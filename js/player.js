@@ -12,7 +12,7 @@ export class Hero {
   constructor(index, profile, scene, world) {
     this.i = index; this.profile = profile; this.scene = scene; this.world = world;
     this.pos = new THREE.Vector3(); this.vy = 0; this.yaw = 0;
-    this.camYaw = Math.PI; this.camPitch = .32; this.camDist = 8; this.camPos = new THREE.Vector3();
+    this.camYaw = Math.PI; this.camPitch = .3; this.camDist = 5.8; this.camPos = new THREE.Vector3();
     this.cam = new THREE.PerspectiveCamera(55, 1, .3, 1200);
     this.state = 'idle'; this.speed = 0; this.onGround = true;
     this.stamina = profile.staminaMax; this.exhausted = false; this.bonusStamina = 0;
@@ -161,9 +161,9 @@ export class Hero {
     // camera: follow behind, gently swinging round when the child is just walking forward
     if (this.manualCamT <= 0 && this.speed > 1 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * .6));
     const dist = this.camDist * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (game.zoom || 1);
-    const target = new THREE.Vector3(p.x, p.y + 1.7 + rideY, p.z);
+    const target = new THREE.Vector3(p.x, p.y + 1.15 + rideY, p.z);
     const want = new THREE.Vector3(p.x + Math.sin(this.camYaw) * Math.cos(this.camPitch) * dist, target.y + Math.sin(this.camPitch) * dist, p.z + Math.cos(this.camYaw) * Math.cos(this.camPitch) * dist);
-    const gy = this.world.groundAt(want.x, want.z) + 1; if (want.y < gy) want.y = gy;
+    const gy = this.world.groundAt(want.x, want.z) + .7; if (want.y < gy) want.y = gy;
     this.camPos.lerp(want, Math.min(1, dt * 8));
     this.cam.position.copy(this.camPos); this.cam.lookAt(target);
   }

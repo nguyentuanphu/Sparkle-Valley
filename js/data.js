@@ -46,8 +46,8 @@ export const SHOP = [
   { kind: 'hat', id: 'bunny', price: 40 }, { kind: 'hat', id: 'crown', price: 80 },
   { kind: 'glider', id: 1, price: 50 }, { kind: 'glider', id: 2, price: 50 }, { kind: 'glider', id: 3, price: 50 }, { kind: 'glider', id: 4, price: 50 }
 ];
-export const HAT_ICON = { none: '🙂', nonla: '👒', cap: '🧢', crown: '👑', bunny: '🐰', flower: '🌸' };
-export const HAT_NAME = { none: () => T('No hat', 'Không đội mũ'), nonla: () => T('Nón lá (leaf hat)', 'Nón lá'), cap: () => T('Cap', 'Mũ lưỡi trai'), crown: () => T('Crown', 'Vương miện'), bunny: () => T('Bunny ears', 'Tai thỏ'), flower: () => T('Flower clip', 'Kẹp hoa') };
+export const HAT_ICON = { none: '🙂', nonla: '👒', cap: '🧢', crown: '👑', bunny: '🐰', flower: '🌸', bow: '🎀' };
+export const HAT_NAME = { none: () => T('No hat', 'Không đội mũ'), nonla: () => T('Nón lá (leaf hat)', 'Nón lá'), cap: () => T('Cap', 'Mũ lưỡi trai'), crown: () => T('Crown', 'Vương miện'), bunny: () => T('Bunny ears', 'Tai thỏ'), flower: () => T('Flower clip', 'Kẹp hoa'), bow: () => T('Bow', 'Nơ') };
 
 // Things to gather around the world (they grow back after a while).
 export const GATHER = [

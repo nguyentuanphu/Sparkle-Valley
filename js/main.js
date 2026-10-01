@@ -1,6 +1,7 @@
 // Sparkle Valley: boot, the game loop, split-screen, NPCs, quests and rewards.
 import { THREE, sprite } from './gfx.js';
-import { settings, saveProfiles } from './state.js';
+import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
+import { settings, saveProfiles, farm } from './state.js';
 import { T } from './i18n.js';
 import { say, hush } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
@@ -27,8 +28,13 @@ try { renderer = new THREE.WebGLRenderer({ antialias: quality !== 'low', preserv
 catch (e) { $('#boot').innerHTML = `<p>${T('Sorry, this device cannot show the 3D world.', 'Xin lỗi, máy này không hiển thị được thế giới 3D.')}</p>`; throw e; }
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === 'low' ? 1.25 : quality === 'high' ? 2 : 1.6));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .82;
+if (quality !== 'low') { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
 document.getElementById('stage').appendChild(renderer.domElement);
 const scene = new THREE.Scene();
+{ // soft sky light bouncing off everything, so materials look real rather than flat
+  const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), .04).texture; pm.dispose();
+}
 const world = createWorld(scene, quality);
 const baseMap = paintMap(256);
 const titleCam = new THREE.PerspectiveCamera(50, 1, .3, 1200);
@@ -54,7 +60,7 @@ function addNPC({ id, name, look, model, x, z, face = 0, icon = '💬', talk }) 
   const obj = model || buildAvatar(look, null).root;
   const av = model ? null : obj;
   obj.position.set(x, world.groundAt(x, z), z); obj.rotation.y = face; scene.add(obj);
-  const tag = nameTag(name); tag.position.set(x, obj.position.y + (model ? 3.4 : 2.7), z); scene.add(tag);
+  const tag = nameTag(name); tag.position.set(x, obj.position.y + (model ? 3.4 : 2.0), z); scene.add(tag);
   const n = { id, name, x, z, obj, tag, avatar: av, talk };
   NPCS.push(n);
   world.colliders.push({ x, z, r: .7 });
@@ -62,16 +68,16 @@ function addNPC({ id, name, look, model, x, z, face = 0, icon = '💬', talk }) 
   return n;
 }
 const V = VILLAGE;
-const kidLook = (o, h, hs, hat) => ({ outfit: o, hat, hair: h, hairStyle: hs, skin: '#f6c7a5', glider: 0 });
+const kidLook = (style, color, h, hs, hat) => ({ style, color, hat, back: 'none', hair: h, hairStyle: hs, skin: '#f6c7a5', glider: 0 });
 let owl, gourd;
 function setupNPCs() {
   owl = addNPC({ id: 'owl', name: 'Ông Cú', model: buildOwl(), x: -2, z: -8, face: .3, icon: '🦉', talk: owlTalk });
-  addNPC({ id: 'mai', name: 'Cô Mai', look: { outfit: 'aodai', hat: 'nonla', hair: '#1d1412', hairStyle: 'long', skin: '#f6c7a5', glider: 0 }, x: V.x + 2, z: V.z - 11.6, face: 0, icon: '🛒', talk: maiTalk });
-  addNPC({ id: 'ba', name: 'Bác Ba', look: { outfit: 'overalls', hat: 'none', hair: '#6b6b6b', hairStyle: 'short', skin: '#e0aa80', glider: 0 }, x: V.x - 4.5, z: V.z + 13, face: .8, icon: '🍲', talk: baTalk });
-  addNPC({ id: 'teo', name: 'Tèo', look: kidLook('sunny', '#1d1412', 'spiky', 'none'), x: V.x + 16, z: V.z + 19.6, face: 0, icon: '🪨', talk: h => kidTalk(h, 'oanquan', 'Tèo', ['Want to play Ô ăn quan with me? It is a clever counting game!', 'Chơi Ô ăn quan với tớ không? Trò này phải tính toán giỏi đấy!']) });
-  addNPC({ id: 'ti', name: 'Tí', look: kidLook('dress', '#3b2618', 'buns', 'flower'), x: V.x - 18, z: V.z + 2.5, face: 0, icon: '🦶', talk: h => kidTalk(h, 'hopscotch', 'Tí', ['Let’s play hopscotch! Nhảy lò cò!', 'Chơi nhảy lò cò đi!']) });
-  addNPC({ id: 'bong', name: 'Bống', look: kidLook('hoodie', '#1d1412', 'long', 'bunny'), x: V.x + 10, z: V.z + 4, face: -1, icon: '⭕', talk: h => kidTalk(h, 'caro', 'Bống', ['Can you beat me at Caro? Get your shapes in a row!', 'Bạn có thắng được tớ môn cờ caro không?']) });
-  addNPC({ id: 'su', name: 'Su', look: kidLook('tunic', '#3b2618', 'short', 'cap'), x: V.x + 7.5, z: V.z + 18, face: -1.57, icon: '🪢', talk: h => kidTalk(h, 'tug', 'Su', ['Tug of war! Are you strong? Dô ta!', 'Kéo co nào! Bạn có khỏe không? Dô ta!']) });
+  addNPC({ id: 'mai', name: 'Cô Mai', look: { style: 'aodai', color: '#e8435a', hat: 'nonla', back: 'none', hair: '#1d1412', hairStyle: 'long', skin: '#f6c7a5', glider: 0 }, x: V.x + 2, z: V.z - 11.6, face: 0, icon: '🛒', talk: maiTalk });
+  addNPC({ id: 'ba', name: 'Bác Ba', look: { style: 'overalls', color: '#5b7fbf', hat: 'none', back: 'none', hair: '#8a8a8a', hairStyle: 'short', skin: '#e0aa80', glider: 0 }, x: V.x - 4.5, z: V.z + 13, face: .8, icon: '🍲', talk: baTalk });
+  addNPC({ id: 'teo', name: 'Tèo', look: kidLook('shirt', '#ffb52e', '#1d1412', 'spiky', 'none'), x: V.x + 16, z: V.z + 19.6, face: 0, icon: '🪨', talk: h => kidTalk(h, 'oanquan', 'Tèo', ['Want to play Ô ăn quan with me? It is a clever counting game!', 'Chơi Ô ăn quan với tớ không? Trò này phải tính toán giỏi đấy!']) });
+  addNPC({ id: 'ti', name: 'Tí', look: kidLook('dress', '#ff7eb8', '#3b2618', 'buns', 'flower'), x: V.x - 18, z: V.z + 2.5, face: 0, icon: '🦶', talk: h => kidTalk(h, 'hopscotch', 'Tí', ['Let’s play hopscotch! Nhảy lò cò!', 'Chơi nhảy lò cò đi!']) });
+  addNPC({ id: 'bong', name: 'Bống', look: kidLook('hoodie', '#9a6bff', '#1d1412', 'ponytail', 'bunny'), x: V.x + 10, z: V.z + 4, face: -1, icon: '⭕', talk: h => kidTalk(h, 'caro', 'Bống', ['Can you beat me at Caro? Get your shapes in a row!', 'Bạn có thắng được tớ môn cờ caro không?']) });
+  addNPC({ id: 'su', name: 'Su', look: kidLook('overalls', '#5bbf6a', '#3b2618', 'short', 'cap'), x: V.x + 7.5, z: V.z + 18, face: -1.57, icon: '🪢', talk: h => kidTalk(h, 'tug', 'Su', ['Tug of war! Are you strong? Dô ta!', 'Kéo co nào! Bạn có khỏe không? Dô ta!']) });
   gourd = addNPC({ id: 'gourd', name: 'Ông Bầu', model: buildGourd(), x: V.x - V.r + 8, z: V.z + 6, face: -1.2, icon: '🍃', talk: gourdTalk });
   // gentle idle animation
   world.updaters.push((dt, t) => NPCS.forEach((n, k) => {
@@ -114,7 +120,7 @@ function give(h, item, n) {
   SFX.pop(n); hudFor(h).toast(`+${n} ${ITEMS[item].icon} ${ITEMS[item].name()}`);
   say(`${n} ${ITEMS[item].name()}!`, `${n} ${ITEMS[item].name()}!`);
 }
-function addMoney(p, xu) { p.wallet += xu; save(); }
+function addMoney(p, xu) { farm.coins += xu; save(); }
 function giveSticker(p) { const left = STICKERS.filter(s => !p.stickers.includes(s)); if (!left.length) return null; const s = pick(left); p.stickers.push(s); save(); return s; }
 const hudFor = h => G.huds[h.i];
 G.give = give;
@@ -349,7 +355,7 @@ function bubble(target, text) {
   x.beginPath(); x.moveTo(236, 96); x.lineTo(256, 124); x.lineTo(276, 96); x.fill();
   x.fillStyle = '#2a3a40'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, 256, 54);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthTest: false })); s.scale.set(4.4, 1.1, 1); s.renderOrder = 6;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthTest: false })); s.scale.set(3.2, .8, 1); s.renderOrder = 6;
   scene.add(s); G.bubbles.push({ s, target, until: performance.now() + 3500 });
 }
 G.emote = (i, id) => {
@@ -368,7 +374,7 @@ function sendHello() {
 }
 Net.on('hello', r => {
   if (G.partner) scene.remove(G.partner.av.root), scene.remove(G.partner.tag);
-  const av = buildAvatar(Object.assign({ outfit: 'tunic', hat: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#f6c7a5', glider: 0 }, r.look || {}), r.photo);
+  const av = buildAvatar(Object.assign({ style: 'shirt', color: '#3d7fd6', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#f6c7a5', glider: 0 }, r.look || {}), r.photo);
   scene.add(av.root); const tag = nameTag(r.name || T('Friend', 'Bạn'), '#9ff0ff'); scene.add(tag);
   G.partner = { av, tag, pos: new THREE.Vector3(0, -50, 0), yaw: 0, st: 'idle', name: r.name };
   SFX.chime(); say(`${r.name} is here! Say hello!`, `${r.name} đã đến! Chào bạn đi!`);
@@ -489,15 +495,15 @@ function frame(now) {
   // music follows the first player
   const h0 = G.heroes[0];
   if (h0 && !gameOpen()) Music.play(h0.gliding ? 'glide' : world.isNight() ? 'night' : G.regionOf[0] === 'village' ? 'village' : regionAt(h0.pos.x, h0.pos.z) === 'plateau' && SHRINES.some(s => dist2(s.x, s.z, h0.pos.x, h0.pos.z) < 8) ? 'shrine' : 'field');
-  if (!G.paused) world.updateSky(dt, h0.pos);
+  if (!G.paused) world.updateSky(dt, h0.pos, h0.pos);
   // online partner
   if (G.partner && Net.remote && Net.remote.s) {
     const s = Net.remote.s, P = G.partner; P.pos.lerp(new THREE.Vector3(s.x, s.y, s.z), Math.min(1, dt * 10)); P.yaw = s.yaw;
-    P.av.root.position.copy(P.pos); P.av.root.rotation.y = P.yaw; P.av.anim(s.st || 'idle', t, s.sp || 0); P.tag.position.set(P.pos.x, P.pos.y + 2.9, P.pos.z);
+    P.av.root.position.copy(P.pos); P.av.root.rotation.y = P.yaw; P.av.anim(s.st || 'idle', t, s.sp || 0); P.tag.position.set(P.pos.x, P.pos.y + 2.0, P.pos.z);
   }
   sendT -= dt; if (Net.connected && sendT <= 0 && h0) { sendT = .1; Net.send({ t: 's', x: +h0.pos.x.toFixed(2), y: +h0.pos.y.toFixed(2), z: +h0.pos.z.toFixed(2), yaw: +h0.yaw.toFixed(2), st: h0.state, sp: +h0.speed.toFixed(1) }); }
   // bubbles
-  G.bubbles = G.bubbles.filter(b => { const p = b.target.pos; b.s.position.set(p.x, p.y + 3.4, p.z); if (now > b.until) { scene.remove(b.s); return false; } return true; });
+  G.bubbles = G.bubbles.filter(b => { const p = b.target.pos; b.s.position.set(p.x, p.y + 2.45, p.z); if (now > b.until) { scene.remove(b.s); return false; } return true; });
   // save positions now and then
   saveT -= dt; if (saveT <= 0) { saveT = 5; G.heroes.forEach(h => { if (h.onGround && !h.towerClimb) h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; }); save(); }
   // render each player's view
@@ -506,7 +512,7 @@ function frame(now) {
   G.heroes.forEach((h, i) => {
     const q = r[i];
     renderer.setViewport(q.x, H - q.y - q.h, q.w, q.h); renderer.setScissor(q.x, H - q.y - q.h, q.w, q.h);
-    world.updateSky(0, h.cam.position);
+    world.updateSky(0, h.cam.position, h.pos);
     renderer.render(scene, h.cam);
     const markers = [];
     const p = h.profile;

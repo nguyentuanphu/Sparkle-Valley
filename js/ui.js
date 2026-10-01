@@ -1,7 +1,7 @@
 // Screens and pop-ups: title, who's playing, grown-ups settings, photo editor, NPC dialogue,
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
 import { T } from './i18n.js';
-import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, OUTFITS, HATS, HAIR, SKIN, HAIRSTYLES, GLIDERS } from './state.js';
+import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, STYLES, OUTFIT_COLORS, HATS, BACKS, HAIR, SKIN, HAIRSTYLES, GLIDERS, farm, resetFarm, MAX_KIDS } from './state.js';
 import { say, voicesFor, onVoices, hasVietnamese } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt, cur } from './money.js';
@@ -11,6 +11,8 @@ import { ITEMS, RECIPES, findRecipe, SHOP, HAT_ICON, HAT_NAME, QUESTS, STICKERS 
 import { SIZE, HALF, SHRINES, TOWERS } from './world.js';
 import { GAMES } from './games/frame.js';
 
+export const STYLE_ICON = { dress: '👗', shirt: '👕', aodai: '🥻', tunic: '🧥', overalls: '👖', hoodie: '🧶' };
+export const STYLE_NAME = { dress: () => T('Dress', 'Váy'), shirt: () => T('Shirt & shorts', 'Áo và quần đùi'), aodai: () => 'Áo dài', tunic: () => T('Explorer', 'Nhà thám hiểm'), overalls: () => T('Overalls', 'Quần yếm'), hoodie: () => T('Hoodie', 'Áo nỉ') };
 export function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3200); }
 
 function modal(cls, html) {
@@ -106,7 +108,7 @@ export function openGrownups(after) {
       </div>
       <div class="field"><label>${T('Graphics', 'Đồ họa')}</label><div class="seg q">${['low', 'auto', 'high'].map(q => `<button data-q="${q}" class="${settings.quality === q ? 'on' : ''}">${{ low: T('Fast', 'Nhanh'), auto: T('Auto', 'Tự động'), high: T('Pretty', 'Đẹp') }[q]}</button>`).join('')}</div></div>
       <h3>${T('Players', 'Người chơi')}</h3>
-      <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(p.name)}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(p.wallet)}</small></div><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
+      <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(p.name)}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
       <button class="btn wide" id="gAdd">+ ${T('Add a player', 'Thêm người chơi')}</button>
       <h3>${T('Backup', 'Sao lưu')}</h3>
       <p class="note">${T('Progress saves automatically on this device. To move it to another phone or tablet, save a backup file and open it there.', 'Tiến trình tự động lưu trên máy này. Để chuyển sang máy khác, hãy lưu tệp sao lưu và mở nó trên máy kia.')}</p>
@@ -146,8 +148,11 @@ export function openEditor(profile, after) {
       <label class="btn primary" for="file">📷 ${T('Take or choose a photo', 'Chụp hoặc chọn ảnh')}</label><input type="file" id="file" accept="image/*" class="vh">
       <input type="range" id="zoom" min="1" max="5" step=".01" value="1" hidden aria-label="Zoom"></div>
     <div class="field"><label for="nm">${T('Name', 'Tên')}</label><input id="nm" maxlength="16" value="${esc(p.name)}" placeholder="${T('e.g. Annie or Bin', 'ví dụ: Na hoặc Bin')}"></div>
-    <div class="field"><span>${T('Outfit', 'Trang phục')}</span><div class="chips" id="cOut"></div></div>
+    <div class="field"><span>${T('Age', 'Tuổi')}</span><div class="seg age"><button data-a="little">🧸 ${T('Little (under 5)', 'Bé nhỏ (dưới 5 tuổi)')}</button><button data-a="big">🎒 ${T('Big kid (5 to 8)', 'Bé lớn (5 đến 8 tuổi)')}</button></div>
+      <p class="note">${T('Little: everything is spoken, games stay gentle and nobody can lose. Big kid: harder levels, more reading, and real opponents in strategy games.', 'Bé nhỏ: mọi thứ đều được đọc to, trò chơi nhẹ nhàng và không ai thua. Bé lớn: cấp độ khó hơn, đọc nhiều hơn, và có đối thủ thật trong trò chơi chiến thuật.')}</p></div>
+    <div class="field"><span>${T('Clothes', 'Trang phục')}</span><div class="chips" id="cOut"></div><div class="chips" id="cCol"></div></div>
     <div class="field"><span>${T('Hat', 'Mũ')}</span><div class="chips" id="cHat"></div></div>
+    <div class="field"><span>${T('On the back', 'Sau lưng')}</span><div class="chips" id="cBack"></div></div>
     <div class="field"><span>${T('Hair', 'Tóc')}</span><div class="chips" id="cHs"></div><div class="chips" id="cHair"></div></div>
     <div class="field"><span>${T('Skin', 'Màu da')}</span><div class="chips" id="cSkin"></div></div>
     <div class="actions">${isNew ? '' : `<button class="btn danger" id="eDel">${T('Remove', 'Xóa')}</button>`}<span class="grow"></span><button class="btn" id="eCancel">${T('Cancel', 'Hủy')}</button><button class="btn primary" id="eSave">${T('Save', 'Lưu')}</button></div>`);
@@ -177,9 +182,14 @@ export function openEditor(profile, after) {
     const box = m.querySelector(id); box.innerHTML = '';
     list.forEach(v => { const b = el('button', 'chip' + (look[key] === v ? ' on' : '')); b.innerHTML = render(v); b.onclick = () => { look[key] = v; chips(id, list, key, render); }; box.appendChild(b); });
   };
-  chips('#cOut', OUTFITS.map(o => o.id), 'outfit', v => { const o = OUTFITS.find(x => x.id === v); return `<span class="sw" style="background:${o.color};border-color:${o.trim}"></span><small>${{ tunic: T('Tunic', 'Áo khoác'), aodai: 'Áo dài', dress: T('Dress', 'Váy'), overalls: T('Overalls', 'Yếm'), hoodie: T('Hoodie', 'Áo nỉ'), sunny: T('Sunny', 'Nắng') }[v]}</small>`; });
-  chips('#cHat', p.owned.hats.filter(h => HATS.includes(h)), 'hat', v => HAT_ICON[v]);
-  chips('#cHs', HAIRSTYLES, 'hairStyle', v => ({ short: '💇', buns: '🎎', long: '👩', spiky: '🦔' }[v]));
+  chips('#cOut', STYLES, 'style', v => `<span>${STYLE_ICON[v]}</span><small>${STYLE_NAME[v]()}</small>`);
+  chips('#cCol', OUTFIT_COLORS, 'color', v => `<span class="sw" style="background:${v}"></span>`);
+  chips('#cHat', HATS, 'hat', v => HAT_ICON[v]);
+  chips('#cBack', BACKS, 'back', v => ({ none: '🙂', wings: '🧚', cape: '🦸' }[v]));
+  chips('#cHs', HAIRSTYLES, 'hairStyle', v => ({ short: '💇', buns: '🎀', long: '👩', ponytail: '🐴', spiky: '🦔' }[v]));
+  let age = p.age || 'little';
+  const ageBtns = () => m.querySelectorAll('.seg.age button').forEach(b => { b.classList.toggle('on', b.dataset.a === age); b.onclick = () => { age = b.dataset.a; ageBtns(); }; });
+  ageBtns();
   chips('#cHair', HAIR, 'hair', v => `<span class="sw" style="background:${v}"></span>`);
   chips('#cSkin', SKIN, 'skin', v => `<span class="sw" style="background:${v}"></span>`);
   const finish = save => {
@@ -192,7 +202,7 @@ export function openEditor(profile, after) {
         ox2.drawImage(img, (240 - img.width * s / 2 + ox - 35) * k, (240 - img.height * s / 2 + oy - 35) * k, img.width * s * k, img.height * s * k);
         p.photo = o.toDataURL('image/jpeg', .82);
       }
-      Object.assign(p.look, look); saveProfiles(true);
+      Object.assign(p.look, look); p.age = age; saveProfiles(true);
     } else if (isNew) removeProfile(p.id);
     m.close(); after && after(p);
   };
@@ -269,7 +279,7 @@ export function openPad(game, i, tab = 'map') {
     const items = Object.entries(p.inv).filter(([, n]) => n > 0);
     const dishes = Object.entries(p.dishes).filter(([, n]) => n > 0);
     body.innerHTML = `
-      <div class="bag-top"><span class="chip">💰 ${fmt(p.wallet)}</span><span class="chip">🔮 ${p.orbs} ${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}</span><span class="chip">🍃 ${Object.keys(p.leafies).length}/24 Leafies</span></div>
+      <div class="bag-top"><span class="chip">💰 ${fmt(farm.coins)}</span><span class="chip">🔮 ${p.orbs} ${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}</span><span class="chip">🍃 ${Object.keys(p.leafies).length}/24 Leafies</span></div>
       <h3>${T('Food', 'Món ăn')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
       <div class="slots">${dishes.map(([id, n]) => { const r = RECIPES.find(r => r.id === id) || { icon: '🥘', name: () => T('Mystery stew', 'Món hầm bí ẩn') }; return `<button class="slot" data-eat="${id}" title="${esc(r.name())}"><span>${r.icon}</span><b>${n}</b><small>${esc(r.name())}</small></button>`; }).join('') || `<p class="note">${T('Cook at a cooking pot to make food.', 'Nấu ăn ở nồi nấu để có món ăn.')}</p>`}</div>
       <h3>${T('Ingredients', 'Nguyên liệu')}</h3>
@@ -358,12 +368,12 @@ export function openShop(game, i) {
   const card = m.querySelector('.card');
   const draw = () => {
     card.innerHTML = `<button class="x" aria-label="Close">✕</button><h2>🛒 ${T("Cô Mai's stall", 'Sạp hàng Cô Mai')}</h2>
-      <p class="sub">💰 ${T('You have', 'Con có')} <b>${fmt(p.wallet)}</b> ${cur().flag}</p>
+      <p class="sub">💰 ${T('You have', 'Con có')} <b>${fmt(farm.coins)}</b> ${cur().flag}</p>
       <div class="shoplist">${SHOP.map((s, k) => {
         const owned = s.kind === 'hat' ? p.owned.hats.includes(s.id) : s.kind === 'glider' ? p.owned.gliders.includes(s.id) : false;
         const ic = s.kind === 'item' ? ITEMS[s.id].icon : s.kind === 'hat' ? HAT_ICON[s.id] : `<span class="sw big" style="background:${GLIDERS[s.id]}"></span>`;
         const nm = s.kind === 'item' ? ITEMS[s.id].name() : s.kind === 'hat' ? HAT_NAME[s.id]() : T('Glider colour', 'Màu cánh lượn');
-        return `<button class="sitem ${owned ? 'owned' : ''} ${p.wallet < s.price && !owned ? 'poor' : ''}" data-k="${k}"><span class="si">${ic}</span><small>${esc(nm)}</small><b>${owned ? '✓' : fmt(s.price)}</b></button>`;
+        return `<button class="sitem ${owned ? 'owned' : ''} ${farm.coins < s.price && !owned ? 'poor' : ''}" data-k="${k}"><span class="si">${ic}</span><small>${esc(nm)}</small><b>${owned ? '✓' : fmt(s.price)}</b></button>`;
       }).join('')}</div>`;
     card.querySelector('.x').onclick = () => m.close();
     card.querySelectorAll('.sitem').forEach(b => b.onclick = () => {
@@ -371,8 +381,8 @@ export function openShop(game, i) {
       const owned = s.kind === 'hat' ? p.owned.hats.includes(s.id) : s.kind === 'glider' ? p.owned.gliders.includes(s.id) : false;
       if (owned) return;
       if (s.kind === 'glider' && !p.glider) { say('You need a glider first!', 'Con cần có cánh lượn trước đã!'); return; }
-      if (p.wallet < s.price) { SFX.no(); say(`That costs ${fmt(s.price)}. Play games to earn more money!`, `Món này giá ${fmt(s.price)}. Chơi trò chơi để có thêm tiền nhé!`); return; }
-      p.wallet -= s.price; SFX.coin();
+      if (farm.coins < s.price) { SFX.no(); say(`That costs ${fmt(s.price)}. Play games to earn more money!`, `Món này giá ${fmt(s.price)}. Chơi trò chơi để có thêm tiền nhé!`); return; }
+      farm.coins -= s.price; SFX.coin();
       if (s.kind === 'item') p.inv[s.id] = (p.inv[s.id] || 0) + 1;
       if (s.kind === 'hat') { p.owned.hats.push(s.id); p.look.hat = s.id; game.rebuildHero(i); }
       if (s.kind === 'glider') { p.owned.gliders.push(s.id); p.look.glider = s.id; game.rebuildHero(i); }

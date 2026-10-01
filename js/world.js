@@ -131,6 +131,11 @@ export function createWorld(scene, quality) {
   scene.fog = new THREE.Fog(0xcfe8ff, 90, 330);
   const hemi = new THREE.HemisphereLight(0xffffff, 0x8fbf6a, .8); scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffffff, 1); scene.add(sun); scene.add(sun.target);
+  if (quality !== 'low') {
+    sun.castShadow = true; const S = sun.shadow; S.mapSize.set(quality === 'high' ? 2048 : 1024, quality === 'high' ? 2048 : 1024);
+    S.camera.left = S.camera.bottom = -28; S.camera.right = S.camera.top = 28; S.camera.near = 1; S.camera.far = 260; S.bias = -.0006; S.normalBias = .04;
+  }
+  scene.environmentIntensity = .35;
 
   const PAL = [
     // t, top, horizon, bottom, sun colour, sun intensity, hemi intensity
@@ -145,7 +150,7 @@ export function createWorld(scene, quality) {
   ].map(r => [r[0], new THREE.Color(r[1]), new THREE.Color(r[2]), new THREE.Color(r[3]), new THREE.Color(r[4]), r[5], r[6]]);
   const tmpA = new THREE.Color(), tmpB = new THREE.Color();
   W.isNight = () => W.time < .24 || W.time > .8;
-  W.updateSky = (dt, camPos) => {
+  W.updateSky = (dt, camPos, focus = camPos) => {
     if (settings.alwaysDay) W.time = lerp(W.time, .42, Math.min(1, dt));
     else W.time = (W.time + dt / 600) % 1; // a full day lasts ten minutes
     const t = W.time; let i = 0; while (i < PAL.length - 2 && PAL[i + 1][0] <= t) i++;
@@ -158,9 +163,10 @@ export function createWorld(scene, quality) {
     const ang = (t - .25) * Math.PI * 2, sd = new THREE.Vector3(Math.cos(ang) * .8, Math.sin(ang), .35).normalize();
     skyMat.uniforms.sunDir.value.copy(sd);
     const day = sd.y > -.05;
-    sun.position.copy(camPos).addScaledVector(day ? sd : sd.clone().negate(), 100); sun.target.position.copy(camPos);
-    sun.color.copy(tmpA.copy(a[4]).lerp(b[4], k)); sun.intensity = lerp(a[5], b[5], k);
-    hemi.intensity = lerp(a[6], b[6], k);
+    // the shadow box follows the player so nearby shadows stay crisp
+    sun.position.copy(focus).addScaledVector(day ? sd : sd.clone().negate(), 120); sun.target.position.copy(focus);
+    sun.color.copy(tmpA.copy(a[4]).lerp(b[4], k)); sun.intensity = lerp(a[5], b[5], k) * 2.2;
+    hemi.intensity = lerp(a[6], b[6], k) * .8; scene.environmentIntensity = lerp(a[6], b[6], k) * .28;
     hemi.color.copy(tmpB.set('#ffffff').lerp(skyMat.uniforms.top.value, .25));
     sky.position.copy(camPos); stars.position.copy(camPos);
     starMat.opacity = clamp(-sd.y * 4, 0, 1);
@@ -192,14 +198,14 @@ export function createWorld(scene, quality) {
     cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b;
   }
   tg.setAttribute('color', new THREE.BufferAttribute(cols, 3)); tg.computeVertexNormals();
-  scene.add(new THREE.Mesh(tg, toonVC()));
+  const terrain = new THREE.Mesh(tg, toonVC({ roughness: .95 })); terrain.receiveShadow = true; scene.add(terrain);
 
   // water with a soft moving shimmer
   const wc = document.createElement('canvas'); wc.width = wc.height = 128; const wx = wc.getContext('2d');
   wx.fillStyle = '#ffffff'; wx.fillRect(0, 0, 128, 128); wx.strokeStyle = 'rgba(160,220,255,.9)'; wx.lineWidth = 3;
   for (let i = 0; i < 14; i++) { const x0 = Math.random() * 128, y0 = Math.random() * 128; wx.beginPath(); wx.arc(x0, y0, 6 + Math.random() * 10, .2, 1.4); wx.stroke(); }
   const wtex = new THREE.CanvasTexture(wc); wtex.wrapS = wtex.wrapT = THREE.RepeatWrapping; wtex.repeat.set(60, 60); wtex.colorSpace = THREE.SRGBColorSpace;
-  const waterMat = new THREE.MeshPhongMaterial({ color: '#3aa7e0', map: wtex, transparent: true, opacity: .82, shininess: 90, specular: '#ffffff' });
+  const waterMat = new THREE.MeshStandardMaterial({ color: '#2f8fc8', map: wtex, transparent: true, opacity: .8, roughness: .08, metalness: .25 });
   const water = new THREE.Mesh(new THREE.PlaneGeometry(SIZE + 400, SIZE + 400).rotateX(-Math.PI / 2), waterMat); water.position.y = WATER; scene.add(water);
   W.updaters.push((dt, t) => { wtex.offset.set(t * .01, t * .006); });
 
@@ -252,7 +258,7 @@ export function createWorld(scene, quality) {
   const o3 = new THREE.Object3D(), tint = new THREE.Color();
   for (const k in spots) {
     const list = spots[k]; if (!list.length) continue;
-    const im = new THREE.InstancedMesh(geos[k], toonVC(), list.length);
+    const im = new THREE.InstancedMesh(geos[k], toonVC(), list.length); im.castShadow = k !== 'rock'; im.receiveShadow = true;
     list.forEach((s, i) => { o3.position.set(s[0], s[1], s[2]); o3.rotation.set(0, s[3], 0); o3.scale.setScalar(s[4]); o3.updateMatrix(); im.setMatrixAt(i, o3.matrix); tint.setHSL(0, 0, .88 + rnd() * .12); im.setColorAt(i, tint); });
     scene.add(im);
   }
@@ -299,7 +305,7 @@ export function createWorld(scene, quality) {
       P(new THREE.ConeGeometry(1, 1, 4, 1), roof, [0, wh + 1.5, 0], [0, Math.PI / 4, 0], [w * .82, 3, d * .82]),
       P(new THREE.BoxGeometry(w * .9, .25, .4), '#8e3a2a', [0, wh + 2.9, 0])
     ]), toonVC()));
-    g.position.set(x, heightAt(x, z) - .05, z); g.rotation.y = rot; scene.add(g);
+    g.position.set(x, heightAt(x, z) - .05, z); g.rotation.y = rot; g.children[0].castShadow = g.children[0].receiveShadow = true; scene.add(g);
     W.colliders.push({ x, z, r: Math.max(w, d) * .62 });
     return g;
   }
@@ -355,7 +361,7 @@ export function createWorld(scene, quality) {
   for (let i = 0; i < 16; i++) {
     const a = i / 16 * Math.PI * 2, x = V.x + Math.cos(a) * 14, z = V.z + Math.sin(a) * 14, y = heightAt(x, z);
     if (i % 2 === 0) { const pole = new THREE.Mesh(new THREE.CylinderGeometry(.1, .1, 3.6, 5), toon('#7a5236')); pole.position.set(x, y + 1.8, z); scene.add(pole); W.colliders.push({ x, z, r: .3 }); }
-    const l = new THREE.Mesh(lanternGeo, new THREE.MeshToonMaterial({ color: i % 3 === 2 ? '#ffcf3a' : '#e8332a', emissive: i % 3 === 2 ? '#ffb000' : '#ff3a1a', emissiveIntensity: .3 }));
+    const l = new THREE.Mesh(lanternGeo, new THREE.MeshStandardMaterial({ roughness: .5, color: i % 3 === 2 ? '#ffcf3a' : '#e8332a', emissive: i % 3 === 2 ? '#ffb000' : '#ff3a1a', emissiveIntensity: .3 }));
     l.position.set(x, y + 3.4, z); scene.add(l); W.lanterns.push(l);
   }
   // Ô ăn quan board drawn on the ground, hopscotch squares, tug-of-war rope
@@ -422,7 +428,7 @@ export function createWorld(scene, quality) {
   SHRINES.forEach(s => {
     const y = heightAt(s.x, s.z);
     const g = new THREE.Group(); g.position.set(s.x, y - .1, s.z);
-    g.add(new THREE.Mesh(shrineBase, toonVC()));
+    const sb = new THREE.Mesh(shrineBase, toonVC({ roughness: .8 })); sb.castShadow = sb.receiveShadow = true; g.add(sb);
     const core = new THREE.Mesh(new THREE.OctahedronGeometry(.7, 0), glow('#ff9a3a')); core.position.y = 2.3; g.add(core);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(1.2, .06, 6, 30), glow('#ffb35a', .8)); ring.position.y = 2.3; ring.rotation.x = Math.PI / 2; g.add(ring);
     const beam = new THREE.Mesh(new THREE.CylinderGeometry(.25, .25, 60, 8, 1, true), glow('#ff9a3a', .18)); beam.position.y = 32; g.add(beam);
@@ -444,7 +450,7 @@ export function createWorld(scene, quality) {
     legs.forEach(([a, b]) => parts.push(P(new THREE.BoxGeometry(.7, H, .7), '#5a5650', [a * 2.4, H / 2, b * 2.4])));
     for (let k = 1; k < 6; k++) parts.push(P(new THREE.BoxGeometry(5.6, .35, 5.6), '#6e6a64', [0, k * H / 6, 0]));
     parts.push(P(new THREE.CylinderGeometry(4.2, 3.6, .6, 10), '#7a766e', [0, H + .3, 0]));
-    const body = new THREE.Mesh(merge(parts), toonVC());
+    const body = new THREE.Mesh(merge(parts), toonVC({ roughness: .7, metalness: .15 })); body.castShadow = true;
     const panels = new THREE.Mesh(new THREE.BoxGeometry(4.2, H - 2, 4.2), glow('#ff9a3a', .22)); panels.position.y = H / 2;
     const top = new THREE.Mesh(new THREE.OctahedronGeometry(1, 0), glow('#ff9a3a')); top.position.y = H + 2.2;
     const g = new THREE.Group(); g.add(body, panels, top); g.position.set(tw.x, y - .2, tw.z); scene.add(g);

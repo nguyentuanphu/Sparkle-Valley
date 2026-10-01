@@ -2,6 +2,7 @@
 // stamina wheel next to the hero, and big touch buttons.
 import { THREE } from './gfx.js';
 import { T } from './i18n.js';
+import { farm } from './state.js';
 import { fmt } from './money.js';
 import { el, esc, clamp } from './util.js';
 import { SIZE, HALF, TOWERS } from './world.js';
@@ -83,9 +84,9 @@ export class Hud {
       let s = ''; for (let i = 0; i < p.hearts; i++) { const f = clamp(h.hearts - i, 0, 1); s += `<i class="heart" style="--f:${f}"></i>`; }
       this.q('.hearts').innerHTML = s; this.last.h = hk;
     }
-    const mk = fmt(p.wallet) + '|' + p.orbs + '|' + Object.keys(p.leafies).length;
+    const mk = fmt(farm.coins) + '|' + p.orbs + '|' + Object.keys(p.leafies).length;
     if (this.last.m !== mk) {
-      this.q('.chip.c-money').textContent = '💰 ' + fmt(p.wallet); this.q('.chip.c-orbs').textContent = '🔮 ' + p.orbs; this.q('.chip.c-leafy').textContent = '🍃 ' + Object.keys(p.leafies).length;
+      this.q('.chip.c-money').textContent = '💰 ' + fmt(farm.coins); this.q('.chip.c-orbs').textContent = '🔮 ' + p.orbs; this.q('.chip.c-leafy').textContent = '🍃 ' + Object.keys(p.leafies).length;
       if (this.last.m) this.q('.chips').classList.add('bump'), setTimeout(() => this.q('.chips').classList.remove('bump'), 400);
       this.last.m = mk;
     }
@@ -124,7 +125,7 @@ export class Hud {
     this.wheelA = clamp((this.wheelA || 0) + (full ? -.05 : .2), 0, 1);
     this.wheel.style.opacity = this.wheelA;
     if (this.wheelA <= 0 || !this.rect) return;
-    const v = new THREE.Vector3(h.pos.x, h.pos.y + 2.2, h.pos.z).project(camera);
+    const v = new THREE.Vector3(h.pos.x, h.pos.y + 1.6, h.pos.z).project(camera);
     const px = (v.x * .5 + .5) * this.rect.w, py = (-v.y * .5 + .5) * this.rect.h;
     this.wheel.style.transform = `translate(${px + 40}px, ${py - 60}px)`;
     c.clearRect(0, 0, 96, 96); c.lineCap = 'round';
