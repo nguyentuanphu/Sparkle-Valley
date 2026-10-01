@@ -6,6 +6,6 @@ cd "$(dirname "$0")"
 OUT=netlify-site
 rm -rf "$OUT" sparkle-valley-netlify.zip
 mkdir -p "$OUT"
-cp -r index.html manifest.webmanifest sw.js netlify.toml css fonts icons js vendor "$OUT"/
+cp -r index.html manifest.webmanifest sw.js netlify.toml css fonts icons js vendor videos "$OUT"/
 (cd "$OUT" && zip -qr ../sparkle-valley-netlify.zip .)
 echo "Ready: $OUT/ and sparkle-valley-netlify.zip"

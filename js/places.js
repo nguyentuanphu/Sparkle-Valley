@@ -4,7 +4,7 @@ import { THREE, toon, toonVC, P, merge, sprite } from './gfx.js';
 import { T } from './i18n.js';
 import { say } from './voice.js';
 import { SFX, Music, PARTY } from './audio.js';
-import { heightAt, VILLAGE } from './world.js';
+import { heightAt, VILLAGE, PLAYGROUND } from './world.js';
 import { dist2 } from './util.js';
 
 export function createPlaces(G) {
@@ -37,6 +37,23 @@ export function createPlaces(G) {
   const ch = PL.chest = { x: 10, z: 146 };
   const chest = new THREE.Mesh(merge([P(new THREE.BoxGeometry(1.4, .8, .9), '#8a5a3b', [0, .4, 0]), P(new THREE.CylinderGeometry(.45, .45, 1.4, 12, 1, false, 0, Math.PI), '#a0703a', [0, .8, 0], [0, 0, Math.PI / 2]), P(new THREE.BoxGeometry(.25, .3, .1), '#ffd23f', [0, .7, .46])]), toonVC({ roughness: .6 }));
   chest.castShadow = true; add(chest, ch.x, ch.z, .4); world.colliders.push({ x: ch.x, z: ch.z, r: 1 });
+
+  // Folk Games Playground: a picnic rug, bunting, a chalk hopscotch and a marble ring
+  const pg = PL.playground = PLAYGROUND, gy = heightAt(pg.x, pg.z);
+  const flags = ['#e8434a', '#ffd23f', '#3cc7e8', '#5fd39a', '#ff7eb8', '#3b6fe0'];
+  const deco = new THREE.Mesh(merge([
+    P(new THREE.BoxGeometry(4, .06, 3), '#e85a6a', [0, .03, 0]), P(new THREE.BoxGeometry(4.02, .07, .3), '#ffffff', [0, .035, -.9]), P(new THREE.BoxGeometry(4.02, .07, .3), '#ffffff', [0, .035, .9]),
+    ...[-7, 7].map(x => P(new THREE.CylinderGeometry(.12, .14, 4.4, 8), '#c99a6a', [x, 2.2, -6])),
+    P(new THREE.CylinderGeometry(.03, .03, 14, 4), '#7a5a3a', [0, 4.1, -6], [0, 0, Math.PI / 2]),
+    ...Array.from({ length: 13 }, (_, k) => P(new THREE.ConeGeometry(.35, .7, 3), flags[k % flags.length], [-6 + k, 3.65 - Math.sin(k / 12 * Math.PI) * .45, -6], [Math.PI, 0, 0])),
+    ...[[0, 0], [0, 1], [-.55, 2], [.55, 2], [0, 3], [-.55, 4], [.55, 4], [0, 5]].map(([x, z]) => P(new THREE.BoxGeometry(1, .03, 1), '#f4f0e8', [-8 + x * 1.05, .02, 3 + z * 1.05])),
+  ]), toonVC({ roughness: .8 }));
+  deco.receiveShadow = true; add(deco, pg.x, pg.z, 0, -.02);
+  // little marbles inside the chalk ring
+  // Ruby's chalk marble ring on the front lawn of the Aussie house across the park
+  const mr = { x: 47.5, z: 56.6 };
+  const ringM = new THREE.Mesh(new THREE.TorusGeometry(1.4, .06, 4, 32).rotateX(Math.PI / 2), toon('#f4f0e8')); ringM.position.set(mr.x, heightAt(mr.x, mr.z) + .03, mr.z); scene.add(ringM);
+  ['🔴', '🔵', '🟢', '🟡'].forEach((m, k) => { const sp = sprite(m, .35); sp.position.set(mr.x + Math.cos(k * 1.6) * .6, gy + .2, mr.z + Math.sin(k * 1.6) * .6); scene.add(sp); });
 
   const I = (id, spot, r, icon, label, act) => G.interactables.push({ id, x: spot.x, z: spot.z, r, icon, label, act, bubble: icon });
   I('xylo', xy, 2.4, '🎵', () => T('Copy the tune', 'Nhại giai điệu'), h => G.playGame(h.i, 'tune', 'place'));

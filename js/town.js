@@ -1,0 +1,304 @@
+// Two Homes Street (Phố Hai Quê): a neighbourhood where Bà Rịa meets a Sydney suburb.
+// On one side: narrow Vietnamese tube houses with balconies and water tanks, a French-style villa and
+// Cô Sáu's sugarcane juice cart; uncles play cards on the footpath. On the other side: an Australian
+// weatherboard house with a front porch, a brick house, a Hills hoist, and the park where kids play
+// folk games. Built from simple flat-coloured shapes in the "summer afternoon" style.
+import { THREE, toon, toonVC, P, merge, sprite } from './gfx.js';
+import { T } from './i18n.js';
+import { say } from './voice.js';
+import { SFX } from './audio.js';
+import { heightAt, TOWN, PLAYGROUND } from './world.js';
+import { buildAvatar } from './avatar.js';
+import { dist2 } from './util.js';
+
+const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+const Cyl = (r1, r2, h, s = 8) => new THREE.CylinderGeometry(r1, r2, h, s);
+// A gable roof: ridge along x, slopes down to the front (+z) and back (-z).
+function gable(parts, w, d, h, y0, col, endCol) {
+  const L = Math.hypot(d / 2, h) + .45, a = Math.atan2(h, d / 2);
+  parts.push(P(Box(w + .7, .16, L), col, [0, y0 + h / 2, d / 4 + .1], [a, 0, 0]), P(Box(w + .7, .16, L), col, [0, y0 + h / 2, -d / 4 - .1], [-a, 0, 0]));
+  const sh = new THREE.Shape(); sh.moveTo(-d / 2, 0); sh.lineTo(d / 2, 0); sh.lineTo(0, h); sh.lineTo(-d / 2, 0);
+  const tri = new THREE.ExtrudeGeometry(sh, { depth: .12, bevelEnabled: false });
+  [-1, 1].forEach(sx => parts.push(P(tri, endCol, [sx * (w / 2) - (sx > 0 ? .12 : 0), y0, 0], [0, Math.PI / 2, 0])));
+}
+// A hip roof (four slopes) over a w × d footprint.
+const hip = (parts, w, d, h, y0, col) => parts.push(P(new THREE.ConeGeometry(Math.SQRT1_2, 1, 4), col, [0, y0 + h / 2, 0], [0, Math.PI / 4, 0], [w + .9, h, d + .9]));
+// A window on a wall facing +z at (x, y, z).
+function win(parts, x, y, z, w = 1.2, h = 1.3, frame = '#f4efe2', glass = '#5d8e94', shutters = null) {
+  parts.push(P(Box(w + .24, h + .24, .08), frame, [x, y, z]), P(Box(w, h, .1), glass, [x, y, z + .02]), P(Box(w + .3, .1, .2), frame, [x, y - h / 2 - .12, z + .06]));
+  if (shutters) [-1, 1].forEach(sx => parts.push(P(Box(w / 2, h + .1, .08), shutters, [x + sx * (w * .75 + .1), y, z + .04])));
+}
+
+// Nhà ống: narrow, tall and colourful, with a roll-up shutter, balconies and a stainless water tank.
+function tubeHouse(color, floors = 3, w = 4.4, d = 10) {
+  const p = [], fh = 3.1;
+  p.push(P(Box(w, fh * floors, d), color, [0, fh * floors / 2, 0]));
+  p.push(P(Box(w - .5, 2.5, .08), '#b9bfc4', [0, 1.3, d / 2 + .02]));
+  for (let k = 0; k < 9; k++) p.push(P(Box(w - .5, .04, .1), '#9aa1a7', [0, .2 + k * .28, d / 2 + .05]));
+  p.push(P(Box(w + .1, .25, .9), '#e9e2d2', [0, 2.75, d / 2 + .35]));
+  for (let f = 1; f < floors; f++) {
+    const y = f * fh;
+    p.push(P(Box(w, .18, 1.2), '#ece5d6', [0, y + .05, d / 2 + .6]));
+    p.push(P(Box(w, .9, .06), '#6f8f7a', [0, y + .55, d / 2 + 1.18]));
+    for (let k = 0; k < 9; k++) p.push(P(Box(.05, .9, .05), '#6f8f7a', [-w / 2 + .25 + k * (w - .5) / 8, y + .55, d / 2 + 1.16]));
+    win(p, 0, y + 1.6, d / 2 + .02, w * .55, 1.6, '#f4efe2', '#6a9aa2');
+  }
+  const top = fh * floors;
+  p.push(P(Box(w + .2, .5, d + .2), '#efe8d8', [0, top + .25, 0]));
+  p.push(P(Box(w + .4, .14, 2.2), '#c8644a', [0, top + .9, d / 2 - .6], [.5, 0, 0]));
+  p.push(P(Cyl(.55, .55, 1.6, 12), '#d6dde0', [-w / 4, top + 1.3, -d / 4], [0, 0, Math.PI / 2]), P(Box(.2, .8, .2), '#a9b1b5', [-w / 4 - .5, top + .6, -d / 4]), P(Box(.2, .8, .2), '#a9b1b5', [-w / 4 + .5, top + .6, -d / 4]));
+  return { geo: merge(p), w, d };
+}
+// A French-colonial villa, Bà Rịa style: ochre walls, green shutters, arches and a terracotta hip roof.
+function frenchVilla(w = 10, d = 9) {
+  const p = [], wall = '#e9c46a', trim = '#f6ead0', green = '#3f7d5c';
+  p.push(P(Box(w, 3.2, d), wall, [0, 1.6, 0]), P(Box(w, 3, d), wall, [0, 4.7, 0]));
+  p.push(P(Box(w + .2, .3, d + .2), trim, [0, 3.25, 0]), P(Box(w + .2, .3, d + .2), trim, [0, 6.25, 0]));
+  // arcade across the front
+  p.push(P(Box(w, .2, 2.2), trim, [0, 3.1, d / 2 + 1.1]), P(Box(w, .3, 2.2), '#d9c9a8', [0, .15, d / 2 + 1.1]));
+  [-1, -1 / 3, 1 / 3, 1].forEach(t => p.push(P(Box(.45, 3, .45), trim, [t * (w / 2 - .25), 1.6, d / 2 + 2])));
+  [-2 / 3, 0, 2 / 3].forEach(t => p.push(P(new THREE.TorusGeometry(1.25, .14, 4, 12, Math.PI), trim, [t * (w / 2 - .25), 1.85, d / 2 + 2.02])));
+  p.push(P(Box(1.4, 2.3, .1), '#7a4a2e', [0, 1.2, d / 2 + .03]));
+  [-3, 3].forEach(x => win(p, x, 1.7, d / 2 + .02, 1.1, 1.5, trim, '#5d8e94', green));
+  [-3.2, 0, 3.2].forEach(x => win(p, x, 4.7, d / 2 + .02, 1.1, 1.6, trim, '#5d8e94', green));
+  // balcony above the arcade
+  p.push(P(Box(w, .8, .1), trim, [0, 3.7, d / 2 + 2.15]));
+  for (let k = 0; k < 15; k++) p.push(P(Cyl(.06, .06, .7, 5), trim, [-w / 2 + .35 + k * (w - .7) / 14, 3.6, d / 2 + 2.15]));
+  hip(p, w, d, 2.6, 6.4, '#c8644a');
+  return { geo: merge(p), w, d: d + 2.3 };
+}
+// Australian weatherboard cottage: raised on stumps, pale boards, tin roof and a front verandah.
+function weatherboard(w = 9, d = 8, color = '#cfe0e6') {
+  const p = [], lift = .7, wallH = 3;
+  for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1], [0, 1], [0, -1]]) p.push(P(Box(.3, lift, .3), '#9a8f84', [x * (w / 2 - .3), lift / 2, z * (d / 2 - .3)]));
+  p.push(P(Box(w, wallH, d), color, [0, lift + wallH / 2, 0]));
+  for (let k = 0; k < 11; k++) p.push(P(Box(w + .04, .04, d + .04), '#b3c7ce', [0, lift + .2 + k * .27, 0]));
+  gable(p, w, d, 1.9, lift + wallH, '#9fb3bd', color);
+  for (let k = 0; k < 10; k++) p.push(P(Box(.05, .05, d / 2 + .9), '#8aa0ab', [-w / 2 + .3 + k * (w - .6) / 9, lift + wallH + 1.05, d / 4 + .15], [Math.atan2(1.9, d / 2), 0, 0]));
+  // verandah: deck, white posts, a skillion roof and steps
+  p.push(P(Box(w, .2, 2.4), '#c9a77a', [0, lift, d / 2 + 1.2]));
+  [-1, -1 / 3, 1 / 3, 1].forEach(t => p.push(P(Box(.16, 2.5, .16), '#ffffff', [t * (w / 2 - .1), lift + 1.25, d / 2 + 2.3])));
+  p.push(P(Box(w + .3, .1, 2.8), '#b4c4cc', [0, lift + 2.65, d / 2 + 1.25], [.12, 0, 0]));
+  p.push(P(Box(w, .5, .06), '#ffffff', [0, lift + .5, d / 2 + 2.35]));
+  p.push(P(Box(1.4, .25, .5), '#c9a77a', [0, .35, d / 2 + 2.6]), P(Box(1.4, .25, .5), '#c9a77a', [0, .12, d / 2 + 3]));
+  p.push(P(Box(1, 2.1, .08), '#b5483c', [0, lift + 1.05, d / 2 + .02]));
+  [-2.6, 2.6].forEach(x => win(p, x, lift + 1.7, d / 2 + .02, 1.3, 1.3, '#ffffff', '#6a9aa2'));
+  return { geo: merge(p), w, d: d + 3 };
+}
+// A red-brick house with a tiled roof and a small front porch, like many in western Sydney.
+function brickHouse(w = 8, d = 8) {
+  const p = [];
+  p.push(P(Box(w, 3, d), '#c9785a', [0, 1.5, 0]));
+  for (let k = 0; k < 10; k++) p.push(P(Box(w + .03, .03, d + .03), '#e0a88c', [0, .3 * k + .15, 0]));
+  hip(p, w, d, 2.2, 3, '#c0583e');
+  p.push(P(Box(3, .2, 1.8), '#d9cdbd', [-1.6, .1, d / 2 + .9]), P(Box(.25, 2.6, .25), '#f4efe2', [-2.9, 1.4, d / 2 + 1.6]), P(Box(.25, 2.6, .25), '#f4efe2', [-.3, 1.4, d / 2 + 1.6]));
+  p.push(P(Box(3.4, .15, 2.2), '#a24e3a', [-1.6, 2.75, d / 2 + .9], [.15, 0, 0]));
+  p.push(P(Box(1, 2.1, .08), '#4f5d6a', [-1.6, 1.05, d / 2 + .02]));
+  win(p, 2, 1.6, d / 2 + .02, 2, 1.3, '#f4efe2', '#6a9aa2');
+  return { geo: merge(p), w, d: d + 1.8 };
+}
+// The house on stilts from the picture: living upstairs, an open breezy space below.
+function raisedHouse(w = 7.5, d = 7) {
+  const p = [];
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([x, z]) => p.push(P(Box(.25, 2.8, .25), '#b9b2a6', [x * (w / 2 - .3), 1.4, z * (d / 2 - .3)])));
+  p.push(P(Box(w * .55, 2.6, d * .7), '#9a8a94', [-w * .2, 1.3, -d * .1]));
+  p.push(P(Box(1, 2, .08), '#5a4a5a', [-w * .2, 1, d * .25 + .02]));
+  p.push(P(Box(1.8, .1, 1), '#c8644a', [-w * .2, 2.3, d * .25 + .5], [.25, 0, 0]));
+  p.push(P(Box(w, 3, d), '#efd9a6', [0, 2.8 + 1.5, 0]));
+  win(p, .6, 4.4, d / 2 + .02, 2.6, 1.3, '#9ac7b4', '#9fd2ee');
+  p.push(P(Box(2.2, .15, 1.4), '#d9cdb8', [-w / 2 - 1, 2.9, d / 4]), P(Box(2.2, .9, .06), '#5f9a7a', [-w / 2 - 1, 3.4, d / 4 + .7]));
+  for (let k = 0; k < 8; k++) p.push(P(Box(.05, .9, .05), '#5f9a7a', [-w / 2 - 2 + k * .3, 3.4, d / 4 + .68]));
+  gable(p, w, d, 1.8, 5.8, '#c8644a', '#efd9a6');
+  return { geo: merge(p), w, d };
+}
+
+export function createTown(G) {
+  const { scene, world } = G, y0 = TOWN.h, RZ = TOWN.roadZ, N = 40, S = 54; // front lines of the north and south houses
+  const mat = toonVC();
+  const put = (geo, x, z, rot = 0, collide = null) => {
+    const m = new THREE.Mesh(geo, mat); m.position.set(x, heightAt(x, z), z); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; scene.add(m);
+    if (collide) world.boxes.push(collide);
+    return m;
+  };
+  const house = (b, x, front, south = false) => {
+    const z = south ? front + b.d / 2 : front - b.d / 2;
+    put(b.geo, x, z + (south ? 0 : 0), south ? Math.PI : 0, { x0: x - b.w / 2, x1: x + b.w / 2, z0: z - b.d / 2 + (south ? 0 : 0), z1: z + b.d / 2 });
+  };
+
+  // ---------- the road, footpaths, lines and a zebra crossing ----------
+  const g = [], x0 = 6, x1 = 56, L = x1 - x0, cx = (x0 + x1) / 2;
+  g.push(P(Box(L, .06, 7), '#b4b9bc', [cx, .03, RZ]));
+  g.push(P(Box(L, .07, 3.6), '#e8d5a8', [cx, .035, RZ - 5.3]), P(Box(L, .07, 3.6), '#e8d5a8', [cx, .035, RZ + 5.3]));
+  g.push(P(Box(L, .08, .16), '#f6f1e4', [cx, .05, RZ - 3.2]), P(Box(L, .08, .16), '#f6f1e4', [cx, .05, RZ + 3.2]));
+  for (let x = x0 + 2; x < x1 - 2; x += 4) if (Math.abs(x - 28) > 3) g.push(P(Box(1.8, .08, .16), '#f6f1e4', [x, .05, RZ]));
+  for (let k = -3; k <= 3; k++) g.push(P(Box(.6, .08, 5.6), '#f6f1e4', [28 + k * 1.1, .055, RZ]));
+  const road = new THREE.Mesh(merge(g), mat); road.position.y = y0; road.receiveShadow = true; scene.add(road);
+
+  // ---------- houses ----------
+  // Bà Rịa side (north)
+  house(tubeHouse('#bfe3cf', 3), 15.6, N);
+  house(tubeHouse('#f2c9a0', 3), 20.1, N);
+  house(tubeHouse('#f6e09a', 2), 24.6, N);
+  const villa = frenchVilla(); house(villa, 33.5, N - 1.2);
+  house(brickHouse(), 45, N - 2.5);
+  // Sydney side (south)
+  house(raisedHouse(), 13.5, S + 1.5, true);
+  house(weatherboard(), 45, S + 4.5, true);
+  // garden walls and fences
+  const fence = [];
+  fence.push(P(Box(10, 1, .25), '#f6ead0', [33.5, .5, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [32.3, .8, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [34.7, .8, N - .6]));
+  for (let k = 0; k < 12; k++) if (k < 5 || k > 6) fence.push(P(Box(.12, .9, .12), '#ffffff', [40.6 + k * .8, .45, S + .6]));
+  fence.push(P(Box(3.6, .1, .1), '#ffffff', [42.4, .75, S + .6]), P(Box(3.6, .1, .1), '#ffffff', [47.6, .75, S + .6]));
+  fence.push(P(Box(.25, 1, .25), '#c0392b', [42.3, .5, S + .4]), P(Box(.5, .4, .4), '#c0392b', [42.3, 1.1, S + .4]));       // letterbox
+  fence.push(P(Box(3.5, .7, .3), '#b5654a', [42.6, .35, N - .5]), P(Box(3.5, .7, .3), '#b5654a', [47.4, .35, N - .5]));   // low brick fence with a gap for the path
+  const fm = new THREE.Mesh(merge(fence), mat); fm.position.y = y0; fm.castShadow = true; scene.add(fm);
+  world.boxes.push({ x0: 28.5, x1: 32.1, z0: N - .8, z1: N - .4 }, { x0: 34.9, x1: 38.5, z0: N - .8, z1: N - .4 });
+
+  // ---------- street lamps and power poles with sagging wires ----------
+  const poles = [];
+  const pp = [];
+  for (let x = 9; x <= 54; x += 11) {
+    const z = S - .7; poles.push(new THREE.Vector3(x, y0 + 8.4, z));
+    pp.push(P(Cyl(.16, .2, 9, 6), '#7d7b70', [x, 4.5, z]), P(Box(1.6, .12, .12), '#6f6d64', [x, 8.4, z]));
+    world.colliders.push({ x, z, r: .35 });
+  }
+  for (const [x, side] of [[16, -1], [29, -1], [40, -1], [22, 1], [36, 1]]) {
+    const z = side < 0 ? N + .9 : S - 1.4;
+    pp.push(P(Cyl(.09, .12, 6.2, 6), '#6f7a66', [x, 3.1, z]));
+    pp.push(P(new THREE.TorusGeometry(.7, .05, 4, 10, Math.PI * .7), '#6f7a66', [x, 6.2, z + side * -.6], [0, Math.PI / 2, 0]));
+    pp.push(P(new THREE.SphereGeometry(.28, 8, 6), '#e8e6dc', [x, 6.5, z - side * 1.2], [0, 0, 0], [1, .45, 1.4]));
+    world.colliders.push({ x, z, r: .3 });
+  }
+  const pm = new THREE.Mesh(merge(pp), mat); pm.castShadow = true; pm.position.y = y0; scene.add(pm);
+  const wireMat = toon('#3d4447');
+  const wire = (a, b, sag) => {
+    const mid = a.clone().lerp(b, .5); mid.y -= sag;
+    const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, .025, 3, false), wireMat); scene.add(m);
+  };
+  for (let k = 0; k < poles.length - 1; k++) for (const off of [-.6, .6]) wire(poles[k].clone().setX(poles[k].x).add(new THREE.Vector3(0, 0, off)), poles[k + 1].clone().add(new THREE.Vector3(0, 0, off)), 1.1);
+  // a wire across the road to the tube houses
+  wire(poles[1].clone(), new THREE.Vector3(20.1, y0 + 8.6, N), 1.4);
+  wire(poles[3].clone(), new THREE.Vector3(33.5, y0 + 6.2, N - 1.4), 1.2);
+
+  // ---------- trees: jacaranda and gum trees (Sydney), banana and star-fruit trees (Bà Rịa) ----------
+  const tree = (x, z, kind) => {
+    const t = [];
+    if (kind === 'jacaranda') { t.push(P(Cyl(.25, .4, 3.4, 6), '#6b5040', [0, 1.7, 0])); [[0, 4.6, 0, 2.2, '#9c7fd6'], [1.6, 4.2, .5, 1.6, '#b39ce6'], [-1.5, 4.3, -.3, 1.7, '#8a6cc8'], [.2, 5.8, .2, 1.3, '#c3b0ee']].forEach(([a, b, c, r, col]) => t.push(P(new THREE.IcosahedronGeometry(r, 1), col, [a, b, c], [0, 0, 0], [1, .8, 1]))); }
+    if (kind === 'gum') { t.push(P(Cyl(.18, .32, 6, 6), '#e9e1d2', [0, 3, 0]), P(Cyl(.1, .14, 2.4, 5), '#e9e1d2', [.7, 5, 0], [0, 0, -.6])); [[0, 6.6, 0, 1.6], [1.4, 6, .4, 1.2], [-1, 6.2, -.5, 1.3]].forEach(([a, b, c, r]) => t.push(P(new THREE.IcosahedronGeometry(r, 0), '#7f9a6a', [a, b, c], [0, 0, 0], [1.2, .7, 1.2]))); }
+    if (kind === 'banana') { t.push(P(Cyl(.15, .22, 2.6, 6), '#9aa65a', [0, 1.3, 0])); for (let k = 0; k < 6; k++) t.push(P(Box(.5, .05, 2.2), k % 2 ? '#5fa860' : '#4e9a52', [Math.cos(k) * .9, 2.7, Math.sin(k) * .9], [-.5 * Math.sin(k), -k, .5 * Math.cos(k)])); }
+    if (kind === 'frangipani') { t.push(P(Cyl(.14, .22, 2, 6), '#8a7a6a', [0, 1, 0])); [[0, 2.4, 0, 1], [.7, 2.2, .3, .7]].forEach(([a, b, c, r]) => t.push(P(new THREE.IcosahedronGeometry(r, 1), '#4f9a62', [a, b, c]))); for (let k = 0; k < 8; k++) t.push(P(new THREE.SphereGeometry(.12, 5, 4), '#fff6dc', [Math.cos(k) * .7, 2.9 + (k % 3) * .1, Math.sin(k) * .7])); }
+    put(merge(t), x, z); world.colliders.push({ x, z, r: kind === 'banana' ? .4 : .5 });
+  };
+  tree(20, 58, 'jacaranda'); tree(37, 72, 'jacaranda'); tree(50, 36, 'gum'); tree(51, 66, 'gum'); tree(9, 40, 'gum');
+  tree(12, 38, 'banana'); tree(27.2, 36, 'banana'); tree(39.5, 37, 'frangipani'); tree(18, 71, 'frangipani');
+
+  // ---------- little things that make it feel lived in ----------
+  const bits = [];
+  // scooters parked on the footpath
+  const scooter = (x, z, col, rot) => [P(Box(.25, .5, 1.5), col, [x, .55, z], [0, rot, 0]), P(Cyl(.28, .28, .14, 10), '#2f3336', [x, .28, z + .6], [0, rot, Math.PI / 2]), P(Cyl(.28, .28, .14, 10), '#2f3336', [x, .28, z - .6], [0, rot, Math.PI / 2]), P(Box(.3, .14, .7), '#3a3030', [x, .85, z - .2], [0, rot, 0]), P(Box(.7, .06, .06), '#9aa', [x, 1.2, z + .7], [0, rot, 0])];
+  bits.push(...scooter(14.3, N + 2.4, '#d9483a', 0), ...scooter(15.5, N + 2.6, '#3a78c8', .1), ...scooter(25.6, N + 2.8, '#f2f2f2', -.1));
+  // wheelie bins on the kerb (red lid for rubbish, yellow lid for recycling)
+  [[41.3, '#d9483a'], [42.2, '#e8c03a']].forEach(([x, lid]) => bits.push(P(Box(.7, 1, .7), '#3c5a44', [x, .5, S - .2]), P(Box(.76, .1, .8), lid, [x, 1.05, S - .2])));
+  [[40.5, '#d9483a']].forEach(([x, lid]) => bits.push(P(Box(.7, 1, .7), '#3c5a44', [x, .5, N + .3]), P(Box(.76, .1, .8), lid, [x, 1.05, N + .3])));
+  // Hills hoist clothes line in the backyard
+  const hx = 45, hz = S + 17.5;
+  bits.push(P(Cyl(.06, .06, 2.4, 6), '#b8bcbf', [hx, 1.2, hz]));
+  for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2; bits.push(P(Box(2.6, .05, .05), '#b8bcbf', [hx + Math.cos(a) * 1.3, 2.3, hz + Math.sin(a) * 1.3], [0, -a, 0])); }
+  [['#ff7eb8', .7], ['#7fd8ff', -.6], ['#ffd23f', 1.4]].forEach(([c, o], k) => bits.push(P(Box(.6, .7, .04), c, [hx + o, 1.9, hz + (k - 1) * .8])));
+  // lanterns strung along the balconies
+  for (let k = 0; k < 9; k++) bits.push(P(new THREE.SphereGeometry(.22, 8, 6), k % 3 === 2 ? '#ffcf3a' : '#e8332a', [14 + k * 1.4, 3.2 - Math.sin(k / 8 * Math.PI) * .4, N + 1.6], [0, 0, 0], [1, 1.3, 1]));
+  bits.push(P(Cyl(.02, .02, 12, 3), '#5a3a2a', [19.6, 3.35, N + 1.6], [0, 0, Math.PI / 2]));
+  // the park: grass edging, a swing set and a slide
+  bits.push(P(Box(1.2, .06, 1.2), '#c9a77a', [35, .03, 70.5]));
+  [[33.4, 70.5], [36.6, 70.5]].forEach(([x, z]) => bits.push(P(Box(.12, 2.6, .12), '#e8433a', [x, 1.3, z - .8], [.25, 0, 0]), P(Box(.12, 2.6, .12), '#e8433a', [x, 1.3, z + .8], [-.25, 0, 0])));
+  bits.push(P(Cyl(.06, .06, 3.4, 6), '#e8433a', [35, 2.5, 70.5], [0, 0, Math.PI / 2]));
+  [34.3, 35.7].forEach(x => bits.push(P(Box(.04, 1.6, .04), '#666', [x, 1.7, 70.5]), P(Box(.5, .06, .25), '#3a78c8', [x, .9, 70.5])));
+  bits.push(P(Box(.8, .1, 3.2), '#ffd23f', [24, 1, 72], [-.55, 0, 0]), P(Box(.8, 2, .8), '#3cc7e8', [24, 1, 70.2]), P(Box(.06, 2.4, .06), '#e8e8e8', [23.6, 1.2, 70.2]), P(Box(.06, 2.4, .06), '#e8e8e8', [24.4, 1.2, 70.2]));
+  world.colliders.push({ x: 35, z: 70.5, r: 1.5 }, { x: 24, z: 70.8, r: 1.2 });
+  const bm = new THREE.Mesh(merge(bits), mat); bm.position.y = y0; bm.castShadow = true; scene.add(bm);
+  world.boxes.push({ x0: 40.1, x1: 42.6, z0: S - .6, z1: S + .2 });
+
+  // ---------- Cô Sáu's sugarcane juice cart (nước mía) ----------
+  const cart = [], kx = 24.6, kz = N + 1.5;
+  cart.push(P(Box(2.4, .9, 1), '#3a7fc2', [0, .75, 0]), P(Box(2.4, .9, .9), '#d6eef6', [0, 1.65, -.05]), P(Box(2.5, .08, 1.1), '#f4f4f4', [0, 2.12, 0]));
+  cart.push(P(Cyl(.32, .32, .1, 12), '#2f3336', [-.9, .32, .55], [Math.PI / 2, 0, 0]), P(Cyl(.32, .32, .1, 12), '#2f3336', [.9, .32, .55], [Math.PI / 2, 0, 0]));
+  cart.push(P(Box(.7, .6, .6), '#c8ccd0', [.7, 2.45, 0]), P(Cyl(.32, .32, .1, 12), '#8a9095', [.7, 2.5, .36], [Math.PI / 2, 0, 0]));
+  for (let k = 0; k < 8; k++) cart.push(P(Cyl(.05, .05, 2.6, 5), k % 2 ? '#7a5a6a' : '#8a6a5a', [-1.5 - (k % 3) * .12, 1.3, -.3 + k * .09], [0, 0, .12 + k * .02]));
+  cart.push(P(Cyl(.03, .03, 3, 4), '#8a8a8a', [-.3, 2.6, -.2]), P(new THREE.ConeGeometry(1.9, .7, 10), '#e84a3a', [-.3, 4, -.2]), P(new THREE.ConeGeometry(1.95, .25, 10), '#ffffff', [-.3, 3.68, -.2]));
+  for (let k = 0; k < 3; k++) cart.push(P(Cyl(.09, .07, .25, 8), '#f3e9a8', [-.5 + k * .3, 2.3, .3]));
+  put(merge(cart), kx, kz); world.colliders.push({ x: kx, z: kz, r: 1.3 });
+  const stools = [];
+  [[-2, 1.2, '#e0453a'], [2.1, 1.3, '#3a78c8'], [2.7, .3, '#e0453a']].forEach(([dx, dz, c]) => stools.push(P(Cyl(.22, .26, .4, 8), c, [kx + dx, .2, kz + dz])));
+  stools.push(P(Box(.6, .45, .6), '#3a78c8', [kx + 2.6, .22, kz + 1.4]));
+  // card table on the footpath in front of the second tube house
+  const cxT = 20.1, czT = N + 2.1;
+  stools.push(P(Box(1.2, .5, .9), '#8a5a3b', [cxT, .25, czT]), P(Box(1.3, .05, 1), '#a07048', [cxT, .52, czT]));
+  [[-1, 0], [1, 0], [0, -.9], [0, .9]].forEach(([dx, dz], k) => stools.push(P(Cyl(.2, .24, .35, 8), k % 2 ? '#e0453a' : '#3a78c8', [cxT + dx, .17, czT + dz])));
+  const sm = new THREE.Mesh(merge(stools), mat); sm.position.y = y0; sm.castShadow = true; scene.add(sm);
+  world.colliders.push({ x: cxT, z: czT, r: 1.6 });
+  // playing cards fanned on the table
+  const cardsG = []; for (let k = 0; k < 6; k++) cardsG.push(P(Box(.18, .01, .26), k % 2 ? '#ffffff' : '#f4f0e6', [cxT - .3 + k * .12, .56 + k * .002, czT + (k % 2) * .1], [0, k * .4, 0]));
+  cardsG.push(P(Box(.3, .02, .4), '#c0392b', [cxT + .35, .56, czT - .2]));
+  const cm = new THREE.Mesh(merge(cardsG), mat); cm.position.y = y0; scene.add(cm);
+
+  // ---------- people ----------
+  const people = [];
+  const person = (look, x, z, face, sit = false) => {
+    const A = buildAvatar(Object.assign({ back: 'none', glider: 0 }, look), null);
+    A.root.position.set(x, heightAt(x, z), z); A.root.rotation.y = face; scene.add(A.root);
+    if (sit) { A.legL.rotation.x = A.legR.rotation.x = -1.45; A.rig.position.y = -.22; }
+    people.push(A); return A;
+  };
+  const L2 = (style, color, hair, hairStyle, hat = 'none', skin = '#e8b48c') => ({ style, color, hair, hairStyle, hat, skin });
+  const sau = person(L2('aodai', '#d94a6a', '#1d1412', 'long', 'nonla'), kx, kz - 1.1, 0);
+  const players = [
+    person(L2('shirt', '#ffffff', '#2a2a2a', 'short'), cxT - 1, czT, Math.PI / 2, true),
+    person(L2('tunic', '#5b7fbf', '#8a8a8a', 'short'), cxT + 1, czT, -Math.PI / 2, true),
+    person(L2('aodai', '#7a4a8a', '#cfcfcf', 'buns'), cxT, czT - .9, 0, true),
+    person(L2('hoodie', '#ff9f43', '#1d1412', 'spiky', 'cap'), cxT, czT + .9, Math.PI, true)
+  ];
+  // teenagers kicking a shuttlecock (đá cầu) in the park
+  const ring = [[29, 67.5], [32, 66], [31.5, 69.5]];
+  const teens = ring.map(([x, z], k) => person(L2(['shirt', 'overalls', 'dress'][k], ['#3cc7e8', '#5fd39a', '#ff7eb8'][k], '#1d1412', ['spiky', 'short', 'ponytail'][k], 'none', '#e0aa80'), x, z, 0));
+  teens.forEach((A, k) => { const c = ring.reduce((a, b) => [a[0] + b[0] / 3, a[1] + b[1] / 3], [0, 0]); A.root.rotation.y = Math.atan2(c[0] - ring[k][0], c[1] - ring[k][1]); world.colliders.push({ x: ring[k][0], z: ring[k][1], r: .4 }); });
+  const cau = new THREE.Mesh(merge([P(Cyl(.12, .12, .06, 8), '#e8433a', [0, 0, 0]), ...[0, 1, 2, 3].map(k => P(Box(.05, .3, .12), ['#ffd23f', '#5fd39a', '#3cc7e8', '#ff7eb8'][k], [Math.cos(k * 1.57) * .06, .17, Math.sin(k * 1.57) * .06], [0, k * 1.57, 0]))]), mat);
+  scene.add(cau);
+  people.forEach(A => world.colliders.push({ x: A.root.position.x, z: A.root.position.z, r: .35 }));
+
+  // name tags and chatter bubbles
+  const tag = (text, x, y, z) => {
+    const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g2 = c.getContext('2d');
+    g2.fillStyle = 'rgba(40,40,40,.55)'; g2.beginPath(); g2.roundRect(8, 10, 240, 46, 23); g2.fill();
+    g2.font = 'bold 30px Fredoka, "Baloo 2", sans-serif'; g2.fillStyle = '#fff'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillText(text, 128, 34);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set(3, .75, 1); s.position.set(x, y, z); scene.add(s); return s;
+  };
+  tag('Cô Sáu 🥤', kx, y0 + 2.6, kz - 1.1);
+  tag('Chú Tư 🃏', cxT, y0 + 2.3, czT);
+  tag('Anh Tuấn 🏸', 30.8, y0 + 2.6, 67.7);
+  const bubble = sprite('💬', .9); bubble.visible = false; scene.add(bubble);
+  const CHATTER = ['🃏', '😆', '🎉', '🤔', '💬'];
+
+  // ---------- things to do ----------
+  const I = (id, x, z, r, icon, label, act) => G.interactables.push({ id, x, z, r, icon, label, act, bubble: icon });
+  I('nuocmia', kx, kz + 1.8, 3, '🥤', () => T('Sugarcane juice', 'Nước mía'), h => G.townTalk(h, 'sau'));
+  I('cards', cxT, czT + 1.8, 3, '🃏', () => T('Card game', 'Đánh bài'), h => G.townTalk(h, 'tu'));
+  I('dacau', 30.8, 66, 3.2, '🏸', () => T('Shuttlecock kicking', 'Đá cầu'), h => G.townTalk(h, 'tuan'));
+
+  // ---------- life: a sugarcane press turning, card players chatting, the shuttlecock flying ----------
+  let hop = 0, from = 0, to = 1, chatT = 2;
+  world.updaters.push((dt, t) => {
+    if (!G.heroes.some(h => dist2(h.pos.x, h.pos.z, 30, 52) < 70)) return;
+    sau.armR.rotation.x = -1 + Math.sin(t * 3) * .5; sau.rig.position.y = Math.sin(t * 2) * .02;
+    players.forEach((A, k) => { A.armR.rotation.x = -.9 + Math.sin(t * 1.3 + k * 2) * .3; A.head && (A.head.rotation.y = Math.sin(t * .7 + k) * .3); });
+    // shuttlecock: arcs from one teen to the next; whoever receives it kicks
+    hop += dt / 1.1;
+    if (hop >= 1) { hop = 0; from = to; to = (to + 1 + (Math.random() < .3 ? 1 : 0)) % 3; if (to === from) to = (to + 1) % 3; const A = teens[from]; A.legR.rotation.x = -1; setTimeout(() => { A.legR.rotation.x = 0; }, 250); }
+    const a = ring[from], b = ring[to], hgt = Math.sin(hop * Math.PI) * 3.2;
+    cau.position.set(a[0] + (b[0] - a[0]) * hop, y0 + .6 + hgt, a[1] + (b[1] - a[1]) * hop); cau.rotation.z = hop * 6;
+    chatT -= dt;
+    if (chatT < 0) { chatT = 2.5 + Math.random() * 3; const A = players[Math.floor(Math.random() * 4)]; bubble.material = sprite(CHATTER[Math.floor(Math.random() * CHATTER.length)]).material; bubble.position.copy(A.root.position).add(new THREE.Vector3(0, 2, 0)); bubble.visible = true; setTimeout(() => { bubble.visible = false; }, 1400); }
+  });
+  return { villa };
+}

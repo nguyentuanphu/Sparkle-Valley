@@ -115,7 +115,7 @@ register({
         api.onCleanup(() => res(false));
       });
       if (!ok || api.closed) return;
-      SFX.chime(); api.say(`${n} carrots! Munch munch. Thank you!`, `${numWord(n)} củ cà rốt! Măm măm. Cảm ơn con!`); await wait(1600);
+      api.right(bunny); api.say(`${n} carrots! Munch munch. Thank you!`, `${numWord(n)} củ cà rốt! Măm măm. Cảm ơn con!`); await wait(1600);
     }
     api.dots(rounds, rounds); return api.win();
   }

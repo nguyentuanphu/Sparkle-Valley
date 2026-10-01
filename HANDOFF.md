@@ -126,6 +126,75 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
   - Ending: the cloud becomes a rainbow friend. Chapters can be re-read from the Album.
 - **Family voice:** grown-ups read 11 prompted lines in each language. The game plays those recordings, and tunes the device voice's pitch towards the recorded voice for everything else.
 
+### Round 3 (feedback: hard to find things, camera, recording, UI)
+- **Recording fixed:**
+  - Recording is now done in `js/recorder.js`, which captures raw sound and saves a small WAV file, so it works on iPhone, Android and computers.
+  - Clips are stored as ArrayBuffers (safer on older Safari) and played through Web Audio.
+  - The screen goes one line at a time, with a big mic button and a level meter. It stops by itself after a short pause.
+  - Clear Vietnamese and English messages explain when the page isn't https, when permission is blocked, or when no microphone is found.
+  - **The microphone only works from an https address** (Netlify or GitHub Pages), not from a file opened directly from a folder.
+- **Easy camera** (default):
+  - A fixed, high view that never spins, and the joystick moves up, down, left and right on screen.
+  - ＋/－ zoom buttons, and the mouse wheel zooms too.
+  - "Explorer" (drag to look around) can still be chosen in Grown-ups → Camera.
+- **Finding things:**
+  - The quest box at the top has a picture, can be tapped to hear the goal again, and has a green **"▶ Go"** button. Go walks to the goal (or flies there when far away) and starts it on arrival.
+  - A golden light beam with a bouncing ❗ marks the goal, and each player has a glowing arrow and a sparkle trail on the ground.
+  - The game starts right next to Ông Cú, who talks automatically.
+  - Every activity has a floating picture bubble **with its name**, and big area signs (Làng Sen, Nông Trại…) are visible from far away.
+  - The map and minimap show every place from the start (no fog), and you can tap any picture on the map to fly there.
+- **🎮 Games hub:** a big pink button on screen opens all games as picture cards grouped by place. Tap a card to play now, or tap 📍 to walk there.
+- **Tap to do:**
+  - Tapping a bubble, a 💧 water drop, a ripe crop or a field plot walks there and does it.
+  - Tapping a water drop near the field waters the plant straight away.
+- **New look:**
+  - A bright toy-box UI: frosted white cards, gradient buttons, and a bottom dock (🎮 Games, 🗺️ Map, 🎒 Bag, 💬 Talk, 🎵, 🔊).
+  - A player card with photo and hearts, and coin pills.
+  - Games use sky or village backgrounds.
+- **More fun in games:** Ông Cú sits in the corner and jumps or cheers. Every right answer sends a ⭐ flying to a star counter, with sparks.
+- **More real:** the ground has a fine grass and soil texture.
+
+### Round 4 (secrets, credits, folk games, voices, chat, "summer afternoon" look, Two Homes Street)
+- **New look, inspired by summer-afternoon.vlucendo.com** (from the parent's screenshots):
+  - Flat, painterly colours with two-tone light and shade (`MeshToonMaterial` with a 4-band gradient, no tone mapping) and faceted low-poly trees, rocks and houses.
+  - Deep blue sky, big cream painted clouds, teal trees, beige boulders, sandy patches and footpaths.
+  - A lower, over-the-shoulder easy camera so the horizon and sky show.
+- **Two Homes Street / Phố Hai Quê** (`js/town.js`, around (12–52, 32–74), road at z = 47): a street where Bà Rịa meets a Sydney suburb.
+  - Vietnamese tube houses (nhà ống) with balconies, roll-up shutters and stainless water tanks.
+  - A yellow French-colonial villa with green shutters and arches.
+  - An Australian weatherboard cottage with a front verandah, a red-brick house, and a house on stilts.
+  - Road markings, a zebra crossing, power poles with sagging wires, street lamps, scooters, wheelie bins, a letterbox, a Hills hoist, jacaranda, gum, banana and frangipani trees, and lanterns.
+  - **Cô Sáu's nước mía cart**: buy a glass for energy.
+  - **Chú Tư and friends play cards** on the footpath; join them for **Snap!**.
+  - **Teenagers kick a shuttlecock** (animated) in the park; join them for **Đá cầu**.
+  - The park holds the folk-game kids; Ruby plays marbles on the front lawn of the Aussie house.
+- **Secret side quests** (`js/secrets.js`, 10 secrets):
+  - Shake apple trees and apples fall, sometimes a golden one.
+  - Find the rooftop cat, the bamboo bell, a bottle on the beach and the snowman on the peak.
+  - Feed the ducks, catch fireflies at night, make a wish at the statue at night, dance by moonlight and take a long glide.
+  - Found secrets are in Album → 🤫; Ông Bầu gives hints.
+- **Credits page** (`js/credits.js`): the title screen's ℹ️ About shows rolling credits with the creator's name, the dedication and why the game was made (read aloud). Grown-ups can edit the text.
+- **Folk games of Australia and Vietnam** (`js/games/folk.js`), each simple enough for little ones:
+  - What's the Time, Mr Wolf? (counting steps; big kids read the clock).
+  - Đánh chuyền / Knucklebones.
+  - Rồng rắn lên mây (learn the chant, then protect the tail).
+  - Bắn bi / Marbles (slingshot physics).
+  - Nhảy dây / Skipping (count the jumps).
+  - Snap! (card matching).
+  - Đá cầu (keep the shuttlecock up).
+  - They appear first in the Games hub with flags.
+- **📺 How to play** (`js/howto.js`): a narrated mini film for every game. Folk games also tell where the game comes from and how to play it for real with friends. Drop a real video at `videos/<game id>.mp4` and it plays instead.
+- **Quests told as stories:** each new goal opens a story page told by a villager, with "▶ Let's go!" (`QUEST_TALES` in `story.js`). Tapping the quest box replays the story. There is a new quest and chapter for Two Homes Street.
+- **Smoother voices** (`js/voice.js`):
+  - Natural pitch, a speed setting, and long lines split at sentence ends.
+  - Optional online natural voice with the parent's own **ElevenLabs** or **Google Cloud TTS** key; every line is cached on the device (IndexedDB `sparkle-valley-tts`).
+  - "Make a voice from my family recordings" uses ElevenLabs voice cloning (uploads the recordings, after a confirm).
+- **Voice control** (`js/listen.js`, `js/commands.js`): a 🎤 button where the browser supports speech recognition. Children can say "open the map", "chơi bắn bi", "go to the village", "talk to Jack" or "đi thôi"…
+- **Villagers who chat** (`js/chat.js`):
+  - "💬 Chat" on any villager's speech box opens a conversation with picture questions, 🎤 or typing.
+  - The offline brain answers who they are, what to do, how to play, where things are, jokes, stories, simple sums and feelings.
+  - With an Anthropic API key in Grown-ups, Claude (model `claude-opus-5-5`, low effort, server-side refusal fallback `fallbacks: "default"`) answers freely, in character and child-safe. The SDK is bundled in `vendor/anthropic-sdk.mjs` and loaded only when used.
+
 ## 3. How it's built
 
 **Tech:**
@@ -155,7 +224,8 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 | `js/input.js` | Floating joystick per screen half, camera drag, taps, keyboard for two players, game controllers |
 | `js/net.js` | Online play: room codes, data channel, voice call, talking meter |
 | `js/audio.js` | `SFX` (including animal sounds), generative themes and sequenced `SONGS`, `Music.play(key)` |
-| `js/voice.js` | `say(en, vi)`, best-voice choice per language, family recordings (IndexedDB), pitch estimate |
+| `js/voice.js` | `say(en, vi)`, best-voice choice per language, family recordings (IndexedDB, played via Web Audio), pitch estimate |
+| `js/recorder.js` | Microphone → WAV recorder that works on iOS and Android, with auto-stop after silence and clear error codes |
 | `js/i18n.js` | `T(en, vi)` inline translations, alphabets, letter names and words, number words, colours |
 | `js/money.js` | AUD and VND denominations, formatting, spoken amounts. Wallet unit "xu": 1 xu = 10c = 2.000đ |
 | `js/data.js` | Items, recipes, Cô Mai's shop, gather spots, stickers, main quest list |
@@ -167,6 +237,15 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 | `js/games/vietnam.js` | oanquan, caro, hopscotch, tug |
 | `js/games/market.js` | market (pay exact amounts in AUD or VND) |
 | `js/games/farmgames.js` | order, sortout, bunny, jigsaw, oddone, tune, tower, duckmaze, balloon, bubbles |
+| `js/games/folk.js` | mrwolf, chuyen, dragon, marbles, skipping, snap, dacau (folk games of Australia and Vietnam) |
+| `js/town.js` | Two Homes Street: house builders (`tubeHouse`, `frenchVilla`, `weatherboard`, `brickHouse`, `raisedHouse`), road, wires, props, townsfolk |
+| `js/secrets.js` | Secret side quests and falling apples |
+| `js/credits.js` | Credits page and its Grown-ups fields |
+| `js/howto.js` | How-to-play films (`HOWTO`, `openHowTo`) |
+| `js/chat.js` | Villager personas, offline conversation brain, optional Claude chat, chat window |
+| `js/listen.js`, `js/commands.js` | Speech recognition and voice commands |
+| `js/extras.js` | Grown-ups settings for natural voice, voice control and AI chat |
+| `vendor/anthropic-sdk.mjs` | Official Anthropic JS SDK bundled with esbuild (only loaded when AI chat is on) |
 
 **Mini-game API:** `register({ id, icon, name, run(api) })`.
 - `api` gives: `stage`, `level` (1–5), `players`, `two`, `little`, `strong`, `say(en, vi)`, `show`, `dots`, `right`, `wrong`, `praise`, `win({title})`, `onCleanup`, `closed`.
@@ -174,16 +253,17 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - Effective level = the child's level for that game + difficulty offset (Easy +0, Medium +1, Hard +2), capped at 5.
 
 **Save data (localStorage):**
-- `sv2_settings`: `{lang, currency, sound, music, voice, voiceEn, voiceVi, bilingual, alwaysDay, quality, familyVoice, familyPitch}`
+- `sv2_settings`: `{lang, currency, sound, music, voice, voiceEn, voiceVi, bilingual, alwaysDay, quality, camMode, familyVoice, familyPitch, voiceRate, voicePitch, tts, ttsKey, elevenVoice, googleVoiceEn, googleVoiceVi, voiceControl, aiOn, aiKey, credits{creator, forWhom, why}}`. API keys stay on the device.
 - `sv2_profiles`: `[{id, name, photo, age, difficulty, look{style,color,hat,back,hair,hairStyle,skin,glider}, hearts, staminaMax, orbs, leafies{}, shrines{}, towers{}, discovered{}, inv{}, dishes{}, stickers[], levels{}, wins{}, quests{}, story{}, glider, album[], pos}]`
 - `sv2_farm` (shared): `{coins, plots[9], seeds{}, basket{}, animals[], hay, products{}, pets[], jobs{day,list}}`
-- IndexedDB `sparkle-valley-voice` / store `clips`: key `"en:great"` → recorded audio Blob.
+- IndexedDB `sparkle-valley-voice` / store `clips`: key `"en:great"` → `{data: ArrayBuffer (WAV), type}`.
 
 **World map** (x to the east, z to the south; the world is 400 × 400):
 - Dawn Plateau (0,0), with the start and the owl.
 - Sunny Farm (−26, 126), south of the plateau ramp.
 - Lotus Village (110, 30), east across the river bridge.
 - Rice fields (112, −38).
+- Two Homes Street (12–52, 32–74), with the park at (28, 62).
 - Mirror Lake (55, 125), with the beach chest at (10, 146).
 - Bamboo forest (−100, 85).
 - Snowcap peaks to the north.
@@ -197,16 +277,35 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - Farm: plant, water and growth work. Mr. Bear, jobs, wardrobe and dance stage work. Story prologue and chapter unlock work.
 - Family-voice recording saves (fake microphone). Tower climb works.
 
+- Round 3 additions (headless Chromium):
+  - Ông Cú greets automatically, "Go" walks to the goal, the Games hub plays a game, and tapping the 💧 waters a plant.
+  - Recording with a fake microphone saves a clip.
+  - Phone portrait split screen has no overlapping HUD.
+
+- Round 4 additions (headless Chromium):
+  - Secrets: apples fall from shaken trees.
+  - The credits page opens and closes.
+  - All folk games open. Mr Wolf was played to the end; marbles was won.
+  - How-to films play.
+  - Quest story pages show, and "Let's go" works.
+  - Offline villager chat answers correctly.
+  - Voice commands parse to the right actions.
+  - The sugarcane juice gives energy.
+  - The Grown-ups extras panel works.
+  - The street renders at desktop and phone sizes.
+  - The earlier regression scripts still pass.
+
 **Not yet tested:**
-- Real iPhone and Android devices: touch feel, performance, voices, home-screen install.
+- ElevenLabs/Google voices, voice cloning and Claude chat (they need real keys and internet; the test machine has neither).
+- Speech recognition with a real microphone.
+- Real iPhone and Android devices: touch feel, performance, voices, home-screen install, and **real microphone recording on iPhone and Android**.
 - **Online play between two devices:** the test machine could not reach the PeerJS server.
 
 ## 5. Known limits and decisions
 
-- **Voice cloning:** making a full synthetic copy of a parent's voice needs an online AI voice service (for example ElevenLabs), which would upload the recordings and needs an account.
-  - That conflicts with "offline, private, no server", so it was not done.
-  - Instead, the recordings play for the lines they cover, and the device voice's pitch is matched for the rest.
-  - Possible upgrade: let the parent record *every* spoken line, or pre-generate natural audio files for all lines offline and ship them with the app.
+- **Natural voices, voice cloning and AI chat are optional and online.** They use the parent's own ElevenLabs, Google or Anthropic keys and cost money per use. Everything works offline without them (device voice and the built-in chat answers).
+  - Keys are kept in localStorage on that device only. The browser calls the services directly (there is no server).
+- **Voice control** relies on the browser's speech recognition (Safari on iPhone/iPad, Chrome on Android). It usually needs the internet.
 - **Online play needs the internet** and uses the free public PeerJS server (`0.peerjs.com`) to introduce the two devices; voice then goes directly between them.
   - Some strict networks block WebRTC. A TURN server would fix that but costs money.
   - Microphone permission is only asked when starting a call or recording.
@@ -219,7 +318,8 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 ## 6. Ideas for next steps
 
 - Bedtime routine at night (brush teeth, story), seasons on the farm, weather (rain waters crops, rainbows).
-- More Vietnamese content: Tết festival event (bánh chưng, lì xì in VND), Trung Thu lantern parade, "Rồng rắn lên mây" chasing game, đàn bầu mini-instrument.
+- More Vietnamese and Australian content: Tết festival event (bánh chưng, lì xì in VND), Trung Thu lantern parade, Australia Day sausage sizzle, đàn bầu mini-instrument, a ride on a scooter, Vietnamese coffee stall.
+- Restyle Lotus Village houses with the Two Homes Street builders; real videos in `videos/`.
 - Phonics (letter sounds), simple words, opposites, telling the time with the in-game clock.
 - Recorded or pre-generated natural audio for all lines. Parental play-time limit with a gentle "time to rest". Weekly progress report per child.
 - Decorating the house and farm. Trading co-op tasks in online play (send a gift, build together).

@@ -66,6 +66,7 @@ export const QUESTS = [
   { id: 'market', icon: '🛒', title: () => T('Help Cô Mai at the market', 'Giúp Cô Mai bán hàng'), at: 'mai' },
   { id: 'cook', icon: '🍲', title: () => T('Cook a dish at a cooking pot', 'Nấu một món ăn'), at: 'pot', check: p => Object.keys(p.dishes).length > 0 },
   { id: 'folk', icon: '🪢', title: () => T('Play a folk game with the village kids', 'Chơi trò dân gian với các bạn'), at: 'kids' },
+  { id: 'playground', icon: '🪁', title: () => T('Learn a game on Two Homes Street', 'Học một trò chơi ở Phố Hai Quê'), at: 'playground', check: p => ['mrwolf', 'chuyen', 'dragon', 'marbles', 'skipping', 'dacau', 'snap'].some(id => p.quests['played_' + id]) },
   { id: 'buffalo', icon: '🐃', title: () => T('Ride a water buffalo', 'Cưỡi trâu'), at: 'buffalo' },
   { id: 'leafies', icon: '🍃', title: () => T('Find 5 hidden Leafies', 'Tìm 5 bạn Lá Lá đang trốn'), at: 'leafy', check: p => Object.keys(p.leafies).length >= 5 },
   { id: 'statue', icon: '🪷', title: () => T('Bring 4 Sparkle Orbs to the Lotus Statue', 'Mang 4 Ngọc Lấp Lánh đến Tượng Sen'), at: 'statue' },

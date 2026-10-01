@@ -38,6 +38,10 @@ export class Hero {
   update(dt, pad, t, game) {
     const W = this.world, p = this.pos;
     // camera control
+    // Easy camera (default): a fixed, high view that never spins, like a picture book. Drag does nothing.
+    // Explorer camera: drag to look around, as in big open-world games.
+    const easy = game.settings.camMode !== 'free';
+    if (easy) { pad.cdx = 0; pad.cdy = 0; }
     if (pad.cdx || pad.cdy) this.manualCamT = 2.5;
     this.camYaw -= pad.cdx * .006 * (game.settings.camSpeed || 1); this.camPitch = clamp(this.camPitch + pad.cdy * .004, -.1, 1.1);
     pad.cdx = 0; pad.cdy = 0;
@@ -166,10 +170,12 @@ export class Hero {
     A.anim(this.state, t, this.speed);
     A.root.children[1].visible = this.state !== 'swim'; // blob shadow
     // camera: follow behind, gently swinging round when the child is just walking forward
-    if (this.manualCamT <= 0 && this.speed > 1 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * .6));
+    const easy = game.settings.camMode !== 'free';
+    if (easy) { this.camYaw = angleLerp(this.camYaw, 0, Math.min(1, dt * 3)); this.camPitch += ((this.towerClimb ? .25 : .42) - this.camPitch) * Math.min(1, dt * 3); }
+    else if (this.manualCamT <= 0 && this.speed > 1 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * .6));
     const close = game.closeUp === this.i; // wardrobe close-up
     if (close) { this.camYaw = angleLerp(this.camYaw, this.yaw, Math.min(1, dt * 4)); this.camPitch += (.08 - this.camPitch) * Math.min(1, dt * 4); }
-    const dist = close ? 2.8 : this.camDist * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (game.zoom || 1);
+    const dist = close ? 2.8 : (easy ? 10 : this.camDist) * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (this.zoom || 1) * (game.zoom || 1);
     const target = new THREE.Vector3(p.x, p.y + (close ? .2 : 1.15) + rideY, p.z);
     const want = new THREE.Vector3(p.x + Math.sin(this.camYaw) * Math.cos(this.camPitch) * dist, target.y + Math.sin(this.camPitch) * dist, p.z + Math.cos(this.camYaw) * Math.cos(this.camPitch) * dist);
     const gy = this.world.groundAt(want.x, want.z) + .7; if (want.y < gy) want.y = gy;

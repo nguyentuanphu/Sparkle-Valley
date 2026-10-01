@@ -165,6 +165,7 @@ export function createFarm(G) {
     const drop = sprite('💧', .8); drop.position.set(px, soil.position.y + 1.6, pz); scene.add(drop);
     const shine = sprite('✨', .9); shine.position.set(px, soil.position.y + 1.7, pz); scene.add(shine);
     F.plots.push({ i, x: px, z: pz, soil, crop, drop, shine, key: '' });
+    drop.scale.setScalar(1.25); shine.scale.setScalar(1.2);
   }
   // fence round the field
   const fenceParts = [];
@@ -305,10 +306,15 @@ export function createFarm(G) {
 
   // ---------- things to do ----------
   const I = (id, spot, r, icon, label, act, extra = {}) => G.interactables.push(Object.assign({ id, x: spot.x, z: spot.z, r, icon, label, act, bubble: icon }, extra));
+  G.tapTargets = G.tapTargets || [];
   F.plots.forEach((pl, i) => {
-    G.interactables.push({ id: 'plot' + i, x: pl.x, z: pl.z, r: 1.7, plot: true, icon: '🌱',
+    // tap the 💧 to water, tap the ✨ to harvest, tap the soil to plant
+    const it = { id: 'plot' + i, x: pl.x, z: pl.z, r: 1.7, plot: true, icon: '🌱',
       label: () => { const p = farm.plots[i]; return !p ? T('Plant', 'Gieo hạt') : p.stage >= 3 ? T('Harvest', 'Thu hoạch') : !p.water ? T('Water', 'Tưới nước') : T('Growing…', 'Đang lớn…'); },
-      act: h => plotAction(G, h, i) });
+      act: h => plotAction(G, h, i) };
+    G.interactables.push(it);
+    pl.drop.userData.it = pl.shine.userData.it = pl.soil.userData.it = it;
+    G.tapTargets.push(pl.drop, pl.shine, pl.soil);
   });
   I('hay', hay, 2.2, '🌾', () => T('Fill the hay box', 'Đổ cỏ khô'), h => { farm.hay = 12; saveFarm(); SFX.plant(); G.fx(hay.x, heightAt(hay.x, hay.z) + 1.5, hay.z, '🌾'); say('The hay box is full! The animals are happy.', 'Hộp cỏ đầy rồi! Các con vật vui lắm.'); });
   I('crate', crate, 2, '🧺', () => T('Collect from the barn', 'Nhặt đồ ở chuồng'), h => collect(G, h));
