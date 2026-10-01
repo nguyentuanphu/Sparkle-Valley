@@ -27,6 +27,7 @@ import './games/folk.js';
 import { openHowTo } from './howto.js';
 import { createFarm, jobProgress, ensureJobs } from './farm.js';
 import { createPlaces } from './places.js';
+import { createTown } from './town.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
 import { openWardrobe, openGamesHub } from './ui.js';
@@ -38,7 +39,7 @@ try { renderer = new THREE.WebGLRenderer({ antialias: quality !== 'low', preserv
 catch (e) { $('#boot').innerHTML = `<p>${T('Sorry, this device cannot show the 3D world.', 'Xin lỗi, máy này không hiển thị được thế giới 3D.')}</p>`; throw e; }
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === 'low' ? 1.25 : quality === 'high' ? 2 : 1.6));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .82;
+renderer.toneMapping = THREE.NoToneMapping; // flat illustrated colours, exactly as painted
 if (quality !== 'low') { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
 document.getElementById('stage').appendChild(renderer.domElement);
 const scene = new THREE.Scene();
@@ -97,7 +98,7 @@ function setupNPCs() {
     talk: h => kidTalk(h, 'chuyen', 'Mít', ['Hi! I am Mít. In Vietnam we play Đánh chuyền with a ball and sticks. Jack calls it Knucklebones!', 'Chào bạn! Tớ là Mít. Ở Việt Nam tụi tớ chơi đánh chuyền với quả bóng và que. Jack gọi là Knucklebones đó!']) });
   addNPC({ id: 'bom', name: 'Bờm 🇻🇳', look: look('tunic', '#e8434a', '#1d1412', 'spiky', 'none'), x: PG.x + 5, z: PG.z - 4, face: -1, icon: '🐉',
     talk: h => kidTalk(h, 'dragon', 'Bờm', ['Let us be a dragon! Hold on tight and sing: Rồng rắn lên mây!', 'Mình làm rồng rắn nào! Bám chặt vào và hát: Rồng rắn lên mây!']) });
-  addNPC({ id: 'ruby', name: 'Ruby 🇦🇺', look: look('overalls', '#a66bff', '#a8432a', 'long', 'bow', '#ffe3d1'), x: PG.x + 9.5, z: PG.z + 2, face: -1.6, icon: '🔮',
+  addNPC({ id: 'ruby', name: 'Ruby 🇦🇺', look: look('overalls', '#a66bff', '#a8432a', 'long', 'bow', '#ffe3d1'), x: 44.2, z: 56.4, face: 1.4, icon: '🔮',
     talk: h => kidTalk(h, 'marbles', 'Ruby', ['I have got my lucky shooter marble! Can you knock the marbles out of the ring?', 'Tớ có viên bi cái may mắn nè! Bạn bắn được bi ra khỏi vòng không?']) });
   addNPC({ id: 'lan', name: 'Lan 🇻🇳', look: look('aodai', '#5fd39a', '#3b2618', 'ponytail', 'none'), x: PG.x - 6, z: PG.z + 3, face: 1.2, icon: '🪢',
     talk: h => kidTalk(h, 'skipping', 'Lan', ['Nhảy dây! Skipping! Jump when the rope comes down and count with me!', 'Nhảy dây nào! Nhảy lên khi dây quay xuống và đếm cùng tớ nhé!']) });
@@ -200,7 +201,7 @@ function setupAreaSigns() {
   sign(T('Mirror Lake', 'Hồ Gương'), '🌊', 55, 125, 8);
   sign(T('Bamboo Forest', 'Rừng Tre'), '🎋', -100, 85, 16);
   sign(T('Rice Fields', 'Đồng Lúa'), '🌾', 112, -38, 8);
-  sign(T('Folk Games', 'Sân Chơi Dân Gian'), '🪁', PLAYGROUND.x, PLAYGROUND.z - 6, 9);
+  sign(T('Two Homes Street', 'Phố Hai Quê'), '🏘️', 28, 47, 12);
 }
 function nearest(h) {
   let best = null, bd = 1e9;
@@ -329,6 +330,30 @@ async function kidTalk(h, game, name, line) {
   if (k === 0) playGame(h.i, game, 'folk');
   if (k === 1) { G.paused = true; openHowTo(game, { onPlay: () => { G.paused = false; playGame(h.i, game, 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
 }
+// ---------- Two Homes Street: talking to the neighbours ----------
+G.townTalk = async (h, who) => {
+  if (who === 'sau') {
+    const k = await dialog('Cô Sáu', [['Nước mía đây! Fresh sugarcane juice, cold and sweet. A glass gives you lots of energy!', 'Nước mía đây con! Mát lạnh, ngọt lịm. Uống một ly là khỏe re!']],
+      [[`🥤 Buy a glass (${fmt(5)})`, `🥤 Mua một ly (${fmt(5)})`], ['👋 Bye', '👋 Tạm biệt']]);
+    if (k !== 0) return;
+    if (farm.coins < 5) { await dialog('Cô Sáu', [['Not enough money? Here, this one is on me. Have a nice day!', 'Không đủ tiền hả? Thôi cô mời con ly này. Chúc con vui nhé!']]); }
+    else addMoney(null, -5);
+    SFX.chime(); h.bonusStamina = Math.max(h.bonusStamina, 60); h.stamina = h.staminaMax; h.hearts = Math.max(h.hearts, h.profile.hearts);
+    await reward('🥤', T('Yum! Sugarcane juice!', 'Ngon quá! Nước mía!'), T('Full of energy: you can run and climb longer.', 'Tràn đầy năng lượng: chạy và leo được lâu hơn.'));
+  }
+  if (who === 'tu') {
+    const k = await dialog('Chú Tư', [['Hello little one! We are playing cards. Want to join? We can play Snap, an Aussie game my neighbour taught me!', 'Chào con! Tụi chú đang đánh bài. Con chơi không? Mình chơi Snap, trò của Úc mà ông hàng xóm dạy chú đó!']],
+      [['▶ Play Snap!', '▶ Chơi Snap!'], ['📺 How to play', '📺 Xem cách chơi'], ['👋 Later', '👋 Để sau']]);
+    if (k === 0) playGame(h.i, 'snap', 'folk');
+    if (k === 1) { G.paused = true; openHowTo('snap', { onPlay: () => { G.paused = false; playGame(h.i, 'snap', 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
+  }
+  if (who === 'tuan') {
+    const k = await dialog('Anh Tuấn', [['Đá cầu! We kick the shuttlecock and never let it touch the ground. Want to try?', 'Đá cầu nè! Tụi anh đá quả cầu, không để nó rơi xuống đất. Em thử không?']],
+      [['▶ Play!', '▶ Chơi!'], ['📺 How to play', '📺 Xem cách chơi'], ['👋 Later', '👋 Để sau']]);
+    if (k === 0) playGame(h.i, 'dacau', 'folk');
+    if (k === 1) { G.paused = true; openHowTo('dacau', { onPlay: () => { G.paused = false; playGame(h.i, 'dacau', 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
+  }
+};
 // ---------- chatting with villagers ----------
 G.chatWith = (i, pid, firstAsk) => { if (!PERSONAS[pid] || gameOpen()) return; const was = G.paused; G.paused = true; openChat(G, i, pid, () => { G.paused = was && !!document.querySelector('.modal'); }, firstAsk); };
 G.voiceCommand = i => voiceCommand(G, i); G.voiceControlOn = voiceControlOn;
@@ -339,7 +364,7 @@ dialogHooks.chat = name => {
   if (h) G.chatWith(h.i, pid);
 };
 // ---------- the Games hub: every game, by place, playable straight away ----------
-const GAME_SPOT = { mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
+const GAME_SPOT = { snap: 'cards', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
   tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
 G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (SHRINES.find(s => s.game === id) || {}).id));
 G.openGamesHub = i => { if (G.paused) return; G.paused = true; openGamesHub(G, i, () => { G.paused = false; }); };
@@ -501,7 +526,7 @@ G.PLACES = [
   { icon: '🏮', name: () => T('Lotus Village', 'Làng Sen'), x: VILLAGE.x - VILLAGE.r + 6, z: VILLAGE.z },
   { icon: '🦉', name: () => T('Ông Cú', 'Ông Cú'), x: -2, z: -3 },
   { icon: '💃', name: () => T('Dance stage', 'Sân khấu'), x: VILLAGE.x - 6, z: VILLAGE.z + 25 },
-  { icon: '🪁', name: () => T('Folk Games Playground', 'Sân Chơi Dân Gian'), x: PLAYGROUND.x, z: PLAYGROUND.z + 6 },
+  { icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: 28, z: 52 },
   { icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: 6, z: 140 },
   { icon: '🐻', name: () => T('Mr. Bear', 'Bác Gấu'), x: HOME.x - 21, z: HOME.z + 6 }
 ];
@@ -760,6 +785,7 @@ loadClips();
 setupNPCs(); setupInteractables();
 G.farm = createFarm(G); world.updaters.push(G.farm.update);
 G.places = createPlaces(G); world.updaters.push(G.places.update);
+G.town = createTown(G);
 G.secrets = createSecrets(G);
 ensureJobs();
 setupBubbles(); setupAreaSigns(); setupGuides();

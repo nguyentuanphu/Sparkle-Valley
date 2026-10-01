@@ -47,6 +47,18 @@ export const HOWTO = {
       S('1️⃣ 2️⃣ 3️⃣', 'Count every jump with me!', 'Cùng đếm mỗi lần nhảy nhé!')],
     real: S('👧🪢👦 🧒', 'For real: two friends hold the ends of a long rope, and everyone takes turns jumping in.', 'Chơi thật: hai bạn cầm hai đầu sợi dây dài, các bạn khác lần lượt nhảy vào.')
   },
+  snap: {
+    origin: S('🇦🇺 🃏', 'Snap is a card game every Aussie kid knows. In Vietnam, uncles and aunties love card games on the footpath too!', 'Snap là trò chơi bài mà trẻ em Úc nào cũng biết. Ở Việt Nam, các chú các bác cũng rất thích ngồi đánh bài ngoài vỉa hè!'),
+    steps: [S('🃏 👀', 'Cards are turned over one by one. Watch carefully.', 'Các lá bài được lật lần lượt. Nhìn thật kỹ nhé.'),
+      S('🐨 🐨', 'When two cards in a row are the same...', 'Khi hai lá liền nhau giống nhau...'),
+      S('👆 SNAP!', 'Tap SNAP as fast as you can, before the uncles!', 'Bấm SNAP thật nhanh, nhanh hơn các chú!')],
+    real: S('🧒🃏🧒', 'For real: share out the cards, take turns putting one down, and shout Snap when two match!', 'Chơi thật: chia bài, lần lượt đặt từng lá xuống, khi hai lá giống nhau thì hô Snap!')
+  },
+  dacau: {
+    origin: S('🇻🇳 🏸', 'Đá cầu is played in parks and schoolyards all over Vietnam. The shuttlecock has colourful feathers.', 'Đá cầu được chơi ở công viên và sân trường khắp Việt Nam. Quả cầu có lông vũ nhiều màu.'),
+    steps: [S('👆 🏸 ⬆️', 'Tap the shuttlecock to kick it up.', 'Chạm quả cầu để đá lên.'), S('🏸 🚫 ⬇️', 'Do not let it touch the ground!', 'Đừng để cầu chạm đất!'), S('1️⃣ 2️⃣ 3️⃣', 'Count your kicks!', 'Đếm số lần đá nhé!')],
+    real: S('🧒🏸👧', 'For real: stand in a circle and kick it to each other with the side of your foot.', 'Chơi thật: đứng thành vòng tròn và chuyền cầu cho nhau bằng má trong bàn chân.')
+  },
   oanquan: {
     origin: S('🇻🇳 🪨', 'Ô ăn quan is one of the oldest games in Vietnam. Children draw the board on the ground and play with little stones.', 'Ô ăn quan là một trong những trò chơi lâu đời nhất của Việt Nam. Các bạn vẽ bàn trên đất và chơi bằng sỏi.'),
     steps: [S('👆 ⬜', 'Pick one of your squares on the bottom row.', 'Chọn một ô của con ở hàng dưới.'),

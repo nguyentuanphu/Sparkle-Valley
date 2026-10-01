@@ -330,3 +330,86 @@ register({
     return api.win({ title: T(`${jumps} jumps! You are a skipping star!`, `Nhảy được ${jumps} lần! Con là ngôi sao nhảy dây!`) });
   }
 });
+
+// ---------- Snap! (Australia), played with the uncles at the card table ----------
+const SNAP_PICS = ['🐨', '🦘', '🦜', '🐊', '🪷', '🐃', '🏮', '🥭', '🐟', '⭐'];
+register({
+  id: 'snap', icon: '🃏', origin: 'au', name: () => T('Snap!', 'Snap! (Bắt Cặp)'),
+  async run(api) {
+    const need = api.little ? 3 : [3, 4, 4, 5, 6][api.level - 1], kinds = api.little ? 4 : Math.min(10, 4 + api.level);
+    const uncleMs = api.little ? 1e9 : [2400, 1900, 1500, 1200, 950][api.level - 1] - (api.strong ? 150 : 0);
+    const flipMs = api.little ? 1700 : [1600, 1450, 1300, 1150, 1000][api.level - 1];
+    api.say('Watch the cards. When two cards in a row are the same, tap SNAP as fast as you can!', 'Nhìn các lá bài nhé. Khi hai lá liền nhau giống nhau, bấm SNAP thật nhanh!');
+    const t = el('div', 'snap', `<div class="sn-uncles">👨🏻‍🦳 👴 👵</div><div class="sn-pile"><div class="sn-card prev"></div><div class="sn-card top"></div></div><div class="sn-score">🃏 <b>0</b>/${need}</div><button class="sn-btn">SNAP!</button>`);
+    api.stage.appendChild(t);
+    const prevEl = t.querySelector('.prev'), topEl = t.querySelector('.top'), btn = t.querySelector('.sn-btn'), scoreEl = t.querySelector('.sn-score b'), uncles = t.querySelector('.sn-uncles');
+    let won = 0, prev = null, top = null, since = 0, armed = false, timer = 0, done;
+    const finished = new Promise(r => done = r);
+    const show = () => { prevEl.textContent = prev || ''; topEl.textContent = top || ''; prevEl.classList.toggle('empty', !prev); topEl.classList.remove('flip'); void topEl.offsetWidth; topEl.classList.add('flip'); };
+    const flip = () => {
+      if (api.closed) return;
+      prev = top;
+      // make a match turn up often enough to be fun
+      top = prev && Math.random() < (since > 3 ? .7 : .3) ? prev : SNAP_PICS[Math.floor(Math.random() * kinds)];
+      armed = top === prev; since = armed ? 0 : since + 1; api.sfx.tap(); show();
+      t.classList.toggle('match', armed && (api.little || api.level <= 1));
+      clearTimeout(timer);
+      if (armed) timer = setTimeout(() => { if (!armed || api.closed) return; armed = false; uncles.classList.add('slap'); api.sfx.pop(2); api.show('An uncle got that one! Keep watching!', 'Chú nhanh tay hơn rồi! Nhìn tiếp nhé!'); setTimeout(() => { uncles.classList.remove('slap'); next(); }, 900); }, Math.min(uncleMs, flipMs * 2.5));
+      else timer = setTimeout(flip, flipMs);
+    };
+    const next = () => { prev = null; top = null; show(); timer = setTimeout(flip, 700); };
+    btn.onclick = () => {
+      if (armed) {
+        armed = false; clearTimeout(timer); won++; scoreEl.textContent = won; api.right(topEl); api.dots(need, won); t.classList.remove('match');
+        if (won >= need) { done(); return; } setTimeout(next, 900);
+      } else { api.wrong(btn, 'Not the same yet! Look carefully.', 'Chưa giống nhau! Nhìn kỹ nhé.'); }
+    };
+    api.onCleanup(() => clearTimeout(timer));
+    api.dots(need, 0); next();
+    await finished; if (api.closed) return;
+    return api.win({ title: T(`You won ${won} snaps! The uncles are impressed!`, `Con bắt được ${won} cặp! Các chú phục quá!`) });
+  }
+});
+
+// ---------- Đá cầu (Vietnam): keep the shuttlecock up ----------
+register({
+  id: 'dacau', icon: '🏸', origin: 'vn', name: () => T('Shuttlecock Kick', 'Đá Cầu'),
+  async run(api) {
+    const need = api.little ? 6 : [8, 10, 12, 15, 18][api.level - 1], grav = api.little ? 260 : [380, 440, 500, 560, 620][api.level - 1];
+    api.say('Tap the shuttlecock to kick it up! Do not let it touch the ground. Count your kicks!', 'Chạm vào quả cầu để đá lên! Đừng để cầu rơi xuống đất. Đếm số lần đá nhé!');
+    const { c, g, w, h } = makeCanvas(api, .75);
+    let x = w / 2, y = h * .3, vx = 0, vy = 0, kicks = 0, last = performance.now(), msg = '', msgT = 0, foot = 0, done;
+    const finished = new Promise(r => done = r), ground = h * .9;
+    const hitR = api.little ? 70 : 52;
+    c.onpointerdown = e => {
+      const r = c.getBoundingClientRect(), px = (e.clientX - r.left) * w / r.width, py = (e.clientY - r.top) * h / r.height;
+      if (!api.little && Math.hypot(px - x, py - y) > hitR) return;   // little ones can tap anywhere
+      vy = -Math.sqrt(2 * grav * h * (.45 + Math.random() * .15)); vx = (Math.random() - .5) * w * (api.little ? .25 : .5); kicks++; foot = .25;
+      api.sfx.jump(); count(kicks); api.dots(need, kicks); if (kicks >= need) done();
+    };
+    const tick = now => {
+      if (api.closed) return;
+      const dt = Math.min(.04, (now - last) / 1000); last = now;
+      vy += grav * dt; x += vx * dt; y += vy * dt;
+      if (x < 20 || x > w - 20) { vx = -vx; x = clamp(x, 20, w - 20); }
+      if (api.little && y > h * .62 && vy > 0) { vy *= .9; y = Math.min(y, h * .7); }      // little ones: it floats and waits
+      if (y > ground) { y = ground - 2; vy = -Math.sqrt(2 * grav * h * .35); vx = 0; x = w / 2; msg = T('Oops! Again!', 'Ối! Lại nào!'); msgT = 1; api.sfx.no(); }
+      if (foot > 0) foot -= dt;
+      g.clearRect(0, 0, w, h);
+      const sky = g.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, '#9fd2f2'); sky.addColorStop(1, '#fff1d6'); g.fillStyle = sky; g.fillRect(0, 0, w, h);
+      g.fillStyle = '#7fbf8c'; g.fillRect(0, ground, w, h - ground);
+      g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(x, ground + 4, 16, 5, 0, 0, Math.PI * 2); g.fill();
+      g.save(); g.translate(x, y); g.rotate(vx / 400);
+      ['#ffd23f', '#5fd39a', '#3cc7e8', '#ff7eb8'].forEach((col, k) => { g.fillStyle = col; g.beginPath(); g.ellipse((k - 1.5) * 6, -18, 4, 16, (k - 1.5) * .25, 0, Math.PI * 2); g.fill(); });
+      g.fillStyle = '#e8433a'; g.beginPath(); g.ellipse(0, 0, 13, 7, 0, 0, Math.PI * 2); g.fill(); g.restore();
+      g.font = `${h * .16}px ${EMOJI_FONT}`; g.textAlign = 'center'; g.textBaseline = 'bottom'; g.fillStyle = '#000';
+      g.fillText(foot > 0 ? '🦵' : '🧒', w / 2, ground + 6);
+      g.font = `bold ${h * .1}px Fredoka, sans-serif`; g.fillStyle = '#6b3a1a'; g.fillText(String(kicks), w - 40, h * .16);
+      if (msgT > 0) { msgT -= dt; g.fillStyle = '#ff5fa2'; g.fillText(msg, w / 2, h * .2); }
+      requestAnimationFrame(tick);
+    };
+    api.dots(need, 0); requestAnimationFrame(tick);
+    await finished; if (api.closed) return;
+    return api.win({ title: T(`${kicks} kicks! Anh Tuấn says you are a natural!`, `${kicks} lần! Anh Tuấn khen con có năng khiếu!`) });
+  }
+});

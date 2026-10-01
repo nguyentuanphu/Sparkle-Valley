@@ -171,11 +171,11 @@ export class Hero {
     A.root.children[1].visible = this.state !== 'swim'; // blob shadow
     // camera: follow behind, gently swinging round when the child is just walking forward
     const easy = game.settings.camMode !== 'free';
-    if (easy) { this.camYaw = angleLerp(this.camYaw, 0, Math.min(1, dt * 3)); this.camPitch += ((this.towerClimb ? .25 : .78) - this.camPitch) * Math.min(1, dt * 3); }
+    if (easy) { this.camYaw = angleLerp(this.camYaw, 0, Math.min(1, dt * 3)); this.camPitch += ((this.towerClimb ? .25 : .42) - this.camPitch) * Math.min(1, dt * 3); }
     else if (this.manualCamT <= 0 && this.speed > 1 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * .6));
     const close = game.closeUp === this.i; // wardrobe close-up
     if (close) { this.camYaw = angleLerp(this.camYaw, this.yaw, Math.min(1, dt * 4)); this.camPitch += (.08 - this.camPitch) * Math.min(1, dt * 4); }
-    const dist = close ? 2.8 : (easy ? 12 : this.camDist) * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (this.zoom || 1) * (game.zoom || 1);
+    const dist = close ? 2.8 : (easy ? 10 : this.camDist) * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (this.zoom || 1) * (game.zoom || 1);
     const target = new THREE.Vector3(p.x, p.y + (close ? .2 : 1.15) + rideY, p.z);
     const want = new THREE.Vector3(p.x + Math.sin(this.camYaw) * Math.cos(this.camPitch) * dist, target.y + Math.sin(this.camPitch) * dist, p.z + Math.cos(this.camYaw) * Math.cos(this.camPitch) * dist);
     const gy = this.world.groundAt(want.x, want.z) + .7; if (want.y < gy) want.y = gy;

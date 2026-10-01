@@ -1,6 +1,6 @@
 // The open world: terrain, water, sky with day and night, trees, the Lotus Village,
 // shrines, towers, hidden Leafies and everything you can walk up to and use.
-import { THREE, toon, toonVC, glow, P, merge, sprite, blobShadow } from './gfx.js';
+import { THREE, toon, toonVC, toonSmooth, glow, P, merge, sprite, blobShadow } from './gfx.js';
 import { clamp, lerp, smooth, fbm, seeded, dist2 } from './util.js';
 import { T } from './i18n.js';
 import { settings } from './state.js';
@@ -12,7 +12,8 @@ export const PADDIES = { x: 112, z: -38, r: 26, h: 2.4 };
 export const LAKE = { x: 55, z: 125, r: 46 };
 export const BAMBOO = { x: -100, z: 85, r: 48 };
 export const HOME = { x: -26, z: 126, r: 30, h: 4 };   // Sunny Farm: house, field, barn and Mr. Bear's market
-export const PLAYGROUND = { x: 28, z: 62, r: 13, h: 7.2 };   // Folk Games Playground: kids from Australia and Vietnam
+export const PLAYGROUND = { x: 28, z: 62, r: 13, h: 7.2 };   // the park on Two Homes Street, where kids from Australia and Vietnam play
+export const TOWN = { x0: 12, x1: 52, z0: 32, z1: 74, h: 7.2, roadZ: 47 };   // Two Homes Street: Bà Rịa meets a Sydney suburb
 const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [58, 40], [52, 85]];
 export const BRIDGE = { x0: 44, x1: 72, z: 30, w: 4.2 };
 
@@ -50,6 +51,7 @@ export function heightAt(x, z) {
   const dl = dist2(x, z, LAKE.x, LAKE.z);
   h = lerp(h, -7, 1 - smooth(LAKE.r * .55, LAKE.r, dl));
   h = lerp(h, Math.min(h, 1.2), 1 - smooth(LAKE.r, LAKE.r + 14, dl));
+  { const ox = Math.max(TOWN.x0 - x, 0, x - TOWN.x1), oz = Math.max(TOWN.z0 - z, 0, z - TOWN.z1); h = lerp(h, TOWN.h, 1 - smooth(0, 12, Math.hypot(ox, oz))); }
   const dr = riverDist(x, z);
   h = lerp(h, -2.6 - mtn * 2, 1 - smooth(3.5, 11, dr));
   // Raised banks either side of the bridge.
@@ -65,6 +67,7 @@ export function regionAt(x, z) {
   if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r + 10) return 'village';
   if (dist2(x, z, HOME.x, HOME.z) < HOME.r + 6) return 'home';
   if (dist2(x, z, PADDIES.x, PADDIES.z) < PADDIES.r + 8) return 'paddies';
+  if (x > TOWN.x0 - 3 && x < TOWN.x1 + 3 && z > TOWN.z0 - 3 && z < TOWN.z1 + 3) return 'town';
   if (dist2(x, z, LAKE.x, LAKE.z) < LAKE.r + 12) return 'lake';
   if (dist2(x, z, BAMBOO.x, BAMBOO.z) < BAMBOO.r + 6) return 'bamboo';
   if (z < -75) return 'mountain';
@@ -73,6 +76,7 @@ export function regionAt(x, z) {
 export const REGION_NAMES = {
   plateau: () => T('Dawn Plateau', 'Cao Nguyên Bình Minh'),
   village: () => T('Lotus Village', 'Làng Sen'),
+  town: () => T('Two Homes Street', 'Phố Hai Quê'),
   home: () => T('Sunny Farm', 'Nông Trại Nắng Mai'),
   paddies: () => T('Golden Rice Fields', 'Cánh Đồng Lúa Vàng'),
   lake: () => T('Mirror Lake', 'Hồ Gương'),
@@ -114,7 +118,7 @@ export const LEAFIES = LEAFY_SPOTS.map(([kind, x, z], i) => ({ id: 'lf' + i, kin
 // ---------- the world object ----------
 export function createWorld(scene, quality) {
   const W = {
-    colliders: [], platforms: [], interactables: [], updaters: [], lanterns: [], shrineMeshes: {}, towerMeshes: {}, leafyMeshes: {},
+    colliders: [], boxes: [], platforms: [], interactables: [], updaters: [], lanterns: [], shrineMeshes: {}, towerMeshes: {}, leafyMeshes: {},
     time: .36
   };
   const rnd = seeded(20250921);
@@ -134,8 +138,8 @@ export function createWorld(scene, quality) {
   const stars = new THREE.Points(starGeo, starMat); stars.frustumCulled = false; scene.add(stars);
   const moon = sprite('🌕', 40); scene.add(moon);
 
-  scene.fog = new THREE.Fog(0xcfe8ff, 90, 330);
-  const hemi = new THREE.HemisphereLight(0xffffff, 0x8fbf6a, .8); scene.add(hemi);
+  scene.fog = new THREE.Fog(0xcfe8ff, 120, 420);
+  const hemi = new THREE.HemisphereLight(0xffffff, 0xd9c79a, .8); scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffffff, 1); scene.add(sun); scene.add(sun.target);
   if (quality !== 'low') {
     sun.castShadow = true; const S = sun.shadow; S.mapSize.set(quality === 'high' ? 2048 : 1024, quality === 'high' ? 2048 : 1024);
@@ -147,9 +151,9 @@ export function createWorld(scene, quality) {
     // t, top, horizon, bottom, sun colour, sun intensity, hemi intensity
     [0, '#0b1433', '#1d2b5a', '#10183a', '#7fa0ff', .15, .32],
     [.22, '#24306a', '#e78f6a', '#3a3f6a', '#ffb07a', .35, .45],
-    [.3, '#4aa3f0', '#ffd8b0', '#9cc6e8', '#fff0d0', .9, .75],
-    [.5, '#2f8fea', '#bfe4ff', '#a8d4f2', '#ffffff', 1.05, .85],
-    [.7, '#3d8de0', '#ffd0a0', '#a0c0e0', '#ffe2b8', .9, .75],
+    [.3, '#3f8fd8', '#ffe2bc', '#a9d0ee', '#fff0d6', .9, .75],
+    [.5, '#2d84d4', '#a8d4f0', '#a8d4f2', '#fff6e6', 1.05, .85],
+    [.7, '#3a86d2', '#ffd9a8', '#a0c0e0', '#ffe6c0', .95, .78],
     [.78, '#3a3a7a', '#f08a5a', '#4a3f6a', '#ff9a6a', .4, .5],
     [.86, '#0b1433', '#1d2b5a', '#10183a', '#7fa0ff', .15, .32],
     [1, '#0b1433', '#1d2b5a', '#10183a', '#7fa0ff', .15, .32]
@@ -171,9 +175,9 @@ export function createWorld(scene, quality) {
     const day = sd.y > -.05;
     // the shadow box follows the player so nearby shadows stay crisp
     sun.position.copy(focus).addScaledVector(day ? sd : sd.clone().negate(), 120); sun.target.position.copy(focus);
-    sun.color.copy(tmpA.copy(a[4]).lerp(b[4], k)); sun.intensity = lerp(a[5], b[5], k) * 2.2;
-    hemi.intensity = lerp(a[6], b[6], k) * .8; scene.environmentIntensity = lerp(a[6], b[6], k) * .28;
-    hemi.color.copy(tmpB.set('#ffffff').lerp(skyMat.uniforms.top.value, .25));
+    sun.color.copy(tmpA.copy(a[4]).lerp(b[4], k)); sun.intensity = lerp(a[5], b[5], k) * 1.55;
+    hemi.intensity = lerp(a[6], b[6], k) * 1.25; scene.environmentIntensity = lerp(a[6], b[6], k) * .28;
+    hemi.color.copy(tmpB.set('#ffffff').lerp(skyMat.uniforms.top.value, .18));
     sky.position.copy(camPos); stars.position.copy(camPos);
     starMat.opacity = clamp(-sd.y * 4, 0, 1);
     moon.position.copy(camPos).addScaledVector(sd.clone().negate(), 700); moon.material.opacity = starMat.opacity;
@@ -185,14 +189,14 @@ export function createWorld(scene, quality) {
   const seg = quality === 'low' ? 150 : 200;
   const tg = new THREE.PlaneGeometry(SIZE, SIZE, seg, seg); tg.rotateX(-Math.PI / 2);
   const pa = tg.attributes.position, cols = new Float32Array(pa.count * 3), c = new THREE.Color();
-  const C = { sand: new THREE.Color('#ecd9a0'), grassA: new THREE.Color('#86c95a'), grassB: new THREE.Color('#5aa84a'), dry: new THREE.Color('#b8c96a'),
-    rock: new THREE.Color('#9a958a'), snow: new THREE.Color('#f4f8ff'), dirt: new THREE.Color('#d8b88a'), paddy: new THREE.Color('#9ee070'), bamboo: new THREE.Color('#6fb05a'), deep: new THREE.Color('#c9b68a') };
+  const C = { sand: new THREE.Color('#ecd6a4'), grassA: new THREE.Color('#7fbf8c'), grassB: new THREE.Color('#62a878'), dry: new THREE.Color('#e3cf9c'),
+    rock: new THREE.Color('#d9cfba'), snow: new THREE.Color('#f6f8fb'), dirt: new THREE.Color('#e6d2a2'), paddy: new THREE.Color('#a7d67c'), bamboo: new THREE.Color('#6eae78'), deep: new THREE.Color('#cdb88e') };
   for (let i = 0; i < pa.count; i++) {
     const x = pa.getX(i), z = pa.getZ(i), h = heightAt(x, z); pa.setY(i, h);
     const sl = Math.abs(heightAt(x + 1.5, z) - h) + Math.abs(heightAt(x, z + 1.5) - h);
     const n = fbm(x * .03, z * .03, 2);
     c.copy(C.grassA).lerp(C.grassB, clamp(n + .5, 0, 1));
-    if (n > .35) c.lerp(C.dry, .5);
+    if (n > .4) c.lerp(C.dry, clamp((n - .4) * 6, 0, 1)); // sandy patches between the grass, like a dry summer
     if (dist2(x, z, PADDIES.x, PADDIES.z) < PADDIES.r + 4) c.copy(C.paddy).lerp(C.grassB, ((Math.floor(x / 5) + Math.floor(z / 9)) & 1) * .25);
     if (dist2(x, z, BAMBOO.x, BAMBOO.z) < BAMBOO.r) c.lerp(C.bamboo, .5);
     const dv = dist2(x, z, VILLAGE.x, VILLAGE.z);
@@ -208,11 +212,11 @@ export function createWorld(scene, quality) {
   tg.setAttribute('color', new THREE.BufferAttribute(cols, 3)); tg.computeVertexNormals();
   // fine detail (grass blades, pebbles, soil) painted into a tiling texture and blended over the ground colours
   const dc = document.createElement('canvas'); dc.width = dc.height = 256; const dx = dc.getContext('2d');
-  dx.fillStyle = '#e8e8e8'; dx.fillRect(0, 0, 256, 256);
-  for (let i = 0; i < 2600; i++) { const v = 170 + Math.floor(Math.random() * 85); dx.fillStyle = `rgb(${v},${v},${v})`; const x = Math.random() * 256, y = Math.random() * 256; dx.fillRect(x, y, 1 + Math.random() * 2, 2 + Math.random() * 5); }
+  dx.fillStyle = '#f4f4f4'; dx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 1400; i++) { const v = 215 + Math.floor(Math.random() * 40); dx.fillStyle = `rgb(${v},${v},${v})`; const x = Math.random() * 256, y = Math.random() * 256; dx.fillRect(x, y, 1 + Math.random() * 2, 2 + Math.random() * 5); }
   for (let i = 0; i < 140; i++) { const v = 150 + Math.floor(Math.random() * 60); dx.fillStyle = `rgba(${v},${v},${v},.6)`; dx.beginPath(); dx.arc(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 3, 0, Math.PI * 2); dx.fill(); }
   const dtex = new THREE.CanvasTexture(dc); dtex.wrapS = dtex.wrapT = THREE.RepeatWrapping; dtex.repeat.set(140, 140); dtex.anisotropy = 4;
-  const terrain = new THREE.Mesh(tg, toonVC({ roughness: .95, map: dtex })); terrain.receiveShadow = true; scene.add(terrain); W.terrain = terrain;
+  const terrain = new THREE.Mesh(tg, toonSmooth({ map: dtex })); terrain.receiveShadow = true; scene.add(terrain); W.terrain = terrain;
 
   // water with a soft moving shimmer
   const wc = document.createElement('canvas'); wc.width = wc.height = 128; const wx = wc.getContext('2d');
@@ -225,10 +229,11 @@ export function createWorld(scene, quality) {
 
   // ---------- trees & plants (instanced) ----------
   const geos = {
-    round: merge([P(new THREE.CylinderGeometry(.28, .4, 3, 7), '#8a5a3b', [0, 1.5, 0]), P(new THREE.IcosahedronGeometry(2.1, 1), '#4fa84a', [0, 4.2, 0]), P(new THREE.IcosahedronGeometry(1.5, 1), '#62bd55', [.9, 5.1, .4])]),
-    apple: merge([P(new THREE.CylinderGeometry(.3, .42, 2.6, 7), '#8a5a3b', [0, 1.3, 0]), P(new THREE.IcosahedronGeometry(2.2, 1), '#5cb34f', [0, 3.9, 0]),
+    round: merge([P(new THREE.CylinderGeometry(.24, .38, 3.2, 6), '#7a5a3e', [0, 1.6, 0]), P(new THREE.CylinderGeometry(.1, .16, 1.8, 5), '#7a5a3e', [.6, 3, 0], [0, 0, -.6]), P(new THREE.CylinderGeometry(.1, .16, 1.6, 5), '#7a5a3e', [-.5, 2.9, .2], [.2, 0, .6]),
+      P(new THREE.IcosahedronGeometry(2.2, 1), '#2f7f5f', [0, 4.5, 0]), P(new THREE.IcosahedronGeometry(1.7, 1), '#3a8d68', [1.5, 4.1, .6]), P(new THREE.IcosahedronGeometry(1.6, 1), '#276f55', [-1.4, 4.2, -.4]), P(new THREE.IcosahedronGeometry(1.4, 1), '#46a077', [.3, 5.9, .3])]),
+    apple: merge([P(new THREE.CylinderGeometry(.3, .42, 2.6, 7), '#8a5a3b', [0, 1.3, 0]), P(new THREE.IcosahedronGeometry(2.2, 1), '#348a63', [0, 3.9, 0]),
       ...[[1.6, 4, .8], [-1.4, 3.6, 1], [.4, 4.4, -1.8], [-.6, 5.4, .9], [1.1, 3.1, -1.3]].map(p => P(new THREE.SphereGeometry(.32, 8, 6), '#e8433a', p))]),
-    pine: merge([P(new THREE.CylinderGeometry(.25, .35, 2, 6), '#6e4a32', [0, 1, 0]), P(new THREE.ConeGeometry(2, 3.2, 8), '#2f7a4f', [0, 3.2, 0]), P(new THREE.ConeGeometry(1.5, 2.6, 8), '#358a58', [0, 4.8, 0]), P(new THREE.ConeGeometry(.9, 2, 8), '#3d9a62', [0, 6.2, 0])]),
+    pine: merge([P(new THREE.CylinderGeometry(.25, .35, 2, 6), '#6e4a32', [0, 1, 0]), P(new THREE.ConeGeometry(2, 3.2, 8), '#25664f', [0, 3.2, 0]), P(new THREE.ConeGeometry(1.5, 2.6, 8), '#2c7558', [0, 4.8, 0]), P(new THREE.ConeGeometry(.9, 2, 8), '#348462', [0, 6.2, 0])]),
     snowpine: merge([P(new THREE.CylinderGeometry(.25, .35, 2, 6), '#6e4a32', [0, 1, 0]), P(new THREE.ConeGeometry(2, 3.2, 8), '#2f6a4f', [0, 3.2, 0]), P(new THREE.ConeGeometry(1.5, 2.6, 8), '#e9f2ff', [0, 4.8, 0]), P(new THREE.ConeGeometry(.9, 2, 8), '#ffffff', [0, 6.2, 0])]),
     bamboo: merge([[0, 0], [.7, .3], [-.5, .6], [.2, -.7], [-.7, -.3]].flatMap(([x, z], i) => {
       const hgt = 7 + (i % 3) * 1.6;
@@ -238,12 +243,12 @@ export function createWorld(scene, quality) {
     palm: merge([P(new THREE.CylinderGeometry(.2, .32, 5.5, 6), '#a07848', [.3, 2.7, 0], [0, 0, -.12]),
       ...[0, 1, 2, 3, 4, 5].map(i => P(new THREE.ConeGeometry(.5, 3.2, 4), i % 2 ? '#4fae4a' : '#3d9a42', [.6 + Math.cos(i) * 1.3, 5.3, Math.sin(i) * 1.3], [Math.PI / 2 - .5, i * 1.05, 0], [1, 1, .25])),
       P(new THREE.SphereGeometry(.25, 6, 5), '#7a5a2a', [.6, 5.2, .3]), P(new THREE.SphereGeometry(.25, 6, 5), '#7a5a2a', [.4, 5.1, -.3])]),
-    bush: merge([P(new THREE.IcosahedronGeometry(1, 1), '#4f9e45', [0, .6, 0]), P(new THREE.IcosahedronGeometry(.75, 1), '#5fb653', [.8, .5, .3])]),
-    rock: merge([P(new THREE.DodecahedronGeometry(1, 0), '#a7a29a', [0, .4, 0], [0, 0, 0], [1.3, .8, 1.1])])
+    bush: merge([P(new THREE.IcosahedronGeometry(1.1, 1), '#24654f', [0, .7, 0], [0, 0, 0], [1.2, .85, 1]), P(new THREE.IcosahedronGeometry(.8, 1), '#30785c', [.9, .55, .3])]),
+    rock: merge([P(new THREE.DodecahedronGeometry(1, 0), '#e6dcc6', [0, .45, 0], [0, .5, 0], [1.5, .85, 1.15])])
   };
   const spots = { round: [], apple: [], pine: [], snowpine: [], bamboo: [], palm: [], bush: [], rock: [] };
   const appleTrees = [];
-  const nearPOI = (x, z) => dist2(x, z, PLAYGROUND.x, PLAYGROUND.z) < PLAYGROUND.r + 3 || SHRINES.some(s => dist2(x, z, s.x, s.z) < 9) || TOWERS.some(s => dist2(x, z, s.x, s.z) < 10) || LEAFIES.some(s => dist2(x, z, s.x, s.z) < 3);
+  const nearPOI = (x, z) => (x > TOWN.x0 - 4 && x < TOWN.x1 + 4 && z > TOWN.z0 - 4 && z < TOWN.z1 + 4) || SHRINES.some(s => dist2(x, z, s.x, s.z) < 9) || TOWERS.some(s => dist2(x, z, s.x, s.z) < 10) || LEAFIES.some(s => dist2(x, z, s.x, s.z) < 3);
   for (let i = 0; i < 9000; i++) {
     const x = (rnd() - .5) * (SIZE - 30), z = (rnd() - .5) * (SIZE - 30), h = heightAt(x, z);
     if (h < 1.5 || nearPOI(x, z)) continue;
@@ -299,11 +304,23 @@ export function createWorld(scene, quality) {
   }
   gIm.count = gi; fIm.count = fi; scene.add(gIm, fIm);
 
-  // clouds
-  const cloudGeo = merge([[0, 0, 0, 6], [5, -1, 1, 4.5], [-5, -1, -1, 4.2], [2, 2, -1, 4], [-2, 1.5, 2, 3.6]].map(([x, y, z, r]) => P(new THREE.IcosahedronGeometry(r, 1), '#ffffff', [x, y, z])));
+  // clouds: big soft painted cumulus with warm afternoon light on their edges
+  const cloudTex = k => {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d'), r = seeded(77 + k);
+    const blobs = Array.from({ length: 9 }, (_, i) => ({ x: 90 + i * 40 + r() * 30, y: 170 - Math.sin(i / 8 * Math.PI) * (60 + r() * 50), rad: 40 + r() * 45 }));
+    const pass = (col, dy, grow) => { g.fillStyle = col; blobs.forEach(b => { g.beginPath(); g.arc(b.x, b.y + dy, b.rad * grow, 0, Math.PI * 2); g.fill(); }); g.fillRect(70, 170 + dy, 380, 40); };
+    pass('#f0cfa0', 8, 1); pass('#fbe6c4', 0, .95); pass('#fff6e6', -10, .78);
+    g.globalCompositeOperation = 'destination-out'; g.fillRect(0, 205, 512, 60);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  };
+  const cloudTexs = [0, 1, 2].map(cloudTex);
   const clouds = [];
-  for (let i = 0; i < 26; i++) { const m = new THREE.Mesh(cloudGeo, toon('#ffffff', { emissive: new THREE.Color('#556677'), transparent: true, opacity: .92 })); m.position.set((rnd() - .5) * 600, 75 + rnd() * 30, (rnd() - .5) * 600); m.scale.setScalar(.8 + rnd() * 1.2); scene.add(m); clouds.push(m); }
-  W.updaters.push(dt => clouds.forEach(m => { m.position.x += dt * 1.5; if (m.position.x > 320) m.position.x = -320; }));
+  for (let i = 0; i < 22; i++) {
+    const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudTexs[i % 3], transparent: true, depthWrite: false, fog: false }));
+    const a = rnd() * Math.PI * 2, d = 330 + rnd() * 200, sc = 110 + rnd() * 90;
+    m.position.set(Math.cos(a) * d, 45 + rnd() * 55, Math.sin(a) * d); m.scale.set(sc, sc / 2, 1); m.renderOrder = -1; scene.add(m); clouds.push(m);
+  }
+  W.updaters.push(dt => clouds.forEach(m => { m.position.x += dt * 1.2; if (m.position.x > 560) m.position.x = -560; }));
 
   // ---------- village ----------
   const V = VILLAGE;
@@ -541,6 +558,12 @@ export function createWorld(scene, quality) {
       const dx = pos.x - c.x, dz = pos.z - c.z, d = Math.hypot(dx, dz), m = c.r + r;
       if (d < m && d > 1e-4) { pos.x = c.x + dx / d * m; pos.z = c.z + dz / d * m; }
     }
+    // houses and walls: push out of the box the shortest way
+    for (const b of W.boxes) {
+      if (pos.x < b.x0 - r || pos.x > b.x1 + r || pos.z < b.z0 - r || pos.z > b.z1 + r) continue;
+      const pen = [pos.x - (b.x0 - r), (b.x1 + r) - pos.x, pos.z - (b.z0 - r), (b.z1 + r) - pos.z], k = pen.indexOf(Math.min(...pen));
+      if (k === 0) pos.x = b.x0 - r; else if (k === 1) pos.x = b.x1 + r; else if (k === 2) pos.z = b.z0 - r; else pos.z = b.z1 + r;
+    }
     pos.x = clamp(pos.x, -HALF + 8, HALF - 8); pos.z = clamp(pos.z, -HALF + 8, HALF - 8);
   };
   W.update = (dt, t) => W.updaters.forEach(f => f(dt, t));
@@ -559,10 +582,12 @@ export function paintMap(size = 256) {
     else if (h < 1.6) { r = 232; g = 214; b = 160; }
     else if (h > 34) { r = 240; g = 245; b = 252; }
     else if (h > 22) { r = 150; g = 150; b = 138; }
-    else { r = 120 + h * 2; g = 180 - h; b = 90; }
+    else { r = 112 + h * 2; g = 178 - h; b = 130; }
     if (dist2(wx, wz, VILLAGE.x, VILLAGE.z) < VILLAGE.r - 2) { r = 222; g = 196; b = 150; }
     if (dist2(wx, wz, PADDIES.x, PADDIES.z) < PADDIES.r) { r = 160; g = 214; b = 110; }
     if (dist2(wx, wz, BAMBOO.x, BAMBOO.z) < BAMBOO.r) { r *= .8; g *= .95; b *= .8; }
+    if (wx > 6 && wx < 56 && Math.abs(wz - TOWN.roadZ) < 3.6) { r = 175; g = 180; b = 184; }
+    else if (wx > 10 && wx < 52 && ((wz > 32 && wz < 40) || (wz > 55 && wz < 72 && (wx < 18 || wx > 40)))) { r = 236; g = 200; b = 160; }
     const o = (j * size + i) * 4; d[o] = clamp(r * shade, 0, 255); d[o + 1] = clamp(g * shade, 0, 255); d[o + 2] = clamp(b * shade, 0, 255); d[o + 3] = 255;
   }
   x.putImageData(img, 0, 0);

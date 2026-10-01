@@ -89,7 +89,7 @@ function holdButton(b, fn) {
 
 // ---------- Grown-ups ----------
 export function openGrownups(after) {
-  const m = modal('grown', '');
+  const m = modal('grownups', '');
   const card = m.querySelector('.card');
   const draw = () => {
     const vEn = voicesFor('en'), vVi = voicesFor('vi');
@@ -535,7 +535,7 @@ export function openRecorder(after) {
 
 // ---------- Games hub ----------
 const HUB = [
-  { key: 'folk', icon: '🪁', title: () => T('Folk games of Australia & Vietnam', 'Trò chơi dân gian Úc và Việt Nam'), games: ['mrwolf', 'chuyen', 'dragon', 'marbles', 'skipping', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
+  { key: 'folk', icon: '🪁', title: () => T('Folk games of Australia & Vietnam', 'Trò chơi dân gian Úc và Việt Nam'), games: ['mrwolf', 'chuyen', 'dragon', 'marbles', 'skipping', 'dacau', 'snap', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
   { key: 'farm', icon: '🏡', title: () => T('At the farm', 'Ở nông trại'), games: ['bunny', 'balloon', 'bubbles', 'jigsaw', 'tower', 'order', 'sortout', 'duckmaze'] },
   { key: 'village', icon: '🏮', title: () => T('In Lotus Village', 'Ở Làng Sen'), games: ['market', 'tune', 'shapes', 'oddone', 'memory'] },
   { key: 'shrine', icon: '✨', title: () => T('Puzzle shrines', 'Đền đố vui'), games: ['pattern', 'counting', 'letters', 'numbers', 'colors', 'sorting', 'hanoi', 'robot', 'maze'] }

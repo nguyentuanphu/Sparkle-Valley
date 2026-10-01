@@ -2,17 +2,26 @@
 import * as THREE from '../vendor/three.module.js';
 export { THREE };
 
-// Physically based materials (soft, slightly rough surfaces like painted wood, cloth and skin).
-// The names "toon" are kept so the rest of the code reads the same.
+// "Summer afternoon" look: flat, painterly colours with soft two-tone light and shade, like an
+// illustrated picture book. Everything uses the same few shading bands so the whole valley matches.
+// (The names "toon" are kept so the rest of the code reads the same.)
+const bands = (() => {
+  const d = new Uint8Array([150, 205, 238, 255]);
+  const t = new THREE.DataTexture(d, d.length, 1, THREE.RedFormat); t.minFilter = t.magFilter = THREE.LinearFilter; t.generateMipmaps = false; t.needsUpdate = true; return t;
+})();
+const PBR_ONLY = ['roughness', 'metalness', 'envMapIntensity', 'clearcoat'];
+const clean = extra => { const o = Object.assign({}, extra || {}); PBR_ONLY.forEach(k => delete o[k]); return o; };
 const matCache = {};
 export function toon(color, extra) {
   const key = extra ? null : color;
   if (key && matCache[key]) return matCache[key];
-  const m = new THREE.MeshStandardMaterial(Object.assign({ color: new THREE.Color(color), roughness: .82, metalness: 0 }, extra || {}));
+  const m = new THREE.MeshToonMaterial(Object.assign({ color: new THREE.Color(color), gradientMap: bands }, clean(extra)));
   if (key) matCache[key] = m;
   return m;
 }
-export const toonVC = extra => new THREE.MeshStandardMaterial(Object.assign({ vertexColors: true, roughness: .88, metalness: 0 }, extra || {}));
+// vertex-coloured models are faceted like cut paper (trees, rocks, houses)
+export const toonVC = extra => new THREE.MeshToonMaterial(Object.assign({ vertexColors: true, gradientMap: bands, flatShading: true }, clean(extra)));
+export const toonSmooth = extra => new THREE.MeshToonMaterial(Object.assign({ vertexColors: true, gradientMap: bands }, clean(extra)));
 export const glow = (color, opacity = 1) => new THREE.MeshBasicMaterial({ color: new THREE.Color(color), transparent: opacity < 1, opacity, depthWrite: opacity >= 1 });
 
 // Merge several (geometry, colour, matrix) parts into one vertex-coloured geometry.

@@ -47,11 +47,13 @@ export function createPlaces(G) {
     P(new THREE.CylinderGeometry(.03, .03, 14, 4), '#7a5a3a', [0, 4.1, -6], [0, 0, Math.PI / 2]),
     ...Array.from({ length: 13 }, (_, k) => P(new THREE.ConeGeometry(.35, .7, 3), flags[k % flags.length], [-6 + k, 3.65 - Math.sin(k / 12 * Math.PI) * .45, -6], [Math.PI, 0, 0])),
     ...[[0, 0], [0, 1], [-.55, 2], [.55, 2], [0, 3], [-.55, 4], [.55, 4], [0, 5]].map(([x, z]) => P(new THREE.BoxGeometry(1, .03, 1), '#f4f0e8', [-8 + x * 1.05, .02, 3 + z * 1.05])),
-    P(new THREE.TorusGeometry(1.6, .06, 4, 32), '#f4f0e8', [8, .03, 4], [Math.PI / 2, 0, 0])
   ]), toonVC({ roughness: .8 }));
   deco.receiveShadow = true; add(deco, pg.x, pg.z, 0, -.02);
   // little marbles inside the chalk ring
-  ['🔴', '🔵', '🟢', '🟡'].forEach((m, k) => { const sp = sprite(m, .35); sp.position.set(pg.x + 8 + Math.cos(k * 1.6) * .6, gy + .2, pg.z + 4 + Math.sin(k * 1.6) * .6); scene.add(sp); });
+  // Ruby's chalk marble ring on the front lawn of the Aussie house across the park
+  const mr = { x: 47.5, z: 56.6 };
+  const ringM = new THREE.Mesh(new THREE.TorusGeometry(1.4, .06, 4, 32).rotateX(Math.PI / 2), toon('#f4f0e8')); ringM.position.set(mr.x, heightAt(mr.x, mr.z) + .03, mr.z); scene.add(ringM);
+  ['🔴', '🔵', '🟢', '🟡'].forEach((m, k) => { const sp = sprite(m, .35); sp.position.set(mr.x + Math.cos(k * 1.6) * .6, gy + .2, mr.z + Math.sin(k * 1.6) * .6); scene.add(sp); });
 
   const I = (id, spot, r, icon, label, act) => G.interactables.push({ id, x: spot.x, z: spot.z, r, icon, label, act, bubble: icon });
   I('xylo', xy, 2.4, '🎵', () => T('Copy the tune', 'Nhại giai điệu'), h => G.playGame(h.i, 'tune', 'place'));
