@@ -790,3 +790,5 @@ button { color: var(--text); }
 .sn-score { color: #fff; font-size: 22px; }
 .sn-btn { border: 0; border-radius: 999px; padding: 18px 50px; font-size: 32px; font-weight: 700; color: #fff; background: linear-gradient(180deg, #ff6f7e, #e8334a); box-shadow: 0 5px 0 #a8203a; }
 .sn-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #a8203a; }
+.cr-by { font-size: clamp(20px, 3.4vw, 28px); letter-spacing: .06em; margin-bottom: 18px; opacity: .95; }
+.cr-by b { font-family: 'Fraunces', Georgia, serif; font-size: 1.25em; }

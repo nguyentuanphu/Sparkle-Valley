@@ -30,6 +30,7 @@ export function openCredits() {
   const c = el('div', 'credits', `
     <button class="cr-x" aria-label="${T('Close', 'Đóng')}">✕</button>
     <div class="cr-roll">
+      <div class="cr-by">${T('Built by', 'Thực hiện bởi')} <b>${esc(val('creator'))}</b></div>
       <div class="cr-logo">Sparkle Valley</div><div class="cr-sub">Thung Lũng Lấp Lánh</div>
       <div class="cr-block"><small>${T('Created with love by', 'Được tạo ra với tình yêu bởi')}</small><h2>${esc(val('creator'))}</h2></div>
       <div class="cr-block"><p class="cr-for">${esc(val('forWhom'))}</p></div>
