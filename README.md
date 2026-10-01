@@ -18,9 +18,10 @@ Choose **one** of these:
 4. Wait about a minute. The address appears at the top of the Pages screen, for example `https://nguyentuanphu.github.io/Sparkle-Valley/`.
 
 **B. Netlify Drop (free, drag and drop)**
-1. Download the repository as a ZIP (green **Code** button → **Download ZIP**) and unzip it.
-2. Go to <https://app.netlify.com/drop> and drag the unzipped folder onto the page.
-3. You get a web address straight away.
+1. Run `./build-netlify.sh` (or download `sparkle-valley-netlify.zip` from a release) to get the `netlify-site/` folder with only the files the game needs.
+2. Go to <https://app.netlify.com/drop> and drag the `netlify-site` folder (or the zip) onto the page.
+3. You get a public web address straight away. Sign up (free) so the site isn't deleted after an hour; then you can rename it under **Site configuration → Change site name**.
+4. To update later: open the site in Netlify → **Deploys** → drag the new folder onto the drop area.
 
 ### 2. Install on each device
 - **iPhone / iPad:** open the address in **Safari** → tap **Share** → **Add to Home Screen**.
