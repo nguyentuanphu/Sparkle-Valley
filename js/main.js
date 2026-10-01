@@ -24,7 +24,7 @@ import './games/farmgames.js';
 import { createFarm, jobProgress, ensureJobs } from './farm.js';
 import { createPlaces } from './places.js';
 import { PROLOGUE, showStory, storyCheck } from './story.js';
-import { openWardrobe } from './ui.js';
+import { openWardrobe, openGamesHub } from './ui.js';
 
 // ---------- renderer & world ----------
 const quality = settings.quality === 'auto' ? ((navigator.hardwareConcurrency || 4) <= 4 || Math.min(screen.width, screen.height) < 500 ? 'low' : 'mid') : settings.quality;
@@ -111,16 +111,77 @@ function setupInteractables() {
 // Floating bubble icons over every activity, so children who can't read can see where the fun is.
 function setupBubbles() {
   const tex = {};
-  const mat = ch => { if (tex[ch]) return tex[ch]; const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
-    const g = x.createRadialGradient(54, 50, 10, 64, 64, 60); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(.85, 'rgba(220,245,255,.85)'); g.addColorStop(1, 'rgba(120,200,255,.9)');
-    x.fillStyle = g; x.beginPath(); x.arc(64, 64, 58, 0, Math.PI * 2); x.fill(); x.strokeStyle = 'rgba(255,255,255,.95)'; x.lineWidth = 5; x.stroke();
-    x.font = '68px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(ch, 64, 70);
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return tex[ch] = new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false }); };
+  // a round picture bubble with a big name tag underneath
+  const mat = (ch, label) => { const key = ch + label; if (tex[key]) return tex[key]; const c = document.createElement('canvas'); c.width = 320; c.height = 200; const x = c.getContext('2d');
+    const g = x.createRadialGradient(150, 62, 10, 160, 72, 64); g.addColorStop(0, '#ffffff'); g.addColorStop(.8, '#e9f8ff'); g.addColorStop(1, '#9fdcff');
+    x.shadowColor = 'rgba(0,40,80,.35)'; x.shadowBlur = 10; x.shadowOffsetY = 4;
+    x.fillStyle = g; x.beginPath(); x.arc(160, 70, 62, 0, Math.PI * 2); x.fill(); x.shadowColor = 'transparent';
+    x.strokeStyle = '#ffffff'; x.lineWidth = 6; x.stroke();
+    x.font = '72px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(ch, 160, 76);
+    if (label) {
+      x.font = 'bold 30px Fredoka, "Baloo 2", sans-serif'; const w = Math.min(310, x.measureText(label).width + 34);
+      x.fillStyle = 'rgba(255,255,255,.96)'; x.beginPath(); x.roundRect(160 - w / 2, 142, w, 50, 25); x.fill();
+      x.strokeStyle = '#ffb52e'; x.lineWidth = 4; x.stroke();
+      x.fillStyle = '#3a2a20'; x.fillText(label, 160, 168, 290);
+    }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return tex[key] = new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false }); };
   G.bubbleIcons = G.interactables.filter(it => it.bubble).map((it, k) => {
-    const s = new THREE.Sprite(mat(it.bubble)); s.scale.setScalar(1.3); const y = heightAt(it.x, it.z) + 3.4; s.position.set(it.x, y, it.z); s.userData.it = it; scene.add(s);
-    world.updaters.push((dt, t) => { s.position.y = y + Math.sin(t * 2 + k) * .18; const near = G.heroes.some(h => dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r); s.material.opacity = near ? .35 : 1; });
+    const label = (it.short ? it.short() : it.label ? it.label() : '').replace(/^(Talk to |Nói chuyện với |Enter shrine: |Vào đền: )/, '');
+    const s = new THREE.Sprite(mat(it.bubble, label.length > 22 ? label.slice(0, 21) + '…' : label)); s.scale.set(3.2, 2, 1); const y = heightAt(it.x, it.z) + 3.6; s.position.set(it.x, y, it.z); s.userData.it = it; scene.add(s);
+    world.updaters.push((dt, t) => { s.position.y = y + Math.sin(t * 2 + k) * .15; const near = G.heroes.some(h => dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r); s.material.opacity = near ? .45 : 1; });
     return s;
   });
+}
+// Help finding the next goal: a golden light beam with a bouncing "!" over it, and for each player
+// a glowing arrow plus a trail of sparkles on the ground leading the way.
+function setupGuides() {
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 70, 16, 1, true), new THREE.MeshBasicMaterial({ color: '#ffd23f', transparent: true, opacity: .28, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+  const bang = sprite('❗', 2.4); bang.material.fog = false; scene.add(beam, bang);
+  const arrowGeo = new THREE.ConeGeometry(.45, 1.1, 4); arrowGeo.rotateX(Math.PI / 2);
+  const guides = [0, 1].map(() => {
+    const arrow = new THREE.Mesh(arrowGeo, new THREE.MeshBasicMaterial({ color: '#ffd23f', fog: false }));
+    const dots = Array.from({ length: 14 }, () => { const d = sprite('✨', .7); d.material = d.material.clone(); scene.add(d); return d; });
+    scene.add(arrow); return { arrow, dots };
+  });
+  world.updaters.push((dt, t) => {
+    const h0 = G.heroes[0], tg0 = h0 && playing ? questTarget(h0) : null;
+    beam.visible = bang.visible = !!tg0;
+    if (tg0) { const gy = heightAt(tg0.x, tg0.z); beam.position.set(tg0.x, gy + 35, tg0.z); bang.position.set(tg0.x, gy + 5.2 + Math.abs(Math.sin(t * 3)) * .8, tg0.z); beam.material.opacity = .2 + Math.sin(t * 2) * .08; }
+    guides.forEach((g, i) => {
+      const h = G.heroes[i], tg = h && playing ? questTarget(h) : null;
+      const d = tg ? dist2(h.pos.x, h.pos.z, tg.x, tg.z) : 0, show = !!tg && d > 5 && !G.paused;
+      g.arrow.visible = show; g.dots.forEach(x => x.visible = show);
+      if (!show) return;
+      const dx = (tg.x - h.pos.x) / d, dz = (tg.z - h.pos.z) / d;
+      g.arrow.position.set(h.pos.x + dx * 1.9, h.pos.y + .35 + Math.sin(t * 5) * .08, h.pos.z + dz * 1.9); g.arrow.rotation.set(0, Math.atan2(dx, dz), 0);
+      const flow = (t * 3) % 2.2;
+      g.dots.forEach((x, k) => {
+        const along = 3 + k * 2.2 + flow; if (along > Math.min(d - 1, 34)) { x.visible = false; return; }
+        const px = h.pos.x + dx * along, pz = h.pos.z + dz * along;
+        x.position.set(px, world.groundAt(px, pz, h.pos.y + 2) + .35, pz); x.material.opacity = 1 - along / 36;
+      });
+    });
+  });
+}
+// Labels floating over whole areas so they are easy to recognise from far away.
+function setupAreaSigns() {
+  const sign = (text, icon, x, z, h = 9) => {
+    const c = document.createElement('canvas'); c.width = 640; c.height = 160; const g = c.getContext('2d');
+    g.font = 'bold 64px Fredoka, "Baloo 2", sans-serif'; const w = Math.min(630, g.measureText(text).width + 150);
+    g.fillStyle = 'rgba(255,255,255,.95)'; g.beginPath(); g.roundRect(320 - w / 2, 20, w, 120, 60); g.fill(); g.strokeStyle = '#ff7eb8'; g.lineWidth = 8; g.stroke();
+    g.font = '70px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(icon, 320 - w / 2 + 26, 84);
+    g.font = 'bold 60px Fredoka, "Baloo 2", sans-serif'; g.fillStyle = '#4a2a5a'; g.textAlign = 'center'; g.fillText(text, 320 + 40, 84, w - 120);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, fog: false })); s.scale.set(16, 4, 1); s.position.set(x, heightAt(x, z) + h, z); scene.add(s);
+    // fade out when you are close (so it never blocks the view), fade in from further away
+    world.updaters.push(() => { const d = Math.min(...G.heroes.map(o => dist2(o.pos.x, o.pos.z, x, z)), 1e9); s.material.opacity = clamp((d - 22) / 18, 0, 1); s.visible = s.material.opacity > .02; });
+  };
+  sign(T('Lotus Village', 'Làng Sen'), '🏮', VILLAGE.x, VILLAGE.z - 4, 14);
+  sign(T('Sunny Farm', 'Nông Trại'), '🏡', HOME.x, HOME.z, 13);
+  sign(T('Dawn Plateau', 'Cao Nguyên'), '🦉', 0, 4, 12);
+  sign(T('Mirror Lake', 'Hồ Gương'), '🌊', 55, 125, 8);
+  sign(T('Bamboo Forest', 'Rừng Tre'), '🎋', -100, 85, 16);
+  sign(T('Rice Fields', 'Đồng Lúa'), '🌾', 112, -38, 8);
 }
 function nearest(h) {
   let best = null, bd = 1e9;
@@ -211,7 +272,7 @@ async function owlTalk(h) {
       ['See that tall tower glowing orange? Climb it, and your map will light up!', 'Con thấy cái tháp cao màu cam kia không? Leo lên đó, bản đồ của con sẽ sáng lên!'],
       ['Then solve the three shrines here on the plateau, and I will give you a special present.', 'Sau đó giải ba ngôi đền trên cao nguyên này, ông sẽ tặng con một món quà đặc biệt.']
     ]);
-    p.quests.owl = true; save(); checkQuests(h); return;
+    G.heroes.forEach(x => { x.profile.quests.owl = true; }); save(); G.heroes.forEach(x => checkQuests(x)); return;
   }
   const done3 = ['sh_pattern', 'sh_count', 'sh_letters'].every(s => p.shrines[s]);
   if (done3 && !p.glider) {
@@ -248,6 +309,25 @@ async function kidTalk(h, game, name, line) {
   const k = await dialog(name, [line], [['▶ Play!', '▶ Chơi!'], ['👋 Later', '👋 Để sau']]);
   if (k === 0) playGame(h.i, game, 'folk');
 }
+// ---------- the Games hub: every game, by place, playable straight away ----------
+const GAME_SPOT = { oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
+  tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
+G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (SHRINES.find(s => s.game === id) || {}).id));
+G.openGamesHub = i => { if (G.paused) return; G.paused = true; openGamesHub(G, i, () => { G.paused = false; }); };
+G.goToGame = (i, id) => { const h = G.heroes[i], it = G.gameSpot(id); if (!h || !it) return; (async () => { if (dist2(h.pos.x, h.pos.z, it.x, it.z) > 45) await G.travel(h, it.x - 1.5, it.z + 2); goAndDo(h, it); })(); };
+// ---------- objective helpers ----------
+G.objectiveIcon = h => { const q = currentQuest(h.profile); return q ? q.icon : '🏆'; };
+G.sayObjective = i => { const h = G.heroes[i]; if (!h) return; const q = currentQuest(h.profile); if (!q) return; say(q.title(), q.title()); };
+// "Go" button: walk to the goal (or fly there if it is far away) and start it on arrival.
+G.goToObjective = async i => {
+  const h = G.heroes[i]; if (!h || G.paused) return;
+  const tg = questTarget(h); if (!tg) { G.sayObjective(i); return; }
+  const it = G.interactables.filter(x => !x.auto && (!x.visible || x.visible(h))).sort((a, b) => dist2(a.x, a.z, tg.x, tg.z) - dist2(b.x, b.z, tg.x, tg.z))[0];
+  const near = it && dist2(it.x, it.z, tg.x, tg.z) < 6 ? it : null;
+  say('Let\u2019s go!', 'Đi thôi!');
+  if (dist2(h.pos.x, h.pos.z, tg.x, tg.z) > 45) { await G.travel(h, tg.x - 1.5, tg.z + 2); }
+  if (near) goAndDo(h, near); else h.goal = { x: tg.x, z: tg.z };
+};
 const GOURD_GIFTS = [[3, 'money', 15], [6, 'money', 25], [10, 'glider', 2], [15, 'money', 40], [20, 'money', 60], [24, 'glider', 4]];
 async function gourdTalk(h) {
   const p = h.profile, n = Object.keys(p.leafies).length;
@@ -296,7 +376,7 @@ function questTarget(h) {
     case 'pot': return near(world.pots);
     case 'kids': return NPCS.find(n => n.id === 'teo');
     case 'buffalo': return near(world.buffalo.map(b => ({ x: b.mesh.position.x, z: b.mesh.position.z })));
-    case 'leafy': return null;
+    case 'leafy': return near(LEAFIES.filter(l => !p.leafies[l.id]));
     case 'statue': return p.orbs >= 4 ? world.statue : near(SHRINES.filter(s => !p.shrines[s.id] && p.discovered[s.id])) || world.statue;
     case 'tower': return near(TOWERS.filter(t => !p.towers[t.id]));
     case 'shrine': return near(SHRINES.filter(s => !p.shrines[s.id] && p.discovered[s.id]));
@@ -408,7 +488,7 @@ world.updaters.push((dt, t) => G.wanderers.forEach((w, k) => {
   else { sp = 2.2; w.yaw = Math.atan2(dx, dz); p.x += dx / d * sp * dt; p.z += dz / d * sp * dt; st = 'walk'; }
   world.collide(p, .4); p.y = world.groundAt(p.x, p.z, p.y + 1); w.av.root.rotation.y = w.yaw; w.av.anim(st, t + k, sp); w.tag.position.set(p.x, p.y + 2, p.z);
 }));
-G.openPad = i => { if (G.paused) return; G.paused = true; openPad(G, i); };
+G.openPad = (i, tab) => { if (G.paused) return; G.paused = true; openPad(G, i, tab); };
 G.closePad = () => { G.paused = false; };
 
 // ---------- talking: quick phrases, speech bubbles, voice calls ----------
@@ -511,23 +591,30 @@ function onTap(i, x, y) {
   if (h._dancing) { G.places.note(h); return; }
   const r = rects()[i]; ndc.set((x - r.x) / r.w * 2 - 1, -((y - r.y) / r.h) * 2 + 1);
   ray.setFromCamera(ndc, h.cam);
-  // tapping a bubble icon walks to that activity
-  const hitB = ray.intersectObjects(G.bubbleIcons || [], false)[0];
-  if (hitB) { h.goal = approach(h, hitB.object.userData.it); return; }
+  // tapping a bubble, a water drop or a ripe crop walks there and does it
+  const hitB = ray.intersectObjects([...(G.bubbleIcons || []), ...(G.tapTargets || [])], false).find(x => x.object.visible);
+  if (hitB) { goAndDo(h, hitB.object.userData.it); return; }
   const hit = ray.intersectObject(world.terrain, false)[0];
   if (hit) { h.goal = { x: hit.point.x, z: hit.point.z }; G.fx(hit.point.x, hit.point.y + .3, hit.point.z, '✨'); }
 }
+function goAndDo(h, it) {
+  if (!it) return;
+  if (dist2(h.pos.x, h.pos.z, it.x, it.z) < (it.plot ? 7 : it.r)) { SFX.tap(); it.act(h, G); return; }
+  h.goal = approach(h, it); h.goalAct = it;
+}
+G.goAndDo = goAndDo;
 // stop just in front of an activity rather than inside it
 function approach(h, it) { const dx = h.pos.x - it.x, dz = h.pos.z - it.z, d = Math.hypot(dx, dz) || 1, k = Math.max(.5, Math.min(it.r * .6, 2.5)); return { x: it.x + dx / d * k, z: it.z + dz / d * k }; }
 const poll = initInput(renderer.domElement, rects, () => G.paused || !G.heroes.length, onTap);
-renderer.domElement.addEventListener('wheel', e => { G.zoom = clamp(G.zoom * (e.deltaY > 0 ? 1.1 : .9), .6, 1.8); }, { passive: true });
+renderer.domElement.addEventListener('wheel', e => { G.zoomBy(0, e.deltaY > 0 ? 1.1 : .9); }, { passive: true });
+G.zoomBy = (i, f) => { const h = G.heroes[i]; if (h) { h.zoom = clamp((h.zoom || 1) * f, .45, 1.8); SFX.tap(); } };
 
 // ---------- starting a session ----------
 function startSession(mode, chosen) {
   G.mode = mode; G.heroes.forEach(h => scene.remove(h.av.root)); G.huds.forEach(h => h.destroy()); G.heroes = []; G.huds = [];
   chosen.forEach((p, i) => {
     const h = new Hero(i, p, scene, world);
-    const start = p.pos && Number.isFinite(p.pos.x) ? p.pos : { x: -6 + i * 3, z: -1 };
+    const start = p.pos && Number.isFinite(p.pos.x) ? p.pos : { x: -3 + i * 2.5, z: -4 };
     h.place(start.x, start.z); h.camYaw = Math.PI * .85;
     G.heroes.push(h); G.huds.push(new Hud(i, h, G)); G.regionOf[i] = null;
   });
@@ -554,7 +641,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
   // the 3D world rests while a full-screen game or the storybook is open (saves battery)
-  if (gameOpen() || document.querySelector('.storybook')) return;
+  if (gameOpen() || document.querySelector('.storybook') || (G.paused && document.querySelector('.modal'))) return;
   world.update(dt, t);
   if (!playing) {
     const a = t * .05;
@@ -568,6 +655,8 @@ function frame(now) {
     G.heroes.forEach((h, i) => {
       if (pads[i].menu()) { G.openPad(i); return; }
       h.update(dt, pads[i], t, G);
+      if (!h.profile.quests.owl && !G._owlAuto && dist2(h.pos.x, h.pos.z, owl.x, owl.z) < 6) { G._owlAuto = true; owlTalk(h); }
+      if (h.goalAct && !h.goal) { const it = h.goalAct; h.goalAct = null; if (dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r + .8) { SFX.tap(); it.act(h, G); } }
       const it = nearest(h);
       if (it && it.auto) it.act(h, G);
       G.huds[i].setAction(it && !it.auto ? it : null);
@@ -615,8 +704,9 @@ function frame(now) {
     renderer.render(scene, h.cam);
     const markers = [];
     const p = h.profile;
-    SHRINES.forEach(s => { if (p.discovered[s.id] || p.shrines[s.id]) markers.push({ x: s.x, z: s.z, icon: p.shrines[s.id] ? '🔷' : '🔶', size: 16 }); });
-    TOWERS.forEach(tw => { if (p.discovered[tw.id] || p.towers[tw.id]) markers.push({ x: tw.x, z: tw.z, icon: '🗼', size: 18 }); });
+    SHRINES.forEach(s => markers.push({ x: s.x, z: s.z, icon: p.shrines[s.id] ? '🔷' : '🔶', size: 16 }));
+    TOWERS.forEach(tw => markers.push({ x: tw.x, z: tw.z, icon: '🗼', size: 18 }));
+    G.PLACES.forEach(pl => markers.push({ x: pl.x, z: pl.z, icon: pl.icon, size: 18 }));
     NPCS.forEach(n => markers.push({ x: n.x, z: n.z, icon: '•', size: 14 }));
     G.heroes.forEach((o, j) => { if (j !== i) markers.push({ x: o.pos.x, z: o.pos.z, icon: '🧒', size: 18 }); });
     if (G.partner) markers.push({ x: G.partner.pos.x, z: G.partner.pos.z, icon: '🧒', size: 18 });
@@ -631,7 +721,7 @@ setupNPCs(); setupInteractables();
 G.farm = createFarm(G); world.updaters.push(G.farm.update);
 G.places = createPlaces(G); world.updaters.push(G.places.update);
 ensureJobs();
-setupBubbles();
+setupBubbles(); setupAreaSigns(); setupGuides();
 $('#songBtn').onclick = () => G.places.nextSong();
 resize();
 $('#boot').remove();

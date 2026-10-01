@@ -204,7 +204,13 @@ export function createWorld(scene, quality) {
     cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b;
   }
   tg.setAttribute('color', new THREE.BufferAttribute(cols, 3)); tg.computeVertexNormals();
-  const terrain = new THREE.Mesh(tg, toonVC({ roughness: .95 })); terrain.receiveShadow = true; scene.add(terrain); W.terrain = terrain;
+  // fine detail (grass blades, pebbles, soil) painted into a tiling texture and blended over the ground colours
+  const dc = document.createElement('canvas'); dc.width = dc.height = 256; const dx = dc.getContext('2d');
+  dx.fillStyle = '#e8e8e8'; dx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 2600; i++) { const v = 170 + Math.floor(Math.random() * 85); dx.fillStyle = `rgb(${v},${v},${v})`; const x = Math.random() * 256, y = Math.random() * 256; dx.fillRect(x, y, 1 + Math.random() * 2, 2 + Math.random() * 5); }
+  for (let i = 0; i < 140; i++) { const v = 150 + Math.floor(Math.random() * 60); dx.fillStyle = `rgba(${v},${v},${v},.6)`; dx.beginPath(); dx.arc(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 3, 0, Math.PI * 2); dx.fill(); }
+  const dtex = new THREE.CanvasTexture(dc); dtex.wrapS = dtex.wrapT = THREE.RepeatWrapping; dtex.repeat.set(140, 140); dtex.anisotropy = 4;
+  const terrain = new THREE.Mesh(tg, toonVC({ roughness: .95, map: dtex })); terrain.receiveShadow = true; scene.add(terrain); W.terrain = terrain;
 
   // water with a soft moving shimmer
   const wc = document.createElement('canvas'); wc.width = wc.height = 128; const wx = wc.getContext('2d');

@@ -31,7 +31,9 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
         <div class="gl-dots"></div>
       </div>
       <div class="gl-help"></div>
-      <div class="gl-stage"></div>`;
+      <div class="gl-stage"></div>
+      <div class="starbox">⭐ <b>0</b></div>
+      <div class="mascot">🦉</div><div class="mascot-say"></div>`;
     document.body.appendChild(layer);
     const stage = layer.querySelector('.gl-stage'), dots = layer.querySelector('.gl-dots'), help = layer.querySelector('.gl-help');
     const cleanups = [];
@@ -41,15 +43,15 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       stage, level, players, two: players.length > 1, partnerName, T, el,
       little,   // under-5 mode: everything gentle, nobody can lose
       strong,   // computer opponents play to win (big kids on medium or hard)
-      say: (en, vi) => { help.textContent = T(en, vi); say(en, vi); },
+      say: (en, vi) => { const t = T(en, vi); help.textContent = t.charAt(0).toUpperCase() + t.slice(1); say(en, vi); },
       // Show text without speaking it.
       show: (en, vi) => { help.textContent = T(en, vi); },
       sfx: SFX, wait,
       onCleanup: f => cleanups.push(f),
       dots(n, done) { dots.innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < done ? 'on' : ''}"></i>`).join(''); },
-      right(e) { SFX.ok(); if (e) { e.classList.remove('wrong'); e.classList.add('right'); } },
-      wrong(e, en = 'Try again!', vi = 'Thử lại nhé!') { SFX.no(); if (e) { e.classList.remove('wrong'); void e.offsetWidth; e.classList.add('wrong'); } say(en, vi); },
-      praise() { const p = [['Great job!', 'Giỏi quá!'], ['Well done!', 'Làm tốt lắm!'], ['Yes! Clever!', 'Đúng rồi! Thông minh quá!'], ['Super!', 'Tuyệt vời!'], ['You got it!', 'Con làm được rồi!']]; const [e, v] = p[Math.floor(Math.random() * p.length)]; say(e, v); },
+      right(e) { SFX.ok(); if (e) { e.classList.remove('wrong'); e.classList.add('right'); } reward(e); },
+      wrong(e, en = 'Try again!', vi = 'Thử lại nhé!') { SFX.no(); if (e) { e.classList.remove('wrong'); void e.offsetWidth; e.classList.add('wrong'); } mascot('hmm', T('Hmm… try again!', 'Ừm… thử lại nhé!')); say(en, vi); },
+      praise() { const p = [['Great job!', 'Giỏi quá!'], ['Well done!', 'Làm tốt lắm!'], ['Yes! Clever!', 'Đúng rồi! Thông minh quá!'], ['Super!', 'Tuyệt vời!'], ['You got it!', 'Con làm được rồi!']]; const [e, v] = p[Math.floor(Math.random() * p.length)]; say(e, v); mascot('cheer', T(e, v)); },
       get closed() { return closed; },
       async win(extra = {}) {
         if (closed) return;
@@ -60,6 +62,24 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
         await wait(2400); finish(true, extra);
       }
     };
+    // Ông Cú cheers in the corner; every right answer sends a star flying to the star counter.
+    let stars = 0;
+    const mascotEl = layer.querySelector('.mascot'), bubbleEl = layer.querySelector('.mascot-say'), starEl = layer.querySelector('.starbox b');
+    function mascot(kind, text) {
+      mascotEl.classList.remove('cheer', 'hmm'); void mascotEl.offsetWidth; mascotEl.classList.add(kind);
+      if (text) { bubbleEl.textContent = text; bubbleEl.classList.add('on'); clearTimeout(mascot._t); mascot._t = setTimeout(() => bubbleEl.classList.remove('on'), 1400); }
+    }
+    function reward(e) {
+      const r = e && e.getBoundingClientRect ? e.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0 };
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2, cols = ['#ffd23f', '#ff6fae', '#5fd3ff', '#7ee35a', '#b598ff'];
+      for (let k = 0; k < 14; k++) { const sp = el('i', 'spark'); const a = k / 14 * Math.PI * 2, d = 50 + Math.random() * 50; sp.style.left = cx + 'px'; sp.style.top = cy + 'px'; sp.style.background = cols[k % cols.length]; sp.style.setProperty('--sx', Math.cos(a) * d + 'px'); sp.style.setProperty('--sy', Math.sin(a) * d + 'px'); layer.appendChild(sp); setTimeout(() => sp.remove(), 800); }
+      const st = el('i', 'flystar', '⭐'); st.style.left = cx - 17 + 'px'; st.style.top = cy - 17 + 'px'; layer.appendChild(st);
+      const box = layer.querySelector('.starbox').getBoundingClientRect();
+      requestAnimationFrame(() => { st.style.transform = `translate(${box.left + 10 - cx}px, ${box.top - cy}px) scale(.6)`; st.style.opacity = '.3'; });
+      setTimeout(() => { st.remove(); stars++; starEl.textContent = stars; SFX.coin(); }, 800);
+      const lines = [['Yay!', 'Hoan hô!'], ['Great!', 'Giỏi quá!'], ['Wow!', 'Oa!'], ['Clever!', 'Thông minh!'], ['Yes!', 'Đúng rồi!']];
+      const l = lines[Math.floor(Math.random() * lines.length)]; mascot('cheer', T(l[0], l[1]));
+    }
     function finish(won, extra = {}) {
       if (closed) return; closed = true; current = null;
       cleanups.forEach(f => { try { f(); } catch (e) { } });

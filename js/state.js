@@ -16,6 +16,7 @@ export const settings = Object.assign({
   alwaysDay: false,
   quality: 'auto',       // 'auto' | 'low' | 'high'
   camSpeed: 1,
+  camMode: 'easy',       // 'easy' = fixed high view (best for little ones) | 'free' = drag to look around
   familyVoice: true,     // play the grown-up's recordings when there are some
   familyPitch: 0         // speaking pitch matched to the recordings (0 = not set)
 }, store.get(KEY_SETTINGS, {}));

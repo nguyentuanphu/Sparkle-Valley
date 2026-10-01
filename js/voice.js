@@ -1,6 +1,7 @@
 // Talking voice in English and Vietnamese using the device's own natural voices.
 // Premium/enhanced/neural voices are picked first; grown-ups can choose a voice in settings.
 import { settings } from './state.js';
+import { ac } from './audio.js';
 
 let all = [];
 const BAD = /compact|eloquence|novelty|whisper|bad news|bells|boing|bubbles|cellos|zarvox|trinoids|albert|jester|organ|superstar|wobble|grandpa|grandma|rocko|reed|eddy|flo\b|sandy|shelley|fred|junior|ralph|kathy|good news|hysterical|deranged|pipe/i;
@@ -59,7 +60,7 @@ export function sayIn(lang, text) {
   if (!settings.voice || !window.speechSynthesis) return;
   try { speechSynthesis.cancel(); speechSynthesis.speak(utter(text, lang)); } catch (e) { }
 }
-export function hush() { try { speechSynthesis.cancel(); } catch (e) { } try { if (playing) playing.pause(); } catch (e) { } }
+export function hush() { try { speechSynthesis.cancel(); } catch (e) { } try { if (playing) playing.stop(); } catch (e) { } }
 
 // ---------- Family voice: real recordings of a grown-up ----------
 // A grown-up records the game's most-used lines. Those lines are then played in their real voice,
@@ -78,27 +79,46 @@ export const FAMILY_PHRASES = [
   { id: 'lookdress', en: 'You look wonderful!', vi: 'Con trông tuyệt quá!' },
   { id: 'love', en: 'I love you! Have fun!', vi: 'Bố mẹ thương con! Chơi vui nhé!' }
 ];
-const clips = {}; // `${lang}:${id}` -> object URL
+const clips = {}; // `${lang}:${id}` -> { data: ArrayBuffer, type, decoded? }
 let dbp = null;
 function db() {
   if (!dbp) dbp = new Promise((res, rej) => { try { const r = indexedDB.open('sparkle-valley-voice', 1); r.onupgradeneeded = () => r.result.createObjectStore('clips'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } });
   return dbp;
 }
-const tx = async (mode, f) => { const d = await db(); return new Promise((res, rej) => { const t = d.transaction('clips', mode), st = t.objectStore('clips'); const r = f(st); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); }); };
+const tx = async (mode, f) => { const d = await db(); return new Promise((res, rej) => { const t = d.transaction('clips', mode), st = t.objectStore('clips'); const r = f(st); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); }); };
 export async function loadClips() {
   try {
     const d = await db();
-    await new Promise(res => { const st = d.transaction('clips').objectStore('clips'), req = st.openCursor(); req.onsuccess = () => { const c = req.result; if (!c) return res(); clips[c.key] = URL.createObjectURL(c.value); c.continue(); }; req.onerror = res; });
+    await new Promise(res => {
+      const req = d.transaction('clips').objectStore('clips').openCursor();
+      req.onsuccess = async () => {
+        const c = req.result; if (!c) return res();
+        const v = c.value; // stored as {data, type}; older saves stored a Blob
+        if (v && v.data) clips[c.key] = { data: v.data, type: v.type };
+        else if (v && v.arrayBuffer) v.arrayBuffer().then(data => { clips[c.key] = { data, type: v.type }; });
+        c.continue();
+      };
+      req.onerror = res;
+    });
   } catch (e) { }
 }
 export const hasClip = (lang, id) => !!clips[lang + ':' + id];
 export const clipCount = () => Object.keys(clips).length;
-export async function saveClip(lang, id, blob) { await tx('readwrite', st => st.put(blob, lang + ':' + id)); if (clips[lang + ':' + id]) URL.revokeObjectURL(clips[lang + ':' + id]); clips[lang + ':' + id] = URL.createObjectURL(blob); }
+// Saved as a plain ArrayBuffer: Safari on older iPhones cannot always store Blobs in IndexedDB.
+export async function saveClip(lang, id, blob) {
+  const data = await blob.arrayBuffer(), key = lang + ':' + id;
+  await tx('readwrite', st => st.put({ data, type: blob.type || 'audio/wav' }, key));
+  clips[key] = { data, type: blob.type || 'audio/wav' };
+}
 export async function deleteClip(lang, id) { await tx('readwrite', st => st.delete(lang + ':' + id)); delete clips[lang + ':' + id]; }
 let playing = null;
+// Played through Web Audio, which (once unlocked by the first tap) can play at any time, even on iPhone.
 export function playClip(lang, id) {
-  const u = clips[lang + ':' + id]; if (!u) return false;
-  try { if (playing) playing.pause(); playing = new Audio(u); playing.play().catch(() => { }); } catch (e) { return false; }
+  const c = clips[lang + ':' + id]; if (!c) return false;
+  const a = ac(); if (!a) return false;
+  const go = buf => { try { if (playing) playing.stop(); } catch (e) { } const s = a.createBufferSource(); s.buffer = buf; s.connect(a.destination); s.start(); playing = s; };
+  if (c.decoded) go(c.decoded);
+  else a.decodeAudioData(c.data.slice(0)).then(buf => { c.decoded = buf; go(buf); }).catch(() => { });
   return true;
 }
 // Estimate how high or low a recorded voice is (average pitch in Hz) using autocorrelation.
