@@ -7,21 +7,21 @@ import { settings } from '../state.js';
 import { sayIn } from '../voice.js';
 import { el, wait, pick, rand, clamp, shuffle } from '../util.js';
 
-const count = n => sayIn(settings.lang, numWord(n));
+export const count = n => sayIn(settings.lang, numWord(n));
 // A star flies from a point on a canvas: frame.right() wants an element, so make a tiny one there.
-function rightAt(api, canvas, x, y) {
+export function rightAt(api, canvas, x, y) {
   const r = canvas.getBoundingClientRect(), k = r.width / canvas._w;
   const d = el('i', 'tmp-pt'); d.style.left = r.left + x * k + 'px'; d.style.top = r.top + y * k + 'px'; document.body.appendChild(d);
   api.right(d); setTimeout(() => d.remove(), 900);
 }
-function makeCanvas(api, aspect = 1) {
+export function makeCanvas(api, aspect = 1) {
   const box = api.stage.getBoundingClientRect();
   const w = Math.max(260, Math.min(560, box.width - 16, (innerHeight * .62) / aspect)), h = w * aspect, dpr = Math.min(2, devicePixelRatio || 1);
   const c = el('canvas', 'folk-cv'); c.width = w * dpr; c.height = h * dpr; c.style.width = w + 'px'; c.style.height = h + 'px'; c._w = w; c._h = h;
   const g = c.getContext('2d'); g.scale(dpr, dpr); api.stage.appendChild(c);
   return { c, g, w, h };
 }
-const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+export const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
 
 // ---------- What's the time, Mr Wolf? (Australia) ----------
 const clockSVG = hr => `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#fffdf6" stroke="#6b4a2a" stroke-width="5"/>${Array.from({ length: 12 }, (_, i) => { const a = (i + 1) / 12 * Math.PI * 2; return `<text x="${(50 + Math.sin(a) * 34).toFixed(1)}" y="${(54.5 - Math.cos(a) * 34).toFixed(1)}" font-size="13" text-anchor="middle" fill="#6b4a2a" font-weight="700" font-family="Fredoka,sans-serif">${i + 1}</text>`; }).join('')}

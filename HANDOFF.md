@@ -195,6 +195,44 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
   - The offline brain answers who they are, what to do, how to play, where things are, jokes, stories, simple sums and feelings.
   - With an Anthropic API key in Grown-ups, Claude (model `claude-opus-5-5`, low effort, server-side refusal fallback `fallbacks: "default"`) answers freely, in character and child-safe. The SDK is bundled in `vendor/anthropic-sdk.mjs` and loaded only when used.
 
+### Round 5 (bugs from real iPhone play, both cultures everywhere, livelier games)
+- **Bug fixes:**
+  - The old river bridge ran into the brick house and had a dip over the water. Two Homes Street's road now crosses the river on a new **Sydney Harbour Bridge**-style steel arch (`BRIDGE` in `world.js`, at z = 47), with railings and level ground at both ends.
+  - On iPhone the 3D view sometimes covered only part of the screen; the size is now re-checked on rotate, after the keyboard closes, and every 0.7 s.
+  - Voice control could hang. Listening now always stops after 9 s, the bubble can be tapped to cancel, sound is woken up afterwards, and the 🎤 is hidden in iPhone Home-Screen apps (speech recognition isn't reliable there).
+  - The microphone stayed on after recording (orange dot, quiet "phone call" sound). It is now released straight after each line.
+  - The recording count showed 11/22 even when one language was finished. It now shows each language separately (🇻🇳 11/11 · 🇦🇺 0/11) and explains where the recordings are used.
+- **⚙️ Tap your picture** (top-left) for quick settings: language, music, sounds, talking, voice control on/off, camera, always daytime, a voice style (Natural / Cute / Grandparent), and Change player.
+- **Chợ Ba Miền / Three Regions Market** (east, `MARKET`): six vendors, each speaking with their own region's words:
+  - **North (Bắc):** Bà Hai's phở, and Cô Thu with her shoulder pole of cốm.
+  - **Centre (Trung):** O Lài's bánh bèo Huế, and Chú Năm's Hội An lanterns.
+  - **South (Nam):** Chú Tám's bánh mì, and Cô Út's coconuts from Bà Rịa.
+  - **Landmarks there:** Turtle Tower in a mini Hồ Gươm, the One Pillar Pagoda, Hội An's covered bridge, and the Bến Thành clock tower.
+  - **Folk-game hosts:** Bông (Đập niêu), Bà Năm (Chi chi chành chành), Anh Hai (kite flying) and Cô Hạnh (Two Homes Words).
+- **Góc Nước Úc / Aussie Corner** (west, `AUSSIE`):
+  - Shops and stalls: a milk bar with lollies, fish & chips, a bakery with pies, the Big Banana, an ice-cream van that plays a jingle, and Uncle Robbo's sausage sizzle.
+  - A playground with a flying fox, a merry-go-round and a see-saw, plus a cricket pitch, kangaroos and a koala in a gum tree.
+  - Folk-game hosts: Noah (sack race), Chloe (pass the parcel) and Liam (backyard cricket).
+- **Landmarks with 📮 postcards** (each one tells a short fact):
+  - Australia: Sydney Opera House (lake beach), Harbour Bridge, Uluru (far south-west), the Big Banana, and a lifesavers' tower.
+  - Vietnam: the Vũng Tàu lighthouse (its beam turns at night), Turtle Tower, One Pillar Pagoda, Hội An covered bridge, and the Bến Thành clock tower.
+- **Regional words and slang** (`js/words.js`):
+  - Every vendor can "teach me a word" (Bắc/Trung/Nam words, or Aussie slang) and sells a food that gives energy.
+  - The album has new pages: Postcards (tap a missing one to fly there), Food passport and Words I learned.
+  - Villager chat also teaches slang, and the AI prompt uses each vendor's regional way of speaking.
+- **7 new games** (`js/games/folk2.js`): Đập niêu, Thả diều, Nhảy bao bố / Sack race, Backyard cricket, Pass the parcel, Chi chi chành chành, and Two Homes Words. All have How-to-play films.
+- **Livelier games** (all games, via `frame.js`):
+  - 3 right in a row gives a 🔥 combo with a bonus star, and sometimes a lucky ⭐ +3 appears.
+  - At the end there is a 1–3 star rating (little ones always get 3) and a gift box that pops open with a surprise.
+- **New quests with story pages:** taste food from all three regions; get a treat at Aussie Corner; collect 5 postcards.
+- **Voices that sound more human, for free:**
+  - On iPhone, download the English "Premium" voices (Settings → Accessibility → Spoken Content → Voices). Vietnamese only has "Linh".
+  - Microsoft Edge on Windows and Android has free natural online voices (vi-VN HoaiMy/NamMinh).
+  - Google Cloud TTS has a free monthly allowance (about 1 million characters for Neural voices) and works with the Grown-ups key option. Lines are cached, so each line is fetched once.
+  - A ready-made voice file from the internet can't be turned into a speaking voice without a cloning service, and should only be used if it's licensed.
+
+- **Names follow the chosen language** (`NAMES_EN` / `NAMES_VI` in `i18n.js`). `T()`, `say()`, dialogs, story pages, chat, name tags and 3D signs all swap titles: in English "Ông Cú" → "Grandpa Owl", "Bà Hai" → "Grandma Hai", "Cô Mai" → "Auntie Mai", "Chú Tư" → "Uncle Tư"; in Vietnamese "Mrs Kelly" → "Cô Kelly", "Aunty Bev" → "Dì Bev". First names stay. Signs and tags register with `onLang()` and redraw instantly when the language changes. New people: add their title to the two maps; new signs: pass `['English', 'Tiếng Việt']`.
+
 ## 3. How it's built
 
 **Tech:**
@@ -238,6 +276,8 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 | `js/games/market.js` | market (pay exact amounts in AUD or VND) |
 | `js/games/farmgames.js` | order, sortout, bunny, jigsaw, oddone, tune, tower, duckmaze, balloon, bubbles |
 | `js/games/folk.js` | mrwolf, chuyen, dragon, marbles, skipping, snap, dacau (folk games of Australia and Vietnam) |
+| `js/regions.js`, `js/words.js` | Chợ Ba Miền, Aussie Corner, landmarks and postcards, vendors (`VENDORS`, `LANDMARKS`), slang and regional words |
+| `js/games/folk2.js` | datnieu, kite, sackrace, cricket, parcel, chichi, words |
 | `js/town.js` | Two Homes Street: house builders (`tubeHouse`, `frenchVilla`, `weatherboard`, `brickHouse`, `raisedHouse`), road, wires, props, townsfolk |
 | `js/secrets.js` | Secret side quests and falling apples |
 | `js/credits.js` | Credits page and its Grown-ups fields |
@@ -263,7 +303,8 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - Sunny Farm (−26, 126), south of the plateau ramp.
 - Lotus Village (110, 30), east across the river bridge.
 - Rice fields (112, −38).
-- Two Homes Street (12–52, 32–74), with the park at (28, 62).
+- Two Homes Street (12–52, 32–74), with the park at (28, 62) and the Harbour-style bridge at z = 47 (x 44–74).
+- Chợ Ba Miền (96–146, 70–96), Aussie Corner (−144 to −90, −40 to 16), Uluru (−128, 152), Opera House (24, 168), Vũng Tàu lighthouse (−10, 160).
 - Mirror Lake (55, 125), with the beach chest at (10, 146).
 - Bamboo forest (−100, 85).
 - Snowcap peaks to the north.

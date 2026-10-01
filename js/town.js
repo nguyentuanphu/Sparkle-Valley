@@ -4,17 +4,17 @@
 // weatherboard house with a front porch, a brick house, a Hills hoist, and the park where kids play
 // folk games. Built from simple flat-coloured shapes in the "summer afternoon" style.
 import { THREE, toon, toonVC, P, merge, sprite } from './gfx.js';
-import { T } from './i18n.js';
+import { T, nm, onLang } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
 import { heightAt, TOWN, PLAYGROUND } from './world.js';
 import { buildAvatar } from './avatar.js';
 import { dist2 } from './util.js';
 
-const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
-const Cyl = (r1, r2, h, s = 8) => new THREE.CylinderGeometry(r1, r2, h, s);
+export const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+export const Cyl = (r1, r2, h, s = 8) => new THREE.CylinderGeometry(r1, r2, h, s);
 // A gable roof: ridge along x, slopes down to the front (+z) and back (-z).
-function gable(parts, w, d, h, y0, col, endCol) {
+export function gable(parts, w, d, h, y0, col, endCol) {
   const L = Math.hypot(d / 2, h) + .45, a = Math.atan2(h, d / 2);
   parts.push(P(Box(w + .7, .16, L), col, [0, y0 + h / 2, d / 4 + .1], [a, 0, 0]), P(Box(w + .7, .16, L), col, [0, y0 + h / 2, -d / 4 - .1], [-a, 0, 0]));
   const sh = new THREE.Shape(); sh.moveTo(-d / 2, 0); sh.lineTo(d / 2, 0); sh.lineTo(0, h); sh.lineTo(-d / 2, 0);
@@ -22,15 +22,15 @@ function gable(parts, w, d, h, y0, col, endCol) {
   [-1, 1].forEach(sx => parts.push(P(tri, endCol, [sx * (w / 2) - (sx > 0 ? .12 : 0), y0, 0], [0, Math.PI / 2, 0])));
 }
 // A hip roof (four slopes) over a w × d footprint.
-const hip = (parts, w, d, h, y0, col) => parts.push(P(new THREE.ConeGeometry(Math.SQRT1_2, 1, 4), col, [0, y0 + h / 2, 0], [0, Math.PI / 4, 0], [w + .9, h, d + .9]));
+export const hip = (parts, w, d, h, y0, col) => parts.push(P(new THREE.ConeGeometry(Math.SQRT1_2, 1, 4), col, [0, y0 + h / 2, 0], [0, Math.PI / 4, 0], [w + .9, h, d + .9]));
 // A window on a wall facing +z at (x, y, z).
-function win(parts, x, y, z, w = 1.2, h = 1.3, frame = '#f4efe2', glass = '#5d8e94', shutters = null) {
+export function win(parts, x, y, z, w = 1.2, h = 1.3, frame = '#f4efe2', glass = '#5d8e94', shutters = null) {
   parts.push(P(Box(w + .24, h + .24, .08), frame, [x, y, z]), P(Box(w, h, .1), glass, [x, y, z + .02]), P(Box(w + .3, .1, .2), frame, [x, y - h / 2 - .12, z + .06]));
   if (shutters) [-1, 1].forEach(sx => parts.push(P(Box(w / 2, h + .1, .08), shutters, [x + sx * (w * .75 + .1), y, z + .04])));
 }
 
 // Nhà ống: narrow, tall and colourful, with a roll-up shutter, balconies and a stainless water tank.
-function tubeHouse(color, floors = 3, w = 4.4, d = 10) {
+export function tubeHouse(color, floors = 3, w = 4.4, d = 10) {
   const p = [], fh = 3.1;
   p.push(P(Box(w, fh * floors, d), color, [0, fh * floors / 2, 0]));
   p.push(P(Box(w - .5, 2.5, .08), '#b9bfc4', [0, 1.3, d / 2 + .02]));
@@ -68,7 +68,7 @@ function frenchVilla(w = 10, d = 9) {
   return { geo: merge(p), w, d: d + 2.3 };
 }
 // Australian weatherboard cottage: raised on stumps, pale boards, tin roof and a front verandah.
-function weatherboard(w = 9, d = 8, color = '#cfe0e6') {
+export function weatherboard(w = 9, d = 8, color = '#cfe0e6') {
   const p = [], lift = .7, wallH = 3;
   for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1], [0, 1], [0, -1]]) p.push(P(Box(.3, lift, .3), '#9a8f84', [x * (w / 2 - .3), lift / 2, z * (d / 2 - .3)]));
   p.push(P(Box(w, wallH, d), color, [0, lift + wallH / 2, 0]));
@@ -86,7 +86,7 @@ function weatherboard(w = 9, d = 8, color = '#cfe0e6') {
   return { geo: merge(p), w, d: d + 3 };
 }
 // A red-brick house with a tiled roof and a small front porch, like many in western Sydney.
-function brickHouse(w = 8, d = 8) {
+export function brickHouse(w = 8, d = 8) {
   const p = [];
   p.push(P(Box(w, 3, d), '#c9785a', [0, 1.5, 0]));
   for (let k = 0; k < 10; k++) p.push(P(Box(w + .03, .03, d + .03), '#e0a88c', [0, .3 * k + .15, 0]));
@@ -126,7 +126,7 @@ export function createTown(G) {
   };
 
   // ---------- the road, footpaths, lines and a zebra crossing ----------
-  const g = [], x0 = 6, x1 = 56, L = x1 - x0, cx = (x0 + x1) / 2;
+  const g = [], x0 = 6, x1 = 44, L = x1 - x0, cx = (x0 + x1) / 2;
   g.push(P(Box(L, .06, 7), '#b4b9bc', [cx, .03, RZ]));
   g.push(P(Box(L, .07, 3.6), '#e8d5a8', [cx, .035, RZ - 5.3]), P(Box(L, .07, 3.6), '#e8d5a8', [cx, .035, RZ + 5.3]));
   g.push(P(Box(L, .08, .16), '#f6f1e4', [cx, .05, RZ - 3.2]), P(Box(L, .08, .16), '#f6f1e4', [cx, .05, RZ + 3.2]));
@@ -269,9 +269,10 @@ export function createTown(G) {
   // name tags and chatter bubbles
   const tag = (text, x, y, z) => {
     const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g2 = c.getContext('2d');
-    g2.fillStyle = 'rgba(40,40,40,.55)'; g2.beginPath(); g2.roundRect(8, 10, 240, 46, 23); g2.fill();
-    g2.font = 'bold 30px Fredoka, "Baloo 2", sans-serif'; g2.fillStyle = '#fff'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillText(text, 128, 34);
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    const draw = () => { g2.clearRect(0, 0, 256, 64); g2.fillStyle = 'rgba(40,40,40,.55)'; g2.beginPath(); g2.roundRect(8, 10, 240, 46, 23); g2.fill();
+      g2.font = 'bold 30px Fredoka, "Baloo 2", sans-serif'; g2.fillStyle = '#fff'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillText(nm(text), 128, 34, 228); };
+    draw();
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; onLang(() => { draw(); t.needsUpdate = true; });
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set(3, .75, 1); s.position.set(x, y, z); scene.add(s); return s;
   };
   tag('Cô Sáu 🥤', kx, y0 + 2.6, kz - 1.1);

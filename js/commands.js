@@ -6,7 +6,7 @@ import { say } from './voice.js';
 import { SFX } from './audio.js';
 import { GAMES } from './games/frame.js';
 import { openHowTo } from './howto.js';
-import { listen, canListen, has, plain } from './listen.js';
+import { listen, canListen, stopListening, has, plain } from './listen.js';
 import { findTarget, PERSONAS } from './chat.js';
 import { el, esc, dist2 } from './util.js';
 
@@ -47,6 +47,8 @@ export async function voiceCommand(G, i) {
   const pop = el('div', 'vc-pop', `<div class="vc-mic">🎤</div><p class="vc-heard">${T('Listening… say what you want!', 'Đang nghe… con muốn gì thì nói nhé!')}</p>
     <small>${T('“Open the map” · “Play marbles” · “Go to the village” · “Talk to Jack” · “Let’s go!”', '“Mở bản đồ” · “Chơi bắn bi” · “Đi đến làng” · “Nói chuyện với Jack” · “Đi thôi!”')}</small>`);
   document.body.appendChild(pop); SFX.tap();
+  // tap anywhere on the bubble to stop listening
+  const x = el('button', 'vc-x', '✕'); pop.appendChild(x); pop.onclick = () => stopListening();
   const heard = await listen({ onPartial: t => { pop.querySelector('.vc-heard').textContent = '“' + t + '”'; } });
   if (heard === '\u0000denied') { pop.querySelector('.vc-heard').textContent = T('The microphone is not allowed. A grown-up can turn it on in the browser settings.', 'Micro chưa được cho phép. Người lớn có thể bật trong cài đặt trình duyệt.'); setTimeout(() => pop.remove(), 3500); return; }
   if (!heard) { pop.querySelector('.vc-heard').textContent = T('I did not hear anything. Try again!', 'Tớ chưa nghe thấy gì. Thử lại nhé!'); say('I did not hear anything. Try again!', 'Tớ chưa nghe thấy gì. Thử lại nhé!'); setTimeout(() => pop.remove(), 2000); return; }

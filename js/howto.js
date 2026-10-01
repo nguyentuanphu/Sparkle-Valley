@@ -47,6 +47,36 @@ export const HOWTO = {
       S('1️⃣ 2️⃣ 3️⃣', 'Count every jump with me!', 'Cùng đếm mỗi lần nhảy nhé!')],
     real: S('👧🪢👦 🧒', 'For real: two friends hold the ends of a long rope, and everyone takes turns jumping in.', 'Chơi thật: hai bạn cầm hai đầu sợi dây dài, các bạn khác lần lượt nhảy vào.')
   },
+  datnieu: {
+    origin: S('🇻🇳 🏺', 'Đập niêu is played at Vietnamese village festivals. Clay pots hang up high, and one is full of treats!', 'Đập niêu là trò chơi trong các lễ hội làng ở Việt Nam. Những chiếc niêu đất treo trên cao, một chiếc có đầy quà!'),
+    steps: [S('🙈 🪵', 'You wear a blindfold and hold a stick.', 'Con bị bịt mắt và cầm một cây gậy.'), S('⬅️ 👂 ➡️', 'Listen to your friends shout left or right, and move.', 'Nghe các bạn hô sang trái hay sang phải, rồi di chuyển.'), S('🔨 🏺 💥', 'When they shout HERE, smash the pot!', 'Khi các bạn hô ĐÂY RỒI, đập niêu thôi!')],
+    real: S('🧒🙈🧒', 'For real: hang a paper bag with lollies, spin the player around three times, and everyone helps by shouting!', 'Chơi thật: treo túi giấy đựng kẹo, xoay người chơi ba vòng, và mọi người cùng hô giúp!')
+  },
+  kite: {
+    origin: S('🇻🇳 🪁', 'On windy summer afternoons, children in Vietnam fly kites over the rice fields and on the beach at Vũng Tàu.', 'Những chiều hè lộng gió, trẻ em Việt Nam thả diều trên cánh đồng lúa và bãi biển Vũng Tàu.'),
+    steps: [S('👆 🪁 ⬆️', 'Hold your finger down to pull the string. The kite flies up!', 'Giữ ngón tay để kéo dây. Diều bay lên!'), S('👉 🪁', 'Move your finger to steer the kite.', 'Di ngón tay để lái diều.'), S('⭐ 🐦', 'Catch the stars and dodge the birds.', 'Bắt sao và tránh chim nhé.')]
+  },
+  sackrace: {
+    origin: S('🇻🇳 🇦🇺 🛍️', 'Sack races are a favourite at Vietnamese Tết festivals and at Aussie school sports days.', 'Nhảy bao bố là trò được yêu thích trong ngày Tết ở Việt Nam và ngày hội thể thao ở trường học Úc.'),
+    steps: [S('🛍️ 🧒', 'Stand in a sack and hold it up.', 'Đứng vào bao và giữ chặt miệng bao.'), S('👆 ⤴️', 'Tap Hop each time you land. Not while you are in the air!', 'Chạm Nhảy mỗi lần chạm đất. Đừng chạm lúc còn trên không!'), S('🏁 🏆', 'Hop all the way to the finish line!', 'Nhảy đến tận vạch đích!')]
+  },
+  cricket: {
+    origin: S('🇦🇺 🏏', 'Backyard cricket is played by families all over Australia, especially on summer holidays and at Christmas.', 'Cricket sân sau được các gia đình khắp nước Úc chơi, nhất là vào kỳ nghỉ hè và Giáng sinh.'),
+    steps: [S('🧑 ⚾ ➡️', 'The bowler sends the ball down the pitch.', 'Người ném bóng ném bóng về phía con.'), S('👆 🏏', 'Tap Swing just as the ball reaches your bat.', 'Chạm Vung gậy đúng lúc bóng tới gậy.'), S('4️⃣ 6️⃣', 'A great hit is a four or a six!', 'Cú đánh hay được bốn hoặc sáu điểm!')],
+    real: S('🗑️ 🏏 🎾', 'For real: use a wheelie bin as the wickets and a tennis ball. Everyone gets a turn to bat!', 'Chơi thật: dùng thùng rác làm cọc và bóng tennis. Ai cũng được lượt đánh!')
+  },
+  parcel: {
+    origin: S('🇦🇺 🎁', 'Pass the parcel is played at almost every Aussie kids’ birthday party!', 'Chuyền quà là trò chơi ở gần như mọi bữa tiệc sinh nhật của trẻ em Úc!'),
+    steps: [S('🎵 🎁 ➡️', 'Pass the parcel around while the music plays.', 'Chuyền món quà quanh vòng khi nhạc vang lên.'), S('🔇 🎁', 'When the music stops, whoever holds it rips off a layer.', 'Khi nhạc dừng, ai đang cầm quà thì bóc một lớp giấy.'), S('🏆', 'The last layer has the big prize!', 'Lớp cuối cùng có giải thưởng lớn!')]
+  },
+  chichi: {
+    origin: S('🇻🇳 ✋', 'Chi chi chành chành is a hand game Vietnamese grandparents teach little children, with a funny old rhyme.', 'Chi chi chành chành là trò chơi bằng tay mà ông bà Việt Nam dạy các cháu nhỏ, kèm một bài đồng dao vui nhộn.'),
+    steps: [S('🫴 👆', 'Put your finger in the open hand.', 'Đặt ngón tay vào lòng bàn tay đang mở.'), S('🎵', 'Sing along: Chi chi chành chành, cái đanh thổi lửa...', 'Hát theo: Chi chi chành chành, cái đanh thổi lửa...'), S('✊ 💨', 'At "Ù à ù ập!", pull your finger out before the hand closes!', 'Đến câu "Ù à ù ập!", rút tay ra trước khi bàn tay nắm lại!')]
+  },
+  words: {
+    origin: S('🇦🇺 🇻🇳 🗣️', 'Aussies say "arvo" for afternoon. In Vietnam, a bowl is "bát" in the north, "đọi" in the centre and "chén" in the south!', 'Người Úc nói "arvo" thay cho buổi chiều. Ở Việt Nam, cái bát miền Bắc gọi là "bát", miền Trung là "đọi", miền Nam là "chén"!'),
+    steps: [S('🇦🇺 💬', 'Guess what the Aussie slang means.', 'Đoán xem tiếng lóng Úc nghĩa là gì.'), S('🇻🇳 🥣', 'Pick the word each region of Vietnam uses.', 'Chọn từ mà mỗi miền Việt Nam dùng.')]
+  },
   snap: {
     origin: S('🇦🇺 🃏', 'Snap is a card game every Aussie kid knows. In Vietnam, uncles and aunties love card games on the footpath too!', 'Snap là trò chơi bài mà trẻ em Úc nào cũng biết. Ở Việt Nam, các chú các bác cũng rất thích ngồi đánh bài ngoài vỉa hè!'),
     steps: [S('🃏 👀', 'Cards are turned over one by one. Watch carefully.', 'Các lá bài được lật lần lượt. Nhìn thật kỹ nhé.'),

@@ -1,6 +1,6 @@
 // Screens and pop-ups: title, who's playing, grown-ups settings, photo editor, NPC dialogue,
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
-import { T, applyLang } from './i18n.js';
+import { T, applyLang, nm } from './i18n.js';
 import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, STYLES, OUTFIT_COLORS, HATS, BACKS, HAIR, SKIN, HAIRSTYLES, GLIDERS, farm, resetFarm, MAX_KIDS } from './state.js';
 import { say, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
 import { startRecording, releaseMic, micProblem } from './recorder.js';
@@ -13,9 +13,13 @@ import { SIZE, HALF, SHRINES, TOWERS } from './world.js';
 import { GAMES } from './games/frame.js';
 import { showStory, storyList } from './story.js';
 import { SECRETS } from './secrets.js';
+import { LANDMARKS, VENDORS } from './regions.js';
+import { AUSSIE_SLANG, VN_WORDS } from './words.js';
 import { openCredits, creditsFields, bindCreditsFields } from './credits.js';
 import { openHowTo } from './howto.js';
 import { extrasHTML, bindExtras } from './extras.js';
+import { canListen } from './listen.js';
+import { VOICE_STYLES, clipCountFor, hush } from './voice.js';
 
 export const STYLE_ICON = { dress: '👗', shirt: '👕', aodai: '🥻', tunic: '🧥', overalls: '👖', hoodie: '🧶' };
 export const STYLE_NAME = { dress: () => T('Dress', 'Váy'), shirt: () => T('Shirt & shorts', 'Áo và quần đùi'), aodai: () => 'Áo dài', tunic: () => T('Explorer', 'Nhà thám hiểm'), overalls: () => T('Overalls', 'Quần yếm'), hoodie: () => T('Hoodie', 'Áo nỉ') };
@@ -106,7 +110,8 @@ export function openGrownups(after) {
       <div class="field"><label>Tiếng Việt</label><div class="vrow"><select id="vVi">${vVi.map(v => `<option ${v.name === settings.voiceVi ? 'selected' : ''}>${esc(v.name)}</option>`).join('') || `<option>${T('No Vietnamese voice found', 'Chưa có giọng tiếng Việt')}</option>`}</select><button class="btn" data-try="vi">▶</button></div></div>
       <p class="note">${hasVietnamese() ? '' : T('To add a Vietnamese voice: iPhone/iPad → Settings → Accessibility → Spoken Content → Voices → Vietnamese. Android → Settings → Text-to-speech → Google → Install voice data → Vietnamese. ', 'Thêm giọng tiếng Việt: iPhone/iPad → Cài đặt → Trợ năng → Nội dung được đọc → Giọng nói → Tiếng Việt. Android → Cài đặt → Chuyển văn bản thành giọng nói → Google → Cài đặt dữ liệu giọng nói → Tiếng Việt. ')}${T('Choose an "Enhanced" or "Premium" voice for the most natural sound.', 'Chọn giọng "Nâng cao" hoặc "Cao cấp" để nghe tự nhiên nhất.')}</p>
       <h3>${T('Family voice', 'Giọng của gia đình')}</h3>
-      <button class="btn primary wide big" id="gRec">🎙️ ${T('Record your voice for the game', 'Thu giọng của bạn cho trò chơi')} (${clipCount()}/${FAMILY_PHRASES.length * 2})</button>
+      <button class="btn primary wide big" id="gRec">🎙️ ${T('Record your voice for the game', 'Thu giọng của bạn cho trò chơi')}<small class="reccount">🇻🇳 ${clipCountFor('vi')}/${FAMILY_PHRASES.length} · 🇦🇺 ${clipCountFor('en')}/${FAMILY_PHRASES.length}</small></button>
+      <p class="note">${T('Each language has its own 11 lines. The game plays your real voice whenever it says one of those lines (praise, “try again”, “you did it”, hello…), in the language the game is set to. Everything else is read by the device voice, tuned towards your voice.', 'Mỗi ngôn ngữ có 11 câu riêng. Trò chơi phát đúng giọng thật của bạn mỗi khi nói một trong các câu đó (khen, “thử lại nhé”, “con làm được rồi”, chào…), theo ngôn ngữ đang chọn. Các câu khác do giọng máy đọc, được chỉnh gần với giọng bạn.')}</p>
       ${extrasHTML()}
       <h3>${T('Sound and world', 'Âm thanh và thế giới')}</h3>
       <div class="toggles">
@@ -152,6 +157,40 @@ export function openGrownups(after) {
   };
   draw();
   onVoices(() => { if (document.body.contains(m)) draw(); });
+}
+
+// ---------- Quick settings: tap your picture in the corner ----------
+export function openQuick(game, i) {
+  const m = modal('qsettings', ''), card = m.querySelector('.card');
+  const close = () => { m.close(); game.paused = false; game.huds.forEach(h => h.refreshAudio()); };
+  const draw = () => {
+    const s = settings, on = v => v ? 'on' : '';
+    card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>⚙️ ${T('Settings', 'Cài đặt')}</h2>
+      ${flagBtns()}
+      <div class="qgrid">
+        <button class="qset ${on(s.music)}" data-k="music"><span>🎵</span>${T('Music', 'Nhạc')}</button>
+        <button class="qset ${on(s.sound)}" data-k="sound"><span>🔔</span>${T('Sounds', 'Âm thanh')}</button>
+        <button class="qset ${on(s.voice)}" data-k="voice"><span>🗣️</span>${T('Talking', 'Giọng nói')}</button>
+        ${canListen() ? `<button class="qset ${on(s.voiceControl)}" data-k="voiceControl"><span>🎤</span>${T('Voice control', 'Điều khiển giọng nói')}</button>` : ''}
+        <button class="qset ${on(s.camMode !== 'free')}" data-k="cam"><span>${s.camMode === 'free' ? '🧭' : '🧸'}</span>${s.camMode === 'free' ? T('Explorer camera', 'Camera tự do') : T('Easy camera', 'Camera dễ')}</button>
+        <button class="qset ${on(s.alwaysDay)}" data-k="alwaysDay"><span>☀️</span>${T('Always daytime', 'Luôn ban ngày')}</button>
+      </div>
+      <div class="field"><label>${T('Voice style', 'Kiểu giọng')}</label><div class="seg vstyle">${VOICE_STYLES.map(v => `<button data-v="${v.id}" class="${(s.voiceStyle || 'natural') === v.id ? 'on' : ''}">${v.icon} ${v.name()}</button>`).join('')}</div></div>
+      <div class="actions"><button class="btn" id="qWho">👫 ${T('Change player', 'Đổi người chơi')}</button><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
+    bindLang(card, draw);
+    card.querySelector('.x').onclick = card.querySelector('#qDone').onclick = close;
+    card.querySelectorAll('.qset').forEach(b => b.onclick = () => {
+      const k = b.dataset.k; SFX.tap();
+      if (k === 'cam') s.camMode = s.camMode === 'free' ? 'easy' : 'free';
+      else s[k] = !s[k];
+      if (k === 'music') { if (s.music) Music.refresh(); else Music.stop(); }
+      if (k === 'voice' && !s.voice) hush();
+      saveSettings(); document.querySelectorAll('.dk.voicecmd').forEach(x => x.hidden = !(s.voiceControl && canListen())); draw();
+    });
+    card.querySelectorAll('.seg.vstyle button').forEach(b => b.onclick = () => { s.voiceStyle = b.dataset.v; saveSettings(); draw(); say('Hello! Do you like my voice?', 'Xin chào! Con có thích giọng này không?'); });
+    card.querySelector('#qWho').onclick = () => { m.close(); game.changePlayer(); };
+  };
+  draw();
 }
 
 // ---------- Player editor with photo cropping ----------
@@ -248,7 +287,7 @@ export function openEditor(profile, after) {
 export const dialogHooks = {};
 export function dialog(name, lines, choices) {
   return new Promise(res => {
-    const d = el('div', 'dialog', `<div class="dname">${esc(name)}</div><div class="dtext"></div><div class="dchoices"></div><div class="dnext">▼</div>`);
+    const d = el('div', 'dialog', `<div class="dname">${esc(nm(name))}</div><div class="dtext"></div><div class="dchoices"></div><div class="dnext">▼</div>`);
     if (dialogHooks.canChat && dialogHooks.canChat(name)) {
       const ask = el('button', 'dask', '💬 ' + T('Chat', 'Trò chuyện')); d.appendChild(ask);
       ask.onclick = e => { e.stopPropagation(); SFX.tap(); close(-1); dialogHooks.chat(name); };
@@ -348,12 +387,18 @@ export function openPad(game, i, tab) {
   }
   function drawAlbum(body) {
     const sec = p.secrets || {};
-    body.innerHTML = `<h3>🤫 ${T('Secrets', 'Bí mật')} ${Object.keys(sec).length}/${SECRETS.length}</h3><div class="secrets">${SECRETS.map(s => sec[s.id] ? `<div class="sec on"><span>${s.icon}</span><small>${esc(s.name())}</small></div>` : `<button class="sec" data-hint="${esc(s.hint())}"><span>❔</span><small>${T('Tap for a clue', 'Chạm để nghe gợi ý')}</small></button>`).join('')}</div>
+    const pcs = p.postcards || {}, tasted = p.tasted || {}, words = Object.keys(p.words || {});
+    body.innerHTML = `<h3>📮 ${T('Postcards', 'Bưu thiếp')} ${Object.keys(pcs).length}/${LANDMARKS.length}</h3><div class="secrets">${LANDMARKS.map(l => pcs[l.id] ? `<button class="sec on" data-pcfact="${l.id}"><span>${l.icon}</span><small>${esc(l.name())}</small></button>` : `<button class="sec" data-fly="${l.id}"><span>❔</span><small>✈️ ${esc(l.name())}</small></button>`).join('')}</div>
+      <h3>🍜 ${T('Food passport', 'Hộ chiếu ẩm thực')} ${Object.keys(tasted).length}/${VENDORS.length}</h3><div class="secrets">${VENDORS.map(v => `<div class="sec ${tasted[v.id] ? 'on' : ''}"><span>${tasted[v.id] ? v.food[0] : '❔'}</span><small>${tasted[v.id] ? esc(T(v.food[1], v.food[2])) : esc(v.name)}</small></div>`).join('')}</div>
+      <h3>🗣️ ${T('Words I learned', 'Từ con đã học')} ${words.length}</h3><div class="wordlist">${words.map(k => { const [kind, w] = [k.slice(0, 2), k.slice(3)]; if (kind === 'au') { const s = AUSSIE_SLANG.find(x => x[0] === w); return s ? `<span>🇦🇺 <b>${esc(s[0])}</b> = ${esc(T(s[1], s[2]))}</span>` : ''; } const v = VN_WORDS.find(x => x[1] === w); return v ? `<span>🇻🇳 ${v[0]} Bắc <b>${esc(v[2])}</b> · Trung <b>${esc(v[3])}</b> · Nam <b>${esc(v[4])}</b></span>` : ''; }).join('') || `<p class="note">${T('Ask the market sellers and the Aussie shopkeepers to teach you a word!', 'Hỏi các cô chú bán hàng ở chợ và ở Góc Nước Úc để học từ mới nhé!')}</p>`}</div>
+      <h3>🤫 ${T('Secrets', 'Bí mật')} ${Object.keys(sec).length}/${SECRETS.length}</h3><div class="secrets">${SECRETS.map(s => sec[s.id] ? `<div class="sec on"><span>${s.icon}</span><small>${esc(s.name())}</small></div>` : `<button class="sec" data-hint="${esc(s.hint())}"><span>❔</span><small>${T('Tap for a clue', 'Chạm để nghe gợi ý')}</small></button>`).join('')}</div>
       <h3>📖 ${T('Storybook', 'Sách truyện')}</h3><div class="stories">${storyList(p).map((st, k) => `<button class="qbtn" data-st="${k}"><span>📖</span><small>${esc(st.title())}</small></button>`).join('')}</div>
       <h3>${T('Stickers', 'Hình dán')} ${p.stickers.length}/${STICKERS.length}</h3><div class="stickers">${STICKERS.map(s => `<div class="${p.stickers.includes(s) ? '' : 'miss'}">${p.stickers.includes(s) ? s : '?'}</div>`).join('')}</div>
       <h3>${T('Photos', 'Ảnh chụp')}</h3><div class="photos">${p.album.map((src, k) => `<figure><img src="${src}" alt=""><button class="btn" data-dl="${k}">⬇</button></figure>`).join('') || `<p class="note">${T('Use the Camera tab to take pictures of your adventure!', 'Dùng thẻ Máy ảnh để chụp ảnh chuyến phiêu lưu!')}</p>`}</div>`;
     body.querySelectorAll('[data-hint]').forEach(b => b.onclick = () => { say(b.dataset.hint, b.dataset.hint); toast(b.dataset.hint); });
     body.querySelectorAll('[data-st]').forEach(b => b.onclick = () => showStory(storyList(p)[+b.dataset.st], p.name));
+    body.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { const l = LANDMARKS.find(x => x.id === b.dataset.fly); close(); game.travel(hero, l.x, l.z + (l.id === 'uluru' ? -4 : 3)); });
+    body.querySelectorAll('[data-pcfact]').forEach(b => b.onclick = () => { const l = LANDMARKS.find(x => x.id === b.dataset.pcfact); say(l.fact[0], l.fact[1]); toast(T(l.fact[0], l.fact[1])); });
     body.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => { const a = document.createElement('a'); a.href = p.album[+b.dataset.dl]; a.download = 'sparkle-valley-photo.jpg'; a.click(); });
   }
   function drawGames(body) {
@@ -497,7 +542,7 @@ export function openRecorder(after) {
         </div>
       </div>
       <div class="recdots">${FAMILY_PHRASES.map((p, k) => `<button class="${hasClip(L(), p.id) ? 'has' : ''} ${k === idx ? 'on' : ''}" data-k="${k}" aria-label="${k + 1}">${k + 1}</button>`).join('')}</div>
-      <p class="note">${done}/${FAMILY_PHRASES.length} ${T('recorded', 'câu đã thu')}${settings.familyPitch ? ' · ' + T('device voice tuned to your pitch', 'giọng máy đã chỉnh theo cao độ của bạn') : ''}</p>
+      <p class="note">${L() === 'vi' ? '🇻🇳 Tiếng Việt' : '🇦🇺 English'}: ${done}/${FAMILY_PHRASES.length} ${T('recorded', 'câu đã thu')} · ${L() === 'vi' ? '🇦🇺 English' : '🇻🇳 Tiếng Việt'}: ${clipCountFor(L() === 'vi' ? 'en' : 'vi')}/${FAMILY_PHRASES.length}${settings.familyPitch ? ' · ' + T('device voice tuned to your pitch', 'giọng máy đã chỉnh theo cao độ của bạn') : ''}</p>
       <label class="tog"><input type="checkbox" id="rUse" ${settings.familyVoice ? 'checked' : ''}> ${T('Use my recordings in the game', 'Dùng giọng thu của tôi trong trò chơi')}</label>
       <p class="note">${T('Recordings stay on this device and are never uploaded. Lines you have not recorded are read by the device voice, tuned to sound closer to yours.', 'Bản thu chỉ lưu trên máy này và không bao giờ được tải lên. Những câu chưa thu sẽ do giọng của máy đọc, được chỉnh cho gần với giọng bạn.')}</p>`;
     card.querySelector('.x').onclick = close;
@@ -535,7 +580,7 @@ export function openRecorder(after) {
 
 // ---------- Games hub ----------
 const HUB = [
-  { key: 'folk', icon: '🪁', title: () => T('Folk games of Australia & Vietnam', 'Trò chơi dân gian Úc và Việt Nam'), games: ['mrwolf', 'chuyen', 'dragon', 'marbles', 'skipping', 'dacau', 'snap', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
+  { key: 'folk', icon: '🪁', title: () => T('Folk games of Australia & Vietnam', 'Trò chơi dân gian Úc và Việt Nam'), games: ['words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
   { key: 'farm', icon: '🏡', title: () => T('At the farm', 'Ở nông trại'), games: ['bunny', 'balloon', 'bubbles', 'jigsaw', 'tower', 'order', 'sortout', 'duckmaze'] },
   { key: 'village', icon: '🏮', title: () => T('In Lotus Village', 'Ở Làng Sen'), games: ['market', 'tune', 'shapes', 'oddone', 'memory'] },
   { key: 'shrine', icon: '✨', title: () => T('Puzzle shrines', 'Đền đố vui'), games: ['pattern', 'counting', 'letters', 'numbers', 'colors', 'sorting', 'hanoi', 'robot', 'maze'] }

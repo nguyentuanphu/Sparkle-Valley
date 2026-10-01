@@ -2,7 +2,7 @@
 import { THREE, sprite } from './gfx.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';
-import { T } from './i18n.js';
+import { T, nm, onLang } from './i18n.js';
 import { say, hush, loadClips } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt } from './money.js';
@@ -24,13 +24,15 @@ import './games/vietnam.js';
 import './games/market.js';
 import './games/farmgames.js';
 import './games/folk.js';
+import './games/folk2.js';
 import { openHowTo } from './howto.js';
 import { createFarm, jobProgress, ensureJobs } from './farm.js';
 import { createPlaces } from './places.js';
 import { createTown } from './town.js';
+import { createRegions, LANDMARKS } from './regions.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
-import { openWardrobe, openGamesHub } from './ui.js';
+import { openWardrobe, openGamesHub, openQuick } from './ui.js';
 
 // ---------- renderer & world ----------
 const quality = settings.quality === 'auto' ? ((navigator.hardwareConcurrency || 4) <= 4 || Math.min(screen.width, screen.height) < 500 ? 'low' : 'mid') : settings.quality;
@@ -59,12 +61,18 @@ window.__sv = G; // handy for debugging in the browser console
 // ---------- people of the valley ----------
 const NPCS = [];
 G.npcs = NPCS;
-function nameTag(text, color = '#ffffff') {
+function nameTag(name, color = '#ffffff') {
   const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d');
-  x.font = 'bold 34px Fredoka, "Baloo 2", sans-serif'; const w = Math.min(250, x.measureText(text).width + 30);
-  x.fillStyle = 'rgba(15,30,35,.72)'; x.beginPath(); x.roundRect((256 - w) / 2, 8, w, 48, 24); x.fill();
-  x.fillStyle = color; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, 128, 33);
+  // drawn in the chosen language, and redrawn when it changes ("Ông Cú" is "Grandpa Owl" in English)
+  const draw = () => {
+    const text = nm(name); x.clearRect(0, 0, 256, 64);
+    x.font = 'bold 34px Fredoka, "Baloo 2", sans-serif'; const w = Math.min(250, x.measureText(text).width + 30);
+    x.fillStyle = 'rgba(15,30,35,.72)'; x.beginPath(); x.roundRect((256 - w) / 2, 8, w, 48, 24); x.fill();
+    x.fillStyle = color; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, 128, 33, 240);
+  };
+  draw();
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  onLang(() => { draw(); t.needsUpdate = true; });
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, depthTest: false })); s.scale.set(3, .75, 1); s.renderOrder = 5;
   return s;
 }
@@ -76,7 +84,7 @@ function addNPC({ id, name, look, model, x, z, face = 0, icon = '💬', talk }) 
   const n = { id, name, x, z, obj, tag, avatar: av, talk };
   NPCS.push(n);
   world.colliders.push({ x, z, r: .7 });
-  G.interactables.push({ id: 'npc_' + id, x, z, r: 3, icon, label: () => T('Talk to ', 'Nói chuyện với ') + name, act: h => talk(h) });
+  G.interactables.push({ id: 'npc_' + id, x, z, r: 3, icon, label: () => T('Talk to ', 'Nói chuyện với ') + nm(name), act: h => talk(h) });
   return n;
 }
 const V = VILLAGE;
@@ -148,6 +156,7 @@ function setupBubbles() {
     const label = (it.short ? it.short() : it.label ? it.label() : '').replace(/^(Talk to |Nói chuyện với |Enter shrine: |Vào đền: )/, '');
     const s = new THREE.Sprite(mat(it.bubble, label.length > 22 ? label.slice(0, 21) + '…' : label)); s.scale.set(3.2, 2, 1); const y = heightAt(it.x, it.z) + 3.6; s.position.set(it.x, y, it.z); s.userData.it = it; scene.add(s);
     world.updaters.push((dt, t) => { s.position.y = y + Math.sin(t * 2 + k) * .15; const near = G.heroes.some(h => dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r); s.material.opacity = near ? .45 : 1; });
+    onLang(() => { const l = (it.short ? it.short() : it.label ? it.label() : '').replace(/^(Talk to |Nói chuyện với |Enter shrine: |Vào đền: )/, ''); s.material = mat(it.bubble, l.length > 22 ? l.slice(0, 21) + '…' : l); });
     return s;
   });
 }
@@ -184,24 +193,30 @@ function setupGuides() {
 }
 // Labels floating over whole areas so they are easy to recognise from far away.
 function setupAreaSigns() {
-  const sign = (text, icon, x, z, h = 9) => {
+  const sign = (en, vi, icon, x, z, h = 9) => {
     const c = document.createElement('canvas'); c.width = 640; c.height = 160; const g = c.getContext('2d');
-    g.font = 'bold 64px Fredoka, "Baloo 2", sans-serif'; const w = Math.min(630, g.measureText(text).width + 150);
-    g.fillStyle = 'rgba(255,255,255,.95)'; g.beginPath(); g.roundRect(320 - w / 2, 20, w, 120, 60); g.fill(); g.strokeStyle = '#ff7eb8'; g.lineWidth = 8; g.stroke();
-    g.font = '70px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(icon, 320 - w / 2 + 26, 84);
-    g.font = 'bold 60px Fredoka, "Baloo 2", sans-serif'; g.fillStyle = '#4a2a5a'; g.textAlign = 'center'; g.fillText(text, 320 + 40, 84, w - 120);
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    const draw = () => {
+      const text = T(en, vi); g.clearRect(0, 0, 640, 160);
+      g.font = 'bold 64px Fredoka, "Baloo 2", sans-serif'; const w = Math.min(630, g.measureText(text).width + 150);
+      g.fillStyle = 'rgba(255,255,255,.95)'; g.beginPath(); g.roundRect(320 - w / 2, 20, w, 120, 60); g.fill(); g.strokeStyle = '#ff7eb8'; g.lineWidth = 8; g.stroke();
+      g.font = '70px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; g.fillStyle = '#000'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(icon, 320 - w / 2 + 26, 84);
+      g.font = 'bold 60px Fredoka, "Baloo 2", sans-serif'; g.fillStyle = '#4a2a5a'; g.textAlign = 'center'; g.fillText(text, 320 + 40, 84, w - 120);
+    };
+    draw();
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; onLang(() => { draw(); t.needsUpdate = true; });
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, fog: false })); s.scale.set(16, 4, 1); s.position.set(x, heightAt(x, z) + h, z); scene.add(s);
     // fade out when you are close (so it never blocks the view), fade in from further away
     world.updaters.push(() => { const d = Math.min(...G.heroes.map(o => dist2(o.pos.x, o.pos.z, x, z)), 1e9); s.material.opacity = clamp((d - 22) / 18, 0, 1); s.visible = s.material.opacity > .02; });
   };
-  sign(T('Lotus Village', 'Làng Sen'), '🏮', VILLAGE.x, VILLAGE.z - 4, 14);
-  sign(T('Sunny Farm', 'Nông Trại'), '🏡', HOME.x, HOME.z, 13);
-  sign(T('Dawn Plateau', 'Cao Nguyên'), '🦉', 0, 4, 12);
-  sign(T('Mirror Lake', 'Hồ Gương'), '🌊', 55, 125, 8);
-  sign(T('Bamboo Forest', 'Rừng Tre'), '🎋', -100, 85, 16);
-  sign(T('Rice Fields', 'Đồng Lúa'), '🌾', 112, -38, 8);
-  sign(T('Two Homes Street', 'Phố Hai Quê'), '🏘️', 28, 47, 12);
+  sign('Lotus Village', 'Làng Sen', '🏮', VILLAGE.x, VILLAGE.z - 4, 14);
+  sign('Sunny Farm', 'Nông Trại', '🏡', HOME.x, HOME.z, 13);
+  sign('Dawn Plateau', 'Cao Nguyên', '🦉', 0, 4, 12);
+  sign('Mirror Lake', 'Hồ Gương', '🌊', 55, 125, 8);
+  sign('Bamboo Forest', 'Rừng Tre', '🎋', -100, 85, 16);
+  sign('Rice Fields', 'Đồng Lúa', '🌾', 112, -38, 8);
+  sign('Two Homes Street', 'Phố Hai Quê', '🏘️', 28, 47, 12);
+  sign('Three Regions Market', 'Chợ Ba Miền', '🏮', 121, 83, 12);
+  sign('Aussie Corner', 'Góc Nước Úc', '🍦', -117, -12, 12);
 }
 function nearest(h) {
   let best = null, bd = 1e9;
@@ -288,7 +303,7 @@ async function owlTalk(h) {
   if (!p.quests.owl) {
     await dialog('Ông Cú', [
       [`Hoo hoo! Good morning, ${p.name}! Welcome to Sparkle Valley.`, `Hú hú! Chào buổi sáng, ${p.name}! Chào mừng con đến Thung Lũng Lấp Lánh.`],
-      ['I am Ông Cú, the wise old owl. This valley is full of puzzles, friends and secrets.', 'Ông là Ông Cú, chú cú già thông thái. Thung lũng này có rất nhiều câu đố, bạn bè và bí mật.'],
+      ['I am Ông Cú, the wisest bird in the valley. This valley is full of puzzles, friends and secrets.', 'Ông là Ông Cú, chú cú già thông thái. Thung lũng này có rất nhiều câu đố, bạn bè và bí mật.'],
       ['See that tall tower glowing orange? Climb it, and your map will light up!', 'Con thấy cái tháp cao màu cam kia không? Leo lên đó, bản đồ của con sẽ sáng lên!'],
       ['Then solve the three shrines here on the plateau, and I will give you a special present.', 'Sau đó giải ba ngôi đền trên cao nguyên này, ông sẽ tặng con một món quà đặc biệt.']
     ]);
@@ -331,6 +346,7 @@ async function kidTalk(h, game, name, line) {
   if (k === 1) { G.paused = true; openHowTo(game, { onPlay: () => { G.paused = false; playGame(h.i, game, 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
 }
 // ---------- Two Homes Street: talking to the neighbours ----------
+G.kidTalk = (h, game, name, line) => kidTalk(h, game, name, line);
 G.townTalk = async (h, who) => {
   if (who === 'sau') {
     const k = await dialog('Cô Sáu', [['Nước mía đây! Fresh sugarcane juice, cold and sweet. A glass gives you lots of energy!', 'Nước mía đây con! Mát lạnh, ngọt lịm. Uống một ly là khỏe re!']],
@@ -364,9 +380,10 @@ dialogHooks.chat = name => {
   if (h) G.chatWith(h.i, pid);
 };
 // ---------- the Games hub: every game, by place, playable straight away ----------
-const GAME_SPOT = { snap: 'cards', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
+const GAME_SPOT = { datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
   tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
 G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (SHRINES.find(s => s.game === id) || {}).id));
+G.openQuick = i => { if (G.paused) return; G.paused = true; openQuick(G, i); };
 G.openGamesHub = i => { if (G.paused) return; G.paused = true; openGamesHub(G, i, () => { G.paused = false; }); };
 G.goToGame = (i, id) => { const h = G.heroes[i], it = G.gameSpot(id); if (!h || !it) return; (async () => { if (dist2(h.pos.x, h.pos.z, it.x, it.z) > 45) await G.travel(h, it.x - 1.5, it.z + 2); goAndDo(h, it); })(); };
 // ---------- objective helpers ----------
@@ -432,6 +449,9 @@ function questTarget(h) {
     case 'pot': return near(world.pots);
     case 'kids': return NPCS.find(n => n.id === 'teo');
     case 'playground': return NPCS.find(n => n.id === 'jack');
+    case 'market': return { x: 99, z: 83 };
+    case 'aussie': return { x: -121, z: -12 };
+    case 'postcard': return near(LANDMARKS.filter(l => !(p.postcards || {})[l.id]).map(l => ({ x: l.x, z: l.z + 2 })));
     case 'buffalo': return near(world.buffalo.map(b => ({ x: b.mesh.position.x, z: b.mesh.position.z })));
     case 'leafy': return near(LEAFIES.filter(l => !p.leafies[l.id]));
     case 'statue': return p.orbs >= 4 ? world.statue : near(SHRINES.filter(s => !p.shrines[s.id] && p.discovered[s.id])) || world.statue;
@@ -528,6 +548,10 @@ G.PLACES = [
   { icon: '💃', name: () => T('Dance stage', 'Sân khấu'), x: VILLAGE.x - 6, z: VILLAGE.z + 25 },
   { icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: 28, z: 52 },
   { icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: 6, z: 140 },
+  { icon: '🏮', name: () => T('Three Regions Market', 'Chợ Ba Miền'), x: 99, z: 83 },
+  { icon: '🍦', name: () => T('Aussie Corner', 'Góc Nước Úc'), x: -121, z: -12 },
+  { icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: 24, z: 160 },
+  { icon: '🪨', name: () => T('Uluru', 'Uluru'), x: -128, z: 132 },
   { icon: '🐻', name: () => T('Mr. Bear', 'Bác Gấu'), x: HOME.x - 21, z: HOME.z + 6 }
 ];
 G.changePlayer = () => {
@@ -650,6 +674,12 @@ function resize() {
   if (G.heroes.length > 1) { const v = innerWidth >= innerHeight; Object.assign(sp.style, v ? { left: innerWidth / 2 - 2 + 'px', top: 0, width: '4px', height: '100%' } : { top: innerHeight / 2 - 2 + 'px', left: 0, height: '4px', width: '100%' }); }
 }
 addEventListener('resize', resize);
+// Phones (especially iPhone home-screen apps) sometimes report the wrong size after rotating or after the
+// keyboard closes, leaving part of the screen empty. Check often and fix the size whenever it drifts.
+addEventListener('orientationchange', () => setTimeout(resize, 300));
+if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(resize, 100));
+addEventListener('focusout', () => setTimeout(() => { window.scrollTo(0, 0); resize(); }, 150));
+setInterval(() => { const c = renderer.domElement; if (Math.abs(c.clientWidth - innerWidth) > 2 || Math.abs(c.clientHeight - innerHeight) > 2) resize(); }, 700);
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 function onTap(i, x, y) {
   const h = G.heroes[i]; if (!h || G.paused) return;
@@ -786,6 +816,8 @@ setupNPCs(); setupInteractables();
 G.farm = createFarm(G); world.updaters.push(G.farm.update);
 G.places = createPlaces(G); world.updaters.push(G.places.update);
 G.town = createTown(G);
+G.GAMES_ICON = id => (GAMES[id] || {}).icon || "🎮";
+createRegions(G);
 G.secrets = createSecrets(G);
 ensureJobs();
 setupBubbles(); setupAreaSigns(); setupGuides();

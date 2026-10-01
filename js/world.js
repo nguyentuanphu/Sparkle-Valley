@@ -14,8 +14,11 @@ export const BAMBOO = { x: -100, z: 85, r: 48 };
 export const HOME = { x: -26, z: 126, r: 30, h: 4 };   // Sunny Farm: house, field, barn and Mr. Bear's market
 export const PLAYGROUND = { x: 28, z: 62, r: 13, h: 7.2 };   // the park on Two Homes Street, where kids from Australia and Vietnam play
 export const TOWN = { x0: 12, x1: 52, z0: 32, z1: 74, h: 7.2, roadZ: 47 };   // Two Homes Street: Bà Rịa meets a Sydney suburb
+export const MARKET = { x0: 96, x1: 146, z0: 70, z1: 96, h: 4, roadZ: 83 };    // Chợ Ba Miền: the Three Regions market (north, central, south Vietnam)
+export const AUSSIE = { x0: -144, x1: -90, z0: -40, z1: 16, h: 4.5, roadZ: -12 }; // Aussie Corner: milk bar, fish and chips, ice-cream van, playground
+const FLATS = [TOWN, MARKET, AUSSIE];
 const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [58, 40], [52, 85]];
-export const BRIDGE = { x0: 44, x1: 72, z: 30, w: 4.2 };
+export const BRIDGE = { x0: 44, x1: 74, z: 47, w: 6.4, h: 7.4 };   // the Harbour-style bridge carrying Two Homes Street over the river
 
 function riverDist(x, z) {
   let best = 1e9;
@@ -51,13 +54,15 @@ export function heightAt(x, z) {
   const dl = dist2(x, z, LAKE.x, LAKE.z);
   h = lerp(h, -7, 1 - smooth(LAKE.r * .55, LAKE.r, dl));
   h = lerp(h, Math.min(h, 1.2), 1 - smooth(LAKE.r, LAKE.r + 14, dl));
-  { const ox = Math.max(TOWN.x0 - x, 0, x - TOWN.x1), oz = Math.max(TOWN.z0 - z, 0, z - TOWN.z1); h = lerp(h, TOWN.h, 1 - smooth(0, 12, Math.hypot(ox, oz))); }
+  for (const F of FLATS) { const ox = Math.max(F.x0 - x, 0, x - F.x1), oz = Math.max(F.z0 - z, 0, z - F.z1); if (ox < 12 && oz < 12) h = lerp(h, F.h, 1 - smooth(0, 12, Math.hypot(ox, oz))); }
   const dr = riverDist(x, z);
   h = lerp(h, -2.6 - mtn * 2, 1 - smooth(3.5, 11, dr));
   // Raised banks either side of the bridge.
-  if (Math.abs(z - BRIDGE.z) < 7 && x > BRIDGE.x0 - 10 && x < BRIDGE.x1 + 10) {
-    const w = (1 - smooth(4, 7, Math.abs(z - BRIDGE.z))) * (1 - smooth(BRIDGE.x0 - 4, BRIDGE.x0 + 6, x) + smooth(BRIDGE.x1 - 6, BRIDGE.x1 + 4, x));
-    h = lerp(h, 3.2, clamp(w, 0, 1));
+  if (Math.abs(z - BRIDGE.z) < 8 && x > BRIDGE.x0 - 10 && x < BRIDGE.x1 + 16) {
+    // level ground at deck height at both ends, easing back to the natural hills further away; the river in the middle is left alone
+    const west = smooth(BRIDGE.x0 + 8, BRIDGE.x0 + 3, x), east = smooth(BRIDGE.x1 - 8, BRIDGE.x1 - 3, x) * (1 - smooth(BRIDGE.x1 + 4, BRIDGE.x1 + 16, x));
+    const w = (1 - smooth(4, 8, Math.abs(z - BRIDGE.z))) * (west + east);
+    h = lerp(h, BRIDGE.h - .2, clamp(w, 0, 1));
   }
   return h;
 }
@@ -68,6 +73,8 @@ export function regionAt(x, z) {
   if (dist2(x, z, HOME.x, HOME.z) < HOME.r + 6) return 'home';
   if (dist2(x, z, PADDIES.x, PADDIES.z) < PADDIES.r + 8) return 'paddies';
   if (x > TOWN.x0 - 3 && x < TOWN.x1 + 3 && z > TOWN.z0 - 3 && z < TOWN.z1 + 3) return 'town';
+  if (x > MARKET.x0 - 3 && x < MARKET.x1 + 3 && z > MARKET.z0 - 3 && z < MARKET.z1 + 3) return 'market';
+  if (x > AUSSIE.x0 - 3 && x < AUSSIE.x1 + 3 && z > AUSSIE.z0 - 3 && z < AUSSIE.z1 + 3) return 'aussie';
   if (dist2(x, z, LAKE.x, LAKE.z) < LAKE.r + 12) return 'lake';
   if (dist2(x, z, BAMBOO.x, BAMBOO.z) < BAMBOO.r + 6) return 'bamboo';
   if (z < -75) return 'mountain';
@@ -77,6 +84,8 @@ export const REGION_NAMES = {
   plateau: () => T('Dawn Plateau', 'Cao Nguyên Bình Minh'),
   village: () => T('Lotus Village', 'Làng Sen'),
   town: () => T('Two Homes Street', 'Phố Hai Quê'),
+  market: () => T('Three Regions Market', 'Chợ Ba Miền'),
+  aussie: () => T('Aussie Corner', 'Góc Nước Úc'),
   home: () => T('Sunny Farm', 'Nông Trại Nắng Mai'),
   paddies: () => T('Golden Rice Fields', 'Cánh Đồng Lúa Vàng'),
   lake: () => T('Mirror Lake', 'Hồ Gương'),
@@ -110,7 +119,7 @@ export const TOWER_H = 26, REVEAL_R = 130;
 const LEAFY_SPOTS = [
   ['rock', -24, 8], ['sparkle', 0, -28], ['rock', 26, 18], ['sparkle', -40, -30], ['rock', -78, 30], ['sparkle', -120, 120], ['rock', -92, 112],
   ['sparkle', 55, 125], ['rock', 30, 150], ['sparkle', 140, 140], ['rock', 150, 10], ['sparkle', 112, 30], ['rock', 120, -70], ['sparkle', 80, -80],
-  ['rock', -10, -150], ['sparkle', -60, -140], ['rock', 50, -150], ['sparkle', -140, -20], ['rock', -150, 40], ['sparkle', 0, 60], ['rock', 70, 60],
+  ['rock', -10, -150], ['sparkle', -60, -140], ['rock', 50, -150], ['sparkle', -150, -32], ['rock', -150, 40], ['sparkle', 0, 60], ['rock', 70, 60],
   ['sparkle', -62, 152], ['rock', 170, -120], ['sparkle', 95, -15]
 ];
 export const LEAFIES = LEAFY_SPOTS.map(([kind, x, z], i) => ({ id: 'lf' + i, kind, x, z }));
@@ -248,7 +257,7 @@ export function createWorld(scene, quality) {
   };
   const spots = { round: [], apple: [], pine: [], snowpine: [], bamboo: [], palm: [], bush: [], rock: [] };
   const appleTrees = [];
-  const nearPOI = (x, z) => (x > TOWN.x0 - 4 && x < TOWN.x1 + 4 && z > TOWN.z0 - 4 && z < TOWN.z1 + 4) || SHRINES.some(s => dist2(x, z, s.x, s.z) < 9) || TOWERS.some(s => dist2(x, z, s.x, s.z) < 10) || LEAFIES.some(s => dist2(x, z, s.x, s.z) < 3);
+  const nearPOI = (x, z) => FLATS.some(F => x > F.x0 - 4 && x < F.x1 + 4 && z > F.z0 - 4 && z < F.z1 + 4) || dist2(x, z, -128, 150) < 34 || dist2(x, z, 24, 170) < 14 || SHRINES.some(s => dist2(x, z, s.x, s.z) < 9) || TOWERS.some(s => dist2(x, z, s.x, s.z) < 10) || LEAFIES.some(s => dist2(x, z, s.x, s.z) < 3);
   for (let i = 0; i < 9000; i++) {
     const x = (rnd() - .5) * (SIZE - 30), z = (rnd() - .5) * (SIZE - 30), h = heightAt(x, z);
     if (h < 1.5 || nearPOI(x, z)) continue;
@@ -439,15 +448,25 @@ export function createWorld(scene, quality) {
 
   // ---------- bridge ----------
   {
-    const B = BRIDGE, len = B.x1 - B.x0, y = 3.4;
-    const br = new THREE.Mesh(merge([
-      P(new THREE.BoxGeometry(len, .4, B.w), '#a9764a', [0, 0, 0]),
-      ...Array.from({ length: 9 }, (_, i) => P(new THREE.CylinderGeometry(.12, .12, 1.3, 5), '#7a5236', [-len / 2 + i * len / 8, .6, B.w / 2])),
-      ...Array.from({ length: 9 }, (_, i) => P(new THREE.CylinderGeometry(.12, .12, 1.3, 5), '#7a5236', [-len / 2 + i * len / 8, .6, -B.w / 2])),
-      P(new THREE.BoxGeometry(len, .15, .15), '#c98b4a', [0, 1.2, B.w / 2]), P(new THREE.BoxGeometry(len, .15, .15), '#c98b4a', [0, 1.2, -B.w / 2]),
-      ...[-.3, .3].map(f => P(new THREE.CylinderGeometry(.35, .35, 6, 6), '#7a5236', [f * len, -3, 0]))
-    ]), toonVC()); br.position.set((B.x0 + B.x1) / 2, y - .2, B.z); scene.add(br);
-    W.platforms.push({ x0: B.x0 - 1, x1: B.x1 + 1, z0: B.z - B.w / 2, z1: B.z + B.w / 2, y });
+    // A small "Sydney Harbour Bridge": a grey steel arch, hangers, stone pylons at each end and a road deck.
+    const B = BRIDGE, len = B.x1 - B.x0, y = B.h, hw = B.w / 2, steel = '#8d979c';
+    const parts = [
+      P(new THREE.BoxGeometry(len + 2, .5, B.w), '#7d858a', [0, -.25, 0]), P(new THREE.BoxGeometry(len + 2, .06, B.w - 2.2), '#b4b9bc', [0, .03, 0]),
+      P(new THREE.BoxGeometry(len + 2, .1, 1), '#d9d4c8', [0, .07, hw - .5]), P(new THREE.BoxGeometry(len + 2, .1, 1), '#d9d4c8', [0, .07, -hw + .5]),
+      ...Array.from({ length: 7 }, (_, i) => P(new THREE.BoxGeometry(1.6, .08, .14), '#f6f1e4', [-len / 2 + 3 + i * (len - 6) / 6, .09, 0])),
+      P(new THREE.BoxGeometry(len + 2, .9, .12), steel, [0, .45, hw]), P(new THREE.BoxGeometry(len + 2, .9, .12), steel, [0, .45, -hw]),
+      ...[-.32, .32].map(f => P(new THREE.CylinderGeometry(.5, .7, 12, 6), '#9a948a', [f * len, -6, 0]))
+    ];
+    for (const sz of [-1, 1]) {
+      parts.push(P(new THREE.TorusGeometry(len / 2 - 1, .35, 5, 28, Math.PI), steel, [0, -1.2, sz * (hw - .2)], [0, 0, 0], [1, .62, 1]));
+      parts.push(P(new THREE.TorusGeometry(len / 2 - 1, .22, 5, 28, Math.PI), steel, [0, -2.4, sz * (hw - .2)], [0, 0, 0], [1, .62, 1]));
+      for (let i = 1; i < 12; i++) { const t = i / 12, x = -len / 2 + 1 + t * (len - 2), a = Math.acos(Math.max(-1, Math.min(1, x / (len / 2 - 1)))), top = Math.sin(a) * (len / 2 - 1) * .62 - 1.2; if (top > 1) parts.push(P(new THREE.BoxGeometry(.12, top, .12), steel, [x, top / 2, sz * (hw - .2)])); }
+      for (const ex of [-1, 1]) parts.push(P(new THREE.BoxGeometry(2.2, 7, 2.2), '#d8cdb6', [ex * (len / 2 + .6), 2.2, sz * (hw + .6)]), P(new THREE.BoxGeometry(2.6, .5, 2.6), '#c8bca2', [ex * (len / 2 + .6), 5.9, sz * (hw + .6)]));
+    }
+    const br = new THREE.Mesh(merge(parts), toonVC()); br.castShadow = true; br.receiveShadow = true; br.position.set((B.x0 + B.x1) / 2, y, B.z); scene.add(br);
+    // railings keep little explorers on the bridge
+    W.boxes.push({ x0: B.x0, x1: B.x1, z0: B.z + hw - .1, z1: B.z + hw + .3 }, { x0: B.x0, x1: B.x1, z0: B.z - hw - .3, z1: B.z - hw + .1 });
+    W.platforms.push({ x0: B.x0 - 2, x1: B.x1 + 2, z0: B.z - B.w / 2, z1: B.z + B.w / 2, y: y + .1 });
   }
 
   // ---------- shrines ----------
@@ -587,6 +606,7 @@ export function paintMap(size = 256) {
     if (dist2(wx, wz, PADDIES.x, PADDIES.z) < PADDIES.r) { r = 160; g = 214; b = 110; }
     if (dist2(wx, wz, BAMBOO.x, BAMBOO.z) < BAMBOO.r) { r *= .8; g *= .95; b *= .8; }
     if (wx > 6 && wx < 56 && Math.abs(wz - TOWN.roadZ) < 3.6) { r = 175; g = 180; b = 184; }
+    else if ((wx > MARKET.x0 && wx < MARKET.x1 && Math.abs(wz - MARKET.roadZ) < 4) || (wx > AUSSIE.x0 && wx < AUSSIE.x1 && Math.abs(wz - AUSSIE.roadZ) < 3.6)) { r = 190; g = 186; b = 178; }
     else if (wx > 10 && wx < 52 && ((wz > 32 && wz < 40) || (wz > 55 && wz < 72 && (wx < 18 || wx > 40)))) { r = 236; g = 200; b = 160; }
     const o = (j * size + i) * 4; d[o] = clamp(r * shade, 0, 255); d[o + 1] = clamp(g * shade, 0, 255); d[o + 2] = clamp(b * shade, 0, 255); d[o + 3] = 255;
   }

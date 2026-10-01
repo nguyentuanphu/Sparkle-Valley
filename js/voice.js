@@ -2,6 +2,7 @@
 // Premium/enhanced/neural voices are picked first; grown-ups can choose a voice in settings.
 import { settings } from './state.js';
 import { ac } from './audio.js';
+import { swapNames } from './i18n.js';
 
 let all = [];
 const BAD = /compact|eloquence|novelty|whisper|bad news|bells|boing|bubbles|cellos|zarvox|trinoids|albert|jester|organ|superstar|wobble|grandpa|grandma|rocko|reed|eddy|flo\b|sandy|shelley|fred|junior|ralph|kathy|good news|hysterical|deranged|pipe/i;
@@ -29,13 +30,21 @@ export function voiceFor(lang) {
 }
 export const hasVietnamese = () => voicesFor('vi').length > 0;
 
+// Voice styles change how the device voice sounds: natural, a cute cartoon friend, or a calm grandparent.
+export const VOICE_STYLES = [
+  { id: 'natural', icon: '🙂', name: () => (settings.lang === 'vi' ? 'Tự nhiên' : 'Natural'), rate: 1, pitch: 1 },
+  { id: 'cute', icon: '🐣', name: () => (settings.lang === 'vi' ? 'Dễ thương' : 'Cute'), rate: 1.06, pitch: 1.35 },
+  { id: 'grandpa', icon: '👴', name: () => (settings.lang === 'vi' ? 'Ông bà' : 'Grandparent'), rate: .88, pitch: .82 }
+];
+const style = () => VOICE_STYLES.find(v => v.id === settings.voiceStyle) || VOICE_STYLES[0];
 function utter(text, lang) {
   const u = new SpeechSynthesisUtterance(text);
   const v = voiceFor(lang);
   if (v) { u.voice = v; u.lang = v.lang; } else u.lang = lang === 'vi' ? 'vi-VN' : 'en-AU';
   // A touch slower than normal and at natural pitch sounds the most human; grown-ups can fine-tune both.
-  u.rate = (lang === 'vi' ? .95 : .97) * (settings.voiceRate || 1);
-  u.pitch = settings.familyVoice && settings.familyPitch ? settings.familyPitch : (settings.voicePitch || 1); u.volume = 1;
+  const st = style();
+  u.rate = (lang === 'vi' ? .95 : .97) * (settings.voiceRate || 1) * st.rate;
+  u.pitch = Math.min(2, (settings.familyVoice && settings.familyPitch && st.id === 'natural' ? settings.familyPitch : (settings.voicePitch || 1)) * st.pitch); u.volume = 1;
   return u;
 }
 // Device speech, as a promise that resolves when the line has been spoken.
@@ -60,6 +69,7 @@ export function say(en, vi) { speak(en, vi); }
 export function sayAsync(en, vi) { return speak(en, vi); }
 async function speak(en, vi) {
   if (!settings.voice) return;
+  en = swapNames(en, 'en'); vi = swapNames(vi, 'vi');
   const my = ++seq;
   try { speechSynthesis.cancel(); } catch (e) { }
   try { if (playing) playing.stop(); } catch (e) { }
@@ -131,6 +141,7 @@ export async function loadClips() {
 }
 export const hasClip = (lang, id) => !!clips[lang + ':' + id];
 export const clipCount = () => Object.keys(clips).length;
+export const clipCountFor = lang => FAMILY_PHRASES.filter(p => clips[lang + ':' + p.id]).length;
 // Saved as a plain ArrayBuffer: Safari on older iPhones cannot always store Blobs in IndexedDB.
 export async function saveClip(lang, id, blob) {
   const data = await blob.arrayBuffer(), key = lang + ':' + id;
