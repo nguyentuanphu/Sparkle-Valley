@@ -4,12 +4,13 @@ import { T } from '../i18n.js';
 import { say } from '../voice.js';
 import { SFX, Music } from '../audio.js';
 import { el, wait, esc } from '../util.js';
+import { openHowTo } from '../howto.js';
 
 export const GAMES = {};
 // Each kind of game has its own song.
 const GAME_MUSIC = {
   pattern: 'think', counting: 'twinkle', letters: 'twinkle', numbers: 'think', shapes: 'think', colors: 'twinkle', sorting: 'think', memory: 'twinkle',
-  hanoi: 'strategy', robot: 'strategy', maze: 'strategy', goat: 'folk', oanquan: 'strategy', caro: 'strategy', hopscotch: 'folk', tug: 'village2',
+  hanoi: 'strategy', robot: 'strategy', maze: 'strategy', goat: 'folk', oanquan: 'strategy', caro: 'strategy', hopscotch: 'folk', tug: 'village2', mrwolf: 'folk', chuyen: 'village2', dragon: 'folk', marbles: 'strategy', skipping: 'party2',
   market: 'money', order: 'farm', sortout: 'money', bunny: 'farm', jigsaw: 'twinkle', oddone: 'pond', tower: 'think', duckmaze: 'pond',
   balloon: 'fly', bubbles: 'party2', tune: 'none'
 };
@@ -29,6 +30,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
         <button class="gl-x" aria-label="${T('Leave', 'Rời đi')}">✕</button>
         <div class="gl-title"><span class="gl-icon">${def.icon}</span><span>${esc(def.name())}</span></div>
         <div class="gl-dots"></div>
+        <button class="gl-how" aria-label="${T('How to play', 'Cách chơi')}">📺</button>
       </div>
       <div class="gl-help"></div>
       <div class="gl-stage"></div>
@@ -89,6 +91,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
     }
     current = { close: finish };
     layer.querySelector('.gl-x').onclick = () => { SFX.tap(); finish(false); };
+    layer.querySelector('.gl-how').onclick = () => { SFX.tap(); const pm = Music.key; openHowTo(id, { onClose: () => Music.play(pm) }); };
     Promise.resolve(def.run(api)).catch(e => { console.error(e); finish(false); });
   });
 }

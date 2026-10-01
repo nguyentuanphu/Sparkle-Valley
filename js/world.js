@@ -12,6 +12,7 @@ export const PADDIES = { x: 112, z: -38, r: 26, h: 2.4 };
 export const LAKE = { x: 55, z: 125, r: 46 };
 export const BAMBOO = { x: -100, z: 85, r: 48 };
 export const HOME = { x: -26, z: 126, r: 30, h: 4 };   // Sunny Farm: house, field, barn and Mr. Bear's market
+export const PLAYGROUND = { x: 28, z: 62, r: 13, h: 7.2 };   // Folk Games Playground: kids from Australia and Vietnam
 const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [58, 40], [52, 85]];
 export const BRIDGE = { x0: 44, x1: 72, z: 30, w: 4.2 };
 
@@ -43,6 +44,7 @@ export function heightAt(x, z) {
   }
   h = flat(h, x, z, VILLAGE, VILLAGE.r, 16, VILLAGE.h);
   h = flat(h, x, z, HOME, HOME.r, 16, HOME.h);
+  h = flat(h, x, z, PLAYGROUND, PLAYGROUND.r, 12, PLAYGROUND.h);
   h = flat(h, x, z, PADDIES, PADDIES.r, 12, PADDIES.h + (Math.floor((z - PADDIES.z) / 9) * .35));
   h = flat(h, x, z, BAMBOO, BAMBOO.r - 10, 20, 5 + fbm(x * .03, z * .03, 2) * 2);
   const dl = dist2(x, z, LAKE.x, LAKE.z);
@@ -241,7 +243,7 @@ export function createWorld(scene, quality) {
   };
   const spots = { round: [], apple: [], pine: [], snowpine: [], bamboo: [], palm: [], bush: [], rock: [] };
   const appleTrees = [];
-  const nearPOI = (x, z) => SHRINES.some(s => dist2(x, z, s.x, s.z) < 9) || TOWERS.some(s => dist2(x, z, s.x, s.z) < 10) || LEAFIES.some(s => dist2(x, z, s.x, s.z) < 3);
+  const nearPOI = (x, z) => dist2(x, z, PLAYGROUND.x, PLAYGROUND.z) < PLAYGROUND.r + 3 || SHRINES.some(s => dist2(x, z, s.x, s.z) < 9) || TOWERS.some(s => dist2(x, z, s.x, s.z) < 10) || LEAFIES.some(s => dist2(x, z, s.x, s.z) < 3);
   for (let i = 0; i < 9000; i++) {
     const x = (rnd() - .5) * (SIZE - 30), z = (rnd() - .5) * (SIZE - 30), h = heightAt(x, z);
     if (h < 1.5 || nearPOI(x, z)) continue;

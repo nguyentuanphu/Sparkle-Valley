@@ -18,7 +18,13 @@ export const settings = Object.assign({
   camSpeed: 1,
   camMode: 'easy',       // 'easy' = fixed high view (best for little ones) | 'free' = drag to look around
   familyVoice: true,     // play the grown-up's recordings when there are some
-  familyPitch: 0         // speaking pitch matched to the recordings (0 = not set)
+  familyPitch: 0,        // speaking pitch matched to the recordings (0 = not set)
+  voiceRate: 1, voicePitch: 1,
+  tts: 'device',         // 'device' | 'eleven' | 'google': optional natural online voice with the grown-up's own key
+  ttsKey: '', elevenVoice: '', googleVoiceEn: '', googleVoiceVi: '',
+  voiceControl: true,    // show the 🎤 "talk to the game" button where speech recognition exists
+  aiKey: '',             // optional Anthropic API key so villagers can chat freely (grown-ups only)
+  aiOn: false
 }, store.get(KEY_SETTINGS, {}));
 export const saveSettings = () => store.set(KEY_SETTINGS, settings);
 

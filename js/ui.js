@@ -14,6 +14,8 @@ import { GAMES } from './games/frame.js';
 import { showStory, storyList } from './story.js';
 import { SECRETS } from './secrets.js';
 import { openCredits, creditsFields, bindCreditsFields } from './credits.js';
+import { openHowTo } from './howto.js';
+import { extrasHTML, bindExtras } from './extras.js';
 
 export const STYLE_ICON = { dress: '👗', shirt: '👕', aodai: '🥻', tunic: '🧥', overalls: '👖', hoodie: '🧶' };
 export const STYLE_NAME = { dress: () => T('Dress', 'Váy'), shirt: () => T('Shirt & shorts', 'Áo và quần đùi'), aodai: () => 'Áo dài', tunic: () => T('Explorer', 'Nhà thám hiểm'), overalls: () => T('Overalls', 'Quần yếm'), hoodie: () => T('Hoodie', 'Áo nỉ') };
@@ -105,6 +107,7 @@ export function openGrownups(after) {
       <p class="note">${hasVietnamese() ? '' : T('To add a Vietnamese voice: iPhone/iPad → Settings → Accessibility → Spoken Content → Voices → Vietnamese. Android → Settings → Text-to-speech → Google → Install voice data → Vietnamese. ', 'Thêm giọng tiếng Việt: iPhone/iPad → Cài đặt → Trợ năng → Nội dung được đọc → Giọng nói → Tiếng Việt. Android → Cài đặt → Chuyển văn bản thành giọng nói → Google → Cài đặt dữ liệu giọng nói → Tiếng Việt. ')}${T('Choose an "Enhanced" or "Premium" voice for the most natural sound.', 'Chọn giọng "Nâng cao" hoặc "Cao cấp" để nghe tự nhiên nhất.')}</p>
       <h3>${T('Family voice', 'Giọng của gia đình')}</h3>
       <button class="btn primary wide big" id="gRec">🎙️ ${T('Record your voice for the game', 'Thu giọng của bạn cho trò chơi')} (${clipCount()}/${FAMILY_PHRASES.length * 2})</button>
+      ${extrasHTML()}
       <h3>${T('Sound and world', 'Âm thanh và thế giới')}</h3>
       <div class="toggles">
         <label class="tog"><input type="checkbox" id="gVoice" ${settings.voice ? 'checked' : ''}> ${T('Talking voice', 'Giọng nói')}</label>
@@ -143,6 +146,7 @@ export function openGrownups(after) {
     card.querySelector('#gExp').onclick = exportBackup;
     card.querySelector('#gRec').onclick = () => openRecorder(draw);
     bindCreditsFields(card); card.querySelector('#gCredits').onclick = () => openCredits();
+    bindExtras(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; }, toast);
     card.querySelector('#gFarm').onclick = () => { if (confirm(T('Start the farm over? Players and stickers are kept.', 'Làm lại nông trại? Người chơi và hình dán được giữ lại.'))) { resetFarm(); window.__sv && window.__sv.farm && (window.__sv.farm.syncAnimals(), window.__sv.farm.syncPets()); toast(T('A fresh new farm!', 'Nông trại mới tinh!')); } };
     card.querySelector('#gImp').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { await importBackup(f); toast(T('Backup loaded!', 'Đã mở bản sao!')); draw(); after && after(); } catch (err) { toast(T('That file is not a Sparkle Valley backup.', 'Tệp này không phải bản sao của Thung Lũng Lấp Lánh.')); } };
   };
@@ -240,9 +244,15 @@ export function openEditor(profile, after) {
 }
 
 // ---------- NPC dialogue (BotW-style box with a name tag) ----------
+// main.js fills these in so villagers' speech boxes get a "💬 Chat" button
+export const dialogHooks = {};
 export function dialog(name, lines, choices) {
   return new Promise(res => {
     const d = el('div', 'dialog', `<div class="dname">${esc(name)}</div><div class="dtext"></div><div class="dchoices"></div><div class="dnext">▼</div>`);
+    if (dialogHooks.canChat && dialogHooks.canChat(name)) {
+      const ask = el('button', 'dask', '💬 ' + T('Chat', 'Trò chuyện')); d.appendChild(ask);
+      ask.onclick = e => { e.stopPropagation(); SFX.tap(); close(-1); dialogHooks.chat(name); };
+    }
     document.body.appendChild(d);
     let i = 0;
     const text = d.querySelector('.dtext'), ch = d.querySelector('.dchoices'), next = d.querySelector('.dnext');
@@ -525,9 +535,10 @@ export function openRecorder(after) {
 
 // ---------- Games hub ----------
 const HUB = [
+  { key: 'folk', icon: '🪁', title: () => T('Folk games of Australia & Vietnam', 'Trò chơi dân gian Úc và Việt Nam'), games: ['mrwolf', 'chuyen', 'dragon', 'marbles', 'skipping', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
   { key: 'farm', icon: '🏡', title: () => T('At the farm', 'Ở nông trại'), games: ['bunny', 'balloon', 'bubbles', 'jigsaw', 'tower', 'order', 'sortout', 'duckmaze'] },
-  { key: 'village', icon: '🏮', title: () => T('In Lotus Village', 'Ở Làng Sen'), games: ['oanquan', 'hopscotch', 'tug', 'caro', 'market', 'tune', 'shapes', 'oddone', 'memory'] },
-  { key: 'shrine', icon: '✨', title: () => T('Puzzle shrines', 'Đền đố vui'), games: ['pattern', 'counting', 'letters', 'numbers', 'colors', 'sorting', 'hanoi', 'robot', 'maze', 'goat'] }
+  { key: 'village', icon: '🏮', title: () => T('In Lotus Village', 'Ở Làng Sen'), games: ['market', 'tune', 'shapes', 'oddone', 'memory'] },
+  { key: 'shrine', icon: '✨', title: () => T('Puzzle shrines', 'Đền đố vui'), games: ['pattern', 'counting', 'letters', 'numbers', 'colors', 'sorting', 'hanoi', 'robot', 'maze'] }
 ];
 const HUB_COLORS = ['#ff7eb8', '#ffb52e', '#5fd39a', '#3cc7e8', '#9a6bff', '#ff8a5a'];
 export function openGamesHub(game, i, onClose) {
@@ -535,13 +546,14 @@ export function openGamesHub(game, i, onClose) {
   const m = modal('hub', ''), card = m.querySelector('.card');
   const close = () => { m.close(); onClose && onClose(); };
   card.innerHTML = `<button class="x" aria-label="Close">✕</button><h2>🎮 ${T('Games', 'Trò chơi')}</h2>
-    <p class="sub">${T('Tap a picture to play now. Tap 📍 to walk there in the valley.', 'Chạm vào hình để chơi ngay. Chạm 📍 để đi đến chỗ đó trong thung lũng.')}</p>
+    <p class="sub">${T('Tap a picture to play now. 📺 shows how to play. 📍 walks you there in the valley.', 'Chạm vào hình để chơi ngay. 📺 xem cách chơi. 📍 đi đến chỗ đó trong thung lũng.')}</p>
     ${HUB.map(sec => `<h3>${sec.icon} ${esc(sec.title())}</h3><div class="hubgrid">${sec.games.filter(id => GAMES[id]).map((id, k) => {
       const g = GAMES[id], lv = p.levels[id] || 1;
-      return `<div class="hcard" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}"><span class="hi">${g.icon}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button></div>`;
+      return `<div class="hcard" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}"><span class="hi">${g.icon}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${{ au: '🇦🇺', vn: '🇻🇳', both: '🇻🇳🇦🇺' }[g.origin]}</span>` : ''}</div>`;
     }).join('')}</div>`).join('')}`;
   card.querySelector('.x').onclick = close;
   card.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); game.playGame(i, id, 'place'); });
   card.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { close(); game.goToGame(i, b.dataset.go); });
+  card.querySelectorAll('[data-how]').forEach(b => b.onclick = () => { const id = b.dataset.how; openHowTo(id, { onPlay: () => { close(); game.playGame(i, id, 'place'); } }); });
   say('Which game shall we play?', 'Mình chơi trò gì nào?');
 }

@@ -7,13 +7,15 @@ import { say, hush, loadClips } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
-import { createWorld, paintMap, heightAt, regionAt, REGION_NAMES, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, REVEAL_R, WATER } from './world.js';
+import { createWorld, paintMap, heightAt, regionAt, REGION_NAMES, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
 import { buildAvatar, buildOwl, buildGourd, avatarURL } from './avatar.js';
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
 import { pads, initInput } from './input.js';
 import { Net } from './net.js';
-import { showTitle, showWho, dialog, reward, openPad, openCooking, openShop, toast } from './ui.js';
+import { showTitle, showWho, dialog, dialogHooks, reward, openPad, openCooking, openShop, toast } from './ui.js';
+import { openChat, personaByName, PERSONAS } from './chat.js';
+import { voiceCommand, voiceControlOn } from './commands.js';
 import { ITEMS, RECIPES, GATHER, STICKERS, QUESTS } from './data.js';
 import { openGame, gameOpen, GAMES } from './games/frame.js';
 import './games/thinking.js';
@@ -21,10 +23,12 @@ import './games/strategy.js';
 import './games/vietnam.js';
 import './games/market.js';
 import './games/farmgames.js';
+import './games/folk.js';
+import { openHowTo } from './howto.js';
 import { createFarm, jobProgress, ensureJobs } from './farm.js';
 import { createPlaces } from './places.js';
 import { createSecrets, SECRETS } from './secrets.js';
-import { PROLOGUE, showStory, storyCheck } from './story.js';
+import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
 import { openWardrobe, openGamesHub } from './ui.js';
 
 // ---------- renderer & world ----------
@@ -53,6 +57,7 @@ window.__sv = G; // handy for debugging in the browser console
 
 // ---------- people of the valley ----------
 const NPCS = [];
+G.npcs = NPCS;
 function nameTag(text, color = '#ffffff') {
   const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d');
   x.font = 'bold 34px Fredoka, "Baloo 2", sans-serif'; const w = Math.min(250, x.measureText(text).width + 30);
@@ -84,6 +89,18 @@ function setupNPCs() {
   addNPC({ id: 'ti', name: 'Tí', look: kidLook('dress', '#ff7eb8', '#3b2618', 'buns', 'flower'), x: V.x - 18, z: V.z + 2.5, face: 0, icon: '🦶', talk: h => kidTalk(h, 'hopscotch', 'Tí', ['Let’s play hopscotch! Nhảy lò cò!', 'Chơi nhảy lò cò đi!']) });
   addNPC({ id: 'bong', name: 'Bống', look: kidLook('hoodie', '#9a6bff', '#1d1412', 'ponytail', 'bunny'), x: V.x + 10, z: V.z + 4, face: -1, icon: '⭕', talk: h => kidTalk(h, 'caro', 'Bống', ['Can you beat me at Caro? Get your shapes in a row!', 'Bạn có thắng được tớ môn cờ caro không?']) });
   addNPC({ id: 'su', name: 'Su', look: kidLook('overalls', '#5bbf6a', '#3b2618', 'short', 'cap'), x: V.x + 7.5, z: V.z + 18, face: -1.57, icon: '🪢', talk: h => kidTalk(h, 'tug', 'Su', ['Tug of war! Are you strong? Dô ta!', 'Kéo co nào! Bạn có khỏe không? Dô ta!']) });
+  // the Folk Games Playground: friends from Australia and Vietnam, each teaching their own game
+  const PG = PLAYGROUND, look = (style, color, hair, hairStyle, hat, skin = '#f6c7a5') => ({ style, color, hat, back: 'none', hair, hairStyle, skin, glider: 0 });
+  addNPC({ id: 'jack', name: 'Jack 🇦🇺', look: look('shirt', '#3b6fe0', '#e8c26a', 'short', 'cap', '#ffe3d1'), x: PG.x - 3, z: PG.z - 3, face: .4, icon: '🐺',
+    talk: h => kidTalk(h, 'mrwolf', 'Jack', ["G'day! I'm Jack from Australia. Want to play What's the time, Mr Wolf? I'll be the wolf! Grrr!", 'Chào bạn! Tớ là Jack đến từ nước Úc. Chơi "Mấy giờ rồi, ông Sói?" không? Tớ làm sói cho! Gừ gừ!']) });
+  addNPC({ id: 'mit', name: 'Mít 🇻🇳', look: look('dress', '#ffd23f', '#1d1412', 'buns', 'flower'), x: PG.x + 1.5, z: PG.z + .5, face: -.6, icon: '🥢',
+    talk: h => kidTalk(h, 'chuyen', 'Mít', ['Hi! I am Mít. In Vietnam we play Đánh chuyền with a ball and sticks. Jack calls it Knucklebones!', 'Chào bạn! Tớ là Mít. Ở Việt Nam tụi tớ chơi đánh chuyền với quả bóng và que. Jack gọi là Knucklebones đó!']) });
+  addNPC({ id: 'bom', name: 'Bờm 🇻🇳', look: look('tunic', '#e8434a', '#1d1412', 'spiky', 'none'), x: PG.x + 5, z: PG.z - 4, face: -1, icon: '🐉',
+    talk: h => kidTalk(h, 'dragon', 'Bờm', ['Let us be a dragon! Hold on tight and sing: Rồng rắn lên mây!', 'Mình làm rồng rắn nào! Bám chặt vào và hát: Rồng rắn lên mây!']) });
+  addNPC({ id: 'ruby', name: 'Ruby 🇦🇺', look: look('overalls', '#a66bff', '#a8432a', 'long', 'bow', '#ffe3d1'), x: PG.x + 9.5, z: PG.z + 2, face: -1.6, icon: '🔮',
+    talk: h => kidTalk(h, 'marbles', 'Ruby', ['I have got my lucky shooter marble! Can you knock the marbles out of the ring?', 'Tớ có viên bi cái may mắn nè! Bạn bắn được bi ra khỏi vòng không?']) });
+  addNPC({ id: 'lan', name: 'Lan 🇻🇳', look: look('aodai', '#5fd39a', '#3b2618', 'ponytail', 'none'), x: PG.x - 6, z: PG.z + 3, face: 1.2, icon: '🪢',
+    talk: h => kidTalk(h, 'skipping', 'Lan', ['Nhảy dây! Skipping! Jump when the rope comes down and count with me!', 'Nhảy dây nào! Nhảy lên khi dây quay xuống và đếm cùng tớ nhé!']) });
   gourd = addNPC({ id: 'gourd', name: 'Ông Bầu', model: buildGourd(), x: V.x - V.r + 8, z: V.z + 6, face: -1.2, icon: '🍃', talk: gourdTalk });
   // gentle idle animation
   world.updaters.push((dt, t) => NPCS.forEach((n, k) => {
@@ -183,6 +200,7 @@ function setupAreaSigns() {
   sign(T('Mirror Lake', 'Hồ Gương'), '🌊', 55, 125, 8);
   sign(T('Bamboo Forest', 'Rừng Tre'), '🎋', -100, 85, 16);
   sign(T('Rice Fields', 'Đồng Lúa'), '🌾', 112, -38, 8);
+  sign(T('Folk Games', 'Sân Chơi Dân Gian'), '🪁', PLAYGROUND.x, PLAYGROUND.z - 6, 9);
 }
 function nearest(h) {
   let best = null, bd = 1e9;
@@ -307,18 +325,28 @@ async function baTalk(h) {
   if (k === 0) openCooking(G, h.i);
 }
 async function kidTalk(h, game, name, line) {
-  const k = await dialog(name, [line], [['▶ Play!', '▶ Chơi!'], ['👋 Later', '👋 Để sau']]);
+  const k = await dialog(name, [line], [['▶ Play!', '▶ Chơi!'], ['📺 How to play', '📺 Xem cách chơi'], ['👋 Later', '👋 Để sau']]);
   if (k === 0) playGame(h.i, game, 'folk');
+  if (k === 1) { G.paused = true; openHowTo(game, { onPlay: () => { G.paused = false; playGame(h.i, game, 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
 }
+// ---------- chatting with villagers ----------
+G.chatWith = (i, pid, firstAsk) => { if (!PERSONAS[pid] || gameOpen()) return; const was = G.paused; G.paused = true; openChat(G, i, pid, () => { G.paused = was && !!document.querySelector('.modal'); }, firstAsk); };
+G.voiceCommand = i => voiceCommand(G, i); G.voiceControlOn = voiceControlOn;
+dialogHooks.canChat = name => !!personaByName(name);
+dialogHooks.chat = name => {
+  const [pid] = personaByName(name), n = NPCS.find(x => x.id === pid) || { x: 0, z: 0 };
+  const h = G.heroes.slice().sort((a, b) => dist2(a.pos.x, a.pos.z, n.x, n.z) - dist2(b.pos.x, b.pos.z, n.x, n.z))[0];
+  if (h) G.chatWith(h.i, pid);
+};
 // ---------- the Games hub: every game, by place, playable straight away ----------
-const GAME_SPOT = { oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
+const GAME_SPOT = { mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
   tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
 G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (SHRINES.find(s => s.game === id) || {}).id));
 G.openGamesHub = i => { if (G.paused) return; G.paused = true; openGamesHub(G, i, () => { G.paused = false; }); };
 G.goToGame = (i, id) => { const h = G.heroes[i], it = G.gameSpot(id); if (!h || !it) return; (async () => { if (dist2(h.pos.x, h.pos.z, it.x, it.z) > 45) await G.travel(h, it.x - 1.5, it.z + 2); goAndDo(h, it); })(); };
 // ---------- objective helpers ----------
 G.objectiveIcon = h => { const q = currentQuest(h.profile); return q ? q.icon : '🏆'; };
-G.sayObjective = i => { const h = G.heroes[i]; if (!h) return; const q = currentQuest(h.profile); if (!q) return; say(q.title(), q.title()); };
+G.sayObjective = i => { const h = G.heroes[i]; if (!h) return; const q = currentQuest(h.profile); if (!q) return; const tale = QUEST_TALES[q.id]; if (tale) say(tale[2], tale[3]); else say(q.title(), q.title()); };
 // "Go" button: walk to the goal (or fly there if it is far away) and start it on arrival.
 G.goToObjective = async i => {
   const h = G.heroes[i]; if (!h || G.paused) return;
@@ -378,6 +406,7 @@ function questTarget(h) {
     case 'mai': return NPCS.find(n => n.id === 'mai');
     case 'pot': return near(world.pots);
     case 'kids': return NPCS.find(n => n.id === 'teo');
+    case 'playground': return NPCS.find(n => n.id === 'jack');
     case 'buffalo': return near(world.buffalo.map(b => ({ x: b.mesh.position.x, z: b.mesh.position.z })));
     case 'leafy': return near(LEAFIES.filter(l => !p.leafies[l.id]));
     case 'statue': return p.orbs >= 4 ? world.statue : near(SHRINES.filter(s => !p.shrines[s.id] && p.discovered[s.id])) || world.statue;
@@ -397,7 +426,14 @@ async function checkQuests(h) {
   if (!p.quests[k]) {
     p.quests[k] = true; save();
     const q = currentQuest(p);
-    if (q && q.id !== 'owl') setTimeout(() => { hudFor(h)?.toast(T('New goal: ', 'Mục tiêu mới: ') + q.title()); }, 2800);
+    // every new goal is told as a little story; "Let's go!" walks there straight away
+    if (q && q.id !== 'owl') setTimeout(async () => {
+      // wait until no game, book, chat or menu is open
+      for (let k = 0; k < 600 && (gameOpen() || document.querySelector('.storybook, .modal, .dialog, .reward, .howto')); k++) await wait(500);
+      if (currentQuest(p) !== q || !playing) return;
+      const was = G.paused; G.paused = true; const go = await showQuestTale(q, p.name); G.paused = was;
+      if (go) G.goToObjective(h.i); else hudFor(h)?.toast(T('New goal: ', 'Mục tiêu mới: ') + q.title());
+    }, 2600);
     if (!q) celebrateAll(h);
   }
 }
@@ -465,6 +501,7 @@ G.PLACES = [
   { icon: '🏮', name: () => T('Lotus Village', 'Làng Sen'), x: VILLAGE.x - VILLAGE.r + 6, z: VILLAGE.z },
   { icon: '🦉', name: () => T('Ông Cú', 'Ông Cú'), x: -2, z: -3 },
   { icon: '💃', name: () => T('Dance stage', 'Sân khấu'), x: VILLAGE.x - 6, z: VILLAGE.z + 25 },
+  { icon: '🪁', name: () => T('Folk Games Playground', 'Sân Chơi Dân Gian'), x: PLAYGROUND.x, z: PLAYGROUND.z + 6 },
   { icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: 6, z: 140 },
   { icon: '🐻', name: () => T('Mr. Bear', 'Bác Gấu'), x: HOME.x - 21, z: HOME.z + 6 }
 ];

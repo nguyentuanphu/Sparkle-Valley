@@ -43,6 +43,7 @@ export class Hud {
         <button class="dk games"><span>🎮</span><small>${T('Games', 'Trò chơi')}</small></button>
         <button class="dk map"><span>🗺️</span><small>${T('Map', 'Bản đồ')}</small></button>
         <button class="dk bag"><span>🎒</span><small>${T('Bag', 'Ba lô')}</small></button>
+        <button class="dk voicecmd" hidden><span>🎤</span><small>${T('Ask', 'Hỏi')}</small></button>
         <button class="dk chat"><span>💬</span><small>${T('Talk', 'Nói')}</small></button>
         <button class="dk call" hidden><span>🎙️</span><small>${T('Call', 'Gọi')}</small></button>
         <button class="dk mus"><span>🎵</span><small>${T('Music', 'Nhạc')}</small></button>
@@ -69,6 +70,8 @@ export class Hud {
     this.q('.dk.map').onclick = () => game.openPad(i, 'map');
     this.q('.dk.bag').onclick = () => game.openPad(i, 'bag');
     this.q('.dk.chat').onclick = () => this.toggleEmotes();
+    this.q('.dk.voicecmd').hidden = !game.voiceControlOn();
+    this.q('.dk.voicecmd').onclick = () => game.voiceCommand(i);
     this.q('.dk.call').onclick = () => game.toggleMute();
     this.q('.dk.mus').onclick = () => game.toggleAudio('music');
     this.q('.dk.snd').onclick = () => game.toggleAudio('sound');
