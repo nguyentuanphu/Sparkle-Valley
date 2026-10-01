@@ -47,6 +47,13 @@ export class Hero {
 
     const f = [-Math.sin(this.camYaw), -Math.cos(this.camYaw)], r = [Math.cos(this.camYaw), -Math.sin(this.camYaw)];
     let mx = f[0] * pad.mz + r[0] * pad.mx, mz = f[1] * pad.mz + r[1] * pad.mx;
+    // tap-to-walk: head for the tapped spot when the stick is not being used
+    if (pad.mx || pad.mz) this.goal = null;
+    else if (this.goal) {
+      const gx = this.goal.x - this.pos.x, gz = this.goal.z - this.pos.z, gd = Math.hypot(gx, gz);
+      if (gd < .7 || (this.goalT = (this.goalT || 0) + dt) > 25) { this.goal = null; this.goalT = 0; }
+      else { mx = gx / gd; mz = gz / gd; if (gd < 2) { mx *= gd / 2 + .2; mz *= gd / 2 + .2; } }
+    }
     const len = Math.hypot(mx, mz), mag = Math.min(1, len); if (len > .01) { mx /= len; mz /= len; }
     const ground = W.groundAt(p.x, p.z, p.y + .5);
     const swimming = ground < WATER - .9 && p.y <= WATER - .5;
@@ -124,7 +131,7 @@ export class Hero {
     if (this.onGround && !swimming && g > WATER + .5 && this.safeTimer <= 0) { this.lastSafe.copy(p); this.safeTimer = 1; }
     if (want === 'walk' && this.onGround) { this.stepTimer -= dt * speed; if (this.stepTimer <= 0) { SFX.step(); this.stepTimer = 2.2; game.stats(this, speed); } }
 
-    this.speed = speed; this.state = this.cheerT > 0 ? 'cheer' : this.emoteT > 0 && want === 'idle' ? 'wave' : want;
+    this.speed = speed; this.state = this.cheerT > 0 ? 'cheer' : this.emoteT > 0 && want === 'idle' ? 'wave' : want === 'idle' && this._dancing ? 'dance' : want;
     this.cheerT -= dt; this.emoteT -= dt;
     this.finish(dt, t, game, 0);
   }
@@ -160,8 +167,10 @@ export class Hero {
     A.root.children[1].visible = this.state !== 'swim'; // blob shadow
     // camera: follow behind, gently swinging round when the child is just walking forward
     if (this.manualCamT <= 0 && this.speed > 1 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * .6));
-    const dist = this.camDist * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (game.zoom || 1);
-    const target = new THREE.Vector3(p.x, p.y + 1.15 + rideY, p.z);
+    const close = game.closeUp === this.i; // wardrobe close-up
+    if (close) { this.camYaw = angleLerp(this.camYaw, this.yaw, Math.min(1, dt * 4)); this.camPitch += (.08 - this.camPitch) * Math.min(1, dt * 4); }
+    const dist = close ? 2.8 : this.camDist * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (game.zoom || 1);
+    const target = new THREE.Vector3(p.x, p.y + (close ? .2 : 1.15) + rideY, p.z);
     const want = new THREE.Vector3(p.x + Math.sin(this.camYaw) * Math.cos(this.camPitch) * dist, target.y + Math.sin(this.camPitch) * dist, p.z + Math.cos(this.camYaw) * Math.cos(this.camPitch) * dist);
     const gy = this.world.groundAt(want.x, want.z) + .7; if (want.y < gy) want.y = gy;
     this.camPos.lerp(want, Math.min(1, dt * 8));

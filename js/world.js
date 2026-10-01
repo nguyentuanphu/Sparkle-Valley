@@ -11,6 +11,7 @@ export const VILLAGE = { x: 110, z: 30, r: 34, h: 3 };
 export const PADDIES = { x: 112, z: -38, r: 26, h: 2.4 };
 export const LAKE = { x: 55, z: 125, r: 46 };
 export const BAMBOO = { x: -100, z: 85, r: 48 };
+export const HOME = { x: -26, z: 126, r: 30, h: 4 };   // Sunny Farm: house, field, barn and Mr. Bear's market
 const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [58, 40], [52, 85]];
 export const BRIDGE = { x0: 44, x1: 72, z: 30, w: 4.2 };
 
@@ -41,6 +42,7 @@ export function heightAt(x, z) {
     h = lerp(h, lerp(PLATEAU.h, Math.max(base, 4), smooth(PLATEAU.r, 92, dp)), w);
   }
   h = flat(h, x, z, VILLAGE, VILLAGE.r, 16, VILLAGE.h);
+  h = flat(h, x, z, HOME, HOME.r, 16, HOME.h);
   h = flat(h, x, z, PADDIES, PADDIES.r, 12, PADDIES.h + (Math.floor((z - PADDIES.z) / 9) * .35));
   h = flat(h, x, z, BAMBOO, BAMBOO.r - 10, 20, 5 + fbm(x * .03, z * .03, 2) * 2);
   const dl = dist2(x, z, LAKE.x, LAKE.z);
@@ -59,6 +61,7 @@ export function heightAt(x, z) {
 export function regionAt(x, z) {
   if (dist2(x, z, PLATEAU.x, PLATEAU.z) < PLATEAU.r + 8 && heightAt(x, z) > 12) return 'plateau';
   if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r + 10) return 'village';
+  if (dist2(x, z, HOME.x, HOME.z) < HOME.r + 6) return 'home';
   if (dist2(x, z, PADDIES.x, PADDIES.z) < PADDIES.r + 8) return 'paddies';
   if (dist2(x, z, LAKE.x, LAKE.z) < LAKE.r + 12) return 'lake';
   if (dist2(x, z, BAMBOO.x, BAMBOO.z) < BAMBOO.r + 6) return 'bamboo';
@@ -68,6 +71,7 @@ export function regionAt(x, z) {
 export const REGION_NAMES = {
   plateau: () => T('Dawn Plateau', 'Cao Nguyên Bình Minh'),
   village: () => T('Lotus Village', 'Làng Sen'),
+  home: () => T('Sunny Farm', 'Nông Trại Nắng Mai'),
   paddies: () => T('Golden Rice Fields', 'Cánh Đồng Lúa Vàng'),
   lake: () => T('Mirror Lake', 'Hồ Gương'),
   bamboo: () => T('Whispering Bamboo', 'Rừng Tre Thì Thầm'),
@@ -98,10 +102,10 @@ export const TOWERS = [
 ];
 export const TOWER_H = 26, REVEAL_R = 130;
 const LEAFY_SPOTS = [
-  ['rock', -24, 8], ['sparkle', 0, -28], ['rock', 26, 18], ['sparkle', -40, -30], ['rock', -78, 30], ['sparkle', -120, 120], ['rock', -90, 110],
+  ['rock', -24, 8], ['sparkle', 0, -28], ['rock', 26, 18], ['sparkle', -40, -30], ['rock', -78, 30], ['sparkle', -120, 120], ['rock', -92, 112],
   ['sparkle', 55, 125], ['rock', 30, 150], ['sparkle', 140, 140], ['rock', 150, 10], ['sparkle', 112, 30], ['rock', 120, -70], ['sparkle', 80, -80],
   ['rock', -10, -150], ['sparkle', -60, -140], ['rock', 50, -150], ['sparkle', -140, -20], ['rock', -150, 40], ['sparkle', 0, 60], ['rock', 70, 60],
-  ['sparkle', -40, 140], ['rock', 170, -120], ['sparkle', 95, -15]
+  ['sparkle', -62, 152], ['rock', 170, -120], ['sparkle', 95, -15]
 ];
 export const LEAFIES = LEAFY_SPOTS.map(([kind, x, z], i) => ({ id: 'lf' + i, kind, x, z }));
 
@@ -191,6 +195,8 @@ export function createWorld(scene, quality) {
     if (dist2(x, z, BAMBOO.x, BAMBOO.z) < BAMBOO.r) c.lerp(C.bamboo, .5);
     const dv = dist2(x, z, VILLAGE.x, VILLAGE.z);
     if (dv < VILLAGE.r - 4 && (Math.abs(x - VILLAGE.x) < 3 || Math.abs(z - VILLAGE.z) < 3 || Math.abs(dv - 14) < 2.2)) c.copy(C.dirt);
+    const dh = dist2(x, z, HOME.x, HOME.z);
+    if (dh < HOME.r - 4 && (Math.abs(x - HOME.x) < 2 || Math.abs(z - HOME.z) < 2)) c.copy(C.dirt);
     if (sl > 2.2) c.lerp(C.rock, clamp((sl - 2.2) / 1.5, 0, 1));
     if (h > 34) c.lerp(C.snow, clamp((h - 34) / 6, 0, 1));
     if (h < 1.6) c.copy(C.sand);
@@ -198,7 +204,7 @@ export function createWorld(scene, quality) {
     cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b;
   }
   tg.setAttribute('color', new THREE.BufferAttribute(cols, 3)); tg.computeVertexNormals();
-  const terrain = new THREE.Mesh(tg, toonVC({ roughness: .95 })); terrain.receiveShadow = true; scene.add(terrain);
+  const terrain = new THREE.Mesh(tg, toonVC({ roughness: .95 })); terrain.receiveShadow = true; scene.add(terrain); W.terrain = terrain;
 
   // water with a soft moving shimmer
   const wc = document.createElement('canvas'); wc.width = wc.height = 128; const wx = wc.getContext('2d');
@@ -234,7 +240,7 @@ export function createWorld(scene, quality) {
     const x = (rnd() - .5) * (SIZE - 30), z = (rnd() - .5) * (SIZE - 30), h = heightAt(x, z);
     if (h < 1.5 || nearPOI(x, z)) continue;
     const sl = Math.abs(heightAt(x + 2, z) - h) + Math.abs(heightAt(x, z + 2) - h);
-    if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r + 4 || dist2(x, z, PADDIES.x, PADDIES.z) < PADDIES.r + 3) continue;
+    if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r + 4 || dist2(x, z, PADDIES.x, PADDIES.z) < PADDIES.r + 3 || dist2(x, z, HOME.x, HOME.z) < HOME.r + 4) continue;
     if (Math.abs(z - BRIDGE.z) < 8 && x > BRIDGE.x0 - 14 && x < BRIDGE.x1 + 10) continue;
     const inPlat = dist2(x, z, PLATEAU.x, PLATEAU.z) < PLATEAU.r;
     if (inPlat && dist2(x, z, PLATEAU.x, PLATEAU.z) < 12) continue;
@@ -278,7 +284,7 @@ export function createWorld(scene, quality) {
   for (let tries = 0; tries < nGrass * 6 && (gi < nGrass || fi < fIm.count); tries++) {
     const near = rnd() < .5; const x = near ? (rnd() - .5) * 180 : (rnd() - .5) * (SIZE - 40), z = near ? (rnd() - .5) * 180 : (rnd() - .5) * (SIZE - 40), h = heightAt(x, z);
     if (h < 1.8 || h > 30) continue;
-    if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r - 6) continue;
+    if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r - 6 || dist2(x, z, HOME.x, HOME.z) < HOME.r - 8) continue;
     o3.position.set(x, h - .05, z); o3.rotation.set(0, rnd() * 6, 0); o3.scale.setScalar(.45 + rnd() * .45); o3.updateMatrix();
     if (rnd() < .16 && fi < fIm.count) { fIm.setMatrixAt(fi, o3.matrix); fIm.setColorAt(fi++, tint.set(FC[Math.floor(rnd() * FC.length)])); }
     else if (gi < nGrass) { gIm.setMatrixAt(gi, o3.matrix); gIm.setColorAt(gi++, tint.setHSL(.26 + rnd() * .06, .55, .3 + rnd() * .1)); }

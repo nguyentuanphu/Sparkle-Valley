@@ -1,6 +1,6 @@
 // Screens and pop-ups: title, who's playing, grown-ups settings, photo editor, NPC dialogue,
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
-import { T } from './i18n.js';
+import { T, applyLang } from './i18n.js';
 import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, STYLES, OUTFIT_COLORS, HATS, BACKS, HAIR, SKIN, HAIRSTYLES, GLIDERS, farm, resetFarm, MAX_KIDS } from './state.js';
 import { say, voicesFor, onVoices, hasVietnamese } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
@@ -15,7 +15,7 @@ export const STYLE_ICON = { dress: '👗', shirt: '👕', aodai: '🥻', tunic: 
 export const STYLE_NAME = { dress: () => T('Dress', 'Váy'), shirt: () => T('Shirt & shorts', 'Áo và quần đùi'), aodai: () => 'Áo dài', tunic: () => T('Explorer', 'Nhà thám hiểm'), overalls: () => T('Overalls', 'Quần yếm'), hoodie: () => T('Hoodie', 'Áo nỉ') };
 export function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3200); }
 
-function modal(cls, html) {
+export function modal(cls, html) {
   const m = el('div', 'modal ' + (cls || ''), `<div class="card">${html}</div>`);
   document.body.appendChild(m);
   m.close = () => { m.classList.add('out'); setTimeout(() => m.remove(), 200); };
@@ -23,7 +23,7 @@ function modal(cls, html) {
 }
 const flagBtns = () => `<div class="seg lang"><button data-l="en" class="${settings.lang === 'en' ? 'on' : ''}">🇦🇺 English</button><button data-l="vi" class="${settings.lang === 'vi' ? 'on' : ''}">🇻🇳 Tiếng Việt</button></div>`;
 function bindLang(root, after) {
-  root.querySelectorAll('.seg.lang button').forEach(b => b.onclick = () => { settings.lang = b.dataset.l; saveSettings(); SFX.tap(); after && after(); });
+  root.querySelectorAll('.seg.lang button').forEach(b => b.onclick = () => { settings.lang = b.dataset.l; saveSettings(); applyLang(); SFX.tap(); after && after(); });
 }
 
 // ---------- Title ----------
@@ -65,7 +65,7 @@ export function showWho(onGo) {
       const p = profiles.find(x => x.id === id); if (chosen.includes(id)) say(`Hi ${p.name}!`, `Chào ${p.name}!`);
       draw();
     });
-    s.querySelector('.pick.add').onclick = () => openEditor(null, draw);
+    s.querySelector('.pick.add').onclick = () => profiles.length >= MAX_KIDS ? toast(T(`Up to ${MAX_KIDS} players. Remove one in Grown-ups first.`, `Tối đa ${MAX_KIDS} người chơi. Hãy xóa bớt trong mục Phụ huynh.`)) : openEditor(null, draw);
     s.querySelector('.go').onclick = () => { if (chosen.length !== need) return; SFX.chime(); s.remove(); onGo(mode, chosen.map(id => profiles.find(p => p.id === id))); };
     holdButton(s.querySelector('.grown'), () => openGrownups(draw));
   };
@@ -110,6 +110,9 @@ export function openGrownups(after) {
       <h3>${T('Players', 'Người chơi')}</h3>
       <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(p.name)}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
       <button class="btn wide" id="gAdd">+ ${T('Add a player', 'Thêm người chơi')}</button>
+      <h3>${T('Farm', 'Nông trại')}</h3>
+      <button class="btn danger" id="gFarm">🔄 ${T('Start the farm over', 'Làm lại nông trại')}</button>
+      <p class="note">${T('Clears crops, animals, pets, basket and coins. Players, photos, stickers and game levels are kept.', 'Xóa cây trồng, vật nuôi, thú cưng, giỏ hàng và tiền. Giữ lại người chơi, ảnh, hình dán và cấp độ trò chơi.')}</p>
       <h3>${T('Backup', 'Sao lưu')}</h3>
       <p class="note">${T('Progress saves automatically on this device. To move it to another phone or tablet, save a backup file and open it there.', 'Tiến trình tự động lưu trên máy này. Để chuyển sang máy khác, hãy lưu tệp sao lưu và mở nó trên máy kia.')}</p>
       <div class="actions"><button class="btn" id="gExp">⬇ ${T('Save backup', 'Lưu bản sao')}</button><label class="btn" for="gImp">⬆ ${T('Open backup', 'Mở bản sao')}</label><input type="file" id="gImp" accept="application/json,.json" class="vh"></div>
@@ -127,8 +130,9 @@ export function openGrownups(after) {
       const keep = settings.lang; settings.lang = b.dataset.try; say('Hello! Welcome to Sparkle Valley.', 'Xin chào! Chào mừng con đến Thung Lũng Lấp Lánh.'); settings.lang = keep;
     });
     card.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => openEditor(profiles.find(p => p.id === b.dataset.ed), () => { draw(); after && after(); }));
-    card.querySelector('#gAdd').onclick = () => openEditor(null, () => { draw(); after && after(); });
+    card.querySelector('#gAdd').onclick = () => profiles.length >= MAX_KIDS ? toast(T(`Up to ${MAX_KIDS} players.`, `Tối đa ${MAX_KIDS} người chơi.`)) : openEditor(null, () => { draw(); after && after(); });
     card.querySelector('#gExp').onclick = exportBackup;
+    card.querySelector('#gFarm').onclick = () => { if (confirm(T('Start the farm over? Players and stickers are kept.', 'Làm lại nông trại? Người chơi và hình dán được giữ lại.'))) { resetFarm(); window.__sv && window.__sv.farm && (window.__sv.farm.syncAnimals(), window.__sv.farm.syncPets()); toast(T('A fresh new farm!', 'Nông trại mới tinh!')); } };
     card.querySelector('#gImp').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { await importBackup(f); toast(T('Backup loaded!', 'Đã mở bản sao!')); draw(); after && after(); } catch (err) { toast(T('That file is not a Sparkle Valley backup.', 'Tệp này không phải bản sao của Thung Lũng Lấp Lánh.')); } };
   };
   draw();
@@ -150,6 +154,7 @@ export function openEditor(profile, after) {
     <div class="field"><label for="nm">${T('Name', 'Tên')}</label><input id="nm" maxlength="16" value="${esc(p.name)}" placeholder="${T('e.g. Annie or Bin', 'ví dụ: Na hoặc Bin')}"></div>
     <div class="field"><span>${T('Age', 'Tuổi')}</span><div class="seg age"><button data-a="little">🧸 ${T('Little (under 5)', 'Bé nhỏ (dưới 5 tuổi)')}</button><button data-a="big">🎒 ${T('Big kid (5 to 8)', 'Bé lớn (5 đến 8 tuổi)')}</button></div>
       <p class="note">${T('Little: everything is spoken, games stay gentle and nobody can lose. Big kid: harder levels, more reading, and real opponents in strategy games.', 'Bé nhỏ: mọi thứ đều được đọc to, trò chơi nhẹ nhàng và không ai thua. Bé lớn: cấp độ khó hơn, đọc nhiều hơn, và có đối thủ thật trong trò chơi chiến thuật.')}</p></div>
+    <div class="field"><span>${T('Difficulty', 'Độ khó')}</span><div class="seg diff"><button data-d="easy">🌱 ${T('Easy', 'Dễ')}</button><button data-d="medium">🌿 ${T('Medium', 'Vừa')}</button><button data-d="hard">🌳 ${T('Hard', 'Khó')}</button></div></div>
     <div class="field"><span>${T('Clothes', 'Trang phục')}</span><div class="chips" id="cOut"></div><div class="chips" id="cCol"></div></div>
     <div class="field"><span>${T('Hat', 'Mũ')}</span><div class="chips" id="cHat"></div></div>
     <div class="field"><span>${T('On the back', 'Sau lưng')}</span><div class="chips" id="cBack"></div></div>
@@ -174,10 +179,18 @@ export function openEditor(profile, after) {
     i.src = url;
   };
   zr.oninput = () => { zoom = +zr.value; draw(); };
-  let drag = null;
-  cv.addEventListener('pointerdown', e => { if (!img) return; drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); });
-  cv.addEventListener('pointermove', e => { if (!drag) return; const k = 480 / cv.clientWidth; ox += (e.clientX - drag.x) * k; oy += (e.clientY - drag.y) * k; drag = { x: e.clientX, y: e.clientY }; draw(); });
-  cv.addEventListener('pointerup', () => drag = null);
+  // drag with one finger to move, pinch with two fingers (or use the slider) to zoom
+  const ptrs = new Map(); let pinch0 = 0, zoom0 = 1;
+  cv.addEventListener('pointerdown', e => { if (!img) return; ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); cv.setPointerCapture(e.pointerId); if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); zoom0 = zoom; } });
+  cv.addEventListener('pointermove', e => {
+    const pr = ptrs.get(e.pointerId); if (!pr) return;
+    if (ptrs.size === 1) { const k = 480 / cv.clientWidth; ox += (e.clientX - pr.x) * k; oy += (e.clientY - pr.y) * k; }
+    pr.x = e.clientX; pr.y = e.clientY;
+    if (ptrs.size === 2 && pinch0) { const [a, b] = [...ptrs.values()]; zoom = clamp(zoom0 * Math.hypot(a.x - b.x, a.y - b.y) / pinch0, 1, 5); zr.value = zoom; }
+    draw();
+  });
+  const up = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = 0; };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   const chips = (id, list, key, render) => {
     const box = m.querySelector(id); box.innerHTML = '';
     list.forEach(v => { const b = el('button', 'chip' + (look[key] === v ? ' on' : '')); b.innerHTML = render(v); b.onclick = () => { look[key] = v; chips(id, list, key, render); }; box.appendChild(b); });
@@ -190,6 +203,9 @@ export function openEditor(profile, after) {
   let age = p.age || 'little';
   const ageBtns = () => m.querySelectorAll('.seg.age button').forEach(b => { b.classList.toggle('on', b.dataset.a === age); b.onclick = () => { age = b.dataset.a; ageBtns(); }; });
   ageBtns();
+  let diff = p.difficulty || 'easy';
+  const diffBtns = () => m.querySelectorAll('.seg.diff button').forEach(b => { b.classList.toggle('on', b.dataset.d === diff); b.onclick = () => { diff = b.dataset.d; diffBtns(); }; });
+  diffBtns();
   chips('#cHair', HAIR, 'hair', v => `<span class="sw" style="background:${v}"></span>`);
   chips('#cSkin', SKIN, 'skin', v => `<span class="sw" style="background:${v}"></span>`);
   const finish = save => {
@@ -202,7 +218,7 @@ export function openEditor(profile, after) {
         ox2.drawImage(img, (240 - img.width * s / 2 + ox - 35) * k, (240 - img.height * s / 2 + oy - 35) * k, img.width * s * k, img.height * s * k);
         p.photo = o.toDataURL('image/jpeg', .82);
       }
-      Object.assign(p.look, look); p.age = age; saveProfiles(true);
+      Object.assign(p.look, look); p.age = age; p.difficulty = diff; saveProfiles(true);
     } else if (isNew) removeProfile(p.id);
     m.close(); after && after(p);
   };
@@ -255,7 +271,11 @@ export function openPad(game, i, tab = 'map') {
   const close = () => { m.close(); game.closePad(i); };
   function drawMap(body) {
     const S = 600, cv = el('canvas', 'bigmap'); cv.width = cv.height = S; body.appendChild(cv);
-    body.appendChild(el('p', 'note center', T('Tap a blue shrine or tower to travel there.', 'Chạm vào đền hoặc tháp màu xanh để bay đến đó.')));
+    body.appendChild(el('p', 'note center', T('Tap a place below, or a blue shrine or tower on the map, to fly there.', 'Chạm vào một nơi bên dưới, hoặc đền và tháp màu xanh trên bản đồ, để bay đến đó.')));
+    const quick = el('div', 'quick');
+    game.PLACES.forEach(pl => { const b = el('button', 'qbtn', `<span>${pl.icon}</span><small>${esc(pl.name())}</small>`); b.onclick = () => { close(); game.travel(hero, pl.x, pl.z); }; quick.appendChild(b); });
+    const ch = el('button', 'qbtn change', `<span>🔄</span><small>${T('Change player', 'Đổi người chơi')}</small>`); ch.onclick = () => { close(); game.changePlayer(); }; quick.appendChild(ch);
+    body.appendChild(quick);
     const x = cv.getContext('2d'); x.drawImage(game.fogMapFor(p), 0, 0, S, S);
     const k = S / SIZE, pt = (wx, wz) => [(wx + HALF) * k, (wz + HALF) * k];
     const spots = [];
@@ -392,3 +412,21 @@ export function openShop(game, i) {
   draw();
 }
 
+
+// ---------- wardrobe (for the children: pictures only, changes show live on the character) ----------
+export function openWardrobe(game, i, onClose) {
+  const p = game.heroes[i].profile;
+  const m = el('div', 'wardrobe');
+  document.body.appendChild(m);
+  const rows = [
+    ['style', STYLES, v => STYLE_ICON[v]], ['color', OUTFIT_COLORS, v => `<span class="sw big" style="background:${v}"></span>`],
+    ['hat', HATS, v => HAT_ICON[v]], ['back', BACKS, v => ({ none: '🙂', wings: '🧚', cape: '🦸' }[v])],
+    ['hairStyle', HAIRSTYLES, v => ({ short: '💇', buns: '🎀', long: '👩', ponytail: '🐴', spiky: '🦔' }[v])], ['hair', HAIR, v => `<span class="sw big" style="background:${v}"></span>`]
+  ];
+  const draw = () => {
+    m.innerHTML = `<button class="x" aria-label="${T('Done', 'Xong')}">✔️</button>` + rows.map(([k, list, r]) => `<div class="wrow">${list.map(v => `<button class="chip ${p.look[k] === v ? 'on' : ''}" data-k="${k}" data-v="${v}">${r(v)}</button>`).join('')}</div>`).join('');
+    m.querySelector('.x').onclick = () => { m.remove(); saveProfiles(); SFX.chime(); say('You look wonderful!', 'Con trông tuyệt quá!'); onClose && onClose(); };
+    m.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { p.look[b.dataset.k] = b.dataset.v; SFX.pop(1); game.rebuildHero(i); draw(); });
+  };
+  draw(); say('Dress up time! Tap the pictures to try things on.', 'Thay đồ nào! Chạm vào hình để thử nhé.');
+}

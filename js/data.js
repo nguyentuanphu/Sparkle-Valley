@@ -42,8 +42,6 @@ export const SHOP = [
   { kind: 'item', id: 'banana', price: 5 }, { kind: 'item', id: 'mango', price: 8 }, { kind: 'item', id: 'rice', price: 4 },
   { kind: 'item', id: 'egg', price: 3 }, { kind: 'item', id: 'fish', price: 10 }, { kind: 'item', id: 'noodles', price: 6 },
   { kind: 'item', id: 'bean', price: 4 }, { kind: 'item', id: 'leaf', price: 2 },
-  { kind: 'hat', id: 'nonla', price: 30 }, { kind: 'hat', id: 'cap', price: 30 }, { kind: 'hat', id: 'flower', price: 25 },
-  { kind: 'hat', id: 'bunny', price: 40 }, { kind: 'hat', id: 'crown', price: 80 },
   { kind: 'glider', id: 1, price: 50 }, { kind: 'glider', id: 2, price: 50 }, { kind: 'glider', id: 3, price: 50 }, { kind: 'glider', id: 4, price: 50 }
 ];
 export const HAT_ICON = { none: '🙂', nonla: '👒', cap: '🧢', crown: '👑', bunny: '🐰', flower: '🌸', bow: '🎀' };

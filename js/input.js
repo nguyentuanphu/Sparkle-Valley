@@ -9,7 +9,8 @@ export class Pad {
 export const pads = [new Pad(), new Pad()];
 
 // rects: function returning [{x,y,w,h}] in CSS pixels for each active player
-export function initInput(canvas, rects, isBlocked) {
+// onTap(player, x, y) is called for a quick tap (used for tap-to-walk).
+export function initInput(canvas, rects, isBlocked, onTap) {
   const touches = new Map(); // pointerId -> {p, kind:'stick'|'cam', x0,y0,x,y, el}
   const which = (x, y) => { const r = rects(); for (let i = 0; i < r.length; i++) { const q = r[i]; if (x >= q.x && x < q.x + q.w && y >= q.y && y < q.y + q.h) return i; } return -1; };
   const stickEls = [0, 1].map(() => { const b = document.createElement('div'); b.className = 'stick'; b.innerHTML = '<i></i>'; b.hidden = true; document.body.appendChild(b); return b; });
@@ -19,8 +20,8 @@ export function initInput(canvas, rects, isBlocked) {
     const r = rects()[p], left = e.clientX < r.x + r.w * .45;
     const kind = left && e.pointerType !== 'mouse' ? 'stick' : 'cam';
     if (kind === 'stick' && [...touches.values()].some(t => t.p === p && t.kind === 'stick')) return;
-    touches.set(e.pointerId, { p, kind, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY });
-    if (kind === 'stick') { const s = stickEls[p]; s.hidden = false; s.style.left = e.clientX + 'px'; s.style.top = e.clientY + 'px'; s.firstChild.style.transform = ''; }
+    touches.set(e.pointerId, { p, kind, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t0: performance.now(), moved: 0 });
+    if (kind === 'stick') { const s = stickEls[p]; s.style.left = e.clientX + 'px'; s.style.top = e.clientY + 'px'; s.firstChild.style.transform = ''; }
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { }
   });
   canvas.addEventListener('pointermove', e => {
@@ -29,12 +30,16 @@ export function initInput(canvas, rects, isBlocked) {
     if (t.kind === 'stick') {
       let dx = e.clientX - t.x0, dy = e.clientY - t.y0; const d = Math.hypot(dx, dy), R = 55;
       if (d > R) { dx = dx / d * R; dy = dy / d * R; }
-      pad.mx = dx / R; pad.mz = -dy / R; stickEls[t.p].firstChild.style.transform = `translate(${dx}px,${dy}px)`;
+      if (t.moved + d > 14) { stickEls[t.p].hidden = false; pad.mx = dx / R; pad.mz = -dy / R; pad.goal = null; }
+      stickEls[t.p].firstChild.style.transform = `translate(${dx}px,${dy}px)`;
     } else { pad.cdx += e.clientX - t.x; pad.cdy += e.clientY - t.y; }
+    t.moved += Math.abs(e.clientX - t.x) + Math.abs(e.clientY - t.y);
     t.x = e.clientX; t.y = e.clientY;
   });
   const end = e => {
     const t = touches.get(e.pointerId); if (!t) return; touches.delete(e.pointerId);
+    // a short tap that hardly moved = "walk there"
+    if (e.type === 'pointerup' && t.moved < 14 && performance.now() - t.t0 < 350 && onTap) onTap(t.p, e.clientX, e.clientY);
     if (t.kind === 'stick') { pads[t.p].mx = 0; pads[t.p].mz = 0; stickEls[t.p].hidden = true; }
   };
   canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end); canvas.addEventListener('lostpointercapture', end);

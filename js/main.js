@@ -1,13 +1,13 @@
 // Sparkle Valley: boot, the game loop, split-screen, NPCs, quests and rewards.
 import { THREE, sprite } from './gfx.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
-import { settings, saveProfiles, farm } from './state.js';
+import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';
 import { T } from './i18n.js';
 import { say, hush } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
-import { createWorld, paintMap, heightAt, regionAt, REGION_NAMES, SHRINES, TOWERS, LEAFIES, VILLAGE, REVEAL_R, WATER } from './world.js';
+import { createWorld, paintMap, heightAt, regionAt, REGION_NAMES, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, REVEAL_R, WATER } from './world.js';
 import { buildAvatar, buildOwl, buildGourd, avatarURL } from './avatar.js';
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
@@ -20,6 +20,10 @@ import './games/thinking.js';
 import './games/strategy.js';
 import './games/vietnam.js';
 import './games/market.js';
+import './games/farmgames.js';
+import { createFarm, jobProgress, ensureJobs } from './farm.js';
+import { createPlaces } from './places.js';
+import { openWardrobe } from './ui.js';
 
 // ---------- renderer & world ----------
 const quality = settings.quality === 'auto' ? ((navigator.hardwareConcurrency || 4) <= 4 || Math.min(screen.width, screen.height) < 500 ? 'low' : 'mid') : settings.quality;
@@ -49,7 +53,7 @@ window.__sv = G; // handy for debugging in the browser console
 const NPCS = [];
 function nameTag(text, color = '#ffffff') {
   const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d');
-  x.font = 'bold 34px Nunito, sans-serif'; const w = Math.min(250, x.measureText(text).width + 30);
+  x.font = 'bold 34px Fredoka, "Baloo 2", sans-serif'; const w = Math.min(250, x.measureText(text).width + 30);
   x.fillStyle = 'rgba(15,30,35,.72)'; x.beginPath(); x.roundRect((256 - w) / 2, 8, w, 48, 24); x.fill();
   x.fillStyle = color; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, 128, 33);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
@@ -103,6 +107,20 @@ function setupInteractables() {
       act: h => { st.ready = performance.now() + 120000; give(h, item, 1); } });
   });
 }
+// Floating bubble icons over every activity, so children who can't read can see where the fun is.
+function setupBubbles() {
+  const tex = {};
+  const mat = ch => { if (tex[ch]) return tex[ch]; const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+    const g = x.createRadialGradient(54, 50, 10, 64, 64, 60); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(.85, 'rgba(220,245,255,.85)'); g.addColorStop(1, 'rgba(120,200,255,.9)');
+    x.fillStyle = g; x.beginPath(); x.arc(64, 64, 58, 0, Math.PI * 2); x.fill(); x.strokeStyle = 'rgba(255,255,255,.95)'; x.lineWidth = 5; x.stroke();
+    x.font = '68px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(ch, 64, 70);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return tex[ch] = new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false }); };
+  G.bubbleIcons = G.interactables.filter(it => it.bubble).map((it, k) => {
+    const s = new THREE.Sprite(mat(it.bubble)); s.scale.setScalar(1.3); const y = heightAt(it.x, it.z) + 3.4; s.position.set(it.x, y, it.z); s.userData.it = it; scene.add(s);
+    world.updaters.push((dt, t) => { s.position.y = y + Math.sin(t * 2 + k) * .18; const near = G.heroes.some(h => dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r); s.material.opacity = near ? .35 : 1; });
+    return s;
+  });
+}
 function nearest(h) {
   let best = null, bd = 1e9;
   for (const it of G.interactables) {
@@ -132,13 +150,18 @@ async function playGame(i, id, source, shrine) {
   const h = G.heroes[i]; if (!h || gameOpen()) return;
   G.paused = true; hush();
   const players = G.heroes.map(x => x.profile); if (G.heroes.length > 1 && i === 1) players.reverse();
-  const p = h.profile, level = p.levels[id] || 1;
+  // Level = how far this child has got in this game, shifted by the chosen difficulty.
+  const p = h.profile, level = Math.min(5, (p.levels[id] || 1) + { easy: 0, medium: 1, hard: 2 }[p.difficulty || 'easy']);
+  const little = G.heroes.some(x => x.profile.age !== 'big'), strong = !little && p.difficulty !== 'easy';
   if (source === 'shrine') { SFX.secret(); say('A shrine! Let’s solve the puzzle.', 'Một ngôi đền! Cùng giải câu đố nào.'); await wait(600); }
-  const res = await openGame(id, { players, level, style: source === 'folk' || id === 'market' ? 'village' : 'shrine' });
+  const res = await openGame(id, { players, level, little, strong, style: source === 'folk' || id === 'market' ? 'village' : 'shrine' });
   G.paused = false;
   if (!res.won) return;
   for (const hero of G.heroes) {
-    const q = hero.profile; q.levels[id] = Math.min(5, (q.levels[id] || 1) + 1);
+    // move up a level after every 2 wins
+    const q = hero.profile; q.wins[id] = (q.wins[id] || 0) + 1;
+    if (q.wins[id] % 2 === 0 && (q.levels[id] || 1) < 5) { q.levels[id] = (q.levels[id] || 1) + 1; if (hero === h) setTimeout(() => { hudFor(h).toast(T('⭐ Level up! ', '⭐ Lên cấp! ') + (q.levels[id])); SFX.chime(); }, 3000); }
+    else if (!q.levels[id]) q.levels[id] = 1;
     q.stats.games = (q.stats.games || 0) + 1;
     if (source === 'shrine' && shrine && !q.shrines[shrine.id]) {
       q.shrines[shrine.id] = true; q.orbs++; addMoney(q, 20);
@@ -147,10 +170,10 @@ async function playGame(i, id, source, shrine) {
         world.setShrineDone(shrine.id, true);
         await reward('🔮', T('Sparkle Orb!', 'Ngọc Lấp Lánh!'), T(`+${fmt(20)} and a new sticker ${st || ''}. Bring 4 orbs to the Lotus Statue!`, `+${fmt(20)} và một hình dán mới ${st || ''}. Mang 4 viên ngọc đến Tượng Sen nhé!`));
       }
-    } else if (source === 'folk' || id === 'market') {
+    } else if (source === 'folk' || source === 'place' || id === 'market') {
       const first = !q.quests['played_' + id];
-      q.quests['played_' + id] = true; q.quests[id === 'market' ? 'market' : 'folk'] = true;
-      const amt = id === 'market' ? 25 : 12; addMoney(q, amt);
+      q.quests['played_' + id] = true; if (source !== 'place') q.quests[id === 'market' ? 'market' : 'folk'] = true;
+      const amt = id === 'market' ? 25 : source === 'place' ? 8 : 12; addMoney(q, amt);
       const st = first ? giveSticker(q) : null;
       if (hero === h) await reward(id === 'market' ? '💰' : '🎉', T(`+${fmt(amt)}!`, `+${fmt(amt)}!`), st ? T(`New sticker ${st}!`, `Hình dán mới ${st}!`) : T('Thank you for playing!', 'Cảm ơn con đã chơi!'));
     } else {
@@ -158,8 +181,12 @@ async function playGame(i, id, source, shrine) {
     }
   }
   save(); checkQuests(h);
+  G.job('puzzle', 1, h); if (id === 'balloon') G.job('fly', 1, h); if (id === 'bubbles') G.job('bubbles', 1, h);
 }
 G.playGame = playGame;
+G.job = (kind, n = 1, h) => jobProgress(G, kind, n, h);
+G.STICKERS = STICKERS;
+G.openWardrobe = i => { if (G.paused) return; G.paused = true; G.closeUp = i; openWardrobe(G, i, () => { G.paused = false; G.closeUp = null; }); };
 
 async function foundLeafy(h, lf) {
   const p = h.profile; if (p.leafies[lf.id]) return;
@@ -308,7 +335,9 @@ G.onGlide = h => { if (!h.profile.quests.glided) { h.profile.quests.glided = tru
 G.hint = (h, k) => { if (k === 'tired' && !h._tiredHint) { h._tiredHint = true; hudFor(h).toast(T('Too tired to climb. Rest a moment!', 'Mệt quá không leo được. Nghỉ một chút nhé!')); setTimeout(() => h._tiredHint = false, 6000); } };
 G.stats = (h, sp) => { h.profile.stats.steps = (h.profile.stats.steps || 0) + 1; };
 G.hurt = (h, n) => {
-  h.hearts = Math.max(0, h.hearts - n); SFX.no(); hudFor(h).toast(T('Ouch! Big fall!', 'Ui da! Ngã đau quá!'));
+  // Falls never hurt little ones. Big kids on Hard lose a heart (food heals), and are carried to safety at zero.
+  if (h.profile.age !== 'big' || h.profile.difficulty !== 'hard') { SFX.bump && SFX.bump(); return; }
+  h.hearts = Math.max(0, h.hearts - n); SFX.no(); hudFor(h).toast(T('Oof! Big fall!', 'Ui da! Ngã đau quá!'));
   if (h.hearts <= 0) G.rescue(h, true);
 };
 G.rescue = async (h, fainted) => {
@@ -332,7 +361,7 @@ G.eat = (h, id) => {
   h.hearts = Math.min(p.hearts, h.hearts + r.heal); h.bonusStamina = r.bonus; h.stamina = p.staminaMax + r.bonus; h.exhausted = false;
   SFX.ok(); say(`Yum yum! ${r.name()}!`, `Măm măm! ${r.name()}!`); h.cheerT = 1.2;
 };
-G.onCooked = (h) => checkQuests(h);
+G.onCooked = (h) => { checkQuests(h); G.job('cook', 1, h); };
 G.rebuildHero = i => { const h = G.heroes[i]; if (h) { h.buildModel(); G.huds[i].refreshWho(); sendHello(); } };
 G.fogMapFor = p => G.fogMaps[p.id] || (G.fogMaps[p.id] = fogMapFor(p, baseMap));
 G.snapshot = i => {
@@ -344,13 +373,44 @@ G.snapshot = i => {
   G.huds.forEach(x => x.root.style.visibility = '');
   return c.toDataURL('image/jpeg', .8);
 };
+G.PLACES = [
+  { icon: '🏡', name: () => T('Sunny Farm', 'Nông trại'), x: HOME.x - 4, z: HOME.z + 2 },
+  { icon: '🏮', name: () => T('Lotus Village', 'Làng Sen'), x: VILLAGE.x - VILLAGE.r + 6, z: VILLAGE.z },
+  { icon: '🦉', name: () => T('Ông Cú', 'Ông Cú'), x: -2, z: -3 },
+  { icon: '💃', name: () => T('Dance stage', 'Sân khấu'), x: VILLAGE.x - 6, z: VILLAGE.z + 25 },
+  { icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: 6, z: 140 },
+  { icon: '🐻', name: () => T('Mr. Bear', 'Bác Gấu'), x: HOME.x - 21, z: HOME.z + 6 }
+];
+G.changePlayer = () => {
+  save(); Net.close(); playing = false; G.paused = true; $('#huds').hidden = true;
+  G.heroes.forEach(h => { if (h.riding) h.dismount(); scene.remove(h.av.root); }); G.huds.forEach(h => h.destroy()); G.heroes = []; G.huds = [];
+  showWho((mode, chosen) => startSession(mode, chosen));
+};
+// Children who are not playing right now still wander around the farm.
+G.wanderers = [];
+function setupWanderers(active) {
+  G.wanderers.forEach(w => { scene.remove(w.av.root); scene.remove(w.tag); }); G.wanderers = [];
+  profiles.filter(p => !active.includes(p)).slice(0, 4).forEach((p, k) => {
+    const av = buildAvatar(p.look, p.photo), tag = nameTag(p.name);
+    const x = HOME.x - 8 + k * 4, z = HOME.z + 4;
+    av.root.position.set(x, heightAt(x, z), z); scene.add(av.root); scene.add(tag);
+    G.wanderers.push({ av, tag, tx: x, tz: z, pos: av.root.position, yaw: 0 });
+  });
+}
+world.updaters.push((dt, t) => G.wanderers.forEach((w, k) => {
+  const p = w.pos, dx = w.tx - p.x, dz = w.tz - p.z, d = Math.hypot(dx, dz);
+  let st = 'idle', sp = 0;
+  if (d < .3) { if (Math.random() < dt * .25) { const a = Math.random() * 6.28, r = 4 + Math.random() * 14; w.tx = HOME.x + Math.cos(a) * r; w.tz = HOME.z + Math.sin(a) * r; } }
+  else { sp = 2.2; w.yaw = Math.atan2(dx, dz); p.x += dx / d * sp * dt; p.z += dz / d * sp * dt; st = 'walk'; }
+  world.collide(p, .4); p.y = world.groundAt(p.x, p.z, p.y + 1); w.av.root.rotation.y = w.yaw; w.av.anim(st, t + k, sp); w.tag.position.set(p.x, p.y + 2, p.z);
+}));
 G.openPad = i => { if (G.paused) return; G.paused = true; openPad(G, i); };
 G.closePad = () => { G.paused = false; };
 
 // ---------- talking: quick phrases, speech bubbles, voice calls ----------
 function bubble(target, text) {
   const c = document.createElement('canvas'); c.width = 512; c.height = 128; const x = c.getContext('2d');
-  x.font = 'bold 44px Nunito, sans-serif'; const w = Math.min(500, x.measureText(text).width + 50);
+  x.font = 'bold 44px Fredoka, "Baloo 2", sans-serif'; const w = Math.min(500, x.measureText(text).width + 50);
   x.fillStyle = '#fff'; x.strokeStyle = '#2a3a40'; x.lineWidth = 6; x.beginPath(); x.roundRect((512 - w) / 2, 6, w, 92, 40); x.fill(); x.stroke();
   x.beginPath(); x.moveTo(236, 96); x.lineTo(256, 124); x.lineTo(276, 96); x.fill();
   x.fillStyle = '#2a3a40'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, 256, 54);
@@ -363,6 +423,12 @@ G.emote = (i, id) => {
   bubble(h, e.icon + ' ' + T(e.en, e.vi)); h.emoteT = 2;
   say(`${h.profile.name} says: ${e.en}`, `${h.profile.name} nói: ${e.vi}`);
   Net.send({ t: 'emote', id });
+};
+// Kid-sized mute buttons: 🎵 turns music on/off, 🔊 turns sound effects and the talking voice on/off together.
+G.toggleAudio = kind => {
+  if (kind === 'music') { settings.music = !settings.music; if (settings.music) Music.refresh(); else Music.stop(); }
+  else { const on = !(settings.sound || settings.voice); settings.sound = on; settings.voice = on; if (!on) hush(); }
+  saveSettings(); SFX.tap(); G.huds.forEach(h => h.refreshAudio());
 };
 G.toggleMute = () => { Net.setMuted(!Net.muted); Net.resumeAudio(); G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted)); };
 function sendHello() {
@@ -435,7 +501,21 @@ function resize() {
   if (G.heroes.length > 1) { const v = innerWidth >= innerHeight; Object.assign(sp.style, v ? { left: innerWidth / 2 - 2 + 'px', top: 0, width: '4px', height: '100%' } : { top: innerHeight / 2 - 2 + 'px', left: 0, height: '4px', width: '100%' }); }
 }
 addEventListener('resize', resize);
-const poll = initInput(renderer.domElement, rects, () => G.paused || !G.heroes.length);
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function onTap(i, x, y) {
+  const h = G.heroes[i]; if (!h || G.paused) return;
+  if (h._dancing) { G.places.note(h); return; }
+  const r = rects()[i]; ndc.set((x - r.x) / r.w * 2 - 1, -((y - r.y) / r.h) * 2 + 1);
+  ray.setFromCamera(ndc, h.cam);
+  // tapping a bubble icon walks to that activity
+  const hitB = ray.intersectObjects(G.bubbleIcons || [], false)[0];
+  if (hitB) { h.goal = approach(h, hitB.object.userData.it); return; }
+  const hit = ray.intersectObject(world.terrain, false)[0];
+  if (hit) { h.goal = { x: hit.point.x, z: hit.point.z }; G.fx(hit.point.x, hit.point.y + .3, hit.point.z, '✨'); }
+}
+// stop just in front of an activity rather than inside it
+function approach(h, it) { const dx = h.pos.x - it.x, dz = h.pos.z - it.z, d = Math.hypot(dx, dz) || 1, k = Math.max(.5, Math.min(it.r * .6, 2.5)); return { x: it.x + dx / d * k, z: it.z + dz / d * k }; }
+const poll = initInput(renderer.domElement, rects, () => G.paused || !G.heroes.length, onTap);
 renderer.domElement.addEventListener('wheel', e => { G.zoom = clamp(G.zoom * (e.deltaY > 0 ? 1.1 : .9), .6, 1.8); }, { passive: true });
 
 // ---------- starting a session ----------
@@ -452,6 +532,7 @@ function startSession(mode, chosen) {
   SHRINES.forEach(s => world.setShrineDone(s.id, !!p0.shrines[s.id]));
   TOWERS.forEach(t => world.setTowerDone(t.id, !!p0.towers[t.id]));
   LEAFIES.forEach(l => { const o = world.leafyMeshes[l.id]; if (o) o.visible = !chosen.every(p => p.leafies[l.id]); });
+  setupWanderers(chosen);
   resize(); G.paused = false; playing = true;
   $('#huds').hidden = false;
   const p = chosen[0];
@@ -465,6 +546,7 @@ let playing = false, last = performance.now(), t = 0, sendT = 0, saveT = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+  if (gameOpen()) return; // the 3D world rests while a full-screen game is open (saves battery)
   world.update(dt, t);
   if (!playing) {
     const a = t * .05;
@@ -481,6 +563,7 @@ function frame(now) {
       const it = nearest(h);
       if (it && it.auto) it.act(h, G);
       G.huds[i].setAction(it && !it.auto ? it : null);
+      h._dancing = G.places.onStage(h);
       if (pads[i].act() && it) { SFX.tap(); it.act(h, G); }
       // discover shrines and towers you walk near
       for (const s of SHRINES.concat(TOWERS)) if (!h.profile.discovered[s.id] && dist2(s.x, s.z, h.pos.x, h.pos.z) < 45) { h.profile.discovered[s.id] = true; save(); }
@@ -491,10 +574,18 @@ function frame(now) {
         if (rg === 'village' && !h.profile.quests.village) { h.profile.quests.village = true; save(); say('Welcome to Lotus Village! Xin chào!', 'Chào mừng đến Làng Sen!'); checkQuests(h); }
       }
     });
-  } else { pads.forEach(p => { p.act(); p.jump(); p.menu(); }); }
+  } else {
+    pads.forEach(p => { p.act(); p.jump(); p.menu(); });
+    if (G.closeUp != null && G.heroes[G.closeUp]) { const h = G.heroes[G.closeUp]; h.state = 'idle'; h.finish(dt, t, G, 0); }
+  }
   // music follows the first player
   const h0 = G.heroes[0];
-  if (h0 && !gameOpen()) Music.play(h0.gliding ? 'glide' : world.isNight() ? 'night' : G.regionOf[0] === 'village' ? 'village' : regionAt(h0.pos.x, h0.pos.z) === 'plateau' && SHRINES.some(s => dist2(s.x, s.z, h0.pos.x, h0.pos.z) < 8) ? 'shrine' : 'field');
+  if (h0 && !gameOpen()) {
+    const rg = G.regionOf[0], nearPond = G.farm && dist2(h0.pos.x, h0.pos.z, G.farm.pondPos.x, G.farm.pondPos.z) < 12;
+    Music.play(G.places.dancing ? G.places.song() : h0.gliding ? 'glide' : nearPond ? 'pond' : rg === 'home' ? 'farm' : world.isNight() ? 'night'
+      : rg === 'village' ? (Math.floor(t / 90) % 2 ? 'village2' : 'village') : SHRINES.some(s => dist2(s.x, s.z, h0.pos.x, h0.pos.z) < 8) ? 'shrine' : 'field');
+  }
+  $('#songBtn').hidden = !G.places.dancing || G.paused;
   if (!G.paused) world.updateSky(dt, h0.pos, h0.pos);
   // online partner
   if (G.partner && Net.remote && Net.remote.s) {
@@ -528,6 +619,11 @@ function frame(now) {
 
 // ---------- boot ----------
 setupNPCs(); setupInteractables();
+G.farm = createFarm(G); world.updaters.push(G.farm.update);
+G.places = createPlaces(G); world.updaters.push(G.places.update);
+ensureJobs();
+setupBubbles();
+$('#songBtn').onclick = () => G.places.nextSong();
 resize();
 $('#boot').remove();
 requestAnimationFrame(frame);

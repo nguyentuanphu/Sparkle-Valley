@@ -13,9 +13,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap">
+<link rel="preload" href="fonts/Fredoka-latin-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -23,6 +22,7 @@
 <div id="split" hidden></div>
 <div id="huds" hidden></div>
 <div id="toast" role="status"></div>
+<button id="songBtn" hidden aria-label="Next song">🎶</button>
 <div id="boot"><div class="spin"></div><p>Sparkle Valley · Thung Lũng Lấp Lánh</p></div>
 <noscript>Please turn on JavaScript to play.</noscript>
 <script type="module" src="js/main.js"></script>

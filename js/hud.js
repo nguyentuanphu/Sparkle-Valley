@@ -27,7 +27,7 @@ export class Hud {
       <div class="hud-tl">
         <div class="hearts"></div>
         <div class="chips"><span class="chip c-money"></span><span class="chip c-orbs"></span><span class="chip c-leafy"></span></div>
-        <div class="hud-btns"><button class="hb pad" aria-label="${T('Sparkle Pad', 'Bảng Lấp Lánh')}">▦</button><button class="hb chat" aria-label="${T('Talk', 'Nói')}">💬</button><button class="hb call" hidden aria-label="${T('Voice call', 'Gọi thoại')}">🎙️</button></div>
+        <div class="hud-btns"><button class="hb pad" aria-label="${T('Sparkle Pad', 'Bảng Lấp Lánh')}">▦</button><button class="hb chat" aria-label="${T('Talk', 'Nói')}">💬</button><button class="hb call" hidden aria-label="${T('Voice call', 'Gọi thoại')}">🎙️</button><button class="hb mus" aria-label="${T('Music on or off', 'Bật tắt nhạc')}">🎵</button><button class="hb snd" aria-label="${T('Sounds on or off', 'Bật tắt âm thanh')}">🔊</button></div>
       </div>
       <div class="hud-tr">
         <div class="mini-wrap"><canvas class="mini" width="200" height="200"></canvas><i class="mini-n">N</i><i class="mini-me"></i></div>
@@ -58,10 +58,17 @@ export class Hud {
     this.q('.hb.pad').onclick = () => game.openPad(i);
     this.q('.hb.chat').onclick = () => this.toggleEmotes();
     this.q('.hb.call').onclick = () => game.toggleMute();
+    this.q('.hb.mus').onclick = () => game.toggleAudio('music');
+    this.q('.hb.snd').onclick = () => game.toggleAudio('sound');
+    this.refreshAudio();
     const em = this.q('.emotes');
     EMOTES.forEach(e => { const b = el('button', 'em', `<span>${e.icon}</span><small>${esc(T(e.en, e.vi))}</small>`); b.onclick = () => { this.toggleEmotes(false); game.emote(i, e.id); }; em.appendChild(b); });
     this.regionT = 0; this.toastT = 0; this.last = {};
     this.refreshWho();
+  }
+  refreshAudio() {
+    const s = this.game.settings, m = this.q('.hb.mus'), d = this.q('.hb.snd');
+    m.classList.toggle('off', !s.music); d.classList.toggle('off', !(s.sound || s.voice)); d.textContent = s.sound || s.voice ? '🔊' : '🔇';
   }
   refreshWho() { const p = this.hero.profile; this.q('.who-tag img').src = avatarURL(p); this.q('.who-tag span').textContent = p.name; }
   toggleEmotes(v) { const e = this.q('.emotes'); e.hidden = v == null ? !e.hidden : !v; }

@@ -35,6 +35,7 @@ function newProfile(i) {
     name: i === 0 ? 'Bé Na' : 'Bé Bin',
     photo: null,
     age: 'little',           // 'little' (under 5: everything spoken, can't lose) or 'big' (5 to 8: harder, real opponents)
+    difficulty: 'easy',      // 'easy' | 'medium' | 'hard'
     look: { style: i === 0 ? 'dress' : 'shirt', color: i === 0 ? '#ff5fa2' : '#3b6fe0', hat: i === 0 ? 'bow' : 'cap', back: i === 0 ? 'wings' : 'cape', hair: HAIR[0], hairStyle: i === 0 ? 'buns' : 'short', skin: SKIN[1], glider: 0 },
     created: Date.now()
   };
@@ -48,6 +49,7 @@ export function normalizeProfile(p) {
   };
   const o = Object.assign({}, d, p);
   if (!o.age) o.age = 'little';
+  if (!['easy', 'medium', 'hard'].includes(o.difficulty)) o.difficulty = o.age === 'big' ? 'medium' : 'easy';
   // older saves stored a fixed outfit; turn it into style + colour
   const L = o.look = Object.assign({ style: 'shirt', color: '#3b6fe0', hat: 'none', back: 'none', hair: HAIR[0], hairStyle: 'short', skin: SKIN[1], glider: 0 }, p.look || {});
   if (L.outfit) { L.style = { tunic: 'tunic', aodai: 'aodai', dress: 'dress', overalls: 'overalls', hoodie: 'hoodie', sunny: 'dress' }[L.outfit] || 'shirt'; L.color = { tunic: '#3d7fd6', aodai: '#e8435a', dress: '#ff7eb8', overalls: '#5bbf6a', hoodie: '#9a6bff', sunny: '#ffb52e' }[L.outfit] || L.color; delete L.outfit; }

@@ -74,7 +74,9 @@ register({
       const opts = [];
       for (let i = 7; i <= 11; i++) if (st.seeds[i]) for (const d of [1, -1]) { const r = simulate(st, i, d); opts.push({ i, d, gain: r.s.score[1] - st.score[1] }); }
       opts.sort((a, b) => b.gain - a.gain);
-      return api.level <= 1 && Math.random() < .55 ? pick(opts) : opts[0];
+      if (api.little) return opts[opts.length - 1];          // little kids: Tèo plays the gentlest move
+      if (api.strong) return opts[0];                         // big kids on medium/hard: Tèo plays to win
+      return Math.random() < .55 ? pick(opts) : opts[0];
     };
     let turn = 0;
     const over = () => !st.big[0] && !st.big[6] && st.seeds[0] === 0 && st.seeds[6] === 0;
@@ -110,9 +112,11 @@ register({
     for (let i = 7; i <= 11; i++) { st.score[1] += st.seeds[i]; st.seeds[i] = 0; }
     draw();
     const w = st.score[0] === st.score[1] ? -1 : st.score[0] > st.score[1] ? 0 : 1;
-    const title = w < 0 ? T("It's a tie!", 'Hòa rồi!') : T(`${names[w]} wins!`, `${names[w]} thắng!`);
+    let title = w < 0 ? T("It's a tie!", 'Hòa rồi!') : T(`${names[w]} wins!`, `${names[w]} thắng!`);
+    // nobody loses in little mode: celebrate what the child captured instead
+    if (api.little && w === 1 && !api.two) title = T(`What a game! You captured ${st.score[0]} seeds!`, `Ván hay quá! Con ăn được ${st.score[0]} hạt!`);
     await wait(800);
-    return api.win({ title, titleVi: w < 0 ? 'Hòa rồi!' : `${names[w]} thắng!` });
+    return api.win({ title, titleVi: title });
   }
 });
 
@@ -137,8 +141,10 @@ register({
     const aiMove = () => {
       const free = b.map((v, i) => v < 0 ? i : -1).filter(i => i >= 0);
       const test = who => free.find(i => { b[i] = who; const w = lineAt(i, who); b[i] = -1; return w; });
-      const win = test(1); if (win != null) return win;
-      const block = test(0); if (block != null && (api.level > 1 || Math.random() < .6)) return block;
+      // In little mode Bống never takes a winning square, so the child can't lose.
+      const win = test(1); if (win != null && !api.little) return win;
+      const block = test(0); if (block != null && (api.strong || (!api.little && api.level > 1) || Math.random() < .5)) return block;
+      if (api.little) { const safe = free.filter(i => { b[i] = 1; const w = lineAt(i, 1); b[i] = -1; return !w; }); if (safe.length) return pick(safe); }
       const c = Math.floor(N / 2) * N + Math.floor(N / 2); if (b[c] < 0 && Math.random() < .7) return c;
       const near = free.filter(i => { const x = i % N, y = Math.floor(i / N); return [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1]].some(([dx, dy]) => b[(y + dy) * N + x + dx] === 1 && x + dx >= 0 && x + dx < N); });
       return pick(near.length && Math.random() < .6 ? near : free);
@@ -151,6 +157,7 @@ register({
       else { api.show(`${names[turn]} ${P[turn]}`, `${names[turn]} ${P[turn]}`); const c = await tapOne(cells.filter(c => b[c._i] < 0)); if (api.closed) return; i = c._i; }
       b[i] = turn; cells[i].textContent = P[turn]; cells[i].classList.add('put'); api.sfx.pop(moves);
       const line = lineAt(i, turn);
+      if (line && api.little && turn === 1 && !api.two) break; // (only if every square would finish a line) call it a tie
       if (line) { line.forEach(k => cells[k].classList.add('win')); winner = turn; break; }
       turn = 1 - turn;
     }
@@ -211,12 +218,13 @@ register({
       const mark = field.querySelector('.mark'), rope = field.querySelector('.rope');
       const pull = d => { x += d * .045; api.sfx.pop(Math.abs(Math.round(x * 10))); };
       b0.onclick = () => pull(-1); if (b1) b1.onclick = () => pull(1);
-      const aiRate = [1.9, 2.3, 2.8, 3.2, 3.6][Math.min(4, api.level - 1)] + attempt * -.25;
+      const aiRate = api.little ? 1.4 : ([1.9, 2.3, 2.8, 3.2, 3.6][Math.min(4, api.level - 1)] + (api.strong ? .4 : 0) + attempt * -.25);
       await new Promise(res => {
         const tick = now => {
           if (api.closed) return res();
           const dt = Math.min(.1, (now - last) / 1000); last = now;
-          if (!api.two && Math.random() < aiRate * dt) pull(1);
+          // the village kids never pull past the middle third against a little one
+          if (!api.two && Math.random() < aiRate * dt && !(api.little && x > .3)) pull(1);
           mark.style.left = (50 + x * 40) + '%'; rope.style.transform = `translateX(${x * 30}%)`;
           if (x <= -1 || x >= 1) { done = x <= -1 ? 0 : 1; return res(); }
           requestAnimationFrame(tick);

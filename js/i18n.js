@@ -3,6 +3,8 @@
 import { settings } from './state.js';
 
 export const T = (en, vi) => (settings.lang === 'vi' ? vi : en);
+export const applyLang = () => { document.documentElement.lang = settings.lang === 'vi' ? 'vi' : 'en'; };
+applyLang();
 export const other = (en, vi) => (settings.lang === 'vi' ? en : vi);
 
 // Alphabets for the letter games.

@@ -141,11 +141,12 @@ register({
       const N = Math.min(8, 3 + api.level + r), walls = makeMaze(N, N);
       const grid = el('div', 'maze'); grid.style.setProperty('--n', N); api.stage.appendChild(grid);
       const cells = walls.map((w, i) => { const c = el('div', 'mcell'); ['n', 's', 'e', 'w'].forEach(k => w[k] && c.classList.add('w' + k)); grid.appendChild(c); return c; });
-      cells[N * N - 1].textContent = '🍉';
-      let p = [0, 0]; const me = el('div', 'mme', api.two ? '👫' : '🐥'); me.style.width = me.style.height = (100 / N) + '%'; grid.appendChild(me);
+      const duck = api.theme === 'duck';
+      cells[N * N - 1].textContent = duck ? '🦆' : '🍉';
+      let p = [0, 0]; const me = el('div', 'mme', duck ? '🐥' : api.two ? '👫' : '🧒'); me.style.width = me.style.height = (100 / N) + '%'; grid.appendChild(me);
       const place = () => { me.style.transform = `translate(${p[0] * 100}%, ${p[1] * 100}%)`; cells[p[1] * N + p[0]].classList.add('trail'); };
       place();
-      api.say('Find the way to the watermelon!', 'Tìm đường đến quả dưa hấu nào!');
+      if (duck) api.say('Help the duckling find its mummy!', 'Giúp vịt con tìm vịt mẹ nào!'); else api.say('Find the way to the watermelon!', 'Tìm đường đến quả dưa hấu nào!');
       const pad = el('div', 'rpad'); api.stage.appendChild(pad);
       await new Promise(res => {
         const move = k => {

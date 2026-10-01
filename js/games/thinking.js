@@ -2,7 +2,8 @@
 // shapes, colours, ordering by size and memory.
 import { register, untilRight, choiceButtons, tapOne } from './frame.js';
 import { T, ALPHABET, VI_LETTER_NAMES, LETTER_WORDS, numWord, COLORS, colorName } from '../i18n.js';
-import { settings } from '../state.js';
+import { settings, profiles } from '../state.js';
+import { avatarURL } from '../avatar.js';
 import { sayIn } from '../voice.js';
 import { shuffle, pick, el, wait } from '../util.js';
 
@@ -205,7 +206,9 @@ register({
   id: 'memory', icon: '🃏', name: () => T('Memory Match', 'Lật Hình Ghi Nhớ'),
   async run(api) {
     const pairs = [3, 4, 6, 6, 8][Math.min(4, api.level - 1)];
-    const faces = shuffle([...ANIMALS, ...FRUIT]).slice(0, pairs);
+    // the children's own photos are some of the cards
+    const photos = profiles.slice(0, 4).map(p => `<img src="${avatarURL(p)}" alt="">`);
+    const faces = shuffle([...shuffle(photos).slice(0, Math.min(photos.length, Math.ceil(pairs / 2))), ...shuffle([...ANIMALS, ...FRUIT])]).slice(0, pairs);
     const deck = shuffle([...faces, ...faces]);
     const grid = el('div', 'mem-grid'); grid.style.setProperty('--cols', pairs <= 3 ? 3 : pairs <= 4 ? 4 : pairs <= 6 ? 4 : 4);
     api.stage.appendChild(grid);

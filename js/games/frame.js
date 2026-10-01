@@ -6,13 +6,20 @@ import { SFX, Music } from '../audio.js';
 import { el, wait, esc } from '../util.js';
 
 export const GAMES = {};
+// Each kind of game has its own song.
+const GAME_MUSIC = {
+  pattern: 'think', counting: 'twinkle', letters: 'twinkle', numbers: 'think', shapes: 'think', colors: 'twinkle', sorting: 'think', memory: 'twinkle',
+  hanoi: 'strategy', robot: 'strategy', maze: 'strategy', goat: 'folk', oanquan: 'strategy', caro: 'strategy', hopscotch: 'folk', tug: 'village2',
+  market: 'money', order: 'farm', sortout: 'money', bunny: 'farm', jigsaw: 'twinkle', oddone: 'pond', tower: 'think', duckmaze: 'pond',
+  balloon: 'fly', bubbles: 'party2', tune: 'none'
+};
 export const register = def => { GAMES[def.id] = def; };
 
 let current = null;
 export const gameOpen = () => !!current;
 
 // players: array of profiles (1 or 2); level: 1..5; style: 'shrine' | 'village'
-export function openGame(id, { players, level = 1, style = 'shrine', partnerName = null }) {
+export function openGame(id, { players, level = 1, style = 'shrine', partnerName = null, little = true, strong = false }) {
   const def = GAMES[id]; if (!def) return Promise.resolve({ won: false });
   if (current) current.close(false);
   return new Promise(resolve => {
@@ -29,9 +36,11 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
     const stage = layer.querySelector('.gl-stage'), dots = layer.querySelector('.gl-dots'), help = layer.querySelector('.gl-help');
     const cleanups = [];
     let closed = false;
-    const prevMusic = Music.key; Music.play('game');
+    const prevMusic = Music.key; Music.play(GAME_MUSIC[id] || 'think');
     const api = {
       stage, level, players, two: players.length > 1, partnerName, T, el,
+      little,   // under-5 mode: everything gentle, nobody can lose
+      strong,   // computer opponents play to win (big kids on medium or hard)
       say: (en, vi) => { help.textContent = T(en, vi); say(en, vi); },
       // Show text without speaking it.
       show: (en, vi) => { help.textContent = T(en, vi); },

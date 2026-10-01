@@ -62,6 +62,20 @@ export const SFX = {
   cook() { for (let i = 0; i < 8; i++) noise(.08, { at: i * .09, freq: rand(2500, 5000), vol: .06 }); },
   moo() { tone(150, 1.1, { type: 'sawtooth', to: 120, vol: .1, filter: 'lowpass', ff: 520 }); },
   quack() { [0, .2].forEach(t => tone(330, .15, { at: t, to: 260, type: 'square', vol: .08, filter: 'bandpass', ff: 1300, q: 3 })); },
+  woof() { [0, .22].forEach(t => { noise(.13, { at: t, freq: 700, q: 1.5, vol: .3 }); tone(320, .13, { at: t, to: 170, type: 'square', vol: .06, filter: 'lowpass', ff: 900 }); }); },
+  meow() { tone(480, .7, { type: 'sawtooth', bend: [.05, 1.7, .25], vol: .07, filter: 'lowpass', ff: 1800, vib: 12, vibRate: 5 }); },
+  baa() { tone(330, .75, { type: 'sawtooth', vol: .08, vib: 18, vibRate: 8, filter: 'lowpass', ff: 1500, to: 300 }); },
+  oink() { [0, .25].forEach(t => { tone(140, .18, { at: t, to: 100, type: 'sawtooth', vol: .11, filter: 'lowpass', ff: 500 }); noise(.18, { at: t, type: 'lowpass', freq: 400, vol: .18 }); }); },
+  cluck() { [0, .12, .24, .5].forEach((t, i) => tone(i === 3 ? 700 : 520, i === 3 ? .25 : .07, { at: t, to: i === 3 ? 480 : 600, type: 'square', vol: .06, filter: 'bandpass', ff: 1400, q: 2 })); },
+  neigh() { tone(900, .8, { type: 'sawtooth', to: 500, vol: .06, vib: 60, vibRate: 14, filter: 'lowpass', ff: 2200 }); },
+  squeak() { [0, .15, .3].forEach(t => tone(1300, .08, { at: t, to: 1700, vol: .06 })); },
+  ribbit() { [0, .18].forEach(t => tone(180, .14, { at: t, to: 120, type: 'square', vol: .08, filter: 'lowpass', ff: 700, vib: 40, vibRate: 30 })); },
+  bump() { tone(260, .2, { to: 150, vol: .12, type: 'triangle' }); },
+  water() { for (let i = 0; i < 6; i++) noise(.12, { at: i * .07, freq: 2500 + i * 200, vol: .06, q: 2 }); },
+  plant() { tone(200, .12, { to: 120, vol: .12, type: 'triangle' }); noise(.1, { freq: 600, vol: .08 }); },
+  harvest() { tone(400, .15, { to: 900, vol: .12, type: 'triangle' }); [79, 84].forEach((m, i) => tone(midi(m), .25, { at: .1 + i * .08, type: 'triangle', vol: .08 })); },
+  note(n = 0) { tone(midi([72, 74, 76, 79, 81, 84, 86, 88][n % 8]), .45, { type: 'triangle', vol: .14 }); },
+  xylo(n = 0) { const f = midi([60, 62, 64, 65, 67, 69, 71, 72][n % 8]); tone(f, .6, { vol: .2 }); tone(f * 4, .12, { vol: .05 }); },
   hoot() { [0, .35].forEach(t => tone(420, .3, { at: t, to: 360, vol: .14, filter: 'lowpass', ff: 900 })); },
   // Tower activation: deep rising swell.
   tower() { tone(110, 2.2, { to: 330, type: 'sawtooth', vol: .07, filter: 'lowpass', ff: 900 }); [76, 79, 83, 88].forEach((m, i) => tone(midi(m), 1.2, { at: .8 + i * .15, vol: .08, type: 'triangle' })); },
@@ -84,20 +98,72 @@ const THEMES = {
   glide: { tempo: .3, play(t, i) { const s = [72, 76, 79, 84, 79, 76]; tone(midi(s[i % 6]), .5, { when: t, vol: .08, type: 'triangle', bus: 'music' }); } },
   game: { tempo: .28, play(t, i) { const s = [72, 74, 76, 79, 76, 74, 72, 67]; if (i % 2 === 0) tone(midi(s[(i / 2) % 8 | 0]), .4, { when: t, vol: .07, type: 'triangle', bus: 'music' }); if (i % 4 === 0) tone(midi(48 + [0, 5, 7, 5][(i / 4) % 4 | 0]), .5, { when: t, vol: .08, bus: 'music' }); noise(.03, { when: t, freq: 6000, vol: .015, bus: 'music' }); } }
 };
+// Sequenced songs: one letter-note per eighth beat ('.' = rest). Children's songs here are traditional
+// and in the public domain; the rest are written for this game.
+const NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+function N(str) { return str.replace(/\|/g, ' ').trim().split(/\s+/).map(t => { if (t === '.') return 0; const m = /^([A-G])(#?)(\d)$/.exec(t); return m ? 12 * (+m[3] + 1) + NOTE[m[1]] + (m[2] ? 1 : 0) : 0; }); }
+const SONGS = {
+  farm: { name: 'Old MacDonald', bpm: 104, inst: 'marimba', drums: 'soft', bar: 8,
+    mel: N('C5 . C5 . C5 . G4 . | A4 . A4 . G4 . . . | E5 . E5 . D5 . D5 . | C5 . . . . . G4 . | C5 . C5 . C5 . G4 . | A4 . A4 . G4 . . . | E5 . E5 . D5 . D5 . | C5 . . . . . . .'), bass: N('C3 F2 G2 C3 C3 F2 G2 C3') },
+  pond: { name: 'Row Your Boat', bpm: 150, inst: 'bell', drums: 'shaker', bar: 6,
+    mel: N('C5 . . C5 . . | C5 . D5 E5 . . | E5 . D5 E5 . F5 | G5 . . . . . | C6 C6 C6 G5 G5 G5 | E5 E5 E5 C5 C5 C5 | G5 . F5 E5 . D5 | C5 . . . . .'), bass: N('C3 C3 C3 C3 C3 C3 G2 C3') },
+  twinkle: { name: 'Twinkle Twinkle', bpm: 96, inst: 'bell', drums: 'none', bar: 8,
+    mel: N('C5 . C5 . G5 . G5 . | A5 . A5 . G5 . . . | F5 . F5 . E5 . E5 . | D5 . D5 . C5 . . . | G5 . G5 . F5 . F5 . | E5 . E5 . D5 . . . | G5 . G5 . F5 . F5 . | E5 . E5 . D5 . . .'), bass: N('C3 F2 F2 C3 C3 G2 C3 G2') },
+  // "Kìa con bướm vàng" (sung to the old French round "Frère Jacques")
+  folk: { name: 'Kìa con bướm vàng', bpm: 112, inst: 'danbau', drums: 'wood', bar: 8,
+    mel: N('C5 . D5 . E5 . C5 . | C5 . D5 . E5 . C5 . | E5 . F5 . G5 . . . | E5 . F5 . G5 . . . | G5 A5 G5 F5 E5 . C5 . | G5 A5 G5 F5 E5 . C5 . | C5 . G4 . C5 . . . | C5 . G4 . C5 . . .'), bass: N('C3 C3 C3 C3 C3 C3 G2 C3') },
+  // An original tune in Vietnamese pentatonic style for the village square
+  village2: { name: 'Village Dance', bpm: 100, inst: 'flute', drums: 'wood', bar: 8,
+    mel: N('D5 . F5 G5 A5 . G5 . | F5 . D5 . C5 . D5 . | F5 . G5 . A5 . C6 . | A5 . G5 . A5 . . . | C6 . A5 G5 F5 . G5 . | A5 . G5 F5 D5 . C5 . | D5 . F5 . G5 . F5 . | D5 . . . . . . .'), bass: N('D3 C3 F2 D3 F2 D3 C3 D3') },
+  think: { name: 'Thinking Time', bpm: 84, inst: 'marimba', drums: 'none', bar: 8,
+    mel: N('E5 . G5 . C6 . . . | B5 . G5 . D5 . . . | C5 . E5 . A5 . . . | G5 . . . . . . . | F5 . A5 . D6 . . . | C6 . A5 . F5 . . . | E5 . G5 . B5 . D6 . | C6 . . . . . . .'), bass: N('C3 G2 A2 E2 F2 F2 G2 C3') },
+  strategy: { name: 'Clever Plan', bpm: 92, inst: 'pluck', drums: 'soft', bar: 8,
+    mel: N('A4 . C5 . E5 . D5 . | C5 . . . A4 . . . | G4 . B4 . D5 . C5 . | B4 . . . G4 . . . | F4 . A4 . C5 . E5 . | D5 . C5 . B4 . A4 . | G#4 . B4 . E5 . D5 . | C5 . B4 . A4 . . .'), bass: N('A2 A2 G2 G2 F2 F2 E2 A2') },
+  money: { name: 'Market Bounce', bpm: 124, inst: 'marimba', drums: 'party', bar: 8,
+    mel: N('G5 . E5 . G5 . C6 . | A5 . G5 . E5 . . . | F5 . D5 . F5 . A5 . | G5 . F5 . D5 . . . | E5 . C5 . E5 . G5 . | A5 . C6 . A5 . G5 . | F5 . A5 . G5 . D5 . | C5 . . . . . . .'), bass: N('C3 C3 F2 G2 C3 F2 G2 C3') },
+  fly: { name: 'Up Up Away', bpm: 132, inst: 'pluck', drums: 'party', bar: 8,
+    mel: N('E5 G5 C6 . G5 . E5 . | F5 A5 D6 . A5 . F5 . | E5 G5 C6 . E6 . D6 . | C6 . G5 . E5 . . . | D5 F5 A5 . F5 . D5 . | E5 G5 C6 . G5 . E5 . | F5 . A5 . G5 . B5 . | C6 . . . . . . .'), bass: N('C3 F2 C3 C3 D3 C3 F2 C3') },
+  party1: { name: 'Party Pop', bpm: 116, inst: 'pluck', drums: 'party', bar: 8, mel: N('C5 . E5 . G5 . E5 . | F5 . E5 D5 C5 . . . | D5 . F5 . A5 . G5 F5 | E5 . D5 . C5 . . .'), bass: N('C3 F2 G2 C3') },
+  party2: { name: 'Twinkle Remix', bpm: 122, inst: 'bell', drums: 'party', bar: 8, mel: N('C5 . C5 . G5 . G5 . | A5 . A5 . G5 . . . | F5 . F5 . E5 . E5 . | D5 . D5 . C5 . . .'), bass: N('C3 F2 G2 C3') },
+  party3: { name: 'Bouncy Castle', bpm: 126, inst: 'lead', drums: 'party', bar: 8, mel: N('G5 . G5 E5 . . G5 . | A5 . G5 . E5 . . . | D5 . D5 E5 . . F5 . | E5 . D5 . C5 . . . | G5 . G5 E5 . . G5 . | C6 . B5 . A5 . G5 . | F5 . A5 . G5 . E5 . | D5 . . . C5 . . .'), bass: N('C3 C3 G2 C3 C3 A2 F2 G2') }
+};
+export const PARTY = ['party1', 'party2', 'party3'];
+function playInst(inst, m, t, v = 1) {
+  const f = midi(m), o = { when: t, bus: 'music' };
+  if (inst === 'marimba') { tone(f, .45, Object.assign({ vol: .17 * v }, o)); tone(f * 4, .07, Object.assign({ vol: .04 * v }, o)); }
+  else if (inst === 'bell') { tone(f, .9, Object.assign({ vol: .13 * v }, o)); tone(f * 2.01, .45, Object.assign({ vol: .04 * v }, o)); }
+  else if (inst === 'lead') { tone(f, .22, Object.assign({ type: 'square', vol: .045 * v }, o)); tone(f, .3, Object.assign({ type: 'triangle', vol: .1 * v }, o)); }
+  else if (inst === 'danbau') { tone(f, .7, Object.assign({ vol: .13 * v, vib: 5, vibRate: 5.5, bend: Math.random() < .3 ? [.2, 1.059, .15] : null }, o)); }
+  else if (inst === 'flute') { tone(f, .5, Object.assign({ vol: .12 * v, vib: 3, vibRate: 5, attack: .05 }, o)); noise(.08, Object.assign({ freq: f * 2, vol: .015, q: 4 }, o)); }
+  else tone(f, .28, Object.assign({ type: 'triangle', vol: .13 * v }, o));
+}
+function songStep(s, i, t) {
+  const m = s.mel[i % s.mel.length], bar = Math.floor(i / s.bar) % s.bass.length, inBar = i % s.bar;
+  if (m) playInst(s.inst, m, t);
+  const half = s.bar === 6 ? 3 : 2;
+  if (inBar % half === 0) { const b = s.bass[bar]; if (b) tone(midi(b + ((inBar / half) % 2 ? 12 : 0)), .24, { type: 'triangle', when: t, vol: .16, bus: 'music' }); }
+  if (s.drums === 'party') { if (inBar % 4 === 0) tone(130, .18, { when: t, to: 45, vol: .26, bus: 'music' }); if (inBar % 8 === 4) noise(.12, { when: t, freq: 1600, vol: .16, bus: 'music' }); if (i % 2) noise(.03, { when: t, freq: 8000, vol: .04, bus: 'music' }); }
+  else if (s.drums === 'soft') { if (inBar === 0) tone(110, .15, { when: t, to: 50, vol: .15, bus: 'music' }); noise(.03, { when: t, freq: 7000, vol: i % 2 ? .015 : .03, bus: 'music' }); }
+  else if (s.drums === 'shaker') noise(.04, { when: t, freq: 6000, vol: inBar % 3 === 0 ? .035 : .018, bus: 'music' });
+  else if (s.drums === 'wood') { if (inBar % 2 === 0) tone(inBar % 4 ? 1400 : 900, .05, { when: t, vol: .07, type: 'triangle', bus: 'music' }); }
+}
 export const Music = {
   key: null, timer: null, next: 0, step: 0,
   play(key) {
     if (this.key === key) return;
     this.key = key; clearInterval(this.timer); this.timer = null;
-    if (!settings.music || !THEMES[key]) return;
+    if (!settings.music || !(THEMES[key] || SONGS[key])) return;
     const a = ac(); if (!a) return;
     this.next = a.currentTime + .1; this.step = 0;
-    this.timer = setInterval(() => this.tick(), 60);
+    this.timer = setInterval(() => this.tick(), 50);
   },
   stop() { clearInterval(this.timer); this.timer = null; this.key = null; },
   refresh() { const k = this.key; this.stop(); if (k) this.play(k); },
+  songName() { return SONGS[this.key] ? SONGS[this.key].name : ''; },
   tick() {
-    if (!AC) return; const th = THEMES[this.key]; if (!th) return;
-    while (this.next < AC.currentTime + .25) { th.play(this.next, this.step); this.next += th.tempo; this.step++; }
+    if (!AC) return;
+    const th = THEMES[this.key], sg = SONGS[this.key];
+    if (th) while (this.next < AC.currentTime + .25) { th.play(this.next, this.step); this.next += th.tempo; this.step++; }
+    else if (sg) { const d = 60 / sg.bpm / 2; while (this.next < AC.currentTime + .2) { songStep(sg, this.step, this.next); this.next += d; this.step++; } }
   }
 };
