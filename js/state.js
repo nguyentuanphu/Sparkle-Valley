@@ -15,7 +15,9 @@ export const settings = Object.assign({
   bilingual: false,      // speak the other language too, after a short pause
   alwaysDay: false,
   quality: 'auto',       // 'auto' | 'low' | 'high'
-  camSpeed: 1
+  camSpeed: 1,
+  familyVoice: true,     // play the grown-up's recordings when there are some
+  familyPitch: 0         // speaking pitch matched to the recordings (0 = not set)
 }, store.get(KEY_SETTINGS, {}));
 export const saveSettings = () => store.set(KEY_SETTINGS, settings);
 

@@ -3,7 +3,7 @@ import { THREE, sprite } from './gfx.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';
 import { T } from './i18n.js';
-import { say, hush } from './voice.js';
+import { say, hush, loadClips } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
@@ -23,6 +23,7 @@ import './games/market.js';
 import './games/farmgames.js';
 import { createFarm, jobProgress, ensureJobs } from './farm.js';
 import { createPlaces } from './places.js';
+import { PROLOGUE, showStory, storyCheck } from './story.js';
 import { openWardrobe } from './ui.js';
 
 // ---------- renderer & world ----------
@@ -247,7 +248,7 @@ async function kidTalk(h, game, name, line) {
   const k = await dialog(name, [line], [['▶ Play!', '▶ Chơi!'], ['👋 Later', '👋 Để sau']]);
   if (k === 0) playGame(h.i, game, 'folk');
 }
-const GOURD_GIFTS = [[3, 'hat', 'flower'], [6, 'hat', 'bunny'], [10, 'glider', 2], [15, 'hat', 'crown'], [20, 'money', 60], [24, 'glider', 4]];
+const GOURD_GIFTS = [[3, 'money', 15], [6, 'money', 25], [10, 'glider', 2], [15, 'money', 40], [20, 'money', 60], [24, 'glider', 4]];
 async function gourdTalk(h) {
   const p = h.profile, n = Object.keys(p.leafies).length;
   const due = GOURD_GIFTS.filter(([need]) => n >= need && !p.quests['gourd' + need]);
@@ -304,8 +305,11 @@ function questTarget(h) {
 }
 G.questTarget = questTarget;
 G.objective = h => { const q = currentQuest(h.profile); return q ? q.title() : T('You finished the adventure! Keep exploring!', 'Con đã hoàn thành cuộc phiêu lưu! Tiếp tục khám phá nhé!'); };
-function checkQuests(h) {
+G.save = save; G.addCoins = xu => addMoney(null, xu); G.giveSticker = p => giveSticker(p); G.reward = reward; G.fmt = fmt;
+async function checkQuests(h) {
   const p = h.profile;
+  // story chapters open when their quest is done (pause the world while the book is open)
+  if (!G._reading) { G._reading = true; try { await storyCheck(G, h, id => questDone(p, QUESTS.find(q => q.id === id))); } finally { G._reading = false; } }
   const k = 'seen_' + (currentQuest(p) || { id: 'all' }).id;
   if (!p.quests[k]) {
     p.quests[k] = true; save();
@@ -536,8 +540,11 @@ function startSession(mode, chosen) {
   resize(); G.paused = false; playing = true;
   $('#huds').hidden = false;
   const p = chosen[0];
-  if (!p.quests.owl) setTimeout(() => say(`Hello ${p.name}! Walk over to the owl and say hi.`, `Chào ${p.name}! Đi đến chỗ chú cú và chào ông nhé.`), 900);
-  else say(`Welcome back, ${p.name}!`, `Chào mừng ${p.name} quay lại!`);
+  const greet = () => { if (!p.quests.owl) say(`Hello ${p.name}! Walk over to the owl and say hi.`, `Chào ${p.name}! Đi đến chỗ chú cú và chào ông nhé.`); else say(`Welcome back, ${p.name}!`, `Chào mừng ${p.name} quay lại!`); };
+  if (!(p.story && p.story.prologue)) {
+    G.paused = true;
+    showStory(PROLOGUE, chosen.map(x => x.name).join(T(' and ', ' và '))).then(() => { chosen.forEach(x => { x.story = x.story || {}; x.story.prologue = true; }); save(); G.paused = false; greet(); });
+  } else greet();
   if (mode === 'online') { G.paused = true; openPad(G, 0, 'friend'); }
 }
 
@@ -546,7 +553,8 @@ let playing = false, last = performance.now(), t = 0, sendT = 0, saveT = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
-  if (gameOpen()) return; // the 3D world rests while a full-screen game is open (saves battery)
+  // the 3D world rests while a full-screen game or the storybook is open (saves battery)
+  if (gameOpen() || document.querySelector('.storybook')) return;
   world.update(dt, t);
   if (!playing) {
     const a = t * .05;
@@ -618,6 +626,7 @@ function frame(now) {
 }
 
 // ---------- boot ----------
+loadClips();
 setupNPCs(); setupInteractables();
 G.farm = createFarm(G); world.updaters.push(G.farm.update);
 G.places = createPlaces(G); world.updaters.push(G.places.update);

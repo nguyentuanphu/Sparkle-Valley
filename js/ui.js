@@ -2,7 +2,7 @@
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
 import { T, applyLang } from './i18n.js';
 import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, STYLES, OUTFIT_COLORS, HATS, BACKS, HAIR, SKIN, HAIRSTYLES, GLIDERS, farm, resetFarm, MAX_KIDS } from './state.js';
-import { say, voicesFor, onVoices, hasVietnamese } from './voice.js';
+import { say, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt, cur } from './money.js';
 import { el, esc, $, clamp, wait } from './util.js';
@@ -10,6 +10,7 @@ import { avatarURL } from './avatar.js';
 import { ITEMS, RECIPES, findRecipe, SHOP, HAT_ICON, HAT_NAME, QUESTS, STICKERS } from './data.js';
 import { SIZE, HALF, SHRINES, TOWERS } from './world.js';
 import { GAMES } from './games/frame.js';
+import { showStory, storyList } from './story.js';
 
 export const STYLE_ICON = { dress: '👗', shirt: '👕', aodai: '🥻', tunic: '🧥', overalls: '👖', hoodie: '🧶' };
 export const STYLE_NAME = { dress: () => T('Dress', 'Váy'), shirt: () => T('Shirt & shorts', 'Áo và quần đùi'), aodai: () => 'Áo dài', tunic: () => T('Explorer', 'Nhà thám hiểm'), overalls: () => T('Overalls', 'Quần yếm'), hoodie: () => T('Hoodie', 'Áo nỉ') };
@@ -99,6 +100,8 @@ export function openGrownups(after) {
       <div class="field"><label>English</label><div class="vrow"><select id="vEn">${vEn.map(v => `<option ${v.name === settings.voiceEn ? 'selected' : ''}>${esc(v.name)}</option>`).join('') || `<option>${T('Default', 'Mặc định')}</option>`}</select><button class="btn" data-try="en">▶</button></div></div>
       <div class="field"><label>Tiếng Việt</label><div class="vrow"><select id="vVi">${vVi.map(v => `<option ${v.name === settings.voiceVi ? 'selected' : ''}>${esc(v.name)}</option>`).join('') || `<option>${T('No Vietnamese voice found', 'Chưa có giọng tiếng Việt')}</option>`}</select><button class="btn" data-try="vi">▶</button></div></div>
       <p class="note">${hasVietnamese() ? '' : T('To add a Vietnamese voice: iPhone/iPad → Settings → Accessibility → Spoken Content → Voices → Vietnamese. Android → Settings → Text-to-speech → Google → Install voice data → Vietnamese. ', 'Thêm giọng tiếng Việt: iPhone/iPad → Cài đặt → Trợ năng → Nội dung được đọc → Giọng nói → Tiếng Việt. Android → Cài đặt → Chuyển văn bản thành giọng nói → Google → Cài đặt dữ liệu giọng nói → Tiếng Việt. ')}${T('Choose an "Enhanced" or "Premium" voice for the most natural sound.', 'Chọn giọng "Nâng cao" hoặc "Cao cấp" để nghe tự nhiên nhất.')}</p>
+      <h3>${T('Family voice', 'Giọng của gia đình')}</h3>
+      <button class="btn wide" id="gRec">🎙️ ${T('Record your voice for the game', 'Thu giọng của bạn cho trò chơi')} (${clipCount()})</button>
       <h3>${T('Sound and world', 'Âm thanh và thế giới')}</h3>
       <div class="toggles">
         <label class="tog"><input type="checkbox" id="gVoice" ${settings.voice ? 'checked' : ''}> ${T('Talking voice', 'Giọng nói')}</label>
@@ -132,6 +135,7 @@ export function openGrownups(after) {
     card.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => openEditor(profiles.find(p => p.id === b.dataset.ed), () => { draw(); after && after(); }));
     card.querySelector('#gAdd').onclick = () => profiles.length >= MAX_KIDS ? toast(T(`Up to ${MAX_KIDS} players.`, `Tối đa ${MAX_KIDS} người chơi.`)) : openEditor(null, () => { draw(); after && after(); });
     card.querySelector('#gExp').onclick = exportBackup;
+    card.querySelector('#gRec').onclick = () => openRecorder(draw);
     card.querySelector('#gFarm').onclick = () => { if (confirm(T('Start the farm over? Players and stickers are kept.', 'Làm lại nông trại? Người chơi và hình dán được giữ lại.'))) { resetFarm(); window.__sv && window.__sv.farm && (window.__sv.farm.syncAnimals(), window.__sv.farm.syncPets()); toast(T('A fresh new farm!', 'Nông trại mới tinh!')); } };
     card.querySelector('#gImp').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { await importBackup(f); toast(T('Backup loaded!', 'Đã mở bản sao!')); draw(); after && after(); } catch (err) { toast(T('That file is not a Sparkle Valley backup.', 'Tệp này không phải bản sao của Thung Lũng Lấp Lánh.')); } };
   };
@@ -305,7 +309,7 @@ export function openPad(game, i, tab = 'map') {
       <h3>${T('Ingredients', 'Nguyên liệu')}</h3>
       <div class="slots">${items.map(([id, n]) => `<div class="slot"><span>${ITEMS[id].icon}</span><b>${n}</b><small>${esc(ITEMS[id].name())}</small></div>`).join('') || `<p class="note">${T('Empty! Shake apple trees and look for herbs and mushrooms.', 'Trống trơn! Rung cây táo và tìm rau thơm, nấm nhé.')}</p>`}</div>
       <h3>${T('Hats', 'Mũ')} <small>${T('tap to wear', 'chạm để đội')}</small></h3>
-      <div class="slots">${p.owned.hats.map(h => `<button class="slot ${p.look.hat === h ? 'on' : ''}" data-hat="${h}"><span>${HAT_ICON[h]}</span><small>${esc(HAT_NAME[h]())}</small></button>`).join('')}</div>
+      <div class="slots">${HATS.map(h => `<button class="slot ${p.look.hat === h ? 'on' : ''}" data-hat="${h}"><span>${HAT_ICON[h]}</span><small>${esc(HAT_NAME[h]())}</small></button>`).join('')}</div>
       <h3>${T('Glider', 'Cánh lượn')}</h3>
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
     body.querySelectorAll('[data-eat]').forEach(b => b.onclick = () => { game.eat(hero, b.dataset.eat); draw(); });
@@ -319,8 +323,10 @@ export function openPad(game, i, tab = 'map') {
       <h3>${T('Recipe book', 'Sổ công thức')}</h3><div class="recipes">${RECIPES.map(r => { const known = p.dishes[r.id] != null; return `<div class="rec ${known ? '' : 'unk'}"><span>${known ? r.icon : '❔'}</span><small>${known ? esc(r.name()) : r.need.map((n, k) => k === 0 ? ITEMS[n].icon : '❔').join(' + ')}</small></div>`; }).join('')}</div>`;
   }
   function drawAlbum(body) {
-    body.innerHTML = `<h3>${T('Stickers', 'Hình dán')} ${p.stickers.length}/${STICKERS.length}</h3><div class="stickers">${STICKERS.map(s => `<div class="${p.stickers.includes(s) ? '' : 'miss'}">${p.stickers.includes(s) ? s : '?'}</div>`).join('')}</div>
+    body.innerHTML = `<h3>📖 ${T('Storybook', 'Sách truyện')}</h3><div class="stories">${storyList(p).map((st, k) => `<button class="qbtn" data-st="${k}"><span>📖</span><small>${esc(st.title())}</small></button>`).join('')}</div>
+      <h3>${T('Stickers', 'Hình dán')} ${p.stickers.length}/${STICKERS.length}</h3><div class="stickers">${STICKERS.map(s => `<div class="${p.stickers.includes(s) ? '' : 'miss'}">${p.stickers.includes(s) ? s : '?'}</div>`).join('')}</div>
       <h3>${T('Photos', 'Ảnh chụp')}</h3><div class="photos">${p.album.map((src, k) => `<figure><img src="${src}" alt=""><button class="btn" data-dl="${k}">⬇</button></figure>`).join('') || `<p class="note">${T('Use the Camera tab to take pictures of your adventure!', 'Dùng thẻ Máy ảnh để chụp ảnh chuyến phiêu lưu!')}</p>`}</div>`;
+    body.querySelectorAll('[data-st]').forEach(b => b.onclick = () => showStory(storyList(p)[+b.dataset.st], p.name));
     body.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => { const a = document.createElement('a'); a.href = p.album[+b.dataset.dl]; a.download = 'sparkle-valley-photo.jpg'; a.click(); });
   }
   function drawGames(body) {
@@ -429,4 +435,50 @@ export function openWardrobe(game, i, onClose) {
     m.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { p.look[b.dataset.k] = b.dataset.v; SFX.pop(1); game.rebuildHero(i); draw(); });
   };
   draw(); say('Dress up time! Tap the pictures to try things on.', 'Thay đồ nào! Chạm vào hình để thử nhé.');
+}
+
+// ---------- grown-ups record the game's most-used lines ----------
+export function openRecorder(after) {
+  const m = modal('rec', ''), card = m.querySelector('.card');
+  let rec = null, chunks = [], recId = null, stream = null;
+  const lang = () => settings.lang;
+  const stopAll = () => { try { rec && rec.state !== 'inactive' && rec.stop(); } catch (e) { } };
+  const draw = () => {
+    const done = FAMILY_PHRASES.filter(p => hasClip(lang(), p.id)).length;
+    card.innerHTML = `<button class="x" aria-label="Close">✕</button><h2>🎙️ ${T('Family voice', 'Giọng của gia đình')}</h2>
+      <p class="sub">${T('Read each line aloud in a happy voice. The game will say these lines in your real voice.', 'Đọc to từng câu bằng giọng vui vẻ. Trò chơi sẽ nói những câu này bằng chính giọng của bạn.')}</p>
+      ${flagBtns()}
+      <div class="reclist">${FAMILY_PHRASES.map(p => `<div class="recrow ${hasClip(lang(), p.id) ? 'has' : ''}"><span class="rt">${esc(lang() === 'vi' ? p.vi : p.en)}</span>
+        <button class="btn rb ${recId === p.id ? 'live' : ''}" data-r="${p.id}">${recId === p.id ? '⏹ ' + T('Stop', 'Dừng') : '⏺ ' + T('Record', 'Thu')}</button>
+        ${hasClip(lang(), p.id) ? `<button class="btn" data-p="${p.id}">▶</button><button class="btn danger" data-d="${p.id}">✕</button>` : ''}</div>`).join('')}</div>
+      <p class="note">${done}/${FAMILY_PHRASES.length} ${T('recorded', 'đã thu')}${settings.familyPitch ? ' · ' + T('voice pitch matched', 'đã khớp cao độ giọng') : ''}</p>
+      <label class="tog"><input type="checkbox" id="rUse" ${settings.familyVoice ? 'checked' : ''}> ${T('Use my recordings in the game', 'Dùng giọng thu của tôi trong trò chơi')}</label>
+      <p class="note">${T('Recordings stay on this device and are never uploaded. Lines you have not recorded are read by the device voice, tuned to sound closer to yours. A full copy of your voice for every sentence would need an online AI voice service, which would mean uploading your voice, so it is not used.', 'Bản thu chỉ lưu trên máy này và không bao giờ được tải lên. Những câu chưa thu sẽ do giọng của máy đọc, được chỉnh cho gần giống giọng bạn. Muốn có bản sao giọng nói cho mọi câu thì cần dịch vụ AI trực tuyến và phải tải giọng nói lên mạng, nên trò chơi không dùng cách đó.')}</p>`;
+    card.querySelector('.x').onclick = () => { stopAll(); stream && stream.getTracks().forEach(t => t.stop()); m.close(); after && after(); };
+    bindLang(card, draw);
+    card.querySelector('#rUse').onchange = e => { settings.familyVoice = e.target.checked; saveSettings(); };
+    card.querySelectorAll('[data-p]').forEach(b => b.onclick = () => playClip(lang(), b.dataset.p));
+    card.querySelectorAll('[data-d]').forEach(b => b.onclick = async () => { await deleteClip(lang(), b.dataset.d); draw(); });
+    card.querySelectorAll('[data-r]').forEach(b => b.onclick = async () => {
+      if (recId) { stopAll(); return; }
+      try { stream = stream || await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+      catch (e) { toast(T('Please allow the microphone to record.', 'Hãy cho phép dùng micrô để thu âm.')); return; }
+      recId = b.dataset.r; chunks = [];
+      rec = new MediaRecorder(stream);
+      rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+      rec.onstop = async () => {
+        const id = recId; recId = null;
+        const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
+        if (blob.size > 2000) {
+          await saveClip(lang(), id, blob);
+          const hz = await estimatePitch(blob); if (hz) { settings.familyPitch = +pitchFromHz(hz).toFixed(2); saveSettings(); }
+          playClip(lang(), id);
+        }
+        draw();
+      };
+      rec.start(); setTimeout(() => { if (recId === b.dataset.r) stopAll(); }, 6000); // stops by itself after 6 seconds
+      draw();
+    });
+  };
+  draw();
 }
