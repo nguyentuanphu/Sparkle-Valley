@@ -10,11 +10,12 @@ export const GAMES = {};
 // Each kind of game has its own song.
 const GAME_MUSIC = {
   pattern: 'think', counting: 'twinkle', letters: 'twinkle', numbers: 'think', shapes: 'think', colors: 'twinkle', sorting: 'think', memory: 'twinkle',
-  hanoi: 'strategy', robot: 'strategy', maze: 'strategy', goat: 'folk', oanquan: 'strategy', caro: 'strategy', hopscotch: 'folk', tug: 'village2', mrwolf: 'folk', snap: 'village2', dacau: 'party2', chuyen: 'village2', dragon: 'folk', marbles: 'strategy', skipping: 'party2',
+  hanoi: 'strategy', robot: 'strategy', maze: 'strategy', goat: 'folk', oanquan: 'strategy', caro: 'strategy', hopscotch: 'folk', tug: 'village2', mrwolf: 'folk', datnieu: 'folk', kite: 'fly', chichi: 'folk', sackrace: 'party2', cricket: 'village2', parcel: 'party1', words: 'twinkle', snap: 'village2', dacau: 'party2', chuyen: 'village2', dragon: 'folk', marbles: 'strategy', skipping: 'party2',
   market: 'money', order: 'farm', sortout: 'money', bunny: 'farm', jigsaw: 'twinkle', oddone: 'pond', tower: 'think', duckmaze: 'pond',
   balloon: 'fly', bubbles: 'party2', tune: 'none'
 };
 export const register = def => { GAMES[def.id] = def; };
+const PRIZES = ['🦄', '🦖', '🚀', '🧸', '🎈', '🍭', '🪁', '🐬', '🌈', '👑', '🎨', '🛼', '🪀', '🍦', '🐼'];
 
 let current = null;
 export const gameOpen = () => !!current;
@@ -51,19 +52,34 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       sfx: SFX, wait,
       onCleanup: f => cleanups.push(f),
       dots(n, done) { dots.innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < done ? 'on' : ''}"></i>`).join(''); },
-      right(e) { SFX.ok(); if (e) { e.classList.remove('wrong'); e.classList.add('right'); } reward(e); },
-      wrong(e, en = 'Try again!', vi = 'Thử lại nhé!') { SFX.no(); if (e) { e.classList.remove('wrong'); void e.offsetWidth; e.classList.add('wrong'); } mascot('hmm', T('Hmm… try again!', 'Ừm… thử lại nhé!')); say(en, vi); },
+      right(e) { SFX.ok(); if (e) { e.classList.remove('wrong'); e.classList.add('right'); } reward(e); streak++; rights++; if (streak >= 3) combo(streak); else if (Math.random() < .08) lucky(); },
+      wrong(e, en = 'Try again!', vi = 'Thử lại nhé!') { SFX.no(); streak = 0; misses++; if (e) { e.classList.remove('wrong'); void e.offsetWidth; e.classList.add('wrong'); } mascot('hmm', T('Hmm… try again!', 'Ừm… thử lại nhé!')); say(en, vi); },
       praise() { const p = [['Great job!', 'Giỏi quá!'], ['Well done!', 'Làm tốt lắm!'], ['Yes! Clever!', 'Đúng rồi! Thông minh quá!'], ['Super!', 'Tuyệt vời!'], ['You got it!', 'Con làm được rồi!']]; const [e, v] = p[Math.floor(Math.random() * p.length)]; say(e, v); mascot('cheer', T(e, v)); },
       get closed() { return closed; },
       async win(extra = {}) {
         if (closed) return;
         SFX.fanfare();
-        const c = el('div', 'gl-win', `<div class="gl-win-star">🌟</div><p>${esc(extra.title || T('You did it!', 'Con làm được rồi!'))}</p>`);
+        // 1 to 3 stars (little ones always get 3), then a treasure chest pops open with a surprise
+        const n = little ? 3 : misses <= 1 ? 3 : misses <= 4 ? 2 : 1, prize = PRIZES[Math.floor(Math.random() * PRIZES.length)];
+        const c = el('div', 'gl-win', `<div class="gl-stars">${[0, 1, 2].map(k => `<i class="${k < n ? 'on' : ''}" style="--d:${k * .25}s">⭐</i>`).join('')}</div>
+          <div class="gl-chest"><span class="lid">🎁</span><span class="prize">${prize}</span></div><p>${esc(extra.title || T('You did it!', 'Con làm được rồi!'))}</p>`);
         layer.appendChild(c); say(extra.title || 'You did it!', extra.titleVi || 'Con làm được rồi!');
         burstConfetti(layer);
-        await wait(2400); finish(true, extra);
+        setTimeout(() => { c.querySelector('.gl-chest').classList.add('open'); SFX.coin(); }, 1100);
+        await new Promise(r => { const t = setTimeout(r, 3400); c.onclick = () => { clearTimeout(t); r(); }; }); finish(true, Object.assign({ stars: n }, extra));
       }
     };
+    let streak = 0, rights = 0, misses = 0;
+    // three right in a row: a combo with extra stars
+    function combo(k) {
+      const b = el('div', 'gl-combo', `🔥 ${T('Combo', 'Liên tiếp')} ×${k}`); layer.appendChild(b); setTimeout(() => b.remove(), 1100);
+      stars += 1; starEl.textContent = stars; SFX.chime();
+    }
+    // now and then a lucky golden star bursts out
+    function lucky() {
+      const b = el('div', 'gl-combo lucky', `🌟 ${T('Lucky star! +3', 'Sao may mắn! +3')}`); layer.appendChild(b); setTimeout(() => b.remove(), 1300);
+      stars += 3; starEl.textContent = stars; SFX.secret && SFX.secret();
+    }
     // Ông Cú cheers in the corner; every right answer sends a star flying to the star counter.
     let stars = 0;
     const mascotEl = layer.querySelector('.mascot'), bubbleEl = layer.querySelector('.mascot-say'), starEl = layer.querySelector('.starbox b');

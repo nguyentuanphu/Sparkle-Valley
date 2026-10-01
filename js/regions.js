@@ -230,6 +230,30 @@ export function createRegions(G) {
     I('v_' + v.id, v.x, v.z + (Math.abs(v.face) > 1 ? -2.4 : 2.6), 3, v.food[0], () => v.name, h => vendorTalk(G, h, v));
   }
 
+  // ---- kids and grown-ups who host the folk games ----
+  const HOSTS = [
+    ['datnieu', 'Bông', L('dress', '#ff7eb8', '#1d1412', 'buns'), 117, 75.5, 0, ['Đập niêu! I will blindfold you, and we all shout where the pot is!', 'Đập niêu nè! Tớ bịt mắt bạn, cả nhóm sẽ hô cho bạn biết niêu ở đâu!']],
+    ['chichi', 'Bà Năm', L('aodai', '#5b7fbf', '#d8d8d8', 'buns'), 128, 74.5, 0, ['Come, grandchild. Put your finger in my hand: chi chi chành chành!', 'Lại đây cháu. Đặt ngón tay vào tay bà nào: chi chi chành chành!']],
+    ['kite', 'Anh Hai', L('shirt', '#3cc7e8', '#1d1412', 'spiky', 'nonla', '#e0aa80'), 142, 93.5, Math.PI, ['The wind is perfect for flying kites, like on the beach at Vũng Tàu!', 'Gió đẹp quá, thả diều thôi em, giống như trên bãi biển Vũng Tàu vậy!']],
+    ['words', 'Cô Hạnh', L('aodai', '#ffffff', '#1d1412', 'long'), 100, 87.6, Math.PI, ['I am a teacher. Did you know a bowl is "bát" in the north and "chén" in the south? Want to learn more?', 'Cô là cô giáo. Con có biết miền Bắc gọi là "bát", miền Nam gọi là "chén" không? Học thêm nhé?']],
+    ['sackrace', 'Noah', L('overalls', '#2f7ac8', '#e8c26a', 'short', 'cap', '#ffe3d1'), -137, -1.5, Math.PI, ['Sack race! Like at our school sports day. Ready, set, hop!', 'Đua nhảy bao bố! Giống ngày hội thể thao ở trường tớ. Chuẩn bị, nhảy!']],
+    ['parcel', 'Chloe', L('dress', '#ffd23f', '#a8432a', 'long', 'bow', '#ffe3d1'), -117, 11, -1.4, ["It's my birthday party! Let's play pass the parcel!", 'Hôm nay sinh nhật tớ! Chơi chuyền quà đi!']],
+    ['cricket', 'Liam', L('shirt', '#ffffff', '#6b4226', 'short', 'cap', '#ffe3d1'), -100.5, 12.5, Math.PI, ["Fancy a hit of backyard cricket, mate? You bat first!", 'Chơi cricket sân sau không bạn? Bạn đánh trước nhé!']]
+  ];
+  for (const [game, name, look, x, z, face, line] of HOSTS) {
+    person(look, x, z, face); tag(scene, name, x, heightAt(x, z) + 2.5, z);
+    I('g_' + game, x, z + (Math.abs(face) > 1 ? -2 : 2), 3, G.GAMES_ICON ? G.GAMES_ICON(game) : '🎮', () => name, h => G.kidTalk(h, game, name, line));
+  }
+  // party decorations and hanging pots
+  { const t = [P(Box(2.4, .1, 1.2), '#ffffff', [0, .8, 0]), ...[[-1, -.5], [1, -.5], [-1, .5], [1, .5]].map(([x, z]) => P(Box(.08, .8, .08), '#dddddd', [x, .4, z]))];
+    put(merge(t), -119, 11); world.colliders.push({ x: -119, z: 11, r: 1.2 }); ['🎈', '🎂', '🎁'].forEach((e, k) => { const sp = sprite(e, .7); sp.position.set(-119.8 + k * .8, A.h + 1.2 + (k === 0 ? .8 : 0), 11); scene.add(sp); }); }
+  { const t = [P(Box(.15, 3.2, .15), '#6b4a32', [-2.5, 1.6, 0]), P(Box(.15, 3.2, .15), '#6b4a32', [2.5, 1.6, 0]), P(Box(5.2, .12, .12), '#6b4a32', [0, 3.2, 0])];
+    for (let k = 0; k < 4; k++) t.push(P(Cyl(.02, .02, .7, 3), '#a08060', [-1.8 + k * 1.2, 2.85, 0]), P(new THREE.SphereGeometry(.32, 8, 6), '#a0603a', [-1.8 + k * 1.2, 2.35, 0], [0, 0, 0], [1, .85, 1]));
+    put(merge(t), 117, 73); world.colliders.push({ x: 114.5, z: 73, r: .3 }, { x: 119.5, z: 73, r: .3 }); }
+  const kiteS = sprite('🪁', 1.6); scene.add(kiteS);
+  const kline = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), new THREE.LineBasicMaterial({ color: '#5a4a3a' })); scene.add(kline);
+  world.updaters.push((dt, t) => { const k = new THREE.Vector3(140 + Math.sin(t * .5) * 3, M.h + 16 + Math.sin(t * .9) * 1.5, 100 + Math.cos(t * .4) * 2); kiteS.position.copy(k); kline.geometry.setFromPoints([new THREE.Vector3(142, M.h + 1.2, 93.2), k]); });
+
   // ================= landmarks in the wider valley =================
   // Sydney Opera House on the lake's southern beach
   { const p = [P(Box(16, 1.6, 10), '#cdb89a', [0, .8, 0]), P(Box(16, .3, 2), '#d9c9aa', [0, .15, 6])];

@@ -11,6 +11,7 @@ import { HOWTO, openHowTo } from './howto.js';
 import { QUEST_TALES } from './story.js';
 import { listen, canListen, plain, has } from './listen.js';
 import { el, esc, pick } from './util.js';
+import { AUSSIE_SLANG, VN_WORDS } from './words.js';
 
 // Who everybody is. age is how old they say they are; likes is their favourite thing.
 export const PERSONAS = {
@@ -100,6 +101,11 @@ export function offlineReply(G, h, pid, text) {
   if (has(text, 'favourite', 'favorite', 'like', 'love', 'thich', 'yeu')) return r(...P.likes);
   if (has(text, 'how are you', 'are you ok', 'khoe khong', 'the nao', 'co khoe')) return r(...P.mood);
   if (has(text, 'hi', 'hello', 'hey', "g'day", 'gday', 'xin chao', 'chao', 'alo')) return r(`Hello ${kid}! ${P.mood[0]}`, `Chào ${kid}! ${P.mood[1]}`);
+  if (has(text, 'slang', 'word', 'words', 'teach me', 'say', 'tieng long', 'tu', 'tu moi', 'day', 'giong', 'noi sao', 'mien')) {
+    const region = P.region || (['jack', 'ruby'].includes(pid) ? 'au' : ['mit', 'bom', 'lan', 'teo', 'ti', 'bong', 'su'].includes(pid) ? 'nam' : pick(['au', 'bac', 'trung', 'nam']));
+    if (region === 'au') { const s2 = pick(AUSSIE_SLANG); return r(`Here's some Aussie slang: "${s2[0]}" means ${s2[1].toLowerCase()}. ${s2[4]}`, `Tiếng lóng Úc nè: "${s2[0]}" nghĩa là ${s2[2].toLowerCase()}. Ví dụ: ${s2[4]}`); }
+    const w = pick(VN_WORDS); return r(`In Vietnam, a ${w[1]} is "${w[2]}" in the north, "${w[3]}" in the centre and "${w[4]}" in the south!`, `Cái này miền Bắc gọi là "${w[2]}", miền Trung gọi là "${w[3]}", miền Nam gọi là "${w[4]}" đó!`);
+  }
   if (has(text, 'australia', 'uc', 'kangaroo', 'koala', 'chuot tui')) return r('Australia is a big sunny country with kangaroos, koalas and beautiful beaches. Kids there play Mr Wolf and marbles!', 'Nước Úc rộng lớn, nhiều nắng, có chuột túi, gấu túi và bãi biển đẹp. Trẻ em ở đó chơi ông Sói và bắn bi!');
   if (has(text, 'vietnam', 'viet nam', 'pho', 'hanoi', 'ha noi', 'saigon')) return r('Vietnam has rice fields, lotus flowers, delicious phở and lanterns at the Mid-Autumn festival!', 'Việt Nam có cánh đồng lúa, hoa sen, phở thơm ngon và đèn lồng Trung Thu!');
   if (has(text, 'love you', 'thuong', 'yeu ban')) return r(`Aww! You are a wonderful friend, ${kid}.`, `Ôi! ${kid} là người bạn tuyệt vời.`);
@@ -131,7 +137,7 @@ async function claudeReply(G, h, pid, history) {
   const system = `You are ${P.name}, ${P.role}, a character in Sparkle Valley, a gentle open-world game for children aged 2 to 8 who are growing up between Australia and Vietnam.
 About you: ${P.about[0]} You like: ${P.likes[0]}${P.game && GAMES[P.game] ? ` You love playing ${GAMES[P.game].name()}.` : ''}
 You are talking with ${p.name}, ${p.age === 'big' ? 'a child aged 5 to 8' : 'a little child under 5'}. Places in the valley: ${places}. Their current goal is: ${q ? q.title() : 'free play, all quests are done'}.
-Reply in ${lang}, in 1 to 3 short, simple sentences a young child understands when read aloud. Be warm, playful and encouraging, and stay in character.
+${P.region === 'au' ? 'Sprinkle in friendly Australian slang (mate, arvo, heaps, no worries) and explain any slang word you use. ' : P.region ? `When speaking Vietnamese, use the ${({ bac: 'northern (Hà Nội)', trung: 'central (Huế)', nam: 'southern (Sài Gòn)' })[P.region]} way of speaking. ` : ''}Reply in ${lang}, in 1 to 3 short, simple sentences a young child understands when read aloud. Be warm, playful and encouraging, and stay in character.
 Talk about the valley, games, animals, counting, letters, kindness, and the cultures of Vietnam and Australia. If asked about something scary, grown-up or unsafe, gently change the subject and suggest asking a grown-up.
 Never ask for or repeat personal details such as surnames, addresses, schools or phone numbers. Do not use emoji, lists, links or markdown, because your words are spoken aloud.
 Latency-sensitive; begin your visible answer immediately.`;

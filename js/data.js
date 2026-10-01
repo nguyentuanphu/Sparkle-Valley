@@ -67,9 +67,12 @@ export const QUESTS = [
   { id: 'cook', icon: '🍲', title: () => T('Cook a dish at a cooking pot', 'Nấu một món ăn'), at: 'pot', check: p => Object.keys(p.dishes).length > 0 },
   { id: 'folk', icon: '🪢', title: () => T('Play a folk game with the village kids', 'Chơi trò dân gian với các bạn'), at: 'kids' },
   { id: 'playground', icon: '🪁', title: () => T('Learn a game on Two Homes Street', 'Học một trò chơi ở Phố Hai Quê'), at: 'playground', check: p => ['mrwolf', 'chuyen', 'dragon', 'marbles', 'skipping', 'dacau', 'snap'].some(id => p.quests['played_' + id]) },
+  { id: 'market3', icon: '🍜', title: () => T('Taste food from the north, centre and south at Chợ Ba Miền', 'Nếm món ăn ba miền ở Chợ Ba Miền'), at: 'market', check: p => ['bac', 'trung', 'nam'].every(rg => Object.keys(p.tasted || {}).some(id => ({ bahai: 'bac', cothu: 'bac', olai: 'trung', chunam: 'trung', chutam: 'nam', cout: 'nam' })[id] === rg)) },
+  { id: 'aussie', icon: '🍦', title: () => T('Get a treat at Aussie Corner', 'Mua quà vặt ở Góc Nước Úc'), at: 'aussie', check: p => ['kelly', 'davo', 'bev', 'gazza', 'robbo'].some(id => (p.tasted || {})[id]) },
   { id: 'buffalo', icon: '🐃', title: () => T('Ride a water buffalo', 'Cưỡi trâu'), at: 'buffalo' },
   { id: 'leafies', icon: '🍃', title: () => T('Find 5 hidden Leafies', 'Tìm 5 bạn Lá Lá đang trốn'), at: 'leafy', check: p => Object.keys(p.leafies).length >= 5 },
   { id: 'statue', icon: '🪷', title: () => T('Bring 4 Sparkle Orbs to the Lotus Statue', 'Mang 4 Ngọc Lấp Lánh đến Tượng Sen'), at: 'statue' },
+  { id: 'postcards', icon: '📮', title: () => T('Collect 5 postcards from famous places', 'Sưu tầm 5 bưu thiếp từ những nơi nổi tiếng'), at: 'postcard', check: p => Object.keys(p.postcards || {}).length >= 5 },
   { id: 'towers', icon: '🗺️', title: () => T('Light up all 4 towers', 'Thắp sáng cả 4 tháp'), at: 'tower', check: p => Object.keys(p.towers).length >= 4 },
   { id: 'shrines', icon: '🌟', title: () => T('Solve all 12 shrines', 'Giải cả 12 đền'), at: 'shrine', check: p => Object.keys(p.shrines).length >= 12 }
 ];

@@ -24,11 +24,12 @@ import './games/vietnam.js';
 import './games/market.js';
 import './games/farmgames.js';
 import './games/folk.js';
+import './games/folk2.js';
 import { openHowTo } from './howto.js';
 import { createFarm, jobProgress, ensureJobs } from './farm.js';
 import { createPlaces } from './places.js';
 import { createTown } from './town.js';
-import { createRegions } from './regions.js';
+import { createRegions, LANDMARKS } from './regions.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
 import { openWardrobe, openGamesHub, openQuick } from './ui.js';
@@ -334,6 +335,7 @@ async function kidTalk(h, game, name, line) {
   if (k === 1) { G.paused = true; openHowTo(game, { onPlay: () => { G.paused = false; playGame(h.i, game, 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
 }
 // ---------- Two Homes Street: talking to the neighbours ----------
+G.kidTalk = (h, game, name, line) => kidTalk(h, game, name, line);
 G.townTalk = async (h, who) => {
   if (who === 'sau') {
     const k = await dialog('Cô Sáu', [['Nước mía đây! Fresh sugarcane juice, cold and sweet. A glass gives you lots of energy!', 'Nước mía đây con! Mát lạnh, ngọt lịm. Uống một ly là khỏe re!']],
@@ -367,7 +369,7 @@ dialogHooks.chat = name => {
   if (h) G.chatWith(h.i, pid);
 };
 // ---------- the Games hub: every game, by place, playable straight away ----------
-const GAME_SPOT = { snap: 'cards', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
+const GAME_SPOT = { datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
   tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
 G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (SHRINES.find(s => s.game === id) || {}).id));
 G.openQuick = i => { if (G.paused) return; G.paused = true; openQuick(G, i); };
@@ -436,6 +438,9 @@ function questTarget(h) {
     case 'pot': return near(world.pots);
     case 'kids': return NPCS.find(n => n.id === 'teo');
     case 'playground': return NPCS.find(n => n.id === 'jack');
+    case 'market': return { x: 99, z: 83 };
+    case 'aussie': return { x: -121, z: -12 };
+    case 'postcard': return near(LANDMARKS.filter(l => !(p.postcards || {})[l.id]).map(l => ({ x: l.x, z: l.z + 2 })));
     case 'buffalo': return near(world.buffalo.map(b => ({ x: b.mesh.position.x, z: b.mesh.position.z })));
     case 'leafy': return near(LEAFIES.filter(l => !p.leafies[l.id]));
     case 'statue': return p.orbs >= 4 ? world.statue : near(SHRINES.filter(s => !p.shrines[s.id] && p.discovered[s.id])) || world.statue;
@@ -800,6 +805,7 @@ setupNPCs(); setupInteractables();
 G.farm = createFarm(G); world.updaters.push(G.farm.update);
 G.places = createPlaces(G); world.updaters.push(G.places.update);
 G.town = createTown(G);
+G.GAMES_ICON = id => (GAMES[id] || {}).icon || "🎮";
 createRegions(G);
 G.secrets = createSecrets(G);
 ensureJobs();
