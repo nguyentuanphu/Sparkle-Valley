@@ -15,7 +15,7 @@ export const HOME = { x: -26, z: 126, r: 30, h: 4 };   // Sunny Farm: house, fie
 export const PLAYGROUND = { x: 28, z: 62, r: 13, h: 7.2 };   // the park on Two Homes Street, where kids from Australia and Vietnam play
 export const TOWN = { x0: 12, x1: 52, z0: 32, z1: 74, h: 7.2, roadZ: 47 };   // Two Homes Street: Bà Rịa meets a Sydney suburb
 const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [58, 40], [52, 85]];
-export const BRIDGE = { x0: 44, x1: 72, z: 30, w: 4.2 };
+export const BRIDGE = { x0: 44, x1: 74, z: 47, w: 6.4, h: 7.4 };   // the Harbour-style bridge carrying Two Homes Street over the river
 
 function riverDist(x, z) {
   let best = 1e9;
@@ -55,9 +55,11 @@ export function heightAt(x, z) {
   const dr = riverDist(x, z);
   h = lerp(h, -2.6 - mtn * 2, 1 - smooth(3.5, 11, dr));
   // Raised banks either side of the bridge.
-  if (Math.abs(z - BRIDGE.z) < 7 && x > BRIDGE.x0 - 10 && x < BRIDGE.x1 + 10) {
-    const w = (1 - smooth(4, 7, Math.abs(z - BRIDGE.z))) * (1 - smooth(BRIDGE.x0 - 4, BRIDGE.x0 + 6, x) + smooth(BRIDGE.x1 - 6, BRIDGE.x1 + 4, x));
-    h = lerp(h, 3.2, clamp(w, 0, 1));
+  if (Math.abs(z - BRIDGE.z) < 8 && x > BRIDGE.x0 - 10 && x < BRIDGE.x1 + 16) {
+    // level ground at deck height at both ends, easing back to the natural hills further away; the river in the middle is left alone
+    const west = smooth(BRIDGE.x0 + 8, BRIDGE.x0 + 3, x), east = smooth(BRIDGE.x1 - 8, BRIDGE.x1 - 3, x) * (1 - smooth(BRIDGE.x1 + 4, BRIDGE.x1 + 16, x));
+    const w = (1 - smooth(4, 8, Math.abs(z - BRIDGE.z))) * (west + east);
+    h = lerp(h, BRIDGE.h - .2, clamp(w, 0, 1));
   }
   return h;
 }
@@ -439,15 +441,25 @@ export function createWorld(scene, quality) {
 
   // ---------- bridge ----------
   {
-    const B = BRIDGE, len = B.x1 - B.x0, y = 3.4;
-    const br = new THREE.Mesh(merge([
-      P(new THREE.BoxGeometry(len, .4, B.w), '#a9764a', [0, 0, 0]),
-      ...Array.from({ length: 9 }, (_, i) => P(new THREE.CylinderGeometry(.12, .12, 1.3, 5), '#7a5236', [-len / 2 + i * len / 8, .6, B.w / 2])),
-      ...Array.from({ length: 9 }, (_, i) => P(new THREE.CylinderGeometry(.12, .12, 1.3, 5), '#7a5236', [-len / 2 + i * len / 8, .6, -B.w / 2])),
-      P(new THREE.BoxGeometry(len, .15, .15), '#c98b4a', [0, 1.2, B.w / 2]), P(new THREE.BoxGeometry(len, .15, .15), '#c98b4a', [0, 1.2, -B.w / 2]),
-      ...[-.3, .3].map(f => P(new THREE.CylinderGeometry(.35, .35, 6, 6), '#7a5236', [f * len, -3, 0]))
-    ]), toonVC()); br.position.set((B.x0 + B.x1) / 2, y - .2, B.z); scene.add(br);
-    W.platforms.push({ x0: B.x0 - 1, x1: B.x1 + 1, z0: B.z - B.w / 2, z1: B.z + B.w / 2, y });
+    // A small "Sydney Harbour Bridge": a grey steel arch, hangers, stone pylons at each end and a road deck.
+    const B = BRIDGE, len = B.x1 - B.x0, y = B.h, hw = B.w / 2, steel = '#8d979c';
+    const parts = [
+      P(new THREE.BoxGeometry(len + 2, .5, B.w), '#7d858a', [0, -.25, 0]), P(new THREE.BoxGeometry(len + 2, .06, B.w - 2.2), '#b4b9bc', [0, .03, 0]),
+      P(new THREE.BoxGeometry(len + 2, .1, 1), '#d9d4c8', [0, .07, hw - .5]), P(new THREE.BoxGeometry(len + 2, .1, 1), '#d9d4c8', [0, .07, -hw + .5]),
+      ...Array.from({ length: 7 }, (_, i) => P(new THREE.BoxGeometry(1.6, .08, .14), '#f6f1e4', [-len / 2 + 3 + i * (len - 6) / 6, .09, 0])),
+      P(new THREE.BoxGeometry(len + 2, .9, .12), steel, [0, .45, hw]), P(new THREE.BoxGeometry(len + 2, .9, .12), steel, [0, .45, -hw]),
+      ...[-.32, .32].map(f => P(new THREE.CylinderGeometry(.5, .7, 12, 6), '#9a948a', [f * len, -6, 0]))
+    ];
+    for (const sz of [-1, 1]) {
+      parts.push(P(new THREE.TorusGeometry(len / 2 - 1, .35, 5, 28, Math.PI), steel, [0, -1.2, sz * (hw - .2)], [0, 0, 0], [1, .62, 1]));
+      parts.push(P(new THREE.TorusGeometry(len / 2 - 1, .22, 5, 28, Math.PI), steel, [0, -2.4, sz * (hw - .2)], [0, 0, 0], [1, .62, 1]));
+      for (let i = 1; i < 12; i++) { const t = i / 12, x = -len / 2 + 1 + t * (len - 2), a = Math.acos(Math.max(-1, Math.min(1, x / (len / 2 - 1)))), top = Math.sin(a) * (len / 2 - 1) * .62 - 1.2; if (top > 1) parts.push(P(new THREE.BoxGeometry(.12, top, .12), steel, [x, top / 2, sz * (hw - .2)])); }
+      for (const ex of [-1, 1]) parts.push(P(new THREE.BoxGeometry(2.2, 7, 2.2), '#d8cdb6', [ex * (len / 2 + .6), 2.2, sz * (hw + .6)]), P(new THREE.BoxGeometry(2.6, .5, 2.6), '#c8bca2', [ex * (len / 2 + .6), 5.9, sz * (hw + .6)]));
+    }
+    const br = new THREE.Mesh(merge(parts), toonVC()); br.castShadow = true; br.receiveShadow = true; br.position.set((B.x0 + B.x1) / 2, y, B.z); scene.add(br);
+    // railings keep little explorers on the bridge
+    W.boxes.push({ x0: B.x0, x1: B.x1, z0: B.z + hw - .1, z1: B.z + hw + .3 }, { x0: B.x0, x1: B.x1, z0: B.z - hw - .3, z1: B.z - hw + .1 });
+    W.platforms.push({ x0: B.x0 - 2, x1: B.x1 + 2, z0: B.z - B.w / 2, z1: B.z + B.w / 2, y: y + .1 });
   }
 
   // ---------- shrines ----------

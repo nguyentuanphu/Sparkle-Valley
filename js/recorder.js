@@ -44,6 +44,9 @@ export async function startRecording({ onLevel, maxMs = 6000, onAuto } = {}) {
     if (stopped) return finished; stopped = true;
     try { src.disconnect(); proc.disconnect(); } catch (e) { }
     const rate = ctx.sampleRate; try { ctx.close(); } catch (e) { }
+    // Turn the microphone fully off straight away. On iPhone a microphone left open switches the whole
+    // app into "phone call" audio: game sound gets quiet and the orange mic dot stays on.
+    releaseMic();
     done(toWav(trim(parts), rate));
     return finished;
   };

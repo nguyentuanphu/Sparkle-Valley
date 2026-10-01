@@ -126,7 +126,7 @@ export function createTown(G) {
   };
 
   // ---------- the road, footpaths, lines and a zebra crossing ----------
-  const g = [], x0 = 6, x1 = 56, L = x1 - x0, cx = (x0 + x1) / 2;
+  const g = [], x0 = 6, x1 = 44, L = x1 - x0, cx = (x0 + x1) / 2;
   g.push(P(Box(L, .06, 7), '#b4b9bc', [cx, .03, RZ]));
   g.push(P(Box(L, .07, 3.6), '#e8d5a8', [cx, .035, RZ - 5.3]), P(Box(L, .07, 3.6), '#e8d5a8', [cx, .035, RZ + 5.3]));
   g.push(P(Box(L, .08, .16), '#f6f1e4', [cx, .05, RZ - 3.2]), P(Box(L, .08, .16), '#f6f1e4', [cx, .05, RZ + 3.2]));

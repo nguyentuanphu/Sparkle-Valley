@@ -16,6 +16,8 @@ import { SECRETS } from './secrets.js';
 import { openCredits, creditsFields, bindCreditsFields } from './credits.js';
 import { openHowTo } from './howto.js';
 import { extrasHTML, bindExtras } from './extras.js';
+import { canListen } from './listen.js';
+import { VOICE_STYLES, clipCountFor, hush } from './voice.js';
 
 export const STYLE_ICON = { dress: '👗', shirt: '👕', aodai: '🥻', tunic: '🧥', overalls: '👖', hoodie: '🧶' };
 export const STYLE_NAME = { dress: () => T('Dress', 'Váy'), shirt: () => T('Shirt & shorts', 'Áo và quần đùi'), aodai: () => 'Áo dài', tunic: () => T('Explorer', 'Nhà thám hiểm'), overalls: () => T('Overalls', 'Quần yếm'), hoodie: () => T('Hoodie', 'Áo nỉ') };
@@ -106,7 +108,8 @@ export function openGrownups(after) {
       <div class="field"><label>Tiếng Việt</label><div class="vrow"><select id="vVi">${vVi.map(v => `<option ${v.name === settings.voiceVi ? 'selected' : ''}>${esc(v.name)}</option>`).join('') || `<option>${T('No Vietnamese voice found', 'Chưa có giọng tiếng Việt')}</option>`}</select><button class="btn" data-try="vi">▶</button></div></div>
       <p class="note">${hasVietnamese() ? '' : T('To add a Vietnamese voice: iPhone/iPad → Settings → Accessibility → Spoken Content → Voices → Vietnamese. Android → Settings → Text-to-speech → Google → Install voice data → Vietnamese. ', 'Thêm giọng tiếng Việt: iPhone/iPad → Cài đặt → Trợ năng → Nội dung được đọc → Giọng nói → Tiếng Việt. Android → Cài đặt → Chuyển văn bản thành giọng nói → Google → Cài đặt dữ liệu giọng nói → Tiếng Việt. ')}${T('Choose an "Enhanced" or "Premium" voice for the most natural sound.', 'Chọn giọng "Nâng cao" hoặc "Cao cấp" để nghe tự nhiên nhất.')}</p>
       <h3>${T('Family voice', 'Giọng của gia đình')}</h3>
-      <button class="btn primary wide big" id="gRec">🎙️ ${T('Record your voice for the game', 'Thu giọng của bạn cho trò chơi')} (${clipCount()}/${FAMILY_PHRASES.length * 2})</button>
+      <button class="btn primary wide big" id="gRec">🎙️ ${T('Record your voice for the game', 'Thu giọng của bạn cho trò chơi')}<small class="reccount">🇻🇳 ${clipCountFor('vi')}/${FAMILY_PHRASES.length} · 🇦🇺 ${clipCountFor('en')}/${FAMILY_PHRASES.length}</small></button>
+      <p class="note">${T('Each language has its own 11 lines. The game plays your real voice whenever it says one of those lines (praise, “try again”, “you did it”, hello…), in the language the game is set to. Everything else is read by the device voice, tuned towards your voice.', 'Mỗi ngôn ngữ có 11 câu riêng. Trò chơi phát đúng giọng thật của bạn mỗi khi nói một trong các câu đó (khen, “thử lại nhé”, “con làm được rồi”, chào…), theo ngôn ngữ đang chọn. Các câu khác do giọng máy đọc, được chỉnh gần với giọng bạn.')}</p>
       ${extrasHTML()}
       <h3>${T('Sound and world', 'Âm thanh và thế giới')}</h3>
       <div class="toggles">
@@ -152,6 +155,40 @@ export function openGrownups(after) {
   };
   draw();
   onVoices(() => { if (document.body.contains(m)) draw(); });
+}
+
+// ---------- Quick settings: tap your picture in the corner ----------
+export function openQuick(game, i) {
+  const m = modal('qsettings', ''), card = m.querySelector('.card');
+  const close = () => { m.close(); game.paused = false; game.huds.forEach(h => h.refreshAudio()); };
+  const draw = () => {
+    const s = settings, on = v => v ? 'on' : '';
+    card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>⚙️ ${T('Settings', 'Cài đặt')}</h2>
+      ${flagBtns()}
+      <div class="qgrid">
+        <button class="qset ${on(s.music)}" data-k="music"><span>🎵</span>${T('Music', 'Nhạc')}</button>
+        <button class="qset ${on(s.sound)}" data-k="sound"><span>🔔</span>${T('Sounds', 'Âm thanh')}</button>
+        <button class="qset ${on(s.voice)}" data-k="voice"><span>🗣️</span>${T('Talking', 'Giọng nói')}</button>
+        ${canListen() ? `<button class="qset ${on(s.voiceControl)}" data-k="voiceControl"><span>🎤</span>${T('Voice control', 'Điều khiển giọng nói')}</button>` : ''}
+        <button class="qset ${on(s.camMode !== 'free')}" data-k="cam"><span>${s.camMode === 'free' ? '🧭' : '🧸'}</span>${s.camMode === 'free' ? T('Explorer camera', 'Camera tự do') : T('Easy camera', 'Camera dễ')}</button>
+        <button class="qset ${on(s.alwaysDay)}" data-k="alwaysDay"><span>☀️</span>${T('Always daytime', 'Luôn ban ngày')}</button>
+      </div>
+      <div class="field"><label>${T('Voice style', 'Kiểu giọng')}</label><div class="seg vstyle">${VOICE_STYLES.map(v => `<button data-v="${v.id}" class="${(s.voiceStyle || 'natural') === v.id ? 'on' : ''}">${v.icon} ${v.name()}</button>`).join('')}</div></div>
+      <div class="actions"><button class="btn" id="qWho">👫 ${T('Change player', 'Đổi người chơi')}</button><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
+    bindLang(card, draw);
+    card.querySelector('.x').onclick = card.querySelector('#qDone').onclick = close;
+    card.querySelectorAll('.qset').forEach(b => b.onclick = () => {
+      const k = b.dataset.k; SFX.tap();
+      if (k === 'cam') s.camMode = s.camMode === 'free' ? 'easy' : 'free';
+      else s[k] = !s[k];
+      if (k === 'music') { if (s.music) Music.refresh(); else Music.stop(); }
+      if (k === 'voice' && !s.voice) hush();
+      saveSettings(); document.querySelectorAll('.dk.voicecmd').forEach(x => x.hidden = !(s.voiceControl && canListen())); draw();
+    });
+    card.querySelectorAll('.seg.vstyle button').forEach(b => b.onclick = () => { s.voiceStyle = b.dataset.v; saveSettings(); draw(); say('Hello! Do you like my voice?', 'Xin chào! Con có thích giọng này không?'); });
+    card.querySelector('#qWho').onclick = () => { m.close(); game.changePlayer(); };
+  };
+  draw();
 }
 
 // ---------- Player editor with photo cropping ----------
@@ -497,7 +534,7 @@ export function openRecorder(after) {
         </div>
       </div>
       <div class="recdots">${FAMILY_PHRASES.map((p, k) => `<button class="${hasClip(L(), p.id) ? 'has' : ''} ${k === idx ? 'on' : ''}" data-k="${k}" aria-label="${k + 1}">${k + 1}</button>`).join('')}</div>
-      <p class="note">${done}/${FAMILY_PHRASES.length} ${T('recorded', 'câu đã thu')}${settings.familyPitch ? ' · ' + T('device voice tuned to your pitch', 'giọng máy đã chỉnh theo cao độ của bạn') : ''}</p>
+      <p class="note">${L() === 'vi' ? '🇻🇳 Tiếng Việt' : '🇦🇺 English'}: ${done}/${FAMILY_PHRASES.length} ${T('recorded', 'câu đã thu')} · ${L() === 'vi' ? '🇦🇺 English' : '🇻🇳 Tiếng Việt'}: ${clipCountFor(L() === 'vi' ? 'en' : 'vi')}/${FAMILY_PHRASES.length}${settings.familyPitch ? ' · ' + T('device voice tuned to your pitch', 'giọng máy đã chỉnh theo cao độ của bạn') : ''}</p>
       <label class="tog"><input type="checkbox" id="rUse" ${settings.familyVoice ? 'checked' : ''}> ${T('Use my recordings in the game', 'Dùng giọng thu của tôi trong trò chơi')}</label>
       <p class="note">${T('Recordings stay on this device and are never uploaded. Lines you have not recorded are read by the device voice, tuned to sound closer to yours.', 'Bản thu chỉ lưu trên máy này và không bao giờ được tải lên. Những câu chưa thu sẽ do giọng của máy đọc, được chỉnh cho gần với giọng bạn.')}</p>`;
     card.querySelector('.x').onclick = close;

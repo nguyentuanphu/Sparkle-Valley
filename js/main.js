@@ -30,7 +30,7 @@ import { createPlaces } from './places.js';
 import { createTown } from './town.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
-import { openWardrobe, openGamesHub } from './ui.js';
+import { openWardrobe, openGamesHub, openQuick } from './ui.js';
 
 // ---------- renderer & world ----------
 const quality = settings.quality === 'auto' ? ((navigator.hardwareConcurrency || 4) <= 4 || Math.min(screen.width, screen.height) < 500 ? 'low' : 'mid') : settings.quality;
@@ -367,6 +367,7 @@ dialogHooks.chat = name => {
 const GAME_SPOT = { snap: 'cards', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
   tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
 G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (SHRINES.find(s => s.game === id) || {}).id));
+G.openQuick = i => { if (G.paused) return; G.paused = true; openQuick(G, i); };
 G.openGamesHub = i => { if (G.paused) return; G.paused = true; openGamesHub(G, i, () => { G.paused = false; }); };
 G.goToGame = (i, id) => { const h = G.heroes[i], it = G.gameSpot(id); if (!h || !it) return; (async () => { if (dist2(h.pos.x, h.pos.z, it.x, it.z) > 45) await G.travel(h, it.x - 1.5, it.z + 2); goAndDo(h, it); })(); };
 // ---------- objective helpers ----------
@@ -650,6 +651,12 @@ function resize() {
   if (G.heroes.length > 1) { const v = innerWidth >= innerHeight; Object.assign(sp.style, v ? { left: innerWidth / 2 - 2 + 'px', top: 0, width: '4px', height: '100%' } : { top: innerHeight / 2 - 2 + 'px', left: 0, height: '4px', width: '100%' }); }
 }
 addEventListener('resize', resize);
+// Phones (especially iPhone home-screen apps) sometimes report the wrong size after rotating or after the
+// keyboard closes, leaving part of the screen empty. Check often and fix the size whenever it drifts.
+addEventListener('orientationchange', () => setTimeout(resize, 300));
+if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(resize, 100));
+addEventListener('focusout', () => setTimeout(() => { window.scrollTo(0, 0); resize(); }, 150));
+setInterval(() => { const c = renderer.domElement; if (Math.abs(c.clientWidth - innerWidth) > 2 || Math.abs(c.clientHeight - innerHeight) > 2) resize(); }, 700);
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 function onTap(i, x, y) {
   const h = G.heroes[i]; if (!h || G.paused) return;

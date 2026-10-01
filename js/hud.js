@@ -25,7 +25,7 @@ export class Hud {
     const root = this.root = el('div', 'hud');
     root.innerHTML = `
       <div class="hud-tl">
-        <div class="pcard"><img class="pav" alt=""><div class="pinfo"><b class="pname"></b><div class="hearts"></div></div></div>
+        <div class="pcard" role="button" aria-label="${T('Settings', 'Cài đặt')}"><img class="pav" alt=""><i class="pgear">⚙️</i><div class="pinfo"><b class="pname"></b><div class="hearts"></div></div></div>
         <div class="chips"><span class="chip c-money"></span><span class="chip c-orbs"></span><span class="chip c-leafy"></span></div>
       </div>
       <div class="quest">
@@ -67,6 +67,7 @@ export class Hud {
     hold(this.q('.mv.run'), '_btnRun'); hold(this.q('.mv.jump'), '_btnJump');
     this.q('.act').addEventListener('pointerdown', e => { e.preventDefault(); pad._act = true; });
     this.q('.dk.games').onclick = () => game.openGamesHub(i);
+    this.q('.pcard').onclick = () => game.openQuick(i);
     this.q('.dk.map').onclick = () => game.openPad(i, 'map');
     this.q('.dk.bag').onclick = () => game.openPad(i, 'bag');
     this.q('.dk.chat').onclick = () => this.toggleEmotes();
