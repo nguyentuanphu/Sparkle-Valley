@@ -278,7 +278,7 @@ export function createWorld(scene, quality) {
     let ready = 0;
     W.interactables.push({ id: 'apple' + i, x: t.x, z: t.z, r: 3.2, icon: '🍎', label: () => T('Shake tree', 'Rung cây'),
       act: (pl, game) => { const now = performance.now(); if (now < ready) { game.toast(pl, T('No apples yet. Come back later!', 'Chưa có táo. Lát nữa quay lại nhé!')); return; }
-        ready = now + 90000; const n = 2 + Math.floor(Math.random() * 2); game.give(pl, 'apple', n); game.fx(t.x, heightAt(t.x, t.z) + 4, t.z, '🍎'); } });
+        ready = now + 90000; if (game.shakeTree) game.shakeTree(pl, t); else { game.give(pl, 'apple', 2); game.fx(t.x, heightAt(t.x, t.z) + 4, t.z, '🍎'); } } });
   });
 
   // grass tufts and flowers
@@ -514,6 +514,7 @@ export function createWorld(scene, quality) {
   const fireflies = [];
   for (let i = 0; i < 40; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ color: '#fff7a0', transparent: true, opacity: 0, depthWrite: false, fog: false })); s.scale.setScalar(.25); const x = BAMBOO.x + (Math.random() - .5) * 80, z = BAMBOO.z + (Math.random() - .5) * 80; s.position.set(x, heightAt(x, z) + 1.5, z); scene.add(s); fireflies.push({ s, ox: x, oz: z, a: Math.random() * 6 }); }
   for (let i = 0; i < 30; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ color: '#fff7a0', transparent: true, opacity: 0, depthWrite: false, fog: false })); s.scale.setScalar(.25); const x = V.x + (Math.random() - .5) * 60, z = V.z + (Math.random() - .5) * 60; s.position.set(x, heightAt(x, z) + 1.5, z); scene.add(s); fireflies.push({ s, ox: x, oz: z, a: Math.random() * 6 }); }
+  W.fireflies = fireflies;
   critters.forEach(c => { c.cx = clamp(c.cx, -170, 170); c.cz = clamp(c.cz, -170, 170); scene.add(c.s); });
   W.updaters.push((dt, t) => {
     critters.forEach(c => {
@@ -522,7 +523,7 @@ export function createWorld(scene, quality) {
       c.s.position.set(x, c.water ? Math.max(g, heightAt(x, z) + .5) : g, z);
     });
     const night = W.isNight();
-    fireflies.forEach(f => { f.a += dt; f.s.material.opacity = night ? .6 + Math.sin(t * 3 + f.a * 3) * .4 : 0; f.s.position.x = f.ox + Math.sin(f.a * .7) * 2; f.s.position.z = f.oz + Math.cos(f.a * .5) * 2; });
+    fireflies.forEach(f => { f.a += dt; const on = night && !(f.caught > performance.now() / 1000); f.s.visible = on; f.s.material.opacity = on ? .6 + Math.sin(t * 3 + f.a * 3) * .4 : 0; f.s.position.x = f.ox + Math.sin(f.a * .7) * 2; f.s.position.z = f.oz + Math.cos(f.a * .5) * 2; });
   });
 
   // ---------- walking surface ----------

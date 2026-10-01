@@ -23,6 +23,7 @@ import './games/market.js';
 import './games/farmgames.js';
 import { createFarm, jobProgress, ensureJobs } from './farm.js';
 import { createPlaces } from './places.js';
+import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck } from './story.js';
 import { openWardrobe, openGamesHub } from './ui.js';
 
@@ -336,7 +337,8 @@ async function gourdTalk(h) {
     const next = GOURD_GIFTS.find(([need]) => n < need);
     await dialog('Ông Bầu', [['Yahoo! I love Leafies, the little spirits hiding all over the valley.', 'Ố là la! Ông thích các bạn Lá Lá lắm, chúng trốn khắp thung lũng.'],
       [next ? `You found ${n}. Find ${next[0]} and I will give you a present!` : 'You found every single Leafy! You are amazing!', next ? `Con tìm được ${n} bạn rồi. Tìm đủ ${next[0]} bạn, ông sẽ tặng quà!` : 'Con tìm được tất cả các bạn Lá Lá! Con giỏi quá!'],
-      ['Look under odd rocks and touch sparkles on high places!', 'Nhìn dưới những hòn đá lạ và chạm vào tia lấp lánh ở chỗ cao nhé!']]);
+      ['Look under odd rocks and touch sparkles on high places!', 'Nhìn dưới những hòn đá lạ và chạm vào tia lấp lánh ở chỗ cao nhé!'],
+      ...(G.secrets.hint(h) ? [['Psst… a secret: ' + G.secrets.hint(h), 'Suỵt… bí mật nhé: ' + G.secrets.hint(h)]] : [])]);
     return;
   }
   for (const [need, kind, what] of due) {
@@ -349,6 +351,7 @@ async function gourdTalk(h) {
 }
 async function statueTalk(h) {
   const p = h.profile;
+  if (world.isNight() && !(p.secrets || {}).wish) { G.fx(world.statue.x, heightAt(world.statue.x, world.statue.z) + 8, world.statue.z, '🌠'); await G.secrets.unlock(h, 'wish'); return; }
   if (p.orbs < 4) { await dialog(T('Lotus Statue', 'Tượng Sen'), [[`Bring me 4 Sparkle Orbs from the shrines and I will make you stronger. You have ${p.orbs}.`, `Hãy mang đến 4 Ngọc Lấp Lánh từ các ngôi đền, ta sẽ giúp con mạnh hơn. Con đang có ${p.orbs} viên.`]]); return; }
   const k = await dialog(T('Lotus Statue', 'Tượng Sen'), [['Four Sparkle Orbs! What would you like?', 'Bốn Ngọc Lấp Lánh! Con muốn gì nào?']], [['❤️ One more heart', '❤️ Thêm một trái tim'], ['💚 More stamina', '💚 Thêm sức bền'], ['Not now', 'Để sau']]);
   if (k === 0 || k === 1) {
@@ -720,6 +723,7 @@ loadClips();
 setupNPCs(); setupInteractables();
 G.farm = createFarm(G); world.updaters.push(G.farm.update);
 G.places = createPlaces(G); world.updaters.push(G.places.update);
+G.secrets = createSecrets(G);
 ensureJobs();
 setupBubbles(); setupAreaSigns(); setupGuides();
 $('#songBtn').onclick = () => G.places.nextSong();
