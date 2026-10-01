@@ -28,6 +28,7 @@ import { openHowTo } from './howto.js';
 import { createFarm, jobProgress, ensureJobs } from './farm.js';
 import { createPlaces } from './places.js';
 import { createTown } from './town.js';
+import { createRegions } from './regions.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
 import { openWardrobe, openGamesHub, openQuick } from './ui.js';
@@ -202,6 +203,8 @@ function setupAreaSigns() {
   sign(T('Bamboo Forest', 'Rừng Tre'), '🎋', -100, 85, 16);
   sign(T('Rice Fields', 'Đồng Lúa'), '🌾', 112, -38, 8);
   sign(T('Two Homes Street', 'Phố Hai Quê'), '🏘️', 28, 47, 12);
+  sign(T('Three Regions Market', 'Chợ Ba Miền'), '🏮', 121, 83, 12);
+  sign(T('Aussie Corner', 'Góc Nước Úc'), '🍦', -117, -12, 12);
 }
 function nearest(h) {
   let best = null, bd = 1e9;
@@ -529,6 +532,10 @@ G.PLACES = [
   { icon: '💃', name: () => T('Dance stage', 'Sân khấu'), x: VILLAGE.x - 6, z: VILLAGE.z + 25 },
   { icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: 28, z: 52 },
   { icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: 6, z: 140 },
+  { icon: '🏮', name: () => T('Three Regions Market', 'Chợ Ba Miền'), x: 99, z: 83 },
+  { icon: '🍦', name: () => T('Aussie Corner', 'Góc Nước Úc'), x: -121, z: -12 },
+  { icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: 24, z: 160 },
+  { icon: '🪨', name: () => T('Uluru', 'Uluru'), x: -128, z: 132 },
   { icon: '🐻', name: () => T('Mr. Bear', 'Bác Gấu'), x: HOME.x - 21, z: HOME.z + 6 }
 ];
 G.changePlayer = () => {
@@ -793,6 +800,7 @@ setupNPCs(); setupInteractables();
 G.farm = createFarm(G); world.updaters.push(G.farm.update);
 G.places = createPlaces(G); world.updaters.push(G.places.update);
 G.town = createTown(G);
+createRegions(G);
 G.secrets = createSecrets(G);
 ensureJobs();
 setupBubbles(); setupAreaSigns(); setupGuides();
