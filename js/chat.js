@@ -2,7 +2,7 @@
 // (🎤) or by typing. Answers come from a built-in, offline "conversation brain" for each villager.
 // If a grown-up adds an Anthropic API key in Grown-ups, villagers can answer anything freely with Claude
 // (online; only the chat text is sent, never names of real people, photos or recordings).
-import { T } from './i18n.js';
+import { T, nm } from './i18n.js';
 import { settings } from './state.js';
 import { say, hush } from './voice.js';
 import { SFX } from './audio.js';
@@ -157,7 +157,7 @@ export const aiReady = () => settings.aiOn && !!settings.aiKey && navigator.onLi
 export function openChat(G, i, pid, onClose, firstAsk) {
   const h = G.heroes[i], P = PERSONAS[pid]; if (!h || !P) return;
   const m = el('div', 'chatbox', `<div class="cb-card">
-    <div class="cb-head"><span class="cb-face">${P.emoji}</span><b>${esc(P.name)}</b>${aiReady() ? '<small class="cb-ai">✨</small>' : ''}<button class="cb-x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
+    <div class="cb-head"><span class="cb-face">${P.emoji}</span><b>${esc(nm(P.name))}</b>${aiReady() ? '<small class="cb-ai">✨</small>' : ''}<button class="cb-x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
     <div class="cb-log"></div><div class="cb-acts"></div><div class="cb-quick"></div>
     <form class="cb-in">${canListen() ? `<button type="button" class="cb-mic" aria-label="${T('Talk', 'Nói')}">🎤</button>` : ''}<input type="text" enterkeyhint="send" placeholder="${T('Say or type something…', 'Nói hoặc gõ gì đó…')}"><button type="submit" class="cb-send" aria-label="${T('Send', 'Gửi')}">➤</button></form></div>`);
   document.body.appendChild(m);

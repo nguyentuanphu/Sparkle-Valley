@@ -7,7 +7,7 @@
 //    Bondi lifesavers' tower, Vũng Tàu lighthouse, Turtle Tower, One Pillar Pagoda, Hội An's covered bridge
 //    and Bến Thành market's clock tower.
 import { THREE, toon, toonVC, P, merge, sprite } from './gfx.js';
-import { T } from './i18n.js';
+import { T, nm, onLang } from './i18n.js';
 import { say } from './voice.js';
 import { SFX, tone } from './audio.js';
 import { heightAt, MARKET, AUSSIE } from './world.js';
@@ -21,13 +21,19 @@ import { dist2, pick } from './util.js';
 
 // ---------- small builders ----------
 function signMesh(text, bg = '#c0392b', fg = '#fff8e0', w = 4, h = .9, font = 'Fredoka') {
+  // text is 'WORDS' or ['English', 'Tiếng Việt']; it redraws when the language changes
   const c = document.createElement('canvas'); c.width = 512; c.height = Math.round(512 * h / w); const g = c.getContext('2d');
-  g.fillStyle = bg; g.fillRect(0, 0, c.width, c.height); g.strokeStyle = fg; g.lineWidth = 8; g.strokeRect(8, 8, c.width - 16, c.height - 16);
-  g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle';
-  let size = c.height * .55; g.font = `bold ${size}px ${font}, "Baloo 2", sans-serif`;
-  while (g.measureText(text).width > c.width - 40 && size > 10) { size -= 2; g.font = `bold ${size}px ${font}, "Baloo 2", sans-serif`; }
-  g.fillText(text, c.width / 2, c.height / 2 + 2);
+  const draw = () => {
+    const tx = Array.isArray(text) ? T(text[0], text[1]) : text;
+    g.fillStyle = bg; g.fillRect(0, 0, c.width, c.height); g.strokeStyle = fg; g.lineWidth = 8; g.strokeRect(8, 8, c.width - 16, c.height - 16);
+    g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle';
+    let size = c.height * .55; g.font = `bold ${size}px ${font}, "Baloo 2", sans-serif`;
+    while (g.measureText(tx).width > c.width - 40 && size > 10) { size -= 2; g.font = `bold ${size}px ${font}, "Baloo 2", sans-serif`; }
+    g.fillText(tx, c.width / 2, c.height / 2 + 2);
+  };
+  draw();
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  if (Array.isArray(text)) onLang(() => { draw(); t.needsUpdate = true; });
   // two faces back to back, so the words read the right way round from both sides
   const g2 = new THREE.Group(), m = new THREE.MeshBasicMaterial({ map: t });
   const a = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m), b = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); b.rotation.y = Math.PI; b.position.z = -.01;
@@ -43,9 +49,10 @@ function stall(a, b, w = 3, d = 1.6) {
 }
 function tag(scene, text, x, y, z) {
   const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
-  g.fillStyle = 'rgba(40,40,40,.55)'; g.beginPath(); g.roundRect(8, 10, 240, 46, 23); g.fill();
-  g.font = 'bold 28px Fredoka, "Baloo 2", sans-serif'; g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 34);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const draw = () => { g.clearRect(0, 0, 256, 64); g.fillStyle = 'rgba(40,40,40,.55)'; g.beginPath(); g.roundRect(8, 10, 240, 46, 23); g.fill();
+    g.font = 'bold 28px Fredoka, "Baloo 2", sans-serif'; g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(nm(text), 128, 34, 228); };
+  draw();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; onLang(() => { draw(); t.needsUpdate = true; });
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set(3, .75, 1); s.position.set(x, y, z); scene.add(s); return s;
 }
 
@@ -53,17 +60,17 @@ function tag(scene, text, x, y, z) {
 // region: bac | trung | nam | au.  word: index into VN_WORDS / AUSSIE_SLANG they like to teach first.
 const L = (style, color, hair, hairStyle, hat = 'none', skin = '#e8b48c') => ({ style, color, hair, hairStyle, hat, skin, back: 'none', glider: 0 });
 export const VENDORS = [
-  { id: 'bahai', name: 'Bà Hai', region: 'bac', look: L('aodai', '#7a4a8a', '#d8d8d8', 'buns'), x: 103, z: 77.4, face: 0, stall: ['#c0392b', '#f6e7c8'], sign: 'PHỞ HÀ NỘI', goods: ['🍜', '🌿'], food: ['🍜', 'a bowl of phở', 'bát phở', 6],
+  { id: 'bahai', name: 'Bà Hai', region: 'bac', look: L('aodai', '#7a4a8a', '#d8d8d8', 'buns'), x: 103, z: 77.4, face: 0, stall: ['#c0392b', '#f6e7c8'], sign: ['HANOI PHỞ', 'PHỞ HÀ NỘI'], goods: ['🍜', '🌿'], food: ['🍜', 'a bowl of phở', 'bát phở', 6],
     greet: ["Come here, little one! A hot bowl of phở? Up north we call a bowl a 'bát'.", 'Cháu ơi, vào đây ăn bát phở nóng không? Ngon lắm đấy, ăn đi cháu!'], role: 'a kind grandma from Hà Nội in the north of Vietnam who sells phở and speaks with a northern accent (bát, thế, đấy, ạ)' },
   { id: 'cothu', name: 'Cô Thu', region: 'bac', look: L('aodai', '#e8d27a', '#1d1412', 'long', 'nonla'), x: 108.5, z: 87.6, face: Math.PI, pole: true, food: ['🟢', 'green rice flakes (cốm)', 'cốm làng Vòng', 4],
     greet: ['Cốm, fresh green rice flakes from Hà Nội! I carry everything on my shoulder pole.', 'Cốm đây! Cốm làng Vòng thơm lắm! Cô gánh hàng rong đi khắp phố đấy cháu ạ.'], role: 'a street seller from Hà Nội who carries her goods on a bamboo shoulder pole (gánh hàng rong)' },
-  { id: 'olai', name: 'O Lài', region: 'trung', look: L('aodai', '#3cc7e8', '#1d1412', 'long', 'nonla'), x: 118, z: 77.4, face: 0, stall: ['#7a4aa8', '#f6e7c8'], sign: 'BÁNH BÈO HUẾ', goods: ['🥟', '🌶️'], food: ['🥟', 'little bánh bèo cakes', 'bánh bèo', 5],
+  { id: 'olai', name: 'O Lài', region: 'trung', look: L('aodai', '#3cc7e8', '#1d1412', 'long', 'nonla'), x: 118, z: 77.4, face: 0, stall: ['#7a4aa8', '#f6e7c8'], sign: ['HUẾ RICE CAKES', 'BÁNH BÈO HUẾ'], goods: ['🥟', '🌶️'], food: ['🥟', 'little bánh bèo cakes', 'bánh bèo', 5],
     greet: ["Hello! In Huế we say 'răng rứa' for 'why is that'. Would you like some bánh bèo?", 'Răng rứa con? Mi ăn chi? Bánh bèo Huế ngon lắm nờ, ăn thử một đọi đi!'], role: 'a cheerful aunt from Huế in central Vietnam who speaks with a central accent (răng, rứa, mô, tê, chi, o)' },
-  { id: 'chunam', name: 'Chú Năm', region: 'trung', look: L('tunic', '#c0392b', '#2a2a2a', 'short'), x: 124, z: 88.6, face: Math.PI, stall: ['#e8a33a', '#f6e7c8'], sign: 'ĐÈN LỒNG HỘI AN', goods: ['🏮', '👒'], food: ['🏮', 'a Hội An silk lantern', 'đèn lồng Hội An', 8],
+  { id: 'chunam', name: 'Chú Năm', region: 'trung', look: L('tunic', '#c0392b', '#2a2a2a', 'short'), x: 124, z: 88.6, face: Math.PI, stall: ['#e8a33a', '#f6e7c8'], sign: ['HỘI AN LANTERNS', 'ĐÈN LỒNG HỘI AN'], goods: ['🏮', '👒'], food: ['🏮', 'a Hội An silk lantern', 'đèn lồng Hội An', 8],
     greet: ['These silk lanterns come from Hội An. At night the whole old town glows!', 'Đèn lồng Hội An đây! Tối tối cả phố cổ sáng rực, đẹp lắm mi ơi!'], role: 'a lantern maker from Hội An in central Vietnam' },
-  { id: 'chutam', name: 'Chú Tám', region: 'nam', look: L('shirt', '#ffffff', '#1d1412', 'short', 'cap'), x: 134, z: 77.4, face: 0, stall: ['#3a78c8', '#f6e7c8'], sign: 'BÁNH MÌ SÀI GÒN', goods: ['🥖', '🥒'], food: ['🥖', 'a crunchy bánh mì', 'ổ bánh mì', 5],
+  { id: 'chutam', name: 'Chú Tám', region: 'nam', look: L('shirt', '#ffffff', '#1d1412', 'short', 'cap'), x: 134, z: 77.4, face: 0, stall: ['#3a78c8', '#f6e7c8'], sign: ['SÀI GÒN BÁNH MÌ', 'BÁNH MÌ SÀI GÒN'], goods: ['🥖', '🥒'], food: ['🥖', 'a crunchy bánh mì', 'ổ bánh mì', 5],
     greet: ["Hey there! Crunchy bánh mì, super yummy! Down south we say 'ngon bá cháy'!", 'Con ăn gì nè? Bánh mì nóng giòn nè, ngon bá cháy luôn đó con!'], role: 'a friendly bánh mì seller from Sài Gòn in the south who speaks with a southern accent (nè, nha, nghen, dzậy, bá cháy)' },
-  { id: 'cout', name: 'Cô Út', region: 'nam', look: L('dress', '#5fd39a', '#1d1412', 'ponytail', 'nonla', '#e0aa80'), x: 140, z: 88.6, face: Math.PI, stall: ['#2f9a5a', '#f6e7c8'], sign: 'NƯỚC DỪA · CHÈ', goods: ['🥥', '🍧'], food: ['🥥', 'a cold coconut', 'trái dừa tươi', 5],
+  { id: 'cout', name: 'Cô Út', region: 'nam', look: L('dress', '#5fd39a', '#1d1412', 'ponytail', 'nonla', '#e0aa80'), x: 140, z: 88.6, face: Math.PI, stall: ['#2f9a5a', '#f6e7c8'], sign: ['COCONUTS · SWEET SOUP', 'NƯỚC DỪA · CHÈ'], goods: ['🥥', '🍧'], food: ['🥥', 'a cold coconut', 'trái dừa tươi', 5],
     greet: ['Fresh coconut from Bà Rịa! Cold and sweet. Down south a fruit is a "trái"!', 'Dừa tươi Bà Rịa nè con! Mát lạnh, ngọt lịm. Uống một trái nghen!'], role: 'a coconut and sweet soup seller from Bà Rịa in southern Vietnam' },
   { id: 'kelly', name: 'Mrs Kelly', region: 'au', look: L('dress', '#ff9f43', '#c98b4a', 'buns', 'none', '#ffe3d1'), x: -136, z: -17.4, face: 0, food: ['🍬', 'a bag of lollies', 'túi kẹo', 3],
     greet: ["G'day, love! After some lollies? Mixed lollies are heaps good this arvo!", 'Chào cháu! Mua kẹo không? Ở Úc, kẹo gọi là "lollies" đó!'], role: 'the friendly owner of an old-fashioned Australian milk bar (corner shop) who sells lollies, icy poles and milkshakes and uses Aussie slang' },
@@ -107,14 +114,14 @@ export function createRegions(G) {
     for (let x = M.x0 + 1; x < M.x1; x += 2) g.push(P(Box(.05, .06, 8), '#c4b9a2', [x, .035, mz]));
     const road = new THREE.Mesh(merge(g), mat); road.position.y = M.h; road.receiveShadow = true; scene.add(road); }
   // region banners across the street
-  [['MIỀN BẮC · HÀ NỘI', 106, '#c0392b'], ['MIỀN TRUNG · HUẾ · HỘI AN', 121, '#7a4aa8'], ['MIỀN NAM · SÀI GÒN · BÀ RỊA', 137, '#2f7ac8']].forEach(([t, x, c]) => {
+  [[['THE NORTH · HÀ NỘI', 'MIỀN BẮC · HÀ NỘI'], 106, '#c0392b'], [['THE CENTRE · HUẾ · HỘI AN', 'MIỀN TRUNG · HUẾ · HỘI AN'], 121, '#7a4aa8'], [['THE SOUTH · SÀI GÒN · BÀ RỊA', 'MIỀN NAM · SÀI GÒN · BÀ RỊA'], 137, '#2f7ac8']].forEach(([t, x, c]) => {
     const posts = merge([P(Box(.2, 5, .2), '#6b4a32', [0, 2.5, -4.6]), P(Box(.2, 5, .2), '#6b4a32', [0, 2.5, 4.6])]); put(posts, x, mz);
     signAt(t, x, 4.6, mz, Math.PI / 2, c, '#fff8e0', 8.6, 1.1);
     world.colliders.push({ x, z: mz - 4.6, r: .3 }, { x, z: mz + 4.6, r: .3 });
   });
   // the entrance gate on the west
   { const p = [P(Box(1, 6, 1), '#c0392b', [0, 3, -4.8]), P(Box(1, 6, 1), '#c0392b', [0, 3, 4.8]), P(Box(1.4, .5, 11.4), '#e8c03a', [0, 6.2, 0]), P(Box(1.8, .3, 12.4), '#a24e3a', [0, 6.6, 0])];
-    put(merge(p), M.x0 + .5, mz); signAt('CHỢ BA MIỀN', M.x0 - .1, 5.3, mz, -Math.PI / 2, '#c0392b', '#ffe08a', 7, 1.2);
+    put(merge(p), M.x0 + .5, mz); signAt(['THREE REGIONS MARKET', 'CHỢ BA MIỀN'], M.x0 - .1, 5.3, mz, -Math.PI / 2, '#c0392b', '#ffe08a', 7, 1.2);
     world.colliders.push({ x: M.x0 + .5, z: mz - 4.8, r: .7 }, { x: M.x0 + .5, z: mz + 4.8, r: .7 }); }
   // lanterns along the central (Hội An) section
   for (let k = 0; k < 14; k++) { const l = sprite('🏮', .7); l.position.set(114 + k, M.h + 4.3 - Math.sin(k / 13 * Math.PI) * .6, mz + (k % 2 ? 1.2 : -1.2)); scene.add(l); }
@@ -138,7 +145,7 @@ export function createRegions(G) {
       P(Cyl(.8, .8, .1, 16), '#ffffff', [-1.22, 7.6, 0], [0, 0, Math.PI / 2]), P(Box(.05, .6, .08), '#333', [-1.3, 7.75, 0]), P(Box(.05, .08, .45), '#333', [-1.3, 7.6, .15]),
       ...[-3, 0, 3].map(z => P(new THREE.TorusGeometry(.9, .12, 4, 10, Math.PI), '#d8b86a', [-1.52, 2.2, z], [0, Math.PI / 2, 0]))];
     put(merge(p), M.x1 + 1.8, mz - 4, 0); box(M.x1 + .3, M.x1 + 3.3, mz - 9, mz + 1);
-    signAt('CHỢ BẾN THÀNH', M.x1 + .25, 5.2, mz - 4, -Math.PI / 2, '#2f7ac8', '#ffffff', 5, .8); }
+    signAt(['BẾN THÀNH MARKET', 'CHỢ BẾN THÀNH'], M.x1 + .25, 5.2, mz - 4, -Math.PI / 2, '#2f7ac8', '#ffffff', 5, .8); }
 
   // ---- market stalls and vendors ----
   for (const v of VENDORS.filter(v => v.region !== 'au')) {
@@ -156,7 +163,7 @@ export function createRegions(G) {
       pole.position.set(0, 1.18, .02); A.root.add(pole);
     }
     tag(scene, v.name, v.x, M.h + 2.5, v.z);
-    I('v_' + v.id, v.x, v.z + (south ? -2.6 : 2.6), 3, v.food[0], () => v.name, h => vendorTalk(G, h, v));
+    I('v_' + v.id, v.x, v.z + (south ? -2.6 : 2.6), 3, v.food[0], () => nm(v.name), h => vendorTalk(G, h, v));
   }
 
   // ================= Aussie Corner =================
@@ -179,13 +186,13 @@ export function createRegions(G) {
     world.colliders.push({ x: x - w / 2 + .2, z: front + 2.2, r: .25 }, { x: x + w / 2 - .2, z: front + 2.2, r: .25 });
     signAt(text, x, 3.9, front + .05, 0, signBg, '#ffffff', w - .8, .9);
   };
-  shop(-136, 8.5, '#f2e6c2', '#d9483a', 'MILK BAR · LOLLIES', '#d9483a');
-  shop(-126, 8.5, '#cfe0e6', '#2f7ac8', 'FISH & CHIPS', '#2f7ac8');
-  shop(-116, 8, '#f6d6b8', '#e8a33a', 'BAKERY · PIES', '#a24e3a');
+  shop(-136, 8.5, '#f2e6c2', '#d9483a', ['MILK BAR · LOLLIES', 'TIỆM TẠP HÓA · KẸO'], '#d9483a');
+  shop(-126, 8.5, '#cfe0e6', '#2f7ac8', ['FISH & CHIPS', 'CÁ & KHOAI CHIÊN'], '#2f7ac8');
+  shop(-116, 8, '#f6d6b8', '#e8a33a', ['BAKERY · PIES', 'TIỆM BÁNH · BÁNH PIE'], '#a24e3a');
   // the Big Banana: a banana-smoothie shop wearing a giant banana
   { const p = [P(Box(7, 3.4, 6), '#fff3c4', [0, 1.7, 0]), P(Box(7.2, .4, 6.2), '#e8c03a', [0, 3.6, 0])];
     for (let k = 0; k <= 10; k++) { const a = -1.1 + k * .22, r = 6; p.push(P(new THREE.SphereGeometry(1.35 - Math.abs(k - 5) * .1, 10, 8), k === 0 || k === 10 ? '#6b5a2a' : '#f2d23a', [Math.sin(a) * r, 4.2 + Math.cos(a) * r - r + 3.2, 0])); }
-    put(merge(p), -99, -20); box(-102.5, -95.5, -23, -17); signAt('THE BIG BANANA', -99, 2.9, -16.95, 0, '#e8c03a', '#5a3a1a', 5, .8); }
+    put(merge(p), -99, -20); box(-102.5, -95.5, -23, -17); signAt(['THE BIG BANANA', 'QUẢ CHUỐI KHỔNG LỒ'], -99, 2.9, -16.95, 0, '#e8c03a', '#5a3a1a', 5, .8); }
   // ice-cream van parked on the kerb
   const van = new THREE.Group();
   { const p = [P(Box(5, 2.2, 2.2), '#f7c6d9', [0, 1.5, 0]), P(Box(5.02, .5, 2.22), '#ffffff', [0, 2.4, 0]), P(Box(1.4, 1.5, 2.1), '#f7c6d9', [3.1, 1.15, 0]), P(Box(.05, .8, 1.8), '#9fd2ee', [3.82, 1.5, 0]),
@@ -227,7 +234,7 @@ export function createRegions(G) {
   for (const v of VENDORS.filter(v => v.region === 'au')) {
     person(v.look, v.x, v.z, v.face);
     tag(scene, v.name, v.x, A.h + 2.5, v.z);
-    I('v_' + v.id, v.x, v.z + (Math.abs(v.face) > 1 ? -2.4 : 2.6), 3, v.food[0], () => v.name, h => vendorTalk(G, h, v));
+    I('v_' + v.id, v.x, v.z + (Math.abs(v.face) > 1 ? -2.4 : 2.6), 3, v.food[0], () => nm(v.name), h => vendorTalk(G, h, v));
   }
 
   // ---- kids and grown-ups who host the folk games ----
@@ -242,7 +249,7 @@ export function createRegions(G) {
   ];
   for (const [game, name, look, x, z, face, line] of HOSTS) {
     person(look, x, z, face); tag(scene, name, x, heightAt(x, z) + 2.5, z);
-    I('g_' + game, x, z + (Math.abs(face) > 1 ? -2 : 2), 3, G.GAMES_ICON ? G.GAMES_ICON(game) : '🎮', () => name, h => G.kidTalk(h, game, name, line));
+    I('g_' + game, x, z + (Math.abs(face) > 1 ? -2 : 2), 3, G.GAMES_ICON ? G.GAMES_ICON(game) : '🎮', () => nm(name), h => G.kidTalk(h, game, name, line));
   }
   // party decorations and hanging pots
   { const t = [P(Box(2.4, .1, 1.2), '#ffffff', [0, .8, 0]), ...[[-1, -.5], [1, -.5], [-1, .5], [1, .5]].map(([x, z]) => P(Box(.08, .8, .08), '#dddddd', [x, .4, z]))];

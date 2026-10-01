@@ -1,7 +1,7 @@
 // The story of Sparkle Valley, told as a narrated picture book.
 // A short prologue starts the adventure; a new chapter opens each time a big quest is finished,
 // with a reward. Chapters can be read again from the Album.
-import { T } from './i18n.js';
+import { T, nm } from './i18n.js';
 import { say, hush } from './voice.js';
 import { SFX } from './audio.js';
 import { el } from './util.js';
@@ -11,7 +11,7 @@ import { burstConfetti } from './games/frame.js';
 export const PROLOGUE = { id: 'prologue', title: () => T('The Sleepy Valley', 'Thung Lũng Ngủ Quên'), pages: [
   ['🌄✨🏮', 'Long ago, Sparkle Valley shone with magic lanterns, happy animals and twelve glowing shrines full of puzzles.', 'Ngày xửa ngày xưa, Thung Lũng Lấp Lánh rực rỡ đèn lồng thần kỳ, đầy những con vật vui vẻ và mười hai ngôi đền phát sáng chứa đầy câu đố.'],
   ['⛈️☁️😤', 'One stormy night, a grumpy cloud called Mây Cau Có blew through the valley. Whoosh! The towers fell asleep and the shrines went quiet.', 'Một đêm giông bão, đám mây khó tính tên là Mây Cau Có thổi qua thung lũng. Vù vù! Các tháp ngủ quên và các ngôi đền im lặng.'],
-  ['🦉🔭', 'Ông Cú, the wise old owl, looked through his telescope and said: "I know who can help. A brave, clever explorer called {name}!"', 'Ông Cú, chú cú già thông thái, nhìn qua kính viễn vọng và nói: "Ta biết ai có thể giúp. Một nhà thám hiểm dũng cảm và thông minh tên là {name}!"'],
+  ['🦉🔭', 'Ông Cú, the wisest bird in the valley, looked through his telescope and said: "I know who can help. A brave, clever explorer called {name}!"', 'Ông Cú, chú cú già thông thái, nhìn qua kính viễn vọng và nói: "Ta biết ai có thể giúp. Một nhà thám hiểm dũng cảm và thông minh tên là {name}!"'],
   ['🧒🌟🗺️', 'Wake the towers. Solve the shrine puzzles. Help your friends. Make the valley sparkle again! Your adventure starts now.', 'Đánh thức các tháp. Giải câu đố ở các ngôi đền. Giúp đỡ bạn bè. Làm cho thung lũng lấp lánh trở lại! Cuộc phiêu lưu bắt đầu!']
 ] };
 
@@ -96,7 +96,7 @@ export const QUEST_TALES = {
   cook: ['👨‍🍳🍲', 'Bác Ba', 'The village is hungry after all that fun! Find a cooking pot, put in some food you gathered, and cook something yummy.', 'Cả làng đói bụng sau khi chơi vui! Tìm một nồi nấu ăn, cho đồ ăn con hái được vào, và nấu món gì thật ngon nhé.'],
   folk: ['🧒🪢', 'Tèo', 'We forgot how to laugh since the storm. Play a game with us, Ô ăn quan, hopscotch or tug of war, and the lanterns will shine again!', 'Từ sau cơn bão tụi mình quên cả cười. Chơi với tụi mình một trò nhé, ô ăn quan, nhảy lò cò hay kéo co, đèn lồng sẽ sáng lại!'],
   playground: ['🐺🇦🇺', 'Jack', "G'day! My friends and I came all the way from Australia. Come to Two Homes Street, where Aussie and Vietnamese families live side by side. Learn our games in the park, and Mít will teach you hers!", 'Chào bạn! Tớ và các bạn đến từ nước Úc xa xôi. Hãy đến Phố Hai Quê, nơi các gia đình Úc và Việt sống cạnh nhau. Học trò chơi của tụi tớ ở công viên, Mít cũng sẽ dạy bạn trò của Mít nữa!'],
-  market3: ['🍜🏮', 'Cô Mai', 'My friends opened a market called Chợ Ba Miền. Bà Hai cooks phở like in Hà Nội, O Lài makes bánh bèo from Huế, and Chú Tám sells bánh mì like in Sài Gòn. Taste all three regions!', 'Bạn của cô mở một khu chợ tên là Chợ Ba Miền. Bà Hai nấu phở kiểu Hà Nội, O Lài làm bánh bèo Huế, còn Chú Tám bán bánh mì kiểu Sài Gòn. Con nếm thử đủ ba miền nhé!'],
+  market3: ['🍜🏮', 'Cô Mai', 'My friends opened the Three Regions Market. Bà Hai cooks phở like in Hà Nội, O Lài makes bánh bèo from Huế, and Chú Tám sells bánh mì like in Sài Gòn. Taste all three regions!', 'Bạn của cô mở một khu chợ tên là Chợ Ba Miền. Bà Hai nấu phở kiểu Hà Nội, O Lài làm bánh bèo Huế, còn Chú Tám bán bánh mì kiểu Sài Gòn. Con nếm thử đủ ba miền nhé!'],
   aussie: ['🍦🦘', 'Jack', "Over in Aussie Corner there's a milk bar with heaps of lollies, a fish and chip shop, and an ice-cream van that plays a song! Grab a treat, mate!", 'Ở Góc Nước Úc có tiệm tạp hóa đầy kẹo, tiệm cá và khoai chiên, và cả xe kem phát nhạc nữa! Mua một món ăn vặt đi bạn ơi!'],
   postcards: ['📮🗺️', 'Ông Cú', 'Famous places from Vietnam and Australia are hidden all over the valley: the Opera House, Uluru, the Turtle Tower and more. Visit them and collect postcards!', 'Những nơi nổi tiếng của Việt Nam và Úc ẩn khắp thung lũng: Nhà hát Opera, Uluru, Tháp Rùa và nhiều nơi khác. Hãy đến thăm và sưu tầm bưu thiếp nhé!'],
   buffalo: ['🐃🌾', 'Bác Ba', 'The water buffalo are gentle and strong. Walk up to one, say hello and hop on for a ride across the fields!', 'Chú trâu hiền lành và khỏe mạnh lắm. Đi lại gần, chào chú rồi leo lên cưỡi một vòng qua cánh đồng nhé!'],
@@ -111,7 +111,7 @@ export function showQuestTale(q, name) {
   const [art, who, en, vi] = tale;
   return new Promise(res => {
     const b = el('div', 'storybook quest-tale', `<div class="sb-title">${q.icon} ${T('New adventure', 'Cuộc phiêu lưu mới')}</div><div class="sb-art in">${art}</div>
-      <p class="sb-text"><b class="qt-who">${who}:</b> “${T(en, vi).replace(/\{name\}/g, name)}”</p>
+      <p class="sb-text"><b class="qt-who">${nm(who)}:</b> “${T(en, vi).replace(/\{name\}/g, name)}”</p>
       <div class="qt-goal">🎯 ${q.title()}</div>
       <div class="sb-foot"><button class="qt-go">▶ ${T("Let's go!", 'Đi thôi!')}</button><button class="sb-skip">${T('Later', 'Để sau')}</button></div>`);
     document.body.appendChild(b); SFX.chime();

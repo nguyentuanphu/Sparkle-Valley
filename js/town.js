@@ -4,7 +4,7 @@
 // weatherboard house with a front porch, a brick house, a Hills hoist, and the park where kids play
 // folk games. Built from simple flat-coloured shapes in the "summer afternoon" style.
 import { THREE, toon, toonVC, P, merge, sprite } from './gfx.js';
-import { T } from './i18n.js';
+import { T, nm, onLang } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
 import { heightAt, TOWN, PLAYGROUND } from './world.js';
@@ -269,9 +269,10 @@ export function createTown(G) {
   // name tags and chatter bubbles
   const tag = (text, x, y, z) => {
     const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g2 = c.getContext('2d');
-    g2.fillStyle = 'rgba(40,40,40,.55)'; g2.beginPath(); g2.roundRect(8, 10, 240, 46, 23); g2.fill();
-    g2.font = 'bold 30px Fredoka, "Baloo 2", sans-serif'; g2.fillStyle = '#fff'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillText(text, 128, 34);
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    const draw = () => { g2.clearRect(0, 0, 256, 64); g2.fillStyle = 'rgba(40,40,40,.55)'; g2.beginPath(); g2.roundRect(8, 10, 240, 46, 23); g2.fill();
+      g2.font = 'bold 30px Fredoka, "Baloo 2", sans-serif'; g2.fillStyle = '#fff'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillText(nm(text), 128, 34, 228); };
+    draw();
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; onLang(() => { draw(); t.needsUpdate = true; });
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set(3, .75, 1); s.position.set(x, y, z); scene.add(s); return s;
   };
   tag('Cô Sáu 🥤', kx, y0 + 2.6, kz - 1.1);

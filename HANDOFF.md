@@ -231,6 +231,8 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
   - Google Cloud TTS has a free monthly allowance (about 1 million characters for Neural voices) and works with the Grown-ups key option. Lines are cached, so each line is fetched once.
   - A ready-made voice file from the internet can't be turned into a speaking voice without a cloning service, and should only be used if it's licensed.
 
+- **Names follow the chosen language** (`NAMES_EN` / `NAMES_VI` in `i18n.js`). `T()`, `say()`, dialogs, story pages, chat, name tags and 3D signs all swap titles: in English "Ông Cú" → "Grandpa Owl", "Bà Hai" → "Grandma Hai", "Cô Mai" → "Auntie Mai", "Chú Tư" → "Uncle Tư"; in Vietnamese "Mrs Kelly" → "Cô Kelly", "Aunty Bev" → "Dì Bev". First names stay. Signs and tags register with `onLang()` and redraw instantly when the language changes. New people: add their title to the two maps; new signs: pass `['English', 'Tiếng Việt']`.
+
 ## 3. How it's built
 
 **Tech:**

@@ -1,6 +1,6 @@
 // Screens and pop-ups: title, who's playing, grown-ups settings, photo editor, NPC dialogue,
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
-import { T, applyLang } from './i18n.js';
+import { T, applyLang, nm } from './i18n.js';
 import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, STYLES, OUTFIT_COLORS, HATS, BACKS, HAIR, SKIN, HAIRSTYLES, GLIDERS, farm, resetFarm, MAX_KIDS } from './state.js';
 import { say, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
 import { startRecording, releaseMic, micProblem } from './recorder.js';
@@ -287,7 +287,7 @@ export function openEditor(profile, after) {
 export const dialogHooks = {};
 export function dialog(name, lines, choices) {
   return new Promise(res => {
-    const d = el('div', 'dialog', `<div class="dname">${esc(name)}</div><div class="dtext"></div><div class="dchoices"></div><div class="dnext">▼</div>`);
+    const d = el('div', 'dialog', `<div class="dname">${esc(nm(name))}</div><div class="dtext"></div><div class="dchoices"></div><div class="dnext">▼</div>`);
     if (dialogHooks.canChat && dialogHooks.canChat(name)) {
       const ask = el('button', 'dask', '💬 ' + T('Chat', 'Trò chuyện')); d.appendChild(ask);
       ask.onclick = e => { e.stopPropagation(); SFX.tap(); close(-1); dialogHooks.chat(name); };

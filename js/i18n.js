@@ -2,8 +2,25 @@
 // languages always travel together.
 import { settings } from './state.js';
 
-export const T = (en, vi) => (settings.lang === 'vi' ? vi : en);
-export const applyLang = () => { document.documentElement.lang = settings.lang === 'vi' ? 'vi' : 'en'; };
+// People's titles follow the chosen language: in English "Ông Cú" is "Grandpa Owl" and "Bà Hai" is
+// "Grandma Hai"; in Vietnamese "Mrs Kelly" is "Cô Kelly". First names stay as they are.
+const NAMES_EN = {
+  'Ông Cú': 'Grandpa Owl', 'Ông Bầu': 'Grandpa Gourd', 'Mây Cau Có': 'Grumpy Cloud', 'Cô Mai': 'Auntie Mai', 'Bác Ba': 'Uncle Ba',
+  'Cô Sáu': 'Auntie Sáu', 'Chú Tư': 'Uncle Tư', 'Anh Tuấn': 'Big Brother Tuấn', 'Bà Hai': 'Grandma Hai', 'Cô Thu': 'Auntie Thu',
+  'O Lài': 'Auntie Lài', 'Chú Năm': 'Uncle Năm', 'Chú Tám': 'Uncle Tám', 'Cô Út': 'Auntie Út', 'Bà Năm': 'Grandma Năm',
+  'Anh Hai': 'Big Brother Hai', 'Cô Hạnh': 'Miss Hạnh', 'Bác Gấu': 'Mr. Bear'
+};
+const NAMES_VI = { 'Mrs Kelly': 'Cô Kelly', 'Aunty Bev': 'Dì Bev', 'Uncle Robbo': 'Chú Robbo', 'Mr. Bear': 'Bác Gấu' };
+const reOf = map => new RegExp(Object.keys(map).sort((a, b) => b.length - a.length).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
+const RE_EN = reOf(NAMES_EN), RE_VI = reOf(NAMES_VI);
+// swap people's names inside any text for the given language
+export const swapNames = (text, lang = settings.lang) => typeof text !== 'string' ? text : lang === 'vi' ? text.replace(RE_VI, m => NAMES_VI[m]) : text.replace(RE_EN, m => NAMES_EN[m]);
+export const nm = name => swapNames(name);
+export const T = (en, vi) => (settings.lang === 'vi' ? swapNames(vi, 'vi') : swapNames(en, 'en'));
+// Things drawn into the 3D world (signs, name tags) register here to redraw when the language changes.
+const langListeners = [];
+export const onLang = f => { langListeners.push(f); };
+export const applyLang = () => { document.documentElement.lang = settings.lang === 'vi' ? 'vi' : 'en'; langListeners.forEach(f => { try { f(); } catch (e) { } }); };
 applyLang();
 export const other = (en, vi) => (settings.lang === 'vi' ? en : vi);
 

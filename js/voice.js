@@ -2,6 +2,7 @@
 // Premium/enhanced/neural voices are picked first; grown-ups can choose a voice in settings.
 import { settings } from './state.js';
 import { ac } from './audio.js';
+import { swapNames } from './i18n.js';
 
 let all = [];
 const BAD = /compact|eloquence|novelty|whisper|bad news|bells|boing|bubbles|cellos|zarvox|trinoids|albert|jester|organ|superstar|wobble|grandpa|grandma|rocko|reed|eddy|flo\b|sandy|shelley|fred|junior|ralph|kathy|good news|hysterical|deranged|pipe/i;
@@ -68,6 +69,7 @@ export function say(en, vi) { speak(en, vi); }
 export function sayAsync(en, vi) { return speak(en, vi); }
 async function speak(en, vi) {
   if (!settings.voice) return;
+  en = swapNames(en, 'en'); vi = swapNames(vi, 'vi');
   const my = ++seq;
   try { speechSynthesis.cancel(); } catch (e) { }
   try { if (playing) playing.stop(); } catch (e) { }

@@ -58,7 +58,7 @@ export const STICKERS = ['🦄', '🌈', '🧁', '🍓', '🐱', '🐶', '🦋',
 
 // The main adventure. Each quest has a check (true when done) and a place to point at.
 export const QUESTS = [
-  { id: 'owl', icon: '🦉', title: () => T('Talk to Ông Cú the Owl', 'Nói chuyện với Ông Cú'), at: 'owl' },
+  { id: 'owl', icon: '🦉', title: () => T('Talk to Ông Cú', 'Nói chuyện với Ông Cú'), at: 'owl' },
   { id: 'tower1', icon: '🗼', title: () => T('Climb the Dawn Tower', 'Leo lên Tháp Bình Minh'), at: 'tw_plateau', check: p => p.towers.tw_plateau },
   { id: 'plateau', icon: '✨', title: () => T('Solve the 3 shrines on the plateau', 'Giải 3 đền trên cao nguyên'), at: 'plateauShrine', check: p => ['sh_pattern', 'sh_count', 'sh_letters'].every(s => p.shrines[s]) },
   { id: 'glider', icon: '🪂', title: () => T('Get the Leaf Glider from Ông Cú', 'Nhận Cánh Lá từ Ông Cú'), at: 'owl', check: p => p.glider },
@@ -67,7 +67,7 @@ export const QUESTS = [
   { id: 'cook', icon: '🍲', title: () => T('Cook a dish at a cooking pot', 'Nấu một món ăn'), at: 'pot', check: p => Object.keys(p.dishes).length > 0 },
   { id: 'folk', icon: '🪢', title: () => T('Play a folk game with the village kids', 'Chơi trò dân gian với các bạn'), at: 'kids' },
   { id: 'playground', icon: '🪁', title: () => T('Learn a game on Two Homes Street', 'Học một trò chơi ở Phố Hai Quê'), at: 'playground', check: p => ['mrwolf', 'chuyen', 'dragon', 'marbles', 'skipping', 'dacau', 'snap'].some(id => p.quests['played_' + id]) },
-  { id: 'market3', icon: '🍜', title: () => T('Taste food from the north, centre and south at Chợ Ba Miền', 'Nếm món ăn ba miền ở Chợ Ba Miền'), at: 'market', check: p => ['bac', 'trung', 'nam'].every(rg => Object.keys(p.tasted || {}).some(id => ({ bahai: 'bac', cothu: 'bac', olai: 'trung', chunam: 'trung', chutam: 'nam', cout: 'nam' })[id] === rg)) },
+  { id: 'market3', icon: '🍜', title: () => T('Taste food from the north, centre and south at the Three Regions Market', 'Nếm món ăn ba miền ở Chợ Ba Miền'), at: 'market', check: p => ['bac', 'trung', 'nam'].every(rg => Object.keys(p.tasted || {}).some(id => ({ bahai: 'bac', cothu: 'bac', olai: 'trung', chunam: 'trung', chutam: 'nam', cout: 'nam' })[id] === rg)) },
   { id: 'aussie', icon: '🍦', title: () => T('Get a treat at Aussie Corner', 'Mua quà vặt ở Góc Nước Úc'), at: 'aussie', check: p => ['kelly', 'davo', 'bev', 'gazza', 'robbo'].some(id => (p.tasted || {})[id]) },
   { id: 'buffalo', icon: '🐃', title: () => T('Ride a water buffalo', 'Cưỡi trâu'), at: 'buffalo' },
   { id: 'leafies', icon: '🍃', title: () => T('Find 5 hidden Leafies', 'Tìm 5 bạn Lá Lá đang trốn'), at: 'leafy', check: p => Object.keys(p.leafies).length >= 5 },
