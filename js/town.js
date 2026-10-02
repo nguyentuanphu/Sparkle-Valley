@@ -145,7 +145,7 @@ export function createTown(G) {
   };
   const houseOld = (b, x, front, south) => { house(b, x, front, south); const m = scene.children[scene.children.length - 1]; outline(m, .03, '#4a3a3f'); };
   // Bà Rịa side (north): tube houses with shops downstairs, then the French villa
-  place(houseTube({ wall: '#9fd8c8', floors: 3, d: 7.4, sign: ['Corner Shop', 'Tạp Hóa'] }), 15.6, N);
+  // (x 12–18 is the Huệ Nghi shop, built in js/cities.js; house number 8 stands next to it)
   place(houseTube({ wall: '#f6c8a8', floors: 3, d: 7.4, sign: ['Bánh Mì', 'Bánh Mì'] }), 20.1, N);
   place(houseTube({ wall: '#f6e09a', floors: 2, d: 7.4, sign: ['Coffee', 'Cà Phê'] }), 24.6, N);
   const villa = Object.assign(houseVilla(), { kind: 'villa' }); place(villa, 33.5, N - 1.2);

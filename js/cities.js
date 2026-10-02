@@ -82,7 +82,7 @@ const CITY_DATA = {
       ['dendo', '⛩️', 0, -10.5, 'dendo', ['Đô Temple', 'Đền Đô'], ['Đền Đô in Bắc Ninh remembers the eight kings of the Lý family, who moved the capital to Thăng Long, today’s Hà Nội, more than a thousand years ago.', 'Đền Đô ở Bắc Ninh thờ tám vị vua nhà Lý, những người đã dời đô về Thăng Long, Hà Nội ngày nay, hơn một nghìn năm trước.']],
       ['quanho', '🎶', -10, 6.5, 'quanho', ['Quan họ singing', 'Dân ca Quan họ'], ['Quan họ is Bắc Ninh’s folk singing: boys and girls take turns singing sweet songs to each other. UNESCO calls it a treasure of the world.', 'Quan họ là dân ca Bắc Ninh: liền anh liền chị hát đối đáp với nhau những câu hát ngọt ngào. UNESCO công nhận là di sản của nhân loại.']]] },
   danang: { host: ['dragonfire', 'Anh Long', look('shirt', '#f2c230', '#1d1412', 'spiky', 'cap'), ['Chào! I am Long, which means dragon! On weekend nights our Dragon Bridge breathes real fire and water. Let us count the puffs!', 'Chào em! Anh tên Long, nghĩa là rồng đó! Tối cuối tuần Cầu Rồng phun lửa phun nước thiệt. Mình đếm thử nghen!'], 'a cheerful young man from Đà Nẵng in central Vietnam who loves the Dragon Bridge and speaks with a central accent (mô, tê, răng, rứa)'],
-    sites: [['goldenbridge', '🤲', -5, -5, 'goldenbridge', ['Golden Bridge', 'Cầu Vàng'], ['High on Bà Nà Hills near Đà Nẵng, the Golden Bridge is held up by two giant stone hands, as if the mountain is giving you a path in the clouds.', 'Trên núi Bà Nà gần Đà Nẵng, Cầu Vàng được nâng bởi hai bàn tay đá khổng lồ, như ngọn núi đang trao cho mình một lối đi giữa mây.']]], extra: [['dragonbridge', '🐉', 20, -57.5, ['Dragon Bridge', 'Cầu Rồng'], ['Đà Nẵng’s Dragon Bridge crosses the Hàn River. It is shaped like a golden dragon, and on weekend nights it breathes fire and water!', 'Cầu Rồng ở Đà Nẵng bắc qua sông Hàn. Cầu có hình con rồng vàng, và tối cuối tuần rồng phun lửa và phun nước!']]] },
+    sites: [['goldenbridge', '🤲', -5, -5, 'goldenbridge', ['Golden Bridge', 'Cầu Vàng'], ['High on Bà Nà Hills near Đà Nẵng, the Golden Bridge is held up by two giant stone hands, as if the mountain is giving you a path in the clouds.', 'Trên núi Bà Nà gần Đà Nẵng, Cầu Vàng được nâng bởi hai bàn tay đá khổng lồ, như ngọn núi đang trao cho mình một lối đi giữa mây.']]], extra: [['dragonbridge', '🐉', 55, -57.5, ['Dragon Bridge', 'Cầu Rồng'], ['Đà Nẵng’s Dragon Bridge crosses the Hàn River. It is shaped like a golden dragon, and on weekend nights it breathes fire and water!', 'Cầu Rồng ở Đà Nẵng bắc qua sông Hàn. Cầu có hình con rồng vàng, và tối cuối tuần rồng phun lửa và phun nước!']]] },
   saigon: { host: ['traffic', 'Cô Lan', look('shirt', '#3a78c8', '#1d1412', 'ponytail', 'cap'), ['Hello! Sài Gòn has millions of scooters. I teach children to be safe on the road. Green means go, red means stop!', 'Chào con! Sài Gòn có cả triệu chiếc xe máy. Cô dạy các bạn nhỏ đi đường an toàn nè. Đèn xanh thì đi, đèn đỏ thì dừng nha!'], 'a friendly road-safety helper from Hồ Chí Minh City who speaks with a southern accent (nè, nha, dzậy)'],
     sites: [['cathedral', '⛪', -6, -5, 'cathedral', ['Notre-Dame Cathedral, Sài Gòn', 'Nhà thờ Đức Bà Sài Gòn'], ['Sài Gòn’s Notre-Dame Cathedral was built with red bricks brought all the way from France, more than 140 years ago. The bricks are still bright red!', 'Nhà thờ Đức Bà Sài Gòn được xây bằng gạch đỏ chở từ Pháp sang, hơn 140 năm trước. Đến giờ gạch vẫn còn đỏ tươi!']],
       ['postoffice', '📮', 6, -5, 'postoffice', ['Sài Gòn Central Post Office', 'Bưu điện Thành phố'], ['The Central Post Office is a yellow building with a big clock and a round roof. People still send postcards from there to the whole world!', 'Bưu điện Thành phố là tòa nhà màu vàng có đồng hồ lớn và mái vòm. Người ta vẫn gửi bưu thiếp từ đó đi khắp thế giới!']]] },
@@ -221,7 +221,7 @@ export function createCities(G) {
       persona(id, '🎮', name, greet, role, c.cc === 'au' ? 'au' : c.id === 'danang' ? 'trung' : c.id === 'saigon' ? 'nam' : 'bac');
     }
     // the city's name on the map, and in Travel
-    G.PLACES.push({ icon: c.icon, name: () => T(c.name[0], c.name[1]), x: gx + fx * 3, z: gz + fz * 3 });
+    G.PLACES.push({ g: c.cc, icon: c.icon, name: () => T(c.name[0], c.name[1]), x: gx + fx * 3, z: gz + fz * 3 });
   }
   world.updaters.push((dt, t) => spinners.forEach(w => { w.rotation.z = t * .12; }));
 
@@ -277,9 +277,10 @@ export function createCities(G) {
     place(MODELS.nhatron(), x, z, rot); world.colliders.push({ x, z, r: 3.4 });
     addLandmark('nhatron', '💧', 'vn', x + Math.sin(rot) * 5.5, z + Math.cos(rot) * 5.5, x, z, ['Nhà Tròn, the Round House (Bà Rịa)', 'Nhà Tròn Bà Rịa'], ['Nhà Tròn in Bà Rịa is a round water tower, about 20 metres tall, standing on eight legs. It was built more than a hundred years ago to keep the town’s water, and people could look out over all the roads from the top.', 'Nhà Tròn ở Bà Rịa là tháp nước hình tròn cao khoảng 20 mét, đứng trên tám cột. Tháp được xây hơn một trăm năm trước để chứa nước cho thị xã, và từ trên cao có thể nhìn khắp các ngả đường.']);
   }
+  buildHueNghi(G, place, person, 15, 36.25);
   // house number 8: a Bà Rịa family home, only its number is shown
   {
-    const [x, z] = [11.5, 34.5], rot = 0; // on its own plot beside the gate, facing the street
+    const [x, z] = [8.8, 34.5], rot = 0; // on its own plot beside the gate, facing the street
     const parts = [
       P(B(6, .3, 7), '#b9b2a4', [0, .15, 0]),
       P(B(5.4, 3.2, 6), '#f6e3a8', [0, 1.75, -.3]), P(B(5.4, 3, 5.4), '#f6e3a8', [0, 4.85, -.6]),
@@ -308,6 +309,64 @@ export function createCities(G) {
     G.interactables.push({ id: 'house8', x: dx, z: dz, r: 2.6, icon: '🏠', bubble: '🏠', label: () => T('Number 8: knock on the door', 'Số 8: gõ cửa'),
       act: async () => { SFX.tap(); await dialog(T('Number 8', 'Nhà số 8'), [['Knock knock! Welcome home to number 8! Come in, come in. There is always rice, fruit and a big hug here.', 'Cốc cốc! Về nhà số 8 rồi! Vào đi con, vào đi. Ở đây lúc nào cũng có cơm, trái cây và một cái ôm thật chặt.']]); } });
   }
+}
+
+// The Huệ Nghi shop on Two Homes Street, from the owner's photo: a one-storey pink Bà Rịa shophouse with a
+// wide opening, the green roll-up shutter rolled up, red steel posts inside, and a white signboard.
+// (No phone numbers or street number on the sign.) Bà Huệ and ông Nghi are at the door.
+function hueNghiSign() {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 300; const g = c.getContext('2d');
+  g.fillStyle = '#f7f7f4'; g.fillRect(0, 0, 1024, 300);
+  g.fillStyle = '#1f5fbf'; g.fillRect(0, 238, 1024, 62);
+  g.fillStyle = '#2b3a8a'; g.font = '600 46px Fredoka, "Baloo 2", sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('TNHH', 40, 78);
+  g.fillStyle = '#d2232a'; g.font = '900 150px Georgia, "Times New Roman", serif'; g.textAlign = 'center'; g.fillText('HUỆ NGHI', 580, 95);
+  g.fillStyle = '#2b3a8a'; g.font = '700 46px "Baloo 2", Fredoka, sans-serif'; g.fillText('VẬN CHUYỂN HÀNG HÓA · SẮT THÉP CŨ VÀ MỚI', 512, 196);
+  g.fillStyle = '#ffffff'; g.font = '600 38px "Baloo 2", Fredoka, sans-serif'; g.fillText('Bà Rịa', 512, 270);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+}
+function buildHueNghi(G, place, person, x, z) {
+  const { scene, world } = G, w = 5.8, d = 7.5, pink = '#e9b7ae', y = heightAt(x, z);
+  const persona = (id, emoji, name, about, role, region) => { PERSONAS[id] = { emoji, name, age: ['grown-up', 'người lớn'], about, likes: about, mood: ['Very well, thank you!', 'Khỏe lắm, cảm ơn con!'], role, region }; };
+  const fz = d / 2; // the front is +z (facing the street)
+  const parts = [
+    P(B(w + .4, .25, d + 1.4), '#cfc8bd', [0, .12, .7]),                         // floor and the tiled step out front
+    P(B(w, 4.3, d - .9), pink, [0, 2.15, -.45]), P(B(w, .9, .9), pink, [0, 3.85, fz - .45]), // the house (the shop front is set back under the beam)
+    P(B(.75, 3.9, .5), pink, [-w / 2 + .38, 1.95, fz + .1]), P(B(.75, 3.9, .5), pink, [w / 2 - .38, 1.95, fz + .1]), // front pillars
+    P(B(w, .7, .5), pink, [0, 3.6, fz + .1]),                                    // beam over the opening
+    P(B(w - .6, 3.4, .1), '#2a2420', [0, 1.75, fz - .82]), P(B(w - .6, .05, .9), '#8f877c', [0, .27, fz - .45]), // the dark shop inside, and its floor
+    P(B(w - 1.4, .45, .45), '#5d7562', [0, 3.05, fz]),                           // green roll-up shutter, rolled up
+    P(B(.16, 3, .16), '#a8302a', [-w / 2 + 1.1, 1.6, fz - .3]), P(B(.16, 3, .16), '#a8302a', [w / 2 - 1.1, 1.6, fz - .3]), P(B(w - 2.2, .16, .16), '#a8302a', [0, 3.05, fz - .3]), // red steel frame
+    P(B(w + .3, 1.95, .14), '#e8e8e2', [0, 4.95, fz + .25]),                      // signboard frame
+    P(new THREE.ConeGeometry(1, 1, 4), '#8c939a', [0, 5.2, -.6], [0, Math.PI / 4, 0], [w * .78, 1.3, d * .7]), // grey tin roof behind the sign
+    P(B(.42, .55, .2), '#d9d9d2', [-w / 2 + .38, 1.7, fz + .42]), P(B(.3, .18, .21), '#ff7a3a', [-w / 2 + .38, 1.25, fz + .42]), // electricity meter
+    P(B(.12, 4.4, .12), '#9aa0a6', [w / 2 + .1, 2.2, fz + .3])                   // the downpipe on the corner
+  ];
+  const m = place(parts, x, z, 0, y - .02);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(w + .1, 1.75), new THREE.MeshBasicMaterial({ map: hueNghiSign() }));
+  sign.position.set(0, 4.95, fz + .33); m.add(sign);
+  // a parked motorbike and two little red plastic stools
+  const bike = [P(new THREE.TorusGeometry(.32, .08, 6, 14), '#222', [0, .34, .6], [0, Math.PI / 2, 0]), P(new THREE.TorusGeometry(.32, .08, 6, 14), '#222', [0, .34, -.6], [0, Math.PI / 2, 0]),
+    P(B(.34, .3, 1.1), '#2c2c34', [0, .62, 0]), P(B(.32, .14, .7), '#3a3a42', [0, .86, -.15]), P(B(.12, .7, .12), '#555', [0, .9, .55], [-.35, 0, 0]), P(B(.7, .06, .06), '#333', [0, 1.22, .66]), P(B(.3, .2, .05), '#eee', [0, .5, -.75])];
+  place(bike, x + 2.6, z + fz + 1.4, .25, y);
+  for (const [dx, dz] of [[-.7, 1.3], [-1.3, 1.6]]) place([P(B(.38, .3, .38), '#e8433a', [0, .15, 0])], x + dx, z + fz + dz, .3, y);
+  world.boxes.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + fz + .2 });
+  world.houses.push({ x, z, rot: 0, d, kind: 'tube' });
+  // bà Huệ and ông Nghi at the door
+  const hue = person(look('aodai', '#7a4a8a', '#d8d8d8', 'buns'), x - 1.9, z + fz + 1.9, .2, 'Bà Huệ');
+  const nghi = person(look('shirt', '#d8d4c8', '#b8b8b8', 'short'), x + 1.1, z + fz + 1.8, -.3, 'Ông Nghi');
+  const talk = async who => {
+    SFX.tap();
+    const lines = who === 'hue'
+      ? [['Chào con! Vào đây uống ly nước mát với bà nè. Tiệm Huệ Nghi mở cửa từ sáng sớm đó con.', 'Chào con! Vào đây uống ly nước mát với bà nè. Tiệm Huệ Nghi mở cửa từ sáng sớm đó con.'], ['Ngoan quá! Bà cho con miếng bánh nha.', 'Ngoan quá! Bà cho con miếng bánh nha.']]
+      : [['Chào con! Ông chở hàng đi khắp Bà Rịa đó: sắt thép, gạch, đủ thứ hết.', 'Chào con! Ông chở hàng đi khắp Bà Rịa đó: sắt thép, gạch, đủ thứ hết.'], ['Lớn lên con giúp ông chở hàng nghen!', 'Lớn lên con giúp ông chở hàng nghen!']];
+    const name = who === 'hue' ? 'Bà Huệ' : 'Ông Nghi';
+    await dialog(name, lines);
+  };
+  G.interactables.push({ id: 'npc_bahue', x: x - 1.9, z: z + fz + 3.2, r: 2.2, icon: '👵', bubble: '👵', label: () => nm('Bà Huệ'), act: () => talk('hue') });
+  G.interactables.push({ id: 'npc_ongnghi', x: x + 1.3, z: z + fz + 3.2, r: 2.2, icon: '👴', bubble: '👴', label: () => nm('Ông Nghi'), act: () => talk('nghi') });
+  persona('npc_bahue', '👵', 'Bà Huệ', ['I am Bà Huệ. Ông Nghi and I keep the Huệ Nghi shop on this street.', 'Bà là bà Huệ. Bà với ông Nghi giữ tiệm Huệ Nghi trên con đường này.'], 'a warm, kind grandmother from Bà Rịa who runs the Huệ Nghi shop with her husband ông Nghi, and speaks with a southern accent', 'nam');
+  persona('npc_ongnghi', '👴', 'Ông Nghi', ['I am Ông Nghi. I carry goods all over Bà Rịa.', 'Ông là ông Nghi. Ông chở hàng đi khắp Bà Rịa.'], 'a cheerful grandfather from Bà Rịa who runs the Huệ Nghi transport shop with his wife bà Huệ, and speaks with a southern accent', 'nam');
+  void hue; void nghi;
 }
 
 const GAMES_ICON = { puppets: '🎎', dongho: '🖼️', dragonfire: '🐉', traffic: '🚦', ferries: '⛴️', tram: '🚋', koala: '🐨' };

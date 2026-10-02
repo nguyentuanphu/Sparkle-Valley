@@ -288,19 +288,23 @@ export function openGrownups(after) {
 export function openQuick(game, i) {
   const m = modal('qsettings', ''), card = m.querySelector('.card');
   const close = () => { m.close(); game.paused = false; game.huds.forEach(h => h.refreshAudio()); };
+  const hero = game.heroes[i], p = hero ? hero.profile : null;
+  // one row with a picture, a name and an on/off switch
+  const row = (k, icon, label, on, hint = '') => `<button class="qrow qset ${on ? 'on' : ''}" data-k="${k}" aria-pressed="${on}"><span class="qi">${icon}</span><b>${label}${hint ? `<small>${hint}</small>` : ''}</b><i class="qsw"></i></button>`;
   const draw = () => {
-    const s = settings, on = v => v ? 'on' : '';
-    card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>⚙️ ${T('Settings', 'Cài đặt')}</h2>
-      ${flagBtns()}
-      <div class="qgrid">
-        <button class="qset ${on(s.music)}" data-k="music"><span>🎵</span>${T('Music', 'Nhạc')}</button>
-        <button class="qset ${on(s.sound)}" data-k="sound"><span>🔔</span>${T('Sounds', 'Âm thanh')}</button>
-        <button class="qset ${on(s.voice)}" data-k="voice"><span>🗣️</span>${T('Talking', 'Giọng nói')}</button>
-        <button class="qset ${on(s.voiceControl)}" data-k="voiceControl"><span>🎤</span>${T('Voice control', 'Điều khiển giọng nói')}</button>
-        <button class="qset ${on(s.camMode !== 'free')}" data-k="cam"><span>${s.camMode === 'free' ? '🧭' : '🧸'}</span>${s.camMode === 'free' ? T('Explorer camera', 'Camera tự do') : T('Easy camera', 'Camera dễ')}</button>
-        <button class="qset ${on(s.alwaysDay)}" data-k="alwaysDay"><span>☀️</span>${T('Always daytime', 'Luôn ban ngày')}</button>
-      </div>
-      <div class="field"><label>${T('Voice style', 'Kiểu giọng')}</label><div class="seg vstyle">${VOICE_STYLES.map(v => `<button data-v="${v.id}" class="${(s.voiceStyle || 'natural') === v.id ? 'on' : ''}">${v.icon} ${v.name()}</button>`).join('')}</div></div>
+    const s = settings, view = (hero && hero.view) || 'follow';
+    card.innerHTML = `<div class="qs-head">${p ? `<img class="qs-av" src="${avatarURL(p)}" alt="">` : ''}<div class="qs-title"><h2>${T('Settings', 'Cài đặt')}</h2>${p ? `<small>${esc(nm(p.name || ''))}</small>` : ''}</div><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
+      <div class="qs-sec"><h4>🌏 ${T('Language', 'Ngôn ngữ')}</h4>${flagBtns()}</div>
+      <div class="qs-sec"><h4>🔊 ${T('Sound', 'Âm thanh')}</h4>
+        ${row('music', '🎵', T('Music', 'Nhạc'), s.music)}${row('sound', '🔔', T('Sounds', 'Tiếng động'), s.sound)}${row('voice', '🗣️', T('Talking', 'Giọng nói'), s.voice)}
+        <div class="qs-sub">${T('Voice style', 'Kiểu giọng')}</div><div class="seg vstyle">${VOICE_STYLES.map(v => `<button data-v="${v.id}" class="${(s.voiceStyle || 'natural') === v.id ? 'on' : ''}">${v.icon} ${v.name()}</button>`).join('')}</div></div>
+      <div class="qs-sec"><h4>🎥 ${T('Camera', 'Máy quay')}</h4>
+        <div class="qs-views">${(game.VIEWS || []).map(([id, icon, en, vi]) => `<button data-view="${id}" class="${view === id ? 'on' : ''}"><span>${icon}</span>${T(en, vi)}</button>`).join('')}</div>
+        ${row('cam', s.camMode === 'free' ? '🧭' : '🧸', T('Easy camera', 'Camera dễ'), s.camMode !== 'free', s.camMode === 'free' ? T('off: drag to look around', 'tắt: kéo để nhìn quanh') : T('turns by itself', 'tự xoay theo con'))}</div>
+      <div class="qs-sec"><h4>🎮 ${T('Play', 'Chơi')}</h4>
+        ${row('voiceControl', '🎤', T('Voice control', 'Điều khiển bằng giọng nói'), s.voiceControl !== false)}${row('alwaysDay', '☀️', T('Always daytime', 'Luôn ban ngày'), s.alwaysDay)}
+        <div class="qs-sub">${T('Text size', 'Cỡ chữ')}</div><div class="seg tsize">${[0, 1, 2].map(k => `<button data-ts="${k}" class="${(s.textSize || 0) === k ? 'on' : ''}" style="font-size:${16 + k * 5}px">A</button>`).join('')}</div></div>
+      ${game.festivals ? `<button class="qs-fest" id="qFest"><span>🎉</span><b>${T('Festivals', 'Lễ hội')}</b><small>${T('Tết, Mid-Autumn, Diwali, Christmas, Australia Day: any day you like', 'Tết, Trung Thu, Diwali, Giáng Sinh, Ngày Nước Úc: ngày nào cũng được')}</small></button>` : ''}
       <button class="grown qgrown"><span class="ring"></span>👨‍👩‍👧 ${T('Grown-ups settings', 'Cài đặt phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>
       <div class="actions"><button class="btn" id="qWho">👫 ${T('Change player', 'Đổi người chơi')}</button><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
     bindLang(card, draw);
@@ -308,17 +312,33 @@ export function openQuick(game, i) {
     card.querySelectorAll('.qset').forEach(b => b.onclick = () => {
       const k = b.dataset.k; SFX.tap();
       if (k === 'cam') s.camMode = s.camMode === 'free' ? 'easy' : 'free';
+      else if (k === 'voiceControl') s.voiceControl = s.voiceControl === false;
       else s[k] = !s[k];
       if (k === 'music') { if (s.music) Music.refresh(); else Music.stop(); }
       if (k === 'voice' && !s.voice) hush();
-      saveSettings(); document.querySelectorAll('.dk.voicecmd').forEach(x => x.hidden = !s.voiceControl); draw();
+      saveSettings(); document.querySelectorAll('.dk.voicecmd').forEach(x => x.hidden = s.voiceControl === false); keep(draw);
     });
-    card.querySelectorAll('.seg.vstyle button').forEach(b => b.onclick = () => { s.voiceStyle = b.dataset.v; saveSettings(); draw(); say('Hello! Do you like my voice?', 'Xin chào! Con có thích giọng này không?'); });
+    card.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { game.setView(i, b.dataset.view); keep(draw); });
+    card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { s.textSize = +b.dataset.ts; saveSettings(); applyComfort(); keep(draw); });
+    card.querySelectorAll('.seg.vstyle button').forEach(b => b.onclick = () => { s.voiceStyle = b.dataset.v; saveSettings(); keep(draw); say('Hello! Do you like my voice?', 'Xin chào! Con có thích giọng này không?'); });
+    const fb = card.querySelector('#qFest'); if (fb) fb.onclick = () => { SFX.tap(); m.close(); openFestivals(game, i); };
     card.querySelector('#qWho').onclick = () => { m.close(); game.changePlayer(); };
     // the full Grown-ups settings, from inside the game (press and hold, so little fingers don't open it by accident)
     holdButton(card.querySelector('.qgrown'), () => openGrownups(() => { draw(); game.huds.forEach(h => { h.refreshAudio(); h.refreshWho(); }); }));
   };
+  const keep = f => { const y = m.scrollTop; f(); m.scrollTop = y; };
   draw();
+}
+
+// choose a festival to visit (any day of the year)
+export function openFestivals(game, i) {
+  const m = modal('festpick', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎉 ${T('Festivals', 'Lễ hội')}</h2>
+    <p class="sub">${T('Pick a festival: the village gets ready, fireworks go up and you get a festival present.', 'Chọn một lễ hội: làng trang trí, pháo hoa bay lên và con nhận quà lễ hội.')}</p>
+    <div class="festgrid">${game.festivals.list().map(f => `<button class="festbtn${f.today ? ' today' : ''}" data-fest="${f.id}"><span>${f.icon}</span><b>${esc(f.name)}</b>${f.today ? `<small>${T('Today!', 'Hôm nay!')}</small>` : ''}</button>`).join('')}</div>`);
+  const done = () => { m.close(); game.paused = false; };
+  m.querySelector('.x').onclick = done;
+  m.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); done(); game.festivals.visit(i, b.dataset.fest); });
+  say('Which festival shall we visit?', 'Mình đi lễ hội nào nhé?');
 }
 
 // ---------- Player editor with photo cropping ----------
@@ -484,9 +504,16 @@ export function openPad(game, i, tab) {
   function drawMap(body) {
     const S = 600, cv = el('canvas', 'bigmap'); cv.width = cv.height = S; body.appendChild(cv);
     body.appendChild(el('p', 'note center', T('Tap any picture on the map, or a place below, to fly there.', 'Chạm vào bất kỳ hình nào trên bản đồ, hoặc một nơi bên dưới, để bay đến đó.')));
-    const quick = el('div', 'quick');
-    game.PLACES.forEach(pl => { const b = el('button', 'qbtn', `<span>${pl.icon}</span><small>${esc(pl.name())}</small>`); b.onclick = () => { close(); game.travelTo(hero, pl.x, pl.z); }; quick.appendChild(b); });
-    const ch = el('button', 'qbtn change', `<span>🔄</span><small>${T('Change player', 'Đổi người chơi')}</small>`); ch.onclick = () => { close(); game.changePlayer(); }; quick.appendChild(ch);
+    // the places, grouped by country and listed from north to south, like a real map
+    const GROUPS = [['home', '🏡', T('Our valley', 'Thung lũng nhà mình')], ['vn', '🇻🇳', T('Vietnam: north to south', 'Việt Nam: từ Bắc vào Nam')], ['au', '🇦🇺', T('Australia: north to south', 'Nước Úc: từ Bắc xuống Nam')], ['asia', '🌏', T('China and India', 'Trung Quốc và Ấn Độ')]];
+    for (const [g, gi, gname] of GROUPS) {
+      const list = game.PLACES.filter(pl => (pl.g || 'home') === g).sort((a, b) => a.z - b.z); if (!list.length) continue;
+      body.appendChild(el('h4', 'qgroup', `${gi} ${esc(gname)}`));
+      const quick = el('div', 'quick');
+      list.forEach(pl => { const b = el('button', 'qbtn', `<span>${pl.icon}</span><small>${esc(pl.name())}</small>`); b.onclick = () => { close(); game.travelTo(hero, pl.x, pl.z); }; quick.appendChild(b); });
+      body.appendChild(quick);
+    }
+    const quick = el('div', 'quick'); const ch = el('button', 'qbtn change', `<span>🔄</span><small>${T('Change player', 'Đổi người chơi')}</small>`); ch.onclick = () => { close(); game.changePlayer(); }; quick.appendChild(ch);
     body.appendChild(quick);
     const x = cv.getContext('2d'); x.drawImage(game.fogMapFor(p), 0, 0, S, S);
     const k = S / SIZE, pt = (wx, wz) => [(wx + HALF) * k, (wz + HALF) * k];
@@ -773,12 +800,14 @@ export function openGamesHub(game, i, onClose) {
   const close = () => { m.close(); onClose && onClose(); };
   card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎮 ${T('Games', 'Trò chơi')}</h2>
     <p class="sub">${T('Tap a picture: you fly to the friend who plays it, and the game starts. 📺 shows how to play. 📍 walks you there.', 'Chạm vào hình: con bay đến chỗ bạn chơi trò đó và bắt đầu chơi. 📺 xem cách chơi. 📍 đi bộ đến đó.')}</p>
+    ${game.festivals ? `<h3>🎉 ${T('Festivals', 'Lễ hội')}</h3><div class="festrow">${game.festivals.list().map(f => `<button class="festbtn${f.today ? ' today' : ''}" data-fest="${f.id}"><span>${f.icon}</span><b>${esc(f.name)}</b>${f.today ? `<small>${T('Today!', 'Hôm nay!')}</small>` : ''}</button>`).join('')}</div>` : ''}
     ${HUB.map(sec => `<h3>${sec.icon} ${esc(sec.title())}</h3><div class="hubgrid">${sec.games.filter(id => GAMES[id]).map((id, k) => {
       const g = GAMES[id], lv = p.levels[id] || 1;
       return `<div class="hcard" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}"><span class="hi">${g.icon}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${originFlags(g.origin)}</span>` : ''}</div>`;
     }).join('')}</div>`).join('')}
     ${game.taleShelfHTML ? `<h2 class="hub-tales">📖 ${T('Fairy tales', 'Truyện cổ tích')}</h2><p class="sub">${T('Tap a story: you fly to Grandma Storyteller and she reads it to you.', 'Chạm vào truyện: con bay đến chỗ Bà Kể Chuyện và bà kể cho con nghe.')}</p><div class="talelib">${game.taleShelfHTML(p)}</div>` : ''}`;
   card.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { close(); game.readTale(i, b.dataset.tale); });
+  card.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.festivals.visit(i, b.dataset.fest); });
   card.querySelector('.x').onclick = close;
   card.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); game.meetAndPlay(i, id); });
   card.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { close(); game.goToGame(i, b.dataset.go); });

@@ -1316,3 +1316,43 @@ body.calm .sv2 .tt-floaters i { animation: none; }
 .sv2 .logo.vi .logo-main { font-size: clamp(40px, 11vw, 96px); }
 /* narrow phones: the progress dots go on their own row under the title, so long game names stay readable */
 @media (max-width: 480px) { .gl-head { flex-wrap: wrap; row-gap: 4px; } .gl-dots { order: 5; flex-basis: 100%; justify-content: center; } }
+/* phones: Talk, Music and Sound sit in a small row under the clock (they don't fit in the dock) */
+.hud .tools { display: flex; gap: 6px; justify-content: center; margin-top: 6px; pointer-events: auto; }
+.hud .tools:empty { display: none; }
+.hud .tools .dk, .hud.small .tools .dk.chat, .hud.small .tools .dk.mus, .hud.small .tools .dk.snd { display: flex; width: 44px; height: 44px; border-radius: 50%; }
+.hud .tools .dk span .ico { width: 24px; height: 24px; } .hud .tools .dk small { display: none; }
+.zoomer .z-view { font-size: 26px; line-height: 1; }
+/* festivals shelf in the Games hub: any festival, any day */
+.festrow { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px; scroll-snap-type: x mandatory; }
+.festbtn { flex: 0 0 auto; scroll-snap-align: start; min-width: 132px; max-width: 160px; border: 0; border-radius: 22px; padding: 12px 10px; background: linear-gradient(160deg, #fff4d6, #ffd9e8); box-shadow: 0 4px 0 rgba(200, 120, 160, .35); display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text); position: relative; }
+.festbtn span { font-size: 40px; line-height: 1; } .festbtn b { font-size: 14px; line-height: 1.15; text-align: center; }
+.festbtn.today { background: linear-gradient(160deg, #ffe27a, #ff9fc8); box-shadow: 0 0 0 3px #ffd23f, 0 4px 0 rgba(200, 120, 160, .35); }
+.festbtn small { position: absolute; top: -8px; right: -4px; background: #ff5f9e; color: #fff; border-radius: 10px; padding: 2px 8px; font-size: 12px; }
+/* ---------- settings (quick settings), redesigned: sections of rows with switches ---------- */
+.qsettings .card { max-width: 520px; padding: 16px 16px 18px; }
+.qs-head { display: flex; align-items: center; gap: 12px; margin: 0 44px 10px 0; }
+.qs-head .x { position: absolute; top: 12px; right: 12px; }
+.qs-av { width: 56px; height: 56px; border-radius: 50%; border: 3px solid #ffd23f; background: #fff; object-fit: cover; flex: 0 0 auto; }
+.qs-title h2 { margin: 0; font-size: 26px; color: #4a2a78; } .qs-title small { color: #7a6a94; font-size: 15px; }
+.qs-sec { background: #faf7ff; border: 1px solid #ece4f8; border-radius: 22px; padding: 10px 12px 12px; margin-top: 10px; }
+.qs-sec h4 { margin: 2px 4px 8px; font-size: 16px; color: #6a4aa0; letter-spacing: .2px; }
+.qs-sub { margin: 10px 4px 6px; font-size: 14px; color: #7a6a94; font-weight: 600; }
+.qsettings .qrow { width: 100%; display: flex; align-items: center; gap: 12px; border: 0; background: #fff; border-radius: 16px; padding: 8px 10px; margin: 6px 0 0; box-shadow: 0 2px 0 #ece4f8; color: var(--text); text-align: left; min-height: 52px; }
+.qsettings .qrow .qi { font-size: 26px; width: 36px; text-align: center; filter: grayscale(1); opacity: .55; transition: .2s; }
+.qsettings .qrow b { flex: 1; font-size: 16px; line-height: 1.2; display: flex; flex-direction: column; }
+.qsettings .qrow b small { font-weight: 500; font-size: 12.5px; color: #8a7fa0; }
+.qsettings .qrow .qsw { width: 50px; height: 30px; border-radius: 15px; background: #ddd5ea; position: relative; flex: 0 0 auto; transition: .2s; }
+.qsettings .qrow .qsw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, .2); transition: .2s; }
+.qsettings .qrow.on .qsw { background: linear-gradient(90deg, #8a5cf6, #b06cf8); } .qsettings .qrow.on .qsw::after { left: 23px; }
+.qsettings .qrow.on .qi { filter: none; opacity: 1; }
+.qs-views { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.qs-views button { border: 2px solid #ece4f8; background: #fff; border-radius: 16px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12.5px; line-height: 1.15; color: var(--text); min-height: 64px; }
+.qs-views button span { font-size: 26px; } .qs-views button.on { border-color: #8a5cf6; background: #f1e9ff; box-shadow: 0 0 0 2px #c9b2ff; }
+.qsettings .seg { flex-wrap: wrap; }
+.qs-fest { width: 100%; margin-top: 12px; border: 0; border-radius: 22px; padding: 12px 14px; background: linear-gradient(120deg, #ffe27a, #ff9fc8); box-shadow: 0 4px 0 #e08ab0; display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-items: center; text-align: left; color: #5a2a48; }
+.qs-fest span { font-size: 36px; grid-row: span 2; } .qs-fest b { font-size: 18px; } .qs-fest small { font-size: 12.5px; opacity: .85; }
+.qsettings .actions { margin-top: 14px; }
+.festpick .card { max-width: 560px; } .festgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 8px; }
+.festgrid .festbtn { max-width: none; }
+.qsettings .qrow, .qsettings .qrow.qset { flex-direction: row; border: 0; padding: 8px 10px; font-size: 16px; background: #fff; }
+.pad .qgroup, .qgroup { margin: 14px 4px 6px; font-size: 16px; color: #6a4aa0; }

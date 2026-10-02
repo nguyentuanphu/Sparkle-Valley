@@ -197,17 +197,28 @@ export class Hero {
         const off = Math.abs(Math.atan2(Math.sin(this.yaw + Math.PI - this.camYaw), Math.cos(this.yaw + Math.PI - this.camYaw)));
         if (this.easyT > .8 && off > .3) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * .9)); }
       else { this.easyT = 0; this.stillT = (this.stillT || 0) + dt; }
+      // standing still in front of a house: turn round to see its front (door, windows, shop sign). A house right
+      // in front wins over a landmark further away; the choice is checked again if the child is moved (Go, travel).
+      const facing = hs => { const fx = Math.sin(hs.rot), fz = Math.cos(hs.rot), vx = p.x - hs.x, vz = p.z - hs.z, ahead = vx * fx + vz * fz, side = Math.abs(vx * fz - vz * fx); return ahead > hs.d * .4 && ahead < hs.d * .5 + 7 && side < hs.d * .5 + 1.5; };
+      const calm = this.stillT > 1 && this.manualCamT <= 0 && !this.towerClimb;
+      if (!calm) this._houseFront = null;
+      else if (!this._houseFront || !facing(this._houseFront)) this._houseFront = (this.world.houses || []).filter(facing).sort((a, b) => Math.hypot(p.x - a.x, p.z - a.z) - Math.hypot(p.x - b.x, p.z - b.z))[0] || null;
+      if (calm && this._houseFront) this.camYaw = angleLerp(this.camYaw, this._houseFront.rot, Math.min(1, dt * 1.4));
       // standing still next to a landmark: slowly turn so it is in front of the camera
-      if (this._lm && (this._lmF || 0) > .25 && this.stillT > .8 && this.manualCamT <= 0 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, Math.atan2(p.x - this._lm.x, p.z - this._lm.z), Math.min(1, dt * 1.2));
+      else if (this._lm && (this._lmF || 0) > .25 && Math.hypot(p.x - this._lm.x, p.z - this._lm.z) > 2 && this.stillT > .8 && this.manualCamT <= 0 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, Math.atan2(p.x - this._lm.x, p.z - this._lm.z), Math.min(1, dt * 1.2));
       // near a landmark, step back and look more level so the whole building fits on screen
       const lf = this._lmF = lerp(this._lmF || 0, game.landmarkFrame ? game.landmarkFrame(this) : 0, Math.min(1, dt * 1.5));
-      this.camPitch += ((this.towerClimb ? .25 : game.lookUpT > 0 ? .1 : .55 - lf * .12 + Math.max(0, (this.zoom || 1) - 1) * .45) - this.camPitch) * Math.min(1, dt * 3);
+      // camera views (🎥 button): behind (normal), high up, at street level, or the child's face
+      const view = this.view || 'follow', base = view === 'high' ? 1.05 : view === 'street' ? .12 : .55;
+      this.camPitch += ((this.towerClimb ? .25 : game.lookUpT > 0 ? .1 : base - lf * .12 + Math.max(0, (this.zoom || 1) - 1) * .45) - this.camPitch) * Math.min(1, dt * 3);
     }
     else if (this.manualCamT <= 0 && this.speed > 1 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * .6));
-    const close = game.closeUp === this.i; // wardrobe close-up
+    // wardrobe close-up, or the "face" camera view while the child stands still
+    const close = game.closeUp === this.i || (this.view === 'face' && this.speed < .6 && !this.towerClimb && !this.gliding);
     if (close) { this.camYaw = angleLerp(this.camYaw, this.yaw, Math.min(1, dt * 4)); this.camPitch += (.08 - this.camPitch) * Math.min(1, dt * 4); }
-    const dist = close ? 2.8 : (easy ? 11.5 * (1 + (this._lmF || 0) * .55) : this.camDist) * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (this.zoom || 1) * (game.zoom || 1);
-    const target = new THREE.Vector3(p.x, p.y + (close ? .2 : 1.15) + rideY, p.z);
+    const vk = this.view === 'high' ? 1.6 : this.view === 'street' ? .62 : 1;
+    const dist = close ? 2.8 : (easy ? 11.5 * (1 + (this._lmF || 0) * .55) : this.camDist) * vk * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (this.zoom || 1) * (game.zoom || 1);
+    const target = new THREE.Vector3(p.x, p.y + (close ? (this.view === 'face' && game.closeUp !== this.i ? 1.05 : .2) : this.view === 'street' ? 1.6 : 1.15) + rideY, p.z);
     const want = new THREE.Vector3(p.x + Math.sin(this.camYaw) * Math.cos(this.camPitch) * dist, target.y + Math.sin(this.camPitch) * dist, p.z + Math.cos(this.camYaw) * Math.cos(this.camPitch) * dist);
     // keep the camera out of houses: if a wall is between the child and the camera, move the camera in
     // front of it. Worked out as one "how much of the distance is free" number (k), then smoothed: the camera

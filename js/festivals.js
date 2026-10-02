@@ -30,7 +30,10 @@ export const FESTIVALS = {
     lines: [['Happy Australia Day! People have picnics and barbecues, play backyard cricket and watch fireworks.', 'Chúc mừng Ngày Nước Úc! Mọi người đi dã ngoại, nướng thịt, chơi cricket sân sau và xem pháo hoa.'], ['It is also a day to remember the First Nations people, who have cared for this land for more than 60,000 years.', 'Đây cũng là ngày tưởng nhớ người Thổ dân, những người đã gìn giữ mảnh đất này hơn 60.000 năm.'], ['Have a sausage sizzle!', 'Ăn xúc xích nướng kẹp bánh mì nhé!']] }
 };
 
+// a festival a child chose to visit from the Games hub or settings (for this session only)
+let visiting = null;
 export function festivalToday(d = new Date()) {
+  if (visiting && FESTIVALS[visiting]) return visiting;
   const pick = settings.festival || 'auto';
   if (pick === 'none') return null;
   if (pick !== 'auto') return FESTIVALS[pick] ? pick : null;
@@ -85,15 +88,16 @@ export function createFestivals(G) {
     if (k === 0) G.playGame(h.i, F.game, 'replay');
   };
   // gentle bobbing, and fireworks at night
-  let fwT = 0;
+  let fwT = 0, showT = 0;
   world.updaters.push((dt, t) => {
     if (!current) return;
     group.children.forEach(s => { if (s.userData.base != null) s.position.y = s.userData.base + Math.sin(t * 2 + s.userData.k) * .15; });
     const F = FESTIVALS[current];
-    if (F.fireworks && world.isNight() && !settings.calm) {
+    if (showT > 0) showT -= dt;
+    if (F.fireworks && (world.isNight() || showT > 0) && !settings.calm) {
       fwT -= dt;
       if (fwT <= 0) {
-        fwT = 1.2 + Math.random() * 1.5;
+        fwT = showT > 0 ? .5 + Math.random() * .6 : 1.2 + Math.random() * 1.5;
         const c = F.where()[0], x = c.x + (Math.random() - .5) * 30, z = c.z + (Math.random() - .5) * 30, y = heightAt(c.x, c.z) + 22 + Math.random() * 10;
         const col = ['#ff4f9a', '#ffd23f', '#3cc7e8', '#5fd36a', '#ff9f43'][Math.floor(Math.random() * 5)];
         for (let i = 0; i < 16; i++) {
@@ -113,6 +117,15 @@ export function createFestivals(G) {
   return {
     rebuild: build,
     current: () => current,
+    // any festival, any day: decorate, fly the child to the festival table, a fireworks show, then the festival visit
+    visit: async (i, id) => {
+      const h = G.heroes[i]; if (!h || !FESTIVALS[id]) return;
+      visiting = id; build();
+      if (tableIt) G.travel(h, tableIt.x + 2.5, tableIt.z + 2.5);
+      showT = 14; SFX.chime && SFX.chime();
+      setTimeout(() => { if (tableIt) visit(h); }, 1800);
+    },
+    list: () => Object.entries(FESTIVALS).map(([id, F]) => ({ id, icon: F.icon, name: F.name(), today: festivalToday() === id })),
     // a greeting when a session starts during a festival
     greet: h => { if (!current) return; const F = FESTIVALS[current]; setTimeout(() => { G.toast(h, `${F.icon} ${T("It's ", 'Hôm nay là ')}${F.name()}!`); say(`It is ${F.name()}! Visit the festival table for a present.`, `Hôm nay là ${F.name()}! Đến bàn lễ hội nhận quà nhé.`); }, 4000); }
   };
