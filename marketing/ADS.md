@@ -6,7 +6,7 @@ The music is an original ukulele-and-bells jingle generated for these ads (no sa
 
 | File | Length | Use it for |
 |---|---|---|
-| `sparkle-valley-why.mp4` | ~48 s | The story: why a dad made this game. Best as a pinned post or a Facebook-group post. |
+| `sparkle-valley-why.mp4` | ~53 s | The story: why a dad made this game. Best as a pinned post or a Facebook-group post. |
 | `sparkle-valley-features.mp4` | ~38 s | The key selling points, one per scene. Best for Reels / Shorts and parent groups. |
 | `sparkle-valley-teaser.mp4` | ~16 s | Quick hook: Explore! Play! Learn! G'day! Xin chào! Best for Stories and paid ads. |
 
@@ -19,7 +19,7 @@ The music is an original ukulele-and-bells jingle generated for these ads (no sa
 5. **Little ones never lose:** in under-5 mode everything is spoken and every game ends in a celebration.
 6. **Family voice:** record Mum and Dad saying the praise lines.
 7. **Private, works offline, no ads, no accounts.**
-8. **Made by a dad (Henry Nguyen)** for his children, growing up between two homes.
+8. **Made by a dad (Henry Nguyen)** for his children, growing up between two homes, and for kids in China, India and everywhere to discover Vietnam and Australia.
 
 ## Post captions (copy and paste)
 
@@ -35,7 +35,7 @@ The music is an original ukulele-and-bells jingle generated for these ads (no sa
 
 Your own voice will feel much warmer than a computer voice. Record each line on your phone in a quiet room, then drop the audio over the video in CapCut, InShot or iMovie (lower the music to about 30% under your voice).
 
-**"Why" video (~48 s)**
+**"Why" video (~53 s)**
 
 | Time | English | Tiếng Việt |
 |---|---|---|
@@ -47,8 +47,9 @@ Your own voice will feel much warmer than a computer voice. Record each line on 
 | 0:22 | They play the folk games their grandparents played, | Các con chơi những trò chơi dân gian của ông bà, |
 | 0:27 | and learn to count, read and solve problems. | và học đếm, học đọc, học giải đố. |
 | 0:32 | Every mistake is just a chance to try again. | Sai thì mình thử lại thôi. |
-| 0:37 | I'm Henry, and I made this with love, for my kids and yours. | Tôi là Henry, tôi làm trò chơi này bằng cả tấm lòng, cho con tôi và con của bạn. |
-| 0:42 | Sparkle Valley. Two homes, one valley. | Thung Lũng Lấp Lánh. Hai quê hương, một thung lũng. |
+| 0:37 | And for kids in China and India to discover Vietnam and Australia too. | Và để các bạn nhỏ ở Trung Quốc, Ấn Độ cùng khám phá Việt Nam và Úc. |
+| 0:42 | I'm Henry, and I made this with love, for my kids and yours. | Tôi là Henry, tôi làm trò chơi này bằng cả tấm lòng, cho con tôi và con của bạn. |
+| 0:47 | Sparkle Valley. Two homes, one valley. | Thung Lũng Lấp Lánh. Hai quê hương, một thung lũng. |
 
 **"Features" video (~38 s)**: read each caption as it appears, in one language or both.
 

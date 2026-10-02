@@ -238,7 +238,15 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - **Title language row no longer wraps:** the language buttons and ⓘ stay on one line; on narrow phones "About" shrinks to just the ⓘ icon.
 - **Two Homes Words:** long answers ("Sunglasses") now wrap inside their buttons.
 - **Ad videos** (`marketing/`): three vertical 1080×1920 videos (the story of why the game was made, key features, a 15-second teaser) with English and Vietnamese captions and an original jingle. `marketing/ADS.md` has post captions, hashtags and a voice-over script for Henry to record. The source (screenshots, HTML stage, music synth, render script) is in `marketing/source/`. The `marketing/` folder is not included in the Netlify zip.
-- **Waiting on a UI direction:** Option A (soft storybook) or Option B (chunky toy-box), on the design board. The next list (full language separation, Chinese + Indian villages, roads with cổng chào, gathering and gems, a market stall with multiplayer and friends, the Easy-camera fix, floating Save, adding coins, credits fix, more Vietnamese voices) starts once a direction is chosen.
+- **UI direction:** Option A (soft storybook) was chosen (see Round 7). Still to do from the list: full language separation everywhere, Chinese + Indian villages and languages, dirt roads with cổng chào between villages, gathering fruit/flowers and breaking rocks for gems, a multiplayer market stall with friends and bigger rooms, the Easy-camera fix, adding coins in Grown-ups, more Vietnamese voices.
+
+### Round 7 (new look, names, credits)
+- **Option A storybook UI chosen.** Characters use **style C (picture-book)**: a bigger head, big clear eyes with a sparkle, brows, rosy cheeks, a soft brown outline (inverted hull, `outline()` in `gfx.js`), rounded shoes with soles and puffier sleeves. Eyes and mouth are painted straight onto the head (`drawFeatures`), so skin shading matches; photo faces still work. Outlines hide on characters more than 30 m from a player, to keep phones fast (`OUTLINED` in `avatar.js`).
+- **Storybook houses** (`js/houses.js`): Bà Rịa tube houses with shops (Corner Shop / Tạp Hóa, Bánh Mì, Coffee / Cà Phê signs that follow the language), the Vũng Tàu French villa, the Sydney weatherboard cottage with a bullnose verandah, and nhà ba gian village houses in Lotus Village. The older brick and raised houses got the same outline.
+- **Names:** titles follow the language and names stay as they are in each region ("Grandpa Cú", "Grandma Hai", "Cô Kelly"). **Grown-ups → Character names → Rename characters** lets parents rename anyone, separately in English and Vietnamese (`settings.npcNames`). Every character registers itself with `registerName()` so it shows up in that list.
+- **Credits:** the assistant credit line was removed. A new block says Henry wants children in China and India (and everywhere) to learn about Vietnam and Australia, and the default "why" text says it too. Credit fields now save as you type.
+- **Grown-ups:** the button at the bottom is now a floating "Save & close".
+- **Ads re-rendered** with the new characters and houses; the "why" video has a new scene for kids in China and India.
 
 ## 3. How it's built
 

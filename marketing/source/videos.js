@@ -19,7 +19,7 @@ window.VIDEOS = (() => {
   const why = [
     { d: 4.6, layers: [L.bg(WARM), L.emoji('🇻🇳', { x: 150, y: 480, at: .2, size: 220 }), L.emoji('❤️', { x: 440, y: 520, at: .6, size: 180 }), L.emoji('🇦🇺', { x: 700, y: 480, at: .4, size: 220 }),
       L.cap('My kids are growing up between two homes', 'Các con tôi lớn lên giữa hai quê hương', { y: 900, at: .9 })] },
-    { d: 4.4, layers: [L.img('street-en', [1.05, 1.18, 0, -40, 0, -60]), L.cap('Bà Rịa 🇻🇳 meets Sydney 🇦🇺', 'Bà Rịa gặp Sydney', { y: 1380, at: .4, cls: 'white' })] },
+    { d: 4.4, layers: [L.img('k-north-en', [1.05, 1.18, 0, -40, 0, -60]), L.cap('Bà Rịa 🇻🇳 meets Sydney 🇦🇺', 'Bà Rịa gặp Sydney', { y: 1380, at: .4, cls: 'white' })] },
     { d: 4.4, layers: [L.img('c4-en', [1.18, 1.04, 30, 0, 40, 0]), L.cap('So I built them one magical valley', 'Nên tôi làm cho các con một thung lũng diệu kỳ', { y: 1330, at: .4, cls: 'purple' })] },
     { d: 4.4, layers: [L.img('c5-en', [1.04, 1.16, 0, 30, 0, -40]), L.cap('Milk bars, Big Things and Aussie slang…', 'Tiệm tạp hóa, Quả Chuối Khổng Lồ, tiếng lóng Úc…', { y: 1360, at: .4, cls: 'blue' })] },
     { d: 4.4, layers: [L.img('c10-en', [1.16, 1.04, -30, 0, 30, 0]), L.cap('…phở, Chùa Một Cột and words from all three regions', '…phở, Chùa Một Cột và tiếng ba miền', { y: 1330, at: .4, cls: 'pink' })] },
@@ -28,6 +28,9 @@ window.VIDEOS = (() => {
     { d: 5, layers: [L.bg(MINT), L.cap('Learn to count, read and solve problems', 'Học đếm, đọc và giải đố', { y: 90, at: .2, cls: 'green' }),
       P('g-counting-en', 40, 640, -5, .5, 420, 746), P('g-letters-en', 330, 760, 4, .8, 420, 746), P('g-jigsaw-en', 620, 640, 6, 1.1, 420, 746)] },
     { d: 4.6, layers: [L.img('win-en-1000-960', [1.0, 1.1, 0, 0, 0, 0]), L.confetti({ at: 0 }), L.cap('Every mistake is just a chance to try again', 'Sai thì mình thử lại nhé!', { y: 1380, at: .4, cls: 'green' })] },
+    { d: 5, layers: [L.bg(SKY), L.emoji('🇨🇳', { x: 150, y: 330, at: .2, size: 200 }), L.emoji('🤝', { x: 440, y: 360, at: .5, size: 170 }), L.emoji('🇮🇳', { x: 710, y: 330, at: .35, size: 200 }),
+      L.emoji('🇻🇳', { x: 260, y: 640, at: .7, size: 170 }), L.emoji('🇦🇺', { x: 620, y: 640, at: .85, size: 170 }),
+      L.cap('…and for kids in China and India to discover Vietnam and Australia too', '…và để các bạn nhỏ Trung Quốc, Ấn Độ cùng khám phá Việt Nam và Úc', { y: 1020, at: 1.1, cls: 'white' })] },
     { d: 5.4, layers: [L.bg(PURPLE), P('credits-en', 250, 160, -3, .2, 580, 1031),
       L.cap('Made with love by a dad', 'Một người bố làm bằng cả tấm lòng', { y: 1280, at: .8, cls: 'white' }),
       L.chip('— Henry Nguyen', { x: 520, y: 1700, at: 1.5, from: 700, rot: -3 })] },
