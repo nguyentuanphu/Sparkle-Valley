@@ -109,12 +109,26 @@ export const MAX_KIDS = 6;
 export function addProfile() { const p = normalizeProfile(newProfile(profiles.length)); p.name = ''; profiles.push(p); return p; }
 export function removeProfile(id) { const i = profiles.findIndex(p => p.id === id); if (i >= 0) profiles.splice(i, 1); saveProfiles(true); }
 
-export function exportBackup() {
-  const blob = new Blob([JSON.stringify({ app: 'sparkle-valley', v: 2, settings, profiles, farm }, null, 1)], { type: 'application/json' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = 'sparkle-valley-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+// Saving a backup opens the phone's share sheet when it can, so a grown-up can put the file straight
+// into Google Drive or iCloud Drive ("Save to Files"). Otherwise the file is downloaded.
+// Resolves to 'shared', 'downloaded' or 'cancelled'.
+export async function exportBackup({ share = true } = {}) {
+  // Phones only allow some file types in the share sheet (not .json), so the backup is a plain .txt file.
+  const name = 'sparkle-valley-backup-' + new Date().toISOString().slice(0, 10) + '.txt';
+  const text = JSON.stringify({ app: 'sparkle-valley', v: 2, saved: Date.now(), settings, profiles, farm }, null, 1);
+  const done = how => { settings.lastBackup = Date.now(); saveSettings(); return how; };
+  if (share && navigator.canShare) {
+    try {
+      const file = new File([text], name, { type: 'text/plain' });
+      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return done('shared'); }
+    } catch (e) { if (e && e.name === 'AbortError') return 'cancelled'; }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' })); a.download = name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  return done('downloaded');
 }
+// Days since the last backup (Infinity if never).
+export const backupAge = () => settings.lastBackup ? (Date.now() - settings.lastBackup) / 864e5 : Infinity;
 export async function importBackup(file) {
   const data = JSON.parse(await file.text());
   if (!data || data.app !== 'sparkle-valley' || !Array.isArray(data.profiles)) throw new Error('bad file');

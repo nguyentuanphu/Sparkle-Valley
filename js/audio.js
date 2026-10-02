@@ -9,7 +9,7 @@ export function ac() {
       AC = new (window.AudioContext || window.webkitAudioContext)();
       const comp = AC.createDynamicsCompressor(); comp.connect(AC.destination);
       sfxBus = AC.createGain(); sfxBus.gain.value = .7; sfxBus.connect(comp);
-      musicBus = AC.createGain(); musicBus.gain.value = .35; musicBus.connect(comp);
+      musicBus = AC.createGain(); musicBus.gain.value = settings.calm ? .17 : .35; musicBus.connect(comp);
       noiseBuf = AC.createBuffer(1, AC.sampleRate * .8, AC.sampleRate);
       const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
@@ -158,7 +158,7 @@ export const Music = {
     this.timer = setInterval(() => this.tick(), 50);
   },
   stop() { clearInterval(this.timer); this.timer = null; this.key = null; },
-  refresh() { const k = this.key; this.stop(); if (k) this.play(k); },
+  refresh() { if (musicBus) musicBus.gain.value = settings.calm ? .17 : .35; const k = this.key; this.stop(); if (k) this.play(k); },
   songName() { return SONGS[this.key] ? SONGS[this.key].name : ''; },
   tick() {
     if (!AC) return;

@@ -11,6 +11,10 @@ import { el, esc, wait } from './util.js';
 // [picture, English, Vietnamese]
 const S = (pic, en, vi) => ({ pic, en, vi });
 export const HOWTO = {
+  music: {
+    origin: S('🇻🇳 🇦🇺 🇨🇳 🇮🇳 🎶', 'Four instruments from four countries: the đàn bầu from Vietnam, the didgeridoo from Australia, the guzheng from China and the tabla from India.', 'Bốn nhạc cụ của bốn nước: đàn bầu Việt Nam, kèn didgeridoo nước Úc, đàn tranh guzheng Trung Quốc và trống tabla Ấn Độ.'),
+    steps: [S('🎸 🥁', 'Choose an instrument at the top.', 'Chọn một nhạc cụ ở trên cùng.'), S('🟥 🟨 🟩', 'Tap the coloured pads to play notes.', 'Chạm vào các phím màu để chơi nhạc.'), S('⏺️ ▶️', 'Tap Record, play a tune, tap Stop, then Play to hear it back!', 'Bấm Thu âm, chơi một giai điệu, bấm Dừng, rồi bấm Nghe để nghe lại!')]
+  },
   firstwords: {
     origin: S('🇨🇳 🇮🇳 🌏', 'Friends in China Town and India Village teach their first words: hello, thank you, family, food, animals and numbers.', 'Các bạn ở Làng Trung Hoa và Làng Ấn Độ dạy những từ đầu tiên: xin chào, cảm ơn, gia đình, món ăn, con vật và con số.'),
     steps: [S('👂 🔊', 'Listen to the word. Tap 🔊 to hear it again.', 'Nghe từ đó. Chạm 🔊 để nghe lại.'), S('👆 🖼️', 'Tap the picture it means.', 'Chạm vào hình đúng nghĩa.'), S('🗣️ 😊', 'Say it out loud with the game!', 'Nói to theo trò chơi nhé!')]

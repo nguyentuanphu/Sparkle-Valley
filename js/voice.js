@@ -3,6 +3,7 @@
 import { settings } from './state.js';
 import { ac } from './audio.js';
 import { swapNames } from './i18n.js';
+import { packHash } from './packhash.js';
 
 let all = [];
 const BAD = /compact|eloquence|novelty|whisper|bad news|bells|boing|bubbles|cellos|zarvox|trinoids|albert|jester|organ|superstar|wobble|grandpa|grandma|rocko|reed|eddy|flo\b|sandy|shelley|fred|junior|ralph|kathy|good news|hysterical|deranged|pipe/i;
@@ -98,7 +99,9 @@ function deviceSpeak(text, lang, my) {
 }
 let seq = 0;
 // say('Hello', 'Xin chào') speaks the current language (and the other one too in bilingual mode).
-export function say(en, vi) { speak(en, vi); }
+// listeners that show captions for every spoken line (even when the voice is switched off)
+export const spoken = [];
+export function say(en, vi) { const t = swapNames(settings.lang === 'vi' ? (vi ?? en) : en, settings.lang); spoken.forEach(f => { try { f(t); } catch (e) { } }); speak(en, vi); }
 // The same, but resolves when it has finished speaking (used by the How-to-play films).
 export function sayAsync(en, vi) { return speak(en, vi); }
 async function speak(en, vi) {
@@ -116,6 +119,7 @@ async function speak(en, vi) {
   if (settings.bilingual && vi != null && en !== vi) parts.push(settings.lang === 'vi' ? ['en', en] : ['vi', vi]);
   for (const [lang, text] of parts) {
     if (my !== seq) return;
+    try { if (await playPack(lang, text, my)) continue; } catch (e) { }
     if (cloudReady()) {
       try { const buf = await cloudVoice(text, lang); if (my !== seq) return; await playBuffer(buf); continue; }
       catch (e) { console.warn('Natural voice failed, using the device voice', e); }
@@ -128,6 +132,7 @@ export function sayIn(lang, text) {
   if (!settings.voice) return;
   const my = ++seq;
   try { speechSynthesis.cancel(); } catch (e) { }
+  if (packSlot(lang, text)) { playPack(lang, text, my).then(ok => { if (!ok && my === seq) deviceSpeak(text, lang, my); }).catch(() => deviceSpeak(text, lang, my)); return; }
   if (cloudReady() && cloudCached(text, lang)) { cloudVoice(text, lang).then(b => my === seq && playBuffer(b)).catch(() => deviceSpeak(text, lang, my)); return; }
   deviceSpeak(text, lang, my);
 }
@@ -192,11 +197,42 @@ export function playClip(lang, id) {
   return decode(c.data).then(buf => { c.decoded = buf; return playBuffer(buf); }).catch(() => { });
 }
 function decode(data) { const a = ac(); return a ? a.decodeAudioData(data.slice(0)) : Promise.reject(new Error('no audio')); }
-function playBuffer(buf) {
+function playBuffer(buf, rate = 1) {
   const a = ac(); if (!a) return Promise.resolve();
   try { if (playing) playing.stop(); } catch (e) { }
-  const s = a.createBufferSource(); s.buffer = buf; s.connect(a.destination); s.start(); playing = s;
-  return new Promise(res => { s.onended = res; setTimeout(res, buf.duration * 1000 + 400); });
+  const s = a.createBufferSource(); s.buffer = buf; s.playbackRate.value = rate; s.connect(a.destination); s.start(); playing = s;
+  return new Promise(res => { s.onended = res; setTimeout(res, buf.duration / rate * 1000 + 400); });
+}
+
+// ---------- Offline voice pack (voices/, made with tools/make-voice-pack.mjs) ----------
+// Every line recorded once with a natural voice. Grandparents play a little slower and deeper, children a
+// little higher; men use the man's voice when the pack has one.
+let PACK = null;
+export const voicePack = () => PACK;
+fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) PACK = j; }).catch(() => { });
+const packSlot = (lang, text) => { const has = PACK && PACK.lines[packHash(lang, text)]; if (!has) return null; const k = speakerKind(); return k && k.gender === 'm' && has.includes('m') ? 'm' : has.includes('f') ? 'f' : has[0]; };
+const packRate = slot => { const k = speakerKind(); if (!k) return 1; let r = k.old ? .9 : k.kid ? 1.1 : 1; if (k.gender === 'm' && slot === 'f') r *= .86; return r; };
+// Download every file of the pack so it plays with no internet (the service worker keeps them).
+export async function savePackOffline(progress) {
+  if (!PACK) return 0; const urls = [];
+  const langs = ['en', 'vi', 'zh', 'hi'];
+  // the manifest only stores hashes, so ask the server for each language folder's files through the list
+  for (const [h, slots] of Object.entries(PACK.lines)) for (const s of slots) for (const L of PACK.langOf ? [PACK.langOf[h]] : langs) urls.push(`voices/${L}/${s}/${h}.mp3`);
+  let n = 0; const cache = await caches.open('sv-voices');
+  for (let i = 0; i < urls.length; i += 6) {
+    await Promise.all(urls.slice(i, i + 6).map(async u => { if (await cache.match(u)) { n++; return; } try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); n++; } } catch (e) { } }));
+    progress && progress(Math.min(urls.length, i + 6), urls.length);
+  }
+  return n;
+}
+export const packUrl = (lang, text, slot) => `voices/${lang}/${slot}/${packHash(lang, text)}.mp3`;
+async function playPack(lang, text, my) {
+  const slot = packSlot(lang, text); if (!slot) return false;
+  const k = 'pack|' + slot + '|' + lang + '|' + text;
+  let buf = mem.get(k);
+  if (!buf) { const r = await fetch(packUrl(lang, text, slot)); if (!r.ok) return false; buf = await decode(await r.arrayBuffer()); mem.set(k, buf); if (mem.size > 120) mem.delete(mem.keys().next().value); }
+  if (my !== seq) return true;
+  await playBuffer(buf, packRate(slot)); return true;
 }
 
 // ---------- Natural voice (optional, online) ----------
@@ -225,7 +261,20 @@ const googleName = lang => {
   return pool[k.seed % pool.length];
 };
 const googlePitch = () => { const k = speakerKind(); return !k ? 0 : k.old ? -3 : k.kid ? 4 : 0; };
-const cloudKey = (text, lang) => [settings.tts, settings.tts === 'eleven' ? settings.elevenVoice || ELEVEN_DEFAULT : googleName(lang) + googlePitch(), lang, text].join('|');
+// Microsoft Azure neural voices: Vietnamese (Hoài My, Nam Minh), Australian English, and Chinese / Hindi
+const AZURE_VOICES = {
+  vi: { f: ['vi-VN-HoaiMyNeural'], m: ['vi-VN-NamMinhNeural'] },
+  en: { f: ['en-AU-NatashaNeural', 'en-AU-AnnetteNeural', 'en-AU-CarlyNeural', 'en-AU-FreyaNeural', 'en-AU-JoanneNeural', 'en-AU-TinaNeural'], m: ['en-AU-WilliamNeural', 'en-AU-DarrenNeural', 'en-AU-DuncanNeural', 'en-AU-KenNeural', 'en-AU-NeilNeural', 'en-AU-TimNeural'] }
+};
+const azureName = lang => {
+  if (lang === 'zh') return 'zh-CN-XiaoxiaoNeural'; if (lang === 'hi') return 'hi-IN-SwaraNeural';
+  const k = speakerKind(), L = lang === 'vi' ? 'vi' : 'en';
+  if (!k) return (lang === 'vi' ? settings.azureVoiceVi : settings.azureVoiceEn) || AZURE_VOICES[L].f[0];
+  if (k.kid && L === 'en') return k.gender === 'f' ? 'en-AU-CarlyNeural' : 'en-AU-KenNeural';
+  const pool = AZURE_VOICES[L][k.gender]; return pool[k.seed % pool.length];
+};
+const azureProsody = () => { const k = speakerKind(); return !k ? ['-4%', '+0%'] : k.old ? ['-14%', '-8%'] : k.kid ? ['-2%', '+14%'] : ['-4%', '+0%']; };
+const cloudKey = (text, lang) => [settings.tts, settings.tts === 'eleven' ? settings.elevenVoice || ELEVEN_DEFAULT : settings.tts === 'azure' ? azureName(lang) + azureProsody().join('') : googleName(lang) + googlePitch(), lang, text].join('|');
 const cloudCached = (text, lang) => mem.has(cloudKey(text, lang)) || known.has(cloudKey(text, lang));
 export const ELEVEN_DEFAULT = '21m00Tcm4TlvDq8ikWAM'; // a warm, friendly premade voice; grown-ups can paste any voice ID
 export const ELEVEN_MODEL = 'eleven_turbo_v2_5';     // speaks both English and Vietnamese
@@ -234,7 +283,7 @@ async function cloudVoice(text, lang) {
   if (mem.has(k)) { const b = mem.get(k); mem.delete(k); mem.set(k, b); return b; }
   let data = await tget(k).catch(() => null);
   if (!data) {
-    data = settings.tts === 'eleven' ? await elevenTTS(text, lang) : await googleTTS(text, lang);
+    data = settings.tts === 'eleven' ? await elevenTTS(text, lang) : settings.tts === 'azure' ? await azureTTS(text, lang) : await googleTTS(text, lang);
     tput(k, data).catch(() => { });
   }
   known.add(k);
@@ -251,6 +300,17 @@ async function elevenTTS(text, lang) {
   if (!r.ok) throw new Error('ElevenLabs ' + r.status + ' ' + (await r.text()).slice(0, 200));
   return r.arrayBuffer();
 }
+async function azureTTS(text, lang) {
+  const region = (settings.azureRegion || 'australiaeast').trim().toLowerCase().replace(/\s+/g, ''), name = azureName(lang), [rate, pitch] = azureProsody();
+  const xml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+  const loc = name.split('-').slice(0, 2).join('-');
+  const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${loc}"><voice name="${name}"><prosody rate="${rate}" pitch="${pitch}">${xml(text)}</prosody></voice></speak>`;
+  const r = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+    method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': settings.ttsKey, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': 'audio-24khz-48kbitrate-mono-mp3' }, body: ssml
+  });
+  if (!r.ok) throw new Error('Azure ' + r.status + (r.status === 401 ? ' (check the key and the region)' : ' ' + (await r.text()).slice(0, 200)));
+  return r.arrayBuffer();
+}
 async function googleTTS(text, lang) {
   const name = googleName(lang);
   const r = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + encodeURIComponent(settings.ttsKey), {
@@ -265,6 +325,7 @@ async function googleTTS(text, lang) {
 // Try the natural voice once, and report a clear error to the grown-up if it does not work.
 export async function testCloudVoice(lang) {
   const text = lang === 'vi' ? 'Xin chào! Cùng chơi ở Thung Lũng Lấp Lánh nào!' : "Hello! Let's play in Sparkle Valley!";
+  setSpeaker(null); // the test uses the main voice, not the last character who spoke
   const buf = await cloudVoice(text, lang); await playBuffer(buf); return true;
 }
 // Make an ElevenLabs voice from the family recordings (this uploads the recordings to ElevenLabs).

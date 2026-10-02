@@ -63,6 +63,7 @@ const MODELS = {
   mahabodhi: () => { const p = [P(B(9, 1, 9), '#c9b89a', [0, .5, 0]), P(B(5.5, 4, 5.5), '#c9b089', [0, 3, 0]), P(new THREE.CylinderGeometry(.6, 2.6, 10, 4), '#d4ba90', [0, 10, 0], [0, Math.PI / 4, 0]), P(C(.5, .6, 1.4, 10), '#f2c230', [0, 15.6, 0])]; [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([a, b]) => p.push(P(new THREE.CylinderGeometry(.3, 1, 4, 4), '#d4ba90', [a * 3.3, 6.5, b * 3.3], [0, Math.PI / 4, 0]))); p.push(P(C(.4, .5, 3), '#7a5236', [6, 1.5, 3]), P(new THREE.IcosahedronGeometry(2.4, 1), '#4f9a4a', [6, 4.6, 3])); return p; }
 };
 
+export let CULTURE_CROPS = {};
 export function createHeritage(G, { give, sfx, say, toast }) {
   const { scene, world } = G;
   // find a clear, fairly flat spot near (x, z)
@@ -85,13 +86,13 @@ export function createHeritage(G, { give, sfx, say, toast }) {
     const water = id === 'halong' || id === 'reef';
     let x = nx, z = nz, mx, mz;
     if (water) { // in the lake's shallows, with the sign on the beach
-      const a = Math.atan2(nz - LAKE.z, nx - LAKE.x); x = LAKE.x + Math.cos(a) * (LAKE.r * (id === 'halong' ? .55 : .72)); z = LAKE.z + Math.sin(a) * (LAKE.r * (id === 'halong' ? .55 : .72));
+      const a = Math.atan2(nz - LAKE.z, nx - LAKE.x); x = LAKE.x + Math.cos(a) * (LAKE.r * (id === 'halong' ? .3 : .72)); z = LAKE.z + Math.sin(a) * (LAKE.r * (id === 'halong' ? .3 : .72));
       const m = new THREE.Mesh(merge(MODELS[model]()), toonVC()); m.position.set(x, WATER - (id === 'halong' ? 2.2 : .12), z); m.rotation.y = a; scene.add(m); outline(m, .03, '#4a3a3f'); mx = x; mz = z;
       x = LAKE.x + Math.cos(a) * (LAKE.r + 3); z = LAKE.z + Math.sin(a) * (LAKE.r + 3); [x, z] = spot(x, z, 1.5);
     } else {
       [x, z] = spot(nx, nz, 9); mx = x; mz = z;
       const rot = face(x, z, cen[cc][0], cen[cc][1]);
-      place(MODELS[model](), x, z, rot); world.colliders.push({ x, z, r: id === 'kakadu' ? 5 : 7 });
+      place(MODELS[model](), x, z, rot); world.colliders.push({ x, z, r: id === 'kakadu' ? 5 : model === 'cave' ? 9.5 : 7 });
       if (id === 'kakadu') { // painted animals on the rock face
         const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d');
         g.fillStyle = '#b0643a'; g.fillRect(0, 0, 512, 256); g.fillStyle = '#f4efe6'; g.strokeStyle = '#f4efe6'; g.lineWidth = 6;
@@ -102,24 +103,25 @@ export function createHeritage(G, { give, sfx, say, toast }) {
         const pl = new THREE.Mesh(new THREE.PlaneGeometry(10, 4.4), new THREE.MeshBasicMaterial({ map: t })); pl.position.set(x + Math.sin(rot) * 2.75, heightAt(x, z) + 2.4, z + Math.cos(rot) * 2.75); pl.rotation.y = rot; scene.add(pl);
       }
       // the sign stands in front
-      x += Math.sin(rot) * 8.5; z += Math.cos(rot) * 8.5;
+      const out = model === 'cave' ? 13 : model === 'hue' || model === 'forbidden' || model === 'exhibition' ? 10 : 8.5;
+      x += Math.sin(rot) * out; z += Math.cos(rot) * out;
     }
     info(x, heightAt(x, z) + 3.2, z);
-    const lm = { id, icon, x, z, mx, mz, name: () => T(name[0], name[1]), fact };
+    const lm = { id, icon, cc, x, z, mx, mz, name: () => T(name[0], name[1]), fact };
     LANDMARKS.push(lm);
     G.interactables.push({ id: 'pc_' + id, x, z, r: 3.4, icon: 'ℹ️', label: () => T('About: ', 'Tìm hiểu: ') + lm.name(), act: h => postcard(G, h, lm) });
   }
 
   // ---------- friends playing traditional games (watch them, tap ℹ️ to learn) ----------
   const groups = [
-    { c: [CHINA.x + 9, CHINA.z + 2], kind: 'shuttle', ppl: [look('shirt', '#e8433a', '#1d1412', 'short', '#f3d2b0'), look('dress', '#ffd23f', '#1d1412', 'buns', '#f3d2b0')], name: ['Jianzi (shuttlecock kicking)', 'Đá cầu Trung Quốc (Jianzi)'], fact: ['In China, children and grandparents kick a feathered shuttlecock called jianzi, and try not to let it touch the ground. It is like Vietnamese đá cầu!', 'Ở Trung Quốc, trẻ em và ông bà đá một quả cầu lông gọi là jianzi, cố không để rơi xuống đất. Giống đá cầu của Việt Nam!'] },
-    { c: [CHINA.x - 9, CHINA.z - 4], kind: 'board', board: '#e8c070', ppl: [look('tunic', '#2d84d4', '#d8d8d8', 'short', '#f3d2b0'), look('tunic', '#6a4a8a', '#d8d8d8', 'short', '#f3d2b0')], name: ['Xiangqi (Chinese chess)', 'Cờ tướng'], fact: ['Grandpas in China play xiangqi in the park. The pieces are flat round discs with characters on them. Vietnamese cờ tướng is the same game!', 'Các ông ở Trung Quốc chơi cờ tướng trong công viên. Quân cờ là những đĩa tròn có chữ. Cờ tướng Việt Nam cũng là trò này!'] },
-    { c: [INDIA.x + 9, INDIA.z + 10], kind: 'board', board: '#f4e2b8', ppl: [look('shirt', '#ff9f1a', '#1d1412', 'short', '#c99a76'), look('dress', '#ff4f9a', '#1d1412', 'long', '#b47a55'), look('tunic', '#2fb04f', '#1d1412', 'short', '#c99a76'), look('dress', '#3cc7e8', '#1d1412', 'buns', '#c99a76')], name: ['Carrom', 'Cờ carrom'], fact: ['Carrom is a favourite family game in India. You flick a striker to knock the wooden discs into the corner pockets.', 'Carrom là trò chơi gia đình rất được yêu thích ở Ấn Độ. Búng quân đánh để đẩy các quân gỗ vào lỗ ở góc bàn.'] },
-    { c: [INDIA.x - 10, INDIA.z + 8], kind: 'kite', ppl: [look('shirt', '#8a5cf6', '#1d1412', 'short', '#c99a76'), look('dress', '#ffd23f', '#1d1412', 'long', '#c99a76')], name: ['Kite festival (Makar Sankranti)', 'Lễ hội thả diều (Makar Sankranti)'], fact: ['In January, the sky over India fills with kites for the festival of Makar Sankranti. Families fly kites from the rooftops!', 'Vào tháng Một, bầu trời Ấn Độ đầy diều trong lễ hội Makar Sankranti. Cả nhà thả diều trên mái nhà!'] },
-    { c: [VILLAGE.x - 10, VILLAGE.z + 14], kind: 'rope', ppl: [look('dress', '#ff7eb8', '#1d1412', 'buns'), look('shirt', '#3cc7e8', '#1d1412', 'short'), look('aodai', '#ffd23f', '#1d1412', 'long')], name: ['Nhảy dây (jump rope)', 'Nhảy dây'], fact: ['In Vietnamese schoolyards, two friends swing a long rope and the others jump in, singing a counting rhyme.', 'Ở sân trường Việt Nam, hai bạn quay dây dài, các bạn khác nhảy vào và cùng hát đồng dao đếm số.'] },
-    { c: [VILLAGE.x + 12, VILLAGE.z - 12], kind: 'board', board: '#d9a066', ppl: [look('tunic', '#c0392b', '#8a8a8a', 'short', '#e0aa80'), look('shirt', '#ffffff', '#8a8a8a', 'short', '#e0aa80')], name: ['Cờ tướng under the tree', 'Cờ tướng dưới gốc cây'], fact: ['In Vietnamese villages, grandpas play cờ tướng under a shady tree, and everyone gathers round to watch and give advice!', 'Ở làng quê Việt Nam, các ông chơi cờ tướng dưới gốc cây, mọi người xúm lại xem và góp ý!'] },
-    { c: [AUSSIE.x0 + 10, AUSSIE.z1 + 10], kind: 'footy', ppl: [look('shirt', '#1d3a7a', '#e8c26a', 'short', '#ffe3d1', 'cap'), look('shirt', '#e8433a', '#6b4226', 'long', '#ffe3d1')], name: ['Kick-to-kick (Aussie Rules footy)', 'Đá bóng bầu dục kiểu Úc'], fact: ['Australian Rules football uses an oval ball. Kids play “kick-to-kick” in the park and shout “Mark!” when they catch it.', 'Bóng bầu dục kiểu Úc dùng quả bóng hình bầu dục. Các bạn nhỏ đá chuyền nhau trong công viên và hô “Mark!” khi bắt được bóng.'] },
-    { c: [AUSSIE.x1 - 6, AUSSIE.z0 - 10], kind: 'bowls', ppl: [look('shirt', '#ffffff', '#d8d8d8', 'short', '#ffe3d1', 'cap'), look('dress', '#ffffff', '#d8d8d8', 'buns', '#ffe3d1')], name: ['Lawn bowls', 'Bowling trên cỏ'], fact: ['Lawn bowls is loved by grandparents in Australia. Players roll heavy balls across the grass to stop as close as they can to the little white “jack”.', 'Bowling trên cỏ được ông bà ở Úc rất yêu thích. Người chơi lăn những quả bóng nặng trên cỏ để dừng gần quả bóng trắng nhỏ “jack” nhất.'] }
+    { cc: 'cn', c: [CHINA.x + 9, CHINA.z + 2], kind: 'shuttle', ppl: [look('shirt', '#e8433a', '#1d1412', 'short', '#f3d2b0'), look('dress', '#ffd23f', '#1d1412', 'buns', '#f3d2b0')], name: ['Jianzi (shuttlecock kicking)', 'Đá cầu Trung Quốc (Jianzi)'], fact: ['In China, children and grandparents kick a feathered shuttlecock called jianzi, and try not to let it touch the ground. It is like Vietnamese đá cầu!', 'Ở Trung Quốc, trẻ em và ông bà đá một quả cầu lông gọi là jianzi, cố không để rơi xuống đất. Giống đá cầu của Việt Nam!'] },
+    { cc: 'cn', c: [CHINA.x - 9, CHINA.z - 4], kind: 'board', board: '#e8c070', ppl: [look('tunic', '#2d84d4', '#d8d8d8', 'short', '#f3d2b0'), look('tunic', '#6a4a8a', '#d8d8d8', 'short', '#f3d2b0')], name: ['Xiangqi (Chinese chess)', 'Cờ tướng'], fact: ['Grandpas in China play xiangqi in the park. The pieces are flat round discs with characters on them. Vietnamese cờ tướng is the same game!', 'Các ông ở Trung Quốc chơi cờ tướng trong công viên. Quân cờ là những đĩa tròn có chữ. Cờ tướng Việt Nam cũng là trò này!'] },
+    { cc: 'in', c: [INDIA.x + 9, INDIA.z + 10], kind: 'board', board: '#f4e2b8', ppl: [look('shirt', '#ff9f1a', '#1d1412', 'short', '#c99a76'), look('dress', '#ff4f9a', '#1d1412', 'long', '#b47a55'), look('tunic', '#2fb04f', '#1d1412', 'short', '#c99a76'), look('dress', '#3cc7e8', '#1d1412', 'buns', '#c99a76')], name: ['Carrom', 'Cờ carrom'], fact: ['Carrom is a favourite family game in India. You flick a striker to knock the wooden discs into the corner pockets.', 'Carrom là trò chơi gia đình rất được yêu thích ở Ấn Độ. Búng quân đánh để đẩy các quân gỗ vào lỗ ở góc bàn.'] },
+    { cc: 'in', c: [INDIA.x - 10, INDIA.z + 8], kind: 'kite', ppl: [look('shirt', '#8a5cf6', '#1d1412', 'short', '#c99a76'), look('dress', '#ffd23f', '#1d1412', 'long', '#c99a76')], name: ['Kite festival (Makar Sankranti)', 'Lễ hội thả diều (Makar Sankranti)'], fact: ['In January, the sky over India fills with kites for the festival of Makar Sankranti. Families fly kites from the rooftops!', 'Vào tháng Một, bầu trời Ấn Độ đầy diều trong lễ hội Makar Sankranti. Cả nhà thả diều trên mái nhà!'] },
+    { cc: 'vn', c: [VILLAGE.x - 10, VILLAGE.z + 14], kind: 'rope', ppl: [look('dress', '#ff7eb8', '#1d1412', 'buns'), look('shirt', '#3cc7e8', '#1d1412', 'short'), look('aodai', '#ffd23f', '#1d1412', 'long')], name: ['Nhảy dây (jump rope)', 'Nhảy dây'], fact: ['In Vietnamese schoolyards, two friends swing a long rope and the others jump in, singing a counting rhyme.', 'Ở sân trường Việt Nam, hai bạn quay dây dài, các bạn khác nhảy vào và cùng hát đồng dao đếm số.'] },
+    { cc: 'vn', c: [VILLAGE.x + 12, VILLAGE.z - 12], kind: 'board', board: '#d9a066', ppl: [look('tunic', '#c0392b', '#8a8a8a', 'short', '#e0aa80'), look('shirt', '#ffffff', '#8a8a8a', 'short', '#e0aa80')], name: ['Cờ tướng under the tree', 'Cờ tướng dưới gốc cây'], fact: ['In Vietnamese villages, grandpas play cờ tướng under a shady tree, and everyone gathers round to watch and give advice!', 'Ở làng quê Việt Nam, các ông chơi cờ tướng dưới gốc cây, mọi người xúm lại xem và góp ý!'] },
+    { cc: 'au', c: [AUSSIE.x0 + 10, AUSSIE.z1 + 10], kind: 'footy', ppl: [look('shirt', '#1d3a7a', '#e8c26a', 'short', '#ffe3d1', 'cap'), look('shirt', '#e8433a', '#6b4226', 'long', '#ffe3d1')], name: ['Kick-to-kick (Aussie Rules footy)', 'Đá bóng bầu dục kiểu Úc'], fact: ['Australian Rules football uses an oval ball. Kids play “kick-to-kick” in the park and shout “Mark!” when they catch it.', 'Bóng bầu dục kiểu Úc dùng quả bóng hình bầu dục. Các bạn nhỏ đá chuyền nhau trong công viên và hô “Mark!” khi bắt được bóng.'] },
+    { cc: 'au', c: [AUSSIE.x1 - 6, AUSSIE.z0 - 10], kind: 'bowls', ppl: [look('shirt', '#ffffff', '#d8d8d8', 'short', '#ffe3d1', 'cap'), look('dress', '#ffffff', '#d8d8d8', 'buns', '#ffe3d1')], name: ['Lawn bowls', 'Bowling trên cỏ'], fact: ['Lawn bowls is loved by grandparents in Australia. Players roll heavy balls across the grass to stop as close as they can to the little white “jack”.', 'Bowling trên cỏ được ông bà ở Úc rất yêu thích. Người chơi lăn những quả bóng nặng trên cỏ để dừng gần quả bóng trắng nhỏ “jack” nhất.'] }
   ];
   groups.forEach((gr, gi) => {
     const [x, z] = spot(gr.c[0], gr.c[1], 4), y = heightAt(x, z), n = gr.ppl.length, rad = gr.kind === 'board' ? 1.1 : gr.kind === 'rope' ? 2.2 : 2.6;
@@ -141,11 +143,11 @@ export function createHeritage(G, { give, sfx, say, toast }) {
       }
     });
     info(x, y + 3.3, z);
-    G.interactables.push({ id: 'cult' + gi, x, z, r: rad + 2.6, icon: 'ℹ️', label: () => T('Learn about ', 'Tìm hiểu ') + T(gr.name[0], gr.name[1]), act: () => G.dialog && G.dialog(T(gr.name[0], gr.name[1]), [gr.fact]) });
+    G.interactables.push({ id: 'cult' + gi, x, z, r: rad + 2.6, icon: 'ℹ️', label: () => T('Learn about ', 'Tìm hiểu ') + T(gr.name[0], gr.name[1]), cc: gr.cc, act: h => { const p = h.profile; p.learned = p.learned || {}; if (!p.learned[gi]) { p.learned[gi] = gr.cc; G.save && G.save(); } G.dialog && G.dialog(T(gr.name[0], gr.name[1]), [gr.fact]); } });
   });
 
   // ---------- crops and fruit trees from each culture ----------
-  const CROPS = {
+  const CROPS = CULTURE_CROPS = {
     vn: [['coconut', '🥥', 'tree', 9, ['Coconut', 'Dừa'], '#7a5236'], ['jackfruit', '🍈', 'tree', 10, ['Jackfruit', 'Mít'], '#9ccf5a'], ['chilli', '🌶️', 'veg', 4, ['Chilli', 'Ớt'], '#e8433a'], ['waterspinach', '🥬', 'veg', 4, ['Water spinach', 'Rau muống'], '#4f9a4a'], ['sweetpotato', '🍠', 'veg', 5, ['Sweet potato', 'Khoai lang'], '#a8433a']],
     au: [['macadamia', '🥜', 'tree', 9, ['Macadamia nuts', 'Hạt mắc ca'], '#c98a4a'], ['quandong', '🍑', 'tree', 8, ['Quandong (desert peach)', 'Quả quandong (đào sa mạc)'], '#e8433a'], ['fingerlime', '🍋', 'tree', 9, ['Finger lime', 'Chanh ngón tay'], '#9ccf5a'], ['bushtomato', '🍅', 'veg', 6, ['Bush tomato', 'Cà chua dại'], '#e8a33a']],
     cn: [['cnpeach', '🍑', 'tree', 8, ['Longevity peach', 'Đào tiên'], '#ffb3cf'], ['mandarin', '🍊', 'tree', 7, ['Mandarin', 'Quýt'], '#ff9f1a'], ['bokchoy', '🥬', 'veg', 4, ['Bok choy', 'Cải thìa'], '#7ac06a'], ['snowpea', '🫛', 'veg', 5, ['Snow peas', 'Đậu Hà Lan'], '#5fb04f']],

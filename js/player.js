@@ -6,6 +6,7 @@ import { WATER, heightAt } from './world.js';
 import { clamp, lerp, angleLerp } from './util.js';
 import { SFX } from './audio.js';
 
+const _ray = new THREE.Raycaster(), _dir = new THREE.Vector3();
 const GRAV = 22, WALK = 5.5, RUN = 9.5, SWIM = 3.4, CLIMB = 2.6, GLIDE = 8, RIDE = 11.5;
 
 export class Hero {
@@ -48,6 +49,16 @@ export class Hero {
     this.manualCamT -= dt;
 
     if (this.towerClimb) return this.updateTowerClimb(dt, t, game);
+    // something else is moving the explorer: a pet towing them to shore, or the ferry
+    if (this.carry) {
+      const c = this.carry(dt, t, pad);
+      if (c) {
+        this.pos.set(c.x, c.y, c.z); if (c.yaw != null) this.yaw = c.yaw;
+        this.vy = 0; this.onGround = !c.swim && c.state !== 'swim'; this.gliding = false; this.fallStart = null; this.goal = null;
+        if (c.rest) { this.stamina = Math.min(this.staminaMax, this.stamina + dt * .45); if (this.stamina >= this.profile.staminaMax * .999) this.exhausted = false; }
+        this.state = c.state || 'idle'; this.speed = c.speed || 0; this.finish(dt, t, game, c.rideY || 0); return;
+      }
+    }
 
     // The stick steers relative to the camera as it was when the child started pushing, so the Easy
     // camera swinging round behind them never bends their path into circles.
@@ -180,14 +191,18 @@ export class Hero {
     // is walking, so what's ahead is always on screen (it used to stay fixed facing north, which hid
     // everything when walking towards the camera). It waits a moment so small turns don't spin it.
     if (easy) {
-      if (this.speed > .8 && !this.towerClimb && this.manualCamT <= 0) { this.easyT = (this.easyT || 0) + dt; if (this.easyT > .35) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * 1.6)); }
-      else this.easyT = 0;
-      this.camPitch += ((this.towerClimb ? .25 : .55) - this.camPitch) * Math.min(1, dt * 3);
+      if (this.speed > .8 && !this.towerClimb && this.manualCamT <= 0) { this.easyT = (this.easyT || 0) + dt; this.stillT = 0; if (this.easyT > .35) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * 1.6)); }
+      else { this.easyT = 0; this.stillT = (this.stillT || 0) + dt; }
+      // standing still next to a landmark: slowly turn so it is in front of the camera
+      if (this._lm && (this._lmF || 0) > .25 && this.stillT > .8 && this.manualCamT <= 0 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, Math.atan2(p.x - this._lm.x, p.z - this._lm.z), Math.min(1, dt * 1.2));
+      // near a landmark, step back and look more level so the whole building fits on screen
+      const lf = this._lmF = lerp(this._lmF || 0, game.landmarkFrame ? game.landmarkFrame(this) : 0, Math.min(1, dt * 1.5));
+      this.camPitch += ((this.towerClimb ? .25 : game.lookUpT > 0 ? .1 : .55 - lf * .12) - this.camPitch) * Math.min(1, dt * 3);
     }
     else if (this.manualCamT <= 0 && this.speed > 1 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * .6));
     const close = game.closeUp === this.i; // wardrobe close-up
     if (close) { this.camYaw = angleLerp(this.camYaw, this.yaw, Math.min(1, dt * 4)); this.camPitch += (.08 - this.camPitch) * Math.min(1, dt * 4); }
-    const dist = close ? 2.8 : (easy ? 11.5 : this.camDist) * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (this.zoom || 1) * (game.zoom || 1);
+    const dist = close ? 2.8 : (easy ? 11.5 * (1 + (this._lmF || 0) * .55) : this.camDist) * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (this.zoom || 1) * (game.zoom || 1);
     const target = new THREE.Vector3(p.x, p.y + (close ? .2 : 1.15) + rideY, p.z);
     const want = new THREE.Vector3(p.x + Math.sin(this.camYaw) * Math.cos(this.camPitch) * dist, target.y + Math.sin(this.camPitch) * dist, p.z + Math.cos(this.camYaw) * Math.cos(this.camPitch) * dist);
     // keep the camera out of houses: if a wall is between the child and the camera, move the camera in
@@ -205,6 +220,17 @@ export class Hero {
         if (t0 <= t1 && t0 < tmin) tmin = t0;
       }
       if (tmin < 1) { const k = Math.max(.22, tmin - .04); want.x = target.x + dx * k; want.z = target.z + dz * k; want.y = target.y + (want.y - target.y) * Math.max(k, .5); }
+    }
+    // anything solid (houses, landmarks, boats…) between the child and the camera: move the camera in front of it
+    const bl = game.camBlockers && !close ? game.camBlockers() : null;
+    if (bl && bl.length) {
+      _dir.subVectors(want, target); const full = _dir.length(); _dir.divideScalar(full || 1);
+      _ray.set(target, _dir); _ray.far = full + .8;
+      // check both sides of every surface (roof overhangs and walls seen from inside count too)
+      const mats = game.camBlockerMats(); mats.forEach(m => { m._side = m.side; m.side = THREE.DoubleSide; });
+      const hit = _ray.intersectObjects(bl, false)[0];
+      mats.forEach(m => { m.side = m._side; });
+      if (hit) { const d = Math.max(1.2, hit.distance - .8); want.copy(target).addScaledVector(_dir, d); want.y = Math.max(want.y, target.y + d * .35); }
     }
     const gy = this.world.groundAt(want.x, want.z) + .7; if (want.y < gy) want.y = gy;
     this.camPos.lerp(want, Math.min(1, dt * 8));

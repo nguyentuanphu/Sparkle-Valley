@@ -298,6 +298,113 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - **Every character is tappable:** the other children wandering the farm now wave back and say hi. A test checks that no avatar in the world is without an interaction.
 - **Still not done:** asphalt and dirt roads with golden welcome gates between villages. The assistant's safety system stopped this twice in that session, so please ask for it in a new session.
 
+### Round 13 (pets, ferry, passport, festivals, weather and lots of little joys)
+- **Pets** (`js/pets.js`):
+  - Each child adopts up to **2 pets** and names them. Names can be typed, or tapped from a list of ideas for children who can't type yet.
+  - Pets: puppy (free), kitty, bunny, panda cub, joey and buffalo calf.
+  - Adopt them at Mr. Bear's shop or from Backpack → 🐾 My pets. 🏡 sends a pet to live on the farm to make room.
+  - Older saves move over: each child starts with a puppy, and the first child keeps any pets bought before.
+  - Pets follow their owner, can be patted, and sniff out hidden Leafies (👃 above them, with a bark).
+  - **Water rescue:** if a child runs out of energy in deep water, a big 🆘 "Call <pet>!" button appears. The pet swims out, then the child taps "Kick! Kick!" to swim faster while the pet pulls them to shore.
+    - The pet comes by itself after 9 seconds, and the tow never stops, so little ones always get saved.
+    - The first rescue gives a "hero" reward. Without a pet, Ông Cú helps as before.
+- **Free ferries** (`js/ferry.js`):
+  - A blue ferry goes round Mirror Lake, stopping at four piers: North Beach, Sunny Farm, Two Homes Street and the Three Regions Market.
+  - Two bamboo rafts cross the river.
+  - At the end of a pier, tap "Ride the free ferry", or "Wait" and you board when it arrives. Tap "Get off" at a stop, or ask to get off at the next one.
+  - Boats show on the minimap. The Hạ Long islands moved nearer the lake centre to keep the route clear.
+- **Passport** (`js/passport.js`, new 🛂 tab in the Sparkle Pad):
+  - One page per country with 5 stamps: visit the village, 2 postcards, play one of its games, harvest one of its crops, learn about one of its traditional games.
+  - Tapping an empty stamp says how to get it.
+  - A full page gives a hat: khăn rằn scarf (Vietnam), Akubra (Australia), silk cap (China), pagri (India). Earned hats appear in the Backpack.
+- **Festivals** (`js/festivals.js`), by the device's date:
+  - Which festivals: Tết / Lunar New Year, Mid-Autumn, Diwali, Christmas and Australia Day.
+  - What changes: decorations round the villages and fireworks at night. A festival table gives a treat or lì xì and a sticker once a day, then offers a matching game.
+  - Grown-ups can preview any festival or switch them off. Moon-festival dates are listed up to 2032.
+- **Weather and seasons** (`js/weather.js`):
+  - Gentle showers grey the sky, rain falls round each player, and the rain waters the farm.
+  - Puddles appear; splash in them or jump in for a "Puddle jump!".
+  - A rainbow appears afterwards, and the easy camera tilts up for a few seconds so it can be seen.
+  - Blossoms drift in January–March and autumn leaves in September–November.
+  - Grown-ups can switch rain off.
+- **15 new dishes** from the four cultures' crops (rau muống xào, chè mít, banana macadamia bread, quandong pie, bok choy dumplings, aam panna, dal…), plus festival treats (mooncake, ladoo, lamington, sausage sizzle, Christmas cookie).
+- **Little joys** (`js/fun.js`):
+  - Tap anything for a reaction:
+    - Villagers hop and wave, then the child walks over to talk.
+    - Farm animals and pets make their sound.
+    - Ducks and chickens scurry, butterflies flutter.
+    - Trees and bushes wobble and drop leaves, sometimes a bird.
+    - Tapping yourself makes your explorer cheer.
+  - Confetti on every reward.
+  - **Sticker scrapbook** (Album → 📒): 3 pages to decorate with stickers and photos. Drag, resize, turn or bin.
+- **For under-5s:** conversations show big 🔁 (hear again) and 👍 (next) picture buttons.
+- **Walk there:** on the map, a place can now be walked to as well as flown to, following a trail of 👣 footprints.
+- **Learning** (`js/learn.js`, `js/games/music.js`):
+  - **Story time** on a mat under the banyan tree in Lotus Village, with five narrated folk tales:
+    - Bánh chưng bánh giầy and Sơn Tinh – Thủy Tinh (Vietnam)
+    - Tiddalik the frog, credited to Aboriginal storytellers (Australia)
+    - Chang'e and the moon (China)
+    - The Monkey and the Crocodile from the Panchatantra (India)
+  - **Counting hunts:** a 🔎 board in each village (5 lotus flowers, sleepy koalas, red lanterns, peacock feathers). Children count aloud, and also in Chinese or Hindi when that's switched on.
+  - **Music Corner** (stall at the market, and in the Games hub): đàn bầu, didgeridoo, guzheng and tabla. Record a tune and play it back.
+- **Grown-ups:**
+  - Rain on/off, calm mode (quieter music, fewer moving effects), and big text and buttons.
+  - Festival picker.
+  - **Rest timer** (off/15/30/45/60 minutes a day): the explorer says goodnight on a moon screen, and a grown-up can hold a button for 10 more minutes.
+  - Minutes are counted on this device only; nothing is sent anywhere.
+- **Still not done:** asphalt and dirt roads, and golden welcome gates between villages. The assistant's safety system stopped this request in an earlier session, so please ask for it in a fresh session.
+
+### Round 14 (seeing landmarks, connecting from far away)
+- **Landmarks are easy to see** (`js/showcase.js`):
+  - Near a landmark, the easy camera steps back and looks more level. When the child stands still, it turns gently so the landmark is in front.
+  - Tapping a landmark's ℹ️ sign first flies the camera slowly round it. It picks the clearest direction (avoiding hills, houses and trees), shows the name, and has a Skip button. Then the fact is read.
+  - Each landmark has a size in `SIZE` so the camera knows how far back to go.
+- **Playing with friends far away** (`js/net.js`):
+  - Why it got stuck: the devices only used STUN, which is enough on simple home Wi-Fi. A friend on mobile data or a strict router needs a relay (TURN), otherwise the link never opens and "Connecting…" never ends.
+  - The game now tries free public relays automatically. Grown-ups → Online play has a field for your own relay: either a credentials link (e.g. a free metered.ca account's "turn credentials" URL) or a `turn:` address with a name and password. Both devices need the same relay.
+  - Joining never waits forever: after 12 s it says it is still trying, and after 30 s (or as soon as the link fails) it stops with tips.
+  - A **🔍 Test the connection** button reports whether this device can reach the play service and whether a relay works.
+  - Tested: 3 devices connect through a local server with voice. A real far-away connection can't be tested on the build machine (no internet), so please try it on two phones on different networks.
+
+### Round 15 (camera inside buildings; kids' UI checklist)
+- **Bug: the camera could end up inside a building** (a screen full of dark walls). Cause: the camera only avoided a few box-shaped houses, and some older landmarks (Opera House, Uluru) had no walls, with their postcard spot in the middle of the building.
+  - **Fix: real camera collision.** The camera checks every solid building, landmark and boat between itself and the child (both sides of each surface), and moves in front of it.
+  - The Opera House and lifesavers' tower are now solid. Older landmarks' postcard spots moved outside onto open ground, and Uluru uses its true centre. The Phong Nha cave sign moved out of the cave dome.
+  - Test: the child at all 28 landmark signs and 21 house doors, facing 4 ways each. 194 of 196 views are clear; in the other 2 the camera only grazes a surface.
+- **Kids' UI checklist (gaps closed):**
+  - **Captions** (on by default): every spoken line also shows as text at the bottom, even with the voice off.
+  - **Text size** in three steps (Normal, Big, Bigger).
+  - The room's starter can **remove a player** (🚪) from an online room.
+
+### Round 16 (Azure voices; backups that really reach iCloud / Drive)
+- **Microsoft Azure voices** (Grown-ups → More natural voice → Voice engine: Microsoft Azure):
+  - Set up: paste Key 1 and the Location (region) of a Speech service resource. The free F0 tier gives 500,000 characters a month.
+  - Characters get their own voices: Hoài My or Nam Minh in Vietnamese, six women's and six men's Australian voices, Carly or Ken for kids, Xiaoxiao for Chinese and Swara for Hindi. Grandparents speak slower and lower, kids higher.
+  - Grown-ups can choose the main voices themselves.
+  - Like ElevenLabs and Google, each line is fetched once and then kept on the device.
+  - Step-by-step help for ElevenLabs and Azure is shown under the key field.
+- **Backup to iCloud / Google Drive fixed:**
+  - Why it failed: phones only allow some file types in the share sheet, and `.json` is not one of them, so the game silently fell back to a download.
+  - Fix: the backup is now a plain `.txt` file, so "Save to Files → iCloud Drive" and "Drive" appear. Open backup accepts `.txt` and older `.json` files.
+
+### Round 17 (offline voice pack from ElevenLabs)
+- **The game can play every line from recorded files (`voices/`) instead of the device voice, with no internet.**
+  - `tools/voice-lines.mjs` finds every spoken line: 612 lines in English and Tiếng Việt, about 66,000 characters, plus the 40 Chinese and Hindi learning words.
+  - `tools/make-voice-pack.mjs` records them with ElevenLabs.
+  - Lines with a child's name or other changing words can't be recorded in advance; the device voice says those.
+- **Characters:** grandparents play a little slower and deeper, children a little higher, and men use the man's voice when the pack has one (`--cast`).
+- **Offline:**
+  - Played lines are kept automatically.
+  - Grown-ups → 🎙️ Offline voice pack → "Keep all voices on this device" downloads the whole pack (about 5–20 MB) so every line works offline.
+  - The pack lives in its own cache, so game updates don't delete it.
+- **How to make the pack** (on any computer with Node.js 18+, in the game folder):
+  1. `node tools/make-voice-pack.mjs --key YOUR_ELEVENLABS_KEY --dry`: shows how many characters it needs and how many your plan has left.
+  2. `node tools/make-voice-pack.mjs --key YOUR_ELEVENLABS_KEY`: makes the files in `voices/`. It stops if there aren't enough characters left. Re-running only makes missing files, and `--limit 300` makes part of it now.
+  3. Options: `--voice-f <voice id>` / `--voice-m <voice id>` to choose voices, and `--cast` to add a man's voice (doubles the cost).
+  4. Publish: include the `voices/` folder in the Netlify upload.
+  - The key is used only while the tool runs and is never written into the game.
+- **Not done yet:** the real pack. The build machine's network is not allowed to reach api.elevenlabs.io. The whole pipeline was tested end-to-end against a pretend ElevenLabs server (1,261 files made and played in the game; the test files were then deleted).
+
 ## 3. How it's built
 
 **Tech:**
@@ -440,5 +547,5 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - **Test in the browser** (desktop, tablet and phone sizes, 1 and 2 players, both languages) before saying something is done, and say plainly what wasn't tested.
 - Keep the existing file structure and code style, and write all text as `T('English', 'Tiếng Việt')`.
 - **Bump `VERSION` in `sw.js`** and add new files to its `FILES` list on every change.
-- Commit and push to GitHub as you go (branch, then a pull request).
+- **HARD RULE: never `git push` (and never open or update a pull request) until the owner has checked the work and clearly confirmed.** Commit locally, show what changed and how it was tested, give the Netlify zip, then wait for a "yes, push". A confirmation covers that one push only.
 - Explain how to deploy and install updates on Android and iPhone in plain steps.

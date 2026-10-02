@@ -1,0 +1,48 @@
+// Lists every line the game speaks (English + Tiếng Việt), with the character who says it, so a voice
+// pack can be made. Usage: node tools/voice-lines.mjs > tools/voice-lines.json
+// Lines that contain a child's name or other changing words (`${…}`) can't be recorded in advance; the
+// game speaks those with the device voice.
+import fs from 'fs';
+import path from 'path';
+
+const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const files = [...fs.readdirSync(path.join(ROOT, 'js')).map(f => 'js/' + f), ...fs.readdirSync(path.join(ROOT, 'js/games')).map(f => 'js/games/' + f)].filter(f => f.endsWith('.js'));
+const VI = /[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/i;
+// a quoted string without ${…}
+const Q = String.raw`(?:'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|\x60(?:[^\x60\\$]|\\.|\$(?!\{))*\x60)`;
+const unq = s => s.slice(1, -1).replace(/\\(['"\x60\\])/g, '$1').replace(/\\n/g, ' ');
+// spoken contexts: say/sayAsync/api.say(en, vi), dialog lines [[en, vi]], story pages [pic, en, vi],
+// how-to cards S(pic, en, vi), facts and lines arrays
+const PATTERNS = [
+  new RegExp(String.raw`\b(?:say|sayAsync|api\.say|\.say)\(\s*(${Q})\s*,\s*(${Q})`, 'g'),
+  new RegExp(String.raw`\[\s*(${Q})\s*,\s*(${Q})\s*\]`, 'g'),
+  new RegExp(String.raw`\[\s*${Q}\s*,\s*(${Q})\s*,\s*(${Q})\s*\]`, 'g'),
+  new RegExp(String.raw`\bS\(\s*${Q}\s*,\s*(${Q})\s*,\s*(${Q})\s*\)`, 'g'),
+  new RegExp(String.raw`\b(?:fact|story|hint|about)\s*:\s*\[\s*(${Q})\s*,\s*(${Q})`, 'g')
+];
+export function collectLines() {
+const seen = new Map();
+for (const f of files) {
+  const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+  for (const re of PATTERNS) {
+    re.lastIndex = 0; let m;
+    while ((m = re.exec(src))) {
+      const en = unq(m[1]).trim(), vi = unq(m[2]).trim();
+      if (!en || !vi || en.length < 2) continue;
+      if (!VI.test(vi) && en === vi) continue;             // not a translation pair
+      if (/^[\p{Emoji}\s✓✕+−=]+$/u.test(en)) continue;     // pictures only
+      if (en.split(/\s+/).length < 2 && !/[!?.]$/.test(en)) continue; // single-word labels are not speech
+      const key = en + '\u0000' + vi;
+      if (!seen.has(key)) seen.set(key, { en, vi, files: new Set() });
+      seen.get(key).files.add(f);
+    }
+  }
+}
+return [...seen.values()].map(l => ({ en: l.en, vi: l.vi, from: [...l.files].join(',') }));
+}
+if (process.argv[1] && process.argv[1].endsWith('voice-lines.mjs')) {
+const lines = collectLines();
+const chars = lines.reduce((a, l) => a + l.en.length + l.vi.length, 0);
+if (process.argv.includes('--count')) { console.log(JSON.stringify({ lines: lines.length, characters: chars, en: lines.reduce((a, l) => a + l.en.length, 0), vi: lines.reduce((a, l) => a + l.vi.length, 0) })); }
+else console.log(JSON.stringify(lines, null, 1));
+}
