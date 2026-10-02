@@ -856,3 +856,26 @@ button { color: var(--text); }
 .gl-combo.lucky { background: linear-gradient(180deg, #ffe066, #ffb020); color: #5a3a00; }
 @keyframes comboUp { 0% { transform: translate(-50%, 20px) scale(.5); opacity: 0; } 20% { transform: translate(-50%, 0) scale(1.1); opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(-50%, -40px) scale(1); opacity: 0; } }
 .wordlist { display: flex; flex-direction: column; gap: 6px; } .wordlist span { background: #fff; border-radius: 14px; padding: 8px 12px; font-size: 15px; box-shadow: 0 1px 4px rgba(80,40,140,.1); }
+
+/* ---------- add to home screen ---------- */
+.title-top { position: absolute; top: calc(env(safe-area-inset-top) + 14px); right: 14px; }
+.installchip { border: 0; border-radius: 999px; padding: 10px 16px; background: rgba(255, 255, 255, .92); box-shadow: var(--shadow); font-size: 15px; font-weight: 700; color: #2b2238; white-space: nowrap; }
+.installrow { margin: 4px 0 6px; font-weight: 700; }
+.title-foot { flex-wrap: nowrap; max-width: calc(100vw - 24px); }
+.title-foot .seg.lang { flex-wrap: nowrap; white-space: nowrap; }
+@media (max-width: 420px) {
+  .title-foot .seg.lang button { padding: 9px 11px; font-size: 15px; }
+  .title-foot .about { padding: 11px 13px; }
+  .title-foot .about span { display: none; }
+}
+.installguide .card { max-width: 440px; }
+.installguide h2 { margin: 0 0 4px; }
+.ig-why { margin: 0 0 12px; color: var(--soft, #555); }
+.ig-steps { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ig-steps li { display: flex; align-items: center; gap: 12px; background: #f7f2ff; border-radius: 16px; padding: 10px 12px; text-align: left; }
+.ig-steps li b { display: block; font-size: 16px; }
+.ig-steps li small { display: block; font-size: 13px; opacity: .8; }
+.ig-n { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: #8a5cf6; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.ig-ic { width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0, 0, 0, .08); }
+.ig-arrow { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 4px); transform: translateX(-50%); font-size: 40px; color: #fff; text-shadow: 0 2px 8px rgba(0, 0, 0, .6); animation: igbob 1s ease-in-out infinite; }
+@keyframes igbob { 50% { transform: translate(-50%, 8px); } }

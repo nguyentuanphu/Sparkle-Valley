@@ -19,6 +19,7 @@ import { openCredits, creditsFields, bindCreditsFields } from './credits.js';
 import { openHowTo } from './howto.js';
 import { extrasHTML, bindExtras } from './extras.js';
 import { canListen } from './listen.js';
+import { installButton } from './install.js';
 import { VOICE_STYLES, clipCountFor, hush } from './voice.js';
 
 export const STYLE_ICON = { dress: '👗', shirt: '👕', aodai: '🥻', tunic: '🧥', overalls: '👖', hoodie: '🧶' };
@@ -40,12 +41,20 @@ function bindLang(root, after) {
 export function showTitle(onStart) {
   const s = el('div', 'screen title', `
     <div class="logo"><div class="logo-main">Sparkle Valley</div><div class="logo-sub">Thung Lũng Lấp Lánh</div></div>
-    <div class="press">${T('Tap anywhere to start', 'Chạm vào đâu đó để bắt đầu')}</div>
-    <div class="title-foot">${flagBtns()}<button class="about">ℹ️ ${T('About', 'Giới thiệu')}</button></div>`);
+    <div class="press"></div>
+    <div class="title-top"></div>
+    <div class="title-foot"></div>`);
   document.body.appendChild(s);
-  const redraw = () => { s.querySelector('.press').textContent = T('Tap anywhere to start', 'Chạm vào đâu đó để bắt đầu'); s.querySelector('.title-foot').innerHTML = flagBtns() + `<button class="about">ℹ️ ${T('About', 'Giới thiệu')}</button>`; bindLang(s, redraw); s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(); }; };
-  bindLang(s, redraw); s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(); };
-  s.addEventListener('click', e => { if (e.target.closest('.seg') || e.target.closest('.about')) return; ac(); SFX.chime(); s.remove(); onStart(); });
+  const redraw = () => {
+    s.querySelector('.press').textContent = T('Tap anywhere to start', 'Chạm vào đâu đó để bắt đầu');
+    s.querySelector('.title-foot').innerHTML = flagBtns() + `<button class="about" aria-label="${T('About', 'Giới thiệu')}">ℹ️<span> ${T('About', 'Giới thiệu')}</span></button>`;
+    bindLang(s, redraw);
+    s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(); };
+    const top = s.querySelector('.title-top'); top.innerHTML = '';
+    const b = installButton(); if (b) top.appendChild(b);
+  };
+  redraw();
+  s.addEventListener('click', e => { if (e.target.closest('.seg') || e.target.closest('.about') || e.target.closest('.installchip')) return; ac(); SFX.chime(); s.remove(); onStart(); });
 }
 
 // ---------- Who's playing ----------
@@ -100,6 +109,7 @@ export function openGrownups(after) {
     card.innerHTML = `
       <button class="x" aria-label="Close">✕</button>
       <h2>${T('Grown-ups', 'Phụ huynh')}</h2>
+      <div class="g-install"></div>
       <h3>${T('Language', 'Ngôn ngữ')}</h3>${flagBtns()}
       <label class="tog"><input type="checkbox" id="gBil" ${settings.bilingual ? 'checked' : ''}> ${T('Bilingual voice: also say everything in the other language', 'Giọng song ngữ: nói thêm bằng ngôn ngữ còn lại')}</label>
       <h3>${T('Money', 'Tiền tệ')}</h3>
@@ -150,6 +160,7 @@ export function openGrownups(after) {
     card.querySelector('#gAdd').onclick = () => profiles.length >= MAX_KIDS ? toast(T(`Up to ${MAX_KIDS} players.`, `Tối đa ${MAX_KIDS} người chơi.`)) : openEditor(null, () => { draw(); after && after(); });
     card.querySelector('#gExp').onclick = exportBackup;
     card.querySelector('#gRec').onclick = () => openRecorder(draw);
+    { const b = installButton('btn wide installrow'); if (b) card.querySelector('.g-install').appendChild(b); }
     bindCreditsFields(card); card.querySelector('#gCredits').onclick = () => openCredits();
     bindExtras(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; }, toast);
     card.querySelector('#gFarm').onclick = () => { if (confirm(T('Start the farm over? Players and stickers are kept.', 'Làm lại nông trại? Người chơi và hình dán được giữ lại.'))) { resetFarm(); window.__sv && window.__sv.farm && (window.__sv.farm.syncAnimals(), window.__sv.farm.syncPets()); toast(T('A fresh new farm!', 'Nông trại mới tinh!')); } };
