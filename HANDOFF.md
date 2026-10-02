@@ -29,13 +29,14 @@ Code: **https://github.com/nguyentuanphu/Sparkle-Valley** (work happens on branc
 | `games` | Every mini-game (53) opens and closes with no errors |
 | `features` | 7 cities, 26 kiosks, 7 city game hosts, ≥ 47 landmarks, house number 8, 32 tales (18 Vietnamese), walkable Dragon Bridge, pets adopt / pet yard / bring back, chat closes when you walk away, keyboard shortcuts, zoom, a tale from the Games hub flies to the storyteller, a game card flies to its host, folk-game friends chat |
 | `camera` | At every landmark sign, facing 4 ways, the camera is not inside a building or blocked by one (186 of 188 clear this round; Harbour Bridge and Huế graze an edge from one side) |
+| `saves` | The main save is wiped from outside the game; reopening restores it from the safe copy |
 | `contract` | HUD buttons, Sparkle Pad tabs and Games hub sections are unchanged (`tests/ui-contract.json`) |
 | `cloud` | Two devices that can never link directly connect through the cloud relay (local MQTT broker): friend status with place and room, Join, positions, meeting, talking, leaving |
 | `multiplayer` | Two devices in one room through a local PeerJS server (with the cloud relay alongside): they see each other, the friend chip shows the distance, "Ask to come" arrives, walking to the friend works, talk bubbles cross (skipped when no server runs, see `tests/README.md`) |
 
 Screenshots of each run go to `tests/out/` (not committed).
 
-**Deploy:** Netlify: run `./build-netlify.sh` (it zips `index.html sw.js manifest.webmanifest netlify.toml css js fonts icons vendor videos`, plus `voices/` when it exists) and drag the zip into Netlify. GitHub Pages also auto-deploys `main`. Phones pick up the new version after closing and reopening the app (because `VERSION` changed).
+**Deploy:** always to the **same** Netlify site, so the address (and every child's saved progress) stays the same: run `./build-netlify.sh` (it zips `index.html sw.js manifest.webmanifest netlify.toml css js fonts icons vendor videos`, plus `voices/` when it exists) and drag the zip into Netlify. GitHub Pages also auto-deploys `main`. Phones pick up the new version after closing and reopening the app (because `VERSION` changed).
 
 ### Everything the game has now (keep all of it)
 - **Players:** up to 6 children, each with a photo face on a 3D character, age mode (under 5 / 5–8), difficulty, outfits, hats, wings or cape and gliders. 1 player, 2 players on one screen (split), or online with friends.
@@ -530,6 +531,16 @@ Screenshots of each run go to `tests/out/` (not committed).
 - **Staying connected:** the screen is kept awake while in a room (Wake Lock), the meeting service reconnects by itself, the cloud relay reconnects to each broker with back-off, and "Back online" / "No internet" messages appear.
 - **Grown-ups → 🔍 Test the connection** also reports how many cloud relay servers answer.
 - **Tests:** new `cloud` check (two devices that can never link directly find each other's status, join from the friends list, move, meet, talk and notice leaving, through a local MQTT broker); `multiplayer` now runs the direct link with the cloud relay alongside. The public brokers could not be reached from the build machine, so please try two phones on different networks (Wi-Fi + mobile data).
+
+### Round 22 (title lettering, Azure voice pack, progress that is never lost)
+- **Title lettering:** the gold glitter gradient is gone. "Sparkle" is solid pink and "Valley" solid purple (Vietnamese: "Thung Lũng" pink, "Lấp Lánh" purple), each word slightly tilted, with a thick white outline and a soft purple shadow.
+- **Voice pack with Microsoft Azure** (`tools/make-voice-pack.mjs --engine azure`): same cast and same offline `voices/` folder as ElevenLabs. Default voices: en-AU Natasha (woman) and William (man), vi-VN Hoài My and Nam Minh, zh-CN Yunxi (man), hi-IN Madhur (man). Cost: 218,796 characters; Azure neural voices are US$16 per million characters (about US$3.50), and the free F0 tier gives 500,000 characters a month, so the whole pack fits in one free month. F0 allows about 20 requests a minute, so the tool paces itself (about 4 hours; it can be stopped and run again). Tested against a pretend Azure server.
+- **Progress is never lost:**
+  - Game updates only replace the game's own files. Saves (localStorage) and the voice pack were never touched; the service worker now also keeps the `sv-save` cache.
+  - Every save is also copied (a few seconds later) to IndexedDB and to the `sv-save` cache, plus one copy per day in IndexedDB. If the main save is ever missing (the browser cleared it), the newest copy is put back by itself when the game opens, with a message.
+  - The game asks the browser to keep this site's storage permanently (`navigator.storage.persist()`).
+  - Saves belong to the web address: **always publish updates to the same Netlify site** (the site's Deploys page → drag the new zip there), not a new "Netlify Drop" site, which gets a new address and starts empty. On iPhone, play from the Home Screen icon (Safari may clear data of websites not opened for a few weeks; Home Screen apps are kept). Backups to iCloud/Drive (Grown-ups) still move progress between devices.
+- **Tests:** new `saves` check (the main save is wiped from outside the game; reopening restores coins, orbs and postcards from the safe copy).
 
 ## 3. How it's built
 

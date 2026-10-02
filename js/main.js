@@ -1087,6 +1087,7 @@ resize();
 $('#boot').remove();
 requestAnimationFrame(frame);
 showTitle(() => showWho((mode, chosen) => startSession(mode, chosen)));
+import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { save(); hush(); } });
 addEventListener('pagehide', () => saveProfiles(true));
 if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) navigator.serviceWorker.register('sw.js').catch(() => { });

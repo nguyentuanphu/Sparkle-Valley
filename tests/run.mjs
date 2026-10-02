@@ -4,7 +4,7 @@
 //   node run.mjs --update-contract                     re-record the UI structure (only when the owner asked for a UI change)
 // Multiplayer runs when a local PeerJS server is up on 127.0.0.1:9000 (see the README in this folder).
 import fs from 'fs';
-import { launch, open, clear } from './harness.mjs';
+import { launch, open, clear, URL } from './harness.mjs';
 
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
@@ -191,6 +191,22 @@ await check('multiplayer', async () => {
   const errs = A.errors.concat(B.errors); await A.ctx.close(); await B.ctx.close();
   ok(/\d+ m/.test(chip) && d < 6 && heard > 0 && !errs.length, JSON.stringify({ chip, d, heard, errs }));
   return `met at ${d.toFixed(1)} m, talk bubble received`;
+});
+
+await check('saves', async () => {
+  // progress survives: the main save is wiped (as a browser might do), and the game brings it back by itself
+  const P = await open(b, { w: 800, h: 600 }); await clear(P.page);
+  await P.page.evaluate(async () => { const S = await import('/js/state.js'); S.farm.coins = 4321; S.profiles[0].orbs = 7; S.profiles[0].postcards = { opera: true }; S.saveProfiles(true); });
+  await P.page.waitForTimeout(4500);
+  // close the game, then wipe the main save from another page of the same site, then open the game again
+  const Q = await P.ctx.newPage(); await P.page.close();
+  await Q.goto(URL + 'manifest.webmanifest'); await Q.evaluate(() => { localStorage.removeItem('sv2_profiles'); localStorage.removeItem('sv2_farm'); });
+  await Q.goto(URL); await Q.waitForSelector('.screen.title', { timeout: 30000 });
+  P.page = Q;
+  const r = await P.page.evaluate(async () => { const S = await import('/js/state.js'); return { coins: S.farm.coins, orbs: S.profiles[0].orbs, pc: !!(S.profiles[0].postcards || {}).opera, restored: S.restoredFromCopy, kept: !!localStorage.getItem('sv2_profiles') }; });
+  await P.ctx.close();
+  ok(r.coins === 4321 && r.orbs === 7 && r.pc && r.restored && r.kept, JSON.stringify(r));
+  return 'wiped main save restored from the safe copy (coins, orbs, postcards)';
 });
 
 await check('cloud', async () => {

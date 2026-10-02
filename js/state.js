@@ -4,8 +4,49 @@ const KEY_SETTINGS = 'sv2_settings', KEY_PROFILES = 'sv2_profiles';
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); mirrorSoon(); return true; } catch (e) { mirrorSoon(); return false; } }
 };
+
+// ---------- keeping progress safe on this device ----------
+// The game's own saves (localStorage) are never touched by game updates. To be extra safe they are also
+// copied to two other places on the device (IndexedDB and the "sv-save" cache, which updates never delete),
+// and the browser is asked to keep this site's storage for good (so it is not cleared when space is low or
+// the game is not opened for a while). If the main save is ever missing, the copy is put back by itself.
+const SNAP_DB = 'sparkle-valley-save', SNAP_CACHE = 'sv-save', SNAP_URL = './__sv-save.json';
+const snapshot = () => ({ app: 'sparkle-valley', v: 2, saved: Date.now(), settings: store.get(KEY_SETTINGS, {}), profiles: store.get(KEY_PROFILES, null), farm: store.get('sv2_farm', null) });
+const idb = mode => new Promise((res, rej) => { const r = indexedDB.open(SNAP_DB, 1); r.onupgradeneeded = () => r.result.createObjectStore('snap'); r.onsuccess = () => res(r.result.transaction('snap', mode).objectStore('snap')); r.onerror = () => rej(r.error); });
+async function writeMirror() {
+  const snap = snapshot(); if (!Array.isArray(snap.profiles) || !snap.profiles.length) return;
+  const text = JSON.stringify(snap);
+  try { const st = await idb('readwrite'); st.put(text, 'latest'); const day = new Date().toISOString().slice(0, 10); st.put(text, 'day-' + day); } catch (e) { }
+  try { if ('caches' in self) { const c = await caches.open(SNAP_CACHE); await c.put(SNAP_URL, new Response(text, { headers: { 'Content-Type': 'application/json' } })); } } catch (e) { }
+}
+let mirrorT = null;
+function mirrorSoon() { clearTimeout(mirrorT); mirrorT = setTimeout(writeMirror, 2500); }
+async function readMirror() {
+  const all = [];
+  try { const st = await idb('readonly'); const t = await new Promise(r => { const q = st.get('latest'); q.onsuccess = () => r(q.result); q.onerror = () => r(null); }); if (t) all.push(JSON.parse(t)); } catch (e) { }
+  try { if ('caches' in self) { const c = await caches.open(SNAP_CACHE), r = await c.match(SNAP_URL); if (r) all.push(await r.json()); } } catch (e) { }
+  return all.filter(x => x && x.app === 'sparkle-valley' && Array.isArray(x.profiles) && x.profiles.length).sort((a, b) => b.saved - a.saved)[0] || null;
+}
+export let restoredFromCopy = false;
+try {
+  // the main save is missing (cleared by the browser, or the storage was wiped): bring back the newest copy
+  if (!localStorage.getItem(KEY_PROFILES)) {
+    const snap = await Promise.race([readMirror(), new Promise(r => setTimeout(() => r(null), 2500))]);
+    if (snap) {
+      localStorage.setItem(KEY_PROFILES, JSON.stringify(snap.profiles));
+      if (snap.farm) localStorage.setItem('sv2_farm', JSON.stringify(snap.farm));
+      if (snap.settings && !localStorage.getItem(KEY_SETTINGS)) localStorage.setItem(KEY_SETTINGS, JSON.stringify(snap.settings));
+      restoredFromCopy = true;
+    }
+  }
+} catch (e) { }
+// ask the browser to keep this site's data permanently (Chrome/Edge/Android grant it for installed apps,
+// Safari and Firefox may ask or decide by themselves)
+export let storagePersisted = null;
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(p => p ? true : navigator.storage.persist()).then(p => { storagePersisted = p; }).catch(() => { }); } catch (e) { }
+setTimeout(writeMirror, 4000);
 
 export const settings = Object.assign({
   lang: 'en',            // 'en' | 'vi'

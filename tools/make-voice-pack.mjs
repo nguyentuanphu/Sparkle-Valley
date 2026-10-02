@@ -15,6 +15,12 @@
 //   choose voices: --voice-en-f <id> --voice-en-m <id> --voice-vi-f <id> --voice-vi-m <id> --voice-zh-m <id> --voice-hi-m <id>
 //   other options: --model <id> (default eleven_flash_v2_5)  --limit <n> (make only n files now)  --force
 //
+// Microsoft Azure instead of ElevenLabs (same cast, same voices/ folder, same offline use):
+//   node tools/make-voice-pack.mjs --engine azure --count                         cost only
+//   node tools/make-voice-pack.mjs --engine azure --key <KEY 1> --region <e.g. australiaeast>
+//   voices default to en-AU Natasha / William, vi-VN Hoài My / Nam Minh, zh-CN Yunxi, hi-IN Madhur;
+//   change with --voice-en-f en-AU-FreyaNeural etc. The free (F0) tier allows about 20 requests a minute,
+//   so it goes slowly by itself (--per-minute 180 on a paid S0 resource makes it faster).
 // It checks the account's remaining credits first and stops if there are not enough (use --force to go
 // anyway). Files that already exist are skipped, so you can stop it and run it again later, or next month.
 // Keep the key secret: it is only used for this run and is never written into the game.
@@ -31,7 +37,10 @@ const { packHash } = await import('../js/packhash.js');
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const flag = k => process.argv.includes('--' + k);
-const KEY = arg('key', process.env.ELEVEN_KEY || process.env.ELEVENLABS_API_KEY);
+const ENGINE = arg('engine', 'eleven');
+const KEY = arg('key', ENGINE === 'azure' ? process.env.AZURE_SPEECH_KEY : (process.env.ELEVEN_KEY || process.env.ELEVENLABS_API_KEY));
+const REGION = arg('region', process.env.AZURE_SPEECH_REGION || '');
+const AZ_VOICES = { en: { f: 'en-AU-NatashaNeural', m: 'en-AU-WilliamNeural' }, vi: { f: 'vi-VN-HoaiMyNeural', m: 'vi-VN-NamMinhNeural' }, zh: { m: 'zh-CN-YunxiNeural' }, hi: { m: 'hi-IN-MadhurNeural' } };
 const MODEL = arg('model', 'eleven_flash_v2_5');
 const API = arg('api', 'https://api.elevenlabs.io/v1'); // --api is only for testing with a pretend server
 // credits per character: Flash and Turbo models cost half a credit, Multilingual v2 and v3 a whole one
@@ -67,11 +76,18 @@ for (const L of Object.keys(CAST)) {
   const ls = list.filter(([, j]) => j.lang === L), c = ls.reduce((a, [, j]) => a + j.text.length, 0);
   console.log(`  ${LANG_NAME[L].padEnd(10)} ${String(ls.length).padStart(5)} lines × ${CAST[L].length} voice${CAST[L].length > 1 ? 's' : ' '} (${CAST[L].map(s => s === 'f' ? 'woman' : 'man').join(' + ')}) = ${String(c * CAST[L].length).padStart(7)} characters`);
 }
+if (ENGINE === 'azure') {
+  const usd = n => (n / 1e6 * 16).toFixed(2);
+  console.log(`  In all: ${files.length} files, ${chars} characters. Azure neural voices: US$16 per million characters, so about US$${usd(chars)}; the free F0 tier gives 500,000 characters a month, so it fits in ${Math.ceil(chars / 500000)} free month(s).`);
+  console.log(`  Still to make: ${missing.length} files, ${need} characters (about US$${usd(need)}, or free on F0). On F0 (about 20 requests a minute) that takes about ${Math.ceil(missing.length / 18 / 60)} hour(s); stop and run again any time.`);
+} else {
 console.log(`  In all: ${files.length} files, ${chars} characters = about ${Math.ceil(chars * RATE)} ElevenLabs credits with ${MODEL}${RATE < 1 ? ` (${chars} with a Multilingual model)` : ''}.`);
 console.log(`  Still to make: ${missing.length} files, ${need} characters (about ${Math.ceil(need * RATE)} credits).`);
+}
 console.log(`  Size: about ${Math.round(chars * 0.075 * 4 / 1024)} MB of MP3 (32 kbps).`);
 if (flag('count')) process.exit(0);
-if (!KEY) { console.error('Add your key: --key sk_... (or set ELEVEN_KEY). Use --count to see the cost without a key.'); process.exit(1); }
+if (!KEY) { console.error(ENGINE === 'azure' ? 'Add your Azure Speech key and region: --key <KEY 1> --region <Location/Region>. Use --count to see the cost without a key.' : 'Add your key: --key sk_... (or set ELEVEN_KEY). Use --count to see the cost without a key.'); process.exit(1); }
+if (ENGINE === 'azure') { await azure(); process.exit(0); }
 const H = { 'xi-api-key': KEY };
 const get = async p => { const r = await fetch(API + p, { headers: H }); if (r.status === 401) { console.error('ElevenLabs did not accept the key (401). Check it on elevenlabs.io → API Keys, and that it may use Text to Speech, Voices and User.'); process.exit(3); } if (!r.ok) throw new Error(p + ' ' + r.status + ' ' + (await r.text()).slice(0, 200)); return r.json(); };
 const sub = await get('/user/subscription');
@@ -136,3 +152,36 @@ const queue = missing.slice(0, limit);
 await Promise.all(Array.from({ length: 3 }, async () => { while (queue.length) await make(queue.shift()); }));
 save();
 console.log(`Finished: ${done} new files (${used} characters). The pack is in voices/ — include that folder when you publish the game (./build-netlify.sh does).`);
+
+// ---------- Microsoft Azure ----------
+async function azure() {
+  if (!REGION) { console.error('Add the region too: --region <the Location/Region of your Speech resource, e.g. australiaeast or southeastasia>.'); process.exit(1); }
+  const AZ = arg('api', `https://${REGION}.tts.speech.microsoft.com`), perMin = +arg('per-minute', 18);
+  // check the key and region with one short line
+  const voices = {}; for (const [L, slots] of Object.entries(CAST)) { voices[L] = {}; for (const sl of slots) voices[L][sl] = { id: arg(`voice-${L}-${sl}`, AZ_VOICES[L][sl]), name: arg(`voice-${L}-${sl}`, AZ_VOICES[L][sl]) }; }
+  console.log('Voices:'); for (const [L, v] of Object.entries(voices)) console.log(`  ${LANG_NAME[L]}: ` + Object.entries(v).map(([sl, x]) => `${sl === 'f' ? 'woman' : 'man'} ${x.id}`).join(', '));
+  const xml = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const LOCALE = { en: 'en-AU', vi: 'vi-VN', zh: 'zh-CN', hi: 'hi-IN' };
+  const man = { version: 2, engine: 'azure', made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, langOf: {} };
+  const save = () => { fs.mkdirSync(PACK_DIR, { recursive: true }); fs.writeFileSync(MAN, JSON.stringify(man)); };
+  for (const [h, j] of list) { man.langOf[h] = j.lang; for (const sl of CAST[j.lang]) if (fs.existsSync(path.join(PACK_DIR, j.lang, sl, h + '.mp3'))) man.lines[h] = (man.lines[h] || '') + sl; }
+  const limit = +arg('limit', 1e9), queue = missing.slice(0, limit), gap = 60000 / perMin;
+  let done = 0, used = 0, next = Date.now();
+  for (const [slot, h, j] of queue) {
+    const wait = next - Date.now(); if (wait > 0) await new Promise(r => setTimeout(r, wait)); next = Date.now() + gap;
+    const v = voices[j.lang][slot].id, ssml = `<speak version='1.0' xml:lang='${LOCALE[j.lang]}'><voice name='${v}'>${xml(j.text)}</voice></speak>`;
+    for (let attempt = 0; ; attempt++) {
+      const r = await fetch(`${AZ}/cognitiveservices/v1`, { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': KEY, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': 'audio-16khz-32kbitrate-mono-mp3', 'User-Agent': 'sparkle-valley-voice-pack' }, body: ssml });
+      if (r.status === 401 || r.status === 403) { console.error('Azure did not accept the key or region (' + r.status + '). Copy KEY 1 and the Location/Region from the Speech resource\'s "Keys and Endpoint" page.'); save(); process.exit(3); }
+      if ((r.status === 429 || r.status >= 500) && attempt < 6) { await new Promise(res => setTimeout(res, 5000 * (attempt + 1))); continue; }
+      if (!r.ok) throw new Error(`${r.status} ${(await r.text()).slice(0, 200)} — "${j.text.slice(0, 40)}"`);
+      const dir = path.join(PACK_DIR, j.lang, slot); fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, h + '.mp3'), Buffer.from(await r.arrayBuffer()));
+      man.lines[h] = (man.lines[h] || '').replace(slot, '') + slot; used += j.text.length; done++;
+      if (done % 20 === 0) { save(); console.log(`${done}/${queue.length} files, ${used} characters`); }
+      break;
+    }
+  }
+  save();
+  console.log(`Finished: ${done} new files (${used} characters). The pack is in voices/ — include that folder when you publish the game (./build-netlify.sh does).`);
+}

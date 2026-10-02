@@ -81,7 +81,8 @@ export function showTitle(onStart) {
   document.body.appendChild(s);
   const redraw = () => {
     s.querySelector('.tt-press').textContent = T('Tap to start', 'Chạm để bắt đầu');
-    s.querySelector('.logo-main').textContent = T('Sparkle Valley', 'Thung Lũng Lấp Lánh');
+    // two words, two colours (pink and purple) with a white outline: clear and friendly, no glitter
+    s.querySelector('.logo-main').innerHTML = (settings.lang === 'vi' ? ['Thung Lũng', 'Lấp Lánh'] : ['Sparkle', 'Valley']).map((w, k) => `<span class="lw lw${k + 1}">${w}</span>`).join(' ');
     s.querySelector('.logo-sub').textContent = T('Two homes · one valley', 'Hai quê hương · một thung lũng');
     s.querySelector('.logo').classList.toggle('vi', settings.lang === 'vi');
     s.querySelector('.about').setAttribute('aria-label', T('About', 'Giới thiệu'));
