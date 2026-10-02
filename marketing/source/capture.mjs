@@ -57,7 +57,7 @@ const S = [
 ];
 for (const [n, hero, yaw, cam, look] of S) if (want(n)) await scene(page, n, hero, yaw, cam, look);
 // the whistling kite in the meadow, flying ahead of the child
-if (want('kite')) { await page.evaluate(() => { const G = window.__sv, p = G.heroes[0].profile; p.kite = true; p.kiteOn = true; G.kites.sync(); }); await scene(page, 'kite', [-40, 30], Math.PI, [-38, 41, 4], [-40, 22, 7], 7000); }
+if (want('kite')) { await page.evaluate(() => { const G = window.__sv, p = G.heroes[0].profile; p.kite = true; p.kiteOn = true; G.kites.sync(); }); await scene(page, 'kite', [0, 12], Math.PI, [3, 24, 3], [-1, 3, 7], 8000); }
 // a kiosk: food and a saying
 if (want('kiosk')) {
   await view(page, 'kiosk-bg', 84, -26, 0, 1, 2500);
@@ -71,9 +71,10 @@ if (want('hub')) { await clear(page); await page.evaluate(() => window.__sv.open
 for (const g of ['puppets', 'dongho', 'traffic', 'koala', 'tram', 'ferries']) if (want('g-' + g)) { await clear(page); await page.evaluate(g => { window.__sv.playGame(0, g, 'replay'); }, g); await page.waitForTimeout(3500); await shot(page, 'g-' + g); await page.evaluate(() => { document.querySelector('.gl .gl-x')?.click(); }); await page.waitForTimeout(800); await clear(page); }
 // a fairy tale in the tale theatre, English then Vietnamese
 for (const [lang, n] of [['en', 'tale-en'], ['vi', 'tale-vi']]) if (want(n)) {
-  const Q = lang === 'en' ? { page } : await game('vi');
+  const Q = { page }; // switch the language in the same window (a second full-quality window is too slow here)
+  await page.evaluate(async lang => { const S = await import('/js/state.js'), I = await import('/js/i18n.js'); S.settings.lang = lang; I.applyLang(); document.querySelectorAll('.theatre, .tt-wrap, .modal').forEach(e => e.remove()); }, lang);
   await clear(Q.page);
-  await Q.page.evaluate(async () => { const T = await import('/js/tales.js'); const D = await import('/js/talesdata.js'); const tale = D.MORE_TALES[0]; T.openTheatre(tale, { name: 'Na', startPage: 1 }); });
-  await Q.page.waitForTimeout(3500); await shot(Q.page, n); if (Q.ctx) await Q.ctx.close();
+  await Q.page.evaluate(async () => { const T = await import('/js/tales.js'); const D = await import('/js/talesdata.js'); const tale = D.MORE_TALES[0]; T.openTheatre(tale, { name: 'Na', startPage: 1 }); document.querySelector('.theatre .th-auto').click(); /* stay on this page */ });
+  await Q.page.waitForTimeout(2200); await shot(Q.page, n); // before it turns the page by itself
 }
 await ctx.close(); await b.close();

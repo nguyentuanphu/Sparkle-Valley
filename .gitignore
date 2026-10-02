@@ -7,3 +7,8 @@ proto/
 tests/node_modules/
 tests/out/
 sparkle-valley-source.zip
+marketing/source/frames/
+marketing/source/out-*.mp4
+marketing/source/music-*.wav
+marketing/source/log-*.txt
+marketing/source/preview-*.jpg
