@@ -38,7 +38,7 @@ export class Hero {
   update(dt, pad, t, game) {
     const W = this.world, p = this.pos;
     // camera control
-    // Easy camera (default): a fixed, high view that never spins, like a picture book. Drag does nothing.
+    // Easy camera (default): a high view that gently turns to look the way the child walks. Drag does nothing.
     // Explorer camera: drag to look around, as in big open-world games.
     const easy = game.settings.camMode !== 'free';
     if (easy) { pad.cdx = 0; pad.cdy = 0; }
@@ -49,7 +49,12 @@ export class Hero {
 
     if (this.towerClimb) return this.updateTowerClimb(dt, t, game);
 
-    const f = [-Math.sin(this.camYaw), -Math.cos(this.camYaw)], r = [Math.cos(this.camYaw), -Math.sin(this.camYaw)];
+    // The stick steers relative to the camera as it was when the child started pushing, so the Easy
+    // camera swinging round behind them never bends their path into circles.
+    const held = Math.abs(pad.mx) + Math.abs(pad.mz) > .05;
+    if (!held || this.steerYaw === undefined || !easy) this.steerYaw = this.camYaw;
+    const sy = easy ? this.steerYaw : this.camYaw;
+    const f = [-Math.sin(sy), -Math.cos(sy)], r = [Math.cos(sy), -Math.sin(sy)];
     let mx = f[0] * pad.mz + r[0] * pad.mx, mz = f[1] * pad.mz + r[1] * pad.mx;
     // tap-to-walk: head for the tapped spot when the stick is not being used
     if (pad.mx || pad.mz) this.goal = null;
@@ -171,13 +176,36 @@ export class Hero {
     A.root.children[1].visible = this.state !== 'swim'; // blob shadow
     // camera: follow behind, gently swinging round when the child is just walking forward
     const easy = game.settings.camMode !== 'free';
-    if (easy) { this.camYaw = angleLerp(this.camYaw, 0, Math.min(1, dt * 3)); this.camPitch += ((this.towerClimb ? .25 : .42) - this.camPitch) * Math.min(1, dt * 3); }
+    // Easy camera: high and a little further back, and it slowly swings round behind the way the child
+    // is walking, so what's ahead is always on screen (it used to stay fixed facing north, which hid
+    // everything when walking towards the camera). It waits a moment so small turns don't spin it.
+    if (easy) {
+      if (this.speed > .8 && !this.towerClimb && this.manualCamT <= 0) { this.easyT = (this.easyT || 0) + dt; if (this.easyT > .35) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * 1.6)); }
+      else this.easyT = 0;
+      this.camPitch += ((this.towerClimb ? .25 : .55) - this.camPitch) * Math.min(1, dt * 3);
+    }
     else if (this.manualCamT <= 0 && this.speed > 1 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * .6));
     const close = game.closeUp === this.i; // wardrobe close-up
     if (close) { this.camYaw = angleLerp(this.camYaw, this.yaw, Math.min(1, dt * 4)); this.camPitch += (.08 - this.camPitch) * Math.min(1, dt * 4); }
-    const dist = close ? 2.8 : (easy ? 10 : this.camDist) * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (this.zoom || 1) * (game.zoom || 1);
+    const dist = close ? 2.8 : (easy ? 11.5 : this.camDist) * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (this.zoom || 1) * (game.zoom || 1);
     const target = new THREE.Vector3(p.x, p.y + (close ? .2 : 1.15) + rideY, p.z);
     const want = new THREE.Vector3(p.x + Math.sin(this.camYaw) * Math.cos(this.camPitch) * dist, target.y + Math.sin(this.camPitch) * dist, p.z + Math.cos(this.camYaw) * Math.cos(this.camPitch) * dist);
+    // keep the camera out of houses: if a wall is between the child and the camera, move the camera in
+    // front of it, so the child (and what's around them) is never hidden behind a building
+    const bx = this.world.boxes; if (bx && bx.length && !close) {
+      const dx = want.x - target.x, dz = want.z - target.z; let tmin = 1;
+      for (const b of bx) {
+        if (target.x > b.x0 && target.x < b.x1 && target.z > b.z0 && target.z < b.z1) continue;
+        let t0 = 0, t1 = 1;
+        for (const [o, d, lo, hi] of [[target.x, dx, b.x0 - .3, b.x1 + .3], [target.z, dz, b.z0 - .3, b.z1 + .3]]) {
+          if (Math.abs(d) < 1e-6) { if (o < lo || o > hi) { t0 = 2; break; } continue; }
+          let a = (lo - o) / d, c = (hi - o) / d; if (a > c) [a, c] = [c, a];
+          t0 = Math.max(t0, a); t1 = Math.min(t1, c); if (t0 > t1) break;
+        }
+        if (t0 <= t1 && t0 < tmin) tmin = t0;
+      }
+      if (tmin < 1) { const k = Math.max(.22, tmin - .04); want.x = target.x + dx * k; want.z = target.z + dz * k; want.y = target.y + (want.y - target.y) * Math.max(k, .5); }
+    }
     const gy = this.world.groundAt(want.x, want.z) + .7; if (want.y < gy) want.y = gy;
     this.camPos.lerp(want, Math.min(1, dt * 8));
     this.cam.position.copy(this.camPos); this.cam.lookAt(target);

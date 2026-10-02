@@ -4,7 +4,7 @@
 // (online; only the chat text is sent, never names of real people, photos or recordings).
 import { T, nm } from './i18n.js';
 import { settings } from './state.js';
-import { say, hush } from './voice.js';
+import { say, hush, setSpeaker } from './voice.js';
 import { SFX } from './audio.js';
 import { GAMES } from './games/frame.js';
 import { HOWTO, openHowTo } from './howto.js';
@@ -165,12 +165,12 @@ export function openChat(G, i, pid, onClose, firstAsk) {
   const history = [];
   let busy = false;
   const bubble = (who, text) => { const b = el('div', 'cb-msg ' + who, esc(text)); log.appendChild(b); log.scrollTop = log.scrollHeight; return b; };
-  const close = () => { hush(); m.remove(); onClose && onClose(); };
+  const close = () => { hush(); setSpeaker(null); m.remove(); onClose && onClose(); };
   const showActions = list => {
     acts.innerHTML = '';
     (list || []).forEach(a => { const b = el('button', 'cb-act', esc(a.label)); b.onclick = () => { SFX.tap(); if (a.ask) ask(a.ask); else { close(); a.run(); } }; acts.appendChild(b); });
   };
-  const answer = (text, list) => { bubble('them', text); history.push({ role: 'assistant', content: text }); say(text, text); showActions(list); };
+  const answer = (text, list) => { bubble('them', text); history.push({ role: 'assistant', content: text }); setSpeaker(P.name); say(text, text); showActions(list); };
   async function ask(text) {
     text = String(text || '').trim(); if (!text || busy) return;
     busy = true; bubble('me', text); history.push({ role: 'user', content: text }); acts.innerHTML = '';
@@ -198,6 +198,6 @@ export function openChat(G, i, pid, onClose, firstAsk) {
     if (heard) ask(heard); else bubble('them', T('I did not hear anything. Tap 🎤 and talk to me!', 'Tớ chưa nghe thấy gì. Chạm 🎤 rồi nói nhé!'));
   };
   const hi = T(`Hello ${h.profile.name}! ${P.mood[0]} What would you like to know?`, `Chào ${h.profile.name}! ${P.mood[1]} Bạn muốn hỏi gì nào?`);
-  if (firstAsk) ask(firstAsk); else { bubble('them', hi); say(hi, hi); }
+  if (firstAsk) ask(firstAsk); else { bubble('them', hi); setSpeaker(P.name); say(hi, hi); }
   return close;
 }

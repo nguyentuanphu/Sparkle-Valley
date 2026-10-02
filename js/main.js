@@ -2,13 +2,13 @@
 import { THREE, sprite } from './gfx.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';
-import { T, nm, onLang } from './i18n.js';
+import { T, nm, onLang, registerName } from './i18n.js';
 import { say, hush, loadClips } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
 import { createWorld, paintMap, heightAt, regionAt, REGION_NAMES, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
-import { buildAvatar, buildOwl, buildGourd, avatarURL } from './avatar.js';
+import { buildAvatar, buildOwl, buildGourd, avatarURL, OUTLINED } from './avatar.js';
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
 import { pads, initInput } from './input.js';
@@ -81,7 +81,7 @@ function addNPC({ id, name, look, model, x, z, face = 0, icon = '💬', talk }) 
   const av = model ? null : obj;
   obj.position.set(x, world.groundAt(x, z), z); obj.rotation.y = face; scene.add(obj);
   const tag = nameTag(name); tag.position.set(x, obj.position.y + (model ? 3.4 : 2.0), z); scene.add(tag);
-  const n = { id, name, x, z, obj, tag, avatar: av, talk };
+  const n = { id, name, x, z, obj, tag, avatar: av, talk }; registerName(name, icon);
   NPCS.push(n);
   world.colliders.push({ x, z, r: .7 });
   G.interactables.push({ id: 'npc_' + id, x, z, r: 3, icon, label: () => T('Talk to ', 'Nói chuyện với ') + nm(name), act: h => talk(h) });
@@ -111,6 +111,12 @@ function setupNPCs() {
   addNPC({ id: 'lan', name: 'Lan 🇻🇳', look: look('aodai', '#5fd39a', '#3b2618', 'ponytail', 'none'), x: PG.x - 6, z: PG.z + 3, face: 1.2, icon: '🪢',
     talk: h => kidTalk(h, 'skipping', 'Lan', ['Nhảy dây! Skipping! Jump when the rope comes down and count with me!', 'Nhảy dây nào! Nhảy lên khi dây quay xuống và đếm cùng tớ nhé!']) });
   gourd = addNPC({ id: 'gourd', name: 'Ông Bầu', model: buildGourd(), x: V.x - V.r + 8, z: V.z + 6, face: -1.2, icon: '🍃', talk: gourdTalk });
+  // outlines only on characters near a player (keeps phones fast)
+  let olT = 0; const _wp = new THREE.Vector3();
+  world.updaters.push(dt => {
+    if ((olT -= dt) > 0) return; olT = .4;
+    OUTLINED.forEach(A => { if (!A.root.parent) return; A.root.getWorldPosition(_wp); const near = G.heroes.some(h => dist2(h.pos.x, h.pos.z, _wp.x, _wp.z) < 30); if (A._ol !== near) { A._ol = near; A.outlines.forEach(o => o.visible = near); } });
+  });
   // gentle idle animation
   world.updaters.push((dt, t) => NPCS.forEach((n, k) => {
     if (n.avatar) { n.avatar.children[0].position.y = Math.sin(t * 2 + k) * .03; }

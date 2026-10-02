@@ -7,7 +7,7 @@
 //    Bondi lifesavers' tower, Vũng Tàu lighthouse, Turtle Tower, One Pillar Pagoda, Hội An's covered bridge
 //    and Bến Thành market's clock tower.
 import { THREE, toon, toonVC, P, merge, sprite } from './gfx.js';
-import { T, nm, onLang } from './i18n.js';
+import { T, nm, onLang, registerName } from './i18n.js';
 import { say } from './voice.js';
 import { SFX, tone } from './audio.js';
 import { heightAt, MARKET, AUSSIE } from './world.js';
@@ -48,6 +48,7 @@ function stall(a, b, w = 3, d = 1.6) {
   return merge(p);
 }
 function tag(scene, text, x, y, z) {
+  registerName(text);
   const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
   const draw = () => { g.clearRect(0, 0, 256, 64); g.fillStyle = 'rgba(40,40,40,.55)'; g.beginPath(); g.roundRect(8, 10, 240, 46, 23); g.fill();
     g.font = 'bold 28px Fredoka, "Baloo 2", sans-serif'; g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(nm(text), 128, 34, 228); };

@@ -3,6 +3,7 @@
 import { THREE, toon, toonVC, toonSmooth, glow, P, merge, sprite, blobShadow } from './gfx.js';
 import { clamp, lerp, smooth, fbm, seeded, dist2 } from './util.js';
 import { T } from './i18n.js';
+import { houseVillage } from './houses.js';
 import { settings } from './state.js';
 
 export const SIZE = 400, HALF = SIZE / 2, WATER = 0;
@@ -333,24 +334,15 @@ export function createWorld(scene, quality) {
 
   // ---------- village ----------
   const V = VILLAGE;
-  function house(x, z, rot, w = 7, d = 6, wall = '#f3e6c4', roof = '#b9533c') {
-    const g = new THREE.Group();
-    const wh = 3.2;
-    g.add(new THREE.Mesh(merge([
-      P(new THREE.BoxGeometry(w, wh, d), wall, [0, wh / 2, 0]),
-      P(new THREE.BoxGeometry(w + .3, .4, d + .3), '#9a8a70', [0, .2, 0]),
-      P(new THREE.BoxGeometry(1.4, 2.2, .2), '#6e4026', [0, 1.1, d / 2 + .05]),
-      P(new THREE.BoxGeometry(1.2, 1, .2), '#4a7fa8', [-w / 3, 1.9, d / 2 + .05]), P(new THREE.BoxGeometry(1.2, 1, .2), '#4a7fa8', [w / 3, 1.9, d / 2 + .05]),
-      P(new THREE.CylinderGeometry(.18, .18, wh, 6), '#8a5a3b', [-w / 2 - .6, wh / 2, d / 2 + .6]), P(new THREE.CylinderGeometry(.18, .18, wh, 6), '#8a5a3b', [w / 2 + .6, wh / 2, d / 2 + .6]),
-      P(new THREE.ConeGeometry(1, 1, 4, 1), roof, [0, wh + 1.5, 0], [0, Math.PI / 4, 0], [w * .82, 3, d * .82]),
-      P(new THREE.BoxGeometry(w * .9, .25, .4), '#8e3a2a', [0, wh + 2.9, 0])
-    ]), toonVC()));
-    g.position.set(x, heightAt(x, z) - .05, z); g.rotation.y = rot; g.children[0].castShadow = g.children[0].receiveShadow = true; scene.add(g);
+  // village houses (nhà ba gian): wooden columns, tiled roofs with upturned corners, brick yards
+  function house(x, z, rot, w = 7, d = 6, wall = '#efe0bf', roof = '#b9533c', palms = false) {
+    const g = houseVillage({ w, d: d * .9, wall, tile: roof, palms }).obj;
+    g.position.set(x, heightAt(x, z) - .05, z); g.rotation.y = rot; scene.add(g);
     W.colliders.push({ x, z, r: Math.max(w, d) * .62 });
     return g;
   }
   [[-18, -14, .5], [-4, -22, 0], [14, -20, -.3], [22, -4, -1.3], [20, 14, -2.2], [-20, 10, 1.6], [-14, 22, 2.4], [6, 24, 3.1]]
-    .forEach(([dx, dz, r], i) => house(V.x + dx, V.z + dz, r + Math.PI, 6 + (i % 3), 5 + (i % 2), i % 3 === 1 ? '#f6dca0' : '#f3e6c4', i % 2 ? '#b9533c' : '#a0442f'));
+    .forEach(([dx, dz, r], i) => house(V.x + dx, V.z + dz, r + Math.PI, 6 + (i % 3), 5 + (i % 2), i % 3 === 1 ? '#f6dca0' : '#efe0bf', i % 2 ? '#b9533c' : '#a0442f', i % 3 === 0));
   // village gate (cổng làng) on the west side, facing the bridge
   {
     const gx = V.x - V.r + 2, gz = V.z, y = heightAt(gx, gz);

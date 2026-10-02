@@ -233,6 +233,28 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 
 - **Names follow the chosen language** (`NAMES_EN` / `NAMES_VI` in `i18n.js`). `T()`, `say()`, dialogs, story pages, chat, name tags and 3D signs all swap titles: in English "Ông Cú" → "Grandpa Owl", "Bà Hai" → "Grandma Hai", "Cô Mai" → "Auntie Mai", "Chú Tư" → "Uncle Tư"; in Vietnamese "Mrs Kelly" → "Cô Kelly", "Aunty Bev" → "Dì Bev". First names stay. Signs and tags register with `onLang()` and redraw instantly when the language changes. New people: add their title to the two maps; new signs: pass `['English', 'Tiếng Việt']`.
 
+### Round 6 (home screen + ads)
+- **📲 Add to Home Screen** (`js/install.js`): a chip at the top right of the title screen and a button at the top of Grown-ups. Where the browser allows it (Chrome / Edge / Samsung Internet on Android, Chrome / Edge on desktop) one tap opens the real install prompt. On iPhone and iPad (Apple doesn't allow pages to install themselves) it opens a 3-step picture guide: Share → "Add to Home Screen" → Add. It hides itself once the game runs from the home screen.
+- **Title language row no longer wraps:** the language buttons and ⓘ stay on one line; on narrow phones "About" shrinks to just the ⓘ icon.
+- **Two Homes Words:** long answers ("Sunglasses") now wrap inside their buttons.
+- **Ad videos** (`marketing/`): three vertical 1080×1920 videos (the story of why the game was made, key features, a 15-second teaser) with English and Vietnamese captions and an original jingle. `marketing/ADS.md` has post captions, hashtags and a voice-over script for Henry to record. The source (screenshots, HTML stage, music synth, render script) is in `marketing/source/`. The `marketing/` folder is not included in the Netlify zip.
+- **UI direction:** Option A (soft storybook) was chosen (see Round 7). Still to do from the list: full language separation everywhere, Chinese + Indian villages and languages, dirt roads with cổng chào between villages, gathering fruit/flowers and breaking rocks for gems, a multiplayer market stall with friends and bigger rooms, the Easy-camera fix, adding coins in Grown-ups, more Vietnamese voices.
+
+### Round 7 (new look, names, credits)
+- **Option A storybook UI chosen.** Characters use **style C (picture-book)**: a bigger head, big clear eyes with a sparkle, brows, rosy cheeks, a soft brown outline (inverted hull, `outline()` in `gfx.js`), rounded shoes with soles and puffier sleeves. Eyes and mouth are painted straight onto the head (`drawFeatures`), so skin shading matches; photo faces still work. Outlines hide on characters more than 30 m from a player, to keep phones fast (`OUTLINED` in `avatar.js`).
+- **Storybook houses** (`js/houses.js`): Bà Rịa tube houses with shops (Corner Shop / Tạp Hóa, Bánh Mì, Coffee / Cà Phê signs that follow the language), the Vũng Tàu French villa, the Sydney weatherboard cottage with a bullnose verandah, and nhà ba gian village houses in Lotus Village. The older brick and raised houses got the same outline.
+- **Names:** titles follow the language and names stay as they are in each region ("Grandpa Cú", "Grandma Hai", "Cô Kelly"). **Grown-ups → Character names → Rename characters** lets parents rename anyone, separately in English and Vietnamese (`settings.npcNames`). Every character registers itself with `registerName()` so it shows up in that list.
+- **Credits:** the assistant credit line was removed. A new block says Henry wants children in China and India (and everywhere) to learn about Vietnam and Australia, and the default "why" text says it too. Credit fields now save as you type.
+- **Grown-ups:** the button at the bottom is now a floating "Save & close".
+- **Ads re-rendered** with the new characters and houses; the "why" video has a new scene for kids in China and India.
+
+### Round 8 (camera, voices, coins, language)
+- **Easy camera:** it now turns slowly to look the way the child is walking (after a short pause, so small turns don't spin it), sits higher and a little further back, and never goes inside a building: if a house is between the child and the camera, the camera moves in front of it. The stick steers from the camera angle at the moment the child starts pushing, so the turning camera never bends their path into circles.
+- **A voice for every character:** dialogs and chat call `setSpeaker(name)`. Titles decide the voice: grandparents speak slower and lower, kids higher, aunties and uncles get a woman's or a man's voice. Several device voices are shared out between characters (Android's Google TTS has 4 Vietnamese voices). With Google Cloud TTS, each character also gets a matching natural voice (vi-VN Neural2/Wavenet, en-AU), unless the grown-up picked one.
+- **Grown-ups → Money:** buttons to top up the shared family coins (+$1, +$5, +$20, or the VND equivalent).
+- **Language sweep:** an automated scan of every screen in both languages. The title now shows "Sparkle Valley · Two homes · one valley" in English and "Thung Lũng Lấp Lánh · Hai quê hương · một thung lũng" in Vietnamese, and close buttons are translated. What stays in Vietnamese in English mode is on purpose: people's and places' names, foods and folk-game names (with the English meaning beside them).
+- **Not done (stopped by the assistant's safety system, not a code problem):** the parents' play-time report, and the dirt roads with welcome gates. Both were stopped while being written and the half-written files were removed. They can be tried again in a new session or built by hand.
+
 ## 3. How it's built
 
 **Tech:**

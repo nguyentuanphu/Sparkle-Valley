@@ -9,8 +9,8 @@ export const CREDIT_DEFAULTS = {
   creator: 'Henry Nguyen',
   forWhom: { en: 'For my children, and for every child growing up between two homes.', vi: 'Dành tặng các con, và mọi em nhỏ lớn lên giữa hai quê hương.' },
   why: {
-    en: 'I made Sparkle Valley so my children could keep both of their homes, Vietnam and Australia, in one magical place. Here they hear both languages, play the folk games their parents and grandparents played, and learn to think, count and solve problems while they laugh and explore. Every puzzle is gentle, every mistake is a chance to try again, and every child is the hero of their own story.',
-    vi: 'Bố làm Thung Lũng Lấp Lánh để các con giữ được cả hai quê hương, Việt Nam và Úc, trong một nơi diệu kỳ. Ở đây các con được nghe cả hai thứ tiếng, chơi những trò chơi dân gian mà bố mẹ và ông bà đã từng chơi, và học cách suy nghĩ, đếm và giải đố trong tiếng cười và niềm vui khám phá. Mỗi câu đố đều nhẹ nhàng, mỗi lần sai là một cơ hội thử lại, và mỗi em nhỏ đều là người hùng trong câu chuyện của mình.'
+    en: 'I made Sparkle Valley so my children could keep both of their homes, Vietnam and Australia, in one magical place. Here they hear both languages, play the folk games their parents and grandparents played, and learn to think, count and solve problems while they laugh and explore. Every puzzle is gentle, every mistake is a chance to try again, and every child is the hero of their own story. I also hope children in China, India and all around the world will visit this valley to learn about Vietnam and Australia, and make new friends along the way.',
+    vi: 'Bố làm Thung Lũng Lấp Lánh để các con giữ được cả hai quê hương, Việt Nam và Úc, trong một nơi diệu kỳ. Ở đây các con được nghe cả hai thứ tiếng, chơi những trò chơi dân gian mà bố mẹ và ông bà đã từng chơi, và học cách suy nghĩ, đếm và giải đố trong tiếng cười và niềm vui khám phá. Mỗi câu đố đều nhẹ nhàng, mỗi lần sai là một cơ hội thử lại, và mỗi em nhỏ đều là người hùng trong câu chuyện của mình. Bố cũng mong các bạn nhỏ ở Trung Quốc, Ấn Độ và khắp nơi trên thế giới sẽ ghé thăm thung lũng này để tìm hiểu về Việt Nam và Úc, và kết thêm nhiều bạn mới.'
   }
 };
 const val = (k) => {
@@ -35,9 +35,9 @@ export function openCredits() {
       <div class="cr-block"><small>${T('Created with love by', 'Được tạo ra với tình yêu bởi')}</small><h2>${esc(val('creator'))}</h2></div>
       <div class="cr-block"><p class="cr-for">${esc(val('forWhom'))}</p></div>
       <div class="cr-block"><small>${T('Why this game exists', 'Vì sao có trò chơi này')}</small><p>${esc(val('why'))}</p></div>
+      <div class="cr-block"><small>${T('For children everywhere', 'Cho trẻ em khắp nơi')}</small><p>${T('I want children in China and India, and everywhere else, to come and learn about Vietnam and Australia here: our languages, our food, our games and our homes. 🇻🇳 🇦🇺 🇨🇳 🇮🇳', 'Tôi mong các bạn nhỏ ở Trung Quốc, Ấn Độ và khắp mọi nơi đến đây để tìm hiểu về Việt Nam và Úc: ngôn ngữ, món ăn, trò chơi và những ngôi nhà của chúng tôi. 🇻🇳 🇦🇺 🇨🇳 🇮🇳')}</p></div>
       <div class="cr-block"><small>${T('What children learn here', 'Các em học được gì')}</small><div class="cr-teach">${teach.map(([i, t]) => `<span><b>${i}</b>${esc(t)}</span>`).join('')}</div></div>
       <div class="cr-block"><small>${T('Idea, story & design', 'Ý tưởng, câu chuyện và thiết kế')}</small><p>${esc(val('creator'))}</p>
-        <small>${T('Built with the help of', 'Được xây dựng với sự giúp đỡ của')}</small><p>Claude (Anthropic)</p>
         <small>${T('Thank you to', 'Cảm ơn')}</small><p>three.js · PeerJS · Fredoka & Baloo 2 fonts<br>${T('Traditional songs and folk games shared by families in Vietnam and Australia', 'Những bài hát truyền thống và trò chơi dân gian được các gia đình ở Việt Nam và Úc gìn giữ')}</p></div>
       <div class="cr-block cr-end">💖<p>${T('Thank you for playing!', 'Cảm ơn con đã chơi!')}</p></div>
     </div>`);
@@ -56,5 +56,5 @@ export function creditsFields() {
 }
 export function bindCreditsFields(root) {
   const save = () => { settings.credits = { creator: root.querySelector('#crName').value.trim(), forWhom: root.querySelector('#crFor').value.trim(), why: root.querySelector('#crWhy').value.trim() }; saveSettings(); };
-  ['#crName', '#crFor', '#crWhy'].forEach(s => root.querySelector(s).addEventListener('change', save));
+  ['#crName', '#crFor', '#crWhy'].forEach(s => { const e = root.querySelector(s); e.addEventListener('input', save); e.addEventListener('change', save); });
 }

@@ -71,3 +71,19 @@ export const blobShadow = (() => {
   const geo = new THREE.CircleGeometry(.7, 24).rotateX(-Math.PI / 2);
   return () => new THREE.Mesh(geo, mat);
 })();
+
+// Soft ink outline (inverted hull) for the picture-book look. Returns the outline meshes so far-away
+// characters can hide theirs. Transparent meshes (faces, glass wings, shadows) are skipped.
+const outlineMats = {};
+export function outline(obj, width = .011, color = '#6a4a3a') {
+  const key = width + color;
+  let m = outlineMats[key];
+  if (!m) {
+    m = outlineMats[key] = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide });
+    m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', `vec3 transformed = position + normalize(normal) * ${width.toFixed(4)};`); };
+    m.customProgramCacheKey = () => 'outline' + key;
+  }
+  const add = [];
+  obj.traverse(o => { if (o.isMesh && !o.userData.outline && !o.material.transparent && o.geometry.attributes.normal) add.push(o); });
+  return add.map(o => { const h = new THREE.Mesh(o.geometry, m); h.userData.outline = true; h.raycast = () => { }; o.add(h); return h; });
+}

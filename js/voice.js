@@ -37,14 +37,48 @@ export const VOICE_STYLES = [
   { id: 'grandpa', icon: '👴', name: () => (settings.lang === 'vi' ? 'Ông bà' : 'Grandparent'), rate: .88, pitch: .82 }
 ];
 const style = () => VOICE_STYLES.find(v => v.id === settings.voiceStyle) || VOICE_STYLES[0];
+
+// ---------- a voice for each character ----------
+// When a character talks (dialog), their title tells us who they are: grandparents speak a little lower
+// and slower, kids higher, aunties and uncles get a woman's or a man's voice. If the device has several
+// voices for the language they are shared out by character, so neighbours don't all sound the same.
+let speaker = null;
+export const setSpeaker = name => { speaker = name ? String(name) : null; };
+const FEMALE = /^(Bà|Cô|O|Dì|Chị|Mợ|Thím|Mrs|Ms|Miss|Aunty|Auntie|Grandma|Nana|Nanna)(?=[\s.]|$)/iu, MALE = /^(Ông|Chú|Bác|Anh|Cậu|Dượng|Mr|Uncle|Grandpa|Pop)(?=[\s.]|$)/iu;
+const OLD = /^(Bà|Ông|Grandma|Grandpa|Nana|Nanna|Pop)(?=[\s.]|$)/iu;
+const KIDS_F = /^(Tí|Bống|Mít|Lan|Ruby|Chloe|Bông)/i;
+export function speakerKind(name = speaker) {
+  if (!name) return null;
+  const n = name.trim(), old = OLD.test(n);
+  const gender = FEMALE.test(n) ? 'f' : MALE.test(n) ? 'm' : KIDS_F.test(n) ? 'f' : 'm';
+  const kid = !FEMALE.test(n) && !MALE.test(n) && !/owl|cú|bầu|gourd|cloud|mây|davo|gazza/i.test(n);
+  let h = 0; for (const c of n) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return { gender, old, kid, seed: h };
+}
+const FEMALE_VOICE = /female|woman|linh|hoaimy|an\b|mai|lan|samantha|karen|catherine|zoe|ava|allison|serena|jenny|aria|libby|sonia|emma|natasha|nicky|susan|victoria|google .*(vi|tiếng)/i;
+const MALE_VOICE = /\bmale\b|namminh|\bnam\b|minh|daniel|lee|james|thomas|aaron|gordon|william|ryan|liam|duc|đức/i;
+function speakerVoice(lang, kind) {
+  const list = voicesFor(lang); if (!kind || list.length < 2) return null;
+  const want = lang === 'vi' ? settings.voiceVi : settings.voiceEn;
+  const g = list.filter(v => kind.gender === 'm' ? MALE_VOICE.test(v.name) && !/female/i.test(v.name) : FEMALE_VOICE.test(v.name) && !MALE_VOICE.test(v.name));
+  const pool = g.length ? g : list.slice(0, 4);
+  // keep the grown-up's chosen voice for the main narrator-like characters, share the rest out
+  return pool.find(v => v.name === want && kind.seed % 2 === 0) || pool[kind.seed % pool.length];
+}
 function utter(text, lang) {
   const u = new SpeechSynthesisUtterance(text);
-  const v = voiceFor(lang);
+  const kind = speakerKind();
+  const v = speakerVoice(lang, kind) || voiceFor(lang);
   if (v) { u.voice = v; u.lang = v.lang; } else u.lang = lang === 'vi' ? 'vi-VN' : 'en-AU';
   // A touch slower than normal and at natural pitch sounds the most human; grown-ups can fine-tune both.
   const st = style();
   u.rate = (lang === 'vi' ? .95 : .97) * (settings.voiceRate || 1) * st.rate;
   u.pitch = Math.min(2, (settings.familyVoice && settings.familyPitch && st.id === 'natural' ? settings.familyPitch : (settings.voicePitch || 1)) * st.pitch); u.volume = 1;
+  if (kind) {
+    if (kind.old) { u.rate *= .9; u.pitch *= .86; }
+    else if (kind.kid) { u.rate *= 1.04; u.pitch = Math.min(2, u.pitch * 1.22); }
+    else if (kind.gender === 'm') u.pitch *= .92; else u.pitch = Math.min(2, u.pitch * 1.05);
+  }
   return u;
 }
 // Device speech, as a promise that resolves when the line has been spoken.
@@ -178,7 +212,19 @@ const tget = async k => { const d = await tdb(); return new Promise(res => { con
 const tput = async (k, v) => { const d = await tdb(); return new Promise(res => { const t = d.transaction('lines', 'readwrite'); t.objectStore('lines').put(v, k); t.oncomplete = res; t.onerror = res; }); };
 const known = new Set();
 export const cloudReady = () => settings.tts && settings.tts !== 'device' && !!settings.ttsKey && navigator.onLine !== false;
-const cloudKey = (text, lang) => [settings.tts, settings.tts === 'eleven' ? settings.elevenVoice || ELEVEN_DEFAULT : (lang === 'vi' ? settings.googleVoiceVi : settings.googleVoiceEn) || '', lang, text].join('|');
+// Google voices for characters: women, men, grandparents and kids each get their own natural voice.
+const GOOGLE_VOICES = {
+  vi: { f: ['vi-VN-Neural2-A', 'vi-VN-Wavenet-A', 'vi-VN-Wavenet-C'], m: ['vi-VN-Neural2-D', 'vi-VN-Wavenet-B', 'vi-VN-Wavenet-D'] },
+  en: { f: ['en-AU-Neural2-C', 'en-AU-Neural2-A', 'en-AU-Wavenet-C'], m: ['en-AU-Neural2-B', 'en-AU-Neural2-D', 'en-AU-Wavenet-B'] }
+};
+const googleName = lang => {
+  const mine = lang === 'vi' ? settings.googleVoiceVi : settings.googleVoiceEn, k = speakerKind();
+  if (!k) return mine || (lang === 'vi' ? 'vi-VN-Neural2-A' : 'en-AU-Neural2-C');
+  const pool = GOOGLE_VOICES[lang === 'vi' ? 'vi' : 'en'][k.gender];
+  return pool[k.seed % pool.length];
+};
+const googlePitch = () => { const k = speakerKind(); return !k ? 0 : k.old ? -3 : k.kid ? 4 : 0; };
+const cloudKey = (text, lang) => [settings.tts, settings.tts === 'eleven' ? settings.elevenVoice || ELEVEN_DEFAULT : googleName(lang) + googlePitch(), lang, text].join('|');
 const cloudCached = (text, lang) => mem.has(cloudKey(text, lang)) || known.has(cloudKey(text, lang));
 export const ELEVEN_DEFAULT = '21m00Tcm4TlvDq8ikWAM'; // a warm, friendly premade voice; grown-ups can paste any voice ID
 export const ELEVEN_MODEL = 'eleven_turbo_v2_5';     // speaks both English and Vietnamese
@@ -205,10 +251,10 @@ async function elevenTTS(text, lang) {
   return r.arrayBuffer();
 }
 async function googleTTS(text, lang) {
-  const name = (lang === 'vi' ? settings.googleVoiceVi : settings.googleVoiceEn) || (lang === 'vi' ? 'vi-VN-Neural2-A' : 'en-AU-Neural2-C');
+  const name = googleName(lang);
   const r = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + encodeURIComponent(settings.ttsKey), {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ input: { text }, voice: { languageCode: name.slice(0, 5), name }, audioConfig: { audioEncoding: 'MP3', speakingRate: .95 } })
+    body: JSON.stringify({ input: { text }, voice: { languageCode: name.slice(0, 5), name }, audioConfig: { audioEncoding: 'MP3', speakingRate: speakerKind() && speakerKind().old ? .88 : .95, pitch: googlePitch() } })
   });
   if (!r.ok) throw new Error('Google TTS ' + r.status + ' ' + (await r.text()).slice(0, 200));
   const j = await r.json(), bin = atob(j.audioContent), out = new Uint8Array(bin.length);
