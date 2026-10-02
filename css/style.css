@@ -843,7 +843,7 @@ button { color: var(--text); }
 .cc-line { font-size: clamp(24px, 5vw, 36px); font-weight: 700; color: #a0442a; min-height: 1.4em; }
 .wq { display: flex; flex-direction: column; align-items: center; gap: 6px; background: #fff; border-radius: 26px; padding: 18px 26px; box-shadow: var(--shadow); max-width: 640px; text-align: center; }
 .wq-flag { font-size: 34px; } .wq-pic { font-size: 84px; } .wq-word { font-size: clamp(24px, 4.5vw, 38px); font-weight: 700; color: var(--text); } .wq-ex { font-size: 16px; color: #7a6a8a; font-style: italic; }
-.wq-opt { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 120px; } .wq-opt b { font-size: 40px; }
+.choice.wq-opt { width: clamp(120px, 30vw, 180px); height: auto; min-height: clamp(110px, 22vw, 150px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 120px; max-width: min(44vw, 240px); font-size: clamp(16px, 3.6vw, 22px); line-height: 1.15; overflow-wrap: anywhere; white-space: normal; padding: 12px 14px; } .wq-opt b { font-size: 40px; }
 .wq-all { background: #fff8e0; border-radius: 999px; padding: 10px 18px; font-size: 18px; box-shadow: var(--shadow); }
 .gl-stars { display: flex; gap: 10px; font-size: clamp(54px, 12vw, 90px); }
 .gl-stars i { font-style: normal; filter: grayscale(1) opacity(.35); transform: scale(.4); animation: starIn .5s var(--d) cubic-bezier(.2, 1.6, .4, 1) forwards; }

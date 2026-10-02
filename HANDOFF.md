@@ -233,6 +233,13 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 
 - **Names follow the chosen language** (`NAMES_EN` / `NAMES_VI` in `i18n.js`). `T()`, `say()`, dialogs, story pages, chat, name tags and 3D signs all swap titles: in English "Ông Cú" → "Grandpa Owl", "Bà Hai" → "Grandma Hai", "Cô Mai" → "Auntie Mai", "Chú Tư" → "Uncle Tư"; in Vietnamese "Mrs Kelly" → "Cô Kelly", "Aunty Bev" → "Dì Bev". First names stay. Signs and tags register with `onLang()` and redraw instantly when the language changes. New people: add their title to the two maps; new signs: pass `['English', 'Tiếng Việt']`.
 
+### Round 6 (home screen + ads)
+- **📲 Add to Home Screen** (`js/install.js`): a chip at the top right of the title screen and a button at the top of Grown-ups. Where the browser allows it (Chrome / Edge / Samsung Internet on Android, Chrome / Edge on desktop) one tap opens the real install prompt. On iPhone and iPad (Apple doesn't allow pages to install themselves) it opens a 3-step picture guide: Share → "Add to Home Screen" → Add. It hides itself once the game runs from the home screen.
+- **Title language row no longer wraps:** the language buttons and ⓘ stay on one line; on narrow phones "About" shrinks to just the ⓘ icon.
+- **Two Homes Words:** long answers ("Sunglasses") now wrap inside their buttons.
+- **Ad videos** (`marketing/`): three vertical 1080×1920 videos (the story of why the game was made, key features, a 15-second teaser) with English and Vietnamese captions and an original jingle. `marketing/ADS.md` has post captions, hashtags and a voice-over script for Henry to record. The source (screenshots, HTML stage, music synth, render script) is in `marketing/source/`. The `marketing/` folder is not included in the Netlify zip.
+- **Waiting on a UI direction:** Option A (soft storybook) or Option B (chunky toy-box), on the design board. The next list (full language separation, Chinese + Indian villages, roads with cổng chào, gathering and gems, a market stall with multiplayer and friends, the Easy-camera fix, floating Save, adding coins, credits fix, more Vietnamese voices) starts once a direction is chosen.
+
 ## 3. How it's built
 
 **Tech:**
