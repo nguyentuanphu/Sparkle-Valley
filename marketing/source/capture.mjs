@@ -11,7 +11,20 @@ const game = async lang => {
   await clear(P.page); await P.page.evaluate(() => { window.__sv.renderer.setPixelRatio(3); dispatchEvent(new Event('resize')); });
   return P;
 };
-const quiet = page => page.evaluate(() => { document.querySelectorAll('.toast, .region-banner, .banner, .vc-pop').forEach(e => e.remove()); });
+const quiet = page => page.evaluate(() => { document.querySelectorAll('.toast, .region-banner, .banner, .vc-pop, .storybook').forEach(e => e.remove()); });
+// a cinematic view: the child stands at hero (facing yaw), the camera sits at cam and looks at look (heights above the ground); no HUD
+async function scene(page, name, hero, yaw, cam, look, wait = 5000) {
+  await clear(page);
+  await page.evaluate(([hx, hz, yaw]) => { const G = window.__sv, h = G.heroes[0]; h.place(hx, hz); h.yaw = yaw; }, [hero[0], hero[1], yaw]);
+  await page.waitForTimeout(1500); await quiet(page);
+  await page.evaluate(([cam, look]) => {
+    const G = window.__sv, h = G.heroes[0], g = (x, z) => G.world.groundAt(x, z);
+    G.paused = true; document.querySelector('#huds').style.visibility = 'hidden';
+    h.cam.position.set(cam[0], g(cam[0], cam[1]) + cam[2], cam[1]); h.cam.lookAt(look[0], g(look[0], look[1]) + look[2], look[1]);
+  }, [cam, look]);
+  await page.waitForTimeout(wait); await quiet(page); await shot(page, name);
+  await page.evaluate(() => { window.__sv.paused = false; document.querySelector('#huds').style.visibility = ''; });
+}
 // a view of the world: stand at (x, z), camera on the side camYaw, a little zoomed out
 async function view(page, name, x, z, camYaw, zoom = 1.5, wait = 4500) {
   await clear(page);
@@ -30,14 +43,21 @@ for (const lang of ['en', 'vi']) {
 }
 
 const { page, ctx } = await game('en');
-const V = [
-  ['city-hanoi', 84, -21, 0], ['city-bacninh', 48, -103, 0], ['city-dragon', 62, -61, Math.PI / 2, 1.7], ['city-saigon', -8, 67, Math.PI],
-  ['city-sydney', -70, -13, 0], ['city-brisbane', -15, 52, Math.PI / 2], ['city-melbourne', -123, 66, Math.PI / 2],
-  ['road-village', 70, 31, -Math.PI / 2, 1.8], ['road-town', 2, 47, -Math.PI / 2, 1.6], ['road-farm', -23, 90, Math.PI, 1.6]
+const S = [
+  ['city-hanoi', [84, -25], Math.PI, [86, -12, 7], [84, -40, 3]],
+  ['city-bacninh', [48, -107], Math.PI, [52, -95, 8], [48, -122, 5]],
+  ['city-dragon', [44, -62], -Math.PI / 2, [60, -48, 9], [36, -62, 5]],
+  ['city-saigon', [-8, 72], 0, [-6, 61, 7], [-8, 88, 4]],
+  ['city-sydney', [-70, -18], Math.PI, [-63, -7, 9], [-70, -34, 7]],
+  ['city-brisbane', [-20, 52], -Math.PI / 2, [-8, 57, 7], [-36, 50, 6]],
+  ['city-melbourne', [-128, 66], -Math.PI / 2, [-117, 70, 6], [-144, 66, 3]],
+  ['road-village', [75, 30], Math.PI / 2, [63, 37, 7], [82, 28, 3]],
+  ['road-town', [4, 47], Math.PI / 2, [-7, 53, 6], [20, 46, 3]],
+  ['road-farm', [-23, 92], 0, [-26, 80, 7], [-22, 104, 2]]
 ];
-for (const [n, x, z, c, zm] of V) if (want(n)) await view(page, n, x, z, c, zm);
-// the whistling kite in the meadow
-if (want('kite')) { await page.evaluate(() => { const G = window.__sv, p = G.heroes[0].profile; p.kite = true; p.kiteOn = true; G.kites.sync(); }); await view(page, 'kite', -30, 20, Math.PI * .8, 1.4, 6000); }
+for (const [n, hero, yaw, cam, look] of S) if (want(n)) await scene(page, n, hero, yaw, cam, look);
+// the whistling kite in the meadow, flying ahead of the child
+if (want('kite')) { await page.evaluate(() => { const G = window.__sv, p = G.heroes[0].profile; p.kite = true; p.kiteOn = true; G.kites.sync(); }); await scene(page, 'kite', [-40, 30], Math.PI, [-38, 41, 4], [-40, 22, 7], 7000); }
 // a kiosk: food and a saying
 if (want('kiosk')) {
   await view(page, 'kiosk-bg', 84, -26, 0, 1, 2500);
@@ -48,7 +68,7 @@ if (want('kiosk')) {
 if (want('map')) { await clear(page); await page.evaluate(() => window.__sv.openPad(0, 'map')); await page.waitForTimeout(1500); await shot(page, 'map'); }
 if (want('hub')) { await clear(page); await page.evaluate(() => window.__sv.openGamesHub(0)); await page.waitForTimeout(1500); await shot(page, 'hub'); }
 // city games
-for (const g of ['puppets', 'dongho', 'traffic', 'koala', 'tram', 'ferries']) if (want('g-' + g)) { await clear(page); await page.evaluate(g => window.__sv.playGame(0, g, 'replay'), g); await page.waitForTimeout(3500); await shot(page, 'g-' + g); await page.evaluate(() => { document.querySelector('.gl .gl-x')?.click(); }); await page.waitForTimeout(800); await clear(page); }
+for (const g of ['puppets', 'dongho', 'traffic', 'koala', 'tram', 'ferries']) if (want('g-' + g)) { await clear(page); await page.evaluate(g => { window.__sv.playGame(0, g, 'replay'); }, g); await page.waitForTimeout(3500); await shot(page, 'g-' + g); await page.evaluate(() => { document.querySelector('.gl .gl-x')?.click(); }); await page.waitForTimeout(800); await clear(page); }
 // a fairy tale in the tale theatre, English then Vietnamese
 for (const [lang, n] of [['en', 'tale-en'], ['vi', 'tale-vi']]) if (want(n)) {
   const Q = lang === 'en' ? { page } : await game('vi');
