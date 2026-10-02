@@ -174,7 +174,7 @@ export class Hud {
     const P = list.sort((a, c) => Math.hypot(a.pos.x - h.pos.x, a.pos.z - h.pos.z) - Math.hypot(c.pos.x - h.pos.x, c.pos.z - h.pos.z))[0];
     const d = Math.hypot(P.pos.x - h.pos.x, P.pos.z - h.pos.z), near = d < 6;
     b.hidden = false; b.classList.toggle('near', near);
-    const txt = near ? T(`${P.name} is here!`, `${P.name} ở đây!`) : `${P.name} · ${Math.round(d)} m`;
+    const pn = nm(P.name), txt = near ? T(`${pn} is here!`, `${pn} ở đây!`) : `${pn} · ${Math.round(d)} m`;
     if (this.last.f !== txt) { this.q('.fc-txt').textContent = txt; this.last.f = txt; }
     const camA = Math.atan2(camera.position.x - h.pos.x, camera.position.z - h.pos.z) + Math.PI; // the way the camera looks
     const a = Math.atan2(P.pos.x - h.pos.x, P.pos.z - h.pos.z) - camA;

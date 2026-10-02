@@ -13,6 +13,8 @@ import { el, esc, dist2, wait } from './util.js';
 import { modal, toast } from './ui.js';
 
 export const MAX_PETS = 2;
+// little pets were easy to lose in the grass: they are shown a bit bigger (the smallest the most)
+const PET_SCALE = { puppy: 1.3, kitty: 1.45, bunny: 1.55, panda: 1.35, joey: 1.4, calf: 1.25 };
 const NAME_IDEAS = ['Lucky', 'Mochi', 'Bông', 'Milo', 'Xoài', 'Coco', 'Bơ', 'Pepper', 'Mít', 'Biscuit', 'Kiwi', 'Tofu'];
 export const petName = pt => pt.name || PETS[pt.kind].name();
 
@@ -48,7 +50,7 @@ export function createPets(G) {
     G.heroes.forEach(h => {
       if (!Array.isArray(h.profile.pets)) h.profile.pets = [{ kind: 'puppy', name: '' }];
       h.profile.pets.slice(0, MAX_PETS).forEach((pt, j) => {
-        const obj = animalModel(pt.kind); obj.position.set(h.pos.x - 1.5 + j * 3, h.pos.y, h.pos.z - 1.5); scene.add(obj);
+        const obj = animalModel(pt.kind); obj.scale.multiplyScalar(PET_SCALE[pt.kind] || 1.3); obj.position.set(h.pos.x - 1.5 + j * 3, h.pos.y, h.pos.z - 1.5); scene.add(obj);
         const tg = tag(() => petName(pt)); scene.add(tg);
         const sn = sprite('👃', .9); sn.visible = false; scene.add(sn);
         const L = { h, pt, obj, tag: tg, sniff: sn, j, barkT: 3 + j * 2, hop: 0 }; live.push(L);
@@ -70,7 +72,7 @@ export function createPets(G) {
   P.syncYard = () => {
     yard.forEach(Y => { scene.remove(Y.obj); scene.remove(Y.tag); }); yard = [];
     farm.petYard.forEach((pt, k) => {
-      const obj = animalModel(pt.kind), a = k * 2.2; obj.position.set(yardC.x + Math.cos(a) * 2, heightAt(yardC.x, yardC.z), yardC.z + Math.sin(a) * 2); scene.add(obj);
+      const obj = animalModel(pt.kind), a = k * 2.2; obj.scale.multiplyScalar(PET_SCALE[pt.kind] || 1.3); obj.position.set(yardC.x + Math.cos(a) * 2, heightAt(yardC.x, yardC.z), yardC.z + Math.sin(a) * 2); scene.add(obj);
       const tg = tag(() => petName(pt)); scene.add(tg);
       const Y = { pt, obj, tag: tg, tx: obj.position.x, tz: obj.position.z, hop: 0 }; yard.push(Y);
       obj.userData.react = () => { const d = PETS[pt.kind]; SFX[d.snd] && SFX[d.snd](); Y.hop = .8; G.fx(obj.position.x, obj.position.y + 1, obj.position.z, '💕'); };
