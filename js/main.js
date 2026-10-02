@@ -1,5 +1,5 @@
 // Sparkle Valley: boot, the game loop, split-screen, NPCs, quests and rewards.
-import { THREE, sprite } from './gfx.js';
+import { THREE, sprite, P, merge, toonVC } from './gfx.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';
 import { T, nm, onLang, registerName } from './i18n.js';
@@ -7,7 +7,7 @@ import { say, hush, loadClips } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
-import { createWorld, paintMap, heightAt, regionAt, REGION_NAMES, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
+import { createWorld, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
 import { buildAvatar, buildOwl, buildGourd, avatarURL, OUTLINED } from './avatar.js';
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
@@ -30,6 +30,10 @@ import { createFarm, jobProgress, ensureJobs } from './farm.js';
 import { createPlaces } from './places.js';
 import { createTown } from './town.js';
 import { createRegions, LANDMARKS } from './regions.js';
+import { createGathering } from './gather.js';
+import { createAsia } from './asia.js';
+import './games/asia.js';
+import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
 import { openWardrobe, openGamesHub, openQuick } from './ui.js';
@@ -386,7 +390,7 @@ dialogHooks.chat = name => {
   if (h) G.chatWith(h.i, pid);
 };
 // ---------- the Games hub: every game, by place, playable straight away ----------
-const GAME_SPOT = { datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
+const GAME_SPOT = { firstwords: 'g_firstwords', tangram: 'g_tangram', snakes: 'g_snakes', rangoli: 'g_rangoli', datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
   tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
 G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (SHRINES.find(s => s.game === id) || {}).id));
 G.openQuick = i => { if (G.paused) return; G.paused = true; openQuick(G, i); };
@@ -550,6 +554,8 @@ G.snapshot = i => {
 G.PLACES = [
   { icon: '🏡', name: () => T('Sunny Farm', 'Nông trại'), x: HOME.x - 4, z: HOME.z + 2 },
   { icon: '🏮', name: () => T('Lotus Village', 'Làng Sen'), x: VILLAGE.x - VILLAGE.r + 6, z: VILLAGE.z },
+  { icon: '🐼', name: () => T('China Town', 'Làng Trung Hoa'), x: CHINA.x, z: CHINA.z + 12 },
+  { icon: '🐘', name: () => T('India Village', 'Làng Ấn Độ'), x: INDIA.x, z: INDIA.z + 15 },
   { icon: '🦉', name: () => T('Ông Cú', 'Ông Cú'), x: -2, z: -3 },
   { icon: '💃', name: () => T('Dance stage', 'Sân khấu'), x: VILLAGE.x - 6, z: VILLAGE.z + 25 },
   { icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: 28, z: 52 },
@@ -561,7 +567,7 @@ G.PLACES = [
   { icon: '🐻', name: () => T('Mr. Bear', 'Bác Gấu'), x: HOME.x - 21, z: HOME.z + 6 }
 ];
 G.changePlayer = () => {
-  save(); Net.close(); playing = false; G.paused = true; $('#huds').hidden = true;
+  save(); Net.close(); Net.stopListening(); playing = false; G.paused = true; $('#huds').hidden = true;
   G.heroes.forEach(h => { if (h.riding) h.dismount(); scene.remove(h.av.root); }); G.huds.forEach(h => h.destroy()); G.heroes = []; G.huds = [];
   showWho((mode, chosen) => startSession(mode, chosen));
 };
@@ -614,47 +620,90 @@ function sendHello() {
   const h = G.heroes[0]; if (!h) return;
   let photo = null;
   if (h.profile.photo) { const c = document.createElement('canvas'); c.width = c.height = 160; const im = new Image(); im.src = h.profile.photo; try { c.getContext('2d').drawImage(im, 0, 0, 160, 160); photo = c.toDataURL('image/jpeg', .7); } catch (e) { } }
-  Net.send({ t: 'hello', name: h.profile.name, look: h.profile.look, photo });
-  return { name: h.profile.name, look: h.profile.look, photo };
+  const friend = settings.friendsOn ? settings.friendCode : null;
+  Net.send({ t: 'hello', name: h.profile.name, look: h.profile.look, photo, friend });
+  return { name: h.profile.name, look: h.profile.look, photo, friend };
 }
+G.sendHello = sendHello;
+// Friends in the same room: one avatar and name tag each.
+G.partners = {};
+Object.defineProperty(G, 'partner', { get: () => Object.values(G.partners)[0] || null }); // older code: the first friend
 Net.on('hello', r => {
-  if (G.partner) scene.remove(G.partner.av.root), scene.remove(G.partner.tag);
+  const old = G.partners[r.id]; if (old) { scene.remove(old.av.root); scene.remove(old.tag); }
   const av = buildAvatar(Object.assign({ style: 'shirt', color: '#3d7fd6', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#f6c7a5', glider: 0 }, r.look || {}), r.photo);
   scene.add(av.root); const tag = nameTag(r.name || T('Friend', 'Bạn'), '#9ff0ff'); scene.add(tag);
-  G.partner = { av, tag, pos: new THREE.Vector3(0, -50, 0), yaw: 0, st: 'idle', name: r.name };
-  SFX.chime(); say(`${r.name} is here! Say hello!`, `${r.name} đã đến! Chào bạn đi!`);
+  G.partners[r.id] = { id: r.id, av, tag, pos: new THREE.Vector3(0, -50, 0), yaw: 0, st: 'idle', name: r.name };
+  if (!old) { SFX.chime(); say(`${r.name} is here! Say hello!`, `${r.name} đã đến! Chào bạn đi!`); }
   G.huds.forEach(hd => hd.setCall(true, false, Net.muted));
+  if (G.onNet) G.onNet();
 });
-Net.on('emote', d => { const e = EMOTES.find(e => e.id === d.id); if (!e || !G.partner) return; bubble(G.partner, e.icon + ' ' + T(e.en, e.vi)); say(`${G.partner.name} says: ${e.en}`, `${G.partner.name} nói: ${e.vi}`); });
-Net.on('left', () => { if (G.partner) { scene.remove(G.partner.av.root); scene.remove(G.partner.tag); G.partner = null; } G.huds.forEach(hd => hd.setCall(false)); toast(T('Your friend left.', 'Bạn đã rời đi.')); });
+Net.on('emote', d => { const e = EMOTES.find(e => e.id === d.id), P = G.partners[d.from]; if (!e || !P) return; bubble(P, e.icon + ' ' + T(e.en, e.vi)); say(`${P.name} says: ${e.en}`, `${P.name} nói: ${e.vi}`); });
+Net.on('left', r => {
+  const P = G.partners[r.id]; if (P) { scene.remove(P.av.root); scene.remove(P.tag); delete G.partners[r.id]; }
+  if (!Net.connected || !Object.keys(G.partners).length) G.huds.forEach(hd => hd.setCall(false));
+  toast(T(`${r.name || 'Your friend'} left.`, `${r.name || 'Bạn'} đã rời đi.`)); if (G.onNet) G.onNet();
+});
 Net.on('talking', on => G.huds.forEach(hd => hd.setCall(Net.connected, on, Net.muted)));
+const _np = new THREE.Vector3();
 let netStatus = '';
 Net.on('status', s => {
   const msg = {
     waiting: T(`Room code: ${s.code}. Tell your friend this number!`, `Mã phòng: ${s.code}. Đọc số này cho bạn nhé!`), connecting: T('Connecting…', 'Đang kết nối…'), connected: T('Connected! You can talk now.', 'Đã kết nối! Giờ có thể nói chuyện rồi.'),
     nocode: T('No room with that number. Check the code.', 'Không có phòng số này. Kiểm tra lại mã nhé.'), nomic: T('No microphone: your friend will not hear you, but you can still play and use the talk buttons.', 'Không có micrô: bạn sẽ không nghe được con, nhưng vẫn chơi và dùng nút nói được.'),
-    left: T('Your friend left.', 'Bạn đã rời đi.'), tapaudio: T('Tap the 🎙️ button to hear your friend.', 'Chạm nút 🎙️ để nghe bạn nói.'), error: T('Could not connect. Check the internet and try again.', 'Không kết nối được. Kiểm tra mạng rồi thử lại.')
+    left: T('The room has closed.', 'Phòng đã đóng.'), full: T('That room is full (6 players). Start your own room!', 'Phòng đã đủ 6 người. Hãy tạo phòng mới nhé!'), tapaudio: T('Tap the 🎙️ button to hear your friend.', 'Chạm nút 🎙️ để nghe bạn nói.'), error: T('Could not connect. Check the internet and try again.', 'Không kết nối được. Kiểm tra mạng rồi thử lại.')
   }[s.key] || '';
   netStatus = msg; if (msg) toast(msg); if (G.onNet) G.onNet();
 });
+// ---------- friends: codes, invites, the online panel ----------
+const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+if (!settings.friendCode) { settings.friendCode = Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join(''); saveSettings(); }
+if (!Array.isArray(settings.friends)) settings.friends = [];
+const onInvite = inv => {
+  SFX.chime(); say(`${inv.name} invites you to play!`, `${inv.name} mời con chơi cùng!`);
+  dialog(T('Invitation', 'Lời mời'), [[`👫 ${inv.name} invites you to play together! Join their room ${inv.room}?`, `👫 ${inv.name} mời con chơi cùng! Vào phòng ${inv.room} nhé?`]], [['✅ Join', '✅ Vào'], ['❌ Not now', '❌ Để sau']])
+    .then(k => { if (k === 0) Net.join(inv.room, sendHello() || {}); });
+};
+G.listenFriends = () => { if (settings.friendsOn && playing) Net.listenForFriends(settings.friendCode, onInvite); else Net.stopListening(); };
+const addFriend = (code, name) => { code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); if (code.length !== 6 || code === settings.friendCode) return false; const f = settings.friends.find(x => x.code === code); if (f) { if (name) f.name = name; } else settings.friends.push({ code, name: name || code }); saveSettings(); return true; };
 G.drawOnlinePanel = (body, redraw) => {
   G.onNet = () => { if (document.body.contains(body)) redraw(); };
-  if (Net.connected) {
-    body.innerHTML = `<div class="online on"><div class="friend"><img src="${G.partner && G.partner.av ? avatarURL({ photo: Net.remote && Net.remote.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, Net.remote && Net.remote.look) }) : ''}" alt=""><b>${esc(Net.remote ? Net.remote.name : '')}</b></div>
-      <p class="note center">${T('You are connected. Talk to each other with your voice, or use the 💬 buttons.', 'Đã kết nối. Hai bạn có thể nói chuyện bằng giọng nói, hoặc dùng nút 💬.')}</p>
-      <div class="actions center"><button class="btn big" id="oMute">${Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big primary" id="oFly">✨ ${T('Fly to my friend', 'Bay đến chỗ bạn')}</button><button class="btn big danger" id="oEnd">📵 ${T('Hang up', 'Kết thúc')}</button></div></div>`;
+  const h = G.heroes[0];
+  const friendsBox = () => `<div class="ocard friends"><h3>👫 ${T('My friends', 'Bạn của con')}</h3>
+      <p class="note">${T('My friend code', 'Mã bạn bè của con')}: <b class="fcode">${settings.friendCode}</b></p>
+      <label class="tog"><input type="checkbox" id="fOn" ${settings.friendsOn ? 'checked' : ''}> ${T('Friends can invite me while the game is open (needs the internet)', 'Bạn bè có thể mời con khi trò chơi đang mở (cần có mạng)')}</label>
+      <div class="flist">${settings.friends.map(f => `<div class="frow"><span>🧒 <b>${esc(f.name)}</b> <small>${f.code}</small></span>${Net.role === 'host' ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
+      <div class="vrow"><input type="text" id="fAdd" maxlength="6" placeholder="${T('Friend code', 'Mã bạn bè')}" autocomplete="off"><button class="btn" id="fAddB">＋ ${T('Add', 'Thêm')}</button></div>
+      ${Net.role !== 'host' && settings.friends.length ? `<p class="note">${T('Start a room to invite your friends.', 'Tạo phòng để mời bạn bè.')}</p>` : ''}</div>`;
+  const bindFriends = () => {
+    body.querySelector('#fOn').onchange = e => { settings.friendsOn = e.target.checked; saveSettings(); G.listenFriends(); };
+    body.querySelector('#fAddB').onclick = () => { if (addFriend(body.querySelector('#fAdd').value)) { SFX.chime(); redraw(); } else toast(T('A friend code has 6 letters and numbers.', 'Mã bạn bè gồm 6 chữ và số.')); };
+    body.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { settings.friends = settings.friends.filter(f => f.code !== b.dataset.rm); saveSettings(); redraw(); });
+    body.querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { b.disabled = true; const ok = await Net.invite(b.dataset.inv, h ? h.profile.name : ''); toast(ok ? T('Invitation sent!', 'Đã gửi lời mời!') : T('Your friend is not online right now.', 'Bạn ấy đang không trực tuyến.')); b.disabled = false; });
+  };
+  if (Net.connected || Net.role === 'host') {
+    const list = Object.values(Net.remotes);
+    body.innerHTML = `<div class="online on">
+      <p class="note center">${Net.code ? T(`Room code <b class="bigcode">${Net.code}</b> · ${Net.count}/6 players`, `Mã phòng <b class="bigcode">${Net.code}</b> · ${Net.count}/6 người chơi`) : ''}</p>
+      <div class="plist">${list.map(r => `<div class="prow"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(r.name)}</b></div>
+        <button class="btn" data-fly="${r.id}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-tr="${r.id}">🔄 ${T('Trade', 'Đổi đồ')}</button>${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${r.friend}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
+      <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
+      <div class="actions center"><button class="btn big" id="oMute">${Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
+      ${friendsBox()}</div>`;
     body.querySelector('#oMute').onclick = () => { G.toggleMute(); redraw(); };
-    body.querySelector('#oFly').onclick = () => { if (G.partner) { $('.modal.pad')?.remove(); G.paused = false; G.travel(G.heroes[0], G.partner.pos.x - 4.5, G.partner.pos.z - 1); } };
-    body.querySelector('#oEnd').onclick = () => { Net.close(); Net.emit('left'); redraw(); };
+    body.querySelector('#oEnd').onclick = () => { Net.close(); Object.keys(G.partners).forEach(id => Net.emit('left', { id, name: G.partners[id].name })); G.huds.forEach(hd => hd.setCall(false)); redraw(); };
+    body.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { const P = G.partners[b.dataset.fly]; if (P) { $('.modal.pad')?.remove(); G.paused = false; G.travel(G.heroes[0], P.pos.x - 4.5, P.pos.z - 1); } });
+    body.querySelectorAll('[data-tr]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; openTrade(G, G.heroes[0], b.dataset.tr); });
+    body.querySelectorAll('[data-addf]').forEach(b => b.onclick = () => { addFriend(b.dataset.addf, b.dataset.n); SFX.chime(); toast(T('Friend added!', 'Đã thêm bạn!')); redraw(); });
+    bindFriends();
     return;
   }
   let code = '';
   body.innerHTML = `<div class="online">
-    <p class="note center">${T('Play together from two phones or tablets, and talk with your voices! Both need the internet.', 'Chơi cùng nhau từ hai máy và nói chuyện bằng giọng nói! Cả hai máy cần có mạng.')}</p>
+    <p class="note center">${T('Play together from up to 6 phones or tablets, and talk with your voices! Everyone needs the internet.', 'Chơi cùng nhau tối đa 6 máy và nói chuyện bằng giọng nói! Mọi máy đều cần có mạng.')}</p>
     <div class="two-col">
       <div class="ocard"><h3>1. ${T('Start a room', 'Tạo phòng')}</h3><button class="btn big primary" id="oHost">📞 ${T('Start', 'Bắt đầu')}</button><div class="bigcode">${Net.role === 'host' && Net.code ? Net.code : ''}</div></div>
       <div class="ocard"><h3>2. ${T('Join a room', 'Vào phòng')}</h3><div class="codebox">____</div><div class="numpad">${[1, 2, 3, 4, 5, 6, 7, 8, 9, '⌫', 0, '✓'].map(n => `<button>${n}</button>`).join('')}</div></div>
-    </div><p class="note center status">${esc(netStatus)}</p></div>`;
+    </div><p class="note center status">${esc(netStatus)}</p>${friendsBox()}</div>`;
   const box = body.querySelector('.codebox');
   body.querySelector('#oHost').onclick = async () => { ac(); await Net.host(sendHello() || {}); redraw(); };
   body.querySelectorAll('.numpad button').forEach(b => b.onclick = () => {
@@ -663,6 +712,7 @@ G.drawOnlinePanel = (body, redraw) => {
     box.textContent = (code + '____').slice(0, 4);
     if (code.length === 4 && v !== '✓') Net.join(code, sendHello() || {});
   });
+  bindFriends();
 };
 
 // ---------- layout ----------
@@ -725,7 +775,7 @@ function startSession(mode, chosen) {
   TOWERS.forEach(t => world.setTowerDone(t.id, !!p0.towers[t.id]));
   LEAFIES.forEach(l => { const o = world.leafyMeshes[l.id]; if (o) o.visible = !chosen.every(p => p.leafies[l.id]); });
   setupWanderers(chosen);
-  resize(); G.paused = false; playing = true;
+  resize(); G.paused = false; playing = true; G.listenFriends();
   $('#huds').hidden = false;
   const p = chosen[0];
   const greet = () => { if (!p.quests.owl) say(`Hello ${p.name}! Walk over to the owl and say hi.`, `Chào ${p.name}! Đi đến chỗ chú cú và chào ông nhé.`); else say(`Welcome back, ${p.name}!`, `Chào mừng ${p.name} quay lại!`); };
@@ -785,9 +835,10 @@ function frame(now) {
   }
   $('#songBtn').hidden = !G.places.dancing || G.paused;
   if (!G.paused) world.updateSky(dt, h0.pos, h0.pos);
-  // online partner
-  if (G.partner && Net.remote && Net.remote.s) {
-    const s = Net.remote.s, P = G.partner; P.pos.lerp(new THREE.Vector3(s.x, s.y, s.z), Math.min(1, dt * 10)); P.yaw = s.yaw;
+  // friends online
+  for (const P of Object.values(G.partners)) {
+    const r = Net.remotes[P.id]; if (!r || !r.s) continue; const s = r.s;
+    P.pos.lerp(_np.set(s.x, s.y, s.z), Math.min(1, dt * 10)); P.yaw = s.yaw;
     P.av.root.position.copy(P.pos); P.av.root.rotation.y = P.yaw; P.av.anim(s.st || 'idle', t, s.sp || 0); P.tag.position.set(P.pos.x, P.pos.y + 2.0, P.pos.z);
   }
   sendT -= dt; if (Net.connected && sendT <= 0 && h0) { sendT = .1; Net.send({ t: 's', x: +h0.pos.x.toFixed(2), y: +h0.pos.y.toFixed(2), z: +h0.pos.z.toFixed(2), yaw: +h0.yaw.toFixed(2), st: h0.state, sp: +h0.speed.toFixed(1) }); }
@@ -810,7 +861,7 @@ function frame(now) {
     G.PLACES.forEach(pl => markers.push({ x: pl.x, z: pl.z, icon: pl.icon, size: 18 }));
     NPCS.forEach(n => markers.push({ x: n.x, z: n.z, icon: '•', size: 14 }));
     G.heroes.forEach((o, j) => { if (j !== i) markers.push({ x: o.pos.x, z: o.pos.z, icon: '🧒', size: 18 }); });
-    if (G.partner) markers.push({ x: G.partner.pos.x, z: G.partner.pos.z, icon: '🧒', size: 18 });
+    Object.values(G.partners).forEach(P => markers.push({ x: P.pos.x, z: P.pos.z, icon: '🧒', size: 18 }));
     const qt = questTarget(h); if (qt) markers.push({ x: qt.x, z: qt.z, pin: true });
     G.huds[i].update(dt, h.cam, G.fogMapFor(p), markers);
   });
@@ -824,6 +875,21 @@ G.places = createPlaces(G); world.updaters.push(G.places.update);
 G.town = createTown(G);
 G.GAMES_ICON = id => (GAMES[id] || {}).icon || "🎮";
 createRegions(G);
+G.dialog = (name, lines, choices) => dialog(name, lines, choices);
+createAsia(G);
+createGathering(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
+setupTrading(G);
+// "My market stall" at the Three Regions Market: trade with friends who are playing online
+{
+  const sx = MARKET.x0 + 4, sz = MARKET.roadZ - 4.5, y = heightAt(sx, sz), parts = [];
+  parts.push(P(new THREE.BoxGeometry(2.6, .9, 1.2), '#c98a4a', [0, .45, 0]), P(new THREE.BoxGeometry(2.8, .1, 1.4), '#f6e7c8', [0, .95, 0]));
+  [[-1.25, -.55], [1.25, -.55], [-1.25, .55], [1.25, .55]].forEach(([x, z]) => parts.push(P(new THREE.CylinderGeometry(.06, .06, 2.3, 6), '#8a5a3b', [x, 1.15, z])));
+  for (let i = 0; i < 6; i++) parts.push(P(new THREE.BoxGeometry(.5, .08, 1.7), i % 2 ? '#ffffff' : '#2fb04f', [-1.25 + i * .5, 2.35, 0], [.12, 0, 0]));
+  [['#ff4f9a', -.8], ['#ffd23f', -.2], ['#3cc7e8', .4], ['#5fd36a', .9]].forEach(([c, x]) => parts.push(P(new THREE.SphereGeometry(.16, 10, 8), c, [x, 1.12, .15])));
+  const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(sx, y, sz); m.castShadow = true; scene.add(m); world.colliders.push({ x: sx, z: sz, r: 1.4 });
+  G.interactables.push({ id: 'stall', x: sx, z: sz + 1.2, r: 3, icon: '🏪', label: () => T('My market stall: trade with friends', 'Sạp hàng của con: đổi đồ với bạn'), act: h => G.openTrade(h.i) });
+}
+G.openTrade = (i, id) => { if (G.paused) return; openTrade(G, G.heroes[i], id); };
 G.secrets = createSecrets(G);
 ensureJobs();
 setupBubbles(); setupAreaSigns(); setupGuides();

@@ -255,6 +255,30 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - **Language sweep:** an automated scan of every screen in both languages. The title now shows "Sparkle Valley · Two homes · one valley" in English and "Thung Lũng Lấp Lánh · Hai quê hương · một thung lũng" in Vietnamese, and close buttons are translated. What stays in Vietnamese in English mode is on purpose: people's and places' names, foods and folk-game names (with the English meaning beside them).
 - **Not done (stopped by the assistant's safety system, not a code problem):** the parents' play-time report, and the dirt roads with welcome gates. Both were stopped while being written and the half-written files were removed. They can be tried again in a new session or built by hand.
 
+### Round 9 (gathering)
+- **Out in the wild** (`js/gather.js`): 16 fruit bushes (mulberries / dâu tằm, guava / ổi, wild strawberries / dâu rừng, wild lemon / chanh rừng), 18 flower patches (peach blossom / hoa đào, yellow apricot blossom / hoa mai, golden wattle / hoa keo vàng, hibiscus / hoa dâm bụt) and 14 rocks, placed with a fixed seed in the meadows, the bamboo forest and on the plateau. Pick fruit (2 at a time) and flowers; bushes and patches grow back after 2–2.5 minutes. **Tap a rock 3 times** to crack it open: inside is a pretty pebble, a fossil shell, a purple crystal, a gold nugget or (rarely) a blue gem. Rocks come back after 3 minutes.
+- **Album → My treasures:** what each child has ever found (`profile.found`), with ❔ for the ones still to discover.
+- **Selling:** Mr. Bear's "Sell my basket and treasures" now also buys wild finds from the backpack (pebble 50c … blue gem $10). Coins go to the family's shared coins.
+
+### Round 10 (playing together: bigger rooms, friends, trading)
+- **Rooms of up to 6** (`js/net.js`): the device that starts a room passes messages between everyone (star layout); guests also call each other, so everyone hears everyone. `Net.remotes` holds every friend in the room, and `G.partners` holds their avatars. Full rooms answer "full". Messages can go to one friend with `{ to: id }`.
+- **Friends:** each device gets a random 6-character friend code (`settings.friendCode`). Grown-ups or kids can add friends by code, or tap ＋👫 next to someone they played with. If "Friends can invite me" is switched on (off by default), the game listens on that code while it is open, so a friend who has started a room can tap 📨 Invite and they get a "Join?" card. Only names, outfits and positions travel, device to device through PeerJS; no accounts.
+- **Trading** (`js/trade.js`): the 🏪 "My market stall" at the Three Regions Market, or 🔄 Trade next to a friend in the online panel. Pick things from the backpack and/or coins to give and what you'd like back, then send the offer. The friend taps Deal! or No thanks. Both sides are checked again before anything changes hands.
+- **Testing locally:** the public PeerJS server can be swapped for a local one with `window.SV_PEER = { host, port, path, secure }` (used by the automated 3-device test).
+
+### Round 11 (China Town and India Village)
+- **Two new villages in the north** (`js/asia.js`, sites `CHINA` and `INDIA` in `world.js`, flattened ground, on the map and in Travel):
+  - **China Town (Làng Trung Hoa):** houses with green tiled roofs, a five-roof pagoda, a little Great Wall with a watchtower, lantern strings and a panda statue. Hosts: Miss Mei (First Words), Jun (Tangram), Grandma Lin (dragon dance).
+  - **India Village (Làng Ấn Độ):** pastel flat-roofed houses with arched doors and marigold garlands, a little Taj Mahal with its pool, a big rangoli on the square and an elephant statue. Hosts: Priya (Snakes and Ladders), Grandma Asha (Rangoli), Arjun (First Words).
+  - Tapping the pagoda, the Great Wall or the Taj Mahal tells a short true fact.
+- **4 new thinking games** (`js/games/asia.js`, with How-to-play films and music):
+  - **First Words:** hear a Chinese or Hindi word (20 each in `js/words2.js`: hello, thank you, family, food, animals, numbers), then tap its picture.
+  - **Tangram Shapes:** which shape fills the gap? Big kids get turned shapes.
+  - **Snakes and Ladders** (Moksha Patam): a 5×5 board with counting aloud. Little ones get no snakes and always get there first.
+  - **Rangoli Patterns:** colour the right side to mirror the left.
+- **Chinese and Hindi, quietly:** small 🌏 中文 / हिन्दी buttons under the language row on the title screen and in Grown-ups (`settings.learnLang`). They switch on "also learning" that language: First Words focuses on it, and the village friends say the word aloud. The device voice is used if it has zh-CN / hi-IN voices, or Google Cloud voices. The game's menus stay in English or Vietnamese: a full Chinese or Hindi translation of every screen is a separate, bigger job.
+- **Still not done:** dirt roads with welcome gates between villages (this was stopped by the assistant's safety system twice in this session; please try it in a new session).
+
 ## 3. How it's built
 
 **Tech:**

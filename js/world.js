@@ -19,6 +19,8 @@ export const MARKET = { x0: 96, x1: 146, z0: 70, z1: 96, h: 4, roadZ: 83 };    /
 export const AUSSIE = { x0: -144, x1: -90, z0: -40, z1: 16, h: 4.5, roadZ: -12 }; // Aussie Corner: milk bar, fish and chips, ice-cream van, playground
 const FLATS = [TOWN, MARKET, AUSSIE];
 const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [58, 40], [52, 85]];
+export const CHINA = { x: 100, z: -88, r: 24, h: 9 };    // China Town: lanterns, tiled roofs, a pagoda and a little Great Wall
+export const INDIA = { x: -112, z: -84, r: 24, h: 9 };  // India Village: colourful houses, a little Taj Mahal, rangoli and marigolds
 export const BRIDGE = { x0: 44, x1: 74, z: 47, w: 6.4, h: 7.4 };   // the Harbour-style bridge carrying Two Homes Street over the river
 
 function riverDist(x, z) {
@@ -50,6 +52,8 @@ export function heightAt(x, z) {
   h = flat(h, x, z, VILLAGE, VILLAGE.r, 16, VILLAGE.h);
   h = flat(h, x, z, HOME, HOME.r, 16, HOME.h);
   h = flat(h, x, z, PLAYGROUND, PLAYGROUND.r, 12, PLAYGROUND.h);
+  h = flat(h, x, z, CHINA, CHINA.r, 18, CHINA.h);
+  h = flat(h, x, z, INDIA, INDIA.r, 18, INDIA.h);
   h = flat(h, x, z, PADDIES, PADDIES.r, 12, PADDIES.h + (Math.floor((z - PADDIES.z) / 9) * .35));
   h = flat(h, x, z, BAMBOO, BAMBOO.r - 10, 20, 5 + fbm(x * .03, z * .03, 2) * 2);
   const dl = dist2(x, z, LAKE.x, LAKE.z);
@@ -71,6 +75,8 @@ export function heightAt(x, z) {
 export function regionAt(x, z) {
   if (dist2(x, z, PLATEAU.x, PLATEAU.z) < PLATEAU.r + 8 && heightAt(x, z) > 12) return 'plateau';
   if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r + 10) return 'village';
+  if (dist2(x, z, CHINA.x, CHINA.z) < CHINA.r + 8) return 'china';
+  if (dist2(x, z, INDIA.x, INDIA.z) < INDIA.r + 8) return 'india';
   if (dist2(x, z, HOME.x, HOME.z) < HOME.r + 6) return 'home';
   if (dist2(x, z, PADDIES.x, PADDIES.z) < PADDIES.r + 8) return 'paddies';
   if (x > TOWN.x0 - 3 && x < TOWN.x1 + 3 && z > TOWN.z0 - 3 && z < TOWN.z1 + 3) return 'town';
@@ -87,6 +93,8 @@ export const REGION_NAMES = {
   town: () => T('Two Homes Street', 'Phố Hai Quê'),
   market: () => T('Three Regions Market', 'Chợ Ba Miền'),
   aussie: () => T('Aussie Corner', 'Góc Nước Úc'),
+  china: () => T('China Town', 'Làng Trung Hoa'),
+  india: () => T('India Village', 'Làng Ấn Độ'),
   home: () => T('Sunny Farm', 'Nông Trại Nắng Mai'),
   paddies: () => T('Golden Rice Fields', 'Cánh Đồng Lúa Vàng'),
   lake: () => T('Mirror Lake', 'Hồ Gương'),
@@ -264,6 +272,7 @@ export function createWorld(scene, quality) {
     if (h < 1.5 || nearPOI(x, z)) continue;
     const sl = Math.abs(heightAt(x + 2, z) - h) + Math.abs(heightAt(x, z + 2) - h);
     if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r + 4 || dist2(x, z, PADDIES.x, PADDIES.z) < PADDIES.r + 3 || dist2(x, z, HOME.x, HOME.z) < HOME.r + 4) continue;
+    if (dist2(x, z, CHINA.x, CHINA.z) < CHINA.r + 6 || dist2(x, z, INDIA.x, INDIA.z) < INDIA.r + 6) continue;
     if (Math.abs(z - BRIDGE.z) < 8 && x > BRIDGE.x0 - 14 && x < BRIDGE.x1 + 10) continue;
     const inPlat = dist2(x, z, PLATEAU.x, PLATEAU.z) < PLATEAU.r;
     if (inPlat && dist2(x, z, PLATEAU.x, PLATEAU.z) < 12) continue;
@@ -307,7 +316,7 @@ export function createWorld(scene, quality) {
   for (let tries = 0; tries < nGrass * 6 && (gi < nGrass || fi < fIm.count); tries++) {
     const near = rnd() < .5; const x = near ? (rnd() - .5) * 180 : (rnd() - .5) * (SIZE - 40), z = near ? (rnd() - .5) * 180 : (rnd() - .5) * (SIZE - 40), h = heightAt(x, z);
     if (h < 1.8 || h > 30) continue;
-    if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r - 6 || dist2(x, z, HOME.x, HOME.z) < HOME.r - 8) continue;
+    if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r - 6 || dist2(x, z, HOME.x, HOME.z) < HOME.r - 8 || dist2(x, z, CHINA.x, CHINA.z) < CHINA.r - 2 || dist2(x, z, INDIA.x, INDIA.z) < INDIA.r - 2) continue;
     o3.position.set(x, h - .05, z); o3.rotation.set(0, rnd() * 6, 0); o3.scale.setScalar(.45 + rnd() * .45); o3.updateMatrix();
     if (rnd() < .16 && fi < fIm.count) { fIm.setMatrixAt(fi, o3.matrix); fIm.setColorAt(fi++, tint.set(FC[Math.floor(rnd() * FC.length)])); }
     else if (gi < nGrass) { gIm.setMatrixAt(gi, o3.matrix); gIm.setColorAt(gi++, tint.setHSL(.26 + rnd() * .06, .55, .3 + rnd() * .1)); }
@@ -596,6 +605,8 @@ export function paintMap(size = 256) {
     else { r = 112 + h * 2; g = 178 - h; b = 130; }
     if (dist2(wx, wz, VILLAGE.x, VILLAGE.z) < VILLAGE.r - 2) { r = 222; g = 196; b = 150; }
     if (dist2(wx, wz, PADDIES.x, PADDIES.z) < PADDIES.r) { r = 160; g = 214; b = 110; }
+    if (dist2(wx, wz, CHINA.x, CHINA.z) < CHINA.r - 2) { r = 226; g = 190; b = 160; }
+    if (dist2(wx, wz, INDIA.x, INDIA.z) < INDIA.r - 2) { r = 238; g = 200; b = 150; }
     if (dist2(wx, wz, BAMBOO.x, BAMBOO.z) < BAMBOO.r) { r *= .8; g *= .95; b *= .8; }
     if (wx > 6 && wx < 56 && Math.abs(wz - TOWN.roadZ) < 3.6) { r = 175; g = 180; b = 184; }
     else if ((wx > MARKET.x0 && wx < MARKET.x1 && Math.abs(wz - MARKET.roadZ) < 4) || (wx > AUSSIE.x0 && wx < AUSSIE.x1 && Math.abs(wz - AUSSIE.roadZ) < 3.6)) { r = 190; g = 186; b = 178; }

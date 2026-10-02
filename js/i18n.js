@@ -9,7 +9,7 @@ const NAMES_EN = {
   'Ông Cú': 'Grandpa Cú', 'Ông Bầu': 'Grandpa Bầu', 'Mây Cau Có': 'Grumpy Cloud', 'Cô Mai': 'Auntie Mai', 'Bác Ba': 'Uncle Ba',
   'Cô Sáu': 'Auntie Sáu', 'Chú Tư': 'Uncle Tư', 'Anh Tuấn': 'Big Brother Tuấn', 'Bà Hai': 'Grandma Hai', 'Cô Thu': 'Auntie Thu',
   'O Lài': 'Auntie Lài', 'Chú Năm': 'Uncle Năm', 'Chú Tám': 'Uncle Tám', 'Cô Út': 'Auntie Út', 'Bà Năm': 'Grandma Năm',
-  'Anh Hai': 'Big Brother Hai', 'Cô Hạnh': 'Miss Hạnh', 'Bác Gấu': 'Mr. Bear'
+  'Anh Hai': 'Big Brother Hai', 'Cô Hạnh': 'Miss Hạnh', 'Bác Gấu': 'Mr. Bear', 'Cô Mei': 'Miss Mei', 'Bà Lin': 'Grandma Lin', 'Bà Asha': 'Grandma Asha'
 };
 const NAMES_VI = { 'Mrs Kelly': 'Cô Kelly', 'Aunty Bev': 'Dì Bev', 'Uncle Robbo': 'Chú Robbo', 'Mr. Bear': 'Bác Gấu' };
 const ALIAS = { 'Mr. Bear': 'Bác Gấu' }; // two spellings of one character
