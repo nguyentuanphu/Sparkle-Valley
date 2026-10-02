@@ -40,13 +40,16 @@ function bindLang(root, after) {
 // ---------- Title ----------
 export function showTitle(onStart) {
   const s = el('div', 'screen title', `
-    <div class="logo"><div class="logo-main">Sparkle Valley</div><div class="logo-sub">Thung Lũng Lấp Lánh</div></div>
+    <div class="logo"><div class="logo-main"></div><div class="logo-sub"></div></div>
     <div class="press"></div>
     <div class="title-top"></div>
     <div class="title-foot"></div>`);
   document.body.appendChild(s);
   const redraw = () => {
     s.querySelector('.press').textContent = T('Tap anywhere to start', 'Chạm vào đâu đó để bắt đầu');
+    s.querySelector('.logo-main').textContent = T('Sparkle Valley', 'Thung Lũng Lấp Lánh');
+    s.querySelector('.logo-sub').textContent = T('Two homes · one valley', 'Hai quê hương · một thung lũng');
+    s.querySelector('.logo').classList.toggle('vi', settings.lang === 'vi');
     s.querySelector('.title-foot').innerHTML = flagBtns() + `<button class="about" aria-label="${T('About', 'Giới thiệu')}">ℹ️<span> ${T('About', 'Giới thiệu')}</span></button>`;
     bindLang(s, redraw);
     s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(); };
@@ -130,7 +133,7 @@ export function openGrownups(after) {
   const draw = () => {
     const vEn = voicesFor('en'), vVi = voicesFor('vi');
     card.innerHTML = `
-      <button class="x" aria-label="Close">✕</button>
+      <button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
       <h2>${T('Grown-ups', 'Phụ huynh')}</h2>
       <div class="g-install"></div>
       <h3>${T('Language', 'Ngôn ngữ')}</h3>${flagBtns()}
@@ -365,7 +368,7 @@ export function openPad(game, i, tab) {
   const TABS = [['map', '🗺️', T('Map', 'Bản đồ')], ['bag', '🎒', T('Backpack', 'Ba lô')], ['log', '📜', T('Adventures', 'Nhiệm vụ')], ['album', '⭐', T('Album', 'Bộ sưu tập')], ['games', '🎲', T('Games', 'Trò chơi')], ['cam', '📷', T('Camera', 'Máy ảnh')]];
   if (game.mode === 'online' || game.mode === 'solo') TABS.push(['friend', '📞', T('Friend', 'Bạn bè')]);
   const draw = () => {
-    card.innerHTML = `<div class="pad-head"><div class="pad-tabs">${TABS.map(t => `<button data-t="${t[0]}" class="${t[0] === tab ? 'on' : ''}"><span>${t[1]}</span><small>${t[2]}</small></button>`).join('')}</div><button class="x" aria-label="Close">✕</button></div><div class="pad-body"></div>`;
+    card.innerHTML = `<div class="pad-head"><div class="pad-tabs">${TABS.map(t => `<button data-t="${t[0]}" class="${t[0] === tab ? 'on' : ''}"><span>${t[1]}</span><small>${t[2]}</small></button>`).join('')}</div><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div><div class="pad-body"></div>`;
     card.querySelectorAll('.pad-tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; SFX.tap(); draw(); });
     card.querySelector('.x').onclick = close;
     const body = card.querySelector('.pad-body');
@@ -478,7 +481,7 @@ export function openCooking(game, i) {
   const pot = [];
   const draw = () => {
     const have = Object.entries(p.inv).map(([id, n]) => [id, n - pot.filter(x => x === id).length]).filter(([, n]) => n > 0);
-    card.innerHTML = `<button class="x" aria-label="Close">✕</button><h2>🍲 ${T('Cooking pot', 'Nồi nấu ăn')}</h2>
+    card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🍲 ${T('Cooking pot', 'Nồi nấu ăn')}</h2>
       <p class="sub">${T('Put up to 3 things in the pot. Try different mixes to discover Vietnamese dishes!', 'Cho tối đa 3 thứ vào nồi. Thử trộn khác nhau để khám phá món ăn Việt Nam!')}</p>
       <div class="potbox">${[0, 1, 2].map(k => `<button class="pslot" data-k="${k}">${pot[k] ? ITEMS[pot[k]].icon : ''}</button>`).join('')}</div>
       <div class="slots">${have.map(([id, n]) => `<button class="slot" data-add="${id}"><span>${ITEMS[id].icon}</span><b>${n}</b><small>${esc(ITEMS[id].name())}</small></button>`).join('') || `<p class="note">${T('Your backpack is empty. Find ingredients or buy them from Cô Mai.', 'Ba lô trống rồi. Tìm nguyên liệu hoặc mua ở chỗ Cô Mai nhé.')}</p>`}</div>
@@ -507,7 +510,7 @@ export function openShop(game, i) {
   const m = modal('shop', '');
   const card = m.querySelector('.card');
   const draw = () => {
-    card.innerHTML = `<button class="x" aria-label="Close">✕</button><h2>🛒 ${T("Cô Mai's stall", 'Sạp hàng Cô Mai')}</h2>
+    card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🛒 ${T("Cô Mai's stall", 'Sạp hàng Cô Mai')}</h2>
       <p class="sub">💰 ${T('You have', 'Con có')} <b>${fmt(farm.coins)}</b> ${cur().flag}</p>
       <div class="shoplist">${SHOP.map((s, k) => {
         const owned = s.kind === 'hat' ? p.owned.hats.includes(s.id) : s.kind === 'glider' ? p.owned.gliders.includes(s.id) : false;
@@ -567,7 +570,7 @@ export function openRecorder(after) {
   const close = () => { if (live) live.stop(); releaseMic(); m.close(); after && after(); };
   const draw = () => {
     const ph = FAMILY_PHRASES[idx], has = hasClip(L(), ph.id), done = FAMILY_PHRASES.filter(p => hasClip(L(), p.id)).length;
-    card.innerHTML = `<button class="x" aria-label="Close">✕</button><h2>🎙️ ${T('Family voice', 'Giọng của gia đình')}</h2>
+    card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎙️ ${T('Family voice', 'Giọng của gia đình')}</h2>
       <p class="sub">${T('Read each line in a happy voice. The game will say these lines in your own voice.', 'Đọc từng câu bằng giọng vui vẻ. Trò chơi sẽ nói những câu này bằng chính giọng của bạn.')}</p>
       ${flagBtns()}
       ${err ? `<div class="warn">⚠️ ${esc(MIC_HELP[err] ? MIC_HELP[err]() : err)}</div>` : ''}
@@ -632,7 +635,7 @@ export function openGamesHub(game, i, onClose) {
   const p = game.heroes[i].profile;
   const m = modal('hub', ''), card = m.querySelector('.card');
   const close = () => { m.close(); onClose && onClose(); };
-  card.innerHTML = `<button class="x" aria-label="Close">✕</button><h2>🎮 ${T('Games', 'Trò chơi')}</h2>
+  card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎮 ${T('Games', 'Trò chơi')}</h2>
     <p class="sub">${T('Tap a picture to play now. 📺 shows how to play. 📍 walks you there in the valley.', 'Chạm vào hình để chơi ngay. 📺 xem cách chơi. 📍 đi đến chỗ đó trong thung lũng.')}</p>
     ${HUB.map(sec => `<h3>${sec.icon} ${esc(sec.title())}</h3><div class="hubgrid">${sec.games.filter(id => GAMES[id]).map((id, k) => {
       const g = GAMES[id], lv = p.levels[id] || 1;

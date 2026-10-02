@@ -892,3 +892,4 @@ button { color: var(--text); }
 .rn-bar .btn { flex: 1; }
 @media (max-width: 460px) { .rn-row { grid-template-columns: 36px 1fr; } .rn-row label:last-child { grid-column: 2; } }
 .grownups #gDone { position: sticky; bottom: calc(env(safe-area-inset-bottom) + 10px); z-index: 3; box-shadow: 0 8px 24px rgba(60, 30, 90, .35); }
+.logo.vi .logo-main { font-size: clamp(38px, 8.6vw, 96px); }

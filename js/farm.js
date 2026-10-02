@@ -351,7 +351,7 @@ function seedPicker(G, h, i) {
   const m = modal('seeds', '');
   const card = m.querySelector('.card');
   const close = () => { m.close(); G.paused = false; };
-  card.innerHTML = `<button class="x" aria-label="Close">✕</button><h2>🌱 ${T('Pick a seed', 'Chọn hạt giống')}</h2><div class="bigpick">${Object.entries(CROPS).map(([k, c]) => { const n = k === 'carrot' ? '∞' : farm.seeds[k] || 0; return `<button data-k="${k}" ${n === 0 ? 'class="none"' : ''}><span>${c.icon}</span><b>${n}</b></button>`; }).join('')}</div><p class="note center">${T('Buy more seeds from Mr. Bear.', 'Mua thêm hạt giống ở chỗ Bác Gấu.')}</p>`;
+  card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🌱 ${T('Pick a seed', 'Chọn hạt giống')}</h2><div class="bigpick">${Object.entries(CROPS).map(([k, c]) => { const n = k === 'carrot' ? '∞' : farm.seeds[k] || 0; return `<button data-k="${k}" ${n === 0 ? 'class="none"' : ''}><span>${c.icon}</span><b>${n}</b></button>`; }).join('')}</div><p class="note center">${T('Buy more seeds from Mr. Bear.', 'Mua thêm hạt giống ở chỗ Bác Gấu.')}</p>`;
   card.querySelector('.x').onclick = close;
   card.querySelectorAll('[data-k]').forEach(b => {
     b.onclick = () => {
@@ -393,7 +393,7 @@ function openSell(G, h) {
   const close = () => { m.close(); G.paused = false; };
   const draw = () => {
     const items = Object.entries(farm.basket).filter(([, n]) => n > 0);
-    card.innerHTML = `<button class="x" aria-label="Close">✕</button><h2>🧺 ${T('Sell to Mr. Bear', 'Bán cho Bác Gấu')}</h2><p class="sub">💰 ${fmt(farm.coins)}</p>
+    card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🧺 ${T('Sell to Mr. Bear', 'Bán cho Bác Gấu')}</h2><p class="sub">💰 ${fmt(farm.coins)}</p>
       <div class="bigpick">${items.map(([k, n]) => `<button data-k="${k}"><span>${itemIcon(k)}</span><b>${n}</b><small>${fmt(sellPrice(k))}</small></button>`).join('') || `<p class="note">${T('Your basket is empty. Harvest crops and collect from the barn!', 'Giỏ trống rồi. Thu hoạch và nhặt đồ ở chuồng nhé!')}</p>`}</div>
       ${items.length ? `<button class="btn primary wide big" id="sellAll">💰 ${T('Sell everything', 'Bán hết')}</button>` : ''}`;
     card.querySelector('.x').onclick = close;
@@ -412,7 +412,7 @@ function openBuy(G, h) {
   const close = () => { m.close(); G.paused = false; };
   const draw = () => {
     const seeds = Object.entries(CROPS).filter(([k]) => k !== 'carrot');
-    card.innerHTML = `<button class="x" aria-label="Close">✕</button><h2>🌱 ${T("Mr. Bear's shop", 'Cửa hàng Bác Gấu')}</h2><p class="sub">💰 ${fmt(farm.coins)}</p>
+    card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🌱 ${T("Mr. Bear's shop", 'Cửa hàng Bác Gấu')}</h2><p class="sub">💰 ${fmt(farm.coins)}</p>
       <h3>${T('Seeds', 'Hạt giống')}</h3><div class="bigpick">${seeds.map(([k, c]) => `<button data-s="${k}" class="${farm.coins < c.seed ? 'poor' : ''}"><span>${c.icon}</span><b>${farm.seeds[k] || 0}</b><small>${fmt(c.seed)}</small></button>`).join('')}</div>
       <h3>${T('Barn animals', 'Vật nuôi trong chuồng')}</h3><div class="bigpick">${Object.entries(ANIMALS).map(([k, a]) => `<button data-a="${k}" class="${farm.coins < a.price ? 'poor' : ''}"><span>${a.icon}</span><b>${farm.animals.filter(x => x.kind === k).length}</b><small>${fmt(a.price)}</small></button>`).join('')}</div>
       <h3>${T('Pets that follow you', 'Thú cưng đi theo con')}</h3><div class="bigpick">${Object.entries(PETS).filter(([, p]) => p.price).map(([k, p]) => `<button data-p="${k}" class="${farm.pets.includes(k) ? 'owned' : farm.coins < p.price ? 'poor' : ''}"><span>${p.icon}</span><small>${farm.pets.includes(k) ? '✓' : fmt(p.price)}</small></button>`).join('')}</div>`;
@@ -428,7 +428,7 @@ export function openJobs(G, h) {
   ensureJobs(); G.paused = true;
   const m = modal('jobs', ''), card = m.querySelector('.card');
   const close = () => { m.close(); G.paused = false; };
-  card.innerHTML = `<button class="x" aria-label="Close">✕</button><h2>📌 ${T("Today's jobs", 'Việc hôm nay')}</h2><p class="sub">${T('Each finished job gives', 'Mỗi việc xong được')} ${fmt(5)} + ⭐</p>
+  card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>📌 ${T("Today's jobs", 'Việc hôm nay')}</h2><p class="sub">${T('Each finished job gives', 'Mỗi việc xong được')} ${fmt(5)} + ⭐</p>
     <div class="joblist">${farm.jobs.list.map(j => `<button class="job ${j.done >= j.n ? 'done' : ''}" data-say="${esc(jobText(j))}"><span class="ji">${j.done >= j.n ? '✅' : jobIcon(j)}</span><span class="jt">${esc(jobText(j))}</span><span class="jp">${Math.min(j.done, j.n)}/${j.n}</span></button>`).join('')}</div>`;
   card.querySelector('.x').onclick = close;
   card.querySelectorAll('[data-say]').forEach(b => b.onclick = () => say(b.dataset.say, b.dataset.say));
