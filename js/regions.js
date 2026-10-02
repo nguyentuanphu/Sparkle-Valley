@@ -10,7 +10,7 @@ import { THREE, toon, toonVC, P, merge, sprite } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
 import { say } from './voice.js';
 import { SFX, tone } from './audio.js';
-import { heightAt, MARKET, AUSSIE } from './world.js';
+import { heightAt, MARKET, AUSSIE, WATER } from './world.js';
 import { buildAvatar } from './avatar.js';
 import { Box, Cyl, gable, hip, win } from './town.js';
 import { dialog, reward } from './ui.js';
@@ -284,7 +284,22 @@ export function createRegions(G) {
     put(merge(p), -128, 152, .2); box(-156, -100, 142, 162); }
   // the Harbour Bridge already carries the road: just add its postcard below
 
-  for (const lm of LANDMARKS) I('pc_' + lm.id, lm.x, lm.z + (lm.id === 'uluru' ? 0 : 0), lm.id === 'uluru' ? 5 : 3.4, '📮', () => T('Postcard: ', 'Bưu thiếp: ') + lm.name(), h => postcard(G, h, lm));
+  // Children must not be able to walk inside a landmark (the camera would end up inside its walls), and
+  // the postcard spot stands outside on open ground, where the whole building can be seen.
+  box(91, 103, 120, 136); box(12, 25, 153, 158); // the Opera House and the lifesavers' tower
+  const OUT = { opera: 11, bondi: 8, lighthouse: 6.5, banana: 8.5, turtle: 7, onepillar: 6.5, chuacau: 7, benthanh: 8 };
+  const clear = (x, z) => heightAt(x, z) > WATER + .4 && world.boxes.every(b => x < b.x0 - .8 || x > b.x1 + .8 || z < b.z0 - .8 || z > b.z1 + .8) && world.colliders.every(c => Math.hypot(c.x - x, c.z - z) > c.r + .8);
+  for (const lm of LANDMARKS) {
+    if (lm.id === 'uluru') { lm.mx = -128; lm.mz = 152; }
+    else if (OUT[lm.id]) {
+      const a0 = Math.atan2(-lm.z, -lm.x); // start looking on the side facing the middle of the valley
+      for (let r = OUT[lm.id]; r < OUT[lm.id] + 8; r += 2) {
+        let ok = null; for (let k = 0; k < 24 && !ok; k++) { const a = a0 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * Math.PI / 12, x = lm.x + Math.cos(a) * r, z = lm.z + Math.sin(a) * r; if (clear(x, z)) ok = [x, z]; }
+        if (ok) { lm.mx = lm.x; lm.mz = lm.z; [lm.x, lm.z] = ok; break; }
+      }
+    }
+    I('pc_' + lm.id, lm.x, lm.z, lm.id === 'uluru' ? 5 : 3.4, '📮', () => T('Postcard: ', 'Bưu thiếp: ') + lm.name(), h => postcard(G, h, lm));
+  }
 
   // ---------- life ----------
   let jingleT = 5;
@@ -341,6 +356,7 @@ async function vendorTalk(G, h, v) {
 export async function postcard(G, h, lm) {
   const p = h.profile; p.postcards = p.postcards || {};
   const first = !p.postcards[lm.id]; p.postcards[lm.id] = true; G.save();
+  if (G.showcase) await G.showcase(h, lm); // fly round the landmark first, so it can be seen whole
   await dialog(lm.name(), [lm.fact]);
   if (first) { G.addCoins(10); const st = G.giveSticker(p); await reward('📮', T('New postcard: ', 'Bưu thiếp mới: ') + lm.name(), T(`+${G.fmt(10)}${st ? ' and a sticker ' + st : ''}`, `+${G.fmt(10)}${st ? ' và hình dán ' + st : ''}`)); }
 }

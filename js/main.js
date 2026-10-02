@@ -16,7 +16,7 @@ import { Net } from './net.js';
 import { showTitle, showWho, dialog, dialogHooks, reward, openPad, openCooking, openShop, toast } from './ui.js';
 import { openChat, personaByName, PERSONAS } from './chat.js';
 import { voiceCommand, voiceControlOn } from './commands.js';
-import { ITEMS, RECIPES, GATHER, STICKERS, QUESTS } from './data.js';
+import { ITEMS, RECIPES, GATHER, STICKERS, QUESTS, dishInfo } from './data.js';
 import { openGame, gameOpen, GAMES } from './games/frame.js';
 import './games/thinking.js';
 import './games/strategy.js';
@@ -33,7 +33,16 @@ import { createRegions, LANDMARKS } from './regions.js';
 import { createGathering } from './gather.js';
 import { createAsia } from './asia.js';
 import { createHeritage } from './heritage.js';
+import { createPets } from './pets.js';
+import { createFerries } from './ferry.js';
+import { createPassport } from './passport.js';
+import { createFestivals } from './festivals.js';
+import { createWeather } from './weather.js';
+import { createFun, confetti } from './fun.js';
+import { createLearning } from './learn.js';
+import { createShowcase } from './showcase.js';
 import './games/asia.js';
+import './games/music.js';
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
@@ -177,6 +186,7 @@ function setupGuides() {
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 70, 16, 1, true), new THREE.MeshBasicMaterial({ color: '#ffd23f', transparent: true, opacity: .28, depthWrite: false, side: THREE.DoubleSide, fog: false }));
   const bang = sprite('❗', 2.4); bang.material.fog = false; scene.add(beam, bang);
   const arrowGeo = new THREE.ConeGeometry(.45, 1.1, 4); arrowGeo.rotateX(Math.PI / 2);
+  const feet = sprite('👣', .8).material; // footprints when walking to a place chosen on the map
   const guides = [0, 1].map(() => {
     const arrow = new THREE.Mesh(arrowGeo, new THREE.MeshBasicMaterial({ color: '#ffd23f', fog: false }));
     const dots = Array.from({ length: 14 }, () => { const d = sprite('✨', .7); d.material = d.material.clone(); scene.add(d); return d; });
@@ -187,14 +197,18 @@ function setupGuides() {
     beam.visible = bang.visible = !!tg0;
     if (tg0) { const gy = heightAt(tg0.x, tg0.z); beam.position.set(tg0.x, gy + 35, tg0.z); bang.position.set(tg0.x, gy + 5.2 + Math.abs(Math.sin(t * 3)) * .8, tg0.z); beam.material.opacity = .2 + Math.sin(t * 2) * .08; }
     guides.forEach((g, i) => {
-      const h = G.heroes[i], tg = h && playing ? questTarget(h) : null;
+      const h = G.heroes[i];
+      if (h && h.walkTo && dist2(h.pos.x, h.pos.z, h.walkTo.x, h.walkTo.z) < 7) { SFX.chime(); hudFor(h).toast('👣 ' + T(`You walked to ${h.walkTo.name}!`, `Con đã đi bộ đến ${h.walkTo.name}!`)); h.walkTo = null; }
+      const tg = h && playing ? h.walkTo || questTarget(h) : null;
       const d = tg ? dist2(h.pos.x, h.pos.z, tg.x, tg.z) : 0, show = !!tg && d > 5 && !G.paused;
       g.arrow.visible = show; g.dots.forEach(x => x.visible = show);
       if (!show) return;
       const dx = (tg.x - h.pos.x) / d, dz = (tg.z - h.pos.z) / d;
       g.arrow.position.set(h.pos.x + dx * 1.9, h.pos.y + .35 + Math.sin(t * 5) * .08, h.pos.z + dz * 1.9); g.arrow.rotation.set(0, Math.atan2(dx, dz), 0);
       const flow = (t * 3) % 2.2;
+      const want = h.walkTo ? feet : g.sparkle || (g.sparkle = g.dots[0].material.clone());
       g.dots.forEach((x, k) => {
+        if (x.material.map !== want.map) { x.material.map = want.map; x.material.needsUpdate = true; }
         const along = 3 + k * 2.2 + flow; if (along > Math.min(d - 1, 34)) { x.visible = false; return; }
         const px = h.pos.x + dx * along, pz = h.pos.z + dz * along;
         x.position.set(px, world.groundAt(px, pz, h.pos.y + 2) + .35, pz); x.material.opacity = 1 - along / 36;
@@ -391,7 +405,7 @@ dialogHooks.chat = name => {
   if (h) G.chatWith(h.i, pid);
 };
 // ---------- the Games hub: every game, by place, playable straight away ----------
-const GAME_SPOT = { firstwords: 'g_firstwords', tangram: 'g_tangram', snakes: 'g_snakes', rangoli: 'g_rangoli', datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
+const GAME_SPOT = { music: 'musiccorner', firstwords: 'g_firstwords', tangram: 'g_tangram', snakes: 'g_snakes', rangoli: 'g_rangoli', datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
   tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
 G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (SHRINES.find(s => s.game === id) || {}).id));
 G.openQuick = i => { if (G.paused) return; G.paused = true; openQuick(G, i); };
@@ -520,6 +534,7 @@ G.hurt = (h, n) => {
   if (h.hearts <= 0) G.rescue(h, true);
 };
 G.rescue = async (h, fainted) => {
+  if (!fainted && G.pets && G.pets.rescue(h)) return; // a pet comes to pull them out of the water
   if (h._rescuing) return; h._rescuing = true;
   const f = el('div', 'fade white'); document.body.appendChild(f); SFX.travel();
   say(fainted ? 'Oh dear! Ông Cú carried you somewhere safe.' : 'Splash! Ông Cú helped you out of the water.', fainted ? 'Ôi! Ông Cú đã đưa con đến chỗ an toàn.' : 'Ùm! Ông Cú đã kéo con lên bờ.');
@@ -530,12 +545,13 @@ G.rescue = async (h, fainted) => {
 G.travel = async (h, x, z) => {
   const f = el('div', 'fade blue'); document.body.appendChild(f); SFX.travel();
   await wait(650); if (h.riding) h.dismount();
+  if (h.cancelCarry) { h.cancelCarry(); h.cancelCarry = null; }
   h.place(x + 4.5, z + 1); h.gliding = false; h.camYaw = Math.PI;
   f.classList.add('out'); setTimeout(() => f.remove(), 700);
 };
 G.eat = (h, id) => {
   const p = h.profile; if (!p.dishes[id]) return;
-  const r = RECIPES.find(r => r.id === id) || { heal: 1, bonus: 0, name: () => T('Mystery stew', 'Món hầm bí ẩn') };
+  const r = dishInfo(id) || { heal: 1, bonus: 0, name: () => T('Mystery stew', 'Món hầm bí ẩn') };
   p.dishes[id]--; save();
   h.hearts = Math.min(p.hearts, h.hearts + r.heal); h.bonusStamina = r.bonus; h.stamina = p.staminaMax + r.bonus; h.exhausted = false;
   SFX.ok(); say(`Yum yum! ${r.name()}!`, `Măm măm! ${r.name()}!`); h.cheerT = 1.2;
@@ -655,7 +671,10 @@ Net.on('status', s => {
   const msg = {
     waiting: T(`Room code: ${s.code}. Tell your friend this number!`, `Mã phòng: ${s.code}. Đọc số này cho bạn nhé!`), connecting: T('Connecting…', 'Đang kết nối…'), connected: T('Connected! You can talk now.', 'Đã kết nối! Giờ có thể nói chuyện rồi.'),
     nocode: T('No room with that number. Check the code.', 'Không có phòng số này. Kiểm tra lại mã nhé.'), nomic: T('No microphone: your friend will not hear you, but you can still play and use the talk buttons.', 'Không có micrô: bạn sẽ không nghe được con, nhưng vẫn chơi và dùng nút nói được.'),
-    left: T('The room has closed.', 'Phòng đã đóng.'), full: T('That room is full (6 players). Start your own room!', 'Phòng đã đủ 6 người. Hãy tạo phòng mới nhé!'), tapaudio: T('Tap the 🎙️ button to hear your friend.', 'Chạm nút 🎙️ để nghe bạn nói.'), error: T('Could not connect. Check the internet and try again.', 'Không kết nối được. Kiểm tra mạng rồi thử lại.')
+    left: T('The room has closed.', 'Phòng đã đóng.'), full: T('That room is full (6 players). Start your own room!', 'Phòng đã đủ 6 người. Hãy tạo phòng mới nhé!'), tapaudio: T('Tap the 🎙️ button to hear your friend.', 'Chạm nút 🎙️ để nghe bạn nói.'), error: T('Could not connect. Check the internet and try again.', 'Không kết nối được. Kiểm tra mạng rồi thử lại.'),
+    removed: T('The room’s starter asked you to leave the room.', 'Chủ phòng đã mời con ra khỏi phòng.'),
+    slow: T('Still connecting… This can take a little longer when you are on different networks.', 'Vẫn đang kết nối… Khi hai máy ở hai mạng khác nhau có thể lâu hơn một chút.'),
+    stuck: T('Could not link the two devices. Try: both on Wi-Fi (or both on mobile data), start the room on the other device, or ask a grown-up to add a relay in Grown-ups → Online play.', 'Không nối được hai máy. Thử: cả hai dùng Wi-Fi (hoặc cả hai dùng 4G), để máy kia tạo phòng, hoặc nhờ người lớn thêm máy chủ trung chuyển trong mục Người lớn → Chơi trực tuyến.')
   }[s.key] || '';
   netStatus = msg; if (msg) toast(msg); if (G.onNet) G.onNet();
 });
@@ -690,13 +709,14 @@ G.drawOnlinePanel = (body, redraw) => {
     body.innerHTML = `<div class="online on">
       <p class="note center">${Net.code ? T(`Room code <b class="bigcode">${Net.code}</b> · ${Net.count}/6 players`, `Mã phòng <b class="bigcode">${Net.code}</b> · ${Net.count}/6 người chơi`) : ''}</p>
       <div class="plist">${list.map(r => `<div class="prow"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(r.name)}</b></div>
-        <button class="btn" data-fly="${r.id}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-tr="${r.id}">🔄 ${T('Trade', 'Đổi đồ')}</button>${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${r.friend}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
+        <button class="btn" data-fly="${r.id}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-tr="${r.id}">🔄 ${T('Trade', 'Đổi đồ')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${r.id}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${r.friend}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
       <div class="actions center"><button class="btn big" id="oMute">${Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
       ${friendsBox()}</div>`;
     body.querySelector('#oMute').onclick = () => { G.toggleMute(); redraw(); };
     body.querySelector('#oEnd').onclick = () => { Net.close(); Object.keys(G.partners).forEach(id => Net.emit('left', { id, name: G.partners[id].name })); G.huds.forEach(hd => hd.setCall(false)); redraw(); };
     body.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { const P = G.partners[b.dataset.fly]; if (P) { $('.modal.pad')?.remove(); G.paused = false; G.travel(G.heroes[0], P.pos.x - 4.5, P.pos.z - 1); } });
+    body.querySelectorAll('[data-kick]').forEach(b => b.onclick = () => { if (confirm(T('Remove this player from the room?', 'Mời bạn này ra khỏi phòng?'))) { Net.kick(b.dataset.kick); setTimeout(redraw, 600); } });
     body.querySelectorAll('[data-tr]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; openTrade(G, G.heroes[0], b.dataset.tr); });
     body.querySelectorAll('[data-addf]').forEach(b => b.onclick = () => { addFriend(b.dataset.addf, b.dataset.n); SFX.chime(); toast(T('Friend added!', 'Đã thêm bạn!')); redraw(); });
     bindFriends();
@@ -750,6 +770,8 @@ function onTap(i, x, y) {
   // tapping a bubble, a water drop or a ripe crop walks there and does it
   const hitB = ray.intersectObjects([...(G.bubbleIcons || []), ...(G.tapTargets || [])], false).find(x => x.object.visible);
   if (hitB) { goAndDo(h, hitB.object.userData.it); return; }
+  // tap a person, animal, tree or critter and it reacts (js/fun.js)
+  if (G.tapReact && G.tapReact(h, ray)) return;
   const hit = ray.intersectObject(world.terrain, false)[0];
   if (hit) { h.goal = { x: hit.point.x, z: hit.point.z }; G.fx(hit.point.x, hit.point.y + .3, hit.point.z, '✨'); }
 }
@@ -780,6 +802,8 @@ function startSession(mode, chosen) {
   TOWERS.forEach(t => world.setTowerDone(t.id, !!p0.towers[t.id]));
   LEAFIES.forEach(l => { const o = world.leafyMeshes[l.id]; if (o) o.visible = !chosen.every(p => p.leafies[l.id]); });
   setupWanderers(chosen);
+  G.pets.sync(); G.pets.refreshInteractables();
+  G.festivals.greet(G.heroes[0]);
   resize(); G.paused = false; playing = true; G.listenFriends();
   $('#huds').hidden = false;
   const p = chosen[0];
@@ -813,7 +837,7 @@ function frame(now) {
       h.update(dt, pads[i], t, G);
       if (!h.profile.quests.owl && !G._owlAuto && dist2(h.pos.x, h.pos.z, owl.x, owl.z) < 6) { G._owlAuto = true; owlTalk(h); }
       if (h.goalAct && !h.goal) { const it = h.goalAct; h.goalAct = null; if (dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r + .8) { SFX.tap(); it.act(h, G); } }
-      const it = nearest(h);
+      const it = h.carry ? h.carryIt || null : nearest(h);
       if (it && it.auto) it.act(h, G);
       G.huds[i].setAction(it && !it.auto ? it : null);
       h._dancing = G.places.onStage(h);
@@ -824,6 +848,7 @@ function frame(now) {
       if (rg !== G.regionOf[i]) {
         if (G.regionOf[i] !== null) { G.huds[i].showRegion(REGION_NAMES[rg]()); }
         G.regionOf[i] = rg;
+        const vis = h.profile.visited = h.profile.visited || {}; if (!vis[rg]) { vis[rg] = true; save(); }
         if (rg === 'village' && !h.profile.quests.village) { h.profile.quests.village = true; save(); say('Welcome to Lotus Village! Xin chào!', 'Chào mừng đến Làng Sen!'); checkQuests(h); }
       }
     });
@@ -840,6 +865,7 @@ function frame(now) {
   }
   $('#songBtn').hidden = !G.places.dancing || G.paused;
   if (!G.paused) world.updateSky(dt, h0.pos, h0.pos);
+  if (G.lookUpT > 0) G.lookUpT -= dt;
   // friends online
   for (const P of Object.values(G.partners)) {
     const r = Net.remotes[P.id]; if (!r || !r.s) continue; const s = r.s;
@@ -857,6 +883,7 @@ function frame(now) {
   G.heroes.forEach((h, i) => {
     const q = r[i];
     renderer.setViewport(q.x, H - q.y - q.h, q.w, q.h); renderer.setScissor(q.x, H - q.y - q.h, q.w, q.h);
+    G.showcaseCam(i, h, dt); // a landmark fly-around takes over the camera
     world.updateSky(0, h.cam.position, h.pos);
     renderer.render(scene, h.cam);
     const markers = [];
@@ -865,6 +892,7 @@ function frame(now) {
     TOWERS.forEach(tw => markers.push({ x: tw.x, z: tw.z, icon: '🗼', size: 18 }));
     G.PLACES.forEach(pl => markers.push({ x: pl.x, z: pl.z, icon: pl.icon, size: 18 }));
     NPCS.forEach(n => markers.push({ x: n.x, z: n.z, icon: '•', size: 14 }));
+    G.ferries.ferries.forEach(F => markers.push({ x: F.model.position.x, z: F.model.position.z, icon: '⛴️', size: 16 }));
     G.heroes.forEach((o, j) => { if (j !== i) markers.push({ x: o.pos.x, z: o.pos.z, icon: '🧒', size: 18 }); });
     Object.values(G.partners).forEach(P => markers.push({ x: P.pos.x, z: P.pos.z, icon: '🧒', size: 18 }));
     const qt = questTarget(h); if (qt) markers.push({ x: qt.x, z: qt.z, pin: true });
@@ -881,9 +909,20 @@ G.town = createTown(G);
 G.GAMES_ICON = id => (GAMES[id] || {}).icon || "🎮";
 createRegions(G);
 G.dialog = (name, lines, choices) => dialog(name, lines, choices);
+// little ones (under 5) get big picture buttons in conversations
+dialogHooks.little = () => G.heroes.some(h => h.profile.age !== 'big');
 onLang(() => G.huds.forEach(hd => hd.refreshWho && hd.refreshWho()));
 createAsia(G);
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
+G.reward = reward;
+G.pets = createPets(G);
+G.ferries = createFerries(G);
+createPassport(G);
+G.festivals = createFestivals(G);
+G.weather = createWeather(G);
+createFun(G);
+createLearning(G);
+createShowcase(G);
 createGathering(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 setupTrading(G);
 // "My market stall" at the Three Regions Market: trade with friends who are playing online
@@ -895,6 +934,28 @@ setupTrading(G);
   [['#ff4f9a', -.8], ['#ffd23f', -.2], ['#3cc7e8', .4], ['#5fd36a', .9]].forEach(([c, x]) => parts.push(P(new THREE.SphereGeometry(.16, 10, 8), c, [x, 1.12, .15])));
   const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(sx, y, sz); m.castShadow = true; scene.add(m); world.colliders.push({ x: sx, z: sz, r: 1.4 });
   G.interactables.push({ id: 'stall', x: sx, z: sz + 1.2, r: 3, icon: '🏪', label: () => T('My market stall: trade with friends', 'Sạp hàng của con: đổi đồ với bạn'), act: h => G.openTrade(h.i) });
+}
+// solid things the camera must never go inside: big, opaque, still-standing meshes (collected once, refreshed
+// now and then so new houses, landmarks and boats are included)
+{
+  let list = [];
+  const collect = () => {
+    list = []; const sphere = new THREE.Sphere();
+    scene.traverse(o => {
+      if (!o.isMesh || o.isInstancedMesh || o.userData.outline || o === world.terrain || !o.visible) return;
+      const mt = o.material; if (!mt || Array.isArray(mt) || mt.transparent || mt.side === THREE.BackSide || mt.isMeshBasicMaterial) return;
+      if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+      sphere.copy(o.geometry.boundingSphere).applyMatrix4(o.matrixWorld);
+      if (sphere.radius < 2.2 || sphere.radius > 120) return;
+      if (G.heroes.some(h => h.av.root.getObjectById(o.id))) return;
+      list.push(o);
+    });
+    mats = [...new Set(list.map(o => o.material))];
+  };
+  let at = -1e9;
+  let mats = [];
+  G.camBlockerMats = () => mats;
+  G.camBlockers = () => { const now = performance.now(); if (now - at > 8000) { at = now; collect(); } return list; };
 }
 G.openTrade = (i, id) => { if (G.paused) return; openTrade(G, G.heroes[i], id); };
 G.secrets = createSecrets(G);

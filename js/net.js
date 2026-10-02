@@ -4,6 +4,7 @@
 // Friends: each device can have a friend code. If the grown-ups switch "friends can invite me" on, the
 // game listens on that code while it is open, so a friend who is hosting a room can send an invite.
 // Nothing goes through a server of ours: only names, outfits and positions travel, device to device.
+import { settings } from './state.js';
 const PREFIX = 'sparkle-valley-v2-';
 export const MAX_ROOM = 6;
 let loading = null;
@@ -12,8 +13,25 @@ function loadPeer() {
   if (!loading) loading = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'vendor/peerjs.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
   return loading;
 }
-// PeerJS server settings (the free public server by default; tests can point it at a local one)
-const peerOpts = () => Object.assign({ debug: 0 }, window.SV_PEER || {});
+// How two devices find each other. STUN servers tell each device its public address, which is enough on
+// most home Wi-Fi. When one friend is on mobile data or behind a strict router, the devices also need a
+// relay (TURN) server to pass the game along. Free public relays are tried by default; a grown-up can paste
+// their own relay in Grown-ups (a link from a free TURN service, or a turn: address with a name and password).
+const STUN = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }, { urls: 'stun:stun.cloudflare.com:3478' }];
+const PUBLIC_TURN = [{ urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'], username: 'openrelayproject', credential: 'openrelayproject' }];
+let fetched = null;
+export async function iceServers() {
+  const r = (settings.turnUrl || '').trim();
+  if (/^https:\/\//i.test(r)) { // a link that hands out relay details (e.g. Metered's free plan)
+    if (!fetched || fetched.url !== r) { try { const res = await fetch(r); const j = await res.json(); fetched = { url: r, list: Array.isArray(j) ? j : j.iceServers || [] }; } catch (e) { fetched = { url: r, list: [] }; } }
+    if (fetched.list.length) return STUN.concat(fetched.list);
+  } else if (/^turns?:/i.test(r)) return STUN.concat([{ urls: r.split(/[\s,]+/).filter(Boolean), username: settings.turnUser || '', credential: settings.turnPass || '' }]);
+  return STUN.concat(PUBLIC_TURN);
+}
+// PeerJS settings (the free public PeerJS server by default; tests can point it at a local one)
+let ICE = STUN.concat(PUBLIC_TURN);
+const peerOpts = () => Object.assign({ debug: 0, config: { iceServers: ICE, iceCandidatePoolSize: 2 } }, window.SV_PEER || {});
+const prepare = async () => { await loadPeer(); ICE = await iceServers(); };
 const cleanHello = (d, from) => ({ id: from, name: String(d.name || '').slice(0, 20), look: d.look, photo: typeof d.photo === 'string' && d.photo.startsWith('data:image/') ? d.photo : null, friend: typeof d.friend === 'string' ? d.friend.slice(0, 8) : null, s: null });
 
 export const Net = {
@@ -36,7 +54,7 @@ export const Net = {
   },
 
   async host(hello) {
-    await loadPeer(); await this.getMic();
+    await prepare(); await this.getMic();
     this.close(true);
     this.role = 'host'; this.hello = hello;
     for (let tries = 0; tries < 4; tries++) {
@@ -57,7 +75,7 @@ export const Net = {
   },
 
   async join(code, hello) {
-    await loadPeer(); await this.getMic();
+    await prepare(); await this.getMic();
     this.close(true);
     this.role = 'guest'; this.code = code; this.hello = hello;
     const p = new window.Peer(peerOpts()); this.peer = p;
@@ -67,6 +85,16 @@ export const Net = {
     this.emit('status', { key: 'connecting' });
     const host = PREFIX + code, c = p.connect(host, { reliable: true });
     this.conns.set(host, c);
+    // never wait forever: explain after 12 s, give up with tips after 30 s (or as soon as the link fails)
+    const t0 = Date.now(), giveUp = why => { if (c.open || this.conns.get(host) !== c) return; clearInterval(watch); this.emit('status', { key: 'stuck', why }); this.close(true); };
+    const watch = setInterval(() => {
+      if (c.open || this.conns.get(host) !== c) { clearInterval(watch); return; }
+      const s = (Date.now() - t0) / 1000, pc = c.peerConnection;
+      if (pc && pc.iceConnectionState === 'failed') return giveUp('ice');
+      if (s > 12 && !this._slowTold) { this._slowTold = true; this.emit('status', { key: 'slow' }); }
+      if (s > 30) giveUp('timeout');
+    }, 1000);
+    this._slowTold = false;
     c.on('open', () => { c.send(Object.assign({ t: 'hello' }, hello)); this.emit('status', { key: 'connected' }); const call = p.call(host, this.mic || this._silence()); if (call) this._call(call); });
     c.on('data', d => this._recv(d, host));
     c.on('close', () => { this.conns.delete(host); Object.keys(this.remotes).forEach(id => this._gone(id)); this.emit('status', { key: 'left' }); });
@@ -96,6 +124,7 @@ export const Net = {
     const from = d.from || via;
     if (d.to && d.to !== this.me) return;
     if (d.t === 'full') { this.emit('status', { key: 'full' }); this.close(true); return; }
+    if (d.t === 'kick' && this.role === 'guest') { this.emit('status', { key: 'removed' }); this.close(true); return; }
     if (d.t === 'hello') {
       const r = this.remotes[from] = cleanHello(d, from); this.emit('hello', r);
       // guests call each other too, so everyone hears everyone (the newer one rings)
@@ -138,6 +167,8 @@ export const Net = {
     } catch (e) { }
   },
 
+  // the room's starter can ask someone to leave (a grown-up's tool if anyone is unkind)
+  kick(id) { if (this.role !== 'host') return; const c = this.conns.get(id); if (c && c.open) { try { c.send({ t: 'kick', from: this.me }); } catch (e) { } setTimeout(() => { try { c.close(); } catch (e) { } }, 400); } },
   setMuted(m) { this.muted = m; if (this.mic) this.mic.getAudioTracks().forEach(t => t.enabled = !m); },
   resumeAudio() { for (const a of this.audios.values()) a.play().catch(() => { }); },
   // send to everyone in the room, or to one friend with {to: id}
@@ -170,6 +201,19 @@ export const Net = {
       c.on('open', () => { c.send({ t: 'invite', name, room: this.code }); clearTimeout(t); setTimeout(() => c.close(), 800); res(true); });
       c.on('error', () => { clearTimeout(t); res(false); });
     });
+  },
+
+  // Connection check for grown-ups: which kinds of route can this device make?
+  async check() {
+    const ice = await iceServers(), found = { host: false, srflx: false, relay: false };
+    try {
+      const pc = new RTCPeerConnection({ iceServers: ice }); pc.createDataChannel('t');
+      pc.onicecandidate = e => { const c = e.candidate && e.candidate.candidate; if (!c) return; const m = / typ (\w+)/.exec(c); if (m && m[1] in found) found[m[1]] = true; };
+      await pc.setLocalDescription(await pc.createOffer());
+      await new Promise(r => setTimeout(r, 6000)); pc.close();
+    } catch (e) { }
+    let server = false; try { await loadPeer(); server = await new Promise(res => { const p = new window.Peer(peerOpts()); const t = setTimeout(() => { p.destroy(); res(false); }, 8000); p.on('open', () => { clearTimeout(t); p.destroy(); res(true); }); p.on('error', () => { clearTimeout(t); p.destroy(); res(false); }); }); } catch (e) { }
+    return Object.assign(found, { server });
   },
 
   close(keepMic) {

@@ -1,0 +1,7 @@
+// A short name for a spoken line in the offline voice pack (the same in the game and in the pack maker).
+export function packHash(lang, text) {
+  const s = lang + '|' + String(text).replace(/\s+/g, ' ').trim();
+  let a = 0x811c9dc5, b = 0x01000193 ^ 0x5bd1e995;
+  for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); a = Math.imul(a ^ c, 0x01000193) >>> 0; b = Math.imul(b ^ c, 0x5bd1e995) >>> 0; b ^= b >>> 15; }
+  return a.toString(16).padStart(8, '0') + b.toString(16).padStart(8, '0');
+}

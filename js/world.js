@@ -136,7 +136,7 @@ export const LEAFIES = LEAFY_SPOTS.map(([kind, x, z], i) => ({ id: 'lf' + i, kin
 // ---------- the world object ----------
 export function createWorld(scene, quality) {
   const W = {
-    colliders: [], boxes: [], platforms: [], houses: [], interactables: [], updaters: [], lanterns: [], shrineMeshes: {}, towerMeshes: {}, leafyMeshes: {},
+    colliders: [], boxes: [], platforms: [], houses: [], plants: [], overcast: 0, interactables: [], updaters: [], lanterns: [], shrineMeshes: {}, towerMeshes: {}, leafyMeshes: {},
     time: .36
   };
   const rnd = seeded(20250921);
@@ -196,6 +196,11 @@ export function createWorld(scene, quality) {
     sun.color.copy(tmpA.copy(a[4]).lerp(b[4], k)); sun.intensity = lerp(a[5], b[5], k) * 1.55;
     hemi.intensity = lerp(a[6], b[6], k) * 1.25; scene.environmentIntensity = lerp(a[6], b[6], k) * .28;
     hemi.color.copy(tmpB.set('#ffffff').lerp(skyMat.uniforms.top.value, .18));
+    // rainy weather (js/weather.js) greys the sky and softens the sun
+    if (W.overcast > 0) {
+      const o = W.overcast; skyMat.uniforms.top.value.lerp(tmpA.set('#8e9aa8'), o * .65); skyMat.uniforms.hor.value.lerp(tmpA.set('#b8c2cc'), o * .6);
+      scene.fog.color.copy(skyMat.uniforms.hor.value); sun.intensity *= 1 - o * .55; hemi.intensity *= 1 - o * .2;
+    }
     sky.position.copy(camPos); stars.position.copy(camPos);
     starMat.opacity = clamp(-sd.y * 4, 0, 1);
     moon.position.copy(camPos).addScaledVector(sd.clone().negate(), 700); moon.material.opacity = starMat.opacity;
@@ -298,7 +303,7 @@ export function createWorld(scene, quality) {
     const list = spots[k]; if (!list.length) continue;
     const im = new THREE.InstancedMesh(geos[k], toonVC(), list.length); im.castShadow = k !== 'rock'; im.receiveShadow = true;
     list.forEach((s, i) => { o3.position.set(s[0], s[1], s[2]); o3.rotation.set(0, s[3], 0); o3.scale.setScalar(s[4]); o3.updateMatrix(); im.setMatrixAt(i, o3.matrix); tint.setHSL(0, 0, .88 + rnd() * .12); im.setColorAt(i, tint); });
-    scene.add(im);
+    scene.add(im); im.userData.kind = k; im.userData.list = list; W.plants.push(im); // tappable (js/fun.js)
   }
   appleTrees.forEach((t, i) => {
     let ready = 0;
@@ -555,7 +560,8 @@ export function createWorld(scene, quality) {
   for (let i = 0; i < 40; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ color: '#fff7a0', transparent: true, opacity: 0, depthWrite: false, fog: false })); s.scale.setScalar(.25); const x = BAMBOO.x + (Math.random() - .5) * 80, z = BAMBOO.z + (Math.random() - .5) * 80; s.position.set(x, heightAt(x, z) + 1.5, z); scene.add(s); fireflies.push({ s, ox: x, oz: z, a: Math.random() * 6 }); }
   for (let i = 0; i < 30; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ color: '#fff7a0', transparent: true, opacity: 0, depthWrite: false, fog: false })); s.scale.setScalar(.25); const x = V.x + (Math.random() - .5) * 60, z = V.z + (Math.random() - .5) * 60; s.position.set(x, heightAt(x, z) + 1.5, z); scene.add(s); fireflies.push({ s, ox: x, oz: z, a: Math.random() * 6 }); }
   W.fireflies = fireflies;
-  critters.forEach(c => { c.cx = clamp(c.cx, -170, 170); c.cz = clamp(c.cz, -170, 170); scene.add(c.s); });
+  critters.forEach(c => { c.cx = clamp(c.cx, -170, 170); c.cz = clamp(c.cz, -170, 170); scene.add(c.s); c.s.userData.critter = c; });
+  W.critters = critters;
   W.updaters.push((dt, t) => {
     critters.forEach(c => {
       c.a += dt * c.sp; const x = c.cx + Math.cos(c.a) * c.r, z = c.cz + Math.sin(c.a) * c.r;

@@ -29,7 +29,10 @@ export const ANIMALS = {
 export const PETS = {
   puppy: { icon: '🐶', price: 0, snd: 'woof', name: () => T('Puppy', 'Cún con') },
   kitty: { icon: '🐱', price: 30, snd: 'meow', name: () => T('Kitty', 'Mèo con') },
-  bunny: { icon: '🐰', price: 30, snd: 'squeak', name: () => T('Bunny', 'Thỏ con') }
+  bunny: { icon: '🐰', price: 30, snd: 'squeak', name: () => T('Bunny', 'Thỏ con') },
+  panda: { icon: '🐼', price: 60, snd: 'squeak', name: () => T('Panda cub', 'Gấu trúc con') },
+  joey: { icon: '🦘', price: 60, snd: 'squeak', name: () => T('Joey (baby kangaroo)', 'Kangaroo con') },
+  calf: { icon: '🐃', price: 60, snd: 'moo', name: () => T('Buffalo calf', 'Nghé con') }
 };
 export const PRODUCE = {
   egg: { icon: '🥚', sell: 4, name: () => T('Egg', 'Trứng') }, milk: { icon: '🥛', sell: 7, name: () => T('Milk', 'Sữa') },
@@ -108,6 +111,9 @@ export function animalModel(kind) {
     case 'puppy': return quad({ body: '#c98b4a', head: '#c98b4a', legs: '#a8703a', size: .6, ears: 'flop', snout: '#e8c49a', tail: 'wag' });
     case 'kitty': return quad({ body: '#ffb36b', head: '#ffb36b', legs: '#ff9f4a', size: .55, ears: 'point', tail: 'long' });
     case 'bunny': return quad({ body: '#ffffff', head: '#ffffff', legs: '#f2f2f2', size: .5, ears: 'long', tail: 'puff' });
+    case 'panda': return quad({ body: '#ffffff', head: '#ffffff', legs: '#2b2b2b', size: .62, ears: 'side', snout: '#f2f2f2', tail: 'puff' });
+    case 'joey': return quad({ body: '#c98a5a', head: '#c98a5a', legs: '#a8703a', size: .58, ears: 'long', snout: '#e8c49a', tail: 'long' });
+    case 'calf': return quad({ body: '#6f6a66', head: '#6f6a66', legs: '#5a5552', size: .7, ears: 'side', snout: '#b5a59a', tail: 'long' });
     case 'bear': return quad({ body: '#8a5a3b', head: '#8a5a3b', legs: '#7a4a2b', size: 1.4, snout: '#d9b58a' });
   }
   return quad({ body: '#999' });
@@ -242,13 +248,12 @@ export function createFarm(G) {
     farm.animals.forEach((a, k) => {
       const obj = animalModel(a.kind); const ang = k * 1.7, r = 2 + (k % 3);
       obj.position.set(pen.x + Math.cos(ang) * r, heightAt(pen.x, pen.z), pen.z + Math.sin(ang) * r); scene.add(obj);
-      F.animals.push({ a, obj, tx: obj.position.x, tz: obj.position.z, hop: 0 });
+      const A = { a, obj, tx: obj.position.x, tz: obj.position.z, hop: 0 }; F.animals.push(A);
+      obj.userData.react = () => { const d = ANIMALS[a.kind]; SFX[d.snd] && SFX[d.snd](); A.hop = .8; G.fx(obj.position.x, obj.position.y + 1.4, obj.position.z, '💕'); };
     });
   };
-  F.syncPets = () => {
-    F.pets.forEach(p => scene.remove(p.obj)); F.pets = [];
-    farm.pets.forEach((k, j) => { const obj = animalModel(k); obj.position.set(house.x + j, heightAt(house.x, house.z - 6), house.z - 6); scene.add(obj); F.pets.push({ kind: k, obj, idx: j }); });
-  };
+  F.syncPets = () => G.pets && G.pets.sync();
+  F.animalObjs = () => F.animals.map(A => A.obj); // each child's pets follow them (js/pets.js)
   F.syncAnimals(); F.syncPets();
 
   // ---------- per-frame update ----------
@@ -423,12 +428,12 @@ function openBuy(G, h) {
     card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🌱 ${T("Mr. Bear's shop", 'Cửa hàng Bác Gấu')}</h2><p class="sub">💰 ${fmt(farm.coins)}</p>
       <h3>${T('Seeds', 'Hạt giống')}</h3><div class="bigpick">${seeds.map(([k, c]) => `<button data-s="${k}" class="${farm.coins < c.seed ? 'poor' : ''}"><span>${c.icon}</span><b>${farm.seeds[k] || 0}</b><small>${fmt(c.seed)}</small></button>`).join('')}</div>
       <h3>${T('Barn animals', 'Vật nuôi trong chuồng')}</h3><div class="bigpick">${Object.entries(ANIMALS).map(([k, a]) => `<button data-a="${k}" class="${farm.coins < a.price ? 'poor' : ''}"><span>${a.icon}</span><b>${farm.animals.filter(x => x.kind === k).length}</b><small>${fmt(a.price)}</small></button>`).join('')}</div>
-      <h3>${T('Pets that follow you', 'Thú cưng đi theo con')}</h3><div class="bigpick">${Object.entries(PETS).filter(([, p]) => p.price).map(([k, p]) => `<button data-p="${k}" class="${farm.pets.includes(k) ? 'owned' : farm.coins < p.price ? 'poor' : ''}"><span>${p.icon}</span><small>${farm.pets.includes(k) ? '✓' : fmt(p.price)}</small></button>`).join('')}</div>`;
+      <h3>${T('Pets that follow you', 'Thú cưng đi theo con')}</h3><button class="btn wide big" id="adoptBtn">🐾 ${T('Adopt and name a pet (up to 2 each)', 'Nhận nuôi và đặt tên thú cưng (mỗi bạn tối đa 2)')}</button>`;
     card.querySelector('.x').onclick = close;
     const pay = (price, what) => { if (farm.coins < price) { SFX.no(); say(`That costs ${spoken(price)}. Sell some things first!`, `Món này giá ${spoken(price)}. Bán bớt đồ trước nhé!`); return false; } farm.coins -= price; SFX.coin(); say(`Here is your ${what}!`, `${what} của con đây!`); return true; };
     card.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { const k = b.dataset.s; if (pay(CROPS[k].seed, CROPS[k].name())) { farm.seeds[k] = (farm.seeds[k] || 0) + 1; saveFarm(); draw(); } });
     card.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { const k = b.dataset.a; if (farm.animals.length >= 10) { say('The barn is full!', 'Chuồng đầy rồi!'); return; } if (pay(ANIMALS[k].price, ANIMALS[k].name())) { farm.animals.push({ kind: k, t: Date.now() }); saveFarm(); G.farm.syncAnimals(); SFX[ANIMALS[k].snd](); draw(); } });
-    card.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { const k = b.dataset.p; if (farm.pets.includes(k)) return; if (pay(PETS[k].price, PETS[k].name())) { farm.pets.push(k); saveFarm(); G.farm.syncPets(); SFX[PETS[k].snd](); draw(); } });
+    card.querySelector('#adoptBtn').onclick = () => { close(); G.pets.openAdopt(h); };
   };
   draw();
 }

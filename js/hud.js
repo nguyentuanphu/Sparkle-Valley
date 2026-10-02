@@ -56,7 +56,8 @@ export class Hud {
         <button class="act" hidden><span class="ai"></span><span class="al"></span></button>
         <div class="moves"><button class="mv run">${ICONS.run}<small>${T('Run', 'Chạy')}</small></button><button class="mv jump">${ICONS.jump}<small>${T('Jump', 'Nhảy')}</small></button></div>
       </div>
-      <div class="emotes" hidden></div>`;
+      <div class="emotes" hidden></div>
+      <button class="bigprompt" hidden></button>`;
     document.getElementById('huds').appendChild(root);
     this.q = s => root.querySelector(s);
     this.mini = this.q('.mini').getContext('2d');
@@ -103,6 +104,12 @@ export class Hud {
     if (!it) { b.hidden = true; this.last.act = null; return; }
     const lab = it.label();
     if (this.last.act !== lab) { b.hidden = false; this.q('.act .ai').textContent = it.icon || '✋'; this.q('.act .al').textContent = lab; this.last.act = lab; }
+  }
+  // a big pulsing button in the middle of the screen (pet rescue, ferry). bigPrompt(null) hides it.
+  bigPrompt(html, onTap) {
+    const b = this.q('.bigprompt'); b.hidden = !html; if (!html) return;
+    b.innerHTML = html; b.classList.toggle('wait', !onTap);
+    b.onpointerdown = e => { e.preventDefault(); e.stopPropagation(); if (onTap) { b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit'); onTap(); } };
   }
   setCall(on, talking, muted) { const b = this.q('.dk.call'); b.hidden = !on; b.querySelector('span').innerHTML = muted ? ICONS.callOff : ICONS.call; b.classList.toggle('talking', !!talking); }
 

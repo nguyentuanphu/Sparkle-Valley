@@ -29,8 +29,33 @@ export const RECIPES = [
   { id: 'taonuong', icon: '🍎', need: ['apple', 'apple'], name: () => T('Baked apples', 'Táo nướng'), heal: 1, bonus: 0 },
   { id: 'chuoinuong', icon: '🍌', need: ['banana'], name: () => T('Grilled banana', 'Chuối nướng'), heal: 1, bonus: 0 },
   { id: 'nam', icon: '🍢', need: ['mushroom'], name: () => T('Mushroom skewer', 'Nấm xiên nướng'), heal: 1, bonus: 0 },
-  { id: 'fruit', icon: '🥗', need: ['apple', 'banana', 'mango'], name: () => T('Rainbow fruit salad', 'Salad trái cây'), heal: 3, bonus: .3 }
+  { id: 'fruit', icon: '🥗', need: ['apple', 'banana', 'mango'], name: () => T('Rainbow fruit salad', 'Salad trái cây'), heal: 3, bonus: .3 },
+  // dishes from the four cultures, made with the crops that grow near each village
+  { id: 'raumuong', icon: '🥬', need: ['waterspinach', 'herb'], name: () => T('Stir-fried water spinach', 'Rau muống xào'), heal: 2, bonus: .2 },
+  { id: 'khoainuong', icon: '🍠', need: ['sweetpotato'], name: () => T('Grilled sweet potato', 'Khoai lang nướng'), heal: 1, bonus: .1 },
+  { id: 'chedua', icon: '🥥', need: ['coconut', 'bean'], name: () => T('Coconut and mung bean sweet soup', 'Chè dừa đậu xanh'), heal: 2, bonus: .3 },
+  { id: 'chemit', icon: '🍈', need: ['jackfruit', 'coconut'], name: () => T('Jackfruit and coconut dessert', 'Chè mít dừa'), heal: 2, bonus: .3 },
+  { id: 'macbread', icon: '🍞', need: ['banana', 'macadamia'], name: () => T('Banana macadamia bread', 'Bánh chuối hạt mắc ca'), heal: 2, bonus: .3 },
+  { id: 'quandongpie', icon: '🥧', need: ['quandong', 'apple'], name: () => T('Quandong pie', 'Bánh nướng quả quandong'), heal: 2, bonus: .3 },
+  { id: 'limefish', icon: '🐠', need: ['fish', 'fingerlime'], name: () => T('Fish with finger lime', 'Cá sốt chanh ngón tay'), heal: 2, bonus: .4 },
+  { id: 'damper', icon: '🫓', need: ['rice', 'bushtomato'], name: () => T('Damper bread with bush tomato', 'Bánh damper với cà chua dại'), heal: 2, bonus: .2 },
+  { id: 'dumplings', icon: '🥟', need: ['bokchoy', 'mushroom', 'egg'], name: () => T('Bok choy dumplings', 'Sủi cảo cải thìa'), heal: 3, bonus: .5 },
+  { id: 'peachbun', icon: '🍑', need: ['cnpeach', 'rice'], name: () => T('Longevity peach buns', 'Bánh bao đào tiên'), heal: 2, bonus: .3 },
+  { id: 'peafried', icon: '🍚', need: ['snowpea', 'rice', 'egg'], name: () => T('Snow pea fried rice', 'Cơm chiên đậu Hà Lan'), heal: 3, bonus: .3 },
+  { id: 'mandarins', icon: '🍊', need: ['mandarin', 'mandarin'], name: () => T('Mandarin segments', 'Quýt bóc múi'), heal: 1, bonus: .1 },
+  { id: 'aampanna', icon: '🧃', need: ['mango', 'ginger'], name: () => T('Mango and ginger drink (aam panna)', 'Nước xoài gừng (aam panna)'), heal: 2, bonus: .4 },
+  { id: 'bharta', icon: '🍆', need: ['brinjal', 'chilli'], name: () => T('Smoky brinjal (baingan bharta)', 'Cà tím nướng (baingan bharta)'), heal: 2, bonus: .2 },
+  { id: 'dal', icon: '🍛', need: ['bean', 'ginger', 'rice'], name: () => T('Dal and rice', 'Đậu hầm với cơm (dal)'), heal: 3, bonus: .5 }
 ];
+// Festival treats: given as presents during festivals (not cooked)
+export const FEAST = [
+  { id: 'mooncake', icon: '🥮', name: () => T('Mooncake', 'Bánh trung thu'), heal: 2, bonus: .5 },
+  { id: 'ladoo', icon: '🟠', name: () => T('Ladoo sweets', 'Kẹo ladoo'), heal: 2, bonus: .3 },
+  { id: 'lamington', icon: '🍰', name: () => T('Lamington cake', 'Bánh lamington'), heal: 2, bonus: .3 },
+  { id: 'sizzle', icon: '🌭', name: () => T('Sausage sizzle', 'Xúc xích nướng kẹp bánh mì'), heal: 2, bonus: .2 },
+  { id: 'xmascookie', icon: '🍪', name: () => T('Christmas cookie', 'Bánh quy Giáng sinh'), heal: 1, bonus: .3 }
+];
+export const dishInfo = id => RECIPES.find(r => r.id === id) || FEAST.find(r => r.id === id);
 export const MYSTERY = { id: 'mystery', icon: '🥘', name: () => T('Mystery stew', 'Món hầm bí ẩn'), heal: 1, bonus: 0 };
 export function findRecipe(list) {
   const key = list.slice().sort().join('+');
@@ -44,8 +69,10 @@ export const SHOP = [
   { kind: 'item', id: 'bean', price: 4 }, { kind: 'item', id: 'leaf', price: 2 },
   { kind: 'glider', id: 1, price: 50 }, { kind: 'glider', id: 2, price: 50 }, { kind: 'glider', id: 3, price: 50 }, { kind: 'glider', id: 4, price: 50 }
 ];
-export const HAT_ICON = { none: '🙂', nonla: '👒', cap: '🧢', crown: '👑', bunny: '🐰', flower: '🌸', bow: '🎀' };
-export const HAT_NAME = { none: () => T('No hat', 'Không đội mũ'), nonla: () => T('Nón lá (leaf hat)', 'Nón lá'), cap: () => T('Cap', 'Mũ lưỡi trai'), crown: () => T('Crown', 'Vương miện'), bunny: () => T('Bunny ears', 'Tai thỏ'), flower: () => T('Flower clip', 'Kẹp hoa'), bow: () => T('Bow', 'Nơ') };
+export const HAT_ICON = { none: '🙂', nonla: '👒', cap: '🧢', crown: '👑', bunny: '🐰', flower: '🌸', bow: '🎀', khanran: '🧣', akubra: '🤠', silkcap: '🎩', pagri: '👳' };
+export const HAT_NAME = { none: () => T('No hat', 'Không đội mũ'), nonla: () => T('Nón lá (leaf hat)', 'Nón lá'), cap: () => T('Cap', 'Mũ lưỡi trai'), crown: () => T('Crown', 'Vương miện'), bunny: () => T('Bunny ears', 'Tai thỏ'), flower: () => T('Flower clip', 'Kẹp hoa'), bow: () => T('Bow', 'Nơ'), khanran: () => T('Khăn rằn checked scarf', 'Khăn rằn'), akubra: () => T('Akubra bush hat', 'Mũ Akubra nước Úc'), silkcap: () => T('Chinese silk cap', 'Mũ lụa Trung Hoa'), pagri: () => T('Pagri turban', 'Khăn xếp Pagri') };
+// Passport rewards: hats you earn by filling a country's page (not shown in the wardrobe until earned)
+export const REWARD_HATS = ['khanran', 'akubra', 'silkcap', 'pagri'];
 
 // Things to gather around the world (they grow back after a while).
 export const GATHER = [
