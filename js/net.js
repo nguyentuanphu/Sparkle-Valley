@@ -3,10 +3,13 @@
 // between everyone, and everyone hears everyone through a live voice call.
 // Friends: each device can have a friend code. If the grown-ups switch "friends can invite me" on, the
 // game listens on that code while it is open, so a friend who is hosting a room can send an invite.
-// Nothing goes through a server of ours: only names, outfits and positions travel, device to device.
+// Nothing goes through a server of ours: only names, outfits, positions and the player photos travel.
 // When the direct link can't open (different networks, mobile data), the room carries on through the cloud
 // relay (relay.js): encrypted messages through free public MQTT brokers. Voice needs the direct link or a
 // TURN relay. Everyone pings everyone every 2 s, so the game can show each friend's signal and ping.
+// Photos over the cloud relay get a second lock: each pair of players agrees a private key (ECDH), so someone
+// who only listens on the brokers (even knowing the room code) can't open them. Anyone who really joins the
+// room is a player and shows in the room list, where the room's starter can remove them (🚪).
 import { settings } from './state.js';
 import { Channel } from './relay.js';
 const PREFIX = 'sparkle-valley-v2-';
@@ -38,7 +41,25 @@ export async function iceServers() {
 let ICE = STUN.concat(PUBLIC_TURN);
 const peerOpts = () => Object.assign({ debug: 0, config: { iceServers: ICE, iceCandidatePoolSize: 2 } }, window.SV_PEER || {});
 const prepare = async () => { await loadPeer(); ICE = await iceServers(); };
-const cleanHello = (d, from) => ({ id: from, name: String(d.name || '').slice(0, 20), look: d.look, photo: typeof d.photo === 'string' && d.photo.startsWith('data:image/') ? d.photo : null, friend: typeof d.friend === 'string' ? d.friend.slice(0, 8) : null, s: null });
+const okPhoto = p => typeof p === 'string' && p.startsWith('data:image/') && p.length < 120000 ? p : null;
+// ids and friend codes go into the page, so only plain letters, digits and dashes are accepted
+const okId = id => typeof id === 'string' && /^[\w-]{1,64}$/.test(id);
+const okLook = l => l && typeof l === 'object' && !Array.isArray(l) ? Object.fromEntries(Object.entries(l).filter(([k, v]) => /^\w{1,16}$/.test(k) && (typeof v === 'number' ? Number.isFinite(v) : typeof v === 'string' && v.length < 40 && /^[#\w -]*$/.test(v)))) : {};
+const cleanHello = (d, from) => ({ id: from, name: String(d.name || '').slice(0, 20), look: okLook(d.look), photo: okPhoto(d.photo), friend: typeof d.friend === 'string' && /^[A-Z0-9]{4,8}$/i.test(d.friend) ? d.friend : null, pub: typeof d.pub === 'string' && d.pub.length < 200 ? d.pub : null, s: null });
+// ---- the private pair keys for photos (ECDH P-256 → AES-GCM) ----
+const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf))), unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+let keyPair = null;
+const myKeys = () => keyPair || (keyPair = crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveKey']));
+async function myPub() { return b64(await crypto.subtle.exportKey('raw', (await myKeys()).publicKey)); }
+const pairKeys = new Map();
+async function pairKey(pub) {
+  if (!pairKeys.has(pub)) pairKeys.set(pub, (async () => { const k = await crypto.subtle.importKey('raw', unb64(pub), { name: 'ECDH', namedCurve: 'P-256' }, false, []); return crypto.subtle.deriveKey({ name: 'ECDH', public: k }, (await myKeys()).privateKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']); })());
+  return pairKeys.get(pub);
+}
+// a smaller copy of the photo for the cloud (about 5 KB)
+function smallPhoto(src, size = 112) {
+  return new Promise(res => { const im = new Image(); im.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = size; c.getContext('2d').drawImage(im, 0, 0, size, size); res(c.toDataURL('image/jpeg', .72)); } catch (e) { res(null); } }; im.onerror = () => res(null); im.src = src; });
+}
 
 export const Net = {
   peer: null, conns: new Map(), calls: new Map(), cloud: null, cloudOn: false, _seen: new Set(), hostId: null, audios: new Map(), mic: null, code: null, role: null, muted: false, me: null, hello: null,
@@ -62,7 +83,7 @@ export const Net = {
   async host(hello) {
     await prepare().catch(() => { }); await this.getMic();
     this.close(true);
-    this.role = 'host'; this.hello = hello;
+    this.role = 'host'; this.hello = await this._withPub(hello);
     for (let tries = 0; tries < 4 && window.Peer; tries++) {
       this.code = String(1000 + Math.floor(Math.random() * 9000));
       const ok = await new Promise(res => {
@@ -89,6 +110,7 @@ export const Net = {
   async join(code, hello) {
     await prepare().catch(() => { }); await this.getMic();
     this.close(true);
+    hello = await this._withPub(hello);
     this.role = 'guest'; this.code = code; this.hello = hello; this.hostId = PREFIX + code;
     this.emit('status', { key: 'connecting' });
     // the cloud relay starts at the same time, so there is a second way in from the very start
@@ -128,10 +150,11 @@ export const Net = {
   // the room's starter: welcome a new friend, introduce everyone, and pass messages along
   _hostConn(c) {
     c.on('open', () => {
-      if (this.conns.size >= MAX_ROOM - 1) { c.send({ t: 'full' }); setTimeout(() => c.close(), 300); return; }
+      if (Object.keys(this.remotes).length >= MAX_ROOM - 1 || (this._banned && this._banned.has(c.peer))) { c.send({ t: 'full', from: this.me }); setTimeout(() => c.close(), 300); return; }
       this.conns.set(c.peer, c);
+      if (this.cloudOn) c.send({ t: 'cloudon', from: this.me });
       c.send(Object.assign({ t: 'hello', from: this.me }, this.hello || {}));
-      for (const r of Object.values(this.remotes)) c.send({ t: 'hello', from: r.id, name: r.name, look: r.look, photo: r.photo, friend: r.friend });
+      for (const r of Object.values(this.remotes)) c.send({ t: 'hello', from: r.id, name: r.name, look: r.look, photo: r.photo, friend: r.friend, pub: r.pub });
       this.emit('status', { key: 'connected' });
     });
     c.on('data', d => {
@@ -148,31 +171,44 @@ export const Net = {
     if (!d || typeof d !== 'object') return;
     const from = d.from || via;
     if (d.to && d.to !== this.me) return;
-    if (from === this.me) return;
+    if (from === this.me || !okId(from)) return;
+    if (this._banned && this._banned.has(from)) return;
+    if (d.t === 's' && ![d.x, d.y, d.z, d.yaw].every(Number.isFinite)) return;
     if (d.mid) { if (this._seen.has(d.mid)) return; this._seen.add(d.mid); if (this._seen.size > 800) this._seen = new Set([...this._seen].slice(-400)); }
     if (this.remotes[from]) { this.remotes[from].last = Date.now(); if (via !== 'cloud') this.remotes[from].direct = Date.now(); }
     if (d.t === 'cloudon') { this._useCloud(); return; }
     if (d.t === 'ping') { this.send({ t: 'pong', to: from, ts: d.ts }); return; }
     if (d.t === 'pong') { const r = this.remotes[from]; if (r) { const rtt = Date.now() - d.ts; r.rtt = r.rtt ? Math.round(r.rtt * .6 + rtt * .4) : rtt; r.route = via === 'cloud' ? 'cloud' : 'direct'; this.emit('quality', r); } return; }
-    if (d.t === 'full') { this.emit('status', { key: 'full' }); this.close(true); return; }
-    if (d.t === 'kick' && this.role === 'guest') { this.emit('status', { key: 'removed' }); this.close(true); return; }
+    // only the room's starter can say the room is full or ask someone to leave
+    if (d.t === 'full') { if (this.role === 'guest' && from === this.hostId) { this.emit('status', { key: 'full' }); this.close(true); } return; }
+    if (d.t === 'kick') { if (this.role === 'guest' && from === this.hostId) { this.emit('status', { key: 'removed' }); this.close(true); } return; }
     if (d.t === 'hello') {
       const known = this.remotes[from];
+      if (known && known.pub && d.pub && d.pub !== known.pub) return; // someone pretending to be a friend already here
       if (via === 'cloud' && this.role === 'host' && !known) {
         if (Object.keys(this.remotes).length >= MAX_ROOM - 1) { this._cloudSend({ t: 'full', to: from }); return; }
         this._useCloud();
         this._cloudSend(Object.assign({ t: 'hello', to: from }, this.hello || {}, { photo: null }));
-        for (const r of Object.values(this.remotes)) this._cloudSend({ t: 'hello', to: from, from: r.id, name: r.name, look: r.look, friend: r.friend });
+        for (const r of Object.values(this.remotes)) this._cloudSend({ t: 'hello', to: from, from: r.id, name: r.name, look: r.look, friend: r.friend, pub: r.pub });
         this.emit('status', { key: 'cloud' });
       }
       if (via === 'cloud' && this.role === 'guest' && from === this.hostId && !known) this.emit('status', { key: 'cloud' });
-      const r = this.remotes[from] = Object.assign(cleanHello(d, from), { last: Date.now(), route: via === 'cloud' ? 'cloud' : 'direct', rtt: known && known.rtt }); if (known && known.photo && !r.photo) r.photo = known.photo; this.emit('hello', r);
+      const r = this.remotes[from] = Object.assign(cleanHello(d, from), { last: Date.now(), route: via === 'cloud' ? 'cloud' : (known && known.route) || 'direct', rtt: known && known.rtt, s: known && known.s, direct: known && known.direct, gotPhoto: known && known.gotPhoto });
+      if (known && known.photo && !r.photo) r.photo = known.photo;
+      if (known && !r.pub) r.pub = known.pub;
+      // only rebuild the friend's character when something about them changed
+      if (!known || known.name !== r.name || known.photo !== r.photo || JSON.stringify(known.look) !== JSON.stringify(r.look)) this.emit('hello', r);
+      // the room's starter introduces a newcomer to everyone already there (cloud friends included)
+      if (!known && this.role === 'host') this.send({ t: 'hello', from, name: r.name, look: r.look, friend: r.friend, pub: r.pub, photo: via === 'cloud' ? null : r.photo });
+      // my photo for a friend on the cloud relay goes in its own privately locked message
+      if (this.cloudOn || via === 'cloud') this._sendPhoto(from);
       if (known) return;
       // guests call each other too, so everyone hears everyone (the newer one rings)
       if (this.role === 'guest' && from !== via && this.me > from && !this.calls.has(from) && this.peer && this.peer.open) { const call = this.peer.call(from, this.mic || this._silence()); if (call) this._call(call); }
       return;
     }
     if (d.t === 'bye') { this._gone(from); return; }
+    if (d.t === 'photo') { this._openPhoto(d, from); return; }
     if (d.t === 's') { if (this.remotes[from]) this.remotes[from].s = d; return; }
     this.emit(d.t, Object.assign({}, d, { from }));
   },
@@ -209,7 +245,14 @@ export const Net = {
   },
 
   // the room's starter can ask someone to leave (a grown-up's tool if anyone is unkind)
-  kick(id) { if (this.role !== 'host') return; const c = this.conns.get(id); if (c && c.open) { try { c.send({ t: 'kick', from: this.me }); } catch (e) { } setTimeout(() => { try { c.close(); } catch (e) { } }, 400); } },
+  // (works for friends on the direct link and on the cloud relay; they can't come back into this room)
+  kick(id) {
+    if (this.role !== 'host') return;
+    (this._banned = this._banned || new Set()).add(id);
+    const c = this.conns.get(id); if (c && c.open) { try { c.send({ t: 'kick', from: this.me }); } catch (e) { } setTimeout(() => { try { c.close(); } catch (e) { } }, 400); }
+    if (this.cloud) this._cloudSend({ t: 'kick', to: id });
+    this._gone(id); this.send({ t: 'bye', from: id });
+  },
   setMuted(m) { this.muted = m; if (this.mic) this.mic.getAudioTracks().forEach(t => t.enabled = !m); },
   resumeAudio() { for (const a of this.audios.values()) a.play().catch(() => { }); },
   // ---------- the cloud relay ----------
@@ -222,6 +265,26 @@ export const Net = {
   _useCloud() {
     if (this.cloudOn) return; this.cloudOn = true;
     for (const c of this.conns.values()) if (c.open) try { c.send({ t: 'cloudon', from: this.me }); } catch (e) { }
+    for (const id of Object.keys(this.remotes)) this._sendPhoto(id);
+  },
+  async _withPub(hello) { try { this.pub = await myPub(); } catch (e) { this.pub = null; } return Object.assign({}, hello || {}, this.pub ? { pub: this.pub } : {}); },
+  // send my photo to one friend through the cloud, locked with our pair key (once per friend)
+  async _sendPhoto(id) {
+    const r = this.remotes[id], mine = this.hello && this.hello.photo; this._photoTo = this._photoTo || new Set();
+    if (!r || !r.pub || !mine || !this.cloud || this._photoTo.has(id + r.pub)) return;
+    this._photoTo.add(id + r.pub);
+    try {
+      const small = await smallPhoto(mine); if (!small) return;
+      const iv = crypto.getRandomValues(new Uint8Array(12)), ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await pairKey(r.pub), new TextEncoder().encode(small));
+      this._cloudSend({ t: 'photo', to: id, iv: b64(iv), ct: b64(ct), mid: 'p' + Math.random().toString(36).slice(2, 10) });
+    } catch (e) { this._photoTo.delete(id + r.pub); }
+  },
+  async _openPhoto(d, from) {
+    const r = this.remotes[from]; if (!r || !r.pub || typeof d.ct !== 'string' || d.ct.length > 160000) return;
+    try {
+      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(d.iv) }, await pairKey(r.pub), unb64(d.ct)), photo = okPhoto(new TextDecoder().decode(pt));
+      if (photo && this.remotes[from] === r && r.photo !== photo) { r.photo = photo; this.emit('hello', r); }
+    } catch (e) { }
   },
   _cloudSend(d) { if (this.cloud) this.cloud.send(Object.assign({ from: this.me }, d)); },
   _helloCloud() { const h = Object.assign({}, this.hello || {}, { photo: null }); this._cloudSend(Object.assign({ t: 'hello', to: this.hostId }, h)); },
@@ -261,9 +324,12 @@ export const Net = {
   // send to everyone in the room, or to one friend with {to: id}
   send(d) {
     d = Object.assign({ mid: Math.random().toString(36).slice(2, 10) + (this._n = (this._n || 0) + 1) }, d);
+    let fresh = false;
+    if (d.t === 'hello' && !d.from) { if (this.pub) d.pub = this.pub; const { t, mid, ...me } = d; const was = this.hello && this.hello.photo; this.hello = me; if (me.photo !== was) { this._photoTo = new Set(); fresh = true; } }
     if (this.cloudOn && this.cloud) {
-      // positions go through the cloud 5 times a second at most
-      if (d.t !== 's' || !this._sT || Date.now() - this._sT > 190) { if (d.t === 's') this._sT = Date.now(); this._cloudSend(d); }
+      // positions go through the cloud 5 times a second at most; photos never ride in the open hello there
+      if (d.t !== 's' || !this._sT || Date.now() - this._sT > 190) { if (d.t === 's') this._sT = Date.now(); this._cloudSend(d.t === 'hello' ? Object.assign({}, d, { photo: null }) : d); }
+      if (fresh) for (const id of Object.keys(this.remotes)) this._sendPhoto(id);
     }
     if (this.role === 'host') {
       const out = Object.assign({ from: this.me }, d);
@@ -290,12 +356,14 @@ export const Net = {
   // "offline" by itself when the device goes away (MQTT "last will"). Invites also arrive this way.
   friends: { ch: null, code: null, watching: new Set(), status: {}, onInvite: null, onChange: null, share: false },
   async friendsStart({ code, share, onInvite, onChange }) {
-    const F = this.friends; F.onInvite = onInvite; F.onChange = onChange; F.share = share;
-    if (F.ch && F.code === code) return;
-    if (F.ch) F.ch.close();
+    const F = this.friends; F.onInvite = onInvite; F.onChange = onChange;
+    if (F.ch && F.code === code && F.share === share) return;
+    // sharing switched off (or a new code): leave an "offline" note straight away, so friends stop seeing me
+    if (F.ch) { const old = F.ch; if (F.share) old.send({ t: 'pres', code: F.code, online: false, ts: Date.now() }, { retain: true }); setTimeout(() => old.close(), 500); }
+    F.share = share;
     F.code = code; F.watching = new Set();
     F.ch = new Channel({ kind: 'pres', code, will: share ? { t: 'pres', code, online: false } : null, onMsg: m => {
-      if (m.t === 'pres' && m.code && m.code !== code) { const was = F.status[m.code]; F.status[m.code] = Object.assign({}, m, { seen: Date.now(), lastOnline: m.online ? Date.now() : (was && was.lastOnline) || m.ts || null }); F.onChange && F.onChange(m.code); }
+      if (m.t === 'pres' && m.code && m.code !== code) { if (m.room && !/^\d{4}$/.test(String(m.room))) m.room = null; const was = F.status[m.code]; F.status[m.code] = Object.assign({}, m, { seen: Date.now(), lastOnline: m.online ? Date.now() : (was && was.lastOnline) || m.ts || null }); F.onChange && F.onChange(m.code); }
       if (m.t === 'invite' && m._topic === F.inboxTopic && /^\d{4}$/.test(String(m.room))) F.onInvite && F.onInvite({ name: String(m.name || '').slice(0, 20), room: String(m.room) });
     } });
     await F.ch.start();
@@ -343,7 +411,7 @@ export const Net = {
     for (const a of this.audios.values()) a.srcObject = null;
     Object.keys(this.remotes).forEach(id => this._gone(id));
     this.calls.clear(); this.conns.clear(); this.audios.clear();
-    this.peer = null; this.role = null; this.me = null; this.code = null;
+    this.peer = null; this.role = null; this.me = null; this.code = null; this._banned = null; this._photoTo = null;
     if (!keepMic && this.mic) { this.mic.getTracks().forEach(t => t.stop()); this.mic = null; }
   }
 };

@@ -27,7 +27,9 @@ export class Hero {
     this.scene.add(this.av.root);
   }
   place(x, z, y) {
-    this.pos.set(x, y != null ? y : this.world.groundAt(x, z), z); this.vy = 0; this.lastSafe.copy(this.pos);
+    // ground, bridge or deck, but not a tower top (those are reached by climbing)
+    let g = this.world.groundAt(x, z); if (y == null && g - heightAt(x, z) > 12) g = this.world.groundAt(x, z, heightAt(x, z) + 10);
+    this.pos.set(x, y != null ? y : g, z); this.vy = 0; this.lastSafe.copy(this.pos);
     this.camPos.set(x + Math.sin(this.camYaw) * this.camDist, this.pos.y + 4, z + Math.cos(this.camYaw) * this.camDist);
   }
   get staminaMax() { return this.profile.staminaMax + this.bonusStamina; }
@@ -127,7 +129,7 @@ export class Hero {
       if (this.onGround && !swimming && rise / Math.max(run, 1e-4) > 1.1) {
         // too steep to walk: climb it with stamina, like scaling a cliff
         if (this.stamina > 0 && !this.exhausted) {
-          const k = CLIMB / speed; nx = p.x + (nx - p.x) * k; nz = p.z + (nz - p.z) * k;
+          const k = Math.min(1, CLIMB / speed); nx = p.x + (nx - p.x) * k; nz = p.z + (nz - p.z) * k;
           this.useStamina(dt * .16); want = 'climb'; this.climbing = true;
         } else { nx = p.x; nz = p.z; want = 'idle'; game.hint(this, 'tired'); }
       } else this.climbing = false;

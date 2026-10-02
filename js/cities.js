@@ -5,7 +5,8 @@
 // Two Homes Street: Bạch Dinh (the White Villa) and Nhà Tròn (the Round House water tower).
 import { THREE, toonVC, P, merge, outline, sprite } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
-import { heightAt, CITIES, TOWN, VILLAGE, CHINA, INDIA, AUSSIE, MARKET } from './world.js';
+import { heightAt, roadDist, CITIES } from './world.js';
+import { roadTexture } from './roads.js';
 import { buildAvatar } from './avatar.js';
 import { LANDMARKS, VENDORS, postcard } from './regions.js';
 import { PERSONAS } from './chat.js';
@@ -66,29 +67,32 @@ const MODELS = {
 };
 
 // ---------- the cities ----------
-// gate: [x, z, rotation]. sites: [id, icon, u, v, model, name en/vi, fact en/vi]. u = across, v = towards the gate.
+// sites: [id, icon, u, v, model, name en/vi, fact en/vi]. u = across, v = towards the main gate (the gates are in world.js).
+// Every city has the same tidy plan: a main street from the gate straight through the square, the landmarks
+// set back on both sides facing the street, the kiosks on the street edges near the gate, the host by the street.
+// Bắc Ninh (custom) keeps its own plan around the clock-tower roundabout.
 const CITY_DATA = {
-  hanoi: { gate: [84, -29, 0], host: ['puppets', 'Chú Tễu', look('tunic', '#e8433a', '#1d1412', 'short'), ['Hello! I am Chú Tễu, the cheekiest water puppet in Hà Nội. Want to make my friends dance?', 'Chào cháu! Chú là chú Tễu, con rối nghịch nhất Hà Nội đây. Cháu muốn làm các bạn rối múa không?'], 'the cheeky, laughing water puppet character Chú Tễu from Hà Nội’s water puppet theatre, who speaks with a northern accent'],
+  hanoi: { host: ['puppets', 'Chú Tễu', look('tunic', '#e8433a', '#1d1412', 'short'), ['Hello! I am Chú Tễu, the cheekiest water puppet in Hà Nội. Want to make my friends dance?', 'Chào cháu! Chú là chú Tễu, con rối nghịch nhất Hà Nội đây. Cháu muốn làm các bạn rối múa không?'], 'the cheeky, laughing water puppet character Chú Tễu from Hà Nội’s water puppet theatre, who speaks with a northern accent'],
     sites: [['vanmieu', '📚', -6.5, -5, 'vanmieu', ['Temple of Literature', 'Văn Miếu – Quốc Tử Giám'], ['The Temple of Literature in Hà Nội was Vietnam’s first university, almost a thousand years old. Students still visit to wish for good marks!', 'Văn Miếu – Quốc Tử Giám ở Hà Nội là trường đại học đầu tiên của Việt Nam, gần một nghìn năm tuổi. Học sinh vẫn đến đây cầu mong học giỏi!']],
       ['puppettheatre', '🎎', 6.5, -5, 'puppetstage', ['Water Puppet Theatre', 'Nhà hát Múa rối nước'], ['In water puppet shows the stage is a pond! Puppeteers hide behind a curtain, standing in water, and make dragons, ducks and farmers dance.', 'Trong múa rối nước, sân khấu là một cái ao! Nghệ nhân đứng dưới nước sau tấm mành, điều khiển rồng, vịt và chú nông dân nhảy múa.']]] },
-  bacninh: { gate: [48, -111, 0], hostAt: [-3.5, 9.5], host: ['dongho', 'Bà Đào', look('aodai', '#7a4a2a', '#d8d8d8', 'buns'), ['Welcome to Bắc Ninh! I print Đông Hồ paintings with wooden blocks. The colours come from flowers, leaves and sea shells. Shall we paint?', 'Chào cháu đến Bắc Ninh! Bà in tranh Đông Hồ bằng khuôn gỗ. Màu làm từ hoa, lá và vỏ sò điệp đấy. Mình cùng in tranh nhé?'], 'a grandmother who makes Đông Hồ folk paintings in Bắc Ninh, gentle and proud of the Kinh Bắc region'],
+  bacninh: { custom: true, hostAt: [4.2, 3.5], host: ['dongho', 'Bà Đào', look('aodai', '#7a4a2a', '#d8d8d8', 'buns'), ['Welcome to Bắc Ninh! I print Đông Hồ paintings with wooden blocks. The colours come from flowers, leaves and sea shells. Shall we paint?', 'Chào cháu đến Bắc Ninh! Bà in tranh Đông Hồ bằng khuôn gỗ. Màu làm từ hoa, lá và vỏ sò điệp đấy. Mình cùng in tranh nhé?'], 'a grandmother who makes Đông Hồ folk paintings in Bắc Ninh, gentle and proud of the Kinh Bắc region'],
     sites: [['bnclock', '🕰️', 0, 0, 'bnclock', ['Bắc Ninh Clock Tower', 'Cột Đồng Hồ Bắc Ninh'], ['The clock tower stands in the middle of a roundabout where six roads meet in Bắc Ninh city. Its four clock faces look north, south, east and west.', 'Cột đồng hồ đứng giữa vòng xuyến nơi sáu con đường gặp nhau ở thành phố Bắc Ninh. Bốn mặt đồng hồ nhìn về bốn hướng.']],
       ['chuadau', '🧱', -10, -7, 'chuadau', ['Dâu Pagoda', 'Chùa Dâu'], ['Chùa Dâu in Bắc Ninh is one of the oldest pagodas in Vietnam. Its red brick tower, Hòa Phong, has stood for hundreds of years.', 'Chùa Dâu ở Bắc Ninh là một trong những ngôi chùa cổ nhất Việt Nam. Tháp gạch đỏ Hòa Phong đã đứng đó hàng trăm năm.']],
       ['butthap', '🖌️', 10, -7, 'butthap', ['Bút Tháp Pagoda', 'Chùa Bút Tháp'], ['Bút Tháp means "brush tower": its stone tower looks like a giant writing brush pointing at the sky!', 'Bút Tháp nghĩa là "tháp hình cây bút": ngọn tháp đá trông như một cây bút lông khổng lồ chỉ lên trời!']],
       ['dendo', '⛩️', 0, -10.5, 'dendo', ['Đô Temple', 'Đền Đô'], ['Đền Đô in Bắc Ninh remembers the eight kings of the Lý family, who moved the capital to Thăng Long, today’s Hà Nội, more than a thousand years ago.', 'Đền Đô ở Bắc Ninh thờ tám vị vua nhà Lý, những người đã dời đô về Thăng Long, Hà Nội ngày nay, hơn một nghìn năm trước.']],
       ['quanho', '🎶', -10, 6.5, 'quanho', ['Quan họ singing', 'Dân ca Quan họ'], ['Quan họ is Bắc Ninh’s folk singing: boys and girls take turns singing sweet songs to each other. UNESCO calls it a treasure of the world.', 'Quan họ là dân ca Bắc Ninh: liền anh liền chị hát đối đáp với nhau những câu hát ngọt ngào. UNESCO công nhận là di sản của nhân loại.']]] },
-  danang: { gate: [17, -62, Math.PI / 2], host: ['dragonfire', 'Anh Long', look('shirt', '#f2c230', '#1d1412', 'spiky', 'cap'), ['Chào! I am Long, which means dragon! On weekend nights our Dragon Bridge breathes real fire and water. Let us count the puffs!', 'Chào em! Anh tên Long, nghĩa là rồng đó! Tối cuối tuần Cầu Rồng phun lửa phun nước thiệt. Mình đếm thử nghen!'], 'a cheerful young man from Đà Nẵng in central Vietnam who loves the Dragon Bridge and speaks with a central accent (mô, tê, răng, rứa)'],
+  danang: { host: ['dragonfire', 'Anh Long', look('shirt', '#f2c230', '#1d1412', 'spiky', 'cap'), ['Chào! I am Long, which means dragon! On weekend nights our Dragon Bridge breathes real fire and water. Let us count the puffs!', 'Chào em! Anh tên Long, nghĩa là rồng đó! Tối cuối tuần Cầu Rồng phun lửa phun nước thiệt. Mình đếm thử nghen!'], 'a cheerful young man from Đà Nẵng in central Vietnam who loves the Dragon Bridge and speaks with a central accent (mô, tê, răng, rứa)'],
     sites: [['goldenbridge', '🤲', -5, -5, 'goldenbridge', ['Golden Bridge', 'Cầu Vàng'], ['High on Bà Nà Hills near Đà Nẵng, the Golden Bridge is held up by two giant stone hands, as if the mountain is giving you a path in the clouds.', 'Trên núi Bà Nà gần Đà Nẵng, Cầu Vàng được nâng bởi hai bàn tay đá khổng lồ, như ngọn núi đang trao cho mình một lối đi giữa mây.']]], extra: [['dragonbridge', '🐉', 20, -57.5, ['Dragon Bridge', 'Cầu Rồng'], ['Đà Nẵng’s Dragon Bridge crosses the Hàn River. It is shaped like a golden dragon, and on weekend nights it breathes fire and water!', 'Cầu Rồng ở Đà Nẵng bắc qua sông Hàn. Cầu có hình con rồng vàng, và tối cuối tuần rồng phun lửa và phun nước!']]] },
-  saigon: { gate: [-8, 75, 0], host: ['traffic', 'Cô Lan', look('shirt', '#3a78c8', '#1d1412', 'ponytail', 'cap'), ['Hello! Sài Gòn has millions of scooters. I teach children to be safe on the road. Green means go, red means stop!', 'Chào con! Sài Gòn có cả triệu chiếc xe máy. Cô dạy các bạn nhỏ đi đường an toàn nè. Đèn xanh thì đi, đèn đỏ thì dừng nha!'], 'a friendly road-safety helper from Hồ Chí Minh City who speaks with a southern accent (nè, nha, dzậy)'],
+  saigon: { host: ['traffic', 'Cô Lan', look('shirt', '#3a78c8', '#1d1412', 'ponytail', 'cap'), ['Hello! Sài Gòn has millions of scooters. I teach children to be safe on the road. Green means go, red means stop!', 'Chào con! Sài Gòn có cả triệu chiếc xe máy. Cô dạy các bạn nhỏ đi đường an toàn nè. Đèn xanh thì đi, đèn đỏ thì dừng nha!'], 'a friendly road-safety helper from Hồ Chí Minh City who speaks with a southern accent (nè, nha, dzậy)'],
     sites: [['cathedral', '⛪', -6, -5, 'cathedral', ['Notre-Dame Cathedral, Sài Gòn', 'Nhà thờ Đức Bà Sài Gòn'], ['Sài Gòn’s Notre-Dame Cathedral was built with red bricks brought all the way from France, more than 140 years ago. The bricks are still bright red!', 'Nhà thờ Đức Bà Sài Gòn được xây bằng gạch đỏ chở từ Pháp sang, hơn 140 năm trước. Đến giờ gạch vẫn còn đỏ tươi!']],
       ['postoffice', '📮', 6, -5, 'postoffice', ['Sài Gòn Central Post Office', 'Bưu điện Thành phố'], ['The Central Post Office is a yellow building with a big clock and a round roof. People still send postcards from there to the whole world!', 'Bưu điện Thành phố là tòa nhà màu vàng có đồng hồ lớn và mái vòm. Người ta vẫn gửi bưu thiếp từ đó đi khắp thế giới!']]] },
-  sydney: { gate: [-70, -21, 0], host: ['ferries', 'Captain Molly', look('shirt', '#ffffff', '#c98b4a', 'ponytail', 'cap', '#ffe3d1'), ['G’day! I drive the green and yellow ferries round Sydney Harbour. Reckon you can send them to the right wharf?', 'Chào con! Cô lái những chiếc phà xanh vàng quanh Cảng Sydney. Con đưa phà đến đúng bến được không?'], 'a cheerful Sydney ferry captain who uses Aussie slang'],
+  sydney: { host: ['ferries', 'Captain Molly', look('shirt', '#ffffff', '#c98b4a', 'ponytail', 'cap', '#ffe3d1'), ['G’day! I drive the green and yellow ferries round Sydney Harbour. Reckon you can send them to the right wharf?', 'Chào con! Cô lái những chiếc phà xanh vàng quanh Cảng Sydney. Con đưa phà đến đúng bến được không?'], 'a cheerful Sydney ferry captain who uses Aussie slang'],
     sites: [['sydneytower', '🗼', -6, -5, 'sydneytower', ['Sydney Tower Eye', 'Tháp Sydney'], ['Sydney Tower is the tallest building in Sydney. From the golden top you can see the Harbour Bridge, the beaches and even the Blue Mountains!', 'Tháp Sydney là tòa nhà cao nhất Sydney. Từ đỉnh tháp màu vàng, con nhìn thấy Cầu Cảng, các bãi biển và cả dãy Núi Xanh!']],
       ['lunapark', '😃', 6, -5, 'lunapark', ['Luna Park Sydney', 'Công viên Luna Sydney'], ['You enter Luna Park in Sydney through a giant smiling face! It is a fun park by the harbour, almost a hundred years old.', 'Con đi vào Công viên Luna ở Sydney qua một khuôn mặt khổng lồ đang cười! Đây là công viên vui chơi bên cảng, gần một trăm năm tuổi.']]] },
-  melbourne: { gate: [-144, 55, 0], host: ['tram', 'Conductor Sam', look('tunic', '#2f7a4a', '#3b2618', 'short', 'cap', '#e0aa80'), ['Ding ding! Welcome to Melbourne, the city with the most trams in the world. Help me ring the bell at the right stop!', 'Leng keng! Chào mừng đến Melbourne, thành phố có nhiều tàu điện nhất thế giới. Giúp chú bấm chuông đúng trạm nhé!'], 'a jolly Melbourne tram conductor who loves trams and coffee'],
+  melbourne: { host: ['tram', 'Conductor Sam', look('tunic', '#2f7a4a', '#3b2618', 'short', 'cap', '#e0aa80'), ['Ding ding! Welcome to Melbourne, the city with the most trams in the world. Help me ring the bell at the right stop!', 'Leng keng! Chào mừng đến Melbourne, thành phố có nhiều tàu điện nhất thế giới. Giúp chú bấm chuông đúng trạm nhé!'], 'a jolly Melbourne tram conductor who loves trams and coffee'],
     sites: [['flinders', '🚉', -6, -5, 'flinders', ['Flinders Street Station', 'Ga Flinders Street'], ['Flinders Street Station in Melbourne is yellow with a green dome and a row of clocks. People say "meet me under the clocks"!', 'Ga Flinders Street ở Melbourne màu vàng, có mái vòm xanh và một hàng đồng hồ. Người ta hay hẹn nhau "gặp dưới mấy cái đồng hồ"!']],
       ['wtram', '🚋', 6.5, -4, 'wtram', ['Melbourne trams', 'Tàu điện Melbourne'], ['Melbourne has the biggest tram network in the world. The old green and cream W-class trams go round the city, and some ride is free!', 'Melbourne có mạng lưới tàu điện lớn nhất thế giới. Những chiếc tàu điện cổ màu xanh kem chạy quanh thành phố, có chỗ còn đi miễn phí!']]] },
-  brisbane: { gate: [-36, 41, 0], host: ['koala', 'Ranger Tash', look('shirt', '#6f8a3a', '#e8c26a', 'ponytail', 'cap', '#ffe3d1'), ['Hooroo! I look after the koalas. They sleep almost all day and eat gum leaves. Can you help me feed them?', 'Chào con! Cô chăm sóc các bạn koala. Koala ngủ gần cả ngày và ăn lá bạch đàn. Con giúp cô cho koala ăn nhé?'], 'a friendly wildlife ranger at a koala sanctuary in Brisbane, Queensland'],
+  brisbane: { host: ['koala', 'Ranger Tash', look('shirt', '#6f8a3a', '#e8c26a', 'ponytail', 'cap', '#ffe3d1'), ['Hooroo! I look after the koalas. They sleep almost all day and eat gum leaves. Can you help me feed them?', 'Chào con! Cô chăm sóc các bạn koala. Koala ngủ gần cả ngày và ăn lá bạch đàn. Con giúp cô cho koala ăn nhé?'], 'a friendly wildlife ranger at a koala sanctuary in Brisbane, Queensland'],
     sites: [['wheel', '🎡', -6, -5, 'wheelbase', ['Wheel of Brisbane', 'Vòng quay Brisbane'], ['The Wheel of Brisbane turns slowly by the river at South Bank. From the top you can see the whole city and the Story Bridge.', 'Vòng quay Brisbane quay chầm chậm bên sông ở South Bank. Từ trên cao con thấy cả thành phố và cầu Story.']],
       ['lonepine', '🐨', 6, -5, 'lonepine', ['Lone Pine Koala Sanctuary', 'Khu bảo tồn Koala Lone Pine'], ['Lone Pine in Brisbane is the oldest koala sanctuary in the world. More than a hundred koalas live there, snoozing in the gum trees.', 'Lone Pine ở Brisbane là khu bảo tồn koala lâu đời nhất thế giới. Hơn một trăm bạn koala sống ở đó, ngủ gà ngủ gật trên cây bạch đàn.']]] }
 };
@@ -150,7 +154,8 @@ export function createCities(G) {
     const A = buildAvatar(lk, null); A.root.position.set(x, heightAt(x, z), z); A.root.rotation.y = face; scene.add(A.root); people.push(A);
     const tg = tagSprite(name); tg.position.set(x, heightAt(x, z) + 2.4, z); scene.add(tg); world.colliders.push({ x, z, r: .45 }); return A;
   };
-  world.updaters.push((dt, t) => people.forEach((A, k) => A.anim('idle', t + k * .7, 0)));
+  // sellers and hosts breathe and sway only when a child is near enough to see them (saves work on phones)
+  world.updaters.push((dt, t) => { const H = G.heroes || []; people.forEach((A, k) => { const p = A.root.getWorldPosition ? A.root.position : null; if (p && A.root.parent === scene && !H.some(h => Math.abs(h.pos.x - p.x) < 70 && Math.abs(h.pos.z - p.z) < 70)) return; A.anim('idle', t + k * .7, 0); }); });
   const persona = (id, emoji, name, about, role, region) => { PERSONAS[id] = { emoji, name, age: ['grown-up', 'người lớn'], about, likes: about, mood: ['Very well, thank you!', 'Khỏe lắm, cảm ơn con!'], role, region }; };
   const addLandmark = (id, icon, cc, x, z, mx, mz, name, fact) => {
     info(x, heightAt(x, z) + 3.2, z);
@@ -165,8 +170,10 @@ export function createCities(G) {
   // ---------- each city ----------
   for (const c of CITIES) {
     const D = CITY_DATA[c.id]; if (!D) continue;
-    const [gx, gz, grot] = D.gate, toward = Math.atan2(gx - c.x, gz - c.z), fx = Math.sin(toward), fz = Math.cos(toward), px = fz, pz = -fx;
-    const L = (u, v) => [c.x + px * u + fx * v, c.z + pz * u + fz * v];
+    const [gx, gz] = c.gates[0], toward = Math.atan2(gx - c.x, gz - c.z), fx = Math.sin(toward), fz = Math.cos(toward), px = fz, pz = -fx;
+    const L = (u, v) => [c.x + px * u + fx * v, c.z + pz * u + fz * v], len = Math.hypot(gx - c.x, gz - c.z);
+    const faceStreet = u => Math.atan2(-px * Math.sign(u), -pz * Math.sign(u)); // turned to look at the main street
+    c.layout = { toward, len, L };
     // paving: warm stone tiles over the whole square
     {
       const cv = document.createElement('canvas'); cv.width = cv.height = 128; const g = cv.getContext('2d');
@@ -176,11 +183,16 @@ export function createCities(G) {
       const m = new THREE.Mesh(new THREE.PlaneGeometry(c.w * 2 - 1, c.d * 2 - 1), new THREE.MeshToonMaterial({ map: t, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
       m.rotation.x = -Math.PI / 2; m.position.set(c.x, c.h + .06, c.z); m.receiveShadow = true; scene.add(m);
     }
-    // the golden welcome gate
-    G.goldenGate(gx, gz, grot, [`Welcome to ${c.name[0]}`, `Chào mừng đến ${c.name[1]}`], 7.5);
-    // landmarks
-    for (const [id, icon, u, v, model, name, fact] of D.sites) {
-      const [x, z] = L(u, v), rot = toward;
+    // the main street, from the gate straight through the square
+    {
+      const t = roadTexture('asphalt'); t.repeat.set(1, len * 2 / 9);
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(5.2, len * 2 - .4), new THREE.MeshToonMaterial({ map: t, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
+      m.rotation.order = 'YXZ'; m.rotation.set(-Math.PI / 2, toward, 0); m.position.set(c.x, c.h + .08, c.z); m.receiveShadow = true; scene.add(m);
+    }
+    // landmarks: set back on both sides of the street (Bắc Ninh: around the roundabout)
+    D.sites.forEach(([id, icon, u0, v0, model, name, fact], k) => {
+      const u = D.custom ? u0 : (k % 2 ? 8 : -8), v = D.custom ? v0 : -3 - Math.floor(k / 2) * 9;
+      const [x, z] = L(u, v), rot = D.custom || model === 'wtram' ? toward : faceStreet(u);
       const m = place(MODELS[model](), x, z, rot, c.h - .05);
       const r = model === 'bnclock' ? 4 : model === 'quanho' || model === 'puppetstage' ? 4.6 : model === 'wtram' ? 4.6 : 4.2;
       world.colliders.push({ x, z, r: Math.min(r, 3.8) });
@@ -195,35 +207,47 @@ export function createCities(G) {
         let sing = 0; world.updaters.push((dt, t) => { sing -= dt; const h0 = G.heroes[0]; if (sing <= 0 && h0 && dist2(h0.pos.x, h0.pos.z, x, z) < 9) { sing = 26; G.fx && G.fx(x, c.h + 3.4, z, '🎶'); say('Người ơi người ở đừng về… A song asking a friend to stay a little longer.', 'Người ơi người ở đừng về… người ơi người ở đừng về…'); } });
         G.interactables.push({ id: 'npc_quanho', x: x + fx * 4.6, z: z + fz * 4.6, r: 3, icon: '🎶', bubble: '🎶', label: () => T('Sing along with the Quan họ singers', 'Hát cùng liền anh liền chị Quan họ'), act: h => G.playGame(h.i, 'tune', 'place') });
       }
-      const sx = x + fx * (model === 'bnclock' ? 5.2 : 5.4), sz = z + fz * (model === 'bnclock' ? 5.2 : 5.4);
+      // its ℹ️ sign stands at the street edge in front of it
+      const [sx, sz] = D.custom ? [x + fx * (model === 'bnclock' ? 5.2 : 5.4), z + fz * (model === 'bnclock' ? 5.2 : 5.4)] : L(Math.sign(u) * 3.6, v);
       addLandmark(id, icon, c.cc, sx, sz, x, z, name, fact);
-    }
+    });
     for (const [id, icon, x, z, name, fact] of D.extra || []) addLandmark(id, icon, c.cc, x, z, (G.dragonBridge || {}).position ? G.dragonBridge.position.x : x, z, name, fact);
     // the host, who plays the city's game with you
     {
-      const [game, name, lk, greet, role] = D.host, [x, z] = L(...(D.hostAt || [-5, 5]));
-      person(lk, x, z, toward + Math.PI * 0, name);
+      const [game, name, lk, greet, role] = D.host, hu = (D.hostAt || [-4.2])[0], [x, z] = L(hu, (D.hostAt || [0, 1.5])[1]), hf = faceStreet(hu);
+      person(lk, x, z, hf, name);
       const id = 'g_' + game; G.GAME_SPOT[game] = id; G.cityHosts[c.id] = { x, z, name, game };
-      G.interactables.push({ id, x: x + fx * 1.6, z: z + fz * 1.6, r: 3, icon: '🎮', bubble: (GAMES_ICON[game] || '🎮'), label: () => nm(name), act: async h => { const k = await dialog(name, [greet], [['🎮 Let’s play!', '🎮 Chơi thôi!'], ['👋 Later', '👋 Để sau']]); if (k === 0) G.playGame(h.i, game, 'place'); } });
+      G.interactables.push({ id, x: x + Math.sin(hf) * 1.6, z: z + Math.cos(hf) * 1.6, r: 3, icon: '🎮', bubble: (GAMES_ICON[game] || '🎮'), label: () => nm(name), act: async h => { const k = await dialog(name, [greet], [['🎮 Let’s play!', '🎮 Chơi thôi!'], ['👋 Later', '👋 Để sau']]); if (k === 0) G.playGame(h.i, game, 'place'); } });
       persona(id, '🎮', name, greet, role, c.cc === 'au' ? 'au' : c.id === 'danang' ? 'trung' : c.id === 'saigon' ? 'nam' : 'bac');
     }
     // the city's name on the map, and in Travel
-    G.PLACES.push({ icon: c.icon, name: () => T(c.name[0], c.name[1]), x: gx + Math.sin(grot + Math.PI / 2) * 0 + fx * 3, z: gz + fz * 3 });
+    G.PLACES.push({ icon: c.icon, name: () => T(c.name[0], c.name[1]), x: gx + fx * 3, z: gz + fz * 3 });
   }
   world.updaters.push((dt, t) => spinners.forEach(w => { w.rotation.z = t * .12; }));
 
   // ---------- kiosks, in the cities and in the older villages ----------
-  // where to put the kiosks of a place: free spots found near its centre
-  const centre = { village: [VILLAGE.x - 14, VILLAGE.z + 8], town: [30, 41], china: [CHINA.x - 8, CHINA.z + 14], india: [INDIA.x + 8, INDIA.z + 15], aussie: [(AUSSIE.x0 + AUSSIE.x1) / 2 + 8, AUSSIE.z1 - 6], market: [(MARKET.x0 + MARKET.x1) / 2 - 6, MARKET.z1 - 3] };
+  // In the older villages the kiosks stand along the edge of the main street, facing it, never on it.
+  // STREETS: the street's centre line [from, to] and how far from it the kiosk stands.
+  const STREETS = { village: [[84, 30], [92, 30], 4.4], town: [[14, 47], [44, 47], 7.2], market: [[108, 83], [144, 83], 5], aussie: [[-138, -12], [-96, -12], 8], china: [[100, -65], [100, -80], 5.2], india: [[-112, -61], [-112, -78], 5.2] };
   const free = (x, z, r) => world.colliders.every(o => dist2(o.x, o.z, x, z) > o.r + r) && world.boxes.every(b => x < b.x0 - r || x > b.x1 + r || z < b.z0 - r || z > b.z1 + r) && G.interactables.every(i => !Number.isFinite(i.x) || dist2(i.x, i.z, x, z) > 3.2);
-  const spot = (x, z, r) => { for (let k = 0; k < 500; k++) { const a = k * 2.399, d = Math.sqrt(k) * 1.6, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d, h = heightAt(px, pz); const sl = Math.abs(heightAt(px + 1.5, pz) - heightAt(px - 1.5, pz)) + Math.abs(heightAt(px, pz + 1.5) - heightAt(px, pz - 1.5)); if (h > 1.2 && sl < 1.6 && free(px, pz, r)) return [px, pz]; } return [x, z]; };
+  const flatAt = (x, z) => heightAt(x, z) > 1.2 && Math.abs(heightAt(x + 1.5, z) - heightAt(x - 1.5, z)) + Math.abs(heightAt(x, z + 1.5) - heightAt(x, z - 1.5)) < 1.2;
+  const offRoad = (x, z) => { const r = roadDist(x, z); return r.d > r.road.w / 2 + 1.6; };
+  const streetSpot = ([[ax, az], [bx, bz], off], n) => {
+    const L = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / L, dz = (bz - az) / L;
+    for (let t = 0; t <= L; t += 1.5) for (const side of n % 2 ? [-1, 1] : [1, -1]) {
+      const sx = ax + dx * t, sz = az + dz * t, x = sx - dz * off * side, z = sz + dx * off * side;
+      // the kiosk, its seller behind it and the customer in front must all fit
+      if (flatAt(x, z) && offRoad(x, z) && free(x, z, 2.2) && free(x + dz * side * 1.2, z - dx * side * 1.2, .8)) return [x, z, Math.atan2(sx - x, sz - z)];
+    }
+    return [ax, az, 0];
+  };
   const cityOf = id => CITIES.find(c => c.id === id);
   const counts = {};
   for (const [id, where, name, lk, food, saying, greet] of KIOSKS) {
     const n = counts[where] = (counts[where] || 0) + 1, c = cityOf(where);
     let x, z, face;
-    if (c) { const D = CITY_DATA[c.id], toward = Math.atan2(D.gate[0] - c.x, D.gate[1] - c.z), fx = Math.sin(toward), fz = Math.cos(toward); const u = n === 1 ? 4 : 8.5, v = n === 1 ? 5 : 1.5; x = c.x + fz * u + fx * v; z = c.z - fx * u + fz * v; face = toward; }
-    else { [x, z] = spot(centre[where][0] + (n - 1) * 5, centre[where][1], 2.2); face = Math.atan2(centre[where][0] - x, centre[where][1] - z); }
+    if (c) { const u = n % 2 ? 4.6 : -4.6; [x, z] = c.layout.L(u, c.layout.len - (c.id === 'bacninh' ? 3.5 : 4.5) - Math.floor((n - 1) / 2) * 4); face = Math.atan2(-Math.cos(c.layout.toward) * Math.sign(u), Math.sin(c.layout.toward) * Math.sign(u)); }
+    else [x, z, face] = streetSpot(STREETS[where], n);
     // the kiosk: a little hut with a striped awning, a sign and its food on the counter
     const parts = [P(B(2.6, 1, 1.4), '#c98a4a', [0, .5, 0]), P(B(2.8, .1, 1.6), '#f6e7c8', [0, 1.05, 0])];
     for (const [ex, ez] of [[-1.25, -.6], [1.25, -.6], [-1.25, .6], [1.25, .6]]) parts.push(P(C(.06, .06, 2.4, 6), '#8a5a3b', [ex, 1.2, ez]));
@@ -243,7 +267,6 @@ export function createCities(G) {
   }
 
   // ---------- Two Homes Street: Bạch Dinh, Nhà Tròn and house number 8 ----------
-  const townSpot = (x, z, r) => spot(x, z, r);
   {
     const [x, z] = [13, 72.5], rot = Math.atan2(30 - x, 47 - z);
     place(MODELS.bachdinh(), x, z, rot); world.colliders.push({ x, z, r: 4.2 });
@@ -256,7 +279,7 @@ export function createCities(G) {
   }
   // house number 8: a Bà Rịa family home, only its number is shown
   {
-    const [x, z] = townSpot(22, 37, 5), rot = Math.atan2(28 - x, 47 - z);
+    const [x, z] = [11.5, 34.5], rot = 0; // on its own plot beside the gate, facing the street
     const parts = [
       P(B(6, .3, 7), '#b9b2a4', [0, .15, 0]),
       P(B(5.4, 3.2, 6), '#f6e3a8', [0, 1.75, -.3]), P(B(5.4, 3, 5.4), '#f6e3a8', [0, 4.85, -.6]),
@@ -295,7 +318,7 @@ async function kioskTalk(G, h, v) {
   const k = await dialog(v.name, [v.greet], [[`${v.food[0]} Buy ${v.food[1]} (${G.fmt(v.food[3])})`, `${v.food[0]} Mua ${v.food[2]} (${G.fmt(v.food[3])})`], ['🗣️ Teach me a saying!', '🗣️ Dạy con một câu nói!'], ['👋 Bye', '👋 Tạm biệt']]);
   if (k === 0) {
     if (farm.coins >= v.food[3]) { farm.coins -= v.food[3]; saveFarm(); } else say('Here, this one is a gift!', 'Thôi, cái này tặng con đó!');
-    SFX.chime(); h.bonusStamina = Math.max(h.bonusStamina || 0, 40); h.stamina = h.staminaMax;
+    SFX.chime(); h.bonusStamina = Math.max(h.bonusStamina || 0, 1); // one extra stamina wheel h.stamina = h.staminaMax;
     p.tasted = p.tasted || {}; const first = !p.tasted[v.id]; p.tasted[v.id] = true; G.save();
     await reward(v.food[0], T(`Yum, ${v.food[1]}!`, `Ngon quá, ${v.food[2]}!`), first ? T('A new taste for your food passport! Full of energy.', 'Món mới trong hộ chiếu ẩm thực! Tràn đầy năng lượng.') : T('Full of energy!', 'Tràn đầy năng lượng!'));
   }

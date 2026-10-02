@@ -3,16 +3,16 @@
 // golden welcome gate (cổng chào) at the entrance of every village and city.
 import { THREE, toonVC, P, merge, outline } from './gfx.js';
 import { T, onLang } from './i18n.js';
-import { heightAt, ROADS, DRAGON, HOME } from './world.js';
+import { heightAt, ROADS, DRAGON, REGION_NAMES } from './world.js';
 
 // a long strip texture: asphalt with a dashed centre line, or packed dirt with wheel tracks
-function roadTexture(kind) {
+export function roadTexture(kind) {
   const c = document.createElement('canvas'); c.width = 64; c.height = 256; const g = c.getContext('2d');
-  if (kind === 'asphalt') {
+  if (kind !== 'dirt') { // 'asphalt', or 'plain' asphalt without lines (for junctions)
     g.fillStyle = '#6f747a'; g.fillRect(0, 0, 64, 256);
     for (let i = 0; i < 500; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.08)'; g.fillRect(Math.random() * 64, Math.random() * 256, 2, 2); }
-    g.fillStyle = '#e9e4d4'; g.fillRect(2, 0, 3, 256); g.fillRect(59, 0, 3, 256);
-    g.fillStyle = '#f6f1e4'; g.fillRect(30, 20, 4, 90); g.fillRect(30, 148, 4, 90);
+    if (kind === 'asphalt') { g.fillStyle = '#e9e4d4'; g.fillRect(2, 0, 3, 256); g.fillRect(59, 0, 3, 256);
+      g.fillStyle = '#f6f1e4'; g.fillRect(30, 20, 4, 90); g.fillRect(30, 148, 4, 90); }
   } else {
     g.fillStyle = '#c99d66'; g.fillRect(0, 0, 64, 256);
     for (let i = 0; i < 700; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,240,210,.12)' : 'rgba(90,60,30,.12)'; g.fillRect(Math.random() * 64, Math.random() * 256, 2 + Math.random() * 2, 2); }
@@ -22,11 +22,20 @@ function roadTexture(kind) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
 }
 
-// a ribbon that follows the ground (and the bridge deck), split into short pieces so it hugs the hills
-function ribbon(R, groundAt) {
+// The road surface sits just above the highest ground nearby, so the bumpy terrain (one point every 2–2.7 m)
+// never pokes through it. On a bridge the deck is the ground (tower tops are not).
+const roadY = (world, x, z) => {
+  let y = Math.max(heightAt(x, z), heightAt(x + 1.4, z), heightAt(x - 1.4, z), heightAt(x, z + 1.4), heightAt(x, z - 1.4));
+  for (const p of world.platforms) if (!p.tower && x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1) y = Math.max(y, p.y);
+  return y + .08;
+};
+
+// a ribbon that follows the ground (and the bridge deck), split into short pieces so it hugs the hills;
+// three points across (both edges and the middle) so it also follows the slope sideways
+function ribbon(R, world) {
   const pts = []; // dense points along the road
   for (let i = 0; i < R.pts.length - 1; i++) {
-    const [ax, az] = R.pts[i], [bx, bz] = R.pts[i + 1], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 1.5));
+    const [ax, az] = R.pts[i], [bx, bz] = R.pts[i + 1], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 1.2));
     for (let k = 0; k < n; k++) pts.push([ax + (bx - ax) * k / n, az + (bz - az) * k / n]);
   }
   pts.push(R.pts[R.pts.length - 1]);
@@ -35,11 +44,12 @@ function ribbon(R, groundAt) {
     const [px, pz] = pts[Math.max(0, i - 1)], [nx, nz] = pts[Math.min(pts.length - 1, i + 1)];
     let dx = nx - px, dz = nz - pz; const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
     if (i) along += Math.hypot(x - pts[i - 1][0], z - pts[i - 1][1]);
-    for (const s of [-1, 1]) {
+    for (const s of [-1, 0, 1]) {
       const vx = x - dz * hw * s, vz = z + dx * hw * s;
-      pos.push(vx, groundAt(vx, vz, 99) + .07, vz); uv.push(s < 0 ? 0 : 1, along / (R.kind === 'asphalt' ? 9 : 7));
+      pos.push(vx, roadY(world, vx, vz), vz); uv.push((s + 1) / 2, along / (R.kind === 'asphalt' ? 9 : 7));
     }
-    if (i) { const a = (i - 1) * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+    // counter-clockwise seen from above, so the road faces up
+    if (i) { const a = (i - 1) * 3; for (const c of [0, 1]) idx.push(a + c, a + c + 1, a + c + 3, a + c + 1, a + c + 4, a + c + 3); }
   });
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
@@ -50,14 +60,14 @@ function ribbon(R, groundAt) {
 function gateSign(text, w, h, bg = '#c62828', fg = '#ffe27a') {
   const c = document.createElement('canvas'); c.width = 768; c.height = Math.round(768 * h / w); const g = c.getContext('2d');
   const draw = () => {
-    const s = Array.isArray(text) ? T(text[0], text[1]) : text;
+    const s = typeof text === 'function' ? text() : Array.isArray(text) ? T(text[0], text[1]) : text;
     g.fillStyle = bg; g.fillRect(0, 0, c.width, c.height); g.strokeStyle = fg; g.lineWidth = 10; g.strokeRect(10, 10, c.width - 20, c.height - 20);
     let size = c.height * .5; g.font = `bold ${size}px Fredoka, "Baloo 2", sans-serif`;
     while (g.measureText(s).width > c.width - 60 && size > 12) { size -= 2; g.font = `bold ${size}px Fredoka, "Baloo 2", sans-serif`; }
     g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(s, c.width / 2, c.height / 2 + 3);
   };
   draw();
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; if (Array.isArray(text)) onLang(() => { draw(); t.needsUpdate = true; });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; if (typeof text !== 'string') onLang(() => { draw(); t.needsUpdate = true; });
   const m = new THREE.MeshBasicMaterial({ map: t }), grp = new THREE.Group();
   const a = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m), b = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); b.rotation.y = Math.PI; a.position.z = .13; b.position.z = -.13;
   grp.add(a, b); return grp;
@@ -88,8 +98,23 @@ export function goldenGate(scene, world, x, z, rot, text, span = 8) {
 
 export function createRoads(G) {
   const { scene, world } = G;
-  const mats = { asphalt: new THREE.MeshToonMaterial({ map: roadTexture('asphalt'), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), dirt: new THREE.MeshToonMaterial({ map: roadTexture('dirt'), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }) };
-  for (const R of ROADS) { const m = new THREE.Mesh(ribbon(R, world.groundAt), mats[R.kind]); m.receiveShadow = true; scene.add(m); }
+  const mats = { asphalt: new THREE.MeshToonMaterial({ map: roadTexture('asphalt'), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), dirt: new THREE.MeshToonMaterial({ map: roadTexture('dirt'), polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }) };
+  // the Dragon Bridge's deck first, so the road is laid on it rather than down in the river
+  { const B = DRAGON; world.platforms.push({ x0: B.x0 - 2, x1: B.x1 + 2, z0: B.z - B.w / 2, z1: B.z + B.w / 2, y: B.h + .1 }); }
+  for (const R of ROADS) { const m = new THREE.Mesh(ribbon(R, world), mats[R.kind]); m.receiveShadow = true; scene.add(m); }
+  // where an asphalt road joins another, a plain round patch covers the crossing lines
+  {
+    const patch = new THREE.MeshToonMaterial({ map: roadTexture('plain'), polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }), done = [];
+    for (const R of ROADS) if (R.kind === 'asphalt') for (const k of [0, R.pts.length - 1]) {
+      const [x, z] = R.pts[k];
+      if ((R.gates || [])[k ? 1 : 0] || done.some(([a, b]) => Math.hypot(a - x, b - z) < 2)) continue;
+      if (!ROADS.some(o => o !== R && o.kind === 'asphalt' && o.pts.some(([a, b]) => Math.hypot(a - x, b - z) < 1))) continue;
+      done.push([x, z]);
+      const g = new THREE.RingGeometry(.01, R.w / 2 + 1.1, 24, 5); g.rotateX(-Math.PI / 2);
+      const pa = g.attributes.position; for (let i = 0; i < pa.count; i++) pa.setY(i, roadY(world, x + pa.getX(i), z + pa.getZ(i)) + .02);
+      g.computeVertexNormals(); const m = new THREE.Mesh(g, patch); m.position.set(x, 0, z); m.receiveShadow = true; scene.add(m);
+    }
+  }
 
   // ---------- Đà Nẵng's Dragon Bridge (Cầu Rồng): a golden dragon arching along the road ----------
   {
@@ -115,20 +140,15 @@ export function createRoads(G) {
     scene.add(puff); puff.visible = false;
     world.updaters.push((dt, t) => { const k = (t % 9) / 9; puff.visible = k < .12; if (puff.visible) { const s = .5 + k * 18; puff.scale.setScalar(s); puff.material.opacity = .9 - k * 6; puff.position.set(br.position.x + hx + 2.4 + k * 14, y + 3.2, B.z); } });
     world.boxes.push({ x0: B.x0, x1: B.x1, z0: B.z + hw - .1, z1: B.z + hw + .3 }, { x0: B.x0, x1: B.x1, z0: B.z - hw - .3, z1: B.z - hw + .1 });
-    world.platforms.push({ x0: B.x0 - 2, x1: B.x1 + 2, z0: B.z - hw, z1: B.z + hw, y: y + .1 });
     G.dragonBridge = br;
   }
 
-  // ---------- golden welcome gates at the villages ----------
-  const face = (x, z, tx, tz) => Math.atan2(tx - x, tz - z);
-  const gates = [
-    [76, 30, Math.PI / 2, ['Welcome to Lotus Village', 'Chào mừng đến Làng Sen']],
-    [-90, -12, Math.PI / 2, ['Welcome to Aussie Corner', 'Chào mừng đến Góc Nước Úc']],
-    [100, -62, 0, ['Welcome to China Town', 'Chào mừng đến Làng Trung Hoa']],
-    [-112, -58, 0, ['Welcome to India Village', 'Chào mừng đến Làng Ấn Độ']],
-    [-20, 98, face(-20, 98, HOME.x, HOME.z), ['Welcome to Sunny Farm', 'Chào mừng đến Nông Trại']],
-    [6, 47, Math.PI / 2, ['Welcome to Sparkle Valley', 'Chào mừng đến Thung Lũng Lấp Lánh']]
-  ];
-  gates.forEach(([x, z, r, t]) => goldenGate(scene, world, x, z, r, t, 7.5));
+  // ---------- golden welcome gates: one across each road where it enters a village or city ----------
+  // (the gate stands on the road's end point and faces along the road, so you always drive through it)
+  for (const R of ROADS) (R.gates || []).forEach((id, k) => {
+    if (!id) return;
+    const n = R.pts.length, [x, z] = R.pts[k ? n - 1 : 0], [px, pz] = R.pts[k ? n - 2 : 1];
+    goldenGate(scene, world, x, z, Math.atan2(x - px, z - pz), () => T('Welcome to ', 'Chào mừng đến ') + REGION_NAMES[id](), 7.5);
+  });
   G.goldenGate = (x, z, r, t, span) => goldenGate(scene, world, x, z, r, t, span);
 }

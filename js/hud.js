@@ -138,7 +138,9 @@ export class Hud {
     const ck = (night ? '🌙 ' : '☀️ ') + String(hr).padStart(2, '0') + ':' + String(mn).padStart(2, '0');
     if (this.last.c !== ck) { this.q('.clock').textContent = ck; this.last.c = ck; }
     this.updateFriend(camera);
-    this.drawMini(fogMap, markers);
+    // the minimap is redrawn about 15 times a second, not every frame (canvas text is slow on phones)
+    this._miniT = (this._miniT || 0) - dt;
+    if (this._miniT <= 0) { this._miniT = .066; this.drawMini(typeof fogMap === 'function' ? fogMap() : fogMap, typeof markers === 'function' ? markers() : markers); }
     this.drawWheel(camera);
   }
 
@@ -193,7 +195,7 @@ export class Hud {
     c.clearRect(0, 0, 96, 96); c.lineCap = 'round';
     const base = h.profile.staminaMax;
     for (let w = 0; w < Math.ceil(max); w++) {
-      const R = 36 - w * 9, cap = Math.min(1, max - w), val = clamp(h.stamina - w, 0, cap);
+      const R = 36 - w * 9, cap = Math.min(1, max - w), val = clamp(h.stamina - w, 0, cap); if (R <= 4) break;
       c.lineWidth = 8; c.strokeStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.arc(48, 48, R, -Math.PI / 2, -Math.PI / 2 + cap * Math.PI * 2); c.stroke();
       c.strokeStyle = h.exhausted ? '#ff5a4a' : w >= base ? '#ffd23f' : '#7ee35a';
       c.beginPath(); c.arc(48, 48, R, -Math.PI / 2, -Math.PI / 2 + val * Math.PI * 2); c.stroke();

@@ -6,15 +6,18 @@ The music is an original ukulele-and-bells jingle generated for these ads (no sa
 
 | File | Length | Use it for |
 |---|---|---|
-| `sparkle-valley-why.mp4` | ~53 s | The story: why a dad made this game. Best as a pinned post or a Facebook-group post. |
-| `sparkle-valley-features.mp4` | ~38 s | The key selling points, one per scene. Best for Reels / Shorts and parent groups. |
+| `sparkle-valley-why.mp4` | ~58 s | The story: why a dad made this game. Best as a pinned post or a Facebook-group post. |
+| `sparkle-valley-features.mp4` | ~51 s | The key selling points, one per scene. Best for Reels / Shorts and parent groups. |
 | `sparkle-valley-teaser.mp4` | ~16 s | Quick hook: Explore! Play! Learn! G'day! Xin chào! Best for Stories and paid ads. |
 
 ## Key selling points used
 
 1. **Two homes, one valley:** Vietnam (Bà Rịa, phở, Chùa Một Cột, words from the north, centre and south) and Australia (Sydney streets, milk bar, Big Banana, Aussie slang).
 2. **English ⇄ Tiếng Việt in one tap**, with everything spoken aloud.
-3. **40+ games:** folk games (Ô ăn quan, Đập niêu, kite flying, backyard cricket, Mr Wolf, dragon snake), plus thinking games (counting, letters, puzzles, memory, money).
+3. **50+ games:** folk games (Ô ăn quan, Đập niêu, kite flying, backyard cricket, Mr Wolf, dragon snake), city games (water puppets, Đông Hồ painting, scooter traffic lights, koala breakfast), plus thinking games (counting, letters, puzzles, memory, money).
+3b. **7 cities with real landmarks:** Hà Nội, Bắc Ninh, Đà Nẵng, Sài Gòn, Sydney, Melbourne, Brisbane, joined by roads with golden welcome gates.
+3c. **32 fairy tales read aloud** in English or Vietnamese over animated pictures (18 from Vietnam).
+3d. **Kiosks with local food and sayings**, a whistling kite to win, and **playing with friends anywhere** (private room codes).
 4. **Learn money in AUD and VND.**
 5. **Little ones never lose:** in under-5 mode everything is spoken and every game ends in a celebration.
 6. **Family voice:** record Mum and Dad saying the praise lines.
@@ -35,21 +38,22 @@ The music is an original ukulele-and-bells jingle generated for these ads (no sa
 
 Your own voice will feel much warmer than a computer voice. Record each line on your phone in a quiet room, then drop the audio over the video in CapCut, InShot or iMovie (lower the music to about 30% under your voice).
 
-**"Why" video (~53 s)**
+**"Why" video (~58 s)**
 
 | Time | English | Tiếng Việt |
 |---|---|---|
 | 0:00 | My kids are growing up between two homes. | Các con tôi đang lớn lên giữa hai quê hương. |
 | 0:05 | Bà Rịa… and Sydney. | Bà Rịa… và Sydney. |
 | 0:09 | So I built them one magical valley, | Nên tôi làm cho các con một thung lũng diệu kỳ, |
-| 0:13 | with milk bars, Big Things and Aussie slang, | có tiệm tạp hóa Úc, những "Big Things" và tiếng lóng Úc, |
-| 0:18 | and phở, Chùa Một Cột and words from all three regions. | và có phở, Chùa Một Cột, và tiếng của cả ba miền. |
+| 0:13 | with Sydney ferries, Melbourne trams and Brisbane koalas, | có phà Sydney, tàu điện Melbourne và koala Brisbane, |
+| 0:18 | and Hà Nội, Bắc Ninh, Đà Nẵng and Sài Gòn. | và Hà Nội, Bắc Ninh, Đà Nẵng và Sài Gòn. |
 | 0:22 | They play the folk games their grandparents played, | Các con chơi những trò chơi dân gian của ông bà, |
-| 0:27 | and learn to count, read and solve problems. | và học đếm, học đọc, học giải đố. |
-| 0:32 | Every mistake is just a chance to try again. | Sai thì mình thử lại thôi. |
-| 0:37 | And for kids in China and India to discover Vietnam and Australia too. | Và để các bạn nhỏ ở Trung Quốc, Ấn Độ cùng khám phá Việt Nam và Úc. |
-| 0:42 | I'm Henry, and I made this with love, for my kids and yours. | Tôi là Henry, tôi làm trò chơi này bằng cả tấm lòng, cho con tôi và con của bạn. |
-| 0:47 | Sparkle Valley. Two homes, one valley. | Thung Lũng Lấp Lánh. Hai quê hương, một thung lũng. |
+| 0:27 | and hear the fairy tales of both homes, read aloud. | và nghe truyện cổ tích của cả hai quê. |
+| 0:32 | They learn to count, read and solve problems. | Các con học đếm, học đọc, học giải đố. |
+| 0:37 | Every mistake is just a chance to try again. | Sai thì mình thử lại thôi. |
+| 0:42 | And for kids in China and India to discover Vietnam and Australia too. | Và để các bạn nhỏ ở Trung Quốc, Ấn Độ cùng khám phá Việt Nam và Úc. |
+| 0:47 | I'm Henry, and I made this with love, for my kids and yours. | Tôi là Henry, tôi làm trò chơi này bằng cả tấm lòng, cho con tôi và con của bạn. |
+| 0:52 | Sparkle Valley. Two homes, one valley. | Thung Lũng Lấp Lánh. Hai quê hương, một thung lũng. |
 
 **"Features" video (~38 s)**: read each caption as it appears, in one language or both.
 
@@ -60,6 +64,7 @@ The source (stage, scene lists, music synth, render script) is in `marketing/sou
 
 ```bash
 cd marketing/source
+node capture.mjs                     # fresh stills from the game (game served on :8765; optional: a list of names)
 python3 -m http.server 8770 &        # serves the stage
 ./make.sh why features teaser        # renders frames, makes music, writes out-*.mp4 (needs node + playwright + ffmpeg)
 ```

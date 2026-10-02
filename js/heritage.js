@@ -4,7 +4,7 @@
 // to knock on.
 import { THREE, toon, toonVC, P, merge, outline, sprite } from './gfx.js';
 import { T, nm, registerName } from './i18n.js';
-import { heightAt, VILLAGE, MARKET, AUSSIE, CHINA, INDIA, LAKE, WATER } from './world.js';
+import { heightAt, roadDist, VILLAGE, MARKET, AUSSIE, CHINA, INDIA, LAKE, WATER } from './world.js';
 import { buildAvatar } from './avatar.js';
 import { LANDMARKS, postcard } from './regions.js';
 import { ITEMS } from './data.js';
@@ -73,7 +73,8 @@ export function createHeritage(G, { give, sfx, say, toast }) {
     for (let k = 0; k < 400; k++) {
       const a = k * 2.399, d = Math.sqrt(k) * 2.2, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d, h = heightAt(px, pz);
       const slope = Math.abs(heightAt(px + r * .6, pz) - heightAt(px - r * .6, pz)) + Math.abs(heightAt(px, pz + r * .6) - heightAt(px, pz - r * .6));
-      if ((water || h > WATER + 1.2) && h < 26 && slope < (water ? 99 : 3.5) && free(px, pz, r)) return [px, pz];
+      const rd = roadDist(px, pz); // never on a road
+      if ((water || h > WATER + 1.2) && h < 26 && slope < (water ? 99 : 3.5) && free(px, pz, r) && (water || rd.d > rd.road.w / 2 + Math.min(r, 7) + .5)) return [px, pz];
     }
     return [x, z];
   }

@@ -471,7 +471,8 @@ export function openPad(game, i, tab) {
   };
   // computer keyboards: 1–8 pick a tab, ← → step through them, Esc closes
   const onKey = e => {
-    if (!document.body.contains(m) || /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '')) return;
+    if (!document.body.contains(m)) { removeEventListener('keydown', onKey, true); return; } // the pad was closed some other way
+    if (/INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '')) return;
     let k = -1; const cur = TABS.findIndex(t => t[0] === tab);
     if (/^Digit[1-9]$/.test(e.code)) k = +e.code.slice(5) - 1;
     else if (e.code === 'ArrowRight' || e.code === 'BracketRight') k = (cur + 1) % TABS.length;

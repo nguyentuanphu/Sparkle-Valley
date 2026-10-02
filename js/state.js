@@ -15,25 +15,37 @@ const store = {
 const SNAP_DB = 'sparkle-valley-save', SNAP_CACHE = 'sv-save', SNAP_URL = './__sv-save.json';
 const snapshot = () => ({ app: 'sparkle-valley', v: 2, saved: Date.now(), settings: store.get(KEY_SETTINGS, {}), profiles: store.get(KEY_PROFILES, null), farm: store.get('sv2_farm', null) });
 const idb = mode => new Promise((res, rej) => { const r = indexedDB.open(SNAP_DB, 1); r.onupgradeneeded = () => r.result.createObjectStore('snap'); r.onsuccess = () => res(r.result.transaction('snap', mode).objectStore('snap')); r.onerror = () => rej(r.error); });
+// If the main save was missing and its copy could not be read in time, the copies are left alone for this
+// session (new progress goes under "new-…"), so a fresh start never overwrites the only good copy.
+let mirrorLocked = false;
 async function writeMirror() {
   const snap = snapshot(); if (!Array.isArray(snap.profiles) || !snap.profiles.length) return;
-  const text = JSON.stringify(snap);
-  try { const st = await idb('readwrite'); st.put(text, 'latest'); const day = new Date().toISOString().slice(0, 10); st.put(text, 'day-' + day); } catch (e) { }
+  const text = JSON.stringify(snap), day = new Date().toISOString().slice(0, 10);
+  try {
+    const st = await idb('readwrite');
+    if (mirrorLocked) { st.put(JSON.stringify(Object.assign(snap, { fresh: true })), 'new-' + day); return; }
+    st.put(text, 'latest'); st.put(text, 'day-' + day);
+    // keep the last 10 daily copies
+    const q = st.getAllKeys(); q.onsuccess = () => q.result.filter(k => /^day-/.test(k)).sort().slice(0, -10).forEach(k => st.delete(k));
+  } catch (e) { }
+  if (mirrorLocked) return;
   try { if ('caches' in self) { const c = await caches.open(SNAP_CACHE); await c.put(SNAP_URL, new Response(text, { headers: { 'Content-Type': 'application/json' } })); } } catch (e) { }
 }
 let mirrorT = null;
 function mirrorSoon() { clearTimeout(mirrorT); mirrorT = setTimeout(writeMirror, 2500); }
 async function readMirror() {
   const all = [];
-  try { const st = await idb('readonly'); const t = await new Promise(r => { const q = st.get('latest'); q.onsuccess = () => r(q.result); q.onerror = () => r(null); }); if (t) all.push(JSON.parse(t)); } catch (e) { }
+  // the latest copy and the daily ones (in case the latest is damaged)
+  try { const st = await idb('readonly'); const list = await new Promise(r => { const q = st.getAll(); q.onsuccess = () => r(q.result || []); q.onerror = () => r([]); }); for (const t of list) try { all.push(JSON.parse(t)); } catch (e) { } } catch (e) { }
   try { if ('caches' in self) { const c = await caches.open(SNAP_CACHE), r = await c.match(SNAP_URL); if (r) all.push(await r.json()); } } catch (e) { }
-  return all.filter(x => x && x.app === 'sparkle-valley' && Array.isArray(x.profiles) && x.profiles.length).sort((a, b) => b.saved - a.saved)[0] || null;
+  return all.filter(x => x && x.app === 'sparkle-valley' && Array.isArray(x.profiles) && x.profiles.length).sort((a, b) => (!!a.fresh - !!b.fresh) || b.saved - a.saved)[0] || null;
 }
 export let restoredFromCopy = false;
 try {
   // the main save is missing (cleared by the browser, or the storage was wiped): bring back the newest copy
   if (!localStorage.getItem(KEY_PROFILES)) {
-    const snap = await Promise.race([readMirror(), new Promise(r => setTimeout(() => r(null), 2500))]);
+    const late = {}, snap = await Promise.race([readMirror(), new Promise(r => setTimeout(() => { late.yes = true; r(null); }, 8000))]);
+    if (late.yes) mirrorLocked = true;
     if (snap) {
       localStorage.setItem(KEY_PROFILES, JSON.stringify(snap.profiles));
       if (snap.farm) localStorage.setItem('sv2_farm', JSON.stringify(snap.farm));
