@@ -248,6 +248,13 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - **Grown-ups:** the button at the bottom is now a floating "Save & close".
 - **Ads re-rendered** with the new characters and houses; the "why" video has a new scene for kids in China and India.
 
+### Round 8 (camera, voices, coins, language)
+- **Easy camera:** it now turns slowly to look the way the child is walking (after a short pause, so small turns don't spin it), sits higher and a little further back, and never goes inside a building: if a house is between the child and the camera, the camera moves in front of it. The stick steers from the camera angle at the moment the child starts pushing, so the turning camera never bends their path into circles.
+- **A voice for every character:** dialogs and chat call `setSpeaker(name)`. Titles decide the voice: grandparents speak slower and lower, kids higher, aunties and uncles get a woman's or a man's voice. Several device voices are shared out between characters (Android's Google TTS has 4 Vietnamese voices). With Google Cloud TTS, each character also gets a matching natural voice (vi-VN Neural2/Wavenet, en-AU), unless the grown-up picked one.
+- **Grown-ups → Money:** buttons to top up the shared family coins (+$1, +$5, +$20, or the VND equivalent).
+- **Language sweep:** an automated scan of every screen in both languages. The title now shows "Sparkle Valley · Two homes · one valley" in English and "Thung Lũng Lấp Lánh · Hai quê hương · một thung lũng" in Vietnamese, and close buttons are translated. What stays in Vietnamese in English mode is on purpose: people's and places' names, foods and folk-game names (with the English meaning beside them).
+- **Not done (stopped by the assistant's safety system, not a code problem):** the parents' play-time report, and the dirt roads with welcome gates. Both were stopped while being written and the half-written files were removed. They can be tried again in a new session or built by hand.
+
 ## 3. How it's built
 
 **Tech:**
