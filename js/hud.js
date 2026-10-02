@@ -32,29 +32,30 @@ export class Hud {
       </div>
       <div class="quest">
         <button class="q-say" aria-label="${T('Hear the goal again', 'Nghe lại nhiệm vụ')}"><span class="q-icon">📍</span><span class="q-text"></span></button>
-        <button class="q-go">▶ ${T('Go', 'Đi')}</button>
+        <button class="q-go">▶ ${T('Go', 'Đi')}<kbd class="kb">F</kbd></button>
       </div>
       <div class="hud-tr">
         <div class="mini-wrap"><canvas class="mini" width="200" height="200"></canvas><i class="mini-n">N</i><i class="mini-me"></i></div>
         <div class="zoom"><span class="clock"></span></div>
       </div>
-      <div class="zoomer"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">${ICONS.zoomIn}</button><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">${ICONS.zoomOut}</button></div>
+      <div class="zoomer"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">${ICONS.zoomIn}<kbd class="kb">+</kbd></button><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">${ICONS.zoomOut}<kbd class="kb">−</kbd></button></div>
+      <button class="friendchip" hidden><span class="fc-arrow">➤</span><span class="fc-txt"></span><span class="fc-sig"></span></button>
       <div class="region"></div>
       <div class="htoast"></div>
       <canvas class="wheel" width="96" height="96"></canvas>
       <div class="dock">
-        <button class="dk games"><span>${ICONS.games}</span><small>${T('Games', 'Trò chơi')}</small></button>
-        <button class="dk map"><span>${ICONS.map}</span><small>${T('Map', 'Bản đồ')}</small></button>
-        <button class="dk bag"><span>${ICONS.bag}</span><small>${T('Bag', 'Ba lô')}</small></button>
-        <button class="dk voicecmd" hidden><span>${ICONS.ask}</span><small>${T('Ask', 'Hỏi')}</small></button>
-        <button class="dk chat"><span>${ICONS.talk}</span><small>${T('Talk', 'Nói')}</small></button>
-        <button class="dk call" hidden><span>${ICONS.call}</span><small>${T('Call', 'Gọi')}</small></button>
-        <button class="dk mus"><span>${ICONS.music}</span><small>${T('Music', 'Nhạc')}</small></button>
-        <button class="dk snd"><span>${ICONS.sound}</span><small>${T('Sound', 'Tiếng')}</small></button>
+        <button class="dk games"><span>${ICONS.games}</span><small>${T('Games', 'Trò chơi')}</small><kbd class="kb">G</kbd></button>
+        <button class="dk map"><span>${ICONS.map}</span><small>${T('Map', 'Bản đồ')}</small><kbd class="kb">M</kbd></button>
+        <button class="dk bag"><span>${ICONS.bag}</span><small>${T('Bag', 'Ba lô')}</small><kbd class="kb">B</kbd></button>
+        <button class="dk voicecmd" hidden><span>${ICONS.ask}</span><small>${T('Ask', 'Hỏi')}</small><kbd class="kb">K</kbd></button>
+        <button class="dk chat"><span>${ICONS.talk}</span><small>${T('Talk', 'Nói')}</small><kbd class="kb">T</kbd></button>
+        <button class="dk call" hidden><span>${ICONS.call}</span><small>${T('Call', 'Gọi')}</small><kbd class="kb">C</kbd></button>
+        <button class="dk mus"><span>${ICONS.music}</span><small>${T('Music', 'Nhạc')}</small><kbd class="kb">N</kbd></button>
+        <button class="dk snd"><span>${ICONS.sound}</span><small>${T('Sound', 'Tiếng')}</small><kbd class="kb">O</kbd></button>
       </div>
+      <button class="act" hidden><span class="ai"></span><span class="al"></span><kbd class="kb">E</kbd></button>
       <div class="hud-br">
-        <button class="act" hidden><span class="ai"></span><span class="al"></span></button>
-        <div class="moves"><button class="mv run">${ICONS.run}<small>${T('Run', 'Chạy')}</small></button><button class="mv jump">${ICONS.jump}<small>${T('Jump', 'Nhảy')}</small></button></div>
+        <div class="moves"><button class="mv run">${ICONS.run}<small>${T('Run', 'Chạy')}</small><kbd class="kb">Shift</kbd></button><button class="mv jump">${ICONS.jump}<small>${T('Jump', 'Nhảy')}</small><kbd class="kb">Space</kbd></button></div>
       </div>
       <div class="emotes" hidden></div>
       <button class="bigprompt" hidden></button>`;
@@ -80,10 +81,12 @@ export class Hud {
     this.q('.dk.call').onclick = () => game.toggleMute();
     this.q('.dk.mus').onclick = () => game.toggleAudio('music');
     this.q('.dk.snd').onclick = () => game.toggleAudio('sound');
+    this.q('.friendchip').onclick = () => { const r = game.findFriend(i); if (r) game.say && game.say(r[0], r[1]); };
     this.q('.q-say').onclick = () => game.sayObjective(i);
     this.q('.q-go').onclick = () => game.goToObjective(i);
-    this.q('.z-in').onclick = () => game.zoomBy(i, .8);
-    this.q('.z-out').onclick = () => game.zoomBy(i, 1.25);
+    // pointerdown (not click) so zoom still works while another finger is on the joystick
+    const zb = (b, f) => b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); game.zoomBy(i, f); });
+    zb(this.q('.z-in'), .8); zb(this.q('.z-out'), 1.25);
     this.refreshAudio();
     const em = this.q('.emotes');
     EMOTES.forEach(e => { const b = el('button', 'em', `<span>${e.icon}</span><small>${esc(T(e.en, e.vi))}</small>`); b.onclick = () => { this.toggleEmotes(false); game.emote(i, e.id); }; em.appendChild(b); });
@@ -134,6 +137,7 @@ export class Hud {
     const night = this.game.world.isNight(), tt = this.game.world.time, hr = Math.floor(tt * 24), mn = Math.floor((tt * 24 - hr) * 60 / 10) * 10;
     const ck = (night ? '🌙 ' : '☀️ ') + String(hr).padStart(2, '0') + ':' + String(mn).padStart(2, '0');
     if (this.last.c !== ck) { this.q('.clock').textContent = ck; this.last.c = ck; }
+    this.updateFriend(camera);
     this.drawMini(fogMap, markers);
     this.drawWheel(camera);
   }
@@ -147,9 +151,13 @@ export class Hud {
     const toMini = (wx, wz) => [S / 2 + (wx - h.pos.x) / view * S / 2, S / 2 + (wz - h.pos.z) / view * S / 2];
     for (const m of markers) {
       const [mx, my] = toMini(m.x, m.z); const off = Math.hypot(mx - S / 2, my - S / 2) > S / 2 - 10;
-      if (off && !m.pin) continue;
+      if (off && !m.pin && !m.friend) continue;
       let px = mx, py = my;
       if (off) { const a = Math.atan2(my - S / 2, mx - S / 2); px = S / 2 + Math.cos(a) * (S / 2 - 12); py = S / 2 + Math.sin(a) * (S / 2 - 12); }
+      if (m.friend) { // a friend online: a blue dot with their first letter, kept on the edge when far away
+        x.fillStyle = '#2fa8ff'; x.beginPath(); x.arc(px, py, 11, 0, Math.PI * 2); x.fill(); x.strokeStyle = '#fff'; x.lineWidth = 3; x.stroke();
+        x.fillStyle = '#fff'; x.font = 'bold 13px Fredoka, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(m.friend).charAt(0).toUpperCase(), px, py + 1); continue;
+      }
       if (m.pin) { const pulse = 9 + Math.sin(performance.now() / 180) * 2; x.fillStyle = '#ff3b6b'; x.beginPath(); x.arc(px, py, pulse, 0, Math.PI * 2); x.fill(); x.strokeStyle = '#fff'; x.lineWidth = 3; x.stroke(); x.fillStyle = '#fff'; x.font = 'bold 12px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('★', px, py + 1); continue; }
       x.font = (m.size || 20) + 'px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(m.icon, px, py);
     }
@@ -158,6 +166,22 @@ export class Hud {
     this.q('.mini-me').style.transform = `translate(-50%,-50%) rotate(${-h.yaw + Math.PI}rad)`;
   }
 
+  // the nearest online friend: name, distance and an arrow pointing their way (relative to the camera)
+  updateFriend(camera) {
+    const b = this.q('.friendchip'), h = this.hero;
+    const list = Object.values(this.game.partners || {}).filter(P => P.pos.y > -40);
+    if (!list.length) { if (!b.hidden) b.hidden = true; return; }
+    const P = list.sort((a, c) => Math.hypot(a.pos.x - h.pos.x, a.pos.z - h.pos.z) - Math.hypot(c.pos.x - h.pos.x, c.pos.z - h.pos.z))[0];
+    const d = Math.hypot(P.pos.x - h.pos.x, P.pos.z - h.pos.z), near = d < 6;
+    b.hidden = false; b.classList.toggle('near', near);
+    const pn = nm(P.name), txt = near ? T(`${pn} is here!`, `${pn} ở đây!`) : `${pn} · ${Math.round(d)} m`;
+    if (this.last.f !== txt) { this.q('.fc-txt').textContent = txt; this.last.f = txt; }
+    const q = this.game.netQuality && this.game.netQuality(P.id), sk = q ? q.bars + (q.route || '') : '';
+    if (this.last.sig !== sk) { this.q('.fc-sig').innerHTML = q ? this.game.barsHTML(q.bars) + (q.route === 'cloud' ? '☁️' : '') : ''; this.last.sig = sk; }
+    const camA = Math.atan2(camera.position.x - h.pos.x, camera.position.z - h.pos.z) + Math.PI; // the way the camera looks
+    const a = Math.atan2(P.pos.x - h.pos.x, P.pos.z - h.pos.z) - camA;
+    this.q('.fc-arrow').style.transform = `rotate(${-a - Math.PI / 2}rad)`;
+  }
   drawWheel(camera) {
     const h = this.hero, c = this.wctx, max = h.staminaMax, full = h.stamina >= max - .001 && !h.exhausted;
     this.wheelA = clamp((this.wheelA || 0) + (full ? -.05 : .2), 0, 1);

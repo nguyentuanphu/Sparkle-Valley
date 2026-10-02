@@ -10,6 +10,7 @@ import { LANDMARKS, postcard } from './regions.js';
 import { ITEMS } from './data.js';
 import { WILD } from './gather.js';
 import { dist2 } from './util.js';
+import { LINES as CHAT } from './chatter.js';
 
 const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), C = (r1, r2, h, s = 12) => new THREE.CylinderGeometry(r1, r2, h, s), S = (r, w = 14, h = 10) => new THREE.SphereGeometry(r, w, h);
 const look = (style, color, hair, hairStyle, skin = '#f6c7a5', hat = 'none') => ({ style, color, hat, back: 'none', hair, hairStyle, skin, glider: 0 });
@@ -127,6 +128,7 @@ export function createHeritage(G, { give, sfx, say, toast }) {
     const [x, z] = spot(gr.c[0], gr.c[1], 4), y = heightAt(x, z), n = gr.ppl.length, rad = gr.kind === 'board' ? 1.1 : gr.kind === 'rope' ? 2.2 : 2.6;
     const A = gr.ppl.map((l, i) => { const a = i / n * Math.PI * 2; const av = buildAvatar(l, null); const px = x + Math.cos(a) * rad, pz = z + Math.sin(a) * rad; av.root.position.set(px, heightAt(px, pz), pz); av.root.rotation.y = Math.atan2(x - px, z - pz); scene.add(av.root); return av; });
     world.colliders.push({ x, z, r: rad + .4 });
+    if (G.chatGroup && CHAT[gr.kind]) G.chatGroup(A.map(av => av.root), CHAT[gr.kind], { face: false });
     let prop = null;
     if (gr.kind === 'board') { const t = new THREE.Mesh(merge([P(B(1.2, .1, 1.2), gr.board, [0, .75, 0]), P(C(.08, .1, .7), '#6a4a2a', [0, .37, 0])]), toonVC()); t.position.set(x, y, z); scene.add(t); for (let i = 0; i < 6; i++) { const d = new THREE.Mesh(C(.07, .07, .04, 10), toon(i % 2 ? '#c62828' : '#2b2238')); d.position.set(x - .4 + (i % 3) * .4, y + .82, z - .3 + Math.floor(i / 3) * .6); scene.add(d); } }
     if (gr.kind === 'shuttle' || gr.kind === 'footy' || gr.kind === 'bowls') { prop = gr.kind === 'shuttle' ? sprite('🪶', .6) : new THREE.Mesh(gr.kind === 'footy' ? S(.22, 12, 10).scale(1, .7, .7) : S(.2), toon(gr.kind === 'footy' ? '#c0392b' : '#3a3a5a')); scene.add(prop); }

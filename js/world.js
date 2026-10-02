@@ -17,11 +17,56 @@ export const PLAYGROUND = { x: 28, z: 62, r: 13, h: 7.2 };   // the park on Two 
 export const TOWN = { x0: 12, x1: 52, z0: 32, z1: 74, h: 7.2, roadZ: 47 };   // Two Homes Street: Bà Rịa meets a Sydney suburb
 export const MARKET = { x0: 96, x1: 146, z0: 70, z1: 96, h: 4, roadZ: 83 };    // Chợ Ba Miền: the Three Regions market (north, central, south Vietnam)
 export const AUSSIE = { x0: -144, x1: -90, z0: -40, z1: 16, h: 4.5, roadZ: -12 }; // Aussie Corner: milk bar, fish and chips, ice-cream van, playground
-const FLATS = [TOWN, MARKET, AUSSIE];
+// Cities around the valley: each a paved square with a welcome gate, landmarks, a game host and food kiosks (js/cities.js)
+export const CITIES = [
+  { id: 'hanoi', cc: 'vn', x: 84, z: -40, w: 13, d: 11, h: 3, icon: '🐢', name: ['Hà Nội', 'Hà Nội'] },
+  { id: 'bacninh', cc: 'vn', x: 48, z: -124, w: 16, d: 13, h: 8.6, icon: '🕰️', name: ['Bắc Ninh', 'Bắc Ninh'] },
+  { id: 'danang', cc: 'vn', x: 4, z: -62, w: 13, d: 11, h: 5.2, icon: '🐉', name: ['Đà Nẵng', 'Đà Nẵng'] },
+  { id: 'saigon', cc: 'vn', x: -8, z: 86, w: 13, d: 11, h: 7.4, icon: '🛵', name: ['Hồ Chí Minh City', 'TP. Hồ Chí Minh'] },
+  { id: 'sydney', cc: 'au', x: -70, z: -32, w: 13, d: 11, h: 3, icon: '⛴️', name: ['Sydney', 'Sydney'] },
+  { id: 'melbourne', cc: 'au', x: -144, z: 66, w: 13, d: 11, h: 4.4, icon: '🚋', name: ['Melbourne', 'Melbourne'] },
+  { id: 'brisbane', cc: 'au', x: -36, z: 52, w: 13, d: 11, h: 5, icon: '🐨', name: ['Brisbane', 'Brisbane'] }
+];
+CITIES.forEach(c => Object.assign(c, { x0: c.x - c.w, x1: c.x + c.w, z0: c.z - c.d, z1: c.z + c.d }));
+const FLATS = [TOWN, MARKET, AUSSIE, ...CITIES];
 const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [58, 40], [52, 85]];
 export const CHINA = { x: 100, z: -88, r: 24, h: 9 };    // China Town: lanterns, tiled roofs, a pagoda and a little Great Wall
 export const INDIA = { x: -112, z: -84, r: 24, h: 9 };  // India Village: colourful houses, a little Taj Mahal, rangoli and marigolds
 export const BRIDGE = { x0: 44, x1: 74, z: 47, w: 6.4, h: 7.4 };   // the Harbour-style bridge carrying Two Homes Street over the river
+export const DRAGON = { x0: 22, x1: 52, z: -62, w: 6.4, h: 5.4 };   // Đà Nẵng's golden Dragon Bridge carrying the road east over the river
+const BRIDGES = [BRIDGE, DRAGON];
+// Roads: an asphalt main road joining the villages and cities, and dirt roads to the quieter places.
+// Each is a list of [x, z] points; js/roads.js lays them on the ground. Two Homes Street keeps its own road.
+export const ROADS = [
+  { kind: 'asphalt', w: 5.2, pts: [[-90, -12], [-80, -16], [-70, -17], [-56, -10], [-46, 6], [-40, 24], [-36, 37], [-26, 38], [-12, 42], [6, 47]] },
+  { kind: 'asphalt', w: 5.2, pts: [[78, 47], [78, 38], [76, 30]] },
+  { kind: 'asphalt', w: 5.2, pts: [[78, 47], [84, 62], [90, 78], [96, 83]] },
+  { kind: 'asphalt', w: 5.2, pts: [[76, 30], [74, 14], [76, -6], [84, -27]] },
+  { kind: 'asphalt', w: 5.2, pts: [[97, -40], [100, -50], [100, -62]] },
+  { kind: 'asphalt', w: 5.2, pts: [[-12, 42], [-10, 58], [-8, 73]] },
+  { kind: 'asphalt', w: 5.2, pts: [[-8, 99], [-14, 102], [-20, 98]] },
+  { kind: 'asphalt', w: 5.2, pts: [[4, -49], [-14, -46], [-32, -38], [-46, -24], [-56, -10]] },
+  { kind: 'asphalt', w: 5.2, pts: [[17, -62], [22, -62], [52, -62], [60, -52], [69, -40]] },
+  { kind: 'dirt', w: 3.4, pts: [[-117, 20], [-124, 34], [-136, 46], [-144, 53]] },
+  { kind: 'dirt', w: 3.4, pts: [[-112, -42], [-112, -58]] },
+  { kind: 'dirt', w: 3.4, pts: [[-112, -58], [-96, -50], [-80, -48], [-70, -45]] },
+  { kind: 'dirt', w: 3.4, pts: [[-36, 65], [-34, 80], [-30, 96]] },
+  { kind: 'dirt', w: 3.4, pts: [[48, -109], [50, -92], [52, -70], [54, -62]] },
+  { kind: 'dirt', w: 3.4, pts: [[64, -120], [70, -106], [76, -92]] },
+  { kind: 'dirt', w: 3.4, pts: [[-12, 128], [-2, 136], [6, 140]] },
+  { kind: 'dirt', w: 3.4, pts: [[-56, 128], [-80, 132], [-104, 134], [-116, 134]] },
+  { kind: 'dirt', w: 3.4, pts: [[118, 96], [112, 108], [100, 118]] },
+  { kind: 'dirt', w: 3.4, pts: [[0, 34], [-2, 40], [-6, 44]] }
+];
+// distance from (x, z) to the nearest road centre line, and that road
+export function roadDist(x, z) {
+  let best = 1e9, road = null;
+  for (const R of ROADS) for (let i = 0; i < R.pts.length - 1; i++) {
+    const [ax, az] = R.pts[i], [bx, bz] = R.pts[i + 1], dx = bx - ax, dz = bz - az, t = clamp(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1), 0, 1);
+    const d = Math.hypot(x - ax - dx * t, z - az - dz * t); if (d < best) { best = d; road = R; }
+  }
+  return { d: best, road };
+}
 
 function riverDist(x, z) {
   let best = 1e9;
@@ -62,18 +107,19 @@ export function heightAt(x, z) {
   for (const F of FLATS) { const ox = Math.max(F.x0 - x, 0, x - F.x1), oz = Math.max(F.z0 - z, 0, z - F.z1); if (ox < 12 && oz < 12) h = lerp(h, F.h, 1 - smooth(0, 12, Math.hypot(ox, oz))); }
   const dr = riverDist(x, z);
   h = lerp(h, -2.6 - mtn * 2, 1 - smooth(3.5, 11, dr));
-  // Raised banks either side of the bridge.
-  if (Math.abs(z - BRIDGE.z) < 8 && x > BRIDGE.x0 - 10 && x < BRIDGE.x1 + 16) {
+  // Raised banks either side of each bridge.
+  for (const B of BRIDGES) if (Math.abs(z - B.z) < 8 && x > B.x0 - 10 && x < B.x1 + 16) {
     // level ground at deck height at both ends, easing back to the natural hills further away; the river in the middle is left alone
-    const west = smooth(BRIDGE.x0 + 8, BRIDGE.x0 + 3, x), east = smooth(BRIDGE.x1 - 8, BRIDGE.x1 - 3, x) * (1 - smooth(BRIDGE.x1 + 4, BRIDGE.x1 + 16, x));
-    const w = (1 - smooth(4, 8, Math.abs(z - BRIDGE.z))) * (west + east);
-    h = lerp(h, BRIDGE.h - .2, clamp(w, 0, 1));
+    const west = smooth(B.x0 + 8, B.x0 + 3, x), east = smooth(B.x1 - 8, B.x1 - 3, x) * (1 - smooth(B.x1 + 4, B.x1 + 16, x));
+    const w = (1 - smooth(4, 8, Math.abs(z - B.z))) * (west + east);
+    h = lerp(h, B.h - .2, clamp(w, 0, 1));
   }
   return h;
 }
 
 export function regionAt(x, z) {
   if (dist2(x, z, PLATEAU.x, PLATEAU.z) < PLATEAU.r + 8 && heightAt(x, z) > 12) return 'plateau';
+  for (const c of CITIES) if (x > c.x0 - 4 && x < c.x1 + 4 && z > c.z0 - 4 && z < c.z1 + 4) return c.id;
   if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r + 10) return 'village';
   if (dist2(x, z, CHINA.x, CHINA.z) < CHINA.r + 8) return 'china';
   if (dist2(x, z, INDIA.x, INDIA.z) < INDIA.r + 8) return 'india';
@@ -102,6 +148,7 @@ export const REGION_NAMES = {
   mountain: () => T('Snowcap Peaks', 'Núi Tuyết Trắng'),
   meadow: () => T('Breezy Meadows', 'Đồng Cỏ Lộng Gió')
 };
+CITIES.forEach(c => { REGION_NAMES[c.id] = () => T(c.name[0], c.name[1]); });
 
 // ---------- places of interest ----------
 export const SHRINES = [
@@ -279,6 +326,7 @@ export function createWorld(scene, quality) {
     if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r + 4 || dist2(x, z, PADDIES.x, PADDIES.z) < PADDIES.r + 3 || dist2(x, z, HOME.x, HOME.z) < HOME.r + 4) continue;
     if (dist2(x, z, CHINA.x, CHINA.z) < CHINA.r + 6 || dist2(x, z, INDIA.x, INDIA.z) < INDIA.r + 6) continue;
     if (Math.abs(z - BRIDGE.z) < 8 && x > BRIDGE.x0 - 14 && x < BRIDGE.x1 + 10) continue;
+    if (BRIDGES.some(B => Math.abs(z - B.z) < 8 && x > B.x0 - 14 && x < B.x1 + 10) || roadDist(x, z).d < 4.5) continue; // keep roads clear
     const inPlat = dist2(x, z, PLATEAU.x, PLATEAU.z) < PLATEAU.r;
     if (inPlat && dist2(x, z, PLATEAU.x, PLATEAU.z) < 12) continue;
     const r = rnd();
@@ -615,6 +663,8 @@ export function paintMap(size = 256) {
     if (dist2(wx, wz, CHINA.x, CHINA.z) < CHINA.r - 2) { r = 226; g = 190; b = 160; }
     if (dist2(wx, wz, INDIA.x, INDIA.z) < INDIA.r - 2) { r = 238; g = 200; b = 150; }
     if (dist2(wx, wz, BAMBOO.x, BAMBOO.z) < BAMBOO.r) { r *= .8; g *= .95; b *= .8; }
+    for (const C of CITIES) if (wx > C.x0 && wx < C.x1 && wz > C.z0 && wz < C.z1) { r = 230; g = 214; b = 186; }
+    { const rd = roadDist(wx, wz); if (rd.d < rd.road.w / 2 + .6) { if (rd.road.kind === 'asphalt') { r = 120; g = 124; b = 130; } else { r = 196; g = 158; b = 108; } } }
     if (wx > 6 && wx < 56 && Math.abs(wz - TOWN.roadZ) < 3.6) { r = 175; g = 180; b = 184; }
     else if ((wx > MARKET.x0 && wx < MARKET.x1 && Math.abs(wz - MARKET.roadZ) < 4) || (wx > AUSSIE.x0 && wx < AUSSIE.x1 && Math.abs(wz - AUSSIE.roadZ) < 3.6)) { r = 190; g = 186; b = 178; }
     else if (wx > 10 && wx < 52 && ((wz > 32 && wz < 40) || (wz > 55 && wz < 72 && (wx < 18 || wx > 40)))) { r = 236; g = 200; b = 160; }
@@ -624,5 +674,6 @@ export function paintMap(size = 256) {
   // the bridge
   x.fillStyle = '#a9764a'; const s = size / SIZE;
   x.fillRect((BRIDGE.x0 + HALF) * s, (BRIDGE.z - 2 + HALF) * s, (BRIDGE.x1 - BRIDGE.x0) * s, 4 * s);
+  x.fillStyle = '#e8b51e'; x.fillRect((DRAGON.x0 + HALF) * s, (DRAGON.z - 2 + HALF) * s, (DRAGON.x1 - DRAGON.x0) * s, 4 * s);
   return c;
 }

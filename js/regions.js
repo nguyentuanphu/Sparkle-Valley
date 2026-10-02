@@ -122,7 +122,7 @@ export function createRegions(G) {
   });
   // the entrance gate on the west
   { const p = [P(Box(1, 6, 1), '#c0392b', [0, 3, -4.8]), P(Box(1, 6, 1), '#c0392b', [0, 3, 4.8]), P(Box(1.4, .5, 11.4), '#e8c03a', [0, 6.2, 0]), P(Box(1.8, .3, 12.4), '#a24e3a', [0, 6.6, 0])];
-    put(merge(p), M.x0 + .5, mz); signAt(['THREE REGIONS MARKET', 'CHỢ BA MIỀN'], M.x0 - .1, 5.3, mz, -Math.PI / 2, '#c0392b', '#ffe08a', 7, 1.2);
+    put(merge(p), M.x0 + .5, mz).userData.noCam = true; signAt(['THREE REGIONS MARKET', 'CHỢ BA MIỀN'], M.x0 - .1, 5.3, mz, -Math.PI / 2, '#c0392b', '#ffe08a', 7, 1.2);
     world.colliders.push({ x: M.x0 + .5, z: mz - 4.8, r: .7 }, { x: M.x0 + .5, z: mz + 4.8, r: .7 }); }
   // lanterns along the central (Hội An) section
   for (let k = 0; k < 14; k++) { const l = sprite('🏮', .7); l.position.set(114 + k, M.h + 4.3 - Math.sin(k / 13 * Math.PI) * .6, mz + (k % 2 ? 1.2 : -1.2)); scene.add(l); }
@@ -249,7 +249,7 @@ export function createRegions(G) {
     ['cricket', 'Liam', L('shirt', '#ffffff', '#6b4226', 'short', 'cap', '#ffe3d1'), -100.5, 12.5, Math.PI, ["Fancy a hit of backyard cricket, mate? You bat first!", 'Chơi cricket sân sau không bạn? Bạn đánh trước nhé!']]
   ];
   for (const [game, name, look, x, z, face, line] of HOSTS) {
-    person(look, x, z, face); tag(scene, name, x, heightAt(x, z) + 2.5, z);
+    const pA = person(look, x, z, face); tag(scene, name, x, heightAt(x, z) + 2.5, z); if (G.hostChat && pA) G.hostChat(pA, game);
     I('g_' + game, x, z + (Math.abs(face) > 1 ? -2 : 2), 3, G.GAMES_ICON ? G.GAMES_ICON(game) : '🎮', () => nm(name), h => G.kidTalk(h, game, name, line));
   }
   // party decorations and hanging pots

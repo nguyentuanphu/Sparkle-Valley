@@ -34,7 +34,7 @@ export function extrasHTML() {
     <p class="note">${T('Each new sentence is sent (as text only) to the service you chose and the sound is kept on this device, so lines play instantly and offline next time. These services charge for use; check their prices. "Make a voice" uploads your recordings to ElevenLabs.', 'Mỗi câu mới được gửi (chỉ phần chữ) đến dịch vụ bạn chọn, âm thanh được lưu trên máy này nên lần sau phát ngay và không cần mạng. Các dịch vụ này tính phí; hãy xem bảng giá của họ. "Tạo giọng" sẽ tải các bản thu của bạn lên ElevenLabs.')}</p>
   </div>
   <h3>🎤 ${T('Talking to the game', 'Nói chuyện với trò chơi')}</h3>
-  <label class="tog"><input type="checkbox" id="xVc" ${s.voiceControl ? 'checked' : ''} ${canListen() ? '' : 'disabled'}> ${T('Show the 🎤 button: children can say “open the map”, “play marbles”, “go to the village”…', 'Hiện nút 🎤: trẻ có thể nói “mở bản đồ”, “chơi bắn bi”, “đi đến làng”…')}</label>
+  <label class="tog"><input type="checkbox" id="xVc" ${s.voiceControl ? 'checked' : ''}> ${T('Show the 🎤 button: children can say “open the map”, “play marbles”, “go to the village”…', 'Hiện nút 🎤: trẻ có thể nói “mở bản đồ”, “chơi bắn bi”, “đi đến làng”…')}</label>
   <p class="note">${canListen() ? T('Speech recognition is done by Apple or Google and usually needs the internet. Nothing is recorded or saved.', 'Nhận dạng giọng nói do Apple hoặc Google thực hiện và thường cần mạng. Không có gì được ghi âm hay lưu lại.') : T('This browser cannot listen. Use Safari on iPhone/iPad or Chrome on Android.', 'Trình duyệt này không nghe được. Hãy dùng Safari trên iPhone/iPad hoặc Chrome trên Android.')}</p>
   <h3>💬 ${T('Villagers who chat freely (AI)', 'Dân làng trò chuyện tự nhiên (AI)')}</h3>
   <p class="note">${T('Tap 💬 Chat when a villager talks. Without a key they answer with built-in, offline answers. With an Anthropic API key they can answer anything, kindly and in character, using Claude. Only the chat text and the child’s first name are sent.', 'Chạm 💬 Trò chuyện khi dân làng nói. Không có key thì họ trả lời bằng câu có sẵn, không cần mạng. Có Anthropic API key thì họ trả lời mọi câu hỏi, nhẹ nhàng và đúng tính cách, nhờ Claude. Chỉ gửi nội dung trò chuyện và tên của bé.')}</p>
@@ -62,6 +62,6 @@ export function bindExtras(card, redraw, toast) {
     try { const id = await cloneFamilyVoice(T('Sparkle Valley family voice', 'Giọng gia đình Thung Lũng Lấp Lánh')); s.elevenVoice = id; save(); redraw(); toast(T('Your family voice is ready!', 'Giọng của gia đình đã sẵn sàng!')); }
     catch (e) { toast(T('It did not work: ', 'Chưa được: ') + (e.message || e)); }
   };
-  q('#xVc').onchange = e => { s.voiceControl = e.target.checked; save(); document.querySelectorAll('.dk.voicecmd').forEach(b => b.hidden = !(s.voiceControl && canListen())); };
+  q('#xVc').onchange = e => { s.voiceControl = e.target.checked; save(); document.querySelectorAll('.dk.voicecmd').forEach(b => b.hidden = !s.voiceControl); };
   q('#xAi').onchange = e => { s.aiOn = e.target.checked; save(); redraw(); };
 }

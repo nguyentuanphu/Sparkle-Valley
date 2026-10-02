@@ -11,6 +11,36 @@ import { el, esc, wait } from './util.js';
 // [picture, English, Vietnamese]
 const S = (pic, en, vi) => ({ pic, en, vi });
 export const HOWTO = {
+  puppets: {
+    origin: S('🇻🇳 🎎 💧', 'Water puppets (múa rối nước) come from the rice-field villages of northern Vietnam, nearly a thousand years ago. Today you can watch them in Hà Nội.', 'Múa rối nước có từ các làng quê đồng lúa miền Bắc Việt Nam, gần một nghìn năm trước. Ngày nay con có thể xem ở Hà Nội.'),
+    steps: [S('👂 🐉', 'Listen: Chú Tễu calls a puppet.', 'Nghe nhé: chú Tễu gọi một con rối.'), S('👆 🦆', 'Tap the puppet he calls.', 'Chạm vào con rối chú gọi.'), S('💦 🎉', 'Splash! It jumps and dances!', 'Tõm! Con rối nhảy múa!')],
+    real: S('🧦 🛁', 'For real: make sock puppets and put on a show behind a towel!', 'Chơi thật: làm rối bằng tất và diễn sau một chiếc khăn!')
+  },
+  dongho: {
+    origin: S('🇻🇳 🖼️ 🐷', 'Đông Hồ paintings come from a village in Bắc Ninh. Painters print them with carved wooden blocks and colours from flowers, leaves and sea shells.', 'Tranh Đông Hồ có từ một ngôi làng ở Bắc Ninh. Nghệ nhân in tranh bằng khuôn gỗ khắc và màu từ hoa, lá và vỏ sò.'),
+    steps: [S('👀 🖼️', 'Look at the sample painting.', 'Nhìn tranh mẫu.'), S('✨ 🎨', 'One part of your painting glows. Pick its colour.', 'Một phần tranh của con đang sáng. Chọn màu cho nó.'), S('🐓 🎉', 'Finish the picture like a real painter!', 'Tô xong bức tranh như nghệ nhân thật!')],
+    real: S('🥔 🎨', 'For real: carve a shape into half a potato and print it with paint!', 'Chơi thật: khắc hình lên nửa củ khoai tây rồi chấm màu in tranh!')
+  },
+  dragonfire: {
+    origin: S('🇻🇳 🐉 🌉', 'The Dragon Bridge in Đà Nẵng is shaped like a golden dragon. On weekend nights it breathes fire and water!', 'Cầu Rồng ở Đà Nẵng có hình con rồng vàng. Tối cuối tuần rồng phun lửa và phun nước!'),
+    steps: [S('👀 🔥', 'Watch the dragon puff.', 'Nhìn rồng phun.'), S('1️⃣ 2️⃣ 3️⃣', 'Count every puff.', 'Đếm từng lần phun.'), S('👆 🔢', 'Tap the right number.', 'Chạm vào số đúng.')]
+  },
+  traffic: {
+    origin: S('🇻🇳 🛵 🚦', 'Hồ Chí Minh City has millions of scooters! Everyone must watch the traffic lights.', 'TP. Hồ Chí Minh có hàng triệu xe máy! Ai cũng phải nhìn đèn giao thông.'),
+    steps: [S('🟢 👆', 'Green light: tap GO.', 'Đèn xanh: chạm ĐI.'), S('🔴 ✋', 'Red light: tap STOP.', 'Đèn đỏ: chạm DỪNG.'), S('🪖 😊', 'Always wear a helmet and hold a grown-up\u2019s hand!', 'Luôn đội mũ bảo hiểm và nắm tay người lớn nhé!')]
+  },
+  ferries: {
+    origin: S('🇦🇺 ⛴️ 🌉', 'Green and yellow ferries carry people all around Sydney Harbour, past the Opera House and under the Harbour Bridge.', 'Những chiếc phà xanh vàng chở mọi người quanh Cảng Sydney, qua Nhà hát Opera và dưới Cầu Cảng.'),
+    steps: [S('⛴️ 🎭', 'Look at the picture on the ferry.', 'Nhìn hình trên phà.'), S('👆 🎭', 'Tap the wharf with the same picture.', 'Chạm vào bến có hình giống.'), S('📯 🎉', 'Toot toot! All aboard!', 'Tu tu! Lên phà nào!')]
+  },
+  tram: {
+    origin: S('🇦🇺 🚋', 'Melbourne has the biggest tram network in the world. Riders ring the bell to stop.', 'Melbourne có mạng lưới tàu điện lớn nhất thế giới. Hành khách bấm chuông để xin dừng.'),
+    steps: [S('👂 5️⃣', 'Listen for the stop number.', 'Nghe số trạm.'), S('🚋 ➡️', 'Watch the tram move stop by stop.', 'Nhìn tàu chạy từng trạm.'), S('🔔 ✅', 'Ring the bell when it reaches your stop!', 'Bấm chuông khi tàu đến đúng trạm!')]
+  },
+  koala: {
+    origin: S('🇦🇺 🐨 🌿', 'Koalas live in gum trees and eat gum leaves. Lone Pine in Brisbane is the oldest koala sanctuary in the world.', 'Koala sống trên cây bạch đàn và ăn lá bạch đàn. Lone Pine ở Brisbane là khu bảo tồn koala lâu đời nhất thế giới.'),
+    steps: [S('🐨 3️⃣', 'The koala shows how many leaves it wants.', 'Koala cho biết muốn bao nhiêu lá.'), S('🌿 👆', 'Tap Give a leaf, counting each one.', 'Chạm Cho lá, đếm từng chiếc.'), S('✅ 😋', 'Tap Done when it is the right number.', 'Đủ số thì chạm Xong.')]
+  },
   music: {
     origin: S('🇻🇳 🇦🇺 🇨🇳 🇮🇳 🎶', 'Four instruments from four countries: the đàn bầu from Vietnam, the didgeridoo from Australia, the guzheng from China and the tabla from India.', 'Bốn nhạc cụ của bốn nước: đàn bầu Việt Nam, kèn didgeridoo nước Úc, đàn tranh guzheng Trung Quốc và trống tabla Ấn Độ.'),
     steps: [S('🎸 🥁', 'Choose an instrument at the top.', 'Chọn một nhạc cụ ở trên cùng.'), S('🟥 🟨 🟩', 'Tap the coloured pads to play notes.', 'Chạm vào các phím màu để chơi nhạc.'), S('⏺️ ▶️', 'Tap Record, play a tune, tap Stop, then Play to hear it back!', 'Bấm Thu âm, chơi một giai điệu, bấm Dừng, rồi bấm Nghe để nghe lại!')]

@@ -43,6 +43,11 @@ import { createLearning } from './learn.js';
 import { createShowcase } from './showcase.js';
 import './games/asia.js';
 import './games/music.js';
+import './games/cities.js';
+import { createRoads } from './roads.js';
+import { createCities } from './cities.js';
+import { createChatter, LINES as CHAT_LINES } from './chatter.js';
+import { createKites } from './kite.js';
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
@@ -71,6 +76,7 @@ const G = {
   fogMaps: {}, regionOf: [], interactables: [], gatherState: {}, bubbles: []
 };
 window.__sv = G; // handy for debugging in the browser console
+G.renderer = renderer;
 
 // ---------- people of the valley ----------
 const NPCS = [];
@@ -91,11 +97,11 @@ function nameTag(name, color = '#ffffff') {
   return s;
 }
 function addNPC({ id, name, look, model, x, z, face = 0, icon = '💬', talk }) {
-  const obj = model || buildAvatar(look, null).root;
+  const A = model ? null : buildAvatar(look, null), obj = model || A.root;
   const av = model ? null : obj;
   obj.position.set(x, world.groundAt(x, z), z); obj.rotation.y = face; scene.add(obj);
   const tag = nameTag(name); tag.position.set(x, obj.position.y + (model ? 3.4 : 2.0), z); scene.add(tag);
-  const n = { id, name, x, z, obj, tag, avatar: av, talk }; registerName(name, icon);
+  const n = { id, name, x, z, obj, tag, avatar: av, A, talk }; registerName(name, icon);
   NPCS.push(n);
   world.colliders.push({ x, z, r: .7 });
   G.interactables.push({ id: 'npc_' + id, x, z, r: 3, icon, label: () => T('Talk to ', 'Nói chuyện với ') + nm(name), act: h => talk(h) });
@@ -132,10 +138,17 @@ function setupNPCs() {
     OUTLINED.forEach(A => { if (!A.root.parent) return; A.root.getWorldPosition(_wp); const near = G.heroes.some(h => dist2(h.pos.x, h.pos.z, _wp.x, _wp.z) < 30); if (A._ol !== near) { A._ol = near; A.outlines.forEach(o => o.visible = near); } });
   });
   // gentle idle animation
+  // the children who host folk games are busy playing: they cheer, wave and clap now and then
+  const PLAYERS = new Set(['teo', 'ti', 'bong', 'su', 'jack', 'mit', 'bom', 'ruby', 'lan']);
   world.updaters.push((dt, t) => NPCS.forEach((n, k) => {
-    if (n.avatar) { n.avatar.children[0].position.y = Math.sin(t * 2 + k) * .03; }
+    if (n.A && PLAYERS.has(n.id)) { const ph = Math.floor(t * .7 + k * 1.3) % 4; n.A.anim(ph === 0 ? 'cheer' : ph === 2 ? 'wave' : 'idle', t + k, 0); }
+    else if (n.avatar) { n.avatar.children[0].position.y = Math.sin(t * 2 + k) * .03; }
     else n.obj.rotation.z = Math.sin(t * 1.5 + k) * .05;
   }));
+  // and they talk to each other about their games
+  const grp = ids => ids.map(id => (NPCS.find(n => n.id === id) || {}).obj).filter(Boolean);
+  G.chatGroup(grp(['jack', 'mit', 'bom', 'lan']), CHAT_LINES.playground, { height: 2.7 });
+  G.chatGroup(grp(['teo', 'su', 'bong', 'ti']), CHAT_LINES.village, { height: 2.7, face: false });
 }
 
 // ---------- interactables ----------
@@ -198,6 +211,7 @@ function setupGuides() {
     if (tg0) { const gy = heightAt(tg0.x, tg0.z); beam.position.set(tg0.x, gy + 35, tg0.z); bang.position.set(tg0.x, gy + 5.2 + Math.abs(Math.sin(t * 3)) * .8, tg0.z); beam.material.opacity = .2 + Math.sin(t * 2) * .08; }
     guides.forEach((g, i) => {
       const h = G.heroes[i];
+      if (h && h.walkTo && h.walkTo.friend) { const P = G.partners[h.walkTo.friend]; if (!P) h.walkTo = null; else { h.walkTo.x = P.pos.x; h.walkTo.z = P.pos.z; if (dist2(h.pos.x, h.pos.z, P.pos.x, P.pos.z) < 4) { SFX.chime(); hudFor(h).toast('👫 ' + T(`You found ${P.name}! Say hello!`, `Con đã gặp ${P.name}! Chào bạn đi!`)); say(`You found ${P.name}! Say hello!`, `Con đã gặp ${P.name} rồi! Chào bạn đi!`); h.walkTo = null; G.huds[h.i] && G.huds[h.i].toggleEmotes(true); } } }
       if (h && h.walkTo && dist2(h.pos.x, h.pos.z, h.walkTo.x, h.walkTo.z) < 7) { SFX.chime(); hudFor(h).toast('👣 ' + T(`You walked to ${h.walkTo.name}!`, `Con đã đi bộ đến ${h.walkTo.name}!`)); h.walkTo = null; }
       const tg = h && playing ? h.walkTo || questTarget(h) : null;
       const d = tg ? dist2(h.pos.x, h.pos.z, tg.x, tg.z) : 0, show = !!tg && d > 5 && !G.paused;
@@ -279,6 +293,11 @@ async function playGame(i, id, source, shrine) {
   const res = await openGame(id, { players, level, little, strong, style: source === 'folk' || id === 'market' ? 'village' : 'shrine' });
   G.paused = false;
   if (!res.won) return;
+  // winning Kite Flying earns the whistling kite (diều sáo), which then flies above you everywhere
+  if (id === 'kite' && !p.kite) {
+    p.kite = true; p.kiteOn = true; save(); G.kites.sync();
+    setTimeout(async () => { await reward('🪁', T('A whistling kite!', 'Diều sáo!'), T('It flies above you wherever you go, and its bamboo flute sings in the wind. Switch it on or off in your Backpack.', 'Diều bay theo con khắp nơi, và ống sáo tre hát vi vu trong gió. Bật hoặc tắt trong Ba lô nhé.')); }, 3600);
+  }
   for (const hero of G.heroes) {
     // move up a level after every 2 wins
     const q = hero.profile; q.wins[id] = (q.wins[id] || 0) + 1;
@@ -407,9 +426,22 @@ dialogHooks.chat = name => {
 // ---------- the Games hub: every game, by place, playable straight away ----------
 const GAME_SPOT = { music: 'musiccorner', firstwords: 'g_firstwords', tangram: 'g_tangram', snakes: 'g_snakes', rangoli: 'g_rangoli', datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
   tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
-G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (SHRINES.find(s => s.game === id) || {}).id));
+G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (G.GAME_SPOT || {})[id] || (SHRINES.find(s => s.game === id) || {}).id));
 G.openQuick = i => { if (G.paused) return; G.paused = true; openQuick(G, i); };
 G.openGamesHub = i => { if (G.paused) return; G.paused = true; openGamesHub(G, i, () => { G.paused = false; }); };
+// Games hub / map: fly straight to the friend who runs a game (or a place), then start it there
+const npcLike = it => /^(npc_|g_|v_|pc_|cards$|dacau$|musiccorner$|bear$|stall$)/.test(it.id || '');
+G.landBy = async (h, x, z) => { await G.travel(h, x - 4.5 + 1.8, z - 1 + 1.4); h.yaw = Math.atan2(x - h.pos.x, z - h.pos.z); h.camYaw = h.yaw + Math.PI; };
+G.meetAndPlay = async (i, id) => {
+  const h = G.heroes[i], it = G.gameSpot(id); if (!h) return;
+  if (!it) { G.playGame(i, id, 'place'); return; }
+  if (dist2(h.pos.x, h.pos.z, it.x, it.z) > 4) await G.landBy(h, it.x, it.z);
+  G.fx && G.fx(it.x, heightAt(it.x, it.z) + 2.4, it.z, '🎮'); await wait(500);
+  G.playGame(i, id, 'place');
+};
+// the villager nearest to a place on the map (within 20 m), so travelling lands you right next to them
+G.npcNear = (x, z, r = 20) => G.interactables.filter(it => npcLike(it) && Number.isFinite(it.x) && dist2(it.x, it.z, x, z) < r).sort((a, b) => dist2(a.x, a.z, x, z) - dist2(b.x, b.z, x, z))[0] || null;
+G.travelTo = async (h, x, z) => { const n = G.npcNear(x, z); if (n) { await G.landBy(h, n.x, n.z); hudFor(h).toast('👋 ' + n.label()); } else await G.travel(h, x, z); };
 G.goToGame = (i, id) => { const h = G.heroes[i], it = G.gameSpot(id); if (!h || !it) return; (async () => { if (dist2(h.pos.x, h.pos.z, it.x, it.z) > 45) await G.travel(h, it.x - 1.5, it.z + 2); goAndDo(h, it); })(); };
 // ---------- objective helpers ----------
 G.objectiveIcon = h => { const q = currentQuest(h.profile); return q ? q.icon : '🏆'; };
@@ -637,6 +669,21 @@ G.toggleAudio = kind => {
   saveSettings(); SFX.tap(); G.huds.forEach(h => h.refreshAudio());
 };
 G.toggleMute = () => { Net.setMuted(!Net.muted); Net.resumeAudio(); G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted)); };
+// Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
+addEventListener('keydown', e => {
+  if (!playing || e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '')) return;
+  const k = e.code;
+  // Escape closes the top pop-up, chat or game card
+  if (k === 'Escape') { const x = [...document.querySelectorAll('.modal .x, .vc-pop .vc-x, .chatwin .x, .dlg-close')].pop(); if (x) { x.click(); e.preventDefault(); } return; }
+  if (G.paused || gameOpen() || document.querySelector('.modal, .storybook, .vc-pop')) return;
+  const two = G.heroes.length > 1, i = 0;
+  const map = { KeyG: () => G.openGamesHub(i), KeyM: () => G.openPad(i, 'map'), KeyB: () => G.openPad(i, 'bag'), KeyK: () => G.voiceCommand(i),
+    KeyT: () => G.huds[i].toggleEmotes(), KeyC: () => Net.connected && G.toggleMute(), KeyN: () => G.toggleAudio('music'), KeyO: () => G.toggleAudio('sound'),
+    KeyF: () => G.goToObjective(i), KeyP: () => G.openPad(i, 'friend'),
+    Equal: () => G.zoomBy(i, .8), NumpadAdd: () => G.zoomBy(i, .8), Minus: () => G.zoomBy(i, 1.25), NumpadSubtract: () => G.zoomBy(i, 1.25) };
+  if (two && ['KeyK', 'KeyT'].includes(k)) return;
+  const f = map[k]; if (f) { e.preventDefault(); e.stopImmediatePropagation(); f(); }
+}, true);
 function sendHello() {
   const h = G.heroes[0]; if (!h) return;
   let photo = null;
@@ -653,7 +700,7 @@ Net.on('hello', r => {
   const old = G.partners[r.id]; if (old) { scene.remove(old.av.root); scene.remove(old.tag); }
   const av = buildAvatar(Object.assign({ style: 'shirt', color: '#3d7fd6', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#f6c7a5', glider: 0 }, r.look || {}), r.photo);
   scene.add(av.root); const tag = nameTag(r.name || T('Friend', 'Bạn'), '#9ff0ff'); scene.add(tag);
-  G.partners[r.id] = { id: r.id, av, tag, pos: new THREE.Vector3(0, -50, 0), yaw: 0, st: 'idle', name: r.name };
+  G.partners[r.id] = { id: r.id, av, tag, pos: old ? old.pos : new THREE.Vector3(0, -50, 0), yaw: 0, st: 'idle', name: r.name, photoURL: avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) }) };
   if (!old) { SFX.chime(); say(`${r.name} is here! Say hello!`, `${r.name} đã đến! Chào bạn đi!`); }
   G.huds.forEach(hd => hd.setCall(true, false, Net.muted));
   if (G.onNet) G.onNet();
@@ -664,6 +711,37 @@ Net.on('left', r => {
   if (!Net.connected || !Object.keys(G.partners).length) G.huds.forEach(hd => hd.setCall(false));
   toast(T(`${r.name || 'Your friend'} left.`, `${r.name || 'Bạn'} đã rời đi.`)); if (G.onNet) G.onNet();
 });
+// "Come and meet me!": a friend asks you to come to where they are
+Net.on('meet', d => {
+  const P = G.partners[d.from]; if (!P || !G.heroes[0]) return;
+  SFX.chime(); bubble(P, '📣 ' + T('Come here!', 'Lại đây nè!'));
+  dialog(P.name, [[`📣 ${P.name} wants to meet you! Shall we go?`, `📣 ${P.name} muốn gặp con! Mình đi nhé?`]], [['👣 Walk there', '👣 Đi bộ đến'], ['✨ Fly there', '✨ Bay đến'], ['🙂 Not now', '🙂 Để sau']])
+    .then(k => { const h = G.heroes[0]; if (k === 0) G.walkToFriend(h, P.id); if (k === 1) G.flyToFriend(h, P.id); if (k === 2) Net.send({ t: 'emote', id: 'wait' }); });
+});
+G.flyToFriend = (h, id) => { const P = G.partners[id]; if (!P || P.pos.y < -40) return; G.travel(h, P.pos.x - 4.5 + 1.5, P.pos.z - 1 + 1.5); setTimeout(() => { bubble(h, '👋 ' + T('Hi!', 'Chào!')); Net.send({ t: 'emote', id: 'hi' }); }, 900); };
+G.walkToFriend = (h, id) => { const P = G.partners[id]; if (!P || P.pos.y < -40) return; h.walkTo = { friend: id, x: P.pos.x, z: P.pos.z, name: P.name }; say(`Follow the footprints to ${P.name}!`, `Đi theo dấu chân đến chỗ ${P.name} nhé!`); };
+G.askFriendToCome = (h, id) => { const P = G.partners[id]; if (!P) return; Net.send({ t: 'meet', to: id }); bubble(h, '📣 ' + T('Come here!', 'Lại đây nè!')); hudFor(h).toast('📣 ' + T(`Asked ${P.name} to come to you`, `Đã gọi ${P.name} đến chỗ con`)); };
+// where are my friends? a little card with each friend's distance and direction, and ways to meet
+const compass = (h, x, z) => { const a = Math.atan2(x - h.pos.x, -(z - h.pos.z)); return ['⬆️ ' + T('north', 'phía bắc'), '↗️ ' + T('north-east', 'đông bắc'), '➡️ ' + T('east', 'phía đông'), '↘️ ' + T('south-east', 'đông nam'), '⬇️ ' + T('south', 'phía nam'), '↙️ ' + T('south-west', 'tây nam'), '⬅️ ' + T('west', 'phía tây'), '↖️ ' + T('north-west', 'tây bắc')][(Math.round(a / (Math.PI / 4)) + 8) % 8]; };
+G.friendWhere = (h, P) => { const rg = regionAt(P.pos.x, P.pos.z); return (REGION_NAMES[rg] ? REGION_NAMES[rg]() : ''); };
+G.findFriend = i => {
+  const h = G.heroes[i]; if (!h) return null;
+  const list = Object.values(G.partners).filter(P => P.pos.y > -40);
+  if (!list.length) { G.openPad(i, 'friend'); return ['No friends are in your room yet. Start a room and tell your friend the number!', 'Chưa có bạn nào trong phòng. Tạo phòng rồi đọc số cho bạn nhé!']; }
+  document.querySelector('.vc-pop')?.remove();
+  const pop = el('div', 'vc-pop friendfind', `<p class="vc-heard">👫 ${T('Where are my friends?', 'Bạn của con ở đâu?')}</p>
+    ${list.map(P => { const d = Math.round(dist2(h.pos.x, h.pos.z, P.pos.x, P.pos.z)); return `<div class="ff-row"><img src="${P.photoURL || ''}" alt="" ${P.photoURL ? '' : 'hidden'}><div class="ff-txt"><b>${esc(nm(P.name))}</b><small>${d} m · ${compass(h, P.pos.x, P.pos.z)}${G.friendWhere(h, P) ? ' · ' + esc(G.friendWhere(h, P)) : ''}</small></div>
+      <div class="ff-btns"><button class="btn primary" data-walk="${P.id}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${P.id}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-call="${P.id}">📣 ${T('Ask to come', 'Gọi bạn đến')}</button></div></div>`; }).join('')}`);
+  const x = el('button', 'vc-x', '✕'); pop.appendChild(x); x.onclick = () => pop.remove();
+  document.body.appendChild(pop); SFX.tap();
+  pop.querySelectorAll('[data-walk]').forEach(b => b.onclick = () => { pop.remove(); G.walkToFriend(h, b.dataset.walk); });
+  pop.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { pop.remove(); G.flyToFriend(h, b.dataset.fly); });
+  pop.querySelectorAll('[data-call]').forEach(b => b.onclick = () => { pop.remove(); G.askFriendToCome(h, b.dataset.call); });
+  return null;
+};
+let qT = 0; Net.on('quality', () => { if (Date.now() - qT > 1900) { qT = Date.now(); if (G.onNet && document.querySelector('.pad .online.on')) G.onNet(); } });
+addEventListener('online', () => { toast(T('Back online!', 'Có mạng lại rồi!')); G.listenFriends && G.listenFriends(); });
+addEventListener('offline', () => toast(T('No internet right now. Friends will come back when it returns.', 'Đang mất mạng. Khi có mạng lại, các bạn sẽ quay lại.')));
 Net.on('talking', on => G.huds.forEach(hd => hd.setCall(Net.connected, on, Net.muted)));
 const _np = new THREE.Vector3();
 let netStatus = '';
@@ -671,12 +749,12 @@ Net.on('status', s => {
   const msg = {
     waiting: T(`Room code: ${s.code}. Tell your friend this number!`, `Mã phòng: ${s.code}. Đọc số này cho bạn nhé!`), connecting: T('Connecting…', 'Đang kết nối…'), connected: T('Connected! You can talk now.', 'Đã kết nối! Giờ có thể nói chuyện rồi.'),
     nocode: T('No room with that number. Check the code.', 'Không có phòng số này. Kiểm tra lại mã nhé.'), nomic: T('No microphone: your friend will not hear you, but you can still play and use the talk buttons.', 'Không có micrô: bạn sẽ không nghe được con, nhưng vẫn chơi và dùng nút nói được.'),
-    left: T('The room has closed.', 'Phòng đã đóng.'), full: T('That room is full (6 players). Start your own room!', 'Phòng đã đủ 6 người. Hãy tạo phòng mới nhé!'), tapaudio: T('Tap the 🎙️ button to hear your friend.', 'Chạm nút 🎙️ để nghe bạn nói.'), error: T('Could not connect. Check the internet and try again.', 'Không kết nối được. Kiểm tra mạng rồi thử lại.'),
+    left: T('The room has closed.', 'Phòng đã đóng.'), full: T('That room is full (6 players). Start your own room!', 'Phòng đã đủ 6 người. Hãy tạo phòng mới nhé!'), tapaudio: T('Tap the 🎙️ button to hear your friend.', 'Chạm nút 🎙️ để nghe bạn nói.'), cloud: T('Connected through the cloud relay! You can play and use the talk buttons. (Voice calls need a direct link: try both on Wi-Fi, or ask a grown-up to add a relay.)', 'Đã kết nối qua mạng đám mây! Chơi và dùng nút nói được. (Gọi bằng giọng nói cần kết nối trực tiếp: thử cả hai dùng Wi-Fi, hoặc nhờ người lớn thêm máy chủ trung chuyển.)'), error: T('Could not connect. Check the internet and try again.', 'Không kết nối được. Kiểm tra mạng rồi thử lại.'),
     removed: T('The room’s starter asked you to leave the room.', 'Chủ phòng đã mời con ra khỏi phòng.'),
     slow: T('Still connecting… This can take a little longer when you are on different networks.', 'Vẫn đang kết nối… Khi hai máy ở hai mạng khác nhau có thể lâu hơn một chút.'),
     stuck: T('Could not link the two devices. Try: both on Wi-Fi (or both on mobile data), start the room on the other device, or ask a grown-up to add a relay in Grown-ups → Online play.', 'Không nối được hai máy. Thử: cả hai dùng Wi-Fi (hoặc cả hai dùng 4G), để máy kia tạo phòng, hoặc nhờ người lớn thêm máy chủ trung chuyển trong mục Người lớn → Chơi trực tuyến.')
   }[s.key] || '';
-  netStatus = msg; if (msg) toast(msg); if (G.onNet) G.onNet();
+  netStatus = msg; if (msg) toast(msg); if (G.onNet) G.onNet(); if (['waiting', 'connected', 'cloud', 'left'].includes(s.key)) G.shareStatus();
 });
 // ---------- friends: codes, invites, the online panel ----------
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -687,35 +765,59 @@ const onInvite = inv => {
   dialog(T('Invitation', 'Lời mời'), [[`👫 ${inv.name} invites you to play together! Join their room ${inv.room}?`, `👫 ${inv.name} mời con chơi cùng! Vào phòng ${inv.room} nhé?`]], [['✅ Join', '✅ Vào'], ['❌ Not now', '❌ Để sau']])
     .then(k => { if (k === 0) Net.join(inv.room, sendHello() || {}); });
 };
-G.listenFriends = () => { if (settings.friendsOn && playing) Net.listenForFriends(settings.friendCode, onInvite); else Net.stopListening(); };
+G.listenFriends = () => {
+  if (settings.friendsOn && playing) Net.listenForFriends(settings.friendCode, onInvite); else Net.stopListening();
+  // friends' status (online, where in the valley, which room) through the cloud relay
+  if (playing && (settings.friendsOn || settings.friends.length)) {
+    Net.friendsStart({ code: settings.friendCode, share: !!settings.friendsOn, onInvite, onChange: () => G.onNet && G.onNet() }).then(() => { Net.friendsWatch(settings.friends.map(f => f.code)); G.shareStatus(); });
+  } else Net.friendsStop();
+};
+// what my friends see about me: my name, the place I am in, and my room (only when sharing is switched on)
+G.shareStatus = () => { const h = G.heroes[0]; if (!h || !settings.friendsOn) return; Net.friendsShare({ name: h.profile.name, at: G.regionOf[0] || '', room: Net.role ? Net.code : null, players: Net.role ? Net.count : 0 }); };
+setInterval(() => { if (playing) G.shareStatus(); }, 45000);
+// signal bars: ▂▄▆█ with the strong ones lit
+G.netQuality = id => Net.quality(id);
+G.barsHTML = n => `<span class="bars b${n}" aria-label="${n}/4"><i></i><i></i><i></i><i></i></span>`;
+const routeName = r => r === 'cloud' ? T('cloud relay', 'qua mạng đám mây') : T('direct', 'trực tiếp');
+const friendStatus = f => {
+  const st = Net.friends.status[f.code];
+  if (!st) return `<small class="fst off">⚪ ${T('Not seen yet', 'Chưa thấy')}</small>`;
+  if (!st.online || Date.now() - (st.seen || 0) > 3 * 60000) { const m = st.lastOnline ? Math.max(1, Math.round((Date.now() - st.lastOnline) / 60000)) : null; return `<small class="fst off">⚪ ${T('Offline', 'Đang tắt')}${m ? ' · ' + (m < 60 ? T(`${m} min ago`, `${m} phút trước`) : T(`${Math.round(m / 60)} h ago`, `${Math.round(m / 60)} giờ trước`)) : ''}</small>`; }
+  const where = st.at && REGION_NAMES[st.at] ? REGION_NAMES[st.at]() : T('in the valley', 'trong thung lũng');
+  return `<small class="fst on">🟢 ${T('Online', 'Đang chơi')} · ${esc(where)}${st.room ? ' · ' + T('room', 'phòng') + ' ' + esc(st.room) : ''}</small>`;
+};
 const addFriend = (code, name) => { code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); if (code.length !== 6 || code === settings.friendCode) return false; const f = settings.friends.find(x => x.code === code); if (f) { if (name) f.name = name; } else settings.friends.push({ code, name: name || code }); saveSettings(); return true; };
 G.drawOnlinePanel = (body, redraw) => {
   G.onNet = () => { if (document.body.contains(body)) redraw(); };
   const h = G.heroes[0];
   const friendsBox = () => `<div class="ocard friends"><h3>👫 ${T('My friends', 'Bạn của con')}</h3>
       <p class="note">${T('My friend code', 'Mã bạn bè của con')}: <b class="fcode">${settings.friendCode}</b></p>
-      <label class="tog"><input type="checkbox" id="fOn" ${settings.friendsOn ? 'checked' : ''}> ${T('Friends can invite me while the game is open (needs the internet)', 'Bạn bè có thể mời con khi trò chơi đang mở (cần có mạng)')}</label>
-      <div class="flist">${settings.friends.map(f => `<div class="frow"><span>🧒 <b>${esc(f.name)}</b> <small>${f.code}</small></span>${Net.role === 'host' ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
+      <label class="tog"><input type="checkbox" id="fOn" ${settings.friendsOn ? 'checked' : ''}> ${T('Friends can see when I am playing and where, and invite me (needs the internet)', 'Bạn bè thấy khi con đang chơi, đang ở đâu, và mời con được (cần có mạng)')}</label>
+      <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${f.code}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}">▶ ${T('Join', 'Vào chơi')}</button>` : ''}${Net.role === 'host' ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
       <div class="vrow"><input type="text" id="fAdd" maxlength="6" placeholder="${T('Friend code', 'Mã bạn bè')}" autocomplete="off"><button class="btn" id="fAddB">＋ ${T('Add', 'Thêm')}</button></div>
       ${Net.role !== 'host' && settings.friends.length ? `<p class="note">${T('Start a room to invite your friends.', 'Tạo phòng để mời bạn bè.')}</p>` : ''}</div>`;
   const bindFriends = () => {
     body.querySelector('#fOn').onchange = e => { settings.friendsOn = e.target.checked; saveSettings(); G.listenFriends(); };
     body.querySelector('#fAddB').onclick = () => { if (addFriend(body.querySelector('#fAdd').value)) { SFX.chime(); redraw(); } else toast(T('A friend code has 6 letters and numbers.', 'Mã bạn bè gồm 6 chữ và số.')); };
     body.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { settings.friends = settings.friends.filter(f => f.code !== b.dataset.rm); saveSettings(); redraw(); });
-    body.querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { b.disabled = true; const ok = await Net.invite(b.dataset.inv, h ? h.profile.name : ''); toast(ok ? T('Invitation sent!', 'Đã gửi lời mời!') : T('Your friend is not online right now.', 'Bạn ấy đang không trực tuyến.')); b.disabled = false; });
+    body.querySelectorAll('[data-joinf]').forEach(b => b.onclick = () => { SFX.tap(); Net.join(b.dataset.joinf, sendHello() || {}); redraw(); });
+    body.querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { b.disabled = true; const both = await Promise.all([Net.invite(b.dataset.inv, h ? h.profile.name : ''), Net.cloudInvite(b.dataset.inv, h ? h.profile.name : '')]); const ok = both[0] || both[1]; toast(ok ? T('Invitation sent!', 'Đã gửi lời mời!') : T('Your friend is not online right now.', 'Bạn ấy đang không trực tuyến.')); b.disabled = false; });
   };
   if (Net.connected || Net.role === 'host') {
     const list = Object.values(Net.remotes);
     body.innerHTML = `<div class="online on">
       <p class="note center">${Net.code ? T(`Room code <b class="bigcode">${Net.code}</b> · ${Net.count}/6 players`, `Mã phòng <b class="bigcode">${Net.code}</b> · ${Net.count}/6 người chơi`) : ''}</p>
-      <div class="plist">${list.map(r => `<div class="prow"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(r.name)}</b></div>
-        <button class="btn" data-fly="${r.id}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-tr="${r.id}">🔄 ${T('Trade', 'Đổi đồ')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${r.id}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${r.friend}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
+      ${(n => `<p class="note center netline">📶 ${T('This device', 'Máy này')}: ${n.online ? (n.type ? esc(n.type) + ' · ' : '') + (n.eff ? esc(n.eff.toUpperCase()) + ' · ' : '') + (n.down ? n.down + ' Mbps · ' : '') : T('no internet!', 'mất mạng!') + ' · '}${n.cloud ? T(`cloud relay on (${n.brokers} server${n.brokers === 1 ? '' : 's'})`, `đang dùng mạng đám mây (${n.brokers} máy chủ)`) : T('direct link', 'kết nối trực tiếp')}${n.voice ? ' · 🎙️ ' + T('voice on', 'đang gọi') : n.cloud ? ' · ' + T('voice needs a direct link', 'gọi giọng cần kết nối trực tiếp') : ''}</p>`)(Net.netInfo())}
+      <div class="plist">${list.map(r => `<div class="prow"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(nm(r.name))}</b>${(q => q ? `<small class="pq">${G.barsHTML(q.bars)} ${q.rtt != null ? q.rtt + ' ms' : '…'} · ${routeName(q.route)}${q.weak ? ' · ' + T('weak', 'yếu') : ''}</small>` : '')(Net.quality(r.id))}</div>
+        <button class="btn" data-walkf="${r.id}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${r.id}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${r.id}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${r.id}">🔄 ${T('Trade', 'Đổi đồ')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${r.id}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${r.friend}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
       <div class="actions center"><button class="btn big" id="oMute">${Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
       ${friendsBox()}</div>`;
     body.querySelector('#oMute').onclick = () => { G.toggleMute(); redraw(); };
     body.querySelector('#oEnd').onclick = () => { Net.close(); Object.keys(G.partners).forEach(id => Net.emit('left', { id, name: G.partners[id].name })); G.huds.forEach(hd => hd.setCall(false)); redraw(); };
-    body.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { const P = G.partners[b.dataset.fly]; if (P) { $('.modal.pad')?.remove(); G.paused = false; G.travel(G.heroes[0], P.pos.x - 4.5, P.pos.z - 1); } });
+    body.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { const P = G.partners[b.dataset.fly]; if (P) { $('.modal.pad')?.remove(); G.paused = false; G.flyToFriend(G.heroes[0], P.id); } });
+    body.querySelectorAll('[data-walkf]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; G.walkToFriend(G.heroes[0], b.dataset.walkf); });
+    body.querySelectorAll('[data-callf]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; G.askFriendToCome(G.heroes[0], b.dataset.callf); });
     body.querySelectorAll('[data-kick]').forEach(b => b.onclick = () => { if (confirm(T('Remove this player from the room?', 'Mời bạn này ra khỏi phòng?'))) { Net.kick(b.dataset.kick); setTimeout(redraw, 600); } });
     body.querySelectorAll('[data-tr]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; openTrade(G, G.heroes[0], b.dataset.tr); });
     body.querySelectorAll('[data-addf]').forEach(b => b.onclick = () => { addFriend(b.dataset.addf, b.dataset.n); SFX.chime(); toast(T('Friend added!', 'Đã thêm bạn!')); redraw(); });
@@ -784,8 +886,15 @@ G.goAndDo = goAndDo;
 // stop just in front of an activity rather than inside it
 function approach(h, it) { const dx = h.pos.x - it.x, dz = h.pos.z - it.z, d = Math.hypot(dx, dz) || 1, k = Math.max(.5, Math.min(it.r * .6, 2.5)); return { x: it.x + dx / d * k, z: it.z + dz / d * k }; }
 const poll = initInput(renderer.domElement, rects, () => G.paused || !G.heroes.length, onTap);
-renderer.domElement.addEventListener('wheel', e => { G.zoomBy(0, e.deltaY > 0 ? 1.1 : .9); }, { passive: true });
-G.zoomBy = (i, f) => { const h = G.heroes[i]; if (h) { h.zoom = clamp((h.zoom || 1) * f, .45, 1.8); SFX.tap(); } };
+// the mouse wheel zooms the screen under the pointer (split screen has two)
+renderer.domElement.addEventListener('wheel', e => { const r = rects(), k = Math.max(0, r.findIndex(q => e.clientX >= q.x && e.clientX < q.x + q.w && e.clientY >= q.y && e.clientY < q.y + q.h)); G.zoomBy(k, e.deltaY > 0 ? 1.1 : .9, true); }, { passive: true });
+// zooming out also lifts the camera up, so rooftops no longer pull it back in (it used to look as if zoom did nothing)
+G.zoomBy = (i, f, quiet) => {
+  const h = G.heroes[i]; if (!h) return;
+  const z = clamp((h.zoom || 1) * f, .35, 2.2);
+  if (Math.abs(z - (h.zoom || 1)) < .001) { if (!quiet) { SFX.no && SFX.no(); G.huds[i] && G.huds[i].toast(f < 1 ? T('That is as close as it goes!', 'Gần nhất rồi!') : T('That is as far as it goes!', 'Xa nhất rồi!')); } return; }
+  h.zoom = z; h.manualCamT = 0; if (!quiet) SFX.tap();
+};
 
 // ---------- starting a session ----------
 function startSession(mode, chosen) {
@@ -802,7 +911,7 @@ function startSession(mode, chosen) {
   TOWERS.forEach(t => world.setTowerDone(t.id, !!p0.towers[t.id]));
   LEAFIES.forEach(l => { const o = world.leafyMeshes[l.id]; if (o) o.visible = !chosen.every(p => p.leafies[l.id]); });
   setupWanderers(chosen);
-  G.pets.sync(); G.pets.refreshInteractables();
+  G.pets.sync(); G.pets.refreshInteractables(); G.kites.sync();
   G.festivals.greet(G.heroes[0]);
   resize(); G.paused = false; playing = true; G.listenFriends();
   $('#huds').hidden = false;
@@ -846,6 +955,7 @@ function frame(now) {
       for (const s of SHRINES.concat(TOWERS)) if (!h.profile.discovered[s.id] && dist2(s.x, s.z, h.pos.x, h.pos.z) < 45) { h.profile.discovered[s.id] = true; save(); }
       const rg = regionAt(h.pos.x, h.pos.z);
       if (rg !== G.regionOf[i]) {
+        if (i === 0) setTimeout(() => G.shareStatus(), 50);
         if (G.regionOf[i] !== null) { G.huds[i].showRegion(REGION_NAMES[rg]()); }
         G.regionOf[i] = rg;
         const vis = h.profile.visited = h.profile.visited || {}; if (!vis[rg]) { vis[rg] = true; save(); }
@@ -856,6 +966,7 @@ function frame(now) {
     pads.forEach(p => { p.act(); p.jump(); p.menu(); });
     if (G.closeUp != null && G.heroes[G.closeUp]) { const h = G.heroes[G.closeUp]; h.state = 'idle'; h.finish(dt, t, G, 0); }
   }
+  walkedAway();
   // music follows the first player
   const h0 = G.heroes[0];
   if (h0 && !gameOpen()) {
@@ -894,7 +1005,7 @@ function frame(now) {
     NPCS.forEach(n => markers.push({ x: n.x, z: n.z, icon: '•', size: 14 }));
     G.ferries.ferries.forEach(F => markers.push({ x: F.model.position.x, z: F.model.position.z, icon: '⛴️', size: 16 }));
     G.heroes.forEach((o, j) => { if (j !== i) markers.push({ x: o.pos.x, z: o.pos.z, icon: '🧒', size: 18 }); });
-    Object.values(G.partners).forEach(P => markers.push({ x: P.pos.x, z: P.pos.z, icon: '🧒', size: 18 }));
+    Object.values(G.partners).forEach(P => { if (P.pos.y > -40) markers.push({ x: P.pos.x, z: P.pos.z, icon: '🧒', size: 18, friend: P.name || '?' }); });
     const qt = questTarget(h); if (qt) markers.push({ x: qt.x, z: qt.z, pin: true });
     G.huds[i].update(dt, h.cam, G.fogMapFor(p), markers);
   });
@@ -902,6 +1013,7 @@ function frame(now) {
 
 // ---------- boot ----------
 loadClips();
+createChatter(G);
 setupNPCs(); setupInteractables();
 G.farm = createFarm(G); world.updaters.push(G.farm.update);
 G.places = createPlaces(G); world.updaters.push(G.places.update);
@@ -911,12 +1023,21 @@ createRegions(G);
 G.dialog = (name, lines, choices) => dialog(name, lines, choices);
 // little ones (under 5) get big picture buttons in conversations
 dialogHooks.little = () => G.heroes.some(h => h.profile.age !== 'big');
+// where everyone stood when a conversation opened; walking about 9 m away closes it (checked in the loop)
+dialogHooks.where = () => G.heroes.map(h => ({ x: h.pos.x, z: h.pos.z }));
+const walkedAway = () => {
+  const d = document.querySelector('.dialog:not(.out)'); if (!d || !d._from || !d._autoClose || G.travelling) return;
+  if (d._from.length && G.heroes.every((h, k) => !d._from[k] || dist2(h.pos.x, h.pos.z, d._from[k].x, d._from[k].z) > 9)) { d._autoClose(); SFX.tap(); }
+};
 onLang(() => G.huds.forEach(hd => hd.refreshWho && hd.refreshWho()));
 createAsia(G);
+createRoads(G);
+createCities(G);
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 G.reward = reward;
 G.pets = createPets(G);
 G.ferries = createFerries(G);
+G.kites = createKites(G);
 createPassport(G);
 G.festivals = createFestivals(G);
 G.weather = createWeather(G);
@@ -942,11 +1063,11 @@ setupTrading(G);
   const collect = () => {
     list = []; const sphere = new THREE.Sphere();
     scene.traverse(o => {
-      if (!o.isMesh || o.isInstancedMesh || o.userData.outline || o === world.terrain || !o.visible) return;
+      if (!o.isMesh || o.isInstancedMesh || o.userData.outline || o.userData.noCam || o === world.terrain || !o.visible) return;
       const mt = o.material; if (!mt || Array.isArray(mt) || mt.transparent || mt.side === THREE.BackSide || mt.isMeshBasicMaterial) return;
       if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
       sphere.copy(o.geometry.boundingSphere).applyMatrix4(o.matrixWorld);
-      if (sphere.radius < 2.2 || sphere.radius > 120) return;
+      if (sphere.radius < 3 || sphere.radius > 120) return; // trees, lamps and stalls are too small to matter
       if (G.heroes.some(h => h.av.root.getObjectById(o.id))) return;
       list.push(o);
     });
@@ -966,6 +1087,7 @@ resize();
 $('#boot').remove();
 requestAnimationFrame(frame);
 showTitle(() => showWho((mode, chosen) => startSession(mode, chosen)));
+import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { save(); hush(); } });
 addEventListener('pagehide', () => saveProfiles(true));
 if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) navigator.serviceWorker.register('sw.js').catch(() => { });

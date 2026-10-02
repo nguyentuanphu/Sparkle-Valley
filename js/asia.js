@@ -77,7 +77,7 @@ export function createAsia(G) {
     }
     // friends who host games
     const host = (game, name, look, dx, dz, face, line, lang) => {
-      const x = cx + dx, z = cz + dz; person(look, x, z, face); tag(name, x, heightAt(x, z) + 2.5, z);
+      const x = cx + dx, z = cz + dz; const pA = person(look, x, z, face); tag(name, x, heightAt(x, z) + 2.5, z); if (G.hostChat && pA) G.hostChat(pA, game);
       I('g_' + game, x + Math.sin(face) * 2, z + Math.cos(face) * 2, 3, G.GAMES_ICON ? G.GAMES_ICON(game) : '🎮', () => nm(name), h => { G.kidTalk(h, game, name, line); if (lang) greet(lang, 0); });
     };
     host('firstwords', 'Cô Mei', L('aodai', '#c62828', '#1d1412', 'buns', 'none', '#f3d2b0'), 4, 2, 0, ['Nǐ hǎo! I teach first words. In Chinese, hello is "nǐ hǎo". Want to learn more words, in Chinese and Hindi?', 'Nǐ hǎo! Cô dạy những từ đầu tiên. Tiếng Trung "xin chào" là "nǐ hǎo". Con muốn học thêm từ tiếng Trung và tiếng Hindi không?'], 'zh');
@@ -133,7 +133,7 @@ export function createAsia(G) {
       mesh(q, cx + 6, cz + 6, -.6); world.colliders.push({ x: cx + 6, z: cz + 6, r: 2 });
     }
     const host = (game, name, look, dx, dz, face, line, lang) => {
-      const x = cx + dx, z = cz + dz; person(look, x, z, face); tag(name, x, heightAt(x, z) + 2.5, z);
+      const x = cx + dx, z = cz + dz; const pA = person(look, x, z, face); tag(name, x, heightAt(x, z) + 2.5, z); if (G.hostChat && pA) G.hostChat(pA, game);
       I('g_' + game, x + Math.sin(face) * 2, z + Math.cos(face) * 2, 3, G.GAMES_ICON ? G.GAMES_ICON(game) : '🎮', () => nm(name), h => { G.kidTalk(h, game, name, line); if (lang) greet(lang, 0); });
     };
     host('snakes', 'Priya', L('dress', '#ff9f1a', '#1d1412', 'long', 'none', '#c99a76'), -4, 6, .3, ['Namaste! Snakes and ladders comes from India. Shall we play?', 'Namaste! Rắn và thang có từ Ấn Độ đó. Mình chơi nhé?'], 'hi');

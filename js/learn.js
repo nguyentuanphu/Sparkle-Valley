@@ -10,10 +10,13 @@ import { say, sayIn } from './voice.js';
 import { SFX } from './audio.js';
 import { settings, saveSettings, saveProfiles, farm, saveFarm } from './state.js';
 import { heightAt, VILLAGE, CHINA, INDIA, AUSSIE, MARKET, WATER } from './world.js';
-import { showStory } from './story.js';
 import { LEARN } from './words2.js';
 import { el, esc, dist2, shuffle } from './util.js';
 import { modal } from './ui.js';
+import { MORE_TALES } from './talesdata.js';
+import { openTheatre } from './tales.js';
+import { buildAvatar } from './avatar.js';
+import { registerName, onLang } from './i18n.js';
 
 // ---------- folk tales: pages are [pictures, English, Tiếng Việt] ----------
 export const TALES = [
@@ -46,6 +49,8 @@ export const TALES = [
     ['🐒💡🌳', 'The clever monkey said: "Oh! I left my heart in the tree. Take me back to get it!" And off he jumped to safety.', 'Khỉ thông minh nói: "Ôi! Tớ để quên trái tim trên cây rồi. Đưa tớ về lấy đã!" Rồi khỉ nhảy lên bờ an toàn.'],
     ['🧠😊', 'Thinking calmly helps us when we are in trouble, and real friends are kind to each other.', 'Bình tĩnh suy nghĩ giúp ta khi gặp khó khăn, và bạn thật sự thì luôn tốt với nhau.']] }
 ];
+TALES.push(...MORE_TALES);
+const TALE_FLAGS = [['🇻🇳', 'Vietnam', 'Việt Nam'], ['🇦🇺', 'Australia', 'Úc'], ['🇨🇳', 'China', 'Trung Quốc'], ['🇮🇳', 'India', 'Ấn Độ']];
 
 // ---------- counting hunts ----------
 const HUNTS = [
@@ -66,20 +71,45 @@ export function createLearning(G) {
     const mat = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, .06, 24), new THREE.MeshToonMaterial({ color: '#e8433a' })); mat.position.set(x, heightAt(x, z) + .04, z); scene.add(mat);
     const s = sprite('📖', 1.4); s.position.set(x, heightAt(x, z) + 2.2, z); scene.add(s); world.updaters.push((dt, t) => { s.position.y = heightAt(x, z) + 2.2 + Math.sin(t * 2) * .15; });
     G.interactables.push({ id: 'storytime', x, z, r: 3, icon: '📖', label: () => T('Story time under the banyan tree', 'Giờ kể chuyện dưới gốc đa'), act: h => openTales(h) });
+    // Bà Kể Chuyện, the storyteller grandma, sits by the mat
+    const sx = x - 1.9, sz = z - .4, A = buildAvatar({ style: 'aodai', color: '#8a4a8a', hat: 'none', back: 'none', hair: '#e8e8e8', hairStyle: 'buns', skin: '#e8b48c', glider: 0 }, null);
+    A.root.position.set(sx, heightAt(sx, sz), sz); A.root.rotation.y = Math.atan2(x - sx, z - sz); scene.add(A.root); world.colliders.push({ x: sx, z: sz, r: .45 });
+    registerName('Bà Kể Chuyện', '📖');
+    const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
+    const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace;
+    const drawTag = () => { g.clearRect(0, 0, 256, 64); g.fillStyle = 'rgba(40,40,40,.55)'; g.beginPath(); g.roundRect(8, 10, 240, 46, 23); g.fill(); g.font = 'bold 26px Fredoka, "Baloo 2", sans-serif'; g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(T('Grandma Storyteller', 'Bà Kể Chuyện'), 128, 34, 228); tx.needsUpdate = true; };
+    drawTag(); onLang(drawTag);
+    const tg = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, transparent: true, depthWrite: false })); tg.scale.set(3, .75, 1); tg.position.set(sx, heightAt(sx, sz) + 2.4, sz); scene.add(tg);
+    world.updaters.push((dt, t) => A.anim(Math.floor(t * .4) % 3 === 0 ? 'wave' : 'idle', t, 0));
+    G.storyteller = { x: sx, z: sz };
   }
+  // read one tale in the theatre, then remember it (three tales give a sticker)
+  const readTale = async (h, t) => {
+    const p = h.profile; p.tales = p.tales || {};
+    G.paused = true;
+    await openTheatre(t, { name: p.name });
+    const first = !p.tales[t.id]; p.tales[t.id] = true; saveProfiles(); G.paused = false;
+    if (first && Object.keys(p.tales).length === 3) { const st = G.giveSticker(p); await G.reward(st || '📚', T('Story lover!', 'Bạn nhỏ mê truyện!'), T('You heard three folk tales.', 'Con đã nghe ba truyện cổ tích.')); }
+    if (first && Object.keys(p.tales).length === 10) { const st = G.giveSticker(p); await G.reward(st || '📚', T('Ten tales!', 'Mười truyện rồi!'), T('You are a real story explorer.', 'Con là nhà thám hiểm truyện cổ tích thật sự.')); }
+  };
+  // from the Games hub (or anywhere): fly to the storyteller grandma, and she starts the tale
+  G.TALES = TALES;
+  G.readTale = async (i, id) => {
+    const h = G.heroes[i], t = TALES.find(x => x.id === id); if (!h || !t) return;
+    if (G.storyteller && dist2(h.pos.x, h.pos.z, G.storyteller.x, G.storyteller.z) > 5) await G.landBy(h, G.storyteller.x, G.storyteller.z);
+    say(`Come and sit down. Here is ${t.title()}.`, `Lại đây ngồi với bà. Bà kể chuyện ${t.title()} nhé.`);
+    await new Promise(r => setTimeout(r, 1300));
+    readTale(h, t);
+  };
+  G.taleShelfHTML = p => TALE_FLAGS.map(([f, en, vi]) => `<h3>${f} ${T('Tales from ' + en, 'Truyện ' + vi)}</h3><div class="talegrid">${TALES.filter(t => t.flag === f).map(t => `<button class="talecard ${(p.tales || {})[t.id] ? 'read' : ''}" data-tale="${t.id}"><span>${[...(t.pages[0][0])].slice(0, 3).join('')}</span><small>${esc(t.title())}${(p.tales || {})[t.id] ? ' ✅' : ''}</small></button>`).join('')}</div>`).join('');
   const openTales = h => {
     G.paused = true;
     const m = modal('tales', ''), card = m.querySelector('.card'), p = h.profile; p.tales = p.tales || {};
     const close = () => { m.close(); G.paused = false; };
-    card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>📖 ${T('Story time', 'Giờ kể chuyện')}</h2><p class="sub">${T('Folk tales from Vietnam, Australia, China and India', 'Truyện cổ tích Việt Nam, Úc, Trung Quốc và Ấn Độ')}</p>
-      <div class="talelist">${TALES.map((t, k) => `<button class="qbtn tale" data-k="${k}"><span>${t.flag}${t.pages[0][0].slice(0, 4)}</span><small>${esc(t.title())}${p.tales[t.id] ? ' ✅' : ''}</small></button>`).join('')}</div>`;
+    card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>📖 ${T('Story time', 'Giờ kể chuyện')}</h2><p class="sub">${T('Folk tales from Vietnam, Australia, China and India. Tap a picture and Grandma reads it to you!', 'Truyện cổ tích Việt Nam, Úc, Trung Quốc và Ấn Độ. Chạm vào hình, bà sẽ kể cho con nghe!')}</p>
+      <div class="talelib">${G.taleShelfHTML(p)}</div>`;
     card.querySelector('.x').onclick = close;
-    card.querySelectorAll('[data-k]').forEach(b => b.onclick = async () => {
-      const t = TALES[+b.dataset.k]; m.close();
-      await showStory(t, p.name);
-      const first = !p.tales[t.id]; p.tales[t.id] = true; saveProfiles(); G.paused = false;
-      if (first && Object.keys(p.tales).length === 3) { const st = G.giveSticker(p); await G.reward(st || '📚', T('Story lover!', 'Bạn nhỏ mê truyện!'), T('You heard three folk tales.', 'Con đã nghe ba truyện cổ tích.')); }
-    });
+    card.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { const t = TALES.find(x => x.id === b.dataset.tale); m.close(); readTale(h, t); });
     say('Which story shall we read?', 'Mình đọc truyện nào nhỉ?');
   };
 

@@ -20,3 +20,15 @@ export const ICONS = {
   gear: svg(`<path d="M24 8l3 4 5-1 1 5 5 1-1 5 4 3-4 3 1 5-5 1-1 5-5-1-3 4-3-4-5 1-1-5-5-1 1-5-4-3 4-3-1-5 5-1 1-5 5 1z" fill="#ffd23f" ${W}/><circle cx="24" cy="24" r="5" fill="#fff" ${W}/>`),
   info: svg(`<circle cx="24" cy="24" r="19" fill="#5fd3ff" ${W}/><circle cx="24" cy="15" r="3" fill="${O}"/><path d="M24 22v13" stroke="${O}" stroke-width="5" stroke-linecap="round"/>`)
 };
+
+// Little flags drawn by the game (Windows shows flag emoji as two letters, e.g. "AU").
+const flag = body => `<svg class="flag" viewBox="0 0 30 20" aria-hidden="true"><g>${body}</g><rect x=".5" y=".5" width="29" height="19" rx="3" fill="none" stroke="rgba(0,0,0,.25)"/></svg>`;
+const star = (cx, cy, r, c) => { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, k = i % 2 ? r * .45 : r; d += (i ? 'L' : 'M') + (cx + Math.cos(a) * k).toFixed(2) + ' ' + (cy + Math.sin(a) * k).toFixed(2); } return `<path d="${d}Z" fill="${c}"/>`; };
+export const FLAGS = {
+  vn: flag(`<rect width="30" height="20" rx="3" fill="#da251d"/>${star(15, 10.5, 6, '#ffde00')}`),
+  au: flag(`<rect width="30" height="20" rx="3" fill="#012169"/><path d="M0 0l15 10M15 0L0 10" stroke="#fff" stroke-width="2.4"/><path d="M0 0l15 10M15 0L0 10" stroke="#c8102e" stroke-width="1"/><path d="M7.5 0v10M0 5h15" stroke="#fff" stroke-width="3.2"/><path d="M7.5 0v10M0 5h15" stroke="#c8102e" stroke-width="1.8"/>${star(7.5, 15, 2.6, '#fff')}${star(23, 5, 1.6, '#fff')}${star(19.5, 10, 1.6, '#fff')}${star(26.5, 9, 1.6, '#fff')}${star(23, 16, 1.6, '#fff')}`),
+  cn: flag(`<rect width="30" height="20" rx="3" fill="#de2910"/>${star(6, 6, 3.4, '#ffde00')}${star(11.5, 2.5, 1.1, '#ffde00')}${star(13.5, 5, 1.1, '#ffde00')}${star(13.5, 8.5, 1.1, '#ffde00')}${star(11.5, 11, 1.1, '#ffde00')}`),
+  in: flag(`<rect width="30" height="20" rx="3" fill="#fff"/><path d="M3 0h24a3 3 0 0 1 3 3v3.67H0V3a3 3 0 0 1 3-3z" fill="#ff9933"/><path d="M0 13.33h30V17a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3z" fill="#138808"/><circle cx="15" cy="10" r="2.6" fill="none" stroke="#000080" stroke-width=".8"/><circle cx="15" cy="10" r=".6" fill="#000080"/>`)
+};
+// the flags for a game's or a place's origin ('vn', 'au', 'cn', 'in' or 'both')
+export const originFlags = o => (o === 'both' ? ['vn', 'au'] : [o]).map(k => FLAGS[k] || '').join('');

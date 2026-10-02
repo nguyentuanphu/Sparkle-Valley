@@ -1,0 +1,40 @@
+{
+ "hud": [
+  "q-say",
+  "q-go",
+  "z-in",
+  "z-out",
+  "friendchip",
+  "dk.games",
+  "dk.map",
+  "dk.bag",
+  "dk.voicecmd",
+  "dk.chat",
+  "dk.call",
+  "dk.mus",
+  "dk.snd",
+  "act",
+  "mv.run",
+  "mv.jump",
+  "em",
+  "em",
+  "em",
+  "em",
+  "em",
+  "em",
+  "em",
+  "em",
+  "bigprompt"
+ ],
+ "tabs": [
+  "map",
+  "bag",
+  "log",
+  "album",
+  "passport",
+  "games",
+  "cam",
+  "friend"
+ ],
+ "hubSections": 9
+}
