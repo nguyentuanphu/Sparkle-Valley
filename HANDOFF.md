@@ -64,8 +64,8 @@ Screenshots of each run go to `tests/out/` (not committed).
   - Voice control and the optional AI villager chat.
 
 ### The UI (keep it as it is)
-- **Title screen:** big logo, language buttons 🇦🇺 English / 🇻🇳 Tiếng Việt, small 🌏 中文 / हिन्दी learning buttons, the "add to home screen" chip, and the grown-ups hold button.
-- **Who's playing:** player cards with photos and three modes (alone / two here / friend far away).
+- **Title screen:** the name on a cream storybook card, a green "Tap to start" button, a round ⓘ About button (top left), the "add to home screen" chip (top right), and one card at the bottom with English / Tiếng Việt and the small 🌏 中文 / हिन्दी learning buttons.
+- **Who's playing:** one cream card with the three modes as tiles (alone / two here / friend far away), player faces and a green Let's go; Grown-ups hold button at the bottom left.
 - **HUD (per player):**
   - Top left: player card (photo, name, hearts) and coins/orbs/leafies chips.
   - Top middle: the quest bar with a green "▶ Go".
@@ -509,6 +509,13 @@ Screenshots of each run go to `tests/out/` (not committed).
 - **Voice pack** (`tools/make-voice-pack.mjs`): English and Vietnamese with a woman's and a man's voice, Chinese and Hindi with a man's voice (`--voice-en-f` … `--voice-hi-m` to choose, otherwise picked from the account's library by language and gender). `--count` shows the cost without a key. After the first visit the game keeps the whole pack on the device by itself (in the voice cache that updates never delete), so it is never downloaded again. `./build-netlify.sh` includes `voices/`.
 - **Tests:** `tests/run.mjs` (see the table in section 0) and `tests/harness.mjs`; the old suite was not in the repo, so this one replaces it. `tests/ui-contract.json` was recorded fresh this round.
 
+### Round 19 (title and player screens, About, Grown-ups in settings, the whistling kite)
+- **Title screen redesigned** in the storybook style of the rest of the game: the name sits on a cream card with little floating friends (kite, lantern, blossom, star, kangaroo, lotus), the subtitle is a purple pill, a big green "▶ Tap to start" button, and the language choices (now with drawn flags) and the 中文 / हिन्दी learning buttons together on one card at the bottom. **About is now just a round ⓘ button** at the top left; "Add to Home Screen" stays top right.
+- **Who's playing redesigned:** everything on one cream card like the Sparkle Pad: the three ways to play as matching tiles, the players' faces, and a green "Let's go!" that is grey until a player is picked. Grown-ups (press and hold) stays at the bottom left.
+- **Grown-ups settings inside the game:** the ⚙️ quick settings (tap your picture) now has a "Grown-ups settings" button (press and hold) that opens the full Grown-ups page.
+- **The whistling kite (diều sáo)** (`js/kite.js`): winning Kite Flying for the first time gives a red-and-yellow kite with a bamboo flute. It flies on a string in front of and above the child wherever they go, its tail wiggles, and the flute hums softly in the wind now and then (more often when running; quieter in calm mode; silent when sounds are off). Backpack → 🪁 Whistling kite: switch it on or off, or tap 🎶 Whistle!
+- Tests: the harness force-clicks the pulsing start button.
+
 ## 3. How it's built
 
 **Tech:**
@@ -576,6 +583,7 @@ Screenshots of each run go to `tests/out/` (not committed).
 | `tests/run.mjs`, `tests/ui-contract.json` | The regression suite and the recorded UI structure |
 | `js/roads.js` | Road ribbons, golden welcome gates (`goldenGate`), the Dragon Bridge |
 | `js/cities.js`, `js/games/cities.js` | The seven cities (landmarks, hosts, kiosks), Bạch Dinh, Nhà Tròn, house number 8; the seven city games |
+| `js/kite.js` | The whistling kite accessory and its flute sound |
 | `js/chatter.js` | Speech bubbles for friends who play and talk together, and hosts calling out |
 | `js/tales.js`, `js/talesdata.js` | The tale theatre and the new fairy tales (Story time in `js/learn.js` lists them all) |
 | `tests/harness.mjs`, `tests/README.md` | Opening the game in Chromium for the checks; how to run them (and the local PeerJS server for multiplayer) |

@@ -17,7 +17,7 @@ export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'so
   // the test browser draws in software: draw fewer pixels so checks run quicker
   await page.evaluate(() => { const r = window.__sv.renderer; if (r) { r.setPixelRatio(.35); dispatchEvent(new Event('resize')); } });
   if (!play) return { ctx, page, errors };
-  await page.click('.screen.title .press');
+  await page.click('.screen.title .press', { force: true });
   await page.waitForSelector('.screen.who');
   if (mode !== 'solo') await page.click(`.modes button[data-m=${mode}]`);
   await page.locator('.pick[data-id]').nth(0).click(); if (mode === 'split') await page.locator('.pick[data-id]').nth(1).click();

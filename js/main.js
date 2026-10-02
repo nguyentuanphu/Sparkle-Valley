@@ -47,6 +47,7 @@ import './games/cities.js';
 import { createRoads } from './roads.js';
 import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
+import { createKites } from './kite.js';
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
@@ -292,6 +293,11 @@ async function playGame(i, id, source, shrine) {
   const res = await openGame(id, { players, level, little, strong, style: source === 'folk' || id === 'market' ? 'village' : 'shrine' });
   G.paused = false;
   if (!res.won) return;
+  // winning Kite Flying earns the whistling kite (diều sáo), which then flies above you everywhere
+  if (id === 'kite' && !p.kite) {
+    p.kite = true; p.kiteOn = true; save(); G.kites.sync();
+    setTimeout(async () => { await reward('🪁', T('A whistling kite!', 'Diều sáo!'), T('It flies above you wherever you go, and its bamboo flute sings in the wind. Switch it on or off in your Backpack.', 'Diều bay theo con khắp nơi, và ống sáo tre hát vi vu trong gió. Bật hoặc tắt trong Ba lô nhé.')); }, 3600);
+  }
   for (const hero of G.heroes) {
     // move up a level after every 2 wins
     const q = hero.profile; q.wins[id] = (q.wins[id] || 0) + 1;
@@ -880,7 +886,7 @@ function startSession(mode, chosen) {
   TOWERS.forEach(t => world.setTowerDone(t.id, !!p0.towers[t.id]));
   LEAFIES.forEach(l => { const o = world.leafyMeshes[l.id]; if (o) o.visible = !chosen.every(p => p.leafies[l.id]); });
   setupWanderers(chosen);
-  G.pets.sync(); G.pets.refreshInteractables();
+  G.pets.sync(); G.pets.refreshInteractables(); G.kites.sync();
   G.festivals.greet(G.heroes[0]);
   resize(); G.paused = false; playing = true; G.listenFriends();
   $('#huds').hidden = false;
@@ -1005,6 +1011,7 @@ createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 G.reward = reward;
 G.pets = createPets(G);
 G.ferries = createFerries(G);
+G.kites = createKites(G);
 createPassport(G);
 G.festivals = createFestivals(G);
 G.weather = createWeather(G);

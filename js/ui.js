@@ -52,7 +52,7 @@ export function modal(cls, html) {
   m.close = () => { m.classList.add('out'); setTimeout(() => m.remove(), 200); };
   return m;
 }
-const flagBtns = () => `<div class="seg lang"><button data-l="en" class="${settings.lang === 'en' ? 'on' : ''}">🇦🇺 English</button><button data-l="vi" class="${settings.lang === 'vi' ? 'on' : ''}">🇻🇳 Tiếng Việt</button></div>`;
+const flagBtns = () => `<div class="seg lang"><button data-l="en" class="${settings.lang === 'en' ? 'on' : ''}">${originFlags('au')} English</button><button data-l="vi" class="${settings.lang === 'vi' ? 'on' : ''}">${originFlags('vn')} Tiếng Việt</button></div>`;
 // Small, quiet buttons to also learn Chinese or Hindi words (in China Town, India Village and First Words).
 const learnBtns = () => `<div class="learnrow" aria-label="${T('Also learn', 'Học thêm')}">🌏 ${Object.entries(LEARN).map(([k, l]) => `<button data-learn="${k}" class="${settings.learnLang === k ? 'on' : ''}" title="${l.name[settings.lang] || l.name.en}">${k === 'zh' ? '中文' : 'हिन्दी'}</button>`).join('')}</div>`;
 function bindLearn(root, after) {
@@ -68,47 +68,54 @@ function bindLang(root, after) {
 
 // ---------- Title ----------
 export function showTitle(onStart) {
-  const s = el('div', 'screen title', `
-    <div class="logo"><div class="logo-main"></div><div class="logo-sub"></div></div>
-    <div class="press"></div>
-    <div class="title-top"></div>
-    <div class="title-learn"></div>
-    <div class="title-foot"></div>`);
+  // a storybook cover: the valley behind, the name on a cream card with little friends floating round it,
+  // a big "start" button, and the language choices together on one card at the bottom
+  const s = el('div', 'screen title sv2', `
+    <div class="tt-bar"><button class="about" aria-label="${T('About', 'Giới thiệu')}">i</button><div class="title-top"></div></div>
+    <div class="tt-cover">
+      <div class="tt-floaters" aria-hidden="true"><i>🪁</i><i>🏮</i><i>🌸</i><i>⭐</i><i>🦘</i><i>🪷</i></div>
+      <div class="logo"><div class="logo-main"></div><div class="logo-sub"></div></div>
+    </div>
+    <button class="press"><span class="tt-play">▶</span><span class="tt-press"></span></button>
+    <div class="tt-panel"><div class="title-foot"></div><div class="title-learn"></div></div>`);
   document.body.appendChild(s);
   const redraw = () => {
-    s.querySelector('.press').textContent = T('Tap anywhere to start', 'Chạm vào đâu đó để bắt đầu');
+    s.querySelector('.tt-press').textContent = T('Tap to start', 'Chạm để bắt đầu');
     s.querySelector('.logo-main').textContent = T('Sparkle Valley', 'Thung Lũng Lấp Lánh');
     s.querySelector('.logo-sub').textContent = T('Two homes · one valley', 'Hai quê hương · một thung lũng');
     s.querySelector('.logo').classList.toggle('vi', settings.lang === 'vi');
-    s.querySelector('.title-foot').innerHTML = flagBtns() + `<button class="about" aria-label="${T('About', 'Giới thiệu')}">ℹ️<span> ${T('About', 'Giới thiệu')}</span></button>`;
+    s.querySelector('.about').setAttribute('aria-label', T('About', 'Giới thiệu'));
+    s.querySelector('.title-foot').innerHTML = flagBtns();
     s.querySelector('.title-learn').innerHTML = learnBtns(); bindLearn(s, redraw);
     bindLang(s, redraw);
-    s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(); };
     const top = s.querySelector('.title-top'); top.innerHTML = '';
     const b = installButton(); if (b) top.appendChild(b);
   };
   redraw();
+  s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(); };
   s.addEventListener('click', e => { if (e.target.closest('.seg') || e.target.closest('.about') || e.target.closest('.installchip') || e.target.closest('.learnrow')) return; ac(); SFX.chime(); s.remove(); onStart(); });
 }
 
 // ---------- Who's playing ----------
 export function showWho(onGo) {
   let mode = 'solo', chosen = [];
-  const s = el('div', 'screen who');
+  const s = el('div', 'screen who sv2');
   document.body.appendChild(s);
   const draw = () => {
     const need = mode === 'split' ? 2 : 1;
     s.innerHTML = `
-      <h2>${T("Who's playing?", 'Ai chơi nào?')}</h2>
-      <div class="modes">
-        <button data-m="solo" class="${mode === 'solo' ? 'on' : ''}">🧒<b>${T('Play alone', 'Chơi một mình')}</b></button>
-        <button data-m="split" class="${mode === 'split' ? 'on' : ''}">👫<b>${T('Two players here', 'Hai bạn cùng máy')}</b></button>
-        <button data-m="online" class="${mode === 'online' ? 'on' : ''}">📞<b>${T('Friend far away', 'Bạn ở xa')}</b></button>
+      <div class="who-card">
+        <h2>${T("Who's playing?", 'Ai chơi nào?')}</h2>
+        <div class="modes">
+          <button data-m="solo" class="${mode === 'solo' ? 'on' : ''}"><span class="mi">🧒</span><b>${T('Play alone', 'Chơi một mình')}</b></button>
+          <button data-m="split" class="${mode === 'split' ? 'on' : ''}"><span class="mi">👫</span><b>${T('Two players here', 'Hai bạn cùng máy')}</b></button>
+          <button data-m="online" class="${mode === 'online' ? 'on' : ''}"><span class="mi">📞</span><b>${T('Friend far away', 'Bạn ở xa')}</b></button>
+        </div>
+        <p class="hint">${mode === 'split' ? T('Pick two players', 'Chọn hai bạn') : T('Pick a player', 'Chọn người chơi')}</p>
+        <div class="picks">${profiles.map(p => `<button class="pick ${chosen.includes(p.id) ? 'on' : ''}" data-id="${p.id}"><img src="${avatarURL(p)}" alt=""><span>${esc(nm(p.name || '?'))}</span>${chosen.includes(p.id) && need === 2 ? `<i class="num">${chosen.indexOf(p.id) + 1}</i>` : ''}</button>`).join('')}
+          <button class="pick add"><span class="plus">+</span><span>${T('New', 'Thêm')}</span></button></div>
+        <button class="go" ${chosen.length === need ? '' : 'disabled'}>${T("Let's go!", 'Đi thôi!')} ▶</button>
       </div>
-      <p class="hint">${mode === 'split' ? T('Pick two players', 'Chọn hai bạn') : T('Pick a player', 'Chọn người chơi')}</p>
-      <div class="picks">${profiles.map(p => `<button class="pick ${chosen.includes(p.id) ? 'on' : ''}" data-id="${p.id}"><img src="${avatarURL(p)}" alt=""><span>${esc(nm(p.name || '?'))}</span>${chosen.includes(p.id) && need === 2 ? `<i class="num">${chosen.indexOf(p.id) + 1}</i>` : ''}</button>`).join('')}
-        <button class="pick add"><span class="plus">+</span><span>${T('New', 'Thêm')}</span></button></div>
-      <button class="go" ${chosen.length === need ? '' : 'disabled'}>${T("Let's go!", 'Đi thôi!')} ▶</button>
       <button class="grown"><span class="ring"></span>${T('Grown-ups', 'Phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>`;
     s.querySelectorAll('.modes button').forEach(b => b.onclick = () => { mode = b.dataset.m; chosen = chosen.slice(0, mode === 'split' ? 2 : 1); SFX.tap(); draw(); });
     s.querySelectorAll('.pick[data-id]').forEach(b => b.onclick = () => {
@@ -290,6 +297,7 @@ export function openQuick(game, i) {
         <button class="qset ${on(s.alwaysDay)}" data-k="alwaysDay"><span>☀️</span>${T('Always daytime', 'Luôn ban ngày')}</button>
       </div>
       <div class="field"><label>${T('Voice style', 'Kiểu giọng')}</label><div class="seg vstyle">${VOICE_STYLES.map(v => `<button data-v="${v.id}" class="${(s.voiceStyle || 'natural') === v.id ? 'on' : ''}">${v.icon} ${v.name()}</button>`).join('')}</div></div>
+      <button class="grown qgrown"><span class="ring"></span>👨‍👩‍👧 ${T('Grown-ups settings', 'Cài đặt phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>
       <div class="actions"><button class="btn" id="qWho">👫 ${T('Change player', 'Đổi người chơi')}</button><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
     bindLang(card, draw);
     card.querySelector('.x').onclick = card.querySelector('#qDone').onclick = close;
@@ -303,6 +311,8 @@ export function openQuick(game, i) {
     });
     card.querySelectorAll('.seg.vstyle button').forEach(b => b.onclick = () => { s.voiceStyle = b.dataset.v; saveSettings(); draw(); say('Hello! Do you like my voice?', 'Xin chào! Con có thích giọng này không?'); });
     card.querySelector('#qWho').onclick = () => { m.close(); game.changePlayer(); };
+    // the full Grown-ups settings, from inside the game (press and hold, so little fingers don't open it by accident)
+    holdButton(card.querySelector('.qgrown'), () => openGrownups(() => { draw(); game.huds.forEach(h => { h.refreshAudio(); h.refreshWho(); }); }));
   };
   draw();
 }
@@ -524,11 +534,15 @@ export function openPad(game, i, tab) {
       <div class="slots">${items.map(([id, n]) => `<div class="slot"><span>${ITEMS[id].icon}</span><b>${n}</b><small>${esc(ITEMS[id].name())}</small></div>`).join('') || `<p class="note">${T('Empty! Shake apple trees and look for herbs and mushrooms.', 'Trống trơn! Rung cây táo và tìm rau thơm, nấm nhé.')}</p>`}</div>
       <h3>${T('Hats', 'Mũ')} <small>${T('tap to wear', 'chạm để đội')}</small></h3>
       <div class="slots">${HATS.concat(REWARD_HATS.filter(h => p.owned.hats.includes(h))).map(h => `<button class="slot ${p.look.hat === h ? 'on' : ''}" data-hat="${h}"><span>${HAT_ICON[h]}</span><small>${esc(HAT_NAME[h]())}</small></button>`).join('')}</div>
+      <h3>🪁 ${T('Whistling kite', 'Diều sáo')}</h3>
+      <div class="slots">${p.kite ? `<button class="slot ${p.kiteOn !== false ? 'on' : ''}" data-kite="1"><span>🪁</span><small>${p.kiteOn !== false ? T('Flying', 'Đang bay') : T('Put away', 'Cất đi')}</small></button><button class="slot" data-whistle="1"><span>🎶</span><small>${T('Whistle!', 'Thổi sáo!')}</small></button>` : `<p class="note">${T('Win the Kite Flying game to get a kite with a bamboo flute that sings in the wind!', 'Thắng trò Thả Diều để nhận diều sáo hát vi vu trong gió!')}</p>`}</div>
       <h3>${T('Glider', 'Cánh lượn')}</h3>
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
     body.querySelectorAll('[data-eat]').forEach(b => b.onclick = () => { game.eat(hero, b.dataset.eat); draw(); });
     body.querySelector('#bagPets').onclick = () => { m.close(); game.closePad(i); setTimeout(() => game.pets.openAdopt(hero), 220); };
     body.querySelectorAll('[data-hat]').forEach(b => b.onclick = () => { p.look.hat = b.dataset.hat; saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); });
+    body.querySelectorAll('[data-kite]').forEach(b => b.onclick = () => { p.kiteOn = p.kiteOn === false; saveProfiles(); game.kites.sync(); SFX.ok(); if (p.kiteOn) game.kites.whistle(hero); draw(); });
+    body.querySelectorAll('[data-whistle]').forEach(b => b.onclick = () => { game.kites.whistle(hero); });
     body.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { p.look.glider = +b.dataset.gl; saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); });
   }
   function drawLog(body) {

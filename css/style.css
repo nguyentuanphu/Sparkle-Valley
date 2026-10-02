@@ -1234,3 +1234,56 @@ body.calm .th-a { animation: th-in .7s ease var(--d) both; }
 .talecard { border: 0; border-radius: 20px; padding: 12px 8px; background: linear-gradient(160deg, #fff6d8, #ffe2a8); box-shadow: 0 4px 0 #e8b84a; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #4a2a00; min-height: 110px; }
 .talecard span { font-size: 34px; letter-spacing: -2px; } .talecard small { font-size: 13px; line-height: 1.2; text-align: center; }
 .talecard.read { background: linear-gradient(160deg, #e8fbe0, #c8f0b8); box-shadow: 0 4px 0 #6ac05a; }
+
+/* ---------- Round 19: title and "Who's playing", in the storybook style of the rest of the game ---------- */
+.seg .flag { width: 22px; height: 15px; vertical-align: -2px; display: inline-block; }
+.screen.title.sv2 { justify-content: space-between; gap: 14px; padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 16px);
+  background: radial-gradient(ellipse at 50% 38%, rgba(255, 250, 235, .0) 0%, rgba(255, 250, 235, .0) 35%, rgba(80, 40, 130, .28) 100%), linear-gradient(180deg, rgba(255, 255, 255, 0) 55%, rgba(90, 50, 150, .45)); }
+.sv2 .tt-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; min-height: 52px; }
+.sv2 .tt-bar .title-top { position: static; }
+.sv2 .about { width: 52px; height: 52px; padding: 0; border-radius: 50%; border: 0; background: #fffdf6; color: #8a5cf6; font: 800 28px/52px Georgia, 'Times New Roman', serif; font-style: italic; box-shadow: 0 4px 0 rgba(90, 60, 130, .25), var(--shadow); flex: none; }
+.sv2 .about:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(90, 60, 130, .25); }
+.sv2 .tt-cover { position: relative; margin-top: auto; padding: clamp(18px, 4vw, 34px) clamp(18px, 5vw, 48px) clamp(16px, 3vw, 26px); border-radius: 36px; background: rgba(255, 253, 246, .9); border: 5px solid #fff;
+  box-shadow: 0 10px 0 rgba(140, 100, 200, .25), 0 24px 50px rgba(60, 30, 100, .35); max-width: min(900px, 94vw); animation: rise 1s ease both; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.sv2 .logo { filter: none; animation: none; }
+.sv2 .logo-main { -webkit-text-stroke: 0; filter: drop-shadow(0 3px 0 #b8742a) drop-shadow(0 6px 10px rgba(120, 70, 0, .3)); line-height: 1.02; padding-bottom: .06em; }
+.sv2 .logo-sub { display: inline-block; margin-top: 12px; padding: 6px 18px; border-radius: 999px; background: linear-gradient(180deg, #b598ff, #8a5cf6); color: #fff; text-shadow: none; letter-spacing: .04em; font-size: clamp(15px, 3.2vw, 24px); box-shadow: 0 4px 0 #6a3fd0; }
+.sv2 .tt-floaters i { position: absolute; font-style: normal; font-size: clamp(26px, 5vw, 44px); animation: floaty 4s ease-in-out infinite; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .15)); }
+.sv2 .tt-floaters i:nth-child(1) { left: -18px; top: -26px; } .sv2 .tt-floaters i:nth-child(2) { right: -14px; top: -30px; animation-delay: -1s; }
+.sv2 .tt-floaters i:nth-child(3) { left: 8%; bottom: -24px; animation-delay: -2s; } .sv2 .tt-floaters i:nth-child(4) { right: 10%; bottom: -22px; animation-delay: -3s; }
+.sv2 .tt-floaters i:nth-child(5) { left: -24px; top: 45%; animation-delay: -1.5s; } .sv2 .tt-floaters i:nth-child(6) { right: -22px; top: 50%; animation-delay: -2.5s; }
+@keyframes floaty { 50% { transform: translateY(-10px) rotate(6deg); } }
+body.calm .sv2 .tt-floaters i { animation: none; }
+.sv2 .press { display: inline-flex; align-items: center; gap: 12px; border: 0; border-radius: 999px; padding: 10px 30px 10px 10px; font-size: clamp(20px, 4vw, 28px); font-weight: 800; color: #fff; text-shadow: none;
+  background: linear-gradient(180deg, #8be07a, #3fbf5a); box-shadow: 0 6px 0 #2a8a3a, 0 14px 30px rgba(40, 140, 60, .4); animation: goPulse 2.2s ease-in-out infinite; margin-bottom: auto; }
+.sv2 .tt-play { width: clamp(44px, 9vw, 58px); height: clamp(44px, 9vw, 58px); border-radius: 50%; background: #fff; color: #3fbf5a; display: flex; align-items: center; justify-content: center; font-size: .9em; padding-left: 4px; }
+.sv2 .tt-panel { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 28px; background: rgba(255, 253, 246, .92); box-shadow: 0 6px 0 rgba(140, 100, 200, .2), var(--shadow); max-width: calc(100vw - 24px); }
+.sv2 .tt-panel .title-foot, .sv2 .tt-panel .title-learn { position: static; }
+.sv2 .tt-panel .seg.lang { background: #f1ebfb; flex-wrap: nowrap; }
+.sv2 .tt-panel .seg.lang button { padding: 10px 16px; font-size: 17px; font-weight: 700; white-space: nowrap; }
+.sv2 .tt-panel .learnrow { margin: 0; opacity: 1; background: none; padding: 0; color: #6a5a8a; }
+.sv2 .tt-panel .learnrow button { background: #f1ebfb; padding: 5px 12px; }
+@media (max-width: 380px) { .sv2 .tt-panel .seg.lang button { padding: 9px 10px; font-size: 15px; } }
+
+/* Who's playing: one cream card, like the Sparkle Pad */
+.screen.who.sv2 { justify-content: center; padding-bottom: calc(env(safe-area-inset-bottom) + 84px); background: radial-gradient(ellipse at 50% 30%, rgba(255, 250, 235, .25), rgba(80, 40, 130, .45)); }
+.sv2 .who-card { width: min(720px, 100%); background: rgba(255, 253, 246, .95); border: 5px solid #fff; border-radius: 34px; padding: 18px clamp(12px, 3vw, 28px) 22px; display: flex; flex-direction: column; align-items: center; gap: 12px;
+  box-shadow: 0 10px 0 rgba(140, 100, 200, .25), 0 24px 50px rgba(60, 30, 100, .35); animation: rise .5s ease both; }
+.sv2 .who-card h2 { color: #4a2a78; text-shadow: none; margin: 0; }
+.sv2 .modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
+.sv2 .modes button { min-width: 0; border-radius: 22px; padding: 12px 6px 10px; gap: 6px; background: #f4eefc; box-shadow: 0 4px 0 #d9ccf2; color: #4a2a78; }
+.sv2 .modes button .mi { font-size: clamp(30px, 7vw, 42px); line-height: 1; }
+.sv2 .modes button b { font-size: clamp(12px, 2.6vw, 15px); line-height: 1.15; text-align: center; }
+.sv2 .modes button.on { background: linear-gradient(180deg, #b598ff, #8a5cf6); color: #fff; box-shadow: 0 4px 0 #6a3fd0, 0 0 0 4px #fff, 0 0 0 7px #c8b6ff; }
+.sv2 .who-card .hint { color: #8a7aa8; text-shadow: none; margin: 2px 0 0; font-weight: 700; }
+.sv2 .picks { gap: 14px; }
+.sv2 .pick span:last-of-type { color: #4a2a78; text-shadow: none; font-weight: 700; }
+.sv2 .pick img { box-shadow: 0 6px 0 #e3d6f6, 0 10px 20px rgba(60, 30, 100, .2); }
+.sv2 .pick .plus { background: #f4eefc; border: 4px dashed #c8b6ff; color: #8a5cf6; }
+.sv2 .go { background: linear-gradient(180deg, #8be07a, #3fbf5a); color: #fff; box-shadow: 0 6px 0 #2a8a3a, 0 14px 30px rgba(40, 140, 60, .35); padding: 14px 44px; }
+.sv2 .go:disabled { filter: none; opacity: 1; background: #e6e0ee; color: #a89cbb; box-shadow: 0 6px 0 #d2c8e0; }
+@media (max-width: 700px) { .sv2 .who-card { gap: 10px; padding-top: 14px; } .sv2 .modes button { padding: 10px 4px 8px; } }
+/* Grown-ups inside the quick settings */
+.qsettings .qgrown { position: static; margin: 14px auto 0; display: flex; width: max-content; max-width: 100%; align-items: center; gap: 10px; background: #f4eefc; box-shadow: 0 4px 0 #d9ccf2; color: #4a2a78; font-weight: 700; }
+.qsettings .qgrown small { margin-left: 4px; }
+.sv2 .logo-main { text-wrap: balance; }
