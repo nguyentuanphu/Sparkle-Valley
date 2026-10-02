@@ -145,7 +145,7 @@ export function createTown(G) {
   };
   const houseOld = (b, x, front, south) => { house(b, x, front, south); const m = scene.children[scene.children.length - 1]; outline(m, .03, '#4a3a3f'); };
   // Bà Rịa side (north): tube houses with shops downstairs, then the French villa
-  // (x 12–18 is the Huệ Nghi shop, built in js/cities.js; house number 8 stands next to it)
+  // (x 12–18 is the Huệ Nghi shop and x 17.5–23 on the south side is house number 8, both built in js/cities.js)
   place(houseTube({ wall: '#f6c8a8', floors: 3, d: 7.4, sign: ['Bánh Mì', 'Bánh Mì'] }), 20.1, N);
   place(houseTube({ wall: '#f6e09a', floors: 2, d: 7.4, sign: ['Coffee', 'Cà Phê'] }), 24.6, N);
   const villa = Object.assign(houseVilla(), { kind: 'villa' }); place(villa, 33.5, N - 1.2);
@@ -199,7 +199,7 @@ export function createTown(G) {
     if (kind === 'frangipani') { t.push(P(Cyl(.14, .22, 2, 6), '#8a7a6a', [0, 1, 0])); [[0, 2.4, 0, 1], [.7, 2.2, .3, .7]].forEach(([a, b, c, r]) => t.push(P(new THREE.IcosahedronGeometry(r, 1), '#4f9a62', [a, b, c]))); for (let k = 0; k < 8; k++) t.push(P(new THREE.SphereGeometry(.12, 5, 4), '#fff6dc', [Math.cos(k) * .7, 2.9 + (k % 3) * .1, Math.sin(k) * .7])); }
     put(merge(t), x, z); world.colliders.push({ x, z, r: kind === 'banana' ? .4 : .5 });
   };
-  tree(20, 58, 'jacaranda'); tree(37, 72, 'jacaranda'); tree(50, 36, 'gum'); tree(51, 66, 'gum'); tree(9, 40, 'gum');
+  tree(19.5, 64.5, 'jacaranda'); tree(37, 72, 'jacaranda'); tree(50, 36, 'gum'); tree(51, 66, 'gum'); tree(9, 40, 'gum');
   tree(12, 38, 'banana'); tree(27.2, 36, 'banana'); tree(39.5, 37, 'frangipani'); tree(18, 71, 'frangipani');
 
   // ---------- little things that make it feel lived in ----------

@@ -56,7 +56,8 @@ export const ROADS = [
   { kind: 'asphalt', pts: [[84, -54], [84, -51]], gates: [null, 'danang'] },
   { kind: 'asphalt', pts: [[56, -62], [54, -80], [48, -100], [48, -111]], gates: [null, 'bacninh'] },
   // south from Đà Nẵng past Lotus Village to the Harbour Bridge and the market (the village and the market have their own gates)
-  { kind: 'asphalt', pts: [[84, -29], [84, -22], [78, -10], [73, 8], [75, 22], [73.5, 30], [73, 40], [74, 47], [80, 60], [88, 74], [96, 83]], gates: ['danang', null] },
+  { kind: 'asphalt', pts: [[84, -29], [84, -22], [78, -10], [73, 8], [75, 22], [73.5, 30], [75, 36], [79, 42], [79, 52], [82, 62], [88, 74], [96, 83]], gates: ['danang', null] },
+  { kind: 'asphalt', pts: [[76, 47], [79, 47]], gates: [null, null] },   // off the Harbour Bridge: the road passes just beyond its stone towers
   { kind: 'asphalt', pts: [[73.5, 30], [78, 30]], gates: [null, null] },   // Lotus Village has its own old gate (cổng làng)
   // dirt roads
   { kind: 'dirt', pts: [[0, 33], [0, 40], [-2, 47.6]] },                       // down the Dawn Plateau to the main road

@@ -5,7 +5,7 @@ import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfi
 import { say, spoken, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
 import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { SFX, Music, ac } from './audio.js';
-import { fmt, cur } from './money.js';
+import { fmt, cur, spoken as money } from './money.js';
 import { el, esc, $, clamp, wait } from './util.js';
 import { avatarURL } from './avatar.js';
 import { confetti } from './fun.js';
@@ -19,6 +19,7 @@ import { AUSSIE_SLANG, VN_WORDS } from './words.js';
 import { openCredits, creditsFields, bindCreditsFields } from './credits.js';
 import { openHowTo } from './howto.js';
 import { WILD } from './gather.js';
+import { snackOf, eatSnack } from './snacks.js';
 import { extrasHTML, bindExtras } from './extras.js';
 import { canListen } from './listen.js';
 import { installButton } from './install.js';
@@ -554,14 +555,21 @@ export function openPad(game, i, tab) {
       ok.querySelector('.no').onclick = () => ok.remove();
     };
   }
+  let sellPick = null; // a treasure tapped once in the bag: tap again to sell it
   function drawBag(body) {
-    const items = Object.entries(p.inv).filter(([, n]) => n > 0);
+    const isGem = id => WILD[id] && WILD[id].kind === 'gem';
+    const items = Object.entries(p.inv).filter(([id, n]) => n > 0 && ITEMS[id] && !isGem(id)), gems = Object.entries(p.inv).filter(([id, n]) => n > 0 && isGem(id)).sort((a, b) => WILD[b[0]].sell - WILD[a[0]].sell);
+    const bought = Object.entries(p.bought || {}).filter(([id, n]) => n > 0 && snackOf(id));
     const dishes = Object.entries(p.dishes).filter(([, n]) => n > 0);
     body.innerHTML = `
       <button class="btn wide" id="bagPets">🐾 ${T('My pets', 'Thú cưng của con')}: ${(p.pets || []).map(pt => (PET_ICON[pt.kind] || '🐾') + ' ' + esc(pt.name || '')).join('  ')}</button>
       <div class="bag-top"><span class="chip">💰 ${fmt(farm.coins)}</span><span class="chip">🔮 ${p.orbs} ${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}</span><span class="chip">🍃 ${Object.keys(p.leafies).length}/24 Leafies</span></div>
       <h3>${T('Food', 'Món ăn')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
       <div class="slots">${dishes.map(([id, n]) => { const r = dishInfo(id) || { icon: '🥘', name: () => T('Mystery stew', 'Món hầm bí ẩn') }; return `<button class="slot" data-eat="${id}" title="${esc(r.name())}"><span>${r.icon}</span><b>${n}</b><small>${esc(r.name())}</small></button>`; }).join('') || `<p class="note">${T('Cook at a cooking pot to make food.', 'Nấu ăn ở nồi nấu để có món ăn.')}</p>`}</div>
+      <h3>🛍️ ${T('From shops and stalls', 'Mua ở quán và sạp')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
+      <div class="slots">${bought.map(([id, n]) => { const v = snackOf(id); return `<button class="slot" data-snack="${id}" title="${esc(T(v.food[1], v.food[2]))}"><span>${v.food[0]}</span><b>${n}</b><small>${esc(T(v.food[1], v.food[2]))}</small></button>`; }).join('') || `<p class="note">${T('Buy food at kiosks, market stalls and from street sellers. It goes in here!', 'Mua đồ ăn ở quán, sạp chợ và các cô gánh hàng rong. Đồ mua sẽ nằm ở đây!')}</p>`}</div>
+      <h3>💎 ${T('Treasures', 'Báu vật')} <small>${T('tap twice to sell', 'chạm 2 lần để bán')}</small></h3>
+      <div class="slots">${gems.map(([id, n]) => `<button class="slot gemslot ${sellPick === id ? 'on' : ''}" data-sellgem="${id}"><span>${WILD[id].icon}</span><b>${n}</b><small>${sellPick === id ? '💰 ' + T('Sell', 'Bán') + ' ' + fmt(WILD[id].sell) + '?' : esc(WILD[id].name()) + ' · ' + fmt(WILD[id].sell)}</small></button>`).join('') || `<p class="note">${T('Dig at the sparkly mounds of earth and crack rocks open to find treasures!', 'Đào ở những ụ đất lấp lánh và gõ vỡ hòn đá để tìm báu vật!')}</p>`}</div>
       <h3>${T('Ingredients', 'Nguyên liệu')}</h3>
       <div class="slots">${items.map(([id, n]) => `<div class="slot"><span>${ITEMS[id].icon}</span><b>${n}</b><small>${esc(ITEMS[id].name())}</small></div>`).join('') || `<p class="note">${T('Empty! Shake apple trees and look for herbs and mushrooms.', 'Trống trơn! Rung cây táo và tìm rau thơm, nấm nhé.')}</p>`}</div>
       <h3>${T('Hats', 'Mũ')} <small>${T('tap to wear', 'chạm để đội')}</small></h3>
@@ -571,6 +579,13 @@ export function openPad(game, i, tab) {
       <h3>${T('Glider', 'Cánh lượn')}</h3>
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
     body.querySelectorAll('[data-eat]').forEach(b => b.onclick = () => { game.eat(hero, b.dataset.eat); draw(); });
+    body.querySelectorAll('[data-snack]').forEach(b => b.onclick = () => { eatSnack(game, hero, b.dataset.snack, true); draw(); });
+    body.querySelectorAll('[data-sellgem]').forEach(b => b.onclick = () => {
+      const id = b.dataset.sellgem, w = WILD[id];
+      if (sellPick !== id) { sellPick = id; SFX.tap(); say(`${w.name()}: ${money(w.sell)}. Tap again to sell it.`, `${w.name()}: ${money(w.sell)}. Chạm lần nữa để bán nhé.`); draw(); return; }
+      sellPick = null; p.inv[id]--; if (p.inv[id] <= 0) delete p.inv[id]; farm.coins += w.sell; saveFarm(); game.save(); SFX.coin();
+      say(`Sold! Now you have ${money(farm.coins)}.`, `Bán rồi! Giờ con có ${money(farm.coins)}.`); game.job && game.job('sell', 1, hero); draw();
+    });
     body.querySelector('#bagPets').onclick = () => { m.close(); game.closePad(i); setTimeout(() => game.pets.openAdopt(hero), 220); };
     body.querySelectorAll('[data-hat]').forEach(b => b.onclick = () => { p.look.hat = b.dataset.hat; saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); });
     body.querySelectorAll('[data-kite]').forEach(b => b.onclick = () => { p.kiteOn = p.kiteOn === false; saveProfiles(); game.kites.sync(); SFX.ok(); if (p.kiteOn) game.kites.whistle(hero); draw(); });
@@ -588,7 +603,7 @@ export function openPad(game, i, tab) {
     const pcs = p.postcards || {}, tasted = p.tasted || {}, words = Object.keys(p.words || {});
     const fd = p.found || {}, wk = Object.keys(WILD);
     const treasures = `<h3>💎 ${T('My treasures', 'Báu vật của con')} ${wk.filter(k => fd[k]).length}/${wk.length}</h3><div class="secrets">${wk.map(k => fd[k] ? `<div class="sec on"><span>${WILD[k].icon}</span><small>${esc(WILD[k].name())} ×${fd[k]}</small></div>` : `<div class="sec"><span>❔</span><small>${T({ fruit: 'Wild fruit', flower: 'Wild flower', gem: 'Inside a rock' }[WILD[k].kind], { fruit: 'Quả dại', flower: 'Hoa dại', gem: 'Trong hòn đá' }[WILD[k].kind])}</small></div>`).join('')}</div>
-      <p class="note">${T('Pick fruit and flowers in the meadows and bamboo forest. Tap a rock 3 times to crack it open! Sell your treasures to Mr. Bear at the farm.', 'Hái quả và hoa ở đồng cỏ và rừng tre. Gõ hòn đá 3 lần để mở nó ra! Bán báu vật cho Bác Gấu ở nông trại nhé.')}</p>`;
+      <p class="note">${T('Pick fruit and flowers in the meadows and bamboo forest. Tap a rock 3 times to crack it open, or dig 3 times at a sparkly mound of earth: the rarest gems are worth the most! Sell treasures from your bag or to Mr. Bear at the farm.', 'Hái quả và hoa ở đồng cỏ và rừng tre. Gõ hòn đá 3 lần để mở nó ra, hoặc đào 3 lần ở ụ đất lấp lánh: đá quý càng hiếm càng đáng giá! Bán báu vật ngay trong túi hoặc cho Bác Gấu ở nông trại.')}</p>`;
     body.innerHTML = `<button class="btn wide big" id="scrapBtn">📒 ${T('My scrapbook: decorate with stickers and photos', 'Sổ dán hình: trang trí bằng hình dán và ảnh')}</button>` + treasures + `<h3>📮 ${T('Postcards', 'Bưu thiếp')} ${Object.keys(pcs).length}/${LANDMARKS.length}</h3><div class="secrets">${LANDMARKS.map(l => pcs[l.id] ? `<button class="sec on" data-pcfact="${l.id}"><span>${l.icon}</span><small>${esc(l.name())}</small></button>` : `<button class="sec" data-fly="${l.id}"><span>❔</span><small>✈️ ${esc(l.name())}</small></button>`).join('')}</div>
       <h3>🍜 ${T('Food passport', 'Hộ chiếu ẩm thực')} ${Object.keys(tasted).length}/${VENDORS.length}</h3><div class="secrets">${VENDORS.map(v => `<div class="sec ${tasted[v.id] ? 'on' : ''}"><span>${tasted[v.id] ? v.food[0] : '❔'}</span><small>${tasted[v.id] ? esc(T(v.food[1], v.food[2])) : esc(v.name)}</small></div>`).join('')}</div>
       <h3>🗣️ ${T('Words I learned', 'Từ con đã học')} ${words.length}</h3><div class="wordlist">${words.map(k => { const [kind, w] = [k.slice(0, 2), k.slice(3)]; if (kind === 'au') { const s = AUSSIE_SLANG.find(x => x[0] === w); return s ? `<span>🇦🇺 <b>${esc(s[0])}</b> = ${esc(T(s[1], s[2]))}</span>` : ''; } const v = VN_WORDS.find(x => x[1] === w); return v ? `<span>🇻🇳 ${v[0]} Bắc <b>${esc(v[2])}</b> · Trung <b>${esc(v[3])}</b> · Nam <b>${esc(v[4])}</b></span>` : ''; }).join('') || `<p class="note">${T('Ask the market sellers and the Aussie shopkeepers to teach you a word!', 'Hỏi các cô chú bán hàng ở chợ và ở Góc Nước Úc để học từ mới nhé!')}</p>`}</div>

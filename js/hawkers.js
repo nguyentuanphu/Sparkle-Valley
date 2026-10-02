@@ -1,16 +1,15 @@
 // Street sellers with a shoulder pole (gánh hàng rong): they walk up and down a street with two baskets
-// on a bamboo pole, calling out what they sell, and stop to serve a child who comes close. Buying from them
-// fills the food passport like the kiosks do.
+// on a bamboo pole, calling out what they sell, and stop to serve a child who comes close. What they sell goes in the
+// backpack like kiosk food (snacks.js), and eating it fills the food passport.
 import { THREE, toonVC, P, merge, sprite } from './gfx.js';
 import { T, nm, registerName } from './i18n.js';
 import { heightAt, CITIES } from './world.js';
 import { buildAvatar } from './avatar.js';
 import { VENDORS } from './regions.js';
 import { PERSONAS } from './chat.js';
-import { dialog, reward } from './ui.js';
-import { farm, saveFarm } from './state.js';
+import { dialog } from './ui.js';
 import { say } from './voice.js';
-import { SFX } from './audio.js';
+import { buyFood } from './snacks.js';
 
 const look = (color, hair, hairStyle, hat = 'nonla') => ({ style: 'aodai', color, hat, back: 'none', hair, hairStyle, skin: '#e8b48c', glider: 0 });
 // [id, name, look, goods (two baskets), food [icon, en, vi, price], call [en, vi], greet [en, vi], where]
@@ -62,12 +61,7 @@ export function createHawkers(G) {
   async function buy(h, H, v) {
     H.busy = true;
     const k = await dialog(H.name, [v.greet], [[`${v.food[0]} ${T('Buy', 'Mua')} ${T(v.food[1], v.food[2])} (${G.fmt(v.food[3])})`, `${v.food[0]} Mua ${v.food[2]} (${G.fmt(v.food[3])})`], ['👋 Bye', '👋 Tạm biệt']]);
-    if (k === 0) {
-      if (farm.coins >= v.food[3]) { farm.coins -= v.food[3]; saveFarm(); } else say('Here, this one is a gift!', 'Thôi, cái này cô cho con đó!');
-      SFX.chime(); h.bonusStamina = Math.max(h.bonusStamina || 0, 1); h.stamina = h.staminaMax;
-      const p = h.profile; p.tasted = p.tasted || {}; const first = !p.tasted[v.id]; p.tasted[v.id] = true; G.save();
-      await reward(v.food[0], T(`Yum, ${v.food[1]}!`, `Ngon quá, ${v.food[2]}!`), first ? T('A new taste for your food passport!', 'Món mới trong hộ chiếu ẩm thực!') : T('Full of energy!', 'Tràn đầy năng lượng!'));
-    }
+    if (k === 0) await buyFood(G, h, v, ['Here, this one is a gift!', 'Thôi, cái này cô cho con đó!']);
     H.busy = false;
   }
   const near = H => G.heroes.find(h => Math.hypot(h.pos.x - H.x, h.pos.z - H.z) < 3.6);

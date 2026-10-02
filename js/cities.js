@@ -15,6 +15,7 @@ import { farm, saveFarm } from './state.js';
 import { say, sayIn } from './voice.js';
 import { SFX } from './audio.js';
 import { dist2 } from './util.js';
+import { buyFood } from './snacks.js';
 
 const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), C = (r1, r2, h, s = 14) => new THREE.CylinderGeometry(r1, r2, h, s), S = (r, w = 14, h = 10) => new THREE.SphereGeometry(r, w, h);
 const look = (style, color, hair, hairStyle, hat = 'none', skin = '#e8b48c') => ({ style, color, hat, back: 'none', hair, hairStyle, skin, glider: 0 });
@@ -150,9 +151,9 @@ export function createCities(G) {
   const people = [];
   const place = (parts, x, z, rot, y) => { const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(x, y ?? heightAt(x, z) - .05, z); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; scene.add(m); outline(m, .025, '#4a3a3f'); return m; };
   const info = (x, y, z) => { const s = sprite('ℹ️', 1.5); s.position.set(x, y, z); scene.add(s); world.updaters.push((dt, t) => { s.position.y = y + Math.sin(t * 2 + x) * .25; }); };
-  const person = (lk, x, z, face, name) => {
+  const person = (lk, x, z, face, name, tagH = 2.4) => { // tagH: lift a name tag so two people side by side don't overlap
     const A = buildAvatar(lk, null); A.root.position.set(x, heightAt(x, z), z); A.root.rotation.y = face; scene.add(A.root); people.push(A);
-    const tg = tagSprite(name); tg.position.set(x, heightAt(x, z) + 2.4, z); scene.add(tg); world.colliders.push({ x, z, r: .45 }); return A;
+    const tg = tagSprite(name); tg.position.set(x, heightAt(x, z) + tagH, z); scene.add(tg); world.colliders.push({ x, z, r: .45 }); return A;
   };
   // sellers and hosts breathe and sway only when a child is near enough to see them (saves work on phones)
   world.updaters.push((dt, t) => { const H = G.heroes || []; people.forEach((A, k) => { const p = A.root.getWorldPosition ? A.root.position : null; if (p && A.root.parent === scene && !H.some(h => Math.abs(h.pos.x - p.x) < 70 && Math.abs(h.pos.z - p.z) < 70)) return; A.anim('idle', t + k * .7, 0); }); });
@@ -280,7 +281,7 @@ export function createCities(G) {
   buildHueNghi(G, place, person, 15, 36.25);
   // house number 8: a Bà Rịa family home, only its number is shown
   {
-    const [x, z] = [8.8, 34.5], rot = 0; // on its own plot beside the gate, facing the street
+    const [x, z] = [20.3, 57.7], rot = Math.PI; // on the flat south side of the street, facing it (the west end is the foot of the Dawn Plateau)
     const parts = [
       P(B(6, .3, 7), '#b9b2a4', [0, .15, 0]),
       P(B(5.4, 3.2, 6), '#f6e3a8', [0, 1.75, -.3]), P(B(5.4, 3, 5.4), '#f6e3a8', [0, 4.85, -.6]),
@@ -353,7 +354,7 @@ function buildHueNghi(G, place, person, x, z) {
   world.houses.push({ x, z, rot: 0, d, kind: 'tube' });
   // bà Huệ and ông Nghi at the door
   const hue = person(look('aodai', '#7a4a8a', '#d8d8d8', 'buns'), x - 1.9, z + fz + 1.9, .2, 'Bà Huệ');
-  const nghi = person(look('shirt', '#d8d4c8', '#b8b8b8', 'short'), x + 1.1, z + fz + 1.8, -.3, 'Ông Nghi');
+  const nghi = person(look('shirt', '#d8d4c8', '#b8b8b8', 'short'), x + 1.1, z + fz + 1.8, -.3, 'Ông Nghi', 2.95);
   const talk = async who => {
     SFX.tap();
     const lines = who === 'hue'
@@ -376,10 +377,7 @@ async function kioskTalk(G, h, v) {
   const p = h.profile;
   const k = await dialog(v.name, [v.greet], [[`${v.food[0]} Buy ${v.food[1]} (${G.fmt(v.food[3])})`, `${v.food[0]} Mua ${v.food[2]} (${G.fmt(v.food[3])})`], ['🗣️ Teach me a saying!', '🗣️ Dạy con một câu nói!'], ['👋 Bye', '👋 Tạm biệt']]);
   if (k === 0) {
-    if (farm.coins >= v.food[3]) { farm.coins -= v.food[3]; saveFarm(); } else say('Here, this one is a gift!', 'Thôi, cái này tặng con đó!');
-    SFX.chime(); h.bonusStamina = Math.max(h.bonusStamina || 0, 1); // one extra stamina wheel h.stamina = h.staminaMax;
-    p.tasted = p.tasted || {}; const first = !p.tasted[v.id]; p.tasted[v.id] = true; G.save();
-    await reward(v.food[0], T(`Yum, ${v.food[1]}!`, `Ngon quá, ${v.food[2]}!`), first ? T('A new taste for your food passport! Full of energy.', 'Món mới trong hộ chiếu ẩm thực! Tràn đầy năng lượng.') : T('Full of energy!', 'Tràn đầy năng lượng!'));
+    await buyFood(G, h, v);
   }
   if (k === 1) {
     const [words, en, vi, lang] = v.saying;
