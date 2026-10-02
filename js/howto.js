@@ -11,6 +11,25 @@ import { el, esc, wait } from './util.js';
 // [picture, English, Vietnamese]
 const S = (pic, en, vi) => ({ pic, en, vi });
 export const HOWTO = {
+  firstwords: {
+    origin: S('🇨🇳 🇮🇳 🌏', 'Friends in China Town and India Village teach their first words: hello, thank you, family, food, animals and numbers.', 'Các bạn ở Làng Trung Hoa và Làng Ấn Độ dạy những từ đầu tiên: xin chào, cảm ơn, gia đình, món ăn, con vật và con số.'),
+    steps: [S('👂 🔊', 'Listen to the word. Tap 🔊 to hear it again.', 'Nghe từ đó. Chạm 🔊 để nghe lại.'), S('👆 🖼️', 'Tap the picture it means.', 'Chạm vào hình đúng nghĩa.'), S('🗣️ 😊', 'Say it out loud with the game!', 'Nói to theo trò chơi nhé!')]
+  },
+  tangram: {
+    origin: S('🇨🇳 🧩', 'The tangram (七巧板, qīqiǎobǎn) is a shape puzzle from China, more than 200 years old.', 'Tangram (七巧板, qīqiǎobǎn) là trò xếp hình của Trung Quốc, có từ hơn 200 năm trước.'),
+    steps: [S('👀 ⬜', 'Look at the picture: one shape is missing.', 'Nhìn bức hình: thiếu một mảnh.'), S('🔺 🔷 🟨', 'Look at the corners and sides of each shape.', 'Nhìn các góc và các cạnh của từng mảnh.'), S('👆 ✅', 'Tap the shape that fits the gap.', 'Chạm vào mảnh vừa với chỗ trống.')],
+    real: S('✂️ 📄', 'For real: cut a square of card into 7 pieces and make animals, boats and houses!', 'Chơi thật: cắt một tấm bìa vuông thành 7 mảnh rồi xếp thành con vật, thuyền và nhà!')
+  },
+  snakes: {
+    origin: S('🇮🇳 🐍 🪜', 'Snakes and ladders started in India long ago, where it was called Moksha Patam.', 'Rắn và thang bắt đầu ở Ấn Độ từ rất lâu, khi đó gọi là Moksha Patam.'),
+    steps: [S('🎲 👆', 'Tap Roll to throw the dice.', 'Chạm Gieo để gieo xúc xắc.'), S('1️⃣ 2️⃣ 3️⃣', 'Count the squares as you move.', 'Đếm từng ô khi di chuyển.'), S('🪜 ⬆️ 🐍 ⬇️', 'Ladders take you up, snakes slide you down. Reach 25 to win!', 'Thang đưa con lên, rắn làm con trượt xuống. Đến ô 25 là thắng!')],
+    real: S('📋 🎲', 'For real: draw a 5×5 board, add ladders and snakes, and play with a dice and buttons.', 'Chơi thật: vẽ bảng 5×5, thêm thang và rắn, rồi chơi với xúc xắc và cúc áo.')
+  },
+  rangoli: {
+    origin: S('🇮🇳 🌸 🪔', 'In India, families draw rangoli at the door with coloured powder, rice and flowers, especially for Diwali, the festival of lights.', 'Ở Ấn Độ, các gia đình vẽ rangoli trước cửa bằng bột màu, gạo và hoa, nhất là vào lễ Diwali, lễ hội ánh sáng.'),
+    steps: [S('🎨 👆', 'Tap a colour.', 'Chọn một màu.'), S('🪞 ⬜', 'Colour the right side to match the left side, like a mirror.', 'Tô bên phải giống hệt bên trái, như soi gương.'), S('✨ 🌸', 'When both sides match, the rangoli glows!', 'Khi hai bên giống nhau, tranh rangoli sẽ sáng lên!')],
+    real: S('🍚 🌼', 'For real: draw a pattern with chalk and fill it with coloured rice or flower petals.', 'Chơi thật: vẽ hoa văn bằng phấn rồi rải gạo màu hoặc cánh hoa lên.')
+  },
   // ---- folk games ----
   mrwolf: {
     origin: S('🇦🇺 🐺', 'This is a schoolyard game from Australia. Children have played it for more than a hundred years!', 'Đây là trò chơi sân trường của nước Úc. Các bạn nhỏ đã chơi trò này hơn một trăm năm rồi!'),

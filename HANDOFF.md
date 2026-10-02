@@ -266,6 +266,19 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - **Trading** (`js/trade.js`): the 🏪 "My market stall" at the Three Regions Market, or 🔄 Trade next to a friend in the online panel. Pick things from the backpack and/or coins to give and what you'd like back, then send the offer. The friend taps Deal! or No thanks. Both sides are checked again before anything changes hands.
 - **Testing locally:** the public PeerJS server can be swapped for a local one with `window.SV_PEER = { host, port, path, secure }` (used by the automated 3-device test).
 
+### Round 11 (China Town and India Village)
+- **Two new villages in the north** (`js/asia.js`, sites `CHINA` and `INDIA` in `world.js`, flattened ground, on the map and in Travel):
+  - **China Town (Làng Trung Hoa):** houses with green tiled roofs, a five-roof pagoda, a little Great Wall with a watchtower, lantern strings and a panda statue. Hosts: Miss Mei (First Words), Jun (Tangram), Grandma Lin (dragon dance).
+  - **India Village (Làng Ấn Độ):** pastel flat-roofed houses with arched doors and marigold garlands, a little Taj Mahal with its pool, a big rangoli on the square and an elephant statue. Hosts: Priya (Snakes and Ladders), Grandma Asha (Rangoli), Arjun (First Words).
+  - Tapping the pagoda, the Great Wall or the Taj Mahal tells a short true fact.
+- **4 new thinking games** (`js/games/asia.js`, with How-to-play films and music):
+  - **First Words:** hear a Chinese or Hindi word (20 each in `js/words2.js`: hello, thank you, family, food, animals, numbers), then tap its picture.
+  - **Tangram Shapes:** which shape fills the gap? Big kids get turned shapes.
+  - **Snakes and Ladders** (Moksha Patam): a 5×5 board with counting aloud. Little ones get no snakes and always get there first.
+  - **Rangoli Patterns:** colour the right side to mirror the left.
+- **Chinese and Hindi, quietly:** small 🌏 中文 / हिन्दी buttons under the language row on the title screen and in Grown-ups (`settings.learnLang`). They switch on "also learning" that language: First Words focuses on it, and the village friends say the word aloud. The device voice is used if it has zh-CN / hi-IN voices, or Google Cloud voices. The game's menus stay in English or Vietnamese: a full Chinese or Hindi translation of every screen is a separate, bigger job.
+- **Still not done:** dirt roads with welcome gates between villages (this was stopped by the assistant's safety system twice in this session; please try it in a new session).
+
 ## 3. How it's built
 
 **Tech:**

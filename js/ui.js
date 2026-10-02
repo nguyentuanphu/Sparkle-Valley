@@ -21,7 +21,8 @@ import { WILD } from './gather.js';
 import { extrasHTML, bindExtras } from './extras.js';
 import { canListen } from './listen.js';
 import { installButton } from './install.js';
-import { VOICE_STYLES, clipCountFor, hush, setSpeaker } from './voice.js';
+import { VOICE_STYLES, clipCountFor, hush, setSpeaker, sayIn } from './voice.js';
+import { LEARN } from './words2.js';
 
 export const STYLE_ICON = { dress: '👗', shirt: '👕', aodai: '🥻', tunic: '🧥', overalls: '👖', hoodie: '🧶' };
 export const STYLE_NAME = { dress: () => T('Dress', 'Váy'), shirt: () => T('Shirt & shorts', 'Áo và quần đùi'), aodai: () => 'Áo dài', tunic: () => T('Explorer', 'Nhà thám hiểm'), overalls: () => T('Overalls', 'Quần yếm'), hoodie: () => T('Hoodie', 'Áo nỉ') };
@@ -34,6 +35,15 @@ export function modal(cls, html) {
   return m;
 }
 const flagBtns = () => `<div class="seg lang"><button data-l="en" class="${settings.lang === 'en' ? 'on' : ''}">🇦🇺 English</button><button data-l="vi" class="${settings.lang === 'vi' ? 'on' : ''}">🇻🇳 Tiếng Việt</button></div>`;
+// Small, quiet buttons to also learn Chinese or Hindi words (in China Town, India Village and First Words).
+const learnBtns = () => `<div class="learnrow" aria-label="${T('Also learn', 'Học thêm')}">🌏 ${Object.entries(LEARN).map(([k, l]) => `<button data-learn="${k}" class="${settings.learnLang === k ? 'on' : ''}" title="${l.name[settings.lang] || l.name.en}">${k === 'zh' ? '中文' : 'हिन्दी'}</button>`).join('')}</div>`;
+function bindLearn(root, after) {
+  root.querySelectorAll('[data-learn]').forEach(b => b.onclick = e => {
+    e.stopPropagation(); const k = b.dataset.learn; settings.learnLang = settings.learnLang === k ? '' : k; saveSettings(); SFX.tap();
+    if (settings.learnLang) { const L = LEARN[k], w = L.words[0]; toast(`${L.flag} ${T('Also learning ' + L.name.en, 'Học thêm ' + L.name.vi)}: ${w[3]} (${w[4]})`); sayIn(k, w[3]); }
+    after && after();
+  });
+}
 function bindLang(root, after) {
   root.querySelectorAll('.seg.lang button').forEach(b => b.onclick = () => { settings.lang = b.dataset.l; saveSettings(); applyLang(); SFX.tap(); after && after(); });
 }
@@ -44,6 +54,7 @@ export function showTitle(onStart) {
     <div class="logo"><div class="logo-main"></div><div class="logo-sub"></div></div>
     <div class="press"></div>
     <div class="title-top"></div>
+    <div class="title-learn"></div>
     <div class="title-foot"></div>`);
   document.body.appendChild(s);
   const redraw = () => {
@@ -52,13 +63,14 @@ export function showTitle(onStart) {
     s.querySelector('.logo-sub').textContent = T('Two homes · one valley', 'Hai quê hương · một thung lũng');
     s.querySelector('.logo').classList.toggle('vi', settings.lang === 'vi');
     s.querySelector('.title-foot').innerHTML = flagBtns() + `<button class="about" aria-label="${T('About', 'Giới thiệu')}">ℹ️<span> ${T('About', 'Giới thiệu')}</span></button>`;
+    s.querySelector('.title-learn').innerHTML = learnBtns(); bindLearn(s, redraw);
     bindLang(s, redraw);
     s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(); };
     const top = s.querySelector('.title-top'); top.innerHTML = '';
     const b = installButton(); if (b) top.appendChild(b);
   };
   redraw();
-  s.addEventListener('click', e => { if (e.target.closest('.seg') || e.target.closest('.about') || e.target.closest('.installchip')) return; ac(); SFX.chime(); s.remove(); onStart(); });
+  s.addEventListener('click', e => { if (e.target.closest('.seg') || e.target.closest('.about') || e.target.closest('.installchip') || e.target.closest('.learnrow')) return; ac(); SFX.chime(); s.remove(); onStart(); });
 }
 
 // ---------- Who's playing ----------
@@ -137,7 +149,7 @@ export function openGrownups(after) {
       <button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
       <h2>${T('Grown-ups', 'Phụ huynh')}</h2>
       <div class="g-install"></div>
-      <h3>${T('Language', 'Ngôn ngữ')}</h3>${flagBtns()}
+      <h3>${T('Language', 'Ngôn ngữ')}</h3>${flagBtns()}${learnBtns()}
       <label class="tog"><input type="checkbox" id="gBil" ${settings.bilingual ? 'checked' : ''}> ${T('Bilingual voice: also say everything in the other language', 'Giọng song ngữ: nói thêm bằng ngôn ngữ còn lại')}</label>
       <h3>${T('Money', 'Tiền tệ')}</h3>
       <div class="seg cur"><button data-c="AUD" class="${settings.currency === 'AUD' ? 'on' : ''}">🇦🇺 AUD $</button><button data-c="VND" class="${settings.currency === 'VND' ? 'on' : ''}">🇻🇳 VND đ</button></div>
@@ -177,7 +189,7 @@ export function openGrownups(after) {
       <div class="actions"><button class="btn" id="gExp">⬇ ${T('Save backup', 'Lưu bản sao')}</button><label class="btn" for="gImp">⬆ ${T('Open backup', 'Mở bản sao')}</label><input type="file" id="gImp" accept="application/json,.json" class="vh"></div>
       <p class="note">${T('Online play uses the free PeerJS service to connect two devices directly. Voice goes straight between the devices and is never recorded.', 'Chơi trực tuyến dùng dịch vụ miễn phí PeerJS để nối hai máy trực tiếp. Giọng nói đi thẳng giữa hai máy và không bao giờ được ghi lại.')}</p>
       <button class="btn primary wide" id="gDone">💾 ${T('Save & close', 'Lưu và đóng')}</button>`;
-    bindLang(card, () => { draw(); after && after(); });
+    bindLang(card, () => { draw(); after && after(); }); bindLearn(card, () => draw());
     card.querySelector('.x').onclick = card.querySelector('#gDone').onclick = () => { m.close(); after && after(); };
     card.querySelectorAll('.seg.cur button').forEach(b => b.onclick = () => { settings.currency = b.dataset.c; saveSettings(); draw(); });
     card.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const n = +b.dataset.add; if (window.__sv && window.__sv.addCoins) window.__sv.addCoins(n); else { farm.coins += n; saveFarm(); } SFX.coin ? SFX.coin() : SFX.chime(); card.querySelector('#gCoins').textContent = fmt(farm.coins); toast(T('Coins added: ', 'Đã thêm: ') + fmt(n)); });
@@ -629,7 +641,7 @@ export function openRecorder(after) {
 
 // ---------- Games hub ----------
 const HUB = [
-  { key: 'folk', icon: '🪁', title: () => T('Folk games of Australia & Vietnam', 'Trò chơi dân gian Úc và Việt Nam'), games: ['words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
+  { key: 'folk', icon: '🪁', title: () => T('Folk games of Australia, Vietnam, China and India', 'Trò chơi dân gian Úc, Việt Nam, Trung Quốc và Ấn Độ'), games: ['firstwords', 'tangram', 'snakes', 'rangoli', 'words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
   { key: 'farm', icon: '🏡', title: () => T('At the farm', 'Ở nông trại'), games: ['bunny', 'balloon', 'bubbles', 'jigsaw', 'tower', 'order', 'sortout', 'duckmaze'] },
   { key: 'village', icon: '🏮', title: () => T('In Lotus Village', 'Ở Làng Sen'), games: ['market', 'tune', 'shapes', 'oddone', 'memory'] },
   { key: 'shrine', icon: '✨', title: () => T('Puzzle shrines', 'Đền đố vui'), games: ['pattern', 'counting', 'letters', 'numbers', 'colors', 'sorting', 'hanoi', 'robot', 'maze'] }

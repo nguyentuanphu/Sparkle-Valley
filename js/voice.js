@@ -21,11 +21,11 @@ export const onVoices = f => listeners.add(f);
 if (window.speechSynthesis) { load(); try { speechSynthesis.addEventListener('voiceschanged', load); } catch (e) { } }
 
 export function voicesFor(lang) {
-  const re = lang === 'vi' ? /^vi/i : /^en/i;
+  const re = new RegExp('^' + (lang || 'en'), 'i');   // en, vi, zh (Chinese), hi (Hindi)
   return all.filter(v => re.test(v.lang)).sort((a, b) => score(b) - score(a) || (/en[-_](au|us)/i.test(b.lang) - /en[-_](au|us)/i.test(a.lang)));
 }
 export function voiceFor(lang) {
-  const list = voicesFor(lang), want = lang === 'vi' ? settings.voiceVi : settings.voiceEn;
+  const list = voicesFor(lang), want = lang === 'vi' ? settings.voiceVi : lang === 'en' ? settings.voiceEn : null;
   return (want && list.find(v => v.name === want)) || list[0] || null;
 }
 export const hasVietnamese = () => voicesFor('vi').length > 0;
@@ -69,7 +69,7 @@ function utter(text, lang) {
   const u = new SpeechSynthesisUtterance(text);
   const kind = speakerKind();
   const v = speakerVoice(lang, kind) || voiceFor(lang);
-  if (v) { u.voice = v; u.lang = v.lang; } else u.lang = lang === 'vi' ? 'vi-VN' : 'en-AU';
+  if (v) { u.voice = v; u.lang = v.lang; } else u.lang = { vi: 'vi-VN', zh: 'zh-CN', hi: 'hi-IN' }[lang] || 'en-AU';
   // A touch slower than normal and at natural pitch sounds the most human; grown-ups can fine-tune both.
   const st = style();
   u.rate = (lang === 'vi' ? .95 : .97) * (settings.voiceRate || 1) * st.rate;
@@ -218,6 +218,7 @@ const GOOGLE_VOICES = {
   en: { f: ['en-AU-Neural2-C', 'en-AU-Neural2-A', 'en-AU-Wavenet-C'], m: ['en-AU-Neural2-B', 'en-AU-Neural2-D', 'en-AU-Wavenet-B'] }
 };
 const googleName = lang => {
+  if (lang === 'zh') return 'cmn-CN-Wavenet-A'; if (lang === 'hi') return 'hi-IN-Wavenet-A';
   const mine = lang === 'vi' ? settings.googleVoiceVi : settings.googleVoiceEn, k = speakerKind();
   if (!k) return mine || (lang === 'vi' ? 'vi-VN-Neural2-A' : 'en-AU-Neural2-C');
   const pool = GOOGLE_VOICES[lang === 'vi' ? 'vi' : 'en'][k.gender];
@@ -254,7 +255,7 @@ async function googleTTS(text, lang) {
   const name = googleName(lang);
   const r = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + encodeURIComponent(settings.ttsKey), {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ input: { text }, voice: { languageCode: name.slice(0, 5), name }, audioConfig: { audioEncoding: 'MP3', speakingRate: speakerKind() && speakerKind().old ? .88 : .95, pitch: googlePitch() } })
+    body: JSON.stringify({ input: { text }, voice: { languageCode: name.split('-').slice(0, 2).join('-'), name }, audioConfig: { audioEncoding: 'MP3', speakingRate: speakerKind() && speakerKind().old ? .88 : .95, pitch: googlePitch() } })
   });
   if (!r.ok) throw new Error('Google TTS ' + r.status + ' ' + (await r.text()).slice(0, 200));
   const j = await r.json(), bin = atob(j.audioContent), out = new Uint8Array(bin.length);
