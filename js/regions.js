@@ -330,7 +330,7 @@ async function vendorTalk(G, h, v) {
   const k = await dialog(v.name, [v.greet], [[`${v.food[0]} Buy ${v.food[1]} (${G.fmt(v.food[3])})`, `${v.food[0]} Mua ${v.food[2]} (${G.fmt(v.food[3])})`], ['🗣️ Teach me a word!', '🗣️ Dạy con một từ!'], ['👋 Bye', '👋 Tạm biệt']]);
   if (k === 0) {
     if (farm.coins >= v.food[3]) { farm.coins -= v.food[3]; saveFarm(); } else say("Here, this one's on me!", 'Thôi, lần này cho con đó!');
-    SFX.chime(); h.bonusStamina = Math.max(h.bonusStamina, 40); h.stamina = h.staminaMax;
+    SFX.chime(); h.bonusStamina = Math.max(h.bonusStamina || 0, 1); // one extra stamina wheel h.stamina = h.staminaMax;
     p.tasted = p.tasted || {}; const first = !p.tasted[v.id]; p.tasted[v.id] = true; G.save();
     await reward(v.food[0], T(`Yum, ${v.food[1]}!`, `Ngon quá, ${v.food[2]}!`), first ? T('A new taste for your food passport! Full of energy.', 'Món mới trong hộ chiếu ẩm thực! Tràn đầy năng lượng.') : T('Full of energy!', 'Tràn đầy năng lượng!'));
   }

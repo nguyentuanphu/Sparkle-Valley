@@ -193,7 +193,7 @@ export class Hud {
     c.clearRect(0, 0, 96, 96); c.lineCap = 'round';
     const base = h.profile.staminaMax;
     for (let w = 0; w < Math.ceil(max); w++) {
-      const R = 36 - w * 9, cap = Math.min(1, max - w), val = clamp(h.stamina - w, 0, cap);
+      const R = 36 - w * 9, cap = Math.min(1, max - w), val = clamp(h.stamina - w, 0, cap); if (R <= 4) break;
       c.lineWidth = 8; c.strokeStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.arc(48, 48, R, -Math.PI / 2, -Math.PI / 2 + cap * Math.PI * 2); c.stroke();
       c.strokeStyle = h.exhausted ? '#ff5a4a' : w >= base ? '#ffd23f' : '#7ee35a';
       c.beginPath(); c.arc(48, 48, R, -Math.PI / 2, -Math.PI / 2 + val * Math.PI * 2); c.stroke();

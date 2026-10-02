@@ -4,7 +4,8 @@
 //  · Several brokers are used at once, so friends meet even if one broker is down or blocked; copies are
 //    recognised and dropped.
 //  · Everything is encrypted (AES-GCM) with a key made from the room code or friend code, and the topic name
-//    is a hash, so the broker only ever sees scrambled bytes. Photos never go through the relay.
+//    is a hash, so the broker only ever sees scrambled bytes. Photos get a second lock on top (a private key
+//    for each pair of players, see net.js), so only the friend they are for can open them.
 //  · No account, no server of ours. Voice still needs a direct link or a TURN relay (see net.js).
 const enc = new TextEncoder(), dec = new TextDecoder();
 export const BROKERS = () => window.SV_MQTT || ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt', 'wss://test.mosquitto.org:8081/mqtt', 'wss://mqtt.eclipseprojects.io/mqtt'];
@@ -57,10 +58,20 @@ class Mqtt {
 
 // ---------- keys, topics, sealing ----------
 const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
-export async function topicFor(kind, code) { return 'sparklevalley/v1/' + kind + '/' + hex(await crypto.subtle.digest('SHA-256', enc.encode('sv-topic|' + kind + '|' + code))).slice(0, 32); }
-export async function keyFor(code) {
-  const base = await crypto.subtle.importKey('raw', enc.encode('sv-key|' + code), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: enc.encode('sparkle-valley-relay'), iterations: 20000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+// Topic names are made with a slow hash (PBKDF2), so nobody can work out a friend code from a topic name by
+// trying every code. Topics and keys are worked out once per code and kept.
+const memo = new Map(), once = (k, f) => { if (!memo.has(k)) memo.set(k, f()); return memo.get(k); };
+export function topicFor(kind, code) {
+  return once('t|' + kind + '|' + code, async () => {
+    const base = await crypto.subtle.importKey('raw', enc.encode('sv-topic|' + kind + '|' + code), 'PBKDF2', false, ['deriveBits']);
+    return 'sparklevalley/v2/' + kind + '/' + hex(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: enc.encode('sparkle-valley-topic'), iterations: 20000, hash: 'SHA-256' }, base, 128));
+  });
+}
+export function keyFor(code) {
+  return once('k|' + code, async () => {
+    const base = await crypto.subtle.importKey('raw', enc.encode('sv-key|' + code), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: enc.encode('sparkle-valley-relay'), iterations: 20000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  });
 }
 export async function seal(key, obj) { const iv = crypto.getRandomValues(new Uint8Array(12)), ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(obj)))); const o = new Uint8Array(12 + ct.length); o.set(iv); o.set(ct, 12); return o; }
 export async function open(key, bytes) { try { const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(0, 12) }, key, bytes.slice(12)); return JSON.parse(dec.decode(pt)); } catch (e) { return null; } }
@@ -87,7 +98,9 @@ export class Channel {
     c.subscribe(this.topic); for (const t of this.extra) c.subscribe(t);
     if (!this.clients.includes(c)) this.clients.push(c);
     const ok = await c.connect(will);
-    c.onclose = () => { if (this.alive) setTimeout(() => { this.clients = this.clients.filter(x => x !== c); this._connect(url, will); }, 2000); };
+    // a broker that keeps dropping is tried again less and less often (it starts over after a minute of calm)
+    const t0 = Date.now();
+    c.onclose = () => { const n = Date.now() - t0 > 60000 ? 0 : tries + 1; if (this.alive) setTimeout(() => { this.clients = this.clients.filter(x => x !== c); this._connect(url, will, n); }, Math.min(60000, 2000 * (n + 1))); };
     if (!ok) { this.clients = this.clients.filter(x => x !== c); if (this.alive) setTimeout(() => this._connect(url, will, tries + 1), Math.min(60000, 4000 * (tries + 1))); }
   }
   // extra topics with their own keys (friends' presence)

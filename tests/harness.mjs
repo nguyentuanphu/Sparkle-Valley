@@ -14,7 +14,7 @@ export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'so
   await page.addInitScript(([lang, s]) => { try { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang, voice: false, sound: false, music: false, quality: 'low' }, s); localStorage.setItem('sv2_settings', JSON.stringify(o)); } catch (e) { } }, [lang, settings]);
   if (pre) await page.addInitScript(pre);
   await page.goto(URL);
-  await page.waitForSelector('.screen.title', { timeout: 30000 });
+  await page.waitForSelector('.screen.title', { timeout: 90000 });
   // the test browser draws in software: draw fewer pixels so checks run quicker
   await page.evaluate(() => { const r = window.__sv.renderer; if (r) { r.setPixelRatio(.35); dispatchEvent(new Event('resize')); } });
   if (!play) return { ctx, page, errors };

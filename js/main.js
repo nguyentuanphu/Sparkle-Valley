@@ -398,7 +398,7 @@ G.townTalk = async (h, who) => {
     if (k !== 0) return;
     if (farm.coins < 5) { await dialog('Cô Sáu', [['Not enough money? Here, this one is on me. Have a nice day!', 'Không đủ tiền hả? Thôi cô mời con ly này. Chúc con vui nhé!']]); }
     else addMoney(null, -5);
-    SFX.chime(); h.bonusStamina = Math.max(h.bonusStamina, 60); h.stamina = h.staminaMax; h.hearts = Math.max(h.hearts, h.profile.hearts);
+    SFX.chime(); h.bonusStamina = Math.max(h.bonusStamina || 0, 1); // one extra stamina wheel h.stamina = h.staminaMax; h.hearts = Math.max(h.hearts, h.profile.hearts);
     await reward('🥤', T('Yum! Sugarcane juice!', 'Ngon quá! Nước mía!'), T('Full of energy: you can run and climb longer.', 'Tràn đầy năng lượng: chạy và leo được lâu hơn.'));
   }
   if (who === 'tu') {
@@ -684,10 +684,22 @@ addEventListener('keydown', e => {
   if (two && ['KeyK', 'KeyT'].includes(k)) return;
   const f = map[k]; if (f) { e.preventDefault(); e.stopImmediatePropagation(); f(); }
 }, true);
+// the photo friends see: a 160 px copy of the child's photo. The picture has to finish loading before it can
+// be copied (copying straight away gave friends a black square), so the first hello may go without it and a
+// second hello follows as soon as it is ready.
+const helloPhotos = new Map();
+function helloPhoto(src) {
+  if (!src) return null;
+  if (helloPhotos.has(src)) return helloPhotos.get(src);
+  helloPhotos.set(src, null);
+  const im = new Image();
+  im.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = 160; c.getContext('2d').drawImage(im, 0, 0, 160, 160); helloPhotos.set(src, c.toDataURL('image/jpeg', .7)); if (Net.role && G.heroes[0] && G.heroes[0].profile.photo === src) sendHello(); } catch (e) { } };
+  im.src = src;
+  return null;
+}
 function sendHello() {
   const h = G.heroes[0]; if (!h) return;
-  let photo = null;
-  if (h.profile.photo) { const c = document.createElement('canvas'); c.width = c.height = 160; const im = new Image(); im.src = h.profile.photo; try { c.getContext('2d').drawImage(im, 0, 0, 160, 160); photo = c.toDataURL('image/jpeg', .7); } catch (e) { } }
+  const photo = helloPhoto(h.profile.photo);
   const friend = settings.friendsOn ? settings.friendCode : null;
   Net.send({ t: 'hello', name: h.profile.name, look: h.profile.look, photo, friend });
   return { name: h.profile.name, look: h.profile.look, photo, friend };
@@ -793,7 +805,7 @@ G.drawOnlinePanel = (body, redraw) => {
   const friendsBox = () => `<div class="ocard friends"><h3>👫 ${T('My friends', 'Bạn của con')}</h3>
       <p class="note">${T('My friend code', 'Mã bạn bè của con')}: <b class="fcode">${settings.friendCode}</b></p>
       <label class="tog"><input type="checkbox" id="fOn" ${settings.friendsOn ? 'checked' : ''}> ${T('Friends can see when I am playing and where, and invite me (needs the internet)', 'Bạn bè thấy khi con đang chơi, đang ở đâu, và mời con được (cần có mạng)')}</label>
-      <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${f.code}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}">▶ ${T('Join', 'Vào chơi')}</button>` : ''}${Net.role === 'host' ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
+      <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}">▶ ${T('Join', 'Vào chơi')}</button>` : ''}${Net.role === 'host' ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
       <div class="vrow"><input type="text" id="fAdd" maxlength="6" placeholder="${T('Friend code', 'Mã bạn bè')}" autocomplete="off"><button class="btn" id="fAddB">＋ ${T('Add', 'Thêm')}</button></div>
       ${Net.role !== 'host' && settings.friends.length ? `<p class="note">${T('Start a room to invite your friends.', 'Tạo phòng để mời bạn bè.')}</p>` : ''}</div>`;
   const bindFriends = () => {
@@ -809,7 +821,7 @@ G.drawOnlinePanel = (body, redraw) => {
       <p class="note center">${Net.code ? T(`Room code <b class="bigcode">${Net.code}</b> · ${Net.count}/6 players`, `Mã phòng <b class="bigcode">${Net.code}</b> · ${Net.count}/6 người chơi`) : ''}</p>
       ${(n => `<p class="note center netline">📶 ${T('This device', 'Máy này')}: ${n.online ? (n.type ? esc(n.type) + ' · ' : '') + (n.eff ? esc(n.eff.toUpperCase()) + ' · ' : '') + (n.down ? n.down + ' Mbps · ' : '') : T('no internet!', 'mất mạng!') + ' · '}${n.cloud ? T(`cloud relay on (${n.brokers} server${n.brokers === 1 ? '' : 's'})`, `đang dùng mạng đám mây (${n.brokers} máy chủ)`) : T('direct link', 'kết nối trực tiếp')}${n.voice ? ' · 🎙️ ' + T('voice on', 'đang gọi') : n.cloud ? ' · ' + T('voice needs a direct link', 'gọi giọng cần kết nối trực tiếp') : ''}</p>`)(Net.netInfo())}
       <div class="plist">${list.map(r => `<div class="prow"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(nm(r.name))}</b>${(q => q ? `<small class="pq">${G.barsHTML(q.bars)} ${q.rtt != null ? q.rtt + ' ms' : '…'} · ${routeName(q.route)}${q.weak ? ' · ' + T('weak', 'yếu') : ''}</small>` : '')(Net.quality(r.id))}</div>
-        <button class="btn" data-walkf="${r.id}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${r.id}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${r.id}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${r.id}">🔄 ${T('Trade', 'Đổi đồ')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${r.id}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${r.friend}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
+        <button class="btn" data-walkf="${esc(r.id)}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${esc(r.id)}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${esc(r.id)}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${esc(r.id)}">🔄 ${T('Trade', 'Đổi đồ')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${esc(r.id)}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${esc(r.friend)}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
       <div class="actions center"><button class="btn big" id="oMute">${Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
       ${friendsBox()}</div>`;
@@ -929,6 +941,9 @@ let playing = false, last = performance.now(), t = 0, sendT = 0, saveT = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+  // friends keep seeing where I am, even while a menu or a game is open (once a second then)
+  { const h0 = G.heroes[0], idle = G.paused || gameOpen(); sendT -= dt;
+    if (playing && h0 && Net.connected && sendT <= 0) { sendT = idle ? 1 : .1; Net.send({ t: 's', x: +h0.pos.x.toFixed(2), y: +h0.pos.y.toFixed(2), z: +h0.pos.z.toFixed(2), yaw: +h0.yaw.toFixed(2), st: idle ? 'idle' : h0.state, sp: idle ? 0 : +h0.speed.toFixed(1) }); } }
   // the 3D world rests while a full-screen game or the storybook is open (saves battery)
   if (gameOpen() || document.querySelector('.storybook') || (G.paused && document.querySelector('.modal'))) return;
   world.update(dt, t);
@@ -983,7 +998,6 @@ function frame(now) {
     P.pos.lerp(_np.set(s.x, s.y, s.z), Math.min(1, dt * 10)); P.yaw = s.yaw;
     P.av.root.position.copy(P.pos); P.av.root.rotation.y = P.yaw; P.av.anim(s.st || 'idle', t, s.sp || 0); P.tag.position.set(P.pos.x, P.pos.y + 2.0, P.pos.z);
   }
-  sendT -= dt; if (Net.connected && sendT <= 0 && h0) { sendT = .1; Net.send({ t: 's', x: +h0.pos.x.toFixed(2), y: +h0.pos.y.toFixed(2), z: +h0.pos.z.toFixed(2), yaw: +h0.yaw.toFixed(2), st: h0.state, sp: +h0.speed.toFixed(1) }); }
   // bubbles
   G.bubbles = G.bubbles.filter(b => { const p = b.target.pos; b.s.position.set(p.x, p.y + 2.45, p.z); if (now > b.until) { scene.remove(b.s); return false; } return true; });
   // save positions now and then
