@@ -279,6 +279,25 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - **Chinese and Hindi, quietly:** small 🌏 中文 / हिन्दी buttons under the language row on the title screen and in Grown-ups (`settings.learnLang`). They switch on "also learning" that language: First Words focuses on it, and the village friends say the word aloud. The device voice is used if it has zh-CN / hi-IN voices, or Google Cloud voices. The game's menus stay in English or Vietnamese: a full Chinese or Hindi translation of every screen is a separate, bigger job.
 - **Still not done:** dirt roads with welcome gates between villages (this was stopped by the assistant's safety system twice in this session; please try it in a new session).
 
+### Round 12 (landmarks, culture, everything tappable)
+- **Fixes:** the Opera House was buried on the slope at the map edge, so it now stands on the lake beach. In English, names turn "Bé X" into "Little X", including the character picker and lists. Text no longer spills on small phones when switching language (tabs, friend panel, game headers, who-screen). The zoom ＋/－ buttons are big and always on the right edge.
+- **New picture icons** (`js/icons.js`): chunky, rounded Sparkle Valley SVG icons in the game's colours replace the phone emoji on the HUD (games, map, bag, talk, call, music, sound, run, jump, zoom, settings).
+- **18 more UNESCO World Heritage sites** (`js/heritage.js`), each with a model, a bobbing ℹ️ sign, a true fact in English and Vietnamese, and a postcard (coins and a sticker the first time):
+  - **Vietnam:** Hạ Long Bay (islands in the lake), Huế Imperial City, Mỹ Sơn, Phong Nha caves, Tràng An.
+  - **Australia:** Great Barrier Reef (coral in the lake), Three Sisters (Blue Mountains), Royal Exhibition Building, Kakadu rock art.
+  - **China:** Forbidden City, Temple of Heaven, Terracotta Army, Potala Palace.
+  - **India:** Qutub Minar, Red Fort, Konark Sun Temple, Hampi stone chariot, Mahabodhi Temple.
+  - Sites find a clear, flat spot near their village by themselves, so moving things in `world.js` won't bury them.
+- **Friends playing traditional games**, animated, each with an ℹ️ to learn about the game: jianzi and xiangqi (China), carrom and the kite festival (India), nhảy dây and cờ tướng under the tree (Vietnam), kick-to-kick footy and lawn bowls (Australia).
+- **Crops from each culture:** two harvestable plants of each near its village. They go into the bag and the collection, and can be sold. Pickings regrow after a few minutes.
+  - Vietnam: coconut, jackfruit, chilli, water spinach, sweet potato.
+  - Australia: macadamia, quandong, finger lime, bush tomato.
+  - China: longevity peach, mandarin, bok choy, snow peas.
+  - India: mango, brinjal, ginger, marigold.
+- **Every house has a door to knock on** (`world.houses`, filled by `town.js`, `world.js` and `asia.js`). The family says something about their kind of home (tube house, French villa, weatherboard cottage, nhà ba gian, Chinese courtyard, Indian home) and gives a small gift once a day.
+- **Every character is tappable:** the other children wandering the farm now wave back and say hi. A test checks that no avatar in the world is without an interaction.
+- **Still not done:** asphalt and dirt roads with golden welcome gates between villages. The assistant's safety system stopped this twice in that session, so please ask for it in a new session.
+
 ## 3. How it's built
 
 **Tech:**
@@ -411,7 +430,8 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - Recorded or pre-generated natural audio for all lines. Parental play-time limit with a gentle "time to rest". Weekly progress report per child.
 - Decorating the house and farm. Trading co-op tasks in online play (send a gift, build together).
 - Native store apps with Capacitor (an iPhone app needs a Mac and an Apple developer account).
-- A TURN server or a hosted backend for cloud sync and more reliable calls.
+- A TURN server or a hosted backend for cloud sync and more reliable calls (see the cloud-save options below).
+- **Cloud saves (not built yet):** 1) the backup file that already exists, saved to Google Drive / iCloud Files; 2) a parent account (Supabase or Firebase) that syncs the save when online and keeps working offline; 3) a short "sync code" pairing two devices with no account. Store only the game save, with no names beyond nicknames and no analytics, and a grown-up switches it on.
 
 ## 7. How I want the assistant to work
 

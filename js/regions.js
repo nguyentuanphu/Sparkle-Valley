@@ -338,7 +338,7 @@ async function vendorTalk(G, h, v) {
 }
 
 // ---------- postcards from famous places ----------
-async function postcard(G, h, lm) {
+export async function postcard(G, h, lm) {
   const p = h.profile; p.postcards = p.postcards || {};
   const first = !p.postcards[lm.id]; p.postcards[lm.id] = true; G.save();
   await dialog(lm.name(), [lm.fact]);

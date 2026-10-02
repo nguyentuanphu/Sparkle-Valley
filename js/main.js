@@ -32,6 +32,7 @@ import { createTown } from './town.js';
 import { createRegions, LANDMARKS } from './regions.js';
 import { createGathering } from './gather.js';
 import { createAsia } from './asia.js';
+import { createHeritage } from './heritage.js';
 import './games/asia.js';
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
@@ -575,17 +576,21 @@ G.changePlayer = () => {
 G.wanderers = [];
 function setupWanderers(active) {
   G.wanderers.forEach(w => { scene.remove(w.av.root); scene.remove(w.tag); }); G.wanderers = [];
+  for (let i = G.interactables.length - 1; i >= 0; i--) if (/^wander\d/.test(G.interactables[i].id)) G.interactables.splice(i, 1);
   profiles.filter(p => !active.includes(p)).slice(0, 4).forEach((p, k) => {
     const av = buildAvatar(p.look, p.photo), tag = nameTag(p.name);
     const x = HOME.x - 8 + k * 4, z = HOME.z + 4;
     av.root.position.set(x, heightAt(x, z), z); scene.add(av.root); scene.add(tag);
-    G.wanderers.push({ av, tag, tx: x, tz: z, pos: av.root.position, yaw: 0 });
+    const w = { av, tag, tx: x, tz: z, pos: av.root.position, yaw: 0, wave: 0 }; G.wanderers.push(w);
+    G.interactables.push({ id: 'wander' + k, get x() { return w.pos.x; }, get z() { return w.pos.z; }, r: 2.5, icon: '👋', label: () => T('Say hi to ', 'Chào ') + nm(p.name),
+      act: h => { SFX.ok(); w.wave = 2.5; w.tx = w.pos.x; w.tz = w.pos.z; w.yaw = Math.atan2(h.pos.x - w.pos.x, h.pos.z - w.pos.z); say(`Hi ${p.name}! Want to play together later?`, `Chào ${p.name}! Lát nữa mình chơi cùng nhau nhé?`); } });
   });
 }
 world.updaters.push((dt, t) => G.wanderers.forEach((w, k) => {
   const p = w.pos, dx = w.tx - p.x, dz = w.tz - p.z, d = Math.hypot(dx, dz);
   let st = 'idle', sp = 0;
-  if (d < .3) { if (Math.random() < dt * .25) { const a = Math.random() * 6.28, r = 4 + Math.random() * 14; w.tx = HOME.x + Math.cos(a) * r; w.tz = HOME.z + Math.sin(a) * r; } }
+  if (w.wave > 0) { w.wave -= dt; st = 'wave'; }
+  else if (d < .3) { if (Math.random() < dt * .25) { const a = Math.random() * 6.28, r = 4 + Math.random() * 14; w.tx = HOME.x + Math.cos(a) * r; w.tz = HOME.z + Math.sin(a) * r; } }
   else { sp = 2.2; w.yaw = Math.atan2(dx, dz); p.x += dx / d * sp * dt; p.z += dz / d * sp * dt; st = 'walk'; }
   world.collide(p, .4); p.y = world.groundAt(p.x, p.z, p.y + 1); w.av.root.rotation.y = w.yaw; w.av.anim(st, t + k, sp); w.tag.position.set(p.x, p.y + 2, p.z);
 }));
@@ -878,6 +883,7 @@ createRegions(G);
 G.dialog = (name, lines, choices) => dialog(name, lines, choices);
 onLang(() => G.huds.forEach(hd => hd.refreshWho && hd.refreshWho()));
 createAsia(G);
+createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 createGathering(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 setupTrading(G);
 // "My market stall" at the Three Regions Market: trade with friends who are playing online

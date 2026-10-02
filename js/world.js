@@ -136,7 +136,7 @@ export const LEAFIES = LEAFY_SPOTS.map(([kind, x, z], i) => ({ id: 'lf' + i, kin
 // ---------- the world object ----------
 export function createWorld(scene, quality) {
   const W = {
-    colliders: [], boxes: [], platforms: [], interactables: [], updaters: [], lanterns: [], shrineMeshes: {}, towerMeshes: {}, leafyMeshes: {},
+    colliders: [], boxes: [], platforms: [], houses: [], interactables: [], updaters: [], lanterns: [], shrineMeshes: {}, towerMeshes: {}, leafyMeshes: {},
     time: .36
   };
   const rnd = seeded(20250921);
@@ -348,6 +348,7 @@ export function createWorld(scene, quality) {
     const g = houseVillage({ w, d: d * .9, wall, tile: roof, palms }).obj;
     g.position.set(x, heightAt(x, z) - .05, z); g.rotation.y = rot; scene.add(g);
     W.colliders.push({ x, z, r: Math.max(w, d) * .62 });
+    W.houses.push({ x, z, rot, d: Math.max(w, d) * 1.24, kind: 'village' });
     return g;
   }
   [[-18, -14, .5], [-4, -22, 0], [14, -20, -.3], [22, -4, -1.3], [20, 14, -2.2], [-20, 10, 1.6], [-14, 22, 2.4], [6, 24, 3.1]]
