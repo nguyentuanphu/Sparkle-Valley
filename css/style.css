@@ -1287,3 +1287,13 @@ body.calm .sv2 .tt-floaters i { animation: none; }
 .qsettings .qgrown { position: static; margin: 14px auto 0; display: flex; width: max-content; max-width: 100%; align-items: center; gap: 10px; background: #f4eefc; box-shadow: 0 4px 0 #d9ccf2; color: #4a2a78; font-weight: 700; }
 .qsettings .qgrown small { margin-left: 4px; }
 .sv2 .logo-main { text-wrap: balance; }
+/* the family-voice recorder: a full-height sheet with the title and ✕ always on top and Save always at the
+   bottom; only the middle scrolls (on iPhone the whole card used to slide under the status bar) */
+.modal.rec { padding: calc(env(safe-area-inset-top) + 8px) 8px calc(env(safe-area-inset-bottom) + 8px); overflow: hidden; align-items: stretch; }
+.modal.rec .card { height: 100%; max-height: 100%; margin: 0 auto; padding: 0; gap: 0; overflow: hidden; }
+.rec .rec-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 12px 10px 18px; border-bottom: 2px solid #efe6fb; background: linear-gradient(180deg, #f5efff, #fffdf6); }
+.rec .rec-head h2 { padding: 0; font-size: clamp(20px, 5vw, 28px); }
+.rec .rec-head .x { position: static; margin: 0; flex: none; }
+.rec .rec-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; padding: 12px 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.rec .rec-foot { flex: none; padding: 10px 16px calc(10px); border-top: 2px solid #efe6fb; display: flex; justify-content: center; background: #fffdf6; }
+.rec .rec-foot .btn { width: min(420px, 100%); }

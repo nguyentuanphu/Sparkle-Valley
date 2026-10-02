@@ -695,7 +695,8 @@ export function openRecorder(after) {
   const close = () => { if (live) live.stop(); releaseMic(); m.close(); after && after(); };
   const draw = () => {
     const ph = FAMILY_PHRASES[idx], has = hasClip(L(), ph.id), done = FAMILY_PHRASES.filter(p => hasClip(L(), p.id)).length;
-    card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎙️ ${T('Family voice', 'Giọng của gia đình')}</h2>
+    const keep = card.querySelector('.rec-body') ? card.querySelector('.rec-body').scrollTop : 0;
+    card.innerHTML = `<div class="rec-head"><h2>🎙️ ${T('Family voice', 'Giọng của gia đình')}</h2><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div><div class="rec-body">
       <p class="sub">${T('Read each line in a happy voice. The game will say these lines in your own voice.', 'Đọc từng câu bằng giọng vui vẻ. Trò chơi sẽ nói những câu này bằng chính giọng của bạn.')}</p>
       ${flagBtns()}
       ${err ? `<div class="warn">⚠️ ${esc(MIC_HELP[err] ? MIC_HELP[err]() : err)}</div>` : ''}
@@ -714,8 +715,12 @@ export function openRecorder(after) {
       <div class="recdots">${FAMILY_PHRASES.map((p, k) => `<button class="${hasClip(L(), p.id) ? 'has' : ''} ${k === idx ? 'on' : ''}" data-k="${k}" aria-label="${k + 1}">${k + 1}</button>`).join('')}</div>
       <p class="note">${L() === 'vi' ? '🇻🇳 Tiếng Việt' : '🇦🇺 English'}: ${done}/${FAMILY_PHRASES.length} ${T('recorded', 'câu đã thu')} · ${L() === 'vi' ? '🇦🇺 English' : '🇻🇳 Tiếng Việt'}: ${clipCountFor(L() === 'vi' ? 'en' : 'vi')}/${FAMILY_PHRASES.length}${settings.familyPitch ? ' · ' + T('device voice tuned to your pitch', 'giọng máy đã chỉnh theo cao độ của bạn') : ''}</p>
       <label class="tog"><input type="checkbox" id="rUse" ${settings.familyVoice ? 'checked' : ''}> ${T('Use my recordings in the game', 'Dùng giọng thu của tôi trong trò chơi')}</label>
-      <p class="note">${T('Recordings stay on this device and are never uploaded. Lines you have not recorded are read by the device voice, tuned to sound closer to yours.', 'Bản thu chỉ lưu trên máy này và không bao giờ được tải lên. Những câu chưa thu sẽ do giọng của máy đọc, được chỉnh cho gần với giọng bạn.')}</p>`;
+      <p class="note">${T('Recordings stay on this device and are never uploaded. Lines you have not recorded are read by the device voice, tuned to sound closer to yours.', 'Bản thu chỉ lưu trên máy này và không bao giờ được tải lên. Những câu chưa thu sẽ do giọng của máy đọc, được chỉnh cho gần với giọng bạn.')}</p></div>
+      <div class="rec-foot"><button class="btn primary big" id="rSave">💾 ${T('Save and close', 'Lưu và đóng')}</button></div>`;
+    card.querySelector('.rec-body').scrollTop = keep;
     card.querySelector('.x').onclick = close;
+    // recordings are saved as each line is recorded; this saves the settings and closes
+    card.querySelector('#rSave').onclick = () => { saveSettings(); SFX.chime && SFX.chime(); toast(T('Saved! The game will use your voice.', 'Đã lưu! Trò chơi sẽ dùng giọng của bạn.')); close(); };
     bindLang(card, () => { idx = Math.max(0, FAMILY_PHRASES.findIndex(p => !hasClip(L(), p.id))); draw(); });
     card.querySelector('#rUse').onchange = e => { settings.familyVoice = e.target.checked; saveSettings(); };
     card.querySelector('#rPrev').onclick = () => { if (!live) { idx--; draw(); } };

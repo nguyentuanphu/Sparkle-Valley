@@ -516,6 +516,11 @@ Screenshots of each run go to `tests/out/` (not committed).
 - **The whistling kite (diều sáo)** (`js/kite.js`): winning Kite Flying for the first time gives a red-and-yellow kite with a bamboo flute. It flies on a string in front of and above the child wherever they go, its tail wiggles, and the flute hums softly in the wind now and then (more often when running; quieter in calm mode; silent when sounds are off). Backpack → 🪁 Whistling kite: switch it on or off, or tap 🎶 Whistle!
 - Tests: the harness force-clicks the pulsing start button.
 
+### Round 20 (family voice recorder on iPhone)
+- **Bug:** after recording, the Family voice screen could not be saved or closed on iPhone: the whole card was taller than the screen, its title and ✕ slid under the status bar (blurred) and it would not scroll back.
+- **Fix:** the recorder is now a full-height sheet: the title and ✕ are always at the top, a big **💾 Save and close** button is always at the bottom, and only the middle scrolls. Recordings are still saved line by line as they are made.
+- Tested with a fake microphone at phone size (390×760): a line records, ✕ and Save stay on screen, Save closes. Real iPhone not tested.
+
 ## 3. How it's built
 
 **Tech:**

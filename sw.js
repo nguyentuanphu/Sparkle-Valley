@@ -1,6 +1,6 @@
 // Offline support: cache the whole game on first visit, then serve from the cache.
 // Bump VERSION whenever files change so devices pick up the update.
-const VERSION = 'sv-2026-10-02-r21';
+const VERSION = 'sv-2026-10-02-r22';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'vendor/three.module.js', 'vendor/peerjs.min.js', 'vendor/RoomEnvironment.js', 'css/fonts.css',
