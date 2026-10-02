@@ -562,7 +562,7 @@ G.PLACES = [
   { icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: 6, z: 140 },
   { icon: '🏮', name: () => T('Three Regions Market', 'Chợ Ba Miền'), x: 99, z: 83 },
   { icon: '🍦', name: () => T('Aussie Corner', 'Góc Nước Úc'), x: -121, z: -12 },
-  { icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: 24, z: 160 },
+  { icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: 92, z: 128 },
   { icon: '🪨', name: () => T('Uluru', 'Uluru'), x: -128, z: 132 },
   { icon: '🐻', name: () => T('Mr. Bear', 'Bác Gấu'), x: HOME.x - 21, z: HOME.z + 6 }
 ];
@@ -876,6 +876,7 @@ G.town = createTown(G);
 G.GAMES_ICON = id => (GAMES[id] || {}).icon || "🎮";
 createRegions(G);
 G.dialog = (name, lines, choices) => dialog(name, lines, choices);
+onLang(() => G.huds.forEach(hd => hd.refreshWho && hd.refreshWho()));
 createAsia(G);
 createGathering(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 setupTrading(G);

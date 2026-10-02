@@ -2,6 +2,8 @@
 // stamina wheel next to the hero, and big touch buttons.
 import { THREE } from './gfx.js';
 import { T } from './i18n.js';
+import { nm } from './i18n.js';
+import { ICONS } from './icons.js';
 import { farm } from './state.js';
 import { fmt } from './money.js';
 import { el, esc, clamp } from './util.js';
@@ -25,7 +27,7 @@ export class Hud {
     const root = this.root = el('div', 'hud');
     root.innerHTML = `
       <div class="hud-tl">
-        <div class="pcard" role="button" aria-label="${T('Settings', 'Cài đặt')}"><img class="pav" alt=""><i class="pgear">⚙️</i><div class="pinfo"><b class="pname"></b><div class="hearts"></div></div></div>
+        <div class="pcard" role="button" aria-label="${T('Settings', 'Cài đặt')}"><img class="pav" alt=""><i class="pgear">${ICONS.gear}</i><div class="pinfo"><b class="pname"></b><div class="hearts"></div></div></div>
         <div class="chips"><span class="chip c-money"></span><span class="chip c-orbs"></span><span class="chip c-leafy"></span></div>
       </div>
       <div class="quest">
@@ -34,24 +36,25 @@ export class Hud {
       </div>
       <div class="hud-tr">
         <div class="mini-wrap"><canvas class="mini" width="200" height="200"></canvas><i class="mini-n">N</i><i class="mini-me"></i></div>
-        <div class="zoom"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">＋</button><span class="clock"></span><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">－</button></div>
+        <div class="zoom"><span class="clock"></span></div>
       </div>
+      <div class="zoomer"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">${ICONS.zoomIn}</button><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">${ICONS.zoomOut}</button></div>
       <div class="region"></div>
       <div class="htoast"></div>
       <canvas class="wheel" width="96" height="96"></canvas>
       <div class="dock">
-        <button class="dk games"><span>🎮</span><small>${T('Games', 'Trò chơi')}</small></button>
-        <button class="dk map"><span>🗺️</span><small>${T('Map', 'Bản đồ')}</small></button>
-        <button class="dk bag"><span>🎒</span><small>${T('Bag', 'Ba lô')}</small></button>
-        <button class="dk voicecmd" hidden><span>🎤</span><small>${T('Ask', 'Hỏi')}</small></button>
-        <button class="dk chat"><span>💬</span><small>${T('Talk', 'Nói')}</small></button>
-        <button class="dk call" hidden><span>🎙️</span><small>${T('Call', 'Gọi')}</small></button>
-        <button class="dk mus"><span>🎵</span><small>${T('Music', 'Nhạc')}</small></button>
-        <button class="dk snd"><span>🔊</span><small>${T('Sound', 'Tiếng')}</small></button>
+        <button class="dk games"><span>${ICONS.games}</span><small>${T('Games', 'Trò chơi')}</small></button>
+        <button class="dk map"><span>${ICONS.map}</span><small>${T('Map', 'Bản đồ')}</small></button>
+        <button class="dk bag"><span>${ICONS.bag}</span><small>${T('Bag', 'Ba lô')}</small></button>
+        <button class="dk voicecmd" hidden><span>${ICONS.ask}</span><small>${T('Ask', 'Hỏi')}</small></button>
+        <button class="dk chat"><span>${ICONS.talk}</span><small>${T('Talk', 'Nói')}</small></button>
+        <button class="dk call" hidden><span>${ICONS.call}</span><small>${T('Call', 'Gọi')}</small></button>
+        <button class="dk mus"><span>${ICONS.music}</span><small>${T('Music', 'Nhạc')}</small></button>
+        <button class="dk snd"><span>${ICONS.sound}</span><small>${T('Sound', 'Tiếng')}</small></button>
       </div>
       <div class="hud-br">
         <button class="act" hidden><span class="ai"></span><span class="al"></span></button>
-        <div class="moves"><button class="mv run">👟<small>${T('Run', 'Chạy')}</small></button><button class="mv jump">⤴<small>${T('Jump', 'Nhảy')}</small></button></div>
+        <div class="moves"><button class="mv run">${ICONS.run}<small>${T('Run', 'Chạy')}</small></button><button class="mv jump">${ICONS.jump}<small>${T('Jump', 'Nhảy')}</small></button></div>
       </div>
       <div class="emotes" hidden></div>`;
     document.getElementById('huds').appendChild(root);
@@ -88,9 +91,9 @@ export class Hud {
   }
   refreshAudio() {
     const s = this.game.settings, m = this.q('.dk.mus'), d = this.q('.dk.snd');
-    m.classList.toggle('off', !s.music); d.classList.toggle('off', !(s.sound || s.voice)); d.querySelector('span').textContent = s.sound || s.voice ? '🔊' : '🔇';
+    m.classList.toggle('off', !s.music); d.classList.toggle('off', !(s.sound || s.voice)); d.querySelector('span').innerHTML = s.sound || s.voice ? ICONS.sound : ICONS.soundOff;
   }
-  refreshWho() { const p = this.hero.profile; this.q('.pav').src = avatarURL(p); this.q('.pname').textContent = p.name; }
+  refreshWho() { const p = this.hero.profile; this.q('.pav').src = avatarURL(p); this.q('.pname').textContent = nm(p.name); }
   toggleEmotes(v) { const e = this.q('.emotes'); e.hidden = v == null ? !e.hidden : !v; }
   layout(r, two) { Object.assign(this.root.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' }); this.root.classList.toggle('small', two || r.w < 560 || r.h < 420); this.rect = r; }
   showRegion(name) { const e = this.q('.region'); e.textContent = name; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
@@ -101,7 +104,7 @@ export class Hud {
     const lab = it.label();
     if (this.last.act !== lab) { b.hidden = false; this.q('.act .ai').textContent = it.icon || '✋'; this.q('.act .al').textContent = lab; this.last.act = lab; }
   }
-  setCall(on, talking, muted) { const b = this.q('.dk.call'); b.hidden = !on; b.querySelector('span').textContent = muted ? '🔇' : '🎙️'; b.classList.toggle('talking', !!talking); }
+  setCall(on, talking, muted) { const b = this.q('.dk.call'); b.hidden = !on; b.querySelector('span').innerHTML = muted ? ICONS.callOff : ICONS.call; b.classList.toggle('talking', !!talking); }
 
   update(dt, camera, fogMap, markers) {
     const h = this.hero, p = h.profile;

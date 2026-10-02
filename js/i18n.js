@@ -31,10 +31,12 @@ function nameRE() {
   return RE;
 }
 // swap people's names inside any text for the given language
+// "Bé" (little one) in front of a child's name is a title too: "Bé Na" is "Little Na" in English.
+const BE_EN = /(?<![\p{L}])Bé (?=\p{Lu})/gu, BE_VI = /(?<![\p{L}])Little (?=\p{Lu})/gu;
 export const swapNames = (text, lang = settings.lang) => typeof text !== 'string' ? text : text.replace(nameRE(), m => {
   const id = ALIAS[m] || m, c = (settings.npcNames || {})[id];
   return (c && c[lang]) || defaultName(id, lang);
-});
+}).replace(lang === 'vi' ? BE_VI : BE_EN, lang === 'vi' ? 'Bé ' : 'Little ');
 export const nm = name => swapNames(name);
 export const T = (en, vi) => (settings.lang === 'vi' ? swapNames(vi, 'vi') : swapNames(en, 'en'));
 // Things drawn into the 3D world (signs, name tags) register here to redraw when the language changes.
