@@ -1,5 +1,6 @@
 // Sunny Farm (Harvest Moon style): a 3×3 field that grows in real time, barn animals that need hay,
 // pets that follow you, Mr. Bear's market and three daily jobs. The farm and coins are shared by everyone.
+import { WILD } from './gather.js';
 import { THREE, toon, toonVC, P, merge, sprite, blobShadow } from './gfx.js';
 import { farm, saveFarm, saveProfiles } from './state.js';
 import { T } from './i18n.js';
@@ -382,7 +383,7 @@ export function petPet(G, P2) { const d = PETS[P2.kind]; SFX[d.snd] && SFX[d.snd
 
 async function bearTalk(G, h) {
   const k = await dialog(T('Mr. Bear', 'Bác Gấu'), [['Hello, little farmer! What would you like to do today?', 'Chào bác nông dân nhí! Hôm nay con muốn làm gì nào?']],
-    [['🧺 Sell my basket', '🧺 Bán giỏ hàng'], ['🌱 Buy seeds and animals', '🌱 Mua hạt giống và con vật'], ['🧺 Sort the baskets (game)', '🧺 Xếp giỏ (trò chơi)'], ['👋 Bye', '👋 Tạm biệt']]);
+    [['🧺 Sell my basket and treasures', '🧺 Bán giỏ hàng và báu vật'], ['🌱 Buy seeds and animals', '🌱 Mua hạt giống và con vật'], ['🧺 Sort the baskets (game)', '🧺 Xếp giỏ (trò chơi)'], ['👋 Bye', '👋 Tạm biệt']]);
   if (k === 0) openSell(G, h);
   if (k === 1) openBuy(G, h);
   if (k === 2) G.playGame(h.i, 'sortout', 'place');
@@ -393,13 +394,20 @@ function openSell(G, h) {
   const close = () => { m.close(); G.paused = false; };
   const draw = () => {
     const items = Object.entries(farm.basket).filter(([, n]) => n > 0);
+    const wild = Object.entries(h.profile.inv || {}).filter(([k, n]) => WILD[k] && n > 0);
     card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🧺 ${T('Sell to Mr. Bear', 'Bán cho Bác Gấu')}</h2><p class="sub">💰 ${fmt(farm.coins)}</p>
       <div class="bigpick">${items.map(([k, n]) => `<button data-k="${k}"><span>${itemIcon(k)}</span><b>${n}</b><small>${fmt(sellPrice(k))}</small></button>`).join('') || `<p class="note">${T('Your basket is empty. Harvest crops and collect from the barn!', 'Giỏ trống rồi. Thu hoạch và nhặt đồ ở chuồng nhé!')}</p>`}</div>
-      ${items.length ? `<button class="btn primary wide big" id="sellAll">💰 ${T('Sell everything', 'Bán hết')}</button>` : ''}`;
+      ${items.length ? `<button class="btn primary wide big" id="sellAll">💰 ${T('Sell everything', 'Bán hết')}</button>` : ''}
+      <h3>💎 ${T('Treasures from the wild', 'Báu vật hái lượm')}</h3>
+      <div class="bigpick">${wild.map(([k, n]) => `<button data-w="${k}"><span>${WILD[k].icon}</span><b>${n}</b><small>${fmt(WILD[k].sell)}</small></button>`).join('') || `<p class="note">${T('Pick wild fruit and flowers, or crack rocks open, then bring them here!', 'Hái quả, hái hoa dại hoặc đập đá rồi mang đến đây nhé!')}</p>`}</div>`;
     card.querySelector('.x').onclick = close;
     card.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
       const k = b.dataset.k; farm.basket[k]--; const v = sellPrice(k); farm.coins += v; saveFarm(); SFX.coin();
       say(`${itemName(k)}: ${spoken(v)}! Now you have ${spoken(farm.coins)}.`, `${itemName(k)}: ${spoken(v)}! Giờ con có ${spoken(farm.coins)}.`); G.job('sell'); draw();
+    });
+    card.querySelectorAll('[data-w]').forEach(b => b.onclick = () => {
+      const k = b.dataset.w, inv = h.profile.inv; inv[k]--; const v = WILD[k].sell; farm.coins += v; saveFarm(); SFX.coin(); G.save && G.save();
+      say(`${WILD[k].name()}: ${spoken(v)}! Now you have ${spoken(farm.coins)}.`, `${WILD[k].name()}: ${spoken(v)}! Giờ con có ${spoken(farm.coins)}.`); G.job('sell'); draw();
     });
     const all = card.querySelector('#sellAll');
     if (all) all.onclick = () => { let v = 0, n = 0; for (const [k, c] of Object.entries(farm.basket)) { v += sellPrice(k) * c; n += c; } farm.basket = {}; farm.coins += v; saveFarm(); SFX.coin(); setTimeout(SFX.coin, 150); say(`Thank you! That is ${spoken(v)}.`, `Cảm ơn con! Tất cả là ${spoken(v)}.`); G.job('sell', n); draw(); };

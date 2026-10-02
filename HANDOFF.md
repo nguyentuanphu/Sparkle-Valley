@@ -255,6 +255,11 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - **Language sweep:** an automated scan of every screen in both languages. The title now shows "Sparkle Valley · Two homes · one valley" in English and "Thung Lũng Lấp Lánh · Hai quê hương · một thung lũng" in Vietnamese, and close buttons are translated. What stays in Vietnamese in English mode is on purpose: people's and places' names, foods and folk-game names (with the English meaning beside them).
 - **Not done (stopped by the assistant's safety system, not a code problem):** the parents' play-time report, and the dirt roads with welcome gates. Both were stopped while being written and the half-written files were removed. They can be tried again in a new session or built by hand.
 
+### Round 9 (gathering)
+- **Out in the wild** (`js/gather.js`): 16 fruit bushes (mulberries / dâu tằm, guava / ổi, wild strawberries / dâu rừng, wild lemon / chanh rừng), 18 flower patches (peach blossom / hoa đào, yellow apricot blossom / hoa mai, golden wattle / hoa keo vàng, hibiscus / hoa dâm bụt) and 14 rocks, placed with a fixed seed in the meadows, the bamboo forest and on the plateau. Pick fruit (2 at a time) and flowers; bushes and patches grow back after 2–2.5 minutes. **Tap a rock 3 times** to crack it open: inside is a pretty pebble, a fossil shell, a purple crystal, a gold nugget or (rarely) a blue gem. Rocks come back after 3 minutes.
+- **Album → My treasures:** what each child has ever found (`profile.found`), with ❔ for the ones still to discover.
+- **Selling:** Mr. Bear's "Sell my basket and treasures" now also buys wild finds from the backpack (pebble 50c … blue gem $10). Coins go to the family's shared coins.
+
 ## 3. How it's built
 
 **Tech:**
