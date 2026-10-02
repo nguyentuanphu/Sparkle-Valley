@@ -138,7 +138,9 @@ export class Hud {
     const ck = (night ? '🌙 ' : '☀️ ') + String(hr).padStart(2, '0') + ':' + String(mn).padStart(2, '0');
     if (this.last.c !== ck) { this.q('.clock').textContent = ck; this.last.c = ck; }
     this.updateFriend(camera);
-    this.drawMini(fogMap, markers);
+    // the minimap is redrawn about 15 times a second, not every frame (canvas text is slow on phones)
+    this._miniT = (this._miniT || 0) - dt;
+    if (this._miniT <= 0) { this._miniT = .066; this.drawMini(typeof fogMap === 'function' ? fogMap() : fogMap, typeof markers === 'function' ? markers() : markers); }
     this.drawWheel(camera);
   }
 

@@ -1019,8 +1019,9 @@ function frame(now) {
     G.showcaseCam(i, h, dt); // a landmark fly-around takes over the camera
     world.updateSky(0, h.cam.position, h.pos);
     renderer.render(scene, h.cam);
-    const markers = [];
     const p = h.profile;
+    // what the minimap shows, worked out only when it is redrawn
+    const markersFor = () => { const markers = [];
     SHRINES.forEach(s => markers.push({ x: s.x, z: s.z, icon: p.shrines[s.id] ? '🔷' : '🔶', size: 16 }));
     TOWERS.forEach(tw => markers.push({ x: tw.x, z: tw.z, icon: '🗼', size: 18 }));
     G.PLACES.forEach(pl => markers.push({ x: pl.x, z: pl.z, icon: pl.icon, size: 18 }));
@@ -1029,7 +1030,8 @@ function frame(now) {
     G.heroes.forEach((o, j) => { if (j !== i) markers.push({ x: o.pos.x, z: o.pos.z, icon: '🧒', size: 18 }); });
     Object.values(G.partners).forEach(P => { if (P.pos.y > -40) markers.push({ x: P.pos.x, z: P.pos.z, icon: '🧒', size: 18, friend: P.name || '?' }); });
     const qt = questTarget(h); if (qt) markers.push({ x: qt.x, z: qt.z, pin: true });
-    G.huds[i].update(dt, h.cam, G.fogMapFor(p), markers);
+    return markers; };
+    G.huds[i].update(dt, h.cam, () => G.fogMapFor(p), markersFor);
   });
 }
 

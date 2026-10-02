@@ -154,7 +154,8 @@ export function createCities(G) {
     const A = buildAvatar(lk, null); A.root.position.set(x, heightAt(x, z), z); A.root.rotation.y = face; scene.add(A.root); people.push(A);
     const tg = tagSprite(name); tg.position.set(x, heightAt(x, z) + 2.4, z); scene.add(tg); world.colliders.push({ x, z, r: .45 }); return A;
   };
-  world.updaters.push((dt, t) => people.forEach((A, k) => A.anim('idle', t + k * .7, 0)));
+  // sellers and hosts breathe and sway only when a child is near enough to see them (saves work on phones)
+  world.updaters.push((dt, t) => { const H = G.heroes || []; people.forEach((A, k) => { const p = A.root.getWorldPosition ? A.root.position : null; if (p && A.root.parent === scene && !H.some(h => Math.abs(h.pos.x - p.x) < 70 && Math.abs(h.pos.z - p.z) < 70)) return; A.anim('idle', t + k * .7, 0); }); });
   const persona = (id, emoji, name, about, role, region) => { PERSONAS[id] = { emoji, name, age: ['grown-up', 'người lớn'], about, likes: about, mood: ['Very well, thank you!', 'Khỏe lắm, cảm ơn con!'], role, region }; };
   const addLandmark = (id, icon, cc, x, z, mx, mz, name, fact) => {
     info(x, heightAt(x, z) + 3.2, z);

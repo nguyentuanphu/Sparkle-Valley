@@ -362,11 +362,18 @@ export function createWorld(scene, quality) {
   // A few apple trees right on the plateau so the cooking quest is easy to start.
   [[-20, 4], [22, 6], [-8, -22]].forEach(([x, z]) => { spots.apple.push([x, heightAt(x, z) - .1, z, 0, 1]); appleTrees.push({ x, z }); W.colliders.push({ x, z, r: .6 }); });
   const o3 = new THREE.Object3D(), tint = new THREE.Color();
+  // Each kind of tree is split into 100 m tiles of the map, so the tiles behind the camera (and outside the
+  // sun's shadow area) are skipped instead of drawing every tree in the valley every frame (phones).
+  const TILE = 100;
   for (const k in spots) {
-    const list = spots[k]; if (!list.length) continue;
-    const im = new THREE.InstancedMesh(geos[k], toonVC(), list.length); im.castShadow = k !== 'rock'; im.receiveShadow = true;
-    list.forEach((s, i) => { o3.position.set(s[0], s[1], s[2]); o3.rotation.set(0, s[3], 0); o3.scale.setScalar(s[4]); o3.updateMatrix(); im.setMatrixAt(i, o3.matrix); tint.setHSL(0, 0, .88 + rnd() * .12); im.setColorAt(i, tint); });
-    scene.add(im); im.userData.kind = k; im.userData.list = list; W.plants.push(im); // tappable (js/fun.js)
+    const tiles = new Map(), mat = toonVC();
+    for (const s of spots[k]) { const key = Math.floor((s[0] + HALF) / TILE) + ',' + Math.floor((s[2] + HALF) / TILE); if (!tiles.has(key)) tiles.set(key, []); tiles.get(key).push(s); }
+    for (const list of tiles.values()) {
+      const im = new THREE.InstancedMesh(geos[k], mat, list.length); im.castShadow = k !== 'rock'; im.receiveShadow = true;
+      list.forEach((s, i) => { o3.position.set(s[0], s[1], s[2]); o3.rotation.set(0, s[3], 0); o3.scale.setScalar(s[4]); o3.updateMatrix(); im.setMatrixAt(i, o3.matrix); tint.setHSL(0, 0, .88 + rnd() * .12); im.setColorAt(i, tint); });
+      im.computeBoundingSphere(); // so the camera can tell when a whole tile is out of view
+      scene.add(im); im.userData.kind = k; im.userData.list = list; W.plants.push(im); // tappable (js/fun.js)
+    }
   }
   appleTrees.forEach((t, i) => {
     let ready = 0;
@@ -643,10 +650,25 @@ export function createWorld(scene, quality) {
     return g;
   };
   W.platformAt = (x, z, y) => W.platforms.find(p => x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1 && Math.abs(y - p.y) < .3);
+  // Solid round things are sorted into a 16 m grid (rebuilt whenever one is added), so each step only checks
+  // the few nearby ones instead of all ~1,500 (phones).
+  const CELL = 16; let grid = null, gridN = -1, gridR = 0;
+  const cellKey = (gx, gz) => (gx + 64) * 256 + (gz + 64);
+  const buildGrid = () => {
+    grid = new Map(); gridR = 0; gridN = W.colliders.length;
+    for (const c of W.colliders) { gridR = Math.max(gridR, c.r); const k = cellKey(Math.floor(c.x / CELL), Math.floor(c.z / CELL)); let l = grid.get(k); if (!l) grid.set(k, l = []); l.push(c); }
+    gridR += 1; // room for a collider that grows a little later
+  };
   W.collide = (pos, r = .5) => {
-    for (const c of W.colliders) {
-      const dx = pos.x - c.x, dz = pos.z - c.z, d = Math.hypot(dx, dz), m = c.r + r;
-      if (d < m && d > 1e-4) { pos.x = c.x + dx / d * m; pos.z = c.z + dz / d * m; }
+    if (gridN !== W.colliders.length) buildGrid();
+    const reach = r + gridR, x0 = Math.floor((pos.x - reach) / CELL), x1 = Math.floor((pos.x + reach) / CELL), z0 = Math.floor((pos.z - reach) / CELL), z1 = Math.floor((pos.z + reach) / CELL);
+    for (let gx = x0; gx <= x1; gx++) for (let gz = z0; gz <= z1; gz++) {
+      const l = grid.get(cellKey(gx, gz)); if (!l) continue;
+      for (const c of l) {
+        const dx = pos.x - c.x, dz = pos.z - c.z, m = c.r + r; if (dx * dx + dz * dz >= m * m) continue;
+        const d = Math.hypot(dx, dz);
+        if (d > 1e-4) { pos.x = c.x + dx / d * m; pos.z = c.z + dz / d * m; }
+      }
     }
     // houses and walls: push out of the box the shortest way
     for (const b of W.boxes) {

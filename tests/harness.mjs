@@ -4,8 +4,8 @@ export const URL = process.env.SV_URL || 'http://localhost:8765/';
 export async function launch() {
   return chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 }
-export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'solo', touch = false, settings = {}, play = true, pre = null } = {}) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch, deviceScaleFactor: 1 });
+export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'solo', touch = false, settings = {}, play = true, pre = null, dpr = 1, fast = true } = {}) {
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch, deviceScaleFactor: dpr });
   const page = await ctx.newPage();
   const errors = [];
   page.on('dialog', d => { errors.push('dialog: ' + d.message()); d.accept().catch(() => { }); });
@@ -16,7 +16,7 @@ export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'so
   await page.goto(URL);
   await page.waitForSelector('.screen.title', { timeout: 90000 });
   // the test browser draws in software: draw fewer pixels so checks run quicker
-  await page.evaluate(() => { const r = window.__sv.renderer; if (r) { r.setPixelRatio(.35); dispatchEvent(new Event('resize')); } });
+  if (fast) await page.evaluate(() => { const r = window.__sv.renderer; if (r) { r.setPixelRatio(.35); dispatchEvent(new Event('resize')); } });
   if (!play) return { ctx, page, errors };
   await page.click('.screen.title .press', { force: true });
   await page.waitForSelector('.screen.who');
