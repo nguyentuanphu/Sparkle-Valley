@@ -893,3 +893,22 @@ button { color: var(--text); }
 @media (max-width: 460px) { .rn-row { grid-template-columns: 36px 1fr; } .rn-row label:last-child { grid-column: 2; } }
 .grownups #gDone { position: sticky; bottom: calc(env(safe-area-inset-bottom) + 10px); z-index: 3; box-shadow: 0 8px 24px rgba(60, 30, 90, .35); }
 .logo.vi .logo-main { font-size: clamp(38px, 8.6vw, 96px); }
+
+/* ---------- trading and friends ---------- */
+.trade .card, .tradein .card { max-width: 560px; }
+.tr-who { display: flex; flex-wrap: wrap; gap: 8px; }
+.tr-who button { border: 2px solid #ece4f8; background: #fff; border-radius: 999px; padding: 8px 14px; font: inherit; font-weight: 700; }
+.tr-who button.on { border-color: #8a5cf6; background: #f1eaff; }
+.tr-pick { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
+.tr-pick button { position: relative; }
+.tr-n { position: absolute; top: 4px; right: 6px; background: #8a5cf6; color: #fff; border-radius: 999px; padding: 0 7px; font-size: 13px; }
+.tr-coins { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; font-size: 18px; }
+.tr-coins button { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #ece4f8; background: #fff; font-size: 20px; }
+.tr-deal { display: flex; align-items: center; justify-content: center; gap: 14px; background: #fff8e0; border-radius: 18px; padding: 12px; margin: 10px 0; text-align: center; }
+.tr-deal div { display: flex; flex-direction: column; gap: 4px; } .tr-deal b { font-size: 20px; } .tr-deal span { font-size: 28px; }
+.friends { margin-top: 14px; text-align: left; }
+.fcode { font-size: 22px; letter-spacing: .12em; background: #fff3c4; border-radius: 10px; padding: 2px 10px; }
+.flist { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.frow { display: flex; align-items: center; gap: 8px; background: #f7f2ff; border-radius: 14px; padding: 8px 10px; }
+.frow span { flex: 1; } .frow small { opacity: .6; margin-left: 6px; }
+.online .bigcode { font-size: 26px; letter-spacing: .1em; }

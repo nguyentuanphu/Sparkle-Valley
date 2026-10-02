@@ -260,6 +260,12 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - **Album → My treasures:** what each child has ever found (`profile.found`), with ❔ for the ones still to discover.
 - **Selling:** Mr. Bear's "Sell my basket and treasures" now also buys wild finds from the backpack (pebble 50c … blue gem $10). Coins go to the family's shared coins.
 
+### Round 10 (playing together: bigger rooms, friends, trading)
+- **Rooms of up to 6** (`js/net.js`): the device that starts a room passes messages between everyone (star layout); guests also call each other, so everyone hears everyone. `Net.remotes` holds every friend in the room, and `G.partners` holds their avatars. Full rooms answer "full". Messages can go to one friend with `{ to: id }`.
+- **Friends:** each device gets a random 6-character friend code (`settings.friendCode`). Grown-ups or kids can add friends by code, or tap ＋👫 next to someone they played with. If "Friends can invite me" is switched on (off by default), the game listens on that code while it is open, so a friend who has started a room can tap 📨 Invite and they get a "Join?" card. Only names, outfits and positions travel, device to device through PeerJS; no accounts.
+- **Trading** (`js/trade.js`): the 🏪 "My market stall" at the Three Regions Market, or 🔄 Trade next to a friend in the online panel. Pick things from the backpack and/or coins to give and what you'd like back, then send the offer. The friend taps Deal! or No thanks. Both sides are checked again before anything changes hands.
+- **Testing locally:** the public PeerJS server can be swapped for a local one with `window.SV_PEER = { host, port, path, secure }` (used by the automated 3-device test).
+
 ## 3. How it's built
 
 **Tech:**
