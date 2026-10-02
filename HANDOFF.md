@@ -126,11 +126,19 @@ Plain HTML/CSS/JS ES modules, **no build step**. three.js r160 (`vendor/three.mo
 
 **Save data (localStorage):** `sv2_settings` (language, currency, sounds, voices and keys, camera, graphics, captions, textSize, calm, noRain, festival, restMins, turnUrl/User/Pass, azure*, learnLang, npcNames, friendCode, friends, friendsOn, packSaved, credits…), `sv2_profiles` (per child: name, photo, age, difficulty, look, hearts, stamina, orbs, leafies, shrines, towers, inv, levels, wins, quests, story, stickers, album, pets, postcards, stamps, visited, found, tasted, tales, words, secrets, kite, kiteOn, pos…), `sv2_farm` (shared: coins, plots, seeds, basket, animals, hay, products, petYard, jobs). IndexedDB: `sparkle-valley-voice` (family clips), `sparkle-valley-tts` (cached online voices), `sparkle-valley-save` (safe copies).
 
-**Voice pack:** cast English & Vietnamese woman + man, Chinese & Hindi man. 3,988 files, ~218,880 characters ≈ 109,440 ElevenLabs credits (Flash v2.5) or ≈ US$3.50 on Azure (free F0 tier: 500k chars/month, tool paces ~18 requests/min). `node tools/make-voice-pack.mjs --count` shows the cost without a key. The game downloads the whole pack once and keeps it offline.
+**Voice pack:** cast English & Vietnamese woman + man, Chinese & Hindi man. 4,046 files, ~222,304 characters (≈ 65 MB) ≈ 111,000 ElevenLabs credits (Flash v2.5) or ≈ US$3.56 on Azure (free F0 tier: 500k chars/month, so it fits in one free month; the tool paces ~18 requests/min, about 4 hours). `node tools/make-voice-pack.mjs --engine azure --count` shows the cost without a key. The pack is matched to the exact sentences, so make it from the latest `main`; after later rounds run it again and it only makes the new lines. The game downloads the whole pack once and keeps it offline.
+
+**Making the Azure voice pack, step by step:**
+1. Azure portal → Microsoft Foundry → Speech service → **Create**: new resource group `sparkle-valley`, region **Australia East**, a unique name, pricing tier **Free F0** (or Standard S0 if F0 is taken). Review + create → Go to resource → **Keys and Endpoint** → copy KEY 1 and the region (`australiaeast`).
+2. **In a Claude Code cloud session:** the environment needs Network access → Custom with `australiaeast.tts.speech.microsoft.com` and `australiaeast.api.cognitive.microsoft.com` allowed (default package managers kept), and environment variables `AZURE_SPEECH_KEY` (KEY 1) and `AZURE_SPEECH_REGION=australiaeast`. Both only reach sessions started after the change. Never paste the key into chat or commit it.
+3. **On your own computer instead:** install Node.js LTS, download the repo (Code → Download ZIP), open a terminal in the folder and run `node tools/make-voice-pack.mjs --engine azure --key <KEY 1> --region australiaeast` (keep the computer awake; on a Mac put `caffeinate -i ` in front). If it stops, run it again: it skips finished files. 401 = wrong key or region.
+4. The pack lands in `voices/` (`en`, `vi`, `zh`, `hi`, `manifest.json`). `./build-netlify.sh` includes it, or copy `voices/` next to `index.html` in the unzipped Netlify folder, then upload.
+5. On each device: ⚙️ → Grown-ups → 🎙️ Offline voice pack shows "Installed"; tap **Keep all voices on this device** once on Wi-Fi. Leave Voice engine on "This device": recorded lines play first, anything missing uses the device voice.
+6. Live Azure voices without a pack: Grown-ups → ✨ More natural voice → Voice engine **Microsoft Azure**, paste KEY 1 and the region, test with ▶ English / ▶ Tiếng Việt. The key stays on that device only.
 
 ## 6. Open items
 
-- The real voice pack (needs a machine that can reach ElevenLabs or Azure).
+- The real voice pack: the owner has an Azure Speech key; make it in a new cloud session set up as in “Making the Azure voice pack” (§5), from `main` once this round is merged.
 - A front photo of house number 8 to match colours, roof, gate and balcony (number only, never the street name).
 - Real-device testing: iPhone/Android touch and performance, real voices with keys, recording, share-sheet backups, **online play across two real networks** (public MQTT brokers and PeerJS could not be reached from the build machine).
 - Optional ideas, only if asked: dark / high-contrast mode, simpler menu for under-5s, bedtime routine, phonics and telling the time, decorating, online co-op tasks, hosted sync, native store apps.
@@ -139,7 +147,7 @@ Plain HTML/CSS/JS ES modules, **no build step**. three.js r160 (`vendor/three.mo
 
 - Natural voices, voice cloning and AI chat are optional, online and use the parent's own keys; everything works offline without them.
 - Online play uses the public PeerJS server to introduce devices; voice goes directly; game messages fall back to the cloud relay. The relay key comes from the 4-digit room code, so names and positions are only lightly protected from someone who knows the scheme; photos have their own pair lock (ECDH). Anyone who joins a room is a player and appears in the room list; the room's starter can remove them (works on both routes, and they can't come back into that room). Only the starter can say "full" or remove someone; ids, looks, friend codes and positions from others are checked before use (they go into the page). Topic names use a slow hash so friend codes can't be read back from them. Worth considering if the owner wants it: the starter approving each newcomer, and longer room codes.
-- Graphics follow the setting (Fast / Auto / Pretty); Auto picks Fast on phones.
+- Graphics follow the setting (Fast / Auto / Pretty); Auto picks Fast on phones and then raises the sharpness step by step while the phone keeps up (adaptive resolution, `adaptResolution` in `main.js`).
 - iOS Home Screen apps keep storage separate from Safari: use backups to move progress.
 - Stamina is counted in wheels (1–3); food and juice give one extra wheel.
 - Saves: if the main save is missing and its copy can't be read within 8 s, this session never overwrites the copies (new progress goes to `new-…`), and the restore also looks at the daily copies (the last 10 are kept).
