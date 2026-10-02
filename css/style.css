@@ -879,3 +879,16 @@ button { color: var(--text); }
 .ig-ic { width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0, 0, 0, .08); }
 .ig-arrow { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 4px); transform: translateX(-50%); font-size: 40px; color: #fff; text-shadow: 0 2px 8px rgba(0, 0, 0, .6); animation: igbob 1s ease-in-out infinite; }
 @keyframes igbob { 50% { transform: translate(-50%, 8px); } }
+
+/* ---------- rename characters ---------- */
+.renamer .card { max-width: 560px; padding-bottom: 0; }
+.rn-list { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 12px; }
+.rn-row { display: grid; grid-template-columns: 44px 1fr 1fr; gap: 8px; align-items: end; background: #f7f2ff; border-radius: 16px; padding: 10px; }
+.rn-ic { font-size: 30px; align-self: center; text-align: center; }
+.rn-row label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; min-width: 0; }
+.rn-row input { font: inherit; font-size: 15px; padding: 9px 10px; border-radius: 12px; border: 2px solid #ece4f8; background: #fff; min-width: 0; }
+.rn-row input::placeholder { color: #a99bb8; }
+.rn-bar { position: sticky; bottom: 0; display: flex; gap: 10px; justify-content: space-between; padding: 12px 0 calc(env(safe-area-inset-bottom) + 14px); background: linear-gradient(rgba(255,253,248,0), #fffdf8 35%); }
+.rn-bar .btn { flex: 1; }
+@media (max-width: 460px) { .rn-row { grid-template-columns: 36px 1fr; } .rn-row label:last-child { grid-column: 2; } }
+.grownups #gDone { position: sticky; bottom: calc(env(safe-area-inset-bottom) + 10px); z-index: 3; box-shadow: 0 8px 24px rgba(60, 30, 90, .35); }

@@ -2,19 +2,39 @@
 // languages always travel together.
 import { settings } from './state.js';
 
-// People's titles follow the chosen language: in English "Ông Cú" is "Grandpa Owl" and "Bà Hai" is
-// "Grandma Hai"; in Vietnamese "Mrs Kelly" is "Cô Kelly". First names stay as they are.
+// People's titles follow the chosen language, but their names stay as they are in their own region:
+// in English "Bà Hai" is "Grandma Hai" and "Ông Cú" is "Grandpa Cú"; in Vietnamese "Mrs Kelly" is "Cô Kelly".
+// Grown-ups can also rename any character (settings.npcNames), per language.
 const NAMES_EN = {
-  'Ông Cú': 'Grandpa Owl', 'Ông Bầu': 'Grandpa Gourd', 'Mây Cau Có': 'Grumpy Cloud', 'Cô Mai': 'Auntie Mai', 'Bác Ba': 'Uncle Ba',
+  'Ông Cú': 'Grandpa Cú', 'Ông Bầu': 'Grandpa Bầu', 'Mây Cau Có': 'Grumpy Cloud', 'Cô Mai': 'Auntie Mai', 'Bác Ba': 'Uncle Ba',
   'Cô Sáu': 'Auntie Sáu', 'Chú Tư': 'Uncle Tư', 'Anh Tuấn': 'Big Brother Tuấn', 'Bà Hai': 'Grandma Hai', 'Cô Thu': 'Auntie Thu',
   'O Lài': 'Auntie Lài', 'Chú Năm': 'Uncle Năm', 'Chú Tám': 'Uncle Tám', 'Cô Út': 'Auntie Út', 'Bà Năm': 'Grandma Năm',
   'Anh Hai': 'Big Brother Hai', 'Cô Hạnh': 'Miss Hạnh', 'Bác Gấu': 'Mr. Bear'
 };
 const NAMES_VI = { 'Mrs Kelly': 'Cô Kelly', 'Aunty Bev': 'Dì Bev', 'Uncle Robbo': 'Chú Robbo', 'Mr. Bear': 'Bác Gấu' };
-const reOf = map => new RegExp(Object.keys(map).sort((a, b) => b.length - a.length).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
-const RE_EN = reOf(NAMES_EN), RE_VI = reOf(NAMES_VI);
+const ALIAS = { 'Mr. Bear': 'Bác Gấu' }; // two spellings of one character
+const esc = k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// The base name of a character, without a flag or emoji after it ("Jack 🇦🇺" → "Jack").
+export const baseName = n => String(n).replace(/\s+[^\p{L}\p{N}]+$/u, '').trim();
+export const defaultName = (id, lang = settings.lang) => lang === 'vi' ? (NAMES_VI[id] || id) : (NAMES_EN[id] || id);
+// Every character the world creates registers here, so Grown-ups can list them for renaming.
+export const NPC_NAMES = [];
+export const registerName = (name, icon = '🙂') => { const id = ALIAS[baseName(name)] || baseName(name); if (id && !NPC_NAMES.some(n => n.id === id)) NPC_NAMES.push({ id, icon }); };
+let RE = null, reKey = '';
+function nameRE() {
+  const custom = Object.keys(settings.npcNames || {}).filter(k => { const c = settings.npcNames[k]; return c && (c.en || c.vi); });
+  const key = custom.join('|');
+  if (!RE || key !== reKey) {
+    const keys = [...new Set([...Object.keys(NAMES_EN), ...Object.keys(NAMES_VI), ...custom])].sort((a, b) => b.length - a.length);
+    RE = new RegExp('(?<![\\p{L}])(' + keys.map(esc).join('|') + ')(?![\\p{L}])', 'gu'); reKey = key;
+  }
+  return RE;
+}
 // swap people's names inside any text for the given language
-export const swapNames = (text, lang = settings.lang) => typeof text !== 'string' ? text : lang === 'vi' ? text.replace(RE_VI, m => NAMES_VI[m]) : text.replace(RE_EN, m => NAMES_EN[m]);
+export const swapNames = (text, lang = settings.lang) => typeof text !== 'string' ? text : text.replace(nameRE(), m => {
+  const id = ALIAS[m] || m, c = (settings.npcNames || {})[id];
+  return (c && c[lang]) || defaultName(id, lang);
+});
 export const nm = name => swapNames(name);
 export const T = (en, vi) => (settings.lang === 'vi' ? swapNames(vi, 'vi') : swapNames(en, 'en'));
 // Things drawn into the 3D world (signs, name tags) register here to redraw when the language changes.

@@ -3,8 +3,9 @@
 // Cô Sáu's sugarcane juice cart; uncles play cards on the footpath. On the other side: an Australian
 // weatherboard house with a front porch, a brick house, a Hills hoist, and the park where kids play
 // folk games. Built from simple flat-coloured shapes in the "summer afternoon" style.
-import { THREE, toon, toonVC, P, merge, sprite } from './gfx.js';
-import { T, nm, onLang } from './i18n.js';
+import { THREE, toon, toonVC, P, merge, sprite, outline } from './gfx.js';
+import { houseTube, houseVilla, houseCottage } from './houses.js';
+import { T, nm, onLang, registerName } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
 import { heightAt, TOWN, PLAYGROUND } from './world.js';
@@ -135,15 +136,22 @@ export function createTown(G) {
   const road = new THREE.Mesh(merge(g), mat); road.position.y = y0; road.receiveShadow = true; scene.add(road);
 
   // ---------- houses ----------
-  // Bà Rịa side (north)
-  house(tubeHouse('#bfe3cf', 3), 15.6, N);
-  house(tubeHouse('#f2c9a0', 3), 20.1, N);
-  house(tubeHouse('#f6e09a', 2), 24.6, N);
-  const villa = frenchVilla(); house(villa, 33.5, N - 1.2);
-  house(brickHouse(), 45, N - 2.5);
+  // storybook houses (js/houses.js) are whole models; the older ones get the same soft outline
+  const place = (b, x, front, south = false) => {
+    const z = south ? front + b.d / 2 : front - b.d / 2;
+    b.obj.position.set(x, heightAt(x, z), z); b.obj.rotation.y = south ? Math.PI : 0; scene.add(b.obj);
+    world.boxes.push({ x0: x - b.w / 2, x1: x + b.w / 2, z0: z - b.d / 2, z1: z + b.d / 2 });
+  };
+  const houseOld = (b, x, front, south) => { house(b, x, front, south); const m = scene.children[scene.children.length - 1]; outline(m, .03, '#4a3a3f'); };
+  // Bà Rịa side (north): tube houses with shops downstairs, then the French villa
+  place(houseTube({ wall: '#9fd8c8', floors: 3, d: 7.4, sign: ['Corner Shop', 'Tạp Hóa'] }), 15.6, N);
+  place(houseTube({ wall: '#f6c8a8', floors: 3, d: 7.4, sign: ['Bánh Mì', 'Bánh Mì'] }), 20.1, N);
+  place(houseTube({ wall: '#f6e09a', floors: 2, d: 7.4, sign: ['Coffee', 'Cà Phê'] }), 24.6, N);
+  const villa = houseVilla(); place(villa, 33.5, N - 1.2);
+  houseOld(brickHouse(), 45, N - 2.5);
   // Sydney side (south)
-  house(raisedHouse(), 13.5, S + 1.5, true);
-  house(weatherboard(), 45, S + 4.5, true);
+  houseOld(raisedHouse(), 13.5, S + 1.5, true);
+  place(houseCottage({ yard: false }), 45, S + 4.5, true);
   // garden walls and fences
   const fence = [];
   fence.push(P(Box(10, 1, .25), '#f6ead0', [33.5, .5, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [32.3, .8, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [34.7, .8, N - .6]));
@@ -268,6 +276,7 @@ export function createTown(G) {
 
   // name tags and chatter bubbles
   const tag = (text, x, y, z) => {
+    registerName(text);
     const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g2 = c.getContext('2d');
     const draw = () => { g2.clearRect(0, 0, 256, 64); g2.fillStyle = 'rgba(40,40,40,.55)'; g2.beginPath(); g2.roundRect(8, 10, 240, 46, 23); g2.fill();
       g2.font = 'bold 30px Fredoka, "Baloo 2", sans-serif'; g2.fillStyle = '#fff'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillText(nm(text), 128, 34, 228); };

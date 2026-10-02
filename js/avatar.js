@@ -1,12 +1,12 @@
 // Chibi characters whose face is the child's own photo.
-import { THREE, toon, glow, blobShadow } from './gfx.js';
+import { THREE, toon, glow, blobShadow, outline } from './gfx.js';
 import { GLIDERS } from './state.js';
 
 const G = {
   head: new THREE.SphereGeometry(.5, 32, 24),
   hairCap: new THREE.SphereGeometry(.54, 32, 18, 0, Math.PI * 2, 0, Math.PI * .55),
   hairBack: new THREE.SphereGeometry(.53, 24, 18, Math.PI, Math.PI, 0, Math.PI * .8),
-  bun: new THREE.SphereGeometry(.17, 12, 10), tie: new THREE.TorusGeometry(.1, .035, 8, 16),
+  lock: new THREE.SphereGeometry(.15, 14, 10), bun: new THREE.SphereGeometry(.17, 12, 10), tie: new THREE.TorusGeometry(.1, .035, 8, 16),
   spike: new THREE.ConeGeometry(.14, .4, 6),
   body: new THREE.CylinderGeometry(.27, .36, .62, 16),
   skirt: new THREE.ConeGeometry(.55, .55, 18, 1, true),
@@ -29,16 +29,26 @@ G.glider = (() => {
 })();
 
 export function drawDefaultFace(x, S, look, mood = 'smile') {
+  // Picture-book face: big clear eyes with a sparkle, soft brows, rosy cheeks and a small smile.
   x.save(); x.fillStyle = look.skin; x.fillRect(0, 0, S, S);
-  x.fillStyle = look.hair; x.beginPath(); x.ellipse(S * .5, S * .08, S * .62, S * .28, 0, 0, Math.PI * 2); x.fill();
-  [.36, .64].forEach(ex => {
-    x.fillStyle = '#2b1a2e'; x.beginPath(); x.ellipse(ex * S, S * .55, S * .05, S * .07, 0, 0, Math.PI * 2); x.fill();
-    x.fillStyle = '#fff'; x.beginPath(); x.arc(ex * S + S * .016, S * .53, S * .02, 0, Math.PI * 2); x.fill();
+  x.fillStyle = look.hair; x.beginPath(); x.ellipse(S * .5, S * .02, S * .6, S * .2, 0, 0, Math.PI * 2); x.fill();
+  x.restore(); drawFeatures(x, S, look, mood);
+}
+// Just the eyes, brows, cheeks and mouth (painted straight onto the head, so the skin shading matches).
+export function drawFeatures(x, S, look, mood = 'smile') {
+  x.save();
+  [.36, .64].forEach(cx => {
+    x.fillStyle = '#fff'; x.beginPath(); x.ellipse(cx * S, S * .55, S * .085, S * .075, 0, 0, 7); x.fill();
+    x.fillStyle = '#3a2418'; x.beginPath(); x.arc(cx * S, S * .56, S * .06, 0, 7); x.fill();
+    x.fillStyle = '#120a08'; x.beginPath(); x.arc(cx * S, S * .56, S * .03, 0, 7); x.fill();
+    x.fillStyle = '#fff'; x.beginPath(); x.arc(cx * S + S * .022, S * .535, S * .02, 0, 7); x.fill();
+    x.strokeStyle = '#2b1a14'; x.lineWidth = S * .02; x.lineCap = 'round'; x.beginPath(); x.ellipse(cx * S, S * .55, S * .088, S * .078, 0, Math.PI * 1.08, Math.PI * 1.92); x.stroke();
+    x.strokeStyle = look.hair; x.lineWidth = S * .022; x.beginPath(); x.moveTo(S * (cx - .07), S * .44); x.quadraticCurveTo(S * cx, S * .41, S * (cx + .07), S * .44); x.stroke();
   });
-  x.fillStyle = 'rgba(255,110,140,.4)'; [.26, .74].forEach(cx => { x.beginPath(); x.arc(cx * S, S * .67, S * .07, 0, Math.PI * 2); x.fill(); });
-  x.strokeStyle = '#a33b52'; x.lineWidth = S * .026; x.lineCap = 'round'; x.beginPath();
-  if (mood === 'o') x.arc(S * .5, S * .7, S * .04, 0, Math.PI * 2); else x.arc(S * .5, S * .65, S * .09, .2 * Math.PI, .8 * Math.PI);
-  x.stroke(); x.restore();
+  x.fillStyle = 'rgba(240,110,110,.4)'; [.24, .76].forEach(cx => { x.beginPath(); x.ellipse(cx * S, S * .67, S * .065, S * .04, 0, 0, 7); x.fill(); });
+  x.fillStyle = '#a3485a'; x.beginPath();
+  if (mood === 'o') x.arc(S * .5, S * .72, S * .035, 0, Math.PI * 2); else { x.moveTo(S * .44, S * .69); x.quadraticCurveTo(S * .5, S * .77, S * .56, S * .69); x.closePath(); }
+  x.fill(); x.restore();
 }
 export function faceTexture(look, photo) {
   const S = 512, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
@@ -48,10 +58,12 @@ export function faceTexture(look, photo) {
     const g = x.createRadialGradient(S / 2, S / 2, S * .42, S / 2, S / 2, S * .5); g.addColorStop(0, '#000'); g.addColorStop(1, 'rgba(0,0,0,0)');
     x.fillStyle = g; x.fillRect(0, 0, S, S); x.globalCompositeOperation = 'source-over'; tex.needsUpdate = true;
   };
-  drawDefaultFace(x, S, look); finish();
+  drawFeatures(x, S, look); tex.needsUpdate = true;
   if (photo) { const im = new Image(); im.onload = () => { x.clearRect(0, 0, S, S); x.drawImage(im, 0, 0, S, S); finish(); }; im.src = photo; }
   return tex;
 }
+// Every character with an outline; the game hides outlines on far-away characters to keep phones fast.
+export const OUTLINED = [];
 const avatarCache = {};
 export function avatarURL(p) {
   if (p.photo) return p.photo;
@@ -62,17 +74,17 @@ export function avatarURL(p) {
 
 // Natural child proportions (about three heads tall). The head is built at a larger scale and
 // shrunk, so the photo-face mapping and the hats stay simple.
-const HEAD_SCALE = .47;
+const HEAD_SCALE = .54;
 const B = {
   torso: new THREE.LatheGeometry([V2(.0, .6), V2(.13, .6), V2(.15, .66), V2(.152, .8), V2(.16, .92), V2(.168, .98), V2(.12, 1.03), V2(.05, 1.05), V2(0, 1.05)], 20),
   skirt: new THREE.CylinderGeometry(.15, .33, .36, 22, 1, true),
   aodai: new THREE.CylinderGeometry(.155, .24, .5, 20, 1, true),
   tunic: new THREE.CylinderGeometry(.155, .22, .24, 20, 1, true),
   hips: new THREE.CylinderGeometry(.155, .16, .14, 18),
-  upperArm: new THREE.CapsuleGeometry(.05, .3, 4, 10), hand: new THREE.SphereGeometry(.055, 12, 10),
-  sleeve: new THREE.CapsuleGeometry(.062, .14, 4, 10),
+  upperArm: new THREE.CapsuleGeometry(.05, .3, 4, 10), hand: new THREE.SphereGeometry(.064, 12, 10),
+  sleeve: new THREE.CapsuleGeometry(.074, .12, 4, 12),
   leg: new THREE.CapsuleGeometry(.064, .42, 4, 10), pants: new THREE.CapsuleGeometry(.074, .42, 4, 10), shorts: new THREE.CapsuleGeometry(.08, .1, 4, 10),
-  shoe: new THREE.CapsuleGeometry(.06, .1, 4, 10), neck: new THREE.CylinderGeometry(.05, .055, .08, 10),
+  shoe: new THREE.CapsuleGeometry(.068, .1, 4, 12), sole: new THREE.CapsuleGeometry(.07, .11, 4, 12), neck: new THREE.CylinderGeometry(.05, .055, .08, 10),
   wing: new THREE.CircleGeometry(.3, 24), cape: new THREE.PlaneGeometry(.42, .62, 4, 6), hood: new THREE.SphereGeometry(.2, 16, 12, 0, Math.PI * 2, Math.PI * .3, Math.PI * .5)
 };
 function V2(x, y) { return new THREE.Vector2(x, y); }
@@ -84,7 +96,7 @@ export function buildAvatar(look, photo) {
   const shadow = blobShadow(); root.add(shadow); shadow.position.y = .03; shadow.scale.setScalar(.65);
   const style = look.style || 'shirt', col = look.color || '#3b6fe0';
   const skin = toon(look.skin, { roughness: .6 }), hairM = toon(look.hair, { roughness: .45, metalness: .05 }), cloth = toon(col, { roughness: .92 });
-  const white = toon('#ffffff', { roughness: .9 }), shoeM = toon('#4a2e22', { roughness: .45 });
+  const white = toon('#ffffff', { roughness: .9 }), shoeM = toon(look.shoe || '#7a4a35', { roughness: .45 }), soleM = toon('#fff8ee');
   const trim = toon(style === 'aodai' ? '#ffd84a' : '#f2d16b', { roughness: .7 });
   const A = { root, rig };
   // legs (pivot at the hip)
@@ -94,7 +106,7 @@ export function buildAvatar(look, photo) {
     const g = new THREE.Group(); g.position.set(sx, .6, 0);
     const l = new THREE.Mesh(legSpec.startsWith('pants') ? B.pants : B.leg, legMat); l.position.y = -.28; g.add(l);
     if (legSpec === 'shorts') { const sh = new THREE.Mesh(B.shorts, toon(col === '#ffffff' ? '#3a5a8a' : '#2f3a5a', { roughness: .9 })); sh.position.y = -.08; g.add(sh); }
-    const s = new THREE.Mesh(B.shoe, shoeM); s.rotation.x = Math.PI / 2; s.position.set(0, -.55, .05); g.add(s);
+    const s = new THREE.Mesh(B.shoe, shoeM); s.rotation.x = Math.PI / 2; s.position.set(0, -.54, .05); g.add(s); const so = new THREE.Mesh(B.sole, soleM); so.rotation.x = Math.PI / 2; so.scale.set(1, 1, .45); so.position.set(0, -.585, .05); g.add(so);
     rig.add(g); return g;
   };
   A.legL = mkLeg(.08); A.legR = mkLeg(-.08);
@@ -102,7 +114,7 @@ export function buildAvatar(look, photo) {
   const torso = new THREE.Group(); rig.add(torso); A.torso = torso;
   const top = style === 'overalls' ? white : cloth;
   const t = new THREE.Mesh(B.torso, top); t.scale.set(1.12, 1, .82); torso.add(t);
-  const hips = new THREE.Mesh(B.hips, style === 'dress' ? cloth : legSpec === 'shorts' ? toon('#2f3a5a', { roughness: .9 }) : legMat); hips.position.y = .6; hips.scale.set(1.05, 1, .85); torso.add(hips);
+  const hips = new THREE.Mesh(B.hips, style === 'dress' || style === 'aodai' ? cloth : legSpec === 'shorts' ? toon('#2f3a5a', { roughness: .9 }) : legMat); hips.position.y = .6; hips.scale.set(1.05, 1, .85); torso.add(hips);
   if (style === 'dress') { const sk = new THREE.Mesh(B.skirt, cloth); sk.position.y = .5; torso.add(sk); const band = new THREE.Mesh(new THREE.TorusGeometry(.15, .018, 6, 24), white); band.rotation.x = Math.PI / 2; band.position.y = .68; torso.add(band); }
   if (style === 'aodai') { const ad = new THREE.Mesh(B.aodai, cloth); ad.position.y = .42; ad.scale.z = .75; torso.add(ad); const c = new THREE.Mesh(new THREE.CylinderGeometry(.055, .06, .06, 12), cloth); c.position.y = 1.06; torso.add(c); for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(.012, 6, 5), trim); b.position.set(.04 + i * .025, 1.0 - i * .07, .13); torso.add(b); } }
   if (style === 'tunic') { const tu = new THREE.Mesh(B.tunic, cloth); tu.position.y = .52; torso.add(tu); const belt = new THREE.Mesh(new THREE.TorusGeometry(.162, .022, 6, 24), toon('#6a4026', { roughness: .5 })); belt.rotation.x = Math.PI / 2; belt.position.y = .66; belt.scale.z = .84; torso.add(belt); }
@@ -132,13 +144,15 @@ export function buildAvatar(look, photo) {
     const clasp = new THREE.Mesh(new THREE.SphereGeometry(.025, 8, 6), toon('#ffcf3a', { metalness: .6, roughness: .3 })); clasp.position.set(0, 1.0, .12); torso.add(clasp);
   }
   // head (built big, then scaled down)
-  const head = new THREE.Group(); head.position.y = 1.31; head.scale.setScalar(HEAD_SCALE); rig.add(head); A.head = head;
+  const head = new THREE.Group(); head.position.y = 1.33; head.scale.setScalar(HEAD_SCALE); rig.add(head); A.head = head;
   const skull = new THREE.Mesh(G.head, skin); skull.scale.set(.95, 1.04, .98); head.add(skull);
   [-1, 1].forEach(s => { const e = new THREE.Mesh(new THREE.SphereGeometry(.11, 10, 8), skin); e.scale.set(.5, 1, .8); e.position.set(s * .48, -.02, 0); head.add(e); });
-  A.faceMat = new THREE.MeshStandardMaterial({ map: faceTexture(look, photo), transparent: true, alphaTest: .02, roughness: .62 });
+  A.faceMat = new THREE.MeshStandardMaterial({ map: faceTexture(look, photo), transparent: true, alphaTest: .02, roughness: .62, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
   const face = new THREE.Mesh(G.face, A.faceMat); head.add(face);
   const hc = new THREE.Mesh(G.hairCap, hairM); hc.rotation.x = -.38; hc.position.set(0, .04, -.05); head.add(hc);
   const back = new THREE.Mesh(G.hairBack, hairM); back.scale.set(1.02, .9, 1.02); back.position.y = .02; head.add(back);
+  // soft locks of fringe across the forehead
+  for (let i = 0; i < 5; i++) { const a = (i - 2) * .32, l = new THREE.Mesh(G.lock, hairM); l.scale.set(.9, 1.25, .55); l.position.set(Math.sin(a) * .42, .32 - Math.abs(i - 2) * .03, Math.cos(a) * .33); l.rotation.set(-.75, a, (i - 2) * -.25); head.add(l); }
   if (look.hairStyle === 'long') { const hb = new THREE.Mesh(G.hairBack, hairM); hb.scale.set(1.04, 1.6, 1.05); hb.position.y = -.28; head.add(hb); }
   if (look.hairStyle === 'buns') [-1, 1].forEach(s => { const b = new THREE.Mesh(G.bun, hairM); b.scale.set(1, 1.5, 1); b.position.set(s * .5, -.08, -.15); b.rotation.z = s * .3; head.add(b); const tie = new THREE.Mesh(G.tie, toon(col)); tie.position.set(s * .44, .08, -.12); tie.rotation.y = Math.PI / 2; head.add(tie); });
   if (look.hairStyle === 'ponytail') { const pt = new THREE.Mesh(new THREE.CapsuleGeometry(.13, .5, 4, 10), hairM); pt.position.set(0, -.15, -.58); pt.rotation.x = .35; head.add(pt); }
@@ -157,6 +171,7 @@ export function buildAvatar(look, photo) {
   [-.45, .45].forEach(x => { const r = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .9, 4), toon('#7a5236')); r.position.set(x, -.42, 0); r.rotation.z = x * .7; glider.add(r); });
   rig.add(glider); A.glider = glider;
   root.traverse(o => { if (o.isMesh && o !== shadow) { o.castShadow = true; } });
+  A.outlines = outline(rig, .011, '#6a4a3a'); OUTLINED.push(A);
   A.anim = (state, t, speed) => animate(A, state, t, speed);
   return A;
 }
