@@ -1,0 +1,108 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="fonts.css">
+<style>
+html, body { margin: 0; background: #000; }
+#stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; font-family: 'Fredoka', 'Baloo 2', sans-serif; color: #2b2238; }
+.scene { position: absolute; inset: 0; overflow: hidden; visibility: hidden; }
+.L { position: absolute; will-change: transform, opacity; }
+.full { left: 0; top: 0; width: 1080px; height: 1920px; object-fit: cover; transform-origin: 50% 50%; }
+.phone { border: 12px solid #2b2238; border-radius: 64px; overflow: hidden; background: #fff; box-shadow: 18px 22px 0 rgba(43,34,56,.85); }
+.phone img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.cap { left: 60px; right: 60px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
+.cap .en { background: #ffd23f; border: 9px solid #2b2238; border-radius: 44px; padding: 18px 40px 20px; font-weight: 500; font-size: 82px; line-height: 1.05; box-shadow: 0 14px 0 #2b2238; }
+.cap .vi { margin-top: 18px; background: #fff; border: 7px solid #2b2238; border-radius: 999px; padding: 6px 34px 10px; font-family: 'Baloo 2', sans-serif; font-weight: 600; font-size: 46px; line-height: 1.2; }
+.cap.pink .en { background: #ff5f7e; color: #fff; } .cap.blue .en { background: #3cc7e8; } .cap.green .en { background: #5fd36a; } .cap.purple .en { background: #8a5cf6; color: #fff; } .cap.white .en { background: #fff; }
+.big { left: 0; right: 0; text-align: center; font-weight: 500; font-size: 200px; line-height: 1; color: #fff; -webkit-text-stroke: 10px #2b2238; paint-order: stroke fill; text-shadow: 0 16px 0 #2b2238; }
+.chip { background: #fff; border: 7px solid #2b2238; border-radius: 999px; padding: 10px 30px 14px; font-size: 52px; font-weight: 500; box-shadow: 0 9px 0 #2b2238; white-space: nowrap; }
+.chip small { font-family: 'Baloo 2'; font-size: 38px; opacity: .75; }
+.emoji { font-size: 150px; line-height: 1; }
+.conf { width: 26px; height: 40px; border-radius: 6px; }
+</style></head>
+<body><div id="stage"></div>
+<script>
+// ---------- tiny animation engine: everything is a pure function of time t (seconds) ----------
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = x => 1 - Math.pow(1 - clamp(x), 3);
+const back = x => { x = clamp(x); const c = 1.9; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const lerp = (a, b, k) => a + (b - a) * k;
+const stage = document.getElementById('stage');
+const FADE = .45;
+
+function el(html) { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
+
+// layer builders return {node, f(lt, d)}
+const L = {
+  bg: css => ({ node: el(`<div class="L" style="inset:0;background:${css}"></div>`), f() {} }),
+  img: (src, kb = [1.02, 1.14, 0, 0, 0, -40]) => {   // Ken Burns: [s0, s1, x0, x1, y0, y1]
+    const n = el(`<img class="L full" src="stills/${src}.jpg">`);
+    return { node: n, f(lt, d) { const k = lt / d; n.style.transform = `translate(${lerp(kb[2], kb[3], k)}px, ${lerp(kb[4], kb[5], k)}px) scale(${lerp(kb[0], kb[1], k)})`; } };
+  },
+  phone: (src, o) => {  // o: x, y, w, h, rot, at, pos (object-position), drift
+    const n = el(`<div class="L phone" style="left:${o.x}px;top:${o.y}px;width:${o.w}px;height:${o.h}px"><img src="stills/${src}.jpg" style="object-position:${o.pos || '50% 50%'}"></div>`);
+    return { node: n, f(lt) { const k = back((lt - (o.at || 0)) / .55); n.style.opacity = clamp((lt - (o.at || 0)) / .2); n.style.transform = `translateY(${(1 - k) * 260 + Math.sin(lt * 1.4 + o.x) * (o.drift ?? 8)}px) rotate(${(o.rot || 0) + (1 - k) * 8}deg) scale(${.7 + .3 * k})`; } };
+  },
+  cap: (en, vi, o = {}) => {
+    const n = el(`<div class="L cap ${o.cls || ''}" style="top:${o.y ?? 1360}px">${en ? `<div class="en">${en}</div>` : ''}${vi ? `<div class="vi">${vi}</div>` : ''}</div>`);
+    return { node: n, f(lt) { const a = o.at || 0, k = back((lt - a) / .5); n.style.opacity = clamp((lt - a) / .15); n.style.transform = `scale(${.4 + .6 * k}) rotate(${(1 - k) * -6 + (o.rot || 0)}deg)`; const v = n.querySelector('.vi'); if (v) { const kv = back((lt - a - .35) / .5); v.style.opacity = clamp((lt - a - .35) / .15); v.style.transform = `translateY(${(1 - kv) * 60}px)`; } } };
+  },
+  big: (text, o = {}) => {
+    const n = el(`<div class="L big" style="top:${o.y ?? 760}px;font-size:${o.size || 200}px;${o.color ? `color:${o.color}` : ''}">${text}</div>`);
+    return { node: n, f(lt) { const a = o.at || 0, k = back((lt - a) / .5); n.style.opacity = clamp((lt - a) / .12); n.style.transform = `scale(${.2 + .8 * k}) rotate(${(1 - k) * 10 + (o.rot || 0)}deg)`; } };
+  },
+  chip: (html, o) => {
+    const n = el(`<div class="L chip" style="left:${o.x}px;top:${o.y}px">${html}</div>`);
+    return { node: n, f(lt) { const a = o.at || 0, k = back((lt - a) / .45); n.style.opacity = clamp((lt - a) / .12); n.style.transform = `translateX(${(1 - k) * (o.from || -700)}px) rotate(${o.rot || 0}deg)`; } };
+  },
+  emoji: (ch, o) => {
+    const n = el(`<div class="L emoji" style="left:${o.x}px;top:${o.y}px;font-size:${o.size || 150}px">${ch}</div>`);
+    return { node: n, f(lt) { const a = o.at || 0, k = back((lt - a) / .5); n.style.opacity = clamp((lt - a) / .1); n.style.transform = `scale(${k}) rotate(${Math.sin(lt * 3 + o.x) * 8}deg) translateY(${Math.sin(lt * 2.2 + o.y) * 14}px)`; } };
+  },
+  logo: (o = {}) => {
+    const n = el(`<div class="L" style="left:0;right:0;top:${o.y ?? 520}px;text-align:center">
+      <img src="icon-512.png" style="width:300px;height:300px;border-radius:72px;border:12px solid #2b2238;box-shadow:16px 18px 0 #2b2238">
+      <div style="margin-top:46px;font-size:150px;line-height:1;color:#ffd23f;-webkit-text-stroke:11px #2b2238;paint-order:stroke fill;text-shadow:0 14px 0 #2b2238">Sparkle Valley</div>
+      <div style="margin-top:26px;font-family:'Baloo 2';font-weight:600;font-size:66px;color:#fff;-webkit-text-stroke:6px #2b2238;paint-order:stroke fill">Thung Lũng Lấp Lánh</div></div>`);
+    return { node: n, f(lt) { const a = o.at || 0, k = back((lt - a) / .6); n.style.opacity = clamp((lt - a) / .15); n.style.transform = `scale(${.5 + .5 * k}) translateY(${Math.sin(lt * 1.6) * 10}px)`; } };
+  },
+  confetti: (o = {}) => {
+    const cols = ['#ffd23f', '#ff5f7e', '#3cc7e8', '#5fd36a', '#8a5cf6', '#fff'];
+    const bits = Array.from({ length: 70 }, (_, i) => ({ x: (i * 397) % 1080, s: 220 + (i * 53) % 260, r: (i * 37) % 360, c: cols[i % cols.length], d: (i * 0.137) % 1.6 }));
+    const n = el(`<div class="L" style="inset:0">${bits.map(b => `<div class="L conf" style="left:${b.x}px;background:${b.c}"></div>`).join('')}</div>`);
+    return { node: n, f(lt) { [...n.children].forEach((c, i) => { const b = bits[i], y = -80 + (lt + b.d - (o.at || 0)) * b.s * 2.2; c.style.transform = `translate(${Math.sin(lt * 2 + i) * 40}px, ${y}px) rotate(${b.r + lt * 300}deg)`; c.style.opacity = lt < (o.at || 0) ? 0 : 1; }); } };
+  },
+  html: (h, o = {}) => {
+    const n = el(`<div class="L" style="${o.style || ''}">${h}</div>`);
+    return { node: n, f(lt) { const a = o.at || 0, k = ease((lt - a) / .5); n.style.opacity = clamp((lt - a) / .3); n.style.transform = `translateY(${(1 - k) * 60}px)`; } };
+  }
+};
+
+let SCENES = [], TOTAL = 0;
+function build(def) {
+  stage.innerHTML = ''; SCENES = []; TOTAL = 0;
+  def.forEach(s => {
+    const node = el('<div class="scene"></div>'); stage.appendChild(node);
+    const layers = s.layers.map(f => { node.appendChild(f.node); return f; });
+    SCENES.push({ node, layers, d: s.d, t0: TOTAL }); TOTAL += s.d;
+  });
+  return TOTAL;
+}
+function render(t) {
+  SCENES.forEach((s, i) => {
+    const lt = t - s.t0;
+    const next = SCENES[i + 1];
+    const on = lt >= 0 && (lt < s.d || (!next && lt <= s.d + 1));
+    const behind = next && t - next.t0 >= 0 && t - next.t0 < FADE; // stays under the next scene while it fades in
+    if (!on && !behind) { s.node.style.visibility = 'hidden'; return; }
+    s.node.style.visibility = 'visible';
+    const clt = Math.min(lt, s.d + FADE);
+    s.layers.forEach(l => l.f(clt, s.d));
+    if (i > 0 && lt < FADE) { const k = ease(lt / FADE); s.node.style.opacity = k; s.node.style.transform = `scale(${1.06 - .06 * k})`; s.node.style.zIndex = 2; }
+    else { s.node.style.opacity = 1; s.node.style.transform = ''; s.node.style.zIndex = 1; }
+  });
+  // fade to black at the very end
+  stage.style.filter = t > TOTAL - .5 ? `brightness(${clamp((TOTAL - t) / .5)})` : '';
+}
+async function ready() { await document.fonts.ready; await Promise.all([...document.images].map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; }))); }
+window.AD = { L, build, render, ready };
+</script></body></html>
