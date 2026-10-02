@@ -30,7 +30,8 @@ Code: **https://github.com/nguyentuanphu/Sparkle-Valley** (work happens on branc
 | `features` | 7 cities, 26 kiosks, 7 city game hosts, ≥ 47 landmarks, house number 8, 32 tales (18 Vietnamese), walkable Dragon Bridge, pets adopt / pet yard / bring back, chat closes when you walk away, keyboard shortcuts, zoom, a tale from the Games hub flies to the storyteller, a game card flies to its host, folk-game friends chat |
 | `camera` | At every landmark sign, facing 4 ways, the camera is not inside a building or blocked by one (186 of 188 clear this round; Harbour Bridge and Huế graze an edge from one side) |
 | `contract` | HUD buttons, Sparkle Pad tabs and Games hub sections are unchanged (`tests/ui-contract.json`) |
-| `multiplayer` | Two devices in one room through a local PeerJS server: they see each other, the friend chip shows the distance, "Ask to come" arrives, walking to the friend works, talk bubbles cross (skipped when no server runs, see `tests/README.md`) |
+| `cloud` | Two devices that can never link directly connect through the cloud relay (local MQTT broker): friend status with place and room, Join, positions, meeting, talking, leaving |
+| `multiplayer` | Two devices in one room through a local PeerJS server (with the cloud relay alongside): they see each other, the friend chip shows the distance, "Ask to come" arrives, walking to the friend works, talk bubbles cross (skipped when no server runs, see `tests/README.md`) |
 
 Screenshots of each run go to `tests/out/` (not committed).
 
@@ -521,6 +522,15 @@ Screenshots of each run go to `tests/out/` (not committed).
 - **Fix:** the recorder is now a full-height sheet: the title and ✕ are always at the top, a big **💾 Save and close** button is always at the bottom, and only the middle scrolls. Recordings are still saved line by line as they are made.
 - Tested with a fake microphone at phone size (390×760): a line records, ✕ and Save stay on screen, Save closes. Real iPhone not tested.
 
+### Round 21 (friends can connect from anywhere; friend status; signal and ping)
+- **Bug:** joining a friend on another network stayed on "Still connecting…". The direct link (WebRTC) needs a relay (TURN) between different networks, and the free public "Open Relay" TURN the game used now needs an account, so the link never opened.
+- **Fix: the cloud relay** (`js/relay.js`): rooms open on the direct route *and* through free public MQTT brokers over secure WebSockets (broker.emqx.io, broker.hivemq.com, test.mosquitto.org, mqtt.eclipseprojects.io — all at once, copies dropped). If the direct link is not open after about 7 s, the game carries on through the cloud; if a direct link breaks later, it switches over by itself. Everything is encrypted (AES-GCM, key made from the room or friend code; topic names are hashes); photos never go through it. No account and no server of ours. **Voice** still needs the direct link or a grown-up's own TURN relay (Grown-ups → Online play); in cloud mode the talk buttons and quick phrases work and a note says so.
+- **Friend status:** with "Friends can see when I am playing and where, and invite me" switched on, each device keeps a small encrypted status note on its friend code: 🟢 online, the place in the valley, the room it is in (with a ▶ Join button), or ⚪ offline and how long ago (the note turns to offline by itself when the device goes away). Invites also travel this way.
+- **Signal and ping:** everyone pings everyone every 2 s. The online panel shows signal bars, the ping in ms and the route (direct / cloud relay) for each friend, plus this device's connection (type, speed when the browser tells it, cloud relay servers, voice on or not). The HUD friend chip shows the bars (☁️ when it goes through the cloud). Friends who go quiet for 20 s are removed; "weak" after 6 s.
+- **Staying connected:** the screen is kept awake while in a room (Wake Lock), the meeting service reconnects by itself, the cloud relay reconnects to each broker with back-off, and "Back online" / "No internet" messages appear.
+- **Grown-ups → 🔍 Test the connection** also reports how many cloud relay servers answer.
+- **Tests:** new `cloud` check (two devices that can never link directly find each other's status, join from the friends list, move, meet, talk and notice leaving, through a local MQTT broker); `multiplayer` now runs the direct link with the cloud relay alongside. The public brokers could not be reached from the build machine, so please try two phones on different networks (Wi-Fi + mobile data).
+
 ## 3. How it's built
 
 **Tech:**
@@ -588,6 +598,7 @@ Screenshots of each run go to `tests/out/` (not committed).
 | `tests/run.mjs`, `tests/ui-contract.json` | The regression suite and the recorded UI structure |
 | `js/roads.js` | Road ribbons, golden welcome gates (`goldenGate`), the Dragon Bridge |
 | `js/cities.js`, `js/games/cities.js` | The seven cities (landmarks, hosts, kiosks), Bạch Dinh, Nhà Tròn, house number 8; the seven city games |
+| `js/relay.js` | The cloud relay: a tiny MQTT client over WebSocket, encryption, channels for rooms and friends' status |
 | `js/kite.js` | The whistling kite accessory and its flute sound |
 | `js/chatter.js` | Speech bubbles for friends who play and talk together, and hosts calling out |
 | `js/tales.js`, `js/talesdata.js` | The tale theatre and the new fairy tales (Story time in `js/learn.js` lists them all) |
@@ -656,7 +667,7 @@ Screenshots of each run go to `tests/out/` (not committed).
 - **Natural voices, voice cloning and AI chat are optional and online.** They use the parent's own ElevenLabs, Google or Anthropic keys and cost money per use. Everything works offline without them (device voice and the built-in chat answers).
   - Keys are kept in localStorage on that device only. The browser calls the services directly (there is no server).
 - **Voice control** relies on the browser's speech recognition (Safari on iPhone/iPad, Chrome on Android). It usually needs the internet.
-- **Online play needs the internet** and uses the free public PeerJS server (`0.peerjs.com`) to introduce the devices; voice then goes directly between them.
+- **Online play needs the internet** and uses the free public PeerJS server (`0.peerjs.com`) to introduce the devices; voice then goes directly between them. When a direct link can't open, game messages go through the cloud relay (free public MQTT brokers, encrypted).
   - Devices on different networks may need a relay (TURN). Free public relays are tried automatically, and a grown-up can add their own in Grown-ups → Online play.
   - Microphone permission is only asked when starting a call or recording.
 - **Realism vs. performance:** shadows, antialiasing and grass density follow the **Graphics** setting (Fast / Auto / Pretty). Auto picks Fast on phones and 4-core devices. If the tablet is slow, choose Fast.

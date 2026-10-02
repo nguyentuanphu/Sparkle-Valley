@@ -39,7 +39,7 @@ export class Hud {
         <div class="zoom"><span class="clock"></span></div>
       </div>
       <div class="zoomer"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">${ICONS.zoomIn}<kbd class="kb">+</kbd></button><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">${ICONS.zoomOut}<kbd class="kb">−</kbd></button></div>
-      <button class="friendchip" hidden><span class="fc-arrow">➤</span><span class="fc-txt"></span></button>
+      <button class="friendchip" hidden><span class="fc-arrow">➤</span><span class="fc-txt"></span><span class="fc-sig"></span></button>
       <div class="region"></div>
       <div class="htoast"></div>
       <canvas class="wheel" width="96" height="96"></canvas>
@@ -176,6 +176,8 @@ export class Hud {
     b.hidden = false; b.classList.toggle('near', near);
     const pn = nm(P.name), txt = near ? T(`${pn} is here!`, `${pn} ở đây!`) : `${pn} · ${Math.round(d)} m`;
     if (this.last.f !== txt) { this.q('.fc-txt').textContent = txt; this.last.f = txt; }
+    const q = this.game.netQuality && this.game.netQuality(P.id), sk = q ? q.bars + (q.route || '') : '';
+    if (this.last.sig !== sk) { this.q('.fc-sig').innerHTML = q ? this.game.barsHTML(q.bars) + (q.route === 'cloud' ? '☁️' : '') : ''; this.last.sig = sk; }
     const camA = Math.atan2(camera.position.x - h.pos.x, camera.position.z - h.pos.z) + Math.PI; // the way the camera looks
     const a = Math.atan2(P.pos.x - h.pos.x, P.pos.z - h.pos.z) - camA;
     this.q('.fc-arrow').style.transform = `rotate(${-a - Math.PI / 2}rad)`;

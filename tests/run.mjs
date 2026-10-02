@@ -172,9 +172,10 @@ await check('contract', async () => {
 await check('multiplayer', async () => {
   const up = await fetch('http://127.0.0.1:9000/myapp/').then(r => r.ok).catch(() => false);
   if (!up) return 'skipped (no local PeerJS server on 127.0.0.1:9000)';
-  const peer = () => { window.SV_PEER = { host: '127.0.0.1', port: 9000, path: '/myapp', secure: false }; };
-  const A = await open(b, { w: 900, h: 640, lang: 'en' }), B = await open(b, { w: 390, h: 760, lang: 'vi', touch: true });
-  for (const P of [A, B]) { await P.page.evaluate(peer); await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  // direct link through a local PeerJS server; the cloud relay runs alongside (local broker, or none)
+  const peer = () => { window.SV_PEER = { host: '127.0.0.1', port: 9000, path: '/myapp', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const A = await open(b, { pre: peer, w: 900, h: 640, lang: 'en' }), B = await open(b, { pre: peer, w: 390, h: 760, lang: 'vi', touch: true });
+  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
   const code = await A.page.evaluate(async () => __Net.host(__sv.sendHello()));
   await B.page.evaluate(c => { __Net.join(c, __sv.sendHello()); }, code);
   await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 60000 });
@@ -190,6 +191,41 @@ await check('multiplayer', async () => {
   const errs = A.errors.concat(B.errors); await A.ctx.close(); await B.ctx.close();
   ok(/\d+ m/.test(chip) && d < 6 && heard > 0 && !errs.length, JSON.stringify({ chip, d, heard, errs }));
   return `met at ${d.toFixed(1)} m, talk bubble received`;
+});
+
+await check('cloud', async () => {
+  // two devices that can never link directly (the meeting service points nowhere), like far-away networks:
+  // they must find each other through the cloud relay (a local MQTT broker on 127.0.0.1:9001 stands in for
+  // the public ones), see each other's status, join from the friends list, move, meet and talk
+  const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
+  if (!up) return 'skipped (no local MQTT broker on 127.0.0.1:9001)';
+  const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const A = await open(b, { pre, w: 900, h: 640, lang: 'en', settings: { friendCode: 'AAAAA2', friendsOn: true, friends: [{ code: 'BBBBB3', name: 'Bin' }] } });
+  const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'BBBBB3', friendsOn: true, friends: [{ code: 'AAAAA2', name: 'Na' }] } });
+  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  const code = await A.page.evaluate(async () => __Net.host(__sv.sendHello()));
+  await A.page.evaluate(() => { __sv.heroes[0].place(-8, 86); __sv.shareStatus(); });
+  await B.page.waitForFunction(() => { const s = __Net.friends.status.AAAAA2; return s && s.online && s.room; }, null, { timeout: 30000 });
+  const status = await B.page.evaluate(() => { __sv.openPad(0, 'friend'); return new Promise(r => setTimeout(() => r(document.querySelector('.frow').innerText.replace(/\n+/g, ' ')), 600)); });
+  await B.page.evaluate(() => document.querySelector('[data-joinf]').click());
+  await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 45000 });
+  await B.page.evaluate(() => { document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false; });
+  await A.page.waitForFunction(() => Object.values(__sv.partners).some(P => P.pos.y > -40), null, { timeout: 20000 });
+  await B.page.waitForFunction(() => Object.values(__sv.partners).some(P => P.pos.y > -40), null, { timeout: 20000 });
+  await A.page.waitForTimeout(3000);
+  const q = await A.page.evaluate(() => __Net.quality(Object.keys(__Net.remotes)[0]));
+  await A.page.evaluate(() => __sv.askFriendToCome(__sv.heroes[0], Object.keys(__sv.partners)[0]));
+  await B.page.waitForSelector('.dialog .dch', { timeout: 15000 }); await B.page.evaluate(() => document.querySelector('.dialog .dch').click());
+  for (let k = 0; k < 40; k++) { const done = await B.page.evaluate(() => { const h = __sv.heroes[0]; if (!h.walkTo) return true; const dx = h.walkTo.x - h.pos.x, dz = h.walkTo.z - h.pos.z, d = Math.hypot(dx, dz); h.place(h.pos.x + dx / d * Math.min(d - 1, 8), h.pos.z + dz / d * Math.min(d - 1, 8)); return false; }); if (done) break; await B.page.waitForTimeout(300); }
+  await B.page.waitForTimeout(1500);
+  const d = await B.page.evaluate(() => { const P = Object.values(__sv.partners)[0], h = __sv.heroes[0]; return Math.hypot(P.pos.x - h.pos.x, P.pos.z - h.pos.z); });
+  await B.page.evaluate(() => __sv.emote(0, 'hi')); await A.page.waitForTimeout(1500);
+  const heard = await A.page.evaluate(() => __sv.bubbles.length);
+  await B.page.evaluate(() => __Net.close()); await A.page.waitForTimeout(3000);
+  const left = await A.page.evaluate(() => Object.keys(__sv.partners).length === 0);
+  const errs = A.errors.concat(B.errors).filter(e => !/WebSocket|ERR_CONNECTION|peerjs/i.test(e)); await A.ctx.close(); await B.ctx.close();
+  ok(/TP\. Hồ Chí Minh/.test(status) && /1\d{3}|[2-9]\d{3}/.test(status) && q && q.route === 'cloud' && q.rtt && d < 6 && heard > 0 && left && !errs.length, JSON.stringify({ status, q, d, heard, left, errs }));
+  return `status "${status}", ping ${q.rtt} ms through the cloud, met at ${d.toFixed(1)} m, talk bubble received, leaving noticed`;
 });
 
 await b.close();

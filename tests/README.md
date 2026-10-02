@@ -12,3 +12,9 @@ mkdir peer && cd peer && npm init -y && npm install peer@1
 node -e "const http=require('http'),express=require('express'),{ExpressPeerServer}=require('peer');const a=express(),s=http.createServer(a);a.use('/myapp',ExpressPeerServer(s,{path:'/'}));s.listen(9000,'127.0.0.1')"
 ```
 Without it the check says "skipped".
+
+**Cloud relay check (`cloud`):** needs a local MQTT broker with WebSockets on 127.0.0.1:9001 (it stands in for the public brokers):
+```
+npm install aedes@0.51 ws@8
+node -e "const a=require('aedes')(),h=require('http'),{WebSocketServer,createWebSocketStream}=require('ws');const s=h.createServer(),w=new WebSocketServer({server:s,handleProtocols:p=>p.has('mqtt')?'mqtt':false});w.on('connection',x=>a.handle(createWebSocketStream(x)));s.listen(9001,'127.0.0.1')"
+```
