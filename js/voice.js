@@ -1,6 +1,6 @@
 // Talking voice in English and Vietnamese using the device's own natural voices.
 // Premium/enhanced/neural voices are picked first; grown-ups can choose a voice in settings.
-import { settings } from './state.js';
+import { settings, saveSettings } from './state.js';
 import { ac } from './audio.js';
 import { swapNames } from './i18n.js';
 import { packHash } from './packhash.js';
@@ -209,7 +209,17 @@ function playBuffer(buf, rate = 1) {
 // little higher; men use the man's voice when the pack has one.
 let PACK = null;
 export const voicePack = () => PACK;
-fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) PACK = j; }).catch(() => { });
+fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; autoSavePack(); } }).catch(() => { });
+// Keep the whole pack on the device by itself, once: a little while after the game opens, every file not yet
+// saved is downloaded quietly into the voice cache (which game updates never delete), so nothing needs to be
+// downloaded again and every line works offline. It only runs again when a new pack is published.
+function autoSavePack() {
+  const sig = Object.keys(PACK.lines).length + ':' + (PACK.version || 1) + ':' + (PACK.made || '');
+  if (settings.autoPack === false || settings.packSaved === sig || !('caches' in window) || navigator.onLine === false) return;
+  setTimeout(async () => {
+    try { const n = await savePackOffline(); const all = Object.values(PACK.lines).reduce((a, v) => a + v.length, 0); if (n >= all) { settings.packSaved = sig; saveSettings(); } } catch (e) { }
+  }, 20000);
+}
 const packSlot = (lang, text) => { const has = PACK && PACK.lines[packHash(lang, text)]; if (!has) return null; const k = speakerKind(); return k && k.gender === 'm' && has.includes('m') ? 'm' : has.includes('f') ? 'f' : has[0]; };
 const packRate = slot => { const k = speakerKind(); if (!k) return 1; let r = k.old ? .9 : k.kid ? 1.1 : 1; if (k.gender === 'm' && slot === 'f') r *= .86; return r; };
 // Download every file of the pack so it plays with no internet (the service worker keeps them).
