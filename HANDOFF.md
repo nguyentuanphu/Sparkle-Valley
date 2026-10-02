@@ -1,7 +1,89 @@
 # Sparkle Valley · Thung Lũng Lấp Lánh — Project Brief & Handoff
 
-Paste or attach this file at the start of a new chat so the assistant has the full context.
-Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and keep committing and pushing: an earlier build was lost because it was never saved anywhere.
+Attach this file at the start of a new chat so the assistant has the full context.
+Code: **https://github.com/nguyentuanphu/Sparkle-Valley** (work happens on branch `claude/sparkle-valley-v2`, merged into `main` by pull request).
+
+---
+
+## 0. START HERE (for the next assistant)
+
+**Ground rules. The owner set these; follow them every time:**
+1. **Do not change, remove or restyle any existing feature or any part of the UI unless the owner asks for that specific change.** This includes the layout, colours, fonts, icons, button order, menu tabs, Grown-ups sections, texts and game rules. New work is added *alongside* what exists.
+2. **Never `git push`, and never open or update a pull request, until the owner has checked the work and clearly said to push.** Commit locally, report what changed and how it was tested, give the Netlify zip, then wait. One "push" covers one push.
+3. **Run the regression suite before and after every change** (see "Testing" below). All 9 checks must pass.
+   - The `contract` check fails if the UI's structure changed. Only run `--update-contract` when the owner asked for that UI change, and say so.
+4. Every text is bilingual: `T('English', 'Tiếng Việt')`. Spoken lines use `say(en, vi)`.
+5. On every change, **bump `VERSION` in `sw.js`** and add new files to `FILES`, or phones keep the old version.
+6. Never put API keys or personal data in the code or the repo. Keys live only in the grown-up's settings on their device.
+7. Test at phone (320–390 px), tablet and desktop sizes, with 1 and 2 players, in both languages, and say plainly what could not be tested.
+
+**Run the game:** `python3 -m http.server 8765` in the repo, then open http://localhost:8765. `window.__sv` is the game object.
+
+**Testing:** `cd tests && npm install && node run.mjs` (Chromium; in the cloud sandbox it uses `/opt/pw-browsers/chromium`, elsewhere set `CHROMIUM=` to a Chrome path).
+| Check | What it proves |
+|---|---|
+| `boot` | The game starts with no errors at phone, tablet and desktop sizes |
+| `spill` | No HUD button, Sparkle Pad tab or Games hub card text runs off screen or out of its box, at 320/375/1024 px in English and Vietnamese |
+| `language` | Vietnamese mode shows none of the common English labels (HUD, Games hub, tales shelf) |
+| `two-players` | Split screen: 2 heroes, 2 HUDs, pets for both |
+| `games` | Every mini-game (53) opens and closes with no errors |
+| `features` | 7 cities, 26 kiosks, 7 city game hosts, ≥ 47 landmarks, house number 8, 32 tales (18 Vietnamese), walkable Dragon Bridge, pets adopt / pet yard / bring back, chat closes when you walk away, keyboard shortcuts, zoom, a tale from the Games hub flies to the storyteller, a game card flies to its host, folk-game friends chat |
+| `camera` | At every landmark sign, facing 4 ways, the camera is not inside a building or blocked by one (186 of 188 clear this round; Harbour Bridge and Huế graze an edge from one side) |
+| `contract` | HUD buttons, Sparkle Pad tabs and Games hub sections are unchanged (`tests/ui-contract.json`) |
+| `multiplayer` | Two devices in one room through a local PeerJS server: they see each other, the friend chip shows the distance, "Ask to come" arrives, walking to the friend works, talk bubbles cross (skipped when no server runs, see `tests/README.md`) |
+
+Screenshots of each run go to `tests/out/` (not committed).
+
+**Deploy:** Netlify: run `./build-netlify.sh` (it zips `index.html sw.js manifest.webmanifest netlify.toml css js fonts icons vendor videos`, plus `voices/` when it exists) and drag the zip into Netlify. GitHub Pages also auto-deploys `main`. Phones pick up the new version after closing and reopening the app (because `VERSION` changed).
+
+### Everything the game has now (keep all of it)
+- **Players:** up to 6 children, each with a photo face on a 3D character, age mode (under 5 / 5–8), difficulty, outfits, hats, wings or cape and gliders. 1 player, 2 players on one screen (split), or online with friends.
+- **World:**
+  - Dawn Plateau, Sunny Farm, Lotus Village, rice fields, Mirror Lake, bamboo forest, snowy peaks.
+  - Two Homes Street (Bà Rịa × Sydney, with Bạch Dinh, Nhà Tròn and house number 8), the Three Regions Market, Aussie Corner, China Town and India Village.
+  - Seven cities, each a paved square with a golden gate, landmarks, a game host and two kiosks: Hà Nội, Bắc Ninh, Đà Nẵng, Hồ Chí Minh City, Sydney, Melbourne, Brisbane.
+  - An asphalt main road and dirt roads between all of them, golden welcome gates, and Đà Nẵng's golden Dragon Bridge over the river.
+  - 47 landmarks with postcards (10 older ones, 18 UNESCO sites, 19 city and Bà Rịa–Vũng Tàu landmarks), 12 shrines, 4 towers, 24 hidden Leafies and secrets.
+- **Things to do:**
+  - 53 mini-games (thinking, strategy, farm, Vietnamese, Australian, Chinese and Indian folk games, Music Corner, and 7 city games).
+  - 32 fairy tales (18 from Vietnam) read aloud over animated pictures by Grandma Storyteller; 26 kiosks with local food and sayings.
+  - Farm with crops, animals and Mr. Bear's shop; cooking (including 15 cultural dishes); gathering and treasures; market stalls and trading.
+  - Story chapters, quests with a "Go" button, daily jobs, stickers, album, camera.
+- **Culture:**
+  - 8 groups of friends playing traditional games (ℹ️ to learn), crops from each culture, doors to knock on.
+  - Passport with 5 stamps per country and a hat reward, festivals by date (Tết, Mid-Autumn, Diwali, Christmas, Australia Day), story time with 5 folk tales, counting hunts, Chinese and Hindi first words.
+- **Pets:** up to 2 per child, named. They follow, sniff out Leafies and rescue the child in deep water (🆘 → kick).
+- **Travel:** free ferry round Mirror Lake (4 piers), 2 river rafts, fly or walk-there (👣) from the map, riding the water buffalo, gliding.
+- **Weather:** rain waters the farm, puddles to jump in, rainbows, blossoms and leaves by season; day and night.
+- **Little joys:** tap anything for a reaction, confetti, sticker scrapbook, buildings framed by the camera and landmark fly-arounds.
+- **For grown-ups (hold the button):**
+  - Players, backup to iCloud/Drive (share sheet, `.txt`), language, currency, sound and music.
+  - Voices: device, ElevenLabs, Microsoft Azure or Google, family recordings, and the offline voice pack.
+  - Captions, text size (3 steps), calm mode, rain on/off, festival picker, rest timer, camera mode, graphics, credits page, renaming characters, coins.
+  - Online play: friend codes, relay setting, connection test, removing a player.
+  - Voice control and the optional AI villager chat.
+
+### The UI (keep it as it is)
+- **Title screen:** big logo, language buttons 🇦🇺 English / 🇻🇳 Tiếng Việt, small 🌏 中文 / हिन्दी learning buttons, the "add to home screen" chip, and the grown-ups hold button.
+- **Who's playing:** player cards with photos and three modes (alone / two here / friend far away).
+- **HUD (per player):**
+  - Top left: player card (photo, name, hearts) and coins/orbs/leafies chips.
+  - Top middle: the quest bar with a green "▶ Go".
+  - Top right: round minimap with N, and a clock.
+  - Right edge: big zoom ＋/－.
+  - Bottom: the dock (Games, Map, Bag, Ask, Talk, Call, Music, Sound) with Sparkle Valley SVG picture icons.
+  - Bottom right: Run and Jump (Run sits above Jump on narrow phones). The action button is bottom centre, big and glowing.
+  - On computers, small key badges show the shortcuts (G games, M map, B bag, K ask, T talk, C call, N music, O sound, F go, P friends, +/− zoom, E action, 1–8 menu tabs, Esc close).
+  - Under the minimap: a blue chip with the nearest online friend's name, distance and direction.
+  - The stamina wheel by the hero, and a big pulsing prompt for rescues.
+- **Sparkle Pad tabs in order:** Map, Backpack, Adventures, Album, Passport, Games, Camera, Friend. The Pad keeps one height on every tab.
+- **Style:** bright summer-afternoon toon look, soft outlines, Fredoka (English) and Baloo 2 (Vietnamese), rounded cards, big tap targets (≥ 44–56 px), cream and pastel panels, and confetti and stars for rewards.
+
+### Not done yet / open items
+- **The real ElevenLabs voice pack:** the tools are ready and now make the cast the owner chose (English and Vietnamese: a woman and a man; Chinese and Hindi: a man). `node tools/make-voice-pack.mjs --count` shows the cost without a key: **218,880 characters = about 109,440 credits with Flash v2.5** (or 218,880 with Multilingual v2), 3,988 files, about 64 MB. It needs a machine that can reach api.elevenlabs.io. The key the owner pasted in an earlier chat must be replaced after use.
+- **House number 8:** built as a typical two-storey Bà Rịa family house with a balcony, a roll-up shutter, a low front wall and a blue number plate showing only "8". The assistant could not see the real house; a front photo from the owner would let it be matched (colours, roof, gate, balcony). The street name must never appear in the game or the repo.
+- From the kids' UI checklist: a dark / high-contrast colour mode, and a simpler menu for under-5s. Both are optional and only if the owner asks.
+- Needs real-device testing: iPhone/Android share sheet for backups, ElevenLabs/Azure/Google voices with real keys, online play across different networks (relay), and performance on older tablets.
 
 ---
 
@@ -405,6 +487,28 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
   - The key is used only while the tool runs and is never written into the game.
 - **Not done yet:** the real pack. The build machine's network is not allowed to reach api.elevenlabs.io. The whole pipeline was tested end-to-end against a pretend ElevenLabs server (1,261 files made and played in the game; the test files were then deleted).
 
+### Round 18 (cities, roads, fairy tales, friends online, easier controls)
+- **Easier to see and reach:**
+  - The action button sits bottom centre above the dock, bigger and glowing, with an `E` key badge on computers.
+  - 🎤 Ask is always shown (switch it off in quick settings). Where the device cannot listen (iPhone Home-Screen apps, Firefox) it offers picture questions instead (map, games, bag, let's go, what to do, find my friend, go home). On narrow phones Run sits above Jump so Ask is never hidden under them.
+  - Keyboard shortcuts on computers, shown as small badges on each button, and 1–8 / ← → / Esc in the Sparkle Pad.
+  - The Sparkle Pad keeps the same height on every tab (it used to jump up and down).
+  - Zoom: buttons react on finger-down (they work while the other finger is on the joystick), the range is wider, zooming out lifts the camera above rooftops (before, walls pulled it back in so zoom seemed to do nothing), a toast says when the limit is reached, and the mouse wheel zooms the screen under the pointer.
+  - A conversation box closes by itself when the child walks about 9 m away.
+  - Calmer camera near houses and trees: it comes in quickly when something is in the way but drifts back out slowly after a pause, rises over obstacles instead of squeezing in, ignores small things like trees and gates, and only swings behind the child after they have walked the same way for a moment.
+  - Games hub flags are drawn by the game (China and India showed "undefined"; Windows showed "AU").
+- **Pets:** pets sent "to the farm" were being deleted, and older saves could lose pets. Now there is a **pet yard** on the farm where they live and play; tap 🐾 to bring one back. Pets are shown bigger (kitty and bunny were easy to lose in the grass).
+- **Friends online:** a blue chip under the minimap shows the nearest friend's name, distance and an arrow; friends are on the minimap edge and on the big map with names. Tap the chip (or a friend on the map, or the online panel) to 👣 walk there along footprints that follow them, ✨ fly there, or 📣 ask them to come (they get a "Walk / Fly / Not now" card). Arriving opens the talk bubbles. Tested with two browsers through a local PeerJS server.
+- **Roads:** an asphalt main road with a dashed centre line (`ROADS` in `world.js`, drawn by `js/roads.js`), dirt roads to the quieter places, golden welcome gates (cổng chào) at every village and city, and Đà Nẵng's golden **Dragon Bridge** carrying the road over the river (it puffs fire now and then). Trees keep off the roads; roads are on the maps.
+- **Cities** (`CITIES` in `world.js`, `js/cities.js`): Hà Nội (Temple of Literature, water puppet theatre; game Water Puppets), **Bắc Ninh** (the clock tower on its roundabout, Chùa Dâu, Bút Tháp, Đền Đô, Quan họ singers on a boat who sing as you pass; game Đông Hồ Paintings), Đà Nẵng (Golden Bridge with the stone hands, Dragon Bridge; game Dragon Bridge Count), Hồ Chí Minh City (Notre-Dame Cathedral, Central Post Office; game Scooter Traffic Lights), Sydney (Sydney Tower Eye, Luna Park; game Harbour Ferries), Melbourne (Flinders Street Station, a W-class tram; game Tram Stops), Brisbane (Wheel of Brisbane that turns, Lone Pine koalas; game Koala Breakfast). Each has a golden gate, postcards, a host and two kiosks. The 7 games are in `js/games/cities.js`, with How-to-play films.
+- **Kiosks** in every city and older village (26): each sells a local food (food passport) and teaches a saying: ca dao and tục ngữ (Ăn quả nhớ kẻ trồng cây, Uống nước nhớ nguồn…), regional words (mô tê răng rứa, dzui quá trời), Aussie sayings (No worries, She'll be right, Hooroo), Chinese and Hindi proverbs (spoken in those languages).
+- **Two Homes Street:** Bạch Dinh (the White Villa of Vũng Tàu, 1898) and Nhà Tròn (Bà Rịa's round water tower on eight legs, early 1900s), both with postcards; and **house number 8**, a Bà Rịa family home where only the number shows (knock on the door for a warm welcome).
+- **Folk-game friends play and chat together** (`js/chatter.js`): groups take turns saying lines about their game in bubbles (in the chosen language) and turn to each other; the playground and village kids cheer, wave and clap; single hosts call out to children passing by.
+- **Go straight to the person:** tapping a game card in the Games hub flies the child to the friend who runs it and starts the game; flying to a place from the map lands next to that place's villager.
+- **Fairy tales** (`js/talesdata.js`, `js/tales.js`): 32 tales, 18 from Vietnam (Con Rồng cháu Tiên, Thánh Gióng, Sự tích Hồ Gươm, Cây tre trăm đốt, Sự tích dưa hấu, Cây khế, Tấm Cám, Sọ Dừa, Thạch Sanh, Chú Cuội, Cóc kiện trời, Sự tích cây vú sữa, Ba lưỡi rìu, Chuyện quả bầu, Thầy bói xem voi, Đeo nhạc cho mèo, plus Bánh chưng and Sơn Tinh), 4 from Australia, 5 from China, 5 from India, gently retold. The **tale theatre** reads each page aloud in the chosen language over an animated picture (actors fly, hop, swim, sway; rain, stars and sparkles; a painted stage chosen from the words), with ◀ ▶, 🔊, ⏯ read-by-itself, swipe and arrow keys. **Grandma Storyteller** sits at the story mat in Lotus Village; tales are on her shelf and in a new "Fairy tales" shelf in the Games hub, which flies you to her.
+- **Voice pack** (`tools/make-voice-pack.mjs`): English and Vietnamese with a woman's and a man's voice, Chinese and Hindi with a man's voice (`--voice-en-f` … `--voice-hi-m` to choose, otherwise picked from the account's library by language and gender). `--count` shows the cost without a key. After the first visit the game keeps the whole pack on the device by itself (in the voice cache that updates never delete), so it is never downloaded again. `./build-netlify.sh` includes `voices/`.
+- **Tests:** `tests/run.mjs` (see the table in section 0) and `tests/harness.mjs`; the old suite was not in the repo, so this one replaces it. `tests/ui-contract.json` was recorded fresh this round.
+
 ## 3. How it's built
 
 **Tech:**
@@ -457,6 +561,24 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 | `js/chat.js` | Villager personas, offline conversation brain, optional Claude chat, chat window |
 | `js/listen.js`, `js/commands.js` | Speech recognition and voice commands |
 | `js/extras.js` | Grown-ups settings for natural voice, voice control and AI chat |
+| `js/heritage.js` | 18 UNESCO sites (models, ℹ️ signs, facts), culture groups playing traditional games, crops from each culture, door knocking |
+| `js/houses.js`, `js/asia.js`, `js/words2.js`, `js/games/asia.js` | Storybook houses; China Town and India Village; Chinese and Hindi words; First Words, Tangram, Snakes and Ladders, Rangoli |
+| `js/gather.js`, `js/trade.js`, `js/install.js`, `js/icons.js` | Wild gathering and treasures; market stall trading; "add to home screen"; the HUD's SVG picture icons |
+| `js/pets.js` | Pets per child (max 2, named), following, sniffing, patting, adopting, water rescue |
+| `js/ferry.js` | Lake ferry and river rafts, piers (walkable), boarding and getting off |
+| `js/passport.js` | Passport stamps per country, hat rewards, Passport tab |
+| `js/festivals.js` | Festival dates, decorations, fireworks, festival table and treats |
+| `js/weather.js` | Rain, overcast sky, puddles, rainbow, seasonal petals and leaves |
+| `js/fun.js` | Tap-anything reactions, confetti, sticker scrapbook |
+| `js/learn.js`, `js/games/music.js` | Story time folk tales, counting hunts, Music Corner stall and game, rest timer |
+| `js/showcase.js` | Landmark camera framing and fly-around (`SIZE` per landmark) |
+| `js/packhash.js`, `tools/voice-lines.mjs`, `tools/make-voice-pack.mjs` | Offline voice pack: line names, list of every spoken line, ElevenLabs pack maker |
+| `tests/run.mjs`, `tests/ui-contract.json` | The regression suite and the recorded UI structure |
+| `js/roads.js` | Road ribbons, golden welcome gates (`goldenGate`), the Dragon Bridge |
+| `js/cities.js`, `js/games/cities.js` | The seven cities (landmarks, hosts, kiosks), Bạch Dinh, Nhà Tròn, house number 8; the seven city games |
+| `js/chatter.js` | Speech bubbles for friends who play and talk together, and hosts calling out |
+| `js/tales.js`, `js/talesdata.js` | The tale theatre and the new fairy tales (Story time in `js/learn.js` lists them all) |
+| `tests/harness.mjs`, `tests/README.md` | Opening the game in Chromium for the checks; how to run them (and the local PeerJS server for multiplayer) |
 | `vendor/anthropic-sdk.mjs` | Official Anthropic JS SDK bundled with esbuild (only loaded when AI chat is on) |
 
 **Mini-game API:** `register({ id, icon, name, run(api) })`.
@@ -467,6 +589,8 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 **Save data (localStorage):**
 - `sv2_settings`: `{lang, currency, sound, music, voice, voiceEn, voiceVi, bilingual, alwaysDay, quality, camMode, familyVoice, familyPitch, voiceRate, voicePitch, tts, ttsKey, elevenVoice, googleVoiceEn, googleVoiceVi, voiceControl, aiOn, aiKey, credits{creator, forWhom, why}}`. API keys stay on the device.
 - `sv2_profiles`: `[{id, name, photo, age, difficulty, look{style,color,hat,back,hair,hairStyle,skin,glider}, hearts, staminaMax, orbs, leafies{}, shrines{}, towers{}, discovered{}, inv{}, dishes{}, stickers[], levels{}, wins{}, quests{}, story{}, glider, album[], pos}]`
+- Newer settings: `textSize` (0–2), `captions`, `calm`, `noRain`, `festival`, `restMins`, `playDay`, `playMins`, `lastBackup`, `turnUrl`, `turnUser`, `turnPass`, `azureRegion`, `azureVoiceEn`, `azureVoiceVi`, `learnLang`, `npcNames`, `friendCode`, `friends`, `friendsOn`.
+- Newer profile fields: `pets[{kind,name}]`, `postcards{}`, `stamps{}`, `visited{}`, `learned{}`, `found{}`, `tasted{}`, `tales{}`, `hunts{}`, `festivals{}`, `scrapbook[[...],[...],[...]]`, `words{}`, `secrets{}`.
 - `sv2_farm` (shared): `{coins, plots[9], seeds{}, basket{}, animals[], hay, products{}, pets[], jobs{day,list}}`
 - IndexedDB `sparkle-valley-voice` / store `clips`: key `"en:great"` → `{data: ArrayBuffer (WAV), type}`.
 
@@ -519,8 +643,8 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - **Natural voices, voice cloning and AI chat are optional and online.** They use the parent's own ElevenLabs, Google or Anthropic keys and cost money per use. Everything works offline without them (device voice and the built-in chat answers).
   - Keys are kept in localStorage on that device only. The browser calls the services directly (there is no server).
 - **Voice control** relies on the browser's speech recognition (Safari on iPhone/iPad, Chrome on Android). It usually needs the internet.
-- **Online play needs the internet** and uses the free public PeerJS server (`0.peerjs.com`) to introduce the two devices; voice then goes directly between them.
-  - Some strict networks block WebRTC. A TURN server would fix that but costs money.
+- **Online play needs the internet** and uses the free public PeerJS server (`0.peerjs.com`) to introduce the devices; voice then goes directly between them.
+  - Devices on different networks may need a relay (TURN). Free public relays are tried automatically, and a grown-up can add their own in Grown-ups → Online play.
   - Microphone permission is only asked when starting a call or recording.
 - **Realism vs. performance:** shadows, antialiasing and grass density follow the **Graphics** setting (Fast / Auto / Pretty). Auto picks Fast on phones and 4-core devices. If the tablet is slow, choose Fast.
 - The photo face is drawn onto the front of a 3D head; it looks best with a straight-on close-up photo.
@@ -528,20 +652,14 @@ Code lives at **https://github.com/nguyentuanphu/Sparkle-Valley**. Clone it, and
 - iOS home-screen apps keep their own storage, separate from Safari: use backup files to move progress.
 - Leafy hiding spots, shrines and towers are fixed positions; new ones go in `world.js`.
 
-## 6. Ideas for next steps
+## 6. Ideas for next steps (only when the owner asks)
 
-- Bedtime routine at night (brush teeth, story), seasons on the farm, weather (rain waters crops, rainbows).
-- More Vietnamese and Australian content: Tết festival event (bánh chưng, lì xì in VND), Trung Thu lantern parade, Australia Day sausage sizzle, đàn bầu mini-instrument, a ride on a scooter, Vietnamese coffee stall.
-- Restyle Lotus Village houses with the Two Homes Street builders; real videos in `videos/`.
-- Phonics (letter sounds), simple words, opposites, telling the time with the in-game clock.
-- Recorded or pre-generated natural audio for all lines. Parental play-time limit with a gentle "time to rest". Weekly progress report per child.
-- Decorating the house and farm. Trading co-op tasks in online play (send a gift, build together).
-- Native store apps with Capacitor (an iPhone app needs a Mac and an Apple developer account).
-- A TURN server or a hosted backend for cloud sync and more reliable calls (see the cloud-save options below).
-- **Cloud saves (not built yet):** 1) the backup file that already exists, saved to Google Drive / iCloud Files; 2) a parent account (Supabase or Firebase) that syncs the save when online and keeps working offline; 3) a short "sync code" pairing two devices with no account. Store only the game save, with no names beyond nicknames and no analytics, and a grown-up switches it on.
+- Already built from earlier idea lists: weather and rainbows, Tết / Mid-Autumn / Australia Day festivals, đàn bầu (Music Corner), a gentle rest time, cloud backup via iCloud/Drive, and a voice-pack pipeline.
+- Still open: the real ElevenLabs pack (see section 0), a photo of house number 8, a dark / high-contrast mode, a simpler menu for under-5s, a bedtime routine, phonics and telling the time, decorating the house and farm, co-op tasks online, a hosted sync account, and native store apps (Capacitor).
 
 ## 7. How I want the assistant to work
 
+- **Do not change, remove or restyle existing features or UI unless the owner asks for that change** (see section 0). Run `tests/run.mjs` before and after.
 - Keep it fun, safe and suitable for ages 2 to 8, for girls and boys, in **English and Vietnamese**.
 - Under-5 mode never punishes. Big kids can have real challenge.
 - **Test in the browser** (desktop, tablet and phone sizes, 1 and 2 players, both languages) before saying something is done, and say plainly what wasn't tested.

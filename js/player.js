@@ -211,6 +211,8 @@ export class Hero {
     // front of it. Worked out as one "how much of the distance is free" number (k), then smoothed: the camera
     // comes in quickly when something is in the way but goes back out slowly and only after a short pause,
     // so walking past houses and trees no longer makes it jump in and out.
+    // rise a little over whatever was in the way (decided last frame), before checking for walls, so the lift never pokes into a roof
+    if (!close && this._camLift) want.y += this._camLift * 2.2;
     let k = 1, lift = 0;
     const bx = this.world.boxes; if (bx && bx.length && !close) {
       const dx = want.x - target.x, dz = want.z - target.z; let tmin = 1;
@@ -236,6 +238,7 @@ export class Hero {
       const hit = _ray.intersectObjects(bl, false)[0];
       mats.forEach(m => { m.side = m._side; });
       if (hit) { k = Math.min(k, Math.max(1.6, hit.distance - .8) / (full || 1)); lift = 1; }
+      this._camHitRay = !!hit;
     }
     if (close) { this._camK = 1; this._camLift = 0; this._camFreeT = 0; }
     else {
@@ -244,9 +247,7 @@ export class Hero {
       else { this._camFreeT = (this._camFreeT || 0) + dt; this._camK = this._camFreeT > .6 ? ck + (k - ck) * Math.min(1, dt * 1.1) : ck; }
       this._camLift = (this._camLift || 0) + (lift - (this._camLift || 0)) * Math.min(1, dt * (lift ? 2.5 : .8));
       const kk = this._camK;
-      if (kk < .999) { want.x = target.x + (want.x - target.x) * kk; want.z = target.z + (want.z - target.z) * kk; want.y = target.y + (want.y - target.y) * Math.max(kk, .55); }
-      // when something is in the way, rise up a little and look down over it rather than squeezing in
-      want.y += this._camLift * 2.2;
+      if (kk < .999) { want.x = target.x + (want.x - target.x) * kk; want.z = target.z + (want.z - target.z) * kk; want.y = target.y + (want.y - target.y) * (this._camHitRay ? kk : Math.max(kk, .55)); }
     }
     const gy = this.world.groundAt(want.x, want.z) + .7; if (want.y < gy) want.y = gy;
     this.camPos.lerp(want, Math.min(1, dt * 5));

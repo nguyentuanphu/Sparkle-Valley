@@ -32,8 +32,8 @@ register({
 const DH_COLS = { red: ['#c8402c', 'red', 'đỏ (gỗ vang)'], yellow: ['#e8b830', 'yellow', 'vàng (hoa hòe)'], green: ['#4f8a3a', 'green', 'xanh (lá chàm)'], black: ['#2b2621', 'black', 'đen (than lá tre)'], white: ['#f4ead2', 'white', 'trắng (vỏ sò điệp)'] };
 const DH_PICS = [
   { en: 'the pig', vi: 'con lợn', parts: [['ellipse', 50, 58, 30, 20, 'black'], ['circle', 76, 50, 10, 0, 'black'], ['circle', 42, 56, 8, 0, 'white'], ['circle', 58, 64, 6, 0, 'red'], ['rect', 30, 74, 8, 12, 'black'], ['rect', 62, 74, 8, 12, 'black']] },
-  { en: 'the rooster', vi: 'con gà trống', parts: [['ellipse', 46, 60, 22, 16, 'red'], ['circle', 66, 40, 9, 0, 'yellow'], ['polygon', '62,30 66,22 70,30', 0, 0, 'red'], ['polygon', '24,52 10,34 18,62', 0, 0, 'green'], ['rect', 44, 74, 4, 14, 'yellow'], ['polygon', '74,40 82,43 74,46', 0, 0, 'yellow']] },
-  { en: 'the carp', vi: 'cá chép', parts: [['ellipse', 48, 50, 28, 14, 'yellow'], ['polygon', '76,50 92,36 92,64', 0, 0, 'red'], ['circle', 30, 46, 3, 0, 'black'], ['ellipse', 50, 38, 10, 4, 'red'], ['ellipse', 50, 62, 10, 4, 'green']] },
+  { en: 'the rooster', vi: 'con gà trống', parts: [['ellipse', 46, 60, 22, 16, 'red'], ['circle', 66, 40, 9, 0, 'yellow'], ['polygon', '62,30 66,22 70,30', 0, 0, 0, 'red'], ['polygon', '24,52 10,34 18,62', 0, 0, 0, 'green'], ['rect', 44, 74, 4, 14, 'yellow'], ['polygon', '74,40 82,43 74,46', 0, 0, 0, 'yellow']] },
+  { en: 'the carp', vi: 'cá chép', parts: [['ellipse', 48, 50, 28, 14, 'yellow'], ['polygon', '76,50 92,36 92,64', 0, 0, 0, 'red'], ['circle', 30, 46, 3, 0, 'black'], ['ellipse', 50, 38, 10, 4, 'red'], ['ellipse', 50, 62, 10, 4, 'green']] },
   { en: 'the children with a toad', vi: 'em bé ôm cóc', parts: [['circle', 50, 30, 12, 0, 'white'], ['rect', 36, 42, 28, 30, 'red'], ['ellipse', 50, 62, 12, 8, 'green'], ['rect', 38, 72, 8, 14, 'yellow'], ['rect', 54, 72, 8, 14, 'yellow'], ['circle', 50, 22, 6, 0, 'black']] }
 ];
 const dhShape = (s, fill, extra = '') => {

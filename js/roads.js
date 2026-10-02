@@ -123,7 +123,6 @@ export function createRoads(G) {
   const face = (x, z, tx, tz) => Math.atan2(tx - x, tz - z);
   const gates = [
     [76, 30, Math.PI / 2, ['Welcome to Lotus Village', 'Chào mừng đến Làng Sen']],
-    [96, 83, Math.PI / 2, ['Welcome to the Three Regions Market', 'Chào mừng đến Chợ Ba Miền']],
     [-90, -12, Math.PI / 2, ['Welcome to Aussie Corner', 'Chào mừng đến Góc Nước Úc']],
     [100, -62, 0, ['Welcome to China Town', 'Chào mừng đến Làng Trung Hoa']],
     [-112, -58, 0, ['Welcome to India Village', 'Chào mừng đến Làng Ấn Độ']],

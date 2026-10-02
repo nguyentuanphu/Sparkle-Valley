@@ -2,8 +2,7 @@
 import { chromium } from 'playwright';
 export const URL = process.env.SV_URL || 'http://localhost:8765/';
 export async function launch() {
-  const exe = process.env.CHROMIUM || (await import('fs')).existsSync('/opt/pw-browsers/chromium') ? undefined : undefined;
-  return chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
+  return chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 }
 export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'solo', touch = false, settings = {}, play = true } = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch, deviceScaleFactor: 1 });
@@ -16,13 +15,12 @@ export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'so
   await page.goto(URL);
   await page.waitForSelector('.screen.title', { timeout: 30000 });
   // the test browser draws in software: draw fewer pixels so checks run quicker
-  await page.evaluate(() => { const r = window.__sv.renderer; r.setPixelRatio(.35); dispatchEvent(new Event('resize')); });
+  await page.evaluate(() => { const r = window.__sv.renderer; if (r) { r.setPixelRatio(.35); dispatchEvent(new Event('resize')); } });
   if (!play) return { ctx, page, errors };
   await page.click('.screen.title .press');
   await page.waitForSelector('.screen.who');
   if (mode !== 'solo') await page.click(`.modes button[data-m=${mode}]`);
-  const picks = await page.$$('.pick[data-id]');
-  await picks[0].click(); if (mode === 'split') await picks[1].click();
+  await page.locator('.pick[data-id]').nth(0).click(); if (mode === 'split') await page.locator('.pick[data-id]').nth(1).click();
   await page.click('.who .go');
   await page.waitForFunction(() => window.__sv && window.__sv.heroes.length > 0);
   // skip the prologue
