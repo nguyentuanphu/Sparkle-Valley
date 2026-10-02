@@ -46,6 +46,7 @@ import './games/music.js';
 import './games/cities.js';
 import { createRoads } from './roads.js';
 import { createCities } from './cities.js';
+import { createChatter, LINES as CHAT_LINES } from './chatter.js';
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
@@ -95,11 +96,11 @@ function nameTag(name, color = '#ffffff') {
   return s;
 }
 function addNPC({ id, name, look, model, x, z, face = 0, icon = '💬', talk }) {
-  const obj = model || buildAvatar(look, null).root;
+  const A = model ? null : buildAvatar(look, null), obj = model || A.root;
   const av = model ? null : obj;
   obj.position.set(x, world.groundAt(x, z), z); obj.rotation.y = face; scene.add(obj);
   const tag = nameTag(name); tag.position.set(x, obj.position.y + (model ? 3.4 : 2.0), z); scene.add(tag);
-  const n = { id, name, x, z, obj, tag, avatar: av, talk }; registerName(name, icon);
+  const n = { id, name, x, z, obj, tag, avatar: av, A, talk }; registerName(name, icon);
   NPCS.push(n);
   world.colliders.push({ x, z, r: .7 });
   G.interactables.push({ id: 'npc_' + id, x, z, r: 3, icon, label: () => T('Talk to ', 'Nói chuyện với ') + nm(name), act: h => talk(h) });
@@ -136,10 +137,17 @@ function setupNPCs() {
     OUTLINED.forEach(A => { if (!A.root.parent) return; A.root.getWorldPosition(_wp); const near = G.heroes.some(h => dist2(h.pos.x, h.pos.z, _wp.x, _wp.z) < 30); if (A._ol !== near) { A._ol = near; A.outlines.forEach(o => o.visible = near); } });
   });
   // gentle idle animation
+  // the children who host folk games are busy playing: they cheer, wave and clap now and then
+  const PLAYERS = new Set(['teo', 'ti', 'bong', 'su', 'jack', 'mit', 'bom', 'ruby', 'lan']);
   world.updaters.push((dt, t) => NPCS.forEach((n, k) => {
-    if (n.avatar) { n.avatar.children[0].position.y = Math.sin(t * 2 + k) * .03; }
+    if (n.A && PLAYERS.has(n.id)) { const ph = Math.floor(t * .7 + k * 1.3) % 4; n.A.anim(ph === 0 ? 'cheer' : ph === 2 ? 'wave' : 'idle', t + k, 0); }
+    else if (n.avatar) { n.avatar.children[0].position.y = Math.sin(t * 2 + k) * .03; }
     else n.obj.rotation.z = Math.sin(t * 1.5 + k) * .05;
   }));
+  // and they talk to each other about their games
+  const grp = ids => ids.map(id => (NPCS.find(n => n.id === id) || {}).obj).filter(Boolean);
+  G.chatGroup(grp(['jack', 'mit', 'bom', 'lan']), CHAT_LINES.playground, { height: 2.7 });
+  G.chatGroup(grp(['teo', 'su', 'bong', 'ti']), CHAT_LINES.village, { height: 2.7, face: false });
 }
 
 // ---------- interactables ----------
@@ -415,6 +423,19 @@ const GAME_SPOT = { music: 'musiccorner', firstwords: 'g_firstwords', tangram: '
 G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (G.GAME_SPOT || {})[id] || (SHRINES.find(s => s.game === id) || {}).id));
 G.openQuick = i => { if (G.paused) return; G.paused = true; openQuick(G, i); };
 G.openGamesHub = i => { if (G.paused) return; G.paused = true; openGamesHub(G, i, () => { G.paused = false; }); };
+// Games hub / map: fly straight to the friend who runs a game (or a place), then start it there
+const npcLike = it => /^(npc_|g_|v_|pc_|cards$|dacau$|musiccorner$|bear$|stall$)/.test(it.id || '');
+G.landBy = async (h, x, z) => { await G.travel(h, x - 4.5 + 1.8, z - 1 + 1.4); h.yaw = Math.atan2(x - h.pos.x, z - h.pos.z); h.camYaw = h.yaw + Math.PI; };
+G.meetAndPlay = async (i, id) => {
+  const h = G.heroes[i], it = G.gameSpot(id); if (!h) return;
+  if (!it) { G.playGame(i, id, 'place'); return; }
+  if (dist2(h.pos.x, h.pos.z, it.x, it.z) > 4) await G.landBy(h, it.x, it.z);
+  G.fx && G.fx(it.x, heightAt(it.x, it.z) + 2.4, it.z, '🎮'); await wait(500);
+  G.playGame(i, id, 'place');
+};
+// the villager nearest to a place on the map (within 20 m), so travelling lands you right next to them
+G.npcNear = (x, z, r = 20) => G.interactables.filter(it => npcLike(it) && Number.isFinite(it.x) && dist2(it.x, it.z, x, z) < r).sort((a, b) => dist2(a.x, a.z, x, z) - dist2(b.x, b.z, x, z))[0] || null;
+G.travelTo = async (h, x, z) => { const n = G.npcNear(x, z); if (n) { await G.landBy(h, n.x, n.z); hudFor(h).toast('👋 ' + n.label()); } else await G.travel(h, x, z); };
 G.goToGame = (i, id) => { const h = G.heroes[i], it = G.gameSpot(id); if (!h || !it) return; (async () => { if (dist2(h.pos.x, h.pos.z, it.x, it.z) > 45) await G.travel(h, it.x - 1.5, it.z + 2); goAndDo(h, it); })(); };
 // ---------- objective helpers ----------
 G.objectiveIcon = h => { const q = currentQuest(h.profile); return q ? q.icon : '🏆'; };
@@ -960,6 +981,7 @@ function frame(now) {
 
 // ---------- boot ----------
 loadClips();
+createChatter(G);
 setupNPCs(); setupInteractables();
 G.farm = createFarm(G); world.updaters.push(G.farm.update);
 G.places = createPlaces(G); world.updaters.push(G.places.update);

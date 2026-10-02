@@ -470,7 +470,7 @@ export function openPad(game, i, tab) {
     const S = 600, cv = el('canvas', 'bigmap'); cv.width = cv.height = S; body.appendChild(cv);
     body.appendChild(el('p', 'note center', T('Tap any picture on the map, or a place below, to fly there.', 'Chạm vào bất kỳ hình nào trên bản đồ, hoặc một nơi bên dưới, để bay đến đó.')));
     const quick = el('div', 'quick');
-    game.PLACES.forEach(pl => { const b = el('button', 'qbtn', `<span>${pl.icon}</span><small>${esc(pl.name())}</small>`); b.onclick = () => { close(); game.travel(hero, pl.x, pl.z); }; quick.appendChild(b); });
+    game.PLACES.forEach(pl => { const b = el('button', 'qbtn', `<span>${pl.icon}</span><small>${esc(pl.name())}</small>`); b.onclick = () => { close(); game.travelTo(hero, pl.x, pl.z); }; quick.appendChild(b); });
     const ch = el('button', 'qbtn change', `<span>🔄</span><small>${T('Change player', 'Đổi người chơi')}</small>`); ch.onclick = () => { close(); game.changePlayer(); }; quick.appendChild(ch);
     body.appendChild(quick);
     const x = cv.getContext('2d'); x.drawImage(game.fogMapFor(p), 0, 0, S, S);
@@ -507,7 +507,7 @@ export function openPad(game, i, tab) {
         const c = el('button', 'btn', '📣 ' + T('Ask to come', 'Gọi bạn đến')); c.onclick = () => { close(); game.askFriendToCome(hero, s.friend); }; ok.insertBefore(c, ok.querySelector('.no'));
         ok.querySelector('.no').onclick = () => ok.remove(); return;
       }
-      ok.querySelector('.primary').onclick = () => { close(); game.travel(hero, s.x, s.z); };
+      ok.querySelector('.primary').onclick = () => { close(); game.travelTo(hero, s.x, s.z); };
       ok.querySelector('.walk').onclick = () => { close(); hero.walkTo = { x: s.x, z: s.z, name: s.name }; say(`Follow the footprints to ${s.name}!`, `Đi theo dấu chân đến ${s.name} nhé!`); };
       ok.querySelector('.no').onclick = () => ok.remove();
     };
@@ -748,13 +748,15 @@ export function openGamesHub(game, i, onClose) {
   const m = modal('hub', ''), card = m.querySelector('.card');
   const close = () => { m.close(); onClose && onClose(); };
   card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎮 ${T('Games', 'Trò chơi')}</h2>
-    <p class="sub">${T('Tap a picture to play now. 📺 shows how to play. 📍 walks you there in the valley.', 'Chạm vào hình để chơi ngay. 📺 xem cách chơi. 📍 đi đến chỗ đó trong thung lũng.')}</p>
+    <p class="sub">${T('Tap a picture: you fly to the friend who plays it, and the game starts. 📺 shows how to play. 📍 walks you there.', 'Chạm vào hình: con bay đến chỗ bạn chơi trò đó và bắt đầu chơi. 📺 xem cách chơi. 📍 đi bộ đến đó.')}</p>
     ${HUB.map(sec => `<h3>${sec.icon} ${esc(sec.title())}</h3><div class="hubgrid">${sec.games.filter(id => GAMES[id]).map((id, k) => {
       const g = GAMES[id], lv = p.levels[id] || 1;
       return `<div class="hcard" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}"><span class="hi">${g.icon}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${originFlags(g.origin)}</span>` : ''}</div>`;
-    }).join('')}</div>`).join('')}`;
+    }).join('')}</div>`).join('')}
+    ${game.taleShelfHTML ? `<h2 class="hub-tales">📖 ${T('Fairy tales', 'Truyện cổ tích')}</h2><p class="sub">${T('Tap a story: you fly to Grandma Storyteller and she reads it to you.', 'Chạm vào truyện: con bay đến chỗ Bà Kể Chuyện và bà kể cho con nghe.')}</p><div class="talelib">${game.taleShelfHTML(p)}</div>` : ''}`;
+  card.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { close(); game.readTale(i, b.dataset.tale); });
   card.querySelector('.x').onclick = close;
-  card.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); game.playGame(i, id, 'place'); });
+  card.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); game.meetAndPlay(i, id); });
   card.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { close(); game.goToGame(i, b.dataset.go); });
   card.querySelectorAll('[data-how]').forEach(b => b.onclick = () => { const id = b.dataset.how; openHowTo(id, { onPlay: () => { close(); game.playGame(i, id, 'place'); } }); });
   say('Which game shall we play?', 'Mình chơi trò gì nào?');

@@ -249,7 +249,7 @@ export function createRegions(G) {
     ['cricket', 'Liam', L('shirt', '#ffffff', '#6b4226', 'short', 'cap', '#ffe3d1'), -100.5, 12.5, Math.PI, ["Fancy a hit of backyard cricket, mate? You bat first!", 'Chơi cricket sân sau không bạn? Bạn đánh trước nhé!']]
   ];
   for (const [game, name, look, x, z, face, line] of HOSTS) {
-    person(look, x, z, face); tag(scene, name, x, heightAt(x, z) + 2.5, z);
+    const pA = person(look, x, z, face); tag(scene, name, x, heightAt(x, z) + 2.5, z); if (G.hostChat && pA) G.hostChat(pA, game);
     I('g_' + game, x, z + (Math.abs(face) > 1 ? -2 : 2), 3, G.GAMES_ICON ? G.GAMES_ICON(game) : '🎮', () => nm(name), h => G.kidTalk(h, game, name, line));
   }
   // party decorations and hanging pots
