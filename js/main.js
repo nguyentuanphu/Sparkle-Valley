@@ -693,7 +693,9 @@ function helloPhoto(src) {
   if (helloPhotos.has(src)) return helloPhotos.get(src);
   helloPhotos.set(src, null);
   const im = new Image();
-  im.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = 160; c.getContext('2d').drawImage(im, 0, 0, 160, 160); helloPhotos.set(src, c.toDataURL('image/jpeg', .7)); if (Net.role && G.heroes[0] && G.heroes[0].profile.photo === src) sendHello(); } catch (e) { } };
+  im.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = 160; c.getContext('2d').drawImage(im, 0, 0, 160, 160); helloPhotos.set(src, c.toDataURL('image/jpeg', .7));
+    // send it again once the room is open (it may still be opening)
+    const resend = (n = 0) => { if (!G.heroes[0] || G.heroes[0].profile.photo !== src) return; if (Net.role) sendHello(); else if (n < 90) setTimeout(() => resend(n + 1), 1000); }; resend(); } catch (e) { } };
   im.src = src;
   return null;
 }
@@ -915,7 +917,7 @@ function startSession(mode, chosen) {
     const h = new Hero(i, p, scene, world);
     const start = p.pos && Number.isFinite(p.pos.x) ? p.pos : { x: -3 + i * 2.5, z: -4 };
     h.place(start.x, start.z); h.camYaw = Math.PI * .85;
-    G.heroes.push(h); G.huds.push(new Hud(i, h, G)); G.regionOf[i] = null;
+    G.heroes.push(h); G.huds.push(new Hud(i, h, G)); G.regionOf[i] = null; if (i === 0) helloPhoto(h.profile.photo); // ready before a friend joins
   });
   // shrine & tower colours follow the first player
   const p0 = chosen[0];
@@ -938,12 +940,18 @@ function startSession(mode, chosen) {
 
 // ---------- the loop ----------
 let playing = false, last = performance.now(), t = 0, sendT = 0, saveT = 0;
+// friends keep seeing where I am: 10 times a second on its own clock (so a slow phone still sends on time),
+// and once a second while a menu or a game is open or the app is in the background
+let sentAt = 0;
+setInterval(() => {
+  const h0 = G.heroes[0], idle = G.paused || gameOpen() || document.hidden, nowMs = performance.now();
+  if (!playing || !h0 || !Net.connected || nowMs - sentAt < (idle ? 950 : 90)) return;
+  sentAt = nowMs;
+  Net.send({ t: 's', x: +h0.pos.x.toFixed(2), y: +h0.pos.y.toFixed(2), z: +h0.pos.z.toFixed(2), yaw: +h0.yaw.toFixed(2), st: idle ? 'idle' : h0.state, sp: idle ? 0 : +h0.speed.toFixed(1) });
+}, 100);
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
-  // friends keep seeing where I am, even while a menu or a game is open (once a second then)
-  { const h0 = G.heroes[0], idle = G.paused || gameOpen(); sendT -= dt;
-    if (playing && h0 && Net.connected && sendT <= 0) { sendT = idle ? 1 : .1; Net.send({ t: 's', x: +h0.pos.x.toFixed(2), y: +h0.pos.y.toFixed(2), z: +h0.pos.z.toFixed(2), yaw: +h0.yaw.toFixed(2), st: idle ? 'idle' : h0.state, sp: idle ? 0 : +h0.speed.toFixed(1) }); } }
   // the 3D world rests while a full-screen game or the storybook is open (saves battery)
   if (gameOpen() || document.querySelector('.storybook') || (G.paused && document.querySelector('.modal'))) return;
   world.update(dt, t);
