@@ -87,7 +87,7 @@ export const VENDORS = [
 
 // ---------- landmarks you can collect as postcards ----------
 export const LANDMARKS = [
-  { id: 'opera', icon: '🎭', x: 24, z: 168, name: () => T('Sydney Opera House', 'Nhà hát Opera Sydney'), fact: ['The Sydney Opera House has roofs shaped like big white sails. Inside, people sing, dance and play music.', 'Nhà hát Opera Sydney có mái hình những cánh buồm trắng khổng lồ. Bên trong, người ta hát, múa và chơi nhạc.'] },
+  { id: 'opera', icon: '🎭', x: 98, z: 128, name: () => T('Sydney Opera House', 'Nhà hát Opera Sydney'), fact: ['The Sydney Opera House has roofs shaped like big white sails. Inside, people sing, dance and play music.', 'Nhà hát Opera Sydney có mái hình những cánh buồm trắng khổng lồ. Bên trong, người ta hát, múa và chơi nhạc.'] },
   { id: 'harbour', icon: '🌉', x: 59, z: 47, name: () => T('Harbour Bridge', 'Cầu Cảng Sydney'), fact: ['The Sydney Harbour Bridge is nicknamed "the Coathanger" because of its shape. Brave people climb right to the top!', 'Cầu Cảng Sydney có biệt danh là "cái móc áo" vì hình dáng của nó. Có người còn leo lên tận đỉnh cầu!'] },
   { id: 'uluru', icon: '🪨', x: -128, z: 136, name: () => T('Uluru', 'Uluru'), fact: ['Uluru is a giant red rock in the middle of Australia. It is a very special place for Aboriginal people, its traditional owners, and it glows orange at sunset.', 'Uluru là một khối đá đỏ khổng lồ ở giữa nước Úc. Đây là nơi rất thiêng liêng của người Thổ dân, chủ nhân truyền thống của vùng đất, và đá rực cam lúc hoàng hôn.'] },
   { id: 'banana', icon: '🍌', x: -98, z: -18, name: () => T('The Big Banana', 'Quả Chuối Khổng Lồ'), fact: ['Australia loves its "Big Things"! The Big Banana in Coffs Harbour is one of the most famous. There is a Big Pineapple and a Big Prawn too!', 'Nước Úc rất thích "những thứ khổng lồ"! Quả Chuối Khổng Lồ ở Coffs Harbour là nổi tiếng nhất. Còn có Quả Dứa Khổng Lồ và Con Tôm Khổng Lồ nữa!'] },
@@ -263,11 +263,11 @@ export function createRegions(G) {
   world.updaters.push((dt, t) => { const k = new THREE.Vector3(140 + Math.sin(t * .5) * 3, M.h + 16 + Math.sin(t * .9) * 1.5, 100 + Math.cos(t * .4) * 2); kiteS.position.copy(k); kline.geometry.setFromPoints([new THREE.Vector3(142, M.h + 1.2, 93.2), k]); });
 
   // ================= landmarks in the wider valley =================
-  // Sydney Opera House on the lake's southern beach
+  // Sydney Opera House on the lake's east beach, looking over the water like Bennelong Point
   { const p = [P(Box(16, 1.6, 10), '#cdb89a', [0, .8, 0]), P(Box(16, .3, 2), '#d9c9aa', [0, .15, 6])];
     const sail = (x, z, s, rot) => { p.push(P(new THREE.ConeGeometry(2.4 * s, 5 * s, 12, 1, true, 0, Math.PI), '#f4f1ea', [x, 1.6 + 2.2 * s, z], [-.35, rot, 0])); };
     sail(-4.5, 1, 1.15, 0); sail(-2, .8, 1, 0); sail(.2, .6, .8, 0); sail(3.5, 0, 1, Math.PI); sail(5.6, .2, .8, Math.PI);
-    put(merge(p), 24, 168, Math.PI * .85); world.colliders.push({ x: 24, z: 168, r: 6.5 }); }
+    put(merge(p), 98, 128, -Math.PI / 2); world.colliders.push({ x: 98, z: 128, r: 6.5 }); }
   // lifesavers' tower and the red-and-yellow flags
   { const p = [...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([x, z]) => P(Box(.15, 3, .15), '#dddddd', [x, 1.5, z])), P(Box(2.6, 1.6, 2.6), '#ffffff', [0, 3.8, 0]), P(Box(2.7, .4, 2.7), '#2f7ac8', [0, 4.4, 0]),
       ...[-6, 6].flatMap(x => [P(Box(.06, 2.4, .06), '#888', [x, 1.2, 4]), P(Box(.8, .3, .04), '#e8433a', [x + .4, 2.2, 4]), P(Box(.8, .3, .04), '#ffd23f', [x + .4, 1.9, 4])])];
@@ -338,7 +338,7 @@ async function vendorTalk(G, h, v) {
 }
 
 // ---------- postcards from famous places ----------
-async function postcard(G, h, lm) {
+export async function postcard(G, h, lm) {
   const p = h.profile; p.postcards = p.postcards || {};
   const first = !p.postcards[lm.id]; p.postcards[lm.id] = true; G.save();
   await dialog(lm.name(), [lm.fact]);

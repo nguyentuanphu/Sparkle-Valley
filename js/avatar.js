@@ -92,7 +92,7 @@ B.cape.translate(0, -.31, 0);
 const STYLE_LEGS = { dress: 'skin', shirt: 'shorts', aodai: 'pants:#ffffff', tunic: 'pants:#7a5236', overalls: 'pants', hoodie: 'pants:#3a5a8a' };
 
 export function buildAvatar(look, photo) {
-  const root = new THREE.Group(), rig = new THREE.Group(); root.add(rig);
+  const root = new THREE.Group(), rig = new THREE.Group(); root.add(rig); root.userData.avatar = true;
   const shadow = blobShadow(); root.add(shadow); shadow.position.y = .03; shadow.scale.setScalar(.65);
   const style = look.style || 'shirt', col = look.color || '#3b6fe0';
   const skin = toon(look.skin, { roughness: .6 }), hairM = toon(look.hair, { roughness: .45, metalness: .05 }), cloth = toon(col, { roughness: .92 });

@@ -141,17 +141,18 @@ export function createTown(G) {
     const z = south ? front + b.d / 2 : front - b.d / 2;
     b.obj.position.set(x, heightAt(x, z), z); b.obj.rotation.y = south ? Math.PI : 0; scene.add(b.obj);
     world.boxes.push({ x0: x - b.w / 2, x1: x + b.w / 2, z0: z - b.d / 2, z1: z + b.d / 2 });
+    world.houses.push({ x, z, rot: b.obj.rotation.y, d: b.d, kind: b.kind || 'tube' });
   };
   const houseOld = (b, x, front, south) => { house(b, x, front, south); const m = scene.children[scene.children.length - 1]; outline(m, .03, '#4a3a3f'); };
   // Bà Rịa side (north): tube houses with shops downstairs, then the French villa
   place(houseTube({ wall: '#9fd8c8', floors: 3, d: 7.4, sign: ['Corner Shop', 'Tạp Hóa'] }), 15.6, N);
   place(houseTube({ wall: '#f6c8a8', floors: 3, d: 7.4, sign: ['Bánh Mì', 'Bánh Mì'] }), 20.1, N);
   place(houseTube({ wall: '#f6e09a', floors: 2, d: 7.4, sign: ['Coffee', 'Cà Phê'] }), 24.6, N);
-  const villa = houseVilla(); place(villa, 33.5, N - 1.2);
+  const villa = Object.assign(houseVilla(), { kind: 'villa' }); place(villa, 33.5, N - 1.2);
   houseOld(brickHouse(), 45, N - 2.5);
   // Sydney side (south)
   houseOld(raisedHouse(), 13.5, S + 1.5, true);
-  place(houseCottage({ yard: false }), 45, S + 4.5, true);
+  place(Object.assign(houseCottage({ yard: false }), { kind: 'cottage' }), 45, S + 4.5, true);
   // garden walls and fences
   const fence = [];
   fence.push(P(Box(10, 1, .25), '#f6ead0', [33.5, .5, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [32.3, .8, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [34.7, .8, N - .6]));
