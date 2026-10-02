@@ -47,10 +47,12 @@ export function createShowcase(G) {
   // 0 (far away) .. 1 (right next to it): how much to pull the camera back for this explorer
   // Also remembers which landmark is nearest (h._lm), so the camera can turn to face it.
   G.landmarkFrame = h => {
-    let best = 0, near = null;
+    // the pull-back follows the biggest landmark around; the one to turn to is the closest for its size, so a
+    // small landmark the child is standing at wins over a big bridge further away
+    let best = 0, near = null, nf = 1;
     for (const lm of LANDMARKS) {
       const c = landmarkCentre(lm), d = Math.hypot(h.pos.x - c.x, h.pos.z - c.z), reach = c.s * 1.1 + 12;
-      if (d < reach) { const k = clamp((reach - d) / (c.s * .6 + 6), 0, 1) * clamp(c.s / 20, .55, 1.3); if (k > best) { best = k; near = c; } }
+      if (d < reach) { const k = clamp((reach - d) / (c.s * .6 + 6), 0, 1) * clamp(c.s / 20, .55, 1.3); if (k > best) best = k; if (d / reach < nf) { nf = d / reach; near = c; } }
     }
     h._lm = near;
     return best;

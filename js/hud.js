@@ -37,8 +37,9 @@ export class Hud {
       <div class="hud-tr">
         <div class="mini-wrap"><canvas class="mini" width="200" height="200"></canvas><i class="mini-n">N</i><i class="mini-me"></i></div>
         <div class="zoom"><span class="clock"></span></div>
+        <div class="tools"></div>
       </div>
-      <div class="zoomer"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">${ICONS.zoomIn}<kbd class="kb">+</kbd></button><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">${ICONS.zoomOut}<kbd class="kb">−</kbd></button></div>
+      <div class="zoomer"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">${ICONS.zoomIn}<kbd class="kb">+</kbd></button><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">${ICONS.zoomOut}<kbd class="kb">−</kbd></button><button class="z-view" aria-label="${T('Camera view', 'Góc nhìn')}">🎥<kbd class="kb">V</kbd></button></div>
       <button class="friendchip" hidden><span class="fc-arrow">➤</span><span class="fc-txt"></span><span class="fc-sig"></span></button>
       <div class="region"></div>
       <div class="htoast"></div>
@@ -87,6 +88,7 @@ export class Hud {
     // pointerdown (not click) so zoom still works while another finger is on the joystick
     const zb = (b, f) => b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); game.zoomBy(i, f); });
     zb(this.q('.z-in'), .8); zb(this.q('.z-out'), 1.25);
+    this.q('.z-view').addEventListener('pointerdown', e => { e.preventDefault(); game.cycleView(i); });
     this.refreshAudio();
     const em = this.q('.emotes');
     EMOTES.forEach(e => { const b = el('button', 'em', `<span>${e.icon}</span><small>${esc(T(e.en, e.vi))}</small>`); b.onclick = () => { this.toggleEmotes(false); game.emote(i, e.id); }; em.appendChild(b); });
@@ -99,7 +101,14 @@ export class Hud {
   }
   refreshWho() { const p = this.hero.profile; this.q('.pav').src = avatarURL(p); this.q('.pname').textContent = nm(p.name); }
   toggleEmotes(v) { const e = this.q('.emotes'); e.hidden = v == null ? !e.hidden : !v; }
-  layout(r, two) { Object.assign(this.root.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' }); this.root.classList.toggle('small', two || r.w < 560 || r.h < 420); this.rect = r; }
+  layout(r, two) {
+    Object.assign(this.root.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
+    const small = two || r.w < 560 || r.h < 420; this.root.classList.toggle('small', small); this.rect = r;
+    // on phones the dock has room for four buttons only, so Talk, Music and Sound move to a small row under the clock
+    const tools = this.q('.tools'), dock = this.q('.dock');
+    for (const k of ['chat', 'mus', 'snd']) { const b = this.q('.dk.' + k); if (small && b.parentNode !== tools) tools.appendChild(b); if (!small && b.parentNode !== dock) dock.appendChild(b); }
+    if (!small) dock.insertBefore(this.q('.dk.call'), this.q('.dk.mus'));
+  }
   showRegion(name) { const e = this.q('.region'); e.textContent = name; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
   toast(msg) { const e = this.q('.htoast'); e.textContent = msg; e.classList.add('show'); clearTimeout(this._tt); this._tt = setTimeout(() => e.classList.remove('show'), 3200); }
   setAction(it) {

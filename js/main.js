@@ -48,6 +48,7 @@ import { createRoads } from './roads.js';
 import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
 import { createKites } from './kite.js';
+import { createHawkers } from './hawkers.js';
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
@@ -601,19 +602,19 @@ G.snapshot = i => {
   return c.toDataURL('image/jpeg', .8);
 };
 G.PLACES = [
-  { icon: '🏡', name: () => T('Sunny Farm', 'Nông trại'), x: HOME.x - 4, z: HOME.z + 2 },
-  { icon: '🏮', name: () => T('Lotus Village', 'Làng Sen'), x: VILLAGE.x - VILLAGE.r + 6, z: VILLAGE.z },
-  { icon: '🐼', name: () => T('China Town', 'Làng Trung Hoa'), x: CHINA.x, z: CHINA.z + 12 },
-  { icon: '🐘', name: () => T('India Village', 'Làng Ấn Độ'), x: INDIA.x, z: INDIA.z + 15 },
-  { icon: '🦉', name: () => T('Ông Cú', 'Ông Cú'), x: -2, z: -3 },
-  { icon: '💃', name: () => T('Dance stage', 'Sân khấu'), x: VILLAGE.x - 6, z: VILLAGE.z + 25 },
-  { icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: 28, z: 52 },
-  { icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: 6, z: 140 },
-  { icon: '🏮', name: () => T('Three Regions Market', 'Chợ Ba Miền'), x: 99, z: 83 },
-  { icon: '🍦', name: () => T('Aussie Corner', 'Góc Nước Úc'), x: -121, z: -12 },
-  { icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: 92, z: 128 },
-  { icon: '🪨', name: () => T('Uluru', 'Uluru'), x: -128, z: 132 },
-  { icon: '🐻', name: () => T('Mr. Bear', 'Bác Gấu'), x: HOME.x - 21, z: HOME.z + 6 }
+  { g: 'home', icon: '🏡', name: () => T('Sunny Farm', 'Nông trại'), x: HOME.x - 4, z: HOME.z + 2 },
+  { g: 'vn', icon: '🏮', name: () => T('Lotus Village', 'Làng Sen'), x: VILLAGE.x - VILLAGE.r + 6, z: VILLAGE.z },
+  { g: 'asia', icon: '🐼', name: () => T('China Town', 'Làng Trung Hoa'), x: CHINA.x, z: CHINA.z + 12 },
+  { g: 'asia', icon: '🐘', name: () => T('India Village', 'Làng Ấn Độ'), x: INDIA.x, z: INDIA.z + 15 },
+  { g: 'home', icon: '🦉', name: () => T('Ông Cú', 'Ông Cú'), x: -2, z: -3 },
+  { g: 'vn', icon: '💃', name: () => T('Dance stage', 'Sân khấu'), x: VILLAGE.x - 6, z: VILLAGE.z + 25 },
+  { g: 'home', icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: 28, z: 52 },
+  { g: 'home', icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: 6, z: 140 },
+  { g: 'vn', icon: '🏮', name: () => T('Three Regions Market', 'Chợ Ba Miền'), x: 99, z: 83 },
+  { g: 'au', icon: '🍦', name: () => T('Aussie Corner', 'Góc Nước Úc'), x: -121, z: -12 },
+  { g: 'au', icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: 92, z: 128 },
+  { g: 'au', icon: '🪨', name: () => T('Uluru', 'Uluru'), x: -128, z: 132 },
+  { g: 'home', icon: '🐻', name: () => T('Mr. Bear', 'Bác Gấu'), x: HOME.x - 21, z: HOME.z + 6 }
 ];
 G.changePlayer = () => {
   save(); Net.close(); Net.stopListening(); playing = false; G.paused = true; $('#huds').hidden = true;
@@ -679,7 +680,7 @@ addEventListener('keydown', e => {
   const two = G.heroes.length > 1, i = 0;
   const map = { KeyG: () => G.openGamesHub(i), KeyM: () => G.openPad(i, 'map'), KeyB: () => G.openPad(i, 'bag'), KeyK: () => G.voiceCommand(i),
     KeyT: () => G.huds[i].toggleEmotes(), KeyC: () => Net.connected && G.toggleMute(), KeyN: () => G.toggleAudio('music'), KeyO: () => G.toggleAudio('sound'),
-    KeyF: () => G.goToObjective(i), KeyP: () => G.openPad(i, 'friend'),
+    KeyF: () => G.goToObjective(i), KeyP: () => G.openPad(i, 'friend'), KeyV: () => G.cycleView(i),
     Equal: () => G.zoomBy(i, .8), NumpadAdd: () => G.zoomBy(i, .8), Minus: () => G.zoomBy(i, 1.25), NumpadSubtract: () => G.zoomBy(i, 1.25) };
   if (two && ['KeyK', 'KeyT'].includes(k)) return;
   const f = map[k]; if (f) { e.preventDefault(); e.stopImmediatePropagation(); f(); }
@@ -903,6 +904,11 @@ const poll = initInput(renderer.domElement, rects, () => G.paused || !G.heroes.l
 // the mouse wheel zooms the screen under the pointer (split screen has two)
 renderer.domElement.addEventListener('wheel', e => { const r = rects(), k = Math.max(0, r.findIndex(q => e.clientX >= q.x && e.clientX < q.x + q.w && e.clientY >= q.y && e.clientY < q.y + q.h)); G.zoomBy(k, e.deltaY > 0 ? 1.1 : .9, true); }, { passive: true });
 // zooming out also lifts the camera up, so rooftops no longer pull it back in (it used to look as if zoom did nothing)
+// camera views: behind (normal) → high up → street level (to see house fronts) → my face (close-up when standing still)
+const VIEWS = [['follow', '🎥', 'Behind me', 'Sau lưng'], ['high', '🦅', 'High up', 'Trên cao'], ['street', '🏘️', 'Street view', 'Ngang phố'], ['face', '😊', 'My face', 'Mặt của con']];
+G.VIEWS = VIEWS;
+G.setView = (i, id) => { const h = G.heroes[i]; if (!h) return; h.view = id; h.manualCamT = 0; const v = VIEWS.find(v => v[0] === id) || VIEWS[0]; G.huds[i] && G.huds[i].toast(v[1] + ' ' + T(v[2], v[3])); const b = G.huds[i] && G.huds[i].q('.z-view'); if (b) b.firstChild.textContent = v[1]; };
+G.cycleView = i => { const h = G.heroes[i]; if (!h) return; SFX.tap(); const k = VIEWS.findIndex(v => v[0] === (h.view || 'follow')); G.setView(i, VIEWS[(k + 1) % VIEWS.length][0]); };
 G.zoomBy = (i, f, quiet) => {
   const h = G.heroes[i]; if (!h) return;
   const z = clamp((h.zoom || 1) * f, .35, 2.2);
@@ -949,8 +955,20 @@ setInterval(() => {
   sentAt = nowMs;
   Net.send({ t: 's', x: +h0.pos.x.toFixed(2), y: +h0.pos.y.toFixed(2), z: +h0.pos.z.toFixed(2), yaw: +h0.yaw.toFixed(2), st: idle ? 'idle' : h0.state, sp: idle ? 0 : +h0.speed.toFixed(1) });
 }, 100);
+// Sharp on phones that can manage it: with Graphics on Auto, the 3D picture is drawn at up to 2× the screen's
+// pixels and steps down a little whenever the game starts to stutter (phones started blurry at 1.25×).
+const adapt = { pr: renderer.getPixelRatio(), max: Math.min(window.devicePixelRatio || 1, 2), min: 1, sum: 0, n: 0, t0: performance.now() };
+function adaptResolution(rawMs) {
+  if (settings.quality !== 'auto' || document.hidden || rawMs > 250) return;
+  adapt.sum += rawMs; adapt.n++;
+  if (performance.now() - adapt.t0 < 2500) return;
+  const ms = adapt.sum / adapt.n; adapt.sum = adapt.n = 0; adapt.t0 = performance.now();
+  const next = ms < 19 ? Math.min(adapt.max, adapt.pr + .25) : ms > 30 ? Math.max(adapt.min, adapt.pr - .25) : adapt.pr;
+  if (next !== adapt.pr) { adapt.pr = next; renderer.setPixelRatio(next); renderer.setSize(innerWidth, innerHeight, false); }
+}
 function frame(now) {
   requestAnimationFrame(frame);
+  if (playing) adaptResolution(now - last);
   const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
   // the 3D world rests while a full-screen game or the storybook is open (saves battery)
   if (gameOpen() || document.querySelector('.storybook') || (G.paused && document.querySelector('.modal'))) return;
@@ -1057,6 +1075,7 @@ onLang(() => G.huds.forEach(hd => hd.refreshWho && hd.refreshWho()));
 createAsia(G);
 createRoads(G);
 createCities(G);
+createHawkers(G);
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 G.reward = reward;
 G.pets = createPets(G);

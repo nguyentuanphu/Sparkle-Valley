@@ -32,13 +32,28 @@ const roadY = (world, x, z) => {
 
 // a ribbon that follows the ground (and the bridge deck), split into short pieces so it hugs the hills;
 // three points across (both edges and the middle) so it also follows the slope sideways
+// A side road that ends on another road stops at that road's edge (instead of painting its lines over it).
+function segDist(x, z, pts) { let best = 1e9; for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))); best = Math.min(best, Math.hypot(x - ax - dx * t, z - az - dz * t)); } return best; }
+function trimmed(R) {
+  let pts = R.pts.map(p => p.slice());
+  for (const end of [0, 1]) {
+    if ((R.gates || [])[end]) continue;
+    const [x, z] = end ? pts[pts.length - 1] : pts[0];
+    const other = ROADS.find(o => o !== R && segDist(x, z, o.pts) < 1.5); if (!other) continue;
+    let cut = other.w / 2 - .15; if (end) pts.reverse();
+    while (pts.length > 2 && Math.hypot(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]) <= cut) { cut -= Math.hypot(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]); pts.shift(); }
+    const [ax, az] = pts[0], [bx, bz] = pts[1], L = Math.hypot(bx - ax, bz - az) || 1; pts[0] = [ax + (bx - ax) / L * Math.min(cut, L * .9), az + (bz - az) / L * Math.min(cut, L * .9)];
+    if (end) pts.reverse();
+  }
+  return pts;
+}
 function ribbon(R, world) {
-  const pts = []; // dense points along the road
-  for (let i = 0; i < R.pts.length - 1; i++) {
-    const [ax, az] = R.pts[i], [bx, bz] = R.pts[i + 1], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 1.2));
+  const pts = [], src = trimmed(R); // dense points along the road
+  for (let i = 0; i < src.length - 1; i++) {
+    const [ax, az] = src[i], [bx, bz] = src[i + 1], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 1.2));
     for (let k = 0; k < n; k++) pts.push([ax + (bx - ax) * k / n, az + (bz - az) * k / n]);
   }
-  pts.push(R.pts[R.pts.length - 1]);
+  pts.push(src[src.length - 1]);
   const pos = [], uv = [], idx = [], hw = R.w / 2; let along = 0;
   pts.forEach(([x, z], i) => {
     const [px, pz] = pts[Math.max(0, i - 1)], [nx, nz] = pts[Math.min(pts.length - 1, i + 1)];
@@ -96,26 +111,93 @@ export function goldenGate(scene, world, x, z, rot, text, span = 8) {
   return m;
 }
 
+// ---------- a gate in the style of each place (the road passes between the two posts, 7.5 m apart) ----------
+const B3 = (w, h, d) => new THREE.BoxGeometry(w, h, d), C3 = (r1, r2, h, n = 12) => new THREE.CylinderGeometry(r1, r2, h, n);
+const roofCone = (w, h, d, color, y, z = 0) => P(new THREE.ConeGeometry(1, 1, 4), color, [0, y, z], [0, Math.PI / 4, 0], [w * .72, h, d * .72]);
+const halfRing = (r, tube, color, y, segs = 24) => P(new THREE.TorusGeometry(r, tube, 8, segs, Math.PI), color, [0, y, 0]);
+const STYLES = {
+  // Hà Nội: an old city gate (ô quan), a thick wall with an arch and a little pavilion on top
+  ohquan: hs => ({ parts: [
+    ...[-1, 1].flatMap(s => [P(B3(2.6, 5.4, 3), '#b9ab8e', [s * (hs + 1.1), 2.7, 0]), P(B3(2.8, .4, 3.2), '#9a8c70', [s * (hs + 1.1), .2, 0])]),
+    P(B3(2 * hs + 5, 1.8, 3), '#b9ab8e', [0, 6.3, 0]), halfRing(hs, .35, '#a89a7c', 5.2),
+    P(B3(4.6, 1.6, 2.4), '#9a3a2a', [0, 7.9, 0]), roofCone(6.4, 1.5, 3.6, '#6a4a2a', 9.3), roofCone(7.4, .7, 4.2, '#7a5634', 8.5),
+    ...[-1, 1].map(s => P(new THREE.ConeGeometry(.25, 1, 6), '#6a4a2a', [s * 3.6, 9, 0], [0, 0, s * -.9]))
+  ], sign: { y: 6.3, w: 5.4, h: 1.2, bg: '#a8302a', fg: '#ffe27a' }, posts: hs + 1.1, postR: 1.5 }),
+  // Bắc Ninh: a village gate of old brick with a curved tiled roof
+  kinhbac: hs => ({ parts: [
+    ...[-1, 1].flatMap(s => [P(B3(1.2, 5, 1.2), '#b45a3a', [s * hs, 2.5, 0]), P(B3(1.5, .3, 1.5), '#8a3a2a', [s * hs, 5.1, 0]), P(new THREE.SphereGeometry(.45, 10, 8), '#e8c86a', [s * hs, 5.6, 0])]),
+    P(B3(2 * hs + 1.6, .6, 1.4), '#7a3a2a', [0, 5.3, 0]), roofCone(2 * hs + 3.4, 1.6, 3, '#8a4a2a', 6.5),
+    ...[-1, 1].map(s => P(new THREE.ConeGeometry(.3, 1.2, 6), '#8a4a2a', [s * (hs + 2.2), 6.3, 0], [0, 0, s * -.9]))
+  ], sign: { y: 4.4, w: 6, h: 1.1, bg: '#7a2a1a', fg: '#ffe27a' }, posts: hs }),
+  // Hồ Chí Minh City: two white posts and a bright blue steel arch
+  saigon: hs => ({ parts: [
+    ...[-1, 1].flatMap(s => [P(B3(.9, 6.2, .9), '#f4f4f0', [s * hs, 3.1, 0]), P(B3(1, .3, 1), '#3a78c8', [s * hs, 2, 0]), P(B3(1, .3, 1), '#3a78c8', [s * hs, 4, 0])]),
+    halfRing(hs, .28, '#3a78c8', 6), halfRing(hs - .7, .12, '#ffd23f', 6)
+  ], sign: { y: 5.3, w: 6.4, h: 1.1, bg: '#ffffff', fg: '#1f4f9a' }, posts: hs }),
+  // Sydney: a little steel coat-hanger arch between two stone pylons
+  coathanger: hs => ({ parts: [
+    ...[-1, 1].flatMap(s => [P(B3(1.6, 3.6, 1.6), '#cfc6b0', [s * (hs + .4), 1.8, 0]), P(B3(1.9, .35, 1.9), '#b8ae96', [s * (hs + .4), 3.8, 0])]),
+    halfRing(hs + .4, .3, '#8a949a', 2.4), halfRing(hs - .3, .14, '#8a949a', 2.4),
+    ...[-2.4, -1.2, 0, 1.2, 2.4].map(x => P(B3(.08, 6 - Math.abs(x) * .55, .08), '#8a949a', [x, 2.4 + (6 - Math.abs(x) * .55) / 2 - .4, 0]))
+  ], sign: { y: 3.4, w: 5.2, h: .9, bg: '#2f5f8a', fg: '#ffffff' }, posts: hs + .4, postR: 1.1 }),
+  // Melbourne: green cast-iron posts and lacework arch
+  iron: hs => ({ parts: [
+    ...[-1, 1].flatMap(s => [P(C3(.2, .26, 5.8), '#2f5a3a', [s * hs, 2.9, 0]), P(new THREE.SphereGeometry(.3, 10, 8), '#c9a24a', [s * hs, 6, 0])]),
+    halfRing(hs, .1, '#2f5a3a', 5.2), halfRing(hs - .5, .07, '#2f5a3a', 5.2),
+    ...Array.from({ length: 9 }, (_, k) => { const a = k / 8 * Math.PI; return P(new THREE.TorusGeometry(.22, .04, 4, 10), '#2f5a3a', [Math.cos(a) * (hs - .25), 5.2 + Math.sin(a) * (hs - .25), 0]); })
+  ], sign: { y: 4.6, w: 5.4, h: .9, bg: '#f4ead2', fg: '#2f5a3a' }, posts: hs }),
+  // Brisbane: a white Queenslander gate with lattice, a tin roof and a koala
+  queenslander: hs => ({ parts: [
+    ...[-1, 1].flatMap(s => [P(B3(.5, 4.8, .5), '#f4f1e8', [s * hs, 2.4, 0]), ...[0, 1, 2].map(k => P(B3(.06, 1.2, .06), '#f4f1e8', [s * (hs + .4 + k * .25), 1.2, 0]))]),
+    P(B3(2 * hs + 1, .4, .8), '#f4f1e8', [0, 4.8, 0]), roofCone(2 * hs + 2, 1, 2, '#9aa6ac', 5.5),
+    P(new THREE.SphereGeometry(.42, 10, 8), '#9a9a9e', [hs - .2, 5.4, .2]), P(new THREE.SphereGeometry(.3, 10, 8), '#9a9a9e', [hs - .2, 5.95, .3]), P(new THREE.SphereGeometry(.12, 8, 6), '#3a3a3a', [hs - .2, 5.95, .58])
+  ], sign: { y: 4.1, w: 5.4, h: .9, bg: '#2f7a4a', fg: '#ffffff' }, posts: hs }),
+  // Aussie Corner: a rustic gate of logs with a hanging sign
+  timber: hs => ({ parts: [
+    ...[-1, 1].map(s => P(C3(.42, .48, 5.6, 9), '#8a5a3b', [s * hs, 2.8, 0])),
+    P(C3(.36, .36, 2 * hs + 2, 9), '#7a4a2a', [0, 5.4, 0], [0, 0, Math.PI / 2]),
+    ...[-1.2, 1.2].map(x => P(B3(.05, .8, .05), '#5a3a1a', [x, 4.85, 0]))
+  ], sign: { y: 4.1, w: 4.4, h: 1, bg: '#7a4a2a', fg: '#ffd23f' }, posts: hs }),
+  // China Town: a paifang, red pillars and green tiled roofs
+  paifang: hs => ({ parts: [
+    ...[-1, 1].flatMap(s => [P(C3(.34, .4, 6.2), '#c0392b', [s * hs, 3.1, 0]), P(C3(.26, .3, 4.4), '#c0392b', [s * (hs + 1.8), 2.2, 0]), roofCone(2.2, .9, 1.6, '#2f7a4a', 4.8, 0), P(B3(.6, .5, .6), '#7a6a5a', [s * hs, .25, 0])].map((p, k) => k === 2 ? P(new THREE.ConeGeometry(1, 1, 4), '#2f7a4a', [s * (hs + 1.8), 4.8, 0], [0, Math.PI / 4, 0], [1.4, .8, 1.1]) : p)),
+    P(B3(2 * hs + 4.4, .5, .6), '#c0392b', [0, 5.6, 0]), P(B3(2 * hs + 1.4, .35, .5), '#e8b830', [0, 4.6, 0]),
+    roofCone(2 * hs + 4, 1.4, 2.4, '#2f7a4a', 6.6), ...[-1, 1].map(s => P(new THREE.ConeGeometry(.3, 1, 6), '#2f7a4a', [s * (hs + 2.6), 6.4, 0], [0, 0, s * -1]))
+  ], sign: { y: 5.1, w: 3.6, h: .8, bg: '#e8b830', fg: '#a8202a' }, posts: hs }),
+  // India Village: a sandstone arch with little domed pavilions (chhatris)
+  mughal: hs => ({ parts: [
+    ...[-1, 1].flatMap(s => [P(B3(1.8, 6.4, 2), '#d9a066', [s * (hs + .9), 3.2, 0]), P(C3(.5, .5, 1, 8), '#e8c08a', [s * (hs + .9), 7.6, 0]), P(new THREE.SphereGeometry(.6, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), '#f4e8d0', [s * (hs + .9), 8.1, 0])]),
+    halfRing(hs, .55, '#d9a066', 4.2), P(B3(2 * hs + 3.6, 1.4, 2), '#d9a066', [0, 6.9, 0]),
+    P(new THREE.SphereGeometry(1.1, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), '#f4e8d0', [0, 7.6, 0]), P(new THREE.ConeGeometry(.12, .7, 6), '#c9a24a', [0, 8.9, 0])
+  ], sign: { y: 6.9, w: 6, h: 1, bg: '#ff9f43', fg: '#ffffff' }, posts: hs + .9, postR: 1.2 }),
+  // Sunny Farm: a wooden farm gate with sunflowers
+  farm: hs => ({ parts: [
+    ...[-1, 1].flatMap(s => [P(B3(.5, 4.4, .5), '#8a5a3b', [s * hs, 2.2, 0]), P(C3(.04, .04, 1.2, 5), '#4f9a4a', [s * (hs + .7), .6, .3]), P(new THREE.SphereGeometry(.3, 10, 8), '#ffd23f', [s * (hs + .7), 1.3, .3], [0, 0, 0], [1, 1, .4])]),
+    P(B3(2 * hs + 1.2, .5, .5), '#8a5a3b', [0, 4.4, 0]), P(B3(2 * hs + 1.6, .2, .7), '#6a4a2a', [0, 4.75, 0])
+  ], sign: { y: 3.6, w: 5, h: 1, bg: '#f6ead0', fg: '#7a4a2a' }, posts: hs }),
+  // Two Homes Street: a Bà Rịa brick post and an Aussie timber post, one each side
+  twohomes: hs => ({ parts: [
+    P(B3(1.1, 5.6, 1.1), '#c0553a', [-hs, 2.8, 0]), P(new THREE.ConeGeometry(.8, .9, 4), '#f2c230', [-hs, 6.05, 0], [0, Math.PI / 4, 0]),
+    P(B3(.8, 5.6, .8), '#f4f1e8', [hs, 2.8, 0]), P(B3(1.1, .25, 1.1), '#2f7a4a', [hs, 5.7, 0]),
+    P(B3(hs, .45, .8), '#c0553a', [-hs / 2, 5.3, 0]), P(B3(hs, .45, .8), '#f4f1e8', [hs / 2, 5.3, 0])
+  ], sign: { y: 4.5, w: 6.2, h: 1, bg: '#ffffff', fg: '#4a2a78' }, posts: hs })
+};
+export const GATE_STYLE = { hanoi: 'ohquan', bacninh: 'kinhbac', danang: 'golden', saigon: 'saigon', sydney: 'coathanger', melbourne: 'iron', brisbane: 'queenslander', aussie: 'timber', china: 'paifang', india: 'mughal', home: 'farm', town: 'twohomes' };
+export function localGate(scene, world, x, z, rot, text, style, span = 7.5) {
+  const make = STYLES[style]; if (!make) return goldenGate(scene, world, x, z, rot, text, span);
+  const hs = span / 2, g = make(hs);
+  const m = new THREE.Mesh(merge(g.parts), toonVC()); m.position.set(x, heightAt(x, z) - .1, z); m.rotation.y = rot; m.castShadow = true; m.userData.noCam = true; scene.add(m); outline(m, .022, '#4a3a2a');
+  const sg = gateSign(text, g.sign.w, g.sign.h, g.sign.bg, g.sign.fg); sg.position.set(0, g.sign.y, 0); m.add(sg);
+  for (const s of [-1, 1]) world.colliders.push({ x: x + Math.cos(rot) * s * g.posts, z: z - Math.sin(rot) * s * g.posts, r: g.postR || .8 });
+  return m;
+}
+
 export function createRoads(G) {
   const { scene, world } = G;
   const mats = { asphalt: new THREE.MeshToonMaterial({ map: roadTexture('asphalt'), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), dirt: new THREE.MeshToonMaterial({ map: roadTexture('dirt'), polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }) };
   // the Dragon Bridge's deck first, so the road is laid on it rather than down in the river
   { const B = DRAGON; world.platforms.push({ x0: B.x0 - 2, x1: B.x1 + 2, z0: B.z - B.w / 2, z1: B.z + B.w / 2, y: B.h + .1 }); }
   for (const R of ROADS) { const m = new THREE.Mesh(ribbon(R, world), mats[R.kind]); m.receiveShadow = true; scene.add(m); }
-  // where an asphalt road joins another, a plain round patch covers the crossing lines
-  {
-    const patch = new THREE.MeshToonMaterial({ map: roadTexture('plain'), polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }), done = [];
-    for (const R of ROADS) if (R.kind === 'asphalt') for (const k of [0, R.pts.length - 1]) {
-      const [x, z] = R.pts[k];
-      if ((R.gates || [])[k ? 1 : 0] || done.some(([a, b]) => Math.hypot(a - x, b - z) < 2)) continue;
-      if (!ROADS.some(o => o !== R && o.kind === 'asphalt' && o.pts.some(([a, b]) => Math.hypot(a - x, b - z) < 1))) continue;
-      done.push([x, z]);
-      const g = new THREE.RingGeometry(.01, R.w / 2 + 1.1, 24, 5); g.rotateX(-Math.PI / 2);
-      const pa = g.attributes.position; for (let i = 0; i < pa.count; i++) pa.setY(i, roadY(world, x + pa.getX(i), z + pa.getZ(i)) + .02);
-      g.computeVertexNormals(); const m = new THREE.Mesh(g, patch); m.position.set(x, 0, z); m.receiveShadow = true; scene.add(m);
-    }
-  }
-
   // ---------- Đà Nẵng's Dragon Bridge (Cầu Rồng): a golden dragon arching along the road ----------
   {
     const B = DRAGON, len = B.x1 - B.x0, y = B.h, hw = B.w / 2, gold = '#f2c230';
@@ -148,7 +230,7 @@ export function createRoads(G) {
   for (const R of ROADS) (R.gates || []).forEach((id, k) => {
     if (!id) return;
     const n = R.pts.length, [x, z] = R.pts[k ? n - 1 : 0], [px, pz] = R.pts[k ? n - 2 : 1];
-    goldenGate(scene, world, x, z, Math.atan2(x - px, z - pz), () => T('Welcome to ', 'Chào mừng đến ') + REGION_NAMES[id](), 7.5);
+    localGate(scene, world, x, z, Math.atan2(x - px, z - pz), () => T('Welcome to ', 'Chào mừng đến ') + REGION_NAMES[id](), GATE_STYLE[id] || 'golden', 7.5);
   });
   G.goldenGate = (x, z, r, t, span) => goldenGate(scene, world, x, z, r, t, span);
 }

@@ -4,6 +4,7 @@
   "q-go",
   "z-in",
   "z-out",
+  "z-view",
   "friendchip",
   "dk.games",
   "dk.map",
@@ -36,5 +37,5 @@
   "cam",
   "friend"
  ],
- "hubSections": 9
+ "hubSections": 10
 }

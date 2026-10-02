@@ -19,13 +19,13 @@ export const MARKET = { x0: 96, x1: 146, z0: 70, z1: 96, h: 4, roadZ: 83 };    /
 export const AUSSIE = { x0: -144, x1: -90, z0: -40, z1: 16, h: 4.5, roadZ: -12 }; // Aussie Corner: milk bar, fish and chips, ice-cream van, playground
 // Cities around the valley: each a paved square with a welcome gate, landmarks, a game host and food kiosks (js/cities.js)
 export const CITIES = [   // gates: where the roads come in (the first is the main gate); the main street runs straight through
-  { id: 'hanoi', cc: 'vn', x: 84, z: -40, w: 13, d: 11, h: 3, icon: '🐢', name: ['Hà Nội', 'Hà Nội'], gates: [[84, -29], [84, -51]] },
+  { id: 'danang', cc: 'vn', x: 84, z: -40, w: 13, d: 11, h: 3, icon: '🐉', name: ['Đà Nẵng', 'Đà Nẵng'], gates: [[84, -51], [84, -29]] },
   { id: 'bacninh', cc: 'vn', x: 48, z: -124, w: 16, d: 13, h: 8.6, icon: '🕰️', name: ['Bắc Ninh', 'Bắc Ninh'], gates: [[48, -111]] },
-  { id: 'danang', cc: 'vn', x: 4, z: -62, w: 13, d: 13, h: 5.2, icon: '🐉', name: ['Đà Nẵng', 'Đà Nẵng'], gates: [[17, -62], [-9, -62]] },
+  { id: 'hanoi', cc: 'vn', x: 4, z: -62, w: 13, d: 13, h: 5.2, icon: '🐢', name: ['Hà Nội', 'Hà Nội'], gates: [[17, -62], [-9, -62]] },
   { id: 'saigon', cc: 'vn', x: -8, z: 86, w: 13, d: 11, h: 7.4, icon: '🛵', name: ['Hồ Chí Minh City', 'TP. Hồ Chí Minh'], gates: [[-8, 75]] },
-  { id: 'sydney', cc: 'au', x: -70, z: -32, w: 13, d: 11, h: 3, icon: '⛴️', name: ['Sydney', 'Sydney'], gates: [[-70, -21], [-70, -43]] },
+  { id: 'brisbane', cc: 'au', x: -70, z: -32, w: 13, d: 11, h: 3, icon: '🐨', name: ['Brisbane', 'Brisbane'], gates: [[-70, -21], [-70, -43]] },
   { id: 'melbourne', cc: 'au', x: -144, z: 66, w: 13, d: 13, h: 4.4, icon: '🚋', name: ['Melbourne', 'Melbourne'], gates: [[-131, 66]] },
-  { id: 'brisbane', cc: 'au', x: -36, z: 52, w: 13, d: 13, h: 5, icon: '🐨', name: ['Brisbane', 'Brisbane'], gates: [[-23, 52], [-49, 52]] }
+  { id: 'sydney', cc: 'au', x: -36, z: 52, w: 13, d: 13, h: 5, icon: '⛴️', name: ['Sydney', 'Sydney'], gates: [[-23, 52], [-49, 52]] }
 ];
 CITIES.forEach(c => Object.assign(c, { x0: c.x - c.w, x1: c.x + c.w, z0: c.z - c.d, z1: c.z + c.d }));
 const FLATS = [TOWN, MARKET, AUSSIE, ...CITIES];
@@ -40,31 +40,30 @@ const BRIDGES = [BRIDGE, DRAGON];
 // a golden welcome gate stands exactly there, across the road (js/roads.js). Roads that end on another road
 // (a junction) have no gate at that end. Two Homes Street and the market keep their own streets.
 export const ROADS = [
-  // west from Two Homes Street: Brisbane, Hồ Chí Minh City and the farm
-  { kind: 'asphalt', pts: [[6, 47], [-4, 48], [-14, 52], [-23, 52]], gates: ['town', 'brisbane'] },
+  // west from Two Homes Street: Sydney, Hồ Chí Minh City and the farm
+  { kind: 'asphalt', pts: [[6, 47], [-4, 48], [-14, 52], [-23, 52]], gates: ['town', 'sydney'] },
   { kind: 'asphalt', pts: [[-4, 48], [-6, 60], [-8, 66], [-8, 75]], gates: [null, 'saigon'] },
   { kind: 'asphalt', pts: [[-6, 60], [-16, 66], [-24, 76], [-23, 88], [-22, 99]], gates: [null, 'home'] },
-  // Brisbane to Melbourne, and north to Sydney and Aussie Corner
-  { kind: 'asphalt', pts: [[-49, 52], [-60, 52], [-82, 53], [-100, 55], [-114, 62], [-122, 66], [-131, 66]], gates: ['brisbane', 'melbourne'] },
-  { kind: 'asphalt', pts: [[-60, 52], [-57, 32], [-55, 18], [-60, 2], [-68, -8], [-70, -12], [-70, -21]], gates: [null, 'sydney'] },
+  // Sydney to Melbourne, and north to Brisbane and Aussie Corner
+  { kind: 'asphalt', pts: [[-49, 52], [-60, 52], [-82, 53], [-100, 55], [-114, 62], [-122, 66], [-131, 66]], gates: ['sydney', 'melbourne'] },
+  { kind: 'asphalt', pts: [[-60, 52], [-57, 32], [-55, 18], [-60, 2], [-68, -8], [-70, -12], [-70, -21]], gates: [null, 'brisbane'] },
   { kind: 'asphalt', pts: [[-68, -8], [-80, -11.5], [-90, -12]], gates: [null, 'aussie'] },
-  // Sydney to Đà Nẵng, and to India Village
-  { kind: 'asphalt', pts: [[-70, -43], [-70, -50], [-50, -52], [-30, -56], [-18, -62], [-9, -62]], gates: ['sydney', 'danang'] },
+  // Brisbane to Hà Nội, and to India Village
+  { kind: 'asphalt', pts: [[-70, -43], [-70, -50], [-50, -52], [-30, -56], [-18, -62], [-9, -62]], gates: ['brisbane', 'hanoi'] },
   { kind: 'asphalt', pts: [[-70, -50], [-96, -50], [-108, -51], [-112, -54], [-112, -58]], gates: [null, 'india'] },
-  // over the Dragon Bridge to Hà Nội, China Town and Bắc Ninh
-  { kind: 'asphalt', pts: [[17, -62], [56, -62], [70, -57], [84, -54]], gates: ['danang', null] },
-  { kind: 'asphalt', pts: [[84, -54], [84, -51]], gates: [null, 'hanoi'] },
-  { kind: 'asphalt', pts: [[84, -54], [96, -55], [100, -58], [100, -62]], gates: [null, 'china'] },
+  // from Hà Nội over Đà Nẵng's Dragon Bridge, to Đà Nẵng, China Town and Bắc Ninh
+  { kind: 'asphalt', pts: [[17, -62], [56, -62], [70, -57], [84, -54], [96, -55], [100, -58], [100, -62]], gates: ['hanoi', 'china'] },
+  { kind: 'asphalt', pts: [[84, -54], [84, -51]], gates: [null, 'danang'] },
   { kind: 'asphalt', pts: [[56, -62], [54, -80], [48, -100], [48, -111]], gates: [null, 'bacninh'] },
-  // south from Hà Nội past Lotus Village to the Harbour Bridge and the market (the village and the market have their own gates)
-  { kind: 'asphalt', pts: [[84, -29], [84, -22], [78, -10], [73, 8], [75, 22], [73.5, 30], [73, 40], [74, 47]], gates: ['hanoi', null] },
+  // south from Đà Nẵng past Lotus Village to the Harbour Bridge and the market (the village and the market have their own gates)
+  { kind: 'asphalt', pts: [[84, -29], [84, -22], [78, -10], [73, 8], [75, 22], [73.5, 30], [75, 36], [79, 42], [79, 52], [82, 62], [88, 74], [96, 83]], gates: ['danang', null] },
+  { kind: 'asphalt', pts: [[76, 47], [79, 47]], gates: [null, null] },   // off the Harbour Bridge: the road passes just beyond its stone towers
   { kind: 'asphalt', pts: [[73.5, 30], [78, 30]], gates: [null, null] },   // Lotus Village has its own old gate (cổng làng)
-  { kind: 'asphalt', pts: [[74, 47], [80, 60], [88, 74], [96, 83]], gates: [null, null] },
   // dirt roads
   { kind: 'dirt', pts: [[0, 33], [0, 40], [-2, 47.6]] },                       // down the Dawn Plateau to the main road
   { kind: 'dirt', pts: [[79, 30], [92, 30]] },                               // Lotus Village's lane, in through its old gate
   { kind: 'dirt', pts: [[110, -3], [111, -12]] },                              // Lotus Village to the rice fields
-  { kind: 'dirt', pts: [[64, -114], [67, -98], [78, -91]] },                 // Bắc Ninh to China Town
+  { kind: 'dirt', pts: [[64, -114], [67, -98], [76, -88], [84, -86]] },                 // Bắc Ninh to China Town
   { kind: 'dirt', pts: [[-146, -12], [-150, 15], [-148, 40], [-144, 53]] },    // Aussie Corner to Melbourne
   { kind: 'dirt', pts: [[-112, -40], [-110, -50.5]] },                           // Aussie Corner to the India road
   { kind: 'dirt', pts: [[-8, 97], [0, 106], [4, 110]] },                       // Hồ Chí Minh City to Mirror Lake
@@ -73,6 +72,17 @@ export const ROADS = [
   { kind: 'dirt', pts: [[118, 96], [112, 108], [100, 118]] }                   // the market to Mirror Lake
 ];
 ROADS.forEach(R => { R.w = R.kind === 'asphalt' ? 5.2 : 3.4; });
+// Round the corners (Chaikin corner cutting, twice) so roads curve gently instead of bending sharply. Points
+// where another road starts or ends stay exactly where they are, so junctions still meet.
+{
+  const pinned = ([x, z], self) => ROADS.some(o => o !== self && [o.pts[0], o.pts[o.pts.length - 1]].some(([a, b]) => Math.hypot(a - x, b - z) < 1));
+  const cut = pts => { const out = [pts[0]]; for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1]; if (i > 0) out.push([ax * .75 + bx * .25, az * .75 + bz * .25]); if (i < pts.length - 2) out.push([ax * .25 + bx * .75, az * .25 + bz * .75]); } out.push(pts[pts.length - 1]); return out; };
+  for (const R of ROADS) {
+    const runs = [[R.pts[0]]];
+    for (let i = 1; i < R.pts.length; i++) { runs[runs.length - 1].push(R.pts[i]); if (i < R.pts.length - 1 && pinned(R.pts[i], R)) runs.push([R.pts[i]]); }
+    R.pts = runs.flatMap((run, k) => { const sm = run.length > 2 ? cut(cut(run)) : run; return k ? sm.slice(1) : sm; });
+  }
+}
 // distance from (x, z) to the nearest road centre line, and that road
 export function roadDist(x, z) {
   let best = 1e9, road = null;

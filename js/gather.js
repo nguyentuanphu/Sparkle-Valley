@@ -1,5 +1,6 @@
-// Out in the wild: fruit bushes to pick, flower patches, and rocks to tap three times until they crack
-// open with a treasure inside. Everything found goes in the backpack, is counted in the Album's
+// Out in the wild: fruit bushes to pick, flower patches, rocks to tap three times until they crack
+// open with a treasure inside, and sparkly dig spots to dig up (three digs) for buried treasure, where the
+// rarest gems are worth the most. Everything found goes in the backpack, is counted in the Album's
 // Treasures page, and can be sold to Mr. Bear at the farm.
 import { THREE, toon, toonVC, P, merge } from './gfx.js';
 import { T } from './i18n.js';
@@ -23,15 +24,25 @@ export const WILD = {
   fossil: { kind: 'gem', icon: '🐚', sell: 20, weight: 22, name: () => T('Fossil shell', 'Hóa thạch vỏ ốc') },
   crystal: { kind: 'gem', icon: '🔮', sell: 30, weight: 18, name: () => T('Purple crystal', 'Pha lê tím') },
   gold: { kind: 'gem', icon: '🪙', sell: 60, weight: 12, name: () => T('Gold nugget', 'Cục vàng') },
-  gem: { kind: 'gem', icon: '💎', sell: 100, weight: 8, name: () => T('Blue gem', 'Đá quý xanh') }
+  gem: { kind: 'gem', icon: '💎', sell: 100, weight: 8, name: () => T('Blue gem', 'Đá quý xanh') },
+  // only found by digging (dig: weight in the dig spots). The rarer, the more Mr. Bear pays.
+  bone: { kind: 'gem', icon: '🦴', sell: 15, dig: 20, name: () => T('Dinosaur bone', 'Xương khủng long') },
+  oldcoin: { kind: 'gem', icon: '🏅', sell: 40, dig: 12, name: () => T('Old bronze coin', 'Đồng xu cổ') },
+  jade: { kind: 'gem', icon: '🟢', sell: 150, dig: 4, name: () => T('Green jade', 'Ngọc bích') },
+  ruby: { kind: 'gem', icon: '❤️', sell: 250, dig: 2, name: () => T('Red ruby', 'Hồng ngọc') },
+  diamond: { kind: 'gem', icon: '💠', sell: 500, dig: .8, name: () => T('Sparkling diamond', 'Kim cương lấp lánh') },
+  crown: { kind: 'gem', icon: '👑', sell: 1000, dig: .2, name: () => T('Lost golden crown', 'Vương miện vàng thất lạc') }
 };
+// what a dig spot can hold (how often, out of about 100): mostly pebbles and bones, gems are rare
+export const DIG = { pebble: 30, bone: 20, fossil: 14, oldcoin: 12, crystal: 8, gold: 6, gem: 3, jade: 4, ruby: 2, diamond: .8, crown: .2 };
 // make them ordinary items so the backpack, toasts and cooking can use them
 for (const [k, w] of Object.entries(WILD)) if (!ITEMS[k]) ITEMS[k] = { icon: w.icon, name: w.name };
 export const isWild = k => !!WILD[k];
 
 const FRUITS = ['mulberry', 'guava', 'strawberry', 'lime'], FLOWERS = ['peach', 'apricot', 'wattle', 'hibiscus'];
-const GEMS = Object.keys(WILD).filter(k => WILD[k].kind === 'gem');
+const GEMS = Object.keys(WILD).filter(k => WILD[k].kind === 'gem' && WILD[k].weight);
 function rollGem(rnd) { const tot = GEMS.reduce((a, k) => a + WILD[k].weight, 0); let r = rnd() * tot; for (const k of GEMS) { r -= WILD[k].weight; if (r <= 0) return k; } return 'pebble'; }
+export function rollDig(r = Math.random()) { const ks = Object.keys(DIG), tot = ks.reduce((a, k) => a + DIG[k], 0); r *= tot; for (const k of ks) { r -= DIG[k]; if (r <= 0) return k; } return 'pebble'; }
 
 // pick spots in open countryside (meadows, bamboo forest, plateau), away from water and each other
 function spots(n, seed, minGap, used) {
@@ -102,6 +113,34 @@ export function createGathering(G, { give, sfx, say, toast }) {
         G.fx && G.fx(x, heightAt(x, z) + 1.2, z, w.icon);
         give(h, kind, 1); found(h, kind, 1);
         if (WILD[kind].sell >= 60) setTimeout(() => say('Wow! A rare treasure!', 'Ồ! Một báu vật hiếm!'), 900);
+      } });
+  });
+
+  // ---------- dig spots: a mound of earth with a little sparkle. Dig three times to find what is buried ----------
+  const dirt = toonVC(), spark = new THREE.MeshBasicMaterial({ color: '#fff6b0', transparent: true, opacity: .9 });
+  spots(18, 51, 14, used).forEach(([x, z], k) => {
+    const g = new THREE.Group();
+    const mound = new THREE.Mesh(merge([P(new THREE.SphereGeometry(.8, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), '#8a5a32', [0, 0, 0], [0, 0, 0], [1, .38, 1]),
+      ...[0, 1, 2, 3].map(i => P(new THREE.DodecahedronGeometry(.13, 0), '#6e4526', [Math.cos(i * 1.7 + k) * .75, .06, Math.sin(i * 1.7 + k) * .75])),
+      P(new THREE.BoxGeometry(.06, .7, .06), '#a0703a', [.25, .55, -.1], [0, 0, .25]), P(new THREE.BoxGeometry(.3, .32, .04), '#b8c0c8', [.17, .2, -.1], [0, 0, .25])]), dirt);
+    mound.castShadow = true; g.add(mound);
+    const sp = [0, 1, 2].map(i => { const m = new THREE.Mesh(new THREE.OctahedronGeometry(.07), spark); g.add(m); return m; });
+    add(g, x, z);
+    const st = { digs: 0, ready: 0, shake: 0 };
+    world.updaters.push((dt, t) => {
+      const up = now() > st.ready; g.visible = up; if (!up) return;
+      sp.forEach((m, i) => { const a = t * 1.6 + i * 2.1; m.position.set(Math.cos(a) * .45, .5 + Math.sin(t * 3 + i) * .15, Math.sin(a) * .45); m.rotation.y = t * 3; });
+      if (st.shake > 0) { st.shake -= dt; mound.scale.y = 1 - Math.sin(st.shake * 30) * .12; } else mound.scale.y = 1 - st.digs * .2;
+    });
+    G.interactables.push({ id: 'wd' + k, x, z, r: 2.4, icon: '🪏', label: () => st.digs ? T(`Dig again! (${3 - st.digs} more)`, `Đào tiếp! (còn ${3 - st.digs} lần)`) : T('Dig for treasure', 'Đào tìm báu vật'), visible: () => now() > st.ready,
+      act: h => {
+        st.digs++; st.shake = .3; sfx.tap(); G.fx && G.fx(x, heightAt(x, z) + .8, z, '🟫');
+        if (st.digs < 3) { say(st.digs === 1 ? 'Dig, dig!' : 'Something is down there!', st.digs === 1 ? 'Đào, đào!' : 'Có gì ở dưới kìa!'); return; }
+        st.digs = 0; st.ready = now() + 240000; sfx.chime();
+        const kind = rollDig(), w = WILD[kind];
+        G.fx && G.fx(x, heightAt(x, z) + 1.2, z, w.icon);
+        give(h, kind, 1); found(h, kind, 1);
+        if (w.sell >= 100) setTimeout(() => { say('Wow! A rare treasure! It is worth a lot!', 'Ồ! Báu vật hiếm! Đáng giá lắm đó!'); toast(h, `${w.icon} ${w.name()}: ${G.fmt ? G.fmt(w.sell) : w.sell}`); }, 900);
       } });
   });
 
