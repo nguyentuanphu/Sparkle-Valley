@@ -24,6 +24,7 @@ export function roadTexture(kind) {
 
 // The road surface sits just above the highest ground nearby, so the bumpy terrain (one point every 2–2.7 m)
 // never pokes through it. On a bridge the deck is the ground (tower tops are not).
+export const roadKey = (x, z) => Math.round(x * 2) * 8192 + Math.round(z * 2); // half-metre cells
 const roadY = (world, x, z) => {
   let y = Math.max(heightAt(x, z), heightAt(x + 1.4, z), heightAt(x - 1.4, z), heightAt(x, z + 1.4), heightAt(x, z - 1.4));
   for (const p of world.platforms) if (!p.tower && x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1) y = Math.max(y, p.y);
@@ -66,6 +67,21 @@ function ribbon(R, world) {
     // counter-clockwise seen from above, so the road faces up
     if (i) { const a = (i - 1) * 3; for (const c of [0, 1]) idx.push(a + c, a + c + 1, a + c + 3, a + c + 1, a + c + 4, a + c + 3); }
   });
+  // remember the road's own surface on a half-metre grid, so children walk ON the road instead of the
+  // ground under it (on a slope the road sits a little above the ground and feet sank into it)
+  const top = world.roadTop || (world.roadTop = new Map());
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = i * 3, b = a + 3, Y = k => pos[k * 3 + 1], X = k => pos[k * 3], Z = k => pos[k * 3 + 2];
+    const len = Math.hypot(X(b + 1) - X(a + 1), Z(b + 1) - Z(a + 1)), na = Math.max(1, Math.ceil(len / .4)), nc = Math.ceil(R.w / .4);
+    for (let u = 0; u <= na; u++) for (let v = 0; v <= nc; v++) {
+      const fu = u / na, fv = v / nc, l = fv < .5 ? 0 : 1, f = fv < .5 ? fv * 2 : fv * 2 - 1; // across: left half, right half
+      const lerp3 = (A, B) => A + (B - A) * f;
+      const x0 = lerp3(X(a + l), X(a + l + 1)), z0 = lerp3(Z(a + l), Z(a + l + 1)), y0 = lerp3(Y(a + l), Y(a + l + 1));
+      const x1 = lerp3(X(b + l), X(b + l + 1)), z1 = lerp3(Z(b + l), Z(b + l + 1)), y1 = lerp3(Y(b + l), Y(b + l + 1));
+      const x = x0 + (x1 - x0) * fu, z = z0 + (z1 - z0) * fu, y = y0 + (y1 - y0) * fu, key = roadKey(x, z);
+      const old = top.get(key); if (old == null || y > old) top.set(key, y);
+    }
+  }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
   return geo;

@@ -16,7 +16,7 @@ import { Box, Cyl, gable, hip, win } from './town.js';
 import { dialog, reward } from './ui.js';
 import { farm, saveFarm } from './state.js';
 import { PERSONAS } from './chat.js';
-import { AUSSIE_SLANG, VN_WORDS, REGION_NAME } from './words.js';
+import { AUSSIE_SLANG, VN_WORDS, VN_SLANG, REGION_NAME } from './words.js';
 import { dist2, pick } from './util.js';
 import { buyFood } from './snacks.js';
 
@@ -339,6 +339,12 @@ async function vendorTalk(G, h, v) {
       p.words['au:' + s[0]] = true; G.save();
       await dialog(v.name, [[`"${s[0]}" means ${s[1].toLowerCase()}! Like this: ${s[4]}`, `"${s[0]}" nghĩa là ${s[2].toLowerCase()}! Ví dụ: ${s[4]}`]]);
       await reward(s[3], `📖 ${s[0]}`, T(`Aussie slang: ${s[1]}`, `Tiếng lóng Úc: ${s[2]}`));
+    } else if (Object.keys(p.words).filter(k => k.startsWith('vs:')).length < Object.keys(p.words).filter(k => k.startsWith('vn:')).length) {
+      // every other time: a slang word or saying instead of a north / centre / south word
+      const left = VN_SLANG.filter(s => !p.words['vs:' + s[0]]), s = left.length ? left[0] : pick(VN_SLANG);
+      p.words['vs:' + s[0]] = true; G.save();
+      await dialog(v.name, [[`Here's a fun saying: "${s[0]}" means ${s[1].toLowerCase()} Like this: ${s[4]}`, `Học câu này nè: "${s[0]}" nghĩa là ${s[2].toLowerCase()}. Ví dụ: ${s[4]}`]]);
+      await reward(s[3], `📖 ${s[0]}`, T(`Vietnamese slang: ${s[1]}`, `Tiếng lóng Việt: ${s[2]}`));
     } else {
       const col = { bac: 2, trung: 3, nam: 4 }[v.region], left = VN_WORDS.filter(w => !p.words['vn:' + w[1]]), w = left.length ? left[0] : pick(VN_WORDS);
       p.words['vn:' + w[1]] = true; G.save();

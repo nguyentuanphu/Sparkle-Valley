@@ -35,7 +35,7 @@ export function createFun(G) {
   // returns true when the tap was used
   G.tapReact = (h, ray) => {
     const people = scene.children.filter(c => c.userData.avatar || c.userData.react);
-    const targets = [...world.plants.filter(m => m.userData.kind !== 'rock'), ...world.critters.map(c => c.s), ...(G.pets ? G.pets.meshes() : []), ...G.npcs.map(n => n.obj), ...(G.farm ? G.farm.animalObjs() : []), ...people];
+    const targets = [...world.plants.filter(m => m.userData.kind !== 'rock'), ...world.critters.map(c => c.s), ...(G.pets ? G.pets.meshes() : []), ...G.npcs.map(n => n.obj), ...(G.farm ? G.farm.animalObjs() : []), ...(world.buffalo || []).map(b => b.mesh), ...(G.pets && G.pets.yardMeshes ? G.pets.yardMeshes() : []), ...people];
     const hit = ray.intersectObjects(targets, true)[0]; if (!hit || hit.distance > 45) return false;
     if (hit.object.isInstancedMesh && hit.distance > 26) return false; // far-away trees: tapping there walks there
     let o = hit.object;
@@ -61,6 +61,8 @@ export function createFun(G) {
     }
     return false;
   };
+  // the water buffaloes moo when tapped (riding is still the button)
+  (world.buffalo || []).forEach(b => { b.mesh.userData.react = () => { SFX.moo(); G.fx(b.mesh.position.x, b.mesh.position.y + 2.2, b.mesh.position.z, '💨'); }; });
   // register villagers: hop, wave and say hello, then walk over to talk
   G.npcs.forEach(n => { n.obj.userData.react = h => { hops.push({ o: n.obj, t: 0, y: n.obj.position.y }); SFX.hee(); G.fx(n.x, n.obj.position.y + 2.6, n.z, '👋'); const it = G.interactables.find(i => i.id === 'npc_' + n.id); if (it) G.goAndDo(h, it); }; });
   world.updaters.push(dt => {

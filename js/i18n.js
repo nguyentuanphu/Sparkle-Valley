@@ -9,7 +9,7 @@ const NAMES_EN = {
   'Ông Cú': 'Grandpa Cú', 'Ông Bầu': 'Grandpa Bầu', 'Mây Cau Có': 'Grumpy Cloud', 'Cô Mai': 'Auntie Mai', 'Bác Ba': 'Uncle Ba',
   'Cô Sáu': 'Auntie Sáu', 'Chú Tư': 'Uncle Tư', 'Anh Tuấn': 'Big Brother Tuấn', 'Bà Hai': 'Grandma Hai', 'Cô Thu': 'Auntie Thu',
   'O Lài': 'Auntie Lài', 'Chú Năm': 'Uncle Năm', 'Chú Tám': 'Uncle Tám', 'Cô Út': 'Auntie Út', 'Bà Năm': 'Grandma Năm',
-  'Anh Hai': 'Big Brother Hai', 'Cô Hạnh': 'Miss Hạnh', 'Bác Gấu': 'Mr. Bear', 'Cô Mei': 'Miss Mei', 'Bà Lin': 'Grandma Lin', 'Bà Asha': 'Grandma Asha', 'Bà Huệ': 'Grandma Huệ', 'Ông Nghi': 'Grandpa Nghi'
+  'Anh Hai': 'Big Brother Hai', 'Cô Hạnh': 'Miss Hạnh', 'Bác Gấu': 'Mr. Bear', 'Cô Mei': 'Miss Mei', 'Bà Lin': 'Grandma Lin', 'Bà Asha': 'Grandma Asha', 'Bà Huệ': 'Grandma Huệ', 'Ông Nghi': 'Grandpa Nghi', 'Bác 2': 'Uncle Hai', 'Bác 3': 'Uncle Ba', 'Bác 4': 'Uncle Tư', 'Cậu Tâm': 'Uncle Tâm', 'Mợ An': 'Auntie An', 'Cô Tám': 'Auntie Tám', 'Chú Trung': 'Uncle Trung', 'Chú Thuận': 'Uncle Thuận', 'Mợ Phương': 'Auntie Phương', 'O Thủy': 'Auntie Thủy', 'O Thúy': 'Auntie Thúy', 'Bác Sơn': 'Uncle Sơn', 'Chú Sự': 'Uncle Sự', 'Em Hà': 'Little Hà', 'Bà Năm': 'Grandma Năm'
 };
 const NAMES_VI = { 'Mrs Kelly': 'Cô Kelly', 'Aunty Bev': 'Dì Bev', 'Uncle Robbo': 'Chú Robbo', 'Mr. Bear': 'Bác Gấu' };
 const ALIAS = { 'Mr. Bear': 'Bác Gấu' }; // two spellings of one character

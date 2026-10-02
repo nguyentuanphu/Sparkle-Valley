@@ -76,7 +76,7 @@ export function createHawkers(G) {
         H.t += dt * 1 / L; if (H.t >= 1) { H.t = 0; H.k = 1 - H.k; }
         const u = H.t, nx = ax + (bx - ax) * u, nz = az + (bz - az) * u; H.yaw = Math.atan2(bx - ax, bz - az); H.x = nx; H.z = nz; moving = true;
       }
-      const y = heightAt(H.x, H.z);
+      const y = world.groundAt(H.x, H.z);
       H.A.root.position.set(H.x, y, H.z); H.A.root.rotation.y = H.yaw;
       if (!far) H.A.anim(moving ? 'walk' : 'idle', t, moving ? 1 : 0);
       H.it.x = H.x; H.it.z = H.z;

@@ -15,7 +15,7 @@ import { GAMES } from './games/frame.js';
 import { showStory, storyList } from './story.js';
 import { SECRETS } from './secrets.js';
 import { LANDMARKS, VENDORS } from './regions.js';
-import { AUSSIE_SLANG, VN_WORDS } from './words.js';
+import { AUSSIE_SLANG, VN_WORDS, VN_SLANG } from './words.js';
 import { openCredits, creditsFields, bindCreditsFields } from './credits.js';
 import { openHowTo } from './howto.js';
 import { WILD } from './gather.js';
@@ -514,6 +514,14 @@ export function openPad(game, i, tab) {
       list.forEach(pl => { const b = el('button', 'qbtn', `<span>${pl.icon}</span><small>${esc(pl.name())}</small>`); b.onclick = () => { close(); game.travelTo(hero, pl.x, pl.z); }; quick.appendChild(b); });
       body.appendChild(quick);
     }
+    // the homes of Two Homes Street: knock, meet the family, go inside (js/homes.js)
+    const named = game.homes ? game.homes.list.filter(hm => hm.H) : [];
+    if (named.length) {
+      body.appendChild(el('h4', 'qgroup', `🏠 ${esc(T('Homes on Two Homes Street', 'Những ngôi nhà ở Phố Hai Quê'))}`));
+      const hq = el('div', 'quick');
+      named.forEach(hm => { const b = el('button', 'qbtn', `<span>🏠</span><small>${esc(hm.name())}</small>`); b.onclick = () => { close(); game.landBy(hero, hm.door.x, hm.door.z); }; hq.appendChild(b); });
+      body.appendChild(hq);
+    }
     const quick = el('div', 'quick'); const ch = el('button', 'qbtn change', `<span>🔄</span><small>${T('Change player', 'Đổi người chơi')}</small>`); ch.onclick = () => { close(); game.changePlayer(); }; quick.appendChild(ch);
     body.appendChild(quick);
     const x = cv.getContext('2d'); x.drawImage(game.fogMapFor(p), 0, 0, S, S);
@@ -606,7 +614,7 @@ export function openPad(game, i, tab) {
       <p class="note">${T('Pick fruit and flowers in the meadows and bamboo forest. Tap a rock 3 times to crack it open, or dig 3 times at a sparkly mound of earth: the rarest gems are worth the most! Sell treasures from your bag or to Mr. Bear at the farm.', 'Hái quả và hoa ở đồng cỏ và rừng tre. Gõ hòn đá 3 lần để mở nó ra, hoặc đào 3 lần ở ụ đất lấp lánh: đá quý càng hiếm càng đáng giá! Bán báu vật ngay trong túi hoặc cho Bác Gấu ở nông trại.')}</p>`;
     body.innerHTML = `<button class="btn wide big" id="scrapBtn">📒 ${T('My scrapbook: decorate with stickers and photos', 'Sổ dán hình: trang trí bằng hình dán và ảnh')}</button>` + treasures + `<h3>📮 ${T('Postcards', 'Bưu thiếp')} ${Object.keys(pcs).length}/${LANDMARKS.length}</h3><div class="secrets">${LANDMARKS.map(l => pcs[l.id] ? `<button class="sec on" data-pcfact="${l.id}"><span>${l.icon}</span><small>${esc(l.name())}</small></button>` : `<button class="sec" data-fly="${l.id}"><span>❔</span><small>✈️ ${esc(l.name())}</small></button>`).join('')}</div>
       <h3>🍜 ${T('Food passport', 'Hộ chiếu ẩm thực')} ${Object.keys(tasted).length}/${VENDORS.length}</h3><div class="secrets">${VENDORS.map(v => `<div class="sec ${tasted[v.id] ? 'on' : ''}"><span>${tasted[v.id] ? v.food[0] : '❔'}</span><small>${tasted[v.id] ? esc(T(v.food[1], v.food[2])) : esc(v.name)}</small></div>`).join('')}</div>
-      <h3>🗣️ ${T('Words I learned', 'Từ con đã học')} ${words.length}</h3><div class="wordlist">${words.map(k => { const [kind, w] = [k.slice(0, 2), k.slice(3)]; if (kind === 'au') { const s = AUSSIE_SLANG.find(x => x[0] === w); return s ? `<span>🇦🇺 <b>${esc(s[0])}</b> = ${esc(T(s[1], s[2]))}</span>` : ''; } const v = VN_WORDS.find(x => x[1] === w); return v ? `<span>🇻🇳 ${v[0]} Bắc <b>${esc(v[2])}</b> · Trung <b>${esc(v[3])}</b> · Nam <b>${esc(v[4])}</b></span>` : ''; }).join('') || `<p class="note">${T('Ask the market sellers and the Aussie shopkeepers to teach you a word!', 'Hỏi các cô chú bán hàng ở chợ và ở Góc Nước Úc để học từ mới nhé!')}</p>`}</div>
+      <h3>🗣️ ${T('Words I learned', 'Từ con đã học')} ${words.length}</h3><div class="wordlist">${words.map(k => { const [kind, w] = [k.slice(0, 2), k.slice(3)]; if (kind === 'au') { const s = AUSSIE_SLANG.find(x => x[0] === w); return s ? `<span>🇦🇺 <b>${esc(s[0])}</b> = ${esc(T(s[1], s[2]))}</span>` : ''; } if (kind === 'vs') { const s = VN_SLANG.find(x => x[0] === w); return s ? `<span>🇻🇳 <b>${esc(s[0])}</b> = ${esc(T(s[1], s[2]))}</span>` : ''; } const v = VN_WORDS.find(x => x[1] === w); return v ? `<span>🇻🇳 ${v[0]} Bắc <b>${esc(v[2])}</b> · Trung <b>${esc(v[3])}</b> · Nam <b>${esc(v[4])}</b></span>` : ''; }).join('') || `<p class="note">${T('Ask the market sellers and the Aussie shopkeepers to teach you a word!', 'Hỏi các cô chú bán hàng ở chợ và ở Góc Nước Úc để học từ mới nhé!')}</p>`}</div>
       <h3>🤫 ${T('Secrets', 'Bí mật')} ${Object.keys(sec).length}/${SECRETS.length}</h3><div class="secrets">${SECRETS.map(s => sec[s.id] ? `<div class="sec on"><span>${s.icon}</span><small>${esc(s.name())}</small></div>` : `<button class="sec" data-hint="${esc(s.hint())}"><span>❔</span><small>${T('Tap for a clue', 'Chạm để nghe gợi ý')}</small></button>`).join('')}</div>
       <h3>📖 ${T('Storybook', 'Sách truyện')}</h3><div class="stories">${storyList(p).map((st, k) => `<button class="qbtn" data-st="${k}"><span>📖</span><small>${esc(st.title())}</small></button>`).join('')}</div>
       <h3>${T('Stickers', 'Hình dán')} ${p.stickers.length}/${STICKERS.length}</h3><div class="stickers">${STICKERS.map(s => `<div class="${p.stickers.includes(s) ? '' : 'miss'}">${p.stickers.includes(s) ? s : '?'}</div>`).join('')}</div>

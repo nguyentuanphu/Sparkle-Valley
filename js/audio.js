@@ -68,6 +68,12 @@ export const SFX = {
   oink() { [0, .25].forEach(t => { tone(140, .18, { at: t, to: 100, type: 'sawtooth', vol: .11, filter: 'lowpass', ff: 500 }); noise(.18, { at: t, type: 'lowpass', freq: 400, vol: .18 }); }); },
   cluck() { [0, .12, .24, .5].forEach((t, i) => tone(i === 3 ? 700 : 520, i === 3 ? .25 : .07, { at: t, to: i === 3 ? 480 : 600, type: 'square', vol: .06, filter: 'bandpass', ff: 1400, q: 2 })); },
   neigh() { tone(900, .8, { type: 'sawtooth', to: 500, vol: .06, vib: 60, vibRate: 14, filter: 'lowpass', ff: 2200 }); },
+  // more animal voices: a bunny sniffing, a panda cub's bleat, a joey's chuff-chuff, a buffalo calf's high moo, a purr
+  sniff() { [0, .09, .18, .27].forEach(t => noise(.05, { at: t, freq: 3200, q: 3, vol: .06 })); tone(1500, .1, { at: .36, to: 1900, vol: .05 }); },
+  bleat() { [0, .3].forEach(t => tone(620, .25, { at: t, to: 520, type: 'sawtooth', vol: .07, vib: 22, vibRate: 11, filter: 'lowpass', ff: 1700 })); },
+  chuff() { [0, .14, .28].forEach(t => { noise(.07, { at: t, freq: 900, q: 1.2, vol: .14 }); tone(200, .06, { at: t, to: 150, vol: .05 }); }); },
+  calfmoo() { tone(260, .8, { type: 'sawtooth', to: 210, vol: .09, filter: 'lowpass', ff: 700, vib: 6, vibRate: 5 }); },
+  purr() { tone(48, .9, { type: 'sawtooth', vol: .07, filter: 'lowpass', ff: 260, vib: 14, vibRate: 22 }); },
   squeak() { [0, .15, .3].forEach(t => tone(1300, .08, { at: t, to: 1700, vol: .06 })); },
   ribbit() { [0, .18].forEach(t => tone(180, .14, { at: t, to: 120, type: 'square', vol: .08, filter: 'lowpass', ff: 700, vib: 40, vibRate: 30 })); },
   bump() { tone(260, .2, { to: 150, vol: .12, type: 'triangle' }); },

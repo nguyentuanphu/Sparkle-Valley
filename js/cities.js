@@ -306,9 +306,7 @@ export function createCities(G) {
     const plate = new THREE.Mesh(new THREE.PlaneGeometry(.7, .52), new THREE.MeshBasicMaterial({ map: t }));
     plate.position.set(x + Math.sin(rot) * 2.82 + Math.cos(rot) * 2.5, heightAt(x, z) + 2.2, z + Math.cos(rot) * 2.82 - Math.sin(rot) * 2.5); plate.rotation.y = rot; scene.add(plate);
     const big = plate.clone(); big.scale.setScalar(1.6); big.position.set(x + Math.sin(rot) * 3.82, heightAt(x, z) + 4.6, z + Math.cos(rot) * 3.82); scene.add(big);
-    const dx = x + Math.sin(rot) * 4.6, dz = z + Math.cos(rot) * 4.6;
-    G.interactables.push({ id: 'house8', x: dx, z: dz, r: 2.6, icon: '🏠', bubble: '🏠', label: () => T('Number 8: knock on the door', 'Số 8: gõ cửa'),
-      act: async () => { SFX.tap(); await dialog(T('Number 8', 'Nhà số 8'), [['Knock knock! Welcome home to number 8! Come in, come in. There is always rice, fruit and a big hug here.', 'Cốc cốc! Về nhà số 8 rồi! Vào đi con, vào đi. Ở đây lúc nào cũng có cơm, trái cây và một cái ôm thật chặt.']]); } });
+    world.houses.push({ x, z, rot, d: 7, kind: 'home8' }); // its door, family and inside: js/homes.js
   }
 }
 

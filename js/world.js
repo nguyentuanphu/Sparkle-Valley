@@ -657,6 +657,8 @@ export function createWorld(scene, quality) {
   W.groundAt = (x, z, y = 1e9) => {
     let g = heightAt(x, z);
     for (const p of W.platforms) if (x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1 && y >= p.y - 1.2) g = Math.max(g, p.y);
+    // on a road: stand on the road surface (roads.js keeps it), unless you are well below it (under a bridge)
+    if (W.roadTop) { const r = W.roadTop.get(Math.round(x * 2) * 8192 + Math.round(z * 2)); if (r != null && y >= r - 1.2) g = Math.max(g, r - .03); }
     return g;
   };
   W.platformAt = (x, z, y) => W.platforms.find(p => x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1 && Math.abs(y - p.y) < .3);

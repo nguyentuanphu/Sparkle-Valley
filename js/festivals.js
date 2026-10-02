@@ -32,6 +32,8 @@ export const FESTIVALS = {
 
 // a festival a child chose to visit from the Games hub or settings (for this session only)
 let visiting = null;
+// a festival happens at a village (a centre point) or a city block (a box): use the middle of either
+const spots = F => F.where().map(o => o.x != null ? o : { x: (o.x0 + o.x1) / 2, z: (o.z0 + o.z1) / 2 });
 export function festivalToday(d = new Date()) {
   if (visiting && FESTIVALS[visiting]) return visiting;
   const pick = settings.festival || 'auto';
@@ -59,7 +61,7 @@ export function createFestivals(G) {
     current = festivalToday(); if (!current) return;
     const F = FESTIVALS[current];
     // decorations in a ring round each village
-    F.where().forEach((c, w) => {
+    spots(F).forEach((c, w) => {
       for (let i = 0; i < 18; i++) {
         const a = i / 18 * Math.PI * 2, r = 9 + (i % 3) * 4, x = c.x + Math.cos(a) * r, z = c.z + Math.sin(a) * r;
         const s = sprite(F.deco[i % F.deco.length], 1.2); s.position.set(x, heightAt(x, z) + 3.2 + (i % 2) * .6, z); group.add(s);
@@ -98,7 +100,7 @@ export function createFestivals(G) {
       fwT -= dt;
       if (fwT <= 0) {
         fwT = showT > 0 ? .5 + Math.random() * .6 : 1.2 + Math.random() * 1.5;
-        const c = F.where()[0], x = c.x + (Math.random() - .5) * 30, z = c.z + (Math.random() - .5) * 30, y = heightAt(c.x, c.z) + 22 + Math.random() * 10;
+        const c = spots(F)[0], x = c.x + (Math.random() - .5) * 30, z = c.z + (Math.random() - .5) * 30, y = heightAt(c.x, c.z) + 22 + Math.random() * 10;
         const col = ['#ff4f9a', '#ffd23f', '#3cc7e8', '#5fd36a', '#ff9f43'][Math.floor(Math.random() * 5)];
         for (let i = 0; i < 16; i++) {
           const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: col, transparent: true, depthWrite: false, fog: false, blending: THREE.AdditiveBlending })); s.scale.setScalar(1.3);
@@ -121,9 +123,12 @@ export function createFestivals(G) {
     visit: async (i, id) => {
       const h = G.heroes[i]; if (!h || !FESTIVALS[id]) return;
       visiting = id; build();
-      if (tableIt) G.travel(h, tableIt.x + 2.5, tableIt.z + 2.5);
+      if (tableIt) await G.landBy(h, tableIt.x, tableIt.z); // an open spot next to the table, never inside a stall or tree
       showT = 14; SFX.chime && SFX.chime();
-      setTimeout(() => { if (tableIt) visit(h); }, 1800);
+      // arriving can open a story page (a new village): let it finish before the festival starts
+      for (let k = 0; k < 600 && document.querySelector('.storybook, .reward, .modal'); k++) await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 900)); showT = 14;
+      if (tableIt) visit(h);
     },
     list: () => Object.entries(FESTIVALS).map(([id, F]) => ({ id, icon: F.icon, name: F.name(), today: festivalToday() === id })),
     // a greeting when a session starts during a festival
