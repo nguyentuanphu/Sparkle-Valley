@@ -730,7 +730,8 @@ button { color: var(--text); }
 /* ---------- How-to-play films ---------- */
 .gl-how { margin-left: auto; width: 52px; height: 52px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .85); box-shadow: var(--shadow); font-size: 24px; flex: none; }
 .hhow { position: absolute; top: -6px; left: -6px; width: 42px; height: 42px; border-radius: 50%; border: 0; background: #fff; box-shadow: var(--shadow); font-size: 20px; }
-.hflag { position: absolute; bottom: 6px; right: 8px; font-size: 16px; pointer-events: none; }
+.hflag { position: absolute; bottom: 6px; right: 8px; font-size: 16px; pointer-events: none; display: flex; gap: 3px; }
+.hflag .flag { width: 24px; height: 16px; display: block; filter: drop-shadow(0 1px 1px rgba(0,0,0,.2)); }
 .howto { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px);
   background: radial-gradient(ellipse at 50% 30%, #fff6dc, #f6dca8 60%, #e2b77c); animation: fadein .3s; }
 .ht-film { width: min(760px, 100%); background: #2b2238; border-radius: 28px; padding: 14px; box-shadow: 0 20px 50px rgba(60, 30, 10, .35); }
@@ -1067,3 +1068,58 @@ body.biggertext .hud .dock .dk small, body.biggertext .hud .mv small { font-size
 body.biggertext .hud .q-text { font-size: 1.3em; }
 body.biggertext .caption { font-size: clamp(21px, 5.4vw, 27px); }
 .seg.tsize button { min-width: 64px; font-weight: 700; }
+
+/* ---------- Round 20: easier to see and reach ---------- */
+/* the action button sits in the middle above the dock, big and glowing, so it is easy to spot */
+.hud .act { left: 50%; bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 104px); transform: translateX(-50%); max-width: min(440px, calc(100% - 24px)); font-size: 22px; padding: 10px 28px 10px 10px; gap: 14px; z-index: 4;
+  animation: actIn .25s ease, actGlow 1.6s ease-in-out .25s infinite; }
+.hud .act .ai { width: 68px; height: 68px; font-size: 38px; }
+.hud .act .al { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@keyframes actIn { from { opacity: 0; transform: translate(-50%, 24px) scale(.9); } }
+@keyframes actGlow { 0%, 100% { box-shadow: 0 6px 0 #d08400, 0 0 0 0 rgba(255, 200, 40, .65), 0 12px 28px rgba(255, 160, 0, .45); } 50% { box-shadow: 0 6px 0 #d08400, 0 0 0 12px rgba(255, 200, 40, 0), 0 12px 28px rgba(255, 160, 0, .45); } }
+.hud .act:active { transform: translate(-50%, 4px); }
+body.calm .hud .act { animation: actIn .25s ease; }
+.hud.small .act { bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 76px); font-size: 16px; padding: 6px 18px 6px 6px; gap: 10px; }
+.hud.small .act .ai { width: 50px; height: 50px; font-size: 28px; }
+@media (max-width: 700px) { .hud .act { bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 80px); } }
+/* narrow phones: Run sits above Jump so the dock (and the 🎤 Ask button) never hides under them */
+@media (max-width: 520px) and (orientation: portrait) {
+  .hud .moves { flex-direction: column-reverse; align-items: center; gap: 8px; }
+  .hud .act { bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 72px); left: calc(50% - 40px); max-width: calc(100% - 110px); }
+  .hud .dock { gap: 6px; }
+}
+@media (max-width: 360px) and (orientation: portrait) {
+  .hud .dk { width: 46px; height: 46px; border-radius: 14px; } .hud .dk.games { width: 56px; height: 56px; }
+  .hud .dk span .ico { width: 28px; height: 28px; }
+}
+/* picture questions for the Ask button where the device cannot listen */
+.ask-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-top: 6px; }
+.ask-grid button { border: 0; border-radius: 18px; background: #f4eefc; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 84px; color: var(--text); }
+.ask-grid button span { font-size: 34px; } .ask-grid button small { font-size: 13px; line-height: 1.15; }
+/* keyboard hints: only on computers with a mouse and keyboard */
+.kb { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .hud .kb { display: block; position: absolute; top: -7px; right: -7px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 6px; background: #3b2a4f; color: #fff; font: 600 11px/20px Fredoka, "Baloo 2", sans-serif; text-align: center; box-shadow: 0 2px 0 rgba(0, 0, 0, .3); pointer-events: none; white-space: nowrap; }
+  .hud .dk, .hud .mv, .hud .zoomer button, .hud .q-go { position: relative; }
+  .hud .act .kb { top: -8px; right: 8px; font-size: 13px; height: 24px; line-height: 24px; min-width: 24px; }
+  .hud.small .kb { display: none; }
+  .padkey { display: inline-block; margin-left: 4px; padding: 0 5px; border-radius: 5px; background: rgba(59, 42, 79, .12); font-size: 11px; vertical-align: middle; }
+}
+/* the Sparkle Pad keeps one size while you switch tabs (it used to jump up and down) */
+.pad .card { height: min(760px, calc(100dvh - 24px)); display: flex; flex-direction: column; }
+.pad .pad-head { flex: none; }
+.pad .pad-body { flex: 1 1 auto; min-height: 0; max-height: none; }
+.padkey { display: none; }
+@media (hover: hover) and (pointer: fine) { .padkey { display: inline-block; } .pad-head .x { position: relative; } .pad-head .x .padkey { position: absolute; bottom: -6px; right: -6px; margin: 0; background: #3b2a4f; color: #fff; } }
+/* online friends: where is my friend? */
+.hud .friendchip { right: calc(var(--pad) + env(safe-area-inset-right)); top: calc(var(--pad) + env(safe-area-inset-top) + 196px); display: flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; padding: 6px 12px 6px 6px; background: linear-gradient(180deg, #7fd0ff, #2fa8ff); color: #fff; font-size: 15px; box-shadow: 0 4px 0 #1f7fc0, var(--shadow); max-width: 220px; }
+.hud .friendchip .fc-arrow { width: 30px; height: 30px; border-radius: 50%; background: #fff; color: #2fa8ff; display: flex; align-items: center; justify-content: center; font-size: 16px; flex: none; transition: transform .2s; }
+.hud .friendchip .fc-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hud .friendchip.near { background: linear-gradient(180deg, #8be07a, #3fbf5a); box-shadow: 0 4px 0 #2a8a3a, var(--shadow); animation: goPulse 1.4s infinite; }
+.hud.small .friendchip { top: calc(var(--pad) + env(safe-area-inset-top) + 132px); font-size: 12px; padding: 4px 9px 4px 4px; max-width: 150px; }
+.hud.small .friendchip .fc-arrow { width: 24px; height: 24px; font-size: 13px; }
+.friendfind { text-align: left; }
+.ff-row { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 18px; background: #f4eefc; margin-top: 8px; flex-wrap: wrap; }
+.ff-row img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex: none; }
+.ff-txt { display: flex; flex-direction: column; flex: 1; min-width: 120px; } .ff-txt small { color: #7a6a8a; }
+.ff-btns { display: flex; gap: 6px; flex-wrap: wrap; }

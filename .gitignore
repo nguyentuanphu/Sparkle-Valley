@@ -4,3 +4,5 @@ node_modules/
 netlify-site/
 sparkle-valley-netlify.zip
 proto/
+tests/node_modules/
+tests/out/

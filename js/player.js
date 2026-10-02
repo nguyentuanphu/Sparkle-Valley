@@ -191,13 +191,15 @@ export class Hero {
     // is walking, so what's ahead is always on screen (it used to stay fixed facing north, which hid
     // everything when walking towards the camera). It waits a moment so small turns don't spin it.
     if (easy) {
-      if (this.speed > .8 && !this.towerClimb && this.manualCamT <= 0) { this.easyT = (this.easyT || 0) + dt; this.stillT = 0; if (this.easyT > .35) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * 1.6)); }
+      if (this.speed > .8 && !this.towerClimb && this.manualCamT <= 0) { this.easyT = (this.easyT || 0) + dt; this.stillT = 0; // calmer: only after walking the same way for a moment, slowly, and it stops once roughly behind
+        const off = Math.abs(Math.atan2(Math.sin(this.yaw + Math.PI - this.camYaw), Math.cos(this.yaw + Math.PI - this.camYaw)));
+        if (this.easyT > .8 && off > .3) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * .9)); }
       else { this.easyT = 0; this.stillT = (this.stillT || 0) + dt; }
       // standing still next to a landmark: slowly turn so it is in front of the camera
       if (this._lm && (this._lmF || 0) > .25 && this.stillT > .8 && this.manualCamT <= 0 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, Math.atan2(p.x - this._lm.x, p.z - this._lm.z), Math.min(1, dt * 1.2));
       // near a landmark, step back and look more level so the whole building fits on screen
       const lf = this._lmF = lerp(this._lmF || 0, game.landmarkFrame ? game.landmarkFrame(this) : 0, Math.min(1, dt * 1.5));
-      this.camPitch += ((this.towerClimb ? .25 : game.lookUpT > 0 ? .1 : .55 - lf * .12) - this.camPitch) * Math.min(1, dt * 3);
+      this.camPitch += ((this.towerClimb ? .25 : game.lookUpT > 0 ? .1 : .55 - lf * .12 + Math.max(0, (this.zoom || 1) - 1) * .45) - this.camPitch) * Math.min(1, dt * 3);
     }
     else if (this.manualCamT <= 0 && this.speed > 1 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * .6));
     const close = game.closeUp === this.i; // wardrobe close-up
@@ -206,7 +208,10 @@ export class Hero {
     const target = new THREE.Vector3(p.x, p.y + (close ? .2 : 1.15) + rideY, p.z);
     const want = new THREE.Vector3(p.x + Math.sin(this.camYaw) * Math.cos(this.camPitch) * dist, target.y + Math.sin(this.camPitch) * dist, p.z + Math.cos(this.camYaw) * Math.cos(this.camPitch) * dist);
     // keep the camera out of houses: if a wall is between the child and the camera, move the camera in
-    // front of it, so the child (and what's around them) is never hidden behind a building
+    // front of it. Worked out as one "how much of the distance is free" number (k), then smoothed: the camera
+    // comes in quickly when something is in the way but goes back out slowly and only after a short pause,
+    // so walking past houses and trees no longer makes it jump in and out.
+    let k = 1, lift = 0;
     const bx = this.world.boxes; if (bx && bx.length && !close) {
       const dx = want.x - target.x, dz = want.z - target.z; let tmin = 1;
       for (const b of bx) {
@@ -219,9 +224,9 @@ export class Hero {
         }
         if (t0 <= t1 && t0 < tmin) tmin = t0;
       }
-      if (tmin < 1) { const k = Math.max(.22, tmin - .04); want.x = target.x + dx * k; want.z = target.z + dz * k; want.y = target.y + (want.y - target.y) * Math.max(k, .5); }
+      if (tmin < 1) { k = Math.max(.3, tmin - .04); lift = 1; }
     }
-    // anything solid (houses, landmarks, boats…) between the child and the camera: move the camera in front of it
+    // anything big and solid (houses, landmarks, boats…) between the child and the camera
     const bl = game.camBlockers && !close ? game.camBlockers() : null;
     if (bl && bl.length) {
       _dir.subVectors(want, target); const full = _dir.length(); _dir.divideScalar(full || 1);
@@ -230,10 +235,21 @@ export class Hero {
       const mats = game.camBlockerMats(); mats.forEach(m => { m._side = m.side; m.side = THREE.DoubleSide; });
       const hit = _ray.intersectObjects(bl, false)[0];
       mats.forEach(m => { m.side = m._side; });
-      if (hit) { const d = Math.max(1.2, hit.distance - .8); want.copy(target).addScaledVector(_dir, d); want.y = Math.max(want.y, target.y + d * .35); }
+      if (hit) { k = Math.min(k, Math.max(1.6, hit.distance - .8) / (full || 1)); lift = 1; }
+    }
+    if (close) { this._camK = 1; this._camLift = 0; this._camFreeT = 0; }
+    else {
+      const ck = this._camK == null ? k : this._camK;
+      if (k < ck - .01) { this._camK = ck + (k - ck) * Math.min(1, dt * 7); this._camFreeT = 0; }
+      else { this._camFreeT = (this._camFreeT || 0) + dt; this._camK = this._camFreeT > .6 ? ck + (k - ck) * Math.min(1, dt * 1.1) : ck; }
+      this._camLift = (this._camLift || 0) + (lift - (this._camLift || 0)) * Math.min(1, dt * (lift ? 2.5 : .8));
+      const kk = this._camK;
+      if (kk < .999) { want.x = target.x + (want.x - target.x) * kk; want.z = target.z + (want.z - target.z) * kk; want.y = target.y + (want.y - target.y) * Math.max(kk, .55); }
+      // when something is in the way, rise up a little and look down over it rather than squeezing in
+      want.y += this._camLift * 2.2;
     }
     const gy = this.world.groundAt(want.x, want.z) + .7; if (want.y < gy) want.y = gy;
-    this.camPos.lerp(want, Math.min(1, dt * 8));
+    this.camPos.lerp(want, Math.min(1, dt * 5));
     this.cam.position.copy(this.camPos); this.cam.lookAt(target);
   }
 }

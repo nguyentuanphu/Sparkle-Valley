@@ -24,6 +24,7 @@ import { canListen } from './listen.js';
 import { installButton } from './install.js';
 import { VOICE_STYLES, clipCountFor, hush, setSpeaker, sayIn } from './voice.js';
 import { LEARN } from './words2.js';
+import { originFlags } from './icons.js';
 
 const PET_ICON = { puppy: '🐶', kitty: '🐱', bunny: '🐰', panda: '🐼', joey: '🦘', calf: '🐃' };
 export const STYLE_ICON = { dress: '👗', shirt: '👕', aodai: '🥻', tunic: '🧥', overalls: '👖', hoodie: '🧶' };
@@ -284,7 +285,7 @@ export function openQuick(game, i) {
         <button class="qset ${on(s.music)}" data-k="music"><span>🎵</span>${T('Music', 'Nhạc')}</button>
         <button class="qset ${on(s.sound)}" data-k="sound"><span>🔔</span>${T('Sounds', 'Âm thanh')}</button>
         <button class="qset ${on(s.voice)}" data-k="voice"><span>🗣️</span>${T('Talking', 'Giọng nói')}</button>
-        ${canListen() ? `<button class="qset ${on(s.voiceControl)}" data-k="voiceControl"><span>🎤</span>${T('Voice control', 'Điều khiển giọng nói')}</button>` : ''}
+        <button class="qset ${on(s.voiceControl)}" data-k="voiceControl"><span>🎤</span>${T('Voice control', 'Điều khiển giọng nói')}</button>
         <button class="qset ${on(s.camMode !== 'free')}" data-k="cam"><span>${s.camMode === 'free' ? '🧭' : '🧸'}</span>${s.camMode === 'free' ? T('Explorer camera', 'Camera tự do') : T('Easy camera', 'Camera dễ')}</button>
         <button class="qset ${on(s.alwaysDay)}" data-k="alwaysDay"><span>☀️</span>${T('Always daytime', 'Luôn ban ngày')}</button>
       </div>
@@ -298,7 +299,7 @@ export function openQuick(game, i) {
       else s[k] = !s[k];
       if (k === 'music') { if (s.music) Music.refresh(); else Music.stop(); }
       if (k === 'voice' && !s.voice) hush();
-      saveSettings(); document.querySelectorAll('.dk.voicecmd').forEach(x => x.hidden = !(s.voiceControl && canListen())); draw();
+      saveSettings(); document.querySelectorAll('.dk.voicecmd').forEach(x => x.hidden = !s.voiceControl); draw();
     });
     card.querySelectorAll('.seg.vstyle button').forEach(b => b.onclick = () => { s.voiceStyle = b.dataset.v; saveSettings(); draw(); say('Hello! Do you like my voice?', 'Xin chào! Con có thích giọng này không?'); });
     card.querySelector('#qWho').onclick = () => { m.close(); game.changePlayer(); };
@@ -415,7 +416,10 @@ export function dialog(name, lines, choices) {
       ch.innerHTML = ''; next.hidden = last && choices && choices.length;
       if (last && choices && choices.length) choices.forEach((c, k) => { const b = el('button', 'dch', esc(T(c[0], c[1]))); b.onclick = e => { e.stopPropagation(); SFX.tap(); close(k); }; ch.appendChild(b); });
     };
-    const close = k => { setSpeaker(null); d.classList.add('out'); setTimeout(() => d.remove(), 200); res(k); };
+    let closed = false;
+    const close = k => { if (closed) return; closed = true; setSpeaker(null); d.classList.add('out'); setTimeout(() => d.remove(), 200); res(k); };
+    // walking away closes the conversation by itself
+    d._autoClose = () => close(-1); d._from = dialogHooks.where ? dialogHooks.where() : null;
     d.onclick = () => { if (choices && i === lines.length - 1 && choices.length) return; SFX.tap(); if (i < lines.length - 1) { i++; show(); } else close(-1); };
     if (little) {
       d.querySelector('.again').onclick = e => { e.stopPropagation(); SFX.tap(); const [en, vi] = lines[i]; setSpeaker(name); say(en, vi); };
@@ -443,13 +447,25 @@ export function openPad(game, i, tab) {
   const TABS = [['map', '🗺️', T('Map', 'Bản đồ')], ['bag', '🎒', T('Backpack', 'Ba lô')], ['log', '📜', T('Adventures', 'Nhiệm vụ')], ['album', '⭐', T('Album', 'Bộ sưu tập')], ['passport', '🛂', T('Passport', 'Hộ chiếu')], ['games', '🎲', T('Games', 'Trò chơi')], ['cam', '📷', T('Camera', 'Máy ảnh')]];
   if (game.mode === 'online' || game.mode === 'solo') TABS.push(['friend', '📞', T('Friend', 'Bạn bè')]);
   const draw = () => {
-    card.innerHTML = `<div class="pad-head"><div class="pad-tabs">${TABS.map(t => `<button data-t="${t[0]}" class="${t[0] === tab ? 'on' : ''}"><span>${t[1]}</span><small>${t[2]}</small></button>`).join('')}</div><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div><div class="pad-body"></div>`;
+    const sl = card.querySelector('.pad-tabs') ? card.querySelector('.pad-tabs').scrollLeft : 0;
+    card.innerHTML = `<div class="pad-head"><div class="pad-tabs">${TABS.map((t, k) => `<button data-t="${t[0]}" class="${t[0] === tab ? 'on' : ''}"><span>${t[1]}</span><small>${t[2]}<kbd class="padkey">${k + 1}</kbd></small></button>`).join('')}</div><button class="x" aria-label="${T('Close', 'Đóng')}">✕<kbd class="padkey">Esc</kbd></button></div><div class="pad-body"></div>`;
+    card.querySelector('.pad-tabs').scrollLeft = sl;
     card.querySelectorAll('.pad-tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; SFX.tap(); draw(); });
     card.querySelector('.x').onclick = close;
     const body = card.querySelector('.pad-body');
     ({ map: drawMap, bag: drawBag, log: drawLog, album: drawAlbum, games: drawGames, cam: drawCam, friend: drawFriend, passport: b => game.drawPassport(b, hero) })[tab](body);
   };
-  const close = () => { m.close(); game.closePad(i); };
+  // computer keyboards: 1–8 pick a tab, ← → step through them, Esc closes
+  const onKey = e => {
+    if (!document.body.contains(m) || /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '')) return;
+    let k = -1; const cur = TABS.findIndex(t => t[0] === tab);
+    if (/^Digit[1-9]$/.test(e.code)) k = +e.code.slice(5) - 1;
+    else if (e.code === 'ArrowRight' || e.code === 'BracketRight') k = (cur + 1) % TABS.length;
+    else if (e.code === 'ArrowLeft' || e.code === 'BracketLeft') k = (cur + TABS.length - 1) % TABS.length;
+    if (k >= 0 && TABS[k]) { e.preventDefault(); e.stopImmediatePropagation(); tab = TABS[k][0]; SFX.tap(); draw(); }
+  };
+  addEventListener('keydown', onKey, true);
+  const close = () => { removeEventListener('keydown', onKey, true); m.close(); game.closePad(i); };
   function drawMap(body) {
     const S = 600, cv = el('canvas', 'bigmap'); cv.width = cv.height = S; body.appendChild(cv);
     body.appendChild(el('p', 'note center', T('Tap any picture on the map, or a place below, to fly there.', 'Chạm vào bất kỳ hình nào trên bản đồ, hoặc một nơi bên dưới, để bay đến đó.')));
@@ -472,12 +488,25 @@ export function openPad(game, i, tab) {
     });
     const q = game.questTarget(hero); if (q) { const [a, b] = pt(q.x, q.z); x.fillStyle = '#ff3b6b'; x.beginPath(); x.arc(a, b - 14, 9, 0, Math.PI * 2); x.moveTo(a - 7, b - 9); x.lineTo(a, b); x.lineTo(a + 7, b - 9); x.fill(); }
     game.heroes.forEach((h, j) => { const [a, b] = pt(h.pos.x, h.pos.z); x.save(); x.translate(a, b); x.rotate(-h.yaw + Math.PI); x.fillStyle = j === 0 ? '#ffd23f' : '#5fe0ff'; x.strokeStyle = '#3a2a10'; x.lineWidth = 2; x.beginPath(); x.moveTo(0, -12); x.lineTo(9, 10); x.lineTo(0, 5); x.lineTo(-9, 10); x.closePath(); x.fill(); x.stroke(); x.restore(); });
-    if (game.partner) { const s = game.partner.pos; icon('🧒', s.x, s.z, 22); }
+    // every friend online, with their name (tap them to walk, fly or ask them to come)
+    Object.values(game.partners || {}).forEach(P => {
+      if (P.pos.y < -40) return; const [a, b] = pt(P.pos.x, P.pos.z);
+      x.fillStyle = '#2fa8ff'; x.strokeStyle = '#fff'; x.lineWidth = 3; x.beginPath(); x.arc(a, b, 13, 0, Math.PI * 2); x.fill(); x.stroke();
+      icon('🧒', P.pos.x, P.pos.z, 18);
+      x.font = 'bold 14px Fredoka, "Baloo 2", sans-serif'; const w = x.measureText(P.name).width + 12; x.fillStyle = '#2fa8ff'; x.fillRect(a - w / 2, b - 36, w, 20); x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(P.name, a, b - 26);
+      spots.push({ x: P.pos.x, z: P.pos.z, name: P.name, r: 16, friend: P.id });
+    });
     cv.onclick = e => {
       const r = cv.getBoundingClientRect(), wx = (e.clientX - r.left) / r.width * SIZE - HALF, wz = (e.clientY - r.top) / r.height * SIZE - HALF;
       const s = spots.slice().sort((a, b) => Math.hypot(a.x - wx, a.z - wz) - Math.hypot(b.x - wx, b.z - wz)).find(s => Math.hypot(s.x - wx, s.z - wz) < (s.r || 10)); if (!s) return;
       const ok = el('div', 'travel', `<p>${T('Travel to', 'Bay đến')} <b>${esc(s.name)}</b>?</p><button class="btn primary">✨ ${T('Fly there', 'Bay đến đó')}</button><button class="btn walk">👣 ${T('Walk there', 'Đi bộ đến đó')}</button><button class="btn no">${T('No', 'Không')}</button>`);
       body.appendChild(ok);
+      if (s.friend) {
+        ok.querySelector('.primary').onclick = () => { close(); game.flyToFriend(hero, s.friend); };
+        ok.querySelector('.walk').onclick = () => { close(); game.walkToFriend(hero, s.friend); };
+        const c = el('button', 'btn', '📣 ' + T('Ask to come', 'Gọi bạn đến')); c.onclick = () => { close(); game.askFriendToCome(hero, s.friend); }; ok.insertBefore(c, ok.querySelector('.no'));
+        ok.querySelector('.no').onclick = () => ok.remove(); return;
+      }
       ok.querySelector('.primary').onclick = () => { close(); game.travel(hero, s.x, s.z); };
       ok.querySelector('.walk').onclick = () => { close(); hero.walkTo = { x: s.x, z: s.z, name: s.name }; say(`Follow the footprints to ${s.name}!`, `Đi theo dấu chân đến ${s.name} nhé!`); };
       ok.querySelector('.no').onclick = () => ok.remove();
@@ -721,7 +750,7 @@ export function openGamesHub(game, i, onClose) {
     <p class="sub">${T('Tap a picture to play now. 📺 shows how to play. 📍 walks you there in the valley.', 'Chạm vào hình để chơi ngay. 📺 xem cách chơi. 📍 đi đến chỗ đó trong thung lũng.')}</p>
     ${HUB.map(sec => `<h3>${sec.icon} ${esc(sec.title())}</h3><div class="hubgrid">${sec.games.filter(id => GAMES[id]).map((id, k) => {
       const g = GAMES[id], lv = p.levels[id] || 1;
-      return `<div class="hcard" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}"><span class="hi">${g.icon}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${{ au: '🇦🇺', vn: '🇻🇳', both: '🇻🇳🇦🇺' }[g.origin]}</span>` : ''}</div>`;
+      return `<div class="hcard" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}"><span class="hi">${g.icon}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${originFlags(g.origin)}</span>` : ''}</div>`;
     }).join('')}</div>`).join('')}`;
   card.querySelector('.x').onclick = close;
   card.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); game.playGame(i, id, 'place'); });

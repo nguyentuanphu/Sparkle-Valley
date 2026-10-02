@@ -71,6 +71,7 @@ const G = {
   fogMaps: {}, regionOf: [], interactables: [], gatherState: {}, bubbles: []
 };
 window.__sv = G; // handy for debugging in the browser console
+G.renderer = renderer;
 
 // ---------- people of the valley ----------
 const NPCS = [];
@@ -198,6 +199,7 @@ function setupGuides() {
     if (tg0) { const gy = heightAt(tg0.x, tg0.z); beam.position.set(tg0.x, gy + 35, tg0.z); bang.position.set(tg0.x, gy + 5.2 + Math.abs(Math.sin(t * 3)) * .8, tg0.z); beam.material.opacity = .2 + Math.sin(t * 2) * .08; }
     guides.forEach((g, i) => {
       const h = G.heroes[i];
+      if (h && h.walkTo && h.walkTo.friend) { const P = G.partners[h.walkTo.friend]; if (!P) h.walkTo = null; else { h.walkTo.x = P.pos.x; h.walkTo.z = P.pos.z; if (dist2(h.pos.x, h.pos.z, P.pos.x, P.pos.z) < 4) { SFX.chime(); hudFor(h).toast('👫 ' + T(`You found ${P.name}! Say hello!`, `Con đã gặp ${P.name}! Chào bạn đi!`)); say(`You found ${P.name}! Say hello!`, `Con đã gặp ${P.name} rồi! Chào bạn đi!`); h.walkTo = null; G.huds[h.i] && G.huds[h.i].toggleEmotes(true); } } }
       if (h && h.walkTo && dist2(h.pos.x, h.pos.z, h.walkTo.x, h.walkTo.z) < 7) { SFX.chime(); hudFor(h).toast('👣 ' + T(`You walked to ${h.walkTo.name}!`, `Con đã đi bộ đến ${h.walkTo.name}!`)); h.walkTo = null; }
       const tg = h && playing ? h.walkTo || questTarget(h) : null;
       const d = tg ? dist2(h.pos.x, h.pos.z, tg.x, tg.z) : 0, show = !!tg && d > 5 && !G.paused;
@@ -637,6 +639,21 @@ G.toggleAudio = kind => {
   saveSettings(); SFX.tap(); G.huds.forEach(h => h.refreshAudio());
 };
 G.toggleMute = () => { Net.setMuted(!Net.muted); Net.resumeAudio(); G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted)); };
+// Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
+addEventListener('keydown', e => {
+  if (!playing || e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '')) return;
+  const k = e.code;
+  // Escape closes the top pop-up, chat or game card
+  if (k === 'Escape') { const x = [...document.querySelectorAll('.modal .x, .vc-pop .vc-x, .chatwin .x, .dlg-close')].pop(); if (x) { x.click(); e.preventDefault(); } return; }
+  if (G.paused || gameOpen() || document.querySelector('.modal, .storybook, .vc-pop')) return;
+  const two = G.heroes.length > 1, i = 0;
+  const map = { KeyG: () => G.openGamesHub(i), KeyM: () => G.openPad(i, 'map'), KeyB: () => G.openPad(i, 'bag'), KeyK: () => G.voiceCommand(i),
+    KeyT: () => G.huds[i].toggleEmotes(), KeyC: () => Net.connected && G.toggleMute(), KeyN: () => G.toggleAudio('music'), KeyO: () => G.toggleAudio('sound'),
+    KeyF: () => G.goToObjective(i), KeyP: () => G.openPad(i, 'friend'),
+    Equal: () => G.zoomBy(i, .8), NumpadAdd: () => G.zoomBy(i, .8), Minus: () => G.zoomBy(i, 1.25), NumpadSubtract: () => G.zoomBy(i, 1.25) };
+  if (two && ['KeyK', 'KeyT'].includes(k)) return;
+  const f = map[k]; if (f) { e.preventDefault(); e.stopImmediatePropagation(); f(); }
+}, true);
 function sendHello() {
   const h = G.heroes[0]; if (!h) return;
   let photo = null;
@@ -653,7 +670,7 @@ Net.on('hello', r => {
   const old = G.partners[r.id]; if (old) { scene.remove(old.av.root); scene.remove(old.tag); }
   const av = buildAvatar(Object.assign({ style: 'shirt', color: '#3d7fd6', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#f6c7a5', glider: 0 }, r.look || {}), r.photo);
   scene.add(av.root); const tag = nameTag(r.name || T('Friend', 'Bạn'), '#9ff0ff'); scene.add(tag);
-  G.partners[r.id] = { id: r.id, av, tag, pos: new THREE.Vector3(0, -50, 0), yaw: 0, st: 'idle', name: r.name };
+  G.partners[r.id] = { id: r.id, av, tag, pos: old ? old.pos : new THREE.Vector3(0, -50, 0), yaw: 0, st: 'idle', name: r.name, photoURL: avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) }) };
   if (!old) { SFX.chime(); say(`${r.name} is here! Say hello!`, `${r.name} đã đến! Chào bạn đi!`); }
   G.huds.forEach(hd => hd.setCall(true, false, Net.muted));
   if (G.onNet) G.onNet();
@@ -664,6 +681,34 @@ Net.on('left', r => {
   if (!Net.connected || !Object.keys(G.partners).length) G.huds.forEach(hd => hd.setCall(false));
   toast(T(`${r.name || 'Your friend'} left.`, `${r.name || 'Bạn'} đã rời đi.`)); if (G.onNet) G.onNet();
 });
+// "Come and meet me!": a friend asks you to come to where they are
+Net.on('meet', d => {
+  const P = G.partners[d.from]; if (!P || !G.heroes[0]) return;
+  SFX.chime(); bubble(P, '📣 ' + T('Come here!', 'Lại đây nè!'));
+  dialog(P.name, [[`📣 ${P.name} wants to meet you! Shall we go?`, `📣 ${P.name} muốn gặp con! Mình đi nhé?`]], [['👣 Walk there', '👣 Đi bộ đến'], ['✨ Fly there', '✨ Bay đến'], ['🙂 Not now', '🙂 Để sau']])
+    .then(k => { const h = G.heroes[0]; if (k === 0) G.walkToFriend(h, P.id); if (k === 1) G.flyToFriend(h, P.id); if (k === 2) Net.send({ t: 'emote', id: 'wait' }); });
+});
+G.flyToFriend = (h, id) => { const P = G.partners[id]; if (!P || P.pos.y < -40) return; G.travel(h, P.pos.x - 4.5 + 1.5, P.pos.z - 1 + 1.5); setTimeout(() => { bubble(h, '👋 ' + T('Hi!', 'Chào!')); Net.send({ t: 'emote', id: 'hi' }); }, 900); };
+G.walkToFriend = (h, id) => { const P = G.partners[id]; if (!P || P.pos.y < -40) return; h.walkTo = { friend: id, x: P.pos.x, z: P.pos.z, name: P.name }; say(`Follow the footprints to ${P.name}!`, `Đi theo dấu chân đến chỗ ${P.name} nhé!`); };
+G.askFriendToCome = (h, id) => { const P = G.partners[id]; if (!P) return; Net.send({ t: 'meet', to: id }); bubble(h, '📣 ' + T('Come here!', 'Lại đây nè!')); hudFor(h).toast('📣 ' + T(`Asked ${P.name} to come to you`, `Đã gọi ${P.name} đến chỗ con`)); };
+// where are my friends? a little card with each friend's distance and direction, and ways to meet
+const compass = (h, x, z) => { const a = Math.atan2(x - h.pos.x, -(z - h.pos.z)); return ['⬆️ ' + T('north', 'phía bắc'), '↗️ ' + T('north-east', 'đông bắc'), '➡️ ' + T('east', 'phía đông'), '↘️ ' + T('south-east', 'đông nam'), '⬇️ ' + T('south', 'phía nam'), '↙️ ' + T('south-west', 'tây nam'), '⬅️ ' + T('west', 'phía tây'), '↖️ ' + T('north-west', 'tây bắc')][(Math.round(a / (Math.PI / 4)) + 8) % 8]; };
+G.friendWhere = (h, P) => { const rg = regionAt(P.pos.x, P.pos.z); return (REGION_NAMES[rg] ? REGION_NAMES[rg]() : ''); };
+G.findFriend = i => {
+  const h = G.heroes[i]; if (!h) return null;
+  const list = Object.values(G.partners).filter(P => P.pos.y > -40);
+  if (!list.length) { G.openPad(i, 'friend'); return ['No friends are in your room yet. Start a room and tell your friend the number!', 'Chưa có bạn nào trong phòng. Tạo phòng rồi đọc số cho bạn nhé!']; }
+  document.querySelector('.vc-pop')?.remove();
+  const pop = el('div', 'vc-pop friendfind', `<p class="vc-heard">👫 ${T('Where are my friends?', 'Bạn của con ở đâu?')}</p>
+    ${list.map(P => { const d = Math.round(dist2(h.pos.x, h.pos.z, P.pos.x, P.pos.z)); return `<div class="ff-row"><img src="${P.photoURL || ''}" alt="" ${P.photoURL ? '' : 'hidden'}><div class="ff-txt"><b>${esc(P.name)}</b><small>${d} m · ${compass(h, P.pos.x, P.pos.z)}${G.friendWhere(h, P) ? ' · ' + esc(G.friendWhere(h, P)) : ''}</small></div>
+      <div class="ff-btns"><button class="btn primary" data-walk="${P.id}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${P.id}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-call="${P.id}">📣 ${T('Ask to come', 'Gọi bạn đến')}</button></div></div>`; }).join('')}`);
+  const x = el('button', 'vc-x', '✕'); pop.appendChild(x); x.onclick = () => pop.remove();
+  document.body.appendChild(pop); SFX.tap();
+  pop.querySelectorAll('[data-walk]').forEach(b => b.onclick = () => { pop.remove(); G.walkToFriend(h, b.dataset.walk); });
+  pop.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { pop.remove(); G.flyToFriend(h, b.dataset.fly); });
+  pop.querySelectorAll('[data-call]').forEach(b => b.onclick = () => { pop.remove(); G.askFriendToCome(h, b.dataset.call); });
+  return null;
+};
 Net.on('talking', on => G.huds.forEach(hd => hd.setCall(Net.connected, on, Net.muted)));
 const _np = new THREE.Vector3();
 let netStatus = '';
@@ -709,13 +754,15 @@ G.drawOnlinePanel = (body, redraw) => {
     body.innerHTML = `<div class="online on">
       <p class="note center">${Net.code ? T(`Room code <b class="bigcode">${Net.code}</b> · ${Net.count}/6 players`, `Mã phòng <b class="bigcode">${Net.code}</b> · ${Net.count}/6 người chơi`) : ''}</p>
       <div class="plist">${list.map(r => `<div class="prow"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(r.name)}</b></div>
-        <button class="btn" data-fly="${r.id}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-tr="${r.id}">🔄 ${T('Trade', 'Đổi đồ')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${r.id}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${r.friend}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
+        <button class="btn" data-walkf="${r.id}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${r.id}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${r.id}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${r.id}">🔄 ${T('Trade', 'Đổi đồ')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${r.id}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${r.friend}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
       <div class="actions center"><button class="btn big" id="oMute">${Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
       ${friendsBox()}</div>`;
     body.querySelector('#oMute').onclick = () => { G.toggleMute(); redraw(); };
     body.querySelector('#oEnd').onclick = () => { Net.close(); Object.keys(G.partners).forEach(id => Net.emit('left', { id, name: G.partners[id].name })); G.huds.forEach(hd => hd.setCall(false)); redraw(); };
-    body.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { const P = G.partners[b.dataset.fly]; if (P) { $('.modal.pad')?.remove(); G.paused = false; G.travel(G.heroes[0], P.pos.x - 4.5, P.pos.z - 1); } });
+    body.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { const P = G.partners[b.dataset.fly]; if (P) { $('.modal.pad')?.remove(); G.paused = false; G.flyToFriend(G.heroes[0], P.id); } });
+    body.querySelectorAll('[data-walkf]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; G.walkToFriend(G.heroes[0], b.dataset.walkf); });
+    body.querySelectorAll('[data-callf]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; G.askFriendToCome(G.heroes[0], b.dataset.callf); });
     body.querySelectorAll('[data-kick]').forEach(b => b.onclick = () => { if (confirm(T('Remove this player from the room?', 'Mời bạn này ra khỏi phòng?'))) { Net.kick(b.dataset.kick); setTimeout(redraw, 600); } });
     body.querySelectorAll('[data-tr]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; openTrade(G, G.heroes[0], b.dataset.tr); });
     body.querySelectorAll('[data-addf]').forEach(b => b.onclick = () => { addFriend(b.dataset.addf, b.dataset.n); SFX.chime(); toast(T('Friend added!', 'Đã thêm bạn!')); redraw(); });
@@ -784,8 +831,15 @@ G.goAndDo = goAndDo;
 // stop just in front of an activity rather than inside it
 function approach(h, it) { const dx = h.pos.x - it.x, dz = h.pos.z - it.z, d = Math.hypot(dx, dz) || 1, k = Math.max(.5, Math.min(it.r * .6, 2.5)); return { x: it.x + dx / d * k, z: it.z + dz / d * k }; }
 const poll = initInput(renderer.domElement, rects, () => G.paused || !G.heroes.length, onTap);
-renderer.domElement.addEventListener('wheel', e => { G.zoomBy(0, e.deltaY > 0 ? 1.1 : .9); }, { passive: true });
-G.zoomBy = (i, f) => { const h = G.heroes[i]; if (h) { h.zoom = clamp((h.zoom || 1) * f, .45, 1.8); SFX.tap(); } };
+// the mouse wheel zooms the screen under the pointer (split screen has two)
+renderer.domElement.addEventListener('wheel', e => { const r = rects(), k = Math.max(0, r.findIndex(q => e.clientX >= q.x && e.clientX < q.x + q.w && e.clientY >= q.y && e.clientY < q.y + q.h)); G.zoomBy(k, e.deltaY > 0 ? 1.1 : .9, true); }, { passive: true });
+// zooming out also lifts the camera up, so rooftops no longer pull it back in (it used to look as if zoom did nothing)
+G.zoomBy = (i, f, quiet) => {
+  const h = G.heroes[i]; if (!h) return;
+  const z = clamp((h.zoom || 1) * f, .35, 2.2);
+  if (Math.abs(z - (h.zoom || 1)) < .001) { if (!quiet) { SFX.no && SFX.no(); G.huds[i] && G.huds[i].toast(f < 1 ? T('That is as close as it goes!', 'Gần nhất rồi!') : T('That is as far as it goes!', 'Xa nhất rồi!')); } return; }
+  h.zoom = z; h.manualCamT = 0; if (!quiet) SFX.tap();
+};
 
 // ---------- starting a session ----------
 function startSession(mode, chosen) {
@@ -856,6 +910,7 @@ function frame(now) {
     pads.forEach(p => { p.act(); p.jump(); p.menu(); });
     if (G.closeUp != null && G.heroes[G.closeUp]) { const h = G.heroes[G.closeUp]; h.state = 'idle'; h.finish(dt, t, G, 0); }
   }
+  walkedAway();
   // music follows the first player
   const h0 = G.heroes[0];
   if (h0 && !gameOpen()) {
@@ -894,7 +949,7 @@ function frame(now) {
     NPCS.forEach(n => markers.push({ x: n.x, z: n.z, icon: '•', size: 14 }));
     G.ferries.ferries.forEach(F => markers.push({ x: F.model.position.x, z: F.model.position.z, icon: '⛴️', size: 16 }));
     G.heroes.forEach((o, j) => { if (j !== i) markers.push({ x: o.pos.x, z: o.pos.z, icon: '🧒', size: 18 }); });
-    Object.values(G.partners).forEach(P => markers.push({ x: P.pos.x, z: P.pos.z, icon: '🧒', size: 18 }));
+    Object.values(G.partners).forEach(P => { if (P.pos.y > -40) markers.push({ x: P.pos.x, z: P.pos.z, icon: '🧒', size: 18, friend: P.name || '?' }); });
     const qt = questTarget(h); if (qt) markers.push({ x: qt.x, z: qt.z, pin: true });
     G.huds[i].update(dt, h.cam, G.fogMapFor(p), markers);
   });
@@ -911,6 +966,12 @@ createRegions(G);
 G.dialog = (name, lines, choices) => dialog(name, lines, choices);
 // little ones (under 5) get big picture buttons in conversations
 dialogHooks.little = () => G.heroes.some(h => h.profile.age !== 'big');
+// where everyone stood when a conversation opened; walking about 9 m away closes it (checked in the loop)
+dialogHooks.where = () => G.heroes.map(h => ({ x: h.pos.x, z: h.pos.z }));
+const walkedAway = () => {
+  const d = document.querySelector('.dialog:not(.out)'); if (!d || !d._from || !d._autoClose || G.travelling) return;
+  if (d._from.length && G.heroes.every((h, k) => !d._from[k] || dist2(h.pos.x, h.pos.z, d._from[k].x, d._from[k].z) > 9)) { d._autoClose(); SFX.tap(); }
+};
 onLang(() => G.huds.forEach(hd => hd.refreshWho && hd.refreshWho()));
 createAsia(G);
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
@@ -946,7 +1007,7 @@ setupTrading(G);
       const mt = o.material; if (!mt || Array.isArray(mt) || mt.transparent || mt.side === THREE.BackSide || mt.isMeshBasicMaterial) return;
       if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
       sphere.copy(o.geometry.boundingSphere).applyMatrix4(o.matrixWorld);
-      if (sphere.radius < 2.2 || sphere.radius > 120) return;
+      if (sphere.radius < 3 || sphere.radius > 120) return; // trees, lamps and stalls are too small to matter
       if (G.heroes.some(h => h.av.root.getObjectById(o.id))) return;
       list.push(o);
     });

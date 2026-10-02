@@ -54,7 +54,7 @@ export function initInput(canvas, rects, isBlocked, onTap) {
     if (down && !e.repeat) {
       if (k === 'Space') pads[0]._jump = true;
       if (k === 'KeyE' || (k === 'Enter' && !two)) pads[0]._act = true;
-      if (k === 'Tab' || k === 'KeyM') { pads[0]._menu = true; e.preventDefault(); }
+      if (k === 'Tab') { pads[0]._menu = true; e.preventDefault(); }
       if (two && k === 'Slash') pads[1]._jump = true;
       if (two && (k === 'Period' || k === 'Enter')) pads[1]._act = true;
     }

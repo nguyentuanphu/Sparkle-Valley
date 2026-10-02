@@ -28,12 +28,17 @@ function tag(textFn) {
 export function createPets(G) {
   const { scene, world } = G;
   // move older saves (one shared list of pets) onto the children: each child starts with a puppy
+  // pets that are not following a child live in the pet yard on the farm (farm.petYard), so none are ever lost
+  if (!Array.isArray(farm.petYard)) farm.petYard = [];
   profiles.forEach((p, i) => {
     if (Array.isArray(p.pets)) return;
-    const kinds = (i === 0 && Array.isArray(farm.pets) ? farm.pets : ['puppy']).filter(k => PETS[k]).slice(0, MAX_PETS);
+    const old = (i === 0 && Array.isArray(farm.pets) ? farm.pets : ['puppy']).filter(k => PETS[k]);
+    const kinds = old.slice(0, MAX_PETS);
     p.pets = (kinds.length ? kinds : ['puppy']).map(kind => ({ kind, name: '' }));
+    // older saves could have bought more than two: the rest go to the yard instead of disappearing
+    if (i === 0) old.slice(MAX_PETS).forEach(kind => farm.petYard.push({ kind, name: '' }));
   });
-  saveProfiles();
+  saveProfiles(); saveFarm();
 
   let live = []; // { h, pt, obj, tag, sniff, j }
   const P = {};
@@ -52,6 +57,35 @@ export function createPets(G) {
     });
   };
   P.forHero = h => live.filter(L => L.h === h);
+
+  // ---------- the pet yard on the farm ----------
+  const yardC = G.farm && G.farm.spots && G.farm.spots.hutch ? { x: G.farm.spots.hutch.x + 5, z: G.farm.spots.hutch.z + 4 } : { x: -40, z: 116 };
+  let yard = []; // { pt, obj, tag, tx, tz, hop }
+  {
+    // a little picket fence and a sign
+    const parts = [];
+    for (let k = 0; k < 20; k++) { const a = k / 20 * Math.PI * 2; if (k === 5) continue; const m = new THREE.Mesh(new THREE.BoxGeometry(.14, .8, .14), new THREE.MeshToonMaterial({ color: '#ffffff' })); m.position.set(yardC.x + Math.cos(a) * 4.2, heightAt(yardC.x + Math.cos(a) * 4.2, yardC.z + Math.sin(a) * 4.2) + .4, yardC.z + Math.sin(a) * 4.2); scene.add(m); parts.push(m); }
+    const sg = sprite('🐾', 1.3); sg.position.set(yardC.x, heightAt(yardC.x, yardC.z) + 2.6, yardC.z); scene.add(sg);
+  }
+  P.syncYard = () => {
+    yard.forEach(Y => { scene.remove(Y.obj); scene.remove(Y.tag); }); yard = [];
+    farm.petYard.forEach((pt, k) => {
+      const obj = animalModel(pt.kind), a = k * 2.2; obj.position.set(yardC.x + Math.cos(a) * 2, heightAt(yardC.x, yardC.z), yardC.z + Math.sin(a) * 2); scene.add(obj);
+      const tg = tag(() => petName(pt)); scene.add(tg);
+      const Y = { pt, obj, tag: tg, tx: obj.position.x, tz: obj.position.z, hop: 0 }; yard.push(Y);
+      obj.userData.react = () => { const d = PETS[pt.kind]; SFX[d.snd] && SFX[d.snd](); Y.hop = .8; G.fx(obj.position.x, obj.position.y + 1, obj.position.z, '💕'); };
+    });
+  };
+  P.yardMeshes = () => yard.map(Y => Y.obj);
+  world.updaters.push((dt, t) => yard.forEach(Y => {
+    const o = Y.obj, dx = Y.tx - o.position.x, dz = Y.tz - o.position.z, d = Math.hypot(dx, dz);
+    if (d < .2) { if (Math.random() < dt * .4) { const a = Math.random() * 6.28, r = Math.random() * 3.2; Y.tx = yardC.x + Math.cos(a) * r; Y.tz = yardC.z + Math.sin(a) * r; } }
+    else { o.rotation.y = Math.atan2(dx, dz); o.position.x += dx / d * dt * 1.2; o.position.z += dz / d * dt * 1.2; }
+    o.position.y = heightAt(o.position.x, o.position.z) + (Y.hop > 0 ? Math.abs(Math.sin(Y.hop * 9)) * .5 : d > .2 ? Math.abs(Math.sin(t * 10)) * .08 : 0); Y.hop = Math.max(0, Y.hop - dt);
+    Y.tag.position.set(o.position.x, o.position.y + 1.4, o.position.z);
+  }));
+  G.interactables.push({ id: 'petyard', x: yardC.x, z: yardC.z, r: 5, icon: '🐾', bubble: '🐾', label: () => T('Pet yard: play with your pets', 'Sân thú cưng: chơi với thú cưng'), act: h => P.openAdopt(h) });
+
 
   // pat a pet: tap it (the bubble button), or press the action button next to it
   const patIts = [];
@@ -122,14 +156,20 @@ export function createPets(G) {
       card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🐾 ${T(`${h.profile.name}'s pets`, `Thú cưng của ${h.profile.name}`)}</h2>
         <p class="sub">${T(`Up to ${MAX_PETS} pets each. They follow you, find hidden Leafies, and save you if you get tired in the water!`, `Mỗi bạn được nuôi tối đa ${MAX_PETS} con. Chúng đi theo con, tìm bạn Lá Lá đang trốn, và cứu con khi con mệt dưới nước!`)}</p>
         <div class="mypets">${mine.map((pt, k) => `<div class="mypet"><span class="pi">${PETS[pt.kind].icon}</span><b>${esc(petName(pt))}</b><button class="btn" data-ren="${k}">✏️ ${T('Name', 'Đặt tên')}</button><button class="btn" data-bye="${k}" aria-label="${T('Let go', 'Cho đi')}">🏡</button></div>`).join('')}</div>
+        ${farm.petYard.length ? `<h3>🐾 ${T('Living in the pet yard on the farm', 'Đang sống ở sân thú cưng trong nông trại')}</h3><div class="mypets">${farm.petYard.map((pt, k) => `<div class="mypet"><span class="pi">${PETS[pt.kind].icon}</span><b>${esc(petName(pt))}</b><button class="btn primary" data-take="${k}">🐾 ${T('Come with me', 'Đi với con')}</button></div>`).join('')}</div>` : ''}
         <h3>${T('Adopt a pet', 'Nhận nuôi thú cưng')}</h3>
         <div class="bigpick">${Object.entries(PETS).map(([k, d]) => `<button data-ad="${k}" class="${mine.length >= MAX_PETS ? 'owned' : farm.coins < d.price ? 'poor' : ''}"><span>${d.icon}</span><small>${d.price ? fmt(d.price) : T('Free', 'Miễn phí')}</small></button>`).join('')}</div>
         ${mine.length >= MAX_PETS ? `<p class="note">${T('You already have two pets. Tap 🏡 to send one to live on the farm if you want a different one.', 'Con đã có hai thú cưng rồi. Chạm 🏡 để gửi một bạn về sống ở nông trại nếu con muốn nuôi bạn khác.')}</p>` : ''}`;
       card.querySelector('.x').onclick = close;
       card.querySelectorAll('[data-ren]').forEach(b => b.onclick = () => { m.close(); G.paused = false; P.openName(h, mine[+b.dataset.ren], () => P.openAdopt(h, after)); });
       card.querySelectorAll('[data-bye]').forEach(b => b.onclick = () => {
-        const pt = mine[+b.dataset.bye]; if (!confirm(T(`Send ${petName(pt)} to live happily on the farm?`, `Gửi ${petName(pt)} về sống vui vẻ ở nông trại nhé?`))) return;
-        mine.splice(+b.dataset.bye, 1); saveProfiles(); P.sync(); P.refreshInteractables(); SFX.tap(); draw();
+        const pt = mine[+b.dataset.bye]; if (!confirm(T(`Send ${petName(pt)} to play in the pet yard on the farm? You can bring them back any time.`, `Gửi ${petName(pt)} về chơi ở sân thú cưng trong nông trại nhé? Con đón về lúc nào cũng được.`))) return;
+        mine.splice(+b.dataset.bye, 1); farm.petYard.push(pt); saveProfiles(); saveFarm(); P.sync(); P.syncYard(); P.refreshInteractables(); SFX.tap(); draw();
+      });
+      card.querySelectorAll('[data-take]').forEach(b => b.onclick = () => {
+        if (mine.length >= MAX_PETS) { SFX.no(); say('You already have two pets with you. Tap 🏡 to swap one.', 'Con đã có hai thú cưng đi cùng rồi. Chạm 🏡 để đổi nhé.'); return; }
+        const pt = farm.petYard.splice(+b.dataset.take, 1)[0]; mine.push(pt); saveProfiles(); saveFarm();
+        P.sync(); P.syncYard(); P.refreshInteractables(); const d = PETS[pt.kind]; SFX[d.snd] && SFX[d.snd](); say(`${petName(pt)} is coming with you!`, `${petName(pt)} đi cùng con nè!`); draw();
       });
       card.querySelectorAll('[data-ad]').forEach(b => b.onclick = () => {
         const k = b.dataset.ad, d = PETS[k];
@@ -203,6 +243,6 @@ export function createPets(G) {
     return true;
   };
 
-  P.sync(); P.refreshInteractables();
+  P.sync(); P.syncYard(); P.refreshInteractables();
   return P;
 }
