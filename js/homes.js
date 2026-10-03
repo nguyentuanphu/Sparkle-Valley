@@ -98,11 +98,11 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
 
   // every house: who lives there, its door, the family outside
   (world.houses || []).forEach((hs, k) => {
-    const H = HOMES.find(e => Math.hypot(e.at[0] - hs.x, e.at[1] - hs.z) < 2.6) || null;
+    const H = hs.info || HOMES.find(e => Math.hypot(e.at[0] - hs.x, e.at[1] - hs.z) < 2.6) || null; // hs.info: the neighbourhoods round the cities (js/suburbs.js)
     const fx = Math.sin(hs.rot), fz = Math.cos(hs.rot), sx = Math.cos(hs.rot), sz = -Math.sin(hs.rot);
     const door = { x: hs.x + fx * (hs.d / 2 + 1.2), z: hs.z + fz * (hs.d / 2 + 1.2) };
     const home = { id: 'home' + k, hs, H, door, kind: H ? H.kind : hs.kind, room: H ? H.room : ROOM_OF[hs.kind] || 'tube',
-      name: () => H ? T(H.name[0], H.name[1]) : T(KIND[hs.kind] ? KIND[hs.kind][0] : 'A house', KIND[hs.kind] ? KIND[hs.kind][1] : 'Một ngôi nhà'), where: () => whereIs(hs.x, hs.z), people: [] };
+      name: () => H ? T(H.name[0], H.name[1]) : T(KIND[hs.kind] ? KIND[hs.kind][0] : 'A house', KIND[hs.kind] ? KIND[hs.kind][1] : 'Một ngôi nhà'), where: () => H && H.city ? T(`just outside ${H.city[0]}, on the road from its gate`, `ngay bên ngoài ${H.city[1]}, trên con đường từ cổng`) : whereIs(hs.x, hs.z), people: [] };
     homes.push(home);
     if (H) H.people.forEach((pp, j) => {
       // the family stands beside the door, facing the street (kids a little further out)

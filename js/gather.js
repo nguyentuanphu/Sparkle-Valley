@@ -5,7 +5,7 @@
 import { THREE, toon, toonVC, P, merge } from './gfx.js';
 import { T } from './i18n.js';
 import { ITEMS } from './data.js';
-import { heightAt, regionAt, roadDist, WATER } from './world.js';
+import { heightAt, regionAt, roadDist, WATER, LOTS } from './world.js';
 import { seeded, dist2 } from './util.js';
 
 export const WILD = {
@@ -49,7 +49,7 @@ function spots(n, seed, minGap, used) {
   const rnd = seeded(seed), out = [];
   for (let tries = 0; out.length < n && tries < 4000; tries++) {
     const x = -170 + rnd() * 340, z = -120 + rnd() * 290, h = heightAt(x, z), rg = regionAt(x, z);
-    if (h < WATER + 1.6 || h > 22 || !['meadow', 'bamboo', 'plateau'].includes(rg) || roadDist(x, z).d < 6) continue;
+    if (h < WATER + 1.6 || h > 22 || !['meadow', 'bamboo', 'plateau'].includes(rg) || roadDist(x, z).d < 6 || LOTS.some(L => dist2(L.x, L.z, x, z) < 12)) continue;
     if ([...used, ...out].some(([ux, uz]) => dist2(ux, uz, x, z) < minGap)) continue;
     out.push([x, z]);
   }

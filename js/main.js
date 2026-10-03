@@ -51,6 +51,7 @@ import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
 import { createKites } from './kite.js';
 import { createHawkers } from './hawkers.js';
+import { createSuburbs } from './suburbs.js';
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
@@ -1086,6 +1087,7 @@ createAsia(G);
 createRoads(G);
 createCities(G);
 createHawkers(G);
+createSuburbs(G); // speciality buildings along the roads out of each city (before the homes are made)
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 G.reward = reward;
 G.pets = createPets(G);

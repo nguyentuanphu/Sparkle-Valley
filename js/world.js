@@ -29,6 +29,8 @@ export const CITIES = [   // gates: where the roads come in (the first is the ma
 ];
 CITIES.forEach(c => Object.assign(c, { x0: c.x - c.w, x1: c.x + c.w, z0: c.z - c.d, z1: c.z + c.d }));
 const FLATS = [TOWN, MARKET, AUSSIE, ...CITIES];
+// building lots along the roads out of each city (js/suburbs.js builds on them): levelled ground, no trees
+export const LOTS = [];
 const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [58, 40], [52, 85]];
 export const CHINA = { x: 100, z: -88, r: 24, h: 9 };    // China Town: lanterns, tiled roofs, a pagoda and a little Great Wall
 export const INDIA = { x: -112, z: -84, r: 24, h: 9 };  // India Village: colourful houses, a little Taj Mahal, rangoli and marigolds
@@ -130,6 +132,11 @@ export function heightAt(x, z) {
   h = lerp(h, -7, 1 - smooth(LAKE.r * .55, LAKE.r, dl));
   h = lerp(h, Math.min(h, 1.2), 1 - smooth(LAKE.r, LAKE.r + 14, dl));
   for (const F of FLATS) { const ox = Math.max(F.x0 - x, 0, x - F.x1), oz = Math.max(F.z0 - z, 0, z - F.z1); if (ox < 12 && oz < 12) h = lerp(h, F.h, 1 - smooth(0, 12, Math.hypot(ox, oz))); }
+  for (const L of LOTS) { // a level plot, easing back to the hillside over 4 m
+    const dx = x - L.x, dz = z - L.z; if (Math.abs(dx) > 16 || Math.abs(dz) > 16) continue;
+    const a = Math.abs(dx * Math.cos(L.rot) - dz * Math.sin(L.rot)) - L.w / 2, b = Math.abs(dx * Math.sin(L.rot) + dz * Math.cos(L.rot)) - L.d / 2, dd = Math.hypot(Math.max(a, 0), Math.max(b, 0));
+    if (dd < 4) h = lerp(h, L.h, 1 - smooth(0, 4, dd));
+  }
   const dr = riverDist(x, z);
   h = lerp(h, -2.6 - mtn * 2, 1 - smooth(3.5, 11, dr));
   // Raised banks either side of each bridge.
@@ -206,6 +213,53 @@ const LEAFY_SPOTS = [
 export const LEAFIES = LEAFY_SPOTS.map(([kind, x, z], i) => ({ id: 'lf' + i, kind, x, z }));
 
 // ---------- the world object ----------
+// ---------- building lots round the cities ----------
+// Walk out along each road from a city gate (10–70 m) and keep the first spots, on either side, that are
+// dry, not too steep to level, clear of the road and of every other place. Two per city.
+{
+  const W = 10, D = 12, circles = [VILLAGE, CHINA, INDIA, HOME, PLAYGROUND, PLATEAU, PADDIES, LAKE];
+  const clear = (x, z) => !FLATS.some(F => x > F.x0 - 6 && x < F.x1 + 6 && z > F.z0 - 6 && z < F.z1 + 6) && !circles.some(c => dist2(x, z, c.x, c.z) < c.r + 6)
+    && !SHRINES.some(s => dist2(x, z, s.x, s.z) < 14) && !TOWERS.some(s => dist2(x, z, s.x, s.z) < 14) && !LEAFIES.some(s => dist2(x, z, s.x, s.z) < 8)
+    && !BRIDGES.some(B => Math.abs(z - B.z) < 16 && x > B.x0 - 16 && x < B.x1 + 16) && riverDist(x, z) > 13 && !LOTS.some(L => dist2(x, z, L.x, L.z) < 15);
+  for (const c of CITIES) {
+    let n = 0;
+    for (const [gx, gz] of c.gates) for (const R of ROADS) {
+      if (n >= 2) break;
+      const a = R.pts[0], b = R.pts[R.pts.length - 1];
+      const pts = Math.hypot(a[0] - gx, a[1] - gz) < 1.5 ? R.pts : Math.hypot(b[0] - gx, b[1] - gz) < 1.5 ? R.pts.slice().reverse() : null; if (!pts) continue;
+      let along = 0;
+      for (let i = 0; i < pts.length - 1 && n < 2; i++) {
+        const [ax, az] = pts[i], [bx, bz] = pts[i + 1], L = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / L, dz = (bz - az) / L;
+        for (let t = 0; t < L && n < 2; t += 2) {
+          const run = along + t; if (run < 10 || run > 60) continue;
+          for (const side of n % 2 ? [1, -1] : [-1, 1]) {
+            const off = R.w / 2 + 2.4 + D / 2, x = ax + dx * t - dz * off * side, z = az + dz * t + dx * off * side, rot = Math.atan2(dz * side, -dx * side);
+            if (!clear(x, z)) continue;
+            const fx = Math.sin(rot), fz = Math.cos(rot), sx = Math.cos(rot), sz = -Math.sin(rot), hs = [];
+            let onRoad = false;
+            for (const u of [-.5, 0, .5]) for (const v of [-.5, 0, .5]) { const px = x + sx * W * u + fx * D * v, pz = z + sz * W * u + fz * D * v; hs.push(heightAt(px, pz)); const r = roadDist(px, pz); if (r.d < r.road.w / 2 + 1.4) onRoad = true; }
+            const lo = Math.min(...hs), hi = Math.max(...hs);
+            if (onRoad || hi - lo > 3 || lo < WATER + 1.6) continue;
+            LOTS.push({ city: c.id, k: n, x, z, rot, w: W, d: D, h: hs.reduce((p, q) => p + q, 0) / hs.length }); n++; break;
+          }
+        }
+        along += L;
+      }
+    }
+    // not enough room along the roads: try a ring just outside the city square, facing the city
+    for (let k = 0; k < 96 && n < 2; k++) {
+      const ang = (k % 48) / 48 * Math.PI * 2 + .3, rr = Math.max(c.w, c.d) + (k < 48 ? 10 : 17), x = c.x + Math.sin(ang) * rr, z = c.z + Math.cos(ang) * rr, rot = ang + Math.PI;
+      if (!clear(x, z)) continue;
+      const fx = Math.sin(rot), fz = Math.cos(rot), sx = Math.cos(rot), sz = -Math.sin(rot), hs = [];
+      let onRoad = false;
+      for (const u of [-.5, 0, .5]) for (const v of [-.5, 0, .5]) { const px = x + sx * W * u + fx * D * v, pz = z + sz * W * u + fz * D * v; hs.push(heightAt(px, pz)); const r = roadDist(px, pz); if (r.d < r.road.w / 2 + 1.4) onRoad = true; }
+      const lo = Math.min(...hs), hi = Math.max(...hs);
+      if (onRoad || hi - lo > 3 || lo < WATER + 1.6) continue;
+      LOTS.push({ city: c.id, k: n, x, z, rot, w: W, d: D, h: hs.reduce((p, q) => p + q, 0) / hs.length }); n++;
+    }
+  }
+}
+
 export function createWorld(scene, quality) {
   const W = {
     colliders: [], boxes: [], platforms: [], houses: [], plants: [], overcast: 0, interactables: [], updaters: [], lanterns: [], shrineMeshes: {}, towerMeshes: {}, leafyMeshes: {},
@@ -343,7 +397,7 @@ export function createWorld(scene, quality) {
   };
   const spots = { round: [], apple: [], pine: [], snowpine: [], bamboo: [], palm: [], bush: [], rock: [] };
   const appleTrees = [];
-  const nearPOI = (x, z) => FLATS.some(F => x > F.x0 - 4 && x < F.x1 + 4 && z > F.z0 - 4 && z < F.z1 + 4) || dist2(x, z, -128, 150) < 34 || dist2(x, z, 24, 170) < 14 || SHRINES.some(s => dist2(x, z, s.x, s.z) < 9) || TOWERS.some(s => dist2(x, z, s.x, s.z) < 10) || LEAFIES.some(s => dist2(x, z, s.x, s.z) < 3);
+  const nearPOI = (x, z) => FLATS.some(F => x > F.x0 - 4 && x < F.x1 + 4 && z > F.z0 - 4 && z < F.z1 + 4) || LOTS.some(L => dist2(x, z, L.x, L.z) < 11) || dist2(x, z, -128, 150) < 34 || dist2(x, z, 24, 170) < 14 || SHRINES.some(s => dist2(x, z, s.x, s.z) < 9) || TOWERS.some(s => dist2(x, z, s.x, s.z) < 10) || LEAFIES.some(s => dist2(x, z, s.x, s.z) < 3);
   for (let i = 0; i < 9000; i++) {
     const x = (rnd() - .5) * (SIZE - 30), z = (rnd() - .5) * (SIZE - 30), h = heightAt(x, z);
     if (h < 1.5 || nearPOI(x, z)) continue;

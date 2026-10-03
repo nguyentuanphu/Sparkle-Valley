@@ -99,7 +99,7 @@ export function brickHouse(w = 8, d = 8) {
   return { geo: merge(p), w, d: d + 1.8 };
 }
 // The house on stilts from the picture: living upstairs, an open breezy space below.
-function raisedHouse(w = 7.5, d = 7) {
+export function raisedHouse(w = 7.5, d = 7) {
   const p = [];
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([x, z]) => p.push(P(Box(.25, 2.8, .25), '#b9b2a6', [x * (w / 2 - .3), 1.4, z * (d / 2 - .3)])));
   p.push(P(Box(w * .55, 2.6, d * .7), '#9a8a94', [-w * .2, 1.3, -d * .1]));
