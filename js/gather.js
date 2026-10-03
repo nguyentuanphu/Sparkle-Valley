@@ -45,11 +45,12 @@ function rollGem(rnd) { const tot = GEMS.reduce((a, k) => a + WILD[k].weight, 0)
 export function rollDig(r = Math.random()) { const ks = Object.keys(DIG), tot = ks.reduce((a, k) => a + DIG[k], 0); r *= tot; for (const k of ks) { r -= DIG[k]; if (r <= 0) return k; } return 'pebble'; }
 
 // pick spots in open countryside (meadows, bamboo forest, plateau), away from water and each other
+let SOLID = null; // the world's buildings and landmarks (set by createGathering): never put a bush, rock or dig spot inside one
 function spots(n, seed, minGap, used) {
   const rnd = seeded(seed), out = [];
   for (let tries = 0; out.length < n && tries < 4000; tries++) {
     const x = -170 + rnd() * 340, z = -120 + rnd() * 290, h = heightAt(x, z), rg = regionAt(x, z);
-    if (h < WATER + 1.6 || h > 22 || !['meadow', 'bamboo', 'plateau'].includes(rg) || roadDist(x, z).d < 6 || LOTS.some(L => dist2(L.x, L.z, x, z) < 12)) continue;
+    if (h < WATER + 1.6 || h > 22 || !['meadow', 'bamboo', 'plateau'].includes(rg) || roadDist(x, z).d < 6 || LOTS.some(L => dist2(L.x, L.z, x, z) < 12) || (SOLID && SOLID.boxes.some(b => x > b.x0 - 2 && x < b.x1 + 2 && z > b.z0 - 2 && z < b.z1 + 2))) continue;
     if ([...used, ...out].some(([ux, uz]) => dist2(ux, uz, x, z) < minGap)) continue;
     out.push([x, z]);
   }
@@ -57,7 +58,7 @@ function spots(n, seed, minGap, used) {
 }
 
 export function createGathering(G, { give, sfx, say, toast }) {
-  const { scene, world } = G, used = [];
+  const { scene, world } = G, used = []; SOLID = world;
   const leaves = toon('#5fa04e'), leaves2 = toon('#4f8f42'), stone = toonVC();
   const now = () => performance.now();
   const add = (o, x, z) => { o.position.set(x, heightAt(x, z), z); scene.add(o); return o; };
