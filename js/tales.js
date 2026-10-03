@@ -6,6 +6,8 @@ import { T } from './i18n.js';
 import { sayAsync, hush } from './voice.js';
 import { SFX, Music } from './audio.js';
 import { el, esc, wait } from './util.js';
+import { CAST, SCENES } from './cartoon.js';
+import { pic, hasArt } from './art.js';
 
 const seg = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
 const graphemes = s => seg ? [...seg.segment(s)].map(x => x.segment).filter(x => x.trim()) : Array.from(s).filter(x => x.trim() && !/[‍️]/.test(x));
@@ -43,13 +45,16 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0 } = {}) {
     const stage = m.querySelector('.th-stage'), bg = m.querySelector('.th-bg'), actors = m.querySelector('.th-actors'), fx = m.querySelector('.th-fx'), text = m.querySelector('.th-text'), dots = m.querySelector('.th-dots');
     const draw = async () => {
       const my = ++token, [pics, en, vi] = tale.pages[k], st = stageOf(en);
-      stage.className = 'th-stage st-' + st; bg.innerHTML = STAGE_ART[st] || '';
+      stage.className = 'th-stage st-' + st; bg.innerHTML = SCENES[st] ? `<svg class="sc" viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${SCENES[st]()}</svg>` : STAGE_ART[st] || '';
       // actors: spread across the stage, each entering from its side, then moving its own way
       const list = graphemes(pics).slice(0, 7);
       actors.innerHTML = list.map((e, i) => {
         const n = list.length, x = n === 1 ? 50 : 14 + i * (72 / (n - 1)), y = 38 + ((i * 37) % 3) * 9 - (moveOf(e) === 'fly' ? 24 : 0);
         const size = n <= 2 ? 22 : n <= 4 ? 17 : 13;
-        return `<span class="th-a mv-${moveOf(e)} in-${i % 2 ? 'r' : 'l'}" style="left:${x}%;top:${y}%;font-size:min(${size}vw, ${size * 1.25}vh);--d:${(i * .18).toFixed(2)}s">${e}</span>`;
+        // people are drawn cartoon characters who walk in; animals and things are the game's drawn pictures
+        const base = e.replace(/\u200d.*$|[\u{1F3FB}-\u{1F3FF}\uFE0F]/gu, ''), fairy = base === '🧚';
+        if (CAST[base]) { const gy = fairy ? 42 : 80 + (i % 2) * 7, sc = fairy ? .8 : .9 + (gy - 80) / 50; return `<span class="th-a th-c${fairy ? ' flying' : ' walking'} in-${i % 2 ? 'r' : 'l'}" style="left:${x}%;top:${gy}%;--sc:${sc.toFixed(2)};--d:${(i * .25).toFixed(2)}s;z-index:${gy}">${CAST[base]()}</span>`; }
+        return `<span class="th-a mv-${moveOf(e)} in-${i % 2 ? 'r' : 'l'}" style="left:${x}%;top:${y}%;font-size:min(${size}vw, ${size * 1.25}vh);--d:${(i * .18).toFixed(2)}s">${hasArt(e) ? pic(e) : e}</span>`;
       }).join('');
       // weather and sparkles that fit the page
       fx.innerHTML = '';
@@ -62,7 +67,9 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0 } = {}) {
       m.querySelector('.th-next').textContent = k === tale.pages.length - 1 ? '🏁' : '▶';
       SFX.page ? SFX.page() : SFX.tap();
       await wait(450); if (!alive || my !== token) return;
-      const t0 = performance.now(); await sayAsync(en, vi);
+      // characters stop walking once they are in place, and talk while the page is read
+      setTimeout(() => actors.querySelectorAll('.th-c').forEach(a => a.classList.remove('walking')), 1900);
+      const t0 = performance.now(); stage.classList.add('speaking'); await sayAsync(en, vi); stage.classList.remove('speaking');
       // with the voice off (or very fast), leave time to look at the picture and read the words
       const need = Math.min(9000, 1500 + T(en, vi).length * 55) - (performance.now() - t0); if (need > 0) await wait(need);
       if (!alive || my !== token || !auto) return;

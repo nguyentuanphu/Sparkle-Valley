@@ -1494,3 +1494,55 @@ svg.art g { transform-box: view-box; }
 @keyframes a-door { 0%, 60%, 100% { transform: scaleX(1); } 75% { transform: scaleX(.55); } }
 body.calm svg.art *, svg.art.still * { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { svg.art * { animation: none !important; } }
+
+/* ---------- tale theatre: painted scenes and cartoon actors (js/cartoon.js) ---------- */
+.th-bg svg.sc { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sc .sc-cloud { animation: sc-drift 26s linear infinite; } .sc .sc-cloud.slow { animation-duration: 40s; }
+.sc .sc-rays { animation: a-spin 30s linear infinite; transform-box: view-box; }
+.sc .sc-sway { animation: sc-sway 3.2s ease-in-out infinite; transform-box: view-box; }
+.sc .sc-sway:nth-child(3n) { animation-delay: -1s; } .sc .sc-sway:nth-child(3n+1) { animation-delay: -2s; }
+.sc .sc-wave { animation: sc-wave 3.2s ease-in-out infinite; } .sc .sc-wave2 { animation: sc-wave 2.6s ease-in-out -1s infinite; } .sc .sc-wave3 { animation: sc-wave 2.2s ease-in-out -.5s infinite; }
+.sc .sc-bob { animation: sc-bob 2.4s ease-in-out infinite; }
+.sc .sc-twinkle { animation: a-fade 2.2s ease-in-out infinite; } .sc .sc-twinkle2 { animation: a-fade 2.8s ease-in-out -1.2s infinite; }
+.sc .sc-glow { animation: a-glow 3s ease-in-out infinite; } .sc .sc-flick { animation: a-flash 1.6s steps(2) infinite; }
+.sc .sc-flag { animation: sc-flag 1.2s ease-in-out infinite; transform-box: view-box; }
+.sc .sc-shimmer { animation: sc-shimmer 2.6s ease-in-out infinite; }
+@keyframes sc-drift { from { transform: translateX(-160px); } to { transform: translateX(960px); } }
+@keyframes sc-sway { 0%, 100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+@keyframes sc-wave { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-40px) translateY(4px); } }
+@keyframes sc-bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(6px) rotate(3deg); } }
+@keyframes sc-flag { 0%, 100% { transform: skewY(0) scaleX(1); } 50% { transform: skewY(8deg) scaleX(.9); } }
+@keyframes sc-shimmer { 50% { transform: translateY(-3px); filter: brightness(1.1); } }
+
+.th-c { width: auto; height: min(34vh, 42vw); transform: translate(-50%, -100%) scale(var(--sc, 1)); transform-origin: 50% 100%; filter: none; animation: th-walkin 1.8s ease-out var(--d) both; }
+.th-c.in-r { --from: 70vw; } .th-c.in-l { --from: -70vw; }
+.th-c svg.ct { height: 100%; width: auto; overflow: visible; display: block; }
+.ct g { transform-box: view-box; }
+@keyframes th-walkin { from { translate: var(--from) 0; opacity: 0; } 15% { opacity: 1; } to { translate: 0 0; } }
+/* walking: legs and arms swing, the body bounces */
+.th-c.walking .ct-legL { animation: ct-leg .45s ease-in-out infinite; } .th-c.walking .ct-legR { animation: ct-leg .45s ease-in-out -.225s infinite; }
+.th-c.walking .ct-armL { animation: ct-leg .45s ease-in-out -.225s infinite; } .th-c.walking .ct-armR { animation: ct-leg .45s ease-in-out infinite; }
+.th-c.walking .ct-all { animation: ct-step .225s ease-in-out infinite alternate; }
+.th-c.in-r.walking svg { transform: scaleX(-1); }
+@keyframes ct-leg { 0%, 100% { transform: rotate(22deg); } 50% { transform: rotate(-22deg); } }
+@keyframes ct-step { from { translate: 0 0; } to { translate: 0 -4px; } }
+/* standing: breathing, looking around, blinking; the fairy's wings flutter */
+.th-c .ct-body { animation: ct-breathe 3s ease-in-out infinite; }
+.th-c .ct-head { animation: ct-look 5s ease-in-out var(--d) infinite; }
+.th-c .ct-eyes { animation: a-blink 3.8s infinite; }
+.th-c .ct-armR { animation: ct-gesture 4s ease-in-out var(--d) infinite; }
+.th-c .ct-wings { animation: ct-flutter .3s ease-in-out infinite alternate; }
+.th-c .ct-mouth-open { display: none; }
+.speaking .th-c:not(.walking) .ct-mouth-open { display: inline; animation: ct-talk .28s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+.speaking .th-c:not(.walking) .ct-mouth-shut { display: none; }
+@keyframes ct-breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.025); } }
+@keyframes ct-look { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-6deg); } 60% { transform: rotate(5deg); } }
+@keyframes ct-gesture { 0%, 70%, 100% { transform: rotate(0); } 80% { transform: rotate(-35deg); } 90% { transform: rotate(-20deg); } }
+@keyframes ct-flutter { from { transform: scaleX(1); } to { transform: scaleX(.8); } }
+@keyframes ct-talk { from { transform: scaleY(.35); } to { transform: scaleY(1); } }
+body.calm .sc *, body.calm .th-c * { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .sc *, .th-c * { animation: none !important; } }
+.th-c { height: 58%; }
+.th-c.flying { animation: th-walkin 1.8s ease-out var(--d) both, ct-fly 3s ease-in-out calc(var(--d) + 1.8s) infinite; }
+.th-c.flying .ct-shadow { display: none; }
+@keyframes ct-fly { 0%, 100% { translate: 0 0; rotate: -4deg; } 50% { translate: 18px -14px; rotate: 5deg; } }
