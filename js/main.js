@@ -61,6 +61,8 @@ import { addFamilyBuildings, applyWorldEdits } from './worldedit.js';
 import { CUSTOM } from './custom.js';
 import { createFolkShow } from './folkshow.js';
 import { createAds } from './ads.js';
+import { buildSolids } from './solids.js';
+import { startCounting, countPlay } from './players.js';
 // the family's defaults from Sparkle Studio: applied once each time they change there (a grown-up can still change
 // them on the device afterwards)
 { const D = CUSTOM.defaults, sig = D ? JSON.stringify(D) : '';
@@ -318,6 +320,7 @@ G.mount = (h, b) => { h.mount(b); h.profile.quests.buffalo = true; save(); say('
 async function playGame(i, id, source, shrine) {
   const h = G.heroes[i]; if (!h || gameOpen()) return;
   G.paused = true; hush();
+  countPlay('game', id); // anonymous: how often each game is played (js/players.js)
   const players = G.heroes.map(x => x.profile); if (G.heroes.length > 1 && i === 1) players.reverse();
   // Level = how far this child has got in this game, shifted by the chosen difficulty.
   const p = h.profile, level = Math.min(5, (p.levels[id] || 1) + { easy: 0, medium: 1, hard: 2 }[p.difficulty || 'easy']);
@@ -476,7 +479,7 @@ G.openGamesHub = i => { if (G.paused) return; G.paused = true; openGamesHub(G, i
 const npcLike = it => /^(npc_|g_|v_|pc_|cards$|dacau$|musiccorner$|bear$|stall$)/.test(it.id || '');
 // the nearest open spot to (x, z): not inside a building, tree or stall, not in water. Travelling lands there.
 G.clearSpot = (x, z, pad = .9) => {
-  const W = G.world, free = (px, pz) => heightAt(px, pz) > WATER + .3 && !W.colliders.some(c => c.r > 0 && Math.hypot(c.x - px, c.z - pz) < c.r + pad) && !W.boxes.some(b => px > b.x0 - pad && px < b.x1 + pad && pz > b.z0 - pad && pz < b.z1 + pad);
+  const W = G.world, free = (px, pz) => heightAt(px, pz) > WATER + .3 && !(W.solidAt && (W.solidAt(px, pz) || W.solidAt(px + .6, pz) || W.solidAt(px - .6, pz) || W.solidAt(px, pz + .6) || W.solidAt(px, pz - .6))) && !W.colliders.some(c => c.r > 0 && Math.hypot(c.x - px, c.z - pz) < c.r + pad) && !W.boxes.some(b => px > b.x0 - pad && px < b.x1 + pad && pz > b.z0 - pad && pz < b.z1 + pad);
   if (free(x, z)) return [x, z];
   for (let r = 1.5; r <= 14; r += 1.25) for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (free(px, pz)) return [px, pz]; }
   return [x, z];
@@ -1198,6 +1201,8 @@ widenFlatLand(world, scene); // more level land round every village and city, fo
 createAds(G); // the family's own signboards (only when Sparkle Studio switched ads on)
 world.levelled = levelUnderBuildings(world, scene);
 world.roadside = plantRoadside(G); // soft road edges and flowers, once everything stands
+G.solidsReady = buildSolids(G); // nobody walks through houses and things (js/solids.js)
+startCounting(); // how many children play, anonymously (js/players.js; Grown-ups can switch it off)
 // solid things the camera must never go inside: big, opaque, still-standing meshes (collected once, refreshed
 // now and then so new houses, landmarks and boats are included)
 {

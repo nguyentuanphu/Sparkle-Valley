@@ -6,6 +6,7 @@
 import fs from 'fs';
 import { launch, open, clear, URL } from './harness.mjs';
 import { groundAudit } from './world-audit.mjs';
+import { studioCheck } from './studio-check.mjs';
 
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
@@ -287,6 +288,58 @@ await check('phone', async () => {
   const errs = D.errors.concat(M.errors); await D.ctx.close(); await M.ctx.close();
   ok(!bad.length && !errs.length, JSON.stringify({ bad, errs }));
   return `${SCREENS.length} screens checked on desktop and phone`;
+});
+
+await check('solid', async () => {
+  // nobody walks through houses and things (js/solids.js), on a desktop and on a phone side by side:
+  // · walking straight at 250 solid spots that have no round or box collider of their own never gets inside
+  // · everything you can tap still has open ground to stand on within reach
+  // · the second start uses the saved map
+  const D = await open(b, { w: 1180, h: 760 }), M = await open(b, { w: 390, h: 760, touch: true, lang: 'vi' });
+  const audit = P => P.page.evaluate(async () => {
+    const G = __sv, W = G.world, st = await G.solidsReady, N = 800, bad = [];
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const covered = (x, z) => W.colliders.some(c => Math.hypot(c.x - x, c.z - z) < c.r) || W.boxes.some(b => x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1);
+    const cells = []; for (let k = 0; k < N * N; k++) if (W.solid[k]) cells.push(k);
+    let tried = 0;
+    for (let n = 0; n < 4000 && tried < 250; n++) {
+      const k = cells[Math.floor(rnd() * cells.length)], cx = (k % N) * .5 - 200 + .25, cz = Math.floor(k / N) * .5 - 200 + .25;
+      if (covered(cx, cz)) continue;
+      const an = rnd() * Math.PI * 2, sx = cx + Math.cos(an) * 3, sz = cz + Math.sin(an) * 3;
+      const p = { x: sx, z: sz, y: W.groundAt(sx, sz) }, q = { ...p }; W.collide(q, .45); if (Math.hypot(q.x - p.x, q.z - p.z) > .01) continue; // start on open ground
+      tried++;
+      for (let s = 0; s < 40; s++) { const dx = cx - p.x, dz = cz - p.z, d = Math.hypot(dx, dz) || 1; p.x += dx / d * .15; p.z += dz / d * .15; W.collide(p, .45); p.y = W.groundAt(p.x, p.z, p.y + 1); }
+      if (W.solidAt(p.x, p.z)) bad.push(`walked into ${cx.toFixed(1)},${cz.toFixed(1)}`);
+    }
+    let lost = 0; const lostAt = [];
+    for (const it of G.interactables) {
+      if (!Number.isFinite(it.x) || (it.y != null && it.y > 100)) continue;
+      let found = false;
+      for (let r = 0; r < (it.r || 2.5) - .2 && !found; r += .4) for (let s = 0; s < 16 && !found; s++) { const an = s / 16 * Math.PI * 2, p = { x: it.x + Math.cos(an) * r, z: it.z + Math.sin(an) * r }; p.y = W.groundAt(p.x, p.z); const q = { ...p }; W.collide(q, .45); if (Math.hypot(q.x - p.x, q.z - p.z) < .05) found = true; }
+      if (!found) { lost++; lostAt.push(it.id); }
+    }
+    return { st, tried, bad, lost, lostAt: lostAt.slice(0, 8) };
+  });
+  const [rd, rm] = await Promise.all([audit(D), audit(M)]);
+  await M.page.reload(); await clear(M.page); const again = await M.page.evaluate(async () => (await __sv.solidsReady).cached);
+  const errs = D.errors.concat(M.errors); await D.ctx.close(); await M.ctx.close();
+  for (const [r, tag] of [[rd, 'desktop'], [rm, 'phone']]) {
+    ok(r.st.cells > 20000, `${tag}: solid map too small (${r.st.cells} cells)`);
+    ok(r.tried >= 200, `${tag}: only ${r.tried} spots tried`);
+    ok(!r.bad.length, `${tag}: ${r.bad.slice(0, 8).join('; ')} (${r.bad.length}/${r.tried})`);
+    ok(!r.lost, `${tag}: ${r.lost} things you tap have no open ground near them: ${r.lostAt.join(', ')}`);
+  }
+  ok(rd.st.cells === rm.st.cells, `desktop and phone maps differ (${rd.st.cells} vs ${rm.st.cells})`);
+  ok(again, 'the saved map was not used on the second start');
+  ok(!errs.length, errs.join(' | '));
+  return `${rd.st.cells} solid cells from ${rd.st.meshes} objects (${rd.st.work} ms work); ${rd.tried} walk-ins stopped on desktop and phone; saved map reused`;
+});
+
+await check('studio', async () => {
+  // Sparkle Studio online and the exe: one program (same pages, same engine, same version as the game)
+  const build = /BUILD = '([^']+)'/.exec(fs.readFileSync('../js/build.js', 'utf8'))[1], studio = JSON.parse(fs.readFileSync('../studio/version.json', 'utf8')).studio;
+  ok(build === studio, `studio/version.json says ${studio} but the game is ${build}: bump them together (and rebuild SparkleStudio.exe)`);
+  return await studioCheck(b);
 });
 
 await check('ground', async () => {

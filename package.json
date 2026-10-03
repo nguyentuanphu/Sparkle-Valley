@@ -1,0 +1,8 @@
+{
+  "name": "sparkle-valley",
+  "private": true,
+  "description": "Sparkle Valley: the game needs no build step. These packages are only for the small Netlify functions (netlify/functions).",
+  "dependencies": {
+    "@netlify/blobs": "^10.7.13"
+  }
+}

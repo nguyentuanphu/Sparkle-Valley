@@ -1,5 +1,6 @@
 // The open world: terrain, water, sky with day and night, trees, the Lotus Village,
 // shrines, towers, hidden Leafies and everything you can walk up to and use.
+import { pushOutOfSolids } from './solids.js';
 import { THREE, toon, toonVC, toonSmooth, glow, P, merge, sprite, blobShadow } from './gfx.js';
 import { clamp, lerp, smooth, fbm, seeded, dist2 } from './util.js';
 import { T } from './i18n.js';
@@ -837,6 +838,7 @@ export function createWorld(scene, quality) {
       const pen = [pos.x - (b.x0 - r), (b.x1 + r) - pos.x, pos.z - (b.z0 - r), (b.z1 + r) - pos.z], k = pen.indexOf(Math.min(...pen));
       if (k === 0) pos.x = b.x0 - r; else if (k === 1) pos.x = b.x1 + r; else if (k === 2) pos.z = b.z0 - r; else pos.z = b.z1 + r;
     }
+    pushOutOfSolids(W, pos, r); // the solid map: walls, fences, rocks, kiosks… (js/solids.js)
     pos.x = clamp(pos.x, -HALF + 8, HALF - 8); pos.z = clamp(pos.z, -HALF + 8, HALF - 8);
   };
   W.update = (dt, t) => W.updaters.forEach(f => f(dt, t));
