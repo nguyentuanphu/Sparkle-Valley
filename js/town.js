@@ -1,6 +1,6 @@
 // Two Homes Street (Phố Hai Quê): a neighbourhood where Bà Rịa meets a Sydney suburb.
 // On one side: narrow Vietnamese tube houses with balconies and water tanks, a French-style villa and
-// Cô Tám's sugarcane juice cart; Bác 2, Bác 3 and Bác 4 play cards, and anh Ba and Phong play Tiến Lên, under the gum tree by the gate. On the other side: an Australian
+// Cô Tám's sugarcane juice cart; Bác 2, Bác 3 and Bác 4 play cards, and anh Ba and Con Vật play Tiến Lên, under the gum tree by the gate. On the other side: an Australian
 // weatherboard house with a front porch, a brick house, a Hills hoist, and the park where kids play
 // folk games. Built from simple flat-coloured shapes in the "summer afternoon" style.
 import { THREE, toon, toonVC, P, merge, sprite, outline } from './gfx.js';
@@ -167,12 +167,13 @@ export function createTown(G) {
   // ---------- street lamps and power poles with sagging wires ----------
   const poles = [];
   const pp = [];
-  for (let x = 9; x <= 54; x += 11) {
+  // spaced so none stands in front of a door on the south side (house 8's door at x 20.3 was blocked by one)
+  for (let x = 9; x <= 50; x += 8) {
     const z = S - .7; poles.push(new THREE.Vector3(x, y0 + 8.4, z));
     pp.push(P(Cyl(.16, .2, 9, 6), '#7d7b70', [x, 4.5, z]), P(Box(1.6, .12, .12), '#6f6d64', [x, 8.4, z]));
     world.colliders.push({ x, z, r: .35 });
   }
-  for (const [x, side] of [[16, -1], [29, -1], [38, -1], [22, 1], [36, 1]]) {
+  for (const [x, side] of [[16, -1], [29, -1], [38, -1], [28, 1], [36, 1]]) {
     const z = side < 0 ? N + .9 : S - 1.4;
     pp.push(P(Cyl(.09, .12, 6.2, 6), '#6f7a66', [x, 3.1, z]));
     pp.push(P(new THREE.TorusGeometry(.7, .05, 4, 10, Math.PI * .7), '#6f7a66', [x, 6.2, z + side * -.6], [0, Math.PI / 2, 0]));
@@ -267,7 +268,7 @@ export function createTown(G) {
   stools.push(P(Box(.6, .45, .6), '#3a78c8', [kx + 1.9, .22, kz + 1.9]));
   const sm = new THREE.Mesh(merge(stools), mat); sm.position.y = y0; sm.castShadow = true; scene.add(sm);
   // the card corner: two low tables under the gum tree by the street's gate, off the footpath so it stays clear.
-  // Bác 2, Bác 3 and Bác 4 play Snap at one; anh Ba and Phong play Tiến Lên (southern style) at the other.
+  // Bác 2, Bác 3 and Bác 4 play Snap at one; anh Ba and Con Vật play Tiến Lên (southern style) at the other.
   const cardTable = (cx, cz) => {
     const t = [P(Box(1.2, .5, .9), '#8a5a3b', [0, .25, 0]), P(Box(1.3, .05, 1), '#a07048', [0, .52, 0]), P(Box(1.5, .02, 1.2), '#2f7a4a', [0, .555, 0])];
     [[-1, 0], [1, 0], [0, -.9], [0, .9]].forEach(([dx, dz], k) => t.push(P(Cyl(.2, .24, .35, 8), k % 2 ? '#e0453a' : '#3a78c8', [dx, .17, dz])));
@@ -294,12 +295,12 @@ export function createTown(G) {
     person(L2('tunic', '#5b7fbf', '#8a8a8a', 'short'), cxT + 1, czT, -Math.PI / 2, true),
     person(L2('aodai', '#7a4a8a', '#cfcfcf', 'buns'), cxT, czT - .9, 0, true),
     person(L2('hoodie', '#ff9f43', '#1d1412', 'spiky', 'cap'), cxT, czT + .9, Math.PI, true),
-    // the Tiến Lên table: anh Ba and his friend Phong (the stool facing the street is for the child)
+    // the Tiến Lên table: anh Ba and his friend Con Vật (the stool facing the street is for the child)
     person(L2('shirt', '#2f7a4a', '#1d1412', 'short'), cxL - 1, czL, Math.PI / 2, true),
     person(L2('hoodie', '#3a78c8', '#1d1412', 'spiky'), cxL + 1, czL, -Math.PI / 2, true)
   ];
   players[5].root.scale.setScalar(.82);
-  ['Bác 2', 'Bác 3', 'Bác 4', 'Bi', 'Anh Ba', 'Phong'].forEach((n, k) => nameAvatar(players[k], n)); nameAvatar(sau, 'Cô Tám');
+  ['Bác 2', 'Bác 3', 'Bác 4', 'Bi', 'Anh Ba', 'Con Vật'].forEach((n, k) => nameAvatar(players[k], n)); nameAvatar(sau, 'Cô Tám');
   // teenagers kicking a shuttlecock (đá cầu) in the park
   const ring = [[29, 67.5], [32, 66], [31.5, 69.5]];
   const teens = ring.map(([x, z], k) => person(L2(['shirt', 'overalls', 'dress'][k], ['#3cc7e8', '#5fd39a', '#ff7eb8'][k], '#1d1412', ['spiky', 'short', 'ponytail'][k], 'none', '#e0aa80'), x, z, 0));
@@ -322,7 +323,7 @@ export function createTown(G) {
   // the card players: Bác 2, Bác 3 and Bác 4 (and Bi from the villa watching)
   const yT = heightAt(cxT, czT), yL = heightAt(cxL, czL);
   tag('Bác 2', cxT - 1, yT + 2.05, czT); tag('Bác 3', cxT + 1, yT + 2.05, czT); tag('Bác 4', cxT, yT + 2.35, czT - .9);
-  tag('Anh Ba', cxL - 1, yL + 2.05, czL); tag('Phong', cxL + 1, yL + 1.8, czL);
+  tag('Anh Ba', cxL - 1, yL + 2.05, czL); tag('Con Vật', cxL + 1, yL + 1.8, czL);
   tag('Anh Tuấn 🏸', 30.8, y0 + 2.6, 67.7);
   const bubble = sprite('💬', .9); bubble.visible = false; scene.add(bubble);
   const CHATTER = ['🃏', '😆', '🎉', '🤔', '💬'];
@@ -331,7 +332,7 @@ export function createTown(G) {
   const I = (id, x, z, r, icon, label, act) => G.interactables.push({ id, x, z, r, icon, label, act, bubble: icon });
   I('nuocmia', kx, kz + 1.8, 3, '🥤', () => T('Sugarcane juice', 'Nước mía'), h => G.townTalk(h, 'sau'));
   I('cards', cxT + 1.9, czT + .4, 2.6, '🃏', () => T('Card game', 'Đánh bài'), h => G.townTalk(h, 'tu'));
-  I('tienlen', cxL + 1.9, czL + .4, 2.6, '🎴', () => T('Tiến Lên with anh Ba and Phong', 'Tiến Lên với anh Ba và Phong'), h => G.townTalk(h, 'tienlen'));
+  I('tienlen', cxL + 1.9, czL + .4, 2.6, '🎴', () => T('Tiến Lên with anh Ba and Con Vật', 'Tiến Lên với anh Ba và Con Vật'), h => G.townTalk(h, 'tienlen'));
   I('dacau', 30.8, 66, 3.2, '🏸', () => T('Shuttlecock kicking', 'Đá cầu'), h => G.townTalk(h, 'tuan'));
 
   // ---------- life: a sugarcane press turning, card players chatting, the shuttlecock flying ----------

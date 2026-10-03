@@ -90,9 +90,11 @@ export function createShowcase(G) {
     const S = G.show; if (!S || S.i !== i) return false;
     S.t += dt; if (S.t > S.len) { G._showDone(); return false; }
     if (S.look) { // riding up for the first 3 s, then turning right round
-      const L = S.look, up = Math.min(1, S.t / 3), e = up * up * (3 - 2 * up), a = S.a0 + Math.max(0, S.t - 3) / (S.len - 3) * Math.PI * 2;
-      h.cam.position.set(L.x, L.y - 14 * (1 - e), L.z);
-      h.cam.lookAt(L.x + Math.sin(a) * 40, L.y - 10 - 4 * (1 - e), L.z + Math.cos(a) * 40); h.camPos.copy(h.cam.position);
+      // standing at the rail on the outside of the top, looking out and a little down over the land (from the
+      // middle the tower's own top filled half the picture)
+      const L = S.look, up = Math.min(1, S.t / 3), e = up * up * (3 - 2 * up), a = S.a0 + Math.max(0, S.t - 3) / (S.len - 3) * Math.PI * 2, R = 7;
+      h.cam.position.set(L.x + Math.sin(a) * R, L.y + 3 - 14 * (1 - e), L.z + Math.cos(a) * R);
+      h.cam.lookAt(L.x + Math.sin(a) * 60, L.y - 16 - 4 * (1 - e), L.z + Math.cos(a) * 60); h.camPos.copy(h.cam.position);
       return true;
     }
     const c = S.c, k = S.t / S.len, a = S.a0 + (k - .5) * (S.len > 4 ? 1.2 : .7), D = camDist(c), H = camHeight(c);

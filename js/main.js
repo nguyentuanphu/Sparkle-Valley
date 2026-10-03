@@ -7,12 +7,12 @@ import { say, hush, loadClips, setVoiceGenders } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
-import { createWorld, levelUnderBuildings, widenFlatLand, settleRoads, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
+import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
 import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL, OUTLINED } from './avatar.js';
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
 import { pads, initInput } from './input.js';
-import { Net } from './net.js';
+import { Net, MAX_ROOM } from './net.js';
 import { showTitle, showWho, dialog, dialogHooks, reward, openPad, openCooking, openShop, toast } from './ui.js';
 import { openChat, personaByName, PERSONAS } from './chat.js';
 import { voiceCommand, voiceControlOn } from './commands.js';
@@ -59,6 +59,7 @@ import { createRegionSites } from './regionsites.js';
 import { createVnFun } from './vnfun.js';
 import { addFamilyBuildings, applyWorldEdits } from './worldedit.js';
 import { CUSTOM } from './custom.js';
+import { createFolkShow } from './folkshow.js';
 // the family's defaults from Sparkle Studio: applied once each time they change there (a grown-up can still change
 // them on the device afterwards)
 { const D = CUSTOM.defaults, sig = D ? JSON.stringify(D) : '';
@@ -443,7 +444,7 @@ G.townTalk = async (h, who) => {
     if (k === 1) { G.paused = true; openHowTo('snap', { onPlay: () => { G.paused = false; playGame(h.i, 'snap', 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
   }
   if (who === 'tienlen') {
-    const k = await dialog('Anh Ba', [['Hey! Phong and I are playing Tiến Lên, southern style. Sit down, I’ll deal you thirteen cards!', 'Ê em! Anh với Phong đang đánh Tiến Lên miền Nam nè. Ngồi xuống, anh chia cho em mười ba lá!']],
+    const k = await dialog('Anh Ba', [['Hey! Con Vật and I are playing Tiến Lên, southern style. Sit down, I’ll deal you thirteen cards!', 'Ê em! Anh với Con Vật đang đánh Tiến Lên miền Nam nè. Ngồi xuống, anh chia cho em mười ba lá!']],
       [['▶ Play Tiến Lên!', '▶ Chơi Tiến Lên!'], ['📺 How to play', '📺 Xem cách chơi'], ['👋 Later', '👋 Để sau']]);
     if (k === 0) playGame(h.i, 'tienlen', 'folk');
     if (k === 1) { G.paused = true; openHowTo('tienlen', { onPlay: () => { G.paused = false; playGame(h.i, 'tienlen', 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
@@ -823,6 +824,9 @@ Net.on('status', s => {
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 if (!settings.friendCode) { settings.friendCode = Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join(''); saveSettings(); }
 if (!Array.isArray(settings.friends)) settings.friends = [];
+// online by default: a child who has friends on the list lets them see when they are playing (from round 28 on;
+// a grown-up or the child can still switch it off in the online panel)
+if (settings.friends.length && !settings.friendsOnR28) { settings.friendsOn = true; settings.friendsOnR28 = true; saveSettings(); }
 const onInvite = inv => {
   SFX.chime(); say(`${inv.name} invites you to play!`, `${inv.name} mời con chơi cùng!`);
   dialog(T('Invitation', 'Lời mời'), [[`👫 ${inv.name} invites you to play together! Join their room ${inv.room}?`, `👫 ${inv.name} mời con chơi cùng! Vào phòng ${inv.room} nhé?`]], [['✅ Join', '✅ Vào'], ['❌ Not now', '❌ Để sau']])
@@ -832,9 +836,27 @@ G.listenFriends = () => {
   if (settings.friendsOn && playing) Net.listenForFriends(settings.friendCode, onInvite); else Net.stopListening();
   // friends' status (online, where in the valley, which room) through the cloud relay
   if (playing && (settings.friendsOn || settings.friends.length)) {
-    Net.friendsStart({ code: settings.friendCode, share: !!settings.friendsOn, onInvite, onChange: () => G.onNet && G.onNet() }).then(() => { Net.friendsWatch(settings.friends.map(f => f.code)); G.shareStatus(); });
+    Net.friendsStart({ code: settings.friendCode, share: !!settings.friendsOn, onInvite, onChange: () => { if (G.onNet) G.onNet(); G.autoMeet(); } }).then(() => { Net.friendsWatch(settings.friends.map(f => f.code)); G.shareStatus(); });
   } else Net.friendsStop();
 };
+// Friends meet by themselves: when a friend on the list is playing too, the two games open a room together, so
+// each sees the other's name and avatar straight away and they can walk over and talk. The friend whose code comes
+// first starts the room; the other joins it as soon as the room shows in that friend's status. A room the child
+// started with others in it is never left. Offline, nothing happens; it tries again when the internet is back.
+let meetBusy = false;
+G.autoMeet = async () => {
+  if (meetBusy || !playing || settings.autoMeet === false || !settings.friendsOn || navigator.onLine === false || !settings.friends.length) return;
+  const now = Date.now(), mine = settings.friendCode;
+  const on = settings.friends.map(f => ({ f, st: Net.friends.status[f.code] })).filter(o => o.st && o.st.online && now - (o.st.seen || 0) < 3 * 60000);
+  if (!on.length || Net.role === 'guest' || (Net.role === 'host' && Net.count > 1)) return;
+  const rooms = on.filter(o => o.st.room && o.st.room !== Net.code && (o.st.players || 1) < MAX_ROOM && ((o.st.players || 1) > 1 || o.f.code < mine));
+  meetBusy = true;
+  try {
+    if (rooms.length) { await Net.join(rooms[0].st.room, sendHello() || {}); return; }
+    if (!Net.role && on.some(o => !o.st.room && mine < o.f.code)) await Net.host(sendHello());
+  } catch (e) { } finally { meetBusy = false; G.shareStatus(); }
+};
+setInterval(() => G.autoMeet(), 12000);
 // what my friends see about me: my name, the place I am in, and my room (only when sharing is switched on)
 G.shareStatus = () => { const h = G.heroes[0]; if (!h || !settings.friendsOn) return; Net.friendsShare({ name: h.profile.name, at: G.regionOf[0] || '', room: Net.role ? Net.code : null, players: Net.role ? Net.count : 0 }); };
 setInterval(() => { if (playing) G.shareStatus(); }, 45000);
@@ -849,7 +871,7 @@ const friendStatus = f => {
   const where = st.at && REGION_NAMES[st.at] ? REGION_NAMES[st.at]() : T('in the valley', 'trong thung lũng');
   return `<small class="fst on">🟢 ${T('Online', 'Đang chơi')} · ${esc(where)}${st.room ? ' · ' + T('room', 'phòng') + ' ' + esc(st.room) : ''}</small>`;
 };
-const addFriend = (code, name) => { code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); if (code.length !== 6 || code === settings.friendCode) return false; const f = settings.friends.find(x => x.code === code); if (f) { if (name) f.name = name; } else settings.friends.push({ code, name: name || code }); saveSettings(); return true; };
+const addFriend = (code, name) => { code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); if (code.length !== 6 || code === settings.friendCode) return false; const f = settings.friends.find(x => x.code === code); if (f) { if (name) f.name = name; } else settings.friends.push({ code, name: name || code }); settings.friendsOn = true; saveSettings(); G.listenFriends(); return true; };
 G.drawOnlinePanel = (body, redraw) => {
   G.onNet = () => { if (document.body.contains(body)) redraw(); };
   const h = G.heroes[0];
@@ -1167,11 +1189,12 @@ for (const c of (Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {
   if (c.gender === 'f' || c.gender === 'm') { CUSTOM.genders = { ...(CUSTOM.genders || {}), [name]: c.gender }; setVoiceGenders(CUSTOM.genders); }
   addNPC({ id: 'fam_' + name.replace(/[^\p{L}\p{N}]+/gu, '_'), name, look, x: +c.x, z: +c.z, face: +c.face || 0, icon: typeof c.icon === 'string' ? c.icon.slice(0, 4) : '💬', talk: () => dialog(name, lines.length ? lines : [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']]) });
 }
+// each village's games time table (with a countdown board) and its singer; after every host is in place
+G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 'buns', 'none'), kidLook('overalls', '#3cc7e8', '#3b2618', 'short', 'cap'), kidLook('dress', '#ffb52e', '#1d1412', 'ponytail', 'flower')] });
 // level land under every building, stall and landmark placed above (and anything added in future rounds)
 world.familyEdits = applyWorldEdits(G); // buildings the family moved or removed in Sparkle Studio
 widenFlatLand(world, scene); // more level land round every village and city, for new buildings (nothing moves on the map)
 world.levelled = levelUnderBuildings(world, scene);
-world.settled = settleRoads(world, scene); // and no road floats above the ground
 // solid things the camera must never go inside: big, opaque, still-standing meshes (collected once, refreshed
 // now and then so new houses, landmarks and boats are included)
 {

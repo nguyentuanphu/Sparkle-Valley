@@ -242,6 +242,24 @@ await check('saves', async () => {
   return 'wiped main save restored from the safe copy (coins, orbs, postcards)';
 });
 
+await check('meet', async () => {
+  // friends meet by themselves: two friends on each other's list start playing and, with no room number read out,
+  // end up in one room seeing each other's names (the one whose code comes first starts it). One of them never
+  // switched "friends can see me" on: having a friend on the list switches it on from round 28.
+  const up = await fetch('http://127.0.0.1:9000/myapp/').then(r => r.ok).catch(() => false);
+  if (!up) return 'skipped (no local PeerJS server on 127.0.0.1:9000)';
+  const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9000, path: '/myapp', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const A = await open(b, { pre, w: 700, h: 500, settings: { friendCode: 'MEETA2', friendsOn: false, friends: [{ code: 'MEETB3', name: 'Bin' }] } });
+  const B = await open(b, { pre, w: 700, h: 500, lang: 'vi', settings: { friendCode: 'MEETB3', friendsOn: true, friends: [{ code: 'MEETA2', name: 'Na' }] } });
+  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  const met = P => P.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 90000 });
+  await Promise.all([met(A), met(B)]);
+  const r = await Promise.all([A, B].map(P => P.page.evaluate(() => ({ role: __Net.role, code: __Net.code, names: Object.values(__sv.partners).map(p => p.name) }))));
+  const errs = A.errors.concat(B.errors); await A.ctx.close(); await B.ctx.close();
+  ok(r[0].role === 'host' && r[1].role === 'guest' && r[0].code === r[1].code && !errs.length, JSON.stringify({ r, errs }));
+  return `met in room ${r[0].code} by themselves, names shown`;
+});
+
 await check('cloud', async () => {
   // two devices that can never link directly (the meeting service points nowhere), like far-away networks:
   // they must find each other through the cloud relay (a local MQTT broker on 127.0.0.1:9001 stands in for
@@ -249,8 +267,8 @@ await check('cloud', async () => {
   const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
   if (!up) return 'skipped (no local MQTT broker on 127.0.0.1:9001)';
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
-  const A = await open(b, { pre, w: 900, h: 640, lang: 'en', settings: { friendCode: 'AAAAA2', friendsOn: true, friends: [{ code: 'BBBBB3', name: 'Bin' }] } });
-  const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'BBBBB3', friendsOn: true, friends: [{ code: 'AAAAA2', name: 'Na' }] } });
+  const A = await open(b, { pre, w: 900, h: 640, lang: 'en', settings: { friendCode: 'AAAAA2', friendsOn: true, autoMeet: false, friends: [{ code: 'BBBBB3', name: 'Bin' }] } });
+  const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'BBBBB3', friendsOn: true, autoMeet: false, friends: [{ code: 'AAAAA2', name: 'Na' }] } });
   // each player has a photo: it must reach the friend through the cloud too (locked with their pair key)
   const photo = c => { const k = document.createElement('canvas'); k.width = k.height = 64; const g = k.getContext('2d'); g.fillStyle = c; g.fillRect(0, 0, 64, 64); __sv.heroes[0].profile.photo = k.toDataURL('image/jpeg', .8); };
   for (const [P, c] of [[A, '#ff0000'], [B, '#0000ff']]) { await clear(P.page); await P.page.evaluate(async c => { window.__Net = (await import('/js/net.js')).Net; }, c); await P.page.evaluate(photo, c); }

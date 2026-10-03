@@ -34,12 +34,18 @@ export async function groundAudit(page) {
         if (onBridge(x, z)) continue;
         const g = W.heightAt(x, z), key = Math.round(x / 6) + ',' + Math.round(z / 6);
         let why = null;
-        if (y < g - .25) why = 'road buried';
+        const row = Math.floor(i / 5), rows = pa.count / 5, endRow = row <= 1 || row >= rows - 2; // a road's last metre may tuck into the ground or under the road it joins
+        if (y < g - .25 && !(endRow && y > g - .7)) { // under another road at a junction is fine: that road is drawn on top
+          const THREE = G.THREE || (await import('/vendor/three.module.js')); const rc = new THREE.Raycaster(new THREE.Vector3(x, y + 6, z), new THREE.Vector3(0, -1, 0)); const hit = rc.intersectObjects(roads.filter(r => r !== o), false)[0];
+          if (!hit || hit.point.y < y) why = 'road buried'; }
         else if (y > g + 1.4) why = 'road floating';
         else if (g < W.WATER + .2 || W.riverDist(x, z) < 4.5) why = 'road in water';
         if (why && !rbad.has(key)) rbad.set(key, { what: why, at: [+x.toFixed(1), +z.toFixed(1)], road: o.name || '', dy: +(y - g).toFixed(2) });
       }
     }
+    // the boats stay on the water, and nothing you can tap stands in it (the sparkle in the middle of the lake is meant to be there)
+    if (G.ferries) G.ferries.ferries.forEach((F, fi) => { const n = F.path.length; for (let i = 0; i < (F.loop ? n : n - 1); i++) { const a = F.path[i], c = F.path[(i + 1) % n]; for (let t = 0; t < 1; t += .1) { const x = a.x + (c.x - a.x) * t, z = a.z + (c.z - a.z) * t; if (W.heightAt(x, z) > W.WATER - .3 && Math.hypot(x - a.x, z - a.z) > 3 && Math.hypot(x - c.x, z - c.z) > 3) { bad.push({ what: 'boat route over land', ferry: fi, at: [+x.toFixed(1), +z.toFixed(1)] }); return; } } } });
+    for (const it of G.interactables) if (!/^ferry|^fish|^lf7$|^g\d|^wr/.test(it.id) && W.heightAt(it.x, it.z) < W.WATER + .3) bad.push({ what: 'tap spot in water', id: it.id, at: [+it.x.toFixed(1), +it.z.toFixed(1)] });
     return { buildings: things.length, bad, roads: roads.length, roadBad: [...rbad.values()] };
   });
 }

@@ -1,5 +1,5 @@
 // Tiến Lên (southern style, "Tiến Lên miền Nam"), played at the card table on Two Homes Street with anh Ba and
-// his friend Phong. 13 cards each; 3 is the lowest card and 2 the highest; suits ♠ < ♣ < ♦ < ♥.
+// his friend Con Vật. 13 cards each; 3 is the lowest card and 2 the highest; suits ♠ < ♣ < ♦ < ♥.
 // You may play one card, a pair, three or four of a kind, a run of 3+ cards in a row (sảnh, no 2s) or 3+ pairs
 // in a row (đôi thông). Beat what is on the table with the same kind of play, higher; or pass, and you sit out
 // until someone starts again. "Chặt": four of a kind or three pairs in a row can beat a 2.
@@ -88,7 +88,7 @@ register({
     api.stage.appendChild(t);
     const oppEl = t.querySelector('.tl-opp'), pileEl = t.querySelector('.tl-pile'), whoEl = t.querySelector('.tl-who'), msgEl = t.querySelector('.tl-msg'), handEl = t.querySelector('.tl-hand');
     const bPlay = t.querySelector('.play'), bPass = t.querySelector('.pass'), bHint = t.querySelector('.hint');
-    const names = [T('You', 'Con'), T('Big Brother Ba', 'Anh Ba'), 'Phong'], faces = ['🙂', '🧑🏻', '👦🏻'];
+    const names = [T('You', 'Con'), T('Big Brother Ba', 'Anh Ba'), 'Con Vật'], faces = ['🙂', '🧑🏻', '👦🏻'];
     const cardHTML = (c, cls = '') => `<div class="tl-card ${c.s >= 2 ? 'red' : ''} ${cls}" data-v="${c.v}"><b>${RANKS[c.r]}</b><i>${SUITS[c.s]}</i></div>`;
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     const HANDS = little ? 2 : 3;

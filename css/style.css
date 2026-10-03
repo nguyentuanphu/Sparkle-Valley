@@ -1647,3 +1647,17 @@ body.calm .rv-img.on { animation: none; }
 .g-adv > summary::before { content: '▸ '; } .g-adv[open] > summary::before { content: '▾ '; }
 .g-miss > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
 .misslist { max-height: 220px; overflow: auto; padding-left: 22px; font-size: 14px; } .misslist small { opacity: .6; }
+
+/* the Games box keeps one height whichever tab is open (it used to jump up and down when tabs were tapped) */
+.hub .card { height: min(86vh, 780px); height: min(86dvh, 780px); }
+.hub .card .hubbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.hub .card .hubtabs { flex: 0 0 auto; }
+
+/* every window: the closing button row floats at the bottom, a single closing button too, and ✕ stays at the top */
+.modal .card > .floatbtn { position: sticky; bottom: calc(env(safe-area-inset-bottom) + 6px); z-index: 3; box-shadow: 0 8px 22px rgba(60, 30, 90, .25); }
+.modal .card > .x { position: sticky; top: 8px; float: right; margin: -2px -2px -48px 8px; z-index: 4; }
+/* the top rows with ✕ (quick settings, Sparkle Pad) stay at the top while the window scrolls */
+.qsettings .card .qs-head { position: sticky; top: 0; z-index: 4; background: #fffdf8; padding-top: 6px; margin-top: -6px; }
+.pad .card .pad-head { position: sticky; top: 0; z-index: 4; }
+.qs-head .x { top: 4px; right: 0; }
+.gl-tapout { margin: 14px 0 0; text-align: center; color: rgba(255, 255, 255, .85); font-weight: 600; font-size: 15px; text-shadow: 0 1px 3px rgba(0, 0, 0, .4); }
