@@ -19,4 +19,6 @@ EOF
 node --experimental-sea-config .build/sea-config.json
 cp ".build/node-$V.exe" dist/SparkleStudio.exe
 npx --yes postject@1.0.0-alpha.6 dist/SparkleStudio.exe NODE_SEA_BLOB .build/studio.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+# a Windows app, not a console program: no black window (messages go to %APPDATA%\SparkleStudio\studio.log)
+node -e "const fs=require('fs'),f='dist/SparkleStudio.exe',b=fs.readFileSync(f),pe=b.readUInt32LE(0x3c);if(b.readUInt32LE(pe)!==0x4550)throw new Error('not a PE file');b.writeUInt16LE(2,pe+24+68);fs.writeFileSync(f,b)"
 ls -la dist/SparkleStudio.exe

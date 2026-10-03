@@ -10,5 +10,6 @@ cp -r index.html manifest.webmanifest sw.js netlify.toml css fonts icons js vend
 rm -rf "$OUT"/content/old   # Sparkle Studio backups stay on the computer
 # the offline voice pack (made with tools/make-voice-pack.mjs), when there is one
 [ -d voices ] && cp -r voices "$OUT"/
+[ -d photos ] && cp -r photos "$OUT"/   # real photos saved by Sparkle Studio
 (cd "$OUT" && zip -qr ../sparkle-valley-netlify.zip .)
 echo "Ready: $OUT/ and sparkle-valley-netlify.zip"

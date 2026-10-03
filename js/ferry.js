@@ -1,15 +1,15 @@
-// Free ferries: a little blue ferry boat that goes round Mirror Lake stopping at four piers, and two
-// bamboo rafts that cross the river. Walk to the end of a pier and tap "Ride the ferry"; if the boat
+// Free ferries: a little blue ferry boat that goes round Mirror Lake stopping at four piers, two bamboo rafts
+// that cross the river, and a river raft that runs up and down the river past the towns. On a boat with more
+// than two stops the child chooses where to go, and the boat takes them straight there. Walk to the end of a pier and tap "Ride the ferry"; if the boat
 // isn't there yet, you wait and hop on when it arrives. Tap "Get off" at any stop.
 import { THREE, P, merge, toonVC, outline, sprite } from './gfx.js';
 import { T, onLang } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
-import { WATER, LAKE, heightAt, regionAt, REGION_NAMES } from './world.js';
+import { WATER, LAKE, RIVER, BRIDGE, DRAGON, CITIES, VILLAGE, TOWN, MARKET, CHINA, INDIA, HOME, AUSSIE, heightAt, regionAt, REGION_NAMES } from './world.js';
 import { dist2 } from './util.js';
 
 const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), C = (r1, r2, h, s = 10) => new THREE.CylinderGeometry(r1, r2, h, s);
-const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [58, 40], [52, 85]];
 
 function signTex(lines, w = 512, h = 128, bg = '#2f86c0') {
   const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
@@ -40,10 +40,12 @@ function bambooRaft() {
   for (let i = 0; i < 9; i++) p.push(P(C(.2, .2, 5, 8), i % 2 ? '#c9b45a' : '#b8a24a', [0, .25, -1.6 + i * .4], [0, 0, Math.PI / 2]));
   [-1.8, 1.8].forEach(x => p.push(P(B(.2, .15, 3.6), '#8a6a3a', [x, .5, 0])));
   [[-1.6, -1.3], [1.6, -1.3], [-1.6, 1.3], [1.6, 1.3]].forEach(([x, z]) => p.push(P(C(.06, .06, 2, 6), '#8a6a3a', [x, 1.5, z])));
-  p.push(P(new THREE.ConeGeometry(2.6, 1, 4), '#d9b86a', [0, 2.9, 0], [0, Math.PI / 4, 0], [1.1, 1, .8]));
   p.push(P(C(.05, .05, 3, 6), '#8a6a3a', [2.3, 1.6, 0], [0, 0, -.5])); // pole
   const m = new THREE.Mesh(merge(p), toonVC()); m.castShadow = true; outline(m, .03, '#4a3a2a');
-  const g = new THREE.Group(); g.add(m);
+  // the thatched roof is its own see-through-able piece: while a child rides, it fades so the camera can see them
+  const roofMat = toonVC(); roofMat.transparent = true;
+  const roof = new THREE.Mesh(merge([P(new THREE.ConeGeometry(2.6, 1, 4), '#d9b86a', [0, 2.9, 0], [0, Math.PI / 4, 0], [1.1, 1, .8])]), roofMat); roof.castShadow = true;
+  const g = new THREE.Group(); g.add(m, roof); g.roof = roof;
   const lan = sprite('🏮', .7); lan.position.set(0, 2.2, 0); g.add(lan);
   g.deck = .5; g.seats = [[-.6, .5], [.6, -.5], [-.6, -.6], [.6, .6]];
   return g;
@@ -63,6 +65,7 @@ export function createFerries(G) {
   // a boat that drives along a path of points, stopping at some of them
   const ferries = [];
   function makeFerry({ model, path, loop, stops, speed }) {
+    model.traverse(o => { o.userData.noCam = true; }); // a moving boat never pushes the camera in (it ended up inside the raft's roof)
     scene.add(model);
     const F = { model, path, loop, stops, speed, seg: 0, k: 0, dir: 1, wait: 4, at: stops[0].i, riders: new Set(), waiting: new Set() };
     model.position.set(path[0].x, WATER, path[0].z);
@@ -97,8 +100,24 @@ export function createFerries(G) {
   const lakeFerry = makeFerry({ model: ferryBoat(), path: lakePath, loop: true, stops: lakeStops, speed: 6.5 });
 
   // ---------- the river: two bamboo rafts crossing back and forth ----------
-  [3, 2].forEach(i => {
-    const [x, z] = RIVER[i], [x0, z0] = RIVER[i - 1], [x1, z1] = RIVER[i + 1];
+  // Each crossing is picked on the river where it is open water well away from both bridges (a raft under the
+  // Dragon Bridge left the camera inside the deck: nothing to see), and as close as possible to a town or village,
+  // so each bank's stop is a real place you can find on the map.
+  const PLACES = [...CITIES.map(c => ({ x: c.x, z: c.z, name: () => T(c.name[0], c.name[1]) })), { x: VILLAGE.x, z: VILLAGE.z, name: () => T('Lotus Village', 'Làng Sen') },
+    { x: (TOWN.x0 + TOWN.x1) / 2, z: TOWN.roadZ, name: () => T('Two Homes Street', 'Phố Hai Quê') }, { x: (MARKET.x0 + MARKET.x1) / 2, z: MARKET.roadZ, name: () => T('Three Regions Market', 'Chợ Ba Miền') },
+    { x: CHINA.x, z: CHINA.z, name: () => T('China Town', 'Phố Tàu') }, { x: INDIA.x, z: INDIA.z, name: () => T('India Village', 'Làng Ấn Độ') }, { x: HOME.x, z: HOME.z, name: () => T('Sunny Farm', 'Nông Trại Nắng') }, { x: (AUSSIE.x0 + AUSSIE.x1) / 2, z: AUSSIE.roadZ, name: () => T('Aussie Corner', 'Góc nước Úc') }];
+  const nearest = (x, z) => { let b = null, bd = 1e9; for (const p of PLACES) { const d = Math.hypot(p.x - x, p.z - z); if (d < bd) { bd = d; b = p; } } return [b, bd]; };
+  const bridgeD = (x, z) => Math.min(...[BRIDGE, DRAGON].map(B => Math.hypot(Math.max(B.x0 - x, 0, x - B.x1), z - B.z)));
+  const cands = [];
+  for (let i = 1; i < RIVER.length - 1; i++) for (let t = .1; t < .95; t += .1) {
+    const [ax, az] = RIVER[i], [bx, bz] = RIVER[i + 1], x = ax + (bx - ax) * t, z = az + (bz - az) * t;
+    if (bridgeD(x, z) < 34 || Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r + 16 || heightAt(x, z) > WATER - .5) continue;
+    cands.push({ i, x, z, d: nearest(x, z)[1] });
+  }
+  cands.sort((a, b) => a.d - b.d);
+  const picks = []; for (const c of cands) { if (picks.every(p => Math.hypot(p.x - c.x, p.z - c.z) > 60)) picks.push(c); if (picks.length === 2) break; }
+  picks.forEach(({ i, x, z }) => {
+    const [x0, z0] = RIVER[i], [x1, z1] = RIVER[i + 1];
     let dx = x1 - x0, dz = z1 - z0; const l = Math.hypot(dx, dz); dx /= l; dz /= l;
     const px = -dz, pz = dx; // across the river
     const bank = s => { let k = 0; while (k < 30 && heightAt(x + px * s * k, z + pz * s * k) < WATER + .5) k += .5; return k; };
@@ -107,12 +126,34 @@ export function createFerries(G) {
     const pb = pier(x + px * (kB + 2), z + pz * (kB + 2), x + px * (kB - 1.2), z + pz * (kB - 1.2));
     const ends = [{ x: x - px * (kA - 2.6), z: z - pz * (kA - 2.6) }, { x: x + px * (kB - 2.6), z: z + pz * (kB - 2.6) }];
     const path = []; for (let k = 0; k <= 10; k++) path.push({ x: ends[0].x + (ends[1].x - ends[0].x) * k / 10, z: ends[0].z + (ends[1].z - ends[0].z) * k / 10 });
-    // name each bank by the way it faces: east/west or north/south
-    const side = s => Math.abs(px) > Math.abs(pz) ? (px * s > 0 ? T('East bank', 'Bờ Đông') : T('West bank', 'Bờ Tây')) : (pz * s > 0 ? T('South bank', 'Bờ Nam') : T('North bank', 'Bờ Bắc'));
-    const where = (bx, bz) => { const rg = REGION_NAMES[regionAt(bx, bz)]; return rg ? ' · ' + rg() : ''; };
-    const names = [() => side(-1) + where(x - px * (kA + 6), z - pz * (kA + 6)), () => side(1) + where(x + px * (kB + 6), z + pz * (kB + 6))];
+    const side = s => Math.abs(px) > Math.abs(pz) ? (px * s > 0 ? T('east bank', 'bờ Đông') : T('west bank', 'bờ Tây')) : (pz * s > 0 ? T('south bank', 'bờ Nam') : T('north bank', 'bờ Bắc'));
+    const placeOf = (bx, bz) => { const [p, d] = nearest(bx, bz); if (p && d < 90) return p.name; const rg = REGION_NAMES[regionAt(bx, bz)]; return rg || (() => ''); };
+    const pA = placeOf(x - px * (kA + 10), z - pz * (kA + 10)), pB = placeOf(x + px * (kB + 10), z + pz * (kB + 10));
+    const names = [() => pA() + ' · ' + side(-1), () => pB() + ' · ' + side(1)];
     makeFerry({ model: bambooRaft(), path, loop: false, speed: 3.2, stops: [{ i: 0, name: names[0], dock: { pier: pa } }, { i: path.length - 1, name: names[1], dock: { pier: pb } }] });
   });
+
+  // ---------- the river raft line: up and down the river, stopping by the towns (passes under both bridges) ----------
+  {
+    const path = []; for (let i = 1; i < RIVER.length - 1; i++) { const [ax, az] = RIVER[i], [bx, bz] = RIVER[i + 1], L = Math.hypot(bx - ax, bz - az), n = Math.ceil(L / 4); for (let k = 0; k < n; k++) path.push({ x: ax + (bx - ax) * k / n, z: az + (bz - az) * k / n }); }
+    const wet = path.filter(p => heightAt(p.x, p.z) < WATER - .6); path.length = 0; path.push(...wet);
+    const under = (x, z) => [BRIDGE, DRAGON].some(B => x > B.x0 - 18 && x < B.x1 + 18 && Math.abs(z - B.z) < 18);
+    const stops = [];
+    const byRiver = PLACES.map(pl => ({ pl, d: Math.min(...path.map(p => Math.hypot(p.x - pl.x, p.z - pl.z))) })).sort((a, b) => a.d - b.d).map(o => o.pl); // the towns nearest the river first
+    for (const pl of byRiver) {
+      let bi = -1, bd = 1e9; path.forEach((p, i) => { const d = Math.hypot(p.x - pl.x, p.z - pl.z); if (d < bd && !under(p.x, p.z) && i > 1 && i < path.length - 2) { bd = d; bi = i; } });
+      if (bi < 0 || bd > 75 || stops.some(s => Math.abs(s.i - bi) < 6)) continue;
+      const p = path[bi], q = path[bi + 1], dx = q.x - p.x, dz = q.z - p.z, l = Math.hypot(dx, dz) || 1; let px = -dz / l, pz = dx / l;
+      if ((pl.x - p.x) * px + (pl.z - p.z) * pz < 0) { px = -px; pz = -pz; } // the bank on the town's side
+      let k = 0; while (k < 30 && heightAt(p.x + px * k, p.z + pz * k) < WATER + .5) k += .5;
+      if (k >= 30) continue;
+      const dock = { pier: pier(p.x + px * (k + 2), p.z + pz * (k + 2), p.x + px * (k - 1.2), p.z + pz * (k - 1.2)) };
+      path[bi] = { x: p.x + px * (k - 2.6), z: p.z + pz * (k - 2.6) }; // the raft pulls in beside the pier
+      stops.push({ i: bi, name: pl.name, dock });
+    }
+    stops.sort((a, b) => a.i - b.i);
+    if (stops.length >= 3) { const f = makeFerry({ model: bambooRaft(), path, loop: false, stops, speed: 4.2 }); f.line = true; f.at = stops[0].i; f.seg = stops[0].i; const p0 = path[stops[0].i]; f.model.position.set(p0.x, WATER, p0.z); }
+  }
 
   // ---------- riding ----------
   const _q = new THREE.Vector3();
@@ -120,14 +161,28 @@ export function createFerries(G) {
     if (h.carry) return;
     F.waiting.delete(h); F.riders.add(h); h.ferry = F; SFX.whoosh(); const seat = F.model.seats[[...F.riders].indexOf(h) % F.model.seats.length];
     const stopName = () => { const s = stopAt(F); return s ? s.name() : ''; };
-    h.carryIt = { icon: '🚶', label: () => stopAt(F) ? T('Get off here: ', 'Xuống ở đây: ') + stopName() : h.offNext ? T('Getting off at the next stop', 'Xuống ở bến sau') : T('Get off at the next stop', 'Xuống ở bến sau'),
+    h.carryIt = { icon: '🚶', label: () => stopAt(F) ? T('Get off here: ', 'Xuống ở đây: ') + stopName() : h.dest && !h.offNext ? T('Going to ', 'Đang đến ') + h.dest.name() : h.offNext ? T('Getting off at the next stop', 'Xuống ở bến sau') : T('Get off at the next stop', 'Xuống ở bến sau'),
       act: () => { if (stopAt(F)) leave(h, F); else { h.offNext = true; SFX.tap(); G.toast(h, T('OK! You will get off at the next stop.', 'Được rồi! Con sẽ xuống ở bến sau.')); } } };
-    h.cancelCarry = () => { F.riders.delete(h); h.carry = null; h.ferry = null; h.carryIt = null; h.offNext = false; };
+    h.cancelCarry = () => { F.riders.delete(h); h.carry = null; h.ferry = null; h.carryIt = null; h.offNext = false; h.dest = null; aim(F); };
     h.carry = () => {
       const m = F.model; _q.set(seat[0], m.deck, seat[1]).applyMatrix4(m.matrixWorld);
       return { x: _q.x, y: _q.y, z: _q.z, yaw: m.rotation.y + Math.PI / 2, state: 'idle', rest: true };
     };
-    say(`All aboard! Ferries are free. Tap Get off when you reach your stop.`, `Lên phà nào! Phà miễn phí. Đến bến con muốn thì bấm Xuống nhé.`);
+    // where to? with more than two stops the child chooses, and the boat goes straight there (the rider steps off by
+    // themselves when it arrives); with two stops it is the other bank
+    const here = stopAt(F), others = F.stops.filter(s => s !== here);
+    if (others.length === 1) { h.dest = others[0]; say(`All aboard! Next stop: ${others[0].name()}.`, `Lên thuyền nào! Bến tới: ${others[0].name()}.`); return; }
+    say('All aboard! Where would you like to go?', 'Lên thuyền nào! Con muốn đi đâu?');
+    if (G.dialog) G.dialog(T('Where to?', 'Đi đâu?'), [['Choose your stop. The boat will take you straight there!', 'Chọn bến con muốn đến. Thuyền sẽ chở con thẳng tới đó!']], others.map(s => ['⛵ ' + s.name(), '⛵ ' + s.name()]))
+      .then(k => { if (k >= 0 && F.riders.has(h)) { h.dest = others[k]; aim(F); G.toast(h, '⛵ ' + T('Going to ', 'Đang đến ') + others[k].name()); } });
+  }
+  // the boat heads for the nearest stop a rider asked for (in its own direction of travel for the lake ferry)
+  function aim(F) {
+    const dests = [...F.riders].map(h => h.dest).filter(Boolean); if (!dests.length) { F.target = null; return; }
+    const n = F.path.length, pos = F.wait > 0 ? F.at : F.seg, dist = s => F.loop ? (s.i - pos + n) % n : Math.abs(s.i - pos);
+    F.target = dests.reduce((a, b) => dist(b) < dist(a) ? b : a);
+    if (!F.loop && F.target.i !== pos) F.dir = F.target.i > pos ? 1 : -1;
+    if (F.wait > 0 && stopAt(F) !== F.target) F.wait = Math.min(F.wait, 1.5); // off we go
   }
   function leave(h, F) {
     const s = stopAt(F); if (!s) return;
@@ -160,7 +215,8 @@ export function createFerries(G) {
         // children waiting on this pier hop on; riders who asked get off
         if (s) {
           F.waiting.forEach(h => { if (h.waitStop === s && dist2(h.pos.x, h.pos.z, s.dock.pier.tip.x, s.dock.pier.tip.z) < 5) board(h, F); else if (dist2(h.pos.x, h.pos.z, s.dock.pier.tip.x, s.dock.pier.tip.z) > 12) F.waiting.delete(h); });
-          F.riders.forEach(h => { if (h.offNext) { h.offNext = false; leave(h, F); } });
+          F.riders.forEach(h => { if (h.offNext || h.dest === s) { h.offNext = false; leave(h, F); } });
+          if (F.target === s) aim(F);
         }
         if (F.wait <= 0) { F.seg = F.at; F.k = 0; }
       } else {
@@ -172,7 +228,9 @@ export function createFerries(G) {
         if (F.k >= 1) {
           F.seg = j; F.k = 0;
           const st = F.stops.find(s => s.i === j);
-          if (st) {
+          // going somewhere a rider chose: other stops are passed by (unless someone is waiting there)
+          const skip = st && F.target && F.target !== st && ![...F.waiting].some(w => w.waitStop === st);
+          if (st && !skip) {
             F.at = j; F.wait = F.loop ? 7 : 6; m.position.set(b.x, WATER, b.z);
             if ([...F.riders].length) { SFX.chime(); F.riders.forEach(h => G.toast(h, '⛴️ ' + st.name())); say(`${st.name()}!`, `${st.name()}!`); }
             if (!F.loop && (j === 0 || j === n - 1)) F.dir = j === 0 ? 1 : -1;
@@ -183,6 +241,7 @@ export function createFerries(G) {
         const want = Math.atan2(b.x - a.x, b.z - a.z) - Math.PI / 2;
         let d = want - m.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); m.rotation.y += d * Math.min(1, dt * (F.loop ? 2 : 6));
       }
+      if (m.roof) { const want = F.riders.size ? .28 : 1, mt = m.roof.material; mt.opacity += (want - mt.opacity) * Math.min(1, dt * 4); mt.depthWrite = mt.opacity > .95; }
       m.position.y = WATER + Math.sin(t * 1.6 + F.speed) * .06; m.rotation.z = Math.sin(t * 1.1) * .02;
       m.updateMatrixWorld();
     });

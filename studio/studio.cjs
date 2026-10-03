@@ -4,10 +4,12 @@
 // (or the folder chosen in Settings):
 //   · content/custom.json + content/faces/  the family's content pack (message, names, faces, stories, quiz, defaults)
 //   · voices/                               the offline voice pack (new lines made with Azure, Piper or the microphone)
+//   · photos/                               real photos of the landmarks (from Wikipedia/Commons, with credits)
 //   · sparkle-valley-netlify.zip            the publish zip, and an optional one-click deploy to Netlify
-// Keys (Azure, Netlify) are kept only on this computer, in %APPDATA%\SparkleStudio\settings.json, never in the game.
+// Publishing to GitHub sends only what the family changed (content, voices, photos); Netlify then updates the site.
+// Keys (Azure, Netlify, GitHub) are kept only on this computer, in %APPDATA%\SparkleStudio\settings.json, never in the game.
 'use strict';
-const http = require('http'), fs = require('fs'), path = require('path'), os = require('os'), zlib = require('zlib'), vm = require('vm'), { spawn, execFile } = require('child_process');
+const http = require('http'), crypto = require('crypto'), fs = require('fs'), path = require('path'), os = require('os'), zlib = require('zlib'), vm = require('vm'), { spawn, execFile } = require('child_process');
 
 let sea = null; try { sea = require('node:sea'); if (!sea.isSea()) sea = null; } catch (e) { sea = null; }
 const UI_DIR = path.join(__dirname, 'ui');
@@ -125,7 +127,141 @@ function zipFolder(root, items, out) {
   fs.closeSync(fd);
   return { files: files.length, bytes: off };
 }
-const PUBLISH = ['index.html', 'manifest.webmanifest', 'sw.js', 'netlify.toml', 'css', 'fonts', 'icons', 'js', 'vendor', 'videos', 'content', 'voices'];
+const PUBLISH = ['index.html', 'manifest.webmanifest', 'sw.js', 'netlify.toml', 'css', 'fonts', 'icons', 'js', 'vendor', 'videos', 'content', 'voices', 'photos'];
+
+// ---------- one long job at a time (photos, GitHub), with progress the dashboard polls ----------
+let JOB = null;
+const job = (kind, f) => { if (JOB && !JOB.end) throw new Error('Something else is still running: ' + JOB.kind); JOB = { kind, done: 0, total: 0, msg: '', start: Date.now() }; f(JOB).then(r => { JOB.result = r; JOB.end = true; }, e => { JOB.error = String(e && e.message || e); JOB.end = true; }); return JOB; };
+
+// ---------- real photos of the landmarks, saved into the game (photos/<key>/n.jpg + photos/index.json) ----------
+const UA = { 'User-Agent': 'SparkleStudio/1.0 (family game dashboard)', accept: 'application/json' };
+const BADPIC = /\.(svg|gif|tif|tiff|webm|ogv|ogg|oga|wav|mp3|pdf)$|logo|flag of|map|locator|coat of arms|seal of|icon|diagram|signature|plan of|chart/i;
+const PIX = () => G('photos', 'index.json');
+const readPix = () => { try { return JSON.parse(fs.readFileSync(PIX(), 'utf8')); } catch (e) { return {}; } };
+const writePix = o => { fs.mkdirSync(G('photos'), { recursive: true }); fs.writeFileSync(PIX(), JSON.stringify(o, null, 1)); };
+const strip = h => String(h || '').replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/\s+/g, ' ').trim();
+async function bestPhotos(sources, max) {
+  for (const s of sources) {
+    const [lang, title] = s.split(/:(.+)/), t = encodeURIComponent(title.replace(/ /g, '_'));
+    const ml = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${t}`, { headers: UA }); if (!ml.ok) continue;
+    const j = await ml.json(); let lead = '';
+    try { const sm = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${t}`, { headers: UA }); if (sm.ok) lead = decodeURIComponent(((await sm.json()).originalimage || {}).source || '').split('/').pop(); } catch (e) { }
+    let items = (j.items || []).filter(it => it.type === 'image' && it.showInGallery !== false && !BADPIC.test(it.title || ''));
+    items.sort((a, b) => (b.title.replace(/^File:/, '').replace(/ /g, '_') === lead) - (a.title.replace(/^File:/, '').replace(/ /g, '_') === lead));
+    if (items.length) return items.slice(0, max).map(it => ({ file: it.title, caption: strip(it.caption && it.caption.html || it.caption && it.caption.text || '') }));
+  }
+  return [];
+}
+async function commonsInfo(file) {
+  const r = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo&iiprop=url|extmetadata|size&iiurlwidth=1280&titles=${encodeURIComponent(file)}`, { headers: UA });
+  const j = await r.json(), pg = Object.values((j.query || {}).pages || {})[0], ii = pg && pg.imageinfo && pg.imageinfo[0]; if (!ii) return null;
+  const md = ii.extmetadata || {};
+  return { url: ii.thumburl || ii.url, width: ii.width, credit: [strip(md.Artist && md.Artist.value).slice(0, 80), strip(md.LicenseShortName && md.LicenseShortName.value)].filter(Boolean).join(' · ') };
+}
+// More places to look than the Wikipedia article (all free to reuse, with the photographer's credit kept):
+//   · Wikimedia Commons search: the whole Commons library, not just the pictures in the article
+//   · Openverse (openverse.org): Creative Commons photos from Flickr, museums and other open collections
+// Every candidate is scored (the article's own lead picture first, then big, landscape, named after the place) and
+// the best are taken from the different sources, so the children see the place from several angles.
+async function commonsSearch(name, n = 8) {
+  const r = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=${n}&gsrsearch=${encodeURIComponent(name + ' filetype:bitmap')}&prop=imageinfo&iiprop=url|extmetadata|size&iiurlwidth=1280`, { headers: UA });
+  if (!r.ok) return []; const j = await r.json();
+  return Object.values((j.query || {}).pages || {}).map(pg => { const ii = pg.imageinfo && pg.imageinfo[0]; if (!ii || BADPIC.test(pg.title)) return null; const md = ii.extmetadata || {};
+    return { url: ii.thumburl || ii.url, width: ii.width, height: ii.height, caption: strip(md.ImageDescription && md.ImageDescription.value || pg.title.replace(/^File:|\.\w+$/g, '')), credit: [strip(md.Artist && md.Artist.value).slice(0, 80), strip(md.LicenseShortName && md.LicenseShortName.value)].filter(Boolean).join(' · '), from: 'Wikimedia Commons', title: pg.title }; }).filter(Boolean);
+}
+async function openverse(name, n = 8) {
+  const r = await fetch(`https://api.openverse.org/v1/images/?q=${encodeURIComponent(name)}&page_size=${n}&mature=false`, { headers: UA });
+  if (!r.ok) return []; const j = await r.json();
+  return (j.results || []).filter(x => x.url && /^https:/.test(x.url)).map(x => ({ url: x.url, width: x.width, height: x.height, caption: strip(x.title || ''), credit: [x.creator, (x.license || '').toUpperCase() + ' ' + (x.license_version || '')].filter(Boolean).join(' · ').trim(), from: x.source || 'Openverse', title: x.title || '' }));
+}
+async function gatherPhotos(sources, name, max) {
+  const cands = [];
+  try { for (const p of await bestPhotos(sources, max + 2)) { const info = await commonsInfo(p.file); if (info) cands.push({ url: info.url, width: info.width, caption: p.caption, credit: info.credit, from: 'Wikipedia', title: p.file, lead: cands.length === 0 }); } } catch (e) { }
+  const q = name || (sources[0] || '').split(':').slice(1).join(':');
+  if (q) { try { cands.push(...await commonsSearch(q)); } catch (e) { } try { cands.push(...await openverse(q)); } catch (e) { } }
+  const words = String(q).toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const score = c => (c.lead ? 100 : 0) + Math.min(30, (c.width || 0) / 60) + (c.width && c.height && c.width > c.height ? 10 : 0) + words.filter(w => (c.title + ' ' + c.caption).toLowerCase().includes(w)).length * 8 - ((c.width || 0) && c.width < 500 ? 100 : 0);
+  const seen = new Set(), bySrc = {};
+  cands.filter(c => !seen.has(c.url) && seen.add(c.url)).sort((a, b) => score(b) - score(a)).forEach(c => (bySrc[c.from] = bySrc[c.from] || []).push(c));
+  const out = [], lists = Object.values(bySrc); while (out.length < max && lists.some(l => l.length)) for (const l of lists) if (l.length && out.length < max) out.push(l.shift()); // take turns between sources
+  return out;
+}
+async function getPhotos(J, list, max) {
+  const pix = readPix(); J.total = list.length;
+  for (const { key, sources, name } of list) {
+    J.msg = name || key;
+    try {
+      const picks = await gatherPhotos(sources, name, max), out = [];
+      fs.mkdirSync(G('photos', key), { recursive: true });
+      for (const p of picks) {
+        const img = await fetch(p.url, { headers: { 'User-Agent': UA['User-Agent'] } }); if (!img.ok || !/image\//.test(img.headers.get('content-type') || 'image/')) continue;
+        const n = out.length + 1, rel = `photos/${key}/${n}.jpg`; fs.writeFileSync(G(rel), Buffer.from(await img.arrayBuffer()));
+        out.push({ src: rel, file: p.title, caption: (p.caption || '').slice(0, 160), credit: [p.credit, p.from].filter(Boolean).join(' · ').slice(0, 200) });
+      }
+      if (out.length) pix[key] = out;
+    } catch (e) { J.errors = (J.errors || 0) + 1; J.last = String(e.message || e); }
+    J.done++; writePix(pix);
+  }
+  return { saved: Object.keys(pix).length };
+}
+
+// ---------- publish to GitHub: only the family's changes (content, voices, photos), as one commit ----------
+// The live site is built from GitHub by Netlify, so a commit here is published there a minute or two later.
+async function gh(p, opt = {}) {
+  const r = await fetch('https://api.github.com' + p, { ...opt, headers: { Authorization: 'Bearer ' + conf.githubToken, Accept: 'application/vnd.github+json', 'User-Agent': 'sparkle-studio', 'X-GitHub-Api-Version': '2022-11-28', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } });
+  const t = await r.text(); let j = {}; try { j = JSON.parse(t); } catch (e) { }
+  if (!r.ok) throw new Error(`GitHub ${r.status}: ${(j.message || t).slice(0, 160)}`);
+  return j;
+}
+// ---------- the website: Netlify deploys and GitHub changes, to see and manage from the dashboard ----------
+async function nf(p, opt = {}) {
+  const r = await fetch('https://api.netlify.com/api/v1' + p, { ...opt, headers: { Authorization: 'Bearer ' + conf.netlifyToken, 'User-Agent': 'sparkle-studio', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } });
+  const t = await r.text(); let j = {}; try { j = JSON.parse(t); } catch (e) { }
+  if (!r.ok) throw new Error(`Netlify ${r.status}: ${(j.message || t).slice(0, 160)}`);
+  return j;
+}
+async function siteStatus() {
+  const out = {};
+  if (conf.netlifyToken && conf.netlifySite) {
+    try {
+      const site = await nf(`/sites/${encodeURIComponent(conf.netlifySite)}`), deps = await nf(`/sites/${encodeURIComponent(conf.netlifySite)}/deploys?per_page=10`);
+      out.netlify = { name: site.name, url: site.ssl_url || site.url, admin: site.admin_url, repo: site.build_settings && site.build_settings.repo_url, branch: site.build_settings && site.build_settings.repo_branch, published: site.published_deploy && site.published_deploy.id,
+        deploys: deps.map(d => ({ id: d.id, state: d.state, context: d.context, branch: d.branch, commit: (d.commit_ref || '').slice(0, 7), title: d.title || '', at: d.created_at, url: d.deploy_ssl_url || d.deploy_url, error: d.error_message || '', live: site.published_deploy && site.published_deploy.id === d.id })) };
+    } catch (e) { out.netlifyError = String(e.message || e); }
+  }
+  if (conf.githubToken && conf.githubRepo) {
+    try {
+      const R = `/repos/${conf.githubRepo}`, br = conf.githubBranch || 'main';
+      const commits = await gh(`${R}/commits?sha=${encodeURIComponent(br)}&per_page=8`), pulls = await gh(`${R}/pulls?state=open&per_page=10`);
+      out.github = { repo: conf.githubRepo, branch: br, commits: commits.map(c => ({ sha: c.sha.slice(0, 7), msg: (c.commit.message || '').split('\n')[0].slice(0, 120), at: c.commit.author && c.commit.author.date, url: c.html_url })),
+        pulls: pulls.map(p => ({ n: p.number, title: p.title, draft: p.draft, branch: p.head && p.head.ref, url: p.html_url, at: p.updated_at })) };
+    } catch (e) { out.githubError = String(e.message || e); }
+  }
+  return out;
+}
+const gitSha = b => crypto.createHash('sha1').update('blob ' + b.length + '\0').update(b).digest('hex');
+const SYNC = ['content', 'voices', 'photos', 'tools/voice-extra.json'];
+async function publishGitHub(J, message) {
+  if (!conf.githubToken || !/^[\w.-]+\/[\w.-]+$/.test(conf.githubRepo || '')) throw new Error('Add the GitHub token and repository (owner/name) in Settings first.');
+  const R = `/repos/${conf.githubRepo}`, br = conf.githubBranch || 'main';
+  J.msg = 'Reading the website’s files…';
+  const ref = await gh(`${R}/git/ref/heads/${encodeURIComponent(br)}`), base = ref.object.sha, baseTree = (await gh(`${R}/git/commits/${base}`)).tree.sha;
+  const remote = new Map(), root = await gh(`${R}/git/trees/${baseTree}`);
+  for (const top of ['content', 'voices', 'photos', 'tools']) { const e = root.tree.find(x => x.path === top && x.type === 'tree'); if (!e) continue; const t = await gh(`${R}/git/trees/${e.sha}?recursive=1`); for (const x of t.tree) if (x.type === 'blob') remote.set(top + '/' + x.path, x.sha); }
+  const local = [];
+  const walk = rel => { const abs = G(rel); if (!fs.existsSync(abs)) return; const st = fs.statSync(abs); if (st.isDirectory()) { for (const f of fs.readdirSync(abs)) { if (rel === 'content' && f === 'old') continue; walk(rel + '/' + f); } } else local.push(rel); };
+  SYNC.forEach(walk);
+  const changed = []; for (const rel of local) { const b = fs.readFileSync(G(rel)); if (remote.get(rel) !== gitSha(b)) changed.push(rel); }
+  J.total = changed.length; if (!changed.length) return { changed: 0, note: 'Nothing new to publish: the website already has everything.' };
+  const items = [];
+  for (const rel of changed) { J.msg = rel; const b = fs.readFileSync(G(rel)); const blob = await gh(`${R}/git/blobs`, { method: 'POST', body: JSON.stringify({ content: b.toString('base64'), encoding: 'base64' }) }); items.push({ path: rel, mode: '100644', type: 'blob', sha: blob.sha }); J.done++; }
+  J.msg = 'Making the commit…'; let tree = baseTree;
+  for (let i = 0; i < items.length; i += 400) tree = (await gh(`${R}/git/trees`, { method: 'POST', body: JSON.stringify({ base_tree: tree, tree: items.slice(i, i + 400) }) })).sha;
+  const commit = await gh(`${R}/git/commits`, { method: 'POST', body: JSON.stringify({ message: message || `Family update from Sparkle Studio (${changed.length} files)`, tree, parents: [base] }) });
+  await gh(`${R}/git/refs/heads/${encodeURIComponent(br)}`, { method: 'PATCH', body: JSON.stringify({ sha: commit.sha }) });
+  return { changed: changed.length, commit: commit.sha.slice(0, 7), url: `https://github.com/${conf.githubRepo}/commit/${commit.sha}` };
+}
+
 
 // ---------- the health check ----------
 function check() {
@@ -172,16 +308,18 @@ const server = http.createServer(async (req, res) => {
     // the game's modules (loaded by the Voices page) fetch content/custom.json from the page's own address
     if (p.startsWith('/content/') && GAME) { const f = safeJoin(GAME, p); return f && fs.existsSync(f) && fs.statSync(f).isFile() ? send(res, 200, fs.readFileSync(f), MIME[path.extname(f).toLowerCase()] || 'application/octet-stream') : send(res, 404, '{}', MIME['.json']); }
     if (!p.startsWith('/api/')) return send(res, 404, 'not found', 'text/plain');
-    const api = p.slice(5);
+    const api = p.slice(5); lastSeen = Date.now();
+    if (api === 'ping') return send(res, 200, { ok: true });
+    if (api === 'quit' && req.method === 'POST') { send(res, 200, { ok: true }); log('Closed from the dashboard.'); setTimeout(() => process.exit(0), 300); return; }
     if (api === 'info') {
       const have = GAME ? voicesHave() : {}, nv = Object.values(have).reduce((a, s) => a + Object.values(s).reduce((b, l) => b + l.length, 0), 0);
       let version = '?'; try { version = /VERSION = '([^']+)'/.exec(fs.readFileSync(G('sw.js'), 'utf8'))[1]; } catch (e) { }
-      return send(res, 200, { game: GAME, ok: isGame(GAME), version, voices: nv, conf: { azure: !!conf.azureKey, azureRegion: conf.azureRegion || '', netlify: !!conf.netlifyToken, netlifySite: conf.netlifySite || '', piper: !!conf.piperExe, piperExe: conf.piperExe || '', piperModels: conf.piperModels || {} }, settingsFile: CONF });
+      return send(res, 200, { game: GAME, ok: isGame(GAME), version, voices: nv, conf: { azure: !!conf.azureKey, azureRegion: conf.azureRegion || '', netlify: !!conf.netlifyToken, netlifySite: conf.netlifySite || '', github: !!conf.githubToken, githubRepo: conf.githubRepo || '', githubBranch: conf.githubBranch || 'main', piper: !!conf.piperExe, piperExe: conf.piperExe || '', piperModels: conf.piperModels || {} }, settingsFile: CONF });
     }
     if (api === 'settings' && req.method === 'POST') {
       const b = await json(req);
-      for (const k of ['azureRegion', 'netlifySite', 'piperExe']) if (typeof b[k] === 'string') conf[k] = b[k].trim();
-      for (const k of ['azureKey', 'netlifyToken']) if (typeof b[k] === 'string' && b[k].trim()) conf[k] = b[k].trim(); // empty = keep the saved one
+      for (const k of ['azureRegion', 'netlifySite', 'piperExe', 'githubRepo', 'githubBranch']) if (typeof b[k] === 'string') conf[k] = b[k].trim();
+      for (const k of ['azureKey', 'netlifyToken', 'githubToken']) if (typeof b[k] === 'string' && b[k].trim()) conf[k] = b[k].trim(); // empty = keep the saved one
       if (b.forget) for (const k of [].concat(b.forget)) delete conf[k];
       if (b.piperModels && typeof b.piperModels === 'object') conf.piperModels = Object.assign(conf.piperModels || {}, b.piperModels);
       if (typeof b.gameDir === 'string' && b.gameDir.trim()) { if (!isGame(b.gameDir.trim())) return send(res, 400, { error: 'That folder has no game in it (index.html and js/main.js).' }); conf.gameDir = path.resolve(b.gameDir.trim()); GAME = conf.gameDir; manCache = null; }
@@ -195,6 +333,26 @@ const server = http.createServer(async (req, res) => {
       fs.mkdirSync(G('content', 'faces'), { recursive: true }); const name = slug(b.id) + '.jpg'; fs.writeFileSync(G('content', 'faces', name), Buffer.from(m[1], 'base64'));
       return send(res, 200, { photo: 'content/faces/' + name });
     }
+    if (api === 'adimage' && req.method === 'POST') { // a picture for an ad (content/ads/), published with the content pack
+      const b = await json(req), m = /^data:image\/(jpeg|png);base64,(.+)$/.exec(b.dataUrl || ''); if (!m) return send(res, 400, { error: 'Choose a JPG or PNG picture.' });
+      const buf = Buffer.from(m[2], 'base64'); if (buf.length > 600 * 1024) return send(res, 400, { error: 'That picture is too big (over 600 KB). Make it smaller first.' });
+      fs.mkdirSync(G('content', 'ads'), { recursive: true }); const name = slug(b.id || 'ad') + '-' + Date.now().toString(36) + (m[1] === 'png' ? '.png' : '.jpg'); fs.writeFileSync(G('content', 'ads', name), buf);
+      return send(res, 200, { image: 'content/ads/' + name });
+    }
+    if (api === 'job') return send(res, 200, JOB || {});
+    if (api === 'photos/index') return send(res, 200, readPix());
+    if (api === 'photos/get' && req.method === 'POST') { const b = await json(req); const list = (b.list || []).filter(x => x && /^[\p{L}\p{N}-]{1,60}$/u.test(x.key || '') && Array.isArray(x.sources)); return send(res, 200, job('photos', J => getPhotos(J, list, Math.min(8, Math.max(1, +b.max || 4))))); }
+    if (api === 'photos/remove' && req.method === 'POST') { const b = await json(req), pix = readPix(), L = pix[b.key] || []; const i = L.findIndex(p => p.src === b.src); if (i >= 0) { const f = safeJoin(GAME, L[i].src); if (f && fs.existsSync(f)) fs.unlinkSync(f); L.splice(i, 1); if (L.length) pix[b.key] = L; else delete pix[b.key]; writePix(pix); } return send(res, 200, { ok: true }); }
+    if (api === 'voices/extra') {
+      const f = G('tools', 'voice-extra.json'); let L = []; try { L = JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { }
+      if (req.method === 'POST') { const b = await json(req), have = new Set(L.map(l => l.lang + '|' + l.text)); let n = 0; for (const l of b.lines || []) if (l && CAST[l.lang] && typeof l.text === 'string' && l.text.trim() && l.text.length < 400 && !have.has(l.lang + '|' + l.text)) { L.push({ lang: l.lang, text: l.text }); have.add(l.lang + '|' + l.text); n++; } fs.mkdirSync(G('tools'), { recursive: true }); fs.writeFileSync(f, JSON.stringify(L, null, 0).replace(/\},\{/g, '},\n{') + '\n'); return send(res, 200, { added: n, total: L.length }); }
+      return send(res, 200, L);
+    }
+    if (api === 'site/status') return send(res, 200, await siteStatus());
+    if (api === 'site/rebuild' && req.method === 'POST') { if (!conf.netlifyToken || !conf.netlifySite) return send(res, 400, { error: 'Add your Netlify token and site in Settings first.' }); await nf(`/sites/${encodeURIComponent(conf.netlifySite)}/builds`, { method: 'POST', body: '{}' }); return send(res, 200, { ok: true }); }
+    if (api === 'site/restore' && req.method === 'POST') { const b = await json(req); if (!/^[0-9a-f]{16,40}$/.test(b.id || '')) return send(res, 400, { error: 'bad deploy' }); await nf(`/sites/${encodeURIComponent(conf.netlifySite)}/deploys/${b.id}/restore`, { method: 'POST', body: '{}' }); return send(res, 200, { ok: true }); }
+    if (api === 'github/merge' && req.method === 'POST') { const b = await json(req); if (!(+b.n > 0)) return send(res, 400, { error: 'bad pull request' }); const r = await gh(`/repos/${conf.githubRepo}/pulls/${+b.n}/merge`, { method: 'PUT', body: JSON.stringify({ merge_method: 'merge' }) }); return send(res, 200, { ok: true, sha: r.sha }); }
+    if (api === 'github/publish' && req.method === 'POST') { const b = await json(req); return send(res, 200, job('github', J => publishGitHub(J, String(b.message || '').slice(0, 200)))); }
     if (api === 'srcfiles') { const list = []; for (const d of ['js', 'js/games']) for (const f of fs.readdirSync(G(d))) if (f.endsWith('.js')) list.push(d + '/' + f); return send(res, 200, list); }
     if (api === 'voices/have') return send(res, 200, voicesHave());
     if (api === 'voice' && req.method === 'POST') {
@@ -227,8 +385,25 @@ function openThing(u) {
   if (process.platform === 'win32') execFile('cmd', ['/c', 'start', '', u], { windowsHide: true });
   else if (process.platform === 'darwin') execFile('open', [u]); else execFile('xdg-open', [u], () => { });
 }
-server.on('error', e => { if (e.code === 'EADDRINUSE') { console.log(`Sparkle Studio is already open: http://localhost:${PORT}`); openThing(`http://localhost:${PORT}/`); setTimeout(() => process.exit(0), 1500); } else throw e; });
+// The dashboard opens in its own app window (Edge or Chrome "--app": no address bar, no tabs), else the default browser.
+function openApp(u) {
+  if (process.platform === 'win32') {
+    const E = process.env, cands = [[E['ProgramFiles(x86)'], 'Microsoft\\Edge\\Application\\msedge.exe'], [E.ProgramFiles, 'Microsoft\\Edge\\Application\\msedge.exe'], [E.ProgramFiles, 'Google\\Chrome\\Application\\chrome.exe'], [E['ProgramFiles(x86)'], 'Google\\Chrome\\Application\\chrome.exe'], [E.LOCALAPPDATA, 'Google\\Chrome\\Application\\chrome.exe']];
+    for (const [dir, rel] of cands) { if (!dir) continue; const exe = path.join(dir, rel); if (fs.existsSync(exe)) { try { spawn(exe, ['--app=' + u, '--window-size=1280,900'], { detached: true, stdio: 'ignore' }).unref(); return; } catch (e) { } } }
+  }
+  openThing(u);
+}
+// Packaged as the exe there is no console window: messages go to a log file next to the settings.
+const LOG = path.join(CONF_DIR, 'studio.log');
+try { fs.mkdirSync(CONF_DIR, { recursive: true }); fs.writeFileSync(LOG, ''); } catch (e) { }
+const log = m => { console.log(m); try { fs.appendFileSync(LOG, new Date().toISOString() + ' ' + m + '\n'); } catch (e) { } };
+process.on('uncaughtException', e => { log('error: ' + (e && e.stack || e)); });
+// The exe stops by itself a few minutes after its window is closed (the dashboard checks in every 20 s; hidden windows may slow that to once a minute).
+const AUTO_QUIT = !!sea || !!process.env.STUDIO_AUTO_QUIT, QUIT_AFTER = +(process.env.STUDIO_QUIT_MS || 180000);
+let lastSeen = 0;
+setInterval(() => { if (AUTO_QUIT && lastSeen && Date.now() - lastSeen > QUIT_AFTER) { log('No dashboard window for a while: stopping.'); process.exit(0); } }, 5000);
+server.on('error', e => { if (e.code === 'EADDRINUSE') { log(`Sparkle Studio is already open: http://localhost:${PORT}`); openApp(`http://localhost:${PORT}/`); setTimeout(() => process.exit(0), 1500); } else { log('error: ' + e.message); process.exit(1); } });
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`\n  Sparkle Studio is running: http://localhost:${PORT}\n  Game folder: ${GAME || '(choose it in Settings)'}\n  Keep this window open while you use the dashboard; close it to stop.\n`);
-  if (!process.env.STUDIO_NO_OPEN) openThing(`http://localhost:${PORT}/`);
+  log(`Sparkle Studio is running: http://localhost:${PORT} · game folder: ${GAME || '(choose it in Settings)'}`);
+  if (!process.env.STUDIO_NO_OPEN) openApp(`http://localhost:${PORT}/`);
 });

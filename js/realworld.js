@@ -1,7 +1,9 @@
 // The real place behind every landmark: "📷 Real photos" shows photographs of the real thing (the pictures
 // Wikipedia's editors chose for its article, from Wikimedia Commons, with who took them), slowly panning like a
 // film; "🚶 Step inside (360°)" opens Google Street View at the real place, to look round as if standing there.
-// Both need the internet; without it the child is told kindly and nothing breaks.
+// Photos saved with the game (photos/, made by Sparkle Studio) show first and work offline; when online, the best
+// photos of the article (its main picture first) are added, and every photo shown is kept on this device, so next
+// time it works without the internet too. Street View needs the internet.
 import { T } from './i18n.js';
 import { el, esc } from './util.js';
 import { SFX } from './audio.js';
@@ -42,23 +44,52 @@ const SPECIAL = [[/phở/i, 'pho'], [/hàng mã/i, 'hangma'], [/đông hồ/i, '
   [/surf/i, 'surf'], [/terrace/i, 'terrace'], [/laneway|café/i, 'laneway'], [/footy/i, 'footy'], [/queenslander/i, 'queenslander'], [/lamington/i, 'lamington'], [/chè/i, 'che']];
 export function homeSources(name, kind) { const sp = SPECIAL.find(([re]) => re.test(name || '')); return REAL_KINDS[sp ? sp[1] : kind] || null; }
 const cache = {};
-const BAD = /\.(svg|gif|tif|tiff|webm|ogv|ogg|oga|wav|mp3|pdf)$|logo|flag of|map|locator|coat of arms|seal of|icon|diagram|signature/i;
-async function photosFor(sources) {
-  const key = sources.join('|'); if (cache[key]) return cache[key];
+const BAD = /\.(svg|gif|tif|tiff|webm|ogv|ogg|oga|wav|mp3|pdf)$|logo|flag of|map|locator|coat of arms|seal of|icon|diagram|signature|plan of|chart/i;
+export const photoKey = sources => sources[0].toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').slice(0, 60);
+let LOCAL = null; // photos/index.json: { key: [{ src, file, caption, credit }] }
+const localPhotos = async key => { if (!LOCAL) LOCAL = fetch('photos/index.json').then(r => r.ok ? r.json() : {}).catch(() => ({})); const L = await LOCAL; return (L[key] || []).map(p => ({ ...p, url: p.src, local: true })); };
+const KEEP = 'sv-photos';
+async function keptList(key) { try { const c = await caches.open(KEEP), r = await c.match('/photos-list/' + key); return r ? await r.json() : null; } catch (e) { return null; } }
+async function keepList(key, list) { try { const c = await caches.open(KEEP); await c.put('/photos-list/' + key, new Response(JSON.stringify(list), { headers: { 'Content-Type': 'application/json' } })); } catch (e) { } }
+// a photo from Wikimedia, kept on the device the first time it is shown (works offline afterwards)
+async function photoURL(p) {
+  if (p.local) return p.url;
+  try {
+    const c = await caches.open(KEEP); let r = await c.match(p.url);
+    if (!r) { r = await fetch(p.url, { mode: 'cors', referrerPolicy: 'no-referrer' }); if (!r.ok) return p.url; await c.put(p.url, r.clone()); }
+    return URL.createObjectURL(await r.blob());
+  } catch (e) { return p.url; }
+}
+async function onlinePhotos(sources) {
   for (const s of sources) {
-    const [lang, title] = s.split(/:(.+)/);
+    const [lang, title] = s.split(/:(.+)/), t = encodeURIComponent(title.replace(/ /g, '_'));
     try {
-      const r = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${encodeURIComponent(title.replace(/ /g, '_'))}`, { headers: { accept: 'application/json' } });
-      if (!r.ok) continue;
-      const j = await r.json();
-      const out = (j.items || []).filter(it => it.type === 'image' && it.showInGallery !== false && !BAD.test(it.title || '') && it.srcset && it.srcset.length).map(it => {
-        const best = it.srcset[it.srcset.length - 1].src, url = best.startsWith('//') ? 'https:' + best : best;
+      const [ml, sum] = await Promise.all([fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${t}`, { headers: { accept: 'application/json' } }), fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${t}`).catch(() => null)]);
+      if (!ml.ok) continue;
+      const j = await ml.json(), lead = sum && sum.ok ? ((await sum.json()).originalimage || {}).source || '' : '';
+      const leadName = lead ? decodeURIComponent(lead.split('/').pop()).replace(/^\d+px-/, '') : '';
+      let out = (j.items || []).filter(it => it.type === 'image' && it.showInGallery !== false && !BAD.test(it.title || '') && it.srcset && it.srcset.length).map(it => {
+        // the 2x size is sharp enough for a phone and far smaller than the full original
+        const pick = it.srcset.find(x => x.scale === '2x') || it.srcset[it.srcset.length - 1], url = pick.src.startsWith('//') ? 'https:' + pick.src : pick.src;
         return { url, file: it.title, caption: it.caption && it.caption.text ? it.caption.text : '' };
-      }).filter(p => { try { return new URL(p.url).hostname === 'upload.wikimedia.org'; } catch (e) { return false; } }).slice(0, 10);
-      if (out.length) { cache[key] = { photos: out, lang, title }; return cache[key]; }
-    } catch (e) { /* offline or blocked: try the next one, then say so */ }
+      }).filter(p => { try { return new URL(p.url).hostname === 'upload.wikimedia.org'; } catch (e) { return false; } });
+      // the article's own main photo first: it is the one Wikipedia's editors judged the best picture of the place
+      if (leadName) out.sort((a, b) => (b.file.replace(/^File:/, '').replace(/ /g, '_') === leadName) - (a.file.replace(/^File:/, '').replace(/ /g, '_') === leadName));
+      out = out.slice(0, 8);
+      if (out.length) return out;
+    } catch (e) { /* offline or blocked: try the next one */ }
   }
   return null;
+}
+async function photosFor(sources) {
+  const key = photoKey(sources); if (cache[key]) return cache[key];
+  const local = await localPhotos(key);
+  const online = navigator.onLine === false ? null : await onlinePhotos(sources);
+  if (online) keepList(key, online);
+  const more = online || await keptList(key) || [];
+  const seen = new Set(local.map(p => p.file)), photos = [...local, ...more.filter(p => !seen.has(p.file))];
+  if (!photos.length) return null;
+  return (cache[key] = { photos });
 }
 // who took the photo and its licence (for the credit line)
 async function creditFor(file) {
@@ -85,12 +116,13 @@ export function openPhotos(name, sources, { icon = '📷', id = null, onClose } 
   if (real) m.querySelector('.rv-360').onclick = () => { SFX.tap(); openStreetView(id); };
   const show = i => {
     if (!list.length) return; k = (i + list.length) % list.length; const p = list[k];
-    const im = el('img', 'rv-img'); im.alt = name; im.referrerPolicy = 'no-referrer'; im.src = p.url; im.style.setProperty('--px', (k % 2 ? 1 : -1) * 3 + '%');
+    const im = el('img', 'rv-img'); im.alt = name; im.referrerPolicy = 'no-referrer'; im.style.setProperty('--px', (k % 2 ? 1 : -1) * 3 + '%');
+    photoURL(p).then(u => { im.src = u; });
     im.onload = () => { stage.querySelectorAll('.rv-img.on').forEach(o => { o.classList.remove('on'); setTimeout(() => o.remove(), 900); }); im.classList.add('on'); };
     stage.appendChild(im);
     dots.innerHTML = list.map((_, j) => `<i class="${j === k ? 'on' : ''}"></i>`).join('');
-    cap.innerHTML = `<span>📷 ${esc(p.caption.slice(0, 120))}</span><a href="https://commons.wikimedia.org/wiki/${encodeURIComponent(p.file)}" target="_blank" rel="noopener">${T('Photo', 'Ảnh')}: Wikimedia Commons</a>`;
-    creditFor(p.file).then(c => { if (c && list[k] === p) cap.querySelector('a').textContent = `${T('Photo', 'Ảnh')}: ${c}`; });
+    cap.innerHTML = `<span>📷 ${esc((p.caption || '').slice(0, 120))}</span><a href="https://commons.wikimedia.org/wiki/${encodeURIComponent(p.file)}" target="_blank" rel="noopener">${T('Photo', 'Ảnh')}: ${esc(p.credit || 'Wikimedia Commons')}</a>`;
+    if (!p.credit) creditFor(p.file).then(c => { if (c) { p.credit = c; if (list[k] === p) cap.querySelector('a').textContent = `${T('Photo', 'Ảnh')}: ${c}`; } });
   };
   const step = d => { SFX.tap(); clearInterval(auto); show(k + d); auto = setInterval(() => show(k + 1), 7000); };
   m.querySelector('.rv-prev').onclick = () => step(-1); m.querySelector('.rv-next').onclick = () => step(1);
@@ -98,8 +130,8 @@ export function openPhotos(name, sources, { icon = '📷', id = null, onClose } 
   photosFor(sources).then(r => {
     if (closed) return;
     if (!r) {
-      stage.querySelector('.rv-load').innerHTML = `${pic(icon)}<p>${T('The real photos need the internet. Ask a grown-up to connect, then try again!', 'Muốn xem ảnh thật thì cần có mạng. Nhờ người lớn bật mạng rồi thử lại nhé!')}</p>`;
-      say('The real photos need the internet.', 'Muốn xem ảnh thật thì cần có mạng nhé.'); m.classList.add('none'); return;
+      stage.querySelector('.rv-load').innerHTML = `${pic(icon)}<p>${T('The photos of this place are still on their way. They will be here next time!', 'Ảnh thật của nơi này đang trên đường tới. Lần sau sẽ có nhé!')}</p>`;
+      say('The photos of this place are still on their way. They will be here next time!', 'Ảnh thật của nơi này đang trên đường tới. Lần sau sẽ có nhé!'); m.classList.add('none'); return;
     }
     list = r.photos; stage.querySelector('.rv-load').remove(); m.classList.toggle('one', list.length < 2);
     show(0); auto = setInterval(() => show(k + 1), 7000);

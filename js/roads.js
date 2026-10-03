@@ -3,7 +3,9 @@
 // golden welcome gate (cổng chào) at the entrance of every village and city.
 import { THREE, toonVC, P, merge, outline } from './gfx.js';
 import { T, onLang } from './i18n.js';
-import { heightAt, ROADS, DRAGON, REGION_NAMES } from './world.js';
+import { SFX } from './audio.js';
+import { heightAt, levelAt, riverDist, roadDist, ROADS, DRAGON, BRIDGE, WATER, REGION_NAMES, setRoadBeds, roadBedsOn } from './world.js';
+import { settings } from './state.js';
 
 // a long strip texture: asphalt with a dashed centre line, or packed dirt with wheel tracks
 export function roadTexture(kind) {
@@ -22,17 +24,6 @@ export function roadTexture(kind) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
 }
 
-// The road surface sits just above the highest ground nearby, so the bumpy terrain (one point every 2–2.7 m)
-// never pokes through it. On a bridge the deck is the ground (tower tops are not).
-export const roadKey = (x, z) => Math.round(x * 2) * 8192 + Math.round(z * 2); // half-metre cells
-const roadY = (world, x, z) => {
-  let y = Math.max(heightAt(x, z), heightAt(x + 1.4, z), heightAt(x - 1.4, z), heightAt(x, z + 1.4), heightAt(x, z - 1.4));
-  for (const p of world.platforms) if (!p.tower && x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1) y = Math.max(y, p.y);
-  return y + .08;
-};
-
-// a ribbon that follows the ground (and the bridge deck), split into short pieces so it hugs the hills;
-// three points across (both edges and the middle) so it also follows the slope sideways
 // A side road that ends on another road stops at that road's edge (instead of painting its lines over it).
 function segDist(x, z, pts) { let best = 1e9; for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))); best = Math.min(best, Math.hypot(x - ax - dx * t, z - az - dz * t)); } return best; }
 function trimmed(R) {
@@ -48,43 +39,148 @@ function trimmed(R) {
   }
   return pts;
 }
-function ribbon(R, world) {
-  const pts = [], src = trimmed(R); // dense points along the road
-  for (let i = 0; i < src.length - 1; i++) {
-    const [ax, az] = src[i], [bx, bz] = src[i + 1], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 1.2));
-    for (let k = 0; k < n; k++) pts.push([ax + (bx - ax) * k / n, az + (bz - az) * k / n]);
-  }
-  pts.push(src[src.length - 1]);
+// Each road is a smooth line sampled every metre with one smooth height along it: the ground under the whole width
+// (its highest point), averaged over several metres so the road never humps or steps, level from side to side,
+// and exactly on the bridge decks. Roads meeting another road take its height at the joint and ease into their own.
+// The ground under and beside the road is then shaped to that height (world.js road beds), so the road, its edges
+// and the walking surface always agree.
+function denseLine(R) {
+  const src = trimmed(R), pts = [];
+  for (let i = 0; i < src.length - 1; i++) { const [ax, az] = src[i], [bx, bz] = src[i + 1], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 1)); for (let k = 0; k < n; k++) pts.push([ax + (bx - ax) * k / n, az + (bz - az) * k / n]); }
+  pts.push(src[src.length - 1]); return pts;
+}
+const deckAt = (world, x, z) => { for (const p of world.platforms) if (!p.tower && x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1) return p.y; return null; };
+function profile(R, world, pts, anchors = null) {
+  const hw = R.w / 2, deck = [], base = pts.map(([x, z], i) => {
+    const [px, pz] = pts[Math.max(0, i - 1)], [nx, nz] = pts[Math.min(pts.length - 1, i + 1)], L = Math.hypot(nx - px, nz - pz) || 1, ux = -(nz - pz) / L, uz = (nx - px) / L;
+    // a real bridge deck: the deck is well above the ground under it (near the ends the bank is the ground)
+    const d = deckAt(world, x, z), g0 = heightAt(x, z), onDeck = d != null && g0 < d - 1; deck.push(onDeck); if (onDeck) return d;
+    let y = -1e9; for (const s of [-1, -.5, 0, .5, 1]) y = Math.max(y, heightAt(x + ux * hw * s, z + uz * hw * s)); return y;
+  });
+  // HARD RULE: inside a village or city the road runs at the place's own level (places are flat); on a bridge, on its deck
+  const lvl = pts.map(([x, z], i) => { if (deck[i]) return null; const L = levelAt(x, z); return L != null && riverDist(x, z) > 13 && ![BRIDGE, DRAGON].some(B => Math.abs(z - B.z) < 9 && x > B.x0 - 12 && x < B.x1 + 18) ? L : null; });
+  lvl.forEach((L, i) => { if (L != null) base[i] = L; });
+  if (anchors) anchors.forEach((y, i) => { base[i] = y; });
+  const n = pts.length, deepIn = lvl.map((L, i) => { if (L == null) return false; for (let k = -6; k <= 6; k++) { const j = i + k; if (j >= 0 && j < n && lvl[j] == null) return false; } return true; }); // (the outer 6 m eases in)
+  const gates = R.gates || [], gateEnd = i => (gates[0] && i < 2) || (gates[1] && i > n - 3);
+  if (gates[0] && !deck[0]) base[0] = base[1] = heightAt(pts[0][0], pts[0][1]); if (gates[1] && !deck[n - 1]) base[n - 1] = base[n - 2] = heightAt(pts[n - 1][0], pts[n - 1][1]);
+  const fixed = i => deck[i] || deepIn[i] || gateEnd(i) || (lvl[i] != null && (i < 2 || i > n - 3)) || (anchors && anchors.has(i)); // (a road's end at a gate is always at the ground there)
+  // HARD RULE: the road is always smooth: a long, gentle average of the ground…
+  let ys = base.slice();
+  const avg = (W, passes) => { for (let it = 0; it < passes; it++) ys = ys.map((y, i) => { if (fixed(i)) return base[i]; let s = 0, w = 0; for (let k = -W; k <= W; k++) { const j = Math.max(0, Math.min(n - 1, i + k)), wk = W + 1 - Math.abs(k); s += ys[j] * wk; w += wk; } return s / w; }); };
+  avg(10, 6);
+  // …never steeper than 10 % (dirt roads 14 %), worked out from both directions from the fixed parts…
+  // (where two fixed parts are too close for that, the whole stretch between them shares the climb evenly)
+  const G = R.kind === 'asphalt' ? .10 : .14, seg = i => Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]), Gs = new Float64Array(n).fill(G);
+  { let f0 = -1, run = 0; for (let i = 0; i < n; i++) { if (i) run += seg(i); if (!fixed(i)) continue; if (f0 >= 0 && i - f0 > 1) { const need = Math.abs(base[i] - base[f0]) / (run || 1) * 1.02; if (need > G) for (let k = f0 + 1; k <= i; k++) Gs[k] = need; } f0 = i; run = 0; } }
+  const step = i => seg(i) * Gs[i];
+  const limit = () => { for (let pass = 0; pass < 3; pass++) {
+    for (let i = 1; i < n; i++) if (!fixed(i)) ys[i] = Math.min(ys[i - 1] + step(i), Math.max(ys[i - 1] - step(i), ys[i]));
+    for (let i = n - 2; i >= 0; i--) if (!fixed(i)) ys[i] = Math.min(ys[i + 1] + step(i + 1), Math.max(ys[i + 1] - step(i + 1), ys[i]));
+  } };
+  limit();
+  // …and every change of slope rounded off
+  avg(4, 4); limit(); avg(2, 2); limit();
+  return { ys, deck, fixed: pts.map((_, i) => fixed(i)) };
+}
+function ribbonGeo(R, pts, ys) {
   const pos = [], uv = [], idx = [], hw = R.w / 2; let along = 0;
   pts.forEach(([x, z], i) => {
     const [px, pz] = pts[Math.max(0, i - 1)], [nx, nz] = pts[Math.min(pts.length - 1, i + 1)];
     let dx = nx - px, dz = nz - pz; const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
     if (i) along += Math.hypot(x - pts[i - 1][0], z - pts[i - 1][1]);
-    for (const s of [-1, 0, 1]) {
-      const vx = x - dz * hw * s, vz = z + dx * hw * s;
-      pos.push(vx, roadY(world, vx, vz), vz); uv.push((s + 1) / 2, along / (R.kind === 'asphalt' ? 9 : 7));
-    }
-    // counter-clockwise seen from above, so the road faces up
-    if (i) { const a = (i - 1) * 3; for (const c of [0, 1]) idx.push(a + c, a + c + 1, a + c + 3, a + c + 1, a + c + 4, a + c + 3); }
+    for (const s of [-1, -.5, 0, .5, 1]) { pos.push(x - dz * hw * s, ys[i] + .035, z + dx * hw * s); uv.push((s + 1) / 2, along / (R.kind === 'asphalt' ? 9 : 7)); }
+    if (i) { const a = (i - 1) * 5; for (let c = 0; c < 4; c++) idx.push(a + c, a + c + 1, a + c + 5, a + c + 1, a + c + 6, a + c + 5); }
   });
-  // remember the road's own surface on a half-metre grid, so children walk ON the road instead of the
-  // ground under it (on a slope the road sits a little above the ground and feet sank into it)
-  const top = world.roadTop || (world.roadTop = new Map());
-  for (let i = 0; i < pts.length - 1; i++) {
-    const a = i * 3, b = a + 3, Y = k => pos[k * 3 + 1], X = k => pos[k * 3], Z = k => pos[k * 3 + 2];
-    const len = Math.hypot(X(b + 1) - X(a + 1), Z(b + 1) - Z(a + 1)), na = Math.max(1, Math.ceil(len / .4)), nc = Math.ceil(R.w / .4);
-    for (let u = 0; u <= na; u++) for (let v = 0; v <= nc; v++) {
-      const fu = u / na, fv = v / nc, l = fv < .5 ? 0 : 1, f = fv < .5 ? fv * 2 : fv * 2 - 1; // across: left half, right half
-      const lerp3 = (A, B) => A + (B - A) * f;
-      const x0 = lerp3(X(a + l), X(a + l + 1)), z0 = lerp3(Z(a + l), Z(a + l + 1)), y0 = lerp3(Y(a + l), Y(a + l + 1));
-      const x1 = lerp3(X(b + l), X(b + l + 1)), z1 = lerp3(Z(b + l), Z(b + l + 1)), y1 = lerp3(Y(b + l), Y(b + l + 1));
-      const x = x0 + (x1 - x0) * fu, z = z0 + (z1 - z0) * fu, y = y0 + (y1 - y0) * fu, key = roadKey(x, z);
-      const old = top.get(key); if (old == null || y > old) top.set(key, y);
-    }
-  }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
   return geo;
+}
+// all roads: profiles, joints matched, road beds registered and switched on (the ground is reshaped), then the ribbons
+function buildRoads(G, mats) {
+  const { scene, world } = G, all = ROADS.map(R => { const pts = denseLine(R); return { R, pts, ...profile(R, world, pts) }; });
+  // a road whose end meets another road takes that road's exact surface height wherever the two overlap; its own
+  // smooth, gentle profile is then worked out again around those fixed points (twice, so joints settle)
+  const yOn = (B, x, z) => { let bd = 1e9, by = 0; for (let j = 0; j < B.pts.length - 1; j++) { const [ax, az] = B.pts[j], [bx, bz] = B.pts[j + 1], dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))), d = Math.hypot(x - ax - dx * t, z - az - dz * t); if (d < bd) { bd = d; by = B.ys[j] + (B.ys[j + 1] - B.ys[j]) * t; } } return { d: bd, y: by }; };
+  // a short road from a through road to a gate: the through road dips to the gate's level where they meet
+  all.forEach((A, ai) => { const g = A.R.gates || [], n = A.pts.length; if (n > 16 || !!g[0] === !!g[1]) return;
+    const jEnd = g[0] ? 1 : 0, [x, z] = A.pts[jEnd ? n - 1 : 0], gy = A.ys[jEnd ? 0 : n - 1];
+    all.forEach((B, bi) => { if (bi === ai || yOn(B, x, z).d > B.R.w / 2 + 1.2) return; B.extraFix = B.extraFix || new Map();
+      B.pts.forEach((p, j) => { if (Math.hypot(p[0] - x, p[1] - z) < B.R.w / 2 + A.R.w / 2 + 2) B.extraFix.set(j, gy); }); });
+  });
+  all.forEach(A => { if (A.extraFix) Object.assign(A, profile(A.R, world, A.pts, A.extraFix)); });
+  for (let round = 0; round < 2; round++) all.forEach((A, ai) => {
+    const n = A.pts.length, anchors = new Map(A.extraFix || []);
+    [0, 1].forEach(end => {
+      const [x, z] = A.pts[end ? n - 1 : 0];
+      let B = null, bd = 1e9; all.forEach((C, ci) => { if (ci === ai) return; const q = yOn(C, x, z); if (q.d < C.R.w / 2 + 1.2 && q.d < bd) { bd = q.d; B = C; } });
+      if (!B) return;
+      (A.jEnd = A.jEnd || [false, false])[end] = true;
+      const reach = B.R.w / 2 + A.R.w / 2 + 1;
+      for (let k = 0; k < n; k++) { const i = end ? n - 1 - k : k, q = yOn(B, A.pts[i][0], A.pts[i][1]); if (q.d > reach || A.deck[i]) break; anchors.set(i, q.y); }
+    });
+    if (anchors.size) Object.assign(A, profile(A.R, world, A.pts, anchors));
+  });
+  const segs = [];
+  for (const A of all) for (let i = 0; i < A.pts.length - 1; i++) if (!A.deck[i] && !A.deck[i + 1]) segs.push({ r: all.indexOf(A), tip: !!A.jEnd && ((A.jEnd[0] && i < 4) || (A.jEnd[1] && i > A.pts.length - 6)), first: i === 0, last: i === A.pts.length - 2, ax: A.pts[i][0], az: A.pts[i][1], bx: A.pts[i + 1][0], bz: A.pts[i + 1][1], ya: A.ys[i], yb: A.ys[i + 1], hw: A.R.w / 2 });
+  setRoadBeds(segs); roadBedsOn(world, scene);
+  world.roadLines = all.map(A => ({ kind: A.R.kind, pts: A.pts, ys: A.ys, deck: A.deck, fixed: A.fixed })); // for the tests
+  world.roadTop = null; // walking on a road is walking on the ground now (bridge decks are platforms)
+  for (const A of all) { const m = new THREE.Mesh(ribbonGeo(A.R, A.pts, A.ys), mats[A.R.kind]); m.receiveShadow = true; m.userData.road = true; scene.add(m); }
+}
+
+// HARD RULE: road edges are soft, with flowers growing alongside. A soft verge fades from the road into the grass on
+// both sides, and little clumps of flowers line the roads (never on a building, a gate, water or another road). Made
+// once everything else stands (main.js), drawn road by road and only near a player, so phones stay quick.
+export function plantRoadside(G) {
+  const { scene, world } = G, lines = world.roadLines || [];
+  const free = (x, z, pad) => !world.colliders.some(c => c.r > 0 && Math.hypot(c.x - x, c.z - z) < c.r + pad) && !world.boxes.some(b => x > b.x0 - pad && x < b.x1 + pad && z > b.z0 - pad && z < b.z1 + pad);
+  const vergeMat = toonVC({ transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 }); // (drawn just in front of the ground)
+  // one flower: a stem, a ring of petals (tinted per flower) and a yellow middle; about 20 triangles
+  const petalsG = new THREE.CircleGeometry(.13, 6); petalsG.rotateX(-Math.PI / 2); petalsG.translate(0, .36, 0);
+  const stemG = merge([P(new THREE.CylinderGeometry(.012, .016, .36, 3), '#4f9a3c', [0, .18, 0]), P(new THREE.CylinderGeometry(.045, .045, .03, 5), '#ffd23f', [0, .375, 0]), P(new THREE.ConeGeometry(.05, .12, 3), '#5fb04a', [.05, .1, 0], [0, 0, -.6])]);
+  const stemMat = toonVC(), petalMat = new THREE.MeshToonMaterial({ color: '#ffffff', side: THREE.DoubleSide });
+  const COLS = ['#ff7eb8', '#ffd23f', '#ffffff', '#b58cff', '#ff6b5a', '#ffa64d'].map(c => new THREE.Color(c));
+  const dense = settings.quality === 'low' ? 2.8 : 1.6, groups = [];
+  lines.forEach((L, k) => {
+    const R = ROADS[k], hw = R.w / 2, n = L.pts.length; if (n < 2) return;
+    // the soft verge: from the road's edge out 1.1 m, gravel-coloured at the road and fading into the grass
+    const pos = [], col = [], idx = [], vc = new THREE.Color(R.kind === 'asphalt' ? '#ddd2ad' : '#dcb47a'); let v = 0;
+    for (let i = 0; i < n; i++) {
+      const [px, pz] = L.pts[Math.max(0, i - 1)], [nx, nz] = L.pts[Math.min(n - 1, i + 1)], D = Math.hypot(nx - px, nz - pz) || 1, ux = -(nz - pz) / D, uz = (nx - px) / D, [x, z] = L.pts[i];
+      for (const sd of [-1, 1]) for (const [o, a] of [[hw - .08, 1], [hw + .6, .75], [hw + 1.5, 0]]) {
+        const X = x + ux * sd * o, Z = z + uz * sd * o, Y = heightAt(X, Z) + (o < hw ? .07 : .12); // (the ground as it finally is; the terrain mesh is coarser, so a little above)
+        pos.push(X, L.deck[i] ? L.ys[i] + .02 : Y, Z); col.push(vc.r, vc.g, vc.b, L.deck[i] ? 0 : a);
+      }
+      if (i) { const a = v - 6; for (const base of [0, 3]) { const p = a + base, q = v + base; idx.push(p, p + 1, q, p + 1, q + 1, q, p + 1, p + 2, q + 1, p + 2, q + 2, q + 1); } }
+      v += 6;
+    }
+    const vg = new THREE.BufferGeometry(); vg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); vg.setAttribute('color', new THREE.Float32BufferAttribute(col, 4)); vg.setIndex(idx); vg.computeVertexNormals();
+    const verge = new THREE.Mesh(vg, vergeMat); verge.renderOrder = 1; verge.receiveShadow = true; verge.userData.noCam = true; scene.add(verge);
+    // the flowers
+    const spots = []; let along = 0, next = Math.random() * dense;
+    for (let i = 1; i < n; i++) {
+      along += Math.hypot(L.pts[i][0] - L.pts[i - 1][0], L.pts[i][1] - L.pts[i - 1][1]); if (along < next || L.deck[i]) continue; next = along + dense * (.7 + Math.random() * .6);
+      if (i < 6 || i > n - 7) continue; // not right at a gate or a joint
+      const [px, pz] = L.pts[i - 1], [x, z] = L.pts[i], D = Math.hypot(x - px, z - pz) || 1, ux = -(z - pz) / D, uz = (x - px) / D;
+      for (const sd of [-1, 1]) { if (Math.random() < .15) continue;
+        const o = hw + 1.7 + Math.random() * 1.4, cx = x + ux * sd * o, cz = z + uz * sd * o;
+        const rd = roadDist(cx, cz); if (rd.d < rd.road.w / 2 + 1.1 || riverDist(cx, cz) < 6 || !free(cx, cz, .5)) continue;
+        const c = COLS[Math.floor(Math.random() * COLS.length)], m = 2 + Math.floor(Math.random() * 3);
+        for (let f = 0; f < m; f++) { const fx = cx + (Math.random() - .5) * .9, fz = cz + (Math.random() - .5) * .9, fy = heightAt(fx, fz); if (fy < WATER + .4) continue; spots.push([fx, fy, fz, 1.6 + Math.random() * .8, Math.random() * 6.28, c]); }
+      }
+    }
+    if (!spots.length) return;
+    const stems = new THREE.InstancedMesh(stemG, stemMat, spots.length), heads = new THREE.InstancedMesh(petalsG, petalMat, spots.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), ps = new THREE.Vector3();
+    let cxs = 0, czs = 0;
+    spots.forEach(([x, y, z, s, r, c], j) => { q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r); m4.compose(ps.set(x, y - .02, z), q, sc.set(s, s, s)); stems.setMatrixAt(j, m4); heads.setMatrixAt(j, m4); heads.setColorAt(j, c); cxs += x; czs += z; });
+    for (const M of [stems, heads]) { M.computeBoundingSphere(); M.userData.noCam = true; scene.add(M); }
+    groups.push({ meshes: [stems, heads], spots });
+  });
+  // only roads near a player show their flowers
+  let t0 = 0; world.updaters.push(dt => { if ((t0 -= dt) > 0) return; t0 = .5;
+    for (const g of groups) { const S = g.meshes[0].boundingSphere, on = G.heroes.some(h => Math.hypot(h.pos.x - S.center.x, h.pos.z - S.center.z) < S.radius + 70); g.meshes.forEach(M => M.visible = on); } });
+  return { count: groups.reduce((a, g) => a + g.spots.length, 0) };
 }
 
 // the welcome sign on a gate: big words that follow the language
@@ -213,30 +309,83 @@ export function createRoads(G) {
   const mats = { asphalt: new THREE.MeshToonMaterial({ map: roadTexture('asphalt'), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), dirt: new THREE.MeshToonMaterial({ map: roadTexture('dirt'), polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }) };
   // the Dragon Bridge's deck first, so the road is laid on it rather than down in the river
   { const B = DRAGON; world.platforms.push({ x0: B.x0 - 2, x1: B.x1 + 2, z0: B.z - B.w / 2, z1: B.z + B.w / 2, y: B.h + .1 }); }
-  for (const R of ROADS) { const m = new THREE.Mesh(ribbon(R, world), mats[R.kind]); m.receiveShadow = true; m.userData.road = true; scene.add(m); }
+  buildRoads(G, mats);
   // ---------- Đà Nẵng's Dragon Bridge (Cầu Rồng): a golden dragon arching along the road ----------
   {
     const B = DRAGON, len = B.x1 - B.x0, y = B.h, hw = B.w / 2, gold = '#f2c230';
     const parts = [P(new THREE.BoxGeometry(len + 2, .5, B.w), '#7d858a', [0, -.25, 0]), P(new THREE.BoxGeometry(len + 2, .08, B.w - 1.6), '#6f747a', [0, .03, 0])];
     for (const s of [-1, 1]) parts.push(P(new THREE.BoxGeometry(len + 2, .8, .12), '#e8e4d8', [0, .4, s * hw]));
     for (const px of [-.25, .25]) parts.push(P(new THREE.CylinderGeometry(.6, .8, 10, 8), '#9a948a', [px * len, -5, 0]));
-    // the dragon's body: humps of golden rings down the middle of the bridge
-    const N = 40;
-    for (let i = 0; i <= N; i++) {
-      const t = i / N, x = -len / 2 + t * len, hump = Math.abs(Math.sin(t * Math.PI * 2.5)) * 4.2 + 1.2;
-      parts.push(P(new THREE.SphereGeometry(.55, 10, 8), gold, [x, hump, 0]));
-      if (i % 2 === 0) parts.push(P(new THREE.ConeGeometry(.22, .7, 6), '#e0861a', [x, hump + .6, 0]));
+    // the dragon: one long golden body arching over the road in waves (as on the real Cầu Rồng), thick at the neck
+    // and thin at the tail, with scale bands, a row of orange spines, legs with claws where it touches the deck, a
+    // proper head (snout, open jaw, horns, whiskers, flame mane) and a finned tail
+    const hx = len / 2 + .2, gold2 = '#d9a21e', orange = '#e8761a';
+    const bodyY = t => 1.2 + Math.pow(Math.abs(Math.sin(t * Math.PI * 2.5)), .8) * 4.4;
+    const pts3 = []; for (let i = 0; i <= 60; i++) { const t = i / 60; pts3.push(new THREE.Vector3(-hx + t * (2 * hx), bodyY(t), Math.sin(t * Math.PI * 5) * .25)); }
+    const curve = new THREE.CatmullRomCurve3(pts3), SEG = 220, RAD = 12, frames = curve.computeFrenetFrames(SEG, false);
+    { // the body as one swept tube whose radius follows the dragon (thin tail → thick neck)
+      const pos = [], idx = [], rOf = t => .22 + .55 * Math.min(1, t / .35) + .1 * Math.sin(t * 60);
+      for (let i = 0; i <= SEG; i++) { const t = i / SEG, c = curve.getPointAt(t), N = frames.normals[i], Bn = frames.binormals[i], r = rOf(t);
+        for (let j = 0; j < RAD; j++) { const a = j / RAD * Math.PI * 2; pos.push(c.x + r * (Math.cos(a) * N.x + Math.sin(a) * Bn.x), c.y + r * (Math.cos(a) * N.y + Math.sin(a) * Bn.y), c.z + r * (Math.cos(a) * N.z + Math.sin(a) * Bn.z)); } }
+      for (let i = 0; i < SEG; i++) for (let j = 0; j < RAD; j++) { const a = i * RAD + j, b2 = i * RAD + (j + 1) % RAD, c2 = a + RAD, d2 = b2 + RAD; idx.push(a, c2, b2, b2, c2, d2); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+      parts.push(P(g, gold));
+      for (let i = 6; i < SEG - 2; i += 7) { const t = i / SEG, c = curve.getPointAt(t), tg = curve.getTangentAt(t), r = rOf(t);
+        const ring = new THREE.TorusGeometry(r * 1.02, .05, 4, 12); ring.lookAt(tg); parts.push(P(ring, gold2, [c.x, c.y, c.z]));
+        // a spine on top every other band
+        if (i % 14 === 6) parts.push(P(new THREE.ConeGeometry(.16 + r * .25, .5 + r * .6, 5), orange, [c.x, c.y + r * .95 + .2, c.z], [0, 0, -Math.atan2(tg.y, tg.x) * .6])); }
     }
-    // head at the east end (facing the sea, as in Đà Nẵng) and a curly tail at the west end
-    const hx = len / 2 + .2;
-    parts.push(P(new THREE.SphereGeometry(1.1, 14, 10), gold, [hx, 3.2, 0], [0, 0, 0], [1.4, .9, .9]), P(new THREE.ConeGeometry(.5, 1.6, 8), '#e0861a', [hx + 1.6, 3.2, 0], [0, 0, -Math.PI / 2]));
-    for (const s of [-1, 1]) parts.push(P(new THREE.SphereGeometry(.22, 8, 6), '#2b2238', [hx + .7, 3.6, s * .55]), P(new THREE.ConeGeometry(.15, 1.2, 6), '#e0861a', [hx - .3, 4.3, s * .4], [0, 0, .5]));
-    parts.push(P(new THREE.TorusGeometry(1.1, .4, 8, 16, Math.PI * 1.5), gold, [-hx - .4, 1.6, 0]));
+    // legs with claws where the body comes down to the deck
+    for (const t of [.2, .4, .6, .8]) { const c = curve.getPointAt(t); for (const s of [-1, 1]) { parts.push(P(new THREE.CylinderGeometry(.14, .2, c.y, 6), gold2, [c.x, c.y / 2, s * .55]));
+      for (const k of [-1, 0, 1]) parts.push(P(new THREE.ConeGeometry(.07, .35, 4), '#f6e7b8', [c.x + .2 + k * .05, .1, s * .55 + k * .14], [0, 0, -Math.PI / 2])); } }
+    { // the head, at the east end looking out to sea
+      const H = curve.getPointAt(1), x0 = H.x, y0 = H.y;
+      parts.push(P(new THREE.SphereGeometry(.85, 14, 10), gold, [x0 + .5, y0 + .1, 0], [0, 0, 0], [1.3, .85, .9]));               // skull
+      parts.push(P(new THREE.BoxGeometry(1.5, .45, .8), gold, [x0 + 1.6, y0 + .05, 0], [0, 0, -.12]));                            // snout
+      parts.push(P(new THREE.BoxGeometry(1.3, .22, .7), gold2, [x0 + 1.5, y0 - .45, 0], [0, 0, .35]));                            // open jaw
+      parts.push(P(new THREE.BoxGeometry(.9, .08, .5), '#c0392b', [x0 + 1.45, y0 - .2, 0], [0, 0, .12]));                         // tongue
+      for (const s of [-1, 1]) {
+        parts.push(P(new THREE.SphereGeometry(.2, 8, 6), '#ffffff', [x0 + .95, y0 + .45, s * .38]), P(new THREE.SphereGeometry(.11, 8, 6), '#2b2238', [x0 + 1.07, y0 + .48, s * .44])); // eyes
+        parts.push(P(new THREE.ConeGeometry(.12, 1.5, 6), '#f6e7b8', [x0 - .2, y0 + 1.05, s * .35], [0, 0, .9]));                 // horns swept back
+        parts.push(P(new THREE.CylinderGeometry(.03, .015, 1.6, 4), orange, [x0 + 2.3, y0 - .25, s * .45], [s * .5, 0, 1.2]));    // whiskers
+        parts.push(P(new THREE.SphereGeometry(.07, 6, 4), '#2b2238', [x0 + 2.33, y0 + .2, s * .16]));                             // nostrils
+        for (let k = 0; k < 5; k++) parts.push(P(new THREE.ConeGeometry(.14, .9, 5), k % 2 ? orange : '#ffb020', [x0 - .4 - k * .12, y0 + .2 + Math.sin(k) * .3, s * (.55 + k * .05)], [s * -1.1, 0, 1.6 + k * .12])); // flame mane
+      }
+      for (let k = 0; k < 4; k++) parts.push(P(new THREE.ConeGeometry(.06, .22, 4), '#ffffff', [x0 + 1.2 + k * .2, y0 - .2, (k % 2 ? 1 : -1) * .26], [Math.PI, 0, 0])); // teeth
+    }
+    { const T0 = curve.getPointAt(0); parts.push(P(new THREE.ConeGeometry(.6, 1.4, 3), orange, [T0.x - .6, T0.y + .2, 0], [0, 0, Math.PI / 2], [1, 1, .3])); } // tail fin
     const br = new THREE.Mesh(merge(parts), toonVC()); br.position.set((B.x0 + B.x1) / 2, y, B.z); br.castShadow = true; scene.add(br); outline(br, .02, '#6a4a10');
-    // the dragon breathes a little puff of fire now and then (just for fun)
-    const puff = new THREE.Mesh(new THREE.SphereGeometry(.6, 10, 8), new THREE.MeshBasicMaterial({ color: '#ff9a2a', transparent: true, opacity: .8 }));
-    scene.add(puff); puff.visible = false;
-    world.updaters.push((dt, t) => { const k = (t % 9) / 9; puff.visible = k < .12; if (puff.visible) { const s = .5 + k * 18; puff.scale.setScalar(s); puff.material.opacity = .9 - k * 6; puff.position.set(br.position.x + hx + 2.4 + k * 14, y + 3.2, B.z); } });
+    // fire, then water, from the dragon's mouth: every 40 s (as the real bridge does on weekend nights), or when tapped
+    const mouth = new THREE.Vector3(br.position.x + curve.getPointAt(1).x + 2.4, y + curve.getPointAt(1).y - .2, B.z), NP = 70;
+    const spray = new THREE.InstancedMesh(new THREE.SphereGeometry(.35, 8, 6), new THREE.MeshBasicMaterial({ transparent: true, opacity: .85, depthWrite: false }), NP);
+    spray.frustumCulled = false; spray.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(NP * 3), 3); scene.add(spray);
+    const pp = Array.from({ length: NP }, () => ({ life: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, fire: true })), m4 = new THREE.Matrix4(), col = new THREE.Color();
+    let showT = -1, emitAcc = 0, idle = 25;
+    const start = (at = 0) => { if (showT < 0) showT = at; };
+    G.dragonShow = start;
+    world.updaters.push((dt, t) => {
+      if (showT < 0) { idle -= dt; if (idle <= 0) { idle = 40; start(); } }
+      const near = G.heroes.some(h => Math.hypot(h.pos.x - mouth.x, h.pos.z - mouth.z) < 90);
+      if (showT >= 0) {
+        showT += dt; const fire = showT < 6, water = showT > 7.5 && showT < 13.5;
+        if ((fire || water) && near) { emitAcc += dt * (fire ? 34 : 40);
+          while (emitAcc > 1) { emitAcc--; const q = pp.find(o => o.life <= 0); if (!q) break; q.life = fire ? 1.1 : 1.6; q.fire = fire; q.x = mouth.x; q.y = mouth.y; q.z = mouth.z;
+            q.vx = (fire ? 11 : 13) + Math.random() * 3; q.vy = fire ? 1 + Math.random() * 1.5 : 5 + Math.random() * 2; q.vz = (Math.random() - .5) * (fire ? 2.5 : 3.5); } }
+        if (showT > 0 && showT < dt * 1.5 && near) { SFX.whoosh(); }
+        if (showT > 7.5 && showT < 7.5 + dt * 1.5 && near) { SFX.splash(); }
+        if (showT > 16) showT = -1;
+      }
+      let any = false;
+      pp.forEach((q, i) => {
+        if (q.life > 0) { any = true; q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt; q.vy += (q.fire ? 2 : -9.8) * dt; q.vx *= q.fire ? .97 : .995;
+          const k = Math.max(0, q.life / (q.fire ? 1.1 : 1.6)), sc = q.fire ? .6 + (1 - k) * 2.2 : .45 + (1 - k) * .9;
+          m4.makeScale(sc, sc, sc).setPosition(q.x, q.y, q.z); col.set(q.fire ? (k > .6 ? '#fff2a0' : k > .3 ? '#ffa020' : '#e0401a') : (k > .5 ? '#e8f8ff' : '#7fd0ff')); }
+        else m4.makeScale(0, 0, 0);
+        spray.setMatrixAt(i, m4); spray.setColorAt(i, col);
+      });
+      spray.visible = any; if (any) { spray.instanceMatrix.needsUpdate = true; spray.instanceColor.needsUpdate = true; }
+    });
+    G.interactables.push({ id: 'dragonshow', x: B.x1 + 3, z: B.z + hw + 2.5, r: 3, icon: '🐉', label: () => T('Ask the dragon to breathe fire and water', 'Nhờ rồng phun lửa và nước'), act: () => { start(0); SFX.tap(); } });
     world.boxes.push({ x0: B.x0, x1: B.x1, z0: B.z + hw - .1, z1: B.z + hw + .3 }, { x0: B.x0, x1: B.x1, z0: B.z - hw - .3, z1: B.z - hw + .1 });
     G.dragonBridge = br;
   }

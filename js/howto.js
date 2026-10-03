@@ -7,9 +7,14 @@ import { sayAsync, hush } from './voice.js';
 import { Music, SFX } from './audio.js';
 import { GAMES } from './games/frame.js';
 import { el, esc, wait } from './util.js';
+import { CAST, SCENES } from './cartoon.js';
+import { pic, hasArt } from './art.js';
+import { stageOf } from './tales.js';
 
 // [picture, English, Vietnamese]
 const S = (pic, en, vi) => ({ pic, en, vi });
+const seg = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+const graphemes = s => seg ? [...seg.segment(s)].map(x => x.segment).filter(x => x.trim()) : Array.from(s).filter(x => x.trim());
 export const HOWTO = {
   puppets: {
     origin: S('🇻🇳 🎎 💧', 'Water puppets (múa rối nước) come from the rice-field villages of northern Vietnam, nearly a thousand years ago. Today you can watch them in Hà Nội.', 'Múa rối nước có từ các làng quê đồng lúa miền Bắc Việt Nam, gần một nghìn năm trước. Ngày nay con có thể xem ở Hà Nội.'),
@@ -252,13 +257,21 @@ export function openHowTo(id, { onPlay, onClose } = {}) {
     const my = ++token, c = cards[k];
     bar.style.width = ((k + 1) / cards.length * 100) + '%';
     const pics = [...String(c.pic).matchAll(/\S+/g)].map(x => x[0]);
+    // every card is a little cartoon scene: a painted backdrop that fits the words, a child who tells you how to
+    // play (talking while the line is read), and the game's things drawn in the valley's own style
+    const st = c.title ? 'palace' : c.end ? 'meadow' : stageOf(c.en), host = ['🧒', '👧', '👦'][k % 3];
+    const art = p => hasArt(p) ? pic(p) : graphemes(p).map(q => hasArt(q) ? pic(q) : `<span class="emo">${q}</span>`).join('');
+    const scene = SCENES[st] ? `<svg class="sc ht-sc" viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${SCENES[st]()}</svg>` : '';
     screen.className = 'ht-screen' + (c.title ? ' title' : '') + (c.end ? ' end' : '');
-    screen.innerHTML = c.title ? `<span class="ht-big">${c.pic}</span><b class="ht-name">${esc(T(c.en, c.vi))}</b>${originLabel(id) ? `<small>${esc(originLabel(id))}</small>` : ''}`
-      : pics.map((p, i) => `<span class="ht-pic${p === '👆' || p === '👇' ? ' finger' : ''}" style="--d:${i * .35}s">${p}</span>`).join('');
+    screen.innerHTML = scene + (c.title ? `<div class="ht-titlecard"><span class="ht-big">${art(c.pic)}</span><b class="ht-name">${esc(T(c.en, c.vi))}</b>${originLabel(id) ? `<small>${esc(originLabel(id))}</small>` : ''}</div>`
+      : `<span class="ht-host th-c in-l${k > 1 ? ' still' : ''}" style="--d:0s">${CAST[host]()}</span><div class="ht-props">${pics.map((p, i) => `<span class="ht-pic${p === '👆' || p === '👇' ? ' finger' : ''}" style="--d:${.3 + i * .35}s">${art(p)}</span>`).join('')}</div>`);
+    setTimeout(() => { const hs = screen.querySelector('.ht-host'); if (hs) hs.classList.remove('walking'); }, 1500);
     cap.textContent = c.title ? '' : T(c.en, c.vi);
     SFX.pop && SFX.pop(k);
     const t0 = performance.now();
+    screen.classList.add('speaking');
     await sayAsync(c.title ? T('How to play ', 'Cách chơi ') + T(c.en, c.vi) : c.en, c.title ? T('How to play ', 'Cách chơi ') + c.vi : c.vi);
+    screen.classList.remove('speaking');
     const left = 2600 - (performance.now() - t0); if (left > 0) await wait(left);
     await wait(700);
     while (paused && my === token && !closed) await wait(200);

@@ -4,7 +4,7 @@
 // (Queensland). Each has an ℹ️ sign, a postcard, real photos and a 360° look round (js/realworld.js REAL).
 import { THREE, P, merge, toonVC, sprite, outline } from './gfx.js';
 import { T } from './i18n.js';
-import { heightAt, oldHeightAt, CITIES, roadDist, WATER, BAMBOO, APOSTLES } from './world.js';
+import { heightAt, oldHeightAt, CITIES, roadDist, riverDist, WATER, BAMBOO, APOSTLES, LAKE } from './world.js';
 import { LANDMARKS, postcard } from './regions.js';
 import { REAL } from './realworld.js';
 
@@ -59,7 +59,7 @@ export function createRegionSites(G) {
   const findSpot = c => {
     for (let R = 22; R <= 64; R += 3) for (let k = 0; k < 24; k++) {
       const a = k / 24 * Math.PI * 2 + c.x * .01, x = c.x + Math.cos(a) * R, z = c.z + Math.sin(a) * R;
-      if (Math.abs(x) > 185 || Math.abs(z) > 185 || Math.hypot(x - BAMBOO.x, z - BAMBOO.z) < BAMBOO.r - 10 || Math.hypot(x + 128, z - 150) < 40 || roadDist(x, z).d < 11 || used.some(([ux, uz]) => Math.hypot(ux - x, uz - z) < 22)) continue;
+      if (Math.abs(x) > 185 || Math.abs(z) > 185 || Math.hypot(x - BAMBOO.x, z - BAMBOO.z) < BAMBOO.r - 10 || Math.hypot(x + 128, z - 150) < 40 || Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r + 16 || riverDist(x, z) < 16 || roadDist(x, z).d < 11 || used.some(([ux, uz]) => Math.hypot(ux - x, uz - z) < 22)) continue;
       const hs = [[0, 0], [7, 0], [-7, 0], [0, 6], [0, -6]].map(([dx, dz]) => oldHeightAt(x + dx, z + dz));
       if (Math.min(...hs) < WATER + .5 || Math.max(...hs) - Math.min(...hs) > (R > 40 ? 3.2 : 2.2)) continue;
       if (world.boxes.some(b => x > b.x0 - 9 && x < b.x1 + 9 && z > b.z0 - 9 && z < b.z1 + 9) || world.colliders.some(o => o.r > .3 && Math.hypot(o.x - x, o.z - z) < o.r + 8)) continue;
@@ -69,8 +69,8 @@ export function createRegionSites(G) {
   };
   for (const [id, city, icon, model, name, fact] of SITES) {
     const c = CITIES.find(k => k.id === city); if (!c) continue;
-    // the Thê Húc bridge belongs beside the Turtle Tower's lake; the rest go round their city
-    const near = id === 'thehuc' ? LANDMARKS.find(l => l.id === 'turtle') : null;
+    // every site goes round its own city (Hồ Gươm and the Thê Húc bridge are in Hà Nội)
+    const near = null;
     const s = id === 'apostles' ? [APOSTLES.x, APOSTLES.z, heightAt(APOSTLES.x, APOSTLES.z) - .3] : (near && findSpot({ x: near.mx ?? near.x, z: near.mz ?? near.z })) || findSpot(c); if (!s) { console.warn('no room for', id); continue; }
     const [x, z, y] = s; used.push([x, z]);
     const rot = Math.atan2(c.x - x, c.z - z); // facing the city

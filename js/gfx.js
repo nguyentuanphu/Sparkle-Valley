@@ -26,8 +26,14 @@ export const glow = (color, opacity = 1) => new THREE.MeshBasicMaterial({ color:
 
 // Merge several (geometry, colour, matrix) parts into one vertex-coloured geometry.
 const _m = new THREE.Matrix4(), _c = new THREE.Color();
+const _r = new THREE.Matrix4(), _s = new THREE.Matrix4();
 export function P(geo, color, pos = [0, 0, 0], rot = [0, 0, 0], scl = [1, 1, 1]) {
-  _m.compose(new THREE.Vector3(...pos), new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot)), new THREE.Vector3(...(typeof scl === 'number' ? [scl, scl, scl] : scl)));
+  const sc = typeof scl === 'number' ? [scl, scl, scl] : scl;
+  // A hip roof is a 4-sided cone turned 45° (so its base is a square) and then stretched to the building. Stretching
+  // has to come after the turn, or the base becomes a slanted diamond and the roof sits crooked on a long building.
+  if (geo.type === 'ConeGeometry' && geo.parameters.radialSegments === 4 && !rot[0] && !rot[2] && sc[0] !== sc[2]) {
+    _r.makeRotationY(rot[1]); _s.makeScale(...sc); _m.makeTranslation(...pos).multiply(_s).multiply(_r);
+  } else _m.compose(new THREE.Vector3(...pos), new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot)), new THREE.Vector3(...sc));
   const g = (geo.index ? geo.toNonIndexed() : geo.clone()).applyMatrix4(_m);
   return { g, color };
 }

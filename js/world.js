@@ -5,6 +5,7 @@ import { clamp, lerp, smooth, fbm, seeded, dist2 } from './util.js';
 import { T } from './i18n.js';
 import { houseVillage } from './houses.js';
 import { settings } from './state.js';
+import { CUSTOM } from './custom.js';
 
 export const SIZE = 400, HALF = SIZE / 2, WATER = 0;
 export const PLATEAU = { x: 0, z: 0, r: 32, h: 18 };
@@ -32,6 +33,10 @@ export const CITIES = [   // gates: where the roads come in (the first is the ma
 ];
 CITIES.forEach(c => Object.assign(c, { x0: c.x - c.w, x1: c.x + c.w, z0: c.z - c.d, z1: c.z + c.d }));
 const FLATS = [TOWN, MARKET, AUSSIE, ...CITIES];
+// the places whose ground is one flat level (see the hard rule at the end of heightAt): circles and boxes
+let LEVELS = null;
+// the level of the village or city at (x, z), or null outside them (roads crossing a place run at its level)
+export function levelAt(x, z) { if (LEVELS) for (const A of LEVELS) { if (A.r ? dist2(x, z, A.x, A.z) <= A.r : x >= A.x0 && x <= A.x1 && z >= A.z0 && z <= A.z1) return A.h; } return null; }
 // building lots along the roads out of each city (js/suburbs.js builds on them): levelled ground, no trees
 export const LOTS = [];
 // Level ground under every building, stall and landmark (filled in by levelUnderBuildings once the world is built):
@@ -40,9 +45,11 @@ export const LOTS = [];
 export const FOOTPRINTS = [];
 const FP_GRID = new Map(), fpKey = (i, j) => i * 4096 + j;
 function fpAdd(F) { FOOTPRINTS.push(F); for (let i = Math.floor((F.x0 - F.pad) / 16); i <= Math.floor((F.x1 + F.pad) / 16); i++) for (let j = Math.floor((F.z0 - F.pad) / 16); j <= Math.floor((F.z1 + F.pad) / 16); j++) { const k = fpKey(i, j); if (!FP_GRID.has(k)) FP_GRID.set(k, []); FP_GRID.get(k).push(F); } }
-const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [58, 40], [52, 85]];
-export const CHINA = { x: 100, z: -88, r: 24, h: 9 };    // China Town: lanterns, tiled roofs, a pagoda and a little Great Wall
-export const INDIA = { x: -112, z: -84, r: 24, h: 9 };  // India Village: colourful houses, a little Taj Mahal, rangoli and marigolds
+export const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [62, 40], [57, 85]]; // (moved 4 m east past Two Homes Street, whose last cottage stood on the bank)
+export const CHINA = { x: 100, z: -88, r: 24, h: 5 };    // China Town: lanterns, tiled roofs, a pagoda and a little Great Wall
+export const INDIA = { x: -112, z: -84, r: 24, h: 7 };  // India Village: colourful houses, a little Taj Mahal, rangoli and marigolds
+LEVELS = [VILLAGE, HOME, CHINA, INDIA].map(C => ({ x: C.x, z: C.z, r: C.r, h: C.h, x0: C.x - C.r, x1: C.x + C.r, z0: C.z - C.r, z1: C.z + C.r }))
+  .concat([TOWN, MARKET, AUSSIE, ...CITIES].map(B => ({ h: B.h, x0: B.x0, x1: B.x1, z0: B.z0, z1: B.z1 })));
 export const BRIDGE = { x0: 44, x1: 74, z: 47, w: 6.4, h: 7.4 };   // the Harbour-style bridge carrying Two Homes Street over the river
 export const DRAGON = { x0: 22, x1: 52, z: -62, w: 6.4, h: 5.4 };   // Đà Nẵng's golden Dragon Bridge carrying the road east over the river
 const BRIDGES = [BRIDGE, DRAGON];
@@ -76,23 +83,41 @@ export const ROADS = [
   { kind: 'dirt', pts: [[110, -3], [111, -12]] },                              // Lotus Village to the rice fields
   { kind: 'dirt', pts: [[64, -114], [67, -98], [76, -88], [84, -86]] },                 // Bắc Ninh to China Town
   { kind: 'dirt', pts: [[-146, -12], [-150, 15], [-148, 40], [-144, 53]] },    // Aussie Corner to Melbourne
-  { kind: 'dirt', pts: [[-112, -40], [-110, -50.5]] },                           // Aussie Corner to the India road
+  { kind: 'dirt', pts: [[-112, -40], [-100, -44], [-104, -50.7]] },                          // Aussie Corner to the India road
   { kind: 'dirt', pts: [[-8, 97], [0, 106], [4, 110]] },                       // Hồ Chí Minh City to Mirror Lake
   { kind: 'dirt', pts: [[-12, 128], [-4, 130], [6, 140]] },                    // the farm to Mirror Lake
   { kind: 'dirt', pts: [[-56, 128], [-80, 132], [-104, 134], [-116, 134]] },   // the farm to the western woods
   { kind: 'dirt', pts: [[118, 96], [112, 108], [100, 118]] }                   // the market to Mirror Lake
 ];
 ROADS.forEach(R => { R.w = R.kind === 'asphalt' ? 5.2 : 3.4; });
-// Round the corners (Chaikin corner cutting, twice) so roads curve gently instead of bending sharply. Points
-// where another road starts or ends stay exactly where they are, so junctions still meet.
+// HARD RULE: roads are straight lines joined by perfect circular curves (asphalt bends round a 24 m circle, dirt
+// roads round 16 m, tighter only where two bends are close), and every road runs straight for its last 14 m into
+// a village or city gate. A side road that ends on another road is joined back onto that road's new line.
 {
-  const pinned = ([x, z], self) => ROADS.some(o => o !== self && [o.pts[0], o.pts[o.pts.length - 1]].some(([a, b]) => Math.hypot(a - x, b - z) < 1));
-  const cut = pts => { const out = [pts[0]]; for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1]; if (i > 0) out.push([ax * .75 + bx * .25, az * .75 + bz * .25]); if (i < pts.length - 2) out.push([ax * .25 + bx * .75, az * .25 + bz * .75]); } out.push(pts[pts.length - 1]); return out; };
-  for (const R of ROADS) {
-    const runs = [[R.pts[0]]];
-    for (let i = 1; i < R.pts.length; i++) { runs[runs.length - 1].push(R.pts[i]); if (i < R.pts.length - 1 && pinned(R.pts[i], R)) runs.push([R.pts[i]]); }
-    R.pts = runs.flatMap((run, k) => { const sm = run.length > 2 ? cut(cut(run)) : run; return k ? sm.slice(1) : sm; });
-  }
+  const STRAIGHT = 14;
+  const fillet = (pts, R, gates) => {
+    if (pts.length < 3) return pts.map(p => p.slice());
+    const seg = pts.slice(1).map((p, i) => Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1])), out = [pts[0].slice()], last = pts.length - 1;
+    for (let i = 1; i < last; i++) {
+      const [ax, az] = pts[i - 1], [bx, bz] = pts[i], [cx, cz] = pts[i + 1];
+      const u1x = (bx - ax) / seg[i - 1], u1z = (bz - az) / seg[i - 1], u2x = (cx - bx) / seg[i], u2z = (cz - bz) / seg[i];
+      const th = Math.acos(clamp(u1x * u2x + u1z * u2z, -1, 1)); if (th < .02) { out.push([bx, bz]); continue; }
+      const half = Math.tan(th / 2);
+      const room1 = i === 1 ? seg[0] - (gates[0] ? Math.min(STRAIGHT, seg[0] / 2) : 0) : seg[i - 1] / 2, room2 = i === last - 1 ? seg[i] - (gates[1] ? Math.min(STRAIGHT, seg[i] / 2) : 0) : seg[i] / 2;
+      const t = Math.min(R * half, room1, room2); if (t < .3) { out.push([bx, bz]); continue; }
+      const r = t / half, sg = u1x * u2z - u1z * u2x > 0 ? 1 : -1, p1x = bx - u1x * t, p1z = bz - u1z * t, p2x = bx + u2x * t, p2z = bz + u2z * t;
+      const ccx = p1x - u1z * sg * r, ccz = p1z + u1x * sg * r;
+      const a0 = Math.atan2(p1z - ccz, p1x - ccx); let da = Math.atan2(p2z - ccz, p2x - ccx) - a0; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+      const n = Math.max(2, Math.ceil(Math.abs(da) * r / Math.min(1.5, r * .1))); // (about one point every 1.5 m, closer on tight curves)
+      for (let k = 0; k <= n; k++) { const a = a0 + da * k / n; out.push([ccx + Math.cos(a) * r, ccz + Math.sin(a) * r]); }
+    }
+    out.push(pts[last].slice()); return out.filter((p, i) => !i || Math.hypot(p[0] - out[i - 1][0], p[1] - out[i - 1][1]) > .05); // (no repeated points where two curves meet)
+  };
+  const near = (x, z, pts) => { let best = null, bd = 1e9; for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], dx = bx - ax, dz = bz - az, t = clamp(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1), 0, 1), px = ax + dx * t, pz = az + dz * t, d = Math.hypot(x - px, z - pz); if (d < bd) { bd = d; best = [px, pz]; } } return { p: best, d: bd }; };
+  // which road ends sit on another road (a junction), found on the lines as drawn
+  const joins = ROADS.map(R => [0, 1].map(end => { if ((R.gates || [])[end]) return null; const [x, z] = end ? R.pts[R.pts.length - 1] : R.pts[0]; const o = ROADS.find(O => O !== R && near(x, z, O.pts).d < 1.5); return o || null; }));
+  for (const R of ROADS) R.pts = fillet(R.pts, R.kind === 'asphalt' ? 24 : 16, R.gates || []);
+  ROADS.forEach((R, k) => joins[k].forEach((O, end) => { if (!O) return; const i = end ? R.pts.length - 1 : 0, q = near(R.pts[i][0], R.pts[i][1], O.pts); if (q.d < 6) R.pts[i] = q.p; }));
 }
 // distance from (x, z) to the nearest road centre line, and that road
 export function roadDist(x, z) {
@@ -104,7 +129,7 @@ export function roadDist(x, z) {
   return { d: best, road };
 }
 
-function riverDist(x, z) {
+export function riverDist(x, z) {
   let best = 1e9;
   for (let i = 0; i < RIVER.length - 1; i++) {
     const [ax, az] = RIVER[i], [bx, bz] = RIVER[i + 1];
@@ -119,7 +144,10 @@ const flat = (h, x, z, c, r, fall, target) => lerp(h, target, 1 - smooth(r, r + 
 // The level ground round every village, town and city reaches WIDE metres further than the places themselves, so
 // there is always room to add new houses and buildings. It is switched on by widenFlatLand() once the whole world is
 // built, so everything already there keeps exactly its place (only lifted or lowered onto the new ground).
-let WIDE = 0;
+let WIDE = 0, PADS = null, RB_ON = false, RB_COV = false;
+const RB_GRID = new Map(), RB_T = [], RB_D = new Float64Array(256), RB_Y = new Float64Array(256), RB_W = new Float64Array(256), RB_E = new Uint8Array(256), RB_P = new Uint8Array(256); // (past a road's very end there is no road)
+// the road beds: [{ ax, az, bx, bz, ya, yb, hw }], registered by js/roads.js before it switches them on
+export function setRoadBeds(segs) { RB_GRID.clear(); for (const S of segs) { const r = S.hw + 10; for (let i = Math.floor((Math.min(S.ax, S.bx) - r) / 8); i <= Math.floor((Math.max(S.ax, S.bx) + r) / 8); i++) for (let j = Math.floor((Math.min(S.az, S.bz) - r) / 8); j <= Math.floor((Math.max(S.az, S.bz) + r) / 8); j++) { const k = fpKey(i, j); if (!RB_GRID.has(k)) RB_GRID.set(k, []); RB_GRID.get(k).push(S); } } }
 export function heightAt(x, z) {
   let h = 5 + fbm(x * .011, z * .011, 4) * 11 + fbm(x * .05 + 3, z * .05, 2) * 1.2;
   const mtn = smooth(-55, -165, z);
@@ -159,25 +187,55 @@ export function heightAt(x, z) {
     const w = (1 - smooth(6, z < zc ? 26 : 20, across)) * smooth(-30, -24, x) * (1 - smooth(10, 16, x));
     h = lerp(h, sy, w);
   }
-  if (FP_GRID.size) { const list = FP_GRID.get(fpKey(Math.floor(x / 16), Math.floor(z / 16))); if (list) for (const F of list) {
-    const ox = Math.max(F.x0 - x, 0, x - F.x1), oz = Math.max(F.z0 - z, 0, z - F.z1); if (ox > F.pad || oz > F.pad) continue;
-    const d = Math.hypot(ox, oz); if (d < F.pad) h = lerp(h, F.h, 1 - smooth(0, F.pad, d));
-  } }
   // the festival grounds are level (their height is the natural height at their centre, worked out once)
   for (const F of Object.values(FESTGROUNDS)) {
     const d = dist2(x, z, F.x, F.z); if (d > 21 || F.h === null) continue;
     if (F.h === undefined) { F.h = null; F.h = heightAt(F.x, F.z); }
     h = lerp(h, F.h, 1 - smooth(15, 21, d));
   }
+  // the lake stays a lake: level land round the market and farm used to spill into it (a sandy tongue the ferry drove over)
+  if (dl < LAKE.r) h = lerp(h, Math.min(h, -7), 1 - smooth(LAKE.r * .62, LAKE.r * .82, dl));
+  // shrines and the rocks with a Leafy under them stand on a small dry pad (one shrine stood in a pond)
+  if (PADS) for (const S of PADS) { const d = dist2(x, z, S.x, S.z); if (d < 7) h = lerp(h, Math.max(h, WATER + 1.4), 1 - smooth(3.6, 7, d)); }
   const dr = riverDist(x, z);
   h = lerp(h, -2.6 - mtn * 2, 1 - smooth(3.5, 11, dr));
   // Raised banks either side of each bridge.
-  for (const B of BRIDGES) if (Math.abs(z - B.z) < 8 && x > B.x0 - 10 && x < B.x1 + 16) {
+  for (const B of BRIDGES) if (Math.abs(z - B.z) < 8 && x > B.x0 - 10 && x < B.x1 + 16 && dr > 7) { // (never over the river itself: boats pass under)
     // level ground at deck height at both ends, easing back to the natural hills further away; the river in the middle is left alone
     const west = smooth(B.x0 + 8, B.x0 + 3, x), east = smooth(B.x1 - 8, B.x1 - 3, x) * (1 - smooth(B.x1 + 4, B.x1 + 16, x));
     const w = (1 - smooth(4, 8, Math.abs(z - B.z))) * (west + east);
     h = lerp(h, B.h - .2, clamp(w, 0, 1));
   }
+  // road beds (js/roads.js): the ground under and beside every road is shaped to the road's own smooth height,
+  // so the road never floats, never sinks into a bump, and walking on it is walking on the ground
+  RB_COV = false;
+  if (RB_ON && dr > 6.5) { const list = RB_GRID.get(fpKey(Math.floor(x / 8), Math.floor(z / 8))); if (list) { // (never fills the river: bridges carry roads over it)
+    // each road's nearest piece gives its height here; where two roads overlap (a junction) the higher one is the
+    // one you see, so the ground follows that one
+    let bd = 1e9, by = 0, bw = 0, cover = -1e9; RB_T.length = 0;
+    for (const S of list) { const dx = S.bx - S.ax, dz = S.bz - S.az, t = clamp(((x - S.ax) * dx + (z - S.az) * dz) / (dx * dx + dz * dz || 1), 0, 1), d = Math.hypot(x - S.ax - dx * t, z - S.az - dz * t);
+      if (!RB_T.includes(S.r)) { RB_T.push(S.r); RB_D[S.r] = 1e9; }
+      if (d < RB_D[S.r]) { RB_D[S.r] = d; RB_Y[S.r] = S.ya + (S.yb - S.ya) * t; RB_W[S.r] = S.hw; RB_E[S.r] = (S.first && t === 0) || (S.last && t === 1) ? 1 : 0; RB_P[S.r] = S.tip ? 1 : 0; } }
+    // (where a side road's tip lies on a through road, the through road's surface is the one that counts)
+    let tipCover = -1e9;
+    for (const r of RB_T) { if (RB_D[r] <= RB_W[r] + .25 && !RB_E[r]) { if (RB_P[r]) tipCover = Math.max(tipCover, RB_Y[r]); else cover = Math.max(cover, RB_Y[r]); } if (RB_D[r] < bd) { bd = RB_D[r]; by = RB_Y[r]; bw = RB_W[r]; } }
+    if (cover === -1e9) cover = tipCover;
+    RB_COV = cover > -1e9;
+    // beside the road the ground eases back to the hillside; a deeper cutting or bank gets a wider, gentler slope
+    if (cover > -1e9) h = cover - .03; else { const e = Math.min(10, Math.max(4, Math.abs(h - by) * 2)); if (bd < bw + e) h = lerp(h, by - .03, 1 - smooth(bw + .35, bw + e, bd)); }
+  } }
+  // HARD RULE: every village, town and city stands on one flat level, all the way across (only the river, the
+  // lake, ponds, bridge banks and the road surface itself are left as they are); it eases back to the hills over 8 m
+  if (!RB_COV && LEVELS && h >= WATER + .5 && dr >= 13 && dl >= LAKE.r + 4) { let best = null, bo = 8; // the place it is in (or nearest to)
+    for (const A of LEVELS) { if (x < A.x0 - 8 || x > A.x1 + 8 || z < A.z0 - 8 || z > A.z1 + 8) continue;
+      const out = A.r ? Math.max(0, dist2(x, z, A.x, A.z) - A.r) : Math.hypot(Math.max(A.x0 - x, 0, x - A.x1), Math.max(A.z0 - z, 0, z - A.z1)); if (out < bo) { bo = out; best = A; } }
+    if (best && !BRIDGES.some(B => Math.abs(z - B.z) < 9 && x > B.x0 - 12 && x < B.x1 + 18)) h = lerp(h, best.h, 1 - smooth(0, 8, bo));
+  }
+  // level ground under every building (after the roads, except where a road actually is)
+  if (FP_GRID.size && !RB_COV) { const list = FP_GRID.get(fpKey(Math.floor(x / 16), Math.floor(z / 16))); if (list) for (const F of list) {
+    const ox = Math.max(F.x0 - x, 0, x - F.x1), oz = Math.max(F.z0 - z, 0, z - F.z1); if (ox > F.pad || oz > F.pad) continue;
+    const d = Math.hypot(ox, oz); if (d < F.pad) h = lerp(h, F.h, 1 - smooth(0, F.pad, d));
+  } }
   return h;
 }
 
@@ -243,6 +301,7 @@ const LEAFY_SPOTS = [
   ['sparkle', -62, 152], ['rock', 170, -120], ['sparkle', 95, -15]
 ];
 export const LEAFIES = LEAFY_SPOTS.map(([kind, x, z], i) => ({ id: 'lf' + i, kind, x, z }));
+PADS = [...SHRINES, ...LEAFIES.filter(l => l.kind === 'rock')];
 
 // ---------- the world object ----------
 // ---------- building lots round the cities ----------
@@ -680,8 +739,9 @@ export function createWorld(scene, quality) {
     const top = new THREE.Mesh(new THREE.OctahedronGeometry(1, 0), glow('#ff9a3a')); top.position.y = H + 2.2;
     const g = new THREE.Group(); g.add(body, panels, top); g.position.set(tw.x, y - .2, tw.z); scene.add(g);
     W.towerMeshes[tw.id] = { panels, top, y: y - .2 };
-    W.colliders.push({ x: tw.x, z: tw.z, r: 3.4 });
-    W.platforms.push({ x0: tw.x - 4, x1: tw.x + 4, z0: tw.z - 4, z1: tw.z + 4, y: y - .2 + H + .6, tower: tw.id });
+    W.colliders.push({ x: tw.x, z: tw.z, r: 3.4, top: y - .2 + H + .6 });
+    // the round roof is walkable all over (it used to push children out from the middle, off the edge)
+    W.platforms.push({ x0: tw.x - 4.1, x1: tw.x + 4.1, z0: tw.z - 4.1, z1: tw.z + 4.1, cx: tw.x, cz: tw.z, r: 4.1, y: y - .2 + H + .6, tower: tw.id });
     W.updaters.push((dt, t) => { top.rotation.y += dt; top.position.y = H + 2.2 + Math.sin(t * 1.5) * .2; });
   });
   W.setTowerDone = (id, done) => { const m = W.towerMeshes[id]; if (!m) return; const c = done ? '#5fe0ff' : '#ff9a3a'; m.panels.material.color.set(c); m.top.material.color.set(c); };
@@ -744,12 +804,12 @@ export function createWorld(scene, quality) {
   // Ground height including bridges and tower tops (only if you are already above them).
   W.groundAt = (x, z, y = 1e9) => {
     let g = heightAt(x, z);
-    for (const p of W.platforms) if (x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1 && y >= p.y - 1.2) g = Math.max(g, p.y);
+    for (const p of W.platforms) if (x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1 && (!p.r || Math.hypot(x - p.cx, z - p.cz) < p.r) && y >= p.y - 1.2) g = Math.max(g, p.y);
     // on a road: stand on the road surface (roads.js keeps it), unless you are well below it (under a bridge)
     if (W.roadTop) { const r = W.roadTop.get(Math.round(x * 2) * 8192 + Math.round(z * 2)); if (r != null && y >= r - 1.2) g = Math.max(g, r - .03); }
     return g;
   };
-  W.platformAt = (x, z, y) => W.platforms.find(p => x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1 && Math.abs(y - p.y) < .3);
+  W.platformAt = (x, z, y) => W.platforms.find(p => x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1 && (!p.r || Math.hypot(x - p.cx, z - p.cz) < p.r) && Math.abs(y - p.y) < .3);
   // Solid round things are sorted into a 16 m grid (rebuilt whenever one is added), so each step only checks
   // the few nearby ones instead of all ~1,500 (phones).
   const CELL = 16; let grid = null, gridN = -1, gridR = 0;
@@ -765,6 +825,7 @@ export function createWorld(scene, quality) {
     for (let gx = x0; gx <= x1; gx++) for (let gz = z0; gz <= z1; gz++) {
       const l = grid.get(cellKey(gx, gz)); if (!l) continue;
       for (const c of l) {
+        if (c.top != null && pos.y != null && pos.y >= c.top - .35) continue; // standing on top of it (a tower's roof)
         const dx = pos.x - c.x, dz = pos.z - c.z, m = c.r + r; if (dx * dx + dz * dz >= m * m) continue;
         const d = Math.hypot(dx, dz);
         if (d > 1e-4) { pos.x = c.x + dx / d * m; pos.z = c.z + dz / d * m; }
@@ -853,7 +914,12 @@ export function levelUnderBuildings(world, scene) {
 // Widen the level land round every village, town and city (see WIDE), after everything is placed: the ground is
 // reshaped, and whatever stands where the ground changed (trees, signs, props, people, roads) moves up or down with
 // it, keeping its place on the map.
-export function widenFlatLand(world, scene, metres = 10) {
+export function widenFlatLand(world, scene, metres = 10) { reshapeGround(world, scene, () => { WIDE = metres; }); }
+// switch the road beds on (js/roads.js) and reshape the ground the same careful way
+export function roadBedsOn(world, scene) { reshapeGround(world, scene, () => { RB_ON = true; }); }
+// Change the ground (change() alters what heightAt returns), then reshape the terrain and move whatever stands where
+// the ground changed (trees, signs, props, people, roads) up or down with it, so nothing shifts on the map.
+function reshapeGround(world, scene, change) {
   const keep = [], inst = [], roads = [];
   for (const o of scene.children) {
     if (o === world.terrain || o.isLight || !o.position) continue;
@@ -866,12 +932,21 @@ export function widenFlatLand(world, scene, metres = 10) {
   const instOld = inst.map(o => { const a = []; for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); p.setFromMatrixPosition(m4); a.push(heightAt(p.x, p.z)); } return a; });
   const roadOld = roads.map(o => { const pa = o.geometry.attributes.position, a = new Float32Array(pa.count); for (let i = 0; i < pa.count; i++) a[i] = heightAt(pa.getX(i), pa.getZ(i)); return a; });
   const topOld = world.roadTop ? [...world.roadTop.keys()].map(k => [k, heightAt(Math.round(k / 8192) / 2, (k - Math.round(k / 8192) * 8192) / 2)]) : [];
-  WIDE = metres;
-  // the ground itself
+  change();
   const t = world.terrain;
   if (t) { const pa = t.geometry.attributes.position; for (let i = 0; i < pa.count; i++) pa.setY(i, heightAt(pa.getX(i), pa.getZ(i))); pa.needsUpdate = true; t.geometry.computeVertexNormals(); t.geometry.computeBoundingSphere(); }
   for (const [o, h0] of keep) { const d = heightAt(o.position.x, o.position.z) - h0; if (Math.abs(d) > .01) o.position.y += d; }
   inst.forEach((o, k) => { let ch = false; for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); m4.decompose(p, q, sc); const d = heightAt(p.x, p.z) - instOld[k][i]; if (Math.abs(d) > .01) { p.y += d; m4.compose(p, q, sc); o.setMatrixAt(i, m4); ch = true; } } if (ch) { o.instanceMatrix.needsUpdate = true; o.computeBoundingSphere && o.computeBoundingSphere(); } });
   roads.forEach((o, k) => { const pa = o.geometry.attributes.position; let ch = false; for (let i = 0; i < pa.count; i++) { const d = heightAt(pa.getX(i), pa.getZ(i)) - roadOld[k][i]; if (Math.abs(d) > .01) { pa.setY(i, pa.getY(i) + d); ch = true; } } if (ch) { pa.needsUpdate = true; o.geometry.computeVertexNormals(); o.geometry.computeBoundingSphere(); } });
   for (const [k, h0] of topOld) { const d = heightAt(Math.round(k / 8192) / 2, (k - Math.round(k / 8192) * 8192) / 2) - h0; if (Math.abs(d) > .01) world.roadTop.set(k, world.roadTop.get(k) + d); }
+}
+
+// More level land drawn by the family in Sparkle Studio (content pack "world.land"): each rectangle becomes flat
+// ground at the height of its middle, with the same gentle edge as the towns, ready for new houses.
+for (const L of (CUSTOM.world && Array.isArray(CUSTOM.world.land) ? CUSTOM.world.land : []).slice(0, 40)) {
+  if (!L || ![L.x0, L.x1, L.z0, L.z1].every(v => typeof v === 'number' && isFinite(v))) continue;
+  const x0 = Math.max(-190, Math.min(L.x0, L.x1)), x1 = Math.min(190, Math.max(L.x0, L.x1)), z0 = Math.max(-190, Math.min(L.z0, L.z1)), z1 = Math.min(190, Math.max(L.z0, L.z1));
+  if (x1 - x0 < 2 || z1 - z0 < 2 || x1 - x0 > 120 || z1 - z0 > 120) continue;
+  const h = typeof L.h === 'number' && isFinite(L.h) ? Math.max(1, Math.min(30, L.h)) : Math.max(1.2, heightAt((x0 + x1) / 2, (z0 + z1) / 2));
+  FLATS.push({ x0, x1, z0, z1, h, family: true });
 }

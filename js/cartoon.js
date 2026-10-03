@@ -29,15 +29,23 @@ function person(p) {
     : p.hat === 'wizard' ? `<path d="M26 28L52 -6 74 28z" fill="#7a4aa0" ${W}/><circle cx="50" cy="10" r="3" fill="#ffd23f"/>` : '';
   const beard = p.beard ? `<path d="M34 50c2 18 10 26 16 26s14-8 16-26c-4 6-10 8-16 8s-12-2-16-8z" fill="${p.beard}" ${W}/>` : '';
   const wings = p.wings ? `<g class="ct-wings" style="transform-origin:50px 72px"><ellipse cx="24" cy="66" rx="18" ry="26" fill="#d8f4ff" fill-opacity=".85" ${W} transform="rotate(-25 24 66)"/><ellipse cx="76" cy="66" rx="18" ry="26" fill="#d8f4ff" fill-opacity=".85" ${W} transform="rotate(25 76 66)"/></g>` : '';
-  const face = `<g class="ct-eyes" style="transform-origin:50px 40px"><ellipse cx="41" cy="40" rx="4" ry="5" fill="#fff" ${W.replace('3"', '1.6"')}/><ellipse cx="59" cy="40" rx="4" ry="5" fill="#fff" ${W.replace('3"', '1.6"')}/><circle class="ct-pupil" cx="42" cy="41" r="2.4" fill="${O}"/><circle class="ct-pupil" cx="60" cy="41" r="2.4" fill="${O}"/></g>
-    <circle cx="34" cy="50" r="4" fill="#ff8aa8" opacity=".55"/><circle cx="66" cy="50" r="4" fill="#ff8aa8" opacity=".55"/>
-    <path class="ct-mouth-shut" d="M44 52q6 5 12 0" fill="none" ${W}/><ellipse class="ct-mouth-open" cx="50" cy="54" rx="5" ry="4" fill="#a8304a" ${W.replace('3"', '2"')}/>`;
+  // a picture-book face: eyes with a coloured iris and a shine, eyebrows, a little nose, rosy cheeks, and soft shading
+  const iris = p.eyes || '#5a3a24';
+  const face = `<g class="ct-eyes" style="transform-origin:50px 40px"><ellipse cx="41" cy="40" rx="5" ry="6" fill="#fff" ${W.replace('3"', '1.6"')}/><ellipse cx="59" cy="40" rx="5" ry="6" fill="#fff" ${W.replace('3"', '1.6"')}/><circle class="ct-pupil" cx="41.6" cy="41" r="3.4" fill="${iris}"/><circle class="ct-pupil" cx="59.6" cy="41" r="3.4" fill="${iris}"/><circle cx="41.8" cy="41.2" r="1.7" fill="${O}"/><circle cx="59.8" cy="41.2" r="1.7" fill="${O}"/><circle cx="40.4" cy="39.2" r="1.2" fill="#fff"/><circle cx="58.4" cy="39.2" r="1.2" fill="#fff"/></g>
+    <path d="M36 32q5-3 9 0M55 32q5-3 9 0" stroke="${p.hairStyle === 'bald' || /e8|f2|ff/.test(h) ? '#9a8a80' : h}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M49 45q1.6 2.4 3.4 0" stroke="${O}" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".7"/>
+    <circle cx="35" cy="50" r="4.4" fill="#ff8aa8" opacity=".5"/><circle cx="65" cy="50" r="4.4" fill="#ff8aa8" opacity=".5"/>
+    <path class="ct-mouth-shut" d="M44 52q6 5 12 0" fill="none" ${W}/><ellipse class="ct-mouth-open" cx="50" cy="54" rx="5" ry="4" fill="#a8304a" ${W.replace('3"', '2"')}/>
+    <path d="M62 22a22 22 0 0 1 0 36 26 26 0 0 0 0-36z" fill="#3b2a4f" opacity=".07"/>`;
+  const ears = `<circle cx="28" cy="43" r="5" fill="${s}" ${W}/><circle cx="72" cy="43" r="5" fill="${s}" ${W}/>`;
+  const neck = `<rect x="45" y="56" width="10" height="9" fill="${s}" ${W}/>`;
+  const shade = p.dress || p.robe ? '' : `<rect x="57" y="64" width="9" height="39" rx="5" fill="#3b2a4f" opacity=".1"/>`;
   const sc = p.small ? .72 : 1;
   return `<svg class="ct" viewBox="0 -10 100 160" aria-hidden="true"><ellipse class="ct-shadow" cx="50" cy="145" rx="28" ry="6" fill="rgba(0,0,0,.18)"/>
     <g class="ct-all" style="transform-origin:50px 145px;transform:scale(${sc})">${wings}
       ${leg(42, 'ct-legL')}${leg(58, 'ct-legR')}
-      <g class="ct-body" style="transform-origin:50px 100px">${arm(30, -1, 'ct-armL')}${body}${arm(70, 1, 'ct-armR')}
-        <g class="ct-head" style="transform-origin:50px 60px">${p.hairStyle === 'long' ? hair : ''}<circle cx="50" cy="40" r="22" fill="${s}" ${W}/>${p.hairStyle === 'long' ? '' : hair}${face}${beard}${hat}</g>
+      <g class="ct-body" style="transform-origin:50px 100px">${arm(30, -1, 'ct-armL')}${neck}${body}${shade}${arm(70, 1, 'ct-armR')}
+        <g class="ct-head" style="transform-origin:50px 60px">${p.hairStyle === 'long' ? hair : ''}${ears}<circle cx="50" cy="40" r="22" fill="${s}" ${W}/>${p.hairStyle === 'long' ? '' : hair}${face}${beard}${hat}</g>
       </g></g></svg>`;
 }
 

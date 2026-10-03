@@ -13,7 +13,7 @@ import { PERSONAS } from './chat.js';
 import { dialog, reward } from './ui.js';
 import { farm, saveFarm } from './state.js';
 import { say, sayIn } from './voice.js';
-import { SFX } from './audio.js';
+import { SFX, tone } from './audio.js';
 import { dist2 } from './util.js';
 import { buyFood } from './snacks.js';
 
@@ -28,7 +28,7 @@ const clockFace = () => { // a round white clock face with hands, as a little ca
   g.lineWidth = 7; g.beginPath(); g.moveTo(64, 64); g.lineTo(64, 26); g.moveTo(64, 64); g.lineTo(92, 74); g.stroke();
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return new THREE.MeshBasicMaterial({ map: t, transparent: true });
 };
-const MODELS = {
+export const MODELS = {
   // Hà Nội: Khuê Văn Các, the pavilion at the Temple of Literature
   vanmieu: () => { const p = [P(B(7, .4, 5), '#b9ab8e', [0, .2, 0]), P(B(6, 3, 4), '#c9b48a', [0, 1.9, 0])]; for (const x of [-1.8, 0, 1.8]) p.push(P(B(1.1, 2, 4.1), '#5a3a2a', [x, 1.3, 0])); p.push(P(B(5.2, 2.4, 3.6), '#c0392b', [0, 4.6, 0]), P(new THREE.ConeGeometry(1, 1, 4), '#6a4a2a', [0, 6.6, 0], [0, Math.PI / 4, 0], [5.4, 1.6, 4.4]), P(new THREE.ConeGeometry(1, 1, 4), '#6a4a2a', [0, 3.6, 0], [0, Math.PI / 4, 0], [6.4, 1, 5])); p.push(P(new THREE.TorusGeometry(.7, .14, 6, 18), '#ffd23f', [0, 4.6, 1.82])); return p; },
   // Hà Nội: the water puppet stage (thủy đình) on a pond
@@ -276,6 +276,29 @@ export function createCities(G) {
   {
     const [x, z] = [36.5, 63.5], rot = Math.atan2(28 - x, 52 - z);
     place(MODELS.nhatron(), x, z, rot); world.colliders.push({ x, z, r: 3.4 });
+    // at the top of every real hour its bell strikes the time (once at one o'clock … twelve times at twelve) and a
+    // flock of swallows flies out from under the roof, circles and goes back in (a game hour is only 25 seconds)
+    {
+      const y0 = heightAt(x, z), bell = sprite('🔔', 1.1); bell.position.set(x, y0 + 11, z); scene.add(bell);
+      const birdGeo = merge([P(new THREE.ConeGeometry(.12, .5, 6), '#1f2a4a', [0, 0, 0], [Math.PI / 2, 0, 0]), P(new THREE.BoxGeometry(.9, .03, .22), '#2a3560', [0, .02, .02]), P(new THREE.ConeGeometry(.06, .3, 4), '#1f2a4a', [.07, 0, -.35], [-Math.PI / 2, 0, .3]), P(new THREE.ConeGeometry(.06, .3, 4), '#1f2a4a', [-.07, 0, -.35], [-Math.PI / 2, 0, -.3]), P(new THREE.SphereGeometry(.09, 6, 4), '#f2e6d6', [0, -.04, .18])]);
+      const birds = Array.from({ length: 7 }, (_, k) => { const m = new THREE.Mesh(birdGeo, toonVC()); m.visible = false; scene.add(m); return { m, k, ph: Math.random() * 6 }; });
+      let lastHour = new Date().getHours(), strikes = 0, nextStrike = 0, flyT = -1, force = false;
+      world.updaters.push((dt, t) => {
+        const hr = new Date().getHours();
+        if (hr !== lastHour || force) { lastHour = hr; force = false; strikes = hr % 12 || 12; nextStrike = 0; flyT = 0; }
+        const near = G.heroes.some(h => Math.hypot(h.pos.x - x, h.pos.z - z) < 70);
+        if (strikes > 0) { nextStrike -= dt; bell.material.rotation = Math.sin(t * 9) * .35; if (nextStrike <= 0) { strikes--; nextStrike = 1.1; if (near && !G.paused) { tone(659, 1.6, { type: 'sine', vol: .2 }); tone(1318, 1.2, { type: 'sine', vol: .07 }); tone(988, 1.4, { type: 'triangle', vol: .05, at: .02 }); } } }
+        else bell.material.rotation *= .9;
+        if (flyT >= 0) {
+          flyT += dt; const life = 14;
+          birds.forEach(B => { const u = Math.min(1, flyT / life), out = Math.sin(u * Math.PI), a = flyT * (1.1 + B.k * .07) + B.k * .9, r = 3 + out * (9 + B.k * 1.3);
+            B.m.visible = flyT < life; B.m.position.set(x + Math.cos(a) * r, y0 + 7 + out * (5 + Math.sin(flyT * 2 + B.ph) * 1.5), z + Math.sin(a) * r); B.m.rotation.set(0, -a, Math.sin(t * 18 + B.ph) * .5); });
+          if (flyT === dt && near && !G.paused) SFX.chirp && SFX.chirp();
+          if (flyT >= life) { flyT = -1; birds.forEach(B => { B.m.visible = false; }); }
+        }
+      });
+      G.nhaTronStrike = () => { force = true; }; // strike now (tests)
+    }
     addLandmark('nhatron', '💧', 'vn', x + Math.sin(rot) * 5.5, z + Math.cos(rot) * 5.5, x, z, ['Nhà Tròn, the Round House (Bà Rịa)', 'Nhà Tròn Bà Rịa'], ['Nhà Tròn in Bà Rịa is a round water tower, about 20 metres tall, standing on eight legs. It was built more than a hundred years ago to keep the town’s water, and people could look out over all the roads from the top.', 'Nhà Tròn ở Bà Rịa là tháp nước hình tròn cao khoảng 20 mét, đứng trên tám cột. Tháp được xây hơn một trăm năm trước để chứa nước cho thị xã, và từ trên cao có thể nhìn khắp các ngả đường.']);
   }
   buildHueNghi(G, place, person, 15, 34.25);

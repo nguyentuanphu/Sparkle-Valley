@@ -6,6 +6,7 @@
 //   tales    [ { id, flag, en, vi, pages: [[pictures, en, vi], …] } ]   the family's own stories (Stories shelf)
 //   quiz     [ { q: [en, vi], pic, answers: [[en, vi], …], right } ]   the Family Quiz game (Learning shelf)
 //   defaults { restMins }                a starting value for settings the device hasn't chosen yet
+//   ads      { enabled, perDay, items }  the family's own ads (js/ads.js); nothing shows unless enabled is true
 let data = {};
 try {
   const r = await fetch('content/custom.json', { cache: 'no-cache' });

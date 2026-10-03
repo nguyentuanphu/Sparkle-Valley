@@ -262,7 +262,11 @@ export class Hero {
       const kk = this._camK;
       if (kk < .999) { want.x = target.x + (want.x - target.x) * kk; want.z = target.z + (want.z - target.z) * kk; want.y = target.y + (want.y - target.y) * (this._camHitRay ? kk : Math.max(kk, .55)); }
     }
-    const gy = this.world.groundAt(want.x, want.z) + .7; if (want.y < gy) want.y = gy;
+    // on a boat the camera stays under a bridge's deck (it used to jump on top of the deck: nothing to see)
+    let gy;
+    if (this.ferry) { gy = Math.max(WATER, heightAt(want.x, want.z)) + .7; for (const pl of this.world.platforms) if (pl.y > target.y + 1.5 && want.x > pl.x0 - 1 && want.x < pl.x1 + 1 && want.z > pl.z0 - 1 && want.z < pl.z1 + 1) want.y = Math.min(want.y, pl.y - .8); }
+    else gy = this.world.groundAt(want.x, want.z) + .7;
+    if (want.y < gy) want.y = gy;
     this.camPos.lerp(want, Math.min(1, dt * 5));
     this.cam.position.copy(this.camPos); this.cam.lookAt(target);
   }

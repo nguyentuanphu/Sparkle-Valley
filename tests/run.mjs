@@ -5,6 +5,7 @@
 // Multiplayer runs when a local PeerJS server is up on 127.0.0.1:9000 (see the README in this folder).
 import fs from 'fs';
 import { launch, open, clear, URL } from './harness.mjs';
+import { groundAudit } from './world-audit.mjs';
 
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
@@ -212,6 +213,95 @@ await check('roads', async () => {
   return `${r.gates} gates on road ends, every city on a road, nothing standing on a road`;
 });
 
+await check('flat', async () => {
+  // HARD RULE: every village, town and city is one flat level (rivers, the lake, bridge ramps, road surfaces and
+  // a building's own base pad aside)
+  const P = await open(b, { w: 700, h: 500 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), bad = [];
+    const circ = (C, id) => ({ id, x0: C.x - C.r, x1: C.x + C.r, z0: C.z - C.r, z1: C.z + C.r, circ: C, h: C.h });
+    const areas = [circ(W.VILLAGE, 'village'), circ(W.CHINA, 'china'), circ(W.INDIA, 'india'), circ(W.HOME, 'home'), { id: 'town', ...W.TOWN }, { id: 'market', ...W.MARKET }, { id: 'aussie', ...W.AUSSIE }, ...W.CITIES];
+    let n = 0;
+    for (const A of areas) for (let x = A.x0 + 3; x <= A.x1 - 3; x += 1.5) for (let z = A.z0 + 3; z <= A.z1 - 3; z += 1.5) {
+      if (A.circ && Math.hypot(x - A.circ.x, z - A.circ.z) > A.circ.r - 3) continue;
+      if (W.riverDist(x, z) < 14 || Math.hypot(x - W.LAKE.x, z - W.LAKE.z) < W.LAKE.r + 6 || [W.BRIDGE, W.DRAGON].some(B => Math.abs(z - B.z) < 10 && x > B.x0 - 13 && x < B.x1 + 19)) continue;
+      const h = W.heightAt(x, z); if (h < W.WATER + .5) continue; n++;
+      if (Math.abs(h - A.h) <= .25) continue;
+      const rd = W.roadDist(x, z); if (rd.d < rd.road.w / 2 + .5) continue;
+      if (W.FOOTPRINTS.some(F => x >= F.x0 - F.pad && x <= F.x1 + F.pad && z >= F.z0 - F.pad && z <= F.z1 + F.pad)) continue;
+      bad.push(`${A.id} ${x.toFixed(0)},${z.toFixed(0)} ${h.toFixed(2)}≠${A.h}`);
+    }
+    return { n, bad };
+  });
+  await P.ctx.close();
+  ok(!r.bad.length, r.bad.slice(0, 12).join('; ') + (r.bad.length > 12 ? ` (+${r.bad.length - 12})` : ''));
+  return `${r.n} spots in 14 villages and cities, all level`;
+});
+
+await check('roadshape', async () => {
+  // HARD RULE: roads are straight or perfectly curved (no step turns more than 8°), never steep (asphalt 10 %, dirt 14 %,
+  // a little more only where two fixed places are too close), and every change of slope is rounded
+  const P = await open(b, { w: 700, h: 500 }); await clear(P.page);
+  const r = await P.page.evaluate(() => { const bad = []; let len = 0;
+    __sv.world.roadLines.forEach((L, k) => { const G = L.kind === 'asphalt' ? .125 : .155;
+      for (let i = 1; i < L.ys.length; i++) { const d = Math.hypot(L.pts[i][0] - L.pts[i - 1][0], L.pts[i][1] - L.pts[i - 1][1]); len += d; const g = Math.abs(L.ys[i] - L.ys[i - 1]) / (d || 1);
+        if (g > G && !L.deck[i]) bad.push(`road ${k} steep ${(g * 100).toFixed(0)}% at ${L.pts[i].map(v => v.toFixed(0))}`);
+        if (i < L.ys.length - 1) { const s1 = L.ys[i] - L.ys[i - 1], s2 = L.ys[i + 1] - L.ys[i]; if (Math.abs(s2 - s1) > .16 && !L.deck[i]) bad.push(`road ${k} kink ${Math.abs(s2 - s1).toFixed(2)} at ${L.pts[i].map(v => v.toFixed(0))}`);
+          const a1 = Math.atan2(L.pts[i][1] - L.pts[i - 1][1], L.pts[i][0] - L.pts[i - 1][0]), a2 = Math.atan2(L.pts[i + 1][1] - L.pts[i][1], L.pts[i + 1][0] - L.pts[i][0]); let t = Math.abs(a2 - a1); if (t > Math.PI) t = 2 * Math.PI - t;
+          if (t * 180 / Math.PI > 8) bad.push(`road ${k} turns ${(t * 180 / Math.PI).toFixed(0)}° at ${L.pts[i].map(v => v.toFixed(0))}`); } } });
+    return { bad, len }; });
+  await P.ctx.close();
+  ok(!r.bad.length, r.bad.slice(0, 10).join('; '));
+  return `${Math.round(r.len)} m of road: straight or smoothly curved, gentle and rounded`;
+});
+
+await check('phone', async () => {
+  // every main screen opened on a desktop and on a phone side by side: nothing spills off the side, every button
+  // (close, play, next…) is fully on the screen, and nothing goes wrong. Bugs that only phones show are caught here.
+  const D = await open(b, { w: 1180, h: 760 }), M = await open(b, { w: 390, h: 760, touch: true, lang: 'vi' });
+  const SCREENS = [
+    ['games hub', () => __sv.openGamesHub(0)], ['map', () => __sv.openPad(0, 'map')], ['bag', () => __sv.openPad(0, 'bag')], ['friends', () => __sv.openPad(0, 'friend')],
+    ['quick settings', () => __sv.openQuick(0)], ['wardrobe', () => __sv.openWardrobe(0)],
+    ['how to play', async () => { (await import('/js/howto.js')).openHowTo('oanquan', {}); }],
+    ['tale', async () => { (await import('/js/tales.js')).openTheatre((await import('/js/learn.js')).TALES[0], {}); }],
+    ['a game', () => { __sv.playGame(0, 'caro', 'replay'); }],
+    ['dialog', () => { __sv.dialog('Bà Năm', [['Hello! Shall we play?', 'Chào cháu! Chơi nhé?']], [['▶ Play!', '▶ Chơi!'], ['👋 Later', '👋 Để sau']]); }]
+  ];
+  const bad = [];
+  for (const P of [D, M]) await clear(P.page);
+  for (const [name, fn] of SCREENS) {
+    for (const [P, tag] of [[D, 'desktop'], [M, 'phone']]) {
+      await P.page.evaluate(`(${fn.toString()})()`); await P.page.waitForTimeout(1400);
+      const r = await P.page.evaluate(() => {
+        const W = innerWidth, H = innerHeight, out = [];
+        if (document.scrollingElement.scrollWidth > W + 1) out.push('page scrolls sideways (' + document.scrollingElement.scrollWidth + ' > ' + W + ')');
+        const top = document.querySelector('.wardrobe, .hub, .pad, .howto, .theatre, .gl, .dialog:not(.out), .modal');
+        if (top) for (const btn of top.querySelectorAll('button')) { const b = btn.getBoundingClientRect(), cs = getComputedStyle(btn); if (!b.width || cs.visibility === 'hidden' || btn.closest('[hidden]')) continue;
+          if (/^(x|th-x|ht-x|gl-x|dch|ht-play|th-next|gl-next)$/.test(btn.className.split(' ')[0]) && (b.left < -1 || b.right > W + 1 || b.top < -1 || b.bottom > H + 1)) out.push(`button "${(btn.textContent || btn.getAttribute('aria-label') || btn.className).trim().slice(0, 20)}" off screen`); }
+        return out;
+      });
+      r.forEach(x => bad.push(`${name} (${tag}): ${x}`));
+      await P.page.evaluate(() => { document.querySelectorAll('.modal, .hub, .pad, .howto, .theatre, .gl, .dialog, .storybook, .vc-pop, .wardrobe').forEach(e => e.remove()); __sv.paused = false; __sv.closeUp = null; });
+    }
+  }
+  const errs = D.errors.concat(M.errors); await D.ctx.close(); await M.ctx.close();
+  ok(!bad.length && !errs.length, JSON.stringify({ bad, errs }));
+  return `${SCREENS.length} screens checked on desktop and phone`;
+});
+
+await check('ground', async () => {
+  // every building on dry, level ground (not over the river or the lake), no road floating, buried or in water,
+  // and the build number in the game matches the service worker's version
+  const P = await open(b, { w: 900, h: 700 }); await clear(P.page);
+  const r = await groundAudit(P.page);
+  const build = await P.page.evaluate(async () => (await import('/js/build.js')).BUILD);
+  const sw = fs.readFileSync(new globalThis.URL('../sw.js', import.meta.url), 'utf8'), ver = /VERSION = '([^']+)'/.exec(sw)[1];
+  await P.ctx.close();
+  ok(!r.bad.length && !r.roadBad.length, 'problems: ' + JSON.stringify([...r.bad, ...r.roadBad].slice(0, 6)));
+  ok(ver.endsWith('-' + build), `build ${build} does not match sw.js VERSION ${ver}`);
+  return `${r.buildings} buildings and ${r.roads} roads checked, build ${build}`;
+});
+
 await check('saves', async () => {
   // progress survives: the main save is wiped (as a browser might do), and the game brings it back by itself
   const P = await open(b, { w: 800, h: 600 }); await clear(P.page);
@@ -228,6 +318,24 @@ await check('saves', async () => {
   return 'wiped main save restored from the safe copy (coins, orbs, postcards)';
 });
 
+await check('meet', async () => {
+  // friends meet by themselves: two friends on each other's list start playing and, with no room number read out,
+  // end up in one room seeing each other's names (the one whose code comes first starts it). One of them never
+  // switched "friends can see me" on: having a friend on the list switches it on from round 28.
+  const up = await fetch('http://127.0.0.1:9000/myapp/').then(r => r.ok).catch(() => false);
+  if (!up) return 'skipped (no local PeerJS server on 127.0.0.1:9000)';
+  const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9000, path: '/myapp', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const A = await open(b, { pre, w: 700, h: 500, settings: { friendCode: 'MEETA2', friendsOn: false, friends: [{ code: 'MEETB3', name: 'Bin' }] } });
+  const B = await open(b, { pre, w: 700, h: 500, lang: 'vi', settings: { friendCode: 'MEETB3', friendsOn: true, friends: [{ code: 'MEETA2', name: 'Na' }] } });
+  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  const met = P => P.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 90000 });
+  await Promise.all([met(A), met(B)]);
+  const r = await Promise.all([A, B].map(P => P.page.evaluate(() => ({ role: __Net.role, code: __Net.code, names: Object.values(__sv.partners).map(p => p.name) }))));
+  const errs = A.errors.concat(B.errors); await A.ctx.close(); await B.ctx.close();
+  ok(r[0].role === 'host' && r[1].role === 'guest' && r[0].code === r[1].code && !errs.length, JSON.stringify({ r, errs }));
+  return `met in room ${r[0].code} by themselves, names shown`;
+});
+
 await check('cloud', async () => {
   // two devices that can never link directly (the meeting service points nowhere), like far-away networks:
   // they must find each other through the cloud relay (a local MQTT broker on 127.0.0.1:9001 stands in for
@@ -235,8 +343,8 @@ await check('cloud', async () => {
   const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
   if (!up) return 'skipped (no local MQTT broker on 127.0.0.1:9001)';
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
-  const A = await open(b, { pre, w: 900, h: 640, lang: 'en', settings: { friendCode: 'AAAAA2', friendsOn: true, friends: [{ code: 'BBBBB3', name: 'Bin' }] } });
-  const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'BBBBB3', friendsOn: true, friends: [{ code: 'AAAAA2', name: 'Na' }] } });
+  const A = await open(b, { pre, w: 900, h: 640, lang: 'en', settings: { friendCode: 'AAAAA2', friendsOn: true, autoMeet: false, friends: [{ code: 'BBBBB3', name: 'Bin' }] } });
+  const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'BBBBB3', friendsOn: true, autoMeet: false, friends: [{ code: 'AAAAA2', name: 'Na' }] } });
   // each player has a photo: it must reach the friend through the cloud too (locked with their pair key)
   const photo = c => { const k = document.createElement('canvas'); k.width = k.height = 64; const g = k.getContext('2d'); g.fillStyle = c; g.fillRect(0, 0, 64, 64); __sv.heroes[0].profile.photo = k.toDataURL('image/jpeg', .8); };
   for (const [P, c] of [[A, '#ff0000'], [B, '#0000ff']]) { await clear(P.page); await P.page.evaluate(async c => { window.__Net = (await import('/js/net.js')).Net; }, c); await P.page.evaluate(photo, c); }

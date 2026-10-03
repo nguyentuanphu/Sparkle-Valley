@@ -59,7 +59,7 @@ export function createShowcase(G) {
     return best;
   };
 
-  // the fly-around: returns a promise that resolves when it ends (after ~5 s, or a tap)
+  // the fly-around: a short swing past the landmark (about 2.5 s, or a tap), then its card opens
   G.showcase = (h, lm) => new Promise(res => {
     if (!h || G.show) return res();
     const c = landmarkCentre(lm), a0 = clearestAngle(c, Math.atan2(h.pos.x - c.x, h.pos.z - c.z));
@@ -68,7 +68,7 @@ export function createShowcase(G) {
     const cap = el('div', 'sc-cap', `${lm.icon || '📍'} ${lm.name()}`);
     document.body.append(skip, cap); document.body.classList.add('showcasing');
     const done = () => { if (!G.show) return; G.show = null; skip.remove(); cap.remove(); document.body.classList.remove('showcasing'); G.paused = wasPaused; res(); };
-    G.show = { i: h.i, c, a0, t: 0, len: 5 };
+    G.show = { i: h.i, c, a0, t: 0, len: 2.4 };
     skip.onclick = e => { e.stopPropagation(); done(); };
     G._showDone = done;
   });
@@ -90,12 +90,14 @@ export function createShowcase(G) {
     const S = G.show; if (!S || S.i !== i) return false;
     S.t += dt; if (S.t > S.len) { G._showDone(); return false; }
     if (S.look) { // riding up for the first 3 s, then turning right round
-      const L = S.look, up = Math.min(1, S.t / 3), e = up * up * (3 - 2 * up), a = S.a0 + Math.max(0, S.t - 3) / (S.len - 3) * Math.PI * 2;
-      h.cam.position.set(L.x, L.y - 14 * (1 - e), L.z);
-      h.cam.lookAt(L.x + Math.sin(a) * 40, L.y - 10 - 4 * (1 - e), L.z + Math.cos(a) * 40); h.camPos.copy(h.cam.position);
+      // standing at the rail on the outside of the top, looking out and a little down over the land (from the
+      // middle the tower's own top filled half the picture)
+      const L = S.look, up = Math.min(1, S.t / 3), e = up * up * (3 - 2 * up), a = S.a0 + Math.max(0, S.t - 3) / (S.len - 3) * Math.PI * 2, R = 7;
+      h.cam.position.set(L.x + Math.sin(a) * R, L.y + 3 - 14 * (1 - e), L.z + Math.cos(a) * R);
+      h.cam.lookAt(L.x + Math.sin(a) * 60, L.y - 16 - 4 * (1 - e), L.z + Math.cos(a) * 60); h.camPos.copy(h.cam.position);
       return true;
     }
-    const c = S.c, k = S.t / S.len, a = S.a0 + (k - .5) * 1.2, D = camDist(c), H = camHeight(c);
+    const c = S.c, k = S.t / S.len, a = S.a0 + (k - .5) * (S.len > 4 ? 1.2 : .7), D = camDist(c), H = camHeight(c);
     h.cam.position.set(c.x + Math.sin(a) * D, H, c.z + Math.cos(a) * D);
     const gy = heightAt(h.cam.position.x, h.cam.position.z) + 1.5; if (h.cam.position.y < gy) h.cam.position.y = gy;
     h.cam.lookAt(c.x, c.y + c.s * .3, c.z);
