@@ -200,7 +200,7 @@ export function heightAt(x, z) {
   const dr = riverDist(x, z);
   h = lerp(h, -2.6 - mtn * 2, 1 - smooth(3.5, 11, dr));
   // Raised banks either side of each bridge.
-  for (const B of BRIDGES) if (Math.abs(z - B.z) < 8 && x > B.x0 - 10 && x < B.x1 + 16) {
+  for (const B of BRIDGES) if (Math.abs(z - B.z) < 8 && x > B.x0 - 10 && x < B.x1 + 16 && dr > 7) { // (never over the river itself: boats pass under)
     // level ground at deck height at both ends, easing back to the natural hills further away; the river in the middle is left alone
     const west = smooth(B.x0 + 8, B.x0 + 3, x), east = smooth(B.x1 - 8, B.x1 - 3, x) * (1 - smooth(B.x1 + 4, B.x1 + 16, x));
     const w = (1 - smooth(4, 8, Math.abs(z - B.z))) * (west + east);
@@ -209,7 +209,7 @@ export function heightAt(x, z) {
   // road beds (js/roads.js): the ground under and beside every road is shaped to the road's own smooth height,
   // so the road never floats, never sinks into a bump, and walking on it is walking on the ground
   RB_COV = false;
-  if (RB_ON) { const list = RB_GRID.get(fpKey(Math.floor(x / 8), Math.floor(z / 8))); if (list) {
+  if (RB_ON && dr > 6.5) { const list = RB_GRID.get(fpKey(Math.floor(x / 8), Math.floor(z / 8))); if (list) { // (never fills the river: bridges carry roads over it)
     // each road's nearest piece gives its height here; where two roads overlap (a junction) the higher one is the
     // one you see, so the ground follows that one
     let bd = 1e9, by = 0, bw = 0, cover = -1e9; RB_T.length = 0;

@@ -255,6 +255,40 @@ await check('roadshape', async () => {
   return `${Math.round(r.len)} m of road: straight or smoothly curved, gentle and rounded`;
 });
 
+await check('phone', async () => {
+  // every main screen opened on a desktop and on a phone side by side: nothing spills off the side, every button
+  // (close, play, next…) is fully on the screen, and nothing goes wrong. Bugs that only phones show are caught here.
+  const D = await open(b, { w: 1180, h: 760 }), M = await open(b, { w: 390, h: 760, touch: true, lang: 'vi' });
+  const SCREENS = [
+    ['games hub', () => __sv.openGamesHub(0)], ['map', () => __sv.openPad(0, 'map')], ['bag', () => __sv.openPad(0, 'bag')], ['friends', () => __sv.openPad(0, 'friend')],
+    ['quick settings', () => __sv.openQuick(0)], ['wardrobe', () => __sv.openWardrobe(0)],
+    ['how to play', async () => { (await import('/js/howto.js')).openHowTo('oanquan', {}); }],
+    ['tale', async () => { (await import('/js/tales.js')).openTheatre((await import('/js/learn.js')).TALES[0], {}); }],
+    ['a game', () => { __sv.playGame(0, 'caro', 'replay'); }],
+    ['dialog', () => { __sv.dialog('Bà Năm', [['Hello! Shall we play?', 'Chào cháu! Chơi nhé?']], [['▶ Play!', '▶ Chơi!'], ['👋 Later', '👋 Để sau']]); }]
+  ];
+  const bad = [];
+  for (const P of [D, M]) await clear(P.page);
+  for (const [name, fn] of SCREENS) {
+    for (const [P, tag] of [[D, 'desktop'], [M, 'phone']]) {
+      await P.page.evaluate(`(${fn.toString()})()`); await P.page.waitForTimeout(1400);
+      const r = await P.page.evaluate(() => {
+        const W = innerWidth, H = innerHeight, out = [];
+        if (document.scrollingElement.scrollWidth > W + 1) out.push('page scrolls sideways (' + document.scrollingElement.scrollWidth + ' > ' + W + ')');
+        const top = document.querySelector('.wardrobe, .hub, .pad, .howto, .theatre, .gl, .dialog:not(.out), .modal');
+        if (top) for (const btn of top.querySelectorAll('button')) { const b = btn.getBoundingClientRect(), cs = getComputedStyle(btn); if (!b.width || cs.visibility === 'hidden' || btn.closest('[hidden]')) continue;
+          if (/^(x|th-x|ht-x|gl-x|dch|ht-play|th-next|gl-next)$/.test(btn.className.split(' ')[0]) && (b.left < -1 || b.right > W + 1 || b.top < -1 || b.bottom > H + 1)) out.push(`button "${(btn.textContent || btn.getAttribute('aria-label') || btn.className).trim().slice(0, 20)}" off screen`); }
+        return out;
+      });
+      r.forEach(x => bad.push(`${name} (${tag}): ${x}`));
+      await P.page.evaluate(() => { document.querySelectorAll('.modal, .hub, .pad, .howto, .theatre, .gl, .dialog, .storybook, .vc-pop, .wardrobe').forEach(e => e.remove()); __sv.paused = false; __sv.closeUp = null; });
+    }
+  }
+  const errs = D.errors.concat(M.errors); await D.ctx.close(); await M.ctx.close();
+  ok(!bad.length && !errs.length, JSON.stringify({ bad, errs }));
+  return `${SCREENS.length} screens checked on desktop and phone`;
+});
+
 await check('ground', async () => {
   // every building on dry, level ground (not over the river or the lake), no road floating, buried or in water,
   // and the build number in the game matches the service worker's version

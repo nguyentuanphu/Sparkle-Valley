@@ -30,7 +30,7 @@ const STAGES = [
   [/king|palace|prince|princess|emperor|queen|festival/i, 'palace'], [/rice|field|farm|garden|village|plant|seed/i, 'field'],
   [/desert|hot|dry|thirsty/i, 'desert']
 ];
-const stageOf = en => (STAGES.find(([re]) => re.test(en)) || [0, 'meadow'])[1];
+export const stageOf = en => (STAGES.find(([re]) => re.test(en)) || [0, 'meadow'])[1];
 
 export function openTheatre(tale, { name = '', onDone, startPage = 0 } = {}) {
   return new Promise(resolve => {
@@ -47,13 +47,14 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0 } = {}) {
       const my = ++token, [pics, en, vi] = tale.pages[k], st = stageOf(en);
       stage.className = 'th-stage st-' + st; bg.innerHTML = SCENES[st] ? `<svg class="sc" viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${SCENES[st]()}</svg>` : STAGE_ART[st] || '';
       // actors: spread across the stage, each entering from its side, then moving its own way
-      const list = graphemes(pics).slice(0, 7);
+      // on a narrow (phone) stage fewer, smaller actors, spread over the whole width, so nobody overlaps
+      const narrow = stage.clientWidth < 560, list = graphemes(pics).slice(0, narrow ? 4 : 7);
       actors.innerHTML = list.map((e, i) => {
-        const n = list.length, x = n === 1 ? 50 : 14 + i * (72 / (n - 1)), y = 38 + ((i * 37) % 3) * 9 - (moveOf(e) === 'fly' ? 24 : 0);
+        const n = list.length, x = n === 1 ? 50 : (narrow ? 12 : 14) + i * ((narrow ? 76 : 72) / (n - 1)), y = 38 + ((i * 37) % 3) * 9 - (moveOf(e) === 'fly' ? 24 : 0);
         const size = n <= 2 ? 22 : n <= 4 ? 17 : 13;
         // people are drawn cartoon characters who walk in; animals and things are the game's drawn pictures
         const base = e.replace(/\u200d.*$|[\u{1F3FB}-\u{1F3FF}\uFE0F]/gu, ''), fairy = base === '🧚';
-        if (CAST[base]) { const gy = fairy ? 42 : 80 + (i % 2) * 7, sc = fairy ? .8 : .9 + (gy - 80) / 50; return `<span class="th-a th-c${fairy ? ' flying' : ' walking'} in-${i % 2 ? 'r' : 'l'}" style="left:${x}%;top:${gy}%;--sc:${sc.toFixed(2)};--d:${(i * .25).toFixed(2)}s;z-index:${gy}">${CAST[base]()}</span>`; }
+        if (CAST[base]) { const gy = fairy ? 42 : 80 + (i % 2) * 7, sc = (fairy ? .8 : .9 + (gy - 80) / 50) * (narrow ? (n >= 3 ? .62 : .8) : 1); return `<span class="th-a th-c${fairy ? ' flying' : ' walking'} in-${i % 2 ? 'r' : 'l'}" style="left:${x}%;top:${gy}%;--sc:${sc.toFixed(2)};--d:${(i * .25).toFixed(2)}s;z-index:${gy}">${CAST[base]()}</span>`; }
         return `<span class="th-a mv-${moveOf(e)} in-${i % 2 ? 'r' : 'l'}" style="left:${x}%;top:${y}%;font-size:min(${size}vw, ${size * 1.25}vh);--d:${(i * .18).toFixed(2)}s">${hasArt(e) ? pic(e) : e}</span>`;
       }).join('');
       // weather and sparkles that fit the page

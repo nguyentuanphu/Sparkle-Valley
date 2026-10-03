@@ -27,7 +27,7 @@ import { BUILD } from './build.js';
 import { VOICE_STYLES, clipCountFor, hush, setSpeaker, sayIn, sayDevice } from './voice.js';
 import { LEARN } from './words2.js';
 import { originFlags } from './icons.js';
-import { pic } from './art.js';
+import { pic , labelArt } from './art.js';
 
 const PET_ICON = { puppy: '🐶', kitty: '🐱', bunny: '🐰', panda: '🐼', joey: '🦘', calf: '🐃' };
 export const STYLE_ICON = { dress: '👗', shirt: '👕', aodai: '🥻', tunic: '🧥', overalls: '👖', hoodie: '🧶' };
@@ -545,7 +545,7 @@ export function dialog(name, lines, choices) {
       const [en, vi] = lines[i]; text.textContent = T(en, vi); setSpeaker(name); say(en, vi);
       const last = i === lines.length - 1;
       ch.innerHTML = ''; next.hidden = last && choices && choices.length;
-      if (last && choices && choices.length) choices.forEach((c, k) => { const b = el('button', 'dch', esc(T(c[0], c[1]))); b.onclick = e => { e.stopPropagation(); SFX.tap(); close(k); }; ch.appendChild(b); });
+      if (last && choices && choices.length) choices.forEach((c, k) => { const b = el('button', 'dch', labelArt(T(c[0], c[1]), esc)); b.onclick = e => { e.stopPropagation(); SFX.tap(); close(k); }; ch.appendChild(b); });
     };
     let closed = false;
     const close = k => { if (closed) return; closed = true; setSpeaker(null); d.classList.add('out'); setTimeout(() => d.remove(), 200); res(k); };
