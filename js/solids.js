@@ -50,11 +50,11 @@ export function buildSolids(G) {
     };
     // a saved map from an earlier start of this same valley is used as it is (the work below takes a few seconds)
     const sig = 'sv2_solid_' + SIG + '_' + still.length;
+    let oi = 0, work = 0, lastEnd = 0; // (declared before the saved map is used: done() reads work)
     let cached = null; try { cached = localStorage.getItem(sig); } catch (e) { }
     if (cached) { const bin = atob(cached); for (let k = 0; k < N * N; k++) if (bin.charCodeAt(k >> 3) & (1 << (k & 7))) { grid[k] = 1; marked++; } return done(true); }
     // otherwise a little at a time (about 12 ms per frame), so the game keeps moving while it is made; on a device
     // whose frames are slow anyway, a bigger bite each time (a quarter of the time between bites, at most 120 ms)
-    let oi = 0, work = 0, lastEnd = 0;
     const step = () => {
       const s0 = performance.now(), until = s0 + Math.min(120, Math.max(12, lastEnd ? (s0 - lastEnd) * .25 : 12));
       while (oi < still.length && performance.now() < until) {
