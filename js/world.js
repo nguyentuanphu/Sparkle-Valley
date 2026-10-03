@@ -34,6 +34,12 @@ CITIES.forEach(c => Object.assign(c, { x0: c.x - c.w, x1: c.x + c.w, z0: c.z - c
 const FLATS = [TOWN, MARKET, AUSSIE, ...CITIES];
 // building lots along the roads out of each city (js/suburbs.js builds on them): levelled ground, no trees
 export const LOTS = [];
+// Level ground under every building, stall and landmark (filled in by levelUnderBuildings once the world is built):
+// each one gets a flat patch at the height it was placed at, easing back to the hillside over a few metres, so
+// whatever is added later always stands on its own level land. Kept in a 16 m grid so looking one up is quick.
+export const FOOTPRINTS = [];
+const FP_GRID = new Map(), fpKey = (i, j) => i * 4096 + j;
+function fpAdd(F) { FOOTPRINTS.push(F); for (let i = Math.floor((F.x0 - F.pad) / 16); i <= Math.floor((F.x1 + F.pad) / 16); i++) for (let j = Math.floor((F.z0 - F.pad) / 16); j <= Math.floor((F.z1 + F.pad) / 16); j++) { const k = fpKey(i, j); if (!FP_GRID.has(k)) FP_GRID.set(k, []); FP_GRID.get(k).push(F); } }
 const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [58, 40], [52, 85]];
 export const CHINA = { x: 100, z: -88, r: 24, h: 9 };    // China Town: lanterns, tiled roofs, a pagoda and a little Great Wall
 export const INDIA = { x: -112, z: -84, r: 24, h: 9 };  // India Village: colourful houses, a little Taj Mahal, rangoli and marigolds
@@ -149,6 +155,10 @@ export function heightAt(x, z) {
     const w = (1 - smooth(6, z < zc ? 26 : 20, across)) * smooth(-30, -24, x) * (1 - smooth(10, 16, x));
     h = lerp(h, sy, w);
   }
+  if (FP_GRID.size) { const list = FP_GRID.get(fpKey(Math.floor(x / 16), Math.floor(z / 16))); if (list) for (const F of list) {
+    const ox = Math.max(F.x0 - x, 0, x - F.x1), oz = Math.max(F.z0 - z, 0, z - F.z1); if (ox > F.pad || oz > F.pad) continue;
+    const d = Math.hypot(ox, oz); if (d < F.pad) h = lerp(h, F.h, 1 - smooth(0, F.pad, d));
+  } }
   // the festival grounds are level (their height is the natural height at their centre, worked out once)
   for (const F of Object.values(FESTGROUNDS)) {
     const d = dist2(x, z, F.x, F.z); if (d > 21 || F.h === null) continue;
@@ -797,4 +807,39 @@ export function paintMap(size = 256) {
   x.fillRect((BRIDGE.x0 + HALF) * s, (BRIDGE.z - 2 + HALF) * s, (BRIDGE.x1 - BRIDGE.x0) * s, 4 * s);
   x.fillStyle = '#e8b51e'; x.fillRect((DRAGON.x0 + HALF) * s, (DRAGON.z - 2 + HALF) * s, (DRAGON.x1 - DRAGON.x0) * s, 4 * s);
   return c;
+}
+
+// Once everything is placed: level the ground under every building (world.boxes) and every big round thing
+// (colliders of 2.5 m and more), then reshape the terrain there. The flat patch is the height the thing was placed
+// at (the ground at its middle); the edge eases back over up to 4 m, less near a road so the road stays on the ground.
+export function levelUnderBuildings(world, scene) {
+  // remember how far above the ground everything small stands (people, tags, animals, props), to move it with the ground
+  const keep = [];
+  if (scene) for (const o of scene.children) {
+    if (o === world.terrain || o.isLight || o.isInstancedMesh || !o.position) continue;
+    if (o.isMesh && o.geometry) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); if (o.geometry.boundingSphere.radius > 6) continue; }
+    keep.push([o, heightAt(o.position.x, o.position.z)]);
+  }
+  const want = [];
+  for (const b of world.boxes) { if (b.room || b.x1 - b.x0 > 40 || b.z1 - b.z0 > 40) continue; want.push({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1 }); }
+  for (const c of world.colliders) if (c.r >= 2.5 && c.r <= 12) want.push({ x0: c.x - c.r * .8, x1: c.x + c.r * .8, z0: c.z - c.r * .8, z1: c.z + c.r * .8 });
+  let n = 0;
+  for (const F of want) {
+    const cx = (F.x0 + F.x1) / 2, cz = (F.z0 + F.z1) / 2, h = heightAt(cx, cz);
+    if (h < WATER + .6 || riverDist(cx, cz) < 12) continue;
+    const corners = [[F.x0, F.z0], [F.x1, F.z0], [F.x0, F.z1], [F.x1, F.z1]].map(([x, z]) => heightAt(x, z));
+    if (Math.max(...corners.map(v => Math.abs(v - h))) < .25) continue; // already flat enough
+    const rd = roadDist(cx, cz), half = rd.road ? rd.road.w / 2 : 0, room = rd.d - half - Math.max(F.x1 - F.x0, F.z1 - F.z0) / 2;
+    F.pad = Math.max(1.2, Math.min(4, room - 1)); F.h = h; fpAdd(F); n++;
+  }
+  // reshape the terrain where anything changed
+  const t = world.terrain; if (!t || !n) return n;
+  const pa = t.geometry.attributes.position;
+  for (let i = 0; i < pa.count; i++) {
+    const x = pa.getX(i), z = pa.getZ(i), list = FP_GRID.get(fpKey(Math.floor(x / 16), Math.floor(z / 16)));
+    if (list && list.length) pa.setY(i, heightAt(x, z));
+  }
+  pa.needsUpdate = true; t.geometry.computeVertexNormals(); t.geometry.computeBoundingSphere();
+  for (const [o, h0] of keep) { const d = heightAt(o.position.x, o.position.z) - h0; if (Math.abs(d) > .02 && Math.abs(d) < 6) o.position.y += d; }
+  return n;
 }
