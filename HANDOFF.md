@@ -1,7 +1,7 @@
 # Sparkle Valley · Thung Lũng Lấp Lánh — Handoff
 
 A bilingual (English / Tiếng Việt) 3D open-world browser game for the owner's children, aged 2–8.
-Attach this file at the start of a new chat. Code: **https://github.com/nguyentuanphu/Sparkle-Valley** (work on a `claude/…` branch, merged into `main` by pull request).
+Attach this file at the start of a new chat, with **`docs/SO-TAY-THIET-KE.md` (Sổ tay thiết kế, the design handbook)**, which holds every design, data, safety and release rule in one place. Code: **https://github.com/nguyentuanphu/Sparkle-Valley** (work on a `claude/…` branch, merged into `main` by pull request).
 
 ---
 
@@ -17,11 +17,69 @@ Attach this file at the start of a new chat. Code: **https://github.com/nguyentu
 8. Test at phone (320–390 px), tablet and desktop sizes, with 1 and 2 players, in both languages, and say plainly what could not be tested.
 9. Keep it fun and safe for ages 2–8, girls and boys. Under-5 mode never punishes (no losing, no timers, no reading needed); big kids can have real challenge.
 10. **HARD RULES for land and roads (round 29, checked by `flat` and `roadshape`):** every village, town and city is one flat level (`LEVELS` in world.js, applied last in `heightAt`; only the river, the lake, ponds, bridge ramps, road surfaces and a building's own base pad differ). Roads are straight runs joined by true circular curves (fillets: asphalt 24 m, dirt 16 m), run straight into every gate, are never steeper than 10 % (dirt 14 %; a little more only where two fixed places are too close, then shared evenly), have every change of slope rounded, take the place's level inside a village and the through road's exact height at a junction, and have a soft verge with flowers along both sides. Never fill the river (bridge banks and road beds stay off it).
-11. **Recorded Azure voices are always the voice.** Every new spoken line must end up in the pack: run `tools/voice-harvest.mjs` and `tools/make-voice-pack.mjs --engine azure` at the end of a round. The phone's own voice is only a fallback for a line with no recording.
+11. **HARD: the downloaded (recorded Azure) voices are always the voice, on every device including iPhone.** Every new spoken line must end up in the pack: run `tools/voice-harvest.mjs` and `tools/make-voice-pack.mjs --engine azure` at the end of a round. The phone's own voice is only a fallback for a line with no recording. On iPhone: sound is woken on every tap, a primed plain audio player plays the recording if Web Audio is asleep, the voice list comes from the saved copy at once, and Grown-ups shows why a recording could not play. Checked by `voice` (round 30, after the owner heard the iPhone voice on Safari).
 12. **Test desktop and phone side by side every round** (`phone` check, plus screenshots at 390×760 touch and 1180×760 together). The owner found bugs on phones that desktop tests missed.
 14. **Suggestions and anything not finished: always ask the owner before doing them.** At the end of every round, list the suggestions and the partly-done items and let the owner decide which to do (never start them on your own).
-15. **REMINDER for the next round (owner asked, round 29):** at the start of the next round, remind the owner that they want to know **how many people play**, and a **report with the key numbers sent to Sparkle Studio** (and viewable online). Ask which option they choose (see §6 "Player numbers and an online Studio") before building it.
+15. **Player numbers and Sparkle Studio online (owner chose B and C in round 30, built):** the anonymous player counter, the Studio Players page and the Studio online at `/studio/` are built. **Sparkle Studio online and SparkleStudio.exe must always be updated together**: they share `studio/ui` and `studio/core.cjs`, `studio/version.json` must equal the game's BUILD (checked by `studio`), and the exe is rebuilt every round `studio/` changes.
+16. **Design rules G0–G11 and R1–R12 (§0b and the handbook) are HARD rules.** The owner's design-rules plan runs one phase per round (§0b).
 13. **No phone emoji in the look of the game:** any picture that shows on screen goes through `pic()` / `labelArt()` / `sprite()`, which draw the valley's own art from `js/art.js` (458 drawings, ~90 % of the emoji in the code). A new emoji needs a drawing there.
+
+## 0b. Design rules (HARD RULES, owner round 30; follow G0–G11 and R1–R12 in every round)
+
+Merged from the owner's "Vietnamese Village Hard Prompts" and the game's measurable rules. Where the code is checked by a test, the check is named; anything new must pass the same checks.
+
+**G0 Style anchor** (start every art or feature brief with it): "Colourful polished Vietnamese village game art, soft warm afternoon lighting, clean toon shading with soft dark-brown outlines (#3a2a20), chunky rounded shapes, harmonious saturated pastels (pink #ff6fae, purple #8a5cf6, leaf green #43c463, gold #ffb020, sky #29b6f6, paper cream #fff6e4), no clutter, readable silhouettes, friendly for children aged 2–8."
+
+**Global**
+- **G1 Toon:** `toonVC()`/MeshToonMaterial + `outline()`; rounded shapes; no realistic/PBR textures; no sharp spikes at child height.
+- **G2 Scale, 1 unit = 1 m:** child 1.6 m (3 heads), adult 2.0 m, grandparents 1.8 m slightly bent; doors ≥ 1.4 × 2.4 m; steps ≤ 0.4 m.
+- **G3 Bilingual everything:** `T('EN','VI')` / `['EN','VI']`, redrawn on `onLang()`; handwritten-style signs too.
+- **G4 On the ground:** `heightAt(x,z)` ± 0.05 m; footprints levelled (FLATS / `levelUnderBuildings`).
+- **G5 Nothing on a road or its verge:** no props, trees, rocks, grass tufts, flowers, pickups or NPC spots within `road.w/2 + 1.5 m` of a road centre (`roadDist()`). *(checked: `roads`)*
+- **G6** Fronts face the nearest road or yard; the interaction point is on the road side.
+- **G7 Interactables:** a floating icon, ~2.5 m tap radius, one main action.
+- **G8 Safe for ages 2–8:** no weapons, blood, scary faces, animal fights, real logos, phone numbers or addresses; house 8 shows only "8".
+- **G9 "High detail" = silhouette and colour, not polygons:** small props ≤ ~2,000 triangles, InstancedMesh for repeats, works at quality 'low'.
+- **G10** Existing UI and features unchanged unless asked; bump `VERSION` in `sw.js`; add new files to `FILES`; tests before and after.
+- **G11 No clutter:** at most one big focal object per 10 m of street, ≥ 40 % open ground, nothing blocking a walking line.
+
+**Roads**
+- **R1** Three classes, constant width end to end: asphalt 5.2 m (villages and cities), dirt 3.4 m (quiet places), footpath 1.6 m (inside villages, round ponds, along paddy bunds).
+- **R2 Continuous curvature:** min radius 10 m asphalt, 6 m dirt, 3 m footpath; no S-bends within 15 m, no zigzags. *(The game meets this with true circular arcs, fillets of 24 m asphalt / 16 m dirt, rather than Chaikin smoothing; checked: `roadshape`, no step turns more than 8°.)*
+- **R3 Surface:** max `heightAt` of the centre and 4 points 1.4 m away + 0.08 m; never > 0.3 m above the ground (flatten instead); grade ≤ 8 % asphalt, 12 % dirt, 15 % footpath (steps above). *(Note: `roadshape` currently allows 10 % / 14 % where two fixed places are too close; tighten only with the owner.)*
+- **R4 Clear corridor:** `w/2 + 1.5 m` (0.8 m for footpaths); trees ≥ `w/2 + 2.5 m`; buildings 2–4 m back from the edge.
+- **R5 Junctions:** T by default: the side road leaves at 60–120°, stops at the main road's edge, runs straight ≥ 6 m before curving. Y only where a road splits evenly into two equal roads (each arm 30–60° off the old heading). Inner corners filleted (radius ≥ road width); the junction is one plain asphalt patch without lines: no gaps, no overlaps. *(checked: `roads`, every side road that ends on another road's middle leaves it at 60–120°.)*
+- **R6** Outside towns only T-junctions; crossroads and roundabouts only inside towns; junctions on one road ≥ 20 m apart; parallel roads ≥ 12 m apart; roads never cross without a junction.
+- **R7 Gates:** a named road end coincides with its gate anchor (0 m gap, no grass strip); the surface runs 2 m through the gate into the street or yard with no step; gate perpendicular, posts outside the road edge, opening ≥ road + 1 m each side; bilingual sign, letters ≥ 0.8 m.
+- **R8** Every village and city reachable by asphalt; no dead ends except at a gate, landmark or pier; real geography north → south. *(checked: `roads`)*
+- **R9 River crossings:** within ± 20° of perpendicular, straight ≥ 6 m each side; asphalt on a flat bridge at road level; dirt roads and footpaths on a low wooden arched bridge (≤ 1.2 m rise, 0.9 m rails); nothing standing on bridge decks.
+- **R10** Lines only on asphalt; plain asphalt at junctions; zebra crossings only in towns, perpendicular.
+- **R11 Pond footpaths** follow the shore 1.5–2.5 m from the water, never < 1 m; gaps end at a bench, pier or bridge, never across a game board or doorway.
+- **R12 Soft edges:** a 0.3–0.5 m colour blend from road to grass; no jagged hard edge.
+
+**By category**
+- **Village houses:** curved red tile roof + small thatched porch, warm wood/ochre walls with a small painted flower panel, stone base, potted flowers, short bamboo fence; NO modern elements in villages (cities keep their tube houses, villas, weatherboards, Queenslanders).
+- **Kiosks:** fixed 2.4 × 1.6 m, or a wooden push cart 2.2 × 1.2 m on two wheels; counter 0.9 m. Vietnam: red-and-yellow striped canopy, red, yellow and green paper lanterns, ≤ 3 baskets of tropical fruit; handwritten-style bilingual sign, letters ≥ 0.25 m.
+- **Market day (chợ phiên):** 3–6 cloth-awning stalls, aisles ≥ 3 m, one product per stall.
+- **Vehicles:**
+  - On dirt roads and footpaths, only buffalo carts (red canopy, hay, tiny lotus), bicycles with flower and fruit baskets, and cyclos, ≤ 1 m/s.
+  - On asphalt, only buses and scooters (riders in helmets), ≤ 6 m/s; keep right in Vietnam, left in Australia.
+  - Every vehicle waits for a child within 4 m in front, and never knocks anyone.
+- **Animals:** buffalo, hen, dog, cat, duck: happy faces, big eyes, flat toon colours (no fur strands), never bite, fight or get hurt; tap = sound + bilingual name.
+- **NPCs:** áo bà ba, farmer clothes, nón lá, warm skin tones, gentle idle poses, bilingual titles, never caricatured.
+- **Village landmarks:** banyan with hanging roots and a small shrine at its foot; stone well with a small tiled roof and a bucket nearby ("cây đa, giếng nước, sân đình"); village gate with stone pillars, red lanterns and a bilingual board, on the gate anchor (R7). Respectful near shrines.
+- **River:** wooden đò with a rower in nón lá, thuyền thúng, lotus near the banks (never in ferry lanes), piers ≥ 6 m with rails and a life ring; children never drown.
+- **Map:** north up, compass rose (red N), legend panel, thin bamboo-and-lotus border ≤ 8 % width, bilingual title, labels ≥ 12 px.
+- **UI:** the current UI stays the default. A wooden lotus-carved "Làng xưa" skin is OPTIONAL only (Phase 5, only if the owner says yes), contrast ≥ 4.5:1, primary buttons ≥ 56 px.
+
+**How the owner wants this work done (the design-rules plan, one phase per round):**
+1. **Phase 1** roads (junction angles, grass off roads, faster `roadDist`, checks).
+2. **Phase 2** Lotus Village (well, shrine, pond footpath, thuyền thúng, real hens, dog and cat, bicycles, buffalo cart).
+3. **Phase 3** kiosks, push carts, market day, NPC clothing.
+4. **Phase 4** map decoration.
+5. **Phase 5** the optional "Làng xưa" skin.
+
+In each phase: run the suite before and after, take before/after screenshots from the same spots, commit locally, give the Netlify zip, and wait for "yes, push".
 
 ## 1. Run, deploy, install
 
@@ -47,7 +105,9 @@ Attach this file at the start of a new chat. Code: **https://github.com/nguyentu
 | `features` | 7 cities, 26 kiosks, 7 hosts, ≥ 47 landmarks (53 now), house 8, 38 tales, Dragon Bridge walkable, pets/pet yard, chat auto-close, shortcuts, zoom, Games hub → host/storyteller, folk-game chatter |
 | `camera` | At every landmark sign facing 4 ways, the camera is not inside or blocked by a building |
 | `contract` | HUD buttons, Pad tabs and Games hub sections unchanged (`tests/ui-contract.json`) |
-| `roads` | Every city is on a road, a golden gate stands on every named road end (15+), and no collider, building or interactable stands on a road |
+| `roads` | Every city is on a road, a golden gate stands on every named road end (15+), no collider, building or interactable stands on a road; **R5:** every side road that ends on another road's middle leaves it at 60–120°; **G5:** no grass tuft or flower within `w/2 + 0.3 m` of a road (`world.groundCover`); `roadDist` gives the same answers as a full search at 20,000 points |
+| `solid` | Houses and objects are solid (js/solids.js): 250 walk-ins at solid spots without their own collider are stopped, everything tappable still has open ground, desktop and phone build the same map, and the saved map is reused |
+| `studio` | Sparkle Studio online and the exe are one program: `studio/version.json` = the game's build; on a pretend GitHub and Netlify: password, saves go to the draft branch, Publish keeps changes made meanwhile, the players report and the missing-lines inbox, the exe's own folder, and the pages open on desktop and phone in both |
 | `ground` | Every building on dry, level ground (none over the river or the lake), no road floating, buried or in water (`tests/world-audit.mjs`), and the build number in `js/build.js` matches `sw.js` VERSION |
 | `flat` | Every village, town and city is level everywhere (6,677 spots) |
 | `roadshape` | Every road: no step turns more than 8°, never steeper than ~12 % (dirt ~15 %), no vertical kinks |
@@ -153,6 +213,10 @@ Plain HTML/CSS/JS ES modules, **no build step**. three.js r160 (`vendor/three.mo
 | `js/games/*.js` | `frame.js` (shared game frame) + thinking, strategy, vietnam, market, farmgames, folk, folk2, asia, music, cities |
 | `js/custom.js`, `content/` | Family content pack (see §1) |
 | `js/worldedit.js` | The family's world changes from Sparkle Studio: new buildings (`BUILD_TYPES`), move/remove inside a circle |
+| `js/solids.js` | The solid map: houses and objects can't be walked through (0.5 m grid from the real meshes, saved per build and content pack; `world.collide` uses it) |
+| `js/players.js`, `netlify/functions/hello.mjs`, `netlify/lib/players.mjs` | Anonymous player counter (hello every 10 min, off switch in Grown-ups → Advanced) and its report; the missing-lines inbox |
+| `studio/core.cjs`, `netlify/functions/studio.mjs`, `studio/version.json` | Sparkle Studio's engine shared by the exe and the online Studio (`/studio/`, password `STUDIO_PASSWORD`, files in GitHub via the `studio-draft` branch) |
+| `docs/SO-TAY-THIET-KE.md` | Sổ tay thiết kế: the design handbook |
 | `js/build.js` | The build number shown on the title screen and in Settings (`r35`); keep it equal to the end of `sw.js` VERSION |
 | `photos/` | Real photos saved with the game by Sparkle Studio (`index.json` + `<key>/n.jpg`); `js/realworld.js` shows these first, then the best online ones, and keeps every photo shown for offline |
 | `tools/voice-harvest.mjs`, `tools/voice-extra.json` | Lines built while playing, collected for the voice pack |
@@ -184,8 +248,28 @@ Plain HTML/CSS/JS ES modules, **no build step**. three.js r160 (`vendor/three.mo
 - Real-device testing: iPhone/Android touch and performance, real voices with keys, recording, share-sheet backups, **online play across two real networks** (public MQTT brokers and PeerJS could not be reached from the build machine).
 - Optional ideas, only if asked: dark / high-contrast mode, simpler menu for under-5s, bedtime routine, phonics and telling the time, decorating, online co-op tasks, hosted sync, native store apps.
 
-- **Player numbers and an online Studio (owner's request, round 29, waiting for the owner's choice):** today the game has no server and counts nothing. Options to put to the owner: (a) Netlify Analytics (paid add-on, no code, counts visits only, not children); (b) a tiny anonymous counter in our own Netlify site (a Netlify Function + Netlify Blobs: a random device id, daily/weekly players, build, language, games played; no names, photos or locations; with a Grown-ups switch), shown on a new Studio "Players" page and on a password-protected online report page; (c) an online Sparkle Studio: the dashboard as a password-protected page on the Netlify site that edits `content/` through the GitHub API (keys stay in Netlify environment variables, never in the repo). The Windows exe stays for recording voices and downloading photos.
-- **Partly done, waiting for the owner's choice (round 29):** redraw the 38 tales in the new cartoon style; draw the remaining ~370 emoji uses; real famous singers (copyright) vs. the current renameable bird-named singers.
+- **Player numbers and Sparkle Studio online: built in round 30 (owner chose B and C).** To switch them on, the owner sets these in Netlify → Site configuration → Environment variables, then redeploys:
+  - `STUDIO_PASSWORD` (long; required);
+  - `GITHUB_TOKEN` (fine-grained, this repository, Contents read and write);
+  - optional `AZURE_KEY` and `AZURE_REGION`, and `NETLIFY_TOKEN`.
+  
+  The counter and the online Studio only work on Git deploys (Netlify Functions + Blobs); a drag-and-drop zip has the game only. In the exe, Settings → "Players and the online Studio" takes the website address and the same password.
+- **Not finished in round 30 (stopped by the usage limit; the owner decides what to resume):**
+  - redraw the 38 tales in the cartoon style;
+  - draw the remaining ~370 emoji;
+  - a bedtime story mode;
+  - spoken answers in phonics and clock;
+  - a sticker book from places;
+  - co-op quests online;
+  - seasonal decorations as 3D models (festivals still use emoji sprites);
+  - decorating your own house;
+  - Studio family album → postcards;
+  - a per-child play report;
+  - phone preview.
+  
+  Two helper worktrees with partial, uncommitted work are under `.claude/worktrees/` (local to that session only).
+- **Singers:** keep the renameable bird-named village singers (real famous singers would need permission for their names, faces and songs).
+- **Design rules plan:** Phase 1 (roads) done in round 30; Phases 2–5 to come, one per round. Open decisions are in the handbook §13 (road grades 8/12 vs 10/14 %, footpaths, room safety, age profiles, voice download, exe publish via draft, `@ts-check`).
 
 ## 7. Decisions and known limits
 
@@ -207,3 +291,12 @@ Plain HTML/CSS/JS ES modules, **no build step**. three.js r160 (`vendor/three.mo
 ## 8. History (one line per round)
 
 1–2 Original brief; BotW-style open world, thinking/strategy/Vietnamese games, learning, story, two devices online, family voice. · 3 Recorder fix, easy camera, Go button, Games hub, tap-to-do. · 4 Summer-afternoon look, Two Homes Street, secrets, credits, folk games, how-to films, voices, voice control, villager chat. · 5 Harbour Bridge, Three Regions Market, Aussie Corner, postcards, slang, 7 folk games, quick settings. · 6 Add to Home Screen, ad videos. · 7 Storybook UI and characters, renaming. · 8 Camera, voices per character, coins, language sweep. · 9 Gathering and treasures. · 10 Rooms of 6, friends, trading. · 11 China Town, India Village, 4 games, Chinese/Hindi words. · 12 SVG icons, 18 UNESCO sites, culture groups, crops, doors. · 13 Pets, ferry, passport, festivals, weather, dishes, little joys, story time, Music Corner, rest timer. · 14 Landmark camera, TURN relay, connection test. · 15 Camera collision, captions, text size. · 16 Azure voices, `.txt` backups. · 17 Offline voice pack. · 18 Cities, roads, gates, Dragon Bridge, kiosks, fairy tales, friend finding, shortcuts, calmer camera, pet yard. · 19 Title and who's-playing redesign, ⓘ About, Grown-ups in quick settings, whistling kite. · 20 Recorder sheet on iPhone. · 21 Cloud relay, friend status, signal and ping. · 22 Title lettering, Azure pack, saves never lost. · **23** Road network rebuilt so every village and city is reached by road, gates only where roads enter, roads actually drawn (they were face-down) and following the ground, nothing standing on roads; tidy city plans and kiosks along street edges; house 8 moved off the road onto its own plot; friend photos over the cloud relay (ECDH pair keys), 3+ player rooms over the relay, positions sent while menus are open; friends' photos were black because the photo was copied before it had loaded (fixed). Code review fixes: page injection through a friend's id, anyone could close the room or remove players, removing a player didn't reach cloud players, switching friend sharing off didn't hide the child, a slow restore could overwrite the good save copy, kiosk food set 40 stamina wheels (wheel drawing crashed), a road spiked up the bamboo tower and dived under the Dragon Bridge deck, "Go" could land the child on a tower top, climbing faster than walking, a leftover keyboard listener. · **24** Huệ Nghi shop on Two Homes Street (bà Huệ and ông Nghi), street sellers with shoulder poles (fruit, tàu hủ, bún ốc, bún riêu, bánh da lợn), cities moved to match real geography, rounded roads trimmed at junctions, each gate in its place's own style, festivals any day from Settings and the Games hub, camera views (behind, high, street, my face) and house fronts turned to the camera, phone tools row for Talk/Music/Sound, Settings redesigned, sharper phone screens (adaptive resolution), Pad map grouped by region north→south; shop food goes in the bag; dig spots with rare, valuable gems, sold from the bag; house 8 moved to a flat lot (it sat on the plateau slope); the Đà Nẵng road now passes beyond the Harbour Bridge's towers with a short link road (it ran through them). · **25** Festival trips fixed (Christmas and Australia Day flew to nowhere: black screen), children, pets and sellers walk on the road surface (were ~40 cm under it on slopes), every animal its own moving model with its own sound, homes with families, About and Go inside, Two Homes Street families named, neighbourhoods of speciality buildings round the cities, 49 Aussie slang + 20 Vietnamese slang + more regional words, Learning tab and 6 new learning games, Games hub tabs, map chips and section shortcuts, drawn moving icons instead of emoji, gathering spots kept out of buildings (two rocks and a dig spot were inside Uluru), fairy tales as cartoons: drawn people who walk in, blink and talk while the page is read, animals as drawn moving pictures, layered painted scenes (drifting clouds, turning sun, swaying trees and rice, rolling waves, twinkling stars, flapping flags). · **26** Đà Nẵng's ground was black on iPhone (too many picture textures: every villager had its own 512 px face; painted faces are now shared at 256 px, two thirds less memory); Two Homes Street families and shops as the owner described, north houses set back for a wide footpath, Bác Sơn's house moved clear of the bridge tower, card corner with a playable Tiến Lên miền Nam; the road now meets the street at the gate (the street's west end was buried in the hillside: a gentle saddle across the plateau ramp); Harbour Bridge postcard moved out of the river; village and China Town roofs closed at the gable ends; action button wraps long names; Next game / Play again / Done after every win; real photos and 360° Street View for landmarks and houses; ride up Sydney Tower and other tall landmarks; region names and symbol animals with stories and photos; six more regional landmarks; photo faces for villagers; floating Save/Done rows; 6 more games and 6 more tales; the Azure voice pack installed and the voice names in Grown-ups fixed. Also in 26: white-screen restarts (riding the buffalo and other activities) traced to memory: besides the face fix, speech bubbles, house-room tags and materials are freed, and if the phone takes the 3D picture away the game saves at once, shows a friendly card and reloads if needed (never into a house room); children playing bắn bi, bịt mắt bắt dê and ném lon outside Hà Nội and Sài Gòn; the Ném Lon game; buffalo pushing and bull racing festivals. Then: Sparkle Studio dashboard and its Windows exe, the family content pack, level land widened round every village and levelled under every building (nothing moved), the voice pack topped up for rounds 25–26. · **27 (r35)** Voices: lines built while playing collected and recorded, recorded sentences play inside longer lines, machine-voice lines noted on the device and sent to the Studio, woman/man voices by character, iPhone silent switch no longer mutes recordings, phone-voice test plays the phone voice; buildings and roads audited (`ground` check): Ruby's cottage off the river bank (river moved 4 m east), no floating road at the bridge ends, crooked hip roofs fixed (Temple of Literature, villas…), gathering rocks off river banks and steep slopes; build number on the title screen and in Settings; Grown-ups settings shortened with an Advanced section; landmark swing 2.4 s and only on the first visit; real photos offline (saved with the game, best first, kept once seen) with no "ask a grown-up"; Sparkle Studio: map for adding villagers, real photos, defaults for every device, voice report import, publish to GitHub, app window without console. River rafts cross away from both bridges (one ran under the Dragon Bridge: the camera was inside the deck), stops named after the nearest town and shown on the big map, the raft roof fades while riding; Studio world editor (build, move, remove, flat land) and Website page (Netlify deploys, GitHub changes and pull requests). · **28** Smooth roads that are the walking surface, floating Save/Close buttons, win screen without Done (tap outside), lookout view from landmark tops, folk-game time tables per village with a countdown, village singers, Nhà Tròn rings the hour with swallows, Đà Nẵng dragon remodelled and breathing fire and water, Phong renamed Con Vật, friends meet by themselves, bug fixes (boat on land, tower top, Hồ Gươm tag, tàu hủ seller, house 8 pole, games menu). · **29 (r36)** Hard rules for flat villages and straight/curved smooth roads with soft verges and flowers (China Town 5 m, India Village 7 m so roads reach them gently; the river flows under the Dragon Bridge), speech waits for the recorded voices at start-up, river raft line with a choice of stop, 344 more drawn pictures replacing emoji (dialog buttons too), how-to films as cartoon scenes with a child host, more detailed story-time characters and no crowding on phones, hidden ads with a Studio page and guide, Studio photos from three sources, `flat`, `roadshape` and `phone` checks.
+
+30 **Solid houses and objects** (js/solids.js, `solid` check). **Player counter** (anonymous, off switch) + Studio **Players** page. **Sparkle Studio online** at `/studio/` (password; GitHub draft branch → Publish), one engine with the exe (`studio/core.cjs`, `studio`). **Missing-lines inbox.** **iPhone voices fixed:** recordings always first (`voice` check). **Design rules** G0–G11 / R1–R12 adopted (§0b, handbook `docs/SO-TAY-THIET-KE.md`). **Phase 1 roads:**
+   - the Sài Gòn/farm fork, the Aussie Corner turn and the India road leave square (R5);
+   - no grass on roads (G5);
+   - faster `roadDist`;
+   - the `roads` check proves junction angles;
+   - the colours shrine moved off the road.
+   
+   Outside assessment reviewed (handbook §14).

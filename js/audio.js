@@ -16,10 +16,21 @@ export function ac() {
       noiseBuf = AC.createBuffer(1, AC.sampleRate * .8, AC.sampleRate);
       const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
-    if (AC.state === 'suspended') AC.resume();
+    if (AC.state !== 'running') AC.resume().catch(() => { }); // 'suspended' before the first tap, 'interrupted' on iPhone after a call or the lock screen
     return AC;
   } catch (e) { return null; }
 }
+// iPhone and iPad only let a page make sound after a tap: on every tap (until it works) the audio is woken up and a
+// silent sound is played, and the voice's own player is primed too (voice.js uses it if Web Audio is still asleep).
+// Without this, the recorded voices could stay silent and the phone's own voice was heard instead.
+export const unlockers = [];
+const unlock = () => {
+  const a = ac(); if (!a) return;
+  try { const b = a.createBuffer(1, 1, 22050), s = a.createBufferSource(); s.buffer = b; s.connect(a.destination); s.start(0); } catch (e) { }
+  unlockers.forEach(f => { try { f(); } catch (e) { } });
+};
+['pointerdown', 'touchend', 'keydown'].forEach(t => addEventListener(t, unlock, { capture: true, passive: true }));
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && AC && AC.state !== 'running') AC.resume().catch(() => { }); });
 const midi = m => 440 * Math.pow(2, (m - 69) / 12);
 
 export function tone(f, dur, o = {}) {

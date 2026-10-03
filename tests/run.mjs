@@ -4,7 +4,7 @@
 //   node run.mjs --update-contract                     re-record the UI structure (only when the owner asked for a UI change)
 // Multiplayer runs when a local PeerJS server is up on 127.0.0.1:9000 (see the README in this folder).
 import fs from 'fs';
-import { launch, open, clear, URL } from './harness.mjs';
+import { launch, open, clear, start, URL } from './harness.mjs';
 import { groundAudit } from './world-audit.mjs';
 import { studioCheck } from './studio-check.mjs';
 
@@ -207,11 +207,37 @@ await check('roads', async () => {
     const named = new Set(W.ROADS.flatMap(R => (R.gates || []).filter(Boolean)));
     const missing = W.CITIES.map(c => c.id).filter(id => !named.has(id));
     const gates = W.ROADS.reduce((n, R) => n + (R.gates || []).filter(Boolean).length, 0);
-    return { out, missing, gates };
+    // R5: a side road that ends on another road's middle leaves it at 60–120° (not a shallow fork laid over it);
+    // an end that simply carries on from another road's end (asphalt turning into a dirt lane) is not a junction
+    const angles = [], straights = [], seg = (pts, x, z) => { let bd = 1e9, bi = 0; for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))), d = Math.hypot(x - ax - dx * t, z - az - dz * t); if (d < bd) { bd = d; bi = i; } } return { d: bd, i: bi }; };
+    W.ROADS.forEach((R, k) => [0, 1].forEach(end => {
+      if ((R.gates || [])[end]) return;
+      const pts = end ? R.pts.slice().reverse() : R.pts, [x, z] = pts[0];
+      for (const O of W.ROADS) { if (O === R) continue; const q = seg(O.pts, x, z); if (q.d > 1.5) continue;
+        if ([O.pts[0], O.pts[O.pts.length - 1]].some(e => Math.hypot(e[0] - x, e[1] - z) < 3)) continue; // carries on from that road's end
+        let j = 1; while (j < pts.length - 1 && Math.hypot(pts[j][0] - x, pts[j][1] - z) < 4) j++;
+        const ux = pts[j][0] - x, uz = pts[j][1] - z, [ax, az] = O.pts[q.i], [bx, bz] = O.pts[q.i + 1];
+        const a = Math.acos(Math.abs(ux * (bx - ax) + uz * (bz - az)) / (Math.hypot(ux, uz) * Math.hypot(bx - ax, bz - az) || 1)) * 180 / Math.PI;
+        angles.push(Math.round(a)); if (a < 60) out.push(`road ${k} leaves another at ${a.toFixed(0)}° at ${x.toFixed(0)},${z.toFixed(0)}`);
+        // …and runs straight at least 6 m before it bends (heading within 3° of its first stretch)
+        const h0 = Math.atan2(pts[1][1] - z, pts[1][0] - x); let run = 0;
+        for (let i = 1; i < pts.length; i++) { const h = Math.atan2(pts[i][1] - pts[i - 1][1], pts[i][0] - pts[i - 1][0]); let dh = Math.abs(h - h0); if (dh > Math.PI) dh = 2 * Math.PI - dh; if (dh > .052) break; run += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); }
+        straights.push(Math.round(run)); if (run < 5.9 && run < Math.hypot(pts[pts.length - 1][0] - x, pts[pts.length - 1][1] - z) - .1) out.push(`road ${k} bends only ${run.toFixed(1)} m after leaving another at ${x.toFixed(0)},${z.toFixed(0)}`); }
+    }));
+    // G5/R4: no grass tuft or flower on a road
+    const cover = G.world.groundCover; if (!cover) out.push('world.groundCover missing'); let tufts = 0;
+    if (cover) { const m = new (await import('/js/gfx.js')).THREE.Matrix4(); for (const im of cover) for (let i = 0; i < im.count; i++) { im.getMatrixAt(i, m); const x = m.elements[12], z = m.elements[14], d = W.roadDist(x, z); tufts++; if (d.d < d.road.w / 2 + .3) out.push(`grass on a road at ${x.toFixed(1)},${z.toFixed(1)}`); } }
+    // roadDist skips far roads by their boxes: the same answers as looking at every road, and faster
+    let diff = 0, seed = 1; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647, brute = (x, z) => { let bd = 1e9, br = null; for (const R of W.ROADS) for (let i = 0; i < R.pts.length - 1; i++) { const [ax, az] = R.pts[i], [bx, bz] = R.pts[i + 1], dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))), d = Math.hypot(x - ax - dx * t, z - az - dz * t); if (d < bd) { bd = d; br = R; } } return { d: bd, road: br }; };
+    const pts = Array.from({ length: 20000 }, () => [(rnd() - .5) * W.SIZE, (rnd() - .5) * W.SIZE]);
+    for (const [x, z] of pts) { const a = W.roadDist(x, z), c = brute(x, z); if (Math.abs(a.d - c.d) > 1e-9 || a.road !== c.road) diff++; }
+    let t0 = performance.now(); for (const [x, z] of pts) W.roadDist(x, z); const fast = performance.now() - t0; t0 = performance.now(); for (const [x, z] of pts) brute(x, z); const slow = performance.now() - t0;
+    if (diff) out.push(`roadDist differs from the full search at ${diff} of 20000 points`);
+    return { out: out.slice(0, 12), n: out.length, missing, gates, angles, straights, tufts, speed: +(slow / fast).toFixed(1) };
   });
   const errs = P.errors; await P.ctx.close();
   ok(!r.out.length && !r.missing.length && r.gates >= 15 && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return `${r.gates} gates on road ends, every city on a road, nothing standing on a road`;
+  return `${r.gates} gates on road ends, every city on a road, nothing standing on a road; ${r.angles.length} side-road junctions all 60–120° (smallest ${Math.min(...r.angles)}°) and straight ≥ 6 m (shortest ${Math.min(...r.straights)} m); ${r.tufts} grass tufts and flowers, none on a road; roadDist ×${r.speed} faster, same answers at 20,000 points`;
 });
 
 await check('flat', async () => {
@@ -320,8 +346,8 @@ await check('solid', async () => {
     }
     return { st, tried, bad, lost, lostAt: lostAt.slice(0, 8) };
   });
-  const [rd, rm] = await Promise.all([audit(D), audit(M)]);
-  await M.page.reload(); await clear(M.page); const again = await M.page.evaluate(async () => (await __sv.solidsReady).cached);
+  const rd = await audit(D); console.log('  solid: desktop', JSON.stringify(rd.st)); const rm = await audit(M); console.log('  solid: phone', JSON.stringify(rm.st)); // one after the other: two software-drawn worlds at once are very slow
+  await M.page.reload(); await start(M.page); await clear(M.page); console.log('  solid: phone restarted'); const again = await M.page.evaluate(async () => (await __sv.solidsReady).cached);
   const errs = D.errors.concat(M.errors); await D.ctx.close(); await M.ctx.close();
   for (const [r, tag] of [[rd, 'desktop'], [rm, 'phone']]) {
     ok(r.st.cells > 20000, `${tag}: solid map too small (${r.st.cells} cells)`);
@@ -333,6 +359,34 @@ await check('solid', async () => {
   ok(again, 'the saved map was not used on the second start');
   ok(!errs.length, errs.join(' | '));
   return `${rd.st.cells} solid cells from ${rd.st.meshes} objects (${rd.st.work} ms work); ${rd.tried} walk-ins stopped on desktop and phone; saved map reused`;
+});
+
+await check('voice', async () => {
+  // HARD RULE: the downloaded (recorded) voices are the voice, on phones too. A recorded line must never be read by
+  // the phone's own voice: not on a normal phone, and not on one whose Web Audio stays asleep (as iPhones do until a
+  // tap takes, or after a call): then the plain audio player plays the same recording.
+  const probe = async asleep => {
+    const pre = `window.__speaks = 0; window.__plays = 0; window.__sources = 0;
+      const sp = speechSynthesis.speak.bind(speechSynthesis); speechSynthesis.speak = u => { window.__speaks++; };
+      HTMLMediaElement.prototype.play = function () { if (!/^data:/.test(this.src)) window.__plays++; setTimeout(() => this.onended && this.onended(), 50); return Promise.resolve(); };
+      const st = AudioBufferSourceNode.prototype.start; AudioBufferSourceNode.prototype.start = function (...a) { if (this.buffer && this.buffer.length > 1) window.__sources++; return st.apply(this, a); };
+      ${asleep ? "Object.defineProperty(AudioContext.prototype, 'state', { get: () => 'suspended' }); AudioContext.prototype.resume = () => Promise.resolve();" : ''}`;
+    const P = await open(b, { w: 390, h: 760, touch: true, lang: 'vi', pre, settings: { voice: true } }); await clear(P.page);
+    await P.page.mouse.click(195, 380); await P.page.waitForTimeout(300); // the child's first tap
+    const r = await P.page.evaluate(async () => {
+      const V = await import('/js/voice.js'), { FAMILY_PHRASES } = V; let rec = null; for (let i = 0; i < 60 && !V.voicePack(); i++) await new Promise(r => setTimeout(r, 250)); window.__svVoiceLog = (l, t, has) => { if (has && !rec) rec = t; };
+      for (const ph of FAMILY_PHRASES) { V.sayIn('vi', ph.vi); if (rec) break; }
+      if (!rec) return { none: true };
+      window.__speaks = 0; window.__plays = 0; window.__sources = 0; await V.sayAsync(rec, rec);
+      return { line: rec, speaks: window.__speaks, plays: window.__plays, sources: window.__sources, diag: V.voiceDiag };
+    });
+    await P.ctx.close(); return r;
+  };
+  const awake = await probe(false), asleep = await probe(true);
+  ok(!awake.none, 'no recorded line found to try');
+  ok(awake.speaks === 0 && awake.sources > 0, 'a recorded line was not played from the recording: ' + JSON.stringify(awake));
+  ok(asleep.speaks === 0 && asleep.plays > 0, 'with Web Audio asleep (iPhone), a recorded line used the phone voice: ' + JSON.stringify(asleep));
+  return `"${awake.line}" plays from the recording on a phone, and still does with Web Audio asleep (plain player); the phone's voice is never used for it`;
 });
 
 await check('studio', async () => {

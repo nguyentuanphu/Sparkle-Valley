@@ -62,14 +62,14 @@ export const ROADS = [
   // west from Two Homes Street: Sydney, Hồ Chí Minh City and the farm
   { kind: 'asphalt', pts: [[6, 47], [-4, 48], [-14, 52], [-23, 52]], gates: ['town', 'sydney'] },
   { kind: 'asphalt', pts: [[-4, 48], [-6, 60], [-8, 66], [-8, 75]], gates: [null, 'saigon'] },
-  { kind: 'asphalt', pts: [[-6, 60], [-16, 66], [-24, 76], [-23, 88], [-22, 99]], gates: [null, 'home'] },
+  { kind: 'asphalt', pts: [[-6, 60], [-17, 60], [-22, 67], [-24, 76], [-23, 88], [-22, 99]], gates: [null, 'home'] }, // leaves the Sài Gòn road at ~72° and runs straight ~7 m before it bends (R5: a T, never a shallow fork)
   // Sydney to Melbourne, and north to Brisbane and Aussie Corner
   { kind: 'asphalt', pts: [[-49, 52], [-60, 52], [-82, 53], [-100, 55], [-114, 62], [-122, 66], [-131, 66]], gates: ['sydney', 'melbourne'] },
   { kind: 'asphalt', pts: [[-60, 52], [-57, 32], [-55, 18], [-60, 2], [-68, -8], [-70, -12], [-70, -21]], gates: [null, 'brisbane'] },
-  { kind: 'asphalt', pts: [[-68, -8], [-80, -11.5], [-90, -12]], gates: [null, 'aussie'] },
+  { kind: 'asphalt', pts: [[-70, -12], [-80, -12], [-90, -12]], gates: [null, 'aussie'] }, // a square T off the Brisbane road (R5)
   // Brisbane to Hà Nội, and to India Village
-  { kind: 'asphalt', pts: [[-70, -43], [-70, -50], [-50, -52], [-30, -56], [-18, -62], [-9, -62]], gates: ['brisbane', 'hanoi'] },
-  { kind: 'asphalt', pts: [[-70, -50], [-96, -50], [-108, -51], [-112, -54], [-112, -58]], gates: [null, 'india'] },
+  { kind: 'asphalt', pts: [[-70, -43], [-70, -55], [-50, -54], [-30, -56], [-18, -62], [-9, -62]], gates: ['brisbane', 'hanoi'] }, // a longer straight below Brisbane's gate, so the India road can leave it square
+  { kind: 'asphalt', pts: [[-70, -48], [-80, -48.5], [-96, -50], [-108, -51], [-112, -54], [-112, -58]], gates: [null, 'india'] }, // leaves the straight below Brisbane's gate square (R5), 5 m clear of the gate, not the bend
   // from Hà Nội over Đà Nẵng's Dragon Bridge, to Đà Nẵng, China Town and Bắc Ninh
   { kind: 'asphalt', pts: [[17, -62], [56, -62], [70, -57], [84, -54], [96, -55], [100, -58], [100, -62], [100, -70]], gates: ['hanoi', 'china'] },   // up the slope into China Town
   { kind: 'asphalt', pts: [[84, -54], [84, -51]], gates: [null, 'danang'] },
@@ -121,12 +121,16 @@ ROADS.forEach(R => { R.w = R.kind === 'asphalt' ? 5.2 : 3.4; });
   ROADS.forEach((R, k) => joins[k].forEach((O, end) => { if (!O) return; const i = end ? R.pts.length - 1 : 0, q = near(R.pts[i][0], R.pts[i][1], O.pts); if (q.d < 6) R.pts[i] = q.p; }));
 }
 // distance from (x, z) to the nearest road centre line, and that road
+// (each road's bounding box is kept, so roads farther away than the best so far are skipped: same answers, faster)
+const BOX = new Map();
+const boxOf = R => { let b = BOX.get(R); if (!b || b.n !== R.pts.length) { b = { n: R.pts.length, x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9 }; for (const [px, pz] of R.pts) { b.x0 = Math.min(b.x0, px); b.x1 = Math.max(b.x1, px); b.z0 = Math.min(b.z0, pz); b.z1 = Math.max(b.z1, pz); } BOX.set(R, b); } return b; };
 export function roadDist(x, z) {
   let best = 1e9, road = null;
-  for (const R of ROADS) for (let i = 0; i < R.pts.length - 1; i++) {
+  for (const R of ROADS) { const b = boxOf(R); if (Math.max(b.x0 - x, x - b.x1, 0) ** 2 + Math.max(b.z0 - z, z - b.z1, 0) ** 2 >= best * best) continue;
+  for (let i = 0; i < R.pts.length - 1; i++) {
     const [ax, az] = R.pts[i], [bx, bz] = R.pts[i + 1], dx = bx - ax, dz = bz - az, t = clamp(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1), 0, 1);
     const d = Math.hypot(x - ax - dx * t, z - az - dz * t); if (d < best) { best = d; road = R; }
-  }
+  } }
   return { d: best, road };
 }
 
@@ -284,7 +288,7 @@ export const SHRINES = [
   { id: 'sh_goat', game: 'goat', x: -112, z: 98 },
   { id: 'sh_sort', game: 'sorting', x: 150, z: -48 },
   { id: 'sh_shapes', game: 'shapes', x: 98, z: 165 },
-  { id: 'sh_colors', game: 'colors', x: -70, z: -55 },
+  { id: 'sh_colors', game: 'colors', x: -78, z: -58 }, // beside the India road junction, not on the road (moved in round 30 when the junction was squared)
   { id: 'sh_maze', game: 'maze', x: 70, z: -110 },
   { id: 'sh_numbers', game: 'numbers', x: 160, z: 85 }
 ];
@@ -550,11 +554,12 @@ export function createWorld(scene, quality) {
     const near = rnd() < .5; const x = near ? (rnd() - .5) * 180 : (rnd() - .5) * (SIZE - 40), z = near ? (rnd() - .5) * 180 : (rnd() - .5) * (SIZE - 40), h = heightAt(x, z);
     if (h < 1.8 || h > 30) continue;
     if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r - 6 || dist2(x, z, HOME.x, HOME.z) < HOME.r - 8 || dist2(x, z, CHINA.x, CHINA.z) < CHINA.r - 2 || dist2(x, z, INDIA.x, INDIA.z) < INDIA.r - 2) continue;
+    { const rd = roadDist(x, z); if (rd.d < rd.road.w / 2 + 1.5) continue; } // nothing grows on a road or its verge (G5/R4)
     o3.position.set(x, h - .05, z); o3.rotation.set(0, rnd() * 6, 0); o3.scale.setScalar(.45 + rnd() * .45); o3.updateMatrix();
     if (rnd() < .16 && fi < fIm.count) { fIm.setMatrixAt(fi, o3.matrix); fIm.setColorAt(fi++, tint.set(FC[Math.floor(rnd() * FC.length)])); }
     else if (gi < nGrass) { gIm.setMatrixAt(gi, o3.matrix); gIm.setColorAt(gi++, tint.setHSL(.26 + rnd() * .06, .55, .3 + rnd() * .1)); }
   }
-  gIm.count = gi; fIm.count = fi; scene.add(gIm, fIm);
+  gIm.count = gi; fIm.count = fi; scene.add(gIm, fIm); W.groundCover = [gIm, fIm]; // (the roads check looks at them)
 
   // clouds: big soft painted cumulus with warm afternoon light on their edges
   const cloudTex = k => {

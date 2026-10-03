@@ -18,6 +18,12 @@ export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'so
   // the test browser draws in software: draw fewer pixels so checks run quicker
   if (fast) await page.evaluate(() => { const r = window.__sv.renderer; if (r) { r.setPixelRatio(.35); dispatchEvent(new Event('resize')); } });
   if (!play) return { ctx, page, errors };
+  await start(page, mode);
+  return { ctx, page, errors };
+}
+// from the title screen into the valley (also after a reload)
+export async function start(page, mode = 'solo') {
+  await page.waitForSelector('.screen.title', { timeout: 90000 });
   await page.click('.screen.title .press', { force: true });
   await page.waitForSelector('.screen.who');
   if (mode !== 'solo') await page.click(`.modes button[data-m=${mode}]`);
@@ -28,7 +34,6 @@ export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'so
   for (let i = 0; i < 40; i++) { const sb = await page.$('.storybook'); if (!sb) break; await page.evaluate(() => { const b = document.querySelector('.storybook .sb-next, .storybook .next, .storybook button:last-of-type'); b && b.click(); }); await page.waitForTimeout(80); }
   await page.evaluate(() => { document.querySelectorAll('.storybook').forEach(e => e.remove()); window.__sv.paused = false; });
   await page.waitForTimeout(500);
-  return { ctx, page, errors };
 }
 // close story pages, dialogs and pop-ups that the world opens by itself
 export async function clear(page) {
