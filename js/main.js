@@ -60,6 +60,7 @@ import { createVnFun } from './vnfun.js';
 import { addFamilyBuildings, applyWorldEdits } from './worldedit.js';
 import { CUSTOM } from './custom.js';
 import { createFolkShow } from './folkshow.js';
+import { createAds } from './ads.js';
 // the family's defaults from Sparkle Studio: applied once each time they change there (a grown-up can still change
 // them on the device afterwards)
 { const D = CUSTOM.defaults, sig = D ? JSON.stringify(D) : '';
@@ -1194,6 +1195,7 @@ G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 
 // level land under every building, stall and landmark placed above (and anything added in future rounds)
 world.familyEdits = applyWorldEdits(G); // buildings the family moved or removed in Sparkle Studio
 widenFlatLand(world, scene); // more level land round every village and city, for new buildings (nothing moves on the map)
+createAds(G); // the family's own signboards (only when Sparkle Studio switched ads on)
 world.levelled = levelUnderBuildings(world, scene);
 world.roadside = plantRoadside(G); // soft road edges and flowers, once everything stands
 // solid things the camera must never go inside: big, opaque, still-standing meshes (collected once, refreshed

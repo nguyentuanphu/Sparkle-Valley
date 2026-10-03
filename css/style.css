@@ -1691,3 +1691,7 @@ body.calm .rv-img.on { animation: none; }
 .ht-screen .ht-host.still { animation: none; }
 /* a drawn picture at the start of a button's words (instead of a phone emoji) */
 .lbl-art svg.art { width: 1.25em; height: 1.25em; margin-right: .3em; vertical-align: -.28em; }
+.gl-ad { margin: 10px auto 0; max-width: 300px; display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, .9); border: 2px dashed #c8b6ff; border-radius: 14px; padding: 6px 10px; position: relative; text-align: left; font-size: 14px; }
+.gl-ad small { position: absolute; top: -9px; left: 10px; background: #3b2a4f; color: #fff; border-radius: 6px; padding: 0 6px; font-size: 11px; }
+.gl-ad img { width: 64px; height: 44px; object-fit: cover; border-radius: 8px; }
+.adgate .card { max-width: 360px; } .adgate .adg-in { font-size: 24px; width: 100%; padding: 8px; border-radius: 10px; border: 2px solid #c8b6ff; margin: 8px 0; }

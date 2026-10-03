@@ -1,5 +1,6 @@
 // A shared frame for every mini-game: the full-screen layer, the title bar, progress dots,
 // gentle feedback (no losing — mistakes just say "try again") and the win celebration.
+import { gameEndAd } from '../ads.js';
 import { T } from '../i18n.js';
 import { say } from '../voice.js';
 import { SFX, Music } from '../audio.js';
@@ -68,13 +69,13 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
         const c = el('div', 'gl-win', `<div class="gl-stars">${[0, 1, 2].map(k => `<i class="${k < n ? 'on' : ''}" style="--d:${k * .25}s">⭐</i>`).join('')}</div>
           <div class="gl-chest"><span class="lid">🎁</span><span class="prize">${prize}</span></div><p>${esc(extra.title || T('You did it!', 'Con làm được rồi!'))}</p>
           <div class="gl-next">${nextName ? `<button class="gl-nx go" data-n="next"><span>${pic('▶️')}</span><b>${T('Next game', 'Trò tiếp theo')}</b><small>${esc(nextName)}</small></button>` : ''}<button class="gl-nx again" data-n="again"><span>${pic('🔁')}</span><b>${T('Play again', 'Chơi lại')}</b></button></div><p class="gl-tapout">${T('Tap anywhere else to finish', 'Chạm chỗ khác để kết thúc')}</p>`);
-        layer.appendChild(c); say(extra.title || 'You did it!', extra.titleVi || 'Con làm được rồi!');
+        layer.appendChild(c); { const ad = gameEndAd(); if (ad) c.appendChild(ad); } say(extra.title || 'You did it!', extra.titleVi || 'Con làm được rồi!');
         burstConfetti(layer);
         setTimeout(() => { c.querySelector('.gl-chest').classList.add('open'); SFX.coin(); }, 1100);
         // then the child chooses: the next game, this one again, or stop (after a long wait: stop)
         setTimeout(() => c.classList.add('ask'), 1600);
         // tapping anywhere outside the two buttons finishes (there is no Done button any more)
-        const next = await new Promise(r => { let t = 0, fin = false; const done = k => { if (fin) return; fin = true; clearTimeout(t); removeEventListener('pointerdown', out, true); r(k); }; const out = e => { if (e.target.closest && e.target.closest('.gl-nx')) return; e.stopPropagation(); e.preventDefault(); SFX.tap(); done('stop'); }; t = setTimeout(() => done('stop'), 30000); setTimeout(() => { if (!fin) addEventListener('pointerdown', out, true); }, 400); c.querySelectorAll('.gl-nx').forEach(b => { b.onclick = e => { e.stopPropagation(); SFX.tap(); done(b.dataset.n); }; }); });
+        const next = await new Promise(r => { let t = 0, fin = false; const done = k => { if (fin) return; fin = true; clearTimeout(t); removeEventListener('pointerdown', out, true); r(k); }; const out = e => { if (e.target.closest && e.target.closest('.gl-nx, .gl-ad')) return; e.stopPropagation(); e.preventDefault(); SFX.tap(); done('stop'); }; t = setTimeout(() => done('stop'), 30000); setTimeout(() => { if (!fin) addEventListener('pointerdown', out, true); }, 400); c.querySelectorAll('.gl-nx').forEach(b => { b.onclick = e => { e.stopPropagation(); SFX.tap(); done(b.dataset.n); }; }); });
         finish(true, Object.assign({ stars: n, next }, extra));
       }
     };

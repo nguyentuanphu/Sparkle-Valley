@@ -12,7 +12,7 @@ const saveContent = async () => { await api('content', CONTENT); toast(T('Saved.
 const TABS = [
   ['home', '🏠', 'Home', 'Trang chính'], ['message', '💌', 'Message', 'Lời nhắn'], ['villagers', '🧑', 'Villagers', 'Nhân vật'], ['stories', '📖', 'Stories', 'Truyện'],
   ['quiz', '💛', 'Family quiz', 'Đố vui gia đình'], ['map', '🗺️', 'Map & building', 'Bản đồ & xây dựng'], ['photos', '📷', 'Real photos', 'Ảnh thật'], ['play', '⏰', 'Defaults', 'Mặc định'], ['children', '👧', 'Children', 'Các con'], ['voices', '🎙️', 'Voices', 'Giọng đọc'],
-  ['publish', '🚀', 'Publish', 'Phát hành'], ['site', '🌐', 'Website', 'Trang web'], ['check', '🩺', 'Check', 'Kiểm tra'], ['settings', '🔑', 'Settings', 'Cài đặt']
+  ['ads', '📣', 'Ads (off)', 'Quảng cáo (tắt)'], ['publish', '🚀', 'Publish', 'Phát hành'], ['site', '🌐', 'Website', 'Trang web'], ['check', '🩺', 'Check', 'Kiểm tra'], ['settings', '🔑', 'Settings', 'Cài đặt']
 ];
 let cur = location.hash.slice(1) || 'home';
 function nav() {
@@ -48,6 +48,43 @@ PAGES.home = async P => {
     <p class="note">${T('Trying the game here uses this computer only; the children see changes after you Publish.', 'Chơi thử ở đây chỉ trên máy này; các con thấy thay đổi sau khi bạn Phát hành.')}</p></div>`;
   $('#play').onclick = () => window.open('/game/', '_blank');
   $('#folder').onclick = () => api('open', { folder: true }).catch(fail);
+};
+// ---------- ads: small, inside the valley, OFF until switched on here; with a guide ----------
+PAGES.ads = async P => {
+  const A = CONTENT.ads = CONTENT.ads || { enabled: false, perDay: 3, items: [] }; A.items = A.items || [];
+  const row = (x, i) => `<div class="card adrow" data-i="${i}"><div class="row" style="align-items:flex-start;gap:14px">
+      <button class="btn ghost adpic" title="${T('Picture', 'Hình')}">${x.image ? `<img src="/game/${esc(x.image)}" style="width:120px;height:68px;object-fit:cover;border-radius:8px">` : '🖼️ ' + T('Choose picture', 'Chọn hình')}</button>
+      <div style="flex:1"><label>${T('Advertiser', 'Nhà quảng cáo')}</label><input class="ad-by" maxlength="60" value="${esc(x.by || '')}">
+      <label>🇦🇺 ${T('Words (English)', 'Lời (tiếng Anh)')}</label><input class="ad-en" maxlength="120" value="${esc(x.en || '')}"><label>🇻🇳 ${T('Words (Vietnamese)', 'Lời (tiếng Việt)')}</label><input class="ad-vi" maxlength="120" value="${esc(x.vi || '')}">
+      <label>🔗 ${T('Link (optional, https://…; opens only after a grown-up check)', 'Liên kết (không bắt buộc, https://…; chỉ mở sau khi người lớn trả lời câu đố)')}</label><input class="ad-link" maxlength="300" value="${esc(x.link || '')}">
+      <div class="row"><label><input type="checkbox" class="ad-boards" ${!x.where || x.where.includes('boards') ? 'checked' : ''}> ${T('Signboards by the roads', 'Biển bên đường')}</label>
+      <label><input type="checkbox" class="ad-end" ${!x.where || x.where.includes('gameend') ? 'checked' : ''}> ${T('Small card after a mini-game', 'Thẻ nhỏ sau trò chơi')}</label>
+      <label><input type="checkbox" class="ad-on" ${x.active !== false ? 'checked' : ''}> ${T('Active', 'Đang dùng')}</label></div></div>
+      <button class="btn ghost ad-del" title="${T('Remove', 'Xóa')}">🗑️</button></div></div>`;
+  P.innerHTML = `<h2>📣 ${T('In-game ads', 'Quảng cáo trong game')}</h2><p class="sub">${T('Ready for later, and switched OFF. Nothing shows in the game until you switch it on here and Publish.', 'Đã chuẩn bị sẵn và đang TẮT. Không có gì hiện trong game cho tới khi bạn bật ở đây và Phát hành.')}</p>
+  <div class="card"><label class="row"><input type="checkbox" id="adOn" ${A.enabled === true ? 'checked' : ''}> <b>${T('Show ads in the game', 'Hiện quảng cáo trong game')}</b></label>
+    <label>${T('Most cards after mini-games per day (each device)', 'Số thẻ tối đa sau trò chơi mỗi ngày (mỗi máy)')}</label><input type="number" id="adPer" min="0" max="10" value="${A.perDay ?? 3}" style="max-width:100px"></div>
+  <div id="adList">${A.items.map(row).join('')}</div>
+  <div class="bar"><button class="btn ghost" id="adAdd">+ ${T('Add an ad', 'Thêm quảng cáo')}</button><button class="btn" id="adSave">💾 ${T('Save', 'Lưu')}</button></div>
+  <details class="card" open><summary><b>📘 ${T('Guide: ads in a children’s game', 'Hướng dẫn: quảng cáo trong game trẻ em')}</b></summary>
+  <ol class="guide">
+    <li>${T('How it works: add a picture (JPG/PNG, landscape, about 1200×680, under 600 KB), the words in both languages and, if you like, a link. Choose where it appears, tick “Show ads”, Save, then Publish. Devices get it the next time they are online.', 'Cách hoạt động: thêm hình (JPG/PNG, nằm ngang, khoảng 1200×680, dưới 600 KB), lời bằng hai thứ tiếng và liên kết nếu muốn. Chọn chỗ hiện, đánh dấu “Hiện quảng cáo”, Lưu, rồi Phát hành. Máy các con nhận được lần tới khi có mạng.')}</li>
+    <li>${T('Where ads appear: a few signboards beside the roads near the towns, and a small card under the “You did it!” screen of a mini-game (a few times a day at most). Never in the middle of play, never in stories, how-to films or learning questions.', 'Quảng cáo hiện ở đâu: vài tấm biển bên đường gần các thành phố, và một thẻ nhỏ dưới màn hình “Con làm được rồi!” sau trò chơi (tối đa vài lần mỗi ngày). Không bao giờ giữa lúc chơi, trong truyện, phim hướng dẫn hay câu hỏi học tập.')}</li>
+    <li>${T('Every ad is labelled “Ad / Quảng cáo”. Links open only after a grown-up answers a sum, and open outside the game.', 'Mỗi quảng cáo đều có nhãn “Ad / Quảng cáo”. Liên kết chỉ mở sau khi người lớn trả lời một phép cộng, và mở ra ngoài game.')}</li>
+    <li>${T('Privacy: the game collects nothing. No ad networks, trackers, cookies or counting. Do not add tracking links (with ?utm=… or redirect services) — in many countries collecting data from children under 13 needs a parent’s consent (US COPPA, EU/UK GDPR-K, Australia’s Privacy Act, Vietnam’s Decree 13/2023 on personal data).', 'Quyền riêng tư: game không thu thập gì. Không mạng quảng cáo, không theo dõi, không cookie, không đếm lượt. Đừng dùng liên kết theo dõi (có ?utm=… hay dịch vụ chuyển hướng) — ở nhiều nước, thu thập dữ liệu của trẻ dưới 13 tuổi cần sự đồng ý của cha mẹ (COPPA của Mỹ, GDPR-K của EU/Anh, Luật Quyền riêng tư của Úc, Nghị định 13/2023 của Việt Nam về dữ liệu cá nhân).')}</li>
+    <li>${T('What is suitable: things that are good for children and families (books, learning, museums, parks, local family businesses). Not allowed: food and drinks high in sugar, salt or fat, toys with violence, gambling or “loot boxes”, anything for adults. Australia’s AANA Children’s Code and Vietnam’s Advertising Law (2012, Art. 8 and 9) set rules for ads to children; check them, or ask an advisor, before taking money for an ad.', 'Phù hợp: những thứ tốt cho trẻ và gia đình (sách, học tập, bảo tàng, công viên, cửa hàng gia đình ở địa phương). Không được: đồ ăn uống nhiều đường, muối, béo, đồ chơi bạo lực, cờ bạc hay “hộp quà may rủi”, thứ dành cho người lớn. Bộ quy tắc quảng cáo cho trẻ em AANA của Úc và Luật Quảng cáo Việt Nam (2012, Điều 8 và 9) có quy định riêng; hãy xem kỹ hoặc hỏi người tư vấn trước khi nhận tiền quảng cáo.')}</li>
+    <li>${T('Words for children: short, friendly, no pressure (“Ask your parents to buy now!” is not allowed). No pretending an ad is part of the story, and no characters from the game selling things.', 'Lời cho trẻ: ngắn, thân thiện, không thúc ép (“Bảo bố mẹ mua ngay!” là không được). Không giả làm một phần câu chuyện, và nhân vật trong game không bán hàng.')}</li>
+    <li>${T('To pause all ads at once, untick “Show ads”, Save and Publish. Removing a picture here removes it from the next publish.', 'Để tạm ngưng mọi quảng cáo, bỏ dấu “Hiện quảng cáo”, Lưu và Phát hành. Xóa hình ở đây thì lần phát hành sau sẽ không còn hình đó.')}</li>
+  </ol></details>`;
+  const collect = () => { A.enabled = $('#adOn').checked; A.perDay = Math.max(0, Math.min(10, +$('#adPer').value || 0));
+    P.querySelectorAll('.adrow').forEach(r => { const x = A.items[+r.dataset.i]; x.by = r.querySelector('.ad-by').value.trim(); x.en = r.querySelector('.ad-en').value.trim(); x.vi = r.querySelector('.ad-vi').value.trim();
+      const l = r.querySelector('.ad-link').value.trim(); x.link = /^https:\/\//.test(l) ? l : ''; x.active = r.querySelector('.ad-on').checked;
+      x.where = [r.querySelector('.ad-boards').checked && 'boards', r.querySelector('.ad-end').checked && 'gameend'].filter(Boolean); }); };
+  $('#adAdd').onclick = () => { collect(); A.items.push({ by: '', en: '', vi: '', link: '', where: ['boards', 'gameend'], active: true }); PAGES.ads(P); };
+  P.querySelectorAll('.ad-del').forEach(b => b.onclick = () => { collect(); A.items.splice(+b.closest('.adrow').dataset.i, 1); PAGES.ads(P); });
+  P.querySelectorAll('.adpic').forEach(b => b.onclick = () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/jpeg,image/png';
+    inp.onchange = () => { const f = inp.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = async () => { try { collect(); const i = +b.closest('.adrow').dataset.i, r = await api('adimage', { id: A.items[i].by || 'ad', dataUrl: rd.result }); A.items[i].image = r.image; PAGES.ads(P); } catch (e) { fail(e); } }; rd.readAsDataURL(f); }; inp.click(); });
+  $('#adSave').onclick = () => { collect(); if (A.enabled && A.items.some(x => x.active !== false && !x.image)) return toast(T('Each active ad needs a picture.', 'Mỗi quảng cáo đang dùng cần có hình.')); saveContent().catch(fail); };
 };
 // ---------- message ----------
 PAGES.message = async P => {

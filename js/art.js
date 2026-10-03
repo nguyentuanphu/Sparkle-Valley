@@ -349,7 +349,9 @@ add('🐦‍⬛', g('a-fly', `<ellipse cx="22" cy="26" rx="14" ry="11" fill="#3b
 add('🦤', g('a-walk', `<ellipse cx="22" cy="28" rx="14" ry="12" fill="#9a8a9a" ${W}/>${circ(34, 16, 7, '#9a8a9a')}${dot(36, 15, 1.6)}<path d="M40 16c6 0 6 6 2 8l-4-2z" fill="#ffd23f" ${W}/><path d="M18 40v4M26 40v4" stroke="#ffb347" stroke-width="3"/>`));
 add('👩‍🌾 🧑‍🌾 👨‍🌾', g('a-bob', face('#f2b98a', '#3a2418', `<path d="M2 18L24 4l22 14z" fill="#e8d8a0" ${W}/>`), '24px 42px'));
 add('👨‍👩‍👧 👨‍👩‍👦 👪', g('a-bob', `<g transform="translate(-10 0) scale(.6)">${face('#f2b98a', '#2a1d18')}</g><g transform="translate(18 0) scale(.6)">${face('#ffe0c4', '#5a3418')}</g><g transform="translate(5 14) scale(.55)">${face('#f2b98a', '#3a2418')}</g>`, '24px 42px'));
-export const hasArt = e => !!ART[e];
+// (an emoji with or without its invisible "picture style" mark finds the same drawing)
+const keyOf = e => e == null ? null : ART[e] ? e : ART[e + '\uFE0F'] ? e + '\uFE0F' : ART[String(e).replace(/\uFE0F/g, '')] ? String(e).replace(/\uFE0F/g, '') : null;
+export const hasArt = e => !!keyOf(e);
 // words that start with an emoji ("👋 Bye"): the drawn picture instead, or just the words when there is none
 const LEAD = /^(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic}|[\u{1F3FB}-\u{1F3FF}])*|[\u{1F1E6}-\u{1F1FF}]{2}|[0-9#]\uFE0F?\u20E3|[▶◀⏮⏭⏸⏯])\s*/u;
 export function labelArt(text, esc = s => s) {
@@ -359,7 +361,7 @@ export function labelArt(text, esc = s => s) {
   return key ? `<span class="lbl-art">${ART[key]}</span>${rest}` : rest;
 }
 // a picture for this emoji (or the emoji itself, in the same box size, when there is no picture)
-export const pic = (e, cls = '') => ART[e] ? ART[e].replace('class="art ', `class="art ${cls} `) : `<span class="emo ${cls}">${e}</span>`;
+export const pic = (e, cls = '') => { const k = keyOf(e); return k ? ART[k].replace('class="art ', `class="art ${cls} `) : `<span class="emo ${cls}">${e}</span>`; };
 // the raw SVG text, for drawing onto a canvas (3D bubbles)
-export const artSVG = e => ART[e] ? ART[e].replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" ') : null;
+export const artSVG = e => { const k = keyOf(e); return k ? ART[k].replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" ') : null; };
 export const ART_COUNT = () => Object.keys(ART).length;

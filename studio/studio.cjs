@@ -306,6 +306,12 @@ const server = http.createServer(async (req, res) => {
       fs.mkdirSync(G('content', 'faces'), { recursive: true }); const name = slug(b.id) + '.jpg'; fs.writeFileSync(G('content', 'faces', name), Buffer.from(m[1], 'base64'));
       return send(res, 200, { photo: 'content/faces/' + name });
     }
+    if (api === 'adimage' && req.method === 'POST') { // a picture for an ad (content/ads/), published with the content pack
+      const b = await json(req), m = /^data:image\/(jpeg|png);base64,(.+)$/.exec(b.dataUrl || ''); if (!m) return send(res, 400, { error: 'Choose a JPG or PNG picture.' });
+      const buf = Buffer.from(m[2], 'base64'); if (buf.length > 600 * 1024) return send(res, 400, { error: 'That picture is too big (over 600 KB). Make it smaller first.' });
+      fs.mkdirSync(G('content', 'ads'), { recursive: true }); const name = slug(b.id || 'ad') + '-' + Date.now().toString(36) + (m[1] === 'png' ? '.png' : '.jpg'); fs.writeFileSync(G('content', 'ads', name), buf);
+      return send(res, 200, { image: 'content/ads/' + name });
+    }
     if (api === 'job') return send(res, 200, JOB || {});
     if (api === 'photos/index') return send(res, 200, readPix());
     if (api === 'photos/get' && req.method === 'POST') { const b = await json(req); const list = (b.list || []).filter(x => x && /^[\p{L}\p{N}-]{1,60}$/u.test(x.key || '') && Array.isArray(x.sources)); return send(res, 200, job('photos', J => getPhotos(J, list, Math.min(8, Math.max(1, +b.max || 4))))); }
