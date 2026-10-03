@@ -293,6 +293,7 @@ export function createRegions(G) {
   const clear = (x, z) => heightAt(x, z) > WATER + .4 && world.boxes.every(b => x < b.x0 - .8 || x > b.x1 + .8 || z < b.z0 - .8 || z > b.z1 + .8) && world.colliders.every(c => Math.hypot(c.x - x, c.z - z) > c.r + .8);
   for (const lm of LANDMARKS) {
     if (lm.id === 'uluru') { lm.mx = -128; lm.mz = 152; }
+    else if (lm.id === 'harbour') { lm.mx = lm.x; lm.mz = lm.z; lm.x = 47.6; lm.z = 52.7; } // on the street's south footpath by the bridge, not down in the river
     else if (OUT[lm.id]) {
       const a0 = Math.atan2(-lm.z, -lm.x); // start looking on the side facing the middle of the valley
       for (let r = OUT[lm.id]; r < OUT[lm.id] + 8; r += 2) {
@@ -358,13 +359,22 @@ async function vendorTalk(G, h, v) {
 }
 
 // ---------- postcards from famous places ----------
+// tall landmarks you can ride up: [height of the view, what is said, caption]
+const LOOKOUT = {
+  sydneytower: [17.6, ['Up, up, up the lift! Look: the whole of Sydney, the harbour, the Opera House and the bridge.', 'Thang máy lên, lên, lên! Nhìn kìa: cả thành phố Sydney, bến cảng, Nhà hát Opera và cây cầu.'], ['Sydney from the top of Sydney Tower', 'Sydney nhìn từ đỉnh tháp Sydney']],
+  wheel: [15, ['Round and up we go! Brisbane and its river are all around us.', 'Vòng quay đưa mình lên cao! Brisbane và dòng sông ở quanh mình nè.'], ['Brisbane from the top of the Wheel', 'Brisbane nhìn từ đỉnh vòng quay']],
+  bnclock: [12, ['From the clock tower you can see all of Bắc Ninh, the Quan họ villages and the rice fields.', 'Từ tháp đồng hồ nhìn thấy cả Bắc Ninh, các làng Quan họ và đồng lúa.'], ['Bắc Ninh from the clock tower', 'Bắc Ninh nhìn từ tháp đồng hồ']],
+  lighthouse: [11, ['From the lighthouse the sea goes on forever, and the boats look tiny!', 'Từ ngọn hải đăng thấy biển xa tít tắp, thuyền bè nhỏ xíu!'], ['The view from the lighthouse', 'Cảnh nhìn từ ngọn hải đăng']]
+};
 export async function postcard(G, h, lm) {
   const p = h.profile; p.postcards = p.postcards || {};
   const first = !p.postcards[lm.id]; p.postcards[lm.id] = true; G.save();
   if (G.showcase) await G.showcase(h, lm); // fly round the landmark first, so it can be seen whole
   // the real place: photos of it, and a 360° look round where it really is (js/realworld.js)
   if (REAL[lm.id]) {
-    const k = await dialog(lm.name(), [lm.fact], [['📷 See real photos', '📷 Xem ảnh thật'], ['🚶 Step inside (360°)', '🚶 Bước vào xem 360°'], ['👋 Bye', '👋 Tạm biệt']]);
+    const top = LOOKOUT[lm.id];
+    const k = await dialog(lm.name(), [lm.fact], [['📷 See real photos', '📷 Xem ảnh thật'], ['🚶 Step inside (360°)', '🚶 Bước vào xem 360°'], ...(top ? [['🛗 Go up to the top', '🛗 Lên tới đỉnh']] : []), ['👋 Bye', '👋 Tạm biệt']]);
+    if (top && k === 2) { const x = lm.mx ?? lm.x, z = lm.mz ?? lm.z; say(top[1][0], top[1][1]); await G.lookout(h, x, heightAt(x, z) + top[0], z, T(top[2][0], top[2][1])); }
     if (k === 0) await new Promise(r => openPhotos(lm.name(), REAL[lm.id][0], { icon: lm.icon, id: lm.id, onClose: r }));
     if (k === 1) openStreetView(lm.id);
   } else await dialog(lm.name(), [lm.fact]);

@@ -53,6 +53,7 @@ import { createChatter, LINES as CHAT_LINES } from './chatter.js';
 import { createKites } from './kite.js';
 import { createHawkers } from './hawkers.js';
 import { createSuburbs } from './suburbs.js';
+import { createSymbols, regionLabel } from './symbols.js';
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
@@ -1019,7 +1020,7 @@ function frame(now) {
       const rg = h.indoors ? G.regionOf[i] : regionAt(h.pos.x, h.pos.z); // inside a house: still where the house is
       if (rg !== G.regionOf[i]) {
         if (i === 0) setTimeout(() => G.shareStatus(), 50);
-        if (G.regionOf[i] !== null) { G.huds[i].showRegion(REGION_NAMES[rg]()); }
+        if (G.regionOf[i] !== null) { const sub = regionLabel(rg); G.huds[i].showRegion(REGION_NAMES[rg]() + (sub ? ' · ' + sub : '')); }
         G.regionOf[i] = rg;
         const vis = h.profile.visited = h.profile.visited || {}; if (!vis[rg]) { vis[rg] = true; save(); }
         if (rg === 'village' && !h.profile.quests.village) { h.profile.quests.village = true; save(); say('Welcome to Lotus Village! Xin chào!', 'Chào mừng đến Làng Sen!'); checkQuests(h); }
@@ -1100,6 +1101,7 @@ createCities(G);
 createHawkers(G);
 createSuburbs(G); // speciality buildings along the roads out of each city (before the homes are made)
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
+createSymbols(G, { sfx: SFX, dialog }); // each region's symbol animal, in a corner of its city square
 G.reward = reward;
 G.pets = createPets(G);
 G.ferries = createFerries(G);

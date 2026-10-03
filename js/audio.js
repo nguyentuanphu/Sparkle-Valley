@@ -82,6 +82,10 @@ export const SFX = {
   harvest() { tone(400, .15, { to: 900, vol: .12, type: 'triangle' }); [79, 84].forEach((m, i) => tone(midi(m), .25, { at: .1 + i * .08, type: 'triangle', vol: .08 })); },
   note(n = 0) { tone(midi([72, 74, 76, 79, 81, 84, 86, 88][n % 8]), .45, { type: 'triangle', vol: .14 }); },
   xylo(n = 0) { const f = midi([60, 62, 64, 65, 67, 69, 71, 72][n % 8]); tone(f, .6, { vol: .2 }); tone(f * 4, .12, { vol: .05 }); },
+  trumpet() { tone(380, .7, { type: 'sawtooth', to: 560, vol: .09, filter: 'bandpass', ff: 900, q: 2 }); tone(560, .5, { at: .45, to: 300, type: 'sawtooth', vol: .07, filter: 'bandpass', ff: 900, q: 2 }); },
+  honk() { [0, .3].forEach(t => tone(520, .22, { at: t, to: 440, type: 'square', vol: .07, filter: 'bandpass', ff: 1100, q: 2 })); },
+  squawk() { tone(900, .35, { type: 'sawtooth', to: 1300, vol: .07, filter: 'bandpass', ff: 1600, q: 3 }); tone(1300, .25, { at: .3, to: 800, type: 'sawtooth', vol: .06, filter: 'bandpass', ff: 1600, q: 3 }); },
+  chirp() { [0, .12, .24].forEach(t => tone(1800, .08, { at: t, to: 2400, vol: .06 })); },
   hoot() { [0, .35].forEach(t => tone(420, .3, { at: t, to: 360, vol: .14, filter: 'lowpass', ff: 900 })); },
   // Tower activation: deep rising swell.
   tower() { tone(110, 2.2, { to: 330, type: 'sawtooth', vol: .07, filter: 'lowpass', ff: 900 }); [76, 79, 83, 88].forEach((m, i) => tone(midi(m), 1.2, { at: .8 + i * .15, vol: .08, type: 'triangle' })); },
