@@ -173,12 +173,15 @@ async function azure() {
     const wait = next - Date.now(); if (wait > 0) await new Promise(r => setTimeout(r, wait)); next = Date.now() + gap;
     const v = voices[j.lang][slot].id, ssml = `<speak version='1.0' xml:lang='${LOCALE[j.lang]}'><voice name='${v}'>${xml(j.text)}</voice></speak>`;
     for (let attempt = 0; ; attempt++) {
-      const r = await fetch(`${AZ}/cognitiveservices/v1`, { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': KEY, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': 'audio-16khz-32kbitrate-mono-mp3', 'User-Agent': 'sparkle-valley-voice-pack' }, body: ssml });
+      let r;
+      // a dropped connection (socket closed, timeout) is tried again, like a busy server, instead of stopping the run
+      try { r = await fetch(`${AZ}/cognitiveservices/v1`, { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': KEY, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': 'audio-16khz-32kbitrate-mono-mp3', 'User-Agent': 'sparkle-valley-voice-pack' }, body: ssml }); var buf = r.ok ? Buffer.from(await r.arrayBuffer()) : null; }
+      catch (e) { if (attempt < 6) { await new Promise(res => setTimeout(res, 5000 * (attempt + 1))); continue; } save(); throw e; }
       if (r.status === 401 || r.status === 403) { console.error('Azure did not accept the key or region (' + r.status + '). Copy KEY 1 and the Location/Region from the Speech resource\'s "Keys and Endpoint" page.'); save(); process.exit(3); }
       if ((r.status === 429 || r.status >= 500) && attempt < 6) { await new Promise(res => setTimeout(res, 5000 * (attempt + 1))); continue; }
       if (!r.ok) throw new Error(`${r.status} ${(await r.text()).slice(0, 200)} — "${j.text.slice(0, 40)}"`);
       const dir = path.join(PACK_DIR, j.lang, slot); fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(path.join(dir, h + '.mp3'), Buffer.from(await r.arrayBuffer()));
+      fs.writeFileSync(path.join(dir, h + '.mp3'), buf);
       man.lines[h] = (man.lines[h] || '').replace(slot, '') + slot; used += j.text.length; done++;
       if (done % 20 === 0) { save(); console.log(`${done}/${queue.length} files, ${used} characters`); }
       break;
