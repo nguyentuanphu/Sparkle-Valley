@@ -191,6 +191,14 @@ Object.assign(BUILD, {
     for (const [x, ph] of [[.07, 0], [-.07, Math.PI]]) r.legs.push([pivot(R, [x, .85, 0], [P(Cyl(.022, .02, .85, 6), '#4a4a4e', [0, -.42, 0])]), ph]);
     r.peck = true; r.slow = true;
   },
+  bull: (R, r) => { // a brown southern bull (bò), with short horns and a hump
+    const f = '#9a5a32', d = '#6a3a1e', light = '#e8c9a0';
+    R.add(mesh([P(Cap(.3, .6), f, [0, .86, 0], [H, 0, 0]), P(S(.2), f, [0, 1.12, .26], [0, 0, 0], [1, .8, 1.2])]));
+    r.head = pivot(R, [0, .98, .55], [P(Cap(.13, .2), f, [0, -.04, .1], [H + .35, 0, 0]), P(S(.12), light, [0, -.14, .26], [0, 0, 0], [1.1, .75, .8]), ...eyes(.11, .06, .14, .03),
+      ...[-1, 1].flatMap(s => [P(Cap(.05, .1), f, [s * .2, .04, .04], [0, 0, s * 1.3], [1, 1, .5]), P(Cone(.035, .2, 6), '#efe6cf', [s * .13, .17, .02], [0, 0, s * -.9])])]);
+    for (const [x, z, ph] of [[.18, .36, 0], [-.18, .36, Math.PI], [.18, -.36, Math.PI], [-.18, -.36, 0]]) r.legs.push([pivot(R, [x, .62, z], [P(Cap(.075, .42), f, [0, -.28, 0]), P(Cyl(.075, .08, .08, 8), d, [0, -.57, 0])]), ph]);
+    r.tail = pivot(R, [0, 1.0, -.58], [P(Cap(.02, .55), f, [0, -.28, -.02]), P(S(.06), d, [0, -.58, -.02], [0, 0, 0], [1, 1.5, 1])]); r.sway = 1; r.swing = true;
+  },
   peacock: (R, r) => {
     const blue = '#1f5fbf', green = '#2f9a6a';
     R.add(mesh([P(S(.22), blue, [0, .5, 0], [0, 0, 0], [.85, 1, 1.15])]));
@@ -201,7 +209,7 @@ Object.assign(BUILD, {
     for (const [x, ph] of [[.07, 0], [-.07, Math.PI]]) r.legs.push([pivot(R, [x, .3, 0], [P(Cyl(.02, .02, .3, 5), '#c9b08a', [0, -.15, 0])]), ph]);
   }
 });
-const SHADOW = { koala: .6, platypus: .6, penguin: .45, emu: .9, turtle: 1, elephant: 2, crane: .8, peacock: .8, puppy: .7, kitty: .6, bunny: .55, panda: .75, joey: .6, calf: .9, cow: 1.35, sheep: 1, pig: .95, unicorn: 1.35, chicken: .5, bear: 1.3 };
+const SHADOW = { bull: 1.35, koala: .6, platypus: .6, penguin: .45, emu: .9, turtle: 1, elephant: 2, crane: .8, peacock: .8, puppy: .7, kitty: .6, bunny: .55, panda: .75, joey: .6, calf: .9, cow: 1.35, sheep: 1, pig: .95, unicorn: 1.35, chicken: .5, bear: 1.3 };
 
 const LIVE = new Set();
 export function animalModel(kind) { const k = BUILD[kind] ? kind : 'puppy'; return make(k, BUILD[k], SHADOW[k] || .8); }

@@ -157,3 +157,44 @@ register({
     api.dots(rounds, rounds); return api.win();
   }
 });
+
+// ---------- Ném Lon (throw a sandal at a stack of cans), as children play it in the south ----------
+register({
+  id: 'nemlon', icon: '🩴', origin: 'vn', name: () => T('Can Knock-Down', 'Ném Lon'),
+  async run(api) {
+    const rounds = 3, throws = api.little ? 99 : [6, 5, 5, 4, 4][api.level - 1];
+    api.say('Stack the cans, then throw your sandal! Tap THROW when the arrow points at the cans.', 'Chồng lon lên, rồi ném dép! Bấm NÉM khi mũi tên chỉ đúng chồng lon nhé.');
+    for (let r = 0; r < rounds; r++) {
+      api.dots(rounds, r); api.stage.innerHTML = '';
+      const n = [3, 6, 6][r], yard = el('div', 'nl-yard'), stack = el('div', 'nl-stack'), aim = el('div', 'nl-aim', '⬆️'), sandal = el('div', 'nl-sandal', '🩴');
+      const rows = n === 3 ? [1, 2] : [1, 2, 3]; let k = 0;
+      rows.forEach(c => { const row = el('div', 'nl-row'); for (let i = 0; i < c; i++) { row.appendChild(el('i', 'nl-can', '🥫')); k++; } stack.appendChild(row); });
+      const btn = el('button', 'sn-btn', T('THROW!', 'NÉM!'));
+      yard.append(stack, aim, sandal); api.stage.append(yard, btn);
+      const target = .25 + Math.random() * .5; stack.style.left = target * 100 + '%';
+      let x = 0, dir = 1, raf = 0, left = n, used = 0, speed = api.little ? .35 : .45 + api.level * .12, last = performance.now();
+      const loop = now => { const dt = (now - last) / 1000; last = now; x += dir * speed * dt; if (x > 1) { x = 1; dir = -1; } if (x < 0) { x = 0; dir = 1; } aim.style.left = x * 100 + '%'; raf = requestAnimationFrame(loop); };
+      raf = requestAnimationFrame(loop); api.onCleanup(() => cancelAnimationFrame(raf));
+      await new Promise(res => {
+        btn.onclick = async () => {
+          if (btn.disabled) return; btn.disabled = true; used++;
+          sandal.style.transition = 'none'; sandal.style.left = x * 100 + '%'; sandal.style.bottom = '0%'; void sandal.offsetWidth;
+          sandal.style.transition = 'bottom .45s ease-out, transform .45s'; sandal.style.bottom = '62%'; sandal.style.transform = 'rotate(540deg)'; api.sfx.whoosh && api.sfx.whoosh();
+          await wait(460);
+          const near = Math.abs(x - target), hitW = api.little ? .2 : [.16, .13, .11, .09, .08][api.level - 1];
+          if (near < hitW) {
+            const cans = [...stack.querySelectorAll('.nl-can:not(.down)')], hit = near < hitW / 2 ? cans.length : Math.ceil(cans.length / 2);
+            cans.slice(-hit).forEach((c, i) => setTimeout(() => { c.classList.add('down'); c.style.setProperty('--dx', ((Math.random() - .5) * 160) + 'px'); api.sfx.pop(i); }, i * 80));
+            left -= hit; api.right(stack); api.say(left > 0 ? `Crash! ${left} left.` : 'All down!', left > 0 ? `Loảng xoảng! Còn ${numWord(left)} lon.` : 'Đổ hết rồi!');
+          } else api.wrong(null, 'Missed! Watch the arrow.', 'Trượt rồi! Nhìn mũi tên nhé.');
+          await wait(700); sandal.style.transition = 'none'; sandal.style.bottom = '0%'; sandal.style.transform = '';
+          if (left <= 0) { cancelAnimationFrame(raf); res(); return; }
+          if (used >= throws) { api.say('Out of throws: let’s stack them again!', 'Hết lượt ném: mình chồng lon lại nhé!'); cancelAnimationFrame(raf); r--; res(); return; }
+          btn.disabled = false;
+        };
+      });
+      if (api.closed) return; await wait(900);
+    }
+    api.dots(rounds, rounds); return api.win({ title: T('Can champion!', 'Vua ném lon!') });
+  }
+});

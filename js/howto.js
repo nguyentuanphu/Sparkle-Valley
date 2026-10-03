@@ -137,6 +137,11 @@ export const HOWTO = {
       S('👆 SNAP!', 'Tap SNAP as fast as you can, before the uncles!', 'Bấm SNAP thật nhanh, nhanh hơn các chú!')],
     real: S('🧒🃏🧒', 'For real: share out the cards, take turns putting one down, and shout Snap when two match!', 'Chơi thật: chia bài, lần lượt đặt từng lá xuống, khi hai lá giống nhau thì hô Snap!')
   },
+  nemlon: {
+    origin: S('🇻🇳 🩴🥫', 'In southern Vietnam children stack empty cans in the lane and take turns knocking them down with a sandal (ném lon). Then everyone runs to stack them again!', 'Ở miền Nam, trẻ con chồng lon rỗng giữa hẻm rồi thay phiên lấy dép ném cho đổ. Rồi cả bọn chạy đi chồng lại!'),
+    steps: [S('⬆️↔️', 'The arrow swings left and right.', 'Mũi tên chạy qua chạy lại.'), S('👆🩴', 'Tap THROW when it points at the cans.', 'Bấm NÉM khi mũi tên chỉ đúng chồng lon.'), S('🥫💥', 'Knock them all down!', 'Ném đổ hết lon nhé!')],
+    real: S('🧒🩴🥫', 'For real: stack cans on a flat spot, stand behind a line and throw your sandal. Be careful nobody is near the cans!', 'Chơi thật: chồng lon chỗ bằng phẳng, đứng sau vạch rồi ném dép. Nhớ đừng để ai đứng gần chồng lon!')
+  },
   oantuti: {
     origin: S('🇻🇳 ✊✋✌️', 'Oẳn tù tì is how Vietnamese children decide who goes first. Children everywhere play it: in Australia it is called rock, paper, scissors.', 'Oẳn tù tì là cách trẻ em Việt Nam chọn ai đi trước. Trẻ em khắp nơi đều chơi: ở Úc gọi là rock, paper, scissors.'),
     steps: [S('🎵', 'Say: oẳn tù tì, ra cái gì, ra cái này!', 'Cùng hô: oẳn tù tì, ra cái gì, ra cái này!'), S('✊ > ✌️', 'Rock breaks scissors.', 'Búa đập kéo.'), S('✌️ > ✋', 'Scissors cut paper.', 'Kéo cắt bao.'), S('✋ > ✊', 'Paper wraps rock.', 'Bao trùm búa.')],

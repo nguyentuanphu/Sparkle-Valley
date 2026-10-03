@@ -56,6 +56,7 @@ import { createHawkers } from './hawkers.js';
 import { createSuburbs } from './suburbs.js';
 import { createSymbols, regionLabel } from './symbols.js';
 import { createRegionSites } from './regionsites.js';
+import { createVnFun } from './vnfun.js';
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
@@ -1117,6 +1118,7 @@ createSuburbs(G); // speciality buildings along the roads out of each city (befo
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 createSymbols(G, { sfx: SFX, dialog }); // each region's symbol animal, in a corner of its city square
 createRegionSites(G); // more famous places of each region, just outside its city
+createVnFun(G, { sfx: SFX, say, dialog, toast: (h, m) => hudFor(h).toast(m) }); // children playing north and south; buffalo and bull festivals
 G.reward = reward;
 G.pets = createPets(G);
 G.ferries = createFerries(G);

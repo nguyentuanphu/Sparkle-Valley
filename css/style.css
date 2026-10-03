@@ -1628,3 +1628,10 @@ body.calm .rv-img.on { animation: none; }
 /* the 3D picture was taken away by the phone (low memory): a friendly card while it comes back */
 .ctxlost { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: #fff7e8; color: #4a2a6a; font-size: 22px; text-align: center; padding: 24px; }
 .ctxlost div { font-size: 72px; animation: a-pulse 1.4s ease-in-out infinite; }
+/* Ném Lon */
+.nl-yard { position: relative; width: min(520px, 100%); height: min(46vh, 360px); border-radius: 22px; background: linear-gradient(#bfe8ff 0 55%, #e8c88a 55%); overflow: hidden; }
+.nl-stack { position: absolute; top: 18%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+.nl-row { display: flex; } .nl-can { font-style: normal; font-size: clamp(30px, 8vw, 44px); line-height: 1; transition: transform .7s cubic-bezier(.3, -.3, .7, 1), opacity .7s; }
+.nl-can.down { transform: translate(var(--dx, 40px), 220px) rotate(200deg); opacity: 0; }
+.nl-aim { position: absolute; bottom: 18%; transform: translateX(-50%); font-size: 40px; }
+.nl-sandal { position: absolute; bottom: 0; left: 50%; margin-left: -22px; font-size: 44px; }

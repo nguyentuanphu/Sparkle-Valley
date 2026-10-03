@@ -4,7 +4,7 @@
 // to knock on.
 import { THREE, toon, toonVC, P, merge, outline, sprite } from './gfx.js';
 import { T, nm, registerName } from './i18n.js';
-import { heightAt, roadDist, VILLAGE, MARKET, AUSSIE, CHINA, INDIA, LAKE, WATER } from './world.js';
+import { heightAt, roadDist, VILLAGE, MARKET, AUSSIE, CHINA, INDIA, LAKE, WATER, APOSTLES, FESTGROUNDS } from './world.js';
 import { buildAvatar } from './avatar.js';
 import { LANDMARKS, postcard } from './regions.js';
 import { ITEMS } from './data.js';
@@ -69,7 +69,7 @@ export let CULTURE_CROPS = {};
 export function createHeritage(G, { give, sfx, say, toast }) {
   const { scene, world } = G;
   // find a clear, fairly flat spot near (x, z)
-  const free = (x, z, r) => world.colliders.every(c => dist2(c.x, c.z, x, z) > c.r + r) && world.boxes.every(b => x < b.x0 - r || x > b.x1 + r || z < b.z0 - r || z > b.z1 + r);
+  const free = (x, z, r) => [APOSTLES, ...Object.values(FESTGROUNDS)].every(f => dist2(f.x, f.z, x, z) > 17 + r) && world.colliders.every(c => dist2(c.x, c.z, x, z) > c.r + r) && world.boxes.every(b => x < b.x0 - r || x > b.x1 + r || z < b.z0 - r || z > b.z1 + r);
   function spot(x, z, r, water = false) {
     for (let k = 0; k < 400; k++) {
       const a = k * 2.399, d = Math.sqrt(k) * 2.2, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d, h = heightAt(px, pz);
