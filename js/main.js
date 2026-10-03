@@ -45,6 +45,7 @@ import { createShowcase } from './showcase.js';
 import './games/asia.js';
 import './games/music.js';
 import './games/cities.js';
+import './games/learning.js';
 import { createRoads } from './roads.js';
 import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
