@@ -4,7 +4,8 @@
 import { THREE, toonVC, P, merge, outline } from './gfx.js';
 import { T, onLang } from './i18n.js';
 import { SFX } from './audio.js';
-import { heightAt, ROADS, DRAGON, REGION_NAMES, setRoadBeds, roadBedsOn } from './world.js';
+import { heightAt, levelAt, riverDist, roadDist, ROADS, DRAGON, BRIDGE, WATER, REGION_NAMES, setRoadBeds, roadBedsOn } from './world.js';
+import { settings } from './state.js';
 
 // a long strip texture: asphalt with a dashed centre line, or packed dirt with wheel tracks
 export function roadTexture(kind) {
@@ -49,21 +50,38 @@ function denseLine(R) {
   pts.push(src[src.length - 1]); return pts;
 }
 const deckAt = (world, x, z) => { for (const p of world.platforms) if (!p.tower && x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1) return p.y; return null; };
-function profile(R, world, pts) {
+function profile(R, world, pts, anchors = null) {
   const hw = R.w / 2, deck = [], base = pts.map(([x, z], i) => {
     const [px, pz] = pts[Math.max(0, i - 1)], [nx, nz] = pts[Math.min(pts.length - 1, i + 1)], L = Math.hypot(nx - px, nz - pz) || 1, ux = -(nz - pz) / L, uz = (nx - px) / L;
     // a real bridge deck: the deck is well above the ground under it (near the ends the bank is the ground)
     const d = deckAt(world, x, z), g0 = heightAt(x, z), onDeck = d != null && g0 < d - 1; deck.push(onDeck); if (onDeck) return d;
     let y = -1e9; for (const s of [-1, -.5, 0, .5, 1]) y = Math.max(y, heightAt(x + ux * hw * s, z + uz * hw * s)); return y;
   });
+  // HARD RULE: inside a village or city the road runs at the place's own level (places are flat); on a bridge, on its deck
+  const lvl = pts.map(([x, z], i) => { if (deck[i]) return null; const L = levelAt(x, z); return L != null && riverDist(x, z) > 13 && ![BRIDGE, DRAGON].some(B => Math.abs(z - B.z) < 9 && x > B.x0 - 12 && x < B.x1 + 18) ? L : null; });
+  lvl.forEach((L, i) => { if (L != null) base[i] = L; });
+  if (anchors) anchors.forEach((y, i) => { base[i] = y; });
+  const n = pts.length, deepIn = lvl.map((L, i) => { if (L == null) return false; for (let k = -6; k <= 6; k++) { const j = i + k; if (j >= 0 && j < n && lvl[j] == null) return false; } return true; }); // (the outer 6 m eases in)
+  const gates = R.gates || [], gateEnd = i => (gates[0] && i < 2) || (gates[1] && i > n - 3);
+  if (gates[0] && !deck[0]) base[0] = base[1] = heightAt(pts[0][0], pts[0][1]); if (gates[1] && !deck[n - 1]) base[n - 1] = base[n - 2] = heightAt(pts[n - 1][0], pts[n - 1][1]);
+  const fixed = i => deck[i] || deepIn[i] || gateEnd(i) || (lvl[i] != null && (i < 2 || i > n - 3)) || (anchors && anchors.has(i)); // (a road's end at a gate is always at the ground there)
+  // HARD RULE: the road is always smooth: a long, gentle average of the ground…
   let ys = base.slice();
-  for (let it = 0; it < 6; it++) ys = ys.map((y, i) => { if (deck[i]) return y; let s = 0, w = 0; for (let k = -4; k <= 4; k++) { const j = i + k; if (j < 0 || j >= ys.length) continue; const wk = 5 - Math.abs(k); s += ys[j] * wk; w += wk; } return s / w; });
-  // never far below the ground's high points (cut at most 35 cm into a bump) nor dug into the bridge banks
-  ys = ys.map((y, i) => deck[i] ? y : Math.max(y, base[i] - .35));
-  // at a town's gate the road meets the town's own level ground exactly, easing into its smooth height over 14 m
-  (R.gates || []).forEach((g, end) => { if (!g) return; const n = ys.length, i0 = end ? n - 1 : 0, diff = base[i0] - ys[i0], N = Math.min(14, n - 1);
-    for (let k = 0; k <= N; k++) { const i = end ? n - 1 - k : k, u = 1 - k / N; if (!deck[i]) ys[i] += diff * u * u * (3 - 2 * u); } });
-  return { ys, deck };
+  const avg = (W, passes) => { for (let it = 0; it < passes; it++) ys = ys.map((y, i) => { if (fixed(i)) return base[i]; let s = 0, w = 0; for (let k = -W; k <= W; k++) { const j = Math.max(0, Math.min(n - 1, i + k)), wk = W + 1 - Math.abs(k); s += ys[j] * wk; w += wk; } return s / w; }); };
+  avg(10, 6);
+  // …never steeper than 10 % (dirt roads 14 %), worked out from both directions from the fixed parts…
+  // (where two fixed parts are too close for that, the whole stretch between them shares the climb evenly)
+  const G = R.kind === 'asphalt' ? .10 : .14, seg = i => Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]), Gs = new Float64Array(n).fill(G);
+  { let f0 = -1, run = 0; for (let i = 0; i < n; i++) { if (i) run += seg(i); if (!fixed(i)) continue; if (f0 >= 0 && i - f0 > 1) { const need = Math.abs(base[i] - base[f0]) / (run || 1) * 1.02; if (need > G) for (let k = f0 + 1; k <= i; k++) Gs[k] = need; } f0 = i; run = 0; } }
+  const step = i => seg(i) * Gs[i];
+  const limit = () => { for (let pass = 0; pass < 3; pass++) {
+    for (let i = 1; i < n; i++) if (!fixed(i)) ys[i] = Math.min(ys[i - 1] + step(i), Math.max(ys[i - 1] - step(i), ys[i]));
+    for (let i = n - 2; i >= 0; i--) if (!fixed(i)) ys[i] = Math.min(ys[i + 1] + step(i + 1), Math.max(ys[i + 1] - step(i + 1), ys[i]));
+  } };
+  limit();
+  // …and every change of slope rounded off
+  avg(4, 4); limit(); avg(2, 2); limit();
+  return { ys, deck, fixed: pts.map((_, i) => fixed(i)) };
 }
 function ribbonGeo(R, pts, ys) {
   const pos = [], uv = [], idx = [], hw = R.w / 2; let along = 0;
@@ -81,19 +99,88 @@ function ribbonGeo(R, pts, ys) {
 // all roads: profiles, joints matched, road beds registered and switched on (the ground is reshaped), then the ribbons
 function buildRoads(G, mats) {
   const { scene, world } = G, all = ROADS.map(R => { const pts = denseLine(R); return { R, pts, ...profile(R, world, pts) }; });
-  // a road whose end meets another road takes that road's height there, easing over the last 14 m
-  all.forEach((A, ai) => [0, 1].forEach(end => {
-    const n = A.pts.length, [x, z] = A.pts[end ? n - 1 : 0];
-    let best = null, bd = 1e9; all.forEach((B, bi) => { if (bi === ai) return; B.pts.forEach((p, j) => { const d = Math.hypot(p[0] - x, p[1] - z); if (d < B.R.w / 2 + 1.2 && d < bd && (bi < ai || (j > 2 && j < B.pts.length - 3))) { bd = d; best = B.ys[j]; } }); });
-    if (best == null) return;
-    const diff = best - A.ys[end ? n - 1 : 0], N = Math.min(14, n - 1);
-    for (let k = 0; k <= N; k++) { const i = end ? n - 1 - k : k; if (!A.deck[i]) { const u = 1 - k / N; A.ys[i] += diff * u * u * (3 - 2 * u); } }
-  }));
+  // a road whose end meets another road takes that road's exact surface height wherever the two overlap; its own
+  // smooth, gentle profile is then worked out again around those fixed points (twice, so joints settle)
+  const yOn = (B, x, z) => { let bd = 1e9, by = 0; for (let j = 0; j < B.pts.length - 1; j++) { const [ax, az] = B.pts[j], [bx, bz] = B.pts[j + 1], dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))), d = Math.hypot(x - ax - dx * t, z - az - dz * t); if (d < bd) { bd = d; by = B.ys[j] + (B.ys[j + 1] - B.ys[j]) * t; } } return { d: bd, y: by }; };
+  // a short road from a through road to a gate: the through road dips to the gate's level where they meet
+  all.forEach((A, ai) => { const g = A.R.gates || [], n = A.pts.length; if (n > 16 || !!g[0] === !!g[1]) return;
+    const jEnd = g[0] ? 1 : 0, [x, z] = A.pts[jEnd ? n - 1 : 0], gy = A.ys[jEnd ? 0 : n - 1];
+    all.forEach((B, bi) => { if (bi === ai || yOn(B, x, z).d > B.R.w / 2 + 1.2) return; B.extraFix = B.extraFix || new Map();
+      B.pts.forEach((p, j) => { if (Math.hypot(p[0] - x, p[1] - z) < B.R.w / 2 + A.R.w / 2 + 2) B.extraFix.set(j, gy); }); });
+  });
+  all.forEach(A => { if (A.extraFix) Object.assign(A, profile(A.R, world, A.pts, A.extraFix)); });
+  for (let round = 0; round < 2; round++) all.forEach((A, ai) => {
+    const n = A.pts.length, anchors = new Map(A.extraFix || []);
+    [0, 1].forEach(end => {
+      const [x, z] = A.pts[end ? n - 1 : 0];
+      let B = null, bd = 1e9; all.forEach((C, ci) => { if (ci === ai) return; const q = yOn(C, x, z); if (q.d < C.R.w / 2 + 1.2 && q.d < bd) { bd = q.d; B = C; } });
+      if (!B) return;
+      (A.jEnd = A.jEnd || [false, false])[end] = true;
+      const reach = B.R.w / 2 + A.R.w / 2 + 1;
+      for (let k = 0; k < n; k++) { const i = end ? n - 1 - k : k, q = yOn(B, A.pts[i][0], A.pts[i][1]); if (q.d > reach || A.deck[i]) break; anchors.set(i, q.y); }
+    });
+    if (anchors.size) Object.assign(A, profile(A.R, world, A.pts, anchors));
+  });
   const segs = [];
-  for (const A of all) for (let i = 0; i < A.pts.length - 1; i++) if (!A.deck[i] && !A.deck[i + 1]) segs.push({ r: all.indexOf(A), first: i === 0, last: i === A.pts.length - 2, ax: A.pts[i][0], az: A.pts[i][1], bx: A.pts[i + 1][0], bz: A.pts[i + 1][1], ya: A.ys[i], yb: A.ys[i + 1], hw: A.R.w / 2 });
+  for (const A of all) for (let i = 0; i < A.pts.length - 1; i++) if (!A.deck[i] && !A.deck[i + 1]) segs.push({ r: all.indexOf(A), tip: !!A.jEnd && ((A.jEnd[0] && i < 4) || (A.jEnd[1] && i > A.pts.length - 6)), first: i === 0, last: i === A.pts.length - 2, ax: A.pts[i][0], az: A.pts[i][1], bx: A.pts[i + 1][0], bz: A.pts[i + 1][1], ya: A.ys[i], yb: A.ys[i + 1], hw: A.R.w / 2 });
   setRoadBeds(segs); roadBedsOn(world, scene);
+  world.roadLines = all.map(A => ({ kind: A.R.kind, pts: A.pts, ys: A.ys, deck: A.deck, fixed: A.fixed })); // for the tests
   world.roadTop = null; // walking on a road is walking on the ground now (bridge decks are platforms)
   for (const A of all) { const m = new THREE.Mesh(ribbonGeo(A.R, A.pts, A.ys), mats[A.R.kind]); m.receiveShadow = true; m.userData.road = true; scene.add(m); }
+}
+
+// HARD RULE: road edges are soft, with flowers growing alongside. A soft verge fades from the road into the grass on
+// both sides, and little clumps of flowers line the roads (never on a building, a gate, water or another road). Made
+// once everything else stands (main.js), drawn road by road and only near a player, so phones stay quick.
+export function plantRoadside(G) {
+  const { scene, world } = G, lines = world.roadLines || [];
+  const free = (x, z, pad) => !world.colliders.some(c => c.r > 0 && Math.hypot(c.x - x, c.z - z) < c.r + pad) && !world.boxes.some(b => x > b.x0 - pad && x < b.x1 + pad && z > b.z0 - pad && z < b.z1 + pad);
+  const vergeMat = toonVC({ transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 }); // (drawn just in front of the ground)
+  // one flower: a stem, a ring of petals (tinted per flower) and a yellow middle; about 20 triangles
+  const petalsG = new THREE.CircleGeometry(.13, 6); petalsG.rotateX(-Math.PI / 2); petalsG.translate(0, .36, 0);
+  const stemG = merge([P(new THREE.CylinderGeometry(.012, .016, .36, 3), '#4f9a3c', [0, .18, 0]), P(new THREE.CylinderGeometry(.045, .045, .03, 5), '#ffd23f', [0, .375, 0]), P(new THREE.ConeGeometry(.05, .12, 3), '#5fb04a', [.05, .1, 0], [0, 0, -.6])]);
+  const stemMat = toonVC(), petalMat = new THREE.MeshToonMaterial({ color: '#ffffff', side: THREE.DoubleSide });
+  const COLS = ['#ff7eb8', '#ffd23f', '#ffffff', '#b58cff', '#ff6b5a', '#ffa64d'].map(c => new THREE.Color(c));
+  const dense = settings.quality === 'low' ? 2.8 : 1.6, groups = [];
+  lines.forEach((L, k) => {
+    const R = ROADS[k], hw = R.w / 2, n = L.pts.length; if (n < 2) return;
+    // the soft verge: from the road's edge out 1.1 m, gravel-coloured at the road and fading into the grass
+    const pos = [], col = [], idx = [], vc = new THREE.Color(R.kind === 'asphalt' ? '#ddd2ad' : '#dcb47a'); let v = 0;
+    for (let i = 0; i < n; i++) {
+      const [px, pz] = L.pts[Math.max(0, i - 1)], [nx, nz] = L.pts[Math.min(n - 1, i + 1)], D = Math.hypot(nx - px, nz - pz) || 1, ux = -(nz - pz) / D, uz = (nx - px) / D, [x, z] = L.pts[i];
+      for (const sd of [-1, 1]) for (const [o, a] of [[hw - .08, 1], [hw + .6, .75], [hw + 1.5, 0]]) {
+        const X = x + ux * sd * o, Z = z + uz * sd * o, Y = heightAt(X, Z) + (o < hw ? .07 : .12); // (the ground as it finally is; the terrain mesh is coarser, so a little above)
+        pos.push(X, L.deck[i] ? L.ys[i] + .02 : Y, Z); col.push(vc.r, vc.g, vc.b, L.deck[i] ? 0 : a);
+      }
+      if (i) { const a = v - 6; for (const base of [0, 3]) { const p = a + base, q = v + base; idx.push(p, p + 1, q, p + 1, q + 1, q, p + 1, p + 2, q + 1, p + 2, q + 2, q + 1); } }
+      v += 6;
+    }
+    const vg = new THREE.BufferGeometry(); vg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); vg.setAttribute('color', new THREE.Float32BufferAttribute(col, 4)); vg.setIndex(idx); vg.computeVertexNormals();
+    const verge = new THREE.Mesh(vg, vergeMat); verge.renderOrder = 1; verge.receiveShadow = true; verge.userData.noCam = true; scene.add(verge);
+    // the flowers
+    const spots = []; let along = 0, next = Math.random() * dense;
+    for (let i = 1; i < n; i++) {
+      along += Math.hypot(L.pts[i][0] - L.pts[i - 1][0], L.pts[i][1] - L.pts[i - 1][1]); if (along < next || L.deck[i]) continue; next = along + dense * (.7 + Math.random() * .6);
+      if (i < 6 || i > n - 7) continue; // not right at a gate or a joint
+      const [px, pz] = L.pts[i - 1], [x, z] = L.pts[i], D = Math.hypot(x - px, z - pz) || 1, ux = -(z - pz) / D, uz = (x - px) / D;
+      for (const sd of [-1, 1]) { if (Math.random() < .15) continue;
+        const o = hw + 1.7 + Math.random() * 1.4, cx = x + ux * sd * o, cz = z + uz * sd * o;
+        const rd = roadDist(cx, cz); if (rd.d < rd.road.w / 2 + 1.1 || riverDist(cx, cz) < 6 || !free(cx, cz, .5)) continue;
+        const c = COLS[Math.floor(Math.random() * COLS.length)], m = 2 + Math.floor(Math.random() * 3);
+        for (let f = 0; f < m; f++) { const fx = cx + (Math.random() - .5) * .9, fz = cz + (Math.random() - .5) * .9, fy = heightAt(fx, fz); if (fy < WATER + .4) continue; spots.push([fx, fy, fz, 1.6 + Math.random() * .8, Math.random() * 6.28, c]); }
+      }
+    }
+    if (!spots.length) return;
+    const stems = new THREE.InstancedMesh(stemG, stemMat, spots.length), heads = new THREE.InstancedMesh(petalsG, petalMat, spots.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), ps = new THREE.Vector3();
+    let cxs = 0, czs = 0;
+    spots.forEach(([x, y, z, s, r, c], j) => { q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r); m4.compose(ps.set(x, y - .02, z), q, sc.set(s, s, s)); stems.setMatrixAt(j, m4); heads.setMatrixAt(j, m4); heads.setColorAt(j, c); cxs += x; czs += z; });
+    for (const M of [stems, heads]) { M.computeBoundingSphere(); M.userData.noCam = true; scene.add(M); }
+    groups.push({ meshes: [stems, heads], spots });
+  });
+  // only roads near a player show their flowers
+  let t0 = 0; world.updaters.push(dt => { if ((t0 -= dt) > 0) return; t0 = .5;
+    for (const g of groups) { const S = g.meshes[0].boundingSphere, on = G.heroes.some(h => Math.hypot(h.pos.x - S.center.x, h.pos.z - S.center.z) < S.radius + 70); g.meshes.forEach(M => M.visible = on); } });
+  return { count: groups.reduce((a, g) => a + g.spots.length, 0) };
 }
 
 // the welcome sign on a gate: big words that follow the language

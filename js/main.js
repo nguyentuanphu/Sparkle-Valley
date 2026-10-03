@@ -48,7 +48,7 @@ import './games/asia.js';
 import './games/music.js';
 import './games/cities.js';
 import './games/learning.js';
-import { createRoads } from './roads.js';
+import { createRoads, plantRoadside } from './roads.js';
 import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
 import { createKites } from './kite.js';
@@ -1195,6 +1195,7 @@ G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 
 world.familyEdits = applyWorldEdits(G); // buildings the family moved or removed in Sparkle Studio
 widenFlatLand(world, scene); // more level land round every village and city, for new buildings (nothing moves on the map)
 world.levelled = levelUnderBuildings(world, scene);
+world.roadside = plantRoadside(G); // soft road edges and flowers, once everything stands
 // solid things the camera must never go inside: big, opaque, still-standing meshes (collected once, refreshed
 // now and then so new houses, landmarks and boats are included)
 {

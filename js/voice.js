@@ -113,6 +113,7 @@ async function speak(en, vi) {
   if (!settings.voice) return;
   en = swapNames(en, 'en'); vi = swapNames(vi, 'vi');
   const my = ++seq;
+  if (!PACK && !packTried) { await waitPack(); if (my !== seq) return; }
   try { speechSynthesis.cancel(); } catch (e) { }
   try { if (playing) playing.stop(); } catch (e) { }
   // a family recording of exactly this line wins over any other voice
@@ -168,6 +169,7 @@ export function sayIn(lang, text) {
   if (window.__svVoiceLog) window.__svVoiceLog(lang, text, !!packSlot(lang, text));
   const my = ++seq;
   try { speechSynthesis.cancel(); } catch (e) { }
+  if (!PACK && !packTried) { waitPack().then(() => { packTried = true; if (my === seq) sayIn(lang, text); }); return; }
   if (packSlot(lang, text)) { playPack(lang, text, my).then(ok => { if (!ok && my === seq) deviceSpeak(text, lang, my); }).catch(() => deviceSpeak(text, lang, my)); return; }
   if (cloudReady() && cloudCached(text, lang)) { cloudVoice(text, lang).then(b => my === seq && playBuffer(b)).catch(() => deviceSpeak(text, lang, my)); return; }
   deviceSpeak(text, lang, my);
@@ -247,7 +249,11 @@ function playBuffer(buf, rate = 1) {
 // little higher; men use the man's voice when the pack has one.
 let PACK = null;
 export const voicePack = () => PACK;
-fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; autoSavePack(); } }).catch(() => { });
+// Lines asked for before the list has arrived (slow phone networks at start-up) wait for it, so they are spoken
+// with the recorded voice too instead of the phone's own voice.
+let packTried = false;
+const packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; autoSavePack(); } }).catch(() => { }).finally(() => { packTried = true; });
+const waitPack = () => PACK || packTried ? null : Promise.race([packReady, new Promise(r => setTimeout(r, 6000))]);
 // Keep the whole pack on the device by itself, once: a little while after the game opens, every file not yet
 // saved is downloaded quietly into the voice cache (which game updates never delete), so nothing needs to be
 // downloaded again and every line works offline. It only runs again when a new pack is published.

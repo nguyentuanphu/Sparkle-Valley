@@ -213,6 +213,48 @@ await check('roads', async () => {
   return `${r.gates} gates on road ends, every city on a road, nothing standing on a road`;
 });
 
+await check('flat', async () => {
+  // HARD RULE: every village, town and city is one flat level (rivers, the lake, bridge ramps, road surfaces and
+  // a building's own base pad aside)
+  const P = await open(b, { w: 700, h: 500 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), bad = [];
+    const circ = (C, id) => ({ id, x0: C.x - C.r, x1: C.x + C.r, z0: C.z - C.r, z1: C.z + C.r, circ: C, h: C.h });
+    const areas = [circ(W.VILLAGE, 'village'), circ(W.CHINA, 'china'), circ(W.INDIA, 'india'), circ(W.HOME, 'home'), { id: 'town', ...W.TOWN }, { id: 'market', ...W.MARKET }, { id: 'aussie', ...W.AUSSIE }, ...W.CITIES];
+    let n = 0;
+    for (const A of areas) for (let x = A.x0 + 3; x <= A.x1 - 3; x += 1.5) for (let z = A.z0 + 3; z <= A.z1 - 3; z += 1.5) {
+      if (A.circ && Math.hypot(x - A.circ.x, z - A.circ.z) > A.circ.r - 3) continue;
+      if (W.riverDist(x, z) < 14 || Math.hypot(x - W.LAKE.x, z - W.LAKE.z) < W.LAKE.r + 6 || [W.BRIDGE, W.DRAGON].some(B => Math.abs(z - B.z) < 10 && x > B.x0 - 13 && x < B.x1 + 19)) continue;
+      const h = W.heightAt(x, z); if (h < W.WATER + .5) continue; n++;
+      if (Math.abs(h - A.h) <= .25) continue;
+      const rd = W.roadDist(x, z); if (rd.d < rd.road.w / 2 + .5) continue;
+      if (W.FOOTPRINTS.some(F => x >= F.x0 - F.pad && x <= F.x1 + F.pad && z >= F.z0 - F.pad && z <= F.z1 + F.pad)) continue;
+      bad.push(`${A.id} ${x.toFixed(0)},${z.toFixed(0)} ${h.toFixed(2)}≠${A.h}`);
+    }
+    return { n, bad };
+  });
+  await P.ctx.close();
+  ok(!r.bad.length, r.bad.slice(0, 12).join('; ') + (r.bad.length > 12 ? ` (+${r.bad.length - 12})` : ''));
+  return `${r.n} spots in 14 villages and cities, all level`;
+});
+
+await check('roadshape', async () => {
+  // HARD RULE: roads are straight or perfectly curved (no step turns more than 8°), never steep (asphalt 10 %, dirt 14 %,
+  // a little more only where two fixed places are too close), and every change of slope is rounded
+  const P = await open(b, { w: 700, h: 500 }); await clear(P.page);
+  const r = await P.page.evaluate(() => { const bad = []; let len = 0;
+    __sv.world.roadLines.forEach((L, k) => { const G = L.kind === 'asphalt' ? .125 : .155;
+      for (let i = 1; i < L.ys.length; i++) { const d = Math.hypot(L.pts[i][0] - L.pts[i - 1][0], L.pts[i][1] - L.pts[i - 1][1]); len += d; const g = Math.abs(L.ys[i] - L.ys[i - 1]) / (d || 1);
+        if (g > G && !L.deck[i]) bad.push(`road ${k} steep ${(g * 100).toFixed(0)}% at ${L.pts[i].map(v => v.toFixed(0))}`);
+        if (i < L.ys.length - 1) { const s1 = L.ys[i] - L.ys[i - 1], s2 = L.ys[i + 1] - L.ys[i]; if (Math.abs(s2 - s1) > .16 && !L.deck[i]) bad.push(`road ${k} kink ${Math.abs(s2 - s1).toFixed(2)} at ${L.pts[i].map(v => v.toFixed(0))}`);
+          const a1 = Math.atan2(L.pts[i][1] - L.pts[i - 1][1], L.pts[i][0] - L.pts[i - 1][0]), a2 = Math.atan2(L.pts[i + 1][1] - L.pts[i][1], L.pts[i + 1][0] - L.pts[i][0]); let t = Math.abs(a2 - a1); if (t > Math.PI) t = 2 * Math.PI - t;
+          if (t * 180 / Math.PI > 8) bad.push(`road ${k} turns ${(t * 180 / Math.PI).toFixed(0)}° at ${L.pts[i].map(v => v.toFixed(0))}`); } } });
+    return { bad, len }; });
+  await P.ctx.close();
+  ok(!r.bad.length, r.bad.slice(0, 10).join('; '));
+  return `${Math.round(r.len)} m of road: straight or smoothly curved, gentle and rounded`;
+});
+
 await check('ground', async () => {
   // every building on dry, level ground (not over the river or the lake), no road floating, buried or in water,
   // and the build number in the game matches the service worker's version
