@@ -12,3 +12,6 @@ marketing/source/out-*.mp4
 marketing/source/music-*.wav
 marketing/source/log-*.txt
 marketing/source/preview-*.jpg
+content/old/
+studio/dist/
+studio/.build/

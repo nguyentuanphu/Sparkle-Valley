@@ -1,0 +1,234 @@
+// Sparkle Studio: the grown-ups' dashboard for Sparkle Valley, running on the family's own computer.
+// Double-click SparkleStudio.exe (or run `node studio/studio.cjs`): it starts a small private web server on this
+// computer only (http://localhost:7777) and opens the dashboard in the browser. It edits the game folder it sits in
+// (or the folder chosen in Settings):
+//   · content/custom.json + content/faces/  the family's content pack (message, names, faces, stories, quiz, defaults)
+//   · voices/                               the offline voice pack (new lines made with Azure, Piper or the microphone)
+//   · sparkle-valley-netlify.zip            the publish zip, and an optional one-click deploy to Netlify
+// Keys (Azure, Netlify) are kept only on this computer, in %APPDATA%\SparkleStudio\settings.json, never in the game.
+'use strict';
+const http = require('http'), fs = require('fs'), path = require('path'), os = require('os'), zlib = require('zlib'), vm = require('vm'), { spawn, execFile } = require('child_process');
+
+let sea = null; try { sea = require('node:sea'); if (!sea.isSea()) sea = null; } catch (e) { sea = null; }
+const UI_DIR = path.join(__dirname, 'ui');
+const asset = name => { if (sea) { try { return Buffer.from(sea.getAsset(name)); } catch (e) { return null; } } const p = path.join(UI_DIR, name); return fs.existsSync(p) ? fs.readFileSync(p) : null; };
+
+// ---------- settings (on this computer only) ----------
+const CONF_DIR = path.join(process.env.APPDATA || path.join(os.homedir(), '.config'), 'SparkleStudio'), CONF = path.join(CONF_DIR, 'settings.json');
+let conf = {}; try { conf = JSON.parse(fs.readFileSync(CONF, 'utf8')); } catch (e) { conf = {}; }
+const saveConf = () => { fs.mkdirSync(CONF_DIR, { recursive: true }); fs.writeFileSync(CONF, JSON.stringify(conf, null, 1)); };
+const isGame = d => d && fs.existsSync(path.join(d, 'index.html')) && fs.existsSync(path.join(d, 'js', 'main.js'));
+function findGame() {
+  const tries = [process.argv[2], conf.gameDir, path.dirname(process.execPath), process.cwd(), path.resolve(__dirname, '..')].filter(Boolean);
+  for (const t of tries) for (const d of [t, path.dirname(t), path.dirname(path.dirname(t))]) if (isGame(d)) return path.resolve(d); // the folder, or one or two up (studio/dist/)
+  return null;
+}
+let GAME = findGame();
+const G = (...p) => path.join(GAME, ...p);
+const safeJoin = (root, rel) => { const p = path.resolve(root, '.' + path.sep + decodeURIComponent(rel).replace(/^[\\/]+/, '')); const r = path.resolve(root); return p === r || p.startsWith(r + path.sep) ? p : null; };
+
+// ---------- helpers ----------
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.woff2': 'font/woff2', '.webmanifest': 'application/manifest+json', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8', '.zip': 'application/zip', '.toml': 'text/plain' };
+const send = (res, code, body, type = 'application/json; charset=utf-8') => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store' }); res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body)); };
+const readBody = (req, max = 60e6) => new Promise((ok, no) => { const ch = []; let n = 0; req.on('data', c => { n += c.length; if (n > max) { no(new Error('too big')); req.destroy(); } else ch.push(c); }); req.on('end', () => ok(Buffer.concat(ch))); req.on('error', no); });
+const json = async req => JSON.parse((await readBody(req)).toString('utf8') || '{}');
+const slug = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 40) || 'face';
+
+// ---------- the content pack ----------
+const CONTENT = () => G('content', 'custom.json');
+function readContent() { try { return JSON.parse(fs.readFileSync(CONTENT(), 'utf8')); } catch (e) { return {}; } }
+function writeContent(obj) {
+  fs.mkdirSync(G('content'), { recursive: true });
+  if (fs.existsSync(CONTENT())) { const bdir = G('content', 'old'); fs.mkdirSync(bdir, { recursive: true }); fs.copyFileSync(CONTENT(), path.join(bdir, 'custom-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json')); }
+  fs.writeFileSync(CONTENT(), JSON.stringify(obj, null, 1));
+}
+
+// ---------- voices ----------
+const CAST = { en: ['f', 'm'], vi: ['f', 'm'], zh: ['m'], hi: ['m'] };
+const AZ_VOICES = { en: { f: 'en-AU-NatashaNeural', m: 'en-AU-WilliamNeural' }, vi: { f: 'vi-VN-HoaiMyNeural', m: 'vi-VN-NamMinhNeural' }, zh: { m: 'zh-CN-YunxiNeural' }, hi: { m: 'hi-IN-MadhurNeural' } };
+const LOCALE = { en: 'en-AU', vi: 'vi-VN', zh: 'zh-CN', hi: 'hi-IN' };
+const MAN = () => G('voices', 'manifest.json');
+function voicesHave() {
+  const out = {};
+  for (const [L, slots] of Object.entries(CAST)) { out[L] = {}; for (const s of slots) { const d = G('voices', L, s); out[L][s] = fs.existsSync(d) ? fs.readdirSync(d).filter(f => f.endsWith('.mp3')).map(f => f.slice(0, -4)) : []; } }
+  return out;
+}
+let manCache = null, manTimer = null;
+function manifest() { if (!manCache) { try { manCache = JSON.parse(fs.readFileSync(MAN(), 'utf8')); } catch (e) { manCache = { version: 2, engine: 'mixed', cast: CAST, voices: {}, lines: {}, langOf: {} }; } } return manCache; }
+function addToManifest(lang, slot, hash) {
+  const m = manifest(); m.lines = m.lines || {}; m.langOf = m.langOf || {}; m.cast = m.cast || CAST; m.voices = m.voices || {};
+  if (!m.voices[lang]) m.voices[lang] = {}; if (!m.voices[lang][slot]) m.voices[lang][slot] = { id: AZ_VOICES[lang][slot], name: AZ_VOICES[lang][slot] };
+  m.langOf[hash] = lang; m.lines[hash] = (m.lines[hash] || '').replace(slot, '') + slot; m.made = new Date().toISOString().slice(0, 10);
+  clearTimeout(manTimer); manTimer = setTimeout(() => { fs.mkdirSync(G('voices'), { recursive: true }); fs.writeFileSync(MAN(), JSON.stringify(m)); }, 800);
+}
+const xml = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+async function azureSay(lang, slot, text) {
+  if (!conf.azureKey || !conf.azureRegion) throw new Error('Add your Azure Speech key and region in Settings first.');
+  const v = (conf.voices && conf.voices[lang] && conf.voices[lang][slot]) || AZ_VOICES[lang][slot];
+  const ssml = `<speak version='1.0' xml:lang='${LOCALE[lang]}'><voice name='${v}'>${xml(text)}</voice></speak>`;
+  for (let a = 0; ; a++) {
+    const r = await fetch(`https://${conf.azureRegion}.tts.speech.microsoft.com/cognitiveservices/v1`, { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': conf.azureKey, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': 'audio-16khz-32kbitrate-mono-mp3', 'User-Agent': 'sparkle-studio' }, body: ssml });
+    if (r.status === 401 || r.status === 403) throw new Error('Azure did not accept the key or region (' + r.status + '). Check them in Settings.');
+    if ((r.status === 429 || r.status >= 500) && a < 6) { await new Promise(ok => setTimeout(ok, 4000 * (a + 1))); continue; }
+    if (!r.ok) throw new Error('Azure ' + r.status + ': ' + (await r.text()).slice(0, 160));
+    return Buffer.from(await r.arrayBuffer());
+  }
+}
+// Piper: free voices that run on this computer, no internet (https://github.com/rhasspy/piper). The grown-up
+// downloads piper.exe and a voice model (.onnx) per language and puts their paths in Settings.
+let lame = null;
+function lameLib() { if (lame) return lame; const src = asset('lame.min.js'); if (!src) throw new Error('The MP3 encoder is missing.'); const ctx = { console, Math, Int8Array, Int16Array, Int32Array, Float32Array, Float64Array, Uint8Array, Array, ArrayBuffer }; ctx.window = ctx; ctx.self = ctx; vm.runInNewContext(src.toString('utf8'), ctx); lame = ctx.lamejs; return lame; }
+function wavToMp3(buf) {
+  // a plain 16-bit PCM WAV (what Piper writes) → MP3 32 kbps mono
+  let p = 12, rate = 22050, ch = 1, data = null;
+  while (p < buf.length - 8) { const id = buf.toString('ascii', p, p + 4), n = buf.readUInt32LE(p + 4); if (id === 'fmt ') { ch = buf.readUInt16LE(p + 10); rate = buf.readUInt32LE(p + 12); } if (id === 'data') { data = buf.subarray(p + 8, p + 8 + n); break; } p += 8 + n + (n & 1); }
+  if (!data) throw new Error('Piper did not make a WAV file.');
+  const L = lameLib(), samples = new Int16Array(data.buffer, data.byteOffset, Math.floor(data.length / 2 / ch) * ch);
+  const mono = ch === 1 ? samples : Int16Array.from({ length: samples.length / ch }, (_, i) => samples[i * ch]);
+  const enc = new L.Mp3Encoder(1, rate, 32), out = [];
+  for (let i = 0; i < mono.length; i += 1152) { const b = enc.encodeBuffer(mono.subarray(i, i + 1152)); if (b.length) out.push(Buffer.from(b)); }
+  const e = enc.flush(); if (e.length) out.push(Buffer.from(e));
+  return Buffer.concat(out);
+}
+function piperSay(lang, text) {
+  const exe = conf.piperExe, model = conf.piperModels && conf.piperModels[lang];
+  if (!exe || !fs.existsSync(exe)) return Promise.reject(new Error('Set the path to piper.exe in Settings first.'));
+  if (!model || !fs.existsSync(model)) return Promise.reject(new Error(`Set a Piper voice model for ${lang} in Settings first.`));
+  const tmp = path.join(os.tmpdir(), 'sparkle-piper-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.wav');
+  return new Promise((ok, no) => {
+    const p = spawn(exe, ['--model', model, '--output_file', tmp], { windowsHide: true }); let err = '';
+    p.stderr.on('data', d => { err += d; }); p.on('error', no);
+    p.on('close', code => { try { if (code !== 0 || !fs.existsSync(tmp)) return no(new Error('Piper stopped: ' + err.slice(-200))); const mp3 = wavToMp3(fs.readFileSync(tmp)); fs.unlinkSync(tmp); ok(mp3); } catch (e) { no(e); } });
+    p.stdin.end(text);
+  });
+}
+
+// ---------- the publish zip (a small ZIP writer: deflate, CRC-32) ----------
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = b => { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+function zipFolder(root, items, out) {
+  const files = [];
+  const walk = rel => { const abs = path.join(root, rel); if (!fs.existsSync(abs)) return; const st = fs.statSync(abs); if (st.isDirectory()) { for (const f of fs.readdirSync(abs)) { if (f === 'old' && rel.endsWith('content')) continue; walk(path.join(rel, f)); } } else files.push(rel); };
+  items.forEach(walk);
+  const fd = fs.openSync(out, 'w'), central = []; let off = 0;
+  const w = b => { fs.writeSync(fd, b); off += b.length; };
+  for (const rel of files) {
+    const data = fs.readFileSync(path.join(root, rel)), name = Buffer.from(rel.split(path.sep).join('/'), 'utf8'), crc = crc32(data);
+    const already = /\.(mp3|mp4|png|jpg|jpeg|woff2|zip)$/i.test(rel), body = already ? data : zlib.deflateRawSync(data, { level: 9 }), method = already ? 0 : 8;
+    const h = Buffer.alloc(30); h.writeUInt32LE(0x04034b50, 0); h.writeUInt16LE(20, 4); h.writeUInt16LE(0x0800, 6); h.writeUInt16LE(method, 8); h.writeUInt32LE(0, 10); h.writeUInt32LE(crc, 14); h.writeUInt32LE(body.length, 18); h.writeUInt32LE(data.length, 22); h.writeUInt16LE(name.length, 26); h.writeUInt16LE(0, 28);
+    const at = off; w(h); w(name); w(body);
+    const c = Buffer.alloc(46); c.writeUInt32LE(0x02014b50, 0); c.writeUInt16LE(20, 4); c.writeUInt16LE(20, 6); c.writeUInt16LE(0x0800, 8); c.writeUInt16LE(method, 10); c.writeUInt32LE(0, 12); c.writeUInt32LE(crc, 16); c.writeUInt32LE(body.length, 20); c.writeUInt32LE(data.length, 24); c.writeUInt16LE(name.length, 28); c.writeUInt32LE(at, 42);
+    central.push(Buffer.concat([c, name]));
+  }
+  const cd = Buffer.concat(central), start = off; w(cd);
+  const e = Buffer.alloc(22); e.writeUInt32LE(0x06054b50, 0); e.writeUInt16LE(files.length, 8); e.writeUInt16LE(files.length, 10); e.writeUInt32LE(cd.length, 12); e.writeUInt32LE(start, 16); w(e);
+  fs.closeSync(fd);
+  return { files: files.length, bytes: off };
+}
+const PUBLISH = ['index.html', 'manifest.webmanifest', 'sw.js', 'netlify.toml', 'css', 'fonts', 'icons', 'js', 'vendor', 'videos', 'content', 'voices'];
+
+// ---------- the health check ----------
+function check() {
+  const out = [];
+  const add = (ok, en, vi) => out.push({ ok, en, vi });
+  add(isGame(GAME), `Game folder: ${GAME}`, `Thư mục game: ${GAME}`);
+  try { const sw = fs.readFileSync(G('sw.js'), 'utf8'), m = /FILES\s*=\s*\[([\s\S]*?)\]/.exec(sw), list = m ? [...m[1].matchAll(/'([^']+)'/g)].map(x => x[1]).filter(f => f !== './') : [];
+    const miss = list.filter(f => !fs.existsSync(G(f))); add(!miss.length, miss.length ? `Files the offline app needs but are missing: ${miss.join(', ')}` : `All ${list.length} offline files are there`, miss.length ? `Thiếu tệp cho chế độ ngoại tuyến: ${miss.join(', ')}` : `Đủ ${list.length} tệp ngoại tuyến`);
+    const v = /VERSION = '([^']+)'/.exec(sw); add(true, `Game version ${v ? v[1] : '?'}`, `Phiên bản ${v ? v[1] : '?'}`); } catch (e) { add(false, 'sw.js could not be read', 'Không đọc được sw.js'); }
+  try { JSON.parse(fs.readFileSync(CONTENT(), 'utf8')); add(true, 'The content pack is valid', 'Gói nội dung hợp lệ'); } catch (e) { add(!fs.existsSync(CONTENT()), fs.existsSync(CONTENT()) ? 'content/custom.json is broken: ' + e.message : 'No content pack yet (that is fine)', fs.existsSync(CONTENT()) ? 'content/custom.json bị lỗi' : 'Chưa có gói nội dung (không sao)'); }
+  const c = readContent(); for (const [id, f] of Object.entries(c.faces || {})) if (!fs.existsSync(G(f.photo || ''))) add(false, `Face photo missing for ${id}: ${f.photo}`, `Thiếu ảnh khuôn mặt của ${id}`);
+  const have = voicesHave(), n = Object.values(have).reduce((a, s) => a + Object.values(s).reduce((b, l) => b + l.length, 0), 0);
+  add(n > 0, n ? `Voice pack: ${n} recordings` : 'No voice pack yet', n ? `Gói giọng: ${n} bản ghi` : 'Chưa có gói giọng');
+  return out;
+}
+
+// ---------- names the villagers have (for the Villagers page) ----------
+function villagerNames() {
+  try {
+    const src = fs.readFileSync(G('js', 'i18n.js'), 'utf8'), m = /const NAMES_EN = \{([\s\S]*?)\n\};/.exec(src); if (!m) return [];
+    const seen = new Map(); for (const x of m[1].matchAll(/'([^']+)':\s*'([^']+)'/g)) if (!seen.has(x[1])) seen.set(x[1], x[2]);
+    return [...seen.entries()].map(([vi, en]) => ({ id: vi, en })).sort((a, b) => a.id.localeCompare(b.id, 'vi'));
+  } catch (e) { return []; }
+}
+
+// ---------- the server ----------
+const PORT = +(process.env.STUDIO_PORT || 7777);
+const server = http.createServer(async (req, res) => {
+  try {
+    if (!/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host || '')) return send(res, 403, 'local only', 'text/plain');
+    const url = new URL(req.url, 'http://localhost'), p = url.pathname;
+    if (req.method === 'POST' && req.headers.origin && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.origin)) return send(res, 403, { error: 'local only' });
+    // the dashboard
+    if (p === '/' || p === '/index.html') return send(res, 200, asset('index.html'), MIME['.html']);
+    if (p.startsWith('/ui/')) { const b = asset(p.slice(4)); return b ? send(res, 200, b, MIME[path.extname(p)] || 'application/octet-stream') : send(res, 404, 'not found', 'text/plain'); }
+    // the game itself, to try things out
+    if (p.startsWith('/game/')) {
+      if (!GAME) return send(res, 404, 'no game folder', 'text/plain');
+      const f = safeJoin(GAME, p.slice(6) || 'index.html'); if (!f) return send(res, 403, 'no', 'text/plain');
+      const file = fs.existsSync(f) && fs.statSync(f).isDirectory() ? path.join(f, 'index.html') : f;
+      if (!fs.existsSync(file)) return send(res, 404, 'not found', 'text/plain');
+      return send(res, 200, fs.readFileSync(file), MIME[path.extname(file).toLowerCase()] || 'application/octet-stream');
+    }
+    // the game's modules (loaded by the Voices page) fetch content/custom.json from the page's own address
+    if (p.startsWith('/content/') && GAME) { const f = safeJoin(GAME, p); return f && fs.existsSync(f) && fs.statSync(f).isFile() ? send(res, 200, fs.readFileSync(f), MIME[path.extname(f).toLowerCase()] || 'application/octet-stream') : send(res, 404, '{}', MIME['.json']); }
+    if (!p.startsWith('/api/')) return send(res, 404, 'not found', 'text/plain');
+    const api = p.slice(5);
+    if (api === 'info') {
+      const have = GAME ? voicesHave() : {}, nv = Object.values(have).reduce((a, s) => a + Object.values(s).reduce((b, l) => b + l.length, 0), 0);
+      let version = '?'; try { version = /VERSION = '([^']+)'/.exec(fs.readFileSync(G('sw.js'), 'utf8'))[1]; } catch (e) { }
+      return send(res, 200, { game: GAME, ok: isGame(GAME), version, voices: nv, conf: { azure: !!conf.azureKey, azureRegion: conf.azureRegion || '', netlify: !!conf.netlifyToken, netlifySite: conf.netlifySite || '', piper: !!conf.piperExe, piperExe: conf.piperExe || '', piperModels: conf.piperModels || {} }, settingsFile: CONF });
+    }
+    if (api === 'settings' && req.method === 'POST') {
+      const b = await json(req);
+      for (const k of ['azureRegion', 'netlifySite', 'piperExe']) if (typeof b[k] === 'string') conf[k] = b[k].trim();
+      for (const k of ['azureKey', 'netlifyToken']) if (typeof b[k] === 'string' && b[k].trim()) conf[k] = b[k].trim(); // empty = keep the saved one
+      if (b.forget) for (const k of [].concat(b.forget)) delete conf[k];
+      if (b.piperModels && typeof b.piperModels === 'object') conf.piperModels = Object.assign(conf.piperModels || {}, b.piperModels);
+      if (typeof b.gameDir === 'string' && b.gameDir.trim()) { if (!isGame(b.gameDir.trim())) return send(res, 400, { error: 'That folder has no game in it (index.html and js/main.js).' }); conf.gameDir = path.resolve(b.gameDir.trim()); GAME = conf.gameDir; manCache = null; }
+      saveConf(); return send(res, 200, { ok: true });
+    }
+    if (!isGame(GAME)) return send(res, 400, { error: 'Choose the game folder in Settings first.' });
+    if (api === 'content') { if (req.method === 'POST') { const b = await json(req); writeContent(b); return send(res, 200, { ok: true }); } return send(res, 200, readContent()); }
+    if (api === 'names') return send(res, 200, villagerNames());
+    if (api === 'face' && req.method === 'POST') {
+      const b = await json(req), m = /^data:image\/jpeg;base64,(.+)$/.exec(b.dataUrl || ''); if (!m) return send(res, 400, { error: 'not a JPEG' });
+      fs.mkdirSync(G('content', 'faces'), { recursive: true }); const name = slug(b.id) + '.jpg'; fs.writeFileSync(G('content', 'faces', name), Buffer.from(m[1], 'base64'));
+      return send(res, 200, { photo: 'content/faces/' + name });
+    }
+    if (api === 'srcfiles') { const list = []; for (const d of ['js', 'js/games']) for (const f of fs.readdirSync(G(d))) if (f.endsWith('.js')) list.push(d + '/' + f); return send(res, 200, list); }
+    if (api === 'voices/have') return send(res, 200, voicesHave());
+    if (api === 'voice' && req.method === 'POST') {
+      const b = await json(req);
+      if (!CAST[b.lang] || !CAST[b.lang].includes(b.slot) || !/^[0-9a-f]{8}-?[0-9a-f]{1,8}$/.test(b.hash || '')) return send(res, 400, { error: 'bad line' });
+      let mp3;
+      if (b.engine === 'azure') mp3 = await azureSay(b.lang, b.slot, String(b.text || ''));
+      else if (b.engine === 'piper') mp3 = await piperSay(b.lang, String(b.text || ''));
+      else if (b.engine === 'upload') { const m = /^data:audio\/mpeg;base64,(.+)$/.exec(b.audio || ''); if (!m) return send(res, 400, { error: 'not an MP3' }); mp3 = Buffer.from(m[1], 'base64'); }
+      else return send(res, 400, { error: 'which engine?' });
+      const dir = G('voices', b.lang, b.slot); fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, b.hash + '.mp3'), mp3); addToManifest(b.lang, b.slot, b.hash);
+      return send(res, 200, { ok: true, bytes: mp3.length });
+    }
+    if (api === 'build' && req.method === 'POST') { const out = G('sparkle-valley-netlify.zip'); const r = zipFolder(GAME, PUBLISH, out); return send(res, 200, Object.assign({ path: out }, r)); }
+    if (api === 'zip') { const f = G('sparkle-valley-netlify.zip'); if (!fs.existsSync(f)) return send(res, 404, { error: 'Build the zip first.' }); res.writeHead(200, { 'Content-Type': 'application/zip', 'Content-Disposition': 'attachment; filename="sparkle-valley-netlify.zip"' }); return fs.createReadStream(f).pipe(res); }
+    if (api === 'deploy' && req.method === 'POST') {
+      if (!conf.netlifyToken || !conf.netlifySite) return send(res, 400, { error: 'Add your Netlify token and site in Settings first.' });
+      const f = G('sparkle-valley-netlify.zip'); if (!fs.existsSync(f)) return send(res, 400, { error: 'Build the zip first.' });
+      const r = await fetch(`https://api.netlify.com/api/v1/sites/${encodeURIComponent(conf.netlifySite)}/deploys`, { method: 'POST', headers: { Authorization: 'Bearer ' + conf.netlifyToken, 'Content-Type': 'application/zip' }, body: fs.readFileSync(f) });
+      const t = await r.text(); let j = {}; try { j = JSON.parse(t); } catch (e) { }
+      if (!r.ok) return send(res, 502, { error: `Netlify said ${r.status}: ${(j.message || t).slice(0, 200)}` });
+      return send(res, 200, { ok: true, state: j.state, url: j.ssl_url || j.url || j.deploy_ssl_url, admin: j.admin_url });
+    }
+    if (api === 'check') return send(res, 200, check());
+    if (api === 'open' && req.method === 'POST') { const b = await json(req); const what = b.folder ? GAME : `http://localhost:${PORT}/game/`; openThing(what); return send(res, 200, { ok: true }); }
+    return send(res, 404, { error: 'unknown' });
+  } catch (e) { send(res, 500, { error: String(e && e.message || e) }); }
+});
+function openThing(u) {
+  if (process.platform === 'win32') execFile('cmd', ['/c', 'start', '', u], { windowsHide: true });
+  else if (process.platform === 'darwin') execFile('open', [u]); else execFile('xdg-open', [u], () => { });
+}
+server.on('error', e => { if (e.code === 'EADDRINUSE') { console.log(`Sparkle Studio is already open: http://localhost:${PORT}`); openThing(`http://localhost:${PORT}/`); setTimeout(() => process.exit(0), 1500); } else throw e; });
+server.listen(PORT, '127.0.0.1', () => {
+  console.log(`\n  Sparkle Studio is running: http://localhost:${PORT}\n  Game folder: ${GAME || '(choose it in Settings)'}\n  Keep this window open while you use the dashboard; close it to stop.\n`);
+  if (!process.env.STUDIO_NO_OPEN) openThing(`http://localhost:${PORT}/`);
+});

@@ -29,6 +29,7 @@ for (const f of files) {
     while ((m = re.exec(src))) {
       const en = unq(m[1]).trim(), vi = unq(m[2]).trim();
       if (!en || !vi || en.length < 2) continue;
+      if (/^[a-z]{2}:/.test(en) || /^[a-z]{2}:/.test(vi)) continue; // wiki page keys, not speech
       if (!VI.test(vi) && en === vi) continue;             // not a translation pair
       if (/^[\p{Emoji}\s✓✕+−=]+$/u.test(en)) continue;     // pictures only
       if (en.split(/\s+/).length < 2 && !/[!?.]$/.test(en)) continue; // single-word labels are not speech
