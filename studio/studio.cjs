@@ -158,18 +158,45 @@ async function commonsInfo(file) {
   const md = ii.extmetadata || {};
   return { url: ii.thumburl || ii.url, width: ii.width, credit: [strip(md.Artist && md.Artist.value).slice(0, 80), strip(md.LicenseShortName && md.LicenseShortName.value)].filter(Boolean).join(' · ') };
 }
+// More places to look than the Wikipedia article (all free to reuse, with the photographer's credit kept):
+//   · Wikimedia Commons search: the whole Commons library, not just the pictures in the article
+//   · Openverse (openverse.org): Creative Commons photos from Flickr, museums and other open collections
+// Every candidate is scored (the article's own lead picture first, then big, landscape, named after the place) and
+// the best are taken from the different sources, so the children see the place from several angles.
+async function commonsSearch(name, n = 8) {
+  const r = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=${n}&gsrsearch=${encodeURIComponent(name + ' filetype:bitmap')}&prop=imageinfo&iiprop=url|extmetadata|size&iiurlwidth=1280`, { headers: UA });
+  if (!r.ok) return []; const j = await r.json();
+  return Object.values((j.query || {}).pages || {}).map(pg => { const ii = pg.imageinfo && pg.imageinfo[0]; if (!ii || BADPIC.test(pg.title)) return null; const md = ii.extmetadata || {};
+    return { url: ii.thumburl || ii.url, width: ii.width, height: ii.height, caption: strip(md.ImageDescription && md.ImageDescription.value || pg.title.replace(/^File:|\.\w+$/g, '')), credit: [strip(md.Artist && md.Artist.value).slice(0, 80), strip(md.LicenseShortName && md.LicenseShortName.value)].filter(Boolean).join(' · '), from: 'Wikimedia Commons', title: pg.title }; }).filter(Boolean);
+}
+async function openverse(name, n = 8) {
+  const r = await fetch(`https://api.openverse.org/v1/images/?q=${encodeURIComponent(name)}&page_size=${n}&mature=false`, { headers: UA });
+  if (!r.ok) return []; const j = await r.json();
+  return (j.results || []).filter(x => x.url && /^https:/.test(x.url)).map(x => ({ url: x.url, width: x.width, height: x.height, caption: strip(x.title || ''), credit: [x.creator, (x.license || '').toUpperCase() + ' ' + (x.license_version || '')].filter(Boolean).join(' · ').trim(), from: x.source || 'Openverse', title: x.title || '' }));
+}
+async function gatherPhotos(sources, name, max) {
+  const cands = [];
+  try { for (const p of await bestPhotos(sources, max + 2)) { const info = await commonsInfo(p.file); if (info) cands.push({ url: info.url, width: info.width, caption: p.caption, credit: info.credit, from: 'Wikipedia', title: p.file, lead: cands.length === 0 }); } } catch (e) { }
+  const q = name || (sources[0] || '').split(':').slice(1).join(':');
+  if (q) { try { cands.push(...await commonsSearch(q)); } catch (e) { } try { cands.push(...await openverse(q)); } catch (e) { } }
+  const words = String(q).toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const score = c => (c.lead ? 100 : 0) + Math.min(30, (c.width || 0) / 60) + (c.width && c.height && c.width > c.height ? 10 : 0) + words.filter(w => (c.title + ' ' + c.caption).toLowerCase().includes(w)).length * 8 - ((c.width || 0) && c.width < 500 ? 100 : 0);
+  const seen = new Set(), bySrc = {};
+  cands.filter(c => !seen.has(c.url) && seen.add(c.url)).sort((a, b) => score(b) - score(a)).forEach(c => (bySrc[c.from] = bySrc[c.from] || []).push(c));
+  const out = [], lists = Object.values(bySrc); while (out.length < max && lists.some(l => l.length)) for (const l of lists) if (l.length && out.length < max) out.push(l.shift()); // take turns between sources
+  return out;
+}
 async function getPhotos(J, list, max) {
   const pix = readPix(); J.total = list.length;
   for (const { key, sources, name } of list) {
     J.msg = name || key;
     try {
-      const picks = await bestPhotos(sources, max), out = [];
+      const picks = await gatherPhotos(sources, name, max), out = [];
       fs.mkdirSync(G('photos', key), { recursive: true });
       for (const p of picks) {
-        const info = await commonsInfo(p.file); if (!info || (info.width && info.width < 500)) continue;
-        const img = await fetch(info.url, { headers: { 'User-Agent': UA['User-Agent'] } }); if (!img.ok) continue;
+        const img = await fetch(p.url, { headers: { 'User-Agent': UA['User-Agent'] } }); if (!img.ok || !/image\//.test(img.headers.get('content-type') || 'image/')) continue;
         const n = out.length + 1, rel = `photos/${key}/${n}.jpg`; fs.writeFileSync(G(rel), Buffer.from(await img.arrayBuffer()));
-        out.push({ src: rel, file: p.file, caption: p.caption.slice(0, 160), credit: info.credit });
+        out.push({ src: rel, file: p.title, caption: (p.caption || '').slice(0, 160), credit: [p.credit, p.from].filter(Boolean).join(' · ').slice(0, 200) });
       }
       if (out.length) pix[key] = out;
     } catch (e) { J.errors = (J.errors || 0) + 1; J.last = String(e.message || e); }
