@@ -10,7 +10,7 @@ export function extrasHTML() {
   const s = settings, sel = (v, w) => v === w ? 'selected' : '';
   return `
   <h3>🎙️ ${T('Offline voice pack', 'Gói giọng đọc ngoại tuyến')}</h3>
-  ${voicePack() ? `<p class="note">${T(`Installed: ${Object.keys(voicePack().lines).length} recorded lines (${Object.values(voicePack().voices || {}).map(v => v.name).join(', ')}). They play instead of the device voice, even with no internet.`, `Đã có: ${Object.keys(voicePack().lines).length} câu đã thu (${Object.values(voicePack().voices || {}).map(v => v.name).join(', ')}). Các câu này phát thay giọng của máy, kể cả khi không có mạng.`)}</p>
+  ${voicePack() ? `<p class="note">${T(`Installed: ${Object.keys(voicePack().lines).length} recorded lines (${Object.values(voicePack().voices || {}).flatMap(v => Object.values(v).map(x => x.name)).join(', ')}). They play instead of the device voice, even with no internet.`, `Đã có: ${Object.keys(voicePack().lines).length} câu đã thu (${Object.values(voicePack().voices || {}).flatMap(v => Object.values(v).map(x => x.name)).join(', ')}). Các câu này phát thay giọng của máy, kể cả khi không có mạng.`)}</p>
   <button class="btn wide" id="xPackSave">⬇️ ${T('Keep all voices on this device', 'Lưu tất cả giọng đọc vào máy')}</button><p class="note" id="xPackProg"></p>`
   : `<p class="note">${T('No voice pack yet. A grown-up can make one with ElevenLabs on a computer: see “Offline voice pack” in HANDOFF.md.', 'Chưa có gói giọng đọc. Người lớn có thể tạo bằng ElevenLabs trên máy tính: xem mục “Offline voice pack” trong HANDOFF.md.')}</p>`}
   <h3>✨ ${T('More natural voice', 'Giọng tự nhiên hơn')}</h3>

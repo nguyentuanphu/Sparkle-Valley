@@ -7,7 +7,7 @@ import { THREE, toonVC, P, merge, outline, sprite } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
 import { heightAt, roadDist, CITIES } from './world.js';
 import { roadTexture } from './roads.js';
-import { buildAvatar } from './avatar.js';
+import { buildAvatar, nameAvatar } from './avatar.js';
 import { LANDMARKS, VENDORS, postcard } from './regions.js';
 import { PERSONAS } from './chat.js';
 import { dialog, reward } from './ui.js';
@@ -152,7 +152,7 @@ export function createCities(G) {
   const place = (parts, x, z, rot, y) => { const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(x, y ?? heightAt(x, z) - .05, z); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; scene.add(m); outline(m, .025, '#4a3a3f'); return m; };
   const info = (x, y, z) => { const s = sprite('ℹ️', 1.5); s.position.set(x, y, z); scene.add(s); world.updaters.push((dt, t) => { s.position.y = y + Math.sin(t * 2 + x) * .25; }); };
   const person = (lk, x, z, face, name, tagH = 2.4) => { // tagH: lift a name tag so two people side by side don't overlap
-    const A = buildAvatar(lk, null); A.root.position.set(x, heightAt(x, z), z); A.root.rotation.y = face; scene.add(A.root); people.push(A);
+    const A = nameAvatar(buildAvatar(lk, null), name); A.root.position.set(x, heightAt(x, z), z); A.root.rotation.y = face; scene.add(A.root); people.push(A);
     const tg = tagSprite(name); tg.position.set(x, heightAt(x, z) + tagH, z); scene.add(tg); world.colliders.push({ x, z, r: .45 }); return A;
   };
   // sellers and hosts breathe and sway only when a child is near enough to see them (saves work on phones)
@@ -278,7 +278,7 @@ export function createCities(G) {
     place(MODELS.nhatron(), x, z, rot); world.colliders.push({ x, z, r: 3.4 });
     addLandmark('nhatron', '💧', 'vn', x + Math.sin(rot) * 5.5, z + Math.cos(rot) * 5.5, x, z, ['Nhà Tròn, the Round House (Bà Rịa)', 'Nhà Tròn Bà Rịa'], ['Nhà Tròn in Bà Rịa is a round water tower, about 20 metres tall, standing on eight legs. It was built more than a hundred years ago to keep the town’s water, and people could look out over all the roads from the top.', 'Nhà Tròn ở Bà Rịa là tháp nước hình tròn cao khoảng 20 mét, đứng trên tám cột. Tháp được xây hơn một trăm năm trước để chứa nước cho thị xã, và từ trên cao có thể nhìn khắp các ngả đường.']);
   }
-  buildHueNghi(G, place, person, 15, 36.25);
+  buildHueNghi(G, place, person, 15, 34.25);
   // house number 8: a Bà Rịa family home, only its number is shown
   {
     const [x, z] = [20.3, 57.7], rot = Math.PI; // on the flat south side of the street, facing it (the west end is the foot of the Dawn Plateau)

@@ -1,6 +1,7 @@
 // Chibi characters whose face is the child's own photo.
 import { THREE, toon, glow, blobShadow, outline } from './gfx.js';
-import { GLIDERS } from './state.js';
+import { GLIDERS, settings } from './state.js';
+import { customFace } from './custom.js';
 
 const G = {
   head: new THREE.SphereGeometry(.5, 32, 24),
@@ -50,7 +51,15 @@ export function drawFeatures(x, S, look, mood = 'smile') {
   if (mood === 'o') x.arc(S * .5, S * .72, S * .035, 0, Math.PI * 2); else { x.moveTo(S * .44, S * .69); x.quadraticCurveTo(S * .5, S * .77, S * .56, S * .69); x.closePath(); }
   x.fill(); x.restore();
 }
+// Painted faces (no photo) are shared by every villager with the same hair and skin, at 256 px: phones
+// (iPhones above all) have a small budget for pictures, and when it runs out new ones come out black.
+const paintedFaces = {};
 export function faceTexture(look, photo) {
+  if (!photo) {
+    const k = look.hair + look.skin;
+    if (!paintedFaces[k]) { const S = 256, c = document.createElement('canvas'); c.width = c.height = S; drawFeatures(c.getContext('2d'), S, look); paintedFaces[k] = new THREE.CanvasTexture(c); paintedFaces[k].colorSpace = THREE.SRGBColorSpace; }
+    return paintedFaces[k];
+  }
   const S = 512, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   const finish = () => {
@@ -98,7 +107,7 @@ export function buildAvatar(look, photo) {
   const skin = toon(look.skin, { roughness: .6 }), hairM = toon(look.hair, { roughness: .45, metalness: .05 }), cloth = toon(col, { roughness: .92 });
   const white = toon('#ffffff', { roughness: .9 }), shoeM = toon(look.shoe || '#7a4a35', { roughness: .45 }), soleM = toon('#fff8ee');
   const trim = toon(style === 'aodai' ? '#ffd84a' : '#f2d16b', { roughness: .7 });
-  const A = { root, rig };
+  const A = { root, rig, skinMat: skin, look };
   // legs (pivot at the hip)
   const legSpec = STYLE_LEGS[style] || 'skin';
   const legMat = legSpec === 'skin' ? skin : legSpec === 'shorts' ? skin : legSpec === 'pants' ? cloth : toon(legSpec.split(':')[1], { roughness: .9 });
@@ -240,3 +249,19 @@ export function buildGourd() {
   return g;
 }
 export const spriteGlow = c => glow(c);
+
+// A grown-up can give any villager a real face (Grown-ups → Character names → 📷). The photo goes on the face and
+// the head, ears, hands and legs take the skin colour sampled from the photo, so the edge of the photo blends in.
+const NAMED = {}; // villager name -> their avatars
+const baseOf = n => String(n).replace(/\s+[^\p{L}\p{N}]+$/u, '').trim();
+export function nameAvatar(A, name, remember = true) { // remember: false for people in a room that is torn down later
+  if (!A || !name) return A; const id = baseOf(name); if (remember) (NAMED[id] = NAMED[id] || []).push(A);
+  const f = (settings.npcFaces || {})[id] || customFace(id); if (f) setFace(A, f);
+  return A;
+}
+function setFace(A, f) {
+  A.faceMat.map = f && f.photo ? faceTexture(A.look, f.photo) : faceTexture(A.look); A.faceMat.needsUpdate = true;
+  if (A.skinMat) A.skinMat.color.set(f && f.skin ? f.skin : A.look.skin);
+}
+export function applyNpcFaces() { for (const [id, list] of Object.entries(NAMED)) list.forEach(A => setFace(A, (settings.npcFaces || {})[id] || customFace(id) || null)); }
+export const namedVillagers = () => Object.keys(NAMED);

@@ -6,10 +6,11 @@
 import { THREE, P, merge, toonVC, sprite } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
 import { heightAt, regionAt, REGION_NAMES, TOWN } from './world.js';
-import { buildAvatar } from './avatar.js';
+import { buildAvatar, nameAvatar } from './avatar.js';
 import { PERSONAS } from './chat.js';
 import { ITEMS } from './data.js';
 import { el, wait } from './util.js';
+import { openPhotos, homeSources } from './realworld.js';
 
 const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), C = (r1, r2, h, s = 12) => new THREE.CylinderGeometry(r1, r2, h, s), S = (r, w = 12, h = 10) => new THREE.SphereGeometry(r, w, h);
 const look = (style, color, hair, hairStyle, hat = 'none', skin = '#e8b48c') => ({ style, color, hair, hairStyle, hat, skin, back: 'none', glider: 0 });
@@ -19,33 +20,36 @@ const GREY = '#cfcfcf', BLACK = '#1d1412';
 // English game calls them Uncle / Auntie (js/i18n.js).
 // people: [name, look, kid?, line [en, vi], [where outside: sideways from the door, out from the wall]]
 export const HOMES = [
-  { at: [20.1, 36.3], kind: 'tube', room: 'banhmi', name: ['Uncle Trung and Auntie Phương’s Bánh Mì shop', 'Tiệm bánh mì nhà chú Trung, mợ Phương'],
-    about: ['A nhà ống (tube house): narrow at the front and long inside. The bánh mì shop is downstairs and the family lives upstairs. Every morning chú Trung bakes the bread and mợ Phương fills it with pâté, pickles and herbs.', 'Nhà ống: mặt tiền hẹp, bên trong dài. Tầng dưới bán bánh mì, tầng trên là nhà ở. Sáng nào chú Trung cũng nướng bánh, mợ Phương kẹp pa-tê, đồ chua và rau thơm.'],
-    people: [['Chú Trung', look('shirt', '#f2f2f2', BLACK, 'short'), 0, ['Fresh bánh mì, still warm! Crunchy outside, soft inside.', 'Bánh mì mới ra lò nè con, còn nóng hổi! Giòn bên ngoài, mềm bên trong.'], [-1.6, .6]],
-      ['Mợ Phương', look('aodai', '#3cb0a0', BLACK, 'long'), 0, ['Come in, come in! Em Hà, say hello to your friend.', 'Vào nhà chơi con! Em Hà ơi, chào bạn đi con.'], [2.0, .6]],
-      ['Em Hà', look('dress', '#ffd23f', BLACK, 'buns'), 1, ['Hi! Do you want to skip rope with me?', 'Chào bạn! Bạn nhảy dây với Hà không?'], [.9, .5]]] },
-  { at: [24.6, 36.3], kind: 'tube', room: 'coffee', name: ['Uncle Thuận’s Coffee', 'Quán cà phê chú Thuận'],
-    about: ['A tube house with a little coffee shop downstairs. Vietnamese coffee drips slowly through a small metal filter called a phin. Grown-ups sit on low stools on the footpath and chat for hours.', 'Nhà ống có quán cà phê nhỏ ở tầng dưới. Cà phê Việt Nam nhỏ giọt chậm qua cái phin nhôm. Người lớn ngồi ghế đẩu trên vỉa hè, nói chuyện cả buổi.'],
-    people: [['Chú Thuận', look('tunic', '#6b4a2a', BLACK, 'short'), 0, ['Drip, drip, drip… a phin coffee takes five minutes. For you: a cold milk, not coffee!', 'Tí tách, tí tách… ly cà phê phin phải đợi năm phút. Con thì uống sữa tươi mát nha, cà phê là của người lớn!'], [1.6, .6]],
-      ['Chú Sự', look('shirt', '#3a78c8', BLACK, 'short', 'cap'), 0, ['I drive a xe ôm, a motorbike taxi. I know every street in town!', 'Chú chạy xe ôm. Đường nào trong phố chú cũng biết hết!'], [-1.3, .8]]] },
-  { at: [33.5, 35.1], kind: 'villa', room: 'villa', name: ['Uncle Tâm and Auntie An’s villa', 'Nhà cậu Tâm, mợ An'],
-    about: ['An old French-style villa with tall green shutters and a front garden. It stays cool in the hot sun. Cậu Tâm and mợ An live here with their two boys, Tí and Bi.', 'Biệt thự kiểu Pháp xưa, cửa chớp xanh cao và vườn trước nhà. Trời nắng mà trong nhà vẫn mát. Cậu Tâm, mợ An sống ở đây với hai đứa con là Tí và Bi.'],
-    people: [['Cậu Tâm', look('shirt', '#5b7fbf', BLACK, 'short'), 0, ['Welcome! The boys are always racing round the garden.', 'Chào con! Hai đứa nhỏ nhà cậu suốt ngày chạy quanh vườn.'], [-2.6, 1.5]],
-      ['Mợ An', look('aodai', '#e8a0c0', BLACK, 'long'), 0, ['Would you like some star fruit from our tree?', 'Con ăn khế không? Khế vườn nhà mợ đó.'], [2.6, 1.5]],
-      ['Tí', look('overalls', '#5fd39a', BLACK, 'spiky'), 1, ['I’m Tí! I’m the big brother.', 'Mình là Tí! Mình là anh hai.'], [-3.3, 2.8]],
-      ['Bi', look('hoodie', '#ff9f43', BLACK, 'short'), 1, ['I’m Bi! Let’s play hide and seek!', 'Mình là Bi! Chơi trốn tìm đi!'], [4, 2.6]]] },
-  { at: [45, 33.5], kind: 'brick', room: 'brick', name: ['Uncle Sơn’s house', 'Nhà bác Sơn'],
-    about: ['A solid brick house with a tiled roof. Bác Sơn keeps bonsai trees and songbirds in the front yard, and plays Chinese chess with the neighbours in the evening.', 'Ngôi nhà gạch mái ngói chắc chắn. Bác Sơn chơi cây cảnh, nuôi chim hót trước sân, chiều chiều đánh cờ tướng với hàng xóm.'],
-    people: [['Bác Sơn', look('tunic', '#8a6a4a', GREY, 'short'), 0, ['Listen to my bird sing! And look at this little bonsai: it is older than your parents!', 'Nghe chim nhà bác hót nè! Còn cây bonsai nhỏ xíu này già hơn cả ba mẹ con đó!'], [-2.2, 2.6]]] },
-  { at: [13.5, 59], kind: 'raised', room: 'raised', name: ['Auntie Thủy and Auntie Thúy’s house', 'Nhà O Thủy, O Thúy'],
-    about: ['A raised house on posts, like a Queenslander, so the breeze blows underneath. The twin sisters O Thủy and O Thúy came from Huế: in Huế people call an auntie “O”.', 'Nhà sàn trên cột như nhà Queenslander bên Úc, gió thổi mát bên dưới. Hai chị em sinh đôi O Thủy và O Thúy quê ở Huế: người Huế gọi cô là “O”.'],
-    people: [['O Thủy', look('aodai', '#7a4aa0', BLACK, 'long', 'nonla'), 0, ['Chào cháu! In Huế we wear purple áo dài and conical hats with poems inside.', 'Chào cháu! Ở Huế tụi O mặc áo dài tím, đội nón bài thơ.'], [-1.9, .7]],
-      ['O Thúy', look('aodai', '#9a6ac0', BLACK, 'buns'), 0, ['I am Thúy, the younger twin, by five minutes!', 'O là Thúy, em sinh đôi, nhỏ hơn có năm phút thôi!'], [1.9, .7]]] },
+  { at: [20.1, 34.3], kind: 'tube', room: 'che', name: ['Uncle Trung and Auntie Thủy’s Chè shop', 'Quán chè chú Trung, O Thủy'],
+    about: ['A nhà ống (tube house) with a chè shop downstairs. Chè is a sweet dessert soup: mung beans, red beans, jelly, coconut milk and crushed ice in a tall glass. Chú Trung cooks the beans every morning and O Thủy, who comes from Huế, makes the coconut cream.', 'Nhà ống có quán chè ở tầng dưới. Chè đậu xanh, đậu đỏ, thạch, nước cốt dừa và đá bào trong ly cao. Sáng nào chú Trung cũng nấu đậu, còn O Thủy quê Huế làm nước cốt dừa.'],
+    people: [['Chú Trung', look('shirt', '#f2f2f2', BLACK, 'short'), 0, ['Chè đậu, chè thạch, chè bắp! Which colour do you want: green, red or yellow?', 'Chè đậu, chè thạch, chè bắp đây con! Con thích màu nào: xanh, đỏ hay vàng?'], [-1.6, .7]],
+      ['O Thủy', look('aodai', '#7a4aa0', BLACK, 'long', 'nonla'), 0, ['Chào cháu! In Huế we eat chè on hot afternoons. Try the coconut one, it is my favourite.', 'Chào cháu! Ở Huế trời nóng là ăn chè. Cháu thử chè dừa đi, O thích nhất đó.'], [1.7, .7]]] },
+  { at: [24.6, 34.3], kind: 'tube', room: 'sand', name: ['Uncle Thuận and Auntie Phương’s sand and stone shop', 'Cửa hàng cát đá chú Thuận, mợ Phương'],
+    about: ['A tube house that sells building things: yellow sand, grey stones, bricks and bags of cement. When a family builds a house, chú Thuận brings the sand and stones, and mợ Phương writes everything in her big book.', 'Nhà ống bán vật liệu xây dựng: cát vàng, đá xám, gạch và bao xi măng. Nhà ai xây nhà là chú Thuận chở cát đá tới, còn mợ Phương ghi hết vào cuốn sổ lớn.'],
+    people: [['Chú Thuận', look('tunic', '#6b4a2a', BLACK, 'short', 'cap'), 0, ['Sand for the walls, stones for the floor! Want to see how heavy one bag is?', 'Cát để xây tường, đá để đổ nền! Con muốn biết một bao nặng cỡ nào không?'], [-1, 1.3]],
+      ['Mợ Phương', look('aodai', '#3cb0a0', BLACK, 'long'), 0, ['Come in, come in! One truck of sand, two trucks of stones… I write it all down.', 'Vào nhà chơi con! Một xe cát, hai xe đá… mợ ghi hết vô sổ nè.'], [1, 1.3]],
+      ['Chú Sự', look('shirt', '#3a78c8', BLACK, 'short', 'cap'), 0, ['I drive a xe ôm, a motorbike taxi. I know every street in town!', 'Chú chạy xe ôm. Đường nào trong phố chú cũng biết hết!'], [0, 2.6]]] },
+  { at: [32.3, 33.1], kind: 'villa', room: 'phones', name: ['Uncle Tâm and Auntie An’s phones and trucks', 'Nhà cậu Tâm, mợ An: điện thoại và xe tải'],
+    about: ['An old French-style villa with tall green shutters. Cậu Tâm runs trucks that carry goods from town to town (his blue truck is parked outside), and mợ An sells phones in the front room. Their two boys, Tí and Bi, help after school.', 'Biệt thự kiểu Pháp xưa, cửa chớp xanh cao. Cậu Tâm chạy xe tải chở hàng đi khắp nơi (xe tải xanh đậu ngoài kia), còn mợ An bán điện thoại ở phòng trước. Hai đứa con Tí và Bi phụ ba mẹ sau giờ học.'],
+    people: [['Cậu Tâm', look('shirt', '#5b7fbf', BLACK, 'short'), 0, ['That blue truck is mine! Tomorrow I drive it all the way to Sài Gòn.', 'Xe tải xanh kia là của cậu đó! Mai cậu chạy xe lên tận Sài Gòn.'], [-.9, 2]],
+      ['Mợ An', look('aodai', '#e8a0c0', BLACK, 'long'), 0, ['Do you want to call Grandma? With a phone you can see her face while you talk!', 'Con muốn gọi cho bà không? Có điện thoại là vừa nói chuyện vừa thấy mặt bà luôn!'], [1.3, 2]],
+      ['Tí', look('overalls', '#5fd39a', BLACK, 'spiky'), 1, ['I’m Tí! I’m the big brother. I know every truck’s name!', 'Mình là Tí! Mình là anh hai. Xe tải nào mình cũng biết tên!'], [2.6, 3]],
+      ['Bi', look('hoodie', '#ff9f43', BLACK, 'short'), 1, ['I’m Bi! Let’s play hide and seek!', 'Mình là Bi! Chơi trốn tìm đi!'], [3.9, 2.4]]] },
+  { at: [41.6, 30.6], kind: 'brick', room: 'brick', name: ['Uncle Sơn and Thúy’s house', 'Nhà bác Sơn và chị Thúy'],
+    about: ['A solid brick house with a tiled roof. Bác Sơn and chị Thúy live here together. Bác Sơn keeps bonsai trees and songbirds in the front yard, and chị Thúy grows herbs in pots by the door.', 'Ngôi nhà gạch mái ngói chắc chắn. Bác Sơn và chị Thúy sống chung ở đây. Bác Sơn chơi cây cảnh, nuôi chim hót trước sân, còn chị Thúy trồng rau thơm trong chậu cạnh cửa.'],
+    people: [['Bác Sơn', look('tunic', '#8a6a4a', GREY, 'short'), 0, ['Listen to my bird sing! And look at this little bonsai: it is older than your parents!', 'Nghe chim nhà bác hót nè! Còn cây bonsai nhỏ xíu này già hơn cả ba mẹ con đó!'], [-1.4, 1.9]],
+      ['Chị Thúy', look('aodai', '#9a6ac0', BLACK, 'buns'), 0, ['Smell this: mint, basil and perilla. We put them in everything!', 'Con ngửi thử nè: húng, quế với tía tô. Món gì nhà chị cũng bỏ rau thơm!'], [1.4, 1.9]]] },
+  { at: [13.5, 59], kind: 'raised', room: 'baby', name: ['Auntie Thương and Uncle Dũng’s baby clothes', 'Nhà O Thương, dượng Dũng: quần áo em bé'],
+    about: ['A raised house on posts, like a Queenslander, so the breeze blows underneath. O Thương sews baby clothes and dượng Dũng sells them from the rack downstairs. Their little girls bé Hà and bé Trà try everything on first!', 'Nhà sàn trên cột như nhà Queenslander bên Úc, gió thổi mát bên dưới. O Thương may quần áo em bé, dượng Dũng bán ở cái giá dưới nhà. Hai bé Hà và bé Trà lúc nào cũng mặc thử trước!'],
+    people: [['O Thương', look('aodai', '#ff9ec4', BLACK, 'long'), 0, ['Tiny shirts, tiny hats, tiny socks! Everything for little babies.', 'Áo nhỏ xíu, nón nhỏ xíu, vớ nhỏ xíu! Đủ thứ cho em bé hết nè.'], [-1.9, .9]],
+      ['Dượng Dũng', look('shirt', '#5fa860', BLACK, 'short'), 0, ['Welcome! Do you have a baby brother or sister? This little hat would fit!', 'Chào con! Con có em bé không? Cái nón nhỏ này vừa lắm nè!'], [1.2, .9]],
+      ['Bé Hà', look('dress', '#ffd23f', BLACK, 'buns'), 1, ['Hi! Do you want to skip rope with me?', 'Chào bạn! Bạn nhảy dây với Hà không?'], [-.6, 2.1]],
+      ['Bé Trà', look('dress', '#8fd3ff', BLACK, 'ponytail'), 1, ['I’m Trà, Hà’s little sister! Look at my new dress!', 'Mình là Trà, em của Hà! Nhìn cái đầm mới của mình nè!'], [.8, 2.2]]] },
   { at: [45, 63.2], kind: 'cottage', room: 'cottage', name: ['Ruby’s family cottage', 'Nhà gỗ của gia đình Ruby'],
     about: ['An Australian weatherboard cottage with a verandah, a Hills Hoist clothesline out the back and a cricket bat by the door.', 'Nhà gỗ ván kiểu Úc có hiên, sân sau có dây phơi đồ xoay Hills Hoist và cây gậy cricket để cạnh cửa.'], people: [] },
   { at: [20.3, 57.7], kind: 'home8', room: 'home8', name: ['Number 8', 'Nhà số 8'],
     about: ['A Bà Rịa family home with a balcony full of flowers. Knock and you are always welcome: there is always rice, fruit and a big hug here.', 'Ngôi nhà của một gia đình Bà Rịa, ban công đầy hoa. Gõ cửa là lúc nào cũng được đón: ở đây lúc nào cũng có cơm, trái cây và một cái ôm thật chặt.'], people: [] },
-  { at: [15, 36.25], kind: 'shop', room: 'huenghi', name: ['Huệ Nghi', 'Huệ Nghi'],
+  { at: [15, 34.25], kind: 'shop', room: 'huenghi', name: ['Huệ Nghi', 'Huệ Nghi'],
     about: ['The Huệ Nghi shop: transport of goods, and steel, old and new. Bà Huệ keeps the books and ông Nghi knows every kind of steel bar by heart.', 'Cửa hàng Huệ Nghi: vận chuyển hàng hóa, sắt thép cũ và mới. Bà Huệ giữ sổ sách, ông Nghi thuộc làu từng loại sắt thép.'], people: [] }
 ];
 
@@ -81,16 +85,17 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
   const RX = -176, RZ = -176, RY = 420;
   world.platforms.push({ x0: RX - 8, x1: RX + 8, z0: RZ - 7, z1: RZ + 7, y: RY });
 
-  const tagSprite = (name, y) => {
+  const tagSprite = (name, y, temp = false) => {
     registerName(name);
     const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g2 = c.getContext('2d');
     const draw = () => { g2.clearRect(0, 0, 256, 64); g2.fillStyle = 'rgba(40,40,40,.55)'; g2.beginPath(); g2.roundRect(8, 10, 240, 46, 23); g2.fill(); g2.font = 'bold 30px Fredoka, "Baloo 2", sans-serif'; g2.fillStyle = '#fff'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillText(nm(name), 128, 34, 228); };
-    draw(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; onLang(() => { draw(); t.needsUpdate = true; });
+    draw(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; if (!temp) onLang(() => { draw(); t.needsUpdate = true; });
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set(2.6, .65, 1); s.position.y = y; return s;
   };
   const person = ([name, lk, kid], x, y, z, face) => {
-    const A = buildAvatar(lk, null); A.root.position.set(x, y, z); A.root.rotation.y = face; if (kid) A.root.scale.setScalar(.78);
-    const tg = tagSprite(name, kid ? 2.05 : 2.45); tg.position.x = x; tg.position.z = z; tg.position.y += y; scene.add(A.root); scene.add(tg);
+    const temp = y > RY - 20; // inside a room: everything is freed when the room is torn down
+    const A = nameAvatar(buildAvatar(lk, null), name, !temp); A.root.position.set(x, y, z); A.root.rotation.y = face; if (kid) A.root.scale.setScalar(.78);
+    const tg = tagSprite(name, kid ? 2.05 : 2.45, temp); tg.position.x = x; tg.position.z = z; tg.position.y += y; scene.add(A.root); scene.add(tg);
     return { A, tg, name };
   };
   const live = []; // people standing outside: they breathe and look round when a child is near
@@ -108,7 +113,7 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
       // the family stands beside the door, facing the street (kids a little further out)
       const [off, out] = pp[4] || [[-1.9, 1.9, -3.1, 3.1][j] || 0, pp[2] ? 1.6 : .7];
       const x = hs.x + fx * (hs.d / 2 + out) + sx * off, z = hs.z + fz * (hs.d / 2 + out) + sz * off, P0 = person(pp, x, world.groundAt(x, z), z, hs.rot);
-      if (pp[0] === 'Em Hà') P0.hop = true; live.push(P0); home.people.push(P0); world.colliders.push({ x, z, r: .35 });
+      if (pp[2] && pp[0].startsWith('Bé')) P0.hop = true; live.push(P0); home.people.push(P0); world.colliders.push({ x, z, r: .35 });
       PERSONAS['home_' + pp[0]] = { emoji: pp[2] ? '🧒' : '🙂', name: pp[0], age: pp[2] ? ['a child', 'một bạn nhỏ'] : ['grown-up', 'người lớn'], about: H.about, likes: pp[3], mood: ['Very well, thank you!', 'Khỏe lắm, cảm ơn con!'], role: `lives at ${H.name[0]} on Two Homes Street`, region: 'nam' };
       G.interactables.push({ id: `home_${k}_${j}`, x, z, r: 1.6, icon: '💬', label: () => nm(pp[0]), act: () => G.dialog(pp[0], [pp[3]]) });
     });
@@ -127,7 +132,10 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
 
   async function about(home) {
     const hs = home.hs, kind = KIND[home.kind] || KIND.tube, extra = home.H ? home.H.about : ABOUT_KIND[home.kind] || ABOUT_KIND.tube;
-    await G.dialog(home.name(), [[`${kind[0]}. ${extra[0]}`, `${kind[1]}. ${extra[1]}`], [`Where: ${home.where()} (map square ${Math.round(hs.x)}, ${Math.round(hs.z)}).`, `Ở đâu: ${home.where()} (ô bản đồ ${Math.round(hs.x)}, ${Math.round(hs.z)}).`]]);
+    const src = homeSources(home.H ? home.H.name[0] : '', home.kind);
+    const k = await G.dialog(home.name(), [[`${kind[0]}. ${extra[0]}`, `${kind[1]}. ${extra[1]}`], [`Where: ${home.where()} (map square ${Math.round(hs.x)}, ${Math.round(hs.z)}).`, `Ở đâu: ${home.where()} (ô bản đồ ${Math.round(hs.x)}, ${Math.round(hs.z)}).`]],
+      src ? [['📷 See real photos', '📷 Xem ảnh thật'], ['👋 OK', '👋 Được rồi']] : undefined);
+    if (src && k === 0) await new Promise(r => openPhotos(home.name(), src, { icon: '🏠', onClose: r }));
   }
 
   // ---------- inside ----------
@@ -160,7 +168,16 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
   const roomItems = [], roomPeople = [];
   function clearRoom() {
     roomPeople.forEach(p => { const i = live.indexOf(p); if (i >= 0) live.splice(i, 1); }); roomPeople.length = 0;
-    if (room) { scene.remove(room); room.traverse(o => { if (o.geometry) o.geometry.dispose(); }); room = null; }
+    if (room) {
+      scene.remove(room);
+      // free the room's own shape, the name tags and the people's own materials (their body shapes and painted faces are shared, so they stay)
+      room.traverse(o => {
+        if (o.userData.roomShape) o.geometry.dispose();
+        if (o.isSprite) { if (!o.material.userData.shared) { o.material.map && o.material.map.dispose(); o.material.dispose(); } }
+        else if (o.isMesh && o.material && !o.userData.roomShape && o.material !== o.userData.keepMat) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach(m => { if (m.userData.shared) return; m.dispose(); }); }
+      });
+      room = null;
+    }
     roomItems.forEach(it => { const i = G.interactables.indexOf(it); if (i >= 0) G.interactables.splice(i, 1); }); roomItems.length = 0;
     for (let i = world.boxes.length - 1; i >= 0; i--) if (world.boxes[i].room) world.boxes.splice(i, 1);
   }
@@ -174,7 +191,7 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
       ...floorTiles(theme), ...walls(W2, D2, wallH, theme),
       ...theme.build()
     ];
-    const m = new THREE.Mesh(merge(parts), toonVC()); m.receiveShadow = true; m.castShadow = true; g.add(m);
+    const m = new THREE.Mesh(merge(parts), toonVC()); m.userData.roomShape = true; m.receiveShadow = true; m.castShadow = true; g.add(m);
     // solid walls (with the door gap at the front)
     const bx = (x0, x1, z0, z1) => world.boxes.push({ x0: RX + x0, x1: RX + x1, z0: RZ + z0, z1: RZ + z1, room: true });
     bx(-W2 - .2, W2 + .2, -D2 - .2, -D2 + .1); bx(-W2 - .2, -W2 + .1, -D2, D2); bx(W2 - .1, W2 + .2, -D2, D2); bx(-W2 - .2, -1.2, D2 - .1, D2 + .2); bx(1.2, W2 + .2, D2 - .1, D2 + .2);
@@ -182,7 +199,7 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
     const fam = home.H ? home.H.people : [];
     fam.forEach((pp, j) => {
       const x = [-2.5, 2.4, -.9, 1.1][j] || 0, z = [-1.2, -1.4, .6, .8][j] || 0, P0 = person(pp, RX + x, RY, RZ + z, 0);
-      g.attach(P0.A.root); g.attach(P0.tg); P0.hop = pp[0] === 'Em Hà'; live.push(P0); roomPeople.push(P0);
+      g.attach(P0.A.root); g.attach(P0.tg); P0.hop = !!pp[2] && pp[0].startsWith('Bé'); live.push(P0); roomPeople.push(P0);
       const it = { id: `inroom_${j}`, x: RX + x, z: RZ + z + .8, y: RY, r: 1.7, icon: '💬', bubble: '💬', label: () => nm(pp[0]), act: () => G.dialog(pp[0], [pp[3]]) };
       G.interactables.push(it); roomItems.push(it);
     });
@@ -244,6 +261,32 @@ const ROOMS = {
   tube: { floor: '#e8dcc8', tiles: '#d4c4a8', wall: '#f6e3c0', trim: '#ffffff', build: () => [...altar(0, -5), ...sofaVN(-3.5, -3), ...fan(3, -4.5), ...tv(4.6, -4.8), ...moto(5.5, 2.5), ...stairs(-6, 0), ...plant(-5.5, 4.4), ...frame(-2, 1.7, -5.35), ...frame(2, 1.7, -5.35, '#e8433a')] },
   banhmi: { floor: '#e8dcc8', tiles: '#d4c4a8', wall: '#f6c8a8', trim: '#ffffff', build: () => [...altar(0, -5), ...sofaVN(-3.5, -3), ...fan(3, -4.5),
     P(B(2.6, 1, .8), '#3a78c8', [2.8, .5, 2.6]), P(B(2.6, .5, .8), '#cfe8f6', [2.8, 1.25, 2.6]), ...[0, 1, 2, 3, 4].map(i => P(C(.08, .08, .6, 8), '#e8b060', [1.9 + i * .45, 1.15, 2.6], [0, 0, Math.PI / 2])), P(B(1.4, .3, .5), '#c0392b', [2.8, 1.75, 2.6]), ...moto(-5.5, 2.5, '#3a78c8'), ...stairs(-6, -1), ...plant(5.6, 4.4)] },
+  che: { floor: '#e8dcc8', tiles: '#d4c4a8', wall: '#f6c8a8', trim: '#ffffff', build: () => [...altar(0, -5), ...sofaVN(-3.5, -3), ...fan(3, -4.5),
+    // the chè counter: a row of big glass jars of beans and jellies, and tall glasses ready to fill
+    P(B(3.4, 1, .8), '#3a78c8', [2.6, .5, 2.4]), ...['#5fd36a', '#c0392b', '#ffd23f', '#f2f2f2', '#9a6ac0'].flatMap((c, i) => [P(C(.22, .22, .5, 12), '#dff4ff', [1.2 + i * .7, 1.25, 2.4]), P(C(.19, .19, .3, 12), c, [1.2 + i * .7, 1.15, 2.4])]),
+    ...[0, 1, 2].flatMap(i => [P(C(.1, .08, .35, 10), '#f6f1e4', [1.6 + i * .5, 1.18, 2.9]), P(C(.085, .07, .12, 10), ['#5fd36a', '#c0392b', '#ffd23f'][i], [1.6 + i * .5, 1.1, 2.9])]),
+    ...table(-1.5, 1.2, '#a07048', 1, .8), ...stool(-2.3, 1.2), ...stool(-.7, 1.2, '#3a78c8'), ...stairs(-6, -1), ...plant(5.6, 4.4)] },
+  sand: { floor: '#cfc8bd', wall: '#f6e09a', trim: '#7a4a2a', build: () => [...altar(-3.5, -5),
+    // heaps of sand and stones, stacked bricks, cement sacks, a big scale and the order book
+    P(new THREE.ConeGeometry(1.3, 1.2, 12), '#e2c27a', [3.5, .6, -3]), P(new THREE.DodecahedronGeometry(.9, 0), '#8f8f8a', [5.3, .45, -1.2], [0, .3, 0], [1, .6, 1]),
+    ...[0, 1, 2, 3].flatMap(r => [0, 1, 2].map(c => P(B(.5, .22, .25), '#c9785a', [-5.2 + c * .52 + (r % 2) * .26, .12 + r * .23, -2]))),
+    ...[0, 1, 2].map(i => P(B(.7, .3, .45), '#e9e2cc', [-1.4 + i * .1, .16 + i * .3, -4.4])),
+    P(B(.8, .1, .8), '#7a7a80', [1, .5, 1.5]), P(B(.1, .5, .1), '#7a7a80', [1, .25, 1.5]), P(C(.3, .3, .1, 14), '#f2f2f2', [1, 1.2, 1.1], [Math.PI / 2, 0, 0]), P(B(.1, .7, .1), '#7a7a80', [1, .85, 1.1]),
+    ...table(-3, 1.5, '#8a6a4a', 1.4, .8), P(B(.6, .05, .45), '#c0392b', [-3, .8, 1.5]), ...stool(-3, 2.3), ...fan(5.6, 3.6)] },
+  phones: { floor: '#b07a4a', wall: '#f3ead8', trim: '#3a7a5a', build: () => [
+    // mợ An's phone counter: a glass case of phones, cases on the wall, and cậu Tâm's map of truck routes
+    P(B(4, 1, .9), '#f2f2f2', [0, .5, -2.4]), P(B(4, .05, .95), '#9fd3e8', [0, 1.02, -2.4]), ...[0, 1, 2, 3, 4, 5].map(i => P(B(.3, .55, .04), '#2a2a2a', [-1.5 + i * .6, 1.3, -2.6], [-.25, 0, 0])), ...[0, 1, 2, 3, 4, 5].map(i => P(B(.24, .45, .045), ['#5fd3ff', '#ff7eb8', '#ffd23f', '#5fd36a', '#9a6ac0', '#ff9f43'][i], [-1.5 + i * .6, 1.3, -2.57], [-.25, 0, 0])),
+    ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => P(B(.28, .5, .05), ['#ff7eb8', '#3a78c8', '#ffd23f', '#5fd36a'][i % 4], [-3 + i * .85, 1.6, -5.35])),
+    P(B(2.6, 1.6, .05), '#f6efe0', [-4.4, 1.5, -5.33]), P(B(2.2, .05, .06), '#c0392b', [-4.4, 1.6, -5.3], [0, 0, .4]), P(B(1.6, .05, .06), '#c0392b', [-4.6, 1.2, -5.3], [0, 0, -.3]),
+    // a toy truck for Tí and Bi on the rug
+    ...rug(2.5, 1.5, '#9a3a3a', '#d9b06a'), P(B(.8, .35, .4), '#3a78c8', [2.3, .3, 1.5]), P(B(.35, .3, .38), '#f2f2f2', [2.9, .27, 1.5]), ...stool(-1, -1.2), ...stool(1, -1.2, '#3a78c8'), ...plant(-6, 4.4), ...plant(6, 4.4), ...[-1, 1].map(s2 => P(B(.08, 2.2, 1.6), '#3a7a5a', [s2 * 6.85, 1.2, -2]))] },
+  baby: { floor: '#d9b48a', wall: '#fff0f6', trim: '#ff7eb8', build: () => [...altar(0, -5),
+    // O Thương's sewing corner and the racks of tiny clothes, a cradle and a box of toys
+    ...table(-4, -3, '#8a5a3b', 1.4, .8), P(B(.6, .35, .3), '#f2f2f2', [-4, .95, -3]), P(C(.03, .03, .3, 6), '#c0c0c0', [-3.8, 1.2, -3]), ...stool(-4, -2.2, '#ff7eb8'),
+    ...[-1, 1].flatMap(r => [P(B(2.4, .05, .05), '#c0c0c0', [3.5, 1.6, r * 1.4]), P(B(.05, 1.6, .05), '#c0c0c0', [2.3, .8, r * 1.4]), P(B(.05, 1.6, .05), '#c0c0c0', [4.7, .8, r * 1.4]),
+      ...[0, 1, 2, 3, 4].map(i => P(B(.35, .45, .04), ['#ff9ec4', '#8fd3ff', '#ffe27a', '#b9f0a8', '#ffffff'][i], [2.6 + i * .45, 1.3, r * 1.4]))]),
+    P(B(1.2, .5, .7), '#f6e3c0', [-2.5, .5, 1.8]), P(C(.35, .35, 1.2, 12, 1, true), '#f6e3c0', [-2.5, .7, 1.8], [0, 0, Math.PI / 2]), P(B(1.1, .1, .6), '#ffb3c6', [-2.5, .78, 1.8]),
+    P(B(.8, .5, .6), '#ffd23f', [5.5, .25, 3.8]), P(S(.18), '#5fd3ff', [5.3, .6, 3.7]), P(S(.15), '#ff7eb8', [5.7, .6, 3.9]), ...plant(-5.8, 4.4), ...frame(3, 1.9, -5.35, '#ff7eb8')] },
   coffee: { floor: '#d9c9a8', tiles: '#c4b08a', wall: '#f6e09a', trim: '#7a4a2a', build: () => [...altar(-3.5, -5), P(B(3, 1, .7), '#7a4a2a', [3, .5, -2.5]), ...[0, 1, 2, 3].map(i => [P(C(.06, .05, .12, 8), '#c0c0c0', [2 + i * .6, 1.08, -2.5]), P(C(.05, .05, .1, 8), '#3a2418', [2 + i * .6, 1.17, -2.5])]).flat(), ...table(0, 1, '#a07048', 1, .8), ...stool(-.8, 1), ...stool(.8, 1, '#3a78c8'), ...table(-3.5, 1.5, '#a07048', 1, .8), ...stool(-4.3, 1.5, '#ffd23f'), ...stool(-2.7, 1.5), ...fan(5.5, -4), ...plant(-6, 4.4), ...frame(0, 1.7, -5.35, '#6a4026')] },
   villa: { floor: '#b07a4a', wall: '#f3ead8', trim: '#3a7a5a', build: () => [P(B(2, 1.1, .9), '#1d1d1d', [-4.5, .55, -4.6]), P(B(1.9, .05, .5), '#ffffff', [-4.5, 1.12, -4.4]), P(B(.6, .45, .4), '#1d1d1d', [-4.5, .22, -3.6]), ...rug(0, -1, '#9a3a3a', '#d9b06a'), P(B(1, .45, .9), '#3a7a5a', [-1.6, .3, -1]), P(B(1, .7, .2), '#3a7a5a', [-1.6, .7, -1.4]), P(B(1, .45, .9), '#3a7a5a', [1.6, .3, -1]), P(B(1, .7, .2), '#3a7a5a', [1.6, .7, -1.4]), ...table(0, -.6, '#6a4026', 1, .7), ...shelf(4.8, -5), ...shelf(3.2, -5), P(S(.3), '#ffe8a0', [0, 2.2, -1]), ...plant(-6, 4.4), ...plant(6, 4.4), ...[-1, 1].map(s => P(B(.08, 2.2, 1.6), '#3a7a5a', [s * 6.85, 1.2, -2]))] },
   cottage: { floor: '#c9a06a', wall: '#f6f1e4', trim: '#5a8ac0', build: () => [...rug(-1, -1, '#3a6ab0', '#e8e0cc'), P(B(2.6, .5, .9), '#6b8f5a', [-1, .35, -2.8]), P(B(2.6, .7, .2), '#5a7a4a', [-1, .75, -3.2]), ...table(-1, -1.2, '#a07048', 1.2, .6), P(B(3, 1, .7), '#e8e0cc', [4, .5, -4.8]), P(B(3, .06, .75), '#8a8a8a', [4, 1.02, -4.8]), P(B(.9, 1.9, .7), '#f2f2f2', [6, .95, -4.8]), P(C(.05, .05, .9, 6), '#c9a05a', [-6.2, .6, 3], [0, 0, .3]), P(B(.12, .35, .5), '#c9a05a', [-6.05, 1.1, 3]), P(B(1.2, 1.1, .5), '#8a5a3b', [-5.8, .55, -4.8]), P(B(.9, .6, .1), '#2a2a2a', [-5.8, .6, -4.5]), ...plant(6, 4.4)] },

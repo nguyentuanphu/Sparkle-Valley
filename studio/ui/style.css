@@ -1,0 +1,30 @@
+:root { --bg: #fbf7ff; --card: #ffffff; --ink: #3b2a4f; --soft: #7a6a8f; --line: #e6dcf5; --accent: #8a5cf6; --accent2: #ff7eb8; --ok: #2f9a5a; --bad: #d2232a; --warn: #c98a00; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1b1626; --card: #251e33; --ink: #f2ecff; --soft: #b9aed0; --line: #3a3150; --accent: #a98bff; --accent2: #ff8ec4; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 "Segoe UI", system-ui, sans-serif; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; background: linear-gradient(90deg, #8a5cf6, #ff7eb8); color: #fff; }
+.brand b { font-size: 22px; } .brand small { margin-left: 8px; opacity: .9; }
+.lang button { border: 0; border-radius: 999px; padding: 6px 14px; margin-left: 4px; background: rgba(255, 255, 255, .25); color: #fff; font: inherit; cursor: pointer; } .lang button.on { background: #fff; color: #8a5cf6; font-weight: 700; }
+nav { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--card); position: sticky; top: 0; z-index: 5; }
+nav button { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 12px; padding: 8px 12px; font: inherit; cursor: pointer; } nav button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+main { max-width: 1100px; margin: 0 auto; padding: 18px 16px 120px; }
+h2 { margin: 6px 0 4px; } .sub { color: var(--soft); margin: 0 0 16px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.stat b { display: block; font-size: 26px; } .stat span { color: var(--soft); }
+label { display: block; margin: 8px 0 4px; font-weight: 600; } .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; } .row > * { flex: 1; min-width: 160px; }
+input[type=text], input[type=password], input[type=number], textarea, select { width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; }
+textarea { min-height: 70px; resize: vertical; }
+.btn { border: 0; border-radius: 12px; padding: 10px 16px; background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer; } .btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); } .btn.pink { background: var(--accent2); } .btn.bad { background: var(--bad); } .btn:disabled { opacity: .5; cursor: default; } .btn.small { padding: 6px 10px; font-size: 14px; }
+.bar { position: sticky; bottom: 0; display: flex; gap: 10px; justify-content: flex-end; padding: 12px 0; background: linear-gradient(transparent, var(--bg) 35%); }
+table { width: 100%; border-collapse: collapse; } td, th { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+.face { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid var(--line); background: var(--bg); display: inline-grid; place-items: center; cursor: pointer; }
+.note { color: var(--soft); font-size: 14px; } .ok { color: var(--ok); } .badtxt { color: var(--bad); } .warn { color: var(--warn); }
+.page-card { border: 1px dashed var(--line); border-radius: 12px; padding: 10px; margin: 8px 0; }
+.page-card .pics { font-size: 34px; }
+.prog { height: 12px; border-radius: 999px; background: var(--line); overflow: hidden; } .prog i { display: block; height: 100%; background: linear-gradient(90deg, #8a5cf6, #ff7eb8); width: 0; transition: width .3s; }
+#toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #3b2a4f; color: #fff; padding: 10px 18px; border-radius: 999px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 50; } #toast.on { opacity: 1; }
+.modal { position: fixed; inset: 0; background: rgba(20, 10, 30, .55); display: grid; place-items: center; z-index: 40; } .modal .card { width: min(520px, 94vw); }
+canvas.crop { width: 100%; max-width: 360px; aspect-ratio: 1; border-radius: 16px; touch-action: none; cursor: grab; background: #eee; display: block; margin: 0 auto; }
+.lines { max-height: 420px; overflow: auto; } .lines td { font-size: 14px; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--line); font-size: 13px; }

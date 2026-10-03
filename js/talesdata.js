@@ -1,6 +1,7 @@
 // More folk and fairy tales for Story time, retold gently for children aged 2 to 8.
 // Each page is [pictures, English, Tiếng Việt]; the pictures come alive in the tale theatre (js/tales.js).
 import { T } from './i18n.js';
+import { customTales } from './custom.js';
 
 const tale = (id, flag, en, vi, pages) => ({ id, flag, title: () => T(en, vi), pages });
 
@@ -197,5 +198,50 @@ export const MORE_TALES = [
     ['💙🐺👑🦁🐘', 'Back in the forest, the animals had never seen a blue animal. "I am your king!" said the jackal.', 'Về rừng, muông thú chưa thấy con vật nào màu xanh. "Ta là vua của các ngươi!" chó rừng nói.'],
     ['🌕🐺🎵', 'But one night, the other jackals howled at the moon. He could not help it: "Owooo!" he howled too.', 'Nhưng một đêm, bầy chó rừng tru lên dưới trăng. Nó không nhịn được: "Hú hú!"'],
     ['🦁🐘😲', 'Everyone knew he was just a jackal pretending.', 'Thế là ai cũng biết nó chỉ là chó rừng giả làm vua.'],
-    ['💡🙂', 'Be yourself: pretending never lasts.', 'Hãy là chính mình: giả vờ chẳng được lâu đâu.']])
+    ['💡🙂', 'Be yourself: pretending never lasts.', 'Hãy là chính mình: giả vờ chẳng được lâu đâu.']]),
+  // ---------- added in round 26 ----------
+  tale('ongtao', '🇻🇳', 'The Kitchen Gods Ride to Heaven', 'Ông Táo về trời', [
+    ['🏠🔥👴', 'In every Vietnamese kitchen lives a kind Kitchen God, Ông Táo, who watches over the family all year.', 'Trong mỗi gian bếp Việt có ông Táo hiền lành, trông nom gia đình suốt cả năm.'],
+    ['📅🌙', 'On the 23rd day of the last moon of the year, he gets ready to fly up to heaven.', 'Ngày hai mươi ba tháng Chạp, ông Táo chuẩn bị bay về trời.'],
+    ['🐟🐟🐟🥣', 'The family lets three little carp go in a pond. The carp will carry Ông Táo up to the sky!', 'Cả nhà thả ba chú cá chép xuống ao. Cá chép sẽ đưa ông Táo bay lên trời!'],
+    ['🐟➡️🐉☁️', 'The carp leap, turn into dragons, and fly him to the Jade Emperor.', 'Cá chép vượt lên, hóa thành rồng, đưa ông lên gặp Ngọc Hoàng.'],
+    ['👑📜😊', 'Ông Táo tells the Jade Emperor about the family: how they helped each other and were kind.', 'Ông Táo kể với Ngọc Hoàng chuyện trong nhà: cả nhà thương yêu, giúp đỡ nhau ra sao.'],
+    ['🧧🌸🎆', 'Then he comes home on New Year’s Eve, just in time for Tết!', 'Rồi đêm giao thừa ông trở về, vừa kịp đón Tết!']]),
+  tale('cachep', '🇻🇳', 'The Carp Who Became a Dragon', 'Cá chép hóa rồng', [
+    ['🐟🌊', 'Far upriver there was a great waterfall called the Vũ Môn gate.', 'Ở thượng nguồn có một thác nước lớn tên là Vũ Môn.'],
+    ['🐟🐟🐟⬆️', 'Every year all the fish tried to jump to the top. Whoever made it would become a dragon!', 'Năm nào các loài cá cũng thi nhảy lên đỉnh thác. Ai vượt qua sẽ hóa thành rồng!'],
+    ['🐟💦😓', 'One little carp jumped and fell, and jumped and fell again. Her friends gave up and swam home.', 'Một chú cá chép nhỏ nhảy lên rồi rơi xuống, lại nhảy, lại rơi. Các bạn bỏ cuộc bơi về.'],
+    ['🐟💪✨', 'But the little carp kept practising, day after day.', 'Nhưng chú cá chép nhỏ vẫn chăm chỉ tập luyện, ngày này qua ngày khác.'],
+    ['🐟⬆️🌈🐉', 'At last she leapt over the top, and turned into a shining dragon!', 'Cuối cùng chú vượt qua đỉnh thác và hóa thành một con rồng sáng lấp lánh!'],
+    ['🐉☁️😊', 'That is why we say: keep trying, and one day you will fly too.', 'Vì thế người ta nói: cứ cố gắng, rồi một ngày con cũng sẽ bay cao.']]),
+  tale('birdcolours', '🇦🇺', 'How the Birds Got Their Colours', 'Vì sao chim có nhiều màu', [
+    ['🐦🐦🐦⚫', 'Long ago, in the Dreaming, all the birds of Australia were plain and brown.', 'Ngày xửa ngày xưa, ở thời Mộng Mơ, mọi loài chim nước Úc đều chỉ có màu nâu.'],
+    ['🐦🤕', 'One day a little bird hurt its foot and could not find food.', 'Một hôm có chú chim nhỏ bị đau chân, không kiếm được mồi.'],
+    ['🐦🐦🍇❤️', 'The other birds brought it seeds and berries, and stayed with it until it was well.', 'Các bạn chim mang hạt và quả mọng đến, ở bên chú cho tới khi khỏe lại.'],
+    ['🐦🎨🌈', 'To say thank you, the little bird found coloured earth and flowers and painted its friends.', 'Để cảm ơn, chú chim nhỏ tìm đất màu và hoa, tô màu cho các bạn.'],
+    ['🦜🐦🦚', 'The parrots became red and green and blue, and the kookaburra got a white chest.', 'Vẹt có màu đỏ, xanh lá, xanh dương, còn chim kookaburra có bộ ngực trắng.'],
+    ['🦜😊', 'And that is why Australian birds are so bright: kindness made them colourful.', 'Thế là chim nước Úc rực rỡ sắc màu: lòng tốt đã tô màu cho chúng.']]),
+  tale('magicpudding', '🇦🇺', 'The Magic Pudding', 'Chiếc bánh pudding thần kỳ', [
+    ['🐨🎒🚶', 'Bunyip Bluegum, a koala, set off to see the world with his walking stick.', 'Chú koala Bunyip Bluegum chống gậy lên đường đi xem thế giới.'],
+    ['🐧👨🍮', 'He met a sailor and a penguin who had a magic pudding called Albert.', 'Chú gặp một bác thủy thủ và một chú chim cánh cụt có chiếc bánh pudding thần tên là Albert.'],
+    ['🍮😠🗣️', 'Albert was very grumpy, but you could eat him again and again, and he never ran out!', 'Albert rất hay cáu kỉnh, nhưng ăn bao nhiêu cũng không bao giờ hết!'],
+    ['🦡🦝🍮💨', 'Two sneaky pudding thieves, a possum and a wombat, kept trying to steal him.', 'Hai tên trộm bánh lén lút, một con thú có túi và một con gấu túi mũi trần, cứ tìm cách bắt trộm.'],
+    ['🐨🐧👨💪', 'But the three friends always got Albert back.', 'Nhưng ba người bạn lần nào cũng giành lại được Albert.'],
+    ['🏡🍮😊', 'At last they built a cosy house with a garden, and shared the pudding with everyone.', 'Cuối cùng họ xây một ngôi nhà ấm cúng có vườn, và chia bánh cho mọi người cùng ăn.']]),
+  tale('kongrong', '🇨🇳', 'Kong Rong Shares the Pears', 'Khổng Dung nhường lê', [
+    ['👦👦👦🍐', 'Long ago in China, little Kong Rong was four years old and had many brothers.', 'Ngày xưa ở Trung Quốc, cậu bé Khổng Dung mới bốn tuổi và có nhiều anh em.'],
+    ['👴🍐🍐🍐', 'One day Grandpa brought a plate of pears: some big, some small.', 'Một hôm ông mang về một đĩa lê: có quả to, có quả nhỏ.'],
+    ['👦🍐❓', 'Kong Rong chose the smallest pear. “Why the small one?” asked Grandpa.', 'Khổng Dung chọn quả lê nhỏ nhất. Ông hỏi: “Sao cháu lấy quả nhỏ?”'],
+    ['👦💬😊', '“I am the youngest, so my big brothers should have the big ones.”', '“Cháu nhỏ nhất, nên các anh phải được quả to ạ.”'],
+    ['👴❤️👦', 'Grandpa smiled, and everyone was proud of him.', 'Ông mỉm cười, cả nhà ai cũng tự hào về cậu.'],
+    ['🍐🤝', 'Children in China still learn this story: sharing makes everyone happy.', 'Trẻ em Trung Quốc ngày nay vẫn học câu chuyện này: biết nhường nhịn thì ai cũng vui.']]),
+  tale('elephantmice', '🇮🇳', 'The Elephants and the Mice', 'Đàn voi và bầy chuột', [
+    ['🐭🐭🏚️', 'In an old ruined town in India lived a big family of mice.', 'Ở một thị trấn đổ nát bên Ấn Độ có một đại gia đình chuột.'],
+    ['🐘🐘🐘👣', 'Every day a herd of elephants walked through on the way to the lake, and squashed the mice’s homes.', 'Ngày nào đàn voi cũng đi ngang qua ra hồ uống nước, giẫm nát nhà của bầy chuột.'],
+    ['🐭🙏🐘', 'The mouse king asked the elephant king kindly: “Please take another path. One day we may help you.”', 'Vua chuột lễ phép xin vua voi: “Xin các bác đi lối khác. Biết đâu một ngày chúng cháu giúp được các bác.”'],
+    ['🐘😄', 'The elephant king laughed, but he agreed and took another path.', 'Vua voi bật cười, nhưng vẫn đồng ý đi lối khác.'],
+    ['🐘🕸️😢', 'Later, hunters caught the elephants in strong nets. They could not get free!', 'Ít lâu sau, thợ săn bắt đàn voi bằng lưới chắc. Voi không sao thoát ra được!'],
+    ['🐭🐭✂️🐘😊', 'The mice came running and chewed through every rope. The elephants were free. Even the smallest friend can help!', 'Bầy chuột chạy tới gặm đứt từng sợi dây. Đàn voi được tự do. Người bạn nhỏ bé nhất cũng có thể giúp đỡ!']]),
+  // the family's own stories, made in Sparkle Studio (content/custom.json)
+  ...customTales().map(t => tale(t.id, t.flag, t.en, t.vi, t.pages))
 ];

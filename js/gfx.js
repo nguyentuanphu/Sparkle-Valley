@@ -16,7 +16,7 @@ export function toon(color, extra) {
   const key = extra ? null : color;
   if (key && matCache[key]) return matCache[key];
   const m = new THREE.MeshToonMaterial(Object.assign({ color: new THREE.Color(color), gradientMap: bands }, clean(extra)));
-  if (key) matCache[key] = m;
+  if (key) { matCache[key] = m; m.userData.shared = true; }
   return m;
 }
 // vertex-coloured models are faceted like cut paper (trees, rocks, houses)
@@ -61,7 +61,7 @@ export function emojiMat(ch) {
     // the game's own drawn picture replaces the emoji as soon as it has loaded (js/art.js)
     const a = artSVG(ch);
     if (a) { const img = new Image(); img.onload = () => { x.clearRect(0, 0, 128, 128); x.drawImage(img, 8, 8, 112, 112); t.needsUpdate = true; }; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(a); }
-    emojiMats[ch] = new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false });
+    emojiMats[ch] = new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false }); emojiMats[ch].userData.shared = true;
   }
   return emojiMats[ch];
 }
@@ -83,7 +83,7 @@ export function outline(obj, width = .011, color = '#6a4a3a') {
   const key = width + color;
   let m = outlineMats[key];
   if (!m) {
-    m = outlineMats[key] = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide });
+    m = outlineMats[key] = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide }); m.userData.shared = true;
     m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', `vec3 transformed = position + normalize(normal) * ${width.toFixed(4)};`); };
     m.customProgramCacheKey = () => 'outline' + key;
   }

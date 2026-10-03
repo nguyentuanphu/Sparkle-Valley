@@ -7,7 +7,7 @@ import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt, cur, spoken as money } from './money.js';
 import { el, esc, $, clamp, wait } from './util.js';
-import { avatarURL } from './avatar.js';
+import { avatarURL, applyNpcFaces } from './avatar.js';
 import { confetti } from './fun.js';
 import { ITEMS, RECIPES, findRecipe, SHOP, HAT_ICON, HAT_NAME, REWARD_HATS, dishInfo, QUESTS, STICKERS } from './data.js';
 import { SIZE, HALF, SHRINES, TOWERS } from './world.js';
@@ -149,24 +149,71 @@ function openRenamer(after) {
   const m = modal('renamer', ''), card = m.querySelector('.card');
   const list = NPC_NAMES.slice().sort((a, b) => defaultName(a.id).localeCompare(defaultName(b.id)));
   const cur = settings.npcNames || {};
+  const faces = Object.assign({}, settings.npcFaces || {}); // photo faces: chosen here, kept only when Save is pressed
   card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
     <h2>✏️ ${T('Character names', 'Tên nhân vật')}</h2>
-    <p class="note">${T('Leave a box empty to keep the usual name (shown in grey).', 'Để trống để giữ tên mặc định (chữ màu xám).')}</p>
-    <div class="rn-list">${list.map(n => `<div class="rn-row" data-id="${esc(n.id)}"><span class="rn-ic" aria-hidden="true">${n.icon}</span>
+    <p class="note">${T('Leave a box empty to keep the usual name (shown in grey). Tap 📷 to give someone a real face from a photo: it goes on their head in the game, and their skin takes the colour of the photo so it looks natural.', 'Để trống để giữ tên mặc định (chữ màu xám). Chạm 📷 để gắn khuôn mặt thật từ ảnh: ảnh được dán lên đầu nhân vật trong game, màu da lấy theo ảnh để trông tự nhiên.')}</p>
+    <div class="rn-list">${list.map(n => `<div class="rn-row" data-id="${esc(n.id)}"><button class="rn-face" aria-label="${T('Photo face', 'Ảnh khuôn mặt')}">${faceHTML(n)}</button>
       <label>🇦🇺 English<input type="text" data-l="en" value="${esc((cur[n.id] || {}).en || '')}" placeholder="${esc(defaultName(n.id, 'en'))}"></label>
       <label>🇻🇳 Tiếng Việt<input type="text" data-l="vi" value="${esc((cur[n.id] || {}).vi || '')}" placeholder="${esc(defaultName(n.id, 'vi'))}"></label></div>`).join('')}</div>
     <div class="rn-bar"><button class="btn" id="rnReset">↩️ ${T('Use the usual names', 'Dùng tên mặc định')}</button><button class="btn primary" id="rnSave">💾 ${T('Save', 'Lưu')}</button></div>`;
   const close = () => { m.close(); after && after(); };
   card.querySelector('.x').onclick = close;
+  function faceHTML(n) { const f = faces[n.id]; return f ? `<img src="${f.photo}" alt=""><i>✕</i>` : `<span class="rn-ic" aria-hidden="true">${n.icon}</span><b>📷</b>`; }
+  card.querySelectorAll('.rn-row').forEach(r => { const b = r.querySelector('.rn-face'), id = r.dataset.id, n = list.find(x => x.id === id);
+    b.onclick = () => { SFX.tap(); if (faces[id]) { delete faces[id]; b.innerHTML = faceHTML(n); return; } openCropper(T('A face for ', 'Khuôn mặt cho ') + defaultName(id), f => { if (f) { faces[id] = f; b.innerHTML = faceHTML(n); } }); }; });
   card.querySelector('#rnReset').onclick = () => card.querySelectorAll('.rn-row input').forEach(i => i.value = '');
   card.querySelector('#rnSave').onclick = () => {
     const out = {};
     card.querySelectorAll('.rn-row').forEach(r => { const en = r.querySelector('[data-l=en]').value.trim(), vi = r.querySelector('[data-l=vi]').value.trim(); if (en || vi) out[r.dataset.id] = { en, vi }; });
-    settings.npcNames = out; saveSettings(); applyLang(); SFX.chime && SFX.chime();
+    settings.npcNames = out; settings.npcFaces = faces; saveSettings(); applyLang(); applyNpcFaces(); SFX.chime && SFX.chime();
     toast(T('Names saved!', 'Đã lưu tên!')); close();
   };
 }
 
+// Crop a photo to a round face (drag to move, pinch or slider to zoom). Gives back { photo, skin }: a 256 px JPEG
+// and the skin colour sampled round the cheeks and forehead, used for the rest of the head so it blends in.
+function openCropper(title, done) {
+  let img = null, zoom = 1, ox = 0, oy = 0;
+  const m = modal('editor cropper', `<h2>📷 ${esc(title)}</h2>
+    <div class="crop-wrap"><canvas width="480" height="480"></canvas>
+      <p class="note">${T('Choose a clear, front-facing photo. Fit the face inside the circle: eyebrows near the top, chin near the bottom. Drag to move, pinch or use the slider to zoom.', 'Chọn ảnh rõ, nhìn thẳng. Đặt khuôn mặt vừa trong vòng tròn: lông mày gần mép trên, cằm gần mép dưới. Kéo để di chuyển, chụm hai ngón hoặc dùng thanh trượt để phóng to.')}</p>
+      <label class="btn primary" for="cfile">📷 ${T('Take or choose a photo', 'Chụp hoặc chọn ảnh')}</label><input type="file" id="cfile" accept="image/*" class="vh">
+      <input type="range" min="1" max="5" step=".01" value="1" hidden aria-label="Zoom"></div>
+    <div class="actions floatbar"><span class="grow"></span><button class="btn" id="cCancel">${T('Cancel', 'Hủy')}</button><button class="btn primary" id="cOk" disabled>${T('Use this face', 'Dùng khuôn mặt này')}</button></div>`);
+  const cv = m.querySelector('canvas'), cx = cv.getContext('2d'), zr = m.querySelector('input[type=range]'), ok = m.querySelector('#cOk');
+  const draw = () => {
+    cx.fillStyle = '#f1e9ff'; cx.fillRect(0, 0, 480, 480);
+    if (img) { const s = Math.max(480 / img.width, 480 / img.height) * zoom; cx.drawImage(img, 240 - img.width * s / 2 + ox, 240 - img.height * s / 2 + oy, img.width * s, img.height * s); }
+    else { cx.font = '160px serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText('🙂', 240, 250); }
+    // guide: the face circle, with eye and chin lines
+    cx.save(); cx.fillStyle = 'rgba(30,20,40,.45)'; cx.beginPath(); cx.rect(0, 0, 480, 480); cx.arc(240, 240, 205, 0, Math.PI * 2, true); cx.fill('evenodd'); cx.restore();
+    cx.strokeStyle = '#fff'; cx.lineWidth = 6; cx.beginPath(); cx.arc(240, 240, 205, 0, Math.PI * 2); cx.stroke();
+    cx.setLineDash([10, 10]); cx.lineWidth = 2; cx.strokeStyle = 'rgba(255,255,255,.7)'; cx.beginPath(); cx.moveTo(110, 220); cx.lineTo(370, 220); cx.moveTo(170, 410); cx.lineTo(310, 410); cx.stroke(); cx.setLineDash([]);
+    zr.hidden = !img; ok.disabled = !img;
+  };
+  draw();
+  m.querySelector('#cfile').onchange = e => { const f = e.target.files[0]; if (!f) return; const url = URL.createObjectURL(f), i = new Image(); i.onload = () => { img = i; zoom = 1; ox = oy = 0; zr.value = 1; draw(); URL.revokeObjectURL(url); }; i.src = url; };
+  zr.oninput = () => { zoom = +zr.value; draw(); };
+  const ptrs = new Map(); let pinch0 = 0, zoom0 = 1;
+  cv.addEventListener('pointerdown', e => { if (!img) return; ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); cv.setPointerCapture(e.pointerId); if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); zoom0 = zoom; } });
+  cv.addEventListener('pointermove', e => { const pr = ptrs.get(e.pointerId); if (!pr) return; if (ptrs.size === 1) { const k = 480 / cv.clientWidth; ox += (e.clientX - pr.x) * k; oy += (e.clientY - pr.y) * k; } pr.x = e.clientX; pr.y = e.clientY; if (ptrs.size === 2 && pinch0) { const [a, b] = [...ptrs.values()]; zoom = clamp(zoom0 * Math.hypot(a.x - b.x, a.y - b.y) / pinch0, 1, 5); zr.value = zoom; } draw(); });
+  const up = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch0 = 0; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  const finish = keep => {
+    let out = null;
+    if (keep && img) {
+      const S = 256, o = document.createElement('canvas'); o.width = o.height = S; const c2 = o.getContext('2d'), s = Math.max(480 / img.width, 480 / img.height) * zoom, k = S / 410;
+      c2.drawImage(img, (240 - img.width * s / 2 + ox - 35) * k, (240 - img.height * s / 2 + oy - 35) * k, img.width * s * k, img.height * s * k);
+      // the skin colour: the middle of each cheek and the forehead
+      let r = 0, g = 0, b = 0, n = 0;
+      for (const [px, py] of [[.3, .62], [.7, .62], [.5, .32]]) { const d = c2.getImageData(px * S - 8, py * S - 8, 16, 16).data; for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; } }
+      const hx = v => Math.round(v / n).toString(16).padStart(2, '0');
+      out = { photo: o.toDataURL('image/jpeg', .85), skin: '#' + hx(r) + hx(g) + hx(b) };
+    }
+    m.close(); done(out);
+  };
+  ok.onclick = () => finish(true); m.querySelector('#cCancel').onclick = () => finish(false);
+}
 // a sticky row of shortcuts at the top of a long page: one chip per section heading, tap to jump there
 function jumpNav(root, after) {
   const hs = [...root.querySelectorAll(':scope > h3, :scope h3.jump')].filter(h => h.textContent.trim());
@@ -317,7 +364,7 @@ export function openQuick(game, i) {
         <div class="qs-sub">${T('Text size', 'Cỡ chữ')}</div><div class="seg tsize">${[0, 1, 2].map(k => `<button data-ts="${k}" class="${(s.textSize || 0) === k ? 'on' : ''}" style="font-size:${16 + k * 5}px">A</button>`).join('')}</div></div>
       ${game.festivals ? `<button class="qs-fest" id="qFest"><span>🎉</span><b>${T('Festivals', 'Lễ hội')}</b><small>${T('Tết, Mid-Autumn, Diwali, Christmas, Australia Day: any day you like', 'Tết, Trung Thu, Diwali, Giáng Sinh, Ngày Nước Úc: ngày nào cũng được')}</small></button>` : ''}
       <button class="grown qgrown"><span class="ring"></span>👨‍👩‍👧 ${T('Grown-ups settings', 'Cài đặt phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>
-      <div class="actions"><button class="btn" id="qWho">👫 ${T('Change player', 'Đổi người chơi')}</button><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
+      <div class="actions floatbar"><button class="btn" id="qWho">👫 ${T('Change player', 'Đổi người chơi')}</button><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
     bindLang(card, draw);
     card.querySelector('.x').onclick = card.querySelector('#qDone').onclick = close;
     card.querySelectorAll('.qset').forEach(b => b.onclick = () => {
@@ -373,7 +420,7 @@ export function openEditor(profile, after) {
     <div class="field"><span>${T('On the back', 'Sau lưng')}</span><div class="chips" id="cBack"></div></div>
     <div class="field"><span>${T('Hair', 'Tóc')}</span><div class="chips" id="cHs"></div><div class="chips" id="cHair"></div></div>
     <div class="field"><span>${T('Skin', 'Màu da')}</span><div class="chips" id="cSkin"></div></div>
-    <div class="actions">${isNew ? '' : `<button class="btn danger" id="eDel">${T('Remove', 'Xóa')}</button>`}<span class="grow"></span><button class="btn" id="eCancel">${T('Cancel', 'Hủy')}</button><button class="btn primary" id="eSave">${T('Save', 'Lưu')}</button></div>`);
+    <div class="actions floatbar">${isNew ? '' : `<button class="btn danger" id="eDel">${T('Remove', 'Xóa')}</button>`}<span class="grow"></span><button class="btn" id="eCancel">${T('Cancel', 'Hủy')}</button><button class="btn primary" id="eSave">${T('Save', 'Lưu')}</button></div>`);
   const cv = m.querySelector('#crop'), cx = cv.getContext('2d'), zr = m.querySelector('#zoom');
   const draw = () => {
     cx.fillStyle = '#fff'; cx.fillRect(0, 0, 480, 480);
@@ -819,13 +866,19 @@ export function openRecorder(after) {
 
 // ---------- Games hub ----------
 const HUB = [
-  { key: 'learn', icon: '📚', short: () => T('Learning', 'Học'), title: () => T('Learning: numbers, letters, time and more', 'Học: số, chữ, xem giờ và nhiều nữa'), games: ['counting', 'numbers', 'sums', 'letters', 'phonics', 'clock', 'shapes', 'colors', 'opposites', 'animalsounds', 'feelings', 'words', 'firstwords', 'pattern', 'sorting', 'memory'] },
-  { key: 'folk', icon: '🪁', short: () => T('Folk games', 'Dân gian'), title: () => T('Folk games of Australia, Vietnam, China and India', 'Trò chơi dân gian Úc, Việt Nam, Trung Quốc và Ấn Độ'), games: ['music', 'firstwords', 'tangram', 'snakes', 'rangoli', 'words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
+  { key: 'learn', icon: '📚', short: () => T('Learning', 'Học'), title: () => T('Learning: numbers, letters, time and more', 'Học: số, chữ, xem giờ và nhiều nữa'), games: ['familyquiz', 'counting', 'numbers', 'sums', 'letters', 'phonics', 'clock', 'shapes', 'colors', 'opposites', 'animalsounds', 'feelings', 'moreless', 'days', 'bodyparts', 'words', 'firstwords', 'pattern', 'sorting', 'memory'] },
+  { key: 'folk', icon: '🪁', short: () => T('Folk games', 'Dân gian'), title: () => T('Folk games of Australia, Vietnam, China and India', 'Trò chơi dân gian Úc, Việt Nam, Trung Quốc và Ấn Độ'), games: ['music', 'firstwords', 'tangram', 'snakes', 'rangoli', 'words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'tienlen', 'oantuti', 'nemlon', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
   { key: 'cities', icon: '🏙️', short: () => T('Cities', 'Thành phố'), title: () => T('In the cities of Vietnam and Australia', 'Ở các thành phố Việt Nam và Úc'), games: ['puppets', 'dongho', 'dragonfire', 'traffic', 'ferries', 'tram', 'koala'] },
-  { key: 'farm', icon: '🏡', short: () => T('Farm', 'Nông trại'), title: () => T('At the farm', 'Ở nông trại'), games: ['bunny', 'balloon', 'bubbles', 'jigsaw', 'tower', 'order', 'sortout', 'duckmaze'] },
+  { key: 'farm', icon: '🏡', short: () => T('Farm', 'Nông trại'), title: () => T('At the farm', 'Ở nông trại'), games: ['bunny', 'eggs', 'balloon', 'bubbles', 'jigsaw', 'tower', 'order', 'sortout', 'duckmaze'] },
   { key: 'village', icon: '🏮', short: () => T('Village', 'Làng Sen'), title: () => T('In Lotus Village', 'Ở Làng Sen'), games: ['market', 'tune', 'shapes', 'oddone', 'memory'] },
-  { key: 'shrine', icon: '✨', short: () => T('Puzzles', 'Đố vui'), title: () => T('Puzzle shrines', 'Đền đố vui'), games: ['pattern', 'counting', 'letters', 'numbers', 'colors', 'sorting', 'hanoi', 'robot', 'maze'] }
+  { key: 'shrine', icon: '✨', short: () => T('Puzzles', 'Đố vui'), title: () => T('Puzzle shrines', 'Đền đố vui'), games: ['pattern', 'counting', 'letters', 'numbers', 'colors', 'sorting', 'sudoku', 'hanoi', 'robot', 'maze'] }
 ];
+// The game after this one in the Games hub (the tab the child last used first), for "Next game" after a win.
+export function nextGameAfter(id) {
+  const secs = [...HUB].sort((a, b) => (b.key === openGamesHub.last) - (a.key === openGamesHub.last));
+  for (const sec of secs) { const list = sec.games.filter(g => GAMES[g]), k = list.indexOf(id); if (k >= 0) return list[(k + 1) % list.length]; }
+  return null;
+}
 const HUB_COLORS = ['#ff7eb8', '#ffb52e', '#5fd39a', '#3cc7e8', '#9a6bff', '#ff8a5a'];
 export function openGamesHub(game, i, onClose) {
   const p = game.heroes[i].profile;

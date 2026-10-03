@@ -137,6 +137,29 @@ export const HOWTO = {
       S('👆 SNAP!', 'Tap SNAP as fast as you can, before the uncles!', 'Bấm SNAP thật nhanh, nhanh hơn các chú!')],
     real: S('🧒🃏🧒', 'For real: share out the cards, take turns putting one down, and shout Snap when two match!', 'Chơi thật: chia bài, lần lượt đặt từng lá xuống, khi hai lá giống nhau thì hô Snap!')
   },
+  nemlon: {
+    origin: S('🇻🇳 🩴🥫', 'In southern Vietnam children stack empty cans in the lane and take turns knocking them down with a sandal (ném lon). Then everyone runs to stack them again!', 'Ở miền Nam, trẻ con chồng lon rỗng giữa hẻm rồi thay phiên lấy dép ném cho đổ. Rồi cả bọn chạy đi chồng lại!'),
+    steps: [S('⬆️↔️', 'The arrow swings left and right.', 'Mũi tên chạy qua chạy lại.'), S('👆🩴', 'Tap THROW when it points at the cans.', 'Bấm NÉM khi mũi tên chỉ đúng chồng lon.'), S('🥫💥', 'Knock them all down!', 'Ném đổ hết lon nhé!')],
+    real: S('🧒🩴🥫', 'For real: stack cans on a flat spot, stand behind a line and throw your sandal. Be careful nobody is near the cans!', 'Chơi thật: chồng lon chỗ bằng phẳng, đứng sau vạch rồi ném dép. Nhớ đừng để ai đứng gần chồng lon!')
+  },
+  oantuti: {
+    origin: S('🇻🇳 ✊✋✌️', 'Oẳn tù tì is how Vietnamese children decide who goes first. Children everywhere play it: in Australia it is called rock, paper, scissors.', 'Oẳn tù tì là cách trẻ em Việt Nam chọn ai đi trước. Trẻ em khắp nơi đều chơi: ở Úc gọi là rock, paper, scissors.'),
+    steps: [S('🎵', 'Say: oẳn tù tì, ra cái gì, ra cái này!', 'Cùng hô: oẳn tù tì, ra cái gì, ra cái này!'), S('✊ > ✌️', 'Rock breaks scissors.', 'Búa đập kéo.'), S('✌️ > ✋', 'Scissors cut paper.', 'Kéo cắt bao.'), S('✋ > ✊', 'Paper wraps rock.', 'Bao trùm búa.')],
+    real: S('🧒✊✋👧', 'For real: face a friend, shake your fist three times while you sing, then show your hand!', 'Chơi thật: đứng đối diện bạn, vừa hô vừa lắc tay ba lần, rồi ra tay!')
+  },
+  sudoku: { steps: [S('🍎🐟⭐', 'Each picture goes once in every row…', 'Mỗi hình chỉ có một lần trong mỗi hàng…'), S('⬇️', '…and once in every column.', '…và một lần trong mỗi cột.'), S('👆', 'Tap an empty square, then the picture that fits.', 'Chạm ô trống rồi chọn hình hợp.')] },
+  eggs: { steps: [S('🐔🥚', 'The hens hid their eggs in the hay.', 'Gà mái giấu trứng trong rơm.'), S('👆🥚', 'Tap the eggs to put them in the basket, and count!', 'Chạm vào trứng để bỏ vào giỏ, và đếm nhé!')] },
+  moreless: { steps: [S('🍎🍎🍎 ⚖️ 🍎', 'Look at both sides.', 'Nhìn cả hai bên.'), S('👆', 'Tap the side with more, or with less!', 'Chạm bên nhiều hơn, hay bên ít hơn!')] },
+  days: { steps: [S('📅', 'Seven days make one week.', 'Bảy ngày là một tuần.'), S('➡️', 'Find the day that comes next.', 'Tìm ngày đến tiếp theo.')] },
+  bodyparts: { steps: [S('👁️👃👂', 'Listen to the name of a part of your body.', 'Nghe tên một bộ phận cơ thể.'), S('👆', 'Tap the right picture!', 'Chạm đúng hình nhé!')] },
+  tienlen: {
+    origin: S('🇻🇳 🎴', 'Tiến Lên means "go forward". It is the favourite card game in the south of Vietnam: at Tết, families play it together all night!', 'Tiến Lên là trò đánh bài được yêu thích nhất miền Nam. Tết đến, cả nhà quây quần đánh Tiến Lên tới khuya!'),
+    steps: [S('3️⃣ ➡️ 2️⃣', '3 is the smallest card and 2 is the biggest. Hearts ♥ beat diamonds ♦, then clubs ♣, then spades ♠.', '3 nhỏ nhất, 2 lớn nhất. Cơ ♥ lớn hơn rô ♦, rồi chuồn ♣, rồi bích ♠.'),
+      S('🎴 🎴', 'Play one card, a pair, three of a kind, or a run like 5 6 7.', 'Đánh một lá, một đôi, sám cô, hay một sảnh như 5 6 7.'),
+      S('⬆️ ✋', 'Beat the table with the same kind, but higher, or Pass.', 'Chặn bài trên bàn bằng bài cùng kiểu mà lớn hơn, hoặc Bỏ lượt.'),
+      S('🏆', 'Play all your cards first to win! Stuck? Tap 💡 Hint.', 'Ai đánh hết bài trước là thắng! Bí quá thì bấm 💡 Gợi ý.')],
+    real: S('🧒🎴🧑', 'For real: deal 13 cards each to 4 players. Whoever has the 3 of spades starts!', 'Chơi thật: chia mỗi người 13 lá, 4 người chơi. Ai có 3 bích thì đánh trước!')
+  },
   dacau: {
     origin: S('🇻🇳 🏸', 'Đá cầu is played in parks and schoolyards all over Vietnam. The shuttlecock has colourful feathers.', 'Đá cầu được chơi ở công viên và sân trường khắp Việt Nam. Quả cầu có lông vũ nhiều màu.'),
     steps: [S('👆 🏸 ⬆️', 'Tap the shuttlecock to kick it up.', 'Chạm quả cầu để đá lên.'), S('🏸 🚫 ⬇️', 'Do not let it touch the ground!', 'Đừng để cầu chạm đất!'), S('1️⃣ 2️⃣ 3️⃣', 'Count your kicks!', 'Đếm số lần đá nhé!')],

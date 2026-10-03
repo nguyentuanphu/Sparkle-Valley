@@ -13,6 +13,7 @@ const Cone = (r, h, s = 10) => new THREE.ConeGeometry(r, h, s);
 const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const Tor = (r, t, a = Math.PI * 2) => new THREE.TorusGeometry(r, t, 6, 14, a);
 const H = Math.PI / 2;
+const s0 = x => Math.sign(x);
 
 const mat = toonVC({ roughness: .85 });
 function mesh(parts) { const m = new THREE.Mesh(merge(parts), mat); m.castShadow = true; return m; }
@@ -136,7 +137,79 @@ const BUILD = {
     for (const [x, z, ph] of [[.2, .3, 0], [-.2, .3, Math.PI], [.2, -.3, Math.PI], [-.2, -.3, 0]]) r.legs.push([pivot(R, [x, .5, z], [P(Cap(.11, .28), fur, [0, -.26, 0])]), ph]);
   }
 };
-const SHADOW = { puppy: .7, kitty: .6, bunny: .55, panda: .75, joey: .6, calf: .9, cow: 1.35, sheep: 1, pig: .95, unicorn: 1.35, chicken: .5, bear: 1.3 };
+Object.assign(BUILD, {
+  koala: (R, r) => {
+    const fur = '#9a9a9e', light = '#e8e6e2', nose = '#2a2a2e';
+    R.add(mesh([P(S(.24), fur, [0, .36, 0], [0, 0, 0], [1, 1.15, .95]), P(S(.15), light, [0, .34, .14], [0, 0, 0], [.9, 1.1, .5])]));
+    r.head = pivot(R, [0, .7, .06], [P(S(.2), fur, [0, 0, 0], [0, 0, 0], [1.15, 1, 1]), P(S(.07), nose, [0, -.02, .19], [0, 0, 0], [.8, 1.15, .7]), ...eyes(.08, .04, .16, .028),
+      ...[-1, 1].flatMap(s => [P(S(.12), fur, [s * .2, .12, -.02], [0, 0, 0], [1, 1, .45]), P(S(.08), light, [s * .2, .12, .01], [0, 0, 0], [1, 1, .35])])]);
+    for (const s of [-1, 1]) r.legs.push([pivot(R, [s * .16, .42, .12], [P(Cap(.06, .14), fur, [0, -.08, .04], [.6, 0, 0])]), 0, false, true]);
+    for (const s of [-1, 1]) r.legs.push([pivot(R, [s * .14, .2, .02], [P(Cap(.07, .1), fur, [0, -.1, .05])]), Math.PI]);
+    r.waddle = .08; r.slow = true;
+  },
+  platypus: (R, r) => {
+    const fur = '#6b4a32', bill = '#3a3a3e';
+    R.add(mesh([P(Cap(.13, .34), fur, [0, .15, 0], [H, 0, 0], [1.2, 1, .8]), P(Box(.32, .05, .28), fur, [0, .1, -.38])]));
+    r.head = pivot(R, [0, .17, .26], [P(S(.12), fur, [0, 0, 0], [0, 0, 0], [1.1, .85, 1]), P(Box(.2, .04, .2), bill, [0, -.02, .16], [0, 0, 0], [1, 1, 1]), ...eyes(.06, .04, .07, .022)]);
+    for (const [x, z, ph] of [[.14, .14, 0], [-.14, .14, Math.PI], [.14, -.14, Math.PI], [-.14, -.14, 0]]) r.legs.push([pivot(R, [x, .1, z], [P(Box(.1, .03, .1), bill, [s0(x) * .03, -.07, .02])]), ph]);
+    r.tail = pivot(R, [0, .1, -.28], [P(Box(.26, .04, .24), fur, [0, 0, -.12])]); r.sway = 1.2; r.waddle = .15;
+  },
+  penguin: (R, r) => {
+    const blue = '#3d5f8a', w = '#ffffff';
+    R.add(mesh([P(S(.17), blue, [0, .25, 0], [0, 0, 0], [1, 1.35, .95]), P(S(.13), w, [0, .23, .06], [0, 0, 0], [1, 1.35, .7])]));
+    r.head = pivot(R, [0, .48, .02], [P(S(.11), blue), P(Cone(.03, .1, 6), '#2a2a2e', [0, -.02, .12], [H, 0, 0]), ...eyes(.05, .03, .08, .02, '#f2f2f2'), ...eyes(.05, .03, .085, .01)]);
+    for (const s of [-1, 1]) r.legs.push([pivot(R, [s * .16, .32, 0], [P(Box(.03, .2, .09), blue, [0, -.08, 0])]), 0, false, true]);
+    for (const [x, ph] of [[.06, 0], [-.06, Math.PI]]) r.legs.push([pivot(R, [x, .05, .03], [P(Box(.07, .02, .1), '#ffb3c6', [0, -.03, .03])]), ph]);
+    r.waddle = .3;
+  },
+  emu: (R, r) => {
+    const f = '#6a5a4a', skin = '#5f86b0';
+    R.add(mesh([P(S(.32), f, [0, .95, 0], [0, 0, 0], [.85, .8, 1.25])]));
+    r.head = pivot(R, [0, 1.05, .3], [P(Cap(.05, .5), skin, [0, .3, .02]), P(S(.08), f, [0, .6, .04]), P(Cone(.03, .12, 6), '#3a3a3e', [0, .58, .14], [H, 0, 0]), ...eyes(.05, .62, .08, .018)]);
+    for (const [x, ph] of [[.1, 0], [-.1, Math.PI]]) r.legs.push([pivot(R, [x, .75, 0], [P(Cyl(.035, .03, .72, 6), '#8a7a6a', [0, -.36, 0]), P(Box(.12, .02, .16), '#8a7a6a', [0, -.72, .05])]), ph]);
+    r.tail = pivot(R, [0, .95, -.38], [P(S(.12), f, [0, 0, -.04])]); r.sway = .8;
+  },
+  turtle: (R, r) => {
+    const shell = '#5a7a4a', skin = '#8aa070', dark = '#3f5a34';
+    R.add(mesh([P(new THREE.SphereGeometry(.42, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), shell, [0, .08, 0], [0, 0, 0], [1, .55, 1.25]), ...[[0, .27, 0], [.18, .23, .15], [-.18, .23, .15], [.18, .23, -.18], [-.18, .23, -.18]].map(([x, y, z]) => P(S(.1, 8, 6), dark, [x, y, z], [0, 0, 0], [1, .35, 1])), P(Cyl(.44, .44, .06, 18), '#c9b88a', [0, .07, 0], [0, 0, 0], [1, 1, 1.25])]));
+    r.head = pivot(R, [0, .12, .52], [P(S(.11), skin, [0, .02, .06], [0, 0, 0], [.9, .8, 1.2]), ...eyes(.06, .06, .12, .022)]);
+    for (const [x, z, ph] of [[.32, .3, 0], [-.32, .3, Math.PI], [.3, -.3, Math.PI], [-.3, -.3, 0]]) r.legs.push([pivot(R, [x, .08, z], [P(S(.09, 8, 6), skin, [s0(x) * .04, -.03, 0], [0, 0, 0], [1.3, .5, 1])]), ph]);
+    r.slow = true;
+  },
+  elephant: (R, r) => {
+    const g = '#9a9aa2', d = '#7d7d86';
+    R.add(mesh([P(S(.7), g, [0, 1.35, 0], [0, 0, 0], [1, .9, 1.3])]));
+    r.head = pivot(R, [0, 1.55, .78], [P(S(.42), g), P(Cap(.11, .7), d, [0, -.55, .3], [.3, 0, 0]), P(Cone(.05, .3, 6), '#f4efe2', [.2, -.28, .3], [1.1, 0, 0]), P(Cone(.05, .3, 6), '#f4efe2', [-.2, -.28, .3], [1.1, 0, 0]), ...eyes(.2, .08, .34, .04)]);
+    for (const s of [-1, 1]) { const e = pivot(r.head, [s * .36, .05, -.08], [P(S(.38), d, [s * .12, -.05, 0], [0, 0, 0], [.25, 1, .9])]); r.ears.push(e); }
+    for (const [x, z, ph] of [[.32, .5, 0], [-.32, .5, Math.PI], [.32, -.5, Math.PI], [-.32, -.5, 0]]) r.legs.push([pivot(R, [x, .95, z], [P(Cyl(.18, .2, .95, 10), g, [0, -.47, 0]), P(Cyl(.21, .21, .06, 10), '#f4efe2', [0, -.93, .02])]), ph]);
+    r.tail = pivot(R, [0, 1.45, -.9], [P(Cap(.03, .5), d, [0, -.25, -.04])]); r.sway = 1; r.swing = true; r.slow = true;
+  },
+  crane: (R, r) => {
+    const w = '#f6f6f2', grey = '#9aa0a8', red = '#e8332a';
+    R.add(mesh([P(S(.26), grey, [0, 1.05, 0], [0, 0, 0], [.75, .7, 1.3]), P(S(.18), '#2a2a2e', [0, 1.05, -.32], [0, 0, 0], [.7, .6, 1])]));
+    r.head = pivot(R, [0, 1.15, .25], [P(Cap(.04, .55), grey, [0, .3, .05], [.15, 0, 0]), P(S(.07), red, [0, .63, .1]), P(Cone(.025, .22, 6), '#3a3a3e', [0, .6, .24], [H, 0, 0]), ...eyes(.04, .65, .13, .015)]);
+    for (const [x, ph] of [[.07, 0], [-.07, Math.PI]]) r.legs.push([pivot(R, [x, .85, 0], [P(Cyl(.022, .02, .85, 6), '#4a4a4e', [0, -.42, 0])]), ph]);
+    r.peck = true; r.slow = true;
+  },
+  bull: (R, r) => { // a brown southern bull (bò), with short horns and a hump
+    const f = '#9a5a32', d = '#6a3a1e', light = '#e8c9a0';
+    R.add(mesh([P(Cap(.3, .6), f, [0, .86, 0], [H, 0, 0]), P(S(.2), f, [0, 1.12, .26], [0, 0, 0], [1, .8, 1.2])]));
+    r.head = pivot(R, [0, .98, .55], [P(Cap(.13, .2), f, [0, -.04, .1], [H + .35, 0, 0]), P(S(.12), light, [0, -.14, .26], [0, 0, 0], [1.1, .75, .8]), ...eyes(.11, .06, .14, .03),
+      ...[-1, 1].flatMap(s => [P(Cap(.05, .1), f, [s * .2, .04, .04], [0, 0, s * 1.3], [1, 1, .5]), P(Cone(.035, .2, 6), '#efe6cf', [s * .13, .17, .02], [0, 0, s * -.9])])]);
+    for (const [x, z, ph] of [[.18, .36, 0], [-.18, .36, Math.PI], [.18, -.36, Math.PI], [-.18, -.36, 0]]) r.legs.push([pivot(R, [x, .62, z], [P(Cap(.075, .42), f, [0, -.28, 0]), P(Cyl(.075, .08, .08, 8), d, [0, -.57, 0])]), ph]);
+    r.tail = pivot(R, [0, 1.0, -.58], [P(Cap(.02, .55), f, [0, -.28, -.02]), P(S(.06), d, [0, -.58, -.02], [0, 0, 0], [1, 1.5, 1])]); r.sway = 1; r.swing = true;
+  },
+  peacock: (R, r) => {
+    const blue = '#1f5fbf', green = '#2f9a6a';
+    R.add(mesh([P(S(.22), blue, [0, .5, 0], [0, 0, 0], [.85, 1, 1.15])]));
+    r.head = pivot(R, [0, .78, .15], [P(Cap(.06, .2), blue, [0, .05, 0]), P(S(.08), blue, [0, .2, .04]), P(Cone(.02, .08, 6), '#d9c9a0', [0, .19, .13], [H, 0, 0]), ...[-1, 0, 1].map(k => P(S(.02, 6, 5), blue, [k * .03, .34, .02])), ...eyes(.04, .22, .07, .015)]);
+    const fan = [];
+    for (let i = 0; i < 13; i++) { const a = (i / 12 - .5) * 2.6; fan.push(P(Box(.12, .9, .02), green, [Math.sin(a) * .45, .45 + Math.cos(a) * .45, 0], [0, 0, -a]), P(S(.06, 8, 6), '#ffd23f', [Math.sin(a) * .82, .45 + Math.cos(a) * .82, .02]), P(S(.035, 8, 6), blue, [Math.sin(a) * .82, .45 + Math.cos(a) * .82, .05])); }
+    r.tail = pivot(R, [0, .5, -.22], fan); r.tail.rotation.x = -.25; r.sway = .7;
+    for (const [x, ph] of [[.07, 0], [-.07, Math.PI]]) r.legs.push([pivot(R, [x, .3, 0], [P(Cyl(.02, .02, .3, 5), '#c9b08a', [0, -.15, 0])]), ph]);
+  }
+});
+const SHADOW = { bull: 1.35, koala: .6, platypus: .6, penguin: .45, emu: .9, turtle: 1, elephant: 2, crane: .8, peacock: .8, puppy: .7, kitty: .6, bunny: .55, panda: .75, joey: .6, calf: .9, cow: 1.35, sheep: 1, pig: .95, unicorn: 1.35, chicken: .5, bear: 1.3 };
 
 const LIVE = new Set();
 export function animalModel(kind) { const k = BUILD[kind] ? kind : 'puppy'; return make(k, BUILD[k], SHADOW[k] || .8); }

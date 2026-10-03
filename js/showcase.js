@@ -11,6 +11,7 @@ import { el } from './util.js';
 const SIZE = {
   opera: 22, harbour: 30, uluru: 58, banana: 12, bondi: 10, lighthouse: 16, turtle: 10, onepillar: 10, chuacau: 12, benthanh: 14,
   halong: 24, hue: 20, myson: 16, phongnha: 18, trangan: 16, reef: 14, sisters: 16, exhibition: 20, kakadu: 18,
+  marble: 16, hoian: 16, thehuc: 18, cairang: 18, apostles: 20, storybridge: 24, sydneytower: 24, wheel: 18, lighthouse: 16, bnclock: 14, flinders: 16, cathedral: 16, postoffice: 16, dragonbridge: 26, goldenbridge: 20,
   forbidden: 20, heaven: 16, terracotta: 14, potala: 18, qutub: 22, redfort: 20, konark: 14, hampi: 16, mahabodhi: 20
 };
 export const landmarkCentre = lm => {
@@ -71,10 +72,29 @@ export function createShowcase(G) {
     skip.onclick = e => { e.stopPropagation(); done(); };
     G._showDone = done;
   });
+  // the view from the top of a tall landmark (Sydney Tower, the Wheel of Brisbane…): the camera rides up and
+  // turns slowly all the way round, looking out over the city and the land around it
+  G.lookout = (h, x, y, z, title) => new Promise(res => {
+    if (!h || G.show) return res();
+    const wasPaused = G.paused; G.paused = true;
+    const skip = el('button', 'sc-skip', '⏭️ ' + T('Back down', 'Xuống thôi'));
+    const cap = el('div', 'sc-cap', title);
+    document.body.append(skip, cap); document.body.classList.add('showcasing');
+    const done = () => { if (!G.show) return; G.show = null; skip.remove(); cap.remove(); document.body.classList.remove('showcasing'); G.paused = wasPaused; res(); };
+    G.show = { i: h.i, look: { x, y, z }, a0: Math.atan2(-x, -z), t: 0, len: 22 };
+    skip.onclick = e => { e.stopPropagation(); done(); };
+    G._showDone = done;
+  });
   // called from the render loop: positions the camera while a fly-around is running
   G.showcaseCam = (i, h, dt) => {
     const S = G.show; if (!S || S.i !== i) return false;
     S.t += dt; if (S.t > S.len) { G._showDone(); return false; }
+    if (S.look) { // riding up for the first 3 s, then turning right round
+      const L = S.look, up = Math.min(1, S.t / 3), e = up * up * (3 - 2 * up), a = S.a0 + Math.max(0, S.t - 3) / (S.len - 3) * Math.PI * 2;
+      h.cam.position.set(L.x, L.y - 14 * (1 - e), L.z);
+      h.cam.lookAt(L.x + Math.sin(a) * 40, L.y - 10 - 4 * (1 - e), L.z + Math.cos(a) * 40); h.camPos.copy(h.cam.position);
+      return true;
+    }
     const c = S.c, k = S.t / S.len, a = S.a0 + (k - .5) * 1.2, D = camDist(c), H = camHeight(c);
     h.cam.position.set(c.x + Math.sin(a) * D, H, c.z + Math.cos(a) * D);
     const gy = heightAt(h.cam.position.x, h.cam.position.z) + 1.5; if (h.cam.position.y < gy) h.cam.position.y = gy;

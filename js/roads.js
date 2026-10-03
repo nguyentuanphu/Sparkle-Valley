@@ -213,7 +213,7 @@ export function createRoads(G) {
   const mats = { asphalt: new THREE.MeshToonMaterial({ map: roadTexture('asphalt'), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), dirt: new THREE.MeshToonMaterial({ map: roadTexture('dirt'), polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }) };
   // the Dragon Bridge's deck first, so the road is laid on it rather than down in the river
   { const B = DRAGON; world.platforms.push({ x0: B.x0 - 2, x1: B.x1 + 2, z0: B.z - B.w / 2, z1: B.z + B.w / 2, y: B.h + .1 }); }
-  for (const R of ROADS) { const m = new THREE.Mesh(ribbon(R, world), mats[R.kind]); m.receiveShadow = true; scene.add(m); }
+  for (const R of ROADS) { const m = new THREE.Mesh(ribbon(R, world), mats[R.kind]); m.receiveShadow = true; m.userData.road = true; scene.add(m); }
   // ---------- Đà Nẵng's Dragon Bridge (Cầu Rồng): a golden dragon arching along the road ----------
   {
     const B = DRAGON, len = B.x1 - B.x0, y = B.h, hw = B.w / 2, gold = '#f2c230';

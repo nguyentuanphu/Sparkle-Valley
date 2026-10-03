@@ -1,6 +1,6 @@
 // Two Homes Street (Phố Hai Quê): a neighbourhood where Bà Rịa meets a Sydney suburb.
 // On one side: narrow Vietnamese tube houses with balconies and water tanks, a French-style villa and
-// Cô Tám's sugarcane juice cart; Bác 2, Bác 3 and Bác 4 play cards on the footpath. On the other side: an Australian
+// Cô Tám's sugarcane juice cart; Bác 2, Bác 3 and Bác 4 play cards, and anh Ba and Phong play Tiến Lên, under the gum tree by the gate. On the other side: an Australian
 // weatherboard house with a front porch, a brick house, a Hills hoist, and the park where kids play
 // folk games. Built from simple flat-coloured shapes in the "summer afternoon" style.
 import { THREE, toon, toonVC, P, merge, sprite, outline } from './gfx.js';
@@ -9,7 +9,7 @@ import { T, nm, onLang, registerName } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
 import { heightAt, TOWN, PLAYGROUND } from './world.js';
-import { buildAvatar } from './avatar.js';
+import { buildAvatar, nameAvatar } from './avatar.js';
 import { dist2 } from './util.js';
 
 export const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
@@ -114,7 +114,7 @@ export function raisedHouse(w = 7.5, d = 7) {
 }
 
 export function createTown(G) {
-  const { scene, world } = G, y0 = TOWN.h, RZ = TOWN.roadZ, N = 40, S = 54; // front lines of the north and south houses
+  const { scene, world } = G, y0 = TOWN.h, RZ = TOWN.roadZ, N = 38, S = 54; // front lines of the north and south houses
   const mat = toonVC();
   const put = (geo, x, z, rot = 0, collide = null) => {
     const m = new THREE.Mesh(geo, mat); m.position.set(x, heightAt(x, z), z); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; scene.add(m);
@@ -129,7 +129,7 @@ export function createTown(G) {
   // ---------- the road, footpaths, lines and a zebra crossing ----------
   const g = [], x0 = 6, x1 = 44, L = x1 - x0, cx = (x0 + x1) / 2;
   g.push(P(Box(L, .06, 7), '#b4b9bc', [cx, .03, RZ]));
-  g.push(P(Box(L, .07, 3.6), '#e8d5a8', [cx, .035, RZ - 5.3]), P(Box(L, .07, 3.6), '#e8d5a8', [cx, .035, RZ + 5.3]));
+  g.push(P(Box(L, .07, 5.5), '#e8d5a8', [cx, .035, RZ - 6.25]), P(Box(L, .07, 3.6), '#e8d5a8', [cx, .035, RZ + 5.3])); // the north footpath is wide: shop fronts open onto it
   g.push(P(Box(L, .08, .16), '#f6f1e4', [cx, .05, RZ - 3.2]), P(Box(L, .08, .16), '#f6f1e4', [cx, .05, RZ + 3.2]));
   for (let x = x0 + 2; x < x1 - 2; x += 4) if (Math.abs(x - 28) > 3) g.push(P(Box(1.8, .08, .16), '#f6f1e4', [x, .05, RZ]));
   for (let k = -3; k <= 3; k++) g.push(P(Box(.6, .08, 5.6), '#f6f1e4', [28 + k * 1.1, .055, RZ]));
@@ -146,22 +146,23 @@ export function createTown(G) {
   const houseOld = (b, x, front, south, kind) => { house(b, x, front, south); const m = scene.children[scene.children.length - 1]; outline(m, .03, '#4a3a3f'); if (kind) world.houses.push({ x, z: south ? front + b.d / 2 : front - b.d / 2, rot: south ? Math.PI : 0, d: b.d, kind }); };
   // Bà Rịa side (north): tube houses with shops downstairs, then the French villa
   // (x 12–18 is the Huệ Nghi shop and x 17.5–23 on the south side is house number 8, both built in js/cities.js)
-  place(houseTube({ wall: '#f6c8a8', floors: 3, d: 7.4, sign: ['Bánh Mì', 'Bánh Mì'] }), 20.1, N);
-  place(houseTube({ wall: '#f6e09a', floors: 2, d: 7.4, sign: ['Coffee', 'Cà Phê'] }), 24.6, N);
-  const villa = Object.assign(houseVilla(), { kind: 'villa' }); place(villa, 33.5, N - 1.2);
-  houseOld(brickHouse(), 45, N - 2.5, false, 'brick');
+  place(houseTube({ wall: '#f6c8a8', floors: 3, d: 7.4, sign: ['Sweet soup · Chè', 'Chè'] }), 20.1, N);
+  place(houseTube({ wall: '#f6e09a', floors: 2, d: 7.4, sign: ['Sand & Stone', 'Cát · Đá'] }), 24.6, N);
+  const villa = Object.assign(houseVilla(), { kind: 'villa' }); place(villa, 32.3, N - 1.2);
+  // Bác Sơn's house: west of the bridge tower, with its door and garden path open to the footpath
+  houseOld(brickHouse(7, 8), 41.6, N - 2.5, false, 'brick');
   // Sydney side (south)
   houseOld(raisedHouse(), 13.5, S + 1.5, true, 'raised');
   place(Object.assign(houseCottage({ yard: false }), { kind: 'cottage' }), 45, S + 4.5, true);
   // garden walls and fences
   const fence = [];
-  fence.push(P(Box(10, 1, .25), '#f6ead0', [33.5, .5, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [32.3, .8, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [34.7, .8, N - .6]));
+  fence.push(P(Box(10, 1, .25), '#f6ead0', [32.3, .5, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [31.1, .8, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [33.5, .8, N - .6]));
   for (let k = 0; k < 12; k++) if (k < 5 || k > 6) fence.push(P(Box(.12, .9, .12), '#ffffff', [40.6 + k * .8, .45, S + .6]));
   fence.push(P(Box(3.6, .1, .1), '#ffffff', [42.4, .75, S + .6]), P(Box(3.6, .1, .1), '#ffffff', [47.6, .75, S + .6]));
   fence.push(P(Box(.25, 1, .25), '#c0392b', [42.3, .5, S + .4]), P(Box(.5, .4, .4), '#c0392b', [42.3, 1.1, S + .4]));       // letterbox
-  fence.push(P(Box(3.5, .7, .3), '#b5654a', [42.6, .35, N - .5]), P(Box(3.5, .7, .3), '#b5654a', [47.4, .35, N - .5]));   // low brick fence with a gap for the path
+  fence.push(P(Box(1.3, .7, .3), '#b5654a', [38.75, .35, N - .5]), P(Box(3.9, .7, .3), '#b5654a', [43.15, .35, N - .5]));   // low brick fence with a gap for the path to Bác Sơn's door
   const fm = new THREE.Mesh(merge(fence), mat); fm.position.y = y0; fm.castShadow = true; scene.add(fm);
-  world.boxes.push({ x0: 28.5, x1: 32.1, z0: N - .8, z1: N - .4 }, { x0: 34.9, x1: 38.5, z0: N - .8, z1: N - .4 });
+  world.boxes.push({ x0: 27.3, x1: 30.9, z0: N - .8, z1: N - .4 }, { x0: 33.7, x1: 37.3, z0: N - .8, z1: N - .4 });
 
   // ---------- street lamps and power poles with sagging wires ----------
   const poles = [];
@@ -171,7 +172,7 @@ export function createTown(G) {
     pp.push(P(Cyl(.16, .2, 9, 6), '#7d7b70', [x, 4.5, z]), P(Box(1.6, .12, .12), '#6f6d64', [x, 8.4, z]));
     world.colliders.push({ x, z, r: .35 });
   }
-  for (const [x, side] of [[16, -1], [29, -1], [40, -1], [22, 1], [36, 1]]) {
+  for (const [x, side] of [[16, -1], [29, -1], [38, -1], [22, 1], [36, 1]]) {
     const z = side < 0 ? N + .9 : S - 1.4;
     pp.push(P(Cyl(.09, .12, 6.2, 6), '#6f7a66', [x, 3.1, z]));
     pp.push(P(new THREE.TorusGeometry(.7, .05, 4, 10, Math.PI * .7), '#6f7a66', [x, 6.2, z + side * -.6], [0, Math.PI / 2, 0]));
@@ -188,7 +189,7 @@ export function createTown(G) {
   for (let k = 0; k < poles.length - 1; k++) for (const off of [-.6, .6]) wire(poles[k].clone().setX(poles[k].x).add(new THREE.Vector3(0, 0, off)), poles[k + 1].clone().add(new THREE.Vector3(0, 0, off)), 1.1);
   // a wire across the road to the tube houses
   wire(poles[1].clone(), new THREE.Vector3(20.1, y0 + 8.6, N), 1.4);
-  wire(poles[3].clone(), new THREE.Vector3(33.5, y0 + 6.2, N - 1.4), 1.2);
+  wire(poles[3].clone(), new THREE.Vector3(32.3, y0 + 6.2, N - 1.4), 1.2);
 
   // ---------- trees: jacaranda and gum trees (Sydney), banana and star-fruit trees (Bà Rịa) ----------
   const tree = (x, z, kind) => {
@@ -199,8 +200,8 @@ export function createTown(G) {
     if (kind === 'frangipani') { t.push(P(Cyl(.14, .22, 2, 6), '#8a7a6a', [0, 1, 0])); [[0, 2.4, 0, 1], [.7, 2.2, .3, .7]].forEach(([a, b, c, r]) => t.push(P(new THREE.IcosahedronGeometry(r, 1), '#4f9a62', [a, b, c]))); for (let k = 0; k < 8; k++) t.push(P(new THREE.SphereGeometry(.12, 5, 4), '#fff6dc', [Math.cos(k) * .7, 2.9 + (k % 3) * .1, Math.sin(k) * .7])); }
     put(merge(t), x, z); world.colliders.push({ x, z, r: kind === 'banana' ? .4 : .5 });
   };
-  tree(19.5, 64.5, 'jacaranda'); tree(37, 72, 'jacaranda'); tree(50, 36, 'gum'); tree(51, 66, 'gum'); tree(9, 40, 'gum');
-  tree(12, 38, 'banana'); tree(27.2, 36, 'banana'); tree(39.5, 37, 'frangipani'); tree(18, 71, 'frangipani');
+  tree(19.5, 64.5, 'jacaranda'); tree(37, 72, 'jacaranda'); tree(50, 36, 'gum'); tree(51, 66, 'gum'); tree(4.6, 37, 'gum');
+  tree(12, 31, 'banana'); tree(10.4, 32.6, 'banana'); tree(47.6, 31, 'frangipani'); tree(18, 71, 'frangipani');
 
   // ---------- little things that make it feel lived in ----------
   const bits = [];
@@ -209,7 +210,7 @@ export function createTown(G) {
   bits.push(...scooter(14.3, N + 2.4, '#d9483a', 0), ...scooter(15.5, N + 2.6, '#3a78c8', .1), ...scooter(25.6, N + 2.8, '#f2f2f2', -.1));
   // wheelie bins on the kerb (red lid for rubbish, yellow lid for recycling)
   [[41.3, '#d9483a'], [42.2, '#e8c03a']].forEach(([x, lid]) => bits.push(P(Box(.7, 1, .7), '#3c5a44', [x, .5, S - .2]), P(Box(.76, .1, .8), lid, [x, 1.05, S - .2])));
-  [[40.5, '#d9483a']].forEach(([x, lid]) => bits.push(P(Box(.7, 1, .7), '#3c5a44', [x, .5, N + .3]), P(Box(.76, .1, .8), lid, [x, 1.05, N + .3])));
+  [[36.6, '#d9483a']].forEach(([x, lid]) => bits.push(P(Box(.7, 1, .7), '#3c5a44', [x, .5, N + .3]), P(Box(.76, .1, .8), lid, [x, 1.05, N + .3])));
   // Hills hoist clothes line in the backyard
   const hx = 45, hz = S + 17.5;
   bits.push(P(Cyl(.06, .06, 2.4, 6), '#b8bcbf', [hx, 1.2, hz]));
@@ -225,11 +226,35 @@ export function createTown(G) {
   [34.3, 35.7].forEach(x => bits.push(P(Box(.04, 1.6, .04), '#666', [x, 1.7, 70.5]), P(Box(.5, .06, .25), '#3a78c8', [x, .9, 70.5])));
   bits.push(P(Box(.8, .1, 3.2), '#ffd23f', [24, 1, 72], [-.55, 0, 0]), P(Box(.8, 2, .8), '#3cc7e8', [24, 1, 70.2]), P(Box(.06, 2.4, .06), '#e8e8e8', [23.6, 1.2, 70.2]), P(Box(.06, 2.4, .06), '#e8e8e8', [24.4, 1.2, 70.2]));
   world.colliders.push({ x: 35, z: 70.5, r: 1.5 }, { x: 24, z: 70.8, r: 1.2 });
+  // chú Thuận and mợ Phương's sand and stone shop: a heap of yellow sand and one of grey stones by the door, and sacks
+  bits.push(P(new THREE.ConeGeometry(.5, .55, 9), '#e2c27a', [22.85, .27, N + .65]), P(new THREE.DodecahedronGeometry(.42, 0), '#8f8f8a', [26.35, .25, N + .65], [0, .4, 0], [1, .6, 1]));
+  [[23.3, .35], [26, .25]].forEach(([x, dz]) => bits.push(P(Box(.45, .3, .3), '#e9e2cc', [x, .15, N + .3 + dz])));
+  world.colliders.push({ x: 22.85, z: N + .65, r: .5 }, { x: 26.35, z: N + .65, r: .45 });
+  // O Thương and dượng Dũng's baby clothes, on a rack under the raised house
+  bits.push(P(Box(.06, 1.5, .06), '#d0d0d0', [15.6, .75, S + 1.1]), P(Box(.06, 1.5, .06), '#d0d0d0', [17, .75, S + 1.1]), P(Box(1.5, .05, .05), '#d0d0d0', [16.3, 1.48, S + 1.1]));
+  ['#ff9ec4', '#8fd3ff', '#ffe27a', '#b9f0a8'].forEach((c, k) => bits.push(P(Box(.3, .38, .04), c, [15.8 + k * .33, 1.2, S + 1.1]), P(Box(.42, .1, .045), c, [15.8 + k * .33, 1.36, S + 1.1])));
+  world.colliders.push({ x: 16.3, z: S + 1.1, r: .7 });
+  // cậu Tâm's little truck, parked at the kerb outside the villa (the family run trucks and sell phones)
+  {
+    const t = [P(Box(3.2, 1.3, 1.5), '#3a78c8', [-.5, 1.05, 0]), P(Box(1.2, 1.1, 1.45), '#f2f2f2', [1.6, .95, 0]), P(Box(.05, .5, 1.2), '#9fd3e8', [2.21, 1.2, 0]), P(Box(4.4, .2, 1.4), '#4a4a4a', [.1, .35, 0])];
+    [[-1.4, .75], [-1.4, -.75], [1.5, .75], [1.5, -.75]].forEach(([x, z]) => t.push(P(Cyl(.32, .32, .2, 12), '#2f3336', [x, .32, z], [Math.PI / 2, 0, 0])));
+    const tm = new THREE.Mesh(merge(t), mat); tm.position.set(36.2, y0, 44.5); tm.castShadow = true; scene.add(tm);
+    world.boxes.push({ x0: 33.9, x1: 38.5, z0: 43.7, z1: 45.3 });
+  }
   const bm = new THREE.Mesh(merge(bits), mat); bm.position.y = y0; bm.castShadow = true; scene.add(bm);
+  // shop boards in both languages
+  const board = (text, x, y, z, rot = 0, w = 2.4) => {
+    const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g2 = c.getContext('2d');
+    const draw = () => { g2.fillStyle = '#c0392b'; g2.fillRect(0, 0, 256, 64); g2.strokeStyle = '#ffd23f'; g2.lineWidth = 4; g2.strokeRect(3, 3, 250, 58); g2.font = 'bold 30px Fredoka, "Baloo 2", sans-serif'; g2.fillStyle = '#fff'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillText(T(text[0], text[1]), 128, 34, 238); };
+    draw(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; onLang(() => { draw(); t.needsUpdate = true; });
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w / 4), new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide })); m.position.set(x, y, z); m.rotation.y = rot; scene.add(m);
+  };
+  board(['Phones · Trucks', 'Điện thoại · Xe tải'], 32.3, y0 + 1.55, N - .45, 0, 2.6);
+  board(['Baby clothes', 'Quần áo em bé'], 16.3, y0 + 1.95, S + 1.1, Math.PI, 1.8);
   world.boxes.push({ x0: 40.1, x1: 42.6, z0: S - .6, z1: S + .2 });
 
   // ---------- Cô Tám's sugarcane juice cart (nước mía) ----------
-  const cart = [], kx = 24.6, kz = N + 1.5;
+  const cart = [], kx = 28.9, kz = N + 1.6;
   cart.push(P(Box(2.4, .9, 1), '#3a7fc2', [0, .75, 0]), P(Box(2.4, .9, .9), '#d6eef6', [0, 1.65, -.05]), P(Box(2.5, .08, 1.1), '#f4f4f4', [0, 2.12, 0]));
   cart.push(P(Cyl(.32, .32, .1, 12), '#2f3336', [-.9, .32, .55], [Math.PI / 2, 0, 0]), P(Cyl(.32, .32, .1, 12), '#2f3336', [.9, .32, .55], [Math.PI / 2, 0, 0]));
   cart.push(P(Box(.7, .6, .6), '#c8ccd0', [.7, 2.45, 0]), P(Cyl(.32, .32, .1, 12), '#8a9095', [.7, 2.5, .36], [Math.PI / 2, 0, 0]));
@@ -238,18 +263,21 @@ export function createTown(G) {
   for (let k = 0; k < 3; k++) cart.push(P(Cyl(.09, .07, .25, 8), '#f3e9a8', [-.5 + k * .3, 2.3, .3]));
   put(merge(cart), kx, kz); world.colliders.push({ x: kx, z: kz, r: 1.3 });
   const stools = [];
-  [[-2, 1.2, '#e0453a'], [2.1, 1.3, '#3a78c8'], [2.7, .3, '#e0453a']].forEach(([dx, dz, c]) => stools.push(P(Cyl(.22, .26, .4, 8), c, [kx + dx, .2, kz + dz])));
-  stools.push(P(Box(.6, .45, .6), '#3a78c8', [kx + 2.6, .22, kz + 1.4]));
-  // card table on the footpath in front of the second tube house
-  const cxT = 20.1, czT = N + 2.1;
-  stools.push(P(Box(1.2, .5, .9), '#8a5a3b', [cxT, .25, czT]), P(Box(1.3, .05, 1), '#a07048', [cxT, .52, czT]));
-  [[-1, 0], [1, 0], [0, -.9], [0, .9]].forEach(([dx, dz], k) => stools.push(P(Cyl(.2, .24, .35, 8), k % 2 ? '#e0453a' : '#3a78c8', [cxT + dx, .17, czT + dz])));
+  [[-1.7, 1.3, '#e0453a'], [1.6, 1.4, '#3a78c8'], [2, .4, '#e0453a']].forEach(([dx, dz, c]) => stools.push(P(Cyl(.22, .26, .4, 8), c, [kx + dx, .2, kz + dz])));
+  stools.push(P(Box(.6, .45, .6), '#3a78c8', [kx + 1.9, .22, kz + 1.9]));
   const sm = new THREE.Mesh(merge(stools), mat); sm.position.y = y0; sm.castShadow = true; scene.add(sm);
-  world.colliders.push({ x: cxT, z: czT, r: 1.6 });
-  // playing cards fanned on the table
-  const cardsG = []; for (let k = 0; k < 6; k++) cardsG.push(P(Box(.18, .01, .26), k % 2 ? '#ffffff' : '#f4f0e6', [cxT - .3 + k * .12, .56 + k * .002, czT + (k % 2) * .1], [0, k * .4, 0]));
-  cardsG.push(P(Box(.3, .02, .4), '#c0392b', [cxT + .35, .56, czT - .2]));
-  const cm = new THREE.Mesh(merge(cardsG), mat); cm.position.y = y0; scene.add(cm);
+  // the card corner: two low tables under the gum tree by the street's gate, off the footpath so it stays clear.
+  // Bác 2, Bác 3 and Bác 4 play Snap at one; anh Ba and Phong play Tiến Lên (southern style) at the other.
+  const cardTable = (cx, cz) => {
+    const t = [P(Box(1.2, .5, .9), '#8a5a3b', [0, .25, 0]), P(Box(1.3, .05, 1), '#a07048', [0, .52, 0]), P(Box(1.5, .02, 1.2), '#2f7a4a', [0, .555, 0])];
+    [[-1, 0], [1, 0], [0, -.9], [0, .9]].forEach(([dx, dz], k) => t.push(P(Cyl(.2, .24, .35, 8), k % 2 ? '#e0453a' : '#3a78c8', [dx, .17, dz])));
+    for (let k = 0; k < 6; k++) t.push(P(Box(.18, .01, .26), k % 2 ? '#ffffff' : '#f4f0e6', [-.3 + k * .12, .57 + k * .002, (k % 2) * .1], [0, k * .4, 0]));
+    t.push(P(Box(.3, .02, .4), '#c0392b', [.35, .57, -.2]));
+    const m = new THREE.Mesh(merge(t), mat); m.position.set(cx, heightAt(cx, cz), cz); m.castShadow = true; scene.add(m);
+    world.colliders.push({ x: cx, z: cz, r: 1.6 });
+  };
+  const cxT = 8.4, czT = 40.2, cxL = 8.6, czL = 35.2;
+  cardTable(cxT, czT); cardTable(cxL, czL);
 
   // ---------- people ----------
   const people = [];
@@ -265,8 +293,13 @@ export function createTown(G) {
     person(L2('shirt', '#ffffff', '#2a2a2a', 'short'), cxT - 1, czT, Math.PI / 2, true),
     person(L2('tunic', '#5b7fbf', '#8a8a8a', 'short'), cxT + 1, czT, -Math.PI / 2, true),
     person(L2('aodai', '#7a4a8a', '#cfcfcf', 'buns'), cxT, czT - .9, 0, true),
-    person(L2('hoodie', '#ff9f43', '#1d1412', 'spiky', 'cap'), cxT, czT + .9, Math.PI, true)
+    person(L2('hoodie', '#ff9f43', '#1d1412', 'spiky', 'cap'), cxT, czT + .9, Math.PI, true),
+    // the Tiến Lên table: anh Ba and his friend Phong (the stool facing the street is for the child)
+    person(L2('shirt', '#2f7a4a', '#1d1412', 'short'), cxL - 1, czL, Math.PI / 2, true),
+    person(L2('hoodie', '#3a78c8', '#1d1412', 'spiky'), cxL + 1, czL, -Math.PI / 2, true)
   ];
+  players[5].root.scale.setScalar(.82);
+  ['Bác 2', 'Bác 3', 'Bác 4', 'Bi', 'Anh Ba', 'Phong'].forEach((n, k) => nameAvatar(players[k], n)); nameAvatar(sau, 'Cô Tám');
   // teenagers kicking a shuttlecock (đá cầu) in the park
   const ring = [[29, 67.5], [32, 66], [31.5, 69.5]];
   const teens = ring.map(([x, z], k) => person(L2(['shirt', 'overalls', 'dress'][k], ['#3cc7e8', '#5fd39a', '#ff7eb8'][k], '#1d1412', ['spiky', 'short', 'ponytail'][k], 'none', '#e0aa80'), x, z, 0));
@@ -287,7 +320,9 @@ export function createTown(G) {
   };
   tag('Cô Tám 🥤', kx, y0 + 2.6, kz - 1.1);
   // the card players: Bác 2, Bác 3 and Bác 4 (and Bi from the villa watching)
-  tag('Bác 2', cxT - 1, y0 + 2.05, czT); tag('Bác 3', cxT + 1, y0 + 2.05, czT); tag('Bác 4', cxT, y0 + 2.35, czT - .9);
+  const yT = heightAt(cxT, czT), yL = heightAt(cxL, czL);
+  tag('Bác 2', cxT - 1, yT + 2.05, czT); tag('Bác 3', cxT + 1, yT + 2.05, czT); tag('Bác 4', cxT, yT + 2.35, czT - .9);
+  tag('Anh Ba', cxL - 1, yL + 2.05, czL); tag('Phong', cxL + 1, yL + 1.8, czL);
   tag('Anh Tuấn 🏸', 30.8, y0 + 2.6, 67.7);
   const bubble = sprite('💬', .9); bubble.visible = false; scene.add(bubble);
   const CHATTER = ['🃏', '😆', '🎉', '🤔', '💬'];
@@ -295,13 +330,14 @@ export function createTown(G) {
   // ---------- things to do ----------
   const I = (id, x, z, r, icon, label, act) => G.interactables.push({ id, x, z, r, icon, label, act, bubble: icon });
   I('nuocmia', kx, kz + 1.8, 3, '🥤', () => T('Sugarcane juice', 'Nước mía'), h => G.townTalk(h, 'sau'));
-  I('cards', cxT, czT + 1.8, 3, '🃏', () => T('Card game', 'Đánh bài'), h => G.townTalk(h, 'tu'));
+  I('cards', cxT + 1.9, czT + .4, 2.6, '🃏', () => T('Card game', 'Đánh bài'), h => G.townTalk(h, 'tu'));
+  I('tienlen', cxL + 1.9, czL + .4, 2.6, '🎴', () => T('Tiến Lên with anh Ba and Phong', 'Tiến Lên với anh Ba và Phong'), h => G.townTalk(h, 'tienlen'));
   I('dacau', 30.8, 66, 3.2, '🏸', () => T('Shuttlecock kicking', 'Đá cầu'), h => G.townTalk(h, 'tuan'));
 
   // ---------- life: a sugarcane press turning, card players chatting, the shuttlecock flying ----------
   let hop = 0, from = 0, to = 1, chatT = 2;
   world.updaters.push((dt, t) => {
-    if (!G.heroes.some(h => dist2(h.pos.x, h.pos.z, 30, 52) < 70)) return;
+    if (!G.heroes.some(h => dist2(h.pos.x, h.pos.z, 28, 50) < 75)) return;
     sau.armR.rotation.x = -1 + Math.sin(t * 3) * .5; sau.rig.position.y = Math.sin(t * 2) * .02;
     players.forEach((A, k) => { A.armR.rotation.x = -.9 + Math.sin(t * 1.3 + k * 2) * .3; A.head && (A.head.rotation.y = Math.sin(t * .7 + k) * .3); });
     // shuttlecock: arcs from one teen to the next; whoever receives it kicks
@@ -310,7 +346,7 @@ export function createTown(G) {
     const a = ring[from], b = ring[to], hgt = Math.sin(hop * Math.PI) * 3.2;
     cau.position.set(a[0] + (b[0] - a[0]) * hop, y0 + .6 + hgt, a[1] + (b[1] - a[1]) * hop); cau.rotation.z = hop * 6;
     chatT -= dt;
-    if (chatT < 0) { chatT = 2.5 + Math.random() * 3; const A = players[Math.floor(Math.random() * 4)]; bubble.material = sprite(CHATTER[Math.floor(Math.random() * CHATTER.length)]).material; bubble.position.copy(A.root.position).add(new THREE.Vector3(0, 2, 0)); bubble.visible = true; setTimeout(() => { bubble.visible = false; }, 1400); }
+    if (chatT < 0) { chatT = 2.5 + Math.random() * 3; const A = players[Math.floor(Math.random() * players.length)]; bubble.material = sprite(CHATTER[Math.floor(Math.random() * CHATTER.length)]).material; bubble.position.copy(A.root.position).add(new THREE.Vector3(0, 2, 0)); bubble.visible = true; setTimeout(() => { bubble.visible = false; }, 1400); }
   });
   return { villa };
 }
