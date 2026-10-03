@@ -116,6 +116,10 @@ function riverDist(x, z) {
 const flat = (h, x, z, c, r, fall, target) => lerp(h, target, 1 - smooth(r, r + fall, dist2(x, z, c.x, c.z)));
 
 // Height of the ground at (x, z). Used for the mesh and for walking, so they always agree.
+// The level ground round every village, town and city reaches WIDE metres further than the places themselves, so
+// there is always room to add new houses and buildings. It is switched on by widenFlatLand() once the whole world is
+// built, so everything already there keeps exactly its place (only lifted or lowered onto the new ground).
+let WIDE = 0;
 export function heightAt(x, z) {
   let h = 5 + fbm(x * .011, z * .011, 4) * 11 + fbm(x * .05 + 3, z * .05, 2) * 1.2;
   const mtn = smooth(-55, -165, z);
@@ -130,17 +134,17 @@ export function heightAt(x, z) {
     const w = smooth(.32, .16, across) * (1 - smooth(80, 98, dp));
     h = lerp(h, lerp(PLATEAU.h, Math.max(base, 4), smooth(PLATEAU.r, 92, dp)), w);
   }
-  h = flat(h, x, z, VILLAGE, VILLAGE.r, 16, VILLAGE.h);
-  h = flat(h, x, z, HOME, HOME.r, 16, HOME.h);
+  h = flat(h, x, z, VILLAGE, VILLAGE.r + WIDE, 16, VILLAGE.h);
+  h = flat(h, x, z, HOME, HOME.r + WIDE * .8, 16, HOME.h);
   h = flat(h, x, z, PLAYGROUND, PLAYGROUND.r, 12, PLAYGROUND.h);
-  h = flat(h, x, z, CHINA, CHINA.r, 18, CHINA.h);
-  h = flat(h, x, z, INDIA, INDIA.r, 18, INDIA.h);
+  h = flat(h, x, z, CHINA, CHINA.r + WIDE, 18, CHINA.h);
+  h = flat(h, x, z, INDIA, INDIA.r + WIDE, 18, INDIA.h);
   h = flat(h, x, z, PADDIES, PADDIES.r, 12, PADDIES.h + (Math.floor((z - PADDIES.z) / 9) * .35));
   h = flat(h, x, z, BAMBOO, BAMBOO.r - 10, 20, 5 + fbm(x * .03, z * .03, 2) * 2);
   const dl = dist2(x, z, LAKE.x, LAKE.z);
   h = lerp(h, -7, 1 - smooth(LAKE.r * .55, LAKE.r, dl));
   h = lerp(h, Math.min(h, 1.2), 1 - smooth(LAKE.r, LAKE.r + 14, dl));
-  for (const F of FLATS) { const ox = Math.max(F.x0 - x, 0, x - F.x1), oz = Math.max(F.z0 - z, 0, z - F.z1); if (ox < 12 && oz < 12) h = lerp(h, F.h, 1 - smooth(0, 12, Math.hypot(ox, oz))); }
+  for (const F of FLATS) { const ox = Math.max(F.x0 - WIDE - x, 0, x - F.x1 - WIDE), oz = Math.max(F.z0 - WIDE - z, 0, z - F.z1 - WIDE), fall = WIDE ? 16 : 12; if (ox < fall && oz < fall) h = lerp(h, F.h, 1 - smooth(0, fall, Math.hypot(ox, oz))); }
   for (const L of LOTS) { // a level plot, easing back to the hillside over 4 m
     const dx = x - L.x, dz = z - L.z; if (Math.abs(dx) > 16 || Math.abs(dz) > 16) continue;
     const a = Math.abs(dx * Math.cos(L.rot) - dz * Math.sin(L.rot)) - L.w / 2, b = Math.abs(dx * Math.sin(L.rot) + dz * Math.cos(L.rot)) - L.d / 2, dd = Math.hypot(Math.max(a, 0), Math.max(b, 0));
@@ -288,6 +292,8 @@ export const LEAFIES = LEAFY_SPOTS.map(([kind, x, z], i) => ({ id: 'lf' + i, kin
   }
 }
 
+// the ground as it was before the level land was widened (the same while the world is being built)
+export function oldHeightAt(x, z) { const w = WIDE; WIDE = 0; try { return heightAt(x, z); } finally { WIDE = w; } }
 export function createWorld(scene, quality) {
   const W = {
     colliders: [], boxes: [], platforms: [], houses: [], plants: [], overcast: 0, interactables: [], updaters: [], lanterns: [], shrineMeshes: {}, towerMeshes: {}, leafyMeshes: {},
@@ -842,4 +848,30 @@ export function levelUnderBuildings(world, scene) {
   pa.needsUpdate = true; t.geometry.computeVertexNormals(); t.geometry.computeBoundingSphere();
   for (const [o, h0] of keep) { const d = heightAt(o.position.x, o.position.z) - h0; if (Math.abs(d) > .02 && Math.abs(d) < 6) o.position.y += d; }
   return n;
+}
+
+// Widen the level land round every village, town and city (see WIDE), after everything is placed: the ground is
+// reshaped, and whatever stands where the ground changed (trees, signs, props, people, roads) moves up or down with
+// it, keeping its place on the map.
+export function widenFlatLand(world, scene, metres = 10) {
+  const keep = [], inst = [], roads = [];
+  for (const o of scene.children) {
+    if (o === world.terrain || o.isLight || !o.position) continue;
+    if (o.userData.road) { roads.push(o); continue; }
+    if (o.isInstancedMesh) { inst.push(o); continue; }
+    if (o.isMesh && o.geometry) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); if (o.geometry.boundingSphere.radius > 45) continue; }
+    keep.push([o, heightAt(o.position.x, o.position.z)]);
+  }
+  const m4 = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+  const instOld = inst.map(o => { const a = []; for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); p.setFromMatrixPosition(m4); a.push(heightAt(p.x, p.z)); } return a; });
+  const roadOld = roads.map(o => { const pa = o.geometry.attributes.position, a = new Float32Array(pa.count); for (let i = 0; i < pa.count; i++) a[i] = heightAt(pa.getX(i), pa.getZ(i)); return a; });
+  const topOld = world.roadTop ? [...world.roadTop.keys()].map(k => [k, heightAt(Math.round(k / 8192) / 2, (k - Math.round(k / 8192) * 8192) / 2)]) : [];
+  WIDE = metres;
+  // the ground itself
+  const t = world.terrain;
+  if (t) { const pa = t.geometry.attributes.position; for (let i = 0; i < pa.count; i++) pa.setY(i, heightAt(pa.getX(i), pa.getZ(i))); pa.needsUpdate = true; t.geometry.computeVertexNormals(); t.geometry.computeBoundingSphere(); }
+  for (const [o, h0] of keep) { const d = heightAt(o.position.x, o.position.z) - h0; if (Math.abs(d) > .01) o.position.y += d; }
+  inst.forEach((o, k) => { let ch = false; for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); m4.decompose(p, q, sc); const d = heightAt(p.x, p.z) - instOld[k][i]; if (Math.abs(d) > .01) { p.y += d; m4.compose(p, q, sc); o.setMatrixAt(i, m4); ch = true; } } if (ch) { o.instanceMatrix.needsUpdate = true; o.computeBoundingSphere && o.computeBoundingSphere(); } });
+  roads.forEach((o, k) => { const pa = o.geometry.attributes.position; let ch = false; for (let i = 0; i < pa.count; i++) { const d = heightAt(pa.getX(i), pa.getZ(i)) - roadOld[k][i]; if (Math.abs(d) > .01) { pa.setY(i, pa.getY(i) + d); ch = true; } } if (ch) { pa.needsUpdate = true; o.geometry.computeVertexNormals(); o.geometry.computeBoundingSphere(); } });
+  for (const [k, h0] of topOld) { const d = heightAt(Math.round(k / 8192) / 2, (k - Math.round(k / 8192) * 8192) / 2) - h0; if (Math.abs(d) > .01) world.roadTop.set(k, world.roadTop.get(k) + d); }
 }

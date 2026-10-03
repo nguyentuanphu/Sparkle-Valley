@@ -7,7 +7,7 @@
 //    the buffaloes lock horns and push, and whoever walks away first loses; nobody gets hurt.
 import { THREE, P, merge, toonVC, sprite, outline } from './gfx.js';
 import { T, registerName } from './i18n.js';
-import { FESTGROUNDS, heightAt, CITIES, roadDist, WATER, VILLAGE, CHINA, INDIA, HOME, PLAYGROUND, PLATEAU, PADDIES, LAKE, BAMBOO } from './world.js';
+import { FESTGROUNDS, oldHeightAt, heightAt, CITIES, roadDist, WATER, VILLAGE, CHINA, INDIA, HOME, PLAYGROUND, PLATEAU, PADDIES, LAKE, BAMBOO } from './world.js';
 import { buildAvatar } from './avatar.js';
 import { animalModel } from './animals.js';
 import { burstConfetti } from './games/frame.js';
@@ -22,7 +22,7 @@ export function createVnFun(G, { sfx, say, dialog, toast }) {
     for (let R = R0; R <= R1; R += 3) for (let k = 0; k < 24; k++) {
       const a = k / 24 * Math.PI * 2 + cx * .013, x = cx + Math.cos(a) * R, z = cz + Math.sin(a) * R;
       if (Math.abs(x) > 185 || Math.abs(z) > 185 || roadDist(x, z).d < need + 3 || PLACES.some(c => Math.hypot(x - c.x, z - c.z) < c.r + need + 6) || CITIES.some(c => Math.abs(x - c.x) < c.w + need + 2 && Math.abs(z - c.z) < c.d + need + 2) || G.interactables.some(it => !it.y && Math.hypot(it.x - x, it.z - z) < need + 3) || used.some(([ux, uz]) => Math.hypot(ux - x, uz - z) < need * 2 + 4)) continue;
-      const hs = [[0, 0], [need, 0], [-need, 0], [0, need], [0, -need]].map(([dx, dz]) => heightAt(x + dx, z + dz));
+      const hs = [[0, 0], [need, 0], [-need, 0], [0, need], [0, -need]].map(([dx, dz]) => oldHeightAt(x + dx, z + dz));
       if (Math.min(...hs) < WATER + .5 || Math.max(...hs) - Math.min(...hs) > 2) continue;
       if (world.boxes.some(b => x > b.x0 - need && x < b.x1 + need && z > b.z0 - need && z < b.z1 + need) || world.colliders.some(o => o.r > .3 && Math.hypot(o.x - x, o.z - z) < o.r + need)) continue;
       used.push([x, z]); return [x, z];

@@ -1,6 +1,7 @@
 // Chibi characters whose face is the child's own photo.
 import { THREE, toon, glow, blobShadow, outline } from './gfx.js';
 import { GLIDERS, settings } from './state.js';
+import { customFace } from './custom.js';
 
 const G = {
   head: new THREE.SphereGeometry(.5, 32, 24),
@@ -255,12 +256,12 @@ const NAMED = {}; // villager name -> their avatars
 const baseOf = n => String(n).replace(/\s+[^\p{L}\p{N}]+$/u, '').trim();
 export function nameAvatar(A, name, remember = true) { // remember: false for people in a room that is torn down later
   if (!A || !name) return A; const id = baseOf(name); if (remember) (NAMED[id] = NAMED[id] || []).push(A);
-  const f = (settings.npcFaces || {})[id]; if (f) setFace(A, f);
+  const f = (settings.npcFaces || {})[id] || customFace(id); if (f) setFace(A, f);
   return A;
 }
 function setFace(A, f) {
   A.faceMat.map = f && f.photo ? faceTexture(A.look, f.photo) : faceTexture(A.look); A.faceMat.needsUpdate = true;
   if (A.skinMat) A.skinMat.color.set(f && f.skin ? f.skin : A.look.skin);
 }
-export function applyNpcFaces() { for (const [id, list] of Object.entries(NAMED)) list.forEach(A => setFace(A, (settings.npcFaces || {})[id] || null)); }
+export function applyNpcFaces() { for (const [id, list] of Object.entries(NAMED)) list.forEach(A => setFace(A, (settings.npcFaces || {})[id] || customFace(id) || null)); }
 export const namedVillagers = () => Object.keys(NAMED);

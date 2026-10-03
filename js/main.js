@@ -7,7 +7,7 @@ import { say, hush, loadClips } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
-import { createWorld, levelUnderBuildings, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
+import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
 import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL, OUTLINED } from './avatar.js';
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
@@ -57,6 +57,8 @@ import { createSuburbs } from './suburbs.js';
 import { createSymbols, regionLabel } from './symbols.js';
 import { createRegionSites } from './regionsites.js';
 import { createVnFun } from './vnfun.js';
+import { CUSTOM } from './custom.js';
+if (CUSTOM.defaults && settings.restMins == null && +CUSTOM.defaults.restMins >= 0) settings.restMins = String(+CUSTOM.defaults.restMins); // a starting value from the family's content pack
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
@@ -972,6 +974,9 @@ function startSession(mode, chosen) {
   G.pets.sync(); G.pets.refreshInteractables(); G.kites.sync();
   G.festivals.greet(G.heroes[0]);
   resize(); G.paused = false; playing = true; G.listenFriends();
+  // a note from the grown-ups (Sparkle Studio), once a day
+  { const M = CUSTOM.message, today = new Date().toDateString();
+    if (M && (M.en || M.vi) && settings.familyMsgDay !== today) { settings.familyMsgDay = today; saveSettings(); setTimeout(() => { if (!G.paused) { G.paused = true; dialog('💌 ' + T('From your family', 'Lời nhắn của gia đình'), [[String(M.en || M.vi).slice(0, 400), String(M.vi || M.en).slice(0, 400)]]).then(() => { G.paused = false; }); } }, 4000); } }
   $('#huds').hidden = false;
   const p = chosen[0];
   const greet = () => { if (!p.quests.owl) say(`Hello ${p.name}! Walk over to the owl and say hi.`, `Chào ${p.name}! Đi đến chỗ chú cú và chào ông nhé.`); else say(`Welcome back, ${p.name}!`, `Chào mừng ${p.name} quay lại!`); };
@@ -1143,6 +1148,7 @@ setupTrading(G);
   G.interactables.push({ id: 'stall', x: sx, z: sz + 1.2, r: 3, icon: '🏪', label: () => T('My market stall: trade with friends', 'Sạp hàng của con: đổi đồ với bạn'), act: h => G.openTrade(h.i) });
 }
 // level land under every building, stall and landmark placed above (and anything added in future rounds)
+widenFlatLand(world, scene); // more level land round every village and city, for new buildings (nothing moves on the map)
 world.levelled = levelUnderBuildings(world, scene);
 // solid things the camera must never go inside: big, opaque, still-standing meshes (collected once, refreshed
 // now and then so new houses, landmarks and boats are included)

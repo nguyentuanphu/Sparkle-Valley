@@ -1,6 +1,7 @@
 // More folk and fairy tales for Story time, retold gently for children aged 2 to 8.
 // Each page is [pictures, English, Tiếng Việt]; the pictures come alive in the tale theatre (js/tales.js).
 import { T } from './i18n.js';
+import { customTales } from './custom.js';
 
 const tale = (id, flag, en, vi, pages) => ({ id, flag, title: () => T(en, vi), pages });
 
@@ -240,5 +241,7 @@ export const MORE_TALES = [
     ['🐭🙏🐘', 'The mouse king asked the elephant king kindly: “Please take another path. One day we may help you.”', 'Vua chuột lễ phép xin vua voi: “Xin các bác đi lối khác. Biết đâu một ngày chúng cháu giúp được các bác.”'],
     ['🐘😄', 'The elephant king laughed, but he agreed and took another path.', 'Vua voi bật cười, nhưng vẫn đồng ý đi lối khác.'],
     ['🐘🕸️😢', 'Later, hunters caught the elephants in strong nets. They could not get free!', 'Ít lâu sau, thợ săn bắt đàn voi bằng lưới chắc. Voi không sao thoát ra được!'],
-    ['🐭🐭✂️🐘😊', 'The mice came running and chewed through every rope. The elephants were free. Even the smallest friend can help!', 'Bầy chuột chạy tới gặm đứt từng sợi dây. Đàn voi được tự do. Người bạn nhỏ bé nhất cũng có thể giúp đỡ!']])
+    ['🐭🐭✂️🐘😊', 'The mice came running and chewed through every rope. The elephants were free. Even the smallest friend can help!', 'Bầy chuột chạy tới gặm đứt từng sợi dây. Đàn voi được tự do. Người bạn nhỏ bé nhất cũng có thể giúp đỡ!']]),
+  // the family's own stories, made in Sparkle Studio (content/custom.json)
+  ...customTales().map(t => tale(t.id, t.flag, t.en, t.vi, t.pages))
 ];

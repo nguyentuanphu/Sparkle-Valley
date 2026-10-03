@@ -1635,3 +1635,4 @@ body.calm .rv-img.on { animation: none; }
 .nl-can.down { transform: translate(var(--dx, 40px), 220px) rotate(200deg); opacity: 0; }
 .nl-aim { position: absolute; bottom: 18%; transform: translateX(-50%); font-size: 40px; }
 .nl-sandal { position: absolute; bottom: 0; left: 50%; margin-left: -22px; font-size: 44px; }
+.fq-pic { font-size: clamp(64px, 18vw, 110px); line-height: 1.1; }

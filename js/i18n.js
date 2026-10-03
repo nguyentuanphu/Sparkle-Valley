@@ -1,6 +1,7 @@
 // Bilingual text. Strings are written inline as T('English', 'Tiếng Việt') so the two
 // languages always travel together.
 import { settings } from './state.js';
+import { CUSTOM, customName } from './custom.js';
 
 // People's titles follow the chosen language, but their names stay as they are in their own region:
 // in English "Bà Hai" is "Grandma Hai" and "Ông Cú" is "Grandpa Cú"; in Vietnamese "Mrs Kelly" is "Cô Kelly".
@@ -22,7 +23,7 @@ export const NPC_NAMES = [];
 export const registerName = (name, icon = '🙂') => { const id = ALIAS[baseName(name)] || baseName(name); if (id && !NPC_NAMES.some(n => n.id === id)) NPC_NAMES.push({ id, icon }); };
 let RE = null, reKey = '';
 function nameRE() {
-  const custom = Object.keys(settings.npcNames || {}).filter(k => { const c = settings.npcNames[k]; return c && (c.en || c.vi); });
+  const custom = [...Object.keys(settings.npcNames || {}).filter(k => { const c = settings.npcNames[k]; return c && (c.en || c.vi); }), ...Object.keys(CUSTOM.names || {})];
   const key = custom.join('|');
   if (!RE || key !== reKey) {
     const keys = [...new Set([...Object.keys(NAMES_EN), ...Object.keys(NAMES_VI), ...custom])].sort((a, b) => b.length - a.length);
@@ -34,8 +35,8 @@ function nameRE() {
 // "Bé" (little one) in front of a child's name is a title too: "Bé Na" is "Little Na" in English.
 const BE_EN = /(?<![\p{L}])Bé (?=\p{Lu})/gu, BE_VI = /(?<![\p{L}])Little (?=\p{Lu})/gu;
 export const swapNames = (text, lang = settings.lang) => typeof text !== 'string' ? text : text.replace(nameRE(), m => {
-  const id = ALIAS[m] || m, c = (settings.npcNames || {})[id];
-  return (c && c[lang]) || defaultName(id, lang);
+  const id = ALIAS[m] || m, c = (settings.npcNames || {})[id], f = customName(id); // the device's own name first, then the family's content pack
+  return (c && c[lang]) || (f && typeof f[lang] === 'string' && f[lang]) || defaultName(id, lang);
 }).replace(lang === 'vi' ? BE_VI : BE_EN, lang === 'vi' ? 'Bé ' : 'Little ');
 export const nm = name => swapNames(name);
 export const T = (en, vi) => (settings.lang === 'vi' ? swapNames(vi, 'vi') : swapNames(en, 'en'));
