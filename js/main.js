@@ -26,6 +26,7 @@ import './games/farmgames.js';
 import './games/folk.js';
 import './games/folk2.js';
 import './games/tienlen.js';
+import './games/more.js';
 import { openHowTo } from './howto.js';
 import { createFarm, jobProgress, ensureJobs } from './farm.js';
 import { createPlaces } from './places.js';
@@ -54,6 +55,7 @@ import { createKites } from './kite.js';
 import { createHawkers } from './hawkers.js';
 import { createSuburbs } from './suburbs.js';
 import { createSymbols, regionLabel } from './symbols.js';
+import { createRegionSites } from './regionsites.js';
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
@@ -1102,6 +1104,7 @@ createHawkers(G);
 createSuburbs(G); // speciality buildings along the roads out of each city (before the homes are made)
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 createSymbols(G, { sfx: SFX, dialog }); // each region's symbol animal, in a corner of its city square
+createRegionSites(G); // more famous places of each region, just outside its city
 G.reward = reward;
 G.pets = createPets(G);
 G.ferries = createFerries(G);

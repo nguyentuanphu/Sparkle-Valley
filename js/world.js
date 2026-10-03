@@ -12,6 +12,7 @@ export const VILLAGE = { x: 110, z: 30, r: 34, h: 3 };
 export const PADDIES = { x: 112, z: -38, r: 26, h: 2.4 };
 export const LAKE = { x: 55, z: 125, r: 46 };
 export const BAMBOO = { x: -100, z: 85, r: 48 };
+export const APOSTLES = { x: -132, z: 126 }; // the Twelve Apostles (js/regionsites.js): kept free of trees
 export const HOME = { x: -26, z: 126, r: 30, h: 4 };   // Sunny Farm: house, field, barn and Mr. Bear's market
 export const PLAYGROUND = { x: 28, z: 62, r: 13, h: 7.2 };   // the park on Two Homes Street, where kids from Australia and Vietnam play
 export const TOWN = { x0: 12, x1: 52, z0: 32, z1: 74, h: 7.2, roadZ: 47 };   // Two Homes Street: Bà Rịa meets a Sydney suburb
@@ -54,7 +55,7 @@ export const ROADS = [
   { kind: 'asphalt', pts: [[-70, -43], [-70, -50], [-50, -52], [-30, -56], [-18, -62], [-9, -62]], gates: ['brisbane', 'hanoi'] },
   { kind: 'asphalt', pts: [[-70, -50], [-96, -50], [-108, -51], [-112, -54], [-112, -58]], gates: [null, 'india'] },
   // from Hà Nội over Đà Nẵng's Dragon Bridge, to Đà Nẵng, China Town and Bắc Ninh
-  { kind: 'asphalt', pts: [[17, -62], [56, -62], [70, -57], [84, -54], [96, -55], [100, -58], [100, -62]], gates: ['hanoi', 'china'] },
+  { kind: 'asphalt', pts: [[17, -62], [56, -62], [70, -57], [84, -54], [96, -55], [100, -58], [100, -62], [100, -70]], gates: ['hanoi', 'china'] },   // up the slope into China Town
   { kind: 'asphalt', pts: [[84, -54], [84, -51]], gates: [null, 'danang'] },
   { kind: 'asphalt', pts: [[56, -62], [54, -80], [48, -100], [48, -111]], gates: [null, 'bacninh'] },
   // south from Đà Nẵng past Lotus Village to the Harbour Bridge and the market (the village and the market have their own gates)
@@ -406,7 +407,7 @@ export function createWorld(scene, quality) {
   };
   const spots = { round: [], apple: [], pine: [], snowpine: [], bamboo: [], palm: [], bush: [], rock: [] };
   const appleTrees = [];
-  const nearPOI = (x, z) => FLATS.some(F => x > F.x0 - 4 && x < F.x1 + 4 && z > F.z0 - 4 && z < F.z1 + 4) || LOTS.some(L => dist2(x, z, L.x, L.z) < 11) || dist2(x, z, -128, 150) < 34 || dist2(x, z, 24, 170) < 14 || SHRINES.some(s => dist2(x, z, s.x, s.z) < 9) || TOWERS.some(s => dist2(x, z, s.x, s.z) < 10) || LEAFIES.some(s => dist2(x, z, s.x, s.z) < 3);
+  const nearPOI = (x, z) => FLATS.some(F => x > F.x0 - 4 && x < F.x1 + 4 && z > F.z0 - 4 && z < F.z1 + 4) || LOTS.some(L => dist2(x, z, L.x, L.z) < 11) || dist2(x, z, -128, 150) < 34 || dist2(x, z, APOSTLES.x, APOSTLES.z) < 15 || dist2(x, z, 24, 170) < 14 || SHRINES.some(s => dist2(x, z, s.x, s.z) < 9) || TOWERS.some(s => dist2(x, z, s.x, s.z) < 10) || LEAFIES.some(s => dist2(x, z, s.x, s.z) < 3);
   for (let i = 0; i < 9000; i++) {
     const x = (rnd() - .5) * (SIZE - 30), z = (rnd() - .5) * (SIZE - 30), h = heightAt(x, z);
     if (h < 1.5 || nearPOI(x, z)) continue;

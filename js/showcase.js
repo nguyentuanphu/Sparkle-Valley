@@ -11,7 +11,7 @@ import { el } from './util.js';
 const SIZE = {
   opera: 22, harbour: 30, uluru: 58, banana: 12, bondi: 10, lighthouse: 16, turtle: 10, onepillar: 10, chuacau: 12, benthanh: 14,
   halong: 24, hue: 20, myson: 16, phongnha: 18, trangan: 16, reef: 14, sisters: 16, exhibition: 20, kakadu: 18,
-  sydneytower: 24, wheel: 18, lighthouse: 16, bnclock: 14, flinders: 16, cathedral: 16, postoffice: 16, dragonbridge: 26, goldenbridge: 20,
+  marble: 16, hoian: 16, thehuc: 18, cairang: 18, apostles: 20, storybridge: 24, sydneytower: 24, wheel: 18, lighthouse: 16, bnclock: 14, flinders: 16, cathedral: 16, postoffice: 16, dragonbridge: 26, goldenbridge: 20,
   forbidden: 20, heaven: 16, terracotta: 14, potala: 18, qutub: 22, redfort: 20, konark: 14, hampi: 16, mahabodhi: 20
 };
 export const landmarkCentre = lm => {

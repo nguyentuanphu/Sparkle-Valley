@@ -12,7 +12,7 @@ export const GAMES = {};
 const GAME_MUSIC = {
   music: 'none', firstwords: 'twinkle', tangram: 'think', snakes: 'party2', rangoli: 'twinkle',
   pattern: 'think', counting: 'twinkle', letters: 'twinkle', numbers: 'think', shapes: 'think', colors: 'twinkle', sorting: 'think', memory: 'twinkle',
-  hanoi: 'strategy', robot: 'strategy', maze: 'strategy', goat: 'folk', oanquan: 'strategy', caro: 'strategy', hopscotch: 'folk', tug: 'village2', mrwolf: 'folk', datnieu: 'folk', kite: 'fly', chichi: 'folk', sackrace: 'party2', cricket: 'village2', parcel: 'party1', words: 'twinkle', snap: 'village2', tienlen: 'village2', dacau: 'party2', chuyen: 'village2', dragon: 'folk', marbles: 'strategy', skipping: 'party2',
+  hanoi: 'strategy', robot: 'strategy', maze: 'strategy', goat: 'folk', oanquan: 'strategy', caro: 'strategy', hopscotch: 'folk', tug: 'village2', mrwolf: 'folk', datnieu: 'folk', kite: 'fly', chichi: 'folk', sackrace: 'party2', cricket: 'village2', parcel: 'party1', words: 'twinkle', snap: 'village2', tienlen: 'village2', oantuti: 'folk', moreless: 'think', days: 'twinkle', bodyparts: 'twinkle', eggs: 'farm', sudoku: 'think', dacau: 'party2', chuyen: 'village2', dragon: 'folk', marbles: 'strategy', skipping: 'party2',
   market: 'money', order: 'farm', sortout: 'money', bunny: 'farm', jigsaw: 'twinkle', oddone: 'pond', tower: 'think', duckmaze: 'pond',
   balloon: 'fly', bubbles: 'party2', tune: 'none',
   clock: 'think', sums: 'twinkle', opposites: 'think', animalsounds: 'farm', phonics: 'twinkle', feelings: 'twinkle'
