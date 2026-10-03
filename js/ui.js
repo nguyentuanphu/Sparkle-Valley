@@ -820,12 +820,18 @@ export function openRecorder(after) {
 // ---------- Games hub ----------
 const HUB = [
   { key: 'learn', icon: '📚', short: () => T('Learning', 'Học'), title: () => T('Learning: numbers, letters, time and more', 'Học: số, chữ, xem giờ và nhiều nữa'), games: ['counting', 'numbers', 'sums', 'letters', 'phonics', 'clock', 'shapes', 'colors', 'opposites', 'animalsounds', 'feelings', 'words', 'firstwords', 'pattern', 'sorting', 'memory'] },
-  { key: 'folk', icon: '🪁', short: () => T('Folk games', 'Dân gian'), title: () => T('Folk games of Australia, Vietnam, China and India', 'Trò chơi dân gian Úc, Việt Nam, Trung Quốc và Ấn Độ'), games: ['music', 'firstwords', 'tangram', 'snakes', 'rangoli', 'words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
+  { key: 'folk', icon: '🪁', short: () => T('Folk games', 'Dân gian'), title: () => T('Folk games of Australia, Vietnam, China and India', 'Trò chơi dân gian Úc, Việt Nam, Trung Quốc và Ấn Độ'), games: ['music', 'firstwords', 'tangram', 'snakes', 'rangoli', 'words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'tienlen', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
   { key: 'cities', icon: '🏙️', short: () => T('Cities', 'Thành phố'), title: () => T('In the cities of Vietnam and Australia', 'Ở các thành phố Việt Nam và Úc'), games: ['puppets', 'dongho', 'dragonfire', 'traffic', 'ferries', 'tram', 'koala'] },
   { key: 'farm', icon: '🏡', short: () => T('Farm', 'Nông trại'), title: () => T('At the farm', 'Ở nông trại'), games: ['bunny', 'balloon', 'bubbles', 'jigsaw', 'tower', 'order', 'sortout', 'duckmaze'] },
   { key: 'village', icon: '🏮', short: () => T('Village', 'Làng Sen'), title: () => T('In Lotus Village', 'Ở Làng Sen'), games: ['market', 'tune', 'shapes', 'oddone', 'memory'] },
   { key: 'shrine', icon: '✨', short: () => T('Puzzles', 'Đố vui'), title: () => T('Puzzle shrines', 'Đền đố vui'), games: ['pattern', 'counting', 'letters', 'numbers', 'colors', 'sorting', 'hanoi', 'robot', 'maze'] }
 ];
+// The game after this one in the Games hub (the tab the child last used first), for "Next game" after a win.
+export function nextGameAfter(id) {
+  const secs = [...HUB].sort((a, b) => (b.key === openGamesHub.last) - (a.key === openGamesHub.last));
+  for (const sec of secs) { const list = sec.games.filter(g => GAMES[g]), k = list.indexOf(id); if (k >= 0) return list[(k + 1) % list.length]; }
+  return null;
+}
 const HUB_COLORS = ['#ff7eb8', '#ffb52e', '#5fd39a', '#3cc7e8', '#9a6bff', '#ff8a5a'];
 export function openGamesHub(game, i, onClose) {
   const p = game.heroes[i].profile;

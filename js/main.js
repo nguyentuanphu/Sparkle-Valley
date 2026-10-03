@@ -25,6 +25,7 @@ import './games/market.js';
 import './games/farmgames.js';
 import './games/folk.js';
 import './games/folk2.js';
+import './games/tienlen.js';
 import { openHowTo } from './howto.js';
 import { createFarm, jobProgress, ensureJobs } from './farm.js';
 import { createPlaces } from './places.js';
@@ -55,7 +56,7 @@ import { createSuburbs } from './suburbs.js';
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
-import { openWardrobe, openGamesHub, openQuick } from './ui.js';
+import { openWardrobe, openGamesHub, openQuick, nextGameAfter } from './ui.js';
 
 // ---------- renderer & world ----------
 const quality = settings.quality === 'auto' ? ((navigator.hardwareConcurrency || 4) <= 4 || Math.min(screen.width, screen.height) < 500 ? 'low' : 'mid') : settings.quality;
@@ -294,9 +295,12 @@ async function playGame(i, id, source, shrine) {
   const p = h.profile, level = Math.min(5, (p.levels[id] || 1) + { easy: 0, medium: 1, hard: 2 }[p.difficulty || 'easy']);
   const little = G.heroes.some(x => x.profile.age !== 'big'), strong = !little && p.difficulty !== 'easy';
   if (source === 'shrine') { SFX.secret(); say('A shrine! Let’s solve the puzzle.', 'Một ngôi đền! Cùng giải câu đố nào.'); await wait(600); }
-  const res = await openGame(id, { players, level, little, strong, style: source === 'folk' || id === 'market' ? 'village' : 'shrine' });
+  const nextId = nextGameAfter(id);
+  const res = await openGame(id, { players, level, little, strong, nextId, style: source === 'folk' || id === 'market' ? 'village' : 'shrine' });
   G.paused = false;
   if (!res.won) return;
+  // after the rewards: straight on to the next game, or this one again, if the child chose that
+  const then = () => { if (res.next === 'next' && nextId) playGame(i, nextId, 'replay'); else if (res.next === 'again') playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); };
   // winning Kite Flying earns the whistling kite (diều sáo), which then flies above you everywhere
   if (id === 'kite' && !p.kite) {
     p.kite = true; p.kiteOn = true; save(); G.kites.sync();
@@ -327,6 +331,7 @@ async function playGame(i, id, source, shrine) {
   }
   save(); checkQuests(h);
   G.job('puzzle', 1, h); if (id === 'balloon') G.job('fly', 1, h); if (id === 'bubbles') G.job('bubbles', 1, h);
+  setTimeout(then, 300);
 }
 G.playGame = playGame;
 G.job = (kind, n = 1, h) => jobProgress(G, kind, n, h);
@@ -411,6 +416,12 @@ G.townTalk = async (h, who) => {
     if (k === 0) playGame(h.i, 'snap', 'folk');
     if (k === 1) { G.paused = true; openHowTo('snap', { onPlay: () => { G.paused = false; playGame(h.i, 'snap', 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
   }
+  if (who === 'tienlen') {
+    const k = await dialog('Anh Ba', [['Hey! Phong and I are playing Tiến Lên, southern style. Sit down, I’ll deal you thirteen cards!', 'Ê em! Anh với Phong đang đánh Tiến Lên miền Nam nè. Ngồi xuống, anh chia cho em mười ba lá!']],
+      [['▶ Play Tiến Lên!', '▶ Chơi Tiến Lên!'], ['📺 How to play', '📺 Xem cách chơi'], ['👋 Later', '👋 Để sau']]);
+    if (k === 0) playGame(h.i, 'tienlen', 'folk');
+    if (k === 1) { G.paused = true; openHowTo('tienlen', { onPlay: () => { G.paused = false; playGame(h.i, 'tienlen', 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
+  }
   if (who === 'tuan') {
     const k = await dialog('Anh Tuấn', [['Đá cầu! We kick the shuttlecock and never let it touch the ground. Want to try?', 'Đá cầu nè! Tụi anh đá quả cầu, không để nó rơi xuống đất. Em thử không?']],
       [['▶ Play!', '▶ Chơi!'], ['📺 How to play', '📺 Xem cách chơi'], ['👋 Later', '👋 Để sau']]);
@@ -428,7 +439,7 @@ dialogHooks.chat = name => {
   if (h) G.chatWith(h.i, pid);
 };
 // ---------- the Games hub: every game, by place, playable straight away ----------
-const GAME_SPOT = { music: 'musiccorner', firstwords: 'g_firstwords', tangram: 'g_tangram', snakes: 'g_snakes', rangoli: 'g_rangoli', datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
+const GAME_SPOT = { music: 'musiccorner', firstwords: 'g_firstwords', tangram: 'g_tangram', snakes: 'g_snakes', rangoli: 'g_rangoli', datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', tienlen: 'tienlen', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
   tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
 G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (G.GAME_SPOT || {})[id] || (SHRINES.find(s => s.game === id) || {}).id));
 G.openQuick = i => { if (G.paused) return; G.paused = true; openQuick(G, i); };

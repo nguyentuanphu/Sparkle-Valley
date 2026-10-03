@@ -9,6 +9,7 @@ import { fmt } from './money.js';
 import { el, esc, clamp } from './util.js';
 import { SIZE, HALF } from './world.js';
 import { avatarURL } from './avatar.js';
+import { pic, hasArt as hasPic } from './art.js';
 
 export const EMOTES = [
   { id: 'hi', icon: '👋', en: 'Hi!', vi: 'Xin chào!' },
@@ -115,7 +116,7 @@ export class Hud {
     const b = this.q('.act');
     if (!it) { b.hidden = true; this.last.act = null; return; }
     const lab = it.label();
-    if (this.last.act !== lab) { b.hidden = false; this.q('.act .ai').textContent = it.icon || '✋'; this.q('.act .al').textContent = lab; this.last.act = lab; }
+    if (this.last.act !== lab) { b.hidden = false; this.q('.act .ai').innerHTML = hasPic(it.icon) ? pic(it.icon) : esc(it.icon || '✋'); this.q('.act .al').textContent = lab; b.classList.toggle('long', lab.length > 18); b.classList.toggle('vlong', lab.length > 34); this.last.act = lab; }
   }
   // a big pulsing button in the middle of the screen (pet rescue, ferry). bigPrompt(null) hides it.
   bigPrompt(html, onTap) {

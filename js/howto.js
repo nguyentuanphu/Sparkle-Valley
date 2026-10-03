@@ -137,6 +137,14 @@ export const HOWTO = {
       S('👆 SNAP!', 'Tap SNAP as fast as you can, before the uncles!', 'Bấm SNAP thật nhanh, nhanh hơn các chú!')],
     real: S('🧒🃏🧒', 'For real: share out the cards, take turns putting one down, and shout Snap when two match!', 'Chơi thật: chia bài, lần lượt đặt từng lá xuống, khi hai lá giống nhau thì hô Snap!')
   },
+  tienlen: {
+    origin: S('🇻🇳 🎴', 'Tiến Lên means "go forward". It is the favourite card game in the south of Vietnam: at Tết, families play it together all night!', 'Tiến Lên là trò đánh bài được yêu thích nhất miền Nam. Tết đến, cả nhà quây quần đánh Tiến Lên tới khuya!'),
+    steps: [S('3️⃣ ➡️ 2️⃣', '3 is the smallest card and 2 is the biggest. Hearts ♥ beat diamonds ♦, then clubs ♣, then spades ♠.', '3 nhỏ nhất, 2 lớn nhất. Cơ ♥ lớn hơn rô ♦, rồi chuồn ♣, rồi bích ♠.'),
+      S('🎴 🎴', 'Play one card, a pair, three of a kind, or a run like 5 6 7.', 'Đánh một lá, một đôi, sám cô, hay một sảnh như 5 6 7.'),
+      S('⬆️ ✋', 'Beat the table with the same kind, but higher, or Pass.', 'Chặn bài trên bàn bằng bài cùng kiểu mà lớn hơn, hoặc Bỏ lượt.'),
+      S('🏆', 'Play all your cards first to win! Stuck? Tap 💡 Hint.', 'Ai đánh hết bài trước là thắng! Bí quá thì bấm 💡 Gợi ý.')],
+    real: S('🧒🎴🧑', 'For real: deal 13 cards each to 4 players. Whoever has the 3 of spades starts!', 'Chơi thật: chia mỗi người 13 lá, 4 người chơi. Ai có 3 bích thì đánh trước!')
+  },
   dacau: {
     origin: S('🇻🇳 🏸', 'Đá cầu is played in parks and schoolyards all over Vietnam. The shuttlecock has colourful feathers.', 'Đá cầu được chơi ở công viên và sân trường khắp Việt Nam. Quả cầu có lông vũ nhiều màu.'),
     steps: [S('👆 🏸 ⬆️', 'Tap the shuttlecock to kick it up.', 'Chạm quả cầu để đá lên.'), S('🏸 🚫 ⬇️', 'Do not let it touch the ground!', 'Đừng để cầu chạm đất!'), S('1️⃣ 2️⃣ 3️⃣', 'Count your kicks!', 'Đếm số lần đá nhé!')],

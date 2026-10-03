@@ -137,6 +137,15 @@ export function heightAt(x, z) {
     const a = Math.abs(dx * Math.cos(L.rot) - dz * Math.sin(L.rot)) - L.w / 2, b = Math.abs(dx * Math.sin(L.rot) + dz * Math.cos(L.rot)) - L.d / 2, dd = Math.hypot(Math.max(a, 0), Math.max(b, 0));
     if (dd < 4) h = lerp(h, L.h, 1 - smooth(0, 4, dd));
   }
+  // where the road from Sydney crosses the Dawn Plateau's ramp to Two Homes Street: a gentle saddle, so the road
+  // meets the street at its own level by the gate (the street's west end used to be buried under the hillside)
+  if (x > -30 && x < 16 && z > 20 && z < 76) {
+    const SX = [[-30, 5], [-14, 7.5], [-6, 9.5], [0, 9.5], [6, 7.2], [16, 7.2]];
+    let sy = 7.2; for (let i = 0; i < SX.length - 1; i++) if (x >= SX[i][0] && x <= SX[i + 1][0]) { const t = (x - SX[i][0]) / (SX[i + 1][0] - SX[i][0]); sy = SX[i][1] + (SX[i + 1][1] - SX[i][1]) * t * t * (3 - 2 * t); }
+    const zc = x < -4 ? 48 + (-4 - x) / 19 * 4 : 48 - (x + 4) / 10, across = Math.abs(z - zc);
+    const w = (1 - smooth(6, z < zc ? 26 : 20, across)) * smooth(-30, -24, x) * (1 - smooth(10, 16, x));
+    h = lerp(h, sy, w);
+  }
   const dr = riverDist(x, z);
   h = lerp(h, -2.6 - mtn * 2, 1 - smooth(3.5, 11, dr));
   // Raised banks either side of each bridge.

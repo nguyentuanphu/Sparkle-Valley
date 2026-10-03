@@ -130,8 +130,15 @@ export function houseVillage({ w = 9, d = 5.5, wall = '#efe0bf', tile = '#b9553a
   // roof: big tiled gable with upturned dragon-tail corners
   const h = 2.6, y0 = 3.2, D = d + 2.2;
   gableRoof(p, w + 1.8, D, h, y0, tile, dark, 'tiles');
-  p.push(P(rbox(w + 2.2, .35, .4, .12), dark, [0, y0 + h + .1, .2]));
-  [-1, 1].forEach(s => { p.push(P(new THREE.ConeGeometry(.22, .9, 8), dark, [s * (w / 2 + 1.05), y0 + h + .45, .2], [0, 0, s * -.5])); [-1, 1].forEach(z => p.push(P(new THREE.ConeGeometry(.16, .7, 8), dark, [s * (w / 2 + .95), y0 + .2, .2 + z * (D / 2)], [z * .6, 0, s * -.9]))); });
+  // the gable ends are closed in with wall (they used to be open, and the roof looked like two loose boards)
+  {
+    const sh = new THREE.Shape(); sh.moveTo(-D / 2 + .25, 0); sh.lineTo(D / 2 - .25, 0); sh.lineTo(0, h - .12); sh.closePath();
+    const tri = new THREE.ExtrudeGeometry(sh, { depth: .16, bevelEnabled: false });
+    [-1, 1].forEach(sx => p.push(P(tri, wall, [sx * w / 2 - (sx > 0 ? .16 : 0), y0 - .02, 0], [0, Math.PI / 2, 0])));
+    p.push(P(Box(w, .3, d), wall, [0, y0 - .05, -.3]));
+  }
+  p.push(P(rbox(w + 2.2, .35, .4, .12), dark, [0, y0 + h + .1, 0]));
+  [-1, 1].forEach(s => { p.push(P(new THREE.ConeGeometry(.22, .9, 8), dark, [s * (w / 2 + 1.05), y0 + h + .45, 0], [0, 0, s * -.5])); [-1, 1].forEach(z => p.push(P(new THREE.ConeGeometry(.16, .7, 8), dark, [s * (w / 2 + .95), y0 + .2, z * (D / 2)], [z * .6, 0, s * -.9]))); });
   // yard: water jar, rice-drying mat, areca palms, potted kumquat
   p.push(P(new THREE.SphereGeometry(.6, 16, 12), '#7a5236', [w / 2 + .1, .9, d / 2 + 1.8], [0, 0, 0], [1, 1.1, 1]), P(new THREE.CylinderGeometry(.5, .5, .1, 16), '#3b6fa0', [w / 2 + .1, 1.5, d / 2 + 1.8]));
   p.push(P(new THREE.CylinderGeometry(1, 1, .05, 24), '#d9b86a', [-2, .48, d / 2 + 2.6]));

@@ -12,7 +12,7 @@ export const GAMES = {};
 const GAME_MUSIC = {
   music: 'none', firstwords: 'twinkle', tangram: 'think', snakes: 'party2', rangoli: 'twinkle',
   pattern: 'think', counting: 'twinkle', letters: 'twinkle', numbers: 'think', shapes: 'think', colors: 'twinkle', sorting: 'think', memory: 'twinkle',
-  hanoi: 'strategy', robot: 'strategy', maze: 'strategy', goat: 'folk', oanquan: 'strategy', caro: 'strategy', hopscotch: 'folk', tug: 'village2', mrwolf: 'folk', datnieu: 'folk', kite: 'fly', chichi: 'folk', sackrace: 'party2', cricket: 'village2', parcel: 'party1', words: 'twinkle', snap: 'village2', dacau: 'party2', chuyen: 'village2', dragon: 'folk', marbles: 'strategy', skipping: 'party2',
+  hanoi: 'strategy', robot: 'strategy', maze: 'strategy', goat: 'folk', oanquan: 'strategy', caro: 'strategy', hopscotch: 'folk', tug: 'village2', mrwolf: 'folk', datnieu: 'folk', kite: 'fly', chichi: 'folk', sackrace: 'party2', cricket: 'village2', parcel: 'party1', words: 'twinkle', snap: 'village2', tienlen: 'village2', dacau: 'party2', chuyen: 'village2', dragon: 'folk', marbles: 'strategy', skipping: 'party2',
   market: 'money', order: 'farm', sortout: 'money', bunny: 'farm', jigsaw: 'twinkle', oddone: 'pond', tower: 'think', duckmaze: 'pond',
   balloon: 'fly', bubbles: 'party2', tune: 'none',
   clock: 'think', sums: 'twinkle', opposites: 'think', animalsounds: 'farm', phonics: 'twinkle', feelings: 'twinkle'
@@ -24,8 +24,9 @@ let current = null;
 export const gameOpen = () => !!current;
 
 // players: array of profiles (1 or 2); level: 1..5; style: 'shrine' | 'village'
-export function openGame(id, { players, level = 1, style = 'shrine', partnerName = null, little = true, strong = false }) {
+export function openGame(id, { players, level = 1, style = 'shrine', partnerName = null, little = true, strong = false, nextId = null }) {
   const def = GAMES[id]; if (!def) return Promise.resolve({ won: false });
+  const nextName = nextId && GAMES[nextId] ? GAMES[nextId].name() : '';
   if (current) current.close(false);
   return new Promise(resolve => {
     const layer = el('div', 'gl gl-' + style);
@@ -65,11 +66,15 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
         // 1 to 3 stars (little ones always get 3), then a treasure chest pops open with a surprise
         const n = little ? 3 : misses <= 1 ? 3 : misses <= 4 ? 2 : 1, prize = PRIZES[Math.floor(Math.random() * PRIZES.length)];
         const c = el('div', 'gl-win', `<div class="gl-stars">${[0, 1, 2].map(k => `<i class="${k < n ? 'on' : ''}" style="--d:${k * .25}s">⭐</i>`).join('')}</div>
-          <div class="gl-chest"><span class="lid">🎁</span><span class="prize">${prize}</span></div><p>${esc(extra.title || T('You did it!', 'Con làm được rồi!'))}</p>`);
+          <div class="gl-chest"><span class="lid">🎁</span><span class="prize">${prize}</span></div><p>${esc(extra.title || T('You did it!', 'Con làm được rồi!'))}</p>
+          <div class="gl-next">${nextName ? `<button class="gl-nx go" data-n="next"><span>${pic('▶️')}</span><b>${T('Next game', 'Trò tiếp theo')}</b><small>${esc(nextName)}</small></button>` : ''}<button class="gl-nx again" data-n="again"><span>${pic('🔁')}</span><b>${T('Play again', 'Chơi lại')}</b></button><button class="gl-nx stop" data-n="stop"><span>${pic('✅')}</span><b>${T('Done', 'Xong rồi')}</b></button></div>`);
         layer.appendChild(c); say(extra.title || 'You did it!', extra.titleVi || 'Con làm được rồi!');
         burstConfetti(layer);
         setTimeout(() => { c.querySelector('.gl-chest').classList.add('open'); SFX.coin(); }, 1100);
-        await new Promise(r => { const t = setTimeout(r, 3400); c.onclick = () => { clearTimeout(t); r(); }; }); finish(true, Object.assign({ stars: n }, extra));
+        // then the child chooses: the next game, this one again, or stop (after a long wait: stop)
+        setTimeout(() => c.classList.add('ask'), 1600);
+        const next = await new Promise(r => { const t = setTimeout(() => r('stop'), 30000); c.querySelectorAll('.gl-nx').forEach(b => { b.onclick = e => { e.stopPropagation(); SFX.tap(); clearTimeout(t); r(b.dataset.n); }; }); });
+        finish(true, Object.assign({ stars: n, next }, extra));
       }
     };
     let streak = 0, rights = 0, misses = 0;

@@ -6,6 +6,7 @@
 //  • Landmarks to visit and collect as postcards: Opera House, Harbour Bridge, Uluru, the Big Banana,
 //    Bondi lifesavers' tower, Vũng Tàu lighthouse, Turtle Tower, One Pillar Pagoda, Hội An's covered bridge
 //    and Bến Thành market's clock tower.
+import { REAL, openPhotos, openStreetView } from './realworld.js';
 import { THREE, toon, toonVC, P, merge, sprite } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
 import { say } from './voice.js';
@@ -361,6 +362,11 @@ export async function postcard(G, h, lm) {
   const p = h.profile; p.postcards = p.postcards || {};
   const first = !p.postcards[lm.id]; p.postcards[lm.id] = true; G.save();
   if (G.showcase) await G.showcase(h, lm); // fly round the landmark first, so it can be seen whole
-  await dialog(lm.name(), [lm.fact]);
+  // the real place: photos of it, and a 360° look round where it really is (js/realworld.js)
+  if (REAL[lm.id]) {
+    const k = await dialog(lm.name(), [lm.fact], [['📷 See real photos', '📷 Xem ảnh thật'], ['🚶 Step inside (360°)', '🚶 Bước vào xem 360°'], ['👋 Bye', '👋 Tạm biệt']]);
+    if (k === 0) await new Promise(r => openPhotos(lm.name(), REAL[lm.id][0], { icon: lm.icon, id: lm.id, onClose: r }));
+    if (k === 1) openStreetView(lm.id);
+  } else await dialog(lm.name(), [lm.fact]);
   if (first) { G.addCoins(10); const st = G.giveSticker(p); await reward('📮', T('New postcard: ', 'Bưu thiếp mới: ') + lm.name(), T(`+${G.fmt(10)}${st ? ' and a sticker ' + st : ''}`, `+${G.fmt(10)}${st ? ' và hình dán ' + st : ''}`)); }
 }

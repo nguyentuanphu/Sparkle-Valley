@@ -50,7 +50,15 @@ export function drawFeatures(x, S, look, mood = 'smile') {
   if (mood === 'o') x.arc(S * .5, S * .72, S * .035, 0, Math.PI * 2); else { x.moveTo(S * .44, S * .69); x.quadraticCurveTo(S * .5, S * .77, S * .56, S * .69); x.closePath(); }
   x.fill(); x.restore();
 }
+// Painted faces (no photo) are shared by every villager with the same hair and skin, at 256 px: phones
+// (iPhones above all) have a small budget for pictures, and when it runs out new ones come out black.
+const paintedFaces = {};
 export function faceTexture(look, photo) {
+  if (!photo) {
+    const k = look.hair + look.skin;
+    if (!paintedFaces[k]) { const S = 256, c = document.createElement('canvas'); c.width = c.height = S; drawFeatures(c.getContext('2d'), S, look); paintedFaces[k] = new THREE.CanvasTexture(c); paintedFaces[k].colorSpace = THREE.SRGBColorSpace; }
+    return paintedFaces[k];
+  }
   const S = 512, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   const finish = () => {

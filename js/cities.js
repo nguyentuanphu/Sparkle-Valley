@@ -278,7 +278,7 @@ export function createCities(G) {
     place(MODELS.nhatron(), x, z, rot); world.colliders.push({ x, z, r: 3.4 });
     addLandmark('nhatron', '💧', 'vn', x + Math.sin(rot) * 5.5, z + Math.cos(rot) * 5.5, x, z, ['Nhà Tròn, the Round House (Bà Rịa)', 'Nhà Tròn Bà Rịa'], ['Nhà Tròn in Bà Rịa is a round water tower, about 20 metres tall, standing on eight legs. It was built more than a hundred years ago to keep the town’s water, and people could look out over all the roads from the top.', 'Nhà Tròn ở Bà Rịa là tháp nước hình tròn cao khoảng 20 mét, đứng trên tám cột. Tháp được xây hơn một trăm năm trước để chứa nước cho thị xã, và từ trên cao có thể nhìn khắp các ngả đường.']);
   }
-  buildHueNghi(G, place, person, 15, 36.25);
+  buildHueNghi(G, place, person, 15, 34.25);
   // house number 8: a Bà Rịa family home, only its number is shown
   {
     const [x, z] = [20.3, 57.7], rot = Math.PI; // on the flat south side of the street, facing it (the west end is the foot of the Dawn Plateau)
