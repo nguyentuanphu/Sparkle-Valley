@@ -5,6 +5,7 @@ import { say } from '../voice.js';
 import { SFX, Music } from '../audio.js';
 import { el, wait, esc } from '../util.js';
 import { openHowTo } from '../howto.js';
+import { pic } from '../art.js';
 
 export const GAMES = {};
 // Each kind of game has its own song.
@@ -13,7 +14,8 @@ const GAME_MUSIC = {
   pattern: 'think', counting: 'twinkle', letters: 'twinkle', numbers: 'think', shapes: 'think', colors: 'twinkle', sorting: 'think', memory: 'twinkle',
   hanoi: 'strategy', robot: 'strategy', maze: 'strategy', goat: 'folk', oanquan: 'strategy', caro: 'strategy', hopscotch: 'folk', tug: 'village2', mrwolf: 'folk', datnieu: 'folk', kite: 'fly', chichi: 'folk', sackrace: 'party2', cricket: 'village2', parcel: 'party1', words: 'twinkle', snap: 'village2', dacau: 'party2', chuyen: 'village2', dragon: 'folk', marbles: 'strategy', skipping: 'party2',
   market: 'money', order: 'farm', sortout: 'money', bunny: 'farm', jigsaw: 'twinkle', oddone: 'pond', tower: 'think', duckmaze: 'pond',
-  balloon: 'fly', bubbles: 'party2', tune: 'none'
+  balloon: 'fly', bubbles: 'party2', tune: 'none',
+  clock: 'think', sums: 'twinkle', opposites: 'think', animalsounds: 'farm', phonics: 'twinkle', feelings: 'twinkle'
 };
 export const register = def => { GAMES[def.id] = def; };
 const PRIZES = ['🦄', '🦖', '🚀', '🧸', '🎈', '🍭', '🪁', '🐬', '🌈', '👑', '🎨', '🛼', '🪀', '🍦', '🐼'];
@@ -30,7 +32,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
     layer.innerHTML = `
       <div class="gl-head">
         <button class="gl-x" aria-label="${T('Leave', 'Rời đi')}">✕</button>
-        <div class="gl-title"><span class="gl-icon">${def.icon}</span><span>${esc(def.name())}</span></div>
+        <div class="gl-title"><span class="gl-icon">${pic(def.icon)}</span><span>${esc(def.name())}</span></div>
         <div class="gl-dots"></div>
         <button class="gl-how" aria-label="${T('How to play', 'Cách chơi')}">📺</button>
       </div>

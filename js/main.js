@@ -31,6 +31,7 @@ import { createPlaces } from './places.js';
 import { createTown } from './town.js';
 import { createRegions, LANDMARKS } from './regions.js';
 import { createGathering } from './gather.js';
+import { tickAnimals } from './animals.js';
 import { createAsia } from './asia.js';
 import { createHeritage } from './heritage.js';
 import { createPets } from './pets.js';
@@ -44,11 +45,13 @@ import { createShowcase } from './showcase.js';
 import './games/asia.js';
 import './games/music.js';
 import './games/cities.js';
+import './games/learning.js';
 import { createRoads } from './roads.js';
 import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
 import { createKites } from './kite.js';
 import { createHawkers } from './hawkers.js';
+import { createSuburbs } from './suburbs.js';
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
@@ -394,16 +397,16 @@ async function kidTalk(h, game, name, line) {
 G.kidTalk = (h, game, name, line) => kidTalk(h, game, name, line);
 G.townTalk = async (h, who) => {
   if (who === 'sau') {
-    const k = await dialog('Cô Sáu', [['Nước mía đây! Fresh sugarcane juice, cold and sweet. A glass gives you lots of energy!', 'Nước mía đây con! Mát lạnh, ngọt lịm. Uống một ly là khỏe re!']],
+    const k = await dialog('Cô Tám', [['Nước mía đây! Fresh sugarcane juice, cold and sweet. A glass gives you lots of energy!', 'Nước mía đây con! Mát lạnh, ngọt lịm. Uống một ly là khỏe re!']],
       [[`🥤 Buy a glass (${fmt(5)})`, `🥤 Mua một ly (${fmt(5)})`], ['👋 Bye', '👋 Tạm biệt']]);
     if (k !== 0) return;
-    if (farm.coins < 5) { await dialog('Cô Sáu', [['Not enough money? Here, this one is on me. Have a nice day!', 'Không đủ tiền hả? Thôi cô mời con ly này. Chúc con vui nhé!']]); }
+    if (farm.coins < 5) { await dialog('Cô Tám', [['Not enough money? Here, this one is on me. Have a nice day!', 'Không đủ tiền hả? Thôi cô mời con ly này. Chúc con vui nhé!']]); }
     else addMoney(null, -5);
     SFX.chime(); h.bonusStamina = Math.max(h.bonusStamina || 0, 1); // one extra stamina wheel h.stamina = h.staminaMax; h.hearts = Math.max(h.hearts, h.profile.hearts);
     await reward('🥤', T('Yum! Sugarcane juice!', 'Ngon quá! Nước mía!'), T('Full of energy: you can run and climb longer.', 'Tràn đầy năng lượng: chạy và leo được lâu hơn.'));
   }
   if (who === 'tu') {
-    const k = await dialog('Chú Tư', [['Hello little one! We are playing cards. Want to join? We can play Snap, an Aussie game my neighbour taught me!', 'Chào con! Tụi chú đang đánh bài. Con chơi không? Mình chơi Snap, trò của Úc mà ông hàng xóm dạy chú đó!']],
+    const k = await dialog('Bác 2', [['Hello little one! We are playing cards. Want to join? We can play Snap, an Aussie game my neighbour taught me!', 'Chào con! Tụi chú đang đánh bài. Con chơi không? Mình chơi Snap, trò của Úc mà ông hàng xóm dạy chú đó!']],
       [['▶ Play Snap!', '▶ Chơi Snap!'], ['📺 How to play', '📺 Xem cách chơi'], ['👋 Later', '👋 Để sau']]);
     if (k === 0) playGame(h.i, 'snap', 'folk');
     if (k === 1) { G.paused = true; openHowTo('snap', { onPlay: () => { G.paused = false; playGame(h.i, 'snap', 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
@@ -432,7 +435,14 @@ G.openQuick = i => { if (G.paused) return; G.paused = true; openQuick(G, i); };
 G.openGamesHub = i => { if (G.paused) return; G.paused = true; openGamesHub(G, i, () => { G.paused = false; }); };
 // Games hub / map: fly straight to the friend who runs a game (or a place), then start it there
 const npcLike = it => /^(npc_|g_|v_|pc_|cards$|dacau$|musiccorner$|bear$|stall$)/.test(it.id || '');
-G.landBy = async (h, x, z) => { await G.travel(h, x - 4.5 + 1.8, z - 1 + 1.4); h.yaw = Math.atan2(x - h.pos.x, z - h.pos.z); h.camYaw = h.yaw + Math.PI; };
+// the nearest open spot to (x, z): not inside a building, tree or stall, not in water. Travelling lands there.
+G.clearSpot = (x, z, pad = .9) => {
+  const W = G.world, free = (px, pz) => heightAt(px, pz) > WATER + .3 && !W.colliders.some(c => c.r > 0 && Math.hypot(c.x - px, c.z - pz) < c.r + pad) && !W.boxes.some(b => px > b.x0 - pad && px < b.x1 + pad && pz > b.z0 - pad && pz < b.z1 + pad);
+  if (free(x, z)) return [x, z];
+  for (let r = 1.5; r <= 14; r += 1.25) for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (free(px, pz)) return [px, pz]; }
+  return [x, z];
+};
+G.landBy = async (h, x, z) => { const [sx, sz] = G.clearSpot(x + 1.8, z + 1.4); await G.travel(h, sx - 4.5, sz - 1); h.yaw = Math.atan2(x - h.pos.x, z - h.pos.z); h.camYaw = h.yaw + Math.PI; };
 G.meetAndPlay = async (i, id) => {
   const h = G.heroes[i], it = G.gameSpot(id); if (!h) return;
   if (!it) { G.playGame(i, id, 'place'); return; }
@@ -576,6 +586,7 @@ G.rescue = async (h, fainted) => {
   f.classList.add('out'); setTimeout(() => f.remove(), 600); h._rescuing = false;
 };
 G.travel = async (h, x, z) => {
+  if (!Number.isFinite(x) || !Number.isFinite(z)) { console.warn('travel: no place to go to'); return; } // never fly into nowhere (a black screen)
   const f = el('div', 'fade blue'); document.body.appendChild(f); SFX.travel();
   await wait(650); if (h.riding) h.dismount();
   if (h.cancelCarry) { h.cancelCarry(); h.cancelCarry = null; }
@@ -994,7 +1005,7 @@ function frame(now) {
       if (pads[i].act() && it) { SFX.tap(); it.act(h, G); }
       // discover shrines and towers you walk near
       for (const s of SHRINES.concat(TOWERS)) if (!h.profile.discovered[s.id] && dist2(s.x, s.z, h.pos.x, h.pos.z) < 45) { h.profile.discovered[s.id] = true; save(); }
-      const rg = regionAt(h.pos.x, h.pos.z);
+      const rg = h.indoors ? G.regionOf[i] : regionAt(h.pos.x, h.pos.z); // inside a house: still where the house is
       if (rg !== G.regionOf[i]) {
         if (i === 0) setTimeout(() => G.shareStatus(), 50);
         if (G.regionOf[i] !== null) { G.huds[i].showRegion(REGION_NAMES[rg]()); }
@@ -1076,6 +1087,7 @@ createAsia(G);
 createRoads(G);
 createCities(G);
 createHawkers(G);
+createSuburbs(G); // speciality buildings along the roads out of each city (before the homes are made)
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 G.reward = reward;
 G.pets = createPets(G);
@@ -1087,6 +1099,7 @@ G.weather = createWeather(G);
 createFun(G);
 createLearning(G);
 createShowcase(G);
+world.updaters.push((dt, t) => tickAnimals(dt, t, G.heroes)); // every animal walks, hops, wags and looks around
 createGathering(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 setupTrading(G);
 // "My market stall" at the Three Regions Market: trade with friends who are playing online

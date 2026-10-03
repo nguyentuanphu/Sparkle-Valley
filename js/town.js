@@ -1,6 +1,6 @@
 // Two Homes Street (Phố Hai Quê): a neighbourhood where Bà Rịa meets a Sydney suburb.
 // On one side: narrow Vietnamese tube houses with balconies and water tanks, a French-style villa and
-// Cô Sáu's sugarcane juice cart; uncles play cards on the footpath. On the other side: an Australian
+// Cô Tám's sugarcane juice cart; Bác 2, Bác 3 and Bác 4 play cards on the footpath. On the other side: an Australian
 // weatherboard house with a front porch, a brick house, a Hills hoist, and the park where kids play
 // folk games. Built from simple flat-coloured shapes in the "summer afternoon" style.
 import { THREE, toon, toonVC, P, merge, sprite, outline } from './gfx.js';
@@ -99,7 +99,7 @@ export function brickHouse(w = 8, d = 8) {
   return { geo: merge(p), w, d: d + 1.8 };
 }
 // The house on stilts from the picture: living upstairs, an open breezy space below.
-function raisedHouse(w = 7.5, d = 7) {
+export function raisedHouse(w = 7.5, d = 7) {
   const p = [];
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([x, z]) => p.push(P(Box(.25, 2.8, .25), '#b9b2a6', [x * (w / 2 - .3), 1.4, z * (d / 2 - .3)])));
   p.push(P(Box(w * .55, 2.6, d * .7), '#9a8a94', [-w * .2, 1.3, -d * .1]));
@@ -143,15 +143,15 @@ export function createTown(G) {
     world.boxes.push({ x0: x - b.w / 2, x1: x + b.w / 2, z0: z - b.d / 2, z1: z + b.d / 2 });
     world.houses.push({ x, z, rot: b.obj.rotation.y, d: b.d, kind: b.kind || 'tube' });
   };
-  const houseOld = (b, x, front, south) => { house(b, x, front, south); const m = scene.children[scene.children.length - 1]; outline(m, .03, '#4a3a3f'); };
+  const houseOld = (b, x, front, south, kind) => { house(b, x, front, south); const m = scene.children[scene.children.length - 1]; outline(m, .03, '#4a3a3f'); if (kind) world.houses.push({ x, z: south ? front + b.d / 2 : front - b.d / 2, rot: south ? Math.PI : 0, d: b.d, kind }); };
   // Bà Rịa side (north): tube houses with shops downstairs, then the French villa
   // (x 12–18 is the Huệ Nghi shop and x 17.5–23 on the south side is house number 8, both built in js/cities.js)
   place(houseTube({ wall: '#f6c8a8', floors: 3, d: 7.4, sign: ['Bánh Mì', 'Bánh Mì'] }), 20.1, N);
   place(houseTube({ wall: '#f6e09a', floors: 2, d: 7.4, sign: ['Coffee', 'Cà Phê'] }), 24.6, N);
   const villa = Object.assign(houseVilla(), { kind: 'villa' }); place(villa, 33.5, N - 1.2);
-  houseOld(brickHouse(), 45, N - 2.5);
+  houseOld(brickHouse(), 45, N - 2.5, false, 'brick');
   // Sydney side (south)
-  houseOld(raisedHouse(), 13.5, S + 1.5, true);
+  houseOld(raisedHouse(), 13.5, S + 1.5, true, 'raised');
   place(Object.assign(houseCottage({ yard: false }), { kind: 'cottage' }), 45, S + 4.5, true);
   // garden walls and fences
   const fence = [];
@@ -228,7 +228,7 @@ export function createTown(G) {
   const bm = new THREE.Mesh(merge(bits), mat); bm.position.y = y0; bm.castShadow = true; scene.add(bm);
   world.boxes.push({ x0: 40.1, x1: 42.6, z0: S - .6, z1: S + .2 });
 
-  // ---------- Cô Sáu's sugarcane juice cart (nước mía) ----------
+  // ---------- Cô Tám's sugarcane juice cart (nước mía) ----------
   const cart = [], kx = 24.6, kz = N + 1.5;
   cart.push(P(Box(2.4, .9, 1), '#3a7fc2', [0, .75, 0]), P(Box(2.4, .9, .9), '#d6eef6', [0, 1.65, -.05]), P(Box(2.5, .08, 1.1), '#f4f4f4', [0, 2.12, 0]));
   cart.push(P(Cyl(.32, .32, .1, 12), '#2f3336', [-.9, .32, .55], [Math.PI / 2, 0, 0]), P(Cyl(.32, .32, .1, 12), '#2f3336', [.9, .32, .55], [Math.PI / 2, 0, 0]));
@@ -285,8 +285,9 @@ export function createTown(G) {
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; onLang(() => { draw(); t.needsUpdate = true; });
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set(3, .75, 1); s.position.set(x, y, z); scene.add(s); return s;
   };
-  tag('Cô Sáu 🥤', kx, y0 + 2.6, kz - 1.1);
-  tag('Chú Tư 🃏', cxT, y0 + 2.3, czT);
+  tag('Cô Tám 🥤', kx, y0 + 2.6, kz - 1.1);
+  // the card players: Bác 2, Bác 3 and Bác 4 (and Bi from the villa watching)
+  tag('Bác 2', cxT - 1, y0 + 2.05, czT); tag('Bác 3', cxT + 1, y0 + 2.05, czT); tag('Bác 4', cxT, y0 + 2.35, czT - .9);
   tag('Anh Tuấn 🏸', 30.8, y0 + 2.6, 67.7);
   const bubble = sprite('💬', .9); bubble.visible = false; scene.add(bubble);
   const CHATTER = ['🃏', '😆', '🎉', '🤔', '💬'];

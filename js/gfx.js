@@ -51,12 +51,16 @@ export function merge(parts) {
   return g;
 }
 
+import { artSVG } from './art.js';
 const emojiMats = {};
 export function emojiMat(ch) {
   if (!emojiMats[ch]) {
     const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
     x.font = '100px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(ch, 64, 72);
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    // the game's own drawn picture replaces the emoji as soon as it has loaded (js/art.js)
+    const a = artSVG(ch);
+    if (a) { const img = new Image(); img.onload = () => { x.clearRect(0, 0, 128, 128); x.drawImage(img, 8, 8, 112, 112); t.needsUpdate = true; }; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(a); }
     emojiMats[ch] = new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false });
   }
   return emojiMats[ch];

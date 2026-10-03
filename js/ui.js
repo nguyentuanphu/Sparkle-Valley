@@ -15,7 +15,7 @@ import { GAMES } from './games/frame.js';
 import { showStory, storyList } from './story.js';
 import { SECRETS } from './secrets.js';
 import { LANDMARKS, VENDORS } from './regions.js';
-import { AUSSIE_SLANG, VN_WORDS } from './words.js';
+import { AUSSIE_SLANG, VN_WORDS, VN_SLANG } from './words.js';
 import { openCredits, creditsFields, bindCreditsFields } from './credits.js';
 import { openHowTo } from './howto.js';
 import { WILD } from './gather.js';
@@ -26,6 +26,7 @@ import { installButton } from './install.js';
 import { VOICE_STYLES, clipCountFor, hush, setSpeaker, sayIn } from './voice.js';
 import { LEARN } from './words2.js';
 import { originFlags } from './icons.js';
+import { pic } from './art.js';
 
 const PET_ICON = { puppy: '🐶', kitty: '🐱', bunny: '🐰', panda: '🐼', joey: '🦘', calf: '🐃' };
 export const STYLE_ICON = { dress: '👗', shirt: '👕', aodai: '🥻', tunic: '🧥', overalls: '👖', hoodie: '🧶' };
@@ -166,6 +167,14 @@ function openRenamer(after) {
   };
 }
 
+// a sticky row of shortcuts at the top of a long page: one chip per section heading, tap to jump there
+function jumpNav(root, after) {
+  const hs = [...root.querySelectorAll(':scope > h3, :scope h3.jump')].filter(h => h.textContent.trim());
+  if (hs.length < 4) return;
+  const nav = el('div', 'jumpnav');
+  hs.forEach((h, k) => { const b = el('button', '', esc(h.textContent.trim().replace(/\s+/g, ' ').slice(0, 26))); b.onclick = () => { SFX.tap(); h.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; nav.appendChild(b); h.style.scrollMarginTop = '64px'; });
+  (after && after.parentNode === root ? after : root.firstElementChild).insertAdjacentElement('afterend', nav);
+}
 // ---------- Grown-ups ----------
 export function openGrownups(after) {
   const m = modal('grownups', '');
@@ -238,6 +247,7 @@ export function openGrownups(after) {
       <button class="btn primary wide" id="gDone">💾 ${T('Save & close', 'Lưu và đóng')}</button>`;
     bindLang(card, () => { draw(); after && after(); }); bindLearn(card, () => draw());
     card.querySelector('.x').onclick = card.querySelector('#gDone').onclick = () => { m.close(); after && after(); };
+    jumpNav(card, card.querySelector('h2'));
     card.querySelectorAll('.seg.cur button').forEach(b => b.onclick = () => { settings.currency = b.dataset.c; saveSettings(); draw(); });
     card.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const n = +b.dataset.add; if (window.__sv && window.__sv.addCoins) window.__sv.addCoins(n); else { farm.coins += n; saveFarm(); } SFX.coin ? SFX.coin() : SFX.chime(); card.querySelector('#gCoins').textContent = fmt(farm.coins); toast(T('Coins added: ', 'Đã thêm: ') + fmt(n)); });
     card.querySelectorAll('.seg.cam button').forEach(b => b.onclick = () => { settings.camMode = b.dataset.c; saveSettings(); draw(); });
@@ -335,7 +345,7 @@ export function openQuick(game, i) {
 export function openFestivals(game, i) {
   const m = modal('festpick', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎉 ${T('Festivals', 'Lễ hội')}</h2>
     <p class="sub">${T('Pick a festival: the village gets ready, fireworks go up and you get a festival present.', 'Chọn một lễ hội: làng trang trí, pháo hoa bay lên và con nhận quà lễ hội.')}</p>
-    <div class="festgrid">${game.festivals.list().map(f => `<button class="festbtn${f.today ? ' today' : ''}" data-fest="${f.id}"><span>${f.icon}</span><b>${esc(f.name)}</b>${f.today ? `<small>${T('Today!', 'Hôm nay!')}</small>` : ''}</button>`).join('')}</div>`);
+    <div class="festgrid">${game.festivals.list().map(f => `<button class="festbtn${f.today ? ' today' : ''}" data-fest="${f.id}"><span>${pic(f.icon)}</span><b>${esc(f.name)}</b>${f.today ? `<small>${T('Today!', 'Hôm nay!')}</small>` : ''}</button>`).join('')}</div>`);
   const done = () => { m.close(); game.paused = false; };
   m.querySelector('.x').onclick = done;
   m.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); done(); game.festivals.visit(i, b.dataset.fest); });
@@ -483,7 +493,7 @@ export function openPad(game, i, tab) {
   if (game.mode === 'online' || game.mode === 'solo') TABS.push(['friend', '📞', T('Friend', 'Bạn bè')]);
   const draw = () => {
     const sl = card.querySelector('.pad-tabs') ? card.querySelector('.pad-tabs').scrollLeft : 0;
-    card.innerHTML = `<div class="pad-head"><div class="pad-tabs">${TABS.map((t, k) => `<button data-t="${t[0]}" class="${t[0] === tab ? 'on' : ''}"><span>${t[1]}</span><small>${t[2]}<kbd class="padkey">${k + 1}</kbd></small></button>`).join('')}</div><button class="x" aria-label="${T('Close', 'Đóng')}">✕<kbd class="padkey">Esc</kbd></button></div><div class="pad-body"></div>`;
+    card.innerHTML = `<div class="pad-head"><div class="pad-tabs">${TABS.map((t, k) => `<button data-t="${t[0]}" class="${t[0] === tab ? 'on' : ''}"><span>${pic(t[1])}</span><small>${t[2]}<kbd class="padkey">${k + 1}</kbd></small></button>`).join('')}</div><button class="x" aria-label="${T('Close', 'Đóng')}">✕<kbd class="padkey">Esc</kbd></button></div><div class="pad-body"></div>`;
     card.querySelector('.pad-tabs').scrollLeft = sl;
     card.querySelectorAll('.pad-tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; SFX.tap(); draw(); });
     card.querySelector('.x').onclick = close;
@@ -505,15 +515,21 @@ export function openPad(game, i, tab) {
   function drawMap(body) {
     const S = 600, cv = el('canvas', 'bigmap'); cv.width = cv.height = S; body.appendChild(cv);
     body.appendChild(el('p', 'note center', T('Tap any picture on the map, or a place below, to fly there.', 'Chạm vào bất kỳ hình nào trên bản đồ, hoặc một nơi bên dưới, để bay đến đó.')));
-    // the places, grouped by country and listed from north to south, like a real map
-    const GROUPS = [['home', '🏡', T('Our valley', 'Thung lũng nhà mình')], ['vn', '🇻🇳', T('Vietnam: north to south', 'Việt Nam: từ Bắc vào Nam')], ['au', '🇦🇺', T('Australia: north to south', 'Nước Úc: từ Bắc xuống Nam')], ['asia', '🌏', T('China and India', 'Trung Quốc và Ấn Độ')]];
-    for (const [g, gi, gname] of GROUPS) {
-      const list = game.PLACES.filter(pl => (pl.g || 'home') === g).sort((a, b) => a.z - b.z); if (!list.length) continue;
-      body.appendChild(el('h4', 'qgroup', `${gi} ${esc(gname)}`));
-      const quick = el('div', 'quick');
-      list.forEach(pl => { const b = el('button', 'qbtn', `<span>${pl.icon}</span><small>${esc(pl.name())}</small>`); b.onclick = () => { close(); game.travelTo(hero, pl.x, pl.z); }; quick.appendChild(b); });
-      body.appendChild(quick);
-    }
+    // the places, grouped by country and listed from north to south, like a real map: one group at a time,
+    // picked from chips (the full list was too long to scroll)
+    const GROUPS = [['home', '🏡', T('Our valley', 'Thung lũng nhà mình')], ['vn', '🇻🇳', T('Vietnam', 'Việt Nam')], ['au', '🇦🇺', T('Australia', 'Nước Úc')], ['asia', '🌏', T('China and India', 'Trung Quốc và Ấn Độ')], ['homes', '🏠', T('Homes', 'Nhà')]];
+    const named = game.homes ? game.homes.list.filter(hm => hm.H) : [];
+    const itemsOf = g => g === 'homes' ? named.map(hm => ({ icon: '🏠', name: hm.name, go: () => game.landBy(hero, hm.door.x, hm.door.z) }))
+      : game.PLACES.filter(pl => (pl.g || 'home') === g).sort((a, b) => a.z - b.z).map(pl => ({ icon: pl.icon, name: pl.name, go: () => game.travelTo(hero, pl.x, pl.z) }));
+    const groups = GROUPS.filter(([g]) => itemsOf(g).length);
+    let gsel = groups.find(([g]) => g === openPad.mapLast) ? openPad.mapLast : groups[0][0];
+    const chips = el('div', 'hubtabs mapchips'), list = el('div', 'quick');
+    groups.forEach(([g, gi, gname]) => { const c = el('button', '', `<span>${pic(gi)}</span><small>${esc(gname)}</small>`); c.dataset.g = g; c.onclick = () => { gsel = openPad.mapLast = g; SFX.tap(); fill(); }; chips.appendChild(c); });
+    const fill = () => {
+      chips.querySelectorAll('button').forEach(c => c.classList.toggle('on', c.dataset.g === gsel)); list.innerHTML = '';
+      itemsOf(gsel).forEach(it => { const b = el('button', 'qbtn', `<span>${pic(it.icon)}</span><small>${esc(it.name())}</small>`); b.onclick = () => { close(); it.go(); }; list.appendChild(b); });
+    };
+    body.appendChild(chips); body.appendChild(list); fill();
     const quick = el('div', 'quick'); const ch = el('button', 'qbtn change', `<span>🔄</span><small>${T('Change player', 'Đổi người chơi')}</small>`); ch.onclick = () => { close(); game.changePlayer(); }; quick.appendChild(ch);
     body.appendChild(quick);
     const x = cv.getContext('2d'); x.drawImage(game.fogMapFor(p), 0, 0, S, S);
@@ -578,6 +594,7 @@ export function openPad(game, i, tab) {
       <div class="slots">${p.kite ? `<button class="slot ${p.kiteOn !== false ? 'on' : ''}" data-kite="1"><span>🪁</span><small>${p.kiteOn !== false ? T('Flying', 'Đang bay') : T('Put away', 'Cất đi')}</small></button><button class="slot" data-whistle="1"><span>🎶</span><small>${T('Whistle!', 'Thổi sáo!')}</small></button>` : `<p class="note">${T('Win the Kite Flying game to get a kite with a bamboo flute that sings in the wind!', 'Thắng trò Thả Diều để nhận diều sáo hát vi vu trong gió!')}</p>`}</div>
       <h3>${T('Glider', 'Cánh lượn')}</h3>
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
+    jumpNav(body, body.querySelector('.bag-top'));
     body.querySelectorAll('[data-eat]').forEach(b => b.onclick = () => { game.eat(hero, b.dataset.eat); draw(); });
     body.querySelectorAll('[data-snack]').forEach(b => b.onclick = () => { eatSnack(game, hero, b.dataset.snack, true); draw(); });
     body.querySelectorAll('[data-sellgem]').forEach(b => b.onclick = () => {
@@ -606,7 +623,7 @@ export function openPad(game, i, tab) {
       <p class="note">${T('Pick fruit and flowers in the meadows and bamboo forest. Tap a rock 3 times to crack it open, or dig 3 times at a sparkly mound of earth: the rarest gems are worth the most! Sell treasures from your bag or to Mr. Bear at the farm.', 'Hái quả và hoa ở đồng cỏ và rừng tre. Gõ hòn đá 3 lần để mở nó ra, hoặc đào 3 lần ở ụ đất lấp lánh: đá quý càng hiếm càng đáng giá! Bán báu vật ngay trong túi hoặc cho Bác Gấu ở nông trại.')}</p>`;
     body.innerHTML = `<button class="btn wide big" id="scrapBtn">📒 ${T('My scrapbook: decorate with stickers and photos', 'Sổ dán hình: trang trí bằng hình dán và ảnh')}</button>` + treasures + `<h3>📮 ${T('Postcards', 'Bưu thiếp')} ${Object.keys(pcs).length}/${LANDMARKS.length}</h3><div class="secrets">${LANDMARKS.map(l => pcs[l.id] ? `<button class="sec on" data-pcfact="${l.id}"><span>${l.icon}</span><small>${esc(l.name())}</small></button>` : `<button class="sec" data-fly="${l.id}"><span>❔</span><small>✈️ ${esc(l.name())}</small></button>`).join('')}</div>
       <h3>🍜 ${T('Food passport', 'Hộ chiếu ẩm thực')} ${Object.keys(tasted).length}/${VENDORS.length}</h3><div class="secrets">${VENDORS.map(v => `<div class="sec ${tasted[v.id] ? 'on' : ''}"><span>${tasted[v.id] ? v.food[0] : '❔'}</span><small>${tasted[v.id] ? esc(T(v.food[1], v.food[2])) : esc(v.name)}</small></div>`).join('')}</div>
-      <h3>🗣️ ${T('Words I learned', 'Từ con đã học')} ${words.length}</h3><div class="wordlist">${words.map(k => { const [kind, w] = [k.slice(0, 2), k.slice(3)]; if (kind === 'au') { const s = AUSSIE_SLANG.find(x => x[0] === w); return s ? `<span>🇦🇺 <b>${esc(s[0])}</b> = ${esc(T(s[1], s[2]))}</span>` : ''; } const v = VN_WORDS.find(x => x[1] === w); return v ? `<span>🇻🇳 ${v[0]} Bắc <b>${esc(v[2])}</b> · Trung <b>${esc(v[3])}</b> · Nam <b>${esc(v[4])}</b></span>` : ''; }).join('') || `<p class="note">${T('Ask the market sellers and the Aussie shopkeepers to teach you a word!', 'Hỏi các cô chú bán hàng ở chợ và ở Góc Nước Úc để học từ mới nhé!')}</p>`}</div>
+      <h3>🗣️ ${T('Words I learned', 'Từ con đã học')} ${words.length}</h3><div class="wordlist">${words.map(k => { const [kind, w] = [k.slice(0, 2), k.slice(3)]; if (kind === 'au') { const s = AUSSIE_SLANG.find(x => x[0] === w); return s ? `<span>🇦🇺 <b>${esc(s[0])}</b> = ${esc(T(s[1], s[2]))}</span>` : ''; } if (kind === 'vs') { const s = VN_SLANG.find(x => x[0] === w); return s ? `<span>🇻🇳 <b>${esc(s[0])}</b> = ${esc(T(s[1], s[2]))}</span>` : ''; } const v = VN_WORDS.find(x => x[1] === w); return v ? `<span>🇻🇳 ${v[0]} Bắc <b>${esc(v[2])}</b> · Trung <b>${esc(v[3])}</b> · Nam <b>${esc(v[4])}</b></span>` : ''; }).join('') || `<p class="note">${T('Ask the market sellers and the Aussie shopkeepers to teach you a word!', 'Hỏi các cô chú bán hàng ở chợ và ở Góc Nước Úc để học từ mới nhé!')}</p>`}</div>
       <h3>🤫 ${T('Secrets', 'Bí mật')} ${Object.keys(sec).length}/${SECRETS.length}</h3><div class="secrets">${SECRETS.map(s => sec[s.id] ? `<div class="sec on"><span>${s.icon}</span><small>${esc(s.name())}</small></div>` : `<button class="sec" data-hint="${esc(s.hint())}"><span>❔</span><small>${T('Tap for a clue', 'Chạm để nghe gợi ý')}</small></button>`).join('')}</div>
       <h3>📖 ${T('Storybook', 'Sách truyện')}</h3><div class="stories">${storyList(p).map((st, k) => `<button class="qbtn" data-st="${k}"><span>📖</span><small>${esc(st.title())}</small></button>`).join('')}</div>
       <h3>${T('Stickers', 'Hình dán')} ${p.stickers.length}/${STICKERS.length}</h3><div class="stickers">${STICKERS.map(s => `<div class="${p.stickers.includes(s) ? '' : 'miss'}">${p.stickers.includes(s) ? s : '?'}</div>`).join('')}</div>
@@ -802,30 +819,47 @@ export function openRecorder(after) {
 
 // ---------- Games hub ----------
 const HUB = [
-  { key: 'folk', icon: '🪁', title: () => T('Folk games of Australia, Vietnam, China and India', 'Trò chơi dân gian Úc, Việt Nam, Trung Quốc và Ấn Độ'), games: ['music', 'firstwords', 'tangram', 'snakes', 'rangoli', 'words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
-  { key: 'cities', icon: '🏙️', title: () => T('In the cities of Vietnam and Australia', 'Ở các thành phố Việt Nam và Úc'), games: ['puppets', 'dongho', 'dragonfire', 'traffic', 'ferries', 'tram', 'koala'] },
-  { key: 'farm', icon: '🏡', title: () => T('At the farm', 'Ở nông trại'), games: ['bunny', 'balloon', 'bubbles', 'jigsaw', 'tower', 'order', 'sortout', 'duckmaze'] },
-  { key: 'village', icon: '🏮', title: () => T('In Lotus Village', 'Ở Làng Sen'), games: ['market', 'tune', 'shapes', 'oddone', 'memory'] },
-  { key: 'shrine', icon: '✨', title: () => T('Puzzle shrines', 'Đền đố vui'), games: ['pattern', 'counting', 'letters', 'numbers', 'colors', 'sorting', 'hanoi', 'robot', 'maze'] }
+  { key: 'learn', icon: '📚', short: () => T('Learning', 'Học'), title: () => T('Learning: numbers, letters, time and more', 'Học: số, chữ, xem giờ và nhiều nữa'), games: ['counting', 'numbers', 'sums', 'letters', 'phonics', 'clock', 'shapes', 'colors', 'opposites', 'animalsounds', 'feelings', 'words', 'firstwords', 'pattern', 'sorting', 'memory'] },
+  { key: 'folk', icon: '🪁', short: () => T('Folk games', 'Dân gian'), title: () => T('Folk games of Australia, Vietnam, China and India', 'Trò chơi dân gian Úc, Việt Nam, Trung Quốc và Ấn Độ'), games: ['music', 'firstwords', 'tangram', 'snakes', 'rangoli', 'words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
+  { key: 'cities', icon: '🏙️', short: () => T('Cities', 'Thành phố'), title: () => T('In the cities of Vietnam and Australia', 'Ở các thành phố Việt Nam và Úc'), games: ['puppets', 'dongho', 'dragonfire', 'traffic', 'ferries', 'tram', 'koala'] },
+  { key: 'farm', icon: '🏡', short: () => T('Farm', 'Nông trại'), title: () => T('At the farm', 'Ở nông trại'), games: ['bunny', 'balloon', 'bubbles', 'jigsaw', 'tower', 'order', 'sortout', 'duckmaze'] },
+  { key: 'village', icon: '🏮', short: () => T('Village', 'Làng Sen'), title: () => T('In Lotus Village', 'Ở Làng Sen'), games: ['market', 'tune', 'shapes', 'oddone', 'memory'] },
+  { key: 'shrine', icon: '✨', short: () => T('Puzzles', 'Đố vui'), title: () => T('Puzzle shrines', 'Đền đố vui'), games: ['pattern', 'counting', 'letters', 'numbers', 'colors', 'sorting', 'hanoi', 'robot', 'maze'] }
 ];
 const HUB_COLORS = ['#ff7eb8', '#ffb52e', '#5fd39a', '#3cc7e8', '#9a6bff', '#ff8a5a'];
 export function openGamesHub(game, i, onClose) {
   const p = game.heroes[i].profile;
   const m = modal('hub', ''), card = m.querySelector('.card');
   const close = () => { m.close(); onClose && onClose(); };
-  card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎮 ${T('Games', 'Trò chơi')}</h2>
-    <p class="sub">${T('Tap a picture: you fly to the friend who plays it, and the game starts. 📺 shows how to play. 📍 walks you there.', 'Chạm vào hình: con bay đến chỗ bạn chơi trò đó và bắt đầu chơi. 📺 xem cách chơi. 📍 đi bộ đến đó.')}</p>
-    ${game.festivals ? `<h3>🎉 ${T('Festivals', 'Lễ hội')}</h3><div class="festrow">${game.festivals.list().map(f => `<button class="festbtn${f.today ? ' today' : ''}" data-fest="${f.id}"><span>${f.icon}</span><b>${esc(f.name)}</b>${f.today ? `<small>${T('Today!', 'Hôm nay!')}</small>` : ''}</button>`).join('')}</div>` : ''}
-    ${HUB.map(sec => `<h3>${sec.icon} ${esc(sec.title())}</h3><div class="hubgrid">${sec.games.filter(id => GAMES[id]).map((id, k) => {
+  // one category at a time, picked from a row of tabs (the whole list was too long to scroll on a phone)
+  const tabs = [...(game.festivals ? [{ key: 'fest', icon: '🎉', short: () => T('Festivals', 'Lễ hội') }] : []), ...HUB, ...(game.taleShelfHTML ? [{ key: 'tales', icon: '📖', short: () => T('Stories', 'Truyện') }] : [])];
+  let cur = tabs.find(t => t.key === openGamesHub.last) ? openGamesHub.last : 'learn';
+  const card2 = sec => `<div class="hubgrid">${sec.games.filter(id => GAMES[id]).map((id, k) => {
       const g = GAMES[id], lv = p.levels[id] || 1;
-      return `<div class="hcard" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}"><span class="hi">${g.icon}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${originFlags(g.origin)}</span>` : ''}</div>`;
-    }).join('')}</div>`).join('')}
-    ${game.taleShelfHTML ? `<h2 class="hub-tales">📖 ${T('Fairy tales', 'Truyện cổ tích')}</h2><p class="sub">${T('Tap a story: you fly to Grandma Storyteller and she reads it to you.', 'Chạm vào truyện: con bay đến chỗ Bà Kể Chuyện và bà kể cho con nghe.')}</p><div class="talelib">${game.taleShelfHTML(p)}</div>` : ''}`;
-  card.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { close(); game.readTale(i, b.dataset.tale); });
-  card.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.festivals.visit(i, b.dataset.fest); });
+      return `<div class="hcard" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}"><span class="hi">${pic(g.icon)}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${originFlags(g.origin)}</span>` : ''}</div>`;
+    }).join('')}</div>`;
+  const body = key => {
+    if (key === 'fest') return `<h3>🎉 ${T('Festivals: go any day', 'Lễ hội: đi ngày nào cũng được')}</h3><div class="festrow">${game.festivals.list().map(f => `<button class="festbtn${f.today ? ' today' : ''}" data-fest="${f.id}"><span>${pic(f.icon)}</span><b>${esc(f.name)}</b>${f.today ? `<small>${T('Today!', 'Hôm nay!')}</small>` : ''}</button>`).join('')}</div>`;
+    if (key === 'tales') return `<h3>📖 ${T('Fairy tales', 'Truyện cổ tích')}</h3><p class="sub">${T('Tap a story: you fly to Grandma Storyteller and she reads it to you.', 'Chạm vào truyện: con bay đến chỗ Bà Kể Chuyện và bà kể cho con nghe.')}</p><div class="talelib">${game.taleShelfHTML(p)}</div>`;
+    const sec = HUB.find(x => x.key === key); return `<h3>${sec.icon} ${esc(sec.title())}</h3>${card2(sec)}`;
+  };
+  card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎮 ${T('Games', 'Trò chơi')}</h2>
+    <div class="hubtabs" role="tablist">${tabs.map(t => `<button role="tab" data-tab="${t.key}"><span>${pic(t.icon)}</span><small>${esc(t.short())}</small></button>`).join('')}</div>
+    <div class="hubbody"></div>`;
+  const draw = () => {
+    card.querySelectorAll('.hubtabs [data-tab]').forEach(b => { const on = b.dataset.tab === cur; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+    const hb = card.querySelector('.hubbody'); hb.innerHTML = body(cur); hb.scrollTop = 0;
+    bind(hb);
+  };
+  card.querySelectorAll('.hubtabs [data-tab]').forEach(b => b.onclick = () => { cur = openGamesHub.last = b.dataset.tab; SFX.tap(); draw(); b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); });
   card.querySelector('.x').onclick = close;
-  card.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); game.meetAndPlay(i, id); });
-  card.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { close(); game.goToGame(i, b.dataset.go); });
-  card.querySelectorAll('[data-how]').forEach(b => b.onclick = () => { const id = b.dataset.how; openHowTo(id, { onPlay: () => { close(); game.playGame(i, id, 'place'); } }); });
+  const bind = root => {
+    root.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { close(); game.readTale(i, b.dataset.tale); });
+    root.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.festivals.visit(i, b.dataset.fest); });
+    root.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); game.meetAndPlay(i, id); });
+    root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { close(); game.goToGame(i, b.dataset.go); });
+    root.querySelectorAll('[data-how]').forEach(b => b.onclick = () => { const id = b.dataset.how; openHowTo(id, { onPlay: () => { close(); game.playGame(i, id, 'place'); } }); });
+  };
+  draw();
   say('Which game shall we play?', 'Mình chơi trò gì nào?');
 }

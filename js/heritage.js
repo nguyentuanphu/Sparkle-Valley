@@ -11,6 +11,7 @@ import { ITEMS } from './data.js';
 import { WILD } from './gather.js';
 import { dist2 } from './util.js';
 import { LINES as CHAT } from './chatter.js';
+import { createHomes } from './homes.js';
 
 const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), C = (r1, r2, h, s = 12) => new THREE.CylinderGeometry(r1, r2, h, s), S = (r, w = 14, h = 10) => new THREE.SphereGeometry(r, w, h);
 const look = (style, color, hair, hairStyle, skin = '#f6c7a5', hat = 'none') => ({ style, color, hat, back: 'none', hair, hairStyle, skin, glider: 0 });
@@ -194,13 +195,6 @@ export function createHeritage(G, { give, sfx, say, toast }) {
     india: [['Namaste! Come in for a cup of chai. We hang marigold garlands on the door to welcome guests.', 'Namaste! Vào uống tách trà chai nhé. Nhà mình treo vòng hoa cúc vạn thọ trên cửa để đón khách.']]
   };
   const GIFTS = { tube: 'banana', villa: 'apple', cottage: 'apple', village: 'rice', china: 'mandarin', india: 'mango' };
-  (world.houses || []).forEach((hs, k) => {
-    const dx = Math.sin(hs.rot) * (hs.d / 2 + 1.2), dz = Math.cos(hs.rot) * (hs.d / 2 + 1.2), x = hs.x + dx, z = hs.z + dz;
-    let day = '';
-    G.interactables.push({ id: 'door' + k, x, z, r: 2.2, icon: '🚪', label: () => T('Knock on the door', 'Gõ cửa'), act: h => {
-      sfx.tap(); setTimeout(() => sfx.tap(), 180);
-      const lines = KNOCK[hs.kind] || KNOCK.tube, today = new Date().toDateString();
-      G.dialog && G.dialog(T('Knock knock!', 'Cốc cốc!'), lines).then(() => { if (day !== today && GIFTS[hs.kind] && ITEMS[GIFTS[hs.kind]]) { day = today; give(h, GIFTS[hs.kind], 1); } });
-    } });
-  });
+  // every house: whose home it is, its family, About this house, and Go inside (js/homes.js)
+  createHomes(G, { KNOCK, GIFTS, give, sfx, say });
 }

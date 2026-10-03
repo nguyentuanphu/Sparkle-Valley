@@ -29,10 +29,10 @@ export const ANIMALS = {
 export const PETS = {
   puppy: { icon: '🐶', price: 0, snd: 'woof', name: () => T('Puppy', 'Cún con') },
   kitty: { icon: '🐱', price: 30, snd: 'meow', name: () => T('Kitty', 'Mèo con') },
-  bunny: { icon: '🐰', price: 30, snd: 'squeak', name: () => T('Bunny', 'Thỏ con') },
-  panda: { icon: '🐼', price: 60, snd: 'squeak', name: () => T('Panda cub', 'Gấu trúc con') },
-  joey: { icon: '🦘', price: 60, snd: 'squeak', name: () => T('Joey (baby kangaroo)', 'Kangaroo con') },
-  calf: { icon: '🐃', price: 60, snd: 'moo', name: () => T('Buffalo calf', 'Nghé con') }
+  bunny: { icon: '🐰', price: 30, snd: 'sniff', name: () => T('Bunny', 'Thỏ con') },
+  panda: { icon: '🐼', price: 60, snd: 'bleat', name: () => T('Panda cub', 'Gấu trúc con') },
+  joey: { icon: '🦘', price: 60, snd: 'chuff', name: () => T('Joey (baby kangaroo)', 'Kangaroo con') },
+  calf: { icon: '🐃', price: 60, snd: 'calfmoo', name: () => T('Buffalo calf', 'Nghé con') }
 };
 export const PRODUCE = {
   egg: { icon: '🥚', sell: 4, name: () => T('Egg', 'Trứng') }, milk: { icon: '🥛', sell: 7, name: () => T('Milk', 'Sữa') },
@@ -67,57 +67,10 @@ export function ensureJobs() {
 export const jobText = j => { const d = JOB_POOL.find(x => x.kind === j.kind); return d ? d.t(j.n) : j.kind; };
 export const jobIcon = j => (JOB_POOL.find(x => x.kind === j.kind) || {}).icon || '⭐';
 
-// ---------- simple animal models ----------
-function quad({ body, head = body, legs = '#5a4440', size = 1, ears = 'side', snout = null, horn = false, spots = false, fluffy = false, tail = null }) {
-  const parts = [
-    P(new THREE.CapsuleGeometry(.32, .55, 4, 10), body, [0, .62, 0], [Math.PI / 2, 0, 0]),
-    P(new THREE.SphereGeometry(.27, 14, 10), head, [0, .9, .5]),
-    ...[[.17, .3], [-.17, .3], [.17, -.3], [-.17, -.3]].map(([x, z]) => P(new THREE.CylinderGeometry(.07, .06, .44, 6), legs, [x, .22, z]))
-  ];
-  if (fluffy) for (let i = 0; i < 10; i++) parts.push(P(new THREE.SphereGeometry(.2, 8, 6), body, [Math.cos(i) * .22, .72 + (i % 3) * .07, -.3 + i * .07]));
-  if (ears === 'side') [-1, 1].forEach(s => parts.push(P(new THREE.SphereGeometry(.09, 8, 6), head, [s * .25, 1.0, .45], [0, 0, 0], [1.4, .5, .8])));
-  if (ears === 'point') [-1, 1].forEach(s => parts.push(P(new THREE.ConeGeometry(.08, .2, 6), head, [s * .14, 1.17, .47])));
-  if (ears === 'long') [-1, 1].forEach(s => parts.push(P(new THREE.CapsuleGeometry(.06, .3, 4, 8), head, [s * .1, 1.28, .45])));
-  if (ears === 'flop') [-1, 1].forEach(s => parts.push(P(new THREE.CapsuleGeometry(.07, .18, 4, 8), legs, [s * .25, .9, .45], [0, 0, s * .3])));
-  if (snout) parts.push(P(new THREE.SphereGeometry(.13, 10, 8), snout, [0, .85, .74], [0, 0, 0], [1.1, .8, .7]));
-  if (horn) { parts.push(P(new THREE.ConeGeometry(.05, .35, 8), '#ffd23f', [0, 1.25, .62], [.5, 0, 0])); parts.push(P(new THREE.SphereGeometry(.12, 8, 6), '#ff9ad5', [0, 1.05, .3], [0, 0, 0], [.6, 1.3, 2])); }
-  if (spots) [[.2, .75, .1], [-.25, .7, -.2], [.1, .9, -.35]].forEach(p => parts.push(P(new THREE.SphereGeometry(.12, 8, 6), '#2b2b2b', p, [0, 0, 0], [1, .6, 1])));
-  if (tail === 'curl') parts.push(P(new THREE.TorusGeometry(.07, .025, 6, 10), body, [0, .75, -.6]));
-  if (tail === 'wag') parts.push(P(new THREE.CapsuleGeometry(.04, .25, 4, 6), body, [0, .85, -.55], [-.7, 0, 0]));
-  if (tail === 'puff') parts.push(P(new THREE.SphereGeometry(.1, 8, 6), '#ffffff', [0, .7, -.55]));
-  if (tail === 'long') parts.push(P(new THREE.CapsuleGeometry(.035, .4, 4, 6), body, [0, .9, -.6], [-1, 0, 0]));
-  // eyes
-  [-1, 1].forEach(s => parts.push(P(new THREE.SphereGeometry(.045, 8, 6), '#1a1a1a', [s * .12, .98, .72])));
-  const m = new THREE.Mesh(merge(parts), toonVC({ roughness: .85 })); m.scale.setScalar(size); m.castShadow = true;
-  const g = new THREE.Group(); g.add(m); const sh = blobShadow(); sh.scale.setScalar(size * .9); g.add(sh);
-  return g;
-}
-function chickenModel() {
-  const m = new THREE.Mesh(merge([
-    P(new THREE.SphereGeometry(.26, 14, 10), '#ffffff', [0, .38, 0], [0, 0, 0], [1, .95, 1.2]), P(new THREE.SphereGeometry(.16, 12, 10), '#ffffff', [0, .66, .2]),
-    P(new THREE.ConeGeometry(.05, .12, 6), '#ffb52e', [0, .64, .38], [Math.PI / 2, 0, 0]), P(new THREE.SphereGeometry(.06, 8, 6), '#e8332a', [0, .82, .2], [0, 0, 0], [.6, 1, 1.4]),
-    P(new THREE.CylinderGeometry(.02, .02, .18, 4), '#ffb52e', [.08, .1, 0]), P(new THREE.CylinderGeometry(.02, .02, .18, 4), '#ffb52e', [-.08, .1, 0]),
-    P(new THREE.SphereGeometry(.03, 6, 5), '#1a1a1a', [.08, .7, .33]), P(new THREE.SphereGeometry(.03, 6, 5), '#1a1a1a', [-.08, .7, .33])
-  ]), toonVC({ roughness: .9 })); m.castShadow = true;
-  const g = new THREE.Group(); g.add(m); const sh = blobShadow(); sh.scale.setScalar(.45); g.add(sh); return g;
-}
-export function animalModel(kind) {
-  switch (kind) {
-    case 'chicken': return chickenModel();
-    case 'cow': return quad({ body: '#ffffff', head: '#ffffff', legs: '#ffffff', size: 1.25, snout: '#ffb3c6', spots: true, tail: 'long' });
-    case 'sheep': return quad({ body: '#f4f1ea', head: '#4a3a36', legs: '#4a3a36', size: .95, fluffy: true });
-    case 'pig': return quad({ body: '#ffa8c5', head: '#ffa8c5', legs: '#ff98b8', size: .85, snout: '#ff8ab0', ears: 'point', tail: 'curl' });
-    case 'unicorn': return quad({ body: '#ffffff', head: '#ffffff', legs: '#ffffff', size: 1.25, ears: 'point', horn: true, tail: 'long' });
-    case 'puppy': return quad({ body: '#c98b4a', head: '#c98b4a', legs: '#a8703a', size: .6, ears: 'flop', snout: '#e8c49a', tail: 'wag' });
-    case 'kitty': return quad({ body: '#ffb36b', head: '#ffb36b', legs: '#ff9f4a', size: .55, ears: 'point', tail: 'long' });
-    case 'bunny': return quad({ body: '#ffffff', head: '#ffffff', legs: '#f2f2f2', size: .5, ears: 'long', tail: 'puff' });
-    case 'panda': return quad({ body: '#ffffff', head: '#ffffff', legs: '#2b2b2b', size: .62, ears: 'side', snout: '#f2f2f2', tail: 'puff' });
-    case 'joey': return quad({ body: '#c98a5a', head: '#c98a5a', legs: '#a8703a', size: .58, ears: 'long', snout: '#e8c49a', tail: 'long' });
-    case 'calf': return quad({ body: '#6f6a66', head: '#6f6a66', legs: '#5a5552', size: .7, ears: 'side', snout: '#b5a59a', tail: 'long' });
-    case 'bear': return quad({ body: '#8a5a3b', head: '#8a5a3b', legs: '#7a4a2b', size: 1.4, snout: '#d9b58a' });
-  }
-  return quad({ body: '#999' });
-}
+// ---------- animal models: js/animals.js (each kind its own shape, with moving legs, head and tail) ----------
+export { animalModel } from './animals.js';
+import { animalModel } from './animals.js';
+
 function bearNPC() {
   const g = new THREE.Group();
   const M = new THREE.Mesh(merge([
@@ -222,7 +175,7 @@ export function createFarm(G) {
   const hutch = at(-20, -14);
   const hu = new THREE.Mesh(merge([P(new THREE.BoxGeometry(2, 1.2, 1.4), '#d9b58a', [0, .9, 0]), P(new THREE.ConeGeometry(1.6, .8, 4), '#8a5a3b', [0, 1.9, 0], [0, Math.PI / 4, 0], [1, 1, .8]), P(new THREE.BoxGeometry(.7, .6, .05), '#3a2a20', [0, .9, .72]), ...[-.8, .8].flatMap(x => [P(new THREE.CylinderGeometry(.06, .06, .6, 4), '#7a5236', [x, .3, .55]), P(new THREE.CylinderGeometry(.06, .06, .6, 4), '#7a5236', [x, .3, -.55])])]), toonVC());
   add(hu, hutch.x, hutch.z); solid(hutch.x, hutch.z, 1.2);
-  const hb = animalModel('bunny'); add(hb, hutch.x + 1.6, hutch.z + .6, .5);
+  const hb = animalModel('bunny'); add(hb, hutch.x + 1.6, hutch.z + .6, .5); hb.userData.react = () => { SFX.sniff(); G.fx(hb.position.x, hb.position.y + 1, hb.position.z, '💕'); };
   const balloon = at(-27, -16);
   const balloonG = new THREE.Group();
   const env = new THREE.Mesh(new THREE.SphereGeometry(2.2, 20, 16), new THREE.MeshStandardMaterial({ color: '#ff5a6a', roughness: .5 })); env.scale.set(1, 1.2, 1); env.position.y = 6; balloonG.add(env);
