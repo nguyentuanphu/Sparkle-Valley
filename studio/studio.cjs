@@ -4,10 +4,12 @@
 // (or the folder chosen in Settings):
 //   · content/custom.json + content/faces/  the family's content pack (message, names, faces, stories, quiz, defaults)
 //   · voices/                               the offline voice pack (new lines made with Azure, Piper or the microphone)
+//   · photos/                               real photos of the landmarks (from Wikipedia/Commons, with credits)
 //   · sparkle-valley-netlify.zip            the publish zip, and an optional one-click deploy to Netlify
-// Keys (Azure, Netlify) are kept only on this computer, in %APPDATA%\SparkleStudio\settings.json, never in the game.
+// Publishing to GitHub sends only what the family changed (content, voices, photos); Netlify then updates the site.
+// Keys (Azure, Netlify, GitHub) are kept only on this computer, in %APPDATA%\SparkleStudio\settings.json, never in the game.
 'use strict';
-const http = require('http'), fs = require('fs'), path = require('path'), os = require('os'), zlib = require('zlib'), vm = require('vm'), { spawn, execFile } = require('child_process');
+const http = require('http'), crypto = require('crypto'), fs = require('fs'), path = require('path'), os = require('os'), zlib = require('zlib'), vm = require('vm'), { spawn, execFile } = require('child_process');
 
 let sea = null; try { sea = require('node:sea'); if (!sea.isSea()) sea = null; } catch (e) { sea = null; }
 const UI_DIR = path.join(__dirname, 'ui');
@@ -125,7 +127,88 @@ function zipFolder(root, items, out) {
   fs.closeSync(fd);
   return { files: files.length, bytes: off };
 }
-const PUBLISH = ['index.html', 'manifest.webmanifest', 'sw.js', 'netlify.toml', 'css', 'fonts', 'icons', 'js', 'vendor', 'videos', 'content', 'voices'];
+const PUBLISH = ['index.html', 'manifest.webmanifest', 'sw.js', 'netlify.toml', 'css', 'fonts', 'icons', 'js', 'vendor', 'videos', 'content', 'voices', 'photos'];
+
+// ---------- one long job at a time (photos, GitHub), with progress the dashboard polls ----------
+let JOB = null;
+const job = (kind, f) => { if (JOB && !JOB.end) throw new Error('Something else is still running: ' + JOB.kind); JOB = { kind, done: 0, total: 0, msg: '', start: Date.now() }; f(JOB).then(r => { JOB.result = r; JOB.end = true; }, e => { JOB.error = String(e && e.message || e); JOB.end = true; }); return JOB; };
+
+// ---------- real photos of the landmarks, saved into the game (photos/<key>/n.jpg + photos/index.json) ----------
+const UA = { 'User-Agent': 'SparkleStudio/1.0 (family game dashboard)', accept: 'application/json' };
+const BADPIC = /\.(svg|gif|tif|tiff|webm|ogv|ogg|oga|wav|mp3|pdf)$|logo|flag of|map|locator|coat of arms|seal of|icon|diagram|signature|plan of|chart/i;
+const PIX = () => G('photos', 'index.json');
+const readPix = () => { try { return JSON.parse(fs.readFileSync(PIX(), 'utf8')); } catch (e) { return {}; } };
+const writePix = o => { fs.mkdirSync(G('photos'), { recursive: true }); fs.writeFileSync(PIX(), JSON.stringify(o, null, 1)); };
+const strip = h => String(h || '').replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/\s+/g, ' ').trim();
+async function bestPhotos(sources, max) {
+  for (const s of sources) {
+    const [lang, title] = s.split(/:(.+)/), t = encodeURIComponent(title.replace(/ /g, '_'));
+    const ml = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${t}`, { headers: UA }); if (!ml.ok) continue;
+    const j = await ml.json(); let lead = '';
+    try { const sm = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${t}`, { headers: UA }); if (sm.ok) lead = decodeURIComponent(((await sm.json()).originalimage || {}).source || '').split('/').pop(); } catch (e) { }
+    let items = (j.items || []).filter(it => it.type === 'image' && it.showInGallery !== false && !BADPIC.test(it.title || ''));
+    items.sort((a, b) => (b.title.replace(/^File:/, '').replace(/ /g, '_') === lead) - (a.title.replace(/^File:/, '').replace(/ /g, '_') === lead));
+    if (items.length) return items.slice(0, max).map(it => ({ file: it.title, caption: strip(it.caption && it.caption.html || it.caption && it.caption.text || '') }));
+  }
+  return [];
+}
+async function commonsInfo(file) {
+  const r = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo&iiprop=url|extmetadata|size&iiurlwidth=1280&titles=${encodeURIComponent(file)}`, { headers: UA });
+  const j = await r.json(), pg = Object.values((j.query || {}).pages || {})[0], ii = pg && pg.imageinfo && pg.imageinfo[0]; if (!ii) return null;
+  const md = ii.extmetadata || {};
+  return { url: ii.thumburl || ii.url, width: ii.width, credit: [strip(md.Artist && md.Artist.value).slice(0, 80), strip(md.LicenseShortName && md.LicenseShortName.value)].filter(Boolean).join(' · ') };
+}
+async function getPhotos(J, list, max) {
+  const pix = readPix(); J.total = list.length;
+  for (const { key, sources, name } of list) {
+    J.msg = name || key;
+    try {
+      const picks = await bestPhotos(sources, max), out = [];
+      fs.mkdirSync(G('photos', key), { recursive: true });
+      for (const p of picks) {
+        const info = await commonsInfo(p.file); if (!info || (info.width && info.width < 500)) continue;
+        const img = await fetch(info.url, { headers: { 'User-Agent': UA['User-Agent'] } }); if (!img.ok) continue;
+        const n = out.length + 1, rel = `photos/${key}/${n}.jpg`; fs.writeFileSync(G(rel), Buffer.from(await img.arrayBuffer()));
+        out.push({ src: rel, file: p.file, caption: p.caption.slice(0, 160), credit: info.credit });
+      }
+      if (out.length) pix[key] = out;
+    } catch (e) { J.errors = (J.errors || 0) + 1; J.last = String(e.message || e); }
+    J.done++; writePix(pix);
+  }
+  return { saved: Object.keys(pix).length };
+}
+
+// ---------- publish to GitHub: only the family's changes (content, voices, photos), as one commit ----------
+// The live site is built from GitHub by Netlify, so a commit here is published there a minute or two later.
+async function gh(p, opt = {}) {
+  const r = await fetch('https://api.github.com' + p, { ...opt, headers: { Authorization: 'Bearer ' + conf.githubToken, Accept: 'application/vnd.github+json', 'User-Agent': 'sparkle-studio', 'X-GitHub-Api-Version': '2022-11-28', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } });
+  const t = await r.text(); let j = {}; try { j = JSON.parse(t); } catch (e) { }
+  if (!r.ok) throw new Error(`GitHub ${r.status}: ${(j.message || t).slice(0, 160)}`);
+  return j;
+}
+const gitSha = b => crypto.createHash('sha1').update('blob ' + b.length + '\0').update(b).digest('hex');
+const SYNC = ['content', 'voices', 'photos', 'tools/voice-extra.json'];
+async function publishGitHub(J, message) {
+  if (!conf.githubToken || !/^[\w.-]+\/[\w.-]+$/.test(conf.githubRepo || '')) throw new Error('Add the GitHub token and repository (owner/name) in Settings first.');
+  const R = `/repos/${conf.githubRepo}`, br = conf.githubBranch || 'main';
+  J.msg = 'Reading the website’s files…';
+  const ref = await gh(`${R}/git/ref/heads/${encodeURIComponent(br)}`), base = ref.object.sha, baseTree = (await gh(`${R}/git/commits/${base}`)).tree.sha;
+  const remote = new Map(), root = await gh(`${R}/git/trees/${baseTree}`);
+  for (const top of ['content', 'voices', 'photos', 'tools']) { const e = root.tree.find(x => x.path === top && x.type === 'tree'); if (!e) continue; const t = await gh(`${R}/git/trees/${e.sha}?recursive=1`); for (const x of t.tree) if (x.type === 'blob') remote.set(top + '/' + x.path, x.sha); }
+  const local = [];
+  const walk = rel => { const abs = G(rel); if (!fs.existsSync(abs)) return; const st = fs.statSync(abs); if (st.isDirectory()) { for (const f of fs.readdirSync(abs)) { if (rel === 'content' && f === 'old') continue; walk(rel + '/' + f); } } else local.push(rel); };
+  SYNC.forEach(walk);
+  const changed = []; for (const rel of local) { const b = fs.readFileSync(G(rel)); if (remote.get(rel) !== gitSha(b)) changed.push(rel); }
+  J.total = changed.length; if (!changed.length) return { changed: 0, note: 'Nothing new to publish: the website already has everything.' };
+  const items = [];
+  for (const rel of changed) { J.msg = rel; const b = fs.readFileSync(G(rel)); const blob = await gh(`${R}/git/blobs`, { method: 'POST', body: JSON.stringify({ content: b.toString('base64'), encoding: 'base64' }) }); items.push({ path: rel, mode: '100644', type: 'blob', sha: blob.sha }); J.done++; }
+  J.msg = 'Making the commit…'; let tree = baseTree;
+  for (let i = 0; i < items.length; i += 400) tree = (await gh(`${R}/git/trees`, { method: 'POST', body: JSON.stringify({ base_tree: tree, tree: items.slice(i, i + 400) }) })).sha;
+  const commit = await gh(`${R}/git/commits`, { method: 'POST', body: JSON.stringify({ message: message || `Family update from Sparkle Studio (${changed.length} files)`, tree, parents: [base] }) });
+  await gh(`${R}/git/refs/heads/${encodeURIComponent(br)}`, { method: 'PATCH', body: JSON.stringify({ sha: commit.sha }) });
+  return { changed: changed.length, commit: commit.sha.slice(0, 7), url: `https://github.com/${conf.githubRepo}/commit/${commit.sha}` };
+}
+
 
 // ---------- the health check ----------
 function check() {
@@ -178,12 +261,12 @@ const server = http.createServer(async (req, res) => {
     if (api === 'info') {
       const have = GAME ? voicesHave() : {}, nv = Object.values(have).reduce((a, s) => a + Object.values(s).reduce((b, l) => b + l.length, 0), 0);
       let version = '?'; try { version = /VERSION = '([^']+)'/.exec(fs.readFileSync(G('sw.js'), 'utf8'))[1]; } catch (e) { }
-      return send(res, 200, { game: GAME, ok: isGame(GAME), version, voices: nv, conf: { azure: !!conf.azureKey, azureRegion: conf.azureRegion || '', netlify: !!conf.netlifyToken, netlifySite: conf.netlifySite || '', piper: !!conf.piperExe, piperExe: conf.piperExe || '', piperModels: conf.piperModels || {} }, settingsFile: CONF });
+      return send(res, 200, { game: GAME, ok: isGame(GAME), version, voices: nv, conf: { azure: !!conf.azureKey, azureRegion: conf.azureRegion || '', netlify: !!conf.netlifyToken, netlifySite: conf.netlifySite || '', github: !!conf.githubToken, githubRepo: conf.githubRepo || '', githubBranch: conf.githubBranch || 'main', piper: !!conf.piperExe, piperExe: conf.piperExe || '', piperModels: conf.piperModels || {} }, settingsFile: CONF });
     }
     if (api === 'settings' && req.method === 'POST') {
       const b = await json(req);
-      for (const k of ['azureRegion', 'netlifySite', 'piperExe']) if (typeof b[k] === 'string') conf[k] = b[k].trim();
-      for (const k of ['azureKey', 'netlifyToken']) if (typeof b[k] === 'string' && b[k].trim()) conf[k] = b[k].trim(); // empty = keep the saved one
+      for (const k of ['azureRegion', 'netlifySite', 'piperExe', 'githubRepo', 'githubBranch']) if (typeof b[k] === 'string') conf[k] = b[k].trim();
+      for (const k of ['azureKey', 'netlifyToken', 'githubToken']) if (typeof b[k] === 'string' && b[k].trim()) conf[k] = b[k].trim(); // empty = keep the saved one
       if (b.forget) for (const k of [].concat(b.forget)) delete conf[k];
       if (b.piperModels && typeof b.piperModels === 'object') conf.piperModels = Object.assign(conf.piperModels || {}, b.piperModels);
       if (typeof b.gameDir === 'string' && b.gameDir.trim()) { if (!isGame(b.gameDir.trim())) return send(res, 400, { error: 'That folder has no game in it (index.html and js/main.js).' }); conf.gameDir = path.resolve(b.gameDir.trim()); GAME = conf.gameDir; manCache = null; }
@@ -197,6 +280,16 @@ const server = http.createServer(async (req, res) => {
       fs.mkdirSync(G('content', 'faces'), { recursive: true }); const name = slug(b.id) + '.jpg'; fs.writeFileSync(G('content', 'faces', name), Buffer.from(m[1], 'base64'));
       return send(res, 200, { photo: 'content/faces/' + name });
     }
+    if (api === 'job') return send(res, 200, JOB || {});
+    if (api === 'photos/index') return send(res, 200, readPix());
+    if (api === 'photos/get' && req.method === 'POST') { const b = await json(req); const list = (b.list || []).filter(x => x && /^[\p{L}\p{N}-]{1,60}$/u.test(x.key || '') && Array.isArray(x.sources)); return send(res, 200, job('photos', J => getPhotos(J, list, Math.min(8, Math.max(1, +b.max || 4))))); }
+    if (api === 'photos/remove' && req.method === 'POST') { const b = await json(req), pix = readPix(), L = pix[b.key] || []; const i = L.findIndex(p => p.src === b.src); if (i >= 0) { const f = safeJoin(GAME, L[i].src); if (f && fs.existsSync(f)) fs.unlinkSync(f); L.splice(i, 1); if (L.length) pix[b.key] = L; else delete pix[b.key]; writePix(pix); } return send(res, 200, { ok: true }); }
+    if (api === 'voices/extra') {
+      const f = G('tools', 'voice-extra.json'); let L = []; try { L = JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { }
+      if (req.method === 'POST') { const b = await json(req), have = new Set(L.map(l => l.lang + '|' + l.text)); let n = 0; for (const l of b.lines || []) if (l && CAST[l.lang] && typeof l.text === 'string' && l.text.trim() && l.text.length < 400 && !have.has(l.lang + '|' + l.text)) { L.push({ lang: l.lang, text: l.text }); have.add(l.lang + '|' + l.text); n++; } fs.mkdirSync(G('tools'), { recursive: true }); fs.writeFileSync(f, JSON.stringify(L, null, 0).replace(/\},\{/g, '},\n{') + '\n'); return send(res, 200, { added: n, total: L.length }); }
+      return send(res, 200, L);
+    }
+    if (api === 'github/publish' && req.method === 'POST') { const b = await json(req); return send(res, 200, job('github', J => publishGitHub(J, String(b.message || '').slice(0, 200)))); }
     if (api === 'srcfiles') { const list = []; for (const d of ['js', 'js/games']) for (const f of fs.readdirSync(G(d))) if (f.endsWith('.js')) list.push(d + '/' + f); return send(res, 200, list); }
     if (api === 'voices/have') return send(res, 200, voicesHave());
     if (api === 'voice' && req.method === 'POST') {

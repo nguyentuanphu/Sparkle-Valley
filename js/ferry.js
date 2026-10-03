@@ -5,11 +5,10 @@ import { THREE, P, merge, toonVC, outline, sprite } from './gfx.js';
 import { T, onLang } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
-import { WATER, LAKE, heightAt, regionAt, REGION_NAMES } from './world.js';
+import { WATER, LAKE, RIVER, heightAt, regionAt, REGION_NAMES } from './world.js';
 import { dist2 } from './util.js';
 
 const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), C = (r1, r2, h, s = 10) => new THREE.CylinderGeometry(r1, r2, h, s);
-const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [58, 40], [52, 85]];
 
 function signTex(lines, w = 512, h = 128, bg = '#2f86c0') {
   const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');

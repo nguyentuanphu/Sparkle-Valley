@@ -4,6 +4,7 @@ import { settings, saveSettings } from './state.js';
 import { ac } from './audio.js';
 import { swapNames } from './i18n.js';
 import { packHash } from './packhash.js';
+import { CUSTOM } from './custom.js';
 
 let all = [];
 const BAD = /compact|eloquence|novelty|whisper|bad news|bells|boing|bubbles|cellos|zarvox|trinoids|albert|jester|organ|superstar|wobble|grandpa|grandma|rocko|reed|eddy|flo\b|sandy|shelley|fred|junior|ralph|kathy|good news|hysterical|deranged|pipe/i;
@@ -45,13 +46,17 @@ const style = () => VOICE_STYLES.find(v => v.id === settings.voiceStyle) || VOIC
 // voices for the language they are shared out by character, so neighbours don't all sound the same.
 let speaker = null;
 export const setSpeaker = name => { speaker = name ? String(name) : null; };
-const FEMALE = /^(Bà|Cô|O|Dì|Chị|Mợ|Thím|Mrs|Ms|Miss|Aunty|Auntie|Grandma|Nana|Nanna)(?=[\s.]|$)/iu, MALE = /^(Ông|Chú|Bác|Anh|Cậu|Dượng|Mr|Uncle|Grandpa|Pop)(?=[\s.]|$)/iu;
+const FEMALE = /^(Bà|Cô|O|Dì|Chị|Mợ|Thím|Mrs|Ms|Miss|Aunty|Auntie|Grandma|Nana|Nanna|Big Sister|Sister|Lady|Madam)(?=[\s.]|$)/iu, MALE = /^(Ông|Chú|Bác|Anh|Cậu|Dượng|Mr|Uncle|Grandpa|Pop|Big Brother|Brother|Sir)(?=[\s.]|$)/iu;
 const OLD = /^(Bà|Ông|Grandma|Grandpa|Nana|Nanna|Pop)(?=[\s.]|$)/iu;
-const KIDS_F = /^(Tí|Bống|Mít|Lan|Ruby|Chloe|Bông)/i;
+const KIDS_F = /^(?:(?:Bé|Em|Little|Út)\s+)?(Tí|Bống|Mít|Lan|Ruby|Chloe|Bông|Hà|Trà|Na|Mai|Linh|Thảo|Vy|Ngọc|Hoa|Lily|Mia|Ava|Priya|Mei|Ling)(?=[\s.!,]|$)/iu;
+// a villager's voice can also be set by name (Sparkle Studio → Villagers): { 'Bé Hà': 'f', 'Tí': 'm' }
+let GENDERS = {};
+export const setVoiceGenders = g => { GENDERS = g && typeof g === 'object' ? g : {}; };
+setVoiceGenders(CUSTOM.genders);
 export function speakerKind(name = speaker) {
   if (!name) return null;
-  const n = name.trim(), old = OLD.test(n);
-  const gender = FEMALE.test(n) ? 'f' : MALE.test(n) ? 'm' : KIDS_F.test(n) ? 'f' : 'm';
+  const n = name.trim(), old = OLD.test(n), set = GENDERS[n] || GENDERS[n.replace(/^(Bé|Em|Little|Út)\s+/iu, '')];
+  const gender = set === 'f' || set === 'm' ? set : FEMALE.test(n) ? 'f' : MALE.test(n) ? 'm' : KIDS_F.test(n) ? 'f' : 'm';
   const kid = !FEMALE.test(n) && !MALE.test(n) && !/owl|cú|bầu|gourd|cloud|mây|davo|gazza/i.test(n);
   let h = 0; for (const c of n) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return { gender, old, kid, seed: h };
@@ -119,23 +124,56 @@ async function speak(en, vi) {
   if (settings.bilingual && vi != null && en !== vi) parts.push(settings.lang === 'vi' ? ['en', en] : ['vi', vi]);
   for (const [lang, text] of parts) {
     if (my !== seq) return;
+    if (window.__svVoiceLog) window.__svVoiceLog(lang, text, !!packSlot(lang, text)); // for tools/voice-harvest.mjs
     try { if (await playPack(lang, text, my)) continue; } catch (e) { }
-    if (cloudReady()) {
-      try { const buf = await cloudVoice(text, lang); if (my !== seq) return; await playBuffer(buf); continue; }
-      catch (e) { console.warn('Natural voice failed, using the device voice', e); }
+    // Not recorded as a whole: recorded sentences inside it still play from the pack; only the rest uses another voice.
+    const bits = sentences(text);
+    if (PACK && bits.length > 1 && bits.some(b => packSlot(lang, b))) {
+      for (const b of bits) {
+        if (my !== seq) return;
+        let ok = false; try { ok = await playPack(lang, b, my); } catch (e) { }
+        if (!ok) { noteMiss(lang, b); await otherVoice(b, lang, my); }
+      }
+      continue;
     }
-    await deviceSpeak(text, lang, my);
+    noteMiss(lang, text);
+    await otherVoice(text, lang, my);
   }
 }
+const sentences = text => (String(text).match(/[^.!?。…]+[.!?。…]*\s*/g) || [text]).map(t => t.trim()).filter(Boolean);
+async function otherVoice(text, lang, my) {
+  if (cloudReady()) {
+    try { const buf = await cloudVoice(text, lang); if (my !== seq) return; await playBuffer(buf); return; }
+    catch (e) { console.warn('Natural voice failed, using the device voice', e); }
+  }
+  await deviceSpeak(text, lang, my);
+}
+// Lines the game had to say without a recording are noted on this device (most-said first). Grown-ups can send
+// the list to Sparkle Studio (it travels inside the backup file), which records them for the next pack.
+const MISS_KEY = 'sv2_voicemiss';
+let misses = null;
+const loadMisses = () => { if (!misses) { try { misses = JSON.parse(localStorage.getItem(MISS_KEY) || '[]'); } catch (e) { misses = []; } } return misses; };
+let missTimer = 0;
+function noteMiss(lang, text) {
+  if (!PACK || !text || /^[\d\s.,!?]+$/.test(text)) return;
+  const L = loadMisses(), f = L.find(m => m[0] === lang && m[1] === text);
+  if (f) f[2]++; else { L.push([lang, text, 1]); if (L.length > 600) { L.sort((a, b) => b[2] - a[2]); L.length = 500; } }
+  clearTimeout(missTimer); missTimer = setTimeout(() => { try { localStorage.setItem(MISS_KEY, JSON.stringify(L)); } catch (e) { } }, 2000);
+}
+export const voiceMisses = () => loadMisses().slice().sort((a, b) => b[2] - a[2]);
+export const clearVoiceMisses = () => { misses = []; try { localStorage.removeItem(MISS_KEY); } catch (e) { } };
 // Speak one string in a fixed language (letter names, etc.).
 export function sayIn(lang, text) {
   if (!settings.voice) return;
+  if (window.__svVoiceLog) window.__svVoiceLog(lang, text, !!packSlot(lang, text));
   const my = ++seq;
   try { speechSynthesis.cancel(); } catch (e) { }
   if (packSlot(lang, text)) { playPack(lang, text, my).then(ok => { if (!ok && my === seq) deviceSpeak(text, lang, my); }).catch(() => deviceSpeak(text, lang, my)); return; }
   if (cloudReady() && cloudCached(text, lang)) { cloudVoice(text, lang).then(b => my === seq && playBuffer(b)).catch(() => deviceSpeak(text, lang, my)); return; }
   deviceSpeak(text, lang, my);
 }
+// the phone's own voice only (Grown-ups → Advanced → Phone voice ▶), so the chosen voice is really heard
+export function sayDevice(lang, text) { const my = ++seq; try { speechSynthesis.cancel(); } catch (e) { } try { if (playing) playing.stop(); } catch (e) { } return deviceSpeak(text, lang, my); }
 export function hush() { seq++; try { speechSynthesis.cancel(); } catch (e) { } try { if (playing) playing.stop(); } catch (e) { } }
 
 // ---------- Family voice: real recordings of a grown-up ----------

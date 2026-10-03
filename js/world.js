@@ -40,7 +40,7 @@ export const LOTS = [];
 export const FOOTPRINTS = [];
 const FP_GRID = new Map(), fpKey = (i, j) => i * 4096 + j;
 function fpAdd(F) { FOOTPRINTS.push(F); for (let i = Math.floor((F.x0 - F.pad) / 16); i <= Math.floor((F.x1 + F.pad) / 16); i++) for (let j = Math.floor((F.z0 - F.pad) / 16); j <= Math.floor((F.z1 + F.pad) / 16); j++) { const k = fpKey(i, j); if (!FP_GRID.has(k)) FP_GRID.set(k, []); FP_GRID.get(k).push(F); } }
-const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [58, 40], [52, 85]];
+export const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [62, 40], [57, 85]]; // (moved 4 m east past Two Homes Street, whose last cottage stood on the bank)
 export const CHINA = { x: 100, z: -88, r: 24, h: 9 };    // China Town: lanterns, tiled roofs, a pagoda and a little Great Wall
 export const INDIA = { x: -112, z: -84, r: 24, h: 9 };  // India Village: colourful houses, a little Taj Mahal, rangoli and marigolds
 export const BRIDGE = { x0: 44, x1: 74, z: 47, w: 6.4, h: 7.4 };   // the Harbour-style bridge carrying Two Homes Street over the river
@@ -104,7 +104,7 @@ export function roadDist(x, z) {
   return { d: best, road };
 }
 
-function riverDist(x, z) {
+export function riverDist(x, z) {
   let best = 1e9;
   for (let i = 0; i < RIVER.length - 1; i++) {
     const [ax, az] = RIVER[i], [bx, bz] = RIVER[i + 1];
@@ -874,4 +874,26 @@ export function widenFlatLand(world, scene, metres = 10) {
   inst.forEach((o, k) => { let ch = false; for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); m4.decompose(p, q, sc); const d = heightAt(p.x, p.z) - instOld[k][i]; if (Math.abs(d) > .01) { p.y += d; m4.compose(p, q, sc); o.setMatrixAt(i, m4); ch = true; } } if (ch) { o.instanceMatrix.needsUpdate = true; o.computeBoundingSphere && o.computeBoundingSphere(); } });
   roads.forEach((o, k) => { const pa = o.geometry.attributes.position; let ch = false; for (let i = 0; i < pa.count; i++) { const d = heightAt(pa.getX(i), pa.getZ(i)) - roadOld[k][i]; if (Math.abs(d) > .01) { pa.setY(i, pa.getY(i) + d); ch = true; } } if (ch) { pa.needsUpdate = true; o.geometry.computeVertexNormals(); o.geometry.computeBoundingSphere(); } });
   for (const [k, h0] of topOld) { const d = heightAt(Math.round(k / 8192) / 2, (k - Math.round(k / 8192) * 8192) / 2) - h0; if (Math.abs(d) > .01) world.roadTop.set(k, world.roadTop.get(k) + d); }
+}
+
+// Last step of building the world: a road never floats. Wherever a road's surface is more than half a metre above
+// the ground under it (steep banks, bridge approaches, ground lowered later), it is laid back down on the ground,
+// and the walking surface with it. Bridge decks and other platforms are left as they are.
+export function settleRoads(world, scene) {
+  const onDeck = (x, z) => world.platforms.some(p => !p.tower && x > p.x0 - .5 && x < p.x1 + .5 && z > p.z0 - .5 && z < p.z1 + .5);
+  let n = 0;
+  scene.traverse(o => {
+    if (!o.userData || !o.userData.road || !o.geometry) return;
+    const pa = o.geometry.attributes.position; let ch = false;
+    for (let i = 0; i < pa.count; i++) {
+      const x = pa.getX(i) + o.position.x, z = pa.getZ(i) + o.position.z, y = pa.getY(i) + o.position.y, g = heightAt(x, z);
+      if (y > g + .5 && !onDeck(x, z)) { pa.setY(i, g + .14 - o.position.y); ch = true; n++; }
+    }
+    if (ch) { pa.needsUpdate = true; o.geometry.computeVertexNormals(); o.geometry.computeBoundingSphere(); }
+  });
+  if (world.roadTop) for (const [k, y] of world.roadTop) {
+    const x = Math.round(k / 8192) / 2, z = (k - Math.round(k / 8192) * 8192) / 2, g = heightAt(x, z);
+    if (y > g + .5 && !onDeck(x, z)) world.roadTop.set(k, g + .12);
+  }
+  return n;
 }

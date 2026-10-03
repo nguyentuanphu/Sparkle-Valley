@@ -6,6 +6,9 @@ let AC = null, sfxBus = null, musicBus = null, noiseBuf = null;
 export function ac() {
   try {
     if (!AC) {
+      // iPhone: game sound (and the recorded voices) would follow the silent switch while the device voice ignores it,
+      // so with the switch on children heard only the machine voice. "playback" makes the game sound like a video's.
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { }
       AC = new (window.AudioContext || window.webkitAudioContext)();
       const comp = AC.createDynamicsCompressor(); comp.connect(AC.destination);
       sfxBus = AC.createGain(); sfxBus.gain.value = .7; sfxBus.connect(comp);

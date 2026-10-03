@@ -1,5 +1,6 @@
 // Settings, player profiles and saving. Everything lives in localStorage on this device;
 // grown-ups can export/import a backup file to move progress between devices.
+import { BUILD } from './build.js';
 const KEY_SETTINGS = 'sv2_settings', KEY_PROFILES = 'sv2_profiles';
 
 const store = {
@@ -168,7 +169,9 @@ export function removeProfile(id) { const i = profiles.findIndex(p => p.id === i
 export async function exportBackup({ share = true } = {}) {
   // Phones only allow some file types in the share sheet (not .json), so the backup is a plain .txt file.
   const name = 'sparkle-valley-backup-' + new Date().toISOString().slice(0, 10) + '.txt';
-  const text = JSON.stringify({ app: 'sparkle-valley', v: 2, saved: Date.now(), settings, profiles, farm }, null, 1);
+  // the lines this device had to say without a recording travel along, so Sparkle Studio can record them
+  let voiceMissing = []; try { voiceMissing = JSON.parse(localStorage.getItem('sv2_voicemiss') || '[]'); } catch (e) { }
+  const text = JSON.stringify({ app: 'sparkle-valley', v: 2, saved: Date.now(), build: BUILD, settings, profiles, farm, voiceMissing }, null, 1);
   const done = how => { settings.lastBackup = Date.now(); saveSettings(); return how; };
   if (share && navigator.canShare) {
     try {

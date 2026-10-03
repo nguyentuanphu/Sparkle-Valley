@@ -369,7 +369,7 @@ const LOOKOUT = {
 export async function postcard(G, h, lm) {
   const p = h.profile; p.postcards = p.postcards || {};
   const first = !p.postcards[lm.id]; p.postcards[lm.id] = true; G.save();
-  if (G.showcase) await G.showcase(h, lm); // fly round the landmark first, so it can be seen whole
+  if (G.showcase && first) await G.showcase(h, lm); // a short swing round the landmark on the first visit; after that the card opens at once
   // the real place: photos of it, and a 360° look round where it really is (js/realworld.js)
   if (REAL[lm.id]) {
     const top = LOOKOUT[lm.id];

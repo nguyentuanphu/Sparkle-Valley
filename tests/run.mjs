@@ -5,6 +5,7 @@
 // Multiplayer runs when a local PeerJS server is up on 127.0.0.1:9000 (see the README in this folder).
 import fs from 'fs';
 import { launch, open, clear, URL } from './harness.mjs';
+import { groundAudit } from './world-audit.mjs';
 
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
@@ -210,6 +211,19 @@ await check('roads', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(!r.out.length && !r.missing.length && r.gates >= 15 && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return `${r.gates} gates on road ends, every city on a road, nothing standing on a road`;
+});
+
+await check('ground', async () => {
+  // every building on dry, level ground (not over the river or the lake), no road floating, buried or in water,
+  // and the build number in the game matches the service worker's version
+  const P = await open(b, { w: 900, h: 700 }); await clear(P.page);
+  const r = await groundAudit(P.page);
+  const build = await P.page.evaluate(async () => (await import('/js/build.js')).BUILD);
+  const sw = fs.readFileSync(new globalThis.URL('../sw.js', import.meta.url), 'utf8'), ver = /VERSION = '([^']+)'/.exec(sw)[1];
+  await P.ctx.close();
+  ok(!r.bad.length && !r.roadBad.length, 'problems: ' + JSON.stringify([...r.bad, ...r.roadBad].slice(0, 6)));
+  ok(ver.endsWith('-' + build), `build ${build} does not match sw.js VERSION ${ver}`);
+  return `${r.buildings} buildings and ${r.roads} roads checked, build ${build}`;
 });
 
 await check('saves', async () => {

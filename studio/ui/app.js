@@ -11,7 +11,7 @@ const saveContent = async () => { await api('content', CONTENT); toast(T('Saved.
 
 const TABS = [
   ['home', '🏠', 'Home', 'Trang chính'], ['message', '💌', 'Message', 'Lời nhắn'], ['villagers', '🧑', 'Villagers', 'Nhân vật'], ['stories', '📖', 'Stories', 'Truyện'],
-  ['quiz', '💛', 'Family quiz', 'Đố vui gia đình'], ['play', '⏰', 'Play time', 'Giờ chơi'], ['children', '👧', 'Children', 'Các con'], ['voices', '🎙️', 'Voices', 'Giọng đọc'],
+  ['quiz', '💛', 'Family quiz', 'Đố vui gia đình'], ['map', '🗺️', 'Map & new villagers', 'Bản đồ & nhân vật mới'], ['photos', '📷', 'Real photos', 'Ảnh thật'], ['play', '⏰', 'Defaults', 'Mặc định'], ['children', '👧', 'Children', 'Các con'], ['voices', '🎙️', 'Voices', 'Giọng đọc'],
   ['publish', '🚀', 'Publish', 'Phát hành'], ['check', '🩺', 'Check', 'Kiểm tra'], ['settings', '🔑', 'Settings', 'Cài đặt']
 ];
 let cur = location.hash.slice(1) || 'home';
@@ -60,12 +60,13 @@ PAGES.message = async P => {
 };
 // ---------- villagers: names and photo faces ----------
 PAGES.villagers = async P => {
-  const list = await api('names'); CONTENT.names = CONTENT.names || {}; CONTENT.faces = CONTENT.faces || {};
+  const list = await api('names'); CONTENT.names = CONTENT.names || {}; CONTENT.faces = CONTENT.faces || {}; CONTENT.genders = CONTENT.genders || {};
   P.innerHTML = `<h2>🧑 ${T('Villagers: names and faces', 'Nhân vật: tên và khuôn mặt')}</h2><p class="sub">${T('Give anyone a different name, or a real face from a photo. A name or face changed on a child’s device still wins there.', 'Đổi tên ai cũng được, hoặc gắn khuôn mặt thật từ ảnh. Tên hay khuôn mặt đã đổi trên máy của con vẫn được ưu tiên ở máy đó.')}</p>
-  <div class="card"><input type="text" id="find" placeholder="🔎 ${T('Find someone…', 'Tìm nhân vật…')}"><table><thead><tr><th></th><th>${T('Name in the game', 'Tên trong game')}</th><th>🇦🇺 English</th><th>🇻🇳 Tiếng Việt</th></tr></thead><tbody>${list.map(n => {
+  <div class="card"><input type="text" id="find" placeholder="🔎 ${T('Find someone…', 'Tìm nhân vật…')}"><table><thead><tr><th></th><th>${T('Name in the game', 'Tên trong game')}</th><th>🇦🇺 English</th><th>🇻🇳 Tiếng Việt</th><th>${T('Voice', 'Giọng')}</th></tr></thead><tbody>${list.map(n => {
     const nm = CONTENT.names[n.id] || {}, f = CONTENT.faces[n.id];
     return `<tr data-id="${esc(n.id)}"><td><button class="face" title="${T('Photo face', 'Ảnh khuôn mặt')}">${f ? `<img class="face" src="/game/${esc(f.photo)}?${Date.now()}">` : '📷'}</button></td><td><b>${esc(n.id)}</b><br><span class="note">${esc(n.en)}</span></td>
-      <td><input type="text" data-l="en" value="${esc(nm.en || '')}" placeholder="${esc(n.en)}"></td><td><input type="text" data-l="vi" value="${esc(nm.vi || '')}" placeholder="${esc(n.id)}"></td></tr>`; }).join('')}</tbody></table></div>
+      <td><input type="text" data-l="en" value="${esc(nm.en || '')}" placeholder="${esc(n.en)}"></td><td><input type="text" data-l="vi" value="${esc(nm.vi || '')}" placeholder="${esc(n.id)}"></td>
+      <td><select data-g><option value="">${T('auto', 'tự động')}</option><option value="f" ${CONTENT.genders[n.id] === 'f' ? 'selected' : ''}>👩 ${T('woman/girl', 'nữ')}</option><option value="m" ${CONTENT.genders[n.id] === 'm' ? 'selected' : ''}>👨 ${T('man/boy', 'nam')}</option></select></td></tr>`; }).join('')}</tbody></table></div>
   <div class="bar"><button class="btn" id="save">💾 ${T('Save names and faces', 'Lưu tên và khuôn mặt')}</button></div>`;
   $('#find').oninput = e => { const q = e.target.value.toLowerCase(); P.querySelectorAll('tbody tr').forEach(r => r.hidden = q && !r.textContent.toLowerCase().includes(q) && !r.dataset.id.toLowerCase().includes(q)); };
   P.querySelectorAll('.face').forEach(b => b.onclick = () => {
@@ -73,7 +74,7 @@ PAGES.villagers = async P => {
     if (CONTENT.faces[id] && !confirm(T('Choose a new photo? (Cancel removes the face.)', 'Chọn ảnh mới? (Hủy để bỏ khuôn mặt.)'))) { delete CONTENT.faces[id]; b.innerHTML = '📷'; return; }
     cropper(id, async out => { if (!out) return; try { const r = await api('face', { id, dataUrl: out.photo }); CONTENT.faces[id] = { photo: r.photo, skin: out.skin }; b.innerHTML = `<img class="face" src="/game/${esc(r.photo)}?${Date.now()}">`; } catch (e) { fail(e); } });
   });
-  $('#save').onclick = () => { P.querySelectorAll('tbody tr').forEach(r => { const en = r.querySelector('[data-l=en]').value.trim(), vi = r.querySelector('[data-l=vi]').value.trim(); if (en || vi) CONTENT.names[r.dataset.id] = { en, vi }; else delete CONTENT.names[r.dataset.id]; }); saveContent().catch(fail); };
+  $('#save').onclick = () => { P.querySelectorAll('tbody tr').forEach(r => { const en = r.querySelector('[data-l=en]').value.trim(), vi = r.querySelector('[data-l=vi]').value.trim(), g = r.querySelector('[data-g]').value; if (en || vi) CONTENT.names[r.dataset.id] = { en, vi }; else delete CONTENT.names[r.dataset.id]; if (g) { CONTENT.genders[r.dataset.id] = g; if (en) CONTENT.genders[en] = g; } else delete CONTENT.genders[r.dataset.id]; }); saveContent().catch(fail); };
 };
 // the round face cropper (drag to move, wheel or slider to zoom); gives { photo: JPEG data URL, skin }
 function cropper(id, done) {
@@ -157,13 +158,26 @@ PAGES.quiz = async P => {
   };
   draw();
 };
-// ---------- play time (defaults for devices that haven't chosen) ----------
+// ---------- defaults sent to every device (applied once each time they change here) ----------
 PAGES.play = async P => {
-  const d = CONTENT.defaults || {};
-  P.innerHTML = `<h2>⏰ ${T('Play time', 'Giờ chơi')}</h2><p class="sub">${T('A starting value for each device. A setting already chosen on a device stays as it is.', 'Giá trị ban đầu cho mỗi máy. Cài đặt đã chọn trên máy nào thì giữ nguyên ở máy đó.')}</p>
-  <div class="card"><label>${T('Remind the children to rest after', 'Nhắc các con nghỉ sau')}</label><select id="rest">${[0, 15, 20, 30, 45, 60].map(m => `<option value="${m}" ${+d.restMins === m ? 'selected' : ''}>${m ? m + ' ' + T('minutes', 'phút') : T('Never', 'Không nhắc')}</option>`).join('')}</select></div>
+  const d = CONTENT.defaults || {}, opt = (k, list) => list.map(([v, l]) => `<option value="${v}" ${String(d[k] ?? '') === String(v) ? 'selected' : ''}>${l}</option>`).join('');
+  const keep = `<option value="">${T('(leave as each device has it)', '(giữ như trên từng máy)')}</option>`;
+  P.innerHTML = `<h2>⏰ ${T('Defaults for every device', 'Mặc định cho mọi máy')}</h2><p class="sub">${T('Choose here once for all the children’s devices. Each device takes the new values the next time it opens the game online; a grown-up can still change them on the device.', 'Chọn ở đây một lần cho mọi máy của các con. Mỗi máy nhận giá trị mới khi mở game có mạng lần tới; người lớn vẫn đổi được trên máy.')}</p>
+  <div class="card grid">
+    <div><label>🌙 ${T('Rest reminder after', 'Nhắc nghỉ sau')}</label><select data-k="restMins">${keep}${opt('restMins', [[0, T('Never', 'Không nhắc')], [15, '15 ' + T('minutes', 'phút')], [20, '20 ' + T('minutes', 'phút')], [30, '30 ' + T('minutes', 'phút')], [45, '45 ' + T('minutes', 'phút')], [60, '60 ' + T('minutes', 'phút')]])}</select></div>
+    <div><label>🌏 ${T('Language', 'Ngôn ngữ')}</label><select data-k="lang">${keep}${opt('lang', [['en', '🇦🇺 English'], ['vi', '🇻🇳 Tiếng Việt']])}</select></div>
+    <div><label>🗣️ ${T('Bilingual voice', 'Giọng song ngữ')}</label><select data-k="bilingual">${keep}${opt('bilingual', [['true', T('On', 'Bật')], ['false', T('Off', 'Tắt')]])}</select></div>
+    <div><label>💰 ${T('Money', 'Tiền tệ')}</label><select data-k="currency">${keep}${opt('currency', [['AUD', 'AUD $'], ['VND', 'VND đ']])}</select></div>
+    <div><label>💬 ${T('Captions', 'Phụ đề')}</label><select data-k="captions">${keep}${opt('captions', [['true', T('On', 'Bật')], ['false', T('Off', 'Tắt')]])}</select></div>
+    <div><label>🌿 ${T('Calm mode', 'Chế độ êm dịu')}</label><select data-k="calm">${keep}${opt('calm', [['true', T('On', 'Bật')], ['false', T('Off', 'Tắt')]])}</select></div>
+    <div><label>🔠 ${T('Text size', 'Cỡ chữ')}</label><select data-k="textSize">${keep}${opt('textSize', [[0, T('Normal', 'Bình thường')], [1, T('Big', 'To')], [2, T('Bigger', 'To hơn')]])}</select></div>
+    <div><label>🎵 ${T('Music', 'Nhạc')}</label><select data-k="music">${keep}${opt('music', [['true', T('On', 'Bật')], ['false', T('Off', 'Tắt')]])}</select></div>
+  </div>
   <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
-  $('#save').onclick = () => { CONTENT.defaults = Object.assign(CONTENT.defaults || {}, { restMins: +$('#rest').value }); saveContent().catch(fail); };
+  $('#save').onclick = () => {
+    const out = {}; P.querySelectorAll('[data-k]').forEach(s => { const v = s.value; if (v === '') return; out[s.dataset.k] = v === 'true' ? true : v === 'false' ? false : /^\d+$/.test(v) ? +v : v; });
+    CONTENT.defaults = out; saveContent().catch(fail);
+  };
 };
 // ---------- children: open a backup, see progress, change it, save a new backup ----------
 PAGES.children = async P => {
@@ -210,6 +224,8 @@ async function allJobs() {
   for (const [en, vi] of seen.values()) { put('en', swapNames(en, 'en')); put('vi', swapNames(vi, 'vi')); }
   for (const [lang, L] of Object.entries(LEARN)) for (const w of L.words) put(lang, w[3]);
   const cities = await (await fetch('/game/js/cities.js')).text(), re = /\['([^'\\]+)', '(?:[^'\\]|\\.)*', '(?:[^'\\]|\\.)*', '(zh|hi)'\]/g; let m; while ((m = re.exec(cities))) put(m[2], m[1]);
+  // lines built while playing (names, numbers, colours…): collected by tools/voice-harvest.mjs and sent from devices
+  for (const l of await api('voices/extra').catch(() => [])) if (CAST[l.lang]) put(l.lang, l.text);
   return jobs;
 }
 let voiceStop = false;
@@ -222,10 +238,17 @@ PAGES.voices = async P => {
     <div class="row"><button class="btn" id="az" ${!INFO.conf.azure || !missing.length ? 'disabled' : ''}>☁️ ${T('Make them with Azure', 'Tạo bằng Azure')}</button><button class="btn pink" id="pi" ${!INFO.conf.piper || !missing.length ? 'disabled' : ''}>💻 ${T('Make them with Piper (free, offline)', 'Tạo bằng Piper (miễn phí, không cần mạng)')}</button><button class="btn ghost" id="stop" disabled>⏹ ${T('Stop', 'Dừng')}</button></div>
     <p class="note">${!INFO.conf.azure ? T('Azure: add your key in Settings. ', 'Azure: thêm khóa trong Cài đặt. ') : T('Azure free tier: about 20 a minute, so this goes slowly; you can stop and carry on later. ', 'Azure miễn phí: khoảng 20 câu một phút nên hơi chậm; dừng lúc nào cũng được, lần sau làm tiếp. ')}${!INFO.conf.piper ? T('Piper: download it and its voices, then set them in Settings.', 'Piper: tải về cùng giọng đọc, rồi chọn trong Cài đặt.') : ''}</p>
     <div class="prog"><i id="pb"></i></div><p class="note" id="pt"></p></div>
+    <div class="card"><h3>📱 ${T('Lines a device said with the machine voice', 'Câu máy đã đọc bằng giọng máy')}</h3><p class="note">${T('On the device: ⚙️ Grown-ups → Save backup. Open that file here: every line it had to say without a recording is added to the list above, ready to make.', 'Trên máy: ⚙️ Phụ huynh → Lưu bản sao. Mở tệp đó ở đây: mọi câu máy phải đọc khi chưa có bản ghi sẽ được thêm vào danh sách trên, sẵn sàng để tạo.')}</p><input type="file" id="vrep" accept=".txt,.json,text/plain"><p class="note" id="vrepres"></p></div>
     <div class="card"><h3>🎤 ${T('Or record them yourselves', 'Hoặc tự thu giọng')}</h3><p class="note">${T('Tap ⏺, read the line, tap ⏹. Your own voice then plays in the game.', 'Bấm ⏺, đọc câu, bấm ⏹. Giọng của bạn sẽ được phát trong game.')}</p>
     <input type="text" id="vf" placeholder="🔎 ${T('Find a line…', 'Tìm câu…')}"><div class="lines"><table><tbody id="vl"></tbody></table></div></div>`;
   const list = q => { $('#vl').innerHTML = missing.filter(x => !q || x.text.toLowerCase().includes(q)).slice(0, 200).map((x, i) => `<tr data-k="${missing.indexOf(x)}"><td><span class="pill">${x.lang} ${x.slot === 'f' ? '👩' : '👨'}</span></td><td>${esc(x.text)}</td><td><button class="btn small" data-rec>⏺</button></td></tr>`).join(''); $('#vl').querySelectorAll('[data-rec]').forEach(b => b.onclick = () => record(missing[+b.closest('tr').dataset.k], b)); };
   list(''); $('#vf').oninput = e => list(e.target.value.toLowerCase());
+  $('#vrep').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return; let d; try { d = JSON.parse(await f.text()); } catch (x) { return toast(T('That is not a Sparkle Valley backup.', 'Đó không phải bản sao Thung Lũng Lấp Lánh.')); }
+    const lines = (d.voiceMissing || []).map(m => ({ lang: m[0], text: m[1] }));
+    if (!lines.length) { $('#vrepres').textContent = '✅ ' + T('That device had a recording for every line it said.', 'Máy đó có bản ghi cho mọi câu đã nói.') + (d.build ? ` (${T('build', 'bản')} ${esc(d.build)})` : ''); return; }
+    const r = await api('voices/extra', { lines }); $('#vrepres').textContent = `✅ ${r.added} ${T('new lines added. Counting again…', 'câu mới được thêm. Đang đếm lại…')}`; setTimeout(render, 900);
+  };
   const run = async engine => {
     voiceStop = false; $('#stop').disabled = false; $('#az').disabled = $('#pi').disabled = true;
     const gap = engine === 'azure' ? 3200 : 0; let done = 0, errs = 0;
@@ -257,13 +280,108 @@ PAGES.voices = async P => {
   }
 };
 // ---------- publish ----------
+let jobTimer = 0;
+const watchJob = (out, done) => { clearInterval(jobTimer); jobTimer = setInterval(async () => { const j = await api('job').catch(() => ({})); if (!j.kind) return; out(j); if (j.end) { clearInterval(jobTimer); done && done(j); } }, 1000); };
 PAGES.publish = async P => {
-  P.innerHTML = `<h2>🚀 ${T('Publish', 'Phát hành')}</h2><p class="sub">${T('Make the zip with everything (game, your content, voices), then put it online.', 'Đóng gói tất cả (game, nội dung của bạn, giọng đọc) thành tệp zip, rồi đưa lên mạng.')}</p>
-  <div class="card"><button class="btn" id="build">📦 ${T('Make the zip', 'Tạo tệp zip')}</button> <span id="bres" class="note"></span></div>
-  <div class="card"><h3>☁️ Netlify</h3><p class="note">${INFO.conf.netlify ? T('Your Netlify site is set: ', 'Đã có trang Netlify: ') + esc(INFO.conf.netlifySite) : T('Add a Netlify token and the site name in Settings for one-click publishing. Or drag the zip onto your site’s Deploys page.', 'Thêm khóa Netlify và tên trang trong Cài đặt để phát hành một chạm. Hoặc kéo tệp zip vào trang Deploys của site.')}</p>
-    <button class="btn pink" id="deploy" ${INFO.conf.netlify ? '' : 'disabled'}>🚀 ${T('Publish to Netlify', 'Phát hành lên Netlify')}</button> <span id="dres" class="note"></span></div>`;
+  const c = INFO.conf;
+  P.innerHTML = `<h2>🚀 ${T('Publish', 'Phát hành')}</h2><p class="sub">${T('Send what you changed here to the children’s devices.', 'Gửi những gì bạn đã đổi ở đây tới máy của các con.')}</p>
+  <div class="card"><h3>🔗 ${T('How it reaches the website', 'Cách đưa lên trang web')}</h3>
+    <p>${T('Everything you change here (message, names, faces, stories, quiz, new villagers, defaults, voices, photos) is saved in the game folder on this computer. Nothing goes online until you publish.', 'Mọi thứ bạn đổi ở đây (lời nhắn, tên, khuôn mặt, truyện, câu đố, nhân vật mới, mặc định, giọng đọc, ảnh) được lưu trong thư mục game trên máy tính này. Chưa có gì lên mạng cho tới khi bạn phát hành.')}</p>
+    <ol><li>${T('<b>GitHub (recommended)</b>: your Netlify site is built from your GitHub repository. “Publish to GitHub” sends only the files you changed, as one commit; Netlify sees it and updates the website by itself in a minute or two.', '<b>GitHub (nên dùng)</b>: trang Netlify của bạn được dựng từ kho GitHub. “Phát hành lên GitHub” chỉ gửi các tệp bạn đã đổi, thành một commit; Netlify thấy và tự cập nhật trang web sau một hai phút.')}</li>
+    <li>${T('<b>Netlify directly</b>: uploads the whole zip. Quick, but the next change on GitHub replaces it, so use it only if the site is not linked to GitHub.', '<b>Netlify trực tiếp</b>: tải cả tệp zip lên. Nhanh, nhưng lần đổi tiếp theo trên GitHub sẽ thay thế nó, nên chỉ dùng khi trang chưa nối với GitHub.')}</li></ol>
+    <p class="note">${T('Each device picks up the new content the next time the game opens with internet (it keeps a copy for offline). The build number in the game (e.g. r35) shows which version a device has.', 'Mỗi máy nhận nội dung mới vào lần tới mở game có mạng (và giữ bản để chơi không mạng). Số bản trong game (vd. r35) cho biết máy đang chạy phiên bản nào.')}</p></div>
+  <div class="card"><h3>🐙 GitHub ${c.github ? '✅ ' + esc(c.githubRepo) + ' · ' + esc(c.githubBranch) : ''}</h3>
+    ${c.github ? `<input type="text" id="gmsg" placeholder="${T('What changed? (optional)', 'Đã đổi gì? (không bắt buộc)')}"><div class="row" style="margin-top:8px"><button class="btn" id="gpub">🐙 ${T('Publish to GitHub', 'Phát hành lên GitHub')}</button></div><div class="prog"><i id="gpb"></i></div><p class="note" id="gres"></p>` : `<p class="note">${T('Add a GitHub token and the repository in Settings first.', 'Thêm khóa GitHub và tên kho trong Cài đặt trước.')}</p>`}</div>
+  <div class="card"><h3>📦 ${T('Zip and Netlify', 'Tệp zip và Netlify')}</h3><button class="btn ghost" id="build">📦 ${T('Make the zip', 'Tạo tệp zip')}</button> <span id="bres" class="note"></span>
+    <p class="note">${c.netlify ? T('Your Netlify site is set: ', 'Đã có trang Netlify: ') + esc(c.netlifySite) : T('Add a Netlify token and the site name in Settings for one-click upload, or drag the zip onto the site’s Deploys page.', 'Thêm khóa Netlify và tên trang trong Cài đặt để tải lên một chạm, hoặc kéo tệp zip vào trang Deploys.')}</p>
+    <button class="btn ghost" id="deploy" ${c.netlify ? '' : 'disabled'}>☁️ ${T('Upload to Netlify', 'Tải lên Netlify')}</button> <span id="dres" class="note"></span></div>`;
   $('#build').onclick = async () => { $('#bres').textContent = T('Packing…', 'Đang đóng gói…'); try { const r = await api('build', {}); $('#bres').innerHTML = `✅ ${r.files} ${T('files', 'tệp')}, ${(r.bytes / 1e6).toFixed(1)} MB · <a href="/api/zip">⬇️ ${T('Download', 'Tải về')}</a>`; } catch (e) { $('#bres').textContent = '⚠️ ' + e.message; } };
-  $('#deploy').onclick = async () => { $('#dres').textContent = T('Uploading… (a minute or two)', 'Đang tải lên… (một hai phút)'); try { const r = await api('deploy', {}); $('#dres').innerHTML = `✅ ${T('Published!', 'Đã phát hành!')} <a href="${esc(r.url)}" target="_blank">${esc(r.url)}</a>`; } catch (e) { $('#dres').textContent = '⚠️ ' + e.message; } };
+  $('#deploy').onclick = async () => { if (c.github && !confirm(T('Your site is published from GitHub. Upload the zip to Netlify anyway?', 'Trang của bạn được phát hành từ GitHub. Vẫn tải tệp zip lên Netlify?'))) return; $('#dres').textContent = T('Uploading… (a minute or two)', 'Đang tải lên… (một hai phút)'); try { const r = await api('deploy', {}); $('#dres').innerHTML = `✅ ${T('Published!', 'Đã phát hành!')} <a href="${esc(r.url)}" target="_blank">${esc(r.url)}</a>`; } catch (e) { $('#dres').textContent = '⚠️ ' + e.message; } };
+  if ($('#gpub')) $('#gpub').onclick = async () => {
+    $('#gpub').disabled = true; $('#gres').textContent = T('Starting…', 'Bắt đầu…');
+    try { await api('github/publish', { message: $('#gmsg').value }); } catch (e) { $('#gres').textContent = '⚠️ ' + e.message; $('#gpub').disabled = false; return; }
+    watchJob(j => { $('#gpb').style.width = (j.total ? j.done / j.total * 100 : 5) + '%'; $('#gres').textContent = `${j.done}/${j.total || '?'} · ${j.msg || ''}`; }, j => {
+      $('#gpub').disabled = false;
+      $('#gres').innerHTML = j.error ? '⚠️ ' + esc(j.error) : j.result.changed ? `✅ ${j.result.changed} ${T('files sent', 'tệp đã gửi')} · <a href="${esc(j.result.url)}" target="_blank">${T('see the commit', 'xem commit')}</a>. ${T('Netlify updates the site in a minute or two.', 'Netlify cập nhật trang sau một hai phút.')}` : '✅ ' + T('Nothing new to publish: the website already has everything.', 'Không có gì mới: trang web đã có đủ.');
+    });
+  };
+};
+// ---------- map: add, place, move and remove the family's own villagers ----------
+const LOOKS = { style: ['dress', 'shirt', 'aodai', 'tunic', 'overalls', 'hoodie'], hairStyle: ['buns', 'short', 'long', 'ponytail', 'spiky'], color: ['#ff5fa2', '#a66bff', '#3cc7e8', '#ffd23f', '#e8434a', '#5fd39a', '#ff9f43', '#3b6fe0', '#ffffff'], hair: ['#1d1412', '#3b2618', '#6b4226', '#c98b4a', '#e8c26a', '#a8432a', '#d9d9d9'], skin: ['#ffe3d1', '#f6c7a5', '#e0aa80', '#b47a55', '#7a4e33'] };
+let mapCanvas = null;
+PAGES.map = async P => {
+  CONTENT.npcs = CONTENT.npcs || [];
+  P.innerHTML = `<h2>🗺️ ${T('Map & new villagers', 'Bản đồ & nhân vật mới')}</h2><p class="sub">${T('Tap the map to add someone there, drag a marker to move them, tap a marker to change or remove them. They appear in the game after you publish.', 'Chạm bản đồ để thêm người ở đó, kéo dấu để dời, chạm dấu để sửa hoặc xóa. Họ sẽ xuất hiện trong game sau khi phát hành.')}</p><div class="card" id="mapwrap">${T('Drawing the map…', 'Đang vẽ bản đồ…')}</div>`;
+  const W = await import('/game/js/world.js');
+  const S = 800, k = S / W.SIZE, toPx = (x, z) => [(x + W.HALF) * k, (z + W.HALF) * k], toW = (px, py) => [px / k - W.HALF, py / k - W.HALF];
+  if (!mapCanvas) mapCanvas = W.paintMap(S);
+  $('#mapwrap').outerHTML = `<div class="mapgrid"><div class="card mapbox"><div class="row" style="margin-bottom:6px"><span class="note">${T('Zoom', 'Phóng to')}</span>${[1, 2, 3].map(z => `<button class="btn small ghost" data-z="${z}">${z}×</button>`).join('')}</div><div class="mapscroll"><canvas id="mc" width="${S}" height="${S}"></canvas></div></div><div class="card" id="npcform"></div></div>
+    <div class="card"><h3>👥 ${T('Your villagers', 'Nhân vật của bạn')} (<span id="npcn">${CONTENT.npcs.length}</span>)</h3><div id="npclist"></div></div><div class="bar"><button class="btn" id="save">💾 ${T('Save villagers', 'Lưu nhân vật')}</button></div>`;
+  const cv = $('#mc'), g = cv.getContext('2d'); let sel = -1, drag = null, zoom = 1;
+  const places = [...W.CITIES.map(c => [c.x, c.z, c.name[1], c.icon]), [W.VILLAGE.x, W.VILLAGE.z, 'Làng Sen', '🪷'], [W.CHINA.x, W.CHINA.z, 'China Town', '🏮'], [W.INDIA.x, W.INDIA.z, 'India Village', '🪔'], [W.HOME.x, W.HOME.z, 'Sunny Farm', '🏡'], [(W.TOWN.x0 + W.TOWN.x1) / 2, W.TOWN.roadZ, 'Two Homes Street', '🏘️'], [(W.MARKET.x0 + W.MARKET.x1) / 2, W.MARKET.roadZ, 'Chợ Ba Miền', '🧺'], [(W.AUSSIE.x0 + W.AUSSIE.x1) / 2, W.AUSSIE.roadZ, 'Aussie Corner', '🦘']];
+  const where = (x, z) => { if (W.heightAt(x, z) < W.WATER + .4) return ['bad', T('in the water', 'dưới nước')]; const rd = W.roadDist(x, z); if (rd.road && rd.d < rd.road.w / 2 + .8) return ['bad', T('on a road', 'giữa đường')]; return ['ok', '']; };
+  const draw = () => {
+    g.drawImage(mapCanvas, 0, 0, S, S); g.font = 'bold 13px Segoe UI, sans-serif'; g.textAlign = 'center';
+    for (const [x, z, n, ic] of places) { const [px, py] = toPx(x, z); g.fillStyle = 'rgba(255,255,255,.85)'; const w = g.measureText(ic + ' ' + n).width + 10; g.fillRect(px - w / 2, py - 9, w, 18); g.fillStyle = '#3b2a4f'; g.fillText(ic + ' ' + n, px, py + 4); }
+    CONTENT.npcs.forEach((c, i) => { const [px, py] = toPx(c.x, c.z); g.beginPath(); g.arc(px, py, i === sel ? 11 : 8, 0, 7); g.fillStyle = c.gender === 'm' ? '#3b6fe0' : '#ff5fa2'; g.fill(); g.lineWidth = 3; g.strokeStyle = '#fff'; g.stroke(); g.fillStyle = '#3b2a4f'; g.fillText(c.name || '?', px, py - 14); });
+  };
+  const evPos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * S / r.width, (e.clientY - r.top) * S / r.height]; };
+  const hit = (px, py) => CONTENT.npcs.findIndex(c => { const [x, y] = toPx(c.x, c.z); return Math.hypot(x - px, y - py) < 13; });
+  cv.onpointerdown = e => { const [px, py] = evPos(e), i = hit(px, py); if (i >= 0) { sel = i; drag = i; cv.setPointerCapture(e.pointerId); } else { const [x, z] = toW(px, py); CONTENT.npcs.push({ name: T('New friend', 'Bạn mới'), gender: 'f', x: +x.toFixed(1), z: +z.toFixed(1), face: 0, icon: '💬', look: { style: 'shirt', color: '#5fd39a', hairStyle: 'short', hair: '#1d1412', skin: '#f6c7a5', age: 'adult' }, lines: [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']] }); sel = CONTENT.npcs.length - 1; } draw(); form(); list(); };
+  cv.onpointermove = e => { if (drag == null) return; const [px, py] = evPos(e), [x, z] = toW(px, py); CONTENT.npcs[drag].x = +x.toFixed(1); CONTENT.npcs[drag].z = +z.toFixed(1); draw(); };
+  cv.onpointerup = () => { if (drag != null) { drag = null; form(); list(); } };
+  P.querySelectorAll('[data-z]').forEach(b => b.onclick = () => { zoom = +b.dataset.z; cv.style.width = S * zoom + 'px'; cv.style.height = S * zoom + 'px'; });
+  const sw = (key, vals, cur) => `<div class="swatches">${vals.map(v => `<button class="sw ${v === cur ? 'on' : ''}" data-${key}="${v}" style="background:${v}"></button>`).join('')}</div>`;
+  function form() {
+    const F = $('#npcform'); const c = CONTENT.npcs[sel];
+    if (!c) { F.innerHTML = `<h3>➕ ${T('Add someone', 'Thêm người')}</h3><p class="note">${T('Tap anywhere on the map. Good places: a village square, beside a shop, near a landmark. Not on a road or in the water.', 'Chạm vào bất kỳ chỗ nào trên bản đồ. Chỗ đẹp: sân làng, cạnh cửa hàng, gần thắng cảnh. Không đặt giữa đường hay dưới nước.')}</p>`; return; }
+    const L = c.look = c.look || {}, [okc, why] = where(c.x, c.z);
+    F.innerHTML = `<h3>✏️ ${esc(c.name)}</h3>
+      <label>${T('Name (as the children call them)', 'Tên (như các con gọi)')}</label><input type="text" id="fn" value="${esc(c.name)}" maxlength="40">
+      <div class="row"><div><label>${T('Voice', 'Giọng')}</label><select id="fg"><option value="f" ${c.gender !== 'm' ? 'selected' : ''}>👩 ${T('woman/girl', 'nữ')}</option><option value="m" ${c.gender === 'm' ? 'selected' : ''}>👨 ${T('man/boy', 'nam')}</option></select></div>
+      <div><label>${T('Age', 'Tuổi')}</label><select id="fa">${[['kid', T('child', 'trẻ em')], ['adult', T('grown-up', 'người lớn')], ['old', T('grandparent', 'ông bà')]].map(([v, l]) => `<option value="${v}" ${(L.age || 'adult') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div><label>${T('Icon', 'Biểu tượng')}</label><input type="text" id="fi" value="${esc(c.icon || '💬')}" maxlength="4"></div></div>
+      <div class="row"><div><label>${T('Clothes', 'Trang phục')}</label><select id="fs">${LOOKS.style.map(v => `<option ${L.style === v ? 'selected' : ''}>${v}</option>`).join('')}</select></div><div><label>${T('Hair', 'Tóc')}</label><select id="fh">${LOOKS.hairStyle.map(v => `<option ${L.hairStyle === v ? 'selected' : ''}>${v}</option>`).join('')}</select></div></div>
+      <label>${T('Clothes colour', 'Màu áo')}</label>${sw('c', LOOKS.color, L.color)}<label>${T('Hair colour', 'Màu tóc')}</label>${sw('h', LOOKS.hair, L.hair)}<label>${T('Skin', 'Màu da')}</label>${sw('s', LOOKS.skin, L.skin)}
+      <label>${T('What they say (one line per page)', 'Họ nói gì (mỗi dòng một trang)')}</label><div id="flines">${(c.lines || []).map((l, j) => `<div class="row" data-j="${j}"><input type="text" data-l="0" value="${esc(l[0])}" placeholder="English"><input type="text" data-l="1" value="${esc(l[1])}" placeholder="Tiếng Việt"><button class="btn small bad" data-rm style="flex:0 0 auto;min-width:0">✕</button></div>`).join('')}</div>
+      <button class="btn small ghost" id="fadd">➕ ${T('Another line', 'Thêm dòng')}</button>
+      <p class="${okc === 'ok' ? 'ok' : 'badtxt'}">📍 ${c.x}, ${c.z} ${okc === 'ok' ? '✅' : '⚠️ ' + why + ' – ' + T('drag them a little', 'kéo ra một chút')}</p>
+      <div class="row"><button class="btn bad" id="fdel">🗑️ ${T('Remove', 'Xóa')}</button><button class="btn ghost" id="fdone">✅ ${T('Done', 'Xong')}</button></div>`;
+    const up = () => { draw(); list(); };
+    $('#fn').oninput = e => { c.name = e.target.value; up(); }; $('#fg').onchange = e => { c.gender = e.target.value; up(); };
+    $('#fa').onchange = e => { L.age = e.target.value; }; $('#fi').oninput = e => { c.icon = e.target.value; }; $('#fs').onchange = e => { L.style = e.target.value; }; $('#fh').onchange = e => { L.hairStyle = e.target.value; };
+    F.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { L.color = b.dataset.c; form(); }); F.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { L.hair = b.dataset.h; form(); }); F.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { L.skin = b.dataset.s; form(); });
+    F.querySelectorAll('#flines [data-j]').forEach(r => { const j = +r.dataset.j; r.querySelectorAll('[data-l]').forEach(i => i.oninput = () => { c.lines[j][+i.dataset.l] = i.value; }); r.querySelector('[data-rm]').onclick = () => { c.lines.splice(j, 1); form(); }; });
+    $('#fadd').onclick = () => { (c.lines = c.lines || []).push(['', '']); form(); };
+    $('#fdel').onclick = () => { if (confirm(T('Remove this villager?', 'Xóa nhân vật này?'))) { CONTENT.npcs.splice(sel, 1); sel = -1; draw(); form(); list(); } };
+    $('#fdone').onclick = () => { sel = -1; draw(); form(); };
+  }
+  function list() { $('#npcn').textContent = CONTENT.npcs.length; $('#npclist').innerHTML = CONTENT.npcs.map((c, i) => { const [okc, why] = where(c.x, c.z); return `<button class="btn small ${i === sel ? '' : 'ghost'}" data-i="${i}">${c.gender === 'm' ? '👨' : '👩'} ${esc(c.name)}${okc === 'ok' ? '' : ' ⚠️'}</button> `; }).join('') || `<p class="note">${T('Nobody yet. Tap the map to add someone.', 'Chưa có ai. Chạm bản đồ để thêm người.')}</p>`; $('#npclist').querySelectorAll('[data-i]').forEach(b => b.onclick = () => { sel = +b.dataset.i; draw(); form(); list(); }); }
+  draw(); form(); list();
+  $('#save').onclick = () => { CONTENT.npcs = CONTENT.npcs.filter(c => c.name && c.name.trim()).map(c => ({ ...c, name: c.name.trim(), lines: (c.lines || []).filter(l => l[0] || l[1]) })); saveContent().then(() => list()).catch(fail); };
+};
+// ---------- real photos of every landmark, saved into the game so they work offline ----------
+PAGES.photos = async P => {
+  const RW = await import('/game/js/realworld.js');
+  const items = new Map();
+  for (const [id, r] of Object.entries(RW.REAL)) items.set(RW.photoKey(r[0]), { key: RW.photoKey(r[0]), sources: r[0], name: r[0][0].split(/:(.+)/)[1] });
+  for (const [kind, src] of Object.entries(RW.REAL_KINDS || {})) if (src && src.length && !items.has(RW.photoKey(src))) items.set(RW.photoKey(src), { key: RW.photoKey(src), sources: src, name: src[0].split(/:(.+)/)[1] });
+  const all = [...items.values()];
+  const draw = async () => {
+    const pix = await api('photos/index'), have = all.filter(x => pix[x.key] && pix[x.key].length).length;
+    P.innerHTML = `<h2>📷 ${T('Real photos', 'Ảnh thật')}</h2><p class="sub">${T('The best photos of each real place (Wikipedia’s main picture first), saved into the game with who took them, so children see them even with no internet.', 'Những ảnh đẹp nhất của từng nơi thật (ảnh chính của Wikipedia trước), lưu vào game kèm tên người chụp, để các con xem được cả khi không có mạng.')}</p>
+    <div class="card"><p><b>${have}</b> / ${all.length} ${T('places have photos saved', 'nơi đã có ảnh')}.</p>
+      <div class="row"><div style="flex:0 0 160px"><label>${T('Photos per place', 'Số ảnh mỗi nơi')}</label><select id="pmax">${[3, 4, 6].map(n => `<option ${n === 4 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+      <button class="btn" id="pmiss">⬇️ ${T('Get photos for places without any', 'Tải ảnh cho nơi chưa có')}</button><button class="btn ghost" id="pall">🔄 ${T('Get them all again', 'Tải lại tất cả')}</button></div>
+      <div class="prog"><i id="ppb"></i></div><p class="note" id="pres"></p></div>
+    <div class="grid">${all.map(x => `<div class="card"><b>${esc(x.name)}</b> <button class="btn small ghost" data-get="${esc(x.key)}">🔄</button><div class="thumbs">${(pix[x.key] || []).map(p => `<span class="thumb"><img src="/game/${esc(p.src)}" title="${esc(p.credit || '')}"><button data-rm="${esc(x.key)}|${esc(p.src)}">✕</button></span>`).join('') || `<span class="note">${T('none yet', 'chưa có')}</span>`}</div></div>`).join('')}</div>`;
+    const go = async list => { try { await api('photos/get', { list, max: +$('#pmax').value }); } catch (e) { return fail(e); } P.querySelectorAll('button').forEach(b => b.disabled = true); watchJob(j => { $('#ppb').style.width = (j.total ? j.done / j.total * 100 : 3) + '%'; $('#pres').textContent = `${j.done}/${j.total} · ${j.msg || ''}${j.errors ? ' · ⚠️ ' + j.errors : ''}`; }, j => { toast(j.error ? '⚠️ ' + j.error : T('Photos saved.', 'Đã lưu ảnh.')); draw(); }); };
+    $('#pmiss').onclick = () => go(all.filter(x => !(pix[x.key] && pix[x.key].length)));
+    $('#pall').onclick = () => go(all);
+    P.querySelectorAll('[data-get]').forEach(b => b.onclick = () => go(all.filter(x => x.key === b.dataset.get)));
+    P.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { const [key, src] = b.dataset.rm.split('|'); await api('photos/remove', { key, src }); draw(); });
+  };
+  await draw();
 };
 // ---------- check ----------
 PAGES.check = async P => {
@@ -281,9 +399,11 @@ PAGES.settings = async P => {
     <div class="row"><div><label>🇦🇺 ${T('English voice (.onnx)', 'Giọng tiếng Anh (.onnx)')}</label><input type="text" id="pen" value="${esc((c.piperModels || {}).en || '')}"></div><div><label>🇻🇳 ${T('Vietnamese voice (.onnx)', 'Giọng tiếng Việt (.onnx)')}</label><input type="text" id="pvi" value="${esc((c.piperModels || {}).vi || '')}"></div></div></div>
   <div class="card"><h3>🚀 Netlify</h3><div class="row"><div><label>${T('Personal access token', 'Khóa truy cập cá nhân')} ${c.netlify ? '✅' : ''}</label><input type="password" id="nt" placeholder="${c.netlify ? T('(saved, type to replace)', '(đã lưu, gõ để thay)') : ''}"></div><div><label>${T('Site name or ID (e.g. sparkle-valley.netlify.app)', 'Tên hoặc ID trang (vd. sparkle-valley.netlify.app)')}</label><input type="text" id="ns" value="${esc(c.netlifySite)}"></div></div>
     <p class="note">${T('Netlify → User settings → Applications → New access token.', 'Netlify → User settings → Applications → New access token.')}</p></div>
+  <div class="card"><h3>🐙 GitHub</h3><div class="row"><div><label>${T('Fine-grained token (Contents: read and write)', 'Khóa fine-grained (Contents: đọc và ghi)')} ${c.github ? '✅' : ''}</label><input type="password" id="gt" placeholder="${c.github ? T('(saved, type to replace)', '(đã lưu, gõ để thay)') : 'github_pat_…'}"></div><div><label>${T('Repository', 'Kho')}</label><input type="text" id="gr" value="${esc(c.githubRepo)}" placeholder="nguyentuanphu/Sparkle-Valley"></div><div><label>${T('Branch', 'Nhánh')}</label><input type="text" id="gb" value="${esc(c.githubBranch || 'main')}"></div></div>
+    <p class="note">${T('github.com → Settings → Developer settings → Fine-grained tokens → Generate: only this repository, permission Contents: Read and write.', 'github.com → Settings → Developer settings → Fine-grained tokens → Generate: chỉ kho này, quyền Contents: Read and write.')}</p></div>
   <div class="bar"><button class="btn ghost" id="forget">🗑️ ${T('Forget the keys', 'Xóa các khóa')}</button><button class="btn" id="save">💾 ${T('Save settings', 'Lưu cài đặt')}</button></div>`;
-  $('#save').onclick = async () => { try { await api('settings', { gameDir: $('#gd').value, azureKey: $('#ak').value, azureRegion: $('#ar').value, piperExe: $('#pe').value, piperModels: { en: $('#pen').value.trim(), vi: $('#pvi').value.trim() }, netlifyToken: $('#nt').value, netlifySite: $('#ns').value }); toast(T('Settings saved.', 'Đã lưu cài đặt.')); render(); } catch (e) { fail(e); } };
-  $('#forget').onclick = async () => { if (!confirm(T('Forget the Azure and Netlify keys on this computer?', 'Xóa khóa Azure và Netlify trên máy này?'))) return; await api('settings', { forget: ['azureKey', 'netlifyToken'] }); toast(T('Keys forgotten.', 'Đã xóa khóa.')); render(); };
+  $('#save').onclick = async () => { try { await api('settings', { gameDir: $('#gd').value, azureKey: $('#ak').value, azureRegion: $('#ar').value, piperExe: $('#pe').value, piperModels: { en: $('#pen').value.trim(), vi: $('#pvi').value.trim() }, netlifyToken: $('#nt').value, netlifySite: $('#ns').value, githubToken: $('#gt').value, githubRepo: $('#gr').value, githubBranch: $('#gb').value }); toast(T('Settings saved.', 'Đã lưu cài đặt.')); render(); } catch (e) { fail(e); } };
+  $('#forget').onclick = async () => { if (!confirm(T('Forget the Azure, Netlify and GitHub keys on this computer?', 'Xóa khóa Azure, Netlify và GitHub trên máy này?'))) return; await api('settings', { forget: ['azureKey', 'netlifyToken', 'githubToken'] }); toast(T('Keys forgotten.', 'Đã xóa khóa.')); render(); };
 };
 window.addEventListener('hashchange', () => { const k = location.hash.slice(1); if (PAGES[k] && k !== cur) { cur = k; render(); } });
 render();

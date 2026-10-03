@@ -1636,3 +1636,14 @@ body.calm .rv-img.on { animation: none; }
 .nl-aim { position: absolute; bottom: 18%; transform: translateX(-50%); font-size: 40px; }
 .nl-sandal { position: absolute; bottom: 0; left: 50%; margin-left: -22px; font-size: 44px; }
 .fq-pic { font-size: clamp(64px, 18vw, 110px); line-height: 1.1; }
+
+/* build number: small, out of the way */
+.tt-build { position: absolute; right: max(10px, env(safe-area-inset-right)); bottom: max(6px, env(safe-area-inset-bottom)); font: 600 11px/1 system-ui, sans-serif; color: rgba(60, 40, 80, .55); background: rgba(255, 255, 255, .55); padding: 3px 7px; border-radius: 999px; pointer-events: none; z-index: 3; }
+.buildtag { display: inline-block; margin-left: 6px; font: 600 11px/1.4 system-ui, sans-serif; color: var(--soft, #7a6a8f); opacity: .8; }
+
+/* Grown-ups: advanced settings fold away */
+.g-adv { margin-top: 18px; border-top: 2px dashed rgba(120, 90, 160, .25); padding-top: 10px; }
+.g-adv > summary { cursor: pointer; font-weight: 700; font-size: 1.1em; padding: 10px 4px; list-style: none; }
+.g-adv > summary::before { content: '▸ '; } .g-adv[open] > summary::before { content: '▾ '; }
+.g-miss > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+.misslist { max-height: 220px; overflow: auto; padding-left: 22px; font-size: 14px; } .misslist small { opacity: .6; }

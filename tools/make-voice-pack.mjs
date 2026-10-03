@@ -62,6 +62,8 @@ for (const [lang, L] of Object.entries(LEARN)) for (const w of L.words) jobs.pus
   const src = fs.readFileSync(path.join(ROOT, 'js/cities.js'), 'utf8'), re = /\['([^'\\]+)', '(?:[^'\\]|\\.)*', '(?:[^'\\]|\\.)*', '(zh|hi)'\]/g; let m;
   while ((m = re.exec(src))) jobs.push({ lang: m[2], text: m[1] });
 }
+// lines built while playing (names, numbers, colours…), collected by tools/voice-harvest.mjs or sent from devices via Sparkle Studio
+try { for (const l of JSON.parse(fs.readFileSync(new URL('./voice-extra.json', import.meta.url), 'utf8'))) if (l && CAST[l.lang] && l.text) jobs.push({ lang: l.lang, text: String(l.text) }); } catch (e) { }
 const uniq = new Map(); jobs.forEach(j => uniq.set(packHash(j.lang, j.text), j));
 const list = [...uniq.entries()];
 

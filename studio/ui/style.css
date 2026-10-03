@@ -28,3 +28,7 @@ table { width: 100%; border-collapse: collapse; } td, th { padding: 6px 8px; bor
 canvas.crop { width: 100%; max-width: 360px; aspect-ratio: 1; border-radius: 16px; touch-action: none; cursor: grab; background: #eee; display: block; margin: 0 auto; }
 .lines { max-height: 420px; overflow: auto; } .lines td { font-size: 14px; }
 .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--line); font-size: 13px; }
+.mapgrid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: 12px; } @media (max-width: 900px) { .mapgrid { grid-template-columns: 1fr; } }
+.mapscroll { overflow: auto; max-height: 72vh; border-radius: 12px; } #mc { width: 800px; max-width: none; image-rendering: pixelated; cursor: crosshair; display: block; touch-action: none; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; } .sw { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line); cursor: pointer; } .sw.on { border-color: var(--accent); transform: scale(1.12); }
+.thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; } .thumb { position: relative; } .thumb img { width: 92px; height: 66px; object-fit: cover; border-radius: 8px; display: block; } .thumb button { position: absolute; top: 2px; right: 2px; border: 0; border-radius: 50%; width: 22px; height: 22px; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; }

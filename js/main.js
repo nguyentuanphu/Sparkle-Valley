@@ -3,11 +3,11 @@ import { THREE, sprite, P, merge, toonVC } from './gfx.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';
 import { T, nm, onLang, registerName } from './i18n.js';
-import { say, hush, loadClips } from './voice.js';
+import { say, hush, loadClips, setVoiceGenders } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
-import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
+import { createWorld, levelUnderBuildings, widenFlatLand, settleRoads, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
 import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL, OUTLINED } from './avatar.js';
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
@@ -58,7 +58,14 @@ import { createSymbols, regionLabel } from './symbols.js';
 import { createRegionSites } from './regionsites.js';
 import { createVnFun } from './vnfun.js';
 import { CUSTOM } from './custom.js';
-if (CUSTOM.defaults && settings.restMins == null && +CUSTOM.defaults.restMins >= 0) settings.restMins = String(+CUSTOM.defaults.restMins); // a starting value from the family's content pack
+// the family's defaults from Sparkle Studio: applied once each time they change there (a grown-up can still change
+// them on the device afterwards)
+{ const D = CUSTOM.defaults, sig = D ? JSON.stringify(D) : '';
+  if (D && typeof D === 'object' && settings.packDefaults !== sig) {
+    const ok = { restMins: v => +v >= 0 && +v <= 120 && String(+v), lang: v => ['en', 'vi'].includes(v) && v, currency: v => ['AUD', 'VND'].includes(v) && v, bilingual: v => typeof v === 'boolean' && { v }, captions: v => typeof v === 'boolean' && { v }, calm: v => typeof v === 'boolean' && { v }, music: v => typeof v === 'boolean' && { v }, textSize: v => [0, 1, 2].includes(+v) && { v: +v } };
+    for (const [k, f] of Object.entries(ok)) if (k in D) { const r = f(D[k]); if (r !== false && r != null) settings[k] = typeof r === 'object' ? r.v : r; }
+    settings.packDefaults = sig; saveSettings();
+  } }
 import { setupTrading, openTrade } from './trade.js';
 import { createSecrets, SECRETS } from './secrets.js';
 import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './story.js';
@@ -1147,9 +1154,21 @@ setupTrading(G);
   const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(sx, y, sz); m.castShadow = true; scene.add(m); world.colliders.push({ x: sx, z: sz, r: 1.4 });
   G.interactables.push({ id: 'stall', x: sx, z: sz + 1.2, r: 3, icon: '🏪', label: () => T('My market stall: trade with friends', 'Sạp hàng của con: đổi đồ với bạn'), act: h => G.openTrade(h.i) });
 }
+// villagers the family added in Sparkle Studio (content pack "npcs"): placed where they were put on the map, saying
+// their own lines in both languages
+for (const c of (Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {
+  if (!c || !isFinite(c.x) || !isFinite(c.z) || Math.abs(c.x) > 190 || Math.abs(c.z) > 190) continue;
+  const name = String(c.name || '').trim().slice(0, 40); if (!name) continue;
+  const L = c.look || {}, hex = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v : null;
+  const look = { style: ['dress', 'shirt', 'aodai', 'tunic', 'overalls', 'hoodie'].includes(L.style) ? L.style : 'shirt', color: hex(L.color) || '#5fb0ff', hat: 'none', back: 'none', hair: hex(L.hair) || '#2a1d14', hairStyle: ['buns', 'short', 'long', 'ponytail', 'spiky'].includes(L.hairStyle) ? L.hairStyle : 'short', skin: hex(L.skin) || '#f1c6a4', glider: 0, age: L.age === 'old' || L.age === 'kid' ? L.age : 'adult' };
+  const lines = (Array.isArray(c.lines) ? c.lines : []).filter(l => Array.isArray(l) && (l[0] || l[1])).slice(0, 12).map(l => [String(l[0] || l[1]).slice(0, 300), String(l[1] || l[0]).slice(0, 300)]);
+  if (c.gender === 'f' || c.gender === 'm') { CUSTOM.genders = { ...(CUSTOM.genders || {}), [name]: c.gender }; setVoiceGenders(CUSTOM.genders); }
+  addNPC({ id: 'fam_' + name.replace(/[^\p{L}\p{N}]+/gu, '_'), name, look, x: +c.x, z: +c.z, face: +c.face || 0, icon: typeof c.icon === 'string' ? c.icon.slice(0, 4) : '💬', talk: () => dialog(name, lines.length ? lines : [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']]) });
+}
 // level land under every building, stall and landmark placed above (and anything added in future rounds)
 widenFlatLand(world, scene); // more level land round every village and city, for new buildings (nothing moves on the map)
 world.levelled = levelUnderBuildings(world, scene);
+world.settled = settleRoads(world, scene); // and no road floats above the ground
 // solid things the camera must never go inside: big, opaque, still-standing meshes (collected once, refreshed
 // now and then so new houses, landmarks and boats are included)
 {
