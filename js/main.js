@@ -57,6 +57,7 @@ import { createSuburbs } from './suburbs.js';
 import { createSymbols, regionLabel } from './symbols.js';
 import { createRegionSites } from './regionsites.js';
 import { createVnFun } from './vnfun.js';
+import { addFamilyBuildings, applyWorldEdits } from './worldedit.js';
 import { CUSTOM } from './custom.js';
 // the family's defaults from Sparkle Studio: applied once each time they change there (a grown-up can still change
 // them on the device afterwards)
@@ -1127,6 +1128,7 @@ createRoads(G);
 createCities(G);
 createHawkers(G);
 createSuburbs(G); // speciality buildings along the roads out of each city (before the homes are made)
+world.familyBuilt = addFamilyBuildings(G); // houses and buildings the family added in Sparkle Studio (they become homes too)
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 createSymbols(G, { sfx: SFX, dialog }); // each region's symbol animal, in a corner of its city square
 createRegionSites(G); // more famous places of each region, just outside its city
@@ -1166,6 +1168,7 @@ for (const c of (Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {
   addNPC({ id: 'fam_' + name.replace(/[^\p{L}\p{N}]+/gu, '_'), name, look, x: +c.x, z: +c.z, face: +c.face || 0, icon: typeof c.icon === 'string' ? c.icon.slice(0, 4) : '💬', talk: () => dialog(name, lines.length ? lines : [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']]) });
 }
 // level land under every building, stall and landmark placed above (and anything added in future rounds)
+world.familyEdits = applyWorldEdits(G); // buildings the family moved or removed in Sparkle Studio
 widenFlatLand(world, scene); // more level land round every village and city, for new buildings (nothing moves on the map)
 world.levelled = levelUnderBuildings(world, scene);
 world.settled = settleRoads(world, scene); // and no road floats above the ground

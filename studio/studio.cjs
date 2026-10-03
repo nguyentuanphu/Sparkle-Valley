@@ -186,6 +186,32 @@ async function gh(p, opt = {}) {
   if (!r.ok) throw new Error(`GitHub ${r.status}: ${(j.message || t).slice(0, 160)}`);
   return j;
 }
+// ---------- the website: Netlify deploys and GitHub changes, to see and manage from the dashboard ----------
+async function nf(p, opt = {}) {
+  const r = await fetch('https://api.netlify.com/api/v1' + p, { ...opt, headers: { Authorization: 'Bearer ' + conf.netlifyToken, 'User-Agent': 'sparkle-studio', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } });
+  const t = await r.text(); let j = {}; try { j = JSON.parse(t); } catch (e) { }
+  if (!r.ok) throw new Error(`Netlify ${r.status}: ${(j.message || t).slice(0, 160)}`);
+  return j;
+}
+async function siteStatus() {
+  const out = {};
+  if (conf.netlifyToken && conf.netlifySite) {
+    try {
+      const site = await nf(`/sites/${encodeURIComponent(conf.netlifySite)}`), deps = await nf(`/sites/${encodeURIComponent(conf.netlifySite)}/deploys?per_page=10`);
+      out.netlify = { name: site.name, url: site.ssl_url || site.url, admin: site.admin_url, repo: site.build_settings && site.build_settings.repo_url, branch: site.build_settings && site.build_settings.repo_branch, published: site.published_deploy && site.published_deploy.id,
+        deploys: deps.map(d => ({ id: d.id, state: d.state, context: d.context, branch: d.branch, commit: (d.commit_ref || '').slice(0, 7), title: d.title || '', at: d.created_at, url: d.deploy_ssl_url || d.deploy_url, error: d.error_message || '', live: site.published_deploy && site.published_deploy.id === d.id })) };
+    } catch (e) { out.netlifyError = String(e.message || e); }
+  }
+  if (conf.githubToken && conf.githubRepo) {
+    try {
+      const R = `/repos/${conf.githubRepo}`, br = conf.githubBranch || 'main';
+      const commits = await gh(`${R}/commits?sha=${encodeURIComponent(br)}&per_page=8`), pulls = await gh(`${R}/pulls?state=open&per_page=10`);
+      out.github = { repo: conf.githubRepo, branch: br, commits: commits.map(c => ({ sha: c.sha.slice(0, 7), msg: (c.commit.message || '').split('\n')[0].slice(0, 120), at: c.commit.author && c.commit.author.date, url: c.html_url })),
+        pulls: pulls.map(p => ({ n: p.number, title: p.title, draft: p.draft, branch: p.head && p.head.ref, url: p.html_url, at: p.updated_at })) };
+    } catch (e) { out.githubError = String(e.message || e); }
+  }
+  return out;
+}
 const gitSha = b => crypto.createHash('sha1').update('blob ' + b.length + '\0').update(b).digest('hex');
 const SYNC = ['content', 'voices', 'photos', 'tools/voice-extra.json'];
 async function publishGitHub(J, message) {
@@ -289,6 +315,10 @@ const server = http.createServer(async (req, res) => {
       if (req.method === 'POST') { const b = await json(req), have = new Set(L.map(l => l.lang + '|' + l.text)); let n = 0; for (const l of b.lines || []) if (l && CAST[l.lang] && typeof l.text === 'string' && l.text.trim() && l.text.length < 400 && !have.has(l.lang + '|' + l.text)) { L.push({ lang: l.lang, text: l.text }); have.add(l.lang + '|' + l.text); n++; } fs.mkdirSync(G('tools'), { recursive: true }); fs.writeFileSync(f, JSON.stringify(L, null, 0).replace(/\},\{/g, '},\n{') + '\n'); return send(res, 200, { added: n, total: L.length }); }
       return send(res, 200, L);
     }
+    if (api === 'site/status') return send(res, 200, await siteStatus());
+    if (api === 'site/rebuild' && req.method === 'POST') { if (!conf.netlifyToken || !conf.netlifySite) return send(res, 400, { error: 'Add your Netlify token and site in Settings first.' }); await nf(`/sites/${encodeURIComponent(conf.netlifySite)}/builds`, { method: 'POST', body: '{}' }); return send(res, 200, { ok: true }); }
+    if (api === 'site/restore' && req.method === 'POST') { const b = await json(req); if (!/^[0-9a-f]{16,40}$/.test(b.id || '')) return send(res, 400, { error: 'bad deploy' }); await nf(`/sites/${encodeURIComponent(conf.netlifySite)}/deploys/${b.id}/restore`, { method: 'POST', body: '{}' }); return send(res, 200, { ok: true }); }
+    if (api === 'github/merge' && req.method === 'POST') { const b = await json(req); if (!(+b.n > 0)) return send(res, 400, { error: 'bad pull request' }); const r = await gh(`/repos/${conf.githubRepo}/pulls/${+b.n}/merge`, { method: 'PUT', body: JSON.stringify({ merge_method: 'merge' }) }); return send(res, 200, { ok: true, sha: r.sha }); }
     if (api === 'github/publish' && req.method === 'POST') { const b = await json(req); return send(res, 200, job('github', J => publishGitHub(J, String(b.message || '').slice(0, 200)))); }
     if (api === 'srcfiles') { const list = []; for (const d of ['js', 'js/games']) for (const f of fs.readdirSync(G(d))) if (f.endsWith('.js')) list.push(d + '/' + f); return send(res, 200, list); }
     if (api === 'voices/have') return send(res, 200, voicesHave());

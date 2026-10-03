@@ -5,6 +5,7 @@ import { clamp, lerp, smooth, fbm, seeded, dist2 } from './util.js';
 import { T } from './i18n.js';
 import { houseVillage } from './houses.js';
 import { settings } from './state.js';
+import { CUSTOM } from './custom.js';
 
 export const SIZE = 400, HALF = SIZE / 2, WATER = 0;
 export const PLATEAU = { x: 0, z: 0, r: 32, h: 18 };
@@ -896,4 +897,14 @@ export function settleRoads(world, scene) {
     if (y > g + .5 && !onDeck(x, z)) world.roadTop.set(k, g + .12);
   }
   return n;
+}
+
+// More level land drawn by the family in Sparkle Studio (content pack "world.land"): each rectangle becomes flat
+// ground at the height of its middle, with the same gentle edge as the towns, ready for new houses.
+for (const L of (CUSTOM.world && Array.isArray(CUSTOM.world.land) ? CUSTOM.world.land : []).slice(0, 40)) {
+  if (!L || ![L.x0, L.x1, L.z0, L.z1].every(v => typeof v === 'number' && isFinite(v))) continue;
+  const x0 = Math.max(-190, Math.min(L.x0, L.x1)), x1 = Math.min(190, Math.max(L.x0, L.x1)), z0 = Math.max(-190, Math.min(L.z0, L.z1)), z1 = Math.min(190, Math.max(L.z0, L.z1));
+  if (x1 - x0 < 2 || z1 - z0 < 2 || x1 - x0 > 120 || z1 - z0 > 120) continue;
+  const h = typeof L.h === 'number' && isFinite(L.h) ? Math.max(1, Math.min(30, L.h)) : Math.max(1.2, heightAt((x0 + x1) / 2, (z0 + z1) / 2));
+  FLATS.push({ x0, x1, z0, z1, h, family: true });
 }

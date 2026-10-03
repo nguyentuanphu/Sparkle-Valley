@@ -28,7 +28,7 @@ const clockFace = () => { // a round white clock face with hands, as a little ca
   g.lineWidth = 7; g.beginPath(); g.moveTo(64, 64); g.lineTo(64, 26); g.moveTo(64, 64); g.lineTo(92, 74); g.stroke();
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return new THREE.MeshBasicMaterial({ map: t, transparent: true });
 };
-const MODELS = {
+export const MODELS = {
   // Hà Nội: Khuê Văn Các, the pavilion at the Temple of Literature
   vanmieu: () => { const p = [P(B(7, .4, 5), '#b9ab8e', [0, .2, 0]), P(B(6, 3, 4), '#c9b48a', [0, 1.9, 0])]; for (const x of [-1.8, 0, 1.8]) p.push(P(B(1.1, 2, 4.1), '#5a3a2a', [x, 1.3, 0])); p.push(P(B(5.2, 2.4, 3.6), '#c0392b', [0, 4.6, 0]), P(new THREE.ConeGeometry(1, 1, 4), '#6a4a2a', [0, 6.6, 0], [0, Math.PI / 4, 0], [5.4, 1.6, 4.4]), P(new THREE.ConeGeometry(1, 1, 4), '#6a4a2a', [0, 3.6, 0], [0, Math.PI / 4, 0], [6.4, 1, 5])); p.push(P(new THREE.TorusGeometry(.7, .14, 6, 18), '#ffd23f', [0, 4.6, 1.82])); return p; },
   // Hà Nội: the water puppet stage (thủy đình) on a pond

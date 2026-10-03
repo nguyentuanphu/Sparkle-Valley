@@ -5,7 +5,7 @@ import { THREE, P, merge, toonVC, outline, sprite } from './gfx.js';
 import { T, onLang } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
-import { WATER, LAKE, RIVER, heightAt, regionAt, REGION_NAMES } from './world.js';
+import { WATER, LAKE, RIVER, BRIDGE, DRAGON, CITIES, VILLAGE, TOWN, MARKET, CHINA, INDIA, HOME, AUSSIE, heightAt, regionAt, REGION_NAMES } from './world.js';
 import { dist2 } from './util.js';
 
 const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), C = (r1, r2, h, s = 10) => new THREE.CylinderGeometry(r1, r2, h, s);
@@ -39,10 +39,12 @@ function bambooRaft() {
   for (let i = 0; i < 9; i++) p.push(P(C(.2, .2, 5, 8), i % 2 ? '#c9b45a' : '#b8a24a', [0, .25, -1.6 + i * .4], [0, 0, Math.PI / 2]));
   [-1.8, 1.8].forEach(x => p.push(P(B(.2, .15, 3.6), '#8a6a3a', [x, .5, 0])));
   [[-1.6, -1.3], [1.6, -1.3], [-1.6, 1.3], [1.6, 1.3]].forEach(([x, z]) => p.push(P(C(.06, .06, 2, 6), '#8a6a3a', [x, 1.5, z])));
-  p.push(P(new THREE.ConeGeometry(2.6, 1, 4), '#d9b86a', [0, 2.9, 0], [0, Math.PI / 4, 0], [1.1, 1, .8]));
   p.push(P(C(.05, .05, 3, 6), '#8a6a3a', [2.3, 1.6, 0], [0, 0, -.5])); // pole
   const m = new THREE.Mesh(merge(p), toonVC()); m.castShadow = true; outline(m, .03, '#4a3a2a');
-  const g = new THREE.Group(); g.add(m);
+  // the thatched roof is its own see-through-able piece: while a child rides, it fades so the camera can see them
+  const roofMat = toonVC(); roofMat.transparent = true;
+  const roof = new THREE.Mesh(merge([P(new THREE.ConeGeometry(2.6, 1, 4), '#d9b86a', [0, 2.9, 0], [0, Math.PI / 4, 0], [1.1, 1, .8])]), roofMat); roof.castShadow = true;
+  const g = new THREE.Group(); g.add(m, roof); g.roof = roof;
   const lan = sprite('🏮', .7); lan.position.set(0, 2.2, 0); g.add(lan);
   g.deck = .5; g.seats = [[-.6, .5], [.6, -.5], [-.6, -.6], [.6, .6]];
   return g;
@@ -62,6 +64,7 @@ export function createFerries(G) {
   // a boat that drives along a path of points, stopping at some of them
   const ferries = [];
   function makeFerry({ model, path, loop, stops, speed }) {
+    model.traverse(o => { o.userData.noCam = true; }); // a moving boat never pushes the camera in (it ended up inside the raft's roof)
     scene.add(model);
     const F = { model, path, loop, stops, speed, seg: 0, k: 0, dir: 1, wait: 4, at: stops[0].i, riders: new Set(), waiting: new Set() };
     model.position.set(path[0].x, WATER, path[0].z);
@@ -96,8 +99,24 @@ export function createFerries(G) {
   const lakeFerry = makeFerry({ model: ferryBoat(), path: lakePath, loop: true, stops: lakeStops, speed: 6.5 });
 
   // ---------- the river: two bamboo rafts crossing back and forth ----------
-  [3, 2].forEach(i => {
-    const [x, z] = RIVER[i], [x0, z0] = RIVER[i - 1], [x1, z1] = RIVER[i + 1];
+  // Each crossing is picked on the river where it is open water well away from both bridges (a raft under the
+  // Dragon Bridge left the camera inside the deck: nothing to see), and as close as possible to a town or village,
+  // so each bank's stop is a real place you can find on the map.
+  const PLACES = [...CITIES.map(c => ({ x: c.x, z: c.z, name: () => T(c.name[0], c.name[1]) })), { x: VILLAGE.x, z: VILLAGE.z, name: () => T('Lotus Village', 'Làng Sen') },
+    { x: (TOWN.x0 + TOWN.x1) / 2, z: TOWN.roadZ, name: () => T('Two Homes Street', 'Phố Hai Quê') }, { x: (MARKET.x0 + MARKET.x1) / 2, z: MARKET.roadZ, name: () => T('Three Regions Market', 'Chợ Ba Miền') },
+    { x: CHINA.x, z: CHINA.z, name: () => T('China Town', 'Phố Tàu') }, { x: INDIA.x, z: INDIA.z, name: () => T('India Village', 'Làng Ấn Độ') }, { x: HOME.x, z: HOME.z, name: () => T('Sunny Farm', 'Nông Trại Nắng') }, { x: (AUSSIE.x0 + AUSSIE.x1) / 2, z: AUSSIE.roadZ, name: () => T('Aussie Corner', 'Góc nước Úc') }];
+  const nearest = (x, z) => { let b = null, bd = 1e9; for (const p of PLACES) { const d = Math.hypot(p.x - x, p.z - z); if (d < bd) { bd = d; b = p; } } return [b, bd]; };
+  const bridgeD = (x, z) => Math.min(...[BRIDGE, DRAGON].map(B => Math.hypot(Math.max(B.x0 - x, 0, x - B.x1), z - B.z)));
+  const cands = [];
+  for (let i = 1; i < RIVER.length - 1; i++) for (let t = .1; t < .95; t += .1) {
+    const [ax, az] = RIVER[i], [bx, bz] = RIVER[i + 1], x = ax + (bx - ax) * t, z = az + (bz - az) * t;
+    if (bridgeD(x, z) < 34 || Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r + 16 || heightAt(x, z) > WATER - .5) continue;
+    cands.push({ i, x, z, d: nearest(x, z)[1] });
+  }
+  cands.sort((a, b) => a.d - b.d);
+  const picks = []; for (const c of cands) { if (picks.every(p => Math.hypot(p.x - c.x, p.z - c.z) > 60)) picks.push(c); if (picks.length === 2) break; }
+  picks.forEach(({ i, x, z }) => {
+    const [x0, z0] = RIVER[i], [x1, z1] = RIVER[i + 1];
     let dx = x1 - x0, dz = z1 - z0; const l = Math.hypot(dx, dz); dx /= l; dz /= l;
     const px = -dz, pz = dx; // across the river
     const bank = s => { let k = 0; while (k < 30 && heightAt(x + px * s * k, z + pz * s * k) < WATER + .5) k += .5; return k; };
@@ -106,10 +125,10 @@ export function createFerries(G) {
     const pb = pier(x + px * (kB + 2), z + pz * (kB + 2), x + px * (kB - 1.2), z + pz * (kB - 1.2));
     const ends = [{ x: x - px * (kA - 2.6), z: z - pz * (kA - 2.6) }, { x: x + px * (kB - 2.6), z: z + pz * (kB - 2.6) }];
     const path = []; for (let k = 0; k <= 10; k++) path.push({ x: ends[0].x + (ends[1].x - ends[0].x) * k / 10, z: ends[0].z + (ends[1].z - ends[0].z) * k / 10 });
-    // name each bank by the way it faces: east/west or north/south
-    const side = s => Math.abs(px) > Math.abs(pz) ? (px * s > 0 ? T('East bank', 'Bờ Đông') : T('West bank', 'Bờ Tây')) : (pz * s > 0 ? T('South bank', 'Bờ Nam') : T('North bank', 'Bờ Bắc'));
-    const where = (bx, bz) => { const rg = REGION_NAMES[regionAt(bx, bz)]; return rg ? ' · ' + rg() : ''; };
-    const names = [() => side(-1) + where(x - px * (kA + 6), z - pz * (kA + 6)), () => side(1) + where(x + px * (kB + 6), z + pz * (kB + 6))];
+    const side = s => Math.abs(px) > Math.abs(pz) ? (px * s > 0 ? T('east bank', 'bờ Đông') : T('west bank', 'bờ Tây')) : (pz * s > 0 ? T('south bank', 'bờ Nam') : T('north bank', 'bờ Bắc'));
+    const placeOf = (bx, bz) => { const [p, d] = nearest(bx, bz); if (p && d < 90) return p.name; const rg = REGION_NAMES[regionAt(bx, bz)]; return rg || (() => ''); };
+    const pA = placeOf(x - px * (kA + 10), z - pz * (kA + 10)), pB = placeOf(x + px * (kB + 10), z + pz * (kB + 10));
+    const names = [() => pA() + ' · ' + side(-1), () => pB() + ' · ' + side(1)];
     makeFerry({ model: bambooRaft(), path, loop: false, speed: 3.2, stops: [{ i: 0, name: names[0], dock: { pier: pa } }, { i: path.length - 1, name: names[1], dock: { pier: pb } }] });
   });
 
@@ -182,6 +201,7 @@ export function createFerries(G) {
         const want = Math.atan2(b.x - a.x, b.z - a.z) - Math.PI / 2;
         let d = want - m.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); m.rotation.y += d * Math.min(1, dt * (F.loop ? 2 : 6));
       }
+      if (m.roof) { const want = F.riders.size ? .28 : 1, mt = m.roof.material; mt.opacity += (want - mt.opacity) * Math.min(1, dt * 4); mt.depthWrite = mt.opacity > .95; }
       m.position.y = WATER + Math.sin(t * 1.6 + F.speed) * .06; m.rotation.z = Math.sin(t * 1.1) * .02;
       m.updateMatrixWorld();
     });

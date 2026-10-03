@@ -617,6 +617,8 @@ export function openPad(game, i, tab) {
       x.font = 'bold 14px Fredoka, "Baloo 2", sans-serif'; const w = x.measureText(pl.name()).width + 12; x.fillStyle = 'rgba(255,255,255,.92)'; x.fillRect(a - w / 2, b + 24, w, 20); x.fillStyle = '#3b2558'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(pl.name(), a, b + 34);
       spots.push({ x: pl.x, z: pl.z, name: pl.name(), r: 14 });
     });
+    // every ferry and raft stop (tap one to go there and wait for the boat)
+    if (game.ferries) game.ferries.ferries.forEach(F => F.stops.forEach(st => { const t = st.dock.pier.tip; icon('⛴️', t.x, t.z, 16); spots.push({ x: t.x, z: t.z, name: '⛴️ ' + st.name(), r: 10 }); }));
     const q = game.questTarget(hero); if (q) { const [a, b] = pt(q.x, q.z); x.fillStyle = '#ff3b6b'; x.beginPath(); x.arc(a, b - 14, 9, 0, Math.PI * 2); x.moveTo(a - 7, b - 9); x.lineTo(a, b); x.lineTo(a + 7, b - 9); x.fill(); }
     game.heroes.forEach((h, j) => { const [a, b] = pt(h.pos.x, h.pos.z); x.save(); x.translate(a, b); x.rotate(-h.yaw + Math.PI); x.fillStyle = j === 0 ? '#ffd23f' : '#5fe0ff'; x.strokeStyle = '#3a2a10'; x.lineWidth = 2; x.beginPath(); x.moveTo(0, -12); x.lineTo(9, 10); x.lineTo(0, 5); x.lineTo(-9, 10); x.closePath(); x.fill(); x.stroke(); x.restore(); });
     // every friend online, with their name (tap them to walk, fly or ask them to come)

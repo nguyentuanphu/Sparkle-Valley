@@ -11,8 +11,8 @@ const saveContent = async () => { await api('content', CONTENT); toast(T('Saved.
 
 const TABS = [
   ['home', '🏠', 'Home', 'Trang chính'], ['message', '💌', 'Message', 'Lời nhắn'], ['villagers', '🧑', 'Villagers', 'Nhân vật'], ['stories', '📖', 'Stories', 'Truyện'],
-  ['quiz', '💛', 'Family quiz', 'Đố vui gia đình'], ['map', '🗺️', 'Map & new villagers', 'Bản đồ & nhân vật mới'], ['photos', '📷', 'Real photos', 'Ảnh thật'], ['play', '⏰', 'Defaults', 'Mặc định'], ['children', '👧', 'Children', 'Các con'], ['voices', '🎙️', 'Voices', 'Giọng đọc'],
-  ['publish', '🚀', 'Publish', 'Phát hành'], ['check', '🩺', 'Check', 'Kiểm tra'], ['settings', '🔑', 'Settings', 'Cài đặt']
+  ['quiz', '💛', 'Family quiz', 'Đố vui gia đình'], ['map', '🗺️', 'Map & building', 'Bản đồ & xây dựng'], ['photos', '📷', 'Real photos', 'Ảnh thật'], ['play', '⏰', 'Defaults', 'Mặc định'], ['children', '👧', 'Children', 'Các con'], ['voices', '🎙️', 'Voices', 'Giọng đọc'],
+  ['publish', '🚀', 'Publish', 'Phát hành'], ['site', '🌐', 'Website', 'Trang web'], ['check', '🩺', 'Check', 'Kiểm tra'], ['settings', '🔑', 'Settings', 'Cài đặt']
 ];
 let cur = location.hash.slice(1) || 'home';
 function nav() {
@@ -308,33 +308,123 @@ PAGES.publish = async P => {
 };
 // ---------- map: add, place, move and remove the family's own villagers ----------
 const LOOKS = { style: ['dress', 'shirt', 'aodai', 'tunic', 'overalls', 'hoodie'], hairStyle: ['buns', 'short', 'long', 'ponytail', 'spiky'], color: ['#ff5fa2', '#a66bff', '#3cc7e8', '#ffd23f', '#e8434a', '#5fd39a', '#ff9f43', '#3b6fe0', '#ffffff'], hair: ['#1d1412', '#3b2618', '#6b4226', '#c98b4a', '#e8c26a', '#a8432a', '#d9d9d9'], skin: ['#ffe3d1', '#f6c7a5', '#e0aa80', '#b47a55', '#7a4e33'] };
-let mapCanvas = null;
+let mapCanvas = null, mapMode = 'npc', SNAP = null;
+// the buildings that are in the game now: the game itself is opened out of sight and asked (it needs a moment)
+async function worldSnapshot() {
+  const f = document.createElement('iframe'); f.style.cssText = 'position:fixed;left:-2000px;top:0;width:400px;height:300px;border:0'; f.src = '/game/index.html?studio=1'; document.body.appendChild(f);
+  try {
+    for (let i = 0; i < 120; i++) { await new Promise(r => setTimeout(r, 500)); const G = f.contentWindow && f.contentWindow.__sv; if (G && G.world && G.world.boxes && G.interactables && G.interactables.length > 50) {
+      await new Promise(r => setTimeout(r, 1500));
+      const lab = it => { try { return typeof it.label === 'function' ? it.label({ i: 0, profile: { leafies: {}, shrines: {} }, pos: { y: 0 } }) : it.id; } catch (e) { return it.id; } };
+      const near = (x, z, r) => { let best = '', bd = r; for (const it of G.interactables) { const d = Math.hypot(it.x - x, it.z - z); if (d < bd && !/^g\d|^lf|^wr|^fl|^dig/.test(it.id)) { bd = d; best = lab(it); } } return best; };
+      const items = G.world.boxes.filter(b => !b.room && b.x1 - b.x0 < 40 && b.z1 - b.z0 < 40 && b.x1 - b.x0 > 1.5).map(b => ({ x: (b.x0 + b.x1) / 2, z: (b.z0 + b.z1) / 2, w: b.x1 - b.x0, d: b.z1 - b.z0 }));
+      for (const c of G.world.colliders) if (c.r >= 2.5 && c.r <= 12 && Math.abs(c.r * 20 - Math.round(c.r * 20)) < 1e-6) items.push({ x: c.x, z: c.z, w: c.r * 1.6, d: c.r * 1.6, round: true });
+      items.forEach(it => { it.name = near(it.x, it.z, Math.max(it.w, it.d) / 2 + 5).replace(/^(About|Giới thiệu|Talk to|Nói chuyện với):?\s*/i, ''); });
+      return items;
+    } }
+    throw new Error(T('The game did not open in time.', 'Game chưa mở kịp.'));
+  } finally { f.remove(); }
+}
 PAGES.map = async P => {
-  CONTENT.npcs = CONTENT.npcs || [];
-  P.innerHTML = `<h2>🗺️ ${T('Map & new villagers', 'Bản đồ & nhân vật mới')}</h2><p class="sub">${T('Tap the map to add someone there, drag a marker to move them, tap a marker to change or remove them. They appear in the game after you publish.', 'Chạm bản đồ để thêm người ở đó, kéo dấu để dời, chạm dấu để sửa hoặc xóa. Họ sẽ xuất hiện trong game sau khi phát hành.')}</p><div class="card" id="mapwrap">${T('Drawing the map…', 'Đang vẽ bản đồ…')}</div>`;
-  const W = await import('/game/js/world.js');
+  CONTENT.npcs = CONTENT.npcs || []; CONTENT.world = CONTENT.world || {}; const WD = CONTENT.world; WD.build = WD.build || []; WD.edits = WD.edits || []; WD.land = WD.land || [];
+  P.innerHTML = `<h2>🗺️ ${T('Map: build and change the world', 'Bản đồ: xây dựng và sửa thế giới')}</h2><p class="sub">${T('Add villagers and buildings, move or remove what is there, and make more flat land for new towns. Changes appear in the game after you publish.', 'Thêm nhân vật và nhà cửa, dời hoặc xóa những gì đang có, và làm thêm đất bằng cho phố mới. Thay đổi xuất hiện trong game sau khi phát hành.')}</p><div class="card" id="mapwrap">${T('Drawing the map…', 'Đang vẽ bản đồ…')}</div>`;
+  const W = await import('/game/js/world.js'), WE = await import('/game/js/worldedit.js'), TYPES = WE.BUILD_TYPES;
   const S = 800, k = S / W.SIZE, toPx = (x, z) => [(x + W.HALF) * k, (z + W.HALF) * k], toW = (px, py) => [px / k - W.HALF, py / k - W.HALF];
   if (!mapCanvas) mapCanvas = W.paintMap(S);
-  $('#mapwrap').outerHTML = `<div class="mapgrid"><div class="card mapbox"><div class="row" style="margin-bottom:6px"><span class="note">${T('Zoom', 'Phóng to')}</span>${[1, 2, 3].map(z => `<button class="btn small ghost" data-z="${z}">${z}×</button>`).join('')}</div><div class="mapscroll"><canvas id="mc" width="${S}" height="${S}"></canvas></div></div><div class="card" id="npcform"></div></div>
-    <div class="card"><h3>👥 ${T('Your villagers', 'Nhân vật của bạn')} (<span id="npcn">${CONTENT.npcs.length}</span>)</h3><div id="npclist"></div></div><div class="bar"><button class="btn" id="save">💾 ${T('Save villagers', 'Lưu nhân vật')}</button></div>`;
-  const cv = $('#mc'), g = cv.getContext('2d'); let sel = -1, drag = null, zoom = 1;
-  const places = [...W.CITIES.map(c => [c.x, c.z, c.name[1], c.icon]), [W.VILLAGE.x, W.VILLAGE.z, 'Làng Sen', '🪷'], [W.CHINA.x, W.CHINA.z, 'China Town', '🏮'], [W.INDIA.x, W.INDIA.z, 'India Village', '🪔'], [W.HOME.x, W.HOME.z, 'Sunny Farm', '🏡'], [(W.TOWN.x0 + W.TOWN.x1) / 2, W.TOWN.roadZ, 'Two Homes Street', '🏘️'], [(W.MARKET.x0 + W.MARKET.x1) / 2, W.MARKET.roadZ, 'Chợ Ba Miền', '🧺'], [(W.AUSSIE.x0 + W.AUSSIE.x1) / 2, W.AUSSIE.roadZ, 'Aussie Corner', '🦘']];
+  const MODES = [['npc', '👥', T('Villagers', 'Nhân vật')], ['build', '🏠', T('Build', 'Xây')], ['move', '↔️', T('Move', 'Dời')], ['remove', '🧹', T('Remove', 'Xóa bỏ')], ['land', '🟫', T('Flat land', 'Đất bằng')]];
+  $('#mapwrap').outerHTML = `<div class="card"><div class="row modes">${MODES.map(([m, i, l]) => `<button class="btn small ${mapMode === m ? '' : 'ghost'}" data-mode="${m}">${i} ${l}</button>`).join('')}
+      <button class="btn small pink" id="snap">🔎 ${SNAP ? T('Buildings shown', 'Đang hiện nhà cửa') : T('Show the buildings that are there now', 'Hiện nhà cửa đang có')}</button><span class="note" id="snapres"></span></div><p class="note" id="modehelp"></p></div>
+    <div class="mapgrid"><div class="card mapbox"><div class="row modes" style="margin-bottom:6px"><span class="note">${T('Zoom', 'Phóng to')}</span>${[1, 2, 3].map(z => `<button class="btn small ghost" data-z="${z}">${z}×</button>`).join('')}</div><div class="mapscroll"><canvas id="mc" width="${S}" height="${S}"></canvas></div></div><div class="card" id="npcform"></div></div>
+    <div class="card"><h3>📋 ${T('Your changes', 'Thay đổi của bạn')}</h3><div id="npclist"></div></div><div class="bar"><button class="btn" id="save">💾 ${T('Save the map', 'Lưu bản đồ')}</button></div>`;
+  const cv = $('#mc'), g = cv.getContext('2d'); let sel = null, drag = null, zoom = 1, rect = null;
+  const HELP = { npc: T('Tap the map to add someone; drag a marker to move them; tap a marker to change or remove them.', 'Chạm bản đồ để thêm người; kéo dấu để dời; chạm dấu để sửa hoặc xóa.'),
+    build: T('Choose a building on the right, then tap the map where it should stand. Drag it to move; turn it with the slider.', 'Chọn loại nhà bên phải, rồi chạm vào chỗ muốn xây. Kéo để dời; xoay bằng thanh trượt.'),
+    move: T('Tap a building (show the buildings first), then drag the green arrow end to where it should go. Everything inside the circle moves with it: people, stalls, trees.', 'Chạm vào một ngôi nhà (bấm hiện nhà cửa trước), rồi kéo đầu mũi tên xanh tới chỗ mới. Mọi thứ trong vòng tròn đi theo: người, sạp, cây.'),
+    remove: T('Tap what should go. Everything inside the red circle is taken away (make the circle bigger or smaller on the right).', 'Chạm vào thứ cần bỏ. Mọi thứ trong vòng tròn đỏ sẽ bị xóa (chỉnh vòng to nhỏ ở bên phải).'),
+    land: T('Drag a rectangle on the map to make it flat land for new houses, or grow a whole place on the right.', 'Kéo một hình chữ nhật trên bản đồ để làm đất bằng cho nhà mới, hoặc mở rộng cả một nơi ở bên phải.') };
+  let buildType = 'tube';
+  const places = [...W.CITIES.map(c => [c.x, c.z, c.name[1], c.icon, c]), [W.VILLAGE.x, W.VILLAGE.z, 'Làng Sen', '🪷'], [W.CHINA.x, W.CHINA.z, 'China Town', '🏮'], [W.INDIA.x, W.INDIA.z, 'India Village', '🪔'], [W.HOME.x, W.HOME.z, 'Sunny Farm', '🏡'], [(W.TOWN.x0 + W.TOWN.x1) / 2, W.TOWN.roadZ, 'Two Homes Street', '🏘️', W.TOWN], [(W.MARKET.x0 + W.MARKET.x1) / 2, W.MARKET.roadZ, 'Chợ Ba Miền', '🧺', W.MARKET], [(W.AUSSIE.x0 + W.AUSSIE.x1) / 2, W.AUSSIE.roadZ, 'Aussie Corner', '🦘', W.AUSSIE]];
   const where = (x, z) => { if (W.heightAt(x, z) < W.WATER + .4) return ['bad', T('in the water', 'dưới nước')]; const rd = W.roadDist(x, z); if (rd.road && rd.d < rd.road.w / 2 + .8) return ['bad', T('on a road', 'giữa đường')]; return ['ok', '']; };
   const draw = () => {
     g.drawImage(mapCanvas, 0, 0, S, S); g.font = 'bold 13px Segoe UI, sans-serif'; g.textAlign = 'center';
+    for (const L of WD.land) { const [a, b2] = toPx(L.x0, L.z0), [c, d] = toPx(L.x1, L.z1); g.fillStyle = 'rgba(190,140,70,.45)'; g.fillRect(a, b2, c - a, d - b2); g.strokeStyle = sel && sel.list === 'land' && WD.land[sel.i] === L ? '#8a5cf6' : '#8a5a2a'; g.lineWidth = 2; g.strokeRect(a, b2, c - a, d - b2); }
+    if (rect) { const [a, b2] = toPx(rect[0], rect[1]), [c, d] = toPx(rect[2], rect[3]); g.strokeStyle = '#8a5cf6'; g.setLineDash([6, 4]); g.strokeRect(a, b2, c - a, d - b2); g.setLineDash([]); }
+    if (SNAP) for (const it of SNAP) { const [a, b2] = toPx(it.x - it.w / 2, it.z - it.d / 2); g.fillStyle = 'rgba(60,50,80,.35)'; g.fillRect(a, b2, it.w * k, it.d * k); }
     for (const [x, z, n, ic] of places) { const [px, py] = toPx(x, z); g.fillStyle = 'rgba(255,255,255,.85)'; const w = g.measureText(ic + ' ' + n).width + 10; g.fillRect(px - w / 2, py - 9, w, 18); g.fillStyle = '#3b2a4f'; g.fillText(ic + ' ' + n, px, py + 4); }
-    CONTENT.npcs.forEach((c, i) => { const [px, py] = toPx(c.x, c.z); g.beginPath(); g.arc(px, py, i === sel ? 11 : 8, 0, 7); g.fillStyle = c.gender === 'm' ? '#3b6fe0' : '#ff5fa2'; g.fill(); g.lineWidth = 3; g.strokeStyle = '#fff'; g.stroke(); g.fillStyle = '#3b2a4f'; g.fillText(c.name || '?', px, py - 14); });
+    WD.edits.forEach((e, i) => { const [px, py] = toPx(e.x, e.z), on = sel && sel.list === 'edits' && sel.i === i; g.beginPath(); g.arc(px, py, e.r * k, 0, 7); g.lineWidth = on ? 4 : 2; g.strokeStyle = e.op === 'move' ? '#2f9a5a' : '#d2232a'; g.fillStyle = e.op === 'move' ? 'rgba(47,154,90,.15)' : 'rgba(210,35,42,.18)'; g.fill(); g.stroke();
+      if (e.op === 'move') { const [tx, ty] = toPx(e.x + (e.dx || 0), e.z + (e.dz || 0)); g.beginPath(); g.moveTo(px, py); g.lineTo(tx, ty); g.stroke(); g.beginPath(); g.arc(tx, ty, Math.max(6, e.r * k), 0, 7); g.setLineDash([4, 3]); g.stroke(); g.setLineDash([]); g.beginPath(); g.arc(tx, ty, 6, 0, 7); g.fillStyle = '#2f9a5a'; g.fill(); } else { g.fillStyle = '#d2232a'; g.fillText('✕', px, py + 4); } });
+    WD.build.forEach((b, i) => { const [px, py] = toPx(b.x, b.z), on = sel && sel.list === 'build' && sel.i === i; g.font = (on ? 26 : 20) + 'px sans-serif'; g.fillText((TYPES[b.type] || {}).icon || '🏠', px, py + 7); g.font = 'bold 13px Segoe UI, sans-serif'; });
+    CONTENT.npcs.forEach((c, i) => { const [px, py] = toPx(c.x, c.z), on = sel && sel.list === 'npcs' && sel.i === i; g.beginPath(); g.arc(px, py, on ? 11 : 8, 0, 7); g.fillStyle = c.gender === 'm' ? '#3b6fe0' : '#ff5fa2'; g.fill(); g.lineWidth = 3; g.strokeStyle = '#fff'; g.stroke(); g.fillStyle = '#3b2a4f'; g.fillText(c.name || '?', px, py - 14); });
   };
   const evPos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * S / r.width, (e.clientY - r.top) * S / r.height]; };
-  const hit = (px, py) => CONTENT.npcs.findIndex(c => { const [x, y] = toPx(c.x, c.z); return Math.hypot(x - px, y - py) < 13; });
-  cv.onpointerdown = e => { const [px, py] = evPos(e), i = hit(px, py); if (i >= 0) { sel = i; drag = i; cv.setPointerCapture(e.pointerId); } else { const [x, z] = toW(px, py); CONTENT.npcs.push({ name: T('New friend', 'Bạn mới'), gender: 'f', x: +x.toFixed(1), z: +z.toFixed(1), face: 0, icon: '💬', look: { style: 'shirt', color: '#5fd39a', hairStyle: 'short', hair: '#1d1412', skin: '#f6c7a5', age: 'adult' }, lines: [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']] }); sel = CONTENT.npcs.length - 1; } draw(); form(); list(); };
-  cv.onpointermove = e => { if (drag == null) return; const [px, py] = evPos(e), [x, z] = toW(px, py); CONTENT.npcs[drag].x = +x.toFixed(1); CONTENT.npcs[drag].z = +z.toFixed(1); draw(); };
-  cv.onpointerup = () => { if (drag != null) { drag = null; form(); list(); } };
+  const hitAt = (px, py) => {
+    const [x, z] = toW(px, py);
+    for (const [list, arr] of [['npcs', CONTENT.npcs], ['build', WD.build]]) { const i = arr.findIndex(c => Math.hypot(c.x - x, c.z - z) * k < 13); if (i >= 0) return { list, i }; }
+    for (let i = 0; i < WD.edits.length; i++) { const e = WD.edits[i]; if (e.op === 'move' && Math.hypot(e.x + (e.dx || 0) - x, e.z + (e.dz || 0) - z) * k < 12) return { list: 'edits', i, end: true }; if (Math.hypot(e.x - x, e.z - z) < e.r) return { list: 'edits', i }; }
+    const li = WD.land.findIndex(L => x > Math.min(L.x0, L.x1) && x < Math.max(L.x0, L.x1) && z > Math.min(L.z0, L.z1) && z < Math.max(L.z0, L.z1)); if (li >= 0 && mapMode === 'land') return { list: 'land', i: li };
+    return null;
+  };
+  const snapAt = (x, z) => SNAP && SNAP.find(it => Math.abs(it.x - x) < it.w / 2 + .5 && Math.abs(it.z - z) < it.d / 2 + .5);
+  cv.onpointerdown = e => {
+    const [px, py] = evPos(e), [x, z] = toW(px, py), h = hitAt(px, py); cv.setPointerCapture(e.pointerId);
+    if (h && !(mapMode === 'land' && h.list !== 'land')) { sel = h; drag = { ...h, ox: x, oz: z }; draw(); form(); list(); return; }
+    const X = +x.toFixed(1), Z = +z.toFixed(1);
+    if (mapMode === 'npc') { CONTENT.npcs.push({ name: T('New friend', 'Bạn mới'), gender: 'f', x: X, z: Z, face: 0, icon: '💬', look: { style: 'shirt', color: '#5fd39a', hairStyle: 'short', hair: '#1d1412', skin: '#f6c7a5', age: 'adult' }, lines: [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']] }); sel = { list: 'npcs', i: CONTENT.npcs.length - 1 }; }
+    else if (mapMode === 'build') { WD.build.push({ type: buildType, x: X, z: Z, rot: 0, name: ['', ''], owner: { name: '', line: ['', ''] } }); sel = { list: 'build', i: WD.build.length - 1 }; }
+    else if (mapMode === 'move' || mapMode === 'remove') { const b = snapAt(x, z), cx = b ? +b.x.toFixed(1) : X, cz = b ? +b.z.toFixed(1) : Z, r = b ? +Math.min(30, Math.max(b.w, b.d) / 2 + 2).toFixed(1) : 5; WD.edits.push(mapMode === 'move' ? { op: 'move', x: cx, z: cz, r, dx: 15, dz: 0, turn: 0, what: b ? b.name : '' } : { op: 'remove', x: cx, z: cz, r, what: b ? b.name : '' }); sel = { list: 'edits', i: WD.edits.length - 1 }; }
+    else if (mapMode === 'land') { rect = [X, Z, X, Z]; drag = { rect: true }; }
+    draw(); form(); list();
+  };
+  cv.onpointermove = e => {
+    if (!drag) return; const [px, py] = evPos(e), [x, z] = toW(px, py);
+    if (drag.rect) { rect[2] = +x.toFixed(1); rect[3] = +z.toFixed(1); draw(); return; }
+    const arr = drag.list === 'npcs' ? CONTENT.npcs : WD[drag.list], it = arr[drag.i]; if (!it) return;
+    if (drag.list === 'edits' && drag.end) { it.dx = +(x - it.x).toFixed(1); it.dz = +(z - it.z).toFixed(1); }
+    else if (drag.list === 'land') { const ddx = x - drag.ox, ddz = z - drag.oz; it.x0 += ddx; it.x1 += ddx; it.z0 += ddz; it.z1 += ddz; drag.ox = x; drag.oz = z; }
+    else { it.x = +x.toFixed(1); it.z = +z.toFixed(1); }
+    draw();
+  };
+  cv.onpointerup = () => { if (drag && drag.rect) { const [x0, z0, x1, z1] = rect; if (Math.abs(x1 - x0) > 3 && Math.abs(z1 - z0) > 3) { WD.land.push({ x0: Math.min(x0, x1), x1: Math.max(x0, x1), z0: Math.min(z0, z1), z1: Math.max(z0, z1) }); sel = { list: 'land', i: WD.land.length - 1 }; } rect = null; }
+    drag = null; draw(); form(); list(); };
   P.querySelectorAll('[data-z]').forEach(b => b.onclick = () => { zoom = +b.dataset.z; cv.style.width = S * zoom + 'px'; cv.style.height = S * zoom + 'px'; });
+  P.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { mapMode = b.dataset.mode; P.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('ghost', x.dataset.mode !== mapMode)); $('#modehelp').textContent = HELP[mapMode]; sel = null; form(); draw(); });
+  $('#modehelp').textContent = HELP[mapMode];
+  $('#snap').onclick = async () => { $('#snapres').textContent = T('Opening the game to look… (up to a minute)', 'Đang mở game để xem… (tối đa một phút)'); try { SNAP = await worldSnapshot(); $('#snapres').textContent = `✅ ${SNAP.length} ${T('buildings', 'công trình')}`; draw(); } catch (e) { $('#snapres').textContent = '⚠️ ' + e.message; } };
   const sw = (key, vals, cur) => `<div class="swatches">${vals.map(v => `<button class="sw ${v === cur ? 'on' : ''}" data-${key}="${v}" style="background:${v}"></button>`).join('')}</div>`;
   function form() {
-    const F = $('#npcform'); const c = CONTENT.npcs[sel];
-    if (!c) { F.innerHTML = `<h3>➕ ${T('Add someone', 'Thêm người')}</h3><p class="note">${T('Tap anywhere on the map. Good places: a village square, beside a shop, near a landmark. Not on a road or in the water.', 'Chạm vào bất kỳ chỗ nào trên bản đồ. Chỗ đẹp: sân làng, cạnh cửa hàng, gần thắng cảnh. Không đặt giữa đường hay dưới nước.')}</p>`; return; }
+    const F = $('#npcform');
+    if (!sel) {
+      if (mapMode === 'build') { F.innerHTML = `<h3>🏠 ${T('What to build', 'Xây gì')}</h3><div class="typelist">${Object.entries(TYPES).map(([id, t]) => `<button class="btn small ${id === buildType ? '' : 'ghost'}" data-type="${id}">${t.icon} ${esc(T(t.name[0], t.name[1]))}</button>`).join('')}</div><p class="note">${T('Then tap the map. Houses become homes the children can visit; give them a name and someone living there.', 'Rồi chạm vào bản đồ. Nhà sẽ thành nhà để các con ghé thăm; đặt tên và người ở trong đó.')}</p>`; F.querySelectorAll('[data-type]').forEach(b => b.onclick = () => { buildType = b.dataset.type; form(); }); return; }
+      if (mapMode === 'land') { F.innerHTML = `<h3>🟫 ${T('Grow a place', 'Mở rộng một nơi')}</h3><p class="note">${T('Adds flat land all round a town, village or city, ready for new buildings.', 'Thêm đất bằng quanh một phố, làng hay thành phố, sẵn sàng để xây thêm.')}</p><select id="gp">${places.filter(p => p[4]).map((p, i) => `<option value="${i}">${p[3]} ${esc(p[2])}</option>`).join('')}</select><label>${T('Metres all round', 'Số mét mỗi phía')}</label><input type="number" id="gm" value="15" min="5" max="40"><button class="btn" id="gadd" style="margin-top:8px">➕ ${T('Add the land', 'Thêm đất')}</button>`;
+        $('#gadd').onclick = () => { const p = places.filter(q => q[4])[+$('#gp').value][4], m = Math.max(5, Math.min(40, +$('#gm').value || 15)); const x0 = p.x0 ?? p.x - (p.w || 13) / 2, x1 = p.x1 ?? p.x + (p.w || 13) / 2, z0 = p.z0 ?? p.z - (p.d || 13) / 2, z1 = p.z1 ?? p.z + (p.d || 13) / 2; WD.land.push({ x0: +(x0 - m).toFixed(1), x1: +(x1 + m).toFixed(1), z0: +(z0 - m).toFixed(1), z1: +(z1 + m).toFixed(1) }); sel = { list: 'land', i: WD.land.length - 1 }; draw(); form(); list(); }; return; }
+      F.innerHTML = `<p class="note">${HELP[mapMode]}</p>`; return;
+    }
+    const del = () => { if (!confirm(T('Remove this change?', 'Bỏ thay đổi này?'))) return; (sel.list === 'npcs' ? CONTENT.npcs : WD[sel.list]).splice(sel.i, 1); sel = null; draw(); form(); list(); };
+    const done = `<div class="row"><button class="btn bad" id="fdel">🗑️ ${T('Remove', 'Xóa')}</button><button class="btn ghost" id="fdone">✅ ${T('Done', 'Xong')}</button></div>`;
+    const bindDone = () => { $('#fdel').onclick = del; $('#fdone').onclick = () => { sel = null; draw(); form(); list(); }; };
+    if (sel.list === 'build') {
+      const b = WD.build[sel.i], t = TYPES[b.type] || {}, [okc, why] = where(b.x, b.z); b.name = b.name || ['', '']; b.owner = b.owner || { name: '', line: ['', ''] }; b.owner.line = b.owner.line || ['', ''];
+      F.innerHTML = `<h3>${t.icon || '🏠'} ${esc(T(t.name[0], t.name[1]))}</h3><label>${T('Type', 'Loại')}</label><select id="bt">${Object.entries(TYPES).map(([id, x]) => `<option value="${id}" ${id === b.type ? 'selected' : ''}>${x.icon} ${esc(T(x.name[0], x.name[1]))}</option>`).join('')}</select>
+        <label>${T('Turn', 'Xoay')}: <span id="brv">${Math.round((b.rot || 0) * 180 / Math.PI)}°</span></label><input type="range" id="br" min="-180" max="180" step="15" value="${Math.round((b.rot || 0) * 180 / Math.PI)}">
+        ${t.home ? `<label>${T('Name on the door', 'Tên trên cửa')}</label><div class="row"><input type="text" id="bn0" value="${esc(b.name[0])}" placeholder="English"><input type="text" id="bn1" value="${esc(b.name[1])}" placeholder="Tiếng Việt"></div>
+        <label>${T('Who lives there', 'Ai ở đó')}</label><input type="text" id="bo" value="${esc(b.owner.name)}" placeholder="${T('e.g. Bà Tư', 'vd. Bà Tư')}"><label>${T('What they say', 'Họ nói gì')}</label><div class="row"><input type="text" id="bl0" value="${esc(b.owner.line[0])}" placeholder="English"><input type="text" id="bl1" value="${esc(b.owner.line[1])}" placeholder="Tiếng Việt"></div>
+        <label>${T('Wall colour', 'Màu tường')}</label>${sw('c', ['#9fd8c8', '#ffb3a0', '#f2d6a0', '#efe0bf', '#cfe6ee', '#f6e27a', '#d9c3f0', '#ffffff'], b.color)}` : ''}
+        <p class="${okc === 'ok' ? 'ok' : 'badtxt'}">📍 ${b.x}, ${b.z} ${okc === 'ok' ? '✅' : '⚠️ ' + why}</p>${done}`;
+      $('#bt').onchange = e => { b.type = e.target.value; draw(); form(); }; $('#br').oninput = e => { b.rot = +e.target.value * Math.PI / 180; $('#brv').textContent = e.target.value + '°'; };
+      if (t.home) { $('#bn0').oninput = e => { b.name[0] = e.target.value; list(); }; $('#bn1').oninput = e => { b.name[1] = e.target.value; }; $('#bo').oninput = e => { b.owner.name = e.target.value; }; $('#bl0').oninput = e => { b.owner.line[0] = e.target.value; }; $('#bl1').oninput = e => { b.owner.line[1] = e.target.value; }; F.querySelectorAll('[data-c]').forEach(x => x.onclick = () => { b.color = x.dataset.c; form(); }); }
+      bindDone(); return;
+    }
+    if (sel.list === 'edits') {
+      const e = WD.edits[sel.i];
+      F.innerHTML = `<h3>${e.op === 'move' ? '↔️ ' + T('Move', 'Dời') : '🧹 ' + T('Remove', 'Xóa bỏ')}</h3><p>${esc(e.what || T('(whatever is in the circle)', '(mọi thứ trong vòng tròn)'))}</p>
+        <label>${T('Circle size (metres)', 'Cỡ vòng tròn (mét)')}: <span id="erv">${e.r}</span></label><input type="range" id="er" min="1" max="30" step=".5" value="${e.r}">
+        ${e.op === 'move' ? `<label>${T('Turn', 'Xoay')}: <span id="etv">${Math.round((e.turn || 0) * 180 / Math.PI)}°</span></label><input type="range" id="et" min="-180" max="180" step="15" value="${Math.round((e.turn || 0) * 180 / Math.PI)}"><p class="note">${T('Drag the green dot on the map to where it should go.', 'Kéo chấm xanh trên bản đồ tới chỗ mới.')}</p>` : `<p class="note">${T('Careful: people and shops inside the circle go too.', 'Cẩn thận: người và cửa hàng trong vòng tròn cũng mất.')}</p>`}${done}`;
+      $('#er').oninput = x => { e.r = +x.target.value; $('#erv').textContent = e.r; draw(); }; if ($('#et')) $('#et').oninput = x => { e.turn = +x.target.value * Math.PI / 180; $('#etv').textContent = x.target.value + '°'; };
+      bindDone(); return;
+    }
+    if (sel.list === 'land') { const L = WD.land[sel.i]; F.innerHTML = `<h3>🟫 ${T('Flat land', 'Đất bằng')}</h3><p>${Math.round(L.x1 - L.x0)} × ${Math.round(L.z1 - L.z0)} m</p><p class="note">${T('Drag it on the map to move it.', 'Kéo trên bản đồ để dời.')}</p>${done}`; bindDone(); return; }
+    // a villager
+    const c = CONTENT.npcs[sel.i]; if (!c) { sel = null; return form(); }
     const L = c.look = c.look || {}, [okc, why] = where(c.x, c.z);
     F.innerHTML = `<h3>✏️ ${esc(c.name)}</h3>
       <label>${T('Name (as the children call them)', 'Tên (như các con gọi)')}</label><input type="text" id="fn" value="${esc(c.name)}" maxlength="40">
@@ -345,18 +435,22 @@ PAGES.map = async P => {
       <label>${T('Clothes colour', 'Màu áo')}</label>${sw('c', LOOKS.color, L.color)}<label>${T('Hair colour', 'Màu tóc')}</label>${sw('h', LOOKS.hair, L.hair)}<label>${T('Skin', 'Màu da')}</label>${sw('s', LOOKS.skin, L.skin)}
       <label>${T('What they say (one line per page)', 'Họ nói gì (mỗi dòng một trang)')}</label><div id="flines">${(c.lines || []).map((l, j) => `<div class="row" data-j="${j}"><input type="text" data-l="0" value="${esc(l[0])}" placeholder="English"><input type="text" data-l="1" value="${esc(l[1])}" placeholder="Tiếng Việt"><button class="btn small bad" data-rm style="flex:0 0 auto;min-width:0">✕</button></div>`).join('')}</div>
       <button class="btn small ghost" id="fadd">➕ ${T('Another line', 'Thêm dòng')}</button>
-      <p class="${okc === 'ok' ? 'ok' : 'badtxt'}">📍 ${c.x}, ${c.z} ${okc === 'ok' ? '✅' : '⚠️ ' + why + ' – ' + T('drag them a little', 'kéo ra một chút')}</p>
-      <div class="row"><button class="btn bad" id="fdel">🗑️ ${T('Remove', 'Xóa')}</button><button class="btn ghost" id="fdone">✅ ${T('Done', 'Xong')}</button></div>`;
+      <p class="${okc === 'ok' ? 'ok' : 'badtxt'}">📍 ${c.x}, ${c.z} ${okc === 'ok' ? '✅' : '⚠️ ' + why + ' – ' + T('drag them a little', 'kéo ra một chút')}</p>${done}`;
     const up = () => { draw(); list(); };
     $('#fn').oninput = e => { c.name = e.target.value; up(); }; $('#fg').onchange = e => { c.gender = e.target.value; up(); };
     $('#fa').onchange = e => { L.age = e.target.value; }; $('#fi').oninput = e => { c.icon = e.target.value; }; $('#fs').onchange = e => { L.style = e.target.value; }; $('#fh').onchange = e => { L.hairStyle = e.target.value; };
     F.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { L.color = b.dataset.c; form(); }); F.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { L.hair = b.dataset.h; form(); }); F.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { L.skin = b.dataset.s; form(); });
     F.querySelectorAll('#flines [data-j]').forEach(r => { const j = +r.dataset.j; r.querySelectorAll('[data-l]').forEach(i => i.oninput = () => { c.lines[j][+i.dataset.l] = i.value; }); r.querySelector('[data-rm]').onclick = () => { c.lines.splice(j, 1); form(); }; });
     $('#fadd').onclick = () => { (c.lines = c.lines || []).push(['', '']); form(); };
-    $('#fdel').onclick = () => { if (confirm(T('Remove this villager?', 'Xóa nhân vật này?'))) { CONTENT.npcs.splice(sel, 1); sel = -1; draw(); form(); list(); } };
-    $('#fdone').onclick = () => { sel = -1; draw(); form(); };
+    bindDone();
   }
-  function list() { $('#npcn').textContent = CONTENT.npcs.length; $('#npclist').innerHTML = CONTENT.npcs.map((c, i) => { const [okc, why] = where(c.x, c.z); return `<button class="btn small ${i === sel ? '' : 'ghost'}" data-i="${i}">${c.gender === 'm' ? '👨' : '👩'} ${esc(c.name)}${okc === 'ok' ? '' : ' ⚠️'}</button> `; }).join('') || `<p class="note">${T('Nobody yet. Tap the map to add someone.', 'Chưa có ai. Chạm bản đồ để thêm người.')}</p>`; $('#npclist').querySelectorAll('[data-i]').forEach(b => b.onclick = () => { sel = +b.dataset.i; draw(); form(); list(); }); }
+  function list() {
+    const chip = (list, i, label, warn) => `<button class="btn small ${sel && sel.list === list && sel.i === i ? '' : 'ghost'}" data-l="${list}" data-i="${i}">${label}${warn ? ' ⚠️' : ''}</button> `;
+    const html = [...CONTENT.npcs.map((c, i) => chip('npcs', i, (c.gender === 'm' ? '👨 ' : '👩 ') + esc(c.name), where(c.x, c.z)[0] !== 'ok')), ...WD.build.map((b, i) => chip('build', i, ((TYPES[b.type] || {}).icon || '🏠') + ' ' + esc((b.name && (b.name[1] || b.name[0])) || T((TYPES[b.type] || { name: ['', ''] }).name[0], (TYPES[b.type] || { name: ['', ''] }).name[1])), where(b.x, b.z)[0] !== 'ok')),
+      ...WD.edits.map((e, i) => chip('edits', i, (e.op === 'move' ? '↔️ ' : '🧹 ') + esc(e.what || T('area', 'khu vực')))), ...WD.land.map((L, i) => chip('land', i, `🟫 ${Math.round(L.x1 - L.x0)}×${Math.round(L.z1 - L.z0)} m`))];
+    $('#npclist').innerHTML = html.join('') || `<p class="note">${T('No changes yet.', 'Chưa có thay đổi.')}</p>`;
+    $('#npclist').querySelectorAll('[data-l]').forEach(b => b.onclick = () => { sel = { list: b.dataset.l, i: +b.dataset.i }; draw(); form(); list(); });
+  }
   draw(); form(); list();
   $('#save').onclick = () => { CONTENT.npcs = CONTENT.npcs.filter(c => c.name && c.name.trim()).map(c => ({ ...c, name: c.name.trim(), lines: (c.lines || []).filter(l => l[0] || l[1]) })); saveContent().then(() => list()).catch(fail); };
 };
@@ -383,6 +477,31 @@ PAGES.photos = async P => {
   };
   await draw();
 };
+// ---------- the website: what is live, recent changes, and managing them ----------
+PAGES.site = async P => {
+  P.innerHTML = `<h2>🌐 ${T('The website', 'Trang web')}</h2><p class="sub">${T('What is live on Netlify, what changed on GitHub, and buttons to manage them.', 'Những gì đang chạy trên Netlify, những gì đã đổi trên GitHub, và các nút để quản lý.')}</p><div class="card">${T('Asking Netlify and GitHub…', 'Đang hỏi Netlify và GitHub…')}</div>`;
+  const s = await api('site/status'), when = d => d ? new Date(d).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+  const STATE = { ready: '✅', building: '🏗️', enqueued: '⏳', processing: '⚙️', uploading: '⬆️', error: '❌', new: '🆕' };
+  const n = s.netlify, g = s.github;
+  P.innerHTML = `<h2>🌐 ${T('The website', 'Trang web')}</h2>
+  <div class="card"><h3>☁️ Netlify ${n ? `· <a href="${esc(n.url)}" target="_blank">${esc(n.url)}</a>` : ''}</h3>
+    ${s.netlifyError ? `<p class="badtxt">⚠️ ${esc(s.netlifyError)}</p>` : !n ? `<p class="note">${T('Add your Netlify token and site in Settings to see the website here.', 'Thêm khóa Netlify và tên trang trong Cài đặt để xem trang web ở đây.')}</p>` : `
+      <p class="note">${n.repo ? T('Built from ', 'Dựng từ ') + esc(n.repo) + ' · ' + esc(n.branch || '') : T('Not linked to GitHub (uploads only).', 'Chưa nối với GitHub (chỉ tải lên).')}</p>
+      <table><tbody>${n.deploys.map(d => `<tr><td>${STATE[d.state] || '•'} ${d.live ? `<span class="pill">${T('LIVE', 'ĐANG CHẠY')}</span>` : ''}</td><td>${esc(when(d.at))}<br><span class="note">${esc(d.context === 'production' ? T('website', 'trang chính') : T('preview', 'bản xem trước'))} · ${esc(d.branch || '')} ${esc(d.commit)}</span></td><td>${esc(d.title).slice(0, 80)}${d.error ? `<br><span class="badtxt">${esc(d.error).slice(0, 120)}</span>` : ''}</td>
+        <td>${d.url ? `<a href="${esc(d.url)}" target="_blank">${T('open', 'mở')}</a>` : ''} ${!d.live && d.state === 'ready' && d.context === 'production' ? `<button class="btn small ghost" data-restore="${esc(d.id)}">↩️ ${T('make this live', 'đưa bản này lên')}</button>` : ''}</td></tr>`).join('')}</tbody></table>
+      <div class="row" style="margin-top:8px"><button class="btn" id="rebuild">🔄 ${T('Rebuild the website now', 'Dựng lại trang web ngay')}</button>${n.admin ? `<a class="btn ghost" href="${esc(n.admin)}" target="_blank">⚙️ ${T('Open Netlify', 'Mở Netlify')}</a>` : ''}</div>`}</div>
+  <div class="card"><h3>🐙 GitHub ${g ? '· ' + esc(g.repo) : ''}</h3>
+    ${s.githubError ? `<p class="badtxt">⚠️ ${esc(s.githubError)}</p>` : !g ? `<p class="note">${T('Add your GitHub token and repository in Settings.', 'Thêm khóa GitHub và tên kho trong Cài đặt.')}</p>` : `
+      <h4>📬 ${T('Updates waiting to go live (pull requests)', 'Bản cập nhật chờ đưa lên (pull request)')}</h4>
+      ${g.pulls.length ? `<table><tbody>${g.pulls.map(p => `<tr><td>#${p.n}</td><td><a href="${esc(p.url)}" target="_blank">${esc(p.title)}</a><br><span class="note">${esc(p.branch)} · ${esc(when(p.at))}${p.draft ? ' · ' + T('draft', 'bản nháp') : ''}</span></td><td><a href="${esc(p.url)}" target="_blank">${T('preview & check', 'xem & kiểm tra')}</a> <button class="btn small" data-merge="${p.n}">✅ ${T('Merge (put it live)', 'Gộp (đưa lên trang)')}</button></td></tr>`).join('')}</tbody></table>` : `<p class="note">${T('None waiting.', 'Không có bản nào đang chờ.')}</p>`}
+      <h4>🕘 ${T('Latest changes on', 'Thay đổi mới nhất trên')} ${esc(g.branch)}</h4>
+      <table><tbody>${g.commits.map(c => `<tr><td><a href="${esc(c.url)}" target="_blank">${esc(c.sha)}</a></td><td>${esc(c.msg)}</td><td class="note">${esc(when(c.at))}</td></tr>`).join('')}</tbody></table>`}</div>
+  <p class="note">${T('Each pull request gets its own preview link from Netlify (in its checks on GitHub): open it on a phone to try the update before merging.', 'Mỗi pull request có đường dẫn xem trước riêng từ Netlify (trong phần kiểm tra trên GitHub): mở trên điện thoại để thử trước khi gộp.')}</p>`;
+  const again = () => setTimeout(() => PAGES.site(P), 1500);
+  if ($('#rebuild')) $('#rebuild').onclick = async () => { try { await api('site/rebuild', {}); toast(T('Netlify is rebuilding the website.', 'Netlify đang dựng lại trang web.')); again(); } catch (e) { fail(e); } };
+  P.querySelectorAll('[data-restore]').forEach(b => b.onclick = async () => { if (!confirm(T('Make this older version the live website?', 'Đưa phiên bản cũ này lên làm trang chính?'))) return; try { await api('site/restore', { id: b.dataset.restore }); toast(T('Done: that version is live.', 'Xong: phiên bản đó đang chạy.')); again(); } catch (e) { fail(e); } });
+  P.querySelectorAll('[data-merge]').forEach(b => b.onclick = async () => { if (!confirm(T('Merge this update? The website changes in a minute or two.', 'Gộp bản cập nhật này? Trang web sẽ đổi sau một hai phút.'))) return; try { await api('github/merge', { n: +b.dataset.merge }); toast(T('Merged. Netlify is building it.', 'Đã gộp. Netlify đang dựng.')); again(); } catch (e) { fail(e); } });
+};
 // ---------- check ----------
 PAGES.check = async P => {
   const r = await api('check');
@@ -400,7 +519,7 @@ PAGES.settings = async P => {
   <div class="card"><h3>🚀 Netlify</h3><div class="row"><div><label>${T('Personal access token', 'Khóa truy cập cá nhân')} ${c.netlify ? '✅' : ''}</label><input type="password" id="nt" placeholder="${c.netlify ? T('(saved, type to replace)', '(đã lưu, gõ để thay)') : ''}"></div><div><label>${T('Site name or ID (e.g. sparkle-valley.netlify.app)', 'Tên hoặc ID trang (vd. sparkle-valley.netlify.app)')}</label><input type="text" id="ns" value="${esc(c.netlifySite)}"></div></div>
     <p class="note">${T('Netlify → User settings → Applications → New access token.', 'Netlify → User settings → Applications → New access token.')}</p></div>
   <div class="card"><h3>🐙 GitHub</h3><div class="row"><div><label>${T('Fine-grained token (Contents: read and write)', 'Khóa fine-grained (Contents: đọc và ghi)')} ${c.github ? '✅' : ''}</label><input type="password" id="gt" placeholder="${c.github ? T('(saved, type to replace)', '(đã lưu, gõ để thay)') : 'github_pat_…'}"></div><div><label>${T('Repository', 'Kho')}</label><input type="text" id="gr" value="${esc(c.githubRepo)}" placeholder="nguyentuanphu/Sparkle-Valley"></div><div><label>${T('Branch', 'Nhánh')}</label><input type="text" id="gb" value="${esc(c.githubBranch || 'main')}"></div></div>
-    <p class="note">${T('github.com → Settings → Developer settings → Fine-grained tokens → Generate: only this repository, permission Contents: Read and write.', 'github.com → Settings → Developer settings → Fine-grained tokens → Generate: chỉ kho này, quyền Contents: Read and write.')}</p></div>
+    <p class="note">${T('github.com → Settings → Developer settings → Fine-grained tokens → Generate: only this repository, permissions Contents: Read and write, Pull requests: Read and write.', 'github.com → Settings → Developer settings → Fine-grained tokens → Generate: chỉ kho này, quyền Contents: Read and write và Pull requests: Read and write.')}</p></div>
   <div class="bar"><button class="btn ghost" id="forget">🗑️ ${T('Forget the keys', 'Xóa các khóa')}</button><button class="btn" id="save">💾 ${T('Save settings', 'Lưu cài đặt')}</button></div>`;
   $('#save').onclick = async () => { try { await api('settings', { gameDir: $('#gd').value, azureKey: $('#ak').value, azureRegion: $('#ar').value, piperExe: $('#pe').value, piperModels: { en: $('#pen').value.trim(), vi: $('#pvi').value.trim() }, netlifyToken: $('#nt').value, netlifySite: $('#ns').value, githubToken: $('#gt').value, githubRepo: $('#gr').value, githubBranch: $('#gb').value }); toast(T('Settings saved.', 'Đã lưu cài đặt.')); render(); } catch (e) { fail(e); } };
   $('#forget').onclick = async () => { if (!confirm(T('Forget the Azure, Netlify and GitHub keys on this computer?', 'Xóa khóa Azure, Netlify và GitHub trên máy này?'))) return; await api('settings', { forget: ['azureKey', 'netlifyToken', 'githubToken'] }); toast(T('Keys forgotten.', 'Đã xóa khóa.')); render(); };
