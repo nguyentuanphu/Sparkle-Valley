@@ -85,16 +85,17 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
   const RX = -176, RZ = -176, RY = 420;
   world.platforms.push({ x0: RX - 8, x1: RX + 8, z0: RZ - 7, z1: RZ + 7, y: RY });
 
-  const tagSprite = (name, y) => {
+  const tagSprite = (name, y, temp = false) => {
     registerName(name);
     const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g2 = c.getContext('2d');
     const draw = () => { g2.clearRect(0, 0, 256, 64); g2.fillStyle = 'rgba(40,40,40,.55)'; g2.beginPath(); g2.roundRect(8, 10, 240, 46, 23); g2.fill(); g2.font = 'bold 30px Fredoka, "Baloo 2", sans-serif'; g2.fillStyle = '#fff'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillText(nm(name), 128, 34, 228); };
-    draw(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; onLang(() => { draw(); t.needsUpdate = true; });
+    draw(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; if (!temp) onLang(() => { draw(); t.needsUpdate = true; });
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set(2.6, .65, 1); s.position.y = y; return s;
   };
   const person = ([name, lk, kid], x, y, z, face) => {
-    const A = nameAvatar(buildAvatar(lk, null), name); A.root.position.set(x, y, z); A.root.rotation.y = face; if (kid) A.root.scale.setScalar(.78);
-    const tg = tagSprite(name, kid ? 2.05 : 2.45); tg.position.x = x; tg.position.z = z; tg.position.y += y; scene.add(A.root); scene.add(tg);
+    const temp = y > RY - 20; // inside a room: everything is freed when the room is torn down
+    const A = nameAvatar(buildAvatar(lk, null), name, !temp); A.root.position.set(x, y, z); A.root.rotation.y = face; if (kid) A.root.scale.setScalar(.78);
+    const tg = tagSprite(name, kid ? 2.05 : 2.45, temp); tg.position.x = x; tg.position.z = z; tg.position.y += y; scene.add(A.root); scene.add(tg);
     return { A, tg, name };
   };
   const live = []; // people standing outside: they breathe and look round when a child is near
@@ -167,7 +168,16 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
   const roomItems = [], roomPeople = [];
   function clearRoom() {
     roomPeople.forEach(p => { const i = live.indexOf(p); if (i >= 0) live.splice(i, 1); }); roomPeople.length = 0;
-    if (room) { scene.remove(room); room.traverse(o => { if (o.geometry) o.geometry.dispose(); }); room = null; }
+    if (room) {
+      scene.remove(room);
+      // free the room's own shape, the name tags and the people's own materials (their body shapes and painted faces are shared, so they stay)
+      room.traverse(o => {
+        if (o.userData.roomShape) o.geometry.dispose();
+        if (o.isSprite) { if (!o.material.userData.shared) { o.material.map && o.material.map.dispose(); o.material.dispose(); } }
+        else if (o.isMesh && o.material && !o.userData.roomShape && o.material !== o.userData.keepMat) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach(m => { if (m.userData.shared) return; m.dispose(); }); }
+      });
+      room = null;
+    }
     roomItems.forEach(it => { const i = G.interactables.indexOf(it); if (i >= 0) G.interactables.splice(i, 1); }); roomItems.length = 0;
     for (let i = world.boxes.length - 1; i >= 0; i--) if (world.boxes[i].room) world.boxes.splice(i, 1);
   }
@@ -181,7 +191,7 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
       ...floorTiles(theme), ...walls(W2, D2, wallH, theme),
       ...theme.build()
     ];
-    const m = new THREE.Mesh(merge(parts), toonVC()); m.receiveShadow = true; m.castShadow = true; g.add(m);
+    const m = new THREE.Mesh(merge(parts), toonVC()); m.userData.roomShape = true; m.receiveShadow = true; m.castShadow = true; g.add(m);
     // solid walls (with the door gap at the front)
     const bx = (x0, x1, z0, z1) => world.boxes.push({ x0: RX + x0, x1: RX + x1, z0: RZ + z0, z1: RZ + z1, room: true });
     bx(-W2 - .2, W2 + .2, -D2 - .2, -D2 + .1); bx(-W2 - .2, -W2 + .1, -D2, D2); bx(W2 - .1, W2 + .2, -D2, D2); bx(-W2 - .2, -1.2, D2 - .1, D2 + .2); bx(1.2, W2 + .2, D2 - .1, D2 + .2);

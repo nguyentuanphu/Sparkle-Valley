@@ -71,6 +71,18 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.NoToneMapping; // flat illustrated colours, exactly as painted
 if (quality !== 'low') { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
 document.getElementById('stage').appendChild(renderer.domElement);
+// If the phone runs short of memory it can take the 3D picture away (the screen goes white and Safari may reload
+// the page). Save at once, show a friendly card, and if the picture does not come back by itself, reload: progress
+// is already saved, so the child carries on where they were.
+{
+  let lostT = 0;
+  renderer.domElement.addEventListener('webglcontextlost', e => {
+    e.preventDefault(); try { G.heroes.forEach(h => { if (h.profile && h.onGround && !h.towerClimb && !h.indoors) h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; }); saveProfiles(true); } catch (err) { }
+    if (!document.querySelector('.ctxlost')) document.body.appendChild(el('div', 'ctxlost', `<div>🌈</div><p>${T('One moment, the valley is coming back…', 'Chờ một chút, thung lũng đang trở lại…')}</p>`));
+    clearTimeout(lostT); lostT = setTimeout(() => location.reload(), 4000);
+  });
+  renderer.domElement.addEventListener('webglcontextrestored', () => { clearTimeout(lostT); document.querySelectorAll('.ctxlost').forEach(e => e.remove()); });
+}
 const scene = new THREE.Scene();
 { // soft sky light bouncing off everything, so materials look real rather than flat
   const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), .04).texture; pm.dispose();
@@ -287,7 +299,7 @@ function giveSticker(p) { const left = STICKERS.filter(s => !p.stickers.includes
 const hudFor = h => G.huds[h.i];
 G.give = give;
 G.toast = (h, m) => hudFor(h).toast(m);
-G.fx = (x, y, z, ch) => { const s = sprite(ch, 1.4); s.position.set(x, y, z); scene.add(s); const t0 = performance.now(); const f = () => { const k = (performance.now() - t0) / 900; s.position.y = y + k * 2; s.material.opacity = 1 - k; if (k < 1) requestAnimationFrame(f); else scene.remove(s); }; f(); };
+G.fx = (x, y, z, ch) => { const s = sprite(ch, 1.4); s.material = s.material.clone(); s.position.set(x, y, z); scene.add(s); const t0 = performance.now(); const f = () => { const k = (performance.now() - t0) / 900; s.position.y = y + k * 2; s.material.opacity = 1 - k; if (k < 1) requestAnimationFrame(f); else { scene.remove(s); s.material.dispose(); } }; f(); };
 G.mount = (h, b) => { h.mount(b); h.profile.quests.buffalo = true; save(); say('Moo! Hold on tight!', 'Ụm bò! Bám chắc nhé!'); hudFor(h).toast(T('Press Jump to get off', 'Bấm Nhảy để xuống')); };
 
 async function playGame(i, id, source, shrine) {
@@ -1050,9 +1062,9 @@ function frame(now) {
     P.av.root.position.copy(P.pos); P.av.root.rotation.y = P.yaw; P.av.anim(s.st || 'idle', t, s.sp || 0); P.tag.position.set(P.pos.x, P.pos.y + 2.0, P.pos.z);
   }
   // bubbles
-  G.bubbles = G.bubbles.filter(b => { const p = b.target.pos; b.s.position.set(p.x, p.y + 2.45, p.z); if (now > b.until) { scene.remove(b.s); return false; } return true; });
+  G.bubbles = G.bubbles.filter(b => { const p = b.target.pos; b.s.position.set(p.x, p.y + 2.45, p.z); if (now > b.until) { scene.remove(b.s); b.s.material.map.dispose(); b.s.material.dispose(); return false; } return true; });
   // save positions now and then
-  saveT -= dt; if (saveT <= 0) { saveT = 5; G.heroes.forEach(h => { if (h.onGround && !h.towerClimb) h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; }); save(); }
+  saveT -= dt; if (saveT <= 0) { saveT = 5; G.heroes.forEach(h => { if (h.onGround && !h.towerClimb && !h.indoors) h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; }); save(); }
   // render each player's view
   const r = rects(), H = innerHeight;
   renderer.setScissorTest(G.heroes.length > 1);

@@ -1625,3 +1625,6 @@ body.calm .rv-img.on { animation: none; }
 .eggbasket { font-size: 44px; } .eggbasket b { font-size: 34px; }
 .sdk { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 6px; width: min(360px, 90vw); padding: 10px; border-radius: 20px; background: #b598ff; }
 .sdk-c { aspect-ratio: 1; border: 0; border-radius: 14px; background: #fff; font-size: clamp(28px, 9vw, 52px); } .sdk-c.hole { background: #efe8ff; } .sdk-c.pick { box-shadow: inset 0 0 0 3px #ffd23f; } .sdk-c.sel { background: #ffe9a8; }
+/* the 3D picture was taken away by the phone (low memory): a friendly card while it comes back */
+.ctxlost { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: #fff7e8; color: #4a2a6a; font-size: 22px; text-align: center; padding: 24px; }
+.ctxlost div { font-size: 72px; animation: a-pulse 1.4s ease-in-out infinite; }
