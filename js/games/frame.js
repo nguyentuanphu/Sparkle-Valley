@@ -5,6 +5,7 @@ import { say } from '../voice.js';
 import { SFX, Music } from '../audio.js';
 import { el, wait, esc } from '../util.js';
 import { openHowTo } from '../howto.js';
+import { pic } from '../art.js';
 
 export const GAMES = {};
 // Each kind of game has its own song.
@@ -31,7 +32,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
     layer.innerHTML = `
       <div class="gl-head">
         <button class="gl-x" aria-label="${T('Leave', 'Rời đi')}">✕</button>
-        <div class="gl-title"><span class="gl-icon">${def.icon}</span><span>${esc(def.name())}</span></div>
+        <div class="gl-title"><span class="gl-icon">${pic(def.icon)}</span><span>${esc(def.name())}</span></div>
         <div class="gl-dots"></div>
         <button class="gl-how" aria-label="${T('How to play', 'Cách chơi')}">📺</button>
       </div>
