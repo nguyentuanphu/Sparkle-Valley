@@ -1383,3 +1383,10 @@ body.calm .sv2 .tt-floaters i { animation: none; }
 @keyframes pulse { 50% { transform: scale(1.08); } }
 .choice .tnum { display: block; font-size: clamp(22px, 6vw, 34px); font-weight: 800; line-height: 1.1; white-space: nowrap; }
 .choices:has(.tnum) .choice { min-width: 0; padding: 10px 12px; }
+/* shortcuts to each section of a long page (Grown-ups, Bag) */
+.jumpnav { position: sticky; top: -2px; z-index: 3; display: flex; gap: 6px; overflow-x: auto; padding: 8px 2px; margin: 4px 0 8px; background: inherit; backdrop-filter: blur(6px); scrollbar-width: none; }
+.jumpnav::-webkit-scrollbar { display: none; }
+.jumpnav button { flex: 0 0 auto; border: 0; border-radius: 999px; padding: 8px 14px; background: #fff3e0; color: #5a4148; font: inherit; font-size: 14px; font-weight: 700; box-shadow: 0 2px 0 #f1d9b8; cursor: pointer; white-space: nowrap; }
+.jumpnav button:active { transform: translateY(1px); }
+.hubtabs, .jumpnav { flex-shrink: 0; }
+.mapchips { position: static; }

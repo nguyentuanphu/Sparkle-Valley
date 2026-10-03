@@ -166,6 +166,14 @@ function openRenamer(after) {
   };
 }
 
+// a sticky row of shortcuts at the top of a long page: one chip per section heading, tap to jump there
+function jumpNav(root, after) {
+  const hs = [...root.querySelectorAll(':scope > h3, :scope h3.jump')].filter(h => h.textContent.trim());
+  if (hs.length < 4) return;
+  const nav = el('div', 'jumpnav');
+  hs.forEach((h, k) => { const b = el('button', '', esc(h.textContent.trim().replace(/\s+/g, ' ').slice(0, 26))); b.onclick = () => { SFX.tap(); h.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; nav.appendChild(b); h.style.scrollMarginTop = '64px'; });
+  (after && after.parentNode === root ? after : root.firstElementChild).insertAdjacentElement('afterend', nav);
+}
 // ---------- Grown-ups ----------
 export function openGrownups(after) {
   const m = modal('grownups', '');
@@ -238,6 +246,7 @@ export function openGrownups(after) {
       <button class="btn primary wide" id="gDone">💾 ${T('Save & close', 'Lưu và đóng')}</button>`;
     bindLang(card, () => { draw(); after && after(); }); bindLearn(card, () => draw());
     card.querySelector('.x').onclick = card.querySelector('#gDone').onclick = () => { m.close(); after && after(); };
+    jumpNav(card, card.querySelector('h2'));
     card.querySelectorAll('.seg.cur button').forEach(b => b.onclick = () => { settings.currency = b.dataset.c; saveSettings(); draw(); });
     card.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const n = +b.dataset.add; if (window.__sv && window.__sv.addCoins) window.__sv.addCoins(n); else { farm.coins += n; saveFarm(); } SFX.coin ? SFX.coin() : SFX.chime(); card.querySelector('#gCoins').textContent = fmt(farm.coins); toast(T('Coins added: ', 'Đã thêm: ') + fmt(n)); });
     card.querySelectorAll('.seg.cam button').forEach(b => b.onclick = () => { settings.camMode = b.dataset.c; saveSettings(); draw(); });
@@ -505,23 +514,21 @@ export function openPad(game, i, tab) {
   function drawMap(body) {
     const S = 600, cv = el('canvas', 'bigmap'); cv.width = cv.height = S; body.appendChild(cv);
     body.appendChild(el('p', 'note center', T('Tap any picture on the map, or a place below, to fly there.', 'Chạm vào bất kỳ hình nào trên bản đồ, hoặc một nơi bên dưới, để bay đến đó.')));
-    // the places, grouped by country and listed from north to south, like a real map
-    const GROUPS = [['home', '🏡', T('Our valley', 'Thung lũng nhà mình')], ['vn', '🇻🇳', T('Vietnam: north to south', 'Việt Nam: từ Bắc vào Nam')], ['au', '🇦🇺', T('Australia: north to south', 'Nước Úc: từ Bắc xuống Nam')], ['asia', '🌏', T('China and India', 'Trung Quốc và Ấn Độ')]];
-    for (const [g, gi, gname] of GROUPS) {
-      const list = game.PLACES.filter(pl => (pl.g || 'home') === g).sort((a, b) => a.z - b.z); if (!list.length) continue;
-      body.appendChild(el('h4', 'qgroup', `${gi} ${esc(gname)}`));
-      const quick = el('div', 'quick');
-      list.forEach(pl => { const b = el('button', 'qbtn', `<span>${pl.icon}</span><small>${esc(pl.name())}</small>`); b.onclick = () => { close(); game.travelTo(hero, pl.x, pl.z); }; quick.appendChild(b); });
-      body.appendChild(quick);
-    }
-    // the homes of Two Homes Street: knock, meet the family, go inside (js/homes.js)
+    // the places, grouped by country and listed from north to south, like a real map: one group at a time,
+    // picked from chips (the full list was too long to scroll)
+    const GROUPS = [['home', '🏡', T('Our valley', 'Thung lũng nhà mình')], ['vn', '🇻🇳', T('Vietnam', 'Việt Nam')], ['au', '🇦🇺', T('Australia', 'Nước Úc')], ['asia', '🌏', T('China and India', 'Trung Quốc và Ấn Độ')], ['homes', '🏠', T('Homes', 'Nhà')]];
     const named = game.homes ? game.homes.list.filter(hm => hm.H) : [];
-    if (named.length) {
-      body.appendChild(el('h4', 'qgroup', `🏠 ${esc(T('Homes on Two Homes Street', 'Những ngôi nhà ở Phố Hai Quê'))}`));
-      const hq = el('div', 'quick');
-      named.forEach(hm => { const b = el('button', 'qbtn', `<span>🏠</span><small>${esc(hm.name())}</small>`); b.onclick = () => { close(); game.landBy(hero, hm.door.x, hm.door.z); }; hq.appendChild(b); });
-      body.appendChild(hq);
-    }
+    const itemsOf = g => g === 'homes' ? named.map(hm => ({ icon: '🏠', name: hm.name, go: () => game.landBy(hero, hm.door.x, hm.door.z) }))
+      : game.PLACES.filter(pl => (pl.g || 'home') === g).sort((a, b) => a.z - b.z).map(pl => ({ icon: pl.icon, name: pl.name, go: () => game.travelTo(hero, pl.x, pl.z) }));
+    const groups = GROUPS.filter(([g]) => itemsOf(g).length);
+    let gsel = groups.find(([g]) => g === openPad.mapLast) ? openPad.mapLast : groups[0][0];
+    const chips = el('div', 'hubtabs mapchips'), list = el('div', 'quick');
+    groups.forEach(([g, gi, gname]) => { const c = el('button', '', `<span>${gi}</span><small>${esc(gname)}</small>`); c.dataset.g = g; c.onclick = () => { gsel = openPad.mapLast = g; SFX.tap(); fill(); }; chips.appendChild(c); });
+    const fill = () => {
+      chips.querySelectorAll('button').forEach(c => c.classList.toggle('on', c.dataset.g === gsel)); list.innerHTML = '';
+      itemsOf(gsel).forEach(it => { const b = el('button', 'qbtn', `<span>${it.icon}</span><small>${esc(it.name())}</small>`); b.onclick = () => { close(); it.go(); }; list.appendChild(b); });
+    };
+    body.appendChild(chips); body.appendChild(list); fill();
     const quick = el('div', 'quick'); const ch = el('button', 'qbtn change', `<span>🔄</span><small>${T('Change player', 'Đổi người chơi')}</small>`); ch.onclick = () => { close(); game.changePlayer(); }; quick.appendChild(ch);
     body.appendChild(quick);
     const x = cv.getContext('2d'); x.drawImage(game.fogMapFor(p), 0, 0, S, S);
@@ -586,6 +593,7 @@ export function openPad(game, i, tab) {
       <div class="slots">${p.kite ? `<button class="slot ${p.kiteOn !== false ? 'on' : ''}" data-kite="1"><span>🪁</span><small>${p.kiteOn !== false ? T('Flying', 'Đang bay') : T('Put away', 'Cất đi')}</small></button><button class="slot" data-whistle="1"><span>🎶</span><small>${T('Whistle!', 'Thổi sáo!')}</small></button>` : `<p class="note">${T('Win the Kite Flying game to get a kite with a bamboo flute that sings in the wind!', 'Thắng trò Thả Diều để nhận diều sáo hát vi vu trong gió!')}</p>`}</div>
       <h3>${T('Glider', 'Cánh lượn')}</h3>
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
+    jumpNav(body, body.querySelector('.bag-top'));
     body.querySelectorAll('[data-eat]').forEach(b => b.onclick = () => { game.eat(hero, b.dataset.eat); draw(); });
     body.querySelectorAll('[data-snack]').forEach(b => b.onclick = () => { eatSnack(game, hero, b.dataset.snack, true); draw(); });
     body.querySelectorAll('[data-sellgem]').forEach(b => b.onclick = () => {
