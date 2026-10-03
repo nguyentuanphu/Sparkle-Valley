@@ -19,7 +19,7 @@ function nav() {
   $('#tabs').innerHTML = TABS.map(([k, i, en, vi]) => `<button data-k="${k}" class="${k === cur ? 'on' : ''}">${i} ${T(en, vi)}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => { cur = b.dataset.k; location.hash = cur; render(); });
   document.querySelectorAll('[data-t]').forEach(e => { const [en, vi] = e.dataset.t.split('|'); e.textContent = T(en, vi); });
-  document.querySelectorAll('.lang button').forEach(b => { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { LANG = b.dataset.l; localStorage.setItem('studioLang', LANG); render(); }; });
+  document.querySelectorAll('.lang button[data-l]').forEach(b => { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { LANG = b.dataset.l; localStorage.setItem('studioLang', LANG); render(); }; });
 }
 async function render() {
   nav(); const P = $('#page');
@@ -287,3 +287,11 @@ PAGES.settings = async P => {
 };
 window.addEventListener('hashchange', () => { const k = location.hash.slice(1); if (PAGES[k] && k !== cur) { cur = k; render(); } });
 render();
+// keep the Studio running while this window is open; ⏻ stops it
+setInterval(() => fetch('/api/ping').catch(() => { }), 20000);
+$('#quit').onclick = async () => {
+  if (!confirm(T('Close Sparkle Studio?', 'Đóng Sparkle Studio?'))) return;
+  await fetch('/api/quit', { method: 'POST' }).catch(() => { });
+  document.body.innerHTML = `<main><div class="card"><h2>👋 ${T('Sparkle Studio is closed.', 'Đã đóng Sparkle Studio.')}</h2><p class="sub">${T('You can close this window. Double-click SparkleStudio.exe to open it again.', 'Bạn có thể đóng cửa sổ này. Bấm đúp SparkleStudio.exe để mở lại.')}</p></div></main>`;
+  window.close();
+};

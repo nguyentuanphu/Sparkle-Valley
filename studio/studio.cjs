@@ -172,7 +172,9 @@ const server = http.createServer(async (req, res) => {
     // the game's modules (loaded by the Voices page) fetch content/custom.json from the page's own address
     if (p.startsWith('/content/') && GAME) { const f = safeJoin(GAME, p); return f && fs.existsSync(f) && fs.statSync(f).isFile() ? send(res, 200, fs.readFileSync(f), MIME[path.extname(f).toLowerCase()] || 'application/octet-stream') : send(res, 404, '{}', MIME['.json']); }
     if (!p.startsWith('/api/')) return send(res, 404, 'not found', 'text/plain');
-    const api = p.slice(5);
+    const api = p.slice(5); lastSeen = Date.now();
+    if (api === 'ping') return send(res, 200, { ok: true });
+    if (api === 'quit' && req.method === 'POST') { send(res, 200, { ok: true }); log('Closed from the dashboard.'); setTimeout(() => process.exit(0), 300); return; }
     if (api === 'info') {
       const have = GAME ? voicesHave() : {}, nv = Object.values(have).reduce((a, s) => a + Object.values(s).reduce((b, l) => b + l.length, 0), 0);
       let version = '?'; try { version = /VERSION = '([^']+)'/.exec(fs.readFileSync(G('sw.js'), 'utf8'))[1]; } catch (e) { }
@@ -227,8 +229,25 @@ function openThing(u) {
   if (process.platform === 'win32') execFile('cmd', ['/c', 'start', '', u], { windowsHide: true });
   else if (process.platform === 'darwin') execFile('open', [u]); else execFile('xdg-open', [u], () => { });
 }
-server.on('error', e => { if (e.code === 'EADDRINUSE') { console.log(`Sparkle Studio is already open: http://localhost:${PORT}`); openThing(`http://localhost:${PORT}/`); setTimeout(() => process.exit(0), 1500); } else throw e; });
+// The dashboard opens in its own app window (Edge or Chrome "--app": no address bar, no tabs), else the default browser.
+function openApp(u) {
+  if (process.platform === 'win32') {
+    const E = process.env, cands = [[E['ProgramFiles(x86)'], 'Microsoft\\Edge\\Application\\msedge.exe'], [E.ProgramFiles, 'Microsoft\\Edge\\Application\\msedge.exe'], [E.ProgramFiles, 'Google\\Chrome\\Application\\chrome.exe'], [E['ProgramFiles(x86)'], 'Google\\Chrome\\Application\\chrome.exe'], [E.LOCALAPPDATA, 'Google\\Chrome\\Application\\chrome.exe']];
+    for (const [dir, rel] of cands) { if (!dir) continue; const exe = path.join(dir, rel); if (fs.existsSync(exe)) { try { spawn(exe, ['--app=' + u, '--window-size=1280,900'], { detached: true, stdio: 'ignore' }).unref(); return; } catch (e) { } } }
+  }
+  openThing(u);
+}
+// Packaged as the exe there is no console window: messages go to a log file next to the settings.
+const LOG = path.join(CONF_DIR, 'studio.log');
+try { fs.mkdirSync(CONF_DIR, { recursive: true }); fs.writeFileSync(LOG, ''); } catch (e) { }
+const log = m => { console.log(m); try { fs.appendFileSync(LOG, new Date().toISOString() + ' ' + m + '\n'); } catch (e) { } };
+process.on('uncaughtException', e => { log('error: ' + (e && e.stack || e)); });
+// The exe stops by itself a few minutes after its window is closed (the dashboard checks in every 20 s; hidden windows may slow that to once a minute).
+const AUTO_QUIT = !!sea || !!process.env.STUDIO_AUTO_QUIT, QUIT_AFTER = +(process.env.STUDIO_QUIT_MS || 180000);
+let lastSeen = 0;
+setInterval(() => { if (AUTO_QUIT && lastSeen && Date.now() - lastSeen > QUIT_AFTER) { log('No dashboard window for a while: stopping.'); process.exit(0); } }, 5000);
+server.on('error', e => { if (e.code === 'EADDRINUSE') { log(`Sparkle Studio is already open: http://localhost:${PORT}`); openApp(`http://localhost:${PORT}/`); setTimeout(() => process.exit(0), 1500); } else { log('error: ' + e.message); process.exit(1); } });
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`\n  Sparkle Studio is running: http://localhost:${PORT}\n  Game folder: ${GAME || '(choose it in Settings)'}\n  Keep this window open while you use the dashboard; close it to stop.\n`);
-  if (!process.env.STUDIO_NO_OPEN) openThing(`http://localhost:${PORT}/`);
+  log(`Sparkle Studio is running: http://localhost:${PORT} · game folder: ${GAME || '(choose it in Settings)'}`);
+  if (!process.env.STUDIO_NO_OPEN) openApp(`http://localhost:${PORT}/`);
 });
