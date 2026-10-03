@@ -9,7 +9,7 @@ import { T, nm, onLang, registerName } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
 import { heightAt, TOWN, PLAYGROUND } from './world.js';
-import { buildAvatar } from './avatar.js';
+import { buildAvatar, nameAvatar } from './avatar.js';
 import { dist2 } from './util.js';
 
 export const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
@@ -299,6 +299,7 @@ export function createTown(G) {
     person(L2('hoodie', '#3a78c8', '#1d1412', 'spiky'), cxL + 1, czL, -Math.PI / 2, true)
   ];
   players[5].root.scale.setScalar(.82);
+  ['Bác 2', 'Bác 3', 'Bác 4', 'Bi', 'Anh Ba', 'Phong'].forEach((n, k) => nameAvatar(players[k], n)); nameAvatar(sau, 'Cô Tám');
   // teenagers kicking a shuttlecock (đá cầu) in the park
   const ring = [[29, 67.5], [32, 66], [31.5, 69.5]];
   const teens = ring.map(([x, z], k) => person(L2(['shirt', 'overalls', 'dress'][k], ['#3cc7e8', '#5fd39a', '#ff7eb8'][k], '#1d1412', ['spiky', 'short', 'ponytail'][k], 'none', '#e0aa80'), x, z, 0));

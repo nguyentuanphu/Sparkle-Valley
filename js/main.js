@@ -8,7 +8,7 @@ import { SFX, Music, ac } from './audio.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
 import { createWorld, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
-import { buildAvatar, buildOwl, buildGourd, avatarURL, OUTLINED } from './avatar.js';
+import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL, OUTLINED } from './avatar.js';
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
 import { pads, initInput } from './input.js';
@@ -103,7 +103,7 @@ function nameTag(name, color = '#ffffff') {
   return s;
 }
 function addNPC({ id, name, look, model, x, z, face = 0, icon = '💬', talk }) {
-  const A = model ? null : buildAvatar(look, null), obj = model || A.root;
+  const A = model ? null : nameAvatar(buildAvatar(look, null), name), obj = model || A.root;
   const av = model ? null : obj;
   obj.position.set(x, world.groundAt(x, z), z); obj.rotation.y = face; scene.add(obj);
   const tag = nameTag(name); tag.position.set(x, obj.position.y + (model ? 3.4 : 2.0), z); scene.add(tag);

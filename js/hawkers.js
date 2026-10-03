@@ -4,7 +4,7 @@
 import { THREE, toonVC, P, merge, sprite } from './gfx.js';
 import { T, nm, registerName } from './i18n.js';
 import { heightAt, CITIES } from './world.js';
-import { buildAvatar } from './avatar.js';
+import { buildAvatar, nameAvatar } from './avatar.js';
 import { VENDORS } from './regions.js';
 import { PERSONAS } from './chat.js';
 import { dialog } from './ui.js';
@@ -48,7 +48,7 @@ export function createHawkers(G) {
   const { scene, world } = G, list = [];
   for (const [id, name, lk, goods, food, call, greet, where] of HAWKERS) {
     const route = routeFor(where); if (!route) continue;
-    const A = buildAvatar(lk, null); A.root.add(poleModel(goods)); scene.add(A.root); registerName(name);
+    const A = nameAvatar(buildAvatar(lk, null), name); A.root.add(poleModel(goods)); scene.add(A.root); registerName(name);
     const tag = sprite('📣', .8); scene.add(tag);
     const H = { id, name, A, tag, route, k: 0, t: Math.random(), x: route[0][0], z: route[0][1], yaw: 0, callT: 4 + Math.random() * 8, call, food };
     list.push(H);

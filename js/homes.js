@@ -6,7 +6,7 @@
 import { THREE, P, merge, toonVC, sprite } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
 import { heightAt, regionAt, REGION_NAMES, TOWN } from './world.js';
-import { buildAvatar } from './avatar.js';
+import { buildAvatar, nameAvatar } from './avatar.js';
 import { PERSONAS } from './chat.js';
 import { ITEMS } from './data.js';
 import { el, wait } from './util.js';
@@ -93,7 +93,7 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set(2.6, .65, 1); s.position.y = y; return s;
   };
   const person = ([name, lk, kid], x, y, z, face) => {
-    const A = buildAvatar(lk, null); A.root.position.set(x, y, z); A.root.rotation.y = face; if (kid) A.root.scale.setScalar(.78);
+    const A = nameAvatar(buildAvatar(lk, null), name); A.root.position.set(x, y, z); A.root.rotation.y = face; if (kid) A.root.scale.setScalar(.78);
     const tg = tagSprite(name, kid ? 2.05 : 2.45); tg.position.x = x; tg.position.z = z; tg.position.y += y; scene.add(A.root); scene.add(tg);
     return { A, tg, name };
   };

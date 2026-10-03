@@ -1,6 +1,6 @@
 // Chibi characters whose face is the child's own photo.
 import { THREE, toon, glow, blobShadow, outline } from './gfx.js';
-import { GLIDERS } from './state.js';
+import { GLIDERS, settings } from './state.js';
 
 const G = {
   head: new THREE.SphereGeometry(.5, 32, 24),
@@ -106,7 +106,7 @@ export function buildAvatar(look, photo) {
   const skin = toon(look.skin, { roughness: .6 }), hairM = toon(look.hair, { roughness: .45, metalness: .05 }), cloth = toon(col, { roughness: .92 });
   const white = toon('#ffffff', { roughness: .9 }), shoeM = toon(look.shoe || '#7a4a35', { roughness: .45 }), soleM = toon('#fff8ee');
   const trim = toon(style === 'aodai' ? '#ffd84a' : '#f2d16b', { roughness: .7 });
-  const A = { root, rig };
+  const A = { root, rig, skinMat: skin, look };
   // legs (pivot at the hip)
   const legSpec = STYLE_LEGS[style] || 'skin';
   const legMat = legSpec === 'skin' ? skin : legSpec === 'shorts' ? skin : legSpec === 'pants' ? cloth : toon(legSpec.split(':')[1], { roughness: .9 });
@@ -248,3 +248,19 @@ export function buildGourd() {
   return g;
 }
 export const spriteGlow = c => glow(c);
+
+// A grown-up can give any villager a real face (Grown-ups → Character names → 📷). The photo goes on the face and
+// the head, ears, hands and legs take the skin colour sampled from the photo, so the edge of the photo blends in.
+const NAMED = {}; // villager name -> their avatars
+const baseOf = n => String(n).replace(/\s+[^\p{L}\p{N}]+$/u, '').trim();
+export function nameAvatar(A, name) {
+  if (!A || !name) return A; const id = baseOf(name); (NAMED[id] = NAMED[id] || []).push(A);
+  const f = (settings.npcFaces || {})[id]; if (f) setFace(A, f);
+  return A;
+}
+function setFace(A, f) {
+  A.faceMat.map = f && f.photo ? faceTexture(A.look, f.photo) : faceTexture(A.look); A.faceMat.needsUpdate = true;
+  if (A.skinMat) A.skinMat.color.set(f && f.skin ? f.skin : A.look.skin);
+}
+export function applyNpcFaces() { for (const [id, list] of Object.entries(NAMED)) list.forEach(A => setFace(A, (settings.npcFaces || {})[id] || null)); }
+export const namedVillagers = () => Object.keys(NAMED);
