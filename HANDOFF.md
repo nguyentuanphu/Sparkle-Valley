@@ -149,7 +149,7 @@ Plain HTML/CSS/JS ES modules, **no build step**. three.js r160 (`vendor/three.mo
 
 **Save data (localStorage):** `sv2_settings` (language, currency, sounds, voices and keys, camera, graphics, captions, textSize, calm, noRain, festival, restMins, turnUrl/User/Pass, azure*, learnLang, npcNames, friendCode, friends, friendsOn, packSaved, credits…), `sv2_profiles` (per child: name, photo, age, difficulty, look, hearts, stamina, orbs, leafies, shrines, towers, inv, levels, wins, quests, story, stickers, album, pets, postcards, stamps, visited, found, tasted, tales, words, secrets, kite, kiteOn, pos…), `sv2_farm` (shared: coins, plots, seeds, basket, animals, hay, products, petYard, jobs). IndexedDB: `sparkle-valley-voice` (family clips), `sparkle-valley-tts` (cached online voices), `sparkle-valley-save` (safe copies).
 
-**Voice pack:** cast English & Vietnamese woman + man, Chinese & Hindi man. 4,046 files, ~222,304 characters (≈ 72 MB) ≈ 111,000 ElevenLabs credits (Flash v2.5) or ≈ US$3.56 on Azure (free F0 tier: 500k chars/month, so it fits in one free month; the tool paces ~18 requests/min, about 4 hours). `node tools/make-voice-pack.mjs --engine azure --count` shows the cost without a key. The pack is matched to the exact sentences, so make it from the latest `main`; after later rounds run it again and it only makes the new lines. The game downloads the whole pack once and keeps it offline.
+**Voice pack:** cast English & Vietnamese woman + man, Chinese & Hindi man. 5,124 files, ~290,290 characters (≈ 85 MB) ≈ 111,000 ElevenLabs credits (Flash v2.5) or ≈ US$3.56 on Azure (free F0 tier: 500k chars/month, so it fits in one free month; the tool paces ~18 requests/min, about 4 hours). `node tools/make-voice-pack.mjs --engine azure --count` shows the cost without a key. The pack is matched to the exact sentences, so make it from the latest `main`; after later rounds run it again and it only makes the new lines. The game downloads the whole pack once and keeps it offline.
 
 **Making the Azure voice pack, step by step:**
 1. Azure portal → Microsoft Foundry → Speech service → **Create**: new resource group `sparkle-valley`, region **Australia East**, a unique name, pricing tier **Free F0** (or Standard S0 if F0 is taken). Review + create → Go to resource → **Keys and Endpoint** → copy KEY 1 and the region (`australiaeast`).
@@ -161,7 +161,7 @@ Plain HTML/CSS/JS ES modules, **no build step**. three.js r160 (`vendor/three.mo
 
 ## 6. Open items
 
-- ~~The real voice pack~~ done (Azure, 4,046 files, made from round 24). Lines added since then (round 25 and 26 texts) have no recording yet and use the device voice until the pack is topped up (`node tools/make-voice-pack.mjs --engine azure --count` shows how many).
+- ~~The real voice pack~~ done (Azure, topped up to 5,124 files after round 26). New lines from later rounds use the device voice until the pack is topped up again (`--count` shows how many, or the Studio's Voices page).
 - A front photo of house number 8 to match colours, roof, gate and balcony (number only, never the street name).
 - Real-device testing: iPhone/Android touch and performance, real voices with keys, recording, share-sheet backups, **online play across two real networks** (public MQTT brokers and PeerJS could not be reached from the build machine).
 - Optional ideas, only if asked: dark / high-contrast mode, simpler menu for under-5s, bedtime routine, phonics and telling the time, decorating, online co-op tasks, hosted sync, native store apps.
