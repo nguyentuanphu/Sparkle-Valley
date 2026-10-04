@@ -273,11 +273,12 @@ await check('flat', async () => {
 });
 
 await check('roadshape', async () => {
-  // HARD RULE: roads are straight or perfectly curved (no step turns more than 8°), never steep (asphalt 10 %, dirt 14 %,
-  // a little more only where two fixed places are too close), and every change of slope is rounded
+  // HARD RULE: roads are straight or perfectly curved (no step turns more than 8°), never steeper than the owner's R3
+  // (asphalt 8 %, dirt 12 %: ROAD_GRADE in roads.js, no allowance anywhere), and every change of slope is rounded
+  // (a place too high for its road is lowered, never the rule loosened)
   const P = await open(b, { w: 700, h: 500 }); await clear(P.page);
   const r = await P.page.evaluate(() => { const bad = []; let len = 0;
-    __sv.world.roadLines.forEach((L, k) => { const G = L.kind === 'asphalt' ? .125 : .155;
+    __sv.world.roadLines.forEach((L, k) => { const G = (L.kind === 'asphalt' ? .08 : .12) + .002; // (+0.2 % for rounding the sampled heights)
       for (let i = 1; i < L.ys.length; i++) { const d = Math.hypot(L.pts[i][0] - L.pts[i - 1][0], L.pts[i][1] - L.pts[i - 1][1]); len += d; const g = Math.abs(L.ys[i] - L.ys[i - 1]) / (d || 1);
         if (g > G && !L.deck[i]) bad.push(`road ${k} steep ${(g * 100).toFixed(0)}% at ${L.pts[i].map(v => v.toFixed(0))}`);
         if (i < L.ys.length - 1) { const s1 = L.ys[i] - L.ys[i - 1], s2 = L.ys[i + 1] - L.ys[i]; if (Math.abs(s2 - s1) > .16 && !L.deck[i]) bad.push(`road ${k} kink ${Math.abs(s2 - s1).toFixed(2)} at ${L.pts[i].map(v => v.toFixed(0))}`);
@@ -286,7 +287,7 @@ await check('roadshape', async () => {
     return { bad, len }; });
   await P.ctx.close();
   ok(!r.bad.length, r.bad.slice(0, 10).join('; '));
-  return `${Math.round(r.len)} m of road: straight or smoothly curved, gentle and rounded`;
+  return `${Math.round(r.len)} m of road: straight or smoothly curved, never steeper than 8 % (dirt 12 %), rounded`;
 });
 
 await check('phone', async () => {
@@ -446,6 +447,30 @@ await check('ground', async () => {
   return `${r.buildings} buildings and ${r.roads} roads checked, build ${build}`;
 });
 
+await check('resume', async () => {
+  // a child comes back where they were (owner, round 30), with a "welcome back"; a spot that is no longer good
+  // (in the lake, inside a building) starts them at the usual place instead
+  const P = await open(b, { w: 800, h: 600 }); await clear(P.page);
+  await P.page.evaluate(() => { __sv.heroes[0].place(-30, -56); }); await P.page.waitForTimeout(1500); await clear(P.page);
+  await P.page.waitForFunction(() => { const p = __sv.heroes[0].profile.pos; return p && Math.hypot(p.x + 30, p.z + 56) < 2; }, null, { timeout: 15000 }).catch(() => { });
+  const saved = await P.page.evaluate(() => __sv.heroes[0].profile.pos);
+  await P.page.reload(); await start(P.page);
+  const toastText = await P.page.waitForFunction(() => /Welcome back/.test(document.querySelector('#toast')?.textContent || ''), null, { timeout: 8000 }).then(() => P.page.evaluate(() => document.querySelector('#toast').textContent)).catch(() => '');
+  const back = await P.page.evaluate(() => ({ x: __sv.heroes[0].pos.x, z: __sv.heroes[0].pos.z }));
+  // now a spot in the middle of Mirror Lake and one inside a building: both start at home
+  const tries = [];
+  for (const spot of [{ x: 55, z: 125 }, await P.page.evaluate(() => { const b = __sv.world.boxes.find(b => b.x1 - b.x0 > 3 && b.z1 - b.z0 > 3); return { x: (b.x0 + b.x1) / 2, z: (b.z0 + b.z1) / 2 }; })]) {
+    // (the game saves the spot when it is put away, so the bad spot is written from another page of the site)
+    await P.page.goto(URL + 'manifest.webmanifest'); await P.page.evaluate(s => { const k = 'sv2_profiles', a = JSON.parse(localStorage.getItem(k)); a[0].pos = s; localStorage.setItem(k, JSON.stringify(a)); }, spot);
+    await P.page.goto(URL); await start(P.page);
+    tries.push(await P.page.evaluate(() => ({ x: +__sv.heroes[0].pos.x.toFixed(1), z: +__sv.heroes[0].pos.z.toFixed(1) })));
+  }
+  const errs = P.errors; await P.ctx.close();
+  const near = (a, x, z, d) => Math.hypot(a.x - x, a.z - z) < d;
+  ok(saved && near(saved, -30, -56, 2) && near(back, saved.x, saved.z, 1.5) && /Welcome back/.test(toastText) && tries.every(t => near(t, -3, -4, 3)) && !errs.length, JSON.stringify({ saved, back, toastText, tries, errs }));
+  return `came back at ${back.x.toFixed(0)}, ${back.z.toFixed(0)} with "${toastText}"; a spot in the lake and one inside a building both started at home`;
+});
+
 await check('saves', async () => {
   // progress survives: the main save is wiped (as a browser might do), and the game brings it back by itself
   const P = await open(b, { w: 800, h: 600 }); await clear(P.page);
@@ -556,6 +581,28 @@ await check('photo', async () => {
   const c = out.computer, i = out.iphone;
   ok(c.added === 1 && /^sparkle-valley-\d{8}-\d{6}\.jpg$/.test(c.download.name) && c.download.size > 5000 && /\.jpg$/.test(c.album) && i.added === 1 && i.shared && i.shared.length === 1 && i.shared[0].type === 'image/jpeg' && i.shared[0].size > 5000 && !c.errs.length && !i.errs.length, JSON.stringify(out));
   return `computer: ${c.download.name} downloaded (${Math.round(c.download.size / 1024)} KB), Album ⬇ downloads too; iPhone: the share sheet got ${i.shared[0].name} (${Math.round(i.shared[0].size / 1024)} KB) for "Save Image"`;
+});
+
+await check('netmsg', async () => {
+  // PRIV-003: every message from another device is checked in one place (js/netmsg.js) before the game sees it
+  const P = await open(b, { w: 600, h: 400, play: false });
+  const r = await P.page.evaluate(async () => {
+    const M = await import('/js/netmsg.js'), c = (d, f = 'p1') => M.checkMsg(d, f), out = {};
+    out.unknown = [c({ t: 'knock' }), c({ t: 'status', key: 'removed' }), c({ t: 'constructor' }), c({ t: '__proto__' })].every(x => x === null);
+    out.badMove = c({ t: 's', x: NaN, y: 0, z: 0, yaw: 0 }) === null && c({ t: 's', x: 1e9, y: 0, z: 0, yaw: 0 }) === null && c({ t: 's', y: 0, z: 0, yaw: 0 }) === null;
+    const okMove = c({ t: 's', x: 1, y: 2, z: 3, yaw: .5, st: 'run', sp: 3, evil: '<img>' }); out.extraRemoved = okMove && okMove.x === 1 && !('evil' in okMove);
+    out.trade = c({ t: 'offer', id: 'o1', give: { coins: 1e9 }, want: {} }) === null && c({ t: 'offer', id: 'o2', give: { items: { apple: 2 } }, want: { coins: 5 } }) !== null && c({ t: 'offer', id: 'o3', give: { items: { 'a<b': 1 } }, want: {} }) === null;
+    out.emote = c({ t: 'emote', id: 'x'.repeat(80) }) === null && c({ t: 'emote', id: 'hi' }, 'p2') !== null;
+    M.resetRates(); let passed = 0; for (let i = 0; i < 100; i++) if (c({ t: 's', x: 0, y: 0, z: 0, yaw: 0 }, 'flood')) passed++; out.flood = passed;
+    out.other = c({ t: 's', x: 0, y: 0, z: 0, yaw: 0 }, 'calm') !== null; // one player's flood doesn't block another
+    out.bigHello = c({ t: 'hello', name: 'A', photo: 'x'.repeat(200000) }, 'p3') === null;
+    out.relayFields = c({ t: 'ping', ts: Date.now(), mid: 'm1', _id: 'abcdefghijklmnop', _topic: 'sparklevalley/v2/room/' + 'f'.repeat(32) }, 'p4') !== null // (the relay's routing fields don't count)
+      && c({ t: 'pong', from: 'sv-c-8rkqujds', to: 'sparkle-valley-v2-2505', ts: Date.now(), mid: 'm9505uqo14', _id: 'fm8qycc1mutbunog' }, 'p5') !== null; // (a real answer with long ids)
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.unknown && r.badMove && r.extraRemoved && r.trade && r.emote && r.flood === 40 && r.other && r.bigHello && r.relayFields && !errs.length, JSON.stringify(r));
+  return 'unknown kinds dropped (a stranger can no longer fake a knock or a status), bad moves and trades dropped, unknown fields removed, a flood of 100 moves cut to 40 a second';
 });
 
 await check('knock', async () => {

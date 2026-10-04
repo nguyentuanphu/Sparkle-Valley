@@ -33,7 +33,9 @@ async function writeMirror() {
   try { if ('caches' in self) { const c = await caches.open(SNAP_CACHE); await c.put(SNAP_URL, new Response(text, { headers: { 'Content-Type': 'application/json' } })); } } catch (e) { }
 }
 let mirrorT = null;
-function mirrorSoon() { clearTimeout(mirrorT); mirrorT = setTimeout(writeMirror, 2500); }
+// (at most 2.5 s after a change, with whatever is newest then: a timer that restarted on every save could be put
+// off again and again by frequent saves, and the copy fell behind)
+function mirrorSoon() { if (mirrorT) return; mirrorT = setTimeout(() => { mirrorT = null; writeMirror(); }, 2500); }
 async function readMirror() {
   const all = [];
   // the latest copy and the daily ones (in case the latest is damaged)

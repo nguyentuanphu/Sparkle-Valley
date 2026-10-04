@@ -214,19 +214,23 @@ What may leave the device:
 
 ## 13. Decisions still open · Cần chủ quyết định
 
-1. **Road grades.**
-   - Your R3: 8 % asphalt / 12 % dirt.
-   - Round 29 rule: 10 % / 14 %.
-   - The `roadshape` test allows 12.5 % / 15.5 % where two fixed places are too close.
-   - Choose one; then the test enforces exactly that, and the steep spots get flattened.
-2. **R1 widths.**
-   - Asphalt is 5.2 m and dirt 3.4 m today.
-   - Footpaths (1.6 m) don't exist yet: add them in villages and round ponds (Phase 2)?
-3. ~~**Online safety:**~~ decided round 30: newcomers knock, saved friends come straight in, 4 digits kept with animals and QR. Open: who taps "Let in" (today the child who started the room; a grown-up-only option?).
-4. **Two age profiles:** an explicit per-child profile, with adaptive help.
-5. **Voice pack download:** keep downloading the whole pack after the first visit (now: the child's language first), or only the child's language unless a grown-up asks for more.
-6. **Studio exe Publish:** straight to `main` (today), or through the draft branch like online.
-7. **Typed safety net:** add `// @ts-check` + JSDoc to the riskiest modules (saves, net messages, Studio core). This gets type checking with no build step; it is the no-rewrite version of "TypeScript".
+**Decided by the owner (round 30, 4 Oct):**
+- **Road grades: 8 % asphalt / 12 % dirt** (R3 as written). The `roadshape` check enforces exactly this, with no "tight spot" allowance; steep spots are flattened instead.
+- **Footpaths (1.6 m): yes**, in Phase 2 (villages, round ponds).
+- **Online safety:** newcomers knock, saved friends come straight in, 4 digits kept with animals and QR; **the child who started the room taps "Let in"**.
+- **Studio exe Publish goes through the draft branch**, like the online Studio.
+- **Resume spot:** a child comes back where they were.
+- **Voice pack:** the whole pack is downloaded, the child's language first (recorded voices are always the default).
+- **What next:** Phase 2 and every unfinished item, one round at a time, the plan shown before each round.
+
+**Still open:**
+1. **Two age profiles** with adaptive help (proposal in the round-30 answers: Little 2–4 / Big 5–8; questions a–e to the owner).
+2. **Typed safety net:** `// @ts-check` + JSDoc for saves, net messages and the Studio core (explained to the owner; awaiting yes/no).
+3. **Performance budgets as hard rules** (explained; awaiting yes/no).
+4. **Caching the generated world** (recommended: measure first, cache only slow parts, keyed by build).
+5. **Architecture pace** (recommended: one step per round).
+6. **Per-room secret in the QR code** (recommended: a later online round).
+7. **In-game QR scanner** (so iPhone scans stay in the Home Screen app) and a grown-up check before the photo share sheet.
 
 ## 14. Review of the outside assessment (round 30)
 
@@ -270,7 +274,7 @@ What may leave the device:
 | Versioned saves | `v: 2` plus three safe copies; **migrations** are the real gap (ARCHITECTURE SAVE-002) |
 | No punishment for little ones | under-5 mode: no losing, no timers (checked by `games`) |
 
-- **What it got right that we had missed:** the road grade numbers disagree (10/14 % rule vs 12.5/15.5 % allowed by `roadshape`). This is §13.1.
+- **What it got right that we had missed:** the road grade numbers disagreed (10/14 % rule vs 12.5/15.5 % allowed by `roadshape`). Settled in round 30: 8 % / 12 %, enforced exactly.
 - **Lesson:** an outside review of documents is useful for finding gaps, but every item must be checked against the code before work is planned.
 
 **14.2 Full TypeScript: no. Types in comments: yes, for risky code (§13.7).**

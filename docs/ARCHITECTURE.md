@@ -665,7 +665,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 |---|---|---|---|---|---|
 | ROAD-001 | R1 | Classes with constant width: asphalt 5.2 m, dirt 3.4 m, footpath 1.6 m | MAJOR | data | — |
 | ROAD-002 | R2 | Straight runs joined by true circular arcs; no step turn > 8°; min radius 10 / 6 / 3 m; no S-bends within 15 m | BLOCKER | check `roadshape`; data | generator fillets |
-| ROAD-003 | R3 | Surface on the ground, never > 0.3 m above it; grade within the limit; every change of slope rounded. **Limit [OPEN]:** owner text 8 % / 12 %; round-29 rule 10 % / 14 %; check allows 12.5 % / 15.5 % in tight spots | BLOCKER | check `roadshape`, `ground` | generator spreads the grade |
+| ROAD-003 | R3 | Surface on the ground, never > 0.3 m above it; grade ≤ **8 % asphalt / 12 % dirt** (owner, round 30; `ROAD_GRADE` in roads.js), no allowance: a place too high for its road is lowered; every change of slope rounded | BLOCKER | check `roadshape`, `ground` | generator spreads the grade |
 | ROAD-004 | R4/G5 | Clear corridor `w/2 + 1.5 m`: no props, trees, rocks, grass, flowers, pickups, NPC spots; trees ≥ `w/2 + 2.5`; buildings 2–4 m back | BLOCKER | check `roads` | placement rejects the spot |
 | ROAD-005 | R5 | Side roads leave at 60–120°, straight ≥ 6 m before bending; Y only for even splits; one plain junction patch | BLOCKER | check `roads` | generator squares the junction |
 | ROAD-006 | R6 | Outside towns only T-junctions; junctions ≥ 20 m apart on a road; parallel roads ≥ 12 m apart; no crossing without a junction | MAJOR | data [IMPR] | — |
@@ -711,7 +711,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | VOICE-003 | No child's name inside a pack line | MAJOR | `players.js` filter + review |
 | PRIV-001 | No API keys or personal data in code or repo | BLOCKER | process + secret scan |
 | PRIV-002 | The hello sends only the whitelisted fields (handbook §10) and stops when switched off | BLOCKER | check `studio` (no names kept) + review |
-| PRIV-003 | Every incoming network, backup, content or Studio payload is validated (type, size, range) before use | BLOCKER | review + tests per schema [IMPR] |
+| PRIV-003 | Every incoming network, backup, content or Studio payload is validated (type, size, range) before use. Network messages: `js/netmsg.js` (one schema per kind, size and rate limits, unknown kinds dropped) | BLOCKER | check `netmsg` (+ `multiplayer`, `cloud`, `knock`); backups/content/Studio: review [IMPR] |
 | PRIV-004 | Online newcomers knock: until the room's starter lets them in they get nothing from the room (no names, moves, voices) and their own microphone is off; only saved friends (friend code on the list) come straight in; "No thanks" keeps them out of that room | BLOCKER | check `knock` (+ `multiplayer`, `cloud`) |
 | SAFE-001 | Safe for ages 2–8: no weapons, blood, scary faces, animal fights, real logos, phone numbers or addresses (G8) | BLOCKER | visual + review |
 | STUDIO-001 | The exe and online Studio are one program and the same version as the game | BLOCKER | check `studio` |
@@ -875,7 +875,7 @@ Metrics are from the r37 measurement (§1.1). No module is dead code, so nothing
 | **7** | **Services instead of `G`:** `app.services` with contracts; modules declare dependencies; `G` members become thin forwards, then disappear. `ui.js` split into screens; gameplay changes go through commands | the `G` member count ratchets down to 0; `contract` unchanged | medium |
 | **8** | **Activities lifecycle:** `activities` system around `games/frame.js`; cleanup checks (ACT-003) | new `activities` check: open/close every game and nothing is left | low–medium |
 | **9** | **Save sections and migrations:** per-system `snapshot/restore/migrate`; unit tests with saved fixtures from r30+ | SAVE-002/003 unit tests; `saves` green | medium |
-| **10** | **Net schema** module and validation tests; emit events | PRIV-003 tests; `multiplayer`/`meet`/`cloud` green | medium |
+| **10** ✔ | **Net schema** module and validation tests (done round 30: `js/netmsg.js`, check `netmsg`); emitting events comes with step 1 | PRIV-003 tests; `multiplayer`/`meet`/`cloud` green | medium |
 | **11** | **Studio uses `gen` + `gen.validate`** for the map editor and before Publish | `studio` check extended | low |
 | **12** | **Actors / vehicles / ferry** as systems (prerequisite for the approved Phase 2 buffalo cart, VEH-001) | integration tests for VEH-001, RIVER-003 | medium |
 
@@ -931,13 +931,13 @@ tests/   run.mjs  harness.mjs  arch.mjs  unit/  world/  visual/  perf/
 
 ### 14.2 Unresolved decisions [OPEN] (owner)
 
-1. **ROAD-003 grade limit:** 8/12 % (owner text) vs 10/14 % (round 29) vs today's check (12.5/15.5 % in tight spots).
-2. **ROAD-001 footpaths:** add the 1.6 m class (needed for ROAD-011 and the approved Phase 2 pond path)?
+1. ~~ROAD-003 grade limit~~ **decided: 8 % asphalt / 12 % dirt**, no tight-spot allowance.
+2. ~~ROAD-001 footpaths~~ **decided: yes**, the 1.6 m class in Phase 2.
 3. **Types:** `// @ts-check` + JSDoc for L0–L3 contracts (no build step), or stay untyped?
-4. **Resume spot:** should a child's position persist between sessions, or always start at home?
+4. ~~Resume spot~~ **decided: a child comes back where they were.**
 5. **Performance budgets** (handbook §15.1) as hard rules (PERF-xxx)?
-6. **Online safety:** newcomer approval and longer room codes (from the assessment).
-7. **Studio exe Publish** through the draft branch, like online?
+6. ~~Online safety~~ **decided and built:** knocking (the child starter lets in), saved friends straight in, 4 digits + animals + QR. Open: per-room secret in the QR.
+7. ~~Studio exe Publish~~ **decided: through the draft branch**, like online.
 8. **Generation caching:** cache WorldData per (build, content) on the device (faster start, more storage) or regenerate each start?
 9. **Migration pace:** one migration step per round alongside design phases (recommended), or a dedicated architecture round first (steps 0–3)?
 

@@ -36,7 +36,7 @@ Keep this file current in the same round as any change to hosting, servers, keys
 5. Voices come **from GitHub through Netlify**. A new voice file pushed to `voices/` is live after the next deploy. Each device's voice-pack check (`js/voice.js` `checkPack`, on every open) downloads what it is missing, with the small progress bar (`js/packbar.js`).
 6. Sparkle Studio changes:
    - **Online Studio:** saves to the `studio-draft` branch; **Publish** copies only the family's files (`content/ voices/ photos/ tools/voice-extra.json`) to `main`.
-   - **Exe:** "Publish to GitHub" commits those same folders to `main` (whether it should go through the draft too is an open question).
+   - **Exe:** the same two steps: **1. Save a draft** sends the changed family files from the computer's game folder to `studio-draft`; **2. Publish** puts the draft on `main`. Both Studios share the one draft branch.
 
 A drag-and-drop zip (`build-netlify.sh`) still works as an emergency fallback, but it has **no functions**, so the counter and online Studio stop working on that deploy. Use Git deploys.
 
@@ -49,6 +49,7 @@ A drag-and-drop zip (`build-netlify.sh`) still works as an emergency fallback, b
 | Netlify → Site configuration → Environment variables | `STUDIO_PASSWORD` | Online Studio login | required for `/studio/` |
 | 〃 | `GITHUB_TOKEN` | Fine-grained, this repo only, Contents read/write: the online Studio reads/saves family files | required for saving |
 | 〃 | `GITHUB_REPO`, `GITHUB_BRANCH` | Defaults: `nguyentuanphu/Sparkle-Valley`, `main` | optional |
+| Tests only | `STUDIO_GITHUB_API` | Points the exe at the pretend GitHub in `tests/studio-check.mjs`; never set for families | — |
 | 〃 | `AZURE_KEY`, `AZURE_REGION` | Making voices from the online Studio | optional |
 | 〃 | `NETLIFY_TOKEN`, `NETLIFY_SITE` | The Studio's Website page (deploys) | optional |
 | Windows PC | `%APPDATA%\SparkleStudio\settings.json` | The exe's keys: Azure, Netlify, GitHub token | as needed |

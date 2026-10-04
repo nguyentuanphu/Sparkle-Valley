@@ -118,8 +118,11 @@ export async function studioCheck(browser, open) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-studio-')), game = path.join(tmp, 'game'), appdata = path.join(tmp, 'appdata');
   fs.cpSync(path.join(ROOT, 'js'), path.join(game, 'js'), { recursive: true }); // the game's code (the pages read it)
   for (const f of Object.keys(seed)) { fs.mkdirSync(path.dirname(path.join(game, f)), { recursive: true }); fs.writeFileSync(path.join(game, f), seed[f]); }
-  fs.mkdirSync(path.join(appdata, 'SparkleStudio'), { recursive: true }); fs.writeFileSync(path.join(appdata, 'SparkleStudio', 'settings.json'), JSON.stringify({ gameDir: game, siteUrl: site, studioPassword: PW }));
-  const exe = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cjs')], { env: { ...process.env, APPDATA: appdata, STUDIO_PORT: String(SPORT), STUDIO_NO_OPEN: '1' }, stdio: 'ignore' });
+  fs.mkdirSync(path.join(appdata, 'SparkleStudio'), { recursive: true }); fs.writeFileSync(path.join(appdata, 'SparkleStudio', 'settings.json'), JSON.stringify({ gameDir: game, siteUrl: site, studioPassword: PW, githubToken: 'test-token', githubRepo: repo }));
+  // the exe is its own process: it reaches the same pretend GitHub over http (STUDIO_GITHUB_API, tests only)
+  const GPORT = 8793, ghNet = http.createServer((req, res) => { let d = ''; req.on('data', c => d += c); req.on('end', async () => { const r = await gh.handle(req.method, 'https://api.github.com' + req.url, d ? JSON.parse(d) : null); res.writeHead(r.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(r.j)); }); });
+  await new Promise(r => ghNet.listen(GPORT, '127.0.0.1', r));
+  const exe = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cjs')], { env: { ...process.env, APPDATA: appdata, STUDIO_PORT: String(SPORT), STUDIO_NO_OPEN: '1', STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}` }, stdio: 'ignore' });
   const notes = [];
   try {
     for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://localhost:${SPORT}/studio/api/ping`)).ok) break; } catch (e) { } await new Promise(r => setTimeout(r, 200)); }
@@ -200,7 +203,15 @@ export async function studioCheck(browser, open) {
     { const web = (await call('/studio/api/players', { cookie: C })).j, exeR = (await ex('players')).j; ok(exeR && exeR.today && exeR.today.devices === web.today.devices && web.today.devices >= 3, 'the exe could not show the players: ' + JSON.stringify({ exe: exeR && exeR.today, web: web.today })); }
     ok((await ex('voices/inbox')).j.length === 2, 'the exe could not see the inbox');
     const chk = (await ex('check')).j; ok(chk.some(x => x.ok && /the same here and online/.test(x.en)), 'the exe and online versions were not compared: ' + JSON.stringify(chk.map(x => x.en)));
-    notes.push('exe: saves to its folder with a backup, players via the website, same version');
+    // the exe sends to GitHub in two steps (owner, round 30): 1. a draft (the website does not change), 2. Publish
+    const job = async (p, body) => { const s0 = await ex(p, body); ok(s0.status === 200, p + ': ' + JSON.stringify(s0.j)); for (let i = 0; i < 100; i++) { const j = (await ex('job')).j; if (j && j.end) return j; await new Promise(r => setTimeout(r, 100)); } throw new Error(p + ' never finished'); };
+    const d1 = await job('github/draft', { message: 'Draft from the exe' });
+    ok(!d1.error && d1.result.changed >= 1 && d1.result.draft && /exe/.test(gh.fileAt('studio-draft', 'content/custom.json')) && !/exe/.test(gh.fileAt('main', 'content/custom.json')), 'the exe draft: ' + JSON.stringify(d1));
+    ok((await ex('info')).j.unpublished, 'the exe did not show the draft as waiting');
+    const p1 = await job('github/publish', { message: 'Publish from the exe' });
+    ok(!p1.error && p1.result.changed >= 1 && /exe/.test(gh.fileAt('main', 'content/custom.json')) && gh.refs.get('studio-draft') === gh.refs.get('main') && gh.fileAt('main', 'content/faces/ba-nam.jpg'), 'the exe publish: ' + JSON.stringify(p1));
+    ok((await job('github/draft', {})).result.changed === 0, 'a second exe draft found changes');
+    notes.push('exe: saves to its folder with a backup, players via the website, same version; GitHub in two steps (draft, then Publish)');
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone
     const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos'], bad = [];
     for (const [w, h, touch] of [[1180, 800, false], [390, 800, true]]) {
@@ -220,5 +231,5 @@ export async function studioCheck(browser, open) {
     ok(!bad.length, bad.slice(0, 8).join(' · '));
     notes.push(`${pages.length} pages open online and in the exe, desktop and phone`);
     return notes.join('; ');
-  } finally { exe.kill(); net.close(); unroute(); fs.rmSync(tmp, { recursive: true, force: true }); }
+  } finally { exe.kill(); net.close(); ghNet.close(); unroute(); fs.rmSync(tmp, { recursive: true, force: true }); }
 }

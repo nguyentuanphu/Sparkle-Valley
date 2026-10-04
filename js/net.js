@@ -16,6 +16,7 @@
 // (their friend code) come straight in without knocking.
 import { settings } from './state.js';
 import { Channel } from './relay.js';
+import { checkMsg } from './netmsg.js';
 const PREFIX = 'sparkle-valley-v2-';
 export const MAX_ROOM = 6;
 let loading = null;
@@ -166,20 +167,23 @@ export const Net = {
       this.conns.set(c.peer, c);   // (a knock until let in: the welcome waits for admit())
       if (this._admitted.has(c.peer)) this._welcome(c.peer);
     });
-    c.on('data', d => {
-      if (!d || typeof d !== 'object') return;
-      d.from = c.peer;                                    // the host decides who a message is from
-      if (!this._admitted.has(c.peer)) { if (d.t === 'hello') this._recv(d, c.peer); return; } // at the door: only the knock
+    c.on('data', raw => {
+      if (!raw || typeof raw !== 'object') return;
+      raw.from = c.peer;                                  // the host decides who a message is from
+      if (this._dup(raw)) return;                         // (a copy that also came through the cloud relay)
+      const d = checkMsg(raw, c.peer); if (!d) return;    // checked once, before it is passed on to anyone (netmsg.js)
+      if (!this._admitted.has(c.peer)) { if (d.t === 'hello') this._recv(d, c.peer, true); return; } // at the door: only the knock
       if (d.to && d.to !== this.me) { const t = this.conns.get(d.to); if (t && t.open && this._admitted.has(d.to)) t.send(d); return; }
       if (!d.to) for (const [id, o] of this.conns) if (id !== c.peer && o.open && this._admitted.has(id)) o.send(d);
-      this._recv(d, c.peer);
+      this._recv(d, c.peer, true);
     });
     c.on('close', () => { this.conns.delete(c.peer); this._goneKnock(c.peer); this._gone(c.peer); for (const o of this.conns.values()) if (o.open) o.send({ t: 'bye', from: c.peer }); });
   },
 
-  _recv(d, via) {
+  _recv(d, via, checked) {
     if (!d || typeof d !== 'object') return;
     const from = d.from || via;
+    if (!checked) { if (this._dup(d)) return; d = checkMsg(d, from); if (!d) return; } // every message: known kind, right fields, sizes and rate (netmsg.js; copies are not counted twice)
     if (d.to && d.to !== this.me) return;
     if (from === this.me || !okId(from)) return;
     if (this._banned && this._banned.has(from)) return;
@@ -266,7 +270,7 @@ export const Net = {
     if (!k) return;
     const c = this.conns.get(id);
     if (c && c.open) this._welcome(id); else if (k.via === 'cloud') this._useCloud();
-    this._recv(k.d, k.via);  // now in: the room meets them (the cloud welcome goes out from here)
+    this._recv(k.d, k.via, true);  // now in: the room meets them (the cloud welcome goes out from here)
     this.emit('knock', null);
   },
   deny(id) {
@@ -277,6 +281,7 @@ export const Net = {
     this.emit('knock', null);
   },
   _goneKnock(id) { if (this.knocks.delete(id)) this.emit('knock', null); },
+  _dup(d) { return typeof d.mid === 'string' && this._seen.has(d.mid); },
   _gone(id) {
     if (!this.remotes[id]) return;
     const r = this.remotes[id]; delete this.remotes[id];

@@ -33,9 +33,11 @@ function folderStore(root) {
 // does not rebuild on every click; Publish copies them onto the main branch as one commit (exactly like the exe's
 // Publish). Only the family's own files can be written: content/, voices/, photos/, tools/voice-extra.json.
 const FAMILY = rel => /^(content|voices|photos)\//.test(rel) || rel === 'tools/voice-extra.json';
+// (tests point the exe at a pretend GitHub with STUDIO_GITHUB_API; it is never set for families)
+const GH_API = (typeof process !== 'undefined' && process.env && process.env.STUDIO_GITHUB_API) || 'https://api.github.com';
 function ghApi(token) {
   return async (p, opt = {}) => {
-    const r = await fetch('https://api.github.com' + p, { ...opt, headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'User-Agent': 'sparkle-studio', 'X-GitHub-Api-Version': '2022-11-28', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } });
+    const r = await fetch(GH_API + p, { ...opt, headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'User-Agent': 'sparkle-studio', 'X-GitHub-Api-Version': '2022-11-28', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } });
     const t = await r.text(); let j = {}; try { j = JSON.parse(t); } catch (e) { }
     if (!r.ok) { const e = new Error(`GitHub ${r.status}: ${(j.message || t).slice(0, 160)}`); e.status = r.status; throw e; }
     return j;
@@ -71,7 +73,8 @@ function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api
     return [...out];
   };
   const commitOn = async (parent, items, message) => {
-    const tree = (await gh(`${R}/git/trees`, { method: 'POST', body: JSON.stringify({ base_tree: (await treeOf(parent)).sha, tree: items }) })).sha;
+    let tree = (await treeOf(parent)).sha; // (in parts: a voice pack top-up can be thousands of files)
+    for (let i = 0; i < items.length; i += 400) tree = (await gh(`${R}/git/trees`, { method: 'POST', body: JSON.stringify({ base_tree: tree, tree: items.slice(i, i + 400) }) })).sha;
     return (await gh(`${R}/git/commits`, { method: 'POST', body: JSON.stringify({ message, tree, parents: [parent] }) })).sha;
   };
   const setRef = async (b, sha, force) => { try { await gh(`${R}/git/refs/heads/${encodeURIComponent(b)}`, { method: 'PATCH', body: JSON.stringify({ sha, force: !!force }) }); } catch (e) { if (e.status !== 422 && e.status !== 404) throw e; if (await refSha(b)) throw e; await gh(`${R}/git/refs`, { method: 'POST', body: JSON.stringify({ ref: 'refs/heads/' + b, sha }) }); } };
@@ -107,7 +110,16 @@ function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api
       await setRef(branch, sha, false); await setRef(draft, sha, true); st = null;
       return { changed: list.length, commit: sha.slice(0, 7), url: `https://github.com/${repo}/commit/${sha}` };
     },
-    unpublished: async () => !!(await state()).d
+    unpublished: async () => !!(await state()).d,
+    // (the exe) the family's files as GitHub has them now: the draft while it has unpublished changes, else main
+    familyShas: async () => { const s = await state(), out = new Map(); for (const [p, sha] of (s.d ? s.draftTree : s.mainTree).map) if (FAMILY(p)) out.set(p, sha); return out; },
+    // (the exe) files already uploaded as blobs → one commit on the draft branch (never on main)
+    saveDraft: async (items, message) => {
+      for (let a = 0; ; a++) {
+        const s = await state(), sha = await commitOn(s.d || s.main, items, message || 'Sparkle Studio: draft');
+        try { await setRef(draft, sha, !s.d); st = null; return sha; } catch (e) { if (a > 1 || e.status !== 422) throw e; st = null; }
+      }
+    }
   };
 }
 
@@ -224,27 +236,31 @@ function createStudio({ store, conf, online = false, local = {} }) {
     await writeJSON('photos/index.json', pix);
     return { key, saved: out.length };
   }
-  // ---------- publish to GitHub (from the exe): only the family's changes (content, voices, photos), as one commit ----------
-  // The live site is built from GitHub by Netlify, so a commit here is published there a minute or two later.
+  // ---------- GitHub from the exe: first a draft, then Publish (owner, round 30: the same two steps as online) ----------
+  // 1. "Save a draft": only the family's files that differ from GitHub (content, voices, photos) go to the
+  //    "studio-draft" branch as one commit. The website does not change.
+  // 2. "Publish": the draft's changes are put onto main as one commit (the same Publish as online); Netlify builds the
+  //    live site from main a minute or two later.
   const gh = conf.githubToken ? ghApi(conf.githubToken) : null;
-  async function publishFromFolder(J, message) {
+  const ghStore = () => {
     if (!gh || !/^[\w.-]+\/[\w.-]+$/.test(conf.githubRepo || '')) throw new Error('Add the GitHub token and repository (owner/name) in Settings first.');
-    const R = `/repos/${conf.githubRepo}`, br = conf.githubBranch || 'main';
+    return githubStore({ token: conf.githubToken, repo: conf.githubRepo, branch: conf.githubBranch || 'main', api: gh });
+  };
+  async function draftFromFolder(J, message) {
+    const G = ghStore(), R = `/repos/${conf.githubRepo}`;
     J.msg = 'Reading the website’s files…';
-    const ref = await gh(`${R}/git/ref/heads/${encodeURIComponent(br)}`), base = ref.object.sha, baseTree = (await gh(`${R}/git/commits/${base}`)).tree.sha;
-    const remote = new Map(), root = await gh(`${R}/git/trees/${baseTree}`);
-    for (const top of ['content', 'voices', 'photos', 'tools']) { const e = root.tree.find(x => x.path === top && x.type === 'tree'); if (!e) continue; const t = await gh(`${R}/git/trees/${e.sha}?recursive=1`); for (const x of t.tree) if (x.type === 'blob') remote.set(top + '/' + x.path, x.sha); }
-    const mine = [...await S.walk('content'), ...await S.walk('voices'), ...await S.walk('photos'), ...((await S.read('tools/voice-extra.json')) ? ['tools/voice-extra.json'] : [])];
+    const remote = await G.familyShas();
+    const mine = [...await S.walk('content'), ...await S.walk('voices'), ...await S.walk('photos'), ...((await S.read('tools/voice-extra.json')) ? ['tools/voice-extra.json'] : [])].filter(rel => FAMILY(rel) && !rel.startsWith('content/old/'));
     const changed = []; for (const rel of mine) { const b = await S.read(rel); if (remote.get(rel) !== gitSha(b)) changed.push(rel); }
-    J.total = changed.length; if (!changed.length) return { changed: 0, note: 'Nothing new to publish: the website already has everything.' };
+    J.total = changed.length; if (!changed.length) return { changed: 0, note: 'Nothing new: GitHub already has everything.' };
     const items = [];
     for (const rel of changed) { J.msg = rel; const b = await S.read(rel); const blob = await gh(`${R}/git/blobs`, { method: 'POST', body: JSON.stringify({ content: b.toString('base64'), encoding: 'base64' }) }); items.push({ path: rel, mode: '100644', type: 'blob', sha: blob.sha }); J.done++; }
-    J.msg = 'Making the commit…'; let tree = baseTree;
-    for (let i = 0; i < items.length; i += 400) tree = (await gh(`${R}/git/trees`, { method: 'POST', body: JSON.stringify({ base_tree: tree, tree: items.slice(i, i + 400) }) })).sha;
-    const commit = await gh(`${R}/git/commits`, { method: 'POST', body: JSON.stringify({ message: message || `Family update from Sparkle Studio (${changed.length} files)`, tree, parents: [base] }) });
-    await gh(`${R}/git/refs/heads/${encodeURIComponent(br)}`, { method: 'PATCH', body: JSON.stringify({ sha: commit.sha }) });
-    return { changed: changed.length, commit: commit.sha.slice(0, 7), url: `https://github.com/${conf.githubRepo}/commit/${commit.sha}` };
+    J.msg = 'Saving the draft…';
+    const sha = await G.saveDraft(items, message || `Family changes from Sparkle Studio (${changed.length} files)`);
+    draftSeen = null; return { changed: changed.length, draft: true, commit: sha.slice(0, 7), url: `https://github.com/${conf.githubRepo}/commit/${sha}` };
   }
+  let draftSeen = null; // (the exe asks GitHub whether a draft waits at most every 30 s)
+  async function publishDraft(J, message) { J.msg = 'Publishing the draft…'; const r = await ghStore().publish(message); J.done = J.total = r.changed; draftSeen = null; return r; }
   // ---------- the website: Netlify deploys and GitHub changes, to see and manage from the dashboard ----------
   async function nf(p, opt = {}) {
     const r = await fetch('https://api.netlify.com/api/v1' + p, { ...opt, headers: { Authorization: 'Bearer ' + conf.netlifyToken, 'User-Agent': 'sparkle-studio', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } });
@@ -311,7 +327,8 @@ function createStudio({ store, conf, online = false, local = {} }) {
     if (api === 'info') {
       const ready = S.ok(), nv = ready ? countVoices(await voicesHave()) : 0; let version = '?';
       try { version = /VERSION = '([^']+)'/.exec((await S.read('sw.js')).toString('utf8'))[1]; } catch (e) { }
-      return ok(Object.assign({ game: S.where, ok: ready, version, voices: nv, studio: STUDIO_VERSION, online, store: S.kind, unpublished: S.unpublished ? await S.unpublished() : false,
+      let unpublished = false; try { if (S.unpublished) unpublished = await S.unpublished(); else if (gh && conf.githubRepo) { if (!draftSeen || Date.now() - draftSeen.t > 30e3) draftSeen = { t: Date.now(), v: await ghStore().unpublished() }; unpublished = draftSeen.v; } } catch (e) { }
+      return ok(Object.assign({ game: S.where, ok: ready, version, voices: nv, studio: STUDIO_VERSION, online, store: S.kind, unpublished,
         conf: { azure: !!conf.azureKey, azureRegion: conf.azureRegion || '', netlify: !!conf.netlifyToken, netlifySite: conf.netlifySite || '', github: !!conf.githubToken, githubRepo: conf.githubRepo || '', githubBranch: conf.githubBranch || 'main', piper: !!conf.piperExe, piperExe: conf.piperExe || '', piperModels: conf.piperModels || {}, siteUrl: conf.siteUrl || '', players: !!(online || (conf.siteUrl && conf.studioPassword)) } }, local.info ? local.info() : {}));
     }
     if (api === 'settings' && post) return local.settings ? local.settings(b) : bad('Online, the keys are set in Netlify: Site configuration → Environment variables.');
@@ -345,8 +362,9 @@ function createStudio({ store, conf, online = false, local = {} }) {
     if (api === 'github/publish' && post) {
       const msg = String(b.message || '').slice(0, 200);
       if (S.publish) { const result = await S.publish(msg); return ok({ kind: 'github', end: true, result, done: result.changed, total: result.changed }); } // online: straight away
-      return ok(job('github', J => publishFromFolder(J, msg)));
+      return ok(job('github', J => publishDraft(J, msg))); // the exe: the draft goes live
     }
+    if (api === 'github/draft' && post) { if (S.publish) return bad('Online, every save already goes to the draft.'); return ok(job('github', J => draftFromFolder(J, String(b.message || '').slice(0, 200)))); }
     if (api === 'srcfiles') { const list = []; for (const d of ['js', 'js/games']) for (const f of (await S.list(d)).sort()) if (f.endsWith('.js')) list.push(d + '/' + f); return ok(list); }
     if (api === 'voices/have') return ok(await voicesHave());
     if (api === 'voice' && post) {

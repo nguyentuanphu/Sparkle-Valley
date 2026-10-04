@@ -25,7 +25,7 @@ export const AUSSIE = { x0: -144, x1: -90, z0: -40, z1: 16, h: 4.5, roadZ: -12 }
 // Cities around the valley: each a paved square with a welcome gate, landmarks, a game host and food kiosks (js/cities.js)
 export const CITIES = [   // gates: where the roads come in (the first is the main gate); the main street runs straight through
   { id: 'danang', cc: 'vn', x: 84, z: -40, w: 13, d: 11, h: 3, icon: '🐉', name: ['Đà Nẵng', 'Đà Nẵng'], gates: [[84, -51], [84, -29]] },
-  { id: 'bacninh', cc: 'vn', x: 48, z: -124, w: 16, d: 13, h: 8.6, icon: '🕰️', name: ['Bắc Ninh', 'Bắc Ninh'], gates: [[48, -111]] },
+  { id: 'bacninh', cc: 'vn', x: 48, z: -124, w: 16, d: 13, h: 8, /* (8 m: the road from the Dragon Bridge stays under 8 %) */ icon: '🕰️', name: ['Bắc Ninh', 'Bắc Ninh'], gates: [[48, -111]] },
   { id: 'hanoi', cc: 'vn', x: 4, z: -62, w: 13, d: 13, h: 5.2, icon: '🐢', name: ['Hà Nội', 'Hà Nội'], gates: [[17, -62], [-9, -62]] },
   { id: 'saigon', cc: 'vn', x: -8, z: 86, w: 13, d: 11, h: 7.4, icon: '🛵', name: ['Hồ Chí Minh City', 'TP. Hồ Chí Minh'], gates: [[-8, 75]] },
   { id: 'brisbane', cc: 'au', x: -70, z: -32, w: 13, d: 11, h: 3, icon: '🐨', name: ['Brisbane', 'Brisbane'], gates: [[-70, -21], [-70, -43]] },
@@ -47,8 +47,8 @@ export const FOOTPRINTS = [];
 const FP_GRID = new Map(), fpKey = (i, j) => i * 4096 + j;
 function fpAdd(F) { FOOTPRINTS.push(F); for (let i = Math.floor((F.x0 - F.pad) / 16); i <= Math.floor((F.x1 + F.pad) / 16); i++) for (let j = Math.floor((F.z0 - F.pad) / 16); j <= Math.floor((F.z1 + F.pad) / 16); j++) { const k = fpKey(i, j); if (!FP_GRID.has(k)) FP_GRID.set(k, []); FP_GRID.get(k).push(F); } }
 export const RIVER = [[-35, -200], [-25, -130], [5, -85], [45, -55], [62, -10], [62, 40], [57, 85]]; // (moved 4 m east past Two Homes Street, whose last cottage stood on the bank)
-export const CHINA = { x: 100, z: -88, r: 24, h: 5 };    // China Town: lanterns, tiled roofs, a pagoda and a little Great Wall
-export const INDIA = { x: -112, z: -84, r: 24, h: 7 };  // India Village: colourful houses, a little Taj Mahal, rangoli and marigolds
+export const CHINA = { x: 100, z: -88, r: 24, h: 4.5 };  // (4.5 m: the road up from Đà Nẵng stays under 8 %)    // China Town: lanterns, tiled roofs, a pagoda and a little Great Wall
+export const INDIA = { x: -112, z: -84, r: 24, h: 5.5 };  // (5.5 m: the road from the Brisbane junction stays under 8 %)  // India Village: colourful houses, a little Taj Mahal, rangoli and marigolds
 LEVELS = [VILLAGE, HOME, CHINA, INDIA].map(C => ({ x: C.x, z: C.z, r: C.r, h: C.h, x0: C.x - C.r, x1: C.x + C.r, z0: C.z - C.r, z1: C.z + C.r }))
   .concat([TOWN, MARKET, AUSSIE, ...CITIES].map(B => ({ h: B.h, x0: B.x0, x1: B.x1, z0: B.z0, z1: B.z1 })));
 export const BRIDGE = { x0: 44, x1: 74, z: 47, w: 6.4, h: 7.4 };   // the Harbour-style bridge carrying Two Homes Street over the river

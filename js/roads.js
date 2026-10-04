@@ -6,6 +6,8 @@ import { T, onLang } from './i18n.js';
 import { SFX } from './audio.js';
 import { heightAt, levelAt, riverDist, roadDist, ROADS, DRAGON, BRIDGE, WATER, REGION_NAMES, setRoadBeds, roadBedsOn } from './world.js';
 import { settings } from './state.js';
+// HARD RULE (owner, round 30): the steepest a road may climb: asphalt 8 %, dirt 12 % (checked by `roadshape`)
+export const ROAD_GRADE = { asphalt: .08, dirt: .12 };
 
 // a long strip texture: asphalt with a dashed centre line, or packed dirt with wheel tracks
 export function roadTexture(kind) {
@@ -69,10 +71,10 @@ function profile(R, world, pts, anchors = null) {
   let ys = base.slice();
   const avg = (W, passes) => { for (let it = 0; it < passes; it++) ys = ys.map((y, i) => { if (fixed(i)) return base[i]; let s = 0, w = 0; for (let k = -W; k <= W; k++) { const j = Math.max(0, Math.min(n - 1, i + k)), wk = W + 1 - Math.abs(k); s += ys[j] * wk; w += wk; } return s / w; }); };
   avg(10, 6);
-  // …never steeper than 10 % (dirt roads 14 %), worked out from both directions from the fixed parts…
+  // …never steeper than 8 % (dirt roads 12 %: owner's R3), worked out from both directions from the fixed parts…
   // (where two fixed parts are too close for that, the whole stretch between them shares the climb evenly)
-  const G = R.kind === 'asphalt' ? .10 : .14, seg = i => Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]), Gs = new Float64Array(n).fill(G);
-  { let f0 = -1, run = 0; for (let i = 0; i < n; i++) { if (i) run += seg(i); if (!fixed(i)) continue; if (f0 >= 0 && i - f0 > 1) { const need = Math.abs(base[i] - base[f0]) / (run || 1) * 1.02; if (need > G) for (let k = f0 + 1; k <= i; k++) Gs[k] = need; } f0 = i; run = 0; } }
+  const G = R.kind === 'asphalt' ? ROAD_GRADE.asphalt : ROAD_GRADE.dirt, seg = i => Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]), Gs = new Float64Array(n).fill(G);
+  { let f0 = -1, run = 0; for (let i = 0; i < n; i++) { if (i) run += seg(i); if (!fixed(i)) continue; if (f0 >= 0 && i - f0 > 1) { const need = Math.abs(base[i] - base[f0]) / (run || 1) * 1.02; if (need > G) { for (let k = f0 + 1; k <= i; k++) Gs[k] = need; (globalThis.__steepRoads = globalThis.__steepRoads || []).push({ road: ROADS.indexOf(R), from: pts[f0].map(Math.round), to: pts[i].map(Math.round), y0: +base[f0].toFixed(2), y1: +base[i].toFixed(2), run: +run.toFixed(1), need: +(need * 100).toFixed(1) }); } } f0 = i; run = 0; } }
   const step = i => seg(i) * Gs[i];
   const limit = () => { for (let pass = 0; pass < 3; pass++) {
     for (let i = 1; i < n; i++) if (!fixed(i)) ys[i] = Math.min(ys[i - 1] + step(i), Math.max(ys[i - 1] - step(i), ys[i]));

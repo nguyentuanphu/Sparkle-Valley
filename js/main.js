@@ -1037,12 +1037,24 @@ G.zoomBy = (i, f, quiet) => {
 };
 
 // ---------- starting a session ----------
+// A child comes back where they were (owner, round 30): the spot is saved every 5 s and when the game is put away.
+// It is only used if it is still a good place to stand (the valley may have changed since): on the map, on dry
+// ground, not inside a building, a wall or a tree; otherwise the child starts at the usual spot by the owl.
+const HOME_SPOT = i => ({ x: -3 + i * 2.5, z: -4 });
+G.goodSpot = (x, z) => {
+  const W = G.world; if (!Number.isFinite(x) || !Number.isFinite(z) || Math.abs(x) > 190 || Math.abs(z) > 190) return false;
+  if (heightAt(x, z) < WATER + .3) return false;
+  if (W.solidAt && [[0, 0], [.6, 0], [-.6, 0], [0, .6], [0, -.6]].some(([dx, dz]) => W.solidAt(x + dx, z + dz))) return false;
+  return !W.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + .45) && !W.boxes.some(b => x > b.x0 - .45 && x < b.x1 + .45 && z > b.z0 - .45 && z < b.z1 + .45);
+};
+const keepSpot = () => G.heroes.forEach(h => { if (h.profile && h.onGround && !h.towerClimb && !h.indoors && G.goodSpot(h.lastSafe.x, h.lastSafe.z)) h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; });
 function startSession(mode, chosen) {
   G.mode = mode; G.heroes.forEach(h => scene.remove(h.av.root)); G.huds.forEach(h => h.destroy()); G.heroes = []; G.huds = [];
   chosen.forEach((p, i) => {
     const h = new Hero(i, p, scene, world);
-    const start = p.pos && Number.isFinite(p.pos.x) ? p.pos : { x: -3 + i * 2.5, z: -4 };
+    const back = p.pos && G.goodSpot(p.pos.x, p.pos.z), start = back ? p.pos : HOME_SPOT(i);
     h.place(start.x, start.z); h.camYaw = Math.PI * .85;
+    if (back && Math.hypot(start.x - HOME_SPOT(i).x, start.z - HOME_SPOT(i).z) > 12) { const rg = regionAt(start.x, start.z), where = REGION_NAMES[rg] ? REGION_NAMES[rg]() : ''; setTimeout(() => toast(where ? T(`Welcome back, ${p.name}! You were in ${where}.`, `Chào mừng ${p.name} quay lại! Lần trước con ở ${where}.`) : T(`Welcome back, ${p.name}! You are where you left off.`, `Chào mừng ${p.name} quay lại! Con ở đúng chỗ lần trước.`)), 1500); }
     G.heroes.push(h); G.huds.push(new Hud(i, h, G)); G.regionOf[i] = null; if (i === 0) helloPhoto(h.profile.photo); // ready before a friend joins
   });
   // shrine & tower colours follow the first player
@@ -1150,7 +1162,8 @@ function frame(now) {
   // bubbles
   G.bubbles = G.bubbles.filter(b => { const p = b.target.pos; b.s.position.set(p.x, p.y + 2.45, p.z); if (now > b.until) { scene.remove(b.s); b.s.material.map.dispose(); b.s.material.dispose(); return false; } return true; });
   // save positions now and then
-  saveT -= dt; if (saveT <= 0) { saveT = 5; G.heroes.forEach(h => { if (h.onGround && !h.towerClimb && !h.indoors) h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; }); save(); }
+  // (every 5 s of real time: game time runs slow on a struggling phone, which saved far less often)
+  if (now - saveT >= 5000) { saveT = now; keepSpot(); save(); }
   // render each player's view
   const r = rects(), H = innerHeight;
   renderer.setScissorTest(G.heroes.length > 1);
@@ -1282,6 +1295,6 @@ $('#boot').remove();
 requestAnimationFrame(frame);
 showTitle(() => showWho((mode, chosen) => startSession(mode, chosen)));
 import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { save(); hush(); } });
-addEventListener('pagehide', () => saveProfiles(true));
+document.addEventListener('visibilitychange', () => { if (document.hidden) { if (playing) keepSpot(); save(); hush(); } });
+addEventListener('pagehide', () => { if (playing) keepSpot(); saveProfiles(true); });
 if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) navigator.serviceWorker.register('sw.js').catch(() => { });
