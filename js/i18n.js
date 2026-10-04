@@ -78,3 +78,5 @@ export const COLORS = [
   { hex: '#4cbf5c', en: 'green', vi: 'xanh lá' }, { hex: '#ff8a2a', en: 'orange', vi: 'cam' }, { hex: '#9a6bff', en: 'purple', vi: 'tím' }, { hex: '#ff7eb8', en: 'pink', vi: 'hồng' }
 ];
 export const colorName = c => T(c.en, c.vi);
+// a label made with T(), in both languages (to speak a name: say(...both(g.name)))
+export const both = f => { const l = settings.lang; try { settings.lang = 'en'; const en = f(); settings.lang = 'vi'; return [en, f()]; } finally { settings.lang = l; } };

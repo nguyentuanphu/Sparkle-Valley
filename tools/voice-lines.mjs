@@ -41,6 +41,18 @@ for (const f of files) {
     }
   }
 }
+// names spoken on their own (round I, the Simple screen says what a child taps): games, tales and the places a child
+// can fly to; one word is enough here, and a name that is the same in both languages (Uluru) is still said in each
+const NAME = new RegExp(String.raw`\b(?:name|title)\s*:\s*\(\)\s*=>\s*T\(\s*(${Q})\s*,\s*(${Q})\s*\)`, 'g');
+for (const f of files.filter(f => f.startsWith('js/games/') || f === 'js/learn.js' || f === 'js/main.js')) {
+  const src = fs.readFileSync(path.join(ROOT, f), 'utf8'); NAME.lastIndex = 0; let m;
+  while ((m = NAME.exec(src))) {
+    const en = unq(m[1]).trim(), vi = unq(m[2]).trim(); if (!en || !vi || !/\p{L}/u.test(en)) continue;
+    const key = en + '\u0000' + vi;
+    if (!seen.has(key)) seen.set(key, { en, vi, files: new Set() });
+    seen.get(key).files.add(f);
+  }
+}
 return [...seen.values()].map(l => ({ en: l.en, vi: l.vi, from: [...l.files].join(',') }));
 }
 if (process.argv[1] && process.argv[1].endsWith('voice-lines.mjs')) {

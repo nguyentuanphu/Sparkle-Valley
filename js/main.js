@@ -60,6 +60,7 @@ import { createCoop } from './coop.js';
 import { createTwinChests } from './twinchests.js';
 import { createClaims } from './claims.js';
 import { createNetGames, onlineDef } from './netgames.js';
+import { createSimple } from './simple.js';
 import { id as makeId } from './core/ids.js';
 import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
@@ -805,6 +806,7 @@ Net.on('hello', r => {
 Net.on('emote', d => { const e = EMOTES.find(e => e.id === d.id), P = G.partners[d.from]; if (!e || !P) return; bubble(P, e.icon + ' ' + T(e.en, e.vi)); say(e.en, e.vi); });
 // ---------- games with friends online (js/netgames.js, round G) ----------
 const remoteName = id => (Net.remotes[id] && Net.remotes[id].name) || T('Your friend', 'Bạn');
+G.simple = createSimple(G);
 G.netGames = createNetGames({
   net: { ids: () => Object.keys(Net.remotes), send: d => Net.send(d) }, me: () => Net.me,
   onAsk: d => { // "Mít wants to play Caro with you!"
@@ -1170,6 +1172,7 @@ function startSession(mode, chosen) {
     showStory(PROLOGUE, chosen.map(x => x.name).join(T(' and ', ' và '))).then(() => { chosen.forEach(x => { x.story = x.story || {}; x.story.prologue = true; }); save(); G.paused = false; greet(); });
   } else greet();
   if (mode === 'online') { G.paused = true; openPad(G, 0, 'friend'); }
+  else G.simple.start(); // the Simple screen for a child who wants it (js/simple.js)
 }
 
 // ---------- the loop ----------

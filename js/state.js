@@ -99,7 +99,7 @@ export const GLIDERS = ['#e7c37a', '#ff7eb8', '#5fd3ff', '#8be07a', '#b48cff'];
 /**
  * A child's profile (one per child on this device).
  * @typedef {{ id: string, name: string, photo: string | null, age: 'little' | 'big', difficulty: 'easy' | 'medium' | 'hard',
- *   look: Record<string, any>, created: number, levels?: Record<string, number>, pos?: any, [k: string]: any }} Profile
+ *   look: Record<string, any>, created: number, levels?: Record<string, number>, pos?: any, screen?: 'simple' | 'valley', [k: string]: any }} Profile
  */
 /** @param {number} i  @returns {Profile} */
 function newProfile(i) {

@@ -134,7 +134,7 @@ export function showWho(onGo) {
   };
   draw();
 }
-function holdButton(b, fn) {
+export function holdButton(b, fn) {
   let t = null, start = 0, raf = 0;
   const ring = b.querySelector('.ring');
   const tick = () => { const k = clamp((performance.now() - start) / 1600, 0, 1); ring.style.setProperty('--p', k * 100 + '%'); if (k >= 1) { stop(); fn(); } else raf = requestAnimationFrame(tick); };
@@ -442,8 +442,10 @@ export function openEditor(profile, after) {
       <label class="btn primary" for="file">📷 ${T('Take or choose a photo', 'Chụp hoặc chọn ảnh')}</label><input type="file" id="file" accept="image/*" class="vh">
       <input type="range" id="zoom" min="1" max="5" step=".01" value="1" hidden aria-label="Zoom"></div>
     <div class="field"><label for="nm">${T('Name', 'Tên')}</label><input id="nm" maxlength="16" value="${esc(p.name)}" placeholder="${T('e.g. Annie or Bin', 'ví dụ: Na hoặc Bin')}"></div>
-    <div class="field"><span>${T('Age', 'Tuổi')}</span><div class="seg age"><button data-a="little">🧸 ${T('Little (under 5)', 'Bé nhỏ (dưới 5 tuổi)')}</button><button data-a="big">🎒 ${T('Big kid (5 to 8)', 'Bé lớn (5 đến 8 tuổi)')}</button></div>
+    <div class="field"><span>${T('Age', 'Tuổi')}</span><div class="seg age"><button data-a="little"><span class="ai">🧸</span><b>${T('Little', 'Bé nhỏ')}</b><small>${T('under 5', 'dưới 5 tuổi')}</small></button><button data-a="big"><span class="ai">🎒</span><b>${T('Big kid', 'Bé lớn')}</b><small>${T('5 to 8', '5 đến 8 tuổi')}</small></button></div>
       <p class="note">${T('Little: everything is spoken, games stay gentle and nobody can lose. Big kid: harder levels, more reading, and real opponents in strategy games.', 'Bé nhỏ: mọi thứ đều được đọc to, trò chơi nhẹ nhàng và không ai thua. Bé lớn: cấp độ khó hơn, đọc nhiều hơn, và có đối thủ thật trong trò chơi chiến thuật.')}</p></div>
+    <div class="field"><span>${T('Start screen', 'Màn hình đầu')}</span><div class="seg age scr"><button data-s="simple"><span class="ai">🧸</span><b>${T('Simple', 'Đơn giản')}</b><small>${T('big pictures', 'hình to')}</small></button><button data-s="valley"><span class="ai">🌳</span><b>${T('Valley', 'Thung lũng')}</b><small>${T('walk and explore', 'đi khám phá')}</small></button></div>
+      <p class="note">${T('Simple: a path of big pictures, one tap to play. Valley: the whole 3D world. The child can switch any time.', 'Đơn giản: một con đường hình to, chạm một lần là chơi. Thung lũng: cả thế giới 3D. Bé đổi lúc nào cũng được.')}</p></div>
     <div class="field"><span>${T('Difficulty', 'Độ khó')}</span><div class="seg diff"><button data-d="easy">🌱 ${T('Easy', 'Dễ')}</button><button data-d="medium">🌿 ${T('Medium', 'Vừa')}</button><button data-d="hard">🌳 ${T('Hard', 'Khó')}</button></div></div>
     <div class="field"><span>${T('Clothes', 'Trang phục')}</span><div class="chips" id="cOut"></div><div class="chips" id="cCol"></div></div>
     <div class="field"><span>${T('Hat', 'Mũ')}</span><div class="chips" id="cHat"></div></div>
@@ -491,8 +493,11 @@ export function openEditor(profile, after) {
   chips('#cBack', BACKS, 'back', v => ({ none: '🙂', wings: '🧚', cape: '🦸' }[v]));
   chips('#cHs', HAIRSTYLES, 'hairStyle', v => ({ short: '💇', buns: '🎀', long: '👩', ponytail: '🐴', spiky: '🦔' }[v]));
   let age = p.age || 'little';
-  const ageBtns = () => m.querySelectorAll('.seg.age button').forEach(b => { b.classList.toggle('on', b.dataset.a === age); b.onclick = () => { age = b.dataset.a; ageBtns(); }; });
+  const ageBtns = () => m.querySelectorAll('.seg.age:not(.scr) button').forEach(b => { b.classList.toggle('on', b.dataset.a === age); b.onclick = () => { age = b.dataset.a; ageBtns(); }; });
   ageBtns();
+  let scr = p.screen || null; // unset: follows the age (under 5: Simple)
+  const scrBtns = () => m.querySelectorAll('.seg.scr button').forEach(b => { b.classList.toggle('on', b.dataset.s === (scr || (age === 'big' ? 'valley' : 'simple'))); b.onclick = () => { scr = b.dataset.s; scrBtns(); }; });
+  scrBtns(); m.querySelectorAll('.seg.age:not(.scr) button').forEach(b => b.addEventListener('click', () => scrBtns()));
   let diff = p.difficulty || 'easy';
   const diffBtns = () => m.querySelectorAll('.seg.diff button').forEach(b => { b.classList.toggle('on', b.dataset.d === diff); b.onclick = () => { diff = b.dataset.d; diffBtns(); }; });
   diffBtns();
@@ -508,7 +513,7 @@ export function openEditor(profile, after) {
         ox2.drawImage(img, (240 - img.width * s / 2 + ox - 35) * k, (240 - img.height * s / 2 + oy - 35) * k, img.width * s * k, img.height * s * k);
         p.photo = o.toDataURL('image/jpeg', .82);
       }
-      Object.assign(p.look, look); p.age = age; p.difficulty = diff; saveProfiles(true);
+      Object.assign(p.look, look); p.age = age; p.difficulty = diff; if (scr) p.screen = scr; saveProfiles(true);
     } else if (isNew) removeProfile(p.id);
     m.close(); after && after(p);
   };
@@ -872,7 +877,7 @@ export function openRecorder(after) {
 
 // ---------- Games hub ----------
 export const folkGames = () => HUB.find(h => h.key === 'folk').games; // the traditional games (js/folkshow.js runs them on a time table)
-const HUB = [
+export const HUB = [
   { key: 'learn', icon: '📚', short: () => T('Learning', 'Học'), title: () => T('Learning: numbers, letters, time and more', 'Học: số, chữ, xem giờ và nhiều nữa'), games: ['familyquiz', 'counting', 'numbers', 'sums', 'letters', 'phonics', 'clock', 'shapes', 'colors', 'opposites', 'animalsounds', 'feelings', 'moreless', 'days', 'bodyparts', 'words', 'firstwords', 'pattern', 'sorting', 'memory'] },
   { key: 'folk', icon: '🪁', short: () => T('Folk games', 'Dân gian'), title: () => T('Folk games of Australia, Vietnam, China and India', 'Trò chơi dân gian Úc, Việt Nam, Trung Quốc và Ấn Độ'), games: ['music', 'firstwords', 'tangram', 'snakes', 'rangoli', 'words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'tienlen', 'oantuti', 'nemlon', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
   { key: 'cities', icon: '🏙️', short: () => T('Cities', 'Thành phố'), title: () => T('In the cities of Vietnam and Australia', 'Ở các thành phố Việt Nam và Úc'), games: ['puppets', 'dongho', 'dragonfire', 'traffic', 'ferries', 'tram', 'koala'] },

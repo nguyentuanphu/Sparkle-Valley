@@ -47,6 +47,7 @@ export class Hud {
       <canvas class="wheel" width="96" height="96"></canvas>
       <div class="dock">
         <button class="dk games"><span>${ICONS.games}</span><small>${T('Games', 'Trò chơi')}</small><kbd class="kb">G</kbd></button>
+        <button class="dk simple" aria-label="${T('Simple screen', 'Màn hình đơn giản')}"><span>${pic('🧸')}</span><small>${T('Simple', 'Đơn giản')}</small></button>
         <button class="dk map"><span>${ICONS.map}</span><small>${T('Map', 'Bản đồ')}</small><kbd class="kb">M</kbd></button>
         <button class="dk bag"><span>${ICONS.bag}</span><small>${T('Bag', 'Ba lô')}</small><kbd class="kb">B</kbd></button>
         <button class="dk voicecmd" hidden><span>${ICONS.ask}</span><small>${T('Ask', 'Hỏi')}</small><kbd class="kb">K</kbd></button>
@@ -74,6 +75,9 @@ export class Hud {
     hold(this.q('.mv.run'), '_btnRun'); hold(this.q('.mv.jump'), '_btnJump');
     this.q('.act').addEventListener('pointerdown', e => { e.preventDefault(); pad._act = true; });
     this.q('.dk.games').onclick = () => game.openGamesHub(i);
+    // the Simple screen (js/simple.js): one player on this device only
+    this.q('.dk.simple').hidden = game.mode === 'split' || i > 0;
+    this.q('.dk.simple').onclick = () => game.simple && game.simple.show();
     this.q('.pcard').onclick = () => game.openQuick(i);
     this.q('.dk.map').onclick = () => game.openPad(i, 'map');
     this.q('.dk.bag').onclick = () => game.openPad(i, 'bag');
