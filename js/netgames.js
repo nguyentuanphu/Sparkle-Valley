@@ -5,7 +5,7 @@
 // checked by js/netmsg.js). If a player leaves, the others are told kindly and the game ends.
 // The transport is passed in, so the same logic runs with the real network (js/net.js) and in tests.
 //   createNetGames({ net, me: () => myId, name: id => name, onAsk, onStart, toast })
-export const ONLINE_GAMES = { caro: { max: 2, all: false }, oantuti: { max: 6, all: true } };
+export const ONLINE_GAMES = { caro: { max: 2, all: false }, oantuti: { max: 6, all: true }, memory: { max: 4, all: true }, tienlen: { max: 4, all: true } };
 const newGid = () => Math.random().toString(36).slice(2, 10);
 
 export function createNetGames({ net, me, onAsk, onStart, onEnd, waitMs = 12000 }) {

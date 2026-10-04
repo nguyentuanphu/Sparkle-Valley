@@ -652,7 +652,7 @@ export function openPad(game, i, tab) {
   }
   function drawLog(body) {
     const next = game.currentQuest(p);
-    body.innerHTML = (game.coop ? game.coop.html() : '') + `<h3>${T('Main adventure', 'Cuộc phiêu lưu chính')}</h3><ol class="quests">${QUESTS.map(q => { const done = !!p.quests[q.id] || (q.check && q.check(p)); return `<li class="${done ? 'done' : q === next ? 'now' : ''}"><span>${done ? '✅' : q.icon}</span>${esc(q.title())}</li>`; }).join('')}</ol>
+    body.innerHTML = (game.coop ? game.coop.html() : '') + (game.chests ? game.chests.html(p) : '') + `<h3>${T('Main adventure', 'Cuộc phiêu lưu chính')}</h3><ol class="quests">${QUESTS.map(q => { const done = !!p.quests[q.id] || (q.check && q.check(p)); return `<li class="${done ? 'done' : q === next ? 'now' : ''}"><span>${done ? '✅' : q.icon}</span>${esc(q.title())}</li>`; }).join('')}</ol>
       <p class="note">✨ ${T('Shrines solved', 'Đền đã giải')}: ${Object.keys(p.shrines).length}/12 · 🗼 ${T('Towers', 'Tháp')}: ${Object.keys(p.towers).length}/4 · 🍳 ${T('Recipes', 'Công thức')}: ${Object.keys(p.dishes).length}/${RECIPES.length}</p>
       <h3>${T('Recipe book', 'Sổ công thức')}</h3><div class="recipes">${RECIPES.map(r => { const known = p.dishes[r.id] != null; return `<div class="rec ${known ? '' : 'unk'}"><span>${known ? r.icon : '❔'}</span><small>${known ? esc(r.name()) : r.need.map((n, k) => k === 0 ? ITEMS[n].icon : '❔').join(' + ')}</small></div>`; }).join('')}</div>`;
   }
