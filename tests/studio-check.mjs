@@ -11,6 +11,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
+import { start } from './harness.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // ---------- a pretend GitHub: blobs, trees, commits and branches in memory ----------
@@ -164,12 +165,39 @@ export async function studioCheck(browser, open) {
     const inb = (await call('/studio/api/inbox', { cookie: C })).j;
     ok(Array.isArray(inb) && inb.length === 2 && inb[0].text === 'A brand new line!' && inb[0].n === 2, 'inbox: ' + JSON.stringify(inb));
     notes.push('players: 3 devices counted, nothing personal kept; inbox has 2 lines');
+    // 4b. offline play is not lost, and a send whose answer was lost is counted once
+    {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true });
+      await ctx.addInitScript(() => { window.__svHelloTest = 'manual'; localStorage.setItem('sv2_settings', JSON.stringify({ lang: 'vi', voice: false, sound: false, music: false, quality: 'low' })); });
+      const pg = await ctx.newPage(); await pg.goto(site + '/'); await start(pg);
+      const ymd = t => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+      const today = ymd(Date.now()), yday = ymd(Date.now() - 864e5);
+      await ctx.setOffline(true);
+      const off = await pg.evaluate(async ([today, yday]) => { const P = await import('/js/players.js'); P.countPlay('game', 'caro'); P.countPlay('tale');
+        const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today].m = 12; o.days[yday] = { m: 20, g: { oanquan: 1 }, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o));
+        const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem('sv2_hello_out')), me: localStorage.getItem('sv2_playerid') }; }, [today, yday]);
+      ok(!off.sent && off.out.pending && off.out.pending.days.length === 2, 'offline: the outbox did not keep the play: ' + JSON.stringify(off));
+      const before = players._m.size;
+      await ctx.setOffline(false);
+      const on = await pg.evaluate(async () => { const P = await import('/js/players.js'); const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem('sv2_hello_out')), me: localStorage.getItem('sv2_playerid') }; });
+      const rec = d => JSON.parse(players._m.get(`d/${d}/${on.me}`) || 'null');
+      ok(players._m.size > before && on.sent && !on.out.pending && rec(yday) && rec(yday).mins === 20 && rec(yday).games.oanquan === 1 && rec(today).mins === 12 && rec(today).games.caro === 1 && rec(today).tales === 1, 'back online: the waiting play was not counted on its own days: ' + JSON.stringify({ on, y: rec(yday), t: rec(today) }));
+      // the website gets it but the answer is lost: the device keeps the batch and sends the same one again
+      await pg.route('**/api/hello', async route => { await route.fetch(); await route.fulfill({ status: 500, body: '' }); });
+      const lost = await pg.evaluate(async today => { const P = await import('/js/players.js'); const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today] = { m: 5, g: {}, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o)); return { sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; }, today);
+      ok(!lost.sent && lost.out.pending && rec(today).mins === 17, 'lost answer: ' + JSON.stringify({ lost, t: rec(today) }));
+      await pg.unroute('**/api/hello');
+      const again = await pg.evaluate(async () => { const P = await import('/js/players.js'); return { sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; });
+      ok(again.sent && !again.out.pending && rec(today).mins === 17, 'the same batch was counted twice: ' + JSON.stringify({ again, t: rec(today) }));
+      await ctx.close();
+      notes.push('offline play waits in an outbox and is counted on its own days; a re-sent batch counts once');
+    }
     // 5. the exe: same engine, its own folder; the players report through the website; the same version
     const ex = async (p, body) => { const r = await fetch(`http://localhost:${SPORT}/studio/api/` + p, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}); return { status: r.status, j: await r.json().catch(() => null) }; };
     const ei = await ex('info'); ok(ei.j && ei.j.ok && !ei.j.online && ei.j.studio === info.j.studio, 'exe info: ' + JSON.stringify(ei.j));
     ok((await ex('content', { message: { en: 'From the exe', vi: 'Từ máy' } })).status === 200 && /exe/.test(fs.readFileSync(path.join(game, 'content/custom.json'), 'utf8')), 'the exe did not save into its folder');
     ok(fs.readdirSync(path.join(game, 'content/old')).length === 1, 'the exe kept no backup of the old content');
-    ok((await ex('players')).j.today.devices === 3, 'the exe could not show the players');
+    { const web = (await call('/studio/api/players', { cookie: C })).j, exeR = (await ex('players')).j; ok(exeR && exeR.today && exeR.today.devices === web.today.devices && web.today.devices >= 3, 'the exe could not show the players: ' + JSON.stringify({ exe: exeR && exeR.today, web: web.today })); }
     ok((await ex('voices/inbox')).j.length === 2, 'the exe could not see the inbox');
     const chk = (await ex('check')).j; ok(chk.some(x => x.ok && /the same here and online/.test(x.en)), 'the exe and online versions were not compared: ' + JSON.stringify(chk.map(x => x.en)));
     notes.push('exe: saves to its folder with a backup, players via the website, same version');

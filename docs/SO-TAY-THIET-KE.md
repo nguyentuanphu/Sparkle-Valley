@@ -161,7 +161,7 @@ What may leave the device:
 
 | What | Where | Rule |
 |---|---|---|
-| Player count hello | `/api/hello` (Netlify Blobs) | Random id, build, language, number of profiles, minutes, games started, stories opened, device type, installed, minutes with friends, ≤ 15 machine-voice lines without names. **Never** names, photos, places or anything typed. Off switch: Grown-ups → Advanced → Count players |
+| Player count hello | `/api/hello` (Netlify Blobs) | Random id, build, language, number of profiles, minutes, games started, stories opened, device type, installed, minutes with friends, ≤ 15 machine-voice lines without names. **Never** names, photos, places or anything typed. Off switch: Grown-ups → Advanced → Count players. **Offline play is not lost:** it waits in a small outbox on the device (per day, ≤ 14 days) and is sent when online, counted on the day it was played; a batch keeps its one-time id until the website confirms it, so a re-send counts once |
 | Online play | PeerJS + cloud relay | Room code is a meeting point, **not** a secret; photos have their own pair lock (ECDH); every message is checked before use |
 | Backups | The family's own Drive/iCloud | Never to our server |
 | Studio online | GitHub (draft branch) | Behind `STUDIO_PASSWORD`; only `content/ voices/ photos/ tools/voice-extra.json` can change |
