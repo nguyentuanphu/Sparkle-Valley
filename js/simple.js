@@ -15,6 +15,8 @@ import { saveProfiles } from './state.js';
 import { GAMES, gameOpen } from './games/frame.js';
 import { HUB, holdButton, openGrownups } from './ui.js';
 
+// a star drawn on the picture card (round I, owner: "stars without a strip, placed on the icon"): gold when earned
+const STAR = 'M12 1.8l3.1 6.4 7 1-5.1 4.9 1.2 7-6.2-3.3-6.2 3.3 1.2-7L1.9 9.2l7-1z';
 export const wantsSimple = p => (p.screen ? p.screen === 'simple' : p.age !== 'big');
 // stars on the path: played once, twice, four times
 export const starsOf = (p, id) => { const w = (p.wins || {})[id] || 0; return w >= 4 ? 3 : w >= 2 ? 2 : w >= 1 ? 1 : 0; };
@@ -65,8 +67,7 @@ export function createSimple(G) {
     path.style.setProperty('--lw', L.lw + 'px');
     path.innerHTML = `<svg class="sp-road" aria-hidden="true"><path/><path class="dash"/></svg>` +
       list.map((s, k) => `<button class="sp-stop${k === next ? ' next' : ''}" data-k="${k}" aria-label="${esc(s.name)}">
-        <span class="sp-pic">${pic(s.icon)}${s.badge ? `<i class="sp-badge">${s.badge}</i>` : ''}</span>
-        ${s.max ? `<span class="sp-stars" aria-hidden="true">${[...Array(s.max)].map((_, j) => `<i class="${j < s.stars ? 'on' : ''}">★</i>`).join('')}</span>` : ''}
+        <span class="sp-pic">${pic(s.icon)}${s.badge ? `<i class="sp-badge">${s.badge}</i>` : ''}${s.max ? `<span class="sp-stars n${s.max}" aria-hidden="true">${[...Array(s.max)].map((_, j) => `<svg class="${j < s.stars ? 'on' : ''}" viewBox="0 0 24 24"><path d="${STAR}"/></svg>`).join('')}</span>` : ''}</span>
         <b class="sp-name">${esc(s.name)}</b></button>`).join('');
     // measure the tallest stop (its name may take two or three lines), then place them all
     const btns = [...path.querySelectorAll('.sp-stop')], tall = Math.max(150, ...btns.map(b => b.offsetHeight));
