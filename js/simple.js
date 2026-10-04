@@ -40,16 +40,18 @@ export function createSimple(G) {
   // left and the path winds sideways, scrolling left and right, like a road across the screen
   const wideQ = typeof matchMedia === 'function' ? matchMedia('(orientation: landscape) and (max-height: 560px)') : null;
   const wide = () => !!(wideQ && wideQ.matches);
-  function layoutWide(n, h) {
-    const gx = 168, mid = Math.max(130, h / 2 - 6), pts = [];
-    for (let k = 0; k < n; k++) pts.push({ x: 96 + k * gx, y: mid + (k % 2 ? 30 : -30) });
-    return { pts, w: 96 + n * gx };
+  // each stop is placed by the middle of its picture; its stars and full name hang below it (names are never cut:
+  // the label is as wide as its column allows and the rows move apart to fit the tallest one)
+  function layoutWide(n, h, tall) {
+    const gx = 184, mid = Math.max(70, Math.min(h / 2 - 20, h - tall + 30)), pts = [];
+    for (let k = 0; k < n; k++) pts.push({ x: 104 + k * gx, y: mid + (k % 2 ? 26 : -26) });
+    return { pts, w: 104 + n * gx, lw: gx - 16 };
   }
   // where each stop sits: a snake of rows across the screen, joined by a winding road
-  function layout(n, w) {
-    const cols = w < 520 ? 2 : w < 820 ? 3 : w < 1100 ? 4 : 5, gx = w / cols, gy = 228, pts = [];
-    for (let k = 0; k < n; k++) { const r = Math.floor(k / cols), c = k % cols, cc = r % 2 ? cols - 1 - c : c; pts.push({ x: gx * (cc + .5), y: 96 + r * gy + (c % 2) * 18 }); }
-    return { pts, h: 96 + Math.ceil(n / cols) * gy + 40 };
+  function layout(n, w, tall) {
+    const cols = w < 520 ? 2 : w < 820 ? 3 : w < 1100 ? 4 : 5, gx = w / cols, gy = Math.max(200, tall + 40), pts = [];
+    for (let k = 0; k < n; k++) { const r = Math.floor(k / cols), c = k % cols, cc = r % 2 ? cols - 1 - c : c; pts.push({ x: gx * (cc + .5), y: 76 + r * gy + (c % 2) * 18 }); }
+    return { pts, h: 76 + (Math.ceil(n / cols) - 1) * gy + tall + 40, lw: Math.min(230, gx - 14) };
   }
   const roadWide = pts => pts.map((q, k) => k ? `C${pts[k - 1].x + 70},${pts[k - 1].y} ${q.x - 70},${q.y} ${q.x},${q.y}` : `M${q.x - 120},${q.y} L${q.x},${q.y}`).join(' ');
   const road = pts => pts.map((q, k) => { if (!k) return `M${q.x},${q.y}`; const a = pts[k - 1], my = (a.y + q.y) / 2; return a.y === q.y || Math.abs(a.y - q.y) < 40 ? `C${(a.x + q.x) / 2},${a.y - 30} ${(a.x + q.x) / 2},${q.y + 30} ${q.x},${q.y}` : `C${a.x + (a.x < q.x ? 90 : -90)},${my} ${q.x + (a.x < q.x ? -90 : 90)},${my} ${q.x},${q.y}`; }).join(' ');
@@ -57,15 +59,21 @@ export function createSimple(G) {
     if (!m) return;
     const list = stops(), path = m.querySelector('.sp-path'), sc = m.querySelector('.sp-scroll'), isWide = wide();
     m.classList.toggle('wide', isWide);
-    let w, h, pts, d;
-    if (isWide) { h = sc.clientHeight || innerHeight - 80; ({ pts, w } = layoutWide(list.length, h)); d = roadWide(pts); }
-    else { w = path.clientWidth || innerWidth; ({ pts, h } = layout(list.length, w)); d = road(pts); }
-    const next = list.findIndex(s => s.max && !s.stars);
-    path.innerHTML = `<svg class="sp-road" width="${w}" height="${h}" aria-hidden="true"><path d="${d}"/><path class="dash" d="${d}"/></svg>` +
-      list.map((s, k) => `<button class="sp-stop${k === next ? ' next' : ''}" data-k="${k}" style="left:${pts[k].x}px;top:${pts[k].y}px" aria-label="${esc(s.name)}">
+    const next = list.findIndex(s => s.max && !s.stars), H = sc.clientHeight || innerHeight - 80, W = path.clientWidth || innerWidth;
+    const place = tall => isWide ? layoutWide(list.length, H, tall) : layout(list.length, W, tall);
+    let L = place(230);
+    path.style.setProperty('--lw', L.lw + 'px');
+    path.innerHTML = `<svg class="sp-road" aria-hidden="true"><path/><path class="dash"/></svg>` +
+      list.map((s, k) => `<button class="sp-stop${k === next ? ' next' : ''}" data-k="${k}" aria-label="${esc(s.name)}">
         <span class="sp-pic">${pic(s.icon)}${s.badge ? `<i class="sp-badge">${s.badge}</i>` : ''}</span>
         ${s.max ? `<span class="sp-stars" aria-hidden="true">${[...Array(s.max)].map((_, j) => `<i class="${j < s.stars ? 'on' : ''}">★</i>`).join('')}</span>` : ''}
         <b class="sp-name">${esc(s.name)}</b></button>`).join('');
+    // measure the tallest stop (its name may take two or three lines), then place them all
+    const btns = [...path.querySelectorAll('.sp-stop')], tall = Math.max(150, ...btns.map(b => b.offsetHeight));
+    L = place(tall);
+    const w = isWide ? L.w : W, h = isWide ? H : L.h, d = isWide ? roadWide(L.pts) : road(L.pts);
+    btns.forEach((b, k) => { b.style.left = L.pts[k].x + 'px'; b.style.top = L.pts[k].y + 'px'; });
+    const svg = path.querySelector('svg'); svg.setAttribute('width', w); svg.setAttribute('height', h); svg.querySelectorAll('path').forEach(p => p.setAttribute('d', d));
     path.style.height = h + 'px'; path.style.width = isWide ? w + 'px' : '';
     m.querySelectorAll('.sp-tabs [data-tab]').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
     path.querySelectorAll('.sp-stop').forEach(b => b.onclick = () => go(list[+b.dataset.k]));

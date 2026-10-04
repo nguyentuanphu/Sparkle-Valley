@@ -1864,3 +1864,10 @@ body.calm .sp-stop.next .sp-pic { animation: none; }
 .sp-stop { gap: 6px; }
 .sp-stars { margin-top: 0; padding: 2px 10px; box-shadow: 0 2px 0 rgba(60, 100, 40, .25); position: relative; z-index: 1; }
 .sp-stop:active .sp-pic { transform: none; box-shadow: 0 6px 0 rgba(60, 100, 40, .35); filter: brightness(.95); }
+/* names are shown in full (owner, round I): placed by the middle of the picture, the name as wide as its column */
+.sp-stop { transform: translate(-50%, -52px); }
+.simple-screen.wide .sp-stop { transform: translate(-50%, -48px); }
+.sp-name { display: block; max-width: var(--lw, 168px); -webkit-line-clamp: unset; overflow: visible; white-space: normal; text-wrap: balance; }
+/* every stop is as wide as its column's label, wherever it sits (so it is measured right and never squeezed at an edge) */
+.sp-stop { width: var(--lw, 168px); min-width: 0; }
+.sp-name { max-width: 100%; }
