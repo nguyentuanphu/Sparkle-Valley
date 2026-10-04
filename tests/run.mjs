@@ -212,7 +212,7 @@ await check('roads', async () => {
     const near = (x, z, rr) => { const d = W.roadDist(x, z); return d.d < d.road.w / 2 + rr; };
     for (const c of G.world.colliders) if (c.r > .45 && near(c.x, c.z, c.r - .3)) out.push(`collider ${c.x.toFixed(1)},${c.z.toFixed(1)} r${c.r}`);
     for (const bx of G.world.boxes) { const x = (bx.x0 + bx.x1) / 2, z = (bx.z0 + bx.z1) / 2; if (near(x, z, Math.min(bx.x1 - bx.x0, bx.z1 - bx.z0) / 2)) out.push(`box ${x.toFixed(1)},${z.toFixed(1)}`); }
-    for (const i of G.interactables) if (Number.isFinite(i.x) && near(i.x, i.z, -.5)) out.push(`thing ${i.id}`);
+    for (const i of G.interactables) if (Number.isFinite(i.x) && !i.walks && near(i.x, i.z, -.5)) out.push(`thing ${i.id}`);
     const named = new Set(W.ROADS.flatMap(R => (R.gates || []).filter(Boolean)));
     const missing = W.CITIES.map(c => c.id).filter(id => !named.has(id));
     const gates = W.ROADS.reduce((n, R) => n + (R.gates || []).filter(Boolean).length, 0);

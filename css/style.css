@@ -951,6 +951,11 @@ button { color: var(--text); }
   .pad-tabs button span { font-size: 22px; }
   .pad-tabs button small { font-size: 10.5px; max-width: 100%; white-space: normal; line-height: 1.05; text-align: center; overflow-wrap: anywhere; }
 }
+/* the narrowest phones: eight tabs of 44 px don't fit in one row, so they sit in two rows of four */
+@media (max-width: 380px) {
+  .pad-tabs { flex-wrap: wrap; overflow-x: visible; }
+  .pad-tabs button { flex: 1 0 25%; }
+}
 .gl-title { min-width: 0; } .gl-title > span:last-child { min-width: 0; overflow-wrap: anywhere; line-height: 1.1; }
 @media (max-width: 480px) { .gl-title { font-size: 16px; } .gl-head { gap: 8px; padding: 10px; } }
 .vrow input { min-width: 0; flex: 1; }
