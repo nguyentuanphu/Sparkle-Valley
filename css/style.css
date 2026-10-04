@@ -1771,3 +1771,18 @@ body.calm .rv-img.on { animation: none; }
    buttons below it down instead of lying on top of them (owner's iPhone screenshot) */
 .hud .hud-tr .friendchip, .hud.small .hud-tr .friendchip { position: static; top: auto; right: auto; align-self: flex-end; pointer-events: auto; max-width: min(240px, 46vw); }
 .hud .hud-tr .friendchip[hidden] { display: none; }
+
+/* Tiến Lên: the deal (js/games/tienlen.js dealCards): a deck in the middle, cards flying to each player */
+.tl { position: relative; }
+.tl-card.back { background: repeating-linear-gradient(45deg, #c0392b 0 6px, #e0574a 6px 12px); border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, .3); }
+.tl-deck { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); pointer-events: none; z-index: 3; }
+.tl-deck .tl-card { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); }
+.tl-deck .tl-card:nth-child(2) { margin: -2px 0 0 2px; } .tl-deck .tl-card:nth-child(3) { margin: -4px 0 0 4px; }
+.tl-fly { position: absolute; z-index: 4; pointer-events: none; margin: calc(clamp(56px, 16vw, 78px) / -2) 0 0 calc(clamp(38px, 11vw, 54px) / -2); transition: transform .3s ease-out, opacity .3s ease-in; }
+@media (prefers-reduced-motion: reduce) { .tl-fly { transition: none; } }
+
+/* Oẳn tù tì with friends online (js/games/more.js rpsOnline): everyone's hand, shown together */
+.rps-room { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 6px 0 14px; }
+.rps-p { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 80px; padding: 8px 10px; border-radius: 16px; background: rgba(255, 255, 255, .85); }
+.rps-p .h { font-size: 44px; line-height: 1.1; } .rps-p b { font-size: 14px; } .rps-p small { font-weight: 800; color: #7a4aa0; }
+.rps-p.me { outline: 3px solid #5fb6ff; } .rps-p.won { background: #e6ffd8; outline: 3px solid #5fd39a; }

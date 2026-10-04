@@ -56,6 +56,7 @@ import { createFamilyCards } from './familycards.js';
 import { createMyHouse } from './myhouse.js';
 import { createReport, addMinute } from './report.js';
 import { createCoop } from './coop.js';
+import { createNetGames, ONLINE_GAMES } from './netgames.js';
 import { id as makeId } from './core/ids.js';
 import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
@@ -797,7 +798,41 @@ Net.on('hello', r => {
   if (G.onNet) G.onNet();
 });
 Net.on('emote', d => { const e = EMOTES.find(e => e.id === d.id), P = G.partners[d.from]; if (!e || !P) return; bubble(P, e.icon + ' ' + T(e.en, e.vi)); say(e.en, e.vi); });
+// ---------- games with friends online (js/netgames.js, round G) ----------
+const remoteName = id => (Net.remotes[id] && Net.remotes[id].name) || T('Your friend', 'Bạn');
+G.netGames = createNetGames({
+  net: { ids: () => Object.keys(Net.remotes), send: d => Net.send(d) }, me: () => Net.me,
+  onAsk: d => { // "Mít wants to play Caro with you!"
+    const h = G.heroes[0], gname = (GAMES[d.game] && GAMES[d.game].name()) || d.game; SFX.chime();
+    say('A friend wants to play a game with you!', 'Một bạn muốn chơi trò chơi với con!');
+    dialog(remoteName(d.from), [[`🎲 ${remoteName(d.from)} wants to play ${gname} with you!`, `🎲 ${remoteName(d.from)} muốn chơi ${gname} với con!`, 'Your friend wants to play a game with you!', 'Bạn của con muốn chơi một trò với con!']], [['▶ Play', '▶ Chơi'], ['Not now', 'Để sau']])
+      .then(k => G.netGames.answer(d, k === 0 && !gameOpen() && !!h));
+  },
+  onStart: (s, ask) => {
+    if (!s) { toast(T('Nobody could play just now. Try again later!', 'Lúc này chưa bạn nào chơi được. Lát nữa thử lại nhé!')); return; }
+    const names = s.seats.map(id => id === Net.me ? G.heroes[0].profile.name : remoteName(id));
+    const online = { mine: s.mine, names, move: (n, mv) => G.netGames.move(n, mv), next: (n, seat) => G.netGames.next(n, seat), all: n => G.netGames.all(n) };
+    G.playGameOnline(s.game, s.level || 1, online).finally(() => G.netGames.leave());
+  },
+  onEnd: id => toast(T(`${remoteName(id)} left the game.`, `${remoteName(id)} đã rời trò chơi.`))
+});
+for (const k of ['gask', 'gyes', 'gno', 'gstart', 'gmove', 'gbye']) Net.on(k, d => G.netGames.receive(d));
+// invite: one friend to a two-player game, or everyone in the room to a party game
+G.inviteGame = (game, to) => { const p = G.heroes[0].profile, lvl = Math.max(1, Math.min(5, (p.levels[game] || 1))); const gid = G.netGames.invite(game, lvl, ONLINE_GAMES[game].all ? undefined : to); if (gid) toast(T('Invitation sent! Waiting for an answer…', 'Đã gửi lời mời! Đang chờ trả lời…')); return gid; };
+G.playGameOnline = async (id, level, online) => {
+  if (gameOpen()) return; G.paused = true; hush();
+  const p = G.heroes[0].profile, little = p.age !== 'big';
+  const actId = makeId('act', id, String(++G.actCount)), playerIds = online.names.map((_, s) => s === online.mine ? makeId('player', p.id || 'guest') : makeId('player', 'online-' + s));
+  events.emit('ActivityStarted', { activityId: actId, kind: 'game', defId: makeId('game', id), players: playerIds, source: 'online' });
+  const res = await openGame(id, { players: [p], level, little, strong: false, online, style: 'village' });
+  G.paused = false;
+  if (res.won) { events.emit('ActivityCompleted', { activityId: actId, defId: makeId('game', id), players: playerIds, result: { won: true, stars: res.stars || 0, level } }); farm.coins += 5; save(); }
+  else events.emit('ActivityAbandoned', { activityId: actId, reason: 'left' });
+  return res;
+};
+
 Net.on('left', r => {
+  G.netGames.left(r.id);
   const P = G.partners[r.id]; if (P) { scene.remove(P.av.root); scene.remove(P.tag); delete G.partners[r.id]; }
   if (!Net.connected || !Object.keys(G.partners).length) G.huds.forEach(hd => hd.setCall(false));
   toast(T(`${r.name || 'Your friend'} left.`, `${r.name || 'Bạn'} đã rời đi.`)); if (G.onNet) G.onNet();
@@ -948,7 +983,8 @@ G.drawOnlinePanel = (body, redraw) => {
       ${Net.role === 'host' && Net.knocks.size ? `<div class="ocard knocks"><h3>🚪 ${T('At the door', 'Đang gõ cửa')}</h3>${[...Net.knocks.values()].map(k => `<div class="prow"><img src="${avatarURL({ photo: k.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, k.look) })}" alt=""><div class="pw"><b>${esc(nm(k.name || T('Someone', 'Một bạn')))}</b></div><button class="btn primary" data-admit="${esc(k.id)}">✅ ${T('Let in', 'Cho vào')}</button><button class="btn" data-deny="${esc(k.id)}">❌</button></div>`).join('')}</div>` : ''}
       ${(n => `<p class="note center netline">📶 ${T('This device', 'Máy này')}: ${n.online ? (n.type ? esc(n.type) + ' · ' : '') + (n.eff ? esc(n.eff.toUpperCase()) + ' · ' : '') + (n.down ? n.down + ' Mbps · ' : '') : T('no internet!', 'mất mạng!') + ' · '}${n.cloud ? T(`cloud relay on (${n.brokers} server${n.brokers === 1 ? '' : 's'})`, `đang dùng mạng đám mây (${n.brokers} máy chủ)`) : T('direct link', 'kết nối trực tiếp')}${n.voice ? ' · 🎙️ ' + T('voice on', 'đang gọi') : n.cloud ? ' · ' + T('voice needs a direct link', 'gọi giọng cần kết nối trực tiếp') : ''}</p>`)(Net.netInfo())}
       <div class="plist">${list.map(r => `<div class="prow roomp"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(nm(r.name))}</b>${(q => q ? `<small class="pq">${G.barsHTML(q.bars)} ${q.rtt != null ? q.rtt + ' ms' : '…'} · ${routeName(q.route)}${q.weak ? ' · ' + T('weak', 'yếu') : ''}</small>` : '')(Net.quality(r.id))}</div>
-        <div class="rp-btns"><button class="btn" data-walkf="${esc(r.id)}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${esc(r.id)}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${esc(r.id)}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${esc(r.id)}">🔄 ${T('Trade', 'Đổi đồ')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${esc(r.id)}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${esc(r.friend)}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div></div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
+        <div class="rp-btns"><button class="btn" data-walkf="${esc(r.id)}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${esc(r.id)}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${esc(r.id)}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${esc(r.id)}">🔄 ${T('Trade', 'Đổi đồ')}</button><button class="btn" data-caro="${esc(r.id)}">⭕ ${T('Caro', 'Caro')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${esc(r.id)}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${esc(r.friend)}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div></div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
+      ${list.length ? `<div class="actions center"><button class="btn" data-rpsall>✌️ ${T('Oẳn tù tì with everyone', 'Oẳn tù tì cả phòng')}</button></div>` : ''}
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
       <div class="actions center"><button class="btn big" id="oMute">${Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
       ${friendsBox()}</div>`;
@@ -962,6 +998,9 @@ G.drawOnlinePanel = (body, redraw) => {
     body.querySelectorAll('[data-callf]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; G.askFriendToCome(G.heroes[0], b.dataset.callf); });
     body.querySelectorAll('[data-kick]').forEach(b => b.onclick = () => { if (confirm(T('Remove this player from the room?', 'Mời bạn này ra khỏi phòng?'))) { Net.kick(b.dataset.kick); setTimeout(redraw, 600); } });
     body.querySelectorAll('[data-tr]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; openTrade(G, G.heroes[0], b.dataset.tr); });
+    // games with friends (round G): Caro with one friend, Oẳn tù tì with everyone in the room
+    body.querySelectorAll('[data-caro]').forEach(b => b.onclick = () => { SFX.tap(); G.inviteGame('caro', b.dataset.caro); });
+    { const r = body.querySelector('[data-rpsall]'); if (r) r.onclick = () => { SFX.tap(); G.inviteGame('oantuti'); }; }
     body.querySelectorAll('[data-addf]').forEach(b => b.onclick = () => { addFriend(b.dataset.addf, b.dataset.n); SFX.chime(); toast(T('Friend added!', 'Đã thêm bạn!')); redraw(); });
     bindFriends();
     return;

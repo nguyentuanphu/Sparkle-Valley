@@ -92,14 +92,14 @@ register({
     const cardHTML = (c, cls = '') => `<div class="tl-card ${c.s >= 2 ? 'red' : ''} ${cls}" data-v="${c.v}"><b>${RANKS[c.r]}</b><i>${SUITS[c.s]}</i></div>`;
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     const HANDS = little ? 2 : 3;
-    let hands, table, lastBy, passed, turn, sel, finished, game = 0, firstHand = true;
+    let hands, table, lastBy, passed, turn, sel, finished, game = 0, firstHand = true, shown = null; // shown: cards dealt so far, while dealing
 
     const say = (en, vi) => { msgEl.textContent = T(en, vi); };
     function drawOpp() {
-      oppEl.innerHTML = [1, 2].map(i => `<div class="tl-p ${turn === i ? 'on' : ''} ${passed.has(i) ? 'out' : ''}"><span class="f">${faces[i]}</span><b>${names[i]}</b><span class="n">🂠 ${hands[i].length}</span>${passed.has(i) ? `<small>${T('passed', 'bỏ')}</small>` : ''}</div>`).join('');
+      oppEl.innerHTML = [1, 2].map(i => `<div class="tl-p ${turn === i ? 'on' : ''} ${passed.has(i) ? 'out' : ''}"><span class="f">${faces[i]}</span><b>${names[i]}</b><span class="n">🂠 ${shown ? shown[i] : hands[i].length}</span>${passed.has(i) ? `<small>${T('passed', 'bỏ')}</small>` : ''}</div>`).join('');
     }
     function drawHand() {
-      handEl.innerHTML = hands[0].map(c => cardHTML(c, sel.has(c.v) ? 'sel' : '')).join('');
+      handEl.innerHTML = (shown ? hands[0].slice(0, shown[0]) : hands[0]).map(c => cardHTML(c, sel.has(c.v) ? 'sel' : '')).join('');
       handEl.querySelectorAll('.tl-card').forEach(e => { e.onclick = () => { if (turn !== 0) return; const v = +e.dataset.v; sel.has(v) ? sel.delete(v) : sel.add(v); api.sfx.tap(); drawHand(); updateBtns(); }; });
       t.classList.toggle('mine', turn === 0);
     }
@@ -117,13 +117,31 @@ register({
       sel = new Set(cs ? cs.map(c => c.v) : []); drawHand(); updateBtns();
       if (!cs) say('Nothing beats it. Tap Pass!', 'Không có bài nào chặn được. Bấm Bỏ lượt nhé!');
     }
-    function deal() {
+    // dealing, the way it is done at the table: a deck in the middle, one card at a time to each player in turn
+    // (owner, round G: "Tiến Lên should show the cards being dealt"); little ones get a quicker deal
+    async function dealCards() {
+      shown = [0, 0, 0]; drawOpp(); drawHand();
+      const deckEl = el('div', 'tl-deck', '<div class="tl-card back"></div><div class="tl-card back"></div><div class="tl-card back"></div>'); t.appendChild(deckEl);
+      const box = t.getBoundingClientRect(), mid = (e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2 - box.left, r.top + r.height / 2 - box.top]; });
+      const from = mid(deckEl), to = [() => mid(handEl), () => mid(oppEl.children[0] || oppEl), () => mid(oppEl.children[1] || oppEl)];
+      const gap = little ? 28 : 45;
+      for (let k = 0; k < 39 && !api.closed; k++) {
+        const who = (turn + k) % 3, fly = el('div', 'tl-card back tl-fly'); fly.style.left = from[0] + 'px'; fly.style.top = from[1] + 'px'; t.appendChild(fly);
+        const [x, y] = to[who](); requestAnimationFrame(() => { fly.style.transform = `translate(${x - from[0]}px, ${y - from[1]}px) rotate(${(who - 1) * 12}deg) scale(.8)`; fly.style.opacity = '.2'; });
+        setTimeout(() => { fly.remove(); shown[who]++; if (who === 0) drawHand(); else drawOpp(); }, 320);
+        if (k % 3 === 0) api.sfx.tap();
+        await sleep(gap);
+      }
+      await sleep(360); deckEl.remove(); shown = null;
+    }
+    async function deal() {
       const deck = []; for (let r = 0; r < 13; r++) for (let s = 0; s < 4; s++) deck.push(card(r, s));
       for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
       hands = [0, 1, 2].map(i => deck.slice(i * 13, i * 13 + 13).sort(byV));
       table = null; lastBy = -1; passed = new Set(); sel = new Set(); finished = [];
       // the first hand starts with whoever has the lowest card; after that the winner starts
       if (firstHand) { const low = hands.map(h => h[0].v); turn = low.indexOf(Math.min(...low)); }
+      drawTable(); await dealCards(); if (api.closed) return;
       drawOpp(); drawHand(); drawTable(); updateBtns();
     }
     function nextTurn() {
@@ -157,7 +175,7 @@ register({
 
     let wins = 0;
     for (game = 0; game < HANDS && !api.closed; game++) {
-      deal(); firstHand = false;
+      await deal(); firstHand = false; if (api.closed) return;
       api.dots(HANDS, game);
       while (!api.closed && finished.length === 0) {
         drawOpp(); drawTable(); drawHand(); updateBtns();

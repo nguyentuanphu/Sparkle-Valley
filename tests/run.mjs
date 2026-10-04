@@ -832,6 +832,70 @@ await check('iphone', async () => {
   return 'microphone: "tap to talk" (not "no microphone"), on after the next tap and put into the open call; real "no microphone" still said; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
 });
 
+await check('tienlen', async () => {
+  // Tiến Lên deals the cards (owner, round G): cards fly from a deck in the middle to each player in turn, the hand
+  // fills up as they arrive, and play starts with 13 cards each
+  const P = await open(b, { w: 900, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), seen = { fly: 0, deck: false, handSizes: new Set() };
+    G.playGame(0, 'tienlen', 'replay');
+    const t0 = performance.now();
+    while (performance.now() - t0 < 6000) {
+      seen.fly = Math.max(seen.fly, document.querySelectorAll('.tl-fly').length); seen.deck = seen.deck || !!document.querySelector('.tl-deck');
+      seen.handSizes.add(document.querySelectorAll('.tl-hand .tl-card').length); await wait(40);
+    }
+    const hand = document.querySelectorAll('.tl-hand .tl-card').length, opp = [...document.querySelectorAll('.tl-opp .n')].map(e => e.textContent.trim());
+    document.querySelector('.gl .gl-x')?.click(); await wait(300);
+    return { fly: seen.fly, deck: seen.deck, steps: seen.handSizes.size, hand, opp };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.deck && r.fly >= 1 && r.steps >= 6 && r.hand === 13 && r.opp.every(x => /13/.test(x)) && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `a deck in the middle, cards flying (up to ${r.fly} at once), the hand filled in ${r.steps} steps to 13; each player has 13`;
+});
+
+await check('netgames', async () => {
+  // games with friends online (js/netgames.js, round G), two devices through the cloud relay: A invites B to Caro from
+  // Pad → Friends, B taps Play, both boards show each move, A wins on both screens; then Oẳn tù tì with everyone:
+  // both pick, both see both hands, first to 3 points wins
+  const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
+  if (!up) return 'skipped (no local MQTT broker on 127.0.0.1:9001)';
+  const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'GAMEA2', friendsOn: true, autoMeet: false, friends: [{ code: 'GAMEB3', name: 'Bin' }] } });
+  const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'GAMEB3', friendsOn: true, autoMeet: false, friends: [{ code: 'GAMEA2', name: 'Na' }] } });
+  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  await A.page.evaluate(async () => __Net.host(__sv.sendHello())); await A.page.evaluate(() => __sv.shareStatus());
+  await B.page.waitForFunction(() => { const s = __Net.friends.status.GAMEA2; return s && s.online && s.room; }, null, { timeout: 30000 });
+  await B.page.evaluate(() => { __sv.openPad(0, 'friend'); }); await B.page.waitForSelector('[data-joinf]'); await B.page.evaluate(() => document.querySelector('[data-joinf]').click());
+  await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 45000 });
+  await A.page.waitForFunction(() => Object.keys(__Net.remotes).length > 0, null, { timeout: 30000 });
+  for (const P of [A, B]) await P.page.evaluate(() => { document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false; });
+  // Caro: A asks from the Friends tab, B says yes
+  await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-caro]').click(); });
+  await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); const ask = await B.page.evaluate(() => document.querySelector('.dialog .dtext').textContent); await B.page.evaluate(() => document.querySelector('.dialog .dch').click());
+  for (const P of [A, B]) await P.page.waitForSelector('.gl .caro', { timeout: 20000 });
+  const tap = async (P, i) => { await P.page.waitForFunction(i => { const c = document.querySelectorAll('.caro-c')[i]; return c && !c.textContent; }, i); await P.page.evaluate(i => document.querySelectorAll('.caro-c')[i].click(), i); };
+  const seen = async (P, i) => P.page.waitForFunction(i => !!document.querySelectorAll('.caro-c')[i].textContent, i, { timeout: 20000 });
+  for (const [P, Q, i] of [[A, B, 0], [B, A, 3], [A, B, 1], [B, A, 4], [A, B, 2]]) { await tap(P, i); await seen(Q, i); }
+  for (const P of [A, B]) await P.page.waitForSelector('.gl-win', { timeout: 20000 });
+  const caro = { a: await A.page.evaluate(() => document.querySelector('.gl-win p').textContent), b: await B.page.evaluate(() => document.querySelector('.gl-win p').textContent), wonCells: await B.page.evaluate(() => document.querySelectorAll('.caro-c.win').length) };
+  for (const P of [A, B]) { await P.page.evaluate(() => document.querySelector('.gl-tapout')?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))); await P.page.waitForTimeout(800); await P.page.evaluate(() => { document.querySelectorAll('.gl, .modal').forEach(m => m.remove()); __sv.paused = false; }); }
+  // Oẳn tù tì with everyone: A rock, B scissors, three times
+  await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-rpsall]').click(); });
+  await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); await B.page.evaluate(() => document.querySelector('.dialog .dch').click());
+  for (const P of [A, B]) await P.page.waitForSelector('.gl .rps-room', { timeout: 20000 });
+  let hands = null;
+  for (let round = 0; round < 3; round++) {
+    for (const [P, k] of [[A, 0], [B, 2]]) { await P.page.waitForFunction(() => document.querySelectorAll('.gl .choice:not([disabled])').length === 3, null, { timeout: 20000 }); await P.page.evaluate(k => document.querySelectorAll('.gl .choice')[k].click(), k); }
+    await A.page.waitForFunction(() => [...document.querySelectorAll('.rps-p .h')].every(e => !/❔|✅/.test(e.textContent)), null, { timeout: 20000 });
+    if (round === 0) hands = await B.page.evaluate(async () => { await new Promise(r => setTimeout(r, 300)); return [...document.querySelectorAll('.rps-p .h')].map(e => e.textContent); });
+  }
+  for (const P of [A, B]) await P.page.waitForSelector('.gl-win', { timeout: 20000 });
+  const rps = { a: await A.page.evaluate(() => document.querySelector('.gl-win p').textContent), b: await B.page.evaluate(() => document.querySelector('.gl-win p').textContent) };
+  const errs = [...A.errors, ...B.errors]; await A.ctx.close(); await B.ctx.close();
+  ok(/Caro/.test(ask) && /wins/.test(caro.a) && /thắng/.test(caro.b) && caro.wonCells === 3 && hands && hands.join('') === '✊✌️' && /champion/i.test(rps.a) && /thắng/.test(rps.b) && !errs.length, JSON.stringify({ ask, caro, hands, rps, errs }));
+  return `Caro on two devices: "${ask.slice(0, 40)}…", every move on both boards, "${caro.a}" / "${caro.b}"; Oẳn tù tì: both hands shown (${hands.join(' ')}), "${rps.a}" / "${rps.b}"`;
+});
+
 await check('types', async () => {
   // type checking (owner, round 30): the files that start with // @ts-check are checked against their JSDoc types
   // (js/state.js, js/netmsg.js, studio/core.cjs; tests/tsconfig.json lists them). Needs: cd tests && npm install

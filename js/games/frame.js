@@ -25,7 +25,8 @@ let current = null;
 export const gameOpen = () => !!current;
 
 // players: array of profiles (1 or 2); level: 1..5; style: 'shrine' | 'village'
-export function openGame(id, { players, level = 1, style = 'shrine', partnerName = null, little = true, strong = false, nextId = null }) {
+// online: playing with friends on their own devices (js/netgames.js): { mine, names, move(n, mv), next(n, seat), all(n) }
+export function openGame(id, { players, level = 1, style = 'shrine', partnerName = null, little = true, strong = false, nextId = null, online = null }) {
   const def = GAMES[id]; if (!def) return Promise.resolve({ won: false });
   const nextName = nextId && GAMES[nextId] ? GAMES[nextId].name() : '';
   if (current) current.close(false);
@@ -48,7 +49,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
     let closed = false;
     const prevMusic = Music.key; Music.play(GAME_MUSIC[id] || 'think');
     const api = {
-      stage, level, players, two: players.length > 1, partnerName, T, el,
+      stage, level, players, two: players.length > 1, partnerName, T, el, online,
       little,   // under-5 mode: everything gentle, nobody can lose
       strong,   // computer opponents play to win (big kids on medium or hard)
       say: (en, vi) => { const t = T(en, vi); help.textContent = t.charAt(0).toUpperCase() + t.slice(1); say(en, vi); },

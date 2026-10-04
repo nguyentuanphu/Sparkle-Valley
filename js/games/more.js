@@ -4,9 +4,10 @@
 //   Farm: Egg Hunt (count the eggs into the basket)
 //   Puzzles: Picture Sudoku (each picture once in every row and column)
 // Same gentle rules as every game: "try again" until it's right, and little ones can't lose.
+import { rpsWinners } from '../netgames.js';
 import { register, untilRight, choiceButtons, tapOne } from './frame.js';
 import { T, numWord } from '../i18n.js';
-import { shuffle, pick, el, wait } from '../util.js';
+import { shuffle, pick, el, wait, esc } from '../util.js';
 import { customQuiz } from '../custom.js';
 
 const THINGS = ['🍎', '⭐', '🐟', '🌸', '🎈', '🐞', '🍓', '🚗'];
@@ -79,6 +80,7 @@ const RPS = [['✊', 'Rock', 'Búa'], ['✋', 'Paper', 'Bao'], ['✌️', 'Sciss
 register({
   id: 'oantuti', icon: '✌️', origin: 'vn', name: () => T('Oẳn Tù Tì', 'Oẳn Tù Tì'),
   async run(api) {
+    if (api.online) return rpsOnline(api);
     const need = api.little ? 2 : 3; let wins = 0, round = 0;
     api.say('Oẳn tù tì, ra cái gì, ra cái này! Rock beats scissors, scissors beat paper, paper beats rock.', 'Oẳn tù tì, ra cái gì, ra cái này! Búa thắng kéo, kéo thắng bao, bao thắng búa.');
     while (wins < need && !api.closed) {
@@ -101,6 +103,35 @@ register({
     return api.win({ title: T('Oẳn tù tì champion!', 'Vua oẳn tù tì!') });
   }
 });
+
+// Oẳn tù tì with friends online (round G): 2 to 6 children, each on their own device; everyone picks in secret, then
+// all the hands are shown together; the winning shape scores a point for each who showed it; first to 3 points wins
+async function rpsOnline(api) {
+  const O = api.online, need = 3, score = O.names.map(() => 0);
+  api.say('Oẳn tù tì with your friends! Everyone picks at the same time.', 'Oẳn tù tì với các bạn! Mọi người cùng ra một lúc nhé.');
+  for (let n = 0; !api.closed; n++) {
+    api.dots(need, Math.max(...score)); api.stage.innerHTML = '';
+    const board = el('div', 'rps-room', O.names.map((nm, s) => `<div class="rps-p ${s === O.mine ? 'me' : ''}"><span class="h">❔</span><b>${esc(nm)}</b><small>${score[s]}</small></div>`).join(''));
+    api.stage.appendChild(board);
+    const btns = choiceButtons(api, RPS, ([i, e, v]) => `<span class="big">${i}</span><small>${T(e, v)}</small>`);
+    const b = await tapOne(btns); if (api.closed) return;
+    const mine = RPS.indexOf(b._v); O.move(n, mine); btns.forEach(x => x.disabled = true);
+    board.children[O.mine].querySelector('.h').textContent = '✅';
+    api.show('Waiting for your friends…', 'Chờ các bạn…');
+    const hands = await O.all(n); if (api.closed) return;
+    if (hands.filter(h => h != null).length < 2) { api.say('Your friends left the game.', 'Các bạn đã rời trò chơi.'); await wait(1500); return api.win({ title: T('Good game!', 'Chơi vui lắm!') }); }
+    hands.forEach((h, s) => { board.children[s].querySelector('.h').textContent = h == null ? '👋' : RPS[h][0]; }); api.sfx.pop(3);
+    const winners = rpsWinners(hands); winners.forEach(s => score[s]++);
+    await wait(500);
+    if (!winners.length) api.say('A draw! Again: oẳn tù tì!', 'Hòa rồi! Lại nào: oẳn tù tì!');
+    else if (winners.includes(O.mine)) { api.right(board.children[O.mine]); api.say(`${RPS[hands[winners[0]]][1]} wins!`, `${RPS[hands[winners[0]]][2]} thắng!`); }
+    else api.say(`${RPS[hands[winners[0]]][1]} wins this time!`, `Lần này ${RPS[hands[winners[0]]][2]} thắng!`);
+    winners.forEach(s => board.children[s].classList.add('won')); board.querySelectorAll('small').forEach((e, s) => { e.textContent = score[s]; });
+    await wait(1800);
+    const best = Math.max(...score);
+    if (best >= need) { const who = O.names.filter((_, s) => score[s] === best).join(' & '); api.dots(need, need); return api.win({ title: score[O.mine] === best ? T('Oẳn tù tì champion!', 'Vua oẳn tù tì!') : T(`${who} won! Good game!`, `${who} thắng! Chơi vui lắm!`) }); }
+  }
+}
 
 // ---------- Egg Hunt (farm) ----------
 register({
