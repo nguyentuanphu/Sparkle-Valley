@@ -14,7 +14,7 @@ const saveContent = async () => { await api('content', CONTENT); toast(T('Saved.
 
 const TABS = [
   ['home', '🏠', 'Home', 'Trang chính'], ['message', '💌', 'Message', 'Lời nhắn'], ['villagers', '🧑', 'Villagers', 'Nhân vật'], ['stories', '📖', 'Stories', 'Truyện'],
-  ['quiz', '💛', 'Family quiz', 'Đố vui gia đình'], ['map', '🗺️', 'Map & building', 'Bản đồ & xây dựng'], ['photos', '📷', 'Real photos', 'Ảnh thật'], ['play', '⏰', 'Defaults', 'Mặc định'], ['children', '👧', 'Children', 'Các con'], ['voices', '🎙️', 'Voices', 'Giọng đọc'],
+  ['quiz', '💛', 'Family quiz', 'Đố vui gia đình'], ['album', '💌', 'Family album', 'Album gia đình'], ['map', '🗺️', 'Map & building', 'Bản đồ & xây dựng'], ['photos', '📷', 'Real photos', 'Ảnh thật'], ['play', '⏰', 'Defaults', 'Mặc định'], ['children', '👧', 'Children', 'Các con'], ['voices', '🎙️', 'Voices', 'Giọng đọc'],
   ['ads', '📣', 'Ads (off)', 'Quảng cáo (tắt)'], ['players', '📊', 'Players', 'Người chơi'], ['publish', '🚀', 'Publish', 'Phát hành'], ['site', '🌐', 'Website', 'Trang web'], ['check', '🩺', 'Check', 'Kiểm tra'], ['settings', '🔑', 'Settings', 'Cài đặt']
 ];
 let cur = location.hash.slice(1) || 'home';
@@ -93,6 +93,34 @@ PAGES.ads = async P => {
   P.querySelectorAll('.adpic').forEach(b => b.onclick = () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/jpeg,image/png';
     inp.onchange = () => { const f = inp.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = async () => { try { collect(); const i = +b.closest('.adrow').dataset.i, r = await api('adimage', { id: A.items[i].by || 'ad', dataUrl: rd.result }); A.items[i].image = r.image; PAGES.ads(P); } catch (e) { fail(e); } }; rd.readAsDataURL(f); }; inp.click(); });
   $('#adSave').onclick = () => { collect(); if (A.enabled && A.items.some(x => x.active !== false && !x.image)) return toast(T('Each active ad needs a picture.', 'Mỗi quảng cáo đang dùng cần có hình.')); saveContent().catch(fail); };
+};
+// ---------- family album: photos the grown-ups add become postcards the children find in the valley (js/familycards.js) ----------
+// (the places are the game's sticker-book places, js/placebook.js PLACES; the studio check keeps the two lists the same)
+const ALBUM_PLACES = [['home', 'Sunny Farm', 'Nông Trại Nắng Mai'], ['village', 'Lotus Village', 'Làng Sen'], ['town', 'Two Homes Street', 'Phố Hai Quê'], ['market', 'Three Regions Market', 'Chợ Ba Miền'],
+  ['aussie', 'Aussie Corner', 'Góc Nước Úc'], ['china', 'China Town', 'Làng Trung Hoa'], ['india', 'India Village', 'Làng Ấn Độ'], ['paddies', 'Golden Rice Fields', 'Cánh Đồng Lúa Vàng'],
+  ['lake', 'Mirror Lake', 'Hồ Gương'], ['bamboo', 'Whispering Bamboo', 'Rừng Tre Thì Thầm'], ['mountain', 'Snowcap Peaks', 'Núi Tuyết Trắng'], ['meadow', 'Breezy Meadows', 'Đồng Cỏ Lộng Gió'],
+  ['plateau', 'Dawn Plateau', 'Cao Nguyên Bình Minh'], ['danang', 'Đà Nẵng', 'Đà Nẵng'], ['bacninh', 'Bắc Ninh', 'Bắc Ninh'], ['hanoi', 'Hà Nội', 'Hà Nội'], ['saigon', 'Hồ Chí Minh City', 'TP. Hồ Chí Minh'],
+  ['brisbane', 'Brisbane', 'Brisbane'], ['melbourne', 'Melbourne', 'Melbourne'], ['sydney', 'Sydney', 'Sydney']];
+// a photo made small enough for a postcard: at most 1000 px on its long side, JPEG
+const shrinkPhoto = file => new Promise((res, rej) => { const img = new Image(); img.onload = () => { const k = Math.min(1, 1000 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); res(c.toDataURL('image/jpeg', .82)); }; img.onerror = () => rej(new Error(T('That file is not a photo.', 'Tệp đó không phải là ảnh.'))); img.src = URL.createObjectURL(file); });
+PAGES.album = async P => {
+  const A = CONTENT.album = Array.isArray(CONTENT.album) ? CONTENT.album : [];
+  const row = (x, i) => `<div class="card alrow" data-i="${i}"><div class="row" style="align-items:flex-start;gap:14px">
+      <button class="btn ghost alpic" title="${T('Photo', 'Ảnh')}">${x.photo ? `<img src="${FILE(esc(x.photo))}" style="width:120px;height:90px;object-fit:cover;border-radius:8px">` : '📷 ' + T('Choose photo', 'Chọn ảnh')}</button>
+      <div style="flex:1"><label>🇦🇺 ${T('Words on the postcard (English)', 'Lời trên bưu thiếp (tiếng Anh)')}</label><input class="al-en" maxlength="120" value="${esc(x.en || '')}">
+      <label>🇻🇳 ${T('Words on the postcard (Vietnamese)', 'Lời trên bưu thiếp (tiếng Việt)')}</label><input class="al-vi" maxlength="120" value="${esc(x.vi || '')}">
+      <label>📍 ${T('Where the children find it', 'Các con tìm thấy ở đâu')}</label><select class="al-place">${ALBUM_PLACES.map(([k, en, vi]) => `<option value="${k}" ${(x.place || 'home') === k ? 'selected' : ''}>${esc(T(en, vi))}</option>`).join('')}</select></div>
+      <button class="btn ghost al-del" title="${T('Remove', 'Xóa')}">🗑️</button></div></div>`;
+  P.innerHTML = `<h2>💌 ${T('Family album', 'Album gia đình')}</h2><p class="sub">${T('Add family photos. Each one becomes a postcard: when a child walks into the place you choose, the postcard arrives in their album (Pad → Album). Save, then Publish.', 'Thêm ảnh gia đình. Mỗi ảnh thành một tấm bưu thiếp: khi con đi đến nơi bạn chọn, bưu thiếp đến album của con (Bảng → Album). Lưu, rồi Phát hành.')}</p>
+  <div id="alList">${A.map(row).join('') || `<div class="card"><p class="note">${T('No photos yet.', 'Chưa có ảnh nào.')}</p></div>`}</div>
+  <div class="bar"><button class="btn ghost" id="alAdd">+ ${T('Add a photo', 'Thêm ảnh')}</button><button class="btn" id="alSave">💾 ${T('Save', 'Lưu')}</button></div>
+  <p class="note">${T('Photos are made smaller (1000 px) before they are saved. Choose photos the family is happy for the children to see; nothing is shared outside the game.', 'Ảnh được thu nhỏ (1000 px) trước khi lưu. Hãy chọn ảnh gia đình muốn các con xem; không có gì được chia sẻ ra ngoài game.')}</p>`;
+  const collect = () => P.querySelectorAll('.alrow').forEach(r => { const x = A[+r.dataset.i]; x.en = r.querySelector('.al-en').value.trim(); x.vi = r.querySelector('.al-vi').value.trim(); x.place = r.querySelector('.al-place').value; });
+  $('#alAdd').onclick = () => { collect(); A.push({ id: 'f' + Date.now().toString(36), en: '', vi: '', place: 'home' }); PAGES.album(P); };
+  P.querySelectorAll('.al-del').forEach(b => b.onclick = () => { collect(); A.splice(+b.closest('.alrow').dataset.i, 1); PAGES.album(P); });
+  P.querySelectorAll('.alpic').forEach(b => b.onclick = () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = async () => { const f = inp.files[0]; if (!f) return; try { collect(); const i = +b.closest('.alrow').dataset.i, r = await api('albumphoto', { id: A[i].id, dataUrl: await shrinkPhoto(f) }); A[i].photo = r.photo; PAGES.album(P); } catch (e) { fail(e); } }; inp.click(); });
+  $('#alSave').onclick = () => { collect(); if (A.some(x => !x.photo)) return toast(T('Each postcard needs a photo.', 'Mỗi bưu thiếp cần một ảnh.')); saveContent().catch(fail); };
 };
 // ---------- message ----------
 PAGES.message = async P => {

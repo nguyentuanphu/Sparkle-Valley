@@ -340,6 +340,9 @@ Outside the game, sharing L0–L2 where possible:
 | `SaveCompleted` / `SaveFailed` | save | `{reason, bytes} / {reason, error}` | ui (grown-ups notice), tests |
 | `PeerJoined` / `PeerLeft` / `NetMessage<type>` | net | validated payloads only | player (remote), activities (co-op), ui |
 | `DialogRequested` / `ToastRequested` / `HowToRequested` | any L3 | `{text: Text, choices?, entityId?}` | ui only (replaces L3 → ui calls) |
+| `StickerEarned` (round E) | progress (`js/placebook.js`) | `{playerId, stickerId, placeId}` | tests; later the per-child report |
+| `PostcardEarned` (round E) | progress (`js/familycards.js`) | `{playerId, postcardId, placeId}` | tests; later the per-child report |
+| `HomeDecorated` (round E) | `js/myhouse.js` | `{playerId, spot, item, price}` | tests; later co-op visits |
 
 **Not adopted:**
 - `VillageCreated`, `BuildingCreated`, `RoadNetworkGenerated` as separate runtime events. Generation is a pure function returning WorldData, and one `WorldGenerated` covers it.
@@ -872,7 +875,7 @@ Metrics are from the r37 measurement (§1.1). No module is dead code, so nothing
 | Step | What | Done when | Risk |
 |---|---|---|---|
 | **0** ◐ | Adopt this document. Add `tests/arch.mjs` (import graph, layer map, cycle count as a ratchet: may only go down) and `js/content/rules.js` (§9.7) with checks reporting rule ids | `arch` passes at baseline (round 30: **2 circle groups, 6 files**: fun ↔ regions ↔ snacks ↔ ui, frame ↔ howto; `tests/arch-baseline.json`); every rule has a validation entry. *Done:* `tests/arch.mjs` + check `arch`; `js/validate.js` reports rule ids. *Still to do:* the layer map and the rules registry | none |
-| **1** | **Core:** `js/core/{ids,events,rng,geo}.js`. `G.events = core.events`. The first events (`ActivityStarted/Completed`, `PlayerEnteredVillage`, `LanguageChanged`) are emitted **in addition to** today's calls | unit tests in Node; suite green | low |
+| **1** ✔ | **Core** (done round E: `js/core/{ids,events,rng,geo}.js`, `G.events`, `util.js` passes the maths and seeded random on unchanged; events PlayerEntered/LeftVillage, ActivityStarted/Completed/Abandoned, LanguageChanged, plus StickerEarned/PostcardEarned/HomeDecorated; checks `unit`, `events`): `js/core/{ids,events,rng,geo}.js`. `G.events = core.events`. The first events (`ActivityStarted/Completed`, `PlayerEnteredVillage`, `LanguageChanged`) are emitted **in addition to** today's calls | unit tests in Node; suite green | low |
 | **2** | **Break the cycles:** snacks → economy; `fun ↔ ui`; `frame ↔ howto` via `HowToRequested`; `regions → ui` | `arch`: 0 cycles | low |
 | **3** | **Content extraction (data only):** move `CITIES`, `ROADS`, `RIVER`, places, `SHRINES`, `TOWERS` from `world.js` into `js/content/*`; `world.js` re-exports them (no behaviour change) | Node can import the world description; suite green | low |
 | **4** | **Pure generation:** `gen/terrain.js` (`heightAt`, levels, beds), `gen/roads.js` (fillets, profile from `roads.js`). Unit tests in Node; `tests/world/validate.mjs` for WORLD-001/003/004 and ROAD-002/003/004/005/007/008/013 in Node (seconds instead of minutes) | the same numbers as the browser checks; suite green | medium (heights must match exactly: compare 20,000 samples before/after, as was done for `roadDist`) |

@@ -7,6 +7,7 @@
 //   quiz     [ { q: [en, vi], pic, answers: [[en, vi], …], right } ]   the Family Quiz game (Learning shelf)
 //   defaults { restMins }                a starting value for settings the device hasn't chosen yet
 //   ads      { enabled, perDay, items }  the family's own ads (js/ads.js); nothing shows unless enabled is true
+//   album    [ { id, photo, en, vi, place } ]   family photos that become postcards (js/familycards.js; photo = 'content/album/….jpg')
 let data = {};
 try {
   const r = await fetch('content/custom.json', { cache: 'no-cache' });
@@ -19,5 +20,7 @@ export const customTales = () => (Array.isArray(CUSTOM.tales) ? CUSTOM.tales : [
   .map(t => ({ id: 'my_' + String(t.id).replace(/[^\w-]/g, '').slice(0, 30), flag: str(t.flag) || '💛', en: str(t.en) || 'Our story', vi: str(t.vi) || 'Truyện của nhà mình', pages: t.pages.filter(p => Array.isArray(p)).map(p => [str(p[0]) || '📖', str(p[1]), str(p[2]) || str(p[1])]) }));
 export const customQuiz = () => (Array.isArray(CUSTOM.quiz) ? CUSTOM.quiz : []).filter(q => q && Array.isArray(q.q) && Array.isArray(q.answers) && q.answers.length >= 2 && q.right >= 0 && q.right < q.answers.length)
   .map(q => ({ q: [str(q.q[0]), str(q.q[1]) || str(q.q[0])], pic: str(q.pic), answers: q.answers.map(a => [str(a[0]), str(a[1]) || str(a[0])]), right: q.right | 0 }));
+export const customAlbum = () => (Array.isArray(CUSTOM.album) ? CUSTOM.album : []).filter(x => x && typeof x.photo === 'string' && /^content\/album\/[\w.-]+\.jpg$/.test(x.photo))
+  .slice(0, 60).map(x => ({ id: String(x.id || x.photo).replace(/[^\w-]/g, '').slice(0, 30) || 'photo', photo: x.photo, en: str(x.en).slice(0, 120), vi: str(x.vi).slice(0, 120) || str(x.en).slice(0, 120), place: /^[a-z]{2,16}$/.test(x.place || '') ? x.place : 'home' }));
 export const customName = id => { const n = CUSTOM.names && CUSTOM.names[id]; return n && typeof n === 'object' ? n : null; };
 export const customFace = id => { const f = CUSTOM.faces && CUSTOM.faces[id]; return f && typeof f.photo === 'string' && /^content\/faces\/[\w.-]+\.(jpg|jpeg|png)$/.test(f.photo) ? f : null; };

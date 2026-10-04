@@ -345,6 +345,11 @@ function createStudio({ store, conf, online = false, local = {} }) {
       const m = /^data:image\/jpeg;base64,(.+)$/.exec(b.dataUrl || ''); if (!m) return bad('not a JPEG');
       const rel = 'content/faces/' + slug(b.id) + '.jpg'; await S.write(rel, Buffer.from(m[1], 'base64')); return ok({ photo: rel });
     }
+    if (api === 'albumphoto' && post) { // a family photo that becomes a postcard in the game (content/album/), published with the content pack
+      const m = /^data:image\/jpeg;base64,(.+)$/.exec(b.dataUrl || ''); if (!m) return bad('Choose a photo (JPG).');
+      const buf = Buffer.from(m[1], 'base64'); if (buf.length > 600 * 1024) return bad('That photo is too big (over 600 KB).');
+      const rel = 'content/album/' + (slug(b.id || 'photo') || 'photo') + '-' + Date.now().toString(36) + '.jpg'; await S.write(rel, buf); return ok({ photo: rel });
+    }
     if (api === 'adimage' && post) { // a picture for an ad (content/ads/), published with the content pack
       const m = /^data:image\/(jpeg|png);base64,(.+)$/.exec(b.dataUrl || ''); if (!m) return bad('Choose a JPG or PNG picture.');
       const buf = Buffer.from(m[2], 'base64'); if (buf.length > 600 * 1024) return bad('That picture is too big (over 600 KB). Make it smaller first.');

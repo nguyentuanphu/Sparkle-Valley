@@ -16,7 +16,7 @@ Keep this file current in the same round as any change to hosting, servers, keys
 | **Voices** | Recorded Azure voice pack (EN/VI, ~7,400 files, ~140 MB) | Downloaded to each device (Cache Storage `sv-voices`), played offline | `voices/` in **GitHub** (tracked) |
 | **World pictures** | Pictures worked out from the world at start (today: the map), stored by build | Cache Storage `sv-world` on each device (painted once per build; the service worker clears it on update) | `js/worldcache.js` |
 | **Real photos** | Landmark photos chosen in the Studio | Cached on the device once seen | `photos/` (from the Studio; none yet) |
-| **Family content** | Message, names, faces, tales, quiz, villagers, buildings, defaults | Read at start by `js/custom.js` | `content/custom.json`, `content/faces/` |
+| **Family content** | Message, names, faces, tales, quiz, villagers, buildings, defaults, the Family album (postcards) | Read at start by `js/custom.js` | `content/custom.json`, `content/faces/`, `content/album/` (photos ≤ 1000 px, ≤ 600 KB) |
 | **Live website** | Netlify site **sparklevalley**, linked to GitHub `main` | Netlify CDN | whole repo (`netlify.toml`: publish `.`) |
 | **Player counter** | Anonymous "hello" from devices | Netlify Function `/api/hello` + Netlify Blobs store `players` | `netlify/functions/hello.mjs`, `netlify/lib/players.mjs`, `js/players.js` |
 | **Sparkle Studio online** | Grown-ups' dashboard at `/studio/` | Netlify Function `/studio/api/*` | `netlify/functions/studio.mjs` + `studio/core.cjs` + `studio/ui/` |
@@ -108,6 +108,7 @@ Netlify Blobs needs no key; it is attached to the site automatically.
 ### 6.3 Automated checks
 
 In `tests/`, run `npm install` once (Playwright, and TypeScript for the `types` check), then `node run.mjs [check…]`. The full list is in HANDOFF §2.
+- **`unit`** runs `node --test` on `tests/unit/` (no browser).
 - **`perf`** compares against `tests/perf-baseline.json` (PERF budgets; numbers may only go down). The test browser draws in software, so frames per second is measured on real phones.
 - **Online checks:** `multiplayer`, `meet`, `cloud`, `knock` need a local PeerJS server (127.0.0.1:9000) and an MQTT broker (127.0.0.1:9001). The commands are in `tests/README.md`; without them those checks say "skipped".
 - **`studio`** uses a fake GitHub and fake Netlify (ports 8791/8792) built into `tests/studio-check.mjs`.
