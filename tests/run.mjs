@@ -763,6 +763,49 @@ await check('report', async () => {
   return '3 games and 2 minutes counted today for the child who played; the report shows the week (7 days), the favourite games and what was collected';
 });
 
+await check('iphone', async () => {
+  // the owner's iPhone screenshots (round F): (1) "no microphone" although the phone has one: friends meet with no tap
+  // and iPhone opens the microphone only after a tap; now it says "tap to talk", opens it on the next tap and puts it
+  // into the open calls; only a phone with really no microphone hears "no microphone". (2) Pad → Friends: the player's
+  // buttons squeezed so their words broke into single letters. (3) The friend bar under the map lay on the round buttons.
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, N = (await import('/js/net.js')).Net, wait = ms => new Promise(r => setTimeout(r, ms)), said = [];
+    N.on('status', s => said.push(s.key));
+    // 1. the microphone: refused without a tap, works after one, goes into an open call
+    let asks = 0, replaced = 0; const md = navigator.mediaDevices, real = md.getUserMedia.bind(md);
+    md.getUserMedia = async c => { asks++; if (asks <= 2) { const e = new Error('needs a tap'); e.name = 'NotAllowedError'; throw e; } return real({ audio: true }); };
+    N.calls.set('peer-y', { peerConnection: { getSenders: () => [{ track: { kind: 'audio' }, replaceTrack: async () => { replaced++; } }] } });
+    N.mic = null; N.cloudOn = true; await N.getMic();
+    const first = said.slice(), noMicYet = !N.mic;
+    document.body.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); for (let k = 0; k < 50 && !(N.mic && said.includes('micon')); k++) await wait(100);
+    const micAfterTap = !!N.mic, after = said.slice();
+    md.getUserMedia = async () => { const e = new Error('none'); e.name = 'NotFoundError'; throw e; }; N.mic = null; said.length = 0; await N.getMic(); const reallyNone = said.slice();
+    md.getUserMedia = real; N.calls.delete('peer-y'); N.cloudOn = false; N.mic = null;
+    // 2. Pad → Friends with a player in the room: no button taller than two lines, all inside the card
+    Object.defineProperty(N, 'connected', { get: () => true, configurable: true }); N.code = '1234'; N.remotes['peer-z'] = { id: 'peer-z', name: 'Mít', look: {}, friend: 'ABCDE2' };
+    G.openPad(0, 'friend'); await wait(500);
+    const row = document.querySelector('.prow.roomp'), card = document.querySelector('.pad .card, .modal.pad .card') || document.querySelector('.pad');
+    const btns = row ? [...row.querySelectorAll('.btn')] : [], lh = btns.length ? parseFloat(getComputedStyle(btns[0]).lineHeight) || 20 : 20;
+    const tall = btns.filter(x => x.getBoundingClientRect().height > lh * 2 + 24).map(x => x.textContent.trim());
+    const cr = row ? row.getBoundingClientRect() : null, outside = btns.filter(x => { const q = x.getBoundingClientRect(); return cr && (q.right > cr.right + 1 || q.left < cr.left - 1); }).length;
+    document.querySelector('.modal .x')?.click(); await wait(300);
+    delete N.remotes['peer-z']; delete N.connected; N.code = null;
+    // 3. the friend bar and the round buttons under the map never overlap
+    // (a pretend friend 13 m away: the game shows the bar by itself, as with a real friend)
+    const hud = G.huds[0], chip = hud.q('.friendchip'), me = G.heroes[0].pos; G.partners['peer-q'] = { id: 'peer-q', name: 'Mít', pos: { x: me.x + 13, y: me.y, z: me.z } }; G.huds[0].setCall(true, false, false);
+    await wait(600);
+    const c = chip.getBoundingClientRect(), hit = [...document.querySelectorAll('.hud .tools .dk, .hud .zoomer button, .hud .mini-wrap, .hud .zoom')].filter(e => e.offsetParent).filter(e => { const q = e.getBoundingClientRect(); return q.left < c.right && c.left < q.right && q.top < c.bottom && c.top < q.bottom; }).map(e => e.className);
+    const onScreen = c.width > 60 && c.height > 20 && c.right <= innerWidth + 1 && c.left >= 0, chipText = chip.textContent;
+    delete G.partners['peer-q']; G.huds[0].setCall(false, false, false);
+    return { first, noMicYet, micAfterTap, after, replaced, reallyNone, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok((r.first.includes('mictap') || r.first.includes('micdenied')) && !r.first.includes('nomic') && r.noMicYet && r.micAfterTap && r.after.includes('micon') && r.replaced === 1 && r.reallyNone.includes('nomic')
+    && r.buttons >= 4 && !r.tall.length && !r.outside && !r.hit.length && r.onScreen && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'microphone: "tap to talk" (not "no microphone"), on after the next tap and put into the open call; real "no microphone" still said; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
+});
+
 await check('types', async () => {
   // type checking (owner, round 30): the files that start with // @ts-check are checked against their JSDoc types
   // (js/state.js, js/netmsg.js, studio/core.cjs; tests/tsconfig.json lists them). Needs: cd tests && npm install

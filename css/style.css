@@ -1758,3 +1758,16 @@ body.calm .rv-img.on { animation: none; }
 .rep-games li span { font-size: 26px; } .rep-games li small { margin-left: auto; color: #7a6a8a; }
 .rep-list { padding-left: 18px; line-height: 1.7; }
 @media print { body.printing-report > *:not(.modal.report) { display: none !important; } body.printing-report .modal.report { position: static; background: #fff; } body.printing-report .modal.report .x, body.printing-report .modal.report .bar { display: none; } }
+
+/* players in the room (Pad → Friends): the photo and name on one line, the buttons in their own row below that wraps;
+   a button never breaks its word into letters (owner's iPhone screenshot, round F) */
+.prow.roomp { flex-wrap: wrap; }
+.prow.roomp .pw { flex: 1 1 140px; }
+.prow.roomp .pw small { white-space: normal; overflow-wrap: anywhere; }
+.rp-btns { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+.rp-btns .btn { flex: 1 1 auto; min-width: max-content; white-space: nowrap; word-break: keep-all; padding: 8px 12px; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+
+/* the friend bar ("Mít · 13 m") lives in the right-hand column under the clock since round F, so it pushes the round
+   buttons below it down instead of lying on top of them (owner's iPhone screenshot) */
+.hud .hud-tr .friendchip, .hud.small .hud-tr .friendchip { position: static; top: auto; right: auto; align-self: flex-end; pointer-events: auto; max-width: min(240px, 46vw); }
+.hud .hud-tr .friendchip[hidden] { display: none; }

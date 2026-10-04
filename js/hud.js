@@ -38,10 +38,10 @@ export class Hud {
       <div class="hud-tr">
         <div class="mini-wrap"><canvas class="mini" width="200" height="200"></canvas><i class="mini-n">N</i><i class="mini-me"></i></div>
         <div class="zoom"><span class="clock"></span></div>
+        <button class="friendchip" hidden><span class="fc-arrow">➤</span><span class="fc-txt"></span><span class="fc-sig"></span></button>
         <div class="tools"></div>
       </div>
       <div class="zoomer"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">${ICONS.zoomIn}<kbd class="kb">+</kbd></button><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">${ICONS.zoomOut}<kbd class="kb">−</kbd></button><button class="z-view" aria-label="${T('Camera view', 'Góc nhìn')}">🎥<kbd class="kb">V</kbd></button></div>
-      <button class="friendchip" hidden><span class="fc-arrow">➤</span><span class="fc-txt"></span><span class="fc-sig"></span></button>
       <div class="region"></div>
       <div class="htoast"></div>
       <canvas class="wheel" width="96" height="96"></canvas>
