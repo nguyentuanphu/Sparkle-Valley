@@ -5,7 +5,8 @@
 // until someone starts again. "Chặt": four of a kind or three pairs in a row can beat a 2.
 // The first to play all their cards wins the hand. Hints light up a good play, and little ones always get one.
 import { register } from './frame.js';
-import { el } from '../util.js';
+import { el, esc } from '../util.js';
+import { stream } from '../core/rng.js';
 import { T } from '../i18n.js';
 
 const RANKS = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'], SUITS = ['♠', '♣', '♦', '♥'];
@@ -78,8 +79,9 @@ export function choose(hand, table, { strong = false, others = 13 } = {}) {
 }
 
 register({
-  id: 'tienlen', icon: '🎴', origin: 'vn', name: () => T('Tiến Lên (cards)', 'Tiến Lên miền Nam'),
+  id: 'tienlen', online: true, icon: '🎴', origin: 'vn', name: () => T('Tiến Lên (cards)', 'Tiến Lên miền Nam'),
   async run(api) {
+    if (api.online) return tienlenOnline(api);
     const little = api.little, strong = api.strong;
     api.say('Tiến Lên! Beat the cards on the table with the same kind of play, but higher. 3 is the lowest, 2 is the highest. Play all your cards first to win!',
       'Tiến Lên! Đánh bài cao hơn bài trên bàn, cùng một kiểu. 3 nhỏ nhất, 2 lớn nhất. Ai đánh hết bài trước là thắng!');
@@ -92,14 +94,14 @@ register({
     const cardHTML = (c, cls = '') => `<div class="tl-card ${c.s >= 2 ? 'red' : ''} ${cls}" data-v="${c.v}"><b>${RANKS[c.r]}</b><i>${SUITS[c.s]}</i></div>`;
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     const HANDS = little ? 2 : 3;
-    let hands, table, lastBy, passed, turn, sel, finished, game = 0, firstHand = true;
+    let hands, table, lastBy, passed, turn, sel, finished, game = 0, firstHand = true, shown = null; // shown: cards dealt so far, while dealing
 
     const say = (en, vi) => { msgEl.textContent = T(en, vi); };
     function drawOpp() {
-      oppEl.innerHTML = [1, 2].map(i => `<div class="tl-p ${turn === i ? 'on' : ''} ${passed.has(i) ? 'out' : ''}"><span class="f">${faces[i]}</span><b>${names[i]}</b><span class="n">🂠 ${hands[i].length}</span>${passed.has(i) ? `<small>${T('passed', 'bỏ')}</small>` : ''}</div>`).join('');
+      oppEl.innerHTML = [1, 2].map(i => `<div class="tl-p ${turn === i ? 'on' : ''} ${passed.has(i) ? 'out' : ''}"><span class="f">${faces[i]}</span><b>${names[i]}</b><span class="n">🂠 ${shown ? shown[i] : hands[i].length}</span>${passed.has(i) ? `<small>${T('passed', 'bỏ')}</small>` : ''}</div>`).join('');
     }
     function drawHand() {
-      handEl.innerHTML = hands[0].map(c => cardHTML(c, sel.has(c.v) ? 'sel' : '')).join('');
+      handEl.innerHTML = (shown ? hands[0].slice(0, shown[0]) : hands[0]).map(c => cardHTML(c, sel.has(c.v) ? 'sel' : '')).join('');
       handEl.querySelectorAll('.tl-card').forEach(e => { e.onclick = () => { if (turn !== 0) return; const v = +e.dataset.v; sel.has(v) ? sel.delete(v) : sel.add(v); api.sfx.tap(); drawHand(); updateBtns(); }; });
       t.classList.toggle('mine', turn === 0);
     }
@@ -117,13 +119,31 @@ register({
       sel = new Set(cs ? cs.map(c => c.v) : []); drawHand(); updateBtns();
       if (!cs) say('Nothing beats it. Tap Pass!', 'Không có bài nào chặn được. Bấm Bỏ lượt nhé!');
     }
-    function deal() {
+    // dealing, the way it is done at the table: a deck in the middle, one card at a time to each player in turn
+    // (owner, round G: "Tiến Lên should show the cards being dealt"); little ones get a quicker deal
+    async function dealCards() {
+      shown = [0, 0, 0]; drawOpp(); drawHand();
+      const deckEl = el('div', 'tl-deck', '<div class="tl-card back"></div><div class="tl-card back"></div><div class="tl-card back"></div>'); t.appendChild(deckEl);
+      const box = t.getBoundingClientRect(), mid = (e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2 - box.left, r.top + r.height / 2 - box.top]; });
+      const from = mid(deckEl), to = [() => mid(handEl), () => mid(oppEl.children[0] || oppEl), () => mid(oppEl.children[1] || oppEl)];
+      const gap = little ? 28 : 45;
+      for (let k = 0; k < 39 && !api.closed; k++) {
+        const who = (turn + k) % 3, fly = el('div', 'tl-card back tl-fly'); fly.style.left = from[0] + 'px'; fly.style.top = from[1] + 'px'; t.appendChild(fly);
+        const [x, y] = to[who](); requestAnimationFrame(() => { fly.style.transform = `translate(${x - from[0]}px, ${y - from[1]}px) rotate(${(who - 1) * 12}deg) scale(.8)`; fly.style.opacity = '.2'; });
+        setTimeout(() => { fly.remove(); shown[who]++; if (who === 0) drawHand(); else drawOpp(); }, 320);
+        if (k % 3 === 0) api.sfx.tap();
+        await sleep(gap);
+      }
+      await sleep(360); deckEl.remove(); shown = null;
+    }
+    async function deal() {
       const deck = []; for (let r = 0; r < 13; r++) for (let s = 0; s < 4; s++) deck.push(card(r, s));
       for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
       hands = [0, 1, 2].map(i => deck.slice(i * 13, i * 13 + 13).sort(byV));
       table = null; lastBy = -1; passed = new Set(); sel = new Set(); finished = [];
       // the first hand starts with whoever has the lowest card; after that the winner starts
       if (firstHand) { const low = hands.map(h => h[0].v); turn = low.indexOf(Math.min(...low)); }
+      drawTable(); await dealCards(); if (api.closed) return;
       drawOpp(); drawHand(); drawTable(); updateBtns();
     }
     function nextTurn() {
@@ -157,7 +177,7 @@ register({
 
     let wins = 0;
     for (game = 0; game < HANDS && !api.closed; game++) {
-      deal(); firstHand = false;
+      await deal(); firstHand = false; if (api.closed) return;
       api.dots(HANDS, game);
       while (!api.closed && finished.length === 0) {
         drawOpp(); drawTable(); drawHand(); updateBtns();
@@ -187,3 +207,70 @@ register({
     return api.win({ title: wins ? T(`You won ${wins} hand${wins > 1 ? 's' : ''} of Tiến Lên!`, `Con thắng ${wins} ván Tiến Lên!`) : T('Great games of Tiến Lên with anh Ba and Phong!', 'Chơi Tiến Lên với anh Ba và Phong vui quá!') });
   }
 });
+
+// Tiến Lên with friends online (round G): 2 to 4 children, each on their own device, and the friendly computer
+// players fill the table to 3 if needed. The same deal everywhere (shuffled from the game's own code), each child sees
+// only their own cards. A child's play travels as one number (which of their cards, or 0 for pass); the computer
+// players think the same way on every device, so they need no messages. One hand: the first to play all cards wins.
+async function tienlenOnline(api) {
+  const O = api.online, humans = O.names.length, seats = Math.max(3, humans), BOTS = ['Anh Ba', 'Con Vật'];
+  const names = [...O.names, ...BOTS.slice(0, seats - humans)], me = O.mine, r = stream('tienlen/' + O.seed);
+  const RANKS = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'], SUITS = ['♠', '♣', '♦', '♥'];
+  const deck = []; for (let k = 0; k < 13; k++) for (let su = 0; su < 4; su++) deck.push({ r: k, s: su, v: k * 4 + su });
+  const sh = r.shuffle(deck), hands = names.map((_, i) => sh.slice(i * 13, i * 13 + 13).sort((a, b) => a.v - b.v));
+  const cardHTML = (c, cls = '') => `<div class="tl-card ${c.s >= 2 ? 'red' : ''} ${cls}" data-v="${c.v}"><b>${RANKS[c.r]}</b><i>${SUITS[c.s]}</i></div>`;
+  const t = el('div', 'tl', `<div class="tl-opp"></div><div class="tl-table"><div class="tl-who"></div><div class="tl-pile"></div></div><div class="tl-msg"></div><div class="tl-hand"></div>
+    <div class="tl-btns"><button class="tl-b hint">💡 ${T('Hint', 'Gợi ý')}</button><button class="tl-b pass">✋ ${T('Pass', 'Bỏ lượt')}</button><button class="tl-b play">▶ ${T('Play', 'Đánh')}</button></div>`);
+  api.stage.appendChild(t);
+  const oppEl = t.querySelector('.tl-opp'), pileEl = t.querySelector('.tl-pile'), whoEl = t.querySelector('.tl-who'), msgEl = t.querySelector('.tl-msg'), handEl = t.querySelector('.tl-hand');
+  const bPlay = t.querySelector('.play'), bPass = t.querySelector('.pass'), bHint = t.querySelector('.hint');
+  let table = null, lastBy = -1, passed = new Set(), sel = new Set(), step = 0;
+  const lows = hands.map(h => h[0].v); let turn = lows.indexOf(Math.min(...lows));
+  const others = () => [...Array(seats).keys()].filter(i => i !== me);
+  const draw = () => {
+    oppEl.innerHTML = others().map(i => `<div class="tl-p ${turn === i ? 'on' : ''} ${passed.has(i) ? 'out' : ''}"><b>${esc(names[i])}</b><span class="n">🂠 ${hands[i].length}</span></div>`).join('');
+    handEl.innerHTML = hands[me].map(c => cardHTML(c, sel.has(c.v) ? 'sel' : '')).join('');
+    handEl.querySelectorAll('.tl-card').forEach(e => { e.onclick = () => { if (turn !== me) return; const v = +e.dataset.v; sel.has(v) ? sel.delete(v) : sel.add(v); api.sfx.tap(); draw(); }; });
+    pileEl.innerHTML = table ? table.cs.map(c => cardHTML(c)).join('') : `<span class="tl-free">${T('New round: play anything!', 'Vòng mới: đánh gì cũng được!')}</span>`;
+    whoEl.textContent = table ? names[lastBy] : '';
+    const cs = hands[me].filter(c => sel.has(c.v)), ok = turn === me && beats(classify(cs), table && table.k);
+    bPlay.disabled = !ok; bPass.disabled = turn !== me || !table; bHint.disabled = turn !== me; t.classList.toggle('mine', turn === me);
+  };
+  const play = (i, cs) => { const set = new Set(cs.map(c => c.v)); hands[i] = hands[i].filter(c => !set.has(c.v)); table = { cs: [...cs].sort((a, b) => a.v - b.v), k: classify(cs) }; lastBy = i; api.sfx.pop(3); };
+  const nextTurn = () => {
+    let n = turn;
+    for (let k = 0; k < seats; k++) { n = (n + 1) % seats; if (!hands[n].length) continue; if (n === lastBy) { table = null; passed.clear(); turn = n; return; } if (!passed.has(n)) { turn = n; return; } }
+    table = null; passed.clear(); turn = lastBy;
+  };
+  // a play as one number: which cards of that player's (sorted) hand, as bits; 0 = pass
+  const enc = (i, cs) => cs.reduce((m, c) => m | (1 << hands[i].findIndex(x => x.v === c.v)), 0), dec = (i, m) => hands[i].filter((_, k) => m & (1 << k));
+  api.say('Tiến Lên with your friends! Beat the cards on the table, or pass.', 'Tiến Lên với các bạn! Chặn bài trên bàn, hoặc bỏ lượt.');
+  while (!api.closed && hands.every(h => h.length)) {
+    draw(); msgEl.textContent = turn === me ? (table ? T('Your turn: beat it, or pass.', 'Tới lượt con: chặn bài, hay bỏ lượt.') : T('Your turn: play anything.', 'Tới lượt con: đánh gì cũng được.')) : T(`${names[turn]}'s turn…`, `Lượt của ${names[turn]}…`);
+    let cs = null;
+    if (turn === me) {
+      if (api.little) { const h = choose(hands[me], table && table.k, { strong: true }); sel = new Set(h ? h.map(c => c.v) : []); draw(); }
+      cs = await new Promise(res => {
+        bPlay.onclick = () => { const x = hands[me].filter(c => sel.has(c.v)); if (beats(classify(x), table && table.k)) res(x); };
+        bPass.onclick = () => { if (table) res(null); };
+        bHint.onclick = () => { const h = choose(hands[me], table && table.k, { strong: true }); sel = new Set(h ? h.map(c => c.v) : []); draw(); api.sfx.tap(); };
+      });
+      if (api.closed) return; sel = new Set(); O.move(step, cs ? enc(me, cs) : 0);
+    } else if (turn < humans) {
+      const m = await O.next(step, turn); if (api.closed) return;
+      if (m == null) { api.say('A friend left the game.', 'Một bạn đã rời trò chơi.'); await new Promise(r2 => setTimeout(r2, 1500)); return api.win({ title: T('Good game!', 'Chơi vui lắm!') }); }
+      cs = m ? dec(turn, m) : null; if (cs && !beats(classify(cs), table && table.k)) cs = null;
+    } else {
+      await new Promise(r2 => setTimeout(r2, 900)); if (api.closed) return;
+      cs = choose(hands[turn], table && table.k, { strong: false, others: Math.min(...others().filter(j => j !== turn).map(j => hands[j].length || 99)) });
+      if (!cs && !table) cs = [hands[turn][0]];
+    }
+    step++;
+    if (cs && cs.length) play(turn, cs); else passed.add(turn);
+    if (!hands[turn].length) break;
+    nextTurn();
+  }
+  if (api.closed) return;
+  draw(); const w = hands.findIndex(h => !h.length);
+  return api.win({ title: w === me ? T('You played all your cards first! You win!', 'Con đánh hết bài trước! Con thắng!') : T(`${names[w]} played all their cards first! Good game!`, `${names[w]} đánh hết bài trước! Ván hay lắm!`) });
+}

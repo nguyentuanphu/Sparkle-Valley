@@ -1,10 +1,10 @@
-node_modules/
+node_modules
 .DS_Store
 *.log
 netlify-site/
 sparkle-valley-netlify.zip
 proto/
-tests/node_modules/
+tests/node_modules
 tests/out/
 sparkle-valley-source.zip
 marketing/source/frames/

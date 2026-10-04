@@ -141,12 +141,16 @@ export async function studioCheck(browser, open) {
     const face = await call('/studio/api/face', { cookie: C, headers: X, body: { id: 'Bà Năm', dataUrl: 'data:image/jpeg;base64,' + Buffer.from('JPEG').toString('base64') } });
     ok(face.j && face.j.photo === 'content/faces/ba-nam.jpg', 'face upload: ' + JSON.stringify(face.j));
     ok((await fetch(site + '/studio/api/file/content/faces/ba-nam.jpg', { headers: { cookie: C } })).ok, 'the face photo could not be shown');
+    // a family album photo (Studio → Family album) goes to content/album/ in the draft too
+    const alb = await call('/studio/api/albumphoto', { cookie: C, headers: X, body: { id: 'f1', dataUrl: 'data:image/jpeg;base64,' + Buffer.from('JPEG').toString('base64') } });
+    ok(alb.j && /^content\/album\/f1-[a-z0-9]+\.jpg$/.test(alb.j.photo), 'album photo upload: ' + JSON.stringify(alb.j));
+    ok((await call('/studio/api/albumphoto', { cookie: C, headers: X, body: { id: 'f2', dataUrl: 'data:image/png;base64,AAAA' } })).status === 400, 'a PNG was taken as an album photo');
     ok((await call('/studio/api/info', { cookie: C })).j.unpublished, 'saved changes not shown as waiting');
     // 3. meanwhile the exe publishes something else to the live branch: Publish online must keep it
     gh.commitOnMain('content/ads/sign.jpg', 'AD', 'Family update from Sparkle Studio (1 files)');
     const pub = await call('/studio/api/github/publish', { cookie: C, headers: X, body: { message: 'From the test' } });
-    ok(pub.j && pub.j.end && pub.j.result.changed === 2, 'publish: ' + JSON.stringify(pub.j));
-    ok(/online/.test(gh.fileAt('main', 'content/custom.json')) && gh.fileAt('main', 'content/faces/ba-nam.jpg') && gh.fileAt('main', 'content/ads/sign.jpg'), 'publish lost a file');
+    ok(pub.j && pub.j.end && pub.j.result.changed === 3, 'publish: ' + JSON.stringify(pub.j));
+    ok(/online/.test(gh.fileAt('main', 'content/custom.json')) && gh.fileAt('main', 'content/faces/ba-nam.jpg') && gh.fileAt('main', 'content/ads/sign.jpg') && gh.fileAt('main', alb.j.photo), 'publish lost a file');
     ok(gh.refs.get('studio-draft') === gh.refs.get('main') && !(await call('/studio/api/info', { cookie: C })).j.unpublished, 'the draft did not start again after publishing');
     ok((await call('/studio/api/github/publish', { cookie: C, headers: X, body: {} })).j.result.changed === 0, 'a second publish found changes');
     // only the family's files can change online

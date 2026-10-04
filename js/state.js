@@ -84,6 +84,8 @@ export const settings = Object.assign({
   aiKey: '',             // optional Anthropic API key so villagers can chat freely (grown-ups only)
   aiOn: false
 }, store.get(KEY_SETTINGS, {}));
+// fewer moving effects: Calm mode, or the device's own "Reduce motion" setting (round I accessibility rule A11Y-001)
+export const reduceMotion = () => !!settings.calm || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
 export const saveSettings = () => store.set(KEY_SETTINGS, settings);
 
 // Clothing: a style plus any colour. Dresses and shirt-and-shorts work for girls and boys alike.
@@ -99,7 +101,7 @@ export const GLIDERS = ['#e7c37a', '#ff7eb8', '#5fd3ff', '#8be07a', '#b48cff'];
 /**
  * A child's profile (one per child on this device).
  * @typedef {{ id: string, name: string, photo: string | null, age: 'little' | 'big', difficulty: 'easy' | 'medium' | 'hard',
- *   look: Record<string, any>, created: number, levels?: Record<string, number>, pos?: any, [k: string]: any }} Profile
+ *   look: Record<string, any>, created: number, levels?: Record<string, number>, pos?: any, screen?: 'simple' | 'valley', [k: string]: any }} Profile
  */
 /** @param {number} i  @returns {Profile} */
 function newProfile(i) {

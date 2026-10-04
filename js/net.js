@@ -81,11 +81,47 @@ export const Net = {
   get count() { return 1 + Object.keys(this.remotes).length; },
   get remote() { return Object.values(this.remotes)[0] || null; },  // older code: the first friend
 
+  // The microphone (owner's iPhone bug, round F: "no microphone" although the phone has one). iPhones only open the
+  // microphone straight after a tap, and friends now meet by themselves with no tap, so the old single try failed and
+  // every failure said "no microphone". Now: ask with the clean-sound settings, then plainly; if the phone wants a tap,
+  // say "tap to talk" and open it on the child's next tap, then put it into the calls already open (no reconnecting).
+  // Only a phone with really no microphone hears "no microphone"; a blocked one gets how to allow it.
+  micError: null,
   async getMic() {
     if (this.mic) return this.mic;
-    try { this.mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false }); }
-    catch (e) { this.mic = null; this.emit('status', { key: 'nomic' }); }
-    return this.mic;
+    if (this._micAsking) return this._micAsking;
+    this._micAsking = (async () => {
+      const md = navigator.mediaDevices;
+      if (!md || !md.getUserMedia) { this.micError = 'nomedia'; this.emit('status', { key: 'nomic' }); return null; }
+      let err = null;
+      for (const audio of [{ echoCancellation: true, noiseSuppression: true, autoGainControl: true }, true]) {
+        try { this.mic = await md.getUserMedia({ audio, video: false }); break; } catch (e) { err = e; if (e && e.name === 'NotFoundError') break; }
+      }
+      if (this.mic) { this.micError = null; this._micOn(); return this.mic; }
+      const name = (err && err.name) || 'Error', tapped = !!(navigator.userActivation && navigator.userActivation.isActive);
+      this.micError = name;
+      if (name === 'NotFoundError' || name === 'OverconstrainedError') this.emit('status', { key: 'nomic' });
+      else { this.emit('status', { key: name === 'NotAllowedError' && tapped ? 'micdenied' : 'mictap' }); this._micOnTap(); } // (always tried again on the next tap)
+      return null;
+    })();
+    try { return await this._micAsking; } finally { this._micAsking = null; }
+  },
+  // on the next tap anywhere, try the microphone again (once per tap, until it works or the room closes)
+  _micOnTap() {
+    if (this._micTapArmed) return; this._micTapArmed = true;
+    const go = () => { removeEventListener('pointerup', go, true); this._micTapArmed = false; if (!this.mic && (this.peer || this.cloudOn)) this.getMic(); };
+    addEventListener('pointerup', go, true);
+  },
+  // the microphone arrived after the calls started (they carried silence): send it in every open call
+  _micOn() {
+    const track = this.mic && this.mic.getAudioTracks()[0]; if (!track) return;
+    track.enabled = !this.muted && !this.knocking;
+    for (const call of this.calls.values()) {
+      const pc = call && call.peerConnection; if (!pc || !pc.getSenders) continue;
+      const snd = pc.getSenders().find(x => x.track && x.track.kind === 'audio') || pc.getSenders().find(x => !x.track);
+      if (snd && snd.track !== track) snd.replaceTrack(track).catch(() => { });
+    }
+    this.emit('status', { key: 'micon' });
   },
 
   async host(hello) {

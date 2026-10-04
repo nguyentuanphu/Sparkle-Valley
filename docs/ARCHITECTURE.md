@@ -340,6 +340,9 @@ Outside the game, sharing L0–L2 where possible:
 | `SaveCompleted` / `SaveFailed` | save | `{reason, bytes} / {reason, error}` | ui (grown-ups notice), tests |
 | `PeerJoined` / `PeerLeft` / `NetMessage<type>` | net | validated payloads only | player (remote), activities (co-op), ui |
 | `DialogRequested` / `ToastRequested` / `HowToRequested` | any L3 | `{text: Text, choices?, entityId?}` | ui only (replaces L3 → ui calls) |
+| `StickerEarned` (round E) | progress (`js/placebook.js`) | `{playerId, stickerId, placeId}` | tests; later the per-child report |
+| `PostcardEarned` (round E) | progress (`js/familycards.js`) | `{playerId, postcardId, placeId}` | tests; later the per-child report |
+| `HomeDecorated` (round E) | `js/myhouse.js` | `{playerId, spot, item, price}` | tests; later co-op visits |
 
 **Not adopted:**
 - `VillageCreated`, `BuildingCreated`, `RoadNetworkGenerated` as separate runtime events. Generation is a pure function returning WorldData, and one `WorldGenerated` covers it.
@@ -625,7 +628,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 
 | Id | Rule | Reason | Sev. | Validation | Failure behaviour |
 |---|---|---|---|---|---|
-| PROC-001 | No `git push` and no PR opened or updated without the owner's explicit "yes, push" (one per push) | Owner control | BLOCKER | process | — |
+| PROC-001 | No `git push` and no PR opened or updated without the owner's explicit "yes, push" (one per push); since 4 Oct the owner's standing instruction lets each planned round be pushed once its full suite is green (CLAUDE.md) | Owner control | BLOCKER | process | — |
 | PROC-002 | Existing features and UI unchanged unless asked | The children know the game | BLOCKER | check `contract`, `spill`, `phone` | — |
 | PROC-003 | Run the suite before and after; desktop and phone side by side | Phone-only bugs | BLOCKER | process + `phone` | — |
 | PROC-004 | Bump `VERSION` (sw.js), `BUILD`, `studio/version.json` together; new files in `FILES` | Devices update | BLOCKER | check `ground`, `studio` | old version keeps running offline |
@@ -704,7 +707,12 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | UI-001 | Every player-facing text is bilingual (`T()` / `[en,vi]`) | BLOCKER | check `language` |
 | UI-002 | No phone emoji on screen: pictures go through `pic()`/`labelArt()`/`sprite()` | MAJOR | grep/audit tool [IMPR] |
 | UI-003 | Close/Save/Next always fully on screen at 320–390 px; no sideways scroll | BLOCKER | check `phone`, `spill` |
-| UI-004 | Main touch targets ≥ 56 px | MAJOR | check [IMPR] |
+| UI-004 | Touch targets: every button a child taps is at least 44 × 44 px; under-5 answers and the Simple screen's pictures and bar at least 64 px; sizes are the same on every screen (round I) | MAJOR | check `a11y` |
+| A11Y-001 | Reduced motion: Calm mode, or the device's own "Reduce motion" setting, stops every animation that repeats for ever and cuts confetti and fireworks; nothing flashes | MAJOR | check `a11y` |
+| A11Y-002 | Readable captions: every spoken line is shown as words (also with the voice off), at least 16 px, contrast at least 4.5 : 1, on screen long enough to read (≥ 2.5 s) | MAJOR | check `a11y` |
+| A11Y-003 | Simple paths: on the Simple screen any game or story is one tap away, and the child is brought back to it afterwards; every screen has a picture way back (✕ or a bar button), no reading needed | MAJOR | check `simple` |
+| A11Y-004 | Voice instructions: for under-5s every game says what to do when it opens (🔁 says it again), and the Simple screen says what each picture is (names in the recorded pack) | MAJOR | check `a11y` |
+| A11Y-005 | Age modes keep the normal screen as it is: they change sizes, hints, voice and the start screen only (the valley's layout is the `contract` check) | MAJOR | check `contract`, `simple` |
 | STR-001 | Player-facing strings are `Text`, never bare strings | MAJOR | review + `language` |
 | VOICE-001 | Recorded (downloaded) voices always first on every device; the device voice only for a line with no recording | BLOCKER | check `voice` |
 | VOICE-002 | Every new spoken line goes into the pack in the same round; misses reach the Studio inbox | MAJOR | process + Studio Voices count |
@@ -726,7 +734,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | SAVE-003 | A save referencing unknown ids loads with those parts dropped, never crashes | MAJOR | unit [IMPR] |
 
 ### 9.7 Rule registry [IMPR]
-- `js/content/rules.js` (L1) exports `RULES = { 'ROAD-005': { text, severity, validator: 'roads.junctionAngle', check: 'roads', alias: 'R5' }, … }`.
+- `js/content/rules.js` (L1) exports `RULES = { 'ROAD-005': { text, severity, check, alias: 'R5' }, … }` — **built round F**, made from this section's tables by `tools/rules-from-doc.mjs` (so the two never disagree; check `rules`). `js/validate.js` gives each problem its rule's severity.
 - Checks and validators report by rule id.
 - The handbook and HANDOFF cite ids.
 - A test fails if a rule has no validation entry, or if a check names an unknown id.
@@ -871,9 +879,9 @@ Metrics are from the r37 measurement (§1.1). No module is dead code, so nothing
 
 | Step | What | Done when | Risk |
 |---|---|---|---|
-| **0** ◐ | Adopt this document. Add `tests/arch.mjs` (import graph, layer map, cycle count as a ratchet: may only go down) and `js/content/rules.js` (§9.7) with checks reporting rule ids | `arch` passes at baseline (round 30: **2 circle groups, 6 files**: fun ↔ regions ↔ snacks ↔ ui, frame ↔ howto; `tests/arch-baseline.json`); every rule has a validation entry. *Done:* `tests/arch.mjs` + check `arch`; `js/validate.js` reports rule ids. *Still to do:* the layer map and the rules registry | none |
-| **1** | **Core:** `js/core/{ids,events,rng,geo}.js`. `G.events = core.events`. The first events (`ActivityStarted/Completed`, `PlayerEnteredVillage`, `LanguageChanged`) are emitted **in addition to** today's calls | unit tests in Node; suite green | low |
-| **2** | **Break the cycles:** snacks → economy; `fun ↔ ui`; `frame ↔ howto` via `HowToRequested`; `regions → ui` | `arch`: 0 cycles | low |
+| **0** ✔ | Adopt this document. Add `tests/arch.mjs` (import graph, layer map, cycle count as a ratchet: may only go down) and `js/content/rules.js` (§9.7) with checks reporting rule ids | `arch` passes at baseline (round 30: **2 circle groups, 6 files**: fun ↔ regions ↔ snacks ↔ ui, frame ↔ howto; `tests/arch-baseline.json`); every rule has a validation entry. *Done:* `tests/arch.mjs` + check `arch`; `js/validate.js` reports rule ids. *Still to do:* the layer map and the rules registry | none |
+| **1** ✔ | **Core** (done round E: `js/core/{ids,events,rng,geo}.js`, `G.events`, `util.js` passes the maths and seeded random on unchanged; events PlayerEntered/LeftVillage, ActivityStarted/Completed/Abandoned, LanguageChanged, plus StickerEarned/PostcardEarned/HomeDecorated; checks `unit`, `events`): `js/core/{ids,events,rng,geo}.js`. `G.events = core.events`. The first events (`ActivityStarted/Completed`, `PlayerEnteredVillage`, `LanguageChanged`) are emitted **in addition to** today's calls | unit tests in Node; suite green | low |
+| **2** ✔ | **Break the cycles** (done round F: `js/popups.js` (modal, dialog, reward, confetti), `js/vendors.js`, `js/games/registry.js`; `arch` at 0, check `names` guards moves): snacks → economy; `fun ↔ ui`; `frame ↔ howto` via `HowToRequested`; `regions → ui` | `arch`: 0 cycles | low |
 | **3** | **Content extraction (data only):** move `CITIES`, `ROADS`, `RIVER`, places, `SHRINES`, `TOWERS` from `world.js` into `js/content/*`; `world.js` re-exports them (no behaviour change) | Node can import the world description; suite green | low |
 | **4** | **Pure generation:** `gen/terrain.js` (`heightAt`, levels, beds), `gen/roads.js` (fillets, profile from `roads.js`). Unit tests in Node; `tests/world/validate.mjs` for WORLD-001/003/004 and ROAD-002/003/004/005/007/008/013 in Node (seconds instead of minutes) | the same numbers as the browser checks; suite green | medium (heights must match exactly: compare 20,000 samples before/after, as was done for `roadDist`) |
 | **5** | **Entity registry + ids:** `entities` with ids for places, roads, landmarks, buildings with names, NPCs with names, interactables (existing ids reused, ID-002). `interaction` reads the registry | WORLD-008/009 validators; `features` + `games` green | medium |

@@ -6,7 +6,7 @@ import { THREE, sprite } from './gfx.js';
 import { T } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
-import { settings, saveProfiles, farm, saveFarm } from './state.js';
+import { settings, saveProfiles, farm, saveFarm, reduceMotion } from './state.js';
 import { heightAt, VILLAGE, CHINA, INDIA, AUSSIE, TOWN } from './world.js';
 import { FEAST } from './data.js';
 
@@ -96,7 +96,7 @@ export function createFestivals(G) {
     group.children.forEach(s => { if (s.userData.base != null) s.position.y = s.userData.base + Math.sin(t * 2 + s.userData.k) * .15; });
     const F = FESTIVALS[current];
     if (showT > 0) showT -= dt;
-    if (F.fireworks && (world.isNight() || showT > 0) && !settings.calm) {
+    if (F.fireworks && (world.isNight() || showT > 0) && !reduceMotion()) {
       fwT -= dt;
       if (fwT <= 0) {
         fwT = showT > 0 ? .5 + Math.random() * .6 : 1.2 + Math.random() * 1.5;

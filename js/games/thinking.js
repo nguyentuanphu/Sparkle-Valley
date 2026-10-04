@@ -5,7 +5,8 @@ import { T, ALPHABET, VI_LETTER_NAMES, LETTER_WORDS, numWord, COLORS, colorName 
 import { settings, profiles } from '../state.js';
 import { avatarURL } from '../avatar.js';
 import { sayIn } from '../voice.js';
-import { shuffle, pick, el, wait } from '../util.js';
+import { shuffle, pick, el, wait, esc } from '../util.js';
+import { stream } from '../core/rng.js';
 
 const FRUIT = ['🍎', '🍌', '🍇', '🍓', '🍊', '🥝', '🍉', '🍐'];
 const ANIMALS = ['🐶', '🐱', '🐰', '🐸', '🐥', '🐷', '🐼', '🦊'];
@@ -203,8 +204,9 @@ register({
 
 // ---------- Memory pairs (co-op: two players take turns and share the score) ----------
 register({
-  id: 'memory', icon: '🃏', name: () => T('Memory Match', 'Lật Hình Ghi Nhớ'),
+  id: 'memory', online: true, icon: '🃏', name: () => T('Memory Match', 'Lật Hình Ghi Nhớ'),
   async run(api) {
+    if (api.online) return memoryOnline(api);
     const pairs = [3, 4, 6, 6, 8][Math.min(4, api.level - 1)];
     // the children's own photos are some of the cards
     const photos = profiles.slice(0, 4).map(p => `<img src="${avatarURL(p)}" alt="">`);
@@ -232,3 +234,36 @@ register({
     await wait(800); return api.win();
   }
 });
+
+// Memory Match with friends online (round G): 2 to 4 children, each on their own device. The same cards on every
+// device (shuffled from the game's own code); players take turns; a pair scores and that player goes again; the most
+// pairs wins. Every flip is one move, so everyone sees every card turn over.
+async function memoryOnline(api) {
+  const O = api.online, n = O.names.length, pairs = n > 2 ? 8 : 6, r = stream('memory/' + O.seed);
+  const faces = r.shuffle([...ANIMALS, ...FRUIT]).slice(0, pairs), deck = r.shuffle([...faces, ...faces]);
+  const score = O.names.map(() => 0);
+  const head = el('div', 'rps-room'), grid = el('div', 'mem-grid'); grid.style.setProperty('--cols', 4);
+  const drawHead = turn => { head.innerHTML = O.names.map((nm, s) => `<div class="rps-p ${s === O.mine ? 'me' : ''} ${s === turn ? 'won' : ''}"><b>${esc(nm)}</b><small>${score[s]}</small></div>`).join(''); };
+  api.stage.append(head, grid);
+  const cards = deck.map(f => { const c = el('button', 'mem', `<span class="back">⭐</span><span class="front">${f}</span>`); c._v = f; grid.appendChild(c); return c; });
+  let turn = 0, step = 0, found = 0;
+  api.say('Memory Match with your friends! Take turns to flip two cards.', 'Lật hình với các bạn! Lần lượt lật hai thẻ nhé.');
+  while (!api.closed && found < pairs) {
+    drawHead(turn);
+    api.show(turn === O.mine ? T('Your turn! Flip two cards.', 'Đến lượt con! Lật hai thẻ.') : T(`${O.names[turn]} is flipping…`, `${O.names[turn]} đang lật…`), turn === O.mine ? 'Đến lượt con! Lật hai thẻ.' : `${O.names[turn]} đang lật…`);
+    const open = [];
+    while (open.length < 2) {
+      let i;
+      if (turn === O.mine) { const c = await tapOne(cards.filter(x => !x.classList.contains('flip'))); if (api.closed) return; i = cards.indexOf(c); O.move(step, i); }
+      else { i = await O.next(step, turn); if (api.closed) return; if (i == null) { api.say('Your friend left the game.', 'Bạn của con đã rời trò chơi.'); await wait(1500); return api.win({ title: T('Good game!', 'Chơi vui lắm!') }); } }
+      step++; const c = cards[i]; if (!c || c.classList.contains('flip')) continue;
+      c.classList.add('flip'); api.sfx.tap(); open.push(c);
+    }
+    await wait(800);
+    if (open[0]._v === open[1]._v) { open.forEach(c => c.classList.add('got')); found++; score[turn]++; api.sfx.chime(); if (turn === O.mine) api.praise(); }
+    else { open.forEach(c => c.classList.remove('flip')); turn = (turn + 1) % n; }
+  }
+  if (api.closed) return;
+  const best = Math.max(...score), who = O.names.filter((_, s) => score[s] === best).join(' & ');
+  return api.win({ title: score[O.mine] === best ? T(`You found the most pairs (${best})!`, `Con tìm được nhiều cặp nhất (${best})!`) : T(`${who} found the most pairs! Good game!`, `${who} tìm được nhiều cặp nhất! Chơi vui lắm!`) });
+}

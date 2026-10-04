@@ -25,6 +25,8 @@ const side = v => {
   if (v.items != null) { if (typeof v.items !== 'object' || Array.isArray(v.items)) return undefined; const e = Object.entries(v.items); if (e.length > 12) return undefined; out.items = {}; for (const [k, n] of e) { if (!/^\w{1,24}$/.test(k) || !Number.isInteger(n) || n < 1 || n > 99) return undefined; out.items[k] = n; } }
   return out;
 };
+/** @type {Field} up to 6 player ids, each a word */
+const seats = v => Array.isArray(v) && v.length >= 2 && v.length <= 6 && v.every(x => typeof x === 'string' && /^[\w-]{1,64}$/.test(x)) ? v.slice() : undefined;
 const W = 180; // world coordinates stay inside ±180 m (the valley is 400 m across)
 // kind → { fields, size (largest JSON in characters), per (at most this many…), sec (…in this many seconds), need (fields that must be there) }
 /** @type {Record<string, Kind>} */
@@ -45,7 +47,16 @@ export const SCHEMA = {
   offer: { fields: { id: word(32), give: side, want: side }, need: ['id', 'give', 'want'], size: 2000, per: 3, sec: 5 },
   tradeYes: { fields: { id: word(32) }, need: ['id'], size: 600, per: 4, sec: 5 },
   tradeNo: { fields: { id: word(32) }, need: ['id'], size: 600, per: 4, sec: 5 },
-  tradeDone: { fields: { id: word(32), ok: bool }, need: ['id'], size: 600, per: 4, sec: 5 }
+  tradeDone: { fields: { id: word(32), ok: bool }, need: ['id'], size: 600, per: 4, sec: 5 },
+  // games with friends (js/netgames.js): an invitation, yes / no, the start with everyone's seat, moves, leaving
+  gask: { fields: { gid: word(12), game: word(48), level: int(1, 5) }, need: ['gid', 'game'], size: 600, per: 3, sec: 10 },
+  gyes: { fields: { gid: word(12) }, need: ['gid'], size: 600, per: 4, sec: 5 },
+  gno: { fields: { gid: word(12) }, need: ['gid'], size: 600, per: 4, sec: 5 },
+  gstart: { fields: { gid: word(12), game: word(48), level: int(1, 5), seats }, need: ['gid', 'game', 'seats'], size: 1200, per: 3, sec: 10 },
+  gmove: { fields: { gid: word(12), n: int(0, 9999), mv: int(0, 9999) }, need: ['gid', 'n', 'mv'], size: 600, per: 12, sec: 2 },
+  gbye: { fields: { gid: word(12) }, need: ['gid'], size: 600, per: 4, sec: 5 },
+  // a pickup taken (fruit, flowers, gems, things on the ground): first come, first served (js/claims.js)
+  claim: { fields: { id: word(16), ms: int(0, 600000) }, need: ['id', 'ms'], size: 600, per: 10, sec: 5 }
 };
 // fields every message may carry (the transport's own)
 /** @type {Record<string, Field>} */

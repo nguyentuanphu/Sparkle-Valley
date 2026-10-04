@@ -148,7 +148,7 @@ Sources merged here:
 - Touch targets ≥ 56 px for main buttons (aim 56–72), well apart, never hugging the screen edge. Close/Save/Next always visible on a 320–390 px phone (checked by `phone`, `spill`).
 - Every screen can be left with one obvious button, or by tapping outside. Leaving never loses progress.
 - **Test desktop and phone side by side, every round** (HARD, rule 12): `phone` check + screenshots at 390 × 760 touch and 1180 × 760.
-- Accessibility already in: calm mode, text size, captions, reduced motion. **(to decide):** one "simpler controls" switch for little hands.
+- Accessibility: calm mode (also turned on by the device's "Reduce motion"), text size, captions (≥ 16 px, contrast ≥ 4.5 : 1), touch targets ≥ 44 px (≥ 64 px for under-5s), spoken instructions for under-5s. **Decided (owner, round I):** the "simpler controls" switch is the **Simple screen**: a path of big pictures, one tap to play, under-5s start on it and every child can switch either way. Rules A11Y-001…005 in ARCHITECTURE §9.6.
 
 ## 10. Data, privacy and safety · Dữ liệu và an toàn
 

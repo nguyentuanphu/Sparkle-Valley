@@ -105,7 +105,9 @@ await check('features', async () => {
   r.keyMap = await P.page.evaluate(() => !!document.querySelector('.pad'));
   await P.page.keyboard.press('Digit2'); await P.page.waitForTimeout(300);
   r.keyTab = await P.page.evaluate(() => document.querySelector('.pad-tabs .on')?.dataset.t);
-  await P.page.keyboard.press('Escape'); await P.page.waitForTimeout(900);
+  await P.page.keyboard.press('Escape'); await P.page.waitForTimeout(300);
+  // (the keys only work once the window has gone and the game runs again: wait for that, not a fixed time)
+  await P.page.waitForFunction(() => !document.querySelector('.modal, .storybook, .vc-pop') && !__sv.paused, null, { timeout: 15000 }).catch(() => { });
   const z0 = await P.page.evaluate(() => __sv.heroes[0].zoom || 1); await P.page.keyboard.press('Minus'); r.zoom = (await P.page.evaluate(() => __sv.heroes[0].zoom)) > z0;
   // a fairy tale from the Games hub: fly to the storyteller, the theatre opens
   await clear(P.page); await P.page.evaluate(() => __sv.openGamesHub(0)); await P.page.waitForTimeout(400);
@@ -210,7 +212,7 @@ await check('roads', async () => {
     const near = (x, z, rr) => { const d = W.roadDist(x, z); return d.d < d.road.w / 2 + rr; };
     for (const c of G.world.colliders) if (c.r > .45 && near(c.x, c.z, c.r - .3)) out.push(`collider ${c.x.toFixed(1)},${c.z.toFixed(1)} r${c.r}`);
     for (const bx of G.world.boxes) { const x = (bx.x0 + bx.x1) / 2, z = (bx.z0 + bx.z1) / 2; if (near(x, z, Math.min(bx.x1 - bx.x0, bx.z1 - bx.z0) / 2)) out.push(`box ${x.toFixed(1)},${z.toFixed(1)}`); }
-    for (const i of G.interactables) if (Number.isFinite(i.x) && near(i.x, i.z, -.5)) out.push(`thing ${i.id}`);
+    for (const i of G.interactables) if (Number.isFinite(i.x) && !i.walks && near(i.x, i.z, -.5)) out.push(`thing ${i.id}`);
     const named = new Set(W.ROADS.flatMap(R => (R.gates || []).filter(Boolean)));
     const missing = W.CITIES.map(c => c.id).filter(id => !named.has(id));
     const gates = W.ROADS.reduce((n, R) => n + (R.gates || []).filter(Boolean).length, 0);
@@ -413,10 +415,10 @@ await check('voicepack', async () => {
   const state = () => P.page.evaluate(async () => { const c = await caches.open('sv-voices'); return { files: (await c.keys()).filter(r => /\/voices\/.+\.mp3$/.test(r.url)).length, saved: JSON.parse(localStorage.getItem('sv2_settings')).packSaved || '' }; });
   const first = await openAgain(), s1 = await state();
   ok(first.some(x => /%/.test(x)) && first.some(x => /✓/.test(x)) && s1.files >= 24 && s1.saved === '24:2:test', 'first open: ' + JSON.stringify({ first: first.slice(0, 4), s1 }));
-  // next open: everything is there, so nothing shows
+  // next open: everything is there, so nothing downloads; the bar only says "ready ✓" for a moment (owner, round F)
   await P.page.reload(); await start(P.page); await clear(P.page); await P.page.waitForTimeout(10000);
   const second = await P.page.evaluate(() => window.__packLog);
-  ok(!second.length, 'the bar showed again although every voice was on the device: ' + JSON.stringify(second));
+  ok(second.some(x => /✓/.test(x)) && !second.some(x => /%/.test(x)), 'next open: ' + JSON.stringify(second));
   // the phone cleared some files: the next open fetches only those, quietly with the bar
   await P.page.evaluate(async () => { const c = await caches.open('sv-voices'); const ks = (await c.keys()).filter(r => /\.mp3$/.test(r.url)); for (const r of ks.slice(0, 5)) await c.delete(r); });
   const third = await openAgain(), s3 = await state();
@@ -424,7 +426,33 @@ await check('voicepack', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(third.some(x => /✓/.test(x)) && s3.files >= 24, 'missing files were not fetched again: ' + JSON.stringify({ third: third.slice(0, 3), s3 }));
   ok(!errs.length, errs.join(' | '));
-  return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open shows nothing, and files the phone lost are fetched again`;
+  return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open only says "${second[0] || ''}" for a moment, and files the phone lost are fetched again`;
+});
+
+await check('welcomevoice', async () => {
+  // HARD RULE 11: the recorded voice is the voice. Lines with a child's or friend's name can't be recorded, so the game
+  // shows the name and speaks a recorded line (owner, round F: the welcome was still in the phone's voice). A new
+  // player: tapping their picture, starting, and Ông Cú's welcome must speak only recorded lines.
+  const P = await open(b, { w: 900, h: 640, play: false, settings: { voice: true } });
+  await P.page.evaluate(() => { localStorage.removeItem('sv2_voiceMisses'); });
+  const said = [];
+  await P.page.exposeFunction('__said', t => said.push(t));
+  await P.page.evaluate(async () => { const V = await import('/js/voice.js'), S = await import('/js/state.js'); V.spoken.push(t => window.__said(t)); S.profiles[0].name = 'Kiwi'; S.profiles[0].quests.owl = false; S.saveProfiles(true); }); // (a name no recording can know, like a real child's)
+  await (await import('./harness.mjs')).start(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], V = await import('/js/voice.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    for (let k = 0; k < 40 && !V.voicePack(); k++) await wait(250);
+    if (!document.querySelector('.dialog:not(.out)')) { h.profile.quests.owl = false; G._owlAuto = false; }
+    const owl = G.interactables.find(i => /owl/i.test(i.id || '')); if (owl) { h.place(owl.x, owl.z + 1.5); }
+    for (let k = 0; k < 30 && !document.querySelector('.dialog:not(.out)'); k++) await wait(200);
+    const d = document.querySelector('.dialog .dtext'), shown = d ? d.textContent : '';
+    return { shown, pack: !!V.voicePack() };
+  });
+  const rec = await P.page.evaluate(async lines => { const V = await import('/js/voice.js'), hash = (await import('/js/packhash.js')).packHash, pack = V.voicePack(); return lines.map(t => [t, !!(pack && pack.lines[hash('en', t)])]); }, said);
+  const errs = P.errors; await P.ctx.close();
+  const notRecorded = rec.filter(([, ok]) => !ok).map(([t]) => t);
+  ok(r.pack && /Good morning, Kiwi/.test(r.shown) && said.length && !notRecorded.length && !errs.length, JSON.stringify({ shown: r.shown, said, notRecorded, errs }));
+  return `Ông Cú's welcome shows the child's name ("${r.shown.slice(0, 40)}…") and every spoken line (${said.length}) has a recording`;
 });
 
 await check('studio', async () => {
@@ -597,6 +625,441 @@ await check('ages', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(!r.small.hintAt[0] && r.small.hintAt[1] && !r.small.after && !r.big.hintAt.some(Boolean) && r.layer && r.hintMs === 10000 && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return 'under 5: big buttons, the right answer wiggles after two misses (or 10 s), and stops once tapped; 5 and up: no hint';
+});
+
+await check('simple', async () => {
+  // the Simple screen (round I, js/simple.js): an under-5 starts on it; any game or story is one tap away (A11Y-003);
+  // when the game ends the path comes back; 🌳 Valley switches to the 3D world and is remembered; a big kid starts in
+  // the valley and can open it from the dock; two players on one device never see it
+  const P = await open(b, { w: 390, h: 844, touch: true, screen: null });
+  await P.page.waitForSelector('.simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
+  await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
+  const r = { start: true };
+  await P.page.locator('.sp-stop').first().click(); await P.page.waitForSelector('.gl', { timeout: 10000 }); r.game = true;
+  await P.page.evaluate(() => document.querySelector('.gl-x').click());
+  r.back = await P.page.waitForFunction(() => __sv.simple.open, null, { timeout: 8000 }).then(() => true, () => false);
+  await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.locator('.sp-stop').first().click();
+  r.tale = await P.page.waitForSelector('.theatre', { timeout: 10000 }).then(() => true, () => false);
+  await P.page.evaluate(() => document.querySelector('.theatre .th-x').click());
+  await P.page.waitForFunction(() => __sv.simple.open, null, { timeout: 8000 }).catch(() => { });
+  await P.page.evaluate(() => document.querySelectorAll('.dialog, .reward').forEach(d => d.remove()));
+  await P.page.click('.sp-valley'); await P.page.waitForTimeout(500);
+  r.valley = await P.page.evaluate(() => ({ open: __sv.simple.open, screen: __sv.heroes[0].profile.screen, dock: !document.querySelector('.dk.simple').hidden, paused: __sv.paused }));
+  await P.page.click('.dk.simple'); r.reopen = await P.page.evaluate(() => __sv.simple.open);
+  const errs = P.errors; await P.ctx.close();
+  // a big kid, and two players
+  const B = await open(b, { w: 390, h: 844, touch: true, screen: null });
+  await B.page.evaluate(() => { __sv.simple.hide(); __sv.heroes[0].profile.age = 'big'; delete __sv.heroes[0].profile.screen; __sv.simple.start(); });
+  await B.page.waitForTimeout(1200); r.big = await B.page.evaluate(() => __sv.simple.open); await B.ctx.close();
+  // a phone on its side: the bar is a rail on the left and the path scrolls sideways; every picture still ≥ 64 px
+  const W = await open(b, { w: 844, h: 390, touch: true, screen: 'simple' });
+  await W.page.waitForSelector('.simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
+  r.wide = await W.page.evaluate(() => { const s = document.querySelector('.simple-screen'), t = s.querySelector('.sp-tabs').getBoundingClientRect(), sc = s.querySelector('.sp-scroll'), pics = [...s.querySelectorAll('.sp-pic')].map(e => e.getBoundingClientRect()), tabs = [...s.querySelectorAll('.sp-tabs button')].map(e => e.getBoundingClientRect());
+    return { wide: s.classList.contains('wide'), rail: t.left < 5 && t.height > 300, sideways: sc.scrollWidth > sc.clientWidth && sc.scrollHeight <= sc.clientHeight + 2, inView: pics.slice(0, 3).every(p => p.top >= 0 && p.bottom <= innerHeight), big: pics.every(p => p.width >= 64) && tabs.every(p => Math.min(p.width, p.height) >= 64) }; });
+  await W.ctx.close();
+  const S = await open(b, { w: 1280, h: 800, mode: 'split', screen: null }); await S.page.waitForTimeout(1500);
+  r.split = await S.page.evaluate(() => ({ open: __sv.simple.open, dock: [...document.querySelectorAll('.dk.simple')].some(d => !d.hidden) })); await S.ctx.close();
+  ok(r.game && r.back && r.tale && !r.valley.open && r.valley.screen === 'valley' && r.valley.dock && !r.valley.paused && r.reopen && r.wide.wide && r.wide.rail && r.wide.sideways && r.wide.inView && r.wide.big && !r.big && !r.split.open && !r.split.dock && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'under 5 starts on the path; a game and a story each one tap away, the path comes back after; Valley remembered; dock button reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
+});
+
+await check('a11y', async () => {
+  // accessibility rules (round I, ARCHITECTURE §9.6): UI-004 touch targets, A11Y-001 reduced motion, A11Y-002 readable
+  // captions, A11Y-004 under-5s hear every game's instruction (A11Y-003 simple paths: the "simple" check)
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  const small = (min, sel = 'button, a[href], [role=button], input[type=checkbox], select') => P.page.evaluate(([min, sel]) => {
+    const out = [];
+    for (const e of document.querySelectorAll(sel)) {
+      const r = e.getBoundingClientRect(), s = getComputedStyle(e);
+      if (!(r.width > 0 && r.height > 0) || s.visibility === 'hidden' || e.closest('[hidden]') || r.bottom <= 0 || r.top >= innerHeight || r.right <= 0 || r.left >= innerWidth) continue;
+      if (Math.min(r.width, r.height) < min - .5) out.push(((e.className && String(e.className)) || e.tagName).split(' ')[0] + ':' + e.textContent.trim().slice(0, 10) + '=' + Math.round(Math.min(r.width, r.height)));
+    }
+    return out;
+  }, [min, sel]);
+  const bad = {};
+  const at = async (name, fn, min = 44, sel) => { await fn(); await P.page.waitForTimeout(500); const s = await small(min, sel); if (s.length) bad[name] = s.slice(0, 6); await clear(P.page); };
+  await at('valley', async () => { });
+  for (const t of ['map', 'bag', 'log', 'album', 'passport', 'games', 'cam', 'friend']) await at('pad-' + t, () => P.page.evaluate(t => __sv.openPad(0, t), t));
+  await at('games hub', () => P.page.evaluate(() => __sv.openGamesHub(0)));
+  await at('quick settings', () => P.page.evaluate(() => __sv.openQuick(0)));
+  // under 5: the answers in a game are at least 64 px; the Simple screen's pictures and bar too
+  await P.page.evaluate(async () => { const F = await import('/js/games/frame.js'); window.__g = F.openGame('colors', { players: [__sv.heroes[0].profile], level: 1, little: true }); });
+  await P.page.waitForTimeout(1200); { const s = await small(64, '.gl .choice'); if (s.length) bad['little answers'] = s; }
+  await P.page.evaluate(() => document.querySelector('.gl-x').click()); await P.page.waitForTimeout(500); await clear(P.page);
+  await at('simple screen', () => P.page.evaluate(() => __sv.simple.show()), 64, '.sp-pic, .sp-tabs button, .sp-again, .sp-grown');
+  await P.page.evaluate(() => __sv.simple.hide());
+  // readable captions: shown even with the voice off, ≥ 16 px, contrast ≥ 4.5 : 1 (on white behind, the worst case), ≥ 2.5 s
+  const cap = await P.page.evaluate(async () => {
+    const V = await import('/js/voice.js'); V.say('Look at the pretty kite!', 'Nhìn con diều đẹp chưa kìa!');
+    await new Promise(r => setTimeout(r, 2400)); const c = document.querySelector('.caption'); if (!c) return null;
+    const s = getComputedStyle(c), rgb = x => x.match(/[\d.]+/g).map(Number), fg = rgb(s.color), bg = rgb(s.backgroundColor), a = bg[3] ?? 1;
+    const mix = bg.slice(0, 3).map((v, k) => v * a + 255 * (1 - a)), L = c3 => { const [r, g, b] = c3.map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * r + .7152 * g + .0722 * b; };
+    const l1 = L(fg.slice(0, 3)), l2 = L(mix);
+    return { shown: c.classList.contains('show'), px: parseFloat(s.fontSize), contrast: +((Math.max(l1, l2) + .05) / (Math.min(l1, l2) + .05)).toFixed(1) };
+  });
+  // reduced motion: the device's "Reduce motion" turns on Calm mode and no animation runs for ever
+  await P.page.emulateMedia({ reducedMotion: 'reduce' }); await P.page.waitForTimeout(300);
+  await P.page.evaluate(() => __sv.simple.show()); await P.page.waitForTimeout(600);
+  const motion = await P.page.evaluate(() => ({ calm: document.body.classList.contains('calm'), forever: document.getAnimations().filter(a => a.playState === 'running' && a.effect && a.effect.getComputedTiming().iterations === Infinity).map(a => (a.animationName || '') + '@' + ((a.effect.target && a.effect.target.className && String(a.effect.target.className).split(' ')[0]) || '')).slice(0, 8) }));
+  await P.page.evaluate(() => __sv.simple.hide()); await P.page.emulateMedia({ reducedMotion: 'no-preference' });
+  // under 5: every game says what to do when it opens
+  const quiet = await P.page.evaluate(async () => {
+    const F = await import('/js/games/frame.js'), V = await import('/js/voice.js'), out = [];
+    let heard = 0; V.spoken.push(() => { heard++; });
+    for (const id of Object.keys(F.GAMES)) {
+      heard = 0; const g = F.openGame(id, { players: [__sv.heroes[0].profile], level: 1, little: true });
+      for (let k = 0; k < 30 && !heard; k++) await new Promise(r => setTimeout(r, 100));
+      if (!heard) out.push(id);
+      const x = document.querySelector('.gl-x'); if (x) x.click(); await Promise.race([g, new Promise(r => setTimeout(r, 1500))]);
+      document.querySelectorAll('.gl, .modal, .dialog, .reward').forEach(e => e.remove());
+    }
+    return { n: Object.keys(F.GAMES).length, quiet: out };
+  });
+  const errs = P.errors.filter(e => !/getUserMedia|NotAllowed/.test(e)); await P.ctx.close();
+  ok(!Object.keys(bad).length && cap && cap.shown && cap.px >= 16 && cap.contrast >= 4.5 && motion.calm && !motion.forever.length && !quiet.quiet.length && !errs.length,
+    JSON.stringify({ bad, cap, motion, quiet: quiet.quiet, errs: errs.slice(0, 5) }));
+  return `touch targets ≥ 44 px on 12 screens, ≥ 64 px for under-5 answers and the Simple screen; captions ${cap.px} px, contrast ${cap.contrast}:1, still up at 2.4 s; Reduce motion → Calm, nothing loops; all ${quiet.n} games speak their instruction to an under-5`;
+});
+
+await check('unit', async () => {
+  // Node unit tests (architecture §10): the L0 core (ids, events, seeded random, geometry), node --test tests/unit
+  const { execFileSync } = await import('child_process');
+  let out = ''; try { out = execFileSync(process.execPath, ['--test', ...fs.readdirSync('unit').filter(f => f.endsWith('.test.mjs')).map(f => 'unit/' + f)], { encoding: 'utf8' }); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').filter(l => /^not ok|Error/.test(l)).slice(0, 6).join(' | ')); }
+  const pass = (out.match(/^# pass (\d+)/m) || [])[1], fail = (out.match(/^# fail (\d+)/m) || [])[1];
+  ok(+fail === 0 && +pass > 0, out.slice(-400));
+  return `${pass} unit tests passed`;
+});
+
+await check('events', async () => {
+  // architecture step 1: the event bus carries what happened, by id, alongside today's calls; the places sticker book
+  // (js/placebook.js) only listens to it: walking into Lotus Village for the first time gives its sticker once
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], W = await import('/js/world.js'), I = await import('/js/i18n.js'), S = await import('/js/state.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    const seen = [], stickers = []; G.events.on('*', (p, n) => { seen.push(n); if (n === 'StickerEarned') stickers.push(p.placeId); });
+    delete (h.profile.placeStickers || {}).village; delete (h.profile.visited || {}).village;
+    h.place(W.VILLAGE.x, W.VILLAGE.z + 6);
+    for (let k = 0; k < 8; k++) { await wait(300); document.querySelectorAll('.storybook, .dialog, .modal').forEach(e => e.remove()); G.paused = false; }
+    const got = !!(h.profile.placeStickers || {}).village;
+    h.place(W.VILLAGE.x - 40, W.VILLAGE.z + 40); await wait(900); h.place(W.VILLAGE.x, W.VILLAGE.z + 6); await wait(900);
+    const earned = stickers.filter(x => x === 'place:village').length;
+    G.playGame(0, 'colors', 'replay'); await wait(700); document.querySelector('.gl .gl-x')?.click(); await wait(500);
+    S.settings.lang = 'vi'; I.applyLang(); S.settings.lang = 'en'; I.applyLang();
+    // the album page shows the book
+    G.openPad && G.openPad(0); await wait(300);
+    return { got, earned, seen: [...new Set(seen)], recent: G.events.recent().slice(-3).map(e => e.name), ids: G.events.recent().filter(e => e.name === 'ActivityStarted').map(e => e.payload.defId) };
+  });
+  const errs = P.errors; await P.ctx.close();
+  const need = ['PlayerEnteredVillage', 'PlayerLeftVillage', 'StickerEarned', 'ActivityStarted', 'ActivityAbandoned', 'LanguageChanged'];
+  ok(r.got && r.earned === 1 && need.every(n => r.seen.includes(n)) && r.ids.includes('game:colors') && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `events seen: ${need.join(', ')}; Lotus Village sticker given once (a second visit gives none)`;
+});
+
+await check('postcards', async () => {
+  // Studio → Family album → postcards (js/familycards.js): a family photo for Lotus Village arrives when the child walks
+  // in (once), shows in the album page, and opens big; Studio's place list is the game's sticker-book place list
+  const P = await open(b, { w: 900, h: 640, play: false });
+  const jpg = Buffer.from('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=', 'base64');
+  await P.page.route('**/content/custom.json*', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ album: [{ id: 'f1', photo: 'content/album/f1.jpg', en: 'Grandma at the market', vi: 'Bà ở chợ', place: 'village' }, { id: 'f2', photo: 'content/album/f2.jpg', en: 'Our garden', vi: 'Vườn nhà mình', place: 'lake' }, { id: 'bad', photo: 'https://example.com/x.jpg', place: 'village' }] }) }));
+  await P.page.route('**/content/album/*.jpg', r => r.fulfill({ contentType: 'image/jpeg', body: jpg }));
+  await P.page.reload(); await start(P.page); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], W = await import('/js/world.js'), F = await import('/js/familycards.js'), C = await import('/js/custom.js'), PB = await import('/js/placebook.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    const got = []; G.events.on('PostcardEarned', p => got.push(p.postcardId));
+    h.profile.familyCards = {}; delete (h.profile.visited || {}).village;
+    if (G.regionOf[0] === 'village') { h.place(W.HOME.x, W.HOME.z); await wait(900); }
+    h.place(W.VILLAGE.x, W.VILLAGE.z + 6); for (let k = 0; k < 6; k++) { await wait(300); document.querySelectorAll('.storybook, .dialog, .modal').forEach(e => e.remove()); G.paused = false; }
+    h.place(W.HOME.x, W.HOME.z); await wait(900); h.place(W.VILLAGE.x, W.VILLAGE.z + 6); await wait(900);
+    const box = document.createElement('div'); box.innerHTML = F.familyCardsHTML(h.profile); document.body.appendChild(box);
+    const shown = { on: box.querySelectorAll('.famcard.on').length, waiting: box.querySelectorAll('.famcard:not(.on)').length };
+    box.querySelector('[data-fam]') && F.bindFamilyCards(box, () => { }); box.querySelector('[data-fam]')?.click(); await wait(300);
+    const big = document.querySelector('.famview img'), loaded = !!(big && big.complete && big.naturalWidth > 0); document.querySelector('.famview')?.click(); box.remove();
+    const studio = await (await fetch('/studio/ui/app.js')).text(), ids = [...studio.slice(studio.indexOf('const ALBUM_PLACES')).split('];')[0].matchAll(/\['([a-z]+)'/g)].map(m => m[1]);
+    return { got, shown, loaded, valid: C.customAlbum().length, studioSame: ids.slice().sort().join() === PB.PLACES.map(x => x.id).sort().join(), ids: ids.length };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.got.length === 1 && r.got[0] === 'postcard:family/f1' && r.shown.on === 1 && r.shown.waiting === 1 && r.loaded && r.valid === 2 && r.studioSame && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `a family photo for Lotus Village arrived once as a postcard, shows in the album and opens big; a photo from outside the game folder is ignored; Studio offers the same ${r.ids} places`;
+});
+
+await check('myhouse', async () => {
+  // decorate your house (js/myhouse.js): the farmhouse door leads into the child's own room with 8 spots; a free
+  // teddy goes on the floor, a clock costs 12 coins (refused with 5, bought with 50), a family postcard can hang on a
+  // wall; it is kept per child, still there after leaving and coming back, and each change says "HomeDecorated"
+  const P = await open(b, { w: 900, h: 640, play: false });
+  const jpg = Buffer.from('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=', 'base64');
+  await P.page.route('**/content/custom.json*', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ album: [{ id: 'f1', photo: 'content/album/f1.jpg', en: 'Grandma', vi: 'Bà', place: 'village' }] }) }));
+  await P.page.route('**/content/album/*.jpg', r => r.fulfill({ contentType: 'image/jpeg', body: jpg }));
+  await P.page.reload(); await start(P.page); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], S = await import('/js/state.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    const ev = []; G.events.on('HomeDecorated', p => ev.push(p.item));
+    h.profile.homeDeco = {}; h.profile.familyCards = { f1: 1 };
+    const doorIt = G.interactables.find(i => i.id === 'myhouse_door'); doorIt.act(h, G); await wait(1600);
+    const inside = !!h.indoors && h.indoors.mine, spots = G.interactables.filter(i => /^deco_/.test(i.id)).length;
+    const pickIn = async (spot, key) => { G.interactables.find(i => i.id === 'deco_' + spot).act(h, G); await wait(300); const b = document.querySelector(`.decor [data-k="${key}"]`); const had = !!b; b && b.click(); await wait(300); document.querySelector('.decor .x')?.click(); await wait(200); return had; };
+    await pickIn(0, 'teddy');
+    S.farm.coins = 5; await pickIn(1, 'clock'); const refused = !h.profile.homeDeco[1] && S.farm.coins === 5;
+    S.farm.coins = 50; await pickIn(1, 'clock'); const bought = h.profile.homeDeco[1] === 'clock' && S.farm.coins === 38;
+    const cardOnWall = await pickIn(4, 'card:f1'), cardOnFloor = await (async () => { G.interactables.find(i => i.id === 'deco_2').act(h, G); await wait(300); const x = !!document.querySelector('.decor [data-k="card:f1"]'); document.querySelector('.decor .x')?.click(); await wait(200); return x; })();
+    G.homes.leave(h); await wait(1400); const out = !h.indoors;
+    doorIt.act(h, G); await wait(1600); const kept = JSON.stringify(h.profile.homeDeco); G.homes.leave(h); await wait(1400);
+    return { inside, spots, refused, bought, cardOnWall, cardOnFloor, out, kept, ev, paused: G.paused };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.inside && r.spots === 8 && r.refused && r.bought && r.cardOnWall && !r.cardOnFloor && r.out && r.kept === '{"0":"teddy","1":"clock","4":"card:f1"}' && r.ev.join() === 'decor:teddy,decor:clock,postcard:family/f1' && !r.paused && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return '8 spots; a free teddy, a 12-coin clock (refused with 5, bought with 50), grandma\'s postcard on a wall (not on the floor); all still there after going out and back in';
+});
+
+await check('names', async () => {
+  // every game file: no name used that is never defined or imported (TypeScript's TS2304 on all of js/, nothing else
+  // judged). Moving code between files (the architecture steps) is where this goes wrong; it once stopped the game.
+  const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
+  if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
+  let out = ''; try { out = execFileSync(tsc, ['-p', 'tsconfig.names.json'], { encoding: 'utf8', maxBuffer: 64e6 }); } catch (e) { out = (e.stdout || '') + ''; }
+  const bad = out.split('\n').filter(l => /TS2304/.test(l) && !l.startsWith('../vendor'));
+  ok(!bad.length, bad.slice(0, 6).join(' | '));
+  return `${fs.readdirSync('../js', { recursive: true }).filter(f => String(f).endsWith('.js')).length} game files: every name is defined or imported`;
+});
+
+await check('rules', async () => {
+  // the rule registry (architecture step 0): js/content/rules.js is exactly what docs/ARCHITECTURE.md §9 says, and every
+  // rule id the code and the checks name (ROAD-003, VEH-001, PRIV-004…) is in it
+  const { execFileSync } = await import('child_process');
+  try { execFileSync(process.execPath, ['../tools/rules-from-doc.mjs', '--check'], { encoding: 'utf8' }); } catch (e) { ok(false, (e.stdout || '') + ''); }
+  const { RULES } = await import('../js/content/rules.js');
+  const src = ['../js/validate.js', 'run.mjs', 'perf-baseline.json'].map(f => fs.readFileSync(f, 'utf8')).join('\n');
+  const named = [...new Set([...src.matchAll(/\b([A-Z]{2,8}-\d{3})\b/g)].map(m => m[1]))], missing = named.filter(id => !RULES[id]);
+  ok(!missing.length, 'named in code but not in the registry: ' + missing.join(', '));
+  return `${Object.keys(RULES).length} rules, the same in the document and the code; ${named.length} rule ids named by the checks, all known`;
+});
+
+await check('coop', async () => {
+  // together quests (js/coop.js): in a room with a friend both devices get the same 3 places from the room code; a
+  // place counts only with the friend within 15 m; all 3 give coins and the next quest. (A pretend friend here; the
+  // real two-device path is the same positions the multiplayer and cloud checks already carry.)
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], N = (await import('/js/net.js')).Net, C = await import('/js/coop.js'), W = await import('/js/world.js'), S = await import('/js/state.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    const same = C.questFor('4321', 0).join() === C.questFor('4321', 0).join() && C.questFor('4321', 0).join() !== C.questFor('4321', 1).join();
+    Object.defineProperty(N, 'connected', { get: () => true, configurable: true }); N.code = '4321';
+    const friend = { id: 'peer-x', pos: { x: 0, y: 0, z: 0 } }; G.partners['peer-x'] = friend;
+    G.coop.tick(); const quest = G.coop.quest, coins0 = S.farm.coins;
+    const spot = id => { // a point inside the place, found from the map
+      for (let r2 = 0; r2 < 200; r2 += 4) for (let a = 0; a < 6.28; a += .5) { const x = Math.cos(a) * r2, z = Math.sin(a) * r2; if (W.regionAt(x, z) === id) return [x, z]; }
+      for (let x = -190; x < 190; x += 3) for (let z = -190; z < 190; z += 3) if (W.regionAt(x, z) === id) return [x, z];
+    };
+    const [ax, az] = spot(quest[0]); h.place(ax, az); friend.pos = { x: ax + 40, y: h.pos.y, z: az }; await wait(200); G.coop.tick();
+    const alone = !!G.coop.done[quest[0]];
+    friend.pos = { x: ax + 5, y: h.pos.y, z: az }; G.coop.tick(); const together = !!G.coop.done[quest[0]];
+    for (const id of quest.slice(1)) { const [x, z] = spot(id); h.place(x, z); friend.pos = { x: x + 3, y: h.pos.y, z }; await wait(150); G.coop.tick(); }
+    const after = { coins: S.farm.coins - coins0, next: G.coop.count, newQuest: G.coop.quest.join() !== quest.join() };
+    // (visiting the village can start a story scene; close it, as a child would, before opening the Pad)
+    document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false;
+    G.openPad(0, 'log'); await wait(400); const shown = !!document.querySelector('.pad-body') && /Together quest/.test(document.querySelector('.pad-body').textContent);
+    document.querySelector('.modal .x')?.click();
+    delete G.partners['peer-x']; delete N.connected; N.code = null;
+    return { same, quest, alone, together, after, shown };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.same && r.quest.length === 3 && !r.alone && r.together && r.after.coins === 15 && r.after.next === 1 && r.after.newQuest && r.shown && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `room 4321's quest: ${r.quest.join(', ')}; a place counts only with the friend near (40 m away: no, 5 m: yes); all 3 gave coins and a new quest`;
+});
+
+await check('report', async () => {
+  // the play report (js/report.js): a game played and a minute of play are counted for the child who played, and
+  // Grown-ups shows them for that child (this week's minutes, favourite games, places)
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], R = await import('/js/report.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    h.profile.stats.days = {}; h.profile.stats.played = {};
+    for (const id of ['colors', 'colors', 'counting']) { G.playGame(0, id, 'replay'); await wait(600); document.querySelector('.gl .gl-x')?.click(); await wait(500); }
+    R.addMinute(h.profile); R.addMinute(h.profile);
+    const d = h.profile.stats.days[R.dayKey()], played = h.profile.stats.played;
+    const m = R.openReport(h.profile); await wait(300);
+    const txt = m.textContent, bars = m.querySelectorAll('.rep-day').length; m.close();
+    return { d, played, bars, hasWeek: /This week: 2 minutes, 3 games/.test(txt), fav: /Rainbow Paints/.test(txt) };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.d && r.d.games === 3 && r.d.min === 2 && r.played.colors === 2 && r.played.counting === 1 && r.bars === 7 && r.hasWeek && r.fav && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return '3 games and 2 minutes counted today for the child who played; the report shows the week (7 days), the favourite games and what was collected';
+});
+
+await check('iphone', async () => {
+  // the owner's iPhone screenshots (round F): (1) "no microphone" although the phone has one: friends meet with no tap
+  // and iPhone opens the microphone only after a tap; now it says "tap to talk", opens it on the next tap and puts it
+  // into the open calls; only a phone with really no microphone hears "no microphone". (2) Pad → Friends: the player's
+  // buttons squeezed so their words broke into single letters. (3) The friend bar under the map lay on the round buttons.
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, N = (await import('/js/net.js')).Net, wait = ms => new Promise(r => setTimeout(r, ms)), said = [];
+    N.on('status', s => said.push(s.key));
+    // 1. the microphone: refused without a tap, works after one, goes into an open call
+    let asks = 0, replaced = 0; const md = navigator.mediaDevices, real = md.getUserMedia.bind(md);
+    md.getUserMedia = async c => { asks++; if (asks <= 2) { const e = new Error('needs a tap'); e.name = 'NotAllowedError'; throw e; } return real({ audio: true }); };
+    N.calls.set('peer-y', { peerConnection: { getSenders: () => [{ track: { kind: 'audio' }, replaceTrack: async () => { replaced++; } }] } });
+    N.mic = null; N.cloudOn = true; await N.getMic();
+    const first = said.slice(), noMicYet = !N.mic;
+    document.body.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); for (let k = 0; k < 50 && !(N.mic && said.includes('micon')); k++) await wait(100);
+    const micAfterTap = !!N.mic, after = said.slice();
+    md.getUserMedia = async () => { const e = new Error('none'); e.name = 'NotFoundError'; throw e; }; N.mic = null; said.length = 0; await N.getMic(); const reallyNone = said.slice();
+    md.getUserMedia = real; N.calls.delete('peer-y'); N.cloudOn = false; N.mic = null;
+    // 2. Pad → Friends with a player in the room: no button taller than two lines, all inside the card
+    Object.defineProperty(N, 'connected', { get: () => true, configurable: true }); N.code = '1234'; N.remotes['peer-z'] = { id: 'peer-z', name: 'Mít', look: {}, friend: 'ABCDE2' };
+    G.openPad(0, 'friend'); await wait(500);
+    const row = document.querySelector('.prow.roomp'), card = document.querySelector('.pad .card, .modal.pad .card') || document.querySelector('.pad');
+    const btns = row ? [...row.querySelectorAll('.btn')] : [], lh = btns.length ? parseFloat(getComputedStyle(btns[0]).lineHeight) || 20 : 20;
+    const tall = btns.filter(x => x.getBoundingClientRect().height > lh * 2 + 24).map(x => x.textContent.trim());
+    const cr = row ? row.getBoundingClientRect() : null, outside = btns.filter(x => { const q = x.getBoundingClientRect(); return cr && (q.right > cr.right + 1 || q.left < cr.left - 1); }).length;
+    document.querySelector('.modal .x')?.click(); await wait(300);
+    delete N.remotes['peer-z']; delete N.connected; N.code = null;
+    // 3. the friend bar and the round buttons under the map never overlap
+    // (a pretend friend 13 m away: the game shows the bar by itself, as with a real friend)
+    const hud = G.huds[0], chip = hud.q('.friendchip'), me = G.heroes[0].pos; G.partners['peer-q'] = { id: 'peer-q', name: 'Mít', pos: { x: me.x + 13, y: me.y, z: me.z } }; G.huds[0].setCall(true, false, false);
+    await wait(600);
+    const c = chip.getBoundingClientRect(), hit = [...document.querySelectorAll('.hud .tools .dk, .hud .zoomer button, .hud .mini-wrap, .hud .zoom')].filter(e => e.offsetParent).filter(e => { const q = e.getBoundingClientRect(); return q.left < c.right && c.left < q.right && q.top < c.bottom && c.top < q.bottom; }).map(e => e.className);
+    const onScreen = c.width > 60 && c.height > 20 && c.right <= innerWidth + 1 && c.left >= 0, chipText = chip.textContent;
+    delete G.partners['peer-q']; G.huds[0].setCall(false, false, false);
+    return { first, noMicYet, micAfterTap, after, replaced, reallyNone, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok((r.first.includes('mictap') || r.first.includes('micdenied')) && !r.first.includes('nomic') && r.noMicYet && r.micAfterTap && r.after.includes('micon') && r.replaced === 1 && r.reallyNone.includes('nomic')
+    && r.buttons >= 4 && !r.tall.length && !r.outside && !r.hit.length && r.onScreen && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'microphone: "tap to talk" (not "no microphone"), on after the next tap and put into the open call; real "no microphone" still said; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
+});
+
+await check('tienlen', async () => {
+  // Tiến Lên deals the cards (owner, round G): cards fly from a deck in the middle to each player in turn, the hand
+  // fills up as they arrive, and play starts with 13 cards each
+  const P = await open(b, { w: 900, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), seen = { fly: 0, deck: false, handSizes: new Set() };
+    G.playGame(0, 'tienlen', 'replay');
+    const t0 = performance.now();
+    while (performance.now() - t0 < 6000) {
+      seen.fly = Math.max(seen.fly, document.querySelectorAll('.tl-fly').length); seen.deck = seen.deck || !!document.querySelector('.tl-deck');
+      seen.handSizes.add(document.querySelectorAll('.tl-hand .tl-card').length);
+      if (seen.deck && !document.querySelector('.tl-deck') && !seen.after) seen.after = { hand: document.querySelectorAll('.tl-hand .tl-card').length, opp: [...document.querySelectorAll('.tl-opp .n')].map(e => e.textContent.trim()) }; // (the moment dealing ends)
+      await wait(40);
+    }
+    const { hand, opp } = seen.after || { hand: 0, opp: [] };
+    document.querySelector('.gl .gl-x')?.click(); await wait(300);
+    return { fly: seen.fly, deck: seen.deck, steps: seen.handSizes.size, hand, opp };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.deck && r.fly >= 1 && r.steps >= 6 && r.hand === 13 && r.opp.every(x => /13/.test(x)) && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `a deck in the middle, cards flying (up to ${r.fly} at once), the hand filled in ${r.steps} steps to 13; each player has 13`;
+});
+
+await check('netgames', async () => {
+  // games with friends online (js/netgames.js, round G), two devices through the cloud relay: A invites B to Caro from
+  // Pad → Friends, B taps Play, both boards show each move, A wins on both screens; then Oẳn tù tì with everyone:
+  // both pick, both see both hands, first to 3 points wins
+  const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
+  if (!up) return 'skipped (no local MQTT broker on 127.0.0.1:9001)';
+  const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'GAMEA2', friendsOn: true, autoMeet: false, friends: [{ code: 'GAMEB3', name: 'Bin' }] } });
+  const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'GAMEB3', friendsOn: true, autoMeet: false, friends: [{ code: 'GAMEA2', name: 'Na' }] } });
+  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  await A.page.evaluate(async () => __Net.host(__sv.sendHello())); await A.page.evaluate(() => __sv.shareStatus());
+  await B.page.waitForFunction(() => { const s = __Net.friends.status.GAMEA2; return s && s.online && s.room; }, null, { timeout: 30000 });
+  await B.page.evaluate(() => { __sv.openPad(0, 'friend'); }); await B.page.waitForSelector('[data-joinf]'); await B.page.evaluate(() => document.querySelector('[data-joinf]').click());
+  await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 45000 });
+  await A.page.waitForFunction(() => Object.keys(__Net.remotes).length > 0, null, { timeout: 30000 });
+  for (const P of [A, B]) await P.page.evaluate(() => { document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false; });
+  // Caro: A asks from the Friends tab, B says yes
+  await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-caro]').click(); await new Promise(r => setTimeout(r, 400)); document.querySelector('.gamelevel [data-lvl="1"]')?.click(); });
+  await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); const ask = await B.page.evaluate(() => document.querySelector('.dialog .dtext').textContent); await B.page.evaluate(() => document.querySelector('.dialog .dch').click());
+  for (const P of [A, B]) await P.page.waitForSelector('.gl .caro', { timeout: 20000 });
+  const tap = async (P, i) => { await P.page.waitForFunction(i => { const c = document.querySelectorAll('.caro-c')[i]; return c && !c.textContent; }, i); await P.page.evaluate(i => document.querySelectorAll('.caro-c')[i].click(), i); };
+  const seen = async (P, i) => P.page.waitForFunction(i => !!document.querySelectorAll('.caro-c')[i].textContent, i, { timeout: 20000 });
+  for (const [P, Q, i] of [[A, B, 0], [B, A, 3], [A, B, 1], [B, A, 4], [A, B, 2]]) { await tap(P, i); await seen(Q, i); }
+  for (const P of [A, B]) await P.page.waitForSelector('.gl-win', { timeout: 20000 });
+  const caro = { a: await A.page.evaluate(() => document.querySelector('.gl-win p').textContent), b: await B.page.evaluate(() => document.querySelector('.gl-win p').textContent), wonCells: await B.page.evaluate(() => document.querySelectorAll('.caro-c.win').length) };
+  for (const P of [A, B]) { await P.page.evaluate(() => document.querySelector('.gl-tapout')?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))); await P.page.waitForTimeout(800); await P.page.evaluate(() => { document.querySelectorAll('.gl, .modal').forEach(m => m.remove()); __sv.paused = false; }); }
+  // Oẳn tù tì with everyone: A rock, B scissors, three times
+  await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-rpsall]').click(); await new Promise(r => setTimeout(r, 400)); document.querySelector('.gamelevel [data-lvl="1"]')?.click(); });
+  await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); await B.page.evaluate(() => document.querySelector('.dialog .dch').click());
+  for (const P of [A, B]) await P.page.waitForSelector('.gl .rps-room', { timeout: 20000 });
+  let hands = null;
+  for (let round = 0; round < 3; round++) {
+    for (const [P, k] of [[A, 0], [B, 2]]) { await P.page.waitForFunction(() => document.querySelectorAll('.gl .choice:not([disabled])').length === 3, null, { timeout: 20000 }); await P.page.evaluate(k => document.querySelectorAll('.gl .choice')[k].click(), k); }
+    await A.page.waitForFunction(() => [...document.querySelectorAll('.rps-p .h')].every(e => !/❔|✅/.test(e.textContent)), null, { timeout: 20000 });
+    if (round === 0) hands = await B.page.evaluate(async () => { await new Promise(r => setTimeout(r, 300)); return [...document.querySelectorAll('.rps-p .h')].map(e => e.textContent); });
+  }
+  for (const P of [A, B]) await P.page.waitForSelector('.gl-win', { timeout: 20000 });
+  const rps = { a: await A.page.evaluate(() => document.querySelector('.gl-win p').textContent), b: await B.page.evaluate(() => document.querySelector('.gl-win p').textContent) };
+  const errs = [...A.errors, ...B.errors]; await A.ctx.close(); await B.ctx.close();
+  ok(/Caro/.test(ask) && /wins/.test(caro.a) && /thắng/.test(caro.b) && caro.wonCells === 3 && hands && hands.join('') === '✊✌️' && /champion/i.test(rps.a) && /thắng/.test(rps.b) && !errs.length, JSON.stringify({ ask, caro, hands, rps, errs }));
+  return `Caro on two devices: "${ask.slice(0, 40)}…", every move on both boards, "${caro.a}" / "${caro.b}"; Oẳn tù tì: both hands shown (${hands.join(' ')}), "${rps.a}" / "${rps.b}"`;
+});
+
+await check('together', async () => {
+  // playing together online (owner, round G/H), two devices through the cloud relay: a story read together (A turns the
+  // page, B's page turns too); any game side by side with everyone's stars; following a friend; a pickup taken by one
+  // is gone for the other ("… got it first"); and the real place opens inside the game, not in another app
+  const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
+  if (!up) return 'skipped (no local MQTT broker on 127.0.0.1:9001)';
+  const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'TOGA22', friendsOn: true, autoMeet: false, friends: [{ code: 'TOGB33', name: 'Bin' }] } });
+  const B = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'TOGB33', friendsOn: true, autoMeet: false, friends: [{ code: 'TOGA22', name: 'Na' }] } });
+  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  await A.page.evaluate(async () => __Net.host(__sv.sendHello())); await A.page.evaluate(() => __sv.shareStatus());
+  await B.page.waitForFunction(() => { const s = __Net.friends.status.TOGA22; return s && s.online && s.room; }, null, { timeout: 30000 });
+  await B.page.evaluate(() => { __sv.openPad(0, 'friend'); }); await B.page.waitForSelector('[data-joinf]'); await B.page.evaluate(() => document.querySelector('[data-joinf]').click());
+  await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 45000 });
+  await A.page.waitForFunction(() => Object.values(__sv.partners).some(P => P.pos.y > -40), null, { timeout: 30000 });
+  const clean = async () => { for (const P of [A, B]) await P.page.evaluate(() => { document.querySelectorAll('.modal, .dialog, .gl, .theatre').forEach(m => m.remove()); __sv.paused = false; __sv.netGames.leave(); }); await A.page.waitForTimeout(600); };
+  await clean();
+  const accept = async () => { await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); await B.page.evaluate(() => document.querySelector('.dialog .dch').click()); };
+  // 1. a story together
+  await A.page.evaluate(() => __sv.inviteGame('tale-banhchung', null, 1)); await accept();
+  for (const P of [A, B]) await P.page.waitForSelector('.theatre .th-text', { timeout: 20000 });
+  await A.page.evaluate(() => document.querySelector('.theatre .th-next').click()); await A.page.waitForTimeout(400); await A.page.evaluate(() => document.querySelector('.theatre .th-next').click());
+  await B.page.waitForFunction(() => /princes searched far and wide|youngest prince/.test(document.querySelector('.theatre .th-text').textContent), null, { timeout: 15000 }).catch(() => { });
+  const tale = { a: await A.page.evaluate(() => document.querySelector('.theatre .th-text').textContent.slice(0, 40)), b: await B.page.evaluate(() => document.querySelector('.theatre .th-text').textContent.slice(0, 40)) };
+  await clean();
+  // 2. any game side by side: both see both names, and a star from A shows on B
+  await A.page.evaluate(() => __sv.inviteGame('colors', null, 1)); await accept();
+  for (const P of [A, B]) await P.page.waitForSelector('.gl .race', { timeout: 20000 });
+  await A.page.evaluate(() => __sv.netGames.move(900, 3));
+  await B.page.waitForFunction(() => /⭐3/.test(document.querySelector('.gl .race').textContent), null, { timeout: 15000 }).catch(() => { });
+  const race = await B.page.evaluate(() => document.querySelector('.gl .race').textContent.replace(/\s+/g, ' ').trim());
+  await clean();
+  // 3. follow a friend: A stands 25 m away, B follows
+  await A.page.evaluate(() => { const h = __sv.heroes[0]; h.place(h.pos.x + 25, h.pos.z); });
+  await B.page.waitForTimeout(1500);
+  const idA = await B.page.evaluate(() => Object.keys(__sv.partners)[0]);
+  await B.page.evaluate(id => __sv.followFriend(0, id), idA);
+  await B.page.waitForFunction(() => { const P = Object.values(__sv.partners)[0], h = __sv.heroes[0]; return Math.hypot(P.pos.x - h.pos.x, P.pos.z - h.pos.z) < 6; }, null, { timeout: 30000 }).catch(() => { });
+  const follow = await B.page.evaluate(() => { const P = Object.values(__sv.partners)[0], h = __sv.heroes[0]; return Math.round(Math.hypot(P.pos.x - h.pos.x, P.pos.z - h.pos.z)); });
+  await B.page.evaluate(() => { __sv.heroes[0].followId = null; });
+  // 4. first come, first served: A takes a pickup, B's is gone and says who got it
+  const pick = await A.page.evaluate(() => { const it = __sv.interactables.find(i => /^g\d+$/.test(i.id) && i.visible()); it.act(__sv.heroes[0], __sv); return it.id; });
+  await B.page.waitForFunction(id => { const it = __sv.interactables.find(i => i.id === id); return it && !it.visible() && it.st.by; }, pick, { timeout: 15000 }).catch(() => { });
+  const claim = await B.page.evaluate(id => { const it = __sv.interactables.find(i => i.id === id); return { gone: !it.visible(), by: it.st.by || '' }; }, pick);
+  // 5. the real place inside the game
+  const real = await A.page.evaluate(async () => { (await import('/js/realworld.js')).openStreetView('opera'); await new Promise(r => setTimeout(r, 300)); const f = document.querySelector('.rvmap iframe'); return { inGame: !!f, src: f ? f.src.slice(0, 40) : '' }; });
+  const errs = [...A.errors, ...B.errors].filter(e => !/maps\.google|google\.com/.test(e)); await A.ctx.close(); await B.ctx.close();
+  ok(tale.a === tale.b && /prince/.test(tale.b) && /⭐3/.test(race) && follow < 6 && claim.gone && claim.by && real.inGame && !errs.length, JSON.stringify({ tale, race, follow, claim, real, errs }));
+  return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game`;
+});
+
+await check('chests', async () => {
+  // treasure chests for two (round G): a child alone on a stone hears that a friend is needed; two children (split
+  // screen here; a friend online works the same) on the two stones open it: coins, a treat, and the best-friends sticker
+  const P = await open(b, { w: 1280, h: 800, mode: 'split' }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, S = await import('/js/state.js'), wait = ms => new Promise(r => setTimeout(r, ms)), [h0, h1] = G.heroes, c = G.chests.chests[0];
+    h0.profile.chests = {}; h1.profile.chests = {}; const coins0 = S.farm.coins, n = G.chests.chests.length;
+    h0.place(c.plates[0].x, c.plates[0].z); h1.place(c.x + 30, c.z + 30); await wait(300); G.chests.tick();
+    const alone = !!h0.profile.chests[c.id];
+    h1.place(c.plates[1].x, c.plates[1].z); await wait(300); G.chests.tick();
+    return { n, alone, open0: !!h0.profile.chests[c.id], open1: !!h1.profile.chests[c.id], coins: S.farm.coins - coins0, sticker: h0.profile.stickers.includes('🤝'), page: G.chests.html(h0.profile).includes('1/') };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.n >= 5 && !r.alone && r.open0 && r.open1 && r.coins === 40 && r.sticker && r.page && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.n} chests; one child alone: shut; two on the stones: open for both (+${r.coins} coins, a treat each, the best-friends sticker)`;
 });
 
 await check('types', async () => {

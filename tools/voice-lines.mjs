@@ -1,7 +1,7 @@
 // Lists every line the game speaks (English + Tiếng Việt), with the character who says it, so a voice
 // pack can be made. Usage: node tools/voice-lines.mjs > tools/voice-lines.json
-// Lines that contain a child's name or other changing words (`${…}`) can't be recorded in advance; the
-// game speaks those with the device voice.
+// Lines that contain a child's name or other changing words (`${…}`) can't be recorded in advance, so the game
+// speaks a fixed version instead (round F: dialog lines [shown en, shown vi, spoken en, spoken vi]).
 import fs from 'fs';
 import path from 'path';
 
@@ -18,6 +18,8 @@ const PATTERNS = [
   new RegExp(String.raw`\[\s*(${Q})\s*,\s*(${Q})\s*\]`, 'g'),
   new RegExp(String.raw`\[\s*${Q}\s*,\s*(${Q})\s*,\s*(${Q})\s*\]`, 'g'),
   new RegExp(String.raw`\bS\(\s*${Q}\s*,\s*(${Q})\s*,\s*(${Q})\s*\)`, 'g'),
+  // a speech-box line that shows a name but speaks recordable words: [`…${name}…`, `…`, 'say en', 'say vi']
+  new RegExp(String.raw`\[\s*\x60[^\x60]*\x60\s*,\s*\x60[^\x60]*\x60\s*,\s*(${Q})\s*,\s*(${Q})\s*\]`, 'g'),
   new RegExp(String.raw`\b(?:fact|story|hint|about)\s*:\s*\[\s*(${Q})\s*,\s*(${Q})`, 'g')
 ];
 export function collectLines() {
@@ -37,6 +39,18 @@ for (const f of files) {
       if (!seen.has(key)) seen.set(key, { en, vi, files: new Set() });
       seen.get(key).files.add(f);
     }
+  }
+}
+// names spoken on their own (round I, the Simple screen says what a child taps): games, tales and the places a child
+// can fly to; one word is enough here, and a name that is the same in both languages (Uluru) is still said in each
+const NAME = new RegExp(String.raw`\b(?:name|title)\s*:\s*\(\)\s*=>\s*T\(\s*(${Q})\s*,\s*(${Q})\s*\)`, 'g');
+for (const f of files.filter(f => f.startsWith('js/games/') || f === 'js/learn.js' || f === 'js/main.js')) {
+  const src = fs.readFileSync(path.join(ROOT, f), 'utf8'); NAME.lastIndex = 0; let m;
+  while ((m = NAME.exec(src))) {
+    const en = unq(m[1]).trim(), vi = unq(m[2]).trim(); if (!en || !vi || !/\p{L}/u.test(en)) continue;
+    const key = en + '\u0000' + vi;
+    if (!seen.has(key)) seen.set(key, { en, vi, files: new Set() });
+    seen.get(key).files.add(f);
   }
 }
 return [...seen.values()].map(l => ({ en: l.en, vi: l.vi, from: [...l.files].join(',') }));

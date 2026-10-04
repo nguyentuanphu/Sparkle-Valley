@@ -2,8 +2,8 @@
 // stalls"). The child can eat it straight away or keep it for later; eating it fills the stamina wheel and
 // stamps the food passport. Kept in profile.bought = { vendorId: count }.
 import { T } from './i18n.js';
-import { VENDORS } from './regions.js';
-import { dialog, reward } from './ui.js';
+import { VENDORS } from './vendors.js';
+import { dialog, reward } from './popups.js';
 import { farm, saveFarm } from './state.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';

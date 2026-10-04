@@ -202,7 +202,7 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
       const it = { id: `inroom_${j}`, x: RX + x, z: RZ + z + .8, y: RY, r: 1.7, icon: '💬', bubble: '💬', label: () => nm(pp[0]), act: () => G.dialog(pp[0], [pp[3]]) };
       G.interactables.push(it); roomItems.push(it);
     });
-    if (!fam.length && home.room !== 'huenghi') { // nobody named lives here: the family's grandma says hello
+    if (!fam.length && home.room !== 'huenghi' && !home.mine) { // nobody named lives here: the family's grandma says hello
       const gm = person(['Bà Năm', look('aodai', '#c0503a', GREY, 'buns'), 0], RX - 1.5, RY, RZ - 1.2, 0); g.attach(gm.A.root); g.attach(gm.tg); live.push(gm); roomPeople.push(gm);
       const it = { id: 'inroom_g', x: RX - 1.5, z: RZ - .4, y: RY, r: 1.7, icon: '💬', bubble: '💬', label: () => nm('Bà Năm'), act: () => G.dialog('Bà Năm', [(KNOCK[home.kind] || KNOCK.tube)[0]]) };
       G.interactables.push(it); roomItems.push(it);
@@ -211,14 +211,19 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
       const P0 = person([n, look(j ? 'shirt' : 'aodai', j ? '#d8d4c8' : '#7a4a8a', GREY, j ? 'short' : 'buns'), 0], RX + (j ? 2 : -2.6), RY, RZ - 1, 0); g.attach(P0.A.root); g.attach(P0.tg); live.push(P0); roomPeople.push(P0);
     });
     const out = { id: 'home_out', x: RX, z: RZ + 4.6, y: RY, r: 1.8, icon: '🚪', bubble: '🚪', label: () => T('Go outside', 'Ra ngoài'), act: h => leave(h) };
-    const info = { id: 'home_info', x: RX + 5, z: RZ + 3.6, y: RY, r: 1.6, icon: 'ℹ️', bubble: 'ℹ️', label: () => T('About this house', 'Về ngôi nhà này'), act: () => about(home) };
-    G.interactables.push(out, info); roomItems.push(out, info);
-    const sign = sprite('ℹ️', .9); sign.position.set(5, 1.6, 3.6); g.add(sign);
+    G.interactables.push(out); roomItems.push(out);
+    if (!home.mine) {
+      const info = { id: 'home_info', x: RX + 5, z: RZ + 3.6, y: RY, r: 1.6, icon: 'ℹ️', bubble: 'ℹ️', label: () => T('About this house', 'Về ngôi nhà này'), act: () => about(home) };
+      G.interactables.push(info); roomItems.push(info);
+      const sign = sprite('ℹ️', .9); sign.position.set(5, 1.6, 3.6); g.add(sign);
+    }
+    // a home can add its own things to the room (the child's own house: js/myhouse.js)
+    if (home.extra) home.extra(g, { RX, RY, RZ, add: it => { G.interactables.push(it); roomItems.push(it); } });
   }
   // walking out of the open door also takes you back outside
   world.updaters.push(() => { for (const [h] of visitors) if (h.pos.y > RY - 20 && h.pos.z > RZ + 6.2) leave(h); });
 
-  G.homes = { list: homes, enter, leave, about, isInside: h => visitors.has(h) };
+  G.homes = { list: homes, enter, leave, about, isInside: h => visitors.has(h), rebuild: () => { if (inside) buildRoom(inside); }, inside: () => inside };
   return G.homes;
 }
 
@@ -257,6 +262,8 @@ const frame = (x, y, z, col = '#3a78c8') => [P(B(.6, .45, .04), '#6a4026', [x, y
 const lantern = (x, z, y = 2.1) => [P(S(.22), '#e8332a', [x, y, z], [0, 0, 0], [1, 1.2, 1]), P(C(.08, .08, .06, 8), '#ffd23f', [x, y + .28, z]), P(C(.08, .08, .06, 8), '#ffd23f', [x, y - .28, z])];
 
 const ROOMS = {
+  // the child's own house at Sunny Farm: a bed, a rug and a table; the rest is what the child chooses (js/myhouse.js)
+  mine: { floor: '#e8d2b0', tiles: '#dcc39c', wall: '#fdf0dc', trim: '#ff9ec4', build: () => [...bed(-5.2, -3.6, '#9ec9ff'), ...rug(0, .4, '#ffcf6b', '#ff9ec4'), ...table(3.8, -3.8, '#c99a6a', 1.2, .8), ...stool(3.8, -2.9, '#5fd39a')] },
   tube: { floor: '#e8dcc8', tiles: '#d4c4a8', wall: '#f6e3c0', trim: '#ffffff', build: () => [...altar(0, -5), ...sofaVN(-3.5, -3), ...fan(3, -4.5), ...tv(4.6, -4.8), ...moto(5.5, 2.5), ...stairs(-6, 0), ...plant(-5.5, 4.4), ...frame(-2, 1.7, -5.35), ...frame(2, 1.7, -5.35, '#e8433a')] },
   banhmi: { floor: '#e8dcc8', tiles: '#d4c4a8', wall: '#f6c8a8', trim: '#ffffff', build: () => [...altar(0, -5), ...sofaVN(-3.5, -3), ...fan(3, -4.5),
     P(B(2.6, 1, .8), '#3a78c8', [2.8, .5, 2.6]), P(B(2.6, .5, .8), '#cfe8f6', [2.8, 1.25, 2.6]), ...[0, 1, 2, 3, 4].map(i => P(C(.08, .08, .6, 8), '#e8b060', [1.9 + i * .45, 1.15, 2.6], [0, 0, Math.PI / 2])), P(B(1.4, .3, .5), '#c0392b', [2.8, 1.75, 2.6]), ...moto(-5.5, 2.5, '#3a78c8'), ...stairs(-6, -1), ...plant(5.6, 4.4)] },

@@ -122,10 +122,10 @@ register({
 
 // ---------- Cờ caro (tic-tac-toe / four in a row) ----------
 register({
-  id: 'caro', icon: '⭕', name: () => T('Caro (Noughts & Crosses)', 'Cờ Caro'),
+  id: 'caro', online: true, icon: '⭕', name: () => T('Caro (Noughts & Crosses)', 'Cờ Caro'),
   async run(api) {
     const N = api.level <= 1 ? 3 : 6, K = api.level <= 1 ? 3 : 4, P = ['🌸', '🍀'];
-    const names = api.two ? [api.players[0].name, api.players[1].name] : [api.players[0].name, 'Bống'];
+    const O = api.online, names = O ? O.names : api.two ? [api.players[0].name, api.players[1].name] : [api.players[0].name, 'Bống'];
     const b = Array(N * N).fill(-1);
     const grid = el('div', 'caro'); grid.style.setProperty('--n', N); api.stage.appendChild(grid);
     const cells = b.map((_, i) => { const c = el('button', 'caro-c'); c._i = i; grid.appendChild(c); return c; });
@@ -153,16 +153,20 @@ register({
     let turn = 0, winner = -1;
     for (let moves = 0; moves < N * N; moves++) {
       let i;
-      if (turn === 1 && !api.two) { api.show('Bống is thinking…', 'Bống đang suy nghĩ…'); await wait(700); i = aiMove(); }
-      else { api.show(`${names[turn]} ${P[turn]}`, `${names[turn]} ${P[turn]}`); const c = await tapOne(cells.filter(c => b[c._i] < 0)); if (api.closed) return; i = c._i; }
+      if (O && turn !== O.mine) { // a friend's move, from their own device
+        api.show(`${names[turn]} is thinking…`, `${names[turn]} đang suy nghĩ…`); i = await O.next(moves, turn); if (api.closed) return;
+        if (i == null || b[i] !== -1 || i >= N * N) { api.say('Your friend left the game.', 'Bạn của con đã rời trò chơi.'); await wait(1500); return api.win({ title: T('Good game!', 'Ván hay lắm!') }); }
+      }
+      else if (turn === 1 && !api.two && !O) { api.show('Bống is thinking…', 'Bống đang suy nghĩ…'); await wait(700); i = aiMove(); }
+      else { api.show(`${names[turn]} ${P[turn]}`, `${names[turn]} ${P[turn]}`); const c = await tapOne(cells.filter(c => b[c._i] < 0)); if (api.closed) return; i = c._i; if (O) O.move(moves, i); }
       b[i] = turn; cells[i].textContent = P[turn]; cells[i].classList.add('put'); api.sfx.pop(moves);
       const line = lineAt(i, turn);
-      if (line && api.little && turn === 1 && !api.two) break; // (only if every square would finish a line) call it a tie
+      if (line && api.little && turn === 1 && !api.two && !O) break; // (only if every square would finish a line) call it a tie
       if (line) { line.forEach(k => cells[k].classList.add('win')); winner = turn; break; }
       turn = 1 - turn;
     }
     await wait(900);
-    const title = winner < 0 ? T("It's a tie! Good thinking!", 'Hòa rồi! Suy nghĩ giỏi lắm!') : winner === 0 || api.two ? T(`${names[winner]} wins!`, `${names[winner]} thắng!`) : T('Bống wins this time. Great try!', 'Lần này Bống thắng. Con cố gắng giỏi lắm!');
+    const title = winner < 0 ? T("It's a tie! Good thinking!", 'Hòa rồi! Suy nghĩ giỏi lắm!') : winner === 0 || api.two || O ? T(`${names[winner]} wins!`, `${names[winner]} thắng!`) : T('Bống wins this time. Great try!', 'Lần này Bống thắng. Con cố gắng giỏi lắm!');
     return api.win({ title, titleVi: title });
   }
 });

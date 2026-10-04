@@ -139,10 +139,20 @@ export function openPhotos(name, sources, { icon = '📷', id = null, onClose } 
   });
   return m;
 }
-// Google Street View at the real place (opens beside the game; the child comes back with the app switcher or ✕)
+// The real place, inside the game (owner, round H: "show it in game instead of jumping to the web or an app"): a window
+// with the real spot from above (satellite map) and from the street (look around), both embedded; ✕ goes back to the
+// valley. Without the internet it says so instead.
 export function openStreetView(id) {
   const r = REAL[id]; if (!r) return;
-  const url = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${r[1]},${r[2]}`;
-  const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove();
-  say('Look around! Drag to turn, and tap the arrows to walk.', 'Nhìn xung quanh nhé! Kéo để xoay, chạm mũi tên để đi.');
+  const [, lat, lng] = r, hl = T('en', 'vi');
+  const src = { map: `https://maps.google.com/maps?q=${lat},${lng}&t=k&z=18&hl=${hl}&output=embed`, street: `https://maps.google.com/maps?layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&hl=${hl}&output=svembed` };
+  const m = el('div', 'modal rvmap', `<div class="card"><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
+    <div class="rvm-tabs"><button class="btn primary" data-v="map">🗺️ ${T('From above', 'Nhìn từ trên cao')}</button><button class="btn" data-v="street">👀 ${T('Look around', 'Nhìn xung quanh')}</button></div>
+    <div class="rvm-frame">${navigator.onLine === false ? `<p class="note center">${T('The real place needs the internet. Try again when you are online!', 'Xem nơi thật cần có mạng. Khi có mạng con thử lại nhé!')}</p>` : `<iframe title="${T('The real place', 'Nơi thật')}" src="${src.map}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`}</div></div>`);
+  document.body.appendChild(m);
+  const close = () => { m.classList.add('out'); setTimeout(() => m.remove(), 200); };
+  m.querySelector('.x').onclick = () => { SFX.tap(); close(); };
+  m.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { SFX.tap(); m.querySelectorAll('[data-v]').forEach(x => x.classList.toggle('primary', x === b)); const f = m.querySelector('iframe'); if (f) f.src = src[b.dataset.v]; if (b.dataset.v === 'street') say('Look around! Drag to turn, and tap the arrows to walk.', 'Nhìn xung quanh nhé! Kéo để xoay, chạm mũi tên để đi.'); });
+  say('Here is the real place!', 'Đây là nơi thật nè!');
+  return m;
 }

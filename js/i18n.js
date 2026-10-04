@@ -1,6 +1,7 @@
 // Bilingual text. Strings are written inline as T('English', 'Tiếng Việt') so the two
 // languages always travel together.
 import { settings } from './state.js';
+import { events } from './core/events.js';
 import { CUSTOM, customName } from './custom.js';
 
 // People's titles follow the chosen language, but their names stay as they are in their own region:
@@ -43,7 +44,7 @@ export const T = (en, vi) => (settings.lang === 'vi' ? swapNames(vi, 'vi') : swa
 // Things drawn into the 3D world (signs, name tags) register here to redraw when the language changes.
 const langListeners = [];
 export const onLang = f => { langListeners.push(f); };
-export const applyLang = () => { document.documentElement.lang = settings.lang === 'vi' ? 'vi' : 'en'; langListeners.forEach(f => { try { f(); } catch (e) { } }); };
+export const applyLang = () => { document.documentElement.lang = settings.lang === 'vi' ? 'vi' : 'en'; langListeners.forEach(f => { try { f(); } catch (e) { } }); events.emit('LanguageChanged', { lang: settings.lang }); };
 applyLang();
 export const other = (en, vi) => (settings.lang === 'vi' ? en : vi);
 
@@ -77,3 +78,5 @@ export const COLORS = [
   { hex: '#4cbf5c', en: 'green', vi: 'xanh lá' }, { hex: '#ff8a2a', en: 'orange', vi: 'cam' }, { hex: '#9a6bff', en: 'purple', vi: 'tím' }, { hex: '#ff7eb8', en: 'pink', vi: 'hồng' }
 ];
 export const colorName = c => T(c.en, c.vi);
+// a label made with T(), in both languages (to speak a name: say(...both(g.name)))
+export const both = f => { const l = settings.lang; try { settings.lang = 'en'; const en = f(); settings.lang = 'vi'; return [en, f()]; } finally { settings.lang = l; } };

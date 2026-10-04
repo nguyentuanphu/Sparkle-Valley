@@ -2,11 +2,12 @@
  "hud": [
   "q-say",
   "q-go",
+  "friendchip",
   "z-in",
   "z-out",
   "z-view",
-  "friendchip",
   "dk.games",
+  "dk.simple",
   "dk.map",
   "dk.bag",
   "dk.voicecmd",

@@ -72,7 +72,7 @@ export function createGathering(G, { give, sfx, say, toast }) {
     add(g, x, z); world.colliders.push({ x, z, r: .8 });
     const st = { ready: 0 };
     world.updaters.push(() => { fruit.visible = now() > st.ready; });
-    G.interactables.push({ id: 'wf' + k, x, z, r: 2.4, icon: w.icon, label: () => T('Pick ', 'Hái ') + w.name(), visible: () => now() > st.ready,
+    G.interactables.push({ st, id: 'wf' + k, x, z, r: 2.4, icon: w.icon, label: () => T('Pick ', 'Hái ') + w.name(), visible: () => now() > st.ready,
       act: h => { st.ready = now() + 150000; sfx.pop(); give(h, kind, 2); found(h, kind, 2); } });
   });
 
@@ -87,7 +87,7 @@ export function createGathering(G, { give, sfx, say, toast }) {
     add(g, x, z);
     const st = { ready: 0 };
     world.updaters.push((dt, t) => { heads.visible = now() > st.ready; heads.rotation.y = Math.sin(t * .8 + k) * .1; });
-    G.interactables.push({ id: 'wl' + k, x, z, r: 2, icon: w.icon, label: () => T('Pick ', 'Hái ') + w.name(), visible: () => now() > st.ready,
+    G.interactables.push({ st, id: 'wl' + k, x, z, r: 2, icon: w.icon, label: () => T('Pick ', 'Hái ') + w.name(), visible: () => now() > st.ready,
       act: h => { st.ready = now() + 120000; sfx.pop(); give(h, kind, 1); found(h, kind, 1); } });
   });
 
@@ -105,7 +105,7 @@ export function createGathering(G, { give, sfx, say, toast }) {
       const up = now() > st.ready; g.visible = up; col.r = up ? 1 : 0;
       if (st.shake > 0) { st.shake -= dt; rock.position.x = Math.sin(st.shake * 60) * .06; } else rock.position.x = 0;
     });
-    G.interactables.push({ id: 'wr' + k, x, z, r: 2.6, icon: '⛏️', label: () => st.hits ? T(`Tap again! (${3 - st.hits} more)`, `Gõ tiếp! (còn ${3 - st.hits} lần)`) : T('Tap the rock 3 times', 'Gõ hòn đá 3 lần'), visible: () => now() > st.ready,
+    G.interactables.push({ st, id: 'wr' + k, x, z, r: 2.6, icon: '⛏️', label: () => st.hits ? T(`Tap again! (${3 - st.hits} more)`, `Gõ tiếp! (còn ${3 - st.hits} lần)`) : T('Tap the rock 3 times', 'Gõ hòn đá 3 lần'), visible: () => now() > st.ready,
       act: h => {
         st.hits++; st.shake = .3; sfx.tap();
         if (st.hits < 3) { say(st.hits === 1 ? 'Tap! Again!' : 'Crack! One more!', st.hits === 1 ? 'Cốc! Gõ nữa!' : 'Rắc! Một lần nữa!'); return; }
@@ -133,7 +133,7 @@ export function createGathering(G, { give, sfx, say, toast }) {
       sp.forEach((m, i) => { const a = t * 1.6 + i * 2.1; m.position.set(Math.cos(a) * .45, .5 + Math.sin(t * 3 + i) * .15, Math.sin(a) * .45); m.rotation.y = t * 3; });
       if (st.shake > 0) { st.shake -= dt; mound.scale.y = 1 - Math.sin(st.shake * 30) * .12; } else mound.scale.y = 1 - st.digs * .2;
     });
-    G.interactables.push({ id: 'wd' + k, x, z, r: 2.4, icon: '🪏', label: () => st.digs ? T(`Dig again! (${3 - st.digs} more)`, `Đào tiếp! (còn ${3 - st.digs} lần)`) : T('Dig for treasure', 'Đào tìm báu vật'), visible: () => now() > st.ready,
+    G.interactables.push({ st, id: 'wd' + k, x, z, r: 2.4, icon: '🪏', label: () => st.digs ? T(`Dig again! (${3 - st.digs} more)`, `Đào tiếp! (còn ${3 - st.digs} lần)`) : T('Dig for treasure', 'Đào tìm báu vật'), visible: () => now() > st.ready,
       act: h => {
         st.digs++; st.shake = .3; sfx.tap(); G.fx && G.fx(x, heightAt(x, z) + .8, z, '🟫');
         if (st.digs < 3) { say(st.digs === 1 ? 'Dig, dig!' : 'Something is down there!', st.digs === 1 ? 'Đào, đào!' : 'Có gì ở dưới kìa!'); return; }
