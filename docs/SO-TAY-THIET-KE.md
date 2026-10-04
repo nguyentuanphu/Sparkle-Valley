@@ -162,13 +162,13 @@ What may leave the device:
 | What | Where | Rule |
 |---|---|---|
 | Player count hello | `/api/hello` (Netlify Blobs) | Random id, build, language, number of profiles, minutes, games started, stories opened, device type, installed, minutes with friends, ≤ 15 machine-voice lines without names. **Never** names, photos, places or anything typed. Off switch: Grown-ups → Advanced → Count players. **Offline play is not lost:** it waits in a small outbox on the device (per day, ≤ 14 days) and is sent when online, counted on the day it was played; a batch keeps its one-time id until the website confirms it, so a re-send counts once |
-| Online play | PeerJS + cloud relay | Room code is a meeting point, **not** a secret; photos have their own pair lock (ECDH); every message is checked before use |
+| Online play | PeerJS + cloud relay | Room code is a meeting point, **not** a secret, so **newcomers knock** (round 30): the room's starter sees the name and picture and taps Let in / No thanks; until then the newcomer gets nothing from the room and their microphone stays off. **Saved friends** (friend code on the list) come straight in. The code stays 4 digits, also shown as 4 animal pictures (0 🐶 dog · 1 🐱 cat · 2 🐰 bunny · 3 🐻 bear · 4 🐸 frog · 5 🐵 monkey · 6 🦆 duck · 7 🐘 elephant · 8 🐢 turtle · 9 🐟 fish) and a QR code (`?room=1234`, which knocks by itself); the join pad has a numbers/animals switch. Photos have their own pair lock (ECDH); every message is checked before use |
 | Backups | The family's own Drive/iCloud | Never to our server |
 | Studio online | GitHub (draft branch) | Behind `STUDIO_PASSWORD`; only `content/ voices/ photos/ tools/voice-extra.json` can change |
 
 - Every incoming thing (network messages, backups, content packs, Studio requests) is checked for type, size and range before use.
 - No ads aimed at children unless the Studio switches them on; a link opens only after a grown-up sum. No purchases, no streaks, no "come back!" pressure.
-- **(to decide):** a starter-approves-newcomer step for online rooms, and longer room codes.
+- **Decided (round 30):** knocking + saved friends straight in; 4-digit codes kept (animals and QR as other ways to enter them). Still known: the cloud relay's lock comes from the room code, so someone who has the code could read room messages on the public brokers (not photos). A per-room secret carried in the QR code would close this; not done yet.
 
 ## 11. The world as data · Thế giới là dữ liệu
 
@@ -222,7 +222,7 @@ What may leave the device:
 2. **R1 widths.**
    - Asphalt is 5.2 m and dirt 3.4 m today.
    - Footpaths (1.6 m) don't exist yet: add them in villages and round ponds (Phase 2)?
-3. **Online safety:** starter approves newcomers; 6-character room codes.
+3. ~~**Online safety:**~~ decided round 30: newcomers knock, saved friends come straight in, 4 digits kept with animals and QR. Open: who taps "Let in" (today the child who started the room; a grown-up-only option?).
 4. **Two age profiles:** an explicit per-child profile, with adaptive help.
 5. **Voice pack download:** keep downloading the whole pack after the first visit (now: the child's language first), or only the child's language unless a grown-up asks for more.
 6. **Studio exe Publish:** straight to `main` (today), or through the draft branch like online.
@@ -244,7 +244,7 @@ What may leave the device:
 **Right, and worth doing (in order):**
 1. **Online safety:** a 4-digit room code is not a secret.
    - HANDOFF §7 already says so.
-   - Add newcomer approval and longer codes; keep message checks (already validated) and add rate limits.
+   - **Done (round 30):** newcomers knock and the starter lets them in (PRIV-004, check `knock`); the owner chose to keep 4 digits, with animal pictures and a QR code. Still to do: rate limits.
 2. **One world validator** (§11) running in tests and in Studio.
 3. **Mini-game lifecycle:** `js/games/frame.js` is the shared frame. Add a test that opens and closes every game and checks nothing is left behind (timers, listeners, sounds).
 4. **Save schema:**

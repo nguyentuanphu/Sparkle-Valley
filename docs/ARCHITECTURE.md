@@ -712,6 +712,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | PRIV-001 | No API keys or personal data in code or repo | BLOCKER | process + secret scan |
 | PRIV-002 | The hello sends only the whitelisted fields (handbook §10) and stops when switched off | BLOCKER | check `studio` (no names kept) + review |
 | PRIV-003 | Every incoming network, backup, content or Studio payload is validated (type, size, range) before use | BLOCKER | review + tests per schema [IMPR] |
+| PRIV-004 | Online newcomers knock: until the room's starter lets them in they get nothing from the room (no names, moves, voices) and their own microphone is off; only saved friends (friend code on the list) come straight in; "No thanks" keeps them out of that room | BLOCKER | check `knock` (+ `multiplayer`, `cloud`) |
 | SAFE-001 | Safe for ages 2–8: no weapons, blood, scary faces, animal fights, real logos, phone numbers or addresses (G8) | BLOCKER | visual + review |
 | STUDIO-001 | The exe and online Studio are one program and the same version as the game | BLOCKER | check `studio` |
 | STUDIO-002 | Online saves go to a draft branch; Publish copies only the family's files | BLOCKER | check `studio` |

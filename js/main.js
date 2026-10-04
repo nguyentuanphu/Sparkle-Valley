@@ -64,6 +64,7 @@ import { createAds } from './ads.js';
 import { buildSolids } from './solids.js';
 import { startCounting, countPlay } from './players.js';
 import { startPackBar } from './packbar.js';
+import { codeHTML, bindCode, padHTML, boxHTML, okRoom, animalSay } from './roomcode.js';
 // the family's defaults from Sparkle Studio: applied once each time they change there (a grown-up can still change
 // them on the device afterwards)
 { const D = CUSTOM.defaults, sig = D ? JSON.stringify(D) : '';
@@ -815,16 +816,42 @@ Net.on('talking', on => G.huds.forEach(hd => hd.setCall(Net.connected, on, Net.m
 const _np = new THREE.Vector3();
 let netStatus = '';
 Net.on('status', s => {
-  const msg = {
+  let msg = {
     waiting: T(`Room code: ${s.code}. Tell your friend this number!`, `Mã phòng: ${s.code}. Đọc số này cho bạn nhé!`), connecting: T('Connecting…', 'Đang kết nối…'), connected: T('Connected! You can talk now.', 'Đã kết nối! Giờ có thể nói chuyện rồi.'),
     nocode: T('No room with that number. Check the code.', 'Không có phòng số này. Kiểm tra lại mã nhé.'), nomic: T('No microphone: your friend will not hear you, but you can still play and use the talk buttons.', 'Không có micrô: bạn sẽ không nghe được con, nhưng vẫn chơi và dùng nút nói được.'),
     left: T('The room has closed.', 'Phòng đã đóng.'), full: T('That room is full (6 players). Start your own room!', 'Phòng đã đủ 6 người. Hãy tạo phòng mới nhé!'), tapaudio: T('Tap the 🎙️ button to hear your friend.', 'Chạm nút 🎙️ để nghe bạn nói.'), cloud: T('Connected through the cloud relay! You can play and use the talk buttons. (Voice calls need a direct link: try both on Wi-Fi, or ask a grown-up to add a relay.)', 'Đã kết nối qua mạng đám mây! Chơi và dùng nút nói được. (Gọi bằng giọng nói cần kết nối trực tiếp: thử cả hai dùng Wi-Fi, hoặc nhờ người lớn thêm máy chủ trung chuyển.)'), error: T('Could not connect. Check the internet and try again.', 'Không kết nối được. Kiểm tra mạng rồi thử lại.'),
     removed: T('The room’s starter asked you to leave the room.', 'Chủ phòng đã mời con ra khỏi phòng.'),
+    knocking: T('Knock knock! Waiting for the room’s starter to let you in…', 'Cốc cốc! Đang chờ chủ phòng cho con vào…'),
+    denied: T('The room’s starter said not this time. You can start your own room!', 'Chủ phòng chưa cho vào lần này. Con có thể tự tạo phòng nhé!'),
+    noanswer: T('Nobody opened the door. Ask your friend to tap “Let in”, or start your own room.', 'Chưa ai mở cửa. Nhờ bạn chạm “Cho vào”, hoặc tự tạo phòng nhé.'),
     slow: T('Still connecting… This can take a little longer when you are on different networks.', 'Vẫn đang kết nối… Khi hai máy ở hai mạng khác nhau có thể lâu hơn một chút.'),
     stuck: T('Could not link the two devices. Try: both on Wi-Fi (or both on mobile data), start the room on the other device, or ask a grown-up to add a relay in Grown-ups → Online play.', 'Không nối được hai máy. Thử: cả hai dùng Wi-Fi (hoặc cả hai dùng 4G), để máy kia tạo phòng, hoặc nhờ người lớn thêm máy chủ trung chuyển trong mục Người lớn → Chơi trực tuyến.')
   }[s.key] || '';
+  if (s.key === 'waiting') { const code = s.code; msg = T(`Room code: ${code} (${animalSay(code)}). Tell your friend!`, `Mã phòng: ${code} (${animalSay(code)}). Đọc cho bạn nhé!`); }
   netStatus = msg; if (msg) toast(msg); if (G.onNet) G.onNet(); if (['waiting', 'connected', 'cloud', 'left'].includes(s.key)) G.shareStatus();
 });
+// Knock knock: someone wants to come into my room. The room's starter sees their name and picture and decides;
+// they hear and see nothing of the room until then. Saved friends come straight in (net.js).
+let knockPop = null;
+const showKnock = () => {
+  const k = [...Net.knocks.values()].sort((a, b) => a.at - b.at)[0];
+  if (!k) { if (knockPop) { knockPop.remove(); knockPop = null; } return; }
+  if (knockPop && knockPop.isConnected && knockPop.dataset.id === k.id) return;
+  if (knockPop) knockPop.remove();
+  const name = k.name || T('Someone', 'Một bạn');
+  knockPop = el('div', 'vc-pop knockpop', `<p class="vc-heard">🚪 ${T('Knock knock!', 'Cốc cốc!')}</p><div class="ff-row"><img src="${avatarURL({ photo: k.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, k.look) })}" alt=""><div class="ff-txt"><b>${esc(nm(name))}</b><small>${T('wants to come into your room', 'muốn vào phòng của con')}</small></div></div>
+    <div class="ff-btns"><button class="btn primary" data-in>✅ ${T('Let in', 'Cho vào')}</button><button class="btn" data-no>❌ ${T('No thanks', 'Không, cảm ơn')}</button></div>
+    <small class="note">${T('Only let in someone you know. A grown-up can help.', 'Chỉ cho người con biết vào thôi. Người lớn có thể giúp con.')}</small>`);
+  knockPop.dataset.id = k.id; document.body.appendChild(knockPop); SFX.chime();
+  say(`${name} is knocking. Do you want to let them in?`, `${name} đang gõ cửa. Con có muốn cho bạn vào không?`);
+  knockPop.querySelector('[data-in]').onclick = () => { SFX.tap(); Net.admit(k.id); };
+  knockPop.querySelector('[data-no]').onclick = () => { SFX.tap(); Net.deny(k.id); };
+};
+Net.on('knock', () => { showKnock(); if (G.onNet) G.onNet(); });
+// a QR code or shared link (?room=1234) knocks on that room once a player is chosen
+let linkRoom = null;
+try { const q = new URLSearchParams(location.search), r = q.get('room'); if (okRoom(r)) linkRoom = r; if (q.has('room')) { q.delete('room'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash); } } catch (e) { }
+G.joinFromLink = () => { if (!linkRoom || Net.role) return; const r = linkRoom; linkRoom = null; toast(T(`Knocking on room ${r}…`, `Đang gõ cửa phòng ${r}…`)); Net.join(r, sendHello() || {}); };
 // ---------- friends: codes, invites, the online panel ----------
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 if (!settings.friendCode) { settings.friendCode = Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join(''); saveSettings(); }
@@ -896,7 +923,8 @@ G.drawOnlinePanel = (body, redraw) => {
   if (Net.connected || Net.role === 'host') {
     const list = Object.values(Net.remotes);
     body.innerHTML = `<div class="online on">
-      <p class="note center">${Net.code ? T(`Room code <b class="bigcode">${Net.code}</b> · ${Net.count}/6 players`, `Mã phòng <b class="bigcode">${Net.code}</b> · ${Net.count}/6 người chơi`) : ''}</p>
+      <p class="note center">${Net.code ? T(`Room code · ${Net.count}/6 players`, `Mã phòng · ${Net.count}/6 người chơi`) : ''}</p>${Net.code && Net.role === 'host' ? codeHTML(Net.code) : Net.code ? `<p class="center"><b class="bigcode">${Net.code}</b></p>` : ''}
+      ${Net.role === 'host' && Net.knocks.size ? `<div class="ocard knocks"><h3>🚪 ${T('At the door', 'Đang gõ cửa')}</h3>${[...Net.knocks.values()].map(k => `<div class="prow"><img src="${avatarURL({ photo: k.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, k.look) })}" alt=""><div class="pw"><b>${esc(nm(k.name || T('Someone', 'Một bạn')))}</b></div><button class="btn primary" data-admit="${esc(k.id)}">✅ ${T('Let in', 'Cho vào')}</button><button class="btn" data-deny="${esc(k.id)}">❌</button></div>`).join('')}</div>` : ''}
       ${(n => `<p class="note center netline">📶 ${T('This device', 'Máy này')}: ${n.online ? (n.type ? esc(n.type) + ' · ' : '') + (n.eff ? esc(n.eff.toUpperCase()) + ' · ' : '') + (n.down ? n.down + ' Mbps · ' : '') : T('no internet!', 'mất mạng!') + ' · '}${n.cloud ? T(`cloud relay on (${n.brokers} server${n.brokers === 1 ? '' : 's'})`, `đang dùng mạng đám mây (${n.brokers} máy chủ)`) : T('direct link', 'kết nối trực tiếp')}${n.voice ? ' · 🎙️ ' + T('voice on', 'đang gọi') : n.cloud ? ' · ' + T('voice needs a direct link', 'gọi giọng cần kết nối trực tiếp') : ''}</p>`)(Net.netInfo())}
       <div class="plist">${list.map(r => `<div class="prow"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(nm(r.name))}</b>${(q => q ? `<small class="pq">${G.barsHTML(q.bars)} ${q.rtt != null ? q.rtt + ' ms' : '…'} · ${routeName(q.route)}${q.weak ? ' · ' + T('weak', 'yếu') : ''}</small>` : '')(Net.quality(r.id))}</div>
         <button class="btn" data-walkf="${esc(r.id)}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${esc(r.id)}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${esc(r.id)}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${esc(r.id)}">🔄 ${T('Trade', 'Đổi đồ')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${esc(r.id)}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${esc(r.friend)}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
@@ -904,6 +932,9 @@ G.drawOnlinePanel = (body, redraw) => {
       <div class="actions center"><button class="btn big" id="oMute">${Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
       ${friendsBox()}</div>`;
     body.querySelector('#oMute').onclick = () => { G.toggleMute(); redraw(); };
+    bindCode(body);
+    body.querySelectorAll('[data-admit]').forEach(b => b.onclick = () => { SFX.tap(); Net.admit(b.dataset.admit); });
+    body.querySelectorAll('[data-deny]').forEach(b => b.onclick = () => { SFX.tap(); Net.deny(b.dataset.deny); });
     body.querySelector('#oEnd').onclick = () => { Net.close(); Object.keys(G.partners).forEach(id => Net.emit('left', { id, name: G.partners[id].name })); G.huds.forEach(hd => hd.setCall(false)); redraw(); };
     body.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { const P = G.partners[b.dataset.fly]; if (P) { $('.modal.pad')?.remove(); G.paused = false; G.flyToFriend(G.heroes[0], P.id); } });
     body.querySelectorAll('[data-walkf]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; G.walkToFriend(G.heroes[0], b.dataset.walkf); });
@@ -914,21 +945,35 @@ G.drawOnlinePanel = (body, redraw) => {
     bindFriends();
     return;
   }
-  let code = '';
+  if (Net.role === 'guest' && Net.knocking) {
+    body.innerHTML = `<div class="online knockwait"><p class="note center">🚪 ${T(`Knock knock on room <b class="bigcode">${esc(Net.code)}</b>`, `Cốc cốc phòng <b class="bigcode">${esc(Net.code)}</b>`)}</p>
+      <p class="note center status">${esc(netStatus)}</p><p class="note center">🔇 ${T('Your microphone stays off until you are let in.', 'Micrô của con tắt cho đến khi được cho vào.')}</p>
+      <div class="actions center"><button class="btn big" id="oStop">✕ ${T('Stop knocking', 'Thôi không gõ nữa')}</button></div>${friendsBox()}</div>`;
+    body.querySelector('#oStop').onclick = () => { Net.close(); redraw(); };
+    bindFriends(); return;
+  }
+  let code = '', animals = !!settings.padAnimals;
   body.innerHTML = `<div class="online">
     <p class="note center">${T('Play together from up to 6 phones or tablets, and talk with your voices! Everyone needs the internet.', 'Chơi cùng nhau tối đa 6 máy và nói chuyện bằng giọng nói! Mọi máy đều cần có mạng.')}</p>
     <div class="two-col">
-      <div class="ocard"><h3>1. ${T('Start a room', 'Tạo phòng')}</h3><button class="btn big primary" id="oHost">📞 ${T('Start', 'Bắt đầu')}</button><div class="bigcode">${Net.role === 'host' && Net.code ? Net.code : ''}</div></div>
-      <div class="ocard"><h3>2. ${T('Join a room', 'Vào phòng')}</h3><div class="codebox">____</div><div class="numpad">${[1, 2, 3, 4, 5, 6, 7, 8, 9, '⌫', 0, '✓'].map(n => `<button>${n}</button>`).join('')}</div></div>
+      <div class="ocard"><h3>1. ${T('Start a room', 'Tạo phòng')}</h3><button class="btn big primary" id="oHost">📞 ${T('Start', 'Bắt đầu')}</button>${Net.role === 'host' && Net.code ? codeHTML(Net.code) : ''}<p class="note">${T('Friends knock, and you choose who comes in. Saved friends come straight in.', 'Bạn bè gõ cửa, con chọn ai được vào. Bạn đã lưu thì vào thẳng.')}</p></div>
+      <div class="ocard joinpad"><h3>2. ${T('Join a room', 'Vào phòng')}</h3><div class="padwrap"></div></div>
     </div><p class="note center status">${esc(netStatus)}</p>${friendsBox()}</div>`;
-  const box = body.querySelector('.codebox');
   body.querySelector('#oHost').onclick = async () => { ac(); await Net.host(sendHello() || {}); redraw(); };
-  body.querySelectorAll('.numpad button').forEach(b => b.onclick = () => {
-    const v = b.textContent; SFX.tap();
-    if (v === '⌫') code = code.slice(0, -1); else if (v === '✓') { if (code.length === 4) Net.join(code, sendHello() || {}); } else if (code.length < 4) code += v;
-    box.textContent = (code + '____').slice(0, 4);
-    if (code.length === 4 && v !== '✓') Net.join(code, sendHello() || {});
-  });
+  bindCode(body);
+  const go = () => { Net.join(code, sendHello() || {}); setTimeout(redraw, 50); };
+  const drawPad = () => {
+    const wrap = body.querySelector('.padwrap'); wrap.innerHTML = padHTML(animals);
+    const box = wrap.querySelector('.codebox'), show = () => { box.innerHTML = boxHTML(code, animals); }; show();
+    wrap.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { SFX.tap(); animals = b.dataset.mode === 'ani'; settings.padAnimals = animals; saveSettings(); drawPad(); });
+    wrap.querySelectorAll('.numpad button').forEach(b => b.onclick = () => {
+      const v = b.dataset.v; SFX.tap();
+      if (v === 'back') code = code.slice(0, -1); else if (v === 'ok') { if (code.length === 4) go(); } else if (code.length < 4) code += v;
+      show();
+      if (code.length === 4 && v !== 'ok') go();
+    });
+  };
+  drawPad();
   bindFriends();
 };
 
@@ -1008,7 +1053,7 @@ function startSession(mode, chosen) {
   setupWanderers(chosen);
   G.pets.sync(); G.pets.refreshInteractables(); G.kites.sync();
   G.festivals.greet(G.heroes[0]);
-  resize(); G.paused = false; playing = true; G.listenFriends();
+  resize(); G.paused = false; playing = true; G.listenFriends(); G.joinFromLink();
   // a note from the grown-ups (Sparkle Studio), once a day
   { const M = CUSTOM.message, today = new Date().toDateString();
     if (M && (M.en || M.vi) && settings.familyMsgDay !== today) { settings.familyMsgDay = today; saveSettings(); setTimeout(() => { if (!G.paused) { G.paused = true; dialog('💌 ' + T('From your family', 'Lời nhắn của gia đình'), [[String(M.en || M.vi).slice(0, 400), String(M.vi || M.en).slice(0, 400)]]).then(() => { G.paused = false; }); } }, 4000); } }

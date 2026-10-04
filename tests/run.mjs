@@ -180,7 +180,14 @@ await check('multiplayer', async () => {
   for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
   const code = await A.page.evaluate(async () => __Net.host(__sv.sendHello()));
   await B.page.evaluate(c => { __Net.join(c, __sv.sendHello()); }, code);
+  // B is not on A's friend list: B knocks, hears nothing with its microphone off, and A lets B in
+  await A.page.waitForSelector('.knockpop [data-in]', { timeout: 60000 });
+  await B.page.waitForFunction(() => __Net._heard > 0, null, { timeout: 15000 });
+  const door = await B.page.evaluate(() => ({ knocking: __Net.knocking, partners: Object.keys(__sv.partners).length, mic: __Net.mic ? __Net.mic.getAudioTracks().some(t => t.enabled) : 'none' }));
+  await A.page.evaluate(() => document.querySelector('.knockpop [data-in]').click());
   await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 60000 });
+  const inside = await B.page.evaluate(() => ({ knocking: __Net.knocking, mic: __Net.mic ? __Net.mic.getAudioTracks().some(t => t.enabled) : 'none' }));
+  ok(door.knocking && !door.partners && door.mic === false && !inside.knocking && inside.mic === true, 'knock ' + JSON.stringify({ door, inside }));
   await A.page.evaluate(() => __sv.heroes[0].place(28, 60)); await B.page.evaluate(() => __sv.heroes[0].place(-60, 0)); await A.page.waitForTimeout(2500);
   const chip = await B.page.evaluate(() => document.querySelector('.fc-txt').textContent);
   await A.page.evaluate(() => __sv.askFriendToCome(__sv.heroes[0], Object.keys(__sv.partners)[0]));
@@ -192,7 +199,7 @@ await check('multiplayer', async () => {
   const heard = await A.page.evaluate(() => __sv.bubbles.length);
   const errs = A.errors.concat(B.errors); await A.ctx.close(); await B.ctx.close();
   ok(/\d+ m/.test(chip) && d < 6 && heard > 0 && !errs.length, JSON.stringify({ chip, d, heard, errs }));
-  return `met at ${d.toFixed(1)} m, talk bubble received`;
+  return `knocked with the microphone off, let in, then met at ${d.toFixed(1)} m, talk bubble received`;
 });
 
 await check('roads', async () => {
@@ -509,6 +516,8 @@ await check('cloud', async () => {
   // a third friend comes in through the cloud: everyone must see everyone
   const C = await open(b, { pre, w: 600, h: 500, lang: 'en' }); await clear(C.page);
   await C.page.evaluate(async c => { window.__Net = (await import('/js/net.js')).Net; __Net.join(c, __sv.sendHello()); __sv.heroes[0].place(-4, 80); }, code);
+  // (B came straight in as a saved friend; C is not on the list, so C knocks through the cloud and A lets C in)
+  await A.page.waitForSelector('.knockpop [data-in]', { timeout: 45000 }); await A.page.evaluate(() => document.querySelector('.knockpop [data-in]').click());
   await C.page.waitForFunction(() => Object.values(__sv.partners).filter(P => P.pos.y > -40).length >= 2, null, { timeout: 45000 }).catch(() => { });
   await B.page.waitForFunction(() => Object.values(__sv.partners).filter(P => P.pos.y > -40).length >= 2, null, { timeout: 20000 }).catch(() => { });
   const three = [await A.page.evaluate(() => Object.keys(__sv.partners).length), await B.page.evaluate(() => Object.values(__sv.partners).filter(P => P.pos.y > -40).length), await C.page.evaluate(() => Object.values(__sv.partners).filter(P => P.pos.y > -40).length)];
@@ -520,6 +529,51 @@ await check('cloud', async () => {
   const red = photoAtB && photoAtB[0] > 180 && photoAtB[2] < 80, blue = photoAtA && photoAtA[2] > 180 && photoAtA[0] < 80;
   ok(/TP\. Hồ Chí Minh/.test(status) && /1\d{3}|[2-9]\d{3}/.test(status) && q && q.route === 'cloud' && q.rtt && d < 6 && heard > 0 && red && blue && three.every(n => n >= 2) && left && !errs.length, JSON.stringify({ status, q, d, heard, photoAtB, photoAtA, three, left, errs }));
   return `status "${status}", ping ${q.rtt} ms through the cloud, met at ${d.toFixed(1)} m, talk bubble received, photos both ways, 3 players all see each other, leaving noticed`;
+});
+
+await check('knock', async () => {
+  // A 4-digit room code is easy to guess, so newcomers knock. Through the cloud relay only (the harder path):
+  // the starter's panel shows the code as digits, animals and a QR code; a child types the code with the animal pad
+  // and knocks (microphone off, nothing of the room heard); "No thanks" sends them away for good; a stranger who
+  // skips knocking and just sends moves is ignored; a QR link (?room=1234) knocks by itself and is let in.
+  const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
+  if (!up) return 'skipped (no local MQTT broker on 127.0.0.1:9001)';
+  const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { autoMeet: false } });
+  await clear(A.page); await A.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; });
+  const code = await A.page.evaluate(async () => __Net.host(__sv.sendHello()));
+  const panel = await A.page.evaluate(() => { __sv.openPad(0, 'friend'); return new Promise(r => setTimeout(() => { const c = document.querySelector('.rcode'); if (!c) return r(null); c.querySelector('.rqrb').click(); const svg = c.querySelector('.rqr svg'); r({ digits: [...c.querySelectorAll('.rd b')].map(x => x.textContent).join(''), animals: c.querySelectorAll('.rd svg.art').length, qr: !!svg && !c.querySelector('.rqr').hidden, rects: svg ? svg.querySelectorAll('path,rect').length : 0 }); }, 700)); });
+  await A.page.screenshot({ path: 'out/knock-code.png' });
+  await A.page.evaluate(() => { document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false; });
+  // D types the code on the animal pad
+  const D = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { autoMeet: false } });
+  await clear(D.page); await D.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; __sv.openPad(0, 'friend'); });
+  await D.page.waitForSelector('.padmode [data-mode=ani]'); await D.page.click('.padmode [data-mode=ani]');
+  const aniKeys = await D.page.evaluate(() => document.querySelectorAll('.numpad.ani button svg.art').length);
+  for (const d of code.slice(0, 2)) await D.page.click(`.numpad button[data-v="${d}"]`);
+  await D.page.screenshot({ path: 'out/knock-pad.png' });
+  for (const d of code.slice(2)) await D.page.click(`.numpad button[data-v="${d}"]`);
+  await A.page.waitForSelector('.knockpop [data-no]', { timeout: 45000 });
+  await D.page.waitForFunction(() => __Net._heard > 0, null, { timeout: 20000 });
+  await D.page.waitForTimeout(1500);
+  const atDoor = await D.page.evaluate(() => ({ knocking: __Net.knocking, partners: Object.keys(__sv.partners).length, mic: __Net.mic ? __Net.mic.getAudioTracks().some(t => t.enabled) : 'none', panel: !!document.querySelector('.knockwait') }));
+  await D.page.screenshot({ path: 'out/knock-wait.png' }); await A.page.screenshot({ path: 'out/knock-door.png' });
+  await A.page.evaluate(() => document.querySelector('.knockpop [data-no]').click());
+  await D.page.waitForFunction(() => !__Net.role, null, { timeout: 20000 });
+  const sentAway = await A.page.evaluate(() => ({ remotes: Object.keys(__Net.remotes).length, knocks: __Net.knocks.size, pop: !!document.querySelector('.knockpop') }));
+  // a stranger skips the knock and just sends moves and a talk bubble through the cloud: nothing appears
+  await D.page.evaluate(async c => { const { Channel } = await import('/js/relay.js'); const ch = new Channel({ kind: 'room', code: c, onMsg: () => { } }); await ch.start(); for (let i = 0; i < 6; i++) { ch.send({ t: 's', from: 'sv-c-stranger1', x: 1, y: 1, z: 1, yaw: 0, mid: 'x' + i }); ch.send({ t: 'emote', id: 'hi', from: 'sv-c-stranger1', mid: 'e' + i }); await new Promise(r => setTimeout(r, 200)); } }, code);
+  await A.page.waitForTimeout(2000);
+  const stranger = await A.page.evaluate(() => ({ remotes: Object.keys(__Net.remotes).length, partners: Object.keys(__sv.partners).length, bubbles: __sv.bubbles.length }));
+  await D.ctx.close();
+  // E scans the QR code: the link knocks on the room by itself once a player is chosen; A lets E in
+  const E = await open(b, { pre, w: 390, h: 760, lang: 'en', touch: true, url: URL + '?room=' + code, settings: { autoMeet: false } });
+  await A.page.waitForSelector('.knockpop [data-in]', { timeout: 45000 }); await A.page.evaluate(() => document.querySelector('.knockpop [data-in]').click());
+  await E.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 30000 });
+  const linked = await E.page.evaluate(() => ({ url: location.search }));
+  const errs = A.errors.concat(D.errors, E.errors).filter(e => !/WebSocket|ERR_CONNECTION|peerjs/i.test(e)); await A.ctx.close(); await E.ctx.close();
+  ok(panel && panel.digits === code && panel.animals === 4 && panel.qr && panel.rects > 0 && aniKeys === 10 && atDoor.knocking && !atDoor.partners && atDoor.mic === false && atDoor.panel && !sentAway.remotes && !sentAway.knocks && !sentAway.pop && !stranger.remotes && !stranger.partners && !stranger.bubbles && !/room=/.test(linked.url) && !errs.length, JSON.stringify({ panel, aniKeys, atDoor, sentAway, stranger, linked, errs }));
+  return `code ${code} shown as digits, 4 animals and a QR code; typed on the animal pad, knocked with the microphone off and nothing heard; "No thanks" sent them away; a stranger's moves without knocking ignored; a QR link knocked by itself and was let in`;
 });
 
 await b.close();
