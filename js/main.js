@@ -49,6 +49,7 @@ import './games/music.js';
 import './games/cities.js';
 import './games/learning.js';
 import { createRoads, plantRoadside } from './roads.js';
+import { cachedCanvas } from './worldcache.js';
 import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
 import { createKites } from './kite.js';
@@ -65,7 +66,7 @@ import { createAds } from './ads.js';
 import { buildSolids } from './solids.js';
 import { startCounting, countPlay } from './players.js';
 import { startPackBar } from './packbar.js';
-import { codeHTML, bindCode, padHTML, boxHTML, okRoom, animalSay } from './roomcode.js';
+import { codeHTML, bindCode, padHTML, boxHTML, animalSay } from './roomcode.js';
 // the family's defaults from Sparkle Studio: applied once each time they change there (a grown-up can still change
 // them on the device afterwards)
 { const D = CUSTOM.defaults, sig = D ? JSON.stringify(D) : '';
@@ -105,8 +106,12 @@ const scene = new THREE.Scene();
 { // soft sky light bouncing off everything, so materials look real rather than flat
   const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), .04).texture; pm.dispose();
 }
-const world = createWorld(scene, quality);
-const baseMap = paintMap(256);
+// how long each start-up step takes (ms since this file began; tests/run.mjs "perf" and Grown-ups › Advanced read it)
+const BOOT0 = performance.now(), bootTimes = {}, bootMark = k => { bootTimes[k] = Math.round(performance.now() - BOOT0); };
+const world = createWorld(scene, quality); bootMark('world');
+// the map picture: read back from the device when this build painted it before (js/worldcache.js)
+const mapPic = cachedCanvas('map', 256, paintMap); bootMark('map');
+mapPic.onReady = () => { G.fogMaps = {}; }; // (a map shown before the picture was ready is drawn again)
 const titleCam = new THREE.PerspectiveCamera(50, 1, .3, 1200);
 
 const G = {
@@ -647,7 +652,8 @@ G.eat = (h, id) => {
 };
 G.onCooked = (h) => { checkQuests(h); G.job('cook', 1, h); };
 G.rebuildHero = i => { const h = G.heroes[i]; if (h) { h.buildModel(); G.huds[i].refreshWho(); sendHello(); } };
-G.fogMapFor = p => G.fogMaps[p.id] || (G.fogMaps[p.id] = fogMapFor(p, baseMap));
+G.fogMapFor = p => G.fogMaps[p.id] || (G.fogMaps[p.id] = fogMapFor(p, mapPic.now()));
+G.mapPic = mapPic;
 G.snapshot = (i, max = 720, q = .8) => {
   const h = G.heroes[i] || G.heroes[0], w = renderer.domElement.width, hh = renderer.domElement.height;
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w / renderer.getPixelRatio(), hh / renderer.getPixelRatio());
@@ -804,7 +810,7 @@ G.findFriend = i => {
     ${list.map(P => { const d = Math.round(dist2(h.pos.x, h.pos.z, P.pos.x, P.pos.z)); return `<div class="ff-row"><img src="${P.photoURL || ''}" alt="" ${P.photoURL ? '' : 'hidden'}><div class="ff-txt"><b>${esc(nm(P.name))}</b><small>${d} m · ${compass(h, P.pos.x, P.pos.z)}${G.friendWhere(h, P) ? ' · ' + esc(G.friendWhere(h, P)) : ''}</small></div>
       <div class="ff-btns"><button class="btn primary" data-walk="${P.id}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${P.id}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-call="${P.id}">📣 ${T('Ask to come', 'Gọi bạn đến')}</button></div></div>`; }).join('')}`);
   const x = el('button', 'vc-x', '✕'); pop.appendChild(x); x.onclick = () => pop.remove();
-  document.body.appendChild(pop); SFX.tap();
+  document.body.appendChild(pop); SFX.tap(); G.walkAwayClose(pop, () => pop.remove());
   pop.querySelectorAll('[data-walk]').forEach(b => b.onclick = () => { pop.remove(); G.walkToFriend(h, b.dataset.walk); });
   pop.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { pop.remove(); G.flyToFriend(h, b.dataset.fly); });
   pop.querySelectorAll('[data-call]').forEach(b => b.onclick = () => { pop.remove(); G.askFriendToCome(h, b.dataset.call); });
@@ -849,10 +855,6 @@ const showKnock = () => {
   knockPop.querySelector('[data-no]').onclick = () => { SFX.tap(); Net.deny(k.id); };
 };
 Net.on('knock', () => { showKnock(); if (G.onNet) G.onNet(); });
-// a QR code or shared link (?room=1234) knocks on that room once a player is chosen
-let linkRoom = null;
-try { const q = new URLSearchParams(location.search), r = q.get('room'); if (okRoom(r)) linkRoom = r; if (q.has('room')) { q.delete('room'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash); } } catch (e) { }
-G.joinFromLink = () => { if (!linkRoom || Net.role) return; const r = linkRoom; linkRoom = null; toast(T(`Knocking on room ${r}…`, `Đang gõ cửa phòng ${r}…`)); Net.join(r, sendHello() || {}); };
 // ---------- friends: codes, invites, the online panel ----------
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 if (!settings.friendCode) { settings.friendCode = Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join(''); saveSettings(); }
@@ -1055,7 +1057,8 @@ function startSession(mode, chosen) {
     const h = new Hero(i, p, scene, world);
     const back = p.pos && G.goodSpot(p.pos.x, p.pos.z), start = back ? p.pos : HOME_SPOT(i);
     h.place(start.x, start.z); h.camYaw = Math.PI * .85;
-    if (back && Math.hypot(start.x - HOME_SPOT(i).x, start.z - HOME_SPOT(i).z) > 12) { const rg = regionAt(start.x, start.z), where = REGION_NAMES[rg] ? REGION_NAMES[rg]() : ''; setTimeout(() => toast(where ? T(`Welcome back, ${p.name}! You were in ${where}.`, `Chào mừng ${p.name} quay lại! Lần trước con ở ${where}.`) : T(`Welcome back, ${p.name}! You are where you left off.`, `Chào mừng ${p.name} quay lại! Con ở đúng chỗ lần trước.`)), 1500); }
+    if (i === 0) G.resumedAway = false;
+    if (back && Math.hypot(start.x - HOME_SPOT(i).x, start.z - HOME_SPOT(i).z) > 12) { if (i === 0) G.resumedAway = true; const rg = regionAt(start.x, start.z), where = REGION_NAMES[rg] ? REGION_NAMES[rg]() : ''; setTimeout(() => toast(where ? T(`Welcome back, ${p.name}! You were in ${where}.`, `Chào mừng ${p.name} quay lại! Lần trước con ở ${where}.`) : T(`Welcome back, ${p.name}! You are where you left off.`, `Chào mừng ${p.name} quay lại! Con ở đúng chỗ lần trước.`)), 1500); }
     G.heroes.push(h); G.huds.push(new Hud(i, h, G)); G.regionOf[i] = null; if (i === 0) helloPhoto(h.profile.photo); // ready before a friend joins
   });
   // shrine & tower colours follow the first player
@@ -1066,13 +1069,15 @@ function startSession(mode, chosen) {
   setupWanderers(chosen);
   G.pets.sync(); G.pets.refreshInteractables(); G.kites.sync();
   G.festivals.greet(G.heroes[0]);
-  resize(); G.paused = false; playing = true; G.listenFriends(); G.joinFromLink();
+  resize(); G.paused = false; playing = true; G.listenFriends();
   // a note from the grown-ups (Sparkle Studio), once a day
   { const M = CUSTOM.message, today = new Date().toDateString();
     if (M && (M.en || M.vi) && settings.familyMsgDay !== today) { settings.familyMsgDay = today; saveSettings(); setTimeout(() => { if (!G.paused) { G.paused = true; dialog('💌 ' + T('From your family', 'Lời nhắn của gia đình'), [[String(M.en || M.vi).slice(0, 400), String(M.vi || M.en).slice(0, 400)]]).then(() => { G.paused = false; }); } }, 4000); } }
   $('#huds').hidden = false;
   const p = chosen[0];
-  const greet = () => { if (!p.quests.owl) say(`Hello ${p.name}! Walk over to the owl and say hi.`, `Chào ${p.name}! Đi đến chỗ chú cú và chào ông nhé.`); else say(`Welcome back, ${p.name}!`, `Chào mừng ${p.name} quay lại!`); };
+  // the welcome is words on the screen, not a voice (owner, round 30: with the child's name in it, only the phone's
+  // own voice could say it); a new player still hears where to go, in a recorded line without the name
+  const greet = () => { if (!p.quests.owl) { toast(T(`Hello ${p.name}! Walk over to the owl and say hi.`, `Chào ${p.name}! Đi đến chỗ chú cú và chào ông nhé.`)); say('Walk over to the owl and say hi!', 'Con đi đến chỗ chú cú và chào ông nhé!'); } else if (!G.resumedAway) toast(T(`Welcome back, ${p.name}!`, `Chào mừng ${p.name} quay lại!`)); };
   if (!(p.story && p.story.prologue)) {
     G.paused = true;
     showStory(PROLOGUE, chosen.map(x => x.name).join(T(' and ', ' và '))).then(() => { chosen.forEach(x => { x.story = x.story || {}; x.story.prologue = true; }); save(); G.paused = false; greet(); });
@@ -1136,7 +1141,7 @@ function frame(now) {
         if (G.regionOf[i] !== null) { const sub = regionLabel(rg); G.huds[i].showRegion(REGION_NAMES[rg]() + (sub ? ' · ' + sub : '')); }
         G.regionOf[i] = rg;
         const vis = h.profile.visited = h.profile.visited || {}; if (!vis[rg]) { vis[rg] = true; save(); }
-        if (rg === 'village' && !h.profile.quests.village) { h.profile.quests.village = true; save(); say('Welcome to Lotus Village! Xin chào!', 'Chào mừng đến Làng Sen!'); checkQuests(h); }
+        if (rg === 'village' && !h.profile.quests.village) { h.profile.quests.village = true; save(); hudFor(h).toast(T('Welcome to Lotus Village! Xin chào!', 'Chào mừng đến Làng Sen!')); checkQuests(h); } // (words, not a voice)
       }
     });
   } else {
@@ -1194,7 +1199,7 @@ function frame(now) {
 loadClips();
 createChatter(G);
 setupNPCs(); setupInteractables();
-G.farm = createFarm(G); world.updaters.push(G.farm.update);
+bootMark('people'); G.farm = createFarm(G); world.updaters.push(G.farm.update);
 G.places = createPlaces(G); world.updaters.push(G.places.update);
 G.town = createTown(G);
 G.GAMES_ICON = id => (GAMES[id] || {}).icon || "🎮";
@@ -1204,13 +1209,20 @@ G.dialog = (name, lines, choices) => dialog(name, lines, choices);
 dialogHooks.little = () => G.heroes.some(h => h.profile.age !== 'big');
 // where everyone stood when a conversation opened; walking about 9 m away closes it (checked in the loop)
 dialogHooks.where = () => G.heroes.map(h => ({ x: h.pos.x, z: h.pos.z }));
+// Any talk box (a villager's words, the chat window, "where are my friends", the picture choices) closes by itself
+// when the child walks 6 m away from where it opened (owner, round 30). G.walkAwayClose(box, close) signs a box up.
+const WALK_AWAY = 6;
+G.walkAwayClose = (node, close) => { node._from = G.heroes.map(h => ({ x: h.pos.x, z: h.pos.z })); node._autoClose = close; node.classList.add('walkclose'); };
 const walkedAway = () => {
-  const d = document.querySelector('.dialog:not(.out)'); if (!d || !d._from || !d._autoClose || G.travelling) return;
-  if (d._from.length && G.heroes.every((h, k) => !d._from[k] || dist2(h.pos.x, h.pos.z, d._from[k].x, d._from[k].z) > 9)) { d._autoClose(); SFX.tap(); }
+  if (G.travelling) return;
+  for (const d of document.querySelectorAll('.dialog:not(.out), .walkclose')) {
+    if (!d._from || !d._autoClose || !d._from.length) continue;
+    if (G.heroes.every((h, k) => !d._from[k] || dist2(h.pos.x, h.pos.z, d._from[k].x, d._from[k].z) > WALK_AWAY)) { const f = d._autoClose; d._autoClose = null; f(); SFX.tap(); }
+  }
 };
 onLang(() => G.huds.forEach(hd => hd.refreshWho && hd.refreshWho()));
 createAsia(G);
-createRoads(G);
+bootMark('town'); createRoads(G); bootMark('roads');
 createCities(G);
 createHawkers(G);
 createSuburbs(G); // speciality buildings along the roads out of each city (before the homes are made)
@@ -1258,11 +1270,11 @@ for (const c of (Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {
 G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 'buns', 'none'), kidLook('overalls', '#3cc7e8', '#3b2618', 'short', 'cap'), kidLook('dress', '#ffb52e', '#1d1412', 'ponytail', 'flower')] });
 // level land under every building, stall and landmark placed above (and anything added in future rounds)
 world.familyEdits = applyWorldEdits(G); // buildings the family moved or removed in Sparkle Studio
-widenFlatLand(world, scene); // more level land round every village and city, for new buildings (nothing moves on the map)
+bootMark('things'); widenFlatLand(world, scene); bootMark('wideland'); // more level land round every village and city, for new buildings (nothing moves on the map)
 createAds(G); // the family's own signboards (only when Sparkle Studio switched ads on)
-world.levelled = levelUnderBuildings(world, scene);
+world.levelled = levelUnderBuildings(world, scene); bootMark('levelled');
 world.roadside = plantRoadside(G); // soft road edges and flowers, once everything stands
-G.solidsReady = buildSolids(G); // nobody walks through houses and things (js/solids.js)
+bootMark('roadside'); G.solidsReady = buildSolids(G); bootMark('solids'); // nobody walks through houses and things (js/solids.js)
 startPackBar(); // the recorded voices downloading: a small bar at the bottom (js/packbar.js)
 startCounting(); // how many children play, anonymously (js/players.js; Grown-ups can switch it off)
 // solid things the camera must never go inside: big, opaque, still-standing meshes (collected once, refreshed
@@ -1300,3 +1312,4 @@ import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(
 document.addEventListener('visibilitychange', () => { if (document.hidden) { if (playing) keepSpot(); save(); hush(); } });
 addEventListener('pagehide', () => { if (playing) keepSpot(); saveProfiles(true); });
 if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) navigator.serviceWorker.register('sw.js').catch(() => { });
+bootMark('ready'); G.bootTimes = bootTimes;

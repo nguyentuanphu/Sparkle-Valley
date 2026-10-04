@@ -1,3 +1,4 @@
+// @ts-check
 // Settings, player profiles and saving. Everything lives in localStorage on this device;
 // grown-ups can export/import a backup file to move progress between devices.
 import { BUILD } from './build.js';
@@ -41,7 +42,7 @@ async function readMirror() {
   // the latest copy and the daily ones (in case the latest is damaged)
   try { const st = await idb('readonly'); const list = await new Promise(r => { const q = st.getAll(); q.onsuccess = () => r(q.result || []); q.onerror = () => r([]); }); for (const t of list) try { all.push(JSON.parse(t)); } catch (e) { } } catch (e) { }
   try { if ('caches' in self) { const c = await caches.open(SNAP_CACHE), r = await c.match(SNAP_URL); if (r) all.push(await r.json()); } } catch (e) { }
-  return all.filter(x => x && x.app === 'sparkle-valley' && Array.isArray(x.profiles) && x.profiles.length).sort((a, b) => (!!a.fresh - !!b.fresh) || b.saved - a.saved)[0] || null;
+  return all.filter(x => x && x.app === 'sparkle-valley' && Array.isArray(x.profiles) && x.profiles.length).sort((a, b) => (+!!a.fresh - +!!b.fresh) || b.saved - a.saved)[0] || null;
 }
 export let restoredFromCopy = false;
 try {
@@ -95,6 +96,12 @@ export const SKIN = ['#ffe3d1', '#f6c7a5', '#e0aa80', '#b47a55', '#7a4e33'];
 export const HAIRSTYLES = ['buns', 'short', 'long', 'ponytail', 'spiky'];
 export const GLIDERS = ['#e7c37a', '#ff7eb8', '#5fd3ff', '#8be07a', '#b48cff'];
 
+/**
+ * A child's profile (one per child on this device).
+ * @typedef {{ id: string, name: string, photo: string | null, age: 'little' | 'big', difficulty: 'easy' | 'medium' | 'hard',
+ *   look: Record<string, any>, created: number, levels?: Record<string, number>, pos?: any, [k: string]: any }} Profile
+ */
+/** @param {number} i  @returns {Profile} */
 function newProfile(i) {
   return {
     id: 'k' + Date.now().toString(36) + Math.floor(Math.random() * 1000),
@@ -106,6 +113,7 @@ function newProfile(i) {
     created: Date.now()
   };
 }
+/** @param {any} p a saved profile (any age of save)  @returns {Profile} */
 export function normalizeProfile(p) {
   const d = {
     hearts: 3, staminaMax: 1, orbs: 0, leafies: {}, shrines: {}, towers: {}, discovered: {},
@@ -113,7 +121,7 @@ export function normalizeProfile(p) {
     stickers: [], levels: {}, wins: {}, quests: {}, glider: false, album: [],
     pos: null, dishes: {}, stats: { games: 0, steps: 0 }
   };
-  const o = Object.assign({}, d, p);
+  /** @type {Profile} */ const o = Object.assign({}, d, p);
   if (!o.age) o.age = 'little';
   if (!['easy', 'medium', 'hard'].includes(o.difficulty)) o.difficulty = o.age === 'big' ? 'medium' : 'easy';
   // older saves stored a fixed outfit; turn it into style + colour
@@ -163,7 +171,9 @@ export function saveProfiles(now) {
   if (now) go(); else saveTimer = setTimeout(go, 800);
 }
 export const MAX_KIDS = 6;
+/** @returns {Profile} */
 export function addProfile() { const p = normalizeProfile(newProfile(profiles.length)); p.name = ''; profiles.push(p); return p; }
+/** @param {string} id */
 export function removeProfile(id) { const i = profiles.findIndex(p => p.id === id); if (i >= 0) profiles.splice(i, 1); saveProfiles(true); }
 
 // Saving a backup opens the phone's share sheet when it can, so a grown-up can put the file straight

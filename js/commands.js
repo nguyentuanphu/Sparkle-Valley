@@ -22,7 +22,7 @@ function askByPictures(G, i) {
   const h = G.heroes[i];
   const pop = el('div', 'vc-pop ask-pics', `<p class="vc-heard">${T('What would you like?', 'Con muốn gì nào?')}</p><div class="ask-grid">${ASK_PICS.map((a, k) => `<button data-k="${k}"><span>${a[0]}</span><small>${esc(T(a[1], a[2]))}</small></button>`).join('')}</div>`);
   const x = el('button', 'vc-x', '✕'); pop.appendChild(x); x.onclick = () => pop.remove();
-  document.body.appendChild(pop); SFX.tap(); say('What would you like?', 'Con muốn gì nào?');
+  document.body.appendChild(pop); SFX.tap(); say('What would you like?', 'Con muốn gì nào?'); if (G.walkAwayClose) G.walkAwayClose(pop, () => pop.remove());
   pop.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { pop.remove(); SFX.tap(); const reply = runCommand(G, h, ASK_PICS[+b.dataset.k][3]); if (reply) say(reply[0], reply[1]); });
 }
 

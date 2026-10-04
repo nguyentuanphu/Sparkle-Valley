@@ -149,8 +149,7 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
       visitors.set(h, home);
       h.place(RX, RZ + 2.2, RY); h.yaw = Math.PI; h.camYaw = 0; h.gliding = false; h.indoors = home;
       f.classList.add('out'); setTimeout(() => f.remove(), 700);
-      G.toast(h, '🏠 ' + home.name());
-      say(`Welcome to ${home.name()}!`, `Chào mừng con đến ${home.name()}!`);
+      G.toast(h, '🏠 ' + T(`Welcome to ${home.name()}!`, `Chào mừng con đến ${home.name()}!`)); // (as words, not a voice: owner, round 30)
     }, 600);
   }
   const leaving = new Set();

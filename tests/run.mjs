@@ -556,6 +556,98 @@ await check('arch', async () => {
   return out.trim().split('\n')[0];
 });
 
+await check('walkaway', async () => {
+  // a villager's words and the chat window stay while the child stands near, and close by themselves once the child
+  // walks away (6 m; owner, round 30)
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], C = await import('/js/chat.js'), x0 = h.pos.x, z0 = h.pos.z, wait = ms => new Promise(r => setTimeout(r, ms));
+    G.dialog('Bà Năm', [['Hello there, little one!', 'Chào con!']]); C.openChat(G, 0, Object.keys(C.PERSONAS)[0]);
+    await wait(400); h.place(x0 + 3, z0); await wait(1200);
+    const near = { dialog: !!document.querySelector('.dialog:not(.out)'), chat: !!document.querySelector('.chatbox') };
+    h.place(x0 + 9, z0); await wait(1500);
+    const far = { dialog: !!document.querySelector('.dialog:not(.out)'), chat: !!document.querySelector('.chatbox') };
+    return { near, far };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.near.dialog && r.near.chat && !r.far.dialog && !r.far.chat && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return '3 m away the talk box and the chat stay; 9 m away both have closed by themselves';
+});
+
+await check('ages', async () => {
+  // two age groups split at 5 (owner, round 30): under-5s get bigger answer buttons, and the right answer wiggles after
+  // 10 s or two misses; 5 and up get no hint. Every game is open to both groups.
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const F = await import('/js/games/frame.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    const run = async little => {
+      const els = [1, 2, 3].map(n => { const e = document.createElement('button'); e.className = 'choice'; e._v = n; document.body.appendChild(e); return e; });
+      const api = { little, closed: false, right() { }, wrong() { } };
+      const done = F.untilRight(api, els, e => e._v === 3);
+      const hintAt = [];
+      for (const k of [0, 1]) { els[k].click(); await wait(50); hintAt.push(els[2].classList.contains('hint')); }
+      els[2].click(); await done; const after = els[2].classList.contains('hint'); els.forEach(e => e.remove());
+      return { hintAt, after };
+    };
+    const small = await run(true), big = await run(false);
+    const g = F.openGame('colors', { players: [{ name: 'A', levels: {} }], little: true }); await wait(300);
+    const layer = !!document.querySelector('.gl.little'); document.querySelector('.gl-x').click(); await g;
+    return { small, big, layer, hintMs: F.HINT_AFTER };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.small.hintAt[0] && r.small.hintAt[1] && !r.small.after && !r.big.hintAt.some(Boolean) && r.layer && r.hintMs === 10000 && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'under 5: big buttons, the right answer wiggles after two misses (or 10 s), and stops once tapped; 5 and up: no hint';
+});
+
+await check('types', async () => {
+  // type checking (owner, round 30): the files that start with // @ts-check are checked against their JSDoc types
+  // (js/state.js, js/netmsg.js, studio/core.cjs; tests/tsconfig.json lists them). Needs: cd tests && npm install
+  const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
+  if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
+  try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
+  const n = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8')).files.length;
+  return `${n} files type-checked, no errors`;
+});
+
+await check('perf', async () => {
+  // performance budgets (PERF-001…006, tests/perf-baseline.json): each number may only go down. The test browser draws
+  // in software, so frames per second (PERF-002, ≥ 30 at quality Auto) is measured on real phones, not here.
+  const base = JSON.parse(fs.readFileSync('perf-baseline.json', 'utf8'));
+  const P = await open(b, { w: 1024, h: 700, play: false });
+  const startMB = await P.page.evaluate(() => performance.getEntriesByType('resource').concat(performance.getEntriesByType('navigation')).reduce((a, e) => a + (e.encodedBodySize || e.transferSize || 0), 0) / 1e6);
+  // the map picture: painted once after the title screen, then read back from the device on the next start
+  const pic = async () => { await P.page.waitForFunction(() => __sv.mapPic && __sv.mapPic.ready, null, { timeout: 60000 }); return P.page.evaluate(() => ({ from: __sv.mapPic.from, boot: __sv.bootTimes })); };
+  const first = await pic(); await P.page.waitForTimeout(800);
+  await P.page.reload(); await P.page.waitForSelector('.screen.title', { timeout: 90000 }); const second = await pic();
+  await P.page.evaluate(() => { __sv.renderer.setPixelRatio(.35); dispatchEvent(new Event('resize')); });
+  ok(first.from === 'painted' && second.from === 'cache', 'map picture: ' + JSON.stringify({ first, second }));
+  await start(P.page); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], W = await import('/js/world.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    h.place(W.VILLAGE.x, W.VILLAGE.z + 6);
+    for (let k = 0; k < 6; k++) { await wait(300); document.querySelectorAll('.storybook, .dialog, .modal').forEach(e => e.remove()); G.paused = false; }
+    // the middle frame of 3 s (the world's own frames: nothing extra is drawn; villagers walk in and out of view)
+    const R = G.renderer, orig = R.render, got = []; R.render = function (...a) { orig.apply(this, a); got.push([R.info.render.calls, R.info.render.triangles]); };
+    await wait(3000); R.render = orig;
+    let texturePx = 0;
+    G.scene.traverse(o => { for (const m of o.material ? [].concat(o.material) : []) for (const k in m) { const t = m[k], im = t && t.isTexture && t.image; if (im && im.width) texturePx = Math.max(texturePx, im.width, im.height); } });
+    // 10 mini-games, each opened, left running a moment and closed; then memory and leftover page elements
+    const ids = Object.keys((await import('/js/games/frame.js')).GAMES).slice(0, 10), gc = () => window.gc && window.gc();
+    h.place(W.VILLAGE.x - 30, W.VILLAGE.z + 30); await wait(600); document.querySelectorAll('.storybook, .dialog, .modal').forEach(e => e.remove()); G.paused = false;
+    gc(); await wait(300); const heap0 = performance.memory.usedJSHeapSize, dom0 = document.getElementsByTagName('*').length;
+    for (const id of ids) { G.playGame(0, id, 'replay'); await wait(700); document.querySelector('.gl .gl-x')?.click(); await wait(500); }
+    await wait(800); gc(); await wait(300);
+    const mid = i => got.map(g => g[i]).sort((a, b) => a - b)[got.length >> 1] || 0;
+    return { drawCalls: mid(0), triangles: mid(1), frames: got.length, texturePx,
+      heapGrowMB: Math.max(0, (performance.memory.usedJSHeapSize - heap0) / 1e6), domGrow: document.getElementsByTagName('*').length - dom0, games: ids.length };
+  });
+  const errs = P.errors; await P.ctx.close();
+  const got = Object.assign({ startMB }, r), over = [], gap = [];
+  for (const [k, B] of Object.entries(base)) { if (k.startsWith('/')) continue; const v = got[k]; if (v > B.max * 1.03 + (k === 'startMB' ? .05 : 0)) over.push(`${B.rule} ${k} ${+v.toFixed(2)} > ${B.max}`); if (v > B.target) gap.push(`${k} ${Math.round(v)} (budget ${B.target})`); }
+  ok(r.frames > 0 && r.games === 10 && !over.length && !errs.length, JSON.stringify({ over, got, errs }));
+  return `start ${startMB.toFixed(1)} MB in ${(second.boot.ready / 1000).toFixed(1)} s (map picture kept on the device), village ${r.drawCalls} draws / ${(r.triangles / 1000).toFixed(0)}k triangles, largest texture ${r.texturePx}px, after 10 games +${r.heapGrowMB.toFixed(1)} MB and ${r.domGrow} elements` + (gap.length ? `; over budget (being reduced): ${gap.join(', ')}` : '');
+});
+
 await check('saves', async () => {
   // progress survives: the main save is wiped (as a browser might do), and the game brings it back by itself
   const P = await open(b, { w: 800, h: 600 }); await clear(P.page);
@@ -692,16 +784,16 @@ await check('netmsg', async () => {
 
 await check('knock', async () => {
   // A 4-digit room code is easy to guess, so newcomers knock. Through the cloud relay only (the harder path):
-  // the starter's panel shows the code as digits, animals and a QR code; a child types the code with the animal pad
-  // and knocks (microphone off, nothing of the room heard); "No thanks" sends them away for good; a stranger who
-  // skips knocking and just sends moves is ignored; a QR link (?room=1234) knocks by itself and is let in.
+  // the starter's panel shows the code as digits and animals (no QR code: owner, round 30); a child types the code with
+  // the animal pad and knocks (microphone off, nothing of the room heard); "No thanks" sends them away for good; a
+  // stranger who skips knocking and just sends moves is ignored; another child types the numbers and is let in.
   const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
   if (!up) return 'skipped (no local MQTT broker on 127.0.0.1:9001)';
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
   const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { autoMeet: false } });
   await clear(A.page); await A.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; });
   const code = await A.page.evaluate(async () => __Net.host(__sv.sendHello()));
-  const panel = await A.page.evaluate(() => { __sv.openPad(0, 'friend'); return new Promise(r => setTimeout(() => { const c = document.querySelector('.rcode'); if (!c) return r(null); c.querySelector('.rqrb').click(); const svg = c.querySelector('.rqr svg'); r({ digits: [...c.querySelectorAll('.rd b')].map(x => x.textContent).join(''), animals: c.querySelectorAll('.rd svg.art').length, qr: !!svg && !c.querySelector('.rqr').hidden, rects: svg ? svg.querySelectorAll('path,rect').length : 0 }); }, 700)); });
+  const panel = await A.page.evaluate(() => { __sv.openPad(0, 'friend'); return new Promise(r => setTimeout(() => { const c = document.querySelector('.rcode'); if (!c) return r(null); r({ digits: [...c.querySelectorAll('.rd b')].map(x => x.textContent).join(''), animals: c.querySelectorAll('.rd svg.art').length, qr: !!document.querySelector('.rqrb, .rqr') }); }, 700)); });
   await A.page.screenshot({ path: 'out/knock-code.png' });
   await A.page.evaluate(() => { document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false; });
   // D types the code on the animal pad
@@ -725,14 +817,16 @@ await check('knock', async () => {
   await A.page.waitForTimeout(2000);
   const stranger = await A.page.evaluate(() => ({ remotes: Object.keys(__Net.remotes).length, partners: Object.keys(__sv.partners).length, bubbles: __sv.bubbles.length }));
   await D.ctx.close();
-  // E scans the QR code: the link knocks on the room by itself once a player is chosen; A lets E in
-  const E = await open(b, { pre, w: 390, h: 760, lang: 'en', touch: true, url: URL + '?room=' + code, settings: { autoMeet: false } });
+  // E types the numbers and knocks; A lets E in
+  const E = await open(b, { pre, w: 390, h: 760, lang: 'en', touch: true, settings: { autoMeet: false } });
+  await clear(E.page); await E.page.evaluate(() => __sv.openPad(0, 'friend')); await E.page.waitForSelector('.padmode [data-mode=num]'); await E.page.click('.padmode [data-mode=num]');
+  for (const d of code) await E.page.click(`.numpad button[data-v="${d}"]`);
   await A.page.waitForSelector('.knockpop [data-in]', { timeout: 45000 }); await A.page.evaluate(() => document.querySelector('.knockpop [data-in]').click());
   await E.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 30000 });
-  const linked = await E.page.evaluate(() => ({ url: location.search }));
+
   const errs = A.errors.concat(D.errors, E.errors).filter(e => !/WebSocket|ERR_CONNECTION|peerjs/i.test(e)); await A.ctx.close(); await E.ctx.close();
-  ok(panel && panel.digits === code && panel.animals === 4 && panel.qr && panel.rects > 0 && aniKeys === 10 && atDoor.knocking && !atDoor.partners && atDoor.mic === false && atDoor.panel && !sentAway.remotes && !sentAway.knocks && !sentAway.pop && !stranger.remotes && !stranger.partners && !stranger.bubbles && !/room=/.test(linked.url) && !errs.length, JSON.stringify({ panel, aniKeys, atDoor, sentAway, stranger, linked, errs }));
-  return `code ${code} shown as digits, 4 animals and a QR code; typed on the animal pad, knocked with the microphone off and nothing heard; "No thanks" sent them away; a stranger's moves without knocking ignored; a QR link knocked by itself and was let in`;
+  ok(panel && panel.digits === code && panel.animals === 4 && !panel.qr && aniKeys === 10 && atDoor.knocking && !atDoor.partners && atDoor.mic === false && atDoor.panel && !sentAway.remotes && !sentAway.knocks && !sentAway.pop && !stranger.remotes && !stranger.partners && !stranger.bubbles && !errs.length, JSON.stringify({ panel, aniKeys, atDoor, sentAway, stranger, errs }));
+  return `code ${code} shown as digits and 4 animals (no QR code); typed on the animal pad, knocked with the microphone off and nothing heard; "No thanks" sent them away; a stranger's moves without knocking ignored; another child typed the numbers and was let in`;
 });
 
 await b.close();

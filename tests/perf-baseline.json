@@ -1,0 +1,9 @@
+{
+  "//": "Performance budgets (hard rules PERF-001…006, owner round 30; docs/ARCHITECTURE.md §9). 'max' is today's allowed number: a ratchet that may only go down (lower it when a round improves it). 'target' is the agreed budget; where max is above target the gap is reported every run.",
+  "startMB":     { "max": 3.2, "target": 8,   "rule": "PERF-001", "what": "MB downloaded before the title screen (8 s on 4G ≈ 8 MB)" },
+  "drawCalls":   { "max": 1500, "target": 250, "rule": "PERF-003", "what": "draw calls per frame in Lotus Village" },
+  "triangles":   { "max": 800000, "target": 300000, "rule": "PERF-003", "what": "triangles per frame in Lotus Village" },
+  "texturePx":   { "max": 1024, "target": 1024, "rule": "PERF-004", "what": "largest texture side in pixels" },
+  "heapGrowMB":  { "max": 40, "target": 40, "rule": "PERF-005", "what": "memory growth after 10 mini-games (opened, played, closed)" },
+  "domGrow":     { "max": 60, "target": 60, "rule": "PERF-005", "what": "page elements left behind after 10 mini-games" }
+}

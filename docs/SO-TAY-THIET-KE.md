@@ -162,13 +162,13 @@ What may leave the device:
 | What | Where | Rule |
 |---|---|---|
 | Player count hello | `/api/hello` (Netlify Blobs) | Random id, build, language, number of profiles, minutes, games started, stories opened, device type, installed, minutes with friends, ≤ 15 machine-voice lines without names. **Never** names, photos, places or anything typed. Off switch: Grown-ups → Advanced → Count players. **Offline play is not lost:** it waits in a small outbox on the device (per day, ≤ 14 days) and is sent when online, counted on the day it was played; a batch keeps its one-time id until the website confirms it, so a re-send counts once |
-| Online play | PeerJS + cloud relay | Room code is a meeting point, **not** a secret, so **newcomers knock** (round 30): the room's starter sees the name and picture and taps Let in / No thanks; until then the newcomer gets nothing from the room and their microphone stays off. **Saved friends** (friend code on the list) come straight in. The code stays 4 digits, also shown as 4 animal pictures (0 🐶 dog · 1 🐱 cat · 2 🐰 bunny · 3 🐻 bear · 4 🐸 frog · 5 🐵 monkey · 6 🦆 duck · 7 🐘 elephant · 8 🐢 turtle · 9 🐟 fish) and a QR code (`?room=1234`, which knocks by itself); the join pad has a numbers/animals switch. Photos have their own pair lock (ECDH); every message is checked before use |
+| Online play | PeerJS + cloud relay | Room code is a meeting point, **not** a secret, so **newcomers knock** (round 30): the room's starter sees the name and picture and taps Let in / No thanks; until then the newcomer gets nothing from the room and their microphone stays off. **Saved friends** (friend code on the list) come straight in. The code stays 4 digits, also shown as 4 animal pictures (0 🐶 dog · 1 🐱 cat · 2 🐰 bunny · 3 🐻 bear · 4 🐸 frog · 5 🐵 monkey · 6 🦆 duck · 7 🐘 elephant · 8 🐢 turtle · 9 🐟 fish) (the QR code was removed in round D); the join pad has a numbers/animals switch. Photos have their own pair lock (ECDH); every message is checked before use |
 | Backups | The family's own Drive/iCloud | Never to our server |
 | Studio online | GitHub (draft branch) | Behind `STUDIO_PASSWORD`; only `content/ voices/ photos/ tools/voice-extra.json` can change |
 
 - Every incoming thing (network messages, backups, content packs, Studio requests) is checked for type, size and range before use.
 - No ads aimed at children unless the Studio switches them on; a link opens only after a grown-up sum. No purchases, no streaks, no "come back!" pressure.
-- **Decided (round 30):** knocking + saved friends straight in; 4-digit codes kept (animals and QR as other ways to enter them). Still known: the cloud relay's lock comes from the room code, so someone who has the code could read room messages on the public brokers (not photos). A per-room secret carried in the QR code would close this; not done yet.
+- **Decided (round 30):** knocking + saved friends straight in; 4-digit codes kept (animal pictures as the other way to enter them; the QR code was removed in round D). Still known: the cloud relay's lock comes from the room code, so someone who has the code could read room messages on the public brokers (not photos); with no QR code there is nowhere to carry a per-room secret, and the owner accepted this.
 
 ## 11. The world as data · Thế giới là dữ liệu
 
@@ -217,20 +217,24 @@ What may leave the device:
 **Decided by the owner (round 30, 4 Oct):**
 - **Road grades: 8 % asphalt / 12 % dirt** (R3 as written). The `roadshape` check enforces exactly this, with no "tight spot" allowance; steep spots are flattened instead.
 - **Footpaths (1.6 m): yes**, in Phase 2 (villages, round ponds).
-- **Online safety:** newcomers knock, saved friends come straight in, 4 digits kept with animals and QR; **the child who started the room taps "Let in"**.
+- **Online safety:** newcomers knock, saved friends come straight in, 4 digits kept with animals (QR removed in round D); **the child who started the room taps "Let in"**.
 - **Studio exe Publish goes through the draft branch**, like the online Studio.
 - **Resume spot:** a child comes back where they were.
 - **Voice pack:** the whole pack is downloaded, the child's language first (recorded voices are always the default).
 - **What next:** Phase 2 and every unfinished item, one round at a time, the plan shown before each round.
 
-**Still open:**
-1. **Two age profiles** with adaptive help (proposal in the round-30 answers: Little 2–4 / Big 5–8; questions a–e to the owner).
-2. **Typed safety net:** `// @ts-check` + JSDoc for saves, net messages and the Studio core (explained to the owner; awaiting yes/no).
-3. **Performance budgets as hard rules** (explained; awaiting yes/no).
-4. **Caching the generated world** (recommended: measure first, cache only slow parts, keyed by build).
-5. **Architecture pace** (recommended: one step per round).
-6. **Per-room secret in the QR code** (recommended: a later online round).
-7. **In-game QR scanner** (so iPhone scans stay in the Home Screen app) and a grown-up check before the photo share sheet.
+**Decided by the owner (round D, 4 Oct):**
+- **No QR code**: the room code is digits and 4 animal pictures only (so no per-room secret in it, and no in-game QR scanner).
+- **No grown-up sum before the photo share sheet.**
+- **Welcomes are text**, not voice (entering the valley, a village, a house); a talk box or the chat closes by itself when the child walks 6 m away.
+- **Two age groups, split at 5** (details left to us): under-5s still see every game, card and strategy games too, and keep money and prices; they get bigger answer buttons and, after 10 s or two misses, the right answer wiggles; games are already gentler for them (no losing). **Only a grown-up changes difficulty** (Grown-ups → the child's card: age and Easy / Medium / Hard). Each game's own level still rises as the child wins; the owner can ask for that to stop.
+- **Type checking: yes** (`// @ts-check` + JSDoc; check `types`).
+- **Performance budgets are hard rules** (§15.1, PERF-001…005; check `perf`). Lotus Village is far over the draw-call budget today (≈1,300 vs 250): the check is a ratchet and a performance round brings it down.
+- **Store the generated world on the device: yes** (first: the map picture, by build; start-up ≈ 8.8 → 4.5 s in the test browser).
+- **One architecture step per round.**
+- Watch a pull request only when the owner asks, and ask first.
+
+**Still open:** nothing from the round-30 list.
 
 ## 14. Review of the outside assessment (round 30)
 
@@ -248,7 +252,7 @@ What may leave the device:
 **Right, and worth doing (in order):**
 1. **Online safety:** a 4-digit room code is not a secret.
    - HANDOFF §7 already says so.
-   - **Done (round 30):** newcomers knock and the starter lets them in (PRIV-004, check `knock`); the owner chose to keep 4 digits, with animal pictures and a QR code. Still to do: rate limits.
+   - **Done (round 30):** newcomers knock and the starter lets them in (PRIV-004, check `knock`); the owner chose to keep 4 digits, with animal pictures (the QR code was removed in round D). Rate and size limits per message: `js/netmsg.js`.
 2. **One world validator** (§11) running in tests and in Studio.
 3. **Mini-game lifecycle:** `js/games/frame.js` is the shared frame. Add a test that opens and closes every game and checks nothing is left behind (timers, listeners, sounds).
 4. **Save schema:**
@@ -331,7 +335,7 @@ The disagreements are about *how* in this particular game, not *whether* these t
 
 Proposals; the owner decides.
 
-1. **Performance budget (HARD once agreed):**
+1. **Performance budget (HARD, owner round D; PERF-001…005, check `perf`):**
    - first playable ≤ 8 s on a mid phone over 4G;
    - ≥ 30 fps at quality Auto;
    - < 250 draw calls in a village;

@@ -30,7 +30,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
   const nextName = nextId && GAMES[nextId] ? GAMES[nextId].name() : '';
   if (current) current.close(false);
   return new Promise(resolve => {
-    const layer = el('div', 'gl gl-' + style);
+    const layer = el('div', 'gl gl-' + style + (little ? ' little' : ''));
     layer.innerHTML = `
       <div class="gl-head">
         <button class="gl-x" aria-label="${T('Leave', 'Rời đi')}">✕</button>
@@ -139,13 +139,21 @@ export function tapOne(els) {
   });
 }
 // Keep asking until the right one is tapped. check(el) -> boolean.
+// Little ones (under 5) who wait 10 seconds, or miss twice, see the right answer wiggle gently.
+export const HINT_AFTER = 10000;
 export async function untilRight(api, els, check) {
-  for (;;) {
-    const e = await tapOne(els);
-    if (api.closed) return null;
-    if (check(e)) { api.right(e); return e; }
-    api.wrong(e);
-  }
+  let misses = 0, t = 0;
+  const hint = () => { const r = els.find(x => check(x)); if (r && !api.closed) r.classList.add('hint'); };
+  const arm = () => { clearTimeout(t); if (api.little) t = setTimeout(hint, misses >= 2 ? 0 : HINT_AFTER); };
+  try {
+    for (;;) {
+      arm();
+      const e = await tapOne(els);
+      if (api.closed) return null;
+      if (check(e)) { e.classList.remove('hint'); api.right(e); return e; }
+      misses++; api.wrong(e);
+    }
+  } finally { clearTimeout(t); }
 }
 export function choiceButtons(api, items, render, cls = 'choice') {
   const row = el('div', 'choices');

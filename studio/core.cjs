@@ -1,3 +1,4 @@
+// @ts-check
 // Sparkle Studio's engine: the work behind every page (content, faces, ads, voices, photos, publishing, the website,
 // the health check, players). It is the same program in both places the Studio runs:
 //   · the exe on the family's computer (studio.cjs): files in the game folder, keys in %APPDATA%\SparkleStudio
@@ -38,8 +39,8 @@ const GH_API = (typeof process !== 'undefined' && process.env && process.env.STU
 function ghApi(token) {
   return async (p, opt = {}) => {
     const r = await fetch(GH_API + p, { ...opt, headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'User-Agent': 'sparkle-studio', 'X-GitHub-Api-Version': '2022-11-28', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } });
-    const t = await r.text(); let j = {}; try { j = JSON.parse(t); } catch (e) { }
-    if (!r.ok) { const e = new Error(`GitHub ${r.status}: ${(j.message || t).slice(0, 160)}`); e.status = r.status; throw e; }
+    const t = await r.text(); /** @type {any} */ let j = {}; try { j = JSON.parse(t); } catch (e) { }
+    if (!r.ok) { const e = /** @type {Error & { status?: number }} */ (new Error(`GitHub ${r.status}: ${(j.message || t).slice(0, 160)}`)); e.status = r.status; throw e; }
     return j;
   };
 }
@@ -59,7 +60,7 @@ function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api
     const main = await refSha(branch); if (!main) throw new Error(`The branch ${branch} is not in ${repo}.`);
     const d = await refSha(draft); let ahead = 0, base = null;
     if (d && d !== main) { const c = await gh(`${R}/compare/${encodeURIComponent(branch)}...${encodeURIComponent(draft)}`); ahead = c.ahead_by; base = c.merge_base_commit.sha; }
-    st = { main, draftSha: d, d: ahead ? d : null, base, mainTree: await treeOf(main) };
+    st = { main, draftSha: d, d: ahead ? d : null, base, mainTree: await treeOf(main), draftTree: null };
     if (st.d) st.draftTree = await treeOf(st.d);
     return st;
   };
@@ -149,7 +150,7 @@ async function bestPhotos(sources, max) {
     const j = await ml.json(); let lead = '';
     try { const sm = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${t}`, { headers: UA }); if (sm.ok) lead = decodeURIComponent(((await sm.json()).originalimage || {}).source || '').split('/').pop(); } catch (e) { }
     let items = (j.items || []).filter(it => it.type === 'image' && it.showInGallery !== false && !BADPIC.test(it.title || ''));
-    items.sort((a, b) => (b.title.replace(/^File:/, '').replace(/ /g, '_') === lead) - (a.title.replace(/^File:/, '').replace(/ /g, '_') === lead));
+    items.sort((a, b) => +(b.title.replace(/^File:/, '').replace(/ /g, '_') === lead) - +(a.title.replace(/^File:/, '').replace(/ /g, '_') === lead));
     if (items.length) return items.slice(0, max).map(it => ({ file: it.title, caption: strip(it.caption && it.caption.html || it.caption && it.caption.text || '') }));
   }
   return [];
@@ -189,6 +190,11 @@ async function gatherPhotos(sources, name, max) {
 //   conf    keys and names: azureKey, azureRegion, netlifyToken, netlifySite, githubToken, githubRepo, githubBranch, …
 //   online  true on the website (computer-only things are switched off there)
 //   local   computer-only helpers from studio.cjs: tts (Piper), settings, build, deploy, open, players, info
+/**
+ * @typedef {{ tts?: Function, settings?: Function, build?: Function, deploy?: Function, open?: Function, players?: Function,
+ *   info?: () => object, inbox?: Function, api?: Function, onlineVersion?: () => Promise<string> }} LocalHelpers
+ * @param {{ store: any, conf: any, online?: boolean, local?: LocalHelpers }} opts
+ */
 function createStudio({ store, conf, online = false, local = {} }) {
   const S = store;
   const readJSON = async (rel, def) => { const b = await S.read(rel); if (!b) return def; try { return JSON.parse(b.toString('utf8')); } catch (e) { return def; } };
@@ -264,7 +270,7 @@ function createStudio({ store, conf, online = false, local = {} }) {
   // ---------- the website: Netlify deploys and GitHub changes, to see and manage from the dashboard ----------
   async function nf(p, opt = {}) {
     const r = await fetch('https://api.netlify.com/api/v1' + p, { ...opt, headers: { Authorization: 'Bearer ' + conf.netlifyToken, 'User-Agent': 'sparkle-studio', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } });
-    const t = await r.text(); let j = {}; try { j = JSON.parse(t); } catch (e) { }
+    const t = await r.text(); /** @type {any} */ let j = {}; try { j = JSON.parse(t); } catch (e) { }
     if (!r.ok) throw new Error(`Netlify ${r.status}: ${(j.message || t).slice(0, 160)}`);
     return j;
   }

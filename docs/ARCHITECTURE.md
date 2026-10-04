@@ -585,7 +585,7 @@ The template is the same for every system. Fields marked "—" mean none.
   - 3D signs that redraw on `LanguageChanged`.
 - **Non-responsibility:** collisions (it may feed meshes to the solid-map builder as a *read-only* source; ARCH note §12 step 6), gameplay decisions.
 - **Interface:** `build(worldData)`, `attachView(entityId, viewDef)`, `camera.*`, `quality(q)`.
-- **Performance:** design budgets in the handbook §15 [OPEN until the owner approves the numbers].
+- **Performance:** budgets PERF-001…005 (§9, owner round D), checked by `perf` against `tests/perf-baseline.json` (a ratchet towards each budget).
 - **Failure:** missing texture or model → placeholder; WebGL context lost → pause + restore.
 
 ### 8.17 `settings`, `content`, `players-count`, `studio`
@@ -712,7 +712,12 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | PRIV-001 | No API keys or personal data in code or repo | BLOCKER | process + secret scan |
 | PRIV-002 | The hello sends only the whitelisted fields (handbook §10) and stops when switched off | BLOCKER | check `studio` (no names kept) + review |
 | PRIV-003 | Every incoming network, backup, content or Studio payload is validated (type, size, range) before use. Network messages: `js/netmsg.js` (one schema per kind, size and rate limits, unknown kinds dropped) | BLOCKER | check `netmsg` (+ `multiplayer`, `cloud`, `knock`); backups/content/Studio: review [IMPR] |
-| PRIV-004 | Online newcomers knock: until the room's starter lets them in they get nothing from the room (no names, moves, voices) and their own microphone is off; only saved friends (friend code on the list) come straight in; "No thanks" keeps them out of that room | BLOCKER | check `knock` (+ `multiplayer`, `cloud`) |
+| PRIV-004 | Online newcomers knock: until the room's starter lets them in they get nothing from the room (no names, moves, voices) and their own microphone is off; only saved friends (friend code on the list) come straight in; "No thanks" keeps them out of that room. The code is shown as digits and animal pictures only (the QR code was removed, owner round D) | BLOCKER | check `knock` (+ `multiplayer`, `cloud`) |
+| PERF-001 | First playable ≤ 8 s on a mid phone over 4G: ≤ 8 MB downloaded before the title screen; slow start-up work is kept on the device by build (`js/worldcache.js`: the map picture) | MAJOR | check `perf` (download, start-up times `G.bootTimes`, map picture read back) |
+| PERF-002 | ≥ 30 fps at quality Auto | MAJOR | real devices (the test browser draws in software) |
+| PERF-003 | < 250 draw calls and < 300k triangles a frame in a village (today about 1,000–1,400 and 0.6–0.75 M in Lotus Village: a ratchet that may only go down) | MAJOR | check `perf` |
+| PERF-004 | Textures ≤ 1024 px; one new prop ≤ 2,000 triangles | MAJOR | check `perf` (textures); props: review |
+| PERF-005 | Memory after 10 mini-games grows < 40 MB and no page elements are left behind | MAJOR | check `perf` |
 | SAFE-001 | Safe for ages 2–8: no weapons, blood, scary faces, animal fights, real logos, phone numbers or addresses (G8) | BLOCKER | visual + review |
 | STUDIO-001 | The exe and online Studio are one program and the same version as the game | BLOCKER | check `studio` |
 | STUDIO-002 | Online saves go to a draft branch; Publish copies only the family's files | BLOCKER | check `studio` |
@@ -737,7 +742,8 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | **Integration (browser)** | `tests/run.mjs` [IMPL] | Playwright Chromium, desktop + phone | today's 20 checks (`boot`, `spill`, `language`, `two-players`, `games`, `features`, `camera`, `contract`, `multiplayer`, `roads`, `flat`, `roadshape`, `phone`, `solid`, `voice`, `studio`, `ground`, `saves`, `meet`, `cloud`) |
 | **Architecture** | `tests/arch.mjs` [IMPR] | Node | import graph: layers (ARCH-001/002), cycles (ARCH-005); baseline today: 5 cycles, then must only go down |
 | **Visual regression** | `tests/visual.mjs` [IMPR] | Playwright | fixed camera spots (junctions, gates, village centre, market, map, Grown-ups, Studio) at 1180×760 and 390×760; image diff + human review |
-| **Performance** | `tests/perf.mjs` [IMPR] | Playwright + real devices | first playable, fps, memory after 10 mini-games; budgets [OPEN] |
+| **Performance** | `perf` in `tests/run.mjs` [IMPL] | Playwright + real devices | PERF-001/003/004/005 against `tests/perf-baseline.json` (ratchet); fps on real devices |
+| **Types** | `types` in `tests/run.mjs` [IMPL] | TypeScript (`tsc`, no build step) | files starting with `// @ts-check` against their JSDoc (`tests/tsconfig.json`): state, netmsg, worldcache, studio core; more files join as they are touched |
 
 ### 10.1 Cross-system tests (each names its rules)
 
@@ -933,13 +939,13 @@ tests/   run.mjs  harness.mjs  arch.mjs  unit/  world/  visual/  perf/
 
 1. ~~ROAD-003 grade limit~~ **decided: 8 % asphalt / 12 % dirt**, no tight-spot allowance.
 2. ~~ROAD-001 footpaths~~ **decided: yes**, the 1.6 m class in Phase 2.
-3. **Types:** `// @ts-check` + JSDoc for L0–L3 contracts (no build step), or stay untyped?
+3. ~~Types~~ **decided: yes** (`// @ts-check` + JSDoc, check `types`; started with state, netmsg, worldcache, studio core).
 4. ~~Resume spot~~ **decided: a child comes back where they were.**
-5. **Performance budgets** (handbook §15.1) as hard rules (PERF-xxx)?
-6. ~~Online safety~~ **decided and built:** knocking (the child starter lets in), saved friends straight in, 4 digits + animals + QR. Open: per-room secret in the QR.
+5. ~~Performance budgets~~ **decided: hard rules** PERF-001…005 (§9), check `perf` as a ratchet; the village draw-call gap (≈1,300 vs 250) needs its own round (static batching).
+6. ~~Online safety~~ **decided and built:** knocking (the child starter lets in), saved friends straight in, 4 digits + animals. The QR code was removed (round D), so no per-room secret; no grown-up sum before the photo share sheet.
 7. ~~Studio exe Publish~~ **decided: through the draft branch**, like online.
-8. **Generation caching:** cache WorldData per (build, content) on the device (faster start, more storage) or regenerate each start?
-9. **Migration pace:** one migration step per round alongside design phases (recommended), or a dedicated architecture round first (steps 0–3)?
+8. ~~Generation caching~~ **decided: store on the device.** First step (round D): the map picture, the slowest start-up step, in the `sv-world` cache by build (`js/worldcache.js`); start-up ≈ 8.8 → 4.5 s in the test browser. WorldData itself follows once `gen.world` exists (step 4).
+9. ~~Migration pace~~ **decided: one architecture step per round.**
 
 ### 14.3 Internal consistency check (done for v1.0)
 

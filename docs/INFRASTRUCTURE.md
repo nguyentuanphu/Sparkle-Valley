@@ -14,6 +14,7 @@ Keep this file current in the same round as any change to hosting, servers, keys
 |---|---|---|---|
 | **The game** | Plain JS ES modules + three.js, PWA, no build step | The child's browser / Home Screen app | repo root: `index.html`, `js/`, `css/`, `vendor/`, `fonts/`, `icons/`, `content/`, `sw.js` |
 | **Voices** | Recorded Azure voice pack (EN/VI, ~7,400 files, ~140 MB) | Downloaded to each device (Cache Storage `sv-voices`), played offline | `voices/` in **GitHub** (tracked) |
+| **World pictures** | Pictures worked out from the world at start (today: the map), stored by build | Cache Storage `sv-world` on each device (painted once per build; the service worker clears it on update) | `js/worldcache.js` |
 | **Real photos** | Landmark photos chosen in the Studio | Cached on the device once seen | `photos/` (from the Studio; none yet) |
 | **Family content** | Message, names, faces, tales, quiz, villagers, buildings, defaults | Read at start by `js/custom.js` | `content/custom.json`, `content/faces/` |
 | **Live website** | Netlify site **sparklevalley**, linked to GitHub `main` | Netlify CDN | whole repo (`netlify.toml`: publish `.`) |
@@ -106,7 +107,8 @@ Netlify Blobs needs no key; it is attached to the site automatically.
 
 ### 6.3 Automated checks
 
-In `tests/`, run `npm install` once, then `node run.mjs [check…]`. The full list is in HANDOFF §2.
+In `tests/`, run `npm install` once (Playwright, and TypeScript for the `types` check), then `node run.mjs [check…]`. The full list is in HANDOFF §2.
+- **`perf`** compares against `tests/perf-baseline.json` (PERF budgets; numbers may only go down). The test browser draws in software, so frames per second is measured on real phones.
 - **Online checks:** `multiplayer`, `meet`, `cloud`, `knock` need a local PeerJS server (127.0.0.1:9000) and an MQTT broker (127.0.0.1:9001). The commands are in `tests/README.md`; without them those checks say "skipped".
 - **`studio`** uses a fake GitHub and fake Netlify (ports 8791/8792) built into `tests/studio-check.mjs`.
 

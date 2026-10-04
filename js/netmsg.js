@@ -1,3 +1,4 @@
+// @ts-check
 // Every message that comes from another device, checked in one place before the game sees it (hard rule PRIV-003,
 // architecture step "net message schema"). For each kind of message: which fields it may have and what they may
 // hold, how big it may be, and how often one player may send it. Anything else is dropped:
@@ -7,6 +8,10 @@
 //   · the same player sending a kind of message faster than a child ever could (a flood).
 // The transport (js/net.js) stays as it is; it calls checkMsg() for every message it receives.
 
+/** @typedef {(v: any) => any} Field  a field check: the cleaned value, or undefined to leave it out */
+/** @typedef {{ fields: Record<string, Field>, size: number, per: number, sec: number, need?: string[] }} Kind */
+/** @typedef {{ t: string, from?: string, to?: string, mid?: string, [k: string]: any }} Msg */
+/** @type {(max?: number) => Field} */
 const word = (max = 32) => v => typeof v === 'string' && v.length <= max && /^[\w-]*$/.test(v) ? v : undefined;
 const text = max => v => typeof v === 'string' && v.length <= max && !/[\u0000-\u0008\u000b-\u001f]/.test(v) ? v : undefined;
 const num = (lo, hi) => v => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? v : undefined;
@@ -22,6 +27,7 @@ const side = v => {
 };
 const W = 180; // world coordinates stay inside ±180 m (the valley is 400 m across)
 // kind → { fields, size (largest JSON in characters), per (at most this many…), sec (…in this many seconds), need (fields that must be there) }
+/** @type {Record<string, Kind>} */
 export const SCHEMA = {
   hello: { fields: { name: text(40), look: any, photo: any, friend: word(8), pub: text(200) }, size: 130000, per: 6, sec: 10 },
   s: { fields: { x: num(-W, W), y: num(-60, 120), z: num(-W, W), yaw: num(-100, 100), st: word(16), sp: num(0, 50) }, need: ['x', 'y', 'z', 'yaw'], size: 600, per: 40, sec: 1 },
@@ -42,11 +48,13 @@ export const SCHEMA = {
   tradeDone: { fields: { id: word(32), ok: bool }, need: ['id'], size: 600, per: 4, sec: 5 }
 };
 // fields every message may carry (the transport's own)
+/** @type {Record<string, Field>} */
 const ENVELOPE = { t: word(16), from: word(64), to: word(64), mid: word(40), _topic: any };
 
 const seen = new Map(); // `${from}|${t}` → recent times
 let lastSweep = 0;
 // → the cleaned message, or null to drop it.
+/** @param {any} d the message as it arrived  @param {string} from who sent it  @returns {Msg | null} */
 export function checkMsg(d, from) {
   let size = null;
   if (!d || typeof d !== 'object' || Array.isArray(d)) return null;
@@ -59,7 +67,7 @@ export function checkMsg(d, from) {
   if (list.length >= S.per) { seen.set(key, list); return null; }
   list.push(now); seen.set(key, list);
   if (now - lastSweep > 30000) { lastSweep = now; for (const [k, l] of seen) if (!l.length || now - l[l.length - 1] > 60000) seen.delete(k); }
-  const out = {};
+  /** @type {any} */ const out = {};
   for (const [k, v] of Object.entries(d)) {
     const f = S.fields[k] || ENVELOPE[k]; if (!f) continue; // not on the list: left out
     if (v === undefined || v === null) continue;
