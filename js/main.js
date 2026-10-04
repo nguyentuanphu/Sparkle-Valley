@@ -59,7 +59,7 @@ import { createReport, addMinute } from './report.js';
 import { createCoop } from './coop.js';
 import { createTwinChests } from './twinchests.js';
 import { createClaims } from './claims.js';
-import { createNetGames, ONLINE_GAMES } from './netgames.js';
+import { createNetGames, onlineDef } from './netgames.js';
 import { id as makeId } from './core/ids.js';
 import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
@@ -819,9 +819,9 @@ G.netGames = createNetGames({
     const names = s.seats.map(id => id === Net.me ? G.heroes[0].profile.name : remoteName(id));
     const online = { mine: s.mine, names, seed: s.gid, onMove: f => G.netGames.onMove(f), move: (n, mv) => G.netGames.move(n, mv), next: (n, seat) => G.netGames.next(n, seat), all: n => G.netGames.all(n) };
     if (/^tale-/.test(s.game)) { // a tale read together: page turns travel as moves
-      const t = (G.TALES || []).find(x => 'tale-' + x.id === s.game); if (!t || !G.readTale) { G.netGames.leave(); return; }
+      const t = (G.TALES || []).find(x => 'tale-' + x.id === s.game); if (!t || !G.readTaleNow) { G.netGames.leave(); return; }
       let seq = 0; const sync = { send: p => online.move(seq++, p), listen: fn => online.onMove((seat, n, mv) => { if (seat !== s.mine) fn(mv); }) };
-      G.readTale(G.heroes[0], t, sync).finally(() => G.netGames.leave()); return;
+      G.readTaleNow(G.heroes[0], t, sync).finally(() => G.netGames.leave()); return;
     }
     G.playGameOnline(s.game, s.level || 1, online).finally(() => G.netGames.leave());
   },
@@ -843,7 +843,7 @@ G.inviteGame = (game, to, level) => {
     m.querySelector('.x').onclick = () => { m.close(); res(null); };
     m.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { SFX.tap(); m.close(); res(G.inviteGame(game, to, +b.dataset.lvl)); });
   });
-  const gid = G.netGames.invite(game, Math.max(1, Math.min(5, level)), ONLINE_GAMES[game].all ? undefined : to);
+  const gid = G.netGames.invite(game, Math.max(1, Math.min(5, level)), (onlineDef(game) || {}).all ? undefined : to);
   if (gid) toast(T('Invitation sent! Waiting for an answer…', 'Đã gửi lời mời! Đang chờ trả lời…')); return gid;
 };
 G.playGameOnline = async (id, level, online) => {

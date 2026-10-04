@@ -99,7 +99,7 @@ export function createLearning(G) {
     if (first && Object.keys(p.tales).length === 10) { const st = G.giveSticker(p); await G.reward(st || '📚', T('Ten tales!', 'Mười truyện rồi!'), T('You are a real story explorer.', 'Con là nhà thám hiểm truyện cổ tích thật sự.')); }
   };
   // from the Games hub (or anywhere): fly to the storyteller grandma, and she starts the tale
-  G.TALES = TALES; G.readTale = readTale;
+  G.TALES = TALES; G.readTaleNow = readTale;
   G.readTale = async (i, id) => {
     const h = G.heroes[i], t = TALES.find(x => x.id === id); if (!h || !t) return;
     if (G.storyteller && dist2(h.pos.x, h.pos.z, G.storyteller.x, G.storyteller.z) > 5) await G.landBy(h, G.storyteller.x, G.storyteller.z);
