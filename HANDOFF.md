@@ -1,7 +1,7 @@
 # Sparkle Valley · Thung Lũng Lấp Lánh — Handoff
 
 A bilingual (English / Tiếng Việt) 3D open-world browser game for the owner's children, aged 2–8.
-Attach this file at the start of a new chat, with **`docs/SO-TAY-THIET-KE.md` (Sổ tay thiết kế, the design handbook)**, which holds every design, data, safety and release rule in one place. Code: **https://github.com/nguyentuanphu/Sparkle-Valley** (work on a `claude/…` branch, merged into `main` by pull request).
+Attach this file at the start of a new chat, with **`docs/SO-TAY-THIET-KE.md` (Sổ tay thiết kế, the design handbook)**, which holds every design, data, safety and release rule in one place, and **`docs/ARCHITECTURE.md`**, the authoritative architecture contract: layers, systems, entity model, ids, events, lifecycle, the SYSTEM-NNN hard rules, tests, the module audit and the migration plan. Read both before changing code. Code: **https://github.com/nguyentuanphu/Sparkle-Valley** (work on a `claude/…` branch, merged into `main` by pull request).
 
 ---
 
