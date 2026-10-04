@@ -257,11 +257,71 @@ What may leave the device:
    - memory after 10 mini-games.
 7. **Release discipline for Studio:** the online Studio already saves to a draft; the exe could do the same (§13.6).
 
-**Not right for us, or already different:**
-- "Treat the handoff as the source": it reviewed only HANDOFF, not the code. Several "to inspect" items are already done (validation of net messages, ECDH photos, Host and Origin checks).
-- Full TypeScript: `@ts-check` + JSDoc gives most of the benefit with no build step (§13.7).
-- "Don't add analytics": the owner chose an anonymous counter. It is minimal, has an off switch, and keeps no names.
-- "Don't auto-download voice packs": the owner's HARD rule is recorded voices by default. We keep it, ordered by the child's language.
+**Where we disagree, and why** (the reasoning, so future chats don't re-open these without new facts):
+
+**14.1 It reviewed HANDOFF, not the code.**
+- The assessment says so itself: "based on the HANDOFF.md description, not a verified, line-by-line review of the source code". Several of its "inspect this" items are already done:
+
+| It asks for | Already in the code |
+|---|---|
+| Validate every incoming network message | ids, looks, friend codes and positions from others are checked before use (`net.js`) |
+| Protect photo exchange | photos have their own pair lock (ECDH, `relay.js`) |
+| Constrain the Studio local server | localhost Host and Origin only, safe paths, size limits (`studio/studio.cjs`) |
+| Versioned saves | `v: 2` plus three safe copies; **migrations** are the real gap (ARCHITECTURE SAVE-002) |
+| No punishment for little ones | under-5 mode: no losing, no timers (checked by `games`) |
+
+- **What it got right that we had missed:** the road grade numbers disagree (10/14 % rule vs 12.5/15.5 % allowed by `roadshape`). This is §13.1.
+- **Lesson:** an outside review of documents is useful for finding gaps, but every item must be checked against the code before work is planned.
+
+**14.2 Full TypeScript: no. Types in comments: yes, for risky code (§13.7).**
+- **The goal is right:** catch wrong names, missing fields and wrong kinds of values early.
+- **What a build step would cost.** Real TypeScript must be converted before the browser can run it. Today files go straight from GitHub to Netlify to the phone. A build step would mean:
+  - every change converted before testing or deploying;
+  - Sparkle Studio and its exe need the converter too;
+  - Netlify must run a build;
+  - more for AI chats to break;
+  - the file on the phone is no longer exactly the file in the repo, which makes iPhone debugging harder.
+- **Choice:** plain JavaScript with `// @ts-check` + JSDoc type comments. The editor or a test checks types; the browser runs the file unchanged.
+- **Where:** only where mistakes are expensive: saves, network messages, the Studio engine, and the new architecture core (L0–L3).
+- **Trade-off:** a little weaker than full TypeScript and wordier, which is why it is an owner decision.
+
+**14.3 "No analytics": the owner chose an anonymous counter; we built it to the spirit of the advice.**
+- The advice is a sound default for a children's game, but the owner asked to know how many children play (round 29) and chose option B (round 30). Following the assessment literally would overrule the owner.
+- **Built to respect both:**
+
+| Concern behind the advice | How ours handles it |
+|---|---|
+| Profiling a child | One random number per device; no name, photo, place or IP address |
+| Behaviour tracking | Totals only (minutes, games started, stories opened); no clicks, paths or answers |
+| Parents not in control | Off switch: Grown-ups → Advanced → Count players |
+| Data piling up | Per-day device records deleted after 60 days |
+| Hidden data flow | The exact whitelist is a hard rule (ARCHITECTURE PRIV-002) and tested |
+
+- **What the advice rightly warns about:** fields creep over time. Adding anything to the whitelist needs the owner's approval.
+
+**14.4 "Don't auto-download voice packs": it contradicts the owner's HARD rule (VOICE-001).**
+- **The worry is fair:** the pack is ~85 MB (139 MB on disk); a full download on mobile data or a small phone is a real cost.
+- **Why we can't follow it:** the owner's rule is that downloaded voices are always the voice, never the phone's. The round-30 iPhone bug is exactly what happens when a recording isn't there in time. A small core pack would mean the phone voice for every line not yet downloaded.
+
+| Option | Data used | Recorded voices offline | Risk of phone voice |
+|---|---|---|---|
+| A. Whole pack after the first visit, child's language first (**today**) | ~85 MB once | everything | lowest |
+| B. Only the child's language; others on request | about half | their language only | low, unless the language is switched or bilingual mode is on |
+| C. Small core pack, the rest when first needed (assessment) | least | only what was already used | high offline and on slow data |
+
+- **Recommendation:** A (today), or B to save data. **C breaks VOICE-001** and must not be built without the owner changing that rule. This is §13.5.
+
+**14.5 Where we agree** (already planned in `docs/ARCHITECTURE.md`):
+- keep JavaScript and three.js, with no big rewrite;
+- one source of truth for the world;
+- a world validator;
+- a standard mini-game lifecycle;
+- save migrations;
+- clear age profiles;
+- performance measured on real phones;
+- online-room safety (newcomer approval, longer codes).
+
+The disagreements are about *how* in this particular game, not *whether* these things matter.
 
 ## 15. More rules recommended for consistency · Đề xuất thêm luật
 
