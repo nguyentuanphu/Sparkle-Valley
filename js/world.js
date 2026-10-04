@@ -88,9 +88,14 @@ export const ROADS = [
   { kind: 'dirt', pts: [[-8, 97], [0, 106], [4, 110]] },                       // Hồ Chí Minh City to Mirror Lake
   { kind: 'dirt', pts: [[-12, 128], [-4, 130], [6, 140]] },                    // the farm to Mirror Lake
   { kind: 'dirt', pts: [[-56, 128], [-80, 132], [-104, 134], [-116, 134]] },   // the farm to the western woods
-  { kind: 'dirt', pts: [[118, 96], [112, 108], [100, 118]] }                   // the market to Mirror Lake
+  { kind: 'dirt', pts: [[118, 96], [112, 108], [100, 118]] },                  // the market to Mirror Lake
+  // footpaths (R1, 1.6 m; Phase 2, round 30): Lotus Village's pond path (R11) carries on from the village lane round the
+  // lotus pond's north and east sides, 8 m from its middle (1.5–2.5 m from the water), and ends at a bench; a short
+  // path leaves it square (R5) to the little shrine at the foot of the banyan tree (js/lotus.js)
+  ...(() => { const cx = VILLAGE.x - 10, cz = VILLAGE.z + 4, arc = []; for (let a = 215; a <= 440; a += 15) arc.push([cx + 8 * Math.cos(a * Math.PI / 180), cz + 8 * Math.sin(a * Math.PI / 180)]);
+    return [{ kind: 'footpath', pts: [[VILLAGE.x - 18, VILLAGE.z], ...arc] }, { kind: 'footpath', pts: [[cx + 8, cz], [VILLAGE.x + 2.4, VILLAGE.z + 4]] }]; })()
 ];
-ROADS.forEach(R => { R.w = R.kind === 'asphalt' ? 5.2 : 3.4; });
+ROADS.forEach(R => { R.w = R.kind === 'asphalt' ? 5.2 : R.kind === 'dirt' ? 3.4 : 1.6; });
 // HARD RULE: roads are straight lines joined by perfect circular curves (asphalt bends round a 24 m circle, dirt
 // roads round 16 m, tighter only where two bends are close), and every road runs straight for its last 14 m into
 // a village or city gate. A side road that ends on another road is joined back onto that road's new line.
@@ -117,7 +122,7 @@ ROADS.forEach(R => { R.w = R.kind === 'asphalt' ? 5.2 : 3.4; });
   const near = (x, z, pts) => { let best = null, bd = 1e9; for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], dx = bx - ax, dz = bz - az, t = clamp(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1), 0, 1), px = ax + dx * t, pz = az + dz * t, d = Math.hypot(x - px, z - pz); if (d < bd) { bd = d; best = [px, pz]; } } return { p: best, d: bd }; };
   // which road ends sit on another road (a junction), found on the lines as drawn
   const joins = ROADS.map(R => [0, 1].map(end => { if ((R.gates || [])[end]) return null; const [x, z] = end ? R.pts[R.pts.length - 1] : R.pts[0]; const o = ROADS.find(O => O !== R && near(x, z, O.pts).d < 1.5); return o || null; }));
-  for (const R of ROADS) R.pts = fillet(R.pts, R.kind === 'asphalt' ? 24 : 16, R.gates || []);
+  for (const R of ROADS) R.pts = fillet(R.pts, R.kind === 'asphalt' ? 24 : R.kind === 'dirt' ? 16 : 8, R.gates || []); // (footpaths bend round an 8 m circle: no step turns more than 8°)
   ROADS.forEach((R, k) => joins[k].forEach((O, end) => { if (!O) return; const i = end ? R.pts.length - 1 : 0, q = near(R.pts[i][0], R.pts[i][1], O.pts); if (q.d < 6) R.pts[i] = q.p; }));
 }
 // distance from (x, z) to the nearest road centre line, and that road
@@ -869,7 +874,7 @@ export function paintMap(size = 256) {
     if (dist2(wx, wz, INDIA.x, INDIA.z) < INDIA.r - 2) { r = 238; g = 200; b = 150; }
     if (dist2(wx, wz, BAMBOO.x, BAMBOO.z) < BAMBOO.r) { r *= .8; g *= .95; b *= .8; }
     for (const C of CITIES) if (wx > C.x0 && wx < C.x1 && wz > C.z0 && wz < C.z1) { r = 230; g = 214; b = 186; }
-    { const rd = roadDist(wx, wz); if (rd.d < rd.road.w / 2 + .6) { if (rd.road.kind === 'asphalt') { r = 120; g = 124; b = 130; } else { r = 196; g = 158; b = 108; } } }
+    { const rd = roadDist(wx, wz); if (rd.d < rd.road.w / 2 + .6) { if (rd.road.kind === 'asphalt') { r = 120; g = 124; b = 130; } else if (rd.road.kind === 'dirt') { r = 196; g = 158; b = 108; } else { r = 214; g = 186; b = 140; } } }
     if (wx > 6 && wx < 56 && Math.abs(wz - TOWN.roadZ) < 3.6) { r = 175; g = 180; b = 184; }
     else if ((wx > MARKET.x0 && wx < MARKET.x1 && Math.abs(wz - MARKET.roadZ) < 4) || (wx > AUSSIE.x0 && wx < AUSSIE.x1 && Math.abs(wz - AUSSIE.roadZ) < 3.6)) { r = 190; g = 186; b = 178; }
     else if (wx > 10 && wx < 52 && ((wz > 32 && wz < 40) || (wz > 55 && wz < 72 && (wx < 18 || wx > 40)))) { r = 236; g = 200; b = 160; }

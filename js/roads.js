@@ -7,12 +7,17 @@ import { SFX } from './audio.js';
 import { heightAt, levelAt, riverDist, roadDist, ROADS, DRAGON, BRIDGE, WATER, REGION_NAMES, setRoadBeds, roadBedsOn } from './world.js';
 import { settings } from './state.js';
 // HARD RULE (owner, round 30): the steepest a road may climb: asphalt 8 %, dirt 12 % (checked by `roadshape`)
-export const ROAD_GRADE = { asphalt: .08, dirt: .12 };
+export const ROAD_GRADE = { asphalt: .08, dirt: .12, footpath: .15 };
 
-// a long strip texture: asphalt with a dashed centre line, or packed dirt with wheel tracks
+// a long strip texture: asphalt with a dashed centre line, packed dirt with wheel tracks, or a footpath of packed
+// earth with flat stepping stones
 export function roadTexture(kind) {
   const c = document.createElement('canvas'); c.width = 64; c.height = 256; const g = c.getContext('2d');
-  if (kind !== 'dirt') { // 'asphalt', or 'plain' asphalt without lines (for junctions)
+  if (kind === 'footpath') {
+    g.fillStyle = '#d8b98a'; g.fillRect(0, 0, 64, 256);
+    for (let i = 0; i < 500; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,245,220,.14)' : 'rgba(110,80,50,.1)'; g.fillRect(Math.random() * 64, Math.random() * 256, 2, 2); }
+    for (let y = 8; y < 256; y += 32) { const x = 14 + (y / 32 % 2) * 10; g.fillStyle = '#bfb4a2'; g.beginPath(); g.ellipse(x + 12, y + 10, 13, 9, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.ellipse(x + 10, y + 8, 8, 4, 0, 0, 7); g.fill(); }
+  } else if (kind !== 'dirt') { // 'asphalt', or 'plain' asphalt without lines (for junctions)
     g.fillStyle = '#6f747a'; g.fillRect(0, 0, 64, 256);
     for (let i = 0; i < 500; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.08)'; g.fillRect(Math.random() * 64, Math.random() * 256, 2, 2); }
     if (kind === 'asphalt') { g.fillStyle = '#e9e4d4'; g.fillRect(2, 0, 3, 256); g.fillRect(59, 0, 3, 256);
@@ -73,7 +78,7 @@ function profile(R, world, pts, anchors = null) {
   avg(10, 6);
   // …never steeper than 8 % (dirt roads 12 %: owner's R3), worked out from both directions from the fixed parts…
   // (where two fixed parts are too close for that, the whole stretch between them shares the climb evenly)
-  const G = R.kind === 'asphalt' ? ROAD_GRADE.asphalt : ROAD_GRADE.dirt, seg = i => Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]), Gs = new Float64Array(n).fill(G);
+  const G = ROAD_GRADE[R.kind] || ROAD_GRADE.dirt, seg = i => Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]), Gs = new Float64Array(n).fill(G);
   { let f0 = -1, run = 0; for (let i = 0; i < n; i++) { if (i) run += seg(i); if (!fixed(i)) continue; if (f0 >= 0 && i - f0 > 1) { const need = Math.abs(base[i] - base[f0]) / (run || 1) * 1.02; if (need > G) { for (let k = f0 + 1; k <= i; k++) Gs[k] = need; (globalThis.__steepRoads = globalThis.__steepRoads || []).push({ road: ROADS.indexOf(R), from: pts[f0].map(Math.round), to: pts[i].map(Math.round), y0: +base[f0].toFixed(2), y1: +base[i].toFixed(2), run: +run.toFixed(1), need: +(need * 100).toFixed(1) }); } } f0 = i; run = 0; } }
   const step = i => seg(i) * Gs[i];
   const limit = () => { for (let pass = 0; pass < 3; pass++) {
@@ -91,7 +96,7 @@ function ribbonGeo(R, pts, ys) {
     const [px, pz] = pts[Math.max(0, i - 1)], [nx, nz] = pts[Math.min(pts.length - 1, i + 1)];
     let dx = nx - px, dz = nz - pz; const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
     if (i) along += Math.hypot(x - pts[i - 1][0], z - pts[i - 1][1]);
-    for (const s of [-1, -.5, 0, .5, 1]) { pos.push(x - dz * hw * s, ys[i] + .035, z + dx * hw * s); uv.push((s + 1) / 2, along / (R.kind === 'asphalt' ? 9 : 7)); }
+    for (const s of [-1, -.5, 0, .5, 1]) { pos.push(x - dz * hw * s, ys[i] + .035, z + dx * hw * s); uv.push((s + 1) / 2, along / (R.kind === 'asphalt' ? 9 : R.kind === 'dirt' ? 7 : 3)); }
     if (i) { const a = (i - 1) * 5; for (let c = 0; c < 4; c++) idx.push(a + c, a + c + 1, a + c + 5, a + c + 1, a + c + 6, a + c + 5); }
   });
   const geo = new THREE.BufferGeometry();
@@ -147,10 +152,11 @@ export function plantRoadside(G) {
   lines.forEach((L, k) => {
     const R = ROADS[k], hw = R.w / 2, n = L.pts.length; if (n < 2) return;
     // the soft verge: from the road's edge out 1.1 m, gravel-coloured at the road and fading into the grass
-    const pos = [], col = [], idx = [], vc = new THREE.Color(R.kind === 'asphalt' ? '#ddd2ad' : '#dcb47a'); let v = 0;
+    const pos = [], col = [], idx = [], vc = new THREE.Color(R.kind === 'asphalt' ? '#ddd2ad' : R.kind === 'dirt' ? '#dcb47a' : '#e2c99c'); let v = 0;
+    const VERGE = R.kind === 'footpath' ? [[hw - .05, 1], [hw + .25, .7], [hw + .5, 0]] : [[hw - .08, 1], [hw + .6, .75], [hw + 1.5, 0]]; // (R12: a footpath's blend is 0.5 m)
     for (let i = 0; i < n; i++) {
       const [px, pz] = L.pts[Math.max(0, i - 1)], [nx, nz] = L.pts[Math.min(n - 1, i + 1)], D = Math.hypot(nx - px, nz - pz) || 1, ux = -(nz - pz) / D, uz = (nx - px) / D, [x, z] = L.pts[i];
-      for (const sd of [-1, 1]) for (const [o, a] of [[hw - .08, 1], [hw + .6, .75], [hw + 1.5, 0]]) {
+      for (const sd of [-1, 1]) for (const [o, a] of VERGE) {
         const X = x + ux * sd * o, Z = z + uz * sd * o, Y = heightAt(X, Z) + (o < hw ? .07 : .12); // (the ground as it finally is; the terrain mesh is coarser, so a little above)
         pos.push(X, L.deck[i] ? L.ys[i] + .02 : Y, Z); col.push(vc.r, vc.g, vc.b, L.deck[i] ? 0 : a);
       }
@@ -308,7 +314,8 @@ export function localGate(scene, world, x, z, rot, text, style, span = 7.5) {
 
 export function createRoads(G) {
   const { scene, world } = G;
-  const mats = { asphalt: new THREE.MeshToonMaterial({ map: roadTexture('asphalt'), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), dirt: new THREE.MeshToonMaterial({ map: roadTexture('dirt'), polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }) };
+  const mats = { asphalt: new THREE.MeshToonMaterial({ map: roadTexture('asphalt'), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), dirt: new THREE.MeshToonMaterial({ map: roadTexture('dirt'), polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+    footpath: new THREE.MeshToonMaterial({ map: roadTexture('footpath'), polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }) };
   // the Dragon Bridge's deck first, so the road is laid on it rather than down in the river
   { const B = DRAGON; world.platforms.push({ x0: B.x0 - 2, x1: B.x1 + 2, z0: B.z - B.w / 2, z1: B.z + B.w / 2, y: B.h + .1 }); }
   buildRoads(G, mats);

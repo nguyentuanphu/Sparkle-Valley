@@ -68,7 +68,7 @@ Netlify Blobs needs no key; it is attached to the site automatically.
 | Public TURN (Open Relay; may need an account now) | Voice across strict networks | A grown-up can add their own TURN in Grown-ups → Online play |
 | Public MQTT brokers: emqx, hivemq, mosquitto, eclipse (`wss://`) | Cloud relay, friends' status, invites | All four are used at once, so one being down doesn't matter |
 | Wikipedia / Wikimedia Commons / Openverse | The Studio's real-photo search | Studio photo search only |
-| Microsoft Azure Speech | Making voice files (Studio) | Making voices only; children play recorded files |
+| Microsoft Azure Speech | Making voice files (Studio, or `tools/make-voice-pack.mjs --engine azure`) | Making voices only; children play recorded files. (In the cloud sandbox Node needs `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` to reach Azure through the proxy; without it Azure answers 403 although the key is right.) |
 
 ## 5. Data that leaves a device (privacy summary; full table in handbook §10)
 

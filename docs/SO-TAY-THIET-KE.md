@@ -64,7 +64,7 @@ Sources merged here:
 | R8 | Every village and city reachable by asphalt; dead ends only at a gate, landmark or pier; real geography north → south | `roads` |
 | R9 | River crossings within ± 20° of square, straight ≥ 6 m each side; nothing on bridge decks | (to add) |
 | R10 | Lines only on asphalt, plain at junctions; zebra crossings only in towns | visual review |
-| R11 | Pond footpaths 1.5–2.5 m from the water, gaps end at a bench, pier or bridge | Phase 2 |
+| R11 | Pond footpaths 1.5–2.5 m from the water, gaps end at a bench, pier or bridge | Phase 2: done (Lotus Village, checks `village`, `validate`) |
 | R12 | Soft edges: a 0.3–0.5 m blend from road to grass, flowers along the verge | visual review |
 
 - **HARD (round 29):** roads are straight runs joined by perfect curves, run straight into every gate, have every change of slope rounded, take the village's level inside it, and never fill the river.

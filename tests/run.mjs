@@ -278,7 +278,7 @@ await check('roadshape', async () => {
   // (a place too high for its road is lowered, never the rule loosened)
   const P = await open(b, { w: 700, h: 500 }); await clear(P.page);
   const r = await P.page.evaluate(() => { const bad = []; let len = 0;
-    __sv.world.roadLines.forEach((L, k) => { const G = (L.kind === 'asphalt' ? .08 : .12) + .002; // (+0.2 % for rounding the sampled heights)
+    __sv.world.roadLines.forEach((L, k) => { const G = ({ asphalt: .08, dirt: .12, footpath: .15 }[L.kind] || .12) + .002; // (+0.2 % for rounding the sampled heights)
       for (let i = 1; i < L.ys.length; i++) { const d = Math.hypot(L.pts[i][0] - L.pts[i - 1][0], L.pts[i][1] - L.pts[i - 1][1]); len += d; const g = Math.abs(L.ys[i] - L.ys[i - 1]) / (d || 1);
         if (g > G && !L.deck[i]) bad.push(`road ${k} steep ${(g * 100).toFixed(0)}% at ${L.pts[i].map(v => v.toFixed(0))}`);
         if (i < L.ys.length - 1) { const s1 = L.ys[i] - L.ys[i - 1], s2 = L.ys[i + 1] - L.ys[i]; if (Math.abs(s2 - s1) > .16 && !L.deck[i]) bad.push(`road ${k} kink ${Math.abs(s2 - s1).toFixed(2)} at ${L.pts[i].map(v => v.toFixed(0))}`);
@@ -469,6 +469,48 @@ await check('resume', async () => {
   const near = (a, x, z, d) => Math.hypot(a.x - x, a.z - z) < d;
   ok(saved && near(saved, -30, -56, 2) && near(back, saved.x, saved.z, 1.5) && /Welcome back/.test(toastText) && tries.every(t => near(t, -3, -4, 3)) && !errs.length, JSON.stringify({ saved, back, toastText, tries, errs }));
   return `came back at ${back.x.toFixed(0)}, ${back.z.toFixed(0)} with "${toastText}"; a spot in the lake and one inside a building both started at home`;
+});
+
+await check('village', async () => {
+  // Phase 2, Lotus Village (js/lotus.js): footpaths as a road class (R1 1.6 m), the pond path 1.5–2.5 m from the water
+  // (R11) ending at a bench, the well, the shrine at the banyan's foot, the basket boat, hens and a dog that never
+  // step on a path, and a bicycle and a buffalo cart at walking pace that wait for a child in front of them
+  const P = await open(b, { w: 800, h: 600 }); await clear(P.page);
+  await P.page.evaluate(() => { __sv.heroes[0].place(100, 44); }); await P.page.waitForTimeout(1500); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), G = __sv, out = [], V = W.VILLAGE, pond = [V.x - 10, V.z + 4];
+    const paths = W.ROADS.filter(R => R.kind === 'footpath');
+    if (paths.length < 2 || paths.some(R => R.w !== 1.6)) out.push('footpaths missing or not 1.6 m');
+    const pp = paths[0].pts.slice(3), gap = pp.map(([x, z]) => Math.hypot(x - pond[0], z - pond[1]) - 5.2 - .8); // (the path's inner edge to the water; past the joint with the lane)
+    if (gap.some(g => g < 1.5 - .05 || g > 2.5 + .05)) out.push('pond path not 1.5–2.5 m from the water: ' + Math.min(...gap).toFixed(2) + '–' + Math.max(...gap).toFixed(2));
+    const ids = ['lv_well', 'lv_shrine', 'lv_bench'], its = ids.map(id => G.interactables.find(i => i.id === id));
+    its.forEach((it, k) => { if (!it) out.push('missing ' + ids[k]); });
+    const L = G.lotus; if (!L || L.animals.length < 5 || L.movers.length < 2) out.push('animals or riders missing');
+    // tap reactions say their line
+    let said = 0; const keep = G.lotus.lines; for (const k of ['well', 'shrine', 'bench', 'boat', 'hen', 'dog', 'bike', 'cart']) if (keep[k] && keep[k][0] && keep[k][1]) said++;
+    // let the animals wander and the riders ride for a while; nobody steps on a path or goes too fast
+    let worst = 1e9, fastest = 0; const last = L.movers.map(m => m.s);
+    for (let k = 0; k < 16; k++) { await new Promise(r => setTimeout(r, 500));
+      for (const a of L.animals) { const d = W.roadDist(a.m.position.x, a.m.position.z); worst = Math.min(worst, d.d - d.road.w / 2); }
+      L.movers.forEach((m, i) => { fastest = Math.max(fastest, Math.abs(m.s - last[i]) / .5); last[i] = m.s; }); }
+    // the bicycle stays on its footpath
+    const bk = L.movers[0].o.position, onPath = W.roadDist(bk.x, bk.z);
+    return { out, said, worst: +worst.toFixed(2), fastest: +fastest.toFixed(2), bikeOn: onPath.road.kind + ' ' + onPath.d.toFixed(2), gap: Math.min(...gap).toFixed(1) + '–' + Math.max(...gap).toFixed(1) };
+  });
+  // a child 2.5 m in front of the bicycle: it waits
+  const waits = await P.page.evaluate(async () => { const G = __sv, m = G.lotus.movers[0], h = G.heroes[0]; m.wait = 0; await new Promise(r => setTimeout(r, 800)); const o = m.o.position; h.place(o.x + Math.sin(m.dyaw) * 2.5, o.z + Math.cos(m.dyaw) * 2.5); const s0 = m.s; await new Promise(r => setTimeout(r, 2500)); return { waiting: m.waiting, moved: +Math.abs(m.s - s0).toFixed(2) }; });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.out.length && r.said === 8 && r.worst > .9 && r.fastest <= 1.05 && /^footpath/.test(r.bikeOn) && waits.waiting && waits.moved < .05 && !errs.length, JSON.stringify({ r, waits, errs }));
+  return `footpaths 1.6 m, the pond path's edge ${r.gap} m from the water, ending at a bench; well, shrine, bench, boat, hens, dog, bicycle and cart all speak both languages; animals stayed ≥ ${r.worst} m off the paths; riders ≤ ${r.fastest} m/s; the bicycle waited for a child in front of it`;
+});
+
+await check('validate', async () => {
+  // the one world checker (js/validate.js): every hard rule it knows holds, each problem named by its rule id
+  const P = await open(b, { w: 700, h: 500 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => (await import('/js/validate.js')).validateWorld(__sv));
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.length && !errs.length, JSON.stringify(r.slice(0, 12)) + JSON.stringify(errs));
+  return 'ROAD-001/002/003/004/011 and VEH-001 hold';
 });
 
 await check('saves', async () => {

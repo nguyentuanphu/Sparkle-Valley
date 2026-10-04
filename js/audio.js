@@ -63,6 +63,7 @@ export const SFX = {
   no() { tone(300, .18, { to: 220, type: 'triangle', vol: .12 }); },
   pop(n = 0) { const f = midi(PENTA[n % PENTA.length]); tone(f * .5, .12, { to: f * 1.5, vol: .2 }); noise(.06, { vol: .12, freq: 3200 }); },
   chime() { [0, 4, 7, 12].forEach((s, i) => tone(midi(84 + s), .6, { type: 'triangle', at: i * .07, vol: .1 })); },
+  ding() { [0, .16].forEach(t => tone(2350, .5, { at: t, vol: .07, type: 'triangle', vib: 18, vibRate: 30 })); }, // a bicycle bell: kring kring
   // The "discovered a secret" jingle: rising arpeggio with a sparkly tail.
   secret() { [67, 71, 74, 79, 83, 86].forEach((m, i) => tone(midi(m), .5, { type: 'triangle', at: i * .09, vol: .1 })); noise(.6, { at: .5, freq: 7000, vol: .05 }); },
   fanfare() { [[72, 0], [76, .15], [79, .3], [84, .45], [79, .7], [84, .85]].forEach(([m, t], i) => { tone(midi(m), i === 5 ? .9 : .22, { type: 'square', at: t, vol: .05 }); tone(midi(m - 12), i === 5 ? .9 : .22, { type: 'triangle', at: t, vol: .1 }); }); },

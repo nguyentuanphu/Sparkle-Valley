@@ -663,7 +663,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 
 | Id | Alias | Rule | Sev. | Validation | Failure behaviour |
 |---|---|---|---|---|---|
-| ROAD-001 | R1 | Classes with constant width: asphalt 5.2 m, dirt 3.4 m, footpath 1.6 m | MAJOR | data | — |
+| ROAD-001 | R1 | Classes with constant width: asphalt 5.2 m, dirt 3.4 m, footpath 1.6 m (footpaths exist from round 30: Lotus Village) | MAJOR | `js/validate.js` (check `validate`) | — |
 | ROAD-002 | R2 | Straight runs joined by true circular arcs; no step turn > 8°; min radius 10 / 6 / 3 m; no S-bends within 15 m | BLOCKER | check `roadshape`; data | generator fillets |
 | ROAD-003 | R3 | Surface on the ground, never > 0.3 m above it; grade ≤ **8 % asphalt / 12 % dirt** (owner, round 30; `ROAD_GRADE` in roads.js), no allowance: a place too high for its road is lowered; every change of slope rounded | BLOCKER | check `roadshape`, `ground` | generator spreads the grade |
 | ROAD-004 | R4/G5 | Clear corridor `w/2 + 1.5 m`: no props, trees, rocks, grass, flowers, pickups, NPC spots; trees ≥ `w/2 + 2.5`; buildings 2–4 m back | BLOCKER | check `roads` | placement rejects the spot |
@@ -673,7 +673,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | ROAD-008 | R8 | Every village and city reachable by asphalt; dead ends only at a gate, landmark or pier | BLOCKER | check `roads` | — |
 | ROAD-009 | R9 | River crossings within ± 20° of square, straight ≥ 6 m each side; nothing on decks | MAJOR | data [IMPR] | — |
 | ROAD-010 | R10 | Lines only on asphalt; plain at junctions; zebra only in towns | MINOR | visual | — |
-| ROAD-011 | R11 | Pond footpaths 1.5–2.5 m from water | MINOR | data (when footpaths exist) | — |
+| ROAD-011 | R11 | Pond footpaths 1.5–2.5 m from water (measured from the path's edge) | MINOR | checks `village`, `validate` | — |
 | ROAD-012 | R12 | Soft verge blend 0.3–0.5 m with flowers along it | MINOR | visual | — |
 | ROAD-013 | — | Inside a village a road takes the village's level; at a junction the side road takes the through road's exact height | BLOCKER | check `flat`, `roadshape` | — |
 
@@ -689,7 +689,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | NPC-001 | NPCs never block an entrance, never stand in a road corridor, never inside a solid | MAJOR | data + check `roads` |
 | NPC-002 | Titles follow the language (`NAMES_EN/VI`); renames win everywhere | MAJOR | check `language` |
 | ANIMAL-001 | Animals stay in their zone; never bite, fight or get hurt; tap = sound + bilingual name | MAJOR | review + data (zone) |
-| VEH-001 | Vehicles keep to their road class (dirt: carts, bikes, cyclos ≤ 1 m/s; asphalt: buses, scooters ≤ 6 m/s), drive on the country's side, and wait for a child within 4 m ahead; they never knock anyone | BLOCKER (when vehicles exist) | integration test [IMPR] |
+| VEH-001 | Vehicles keep to their road class (dirt: carts, bikes, cyclos ≤ 1 m/s; asphalt: buses, scooters ≤ 6 m/s), drive on the country's side, and wait for a child within 4 m ahead; they never knock anyone | BLOCKER | check `village` (Lotus Village bicycle and buffalo cart, round 30), `validate` |
 | RIVER-001 | Bridges meet both banks at valid crossing points | MAJOR | data |
 | RIVER-002 | Ferry and raft routes stay on water and stop only at piers | BLOCKER | check `features` (raft) + data |
 | RIVER-003 | A rider is never left on water: a blocked route returns to a pier | BLOCKER | integration [IMPR] |
@@ -876,7 +876,7 @@ Metrics are from the r37 measurement (§1.1). No module is dead code, so nothing
 | **8** | **Activities lifecycle:** `activities` system around `games/frame.js`; cleanup checks (ACT-003) | new `activities` check: open/close every game and nothing is left | low–medium |
 | **9** | **Save sections and migrations:** per-system `snapshot/restore/migrate`; unit tests with saved fixtures from r30+ | SAVE-002/003 unit tests; `saves` green | medium |
 | **10** ✔ | **Net schema** module and validation tests (done round 30: `js/netmsg.js`, check `netmsg`); emitting events comes with step 1 | PRIV-003 tests; `multiplayer`/`meet`/`cloud` green | medium |
-| **11** | **Studio uses `gen` + `gen.validate`** for the map editor and before Publish | `studio` check extended | low |
+| **11** | **Studio uses `gen` + `gen.validate`** for the map editor and before Publish (the checker exists from round 30: `js/validate.js`, check `validate`; the Studio does not call it yet) | `studio` check extended | low |
 | **12** | **Actors / vehicles / ferry** as systems (prerequisite for the approved Phase 2 buffalo cart, VEH-001) | integration tests for VEH-001, RIVER-003 | medium |
 
 **Order with the owner's design phases:**

@@ -57,6 +57,7 @@ import { createSuburbs } from './suburbs.js';
 import { createSymbols, regionLabel } from './symbols.js';
 import { createRegionSites } from './regionsites.js';
 import { createVnFun } from './vnfun.js';
+import { createLotus } from './lotus.js';
 import { addFamilyBuildings, applyWorldEdits } from './worldedit.js';
 import { CUSTOM } from './custom.js';
 import { createFolkShow } from './folkshow.js';
@@ -1218,6 +1219,7 @@ createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 createSymbols(G, { sfx: SFX, dialog }); // each region's symbol animal, in a corner of its city square
 createRegionSites(G); // more famous places of each region, just outside its city
 createVnFun(G, { sfx: SFX, say, dialog, toast: (h, m) => hudFor(h).toast(m) }); // children playing north and south; buffalo and bull festivals
+G.lotus = createLotus(G, { say, toast: (h, m) => hudFor(h).toast(m) }); // Lotus Village: well, shrine, pond bench and boat, hens, a dog, a bicycle and a buffalo cart (Phase 2)
 G.reward = reward;
 G.pets = createPets(G);
 G.ferries = createFerries(G);
