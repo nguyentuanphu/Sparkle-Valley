@@ -15,3 +15,4 @@ marketing/source/preview-*.jpg
 content/old/
 studio/dist/
 studio/.build/
+.claude/worktrees/
