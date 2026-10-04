@@ -22,6 +22,7 @@ Keep this file current in the same round as any change to hosting, servers, keys
 | **Sparkle Studio online** | Grown-ups' dashboard at `/studio/` | Netlify Function `/studio/api/*` | `netlify/functions/studio.mjs` + `studio/core.cjs` + `studio/ui/` |
 | **Sparkle Studio exe** | The same dashboard on Windows | `SparkleStudio.exe` → local server 127.0.0.1:7777 | `studio/studio.cjs` + `studio/core.cjs` + `studio/ui/` (built by `studio/build-exe.sh`) |
 | **Online play** | Rooms of up to 6, voice, friends | Peer-to-peer (PeerJS/WebRTC) + public MQTT brokers as the cloud relay | `js/net.js`, `js/relay.js`, `js/roomcode.js` |
+| **Google Drive mirror** | A second source of truth: every pushed branch, copied file by file | GitHub Action `drive-mirror.yml` (rclone) → the owner's Drive folder "Sparkle Valley" / "GitHub mirror" / branch | `.github/workflows/drive-mirror.yml` (secrets `RCLONE_CONF`, `DRIVE_FOLDER_ID`) |
 | **GitHub Pages** (optional) | Second copy of the site | GitHub Actions on push to `main` | `.github/workflows/pages.yml` (needs Settings → Pages → Source: GitHub Actions) |
 
 ## 2. How a change reaches children
@@ -50,6 +51,7 @@ A drag-and-drop zip (`build-netlify.sh`) still works as an emergency fallback, b
 | Netlify → Site configuration → Environment variables | `STUDIO_PASSWORD` | Online Studio login | required for `/studio/` |
 | 〃 | `GITHUB_TOKEN` | Fine-grained, this repo only, Contents read/write: the online Studio reads/saves family files | required for saving |
 | 〃 | `GITHUB_REPO`, `GITHUB_BRANCH` | Defaults: `nguyentuanphu/Sparkle-Valley`, `main` | optional |
+| GitHub → Settings → Secrets → Actions | `RCLONE_CONF`, `DRIVE_FOLDER_ID` | The Google Drive mirror (rclone config made by the owner with `rclone config`; the Drive folder's id) | for the Drive mirror |
 | Tests only | `STUDIO_GITHUB_API` | Points the exe at the pretend GitHub in `tests/studio-check.mjs`; never set for families | — |
 | 〃 | `AZURE_KEY`, `AZURE_REGION` | Making voices from the online Studio | optional |
 | 〃 | `NETLIFY_TOKEN`, `NETLIFY_SITE` | The Studio's Website page (deploys) | optional |
