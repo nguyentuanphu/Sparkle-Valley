@@ -28,7 +28,8 @@ export function validateWorld(G) {
   const on = (x, z, r) => { const d = roadDist(x, z); return d.road && d.d < d.road.w / 2 + r; };
   for (const c of W.colliders) if (c.r > .45 && on(c.x, c.z, c.r - .3)) add('ROAD-004', `something solid on a road at ${f(c.x)},${f(c.z)}`);
   for (const b of W.boxes) { const x = (b.x0 + b.x1) / 2, z = (b.z0 + b.z1) / 2; if (on(x, z, Math.min(b.x1 - b.x0, b.z1 - b.z0) / 2)) add('ROAD-004', `a building on a road at ${f(x)},${f(z)}`); }
-  for (const i of G.interactables || []) if (Number.isFinite(i.x) && on(i.x, i.z, -.5)) add('ROAD-004', `"${i.id}" stands on a road`);
+  // (a street seller walking along the pavement may cross a side street on the way: walking, not standing; skipped)
+  for (const i of G.interactables || []) if (Number.isFinite(i.x) && !i.walks && on(i.x, i.z, -.5)) add('ROAD-004', `"${i.id}" stands on a road`);
   // ROAD-011: Lotus Village's pond path keeps 1.5–2.5 m between its edge and the water
   const pond = [VILLAGE.x - 10, VILLAGE.z + 4], pp = ROADS.find(R => R.kind === 'footpath');
   if (pp) pp.pts.slice(3).forEach(([x, z]) => { const g = Math.hypot(x - pond[0], z - pond[1]) - 5.2 - pp.w / 2; if (g < 1.45 || g > 2.55) add('ROAD-011', `pond path ${g.toFixed(1)} m from the water at ${f(x)},${f(z)}`); });

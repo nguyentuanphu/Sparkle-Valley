@@ -147,7 +147,7 @@ export function openStreetView(id) {
   const [, lat, lng] = r, hl = T('en', 'vi');
   const src = { map: `https://maps.google.com/maps?q=${lat},${lng}&t=k&z=18&hl=${hl}&output=embed`, street: `https://maps.google.com/maps?layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&hl=${hl}&output=svembed` };
   const m = el('div', 'modal rvmap', `<div class="card"><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
-    <div class="rvm-tabs"><button class="btn primary" data-v="map">🛰️ ${T('From above', 'Nhìn từ trên cao')}</button><button class="btn" data-v="street">👀 ${T('Look around', 'Nhìn xung quanh')}</button></div>
+    <div class="rvm-tabs"><button class="btn primary" data-v="map">🗺️ ${T('From above', 'Nhìn từ trên cao')}</button><button class="btn" data-v="street">👀 ${T('Look around', 'Nhìn xung quanh')}</button></div>
     <div class="rvm-frame">${navigator.onLine === false ? `<p class="note center">${T('The real place needs the internet. Try again when you are online!', 'Xem nơi thật cần có mạng. Khi có mạng con thử lại nhé!')}</p>` : `<iframe title="${T('The real place', 'Nơi thật')}" src="${src.map}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`}</div></div>`);
   document.body.appendChild(m);
   const close = () => { m.classList.add('out'); setTimeout(() => m.remove(), 200); };

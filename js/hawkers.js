@@ -55,7 +55,7 @@ export function createHawkers(G) {
     const v = { id, name, region: where === 'hanoi' ? 'bac' : 'nam', food, greet, saying: null, hawker: true, x: H.x, z: H.z };
     VENDORS.push(v); // in the food passport
     PERSONAS['hk_' + id] = { emoji: food[0], name, age: ['grown-up', 'người lớn'], about: greet, likes: greet, mood: ['Very well, thank you!', 'Khỏe lắm, cảm ơn con!'], role: `a street seller who carries ${food[1]} in two baskets on a bamboo shoulder pole and calls out to people as she walks`, region: v.region };
-    const it = { id: 'hk_' + id, x: H.x, z: H.z, r: 2.6, icon: food[0], bubble: food[0], label: () => nm(name), act: h => buy(h, H, v) };
+    const it = { id: 'hk_' + id, x: H.x, z: H.z, r: 2.6, walks: true, icon: food[0], bubble: food[0], label: () => nm(name), act: h => buy(h, H, v) };
     G.interactables.push(it); H.it = it;
   }
   async function buy(h, H, v) {
