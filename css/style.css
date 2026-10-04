@@ -1695,3 +1695,8 @@ body.calm .rv-img.on { animation: none; }
 .gl-ad small { position: absolute; top: -9px; left: 10px; background: #3b2a4f; color: #fff; border-radius: 6px; padding: 0 6px; font-size: 11px; }
 .gl-ad img { width: 64px; height: 44px; object-fit: cover; border-radius: 8px; }
 .adgate .card { max-width: 360px; } .adgate .adg-in { font-size: 24px; width: 100%; padding: 8px; border-radius: 10px; border: 2px solid #c8b6ff; margin: 8px 0; }
+/* the recorded voices downloading (js/packbar.js): small and quiet, never in the way */
+.packbar { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 78px); transform: translateX(-50%); z-index: 60; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 10px 5px; border-radius: 10px; background: rgba(255, 255, 255, .72); color: var(--soft); font: 600 11px/1.2 var(--font); white-space: nowrap; transition: opacity .6s; }
+.packbar i { display: block; width: 120px; height: 3px; border-radius: 3px; background: rgba(90, 60, 130, .15); overflow: hidden; }
+.packbar b { display: block; height: 100%; width: 3%; background: var(--purple); border-radius: 3px; transition: width .4s; }
+.packbar.out { opacity: 0; }

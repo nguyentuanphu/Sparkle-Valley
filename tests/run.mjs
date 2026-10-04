@@ -389,6 +389,36 @@ await check('voice', async () => {
   return `"${awake.line}" plays from the recording on a phone, and still does with Web Audio asleep (plain player); the phone's voice is never used for it`;
 });
 
+await check('voicepack', async () => {
+  // HARD RULE (VOICE-001): the recorded voices are downloaded to the device by themselves, with a small quiet progress
+  // bar; every open checks they are all still there and fetches only what is missing. (A cut-down pack keeps it quick.)
+  // a fresh phone: its own browser profile, the cut-down pack list from the very first load, saving voices on
+  const ctx = await b.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true }), page = await ctx.newPage(), errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await ctx.addInitScript(() => { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang: 'vi', voice: false, sound: false, music: false, quality: 'low', autoPack: true }); localStorage.setItem('sv2_settings', JSON.stringify(o)); });
+  const P = { ctx, page, errors };
+  await P.ctx.route('**/voices/manifest.json', async route => { const r = await route.fetch(), j = await r.json(), keep = Object.keys(j.lines).slice(0, 24), lines = {}, langOf = {}; for (const h of keep) { lines[h] = j.lines[h]; if (j.langOf) langOf[h] = j.langOf[h]; } await route.fulfill({ json: { ...j, lines, langOf, made: 'test' } }); });
+  // every text the bar shows is written down as it changes
+  await P.ctx.addInitScript(() => { window.__packLog = []; new MutationObserver(() => { const e = document.querySelector('.packbar span'); if (e && window.__packLog[window.__packLog.length - 1] !== e.textContent) window.__packLog.push(e.textContent); }).observe(document, { subtree: true, childList: true, characterData: true }); });
+  let firstLoad = true;
+  const openAgain = async () => { if (firstLoad) { firstLoad = false; await P.page.goto(URL); } else await P.page.reload(); await start(P.page); await clear(P.page); await P.page.waitForFunction(() => window.__packLog.some(x => /✓/.test(x)), null, { timeout: 60000 }).catch(() => { }); return P.page.evaluate(() => window.__packLog); };
+  const state = () => P.page.evaluate(async () => { const c = await caches.open('sv-voices'); return { files: (await c.keys()).filter(r => /\/voices\/.+\.mp3$/.test(r.url)).length, saved: JSON.parse(localStorage.getItem('sv2_settings')).packSaved || '' }; });
+  const first = await openAgain(), s1 = await state();
+  ok(first.some(x => /%/.test(x)) && first.some(x => /✓/.test(x)) && s1.files >= 24 && s1.saved === '24:2:test', 'first open: ' + JSON.stringify({ first: first.slice(0, 4), s1 }));
+  // next open: everything is there, so nothing shows
+  await P.page.reload(); await start(P.page); await clear(P.page); await P.page.waitForTimeout(10000);
+  const second = await P.page.evaluate(() => window.__packLog);
+  ok(!second.length, 'the bar showed again although every voice was on the device: ' + JSON.stringify(second));
+  // the phone cleared some files: the next open fetches only those, quietly with the bar
+  await P.page.evaluate(async () => { const c = await caches.open('sv-voices'); const ks = (await c.keys()).filter(r => /\.mp3$/.test(r.url)); for (const r of ks.slice(0, 5)) await c.delete(r); });
+  const third = await openAgain(), s3 = await state();
+  await P.page.screenshot({ path: 'out/voicepack-phone.png' });
+  const errs = P.errors; await P.ctx.close();
+  ok(third.some(x => /✓/.test(x)) && s3.files >= 24, 'missing files were not fetched again: ' + JSON.stringify({ third: third.slice(0, 3), s3 }));
+  ok(!errs.length, errs.join(' | '));
+  return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open shows nothing, and files the phone lost are fetched again`;
+});
+
 await check('studio', async () => {
   // Sparkle Studio online and the exe: one program (same pages, same engine, same version as the game)
   const build = /BUILD = '([^']+)'/.exec(fs.readFileSync('../js/build.js', 'utf8'))[1], studio = JSON.parse(fs.readFileSync('../studio/version.json', 'utf8')).studio;

@@ -63,6 +63,7 @@ import { createFolkShow } from './folkshow.js';
 import { createAds } from './ads.js';
 import { buildSolids } from './solids.js';
 import { startCounting, countPlay } from './players.js';
+import { startPackBar } from './packbar.js';
 // the family's defaults from Sparkle Studio: applied once each time they change there (a grown-up can still change
 // them on the device afterwards)
 { const D = CUSTOM.defaults, sig = D ? JSON.stringify(D) : '';
@@ -1202,6 +1203,7 @@ createAds(G); // the family's own signboards (only when Sparkle Studio switched 
 world.levelled = levelUnderBuildings(world, scene);
 world.roadside = plantRoadside(G); // soft road edges and flowers, once everything stands
 G.solidsReady = buildSolids(G); // nobody walks through houses and things (js/solids.js)
+startPackBar(); // the recorded voices downloading: a small bar at the bottom (js/packbar.js)
 startCounting(); // how many children play, anonymously (js/players.js; Grown-ups can switch it off)
 // solid things the camera must never go inside: big, opaque, still-standing meshes (collected once, refreshed
 // now and then so new houses, landmarks and boats are included)
