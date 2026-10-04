@@ -1,12 +1,13 @@
 // One world checker for the hard rules (architecture step "gen.validate", round 30): the same checks wherever they
 // are needed (the test suite now; Sparkle Studio before Publish next). Each problem names its rule id from
 // docs/ARCHITECTURE.md §9, so a report reads the same everywhere. It only reads the world; it never changes it.
-//   validateWorld(G) → [{ rule, msg }]   (empty when every rule holds)
+//   validateWorld(G) → [{ rule, severity, msg }]   (empty when every rule holds; severity from js/content/rules.js)
 import { ROADS, roadDist, VILLAGE } from './world.js';
 import { ROAD_GRADE } from './roads.js';
+import { RULES } from './content/rules.js';
 
 export function validateWorld(G) {
-  const W = G.world, out = [], add = (rule, msg) => { if (out.length < 200) out.push({ rule, msg }); }, f = v => v.toFixed(0);
+  const W = G.world, out = [], add = (rule, msg) => { if (!RULES[rule]) throw new Error(`validate.js uses ${rule}, which is not in the rule registry`); if (out.length < 200) out.push({ rule, severity: RULES[rule].severity, msg }); }, f = v => v.toFixed(0);
   // ROAD-003 grade, ROAD-002 smooth curves (no step turns more than 8°), rounded changes of slope
   (W.roadLines || []).forEach((L, k) => {
     const G2 = (ROAD_GRADE[L.kind] || ROAD_GRADE.dirt) + .002;

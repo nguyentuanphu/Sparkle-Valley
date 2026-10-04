@@ -5,7 +5,7 @@
 import { T } from './i18n.js';
 import { sayAsync, hush } from './voice.js';
 import { Music, SFX } from './audio.js';
-import { GAMES } from './games/frame.js';
+import { GAMES } from './games/registry.js';
 import { el, esc, wait } from './util.js';
 import { CAST, SCENES } from './cartoon.js';
 import { pic, hasArt } from './art.js';

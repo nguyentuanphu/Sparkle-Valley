@@ -105,7 +105,9 @@ await check('features', async () => {
   r.keyMap = await P.page.evaluate(() => !!document.querySelector('.pad'));
   await P.page.keyboard.press('Digit2'); await P.page.waitForTimeout(300);
   r.keyTab = await P.page.evaluate(() => document.querySelector('.pad-tabs .on')?.dataset.t);
-  await P.page.keyboard.press('Escape'); await P.page.waitForTimeout(900);
+  await P.page.keyboard.press('Escape'); await P.page.waitForTimeout(300);
+  // (the keys only work once the window has gone and the game runs again: wait for that, not a fixed time)
+  await P.page.waitForFunction(() => !document.querySelector('.modal, .storybook, .vc-pop') && !__sv.paused, null, { timeout: 15000 }).catch(() => { });
   const z0 = await P.page.evaluate(() => __sv.heroes[0].zoom || 1); await P.page.keyboard.press('Minus'); r.zoom = (await P.page.evaluate(() => __sv.heroes[0].zoom)) > z0;
   // a fairy tale from the Games hub: fly to the storyteller, the theatre opens
   await clear(P.page); await P.page.evaluate(() => __sv.openGamesHub(0)); await P.page.waitForTimeout(400);
@@ -687,6 +689,78 @@ await check('myhouse', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(r.inside && r.spots === 8 && r.refused && r.bought && r.cardOnWall && !r.cardOnFloor && r.out && r.kept === '{"0":"teddy","1":"clock","4":"card:f1"}' && r.ev.join() === 'decor:teddy,decor:clock,postcard:family/f1' && !r.paused && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return '8 spots; a free teddy, a 12-coin clock (refused with 5, bought with 50), grandma\'s postcard on a wall (not on the floor); all still there after going out and back in';
+});
+
+await check('names', async () => {
+  // every game file: no name used that is never defined or imported (TypeScript's TS2304 on all of js/, nothing else
+  // judged). Moving code between files (the architecture steps) is where this goes wrong; it once stopped the game.
+  const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
+  if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
+  let out = ''; try { out = execFileSync(tsc, ['-p', 'tsconfig.names.json'], { encoding: 'utf8', maxBuffer: 64e6 }); } catch (e) { out = (e.stdout || '') + ''; }
+  const bad = out.split('\n').filter(l => /TS2304/.test(l) && !l.startsWith('../vendor'));
+  ok(!bad.length, bad.slice(0, 6).join(' | '));
+  return `${fs.readdirSync('../js', { recursive: true }).filter(f => String(f).endsWith('.js')).length} game files: every name is defined or imported`;
+});
+
+await check('rules', async () => {
+  // the rule registry (architecture step 0): js/content/rules.js is exactly what docs/ARCHITECTURE.md §9 says, and every
+  // rule id the code and the checks name (ROAD-003, VEH-001, PRIV-004…) is in it
+  const { execFileSync } = await import('child_process');
+  try { execFileSync(process.execPath, ['../tools/rules-from-doc.mjs', '--check'], { encoding: 'utf8' }); } catch (e) { ok(false, (e.stdout || '') + ''); }
+  const { RULES } = await import('../js/content/rules.js');
+  const src = ['../js/validate.js', 'run.mjs', 'perf-baseline.json'].map(f => fs.readFileSync(f, 'utf8')).join('\n');
+  const named = [...new Set([...src.matchAll(/\b([A-Z]{2,8}-\d{3})\b/g)].map(m => m[1]))], missing = named.filter(id => !RULES[id]);
+  ok(!missing.length, 'named in code but not in the registry: ' + missing.join(', '));
+  return `${Object.keys(RULES).length} rules, the same in the document and the code; ${named.length} rule ids named by the checks, all known`;
+});
+
+await check('coop', async () => {
+  // together quests (js/coop.js): in a room with a friend both devices get the same 3 places from the room code; a
+  // place counts only with the friend within 15 m; all 3 give coins and the next quest. (A pretend friend here; the
+  // real two-device path is the same positions the multiplayer and cloud checks already carry.)
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], N = (await import('/js/net.js')).Net, C = await import('/js/coop.js'), W = await import('/js/world.js'), S = await import('/js/state.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    const same = C.questFor('4321', 0).join() === C.questFor('4321', 0).join() && C.questFor('4321', 0).join() !== C.questFor('4321', 1).join();
+    Object.defineProperty(N, 'connected', { get: () => true, configurable: true }); N.code = '4321';
+    const friend = { id: 'peer-x', pos: { x: 0, y: 0, z: 0 } }; G.partners['peer-x'] = friend;
+    G.coop.tick(); const quest = G.coop.quest, coins0 = S.farm.coins;
+    const spot = id => { // a point inside the place, found from the map
+      for (let r2 = 0; r2 < 200; r2 += 4) for (let a = 0; a < 6.28; a += .5) { const x = Math.cos(a) * r2, z = Math.sin(a) * r2; if (W.regionAt(x, z) === id) return [x, z]; }
+      for (let x = -190; x < 190; x += 3) for (let z = -190; z < 190; z += 3) if (W.regionAt(x, z) === id) return [x, z];
+    };
+    const [ax, az] = spot(quest[0]); h.place(ax, az); friend.pos = { x: ax + 40, y: h.pos.y, z: az }; await wait(200); G.coop.tick();
+    const alone = !!G.coop.done[quest[0]];
+    friend.pos = { x: ax + 5, y: h.pos.y, z: az }; G.coop.tick(); const together = !!G.coop.done[quest[0]];
+    for (const id of quest.slice(1)) { const [x, z] = spot(id); h.place(x, z); friend.pos = { x: x + 3, y: h.pos.y, z }; await wait(150); G.coop.tick(); }
+    const after = { coins: S.farm.coins - coins0, next: G.coop.count, newQuest: G.coop.quest.join() !== quest.join() };
+    G.openPad(0, 'log'); await wait(400); const shown = !!document.querySelector('.pad-body') && /Together quest/.test(document.querySelector('.pad-body').textContent);
+    document.querySelector('.modal .x')?.click();
+    delete G.partners['peer-x']; delete N.connected; N.code = null;
+    return { same, quest, alone, together, after, shown };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.same && r.quest.length === 3 && !r.alone && r.together && r.after.coins === 15 && r.after.next === 1 && r.after.newQuest && r.shown && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `room 4321's quest: ${r.quest.join(', ')}; a place counts only with the friend near (40 m away: no, 5 m: yes); all 3 gave coins and a new quest`;
+});
+
+await check('report', async () => {
+  // the play report (js/report.js): a game played and a minute of play are counted for the child who played, and
+  // Grown-ups shows them for that child (this week's minutes, favourite games, places)
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], R = await import('/js/report.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    h.profile.stats.days = {}; h.profile.stats.played = {};
+    for (const id of ['colors', 'colors', 'counting']) { G.playGame(0, id, 'replay'); await wait(600); document.querySelector('.gl .gl-x')?.click(); await wait(500); }
+    R.addMinute(h.profile); R.addMinute(h.profile);
+    const d = h.profile.stats.days[R.dayKey()], played = h.profile.stats.played;
+    const m = R.openReport(h.profile); await wait(300);
+    const txt = m.textContent, bars = m.querySelectorAll('.rep-day').length; m.close();
+    return { d, played, bars, hasWeek: /This week: 2 minutes, 3 games/.test(txt), fav: /Rainbow Paints/.test(txt) };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.d && r.d.games === 3 && r.d.min === 2 && r.played.colors === 2 && r.played.counting === 1 && r.bars === 7 && r.hasWeek && r.fav && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return '3 games and 2 minutes counted today for the child who played; the report shows the week (7 days), the favourite games and what was collected';
 });
 
 await check('types', async () => {

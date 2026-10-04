@@ -1747,3 +1747,14 @@ body.calm .rv-img.on { animation: none; }
 .decor-it.on { outline: 4px solid #5fd39a; }
 .decor-it.dear { opacity: .55; }
 .decor-it.wrong { animation: hintWiggle .5s; }
+
+/* the play report for grown-ups (js/report.js) */
+.rep-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 140px; align-items: end; margin: 6px 0 12px; }
+.rep-day { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 2px; }
+.rep-day i { width: 70%; min-height: 3px; background: linear-gradient(#7ad0ff, #5f9bff); border-radius: 6px 6px 2px 2px; }
+.rep-day b { font-size: 13px; } .rep-day small { font-size: 12px; color: #7a6a8a; }
+.rep-games { padding-left: 0; list-style: none; display: grid; gap: 6px; }
+.rep-games li { display: flex; align-items: center; gap: 8px; background: #fff7ec; border-radius: 10px; padding: 6px 10px; }
+.rep-games li span { font-size: 26px; } .rep-games li small { margin-left: auto; color: #7a6a8a; }
+.rep-list { padding-left: 18px; line-height: 1.7; }
+@media print { body.printing-report > *:not(.modal.report) { display: none !important; } body.printing-report .modal.report { position: static; background: #fff; } body.printing-report .modal.report .x, body.printing-report .modal.report .bar { display: none; } }

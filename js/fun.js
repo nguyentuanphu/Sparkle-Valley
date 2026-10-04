@@ -9,21 +9,11 @@ import { settings, saveProfiles } from './state.js';
 import { STICKERS } from './data.js';
 import { PLACES, placeStickers } from './placebook.js';
 import { el, esc, pick } from './util.js';
-import { modal } from './ui.js';
+import { modal } from './popups.js';
 
-// ---------- confetti ----------
-const COLORS = ['#ff4f9a', '#ffd23f', '#3cc7e8', '#5fd36a', '#ff9f43', '#a66bff'];
-export function confetti(rect, n = 60) {
-  if (settings.calm) n = 16;
-  const r = rect || { x: 0, y: 0, w: innerWidth, h: innerHeight };
-  const box = el('div', 'confetti'); Object.assign(box.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
-  for (let i = 0; i < n; i++) {
-    const c = el('i'); const x = Math.random() * 100, d = 1.6 + Math.random() * 1.4, dx = (Math.random() - .5) * 160;
-    c.style.cssText = `left:${x}%;background:${pick(COLORS)};animation-duration:${d}s;animation-delay:${Math.random() * .35}s;--dx:${dx}px;--rot:${Math.random() * 900 - 450}deg;${i % 3 ? '' : 'border-radius:50%;'}`;
-    box.appendChild(c);
-  }
-  document.body.appendChild(box); setTimeout(() => box.remove(), 3600);
-}
+// ---------- confetti: js/popups.js (architecture step 2), passed on from here ----------
+import { confetti } from './popups.js';
+export { confetti };
 
 export function createFun(G) {
   const { scene, world } = G;

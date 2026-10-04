@@ -628,7 +628,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 
 | Id | Rule | Reason | Sev. | Validation | Failure behaviour |
 |---|---|---|---|---|---|
-| PROC-001 | No `git push` and no PR opened or updated without the owner's explicit "yes, push" (one per push) | Owner control | BLOCKER | process | — |
+| PROC-001 | No `git push` and no PR opened or updated without the owner's explicit "yes, push" (one per push); since 4 Oct the owner's standing instruction lets each planned round be pushed once its full suite is green (CLAUDE.md) | Owner control | BLOCKER | process | — |
 | PROC-002 | Existing features and UI unchanged unless asked | The children know the game | BLOCKER | check `contract`, `spill`, `phone` | — |
 | PROC-003 | Run the suite before and after; desktop and phone side by side | Phone-only bugs | BLOCKER | process + `phone` | — |
 | PROC-004 | Bump `VERSION` (sw.js), `BUILD`, `studio/version.json` together; new files in `FILES` | Devices update | BLOCKER | check `ground`, `studio` | old version keeps running offline |
@@ -729,7 +729,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | SAVE-003 | A save referencing unknown ids loads with those parts dropped, never crashes | MAJOR | unit [IMPR] |
 
 ### 9.7 Rule registry [IMPR]
-- `js/content/rules.js` (L1) exports `RULES = { 'ROAD-005': { text, severity, validator: 'roads.junctionAngle', check: 'roads', alias: 'R5' }, … }`.
+- `js/content/rules.js` (L1) exports `RULES = { 'ROAD-005': { text, severity, check, alias: 'R5' }, … }` — **built round F**, made from this section's tables by `tools/rules-from-doc.mjs` (so the two never disagree; check `rules`). `js/validate.js` gives each problem its rule's severity.
 - Checks and validators report by rule id.
 - The handbook and HANDOFF cite ids.
 - A test fails if a rule has no validation entry, or if a check names an unknown id.

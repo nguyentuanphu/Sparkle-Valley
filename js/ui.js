@@ -8,9 +8,10 @@ import { SFX, Music, ac } from './audio.js';
 import { fmt, cur, spoken as money } from './money.js';
 import { el, esc, $, clamp, wait } from './util.js';
 import { avatarURL, applyNpcFaces } from './avatar.js';
-import { confetti } from './fun.js';
+import { confetti } from './popups.js';
 import { placeBookHTML, bindPlaceBook } from './placebook.js';
 import { familyCardsHTML, bindFamilyCards } from './familycards.js';
+import { openReport } from './report.js';
 import { ITEMS, RECIPES, findRecipe, SHOP, HAT_ICON, HAT_NAME, REWARD_HATS, dishInfo, QUESTS, STICKERS } from './data.js';
 import { SIZE, HALF, SHRINES, TOWERS } from './world.js';
 import { GAMES } from './games/frame.js';
@@ -52,24 +53,6 @@ applyComfort();
 }
 export function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3200); }
 
-// The Save / Done / Close / Back row at the end of any window floats at the bottom while the page scrolls, and the
-// ✕ stays at the top, so they can always be reached without scrolling (this runs for every window, also ones
-// drawn again later).
-const ENDWORDS = /\b(save|done|close|back|cancel|exit|ok|finish|bye)\b|lưu|xong|đóng|quay lại|hủy|thoát|tạm biệt|💾|✅/i;
-function floatEnds(card) {
-  const kids = [...card.children].filter(e => !e.hidden && e.offsetParent !== null && !e.classList.contains('x'));
-  const last = kids[kids.length - 1]; if (!last) return;
-  const isEnd = e => (e.matches('button, .btn, .actions, .bar, .row') && ENDWORDS.test(e.textContent || ''));
-  if (isEnd(last) && !last.classList.contains('floatbar')) { if (last.matches('button, .btn')) last.classList.add('floatbtn'); else last.classList.add('actions', 'floatbar'); }
-}
-const floatWatch = new MutationObserver(list => { const seen = new Set(); for (const r of list) { const c = r.target.closest && r.target.closest('.modal .card'); if (c && !seen.has(c)) { seen.add(c); floatEnds(c); } } });
-floatWatch.observe(document.documentElement, { childList: true, subtree: true });
-export function modal(cls, html) {
-  const m = el('div', 'modal ' + (cls || ''), `<div class="card">${html}</div>`);
-  document.body.appendChild(m); requestAnimationFrame(() => floatEnds(m.querySelector('.card')));
-  m.close = () => { m.classList.add('out'); setTimeout(() => m.remove(), 200); };
-  return m;
-}
 const flagBtns = () => `<div class="seg lang"><button data-l="en" class="${settings.lang === 'en' ? 'on' : ''}">${originFlags('au')} English</button><button data-l="vi" class="${settings.lang === 'vi' ? 'on' : ''}">${originFlags('vn')} Tiếng Việt</button></div>`;
 // Small, quiet buttons to also learn Chinese or Hindi words (in China Town, India Village and First Words).
 const learnBtns = () => `<div class="learnrow" aria-label="${T('Also learn', 'Học thêm')}">🌏 ${Object.entries(LEARN).map(([k, l]) => `<button data-learn="${k}" class="${settings.learnLang === k ? 'on' : ''}" title="${l.name[settings.lang] || l.name.en}">${k === 'zh' ? '中文' : 'हिन्दी'}</button>`).join('')}</div>`;
@@ -289,7 +272,7 @@ export function openGrownups(after) {
       <div>
       </div>
       <h3>${T('Players', 'Người chơi')}</h3>
-      <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(nm(p.name))}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
+      <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(nm(p.name))}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn ghost" data-rep="${p.id}" aria-label="${T('Play report', 'Báo cáo chơi')}">${pic('📊')}</button><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
       <button class="btn wide" id="gAdd">+ ${T('Add a player', 'Thêm người chơi')}</button>
       <h3>☁️ ${T('Backup to Google Drive or iCloud', 'Sao lưu lên Google Drive hoặc iCloud')}</h3>
       <p class="note">${T('Progress saves automatically on this device. To keep a copy online, tap Save backup and choose Google Drive, or “Save to Files” → iCloud Drive on iPhone and iPad. To bring it back (or onto a new device), tap Open backup and pick the file from Drive or iCloud.', 'Tiến trình tự động lưu trên máy này. Để giữ một bản trên mạng, bấm Lưu bản sao rồi chọn Google Drive, hoặc “Lưu vào Tệp” → iCloud Drive trên iPhone và iPad. Để lấy lại (hoặc chuyển sang máy mới), bấm Mở bản sao và chọn tệp trong Drive hoặc iCloud.')}</p>
@@ -373,6 +356,7 @@ export function openGrownups(after) {
     card.querySelectorAll('[data-try]').forEach(b => b.onclick = () => {
       sayDevice(b.dataset.try, b.dataset.try === 'vi' ? 'Xin chào! Chào mừng con đến Thung Lũng Lấp Lánh.' : 'Hello! Welcome to Sparkle Valley.');
     });
+    card.querySelectorAll('[data-rep]').forEach(b => b.onclick = () => { SFX.tap(); openReport(profiles.find(p => p.id === b.dataset.rep)); });
     card.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => openEditor(profiles.find(p => p.id === b.dataset.ed), () => { draw(); after && after(); }));
     card.querySelector('#gAdd').onclick = () => profiles.length >= MAX_KIDS ? toast(T(`Up to ${MAX_KIDS} players.`, `Tối đa ${MAX_KIDS} người chơi.`)) : openEditor(null, () => { draw(); after && after(); });
     card.querySelector('#gExp').onclick = async () => { const how = await exportBackup(); if (how === 'cancelled') return; toast(how === 'shared' ? T('Backup saved!', 'Đã lưu bản sao!') : T('Backup downloaded. Put it in Drive or iCloud to keep it safe.', 'Đã tải bản sao. Hãy cất vào Drive hoặc iCloud cho an toàn.')); const y = m.scrollTop; draw(); m.scrollTop = y; };
@@ -534,47 +518,9 @@ export function openEditor(profile, after) {
   if (del) del.onclick = () => { if (profiles.length <= 1) return toast(T('Keep at least one player.', 'Cần giữ ít nhất một người chơi.')); if (confirm(T(`Remove ${p.name} and all their progress?`, `Xóa ${p.name} và toàn bộ tiến trình?`))) { removeProfile(p.id); m.close(); after && after(); } };
 }
 
-// ---------- NPC dialogue (BotW-style box with a name tag) ----------
-// main.js fills these in so villagers' speech boxes get a "💬 Chat" button
-export const dialogHooks = {};
-export function dialog(name, lines, choices) {
-  return new Promise(res => {
-    const little = dialogHooks.little && dialogHooks.little();
-    const d = el('div', 'dialog' + (little ? ' little' : ''), `<div class="dname">${esc(nm(name))}</div><div class="dtext"></div><div class="dchoices"></div><div class="dnext">▼</div>${little ? `<div class="dpics"><button class="dpic again" aria-label="${T('Hear it again', 'Nghe lại')}">🔁</button><button class="dpic ok" aria-label="${T('OK', 'Được')}">👍</button></div>` : ''}`);
-    if (dialogHooks.canChat && dialogHooks.canChat(name)) {
-      const ask = el('button', 'dask', '💬 ' + T('Chat', 'Trò chuyện')); d.appendChild(ask);
-      ask.onclick = e => { e.stopPropagation(); SFX.tap(); close(-1); dialogHooks.chat(name); };
-    }
-    document.body.appendChild(d);
-    let i = 0;
-    const text = d.querySelector('.dtext'), ch = d.querySelector('.dchoices'), next = d.querySelector('.dnext');
-    let show = () => {
-      const [en, vi] = lines[i]; text.textContent = T(en, vi); setSpeaker(name); say(en, vi);
-      const last = i === lines.length - 1;
-      ch.innerHTML = ''; next.hidden = last && choices && choices.length;
-      if (last && choices && choices.length) choices.forEach((c, k) => { const b = el('button', 'dch', labelArt(T(c[0], c[1]), esc)); b.onclick = e => { e.stopPropagation(); SFX.tap(); close(k); }; ch.appendChild(b); });
-    };
-    let closed = false;
-    const close = k => { if (closed) return; closed = true; setSpeaker(null); d.classList.add('out'); setTimeout(() => d.remove(), 200); res(k); };
-    // walking away closes the conversation by itself
-    d._autoClose = () => close(-1); d._from = dialogHooks.where ? dialogHooks.where() : null;
-    d.onclick = () => { if (choices && i === lines.length - 1 && choices.length) return; SFX.tap(); if (i < lines.length - 1) { i++; show(); } else close(-1); };
-    if (little) {
-      d.querySelector('.again').onclick = e => { e.stopPropagation(); SFX.tap(); const [en, vi] = lines[i]; setSpeaker(name); say(en, vi); };
-      const ok = d.querySelector('.ok'); ok.onclick = e => { e.stopPropagation(); d.onclick(); };
-      const upd = () => { ok.hidden = !!(choices && choices.length && i === lines.length - 1); }; const s0 = show; show = () => { s0(); upd(); };
-    }
-    show();
-  });
-}
-
-// ---------- reward pop-up ----------
-export function reward(big, line, sub) {
-  confetti();
-  const r = el('div', 'reward', `<div class="rbig">${big}</div><p>${esc(line)}</p>${sub ? `<small>${esc(sub)}</small>` : ''}`);
-  document.body.appendChild(r); SFX.secret();
-  return new Promise(res => { const go = () => { r.classList.add('out'); setTimeout(() => { r.remove(); res(); }, 250); }; r.onclick = go; setTimeout(go, 2600); });
-}
+// (windows, NPC dialogue, the reward pop-up and confetti live in js/popups.js since architecture step 2; passed on from here)
+export { modal, dialog, dialogHooks, reward } from './popups.js';
+import { modal, dialog, dialogHooks, reward } from './popups.js';
 
 // ---------- the Sparkle Pad ----------
 export function openPad(game, i, tab) {
@@ -706,7 +652,7 @@ export function openPad(game, i, tab) {
   }
   function drawLog(body) {
     const next = game.currentQuest(p);
-    body.innerHTML = `<h3>${T('Main adventure', 'Cuộc phiêu lưu chính')}</h3><ol class="quests">${QUESTS.map(q => { const done = !!p.quests[q.id] || (q.check && q.check(p)); return `<li class="${done ? 'done' : q === next ? 'now' : ''}"><span>${done ? '✅' : q.icon}</span>${esc(q.title())}</li>`; }).join('')}</ol>
+    body.innerHTML = (game.coop ? game.coop.html() : '') + `<h3>${T('Main adventure', 'Cuộc phiêu lưu chính')}</h3><ol class="quests">${QUESTS.map(q => { const done = !!p.quests[q.id] || (q.check && q.check(p)); return `<li class="${done ? 'done' : q === next ? 'now' : ''}"><span>${done ? '✅' : q.icon}</span>${esc(q.title())}</li>`; }).join('')}</ol>
       <p class="note">✨ ${T('Shrines solved', 'Đền đã giải')}: ${Object.keys(p.shrines).length}/12 · 🗼 ${T('Towers', 'Tháp')}: ${Object.keys(p.towers).length}/4 · 🍳 ${T('Recipes', 'Công thức')}: ${Object.keys(p.dishes).length}/${RECIPES.length}</p>
       <h3>${T('Recipe book', 'Sổ công thức')}</h3><div class="recipes">${RECIPES.map(r => { const known = p.dishes[r.id] != null; return `<div class="rec ${known ? '' : 'unk'}"><span>${known ? r.icon : '❔'}</span><small>${known ? esc(r.name()) : r.need.map((n, k) => k === 0 ? ITEMS[n].icon : '❔').join(' + ')}</small></div>`; }).join('')}</div>`;
   }

@@ -8,7 +8,8 @@ import { el, wait, esc } from '../util.js';
 import { openHowTo } from '../howto.js';
 import { pic } from '../art.js';
 
-export const GAMES = {};
+import { GAMES, register } from './registry.js';
+export { GAMES, register }; // (the list itself is in registry.js)
 // Each kind of game has its own song.
 const GAME_MUSIC = {
   music: 'none', firstwords: 'twinkle', tangram: 'think', snakes: 'party2', rangoli: 'twinkle',
@@ -18,7 +19,6 @@ const GAME_MUSIC = {
   balloon: 'fly', bubbles: 'party2', tune: 'none',
   clock: 'think', sums: 'twinkle', opposites: 'think', animalsounds: 'farm', phonics: 'twinkle', feelings: 'twinkle'
 };
-export const register = def => { GAMES[def.id] = def; };
 const PRIZES = ['🦄', '🦖', '🚀', '🧸', '🎈', '🍭', '🪁', '🐬', '🌈', '👑', '🎨', '🛼', '🪀', '🍦', '🐼'];
 
 let current = null;

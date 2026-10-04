@@ -54,6 +54,8 @@ import { events } from './core/events.js';
 import { createPlaceBook } from './placebook.js';
 import { createFamilyCards } from './familycards.js';
 import { createMyHouse } from './myhouse.js';
+import { createReport, addMinute } from './report.js';
+import { createCoop } from './coop.js';
 import { id as makeId } from './core/ids.js';
 import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
@@ -1098,7 +1100,7 @@ function startSession(mode, chosen) {
 }
 
 // ---------- the loop ----------
-let playing = false, last = performance.now(), t = 0, sendT = 0, saveT = 0;
+let playing = false, last = performance.now(), t = 0, sendT = 0, saveT = 0, minT = performance.now();
 // friends keep seeing where I am: 10 times a second on its own clock (so a slow phone still sends on time),
 // and once a second while a menu or a game is open or the app is in the background
 let sentAt = 0;
@@ -1183,6 +1185,8 @@ function frame(now) {
   // save positions now and then
   // (every 5 s of real time: game time runs slow on a struggling phone, which saved far less often)
   if (now - saveT >= 5000) { saveT = now; keepSpot(); save(); }
+  // one minute of play for the grown-ups' report (real minutes, only while the game is in front and not on a menu)
+  if (now - minT >= 60000) { minT = now; if (!document.hidden && !G.paused) G.heroes.forEach(h => addMinute(h.profile)); }
   // render each player's view
   const r = rects(), H = innerHeight;
   renderer.setScissorTest(G.heroes.length > 1);
@@ -1247,6 +1251,8 @@ createVnFun(G, { sfx: SFX, say, dialog, toast: (h, m) => hudFor(h).toast(m) }); 
 G.placeBook = createPlaceBook(G, { toast: (h, m) => hudFor(h).toast(m), save }); // the places sticker book listens to the event bus (js/placebook.js)
 G.familyCards = createFamilyCards(G, { toast: (h, m) => hudFor(h).toast(m), save }); // family photos from Studio arrive as postcards (js/familycards.js)
 G.myHouse = G.homes ? createMyHouse(G) : null; // decorate your own house at Sunny Farm (js/myhouse.js)
+G.report = createReport(G, { save }); // the play report for grown-ups counts games and minutes (js/report.js)
+G.coop = createCoop(G, { Net, toast: (h, m) => hudFor(h).toast(m) }); // together quests in an online room (js/coop.js)
 G.lotus = createLotus(G, { say, toast: (h, m) => hudFor(h).toast(m) }); // Lotus Village: well, shrine, pond bench and boat, hens, a dog, a bicycle and a buffalo cart (Phase 2)
 G.reward = reward;
 G.pets = createPets(G);
