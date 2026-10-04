@@ -599,6 +599,40 @@ await check('ages', async () => {
   return 'under 5: big buttons, the right answer wiggles after two misses (or 10 s), and stops once tapped; 5 and up: no hint';
 });
 
+await check('unit', async () => {
+  // Node unit tests (architecture §10): the L0 core (ids, events, seeded random, geometry), node --test tests/unit
+  const { execFileSync } = await import('child_process');
+  let out = ''; try { out = execFileSync(process.execPath, ['--test', ...fs.readdirSync('unit').filter(f => f.endsWith('.test.mjs')).map(f => 'unit/' + f)], { encoding: 'utf8' }); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').filter(l => /^not ok|Error/.test(l)).slice(0, 6).join(' | ')); }
+  const pass = (out.match(/^# pass (\d+)/m) || [])[1], fail = (out.match(/^# fail (\d+)/m) || [])[1];
+  ok(+fail === 0 && +pass > 0, out.slice(-400));
+  return `${pass} unit tests passed`;
+});
+
+await check('events', async () => {
+  // architecture step 1: the event bus carries what happened, by id, alongside today's calls; the places sticker book
+  // (js/placebook.js) only listens to it: walking into Lotus Village for the first time gives its sticker once
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], W = await import('/js/world.js'), I = await import('/js/i18n.js'), S = await import('/js/state.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    const seen = [], stickers = []; G.events.on('*', (p, n) => { seen.push(n); if (n === 'StickerEarned') stickers.push(p.placeId); });
+    delete (h.profile.placeStickers || {}).village; delete (h.profile.visited || {}).village;
+    h.place(W.VILLAGE.x, W.VILLAGE.z + 6);
+    for (let k = 0; k < 8; k++) { await wait(300); document.querySelectorAll('.storybook, .dialog, .modal').forEach(e => e.remove()); G.paused = false; }
+    const got = !!(h.profile.placeStickers || {}).village;
+    h.place(W.VILLAGE.x - 40, W.VILLAGE.z + 40); await wait(900); h.place(W.VILLAGE.x, W.VILLAGE.z + 6); await wait(900);
+    const earned = stickers.filter(x => x === 'place:village').length;
+    G.playGame(0, 'colors', 'replay'); await wait(700); document.querySelector('.gl .gl-x')?.click(); await wait(500);
+    S.settings.lang = 'vi'; I.applyLang(); S.settings.lang = 'en'; I.applyLang();
+    // the album page shows the book
+    G.openPad && G.openPad(0); await wait(300);
+    return { got, earned, seen: [...new Set(seen)], recent: G.events.recent().slice(-3).map(e => e.name), ids: G.events.recent().filter(e => e.name === 'ActivityStarted').map(e => e.payload.defId) };
+  });
+  const errs = P.errors; await P.ctx.close();
+  const need = ['PlayerEnteredVillage', 'PlayerLeftVillage', 'StickerEarned', 'ActivityStarted', 'ActivityAbandoned', 'LanguageChanged'];
+  ok(r.got && r.earned === 1 && need.every(n => r.seen.includes(n)) && r.ids.includes('game:colors') && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `events seen: ${need.join(', ')}; Lotus Village sticker given once (a second visit gives none)`;
+});
+
 await check('types', async () => {
   // type checking (owner, round 30): the files that start with // @ts-check are checked against their JSDoc types
   // (js/state.js, js/netmsg.js, studio/core.cjs; tests/tsconfig.json lists them). Needs: cd tests && npm install

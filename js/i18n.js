@@ -1,6 +1,7 @@
 // Bilingual text. Strings are written inline as T('English', 'Tiếng Việt') so the two
 // languages always travel together.
 import { settings } from './state.js';
+import { events } from './core/events.js';
 import { CUSTOM, customName } from './custom.js';
 
 // People's titles follow the chosen language, but their names stay as they are in their own region:
@@ -43,7 +44,7 @@ export const T = (en, vi) => (settings.lang === 'vi' ? swapNames(vi, 'vi') : swa
 // Things drawn into the 3D world (signs, name tags) register here to redraw when the language changes.
 const langListeners = [];
 export const onLang = f => { langListeners.push(f); };
-export const applyLang = () => { document.documentElement.lang = settings.lang === 'vi' ? 'vi' : 'en'; langListeners.forEach(f => { try { f(); } catch (e) { } }); };
+export const applyLang = () => { document.documentElement.lang = settings.lang === 'vi' ? 'vi' : 'en'; langListeners.forEach(f => { try { f(); } catch (e) { } }); events.emit('LanguageChanged', { lang: settings.lang }); };
 applyLang();
 export const other = (en, vi) => (settings.lang === 'vi' ? en : vi);
 

@@ -1,17 +1,13 @@
 // Small shared helpers: math, seeded random, value noise, DOM.
-export const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-export const lerp = (a, b, t) => a + (b - a) * t;
-export const smooth = (e0, e1, x) => { const t = clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
+// The maths and the seeded random now live in js/core (architecture step 1); they are passed on from here unchanged.
+import { clamp, lerp, smooth, dist2, angleLerp } from './core/geo.js';
+import { mulberry } from './core/rng.js';
+export { clamp, lerp, smooth, dist2, angleLerp };
 export const rand = (a, b) => a + Math.random() * (b - a);
 export const pick = a => a[Math.floor(Math.random() * a.length)];
 export const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-export const dist2 = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
-export const angleLerp = (a, b, t) => { let d = ((b - a + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI; return a + d * t; };
 
-export function seeded(seed) {
-  let s = seed >>> 0;
-  return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-}
+export const seeded = mulberry; // (core/rng.js: the same numbers as before)
 
 // 2D value noise with smooth interpolation, deterministic.
 function hash(x, z) { let h = Math.imul(x, 374761393) + Math.imul(z, 668265263); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }

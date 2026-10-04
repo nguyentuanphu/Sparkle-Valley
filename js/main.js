@@ -50,6 +50,9 @@ import './games/cities.js';
 import './games/learning.js';
 import { createRoads, plantRoadside } from './roads.js';
 import { cachedCanvas } from './worldcache.js';
+import { events } from './core/events.js';
+import { createPlaceBook } from './placebook.js';
+import { id as makeId } from './core/ids.js';
 import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
 import { createKites } from './kite.js';
@@ -115,6 +118,8 @@ mapPic.onReady = () => { G.fogMaps = {}; }; // (a map shown before the picture w
 const titleCam = new THREE.PerspectiveCamera(50, 1, .3, 1200);
 
 const G = {
+  actCount: 0,
+  events, // the event bus (js/core/events.js, architecture step 1)
   settings, world, scene, pads, heroes: [], huds: [], mode: 'solo', paused: false, partner: null, zoom: 1,
   fogMaps: {}, regionOf: [], interactables: [], gatherState: {}, bubbles: []
 };
@@ -335,8 +340,13 @@ async function playGame(i, id, source, shrine) {
   const little = G.heroes.some(x => x.profile.age !== 'big'), strong = !little && p.difficulty !== 'easy';
   if (source === 'shrine') { SFX.secret(); say('A shrine! Let’s solve the puzzle.', 'Một ngôi đền! Cùng giải câu đố nào.'); await wait(600); }
   const nextId = nextGameAfter(id);
+  // events alongside today's calls (architecture step 1): the activity, by id, and who plays it
+  const actId = makeId('act', id, String(++G.actCount)), playerIds = players.map(q => makeId('player', q.id || 'guest'));
+  events.emit('ActivityStarted', { activityId: actId, kind: 'game', defId: makeId('game', id), players: playerIds, source });
   const res = await openGame(id, { players, level, little, strong, nextId, style: source === 'folk' || id === 'market' ? 'village' : 'shrine' });
   G.paused = false;
+  if (res.won) events.emit('ActivityCompleted', { activityId: actId, defId: makeId('game', id), players: playerIds, result: { won: true, stars: res.stars || 0, level } });
+  else events.emit('ActivityAbandoned', { activityId: actId, reason: 'left' });
   if (!res.won) return;
   // after the rewards: straight on to the next game, or this one again, if the child chose that
   const then = () => { if (res.next === 'next' && nextId) playGame(i, nextId, 'replay'); else if (res.next === 'again') playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); };
@@ -1139,6 +1149,7 @@ function frame(now) {
       if (rg !== G.regionOf[i]) {
         if (i === 0) setTimeout(() => G.shareStatus(), 50);
         if (G.regionOf[i] !== null) { const sub = regionLabel(rg); G.huds[i].showRegion(REGION_NAMES[rg]() + (sub ? ' · ' + sub : '')); }
+        { const who = makeId('player', h.profile.id || 'guest'); if (G.regionOf[i]) events.emit('PlayerLeftVillage', { playerId: who, villageId: makeId('place', G.regionOf[i]) }); if (rg) events.emit('PlayerEnteredVillage', { playerId: who, villageId: makeId('place', rg), first: !(h.profile.visited || {})[rg] }); }
         G.regionOf[i] = rg;
         const vis = h.profile.visited = h.profile.visited || {}; if (!vis[rg]) { vis[rg] = true; save(); }
         if (rg === 'village' && !h.profile.quests.village) { h.profile.quests.village = true; save(); hudFor(h).toast(T('Welcome to Lotus Village! Xin chào!', 'Chào mừng đến Làng Sen!')); checkQuests(h); } // (words, not a voice)
@@ -1231,6 +1242,7 @@ createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 createSymbols(G, { sfx: SFX, dialog }); // each region's symbol animal, in a corner of its city square
 createRegionSites(G); // more famous places of each region, just outside its city
 createVnFun(G, { sfx: SFX, say, dialog, toast: (h, m) => hudFor(h).toast(m) }); // children playing north and south; buffalo and bull festivals
+G.placeBook = createPlaceBook(G, { toast: (h, m) => hudFor(h).toast(m), save }); // the places sticker book listens to the event bus (js/placebook.js)
 G.lotus = createLotus(G, { say, toast: (h, m) => hudFor(h).toast(m) }); // Lotus Village: well, shrine, pond bench and boat, hens, a dog, a bicycle and a buffalo cart (Phase 2)
 G.reward = reward;
 G.pets = createPets(G);

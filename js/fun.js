@@ -7,6 +7,7 @@ import { say } from './voice.js';
 import { SFX, noise } from './audio.js';
 import { settings, saveProfiles } from './state.js';
 import { STICKERS } from './data.js';
+import { PLACES, placeStickers } from './placebook.js';
 import { el, esc, pick } from './util.js';
 import { modal } from './ui.js';
 
@@ -84,7 +85,8 @@ export function createFun(G) {
     const close = () => { saveProfiles(); m.close(); G.paused = false; after && after(); };
     const items = () => p.scrapbook[page];
     const draw = () => {
-      const owned = p.stickers.length ? p.stickers : [];
+      // the stickers from games, then the places sticker book's (js/placebook.js), each once
+      const owned = [...new Set([...p.stickers, ...PLACES.filter(x => placeStickers(p)[x.id]).map(x => x.icon)])];
       card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>📒 ${T('My scrapbook', 'Sổ dán hình của con')}</h2>
         <div class="sb-pages">${[0, 1, 2].map(k => `<button class="btn ${k === page ? 'primary' : ''}" data-pg="${k}">${T('Page', 'Trang')} ${k + 1}</button>`).join('')}</div>
         <div class="sb-page"></div>
