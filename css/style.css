@@ -1852,3 +1852,11 @@ body.calm .sp-stop.next .sp-pic { animation: none; }
 .hud .q-say, .hud .q-go, .hgo, .hhow { min-width: 44px; min-height: 44px; }
 .pad-tabs button, .seg button, .btn { min-height: 44px; }
 .jumpnav button { min-height: 44px; }
+/* the Simple screen on a phone on its side: the bar is a rail on the left, the path scrolls sideways */
+.simple-screen.wide { display: grid; grid-template-columns: calc(env(safe-area-inset-left) + 96px) 1fr; grid-template-rows: auto 1fr; }
+.simple-screen.wide .sp-tabs { grid-column: 1; grid-row: 1 / span 2; flex-direction: column; justify-content: center; border-radius: 0 28px 28px 0; padding: 8px 8px 8px calc(env(safe-area-inset-left) + 8px); box-shadow: 4px 0 16px rgba(40, 80, 30, .15); }
+.simple-screen.wide .sp-tabs button { flex: 0 0 auto; min-height: 72px; max-width: none; width: 100%; }
+.simple-screen.wide .sp-top { grid-column: 2; padding: calc(env(safe-area-inset-top) + 8px) calc(env(safe-area-inset-right) + 12px) 0 12px; }
+.simple-screen.wide .sp-scroll { grid-column: 2; overflow-x: auto; overflow-y: hidden; }
+.simple-screen.wide .sp-path { height: 100%; }
+.simple-screen.wide .sp-pic { width: 96px; height: 96px; }

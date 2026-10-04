@@ -651,10 +651,16 @@ await check('simple', async () => {
   const B = await open(b, { w: 390, h: 844, touch: true, screen: null });
   await B.page.evaluate(() => { __sv.simple.hide(); __sv.heroes[0].profile.age = 'big'; delete __sv.heroes[0].profile.screen; __sv.simple.start(); });
   await B.page.waitForTimeout(1200); r.big = await B.page.evaluate(() => __sv.simple.open); await B.ctx.close();
+  // a phone on its side: the bar is a rail on the left and the path scrolls sideways; every picture still ≥ 64 px
+  const W = await open(b, { w: 844, h: 390, touch: true, screen: 'simple' });
+  await W.page.waitForSelector('.simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
+  r.wide = await W.page.evaluate(() => { const s = document.querySelector('.simple-screen'), t = s.querySelector('.sp-tabs').getBoundingClientRect(), sc = s.querySelector('.sp-scroll'), pics = [...s.querySelectorAll('.sp-pic')].map(e => e.getBoundingClientRect()), tabs = [...s.querySelectorAll('.sp-tabs button')].map(e => e.getBoundingClientRect());
+    return { wide: s.classList.contains('wide'), rail: t.left < 5 && t.height > 300, sideways: sc.scrollWidth > sc.clientWidth && sc.scrollHeight <= sc.clientHeight + 2, inView: pics.slice(0, 3).every(p => p.top >= 0 && p.bottom <= innerHeight), big: pics.every(p => p.width >= 64) && tabs.every(p => Math.min(p.width, p.height) >= 64) }; });
+  await W.ctx.close();
   const S = await open(b, { w: 1280, h: 800, mode: 'split', screen: null }); await S.page.waitForTimeout(1500);
   r.split = await S.page.evaluate(() => ({ open: __sv.simple.open, dock: [...document.querySelectorAll('.dk.simple')].some(d => !d.hidden) })); await S.ctx.close();
-  ok(r.game && r.back && r.tale && !r.valley.open && r.valley.screen === 'valley' && r.valley.dock && !r.valley.paused && r.reopen && !r.big && !r.split.open && !r.split.dock && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'under 5 starts on the path; a game and a story each one tap away, the path comes back after; Valley remembered; dock button reopens it; big kid and two players start in the valley';
+  ok(r.game && r.back && r.tale && !r.valley.open && r.valley.screen === 'valley' && r.valley.dock && !r.valley.paused && r.reopen && r.wide.wide && r.wide.rail && r.wide.sideways && r.wide.inView && r.wide.big && !r.big && !r.split.open && !r.split.dock && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'under 5 starts on the path; a game and a story each one tap away, the path comes back after; Valley remembered; dock button reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
 });
 
 await check('a11y', async () => {
