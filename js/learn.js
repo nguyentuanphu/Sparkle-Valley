@@ -4,6 +4,7 @@
 //   when a grown-up has switched that on).
 // · The Music Corner stall at the Three Regions Market.
 // · A gentle rest timer: when the grown-up's time is up, the explorer yawns and says goodnight.
+import { pic } from './art.js';
 import { THREE, sprite, P, merge, toonVC, outline } from './gfx.js';
 import { T } from './i18n.js';
 import { say, sayIn } from './voice.js';
@@ -19,6 +20,9 @@ import { buildAvatar } from './avatar.js';
 import { registerName, onLang } from './i18n.js';
 
 // ---------- folk tales: pages are [pictures, English, Tiếng Việt] ----------
+// the first pictures of a tale, drawn (whole emoji, so a person with a hat stays one picture)
+const seg = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+const shelfPics = s => (seg ? [...seg.segment(s)].map(x => x.segment) : Array.from(s)).filter(x => x.trim()).slice(0, 3).map(e => pic(e)).join('');
 export const TALES = [
   { id: 'banhchung', flag: '🇻🇳', title: () => T('The Square Cake and the Round Cake', 'Sự tích Bánh Chưng Bánh Giầy'), pages: [
     ['👑🤴🤴🤴', 'Long ago, a king asked his sons: "Bring me the most special food in the land, for the New Year."', 'Ngày xưa, vua Hùng bảo các hoàng tử: "Hãy mang đến món ăn quý nhất để dâng lên ngày Tết."'],
@@ -101,7 +105,7 @@ export function createLearning(G) {
     await new Promise(r => setTimeout(r, 1300));
     readTale(h, t);
   };
-  G.taleShelfHTML = p => TALE_FLAGS.map(([f, en, vi]) => `<h3>${f} ${T('Tales from ' + en, 'Truyện ' + vi)}</h3><div class="talegrid">${TALES.filter(t => t.flag === f).map(t => `<button class="talecard ${(p.tales || {})[t.id] ? 'read' : ''}" data-tale="${t.id}"><span>${[...(t.pages[0][0])].slice(0, 3).join('')}</span><small>${esc(t.title())}${(p.tales || {})[t.id] ? ' ✅' : ''}</small></button>`).join('')}</div>`).join('');
+  G.taleShelfHTML = p => TALE_FLAGS.map(([f, en, vi]) => `<h3>${f} ${T('Tales from ' + en, 'Truyện ' + vi)}</h3><div class="talegrid">${TALES.filter(t => t.flag === f).map(t => `<button class="talecard ${(p.tales || {})[t.id] ? 'read' : ''}" data-tale="${t.id}"><span>${shelfPics(t.pages[0][0])}</span><small>${esc(t.title())}${(p.tales || {})[t.id] ? ' ' + pic('✅') : ''}</small></button>`).join('')}</div>`).join('');
   const openTales = h => {
     G.paused = true;
     const m = modal('tales', ''), card = m.querySelector('.card'), p = h.profile; p.tales = p.tales || {};

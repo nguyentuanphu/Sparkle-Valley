@@ -1,0 +1,9 @@
+{
+  "//": "Type checking (owner, round 30): the files that start with // @ts-check are checked with their JSDoc types. Run: npx tsc -p tests",
+  "compilerOptions": {
+    "allowJs": true, "checkJs": false, "noEmit": true, "strict": false, "noImplicitAny": false,
+    "target": "es2022", "module": "es2022", "moduleResolution": "bundler", "lib": ["es2022", "dom", "dom.iterable"],
+    "types": ["node"], "skipLibCheck": true, "resolveJsonModule": true
+  },
+  "files": ["../js/state.js", "../js/netmsg.js", "../js/worldcache.js", "../studio/core.cjs"]
+}

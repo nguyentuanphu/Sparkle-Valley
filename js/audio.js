@@ -16,10 +16,21 @@ export function ac() {
       noiseBuf = AC.createBuffer(1, AC.sampleRate * .8, AC.sampleRate);
       const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
-    if (AC.state === 'suspended') AC.resume();
+    if (AC.state !== 'running') AC.resume().catch(() => { }); // 'suspended' before the first tap, 'interrupted' on iPhone after a call or the lock screen
     return AC;
   } catch (e) { return null; }
 }
+// iPhone and iPad only let a page make sound after a tap: on every tap (until it works) the audio is woken up and a
+// silent sound is played, and the voice's own player is primed too (voice.js uses it if Web Audio is still asleep).
+// Without this, the recorded voices could stay silent and the phone's own voice was heard instead.
+export const unlockers = [];
+const unlock = () => {
+  const a = ac(); if (!a) return;
+  try { const b = a.createBuffer(1, 1, 22050), s = a.createBufferSource(); s.buffer = b; s.connect(a.destination); s.start(0); } catch (e) { }
+  unlockers.forEach(f => { try { f(); } catch (e) { } });
+};
+['pointerdown', 'touchend', 'keydown'].forEach(t => addEventListener(t, unlock, { capture: true, passive: true }));
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && AC && AC.state !== 'running') AC.resume().catch(() => { }); });
 const midi = m => 440 * Math.pow(2, (m - 69) / 12);
 
 export function tone(f, dur, o = {}) {
@@ -52,6 +63,7 @@ export const SFX = {
   no() { tone(300, .18, { to: 220, type: 'triangle', vol: .12 }); },
   pop(n = 0) { const f = midi(PENTA[n % PENTA.length]); tone(f * .5, .12, { to: f * 1.5, vol: .2 }); noise(.06, { vol: .12, freq: 3200 }); },
   chime() { [0, 4, 7, 12].forEach((s, i) => tone(midi(84 + s), .6, { type: 'triangle', at: i * .07, vol: .1 })); },
+  ding() { [0, .16].forEach(t => tone(2350, .5, { at: t, vol: .07, type: 'triangle', vib: 18, vibRate: 30 })); }, // a bicycle bell: kring kring
   // The "discovered a secret" jingle: rising arpeggio with a sparkly tail.
   secret() { [67, 71, 74, 79, 83, 86].forEach((m, i) => tone(midi(m), .5, { type: 'triangle', at: i * .09, vol: .1 })); noise(.6, { at: .5, freq: 7000, vol: .05 }); },
   fanfare() { [[72, 0], [76, .15], [79, .3], [84, .45], [79, .7], [84, .85]].forEach(([m, t], i) => { tone(midi(m), i === 5 ? .9 : .22, { type: 'square', at: t, vol: .05 }); tone(midi(m - 12), i === 5 ? .9 : .22, { type: 'triangle', at: t, vol: .1 }); }); },

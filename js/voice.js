@@ -1,7 +1,7 @@
 // Talking voice in English and Vietnamese using the device's own natural voices.
 // Premium/enhanced/neural voices are picked first; grown-ups can choose a voice in settings.
 import { settings, saveSettings } from './state.js';
-import { ac } from './audio.js';
+import { ac, unlockers } from './audio.js';
 import { swapNames } from './i18n.js';
 import { packHash } from './packhash.js';
 import { CUSTOM } from './custom.js';
@@ -237,6 +237,18 @@ export function playClip(lang, id) {
   return decode(c.data).then(buf => { c.decoded = buf; return playBuffer(buf); }).catch(() => { });
 }
 function decode(data) { const a = ac(); return a ? a.decodeAudioData(data.slice(0)) : Promise.reject(new Error('no audio')); }
+// A plain audio player, primed by the first tap (audio.js), for when Web Audio is asleep on iPhone.
+const SILENT = (() => { const b = new Uint8Array(46), v = new DataView(b.buffer), w = (o, t) => [...t].forEach((c, i) => { b[o + i] = c.charCodeAt(0); }); // a tiny silent WAV
+  w(0, 'RIFF'); v.setUint32(4, 38, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true); v.setUint32(28, 16000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, 2, true);
+  return 'data:audio/wav;base64,' + btoa(String.fromCharCode(...b)); })();
+let player = null, primed = false;
+unlockers.push(() => { if (primed) return; try { player = player || new Audio(); player.src = SILENT; const p = player.play(); if (p) p.then(() => { primed = true; player.pause(); }).catch(() => { }); } catch (e) { } });
+function playUrl(url, rate = 1) {
+  if (!player) return Promise.resolve(false);
+  return new Promise(res => { try { player.pause(); player.src = url; player.playbackRate = rate; player.onended = () => res(true); player.onerror = () => res(false); player.play().catch(() => res(false)); } catch (e) { res(false); } });
+}
+// why the recorded voice did or did not play last time (Grown-ups shows it, to help find phone problems)
+export const voiceDiag = { pack: 'loading', lastMiss: '', audio: '' };
 function playBuffer(buf, rate = 1) {
   const a = ac(); if (!a) return Promise.resolve();
   try { if (playing) playing.stop(); } catch (e) { }
@@ -252,26 +264,50 @@ export const voicePack = () => PACK;
 // Lines asked for before the list has arrived (slow phone networks at start-up) wait for it, so they are spoken
 // with the recorded voice too instead of the phone's own voice.
 let packTried = false;
-const packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; autoSavePack(); } }).catch(() => { }).finally(() => { packTried = true; });
-const waitPack = () => PACK || packTried ? null : Promise.race([packReady, new Promise(r => setTimeout(r, 6000))]);
-// Keep the whole pack on the device by itself, once: a little while after the game opens, every file not yet
-// saved is downloaded quietly into the voice cache (which game updates never delete), so nothing needs to be
-// downloaded again and every line works offline. It only runs again when a new pack is published.
+const packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; voiceDiag.pack = 'ok'; autoSavePack(); } else voiceDiag.pack = 'missing'; }).catch(() => { voiceDiag.pack = 'offline'; }).finally(() => { packTried = true; });
+const waitPack = () => PACK || packTried ? null : Promise.race([packReady, new Promise(r => setTimeout(r, 12000))]);
+// Keep the whole pack on the device by itself: a few seconds after the game opens (every time it opens), the voice
+// cache is checked against the list, and any file not there yet (first visit, a new pack, or a phone that cleared
+// space) is downloaded quietly, the child's own language first. A small bar shows it (js/packbar.js); every line
+// then plays with the recorded voice, offline too.
+const packListeners = []; let packLast = null;
+export const onPackProgress = f => { packListeners.push(f); if (packLast) try { f(packLast); } catch (x) { } }; // (a late listener hears where it is now)
+const packEmit = e => { packLast = e; packListeners.forEach(f => { try { f(e); } catch (x) { } }); };
 function autoSavePack() {
-  const sig = Object.keys(PACK.lines).length + ':' + (PACK.version || 1) + ':' + (PACK.made || '');
-  if (settings.autoPack === false || settings.packSaved === sig || !('caches' in window) || navigator.onLine === false) return;
-  setTimeout(async () => {
-    try { const n = await savePackOffline(); const all = Object.values(PACK.lines).reduce((a, v) => a + v.length, 0); if (n >= all) { settings.packSaved = sig; saveSettings(); } } catch (e) { }
-  }, 20000);
+  if (settings.autoPack === false || !('caches' in window)) return;
+  setTimeout(() => { checkPack().catch(() => { }); }, 6000);
+  addEventListener('online', () => { checkPack().catch(() => { }); });
+}
+let checking = false;
+async function checkPack() {
+  if (checking || !PACK) return; checking = true;
+  try {
+    const cache = await caches.open('sv-voices'), have = new Set((await cache.keys()).map(r => r.url));
+    const missing = packFiles().filter(u => !have.has(new URL(u, location.href).href));
+    if (!missing.length) { settings.packSaved = packSig(); saveSettings(); packEmit({ state: 'ready', quiet: true }); return; }
+    if (navigator.onLine === false) { packEmit({ state: 'waiting', left: missing.length }); return; }
+    let done = 0; packEmit({ state: 'loading', done, total: missing.length });
+    for (let i = 0; i < missing.length; i += 6) {
+      await Promise.all(missing.slice(i, i + 6).map(async u => { try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); done++; } } catch (e) { } }));
+      packEmit({ state: 'loading', done, total: missing.length });
+      if (navigator.onLine === false) { packEmit({ state: 'waiting', left: missing.length - done }); return; } // goes on when the internet is back
+    }
+    if (done >= missing.length) { settings.packSaved = packSig(); saveSettings(); packEmit({ state: 'ready' }); } else packEmit({ state: 'waiting', left: missing.length - done });
+  } finally { checking = false; }
+}
+const packSig = () => Object.keys(PACK.lines).length + ':' + (PACK.version || 1) + ':' + (PACK.made || '');
+// every file of the pack, the child's own language first
+function packFiles() {
+  const urls = [], langs = ['en', 'vi', 'zh', 'hi'];
+  for (const [h, slots] of Object.entries(PACK.lines)) for (const s of slots) for (const L of PACK.langOf ? [PACK.langOf[h]] : langs) urls.push(`voices/${L}/${s}/${h}.mp3`);
+  const mine = settings.lang === 'vi' ? 'voices/vi/' : 'voices/en/'; urls.sort((a, b) => b.startsWith(mine) - a.startsWith(mine));
+  return urls;
 }
 const packSlot = (lang, text) => { const has = PACK && PACK.lines[packHash(lang, text)]; if (!has) return null; const k = speakerKind(); return k && k.gender === 'm' && has.includes('m') ? 'm' : has.includes('f') ? 'f' : has[0]; };
 const packRate = slot => { const k = speakerKind(); if (!k) return 1; let r = k.old ? .9 : k.kid ? 1.1 : 1; if (k.gender === 'm' && slot === 'f') r *= .86; return r; };
-// Download every file of the pack so it plays with no internet (the service worker keeps them).
+// Download every file of the pack so it plays with no internet (Grown-ups → "Save voices for offline")
 export async function savePackOffline(progress) {
-  if (!PACK) return 0; const urls = [];
-  const langs = ['en', 'vi', 'zh', 'hi'];
-  // the manifest only stores hashes, so ask the server for each language folder's files through the list
-  for (const [h, slots] of Object.entries(PACK.lines)) for (const s of slots) for (const L of PACK.langOf ? [PACK.langOf[h]] : langs) urls.push(`voices/${L}/${s}/${h}.mp3`);
+  if (!PACK) return 0; const urls = packFiles();
   let n = 0; const cache = await caches.open('sv-voices');
   for (let i = 0; i < urls.length; i += 6) {
     await Promise.all(urls.slice(i, i + 6).map(async u => { if (await cache.match(u)) { n++; return; } try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); n++; } } catch (e) { } }));
@@ -283,10 +319,18 @@ export const packUrl = (lang, text, slot) => `voices/${lang}/${slot}/${packHash(
 async function playPack(lang, text, my) {
   const slot = packSlot(lang, text); if (!slot) return false;
   const k = 'pack|' + slot + '|' + lang + '|' + text;
+  const url = packUrl(lang, text, slot), a = ac();
+  // Web Audio asleep (iPhone before a tap took, or after a call): the plain player plays the same recording
+  if (!a || a.state !== 'running') { voiceDiag.audio = a ? a.state : 'none'; if (await playUrl(url, packRate(slot))) return true; voiceDiag.lastMiss = 'audio ' + voiceDiag.audio; return false; }
   let buf = mem.get(k);
-  if (!buf) { const r = await fetch(packUrl(lang, text, slot)); if (!r.ok) return false; buf = await decode(await r.arrayBuffer()); mem.set(k, buf); if (mem.size > 120) mem.delete(mem.keys().next().value); }
+  if (!buf) {
+    const r = await fetch(url); if (!r.ok) { voiceDiag.lastMiss = 'file ' + r.status; return false; }
+    const data = await r.arrayBuffer();
+    try { buf = await decode(data); } catch (e) { voiceDiag.lastMiss = 'decode'; return playUrl(url, packRate(slot)); }
+    mem.set(k, buf); if (mem.size > 120) mem.delete(mem.keys().next().value);
+  }
   if (my !== seq) return true;
-  await playBuffer(buf, packRate(slot)); return true;
+  voiceDiag.audio = 'running'; await playBuffer(buf, packRate(slot)); return true;
 }
 
 // ---------- Natural voice (optional, online) ----------

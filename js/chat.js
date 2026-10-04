@@ -166,7 +166,8 @@ export function openChat(G, i, pid, onClose, firstAsk) {
   const history = [];
   let busy = false;
   const bubble = (who, text) => { const b = el('div', 'cb-msg ' + who, esc(text)); log.appendChild(b); log.scrollTop = log.scrollHeight; return b; };
-  const close = () => { hush(); setSpeaker(null); m.remove(); onClose && onClose(); };
+  const close = () => { if (!m.isConnected) return; hush(); setSpeaker(null); m.remove(); onClose && onClose(); };
+  if (G.walkAwayClose) G.walkAwayClose(m, close); // (walking away closes it)
   const showActions = list => {
     acts.innerHTML = '';
     (list || []).forEach(a => { const b = el('button', 'cb-act', esc(a.label)); b.onclick = () => { SFX.tap(); if (a.ask) ask(a.ask); else { close(); a.run(); } }; acts.appendChild(b); });

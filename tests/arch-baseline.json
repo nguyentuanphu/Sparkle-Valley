@@ -1,0 +1,5 @@
+{
+  "note": "Circles in the import map (tests/arch.mjs). A ratchet: lower these when a round removes a circle; never raise them.",
+  "maxCycles": 2,
+  "maxFilesInCycles": 6
+}

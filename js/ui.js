@@ -2,7 +2,7 @@
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
 import { T, applyLang, nm, NPC_NAMES, defaultName } from './i18n.js';
 import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, backupAge, STYLES, OUTFIT_COLORS, HATS, BACKS, HAIR, SKIN, HAIRSTYLES, GLIDERS, farm, resetFarm, saveFarm, MAX_KIDS } from './state.js';
-import { say, spoken, voicePack, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
+import { say, spoken, voicePack, voiceDiag, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
 import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt, cur, spoken as money } from './money.js';
@@ -20,6 +20,7 @@ import { openCredits, creditsFields, bindCreditsFields } from './credits.js';
 import { openHowTo } from './howto.js';
 import { WILD } from './gather.js';
 import { snackOf, eatSnack } from './snacks.js';
+import { saveToDevice, savesByShare } from './photos.js';
 import { extrasHTML, bindExtras } from './extras.js';
 import { canListen } from './listen.js';
 import { installButton } from './install.js';
@@ -242,6 +243,7 @@ function jumpNav(root, after) {
 function packStatusHTML() {
   const P = voicePack(), miss = voiceMisses().filter(m => m[0] === 'en' || m[0] === 'vi'), n = P ? Object.keys(P.lines).length : 0;
   return `<p class="note">${P ? '✅ ' + T(`${n.toLocaleString()} lines recorded with natural voices. They always play first, even offline; the phone's voice reads only a line that has no recording.`, `${n.toLocaleString('vi-VN')} câu đã thu bằng giọng tự nhiên. Luôn được phát trước, kể cả khi không có mạng; giọng của máy chỉ đọc câu chưa có bản ghi.`) : '⚠️ ' + T('The recorded voices have not loaded yet (they need the internet once).', 'Giọng đã thu chưa tải được (cần có mạng một lần).')}</p>
+    ${voiceDiag.lastMiss ? `<p class="note warn">⚠️ ${T('Last time a recording could not play here', 'Lần trước máy này không phát được bản ghi')} (${esc(voiceDiag.lastMiss)}). ${T('Tap anywhere on the screen once, check the side switch is not on silent, then press ▶ below.', 'Chạm vào màn hình một lần, kiểm tra nút gạt bên hông không ở chế độ im lặng, rồi bấm ▶ bên dưới.')}</p>` : ''}
     <div class="actions"><button class="btn" data-pv="f">▶ 👩 ${T('Woman', 'Giọng nữ')}</button><button class="btn" data-pv="m">▶ 👨 ${T('Man', 'Giọng nam')}</button></div>
     <p class="note">${T('Women, girls and grandmas speak with the woman’s voice; men, boys and grandpas with the man’s.', 'Phụ nữ, bé gái và bà nói bằng giọng nữ; đàn ông, bé trai và ông nói bằng giọng nam.')}</p>
     ${miss.length ? `<details class="g-miss"><summary>📝 ${T(`${miss.length} lines on this device had no recording yet`, `${miss.length} câu trên máy này chưa có bản ghi`)}</summary>
@@ -310,6 +312,8 @@ export function openGrownups(after) {
       <h3>🎉 ${T('Festivals', 'Lễ hội')}</h3>
       <p class="note">${T('Festivals follow the calendar on this device: Tết, Mid-Autumn, Diwali, Christmas and Australia Day. You can also show one now.', 'Lễ hội theo lịch của máy này: Tết, Trung Thu, Diwali, Giáng Sinh và Ngày Nước Úc. Bạn cũng có thể bật một lễ hội ngay bây giờ.')}</p>
       <div class="seg fest">${[['auto', T('By date', 'Theo lịch')], ['tet', '🧧 Tết'], ['midautumn', '🥮 ' + T('Mid-Autumn', 'Trung Thu')], ['diwali', '🪔 Diwali'], ['christmas', '🎄 ' + T('Christmas', 'Giáng Sinh')], ['ausday', '🇦🇺 ' + T('Australia Day', 'Ngày Nước Úc')], ['none', T('Off', 'Tắt')]].map(([k, l]) => `<button data-f="${k}" class="${(settings.festival || 'auto') === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+      <div class="field"><label>${T('Count players', 'Đếm người chơi')}</label><div class="seg cnt"><button data-c="1" class="${settings.countPlayers !== false ? 'on' : ''}">${T('On', 'Bật')}</button><button data-c="0" class="${settings.countPlayers === false ? 'on' : ''}">${T('Off', 'Tắt')}</button></div></div>
+      <p class="note">${T('The game tells its website, without names, photos or places, that this device played (minutes, games, language, version), so the family can see how many children play. Switch it off any time.', 'Trò chơi báo cho trang web của nó, không có tên, ảnh hay địa điểm, rằng máy này đã chơi (số phút, trò chơi, ngôn ngữ, phiên bản), để gia đình biết có bao nhiêu bé chơi. Tắt lúc nào cũng được.')}</p>
       <div class="field"><label>${T('Camera', 'Góc nhìn')}</label><div class="seg cam"><button data-c="easy" class="${settings.camMode !== 'free' ? 'on' : ''}">🧸 ${T('Easy: fixed view from above', 'Dễ: nhìn từ trên, cố định')}</button><button data-c="free" class="${settings.camMode === 'free' ? 'on' : ''}">🧭 ${T('Explorer: drag to look around', 'Tự do: kéo để xoay')}</button></div></div>
       <div class="field"><label>${T('Graphics', 'Đồ họa')}</label><div class="seg q">${['low', 'auto', 'high'].map(q => `<button data-q="${q}" class="${settings.quality === q ? 'on' : ''}">${{ low: T('Fast', 'Nhanh'), auto: T('Auto', 'Tự động'), high: T('Pretty', 'Đẹp') }[q]}</button>`).join('')}</div></div>
       <h3>🏷️ ${T('Character names', 'Tên nhân vật')}</h3>
@@ -336,6 +340,7 @@ export function openGrownups(after) {
     card.querySelectorAll('.seg.cur button').forEach(b => b.onclick = () => { settings.currency = b.dataset.c; saveSettings(); draw(); });
     card.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const n = +b.dataset.add; if (window.__sv && window.__sv.addCoins) window.__sv.addCoins(n); else { farm.coins += n; saveFarm(); } SFX.coin ? SFX.coin() : SFX.chime(); card.querySelector('#gCoins').textContent = fmt(farm.coins); toast(T('Coins added: ', 'Đã thêm: ') + fmt(n)); });
     card.querySelectorAll('.seg.cam button').forEach(b => b.onclick = () => { settings.camMode = b.dataset.c; saveSettings(); draw(); });
+    card.querySelectorAll('.seg.cnt button').forEach(b => b.onclick = () => { settings.countPlayers = b.dataset.c === '1'; saveSettings(); draw(); });
     card.querySelectorAll('.seg.q button').forEach(b => b.onclick = () => { settings.quality = b.dataset.q; saveSettings(); draw(); toast(T('Restart the game to change graphics.', 'Mở lại trò chơi để đổi đồ họa.')); });
     const chk = (id, k, f) => card.querySelector(id).onchange = e => { settings[k] = e.target.checked; saveSettings(); f && f(); };
     card.querySelector('#gAutoMeet').onchange = e => { settings.autoMeet = e.target.checked; saveSettings(); };
@@ -721,7 +726,7 @@ export function openPad(game, i, tab) {
     body.querySelectorAll('[data-st]').forEach(b => b.onclick = () => showStory(storyList(p)[+b.dataset.st], p.name));
     body.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { const l = LANDMARKS.find(x => x.id === b.dataset.fly); close(); game.travel(hero, l.x, l.z + (l.id === 'uluru' ? -4 : 3)); });
     body.querySelectorAll('[data-pcfact]').forEach(b => b.onclick = () => { const l = LANDMARKS.find(x => x.id === b.dataset.pcfact); say(l.fact[0], l.fact[1]); toast(T(l.fact[0], l.fact[1])); });
-    body.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => { const a = document.createElement('a'); a.href = p.album[+b.dataset.dl]; a.download = 'sparkle-valley-photo.jpg'; a.click(); });
+    body.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => savePhoto(p.album[+b.dataset.dl]));
   }
   function drawGames(body) {
     body.innerHTML = `<p class="note">${T('Play any game you have already found again. Every win makes the next one a little harder.', 'Chơi lại các trò con đã tìm thấy. Mỗi lần thắng, trò chơi sẽ khó hơn một chút.')}</p><div class="gamelist"></div>`;
@@ -734,16 +739,27 @@ export function openPad(game, i, tab) {
       list.appendChild(b);
     });
   }
+  // a photo into the device's own Photos (js/photos.js): iPhone/iPad through the share sheet ("Save Image"),
+  // Android and computers as a download
+  async function savePhoto(src) {
+    const how = await saveToDevice(src);
+    if (how === 'downloaded') toast(T('Saved to the phone: look in Photos or Gallery (Downloads).', 'Đã lưu vào máy: xem trong Ảnh hoặc Thư viện (Tải về).'));
+    if (how === 'failed') toast(T('Could not save the picture on this device.', 'Không lưu được ảnh trên máy này.'));
+  }
   function drawCam(body) {
-    body.innerHTML = `<div class="cam-prev"></div><div class="actions center"><button class="btn primary big" id="snap">📷 ${T('Take picture', 'Chụp ảnh')}</button></div><p class="note center">${T('Pictures are saved in your Album.', 'Ảnh được lưu trong Bộ sưu tập.')}</p>`;
+    const howTo = savesByShare() ? T('Then tap “Save to my photos” and choose “Save Image”.', 'Rồi chạm “Lưu vào ảnh của máy” và chọn “Lưu hình ảnh”.') : T('Then tap “Save to my photos”.', 'Rồi chạm “Lưu vào ảnh của máy”.');
+    body.innerHTML = `<div class="cam-prev"></div><div class="actions center"><button class="btn primary big" id="snap">📷 ${T('Take picture', 'Chụp ảnh')}</button><button class="btn big" id="toPhone" hidden>📲 ${T('Save to my photos', 'Lưu vào ảnh của máy')}</button></div><p class="note center">${T('Pictures are kept in your Album.', 'Ảnh được giữ trong Bộ sưu tập.')} ${howTo}</p>`;
+    let big = null;
     body.querySelector('#snap').onclick = async () => {
       m.style.visibility = 'hidden'; await wait(60);
-      const shot = game.snapshot(i); m.style.visibility = '';
+      const shot = game.snapshot(i); big = game.snapshot(i, 1600, .9); m.style.visibility = '';
       SFX.chime();
       body.querySelector('.cam-prev').innerHTML = `<img src="${shot}" alt="">`;
+      body.querySelector('#toPhone').hidden = false;
       p.album.push(shot); if (p.album.length > 12) p.album.shift(); saveProfiles();
       say('Click! What a lovely picture!', 'Tách! Bức ảnh đẹp quá!');
     };
+    body.querySelector('#toPhone').onclick = () => { if (big) { SFX.tap(); savePhoto(big); } };
   }
   function drawFriend(body) { game.drawOnlinePanel(body, () => draw()); }
   draw();
