@@ -47,7 +47,7 @@ export function createSimple(G) {
   }
   // where each stop sits: a snake of rows across the screen, joined by a winding road
   function layout(n, w) {
-    const cols = w < 520 ? 2 : w < 820 ? 3 : w < 1100 ? 4 : 5, gx = w / cols, gy = 216, pts = [];
+    const cols = w < 520 ? 2 : w < 820 ? 3 : w < 1100 ? 4 : 5, gx = w / cols, gy = 228, pts = [];
     for (let k = 0; k < n; k++) { const r = Math.floor(k / cols), c = k % cols, cc = r % 2 ? cols - 1 - c : c; pts.push({ x: gx * (cc + .5), y: 96 + r * gy + (c % 2) * 18 }); }
     return { pts, h: 96 + Math.ceil(n / cols) * gy + 40 };
   }

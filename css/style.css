@@ -1860,3 +1860,7 @@ body.calm .sp-stop.next .sp-pic { animation: none; }
 .simple-screen.wide .sp-scroll { grid-column: 2; overflow-x: auto; overflow-y: hidden; }
 .simple-screen.wide .sp-path { height: 100%; }
 .simple-screen.wide .sp-pic { width: 96px; height: 96px; }
+/* stars sit on their own line under the picture, never under its edge (owner, round I) */
+.sp-stop { gap: 6px; }
+.sp-stars { margin-top: 0; padding: 2px 10px; box-shadow: 0 2px 0 rgba(60, 100, 40, .25); position: relative; z-index: 1; }
+.sp-stop:active .sp-pic { transform: none; box-shadow: 0 6px 0 rgba(60, 100, 40, .35); filter: brightness(.95); }
