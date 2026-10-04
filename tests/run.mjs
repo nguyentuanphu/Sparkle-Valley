@@ -531,6 +531,33 @@ await check('cloud', async () => {
   return `status "${status}", ping ${q.rtt} ms through the cloud, met at ${d.toFixed(1)} m, talk bubble received, photos both ways, 3 players all see each other, leaving noticed`;
 });
 
+await check('photo', async () => {
+  // Camera → Take picture → "Save to my photos": on an iPhone the share sheet gets a full-size picture file (its
+  // "Save Image" puts it in Photos); on a computer or Android the picture downloads. The Album's ⬇ does the same.
+  const out = {};
+  for (const kind of ['computer', 'iphone']) {
+    const P = await open(b, kind === 'iphone' ? { w: 390, h: 760, touch: true, pre: () => { Object.defineProperty(navigator, 'userAgent', { get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' }); navigator.canShare = d => !!(d && d.files); navigator.share = async d => { window.__shared = d.files.map(f => ({ name: f.name, type: f.type, size: f.size })); }; } } : { w: 1000, h: 700 });
+    await clear(P.page);
+    const before = await P.page.evaluate(() => __sv.heroes[0].profile.album.length);
+    await P.page.evaluate(() => __sv.openPad(0, 'cam')); await P.page.waitForSelector('#snap'); await P.page.click('#snap');
+    await P.page.waitForSelector('#toPhone:not([hidden])', { timeout: 5000 });
+    const r = { added: (await P.page.evaluate(() => __sv.heroes[0].profile.album.length)) - before };
+    if (kind === 'iphone') { await P.page.click('#toPhone'); await P.page.waitForFunction(() => window.__shared, null, { timeout: 5000 }); r.shared = await P.page.evaluate(() => window.__shared); await P.page.screenshot({ path: 'out/photo-iphone.png' }); }
+    else {
+      const [dl] = await Promise.all([P.page.waitForEvent('download', { timeout: 5000 }), P.page.click('#toPhone')]);
+      const fp = await dl.path(); r.download = { name: dl.suggestedFilename(), size: fs.statSync(fp).size };
+      await P.page.evaluate(() => { document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false; __sv.openPad(0, 'album'); });
+      await P.page.waitForSelector('[data-dl]', { state: 'attached' });
+      const [dl2] = await Promise.all([P.page.waitForEvent('download', { timeout: 5000 }), P.page.evaluate(() => document.querySelector('[data-dl]').click())]);
+      r.album = dl2.suggestedFilename();
+    }
+    r.errs = P.errors; await P.ctx.close(); out[kind] = r;
+  }
+  const c = out.computer, i = out.iphone;
+  ok(c.added === 1 && /^sparkle-valley-\d{8}-\d{6}\.jpg$/.test(c.download.name) && c.download.size > 5000 && /\.jpg$/.test(c.album) && i.added === 1 && i.shared && i.shared.length === 1 && i.shared[0].type === 'image/jpeg' && i.shared[0].size > 5000 && !c.errs.length && !i.errs.length, JSON.stringify(out));
+  return `computer: ${c.download.name} downloaded (${Math.round(c.download.size / 1024)} KB), Album ⬇ downloads too; iPhone: the share sheet got ${i.shared[0].name} (${Math.round(i.shared[0].size / 1024)} KB) for "Save Image"`;
+});
+
 await check('knock', async () => {
   // A 4-digit room code is easy to guess, so newcomers knock. Through the cloud relay only (the harder path):
   // the starter's panel shows the code as digits, animals and a QR code; a child types the code with the animal pad

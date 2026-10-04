@@ -20,6 +20,7 @@ import { openCredits, creditsFields, bindCreditsFields } from './credits.js';
 import { openHowTo } from './howto.js';
 import { WILD } from './gather.js';
 import { snackOf, eatSnack } from './snacks.js';
+import { saveToDevice, savesByShare } from './photos.js';
 import { extrasHTML, bindExtras } from './extras.js';
 import { canListen } from './listen.js';
 import { installButton } from './install.js';
@@ -725,7 +726,7 @@ export function openPad(game, i, tab) {
     body.querySelectorAll('[data-st]').forEach(b => b.onclick = () => showStory(storyList(p)[+b.dataset.st], p.name));
     body.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { const l = LANDMARKS.find(x => x.id === b.dataset.fly); close(); game.travel(hero, l.x, l.z + (l.id === 'uluru' ? -4 : 3)); });
     body.querySelectorAll('[data-pcfact]').forEach(b => b.onclick = () => { const l = LANDMARKS.find(x => x.id === b.dataset.pcfact); say(l.fact[0], l.fact[1]); toast(T(l.fact[0], l.fact[1])); });
-    body.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => { const a = document.createElement('a'); a.href = p.album[+b.dataset.dl]; a.download = 'sparkle-valley-photo.jpg'; a.click(); });
+    body.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => savePhoto(p.album[+b.dataset.dl]));
   }
   function drawGames(body) {
     body.innerHTML = `<p class="note">${T('Play any game you have already found again. Every win makes the next one a little harder.', 'Chơi lại các trò con đã tìm thấy. Mỗi lần thắng, trò chơi sẽ khó hơn một chút.')}</p><div class="gamelist"></div>`;
@@ -738,16 +739,27 @@ export function openPad(game, i, tab) {
       list.appendChild(b);
     });
   }
+  // a photo into the device's own Photos (js/photos.js): iPhone/iPad through the share sheet ("Save Image"),
+  // Android and computers as a download
+  async function savePhoto(src) {
+    const how = await saveToDevice(src);
+    if (how === 'downloaded') toast(T('Saved to the phone: look in Photos or Gallery (Downloads).', 'Đã lưu vào máy: xem trong Ảnh hoặc Thư viện (Tải về).'));
+    if (how === 'failed') toast(T('Could not save the picture on this device.', 'Không lưu được ảnh trên máy này.'));
+  }
   function drawCam(body) {
-    body.innerHTML = `<div class="cam-prev"></div><div class="actions center"><button class="btn primary big" id="snap">📷 ${T('Take picture', 'Chụp ảnh')}</button></div><p class="note center">${T('Pictures are saved in your Album.', 'Ảnh được lưu trong Bộ sưu tập.')}</p>`;
+    const howTo = savesByShare() ? T('Then tap “Save to my photos” and choose “Save Image”.', 'Rồi chạm “Lưu vào ảnh của máy” và chọn “Lưu hình ảnh”.') : T('Then tap “Save to my photos”.', 'Rồi chạm “Lưu vào ảnh của máy”.');
+    body.innerHTML = `<div class="cam-prev"></div><div class="actions center"><button class="btn primary big" id="snap">📷 ${T('Take picture', 'Chụp ảnh')}</button><button class="btn big" id="toPhone" hidden>📲 ${T('Save to my photos', 'Lưu vào ảnh của máy')}</button></div><p class="note center">${T('Pictures are kept in your Album.', 'Ảnh được giữ trong Bộ sưu tập.')} ${howTo}</p>`;
+    let big = null;
     body.querySelector('#snap').onclick = async () => {
       m.style.visibility = 'hidden'; await wait(60);
-      const shot = game.snapshot(i); m.style.visibility = '';
+      const shot = game.snapshot(i); big = game.snapshot(i, 1600, .9); m.style.visibility = '';
       SFX.chime();
       body.querySelector('.cam-prev').innerHTML = `<img src="${shot}" alt="">`;
+      body.querySelector('#toPhone').hidden = false;
       p.album.push(shot); if (p.album.length > 12) p.album.shift(); saveProfiles();
       say('Click! What a lovely picture!', 'Tách! Bức ảnh đẹp quá!');
     };
+    body.querySelector('#toPhone').onclick = () => { if (big) { SFX.tap(); savePhoto(big); } };
   }
   function drawFriend(body) { game.drawOnlinePanel(body, () => draw()); }
   draw();

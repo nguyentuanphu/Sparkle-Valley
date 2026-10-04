@@ -1,0 +1,119 @@
+# Sparkle Valley — Infrastructure
+
+Everything the game runs on, where each piece lives, who can change it, and how to test it locally.
+Companion documents:
+- `HANDOFF.md`: rules, features and history.
+- `docs/ARCHITECTURE.md`: how the code is built.
+- `docs/SO-TAY-THIET-KE.md`: the design handbook.
+
+Keep this file current in the same round as any change to hosting, servers, keys or the bundle.
+
+## 1. The pieces at a glance
+
+| Piece | What it is | Where it runs | Source |
+|---|---|---|---|
+| **The game** | Plain JS ES modules + three.js, PWA, no build step | The child's browser / Home Screen app | repo root: `index.html`, `js/`, `css/`, `vendor/`, `fonts/`, `icons/`, `content/`, `sw.js` |
+| **Voices** | Recorded Azure voice pack (EN/VI, ~7,400 files, ~140 MB) | Downloaded to each device (Cache Storage `sv-voices`), played offline | `voices/` in **GitHub** (tracked) |
+| **Real photos** | Landmark photos chosen in the Studio | Cached on the device once seen | `photos/` (from the Studio; none yet) |
+| **Family content** | Message, names, faces, tales, quiz, villagers, buildings, defaults | Read at start by `js/custom.js` | `content/custom.json`, `content/faces/` |
+| **Live website** | Netlify site **sparklevalley**, linked to GitHub `main` | Netlify CDN | whole repo (`netlify.toml`: publish `.`) |
+| **Player counter** | Anonymous "hello" from devices | Netlify Function `/api/hello` + Netlify Blobs store `players` | `netlify/functions/hello.mjs`, `netlify/lib/players.mjs`, `js/players.js` |
+| **Sparkle Studio online** | Grown-ups' dashboard at `/studio/` | Netlify Function `/studio/api/*` | `netlify/functions/studio.mjs` + `studio/core.cjs` + `studio/ui/` |
+| **Sparkle Studio exe** | The same dashboard on Windows | `SparkleStudio.exe` → local server 127.0.0.1:7777 | `studio/studio.cjs` + `studio/core.cjs` + `studio/ui/` (built by `studio/build-exe.sh`) |
+| **Online play** | Rooms of up to 6, voice, friends | Peer-to-peer (PeerJS/WebRTC) + public MQTT brokers as the cloud relay | `js/net.js`, `js/relay.js`, `js/roomcode.js` |
+| **GitHub Pages** (optional) | Second copy of the site | GitHub Actions on push to `main` | `.github/workflows/pages.yml` (needs Settings → Pages → Source: GitHub Actions) |
+
+## 2. How a change reaches children
+
+1. Work happens on a feature branch and is committed locally.
+   - **HARD RULE:** nothing is pushed until the owner has checked it and said "yes, push".
+2. A pushed branch gets a draft PR. Netlify makes a **deploy preview** for each PR.
+3. Merge to `main` → Netlify rebuilds `sparklevalley` in 1–2 minutes. The functions are bundled by esbuild (`[functions]` in `netlify.toml`).
+4. Devices pick up the new version the next time the game opens online.
+   - The service worker `sw.js` has `VERSION = 'sv-<date>-r<NN>'`.
+   - `js/build.js` `BUILD` must match it (the `ground` check enforces this).
+   - Every new file must be in `sw.js` `FILES`, or it won't work offline.
+5. Voices come **from GitHub through Netlify**. A new voice file pushed to `voices/` is live after the next deploy. Each device's voice-pack check (`js/voice.js` `checkPack`, on every open) downloads what it is missing, with the small progress bar (`js/packbar.js`).
+6. Sparkle Studio changes:
+   - **Online Studio:** saves to the `studio-draft` branch; **Publish** copies only the family's files (`content/ voices/ photos/ tools/voice-extra.json`) to `main`.
+   - **Exe:** "Publish to GitHub" commits those same folders to `main` (whether it should go through the draft too is an open question).
+
+A drag-and-drop zip (`build-netlify.sh`) still works as an emergency fallback, but it has **no functions**, so the counter and online Studio stop working on that deploy. Use Git deploys.
+
+## 3. Keys, secrets and settings (names only, never values)
+
+**Rule:** no key, password or personal data in the code or the repo.
+
+| Where | Name | What for | Needed? |
+|---|---|---|---|
+| Netlify → Site configuration → Environment variables | `STUDIO_PASSWORD` | Online Studio login | required for `/studio/` |
+| 〃 | `GITHUB_TOKEN` | Fine-grained, this repo only, Contents read/write: the online Studio reads/saves family files | required for saving |
+| 〃 | `GITHUB_REPO`, `GITHUB_BRANCH` | Defaults: `nguyentuanphu/Sparkle-Valley`, `main` | optional |
+| 〃 | `AZURE_KEY`, `AZURE_REGION` | Making voices from the online Studio | optional |
+| 〃 | `NETLIFY_TOKEN`, `NETLIFY_SITE` | The Studio's Website page (deploys) | optional |
+| Windows PC | `%APPDATA%\SparkleStudio\settings.json` | The exe's keys: Azure, Netlify, GitHub token | as needed |
+| Each device | `localStorage sv2_settings` | A grown-up's own keys typed in the game (Azure/ElevenLabs/Google voices, Anthropic chat, TURN relay) | optional |
+
+Netlify Blobs needs no key; it is attached to the site automatically.
+
+## 4. Servers and services we depend on (all free tiers)
+
+| Service | Used for | If it is down |
+|---|---|---|
+| Netlify (hosting, Functions, Blobs) | The website, `/api/hello`, `/studio/` | Installed games keep working offline. Counting waits in the device outbox (≤ 14 days) and sends later |
+| GitHub | Source, voices, Studio storage, Netlify builds | No new deploys or Studio saves; the live site stays |
+| PeerJS public server (`0.peerjs.com`) | Introduces devices for direct links | Rooms carry on through the cloud relay (no voice calls) |
+| STUN (Google, Cloudflare) | Finding public addresses | Same as above |
+| Public TURN (Open Relay; may need an account now) | Voice across strict networks | A grown-up can add their own TURN in Grown-ups → Online play |
+| Public MQTT brokers: emqx, hivemq, mosquitto, eclipse (`wss://`) | Cloud relay, friends' status, invites | All four are used at once, so one being down doesn't matter |
+| Wikipedia / Wikimedia Commons / Openverse | The Studio's real-photo search | Studio photo search only |
+| Microsoft Azure Speech | Making voice files (Studio) | Making voices only; children play recorded files |
+
+## 5. Data that leaves a device (privacy summary; full table in handbook §10)
+
+- **Player hello:** random device id, build, language, number of profiles, minutes, games, stories, device type, installed or not, minutes online, and ≤ 15 game lines that had no recording.
+  - Never names, photos, places or anything typed.
+  - Off switch: Grown-ups → Advanced → Count players.
+- **Online play:** names, outfits, positions and the player photo go to the other players only.
+  - Photos travel under a pair lock (ECDH).
+  - **Newcomers knock** and the room's starter lets them in; saved friends come straight in.
+  - Known gap: the relay lock comes from the room code.
+- **Backups:** to the family's own iCloud/Drive through the share sheet. Never to our server.
+- **Photos taken in the game:** kept in the Album on the device. "Save to my photos" puts a full-size copy in the device's own library: the share sheet on iPhone/iPad, a download on Android and computers. Nothing is uploaded.
+
+## 6. Local testing
+
+### 6.1 The local bundle (made every round)
+
+`tools/make-bundle.sh` makes **`SparkleValley-<build>-local.zip`**. It always contains:
+
+| In the zip | What |
+|---|---|
+| `game/` | The **full game**: every tracked file, including `voices/`, `photos/`, `content/`, the Netlify functions, the Studio sources and the tests |
+| `SparkleStudio.exe` | The Windows Studio built from the same commit (if it was built) |
+| `HANDOFF.md`, `INFRASTRUCTURE.md`, `ARCHITECTURE.md`, `SO-TAY-THIET-KE.md` | The documents |
+| `START-HERE.txt` | How to run it |
+
+### 6.2 Running it
+
+- **Game:** in `game/`, run `python3 -m http.server 8765` → http://localhost:8765. Any static server works; the service worker needs `localhost` or https.
+- **Studio exe:** put `SparkleStudio.exe` in `game/` and double-click it (or `node studio/studio.cjs` with Node 22) → http://127.0.0.1:7777.
+- **On a phone on the same Wi-Fi:** open `http://<computer-ip>:8765`.
+  - The service worker and microphone need https on a phone, so offline install, voice chat and the voice pack won't work.
+  - Use a Netlify deploy preview for full phone tests.
+- **Not available locally:** `/api/hello` and `/studio/` (they are Netlify Functions). The game skips counting on localhost by design. To run them locally, use `netlify dev` (Netlify CLI) in `game/`.
+
+### 6.3 Automated checks
+
+In `tests/`, run `npm install` once, then `node run.mjs [check…]`. The full list is in HANDOFF §2.
+- **Online checks:** `multiplayer`, `meet`, `cloud`, `knock` need a local PeerJS server (127.0.0.1:9000) and an MQTT broker (127.0.0.1:9001). The commands are in `tests/README.md`; without them those checks say "skipped".
+- **`studio`** uses a fake GitHub and fake Netlify (ports 8791/8792) built into `tests/studio-check.mjs`.
+
+## 7. Versions and release checklist
+
+1. Bump `js/build.js` `BUILD`, `sw.js` `VERSION`, `studio/version.json` together. The exe and online Studio are always updated together.
+2. New files go into `sw.js` `FILES`.
+3. Run the full suite (desktop + phone). Fix everything red.
+4. Rebuild the exe (`bash studio/build-exe.sh`); make the local bundle (`tools/make-bundle.sh`).
+5. Update HANDOFF (history line, test table), this file if infrastructure changed, and the handbook if a design rule changed.
+6. Commit locally, show the owner the changes, tests and bundle, then wait for "yes, push".

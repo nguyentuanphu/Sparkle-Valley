@@ -647,14 +647,14 @@ G.eat = (h, id) => {
 G.onCooked = (h) => { checkQuests(h); G.job('cook', 1, h); };
 G.rebuildHero = i => { const h = G.heroes[i]; if (h) { h.buildModel(); G.huds[i].refreshWho(); sendHello(); } };
 G.fogMapFor = p => G.fogMaps[p.id] || (G.fogMaps[p.id] = fogMapFor(p, baseMap));
-G.snapshot = i => {
+G.snapshot = (i, max = 720, q = .8) => {
   const h = G.heroes[i] || G.heroes[0], w = renderer.domElement.width, hh = renderer.domElement.height;
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w / renderer.getPixelRatio(), hh / renderer.getPixelRatio());
   h.cam.aspect = w / hh; h.cam.updateProjectionMatrix(); G.huds.forEach(x => x.root.style.visibility = 'hidden');
   renderer.render(scene, h.cam);
-  const c = document.createElement('canvas'), k = Math.min(1, 720 / w); c.width = w * k; c.height = hh * k; c.getContext('2d').drawImage(renderer.domElement, 0, 0, c.width, c.height);
+  const c = document.createElement('canvas'), k = Math.min(1, max / Math.max(w, hh)); c.width = w * k; c.height = hh * k; c.getContext('2d').drawImage(renderer.domElement, 0, 0, c.width, c.height);
   G.huds.forEach(x => x.root.style.visibility = '');
-  return c.toDataURL('image/jpeg', .8);
+  return c.toDataURL('image/jpeg', q);
 };
 G.PLACES = [
   { g: 'home', icon: '🏡', name: () => T('Sunny Farm', 'Nông trại'), x: HOME.x - 4, z: HOME.z + 2 },
