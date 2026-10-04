@@ -2,7 +2,8 @@
 # The local test bundle, made every round (docs/INFRASTRUCTURE.md §6.1):
 #   SparkleValley-<build>-local.zip = game/ (every tracked file of HEAD, voices included) + SparkleStudio.exe
 #   + HANDOFF.md, INFRASTRUCTURE.md, ARCHITECTURE.md, SO-TAY-THIET-KE.md + START-HERE.txt
-# Usage: tools/make-bundle.sh [output folder]   (commit first: the game comes from HEAD, not the working tree)
+# Usage: tools/make-bundle.sh [output folder] [--parts]   (commit first: the game comes from HEAD, not the working tree)
+#   --parts  also splits it into parts under 28 MB that all unpack into the same folder (tools/bundle-parts.py), for sending where one 190 MB file is too big
 set -e
 cd "$(dirname "$0")/.."
 OUT_DIR="${1:-.}"
@@ -32,3 +33,5 @@ EOF
 (cd "$TMP" && zip -qr "$NAME.zip" "$NAME")
 mv "$TMP/$NAME.zip" "$OUT_DIR/"
 echo "Ready: $OUT_DIR/$NAME.zip ($(du -h "$OUT_DIR/$NAME.zip" | cut -f1))"
+if [ "$2" = "--parts" ]; then python3 tools/bundle-parts.py "$OUT_DIR/$NAME.zip" "$OUT_DIR"; fi
+
