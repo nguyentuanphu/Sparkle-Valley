@@ -513,6 +513,49 @@ await check('validate', async () => {
   return 'ROAD-001/002/003/004/011 and VEH-001 hold';
 });
 
+await check('tales', async () => {
+  // HANDOFF rule 13: every page of every tale shows drawn pictures and cartoon actors, never a phone emoji
+  // (all 38 tales, every page; the first page again in Vietnamese); the tale shelf too
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const { openTheatre } = await import('/js/tales.js'), S = await import('/js/state.js'), G = __sv, bad = [], RAW = /\p{Extended_Pictographic}/u, OK = new Set(['◀', '▶', '✕', '⏯', '✦']);
+    const rawIn = node => { const out = []; const w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT); let t; while ((t = w.nextNode())) for (const ch of t.data) if (RAW.test(ch) && !OK.has(ch)) out.push(ch); return out; };
+    let pages = 0;
+    for (const lang of ['en', 'vi']) { S.settings.lang = lang;
+      for (const tale of G.TALES) {
+        const done = openTheatre(tale, {}), m = document.querySelector('.theatre');
+        for (let k = 0; k < (lang === 'en' ? tale.pages.length : 1); k++) { // (the pictures are the same in both languages)
+          await new Promise(r => setTimeout(r, 120)); pages++;
+          const where = m.querySelector('.th-stage'), raw = rawIn(where).concat(rawIn(m.querySelector('.th-bar'))), fall = where.querySelectorAll('.emo').length;
+          if (raw.length || fall) bad.push(`${tale.id} p${k + 1}: ${raw.join('')} ${fall ? fall + ' undrawn' : ''}`);
+          if (k < tale.pages.length - 1 && lang === 'en') m.querySelector('.th-next').click();
+        }
+        m.querySelector('.th-x').click(); await Promise.race([done, new Promise(r => setTimeout(r, 1500))]); document.querySelectorAll('.theatre').forEach(x => x.remove());
+      }
+    }
+    // the tale shelf
+    const shelf = document.createElement('div'); shelf.innerHTML = G.taleShelfHTML(G.heroes[0].profile); const shelfRaw = rawIn(shelf).filter(ch => !/[\u{1F1E6}-\u{1F1FF}]/u.test(ch));
+    return { pages, tales: G.TALES.length, bad: bad.slice(0, 15), nbad: bad.length, shelfRaw: shelfRaw.join('') };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.tales >= 38 && !r.nbad && !r.shelfRaw && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.tales} tales, ${r.pages} pages: every picture drawn, no phone emoji (the tale shelf too)`;
+});
+
+await check('emoji', async () => {
+  // every emoji the game uses has a drawing in js/art.js (tools/emoji-audit.mjs)
+  const { execFileSync } = await import('child_process');
+  let out = ''; try { out = execFileSync(process.execPath, ['../tools/emoji-audit.mjs'], { encoding: 'utf8' }); } catch (e) { out = (e.stdout || '') + ''; ok(false, out.split('\n').slice(0, 12).join(' | ')); }
+  return out.trim().split('\n').pop();
+});
+
+await check('arch', async () => {
+  // the import map: groups of files importing each other in a circle may only get fewer (tests/arch.mjs)
+  const { execFileSync } = await import('child_process');
+  let out = ''; try { out = execFileSync(process.execPath, ['arch.mjs'], { encoding: 'utf8' }); } catch (e) { ok(false, (e.stdout || '') + ''); }
+  return out.trim().split('\n')[0];
+});
+
 await check('saves', async () => {
   // progress survives: the main save is wiped (as a browser might do), and the game brings it back by itself
   const P = await open(b, { w: 800, h: 600 }); await clear(P.page);

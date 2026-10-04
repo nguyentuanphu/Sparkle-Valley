@@ -865,7 +865,7 @@ Metrics are from the r37 measurement (§1.1). No module is dead code, so nothing
 
 | Step | What | Done when | Risk |
 |---|---|---|---|
-| **0** | Adopt this document. Add `tests/arch.mjs` (import graph, layer map, cycle count as a ratchet: may only go down) and `js/content/rules.js` (§9.7) with checks reporting rule ids | `arch` passes at baseline (5 cycles); every rule has a validation entry | none |
+| **0** ◐ | Adopt this document. Add `tests/arch.mjs` (import graph, layer map, cycle count as a ratchet: may only go down) and `js/content/rules.js` (§9.7) with checks reporting rule ids | `arch` passes at baseline (round 30: **2 circle groups, 6 files**: fun ↔ regions ↔ snacks ↔ ui, frame ↔ howto; `tests/arch-baseline.json`); every rule has a validation entry. *Done:* `tests/arch.mjs` + check `arch`; `js/validate.js` reports rule ids. *Still to do:* the layer map and the rules registry | none |
 | **1** | **Core:** `js/core/{ids,events,rng,geo}.js`. `G.events = core.events`. The first events (`ActivityStarted/Completed`, `PlayerEnteredVillage`, `LanguageChanged`) are emitted **in addition to** today's calls | unit tests in Node; suite green | low |
 | **2** | **Break the cycles:** snacks → economy; `fun ↔ ui`; `frame ↔ howto` via `HowToRequested`; `regions → ui` | `arch`: 0 cycles | low |
 | **3** | **Content extraction (data only):** move `CITIES`, `ROADS`, `RIVER`, places, `SHRINES`, `TOWERS` from `world.js` into `js/content/*`; `world.js` re-exports them (no behaviour change) | Node can import the world description; suite green | low |

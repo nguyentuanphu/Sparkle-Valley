@@ -40,7 +40,7 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0 } = {}) {
       <div class="th-top"><span class="th-flag">${tale.flag}</span><b class="th-title">${esc(tale.title())}</b><button class="th-x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
       <div class="th-stage"><div class="th-bg"></div><div class="th-actors"></div><div class="th-fx"></div></div>
       <div class="th-text"></div>
-      <div class="th-bar"><button class="th-prev" aria-label="${T('Back', 'Trang trước')}">◀</button><button class="th-hear" aria-label="${T('Hear it again', 'Nghe lại')}">🔊</button><button class="th-auto on" aria-label="${T('Read by itself', 'Tự đọc')}">⏯</button><div class="th-dots"></div><button class="th-next" aria-label="${T('Next', 'Trang sau')}">▶</button></div>`);
+      <div class="th-bar"><button class="th-prev" aria-label="${T('Back', 'Trang trước')}">◀</button><button class="th-hear" aria-label="${T('Hear it again', 'Nghe lại')}">${pic('🔊')}</button><button class="th-auto on" aria-label="${T('Read by itself', 'Tự đọc')}">⏯</button><div class="th-dots"></div><button class="th-next" aria-label="${T('Next', 'Trang sau')}">▶</button></div>`);
     document.body.appendChild(m);
     const stage = m.querySelector('.th-stage'), bg = m.querySelector('.th-bg'), actors = m.querySelector('.th-actors'), fx = m.querySelector('.th-fx'), text = m.querySelector('.th-text'), dots = m.querySelector('.th-dots');
     const draw = async () => {
@@ -61,11 +61,11 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0 } = {}) {
       fx.innerHTML = '';
       if (/🌧|rain|mưa/i.test(pics + en)) for (let i = 0; i < 26; i++) fx.appendChild(el('i', 'th-rain', '')).style.cssText = `left:${(i * 37) % 100}%;animation-delay:${(i % 9) * .13}s`;
       if (st === 'night') for (let i = 0; i < 18; i++) fx.appendChild(el('i', 'th-star', '✦')).style.cssText = `left:${(i * 53) % 100}%;top:${(i * 29) % 45}%;animation-delay:${(i % 5) * .4}s`;
-      if (/✨|magic|thần|fairy|Bụt/i.test(pics + en)) for (let i = 0; i < 10; i++) fx.appendChild(el('i', 'th-spark', '✨')).style.cssText = `left:${10 + (i * 41) % 80}%;top:${10 + (i * 23) % 60}%;animation-delay:${(i % 6) * .3}s`;
+      if (/✨|magic|thần|fairy|Bụt/i.test(pics + en)) for (let i = 0; i < 10; i++) fx.appendChild(el('i', 'th-spark', pic('✨'))).style.cssText = `left:${10 + (i * 41) % 80}%;top:${10 + (i * 23) % 60}%;animation-delay:${(i % 6) * .3}s`;
       text.innerHTML = `<p>${esc(T(en, vi).replace(/\{name\}/g, name))}</p>`;
       dots.innerHTML = tale.pages.map((_, i) => `<i class="${i === k ? 'on' : i < k ? 'done' : ''}"></i>`).join('');
       m.querySelector('.th-prev').disabled = k === 0;
-      m.querySelector('.th-next').textContent = k === tale.pages.length - 1 ? '🏁' : '▶';
+      m.querySelector('.th-next').innerHTML = k === tale.pages.length - 1 ? pic('🏁') : '▶';
       SFX.page ? SFX.page() : SFX.tap();
       await wait(450); if (!alive || my !== token) return;
       // characters stop walking once they are in place, and talk while the page is read
