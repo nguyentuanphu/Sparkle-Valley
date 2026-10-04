@@ -105,7 +105,9 @@ await check('features', async () => {
   r.keyMap = await P.page.evaluate(() => !!document.querySelector('.pad'));
   await P.page.keyboard.press('Digit2'); await P.page.waitForTimeout(300);
   r.keyTab = await P.page.evaluate(() => document.querySelector('.pad-tabs .on')?.dataset.t);
-  await P.page.keyboard.press('Escape'); await P.page.waitForTimeout(900);
+  await P.page.keyboard.press('Escape'); await P.page.waitForTimeout(300);
+  // (the keys only work once the window has gone and the game runs again: wait for that, not a fixed time)
+  await P.page.waitForFunction(() => !document.querySelector('.modal, .storybook, .vc-pop') && !__sv.paused, null, { timeout: 15000 }).catch(() => { });
   const z0 = await P.page.evaluate(() => __sv.heroes[0].zoom || 1); await P.page.keyboard.press('Minus'); r.zoom = (await P.page.evaluate(() => __sv.heroes[0].zoom)) > z0;
   // a fairy tale from the Games hub: fly to the storyteller, the theatre opens
   await clear(P.page); await P.page.evaluate(() => __sv.openGamesHub(0)); await P.page.waitForTimeout(400);
