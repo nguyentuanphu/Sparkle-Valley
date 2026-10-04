@@ -5,8 +5,14 @@
 // checked by js/netmsg.js). If a player leaves, the others are told kindly and the game ends.
 // The transport is passed in, so the same logic runs with the real network (js/net.js) and in tests.
 //   createNetGames({ net, me: () => myId, name: id => name, onAsk, onStart, toast })
+import { GAMES } from './games/registry.js';
+// games made for playing together; every other game is played side by side (a race: js/games/frame.js), and a tale
+// ('tale-<id>') is read together, page by page
 export const ONLINE_GAMES = { caro: { max: 2, all: false }, oantuti: { max: 6, all: true }, memory: { max: 4, all: true }, tienlen: { max: 4, all: true } };
 const newGid = () => Math.random().toString(36).slice(2, 10);
+
+const defOf = game => ONLINE_GAMES[game] || (GAMES[game] ? { max: 6, all: true, race: true } : /^tale-[\w-]{1,40}$/.test(game || '') ? { max: 6, all: true, tale: true } : null);
+export { defOf as onlineDef };
 
 export function createNetGames({ net, me, onAsk, onStart, onEnd, waitMs = 12000 }) {
   const asks = new Map();      // gid → { game, level, yes: Set, no: Set, asked: Set, timer } (I invited)
@@ -15,7 +21,7 @@ export function createNetGames({ net, me, onAsk, onStart, onEnd, waitMs = 12000 
     get session() { return session; },
     // invite one friend (to) or everyone in the room (to omitted) to a game
     invite(game, level, to) {
-      const def = ONLINE_GAMES[game]; if (!def || session) return null;
+      const def = defOf(game); if (!def || session) return null;
       const gid = newGid(), asked = new Set(to ? [to] : net.ids());
       if (!asked.size) return null;
       const a = { gid, game, level, yes: new Set(), no: new Set(), asked };
@@ -37,11 +43,13 @@ export function createNetGames({ net, me, onAsk, onStart, onEnd, waitMs = 12000 
     },
     // everyone's moves for step n (Oẳn tù tì): resolves once every seat still here has moved
     async all(n) { const out = []; for (let s = 0; s < session.seats.length; s++) out[s] = await api.next(n, s); return out; },
+    // every move as it arrives (races and tales): f(seat, n, mv)
+    onMove(f) { if (session) session.listeners.push(f); },
     leave() { if (!session) return; net.send({ t: 'gbye', gid: session.gid }); session = null; },
     // (from the network)
     receive(d) {
-      if (d.t === 'gask') { if (!ONLINE_GAMES[d.game] || session) return api.answer(d, false); onAsk && onAsk(d); return; }
-      if (d.t === 'gyes' || d.t === 'gno') { const a = asks.get(d.gid); if (!a || !a.asked.has(d.from)) return; (d.t === 'gyes' ? a.yes : a.no).add(d.from); if (a.yes.size + a.no.size >= a.asked.size || a.yes.size + 1 >= ONLINE_GAMES[a.game].max) go(d.gid); return; }
+      if (d.t === 'gask') { if (!defOf(d.game) || session) return api.answer(d, false); onAsk && onAsk(d); return; }
+      if (d.t === 'gyes' || d.t === 'gno') { const a = asks.get(d.gid); if (!a || !a.asked.has(d.from)) return; (d.t === 'gyes' ? a.yes : a.no).add(d.from); if (a.yes.size + a.no.size >= a.asked.size || a.yes.size + 1 >= defOf(a.game).max) go(d.gid); return; }
       if (d.t === 'gstart') { if (session || !Array.isArray(d.seats) || !d.seats.includes(me())) return; begin(d.gid, d.game, d.level, d.seats); return; }
       if (!session || d.gid !== session.gid) return;
       const s = session.seats.indexOf(d.from); if (s < 0) return;
@@ -54,17 +62,18 @@ export function createNetGames({ net, me, onAsk, onStart, onEnd, waitMs = 12000 
   function record(s, n, mv) {
     if (!session.moves.has(n)) session.moves.set(n, new Map());
     const m = session.moves.get(n); if (m.has(s)) return; m.set(s, mv);
+    session.listeners.forEach(f => { try { f(s, n, mv); } catch (e) { } });
     session.waiters = session.waiters.filter(w => { if (w.n === n && w.s === s) { w.res(mv); return false; } return true; });
   }
   function go(gid) {
     const a = asks.get(gid); if (!a) return; asks.delete(gid); clearTimeout(a.timer);
     if (!a.yes.size) { onStart && onStart(null, a); return; }
-    const seats = [me(), ...[...a.yes].slice(0, ONLINE_GAMES[a.game].max - 1)];
+    const seats = [me(), ...[...a.yes].slice(0, defOf(a.game).max - 1)];
     for (const id of seats.slice(1)) net.send({ t: 'gstart', to: id, gid, game: a.game, level: a.level, seats });
     begin(gid, a.game, a.level, seats);
   }
   function begin(gid, game, level, seats) {
-    session = { gid, game, level, seats, mine: seats.indexOf(me()), moves: new Map(), waiters: [], gone: new Set() };
+    session = { gid, game, level, seats, mine: seats.indexOf(me()), moves: new Map(), waiters: [], gone: new Set(), listeners: [] };
     onStart && onStart(session);
   }
   return api;

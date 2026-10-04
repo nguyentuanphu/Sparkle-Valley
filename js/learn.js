@@ -88,16 +88,18 @@ export function createLearning(G) {
     G.storyteller = { x: sx, z: sz };
   }
   // read one tale in the theatre, then remember it (three tales give a sticker)
-  const readTale = async (h, t) => {
+  const readTale = async (h, t, sync) => {
     const p = h.profile; p.tales = p.tales || {};
+    // friends in the room: read it together? (round H)
+    if (!sync && G.together && G.together()) { const k = await G.dialog('Bà Năm', [['Shall we read it together with your friends?', 'Mình đọc cùng các bạn nhé?']], [['👫 Together', '👫 Cùng nhau'], ['🙂 Just me', '🙂 Mình con']]); if (k === 0) { G.inviteGame('tale-' + t.id, null, 1); return; } }
     G.paused = true;
-    await openTheatre(t, { name: p.name });
+    await openTheatre(t, { name: p.name, sync });
     const first = !p.tales[t.id]; p.tales[t.id] = true; saveProfiles(); G.paused = false;
     if (first && Object.keys(p.tales).length === 3) { const st = G.giveSticker(p); await G.reward(st || '📚', T('Story lover!', 'Bạn nhỏ mê truyện!'), T('You heard three folk tales.', 'Con đã nghe ba truyện cổ tích.')); }
     if (first && Object.keys(p.tales).length === 10) { const st = G.giveSticker(p); await G.reward(st || '📚', T('Ten tales!', 'Mười truyện rồi!'), T('You are a real story explorer.', 'Con là nhà thám hiểm truyện cổ tích thật sự.')); }
   };
   // from the Games hub (or anywhere): fly to the storyteller grandma, and she starts the tale
-  G.TALES = TALES;
+  G.TALES = TALES; G.readTale = readTale;
   G.readTale = async (i, id) => {
     const h = G.heroes[i], t = TALES.find(x => x.id === id); if (!h || !t) return;
     if (G.storyteller && dist2(h.pos.x, h.pos.z, G.storyteller.x, G.storyteller.z) > 5) await G.landBy(h, G.storyteller.x, G.storyteller.z);

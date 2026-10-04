@@ -81,6 +81,18 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       }
     };
     let streak = 0, rights = 0, misses = 0;
+    // side by side with friends (round H): a game not made for playing together is played by each child on their own
+    // device at the same time; a strip shows everyone's stars as they come in, and a flag for whoever finished first
+    if (online && !def.online) {
+      const bar = el('div', 'race', ''), score = online.names.map(() => 0), done = [];
+      const draw = () => { bar.innerHTML = online.names.map((n, s) => `<span class="${s === online.mine ? 'me' : ''}">${done.includes(s) ? '🏁 ' : ''}<b>${esc(n)}</b> ⭐${score[s]}</span>`).join(''); };
+      layer.querySelector('.gl-head').after(bar); draw();
+      let seq = 0; const send = mv => online.move(seq++, mv);
+      online.onMove && online.onMove((s, n, mv) => { if (s === online.mine) return; if (mv >= 5000) { if (!done.includes(s)) done.push(s); score[s] = mv - 5000; if (done.length === 1 && !closed) mascot('cheer', T(`${online.names[s]} finished!`, `${online.names[s]} xong rồi!`)); } else score[s] = Math.max(score[s], mv); draw(); });
+      const right0 = api.right, win0 = api.win;
+      api.right = e => { right0(e); score[online.mine]++; draw(); send(Math.min(4999, score[online.mine])); };
+      api.win = (extra = {}) => { done.push(online.mine); draw(); send(5000 + Math.min(4999, score[online.mine])); const first = done[0] === online.mine, title = first ? T('You finished first!', 'Con xong đầu tiên!') : T(`You finished! ${online.names[done[0]]} was first.`, `Con xong rồi! ${online.names[done[0]]} xong trước.`); return win0(Object.assign({}, extra, { title, titleVi: title })); };
+    }
     // three right in a row: a combo with extra stars
     function combo(k) {
       const b = el('div', 'gl-combo', `🔥 ${T('Combo', 'Liên tiếp')} ×${k}`); layer.appendChild(b); setTimeout(() => b.remove(), 1100);

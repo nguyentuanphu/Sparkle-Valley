@@ -1786,3 +1786,19 @@ body.calm .rv-img.on { animation: none; }
 .rps-p { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 80px; padding: 8px 10px; border-radius: 16px; background: rgba(255, 255, 255, .85); }
 .rps-p .h { font-size: 44px; line-height: 1.1; } .rps-p b { font-size: 14px; } .rps-p small { font-weight: 800; color: #7a4aa0; }
 .rps-p.me { outline: 3px solid #5fb6ff; } .rps-p.won { background: #e6ffd8; outline: 3px solid #5fd39a; }
+
+/* games with friends: choosing how hard (G.inviteGame) */
+.lvl-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 8px; }
+.lvl-pick .btn { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; }
+.lvl-pick .btn b { font-size: 15px; letter-spacing: -2px; } .lvl-pick .btn small { font-size: 13px; }
+
+/* the real place inside the game (js/realworld.js openStreetView) */
+.modal.rvmap .card { width: min(900px, 96vw); max-height: 92vh; display: flex; flex-direction: column; gap: 8px; }
+.rvm-tabs { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; padding-right: 44px; }
+.rvm-frame { flex: 1; min-height: min(62vh, 520px); border-radius: 14px; overflow: hidden; background: #dfe9f2; display: flex; align-items: center; justify-content: center; }
+.rvm-frame iframe { width: 100%; height: min(62vh, 520px); border: 0; display: block; }
+
+/* side by side with friends (js/games/frame.js race): everyone's stars */
+.gl .race { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 4px 10px; position: relative; z-index: 2; }
+.gl .race span { background: rgba(255, 255, 255, .9); border-radius: 999px; padding: 3px 10px; font-size: 14px; box-shadow: 0 2px 0 rgba(90, 60, 130, .15); }
+.gl .race span.me { outline: 2px solid #5fb6ff; }

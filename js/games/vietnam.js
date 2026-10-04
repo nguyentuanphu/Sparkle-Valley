@@ -122,7 +122,7 @@ register({
 
 // ---------- Cờ caro (tic-tac-toe / four in a row) ----------
 register({
-  id: 'caro', icon: '⭕', name: () => T('Caro (Noughts & Crosses)', 'Cờ Caro'),
+  id: 'caro', online: true, icon: '⭕', name: () => T('Caro (Noughts & Crosses)', 'Cờ Caro'),
   async run(api) {
     const N = api.level <= 1 ? 3 : 6, K = api.level <= 1 ? 3 : 4, P = ['🌸', '🍀'];
     const O = api.online, names = O ? O.names : api.two ? [api.players[0].name, api.players[1].name] : [api.players[0].name, 'Bống'];

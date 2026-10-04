@@ -437,12 +437,12 @@ await check('welcomevoice', async () => {
   await P.page.evaluate(() => { localStorage.removeItem('sv2_voiceMisses'); });
   const said = [];
   await P.page.exposeFunction('__said', t => said.push(t));
-  await P.page.evaluate(async () => { const V = await import('/js/voice.js'); V.spoken.push(t => window.__said(t)); });
+  await P.page.evaluate(async () => { const V = await import('/js/voice.js'), S = await import('/js/state.js'); V.spoken.push(t => window.__said(t)); S.profiles[0].name = 'Kiwi'; S.profiles[0].quests.owl = false; S.saveProfiles(true); }); // (a name no recording can know, like a real child's)
   await (await import('./harness.mjs')).start(P.page);
   const r = await P.page.evaluate(async () => {
     const G = __sv, h = G.heroes[0], V = await import('/js/voice.js'), wait = ms => new Promise(r => setTimeout(r, ms));
     for (let k = 0; k < 40 && !V.voicePack(); k++) await wait(250);
-    h.profile.quests.owl = false; G._owlAuto = false; h.profile.name = 'Kiwi'; // (a name no recording can know, like a real child's)
+    if (!document.querySelector('.dialog:not(.out)')) { h.profile.quests.owl = false; G._owlAuto = false; }
     const owl = G.interactables.find(i => /owl/i.test(i.id || '')); if (owl) { h.place(owl.x, owl.z + 1.5); }
     for (let k = 0; k < 30 && !document.querySelector('.dialog:not(.out)'); k++) await wait(200);
     const d = document.querySelector('.dialog .dtext'), shown = d ? d.textContent : '';
@@ -842,9 +842,11 @@ await check('tienlen', async () => {
     const t0 = performance.now();
     while (performance.now() - t0 < 6000) {
       seen.fly = Math.max(seen.fly, document.querySelectorAll('.tl-fly').length); seen.deck = seen.deck || !!document.querySelector('.tl-deck');
-      seen.handSizes.add(document.querySelectorAll('.tl-hand .tl-card').length); await wait(40);
+      seen.handSizes.add(document.querySelectorAll('.tl-hand .tl-card').length);
+      if (seen.deck && !document.querySelector('.tl-deck') && !seen.after) seen.after = { hand: document.querySelectorAll('.tl-hand .tl-card').length, opp: [...document.querySelectorAll('.tl-opp .n')].map(e => e.textContent.trim()) }; // (the moment dealing ends)
+      await wait(40);
     }
-    const hand = document.querySelectorAll('.tl-hand .tl-card').length, opp = [...document.querySelectorAll('.tl-opp .n')].map(e => e.textContent.trim());
+    const { hand, opp } = seen.after || { hand: 0, opp: [] };
     document.querySelector('.gl .gl-x')?.click(); await wait(300);
     return { fly: seen.fly, deck: seen.deck, steps: seen.handSizes.size, hand, opp };
   });
@@ -870,7 +872,7 @@ await check('netgames', async () => {
   await A.page.waitForFunction(() => Object.keys(__Net.remotes).length > 0, null, { timeout: 30000 });
   for (const P of [A, B]) await P.page.evaluate(() => { document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false; });
   // Caro: A asks from the Friends tab, B says yes
-  await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-caro]').click(); });
+  await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-caro]').click(); await new Promise(r => setTimeout(r, 400)); document.querySelector('.gamelevel [data-lvl="1"]')?.click(); });
   await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); const ask = await B.page.evaluate(() => document.querySelector('.dialog .dtext').textContent); await B.page.evaluate(() => document.querySelector('.dialog .dch').click());
   for (const P of [A, B]) await P.page.waitForSelector('.gl .caro', { timeout: 20000 });
   const tap = async (P, i) => { await P.page.waitForFunction(i => { const c = document.querySelectorAll('.caro-c')[i]; return c && !c.textContent; }, i); await P.page.evaluate(i => document.querySelectorAll('.caro-c')[i].click(), i); };
@@ -880,7 +882,7 @@ await check('netgames', async () => {
   const caro = { a: await A.page.evaluate(() => document.querySelector('.gl-win p').textContent), b: await B.page.evaluate(() => document.querySelector('.gl-win p').textContent), wonCells: await B.page.evaluate(() => document.querySelectorAll('.caro-c.win').length) };
   for (const P of [A, B]) { await P.page.evaluate(() => document.querySelector('.gl-tapout')?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))); await P.page.waitForTimeout(800); await P.page.evaluate(() => { document.querySelectorAll('.gl, .modal').forEach(m => m.remove()); __sv.paused = false; }); }
   // Oẳn tù tì with everyone: A rock, B scissors, three times
-  await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-rpsall]').click(); });
+  await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-rpsall]').click(); await new Promise(r => setTimeout(r, 400)); document.querySelector('.gamelevel [data-lvl="1"]')?.click(); });
   await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); await B.page.evaluate(() => document.querySelector('.dialog .dch').click());
   for (const P of [A, B]) await P.page.waitForSelector('.gl .rps-room', { timeout: 20000 });
   let hands = null;

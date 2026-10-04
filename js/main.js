@@ -13,7 +13,8 @@ import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
 import { pads, initInput } from './input.js';
 import { Net, MAX_ROOM } from './net.js';
-import { showTitle, showWho, dialog, dialogHooks, reward, openPad, openCooking, openShop, toast } from './ui.js';
+import { showTitle, showWho, dialog, dialogHooks, reward, openPad, openCooking, openShop, toast, modal } from './ui.js';
+import { pic } from './art.js';
 import { openChat, personaByName, PERSONAS } from './chat.js';
 import { voiceCommand, voiceControlOn } from './commands.js';
 import { ITEMS, RECIPES, GATHER, STICKERS, QUESTS, dishInfo } from './data.js';
@@ -57,6 +58,7 @@ import { createMyHouse } from './myhouse.js';
 import { createReport, addMinute } from './report.js';
 import { createCoop } from './coop.js';
 import { createTwinChests } from './twinchests.js';
+import { createClaims } from './claims.js';
 import { createNetGames, ONLINE_GAMES } from './netgames.js';
 import { id as makeId } from './core/ids.js';
 import { createCities } from './cities.js';
@@ -218,7 +220,7 @@ function setupInteractables() {
     const y = Math.max(heightAt(x, z), WATER) + .7, s = sprite(ITEMS[item].icon, 1.1); s.position.set(x, y, z); scene.add(s);
     const st = G.gatherState[k] = { s, ready: 0 };
     world.updaters.push((dt, t) => { s.visible = performance.now() > st.ready; s.position.y = y + Math.sin(t * 2 + k) * .12; });
-    G.interactables.push({ id: 'g' + k, x, z, r: 2.4, icon: ITEMS[item].icon, label: () => T('Pick up ', 'Nhặt ') + ITEMS[item].name(), visible: () => performance.now() > st.ready,
+    G.interactables.push({ st, id: 'g' + k, x, z, r: 2.4, icon: ITEMS[item].icon, label: () => T('Pick up ', 'Nhặt ') + ITEMS[item].name(), visible: () => performance.now() > st.ready,
       act: h => { st.ready = performance.now() + 120000; give(h, item, 1); } });
   });
 }
@@ -339,6 +341,8 @@ G.mount = (h, b) => { h.mount(b); h.profile.quests.buffalo = true; save(); say('
 async function playGame(i, id, source, shrine) {
   const h = G.heroes[i]; if (!h || gameOpen()) return;
   G.paused = true; hush();
+  // friends in the room: play it together? (round H: every game can be played together)
+  if (G.together() && source !== 'online' && !shrine) { G.paused = false; const k = await dialog(T('Play together?', 'Chơi cùng nhau?'), [['Your friends are here. Play this game together?', 'Các bạn đang ở đây. Chơi trò này cùng nhau nhé?']], [['👫 Together', '👫 Cùng nhau'], ['🙂 Just me', '🙂 Mình con']]); if (k === 0) { G.inviteGame(id); return; } G.paused = true; }
   countPlay('game', id); // anonymous: how often each game is played (js/players.js)
   const players = G.heroes.map(x => x.profile); if (G.heroes.length > 1 && i === 1) players.reverse();
   // Level = how far this child has got in this game, shifted by the chosen difficulty.
@@ -804,22 +808,44 @@ const remoteName = id => (Net.remotes[id] && Net.remotes[id].name) || T('Your fr
 G.netGames = createNetGames({
   net: { ids: () => Object.keys(Net.remotes), send: d => Net.send(d) }, me: () => Net.me,
   onAsk: d => { // "Mít wants to play Caro with you!"
-    const h = G.heroes[0], gname = (GAMES[d.game] && GAMES[d.game].name()) || d.game; SFX.chime();
+    const h = G.heroes[0], tale = /^tale-/.test(d.game) && (G.TALES || []).find(x => 'tale-' + x.id === d.game), gname = tale ? T('the story “' + tale.title() + '”', 'truyện “' + tale.title() + '”') : (GAMES[d.game] && GAMES[d.game].name()) || d.game; SFX.chime();
     say('A friend wants to play a game with you!', 'Một bạn muốn chơi trò chơi với con!');
-    dialog(remoteName(d.from), [[`🎲 ${remoteName(d.from)} wants to play ${gname} with you!`, `🎲 ${remoteName(d.from)} muốn chơi ${gname} với con!`, 'Your friend wants to play a game with you!', 'Bạn của con muốn chơi một trò với con!']], [['▶ Play', '▶ Chơi'], ['Not now', 'Để sau']])
+    const stars = '⭐'.repeat(d.level || 1);
+    dialog(remoteName(d.from), [[`🎲 ${remoteName(d.from)} wants to play ${gname} with you! (${stars})`, `🎲 ${remoteName(d.from)} muốn chơi ${gname} với con! (${stars})`, 'Your friend wants to play a game with you!', 'Bạn của con muốn chơi một trò với con!']], [['▶ Play', '▶ Chơi'], ['Not now', 'Để sau']])
       .then(k => G.netGames.answer(d, k === 0 && !gameOpen() && !!h));
   },
   onStart: (s, ask) => {
     if (!s) { toast(T('Nobody could play just now. Try again later!', 'Lúc này chưa bạn nào chơi được. Lát nữa thử lại nhé!')); return; }
     const names = s.seats.map(id => id === Net.me ? G.heroes[0].profile.name : remoteName(id));
-    const online = { mine: s.mine, names, seed: s.gid, move: (n, mv) => G.netGames.move(n, mv), next: (n, seat) => G.netGames.next(n, seat), all: n => G.netGames.all(n) };
+    const online = { mine: s.mine, names, seed: s.gid, onMove: f => G.netGames.onMove(f), move: (n, mv) => G.netGames.move(n, mv), next: (n, seat) => G.netGames.next(n, seat), all: n => G.netGames.all(n) };
+    if (/^tale-/.test(s.game)) { // a tale read together: page turns travel as moves
+      const t = (G.TALES || []).find(x => 'tale-' + x.id === s.game); if (!t || !G.readTale) { G.netGames.leave(); return; }
+      let seq = 0; const sync = { send: p => online.move(seq++, p), listen: fn => online.onMove((seat, n, mv) => { if (seat !== s.mine) fn(mv); }) };
+      G.readTale(G.heroes[0], t, sync).finally(() => G.netGames.leave()); return;
+    }
     G.playGameOnline(s.game, s.level || 1, online).finally(() => G.netGames.leave());
   },
   onEnd: id => toast(T(`${remoteName(id)} left the game.`, `${remoteName(id)} đã rời trò chơi.`))
 });
 for (const k of ['gask', 'gyes', 'gno', 'gstart', 'gmove', 'gbye']) Net.on(k, d => G.netGames.receive(d));
+// first come, first served pickups when playing together (js/claims.js)
+G.claims = createClaims(G, { net: { connected: () => Net.connected, send: d => Net.send(d), name: id => remoteName(id) }, toast: (h, m) => hudFor(h).toast(m), say, T });
+Net.on('claim', d => G.claims.receive(d));
 // invite: one friend to a two-player game, or everyone in the room to a party game
-G.inviteGame = (game, to) => { const p = G.heroes[0].profile, lvl = Math.max(1, Math.min(5, (p.levels[game] || 1))); const gid = G.netGames.invite(game, lvl, ONLINE_GAMES[game].all ? undefined : to); if (gid) toast(T('Invitation sent! Waiting for an answer…', 'Đã gửi lời mời! Đang chờ trả lời…')); return gid; };
+// (owner, round G: in games with friends the players choose how hard it is: the one who invites picks 1 to 5)
+G.together = () => Net.connected && Object.keys(Net.remotes).length > 0 && !G.netGames.session;
+G.inviteGame = (game, to, level) => {
+  const p = G.heroes[0].profile;
+  if (level == null) return new Promise(res => {
+    const m = modal('gamelevel', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>${pic(GAMES[game] ? GAMES[game].icon : '🎲')} ${esc(GAMES[game] ? GAMES[game].name() : game)}</h2>
+      <p class="note center">${T('How hard? Everyone plays at this level.', 'Khó cỡ nào? Mọi người chơi cùng một cấp.')}</p>
+      <div class="lvl-pick">${[1, 2, 3, 4, 5].map(l => `<button class="btn ${l === Math.min(5, p.levels[game] || 1) ? 'primary' : ''}" data-lvl="${l}"><b>${'⭐'.repeat(l)}</b><small>${[T('Very easy', 'Rất dễ'), T('Easy', 'Dễ'), T('Medium', 'Vừa'), T('Hard', 'Khó'), T('Very hard', 'Rất khó')][l - 1]}</small></button>`).join('')}</div>`);
+    m.querySelector('.x').onclick = () => { m.close(); res(null); };
+    m.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { SFX.tap(); m.close(); res(G.inviteGame(game, to, +b.dataset.lvl)); });
+  });
+  const gid = G.netGames.invite(game, Math.max(1, Math.min(5, level)), ONLINE_GAMES[game].all ? undefined : to);
+  if (gid) toast(T('Invitation sent! Waiting for an answer…', 'Đã gửi lời mời! Đang chờ trả lời…')); return gid;
+};
 G.playGameOnline = async (id, level, online) => {
   if (gameOpen()) return; G.paused = true; hush();
   const p = G.heroes[0].profile, little = p.age !== 'big';
@@ -846,6 +872,7 @@ Net.on('meet', d => {
     .then(k => { const h = G.heroes[0]; if (k === 0) G.walkToFriend(h, P.id); if (k === 1) G.flyToFriend(h, P.id); if (k === 2) Net.send({ t: 'emote', id: 'wait' }); });
 });
 G.flyToFriend = (h, id) => { const P = G.partners[id]; if (!P || P.pos.y < -40) return; G.travel(h, P.pos.x - 4.5 + 1.5, P.pos.z - 1 + 1.5); setTimeout(() => { bubble(h, '👋 ' + T('Hi!', 'Chào!')); Net.send({ t: 'emote', id: 'hi' }); }, 900); };
+G.followFriend = (i, id) => { const h = G.heroes[i]; if (!h) return; if (h.followId === id) { h.followId = null; h.goal = null; hudFor(h).toast('👣 ' + T('Stopped following.', 'Ngừng đi theo.')); return; } h.followId = id; const nm2 = remoteName(id); hudFor(h).toast('🚶 ' + T(`Following ${nm2}. Move the joystick to stop.`, `Đang đi theo ${nm2}. Đẩy cần điều khiển để dừng.`)); say('Follow your friend!', 'Đi theo bạn nào!'); };
 G.walkToFriend = (h, id) => { const P = G.partners[id]; if (!P || P.pos.y < -40) return; h.walkTo = { friend: id, x: P.pos.x, z: P.pos.z, name: P.name }; say('Follow the footprints to your friend!', 'Đi theo dấu chân đến chỗ bạn nhé!'); };
 G.askFriendToCome = (h, id) => { const P = G.partners[id]; if (!P) return; Net.send({ t: 'meet', to: id }); bubble(h, '📣 ' + T('Come here!', 'Lại đây nè!')); hudFor(h).toast('📣 ' + T(`Asked ${P.name} to come to you`, `Đã gọi ${P.name} đến chỗ con`)); };
 // where are my friends? a little card with each friend's distance and direction, and ways to meet
@@ -984,7 +1011,7 @@ G.drawOnlinePanel = (body, redraw) => {
       ${Net.role === 'host' && Net.knocks.size ? `<div class="ocard knocks"><h3>🚪 ${T('At the door', 'Đang gõ cửa')}</h3>${[...Net.knocks.values()].map(k => `<div class="prow"><img src="${avatarURL({ photo: k.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, k.look) })}" alt=""><div class="pw"><b>${esc(nm(k.name || T('Someone', 'Một bạn')))}</b></div><button class="btn primary" data-admit="${esc(k.id)}">✅ ${T('Let in', 'Cho vào')}</button><button class="btn" data-deny="${esc(k.id)}">❌</button></div>`).join('')}</div>` : ''}
       ${(n => `<p class="note center netline">📶 ${T('This device', 'Máy này')}: ${n.online ? (n.type ? esc(n.type) + ' · ' : '') + (n.eff ? esc(n.eff.toUpperCase()) + ' · ' : '') + (n.down ? n.down + ' Mbps · ' : '') : T('no internet!', 'mất mạng!') + ' · '}${n.cloud ? T(`cloud relay on (${n.brokers} server${n.brokers === 1 ? '' : 's'})`, `đang dùng mạng đám mây (${n.brokers} máy chủ)`) : T('direct link', 'kết nối trực tiếp')}${n.voice ? ' · 🎙️ ' + T('voice on', 'đang gọi') : n.cloud ? ' · ' + T('voice needs a direct link', 'gọi giọng cần kết nối trực tiếp') : ''}</p>`)(Net.netInfo())}
       <div class="plist">${list.map(r => `<div class="prow roomp"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(nm(r.name))}</b>${(q => q ? `<small class="pq">${G.barsHTML(q.bars)} ${q.rtt != null ? q.rtt + ' ms' : '…'} · ${routeName(q.route)}${q.weak ? ' · ' + T('weak', 'yếu') : ''}</small>` : '')(Net.quality(r.id))}</div>
-        <div class="rp-btns"><button class="btn" data-walkf="${esc(r.id)}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${esc(r.id)}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${esc(r.id)}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${esc(r.id)}">🔄 ${T('Trade', 'Đổi đồ')}</button><button class="btn" data-caro="${esc(r.id)}">⭕ ${T('Caro', 'Caro')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${esc(r.id)}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${esc(r.friend)}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div></div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
+        <div class="rp-btns"><button class="btn" data-walkf="${esc(r.id)}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${esc(r.id)}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${esc(r.id)}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${esc(r.id)}">🔄 ${T('Trade', 'Đổi đồ')}</button><button class="btn" data-caro="${esc(r.id)}">⭕ ${T('Caro', 'Caro')}</button><button class="btn ${G.heroes[0] && G.heroes[0].followId === r.id ? 'primary' : ''}" data-follow="${esc(r.id)}">🚶 ${G.heroes[0] && G.heroes[0].followId === r.id ? T('Stop following', 'Thôi đi theo') : T('Follow', 'Đi theo')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${esc(r.id)}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${esc(r.friend)}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div></div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
       ${list.length ? `<div class="actions center"><button class="btn" data-rpsall>✌️ ${T('Oẳn tù tì with everyone', 'Oẳn tù tì cả phòng')}</button><button class="btn" data-allg="memory">🃏 ${T('Memory Match together', 'Lật hình cùng nhau')}</button><button class="btn" data-allg="tienlen">🎴 ${T('Tiến Lên together', 'Tiến Lên cùng nhau')}</button></div>` : ''}
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
       <div class="actions center"><button class="btn big" id="oMute">${Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
@@ -1000,6 +1027,7 @@ G.drawOnlinePanel = (body, redraw) => {
     body.querySelectorAll('[data-kick]').forEach(b => b.onclick = () => { if (confirm(T('Remove this player from the room?', 'Mời bạn này ra khỏi phòng?'))) { Net.kick(b.dataset.kick); setTimeout(redraw, 600); } });
     body.querySelectorAll('[data-tr]').forEach(b => b.onclick = () => { $('.modal.pad')?.remove(); G.paused = false; openTrade(G, G.heroes[0], b.dataset.tr); });
     // games with friends (round G): Caro with one friend, Oẳn tù tì with everyone in the room
+    body.querySelectorAll('[data-follow]').forEach(b => b.onclick = () => { SFX.tap(); G.followFriend(0, b.dataset.follow); $('.modal.pad')?.remove(); G.paused = false; });
     body.querySelectorAll('[data-caro]').forEach(b => b.onclick = () => { SFX.tap(); G.inviteGame('caro', b.dataset.caro); });
     { const r = body.querySelector('[data-rpsall]'); if (r) r.onclick = () => { SFX.tap(); G.inviteGame('oantuti'); }; }
     body.querySelectorAll('[data-allg]').forEach(b => b.onclick = () => { SFX.tap(); G.inviteGame(b.dataset.allg); });
@@ -1184,6 +1212,13 @@ function frame(now) {
   if (!G.paused && !gameOpen()) {
     G.heroes.forEach((h, i) => {
       if (pads[i].menu()) { G.openPad(i); return; }
+      // following a friend (owner, round G): walk behind them by yourself; touching the joystick stops it
+      if (h.followId) {
+        const P = G.partners[h.followId], pd = pads[i];
+        if (!P || P.pos.y < -40) { h.followId = null; hudFor(h).toast('👣 ' + T('Your friend left: stopped following.', 'Bạn đã đi: ngừng đi theo.')); }
+        else if (pd.mx || pd.mz) { h.followId = null; h.goal = null; hudFor(h).toast('👣 ' + T('Stopped following.', 'Ngừng đi theo.')); }
+        else { const dx = P.pos.x - h.pos.x, dz = P.pos.z - h.pos.z, d = Math.hypot(dx, dz); if (d > 3.2) { h.goal = { x: P.pos.x - dx / d * 2.2, z: P.pos.z - dz / d * 2.2 }; h.goalT = 0; if (d > 40 && !(h._followHop > performance.now())) { h._followHop = performance.now() + 5000; G.travel(h, P.pos.x - dx / d * 3, P.pos.z - dz / d * 3); } } else if (h.goal) h.goal = null; }
+      }
       h.update(dt, pads[i], t, G);
       if (!h.profile.quests.owl && !G._owlAuto && dist2(h.pos.x, h.pos.z, owl.x, owl.z) < 6) { G._owlAuto = true; owlTalk(h); }
       if (h.goalAct && !h.goal) { const it = h.goalAct; h.goalAct = null; if (dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r + .8) { SFX.tap(); it.act(h, G); } }
@@ -1370,6 +1405,7 @@ startCounting(); // how many children play, anonymously (js/players.js; Grown-up
 G.openTrade = (i, id) => { if (G.paused) return; openTrade(G, G.heroes[i], id); };
 G.secrets = createSecrets(G);
 ensureJobs();
+G.claims.wrap(); // (after every pickup exists: first come, first served online)
 setupBubbles(); setupAreaSigns(); setupGuides();
 $('#songBtn').onclick = () => G.places.nextSong();
 resize();

@@ -204,7 +204,7 @@ register({
 
 // ---------- Memory pairs (co-op: two players take turns and share the score) ----------
 register({
-  id: 'memory', icon: '🃏', name: () => T('Memory Match', 'Lật Hình Ghi Nhớ'),
+  id: 'memory', online: true, icon: '🃏', name: () => T('Memory Match', 'Lật Hình Ghi Nhớ'),
   async run(api) {
     if (api.online) return memoryOnline(api);
     const pairs = [3, 4, 6, 6, 8][Math.min(4, api.level - 1)];

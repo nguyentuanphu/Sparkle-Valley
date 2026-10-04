@@ -32,7 +32,9 @@ const STAGES = [
 ];
 export const stageOf = en => (STAGES.find(([re]) => re.test(en)) || [0, 'meadow'])[1];
 
-export function openTheatre(tale, { name = '', onDone, startPage = 0 } = {}) {
+// sync (round H, reading together online): { send(page), listen(fn) } — a page turned here turns for every friend reading
+export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = null } = {}) {
+  let fromFriend = false;
   return new Promise(resolve => {
     let k = startPage, auto = true, alive = true, token = 0;
     const prev = Music.key; Music.play('none');
@@ -64,6 +66,7 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0 } = {}) {
       if (/✨|magic|thần|fairy|Bụt/i.test(pics + en)) for (let i = 0; i < 10; i++) fx.appendChild(el('i', 'th-spark', pic('✨'))).style.cssText = `left:${10 + (i * 41) % 80}%;top:${10 + (i * 23) % 60}%;animation-delay:${(i % 6) * .3}s`;
       text.innerHTML = `<p>${esc(T(en, vi).replace(/\{name\}/g, name))}</p>`;
       dots.innerHTML = tale.pages.map((_, i) => `<i class="${i === k ? 'on' : i < k ? 'done' : ''}"></i>`).join('');
+      if (sync && !fromFriend) sync.send(k);
       m.querySelector('.th-prev').disabled = k === 0;
       m.querySelector('.th-next').innerHTML = k === tale.pages.length - 1 ? pic('🏁') : '▶';
       SFX.page ? SFX.page() : SFX.tap();
@@ -79,6 +82,8 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0 } = {}) {
     };
     const finish = done => { if (!alive) return; alive = false; hush(); m.classList.add('out'); setTimeout(() => m.remove(), 300); Music.play(prev || 'field'); resolve(done); onDone && onDone(done); };
     const next = () => { if (k < tale.pages.length - 1) { k++; draw(); } else { SFX.chime && SFX.chime(); finish(true); } };
+    // a friend turned the page
+    if (sync) sync.listen(p => { if (!alive || p === k || p < 0 || p >= tale.pages.length) return; fromFriend = true; k = p; draw(); fromFriend = false; });
     m.querySelector('.th-next').onclick = () => { SFX.tap(); next(); };
     m.querySelector('.th-prev').onclick = () => { if (k > 0) { SFX.tap(); k--; draw(); } };
     m.querySelector('.th-hear').onclick = () => { const [, en, vi] = tale.pages[k]; token++; sayAsync(en, vi); };

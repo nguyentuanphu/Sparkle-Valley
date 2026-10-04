@@ -49,12 +49,14 @@ export const SCHEMA = {
   tradeNo: { fields: { id: word(32) }, need: ['id'], size: 600, per: 4, sec: 5 },
   tradeDone: { fields: { id: word(32), ok: bool }, need: ['id'], size: 600, per: 4, sec: 5 },
   // games with friends (js/netgames.js): an invitation, yes / no, the start with everyone's seat, moves, leaving
-  gask: { fields: { gid: word(12), game: word(16), level: int(1, 5) }, need: ['gid', 'game'], size: 600, per: 3, sec: 10 },
+  gask: { fields: { gid: word(12), game: word(48), level: int(1, 5) }, need: ['gid', 'game'], size: 600, per: 3, sec: 10 },
   gyes: { fields: { gid: word(12) }, need: ['gid'], size: 600, per: 4, sec: 5 },
   gno: { fields: { gid: word(12) }, need: ['gid'], size: 600, per: 4, sec: 5 },
-  gstart: { fields: { gid: word(12), game: word(16), level: int(1, 5), seats }, need: ['gid', 'game', 'seats'], size: 1200, per: 3, sec: 10 },
+  gstart: { fields: { gid: word(12), game: word(48), level: int(1, 5), seats }, need: ['gid', 'game', 'seats'], size: 1200, per: 3, sec: 10 },
   gmove: { fields: { gid: word(12), n: int(0, 9999), mv: int(0, 9999) }, need: ['gid', 'n', 'mv'], size: 600, per: 12, sec: 2 },
-  gbye: { fields: { gid: word(12) }, need: ['gid'], size: 600, per: 4, sec: 5 }
+  gbye: { fields: { gid: word(12) }, need: ['gid'], size: 600, per: 4, sec: 5 },
+  // a pickup taken (fruit, flowers, gems, things on the ground): first come, first served (js/claims.js)
+  claim: { fields: { id: word(16), ms: int(0, 600000) }, need: ['id', 'ms'], size: 600, per: 10, sec: 5 }
 };
 // fields every message may carry (the transport's own)
 /** @type {Record<string, Field>} */

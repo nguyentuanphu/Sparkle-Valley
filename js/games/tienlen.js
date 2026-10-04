@@ -79,7 +79,7 @@ export function choose(hand, table, { strong = false, others = 13 } = {}) {
 }
 
 register({
-  id: 'tienlen', icon: '🎴', origin: 'vn', name: () => T('Tiến Lên (cards)', 'Tiến Lên miền Nam'),
+  id: 'tienlen', online: true, icon: '🎴', origin: 'vn', name: () => T('Tiến Lên (cards)', 'Tiến Lên miền Nam'),
   async run(api) {
     if (api.online) return tienlenOnline(api);
     const little = api.little, strong = api.strong;

@@ -78,7 +78,7 @@ register({
 // ---------- Oẳn Tù Tì (rock, paper, scissors) ----------
 const RPS = [['✊', 'Rock', 'Búa'], ['✋', 'Paper', 'Bao'], ['✌️', 'Scissors', 'Kéo']]; // búa > kéo, kéo > bao, bao > búa
 register({
-  id: 'oantuti', icon: '✌️', origin: 'vn', name: () => T('Oẳn Tù Tì', 'Oẳn Tù Tì'),
+  id: 'oantuti', online: true, icon: '✌️', origin: 'vn', name: () => T('Oẳn Tù Tì', 'Oẳn Tù Tì'),
   async run(api) {
     if (api.online) return rpsOnline(api);
     const need = api.little ? 2 : 3; let wins = 0, round = 0;
