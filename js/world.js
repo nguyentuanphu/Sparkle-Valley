@@ -84,7 +84,7 @@ export const ROADS = [
   { kind: 'dirt', pts: [[110, -3], [111, -12]] },                              // Lotus Village to the rice fields
   { kind: 'dirt', pts: [[64, -114], [67, -98], [76, -88], [84, -86]] },                 // Bắc Ninh to China Town
   { kind: 'dirt', pts: [[-146, -12], [-150, 15], [-148, 40], [-144, 53]] },    // Aussie Corner to Melbourne
-  { kind: 'dirt', pts: [[-112, -40], [-100, -44], [-104, -50.7]] },                          // Aussie Corner to the India road
+  { kind: 'dirt', pts: [[-112, -36], [-104, -36], [-104, -50.7]] }, // Aussie Corner to the India road, straight down into it (R5)
   { kind: 'dirt', pts: [[-8, 97], [0, 106], [4, 110]] },                       // Hồ Chí Minh City to Mirror Lake
   { kind: 'dirt', pts: [[-12, 128], [-4, 130], [6, 140]] },                    // the farm to Mirror Lake
   { kind: 'dirt', pts: [[-56, 128], [-80, 132], [-104, 134], [-116, 134]] },   // the farm to the western woods
