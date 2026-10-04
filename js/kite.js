@@ -4,7 +4,7 @@
 // Backpack. Tap the kite button there to make it whistle.
 import { THREE, toonVC, P, merge } from './gfx.js';
 import { tone } from './audio.js';
-import { settings } from './state.js';
+import { settings, reduceMotion } from './state.js';
 
 function kiteModel() {
   const parts = [];
@@ -28,7 +28,7 @@ function kiteModel() {
 // the flute's voice: a soft, breathy hum that rises and falls with the wind
 export function kiteWhistle(strength = 1) {
   if (!settings.sound) return;
-  const base = 560 + Math.random() * 80, d = 1.4 + strength * .6, v = .045 * (settings.calm ? .5 : 1);
+  const base = 560 + Math.random() * 80, d = 1.4 + strength * .6, v = .045 * (reduceMotion() ? .5 : 1);
   tone(base, d, { to: base * 1.12, vib: 9, vibRate: 3.5, vol: v, attack: .35 });
   tone(base * 2, d * .9, { to: base * 2.2, vib: 14, vibRate: 3.5, vol: v * .35, attack: .4 });
   tone(base * 1.5, d * .7, { at: .3, to: base * 1.45, vib: 8, vibRate: 4, vol: v * .25, attack: .3 });

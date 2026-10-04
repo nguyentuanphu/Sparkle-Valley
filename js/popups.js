@@ -5,14 +5,14 @@
 import { T, nm } from './i18n.js';
 import { say, setSpeaker } from './voice.js';
 import { SFX } from './audio.js';
-import { settings } from './state.js';
+import { settings, reduceMotion } from './state.js';
 import { labelArt } from './art.js';
 import { el, esc, pick } from './util.js';
 
 // ---------- confetti ----------
 const COLORS = ['#ff4f9a', '#ffd23f', '#3cc7e8', '#5fd36a', '#ff9f43', '#a66bff'];
 export function confetti(rect, n = 60) {
-  if (settings.calm) n = 16;
+  if (reduceMotion()) n = 16;
   const r = rect || { x: 0, y: 0, w: innerWidth, h: innerHeight };
   const box = el('div', 'confetti'); Object.assign(box.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
   for (let i = 0; i < n; i++) {

@@ -947,7 +947,7 @@ button { color: var(--text); }
 
 /* ---------- text never spills, in either language ---------- */
 @media (max-width: 560px) {
-  .pad-tabs button { min-width: 0; padding: 6px 1px; }
+  .pad-tabs button { min-width: 44px; padding: 6px 1px; }
   .pad-tabs button span { font-size: 22px; }
   .pad-tabs button small { font-size: 10.5px; max-width: 100%; white-space: normal; line-height: 1.05; text-align: center; overflow-wrap: anywhere; }
 }
@@ -1064,7 +1064,7 @@ body.calm .reward .rbig { animation-duration: 1.6s; }
 .sc-cap { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 16px); transform: translateX(-50%); z-index: 35; max-width: calc(100% - 32px); padding: 10px 22px; border-radius: 999px; background: rgba(255,255,255,.94); font: 700 clamp(18px, 4.6vw, 26px) Fredoka, "Baloo 2", sans-serif; color: #4a2a5a; text-align: center; animation: fadein .4s; }
 body.showcasing #huds { visibility: hidden; }
 /* captions for everything that is said */
-.caption { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 112px); transform: translateX(-50%) translateY(10px); z-index: 29; max-width: min(640px, calc(100% - 32px)); padding: 8px 16px; border-radius: 16px; background: rgba(20, 16, 40, .82); color: #fff; font: 600 clamp(15px, 3.8vw, 19px)/1.35 Fredoka, "Baloo 2", sans-serif; text-align: center; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; }
+.caption { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 112px); transform: translateX(-50%) translateY(10px); z-index: 29; max-width: min(640px, calc(100% - 32px)); padding: 8px 16px; border-radius: 16px; background: rgba(20, 16, 40, .82); color: #fff; font: 600 clamp(16px, 3.8vw, 19px)/1.35 Fredoka, "Baloo 2", sans-serif; text-align: center; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; }
 .caption.show { opacity: 1; transform: translateX(-50%); }
 body.bigtext .caption { font-size: clamp(18px, 4.6vw, 23px); }
 /* the biggest text size */
@@ -1847,3 +1847,8 @@ body.calm .sp-stop.next .sp-pic { animation: none; }
 .sp-grown .ring { position: absolute; inset: -5px; width: auto; height: auto; z-index: -1; }
 .sp-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sp-name { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; max-width: 168px; }
+
+/* touch targets (round I, rule UI-004): every button a child taps is at least 44 × 44 px */
+.hud .q-say, .hud .q-go, .hgo, .hhow { min-width: 44px; min-height: 44px; }
+.pad-tabs button, .seg button, .btn { min-height: 44px; }
+.jumpnav button { min-height: 44px; }

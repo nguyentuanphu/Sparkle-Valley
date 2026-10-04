@@ -707,7 +707,12 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | UI-001 | Every player-facing text is bilingual (`T()` / `[en,vi]`) | BLOCKER | check `language` |
 | UI-002 | No phone emoji on screen: pictures go through `pic()`/`labelArt()`/`sprite()` | MAJOR | grep/audit tool [IMPR] |
 | UI-003 | Close/Save/Next always fully on screen at 320–390 px; no sideways scroll | BLOCKER | check `phone`, `spill` |
-| UI-004 | Main touch targets ≥ 56 px | MAJOR | check [IMPR] |
+| UI-004 | Touch targets: every button a child taps is at least 44 × 44 px; under-5 answers and the Simple screen's pictures and bar at least 64 px; sizes are the same on every screen (round I) | MAJOR | check `a11y` |
+| A11Y-001 | Reduced motion: Calm mode, or the device's own "Reduce motion" setting, stops every animation that repeats for ever and cuts confetti and fireworks; nothing flashes | MAJOR | check `a11y` |
+| A11Y-002 | Readable captions: every spoken line is shown as words (also with the voice off), at least 16 px, contrast at least 4.5 : 1, on screen long enough to read (≥ 2.5 s) | MAJOR | check `a11y` |
+| A11Y-003 | Simple paths: on the Simple screen any game or story is one tap away, and the child is brought back to it afterwards; every screen has a picture way back (✕ or a bar button), no reading needed | MAJOR | check `simple` |
+| A11Y-004 | Voice instructions: for under-5s every game says what to do when it opens (🔁 says it again), and the Simple screen says what each picture is (names in the recorded pack) | MAJOR | check `a11y` |
+| A11Y-005 | Age modes keep the normal screen as it is: they change sizes, hints, voice and the start screen only (the valley's layout is the `contract` check) | MAJOR | check `contract`, `simple` |
 | STR-001 | Player-facing strings are `Text`, never bare strings | MAJOR | review + `language` |
 | VOICE-001 | Recorded (downloaded) voices always first on every device; the device voice only for a line with no recording | BLOCKER | check `voice` |
 | VOICE-002 | Every new spoken line goes into the pack in the same round; misses reach the Studio inbox | MAJOR | process + Studio Voices count |

@@ -29,7 +29,7 @@ export async function start(page, mode = 'solo', screen = 'valley') {
   await page.waitForSelector('.screen.who');
   if (mode !== 'solo') await page.click(`.modes button[data-m=${mode}]`);
   await page.locator('.pick[data-id]').nth(0).click(); if (mode === 'split') await page.locator('.pick[data-id]').nth(1).click();
-  await page.evaluate(async scr => { const S = await import('/js/state.js'); S.profiles.forEach(p => { p.screen = scr; }); }, screen);
+  if (screen) await page.evaluate(async scr => { const S = await import('/js/state.js'); S.profiles.forEach(p => { p.screen = scr; }); }, screen);
   await page.click('.who .go');
   await page.waitForFunction(() => window.__sv && window.__sv.heroes.length > 0);
   // skip the prologue

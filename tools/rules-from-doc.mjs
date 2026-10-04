@@ -13,7 +13,7 @@ export function rulesFromDoc(md) {
     if (!line.startsWith('|')) { head = null; continue; }
     const cells = line.split('|').slice(1, -1).map(c => c.trim());
     if (cells[0] === 'Id') { head = cells.map(c => c.toLowerCase()); continue; }
-    if (!head || !/^[A-Z]+-\d{3}$/.test(cells[0])) continue;
+    if (!head || !/^[A-Z][A-Z0-9]*-\d{3}$/.test(cells[0])) continue;
     const col = name => { const i = head.findIndex(h => h.startsWith(name)); return i >= 0 ? cells[i] : ''; };
     const plain = s => s.replace(/\*\*/g, '').replace(/`/g, '');
     out[cells[0]] = { text: plain(col('rule')), severity: col('sev'), check: plain(col('validation')), ...(col('alias') ? { alias: col('alias') } : {}) };

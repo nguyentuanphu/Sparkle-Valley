@@ -1,7 +1,7 @@
 // Screens and pop-ups: title, who's playing, grown-ups settings, photo editor, NPC dialogue,
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
 import { T, applyLang, nm, NPC_NAMES, defaultName } from './i18n.js';
-import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, backupAge, STYLES, OUTFIT_COLORS, HATS, BACKS, HAIR, SKIN, HAIRSTYLES, GLIDERS, farm, resetFarm, saveFarm, MAX_KIDS } from './state.js';
+import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, backupAge, STYLES, OUTFIT_COLORS, HATS, BACKS, HAIR, SKIN, HAIRSTYLES, GLIDERS, farm, resetFarm, saveFarm, MAX_KIDS, reduceMotion } from './state.js';
 import { say, spoken, voicePack, voiceDiag, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
 import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { SFX, Music, ac } from './audio.js';
@@ -37,8 +37,10 @@ const PET_ICON = { puppy: '🐶', kitty: '🐱', bunny: '🐰', panda: '🐼', j
 export const STYLE_ICON = { dress: '👗', shirt: '👕', aodai: '🥻', tunic: '🧥', overalls: '👖', hoodie: '🧶' };
 export const STYLE_NAME = { dress: () => T('Dress', 'Váy'), shirt: () => T('Shirt & shorts', 'Áo và quần đùi'), aodai: () => 'Áo dài', tunic: () => T('Explorer', 'Nhà thám hiểm'), overalls: () => T('Overalls', 'Quần yếm'), hoodie: () => T('Hoodie', 'Áo nỉ') };
 // big text and calm mode change the whole page
-export function applyComfort() { if (settings.textSize == null) settings.textSize = settings.bigText ? 1 : 0; document.body.classList.toggle('bigtext', settings.textSize >= 1); document.body.classList.toggle('biggertext', settings.textSize >= 2); document.body.classList.toggle('calm', !!settings.calm); if (Music.key) Music.refresh(); }
+export function applyComfort() { if (settings.textSize == null) settings.textSize = settings.bigText ? 1 : 0; document.body.classList.toggle('bigtext', settings.textSize >= 1); document.body.classList.toggle('biggertext', settings.textSize >= 2); document.body.classList.toggle('calm', reduceMotion()); if (Music.key) Music.refresh(); }
 applyComfort();
+// the device's "Reduce motion" switch, also when it is changed while playing
+try { matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => applyComfort()); } catch (e) { }
 // Captions: every spoken line also appears as text at the bottom (unless a speech box, game or storybook
 // is already showing those words). On by default; grown-ups can switch it off.
 {

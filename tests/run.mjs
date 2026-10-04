@@ -627,6 +627,94 @@ await check('ages', async () => {
   return 'under 5: big buttons, the right answer wiggles after two misses (or 10 s), and stops once tapped; 5 and up: no hint';
 });
 
+await check('simple', async () => {
+  // the Simple screen (round I, js/simple.js): an under-5 starts on it; any game or story is one tap away (A11Y-003);
+  // when the game ends the path comes back; 🌳 Valley switches to the 3D world and is remembered; a big kid starts in
+  // the valley and can open it from the dock; two players on one device never see it
+  const P = await open(b, { w: 390, h: 844, touch: true, screen: null });
+  await P.page.waitForSelector('.simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
+  await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
+  const r = { start: true };
+  await P.page.locator('.sp-stop').first().click(); await P.page.waitForSelector('.gl', { timeout: 10000 }); r.game = true;
+  await P.page.evaluate(() => document.querySelector('.gl-x').click());
+  r.back = await P.page.waitForFunction(() => __sv.simple.open, null, { timeout: 8000 }).then(() => true, () => false);
+  await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.locator('.sp-stop').first().click();
+  r.tale = await P.page.waitForSelector('.theatre', { timeout: 10000 }).then(() => true, () => false);
+  await P.page.evaluate(() => document.querySelector('.theatre .th-x').click());
+  await P.page.waitForFunction(() => __sv.simple.open, null, { timeout: 8000 }).catch(() => { });
+  await P.page.evaluate(() => document.querySelectorAll('.dialog, .reward').forEach(d => d.remove()));
+  await P.page.click('.sp-valley'); await P.page.waitForTimeout(500);
+  r.valley = await P.page.evaluate(() => ({ open: __sv.simple.open, screen: __sv.heroes[0].profile.screen, dock: !document.querySelector('.dk.simple').hidden, paused: __sv.paused }));
+  await P.page.click('.dk.simple'); r.reopen = await P.page.evaluate(() => __sv.simple.open);
+  const errs = P.errors; await P.ctx.close();
+  // a big kid, and two players
+  const B = await open(b, { w: 390, h: 844, touch: true, screen: null });
+  await B.page.evaluate(() => { __sv.simple.hide(); __sv.heroes[0].profile.age = 'big'; delete __sv.heroes[0].profile.screen; __sv.simple.start(); });
+  await B.page.waitForTimeout(1200); r.big = await B.page.evaluate(() => __sv.simple.open); await B.ctx.close();
+  const S = await open(b, { w: 1280, h: 800, mode: 'split', screen: null }); await S.page.waitForTimeout(1500);
+  r.split = await S.page.evaluate(() => ({ open: __sv.simple.open, dock: [...document.querySelectorAll('.dk.simple')].some(d => !d.hidden) })); await S.ctx.close();
+  ok(r.game && r.back && r.tale && !r.valley.open && r.valley.screen === 'valley' && r.valley.dock && !r.valley.paused && r.reopen && !r.big && !r.split.open && !r.split.dock && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'under 5 starts on the path; a game and a story each one tap away, the path comes back after; Valley remembered; dock button reopens it; big kid and two players start in the valley';
+});
+
+await check('a11y', async () => {
+  // accessibility rules (round I, ARCHITECTURE §9.6): UI-004 touch targets, A11Y-001 reduced motion, A11Y-002 readable
+  // captions, A11Y-004 under-5s hear every game's instruction (A11Y-003 simple paths: the "simple" check)
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  const small = (min, sel = 'button, a[href], [role=button], input[type=checkbox], select') => P.page.evaluate(([min, sel]) => {
+    const out = [];
+    for (const e of document.querySelectorAll(sel)) {
+      const r = e.getBoundingClientRect(), s = getComputedStyle(e);
+      if (!(r.width > 0 && r.height > 0) || s.visibility === 'hidden' || e.closest('[hidden]') || r.bottom <= 0 || r.top >= innerHeight || r.right <= 0 || r.left >= innerWidth) continue;
+      if (Math.min(r.width, r.height) < min - .5) out.push(((e.className && String(e.className)) || e.tagName).split(' ')[0] + ':' + e.textContent.trim().slice(0, 10) + '=' + Math.round(Math.min(r.width, r.height)));
+    }
+    return out;
+  }, [min, sel]);
+  const bad = {};
+  const at = async (name, fn, min = 44, sel) => { await fn(); await P.page.waitForTimeout(500); const s = await small(min, sel); if (s.length) bad[name] = s.slice(0, 6); await clear(P.page); };
+  await at('valley', async () => { });
+  for (const t of ['map', 'bag', 'log', 'album', 'passport', 'games', 'cam', 'friend']) await at('pad-' + t, () => P.page.evaluate(t => __sv.openPad(0, t), t));
+  await at('games hub', () => P.page.evaluate(() => __sv.openGamesHub(0)));
+  await at('quick settings', () => P.page.evaluate(() => __sv.openQuick(0)));
+  // under 5: the answers in a game are at least 64 px; the Simple screen's pictures and bar too
+  await P.page.evaluate(async () => { const F = await import('/js/games/frame.js'); window.__g = F.openGame('colors', { players: [__sv.heroes[0].profile], level: 1, little: true }); });
+  await P.page.waitForTimeout(1200); { const s = await small(64, '.gl .choice'); if (s.length) bad['little answers'] = s; }
+  await P.page.evaluate(() => document.querySelector('.gl-x').click()); await P.page.waitForTimeout(500); await clear(P.page);
+  await at('simple screen', () => P.page.evaluate(() => __sv.simple.show()), 64, '.sp-pic, .sp-tabs button, .sp-again, .sp-grown');
+  await P.page.evaluate(() => __sv.simple.hide());
+  // readable captions: shown even with the voice off, ≥ 16 px, contrast ≥ 4.5 : 1 (on white behind, the worst case), ≥ 2.5 s
+  const cap = await P.page.evaluate(async () => {
+    const V = await import('/js/voice.js'); V.say('Look at the pretty kite!', 'Nhìn con diều đẹp chưa kìa!');
+    await new Promise(r => setTimeout(r, 2400)); const c = document.querySelector('.caption'); if (!c) return null;
+    const s = getComputedStyle(c), rgb = x => x.match(/[\d.]+/g).map(Number), fg = rgb(s.color), bg = rgb(s.backgroundColor), a = bg[3] ?? 1;
+    const mix = bg.slice(0, 3).map((v, k) => v * a + 255 * (1 - a)), L = c3 => { const [r, g, b] = c3.map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * r + .7152 * g + .0722 * b; };
+    const l1 = L(fg.slice(0, 3)), l2 = L(mix);
+    return { shown: c.classList.contains('show'), px: parseFloat(s.fontSize), contrast: +((Math.max(l1, l2) + .05) / (Math.min(l1, l2) + .05)).toFixed(1) };
+  });
+  // reduced motion: the device's "Reduce motion" turns on Calm mode and no animation runs for ever
+  await P.page.emulateMedia({ reducedMotion: 'reduce' }); await P.page.waitForTimeout(300);
+  await P.page.evaluate(() => __sv.simple.show()); await P.page.waitForTimeout(600);
+  const motion = await P.page.evaluate(() => ({ calm: document.body.classList.contains('calm'), forever: document.getAnimations().filter(a => a.playState === 'running' && a.effect && a.effect.getComputedTiming().iterations === Infinity).map(a => (a.animationName || '') + '@' + ((a.effect.target && a.effect.target.className && String(a.effect.target.className).split(' ')[0]) || '')).slice(0, 8) }));
+  await P.page.evaluate(() => __sv.simple.hide()); await P.page.emulateMedia({ reducedMotion: 'no-preference' });
+  // under 5: every game says what to do when it opens
+  const quiet = await P.page.evaluate(async () => {
+    const F = await import('/js/games/frame.js'), V = await import('/js/voice.js'), out = [];
+    let heard = 0; V.spoken.push(() => { heard++; });
+    for (const id of Object.keys(F.GAMES)) {
+      heard = 0; const g = F.openGame(id, { players: [__sv.heroes[0].profile], level: 1, little: true });
+      for (let k = 0; k < 30 && !heard; k++) await new Promise(r => setTimeout(r, 100));
+      if (!heard) out.push(id);
+      const x = document.querySelector('.gl-x'); if (x) x.click(); await Promise.race([g, new Promise(r => setTimeout(r, 1500))]);
+      document.querySelectorAll('.gl, .modal, .dialog, .reward').forEach(e => e.remove());
+    }
+    return { n: Object.keys(F.GAMES).length, quiet: out };
+  });
+  const errs = P.errors.filter(e => !/getUserMedia|NotAllowed/.test(e)); await P.ctx.close();
+  ok(!Object.keys(bad).length && cap && cap.shown && cap.px >= 16 && cap.contrast >= 4.5 && motion.calm && !motion.forever.length && !quiet.quiet.length && !errs.length,
+    JSON.stringify({ bad, cap, motion, quiet: quiet.quiet, errs: errs.slice(0, 5) }));
+  return `touch targets ≥ 44 px on 12 screens, ≥ 64 px for under-5 answers and the Simple screen; captions ${cap.px} px, contrast ${cap.contrast}:1, still up at 2.4 s; Reduce motion → Calm, nothing loops; all ${quiet.n} games speak their instruction to an under-5`;
+});
+
 await check('unit', async () => {
   // Node unit tests (architecture §10): the L0 core (ids, events, seeded random, geometry), node --test tests/unit
   const { execFileSync } = await import('child_process');
