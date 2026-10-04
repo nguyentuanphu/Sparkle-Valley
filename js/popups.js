@@ -57,7 +57,8 @@ export function dialog(name, lines, choices) {
     let i = 0;
     const text = d.querySelector('.dtext'), ch = d.querySelector('.dchoices'), next = d.querySelector('.dnext');
     let show = () => {
-      const [en, vi] = lines[i]; text.textContent = T(en, vi); setSpeaker(name); say(en, vi);
+      // (a line [en, vi, sayEn, sayVi] shows its words but speaks the recordable ones: names can't be recorded)
+      const [en, vi, sEn, sVi] = lines[i]; text.textContent = T(en, vi); setSpeaker(name); say(sEn || en, sVi || vi);
       const last = i === lines.length - 1;
       ch.innerHTML = ''; next.hidden = last && choices && choices.length;
       if (last && choices && choices.length) choices.forEach((c, k) => { const b = el('button', 'dch', labelArt(T(c[0], c[1]), esc)); b.onclick = e => { e.stopPropagation(); SFX.tap(); close(k); }; ch.appendChild(b); });
@@ -68,7 +69,7 @@ export function dialog(name, lines, choices) {
     d._autoClose = () => close(-1); d._from = dialogHooks.where ? dialogHooks.where() : null;
     d.onclick = () => { if (choices && i === lines.length - 1 && choices.length) return; SFX.tap(); if (i < lines.length - 1) { i++; show(); } else close(-1); };
     if (little) {
-      d.querySelector('.again').onclick = e => { e.stopPropagation(); SFX.tap(); const [en, vi] = lines[i]; setSpeaker(name); say(en, vi); };
+      d.querySelector('.again').onclick = e => { e.stopPropagation(); SFX.tap(); const [en, vi, sEn, sVi] = lines[i]; setSpeaker(name); say(sEn || en, sVi || vi); };
       const ok = d.querySelector('.ok'); ok.onclick = e => { e.stopPropagation(); d.onclick(); };
       const upd = () => { ok.hidden = !!(choices && choices.length && i === lines.length - 1); }; const s0 = show; show = () => { s0(); upd(); };
     }

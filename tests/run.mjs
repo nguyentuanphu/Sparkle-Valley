@@ -415,10 +415,10 @@ await check('voicepack', async () => {
   const state = () => P.page.evaluate(async () => { const c = await caches.open('sv-voices'); return { files: (await c.keys()).filter(r => /\/voices\/.+\.mp3$/.test(r.url)).length, saved: JSON.parse(localStorage.getItem('sv2_settings')).packSaved || '' }; });
   const first = await openAgain(), s1 = await state();
   ok(first.some(x => /%/.test(x)) && first.some(x => /✓/.test(x)) && s1.files >= 24 && s1.saved === '24:2:test', 'first open: ' + JSON.stringify({ first: first.slice(0, 4), s1 }));
-  // next open: everything is there, so nothing shows
+  // next open: everything is there, so nothing downloads; the bar only says "ready ✓" for a moment (owner, round F)
   await P.page.reload(); await start(P.page); await clear(P.page); await P.page.waitForTimeout(10000);
   const second = await P.page.evaluate(() => window.__packLog);
-  ok(!second.length, 'the bar showed again although every voice was on the device: ' + JSON.stringify(second));
+  ok(second.some(x => /✓/.test(x)) && !second.some(x => /%/.test(x)), 'next open: ' + JSON.stringify(second));
   // the phone cleared some files: the next open fetches only those, quietly with the bar
   await P.page.evaluate(async () => { const c = await caches.open('sv-voices'); const ks = (await c.keys()).filter(r => /\.mp3$/.test(r.url)); for (const r of ks.slice(0, 5)) await c.delete(r); });
   const third = await openAgain(), s3 = await state();
@@ -426,7 +426,33 @@ await check('voicepack', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(third.some(x => /✓/.test(x)) && s3.files >= 24, 'missing files were not fetched again: ' + JSON.stringify({ third: third.slice(0, 3), s3 }));
   ok(!errs.length, errs.join(' | '));
-  return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open shows nothing, and files the phone lost are fetched again`;
+  return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open only says "${second[0] || ''}" for a moment, and files the phone lost are fetched again`;
+});
+
+await check('welcomevoice', async () => {
+  // HARD RULE 11: the recorded voice is the voice. Lines with a child's or friend's name can't be recorded, so the game
+  // shows the name and speaks a recorded line (owner, round F: the welcome was still in the phone's voice). A new
+  // player: tapping their picture, starting, and Ông Cú's welcome must speak only recorded lines.
+  const P = await open(b, { w: 900, h: 640, play: false, settings: { voice: true } });
+  await P.page.evaluate(() => { localStorage.removeItem('sv2_voiceMisses'); });
+  const said = [];
+  await P.page.exposeFunction('__said', t => said.push(t));
+  await P.page.evaluate(async () => { const V = await import('/js/voice.js'); V.spoken.push(t => window.__said(t)); });
+  await (await import('./harness.mjs')).start(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], V = await import('/js/voice.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    for (let k = 0; k < 40 && !V.voicePack(); k++) await wait(250);
+    h.profile.quests.owl = false; G._owlAuto = false; h.profile.name = 'Kiwi'; // (a name no recording can know, like a real child's)
+    const owl = G.interactables.find(i => /owl/i.test(i.id || '')); if (owl) { h.place(owl.x, owl.z + 1.5); }
+    for (let k = 0; k < 30 && !document.querySelector('.dialog:not(.out)'); k++) await wait(200);
+    const d = document.querySelector('.dialog .dtext'), shown = d ? d.textContent : '';
+    return { shown, pack: !!V.voicePack() };
+  });
+  const rec = await P.page.evaluate(async lines => { const V = await import('/js/voice.js'), hash = (await import('/js/packhash.js')).packHash, pack = V.voicePack(); return lines.map(t => [t, !!(pack && pack.lines[hash('en', t)])]); }, said);
+  const errs = P.errors; await P.ctx.close();
+  const notRecorded = rec.filter(([, ok]) => !ok).map(([t]) => t);
+  ok(r.pack && /Good morning, Kiwi/.test(r.shown) && said.length && !notRecorded.length && !errs.length, JSON.stringify({ shown: r.shown, said, notRecorded, errs }));
+  return `Ông Cú's welcome shows the child's name ("${r.shown.slice(0, 40)}…") and every spoken line (${said.length}) has a recording`;
 });
 
 await check('studio', async () => {

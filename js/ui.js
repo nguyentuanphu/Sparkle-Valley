@@ -125,7 +125,7 @@ export function showWho(onGo) {
       const id = b.dataset.id; SFX.pop(chosen.length);
       if (chosen.includes(id)) chosen = chosen.filter(x => x !== id);
       else if (need === 1) chosen = [id]; else chosen = [...chosen, id].slice(-2);
-      const p = profiles.find(x => x.id === id); if (chosen.includes(id)) say(`Hi ${p.name}!`, `Chào ${p.name}!`);
+      const p = profiles.find(x => x.id === id); if (chosen.includes(id)) toast(T(`Hi ${p.name}!`, `Chào ${p.name}!`)); // (a welcome: text, not a voice; owner, round D)
       draw();
     });
     s.querySelector('.pick.add').onclick = () => profiles.length >= MAX_KIDS ? toast(T(`Up to ${MAX_KIDS} players. Remove one in Grown-ups first.`, `Tối đa ${MAX_KIDS} người chơi. Hãy xóa bớt trong mục Phụ huynh.`)) : openEditor(null, draw);

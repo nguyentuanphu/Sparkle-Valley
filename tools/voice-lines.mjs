@@ -1,7 +1,7 @@
 // Lists every line the game speaks (English + Tiếng Việt), with the character who says it, so a voice
 // pack can be made. Usage: node tools/voice-lines.mjs > tools/voice-lines.json
-// Lines that contain a child's name or other changing words (`${…}`) can't be recorded in advance; the
-// game speaks those with the device voice.
+// Lines that contain a child's name or other changing words (`${…}`) can't be recorded in advance, so the game
+// speaks a fixed version instead (round F: dialog lines [shown en, shown vi, spoken en, spoken vi]).
 import fs from 'fs';
 import path from 'path';
 
@@ -18,6 +18,8 @@ const PATTERNS = [
   new RegExp(String.raw`\[\s*(${Q})\s*,\s*(${Q})\s*\]`, 'g'),
   new RegExp(String.raw`\[\s*${Q}\s*,\s*(${Q})\s*,\s*(${Q})\s*\]`, 'g'),
   new RegExp(String.raw`\bS\(\s*${Q}\s*,\s*(${Q})\s*,\s*(${Q})\s*\)`, 'g'),
+  // a speech-box line that shows a name but speaks recordable words: [`…${name}…`, `…`, 'say en', 'say vi']
+  new RegExp(String.raw`\[\s*\x60[^\x60]*\x60\s*,\s*\x60[^\x60]*\x60\s*,\s*(${Q})\s*,\s*(${Q})\s*\]`, 'g'),
   new RegExp(String.raw`\b(?:fact|story|hint|about)\s*:\s*\[\s*(${Q})\s*,\s*(${Q})`, 'g')
 ];
 export function collectLines() {

@@ -408,7 +408,7 @@ async function owlTalk(h) {
   const p = h.profile; SFX.hoot();
   if (!p.quests.owl) {
     await dialog('Ông Cú', [
-      [`Hoo hoo! Good morning, ${p.name}! Welcome to Sparkle Valley.`, `Hú hú! Chào buổi sáng, ${p.name}! Chào mừng con đến Thung Lũng Lấp Lánh.`],
+      [`Hoo hoo! Good morning, ${p.name}! Welcome to Sparkle Valley.`, `Hú hú! Chào buổi sáng, ${p.name}! Chào mừng con đến Thung Lũng Lấp Lánh.`, 'Hoo hoo! Good morning, little one! Welcome to Sparkle Valley.', 'Hú hú! Chào buổi sáng con! Chào mừng con đến Thung Lũng Lấp Lánh.'],
       ['I am Ông Cú, the wisest bird in the valley. This valley is full of puzzles, friends and secrets.', 'Ông là Ông Cú, chú cú già thông thái. Thung lũng này có rất nhiều câu đố, bạn bè và bí mật.'],
       ['See that tall tower glowing orange? Climb it, and your map will light up!', 'Con thấy cái tháp cao màu cam kia không? Leo lên đó, bản đồ của con sẽ sáng lên!'],
       ['Then solve the three shrines here on the plateau, and I will give you a special present.', 'Sau đó giải ba ngôi đền trên cao nguyên này, ông sẽ tặng con một món quà đặc biệt.']
@@ -708,7 +708,7 @@ function setupWanderers(active) {
     av.root.position.set(x, heightAt(x, z), z); scene.add(av.root); scene.add(tag);
     const w = { av, tag, tx: x, tz: z, pos: av.root.position, yaw: 0, wave: 0 }; G.wanderers.push(w);
     G.interactables.push({ id: 'wander' + k, get x() { return w.pos.x; }, get z() { return w.pos.z; }, r: 2.5, icon: '👋', label: () => T('Say hi to ', 'Chào ') + nm(p.name),
-      act: h => { SFX.ok(); w.wave = 2.5; w.tx = w.pos.x; w.tz = w.pos.z; w.yaw = Math.atan2(h.pos.x - w.pos.x, h.pos.z - w.pos.z); say(`Hi ${p.name}! Want to play together later?`, `Chào ${p.name}! Lát nữa mình chơi cùng nhau nhé?`); } });
+      act: h => { SFX.ok(); w.wave = 2.5; w.tx = w.pos.x; w.tz = w.pos.z; w.yaw = Math.atan2(h.pos.x - w.pos.x, h.pos.z - w.pos.z); say('Hi! Want to play together later?', 'Chào bạn! Lát nữa mình chơi cùng nhau nhé?'); } });
   });
 }
 world.updaters.push((dt, t) => G.wanderers.forEach((w, k) => {
@@ -736,7 +736,7 @@ function bubble(target, text) {
 G.emote = (i, id) => {
   const e = EMOTES.find(e => e.id === id), h = G.heroes[i]; if (!e || !h) return;
   bubble(h, e.icon + ' ' + T(e.en, e.vi)); h.emoteT = 2;
-  say(`${h.profile.name} says: ${e.en}`, `${h.profile.name} nói: ${e.vi}`);
+  say(e.en, e.vi); // (names can't be recorded: the recorded words only)
   Net.send({ t: 'emote', id });
 };
 // Kid-sized mute buttons: 🎵 turns music on/off, 🔊 turns sound effects and the talking voice on/off together.
@@ -792,11 +792,11 @@ Net.on('hello', r => {
   const av = buildAvatar(Object.assign({ style: 'shirt', color: '#3d7fd6', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#f6c7a5', glider: 0 }, r.look || {}), r.photo);
   scene.add(av.root); const tag = nameTag(r.name || T('Friend', 'Bạn'), '#9ff0ff'); scene.add(tag);
   G.partners[r.id] = { id: r.id, av, tag, pos: old ? old.pos : new THREE.Vector3(0, -50, 0), yaw: 0, st: 'idle', name: r.name, photoURL: avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) }) };
-  if (!old) { SFX.chime(); say(`${r.name} is here! Say hello!`, `${r.name} đã đến! Chào bạn đi!`); }
+  if (!old) { SFX.chime(); say('Your friend is here! Say hello!', 'Bạn của con đã đến! Chào bạn đi!'); toast(T(`${r.name} is here!`, `${r.name} đã đến!`)); }
   G.huds.forEach(hd => hd.setCall(true, false, Net.muted));
   if (G.onNet) G.onNet();
 });
-Net.on('emote', d => { const e = EMOTES.find(e => e.id === d.id), P = G.partners[d.from]; if (!e || !P) return; bubble(P, e.icon + ' ' + T(e.en, e.vi)); say(`${P.name} says: ${e.en}`, `${P.name} nói: ${e.vi}`); });
+Net.on('emote', d => { const e = EMOTES.find(e => e.id === d.id), P = G.partners[d.from]; if (!e || !P) return; bubble(P, e.icon + ' ' + T(e.en, e.vi)); say(e.en, e.vi); });
 Net.on('left', r => {
   const P = G.partners[r.id]; if (P) { scene.remove(P.av.root); scene.remove(P.tag); delete G.partners[r.id]; }
   if (!Net.connected || !Object.keys(G.partners).length) G.huds.forEach(hd => hd.setCall(false));
@@ -806,11 +806,11 @@ Net.on('left', r => {
 Net.on('meet', d => {
   const P = G.partners[d.from]; if (!P || !G.heroes[0]) return;
   SFX.chime(); bubble(P, '📣 ' + T('Come here!', 'Lại đây nè!'));
-  dialog(P.name, [[`📣 ${P.name} wants to meet you! Shall we go?`, `📣 ${P.name} muốn gặp con! Mình đi nhé?`]], [['👣 Walk there', '👣 Đi bộ đến'], ['✨ Fly there', '✨ Bay đến'], ['🙂 Not now', '🙂 Để sau']])
+  dialog(P.name, [[`📣 ${P.name} wants to meet you! Shall we go?`, `📣 ${P.name} muốn gặp con! Mình đi nhé?`, 'Your friend wants to meet you! Shall we go?', 'Bạn của con muốn gặp con! Mình đi nhé?']], [['👣 Walk there', '👣 Đi bộ đến'], ['✨ Fly there', '✨ Bay đến'], ['🙂 Not now', '🙂 Để sau']])
     .then(k => { const h = G.heroes[0]; if (k === 0) G.walkToFriend(h, P.id); if (k === 1) G.flyToFriend(h, P.id); if (k === 2) Net.send({ t: 'emote', id: 'wait' }); });
 });
 G.flyToFriend = (h, id) => { const P = G.partners[id]; if (!P || P.pos.y < -40) return; G.travel(h, P.pos.x - 4.5 + 1.5, P.pos.z - 1 + 1.5); setTimeout(() => { bubble(h, '👋 ' + T('Hi!', 'Chào!')); Net.send({ t: 'emote', id: 'hi' }); }, 900); };
-G.walkToFriend = (h, id) => { const P = G.partners[id]; if (!P || P.pos.y < -40) return; h.walkTo = { friend: id, x: P.pos.x, z: P.pos.z, name: P.name }; say(`Follow the footprints to ${P.name}!`, `Đi theo dấu chân đến chỗ ${P.name} nhé!`); };
+G.walkToFriend = (h, id) => { const P = G.partners[id]; if (!P || P.pos.y < -40) return; h.walkTo = { friend: id, x: P.pos.x, z: P.pos.z, name: P.name }; say('Follow the footprints to your friend!', 'Đi theo dấu chân đến chỗ bạn nhé!'); };
 G.askFriendToCome = (h, id) => { const P = G.partners[id]; if (!P) return; Net.send({ t: 'meet', to: id }); bubble(h, '📣 ' + T('Come here!', 'Lại đây nè!')); hudFor(h).toast('📣 ' + T(`Asked ${P.name} to come to you`, `Đã gọi ${P.name} đến chỗ con`)); };
 // where are my friends? a little card with each friend's distance and direction, and ways to meet
 const compass = (h, x, z) => { const a = Math.atan2(x - h.pos.x, -(z - h.pos.z)); return ['⬆️ ' + T('north', 'phía bắc'), '↗️ ' + T('north-east', 'đông bắc'), '➡️ ' + T('east', 'phía đông'), '↘️ ' + T('south-east', 'đông nam'), '⬇️ ' + T('south', 'phía nam'), '↙️ ' + T('south-west', 'tây nam'), '⬅️ ' + T('west', 'phía tây'), '↖️ ' + T('north-west', 'tây bắc')][(Math.round(a / (Math.PI / 4)) + 8) % 8]; };
@@ -868,7 +868,7 @@ const showKnock = () => {
     <div class="ff-btns"><button class="btn primary" data-in>✅ ${T('Let in', 'Cho vào')}</button><button class="btn" data-no>❌ ${T('No thanks', 'Không, cảm ơn')}</button></div>
     <small class="note">${T('Only let in someone you know. A grown-up can help.', 'Chỉ cho người con biết vào thôi. Người lớn có thể giúp con.')}</small>`);
   knockPop.dataset.id = k.id; document.body.appendChild(knockPop); SFX.chime();
-  say(`${name} is knocking. Do you want to let them in?`, `${name} đang gõ cửa. Con có muốn cho bạn vào không?`);
+  say('Someone is knocking. Do you want to let them in?', 'Có bạn đang gõ cửa. Con có muốn cho bạn vào không?'); // (the name and photo are on the card)
   knockPop.querySelector('[data-in]').onclick = () => { SFX.tap(); Net.admit(k.id); };
   knockPop.querySelector('[data-no]').onclick = () => { SFX.tap(); Net.deny(k.id); };
 };
@@ -881,8 +881,8 @@ if (!Array.isArray(settings.friends)) settings.friends = [];
 // a grown-up or the child can still switch it off in the online panel)
 if (settings.friends.length && !settings.friendsOnR28) { settings.friendsOn = true; settings.friendsOnR28 = true; saveSettings(); }
 const onInvite = inv => {
-  SFX.chime(); say(`${inv.name} invites you to play!`, `${inv.name} mời con chơi cùng!`);
-  dialog(T('Invitation', 'Lời mời'), [[`👫 ${inv.name} invites you to play together! Join their room ${inv.room}?`, `👫 ${inv.name} mời con chơi cùng! Vào phòng ${inv.room} nhé?`]], [['✅ Join', '✅ Vào'], ['❌ Not now', '❌ Để sau']])
+  SFX.chime(); say('A friend invites you to play!', 'Một bạn mời con chơi cùng!');
+  dialog(T('Invitation', 'Lời mời'), [[`👫 ${inv.name} invites you to play together! Join their room ${inv.room}?`, `👫 ${inv.name} mời con chơi cùng! Vào phòng ${inv.room} nhé?`, 'A friend invites you to play together! Shall we join?', 'Một bạn mời con chơi cùng! Mình vào nhé?']], [['✅ Join', '✅ Vào'], ['❌ Not now', '❌ Để sau']])
     .then(k => { if (k === 0) Net.join(inv.room, sendHello() || {}); });
 };
 G.listenFriends = () => {

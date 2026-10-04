@@ -264,7 +264,7 @@ export const voicePack = () => PACK;
 // Lines asked for before the list has arrived (slow phone networks at start-up) wait for it, so they are spoken
 // with the recorded voice too instead of the phone's own voice.
 let packTried = false;
-const packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; voiceDiag.pack = 'ok'; autoSavePack(); } else voiceDiag.pack = 'missing'; }).catch(() => { voiceDiag.pack = 'offline'; }).finally(() => { packTried = true; });
+const packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; voiceDiag.pack = 'ok'; autoSavePack(); } else { voiceDiag.pack = 'missing'; packEmit({ state: 'nopack' }); } }).catch(() => { voiceDiag.pack = 'offline'; packEmit({ state: 'nopack' }); }).finally(() => { packTried = true; });
 const waitPack = () => PACK || packTried ? null : Promise.race([packReady, new Promise(r => setTimeout(r, 12000))]);
 // Keep the whole pack on the device by itself: a few seconds after the game opens (every time it opens), the voice
 // cache is checked against the list, and any file not there yet (first visit, a new pack, or a phone that cleared
@@ -274,7 +274,9 @@ const packListeners = []; let packLast = null;
 export const onPackProgress = f => { packListeners.push(f); if (packLast) try { f(packLast); } catch (x) { } }; // (a late listener hears where it is now)
 const packEmit = e => { packLast = e; packListeners.forEach(f => { try { f(e); } catch (x) { } }); };
 function autoSavePack() {
-  if (settings.autoPack === false || !('caches' in window)) return;
+  // (an address that can't keep files, like http://192.168.… on a phone: the voices still play, from the internet)
+  if (!('caches' in window)) { setTimeout(() => packEmit({ state: 'nostore', total: packFiles().length }), 3000); return; }
+  if (settings.autoPack === false) return;
   setTimeout(() => { checkPack().catch(() => { }); }, 6000);
   addEventListener('online', () => { checkPack().catch(() => { }); });
 }
@@ -284,7 +286,7 @@ async function checkPack() {
   try {
     const cache = await caches.open('sv-voices'), have = new Set((await cache.keys()).map(r => r.url));
     const missing = packFiles().filter(u => !have.has(new URL(u, location.href).href));
-    if (!missing.length) { settings.packSaved = packSig(); saveSettings(); packEmit({ state: 'ready', quiet: true }); return; }
+    if (!missing.length) { settings.packSaved = packSig(); saveSettings(); packEmit({ state: 'ready', quiet: true, total: packFiles().length }); return; }
     if (navigator.onLine === false) { packEmit({ state: 'waiting', left: missing.length }); return; }
     let done = 0; packEmit({ state: 'loading', done, total: missing.length });
     for (let i = 0; i < missing.length; i += 6) {
