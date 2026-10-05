@@ -418,6 +418,7 @@ function createStudio({ store, conf, online = false, local = {} }) {
     }
     // the missing lines inbox: lines the children's devices had to say with the machine voice (from the website)
     if (api === 'voices/inbox') { if (!local.inbox) return ok([]); try { return ok(await local.inbox()); } catch (e) { return ok([]); } }
+    if (api === 'players/label' && post) { if (!local.label) return bad('Set the website address and the Studio password in Settings first.'); return ok(await local.label(b)); }
     if (api === 'players') { if (!local.players) return bad('Set the website address and the Studio password in Settings to see the players.'); return ok(await local.players(b)); }
     if (api === 'check') return ok(await check());
     if (local.api) { const r = await local.api(api, method, b); if (r) return r; }

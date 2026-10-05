@@ -100,7 +100,7 @@ export async function fakeNetlify({ port, env, players }) {
     const fn = p === '/api/hello' ? hello : (p.startsWith('/studio/api/') || p.startsWith('/studio/content/')) ? studio : null;
     if (fn) {
       const ch = []; for await (const c of req) ch.push(c);
-      const r = await fn(new Request(url, { method: req.method, headers: req.headers, body: req.method === 'POST' ? Buffer.concat(ch) : undefined }));
+      const r = await fn(new Request(url, { method: req.method, headers: req.headers, body: req.method === 'POST' ? Buffer.concat(ch) : undefined }), { geo: JSON.parse(req.headers['x-test-geo'] || '{}') }); // (Netlify gives the town from the connection; tests say it in a header)
       const h = {}; r.headers.forEach((v, k) => { h[k] = v; }); res.writeHead(r.status, h); res.end(Buffer.from(await r.arrayBuffer())); return;
     }
     if (p === '/studio' || p === '/studio/') p = '/studio/ui/index.html'; else if (p.startsWith('/studio/game/')) p = p.slice('/studio/game'.length); else if (p.startsWith('/studio/voices/')) p = p.slice('/studio'.length);
@@ -181,6 +181,17 @@ export async function studioCheck(browser, open) {
     const inb = (await call('/studio/api/inbox', { cookie: C })).j;
     ok(Array.isArray(inb) && inb.length === 2 && inb[0].text === 'A brand new line!' && inb[0].n === 2, 'inbox: ' + JSON.stringify(inb));
     notes.push('players: 3 devices counted, nothing personal kept; inbox has 2 lines');
+    // round L: a device with one child's day: name, games (started, won, left), places, stories, hours, errors, stuck, smoothness; the town from the connection
+    { const today = new Date().toISOString().slice(0, 10);
+      const st = await fetch(site + '/api/hello', { method: 'POST', headers: { 'x-test-geo': JSON.stringify({ city: 'Brisbane', subdivision: { code: 'QLD' }, country: { code: 'AU' } }) }, body: JSON.stringify({ id: 'dddddddddddd', b: 'r43', l: 'en', k: 1, d: 'tablet', a: true, os: 'iPadOS', br: 'Safari', sc: '820x1180',
+        days: [{ d: today, m: 12, g: { caro: 2 }, t: 1, o: 0, h: { 9: 12 }, c: { p1: { n: 'Na', a: 'little', m: 12, sm: 2, t: 1, g: { caro: [6, 1, 5] }, p: { village: 2 } }, 'bad key!': { n: '<b>x</b>' } }, e: { 'x is not defined @ main.js:10': 2, '<script>': 1 }, s: { 'village (3, 4)': 3 }, q: { caro: 5 }, f: [1200, 60, 50] }] }) }).then(r => r.status);
+      ok(st === 204, 'a rich hello was not taken: ' + st);
+      ok((await call('/studio/api/players/label', { cookie: C, headers: X, body: { id: 'dddddddddddd', label: 'Na’s iPad' } })).status === 200, 'naming a device failed');
+      const R = (await call('/studio/api/players', { cookie: C })).j, dv = (R.devices || []).find(x => x.id === 'dddddddddddd') || {}, kid = (dv.kids || [])[0] || {};
+      ok(dv.label === 'Na’s iPad' && dv.os === 'iPadOS' && dv.br === 'Safari' && dv.loc && dv.loc.city === 'Brisbane' && dv.loc.country === 'AU' && dv.kids.length === 1 && kid.name === 'Na' && kid.age === 'little' && kid.games[0][0] === 'caro' && kid.games[0][3] === 5 && kid.places[0][0] === 'village' && dv.fps === 20 && dv.errors === 2 && dv.stuck === 3, 'device report: ' + JSON.stringify(dv));
+      ok(R.hours[9] >= 12 && R.places[0][0] === 'village' && R.problems.errors.length === 1 && R.problems.stuck[0][1] === 3 && R.problems.quits[0][0] === 'caro' && R.locations['Brisbane, QLD, AU'] === 1 && R.os.iPadOS === 1 && R.tips.length >= 3, 'report for everyone: ' + JSON.stringify({ hours: R.hours, places: R.places, problems: R.problems, loc: R.locations, tips: R.tips }));
+      ok(![...players._m.values()].some(v => /<b>|<script>|127\.0\.0\.1/.test(v)), 'something odd was kept');
+      notes.push(`report per device and child: name, games, places, town, system and browser, errors, stuck spots, ${R.tips.length} suggestions`); }
     // 4b. offline play is not lost, and a send whose answer was lost is counted once
     {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true });

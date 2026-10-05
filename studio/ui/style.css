@@ -74,3 +74,11 @@ main { padding-top: 12px; }
   .actions { gap: 6px; } .actions .icon { width: 36px; height: 36px; font-size: 18px; } .lang button { padding: 6px 10px; }
   .actions .pub { padding: 8px 12px; font-size: 14px; }
 }
+/* round L: the play report, per device and per child */
+.tips { border-color: #ffd23f; background: #fffbea; } .tips ul { margin: 6px 0 0; padding-left: 20px; } .tips li { margin: 4px 0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tips { background: #3a3320; } }
+h3.sec { margin: 22px 0 8px; font-size: 20px; }
+.dev h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 4px; }
+.kids { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-top: 8px; }
+.kid { border: 1px dashed var(--line); border-radius: 12px; padding: 10px 12px; }
+table.mini td, table.mini th { padding: 4px 6px; font-size: 14px; } table.mini th { color: var(--soft); font-weight: 600; }
