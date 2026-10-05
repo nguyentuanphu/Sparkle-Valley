@@ -1982,3 +1982,30 @@ body.calm .sp-owl.cheer { animation: none; }
 /* round N (owner's iPhone screenshot): the star counter sat over 📺 because the top bar moves down by the notch while
    the counter did not; it now sits just under the top bar, whatever the notch */
 .gl .starbox { top: calc(env(safe-area-inset-top, 0px) + 80px); }
+
+/* ---------- 🎵 Songs (js/songs.js, round N) ---------- */
+.songs { position: fixed; inset: 0; z-index: 32; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding: calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 20px) calc(env(safe-area-inset-left) + 16px);
+  background: linear-gradient(180deg, #fff3d6 0%, #ffe3f0 60%, #e9e1ff 100%); color: #3b2a4f; transition: background .6s; }
+.songs.night { background: radial-gradient(circle at 80% 12%, #4a3f8a 0 6%, transparent 30%), linear-gradient(180deg, #1d1b45 0%, #2b2560 60%, #3b2f6e 100%); color: #f3eeff; }
+.sg-top { display: flex; align-items: center; justify-content: space-between; } .sg-top h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 26px; }
+.sg-top h2 .art, .sg-top h2 .emo { width: 38px; height: 38px; font-size: 32px; }
+.sg-x { width: 56px; height: 56px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .9); color: #4a3d70; font-size: 26px; font-weight: 700; flex: none; }
+.sg-groups { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+.sg-groups button { flex: none; min-width: 84px; min-height: 76px; border: 0; border-radius: 20px; background: rgba(255, 255, 255, .75); color: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 10px; font: inherit; }
+.sg-groups button .art, .sg-groups button .emo { width: 36px; height: 36px; font-size: 30px; } .sg-groups button small { font-size: 13px; max-width: 120px; text-align: center; line-height: 1.15; }
+.sg-groups button.on { background: #8a5cf6; color: #fff; }
+.songs.night .sg-groups button { background: rgba(255, 255, 255, .12); } .songs.night .sg-groups button.on { background: #ffd23f; color: #2b2560; }
+.sg-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.sg-song { display: flex; align-items: center; gap: 12px; min-height: 72px; border: 0; border-radius: 22px; background: #fff; color: #3b2a4f; padding: 8px 16px; font: inherit; text-align: left; box-shadow: 0 4px 0 rgba(60, 30, 90, .12); }
+.sg-song .art, .sg-song .emo { width: 48px; height: 48px; font-size: 40px; flex: none; } .sg-song b { flex: 1; font-size: 18px; } .sg-song i { font-style: normal; font-size: 24px; }
+.sg-song.on { background: #8a5cf6; color: #fff; }
+.songs.night .sg-song { background: rgba(255, 255, 255, .1); color: #f3eeff; box-shadow: none; } .songs.night .sg-song.on { background: #ffd23f; color: #2b2560; }
+.sg-sleep { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .sg-sleep span { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+.sg-sleep span .art, .sg-sleep span .emo { width: 30px; height: 30px; font-size: 24px; }
+.sg-sleep button { min-height: 48px; min-width: 64px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .15); color: inherit; font: inherit; font-weight: 700; padding: 0 16px; }
+.sg-sleep button.on { background: #ffd23f; color: #2b2560; }
+.sg-words { background: rgba(255, 255, 255, .08); border-radius: 22px; padding: 14px 18px; font-size: 20px; line-height: 1.5; }
+.sg-words p { margin: 4px 0; } .sg-words small { display: block; font-size: 15px; opacity: .75; }
+.songs:not(.night) .sg-words { background: rgba(255, 255, 255, .7); }
+.sg-moon { position: fixed; right: 28px; top: calc(env(safe-area-inset-top) + 90px); width: 54px; height: 54px; border-radius: 50%; background: #fff6c2; box-shadow: 0 0 40px 10px rgba(255, 246, 194, .35); pointer-events: none; opacity: .85; }
+.qs-songs { } /* (Settings card: same look as the festival card) */

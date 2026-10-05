@@ -5,6 +5,8 @@ import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js
 import { T, nm, onLang, registerName } from './i18n.js';
 import { say, hush, loadClips, setVoiceGenders } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
+import { openSongs } from './songs.js';
+import { songsFor, VN_AREAS, familySongs } from './content/songs.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
 import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
@@ -798,6 +800,7 @@ Net.on('emote', d => { const e = EMOTES.find(e => e.id === d.id), P = G.partners
 // ---------- games with friends online (js/netgames.js, round G) ----------
 const remoteName = id => (Net.remotes[id] && Net.remotes[id].name) || T('Your friend', 'Bạn');
 G.simple = createSimple(G);
+G.openSongs = start => openSongs(G, start); for (const f of familySongs()) Music.files[f.key] = f.file; // 🎵 Songs (round N)
 G.netGames = createNetGames({
   net: { ids: () => Object.keys(Net.remotes), send: d => Net.send(d) }, me: () => Net.me,
   onAsk: d => { // "Mít wants to play Caro with you!"
@@ -1241,10 +1244,13 @@ function frame(now) {
   walkedAway();
   // music follows the first player
   const h0 = G.heroes[0];
-  if (h0 && !gameOpen()) {
+  // (round N) during a festival its own songs play; in the Vietnam areas, Vietnamese tunes (a family's recordings from
+  // Studio first); the 🎵 Songs page, while open, chooses the music itself
+  if (h0 && !gameOpen() && !Music.pinned) {
     const rg = G.regionOf[0], nearPond = G.farm && dist2(h0.pos.x, h0.pos.z, G.farm.pondPos.x, G.farm.pondPos.z) < 12;
-    Music.play(G.places.dancing ? G.places.song() : h0.gliding ? 'glide' : nearPond ? 'pond' : rg === 'home' ? 'farm' : world.isNight() ? 'night'
-      : rg === 'village' ? (Math.floor(t / 90) % 2 ? 'village2' : 'village') : SHRINES.some(s => dist2(s.x, s.z, h0.pos.x, h0.pos.z) < 8) ? 'shrine' : 'field');
+    const fest = G.festivals && G.festivals.current && G.festivals.current(), festSongs = fest ? songsFor(fest) : [], turn = l => l[Math.floor(t / 90) % l.length];
+    Music.play(G.places.dancing ? G.places.song() : h0.gliding ? 'glide' : festSongs.length ? turn(festSongs) : nearPond ? 'pond' : rg === 'home' ? 'farm' : world.isNight() ? 'night'
+      : VN_AREAS.includes(rg) ? turn(songsFor('vn')) : SHRINES.some(s => dist2(s.x, s.z, h0.pos.x, h0.pos.z) < 8) ? 'shrine' : 'field');
   }
   $('#songBtn').hidden = !G.places.dancing || G.paused;
   if (!G.paused) world.updateSky(dt, h0.pos, h0.pos);

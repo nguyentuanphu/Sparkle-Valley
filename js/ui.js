@@ -393,6 +393,7 @@ export function openQuick(game, i) {
         ${row('voiceControl', '🎤', T('Voice control', 'Điều khiển bằng giọng nói'), s.voiceControl !== false)}${row('alwaysDay', '☀️', T('Always daytime', 'Luôn ban ngày'), s.alwaysDay)}
         <div class="qs-sub">${T('Text size', 'Cỡ chữ')}</div><div class="seg tsize">${[0, 1, 2].map(k => `<button data-ts="${k}" class="${(s.textSize || 0) === k ? 'on' : ''}" style="font-size:${16 + k * 5}px">A</button>`).join('')}</div></div>
       ${game.festivals ? `<button class="qs-fest" id="qFest"><span>🎉</span><b>${T('Festivals', 'Lễ hội')}</b><small>${T('Tết, Mid-Autumn, Diwali, Christmas, Australia Day: any day you like', 'Tết, Trung Thu, Diwali, Giáng Sinh, Ngày Nước Úc: ngày nào cũng được')}</small></button>` : ''}
+      <button class="qs-fest qs-songs" id="qSongs"><span>🎵</span><b>${T('Songs', 'Bài hát')}</b><small>${T('Lullabies, village tunes, festival songs', 'Hát ru, làng quê, nhạc lễ hội')}</small></button>
       <button class="grown qgrown"><span class="ring"></span>👨‍👩‍👧 ${T('Grown-ups settings', 'Cài đặt phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>
       <div class="actions floatbar"><button class="btn" id="qWho">👫 ${T('Change player', 'Đổi người chơi')}</button><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
     bindLang(card, draw);
@@ -410,6 +411,7 @@ export function openQuick(game, i) {
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { s.textSize = +b.dataset.ts; saveSettings(); applyComfort(); keep(draw); });
     card.querySelectorAll('.seg.vstyle button').forEach(b => b.onclick = () => { s.voiceStyle = b.dataset.v; saveSettings(); keep(draw); say('Hello! Do you like my voice?', 'Xin chào! Con có thích giọng này không?'); });
     const fb = card.querySelector('#qFest'); if (fb) fb.onclick = () => { SFX.tap(); m.close(); openFestivals(game, i); };
+    const sb = card.querySelector('#qSongs'); if (sb) sb.onclick = () => { SFX.tap(); m.close(); game.openSongs && game.openSongs(); };
     card.querySelector('#qWho').onclick = () => { m.close(); game.changePlayer(); };
     // the full Grown-ups settings, from inside the game (press and hold, so little fingers don't open it by accident)
     holdButton(card.querySelector('.qgrown'), () => openGrownups(() => { draw(); game.huds.forEach(h => { h.refreshAudio(); h.refreshWho(); }); }));

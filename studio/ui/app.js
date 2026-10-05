@@ -17,7 +17,7 @@ const saveContent = async () => { await api('content', CONTENT); if (INFO) { INF
 const SECTIONS = [
   { k: 'home', i: '🏠', en: 'Home', vi: 'Trang chính', pages: ['home'] },
   { k: 'family', i: '💛', en: 'Family', vi: 'Gia đình', pages: ['message', 'children', 'album', 'quiz', 'stories', 'villagers'] },
-  { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['path', 'map', 'photos', 'play', 'voices', 'ads'] },
+  { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['path', 'music', 'map', 'photos', 'play', 'voices', 'ads'] },
   { k: 'players', i: '📊', en: 'Analytics', vi: 'Phân tích', pages: ['players'] },
   { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Cài đặt', pages: ['publish', 'site', 'check', 'settings'] }
 ];
@@ -31,6 +31,7 @@ const ABOUT = {
   stories: ['📖', 'Our stories', 'Truyện nhà mình', 'Write the family’s own picture stories', 'Viết truyện tranh của gia đình'],
   villagers: ['🧑', 'Villagers', 'Nhân vật', 'Names and photo faces of the people in the valley', 'Tên và ảnh khuôn mặt của mọi người trong thung lũng'],
   path: ['🧸', 'Simple screen', 'Màn hình đơn giản', 'Which games under-5s see, and in which area', 'Bé dưới 5 tuổi thấy trò nào, ở khu nào'],
+  music: ['🎵', 'Music', 'Âm nhạc', 'Your own recordings: lullabies, Tết and Trung Thu songs, village songs', 'Bản ghi của nhà mình: hát ru, nhạc Tết, Trung Thu, làng quê'],
   map: ['🗺️', 'Map and building', 'Bản đồ & xây dựng', 'Move, add or remove buildings and land', 'Di chuyển, thêm hoặc bỏ nhà và đất'],
   photos: ['📷', 'Real photos', 'Ảnh thật', 'Real photos of the landmarks', 'Ảnh thật của các địa danh'],
   play: ['⏰', 'Play time', 'Giờ chơi', 'Rest reminders and other starting settings', 'Nhắc nghỉ và các cài đặt ban đầu khác'],
@@ -317,6 +318,27 @@ PAGES.path = async P => {
         if (f.dataset.f === 'area') draw();
       }); });
     $('#reset').onclick = () => { CONTENT.activities = {}; draw(); };
+    $('#save').onclick = () => saveContent().catch(fail);
+  };
+  draw();
+};
+// ---------- 🎵 Music (round N): the family's own recordings, and where each one plays ----------
+PAGES.music = async P => {
+  CONTENT.music = CONTENT.music || [];
+  const TAGS = [['lullaby', '🌙', 'Lullaby (hát ru)', 'Hát ru'], ['tet', '🧧', 'Tết', 'Tết'], ['midautumn', '🏮', 'Trung Thu', 'Trung Thu'], ['christmas', '🎄', 'Christmas', 'Giáng Sinh'], ['diwali', '🪔', 'Diwali', 'Diwali'], ['ausday', '🇦🇺', 'Australia Day', 'Ngày Nước Úc'], ['vn', '🏮', 'Vietnam areas', 'Khu Việt Nam'], ['kids', '🎈', 'Children’s songs', 'Thiếu nhi']];
+  const draw = () => {
+    P.innerHTML = `<h2>🎵 ${T('Music', 'Âm nhạc')}</h2><p class="sub">${T('Add your own recordings: a lullaby sung by Mum or Grandma, a Tết or Trung Thu song you have the rights to. Tick where each one plays: it is used instead of the built-in tune there, and it appears under “Our family’s songs” on the children’s 🎵 Songs page. MP3, up to 4 MB each.', 'Thêm bản ghi của nhà mình: bài hát ru mẹ hoặc bà hát, bài hát Tết hay Trung Thu mà bạn có quyền dùng. Đánh dấu nơi phát: bài sẽ thay nhạc có sẵn ở đó, và hiện trong “Bài hát của nhà mình” trên trang 🎵 Bài hát của các con. MP3, tối đa 4 MB mỗi bài.')}</p>
+      ${CONTENT.music.map((m, i) => `<div class="card" data-i="${i}"><div class="row"><div><label>🇦🇺 ${T('Name', 'Tên')}</label><input type="text" data-f="en" value="${esc(m.en || '')}"></div><div><label>🇻🇳 ${T('Name', 'Tên')}</label><input type="text" data-f="vi" value="${esc(m.vi || '')}"></div><button class="btn small bad" data-rm style="flex:0 0 auto">🗑️</button></div>
+        <audio controls preload="none" src="${GAME + esc(m.file)}" style="width:100%;margin:8px 0"></audio>
+        <div class="row" style="gap:6px">${TAGS.map(([k, ic, en, vi]) => `<label style="flex:0 0 auto;font-weight:400"><input type="checkbox" data-t="${k}" ${(m.tags || []).includes(k) ? 'checked' : ''}> ${ic} ${T(en, vi)}</label>`).join('')}</div></div>`).join('') || `<div class="card note">${T('No recordings yet.', 'Chưa có bản ghi nào.')}</div>`}
+      <div class="bar"><label class="btn ghost" for="mfile">➕ ${T('Add an MP3', 'Thêm MP3')}</label><input type="file" id="mfile" accept="audio/mpeg,.mp3" hidden><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
+    P.querySelectorAll('[data-i]').forEach(c => { const m = CONTENT.music[+c.dataset.i];
+      c.querySelectorAll('[data-f]').forEach(f => f.oninput = () => { m[f.dataset.f] = f.value; });
+      c.querySelectorAll('[data-t]').forEach(f => f.onchange = () => { m.tags = TAGS.map(t => t[0]).filter(k => c.querySelector(`[data-t="${k}"]`).checked); });
+      c.querySelector('[data-rm]').onclick = () => { CONTENT.music.splice(+c.dataset.i, 1); draw(); }; });
+    $('#mfile').onchange = e => { const f = e.target.files[0]; if (!f) return; if (f.size > 4 * 1024 * 1024) { toast(T('That file is over 4 MB.', 'Tệp lớn hơn 4 MB.')); return; }
+      const rd = new FileReader(); rd.onload = async () => { try { const name = f.name.replace(/\.mp3$/i, ''); const r = await api('musicfile', { id: name, dataUrl: String(rd.result).replace(/^data:audio\/[^;]*;/, 'data:audio/mpeg;') });
+        CONTENT.music.push({ id: name.replace(/[^\w-]/g, '').slice(0, 30) || 'song', file: r.file, en: name, vi: name, tags: ['lullaby'] }); draw(); toast(T('Added. Tick where it plays, then Save.', 'Đã thêm. Đánh dấu nơi phát rồi bấm Lưu.')); } catch (err) { fail(err); } }; rd.readAsDataURL(f); };
     $('#save').onclick = () => saveContent().catch(fail);
   };
   draw();
