@@ -64,7 +64,7 @@ import { CUSTOM } from './custom.js';
 import { createFolkShow } from './folkshow.js';
 import { createAds } from './ads.js';
 import { buildSolids } from './solids.js';
-import { startCounting, countPlay } from './players.js';
+import { startCounting, countPlay, watchHero } from './players.js';
 import { startPackBar } from './packbar.js';
 import { codeHTML, bindCode, padHTML, boxHTML, animalSay } from './roomcode.js';
 // the family's defaults from Sparkle Studio: applied once each time they change there (a grown-up can still change
@@ -1214,6 +1214,7 @@ function frame(now) {
         else { const dx = P.pos.x - h.pos.x, dz = P.pos.z - h.pos.z, d = Math.hypot(dx, dz); if (d > 3.2) { h.goal = { x: P.pos.x - dx / d * 2.2, z: P.pos.z - dz / d * 2.2 }; h.goalT = 0; if (d > 40 && !(h._followHop > performance.now())) { h._followHop = performance.now() + 5000; G.travel(h, P.pos.x - dx / d * 3, P.pos.z - dz / d * 3); } } else if (h.goal) h.goal = null; }
       }
       h.update(dt, pads[i], t, G);
+      if (i === 0) watchHero(h, pads[i], dt, G.regionOf[i]); // stuck: pushing to walk without moving (Studio's report)
       if (!h.profile.quests.owl && !G._owlAuto && dist2(h.pos.x, h.pos.z, owl.x, owl.z) < 6) { G._owlAuto = true; owlTalk(h); }
       if (h.goalAct && !h.goal) { const it = h.goalAct; h.goalAct = null; if (dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r + .8) { SFX.tap(); it.act(h, G); } }
       const it = h.carry ? h.carryIt || null : nearest(h);
@@ -1373,7 +1374,7 @@ world.levelled = levelUnderBuildings(world, scene); bootMark('levelled');
 world.roadside = plantRoadside(G); // soft road edges and flowers, once everything stands
 bootMark('roadside'); G.solidsReady = buildSolids(G); bootMark('solids'); // nobody walks through houses and things (js/solids.js)
 startPackBar(); // the recorded voices downloading: a small bar at the bottom (js/packbar.js)
-startCounting(); // how many children play, anonymously (js/players.js; Grown-ups can switch it off)
+startCounting(G); // how many children play, and what they play, for Studio's report (js/players.js; Grown-ups can switch it off)
 // solid things the camera must never go inside: big, opaque, still-standing meshes (collected once, refreshed
 // now and then so new houses, landmarks and boats are included)
 {

@@ -10,27 +10,84 @@ const api = async (p, body) => { const r = await fetch(BASE + '/api/' + p, body 
 const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); };
 const fail = e => toast('⚠️ ' + (e.message || e));
 let INFO = null, CONTENT = {};
-const saveContent = async () => { await api('content', CONTENT); toast(T('Saved. Publish to send it to the children’s devices.', 'Đã lưu. Bấm Phát hành để gửi tới máy của các con.')); };
+const saveContent = async () => { await api('content', CONTENT); if (INFO) { INFO.unpublished = true; head(); } toast(T('Saved. Publish to send it to the children’s devices.', 'Đã lưu. Bấm Phát hành để gửi tới máy của các con.')); };
 
-const TABS = [
-  ['home', '🏠', 'Home', 'Trang chính'], ['message', '💌', 'Message', 'Lời nhắn'], ['villagers', '🧑', 'Villagers', 'Nhân vật'], ['stories', '📖', 'Stories', 'Truyện'],
-  ['quiz', '💛', 'Family quiz', 'Đố vui gia đình'], ['path', '🧸', 'Simple screen', 'Màn hình đơn giản'], ['album', '💌', 'Family album', 'Album gia đình'], ['map', '🗺️', 'Map & building', 'Bản đồ & xây dựng'], ['photos', '📷', 'Real photos', 'Ảnh thật'], ['play', '⏰', 'Defaults', 'Mặc định'], ['children', '👧', 'Children', 'Các con'], ['voices', '🎙️', 'Voices', 'Giọng đọc'],
-  ['ads', '📣', 'Ads (off)', 'Quảng cáo (tắt)'], ['players', '📊', 'Players', 'Người chơi'], ['publish', '🚀', 'Publish', 'Phát hành'], ['site', '🌐', 'Website', 'Trang web'], ['check', '🩺', 'Check', 'Kiểm tra'], ['settings', '🔑', 'Settings', 'Cài đặt']
+// Five sections instead of seventeen tabs (round K, owner: "too many menus, confusing on the phone"): each section opens
+// as big cards, one per page; on a phone the sections are a bar at the bottom, on a computer a column on the left.
+const SECTIONS = [
+  { k: 'home', i: '🏠', en: 'Home', vi: 'Trang chính', pages: ['home'] },
+  { k: 'family', i: '💛', en: 'Family', vi: 'Gia đình', pages: ['message', 'children', 'album', 'quiz', 'stories', 'villagers'] },
+  { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['path', 'map', 'photos', 'play', 'voices', 'ads'] },
+  { k: 'players', i: '📊', en: 'Analytics', vi: 'Phân tích', pages: ['players'] },
+  { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Cài đặt', pages: ['publish', 'site', 'check', 'settings'] }
 ];
-let cur = location.hash.slice(1) || 'home';
+// each page: its picture, its name and one line saying what it is for
+const ABOUT = {
+  home: ['🏠', 'Home', 'Trang chính', '', ''],
+  message: ['💌', 'Message', 'Lời nhắn', 'A note the children see when they start playing', 'Lời nhắn các con thấy khi bắt đầu chơi'],
+  children: ['👧', 'Children', 'Các con', 'Each child’s name, age, photo and progress', 'Tên, tuổi, ảnh và tiến bộ của từng con'],
+  album: ['📸', 'Family album', 'Album gia đình', 'Family photos that arrive as postcards in the game', 'Ảnh gia đình đến thành bưu thiếp trong game'],
+  quiz: ['💛', 'Family quiz', 'Đố vui gia đình', 'Your own questions: “What is Grandma’s name?”', 'Câu hỏi của nhà mình: “Bà tên gì?”'],
+  stories: ['📖', 'Our stories', 'Truyện nhà mình', 'Write the family’s own picture stories', 'Viết truyện tranh của gia đình'],
+  villagers: ['🧑', 'Villagers', 'Nhân vật', 'Names and photo faces of the people in the valley', 'Tên và ảnh khuôn mặt của mọi người trong thung lũng'],
+  path: ['🧸', 'Simple screen', 'Màn hình đơn giản', 'Which games under-5s see, and in which area', 'Bé dưới 5 tuổi thấy trò nào, ở khu nào'],
+  map: ['🗺️', 'Map and building', 'Bản đồ & xây dựng', 'Move, add or remove buildings and land', 'Di chuyển, thêm hoặc bỏ nhà và đất'],
+  photos: ['📷', 'Real photos', 'Ảnh thật', 'Real photos of the landmarks', 'Ảnh thật của các địa danh'],
+  play: ['⏰', 'Play time', 'Giờ chơi', 'Rest reminders and other starting settings', 'Nhắc nghỉ và các cài đặt ban đầu khác'],
+  voices: ['🎙️', 'Voices', 'Giọng đọc', 'Recordings for new lines, and the children’s inbox', 'Bản ghi cho câu mới, và hộp thư của các con'],
+  ads: ['📣', 'Ads (off)', 'Quảng cáo (tắt)', 'Your own ads; nothing shows unless you turn them on', 'Quảng cáo của bạn; không hiện gì trừ khi bật'],
+  players: ['📊', 'Analytics', 'Phân tích', '', ''],
+  publish: ['🚀', 'Publish', 'Phát hành', 'Send your saved changes to the children’s devices', 'Gửi thay đổi đã lưu tới máy của các con'],
+  site: ['🌐', 'Website', 'Trang web', 'The game’s website: updates and GitHub', 'Trang web của game: cập nhật và GitHub'],
+  check: ['🩺', 'Check', 'Kiểm tra', 'Is everything set up and working?', 'Mọi thứ đã cài đặt và chạy tốt chưa?'],
+  settings: ['🔑', 'Settings', 'Cài đặt', 'Keys, the game folder, signing out', 'Khóa, thư mục game, đăng xuất']
+};
+const sectionOf = k => SECTIONS.find(x => x.k === k || x.pages.includes(k)) || SECTIONS[0];
+// #family → the Family cards; #family/quiz (or the old #quiz) → that page
+const route = () => { const h = location.hash.slice(1), [a, b] = h.split('/'); if (b && ABOUT[b]) return b; if (ABOUT[a] || SECTIONS.some(x => x.k === a)) return a; return 'home'; };
+let cur = route();
+const go = k => { if (k === cur) return; cur = k; const sec = sectionOf(k); location.hash = sec.k === k || sec.pages.length === 1 ? sec.k : sec.k + '/' + k; render(); };
+// the bar at the top: Publish when something is waiting, reload, language
+function head() {
+  const pub = $('#pub'); if (!pub) return;
+  pub.hidden = !(INFO && INFO.unpublished); pub.textContent = '🚀 ' + T('Publish', 'Phát hành');
+}
 function nav() {
-  $('#tabs').innerHTML = TABS.map(([k, i, en, vi]) => `<button data-k="${k}" class="${k === cur ? 'on' : ''}">${i} ${T(en, vi)}</button>`).join('');
-  $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => { cur = b.dataset.k; location.hash = cur; render(); });
+  const sec = sectionOf(cur);
+  $('#tabs').innerHTML = SECTIONS.map(x => `<button data-k="${x.k}" class="${x === sec ? 'on' : ''}"><span>${x.i}</span><small>${T(x.en, x.vi)}</small></button>`).join('');
+  $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.k));
   document.querySelectorAll('[data-t]').forEach(e => { const [en, vi] = e.dataset.t.split('|'); e.textContent = T(en, vi); });
   document.querySelectorAll('.lang button[data-l]').forEach(b => { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { LANG = b.dataset.l; localStorage.setItem('studioLang', LANG); render(); }; });
+  if ($('#pub')) $('#pub').onclick = () => go('publish');
+  if ($('#reload')) $('#reload').onclick = () => render(true);
+  head();
 }
-async function render() {
-  nav(); const P = $('#page');
+// the status and the family's content are fetched once and kept while you move between pages (round K: online, every
+// tab used to ask GitHub again); they are fetched again after Publish, after signing in, and with ↻
+let LOADED = false;
+async function load(force) {
+  if (LOADED && !force) return;
+  INFO = await api('info'); document.body.classList.toggle('online', !!INFO.online);
+  CONTENT = INFO.ok ? await api('content') : {};
+  LOADED = true;
+}
+const drawSection = (P, sec) => {
+  P.innerHTML = `<h2>${sec.i} ${T(sec.en, sec.vi)}</h2><div class="cards">${sec.pages.map(k => { const [i, en, vi, den, dvi] = ABOUT[k];
+    return `<button class="pcard" data-p="${k}"><span class="pi">${i}</span><b>${T(en, vi)}</b><small>${T(den, dvi)}</small></button>`; }).join('')}</div>`;
+  P.querySelectorAll('.pcard').forEach(b => b.onclick = () => go(b.dataset.p));
+};
+async function render(force) {
+  nav(); const P = $('#page'), crumb = $('#crumb');
+  if (!LOADED || force) P.innerHTML = `<div class="loading">✨ ${T('Loading…', 'Đang tải…')}</div>`;
   try {
-    INFO = await api('info'); document.body.classList.toggle('online', !!INFO.online);
+    await load(force);
     if (!INFO.ok && cur !== 'settings') { cur = 'settings'; nav(); toast(T('First, choose the game folder.', 'Trước tiên, chọn thư mục game.')); }
-    if (INFO.ok) CONTENT = await api('content');
-    await PAGES[cur](P);
+    head();
+    const sec = sectionOf(cur);
+    if (sec.k === cur && sec.pages.length > 1) { crumb.innerHTML = ''; drawSection(P, sec); window.scrollTo(0, 0); return; }
+    crumb.innerHTML = sec.pages.length > 1 ? `<button class="back">← ${sec.i} ${T(sec.en, sec.vi)}</button>` : '';
+    if (crumb.firstChild) crumb.firstChild.onclick = () => go(sec.k);
+    await PAGES[cur](P); window.scrollTo(0, 0);
   } catch (e) { if (!e.signin) P.innerHTML = `<div class="card badtxt">${esc(e.message)}</div>`; }
 }
 
@@ -418,7 +475,7 @@ PAGES.publish = async P => {
       again();
       const r = j.result || {}, draft = what === 'draft';
       $('#gres').innerHTML = j.error ? '⚠️ ' + esc(j.error) : r.changed ? `✅ ${r.changed} ${draft ? T('files saved in the draft', 'tệp đã lưu vào bản nháp') : T('files published', 'tệp đã phát hành')} · <a href="${esc(r.url)}" target="_blank">${T('see the change', 'xem thay đổi')}</a>. ${draft ? T('The website has not changed yet: press 2. Publish when you are ready.', 'Trang web chưa đổi: bấm 2. Phát hành khi bạn sẵn sàng.') : T('Netlify updates the site in a minute or two.', 'Netlify cập nhật trang sau một hai phút.')}` : '✅ ' + esc(r.note || T('Nothing new.', 'Không có gì mới.'));
-      if (!j.error && $('#gwait')) { const waiting = draft ? (r.changed > 0 || INFO.unpublished) : false; INFO.unpublished = waiting; $('#gwait').className = waiting ? 'warn' : 'ok'; $('#gwait').textContent = waiting ? '✏️ ' + T('A draft is waiting on GitHub: press Publish to put it live.', 'Có bản nháp đang chờ trên GitHub: bấm Phát hành để đưa lên.') : '✅ ' + T('No draft waiting.', 'Không có bản nháp đang chờ.'); }
+      if (!j.error && $('#gwait')) { const waiting = draft ? (r.changed > 0 || INFO.unpublished) : false; INFO.unpublished = waiting; head(); $('#gwait').className = waiting ? 'warn' : 'ok'; $('#gwait').textContent = waiting ? '✏️ ' + T('A draft is waiting on GitHub: press Publish to put it live.', 'Có bản nháp đang chờ trên GitHub: bấm Phát hành để đưa lên.') : '✅ ' + T('No draft waiting.', 'Không có bản nháp đang chờ.'); }
     };
     if (j0.end) { show(j0); fin(j0); } else watchJob(show, fin); // online it is done straight away
   };
@@ -654,38 +711,83 @@ PAGES.settings = async P => {
   <div class="card"><h3>📊 ${T('Players and the online Studio', 'Người chơi và Studio trên mạng')}</h3><div class="row"><div><label>${T('The game’s website', 'Trang web của game')}</label><input type="text" id="su" value="${esc(c.siteUrl)}" placeholder="https://sparklevalley.netlify.app"></div><div><label>${T('Studio password (STUDIO_PASSWORD in Netlify)', 'Mật khẩu Studio (STUDIO_PASSWORD trong Netlify)')} ${c.players ? '✅' : ''}</label><input type="password" id="sp" placeholder="${c.players ? T('(saved, type to replace)', '(đã lưu, gõ để thay)') : ''}"></div></div>
     <p class="note">${T('The same Studio is online at the website’s /studio/ page (sign in with this password). The Players page asks the website how many children play.', 'Studio này cũng có trên mạng ở trang /studio/ của trang web (đăng nhập bằng mật khẩu này). Trang Người chơi hỏi trang web có bao nhiêu bé đang chơi.')}</p></div>
   <div class="bar"><button class="btn ghost" id="forget">🗑️ ${T('Forget the keys', 'Xóa các khóa')}</button><button class="btn" id="save">💾 ${T('Save settings', 'Lưu cài đặt')}</button></div>`;
-  $('#save').onclick = async () => { try { await api('settings', { gameDir: $('#gd').value, azureKey: $('#ak').value, azureRegion: $('#ar').value, piperExe: $('#pe').value, piperModels: { en: $('#pen').value.trim(), vi: $('#pvi').value.trim() }, netlifyToken: $('#nt').value, netlifySite: $('#ns').value, githubToken: $('#gt').value, githubRepo: $('#gr').value, githubBranch: $('#gb').value, siteUrl: $('#su').value, studioPassword: $('#sp').value }); toast(T('Settings saved.', 'Đã lưu cài đặt.')); render(); } catch (e) { fail(e); } };
+  $('#save').onclick = async () => { try { await api('settings', { gameDir: $('#gd').value, azureKey: $('#ak').value, azureRegion: $('#ar').value, piperExe: $('#pe').value, piperModels: { en: $('#pen').value.trim(), vi: $('#pvi').value.trim() }, netlifyToken: $('#nt').value, netlifySite: $('#ns').value, githubToken: $('#gt').value, githubRepo: $('#gr').value, githubBranch: $('#gb').value, siteUrl: $('#su').value, studioPassword: $('#sp').value }); toast(T('Settings saved.', 'Đã lưu cài đặt.')); render(true); } catch (e) { fail(e); } };
   $('#forget').onclick = async () => { if (!confirm(T('Forget the Azure, Netlify and GitHub keys on this computer?', 'Xóa khóa Azure, Netlify và GitHub trên máy này?'))) return; await api('settings', { forget: ['azureKey', 'netlifyToken', 'githubToken', 'studioPassword'] }); toast(T('Keys forgotten.', 'Đã xóa khóa.')); render(); };
 };
 // ---------- players: how many children play (anonymous counts from the website, netlify/lib/players.mjs) ----------
 PAGES.players = async P => {
-  P.innerHTML = `<h2>📊 ${T('Players', 'Người chơi')}</h2><div class="card">${T('Asking the website…', 'Đang hỏi trang web…')}</div>`;
-  let r; try { r = await api('players'); } catch (e) { P.innerHTML = `<h2>📊 ${T('Players', 'Người chơi')}</h2><div class="card"><p class="badtxt">⚠️ ${esc(e.message)}</p><p class="note">${T('The count comes from the website (it needs a Git deploy on Netlify). In SparkleStudio.exe, put the website and the Studio password in Settings.', 'Số liệu đến từ trang web (cần deploy từ Git trên Netlify). Trong SparkleStudio.exe, điền trang web và mật khẩu Studio trong Cài đặt.')}</p></div>`; return; }
+  P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><div class="card">${T('Asking the website…', 'Đang hỏi trang web…')}</div>`;
+  let r; try { r = await api('players'); } catch (e) { P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><div class="card"><p class="badtxt">⚠️ ${esc(e.message)}</p><p class="note">${T('The count comes from the website (it needs a Git deploy on Netlify). In SparkleStudio.exe, put the website and the Studio password in Settings.', 'Số liệu đến từ trang web (cần deploy từ Git trên Netlify). Trong SparkleStudio.exe, điền trang web và mật khẩu Studio trong Cài đặt.')}</p></div>`; return; }
   const big = (n, en, vi) => `<div class="card stat"><b>${n}</b><span>${T(en, vi)}</span></div>`, hrs = m => m >= 120 ? (m / 60).toFixed(m >= 600 ? 0 : 1) + ' h' : m + ' min';
   const max = Math.max(1, ...r.perDay.map(d => d.devices)), W = 600, H = 150, bw = W / r.perDay.length;
   const bars = r.perDay.map((d, i) => `<rect x="${(i * bw + 2).toFixed(1)}" y="${(H - 18 - d.devices / max * (H - 30)).toFixed(1)}" width="${(bw - 4).toFixed(1)}" height="${(d.devices / max * (H - 30)).toFixed(1)}" rx="3" fill="#8a5cf6"><title>${d.date}: ${d.devices} (${d.newDevices} ${T('new', 'mới')}), ${hrs(d.mins)}</title></rect>${d.newDevices ? `<rect x="${(i * bw + 2).toFixed(1)}" y="${(H - 18 - d.newDevices / max * (H - 30)).toFixed(1)}" width="${(bw - 4).toFixed(1)}" height="${(d.newDevices / max * (H - 30)).toFixed(1)}" rx="3" fill="#ff7eb8"/>` : ''}${i % 5 === 4 ? `<text x="${(i * bw + bw / 2).toFixed(1)}" y="${H - 4}" font-size="10" text-anchor="middle" fill="#6b5b80">${d.date.slice(5)}</text>` : ''}`).join('');
   const pct = (n, t) => t ? Math.round(n / t * 100) + '%' : '–', tw = Object.values(r.kinds).reduce((a, b) => a + b, 0);
   const table = (o, name) => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<tr><td>${esc(name ? name(k) : k)}</td><td>${n}</td><td>${pct(n, tw)}</td></tr>`).join('');
-  P.innerHTML = `<h2>📊 ${T('Players', 'Người chơi')}</h2><p class="sub">${T('Counted without knowing who: each device has a random number, nothing else (no names, photos or places). A grown-up can switch it off on the device: Grown-ups → Advanced → Count players.', 'Đếm mà không biết là ai: mỗi máy chỉ có một số ngẫu nhiên (không tên, không ảnh, không địa điểm). Người lớn có thể tắt trên máy: Phụ huynh → Nâng cao → Đếm người chơi.')}</p>
-  <div class="grid">${big(r.today.devices, 'devices playing today', 'máy chơi hôm nay')}${big(r.week.devices, 'this week', 'tuần này')}${big(r.month.devices, 'last 30 days', '30 ngày qua')}${big(r.allTime, 'devices ever', 'máy từ trước tới nay')}${big(r.week.newDevices, 'new this week', 'máy mới tuần này')}${big(hrs(r.minsPerDevice), 'a device plays a day', 'mỗi máy chơi một ngày')}${big(r.kidsPerDevice, 'children per device', 'bé mỗi máy')}</div>
+  // round L: names for games and places from the game itself; each device with its children, problems, suggestions
+  let GN = {}, PN = {};
+  try { await import(GAME + 'js/games/all.js'); const { GAMES } = await import(GAME + 'js/games/registry.js'); for (const [id, g] of Object.entries(GAMES)) GN[id] = `${g.icon} ${g.name()}`; } catch (e) { }
+  try { const W = await import(GAME + 'js/world.js'); for (const [id, f] of Object.entries(W.REGION_NAMES || {})) PN[id] = typeof f === 'function' ? f() : String(f); } catch (e) { }
+  const gname = g => GN[g] || g, pname = p => PN[p] || p, when = d => d ? new Date(d + 'T12:00:00').toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { day: 'numeric', month: 'short' }) : '–';
+  const kindName = k => ({ phone: T('Phone', 'Điện thoại'), tablet: T('Tablet', 'Máy tính bảng'), computer: T('Computer', 'Máy tính') }[k] || k);
+  const locName = l => l ? [l.city, l.region, l.country].filter(Boolean).join(', ') : T('unknown', 'không rõ');
+  const hmax = Math.max(1, ...(r.hours || [])), hbars = (r.hours || []).map((m, h) => `<rect x="${h * 25 + 2}" y="${(110 - m / hmax * 90).toFixed(1)}" width="21" height="${(m / hmax * 90).toFixed(1)}" rx="3" fill="#ff7eb8"><title>${h}:00 · ${hrs(m)}</title></rect>${h % 3 === 0 ? `<text x="${h * 25 + 12}" y="126" font-size="11" text-anchor="middle" fill="currentColor">${h}</text>` : ''}`).join('');
+  const kidCard = K => `<div class="kid"><b>${K.age === 'big' ? '🧒' : '👶'} ${esc(K.name || T('A child', 'Một bé'))}</b> <span class="pill">${K.age === 'big' ? T('5 and up', '5 tuổi trở lên') : T('under 5', 'dưới 5 tuổi')}</span>
+      <p class="note">⏱️ ${hrs(K.mins)} · 🧸 ${T('Simple screen', 'Màn hình đơn giản')} ${pct(K.simpleMins, K.mins)} · 📖 ${K.tales} ${T('stories', 'truyện')}</p>
+      ${K.games.length ? `<table class="mini"><thead><tr><th>${T('Game', 'Trò chơi')}</th><th>▶</th><th>🏆</th><th>🚪</th></tr></thead><tbody>${K.games.map(([g, st, w, q]) => `<tr><td>${esc(gname(g))}</td><td>${st}</td><td>${w}</td><td class="${q > w && q >= 2 ? 'warn' : ''}">${q}</td></tr>`).join('')}</tbody></table>` : ''}
+      ${K.places.length ? `<p class="note">📍 ${K.places.map(([p, n]) => `${esc(pname(p))} (${n})`).join(' · ')}</p>` : ''}</div>`;
+  const devCard = d => `<div class="card dev" data-id="${esc(d.id)}"><div class="row" style="align-items:flex-start"><div style="flex:2">
+      <h3>${{ phone: '📱', tablet: '📲', computer: '💻' }[d.kind] || '❔'} <span class="dlabel">${esc(devName(d))}</span> <button class="btn small ghost" data-rename>✏️ ${T('Name it', 'Đặt tên')}</button></h3>
+      <p class="note">${esc(d.os)} · ${esc(d.br)}${d.screen ? ' · ' + esc(d.screen) : ''}${d.app ? ' · ' + T('installed app', 'đã cài như ứng dụng') : ''} · ${esc(d.build)} · ${d.lang === 'vi' ? 'Tiếng Việt' : 'English'}<br>📍 ${esc(locName(d.loc))} · ${T('first seen', 'lần đầu')} ${when(d.first)} · ${T('last played', 'chơi gần nhất')} ${when(d.last)}</p></div>
+      <div style="flex:1;min-width:150px"><p>⏱️ <b>${hrs(d.mins)}</b> ${T('in 30 days', 'trong 30 ngày')}<br>📅 ${d.days} ${T('days played', 'ngày có chơi')}${d.fps != null ? `<br>🎞️ ${d.fps} ${T('frames/s', 'khung hình/giây')}` : ''}${d.errors ? `<br><span class="badtxt">🐞 ${d.errors} ${T('errors', 'lỗi')}</span>` : ''}${d.stuck ? `<br><span class="warn">🧱 ${T('stuck', 'bị kẹt')} ${d.stuck}×</span>` : ''}</p></div></div>
+      <div class="kids">${d.kids.map(kidCard).join('') || `<p class="note">${T('No per-child details yet (they start with version r43).', 'Chưa có chi tiết từng bé (bắt đầu từ bản r43).')}</p>`}</div></div>`;
+  const pb = r.problems || { errors: [], stuck: [], quits: [], slow: [] };
+  // the suggestions in words, with the games', places' and devices' own names
+  const devName = d => d.label || (d.os && d.os !== '?' ? `${kindName(d.kind)} · ${d.os}${d.br && d.br !== '?' ? ' · ' + d.br : ''}` : T('A device', 'Một máy') + ' ' + d.id.slice(0, 4));
+  const where = w => { const m = /^([\w-]+)(.*)$/.exec(w || ''); return m ? pname(m[1]) + m[2] : w; };
+  const tipText = t => ({
+    quit: () => T(`“${gname(t.g)}” is often left before the end (${t.n} of ${t.st} times): it may be too hard. Try an easier level, or take it off the under-5 path (🎮 Game → 🧸 Simple screen).`, `“${gname(t.g)}” hay bị bỏ dở (${t.n}/${t.st} lần): có thể hơi khó. Thử mức dễ hơn, hoặc bỏ khỏi đường của bé dưới 5 tuổi (🎮 Trò chơi → 🧸 Màn hình đơn giản).`),
+    stuck: () => T(`Children got stuck ${t.n} times at ${where(t.where)}: worth a look on the map there (🎮 Game → 🗺️ Map).`, `Các bé bị kẹt ${t.n} lần ở ${where(t.where)}: nên xem lại bản đồ chỗ đó (🎮 Trò chơi → 🗺️ Bản đồ).`),
+    error: () => T(`The game hit an error ${t.n} times on ${t.dv} device(s): “${t.e}”. Send this line to the developer.`, `Game gặp lỗi ${t.n} lần trên ${t.dv} máy: “${t.e}”. Gửi dòng này cho người làm game.`),
+    slow: () => T(`${devName(t.d)} runs slowly (about ${t.fps} frames a second): in the game, Grown-ups → Graphics → Fast.`, `${devName(t.d)} chạy chậm (khoảng ${t.fps} khung hình/giây): trong game, Người lớn → Đồ họa → Nhanh.`),
+    old: () => T(`${devName(t.d)} still runs ${t.build} (newest ${t.newest}): open the game there with the internet on to update it.`, `${devName(t.d)} vẫn chạy bản ${t.build} (mới nhất ${t.newest}): mở game trên máy đó khi có mạng để cập nhật.`),
+    quiet: () => T(`${devName(t.d)} has not played since ${when(t.last)}.`, `${devName(t.d)} chưa chơi từ ${when(t.last)}.`),
+    simple: () => T(`${t.name || 'A little one'} (under 5) mostly plays in the 3D valley on ${devName(t.d)}: the 🧸 Simple screen may be easier.`, `${t.name || 'Một bé'} (dưới 5 tuổi) hầu như chơi trong thung lũng 3D trên ${devName(t.d)}: 🧸 Màn hình đơn giản có thể dễ hơn.`)
+  }[t.k] || (() => ''))();
+  P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><p class="sub">${T('What the children play, from the game’s own website: per device and per child, for the last 30 days. Towns come from the internet connection (never GPS). A grown-up can leave names out (“Names in analytics”), or switch it all off (“Analytics”), on the device: Grown-ups → Advanced.', 'Các con chơi gì, từ trang web của game: theo từng máy và từng bé, trong 30 ngày qua. Thành phố lấy từ kết nối mạng (không bao giờ GPS). Người lớn có thể bỏ tên (“Tên trong phân tích”), hoặc tắt hết (“Phân tích”), trên máy: Người lớn → Nâng cao.')}</p>
+  ${(r.tips || []).length ? `<div class="card tips"><h3>💡 ${T('Suggestions', 'Gợi ý')}</h3><ul>${r.tips.map(t => `<li>${esc(tipText(t))}</li>`).join('')}</ul></div>` : ''}
+  <div class="grid">${big(r.today.devices, 'devices playing today', 'máy chơi hôm nay')}${big(r.week.devices, 'this week', 'tuần này')}${big(r.month.devices, 'last 30 days', '30 ngày qua')}${big(r.allTime, 'devices ever', 'máy từ trước tới nay')}${big(r.week.newDevices, 'new this week', 'máy mới tuần này')}${big(hrs(r.minsPerDevice), 'a device plays a day', 'mỗi máy chơi mỗi ngày')}</div>
+  <h3 class="sec">👨‍👩‍👧 ${T('Each device and child', 'Từng máy và từng bé')}</h3>${(r.devices || []).map(devCard).join('') || `<div class="card note">${T('No devices yet.', 'Chưa có máy nào.')}</div>`}
+  <h3 class="sec">🌏 ${T('Everyone', 'Tất cả')}</h3>
   <div class="card"><h3>📅 ${T('Devices each day (pink: new)', 'Số máy mỗi ngày (hồng: máy mới)')}</h3><svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px">${bars}</svg></div>
-  <div class="grid"><div class="card"><h3>🎲 ${T('Most played (30 days)', 'Chơi nhiều nhất (30 ngày)')}</h3><table><tbody>${r.games.map(([g, n]) => `<tr><td>${esc(g)}</td><td>${n}</td></tr>`).join('') || `<tr><td class="note">${T('none yet', 'chưa có')}</td></tr>`}</tbody></table><p class="note">${T('Stories read', 'Truyện đã đọc')}: ${r.tales} · ${T('played with friends online', 'chơi cùng bạn trên mạng')}: ${hrs(r.onlineMins)}</p></div>
-  <div class="card"><h3>📱 ${T('Devices this week', 'Thiết bị tuần này')}</h3><table><tbody>${table(r.kinds, k => ({ phone: T('phone', 'điện thoại'), tablet: T('tablet', 'máy tính bảng'), computer: T('computer', 'máy tính') }[k] || k))}</tbody></table><p class="note">${T('Installed as an app', 'Cài như ứng dụng')}: ${pct(r.app, r.weekDeviceDays)}</p>
-    <h3>🗣️ ${T('Language', 'Ngôn ngữ')}</h3><table><tbody>${table(r.langs, k => ({ en: 'English', vi: 'Tiếng Việt' }[k] || k))}</tbody></table>
-    <h3>🏷️ ${T('Game version on the devices', 'Phiên bản game trên các máy')}</h3><table><tbody>${table(r.builds)}</tbody></table><p class="note">${T('Newest', 'Mới nhất')}: ${esc(INFO.version.split('-').pop())}</p></div></div>
-  <p class="note">${T('Made', 'Lúc')} ${esc(new Date(r.made).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU'))}</p>`;
+  <div class="card"><h3>🕒 ${T('When they play (each device’s own clock)', 'Giờ chơi (theo đồng hồ của từng máy)')}</h3><svg viewBox="0 0 600 130" style="width:100%;max-width:600px">${hbars}</svg></div>
+  <div class="grid"><div class="card"><h3>🎲 ${T('Most played (30 days)', 'Chơi nhiều nhất (30 ngày)')}</h3><table><tbody>${r.games.map(([g, n]) => `<tr><td>${esc(gname(g))}</td><td>${n}</td></tr>`).join('') || `<tr><td class="note">${T('none yet', 'chưa có')}</td></tr>`}</tbody></table><p class="note">${T('Stories read', 'Truyện đã đọc')}: ${r.tales} · ${T('played with friends online', 'chơi cùng bạn trên mạng')}: ${hrs(r.onlineMins)}</p></div>
+    <div class="card"><h3>📍 ${T('Places visited most', 'Nơi đến nhiều nhất')}</h3><table><tbody>${(r.places || []).map(([p, n]) => `<tr><td>${esc(pname(p))}</td><td>${n}</td></tr>`).join('') || `<tr><td class="note">${T('none yet', 'chưa có')}</td></tr>`}</tbody></table></div>
+    <div class="card"><h3>🌏 ${T('Where from', 'Ở đâu')}</h3><table><tbody>${table(r.locations || {})}</tbody></table></div>
+    <div class="card"><h3>📱 ${T('Devices this week', 'Thiết bị tuần này')}</h3><table><tbody>${table(r.kinds, k => kindName(k))}</tbody></table><p class="note">${T('Installed as an app', 'Cài như ứng dụng')}: ${pct(r.app, r.weekDeviceDays)}</p>
+      <h3>💻 ${T('Systems', 'Hệ điều hành')}</h3><table><tbody>${table(r.os || {})}</tbody></table><h3>🌐 ${T('Browsers', 'Trình duyệt')}</h3><table><tbody>${table(r.browsers || {})}</tbody></table></div>
+    <div class="card"><h3>🗣️ ${T('Language', 'Ngôn ngữ')}</h3><table><tbody>${table(r.langs, k => ({ en: 'English', vi: 'Tiếng Việt' }[k] || k))}</tbody></table>
+      <h3>🏷️ ${T('Game version on the devices', 'Phiên bản game trên các máy')}</h3><table><tbody>${table(r.builds)}</tbody></table><p class="note">${T('Newest', 'Mới nhất')}: ${esc(INFO.version.split('-').pop())}</p></div></div>
+  <h3 class="sec">🐞 ${T('Problems', 'Sự cố')}</h3>
+  <div class="grid"><div class="card"><h3>🐞 ${T('Errors in the game', 'Lỗi trong game')}</h3>${pb.errors.length ? `<table class="mini"><tbody>${pb.errors.map(([k, n, dv]) => `<tr><td><code>${esc(k)}</code></td><td>${n}×</td><td>${dv} ${T('dev.', 'máy')}</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('No errors.', 'Không có lỗi.')}</p>`}</div>
+    <div class="card"><h3>🧱 ${T('Where children got stuck', 'Chỗ các bé bị kẹt')}</h3>${pb.stuck.length ? `<table class="mini"><tbody>${pb.stuck.map(([k, n]) => `<tr><td>${esc(where(k))}</td><td>${n}×</td></tr>`).join('')}</tbody></table><p class="note">${T('Pushing to walk for 4 seconds without moving (area and map position).', 'Đẩy để đi 4 giây mà không nhúc nhích (khu và vị trí trên bản đồ).')}</p>` : `<p class="ok">✅ ${T('Nobody got stuck.', 'Không ai bị kẹt.')}</p>`}</div>
+    <div class="card"><h3>🚪 ${T('Games left before the end', 'Trò bị bỏ dở')}</h3>${pb.quits.length ? `<table class="mini"><tbody>${pb.quits.map(([g, n, st, pc]) => `<tr><td>${esc(gname(g))}</td><td>${n}/${st}</td><td class="${pc >= 50 ? 'warn' : ''}">${pc}%</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('None.', 'Không có.')}</p>`}</div>
+    <div class="card"><h3>🐢 ${T('Slow devices', 'Máy chạy chậm')}</h3>${pb.slow.length ? `<table class="mini"><tbody>${pb.slow.map(([id, l, f, sm]) => `<tr><td>${esc(l || id)}</td><td>${f} ${T('frames/s', 'khung/giây')}</td><td>${sm} ${T('slow min', 'phút chậm')}</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('All smooth.', 'Đều mượt.')}</p>`}</div></div>
+  <p class="note">${T('Made', 'Lúc')} ${esc(new Date(r.made).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Brisbane' }))} AEST</p>`;
+  P.querySelectorAll('.dev [data-rename]').forEach(b => b.onclick = async () => { const card = b.closest('.dev'), id = card.dataset.id, cur = card.querySelector('.dlabel').textContent;
+    const l = prompt(T('A name for this device (e.g. “Na’s iPad”):', 'Tên cho máy này (ví dụ “iPad của Na”):'), cur); if (l === null) return;
+    try { await api('players/label', { id, label: l }); card.querySelector('.dlabel').textContent = l || cur; toast(T('Saved.', 'Đã lưu.')); } catch (e) { fail(e); } });
 };
 // ---------- signing in (online only) ----------
 function signIn() {
-  $('#tabs').innerHTML = ''; document.body.classList.add('online');
+  LOADED = false; $('#tabs').innerHTML = ''; if ($('#crumb')) $('#crumb').innerHTML = ''; if ($('#pub')) $('#pub').hidden = true; document.body.classList.add('online');
   $('#page').innerHTML = `<div class="card signin"><h2>✨ Sparkle Studio</h2><p class="sub">${T('The grown-ups’ dashboard, online. Enter the Studio password.', 'Bảng điều khiển của người lớn, trên mạng. Nhập mật khẩu Studio.')}</p>
     <form id="si"><input type="password" id="pw" autocomplete="current-password" placeholder="${T('Password', 'Mật khẩu')}"><button class="btn" style="margin-top:10px">🔓 ${T('Sign in', 'Đăng nhập')}</button><p class="note" id="sires"></p></form></div>`;
   $('#si').onsubmit = async e => { e.preventDefault(); $('#sires').textContent = '…';
     const r = await fetch(BASE + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: $('#pw').value }) }); const j = await r.json().catch(() => ({}));
-    if (r.ok) render(); else $('#sires').textContent = '⚠️ ' + (j.error || r.status); };
+    if (r.ok) render(true); else $('#sires').textContent = '⚠️ ' + (j.error || r.status); };
   $('#pw').focus();
 }
-window.addEventListener('hashchange', () => { const k = location.hash.slice(1); if (PAGES[k] && k !== cur) { cur = k; render(); } });
+window.addEventListener('hashchange', () => { const k = route(); if (k !== cur) { cur = k; render(); } });
 render();
 // keep the Studio running while this window is open; ⏻ stops it
 setInterval(() => { if (INFO && !INFO.online) fetch(BASE + '/api/ping').catch(() => { }); }, 20000);

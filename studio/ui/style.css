@@ -38,3 +38,47 @@ canvas.crop { width: 100%; max-width: 360px; aspect-ratio: 1; border-radius: 16p
 .signin { max-width: 420px; margin: 40px auto; }
 .signin input { width: 100%; }
 .inbox { border: 2px dashed #8a5cf6; border-radius: 12px; padding: 10px 14px; margin-bottom: 10px; background: #f6f0ff; }
+/* ---------- round K: five sections; a column on the left on a computer, a bar at the bottom on a phone ---------- */
+header { position: sticky; top: 0; z-index: 10; padding: calc(env(safe-area-inset-top) + 10px) 16px 10px; }
+.actions { display: flex; align-items: center; gap: 8px; }
+.actions .icon { width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .25); color: #fff; font-size: 20px; cursor: pointer; }
+.actions .pub { border: 0; border-radius: 999px; padding: 9px 16px; background: #fff; color: #8a5cf6; font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 0 0 3px rgba(255, 255, 255, .5); }
+.actions .pub[hidden] { display: none; }
+.lang { display: flex; } .lang button { margin-left: 0; } .lang button + button { margin-left: 4px; }
+nav#tabs { flex-direction: column; flex-wrap: nowrap; gap: 6px; position: fixed; top: 64px; left: 0; bottom: 0; width: 200px; padding: 14px 10px; border-bottom: 0; border-right: 1px solid var(--line); overflow-y: auto; }
+nav#tabs button { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; border: 0; background: transparent; font-size: 17px; text-align: left; }
+nav#tabs button span { font-size: 22px; } nav#tabs button.on { background: var(--accent); color: #fff; }
+#crumb, main { margin-left: 200px; }
+#crumb { max-width: 1100px; padding: 12px 16px 0; } #crumb:empty { display: none; }
+#crumb .back { border: 0; background: transparent; color: var(--accent); font: inherit; font-weight: 600; padding: 8px 4px; cursor: pointer; }
+main { padding-top: 12px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-top: 12px; }
+.pcard { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; padding: 18px; border-radius: 18px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; cursor: pointer; min-height: 130px; box-shadow: 0 3px 0 var(--line); }
+.pcard:hover { border-color: var(--accent); } .pcard .pi { font-size: 34px; line-height: 1; } .pcard b { font-size: 18px; } .pcard small { color: var(--soft); }
+.loading { padding: 40px 0; text-align: center; color: var(--soft); font-size: 18px; }
+.card { overflow-x: auto; }
+@media (max-width: 899px) {
+  header { padding: calc(env(safe-area-inset-top) + 8px) 12px 8px; }
+  .brand small { display: none; } .brand b { font-size: 18px; }
+  nav#tabs { top: auto; bottom: 0; right: 0; width: auto; flex-direction: row; justify-content: space-around; padding: 6px 4px calc(env(safe-area-inset-bottom) + 6px); border-right: 0; border-top: 1px solid var(--line); box-shadow: 0 -4px 14px rgba(60, 30, 90, .08); z-index: 10; }
+  nav#tabs button { flex: 1; flex-direction: column; gap: 2px; padding: 8px 2px; font-size: 12px; text-align: center; min-height: 58px; justify-content: center; }
+  nav#tabs button.on { background: #efe6ff; color: var(--accent); font-weight: 700; }
+  #crumb, main { margin-left: 0; }
+  main { padding-bottom: calc(env(safe-area-inset-bottom) + 110px); }
+  .bar { bottom: calc(env(safe-area-inset-bottom) + 70px); }
+  .cards { grid-template-columns: 1fr; gap: 10px; }
+  .pcard { flex-direction: row; align-items: center; min-height: 0; padding: 14px 16px; gap: 14px; }
+  .pcard b { display: block; } .pcard small { display: block; }
+  .pcard { display: grid; grid-template-columns: 44px 1fr; grid-template-rows: auto auto; column-gap: 14px; row-gap: 2px; }
+  .pcard .pi { grid-row: 1 / span 2; align-self: center; }
+  .actions { gap: 6px; } .actions .icon { width: 36px; height: 36px; font-size: 18px; } .lang button { padding: 6px 10px; }
+  .actions .pub { padding: 8px 12px; font-size: 14px; }
+}
+/* round L: the play report, per device and per child */
+.tips { border-color: #ffd23f; background: #fffbea; } .tips ul { margin: 6px 0 0; padding-left: 20px; } .tips li { margin: 4px 0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tips { background: #3a3320; } }
+h3.sec { margin: 22px 0 8px; font-size: 20px; }
+.dev h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 4px; }
+.kids { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-top: 8px; }
+.kid { border: 1px dashed var(--line); border-radius: 12px; padding: 10px 12px; }
+table.mini td, table.mini th { padding: 4px 6px; font-size: 14px; } table.mini th { color: var(--soft); font-weight: 600; }

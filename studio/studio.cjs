@@ -108,6 +108,7 @@ const local = {
     const r = await fetch(site() + '/studio/api/players', { headers: { 'X-Studio-Password': conf.studioPassword || '' } });
     const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'The website said ' + r.status); return j;
   },
+  label: async b => { const r = await fetch(site() + '/studio/api/players/label', { method: 'POST', headers: { 'X-Studio-Password': conf.studioPassword || '', 'X-Studio': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.id, label: b.label }) }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'The website said ' + r.status); return j; },
   inbox: async () => { if (!conf.studioPassword) return []; const r = await fetch(site() + '/studio/api/inbox', { headers: { 'X-Studio-Password': conf.studioPassword } }); return r.ok ? r.json() : []; },
   onlineVersion: async () => { const r = await fetch(site() + '/studio/version.json', { cache: 'no-store' }); return r.ok ? (await r.json()).studio : null; },
   api: async (api, method, b) => {

@@ -8,7 +8,7 @@
 //   AZURE_KEY, AZURE_REGION                            to make voices online             optional
 //   NETLIFY_TOKEN                                      the Website page                  optional
 import core from '../../studio/core.cjs';
-import { report, inbox } from '../lib/players.mjs';
+import { report, inbox, setLabel } from '../lib/players.mjs';
 const { createStudio, githubStore, makeToken, checkToken, samePassword } = core;
 
 const env = k => ((globalThis.Netlify && globalThis.Netlify.env.get(k)) || process.env[k] || '').trim();
@@ -35,6 +35,8 @@ export const makeStudio = ({ playersStore = blobs } = {}) => async req => {
   const players = async () => report(await playersStore());
   if (p === '/studio/api/players') return json(await players());
   if (p === '/studio/api/inbox') return json(await inbox(await playersStore()));
+  // a name for a device in the play report ("Na's iPad"), round L
+  if (p === '/studio/api/players/label' && post) { const b = await req.json().catch(() => ({})); return json({ ok: await setLabel(await playersStore(), b.id, b.label) }); }
   const conf = { azureKey: env('AZURE_KEY'), azureRegion: env('AZURE_REGION'), githubToken: env('GITHUB_TOKEN'), githubRepo: env('GITHUB_REPO') || 'nguyentuanphu/Sparkle-Valley', githubBranch: env('GITHUB_BRANCH') || 'main',
     netlifyToken: env('NETLIFY_TOKEN'), netlifySite: env('NETLIFY_SITE') || env('SITE_ID'), siteUrl: env('URL') };
   if (!conf.githubToken) return json({ error: 'Add GITHUB_TOKEN in Netlify (Site configuration → Environment variables) so the online Studio can read and save the family’s files.', setup: true }, 503);

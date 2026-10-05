@@ -74,6 +74,7 @@ export const settings = Object.assign({
   quality: 'auto',       // 'auto' | 'low' | 'high'
   camSpeed: 1,
   camMode: 'easy',       // 'easy' = fixed high view (best for little ones) | 'free' = drag to look around
+  reportNames: true,     // the children's first names in Studio's play report (round L; off: "child 1, child 2")
   countPlayers: true,    // say an anonymous hello to the game's website, so the family knows how many children play (js/players.js)
   familyVoice: true,     // play the grown-up's recordings when there are some
   familyPitch: 0,        // speaking pitch matched to the recordings (0 = not set)
