@@ -297,8 +297,6 @@ export function openGrownups(after) {
       <p class="note">${T('Each language has its own 11 lines. The game plays your real voice whenever it says one of those lines (praise, “try again”, “you did it”, hello…), in the language the game is set to. Everything else is read by the device voice, tuned towards your voice.', 'Mỗi ngôn ngữ có 11 câu riêng. Trò chơi phát đúng giọng thật của bạn mỗi khi nói một trong các câu đó (khen, “thử lại nhé”, “con làm được rồi”, chào…), theo ngôn ngữ đang chọn. Các câu khác do giọng máy đọc, được chỉnh gần với giọng bạn.')}</p>
       ${extrasHTML()}
       <div class="field"><label>📊 ${T('Analytics', 'Phân tích')}</label><div class="seg cnt"><button data-c="1" class="${settings.countPlayers !== false ? 'on' : ''}">${T('On', 'Bật')}</button><button data-c="0" class="${settings.countPlayers === false ? 'on' : ''}">${T('Off', 'Tắt')}</button></div></div>
-      <div class="field"><label>${T('Names in analytics', 'Tên trong phân tích')}</label><div class="seg rnm"><button data-c="1" class="${settings.reportNames !== false ? 'on' : ''}">${T('On', 'Bật')}</button><button data-c="0" class="${settings.reportNames === false ? 'on' : ''}">${T('Off', 'Tắt')}</button></div></div>
-      <p class="note">${T('Analytics: the game tells its own website what was played, for the grown-ups’ Analytics page in Sparkle Studio: minutes, games, places and stories per child (with first names unless switched off above), the device and browser type, roughly which town (from the internet connection, never GPS), and any errors or places a child got stuck. Never photos, voices or anything a child typed. Switch it off any time.', 'Phân tích: trò chơi báo cho trang web của mình những gì đã chơi, cho trang Phân tích của người lớn trong Sparkle Studio: số phút, trò chơi, nơi chốn và truyện của từng bé (kèm tên, trừ khi tắt ở trên), loại máy và trình duyệt, khoảng thành phố nào (từ kết nối mạng, không bao giờ dùng GPS), và lỗi hay chỗ bé bị kẹt. Không bao giờ có ảnh, giọng nói hay chữ bé gõ. Tắt lúc nào cũng được.')}</p>
       <div class="field"><label>${T('Camera', 'Góc nhìn')}</label><div class="seg cam"><button data-c="easy" class="${settings.camMode !== 'free' ? 'on' : ''}">🧸 ${T('Easy: fixed view from above', 'Dễ: nhìn từ trên, cố định')}</button><button data-c="free" class="${settings.camMode === 'free' ? 'on' : ''}">🧭 ${T('Explorer: drag to look around', 'Tự do: kéo để xoay')}</button></div></div>
       <div class="field"><label>${T('Graphics', 'Đồ họa')}</label><div class="seg q">${['low', 'auto', 'high'].map(q => `<button data-q="${q}" class="${settings.quality === q ? 'on' : ''}">${{ low: T('Fast', 'Nhanh'), auto: T('Auto', 'Tự động'), high: T('Pretty', 'Đẹp') }[q]}</button>`).join('')}</div></div>
       <h3>🏷️ ${T('Character names', 'Tên nhân vật')}</h3>
@@ -326,7 +324,6 @@ export function openGrownups(after) {
     card.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const n = +b.dataset.add; if (window.__sv && window.__sv.addCoins) window.__sv.addCoins(n); else { farm.coins += n; saveFarm(); } SFX.coin ? SFX.coin() : SFX.chime(); card.querySelector('#gCoins').textContent = fmt(farm.coins); toast(T('Coins added: ', 'Đã thêm: ') + fmt(n)); });
     card.querySelectorAll('.seg.cam button').forEach(b => b.onclick = () => { settings.camMode = b.dataset.c; saveSettings(); draw(); });
     card.querySelectorAll('.seg.cnt button').forEach(b => b.onclick = () => { settings.countPlayers = b.dataset.c === '1'; saveSettings(); draw(); });
-    card.querySelectorAll('.seg.rnm button').forEach(b => b.onclick = () => { settings.reportNames = b.dataset.c === '1'; saveSettings(); draw(); });
     card.querySelectorAll('.seg.q button').forEach(b => b.onclick = () => { settings.quality = b.dataset.q; saveSettings(); draw(); toast(T('Restart the game to change graphics.', 'Mở lại trò chơi để đổi đồ họa.')); });
     const chk = (id, k, f) => card.querySelector(id).onchange = e => { settings[k] = e.target.checked; saveSettings(); f && f(); };
     card.querySelector('#gAutoMeet').onchange = e => { settings.autoMeet = e.target.checked; saveSettings(); };
@@ -393,6 +390,7 @@ export function openQuick(game, i) {
         ${row('voiceControl', '🎤', T('Voice control', 'Điều khiển bằng giọng nói'), s.voiceControl !== false)}${row('alwaysDay', '☀️', T('Always daytime', 'Luôn ban ngày'), s.alwaysDay)}
         <div class="qs-sub">${T('Text size', 'Cỡ chữ')}</div><div class="seg tsize">${[0, 1, 2].map(k => `<button data-ts="${k}" class="${(s.textSize || 0) === k ? 'on' : ''}" style="font-size:${16 + k * 5}px">A</button>`).join('')}</div></div>
       ${game.festivals ? `<button class="qs-fest" id="qFest"><span>🎉</span><b>${T('Festivals', 'Lễ hội')}</b><small>${T('Tết, Mid-Autumn, Diwali, Christmas, Australia Day: any day you like', 'Tết, Trung Thu, Diwali, Giáng Sinh, Ngày Nước Úc: ngày nào cũng được')}</small></button>` : ''}
+      <button class="qs-fest qs-songs" id="qSongs"><span>🎵</span><b>${T('Songs', 'Bài hát')}</b><small>${T('Lullabies, village tunes, festival songs', 'Hát ru, làng quê, nhạc lễ hội')}</small></button>
       <button class="grown qgrown"><span class="ring"></span>👨‍👩‍👧 ${T('Grown-ups settings', 'Cài đặt phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>
       <div class="actions floatbar"><button class="btn" id="qWho">👫 ${T('Change player', 'Đổi người chơi')}</button><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
     bindLang(card, draw);
@@ -410,6 +408,7 @@ export function openQuick(game, i) {
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { s.textSize = +b.dataset.ts; saveSettings(); applyComfort(); keep(draw); });
     card.querySelectorAll('.seg.vstyle button').forEach(b => b.onclick = () => { s.voiceStyle = b.dataset.v; saveSettings(); keep(draw); say('Hello! Do you like my voice?', 'Xin chào! Con có thích giọng này không?'); });
     const fb = card.querySelector('#qFest'); if (fb) fb.onclick = () => { SFX.tap(); m.close(); openFestivals(game, i); };
+    const sb = card.querySelector('#qSongs'); if (sb) sb.onclick = () => { SFX.tap(); m.close(); game.openSongs && game.openSongs(); };
     card.querySelector('#qWho').onclick = () => { m.close(); game.changePlayer(); };
     // the full Grown-ups settings, from inside the game (press and hold, so little fingers don't open it by accident)
     holdButton(card.querySelector('.qgrown'), () => openGrownups(() => { draw(); game.huds.forEach(h => { h.refreshAudio(); h.refreshWho(); }); }));

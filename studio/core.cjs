@@ -378,6 +378,11 @@ function createStudio({ store, conf, online = false, local = {} }) {
       const buf = Buffer.from(m[1], 'base64'); if (buf.length > 600 * 1024) return bad('That photo is too big (over 600 KB).');
       const rel = 'content/album/' + (slug(b.id || 'photo') || 'photo') + '-' + Date.now().toString(36) + '.jpg'; await S.write(rel, buf); return ok({ photo: rel });
     }
+    if (api === 'musicfile' && post) { // a family recording (round N): a lullaby, a festival song… (content/music/), published with the content pack
+      const m = /^data:audio\/(?:mpeg|mp3);base64,(.+)$/.exec(b.dataUrl || ''); if (!m) return bad('Choose an MP3 file.');
+      const buf = Buffer.from(m[1], 'base64'); if (buf.length > 4 * 1024 * 1024) return bad('That recording is too big (over 4 MB): try a shorter one, or a lower quality MP3.');
+      const rel = 'content/music/' + (slug(b.id || 'song') || 'song') + '-' + Date.now().toString(36) + '.mp3'; await S.write(rel, buf); return ok({ file: rel });
+    }
     if (api === 'adimage' && post) { // a picture for an ad (content/ads/), published with the content pack
       const m = /^data:image\/(jpeg|png);base64,(.+)$/.exec(b.dataUrl || ''); if (!m) return bad('Choose a JPG or PNG picture.');
       const buf = Buffer.from(m[2], 'base64'); if (buf.length > 600 * 1024) return bad('That picture is too big (over 600 KB). Make it smaller first.');

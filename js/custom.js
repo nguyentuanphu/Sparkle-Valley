@@ -8,6 +8,7 @@
 //   defaults { restMins }                a starting value for settings the device hasn't chosen yet
 //   ads      { enabled, perDay, items }  the family's own ads (js/ads.js); nothing shows unless enabled is true
 //   activities { id: { area, little, hide } }   the Simple screen's areas: move a game, open it to under-5s, hide it (js/content/activities.js)
+//   music    [ { id, file, en, vi, tags } ]   the family's recordings (round N; file = 'content/music/….mp3'; tags: lullaby, tet, midautumn, christmas, diwali, ausday, vn, kids)
 //   album    [ { id, photo, en, vi, place } ]   family photos that become postcards (js/familycards.js; photo = 'content/album/….jpg')
 let data = {};
 try {

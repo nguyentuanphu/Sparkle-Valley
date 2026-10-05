@@ -76,7 +76,9 @@ export function createSimple(G) {
     }
     if (t === 'places') return PLACE_AREAS.map(a => ({ area: a, items: (G.PLACES || []).map((pl, k) => ({ pl, k })).filter(x => x.pl.g === a.key)
       .map(({ pl, k }) => ({ kind: 'place', key: String(k), icon: pl.icon, name: pl.name(), voice: both(pl.name), stars: 0, max: 0 })) }));
-    return AREAS.map(a => ({ area: a, items: gamesIn(GAMES, a.key, lt).map(g => ({ kind: 'game', key: g.id, icon: GAMES[g.id].icon, name: GAMES[g.id].name(), voice: both(GAMES[g.id].name), stars: starsOf(p, g.id), max: 3, level: g.level })) }));
+    // (round N) the Music group starts with 🎵 Songs: lullabies, village tunes and festival songs to listen to
+    const songs = { kind: 'songs', key: 'songs', icon: '🎵', name: T('Songs', 'Bài hát'), voice: ['Songs', 'Bài hát'], stars: 0, max: 0 };
+    return AREAS.map(a => ({ area: a, items: (a.key === 'music' && G.openSongs ? [songs] : []).concat(gamesIn(GAMES, a.key, lt).map(g => ({ kind: 'game', key: g.id, icon: GAMES[g.id].icon, name: GAMES[g.id].name(), voice: both(GAMES[g.id].name), stars: starsOf(p, g.id), max: 3, level: g.level }))) }));
   }
   // the groups of a tab, as stops: each with its picture and name
   const tabOf = t => TABS.find(y => y.key === t);
@@ -163,6 +165,7 @@ export function createSimple(G) {
     if (busy || !s) return;
     const top = () => { const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0; };
     if (s.kind === 'sign') { SFX.tap(); say(s.voice[0], s.voice[1]); if (s.key === 'group') { group[tab] = s.to; at[tab] = 0; } else if (s.key === 'first') at[tab] = 0; else at[tab]++; sel = null; draw(); top(); return; }
+    if (s.kind === 'songs') { SFX.tap(); say(s.voice[0], s.voice[1]); G.openSongs(); return; }
     if (s.kind === 'group') { SFX.tap(); say(s.voice[0], s.voice[1]); group[tab] = s.key; at[tab] = 0; sel = null; draw(); top(); return; }
     if (!little() && sel !== idOf(s)) { // a big kid: the first tap shows it, the second one plays it
       SFX.tap(); sel = idOf(s); say(s.voice[0], s.voice[1]);

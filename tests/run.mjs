@@ -691,7 +691,7 @@ await check('adventure', async () => {
       for (let n = 0; n < 10; n++) {
         const v = __sv.simple.view; out.pages++; out.most = Math.max(out.most, v.stops.length); out.seen.push(...v.stops);
         document.querySelectorAll('.sp-stop:not(.sign) .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push(p.parentElement.getAttribute('aria-label')); });
-        out.tooBig.push(...v.stops.filter(id => A.gameInfo(id).ageMin >= 5));
+        out.tooBig.push(...v.stops.filter(id => id !== 'songs' && A.gameInfo(id).ageMin >= 5));
         if (v.page >= v.of - 1) break;
         document.querySelector('.sp-stop.sign').click(); await new Promise(r => setTimeout(r, 40));
       }
@@ -704,7 +704,7 @@ await check('adventure', async () => {
   r.find = await P.page.evaluate(() => ({ cards: document.querySelectorAll('.sp-card').length, search: !!document.querySelector('.sp-q') }));
   await P.page.click('.sp-card[data-t="games"][data-a="music"]'); r.music = await P.page.evaluate(() => __sv.simple.view.area);
   // a double tap starts the game once
-  await P.page.evaluate(() => { window.__starts = 0; const pg = __sv.playGame; __sv.playGame = (...a) => { window.__starts++; return pg(...a); }; const s = document.querySelector('.sp-stop:not(.sign)'); s.click(); s.click(); setTimeout(() => s.click(), 120); });
+  await P.page.evaluate(() => { window.__starts = 0; const pg = __sv.playGame; __sv.playGame = (...a) => { window.__starts++; return pg(...a); }; const s = [...document.querySelectorAll('.sp-stop:not(.sign)')].find(x => !/^(Songs|Bài hát)$/.test(x.getAttribute('aria-label'))); s.click(); s.click(); setTimeout(() => s.click(), 120); }); // (a game, not the Music group's 🎵 Songs)
   await P.page.waitForSelector('.gl', { timeout: 10000 }); await P.page.waitForTimeout(400);
   r.starts = await P.page.evaluate(() => window.__starts);
   await P.page.evaluate(() => document.querySelector('.gl-x').click());
@@ -795,6 +795,52 @@ await check('quiet', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(r.before.state === 'running' && r.away.state === 'suspended' && !r.away.scheduling && r.away.videoPaused && r.back.state === 'running' && !errs.length, JSON.stringify({ r, errs }));
   return 'in the background: audio asleep, no music scheduled, videos paused (a sound effect does not wake it); back on screen: sound again';
+});
+
+await check('songs', async () => {
+  // round N (owner): Trung Thu music at Trung Thu (and Tết at Tết…), Vietnamese tunes in the Vietnam areas, a 🎵 Songs
+  // page (from the Simple screen's Music group and from Settings) with hát ru words, a night look and a sleep timer;
+  // the family's Studio recordings come first; plus the reef stays in the lake and the star counter clears the top bar
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  await P.page.mouse.click(200, 420);
+  const r = await P.page.evaluate(async () => {
+    const S = await import('/js/state.js'), A = await import('/js/audio.js'), W = await import('/js/world.js'), C = await import('/js/content/songs.js'), CU = await import('/js/custom.js'), w = t => new Promise(res => setTimeout(res, t)), G = __sv, out = {};
+    S.settings.music = true; A.Music.stop();
+    // a festival: its own songs
+    S.settings.festival = 'midautumn'; G.festivals.rebuild(); await w(800); out.trungthu = A.Music.key;
+    S.settings.festival = 'none'; G.festivals.rebuild();
+    // the Vietnam village: Vietnamese tunes
+    const h = G.heroes[0]; h.pos.x = W.VILLAGE.x; h.pos.z = W.VILLAGE.z + 4; h.pos.y = W.heightAt(h.pos.x, h.pos.z); await w(1200); out.region = G.regionOf[0]; out.village = A.Music.key;
+    // the family's recording comes first for its tags
+    CU.CUSTOM.music = [{ id: 'bairu', file: 'content/music/bairu.mp3', en: 'Our lullaby', vi: 'Bài ru của mẹ', tags: ['lullaby', 'midautumn'] }];
+    out.famFest = C.songsFor('midautumn'); out.famVn = C.songsFor('vn');
+    // the 🎵 Songs page: lullabies with words, night, sleep timer; the valley leaves the music alone while it is open
+    const pg = G.openSongs('lullaby'); await w(300);
+    document.querySelector('.songs [data-s="ru1"]').click(); await w(300);
+    out.page = { night: document.querySelector('.songs').classList.contains('night'), words: document.querySelectorAll('.sg-words p').length, key: A.Music.key, pinned: A.Music.pinned, family: !!document.querySelector('.songs [data-g="family"]'), timer: document.querySelectorAll('.sg-sleep [data-t]').length };
+    await w(1200); out.stillLullaby = A.Music.key;
+    A.Music.fadeOut(.3); await w(600); out.faded = A.Music.key;
+    pg.close(); out.closed = { page: !!document.querySelector('.songs'), pinned: A.Music.pinned };
+    delete CU.CUSTOM.music;
+    // the reef: inside the lake, on ground under the water
+    out.reef = (G.world.waterSites || []).map(s => ({ id: s.id, inside: Math.hypot(s.x - W.LAKE.x, s.z - W.LAKE.z) + s.r < W.LAKE.r - 2, under: W.heightAt(s.x, s.z) < W.WATER - .3 }));
+    return out;
+  });
+  // the Simple screen's Music group starts with 🎵 Songs; Settings has a Songs card
+  await P.page.evaluate(() => { __sv.simple.show(); __sv.simple.openGroup('games', 'music'); document.querySelectorAll('.dialog').forEach(d => d.remove()); });
+  r.simple = await P.page.evaluate(async () => { const first = __sv.simple.view.stops[0]; document.querySelector('.sp-stop').click(); await new Promise(res => setTimeout(res, 400)); const open = !!document.querySelector('.songs'); document.querySelector('.songs .sg-x').click(); __sv.simple.hide(); return { first, open }; });
+  // the star counter sits under the game's top bar (it covered 📺 on notched phones)
+  await P.page.evaluate(() => { __sv.playGame(0, 'counting'); }); await P.page.waitForSelector('.gl .starbox'); // (not waiting for the game to end)
+  r.star = await P.page.evaluate(() => { const s = document.querySelector('.gl .starbox').getBoundingClientRect(), hb = [...document.querySelectorAll('.gl-head button')].map(b => b.getBoundingClientRect()); return { clear: hb.every(b => s.top >= b.bottom - 1 || s.bottom <= b.top || s.right <= b.left || s.left >= b.right) }; });
+  const errs = P.errors; await P.ctx.close();
+  ok(['trungthu1', 'trungthu2'].includes(r.trungthu), 'Trung Thu music: ' + r.trungthu);
+  ok(r.region === 'village' && ['village', 'village2', 'vn_sang', 'vn_dong', 'folk'].includes(r.village), 'Vietnam area music: ' + JSON.stringify([r.region, r.village]));
+  ok(r.famFest.join() === 'file:bairu' && r.famVn.includes('vn_sang'), 'family recordings first: ' + JSON.stringify([r.famFest, r.famVn]));
+  ok(r.page.night && r.page.words >= 4 && r.page.key === 'ru1' && r.page.pinned && r.page.family && r.page.timer === 3 && r.stillLullaby === 'ru1' && r.faded === null && !r.closed.page && !r.closed.pinned, 'songs page: ' + JSON.stringify(r.page) + ' ' + r.stillLullaby + ' ' + r.faded + ' ' + JSON.stringify(r.closed));
+  ok(r.simple.first === 'songs' && r.simple.open, 'Simple screen songs: ' + JSON.stringify(r.simple));
+  ok(r.reef.length === 2 && r.reef.every(x => x.inside && x.under), 'water landmarks: ' + JSON.stringify(r.reef));
+  ok(r.star.clear && !errs.length, JSON.stringify({ star: r.star, errs }));
+  return `Trung Thu → ${r.trungthu}; Lotus Village → ${r.village}; family recordings first; Songs page: lullaby words, night, sleep timer, valley music left alone; Simple screen Music group starts with Songs; reef and Hạ Long inside the lake; star counter clear of the top bar`;
 });
 
 await check('a11y', async () => {

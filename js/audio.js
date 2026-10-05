@@ -41,6 +41,7 @@ export function quiet() {
 }
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { quiet(); return; }
+  if (filePlayer && Music.key && Music.key.startsWith('file:')) filePlayer.play().catch(() => { }); // a family recording carries on
   if (AC && AC.state !== 'running') AC.resume().then(() => { if (Music.key) Music.next = AC.currentTime + .1; }).catch(() => { });
 });
 addEventListener('pagehide', quiet); document.addEventListener('freeze', quiet); addEventListener('blur', () => { if (document.hidden) quiet(); });
@@ -165,6 +166,39 @@ const SONGS = {
   party2: { name: 'Twinkle Remix', bpm: 122, inst: 'bell', drums: 'party', bar: 8, mel: N('C5 . C5 . G5 . G5 . | A5 . A5 . G5 . . . | F5 . F5 . E5 . E5 . | D5 . D5 . C5 . . .'), bass: N('C3 F2 G2 C3') },
   party3: { name: 'Bouncy Castle', bpm: 126, inst: 'lead', drums: 'party', bar: 8, mel: N('G5 . G5 E5 . . G5 . | A5 . G5 . E5 . . . | D5 . D5 E5 . . F5 . | E5 . D5 . C5 . . . | G5 . G5 E5 . . G5 . | C6 . B5 . A5 . G5 . | F5 . A5 . G5 . E5 . | D5 . . . C5 . . .'), bass: N('C3 C3 G2 C3 C3 A2 F2 G2') }
 };
+// ---------- round N (owner): Vietnamese, festival and lullaby music ----------
+// Original melodies in the Vietnamese pentatonic style for the Vietnam areas and the festivals (famous children's songs
+// such as "Chiếc đèn ông sao" are under copyright: families can add recordings they own in Studio → 🎵 Music), Jingle
+// Bells (public domain) for Christmas, and gentle hát ru instrumentals under the traditional lullaby words (a hát ru has
+// no fixed tune: each mother sings it her own way, so these are original slow melodies in that style).
+Object.assign(SONGS, {
+  vn_sang: { name: 'Sáng trên làng', bpm: 96, inst: 'flute', drums: 'wood', bar: 8,
+    mel: N('D5 . . F5 G5 . A5 . | G5 . F5 . D5 . . . | C5 . D5 . F5 . G5 . | A5 . . . . . . . | C6 . A5 . G5 . A5 . | G5 F5 D5 . F5 . . . | G5 . F5 . D5 . C5 . | D5 . . . . . . .'), bass: N('D3 D3 C3 F2 F2 D3 C3 D3') },
+  vn_dong: { name: 'Đồng lúa', bpm: 88, inst: 'danbau', drums: 'none', bar: 8,
+    mel: N('A5 . G5 . A5 . C6 . | D6 . . . C6 . A5 . | G5 . F5 . G5 . A5 . | G5 . . . . . . . | F5 . G5 . A5 . G5 . | F5 . D5 . C5 . D5 . | F5 . G5 . F5 . D5 . | D5 . . . . . . .'), bass: N('D3 D3 C3 C3 F2 D3 C3 D3') },
+  tet1: { name: 'Xuân về', bpm: 116, inst: 'flute', drums: 'wood', bar: 8,
+    mel: N('D5 . F5 G5 A5 . C6 . | A5 G5 F5 . G5 . . . | A5 . C6 . D6 . C6 A5 | G5 . A5 . . . . . | F5 . G5 A5 G5 F5 D5 . | C5 . D5 F5 G5 . . . | A5 G5 F5 G5 F5 . D5 C5 | D5 . . . . . . .'), bass: N('D3 F2 A2 D3 F2 C3 G2 D3') },
+  tet2: { name: 'Pháo hoa ngày Tết', bpm: 128, inst: 'lead', drums: 'party', bar: 8,
+    mel: N('D5 D5 F5 . G5 . A5 . | C6 . A5 . G5 . . . | F5 F5 G5 . A5 . C6 . | D6 . C6 . A5 . . . | G5 . A5 . G5 F5 D5 . | F5 . G5 . A5 . . . | C6 . A5 . G5 . F5 . | D5 . . . . . . .'), bass: N('D3 D3 F2 F2 G2 G2 C3 D3') },
+  trungthu1: { name: 'Rước đèn', bpm: 108, inst: 'bell', drums: 'wood', bar: 8,
+    mel: N('G5 . A5 . C6 . A5 . | G5 . E5 . G5 . . . | D5 . E5 . G5 . A5 . | G5 . . . . . . . | C6 . A5 . G5 . E5 . | D5 . E5 . G5 . . . | A5 . G5 . E5 . D5 . | C5 . . . . . . .'), bass: N('C3 C3 G2 C3 F2 C3 G2 C3') },
+  trungthu2: { name: 'Đêm trăng rằm', bpm: 84, inst: 'danbau', drums: 'none', bar: 8,
+    mel: N('A4 . C5 . D5 . . . | E5 . D5 . C5 . A4 . | G4 . A4 . C5 . . . | A4 . . . . . . . | C5 . D5 . E5 . G5 . | A5 . G5 . E5 . D5 . | C5 . D5 . A4 . G4 . | A4 . . . . . . .'), bass: N('A2 A2 G2 A2 C3 C3 G2 A2') },
+  jingle: { name: 'Jingle Bells', bpm: 132, inst: 'bell', drums: 'shaker', bar: 8,
+    mel: N('E5 . E5 . E5 . . . | E5 . E5 . E5 . . . | E5 . G5 . C5 . . D5 | E5 . . . . . . . | F5 . F5 . F5 . . F5 | F5 . E5 . E5 . E5 E5 | E5 . D5 . D5 . E5 . | D5 . . . G5 . . . | E5 . E5 . E5 . . . | E5 . E5 . E5 . . . | E5 . G5 . C5 . . D5 | E5 . . . . . . . | F5 . F5 . F5 . . F5 | F5 . E5 . E5 . E5 E5 | G5 . G5 . F5 . D5 . | C5 . . . . . . .'), bass: N('C3 C3 C3 C3 F2 C3 G2 G2 C3 C3 C3 C3 F2 C3 G2 C3') },
+  diwali: { name: 'Diya lights', bpm: 100, inst: 'pluck', drums: 'soft', bar: 8,
+    mel: N('C5 . C#5 . E5 . F5 . | G5 . F5 . E5 . . . | F5 . G5 . G#5 . G5 . | F5 . E5 . C#5 . . . | C5 . E5 . G5 . C6 . | B5 . G#5 . G5 . . . | F5 . E5 . C#5 . E5 . | C5 . . . . . . .'), bass: N('C3 C3 F2 C3 C3 C3 F2 C3') },
+  ausday: { name: 'Sunny picnic', bpm: 120, inst: 'marimba', drums: 'party', bar: 8,
+    mel: N('C5 . E5 . G5 . A5 . | G5 . E5 . C5 . . . | D5 . F5 . A5 . G5 . | E5 . . . . . . . | C5 . E5 . G5 . C6 . | A5 . G5 . E5 . D5 . | F5 . E5 . D5 . G4 . | C5 . . . . . . .'), bass: N('C3 C3 G2 C3 C3 F2 G2 C3') },
+  ru1: { name: 'À ơi', bpm: 60, inst: 'soft', drums: 'none', bar: 8, soft: true,
+    mel: N('A4 . . . C5 . D5 . | C5 . . . A4 . . . | G4 . . . A4 . C5 . | A4 . . . . . . . | D5 . . . C5 . A4 . | G4 . . . E4 . G4 . | A4 . . . . . . . | . . . . . . . .'), bass: N('A2 A2 G2 A2 D3 G2 A2 A2') },
+  ru2: { name: 'Ầu ơ', bpm: 58, inst: 'soft', drums: 'none', bar: 8, soft: true,
+    mel: N('E5 . . . D5 . C5 . | A4 . . . . . C5 . | D5 . E5 . D5 . C5 . | A4 . . . . . . . | G4 . . . A4 . C5 . | D5 . . . C5 . A4 . | G4 . A4 . . . . . | . . . . . . . .'), bass: N('A2 F2 G2 A2 C3 D3 A2 A2') },
+  ru3: { name: 'Gió mùa thu', bpm: 62, inst: 'soft', drums: 'none', bar: 8, soft: true,
+    mel: N('C5 . D5 . E5 . . . | G5 . E5 . D5 . . . | C5 . A4 . G4 . . . | A4 . . . . . . . | C5 . . . D5 . E5 . | D5 . C5 . A4 . . . | G4 . . . A4 . . . | . . . . . . . .'), bass: N('C3 C3 F2 A2 C3 D3 G2 A2') },
+  ru4: { name: 'Cái ngủ', bpm: 60, inst: 'soft', drums: 'none', bar: 8, soft: true,
+    mel: N('G4 . A4 . C5 . . . | A4 . G4 . E4 . . . | D4 . E4 . G4 . A4 . | G4 . . . . . . . | C5 . . . A4 . G4 . | E4 . G4 . A4 . . . | G4 . E4 . D4 . . . | . . . . . . . .'), bass: N('C3 C3 G2 C3 F2 C3 G2 C3') }
+});
 export const PARTY = ['party1', 'party2', 'party3'];
 function playInst(inst, m, t, v = 1) {
   const f = midi(m), o = { when: t, bus: 'music' };
@@ -172,6 +206,7 @@ function playInst(inst, m, t, v = 1) {
   else if (inst === 'bell') { tone(f, .9, Object.assign({ vol: .13 * v }, o)); tone(f * 2.01, .45, Object.assign({ vol: .04 * v }, o)); }
   else if (inst === 'lead') { tone(f, .22, Object.assign({ type: 'square', vol: .045 * v }, o)); tone(f, .3, Object.assign({ type: 'triangle', vol: .1 * v }, o)); }
   else if (inst === 'danbau') { tone(f, .7, Object.assign({ vol: .13 * v, vib: 5, vibRate: 5.5, bend: Math.random() < .3 ? [.2, 1.059, .15] : null }, o)); }
+  else if (inst === 'soft') { tone(f, 1.6, Object.assign({ vol: .09 * v, attack: .12 }, o)); tone(f * 2, .9, Object.assign({ vol: .015 * v, attack: .1 }, o)); } // a hushed music-box for lullabies
   else if (inst === 'flute') { tone(f, .5, Object.assign({ vol: .12 * v, vib: 3, vibRate: 5, attack: .05 }, o)); noise(.08, Object.assign({ freq: f * 2, vol: .015, q: 4 }, o)); }
   else tone(f, .28, Object.assign({ type: 'triangle', vol: .13 * v }, o));
 }
@@ -179,23 +214,38 @@ function songStep(s, i, t) {
   const m = s.mel[i % s.mel.length], bar = Math.floor(i / s.bar) % s.bass.length, inBar = i % s.bar;
   if (m) playInst(s.inst, m, t);
   const half = s.bar === 6 ? 3 : 2;
+  if (s.soft) { if (inBar === 0) { const b = s.bass[bar]; if (b) tone(midi(b), 2.4, { when: t, vol: .05, bus: 'music', attack: .2 }); } return; } // lullabies: one soft low note a bar, nothing else
   if (inBar % half === 0) { const b = s.bass[bar]; if (b) tone(midi(b + ((inBar / half) % 2 ? 12 : 0)), .24, { type: 'triangle', when: t, vol: .16, bus: 'music' }); }
   if (s.drums === 'party') { if (inBar % 4 === 0) tone(130, .18, { when: t, to: 45, vol: .26, bus: 'music' }); if (inBar % 8 === 4) noise(.12, { when: t, freq: 1600, vol: .16, bus: 'music' }); if (i % 2) noise(.03, { when: t, freq: 8000, vol: .04, bus: 'music' }); }
   else if (s.drums === 'soft') { if (inBar === 0) tone(110, .15, { when: t, to: 50, vol: .15, bus: 'music' }); noise(.03, { when: t, freq: 7000, vol: i % 2 ? .015 : .03, bus: 'music' }); }
   else if (s.drums === 'shaker') noise(.04, { when: t, freq: 6000, vol: inBar % 3 === 0 ? .035 : .018, bus: 'music' });
   else if (s.drums === 'wood') { if (inBar % 2 === 0) tone(inBar % 4 ? 1400 : 900, .05, { when: t, vol: .07, type: 'triangle', bus: 'music' }); }
 }
+// a family recording from Studio (content/music/…mp3) plays through this one hidden player, looped
+let filePlayer = null;
 export const Music = {
   key: null, timer: null, next: 0, step: 0,
-  play(key) {
+  pinned: false, // the 🎵 Songs page chose the music: the valley leaves it alone until the page closes
+  files: {},     // 'file:<id>' → its address (js/songs.js fills it from Studio's content pack)
+  play(key, force) {
     if (this.key === key) return;
-    this.key = key; clearInterval(this.timer); this.timer = null;
-    if (!settings.music || !(THEMES[key] || SONGS[key])) return;
+    this.key = key; clearInterval(this.timer); this.timer = null; if (filePlayer) filePlayer.pause();
+    if (!settings.music && !force) return;
+    if (key && key.startsWith('file:') && this.files[key]) {
+      if (!filePlayer) { filePlayer = document.createElement('audio'); filePlayer.loop = true; filePlayer.hidden = true; document.body.appendChild(filePlayer); }
+      if (filePlayer.dataset.src !== this.files[key]) { filePlayer.src = this.files[key]; filePlayer.dataset.src = this.files[key]; }
+      filePlayer.volume = settings.calm ? .45 : .8; filePlayer.currentTime = 0; filePlayer.play().catch(() => { }); return;
+    }
+    if (!(THEMES[key] || SONGS[key])) return;
     const a = ac(); if (!a) return;
     this.next = a.currentTime + .1; this.step = 0;
     this.timer = setInterval(() => this.tick(), 50);
   },
-  stop() { clearInterval(this.timer); this.timer = null; this.key = null; },
+  stop() { clearInterval(this.timer); this.timer = null; this.key = null; if (filePlayer) filePlayer.pause(); },
+  has: key => !!(THEMES[key] || SONGS[key]),
+  // the music fades out over a few seconds (the lullaby sleep timer), then stops
+  fadeOut(sec = 6) { if (musicBus && AC) { const g = musicBus.gain, now = AC.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(0, now + sec); } if (filePlayer) { const v0 = filePlayer.volume, t0 = Date.now(), iv = setInterval(() => { const k = (Date.now() - t0) / (sec * 1000); filePlayer.volume = Math.max(0, v0 * (1 - k)); if (k >= 1) clearInterval(iv); }, 200); }
+    setTimeout(() => { this.stop(); this.pinned = false; if (musicBus) musicBus.gain.value = settings.calm ? .17 : .35; }, sec * 1000 + 100); },
   refresh() { if (musicBus) musicBus.gain.value = settings.calm ? .17 : .35; const k = this.key; this.stop(); if (k) this.play(k); },
   songName() { return SONGS[this.key] ? SONGS[this.key].name : ''; },
   tick() {
