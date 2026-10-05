@@ -16,7 +16,7 @@ export function openSongs(G, start) {
   const idOf = s => s.alt || s.key;
   let group = start && groups.some(g => g.key === start) ? start : groups[0].key, playing = null, timer = null, timerMins = 0;
   const wasPaused = G.paused, prev = Music.key; G.paused = true; Music.pinned = true;
-  const m = el('div', 'songs'); document.body.appendChild(m);
+  const m = el('div', 'songs'); document.body.appendChild(m); document.body.classList.add('songs-on');
   function draw() {
     const night = group === 'lullaby', now = all.find(s => idOf(s) === playing);
     m.classList.toggle('night', night);
@@ -36,7 +36,7 @@ export function openSongs(G, start) {
     m.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { SFX.tap(); timerMins = +b.dataset.t; clearTimeout(timer); if (timerMins) timer = setTimeout(() => { Music.fadeOut(8); playing = null; draw(); }, timerMins * 60e3); draw(); });
   }
   function close() {
-    clearTimeout(timer); m.remove(); open = null; Music.pinned = false; Music.stop(); G.paused = wasPaused;
+    clearTimeout(timer); m.remove(); document.body.classList.remove('songs-on'); open = null; Music.pinned = false; Music.stop(); G.paused = wasPaused;
     if (prev && prev !== Music.key) Music.play(prev);
   }
   draw(); say('Tap a song to listen.', 'Chạm vào một bài để nghe nhé.');
