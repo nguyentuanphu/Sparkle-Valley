@@ -60,12 +60,12 @@ export async function hello(S, body, now = Date.now(), where = {}) {
     await S.setJSON(k, o); }
   for (const x of d.days) {
     const key = `d/${x.d}/${d.id}`, r = (await S.get(key, { type: 'json' })) || { hellos: 0, mins: 0, games: {}, tales: 0, online: 0 };
-    r.hours = r.hours || {}; r.kids = r.kids || {}; r.errs = r.errs || {}; r.stuck = r.stuck || {}; r.quits = r.quits || {}; r.fps = r.fps || [0, 0, 0];
+    r.hours = r.hours || {}; r.children = r.children || {}; r.errs = r.errs || {}; r.stuck = r.stuck || {}; r.quits = r.quits || {}; r.fps = r.fps || [0, 0, 0];
     for (const [h, n] of Object.entries(x.hours)) r.hours[h] = Math.min(60, (r.hours[h] || 0) + n);
     for (const f of ['errs', 'stuck', 'quits']) for (const [k, n] of Object.entries(x[f])) r[f][k] = (r[f][k] || 0) + n;
     r.fps = r.fps.map((v, i) => v + x.fps[i]);
     for (const [k, c] of Object.entries(x.kids)) {
-      const m = r.kids[k] = r.kids[k] || { n: '', a: c.a, m: 0, sm: 0, t: 0, g: {}, p: {} };
+      const m = r.children[k] = r.children[k] || { n: '', a: c.a, m: 0, sm: 0, t: 0, g: {}, p: {} };
       m.n = c.n; m.a = c.a; m.m = Math.min(24 * 60, m.m + c.m); m.sm = Math.min(24 * 60, m.sm + c.sm); m.t += c.t;
       for (const [g, v] of Object.entries(c.g)) { const o = m.g[g] = m.g[g] || [0, 0, 0]; v.forEach((n, i) => { o[i] += n; }); }
       for (const [pl, n] of Object.entries(c.p)) m.p[pl] = (m.p[pl] || 0) + n;
@@ -90,7 +90,7 @@ async function sumDay(S, date, keep) {
     s.ids.push(b.key.split('/')[2]); if (r.isNew) s.newDevices++; s.mins += r.mins; s.kids += r.kids; s.tales += r.tales; s.online += r.online || 0; if (r.app) s.app++;
     add(s.langs, r.lang); add(s.builds, r.build); add(s.kinds, r.kind); for (const [g, n] of Object.entries(r.games || {})) add(s.games, g, n);
     // round L: what this device did that day, kept with the day's sum (per child, hours, problems, smoothness)
-    s.dev[b.key.split('/')[2]] = { mins: r.mins, tales: r.tales, games: r.games || {}, hours: r.hours || {}, kids: r.kids || {}, errs: r.errs || {}, stuck: r.stuck || {}, quits: r.quits || {}, fps: r.fps || [0, 0, 0] };
+    s.dev[b.key.split('/')[2]] = { mins: r.mins, tales: r.tales, games: r.games || {}, hours: r.hours || {}, kids: r.children || {}, errs: r.errs || {}, stuck: r.stuck || {}, quits: r.quits || {}, fps: r.fps || [0, 0, 0] };
   }
   if (keep) await S.setJSON('sum/' + date, s); // a finished day never changes again
   return s;
@@ -159,17 +159,17 @@ async function details(S, sums, now) {
     quits: Object.entries(quits).map(([g, n]) => [g, n, starts[g] || n, Math.round(100 * n / Math.max(n, starts[g] || n))]).sort((a, b) => b[1] - a[1]).slice(0, 12),
     slow: devices.filter(d => d.fps != null && d.fps < 25).map(d => [d.id, d.label, d.fps, d.slowMins])
   };
-  // things worth doing, in plain words (both languages)
-  const tips = [], nameOf = d => d.label || `${d.os} · ${d.br}`;
-  for (const [g, n, st, pct] of problems.quits) if (st >= 5 && pct >= 50) tips.push([`“${g}” is often left before the end (${n} of ${st} times): it may be too hard. Try an easier level, or take it off the under-5 path (🧸 Simple screen).`, `“${g}” hay bị bỏ dở (${n}/${st} lần): có thể hơi khó. Thử mức dễ hơn, hoặc bỏ khỏi đường của bé dưới 5 tuổi (🧸 Màn hình đơn giản).`]);
-  for (const [k, n] of problems.stuck) if (n >= 3) tips.push([`Children got stuck ${n} times near ${k}: worth a look on the map there.`, `Các bé bị kẹt ${n} lần gần ${k}: nên xem lại bản đồ chỗ đó.`]);
-  for (const [k, n, dv] of problems.errors.slice(0, 3)) tips.push([`The game hit an error ${n} times on ${dv} device(s): “${k}”. Send this line to the developer.`, `Game gặp lỗi ${n} lần trên ${dv} máy: “${k}”. Gửi dòng này cho người làm game.`]);
-  for (const d of devices) if (d.fps != null && d.fps < 25) tips.push([`${nameOf(d)} runs slowly (about ${d.fps} frames a second): in the game, Grown-ups → Graphics → Fast.`, `${nameOf(d)} chạy chậm (khoảng ${d.fps} khung hình/giây): trong game, Người lớn → Đồ họa → Nhanh.`]);
-  const newest = Object.keys(count(d => d.build)).sort().pop();
-  for (const d of devices) if (d.days && d.build !== newest) tips.push([`${nameOf(d)} still runs ${d.build}: open the game there with the internet on to update it.`, `${nameOf(d)} vẫn chạy bản ${d.build}: mở game trên máy đó khi có mạng để cập nhật.`]);
+  // things worth doing: Studio words them (with the games' and places' own names), most useful first
+  const tips = [], who = d => ({ id: d.id, label: d.label, kind: d.kind, os: d.os, br: d.br });
+  for (const [g, n, st, pct] of problems.quits) if (st >= 5 && pct >= 50) tips.push({ k: 'quit', g, n, st });
+  for (const [where, n] of problems.stuck) if (n >= 3) tips.push({ k: 'stuck', where, n });
+  for (const [e, n, dv] of problems.errors.slice(0, 3)) tips.push({ k: 'error', e, n, dv });
+  for (const d of devices) if (d.fps != null && d.fps < 25) tips.push({ k: 'slow', d: who(d), fps: d.fps });
+  const newest = Object.keys(count(d => d.build)).filter(b => /^r\d+$/.test(b)).sort((a, b) => +a.slice(1) - +b.slice(1)).pop();
+  for (const d of devices) if (d.days && newest && /^r\d+$/.test(d.build) && d.build !== newest) tips.push({ k: 'old', d: who(d), build: d.build, newest });
   const quiet = day(now - 7 * 864e5);
-  for (const d of devices) if (d.last && d.last < quiet && d.days) tips.push([`${nameOf(d)} has not played since ${d.last}.`, `${nameOf(d)} chưa chơi từ ${d.last}.`]);
-  for (const d of devices) for (const K of d.kids) if (K.age === 'little' && K.mins > 30 && K.simpleMins < K.mins * .2) tips.push([`${K.name || 'A little one'} (under 5) mostly plays in the 3D valley: the 🧸 Simple screen may be easier.`, `${K.name || 'Một bé'} (dưới 5 tuổi) hầu như chơi trong thung lũng 3D: 🧸 Màn hình đơn giản có thể dễ hơn.`]);
+  for (const d of devices) if (d.last && d.last < quiet && d.days) tips.push({ k: 'quiet', d: who(d), last: d.last });
+  for (const d of devices) for (const K of d.kids) if (K.age === 'little' && K.mins > 30 && K.simpleMins < K.mins * .2) tips.push({ k: 'simple', name: K.name, d: who(d) });
   return { hours, places: top(places, 15), devices, os: count(d => d.os), browsers: count(d => d.br), locations: count(d => d.loc ? [d.loc.city, d.loc.region, d.loc.country].filter(Boolean).join(', ') : '?'), problems, tips: tips.slice(0, 20) };
 }
 // a name the family gives a device in Studio ("Na's iPad")
