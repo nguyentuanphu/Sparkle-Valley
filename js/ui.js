@@ -296,11 +296,9 @@ export function openGrownups(after) {
       <button class="btn primary wide big" id="gRec">🎙️ ${T('Record your voice for the game', 'Thu giọng của bạn cho trò chơi')}<small class="reccount">🇻🇳 ${clipCountFor('vi')}/${FAMILY_PHRASES.length} · 🇦🇺 ${clipCountFor('en')}/${FAMILY_PHRASES.length}</small></button>
       <p class="note">${T('Each language has its own 11 lines. The game plays your real voice whenever it says one of those lines (praise, “try again”, “you did it”, hello…), in the language the game is set to. Everything else is read by the device voice, tuned towards your voice.', 'Mỗi ngôn ngữ có 11 câu riêng. Trò chơi phát đúng giọng thật của bạn mỗi khi nói một trong các câu đó (khen, “thử lại nhé”, “con làm được rồi”, chào…), theo ngôn ngữ đang chọn. Các câu khác do giọng máy đọc, được chỉnh gần với giọng bạn.')}</p>
       ${extrasHTML()}
-      <h3>🎉 ${T('Festivals', 'Lễ hội')}</h3>
-      <p class="note">${T('Festivals follow the calendar on this device: Tết, Mid-Autumn, Diwali, Christmas and Australia Day. You can also show one now.', 'Lễ hội theo lịch của máy này: Tết, Trung Thu, Diwali, Giáng Sinh và Ngày Nước Úc. Bạn cũng có thể bật một lễ hội ngay bây giờ.')}</p>
-      <div class="seg fest">${[['auto', T('By date', 'Theo lịch')], ['tet', '🧧 Tết'], ['midautumn', '🥮 ' + T('Mid-Autumn', 'Trung Thu')], ['diwali', '🪔 Diwali'], ['christmas', '🎄 ' + T('Christmas', 'Giáng Sinh')], ['ausday', '🇦🇺 ' + T('Australia Day', 'Ngày Nước Úc')], ['none', T('Off', 'Tắt')]].map(([k, l]) => `<button data-f="${k}" class="${(settings.festival || 'auto') === k ? 'on' : ''}">${l}</button>`).join('')}</div>
-      <div class="field"><label>${T('Count players', 'Đếm người chơi')}</label><div class="seg cnt"><button data-c="1" class="${settings.countPlayers !== false ? 'on' : ''}">${T('On', 'Bật')}</button><button data-c="0" class="${settings.countPlayers === false ? 'on' : ''}">${T('Off', 'Tắt')}</button></div></div>
-      <p class="note">${T('The game tells its website, without names, photos or places, that this device played (minutes, games, language, version), so the family can see how many children play. Switch it off any time.', 'Trò chơi báo cho trang web của nó, không có tên, ảnh hay địa điểm, rằng máy này đã chơi (số phút, trò chơi, ngôn ngữ, phiên bản), để gia đình biết có bao nhiêu bé chơi. Tắt lúc nào cũng được.')}</p>
+      <div class="field"><label>📊 ${T('Analytics', 'Phân tích')}</label><div class="seg cnt"><button data-c="1" class="${settings.countPlayers !== false ? 'on' : ''}">${T('On', 'Bật')}</button><button data-c="0" class="${settings.countPlayers === false ? 'on' : ''}">${T('Off', 'Tắt')}</button></div></div>
+      <div class="field"><label>${T('Names in analytics', 'Tên trong phân tích')}</label><div class="seg rnm"><button data-c="1" class="${settings.reportNames !== false ? 'on' : ''}">${T('On', 'Bật')}</button><button data-c="0" class="${settings.reportNames === false ? 'on' : ''}">${T('Off', 'Tắt')}</button></div></div>
+      <p class="note">${T('Analytics: the game tells its own website what was played, for the grown-ups’ Analytics page in Sparkle Studio: minutes, games, places and stories per child (with first names unless switched off above), the device and browser type, roughly which town (from the internet connection, never GPS), and any errors or places a child got stuck. Never photos, voices or anything a child typed. Switch it off any time.', 'Phân tích: trò chơi báo cho trang web của mình những gì đã chơi, cho trang Phân tích của người lớn trong Sparkle Studio: số phút, trò chơi, nơi chốn và truyện của từng bé (kèm tên, trừ khi tắt ở trên), loại máy và trình duyệt, khoảng thành phố nào (từ kết nối mạng, không bao giờ dùng GPS), và lỗi hay chỗ bé bị kẹt. Không bao giờ có ảnh, giọng nói hay chữ bé gõ. Tắt lúc nào cũng được.')}</p>
       <div class="field"><label>${T('Camera', 'Góc nhìn')}</label><div class="seg cam"><button data-c="easy" class="${settings.camMode !== 'free' ? 'on' : ''}">🧸 ${T('Easy: fixed view from above', 'Dễ: nhìn từ trên, cố định')}</button><button data-c="free" class="${settings.camMode === 'free' ? 'on' : ''}">🧭 ${T('Explorer: drag to look around', 'Tự do: kéo để xoay')}</button></div></div>
       <div class="field"><label>${T('Graphics', 'Đồ họa')}</label><div class="seg q">${['low', 'auto', 'high'].map(q => `<button data-q="${q}" class="${settings.quality === q ? 'on' : ''}">${{ low: T('Fast', 'Nhanh'), auto: T('Auto', 'Tự động'), high: T('Pretty', 'Đẹp') }[q]}</button>`).join('')}</div></div>
       <h3>🏷️ ${T('Character names', 'Tên nhân vật')}</h3>
@@ -328,6 +326,7 @@ export function openGrownups(after) {
     card.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const n = +b.dataset.add; if (window.__sv && window.__sv.addCoins) window.__sv.addCoins(n); else { farm.coins += n; saveFarm(); } SFX.coin ? SFX.coin() : SFX.chime(); card.querySelector('#gCoins').textContent = fmt(farm.coins); toast(T('Coins added: ', 'Đã thêm: ') + fmt(n)); });
     card.querySelectorAll('.seg.cam button').forEach(b => b.onclick = () => { settings.camMode = b.dataset.c; saveSettings(); draw(); });
     card.querySelectorAll('.seg.cnt button').forEach(b => b.onclick = () => { settings.countPlayers = b.dataset.c === '1'; saveSettings(); draw(); });
+    card.querySelectorAll('.seg.rnm button').forEach(b => b.onclick = () => { settings.reportNames = b.dataset.c === '1'; saveSettings(); draw(); });
     card.querySelectorAll('.seg.q button').forEach(b => b.onclick = () => { settings.quality = b.dataset.q; saveSettings(); draw(); toast(T('Restart the game to change graphics.', 'Mở lại trò chơi để đổi đồ họa.')); });
     const chk = (id, k, f) => card.querySelector(id).onchange = e => { settings[k] = e.target.checked; saveSettings(); f && f(); };
     card.querySelector('#gAutoMeet').onchange = e => { settings.autoMeet = e.target.checked; saveSettings(); };
@@ -350,7 +349,6 @@ export function openGrownups(after) {
     chk('#gCalm', 'calm', applyComfort);
     card.querySelector('#gCap').onchange = e => { settings.captions = e.target.checked; saveSettings(); };
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { settings.textSize = +b.dataset.ts; saveSettings(); applyComfort(); const y = m.scrollTop; draw(); m.scrollTop = y; });
-    card.querySelectorAll('.seg.fest button').forEach(b => b.onclick = () => { settings.festival = b.dataset.f; saveSettings(); window.__sv && window.__sv.festivals && window.__sv.festivals.rebuild(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.rest button').forEach(b => b.onclick = () => { settings.restMins = b.dataset.r; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     chk('#gBil', 'bilingual'); chk('#gVoice', 'voice'); chk('#gMusic', 'music', () => settings.music ? Music.refresh() : Music.stop()); chk('#gSound', 'sound'); chk('#gDay', 'alwaysDay');
     card.querySelector('#vEn').onchange = e => { settings.voiceEn = e.target.value; saveSettings(); };
@@ -428,6 +426,14 @@ export function openFestivals(game, i) {
   const done = () => { m.close(); game.paused = false; };
   m.querySelector('.x').onclick = done;
   m.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); done(); game.festivals.visit(i, b.dataset.fest); });
+  // the one place for festivals (round M, owner): which festival decorates the whole valley is here too, for grown-ups
+  // (press and hold, as everywhere): by the calendar on this device, one festival all the time, or none
+  const card = m.querySelector('.card'), box = el('div', 'fest-grown');
+  const deco = () => { box.innerHTML = `<h3>🏮 ${T('Festival decorations in the valley', 'Trang trí lễ hội trong thung lũng')}</h3><p class="note">${T('By date follows the calendar on this device: Tết, Mid-Autumn, Diwali, Christmas and Australia Day.', 'Theo lịch là theo lịch của máy này: Tết, Trung Thu, Diwali, Giáng Sinh và Ngày Nước Úc.')}</p>
+    <div class="seg fest">${[['auto', T('By date', 'Theo lịch')], ['tet', '🧧 Tết'], ['midautumn', '🥮 ' + T('Mid-Autumn', 'Trung Thu')], ['diwali', '🪔 Diwali'], ['christmas', '🎄 ' + T('Christmas', 'Giáng Sinh')], ['ausday', '🇦🇺 ' + T('Australia Day', 'Ngày Nước Úc')], ['none', T('Off', 'Tắt')]].map(([k, l]) => `<button data-f="${k}" class="${(settings.festival || 'auto') === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+    box.querySelectorAll('.seg.fest button').forEach(b => b.onclick = () => { SFX.tap(); settings.festival = b.dataset.f; saveSettings(); window.__sv && window.__sv.festivals && window.__sv.festivals.rebuild(); deco(); }); };
+  box.innerHTML = `<button class="grown fest-hold"><span class="ring"></span>🔒 <b>${T('Grown-ups: festival decorations', 'Người lớn: trang trí lễ hội')}</b> <small>${T('press and hold', 'nhấn giữ')}</small></button>`;
+  card.appendChild(box); holdButton(box.querySelector('.fest-hold'), () => { SFX.chime && SFX.chime(); deco(); });
   say('Which festival shall we visit?', 'Mình đi lễ hội nào nhé?');
 }
 

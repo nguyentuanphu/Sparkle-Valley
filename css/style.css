@@ -1883,3 +1883,99 @@ body.calm .sp-stop.next .sp-pic { animation: none; }
 .sp-stars.n3 svg:nth-child(3) { transform: translateY(-2px) rotate(14deg); }
 .sp-stars.n1 svg { width: 34px; height: 34px; }
 .sp-stop { gap: 22px; }
+
+/* ---------- the Simple screen, round J: a storybook landscape, areas, a tap that answers at once, Discover, Ông Cú ---------- */
+.simple-screen { background: linear-gradient(180deg, #cdeefc 0%, #e4f6d8 38%, #bfe8a8 60%, #9fd88b 100%); }
+.sp-scene { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.sp-land { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sp-top, .sp-scroll, .sp-tabs { position: relative; z-index: 1; }
+/* the landscape moves slowly and a little, and never more than the pictures you can tap */
+.sp-cloud { animation: spCloud 60s ease-in-out infinite alternate; }
+.sp-cloud.c2 { animation-duration: 80s; animation-direction: alternate-reverse; }
+@keyframes spCloud { from { transform: translateX(-40px); } to { transform: translateX(50px); } }
+.sp-tree { transform-box: fill-box; transform-origin: 50% 100%; animation: spSway 7s ease-in-out infinite alternate; }
+.sp-tree.t2 { animation-delay: -3s; }
+@keyframes spSway { from { transform: rotate(-1.5deg); } to { transform: rotate(1.5deg); } }
+.sp-ripple { transform-box: fill-box; transform-origin: center; animation: spRipple 5s ease-out infinite; }
+@keyframes spRipple { from { transform: scale(.5); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+.sp-fly { position: absolute; left: 0; top: 34%; width: 34px; height: 34px; opacity: .9; animation: spFly 30s linear infinite; }
+.sp-fly .art, .sp-fly .emo { width: 34px; height: 34px; font-size: 28px; }
+@keyframes spFly { 0% { transform: translate(-60px, 0); } 25% { transform: translate(25vw, -40px); } 50% { transform: translate(55vw, 20px); } 75% { transform: translate(80vw, -30px); } 100% { transform: translate(110vw, 0); } }
+.sp-twinkle { position: absolute; right: 18%; top: 22%; width: 10px; height: 10px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px 4px #fff6b0; opacity: 0; animation: spTwinkle 9s ease-in-out infinite; }
+@keyframes spTwinkle { 0%, 80%, 100% { opacity: 0; } 88% { opacity: .9; } }
+.simple-screen.still .sp-scene *, body.calm .sp-scene * { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .sp-scene * { animation: none !important; } }
+/* the area the path is in: its picture (and its name when there is room); tap it to choose another */
+.sp-area { display: flex; align-items: center; gap: 8px; min-height: 64px; min-width: 64px; border: 0; border-radius: 999px; background: #fff; padding: 6px 14px 6px 8px; box-shadow: 0 4px 0 rgba(60, 100, 40, .3); color: inherit; font-size: 18px; }
+.sp-area .art, .sp-area .emo { width: 46px; height: 46px; font-size: 38px; }
+.sp-area small { font-weight: 400; opacity: .7; }
+.sp-again { margin-left: 0; }
+.sp-area { margin-left: auto; }
+@media (max-width: 519px) { .sp-area b { display: none; } .sp-area { padding: 6px; justify-content: center; } .sp-me b { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
+/* five buttons in the bottom bar */
+.sp-tabs { gap: 4px; padding-left: 4px; padding-right: 4px; }
+.sp-tabs button { font-size: 14px; line-height: 1.1; text-align: center; min-width: 64px; }
+.simple-screen.wide .sp-tabs { gap: 4px; padding-top: 4px; padding-bottom: 4px; }
+.simple-screen.wide .sp-tabs button { min-height: 64px; }
+.simple-screen.wide .sp-tabs button .art, .simple-screen.wide .sp-tabs button .emo { width: 34px; height: 34px; font-size: 28px; }
+/* the signpost at the end of the path: on to the next stops */
+.sp-stop.sign .sp-pic { background: #fff3c4; box-shadow: 0 0 0 4px #e8bd55 inset, 0 6px 0 rgba(60, 100, 40, .35); }
+.sp-arrow { position: absolute; right: -14px; bottom: -10px; width: 46px; height: 46px; display: grid; place-items: center; background: #fff; border-radius: 50%; box-shadow: 0 3px 0 rgba(60, 100, 40, .3); }
+.sp-arrow .art, .sp-arrow .emo { width: 34px; height: 34px; font-size: 28px; }
+/* ✨ new since the last look (big kids) */
+.sp-new { position: absolute; left: -10px; top: -10px; width: 34px; height: 34px; }
+.sp-new .art, .sp-new .emo { width: 34px; height: 34px; font-size: 28px; }
+/* big kids choose with two taps: the first shows it, the second (or ▶ Play) plays it */
+.sp-play { display: none; position: absolute; left: 50%; top: 54px; transform: translateX(-50%); z-index: 4; min-height: 48px; align-items: center; padding: 0 20px; border-radius: 999px; background: #8a5cf6; color: #fff; font-weight: 700; font-size: 18px; box-shadow: 0 4px 0 #5b2fd0; white-space: nowrap; }
+.sp-stop.sel { z-index: 3; }
+.sp-stop.sel .sp-play { display: inline-flex; }
+.sp-stop.sel .sp-pic { box-shadow: 0 0 0 6px #8a5cf6, 0 6px 0 rgba(60, 100, 40, .35); transform: scale(1.06); }
+/* the tap: the picture grows and bounces and little stars burst out, straight away */
+.sp-stop.tapped .sp-pic { animation: spTap .45s ease-out both; box-shadow: 0 0 0 8px #ffd23f, 0 6px 0 rgba(60, 100, 40, .35); }
+@keyframes spTap { 0% { transform: scale(1); } 35% { transform: scale(1.2); } 65% { transform: scale(.97); } 100% { transform: scale(1.08); } }
+.sp-spark { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px; background: #ffd23f; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: spBurst .5s ease-out forwards; pointer-events: none; z-index: 3; }
+@keyframes spBurst { from { transform: rotate(var(--a)) translateY(-20px) scale(1); opacity: 1; } to { transform: rotate(var(--a)) translateY(-84px) scale(.4); opacity: 0; } }
+body.calm .sp-stop.tapped .sp-pic, body.calm .sp-stop.sel .sp-pic { animation: none; transform: none; }
+body.calm .sp-spark { display: none; }
+@media (prefers-reduced-motion: reduce) { .sp-stop.tapped .sp-pic, .sp-stop.sel .sp-pic { animation: none; transform: none; } .sp-spark { display: none; } }
+/* Ông Cú beside the next one to try: he leans towards it, and jumps for joy at a new star */
+.sp-owl { position: absolute; transform: translate(-50%, -50%) rotate(-8deg); width: 72px; height: 72px; border: 0; padding: 0; background: none; z-index: 2; display: grid; place-items: center; filter: drop-shadow(0 4px 0 rgba(60, 100, 40, .3)); }
+.sp-owl.left { transform: translate(-50%, -50%) rotate(8deg) scaleX(-1); }
+.sp-owl .art, .sp-owl .emo { width: 64px; height: 64px; font-size: 54px; }
+.sp-owl.cheer { animation: spCheer .9s ease-out 2; }
+@keyframes spCheer { 0%, 100% { translate: 0 0; } 30% { translate: 0 -26px; } 55% { translate: 0 0; } 75% { translate: 0 -10px; } }
+body.calm .sp-owl.cheer { animation: none; }
+@media (prefers-reduced-motion: reduce) { .sp-owl.cheer { animation: none; } }
+/* 🔎 Discover: every area as a big picture; big kids can also type */
+.sp-find { position: absolute; inset: 0; z-index: 5; background: rgba(255, 251, 240, .98); overflow-y: auto; padding: calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 14px) calc(env(safe-area-inset-bottom) + 20px) calc(env(safe-area-inset-left) + 14px); }
+.sp-find[hidden] { display: none; }
+.sp-find-top { display: flex; gap: 10px; justify-content: flex-end; position: sticky; top: 0; z-index: 1; }
+.sp-q { flex: 1; min-width: 0; min-height: 56px; border-radius: 999px; border: 3px solid #d9cdf3; padding: 0 20px; font-size: 20px; background: #fff; }
+.sp-find-x { width: 64px; height: 64px; border-radius: 50%; border: 0; background: #fff; box-shadow: 0 4px 0 rgba(60, 40, 90, .2); display: grid; place-items: center; flex: none; }
+.sp-find-x { font-size: 30px; font-weight: 700; color: #4a3d70; }
+.sp-find h3 { display: flex; align-items: center; gap: 8px; font-size: 20px; margin: 16px 4px 10px; }
+.sp-find h3 .art, .sp-find h3 .emo { width: 32px; height: 32px; font-size: 26px; }
+.sp-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 14px; }
+.sp-card { min-height: 132px; border: 0; border-radius: 28px; background: #fff; box-shadow: 0 5px 0 rgba(60, 40, 90, .15); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px 8px; color: inherit; font-size: 17px; }
+.sp-card .art, .sp-card .emo { width: 64px; height: 64px; font-size: 54px; }
+.sp-card b { text-align: center; line-height: 1.2; }
+.sp-none { display: flex; align-items: center; gap: 10px; font-size: 18px; margin: 24px 4px; }
+.sp-none .art, .sp-none .emo { width: 40px; height: 40px; font-size: 34px; }
+
+/* round M: easy · medium · hard inside every game */
+.gl-lvl { min-height: 44px; min-width: 44px; border: 0; border-radius: 999px; padding: 0 14px; background: rgba(255, 255, 255, .85); color: #4a2a78; font: inherit; font-weight: 700; font-size: 16px; box-shadow: 0 3px 0 rgba(60, 30, 90, .18); white-space: nowrap; flex: none; }
+.gl-lvlpick { position: fixed; inset: 0; z-index: 6; display: grid; place-items: center; background: rgba(40, 20, 60, .45); }
+.gl-lvlcard { background: #fff; border-radius: 28px; padding: 18px; display: flex; flex-direction: column; gap: 12px; width: min(320px, calc(100% - 32px)); box-shadow: var(--shadow); color: #3b2a4f; }
+.gl-lvlcard h3 { margin: 0 0 4px; text-align: center; font-size: 22px; }
+.gl-lvlcard button { min-height: 64px; border: 0; border-radius: 20px; background: #f1ecff; color: #3b2a4f; font: inherit; font-weight: 700; font-size: 22px; }
+.gl-lvlcard button.on { background: #8a5cf6; color: #fff; }
+@media (max-width: 400px) { .gl-lvl { padding: 0 10px; font-size: 14px; } }
+/* round M: in a group, the chip at the top goes back to all the groups */
+.sp-backarrow { font-style: normal; font-weight: 700; font-size: 26px; color: #5b2fd0; margin-right: 2px; }
+.sp-area.back { background: #efe6ff; }
+.sp-stop.grp, .sp-stop.sign { gap: 8px; } /* no stars under a group or a signpost: the name sits close to its picture */
+/* round M: festival decorations live on the festival page, behind the grown-ups' press and hold */
+.fest-grown { margin-top: 18px; border-top: 2px dashed rgba(138, 92, 246, .25); padding-top: 14px; }
+.fest-grown .grown.fest-hold { position: relative; left: auto; bottom: auto; right: auto; top: auto; display: flex; align-items: center; gap: 8px; width: 100%; min-height: 56px; border-radius: 18px; padding: 10px 16px; font: inherit; color: inherit; }
+.fest-grown .fest-hold small { margin-left: auto; opacity: .7; }
+.fest-grown .ring { position: absolute; inset: -4px; width: auto; height: auto; z-index: -1; }

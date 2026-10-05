@@ -26,7 +26,10 @@ export const gameOpen = () => !!current;
 
 // players: array of profiles (1 or 2); level: 1..5; style: 'shrine' | 'village'
 // online: playing with friends on their own devices (js/netgames.js): { mine, names, move(n, mv), next(n, seat), all(n) }
-export function openGame(id, { players, level = 1, style = 'shrine', partnerName = null, little = true, strong = false, nextId = null, online = null }) {
+// levelPick (round M, owner: "a choice of difficulty inside each game"): { value: 'easy'|'medium'|'hard' } shows a
+// button in the game's top bar; choosing another level closes the game with { restart: level } and it starts again
+const LEVELS = [['easy', 'Easy', 'Dễ'], ['medium', 'Medium', 'Vừa'], ['hard', 'Hard', 'Khó']];
+export function openGame(id, { players, level = 1, style = 'shrine', partnerName = null, little = true, strong = false, nextId = null, online = null, levelPick = null }) {
   const def = GAMES[id]; if (!def) return Promise.resolve({ won: false });
   const nextName = nextId && GAMES[nextId] ? GAMES[nextId].name() : '';
   if (current) current.close(false);
@@ -37,6 +40,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
         <button class="gl-x" aria-label="${T('Leave', 'Rời đi')}">✕</button>
         <div class="gl-title"><span class="gl-icon">${pic(def.icon)}</span><span>${esc(def.name())}</span></div>
         <div class="gl-dots"></div>
+        ${levelPick ? `<button class="gl-lvl" aria-label="${T('How hard', 'Độ khó')}">${esc(T(...(LEVELS.find(l => l[0] === levelPick.value) || LEVELS[0]).slice(1)))} ▾</button>` : ''}
         <button class="gl-how" aria-label="${T('How to play', 'Cách chơi')}">📺</button>
       </div>
       <div class="gl-help"></div>
@@ -131,6 +135,16 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
     current = { close: finish };
     layer.querySelector('.gl-x').onclick = () => { SFX.tap(); finish(false); };
     layer.querySelector('.gl-how').onclick = () => { SFX.tap(); const pm = Music.key; openHowTo(id, { onClose: () => Music.play(pm) }); };
+    // easy, medium or hard: three big buttons; another level starts the game again at that level
+    const lv = layer.querySelector('.gl-lvl');
+    if (lv) lv.onclick = () => {
+      SFX.tap(); if (layer.querySelector('.gl-lvlpick')) return;
+      const pk = el('div', 'gl-lvlpick');
+      pk.innerHTML = `<div class="gl-lvlcard"><h3>${T('How hard?', 'Khó hay dễ?')}</h3>${LEVELS.map(([k, en, vi]) => `<button data-l="${k}" class="${k === levelPick.value ? 'on' : ''}">${esc(T(en, vi))}</button>`).join('')}</div>`;
+      layer.appendChild(pk); say('How hard?', 'Khó hay dễ?');
+      pk.onclick = e => { if (e.target === pk) pk.remove(); };
+      pk.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { SFX.tap(); pk.remove(); if (b.dataset.l !== levelPick.value) finish(false, { restart: b.dataset.l }); });
+    };
     Promise.resolve(def.run(api)).catch(e => { console.error(e); finish(false); });
   });
 }

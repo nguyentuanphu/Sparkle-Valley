@@ -19,15 +19,7 @@ import { openChat, personaByName, PERSONAS } from './chat.js';
 import { voiceCommand, voiceControlOn } from './commands.js';
 import { ITEMS, RECIPES, GATHER, STICKERS, QUESTS, dishInfo } from './data.js';
 import { openGame, gameOpen, GAMES } from './games/frame.js';
-import './games/thinking.js';
-import './games/strategy.js';
-import './games/vietnam.js';
-import './games/market.js';
-import './games/farmgames.js';
-import './games/folk.js';
-import './games/folk2.js';
-import './games/tienlen.js';
-import './games/more.js';
+import './games/all.js'; // every mini-game (js/games/all.js)
 import { openHowTo } from './howto.js';
 import { createFarm, jobProgress, ensureJobs } from './farm.js';
 import { createPlaces } from './places.js';
@@ -45,10 +37,6 @@ import { createWeather } from './weather.js';
 import { createFun, confetti } from './fun.js';
 import { createLearning } from './learn.js';
 import { createShowcase } from './showcase.js';
-import './games/asia.js';
-import './games/music.js';
-import './games/cities.js';
-import './games/learning.js';
 import { createRoads, plantRoadside } from './roads.js';
 import { cachedCanvas } from './worldcache.js';
 import { events } from './core/events.js';
@@ -60,7 +48,7 @@ import { createCoop } from './coop.js';
 import { createTwinChests } from './twinchests.js';
 import { createClaims } from './claims.js';
 import { createNetGames, onlineDef } from './netgames.js';
-import { createSimple } from './simple.js';
+import { createSimple, wantsSimple } from './simple.js';
 import { id as makeId } from './core/ids.js';
 import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
@@ -76,7 +64,7 @@ import { CUSTOM } from './custom.js';
 import { createFolkShow } from './folkshow.js';
 import { createAds } from './ads.js';
 import { buildSolids } from './solids.js';
-import { startCounting, countPlay } from './players.js';
+import { startCounting, countPlay, watchHero } from './players.js';
 import { startPackBar } from './packbar.js';
 import { codeHTML, bindCode, padHTML, boxHTML, animalSay } from './roomcode.js';
 // the family's defaults from Sparkle Studio: applied once each time they change there (a grown-up can still change
@@ -347,15 +335,18 @@ async function playGame(i, id, source, shrine) {
   countPlay('game', id); // anonymous: how often each game is played (js/players.js)
   const players = G.heroes.map(x => x.profile); if (G.heroes.length > 1 && i === 1) players.reverse();
   // Level = how far this child has got in this game, shifted by the chosen difficulty.
-  const p = h.profile, level = Math.min(5, (p.levels[id] || 1) + { easy: 0, medium: 1, hard: 2 }[p.difficulty || 'easy']);
-  const little = G.heroes.some(x => x.profile.age !== 'big'), strong = !little && p.difficulty !== 'easy';
+  // the level the child chose inside this game (round M), else the grown-ups' difficulty for this child
+  const p = h.profile, diff = (p.gameDiff && p.gameDiff[id]) || p.difficulty || 'easy', level = Math.min(5, (p.levels[id] || 1) + { easy: 0, medium: 1, hard: 2 }[diff]);
+  const little = G.heroes.some(x => x.profile.age !== 'big'), strong = !little && diff !== 'easy';
   if (source === 'shrine') { SFX.secret(); say('A shrine! Let’s solve the puzzle.', 'Một ngôi đền! Cùng giải câu đố nào.'); await wait(600); }
   const nextId = nextGameAfter(id);
   // events alongside today's calls (architecture step 1): the activity, by id, and who plays it
   const actId = makeId('act', id, String(++G.actCount)), playerIds = players.map(q => makeId('player', q.id || 'guest'));
   events.emit('ActivityStarted', { activityId: actId, kind: 'game', defId: makeId('game', id), players: playerIds, source });
-  const res = await openGame(id, { players, level, little, strong, nextId, style: source === 'folk' || id === 'market' ? 'village' : 'shrine' });
+  const res = await openGame(id, { players, level, little, strong, nextId, style: source === 'folk' || id === 'market' ? 'village' : 'shrine', levelPick: { value: diff } });
   G.paused = false;
+  // another level chosen inside the game: remember it for this game and start again
+  if (res.restart) { events.emit('ActivityAbandoned', { activityId: actId, reason: 'level' }); p.gameDiff = { ...(p.gameDiff || {}), [id]: res.restart }; save(); return playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); }
   if (res.won) events.emit('ActivityCompleted', { activityId: actId, defId: makeId('game', id), players: playerIds, result: { won: true, stars: res.stars || 0, level } });
   else events.emit('ActivityAbandoned', { activityId: actId, reason: 'left' });
   if (!res.won) return;
@@ -1166,7 +1157,7 @@ function startSession(mode, chosen) {
   const p = chosen[0];
   // the welcome is words on the screen, not a voice (owner, round 30: with the child's name in it, only the phone's
   // own voice could say it); a new player still hears where to go, in a recorded line without the name
-  const greet = () => { if (!p.quests.owl) { toast(T(`Hello ${p.name}! Walk over to the owl and say hi.`, `Chào ${p.name}! Đi đến chỗ chú cú và chào ông nhé.`)); say('Walk over to the owl and say hi!', 'Con đi đến chỗ chú cú và chào ông nhé!'); } else if (!G.resumedAway) toast(T(`Welcome back, ${p.name}!`, `Chào mừng ${p.name} quay lại!`)); };
+  const greet = () => { if (!p.quests.owl && !(G.heroes.length === 1 && wantsSimple(p))) { toast(T(`Hello ${p.name}! Walk over to the owl and say hi.`, `Chào ${p.name}! Đi đến chỗ chú cú và chào ông nhé.`)); say('Walk over to the owl and say hi!', 'Con đi đến chỗ chú cú và chào ông nhé!'); } else if (!G.resumedAway) toast(T(`Welcome back, ${p.name}!`, `Chào mừng ${p.name} quay lại!`)); };
   if (!(p.story && p.story.prologue)) {
     G.paused = true;
     showStory(PROLOGUE, chosen.map(x => x.name).join(T(' and ', ' và '))).then(() => { chosen.forEach(x => { x.story = x.story || {}; x.story.prologue = true; }); save(); G.paused = false; greet(); });
@@ -1223,6 +1214,7 @@ function frame(now) {
         else { const dx = P.pos.x - h.pos.x, dz = P.pos.z - h.pos.z, d = Math.hypot(dx, dz); if (d > 3.2) { h.goal = { x: P.pos.x - dx / d * 2.2, z: P.pos.z - dz / d * 2.2 }; h.goalT = 0; if (d > 40 && !(h._followHop > performance.now())) { h._followHop = performance.now() + 5000; G.travel(h, P.pos.x - dx / d * 3, P.pos.z - dz / d * 3); } } else if (h.goal) h.goal = null; }
       }
       h.update(dt, pads[i], t, G);
+      if (i === 0) watchHero(h, pads[i], dt, G.regionOf[i]); // stuck: pushing to walk without moving (Studio's report)
       if (!h.profile.quests.owl && !G._owlAuto && dist2(h.pos.x, h.pos.z, owl.x, owl.z) < 6) { G._owlAuto = true; owlTalk(h); }
       if (h.goalAct && !h.goal) { const it = h.goalAct; h.goalAct = null; if (dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r + .8) { SFX.tap(); it.act(h, G); } }
       const it = h.carry ? h.carryIt || null : nearest(h);
@@ -1382,7 +1374,7 @@ world.levelled = levelUnderBuildings(world, scene); bootMark('levelled');
 world.roadside = plantRoadside(G); // soft road edges and flowers, once everything stands
 bootMark('roadside'); G.solidsReady = buildSolids(G); bootMark('solids'); // nobody walks through houses and things (js/solids.js)
 startPackBar(); // the recorded voices downloading: a small bar at the bottom (js/packbar.js)
-startCounting(); // how many children play, anonymously (js/players.js; Grown-ups can switch it off)
+startCounting(G); // how many children play, and what they play, for Studio's report (js/players.js; Grown-ups can switch it off)
 // solid things the camera must never go inside: big, opaque, still-standing meshes (collected once, refreshed
 // now and then so new houses, landmarks and boats are included)
 {
