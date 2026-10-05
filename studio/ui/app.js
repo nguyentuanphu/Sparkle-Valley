@@ -14,7 +14,7 @@ const saveContent = async () => { await api('content', CONTENT); toast(T('Saved.
 
 const TABS = [
   ['home', '🏠', 'Home', 'Trang chính'], ['message', '💌', 'Message', 'Lời nhắn'], ['villagers', '🧑', 'Villagers', 'Nhân vật'], ['stories', '📖', 'Stories', 'Truyện'],
-  ['quiz', '💛', 'Family quiz', 'Đố vui gia đình'], ['album', '💌', 'Family album', 'Album gia đình'], ['map', '🗺️', 'Map & building', 'Bản đồ & xây dựng'], ['photos', '📷', 'Real photos', 'Ảnh thật'], ['play', '⏰', 'Defaults', 'Mặc định'], ['children', '👧', 'Children', 'Các con'], ['voices', '🎙️', 'Voices', 'Giọng đọc'],
+  ['quiz', '💛', 'Family quiz', 'Đố vui gia đình'], ['path', '🧸', 'Simple screen', 'Màn hình đơn giản'], ['album', '💌', 'Family album', 'Album gia đình'], ['map', '🗺️', 'Map & building', 'Bản đồ & xây dựng'], ['photos', '📷', 'Real photos', 'Ảnh thật'], ['play', '⏰', 'Defaults', 'Mặc định'], ['children', '👧', 'Children', 'Các con'], ['voices', '🎙️', 'Voices', 'Giọng đọc'],
   ['ads', '📣', 'Ads (off)', 'Quảng cáo (tắt)'], ['players', '📊', 'Players', 'Người chơi'], ['publish', '🚀', 'Publish', 'Phát hành'], ['site', '🌐', 'Website', 'Trang web'], ['check', '🩺', 'Check', 'Kiểm tra'], ['settings', '🔑', 'Settings', 'Cài đặt']
 ];
 let cur = location.hash.slice(1) || 'home';
@@ -228,6 +228,39 @@ PAGES.quiz = async P => {
       const mo = c.querySelector('[data-more]'); if (mo) mo.onclick = () => { q.answers.push(['', '']); draw(); }; });
     $('#new').onclick = () => { CONTENT.quiz.push({ q: ['', ''], pic: '❓', answers: [['', ''], ['', '']], right: 0 }); draw(); };
     $('#save').onclick = () => { CONTENT.quiz = CONTENT.quiz.map(q => ({ ...q, answers: q.answers.filter(a => a[0] || a[1]) })).filter(q => (q.q[0] || q.q[1]) && q.answers.length >= 2 && q.right < q.answers.length); saveContent().then(draw).catch(fail); };
+  };
+  draw();
+};
+// ---------- the Simple screen's areas (round J): which area each game sits in, and which ones under-5s see ----------
+PAGES.path = async P => {
+  await import(GAME + 'js/games/all.js');
+  const { GAMES } = await import(GAME + 'js/games/registry.js'), A = await import(GAME + 'js/content/activities.js'), I18 = await import(GAME + 'js/i18n.js');
+  void I18; const nm = f => typeof f === 'function' ? f() : f;
+  CONTENT.activities = CONTENT.activities || {};
+  // what this page shows comes from the choices made here (not yet published), over the usual ones
+  const info = id => { const c = CONTENT.activities[id] || {}, base = A.GAME_INFO[id] || ['thinking', 5, 2]; return { area: c.area || base[0], little: c.little === undefined ? base[1] < 5 : c.little, hide: !!c.hide, base, changed: c.little !== undefined }; };
+  const draw = () => {
+    const rows = A.AREAS.map(a => {
+      const ids = Object.keys(GAMES).filter(id => info(id).area === a.key);
+      return `<div class="card"><h3>${a.icon} ${esc(nm(a.name))} <span class="sub">(${ids.length})</span></h3><table><tbody>${ids.map(id => { const g = info(id), base = g.base;
+        return `<tr data-id="${id}"><td>${GAMES[id].icon} ${esc(nm(GAMES[id].name))}</td>
+          <td><select data-f="area">${A.AREAS.map(b => `<option value="${b.key}" ${g.area === b.key ? 'selected' : ''}>${b.icon} ${esc(nm(b.name))}</option>`).join('')}</select></td>
+          <td><label><input type="checkbox" data-f="little" ${g.little ? 'checked' : ''}> ${T('Under 5', 'Dưới 5 tuổi')}</label>${!g.changed ? '' : ` <span class="sub">(${T('changed', 'đã đổi')}; ${T('usual', 'mặc định')}: ${base[1] < 5 ? '✓' : '✗'})</span>`}</td>
+          <td><label><input type="checkbox" data-f="hide" ${g.hide ? 'checked' : ''}> ${T('Hide', 'Ẩn')}</label></td></tr>`; }).join('')}</tbody></table></div>`;
+    }).join('');
+    P.innerHTML = `<h2>🧸 ${T('Simple screen', 'Màn hình đơn giản')}</h2><p class="sub">${T('The Simple screen shows the games one area at a time (Animals, Music, Numbers…); children under 5 see at most six at once, and only the games ticked “Under 5”. Move a game to another area, or hide it from the Simple screen (it stays in the valley).', 'Màn hình đơn giản cho xem trò chơi theo từng khu (Con vật, Âm nhạc, Con số…); bé dưới 5 tuổi chỉ thấy tối đa sáu trò mỗi lần, và chỉ những trò được đánh dấu “Dưới 5 tuổi”. Có thể chuyển trò sang khu khác, hoặc ẩn khỏi màn hình đơn giản (vẫn còn trong thung lũng).')}</p>
+      ${rows}<div class="bar"><button class="btn ghost" id="reset">↩️ ${T('Back to the usual', 'Về mặc định')}</button><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
+    P.querySelectorAll('tr[data-id]').forEach(r => { const id = r.dataset.id, base = A.GAME_INFO[id] || ['thinking', 5, 2];
+      r.querySelectorAll('[data-f]').forEach(f => f.onchange = () => {
+        const c = CONTENT.activities[id] = { ...(CONTENT.activities[id] || {}) };
+        if (f.dataset.f === 'area') { if (f.value === base[0]) delete c.area; else c.area = f.value; }
+        if (f.dataset.f === 'little') { if (f.checked === base[1] < 5) delete c.little; else c.little = f.checked; }
+        if (f.dataset.f === 'hide') { if (f.checked) c.hide = true; else delete c.hide; }
+        if (!Object.keys(c).length) delete CONTENT.activities[id];
+        if (f.dataset.f === 'area') draw();
+      }); });
+    $('#reset').onclick = () => { CONTENT.activities = {}; draw(); };
+    $('#save').onclick = () => saveContent().catch(fail);
   };
   draw();
 };

@@ -663,6 +663,80 @@ await check('simple', async () => {
   return 'under 5 starts on the path; a game and a story each one tap away, the path comes back after; Valley remembered; dock button reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
 });
 
+await check('adventure', async () => {
+  // round J (owner's brief: "an adventure world containing places children want to visit"): one activity list places
+  // every game; an under-5 sees at most six stops at a time and every one is a drawn picture; a tap answers at once and a
+  // second tap can't start a game twice; a big kid taps once to look and again to play, sees ✨ on new games and can
+  // search; Discover jumps to any area; Ông Cú cheers a new star; the landscape stands still in Calm mode; opening and
+  // closing the screen 25 times leaves no extra listeners or elements behind
+  const P = await open(b, { w: 390, h: 844, touch: true, screen: 'simple' });
+  await P.page.waitForSelector('.simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
+  await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
+  const r = {};
+  // the list: every game is placed exactly once, and nothing is listed that isn't a game
+  r.list = await P.page.evaluate(async () => { const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), ids = Object.keys(GAMES), keys = Object.keys(A.GAME_INFO);
+    return { missing: ids.filter(i => !A.GAME_INFO[i]), extra: keys.filter(k => !GAMES[k] && k !== 'familyquiz') /* Family Quiz is there only once the family has written questions in Studio */, badArea: keys.filter(k => !A.AREAS.some(a => a.key === A.GAME_INFO[k][0])), games: ids.length }; });
+  // walk the whole under-5 path page by page with the signposts
+  r.walk = await P.page.evaluate(async () => {
+    const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), out = { pages: 0, most: 0, seen: [], notDrawn: [], tooBig: [] };
+    for (let n = 0; n < 40; n++) {
+      const v = __sv.simple.view; out.pages++; out.most = Math.max(out.most, v.stops.length); out.seen.push(...v.stops);
+      document.querySelectorAll('.sp-stop:not(.sign) .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push(p.parentElement.getAttribute('aria-label')); });
+      out.tooBig.push(...v.stops.filter(id => A.gameInfo(id).ageMin >= 5));
+      if (v.area === 'thinking' && v.page === v.of - 1 || out.pages >= v.pages) break;
+      document.querySelector('.sp-stop.sign').click(); await new Promise(r => setTimeout(r, 60));
+    }
+    const want = Object.keys(GAMES).filter(id => A.gameInfo(id).ageMin < 5);
+    return { pages: out.pages, most: out.most, missed: want.filter(id => !out.seen.includes(id)), notDrawn: out.notDrawn, tooBig: out.tooBig };
+  });
+  // Discover: a big picture for every area; tapping Music goes there
+  await P.page.click('.sp-discover'); await P.page.waitForSelector('.sp-find:not([hidden]) .sp-card');
+  r.find = await P.page.evaluate(() => ({ cards: document.querySelectorAll('.sp-card').length, search: !!document.querySelector('.sp-q') }));
+  await P.page.click('.sp-card[data-t="games"][data-k]:nth-child(2)'); r.music = await P.page.evaluate(() => __sv.simple.view.area);
+  // a double tap starts the game once
+  await P.page.evaluate(() => { window.__starts = 0; const pg = __sv.playGame; __sv.playGame = (...a) => { window.__starts++; return pg(...a); }; const s = document.querySelector('.sp-stop:not(.sign)'); s.click(); s.click(); setTimeout(() => s.click(), 120); });
+  await P.page.waitForSelector('.gl', { timeout: 10000 }); await P.page.waitForTimeout(400);
+  r.starts = await P.page.evaluate(() => window.__starts);
+  await P.page.evaluate(() => document.querySelector('.gl-x').click());
+  await P.page.waitForFunction(() => __sv.simple.open, null, { timeout: 8000 }).catch(() => { });
+  await P.page.evaluate(() => document.querySelectorAll('.dialog, .reward').forEach(d => d.remove()));
+  // Ông Cú is there, and cheers when a new star was won since the path was last open
+  r.owl = await P.page.evaluate(async () => { const owl = !!document.querySelector('.sp-owl .art'); __sv.simple.hide(); const p = __sv.heroes[0].profile; p.wins = p.wins || {}; p.wins.bunny = (p.wins.bunny || 0) + 4; __sv.simple.show(); return { owl, cheer: document.querySelector('.sp-owl').classList.contains('cheer') }; });
+  // Calm mode: the landscape stands still
+  r.calm = await P.page.evaluate(() => { document.body.classList.add('calm'); const a = getComputedStyle(document.querySelector('.sp-cloud')).animationName; document.body.classList.remove('calm'); return a; });
+  // 25 times open and closed: no more listeners, elements or screens than before
+  const cdp = await P.ctx.newCDPSession(P.page);
+  const listeners = async () => { const w = await cdp.send('Runtime.evaluate', { expression: 'window' }), d = await cdp.send('Runtime.evaluate', { expression: 'document' }); return (await cdp.send('DOMDebugger.getEventListeners', { objectId: w.result.objectId })).listeners.length + (await cdp.send('DOMDebugger.getEventListeners', { objectId: d.result.objectId })).listeners.length; };
+  const nodes = () => P.page.evaluate(() => document.getElementsByTagName('*').length);
+  const l0 = await listeners(), n0 = await nodes();
+  for (let i = 0; i < 25; i++) await P.page.evaluate(() => { __sv.simple.hide(); __sv.simple.show(); });
+  r.leak = { listeners: (await listeners()) - l0, nodes: (await nodes()) - n0, screens: await P.page.evaluate(() => document.querySelectorAll('.simple-screen').length) };
+  const errs = P.errors; await P.ctx.close();
+  // a big kid: the first tap shows, the second plays; ✨ on a game that came after the last look; search finds "Đập Niêu" without accents
+  const B = await open(b, { w: 390, h: 844, touch: true, screen: 'simple' });
+  await B.page.evaluate(() => { const p = __sv.heroes[0].profile; p.age = 'big'; p.seenActs = undefined; __sv.simple.hide(); __sv.simple.show(); p.seenActs = p.seenActs.filter(x => x !== 'game:bunny'); __sv.simple.hide(); __sv.simple.show('games'); document.querySelectorAll('.dialog').forEach(d => d.remove()); });
+  r.big = await B.page.evaluate(() => ({ stops: __sv.simple.view.stops.length, newOn: [...document.querySelectorAll('.sp-stop')].filter(s => s.querySelector('.sp-new')).map(s => s.getAttribute('aria-label')), dots: document.querySelectorAll('.sp-level').length > 0 }));
+  await B.page.locator('.sp-stop:not(.sign)').first().click(); await B.page.waitForTimeout(700);
+  r.big.firstTap = await B.page.evaluate(() => ({ game: !!document.querySelector('.gl'), sel: !!document.querySelector('.sp-stop.sel .sp-play') }));
+  await B.page.locator('.sp-stop.sel').click(); r.big.secondTap = await B.page.waitForSelector('.gl', { timeout: 10000 }).then(() => true, () => false);
+  await B.page.evaluate(() => document.querySelector('.gl-x').click());
+  await B.page.waitForFunction(() => __sv.simple.open, null, { timeout: 8000 }).catch(() => { });
+  await B.page.evaluate(() => document.querySelectorAll('.dialog, .reward').forEach(d => d.remove()));
+  await B.page.click('.sp-discover'); await B.page.fill('.sp-q', 'dap nieu'); await B.page.waitForTimeout(200);
+  r.big.search = await B.page.evaluate(() => [...document.querySelectorAll('.sp-found .sp-card b')].map(b => b.textContent));
+  errs.push(...B.errors); await B.ctx.close();
+  ok(!r.list.missing.length && !r.list.extra.length && !r.list.badArea.length, 'activity list: ' + JSON.stringify(r.list));
+  ok(r.walk.most <= 6 && !r.walk.missed.length && !r.walk.notDrawn.length && !r.walk.tooBig.length, 'under-5 path: ' + JSON.stringify(r.walk));
+  ok(r.find.cards >= 18 && !r.find.search && r.music === 'music', 'discover: ' + JSON.stringify(r.find) + ' ' + r.music);
+  ok(r.starts === 1, 'a double tap started the game ' + r.starts + ' times');
+  ok(r.owl.owl && r.owl.cheer, 'Ông Cú: ' + JSON.stringify(r.owl));
+  ok(r.calm === 'none', 'the landscape still moves in Calm mode: ' + r.calm);
+  ok(r.leak.listeners <= 0 && r.leak.nodes <= 5 && r.leak.screens === 1, 'after 25 opens: ' + JSON.stringify(r.leak));
+  ok(r.big.stops > 6 && r.big.newOn.includes('Feed the Bunny') && r.big.newOn.length === 1 && r.big.dots && !r.big.firstTap.game && r.big.firstTap.sel && r.big.secondTap && r.big.search.some(t => /Smash the Pot/.test(t)), 'big kid: ' + JSON.stringify(r.big));
+  ok(!errs.length, errs.join(' | '));
+  return `${r.list.games} games in 11 areas; under-5 path ${r.walk.pages} pages of at most ${r.walk.most}, every one drawn; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
+});
+
 await check('a11y', async () => {
   // accessibility rules (round I, ARCHITECTURE §9.6): UI-004 touch targets, A11Y-001 reduced motion, A11Y-002 readable
   // captions, A11Y-004 under-5s hear every game's instruction (A11Y-003 simple paths: the "simple" check)

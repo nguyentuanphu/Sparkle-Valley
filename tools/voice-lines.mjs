@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-const files = [...fs.readdirSync(path.join(ROOT, 'js')).map(f => 'js/' + f), ...fs.readdirSync(path.join(ROOT, 'js/games')).map(f => 'js/games/' + f)].filter(f => f.endsWith('.js'));
+const files = [...fs.readdirSync(path.join(ROOT, 'js')).map(f => 'js/' + f), ...fs.readdirSync(path.join(ROOT, 'js/games')).map(f => 'js/games/' + f), ...fs.readdirSync(path.join(ROOT, 'js/content')).map(f => 'js/content/' + f)].filter(f => f.endsWith('.js'));
 const VI = /[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/i;
 // a quoted string without ${…}
 const Q = String.raw`(?:'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|\x60(?:[^\x60\\$]|\\.|\$(?!\{))*\x60)`;
@@ -44,7 +44,7 @@ for (const f of files) {
 // names spoken on their own (round I, the Simple screen says what a child taps): games, tales and the places a child
 // can fly to; one word is enough here, and a name that is the same in both languages (Uluru) is still said in each
 const NAME = new RegExp(String.raw`\b(?:name|title)\s*:\s*\(\)\s*=>\s*T\(\s*(${Q})\s*,\s*(${Q})\s*\)`, 'g');
-for (const f of files.filter(f => f.startsWith('js/games/') || f === 'js/learn.js' || f === 'js/main.js')) {
+for (const f of files.filter(f => f.startsWith('js/games/') || f === 'js/learn.js' || f === 'js/main.js' || f === 'js/content/activities.js')) {
   const src = fs.readFileSync(path.join(ROOT, f), 'utf8'); NAME.lastIndex = 0; let m;
   while ((m = NAME.exec(src))) {
     const en = unq(m[1]).trim(), vi = unq(m[2]).trim(); if (!en || !vi || !/\p{L}/u.test(en)) continue;
