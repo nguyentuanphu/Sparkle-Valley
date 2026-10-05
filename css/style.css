@@ -1973,3 +1973,4 @@ body.calm .sp-owl.cheer { animation: none; }
 /* round M: in a group, the chip at the top goes back to all the groups */
 .sp-backarrow { font-style: normal; font-weight: 700; font-size: 26px; color: #5b2fd0; margin-right: 2px; }
 .sp-area.back { background: #efe6ff; }
+.sp-stop.grp, .sp-stop.sign { gap: 8px; } /* no stars under a group or a signpost: the name sits close to its picture */

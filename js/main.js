@@ -48,7 +48,7 @@ import { createCoop } from './coop.js';
 import { createTwinChests } from './twinchests.js';
 import { createClaims } from './claims.js';
 import { createNetGames, onlineDef } from './netgames.js';
-import { createSimple } from './simple.js';
+import { createSimple, wantsSimple } from './simple.js';
 import { id as makeId } from './core/ids.js';
 import { createCities } from './cities.js';
 import { createChatter, LINES as CHAT_LINES } from './chatter.js';
@@ -1157,7 +1157,7 @@ function startSession(mode, chosen) {
   const p = chosen[0];
   // the welcome is words on the screen, not a voice (owner, round 30: with the child's name in it, only the phone's
   // own voice could say it); a new player still hears where to go, in a recorded line without the name
-  const greet = () => { if (!p.quests.owl) { toast(T(`Hello ${p.name}! Walk over to the owl and say hi.`, `Chào ${p.name}! Đi đến chỗ chú cú và chào ông nhé.`)); say('Walk over to the owl and say hi!', 'Con đi đến chỗ chú cú và chào ông nhé!'); } else if (!G.resumedAway) toast(T(`Welcome back, ${p.name}!`, `Chào mừng ${p.name} quay lại!`)); };
+  const greet = () => { if (!p.quests.owl && !(G.heroes.length === 1 && wantsSimple(p))) { toast(T(`Hello ${p.name}! Walk over to the owl and say hi.`, `Chào ${p.name}! Đi đến chỗ chú cú và chào ông nhé.`)); say('Walk over to the owl and say hi!', 'Con đi đến chỗ chú cú và chào ông nhé!'); } else if (!G.resumedAway) toast(T(`Welcome back, ${p.name}!`, `Chào mừng ${p.name} quay lại!`)); };
   if (!(p.story && p.story.prologue)) {
     G.paused = true;
     showStory(PROLOGUE, chosen.map(x => x.name).join(T(' and ', ' và '))).then(() => { chosen.forEach(x => { x.story = x.story || {}; x.story.prologue = true; }); save(); G.paused = false; greet(); });

@@ -140,7 +140,7 @@ export function createSimple(G) {
     let L = place(230);
     path.style.setProperty('--lw', L.lw + 'px');
     path.innerHTML = `<svg class="sp-road" aria-hidden="true"><path/><path class="dash"/></svg>` +
-      list.map((s, k) => `<button class="sp-stop${s.kind === 'sign' ? ' sign' : ''}${k === next ? ' next' : ''}${sel === idOf(s) ? ' sel' : ''}" data-k="${k}" aria-label="${esc(s.name)}">
+      list.map((s, k) => `<button class="sp-stop${s.kind === 'sign' ? ' sign' : ''}${s.kind === 'group' ? ' grp' : ''}${k === next ? ' next' : ''}${sel === idOf(s) ? ' sel' : ''}" data-k="${k}" aria-label="${esc(s.name)}">
         <span class="sp-pic">${pic(s.icon)}${s.badge ? `<i class="sp-badge">${s.badge}</i>` : ''}${s.kind === 'sign' ? `<i class="sp-arrow">${pic('👉')}</i>` : ''}${s.isNew ? `<i class="sp-new">${pic('✨')}</i>` : ''}${starsHTML(s)}</span>
         <b class="sp-name">${esc(s.name)}</b>${!lt && s.kind !== 'sign' && s.kind !== 'group' ? `<span class="sp-play">${T('Play', 'Chơi')} ▶</span>` : ''}</button>`).join('') +
       `<button class="sp-owl" aria-label="${T('Ông Cú', 'Ông Cú')}">${pic('🦉')}</button>`;
