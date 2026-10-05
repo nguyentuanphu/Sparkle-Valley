@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sparkle Studio</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
 <link rel="stylesheet" href="/studio/ui/style.css">
@@ -10,9 +10,15 @@
 <body>
 <header>
   <div class="brand">✨ <b>Sparkle Studio</b> <small data-t="The grown-ups' dashboard for Sparkle Valley|Bảng điều khiển của người lớn cho Thung Lũng Lấp Lánh"></small></div>
-  <div class="lang"><button data-l="en">English</button><button data-l="vi">Tiếng Việt</button><button id="quit" data-t="⏻ Close|⏻ Đóng"></button></div>
+  <div class="actions">
+    <button id="pub" class="pub" hidden></button>
+    <button id="reload" class="icon" title="Reload" aria-label="Reload">↻</button>
+    <div class="lang"><button data-l="en">EN</button><button data-l="vi">VI</button></div>
+    <button id="quit" class="icon" title="Close" aria-label="Close">⏻</button>
+  </div>
 </header>
 <nav id="tabs"></nav>
+<div id="crumb"></div>
 <main id="page"></main>
 <div id="toast"></div>
 <script type="module" src="/studio/ui/app.js"></script>

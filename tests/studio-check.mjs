@@ -40,6 +40,12 @@ export function fakeGitHub(repo, files) {
       for (const d of dirs) out.push({ path: d, type: 'tree', sha: tsha + ':' + pre + d });
       return ok({ tree: out });
     }
+    if ((m = /^\/contents\/(.+)$/.exec(q)) && method === 'GET') { // one file, or one folder (round K)
+      const ref = u.searchParams.get('ref') || 'main', c = refs.get(ref) || ref, map = commits.has(c) && trees.get(commits.get(c).tree); if (!map) return no(404, 'No commit');
+      const rel = m[1]; if (map.has(rel)) { const b = blobs.get(map.get(rel)); return ok({ type: 'file', name: rel.split('/').pop(), path: rel, sha: map.get(rel), size: b.length, encoding: 'base64', content: b.toString('base64') }); }
+      const pre = rel + '/', out = new Map(); for (const [path2, s2] of map) if (path2.startsWith(pre)) { const rest = path2.slice(pre.length), n = rest.split('/')[0]; out.set(n, rest.includes('/') ? { type: 'dir', name: n, path: pre + n } : { type: 'file', name: n, path: path2, sha: s2 }); }
+      return out.size ? ok([...out.values()]) : no(404, 'Not Found');
+    }
     if ((m = /^\/git\/blobs\/(\w+)$/.exec(q))) return blobs.has(m[1]) ? ok({ content: blobs.get(m[1]).toString('base64') }) : no(404, 'No blob');
     if (q === '/git/blobs' && method === 'POST') { const buf = Buffer.from(body.content, 'base64'), s = gitSha(buf); blobs.set(s, buf); return ok({ sha: s }); }
     if (q === '/git/trees' && method === 'POST') {
@@ -133,6 +139,9 @@ export async function studioCheck(browser, open) {
     const li = await call('/studio/api/login', { body: { password: PW } }); ok(li.status === 200 && /^sv_studio=/.test(li.cookie), 'signing in failed');
     const C = li.cookie, X = { 'X-Studio': '1' };
     const info = await call('/studio/api/info', { cookie: C }); ok(info.j && info.j.ok && info.j.online && info.j.voices === 1, 'online info: ' + JSON.stringify(info.j));
+    // round K: changing page online is quick: the status and the family's content take a few small GitHub calls, never the list of every file
+    { gh.log.length = 0; await call('/studio/api/info', { cookie: C }); await call('/studio/api/content', { cookie: C }); const calls = gh.log.slice();
+      ok(!calls.some(c => /\/git\/trees\//.test(c)) && calls.length <= 6, 'a page change online asked GitHub ' + calls.length + ' times: ' + calls.join(', ')); notes.push(`a page change online: ${calls.length} small GitHub calls`); }
     // 2. saving goes to the draft, never straight to the live branch
     ok((await call('/studio/api/content', { cookie: C, body: { message: { en: 'x', vi: 'x' } } })).status === 403, 'a change without the Studio header was taken');
     ok((await call('/studio/api/content', { cookie: C, headers: X, body: { message: { en: 'Hi from online', vi: 'Chào từ trên mạng' } } })).status === 200, 'saving online failed');
@@ -222,13 +231,18 @@ export async function studioCheck(browser, open) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch }), errs = [];
       const pg = await ctx.newPage(); pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/favicon|401|403/.test(m.text())) errs.push(m.text() + ' ' + (m.location().url || '')); });
       await pg.goto(site + '/studio'); await pg.waitForSelector('#pw', { timeout: 15000 }); await pg.fill('#pw', PW); await pg.click('#si button'); await pg.waitForSelector('#tabs button', { timeout: 15000 });
-      for (const k of pages) { await pg.evaluate(k2 => document.querySelector(`#tabs [data-k="${k2}"]`).click(), k); await pg.waitForTimeout(k === 'photos' ? 2500 : 900); const t = await pg.evaluate(() => document.querySelector('#page').innerText); if (await pg.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`online ${w}px ${k}: ${t.slice(0, 80)}`);
+      // round K: five sections (a column on a computer, a bar at the bottom of a phone), each opening as cards
+      const navOk = await pg.evaluate(touch => { const bs = [...document.querySelectorAll('#tabs button')], r = bs.map(b => b.getBoundingClientRect()); return bs.length === 5 && (touch ? r.every(x => x.bottom >= innerHeight - 2 - 40 && x.height >= 56) : r.every(x => x.left < 220)); }, touch);
+      if (!navOk) bad.push(`online ${w}px: the five sections are not where they should be`);
+      await pg.evaluate(() => document.querySelector('#tabs [data-k="family"]').click()); await pg.waitForTimeout(400);
+      if (await pg.evaluate(() => document.querySelectorAll('#page .pcard').length) !== 6) bad.push(`online ${w}px: the Family section does not show its six cards`);
+      for (const k of pages) { await pg.evaluate(k2 => { location.hash = k2; }, k); await pg.waitForTimeout(k === 'photos' ? 2500 : 900); const t = await pg.evaluate(() => document.querySelector('#page').innerText); if (await pg.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`online ${w}px ${k}: ${t.slice(0, 80)}`);
         if (await pg.evaluate(() => document.scrollingElement.scrollWidth > innerWidth + 1)) bad.push(`online ${w}px ${k}: page scrolls sideways`); }
       ok(/3/.test(await pg.evaluate(() => (document.querySelector('#tabs [data-k="players"]').click(), new Promise(r => setTimeout(() => r(document.querySelector('#page').innerText), 1500))))), 'online players page');
       await pg.screenshot({ path: `out/studio-online-${w}.png` });
       const pe = await ctx.newPage(); pe.on('pageerror', e => errs.push('exe: ' + e.message));
       await pe.goto(`http://localhost:${SPORT}/`); // (sends you on to /studio/) await pe.waitForSelector('#tabs button', { timeout: 15000 });
-      for (const k of pages) { await pe.evaluate(k2 => document.querySelector(`#tabs [data-k="${k2}"]`).click(), k); await pe.waitForTimeout(900); const t = await pe.evaluate(() => document.querySelector('#page').innerText); if (await pe.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`exe ${w}px ${k}: ${t.slice(0, 80)}`); }
+      for (const k of pages) { await pe.evaluate(k2 => { location.hash = k2; }, k); await pe.waitForTimeout(900); const t = await pe.evaluate(() => document.querySelector('#page').innerText); if (await pe.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`exe ${w}px ${k}: ${t.slice(0, 80)}`); }
       await pe.screenshot({ path: `out/studio-exe-${w}.png` });
       bad.push(...errs.map(e => `${w}px: ${e}`)); await ctx.close();
     }

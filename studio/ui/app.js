@@ -10,27 +10,84 @@ const api = async (p, body) => { const r = await fetch(BASE + '/api/' + p, body 
 const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); };
 const fail = e => toast('⚠️ ' + (e.message || e));
 let INFO = null, CONTENT = {};
-const saveContent = async () => { await api('content', CONTENT); toast(T('Saved. Publish to send it to the children’s devices.', 'Đã lưu. Bấm Phát hành để gửi tới máy của các con.')); };
+const saveContent = async () => { await api('content', CONTENT); if (INFO) { INFO.unpublished = true; head(); } toast(T('Saved. Publish to send it to the children’s devices.', 'Đã lưu. Bấm Phát hành để gửi tới máy của các con.')); };
 
-const TABS = [
-  ['home', '🏠', 'Home', 'Trang chính'], ['message', '💌', 'Message', 'Lời nhắn'], ['villagers', '🧑', 'Villagers', 'Nhân vật'], ['stories', '📖', 'Stories', 'Truyện'],
-  ['quiz', '💛', 'Family quiz', 'Đố vui gia đình'], ['path', '🧸', 'Simple screen', 'Màn hình đơn giản'], ['album', '💌', 'Family album', 'Album gia đình'], ['map', '🗺️', 'Map & building', 'Bản đồ & xây dựng'], ['photos', '📷', 'Real photos', 'Ảnh thật'], ['play', '⏰', 'Defaults', 'Mặc định'], ['children', '👧', 'Children', 'Các con'], ['voices', '🎙️', 'Voices', 'Giọng đọc'],
-  ['ads', '📣', 'Ads (off)', 'Quảng cáo (tắt)'], ['players', '📊', 'Players', 'Người chơi'], ['publish', '🚀', 'Publish', 'Phát hành'], ['site', '🌐', 'Website', 'Trang web'], ['check', '🩺', 'Check', 'Kiểm tra'], ['settings', '🔑', 'Settings', 'Cài đặt']
+// Five sections instead of seventeen tabs (round K, owner: "too many menus, confusing on the phone"): each section opens
+// as big cards, one per page; on a phone the sections are a bar at the bottom, on a computer a column on the left.
+const SECTIONS = [
+  { k: 'home', i: '🏠', en: 'Home', vi: 'Trang chính', pages: ['home'] },
+  { k: 'family', i: '💛', en: 'Family', vi: 'Gia đình', pages: ['message', 'children', 'album', 'quiz', 'stories', 'villagers'] },
+  { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['path', 'map', 'photos', 'play', 'voices', 'ads'] },
+  { k: 'players', i: '📊', en: 'Players', vi: 'Người chơi', pages: ['players'] },
+  { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Cài đặt', pages: ['publish', 'site', 'check', 'settings'] }
 ];
-let cur = location.hash.slice(1) || 'home';
+// each page: its picture, its name and one line saying what it is for
+const ABOUT = {
+  home: ['🏠', 'Home', 'Trang chính', '', ''],
+  message: ['💌', 'Message', 'Lời nhắn', 'A note the children see when they start playing', 'Lời nhắn các con thấy khi bắt đầu chơi'],
+  children: ['👧', 'Children', 'Các con', 'Each child’s name, age, photo and progress', 'Tên, tuổi, ảnh và tiến bộ của từng con'],
+  album: ['📸', 'Family album', 'Album gia đình', 'Family photos that arrive as postcards in the game', 'Ảnh gia đình đến thành bưu thiếp trong game'],
+  quiz: ['💛', 'Family quiz', 'Đố vui gia đình', 'Your own questions: “What is Grandma’s name?”', 'Câu hỏi của nhà mình: “Bà tên gì?”'],
+  stories: ['📖', 'Our stories', 'Truyện nhà mình', 'Write the family’s own picture stories', 'Viết truyện tranh của gia đình'],
+  villagers: ['🧑', 'Villagers', 'Nhân vật', 'Names and photo faces of the people in the valley', 'Tên và ảnh khuôn mặt của mọi người trong thung lũng'],
+  path: ['🧸', 'Simple screen', 'Màn hình đơn giản', 'Which games under-5s see, and in which area', 'Bé dưới 5 tuổi thấy trò nào, ở khu nào'],
+  map: ['🗺️', 'Map and building', 'Bản đồ & xây dựng', 'Move, add or remove buildings and land', 'Di chuyển, thêm hoặc bỏ nhà và đất'],
+  photos: ['📷', 'Real photos', 'Ảnh thật', 'Real photos of the landmarks', 'Ảnh thật của các địa danh'],
+  play: ['⏰', 'Play time', 'Giờ chơi', 'Rest reminders and other starting settings', 'Nhắc nghỉ và các cài đặt ban đầu khác'],
+  voices: ['🎙️', 'Voices', 'Giọng đọc', 'Recordings for new lines, and the children’s inbox', 'Bản ghi cho câu mới, và hộp thư của các con'],
+  ads: ['📣', 'Ads (off)', 'Quảng cáo (tắt)', 'Your own ads; nothing shows unless you turn them on', 'Quảng cáo của bạn; không hiện gì trừ khi bật'],
+  players: ['📊', 'Players', 'Người chơi', '', ''],
+  publish: ['🚀', 'Publish', 'Phát hành', 'Send your saved changes to the children’s devices', 'Gửi thay đổi đã lưu tới máy của các con'],
+  site: ['🌐', 'Website', 'Trang web', 'The game’s website: updates and GitHub', 'Trang web của game: cập nhật và GitHub'],
+  check: ['🩺', 'Check', 'Kiểm tra', 'Is everything set up and working?', 'Mọi thứ đã cài đặt và chạy tốt chưa?'],
+  settings: ['🔑', 'Settings', 'Cài đặt', 'Keys, the game folder, signing out', 'Khóa, thư mục game, đăng xuất']
+};
+const sectionOf = k => SECTIONS.find(x => x.k === k || x.pages.includes(k)) || SECTIONS[0];
+// #family → the Family cards; #family/quiz (or the old #quiz) → that page
+const route = () => { const h = location.hash.slice(1), [a, b] = h.split('/'); if (b && ABOUT[b]) return b; if (ABOUT[a] || SECTIONS.some(x => x.k === a)) return a; return 'home'; };
+let cur = route();
+const go = k => { if (k === cur) return; cur = k; const sec = sectionOf(k); location.hash = sec.k === k || sec.pages.length === 1 ? sec.k : sec.k + '/' + k; render(); };
+// the bar at the top: Publish when something is waiting, reload, language
+function head() {
+  const pub = $('#pub'); if (!pub) return;
+  pub.hidden = !(INFO && INFO.unpublished); pub.textContent = '🚀 ' + T('Publish', 'Phát hành');
+}
 function nav() {
-  $('#tabs').innerHTML = TABS.map(([k, i, en, vi]) => `<button data-k="${k}" class="${k === cur ? 'on' : ''}">${i} ${T(en, vi)}</button>`).join('');
-  $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => { cur = b.dataset.k; location.hash = cur; render(); });
+  const sec = sectionOf(cur);
+  $('#tabs').innerHTML = SECTIONS.map(x => `<button data-k="${x.k}" class="${x === sec ? 'on' : ''}"><span>${x.i}</span><small>${T(x.en, x.vi)}</small></button>`).join('');
+  $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.k));
   document.querySelectorAll('[data-t]').forEach(e => { const [en, vi] = e.dataset.t.split('|'); e.textContent = T(en, vi); });
   document.querySelectorAll('.lang button[data-l]').forEach(b => { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { LANG = b.dataset.l; localStorage.setItem('studioLang', LANG); render(); }; });
+  if ($('#pub')) $('#pub').onclick = () => go('publish');
+  if ($('#reload')) $('#reload').onclick = () => render(true);
+  head();
 }
-async function render() {
-  nav(); const P = $('#page');
+// the status and the family's content are fetched once and kept while you move between pages (round K: online, every
+// tab used to ask GitHub again); they are fetched again after Publish, after signing in, and with ↻
+let LOADED = false;
+async function load(force) {
+  if (LOADED && !force) return;
+  INFO = await api('info'); document.body.classList.toggle('online', !!INFO.online);
+  CONTENT = INFO.ok ? await api('content') : {};
+  LOADED = true;
+}
+const drawSection = (P, sec) => {
+  P.innerHTML = `<h2>${sec.i} ${T(sec.en, sec.vi)}</h2><div class="cards">${sec.pages.map(k => { const [i, en, vi, den, dvi] = ABOUT[k];
+    return `<button class="pcard" data-p="${k}"><span class="pi">${i}</span><b>${T(en, vi)}</b><small>${T(den, dvi)}</small></button>`; }).join('')}</div>`;
+  P.querySelectorAll('.pcard').forEach(b => b.onclick = () => go(b.dataset.p));
+};
+async function render(force) {
+  nav(); const P = $('#page'), crumb = $('#crumb');
+  if (!LOADED || force) P.innerHTML = `<div class="loading">✨ ${T('Loading…', 'Đang tải…')}</div>`;
   try {
-    INFO = await api('info'); document.body.classList.toggle('online', !!INFO.online);
+    await load(force);
     if (!INFO.ok && cur !== 'settings') { cur = 'settings'; nav(); toast(T('First, choose the game folder.', 'Trước tiên, chọn thư mục game.')); }
-    if (INFO.ok) CONTENT = await api('content');
-    await PAGES[cur](P);
+    head();
+    const sec = sectionOf(cur);
+    if (sec.k === cur && sec.pages.length > 1) { crumb.innerHTML = ''; drawSection(P, sec); window.scrollTo(0, 0); return; }
+    crumb.innerHTML = sec.pages.length > 1 ? `<button class="back">← ${sec.i} ${T(sec.en, sec.vi)}</button>` : '';
+    if (crumb.firstChild) crumb.firstChild.onclick = () => go(sec.k);
+    await PAGES[cur](P); window.scrollTo(0, 0);
   } catch (e) { if (!e.signin) P.innerHTML = `<div class="card badtxt">${esc(e.message)}</div>`; }
 }
 
@@ -418,7 +475,7 @@ PAGES.publish = async P => {
       again();
       const r = j.result || {}, draft = what === 'draft';
       $('#gres').innerHTML = j.error ? '⚠️ ' + esc(j.error) : r.changed ? `✅ ${r.changed} ${draft ? T('files saved in the draft', 'tệp đã lưu vào bản nháp') : T('files published', 'tệp đã phát hành')} · <a href="${esc(r.url)}" target="_blank">${T('see the change', 'xem thay đổi')}</a>. ${draft ? T('The website has not changed yet: press 2. Publish when you are ready.', 'Trang web chưa đổi: bấm 2. Phát hành khi bạn sẵn sàng.') : T('Netlify updates the site in a minute or two.', 'Netlify cập nhật trang sau một hai phút.')}` : '✅ ' + esc(r.note || T('Nothing new.', 'Không có gì mới.'));
-      if (!j.error && $('#gwait')) { const waiting = draft ? (r.changed > 0 || INFO.unpublished) : false; INFO.unpublished = waiting; $('#gwait').className = waiting ? 'warn' : 'ok'; $('#gwait').textContent = waiting ? '✏️ ' + T('A draft is waiting on GitHub: press Publish to put it live.', 'Có bản nháp đang chờ trên GitHub: bấm Phát hành để đưa lên.') : '✅ ' + T('No draft waiting.', 'Không có bản nháp đang chờ.'); }
+      if (!j.error && $('#gwait')) { const waiting = draft ? (r.changed > 0 || INFO.unpublished) : false; INFO.unpublished = waiting; head(); $('#gwait').className = waiting ? 'warn' : 'ok'; $('#gwait').textContent = waiting ? '✏️ ' + T('A draft is waiting on GitHub: press Publish to put it live.', 'Có bản nháp đang chờ trên GitHub: bấm Phát hành để đưa lên.') : '✅ ' + T('No draft waiting.', 'Không có bản nháp đang chờ.'); }
     };
     if (j0.end) { show(j0); fin(j0); } else watchJob(show, fin); // online it is done straight away
   };
@@ -654,7 +711,7 @@ PAGES.settings = async P => {
   <div class="card"><h3>📊 ${T('Players and the online Studio', 'Người chơi và Studio trên mạng')}</h3><div class="row"><div><label>${T('The game’s website', 'Trang web của game')}</label><input type="text" id="su" value="${esc(c.siteUrl)}" placeholder="https://sparklevalley.netlify.app"></div><div><label>${T('Studio password (STUDIO_PASSWORD in Netlify)', 'Mật khẩu Studio (STUDIO_PASSWORD trong Netlify)')} ${c.players ? '✅' : ''}</label><input type="password" id="sp" placeholder="${c.players ? T('(saved, type to replace)', '(đã lưu, gõ để thay)') : ''}"></div></div>
     <p class="note">${T('The same Studio is online at the website’s /studio/ page (sign in with this password). The Players page asks the website how many children play.', 'Studio này cũng có trên mạng ở trang /studio/ của trang web (đăng nhập bằng mật khẩu này). Trang Người chơi hỏi trang web có bao nhiêu bé đang chơi.')}</p></div>
   <div class="bar"><button class="btn ghost" id="forget">🗑️ ${T('Forget the keys', 'Xóa các khóa')}</button><button class="btn" id="save">💾 ${T('Save settings', 'Lưu cài đặt')}</button></div>`;
-  $('#save').onclick = async () => { try { await api('settings', { gameDir: $('#gd').value, azureKey: $('#ak').value, azureRegion: $('#ar').value, piperExe: $('#pe').value, piperModels: { en: $('#pen').value.trim(), vi: $('#pvi').value.trim() }, netlifyToken: $('#nt').value, netlifySite: $('#ns').value, githubToken: $('#gt').value, githubRepo: $('#gr').value, githubBranch: $('#gb').value, siteUrl: $('#su').value, studioPassword: $('#sp').value }); toast(T('Settings saved.', 'Đã lưu cài đặt.')); render(); } catch (e) { fail(e); } };
+  $('#save').onclick = async () => { try { await api('settings', { gameDir: $('#gd').value, azureKey: $('#ak').value, azureRegion: $('#ar').value, piperExe: $('#pe').value, piperModels: { en: $('#pen').value.trim(), vi: $('#pvi').value.trim() }, netlifyToken: $('#nt').value, netlifySite: $('#ns').value, githubToken: $('#gt').value, githubRepo: $('#gr').value, githubBranch: $('#gb').value, siteUrl: $('#su').value, studioPassword: $('#sp').value }); toast(T('Settings saved.', 'Đã lưu cài đặt.')); render(true); } catch (e) { fail(e); } };
   $('#forget').onclick = async () => { if (!confirm(T('Forget the Azure, Netlify and GitHub keys on this computer?', 'Xóa khóa Azure, Netlify và GitHub trên máy này?'))) return; await api('settings', { forget: ['azureKey', 'netlifyToken', 'githubToken', 'studioPassword'] }); toast(T('Keys forgotten.', 'Đã xóa khóa.')); render(); };
 };
 // ---------- players: how many children play (anonymous counts from the website, netlify/lib/players.mjs) ----------
@@ -677,15 +734,15 @@ PAGES.players = async P => {
 };
 // ---------- signing in (online only) ----------
 function signIn() {
-  $('#tabs').innerHTML = ''; document.body.classList.add('online');
+  LOADED = false; $('#tabs').innerHTML = ''; if ($('#crumb')) $('#crumb').innerHTML = ''; if ($('#pub')) $('#pub').hidden = true; document.body.classList.add('online');
   $('#page').innerHTML = `<div class="card signin"><h2>✨ Sparkle Studio</h2><p class="sub">${T('The grown-ups’ dashboard, online. Enter the Studio password.', 'Bảng điều khiển của người lớn, trên mạng. Nhập mật khẩu Studio.')}</p>
     <form id="si"><input type="password" id="pw" autocomplete="current-password" placeholder="${T('Password', 'Mật khẩu')}"><button class="btn" style="margin-top:10px">🔓 ${T('Sign in', 'Đăng nhập')}</button><p class="note" id="sires"></p></form></div>`;
   $('#si').onsubmit = async e => { e.preventDefault(); $('#sires').textContent = '…';
     const r = await fetch(BASE + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: $('#pw').value }) }); const j = await r.json().catch(() => ({}));
-    if (r.ok) render(); else $('#sires').textContent = '⚠️ ' + (j.error || r.status); };
+    if (r.ok) render(true); else $('#sires').textContent = '⚠️ ' + (j.error || r.status); };
   $('#pw').focus();
 }
-window.addEventListener('hashchange', () => { const k = location.hash.slice(1); if (PAGES[k] && k !== cur) { cur = k; render(); } });
+window.addEventListener('hashchange', () => { const k = route(); if (k !== cur) { cur = k; render(); } });
 render();
 // keep the Studio running while this window is open; ⏻ stops it
 setInterval(() => { if (INFO && !INFO.online) fetch(BASE + '/api/ping').catch(() => { }); }, 20000);

@@ -45,8 +45,12 @@ function ghApi(token) {
   };
 }
 const TREES = new Map(), BLOBS = new Map(); // kept between requests while the function stays warm (by sha: never stale)
+// where the branches point, kept for a few seconds between requests (round K: a tab change online cost several GitHub
+// calls each time); any save or publish from this server forgets it at once
+const REFS = new Map(), REFS_TTL = 15e3;
 function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api = ghApi(token) }) {
   const R = `/repos/${repo}`, gh = api, pending = new Map(); let st = null;
+  const treeShaOf = async commit => TREES.has(commit) ? TREES.get(commit).sha : (await gh(`${R}/git/commits/${commit}`)).tree.sha;
   const treeOf = async commit => {
     if (TREES.has(commit)) return TREES.get(commit);
     const c = await gh(`${R}/git/commits/${commit}`), t = await gh(`${R}/git/trees/${c.tree.sha}?recursive=1`), map = new Map();
@@ -55,70 +59,92 @@ function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api
   };
   const refSha = async b => { try { return (await gh(`${R}/git/ref/heads/${encodeURIComponent(b)}`)).object.sha; } catch (e) { if (e.status === 404) return null; throw e; } };
   // main, and the draft only while it has changes main does not (otherwise everything is read from main)
+  // where main and the draft point (the whole list of files is only fetched when something needs it: round K)
+  const RK = repo + '|' + branch + '|' + draft;
   const state = async () => {
     if (st) return st;
-    const main = await refSha(branch); if (!main) throw new Error(`The branch ${branch} is not in ${repo}.`);
-    const d = await refSha(draft); let ahead = 0, base = null;
-    if (d && d !== main) { const c = await gh(`${R}/compare/${encodeURIComponent(branch)}...${encodeURIComponent(draft)}`); ahead = c.ahead_by; base = c.merge_base_commit.sha; }
-    st = { main, draftSha: d, d: ahead ? d : null, base, mainTree: await treeOf(main), draftTree: null };
-    if (st.d) st.draftTree = await treeOf(st.d);
+    const kept = REFS.get(RK);
+    if (kept && Date.now() - kept.t < REFS_TTL) st = { ...kept.s, mainTree: null, draftTree: null };
+    else {
+      const main = await refSha(branch); if (!main) throw new Error(`The branch ${branch} is not in ${repo}.`);
+      const d = await refSha(draft); let ahead = 0, base = null;
+      if (d && d !== main) { const c = await gh(`${R}/compare/${encodeURIComponent(branch)}...${encodeURIComponent(draft)}`); ahead = c.ahead_by; base = c.merge_base_commit.sha; }
+      st = { main, draftSha: d, d: ahead ? d : null, base, mainTree: null, draftTree: null };
+      REFS.set(RK, { t: Date.now(), s: { main, draftSha: d, d: st.d, base } });
+    }
     return st;
   };
-  const shaOf = async rel => { const s = await state(); return (FAMILY(rel) && s.d ? s.draftTree : s.mainTree).map.get(rel); };
+  const forget = () => { st = null; REFS.delete(RK); };
+  const full = async () => { const s = await state(); if (!s.mainTree) s.mainTree = await treeOf(s.main); if (s.d && !s.draftTree) s.draftTree = await treeOf(s.d); return s; };
+  const commitFor = async rel => { const s = await state(); return FAMILY(rel) && s.d ? s.d : s.main; };
+  // one file or one folder straight from GitHub, without the list of every file (unless that list is here already)
+  const contents = async (rel, commit) => { try { return await gh(`${R}/contents/${rel.split('/').map(encodeURIComponent).join('/')}?ref=${commit}`); } catch (e) { if (e.status === 404) return null; throw e; } };
+  const shaOf = async rel => { const c = await commitFor(rel); if (TREES.has(c)) return TREES.get(c).map.get(rel); const j = await contents(rel, c); return j && !Array.isArray(j) && j.type === 'file' ? j.sha : null; };
   const blob = async sha => { if (BLOBS.has(sha)) return BLOBS.get(sha); const b = Buffer.from((await gh(`${R}/git/blobs/${sha}`)).content, 'base64'); if (b.length < 400e3) { if (BLOBS.size > 200) BLOBS.clear(); BLOBS.set(sha, b); } return b; };
   const names = async (dir, deep) => {
-    const s = await state(), pre = dir.replace(/\/$/, '') + '/', out = new Set();
-    const t = FAMILY(pre) && s.d ? s.draftTree : s.mainTree;
-    for (const p of t.map.keys()) if (p.startsWith(pre) && (deep || !p.slice(pre.length).includes('/'))) out.add(deep ? p : p.slice(pre.length));
+    const pre = dir.replace(/\/$/, '') + '/', out = new Set(), c = await commitFor(pre);
+    let listed = false;
+    if (!deep && !TREES.has(c)) { // one folder: GitHub lists up to 1,000 files this way; a bigger folder needs the full list
+      const j = await contents(pre.slice(0, -1), c);
+      if (!j) listed = true; else if (Array.isArray(j) && j.length < 1000) { for (const x of j) if (x.type === 'file') out.add(x.name); listed = true; }
+    }
+    if (!listed) { const t = await treeOf(c); for (const p of t.map.keys()) if (p.startsWith(pre) && (deep || !p.slice(pre.length).includes('/'))) out.add(deep ? p : p.slice(pre.length)); }
     for (const [p, v] of pending) if (p.startsWith(pre) && (deep || !p.slice(pre.length).includes('/'))) { const k = deep ? p : p.slice(pre.length); if (v) out.add(k); else out.delete(k); }
     return [...out];
   };
   const commitOn = async (parent, items, message) => {
-    let tree = (await treeOf(parent)).sha; // (in parts: a voice pack top-up can be thousands of files)
+    let tree = await treeShaOf(parent); // (in parts: a voice pack top-up can be thousands of files)
     for (let i = 0; i < items.length; i += 400) tree = (await gh(`${R}/git/trees`, { method: 'POST', body: JSON.stringify({ base_tree: tree, tree: items.slice(i, i + 400) }) })).sha;
     return (await gh(`${R}/git/commits`, { method: 'POST', body: JSON.stringify({ message, tree, parents: [parent] }) })).sha;
   };
   const setRef = async (b, sha, force) => { try { await gh(`${R}/git/refs/heads/${encodeURIComponent(b)}`, { method: 'PATCH', body: JSON.stringify({ sha, force: !!force }) }); } catch (e) { if (e.status !== 422 && e.status !== 404) throw e; if (await refSha(b)) throw e; await gh(`${R}/git/refs`, { method: 'POST', body: JSON.stringify({ ref: 'refs/heads/' + b, sha }) }); } };
   return {
     kind: 'github', where: `${repo} · ${branch}`, backup: false, ok: () => true,
-    read: async rel => { if (pending.has(rel)) return pending.get(rel); const sha = await shaOf(rel); return sha ? blob(sha) : null; },
+    read: async rel => {
+      if (pending.has(rel)) return pending.get(rel);
+      const c = await commitFor(rel);
+      if (!TREES.has(c)) { const j = await contents(rel, c); if (!j || Array.isArray(j) || j.type !== 'file') return null; if (BLOBS.has(j.sha)) return BLOBS.get(j.sha); if (j.encoding === 'base64' && j.content) { const b = Buffer.from(j.content, 'base64'); if (b.length < 400e3) BLOBS.set(j.sha, b); return b; } return blob(j.sha); }
+      const sha = TREES.get(c).map.get(rel); return sha ? blob(sha) : null;
+    },
     write: async (rel, buf) => { if (!FAMILY(rel)) throw new Error('Online, only the family’s own files can change.'); pending.set(rel, Buffer.from(buf)); },
     remove: async rel => { if (!FAMILY(rel)) throw new Error('Online, only the family’s own files can change.'); pending.set(rel, null); },
     list: dir => names(dir, false), walk: dir => names(dir, true),
     // one commit on the draft branch for everything this request changed
     flush: async message => {
       if (!pending.size) return null;
+      forget(); // a change always starts from where the branches really are now
       for (let a = 0; ; a++) {
-        const s = await state(), parent = s.d || s.main, have = (await treeOf(parent)).map, items = [];
+        const s = await state(), parent = s.d || s.main, items = [], have = [...pending.values()].some(v => !v) ? (await treeOf(parent)).map : new Map();
         for (const [rel, buf] of pending) {
           if (buf) items.push({ path: rel, mode: '100644', type: 'blob', sha: (await gh(`${R}/git/blobs`, { method: 'POST', body: JSON.stringify({ content: buf.toString('base64'), encoding: 'base64' }) })).sha });
           else if (have.has(rel)) items.push({ path: rel, mode: '100644', type: 'blob', sha: null });
         }
         if (!items.length) { pending.clear(); return null; }
         const sha = await commitOn(parent, items, message || 'Sparkle Studio online: draft');
-        try { await setRef(draft, sha, !s.d); pending.clear(); st = null; return sha; } // a draft with nothing unpublished is simply restarted from main
-        catch (e) { if (a > 1 || e.status !== 422) throw e; st = null; } // someone else saved at the same moment: once more on top of theirs
+        try { await setRef(draft, sha, !s.d); pending.clear(); forget(); return sha; } // a draft with nothing unpublished is simply restarted from main
+        catch (e) { if (a > 1 || e.status !== 422) throw e; forget(); } // someone else saved at the same moment: once more on top of theirs
       }
     },
     // Publish: the family's files that changed on the draft are put onto main as one commit, then the draft starts
     // again from main. Files that changed only on main (e.g. published from the exe meanwhile) are left as they are.
     publish: async message => {
-      const s = await state(); if (!s.d) return { changed: 0, note: 'Nothing new to publish: the website already has everything.' };
+      forget(); const s = await full(); if (!s.d) return { changed: 0, note: 'Nothing new to publish: the website already has everything.' };
       const base = (await treeOf(s.base)).map, mine = s.draftTree.map, items = [];
       for (const p of new Set([...base.keys(), ...mine.keys()])) if (FAMILY(p) && base.get(p) !== mine.get(p)) items.push(mine.has(p) ? { path: p, mode: '100644', type: 'blob', sha: mine.get(p) } : s.mainTree.map.has(p) ? { path: p, mode: '100644', type: 'blob', sha: null } : null);
       const list = items.filter(Boolean); if (!list.length) return { changed: 0, note: 'Nothing new to publish: the website already has everything.' };
       const sha = await commitOn(s.main, list, message || `Family update from Sparkle Studio online (${list.length} files)`);
-      await setRef(branch, sha, false); await setRef(draft, sha, true); st = null;
+      await setRef(branch, sha, false); await setRef(draft, sha, true); forget();
       return { changed: list.length, commit: sha.slice(0, 7), url: `https://github.com/${repo}/commit/${sha}` };
     },
     unpublished: async () => !!(await state()).d,
     // (the exe) the family's files as GitHub has them now: the draft while it has unpublished changes, else main
-    familyShas: async () => { const s = await state(), out = new Map(); for (const [p, sha] of (s.d ? s.draftTree : s.mainTree).map) if (FAMILY(p)) out.set(p, sha); return out; },
+    familyShas: async () => { const s = await full(), out = new Map(); for (const [p, sha] of (s.d ? s.draftTree : s.mainTree).map) if (FAMILY(p)) out.set(p, sha); return out; },
     // (the exe) files already uploaded as blobs → one commit on the draft branch (never on main)
     saveDraft: async (items, message) => {
+      forget();
       for (let a = 0; ; a++) {
         const s = await state(), sha = await commitOn(s.d || s.main, items, message || 'Sparkle Studio: draft');
-        try { await setRef(draft, sha, !s.d); st = null; return sha; } catch (e) { if (a > 1 || e.status !== 422) throw e; st = null; }
+        try { await setRef(draft, sha, !s.d); forget(); return sha; } catch (e) { if (a > 1 || e.status !== 422) throw e; forget(); }
       }
     }
   };
@@ -210,6 +236,8 @@ function createStudio({ store, conf, online = false, local = {} }) {
     for (const [L, slots] of Object.entries(CAST)) { out[L] = {}; for (const s of slots) out[L][s] = (await S.list(`voices/${L}/${s}`)).filter(f => f.endsWith('.mp3')).map(f => f.slice(0, -4)); }
     return out;
   }
+  // how many recordings, from the pack's own list (one small file, not every folder: round K, the online Studio was slow)
+  async function voiceCount() { const m = await readJSON('voices/manifest.json', null); if (m && m.lines && typeof m.lines === 'object') return Object.values(m.lines).reduce((a, v) => a + String(v).length, 0); return countVoices(await voicesHave()); }
   const countVoices = h => Object.values(h).reduce((a, s) => a + Object.values(s).reduce((b, l) => b + l.length, 0), 0);
   async function addToManifest(lang, slot, hash) {
     const m = await readJSON('voices/manifest.json', { version: 2, engine: 'mixed', cast: CAST, voices: {}, lines: {}, langOf: {} });
@@ -331,7 +359,7 @@ function createStudio({ store, conf, online = false, local = {} }) {
     const post = method === 'POST', b = post ? parse(bodyBuf) : {};
     if (api === 'ping') return ok({ ok: true });
     if (api === 'info') {
-      const ready = S.ok(), nv = ready ? countVoices(await voicesHave()) : 0; let version = '?';
+      const ready = S.ok(), nv = ready ? await voiceCount() : 0; let version = '?';
       try { version = /VERSION = '([^']+)'/.exec((await S.read('sw.js')).toString('utf8'))[1]; } catch (e) { }
       let unpublished = false; try { if (S.unpublished) unpublished = await S.unpublished(); else if (gh && conf.githubRepo) { if (!draftSeen || Date.now() - draftSeen.t > 30e3) draftSeen = { t: Date.now(), v: await ghStore().unpublished() }; unpublished = draftSeen.v; } } catch (e) { }
       return ok(Object.assign({ game: S.where, ok: ready, version, voices: nv, studio: STUDIO_VERSION, online, store: S.kind, unpublished,
