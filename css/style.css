@@ -1925,10 +1925,6 @@ body.calm .sp-stop.next .sp-pic { animation: none; }
 /* ✨ new since the last look (big kids) */
 .sp-new { position: absolute; left: -10px; top: -10px; width: 34px; height: 34px; }
 .sp-new .art, .sp-new .emo { width: 34px; height: 34px; font-size: 28px; }
-/* how hard (big kids): one to three dots */
-.sp-level { display: flex; gap: 4px; margin-top: -14px; }
-.sp-level i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, .8); box-shadow: 0 0 0 2px #b7a6e0 inset; }
-.sp-level i.on { background: #8a5cf6; box-shadow: none; }
 /* big kids choose with two taps: the first shows it, the second (or ▶ Play) plays it */
 .sp-play { display: none; position: absolute; left: 50%; top: 54px; transform: translateX(-50%); z-index: 4; min-height: 48px; align-items: center; padding: 0 20px; border-radius: 999px; background: #8a5cf6; color: #fff; font-weight: 700; font-size: 18px; box-shadow: 0 4px 0 #5b2fd0; white-space: nowrap; }
 .sp-stop.sel { z-index: 3; }
