@@ -7,8 +7,8 @@
 //   · up to 15 lines of the game's own text it had to read with the machine voice (so Sparkle Studio can record
 //     them: the "missing lines inbox"), never a line with a child's name in it
 // Round L (owner: "a report per child and for everyone: devices, location, games and places, activity, bugs and where
-// they get stuck"): each played day also carries, per child, the child's first name (Grown-ups → Advanced → "Names
-// in analytics" leaves them out), age group, minutes, games started, won and left early, places visited and
+// they get stuck"): each played day also carries, per child, the child's first name (round N: no separate switch
+// on screen; "Analytics" off stops everything), age group, minutes, games started, won and left early, places visited and
 // stories opened; minutes by hour of the day; the device's system and browser (from the browser, e.g. "iOS · Safari")
 // and screen size; how smooth the game ran; errors in the game's own code (the message and file:line, never what a
 // child typed); and where a child pushed to walk but did not move (stuck), by area. The town or city is worked out
