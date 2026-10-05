@@ -2,8 +2,11 @@
 // big kids can switch to it too"). Instead of walking the 3D valley, a child sees a winding path of big pictures in a
 // little storybook landscape: tap one and it starts (a game, a story), or the explorer flies there (a place).
 //   Round J (owner's brief "an adventure world containing places children want to visit"):
-//   · the path visits one area at a time (Animals, Music, Numbers…, js/content/activities.js); an under-5 sees at most
-//     six stops at once, and a signpost at the end of the path leads on to the next ones
+//   · each tab opens on its groups (Animals, Music, Numbers…; stories by country; places by region: round M, owner:
+//     "categorised into groups for easier understanding"); tap a group to walk its path; ⬅ at the top goes back to the
+//     groups. An under-5 sees at most six stops at once, and a signpost at the end of the path leads on
+//   · a game or story opens straight over this screen, which stays behind it (round M: the valley no longer flashes
+//     up first), and the path is there again when it ends
 //   · a tap answers at once: the picture grows and bounces, little stars burst, the voice says its name, then it opens;
 //     a second tap while that happens is ignored, so a game never starts twice
 //   · 🔎 Discover: every area as a big picture (and, for big kids, a search box)
@@ -57,6 +60,8 @@ const SCENE = `<svg class="sp-land" viewBox="0 0 400 800" preserveAspectRatio="x
 export function createSimple(G) {
   let m = null, tab = 'games', back = false, busy = false, sel = null, finding = false;
   const at = { games: 0, tales: 0, places: 0 }; // which page of the path each tab is on
+  const group = { games: null, tales: null, places: null }; // the group open in each tab (null: the groups themselves)
+  let launched = 0, opened = false, starsBefore = 0; // a game or story started from here (when), and whether it is open yet
   const lastStars = {};
   const hero = () => G.heroes[0];
   const solo = () => G.heroes.length === 1;
@@ -73,11 +78,16 @@ export function createSimple(G) {
       .map(({ pl, k }) => ({ kind: 'place', key: String(k), icon: pl.icon, name: pl.name(), voice: both(pl.name), stars: 0, max: 0 })) }));
     return AREAS.map(a => ({ area: a, items: gamesIn(GAMES, a.key, lt).map(g => ({ kind: 'game', key: g.id, icon: GAMES[g.id].icon, name: GAMES[g.id].name(), voice: both(GAMES[g.id].name), stars: starsOf(p, g.id), max: 3, level: g.level })) }));
   }
-  // the pages of the path: an under-5 gets at most six stops at a time, a big kid a whole area
+  // the groups of a tab, as stops: each with its picture and name
+  const tabOf = t => TABS.find(y => y.key === t);
+  const groupsOf = t => areasOf(t).filter(a => a.items.length);
+  // the pages of the path: the groups, or the open group's stops; an under-5 gets at most six at a time, a big kid all
   function viewsOf(t) {
-    const out = [];
-    for (const { area, items } of areasOf(t)) if (items.length) { const ps = little() ? pages(items, LITTLE_PAGE) : [items]; ps.forEach((items, i) => out.push({ area, items, i, of: ps.length })); }
-    return out;
+    const split = items => little() ? pages(items, LITTLE_PAGE) : [items];
+    if (!group[t]) { const tb = tabOf(t), all = { key: 'groups', icon: tb.icon, name: tb.label }; const gs = groupsOf(t).map(({ area, items }) => ({ kind: 'group', key: area.key, icon: area.icon, name: area.name(), voice: both(area.name), stars: 0, max: 0, count: items.length }));
+      return split(gs).map((items, i, ps) => ({ area: all, items, i, of: ps.length, groups: true })); }
+    const a = groupsOf(t).find(x => x.area.key === group[t]); if (!a) { group[t] = null; return viewsOf(t); }
+    return split(a.items).map((items, i, ps) => ({ area: a.area, items, i, of: ps.length }));
   }
   const idOf = s => s.kind + ':' + s.key;
   // ✨ new: games, stories and places that came after the child last looked (the first visit only remembers them all)
@@ -115,13 +125,16 @@ export function createSimple(G) {
     const views = viewsOf(tab); at[tab] = Math.min(at[tab], views.length - 1);
     const v = views[at[tab]] || { area: AREAS[0], items: [], i: 0, of: 1 }, lt = little(), seen = lt ? null : seenSet();
     list = v.items.map(s => ({ ...s, isNew: !!seen && !seen.has(idOf(s)) }));
-    if (views.length > 1) { // the signpost to the next page (the same area's next stops, or the next area)
-      const nx = views[(at[tab] + 1) % views.length], same = nx.area === v.area;
-      list.push({ kind: 'sign', key: 'next', icon: nx.area.icon, name: same ? T('More', 'Còn nữa') : nx.area.name(), voice: same ? ['Here are some more!', 'Còn nữa đây!'] : both(nx.area.name), stars: 0, max: 0 });
-    }
+    // the signpost at the end: this group's next stops, or else on to the next group
+    if (at[tab] < views.length - 1) list.push({ kind: 'sign', key: 'more', icon: v.area.icon, name: T('More', 'Còn nữa'), voice: ['Here are some more!', 'Còn nữa đây!'], stars: 0, max: 0 });
+    else if (group[tab]) { const gs = groupsOf(tab), k = gs.findIndex(x => x.area.key === group[tab]), nx = gs[(k + 1) % gs.length].area; if (gs.length > 1) list.push({ kind: 'sign', key: 'group', to: nx.key, icon: nx.icon, name: nx.name(), voice: both(nx.name), stars: 0, max: 0 }); }
+    else if (views.length > 1) list.push({ kind: 'sign', key: 'first', icon: v.area.icon, name: T('Back to the start', 'Về đầu'), voice: ['Back to the start!', 'Về đầu nào!'], stars: 0, max: 0 });
     const path = m.querySelector('.sp-path'), sc = m.querySelector('.sp-scroll'), isWide = wide();
     m.classList.toggle('wide', isWide); m.classList.toggle('big', !lt);
-    const area = m.querySelector('.sp-area'); area.innerHTML = `${pic(v.area.icon)}<b>${esc(v.area.name())}${v.of > 1 ? ` <small>${v.i + 1}/${v.of}</small>` : ''}</b>`; area.setAttribute('aria-label', v.area.name());
+    // the chip at the top: in a group it says which one and takes you back to all the groups (⬅)
+    const area = m.querySelector('.sp-area'), inGroup = !!group[tab]; area.classList.toggle('back', inGroup);
+    area.innerHTML = `${inGroup ? '<i class="sp-backarrow">⬅</i>' : ''}${pic(v.area.icon)}<b>${esc(v.area.name())}${v.of > 1 ? ` <small>${v.i + 1}/${v.of}</small>` : ''}</b>`;
+    area.setAttribute('aria-label', inGroup ? T('All groups', 'Tất cả các nhóm') : v.area.name());
     const next = list.findIndex(s => s.max && !s.stars), H = sc.clientHeight || innerHeight - 80, W = path.clientWidth || innerWidth;
     const place = tall => isWide ? layoutWide(list.length, H, tall) : layout(list.length, W, tall);
     let L = place(230);
@@ -129,7 +142,7 @@ export function createSimple(G) {
     path.innerHTML = `<svg class="sp-road" aria-hidden="true"><path/><path class="dash"/></svg>` +
       list.map((s, k) => `<button class="sp-stop${s.kind === 'sign' ? ' sign' : ''}${k === next ? ' next' : ''}${sel === idOf(s) ? ' sel' : ''}" data-k="${k}" aria-label="${esc(s.name)}">
         <span class="sp-pic">${pic(s.icon)}${s.badge ? `<i class="sp-badge">${s.badge}</i>` : ''}${s.kind === 'sign' ? `<i class="sp-arrow">${pic('👉')}</i>` : ''}${s.isNew ? `<i class="sp-new">${pic('✨')}</i>` : ''}${starsHTML(s)}</span>
-        <b class="sp-name">${esc(s.name)}</b>${!lt && s.kind !== 'sign' ? `<span class="sp-play">${T('Play', 'Chơi')} ▶</span>` : ''}</button>`).join('') +
+        <b class="sp-name">${esc(s.name)}</b>${!lt && s.kind !== 'sign' && s.kind !== 'group' ? `<span class="sp-play">${T('Play', 'Chơi')} ▶</span>` : ''}</button>`).join('') +
       `<button class="sp-owl" aria-label="${T('Ông Cú', 'Ông Cú')}">${pic('🦉')}</button>`;
     // measure the tallest stop (its name may take two or three lines), then place them all
     const btns = [...path.querySelectorAll('.sp-stop')], tall = Math.max(150, ...btns.map(b => b.offsetHeight));
@@ -148,7 +161,9 @@ export function createSimple(G) {
   // the tap: grow, bounce and sparkle at once, say the name, then open it (twice-tapping can't start it twice)
   function go(s, btn) {
     if (busy || !s) return;
-    if (s.kind === 'sign') { SFX.tap(); say(s.voice[0], s.voice[1]); const n = viewsOf(tab).length; at[tab] = (at[tab] + 1) % n; sel = null; draw(); const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0; return; }
+    const top = () => { const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0; };
+    if (s.kind === 'sign') { SFX.tap(); say(s.voice[0], s.voice[1]); if (s.key === 'group') { group[tab] = s.to; at[tab] = 0; } else if (s.key === 'first') at[tab] = 0; else at[tab]++; sel = null; draw(); top(); return; }
+    if (s.kind === 'group') { SFX.tap(); say(s.voice[0], s.voice[1]); group[tab] = s.key; at[tab] = 0; sel = null; draw(); top(); return; }
     if (!little() && sel !== idOf(s)) { // a big kid: the first tap shows it, the second one plays it
       SFX.tap(); sel = idOf(s); say(s.voice[0], s.voice[1]);
       m.querySelectorAll('.sp-stop.sel').forEach(b => b.classList.remove('sel')); if (btn) btn.classList.add('sel');
@@ -158,8 +173,9 @@ export function createSimple(G) {
     if (btn) { btn.classList.add('tapped'); const pc = btn.querySelector('.sp-pic'); for (let i = 0; i < 6; i++) { const sp = el('i', 'sp-spark'); sp.style.setProperty('--a', i * 60 + 'deg'); pc.appendChild(sp); } }
     const wait = reduceMotion() ? 200 : 450, i = 0, h = hero();
     setTimeout(() => {
-      if (s.kind === 'game') { back = true; hide(); setTimeout(() => G.playGame(i, s.key, 'simple'), 50); }
-      else if (s.kind === 'tale') { const t = (G.TALES || []).find(x => x.id === s.key); if (!t) { busy = false; return; } back = true; hide(); setTimeout(() => G.readTaleNow(h, t), 50); }
+      // games and stories open straight over this screen (it stays behind them); a place flies there in the valley
+      if (s.kind === 'game') { launched = Date.now(); opened = false; starsBefore = totalStars(); G.playGame(i, s.key, 'simple'); }
+      else if (s.kind === 'tale') { const t = (G.TALES || []).find(x => x.id === s.key); if (!t) { busy = false; return; } launched = Date.now(); opened = false; starsBefore = totalStars(); G.readTaleNow(h, t); }
       else { const pl = G.PLACES[+s.key]; back = false; leave(); setTimeout(() => G.travelTo(h, pl.x, pl.z), 50); }
     }, wait);
   }
@@ -167,20 +183,20 @@ export function createSimple(G) {
   function discover(open) {
     finding = open; const f = m.querySelector('.sp-find'); f.hidden = !open; if (!open) return;
     const lt = little(), groups = TABS.map(t => ({ t, views: viewsOf(t.key) }));
-    const cards = groups.map(({ t, views }) => `<h3>${pic(t.icon)} ${esc(t.label())}</h3><div class="sp-cards">${views.map((v, k) => v.i ? '' : `<button class="sp-card" data-t="${t.key}" data-k="${k}" aria-label="${esc(v.area.name())}">${pic(v.area.icon)}<b>${esc(v.area.name())}</b></button>`).join('')}</div>`).join('');
+    const cards = groups.map(({ t }) => `<h3>${pic(t.icon)} ${esc(t.label())}</h3><div class="sp-cards">${groupsOf(t.key).map(({ area }) => `<button class="sp-card" data-t="${t.key}" data-a="${esc(area.key)}" aria-label="${esc(area.name())}">${pic(area.icon)}<b>${esc(area.name())}</b></button>`).join('')}</div>`).join('');
     f.innerHTML = `<div class="sp-find-top">${lt ? '' : `<input class="sp-q" type="search" placeholder="${T('Find a game, story or place…', 'Tìm trò chơi, truyện, nơi chốn…')}" aria-label="${T('Search', 'Tìm kiếm')}">`}<button class="sp-find-x" aria-label="${T('Close', 'Đóng')}">✕</button></div><div class="sp-found">${cards}</div>`;
     f.querySelector('.sp-find-x').onclick = () => { SFX.tap(); discover(false); };
     const bind = () => f.querySelectorAll('.sp-card').forEach(b => b.onclick = () => {
       SFX.tap();
-      if (b.dataset.s) { const s = found[+b.dataset.s]; discover(false); tab = s.tab; at[tab] = s.view; sel = null; draw(); const btn = [...m.querySelectorAll('.sp-stop')].find(x => list[+x.dataset.k] && idOf(list[+x.dataset.k]) === idOf(s.stop)); go(list[+btn.dataset.k], btn); return; }
-      tab = b.dataset.t; at[tab] = +b.dataset.k; sel = null; discover(false); draw(); const v = viewsOf(tab)[at[tab]]; say(...both(v.area.name));
+      if (b.dataset.s) { const s = found[+b.dataset.s]; discover(false); tab = s.tab; group[tab] = s.area; at[tab] = 0; sel = null; const vs = viewsOf(tab); at[tab] = Math.max(0, vs.findIndex(v => v.items.some(x => idOf(x) === idOf(s.stop)))); draw(); const btn = [...m.querySelectorAll('.sp-stop')].find(x => list[+x.dataset.k] && idOf(list[+x.dataset.k]) === idOf(s.stop)); if (btn) go(list[+btn.dataset.k], btn); return; }
+      tab = b.dataset.t; group[tab] = b.dataset.a; at[tab] = 0; sel = null; discover(false); draw(); const v = viewsOf(tab)[0]; say(...both(v.area.name));
       const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0;
     });
     let found = []; bind();
     const q = f.querySelector('.sp-q');
     if (q) q.oninput = () => {
       const w = plain(q.value.trim()); if (!w) { f.querySelector('.sp-found').innerHTML = cards; bind(); return; }
-      found = groups.flatMap(({ t, views }) => views.flatMap((v, k) => v.items.map(stop => ({ tab: t.key, view: k, stop })))).filter(x => plain(x.stop.voice[0] + ' ' + x.stop.voice[1]).includes(w)).slice(0, 24);
+      found = groups.flatMap(({ t }) => groupsOf(t.key).flatMap(({ area, items }) => items.map(stop => ({ tab: t.key, area: area.key, stop })))).filter(x => plain(x.stop.voice[0] + ' ' + x.stop.voice[1]).includes(w)).slice(0, 24);
       f.querySelector('.sp-found').innerHTML = found.length ? `<div class="sp-cards">${found.map((x, k) => `<button class="sp-card" data-s="${k}">${pic(x.stop.icon)}<b>${esc(x.stop.name)}</b></button>`).join('')}</div>` : `<p class="sp-none">${pic('🤔')} ${T('Nothing with that name yet.', 'Chưa có tên nào như vậy.')}</p>`;
       bind();
     };
@@ -201,9 +217,11 @@ export function createSimple(G) {
           <button class="sp-valley"><span>${pic('🌳')}</span><small>${T('Valley', 'Thung lũng')}</small></button></nav>
         <div class="sp-find" hidden></div>`;
       document.body.appendChild(m);
-      m.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { if (busy) return; SFX.tap(); discover(false); tab = b.dataset.tab; sel = null; draw(); const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0; const x = TABS.find(y => y.key === tab); say(x.say[0], x.say[1]); });
+      m.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { if (busy) return; SFX.tap(); discover(false); tab = b.dataset.tab; group[tab] = null; at[tab] = 0; sel = null; draw(); const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0; const x = TABS.find(y => y.key === tab); say(x.say[0], x.say[1]); });
       m.querySelector('.sp-again').onclick = () => { const x = TABS.find(y => y.key === tab); say(x.say[0], x.say[1]); };
-      m.querySelector('.sp-area').onclick = m.querySelector('.sp-discover').onclick = () => { if (busy) return; SFX.tap(); discover(!finding); if (finding) say('Where shall we go?', 'Mình đi đâu nào?'); };
+      m.querySelector('.sp-discover').onclick = () => { if (busy) return; SFX.tap(); discover(!finding); if (finding) say('Where shall we go?', 'Mình đi đâu nào?'); };
+      // the chip: in a group, back to all the groups; otherwise Discover
+      m.querySelector('.sp-area').onclick = () => { if (busy) return; SFX.tap(); if (group[tab]) { group[tab] = null; at[tab] = 0; sel = null; draw(); const x = tabOf(tab); say(x.say[0], x.say[1]); } else { discover(!finding); if (finding) say('Where shall we go?', 'Mình đi đâu nào?'); } };
       m.querySelector('.sp-valley').onclick = () => { if (busy) return; SFX.tap(); choose('valley'); leave(); say('Off you go! Explore the valley.', 'Đi nào! Khám phá thung lũng thôi.'); };
       holdButton(m.querySelector('.sp-grown'), () => openGrownups(() => draw()));
       addEventListener('resize', draw);
@@ -225,6 +243,14 @@ export function createSimple(G) {
   function choose(screen) { const p = hero() && hero().profile; if (p && p.screen !== screen) { p.screen = screen; saveProfiles(); } }
   // back to the path when the game or story started here is over (and nothing else is open)
   setInterval(() => {
+    // a game or story started from this screen: it opens over it; when it has closed again, the path is ready (stars
+    // brought up to date, Ông Cú cheers a new one); if it never opened (a question came first), the screen is free again
+    if (launched && m && !m.hidden) {
+      const up = gameOpen() || !!document.querySelector('.theatre, .gl');
+      if (up) opened = true;
+      else if (opened && !document.querySelector('.reward, .dialog')) { launched = 0; busy = false; draw(); if (totalStars() > starsBefore) { const owl = m.querySelector('.sp-owl'); if (owl) owl.classList.add('cheer'); say('Well done! You won a new star!', 'Giỏi lắm! Con được thêm một ngôi sao!'); } lastStars[hero().profile.name] = totalStars(); }
+      else if (!opened && Date.now() - launched > 6000) { launched = 0; busy = false; }
+    }
     if (m && !m.hidden && !gameOpen()) G.paused = true; // the valley stays still behind it, also after a talk box closes
     if (!back || !m || !m.hidden || G.paused || gameOpen() || document.querySelector('.modal, .dialog, .storybook, .theatre, .reward')) return;
     back = false; show();
@@ -232,7 +258,9 @@ export function createSimple(G) {
   return {
     show, hide: leave, get open() { return !!m && !m.hidden; }, get tab() { return tab; },
     // what the path shows now (for the checks): the area, which page of it, and the stops
-    get view() { const v = m && viewsOf(tab)[at[tab]]; return v ? { area: v.area.key, page: v.i, of: v.of, pages: viewsOf(tab).length, stops: list.filter(s => s.kind !== 'sign').map(s => s.key) } : null; },
+    get view() { const v = m && viewsOf(tab)[at[tab]]; return v ? { groups: !!v.groups, area: v.area.key, page: v.i, of: v.of, pages: viewsOf(tab).length, stops: list.filter(s => s.kind !== 'sign').map(s => s.key) } : null; },
+    // open a group (tests, and anything that wants to take a child straight to one)
+    openGroup(t, key) { tab = t; group[t] = key; at[t] = 0; sel = null; draw(); },
     // at the start of a session: the Simple screen for a child who wants it
     start() { if (solo() && wantsSimple(hero().profile)) { const wait = setInterval(() => { if (document.querySelector('.storybook')) return; clearInterval(wait); if (solo() && wantsSimple(hero().profile)) show(); }, 400); } else if (m) leave(); }
   };

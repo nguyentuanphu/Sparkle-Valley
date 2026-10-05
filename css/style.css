@@ -1961,3 +1961,15 @@ body.calm .sp-owl.cheer { animation: none; }
 .sp-card b { text-align: center; line-height: 1.2; }
 .sp-none { display: flex; align-items: center; gap: 10px; font-size: 18px; margin: 24px 4px; }
 .sp-none .art, .sp-none .emo { width: 40px; height: 40px; font-size: 34px; }
+
+/* round M: easy · medium · hard inside every game */
+.gl-lvl { min-height: 44px; min-width: 44px; border: 0; border-radius: 999px; padding: 0 14px; background: rgba(255, 255, 255, .85); color: #4a2a78; font: inherit; font-weight: 700; font-size: 16px; box-shadow: 0 3px 0 rgba(60, 30, 90, .18); white-space: nowrap; flex: none; }
+.gl-lvlpick { position: fixed; inset: 0; z-index: 6; display: grid; place-items: center; background: rgba(40, 20, 60, .45); }
+.gl-lvlcard { background: #fff; border-radius: 28px; padding: 18px; display: flex; flex-direction: column; gap: 12px; width: min(320px, calc(100% - 32px)); box-shadow: var(--shadow); color: #3b2a4f; }
+.gl-lvlcard h3 { margin: 0 0 4px; text-align: center; font-size: 22px; }
+.gl-lvlcard button { min-height: 64px; border: 0; border-radius: 20px; background: #f1ecff; color: #3b2a4f; font: inherit; font-weight: 700; font-size: 22px; }
+.gl-lvlcard button.on { background: #8a5cf6; color: #fff; }
+@media (max-width: 400px) { .gl-lvl { padding: 0 10px; font-size: 14px; } }
+/* round M: in a group, the chip at the top goes back to all the groups */
+.sp-backarrow { font-style: normal; font-weight: 700; font-size: 26px; color: #5b2fd0; margin-right: 2px; }
+.sp-area.back { background: #efe6ff; }

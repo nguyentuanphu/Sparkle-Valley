@@ -335,15 +335,18 @@ async function playGame(i, id, source, shrine) {
   countPlay('game', id); // anonymous: how often each game is played (js/players.js)
   const players = G.heroes.map(x => x.profile); if (G.heroes.length > 1 && i === 1) players.reverse();
   // Level = how far this child has got in this game, shifted by the chosen difficulty.
-  const p = h.profile, level = Math.min(5, (p.levels[id] || 1) + { easy: 0, medium: 1, hard: 2 }[p.difficulty || 'easy']);
-  const little = G.heroes.some(x => x.profile.age !== 'big'), strong = !little && p.difficulty !== 'easy';
+  // the level the child chose inside this game (round M), else the grown-ups' difficulty for this child
+  const p = h.profile, diff = (p.gameDiff && p.gameDiff[id]) || p.difficulty || 'easy', level = Math.min(5, (p.levels[id] || 1) + { easy: 0, medium: 1, hard: 2 }[diff]);
+  const little = G.heroes.some(x => x.profile.age !== 'big'), strong = !little && diff !== 'easy';
   if (source === 'shrine') { SFX.secret(); say('A shrine! Let’s solve the puzzle.', 'Một ngôi đền! Cùng giải câu đố nào.'); await wait(600); }
   const nextId = nextGameAfter(id);
   // events alongside today's calls (architecture step 1): the activity, by id, and who plays it
   const actId = makeId('act', id, String(++G.actCount)), playerIds = players.map(q => makeId('player', q.id || 'guest'));
   events.emit('ActivityStarted', { activityId: actId, kind: 'game', defId: makeId('game', id), players: playerIds, source });
-  const res = await openGame(id, { players, level, little, strong, nextId, style: source === 'folk' || id === 'market' ? 'village' : 'shrine' });
+  const res = await openGame(id, { players, level, little, strong, nextId, style: source === 'folk' || id === 'market' ? 'village' : 'shrine', levelPick: { value: diff } });
   G.paused = false;
+  // another level chosen inside the game: remember it for this game and start again
+  if (res.restart) { events.emit('ActivityAbandoned', { activityId: actId, reason: 'level' }); p.gameDiff = { ...(p.gameDiff || {}), [id]: res.restart }; save(); return playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); }
   if (res.won) events.emit('ActivityCompleted', { activityId: actId, defId: makeId('game', id), players: playerIds, result: { won: true, stars: res.stars || 0, level } });
   else events.emit('ActivityAbandoned', { activityId: actId, reason: 'left' });
   if (!res.won) return;

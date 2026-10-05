@@ -635,10 +635,14 @@ await check('simple', async () => {
   await P.page.waitForSelector('.simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
   await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
   const r = { start: true };
-  await P.page.locator('.sp-stop').first().click(); await P.page.waitForSelector('.gl', { timeout: 10000 }); r.game = true;
+  r.groupsFirst = await P.page.evaluate(() => __sv.simple.view.groups);
+  await P.page.locator('.sp-stop').first().click(); await P.page.waitForTimeout(300); // a group
+  // round M: the game opens straight over the Simple screen (it never hides first, so the valley does not flash up)
+  await P.page.evaluate(() => { window.__flash = false; const t = setInterval(() => { if (!__sv.simple.open) window.__flash = true; if (document.querySelector('.gl')) clearInterval(t); }, 20); });
+  await P.page.locator('.sp-stop:not(.sign)').first().click(); await P.page.waitForSelector('.gl', { timeout: 10000 }); r.game = true; r.flash = await P.page.evaluate(() => window.__flash);
   await P.page.evaluate(() => document.querySelector('.gl-x').click());
   r.back = await P.page.waitForFunction(() => __sv.simple.open, null, { timeout: 8000 }).then(() => true, () => false);
-  await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.locator('.sp-stop').first().click();
+  await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.locator('.sp-stop').first().click(); await P.page.waitForTimeout(300); await P.page.locator('.sp-stop:not(.sign)').first().click();
   r.tale = await P.page.waitForSelector('.theatre', { timeout: 10000 }).then(() => true, () => false);
   await P.page.evaluate(() => document.querySelector('.theatre .th-x').click());
   await P.page.waitForFunction(() => __sv.simple.open, null, { timeout: 8000 }).catch(() => { });
@@ -659,7 +663,7 @@ await check('simple', async () => {
   await W.ctx.close();
   const S = await open(b, { w: 1280, h: 800, mode: 'split', screen: null }); await S.page.waitForTimeout(1500);
   r.split = await S.page.evaluate(() => ({ open: __sv.simple.open, dock: [...document.querySelectorAll('.dk.simple')].some(d => !d.hidden) })); await S.ctx.close();
-  ok(r.game && r.back && r.tale && !r.valley.open && r.valley.screen === 'valley' && r.valley.dock && !r.valley.paused && r.reopen && r.wide.wide && r.wide.rail && r.wide.sideways && r.wide.inView && r.wide.big && !r.big && !r.split.open && !r.split.dock && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  ok(r.groupsFirst && !r.flash && r.game && r.back && r.tale && !r.valley.open && r.valley.screen === 'valley' && r.valley.dock && !r.valley.paused && r.reopen && r.wide.wide && r.wide.rail && r.wide.sideways && r.wide.inView && r.wide.big && !r.big && !r.split.open && !r.split.dock && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return 'under 5 starts on the path; a game and a story each one tap away, the path comes back after; Valley remembered; dock button reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
 });
 
@@ -679,20 +683,26 @@ await check('adventure', async () => {
   // walk the whole under-5 path page by page with the signposts
   r.walk = await P.page.evaluate(async () => {
     const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), out = { pages: 0, most: 0, seen: [], notDrawn: [], tooBig: [] };
-    for (let n = 0; n < 40; n++) {
-      const v = __sv.simple.view; out.pages++; out.most = Math.max(out.most, v.stops.length); out.seen.push(...v.stops);
-      document.querySelectorAll('.sp-stop:not(.sign) .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push(p.parentElement.getAttribute('aria-label')); });
-      out.tooBig.push(...v.stops.filter(id => A.gameInfo(id).ageMin >= 5));
-      if (v.area === 'thinking' && v.page === v.of - 1 || out.pages >= v.pages) break;
-      document.querySelector('.sp-stop.sign').click(); await new Promise(r => setTimeout(r, 60));
+    // round M: the groups first (at most six at a time too), then each group's pages
+    out.groupPages = __sv.simple.view.pages; out.most = Math.max(out.most, __sv.simple.view.stops.length);
+    for (const a of A.AREAS) {
+      if (!Object.keys(GAMES).some(id => A.gameInfo(id).area === a.key && A.gameInfo(id).ageMin < 5)) continue;
+      __sv.simple.openGroup('games', a.key); await new Promise(r => setTimeout(r, 40));
+      for (let n = 0; n < 10; n++) {
+        const v = __sv.simple.view; out.pages++; out.most = Math.max(out.most, v.stops.length); out.seen.push(...v.stops);
+        document.querySelectorAll('.sp-stop:not(.sign) .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push(p.parentElement.getAttribute('aria-label')); });
+        out.tooBig.push(...v.stops.filter(id => A.gameInfo(id).ageMin >= 5));
+        if (v.page >= v.of - 1) break;
+        document.querySelector('.sp-stop.sign').click(); await new Promise(r => setTimeout(r, 40));
+      }
     }
     const want = Object.keys(GAMES).filter(id => A.gameInfo(id).ageMin < 5);
-    return { pages: out.pages, most: out.most, missed: want.filter(id => !out.seen.includes(id)), notDrawn: out.notDrawn, tooBig: out.tooBig };
+    return { groupPages: out.groupPages, pages: out.pages, most: out.most, missed: want.filter(id => !out.seen.includes(id)), notDrawn: out.notDrawn, tooBig: out.tooBig };
   });
   // Discover: a big picture for every area; tapping Music goes there
   await P.page.click('.sp-discover'); await P.page.waitForSelector('.sp-find:not([hidden]) .sp-card');
   r.find = await P.page.evaluate(() => ({ cards: document.querySelectorAll('.sp-card').length, search: !!document.querySelector('.sp-q') }));
-  await P.page.click('.sp-card[data-t="games"][data-k]:nth-child(2)'); r.music = await P.page.evaluate(() => __sv.simple.view.area);
+  await P.page.click('.sp-card[data-t="games"][data-a="music"]'); r.music = await P.page.evaluate(() => __sv.simple.view.area);
   // a double tap starts the game once
   await P.page.evaluate(() => { window.__starts = 0; const pg = __sv.playGame; __sv.playGame = (...a) => { window.__starts++; return pg(...a); }; const s = document.querySelector('.sp-stop:not(.sign)'); s.click(); s.click(); setTimeout(() => s.click(), 120); });
   await P.page.waitForSelector('.gl', { timeout: 10000 }); await P.page.waitForTimeout(400);
@@ -714,7 +724,7 @@ await check('adventure', async () => {
   const errs = P.errors; await P.ctx.close();
   // a big kid: the first tap shows, the second plays; ✨ on a game that came after the last look; search finds "Đập Niêu" without accents
   const B = await open(b, { w: 390, h: 844, touch: true, screen: 'simple' });
-  await B.page.evaluate(() => { const p = __sv.heroes[0].profile; p.age = 'big'; p.seenActs = undefined; __sv.simple.hide(); __sv.simple.show(); p.seenActs = p.seenActs.filter(x => x !== 'game:bunny'); __sv.simple.hide(); __sv.simple.show('games'); document.querySelectorAll('.dialog').forEach(d => d.remove()); });
+  await B.page.evaluate(() => { const p = __sv.heroes[0].profile; p.age = 'big'; p.seenActs = undefined; __sv.simple.hide(); __sv.simple.show(); p.seenActs = p.seenActs.filter(x => x !== 'game:bunny'); __sv.simple.hide(); __sv.simple.show('games'); __sv.simple.openGroup('games', 'animals'); document.querySelectorAll('.dialog').forEach(d => d.remove()); });
   r.big = await B.page.evaluate(() => ({ stops: __sv.simple.view.stops.length, newOn: [...document.querySelectorAll('.sp-stop')].filter(s => s.querySelector('.sp-new')).map(s => s.getAttribute('aria-label')), dots: document.querySelectorAll('.sp-level').length === 0 })); // stars only: no difficulty dots (owner)
   await B.page.locator('.sp-stop:not(.sign)').first().click(); await B.page.waitForTimeout(700);
   r.big.firstTap = await B.page.evaluate(() => ({ game: !!document.querySelector('.gl'), sel: !!document.querySelector('.sp-stop.sel .sp-play') }));
@@ -726,7 +736,7 @@ await check('adventure', async () => {
   r.big.search = await B.page.evaluate(() => [...document.querySelectorAll('.sp-found .sp-card b')].map(b => b.textContent));
   errs.push(...B.errors); await B.ctx.close();
   ok(!r.list.missing.length && !r.list.extra.length && !r.list.badArea.length, 'activity list: ' + JSON.stringify(r.list));
-  ok(r.walk.most <= 6 && !r.walk.missed.length && !r.walk.notDrawn.length && !r.walk.tooBig.length, 'under-5 path: ' + JSON.stringify(r.walk));
+  ok(r.walk.most <= 6 && r.walk.groupPages === 2 && !r.walk.missed.length && !r.walk.notDrawn.length && !r.walk.tooBig.length, 'under-5 path: ' + JSON.stringify(r.walk));
   ok(r.find.cards >= 18 && !r.find.search && r.music === 'music', 'discover: ' + JSON.stringify(r.find) + ' ' + r.music);
   ok(r.starts === 1, 'a double tap started the game ' + r.starts + ' times');
   ok(r.owl.owl && r.owl.cheer, 'Ông Cú: ' + JSON.stringify(r.owl));
@@ -735,6 +745,27 @@ await check('adventure', async () => {
   ok(r.big.stops > 6 && r.big.dots && r.big.newOn.includes('Feed the Bunny') && r.big.newOn.length === 1 && !r.big.firstTap.game && r.big.firstTap.sel && r.big.secondTap && r.big.search.some(t => /Smash the Pot/.test(t)), 'big kid: ' + JSON.stringify(r.big));
   ok(!errs.length, errs.join(' | '));
   return `${r.list.games} games in 11 areas; under-5 path ${r.walk.pages} pages of at most ${r.walk.most}, every one drawn; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
+});
+
+await check('gamelevel', async () => {
+  // round M (owner): every game has Easy · Medium · Hard in its top bar; choosing another level starts it again at that
+  // level and is remembered for that game and child; Festivals sit in the main Grown-ups settings, not under Advanced
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  const r = {};
+  await P.page.evaluate(() => { __sv.heroes[0].profile.age = 'big'; __sv.heroes[0].profile.difficulty = 'easy'; __sv.playGame(0, 'counting'); });
+  await P.page.waitForSelector('.gl .gl-lvl', { timeout: 10000 });
+  r.first = await P.page.evaluate(() => { const b = document.querySelector('.gl-lvl').getBoundingClientRect(); return { text: document.querySelector('.gl-lvl').textContent.trim(), w: b.width, h: b.height, inside: b.right <= innerWidth && b.left >= 0 }; });
+  await P.page.click('.gl-lvl'); await P.page.waitForSelector('.gl-lvlpick [data-l="hard"]');
+  r.choices = await P.page.evaluate(() => [...document.querySelectorAll('.gl-lvlpick [data-l]')].map(b => b.getBoundingClientRect().height >= 64 ? b.dataset.l : 'small'));
+  await P.page.click('.gl-lvlpick [data-l="hard"]');
+  await P.page.waitForFunction(() => { const l = document.querySelector('.gl:not(.out) .gl-lvl'); return l && /Hard/.test(l.textContent); }, null, { timeout: 10000 }).catch(() => { });
+  r.after = await P.page.evaluate(() => ({ text: (document.querySelector('.gl:not(.out) .gl-lvl') || {}).textContent, saved: (__sv.heroes[0].profile.gameDiff || {}).counting, games: document.querySelectorAll('.gl:not(.out)').length }));
+  await P.page.evaluate(() => document.querySelector('.gl:not(.out) .gl-x').click()); await P.page.waitForTimeout(500);
+  // Festivals: in the main settings
+  r.fest = await P.page.evaluate(async () => { (await import('/js/ui.js')).openGrownups(); await new Promise(r => setTimeout(r, 300)); const f = document.querySelector('.seg.fest'); return { there: !!f, advanced: !!(f && f.closest('details.g-adv')) }; });
+  const errs = P.errors; await P.ctx.close();
+  ok(/Easy/.test(r.first.text) && r.first.h >= 44 && r.first.inside && r.choices.join() === 'easy,medium,hard' && /Hard/.test(r.after.text || '') && r.after.saved === 'hard' && r.after.games === 1 && r.fest.there && !r.fest.advanced && !errs.length, JSON.stringify({ r, errs }));
+  return 'Easy · Medium · Hard in the game bar (44 px, on screen at 390 px); Hard starts it again at Hard and is remembered; Festivals in the main settings';
 });
 
 await check('a11y', async () => {
