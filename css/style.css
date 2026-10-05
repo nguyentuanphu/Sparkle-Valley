@@ -2009,5 +2009,4 @@ body.calm .sp-owl.cheer { animation: none; }
 .songs:not(.night) .sg-words { background: rgba(255, 255, 255, .7); }
 .sg-moon { position: fixed; right: 28px; top: calc(env(safe-area-inset-top) + 90px); width: 54px; height: 54px; border-radius: 50%; background: #fff6c2; box-shadow: 0 0 40px 10px rgba(255, 246, 194, .35); pointer-events: none; opacity: .85; }
 .qs-songs { } /* (Settings card: same look as the festival card) */
-.g-what summary { cursor: pointer; font-weight: 600; color: var(--muted, #7a6a8f); min-height: 44px; display: flex; align-items: center; } /* round N: what Analytics sends, folded away */
 body.songs-on .htoast { display: none; } /* the valley's hints stay behind the Songs page (round N) */
