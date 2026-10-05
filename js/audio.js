@@ -16,7 +16,7 @@ export function ac() {
       noiseBuf = AC.createBuffer(1, AC.sampleRate * .8, AC.sampleRate);
       const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
-    if (AC.state !== 'running') AC.resume().catch(() => { }); // 'suspended' before the first tap, 'interrupted' on iPhone after a call or the lock screen
+    if (AC.state !== 'running' && !document.hidden) AC.resume().catch(() => { }); // 'suspended' before the first tap, 'interrupted' on iPhone after a call or the lock screen (never while the game is in the background)
     return AC;
   } catch (e) { return null; }
 }
@@ -30,7 +30,20 @@ const unlock = () => {
   unlockers.forEach(f => { try { f(); } catch (e) { } });
 };
 ['pointerdown', 'touchend', 'keydown'].forEach(t => addEventListener(t, unlock, { capture: true, passive: true }));
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && AC && AC.state !== 'running') AC.resume().catch(() => { }); });
+// Silence in the background (owner, round M: "the game and sounds keep playing when no longer in the game; I have to
+// kill the game to stop the sound"): when the game is switched away from, the phone is locked or the page is left, all
+// sound stops (the audio engine is put to sleep, music stops scheduling notes, videos and voices stop); it wakes again
+// when the game is back on the screen.
+export function quiet() {
+  try { if (AC && AC.state === 'running') AC.suspend(); } catch (e) { }
+  document.querySelectorAll('audio, video').forEach(m => { try { m.pause(); } catch (e) { } });
+  try { speechSynthesis.cancel(); } catch (e) { }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { quiet(); return; }
+  if (AC && AC.state !== 'running') AC.resume().then(() => { if (Music.key) Music.next = AC.currentTime + .1; }).catch(() => { });
+});
+addEventListener('pagehide', quiet); document.addEventListener('freeze', quiet); addEventListener('blur', () => { if (document.hidden) quiet(); });
 const midi = m => 440 * Math.pow(2, (m - 69) / 12);
 
 export function tone(f, dur, o = {}) {
@@ -186,7 +199,7 @@ export const Music = {
   refresh() { if (musicBus) musicBus.gain.value = settings.calm ? .17 : .35; const k = this.key; this.stop(); if (k) this.play(k); },
   songName() { return SONGS[this.key] ? SONGS[this.key].name : ''; },
   tick() {
-    if (!AC) return;
+    if (!AC || document.hidden || AC.state !== 'running') return; // nothing is scheduled while the game is in the background
     const th = THEMES[this.key], sg = SONGS[this.key];
     if (th) while (this.next < AC.currentTime + .25) { th.play(this.next, this.step); this.next += th.tempo; this.step++; }
     else if (sg) { const d = 60 / sg.bpm / 2; while (this.next < AC.currentTime + .2) { songStep(sg, this.step, this.next); this.next += d; this.step++; } }

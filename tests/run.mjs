@@ -768,6 +768,29 @@ await check('gamelevel', async () => {
   return 'Easy · Medium · Hard in the game bar (44 px, on screen at 390 px); Hard starts it again at Hard and is remembered; Festivals in the main settings';
 });
 
+await check('quiet', async () => {
+  // round M (owner: sound kept playing after leaving the game, until it was killed): when the game goes to the
+  // background (another app, the lock screen) the audio engine sleeps, music stops scheduling and videos pause; when
+  // it comes back, sound comes back
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  await P.page.mouse.click(200, 400); // a tap: iPhone-style, sound is allowed after one
+  const r = await P.page.evaluate(async () => {
+    const A = await import('/js/audio.js'), S = await import('/js/state.js'), wait = t => new Promise(res => setTimeout(res, t));
+    S.settings.music = true; S.settings.sound = true; A.Music.stop(); A.Music.play('field'); const ctx = A.ac(); await ctx.resume().catch(() => { }); await wait(400);
+    const v = document.createElement('video'); document.body.appendChild(v);
+    const before = { state: ctx.state, next: A.Music.next };
+    const hide = h => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => h }); Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => h ? 'hidden' : 'visible' }); document.dispatchEvent(new Event('visibilitychange')); };
+    hide(true); await wait(500); const n1 = A.Music.next; A.SFX.tap && A.SFX.tap(); await wait(600);
+    const away = { state: ctx.state, scheduling: A.Music.next !== n1, videoPaused: v.paused };
+    hide(false); await wait(500);
+    const back = { state: ctx.state }; delete document.hidden; delete document.visibilityState; v.remove(); A.Music.stop();
+    return { before, away, back };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.before.state === 'running' && r.away.state === 'suspended' && !r.away.scheduling && r.away.videoPaused && r.back.state === 'running' && !errs.length, JSON.stringify({ r, errs }));
+  return 'in the background: audio asleep, no music scheduled, videos paused (a sound effect does not wake it); back on screen: sound again';
+});
+
 await check('a11y', async () => {
   // accessibility rules (round I, ARCHITECTURE §9.6): UI-004 touch targets, A11Y-001 reduced motion, A11Y-002 readable
   // captions, A11Y-004 under-5s hear every game's instruction (A11Y-003 simple paths: the "simple" check)
