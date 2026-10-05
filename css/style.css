@@ -1974,3 +1974,8 @@ body.calm .sp-owl.cheer { animation: none; }
 .sp-backarrow { font-style: normal; font-weight: 700; font-size: 26px; color: #5b2fd0; margin-right: 2px; }
 .sp-area.back { background: #efe6ff; }
 .sp-stop.grp, .sp-stop.sign { gap: 8px; } /* no stars under a group or a signpost: the name sits close to its picture */
+/* round M: festival decorations live on the festival page, behind the grown-ups' press and hold */
+.fest-grown { margin-top: 18px; border-top: 2px dashed rgba(138, 92, 246, .25); padding-top: 14px; }
+.fest-grown .grown.fest-hold { position: relative; left: auto; bottom: auto; right: auto; top: auto; display: flex; align-items: center; gap: 8px; width: 100%; min-height: 56px; border-radius: 18px; padding: 10px 16px; font: inherit; color: inherit; }
+.fest-grown .fest-hold small { margin-left: auto; opacity: .7; }
+.fest-grown .ring { position: absolute; inset: -4px; width: auto; height: auto; z-index: -1; }
