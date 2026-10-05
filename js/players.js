@@ -8,12 +8,13 @@
 //     them: the "missing lines inbox"), never a line with a child's name in it
 // Round L (owner: "a report per child and for everyone: devices, location, games and places, activity, bugs and where
 // they get stuck"): each played day also carries, per child, the child's first name (Grown-ups → Advanced → "Names
-// in the family report" leaves them out), age group, minutes, games started, won and left early, places visited and
+// in analytics" leaves them out), age group, minutes, games started, won and left early, places visited and
 // stories opened; minutes by hour of the day; the device's system and browser (from the browser, e.g. "iOS · Safari")
 // and screen size; how smooth the game ran; errors in the game's own code (the message and file:line, never what a
 // child typed); and where a child pushed to walk but did not move (stuck), by area. The town or city is worked out
 // by the website from the connection (never GPS). Never photos, voices or anything a child typed.
-// Grown-ups → Advanced → "Count players" turns it all off.
+// Everything this file sends is the game's ANALYTICS (owner: "any data sent back to Studio is labelled analytics"); Grown-ups →
+// Advanced → "Analytics" turns it all off.
 // Nothing is sent when the game is opened from a file, this computer (tests, Sparkle Studio) or with it switched off.
 // Offline play counts too: minutes, games and stories wait in a small outbox on the device (per day, at most 14 days)
 // and go when the internet is back. The outbox is only emptied when the website says it got them; each send has a

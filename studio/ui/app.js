@@ -18,7 +18,7 @@ const SECTIONS = [
   { k: 'home', i: '🏠', en: 'Home', vi: 'Trang chính', pages: ['home'] },
   { k: 'family', i: '💛', en: 'Family', vi: 'Gia đình', pages: ['message', 'children', 'album', 'quiz', 'stories', 'villagers'] },
   { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['path', 'map', 'photos', 'play', 'voices', 'ads'] },
-  { k: 'players', i: '📊', en: 'Players', vi: 'Người chơi', pages: ['players'] },
+  { k: 'players', i: '📊', en: 'Analytics', vi: 'Phân tích', pages: ['players'] },
   { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Cài đặt', pages: ['publish', 'site', 'check', 'settings'] }
 ];
 // each page: its picture, its name and one line saying what it is for
@@ -36,7 +36,7 @@ const ABOUT = {
   play: ['⏰', 'Play time', 'Giờ chơi', 'Rest reminders and other starting settings', 'Nhắc nghỉ và các cài đặt ban đầu khác'],
   voices: ['🎙️', 'Voices', 'Giọng đọc', 'Recordings for new lines, and the children’s inbox', 'Bản ghi cho câu mới, và hộp thư của các con'],
   ads: ['📣', 'Ads (off)', 'Quảng cáo (tắt)', 'Your own ads; nothing shows unless you turn them on', 'Quảng cáo của bạn; không hiện gì trừ khi bật'],
-  players: ['📊', 'Players', 'Người chơi', '', ''],
+  players: ['📊', 'Analytics', 'Phân tích', '', ''],
   publish: ['🚀', 'Publish', 'Phát hành', 'Send your saved changes to the children’s devices', 'Gửi thay đổi đã lưu tới máy của các con'],
   site: ['🌐', 'Website', 'Trang web', 'The game’s website: updates and GitHub', 'Trang web của game: cập nhật và GitHub'],
   check: ['🩺', 'Check', 'Kiểm tra', 'Is everything set up and working?', 'Mọi thứ đã cài đặt và chạy tốt chưa?'],
@@ -716,8 +716,8 @@ PAGES.settings = async P => {
 };
 // ---------- players: how many children play (anonymous counts from the website, netlify/lib/players.mjs) ----------
 PAGES.players = async P => {
-  P.innerHTML = `<h2>📊 ${T('Players', 'Người chơi')}</h2><div class="card">${T('Asking the website…', 'Đang hỏi trang web…')}</div>`;
-  let r; try { r = await api('players'); } catch (e) { P.innerHTML = `<h2>📊 ${T('Players', 'Người chơi')}</h2><div class="card"><p class="badtxt">⚠️ ${esc(e.message)}</p><p class="note">${T('The count comes from the website (it needs a Git deploy on Netlify). In SparkleStudio.exe, put the website and the Studio password in Settings.', 'Số liệu đến từ trang web (cần deploy từ Git trên Netlify). Trong SparkleStudio.exe, điền trang web và mật khẩu Studio trong Cài đặt.')}</p></div>`; return; }
+  P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><div class="card">${T('Asking the website…', 'Đang hỏi trang web…')}</div>`;
+  let r; try { r = await api('players'); } catch (e) { P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><div class="card"><p class="badtxt">⚠️ ${esc(e.message)}</p><p class="note">${T('The count comes from the website (it needs a Git deploy on Netlify). In SparkleStudio.exe, put the website and the Studio password in Settings.', 'Số liệu đến từ trang web (cần deploy từ Git trên Netlify). Trong SparkleStudio.exe, điền trang web và mật khẩu Studio trong Cài đặt.')}</p></div>`; return; }
   const big = (n, en, vi) => `<div class="card stat"><b>${n}</b><span>${T(en, vi)}</span></div>`, hrs = m => m >= 120 ? (m / 60).toFixed(m >= 600 ? 0 : 1) + ' h' : m + ' min';
   const max = Math.max(1, ...r.perDay.map(d => d.devices)), W = 600, H = 150, bw = W / r.perDay.length;
   const bars = r.perDay.map((d, i) => `<rect x="${(i * bw + 2).toFixed(1)}" y="${(H - 18 - d.devices / max * (H - 30)).toFixed(1)}" width="${(bw - 4).toFixed(1)}" height="${(d.devices / max * (H - 30)).toFixed(1)}" rx="3" fill="#8a5cf6"><title>${d.date}: ${d.devices} (${d.newDevices} ${T('new', 'mới')}), ${hrs(d.mins)}</title></rect>${d.newDevices ? `<rect x="${(i * bw + 2).toFixed(1)}" y="${(H - 18 - d.newDevices / max * (H - 30)).toFixed(1)}" width="${(bw - 4).toFixed(1)}" height="${(d.newDevices / max * (H - 30)).toFixed(1)}" rx="3" fill="#ff7eb8"/>` : ''}${i % 5 === 4 ? `<text x="${(i * bw + bw / 2).toFixed(1)}" y="${H - 4}" font-size="10" text-anchor="middle" fill="#6b5b80">${d.date.slice(5)}</text>` : ''}`).join('');
@@ -753,7 +753,7 @@ PAGES.players = async P => {
     quiet: () => T(`${devName(t.d)} has not played since ${when(t.last)}.`, `${devName(t.d)} chưa chơi từ ${when(t.last)}.`),
     simple: () => T(`${t.name || 'A little one'} (under 5) mostly plays in the 3D valley on ${devName(t.d)}: the 🧸 Simple screen may be easier.`, `${t.name || 'Một bé'} (dưới 5 tuổi) hầu như chơi trong thung lũng 3D trên ${devName(t.d)}: 🧸 Màn hình đơn giản có thể dễ hơn.`)
   }[t.k] || (() => ''))();
-  P.innerHTML = `<h2>📊 ${T('Players', 'Người chơi')}</h2><p class="sub">${T('What the children play, from the game’s own website: per device and per child, for the last 30 days. Towns come from the internet connection (never GPS). A grown-up can leave names out, or switch it all off, on the device: Grown-ups → Advanced.', 'Các con chơi gì, từ trang web của game: theo từng máy và từng bé, trong 30 ngày qua. Thành phố lấy từ kết nối mạng (không bao giờ GPS). Người lớn có thể bỏ tên, hoặc tắt hết, trên máy: Người lớn → Nâng cao.')}</p>
+  P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><p class="sub">${T('What the children play, from the game’s own website: per device and per child, for the last 30 days. Towns come from the internet connection (never GPS). A grown-up can leave names out (“Names in analytics”), or switch it all off (“Analytics”), on the device: Grown-ups → Advanced.', 'Các con chơi gì, từ trang web của game: theo từng máy và từng bé, trong 30 ngày qua. Thành phố lấy từ kết nối mạng (không bao giờ GPS). Người lớn có thể bỏ tên (“Tên trong phân tích”), hoặc tắt hết (“Phân tích”), trên máy: Người lớn → Nâng cao.')}</p>
   ${(r.tips || []).length ? `<div class="card tips"><h3>💡 ${T('Suggestions', 'Gợi ý')}</h3><ul>${r.tips.map(t => `<li>${esc(tipText(t))}</li>`).join('')}</ul></div>` : ''}
   <div class="grid">${big(r.today.devices, 'devices playing today', 'máy chơi hôm nay')}${big(r.week.devices, 'this week', 'tuần này')}${big(r.month.devices, 'last 30 days', '30 ngày qua')}${big(r.allTime, 'devices ever', 'máy từ trước tới nay')}${big(r.week.newDevices, 'new this week', 'máy mới tuần này')}${big(hrs(r.minsPerDevice), 'a device plays a day', 'mỗi máy chơi mỗi ngày')}</div>
   <h3 class="sec">👨‍👩‍👧 ${T('Each device and child', 'Từng máy và từng bé')}</h3>${(r.devices || []).map(devCard).join('') || `<div class="card note">${T('No devices yet.', 'Chưa có máy nào.')}</div>`}
