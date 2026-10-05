@@ -174,7 +174,7 @@ export function createSimple(G) {
     const wait = reduceMotion() ? 200 : 450, i = 0, h = hero();
     setTimeout(() => {
       // games and stories open straight over this screen (it stays behind them); a place flies there in the valley
-      if (s.kind === 'game') { launched = Date.now(); opened = false; starsBefore = totalStars(); G.playGame(i, s.key, 'simple'); }
+      if (s.kind === 'game') { launched = Date.now(); opened = false; starsBefore = totalStars(); Promise.resolve(G.playGame(i, s.key, 'simple')).finally(() => { if (opened || gameOpen()) opened = true; settle(); }); }
       else if (s.kind === 'tale') { const t = (G.TALES || []).find(x => x.id === s.key); if (!t) { busy = false; return; } launched = Date.now(); opened = false; starsBefore = totalStars(); G.readTaleNow(h, t); }
       else { const pl = G.PLACES[+s.key]; back = false; leave(); setTimeout(() => G.travelTo(h, pl.x, pl.z), 50); }
     }, wait);
@@ -241,6 +241,13 @@ export function createSimple(G) {
   function hide() { if (m) m.hidden = true; document.body.classList.remove('simple-on'); G.paused = false; }
   function leave() { back = false; hide(); }
   function choose(screen) { const p = hero() && hero().profile; if (p && p.screen !== screen) { p.screen = screen; saveProfiles(); } }
+  // the game or story started from here is over: the path is free at once, with the stars brought up to date
+  function settle() {
+    if (!launched || !m || m.hidden || gameOpen() || document.querySelector('.theatre')) return;
+    launched = 0; busy = false; draw(); lastStars[hero().profile.name] = lastStars[hero().profile.name] ?? starsBefore;
+    if (totalStars() > starsBefore) { const owl = m.querySelector('.sp-owl'); if (owl) owl.classList.add('cheer'); say('Well done! You won a new star!', 'Giỏi lắm! Con được thêm một ngôi sao!'); }
+    lastStars[hero().profile.name] = totalStars();
+  }
   // back to the path when the game or story started here is over (and nothing else is open)
   setInterval(() => {
     // a game or story started from this screen: it opens over it; when it has closed again, the path is ready (stars
@@ -248,7 +255,7 @@ export function createSimple(G) {
     if (launched && m && !m.hidden) {
       const up = gameOpen() || !!document.querySelector('.theatre, .gl');
       if (up) opened = true;
-      else if (opened && !document.querySelector('.reward, .dialog')) { launched = 0; busy = false; draw(); if (totalStars() > starsBefore) { const owl = m.querySelector('.sp-owl'); if (owl) owl.classList.add('cheer'); say('Well done! You won a new star!', 'Giỏi lắm! Con được thêm một ngôi sao!'); } lastStars[hero().profile.name] = totalStars(); }
+      else if (opened) settle();
       else if (!opened && Date.now() - launched > 6000) { launched = 0; busy = false; }
     }
     if (m && !m.hidden && !gameOpen()) G.paused = true; // the valley stays still behind it, also after a talk box closes
@@ -256,7 +263,7 @@ export function createSimple(G) {
     back = false; show();
   }, 700);
   return {
-    show, hide: leave, get open() { return !!m && !m.hidden; }, get tab() { return tab; },
+    show, hide: leave, get open() { return !!m && !m.hidden; }, get tab() { return tab; }, get busy() { return busy; },
     // what the path shows now (for the checks): the area, which page of it, and the stops
     get view() { const v = m && viewsOf(tab)[at[tab]]; return v ? { groups: !!v.groups, area: v.area.key, page: v.i, of: v.of, pages: viewsOf(tab).length, stops: list.filter(s => s.kind !== 'sign').map(s => s.key) } : null; },
     // open a group (tests, and anything that wants to take a child straight to one)
