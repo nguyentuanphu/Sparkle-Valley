@@ -8,7 +8,7 @@
 //     a second tap while that happens is ignored, so a game never starts twice
 //   · 🔎 Discover: every area as a big picture (and, for big kids, a search box)
 //   · Ông Cú sits by the path, points at the next one to try and cheers when a new star is won; he never pops up
-//   · big kids (5+) also see how hard each game is and a ✨ on games that are new since they last looked, and choose
+//   · big kids (5+) also see a ✨ on games that are new since they last looked, and choose
 //     with two taps (the first one shows it, the second one plays), so a slip of the finger never starts a game
 //   Bottom bar: 🎮 Games · 📖 Stories · 🗺️ Places · 🔎 Discover · 🌳 Valley (the 3D world). Grown-ups: press and hold.
 // Which screen a child starts on is kept per child (profile.screen: 'simple' | 'valley'); until a child has chosen,
@@ -108,7 +108,6 @@ export function createSimple(G) {
   }
   const roadWide = pts => pts.map((q, k) => k ? `C${pts[k - 1].x + 70},${pts[k - 1].y} ${q.x - 70},${q.y} ${q.x},${q.y}` : `M${q.x - 120},${q.y} L${q.x},${q.y}`).join(' ');
   const road = pts => pts.map((q, k) => { if (!k) return `M${q.x},${q.y}`; const a = pts[k - 1], my = (a.y + q.y) / 2; return a.y === q.y || Math.abs(a.y - q.y) < 40 ? `C${(a.x + q.x) / 2},${a.y - 30} ${(a.x + q.x) / 2},${q.y + 30} ${q.x},${q.y}` : `C${a.x + (a.x < q.x ? 90 : -90)},${my} ${q.x + (a.x < q.x ? -90 : 90)},${my} ${q.x},${q.y}`; }).join(' ');
-  const levelDots = n => `<span class="sp-level" aria-hidden="true">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
   const starsHTML = s => s.max ? `<span class="sp-stars n${s.max}" aria-hidden="true">${[...Array(s.max)].map((_, j) => `<svg class="${j < s.stars ? 'on' : ''}" viewBox="0 0 24 24"><path d="${STAR}"/></svg>`).join('')}</span>` : '';
   let list = [];
   function draw() {
@@ -130,7 +129,7 @@ export function createSimple(G) {
     path.innerHTML = `<svg class="sp-road" aria-hidden="true"><path/><path class="dash"/></svg>` +
       list.map((s, k) => `<button class="sp-stop${s.kind === 'sign' ? ' sign' : ''}${k === next ? ' next' : ''}${sel === idOf(s) ? ' sel' : ''}" data-k="${k}" aria-label="${esc(s.name)}">
         <span class="sp-pic">${pic(s.icon)}${s.badge ? `<i class="sp-badge">${s.badge}</i>` : ''}${s.kind === 'sign' ? `<i class="sp-arrow">${pic('👉')}</i>` : ''}${s.isNew ? `<i class="sp-new">${pic('✨')}</i>` : ''}${starsHTML(s)}</span>
-        <b class="sp-name">${esc(s.name)}</b>${!lt && s.level ? levelDots(s.level) : ''}${!lt && s.kind !== 'sign' ? `<span class="sp-play">${T('Play', 'Chơi')} ▶</span>` : ''}</button>`).join('') +
+        <b class="sp-name">${esc(s.name)}</b>${!lt && s.kind !== 'sign' ? `<span class="sp-play">${T('Play', 'Chơi')} ▶</span>` : ''}</button>`).join('') +
       `<button class="sp-owl" aria-label="${T('Ông Cú', 'Ông Cú')}">${pic('🦉')}</button>`;
     // measure the tallest stop (its name may take two or three lines), then place them all
     const btns = [...path.querySelectorAll('.sp-stop')], tall = Math.max(150, ...btns.map(b => b.offsetHeight));
