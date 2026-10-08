@@ -671,7 +671,7 @@ await check('simple', async () => {
 
 await check('adventure', async () => {
   // round J (owner's brief: "an adventure world containing places children want to visit"): one activity list places
-  // every game; an under-5 sees at most six stops at a time and every one is a drawn picture; a tap answers at once and a
+  // every game; an under-5 sees one group at a time on one page that scrolls (round P, owner; it was six a page) and every one is a drawn picture; a tap answers at once and a
   // second tap can't start a game twice; a big kid taps once to look and again to play, sees ✨ on new games and can
   // search; Discover jumps to any area; Ông Cú cheers a new star; the landscape stands still in Calm mode; opening and
   // closing the screen 25 times leaves no extra listeners or elements behind
@@ -738,7 +738,7 @@ await check('adventure', async () => {
   r.big.search = await B.page.evaluate(() => [...document.querySelectorAll('.sp-found .sp-card b')].map(b => b.textContent));
   errs.push(...B.errors); await B.ctx.close();
   ok(!r.list.missing.length && !r.list.extra.length && !r.list.badArea.length, 'activity list: ' + JSON.stringify(r.list));
-  ok(r.walk.most <= 6 && r.walk.groupPages === 2 && !r.walk.missed.length && !r.walk.notDrawn.length && !r.walk.tooBig.length, 'under-5 path: ' + JSON.stringify(r.walk));
+  ok(r.walk.groupPages === 1 && r.walk.pages <= 12 && !r.walk.missed.length && !r.walk.notDrawn.length && !r.walk.tooBig.length, 'under-5 path: ' + JSON.stringify(r.walk));
   ok(r.find.cards >= 18 && !r.find.search && r.music === 'music', 'discover: ' + JSON.stringify(r.find) + ' ' + r.music);
   ok(r.starts === 1, 'a double tap started the game ' + r.starts + ' times');
   ok(r.owl.owl && r.owl.cheer, 'Ông Cú: ' + JSON.stringify(r.owl));
@@ -746,7 +746,7 @@ await check('adventure', async () => {
   ok(r.leak.listeners <= 0 && r.leak.nodes <= 5 && r.leak.screens === 1, 'after 25 opens: ' + JSON.stringify(r.leak));
   ok(r.big.stops > 6 && r.big.dots && r.big.newOn.includes('Feed the Bunny') && r.big.newOn.length === 1 && !r.big.firstTap.game && r.big.firstTap.sel && r.big.secondTap && r.big.search.some(t => /Smash the Pot/.test(t)), 'big kid: ' + JSON.stringify(r.big));
   ok(!errs.length, errs.join(' | '));
-  return `${r.list.games} games in 11 areas; under-5 path ${r.walk.pages} pages of at most ${r.walk.most}, every one drawn; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
+  return `${r.list.games} games in 11 areas; under-5 path: every group on one scrolling page (round P; ${r.walk.pages} groups, up to ${r.walk.most} stops), every one drawn; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
 });
 
 await check('gamelevel', async () => {
@@ -872,6 +872,21 @@ await check('realphotos', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(!r.none && r.dots === 2 && /Photographer/.test(r.cap) && r.onTop && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return `2 photos from the main API (map left out), the article's own picture first, credit “${r.cap}”; 360° opens on top of the photos`;
+});
+
+await check('firstplayer', async () => {
+  // round P (owner): no ready-made characters; a new device asks the child to make their own first (name, look, photo)
+  const P = await open(b, { w: 390, h: 844, touch: true, lang: 'vi', play: false, pre: () => { localStorage.setItem('sv2_profiles', '[]'); } });
+  await P.page.click('.screen.title .press', { force: true }); await P.page.waitForSelector('.screen.who');
+  const before = await P.page.evaluate(() => ({ first: !!document.querySelector('.who-card.first .make'), picks: document.querySelectorAll('.pick[data-id]').length }));
+  await P.page.click('.who .make'); await P.page.waitForSelector('.modal.editor #nm');
+  await P.page.fill('#nm', 'Mai'); await P.page.evaluate(() => document.querySelector('#eSave').click());
+  await P.page.waitForSelector('.who .go:not([disabled])', { timeout: 5000 });
+  await P.page.click('.who .go'); await P.page.waitForFunction(() => window.__sv && window.__sv.heroes.length > 0);
+  const r = await P.page.evaluate(() => ({ name: __sv.heroes[0].profile.name, saved: JSON.parse(localStorage.getItem('sv2_profiles')).map(p => p.name) }));
+  const errs = P.errors; await P.ctx.close();
+  ok(before.first && !before.picks && r.name === 'Mai' && r.saved.length === 1 && r.saved[0] === 'Mai' && !errs.length, JSON.stringify({ before, r, errs }));
+  return 'a new device shows “Make my character” and no ready-made players; the child made “Mai” and plays as Mai';
 });
 
 await check('playhub', async () => {

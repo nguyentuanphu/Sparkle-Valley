@@ -107,8 +107,21 @@ export function showWho(onGo) {
   let mode = 'solo', chosen = [];
   const s = el('div', 'screen who sv2');
   document.body.appendChild(s);
+  let asked = false;
   const draw = () => {
     const need = mode === 'split' ? 2 : 1;
+    // nobody yet (a new device): one big card to make your own character (round P)
+    if (!profiles.length) {
+      s.innerHTML = `<div class="who-card first"><h2>${T('Hello! Who are you?', 'Xin chào! Con là ai?')}</h2>
+        <p class="hint">${T('Make your own character: your name, how you look, and a photo if you like.', 'Tạo nhân vật của con: tên, trông thế nào, và ảnh nếu con thích.')}</p>
+        <button class="go make">✨ ${T('Make my character', 'Tạo nhân vật của con')}</button></div>
+        <button class="grown"><span class="ring"></span>${T('Grown-ups', 'Phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>`;
+      const make = () => { SFX.tap(); openEditor(null, p => { if (p && profiles.includes(p)) { chosen = [p.id]; toast(T(`Hi ${p.name}!`, `Chào ${p.name}!`)); } draw(); }); };
+      s.querySelector('.make').onclick = make;
+      holdButton(s.querySelector('.grown'), () => openGrownups(draw));
+      if (!asked) { asked = true; say('Hello! Make your own character.', 'Xin chào! Con hãy tạo nhân vật của mình nhé.'); }
+      return;
+    }
     s.innerHTML = `
       <div class="who-card">
         <h2>${T("Who's playing?", 'Ai chơi nào?')}</h2>
@@ -442,7 +455,7 @@ export function openEditor(profile, after) {
   const look = Object.assign({}, p.look);
   let photo = p.photo, img = null, zoom = 1, ox = 0, oy = 0;
   const m = modal('editor', `
-    <h2>${isNew ? T('New player', 'Người chơi mới') : T('Edit player', 'Sửa người chơi')}</h2>
+    <h2>${isNew ? T('Make a character', 'Tạo nhân vật') : T('Edit player', 'Sửa người chơi')}</h2>
     <div class="crop-wrap"><canvas id="crop" width="480" height="480"></canvas>
       <p class="note">${T('Use a close-up photo of their face. Drag to move, use the slider to zoom.', 'Dùng ảnh chụp gần khuôn mặt. Kéo để di chuyển, dùng thanh trượt để phóng to.')}</p>
       <label class="btn primary" for="file">📷 ${T('Take or choose a photo', 'Chụp hoặc chọn ảnh')}</label><input type="file" id="file" accept="image/*" class="vh">
@@ -526,7 +539,8 @@ export function openEditor(profile, after) {
   m.querySelector('#eSave').onclick = () => finish(true);
   m.querySelector('#eCancel').onclick = () => finish(false);
   const del = m.querySelector('#eDel');
-  if (del) del.onclick = () => { if (profiles.length <= 1) return toast(T('Keep at least one player.', 'Cần giữ ít nhất một người chơi.')); if (confirm(T(`Remove ${p.name} and all their progress?`, `Xóa ${p.name} và toàn bộ tiến trình?`))) { removeProfile(p.id); m.close(); after && after(); } };
+  // (the last player can go too: the next start asks for a new character, round P)
+  if (del) del.onclick = () => { if (confirm(T(`Remove ${p.name} and all their progress?`, `Xóa ${p.name} và toàn bộ tiến trình?`))) { removeProfile(p.id); m.close(); after && after(); } };
 }
 
 // (windows, NPC dialogue, the reward pop-up and confetti live in js/popups.js since architecture step 2; passed on from here)

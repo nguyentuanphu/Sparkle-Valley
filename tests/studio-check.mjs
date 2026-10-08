@@ -89,11 +89,11 @@ export function memoryBlobs() {
 }
 
 // ---------- a pretend Netlify: the site's files, netlify.toml's redirects and the two functions ----------
-export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs() }) {
+export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs(), heldStore = memoryBlobs() }) {
   Object.assign(process.env, env);
   const { makeStudio } = await import(path.join(ROOT, 'netlify/functions/studio.mjs'));
   const { makeHello } = await import(path.join(ROOT, 'netlify/functions/hello.mjs'));
-  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore }), hello = makeHello({ playersStore: async () => players });
+  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore, heldStore: async () => heldStore }), hello = makeHello({ playersStore: async () => players });
   const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2' };
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`); let p = decodeURIComponent(url.pathname);
@@ -178,10 +178,12 @@ export async function studioCheck(browser, open) {
     // round K: changing page online is quick: the status and the family's content take a few small GitHub calls, never the list of every file
     { gh.log.length = 0; await call('/studio/api/info', { cookie: C }); await call('/studio/api/content', { cookie: C }); const calls = gh.log.slice();
       ok(!calls.some(c => /\/git\/trees\//.test(c)) && calls.length <= 6, 'a page change online asked GitHub ' + calls.length + ' times: ' + calls.join(', ')); notes.push(`a page change online: ${calls.length} small GitHub calls`); }
-    // 2. saving goes to the draft, never straight to the live branch
+    // 2. saving waits on the website (round P: instant, no GitHub call), is read back at once, and never goes live by itself
     ok((await call('/studio/api/content', { cookie: C, body: { message: { en: 'x', vi: 'x' } } })).status === 403, 'a change without the Studio header was taken');
+    gh.log.length = 0;
     ok((await call('/studio/api/content', { cookie: C, headers: X, body: { message: { en: 'Hi from online', vi: 'Chào từ trên mạng' } } })).status === 200, 'saving online failed');
-    ok(gh.refs.has('studio-draft') && /Hello/.test(gh.fileAt('main', 'content/custom.json')) && /online/.test(gh.fileAt('studio-draft', 'content/custom.json')), 'the save did not go to the draft');
+    const saveCalls = gh.log.filter(c => /^(POST|PATCH)/.test(c)).length;
+    ok(!saveCalls && /Hello/.test(gh.fileAt('main', 'content/custom.json')) && !gh.refs.has('studio-draft'), 'a save went to GitHub straight away: ' + gh.log.join(', '));
     ok(/online/.test((await call('/studio/api/content', { cookie: C })).j.message.en), 'the draft was not read back');
     const face = await call('/studio/api/face', { cookie: C, headers: X, body: { id: 'Bà Năm', dataUrl: 'data:image/jpeg;base64,' + Buffer.from('JPEG').toString('base64') } });
     ok(face.j && face.j.photo === 'content/faces/ba-nam.jpg', 'face upload: ' + JSON.stringify(face.j));
@@ -190,7 +192,8 @@ export async function studioCheck(browser, open) {
     const alb = await call('/studio/api/albumphoto', { cookie: C, headers: X, body: { id: 'f1', dataUrl: 'data:image/jpeg;base64,' + Buffer.from('JPEG').toString('base64') } });
     ok(alb.j && /^content\/album\/f1-[a-z0-9]+\.jpg$/.test(alb.j.photo), 'album photo upload: ' + JSON.stringify(alb.j));
     ok((await call('/studio/api/albumphoto', { cookie: C, headers: X, body: { id: 'f2', dataUrl: 'data:image/png;base64,AAAA' } })).status === 400, 'a PNG was taken as an album photo');
-    ok((await call('/studio/api/info', { cookie: C })).j.unpublished, 'saved changes not shown as waiting');
+    { const inf = (await call('/studio/api/info', { cookie: C })).j, w = (await call('/studio/api/pending', { cookie: C })).j.files;
+      ok(inf.unpublished && inf.waiting === 3 && w.includes('content/custom.json') && w.includes('content/faces/ba-nam.jpg'), 'saved changes not shown as waiting: ' + JSON.stringify({ u: inf.unpublished, n: inf.waiting, w })); }
     // 3. meanwhile the exe publishes something else to the live branch: Publish online must keep it
     gh.commitOnMain('content/ads/sign.jpg', 'AD', 'Family update from Sparkle Studio (1 files)');
     const pub = await call('/studio/api/github/publish', { cookie: C, headers: X, body: { message: 'From the test' } });
@@ -198,9 +201,19 @@ export async function studioCheck(browser, open) {
     ok(/online/.test(gh.fileAt('main', 'content/custom.json')) && gh.fileAt('main', 'content/faces/ba-nam.jpg') && gh.fileAt('main', 'content/ads/sign.jpg') && gh.fileAt('main', alb.j.photo), 'publish lost a file');
     ok(gh.refs.get('studio-draft') === gh.refs.get('main') && !(await call('/studio/api/info', { cookie: C })).j.unpublished, 'the draft did not start again after publishing');
     ok((await call('/studio/api/github/publish', { cookie: C, headers: X, body: {} })).j.result.changed === 0, 'a second publish found changes');
+    ok(!(await call('/studio/api/pending', { cookie: C })).j.files.length, 'changes still waiting after Publish');
+    // dropping waiting changes: they are gone and nothing reaches GitHub
+    await call('/studio/api/content', { cookie: C, headers: X, body: { message: { en: 'Never mind', vi: 'Thôi' } } });
+    ok((await call('/studio/api/pending/discard', { cookie: C, headers: X, body: {} })).status === 200 && /online/.test((await call('/studio/api/content', { cookie: C })).j.message.en) && !(await call('/studio/api/pending', { cookie: C })).j.files.length, 'dropping the waiting changes failed');
+    // a real photo taken off (✕) goes at once (read back straight away) and is never fetched again
+    { gh.commitOnMain('photos/index.json', JSON.stringify({ 'saigon-post': [{ src: 'photos/saigon-post/1.jpg', file: 'File:Wrong.jpg' }, { src: 'photos/saigon-post/2.jpg', file: 'File:Right.jpg' }] }), 'photos');
+      ok((await call('/studio/api/photos/remove', { cookie: C, headers: X, body: { key: 'saigon-post', src: 'photos/saigon-post/1.jpg' } })).status === 200, 'photos/remove failed');
+      const left = (await call('/studio/api/photos/index', { cookie: C })).j['saigon-post'] || [], bl = (await call('/studio/api/file/photos/blocked.json', { cookie: C })).j || {};
+      ok(left.length === 1 && left[0].file === 'File:Right.jpg' && (bl['saigon-post'] || []).includes('File:Wrong.jpg'), 'a removed photo: ' + JSON.stringify({ left, bl }));
+      await call('/studio/api/pending/discard', { cookie: C, headers: X, body: {} }); }
     // only the family's files can change online
     ok((await call('/studio/api/voices/extra', { cookie: C, headers: X, body: { lines: [{ lang: 'vi', text: 'Một câu mới' }] } })).j.added === 1, 'adding a voice line failed');
-    notes.push('online: password, draft, publish (keeps the exe\'s change)');
+    notes.push(`online: password; saves wait on the website (${saveCalls} GitHub writes per save), one Publish sends them all (keeps the exe's change); drop waiting changes`);
     // 4. players: devices say hello, the report counts them
     const hi = (b2) => fetch(site + '/api/hello', { method: 'POST', body: JSON.stringify(b2) }).then(r => r.status);
     ok(await hi({ id: 'aaaaaaaaaaaa', b: 'r37', l: 'vi', k: 2, m: 10, g: { caro: 2 }, t: 1, d: 'phone', a: true }) === 204, 'hello not taken');

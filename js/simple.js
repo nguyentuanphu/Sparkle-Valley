@@ -25,7 +25,7 @@ import { pic } from './art.js';
 import { saveProfiles, reduceMotion } from './state.js';
 import { GAMES, gameOpen } from './games/frame.js';
 import { holdButton, openGrownups } from './ui.js';
-import { AREAS, TALE_AREAS, PLACE_AREAS, LITTLE_PAGE, gamesIn, pages } from './content/activities.js';
+import { AREAS, TALE_AREAS, PLACE_AREAS, gamesIn } from './content/activities.js';
 
 // a star drawn on the picture card (round I, owner: "stars without a strip, placed on the icon"): gold when earned
 const STAR = 'M12 1.8l3.1 6.4 7 1-5.1 4.9 1.2 7-6.2-3.3-6.2 3.3 1.2-7L1.9 9.2l7-1z';
@@ -83,9 +83,10 @@ export function createSimple(G) {
   // the groups of a tab, as stops: each with its picture and name
   const tabOf = t => TABS.find(y => y.key === t);
   const groupsOf = t => areasOf(t).filter(a => a.items.length);
-  // the pages of the path: the groups, or the open group's stops; an under-5 gets at most six at a time, a big kid all
+  // the path: the groups, or the open group's stops, all on one page that scrolls down (round P, owner: "show it on
+  // one page and let the kid scroll down instead of tapping a button for the next page"; it used to be six at a time)
   function viewsOf(t) {
-    const split = items => little() ? pages(items, LITTLE_PAGE) : [items];
+    const split = items => [items];
     if (!group[t]) { const tb = tabOf(t), all = { key: 'groups', icon: tb.icon, name: tb.label }; const gs = groupsOf(t).map(({ area, items }) => ({ kind: 'group', key: area.key, icon: area.icon, name: area.name(), voice: both(area.name), stars: 0, max: 0, count: items.length }));
       return split(gs).map((items, i, ps) => ({ area: all, items, i, of: ps.length, groups: true })); }
     const a = groupsOf(t).find(x => x.area.key === group[t]); if (!a) { group[t] = null; return viewsOf(t); }

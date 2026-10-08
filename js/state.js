@@ -108,7 +108,7 @@ export const GLIDERS = ['#e7c37a', '#ff7eb8', '#5fd3ff', '#8be07a', '#b48cff'];
 function newProfile(i) {
   return {
     id: 'k' + Date.now().toString(36) + Math.floor(Math.random() * 1000),
-    name: i === 0 ? 'Bé Na' : 'Bé Bin',
+    name: '',
     photo: null,
     age: 'little',           // 'little' (under 5: everything spoken, can't lose) or 'big' (5 to 8: harder, real opponents)
     difficulty: 'easy',      // 'easy' | 'medium' | 'hard'
@@ -139,7 +139,9 @@ export function normalizeProfile(p) {
 }
 
 export let profiles = store.get(KEY_PROFILES, null);
-if (!Array.isArray(profiles) || !profiles.length) profiles = [newProfile(0), newProfile(1)];
+// (round P, owner: "remove the default characters and let a new user create their own") a new device starts with
+// nobody: the Who's playing screen asks the child to make their own character first
+if (!Array.isArray(profiles)) profiles = [];
 profiles = profiles.map(normalizeProfile);
 
 // ---------- the shared farm: coins, crops, animals, pets and daily jobs belong to everyone ----------

@@ -12,6 +12,10 @@ export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'so
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/peerjs|0\.peerjs|ERR_|Failed to load resource|net::|WebSocket connection to/.test(m.text())) errors.push('console: ' + m.text()); });
   await page.addInitScript(([lang, s]) => { try { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang, voice: false, sound: false, music: false, quality: 'low', autoPack: false }, s); localStorage.setItem('sv2_settings', JSON.stringify(o)); } catch (e) { } }, [lang, settings]);
+  // (round P: a new device starts with nobody; the checks play as two children made beforehand)
+  await page.addInitScript(() => { try { if (!localStorage.getItem('sv2_profiles')) localStorage.setItem('sv2_profiles', JSON.stringify([
+    { id: 'kna', name: 'Bé Na', photo: null, age: 'little', difficulty: 'easy', look: { style: 'dress', color: '#ff5fa2', hat: 'bow', back: 'wings', hairStyle: 'buns' }, created: 1 },
+    { id: 'kbin', name: 'Bé Bin', photo: null, age: 'little', difficulty: 'easy', look: { style: 'shirt', color: '#3b6fe0', hat: 'cap', back: 'cape', hairStyle: 'short' }, created: 2 }])); } catch (e) { } });
   if (pre) await page.addInitScript(pre);
   await page.goto(url);
   await page.waitForSelector('.screen.title', { timeout: 90000 });

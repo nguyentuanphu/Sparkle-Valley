@@ -10,7 +10,7 @@ const api = async (p, body) => { const r = await fetch(BASE + '/api/' + p, body 
 const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); };
 const fail = e => toast('⚠️ ' + (e.message || e));
 let INFO = null, CONTENT = {};
-const saveContent = async () => { await api('content', CONTENT); if (INFO) { INFO.unpublished = true; head(); } toast(T('Saved. Publish to send it to the children’s devices.', 'Đã lưu. Bấm Phát hành để gửi tới máy của các con.')); };
+const saveContent = async () => { await api('content', CONTENT); if (INFO) { INFO.unpublished = true; head(); if (INFO.online) api('pending').then(j => { INFO.waiting = j.files.length; head(); }).catch(() => { }); } toast(T('Saved. Publish to send it to the children’s devices.', 'Đã lưu. Bấm Phát hành để gửi tới máy của các con.')); };
 
 // Five sections instead of seventeen tabs (round K, owner: "too many menus, confusing on the phone"): each section opens
 // as big cards, one per page; on a phone the sections are a bar at the bottom, on a computer a column on the left.
@@ -56,7 +56,7 @@ const go = k => { if (k === cur) return; cur = k; const sec = sectionOf(k); loca
 // the bar at the top: Publish when something is waiting, reload, language
 function head() {
   const pub = $('#pub'); if (!pub) return;
-  pub.hidden = !(INFO && INFO.unpublished); pub.textContent = '🚀 ' + T('Publish', 'Phát hành');
+  pub.hidden = !(INFO && INFO.unpublished) || ROLE() === 'viewer'; pub.textContent = '🚀 ' + T('Publish', 'Phát hành') + (INFO && INFO.waiting ? ` (${INFO.waiting})` : '');
 }
 function nav() {
   const sec = sectionOf(cur);
@@ -492,6 +492,19 @@ PAGES.publish = async P => {
   ${INFO.online ? '' : `<div class="card"><h3>📦 ${T('Zip and Netlify', 'Tệp zip và Netlify')}</h3><button class="btn ghost" id="build">📦 ${T('Make the zip', 'Tạo tệp zip')}</button> <span id="bres" class="note"></span>
     <p class="note">${c.netlify ? T('Your Netlify site is set: ', 'Đã có trang Netlify: ') + esc(c.netlifySite) : T('Add a Netlify token and the site name in Settings for one-click upload, or drag the zip onto the site’s Deploys page.', 'Thêm khóa Netlify và tên trang trong Cài đặt để tải lên một chạm, hoặc kéo tệp zip vào trang Deploys.')}</p>
     <button class="btn ghost" id="deploy" ${c.netlify ? '' : 'disabled'}>☁️ ${T('Upload to Netlify', 'Tải lên Netlify')}</button> <span id="dres" class="note"></span></div>`}`;
+  // online (round P): every save waits here on the website; one Publish sends them all, or drop them
+  if (INFO.online && ROLE() !== 'viewer') {
+    const box = document.createElement('div'); box.className = 'card'; P.querySelector('.sub').after(box);
+    const drawWait = async () => {
+      let files = []; try { files = (await api('pending')).files; } catch (e) { }
+      const by = {}; for (const f of files) { const k = f.split('/').slice(0, 2).join('/'); by[k] = (by[k] || 0) + 1; }
+      box.innerHTML = `<h3>📝 ${T('Waiting to publish', 'Đang chờ phát hành')}: ${files.length}</h3>${files.length ? `<p class="note">${Object.entries(by).map(([k, n]) => `${esc(k)} (${n})`).join(' · ')}</p>
+        <p class="note">${T('Saving is instant now: changes wait here, and Publish sends them all to the children in one go.', 'Lưu giờ rất nhanh: thay đổi chờ ở đây, và Phát hành gửi tất cả tới các con trong một lần.')}</p>
+        <button class="btn ghost" id="wdrop">🗑️ ${T('Drop all waiting changes', 'Bỏ tất cả thay đổi đang chờ')}</button>` : `<p class="ok">✅ ${T('Nothing waiting.', 'Không có gì đang chờ.')}</p>`}`;
+      const d = box.querySelector('#wdrop'); if (d) d.onclick = async () => { if (!confirm(T(`Drop ${files.length} waiting change(s)? They will not be published.`, `Bỏ ${files.length} thay đổi đang chờ? Chúng sẽ không được phát hành.`))) return; try { await api('pending/discard', {}); LOADED = false; await load(true); head(); toast(T('Dropped.', 'Đã bỏ.')); drawWait(); } catch (e) { fail(e); } };
+    };
+    drawWait();
+  }
   if ($('#build')) $('#build').onclick = async () => { $('#bres').textContent = T('Packing…', 'Đang đóng gói…'); try { const r = await api('build', {}); $('#bres').innerHTML = `✅ ${r.files} ${T('files', 'tệp')}, ${(r.bytes / 1e6).toFixed(1)} MB · <a href="${BASE}/api/zip">⬇️ ${T('Download', 'Tải về')}</a>`; } catch (e) { $('#bres').textContent = '⚠️ ' + e.message; } };
   if ($('#deploy')) $('#deploy').onclick = async () => { if (c.github && !confirm(T('Your site is published from GitHub. Upload the zip to Netlify anyway?', 'Trang của bạn được phát hành từ GitHub. Vẫn tải tệp zip lên Netlify?'))) return; $('#dres').textContent = T('Uploading… (a minute or two)', 'Đang tải lên… (một hai phút)'); try { const r = await api('deploy', {}); $('#dres').innerHTML = `✅ ${T('Published!', 'Đã phát hành!')} <a href="${esc(r.url)}" target="_blank">${esc(r.url)}</a>`; } catch (e) { $('#dres').textContent = '⚠️ ' + e.message; } };
   const ghRun = async (what, btn) => {
@@ -667,12 +680,12 @@ PAGES.photos = async P => {
   const all = [...items.values()];
   const draw = async () => {
     const pix = await api('photos/index'), have = all.filter(x => pix[x.key] && pix[x.key].length).length;
-    P.innerHTML = `<h2>📷 ${T('Real photos', 'Ảnh thật')}</h2><p class="sub">${T('The best photos of each real place, from Wikipedia, Wikimedia Commons and Openverse (Creative Commons photos from Flickr and museums), the article’s main picture first, a few from each source. They are saved into the game with who took them and the licence, so children see them even with no internet. Runs on this computer; Publish to send them to the children.', 'Những ảnh đẹp nhất của từng nơi thật, lấy từ Wikipedia, Wikimedia Commons và Openverse (ảnh Creative Commons từ Flickr và các bảo tàng), ảnh chính của bài viết trước, mỗi nguồn vài ảnh. Ảnh được lưu vào game kèm tên người chụp và giấy phép, nên các con xem được cả khi không có mạng. Chạy trên máy này; bấm Phát hành để gửi tới các con.')}</p>
+    P.innerHTML = `<h2>📷 ${T('Real photos', 'Ảnh thật')}</h2><p class="sub">${T('The best photos of each real place, from Wikipedia, Wikimedia Commons and Openverse (Creative Commons photos from Flickr and museums), the article’s main picture first, a few from each source. They are saved into the game with who took them and the licence, so children see them even with no internet. Runs on this computer; Publish to send them to the children. ✕ takes off a photo that is not of the place, and it is never fetched again.', 'Những ảnh đẹp nhất của từng nơi thật, lấy từ Wikipedia, Wikimedia Commons và Openverse (ảnh Creative Commons từ Flickr và các bảo tàng), ảnh chính của bài viết trước, mỗi nguồn vài ảnh. Ảnh được lưu vào game kèm tên người chụp và giấy phép, nên các con xem được cả khi không có mạng. Chạy trên máy này; bấm Phát hành để gửi tới các con. ✕ bỏ ảnh không đúng nơi, và ảnh đó sẽ không bị tải lại.')}</p>
     <div class="card"><p><b>${have}</b> / ${all.length} ${T('places have photos saved', 'nơi đã có ảnh')}.</p>
       <div class="row"><div style="flex:0 0 160px"><label>${T('Photos per place', 'Số ảnh mỗi nơi')}</label><select id="pmax">${[3, 4, 6].map(n => `<option ${n === 4 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
       <button class="btn" id="pmiss">⬇️ ${T('Get photos for places without any', 'Tải ảnh cho nơi chưa có')}</button><button class="btn ghost" id="pall">🔄 ${T('Get them all again', 'Tải lại tất cả')}</button></div>
       <div class="prog"><i id="ppb"></i></div><p class="note" id="pres"></p></div>
-    <div class="grid">${all.map(x => `<div class="card"><b>${esc(x.name)}</b> <button class="btn small ghost" data-get="${esc(x.key)}">🔄</button><div class="thumbs">${(pix[x.key] || []).map(p => `<span class="thumb"><img src="${FILE(esc(p.src))}" title="${esc(p.credit || '')}"><button data-rm="${esc(x.key)}|${esc(p.src)}">✕</button></span>`).join('') || `<span class="note">${T('none yet', 'chưa có')}</span>`}</div></div>`).join('')}</div>`;
+    <div class="grid">${all.map(x => `<div class="card"><b>${esc(x.name)}</b> <button class="btn small ghost" data-get="${esc(x.key)}">🔄</button><div class="thumbs">${(pix[x.key] || []).map(p => `<span class="thumb"><img src="${FILE(esc(p.src))}" title="${esc(p.credit || '')}"><button data-rm="${esc(x.key)}|${esc(p.src)}" title="${T('Not this place: take it off (it won’t be fetched again)', 'Không phải nơi này: bỏ ảnh (sẽ không tải lại)')}" aria-label="${T('Remove this photo', 'Bỏ ảnh này')}">✕</button></span>`).join('') || `<span class="note">${T('none yet', 'chưa có')}</span>`}</div></div>`).join('')}</div>`;
     const go = async list => { // one place at a time (online each request must be short), the progress shown here
       P.querySelectorAll('button').forEach(b => b.disabled = true); let done = 0, errs = 0;
       for (const item of list) { $('#pres').textContent = `${done}/${list.length} · ${item.name}${errs ? ' · ⚠️ ' + errs : ''}`; try { await api('photos/get1', { item, max: +$('#pmax').value }); } catch (e) { errs++; } done++; $('#ppb').style.width = (done / list.length * 100) + '%'; }
@@ -680,7 +693,8 @@ PAGES.photos = async P => {
     $('#pmiss').onclick = () => go(all.filter(x => !(pix[x.key] && pix[x.key].length)));
     $('#pall').onclick = () => go(all);
     P.querySelectorAll('[data-get]').forEach(b => b.onclick = () => go(all.filter(x => x.key === b.dataset.get)));
-    P.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { const [key, src] = b.dataset.rm.split('|'); await api('photos/remove', { key, src }); draw(); });
+    // ✕ takes a photo off at once (it fades straight away; saving waits for Publish online) and it is never fetched again
+    P.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { const [key, src] = b.dataset.rm.split('|'), th = b.closest('.thumb'); th.style.opacity = .3; try { await api('photos/remove', { key, src }); th.remove(); if (INFO) { INFO.unpublished = true; head(); } } catch (e) { th.style.opacity = 1; fail(e); } });
   };
   await draw();
 };

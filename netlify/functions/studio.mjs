@@ -20,7 +20,18 @@ const COOKIE = 'sv_studio';
 // the players' store is Netlify Blobs on the website (tests hand in their own)
 const blobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'players', consistency: 'strong' }));
 const adminBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'studio-admins', consistency: 'strong' }));
-export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs } = {}) => async req => {
+const heldBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'studio-pending', consistency: 'strong' }));
+// the saved changes waiting for Publish (round P), kept in Netlify Blobs: "index" lists them (path → size, or null for
+// a removed file) and "f/<path>" holds each file (base64)
+export const heldOn = S => ({
+  index: async () => (await S.get('index', { type: 'json' })) || {},
+  get: async rel => { const b = await S.get('f/' + rel); return b == null ? null : Buffer.from(String(b), 'base64'); },
+  put: async changes => { const ix = (await S.get('index', { type: 'json' })) || {};
+    for (const [rel, buf] of changes) { if (buf) { await S.set('f/' + rel, Buffer.from(buf).toString('base64')); ix[rel] = buf.length; } else { await S.delete('f/' + rel); ix[rel] = null; } }
+    await S.setJSON('index', ix); },
+  clear: async () => { const ix = (await S.get('index', { type: 'json' })) || {}; for (const rel of Object.keys(ix)) await S.delete('f/' + rel); await S.setJSON('index', {}); }
+});
+export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs } = {}) => async req => {
   const url = new URL(req.url), p = url.pathname, pw = env('STUDIO_PASSWORD'), post = req.method === 'POST';
   if (!pw) return json({ error: 'The online Studio is not set up yet: add STUDIO_PASSWORD in Netlify (Site configuration → Environment variables), then deploy again.', setup: true }, 503);
   // signing in and out
@@ -65,7 +76,10 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs } = {
   const conf = { azureKey: env('AZURE_KEY'), azureRegion: env('AZURE_REGION'), githubToken: env('GITHUB_TOKEN'), githubRepo: env('GITHUB_REPO') || 'nguyentuanphu/Sparkle-Valley', githubBranch: env('GITHUB_BRANCH') || 'main',
     netlifyToken: env('NETLIFY_TOKEN'), netlifySite: env('NETLIFY_SITE') || env('SITE_ID'), siteUrl: env('URL') };
   if (!conf.githubToken) return json({ error: 'Add GITHUB_TOKEN in Netlify (Site configuration → Environment variables) so the online Studio can read and save the family’s files.', setup: true }, 503);
-  const store = githubStore({ token: conf.githubToken, repo: conf.githubRepo, branch: conf.githubBranch });
+  const store = githubStore({ token: conf.githubToken, repo: conf.githubRepo, branch: conf.githubBranch, held: heldOn(await heldStore()) });
+  // the changes waiting for Publish, and dropping them (round P)
+  if (p === '/studio/api/pending') return json({ files: await store.waiting() });
+  if (p === '/studio/api/pending/discard' && post) return json(await store.discard());
   const studio = createStudio({ store, conf, online: true, local: { players, inbox: async () => inbox(await playersStore()) } });
   // the game's modules on the Map and Voices pages fetch content/custom.json from the page's own address
   const api = p.startsWith('/studio/content/') ? 'file/' + p.slice(8) : decodeURIComponent(p.slice('/studio/api/'.length));
@@ -73,7 +87,7 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs } = {
     const body = post ? Buffer.from(await req.arrayBuffer()) : null;
     if (body && body.length > 5.5e6) return json({ error: 'That is too big to send online (over 5 MB).' }, 413);
     const r = await studio.handle(api, req.method, body);
-    if (api === 'info' && r.body && typeof r.body === 'object') r.body.me = me; // who is signed in, and what they may do
+    if (api === 'info' && r.body && typeof r.body === 'object') { r.body.me = me; r.body.waiting = (await store.waiting()).length; } // who is signed in, and what they may do
     if (post && r.code < 400) await store.flush('Sparkle Studio online: ' + api);
     if (r.raw) return new Response(r.raw, { status: r.code, headers: { 'Content-Type': r.type, 'Cache-Control': 'no-store' } });
     if (api === 'file/content/custom.json' && r.code === 404) return json({});
