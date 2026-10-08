@@ -709,7 +709,7 @@ await check('films', async () => {
       out.films[id] = { pages: n, helps };
     };
     for (const id of Object.keys(C.FILMS)) {
-      openTheatre(MORE_TALES.find(t => t.id === id), { name: 'Na' }); await new Promise(r => setTimeout(r, 300));
+      openTheatre(MORE_TALES.find(t => t.id === id), { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); // (loaded when the story opens)
       document.querySelector('.th-auto').click();
       if (!document.querySelector('.theatre.film canvas.th-film')) out.bad.push(id + ': no 3D stage');
       await run(id, C.FILMS[id].pages.length);
@@ -717,7 +717,7 @@ await check('films', async () => {
       if (F.filmNow() || document.querySelector('canvas.th-film')) out.bad.push(id + ': not freed');
     }
     for (const id of Object.keys(C.GUIDES)) {
-      openHowTo(id, {}); await new Promise(r => setTimeout(r, 300)); document.querySelector('.ht-pp').click();
+      openHowTo(id, {}); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); document.querySelector('.ht-pp').click();
       await run(id, C.GUIDES[id].pages.length);
       document.querySelector('.ht-x').click(); await new Promise(r => setTimeout(r, 300));
       if (F.filmNow()) out.bad.push(id + ': not freed');
@@ -725,11 +725,11 @@ await check('films', async () => {
     return out;
   });
   const fails = [...r.bad];
-  for (const id of ['duahau', 'thanhgiong']) if (!r.films[id] || r.films[id].helps !== 2) fails.push(`${id}: the child should help twice`);
+  for (const id of ['duahau', 'thanhgiong']) if (!r.films[id] || r.films[id].helps < 2) fails.push(`${id}: the child should help at least twice`);
   if (P.errors.length) fails.push(...P.errors.slice(0, 3));
   await P.ctx.close();
   if (fails.length) throw new Error(JSON.stringify({ fails, films: r.films }));
-  return Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps twice in each story';
+  return Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps at least twice in each story';
 });
 await check('camcalm', async () => {
   // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:

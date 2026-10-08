@@ -8,8 +8,6 @@ import { SFX, Music } from './audio.js';
 import { el, esc, wait, flip } from './util.js';
 import { CAST, SCENES } from './cartoon.js';
 import { pic, hasArt } from './art.js';
-import { createFilm } from './film.js';
-import { FILMS } from './content/films.js';
 import { featureOn } from './custom.js';
 
 const seg = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
@@ -49,10 +47,12 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
     document.body.appendChild(m);
     const stage = m.querySelector('.th-stage'), bg = m.querySelector('.th-bg'), actors = m.querySelector('.th-actors'), fx = m.querySelector('.th-fx'), text = m.querySelector('.th-text'), dots = m.querySelector('.th-dots');
     // (round R) tales that have a film are acted in 3D instead of the picture stage (js/film.js)
-    const film = FILMS[tale.id] && featureOn('storyFilms', true) ? createFilm(stage, FILMS[tale.id]) : null;
-    if (film) m.classList.add('film');
+    // (loaded only when a story opens, so starting the game stays small)
+    let film = null;
+    const ready = featureOn('storyFilms', true) ? import('./content/films.js').then(async C => { if (!C.FILMS[tale.id] || !alive) return; const F = await import('./film.js'); film = F.createFilm(stage, C.FILMS[tale.id]); if (film) m.classList.add('film'); }).catch(e => console.warn('film', e)) : Promise.resolve();
     const draw = async () => {
-      const my = ++token, [pics, en, vi] = tale.pages[k], st = stageOf(en);
+      const my = ++token; await ready; if (!alive || my !== token) return;
+      const [pics, en, vi] = tale.pages[k], st = stageOf(en);
       if (film) return drawFilm(my, en, vi);
       stage.className = 'th-stage st-' + st; bg.innerHTML = SCENES[st] ? `<svg class="sc" viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${SCENES[st]()}</svg>` : STAGE_ART[st] || '';
       // actors: spread across the stage, each entering from its side, then moving its own way

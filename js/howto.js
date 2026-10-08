@@ -11,8 +11,6 @@ import { el, esc, wait } from './util.js';
 import { CAST, SCENES } from './cartoon.js';
 import { pic, hasArt } from './art.js';
 import { stageOf } from './tales.js';
-import { createFilm } from './film.js';
-import { GUIDES } from './content/films.js';
 import { featureOn } from './custom.js';
 
 // [picture, English, Vietnamese]
@@ -257,11 +255,13 @@ export function openHowTo(id, { onPlay, onClose } = {}) {
   const screen = m.querySelector('.ht-screen'), cap = m.querySelector('.ht-cap'), bar = m.querySelector('.ht-bar i'), pp = m.querySelector('.ht-pp');
   let k = 0, paused = false, closed = false, token = 0;
   // (round R) games with a guide film: every card is acted in 3D by village children (js/film.js)
-  const film = GUIDES[id] && featureOn('storyFilms', true) ? createFilm(screen, GUIDES[id]) : null;
-  if (film) m.classList.add('film');
+  // (loaded only when a guide opens, so starting the game stays small)
+  let film = null;
+  const ready = featureOn('storyFilms', true) ? import('./content/films.js').then(async C => { if (!C.GUIDES[id] || closed) return; const F = await import('./film.js'); film = F.createFilm(screen, C.GUIDES[id]); if (film) m.classList.add('film'); }).catch(e => console.warn('film', e)) : Promise.resolve();
   const close = () => { if (closed) return; closed = true; token++; hush(); if (film) film.close(); m.remove(); Music.play(prevMusic || 'field'); onClose && onClose(); };
   const show = async () => {
-    const my = ++token, c = cards[k];
+    const my = ++token; await ready; if (my !== token || closed) return;
+    const c = cards[k];
     bar.style.width = ((k + 1) / cards.length * 100) + '%';
     const pics = [...String(c.pic).matchAll(/\S+/g)].map(x => x[0]);
     // every card is a little cartoon scene: a painted backdrop that fits the words, a child who tells you how to

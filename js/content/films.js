@@ -75,7 +75,7 @@ export const FILMS = {
       S.cam(0, 4.4, [9, 4.5, 27], [0, 1, 15]);
       S.do(g1, 4, 'point', 1.5);
       hopOff(S, an, 4.6, [-1.2, 11.4], 0); hopOff(S, wife, 4.9, [.2, 11.6], 0); hopOff(S, son, 5.2, [1.2, 11.2], 0);
-      S.cam(4.6, 1.6, [3.5, 2.4, 18], [0, 1, 11.4]);
+      S.cam(4.6, 1.6, [8, 2.6, 13.5], [0, 1, 11.4]);
       S.tw(6, 6, k => { boat.position.z = 15.6 + k * 26; boat.rotation.y = PI - k * PI; }, t => t * t);
       S.face(son, 6.2, [.2, 11.6]); S.do(son, 6.6, 'hug', 3); S.do(wife, 6.6, 'sad', 4);
       S.cam(6.6, 3, [0, 2.2, 17.5], [0, 1, 11.4]);
@@ -142,7 +142,7 @@ export const FILMS = {
       days(S, 7.6, 3, 1.9);
       const sprouts = row.map(([x, z]) => { const s = Pp.sprout(); s.scale.setScalar(0); return S.add(s, x, 0, z); });
       sprouts.forEach((s, i) => S.scale(s, 8.4 + i * .15, .8, 0, 1.4, undefined));
-      const vines = Pp.vines(54, 5.5); S.add(vines, 0, 0, 4.6);
+      const vines = Pp.vines(54, 4.2); S.add(vines, 0, 0, 4.6);
       S.tw(10, 3.8, k => vines.userData.grow(k), t => t);
       sprouts.forEach(s => S.scale(s, 11, .6, 1.4, 0));
       S.do(an, 13.4, 'cheer', 2); S.mood(an, 13.4, 'happy');
@@ -151,7 +151,7 @@ export const FILMS = {
     // 4. Big round fruits appear: green outside, red and sweet inside.
     S => {
       isle(S);
-      const vines = Pp.vines(54, 5.5); S.add(vines, 0, 0, 4.6); vines.userData.grow(1);
+      const vines = Pp.vines(54, 4.2); S.add(vines, 0, 0, 4.6); vines.userData.grow(1);
       const spots = [[.6, 5.4, .5], [-1.8, 6.2, .42], [2.4, 3.6, .45], [-2.6, 3.2, .38], [1.6, 7.4, .4], [-.4, 8.2, .36]];
       const melons = spots.map(([x, z, r]) => { const m = Pp.melon(r); m.scale.setScalar(.05); return S.add(m, x, 0, z, x); });
       melons.forEach((m, i) => S.scale(m, .5 + i * .35, 2.2, .05, 1, k => 1 - (1 - k) ** 3));
@@ -214,7 +214,7 @@ export const FILMS = {
     S => {
       S.sky('#9fd4f4', '#fff1d8'); L.ground(S, '#cbb88a'); L.palace(S); L.blossom(S, -8, -2.5); L.blossom(S, 8, -2.5);
       const lanterns = [-6, -3, 0, 3, 6].map(x => L.lantern(S, x, 4.3, -6.2));
-      const king = S.person(KING, 0, -6.8, 0), g1 = S.person(GUARD, -3, -6, 0), g2 = S.person(GUARD, 3, -6, 0);
+      const king = S.person(KING, 0, -5.9, 0), g1 = S.person(GUARD, -3.3, -6, 0), g2 = S.person(GUARD, 3.3, -6, 0);
       [king, g1, g2].forEach(a => { a.o.position.y = .5; });
       [g1, g2].forEach(g => { const f = Pp.flag('#e8b62a'); S.add(f); S.grab(g, 0, f, [0, -.45, .05]); });
       const an = S.person(AN, 0, 6, PI), wife = S.person(WIFE, -1.2, 6.6, PI), son = S.person(SON, 1.1, 6.4, PI, .68), m = Pp.melon(.42);
@@ -225,8 +225,8 @@ export const FILMS = {
       S.cam(3, 2.5, [5, 2.2, 2.5], [0, 1.4, -4.5]);
       [an, wife, son].forEach(a => S.do(a, 7.6, 'bow', 2));
       S.mood(king, 8, 'happy'); S.talk(king, 8.4, 2.2); S.do(king, 8.4, 'talk', 2.2);
-      S.cam(7.8, 1.6, [1.4, 2.6, -2.6], [0, 2.1, -6.8]);
-      S.walk(an, 10.2, [0, -5.3], 1); S.do(an, 11.8, 'give', 1);
+      S.cam(7.8, 1.6, [1.2, 2.4, -2], [0, 1.9, -5.9]);
+      S.walk(an, 10.2, [0, -4.9], 1); S.do(an, 11.8, 'give', 1);
       S.grab(king, 12.6, m, [0, .5, .42], 'torso'); S.do(king, 12.6, 'carry', 2); S.do(an, 12.8, 'idle');
       S.cam(10.4, 1.6, [3, 2, -2], [0, 1.3, -5.6]);
       // Tết: lanterns glow, fireworks, everyone cheers
@@ -355,9 +355,9 @@ export const FILMS = {
       // the stick snaps
       S.at(1.9, () => { S.root.attach(stick.userData.halves[1]); });
       S.tw(1.95, .9, (k, first) => { const b = stick.userData.halves[1]; if (first) b.userData.y0 = b.position.y; b.position.y = Math.max(.1, b.userData.y0 * (1 - k)); b.rotation.z = k * 1.4; }, k => k * k);
-      S.mood(hero, 2, 'o'); S.cam(1.8, 1, [4, 6, 6], [0, 4.6, -.4]);
+      S.mood(hero, 2, 'o'); S.cam(1.8, 1, [9, 6, 10], [0, 4.4, -.6]);
       S.tw(2.8, .8, k => { horse.rotation.y = PI + k * .75; }); S.mood(hero, 3.2, 'smile');
-      S.cam(3, 1.4, [3.5, 5, 7], [-4, 3.5, -3]);
+      S.cam(3, 1.4, [7, 5.5, 10], [-3.5, 3.5, -3]);
       const bam = clumps[0];
       S.help(3.6, 'Tap the bamboo to pull it up!', 'Chạm vào bụi tre để nhổ lên nào!', t => {
         S.do(hero, t, 'pull', 1.4); S.mood(hero, t, 'happy');
@@ -443,15 +443,15 @@ export const GUIDES = {
     S => {
       const { b, pebbles, teo, bong } = quanYard(S);
       S.do(teo, 0, 'kneel'); S.do(bong, 0, 'kneel');
-      S.shot([0, 2.7, 3.6], [0, 0, .2]);
-      S.cam(.2, 1.6, [.6, 2, 2.6], [-.6, 0, .3]);
+      S.shot([1.8, 3.2, 3], [0, 0, .1]);
+      S.cam(.2, 1.6, [.8, 2.2, 2.6], [-.5, .1, .4]);
       const ring = Pp.sparkle(); S.add(ring, -.6, 0, .3); S.show(ring, .8);
       S.do(teo, 1.6, 'pick', 2);
       // the five stones jump up into his hand
       pebbles[1].forEach((p, j) => { S.tw(2.2 + j * .12, .35, (k, first) => { if (first) p.userData.from = p.position.clone(); p.position.y = p.userData.from.y + Math.sin(k * PI) * .4; p.position.z = p.userData.from.z + k * .25; p.scale.setScalar(1 - k * .6); }); S.show(p, 2.6 + j * .12, false); });
       const handful = Pp.seed(); handful.scale.setScalar(3.4); handful.visible = false; S.grab(teo, 3.1, handful, [0, -.48, .06]); S.show(handful, 3.1); S.show(ring, 3.2, false);
       S.do(teo, 3.6, 'carry', 2); S.mood(teo, 3.6, 'happy');
-      S.cam(3.4, 1.4, [1, 1.4, 2.6], [-.4, .5, .9]);
+      S.cam(3.4, 1.4, [1.2, 1.5, 2.8], [-.4, .5, .9]);
     },
     // step 2: choose a direction, then drop one seed in each square
     S => {
@@ -461,7 +461,7 @@ export const GUIDES = {
       // an arrow on the ground shows the way he goes
       const arrow = new THREE.Group(); arrow.add(new THREE.Mesh(G3.Box(.7, .02, .08), new THREE.MeshBasicMaterial({ color: '#ffd23f' }))); const tip = new THREE.Mesh(G3.Cone(.12, .22, 3), new THREE.MeshBasicMaterial({ color: '#ffd23f' })); tip.rotation.set(0, 0, -H); tip.position.x = .4; arrow.add(tip);
       S.add(arrow, -.2, .05, .72); arrow.visible = false; S.show(arrow, .5);
-      S.shot([.6, 2.6, 3.2], [0, 0, .2]);
+      S.shot([1.8, 3.2, 3], [.2, 0, .1]);
       const hand = Pp.seed(); hand.scale.setScalar(3.4); S.add(hand); S.grab(teo, 0, hand, [0, -.48, .06]);
       // five stones, one into each square to the right, while he moves along
       S.do(teo, 1, 'plant', 4.6);
@@ -473,7 +473,7 @@ export const GUIDES = {
         S.walk(teo, t, [to[0] + .1, 1.2], .9, 'kneel');
       }
       S.show(hand, 5.4, false); S.show(arrow, 5.4, false);
-      S.cam(1.4, 4, [1.8, 2, 2.6], [.6, 0, .2]);
+      S.cam(1.4, 4, [2, 2.6, 2.8], [.8, 0, .3]);
       S.do(teo, 5.8, 'cheer', 1.6);
     },
     // step 3: land next to an empty square, and capture the seeds after it
@@ -481,7 +481,7 @@ export const GUIDES = {
       const { b, pebbles, teo, bong } = quanYard(S);
       pebbles[4].forEach(p => { p.visible = false; });   // the empty square
       S.do(teo, 0, 'kneel'); S.do(bong, 0, 'kneel');
-      S.shot([.4, 2.8, 3.2], [.6, 0, 0]);
+      S.shot([1.8, 3.2, 3], [.6, 0, 0]);
       const e = Pp.sparkle('#9fe0ff'); S.add(e, 1.2, 0, .3); S.show(e, .6); S.show(e, 2.4, false);
       const c = Pp.sparkle('#ffd23f'); S.add(c, 1.2, 0, -.3); S.show(c, 2.2);
       S.cam(.4, 1.6, [1.6, 1.8, 1.6], [1.2, 0, 0]);

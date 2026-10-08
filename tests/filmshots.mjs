@@ -11,13 +11,15 @@ const list = await P.page.evaluate(async () => { const F = await import('/js/con
 for (const [kind, id, n] of list) {
   if (only.length && !only.includes(id)) continue;
   await P.page.evaluate(async ([kind, id]) => {
-    if (kind === 'tale') { const { MORE_TALES } = await import('/js/talesdata.js'); const { TALES } = await import('/js/talesdata.js').catch(() => ({})); const all = [...(MORE_TALES || []), ...(TALES || [])]; const t = all.find(x => x.id === id); const { openTheatre } = await import('/js/tales.js'); openTheatre(t, { name: 'Na' }); await new Promise(r => setTimeout(r, 300)); document.querySelector('.th-auto').click(); }
-    else { const { openHowTo } = await import('/js/howto.js'); openHowTo(id, {}); await new Promise(r => setTimeout(r, 300)); document.querySelector('.ht-pp').click(); }
+    if (kind === 'tale') { const { MORE_TALES } = await import('/js/talesdata.js'); const { TALES } = await import('/js/talesdata.js').catch(() => ({})); const all = [...(MORE_TALES || []), ...(TALES || [])]; const t = all.find(x => x.id === id); const { openTheatre } = await import('/js/tales.js'); openTheatre(t, { name: 'Na' }); await new Promise(r => setTimeout(r, 1500)); document.querySelector('.th-auto').click(); }
+    else { const { openHowTo } = await import('/js/howto.js'); openHowTo(id, {}); await new Promise(r => setTimeout(r, 1500)); document.querySelector('.ht-pp').click(); }
   }, [kind, id]);
   for (let k = 0; k < n; k++) {
-    const len = await P.page.evaluate(async k => { const F = await import('/js/film.js'); const f = F.filmNow(); f.page(k); f.narrated(); return f.now.len; }, k);
-    const times = [.2, ...[...Array(Math.ceil(len / 2.6)).keys()].map(i => Math.min(len, (i + 1) * 2.6))];
-    for (const t of times) {
+    const len = await P.page.evaluate(async k => { const F = await import('/js/film.js'); const f = F.filmNow(); document.querySelectorAll('.ht-titlecard').forEach(x => x.remove()); f.page(k); f.narrated(); return f.now.len; }, k);
+    // (the page grows after the child's turn, so keep going until it has really ended)
+    for (let t = .2, i = 0; i < 14; i++, t = i * 2.6) {
+      const now = await P.page.evaluate(async () => { const F = await import('/js/film.js'); const p = F.filmNow().now; return { len: p.len, ended: p.ended }; });
+      if (t > now.len + .5) break;
       await P.page.evaluate(async t => { const F = await import('/js/film.js'); const p = F.filmNow().now; while (p.t < t) { if (p.hold) p.release(true); p.t = Math.min(t, p.t + .25); await new Promise(r => requestAnimationFrame(r)); } }, t);
       await P.page.waitForTimeout(250);
       const el = await P.page.$(kind === 'tale' ? '.th-stage' : '.ht-screen');
