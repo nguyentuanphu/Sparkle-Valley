@@ -636,6 +636,28 @@ await check('emoji', async () => {
   return out.trim().split('\n').pop() + '; no emoji in the docs';
 });
 
+await check('camcalm', async () => {
+  // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:
+  // the camera never swings faster than a slow steady pace, and a jump doesn't jerk the picture up and down
+  const P = await open(b, { w: 1180, h: 760 }); await clear(P.page);
+  const r = await P.page.evaluate(() => {
+    const h = __sv.heroes[0], dt = 1 / 60; let t = 0, maxTurn = 0, maxLookY = 0, at = -1;
+    h.place(h.pos.x, h.pos.z); h.manualCamT = 0;
+    const lookDir = () => { const d = new h.cam.position.constructor(); h.cam.getWorldDirection(d); return d; };
+    let prev = null;
+    for (let f = 0; f < 600; f++) {
+      t += dt; h.speed = 5; h.state = 'walk'; h.yaw = f < 200 ? 0 : f < 400 ? Math.PI : Math.PI / 2;   // sudden turn-rounds
+      h.onGround = !(f % 120 > 100); const jumpY = h.onGround ? 0 : .8; const y0 = h.pos.y; h.pos.y = y0 + jumpY;
+      h.finish(dt, t, __sv, 0); h.pos.y = y0;
+      const d = lookDir(); if (prev && f > 60) { const w = prev.angleTo(d) / dt; if (w > maxTurn) { maxTurn = w; at = f; } maxLookY = Math.max(maxLookY, Math.abs(d.y - prev.y) / dt); } prev = d;
+    }
+    return { maxTurn, maxLookY, at };
+  });
+  ok(r.maxTurn < 1.0, `the view turns too fast: ${r.maxTurn.toFixed(2)} rad/s (frame ${r.at})`);
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return `the view turns at most ${r.maxTurn.toFixed(2)} rad/s when the child turns round, and tips at most ${r.maxLookY.toFixed(2)}/s on a jump`;
+});
+
 await check('vehicles', async () => {
   // (round R, owner: real xe 67, Cub, Dream, xích lô, Australian motorbikes, bicycles of every kind, cars, buses, trams;
   // riders' hands on the grips and feet on the pegs; children can ride bicycles; all switchable in Studio)
@@ -694,7 +716,7 @@ await check('viwords', async () => {
     ['Long ago, a kind girl called An Tiêm was sent', 'Long ago, a kind girl called [An Tiêm] was sent'], ['Xiè xie means thank you!', 'Xiè xie means thank you!'], ['Let us play a game!', 'Let us play a game!']];
   for (const [t, want] of cases) ok(show(t) === want, `cut: ${show(t)} (wanted ${want})`);
   const P = await open(b, { w: 1180, h: 820 }); await clear(P.page);
-  const line = 'I am Auntie Tám. I sell sugarcane juice, nước mía, on Two Homes Street, just like on the streets of Bà Rịa.'; // Cô Tám's line as English says it
+  const line = "I am Miss Tam. I teach at the secondary school, trường cấp 2. After school I help at my family's sugarcane juice cart, nước mía, on Two Homes Street, just like in Bà Rịa."; // Cô Tam's line as English says it
   const r = await P.page.evaluate(async line => {
     // a phone with an English and a Vietnamese voice: record what each utterance says, and in which language
     const said = [], fake = [{ name: 'Karen', lang: 'en-AU', localService: true }, { name: 'Linh', lang: 'vi-VN', localService: true }];
@@ -707,11 +729,11 @@ await check('viwords', async () => {
     return { said, rec: pack && pack.lines[h], old: pack && pack.lines[H.packHash('en', line)], url: V.packUrl('en', line, 'f'), h };
   }, line);
   ok(JSON.stringify(r.said) === JSON.stringify([['en-AU', 'Buy some'], ['vi-VN', 'bánh khọt'], ['en-AU', 'from'], ['vi-VN', 'Vũng Tàu'], ['en-AU', ', please!']]), 'phone voice: ' + JSON.stringify(r.said));
-  ok(r.rec === 'fm' || r.rec === 'mf', `the pack has no two-voice recording of Auntie Tám's line (${r.rec})`);
+  ok(r.rec === 'fm' || r.rec === 'mf', `the pack has no two-voice recording of Cô Tam's line (${r.rec})`);
   ok(!r.old && r.url.endsWith(r.h + '.mp3'), 'the old all-English recording is still used');
   const mp3 = fs.statSync(`../voices/en/f/${r.h}.mp3`).size;
   ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
-  return `${cases.length} lines cut right; the phone says the Vietnamese words with its Vietnamese voice; recorded lines use both voices (Auntie Tám ${(mp3 / 1024).toFixed(0)} KB)`;
+  return `${cases.length} lines cut right; the phone says the Vietnamese words with its Vietnamese voice; recorded lines use both voices (Cô Tam ${(mp3 / 1024).toFixed(0)} KB)`;
 });
 
 // No phone emoji anywhere (owner, round R): every emoji on screen is the game's own drawing (js/emojiswap.js), on the

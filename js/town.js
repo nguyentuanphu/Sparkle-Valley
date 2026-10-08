@@ -1,6 +1,6 @@
 // Two Homes Street (Phố Hai Quê): a neighbourhood where Bà Rịa meets a Sydney suburb.
 // On one side: narrow Vietnamese tube houses with balconies and water tanks, a French-style villa and
-// Cô Tám's sugarcane juice cart; Bác 2, Bác 3 and Bác 4 play cards, and anh Ba and Con Vật play Tiến Lên, under the gum tree by the gate. On the other side: an Australian
+// Cô Tam's family sugarcane juice cart (Cô Tam teaches at the trường cấp 2 and helps there after school); Bác 2, Bác 3 and Bác 4 play cards, and anh Ba and Con Vật play Tiến Lên, under the gum tree by the gate. On the other side: an Australian
 // weatherboard house with a front porch, a brick house, a Hills hoist, and the park where kids play
 // folk games. Built from simple flat-coloured shapes in the "summer afternoon" style.
 import { THREE, toon, toonVC, P, merge, sprite, outline } from './gfx.js';
@@ -245,7 +245,7 @@ export function createTown(G) {
   board(['Baby clothes', 'Quần áo em bé'], 16.3, y0 + 1.95, S + 1.1, Math.PI, 1.8);
   world.boxes.push({ x0: 40.1, x1: 42.6, z0: S - .6, z1: S + .2 });
 
-  // ---------- Cô Tám's sugarcane juice cart (nước mía) ----------
+  // ---------- the sugarcane juice cart (nước mía) where Cô Tam, a secondary-school teacher, helps after school ----------
   const cart = [], kx = 28.9, kz = N + 1.6;
   cart.push(P(Box(2.4, .9, 1), '#3a7fc2', [0, .75, 0]), P(Box(2.4, .9, .9), '#d6eef6', [0, 1.65, -.05]), P(Box(2.5, .08, 1.1), '#f4f4f4', [0, 2.12, 0]));
   cart.push(P(Cyl(.32, .32, .1, 12), '#2f3336', [-.9, .32, .55], [Math.PI / 2, 0, 0]), P(Cyl(.32, .32, .1, 12), '#2f3336', [.9, .32, .55], [Math.PI / 2, 0, 0]));
@@ -291,7 +291,7 @@ export function createTown(G) {
     person(L2('hoodie', '#3a78c8', '#1d1412', 'spiky'), cxL + 1, czL, -Math.PI / 2, true)
   ];
   players[5].root.scale.setScalar(.82);
-  ['Bác 2', 'Bác 3', 'Bác 4', 'Bi', 'Anh Ba', 'Con Vật'].forEach((n, k) => nameAvatar(players[k], n)); nameAvatar(sau, 'Cô Tám');
+  ['Bác 2', 'Bác 3', 'Bác 4', 'Bi', 'Anh Ba', 'Con Vật'].forEach((n, k) => nameAvatar(players[k], n)); nameAvatar(sau, 'Cô Tam');
   // teenagers kicking a shuttlecock (đá cầu) in the park
   const ring = [[29, 67.5], [32, 66], [31.5, 69.5]];
   const teens = ring.map(([x, z], k) => person(L2(['shirt', 'overalls', 'dress'][k], ['#3cc7e8', '#5fd39a', '#ff7eb8'][k], '#1d1412', ['spiky', 'short', 'ponytail'][k], 'none', '#e0aa80'), x, z, 0));
@@ -310,7 +310,7 @@ export function createTown(G) {
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; onLang(() => { draw(); t.needsUpdate = true; });
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set(3, .75, 1); s.position.set(x, y, z); scene.add(s); return s;
   };
-  tag('Cô Tám 🥤', kx, y0 + 2.6, kz - 1.1);
+  tag('Cô Tam 🥤', kx, y0 + 2.6, kz - 1.1);
   // the card players: Bác 2, Bác 3 and Bác 4 (and Bi from the villa watching)
   const yT = heightAt(cxT, czT), yL = heightAt(cxL, czL);
   tag('Bác 2', cxT - 1, yT + 2.05, czT); tag('Bác 3', cxT + 1, yT + 2.05, czT); tag('Bác 4', cxT, yT + 2.35, czT - .9);

@@ -461,10 +461,10 @@ async function kidTalk(h, game, name, line) {
 G.kidTalk = (h, game, name, line) => kidTalk(h, game, name, line);
 G.townTalk = async (h, who) => {
   if (who === 'sau') {
-    const k = await dialog('Cô Tám', [['Nước mía đây! Fresh sugarcane juice, cold and sweet. A glass gives you lots of energy!', 'Nước mía đây con! Mát lạnh, ngọt lịm. Uống một ly là khỏe re!']],
+    const k = await dialog('Cô Tam', [['School is out! Nước mía đây! Fresh sugarcane juice, cold and sweet. A glass gives you lots of energy!', 'Tan trường rồi! Nước mía đây con! Mát lạnh, ngọt lịm. Uống một ly là khỏe re!']],
       [[`🥤 Buy a glass (${fmt(5)})`, `🥤 Mua một ly (${fmt(5)})`], ['👋 Bye', '👋 Tạm biệt']]);
     if (k !== 0) return;
-    if (farm.coins < 5) { await dialog('Cô Tám', [['Not enough money? Here, this one is on me. Have a nice day!', 'Không đủ tiền hả? Thôi cô mời con ly này. Chúc con vui nhé!']]); }
+    if (farm.coins < 5) { await dialog('Cô Tam', [['Not enough money? Here, this one is on me. Have a nice day!', 'Không đủ tiền hả? Thôi cô mời con ly này. Chúc con vui nhé!']]); }
     else addMoney(null, -5);
     SFX.chime(); h.bonusStamina = Math.max(h.bonusStamina || 0, 1); // one extra stamina wheel h.stamina = h.staminaMax; h.hearts = Math.max(h.hearts, h.profile.hearts);
     await reward('🥤', T('Yum! Sugarcane juice!', 'Ngon quá! Nước mía!'), T('Full of energy: you can run and climb longer.', 'Tràn đầy năng lượng: chạy và leo được lâu hơn.'));

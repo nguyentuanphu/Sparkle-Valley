@@ -404,6 +404,8 @@ export function seatRider(A, v, at, grips, feet, scale = .9, attach = true) {
   let lean = 0;
   for (let k = 0; k <= 14; k++) {
     lean = k * .05; A.torso.rotation.set(lean, 0, 0); A.torso.position.copy(hip).sub(hip.clone().applyEuler(A.torso.rotation));
+    // the head sits on the rig, not on the torso: carry it along so it stays on the neck, tipped back a little to look ahead
+    A.head.position.copy(A.torso.position).add(new THREE.Vector3(0, 1.33, 0).applyEuler(A.torso.rotation)); A.head.rotation.set(lean * .35, 0, 0);
     A.root.updateMatrixWorld(true);
     if (!grips || Math.max(aim(A.armL, W(grips[0]), .42 * scale), aim(A.armR, W(grips[1]), .42 * scale)) <= 1.02) break;
   }
