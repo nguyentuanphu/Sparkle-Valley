@@ -15,7 +15,7 @@ const CELL = .5, HALF = 200, N = Math.round(HALF * 2 / CELL), LO = .35, HI = 1.6
 export function buildSolids(G) {
   const { scene, world: W } = G, grid = new Uint8Array(N * N);
   const idx = (x, z) => { const i = Math.floor((x + HALF) / CELL), j = Math.floor((z + HALF) / CELL); return i < 0 || j < 0 || i >= N || j >= N ? -1 : j * N + i; };
-  const skipTree = o => { for (let p = o; p && p !== scene; p = p.parent) { const u = p.userData || {}; if (u.avatar || u.road || u.walk || u.moving) return true; } return false; };
+  const skipTree = o => { for (let p = o; p && p !== scene; p = p.parent) { const u = p.userData || {}; if (u.avatar || u.road || u.walk || u.moving || u.noSolid) return true; } return false; };
   const boats = new Set(); ((G.ferries && G.ferries.ferries) || []).forEach(F => F.model.traverse(o => boats.add(o)));
   // which meshes are still: their place now and a moment later
   const cand = [];
@@ -27,7 +27,9 @@ export function buildSolids(G) {
     if (o.isInstancedMesh && g.boundingBox.max.y - g.boundingBox.min.y < 1.4) return; // grass and flowers
     cand.push({ o, m0: o.matrixWorld.clone() });
   });
-  return new Promise(resolve => setTimeout(() => {
+  // (the second look waits until the valley has been drawn for a few frames, so things that walk or drive have moved and
+  // are left out: round R, the title shows before the first frame)
+  return new Promise(resolve => (G.firstFrames || Promise.resolve()).then(() => setTimeout(() => {
     const t0 = performance.now(); scene.updateMatrixWorld(true);
     const still = cand.filter(c => c.o.parent && c.o.matrixWorld.equals(c.m0)).map(c => c.o);
     const gcache = new Float32Array(N * N).fill(NaN), ground = (x, z) => { const k = idx(x, z); if (k < 0) return W.groundAt(x, z); let g = gcache[k]; if (g !== g) g = gcache[k] = W.groundAt(Math.floor((x + HALF) / CELL) * CELL - HALF + CELL / 2, Math.floor((z + HALF) / CELL) * CELL - HALF + CELL / 2); return g; };
@@ -88,7 +90,7 @@ export function buildSolids(G) {
     W.solidStats = { meshes: still.length, cells: marked, ms: Math.round(performance.now() - t0), work: Math.round(work), cached: fromCache };
     resolve(W.solidStats);
     }
-  }, 1200));
+  }, 1200)));
 }
 // push a body of radius r out of solid cells (used by world.collide)
 export function pushOutOfSolids(W, pos, r) {

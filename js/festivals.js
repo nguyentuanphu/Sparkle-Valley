@@ -157,7 +157,7 @@ export const showName = F => ({ fireworks: ['fireworks', 'pháo hoa'], lanterns:
 export function createFestivals(G) {
   const { scene, world } = G, W = world;
   const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.4, 'rgba(255,255,255,.5)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
-  const group = new THREE.Group(); scene.add(group);
+  const group = new THREE.Group(); scene.add(group); group.userData.noSolid = true; // (decorations come and go with the dates: never part of the solid map)
   const bursts = [], tables = [], doors = [];
   let active = [], glowMeshes = [];
   const free = (x, z, r = 1) => heightAt(x, z) > WATER + .3 && !W.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + r) && !W.boxes.some(b => x > b.x0 - r && x < b.x1 + r && z > b.z0 - r && z < b.z1 + r);

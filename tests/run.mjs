@@ -624,7 +624,7 @@ await check('tales', async () => {
 
 await check('emoji', async () => {
   // every emoji the game uses has a drawing in js/art.js (tools/emoji-audit.mjs)
-  const { execFileSync } = await import('child_process');
+  const { execFileSync } = await import('child_process'), { fileURLToPath } = await import('url');
   let out = ''; try { out = execFileSync(process.execPath, ['../tools/emoji-audit.mjs'], { encoding: 'utf8' }); } catch (e) { out = (e.stdout || '') + ''; ok(false, out.split('\n').slice(0, 12).join(' | ')); }
   // (owner, round R: "don't use emoji at all, including in all our docs, only our drawings") no emoji in the docs either
   const EMO = /\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}]/u, ARROWS = /^[\u2190-\u21FF\u25A0-\u25FF\u2B05-\u2B07\u23E9-\u23FA©®™‼⁉〰]$/u, inDocs = [];
@@ -757,6 +757,12 @@ await check('halves', async () => {
   }
   if (out.length) throw new Error(out.join('; '));
   return 'side by side and face to face: each window opens in its own child\'s half and pauses only that child; both can have one open';
+});
+await check('preload', async () => {
+  // (round R, faster launch) index.html lists every start-up script so the browser fetches them all at once
+  const { execFileSync } = await import('child_process'), { fileURLToPath } = await import('url');
+  try { return execFileSync(process.execPath, [fileURLToPath(new globalThis.URL('../tools/preload.mjs', import.meta.url)), '--check'], { encoding: 'utf8' }).trim(); }
+  catch (e) { throw new Error((e.stdout || e.message).trim()); }
 });
 await check('camcalm', async () => {
   // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:

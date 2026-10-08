@@ -16,7 +16,7 @@ const urlOf = name => `./__sv-world/${BUILD}/${name}.png`;
  * @param {number} size
  * @param {(size: number) => HTMLCanvasElement} paint
  */
-export function cachedCanvas(name, size, paint) {
+export function cachedCanvas(name, size, paint, after = null) {
   const c = document.createElement('canvas'); c.width = c.height = size;
   const st = {
     canvas: c, ready: false, /** @type {null | 'cache' | 'painted'} */ from: null, ms: 0, /** @type {null | (() => void)} */ onReady: null,
@@ -35,8 +35,8 @@ export function cachedCanvas(name, size, paint) {
       }).catch(() => { });
     }, 'image/png');
   };
-  // paint after the title screen is up, not before it
-  const later = () => setTimeout(() => st.now(), 0);
+  // paint after the title screen is up, not before it (and, with `after`, once the valley is built: round R, faster launch)
+  const later = () => (after || Promise.resolve()).then(() => setTimeout(() => st.now(), 0));
   if (!has()) later();
   else caches.open(CACHE).then(k => k.match(urlOf(name))).then(r => r ? r.blob() : null).then(b => b ? createImageBitmap(b) : null)
     .then(bm => { if (st.ready) return; if (bm) { fill(bm); st.from = 'cache'; } else later(); }).catch(later);

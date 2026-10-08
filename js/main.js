@@ -115,10 +115,25 @@ const scene = new THREE.Scene();
   const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), .04).texture; pm.dispose();
 }
 // how long each start-up step takes (ms since this file began; tests/run.mjs "perf" and Grown-ups › Advanced read it)
-const BOOT0 = performance.now(), bootTimes = {}, bootMark = k => { bootTimes[k] = Math.round(performance.now() - BOOT0); };
-const world = createWorld(scene, quality); bootMark('world');
+const BOOT0 = performance.now(), bootTimes = { start: Math.round(BOOT0) }, bootMark = k => { bootTimes[k] = Math.round(performance.now() - BOOT0); };
+// (round R, faster launch) the title and "Who's playing?" show at once; the valley is built behind them in steps, with a
+// breath between steps so the screen keeps answering taps. Pressing Go before it is ready waits a moment (startWhenBuilt).
+let framesSeen = 0, framesDone = null; const firstFrames = new Promise(r => { framesDone = r; });
+let bootDone = null, booted = false; const bootReady = new Promise(r => { bootDone = () => { booted = true; r(); }; });
+const breathe = () => new Promise(r => setTimeout(r, 0));
+async function startWhenBuilt(mode, chosen) {
+  if (!booted) {
+    const w = document.createElement('div'); w.className = 'bootwait'; w.innerHTML = `<div class="spin"></div><p>${T('Getting the valley ready…', 'Đang chuẩn bị thung lũng…')}</p>`;
+    document.body.appendChild(w); await bootReady; w.remove();
+  }
+  startSession(mode, chosen);
+}
+document.getElementById('boot')?.remove();
+showTitle(() => showWho((mode, chosen) => startWhenBuilt(mode, chosen)));
+await breathe();
+const world = createWorld(scene, quality); bootMark('world'); await breathe();
 // the map picture: read back from the device when this build painted it before (js/worldcache.js)
-const mapPic = cachedCanvas('map', 256, paintMap); bootMark('map');
+const mapPic = cachedCanvas('map', 256, paintMap, bootReady); bootMark('map');
 mapPic.onReady = () => { G.fogMaps = {}; }; // (a map shown before the picture was ready is drawn again)
 const titleCam = new THREE.PerspectiveCamera(50, 1, .3, 1200);
 
@@ -128,6 +143,7 @@ const G = {
   settings, world, scene, pads, heroes: [], huds: [], mode: 'solo', partner: null, zoom: 1,
   fogMaps: {}, regionOf: [], interactables: [], gatherState: {}, bubbles: []
 };
+G.firstFrames = firstFrames; // (the valley has been drawn a few times: js/solids.js)
 // (round R, owner) two children on one screen: each child's windows sit in their own half and pause only that child, so
 // the other keeps playing. With two halves "paused" means the half of whoever touched last (G.lastPlayer); alone it is a flag.
 let pausedFlag = false;
@@ -1309,6 +1325,7 @@ const worldHidden = () => (G.simple && G.simple.open) || !!document.querySelecto
 G.worldHidden = worldHidden;
 function frame(now) {
   requestAnimationFrame(frame);
+  if (framesSeen < 4 && ++framesSeen === 4) framesDone(); // (js/solids.js waits for these)
   if (FRAME_MS && now - last < FRAME_MS - 4) return;
   if (playing) adaptResolution(now - last - (FRAME_MS ? FRAME_MS - 1000 / 60 : 0)); // (the wait between frames is not slowness)
   const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
@@ -1419,7 +1436,7 @@ function frame(now) {
 loadClips();
 createChatter(G);
 setupNPCs(); setupInteractables();
-bootMark('people'); G.farm = createFarm(G); world.updaters.push(G.farm.update);
+bootMark('people'); G.farm = createFarm(G); world.updaters.push(G.farm.update); await breathe();
 G.places = createPlaces(G); world.updaters.push(G.places.update);
 G.town = createTown(G);
 G.GAMES_ICON = id => (GAMES[id] || {}).icon || "🎮";
@@ -1442,13 +1459,13 @@ const walkedAway = () => {
 };
 onLang(() => G.huds.forEach(hd => hd.refreshWho && hd.refreshWho()));
 createAsia(G);
-bootMark('town'); createRoads(G); bootMark('roads');
+bootMark('town'); createRoads(G); bootMark('roads'); await breathe();
 createCities(G);
 createHawkers(G);
 createSuburbs(G); // speciality buildings along the roads out of each city (before the homes are made)
 world.familyBuilt = addFamilyBuildings(G); // houses and buildings the family added in Sparkle Studio (they become homes too)
 buildPowerLines(G); // power poles (when switched on in Studio) wired to each other by themselves
-bootMark('pretraffic'); createTraffic(G); bootMark('traffic'); // motorbikes, cars, buses, trams, xích lô and bicycles (js/traffic.js; Studio switches)
+bootMark('pretraffic'); createTraffic(G); bootMark('traffic'); await breathe(); // motorbikes, cars, buses, trams, xích lô and bicycles (js/traffic.js; Studio switches)
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 createSymbols(G, { sfx: SFX, dialog }); // each region's symbol animal, in a corner of its city square
 createRegionSites(G); // more famous places of each region, just outside its city
@@ -1498,11 +1515,11 @@ for (const c of (Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {
 G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 'buns', 'none'), kidLook('overalls', '#3cc7e8', '#3b2618', 'short', 'cap'), kidLook('dress', '#ffb52e', '#1d1412', 'ponytail', 'flower')] });
 // level land under every building, stall and landmark placed above (and anything added in future rounds)
 world.familyEdits = applyWorldEdits(G); // buildings the family moved or removed in Sparkle Studio
-bootMark('things'); widenFlatLand(world, scene); bootMark('wideland'); // more level land round every village and city, for new buildings (nothing moves on the map)
+bootMark('things'); widenFlatLand(world, scene); bootMark('wideland'); await breathe(); // more level land round every village and city, for new buildings (nothing moves on the map)
 createAds(G); // the family's own signboards (only when Sparkle Studio switched ads on)
-world.levelled = levelUnderBuildings(world, scene); bootMark('levelled');
+world.levelled = levelUnderBuildings(world, scene); bootMark('levelled'); await breathe();
 world.roadside = plantRoadside(G); // soft road edges and flowers, once everything stands
-bootMark('roadside'); G.solidsReady = buildSolids(G); bootMark('solids'); // nobody walks through houses and things (js/solids.js)
+bootMark('roadside'); G.solidsReady = buildSolids(G); bootMark('solids'); // (no breath here: the solid map is read once everything below is placed too) // nobody walks through houses and things (js/solids.js)
 startPackBar(); // the recorded voices downloading: a small bar at the bottom (js/packbar.js)
 startCounting(G); // how many children play, and what they play, for Studio's report (js/players.js; Grown-ups can switch it off)
 // solid things the camera must never go inside: big, opaque, still-standing meshes (collected once, refreshed
@@ -1534,11 +1551,12 @@ G.claims.wrap(); // (after every pickup exists: first come, first served online)
 setupBubbles(); setupAreaSigns(); setupGuides();
 $('#songBtn').onclick = () => G.places.nextSong();
 resize();
-$('#boot').remove();
-requestAnimationFrame(frame);
-showTitle(() => showWho((mode, chosen) => startSession(mode, chosen)));
+// (round R, faster launch) the first picture prepares every material's shader at once (a few seconds on a phone): the
+// title is already painted by then, and the valley is drawn behind it a frame later
+{ let go = false; const start = () => { if (go) return; go = true; bootMark('shaders'); requestAnimationFrame(frame); };
+  requestAnimationFrame(() => setTimeout(start, 30)); }
 import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { if (playing) keepSpot(); save(); hush(); } });
 addEventListener('pagehide', () => { if (playing) keepSpot(); saveProfiles(true); });
 if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) navigator.serviceWorker.register('sw.js').catch(() => { });
-bootMark('ready'); G.bootTimes = bootTimes;
+bootMark('ready'); G.bootTimes = bootTimes; bootDone();
