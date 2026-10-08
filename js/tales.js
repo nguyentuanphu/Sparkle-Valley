@@ -5,7 +5,7 @@
 import { T } from './i18n.js';
 import { sayAsync, hush } from './voice.js';
 import { SFX, Music } from './audio.js';
-import { el, esc, wait } from './util.js';
+import { el, esc, wait, flip } from './util.js';
 import { CAST, SCENES } from './cartoon.js';
 import { pic, hasArt } from './art.js';
 
@@ -90,7 +90,7 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
     m.querySelector('.th-auto').onclick = e => { auto = !auto; e.currentTarget.classList.toggle('on', auto); if (auto) draw(); };
     m.querySelector('.th-x').onclick = () => finish(false);
     // swipe left / right to turn the page
-    let sx = null; stage.addEventListener('pointerdown', e => { sx = e.clientX; }); stage.addEventListener('pointerup', e => { if (sx == null) return; const d = e.clientX - sx; sx = null; if (d < -50) next(); else if (d > 50 && k > 0) { k--; draw(); } });
+    let sx = null; stage.addEventListener('pointerdown', e => { sx = e.clientX; }); stage.addEventListener('pointerup', e => { if (sx == null) return; const d = (e.clientX - sx) * flip(stage); sx = null; if (d < -50) next(); else if (d > 50 && k > 0) { k--; draw(); } });
     const onKey = e => { if (!alive) return removeEventListener('keydown', onKey, true); if (e.code === 'ArrowRight' || e.code === 'Space') { e.preventDefault(); e.stopImmediatePropagation(); next(); } else if (e.code === 'ArrowLeft' && k > 0) { e.preventDefault(); e.stopImmediatePropagation(); k--; draw(); } else if (e.code === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); finish(false); } };
     addEventListener('keydown', onKey, true);
     draw();

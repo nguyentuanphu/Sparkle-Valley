@@ -5,7 +5,7 @@
 // photos of the article (its main picture first) are added, and every photo shown is kept on this device, so next
 // time it works without the internet too. Street View needs the internet.
 import { T } from './i18n.js';
-import { el, esc } from './util.js';
+import { el, esc, flip } from './util.js';
 import { SFX } from './audio.js';
 import { say } from './voice.js';
 import { pic } from './art.js';
@@ -146,7 +146,7 @@ export function openPhotos(name, sources, { icon = '📷', id = null, onClose } 
   };
   const step = d => { SFX.tap(); clearInterval(auto); show(k + d); auto = setInterval(() => show(k + 1), 7000); };
   m.querySelector('.rv-prev').onclick = () => step(-1); m.querySelector('.rv-next').onclick = () => step(1);
-  let sx = null; stage.addEventListener('pointerdown', e => { sx = e.clientX; }); stage.addEventListener('pointerup', e => { if (sx != null && Math.abs(e.clientX - sx) > 40) step(e.clientX < sx ? 1 : -1); sx = null; });
+  let sx = null; stage.addEventListener('pointerdown', e => { sx = e.clientX; }); stage.addEventListener('pointerup', e => { if (sx != null && Math.abs(e.clientX - sx) > 40) step((e.clientX - sx) * flip(stage) < 0 ? 1 : -1); sx = null; });
   photosFor(sources).then(r => {
     if (closed) return;
     if (!r) {

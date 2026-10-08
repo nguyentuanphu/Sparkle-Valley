@@ -2043,3 +2043,8 @@ body.songs-on .htoast { display: none; } /* the valley's hints stay behind the S
 /* the play report's buttons (round P: its row borrowed a game's narrow ".bar" style and the words stood on end) */
 .rp-bar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 16px; }
 .rp-bar .btn { width: auto; min-height: 48px; white-space: nowrap; }
+
+/* Two players face to face (round R): the far player's half and the windows they open are turned half a turn */
+.hud.far { transform-origin: 50% 50%; }
+.facewrap { position: fixed; inset: 0; transform: rotate(180deg); pointer-events: none; z-index: 60; }
+.facewrap > * { pointer-events: auto; }

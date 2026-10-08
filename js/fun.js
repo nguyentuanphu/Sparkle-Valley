@@ -8,7 +8,7 @@ import { SFX, noise } from './audio.js';
 import { settings, saveProfiles } from './state.js';
 import { STICKERS } from './data.js';
 import { PLACES, placeStickers } from './placebook.js';
-import { el, esc, pick } from './util.js';
+import { el, esc, pick, flip } from './util.js';
 import { modal } from './popups.js';
 
 // ---------- confetti: js/popups.js (architecture step 2), passed on from here ----------
@@ -104,7 +104,7 @@ export function createFun(G) {
         d.onpointerdown = e => {
           e.preventDefault(); sel = k; card.querySelector('.sb-tools').hidden = false; pg.querySelectorAll('.sb-item').forEach(x => x.classList.remove('sel')); d.classList.add('sel');
           const R = pg.getBoundingClientRect();
-          const move = ev => { it.x = Math.max(0, Math.min(100, (ev.clientX - R.left) / R.width * 100)); it.y = Math.max(0, Math.min(100, (ev.clientY - R.top) / R.height * 100)); d.style.left = it.x + '%'; d.style.top = it.y + '%'; };
+          const move = ev => { const fl = flip(d) < 0; it.x = Math.max(0, Math.min(100, (fl ? R.right - ev.clientX : ev.clientX - R.left) / R.width * 100)); it.y = Math.max(0, Math.min(100, (fl ? R.bottom - ev.clientY : ev.clientY - R.top) / R.height * 100)); d.style.left = it.x + '%'; d.style.top = it.y + '%'; };
           const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); saveProfiles(); };
           addEventListener('pointermove', move); addEventListener('pointerup', up);
         };

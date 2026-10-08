@@ -6,7 +6,7 @@ import { say, spoken, voicePack, voiceDiag, voiceMisses, clearVoiceMisses, voice
 import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt, cur, spoken as money } from './money.js';
-import { el, esc, $, clamp, wait } from './util.js';
+import { el, esc, $, clamp, wait, local } from './util.js';
 import { avatarURL, applyNpcFaces } from './avatar.js';
 import { confetti } from './popups.js';
 import { placeBookHTML, bindPlaceBook } from './placebook.js';
@@ -301,6 +301,9 @@ export function openGrownups(after) {
         <label class="tog"><input type="checkbox" id="gRain" ${settings.noRain ? '' : 'checked'}> ${T('Rain showers and rainbows', 'Mưa rào và cầu vồng')}</label>
         <label class="tog"><input type="checkbox" id="gCalm" ${settings.calm ? 'checked' : ''}> ${T('Calm mode: quieter music, fewer moving effects', 'Chế độ êm dịu: nhạc nhỏ hơn, ít hiệu ứng chuyển động')}</label>
       </div>
+<h3>👫 ${T('Two players on one device', 'Hai người chơi trên một máy')}</h3>
+      <div class="seg tview">${[['auto', T('Automatic', 'Tự động')], ['face', T('Face to face', 'Đối diện nhau')], ['side', T('Side by side', 'Cạnh nhau')]].map(([k, l]) => `<button data-tv="${k}" class="${(settings.twoView || 'auto') === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+      <p class="note">${T('Face to face: lay the tablet flat with a child at each end; each half of the screen faces its child. Automatic uses face to face on touch screens and side by side on a computer.', 'Đối diện nhau: đặt máy tính bảng nằm trên bàn, mỗi bé ngồi một đầu; mỗi nửa màn hình quay về phía bé đó. Tự động: đối diện trên màn hình cảm ứng, cạnh nhau trên máy tính.')}</p>
 <h3>🔠 ${T('Text size', 'Cỡ chữ')}</h3>
       <div class="seg tsize">${[[0, 'A'], [1, 'A'], [2, 'A']].map(([k, l]) => `<button data-ts="${k}" class="${(settings.textSize || 0) === k ? 'on' : ''}" style="font-size:${16 + k * 5}px" aria-label="${[T('Normal', 'Bình thường'), T('Big', 'To'), T('Bigger', 'To hơn')][k]}">${l}</button>`).join('')}</div>
       <div>
@@ -384,6 +387,7 @@ export function openGrownups(after) {
     card.querySelector('#gRain').onchange = e => { settings.noRain = !e.target.checked; saveSettings(); };
     chk('#gCalm', 'calm', applyComfort);
     card.querySelector('#gCap').onchange = e => { settings.captions = e.target.checked; saveSettings(); };
+    card.querySelectorAll('.seg.tview button').forEach(b => b.onclick = () => { settings.twoView = b.dataset.tv; saveSettings(); dispatchEvent(new Event('resize')); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { settings.textSize = +b.dataset.ts; saveSettings(); applyComfort(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.rest button').forEach(b => b.onclick = () => { settings.restMins = b.dataset.r; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     chk('#gBil', 'bilingual'); chk('#gVoice', 'voice'); chk('#gMusic', 'music', () => settings.music ? Music.refresh() : Music.stop()); chk('#gSound', 'sound'); chk('#gDay', 'alwaysDay');
@@ -646,7 +650,7 @@ export function openPad(game, i, tab) {
       spots.push({ x: P.pos.x, z: P.pos.z, name: P.name, r: 16, friend: P.id });
     });
     cv.onclick = e => {
-      const r = cv.getBoundingClientRect(), wx = (e.clientX - r.left) / r.width * SIZE - HALF, wz = (e.clientY - r.top) / r.height * SIZE - HALF;
+      const q = local(cv, e), r = q.r, wx = q.x / r.width * SIZE - HALF, wz = q.y / r.height * SIZE - HALF;
       const s = spots.slice().sort((a, b) => Math.hypot(a.x - wx, a.z - wz) - Math.hypot(b.x - wx, b.z - wz)).find(s => Math.hypot(s.x - wx, s.z - wz) < (s.r || 10)); if (!s) return;
       const ok = el('div', 'travel', `<p>${T('Travel to', 'Bay đến')} <b>${esc(s.name)}</b>?</p><button class="btn primary">✨ ${T('Fly there', 'Bay đến đó')}</button><button class="btn walk">👣 ${T('Walk there', 'Đi bộ đến đó')}</button><button class="btn no">${T('No', 'Không')}</button>`);
       body.appendChild(ok);

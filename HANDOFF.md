@@ -104,6 +104,7 @@ In each phase: run the suite before and after, take before/after screenshots fro
 | `spill` | No HUD, Sparkle Pad tab or Games hub text runs out of its box at 320/375/1024 px in both languages |
 | `language` | Vietnamese mode shows none of the common English labels |
 | `two-players` | Split screen: 2 heroes, 2 HUDs, pets for both |
+| `facetoface` | Two players on a tablet (tall and wide): the far half, its buttons, joystick and the windows its player opens are turned to face the far end; a computer stays side by side |
 | `games` | All 67 mini-games open and close without errors |
 | `features` | 7 cities, 26 kiosks, 7 hosts, ≥ 47 landmarks (53 now), house 8, 38 tales, Dragon Bridge walkable, pets/pet yard, chat auto-close, shortcuts, zoom, Games hub → host/storyteller, folk-game chatter |
 | `camera` | At every landmark sign facing 4 ways, the camera is not inside or blocked by a building |

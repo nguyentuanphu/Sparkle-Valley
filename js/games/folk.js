@@ -5,7 +5,7 @@ import { register, tapOne } from './frame.js';
 import { T, numWord } from '../i18n.js';
 import { settings } from '../state.js';
 import { sayIn } from '../voice.js';
-import { el, wait, pick, rand, clamp, shuffle } from '../util.js';
+import { el, wait, pick, rand, clamp, shuffle, local } from '../util.js';
 
 export const count = n => sayIn(settings.lang, numWord(n));
 // A star flies from a point on a canvas: frame.right() wants an element, so make a tiny one there.
@@ -223,7 +223,7 @@ register({
         g.globalAlpha = b.fade != null ? b.fade : 1; g.beginPath(); g.arc(b.x, b.y, b.r, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
       }
     };
-    const pt = e => { const r = c.getBoundingClientRect(); return { x: (e.clientX - r.left) * w / r.width, y: (e.clientY - r.top) * h / r.height }; };
+    const pt = e => { const q = local(c, e); return { x: q.x * w / q.r.width, y: q.y * h / q.r.height }; };
     c.onpointerdown = e => { if (moving) return; const p = pt(e); if (Math.hypot(p.x - sh.x, p.y - sh.y) < sh.r * 4 || p.y > h * .7) { aim = p; c.setPointerCapture(e.pointerId); } };
     c.onpointermove = e => { if (aim) aim = pt(e); };
     c.onpointerup = () => {
@@ -382,7 +382,7 @@ register({
     const finished = new Promise(r => done = r), ground = h * .9;
     const hitR = api.little ? 70 : 52;
     c.onpointerdown = e => {
-      const r = c.getBoundingClientRect(), px = (e.clientX - r.left) * w / r.width, py = (e.clientY - r.top) * h / r.height;
+      const q = local(c, e), r = q.r, px = q.x * w / r.width, py = q.y * h / r.height;
       if (!api.little && Math.hypot(px - x, py - y) > hitR) return;   // little ones can tap anywhere
       vy = -Math.sqrt(2 * grav * h * (.45 + Math.random() * .15)); vx = (Math.random() - .5) * w * (api.little ? .25 : .5); kicks++; foot = .25;
       api.sfx.jump(); count(kicks); api.dots(need, kicks); if (kicks >= need) done();

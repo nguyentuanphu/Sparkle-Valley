@@ -70,6 +70,7 @@ export const settings = Object.assign({
   sound: true, music: true, voice: true,
   voiceEn: '', voiceVi: '',
   bilingual: false,      // speak the other language too, after a short pause
+  twoView: 'auto',       // two players: 'face' (each half turned to its own end), 'side' (both one way), 'auto' = face on touch screens
   alwaysDay: false,
   quality: 'auto',       // 'auto' | 'low' | 'high'
   camSpeed: 1,

@@ -111,7 +111,8 @@ export class Hud {
   refreshWho() { const p = this.hero.profile; this.q('.pav').src = avatarURL(p); this.q('.pname').textContent = nm(p.name); }
   toggleEmotes(v) { const e = this.q('.emotes'); e.hidden = v == null ? !e.hidden : !v; }
   layout(r, two) {
-    Object.assign(this.root.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
+    Object.assign(this.root.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px', transform: r.rot ? `rotate(${r.rot}deg)` : '' });
+    this.root.classList.toggle('far', r.rot === 180);   // (two players face to face: this half is turned to the far end)
     const small = two || r.w < 560 || r.h < 420; this.root.classList.toggle('small', small); this.rect = r;
     // on phones the dock has room for four buttons only, so Talk, Music and Sound move to a small row under the clock
     const tools = this.q('.tools'), dock = this.q('.dock');

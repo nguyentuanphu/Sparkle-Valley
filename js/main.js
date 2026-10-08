@@ -1096,10 +1096,43 @@ G.drawOnlinePanel = (body, redraw) => {
 };
 
 // ---------- layout ----------
+// Two players face to face (owner, round R: a tablet lying on the table with a child at each end): the screen is cut
+// across the middle; player 1 has the near half, player 2 the far half turned half a turn (rot 180) so it faces them.
+// On a computer or TV both halves face the same way, side by side ('side'). Grown-ups can pick either (settings.twoView).
+const faceToFace = () => settings.twoView === 'face' || (settings.twoView !== 'side' && document.body.classList.contains('touch'));
 function rects() {
   const W = innerWidth, H = innerHeight;
-  if (G.heroes.length < 2) return [{ x: 0, y: 0, w: W, h: H }];
-  return W >= H ? [{ x: 0, y: 0, w: W / 2, h: H }, { x: W / 2, y: 0, w: W / 2, h: H }] : [{ x: 0, y: 0, w: W, h: H / 2 }, { x: 0, y: H / 2, w: W, h: H / 2 }];
+  if (G.heroes.length < 2) return [{ x: 0, y: 0, w: W, h: H, rot: 0 }];
+  if (faceToFace()) return [{ x: 0, y: H / 2, w: W, h: H / 2, rot: 0 }, { x: 0, y: 0, w: W, h: H / 2, rot: 180 }];
+  return W >= H ? [{ x: 0, y: 0, w: W / 2, h: H, rot: 0 }, { x: W / 2, y: 0, w: W / 2, h: H, rot: 0 }] : [{ x: 0, y: 0, w: W, h: H / 2, rot: 0 }, { x: 0, y: H / 2, w: W, h: H / 2, rot: 0 }];
+}
+G.rects = rects; G.faceToFace = () => G.heroes.length > 1 && faceToFace();
+// Windows (the Pad, games, stories, dialogs, rewards) are added to the page; face to face, one opened by the player at
+// the far end is moved into a full-screen holder turned half a turn, so it faces them (G.lastPlayer = whoever touched last).
+G.lastPlayer = 0;
+const faceWrap = (() => { const w = document.createElement('div'); w.className = 'facewrap'; return w; })();
+const NOT_A_WINDOW = /(^|\s)(hud|stick|facewrap|caption|title)(\s|$)/;
+document.addEventListener('pointerdown', e => {
+  if (!G.faceToFace()) return;
+  const t = e.target instanceof Element ? e.target : null;
+  if (t && t.closest('.facewrap')) G.lastPlayer = 1;
+  else if (t && t.closest('.hud')) G.lastPlayer = Math.max(0, G.huds.findIndex(h => h.root.contains(t)));
+  else G.lastPlayer = e.clientY < innerHeight / 2 ? 1 : 0;
+}, true);
+new MutationObserver(list => {
+  if (!G.faceToFace()) { if (faceWrap.childElementCount) [...faceWrap.children].forEach(c => document.body.appendChild(c)); return; }
+  if (G.lastPlayer !== 1) return;
+  for (const m of list) for (const n of m.addedNodes) {
+    if (!(n instanceof HTMLElement) || n.parentNode !== document.body || n.tagName === 'CANVAS' || n.tagName === 'SCRIPT' || n.id === 'split' || NOT_A_WINDOW.test(n.className)) continue;
+    if (!faceWrap.isConnected) document.body.appendChild(faceWrap);
+    faceWrap.appendChild(n);
+  }
+}).observe(document.body, { childList: true });
+// a turned-round half: its picture is turned in the camera itself, so taps and the 3D view stay matched
+const _rotZ = new THREE.Matrix4().makeRotationZ(Math.PI);
+function aimCam(h, q) {
+  h.cam.aspect = q.w / q.h; h.cam.updateProjectionMatrix();
+  if (q.rot === 180) { h.cam.projectionMatrix.premultiply(_rotZ); h.cam.projectionMatrixInverse.copy(h.cam.projectionMatrix).invert(); }
 }
 function resize() {
   renderer.setSize(innerWidth, innerHeight);
@@ -1107,7 +1140,7 @@ function resize() {
   G.heroes.forEach((h, i) => { h.cam.aspect = r[i].w / r[i].h; h.cam.updateProjectionMatrix(); G.huds[i] && G.huds[i].layout(r[i], G.heroes.length > 1); });
   titleCam.aspect = innerWidth / innerHeight; titleCam.updateProjectionMatrix();
   const sp = $('#split'); sp.hidden = G.heroes.length < 2;
-  if (G.heroes.length > 1) { const v = innerWidth >= innerHeight; Object.assign(sp.style, v ? { left: innerWidth / 2 - 2 + 'px', top: 0, width: '4px', height: '100%' } : { top: innerHeight / 2 - 2 + 'px', left: 0, height: '4px', width: '100%' }); }
+  if (G.heroes.length > 1) { const v = innerWidth >= innerHeight && !faceToFace(); Object.assign(sp.style, v ? { left: innerWidth / 2 - 2 + 'px', top: 0, width: '4px', height: '100%' } : { top: innerHeight / 2 - 2 + 'px', left: 0, height: '4px', width: '100%' }); }
 }
 addEventListener('resize', resize);
 // Phones (especially iPhone home-screen apps) sometimes report the wrong size after rotating or after the
@@ -1121,7 +1154,7 @@ function onTap(i, x, y) {
   const h = G.heroes[i]; if (!h || G.paused) return;
   if (h._dancing) { G.places.note(h); return; }
   const r = rects()[i]; ndc.set((x - r.x) / r.w * 2 - 1, -((y - r.y) / r.h) * 2 + 1);
-  ray.setFromCamera(ndc, h.cam);
+  aimCam(h, r); ray.setFromCamera(ndc, h.cam);
   // tapping a bubble, a water drop or a ripe crop walks there and does it
   const hitB = ray.intersectObjects([...(G.bubbleIcons || []), ...(G.tapTargets || [])], false).find(x => x.object.visible);
   if (hitB) { goAndDo(h, hitB.object.userData.it); return; }
@@ -1315,6 +1348,7 @@ function frame(now) {
     const q = r[i];
     renderer.setViewport(q.x, H - q.y - q.h, q.w, q.h); renderer.setScissor(q.x, H - q.y - q.h, q.w, q.h);
     G.showcaseCam(i, h, dt); // a landmark fly-around takes over the camera
+    if (r.length > 1) aimCam(h, q);
     world.updateSky(0, h.cam.position, h.pos);
     renderer.render(scene, h.cam);
     const p = h.profile;

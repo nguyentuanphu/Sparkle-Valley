@@ -64,6 +64,36 @@ await check('two-players', async () => {
   ok(r.heroes === 2 && r.huds === 2 && r.pets >= 1, JSON.stringify(r));
 });
 
+// Two players face to face (owner, round R): on a touch screen the far half (and the far player's controls and
+// windows) are turned half a turn so each child at each end sees their half the right way up
+await check('facetoface', async () => {
+  const out = [];
+  for (const [w, h] of [[820, 1180], [1180, 820]]) {
+    const P = await open(b, { w, h, touch: true, mode: 'split' }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      const cv = __sv.renderer.domElement, I = await import('/js/input.js'), q = __sv.rects();
+      const ev = (type, x, y, id) => cv.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, pointerId: id, pointerType: 'touch', bubbles: true }));
+      const far = q[1], near = q[0];
+      ev('pointerdown', far.x + far.w - 60, far.y + far.h / 2, 7); ev('pointermove', far.x + far.w - 60, far.y + far.h / 2 + 40, 7); ev('pointermove', far.x + far.w - 60, far.y + far.h / 2 + 60, 7);
+      const farMz = I.pads[1].mz; ev('pointerup', 0, 0, 7);
+      ev('pointerdown', near.x + 60, near.y + near.h / 2, 8); ev('pointermove', near.x + 60, near.y + near.h / 2 - 40, 8); ev('pointermove', near.x + 60, near.y + near.h / 2 - 60, 8);
+      const nearMz = I.pads[0].mz; ev('pointerup', 0, 0, 8);
+      __sv.lastPlayer = 1; __sv.openPad(1, 'map'); await new Promise(r => setTimeout(r, 400));
+      const turned = !!document.querySelector('.facewrap > *'); document.querySelectorAll('.modal').forEach(m => m.remove());
+      return { rot: q.map(x => x.rot), farTop: far.y === 0, hudFar: __sv.huds[1].root.classList.contains('far'), farMz, nearMz, turned };
+    });
+    if (!(r.rot[0] === 0 && r.rot[1] === 180 && r.farTop && r.hudFar && r.farMz > .9 && r.nearMz > .9 && r.turned)) out.push(`${w}x${h} ${JSON.stringify(r)}`);
+    if (P.errors.length) out.push(`${w}x${h}: ${P.errors.join(' | ')}`);
+    await P.page.screenshot({ path: `out/facetoface-${w}.png` }); await P.ctx.close();
+  }
+  // a computer keeps both halves the same way round, side by side
+  const D = await open(b, { w: 1280, h: 800, mode: 'split' }); await clear(D.page);
+  const side = await D.page.evaluate(() => __sv.rects().map(x => x.rot).join(',') + ' ' + __sv.rects()[1].x); await D.ctx.close();
+  if (side !== '0,0 640') out.push('computer: ' + side);
+  ok(!out.length, out.join(' · '));
+  return 'tablet tall and wide: the far half, its buttons, joystick and windows face the far child; a computer stays side by side';
+});
+
 await check('games', async () => {
   const P = await open(b, { w: 1024, h: 768 }); await clear(P.page);
   const ids = await P.page.evaluate(async () => Object.keys((await import('/js/games/frame.js')).GAMES));
