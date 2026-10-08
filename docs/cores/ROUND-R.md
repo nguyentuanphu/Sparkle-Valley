@@ -23,7 +23,12 @@ Reported to the owner on its own, so Halloween can go live around 12–14 Oct.
    - **Mountains:** snowy northern peaks with the China and India towns, the Trường Sơn range with the Hải Vân pass, the Great Dividing Range with the outback beyond.
    - **Village pattern** everywhere: gate, market street with kiosks on one side, square with the host, stage at the end, houses on back lanes, nature and a footpath loop outside.
    - Picture signposts at every junction; landmarks at road ends; kiosks in groups; map labels never overlap.
-   - Hard road and village rules stay. The valley stays 400 m if it fits, otherwise grows about a fifth if the speed checks pass on phones.
+   - **Room for family memories** (owner, 8 Oct): the owner plans to add families' own houses and buildings on request later, so the land is planned now.
+     - Làng Kỷ Niệm (Memory Village) beside the home island with about 40 plots, plus 2–3 spare plots in every town and village: about 60 plots.
+     - Plot sizes: small (stall, shrine, bench), house, big (school, shop, café). Each is flat, joined to a road, with an address.
+     - An unused plot is a small garden (flowers, bench, tree); a building replaces it.
+     - Every player sees family buildings. They show only a family nickname, never children's photos, full names or real addresses, and go up only when the owner places them in Studio (a Plots page: pick a plot, pick or upload a design).
+   - Hard road and village rules stay. The valley grows by about a fifth (about 480 m) to fit the water, mountains and plots, as long as the speed checks pass on phones.
 3. **New child's journey:**
    - The child picks a companion when making a character: Lấp Lánh the firefly or a baby dragon (rồng con). They can swap at home.
    - One button at a time, clouds over unvisited places on the map, a "❓ Làm gì bây giờ?" button, a new place each day in the first week.
