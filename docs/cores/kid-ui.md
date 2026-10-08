@@ -16,7 +16,7 @@ album…), menus, settings and Grown-ups, pop-ups, icons and pictures, text size
 A11Y-001 (Reduce motion turns on Calm), A11Y-002 (every spoken line also shown as words, ≥ 16 px), A11Y-003 (Simple
 screen tabs open on their groups), A11Y-005 (age modes change sizes, hints and voice, not the screen), A11Y-006 (an
 under-5 sees one group at a time, scrolling down, every stop a drawn picture), A11Y-007 (every tap answers at once);
-UI-001 (everything in English and Vietnamese), UI-002 (no phone emoji: drawn pictures), UI-003 (Close/Save/Next always
+UI-006 (checked on a phone, a tablet and a computer: tidy on all three), UI-001 (everything in English and Vietnamese), UI-002 (no phone emoji: drawn pictures), UI-003 (Close/Save/Next always
 on screen at 320–390 px), UI-004 (touch targets ≥ 44 px, ≥ 64 px for under-5s); SAFE-001 (safe for ages 2–8);
 SAVE-001…003 (saves never lost, versioned, unknown parts dropped safely).
 

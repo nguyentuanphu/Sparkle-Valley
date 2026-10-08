@@ -293,9 +293,10 @@ await check('roadshape', async () => {
 });
 
 await check('phone', async () => {
-  // every main screen opened on a desktop and on a phone side by side: nothing spills off the side, every button
-  // (close, play, next…) is fully on the screen, and nothing goes wrong. Bugs that only phones show are caught here.
-  const D = await open(b, { w: 1180, h: 760 }), M = await open(b, { w: 390, h: 760, touch: true, lang: 'vi' });
+  // every main screen opened on a desktop, a phone and a tablet side by side (rule UI-006, owner round P: always check
+  // all three): nothing spills off the side, every button (close, play, next…) is fully on the screen, tab names are
+  // never broken in the middle of a word, windows dim the game without blurring it, and nothing goes wrong
+  const D = await open(b, { w: 1180, h: 760 }), M = await open(b, { w: 390, h: 760, touch: true, lang: 'vi' }), Tb = await open(b, { w: 820, h: 1180, touch: true });
   const SCREENS = [
     ['games hub', () => __sv.openGamesHub(0)], ['map', () => __sv.openPad(0, 'map')], ['bag', () => __sv.openPad(0, 'bag')], ['friends', () => __sv.openPad(0, 'friend')],
     ['quick settings', () => __sv.openQuick(0)], ['wardrobe', () => __sv.openWardrobe(0)],
@@ -305,9 +306,9 @@ await check('phone', async () => {
     ['dialog', () => { __sv.dialog('Bà Năm', [['Hello! Shall we play?', 'Chào cháu! Chơi nhé?']], [['▶ Play!', '▶ Chơi!'], ['👋 Later', '👋 Để sau']]); }]
   ];
   const bad = [];
-  for (const P of [D, M]) await clear(P.page);
+  for (const P of [D, M, Tb]) await clear(P.page);
   for (const [name, fn] of SCREENS) {
-    for (const [P, tag] of [[D, 'desktop'], [M, 'phone']]) {
+    for (const [P, tag] of [[D, 'desktop'], [M, 'phone'], [Tb, 'tablet']]) {
       await P.page.evaluate(`(${fn.toString()})()`); await P.page.waitForTimeout(1400);
       const r = await P.page.evaluate(() => {
         const W = innerWidth, H = innerHeight, out = [];
@@ -315,15 +316,17 @@ await check('phone', async () => {
         const top = document.querySelector('.wardrobe, .hub, .pad, .howto, .theatre, .gl, .dialog:not(.out), .modal');
         if (top) for (const btn of top.querySelectorAll('button')) { const b = btn.getBoundingClientRect(), cs = getComputedStyle(btn); if (!b.width || cs.visibility === 'hidden' || btn.closest('[hidden]')) continue;
           if (/^(x|th-x|ht-x|gl-x|dch|ht-play|th-next|gl-next)$/.test(btn.className.split(' ')[0]) && (b.left < -1 || b.right > W + 1 || b.top < -1 || b.bottom > H + 1)) out.push(`button "${(btn.textContent || btn.getAttribute('aria-label') || btn.className).trim().slice(0, 20)}" off screen`); }
+        for (const t of document.querySelectorAll('.pad-tabs small')) { const lh = parseFloat(getComputedStyle(t).lineHeight) || 13; if (t.getClientRects().length && t.getBoundingClientRect().height > lh * 1.6 + 2) out.push(`tab name "${t.firstChild && t.firstChild.textContent}" broken over lines`); }
+        const md = document.querySelector('.modal'); if (md && /blur/.test(getComputedStyle(md).backdropFilter || '')) out.push('the window blurs the game behind it');
         return out;
       });
       r.forEach(x => bad.push(`${name} (${tag}): ${x}`));
       await P.page.evaluate(() => { document.querySelectorAll('.modal, .hub, .pad, .howto, .theatre, .gl, .dialog, .storybook, .vc-pop, .wardrobe').forEach(e => e.remove()); __sv.paused = false; __sv.closeUp = null; });
     }
   }
-  const errs = D.errors.concat(M.errors); await D.ctx.close(); await M.ctx.close();
+  const errs = D.errors.concat(M.errors, Tb.errors); await D.ctx.close(); await M.ctx.close(); await Tb.ctx.close();
   ok(!bad.length && !errs.length, JSON.stringify({ bad, errs }));
-  return `${SCREENS.length} screens checked on desktop and phone`;
+  return `${SCREENS.length} screens checked on desktop, phone and tablet`;
 });
 
 await check('solid', async () => {

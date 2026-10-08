@@ -66,7 +66,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, label.btn:focus
 .ring { width: 24px; height: 24px; border-radius: 50%; background: conic-gradient(var(--cyan) var(--p, 0%), rgba(255, 255, 255, .2) 0); flex: none; }
 
 /* ---------- modals ---------- */
-.modal { position: fixed; inset: 0; z-index: 30; background: rgba(0, 10, 14, .55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; padding: calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px); animation: fadein .2s; touch-action: pan-y; -webkit-user-select: text; user-select: text; }
+.modal { position: fixed; inset: 0; z-index: 30; background: rgba(0, 10, 14, .55); display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; padding: calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px); animation: fadein .2s; touch-action: pan-y; -webkit-user-select: text; user-select: text; }
 .modal.out, .dialog.out, .reward.out { opacity: 0; transition: opacity .2s; }
 @keyframes fadein { from { opacity: 0; } }
 .card { position: relative; width: 100%; max-width: 560px; margin: auto 0; background: var(--panel2); border: 1px solid var(--line); border-radius: 22px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); }
@@ -947,9 +947,11 @@ button { color: var(--text); }
 
 /* ---------- text never spills, in either language ---------- */
 @media (max-width: 560px) {
-  .pad-tabs button { min-width: 44px; padding: 6px 1px; }
+  /* (round P, owner: “Backpac k”, “Adventu res”: words never break in the middle) each tab as wide as its word; the row
+     slides sideways when they don't all fit */
+  .pad-tabs button { flex: 1 0 auto; min-width: 58px; padding: 6px 4px; }
   .pad-tabs button span { font-size: 22px; }
-  .pad-tabs button small { font-size: 10.5px; max-width: 100%; white-space: normal; line-height: 1.05; text-align: center; overflow-wrap: anywhere; }
+  .pad-tabs button small { font-size: 10.5px; white-space: nowrap; line-height: 1.05; text-align: center; }
 }
 /* the narrowest phones: eight tabs of 44 px don't fit in one row, so they sit in two rows of four */
 @media (max-width: 380px) {
