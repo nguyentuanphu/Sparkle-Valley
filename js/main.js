@@ -67,6 +67,7 @@ import { createRegionSites } from './regionsites.js';
 import { createVnFun } from './vnfun.js';
 import { createLotus } from './lotus.js';
 import { createLanterns } from './lanterns.js';
+import { createYard } from './yard.js';
 import { openTheatre } from './tales.js';
 import { addFamilyBuildings, applyWorldEdits } from './worldedit.js';
 import { buildPowerLines } from './powerlines.js';
@@ -604,7 +605,8 @@ async function statueTalk(h) {
 // ---------- quests ----------
 const questDone = (p, q) => !!p.quests[q.id] || !!(q.check && q.check(p));
 // (round R) the story's step comes first; when no chapter is open, the valley's adventure list as before
-function currentQuest(p) { return (G.lanterns && G.lanterns.quest(p)) || QUESTS.find(q => !questDone(p, q)); }
+// (a side story the child chose to start, such as bà Huệ and ông Nghi's yard, comes before the chapter's step)
+function currentQuest(p) { return (G.yard && G.yard.quest(p)) || (G.lanterns && G.lanterns.quest(p)) || QUESTS.find(q => !questDone(p, q)); }
 G.currentQuest = currentQuest;
 function questTarget(h) {
   const p = h.profile, q = currentQuest(p); if (!q) return null;
@@ -1495,6 +1497,8 @@ createLearning(G);
 // the main story, Đèn Lồng Thung Lũng (js/lanterns.js, chapters in js/content/chapters.js): after the storyteller and the villagers
 G.npcAt = id => (n => n && { x: n.x, z: n.z })(NPCS.find(n => n.id === id));
 G.lanterns = createLanterns(G, { dialog, say, reward, save, openTheatre });
+// bà Huệ and ông Nghi's yard near the Huệ Nghi shop (js/yard.js): a side story
+G.yard = createYard(G, { dialog, say, reward, save });
 createShowcase(G);
 world.updaters.push((dt, t) => tickAnimals(dt, t, G.heroes)); // every animal walks, hops, wags and looks around
 createGathering(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });

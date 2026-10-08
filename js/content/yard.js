@@ -1,0 +1,55 @@
+// Bà Huệ and ông Nghi's yard (round R story, owner 9 Oct): when they started out, bà Huệ and ông Nghi helped the
+// younger ones in the family, bringing them from Hà Tĩnh to work with them and building jobs in transport,
+// construction and hauling earth and stone. In the valley they open a transport and building yard near the Huệ Nghi
+// shop on Phố Hai Quê; their son Anh 2 runs it. js/yard.js runs this chain (a side story the child starts by asking
+// bà Huệ; Studio switch 'story_yard'). Lesson: helping your family and giving everyone a chance.
+//
+// The three relatives use PLACEHOLDER names until the owner sends the real names and jobs (change them here).
+export const RELATIVES = [
+  { id: 'rel_driver', name: 'Chú Tư', job: 0, look: ['shirt', '#4a7ab8', '#2a2a2a', 'short'],
+    hello: ['I can drive anything with wheels! Back home I drove the rice cart every day.', 'Chú lái được mọi thứ có bánh xe! Ở quê ngày nào chú cũng đánh xe chở lúa.'] },
+  { id: 'rel_builder', name: 'Cô Sáu', job: 1, look: ['shirt', '#c8503a', '#2a2a2a', 'buns'],
+    hello: ['I love making things with my hands. I helped build our school in Hà Tĩnh!', 'Cô thích làm mọi thứ bằng tay. Cô đã giúp xây ngôi trường ở Hà Tĩnh đó!'] },
+  { id: 'rel_digger', name: 'Anh Bảy', job: 2, look: ['shirt', '#5a9a4a', '#2a2a2a', 'short'],
+    hello: ['I am strong and patient. I can dig a well all by myself!', 'Anh khỏe và kiên nhẫn lắm. Anh tự đào được cả một cái giếng!'] }
+];
+export const JOBS = [['Driver', 'Lái xe'], ['Builder', 'Thợ xây'], ['Digger operator', 'Lái máy xúc']];
+export const ANH2 = { id: 'anh2', name: 'Anh 2', look: ['shirt', '#e8a83a', '#2a2a2a', 'short'] };
+
+// a step: id, icon, en/vi (the goal shown), tale [pictures, who, en, vi] (said as the step starts), at (where the arrow points)
+export const YARD_STEPS = [
+  { id: 'y_start', icon: '👵', en: 'Ask Bà Huệ about the new yard', vi: 'Hỏi bà Huệ về công trường mới', at: 'hue' },
+  { id: 'y_coach', icon: '🚌', en: 'Meet the coach from Hà Tĩnh', vi: 'Đón xe khách từ Hà Tĩnh', at: 'coach',
+    tale: ['👵🚌', 'Bà Huệ', 'When ông Nghi and I started out, we brought the young ones from Hà Tĩnh to work with us. Today more of the family are coming! Please meet their coach.', 'Hồi bà với ông Nghi mới lập nghiệp, ông bà đưa các em từ Hà Tĩnh vào làm cùng. Hôm nay lại có thêm người nhà vào! Con ra đón xe khách giúp bà nhé.'] },
+  { id: 'y_jobs', icon: '👷', en: 'Give everyone a job', vi: 'Giao việc cho mọi người', at: 'relatives',
+    tale: ['👷🏗️', 'Anh 2', 'Welcome to the yard! Ask each of them what they are good at, then give them the right job.', 'Chào mừng đến công trường! Con hỏi mỗi người giỏi việc gì, rồi giao cho họ việc phù hợp nhé.'] },
+  { id: 'y_truck', icon: '🚚', en: 'Drive the dump truck with earth and stone', vi: 'Lái xe ben chở đất đá', at: 'truck',
+    tale: ['🚚🪨', 'Chú Tư', 'Jump in, we will drive together! Load up at the stone pile, then tip it out at the building site.', 'Lên xe nào, mình cùng lái nhé! Xúc đá ở bãi đá, rồi đổ xuống chỗ xây nhà.'] },
+  { id: 'y_dig', icon: '🏗️', en: 'Dig the foundations with the excavator', vi: 'Đào móng bằng máy xúc', at: 'digger',
+    tale: ['🏗️💪', 'Anh Bảy', 'A strong house needs deep foundations. Pull the levers with me and dig!', 'Nhà chắc phải có móng sâu. Con kéo cần cùng anh rồi đào nhé!'] },
+  { id: 'y_build', icon: '🧱', en: 'Build the house together', vi: 'Cùng nhau xây nhà', at: 'site',
+    tale: ['🧱🏠', 'Cô Sáu', 'Brick by brick, everyone together! Then we lift the roof on.', 'Từng viên gạch, mọi người cùng làm! Rồi mình lợp mái nhé.'] },
+  { id: 'y_party', icon: '🍲', en: 'Come to the house-warming meal at the Huệ Nghi shop', vi: 'Về tiệm Huệ Nghi ăn mừng nhà mới', at: 'hue',
+    tale: ['🏠🎉', 'Anh 2', 'The house is finished! Mẹ is cooking a big meal at the shop. Let us all go and eat together!', 'Nhà xong rồi! Mẹ đang nấu một bữa thật ngon ở tiệm. Mình cùng về ăn mừng nhé!'] }
+];
+
+// what is said along the way ([en, vi]; the child's name is never in a spoken line so the recordings fit everyone)
+export const YARD_LINES = {
+  start: [['A long time ago, ông Nghi and I started with one old truck. We carried bricks and steel all over Bà Rịa.', 'Ngày xưa, ông Nghi với bà bắt đầu chỉ với một chiếc xe tải cũ. Ông bà chở gạch, sắt thép đi khắp Bà Rịa.'],
+    ['When we had work, we brought the young ones from Hà Tĩnh to work with us. Family helps family.', 'Có việc rồi, ông bà đưa các em từ Hà Tĩnh vào làm cùng. Người nhà thì giúp nhau.'],
+    ['Now our son, Anh 2, has opened a yard here. Will you help us?', 'Giờ con trai bà, Anh 2, mở một công trường ở đây. Con giúp ông bà nhé?']],
+  coach: [['Phew, what a long ride from Hà Tĩnh! Thank you for meeting us!', 'Phù, đi từ Hà Tĩnh vào xa ghê! Cảm ơn con đã ra đón!']],
+  jobAsk: ['What job should they do?', 'Người này nên làm việc gì?'],
+  jobRight: ['That is just right for me. Thank you!', 'Đúng việc mình thích rồi. Cảm ơn con!'],
+  jobWrong: ['Hmm, I think another job suits me better. Listen to what I am good at!', 'Hừm, chắc việc khác hợp với mình hơn. Con nghe xem mình giỏi gì nha!'],
+  truckGo: ['Here we go to the building site!', 'Mình chạy tới chỗ xây nhà nào!'],
+  truckTip: ['Tip it out!', 'Đổ xuống!'],
+  truckDone: ['Well done! The earth and stone are on the site.', 'Giỏi quá! Đất đá đã về tới chỗ xây.'],
+  dig: ['Dig!', 'Đào!'],
+  digDone: ['The foundations are dug. Great digging!', 'Móng đào xong rồi. Đào giỏi lắm!'],
+  brick: ['Lay the bricks!', 'Xây gạch!'],
+  roof: ['Lift the roof!', 'Lợp mái!'],
+  buildDone: ['We built it together! A new house for the family.', 'Mình cùng nhau xây xong rồi! Một ngôi nhà mới cho cả nhà.'],
+  party: [['Come, eat! When we help each other, everyone has a chance to do well.', 'Vào ăn đi con! Khi mình giúp nhau, ai cũng có cơ hội làm nên.'],
+    ['The yard is always open for you. Drive the truck and dig any time you like!', 'Công trường lúc nào cũng mở cho con. Con lái xe ben, đào đất lúc nào cũng được nhé!']]
+};

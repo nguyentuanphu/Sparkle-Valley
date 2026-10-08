@@ -12,6 +12,7 @@ import { events } from './core/events.js';
 import { CHAPTERS, STORY_TALES, COMPANIONS } from './content/chapters.js';
 import { buildDinh, buildLantern } from './dinh.js';
 import { createCompanions } from './companion.js';
+import { openSpot } from './openspot.js';
 
 const V = VILLAGE;
 const released = ch => featureOn('story_' + ch.id, true);
@@ -42,34 +43,13 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   };
 
   // ---------- where things are ----------
-  // the đình: a flat, open spot in or at the edge of the village (never on a road, a building or water)
+  // (never on a road, a building or water)
   const free = (x, z, r) => heightAt(x, z) > WATER + .4 && !world.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + r)
     && !world.boxes.some(b => x > b.x0 - r && x < b.x1 + r && z > b.z0 - r && z < b.z1 + r) && (d => !d.road || d.d > d.road.w / 2 + r)(roadDist(x, z));
-  const flat = (x, z, r) => { const h0 = heightAt(x, z); for (let a = 0; a < 8; a++) if (Math.abs(heightAt(x + Math.cos(a) * r, z + Math.sin(a) * r) - h0) > .6) return false; return true; };
-  let dinhAt = null;
-  // (a yard round it: room in front to stand and look at it; houses' roofs reach past their walls, so keep well clear)
-  // Every thing already standing in the village (houses, kiosks, stalls, trees, poles) as a footprint on the ground; the
-  // spot with the widest room round it wins (a little nearer the middle breaks ties).
-  const near = [], bb = new THREE.Box3();
-  for (const o of scene.children) {
-    if (!o.visible || o.isLight || o.isCamera || (o.userData && o.userData.noSolid)) continue;
-    bb.setFromObject(o); if (bb.isEmpty()) continue;
-    const sx = bb.max.x - bb.min.x, sz = bb.max.z - bb.min.z;
-    if (sx > 40 || sz > 40 || bb.max.y - bb.min.y < .4) continue; // the ground, the sky, the water, flat decals
-    if (bb.max.x < V.x - V.r - 12 || bb.min.x > V.x + V.r + 12 || bb.max.z < V.z - V.r - 12 || bb.min.z > V.z + V.r + 12) continue;
-    near.push([bb.min.x, bb.max.x, bb.min.z, bb.max.z]);
-  }
-  const room = (x, z) => { let m = 99; for (const [x0, x1, z0, z1] of near) m = Math.min(m, Math.hypot(Math.max(x0 - x, 0, x - x1), Math.max(z0 - z, 0, z - z1))); return m; };
-  const clear = (x, z, r) => free(x, z, r) && G.interactables.every(i => !Number.isFinite(i.x) || Math.hypot(i.x - x, i.z - z) > r);
-  let best = -1;
-  // (the village itself is full of houses and stalls, so the đình may stand at its edge, as many real đình do)
-  for (let k = 0; k < 1400; k++) {
-    const a = k * 2.39996, d = 6 + k * .03, x = V.x + Math.cos(a) * d, z = V.z + Math.sin(a) * d;
-    if (d > V.r + 10 || !clear(x, z, 6) || !flat(x, z, 6)) continue;
-    const score = Math.min(room(x, z), 10) * 3 - d * .1;
-    if (score > best) { best = score; dinhAt = [x, z]; }
-  }
-  dinhAt = dinhAt || [V.x + 14, V.z - 14];
+  // the đình: the flat spot with the most room round it, in or at the edge of the village (Làng Sen is full of houses
+  // and stalls, and many real đình stand at the village edge); a yard in front to stand and look at it
+  const spot = openSpot(G, { cx: V.x, cz: V.z, rmax: V.r + 10, need: 6, flatR: 6, want: 10 });
+  const dinhAt = spot ? [spot.x, spot.z] : [V.x + 14, V.z - 14];
   const dinh = buildDinh(), dy = heightAt(dinhAt[0], dinhAt[1]);
   const face = Math.atan2(V.x - dinhAt[0], V.z - dinhAt[1]); // the doors look towards the village middle
   dinh.position.set(dinhAt[0], dy, dinhAt[1]); dinh.rotation.y = face; scene.add(dinh);

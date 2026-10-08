@@ -341,6 +341,54 @@ export function bus(vn = true) {
     box(.06, 1.9, .9, '#2b2e31', [1.22, 1.3, L / 2 - 1.0]), box(.06, 1.9, .9, '#2b2e31', [1.22, 1.3, .2])], .015));
   return { o: g, wheels, wr: R, seat: [vn ? .7 : -.7, 1.1, L / 2 - .9], grips: null, feet: null, name: [vn ? 'City bus (Vietnam)' : 'City bus (Australia)', 'Xe buýt'] };
 }
+// ---------- the Huệ Nghi yard (round R story: bà Huệ and ông Nghi's transport and building yard) ----------
+// a long-distance coach (xe khách) like the ones from Hà Tĩnh: cream with red and blue bands, a luggage rack on the roof
+export function coach() {
+  const g = new THREE.Group(), R = .45, L = 10.5;
+  const wheels = wheelsAt(g, [[1.05, R, 3.4, { r: R, cast: true, tyre: .13 }], [-1.05, R, 3.4, { r: R, cast: true, tyre: .13 }], [1.05, R, -3.0, { r: R, cast: true, tyre: .13 }], [-1.05, R, -3.0, { r: R, cast: true, tyre: .13 }]]);
+  g.add(solid([side([[L / 2, .4], [L / 2 + .1, 2.4], [L / 2 - .4, 3.1], [-L / 2 + .1, 3.1], [-L / 2, 2.9], [-L / 2, .4]], 2.45, '#f2ead6', 0, .03, .14),
+    side([[L / 2 + .04, 1.55], [L / 2 - .3, 2.75], [-L / 2 + .3, 2.75], [-L / 2 + .3, 1.6]], 2.49, GLASS, 0, .03, .12),
+    box(2.5, .22, L - .3, '#c8322a', [0, 1.2, 0]), box(2.5, .1, L - .3, '#2f5fb0', [0, 1.4, 0]),
+    ...Array.from({ length: 8 }, (_, k) => box(2.51, 1.1, .1, '#f2ead6', [0, 2.15, -L / 2 + 1.0 + k * 1.2])),
+    box(2.0, .12, 5.5, '#6a6f74', [0, 3.2, -1.5]), ...[-1, 1].map(s => box(.06, .25, 5.5, STEEL, [s * 1, 3.3, -1.5])),
+    box(1.0, .5, 1.2, '#4a7ab8', [-.4, 3.5, -1.9]), box(.8, .45, .9, '#d8a83a', [.45, 3.48, -.9]),   // bags tied on the roof
+    box(1.8, .26, .05, '#1d1f22', [0, 2.85, L / 2 + .02]), box(1.4, .14, .06, '#ffb43a', [0, 2.85, L / 2 + .03]),
+    ...[-1, 1].flatMap(sd => [box(.32, .16, .04, '#fff6c8', [sd * .9, .8, L / 2 + .06]), box(.3, .16, .04, '#d8322a', [sd * .95, .85, -L / 2 - .02])]),
+    box(.06, 2.0, .95, '#2b2e31', [1.24, 1.35, L / 2 - 1.1])], .015));
+  return { o: g, wheels, wr: R, seat: [.7, 1.2, L / 2 - 1], grips: null, feet: null, door: [1.5, 0, L / 2 - 1.1], name: ['Coach', 'Xe khách'] };
+}
+// a dump truck (xe ben): a blue cab and a steel tipper bed that tips up (userData.bed pivots on its back edge)
+export function dumpTruck() {
+  const g = new THREE.Group(), R = .5;
+  const wheels = wheelsAt(g, [[1.0, R, 2.0, { r: R, cast: true, tyre: .16 }], [-1.0, R, 2.0, { r: R, cast: true, tyre: .16 }], [1.0, R, -1.2, { r: R, cast: true, tyre: .16 }], [-1.0, R, -1.2, { r: R, cast: true, tyre: .16 }], [1.0, R, -2.3, { r: R, cast: true, tyre: .16 }], [-1.0, R, -2.3, { r: R, cast: true, tyre: .16 }]]);
+  g.add(solid([box(1.7, .3, 6.2, '#3a3d40', [0, .75, -.2]),
+    side([[3.0, .7], [3.05, 2.2], [2.7, 2.8], [1.4, 2.85], [1.35, .7]], 2.3, '#2f6fb0', 0, .03, .14), side([[2.95, 1.75], [2.68, 2.6], [1.55, 2.6], [1.55, 1.75]], 2.34, GLASS, 0, .03, .1),
+    box(2.0, .3, .1, '#3a3d40', [0, .9, 3.06]), ...[-1, 1].flatMap(sd => [box(.3, .16, .05, '#fff6c8', [sd * .8, 1.2, 3.07]), box(.5, .5, .5, '#3a3d40', [sd * .9, .95, -3.2])]),
+    ...[-1, 1].map(sd => P(new THREE.TorusGeometry(.62, .1, 6, 16, Math.PI), '#2b2e31', [sd * 1.03, R, 2.0], [0, Math.PI / 2, 0]))], .015));
+  // the tipper bed: hinged at the back (z = -3.1, y = 1.0); the load sits inside it
+  const bed = new THREE.Group(); bed.position.set(0, 1.0, -3.1); g.add(bed);
+  bed.add(solid([box(2.3, .15, 4.3, '#c9a43a', [0, .1, 2.15]), ...[-1, 1].map(sd => box(.12, 1.1, 4.3, '#c9a43a', [sd * 1.1, .7, 2.15])), box(2.3, 1.3, .12, '#c9a43a', [0, .8, 4.3]), box(2.3, 1.1, .1, '#b8932e', [0, .65, .02]),
+    ...Array.from({ length: 4 }, (_, k) => box(2.34, .08, .1, '#8a6e22', [0, .9, .6 + k * 1.1]))], .015));
+  const load = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), new THREE.MeshToonMaterial({ color: '#8a7a68' })); load.scale.set(1.0, .45, 1.8); load.position.set(0, .9, 2.1); load.visible = false; bed.add(load);
+  g.userData = { bed, load };
+  return { o: g, wheels, wr: R, seat: [.5, 1.35, 2.1], grips: null, feet: null, name: ['Dump truck', 'Xe ben'] };
+}
+// an excavator (máy xúc): tracks, a turning yellow body, and a boom, arm and bucket that move (userData.turn, boom, arm, bucket)
+export function excavator() {
+  const g = new THREE.Group(), Y = '#f2b81e';
+  g.add(solid([...[-1, 1].flatMap(sd => [box(.6, .7, 3.6, '#2b2e31', [sd * 1.0, .35, 0]), ...[-1.4, -.47, .47, 1.4].map(z => disc(.3, .62, '#5a5f64', [sd * 1.0, .35, z]))]), box(1.6, .3, 1.6, '#3a3d40', [0, .8, 0])], .015));
+  const turn = new THREE.Group(); turn.position.y = .95; g.add(turn);
+  turn.add(solid([box(2.4, .9, 2.8, Y, [0, .45, -.3]), box(1.0, 1.4, 1.1, Y, [.6, 1.6, .55]), box(.92, .9, 1.02, GLASS, [.6, 1.75, .56]), box(2.2, .5, .6, '#3a3d40', [0, .5, -1.75]), box(.12, .7, .12, '#3a3d40', [-.6, 1.25, -1.2])], .015));
+  const boom = new THREE.Group(); boom.position.set(-.3, .9, .9); turn.add(boom);
+  boom.add(solid([box(.35, .45, 3.0, Y, [0, 0, 1.5])], .012)); boom.rotation.x = -.5;
+  const arm = new THREE.Group(); arm.position.set(0, 0, 3.0); boom.add(arm);
+  arm.add(solid([box(.3, .38, 2.2, Y, [0, 0, 1.1])], .012)); arm.rotation.x = 1.3;
+  const bucket = new THREE.Group(); bucket.position.set(0, 0, 2.2); arm.add(bucket);
+  bucket.add(solid([box(.9, .55, .12, '#5a5f64', [0, -.2, .3]), box(.9, .1, .6, '#5a5f64', [0, -.45, 0]), ...[-1, 1].map(s => box(.08, .5, .6, '#5a5f64', [s * .42, -.2, 0])), ...[-.3, 0, .3].map(x => box(.08, .08, .15, '#8e959a', [x, -.48, -.35]))], .012));
+  bucket.rotation.x = .4;
+  g.userData = { turn, boom, arm, bucket };
+  return { o: g, wheels: [], wr: 1, seat: [.6, 1.9, .5], grips: null, feet: null, name: ['Excavator', 'Máy xúc'] };
+}
 // trams: Melbourne's old W-class (green and cream, wooden, with a trolley pole) and a long modern low-floor tram
 export function tram(kind = 'w') {
   const g = new THREE.Group(), R = .3, w = kind === 'w', L = w ? 10 : 16, c1 = w ? '#2f6b4a' : '#f4f4ee', c2 = w ? '#f2e2b8' : '#7ac143';
@@ -418,4 +466,4 @@ export function seatRider(A, v, at, grips, feet, scale = .9, attach = true) {
 export function build(id, { real = false, args = [] } = {}) { REAL = real; try { return VEHICLES[id](...args); } finally { REAL = false; } }
 // every vehicle by id, for Sparkle Studio and the valley's traffic
 export const VEHICLES = { honda67, cub, dream, scooter, xichlo, baGac, postie, trailBike, quadBike, roadster, miniBike, roadBike, bmx, kidsBike, packBike,
-  sedan, taxi, ute, suv, bus: () => bus(true), busAU: () => bus(false), tram: () => tram('w'), tramModern: () => tram('e'), touristCart };
+  sedan, taxi, ute, suv, bus: () => bus(true), busAU: () => bus(false), tram: () => tram('w'), tramModern: () => tram('e'), touristCart, coach, dumpTruck, excavator };

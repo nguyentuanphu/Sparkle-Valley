@@ -36,6 +36,8 @@ export async function start(page, mode = 'solo', screen = 'valley') {
   if (mode !== 'solo') await page.click(`.modes button[data-m=${mode}]`);
   await page.locator('.pick[data-id]').nth(0).click(); if (mode === 'split') await page.locator('.pick[data-id]').nth(1).click();
   if (screen) await page.evaluate(async scr => { const S = await import('/js/state.js'); S.profiles.forEach(p => { p.screen = scr; }); }, screen);
+  // (round R) Ông Cú's prologue film starts by itself for a new child; the checks start without it unless they ask
+  await page.evaluate(() => { if (window.__sv) window.__sv._owlAuto = true; });
   await page.click('.who .go');
   await page.waitForFunction(() => window.__sv && window.__sv.heroes.length > 0);
   // skip the prologue

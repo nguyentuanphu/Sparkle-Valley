@@ -130,3 +130,10 @@ Measured in the test browser (390 px phone; the slow-phone figures use a 4x slow
 - **Where the đình stands:** Làng Sen is full of houses and stalls, so the game picks the flat spot with the most room round it, in or at the edge of the village, facing the village middle (many real đình stand at the village edge). The `story` check keeps every building at least 5 m away.
 - **Voices:** the step speeches and film pages are recorded (Azure). Lines that show the child's name speak a version without it, so one recording works for every child.
 - **Switches:** Studio > Releases: `story_prologue` and `story_ch1` (on by default).
+
+## Story: bà Huệ and ông Nghi's yard (built 9 Oct)
+- `js/yard.js` (content in `js/content/yard.js`): a transport and building yard on open, flat ground near the Huệ Nghi shop (found with `js/openspot.js`, which the đình also uses), with a site office and sign, a stone pile, a building site, a coach (xe khách), a dump truck (xe ben) and an excavator (máy xúc) (new models in `js/vehicles.js`). Anh 2, their son, runs it.
+- **The side story** (the child starts it by asking bà Huệ; while it runs it is the child's goal, then the main story carries on): bà Huệ tells how she and ông Nghi brought the young ones from Hà Tĩnh; meet the coach; ask each relative what they are good at and give them the right job (a wrong one is turned down kindly); haul earth and stone in the dump truck and tip it at the site; dig the foundations with the excavator; lay the bricks and lift the roof together; the house-warming meal at the shop. Afterwards the truck and the excavator are open for free play.
+- **Placeholder names** until the owner sends the real ones: Chú Tư (driver), Cô Sáu (builder), Anh Bảy (digger operator). Change them in `js/content/yard.js`.
+- Voices recorded (Azure). Studio switch `story_yard` (on).
+- **Test start:** the harness now starts the checks without Ông Cú's prologue film (it plays by itself for a new child); the welcome-voice check follows the story's welcome ("Who will fly with you, …?").

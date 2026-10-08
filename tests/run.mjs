@@ -496,14 +496,15 @@ await check('welcomevoice', async () => {
     for (let k = 0; k < 40 && !V.voicePack(); k++) await wait(250);
     if (!document.querySelector('.dialog:not(.out)')) { h.profile.quests.owl = false; G._owlAuto = false; }
     const owl = G.interactables.find(i => /owl/i.test(i.id || '')); if (owl) { h.place(owl.x, owl.z + 1.5); }
-    for (let k = 0; k < 30 && !document.querySelector('.dialog:not(.out)'); k++) await wait(200);
+    // (round R) with the story on, Ông Cú's welcome is the prologue film, then "Who will fly with you, Kiwi?"
+    for (let k = 0; k < 60 && !document.querySelector('.dialog:not(.out)'); k++) { await wait(250); const x = document.querySelector('.theatre .th-x'); if (x && k > 8) x.click(); }
     const d = document.querySelector('.dialog .dtext'), shown = d ? d.textContent : '';
     return { shown, pack: !!V.voicePack() };
   });
   const rec = await P.page.evaluate(async lines => { const V = await import('/js/voice.js'), hash = (await import('/js/packhash.js')).lineHash, pack = V.voicePack(); return lines.map(t => [t, !!(pack && pack.lines[hash('en', t)])]); }, said);
   const errs = P.errors; await P.ctx.close();
   const notRecorded = rec.filter(([, ok]) => !ok).map(([t]) => t);
-  ok(r.pack && /Good morning, Kiwi/.test(r.shown) && said.length && !notRecorded.length && !errs.length, JSON.stringify({ shown: r.shown, said, notRecorded, errs }));
+  ok(r.pack && /Good morning, Kiwi|with you, Kiwi/.test(r.shown) && said.length && !notRecorded.length && !errs.length, JSON.stringify({ shown: r.shown, said, notRecorded, errs }));
   return `Ông Cú's welcome shows the child's name ("${r.shown.slice(0, 40)}…") and every spoken line (${said.length}) has a recording`;
 });
 
@@ -808,6 +809,54 @@ await check('story', async () => {
   await P.ctx.close();
   if (out.length) throw new Error(out.join('; '));
   return `prologue and chapter 1 played through (${want.length} steps); đình lit, keepsake home, then "${seen[8]}"; nearest building ${end.house.toFixed(1)} m away`;
+});
+await check('yard', async () => {
+  // (round R, owner: bà Huệ and ông Nghi's quest chain) the yard stands in an open spot near the Huệ Nghi shop; the side
+  // story plays from bà Huệ's start to the house-warming meal: the coach from Hà Tĩnh, a job for each relative (a wrong
+  // job is turned down kindly), the dump truck tips its load, the excavator digs, the house is built; the truck and the
+  // excavator stay for free play afterwards
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const pg = P.page, seen = [];
+  const goal = () => pg.evaluate(() => { const c = __sv.currentQuest(__sv.heroes[0].profile); return c && c.id; });
+  // tap through speech boxes, choosing answer `pick` when there is a choice, until the button's work is over
+  const use = async (id, pick = 0) => {
+    const ok = await pg.evaluate(id => { const h = __sv.heroes[0], it = __sv.interactables.find(i => i.id === id); if (!it || (it.visible && !it.visible(h))) return false; it.act(h, __sv); return true; }, id);
+    if (!ok) return false;
+    for (let i = 0; i < 80; i++) {
+      await pg.waitForTimeout(350);
+      const s = await pg.evaluate(pick => { const c = document.querySelectorAll('.dialog .dchoices button'); if (c.length) { c[Math.min(pick, c.length - 1)].click(); return 'c'; } const d = document.querySelector('.dialog'); if (d) { d.click(); return 'd'; } return document.querySelector('.reward') ? 'r' : ''; }, pick);
+      if (s === 'r') { await pg.evaluate(() => document.querySelectorAll('.reward').forEach(e => e.click())); }
+      if (!s && !(await pg.evaluate(() => __sv.paused))) break;
+    }
+    await pg.evaluate(() => { document.querySelectorAll('.storybook,.reward').forEach(e => e.remove()); __sv.paused = false; });
+    return true;
+  };
+  const info = await pg.evaluate(() => { const Y = __sv.yard, sh = __sv.interactables.find(i => i.id === 'npc_bahue');
+    const house = Math.min(...__sv.world.colliders.filter(c => c.r > 2 && c.top == null).map(c => Math.hypot(c.x - Y.at.x, c.z - Y.at.z) - c.r));
+    return { far: Math.hypot(sh.x - Y.at.x, sh.z - Y.at.z), room: Y.at.room || 0, house }; });
+  seen.push(await goal()); await use('yard_start'); seen.push(await goal());
+  await use('yard_coach'); seen.push(await goal());
+  const rels = await pg.evaluate(async () => (await import('/js/content/yard.js')).RELATIVES.map(r => [r.id, r.job]));
+  await use('yard_job_' + rels[0][0], (rels[0][1] + 1) % 3); const wrongKept = await pg.evaluate(id => __sv.heroes[0].profile.yard.jobs[id] == null, rels[0][0]);
+  for (const [id, job] of rels) await use('yard_job_' + id, job);
+  seen.push(await goal());
+  await use('yard_truck'); const heap = await pg.evaluate(() => __sv.heroes[0].profile.yard.done.y_truck); seen.push(await goal());
+  await use('yard_dig'); seen.push(await goal());
+  await use('yard_build'); seen.push(await goal());
+  await use('yard_party'); seen.push(await goal());
+  const free = await pg.evaluate(() => { const h = __sv.heroes[0]; return ['yard_truck', 'yard_dig'].every(id => __sv.interactables.find(i => i.id === id).visible(h)); });
+  const want = ['', 'Y_y_coach', 'Y_y_jobs', 'Y_y_truck', 'Y_y_dig', 'Y_y_build', 'Y_y_party'], out = [];
+  want.forEach((id, i) => { if (i && seen[i] !== id) out.push(`goal ${i} was ${seen[i]}, expected ${id}`); });
+  if (/^Y_/.test(seen[0] || '') || /^Y_/.test(seen[7] || '')) out.push('the yard was the goal before it started or after it ended: ' + seen[0] + ' / ' + seen[7]);
+  if (!wrongKept) out.push('a wrong job was accepted');
+  if (!heap) out.push('the truck run did not finish');
+  if (!free) out.push('the truck and excavator are not open for free play afterwards');
+  if (!(info.far < 70)) out.push(`the yard is ${info.far.toFixed(0)} m from the Huệ Nghi shop`);
+  if (!(info.house > 6)) out.push(`a building stands ${info.house.toFixed(1)} m from the middle of the yard`);
+  if (P.errors.length) out.push(...P.errors.slice(0, 2));
+  await P.ctx.close();
+  if (out.length) throw new Error(out.join('; '));
+  return `the yard ${info.far.toFixed(0)} m from the shop, ${info.room.toFixed(0)} m of room; coach, jobs (a wrong one turned down), dump truck, excavator, building and the meal played through; free play after`;
 });
 await check('camcalm', async () => {
   // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:
