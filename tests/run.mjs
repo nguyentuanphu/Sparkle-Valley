@@ -626,11 +626,16 @@ await check('emoji', async () => {
   // every emoji the game uses has a drawing in js/art.js (tools/emoji-audit.mjs)
   const { execFileSync } = await import('child_process');
   let out = ''; try { out = execFileSync(process.execPath, ['../tools/emoji-audit.mjs'], { encoding: 'utf8' }); } catch (e) { out = (e.stdout || '') + ''; ok(false, out.split('\n').slice(0, 12).join(' | ')); }
-  return out.trim().split('\n').pop();
+  // (owner, round R: "don't use emoji at all, including in all our docs, only our drawings") no emoji in the docs either
+  const EMO = /\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}]/u, ARROWS = /^[\u2190-\u21FF\u25A0-\u25FF\u2B05-\u2B07\u23E9-\u23FA©®™‼⁉〰]$/u, inDocs = [];
+  for (const f of execFileSync('git', ['ls-files', '*.md', '*.txt'], { cwd: '..', encoding: 'utf8' }).split('\n').filter(Boolean)) {
+    if (f.includes('node_modules')) continue;
+    for (const ch of fs.readFileSync('../' + f, 'utf8')) if (EMO.test(ch) && !ARROWS.test(ch)) { inDocs.push(f + ' ' + ch); break; }
+  }
+  ok(!inDocs.length, 'emoji in the docs: ' + inDocs.join(', '));
+  return out.trim().split('\n').pop() + '; no emoji in the docs';
 });
 
-// No phone emoji anywhere (owner, round R): every emoji on screen is the game's own drawing (js/emojiswap.js), on the
-// page (menus, Grown-ups, games, speech boxes) and on canvases (signs, name tags, the mini-map)
 await check('dialogtap', async () => {
   // (round R, owner: "there shouldn't be any repeats, the child just taps the speech box as OK") a speech box has no
   // Hear-again or OK buttons for any age; a tap on the box goes on, and the last tap closes it
@@ -681,6 +686,8 @@ await check('viwords', async () => {
   return `${cases.length} lines cut right; the phone says the Vietnamese words with its Vietnamese voice; recorded lines use both voices (Auntie Tám ${(mp3 / 1024).toFixed(0)} KB)`;
 });
 
+// No phone emoji anywhere (owner, round R): every emoji on screen is the game's own drawing (js/emojiswap.js), on the
+// page (menus, Grown-ups, games, speech boxes) and on canvases (signs, name tags, the mini-map)
 await check('noemoji', async () => {
   const bad = [];
   const scan = (P, where) => P.page.evaluate(w => {

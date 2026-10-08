@@ -7,14 +7,14 @@ for "yes, push" and "yes, deploy".
 
 | # | Core | File | In one line |
 |---|------|------|-------------|
-| 1 | 🌏 World | [world.md](world.md) | The 3D valley: land, roads, buildings, villages, landmarks, water, collisions, 3D speed |
-| 2 | 🎮 Play | [play.md](play.md) | Mini-games, stories, festivals, songs, levels, quests and rewards |
-| 3 | 🧸 Kid UI | [kid-ui.md](kid-ui.md) | Everything a child taps: Simple screen, HUD and dock, menus, settings, welcome, characters, accessibility |
-| 4 | 🎙️ Voice & Audio | [voice-audio.md](voice-audio.md) | The voice pack, the device voice, music, sound effects, Azure |
-| 5 | 👫 Online | [online.md](online.md) | Friends, rooms, knock and invite, microphone and calls, relays, child safety |
-| 6 | 🛠️ Studio | [studio.md](studio.md) | Sparkle Studio (exe and online), admins, saving and Publish, family content and photos |
-| 7 | 📊 Analytics & Infra | [analytics-infra.md](analytics-infra.md) | The analytics report, Netlify functions and settings, privacy, the service worker and caching |
-| 8 | 🚦 Release | [release.md](release.md) | Merging, the full regression suite, version, voices, packages, reports, push and deploy |
+| 1 | World | [world.md](world.md) | The 3D valley: land, roads, buildings, villages, landmarks, water, collisions, 3D speed |
+| 2 | Play | [play.md](play.md) | Mini-games, stories, festivals, songs, levels, quests and rewards |
+| 3 | Kid UI | [kid-ui.md](kid-ui.md) | Everything a child taps: Simple screen, HUD and dock, menus, settings, welcome, characters, accessibility |
+| 4 | Voice & Audio | [voice-audio.md](voice-audio.md) | The voice pack, the device voice, music, sound effects, Azure |
+| 5 | Online | [online.md](online.md) | Friends, rooms, knock and invite, microphone and calls, relays, child safety |
+| 6 | Studio | [studio.md](studio.md) | Sparkle Studio (exe and online), admins, saving and Publish, family content and photos |
+| 7 | Analytics & Infra | [analytics-infra.md](analytics-infra.md) | The analytics report, Netlify functions and settings, privacy, the service worker and caching |
+| 8 | Release | [release.md](release.md) | Merging, the full regression suite, version, voices, packages, reports, push and deploy |
 
 ## How to start a chat for a core
 

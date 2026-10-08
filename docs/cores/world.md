@@ -1,4 +1,4 @@
-# 🌏 World core
+# World core
 
 **You build the 3D valley:** the land and water, the roads, the buildings and villages, the real landmarks, the
 people, animals and vehicles standing in it, what is solid, and how fast it draws.
@@ -24,7 +24,7 @@ Plus `node tests/world-audit.mjs` after moving buildings, land or roads.
 
 ## Talks to
 - **Play**: where each game's host and each festival stands (`js/content/activities.js` is Play's; positions are yours).
-- **Kid UI**: the map in the Pad, the region name banner, the Simple screen's 🗺️ places list (`PLACE_AREAS`).
+- **Kid UI**: the map in the Pad, the region name banner, the Simple screen's places list (`PLACE_AREAS`).
 - **Voice & Audio**: which music plays in which area (`VN_AREAS` in `js/content/songs.js`): tell them when an area is renamed.
 - **Studio**: the Map and building page edits `content/custom.json` "world" through `js/worldedit.js`: keep its format.
 

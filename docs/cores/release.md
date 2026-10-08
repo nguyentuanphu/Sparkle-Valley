@@ -1,4 +1,4 @@
-# 🚦 Release core
+# Release core
 
 **You bring the cores' work together and hand it to the owner:** merge the core branches, run the full regression
 suite, bump the version, record new voices, update the docs, build the packages, report, and push and deploy only

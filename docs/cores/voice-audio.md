@@ -1,4 +1,4 @@
-# 🎙️ Voice & Audio core
+# Voice & Audio core
 
 **You make the game sound right:** the recorded voice pack (English, Vietnamese, Chinese, Hindi), the device voice as
 a fallback, the family's own voice lines, music and tunes, sound effects, and silence when the game is put away.
@@ -24,7 +24,7 @@ nothing; it plays offline. PRIV rules for family recordings.
 ## Talks to
 - **Every core** that adds a line a child hears: they list it on the board; you record it.
 - **Play**: the song list (`js/content/songs.js`) is theirs, the tunes are yours.
-- **Studio**: the 🎙️ Voices and 🎵 Music pages upload into your formats.
+- **Studio**: the Voices and Music pages upload into your formats.
 
 ## Owner's decisions to keep
 - Azure voices by default; NPC voices match their gender.

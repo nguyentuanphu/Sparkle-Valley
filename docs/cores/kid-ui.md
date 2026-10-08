@@ -1,4 +1,4 @@
-# 🧸 Kid UI core
+# Kid UI core
 
 **You make everything a child sees and taps outside the 3D world and the games:** the title and welcome, making a
 character, “Who's playing?”, the Simple screen, the buttons on the screen (HUD and dock), the Pad (map, backpack,
@@ -28,11 +28,11 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
 - **Play**: their lists show on your screens; you decide how, they decide what.
 - **Voice & Audio**: every spoken line needs a recording.
 - **Online**: the Friends tab's panel is drawn by `drawOnlinePanel` in `js/main.js` (Online's block); its look is yours.
-- **Analytics & Infra**: the Grown-ups → Advanced → 📊 Analytics switch.
+- **Analytics & Infra**: the Grown-ups → Advanced → Analytics switch.
 
 ## Owner's decisions to keep
 - Under-5s start on the Simple screen, big kids in the valley; each child switches either way (round I).
 - The Simple screen: groups first, one page per group that scrolls down, no “next page” buttons (round P).
 - The switch to it is “▦ Hình to / Big pictures” beside the player's card (round O).
 - A new device has no ready-made characters: the child makes their own (round P).
-- Festivals in one place (Settings → 🎉 Lễ hội); Grown-ups shows only the 📊 Analytics switch, no explanation (round N).
+- Festivals in one place (Settings → Lễ hội); Grown-ups shows only the Analytics switch, no explanation (round N).

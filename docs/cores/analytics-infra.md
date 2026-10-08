@@ -1,4 +1,4 @@
-# 📊 Analytics & Infra core
+# Analytics & Infra core
 
 **You keep the game's website running and report how it is used:** the anonymous analytics (per device and child,
 online now, problems), the Netlify functions and settings, offline caching (service worker), privacy, and the
@@ -12,7 +12,7 @@ infrastructure notes.
 - The analytics view's data shape (Studio draws it)
 
 ## Hard rules (§9.6)
-PRIV-001…005 (no addresses, GPS, photos or keys; a grown-up can switch analytics off: Grown-ups → Advanced → 📊
+PRIV-001…005 (no addresses, GPS, photos or keys; a grown-up can switch analytics off: Grown-ups → Advanced →
 Analytics; first names only, nothing else about a child), PERF rules on network use (a “still here” every two minutes,
 nothing while hidden).
 
@@ -31,5 +31,5 @@ nothing while hidden).
 
 ## Owner's decisions to keep
 - Analytics per device and per child, with first names, device and browser, city and country (round L).
-- 🟢 Playing now / ⚪ Offline per device in Studio (round O).
+- green dot Playing now / grey dot Offline per device in Studio (round O).
 - GitHub and Netlify are separate steps: “yes, push” then “yes, deploy”.

@@ -27,10 +27,10 @@ The music is an original ukulele-and-bells jingle generated for these ads (no sa
 ## Post captions (copy and paste)
 
 **English**
-> My kids are growing up between two homes: Vietnam 🇻🇳 and Australia 🇦🇺. So I built them Sparkle Valley, a gentle 3D world where they hear both languages, play the folk games their grandparents played, and learn to count, read and solve problems. Ages 2–8 · No ads · Works offline. Open it in your browser and tap "Add to Home Screen". 💛
+> My kids are growing up between two homes: Vietnam and Australia. So I built them Sparkle Valley, a gentle 3D world where they hear both languages, play the folk games their grandparents played, and learn to count, read and solve problems. Ages 2–8 · No ads · Works offline. Open it in your browser and tap "Add to Home Screen".
 
 **Tiếng Việt**
-> Các con tôi lớn lên giữa hai quê hương: Việt Nam 🇻🇳 và Úc 🇦🇺. Vì vậy tôi làm Thung Lũng Lấp Lánh, một thế giới 3D nhẹ nhàng nơi các con được nghe cả hai thứ tiếng, chơi trò chơi dân gian của ông bà, và học đếm, đọc, giải đố. Cho bé 2–8 tuổi · Không quảng cáo · Chơi được khi không có mạng. Mở trên trình duyệt rồi bấm "Thêm vào màn hình chính". 💛
+> Các con tôi lớn lên giữa hai quê hương: Việt Nam và Úc. Vì vậy tôi làm Thung Lũng Lấp Lánh, một thế giới 3D nhẹ nhàng nơi các con được nghe cả hai thứ tiếng, chơi trò chơi dân gian của ông bà, và học đếm, đọc, giải đố. Cho bé 2–8 tuổi · Không quảng cáo · Chơi được khi không có mạng. Mở trên trình duyệt rồi bấm "Thêm vào màn hình chính".
 
 **Hashtags:** #SparkleValley #ThungLungLapLanh #VietnameseAustralian #NguoiVietOUc #BilingualKids #SongNgu #LearnVietnamese #HocTiengViet #KidsGames #TroChoiDanGian #EducationalGames #Preschool
 

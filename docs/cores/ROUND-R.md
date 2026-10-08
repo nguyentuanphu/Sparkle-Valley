@@ -4,13 +4,13 @@ One big round, in two parts. Nothing is pushed until the owner says "yes, push",
 
 ## Part 1 (first, about 3–4 days): festival calendar and Halloween
 Reported to the owner on its own, so Halloween can go live around 12–14 Oct.
-- **📅 Lịch lễ hội** (Festival calendar) in the Pad and on the Simple screen: the next festivals with a countdown, today's timetable, and a "come back at 18:30" reminder.
+- **Lịch lễ hội** (Festival calendar) in the Pad and on the Simple screen: the next festivals with a countdown, today's timetable, and a "come back at 18:30" reminder.
 - **Dates work themselves out:** lunar dates use Hồ Ngọc Đức's Vietnamese calendar (UTC+7), plus Easter and "nth Sunday" rules, so there is no yearly table to update.
 - **Build-up:** party festivals decorate for at least 3 weeks, more each week. Quiet days (Anzac Day, Vu Lan, Giỗ Tổ, Reconciliation Week) show only a few days before, with no fireworks.
 - **Overlaps:** each festival decorates its own area, so two can run at once.
 - **On the day:** 08:00 greeting and treat, 15:00 festival game, 18:30 lanterns, parade or fireworks (17:30 for under-5s).
 - **Halloween:** cute only, nothing scary for under-5s. Pumpkins, costumes, trick-or-treat at houses, and a pumpkin-lantern keepsake.
-- **Studio 🚀 Ra mắt (Releases) page, first version:** switches on the website, start in N days, on for N days only, "New" badge for N days, and the "New!" moment (see `FEATURES.md`). Festivals are its first switches. Part 2 adds every other feature.
+- **Studio Ra mắt (Releases) page, first version:** switches on the website, start in N days, on for N days only, "New" badge for N days, and the "New!" moment (see `FEATURES.md`). Festivals are its first switches. Part 2 adds every other feature.
 - **Studio Festivals page:** the year's calendar; switch any festival on or off, move a date, change the build-up length, preview the decorations.
 
 ## Part 2: the rest, in this order
@@ -51,7 +51,7 @@ Reported to the owner on its own, so Halloween can go live around 12–14 Oct.
    - Hard road and village rules stay. The valley grows by about a fifth (about 480 m) to fit the water, mountains and plots, as long as the speed checks pass on phones.
 3. **New child's journey:**
    - The child picks a companion when making a character: Lấp Lánh the firefly or a baby dragon (rồng con). They can swap at home.
-   - One button at a time, clouds over unvisited places on the map, a "❓ Làm gì bây giờ?" button, a new place each day in the first week.
+   - One button at a time, clouds over unvisited places on the map, a "Làm gì bây giờ?" button, a new place each day in the first week.
    - 9 starter quests (Ông Cú → companion → house key → plant a seed → name the pet → first friend → first purchase → first decoration → first game prize → goodnight sticker), then the existing adventure.
    - Children who already play get the companion, the cottage and the surprises, and skip the basics.
 4. **Homes:** cottage (start), treehouse (finish the plateau), riverside stilt house (ride the raft to every stop). Each has 5 levels, built with materials found in the world plus quest stamps; Bác Thợ builds them. Rooms: bedroom, kitchen, pet corner, trophy shelf, sticker wall, garden. Plants and pets grow over real days and never die or get sad.

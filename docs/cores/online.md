@@ -1,6 +1,6 @@
-# 👫 Online core
+# Online core
 
-**You let children play together safely:** friend codes and the friends list, “🟢 … is playing” notices, invites,
+**You let children play together safely:** friend codes and the friends list, “green dot … is playing” notices, invites,
 rooms (start, knock, let in), seeing each other in the valley, talk buttons, the microphone and voice calls, the cloud
 relay and the voice relay (TURN), and keeping strangers out.
 
@@ -24,7 +24,7 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
 - **Analytics & Infra**: the Netlify side of `/api/turn` and its environment variables.
 
 ## Owner's decisions to keep
-- Friends are told, never moved: a notice with 📨 Invite and ▶ Go to their room; leaving a room with friends asks first (round O).
-- The microphone comes on with a 🎙️ button, not on every tap; over the cloud relay say plainly that voices can't travel there (round O).
+- Friends are told, never moved: a notice with Invite and ▶ Go to their room; leaving a room with friends asks first (round O).
+- The microphone comes on with a button, not on every tap; over the cloud relay say plainly that voices can't travel there (round O).
 - One TURN key for everyone, kept in Netlify (CF_TURN_KEY_ID, CF_TURN_KEY_TOKEN), handed out a few hours at a time (round O).
 - Up to 6 players a room.

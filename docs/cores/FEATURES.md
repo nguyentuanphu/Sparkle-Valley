@@ -1,6 +1,6 @@
 # Feature list for the Studio Release page (draft, 8 Oct AEST)
 
-Every line becomes a switch in Sparkle Studio → 🚀 **Ra mắt** (Releases).
+Every line becomes a switch in Sparkle Studio → **Ra mắt** (Releases).
 
 ## How a switch works (owner's answers, 8 Oct AEST)
 - **On or Off**, for everyone at once. There is no test step and no gradual rollout.
@@ -10,7 +10,7 @@ Every line becomes a switch in Sparkle Studio → 🚀 **Ra mắt** (Releases).
   - **On for N days only:** a limited-time feature or event that switches off by itself; what children got from it stays theirs and usable.
   - **"New" badge for N days:** default 7.
 - **"New!" moment when a feature goes live:**
-  - A ✨ MỚI badge.
+  - A MỚI badge.
   - The companion flies over, says what's new and can lead the child to it.
   - A "Có gì mới" card the next time the child starts.
   - A gift the first time the child tries it.
@@ -67,7 +67,7 @@ Columns below: **Suggested start** = my suggestion only (Live, or Off then drip 
 | Feature | Suggested start |
 |---|---|
 | Tết, Trung Thu, Diwali, Christmas, Australia Day (already in) | Live |
-| Festival calendar 📅 (Round R) | Live with Halloween |
+| Festival calendar (Round R) | Live with Halloween |
 | Each new festival (Round R), its own switch | Scheduled by date |
 | Hội làng: 3 big events a day | Off then drip |
 
@@ -134,14 +134,14 @@ Columns below: **Suggested start** = my suggestion only (Live, or Off then drip 
 ## Suggested drip calendar (one "new" thing each week, AEST)
 | Week from | New for players |
 |---|---|
-| 12 Oct | 📅 Festival calendar + 🎃 Halloween decorations |
+| 12 Oct | Festival calendar + Halloween decorations |
 | 19 Oct | Village singers + Đà Nẵng Dragon Bridge fire and water (already built, held back) |
-| 26 Oct | 🎃 Halloween night events (31 Oct) |
+| 26 Oct | Halloween night events (31 Oct) |
 | 2 Nov | Companion, first-day journey and cottage (when Round R part 2 is ready) |
 | 9 Nov | Diwali + the China & India areas |
 | 16 Nov | Teachers' Day cards + Bé Bán Hàng stall |
 | 23 Nov | Rare lotus, golden butterfly + Heo Đất, Need or Want? |
-| 30 Nov | 🎄 Christmas build-up + Hội làng events |
+| 30 Nov | Christmas build-up + Hội làng events |
 | 7 Dec | Treehouse |
 | 14 Dec | Treasure map |
 | 21 Dec | Shooting stars + Christmas Day |
@@ -150,6 +150,6 @@ Columns below: **Suggested start** = my suggestion only (Live, or Off then drip 
 | 11 Jan | Rankings |
 | 18 Jan | Mystery boxes |
 | 25 Jan | Australia Day + Ông Táo carp release |
-| 1 Feb | 🧧 Tết build-up |
+| 1 Feb | Tết build-up |
 
 Until Round R part 2 is ready, the weekly news comes from things already built and held back. The dates follow from the Round R plan and the owner can move any of them in Studio.

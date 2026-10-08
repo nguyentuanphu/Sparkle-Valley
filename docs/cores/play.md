@@ -1,4 +1,4 @@
-# 🎮 Play core
+# Play core
 
 **You make the things to do:** every mini-game, the fairy tales, festivals, the song list, levels (Easy, Medium,
 Hard), stars, quests, rewards, co-op quests and the games played together online.
@@ -30,5 +30,5 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
 
 ## Owner's decisions to keep
 - Stars only (no difficulty dots); Easy · Medium · Hard inside each game, remembered per game and child (round M).
-- Songs live with the games: the pink button is “Vui chơi / Play” with a 🎵 Songs tab (round O).
+- Songs live with the games: the pink button is “Vui chơi / Play” with a Songs tab (round O).
 - Festival music during festivals; Vietnamese tunes in the Vietnam areas; family recordings first (round N).

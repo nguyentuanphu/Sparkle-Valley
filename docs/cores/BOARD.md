@@ -5,28 +5,28 @@ Every core keeps its own section up to date. Times are in AEST. Release reads th
 Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
-## 🚦 Release
+## Release
 - Round O (r46) and Round P (r47) are on `round-o` / `round-p`, waiting for the owner's "yes, push" / "yes, deploy".
 - Round R plan (owner's answers, 8 Oct AEST): `docs/cores/ROUND-R.md`. Part 1 (festival calendar + Halloween) first, reported on its own.
 - The Google Drive mirror (`.github/workflows/drive-mirror.yml`) is not set up yet: ask the owner at every report.
 
-## 🌏 World
+## World
 - (nothing open)
 
-## 🎮 Play
+## Play
 - (nothing open)
 
-## 🧸 Kid UI
+## Kid UI
 - (nothing open)
 
-## 🎙️ Voice & Audio
-- Lullabies with real voices: the owner may paste titles or words (soha.vn could not be reached), or record them in Studio → 🎵 Music.
+## Voice & Audio
+- Lullabies with real voices: the owner may paste titles or words (soha.vn could not be reached), or record them in Studio → Music.
 
-## 👫 Online
+## Online
 - The voice relay waits for the owner's Cloudflare TURN key (CF_TURN_KEY_ID, CF_TURN_KEY_TOKEN in Netlify): until then, voices only work when the two devices can link directly.
 
-## 🛠️ Studio
+## Studio
 - (nothing open)
 
-## 📊 Analytics & Infra
+## Analytics & Infra
 - (nothing open)

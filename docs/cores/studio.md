@@ -1,4 +1,4 @@
-# 🛠️ Studio core
+# Studio core
 
 **You make Sparkle Studio, the grown-ups' dashboard:** the Windows exe and the same pages online at `/studio/`,
 signing in and admins, saving and Publish, and every family page (message, children, album, quiz, stories,
@@ -11,7 +11,7 @@ villagers, Simple screen, music, map, real photos, play time, voices, ads, analy
 - `tests/studio-check.mjs`
 
 ## How saving works (owner, round P)
-Online, a save waits on the website (Netlify Blobs store `studio-pending`) and is read back at once; 🚀 Publish (N)
+Online, a save waits on the website (Netlify Blobs store `studio-pending`) and is read back at once; Publish (N)
 sends all waiting changes to GitHub as one commit and puts them live; “Drop all waiting changes” forgets them. The exe
 saves into the game folder and sends to GitHub in two steps (draft, then Publish). Only the family's files can change
 online: `content/`, `voices/`, `photos/`, `tools/voice-extra.json`.
@@ -25,7 +25,7 @@ until Publish; only the family's files change), PRIV rules (no keys in the repos
 Build the exe after changes: `bash studio/build-exe.sh`.
 
 ## Talks to
-- **Analytics & Infra**: the 📊 Analytics page shows their report; Netlify environment variables.
+- **Analytics & Infra**: the Analytics page shows their report; Netlify environment variables.
 - **Voice & Audio**: voices and music uploads.
 - **World**: the map and building page writes their world format.
 - **Release**: the exe goes into each round's packages.
