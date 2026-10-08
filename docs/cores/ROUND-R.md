@@ -34,6 +34,14 @@ Reported to the owner on its own, so Halloween can go live around 12–14 Oct.
      - Animals: soft plush-toy style, big eyes with a shine, expressions (happy, sleepy, hungry), babies following mothers, small friends riding along.
      - Trees: clusters of soft clumps, lighter on top, gentle sway; species by region (cây đa, feathery bamboo, banana, coconut, phượng vĩ; gum, jacaranda, wattle; willow, plum blossom); flowering with the real season and festivals (hoa mai and hoa đào at Tết, jacaranda in Oct–Nov).
      - Phones stay fast: simple merged shapes, colours in the model, one draw per kind of tree or animal, simpler versions far away.
+   - **More designs** (owner picked all four, 8 Oct; drawings on the concept page):
+     - Name tags: only the nearest few (at most 4) show a small tag that fades with distance; a pink "!" marks who has something for you; ⓘ only when close; tags never overlap each other or a face.
+     - Pad map: a drawn picture of the new valley, regions tinted, round picture badges with one name each (never overlapping), zoom for town names and shops; you, friends, today's festival, the next first-week stop, clouds over unvisited places.
+     - New screens in one shared frame (big card, drawn title, ≥ 64 px targets for under-5s, round ✕, nothing that needs reading): shop and wardrobe, home upgrade, festival calendar, What's new card, mystery box, rankings, collectibles book, treasure map.
+     - Vehicles in toy style with rolling wheels and helmets: family motorbike, xích lô, bus, little car, Melbourne tram; bamboo raft, ferry, thúng chai. They keep to roads, go slowly and stop for children.
+     - Street things: xe đẩy and gánh stalls, striped kiosks, lantern lamps (VN) and street lamps (AU), picture signposts, benches, bins, red letterbox. Power poles and wires are switched off (Studio switch, done).
+     - Sky by real time (dawn, day, sunset, starry night with the real moon phase), gentle rain then a rainbow, no glare; grass with wildflowers instead of bare sand, round rocks, snowy peaks, beaches; small life (butterflies, dragonflies, frogs, jumping fish, birds).
+     - Companion: Lấp Lánh the glowing firefly; the baby dragon hatches from an egg and grows (baby, young, grown) until it can fly the child. Pets in plush style with tricks, a bed and a bowl. Calm mode keeps weather gentle and daytime.
    - Picture signposts at every junction; landmarks at road ends; kiosks in groups; map labels never overlap.
    - **Room for family memories** (owner, 8 Oct): the owner plans to add families' own houses and buildings on request later, so the land is planned now.
      - Two Memory Villages (Làng Kỷ Niệm), one on each bank beside the home island, about 20 plots each, plus 2–3 spare plots in every town and village: about 60 plots.
