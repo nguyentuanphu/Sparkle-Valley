@@ -66,8 +66,6 @@ import { createSymbols, regionLabel } from './symbols.js';
 import { createRegionSites } from './regionsites.js';
 import { createVnFun } from './vnfun.js';
 import { createLotus } from './lotus.js';
-import { createLanterns } from './lanterns.js';
-import { createYard } from './yard.js';
 import { openTheatre } from './tales.js';
 import { addFamilyBuildings, applyWorldEdits } from './worldedit.js';
 import { buildPowerLines } from './powerlines.js';
@@ -1496,6 +1494,8 @@ createFun(G);
 createLearning(G);
 // the main story, Đèn Lồng Thung Lũng (js/lanterns.js, chapters in js/content/chapters.js): after the storyteller and the villagers
 G.npcAt = id => (n => n && { x: n.x, z: n.z })(NPCS.find(n => n.id === id));
+// (loaded while the valley is built behind the title screen, so the title comes up sooner: PERF-001)
+const [{ createLanterns }, { createYard }] = await Promise.all([import('./lanterns.js'), import('./yard.js')]);
 G.lanterns = createLanterns(G, { dialog, say, reward, save, openTheatre });
 // bà Huệ and ông Nghi's yard near the Huệ Nghi shop (js/yard.js): a side story
 G.yard = createYard(G, { dialog, say, reward, save });
