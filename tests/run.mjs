@@ -710,7 +710,9 @@ await check('films', async () => {
       out.films[id] = { pages: n, helps };
     };
     for (const id of Object.keys(C.FILMS)) {
-      openTheatre(MORE_TALES.find(t => t.id === id), { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); // (loaded when the story opens)
+      // (the story's own films come from js/content/chapters.js, the fairy tales from js/talesdata.js)
+      const { STORY_TALES } = await import('/js/content/chapters.js'), st = STORY_TALES[id];
+      openTheatre(MORE_TALES.find(t => t.id === id) || (st && { ...st, title: () => st.title[0], ctx: { name: 'Na', companion: 'firefly' } }), { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); // (loaded when the story opens)
       document.querySelector('.th-auto').click();
       if (!document.querySelector('.theatre.film canvas.th-film')) out.bad.push(id + ': no 3D stage');
       await run(id, C.FILMS[id].pages.length);
