@@ -43,6 +43,8 @@ import { createLearning } from './learn.js';
 import { createShowcase } from './showcase.js';
 import { createRoads, plantRoadside } from './roads.js';
 import { createTraffic } from './traffic.js';
+import { RELEASES } from './content/releases.js';
+import { releaseNew } from './custom.js';
 import { cachedCanvas } from './worldcache.js';
 import { events } from './core/events.js';
 import { createPlaceBook } from './placebook.js';
@@ -1207,6 +1209,14 @@ G.goodSpot = (x, z) => {
   return !W.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + .45) && !W.boxes.some(b => x > b.x0 - .45 && x < b.x1 + .45 && z > b.z0 - .45 && z < b.z1 + .45);
 };
 const keepSpot = () => G.heroes.forEach(h => { if (h.profile && h.onGround && !h.towerClimb && !h.indoors && G.goodSpot(h.lastSafe.x, h.lastSafe.z)) h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; });
+// the "New!" moment (round R, owner): what Studio's Releases page marked new, once per child, at most three at a time
+async function newMoment(h) {
+  if (!h || !h.profile) return; const p = h.profile; p.seenNew = p.seenNew && typeof p.seenNew === 'object' ? p.seenNew : {};
+  const fresh = RELEASES.filter(r => releaseNew(r.id) && !p.seenNew[r.id]).slice(0, 3); if (!fresh.length) return;
+  for (let k = 0; k < 60 && document.querySelector('.storybook, .reward, .modal, .dialog'); k++) await new Promise(r => setTimeout(r, 500));
+  fresh.forEach(r => { p.seenNew[r.id] = new Date().toISOString().slice(0, 10); }); save();
+  await reward('🆕', T('New in the valley!', 'Mới trong thung lũng!'), fresh.map(r => T(r.en, r.vi)).join(' · '));
+}
 function startSession(mode, chosen) {
   G.mode = mode; G.heroes.forEach(h => scene.remove(h.av.root)); G.huds.forEach(h => h.destroy()); G.heroes = []; G.huds = [];
   chosen.forEach((p, i) => {
@@ -1227,6 +1237,10 @@ function startSession(mode, chosen) {
   if (G.traffic) G.traffic.apply(chosen.every(p => p.age === 'big'));
   G.pets.sync(); G.pets.refreshInteractables(); G.kites.sync();
   G.festivals.greet(G.heroes[0]);
+  // (round R) a grown-up's festival preview from Sparkle Studio (?festival=halloween), once
+  { const pf = new URLSearchParams(location.search).get('festival'); if (pf && !G._previewed) { G._previewed = true; setTimeout(() => G.festivals.visit(0, pf), 1800); } }
+  // (round R) the "New!" moment: something Studio released in the last few days, shown once to each child
+  setTimeout(() => newMoment(G.heroes[0]), 4000);
   resize(); G.paused = false; playing = true; G.listenFriends();
   // a note from the grown-ups (Sparkle Studio), once a day
   { const M = CUSTOM.message, today = new Date().toDateString();

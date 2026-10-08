@@ -10,6 +10,7 @@
 import core from '../../studio/core.cjs';
 import { report, inbox, setLabel } from '../lib/players.mjs';
 import * as admins from '../lib/admins.mjs';
+import { readLive, saveLive } from '../lib/live.mjs';
 const { createStudio, githubStore, makeToken, checkToken, samePassword } = core;
 
 const env = k => ((globalThis.Netlify && globalThis.Netlify.env.get(k)) || process.env[k] || '').trim();
@@ -20,6 +21,7 @@ const COOKIE = 'sv_studio';
 // the players' store is Netlify Blobs on the website (tests hand in their own)
 const blobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'players', consistency: 'strong' }));
 const adminBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'studio-admins', consistency: 'strong' }));
+const liveBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'live', consistency: 'strong' }));
 const heldBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'studio-pending', consistency: 'strong' }));
 // the saved changes waiting for Publish (round P), kept in Netlify Blobs: "index" lists them (path → size, or null for
 // a removed file) and "f/<path>" holds each file (base64)
@@ -31,7 +33,7 @@ export const heldOn = S => ({
     await S.setJSON('index', ix); },
   clear: async () => { const ix = (await S.get('index', { type: 'json' })) || {}; for (const rel of Object.keys(ix)) await S.delete('f/' + rel); await S.setJSON('index', {}); }
 });
-export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs } = {}) => async req => {
+export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs, liveStore = liveBlobs } = {}) => async req => {
   const url = new URL(req.url), p = url.pathname, pw = env('STUDIO_PASSWORD'), post = req.method === 'POST';
   if (!pw) return json({ error: 'The online Studio is not set up yet: add STUDIO_PASSWORD in Netlify (Site configuration → Environment variables), then deploy again.', setup: true }, 503);
   // signing in and out
@@ -68,6 +70,8 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
     }
     return json({ error: 'no' }, 404);
   }
+  // (round R) Releases and Festivals: saved straight to the website, so they reach the devices at once, no Publish
+  if (p === '/studio/api/live') return json(post ? await saveLive(await liveStore(), await req.json().catch(() => ({})), me.name) : await readLive(await liveStore()));
   const players = async () => report(await playersStore());
   if (p === '/studio/api/players') return json(await players());
   if (p === '/studio/api/inbox') return json(await inbox(await playersStore()));

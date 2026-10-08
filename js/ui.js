@@ -461,20 +461,38 @@ export function openQuick(game, i) {
   draw();
 }
 
+// ---------- Lịch lễ hội, the festival calendar (round R, owner) ----------
+// Today's festival with its timetable (08:00 present, 15:00 festival game, 18:30 show; 17:30 for under-5s), the ones
+// getting ready (decorations go up 3 weeks before), and the next ones with how many days to go. Any of them can be
+// visited now (the village decorates, the show plays and the festival table gives its present).
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const dayLabel = d => T(`${d.getDate()} ${MONTHS[d.getMonth()]}`, `${d.getDate()}/${d.getMonth() + 1}`);
+export function festCalendarHTML(game) {
+  const F = game.festivals; if (!F || !F.upcoming) return '';
+  const isNew = new Set(F.list().filter(f => f.isNew).map(f => f.id)), list = F.upcoming().map(n => ({ ...n, isNew: isNew.has(n.F.id) })), today = list.filter(n => n.on), soon = list.filter(n => !n.on).slice(0, 12), show = F.showTime();
+  const SHOW = { fireworks: ['Fireworks', 'Pháo hoa'], lanterns: ['Lantern parade', 'Rước đèn'], parade: ['Parade', 'Diễu hành'], lights: ['Light show', 'Trình diễn ánh sáng'] };
+  const plan = f => f.kind === 'quiet' ? `<li><b>${T('All day', 'Cả ngày')}</b> ${T('A quiet day of remembering', 'Một ngày yên lặng để tưởng nhớ')}</li>`
+    : `<li><b>08:00</b> ${T('A present at the festival table', 'Nhận quà ở bàn lễ hội')}</li><li><b>15:00</b> ${T('The festival game', 'Trò chơi lễ hội')}</li>${f.show && f.show !== 'none' ? `<li><b>${show}</b> ${T(...SHOW[f.show])}</li>` : ''}`;
+  const card = n => `<div class="fcal-today"><span class="fi">${pic(n.F.icon)}</span><div><b>${esc(T(n.F.en, n.F.vi))}</b><ul class="fplan">${plan(n.F)}</ul><button class="btn" data-fest="${n.F.id}">${T('Go there', 'Đến đó')}</button></div></div>`;
+  const row = n => { const gr = n.F.group === 'vn' ? 'vn' : n.F.group === 'au' ? 'au' : 'west', ready = n.daysTo <= (n.F.kind === 'quiet' ? 3 : 21);
+    return `<button class="fcal-row ${gr}${ready ? ' ready' : ''}" data-fest="${n.F.id}"><span class="fi">${pic(n.F.icon)}</span><b>${esc(T(n.F.en, n.F.vi))}${n.isNew ? ` <i class="newtag">${T('New', 'Mới')}</i>` : ''}</b><small>${dayLabel(n.start)}</small><em>${n.daysTo === 1 ? T('tomorrow', 'ngày mai') : T(`in ${n.daysTo} days`, `còn ${n.daysTo} ngày`)}${ready ? ' · ' + T('getting ready', 'đang trang trí') : ''}</em></button>`; };
+  return `${today.length ? `<h3>${T('Today', 'Hôm nay')}</h3>${today.map(card).join('')}` : ''}
+    <h3>${T('Coming up', 'Sắp tới')}</h3><div class="fcal-list">${soon.map(row).join('')}</div>
+    <p class="note">${T('Tap one to visit it now: the village decorates and you get a festival present.', 'Chạm vào một lễ hội để đến ngay: làng trang trí và con nhận quà lễ hội.')}</p>`;
+}
+
 // choose a festival to visit (any day of the year)
 export function openFestivals(game, i) {
-  const m = modal('festpick', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎉 ${T('Festivals', 'Lễ hội')}</h2>
-    <p class="sub">${T('Pick a festival: the village gets ready, fireworks go up and you get a festival present.', 'Chọn một lễ hội: làng trang trí, pháo hoa bay lên và con nhận quà lễ hội.')}</p>
-    <div class="festgrid">${game.festivals.list().map(f => `<button class="festbtn${f.today ? ' today' : ''}" data-fest="${f.id}"><span>${pic(f.icon)}</span><b>${esc(f.name)}</b>${f.today ? `<small>${T('Today!', 'Hôm nay!')}</small>` : ''}</button>`).join('')}</div>`);
+  const m = modal('festpick', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>📅 ${T('Festival calendar', 'Lịch lễ hội')}</h2>${festCalendarHTML(game)}`);
   const done = () => { m.close(); game.paused = false; };
   m.querySelector('.x').onclick = done;
   m.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); done(); game.festivals.visit(i, b.dataset.fest); });
   // the one place for festivals (round M, owner): which festival decorates the whole valley is here too, for grown-ups
   // (press and hold, as everywhere): by the calendar on this device, one festival all the time, or none
   const card = m.querySelector('.card'), box = el('div', 'fest-grown');
-  const deco = () => { box.innerHTML = `<h3>🏮 ${T('Festival decorations in the valley', 'Trang trí lễ hội trong thung lũng')}</h3><p class="note">${T('By date follows the calendar on this device: Tết, Mid-Autumn, Diwali, Christmas and Australia Day.', 'Theo lịch là theo lịch của máy này: Tết, Trung Thu, Diwali, Giáng Sinh và Ngày Nước Úc.')}</p>
-    <div class="seg fest">${[['auto', T('By date', 'Theo lịch')], ['tet', '🧧 Tết'], ['midautumn', '🥮 ' + T('Mid-Autumn', 'Trung Thu')], ['diwali', '🪔 Diwali'], ['christmas', '🎄 ' + T('Christmas', 'Giáng Sinh')], ['ausday', '🇦🇺 ' + T('Australia Day', 'Ngày Nước Úc')], ['none', T('Off', 'Tắt')]].map(([k, l]) => `<button data-f="${k}" class="${(settings.festival || 'auto') === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
-    box.querySelectorAll('.seg.fest button').forEach(b => b.onclick = () => { SFX.tap(); settings.festival = b.dataset.f; saveSettings(); window.__sv && window.__sv.festivals && window.__sv.festivals.rebuild(); deco(); }); };
+  const deco = () => { box.innerHTML = `<h3>🏮 ${T('Festival decorations in the valley', 'Trang trí lễ hội trong thung lũng')}</h3><p class="note">${T('By date follows the calendar: each festival decorates its own places for 3 weeks before (a few days for quiet days).', 'Theo lịch: mỗi lễ hội trang trí nơi của nó 3 tuần trước ngày lễ (ngày yên lặng thì vài ngày).')}</p>
+    <select class="fest-pick">${[['auto', T('By date', 'Theo lịch')], ['none', T('Off', 'Tắt')], ...game.festivals.list().map(f => [f.id, f.name])].map(([v, l]) => `<option value="${v}" ${(settings.festival || 'auto') === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+    box.querySelector('.fest-pick').onchange = e => { SFX.tap(); settings.festival = e.target.value; saveSettings(); window.__sv && window.__sv.festivals && window.__sv.festivals.rebuild(); }; };
   box.innerHTML = `<button class="grown fest-hold"><span class="ring"></span>🔒 <b>${T('Grown-ups: festival decorations', 'Người lớn: trang trí lễ hội')}</b> <small>${T('press and hold', 'nhấn giữ')}</small></button>`;
   card.appendChild(box); holdButton(box.querySelector('.fest-hold'), () => { SFX.chime && SFX.chime(); deco(); });
   say('Which festival shall we visit?', 'Mình đi lễ hội nào nhé?');
@@ -585,7 +603,7 @@ export function openPad(game, i, tab) {
   const hero = game.heroes[i], p = hero.profile;
   const m = modal('pad', '');
   const card = m.querySelector('.card');
-  const TABS = [['map', '🗺️', T('Map', 'Bản đồ')], ['bag', '🎒', T('Backpack', 'Ba lô')], ['log', '📜', T('Adventures', 'Nhiệm vụ')], ['album', '⭐', T('Album', 'Bộ sưu tập')], ['passport', '🛂', T('Passport', 'Hộ chiếu')], ['games', '🎲', T('Games', 'Trò chơi')], ['cam', '📷', T('Camera', 'Máy ảnh')]];
+  const TABS = [['map', '🗺️', T('Map', 'Bản đồ')], ['bag', '🎒', T('Backpack', 'Ba lô')], ['log', '📜', T('Adventures', 'Nhiệm vụ')], ['album', '⭐', T('Album', 'Bộ sưu tập')], ['passport', '🛂', T('Passport', 'Hộ chiếu')], ['games', '🎲', T('Games', 'Trò chơi')], ['cam', '📷', T('Camera', 'Máy ảnh')], ['cal', '📅', T('Festivals', 'Lễ hội')]];
   if (game.mode === 'online' || game.mode === 'solo') TABS.push(['friend', '📞', T('Friend', 'Bạn bè')]);
   const draw = () => {
     const sl = card.querySelector('.pad-tabs') ? card.querySelector('.pad-tabs').scrollLeft : 0;
@@ -594,7 +612,7 @@ export function openPad(game, i, tab) {
     card.querySelectorAll('.pad-tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; SFX.tap(); draw(); });
     card.querySelector('.x').onclick = close;
     const body = card.querySelector('.pad-body');
-    ({ map: drawMap, bag: drawBag, log: drawLog, album: drawAlbum, games: drawGames, cam: drawCam, friend: drawFriend, passport: b => game.drawPassport(b, hero) })[tab](body);
+    ({ map: drawMap, bag: drawBag, log: drawLog, album: drawAlbum, games: drawGames, cam: drawCam, friend: drawFriend, passport: b => game.drawPassport(b, hero), cal: drawCal })[tab](body);
   };
   // computer keyboards: 1–8 pick a tab, ← → step through them, Esc closes
   const onKey = e => {
@@ -751,6 +769,11 @@ export function openPad(game, i, tab) {
     const how = await saveToDevice(src);
     if (how === 'downloaded') toast(T('Saved to the phone: look in Photos or Gallery (Downloads).', 'Đã lưu vào máy: xem trong Ảnh hoặc Thư viện (Tải về).'));
     if (how === 'failed') toast(T('Could not save the picture on this device.', 'Không lưu được ảnh trên máy này.'));
+  }
+  // the festival calendar (round R): tap a festival to go there now
+  function drawCal(body) {
+    body.innerHTML = `<div class="fcal">${festCalendarHTML(game)}</div>`;
+    body.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.festivals.visit(i, b.dataset.fest); });
   }
   function drawCam(body) {
     const howTo = savesByShare() ? T('Then tap “Save to my photos” and choose “Save Image”.', 'Rồi chạm “Lưu vào ảnh của máy” và chọn “Lưu hình ảnh”.') : T('Then tap “Save to my photos”.', 'Rồi chạm “Lưu vào ảnh của máy”.');
@@ -964,7 +987,7 @@ export function openGamesHub(game, i, onClose) {
       return `<div class="hcard" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}"><span class="hi">${pic(g.icon)}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${originFlags(g.origin)}</span>` : ''}</div>`;
     }).join('')}</div>`;
   const body = key => {
-    if (key === 'fest') return `<h3>🎉 ${T('Festivals: go any day', 'Lễ hội: đi ngày nào cũng được')}</h3><div class="festrow">${game.festivals.list().map(f => `<button class="festbtn${f.today ? ' today' : ''}" data-fest="${f.id}"><span>${pic(f.icon)}</span><b>${esc(f.name)}</b>${f.today ? `<small>${T('Today!', 'Hôm nay!')}</small>` : ''}</button>`).join('')}</div>`;
+    if (key === 'fest') return `<h3>📅 ${T('Festival calendar', 'Lịch lễ hội')}</h3>${festCalendarHTML(game)}`;
     if (key === 'tales') return `<h3>📖 ${T('Fairy tales', 'Truyện cổ tích')}</h3><p class="sub">${T('Tap a story: you fly to Grandma Storyteller and she reads it to you.', 'Chạm vào truyện: con bay đến chỗ Bà Kể Chuyện và bà kể cho con nghe.')}</p><div class="talelib">${game.taleShelfHTML(p)}</div>`;
     if (key === 'songs') {
       // (round O, owner: songs belong with the games, not in Settings) one big button per group; it opens the Songs page there

@@ -31,7 +31,9 @@ export const DECOR = {
   rainbow: { icon: '🌈', price: 5, en: 'Rainbow picture', vi: 'Tranh cầu vồng', wall: true },
   painting: { icon: '🖼️', price: 8, en: 'Painting', vi: 'Bức tranh', wall: true },
   lantern: { icon: '🏮', price: 8, en: 'Lantern', vi: 'Đèn lồng', wall: true },
-  star: { icon: '⭐', price: 0, en: 'Gold star', vi: 'Ngôi sao vàng', wall: true }
+  star: { icon: '⭐', price: 0, en: 'Gold star', vi: 'Ngôi sao vàng', wall: true },
+  // keepsakes (round R): won, never bought; they show in the chooser only once the child has one (profile.keepsakes)
+  pumpkin: { icon: '🎃', price: 0, en: 'Pumpkin lantern (Halloween)', vi: 'Đèn bí ngô (Halloween)', keepsake: true }
 };
 // the 8 spots in the room (room coordinates; the door is at +z): 4 on the floor, 4 on the walls
 export const SPOTS = [
@@ -73,7 +75,7 @@ export function createMyHouse(G) {
   function choose(h, k) {
     const p = h.profile, d = deco(p), s = SPOTS[k], cards = customAlbum().filter(c => familyCards(p)[c.id]);
     G.paused = true; SFX.tap();
-    const opts = Object.entries(DECOR).filter(([, v]) => !!v.wall === !!s.wall).map(([key, v]) => ({ key, icon: v.icon, name: T(v.en, v.vi), price: v.price }))
+    const opts = Object.entries(DECOR).filter(([key, v]) => !!v.wall === !!s.wall && (!v.keepsake || (Array.isArray(p.keepsakes) && p.keepsakes.includes(key)))).map(([key, v]) => ({ key, icon: v.icon, name: T(v.en, v.vi), price: v.price }))
       .concat(s.wall ? cards.map(c => ({ key: 'card:' + c.id, photo: c.photo, name: T(c.en, c.vi) || T('Family photo', 'Ảnh gia đình'), price: 0 })) : []);
     const m = modal('decor', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>${pic('🎨')} ${s.wall ? T('Something for the wall', 'Treo gì lên tường') : T('Something for the floor', 'Đặt gì trên sàn')}</h2>
       <p class="note center">${pic('💰')} ${fmt(farm.coins)}</p>

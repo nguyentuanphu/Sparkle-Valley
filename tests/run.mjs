@@ -636,6 +636,35 @@ await check('emoji', async () => {
   return out.trim().split('\n').pop() + '; no emoji in the docs';
 });
 
+await check('festcal', async () => {
+  // (round R, owner) the festival calendar: real dates, 3 weeks of build-up that grows each week, two festivals at once
+  // in their own places, quiet days only a few days before, the day's timetable, Halloween trick-or-treat and keepsake
+  const P = await open(b, { w: 1180, h: 820 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const F = await import('/js/festivals.js'), st = d => F.activeFestivals(new Date(d + 'T10:00:00')).map(a => a.F.id + ':' + a.stage).sort().join(' ');
+    const out = { oct9: st('2026-10-09'), oct10: st('2026-10-10'), oct25: st('2026-10-25'), oct31: st('2026-10-31'), anzac20: st('2027-04-20'), anzac23: st('2027-04-23'), tet: st('2026-02-17') };
+    // the calendar on the Pad
+    __sv.openPad(0, 'cal'); await new Promise(r => setTimeout(r, 500));
+    out.rows = document.querySelectorAll('.pad .fcal-row').length; document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.paused = false;
+    // Halloween: knock at five doors for a pumpkin lantern
+    const h = __sv.heroes[0]; __sv.festivals.visit(0, 'halloween'); await new Promise(r => setTimeout(r, 2500));
+    document.querySelectorAll('.dialog, .reward, .modal').forEach(e => e.remove());
+    const doors = __sv.interactables.filter(i => i.id.startsWith('trick_')); out.doors = doors.length;
+    for (const d of doors.slice(0, 5)) { d.act(h); await new Promise(r => setTimeout(r, 100)); document.querySelectorAll('.reward').forEach(e => e.click()); }
+    out.keepsake = (h.profile.keepsakes || []).includes('pumpkin'); out.treats = h.profile.halloween && h.profile.halloween.treats;
+    return out;
+  });
+  ok(r.oct9 === '' || !r.oct9.includes('halloween'), 'Halloween decorated more than 3 weeks before: ' + r.oct9);
+  ok(r.oct10.includes('halloween:1'), 'Halloween 3 weeks before should be stage 1: ' + r.oct10);
+  ok(r.oct25.includes('halloween:3') && r.oct25.includes('diwali:2'), 'two festivals at once, each its own stage: ' + r.oct25);
+  ok(r.oct31.includes('halloween:4'), 'Halloween day: ' + r.oct31);
+  ok(!r.anzac20.includes('anzac') && r.anzac23.includes('anzac:2'), 'a quiet day shows only a few days before: ' + r.anzac20 + ' / ' + r.anzac23);
+  ok(r.tet.includes('tet:4'), 'Tết on its lunar date: ' + r.tet);
+  ok(r.rows >= 10, 'calendar rows: ' + r.rows); ok(r.doors >= 5, 'pumpkin doors: ' + r.doors); ok(r.keepsake && r.treats === 5, 'no pumpkin lantern after 5 treats');
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return `build-up from 3 weeks before (stage 1→4), Halloween and Diwali at once, quiet days ${'3'} days before, ${r.rows} festivals coming up on the calendar, ${r.doors} pumpkin doors, a pumpkin lantern after 5 treats`;
+});
+
 await check('camcalm', async () => {
   // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:
   // the camera never swings faster than a slow steady pace, and a jump doesn't jerk the picture up and down

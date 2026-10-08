@@ -1,0 +1,16 @@
+import { launch, open, clear } from './harness.mjs';
+const OUT = '/tmp/claude-0/-home-user-Sparkle-Valley/0f9897b3-04f2-58fa-a097-233218d3db1c/scratchpad/fest';
+import fs from 'fs'; fs.mkdirSync(OUT, { recursive: true });
+const b = await launch();
+const P = await open(b, { w: 1180, h: 820, lang: 'vi' }); await clear(P.page);
+await P.page.evaluate(() => __sv.openPad(0, 'cal')); await P.page.waitForTimeout(800); await P.page.screenshot({ path: `${OUT}/cal.png` });
+await P.page.evaluate(() => { document.querySelectorAll('.modal, .pad').forEach(e => e.remove()); __sv.paused = false; });
+await P.page.addStyleTag({ content: '.storybook, .dialog, .reward, .toast, .modal { display: none !important; }' });
+await P.page.evaluate(() => { __sv.festivals.visit(0, 'halloween'); });
+await P.page.waitForTimeout(6000);
+await P.page.evaluate(() => { const h = __sv.heroes[0]; h.camDist = 9; });
+await P.page.screenshot({ path: `${OUT}/halloween-day.png` });
+await P.page.evaluate(() => { __sv.world.time = .9; }); await P.page.waitForTimeout(4000); await P.page.screenshot({ path: `${OUT}/halloween-night.png` });
+await P.page.evaluate(() => { __sv.world.time = .45; __sv.festivals.visit(0, 'tet'); }); await P.page.waitForTimeout(6000); await P.page.screenshot({ path: `${OUT}/tet.png` });
+console.log(JSON.stringify(await P.page.evaluate(() => ({ act: __sv.festivals.active().map(a => a.F.id + ':' + a.stage), tricks: __sv.interactables.filter(i => i.id.startsWith('trick_')).length }))));
+console.log('errors', P.errors.join(' | ') || 'none'); await b.close();

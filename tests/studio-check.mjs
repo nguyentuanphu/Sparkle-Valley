@@ -95,15 +95,16 @@ export function memoryBlobs() {
 }
 
 // ---------- a pretend Netlify: the site's files, netlify.toml's redirects and the two functions ----------
-export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs(), heldStore = memoryBlobs() }) {
+export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs(), heldStore = memoryBlobs(), liveStore = memoryBlobs() }) {
   Object.assign(process.env, env);
   const { makeStudio } = await import(path.join(ROOT, 'netlify/functions/studio.mjs'));
   const { makeHello } = await import(path.join(ROOT, 'netlify/functions/hello.mjs'));
-  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore, heldStore: async () => heldStore }), hello = makeHello({ playersStore: async () => players });
+  const { makeLive } = await import(path.join(ROOT, 'netlify/functions/live.mjs'));
+  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore, heldStore: async () => heldStore, liveStore: async () => liveStore }), hello = makeHello({ playersStore: async () => players }), live = makeLive({ liveStore: async () => liveStore });
   const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2' };
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`); let p = decodeURIComponent(url.pathname);
-    const fn = p === '/api/hello' ? hello : (p.startsWith('/studio/api/') || p.startsWith('/studio/content/')) ? studio : null;
+    const fn = p === '/api/hello' ? hello : p === '/api/live' ? live : (p.startsWith('/studio/api/') || p.startsWith('/studio/content/')) ? studio : null;
     if (fn) {
       const ch = []; for await (const c of req) ch.push(c);
       const r = await fn(new Request(url, { method: req.method, headers: req.headers, body: req.method === 'POST' ? Buffer.concat(ch) : undefined }), { geo: JSON.parse(req.headers['x-test-geo'] || '{}') }); // (Netlify gives the town from the connection; tests say it in a header)
@@ -293,7 +294,7 @@ export async function studioCheck(browser, open) {
     ok((await job('github/draft', {})).result.changed === 0, 'a second exe draft found changes');
     notes.push('exe: saves to its folder with a backup, players via the website, same version; GitHub in two steps (draft, then Publish)');
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone
-    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos'], bad = [];
+    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals'], bad = [];
     for (const [w, h, touch] of [[1180, 800, false], [390, 800, true]]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch }), errs = [];
       const pg = await ctx.newPage(); pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/favicon|401|403/.test(m.text())) errs.push(m.text() + ' ' + (m.location().url || '')); });
@@ -307,6 +308,19 @@ export async function studioCheck(browser, open) {
         if (await pg.evaluate(() => document.scrollingElement.scrollWidth > innerWidth + 1)) bad.push(`online ${w}px ${k}: page scrolls sideways`);
         const emo = await pg.evaluate(SHOWN_EMOJI); if (emo.length) bad.push(`online ${w}px ${k}: phone emoji shown: ${emo.join(' ')}`); }
       ok(/3/.test(await pg.evaluate(() => (document.querySelector('#tabs [data-k="players"]').click(), new Promise(r => setTimeout(() => r(document.querySelector('#page').innerText), 1500))))), 'online players page');
+      // (round R) Releases online: switch traffic off and Halloween to start in 3 days; the website hands it to every device
+      if (!touch) {
+        await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('tr[data-id="traffic"]', { timeout: 15000 });
+        await pg.evaluate(() => { document.querySelector('tr[data-id="traffic"] [data-r="on"]').value = 'false'; const t = document.querySelector('tr[data-id="fest_halloween"]'); t.querySelector('[data-in="3"]').click(); t.querySelector('[data-r="newDays"]').value = '5'; document.querySelector('#save').click(); });
+        await pg.waitForTimeout(1200);
+        const lv = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
+        if (!(lv.releases && lv.releases.traffic && lv.releases.traffic.on === false && lv.releases.fest_halloween && lv.releases.fest_halloween.newDays === 5 && /^\d{4}-/.test(lv.releases.fest_halloween.start))) bad.push('releases did not reach /api/live: ' + JSON.stringify(lv));
+        await pg.evaluate(() => { location.hash = 'game/festivals'; }); await pg.waitForSelector('tr[data-id="tet"]', { timeout: 15000 });
+        await pg.evaluate(() => { document.querySelector('tr[data-id="anzac"] [data-f="on"]').value = 'false'; document.querySelector('tr[data-id="halloween"] [data-f="buildup"]').value = '14'; document.querySelector('#save').click(); });
+        await pg.waitForTimeout(1200);
+        const lf = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
+        if (!(lf.festivals && lf.festivals.anzac && lf.festivals.anzac.on === false && lf.festivals.halloween.buildup === 14 && lf.releases.traffic)) bad.push('festival changes did not reach /api/live: ' + JSON.stringify(lf));
+      }
       await pg.screenshot({ path: `out/studio-online-${w}.png` });
       const pe = await ctx.newPage(); pe.on('pageerror', e => errs.push('exe: ' + e.message));
       await pe.goto(`http://localhost:${SPORT}/`); // (sends you on to /studio/) await pe.waitForSelector('#tabs button', { timeout: 15000 });

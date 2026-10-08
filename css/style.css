@@ -195,8 +195,8 @@ select option { color: #000; }
 .pad-head { display: flex; align-items: stretch; border-bottom: 1px solid var(--line); background: rgba(0, 0, 0, .25); }
 .pad-head .x { position: static; margin: 8px; flex: none; }
 .pad-tabs { flex: 1; display: flex; overflow-x: auto; scrollbar-width: none; }
-.pad-tabs button { flex: 1; min-width: 74px; border: 0; background: none; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--soft); border-bottom: 3px solid transparent; }
-.pad-tabs button span { font-size: 26px; } .pad-tabs button small { font-size: 12px; }
+.pad-tabs button { flex: 1 0 auto; min-width: 74px; border: 0; background: none; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--soft); border-bottom: 3px solid transparent; }
+.pad-tabs button span { font-size: 26px; } .pad-tabs button small { font-size: 12px; white-space: nowrap; }
 .pad-tabs button.on { color: #fff; border-bottom-color: var(--cyan); background: rgba(95, 224, 255, .1); }
 .pad-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; max-height: calc(100dvh - 140px); overflow-y: auto; position: relative; }
 .bigmap { width: 100%; max-width: 600px; aspect-ratio: 1; align-self: center; border-radius: 16px; border: 1px solid var(--line); background: #e9dcb8; }
@@ -2053,3 +2053,19 @@ body.songs-on .htoast { display: none; } /* the valley's hints stay behind the S
 /* the switch on the line between the two halves */
 #split .viewsw { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 52px; height: 52px; border-radius: 50%; border: 3px solid #fff; background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, .3); pointer-events: auto; padding: 4px; display: grid; place-items: center; }
 #split .viewsw .ico { width: 40px; height: 40px; }
+/* (round R) Lịch lễ hội, the festival calendar: today's timetable, then coming up with days to go */
+.fcal-today { display: flex; gap: 14px; align-items: flex-start; background: linear-gradient(160deg, #ffe27a, #ffc0d8); border-radius: 22px; padding: 14px; margin: 6px 0 12px; box-shadow: 0 4px 0 rgba(200, 120, 160, .3); }
+.fcal-today .fi { font-size: 52px; line-height: 1; flex: 0 0 auto; }
+.fcal-today b { font-size: 18px; }
+.fplan { list-style: none; margin: 6px 0 10px; padding: 0; }
+.fplan li { padding: 3px 0; font-size: 15px; } .fplan li b { display: inline-block; min-width: 58px; font-size: 15px; color: #7a3a5a; }
+.fcal-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.fcal-row { display: grid; grid-template-columns: 48px 1fr auto; grid-template-rows: auto auto; align-items: center; column-gap: 10px; text-align: left; border: 0; border-radius: 18px; padding: 10px 12px; min-height: 64px; background: #fff7e6; box-shadow: 0 3px 0 rgba(160, 120, 80, .2); font: inherit; color: inherit; cursor: pointer; }
+.fcal-row .fi { grid-row: 1 / 3; font-size: 36px; line-height: 1; }
+.fcal-row b { font-size: 15px; line-height: 1.15; } .fcal-row small { grid-row: 1; grid-column: 3; font-weight: 700; color: #7a5a3a; }
+.fcal-row em { grid-column: 2 / 4; font-style: normal; font-size: 13px; color: #8a6a5a; }
+.fcal-row.vn { background: #fff0e8; } .fcal-row.au { background: #eaf6ea; } .fcal-row.west { background: #f0ecff; }
+.fcal-row.ready { box-shadow: 0 0 0 3px #ffd23f, 0 3px 0 rgba(160, 120, 80, .2); }
+.fcal-row:active { transform: translateY(2px); }
+.fest-pick { font-size: 16px; padding: 8px 10px; border-radius: 12px; min-height: 44px; }
+.newtag { font-style: normal; font-size: 11px; background: #ff4f9a; color: #fff; border-radius: 8px; padding: 1px 6px; vertical-align: middle; }

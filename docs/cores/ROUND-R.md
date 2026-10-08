@@ -3,6 +3,7 @@
 One big round, in two parts. Nothing is pushed until the owner says "yes, push", and Netlify needs its own "yes, deploy".
 
 ## Part 1 (first, about 3–4 days): festival calendar and Halloween
+**Built (8 Oct, r48):** `js/lunar.js`, `js/content/festcal.js` (24 festivals in four groups), `js/festivals.js` (3D decorations that grow over 3 weeks, each festival in its own places, the day's timetable, the evening show on the real clock, Halloween trick-or-treat and the pumpkin-lantern keepsake), the calendar in the Pad, the Play hub, the Festivals screen and the Simple screen; Studio Ra mắt (Releases) and Festivals pages saving live to `/api/live` (`netlify/functions/live.mjs`); checks `festcal`, `studio`, unit tests.
 Reported to the owner on its own, so Halloween can go live around 12–14 Oct.
 - **Lịch lễ hội** (Festival calendar) in the Pad and on the Simple screen: the next festivals with a countdown, today's timetable, and a "come back at 18:30" reminder.
 - **Dates work themselves out:** lunar dates use Hồ Ngọc Đức's Vietnamese calendar (UTC+7), plus Easter and "nth Sunday" rules, so there is no yearly table to update.

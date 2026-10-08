@@ -24,7 +24,7 @@ import { say } from './voice.js';
 import { pic } from './art.js';
 import { saveProfiles, reduceMotion } from './state.js';
 import { GAMES, gameOpen } from './games/frame.js';
-import { holdButton, openGrownups } from './ui.js';
+import { holdButton, openGrownups, openFestivals } from './ui.js';
 import { AREAS, TALE_AREAS, PLACE_AREAS, gamesIn } from './content/activities.js';
 
 // a star drawn on the picture card (round I, owner: "stars without a strip, placed on the icon"): gold when earned
@@ -74,8 +74,10 @@ export function createSimple(G) {
       return TALE_AREAS.map(a => ({ area: a, items: tales.filter(x => a.key === '💛' ? !known.includes(x.flag) : x.flag === a.key)
         .map(x => ({ kind: 'tale', key: x.id, icon: firstPic(x.pages[0][0]), badge: x.flag, name: x.title(), voice: both(x.title), stars: (p.tales || {})[x.id] ? 1 : 0, max: 1 })) }));
     }
-    if (t === 'places') return PLACE_AREAS.map(a => ({ area: a, items: (G.PLACES || []).map((pl, k) => ({ pl, k })).filter(x => x.pl.g === a.key)
-      .map(({ pl, k }) => ({ kind: 'place', key: String(k), icon: pl.icon, name: pl.name(), voice: both(pl.name), stars: 0, max: 0 })) }));
+    // (round R) the festival calendar opens the places tab: festivals happen in places, each in its own ones
+    const cal = { kind: 'fest', key: 'cal', icon: '📅', name: T('Festival calendar', 'Lịch lễ hội'), voice: ['Festival calendar', 'Lịch lễ hội'], stars: 0, max: 0 };
+    if (t === 'places') return PLACE_AREAS.map((a, n) => ({ area: a, items: (n === 0 && G.festivals ? [cal] : []).concat((G.PLACES || []).map((pl, k) => ({ pl, k })).filter(x => x.pl.g === a.key)
+      .map(({ pl, k }) => ({ kind: 'place', key: String(k), icon: pl.icon, name: pl.name(), voice: both(pl.name), stars: 0, max: 0 }))) }));
     // (round N) the Music group starts with 🎵 Songs: lullabies, village tunes and festival songs to listen to
     const songs = { kind: 'songs', key: 'songs', icon: '🎵', name: T('Songs', 'Bài hát'), voice: ['Songs', 'Bài hát'], stars: 0, max: 0 };
     return AREAS.map(a => ({ area: a, items: (a.key === 'music' && G.openSongs ? [songs] : []).concat(gamesIn(GAMES, a.key, lt).map(g => ({ kind: 'game', key: g.id, icon: GAMES[g.id].icon, name: GAMES[g.id].name(), voice: both(GAMES[g.id].name), stars: starsOf(p, g.id), max: 3, level: g.level }))) }));
@@ -167,6 +169,7 @@ export function createSimple(G) {
     const top = () => { const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0; };
     if (s.kind === 'sign') { SFX.tap(); say(s.voice[0], s.voice[1]); if (s.key === 'group') { group[tab] = s.to; at[tab] = 0; } else if (s.key === 'first') at[tab] = 0; else at[tab]++; sel = null; draw(); top(); return; }
     if (s.kind === 'songs') { SFX.tap(); say(s.voice[0], s.voice[1]); G.openSongs(); return; }
+    if (s.kind === 'fest') { SFX.tap(); say('Festival calendar', 'Lịch lễ hội'); openFestivals(G, 0); return; }
     if (s.kind === 'group') { SFX.tap(); say(s.voice[0], s.voice[1]); group[tab] = s.key; at[tab] = 0; sel = null; draw(); top(); return; }
     if (!little() && sel !== idOf(s)) { // a big kid: the first tap shows it, the second one plays it
       SFX.tap(); sel = idOf(s); say(s.voice[0], s.voice[1]);

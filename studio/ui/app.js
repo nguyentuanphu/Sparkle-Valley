@@ -19,7 +19,7 @@ const saveContent = async () => { await api('content', CONTENT); if (INFO) { INF
 const SECTIONS = [
   { k: 'home', i: '🏠', en: 'Home', vi: 'Trang chính', pages: ['home'] },
   { k: 'family', i: '💛', en: 'Family', vi: 'Gia đình', pages: ['message', 'children', 'album', 'quiz', 'stories', 'villagers'] },
-  { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['path', 'music', 'map', 'photos', 'play', 'voices', 'ads'] },
+  { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['releases', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads'] },
   { k: 'players', i: '📊', en: 'Analytics', vi: 'Phân tích', pages: ['players'] },
   { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Cài đặt', pages: ['publish', 'site', 'check', 'settings', 'admins'] }
 ];
@@ -36,6 +36,8 @@ const ABOUT = {
   quiz: ['💛', 'Family quiz', 'Đố vui gia đình', 'Your own questions: “What is Grandma’s name?”', 'Câu hỏi của nhà mình: “Bà tên gì?”'],
   stories: ['📖', 'Our stories', 'Truyện nhà mình', 'Write the family’s own picture stories', 'Viết truyện tranh của gia đình'],
   villagers: ['🧑', 'Villagers', 'Nhân vật', 'Names and photo faces of the people in the valley', 'Tên và ảnh khuôn mặt của mọi người trong thung lũng'],
+  releases: ['🆕', 'Releases', 'Ra mắt', 'Switch features on or off, start them on a day, for so many days, with a New badge', 'Bật tắt tính năng, cho ra mắt vào ngày nào, trong bao lâu, có nhãn Mới'],
+  festivals: ['📅', 'Festivals', 'Lễ hội', 'This year’s festivals: switch one off, move a date, change how early it decorates', 'Lễ hội năm nay: tắt, đổi ngày, đổi thời gian trang trí trước'],
   path: ['🧸', 'Simple screen', 'Màn hình đơn giản', 'Which games under-5s see, and in which area', 'Bé dưới 5 tuổi thấy trò nào, ở khu nào'],
   music: ['🎵', 'Music', 'Âm nhạc', 'Your own recordings: lullabies, Tết and Trung Thu songs, village songs', 'Bản ghi của nhà mình: hát ru, nhạc Tết, Trung Thu, làng quê'],
   map: ['🗺️', 'Map and building', 'Bản đồ & xây dựng', 'Move, add or remove buildings and land', 'Di chuyển, thêm hoặc bỏ nhà và đất'],
@@ -381,6 +383,54 @@ PAGES.play = async P => {
     CONTENT.defaults = out;
     const f = Object.assign({}, CONTENT.features); P.querySelectorAll('[data-f]').forEach(s => { f[s.dataset.f] = s.value === 'true'; }); CONTENT.features = f;
     saveContent().catch(fail);
+  };
+};
+// ---------- Ra mắt (Releases) and Festivals (round R, owner: "instant, no deploy") ----------
+// Online, these save straight to the website and reach the devices the next time they open the game (festivals change
+// as soon as a device hears). On the family's computer (SparkleStudio.exe) they go into the content pack and need Publish.
+const loadLive = async () => INFO && INFO.online ? await api('live') : { releases: CONTENT.releases || {}, festivals: CONTENT.festivals || {} };
+const saveLive = async live => { if (INFO && INFO.online) { await api('live', live); toast(T('Saved. The children’s devices get it the next time they open the game.', 'Đã lưu. Máy của các con nhận được khi mở game lần tới.')); } else { CONTENT.releases = live.releases; CONTENT.festivals = live.festivals; await saveContent(); } };
+const isoDay = d => d.toISOString().slice(0, 10), plusDays = n => isoDay(new Date(Date.now() + n * 864e5));
+PAGES.releases = async P => {
+  const { RELEASES, RELEASE_GROUPS } = await import(GAME + 'js/content/releases.js'), live = await loadLive(), R = live.releases || {};
+  const row = x => { const r = R[x.id] || {}, on = typeof r.on === 'boolean' ? r.on : x.def;
+    return `<tr data-id="${x.id}"><td>${x.icon ? x.icon + ' ' : ''}${esc(T(x.en, x.vi))}</td>
+      <td><select data-r="on"><option value="true" ${on ? 'selected' : ''}>${T('On', 'Bật')}</option><option value="false" ${on ? '' : 'selected'}>${T('Off', 'Tắt')}</option></select></td>
+      <td><input type="date" data-r="start" value="${esc(r.start || '')}"><div class="mini">${[0, 1, 3, 7].map(n => `<button class="btn small ghost" data-in="${n}">${n ? T(`in ${n} d`, `${n} ngày nữa`) : T('today', 'hôm nay')}</button>`).join('')}</div></td>
+      <td><input type="number" min="0" max="3650" data-r="days" value="${r.days || ''}" placeholder="${T('always', 'luôn')}"></td>
+      <td><input type="number" min="0" max="365" data-r="newDays" value="${r.newDays || ''}" placeholder="0"></td></tr>`; };
+  P.innerHTML = `<h2>🆕 ${T('Releases', 'Ra mắt')}</h2><p class="sub">${T('Switch anything on or off, choose the day it starts, how many days it stays (empty: always), and how many days it shows a “New” badge (the children also get a “New!” moment). Switching off never takes away what a child already has.', 'Bật hoặc tắt bất cứ thứ gì, chọn ngày bắt đầu, ở lại bao nhiêu ngày (để trống: luôn luôn), và bao nhiêu ngày có nhãn “Mới” (các con cũng thấy khoảnh khắc “Mới!”). Tắt đi không lấy mất những gì con đã có.')}</p>
+    ${Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th>${T('Starts', 'Bắt đầu')}</th><th>${T('Days on', 'Số ngày')}</th><th>${T('“New” days', 'Ngày “Mới”')}</th></tr></thead><tbody>${RELEASES.filter(x => x.group === g).map(row).join('')}</tbody></table></div>`).join('')}
+    <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
+  P.querySelectorAll('[data-in]').forEach(b => b.onclick = () => { b.closest('td').querySelector('[data-r="start"]').value = plusDays(+b.dataset.in); });
+  $('#save').onclick = async () => {
+    const out = {};
+    P.querySelectorAll('tr[data-id]').forEach(tr => { const id = tr.dataset.id, x = RELEASES.find(y => y.id === id), v = k => tr.querySelector(`[data-r="${k}"]`).value;
+      const r = {}, on = v('on') === 'true'; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
+      if (Object.keys(r).length) out[id] = r; });
+    await saveLive({ releases: out, festivals: live.festivals || {} }).catch(fail);
+  };
+};
+PAGES.festivals = async P => {
+  const [{ FESTCAL, GROUPS }, L] = await Promise.all([import(GAME + 'js/content/festcal.js'), import(GAME + 'js/lunar.js')]), live = await loadLive(), F = live.festivals || {};
+  const pad = n => String(n).padStart(2, '0'), y = new Date().getFullYear();
+  // this year's (or next year's, once it has passed) date, worked out like the game does
+  const dateOf = (f, yr) => { const w = f.when; return w.lunar ? L.lunarDay(w.lunar[0], w.lunar[1], yr) : w.date ? `${yr}-${pad(w.date[0])}-${pad(w.date[1])}` : w.easter != null ? L.easter(yr) : w.nth ? L.nthWeekday(yr, ...w.nth) : w.table ? w.table[yr] : null; };
+  const next = f => { const a = dateOf(f, y), today = isoDay(new Date()); return a && a >= today ? a : dateOf(f, y + 1); };
+  const row = f => { const r = F[f.id] || {}, on = r.on !== false;
+    return `<tr data-id="${f.id}"><td>${f.icon} ${esc(T(f.en, f.vi))}<div class="mini">${f.kind === 'quiet' ? T('quiet day', 'ngày yên lặng') : ''}</div></td>
+      <td><select data-f="on"><option value="true" ${on ? 'selected' : ''}>${T('On', 'Bật')}</option><option value="false" ${on ? '' : 'selected'}>${T('Off', 'Tắt')}</option></select></td>
+      <td>${next(f) || '?'}</td><td><input type="date" data-f="date" value="${/^\d{4}/.test(r.date || '') ? r.date : ''}"></td>
+      <td><input type="number" min="0" max="60" data-f="buildup" value="${r.buildup ?? ''}" placeholder="${f.kind === 'quiet' ? 3 : 21}"></td>
+      <td><a class="btn small ghost" target="_blank" href="${GAME}?festival=${f.id}">${T('Preview', 'Xem thử')}</a></td></tr>`; };
+  P.innerHTML = `<h2>📅 ${T('Festivals', 'Lễ hội')}</h2><p class="sub">${T('Every festival on its real date (lunar dates are worked out each year). Party festivals decorate their places for 3 weeks before, quiet days a few days. On the day: 08:00 present, 15:00 festival game, 18:30 show (17:30 for under-5s).', 'Mỗi lễ hội đúng ngày thật (ngày âm lịch tự tính mỗi năm). Lễ hội vui trang trí 3 tuần trước, ngày yên lặng vài ngày. Đúng ngày: 08:00 nhận quà, 15:00 trò chơi lễ hội, 18:30 trình diễn (17:30 cho bé dưới 5 tuổi).')}</p>
+    ${Object.entries(GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th>${T('Next date', 'Ngày tới')}</th><th>${T('Move to', 'Đổi sang ngày')}</th><th>${T('Decorate days before', 'Trang trí trước (ngày)')}</th><th></th></tr></thead><tbody>${FESTCAL.filter(f => f.group === g).map(row).join('')}</tbody></table></div>`).join('')}
+    <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
+  $('#save').onclick = async () => {
+    const out = {};
+    P.querySelectorAll('tr[data-id]').forEach(tr => { const id = tr.dataset.id, v = k => tr.querySelector(`[data-f="${k}"]`).value, r = {};
+      if (v('on') === 'false') r.on = false; if (v('date')) r.date = v('date'); if (v('buildup') !== '') r.buildup = +v('buildup'); if (Object.keys(r).length) out[id] = r; });
+    await saveLive({ releases: live.releases || {}, festivals: out }).catch(fail);
   };
 };
 // ---------- children: open a backup, see progress, change it, save a new backup ----------
