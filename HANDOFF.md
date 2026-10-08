@@ -127,6 +127,7 @@ In each phase: run the suite before and after, take before/after screenshots fro
 | `tales` | All 38 tales, every page (259), and the tale shelf: every picture is drawn art or a cartoon actor, never a phone emoji |
 | `emoji` | Every emoji the game uses has a drawing in `js/art.js` (`tools/emoji-audit.mjs`) |
 | `noemoji` | No phone emoji shown anywhere: Who's playing, the valley, Vui chơi, every Pad tab, Grown-ups, a speech box and every game; painted labels use the drawings (`js/emojiswap.js`; the `studio` check does the same for Studio's pages) |
+| `dialogtap` | A speech box has no Hear-again or OK buttons (for any age): the child taps the box to go on and to close it (owner, round R) |
 | `viwords` | Vietnamese names and dishes inside English lines ("bánh khọt", "Vũng Tàu", "Cô Tám") are said by the Vietnamese voice: the cut (`js/viwords.js`), the phone voice switching languages mid-line, and the pack's two-voice recordings (`lineHash`, Azure SSML switching to the Vietnamese voice of the same man or woman) |
 | `arch` | The import map (`tests/arch.mjs`): no files import each other in a circle (since round F: 0; `tests/arch-baseline.json` keeps it at 0) |
 | `names` | Every game file: no name used that is never defined or imported (TypeScript TS2304 over all of `js/`, `tests/tsconfig.names.json`); catches the mistakes moving code between files makes |

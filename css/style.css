@@ -1016,10 +1016,6 @@ button { color: var(--text); }
 @keyframes conf-fall { to { transform: translate(var(--dx), 110vh) rotate(var(--rot)); opacity: .9; } }
 /* conversations for little ones: big picture buttons */
 .dialog.little .dtext { font-size: clamp(19px, 4.4vw, 24px); }
-.dialog .dpics { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
-.dialog .dpic { width: 64px; height: 56px; border: 0; border-radius: 18px; font-size: 30px; background: #fff3c4; box-shadow: 0 4px 0 #e2c46a; }
-.dialog .dpic.ok { background: #c8f5c0; box-shadow: 0 4px 0 #7cc96e; }
-.dialog .dpic:active { transform: translateY(3px); box-shadow: none; }
 .dialog.little .dnext { display: none; }
 .travel .walk { background: #e9fbe4; }
 /* scrapbook */
