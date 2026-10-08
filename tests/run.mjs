@@ -163,7 +163,7 @@ await check('features', async () => {
   await P.page.evaluate(() => document.querySelector('.th-x')?.click());
   // tapping a game card flies to its host
   await clear(P.page); await P.page.evaluate(() => __sv.openGamesHub(0)); await P.page.waitForTimeout(400);
-  await P.page.evaluate(() => { document.querySelector('.hub [data-tab="cities"]').click(); document.querySelector('[data-play="traffic"]').click(); }); await P.page.waitForTimeout(3500);
+  await P.page.evaluate(() => { document.querySelector('.hub [data-tab="places"]').click(); document.querySelector('[data-play="traffic"]').click(); }); await P.page.waitForTimeout(3500);
   r.flewToHost = await P.page.evaluate(() => { const it = __sv.gameSpot('traffic'), h = __sv.heroes[0]; return Math.hypot(it.x - h.pos.x, it.z - h.pos.z) < 6 && !!document.querySelector('.gl'); });
   // folk-game friends chat: a bubble shows within a few seconds near the playground
   await P.page.evaluate(() => { document.querySelector('.gl .gl-x')?.click(); __sv.heroes[0].place(28, 66); });
