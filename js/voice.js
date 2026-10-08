@@ -3,7 +3,8 @@
 import { settings, saveSettings } from './state.js';
 import { ac, unlockers } from './audio.js';
 import { swapNames } from './i18n.js';
-import { packHash } from './packhash.js';
+import { packHash, lineHash } from './packhash.js';
+import { viRuns, mixed, mixedSsml } from './viwords.js';
 import { CUSTOM } from './custom.js';
 
 let all = [];
@@ -92,11 +93,15 @@ function utter(text, lang) {
 function deviceSpeak(text, lang, my) {
   if (!window.speechSynthesis) return Promise.resolve();
   const parts = String(text).match(/[^.!?。…]+[.!?。…]*\s*/g) || [text];
-  const chunks = []; for (const p of parts) { const last = chunks.length - 1; if (last >= 0 && (chunks[last] + p).length < 160) chunks[last] += p; else chunks.push(p); }
+  let chunks = []; for (const p of parts) { const last = chunks.length - 1; if (last >= 0 && (chunks[last] + p).length < 160) chunks[last] += p; else chunks.push(p); }
+  // (round R, owner: "bánh khọt" and "nước mía" said by the English voice can't be understood) the Vietnamese words of an
+  // English line are said by the phone's Vietnamese voice when it has one
+  chunks = chunks.map(c => [lang, c]);
+  if (lang === 'en' && mixed(text) && voicesFor('vi').length) chunks = chunks.flatMap(([, c]) => viRuns(c)).filter(([, c]) => /[\p{L}\d]/u.test(c));
   return new Promise(res => {
     let left = chunks.length, ended = false;
     const end = () => { if (!ended) { ended = true; res(); } };
-    chunks.forEach(c => { const u = utter(c.trim(), lang); u.onend = u.onerror = () => { if (--left <= 0) end(); }; try { speechSynthesis.speak(u); } catch (e) { end(); } });
+    chunks.forEach(([l, c]) => { const u = utter(c.trim(), l); u.onend = u.onerror = () => { if (--left <= 0) end(); }; try { speechSynthesis.speak(u); } catch (e) { end(); } });
     // in case the device never reports the end
     setTimeout(end, 1500 + String(text).length * 95);
     const poll = setInterval(() => { if (my !== seq) { clearInterval(poll); end(); } if (ended) clearInterval(poll); }, 200);
@@ -143,6 +148,10 @@ async function speak(en, vi) {
 }
 const sentences = text => (String(text).match(/[^.!?。…]+[.!?。…]*\s*/g) || [text]).map(t => t.trim()).filter(Boolean);
 async function otherVoice(text, lang, my) {
+  if (cloudReady() && lang === 'en' && settings.tts !== 'azure' && mixed(text)) {
+    try { for (const [l, t] of viRuns(text)) { if (!/[\p{L}\d]/u.test(t)) continue; const buf = await cloudVoice(t.trim(), l); if (my !== seq) return; await playBuffer(buf); } return; }
+    catch (e) { console.warn('Natural voice failed, using the device voice', e); }
+  }
   if (cloudReady()) {
     try { const buf = await cloudVoice(text, lang); if (my !== seq) return; await playBuffer(buf); return; }
     catch (e) { console.warn('Natural voice failed, using the device voice', e); }
@@ -314,7 +323,10 @@ function packFiles() {
   const mine = settings.lang === 'vi' ? 'voices/vi/' : 'voices/en/'; urls.sort((a, b) => b.startsWith(mine) - a.startsWith(mine));
   return urls;
 }
-const packSlot = (lang, text) => { const has = PACK && PACK.lines[packHash(lang, text)]; if (!has) return null; const k = speakerKind(); return k && k.gender === 'm' && has.includes('m') ? 'm' : has.includes('f') ? 'f' : has[0]; };
+// an English line with Vietnamese words has its own recording with both voices (js/packhash.js lineHash); an older pack
+// without it still plays its all-English recording
+const packKey = (lang, text) => { if (!PACK) return null; const h = lineHash(lang, text); if (PACK.lines[h]) return h; const o = packHash(lang, text); return PACK.lines[o] ? o : null; };
+const packSlot = (lang, text) => { const has = PACK && PACK.lines[packKey(lang, text)]; if (!has) return null; const k = speakerKind(); return k && k.gender === 'm' && has.includes('m') ? 'm' : has.includes('f') ? 'f' : has[0]; };
 // (round P, owner: "the 3 voice styles sound the same") the recordings play for almost every line, so the style changes
 // them too: Cute a little higher and quicker, Grandparent lower and slower (playing faster or slower moves the pitch)
 const STYLE_RATE = { natural: 1, cute: 1.13, grandpa: .88 };
@@ -329,7 +341,7 @@ export async function savePackOffline(progress) {
   }
   return n;
 }
-export const packUrl = (lang, text, slot) => `voices/${lang}/${slot}/${packHash(lang, text)}.mp3`;
+export const packUrl = (lang, text, slot) => `voices/${lang}/${slot}/${packKey(lang, text) || lineHash(lang, text)}.mp3`;
 async function playPack(lang, text, my) {
   const slot = packSlot(lang, text); if (!slot) return false;
   const k = 'pack|' + slot + '|' + lang + '|' + text;
@@ -386,7 +398,7 @@ const azureName = lang => {
   const pool = AZURE_VOICES[L][k.gender]; return pool[k.seed % pool.length];
 };
 const azureProsody = () => { const k = speakerKind(); return !k ? ['-4%', '+0%'] : k.old ? ['-14%', '-8%'] : k.kid ? ['-2%', '+14%'] : ['-4%', '+0%']; };
-const cloudKey = (text, lang) => [settings.tts, settings.tts === 'eleven' ? settings.elevenVoice || ELEVEN_DEFAULT : settings.tts === 'azure' ? azureName(lang) + azureProsody().join('') : googleName(lang) + googlePitch(), lang, text].join('|');
+const cloudKey = (text, lang) => [settings.tts, settings.tts === 'eleven' ? settings.elevenVoice || ELEVEN_DEFAULT : settings.tts === 'azure' ? azureName(lang) + azureProsody().join('') + (lang === 'en' && mixed(text) ? '+vi' : '') : googleName(lang) + googlePitch(), lang, text].join('|');
 const cloudCached = (text, lang) => mem.has(cloudKey(text, lang)) || known.has(cloudKey(text, lang));
 export const ELEVEN_DEFAULT = '21m00Tcm4TlvDq8ikWAM'; // a warm, friendly premade voice; grown-ups can paste any voice ID
 export const ELEVEN_MODEL = 'eleven_turbo_v2_5';     // speaks both English and Vietnamese
@@ -416,7 +428,8 @@ async function azureTTS(text, lang) {
   const region = (settings.azureRegion || 'australiaeast').trim().toLowerCase().replace(/\s+/g, ''), name = azureName(lang), [rate, pitch] = azureProsody();
   const xml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
   const loc = name.split('-').slice(0, 2).join('-');
-  const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${loc}"><voice name="${name}"><prosody rate="${rate}" pitch="${pitch}">${xml(text)}</prosody></voice></speak>`;
+  const ssml = lang === 'en' && mixed(text) ? mixedSsml(viRuns(text), name, azureName('vi'), `rate="${rate}" pitch="${pitch}"`)
+    : `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${loc}"><voice name="${name}"><prosody rate="${rate}" pitch="${pitch}">${xml(text)}</prosody></voice></speak>`;
   const r = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
     method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': settings.ttsKey, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': 'audio-24khz-48kbitrate-mono-mp3' }, body: ssml
   });

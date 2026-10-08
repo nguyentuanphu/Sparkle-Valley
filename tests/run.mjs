@@ -500,7 +500,7 @@ await check('welcomevoice', async () => {
     const d = document.querySelector('.dialog .dtext'), shown = d ? d.textContent : '';
     return { shown, pack: !!V.voicePack() };
   });
-  const rec = await P.page.evaluate(async lines => { const V = await import('/js/voice.js'), hash = (await import('/js/packhash.js')).packHash, pack = V.voicePack(); return lines.map(t => [t, !!(pack && pack.lines[hash('en', t)])]); }, said);
+  const rec = await P.page.evaluate(async lines => { const V = await import('/js/voice.js'), hash = (await import('/js/packhash.js')).lineHash, pack = V.voicePack(); return lines.map(t => [t, !!(pack && pack.lines[hash('en', t)])]); }, said);
   const errs = P.errors; await P.ctx.close();
   const notRecorded = rec.filter(([, ok]) => !ok).map(([t]) => t);
   ok(r.pack && /Good morning, Kiwi/.test(r.shown) && said.length && !notRecorded.length && !errs.length, JSON.stringify({ shown: r.shown, said, notRecorded, errs }));
@@ -631,6 +631,36 @@ await check('emoji', async () => {
 
 // No phone emoji anywhere (owner, round R): every emoji on screen is the game's own drawing (js/emojiswap.js), on the
 // page (menus, Grown-ups, games, speech boxes) and on canvases (signs, name tags, the mini-map)
+await check('viwords', async () => {
+  // (round R, owner: "bánh khọt" and "nước mía" said by the English voice can't be understood) Vietnamese names and dishes
+  // inside English lines are cut out and said by the Vietnamese voice: by the recorded pack, the phone voice and online voices
+  const { viRuns } = await import('../js/viwords.js'), show = t => viRuns(t).map(([l, x]) => l === 'vi' ? '[' + x + ']' : x).join('');
+  const cases = [['Buy some bánh khọt?', 'Buy some [bánh khọt]?'], ['Welcome to Hội An and Bắc Ninh!', 'Welcome to [Hội An] and [Bắc Ninh]!'],
+    ['I am Bác 2. Every afternoon Bác 3, Bác 4 and I play cards.', 'I am [Bác 2]. Every afternoon [Bác 3], [Bác 4] and I play cards.'],
+    ['We went to Nha Trang and Vũng Tàu.', 'We went to [Nha Trang] and [Vũng Tàu].'], ['Phố Hai Quê is home.', '[Phố Hai Quê] is home.'],
+    ['Long ago, a kind girl called An Tiêm was sent', 'Long ago, a kind girl called [An Tiêm] was sent'], ['Xiè xie means thank you!', 'Xiè xie means thank you!'], ['Let us play a game!', 'Let us play a game!']];
+  for (const [t, want] of cases) ok(show(t) === want, `cut: ${show(t)} (wanted ${want})`);
+  const P = await open(b, { w: 1180, h: 820 }); await clear(P.page);
+  const line = 'I am Cô Tám. I sell sugarcane juice, nước mía, on Two Homes Street, just like on the streets of Bà Rịa.';
+  const r = await P.page.evaluate(async line => {
+    // a phone with an English and a Vietnamese voice: record what each utterance says, and in which language
+    const said = [], fake = [{ name: 'Karen', lang: 'en-AU', localService: true }, { name: 'Linh', lang: 'vi-VN', localService: true }];
+    window.SpeechSynthesisUtterance = class { constructor(t) { this.text = t; } };
+    speechSynthesis.getVoices = () => fake; speechSynthesis.speak = u => { said.push([u.lang, u.text]); setTimeout(() => u.onend && u.onend(), 5); };
+    speechSynthesis.dispatchEvent(new Event('voiceschanged'));
+    const V = await import('/js/voice.js'), H = await import('/js/packhash.js');
+    await V.sayDevice('en', 'Buy some bánh khọt from Vũng Tàu, please!');
+    const pack = V.voicePack(), h = H.lineHash('en', line);
+    return { said, rec: pack && pack.lines[h], old: pack && pack.lines[H.packHash('en', line)], url: V.packUrl('en', line, 'f'), h };
+  }, line);
+  ok(JSON.stringify(r.said) === JSON.stringify([['en-AU', 'Buy some'], ['vi-VN', 'bánh khọt'], ['en-AU', 'from'], ['vi-VN', 'Vũng Tàu'], ['en-AU', ', please!']]), 'phone voice: ' + JSON.stringify(r.said));
+  ok(r.rec === 'fm' || r.rec === 'mf', `the pack has no two-voice recording of Cô Tám's line (${r.rec})`);
+  ok(!r.old && r.url.endsWith(r.h + '.mp3'), 'the old all-English recording is still used');
+  const mp3 = fs.statSync(`../voices/en/f/${r.h}.mp3`).size;
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return `${cases.length} lines cut right; the phone says the Vietnamese words with its Vietnamese voice; recorded lines use both voices (Cô Tám ${(mp3 / 1024).toFixed(0)} KB)`;
+});
+
 await check('noemoji', async () => {
   const bad = [];
   const scan = (P, where) => P.page.evaluate(w => {

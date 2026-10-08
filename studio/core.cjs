@@ -274,10 +274,17 @@ function createStudio({ store, conf, online = false, local = {} }) {
     m.langOf[hash] = lang; m.lines[hash] = (m.lines[hash] || '').replace(slot, '') + slot; m.made = new Date().toISOString().slice(0, 10);
     await S.write('voices/manifest.json', Buffer.from(JSON.stringify(m)));
   }
-  async function azureSay(lang, slot, text) {
+  async function azureSay(lang, slot, text, runs) {
     if (!conf.azureKey || !conf.azureRegion) throw new Error(online ? 'Add AZURE_KEY and AZURE_REGION in Netlify (Site configuration → Environment variables) first.' : 'Add your Azure Speech key and region in Settings first.');
     const v = (conf.voices && conf.voices[lang] && conf.voices[lang][slot]) || AZ_VOICES[lang][slot];
-    const ssml = `<speak version='1.0' xml:lang='${LOCALE[lang]}'><voice name='${v}'>${xml(text)}</voice></speak>`;
+    // (round R) an English line with Vietnamese words: those words in the Vietnamese voice of the same man or woman, with the
+    // pauses at each switch set by hand (the same as js/viwords.js mixedSsml, which the page has already cut the line with)
+    const vv = (conf.voices && conf.voices.vi && conf.voices.vi[slot]) || AZ_VOICES.vi[slot];
+    const ok = Array.isArray(runs) && runs.length > 1 && runs.every(r => Array.isArray(r) && (r[0] === 'en' || r[0] === 'vi') && typeof r[1] === 'string') && runs.map(r => r[1]).join('') === text;
+    const ssml = lang === 'en' && ok ? `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='http://www.w3.org/2001/mstts' xml:lang='en-AU'>` + runs.filter((r, i) => /[\p{L}\d]/u.test(r[1]) || i === runs.length - 1).map(([l, s], i, a) => {
+      const end = s.trimEnd(), tail = i === a.length - 1 ? '' : /[.!?…]["”')]?$/.test(end) ? '350ms' : /[,;:]$/.test(end) ? '180ms' : '40ms';
+      return `<voice name='${l === 'vi' ? vv : v}'>${i ? `<mstts:silence type='Leading-exact' value='0ms'/>` : ''}${tail ? `<mstts:silence type='Tailing-exact' value='${tail}'/>` : ''}${xml(s)}</voice>`; }).join('') + '</speak>'
+      : `<speak version='1.0' xml:lang='${LOCALE[lang]}'><voice name='${v}'>${xml(text)}</voice></speak>`;
     for (let a = 0; ; a++) {
       const r = await fetch(`https://${conf.azureRegion}.tts.speech.microsoft.com/cognitiveservices/v1`, { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': conf.azureKey, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': 'audio-16khz-32kbitrate-mono-mp3', 'User-Agent': 'sparkle-studio' }, body: ssml });
       if (r.status === 401 || r.status === 403) throw new Error('Azure did not accept the key or region (' + r.status + '). Check them in Settings.');
@@ -446,7 +453,7 @@ function createStudio({ store, conf, online = false, local = {} }) {
     if (api === 'voice' && post) {
       if (!CAST[b.lang] || !CAST[b.lang].includes(b.slot) || !/^[0-9a-f]{8}-?[0-9a-f]{1,8}$/.test(b.hash || '')) return bad('bad line');
       let mp3;
-      if (b.engine === 'azure') mp3 = await azureSay(b.lang, b.slot, String(b.text || ''));
+      if (b.engine === 'azure') mp3 = await azureSay(b.lang, b.slot, String(b.text || ''), b.runs);
       else if (b.engine === 'piper') { if (!local.tts) return bad('Piper runs on the family computer only (in SparkleStudio.exe).'); mp3 = await local.tts('piper', b.lang, String(b.text || '')); }
       else if (b.engine === 'upload') { const m = /^data:audio\/mpeg;base64,(.+)$/.exec(b.audio || ''); if (!m) return bad('not an MP3'); mp3 = Buffer.from(m[1], 'base64'); }
       else return bad('which engine?');

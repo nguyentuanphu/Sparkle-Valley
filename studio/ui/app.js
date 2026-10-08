@@ -418,8 +418,8 @@ async function allJobs() {
   (c.tales || []).forEach(t => { add(t.en, t.vi); t.pages.forEach(p => add(p[1], p[2])); });
   (c.quiz || []).forEach(q => { add(q.q[0], q.q[1]); q.answers.forEach(a => add(a[0] + '!', a[1] + '!')); });
   if (c.message) add(c.message.en, c.message.vi);
-  const { swapNames } = await import(GAME + 'js/i18n.js'), { LEARN } = await import(GAME + 'js/words2.js'), { packHash } = await import(GAME + 'js/packhash.js');
-  const jobs = new Map(); const put = (lang, text) => { if (text) jobs.set(packHash(lang, text), { lang, text }); };
+  const { swapNames } = await import(GAME + 'js/i18n.js'), { LEARN } = await import(GAME + 'js/words2.js'), { lineHash: packHash } = await import(GAME + 'js/packhash.js'), { viRuns, mixed } = await import(GAME + 'js/viwords.js');
+  const jobs = new Map(); const put = (lang, text) => { if (text) jobs.set(packHash(lang, text), { lang, text, ...(lang === 'en' && mixed(text) ? { runs: viRuns(text) } : {}) }); };
   for (const [en, vi] of seen.values()) { put('en', swapNames(en, 'en')); put('vi', swapNames(vi, 'vi')); }
   for (const [lang, L] of Object.entries(LEARN)) for (const w of L.words) put(lang, w[3]);
   const cities = await (await fetch(GAME + 'js/cities.js')).text(), re = /\['([^'\\]+)', '(?:[^'\\]|\\.)*', '(?:[^'\\]|\\.)*', '(zh|hi)'\]/g; let m; while ((m = re.exec(cities))) put(m[2], m[1]);
@@ -458,7 +458,7 @@ PAGES.voices = async P => {
     const gap = engine === 'azure' ? 3200 : 0; let done = 0, errs = 0;
     for (const x of [...missing].filter(x => !only || x.asked)) {
       if (voiceStop) break; const t0 = Date.now();
-      try { await api('voice', { engine, lang: x.lang, slot: x.slot, hash: x.hash, text: x.text }); done++; missing.splice(missing.indexOf(x), 1); } catch (e) { errs++; $('#pt').textContent = '⚠️ ' + e.message; if (/key|region|Settings|Piper/.test(e.message)) break; }
+      try { await api('voice', { engine, lang: x.lang, slot: x.slot, hash: x.hash, text: x.text, runs: x.runs }); done++; missing.splice(missing.indexOf(x), 1); } catch (e) { errs++; $('#pt').textContent = '⚠️ ' + e.message; if (/key|region|Settings|Piper/.test(e.message)) break; }
       $('#pb').style.width = (done / (done + missing.length) * 100) + '%'; $('#pt').textContent = `${done} ${T('made', 'đã tạo')}, ${missing.length} ${T('to go', 'còn lại')}${errs ? `, ${errs} ⚠️` : ''}`;
       const w = gap - (Date.now() - t0); if (w > 0) await new Promise(r => setTimeout(r, w));
     }
