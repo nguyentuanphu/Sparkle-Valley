@@ -2056,6 +2056,13 @@ body.songs-on .htoast { display: none; } /* the valley's hints stay behind the S
 .hud.far { transform-origin: 50% 50%; }
 .facewrap { position: fixed; inset: 0; transform: rotate(180deg); pointer-events: none; z-index: 60; }
 .facewrap > * { pointer-events: auto; }
+/* two players (round R): each child's windows in a holder over their own half; it holds fixed windows (transform), and
+   cards are kept inside the half */
+.halfwrap { position: fixed; right: auto; bottom: auto; transform: translateZ(0); overflow: hidden; pointer-events: none; z-index: 60; }
+.halfwrap.facewrap { inset: auto; transform: rotate(180deg); }
+.halfwrap > * { pointer-events: auto; }
+.halfwrap .modal .card { max-height: calc(100% - 16px); max-width: calc(100% - 16px); }
+.halfwrap .dialog { max-width: calc(100% - 24px); }
 
 /* "Who's playing?" with two players: face to face or side by side (round R) */
 .who .views { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }

@@ -731,6 +731,33 @@ await check('films', async () => {
   if (fails.length) throw new Error(JSON.stringify({ fails, films: r.films }));
   return Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps at least twice in each story';
 });
+await check('halves', async () => {
+  // (round R, owner) two players: a window opens in its own child's half and pauses only that child; the other keeps playing
+  const out = [];
+  for (const [w, h, touch, tag] of [[1180, 760, false, 'side'], [820, 1180, true, 'face']]) {
+    const P = await open(b, { w, h, touch, mode: 'split' }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      const G = __sv, w = t => new Promise(r => setTimeout(r, t)), hold = () => document.querySelectorAll('.halfwrap');
+      G.openPad(1); await w(600);
+      const inHalf1 = !!(hold()[1] && hold()[1].querySelector('.modal')), busy = [G.halfBusy(0), G.halfBusy(1)];
+      const h0 = G.heroes[0], x0 = h0.pos.x, z0 = h0.pos.z; h0.goal = { x: x0 + 6, z: z0 + 2 };
+      const h1 = G.heroes[1], x1 = h1.pos.x, z1 = h1.pos.z; h1.goal = { x: x1 + 6, z: z1 }; await w(1500);
+      const moved0 = Math.hypot(h0.pos.x - x0, h0.pos.z - z0), moved1 = Math.hypot(h1.pos.x - x1, h1.pos.z - z1);
+      G.lastPlayer = 0; G.openPad(0); await w(600);
+      const both = [!!hold()[0].querySelector('.modal'), !!hold()[1].querySelector('.modal')], far = hold()[1].classList.contains('facewrap');
+      return { inHalf1, busy, moved0, moved1, both, far };
+    });
+    if (!r.inHalf1) out.push(tag + ': the window did not open in its child\'s half');
+    if (r.busy[0] || !r.busy[1]) out.push(tag + ': wrong child paused ' + JSON.stringify(r.busy));
+    if (!(r.moved0 > .3) || r.moved1 > .05) out.push(tag + ': the other child could not keep playing ' + JSON.stringify(r));
+    if (!r.both[0] || !r.both[1]) out.push(tag + ': both children could not have a window open');
+    if ((tag === 'face') !== r.far) out.push(tag + ': far half not turned to face its child');
+    if (P.errors.length) out.push(...P.errors.slice(0, 2));
+    await P.ctx.close();
+  }
+  if (out.length) throw new Error(out.join('; '));
+  return 'side by side and face to face: each window opens in its own child\'s half and pauses only that child; both can have one open';
+});
 await check('camcalm', async () => {
   // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:
   // the camera never swings faster than a slow steady pace, and a jump doesn't jerk the picture up and down

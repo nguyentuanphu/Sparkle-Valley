@@ -125,9 +125,15 @@ const titleCam = new THREE.PerspectiveCamera(50, 1, .3, 1200);
 const G = {
   actCount: 0,
   events, // the event bus (js/core/events.js, architecture step 1)
-  settings, world, scene, pads, heroes: [], huds: [], mode: 'solo', paused: false, partner: null, zoom: 1,
+  settings, world, scene, pads, heroes: [], huds: [], mode: 'solo', partner: null, zoom: 1,
   fogMaps: {}, regionOf: [], interactables: [], gatherState: {}, bubbles: []
 };
+// (round R, owner) two children on one screen: each child's windows sit in their own half and pause only that child, so
+// the other keeps playing. With two halves "paused" means the half of whoever touched last (G.lastPlayer); alone it is a flag.
+let pausedFlag = false;
+const twoHalves = () => G.heroes.length > 1;
+G.halfBusy = () => false;
+Object.defineProperty(G, 'paused', { get: () => twoHalves() ? G.halfBusy(G.lastPlayer) : pausedFlag, set: v => { pausedFlag = !!v; }, enumerable: true });
 window.__sv = G; // handy for debugging in the browser console
 // phones and tablets (round P): the layout keeps the joystick's half of the screen free (css: body.touch)
 if (matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0) document.body.classList.add('touch');
@@ -340,7 +346,8 @@ G.fx = (x, y, z, ch) => { const s = sprite(ch, 1.4); s.material = s.material.clo
 G.mount = (h, b) => { h.mount(b); h.profile.quests.buffalo = true; save(); say('Moo! Hold on tight!', 'Ụm bò! Bám chắc nhé!'); hudFor(h).toast(T('Press Jump to get off', 'Bấm Nhảy để xuống')); };
 
 async function playGame(i, id, source, shrine) {
-  const h = G.heroes[i]; if (!h || gameOpen()) return;
+  const h = G.heroes[i]; if (!h) return;
+  if (gameOpen()) { if (twoHalves()) hudFor(h).toast(T('Your friend is playing a game. Play it together, or wait a moment!', 'Bạn con đang chơi một trò. Chơi cùng bạn, hoặc chờ một chút nhé!')); return; }
   G.paused = true; hush();
   // friends in the room: play it together? (round H: every game can be played together)
   if (G.together() && source !== 'online' && !shrine) { G.paused = false; const k = await dialog(T('Play together?', 'Chơi cùng nhau?'), [['Your friends are here. Play this game together?', 'Các bạn đang ở đây. Chơi trò này cùng nhau nhé?']], [['👫 Together', '👫 Cùng nhau'], ['🙂 Just me', '🙂 Mình con']]); if (k === 0) { G.inviteGame(id); return; } G.paused = true; }
@@ -399,7 +406,7 @@ async function playGame(i, id, source, shrine) {
 G.playGame = playGame;
 G.job = (kind, n = 1, h) => jobProgress(G, kind, n, h);
 G.STICKERS = STICKERS;
-G.openWardrobe = i => { if (G.paused) return; G.paused = true; G.closeUp = i; openWardrobe(G, i, () => { G.paused = false; G.closeUp = null; }); };
+G.openWardrobe = i => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; G.closeUp = i; openWardrobe(G, i, () => { G.paused = false; G.closeUp = null; }); };
 
 async function foundLeafy(h, lf) {
   const p = h.profile; if (p.leafies[lf.id]) return;
@@ -505,8 +512,8 @@ dialogHooks.chat = name => {
 const GAME_SPOT = { music: 'musiccorner', firstwords: 'g_firstwords', tangram: 'g_tangram', snakes: 'g_snakes', rangoli: 'g_rangoli', datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', tienlen: 'tienlen', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
   tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
 G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (G.GAME_SPOT || {})[id] || (SHRINES.find(s => s.game === id) || {}).id));
-G.openQuick = i => { if (G.paused) return; G.paused = true; openQuick(G, i); };
-G.openGamesHub = i => { if (G.paused) return; G.paused = true; openGamesHub(G, i, () => { G.paused = false; }); };
+G.openQuick = i => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; openQuick(G, i); };
+G.openGamesHub = i => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; openGamesHub(G, i, () => { G.paused = false; }); };
 // Games hub / map: fly straight to the friend who runs a game (or a place), then start it there
 const npcLike = it => /^(npc_|g_|v_|pc_|cards$|dacau$|musiccorner$|bear$|stall$)/.test(it.id || '');
 // the nearest open spot to (x, z): not inside a building, tree or stall, not in water. Travelling lands there.
@@ -730,7 +737,7 @@ world.updaters.push((dt, t) => G.wanderers.forEach((w, k) => {
   else { sp = 2.2; w.yaw = Math.atan2(dx, dz); p.x += dx / d * sp * dt; p.z += dz / d * sp * dt; st = 'walk'; }
   world.collide(p, .4); p.y = world.groundAt(p.x, p.z, p.y + 1); w.av.root.rotation.y = w.yaw; w.av.anim(st, t + k, sp); w.tag.position.set(p.x, p.y + 2, p.z);
 }));
-G.openPad = (i, tab) => { if (G.paused) return; G.paused = true; openPad(G, i, tab); };
+G.openPad = (i, tab) => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; openPad(G, i, tab); };
 G.closePad = () => { G.paused = false; };
 
 // ---------- talking: quick phrases, speech bubbles, voice calls ----------
@@ -1116,25 +1123,35 @@ function rects() {
   return W >= H ? [{ x: 0, y: 0, w: W / 2, h: H, rot: 0 }, { x: W / 2, y: 0, w: W / 2, h: H, rot: 0 }] : [{ x: 0, y: 0, w: W, h: H / 2, rot: 0 }, { x: 0, y: H / 2, w: W, h: H / 2, rot: 0 }];
 }
 G.rects = rects; G.faceToFace = () => G.heroes.length > 1 && faceToFace();
-// Windows (the Pad, games, stories, dialogs, rewards) are added to the page; face to face, one opened by the player at
-// the far end is moved into a full-screen holder turned half a turn, so it faces them (G.lastPlayer = whoever touched last).
+// Windows (the Pad, games, stories, dialogs, rewards) are added to the page. With two players each one is moved into a
+// holder over the half of the child who opened it (G.lastPlayer = whoever touched or pressed last); face to face the far
+// child's holder is turned half a turn, so their windows face them (round R, owner: "the other child can keep playing").
 G.lastPlayer = 0;
-const faceWrap = (() => { const w = document.createElement('div'); w.className = 'facewrap'; return w; })();
-const NOT_A_WINDOW = /(^|\s)(hud|stick|facewrap|caption|title)(\s|$)/;
+const holders = [0, 1].map(() => { const w = document.createElement('div'); w.className = 'halfwrap'; return w; });
+G.halfBusy = i => !!holders[i] && holders[i].isConnected && [...holders[i].children].some(c => !c.classList.contains('out'));
+const NOT_A_WINDOW = /(^|\s)(hud|stick|facewrap|halfwrap|caption|title)(\s|$)/;
+function placeHolders() {
+  const r = rects(), two = twoHalves();
+  holders.forEach((w, i) => {
+    if (!two) { [...w.children].forEach(c => document.body.appendChild(c)); w.remove(); return; }
+    const q = r[i]; Object.assign(w.style, { left: q.x + 'px', top: q.y + 'px', width: q.w + 'px', height: q.h + 'px' });
+    w.classList.toggle('facewrap', q.rot === 180);
+  });
+}
 document.addEventListener('pointerdown', e => {
-  if (!G.faceToFace()) return;
-  const t = e.target instanceof Element ? e.target : null;
-  if (t && t.closest('.facewrap')) G.lastPlayer = 1;
-  else if (t && t.closest('.hud')) G.lastPlayer = Math.max(0, G.huds.findIndex(h => h.root.contains(t)));
-  else G.lastPlayer = e.clientY < innerHeight / 2 ? 1 : 0;
+  if (!twoHalves()) return;
+  const t = e.target instanceof Element ? e.target : null, w = t && t.closest('.halfwrap');
+  if (w) { G.lastPlayer = holders.indexOf(w); return; }
+  if (t && t.closest('.hud')) { const k = G.huds.findIndex(h => h.root.contains(t)); if (k >= 0) { G.lastPlayer = k; return; } }
+  const k = rects().findIndex(q => e.clientX >= q.x && e.clientX < q.x + q.w && e.clientY >= q.y && e.clientY < q.y + q.h); if (k >= 0) G.lastPlayer = k;
 }, true);
 new MutationObserver(list => {
-  if (!G.faceToFace()) { if (faceWrap.childElementCount) [...faceWrap.children].forEach(c => document.body.appendChild(c)); return; }
-  if (G.lastPlayer !== 1) return;
+  if (!twoHalves()) { placeHolders(); return; }
   for (const m of list) for (const n of m.addedNodes) {
     if (!(n instanceof HTMLElement) || n.parentNode !== document.body || n.tagName === 'CANVAS' || n.tagName === 'SCRIPT' || n.id === 'split' || NOT_A_WINDOW.test(n.className)) continue;
-    if (!faceWrap.isConnected) document.body.appendChild(faceWrap);
-    faceWrap.appendChild(n);
+    const w = holders[G.lastPlayer] || holders[0];
+    if (!w.isConnected) { document.body.appendChild(w); placeHolders(); }
+    w.appendChild(n);
   }
 }).observe(document.body, { childList: true });
 // a turned-round half: its picture is turned in the camera itself, so taps and the 3D view stay matched
@@ -1147,7 +1164,7 @@ function resize() {
   renderer.setSize(innerWidth, innerHeight);
   const r = rects();
   G.heroes.forEach((h, i) => { h.cam.aspect = r[i].w / r[i].h; h.cam.updateProjectionMatrix(); G.huds[i] && G.huds[i].layout(r[i], G.heroes.length > 1); });
-  titleCam.aspect = innerWidth / innerHeight; titleCam.updateProjectionMatrix();
+  titleCam.aspect = innerWidth / innerHeight; titleCam.updateProjectionMatrix(); placeHolders();
   const sp = $('#split'); sp.hidden = G.heroes.length < 2;
   // a small round switch in the middle of the line: face to face ⇄ side by side, any time (round R, owner)
   let sw = sp.querySelector('.viewsw');
@@ -1178,7 +1195,7 @@ function onTap(i, x, y) {
 }
 function goAndDo(h, it) {
   if (!it) return;
-  if (dist2(h.pos.x, h.pos.z, it.x, it.z) < (it.plot ? 7 : it.r)) { SFX.tap(); it.act(h, G); return; }
+  if (dist2(h.pos.x, h.pos.z, it.x, it.z) < (it.plot ? 7 : it.r)) { SFX.tap(); if (twoHalves()) G.lastPlayer = Math.max(0, G.heroes.indexOf(h)); it.act(h, G); return; }
   h.goal = approach(h, it); h.goalAct = it;
 }
 G.goAndDo = goAndDo;
@@ -1296,7 +1313,8 @@ function frame(now) {
   if (playing) adaptResolution(now - last - (FRAME_MS ? FRAME_MS - 1000 / 60 : 0)); // (the wait between frames is not slowness)
   const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
   // the 3D world rests while a full-screen game, the storybook or a page that covers it is open (saves battery)
-  if (gameOpen() || document.querySelector('.storybook, .theatre.film') || (G.paused && document.querySelector('.modal')) || (playing && worldHidden())) return;
+  // (two players: the world rests only when both halves have a window open)
+  if (twoHalves() && playing ? G.halfBusy(0) && G.halfBusy(1) : gameOpen() || document.querySelector('.storybook, .theatre.film') || (G.paused && document.querySelector('.modal')) || (playing && worldHidden())) return;
   world.update(dt, t);
   if (!playing) {
     const a = t * .05;
@@ -1306,9 +1324,12 @@ function frame(now) {
     return;
   }
   poll(dt);
-  if (!G.paused && !gameOpen()) {
+  const two = twoHalves();
+  if (two || (!G.paused && !gameOpen())) {
     G.heroes.forEach((h, i) => {
-      if (pads[i].menu()) { G.openPad(i); return; }
+      // (two players) a child with a window open in their half waits; the other keeps playing
+      if (two && G.halfBusy(i)) { pads[i].act(); pads[i].jump(); pads[i].menu(); h.state = 'idle'; h.finish(dt, t, G, 0); return; }
+      if (pads[i].menu()) { G.lastPlayer = i; G.openPad(i); return; }
       // following a friend (owner, round G): walk behind them by yourself; touching the joystick stops it
       if (h.followId) {
         const P = G.partners[h.followId], pd = pads[i];
@@ -1319,12 +1340,12 @@ function frame(now) {
       h.update(dt, pads[i], t, G);
       if (i === 0) watchHero(h, pads[i], dt, G.regionOf[i]); // stuck: pushing to walk without moving (Studio's report)
       if (!h.profile.quests.owl && !G._owlAuto && dist2(h.pos.x, h.pos.z, owl.x, owl.z) < 6) { G._owlAuto = true; owlTalk(h); }
-      if (h.goalAct && !h.goal) { const it = h.goalAct; h.goalAct = null; if (dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r + .8) { SFX.tap(); it.act(h, G); } }
+      if (h.goalAct && !h.goal) { const it = h.goalAct; h.goalAct = null; if (dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r + .8) { SFX.tap(); (G.lastPlayer = i, it.act(h, G)); } }
       const it = h.carry ? h.carryIt || null : nearest(h);
-      if (it && it.auto) it.act(h, G);
+      if (it && it.auto) (G.lastPlayer = i, it.act(h, G));
       G.huds[i].setAction(it && !it.auto ? it : null);
       h._dancing = G.places.onStage(h);
-      if (pads[i].act() && it) { SFX.tap(); it.act(h, G); }
+      if (pads[i].act() && it) { SFX.tap(); (G.lastPlayer = i, it.act(h, G)); }
       // discover shrines and towers you walk near
       for (const s of SHRINES.concat(TOWERS)) if (!h.profile.discovered[s.id] && dist2(s.x, s.z, h.pos.x, h.pos.z) < 45) { h.profile.discovered[s.id] = true; save(); }
       const rg = h.indoors ? G.regionOf[i] : regionAt(h.pos.x, h.pos.z); // inside a house: still where the house is
