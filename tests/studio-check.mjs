@@ -15,6 +15,12 @@ import { start, seedPlayers } from './harness.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // ---------- a pretend GitHub: blobs, trees, commits and branches in memory ----------
+// emoji still shown as text on the page (round R: every emoji is the game's drawing, js/emojiswap.js)
+const SHOWN_EMOJI = () => { const EMO = /\p{Extended_Pictographic}(?:\uFE0F|[\u{1F3FB}-\u{1F3FF}])*(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|[\u{1F3FB}-\u{1F3FF}])*)*|[\u{1F1E6}-\u{1F1FF}]{2}/gu, out = new Set();
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let t = w.nextNode(); t; t = w.nextNode()) { const p = t.parentElement; if (!p || p.closest('script,style,svg,textarea,input') || !p.getClientRects().length) continue; const s = t.nodeValue; for (const m of s.matchAll(EMO)) if (s[m.index + m[0].length] !== '\uFE0E') out.add(m[0]); }
+  return [...out]; };
+
 export function fakeGitHub(repo, files) {
   const blobs = new Map(), trees = new Map(), commits = new Map(), refs = new Map(), log = [];
   const gitSha = b => crypto.createHash('sha1').update('blob ' + b.length + '\0').update(b).digest('hex');
@@ -298,12 +304,14 @@ export async function studioCheck(browser, open) {
       await pg.evaluate(() => document.querySelector('#tabs [data-k="family"]').click()); await pg.waitForTimeout(400);
       if (await pg.evaluate(() => document.querySelectorAll('#page .pcard').length) !== 6) bad.push(`online ${w}px: the Family section does not show its six cards`);
       for (const k of pages) { await pg.evaluate(k2 => { location.hash = k2; }, k); await pg.waitForTimeout(k === 'photos' ? 2500 : 900); const t = await pg.evaluate(() => document.querySelector('#page').innerText); if (await pg.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`online ${w}px ${k}: ${t.slice(0, 80)}`);
-        if (await pg.evaluate(() => document.scrollingElement.scrollWidth > innerWidth + 1)) bad.push(`online ${w}px ${k}: page scrolls sideways`); }
+        if (await pg.evaluate(() => document.scrollingElement.scrollWidth > innerWidth + 1)) bad.push(`online ${w}px ${k}: page scrolls sideways`);
+        const emo = await pg.evaluate(SHOWN_EMOJI); if (emo.length) bad.push(`online ${w}px ${k}: phone emoji shown: ${emo.join(' ')}`); }
       ok(/3/.test(await pg.evaluate(() => (document.querySelector('#tabs [data-k="players"]').click(), new Promise(r => setTimeout(() => r(document.querySelector('#page').innerText), 1500))))), 'online players page');
       await pg.screenshot({ path: `out/studio-online-${w}.png` });
       const pe = await ctx.newPage(); pe.on('pageerror', e => errs.push('exe: ' + e.message));
       await pe.goto(`http://localhost:${SPORT}/`); // (sends you on to /studio/) await pe.waitForSelector('#tabs button', { timeout: 15000 });
       for (const k of pages) { await pe.evaluate(k2 => { location.hash = k2; }, k); await pe.waitForTimeout(900); const t = await pe.evaluate(() => document.querySelector('#page').innerText); if (await pe.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`exe ${w}px ${k}: ${t.slice(0, 80)}`); }
+      { await pe.evaluate(() => { location.hash = 'home'; }); await pe.waitForTimeout(700); const emo = await pe.evaluate(SHOWN_EMOJI); if (emo.length) bad.push(`exe ${w}px: phone emoji shown: ${emo.join(' ')}`); }
       await pe.screenshot({ path: `out/studio-exe-${w}.png` });
       bad.push(...errs.map(e => `${w}px: ${e}`)); await ctx.close();
     }

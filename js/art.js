@@ -576,6 +576,25 @@ add('✔️', g('a-check', `<path d="M8 26l10 10L40 12" stroke="#5fd36a" stroke-
 add('➖', `<path d="M10 24h28" stroke="#5fb6ff" stroke-width="6" stroke-linecap="round"/>`);
 add('〰️ 〰', g('a-waveh', `<path d="M4 24c5-8 9-8 13 0s9 8 13 0 9-8 14 0" stroke="#5fb6ff" stroke-width="4" stroke-linecap="round" ${N}/>`));
 
+// round R: the last few pictures Sparkle Studio used as phone emoji (owner: "replace all emoji")
+add('👥', `${circ(17, 16, 7, '#ffb37a')}<path d="M5 40c0-9 5-14 12-14s12 5 12 14z" fill="#5fb6ff" ${W}/>${circ(32, 18, 6, '#e8a070')}<path d="M24 40c1-8 4-12 9-12s10 4 10 12z" fill="#ff7eb8" ${W}/>`);
+add('📸', `<rect x="4" y="14" width="40" height="26" rx="5" fill="#9aa4b8" ${W}/><path d="M16 14l3-5h10l3 5" fill="#9aa4b8" ${W}/>${circ(24, 27, 8, '#5fb6ff')}${circ(24, 27, 3.5, '#fff')}<path d="M38 6l2 4 4 1-4 2-2 4-2-4-4-2 4-1z" fill="#ffd23f" ${W}/>`);
+add('⏰', g('a-wiggle', `${circ(24, 26, 15, '#fff')}<path d="M24 26V17M24 26l7 4" ${W} ${N}/>${circ(11, 10, 5, '#ff7eb8')}${circ(37, 10, 5, '#ff7eb8')}<path d="M14 41l-3 4M34 41l3 4" ${W}/>`));
+add('🔑', g('a-swing', `${circ(14, 20, 9, '#ffd23f')}${circ(14, 20, 3, '#fff')}<path d="M22 22l20 12M34 27l-3 5M39 30l-3 5" stroke="#ffd23f" stroke-width="5" stroke-linecap="round"/><path d="M22 22l20 12" ${W} ${N}/>`, '14px 20px'));
+add('🔗', `<rect x="4" y="18" width="22" height="12" rx="6" fill="none" stroke="#5fb6ff" stroke-width="5"/><rect x="22" y="18" width="22" height="12" rx="6" fill="none" stroke="#5fd39a" stroke-width="5"/>`);
+add('📘', `<rect x="9" y="5" width="30" height="38" rx="4" fill="#5fb6ff" ${W}/><path d="M15 5v38" ${W}/><path d="M20 15h13M20 21h10" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>`);
+add('🔌', `<path d="M24 30v12" stroke="${O}" stroke-width="4" stroke-linecap="round"/><rect x="13" y="12" width="22" height="18" rx="5" fill="#9aa4b8" ${W}/><path d="M19 12V4M29 12V4" ${W}/>`);
+add('📥', `<path d="M6 28h10l3 6h10l3-6h10v12a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z" fill="#5fb6ff" ${W}/><path d="M24 5v19M17 17l7 7 7-7" ${W} ${N}/>`);
+add('💻', `<rect x="8" y="9" width="32" height="22" rx="3" fill="#5fb6ff" ${W}/><rect x="12" y="13" width="24" height="14" rx="2" fill="#d8f4ff"/><path d="M3 35h42l-3 5H6z" fill="#9aa4b8" ${W}/>`);
+add('📦', `<path d="M6 16l18-8 18 8v18l-18 9-18-9z" fill="#e8b46a" ${W}/><path d="M6 16l18 8 18-8M24 24v19" ${W} ${N}/><path d="M15 12l18 8" stroke="#fff" stroke-width="3" opacity=".6"/>`);
+add('🏗️ 🏗', `<path d="M10 44V8M10 8h30M10 14l6-6M40 8v10" ${W} ${N}/><path d="M10 8l30 0" stroke="#ffd23f" stroke-width="4"/><rect x="34" y="18" width="12" height="10" rx="2" fill="#ff7eb8" ${W}/><rect x="16" y="30" width="16" height="14" fill="#e8b46a" ${W}/>`);
+add('🆕', `<rect x="3" y="12" width="42" height="24" rx="5" fill="#5fd39a" ${W}/><text x="24" y="29" font-size="13" font-weight="bold" text-anchor="middle" fill="#fff" font-family="sans-serif">NEW</text>`);
+add('📬', `<path d="M10 22a10 10 0 0 1 20 0v18H10z" fill="#5fb6ff" ${W}/><path d="M20 12h14a8 8 0 0 1 8 8v20H30" fill="#ff7eb8" ${W}/><path d="M24 30V6h10v6H24" fill="#ffd23f" ${W}/><path d="M20 40v6" ${W}/>`);
+add('🕘', `${circ(24, 24, 18, '#fff')}<path d="M24 24V12M24 24H14" ${W} ${N}/>${dot(24, 24, 2.4)}`);
+add('⏱️ ⏱', `${circ(24, 27, 16, '#fff')}<path d="M24 27l6-7" ${W} ${N}/><rect x="20" y="4" width="8" height="5" rx="2" fill="#ff7eb8" ${W}/><path d="M24 9v2M36 14l3-3" ${W}/>${dot(24, 27, 2.2)}`);
+add('🎞️ 🎞', `<rect x="10" y="4" width="28" height="40" rx="3" fill="#3b2a4f"/><rect x="16" y="9" width="16" height="12" fill="#5fb6ff"/><rect x="16" y="27" width="16" height="12" fill="#ffd23f"/>${[8, 16, 24, 32, 40].map(y => `<rect x="11.5" y="${y - 1.5}" width="2.5" height="3" fill="#fff"/><rect x="34" y="${y - 1.5}" width="2.5" height="3" fill="#fff"/>`).join('')}`);
+add('🔓', `<rect x="10" y="20" width="28" height="22" rx="4" fill="#5fd39a" ${W}/><path d="M16 20v-6c0-6 4-9 8-9s8 3 8 7" ${W} ${N}/>${circ(24, 30, 3, O)}<path d="M24 31v5" ${W}/>`);
+
 // (an emoji with or without its invisible "picture style" mark finds the same drawing)
 const keyOf = e => e == null ? null : ART[e] ? e : ART[e + '\uFE0F'] ? e + '\uFE0F' : ART[String(e).replace(/\uFE0F/g, '')] ? String(e).replace(/\uFE0F/g, '') : null;
 export const hasArt = e => !!keyOf(e);

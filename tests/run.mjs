@@ -629,6 +629,37 @@ await check('emoji', async () => {
   return out.trim().split('\n').pop();
 });
 
+// No phone emoji anywhere (owner, round R): every emoji on screen is the game's own drawing (js/emojiswap.js), on the
+// page (menus, Grown-ups, games, speech boxes) and on canvases (signs, name tags, the mini-map)
+await check('noemoji', async () => {
+  const bad = [];
+  const scan = (P, where) => P.page.evaluate(w => {
+    const EMO = /\p{Extended_Pictographic}(?:️|[\u{1F3FB}-\u{1F3FF}])*(?:‍\p{Extended_Pictographic}(?:️|[\u{1F3FB}-\u{1F3FF}])*)*|[\u{1F1E6}-\u{1F1FF}]{2}/gu, out = new Set();
+    const t0 = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let t = t0.nextNode(); t; t = t0.nextNode()) { const p = t.parentElement; if (!p || p.closest('script,style,svg,textarea,input') || !p.getClientRects().length) continue; const s = t.nodeValue; for (const m of s.matchAll(EMO)) if (s[m.index + m[0].length] !== '︎') out.add(m[0] + ' (' + w + ')'); }
+    return [...out];
+  }, where).then(r => bad.push(...r));
+  { const P = await open(b, { w: 820, h: 1180, touch: true, play: false, lang: 'vi' });
+    await P.page.click('.screen.title .press', { force: true }); await P.page.waitForSelector('.screen.who'); await P.page.click('.modes button[data-m=split]'); await scan(P, 'who'); await P.ctx.close(); }
+  const P = await open(b, { w: 1180, h: 820, lang: 'vi' }); await clear(P.page);
+  await scan(P, 'valley');
+  await P.page.evaluate(() => __sv.openGamesHub(0)); await P.page.waitForTimeout(500); await scan(P, 'Vui chơi'); await clear(P.page);
+  for (const t of ['map', 'bag', 'log', 'album', 'passport', 'games', 'cam', 'friend']) { await P.page.evaluate(t => __sv.openPad(0, t), t); await P.page.waitForTimeout(400); await scan(P, 'Pad ' + t); await clear(P.page); }
+  await P.page.evaluate(async () => { (await import('/js/ui.js')).openGrownups(() => { }); }); await P.page.waitForTimeout(500);
+  await P.page.evaluate(() => document.querySelectorAll('details').forEach(d => { d.open = true; })); await P.page.waitForTimeout(300); await scan(P, 'Grown-ups'); await clear(P.page);
+  await P.page.evaluate(() => { __sv.dialog('Bà Năm', [['🌸 Hello! 🇻🇳 🇦🇺', '🌸 Chào con! 🇻🇳 🇦🇺']]); }); await P.page.waitForTimeout(400); await scan(P, 'speech box'); await clear(P.page);
+  const ids = await P.page.evaluate(async () => Object.keys((await import('/js/games/frame.js')).GAMES));
+  for (const id of ids) { await P.page.evaluate(id => { __sv.playGame(0, id, 'replay'); }, id); await P.page.waitForTimeout(400); await scan(P, 'game ' + id); await P.page.evaluate(() => { document.querySelector('.gl .gl-x')?.click(); }); await P.page.waitForTimeout(250); }
+  // a canvas label with a flag and a flower is painted with the drawings (blue from the Australian flag)
+  const cv = await P.page.evaluate(() => { const c = document.createElement('canvas'); c.width = 200; c.height = 60; const g = c.getContext('2d'); g.font = '40px sans-serif'; g.textBaseline = 'middle'; g.fillText('Jack 🇦🇺 🌸', 4, 30); const d = g.getImageData(0, 0, 200, 60).data; let blue = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 2] > 80 && d[i] < 30 && d[i + 1] < 60) blue++; return blue; });
+  if (cv < 200) bad.push('canvas labels still use phone emoji');
+  const noArt = await P.page.evaluate(() => [...(window.__svNoArt || [])]); if (noArt.length) bad.push('no drawing yet: ' + noArt.join(' '));
+  if (P.errors.length) bad.push(...P.errors);
+  await P.ctx.close();
+  ok(!bad.length, [...new Set(bad)].slice(0, 10).join(' · '));
+  return `no phone emoji on Who's playing, the valley, Vui chơi, 8 Pad tabs, Grown-ups, a speech box and ${ids.length} games; painted labels use the drawings`;
+});
+
 await check('arch', async () => {
   // the import map: groups of files importing each other in a circle may only get fewer (tests/arch.mjs)
   const { execFileSync } = await import('child_process');

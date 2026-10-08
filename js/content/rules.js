@@ -55,7 +55,7 @@ export const RULES = {
   "ACT-002": { "text": "Every game: id, both languages, how-to film, Next/Stop at the end, tap outside to exit", "severity": "MAJOR", "check": "check games, phone" },
   "ACT-003": { "text": "After an activity ends, nothing it created stays alive (timers, listeners, audio, DOM)", "severity": "MAJOR", "check": "integration [IMPR]" },
   "UI-001": { "text": "Every player-facing text is bilingual (T() / [en,vi])", "severity": "BLOCKER", "check": "check language" },
-  "UI-002": { "text": "No phone emoji on screen: pictures go through pic()/labelArt()/sprite()", "severity": "MAJOR", "check": "grep/audit tool [IMPR]" },
+  "UI-002": { "text": "No phone emoji anywhere (game, Studio, painted signs and labels): every emoji has a drawing (js/art.js) and js/emojiswap.js swaps any emoji on the page or painted on a canvas for it (owner, round R)", "severity": "MAJOR", "check": "check emoji noemoji" },
   "UI-003": { "text": "Close/Save/Next always fully on screen at 320–390 px; no sideways scroll", "severity": "BLOCKER", "check": "check phone, spill" },
   "UI-004": { "text": "Touch targets: every button a child taps is at least 44 × 44 px; under-5 answers and the Simple screen's pictures and bar at least 64 px; sizes are the same on every screen (round I)", "severity": "MAJOR", "check": "check a11y" },
   "A11Y-001": { "text": "Reduced motion: Calm mode, or the device's own \"Reduce motion\" setting, stops every animation that repeats for ever and cuts confetti and fireworks; nothing flashes", "severity": "MAJOR", "check": "check a11y" },

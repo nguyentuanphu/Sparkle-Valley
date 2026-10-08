@@ -1,4 +1,5 @@
 // Sparkle Valley: boot, the game loop, split-screen, NPCs, quests and rewards.
+import './emojiswap.js'; // (first: no phone emoji on the page or on any canvas)
 import { THREE, sprite, P, merge, toonVC } from './gfx.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';

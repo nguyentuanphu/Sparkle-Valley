@@ -6,6 +6,8 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 // The same page runs in SparkleStudio.exe (http://localhost:7777/studio/) and online on the game's website (/studio/),
 // at the same addresses: the API, the game and its files are under BASE in both. Online, a change needs the "X-Studio" header (other websites can't send it).
 const BASE = '/studio', GAME = BASE + '/game/', FILE = p => BASE + '/api/file/' + p;
+// the game's own drawings in place of phone emoji on every Studio page (owner, round R; js/emojiswap.js)
+import(GAME + 'js/emojiswap.js').catch(() => { });
 const api = async (p, body) => { const r = await fetch(BASE + '/api/' + p, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Studio': '1' }, body: JSON.stringify(body) }); const j = await r.json().catch(() => ({})); if (r.status === 401 && j.signin) { signIn(); throw Object.assign(new Error(T('Please sign in.', 'Vui lòng đăng nhập.')), { signin: true }); } if (!r.ok) throw new Error(j.error || r.status); return j; };
 const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); };
 const fail = e => toast('⚠️ ' + (e.message || e));
