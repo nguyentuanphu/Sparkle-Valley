@@ -1,5 +1,6 @@
 // The explorer: walking, running, jumping, gliding, climbing slopes, swimming and riding,
 // with a stamina wheel. Nothing here can really hurt a child; long falls only cost a heart.
+import { seatRider } from './vehicles.js';
 import { THREE } from './gfx.js';
 import { buildAvatar } from './avatar.js';
 import { WATER, heightAt } from './world.js';
@@ -85,13 +86,16 @@ export class Hero {
     if (this.riding) {
       if (jump || pad.act()) { this.dismount(); }
       else {
-        const sp = RIDE * mag; this.speed = lerp(this.speed, sp, Math.min(1, dt * 4));
+        const b0 = this.riding, sp = (b0.speed || RIDE) * mag; this.speed = lerp(this.speed, sp, Math.min(1, dt * 4));
         if (mag > .05) this.yaw = angleLerp(this.yaw, Math.atan2(mx, mz), Math.min(1, dt * 6));
         const nx = p.x + Math.sin(this.yaw) * this.speed * dt, nz = p.z + Math.cos(this.yaw) * this.speed * dt;
         const g = heightAt(nx, nz);
         if (g > WATER - .4 && Math.abs(g - ground) < 1.5) { p.x = nx; p.z = nz; }
         W.collide(p, 1.2); p.y = W.groundAt(p.x, p.z);
         const b = this.riding; b.mesh.position.set(p.x, p.y, p.z); b.mesh.rotation.y = this.yaw; b.shadow.position.set(p.x, p.y + .05, p.z);
+        // (round R) a bicycle: its wheels roll, and the child sits on its saddle with hands on the grips and feet on the pedals
+        if (b.vehicle) { const v = b.vehicle; v.wheels.forEach(w => { w.rotation.x += this.speed * dt / v.wr; }); this.state = 'ride'; this.finish(dt, t, game, 0);
+          this.av.rig.position.y = 0; b.mesh.updateMatrixWorld(true); seatRider(this.av, v, v.seat, v.grips, v.feet, this.av.root.scale.x, false); return; }
         this.state = 'ride'; this.finish(dt, t, game, 1.6); return;
       }
     }
@@ -163,8 +167,8 @@ export class Hero {
     this.fallStart = null;
     if (fell > 14 && !this.gliding) game.hurt(this, fell > 30 ? 2 : 1);
   }
-  mount(b) { this.riding = b; b.rider = this; this.gliding = false; this.pos.copy(b.mesh.position); this.yaw = b.yaw; SFX.moo(); }
-  dismount() { const b = this.riding; if (!b) return; b.rider = null; b.tx = b.mesh.position.x; b.tz = b.mesh.position.z; this.riding = null; this.pos.x += Math.cos(this.yaw) * 1.8; this.pos.z -= Math.sin(this.yaw) * 1.8; this.pos.y = this.world.groundAt(this.pos.x, this.pos.z); }
+  mount(b) { this.riding = b; b.rider = this; this.gliding = false; this.pos.copy(b.mesh.position); this.yaw = b.yaw; if (!b.quiet) SFX.moo(); }
+  dismount() { const b = this.riding; if (!b) return; b.rider = null; b.tx = b.mesh.position.x; b.tz = b.mesh.position.z; if (b.slot) b.slot.taken = null; if (b.vehicle) this.av.torso.rotation.set(0, 0, 0), this.av.torso.position.set(0, 0, 0), this.av.armL.scale.y = this.av.armR.scale.y = 1; this.riding = null; this.pos.x += Math.cos(this.yaw) * 1.8; this.pos.z -= Math.sin(this.yaw) * 1.8; this.pos.y = this.world.groundAt(this.pos.x, this.pos.z); }
 
   startTowerClimb(tw) {
     const m = this.world.towerMeshes[tw.id];

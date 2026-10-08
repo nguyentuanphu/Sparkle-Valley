@@ -42,6 +42,7 @@ import { createFun, confetti } from './fun.js';
 import { createLearning } from './learn.js';
 import { createShowcase } from './showcase.js';
 import { createRoads, plantRoadside } from './roads.js';
+import { createTraffic } from './traffic.js';
 import { cachedCanvas } from './worldcache.js';
 import { events } from './core/events.js';
 import { createPlaceBook } from './placebook.js';
@@ -1222,6 +1223,8 @@ function startSession(mode, chosen) {
   TOWERS.forEach(t => world.setTowerDone(t.id, !!p0.towers[t.id]));
   LEAFIES.forEach(l => { const o = world.leafyMeshes[l.id]; if (o) o.visible = !chosen.every(p => p.leafies[l.id]); });
   setupWanderers(chosen);
+  // (round R) the vehicles' real look when every child playing is 5 or older, the toy look for under-5s
+  if (G.traffic) G.traffic.apply(chosen.every(p => p.age === 'big'));
   G.pets.sync(); G.pets.refreshInteractables(); G.kites.sync();
   G.festivals.greet(G.heroes[0]);
   resize(); G.paused = false; playing = true; G.listenFriends();
@@ -1407,6 +1410,7 @@ createHawkers(G);
 createSuburbs(G); // speciality buildings along the roads out of each city (before the homes are made)
 world.familyBuilt = addFamilyBuildings(G); // houses and buildings the family added in Sparkle Studio (they become homes too)
 buildPowerLines(G); // power poles (when switched on in Studio) wired to each other by themselves
+bootMark('pretraffic'); createTraffic(G); bootMark('traffic'); // motorbikes, cars, buses, trams, xích lô and bicycles (js/traffic.js; Studio switches)
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 createSymbols(G, { sfx: SFX, dialog }); // each region's symbol animal, in a corner of its city square
 createRegionSites(G); // more famous places of each region, just outside its city

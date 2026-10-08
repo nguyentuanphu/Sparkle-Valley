@@ -205,6 +205,7 @@ export function animate(A, state, t, speed = 0) {
     case 'glide': A.glider.visible = true; A.armL.rotation.z = 2.8; A.armR.rotation.z = -2.8; A.legL.rotation.x = .25; A.legR.rotation.x = .1; A.rig.rotation.x = .12; A.rig.position.y = Math.sin(t * 2) * .04; break;
     case 'swim': A.rig.rotation.x = 1.15; A.rig.position.y = -.55; A.armL.rotation.x = Math.sin(t * 5) * 1.6; A.armR.rotation.x = -Math.sin(t * 5) * 1.6; A.legL.rotation.x = Math.sin(t * 8) * .4; A.legR.rotation.x = -Math.sin(t * 8) * .4; break;
     case 'climb': A.armL.rotation.x = -2.7 + Math.sin(t * 6) * .4; A.armR.rotation.x = -2.7 - Math.sin(t * 6) * .4; A.legL.rotation.x = Math.sin(t * 6) * .4; A.legR.rotation.x = -Math.sin(t * 6) * .4; break;
+    case 'sit': A.legL.rotation.set(-1.45, 0, .08); A.legR.rotation.set(-1.45, 0, -.08); A.armL.rotation.set(-.55, 0, .2); A.armR.rotation.set(-.55, 0, -.2); break;   // (round R: a passenger seat, a bench)
     case 'ride': A.legL.rotation.set(-1.3, 0, .55); A.legR.rotation.set(-1.3, 0, -.55); A.rig.position.y = Math.abs(Math.sin(t * 7)) * .05 * Math.min(1, speed / 3); A.armL.rotation.x = -.7; A.armR.rotation.x = -.7; break;
     case 'cheer': A.armL.rotation.z = 2.8 + Math.sin(t * 10) * .2; A.armR.rotation.z = -2.8 - Math.sin(t * 10) * .2; A.rig.position.y = Math.abs(Math.sin(t * 8)) * .18; break;
     case 'wave': A.armR.rotation.z = -2.6 + Math.sin(t * 10) * .35; A.head.rotation.z = Math.sin(t * 3) * .1; break;

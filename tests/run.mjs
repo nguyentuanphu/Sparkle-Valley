@@ -636,6 +636,34 @@ await check('emoji', async () => {
   return out.trim().split('\n').pop() + '; no emoji in the docs';
 });
 
+await check('vehicles', async () => {
+  // (round R, owner: real xe 67, Cub, Dream, xích lô, Australian motorbikes, bicycles of every kind, cars, buses, trams;
+  // riders' hands on the grips and feet on the pegs; children can ride bicycles; all switchable in Studio)
+  const P = await open(b, { w: 1180, h: 760 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const T = __sv.traffic, ids = new Set(T.slots.map(s => s.id)), V = await import('/js/vehicles.js');
+    // the vehicles are made when a child comes near: go near a moving one and give them a moment
+    const m = T.slots.find(s => s.mover && s.id !== 'xichlo' && s.id !== 'tramModern'), [mx, mz] = T.where(m), h = __sv.heroes[0]; h.place(mx + 20, mz + 20);
+    T.slots.forEach(sl => { if (!sl.v) T.make(sl); });
+    // every rider holds the grips: each hand within 12 cm of its grip
+    const far = [];
+    for (const sl of T.slots) if (sl.rider && sl.v.grips) { sl.v.o.updateMatrixWorld(true); const A = sl.rider;
+      for (const [arm, g] of [[A.armL, sl.v.grips[0]], [A.armR, sl.v.grips[1]]]) { const hand = arm.children.find(c => Math.abs(c.position.y + .42) < .01); const hp = hand.getWorldPosition(new (hand.position.constructor)()), gp = sl.v.o.localToWorld(new (hand.position.constructor)(...g)); const d = hp.distanceTo(gp); if (d > .12) far.push(sl.id + ' ' + d.toFixed(2)); } }
+    // a moving one moves
+    const p0 = m.v.o.position.clone();
+    await new Promise(r => setTimeout(r, 1500)); const moved = m.v.o.position.distanceTo(p0);
+    // a child rides a bicycle and gets off again
+    const it = __sv.interactables.find(i => i.id.startsWith('bike_')); h.place(it.x + 1, it.z + 1); await new Promise(r => setTimeout(r, 400)); it.act(h, __sv);
+    const riding = !!(h.riding && h.riding.vehicle); h.dismount();
+    return { n: T.slots.length, ids: [...ids], all: Object.keys(V.VEHICLES).length, far, moved, riding, off: !h.riding };
+  });
+  for (const id of ['honda67', 'cub', 'dream', 'scooter', 'xichlo', 'postie', 'tramModern', 'touristCart', 'miniBike', 'roadster', 'sedan']) ok(r.ids.includes(id), 'missing in the valley: ' + id);
+  ok(!r.far.length, 'hands off the grips: ' + r.far.slice(0, 6).join(', '));
+  ok(r.moved > .5, 'traffic did not move (' + r.moved + ')'); ok(r.riding && r.off, 'could not ride a bicycle and get off');
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return `${r.all} models; ${r.n} vehicles in the valley; riders' hands on the grips; traffic moves; a child rides a bicycle and gets off`;
+});
+
 await check('dialogtap', async () => {
   // (round R, owner: "there shouldn't be any repeats, the child just taps the speech box as OK") a speech box has no
   // Hear-again or OK buttons for any age; a tap on the box goes on, and the last tap closes it

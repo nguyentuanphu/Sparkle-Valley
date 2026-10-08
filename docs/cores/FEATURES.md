@@ -36,6 +36,12 @@ Columns below: **Suggested start** = my suggestion only (Live, or Off then drip 
 | China and India areas | Off then drip |
 | Cities and landmarks (Sydney, Hà Nội, Hội An, Đà Nẵng, Vũng Tàu, Uluru…), 53 landmarks | Live; each city can be its own switch |
 | Real photos and 360° views of landmarks | Live |
+| Traffic on the roads: motorbikes (xe 67, Cub, Dream, xe tay ga, xe ba gác), taxis and buses in Vietnam; cars, utes, SUVs, buses and the postie bike in Australia (`traffic`) | Live |
+| City vehicles: parked bikes and cars, Melbourne's modern tram, Hà Nội's electric cart, xích lô (`cityVehicles`) | Live |
+| Bicycles children can ride in the villages, farm, Two Homes Street and Aussie Corner (`rideBikes`) | Live |
+| Xích lô rides in Sài Gòn and Hà Nội (`xichloRides`) | Live |
+| Real-looking vehicles for older children (`realVehicles`) | Live |
+| Power poles and wires (`powerPoles`) | Off (kept for later) |
 | River raft and ferry | Live |
 | Buffalo ride, buffalo cart, bicycles | Live |
 | Leaf Glider | Live (quest prize) |

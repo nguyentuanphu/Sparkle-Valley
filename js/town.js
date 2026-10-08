@@ -114,6 +114,8 @@ export function raisedHouse(w = 7.5, d = 7) {
   return { geo: merge(p), w, d };
 }
 
+// motorbikes parked on Two Homes Street's footpath: [x, z, turn, model] (js/traffic.js puts them there)
+export const TOWN_PARKED = [];
 export function createTown(G) {
   const { scene, world } = G, y0 = TOWN.h, RZ = TOWN.roadZ, N = 38, S = 54; // front lines of the north and south houses
   const mat = toonVC();
@@ -196,7 +198,8 @@ export function createTown(G) {
   const bits = [];
   // scooters parked on the footpath
   const scooter = (x, z, col, rot) => [P(Box(.25, .5, 1.5), col, [x, .55, z], [0, rot, 0]), P(Cyl(.28, .28, .14, 10), '#2f3336', [x, .28, z + .6], [0, rot, Math.PI / 2]), P(Cyl(.28, .28, .14, 10), '#2f3336', [x, .28, z - .6], [0, rot, Math.PI / 2]), P(Box(.3, .14, .7), '#3a3030', [x, .85, z - .2], [0, rot, 0]), P(Box(.7, .06, .06), '#9aa', [x, 1.2, z + .7], [0, rot, 0])];
-  bits.push(...scooter(14.3, N + 2.4, '#d9483a', 0), ...scooter(15.5, N + 2.6, '#3a78c8', .1), ...scooter(25.6, N + 2.8, '#f2f2f2', -.1));
+  // (round R: the real motorbikes of js/vehicles.js now stand here, placed by js/traffic.js)
+  TOWN_PARKED.push([14.3, N + 2.4, 0, 'honda67'], [15.5, N + 2.6, .1, 'cub'], [25.6, N + 2.8, -.1, 'dream']);
   // wheelie bins on the kerb (red lid for rubbish, yellow lid for recycling)
   [[41.3, '#d9483a'], [42.2, '#e8c03a']].forEach(([x, lid]) => bits.push(P(Box(.7, 1, .7), '#3c5a44', [x, .5, S - .2]), P(Box(.76, .1, .8), lid, [x, 1.05, S - .2])));
   [[36.6, '#d9483a']].forEach(([x, lid]) => bits.push(P(Box(.7, 1, .7), '#3c5a44', [x, .5, N + .3]), P(Box(.76, .1, .8), lid, [x, 1.05, N + .3])));
