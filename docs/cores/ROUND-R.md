@@ -19,12 +19,15 @@ Reported to the owner on its own, so Halloween can go live around 12–14 Oct.
    - **Two banks:** Vietnam on the east bank, Australia on the west, each north to south like the real country (Hà Nội, Bắc Ninh, Làng Sen, Đà Nẵng, Hội An, Chợ Ba Miền, TP. HCM; Brisbane, Aussie Corner, Sydney, Melbourne, Uluru). Home and Ông Cú on an island in the middle; Phố Hai Quê on the main bridge.
    - **Ring and colours:** a ring road around the home island; roads in each region's colour (red Vietnam, orange Australia, purple mountain road to China and India, blue coast road).
    - **Journey stops:** numbered first-week stops, one new place each day.
-   - **More water:** main river, Sông Hồng to Hà Nội, the Murray, the Mekong delta channels; lakes Hồ Gươm, Sydney Harbour, Hồ Gương, a billabong; a southern coast with Bondi beach.
+   - **More water:** the main river; Sông Hồng, Sông Hàn, the Hội An canal and Sông Sài Gòn (Vietnam side); the Brisbane River, the Yarra and the Murray (Australian side); the Mekong delta; lakes Hồ Gươm, Sydney Harbour, Hồ Gương, a billabong; a southern coast with Bondi beach.
+   - **Every bridge landmark crosses real water** (owner, 8 Oct): Cầu Rồng over Sông Hàn, Chùa Cầu over the Hội An canal, Long Biên over Sông Hồng, the Harbour Bridge, the Story Bridge over the Brisbane River, Princes Bridge over the Yarra; two bridges join the home island to the banks.
+   - **Boats connect and are checked:** the river raft runs the main river with a stop at every bridge; a Sydney Harbour ferry; a boat from TP. HCM down Sông Sài Gòn to Vũng Tàu; a coast boat past the Mekong delta. Every pier joins a road; a check rides every boat end to end and fails if a boat touches land or a stop has no road.
+   - **Bà Rịa–Vũng Tàu** (owner, 8 Oct): a coastal village south-east of TP. HCM, by road and boat. Vũng Tàu Lighthouse on the hill, Bạch Dinh, Bãi Sau beach, fishing boats, bánh khọt stalls. The lighthouse and Bạch Dinh move here; Nhà Tròn stays on Phố Hai Quê. First-week stop 8.
    - **Mountains:** snowy northern peaks with the China and India towns, the Trường Sơn range with the Hải Vân pass, the Great Dividing Range with the outback beyond.
    - **Village pattern** everywhere: gate, market street with kiosks on one side, square with the host, stage at the end, houses on back lanes, nature and a footpath loop outside.
    - Picture signposts at every junction; landmarks at road ends; kiosks in groups; map labels never overlap.
    - **Room for family memories** (owner, 8 Oct): the owner plans to add families' own houses and buildings on request later, so the land is planned now.
-     - Làng Kỷ Niệm (Memory Village) beside the home island with about 40 plots, plus 2–3 spare plots in every town and village: about 60 plots.
+     - Two Memory Villages (Làng Kỷ Niệm), one on each bank beside the home island, about 20 plots each, plus 2–3 spare plots in every town and village: about 60 plots.
      - Plot sizes: small (stall, shrine, bench), house, big (school, shop, café). Each is flat, joined to a road, with an address.
      - An unused plot is a small garden (flowers, bench, tree); a building replaces it.
      - Every player sees family buildings. They show only a family nickname, never children's photos, full names or real addresses, and go up only when the owner places them in Studio (a Plots page: pick a plot, pick or upload a design).
