@@ -94,7 +94,7 @@ export function offlineReply(G, h, pid, text) {
   }
   if (has(text, 'what should i do', 'what do i do', 'help', 'quest', 'mission', 'lam gi', 'nhiem vu', 'giup', 'bay gio')) {
     if (!q) return r('You finished every quest! Now you can explore, find secrets and play with friends.', 'Con xong hết nhiệm vụ rồi! Giờ hãy khám phá, tìm bí mật và chơi với bạn bè nhé.');
-    const tale = QUEST_TALES[q.id]; A.push({ label: '▶ ' + T("Let's go!", 'Đi thôi!'), run: () => G.goToObjective(h.i) });
+    const tale = q.tale || QUEST_TALES[q.id]; A.push({ label: '▶ ' + T("Let's go!", 'Đi thôi!'), run: () => G.goToObjective(h.i) });
     return tale ? r(`${q.title()}. ${tale[2]}`, `${q.title()}. ${tale[3]}`) : r(q.title(), q.title());
   }
   if (has(text, 'who are you', 'your name', 'what is your name', 'ten gi', 'la ai', 'ten la', 'ban ten')) return r(...P.about);

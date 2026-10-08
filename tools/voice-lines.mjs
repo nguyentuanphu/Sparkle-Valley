@@ -22,8 +22,12 @@ const PATTERNS = [
   new RegExp(String.raw`\[\s*\x60[^\x60]*\x60\s*,\s*\x60[^\x60]*\x60\s*,\s*(${Q})\s*,\s*(${Q})\s*\]`, 'g'),
   new RegExp(String.raw`\b(?:fact|story|hint|about)\s*:\s*\[\s*(${Q})\s*,\s*(${Q})`, 'g'),
   // the child's turn in a film (js/content/films.js): S.help(time, en, vi, …)
-  new RegExp(String.raw`\bS\.help\(\s*[^,]+,\s*(${Q})\s*,\s*(${Q})`, 'g')
+  new RegExp(String.raw`\bS\.help\(\s*[^,]+,\s*(${Q})\s*,\s*(${Q})`, 'g'),
+  // what someone says as a story step starts (js/content/chapters.js): tale: [pictures, who, en, vi]
+  new RegExp(String.raw`\btale\s*:\s*\[\s*${Q}\s*,\s*${Q}\s*,\s*(${Q})\s*,\s*(${Q})\s*\]`, 'g')
 ];
+// the story's speech boxes show the child's name but say the line without it (js/lanterns.js unnamed)
+const unnamed = s => s.replace(/,?\s*\{name\}/g, '');
 export function collectLines() {
 const seen = new Map();
 for (const f of files) {
@@ -37,9 +41,11 @@ for (const f of files) {
       if (!VI.test(vi) && en === vi) continue;             // not a translation pair
       if (/^[\p{Emoji}\s✓✕+−=]+$/u.test(en)) continue;     // pictures only
       if (en.split(/\s+/).length < 2 && !/[!?.]$/.test(en)) continue; // single-word labels are not speech
-      const key = en + '\u0000' + vi;
-      if (!seen.has(key)) seen.set(key, { en, vi, files: new Set() });
-      seen.get(key).files.add(f);
+      for (const [e, v] of f === 'js/content/chapters.js' && /\{name\}/.test(en + vi) ? [[unnamed(en), unnamed(vi)]] : [[en, vi]]) {
+        const key = e + '\u0000' + v;
+        if (!seen.has(key)) seen.set(key, { en: e, vi: v, files: new Set() });
+        seen.get(key).files.add(f);
+      }
     }
   }
 }

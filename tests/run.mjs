@@ -764,6 +764,51 @@ await check('preload', async () => {
   try { return execFileSync(process.execPath, [fileURLToPath(new globalThis.URL('../tools/preload.mjs', import.meta.url)), '--check'], { encoding: 'utf8' }).trim(); }
   catch (e) { throw new Error((e.stdout || e.message).trim()); }
 });
+await check('story', async () => {
+  // (round R, owner approved "Đèn Lồng Thung Lũng") the prologue and chapter 1 can be played from start to end: Ông Cú's
+  // film, choosing a companion, each step of Làng Sen in turn, finding and hanging the lantern; the đình wakes up, the
+  // keepsake goes home, and the old adventures follow. The đình stands in an open yard, not between houses.
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const pg = P.page, w = ms => pg.waitForTimeout(ms), seen = [];
+  const q = () => pg.evaluate(() => { const c = __sv.currentQuest(__sv.heroes[0].profile); return c && c.id; });
+  const calm = () => pg.evaluate(() => { document.querySelectorAll('.storybook,.dialog,.reward').forEach(e => e.remove()); __sv.paused = false; });
+  const act = id => pg.evaluate(id => { const it = __sv.interactables.find(i => i.id === id); it.act(__sv.heroes[0], __sv); }, id);
+  seen.push(await q());
+  await pg.evaluate(() => { if (!document.querySelector('.theatre')) __sv.lanterns.owl(__sv.heroes[0]); }); await w(2500);
+  const film = await pg.evaluate(() => !!document.querySelector('.theatre'));
+  await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(800);
+  await pg.evaluate(() => { const c = document.querySelectorAll('.dialog .dchoices button'); c[1] && c[1].click(); }); await w(800);
+  await calm(); await w(2500); await calm(); seen.push(await q());
+  await pg.evaluate(() => { const L = __sv.lanterns; __sv.heroes[0].place(L.dinh.front[0], L.dinh.front[1] + 6); }); await w(2500); await calm(); seen.push(await q());
+  await act('story_c1_nam'); await w(600);
+  for (let i = 0; i < 5; i++) { await pg.evaluate(() => document.querySelector('.dialog')?.click()); await w(400); }
+  await calm(); await w(2500); await calm(); seen.push(await q());
+  await act('lv_well'); await w(1800); await calm(); await w(2500); await calm(); seen.push(await q());
+  await pg.evaluate(async () => { const E = await import('/js/core/events.js'); E.events.emit('ActivityCompleted', { activityId: 'x', defId: 'game:oanquan', players: [], result: { won: true } }); });
+  await w(400); await calm(); await w(2500); await calm(); seen.push(await q());
+  await pg.evaluate(() => __sv.lanterns._finish(__sv.heroes[0], 'c1_tale')); await w(300); await calm(); await w(2500); await calm(); seen.push(await q());
+  await act('story_c1_find'); await w(600); await calm(); await w(2500); await calm();
+  const carrying = await pg.evaluate(() => __sv.heroes[0].profile.lanterns.carrying); seen.push(await q());
+  pg.evaluate(() => { const it = __sv.interactables.find(i => i.id === 'story_c1_hang'); it.act(__sv.heroes[0]); }); await w(2500);
+  await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(1200);
+  await pg.evaluate(() => document.querySelectorAll('.reward,.modal').forEach(e => e.click())); await w(800); await calm(); await w(1500);
+  seen.push(await q());
+  const end = await pg.evaluate(() => { const G = __sv, p = G.heroes[0].profile, D = G.lanterns.dinh;
+    const house = Math.min(...G.world.colliders.filter(c => c.r > 2 && c.top == null).map(c => Math.hypot(c.x - D.x, c.z - D.z) - c.r));
+    return { companion: p.lanterns.companion, ch1: !!p.lanterns.chapters.ch1, keep: (p.keepsakes || []).includes('lantern_ch1'), carrying: p.lanterns.carrying, house }; });
+  const want = ['L_p_owl', 'L_c1_village', 'L_c1_nam', 'L_c1_well', 'L_c1_teo', 'L_c1_tale', 'L_c1_find', 'L_c1_hang'], out = [];
+  want.forEach((id, i) => { if (seen[i] !== id) out.push(`step ${i + 1} was ${seen[i]}, expected ${id}`); });
+  if (!seen[8] || /^L_/.test(seen[8])) out.push('after chapter 1 the goal was ' + seen[8] + ', not an old adventure');
+  if (!film) out.push('Ông Cú\'s film did not play');
+  if (end.companion !== 'dragon') out.push('the companion was not chosen');
+  if (carrying !== 'ch1' || end.carrying) out.push('the lantern was not carried and then hung');
+  if (!end.ch1 || !end.keep) out.push('chapter 1 not finished ' + JSON.stringify(end));
+  if (!(end.house > 5)) out.push(`a building stands ${end.house.toFixed(1)} m from the đình`);
+  if (P.errors.length) out.push(...P.errors.slice(0, 2));
+  await P.ctx.close();
+  if (out.length) throw new Error(out.join('; '));
+  return `prologue and chapter 1 played through (${want.length} steps); đình lit, keepsake home, then "${seen[8]}"; nearest building ${end.house.toFixed(1)} m away`;
+});
 await check('camcalm', async () => {
   // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:
   // the camera never swings faster than a slow steady pace, and a jump doesn't jerk the picture up and down

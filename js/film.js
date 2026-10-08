@@ -152,7 +152,7 @@ function skyTex() {
 const mixHex = (a, b, k) => '#' + new THREE.Color(a).lerp(new THREE.Color(b), k).getHexString();
 
 // A film: made when the theatre opens a tale that has one, gone when the theatre closes.
-export function createFilm(stage, script) {
+export function createFilm(stage, script, ctx = {}) {
   const r = renderer(); if (!r || !script) return null;
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, 1, .1, 600);
   const sky = skyTex(); scene.background = sky; scene.fog = new THREE.Fog('#cfefff', 60, 260);
@@ -190,7 +190,7 @@ export function createFilm(stage, script) {
     const S = this; S.root = new THREE.Group(); scene.add(S.root);
     S.ev = []; S.t = 0; S.len = 0; S.actors = []; S.tickers = []; S.hold = null; S.narrated = false; S.camT = null;
     S.camPos = new THREE.Vector3(0, 3, 12); S.camLook = new THREE.Vector3(0, 1, 0); S.follow = null;
-    S.calm = calm; S.k = k;
+    S.calm = calm; S.k = k; S.ctx = ctx || {}; // (story films: the child's own look, name and companion)
     let resolve; S.done = new Promise(res => { resolve = res; });
     S.tw = (t, dur, fn, e = io) => { S.ev.push({ t, dur: calm && fn.cam ? 0 : Math.max(0, dur), fn, e }); S.len = Math.max(S.len, t + dur); return t + dur; };
     S.at = (t, fn) => S.tw(t, 0, (k, first) => { if (first) fn(); });

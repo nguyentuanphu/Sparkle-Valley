@@ -66,6 +66,8 @@ import { createSymbols, regionLabel } from './symbols.js';
 import { createRegionSites } from './regionsites.js';
 import { createVnFun } from './vnfun.js';
 import { createLotus } from './lotus.js';
+import { createLanterns } from './lanterns.js';
+import { openTheatre } from './tales.js';
 import { addFamilyBuildings, applyWorldEdits } from './worldedit.js';
 import { buildPowerLines } from './powerlines.js';
 import { CUSTOM } from './custom.js';
@@ -439,6 +441,7 @@ async function foundLeafy(h, lf) {
 // ---------- NPC talks ----------
 async function owlTalk(h) {
   const p = h.profile; SFX.hoot();
+  if (G.lanterns && await G.lanterns.owl(h)) return; // (round R) the story's prologue, once
   if (!p.quests.owl) {
     await dialog('Ông Cú', [
       [`Hoo hoo! Good morning, ${p.name}! Welcome to Sparkle Valley.`, `Hú hú! Chào buổi sáng, ${p.name}! Chào mừng con đến Thung Lũng Lấp Lánh.`, 'Hoo hoo! Good morning, little one! Welcome to Sparkle Valley.', 'Hú hú! Chào buổi sáng con! Chào mừng con đến Thung Lũng Lấp Lánh.'],
@@ -553,7 +556,7 @@ G.travelTo = async (h, x, z) => { const n = G.npcNear(x, z); if (n) { await G.la
 G.goToGame = (i, id) => { const h = G.heroes[i], it = G.gameSpot(id); if (!h || !it) return; (async () => { if (dist2(h.pos.x, h.pos.z, it.x, it.z) > 45) await G.travel(h, it.x - 1.5, it.z + 2); goAndDo(h, it); })(); };
 // ---------- objective helpers ----------
 G.objectiveIcon = h => { const q = currentQuest(h.profile); return q ? q.icon : '🏆'; };
-G.sayObjective = i => { const h = G.heroes[i]; if (!h) return; const q = currentQuest(h.profile); if (!q) return; const tale = QUEST_TALES[q.id]; if (tale) say(tale[2], tale[3]); else say(q.title(), q.title()); };
+G.sayObjective = i => { const h = G.heroes[i]; if (!h) return; const q = currentQuest(h.profile); if (!q) return; const tale = q.tale || QUEST_TALES[q.id]; if (tale) say(tale[2], tale[3]); else say(q.title(), q.title()); };
 // "Go" button: walk to the goal (or fly there if it is far away) and start it on arrival.
 G.goToObjective = async i => {
   const h = G.heroes[i]; if (!h || G.paused) return;
@@ -600,10 +603,12 @@ async function statueTalk(h) {
 
 // ---------- quests ----------
 const questDone = (p, q) => !!p.quests[q.id] || !!(q.check && q.check(p));
-function currentQuest(p) { return QUESTS.find(q => !questDone(p, q)); }
+// (round R) the story's step comes first; when no chapter is open, the valley's adventure list as before
+function currentQuest(p) { return (G.lanterns && G.lanterns.quest(p)) || QUESTS.find(q => !questDone(p, q)); }
 G.currentQuest = currentQuest;
 function questTarget(h) {
   const p = h.profile, q = currentQuest(p); if (!q) return null;
+  if (q.target) return q.target();
   const near = list => list.slice().sort((a, b) => dist2(a.x, a.z, h.pos.x, h.pos.z) - dist2(b.x, b.z, h.pos.x, h.pos.z))[0];
   switch (q.at) {
     case 'owl': return { x: owl.x, z: owl.z };
@@ -627,6 +632,7 @@ function questTarget(h) {
 }
 G.questTarget = questTarget;
 G.objective = h => { const q = currentQuest(h.profile); return q ? q.title() : T('You finished the adventure! Keep exploring!', 'Con đã hoàn thành cuộc phiêu lưu! Tiếp tục khám phá nhé!'); };
+G.checkQuests = h => checkQuests(h);
 G.save = save; G.addCoins = xu => addMoney(null, xu); G.giveSticker = p => giveSticker(p); G.reward = reward; G.fmt = fmt;
 async function checkQuests(h) {
   const p = h.profile;
@@ -1370,7 +1376,7 @@ function frame(now) {
         if (i === 0) setTimeout(() => G.shareStatus(), 50);
         if (G.regionOf[i] !== null) { const sub = regionLabel(rg); G.huds[i].showRegion(REGION_NAMES[rg]() + (sub ? ' · ' + sub : '')); }
         { const who = makeId('player', h.profile.id || 'guest'); if (G.regionOf[i]) events.emit('PlayerLeftVillage', { playerId: who, villageId: makeId('place', G.regionOf[i]) }); if (rg) events.emit('PlayerEnteredVillage', { playerId: who, villageId: makeId('place', rg), first: !(h.profile.visited || {})[rg] }); }
-        G.regionOf[i] = rg;
+        G.regionOf[i] = rg; if (G.lanterns) G.lanterns.onRegion(h, rg);
         const vis = h.profile.visited = h.profile.visited || {}; if (!vis[rg]) { vis[rg] = true; save(); }
         if (rg === 'village' && !h.profile.quests.village) { h.profile.quests.village = true; save(); hudFor(h).toast(T('Welcome to Lotus Village! Xin chào!', 'Chào mừng đến Làng Sen!')); checkQuests(h); } // (words, not a voice)
       }
@@ -1486,6 +1492,9 @@ G.festivals = createFestivals(G);
 G.weather = createWeather(G);
 createFun(G);
 createLearning(G);
+// the main story, Đèn Lồng Thung Lũng (js/lanterns.js, chapters in js/content/chapters.js): after the storyteller and the villagers
+G.npcAt = id => (n => n && { x: n.x, z: n.z })(NPCS.find(n => n.id === id));
+G.lanterns = createLanterns(G, { dialog, say, reward, save, openTheatre });
 createShowcase(G);
 world.updaters.push((dt, t) => tickAnimals(dt, t, G.heroes)); // every animal walks, hops, wags and looks around
 createGathering(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });

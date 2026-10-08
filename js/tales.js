@@ -49,7 +49,7 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
     // (round R) tales that have a film are acted in 3D instead of the picture stage (js/film.js)
     // (loaded only when a story opens, so starting the game stays small)
     let film = null;
-    const ready = featureOn('storyFilms', true) ? import('./content/films.js').then(async C => { if (!C.FILMS[tale.id] || !alive) return; const F = await import('./film.js'); film = F.createFilm(stage, C.FILMS[tale.id]); if (film) m.classList.add('film'); }).catch(e => console.warn('film', e)) : Promise.resolve();
+    const ready = featureOn('storyFilms', true) ? import('./content/films.js').then(async C => { if (!C.FILMS[tale.id] || !alive) return; const F = await import('./film.js'); film = F.createFilm(stage, C.FILMS[tale.id], tale.ctx); if (film) m.classList.add('film'); }).catch(e => console.warn('film', e)) : Promise.resolve();
     const draw = async () => {
       const my = ++token; await ready; if (!alive || my !== token) return;
       const [pics, en, vi] = tale.pages[k], st = stageOf(en);

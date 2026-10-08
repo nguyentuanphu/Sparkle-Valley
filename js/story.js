@@ -107,7 +107,7 @@ export const QUEST_TALES = {
 };
 // One page, read aloud, with a "Let's go!" button. Resolves true if the child wants to go now.
 export function showQuestTale(q, name) {
-  const tale = QUEST_TALES[q.id]; if (!tale) return Promise.resolve(false);
+  const tale = q.tale || QUEST_TALES[q.id]; if (!tale) return Promise.resolve(false);
   const [art, who, en, vi] = tale;
   return new Promise(res => {
     const b = el('div', 'storybook quest-tale', `<div class="sb-title">${q.icon} ${T('New adventure', 'Cuộc phiêu lưu mới')}</div><div class="sb-art in">${art}</div>

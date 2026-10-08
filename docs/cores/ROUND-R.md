@@ -122,3 +122,11 @@ Measured in the test browser (390 px phone; the slow-phone figures use a 4x slow
 - **Infrastructure:** bundle and compress the code; GitHub CI with deploy previews; split main.js into the 8 cores. (Voices and exe stay in git for now.)
 - **Studio:** faster pages with undo/history, a content calendar, a quest and story editor, family voices with a plain-words dashboard, and a better page layout with new and improved features.
 - **Privacy review:** the owner asked for more detail first.
+
+## Story: prologue and chapter 1 built (owner, 9 Oct: "Approve, start building")
+- `js/lanterns.js` runs the chapters in `js/content/chapters.js`: the child's goal is the first step not yet done in the first released chapter; when none is open the old adventures (`QUESTS`) carry on. Progress lives in `profile.lanterns`.
+- **Prologue:** Ông Cú's film (the lanterns glow on the banyan, Mây Cau Có blows them away), then the child picks a companion: Lấp Lánh the firefly or Rồng con the baby dragon (`js/companion.js`), who flies beside them and carries the lantern once found.
+- **Chapter 1, Làng Sen:** fly to the village, ask Bà Năm, fetch water at the old well, beat Tèo at a folk game, hear the watermelon story, find the lantern among the lotus leaves, hang it at the đình. The đình (`js/dinh.js`) sits under soft mist until then; hanging the lantern plays the festival-night film, lights it up and gives the keepsake lantern for the child's house.
+- **Where the đình stands:** Làng Sen is full of houses and stalls, so the game picks the flat spot with the most room round it, in or at the edge of the village, facing the village middle (many real đình stand at the village edge). The `story` check keeps every building at least 5 m away.
+- **Voices:** the step speeches and film pages are recorded (Azure). Lines that show the child's name speak a version without it, so one recording works for every child.
+- **Switches:** Studio > Releases: `story_prologue` and `story_ch1` (on by default).

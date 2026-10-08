@@ -33,7 +33,8 @@ export const DECOR = {
   lantern: { icon: '🏮', price: 8, en: 'Lantern', vi: 'Đèn lồng', wall: true },
   star: { icon: '⭐', price: 0, en: 'Gold star', vi: 'Ngôi sao vàng', wall: true },
   // keepsakes (round R): won, never bought; they show in the chooser only once the child has one (profile.keepsakes)
-  pumpkin: { icon: '🎃', price: 0, en: 'Pumpkin lantern (Halloween)', vi: 'Đèn bí ngô (Halloween)', keepsake: true }
+  pumpkin: { icon: '🎃', price: 0, en: 'Pumpkin lantern (Halloween)', vi: 'Đèn bí ngô (Halloween)', keepsake: true },
+  lantern_ch1: { icon: '🏮', price: 0, en: 'The lantern of Lotus Village (story)', vi: 'Đèn lồng Làng Sen (truyện)', keepsake: true }
 };
 // the 8 spots in the room (room coordinates; the door is at +z): 4 on the floor, 4 on the walls
 export const SPOTS = [

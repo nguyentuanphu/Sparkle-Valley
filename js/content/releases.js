@@ -10,6 +10,8 @@ export const RELEASES = [
   { id: 'xichloRides', en: 'Xích lô rides', vi: 'Đi xích lô', group: 'world', def: true },
   { id: 'realVehicles', en: 'Real-looking vehicles for older children', vi: 'Xe như thật cho các con lớn', group: 'world', def: true },
   { id: 'powerPoles', en: 'Power poles and wires', vi: 'Cột điện và dây điện', group: 'world', def: false },
+  { id: 'story_prologue', en: 'Story: The Lanterns Blow Away (prologue, companion)', vi: 'Truyện: Đèn Lồng Bay Mất (mở đầu, bạn đồng hành)', group: 'story', def: true },
+  { id: 'story_ch1', en: 'Story chapter 1: Lotus Village', vi: 'Truyện chương 1: Làng Sen', group: 'story', def: true },
   ...FESTCAL.map(F => ({ id: 'fest_' + F.id, en: F.en, vi: F.vi, group: 'festivals', def: true, icon: F.icon }))
 ];
-export const RELEASE_GROUPS = { world: ['In the valley', 'Trong thung lũng'], festivals: ['Festivals', 'Lễ hội'] };
+export const RELEASE_GROUPS = { story: ['The lantern story', 'Truyện đèn lồng'], world: ['In the valley', 'Trong thung lũng'], festivals: ['Festivals', 'Lễ hội'] };

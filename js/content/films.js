@@ -3,7 +3,7 @@
 // from the start of the page). Pages stand alone, so ◀ ▶ can jump to any page.
 // The child helps on two pages of each film: S.help(time, English, Vietnamese, what happens after the tap).
 import { SETS as L, PROPS as Pp, LOOK, G3 } from '../film.js';
-import { THREE, P } from '../gfx.js';
+import { THREE, P, merge } from '../gfx.js';
 
 const PI = Math.PI, H = PI / 2;
 // the cast
@@ -549,3 +549,113 @@ function countYard(S, noBasket) {
   const lan = S.person(LAN, -.7, .6, .5, .74); S.mood(lan, 0, 'happy');
   return { lan, basket };
 }
+
+// ---------------- The lantern story (round R): the prologue and each chapter's festival night ----------------
+// S.ctx carries the child's own look, name and companion (js/lanterns.js)
+import { buildOwl } from '../avatar.js';
+import { buildDinh, buildLantern } from '../dinh.js';
+import { buildCompanion } from '../companion.js';
+const owl = () => { const o = buildOwl(); o.remove(o.children[o.children.length - 1]); return o; }; // (without its shared shadow)
+const kidOf = S => LOOK(Object.assign({ style: 'shirt', color: '#3b6fe0', hairStyle: 'short' }, (S.ctx && S.ctx.look) || {}, { back: 'none', glider: 0 }));
+// the grumpy cloud Mây Cau Có: big, grey, puffed cheeks and a frown
+function grumpy() {
+  const g = new THREE.Group(), parts = [];
+  for (let i = 0; i < 7; i++) parts.push(P(G3.S(1.6 + (i % 3) * .5, 10, 8), i % 2 ? '#8a90a0' : '#9aa0b0', [(i - 3) * 1.4, Math.sin(i * 1.3) * .5, (i % 2) * .6]));
+  parts.push(P(G3.S(.32, 10, 8), '#ffffff', [-.8, .4, 2]), P(G3.S(.32, 10, 8), '#ffffff', [.8, .4, 2]), P(G3.S(.15, 8, 6), '#2a2a3a', [-.8, .35, 2.28]), P(G3.S(.15, 8, 6), '#2a2a3a', [.8, .35, 2.28]),
+    P(G3.Box(.7, .12, .1), '#2a2a3a', [-.85, .85, 2.1], [0, 0, -.35]), P(G3.Box(.7, .12, .1), '#2a2a3a', [.85, .85, 2.1], [0, 0, .35]), P(G3.Cyl(.25, .25, .12, 12), '#5a5a6a', [0, -.5, 2.1], [H, 0, 0]));
+  g.add(new THREE.Mesh(merge(parts), new THREE.MeshToonMaterial({ vertexColors: true })));
+  return g;
+}
+function windStreaks(S, n = 14) {
+  const g = new THREE.Group(), m = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .55, depthWrite: false });
+  for (let i = 0; i < n; i++) { const s = new THREE.Mesh(G3.Cyl(.03, .03, 3 + (i % 3), 4), m); s.rotation.z = H; s.position.set(-14 + (i * 3.7) % 28, 4 + (i * 1.9) % 9, -6 + (i * 2.3) % 8); g.add(s); }
+  g.visible = false;
+  S.every((dt, time) => { if (g.visible) g.children.forEach((s, i) => { s.position.x += dt * (16 + i % 4 * 3); if (s.position.x > 16) s.position.x = -16; }); });
+  return S.add(g);
+}
+FILMS.lantern_prologue = { pages: [
+  // 1. the night before the festival: the lanterns glow on the old banyan
+  S => {
+    village(S, [10, -10]); S.sky('#2a3070', '#f0a070'); S.light(.6, .7);
+    L.banyan(S, 0, -4, 1.2);
+    const lan = [...Array(9)].map((_, i) => { const a = -.3 + i * .45, l = buildLantern(true); l.scale.setScalar(1.1); return S.add(l, Math.cos(a) * 5.2, 2.6 + (i % 3) * .45, -4 + Math.sin(a) * 2 + 2.2); }); // (under the branches, where everyone can see them)
+    S.every((dt, time) => lan.forEach((l, i) => { l.rotation.z = Math.sin(time * 1.3 + i) * .08; }));
+    const o = owl(); o.scale.setScalar(.7); S.add(o, 2.6, 0, -.8, -.4);
+    const nam = S.person(LOOK({ style: 'aodai', color: '#8a4a8a', hairStyle: 'buns', hair: '#e8e8e8' }), -2.4, 1, .4), teo = S.person(TEO, -1, 2, .2, .72), v = S.person(VILLAGER('shirt', '#3b6fe0', 'nonla', 'short'), 1, 1.8, -.2);
+    [nam, teo, v].forEach((a, i) => { S.mood(a, 0, 'happy'); S.do(a, 1 + i * .4, 'point', 2); });
+    S.shot([0, 2.4, 13], [0, 3, -3]); S.cam(.3, 8, [1.5, 3, 8.5], [0, 3.8, -3.5]);
+    S.at(9.5, () => { });
+  },
+  // 2. whoosh: Mây Cau Có blows the lanterns far away
+  S => {
+    village(S, [10, -10]); S.sky('#2a3070', '#d88a70'); S.light(.55, .65);
+    L.banyan(S, 0, -4, 1.2);
+    const lan = [...Array(9)].map((_, i) => { const a = -.3 + i * .45, l = buildLantern(true); l.scale.setScalar(1.1); return S.add(l, Math.cos(a) * 5.2, 2.6 + (i % 3) * .45, -4 + Math.sin(a) * 2 + 2.2); }); // (under the branches, where everyone can see them)
+    const cloud = grumpy(); S.add(cloud, -26, 13, -10); S.move(cloud, 0, 3, [-9, 12, -8]);
+    S.tw(3, 1.2, k => { cloud.scale.set(1 + Math.sin(k * Math.PI) * .25, 1 + Math.sin(k * Math.PI) * .2, 1); });
+    const wind = windStreaks(S); S.show(wind, 3.6);
+    lan.forEach((l, i) => S.move(l, 3.8 + i * .25, 4.5, [18 + i * 3, 22 + (i % 4) * 4, -30 - i * 4], k => k * k));
+    const nam = S.person(LOOK({ style: 'aodai', color: '#8a4a8a', hairStyle: 'buns', hair: '#e8e8e8' }), -2.4, 1, .4), teo = S.person(TEO, -1, 2, .2, .72);
+    [nam, teo].forEach((a, i) => { S.mood(a, 4, 'o'); S.do(a, 4.2 + i * .3, 'surprised', 3); S.mood(a, 8, 'sad'); });
+    S.shot([0, 2.4, 13], [-2, 4.5, -4]);
+    S.cam(3.6, 2, [2, 2.4, 12], [0, 6, -6]); S.cam(6, 3.5, [2, 2, 12], [10, 16, -24]);
+    S.at(10.5, () => { });
+  },
+  // 3. Ông Cú asks the child, and two friends are ready to fly with them
+  S => {
+    village(S, [10, -10]); S.sky('#3a3a80', '#f2b080'); S.light(.7, .75);
+    L.banyan(S, 0, -6, 1.2);
+    const o = owl(); o.scale.setScalar(.8); S.add(o, 0, 0, -1.6, 0);
+    S.every((dt, time) => { o.rotation.z = Math.sin(time * 3) * .04; o.position.y = Math.abs(Math.sin(time * 3)) * .05; });
+    const kid = S.person(kidOf(S), 0, 2.2, PI, .72); S.mood(kid, 0, 'smile');
+    const ff = buildCompanion('firefly'), dr = buildCompanion('dragon');
+    S.add(ff, -1.6, 1.6, .4); S.add(dr, 1.6, 1.4, .4); ff.visible = dr.visible = false; S.show(ff, 3.5); S.show(dr, 4.2);
+    S.every((dt, time) => [ff, dr].forEach((c, i) => { c.position.y = 1.5 + Math.sin(time * 2 + i) * .15; c.userData.wings.forEach((w, j) => { w.rotation.z = (j ? -1 : 1) * Math.sin(time * c.userData.flap) * .6; }); c.rotation.y = Math.sin(time * .8 + i) * .4; }));
+    const sp = Pp.sparkle(); S.add(sp, 0, .5, .4); S.show(sp, 3.4);
+    S.shot([0, 1.8, 7], [0, 1.2, 0]); S.cam(.5, 3, [2.6, 1.6, 5], [0, 1.1, 0]);
+    S.mood(kid, 3.6, 'happy'); S.do(kid, 4.5, 'cheer', 2);
+    S.cam(3.2, 2.5, [0, 1.7, 5.6], [0, 1.4, .4]);
+    S.at(8.5, () => { });
+  }
+] };
+FILMS.lantern_ch1 = { pages: [
+  // 1. the lantern goes up on the đình; it glows and the mist lifts
+  S => {
+    S.sky('#a8c8e8', '#ffe8c8'); L.ground(S, '#8fcf6a'); L.mountains(S, -110); L.bamboo(S, -11, -6); L.bamboo(S, 11, -5);
+    const d = buildDinh(); S.add(d, 0, 0, -4);
+    const mm = new THREE.MeshBasicMaterial({ color: '#f4f7fb', transparent: true, opacity: .45, depthWrite: false });
+    const mist = [...Array(10)].map((_, i) => { const s = new THREE.Mesh(G3.S(2.4 + (i % 3) * .6, 12, 8), mm); s.scale.y = .6; return S.add(s, Math.cos(i * 2.4) * 4, 1.4 + (i % 3) * 1.2, -4 + Math.sin(i * 2.4) * 3); });
+    const kid = S.person(kidOf(S), 0, 6, PI, .72);
+    const lan = buildLantern(true); lan.scale.setScalar(.8); S.add(lan); S.grab(kid, 0, lan, [0, -.5, .1]);
+    const comp = buildCompanion(S.ctx.companion || 'firefly'); S.add(comp, .8, 1.6, 6.3);
+    S.every((dt, time) => { comp.position.y = 1.5 + Math.sin(time * 2.2) * .12; comp.userData.wings.forEach((w, j) => { w.rotation.z = (j ? -1 : 1) * Math.sin(time * comp.userData.flap) * .6; }); });
+    S.shot([3, 2.4, 13], [0, 2.4, -2]);
+    S.walk(kid, .4, [0, -.4], 1.3); S.move(comp, .4, 4.2, [.9, 1.6, .2], k => k);
+    S.do(kid, 4.2, 'give', 1.4);
+    const hook = d.userData.hooks[2].clone().add(new THREE.Vector3(0, 0, -4));
+    S.drop(lan, 4.6); S.move(lan, 4.62, 1.2, [hook.x, hook.y, hook.z], undefined, .4);
+    const others = d.userData.hooks.filter((_, i) => i !== 2).map(v => { const l = buildLantern(true); l.scale.setScalar(.9); l.visible = false; return S.add(l, v.x, v.y, v.z - 4); });
+    others.forEach((l, i) => S.show(l, 6.2 + i * .35));
+    S.tw(6, 3, k => { mm.opacity = .45 * (1 - k); mist.forEach(m => m.scale.set(1 + k * .5, .6 + k * .3, 1 + k * .5)); }, k => k);
+    S.skyTo(6, 3, '#7cc8f0', '#e8f6ff');
+    S.mood(kid, 6.4, 'happy'); S.do(kid, 7, 'cheer', 2.4);
+    S.cam(4, 2, [2, 2.2, 5], [0, 2.6, -2]); S.cam(6.5, 3, [4, 3, 11], [0, 3, -4]);
+    S.at(10.5, () => { });
+  },
+  // 2. that night: the village festival with drums, games and lanterns everywhere
+  S => {
+    S.sky('#141a44', '#34406e'); S.light(.3, .55); L.ground(S, '#5f8f4a'); L.mountains(S, -110, '#3a4a6a'); L.bamboo(S, -11, -6); L.bamboo(S, 11, -5);
+    const d = buildDinh(); S.add(d, 0, 0, -6);
+    d.userData.hooks.forEach(v => { const l = buildLantern(true); l.scale.setScalar(.9); S.add(l, v.x, v.y, v.z - 6); });
+    // strings of lanterns across the yard
+    for (let r = 0; r < 2; r++) for (let i = 0; i < 9; i++) { const l = buildLantern(true, i % 3 ? '#d8301e' : '#ffb52e'); l.scale.setScalar(.6); S.add(l, -8 + i * 2, 4.2 - Math.sin(i / 8 * PI) * .6, 1 + r * 4); }
+    const drum = new THREE.Mesh(G3.Cyl(.7, .7, .9, 16), new THREE.MeshToonMaterial({ color: '#a8281e' })); drum.rotation.z = H; S.add(drum, -3.5, .9, 2);
+    const drummer = S.person(VILLAGER('shirt', '#c62f2f', 'none', 'short'), -3.5, 3.1, PI);
+    S.every((dt, time) => { drummer.A.armR.rotation.x = -1.2 + Math.max(0, Math.sin(time * 6)) * .8; drummer.A.armL.rotation.x = -1.2 + Math.max(0, Math.sin(time * 6 + PI)) * .8; drum.scale.setScalar(1 + Math.max(0, Math.sin(time * 6)) * .03); });
+    const kid = S.person(kidOf(S), 0, 4, 0, .72), teo = S.person(TEO, 1.4, 4.4, 0, .72), bong = S.person(BONG, -1.2, 4.6, 0, .72), nam = S.person(LOOK({ style: 'aodai', color: '#8a4a8a', hairStyle: 'buns', hair: '#e8e8e8' }), 2.8, 3.4, -.4);
+    [kid, teo, bong, nam].forEach((a, i) => { S.mood(a, 0, 'happy'); S.do(a, .5 + i * .3, i === 3 ? 'wave' : 'cheer', 6); });
+    const fw = [[-6, 14, -14], [5, 15, -16], [0, 17, -20]].map(p => Pp.fireworks(S, ...p)); fw.forEach((f, i) => S.show(f, 1 + i * .8));
+    S.shot([0, 3, 14], [0, 3, -2]); S.cam(.5, 8, [3, 2.4, 10], [0, 4, -4]);
+    S.at(10, () => { });
+  }
+] };
