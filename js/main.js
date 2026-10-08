@@ -1201,12 +1201,20 @@ function adaptResolution(rawMs) {
   const next = ms < 19 ? Math.min(adapt.max, adapt.pr + .25) : ms > 30 ? Math.max(adapt.min, adapt.pr - .25) : adapt.pr;
   if (next !== adapt.pr) { adapt.pr = next; renderer.setPixelRatio(next); renderer.setSize(innerWidth, innerHeight, false); }
 }
+// Battery (owner, round O: "the game uses too much battery"): on phones and tablets the valley is drawn 30 times a
+// second (smooth enough for walking; half the work), unless Graphics is on "Pretty"; computers keep 60.
+const FRAME_MS = settings.quality !== 'high' && matchMedia('(pointer: coarse)').matches ? 1000 / 30 : 0;
+// pages that cover the whole screen: nothing of the valley shows, so it isn't drawn at all (the Simple screen, which
+// under-5s start on, the 🎵 Songs page, often left playing lullabies at bedtime, and the real photos)
+const worldHidden = () => (G.simple && G.simple.open) || !!document.querySelector('.songs, .realview');
+G.worldHidden = worldHidden;
 function frame(now) {
   requestAnimationFrame(frame);
-  if (playing) adaptResolution(now - last);
+  if (FRAME_MS && now - last < FRAME_MS - 4) return;
+  if (playing) adaptResolution(now - last - (FRAME_MS ? FRAME_MS - 1000 / 60 : 0)); // (the wait between frames is not slowness)
   const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
-  // the 3D world rests while a full-screen game or the storybook is open (saves battery)
-  if (gameOpen() || document.querySelector('.storybook') || (G.paused && document.querySelector('.modal'))) return;
+  // the 3D world rests while a full-screen game, the storybook or a page that covers it is open (saves battery)
+  if (gameOpen() || document.querySelector('.storybook') || (G.paused && document.querySelector('.modal')) || (playing && worldHidden())) return;
   world.update(dt, t);
   if (!playing) {
     const a = t * .05;

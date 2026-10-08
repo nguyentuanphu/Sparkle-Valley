@@ -1,8 +1,8 @@
 // The recorded voices getting ready: a small, quiet note at the bottom of the screen while the voice pack downloads
 // to the device ("Getting the voices ready… 45%" with a thin bar), "Voices ready" for a moment when it is done, and
-// "waiting for the internet" if it stops. When everything is already on the device it says so briefly on every start
-// (owner, round F: "I don't see the voice download bar"), and it says when this address can't keep the voices or
-// no recorded voices were found.
+// "waiting for the internet" if it stops. Once the pack is on the device a start shows nothing (round O, owner: it
+// looked as if the voices loaded every time); it says when this address can't keep the voices or no recorded voices
+// were found.
 // Never in the way: it can't be tapped, sits between the joystick and the buttons, and fades when idle.
 import { T } from './i18n.js';
 import { onPackProgress } from './voice.js';
@@ -20,6 +20,7 @@ const hide = (after = 0) => { clearTimeout(hideT); hideT = setTimeout(() => { if
 export function startPackBar() {
   onPackProgress(e => {
     if (e.state === 'loading') show(T('Getting the voices ready…', 'Đang tải giọng đọc…') + ' ' + Math.floor(e.done / e.total * 100) + '%', e.done / e.total * 100);
+    else if (e.state === 'ready' && e.known) { /* already on the device from an earlier start: nothing to say (round O) */ }
     else if (e.state === 'ready') { show(T('Voices ready', 'Giọng đọc đã sẵn sàng') + ' ✓' + (e.total ? ` (${e.total.toLocaleString()})` : ''), 100); hide(e.quiet ? 2500 : 3000); }
     else if (e.state === 'nostore') { show(T('Voices play from the internet here: this address can’t keep them on the device (use the https website to keep them)', 'Ở địa chỉ này giọng đọc phát qua mạng, không lưu được trên máy (dùng trang https để lưu)'), null); hide(8000); }
     else if (e.state === 'nopack') { show(T('No recorded voices found: the device’s own voice is used', 'Không tìm thấy giọng đọc ghi sẵn: dùng giọng của máy'), null); hide(8000); }

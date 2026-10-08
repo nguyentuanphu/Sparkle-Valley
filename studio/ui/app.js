@@ -19,8 +19,12 @@ const SECTIONS = [
   { k: 'family', i: '💛', en: 'Family', vi: 'Gia đình', pages: ['message', 'children', 'album', 'quiz', 'stories', 'villagers'] },
   { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['path', 'music', 'map', 'photos', 'play', 'voices', 'ads'] },
   { k: 'players', i: '📊', en: 'Analytics', vi: 'Phân tích', pages: ['players'] },
-  { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Cài đặt', pages: ['publish', 'site', 'check', 'settings'] }
+  { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Cài đặt', pages: ['publish', 'site', 'check', 'settings', 'admins'] }
 ];
+// who is signed in online (round O: each admin has an own account): a viewer sees the Analytics only; the 👥 Admins
+// page is online only (the exe on the family's computer is the owner's)
+const ROLE = () => (INFO && INFO.me && INFO.me.role) || 'owner';
+const SEC = () => ROLE() === 'viewer' ? SECTIONS.filter(x => x.k === 'players') : SECTIONS.map(x => x.k === 'setup' && !(INFO && INFO.online) ? { ...x, pages: x.pages.filter(k => k !== 'admins') } : x);
 // each page: its picture, its name and one line saying what it is for
 const ABOUT = {
   home: ['🏠', 'Home', 'Trang chính', '', ''],
@@ -41,9 +45,10 @@ const ABOUT = {
   publish: ['🚀', 'Publish', 'Phát hành', 'Send your saved changes to the children’s devices', 'Gửi thay đổi đã lưu tới máy của các con'],
   site: ['🌐', 'Website', 'Trang web', 'The game’s website: updates and GitHub', 'Trang web của game: cập nhật và GitHub'],
   check: ['🩺', 'Check', 'Kiểm tra', 'Is everything set up and working?', 'Mọi thứ đã cài đặt và chạy tốt chưa?'],
-  settings: ['🔑', 'Settings', 'Cài đặt', 'Keys, the game folder, signing out', 'Khóa, thư mục game, đăng xuất']
+  settings: ['🔑', 'Settings', 'Cài đặt', 'Keys, the game folder, signing out', 'Khóa, thư mục game, đăng xuất'],
+  admins: ['👥', 'Admins', 'Quản trị viên', 'Other grown-ups sign in with their own name and password', 'Người lớn khác đăng nhập bằng tên và mật khẩu riêng']
 };
-const sectionOf = k => SECTIONS.find(x => x.k === k || x.pages.includes(k)) || SECTIONS[0];
+const sectionOf = k => SEC().find(x => x.k === k || x.pages.includes(k)) || SEC()[0];
 // #family → the Family cards; #family/quiz (or the old #quiz) → that page
 const route = () => { const h = location.hash.slice(1), [a, b] = h.split('/'); if (b && ABOUT[b]) return b; if (ABOUT[a] || SECTIONS.some(x => x.k === a)) return a; return 'home'; };
 let cur = route();
@@ -55,7 +60,7 @@ function head() {
 }
 function nav() {
   const sec = sectionOf(cur);
-  $('#tabs').innerHTML = SECTIONS.map(x => `<button data-k="${x.k}" class="${x === sec ? 'on' : ''}"><span>${x.i}</span><small>${T(x.en, x.vi)}</small></button>`).join('');
+  $('#tabs').innerHTML = SEC().map(x => `<button data-k="${x.k}" class="${x === sec ? 'on' : ''}"><span>${x.i}</span><small>${T(x.en, x.vi)}</small></button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.k));
   document.querySelectorAll('[data-t]').forEach(e => { const [en, vi] = e.dataset.t.split('|'); e.textContent = T(en, vi); });
   document.querySelectorAll('.lang button[data-l]').forEach(b => { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { LANG = b.dataset.l; localStorage.setItem('studioLang', LANG); render(); }; });
@@ -82,7 +87,8 @@ async function render(force) {
   if (!LOADED || force) P.innerHTML = `<div class="loading">✨ ${T('Loading…', 'Đang tải…')}</div>`;
   try {
     await load(force);
-    if (!INFO.ok && cur !== 'settings') { cur = 'settings'; nav(); toast(T('First, choose the game folder.', 'Trước tiên, chọn thư mục game.')); }
+    if (ROLE() === 'viewer' && cur !== 'players') { cur = 'players'; nav(); }
+    else if (!INFO.ok && cur !== 'settings') { cur = 'settings'; nav(); toast(T('First, choose the game folder.', 'Trước tiên, chọn thư mục game.')); }
     head();
     const sec = sectionOf(cur);
     if (sec.k === cur && sec.pages.length > 1) { crumb.innerHTML = ''; drawSection(P, sec); window.scrollTo(0, 0); return; }
@@ -749,6 +755,8 @@ PAGES.players = async P => {
   let GN = {}, PN = {};
   try { await import(GAME + 'js/games/all.js'); const { GAMES } = await import(GAME + 'js/games/registry.js'); for (const [id, g] of Object.entries(GAMES)) GN[id] = `${g.icon} ${g.name()}`; } catch (e) { }
   try { const W = await import(GAME + 'js/world.js'); for (const [id, f] of Object.entries(W.REGION_NAMES || {})) PN[id] = typeof f === 'function' ? f() : String(f); } catch (e) { }
+  // how long ago a device was last on the screen (round O)
+  const ago = iso => { const m = Math.max(1, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 60 ? T(`${m} min ago`, `${m} phút trước`) : m < 48 * 60 ? T(`${Math.round(m / 60)} h ago`, `${Math.round(m / 60)} giờ trước`) : T(`${Math.round(m / 1440)} days ago`, `${Math.round(m / 1440)} ngày trước`); };
   const gname = g => GN[g] || g, pname = p => PN[p] || p, when = d => d ? new Date(d + 'T12:00:00').toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { day: 'numeric', month: 'short' }) : '–';
   const kindName = k => ({ phone: T('Phone', 'Điện thoại'), tablet: T('Tablet', 'Máy tính bảng'), computer: T('Computer', 'Máy tính') }[k] || k);
   const locName = l => l ? [l.city, l.region, l.country].filter(Boolean).join(', ') : T('unknown', 'không rõ');
@@ -758,7 +766,7 @@ PAGES.players = async P => {
       ${K.games.length ? `<table class="mini"><thead><tr><th>${T('Game', 'Trò chơi')}</th><th>▶</th><th>🏆</th><th>🚪</th></tr></thead><tbody>${K.games.map(([g, st, w, q]) => `<tr><td>${esc(gname(g))}</td><td>${st}</td><td>${w}</td><td class="${q > w && q >= 2 ? 'warn' : ''}">${q}</td></tr>`).join('')}</tbody></table>` : ''}
       ${K.places.length ? `<p class="note">📍 ${K.places.map(([p, n]) => `${esc(pname(p))} (${n})`).join(' · ')}</p>` : ''}</div>`;
   const devCard = d => `<div class="card dev" data-id="${esc(d.id)}"><div class="row" style="align-items:flex-start"><div style="flex:2">
-      <h3>${{ phone: '📱', tablet: '📲', computer: '💻' }[d.kind] || '❔'} <span class="dlabel">${esc(devName(d))}</span> <button class="btn small ghost" data-rename>✏️ ${T('Name it', 'Đặt tên')}</button></h3>
+      <h3>${{ phone: '📱', tablet: '📲', computer: '💻' }[d.kind] || '❔'} <span class="dlabel">${esc(devName(d))}</span> ${d.online ? `<span class="pill live on">🟢 ${T('Playing now', 'Đang chơi')}${d.playingNow ? ' · ' + esc(d.playingNow) : ''}</span>` : `<span class="pill live">⚪ ${T('Offline', 'Không chơi')}${d.seenAt ? ' · ' + ago(d.seenAt) : ''}</span>`} <button class="btn small ghost" data-rename>✏️ ${T('Name it', 'Đặt tên')}</button></h3>
       <p class="note">${esc(d.os)} · ${esc(d.br)}${d.screen ? ' · ' + esc(d.screen) : ''}${d.app ? ' · ' + T('installed app', 'đã cài như ứng dụng') : ''} · ${esc(d.build)} · ${d.lang === 'vi' ? 'Tiếng Việt' : 'English'}<br>📍 ${esc(locName(d.loc))} · ${T('first seen', 'lần đầu')} ${when(d.first)} · ${T('last played', 'chơi gần nhất')} ${when(d.last)}</p></div>
       <div style="flex:1;min-width:150px"><p>⏱️ <b>${hrs(d.mins)}</b> ${T('in 30 days', 'trong 30 ngày')}<br>📅 ${d.days} ${T('days played', 'ngày có chơi')}${d.fps != null ? `<br>🎞️ ${d.fps} ${T('frames/s', 'khung hình/giây')}` : ''}${d.errors ? `<br><span class="badtxt">🐞 ${d.errors} ${T('errors', 'lỗi')}</span>` : ''}${d.stuck ? `<br><span class="warn">🧱 ${T('stuck', 'bị kẹt')} ${d.stuck}×</span>` : ''}</p></div></div>
       <div class="kids">${d.kids.map(kidCard).join('') || `<p class="note">${T('No per-child details yet (they start with version r43).', 'Chưa có chi tiết từng bé (bắt đầu từ bản r43).')}</p>`}</div></div>`;
@@ -777,7 +785,7 @@ PAGES.players = async P => {
   }[t.k] || (() => ''))();
   P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><p class="sub">${T('What the children play, from the game’s own website: per device and per child, for the last 30 days. Towns come from the internet connection (never GPS). A grown-up can switch it all off on the device: Grown-ups → Advanced → Analytics.', 'Các con chơi gì, từ trang web của game: theo từng máy và từng bé, trong 30 ngày qua. Thành phố lấy từ kết nối mạng (không bao giờ GPS). Người lớn có thể tắt hết trên máy: Người lớn → Nâng cao → Phân tích.')}</p>
   ${(r.tips || []).length ? `<div class="card tips"><h3>💡 ${T('Suggestions', 'Gợi ý')}</h3><ul>${r.tips.map(t => `<li>${esc(tipText(t))}</li>`).join('')}</ul></div>` : ''}
-  <div class="grid">${big(r.today.devices, 'devices playing today', 'máy chơi hôm nay')}${big(r.week.devices, 'this week', 'tuần này')}${big(r.month.devices, 'last 30 days', '30 ngày qua')}${big(r.allTime, 'devices ever', 'máy từ trước tới nay')}${big(r.week.newDevices, 'new this week', 'máy mới tuần này')}${big(hrs(r.minsPerDevice), 'a device plays a day', 'mỗi máy chơi mỗi ngày')}</div>
+  <div class="grid">${big(r.onlineNow || 0, '🟢 playing right now', '🟢 đang chơi lúc này')}${big(r.today.devices, 'devices playing today', 'máy chơi hôm nay')}${big(r.week.devices, 'this week', 'tuần này')}${big(r.month.devices, 'last 30 days', '30 ngày qua')}${big(r.allTime, 'devices ever', 'máy từ trước tới nay')}${big(r.week.newDevices, 'new this week', 'máy mới tuần này')}${big(hrs(r.minsPerDevice), 'a device plays a day', 'mỗi máy chơi mỗi ngày')}</div>
   <h3 class="sec">👨‍👩‍👧 ${T('Each device and child', 'Từng máy và từng bé')}</h3>${(r.devices || []).map(devCard).join('') || `<div class="card note">${T('No devices yet.', 'Chưa có máy nào.')}</div>`}
   <h3 class="sec">🌏 ${T('Everyone', 'Tất cả')}</h3>
   <div class="card"><h3>📅 ${T('Devices each day (pink: new)', 'Số máy mỗi ngày (hồng: máy mới)')}</h3><svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px">${bars}</svg></div>
@@ -799,15 +807,38 @@ PAGES.players = async P => {
     const l = prompt(T('A name for this device (e.g. “Na’s iPad”):', 'Tên cho máy này (ví dụ “iPad của Na”):'), cur); if (l === null) return;
     try { await api('players/label', { id, label: l }); card.querySelector('.dlabel').textContent = l || cur; toast(T('Saved.', 'Đã lưu.')); } catch (e) { fail(e); } });
 };
+// ---------- 👥 Admins (online, round O) ----------
+const ROLE_NAMES = { viewer: ['👀 Viewer: Analytics only', '👀 Xem: chỉ Phân tích'], editor: ['✏️ Editor: every page and Publish', '✏️ Sửa: mọi trang và Phát hành'], owner: ['👑 Owner: everything, also admins', '👑 Chủ: tất cả, cả quản trị viên'] };
+PAGES.admins = async P => {
+  const me = (INFO && INFO.me) || { name: 'owner', role: 'owner' };
+  const mine = me.name === 'owner' ? '' : `<div class="card"><h3>🔑 ${T('My password', 'Mật khẩu của tôi')} (${esc(me.name)})</h3>
+    <input type="password" id="op" autocomplete="current-password" placeholder="${T('Old password', 'Mật khẩu cũ')}"> <input type="password" id="np" autocomplete="new-password" placeholder="${T('New password (10+ characters)', 'Mật khẩu mới (từ 10 ký tự)')}"> <button class="btn" id="chg">${T('Change', 'Đổi')}</button></div>`;
+  if (me.role !== 'owner') { P.innerHTML = `<h2>👥 ${T('Admins', 'Quản trị viên')}</h2><p class="sub">${T('You are signed in as', 'Bạn đang đăng nhập là')} <b>${esc(me.name)}</b> · ${T(...ROLE_NAMES[me.role])}</p>${mine}`; bindMine(P); return; }
+  const { admins } = await api('admins/list'), opt = r => Object.keys(ROLE_NAMES).map(k => `<option value="${k}" ${k === r ? 'selected' : ''}>${T(...ROLE_NAMES[k])}</option>`).join('');
+  P.innerHTML = `<h2>👥 ${T('Admins', 'Quản trị viên')}</h2><p class="sub">${T('Other grown-ups sign in at this address with their own name and password; they never need a GitHub token (the website’s own is used). You see here who can do what.', 'Người lớn khác đăng nhập ở địa chỉ này bằng tên và mật khẩu riêng; họ không cần token GitHub (dùng token của trang web). Ở đây bạn thấy ai được làm gì.')}</p>
+    <div class="card"><h3>➕ ${T('Add someone', 'Thêm người')}</h3><div class="row" style="flex-wrap:wrap;gap:8px">
+      <input type="text" id="an" autocapitalize="none" spellcheck="false" placeholder="${T('Sign-in name, e.g. ba.nam', 'Tên đăng nhập, ví dụ ba.nam')}"><input type="password" id="ap" autocomplete="new-password" placeholder="${T('Their password (10+ characters)', 'Mật khẩu của họ (từ 10 ký tự)')}"><select id="ar">${opt('viewer')}</select><button class="btn" id="aadd">${T('Add', 'Thêm')}</button></div>
+      <p class="note">${T('Tell them the address (this page), their name and password yourself. They can change their password here after signing in.', 'Tự gửi cho họ địa chỉ (trang này), tên và mật khẩu. Sau khi đăng nhập họ có thể tự đổi mật khẩu ở đây.')}</p></div>
+    <div class="card"><h3>👥 ${T('Who can sign in', 'Ai có thể đăng nhập')}</h3><table class="mini"><tbody>
+      <tr><td><b>owner</b></td><td>${T(...ROLE_NAMES.owner)}</td><td class="note">${T('the Studio password (STUDIO_PASSWORD in Netlify)', 'mật khẩu Studio (STUDIO_PASSWORD trong Netlify)')}</td><td></td></tr>
+      ${admins.map(a => `<tr data-n="${esc(a.name)}"><td><b>${esc(a.name)}</b></td><td><select data-role>${opt(a.role)}</select></td><td class="note">${T('added', 'thêm')} ${esc(new Date(a.at).toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Brisbane' }))} · ${esc(a.by)}</td><td><button class="btn small ghost" data-pw>🔑 ${T('New password', 'Mật khẩu mới')}</button> <button class="btn small ghost" data-rm>🗑️</button></td></tr>`).join('')}
+    </tbody></table>${admins.length ? '' : `<p class="note">${T('Nobody else yet.', 'Chưa có ai khác.')}</p>`}</div>`;
+  $('#aadd').onclick = async () => { try { await api('admins/save', { name: $('#an').value, password: $('#ap').value, role: $('#ar').value }); toast(T('Added.', 'Đã thêm.')); PAGES.admins(P); } catch (e) { fail(e); } };
+  P.querySelectorAll('tr[data-n]').forEach(tr => { const name = tr.dataset.n;
+    tr.querySelector('[data-role]').onchange = async e => { try { await api('admins/save', { name, role: e.target.value }); toast(T('Saved.', 'Đã lưu.')); } catch (x) { fail(x); } };
+    tr.querySelector('[data-pw]').onclick = async () => { const pw = prompt(T(`A new password for ${name} (10+ characters):`, `Mật khẩu mới cho ${name} (từ 10 ký tự):`)); if (!pw) return; try { await api('admins/save', { name, password: pw, role: tr.querySelector('[data-role]').value }); toast(T('Changed: they are signed out everywhere.', 'Đã đổi: họ bị đăng xuất khỏi mọi nơi.')); } catch (e) { fail(e); } };
+    tr.querySelector('[data-rm]').onclick = async () => { if (!confirm(T(`Remove ${name}? They can no longer sign in.`, `Xóa ${name}? Họ sẽ không đăng nhập được nữa.`))) return; try { await api('admins/remove', { name }); PAGES.admins(P); } catch (e) { fail(e); } }; });
+};
+function bindMine(P) { const b = P.querySelector('#chg'); if (b) b.onclick = async () => { try { await api('admins/me', { old: $('#op').value, password: $('#np').value }); toast(T('Password changed. Please sign in again.', 'Đã đổi mật khẩu. Vui lòng đăng nhập lại.')); setTimeout(signIn, 1200); } catch (e) { fail(e); } }; }
 // ---------- signing in (online only) ----------
 function signIn() {
   LOADED = false; $('#tabs').innerHTML = ''; if ($('#crumb')) $('#crumb').innerHTML = ''; if ($('#pub')) $('#pub').hidden = true; document.body.classList.add('online');
-  $('#page').innerHTML = `<div class="card signin"><h2>✨ Sparkle Studio</h2><p class="sub">${T('The grown-ups’ dashboard, online. Enter the Studio password.', 'Bảng điều khiển của người lớn, trên mạng. Nhập mật khẩu Studio.')}</p>
-    <form id="si"><input type="password" id="pw" autocomplete="current-password" placeholder="${T('Password', 'Mật khẩu')}"><button class="btn" style="margin-top:10px">🔓 ${T('Sign in', 'Đăng nhập')}</button><p class="note" id="sires"></p></form></div>`;
+  $('#page').innerHTML = `<div class="card signin"><h2>✨ Sparkle Studio</h2><p class="sub">${T('The grown-ups’ dashboard, online. Sign in with your name and password (the owner leaves the name empty and uses the Studio password).', 'Bảng điều khiển của người lớn, trên mạng. Đăng nhập bằng tên và mật khẩu của bạn (chủ để trống tên và dùng mật khẩu Studio).')}</p>
+    <form id="si"><input type="text" id="nm" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="${T('Sign-in name (empty for the owner)', 'Tên đăng nhập (chủ để trống)')}" style="margin-bottom:8px"><input type="password" id="pw" autocomplete="current-password" placeholder="${T('Password', 'Mật khẩu')}"><button class="btn" style="margin-top:10px">🔓 ${T('Sign in', 'Đăng nhập')}</button><p class="note" id="sires"></p></form></div>`;
   $('#si').onsubmit = async e => { e.preventDefault(); $('#sires').textContent = '…';
-    const r = await fetch(BASE + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: $('#pw').value }) }); const j = await r.json().catch(() => ({}));
+    const r = await fetch(BASE + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('#nm').value, password: $('#pw').value }) }); const j = await r.json().catch(() => ({}));
     if (r.ok) render(true); else $('#sires').textContent = '⚠️ ' + (j.error || r.status); };
-  $('#pw').focus();
+  $('#nm').focus();
 }
 window.addEventListener('hashchange', () => { const k = route(); if (k !== cur) { cur = k; render(); } });
 render();

@@ -284,7 +284,16 @@ let checking = false;
 async function checkPack() {
   if (checking || !PACK) return; checking = true;
   try {
-    const cache = await caches.open('sv-voices'), have = new Set((await cache.keys()).map(r => r.url));
+    const cache = await caches.open('sv-voices');
+    // (round O, owner: "does it load the voice pack every time? it should be once, unless there are new voices") once
+    // the whole pack is on the device, a start only looks at 16 files picked at random, says nothing and downloads
+    // nothing; the full check (listing all ~8,000 files) runs only for a new pack, or when a file has gone missing
+    if (settings.packSaved === packSig()) {
+      const all = packFiles(), pick = all.length <= 64 ? all : Array.from({ length: 16 }, () => all[Math.floor(Math.random() * all.length)]);
+      const found = await Promise.all(pick.map(u => cache.match(u).then(Boolean)));
+      if (found.every(Boolean)) { packEmit({ state: 'ready', quiet: true, known: true, total: all.length }); return; }
+    }
+    const have = new Set((await cache.keys()).map(r => r.url));
     const missing = packFiles().filter(u => !have.has(new URL(u, location.href).href));
     if (!missing.length) { settings.packSaved = packSig(); saveSettings(); packEmit({ state: 'ready', quiet: true, total: packFiles().length }); return; }
     if (navigator.onLine === false) { packEmit({ state: 'waiting', left: missing.length }); return; }

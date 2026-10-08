@@ -93,7 +93,7 @@ export async function fakeNetlify({ port, env, players }) {
   Object.assign(process.env, env);
   const { makeStudio } = await import(path.join(ROOT, 'netlify/functions/studio.mjs'));
   const { makeHello } = await import(path.join(ROOT, 'netlify/functions/hello.mjs'));
-  const studio = makeStudio({ playersStore: async () => players }), hello = makeHello({ playersStore: async () => players });
+  const adminStore = memoryBlobs(), studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore }), hello = makeHello({ playersStore: async () => players });
   const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2' };
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`); let p = decodeURIComponent(url.pathname);
@@ -138,6 +138,33 @@ export async function studioCheck(browser, open) {
     ok((await call('/studio/api/login', { body: { password: 'wrong' } })).status === 401, 'a wrong password was let in');
     const li = await call('/studio/api/login', { body: { password: PW } }); ok(li.status === 200 && /^sv_studio=/.test(li.cookie), 'signing in failed');
     const C = li.cookie, X = { 'X-Studio': '1' };
+    // 1b. other admins with their own accounts (round O): the owner adds them; a viewer only reads the analytics,
+    // an editor can change things but not the admins; a new password or removing them signs them out
+    { const add = (name, password, role) => call('/studio/api/admins/save', { body: { name, password, role }, cookie: C, headers: X });
+      ok((await add('ba.nam', 'short', 'viewer')).status === 400, 'a short admin password was accepted');
+      ok((await add('ba.nam', 'viewer-password-1', 'viewer')).status === 200 && (await add('co.lan', 'editor-password-1', 'editor')).status === 200, 'the owner could not add admins');
+      ok((await call('/studio/api/login', { body: { name: 'ba.nam', password: 'nope-nope-nope' } })).status === 401, 'a wrong admin password was let in');
+      const v = await call('/studio/api/login', { body: { name: 'Ba.Nam', password: 'viewer-password-1' } }); ok(v.status === 200 && /^sv_studio=a\./.test(v.cookie), 'a viewer could not sign in');
+      const vi = await call('/studio/api/info', { cookie: v.cookie }); ok(vi.status === 200 && vi.j && vi.j.me && vi.j.me.role === 'viewer', 'info does not say who is signed in: ' + JSON.stringify(vi.j && vi.j.me));
+      ok((await call('/studio/api/players', { cookie: v.cookie })).status === 200, 'a viewer could not read the analytics');
+      ok((await call('/studio/api/content', { body: { message: { en: 'x' } }, cookie: v.cookie, headers: X })).status === 403, 'a viewer could change the content');
+      ok((await call('/studio/api/admins/list', { cookie: v.cookie })).status === 403, 'a viewer could see the admins');
+      const e = await call('/studio/api/login', { body: { name: 'co.lan', password: 'editor-password-1' } });
+      ok((await call('/studio/api/admins/save', { body: { name: 'x.y', password: 'editor-password-2', role: 'owner' }, cookie: e.cookie, headers: X })).status === 403, 'an editor could add admins');
+      ok((await call('/studio/api/admins/me', { body: { old: 'editor-password-1', password: 'editor-password-2' }, cookie: e.cookie, headers: X })).status === 200, 'an editor could not change their own password');
+      ok((await call('/studio/api/info', { cookie: e.cookie })).status === 401, 'the old sign-in still worked after the password changed');
+      ok(!JSON.stringify([...adminStore._m.values()]).includes('viewer-password-1'), 'an admin password was kept as it is');
+      await call('/studio/api/admins/remove', { body: { name: 'ba.nam' }, cookie: C, headers: X });
+      ok((await call('/studio/api/players', { cookie: v.cookie })).status === 401, 'a removed admin could still read');
+      notes.push('admins: viewer reads analytics only, editor cannot manage admins, password change and removal sign out'); }
+    // 1c. online now (round O): "still here" from a device shows it playing in the Analytics, "gone" shows it offline
+    { const live = on => fetch(site + '/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'livetest0001', live: on, kid: 'Na' }) });
+      ok((await live(1)).status === 204, 'a live hello was refused');
+      let r = (await call('/studio/api/players', { cookie: C })).j, d = (r.devices || []).find(x => x.id === 'livetest0001');
+      ok(r.onlineNow >= 1 && d && d.online && d.playingNow === 'Na', 'a device playing now is not shown online: ' + JSON.stringify(d));
+      await live(0); r = (await call('/studio/api/players', { cookie: C })).j; d = (r.devices || []).find(x => x.id === 'livetest0001');
+      ok(d && !d.online && d.seenAt, 'a device that left still shows online: ' + JSON.stringify(d));
+      notes.push('online now: 🟢 while playing (with the child), ⚪ after leaving'); }
     const info = await call('/studio/api/info', { cookie: C }); ok(info.j && info.j.ok && info.j.online && info.j.voices === 1, 'online info: ' + JSON.stringify(info.j));
     // round K: changing page online is quick: the status and the family's content take a few small GitHub calls, never the list of every file
     { gh.log.length = 0; await call('/studio/api/info', { cookie: C }); await call('/studio/api/content', { cookie: C }); const calls = gh.log.slice();

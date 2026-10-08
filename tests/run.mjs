@@ -401,7 +401,7 @@ await check('voice', async () => {
 
 await check('voicepack', async () => {
   // HARD RULE (VOICE-001): the recorded voices are downloaded to the device by themselves, with a small quiet progress
-  // bar; every open checks they are all still there and fetches only what is missing. (A cut-down pack keeps it quick.)
+  // bar; every open checks quietly that they are still there and fetches only what is missing. (A cut-down pack keeps it quick.)
   // a fresh phone: its own browser profile, the cut-down pack list from the very first load, saving voices on
   const ctx = await b.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true }), page = await ctx.newPage(), errors = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -415,10 +415,11 @@ await check('voicepack', async () => {
   const state = () => P.page.evaluate(async () => { const c = await caches.open('sv-voices'); return { files: (await c.keys()).filter(r => /\/voices\/.+\.mp3$/.test(r.url)).length, saved: JSON.parse(localStorage.getItem('sv2_settings')).packSaved || '' }; });
   const first = await openAgain(), s1 = await state();
   ok(first.some(x => /%/.test(x)) && first.some(x => /✓/.test(x)) && s1.files >= 24 && s1.saved === '24:2:test', 'first open: ' + JSON.stringify({ first: first.slice(0, 4), s1 }));
-  // next open: everything is there, so nothing downloads; the bar only says "ready ✓" for a moment (owner, round F)
+  // next open: everything is there, so nothing downloads and the bar says nothing (round O, owner: it looked as if the
+  // voices loaded on every start, and listing all the files each time cost battery)
   await P.page.reload(); await start(P.page); await clear(P.page); await P.page.waitForTimeout(10000);
   const second = await P.page.evaluate(() => window.__packLog);
-  ok(second.some(x => /✓/.test(x)) && !second.some(x => /%/.test(x)), 'next open: ' + JSON.stringify(second));
+  ok(!second.length, 'next open: ' + JSON.stringify(second));
   // the phone cleared some files: the next open fetches only those, quietly with the bar
   await P.page.evaluate(async () => { const c = await caches.open('sv-voices'); const ks = (await c.keys()).filter(r => /\.mp3$/.test(r.url)); for (const r of ks.slice(0, 5)) await c.delete(r); });
   const third = await openAgain(), s3 = await state();
@@ -426,7 +427,7 @@ await check('voicepack', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(third.some(x => /✓/.test(x)) && s3.files >= 24, 'missing files were not fetched again: ' + JSON.stringify({ third: third.slice(0, 3), s3 }));
   ok(!errs.length, errs.join(' | '));
-  return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open only says "${second[0] || ''}" for a moment, and files the phone lost are fetched again`;
+  return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open shows and downloads nothing, and files the phone lost are fetched again`;
 });
 
 await check('welcomevoice', async () => {

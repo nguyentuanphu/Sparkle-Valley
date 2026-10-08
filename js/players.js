@@ -113,9 +113,20 @@ function listen() {
 // how smoothly the game runs: frames counted for one second each minute while it is on the screen
 function sampleFps() { let n = 0; const t0 = performance.now(); const tick = () => { n++; if (performance.now() - t0 < 1000) requestAnimationFrame(tick); else { const fps = Math.round(n * 1000 / (performance.now() - t0)); bump(d => { d.f[0] += fps; d.f[1]++; if (fps < 20) d.f[2]++; }); } }; requestAnimationFrame(tick); }
 
+// online now, for Studio (round O): "still here" every two minutes while the game is on the screen, "gone" when put away
+export function sendLive(on, G) {
+  if (settings.countPlayers === false || !onSite()) return;
+  const me = id(); if (!me) return;
+  const p = G && G.heroes && G.heroes[0] && G.heroes[0].profile, kid = p ? String(p.name || '').trim().split(/\s+/)[0].slice(0, 20) : '';
+  const body = JSON.stringify({ id: me, live: on ? 1 : 0, kid });
+  try { if (!on && navigator.sendBeacon) { navigator.sendBeacon('/api/hello', new Blob([body], { type: 'application/json' })); return; } } catch (e) { }
+  if (navigator.onLine !== false) fetch('/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => { });
+}
 export function startCounting(G) {
   listen();
   if (window.__svHelloTest === 'manual') return; // (tests send by hand)
+  setTimeout(() => sendLive(true, G), 8000);
+  setInterval(() => { if (document.visibilityState === 'visible') sendLive(true, G); }, 120e3);
   // a minute counts while the game is on the screen (offline too: it waits in the outbox)
   setInterval(() => {
     if (document.visibilityState !== 'visible') return;
@@ -124,8 +135,8 @@ export function startCounting(G) {
     sampleFps();
     if (Date.now() - lastSent >= EVERY) flush(false);
   }, 60e3);
-  addEventListener('pagehide', () => flush(true));
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(true); else flush(false); });
+  addEventListener('pagehide', () => { flush(true); sendLive(false, G); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { flush(true); sendLive(false, G); } else { flush(false); sendLive(true, G); } });
   addEventListener('online', () => flush(false)); // the internet is back: send what waited
   // a story opened: the tale theatre appearing on the screen
   new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.classList && n.classList.contains('theatre')) { countPlay('tale'); const p = G && G.heroes[0] && G.heroes[0].profile; if (p) bump(d => { kidOf(d, p).t++; }); } }).observe(document.body, { childList: true });

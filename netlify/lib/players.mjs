@@ -45,7 +45,18 @@ export function clean(b, now = Date.now()) {
 
 // a place name from the connection (Netlify's geo), cleaned
 const place = s => String(s || '').normalize('NFC').replace(/[^\p{L}\p{N} .'-]/gu, '').slice(0, 40);
+// Online now (round O, owner: Studio should show whether each device is playing right now): while the game is on the
+// screen a device says "still here" every two minutes ({ id, live: 1, kid: the child's first name }), and "gone"
+// when it is put away ({ id, live: 0 }); only the latest is kept, in live/<id>.
+export async function live(S, b, now = Date.now()) {
+  if (!b || !ID.test(b.id || '')) return false;
+  const kid = NAME.test(String(b.kid || '')) ? String(b.kid || '').trim() : '';
+  await S.setJSON('live/' + b.id, { on: !!b.live, at: now, kid });
+  return true;
+}
+export const LIVE_MS = 5 * 60e3; // no "still here" for five minutes: offline (the phone died, or lost the internet)
 export async function hello(S, body, now = Date.now(), where = {}) {
+  if (body && body.live != null) return live(S, body, now);
   const d = clean(body, now); if (!d) return false;
   const today = day(now);
   if (d.hid && await S.get('seen/' + d.hid)) return true; // a copy of one already counted (its answer was lost): just confirm it
@@ -128,7 +139,8 @@ export async function report(S, now = Date.now()) {
 // round L: the last 30 days per device and per child, when they play, where from, what went wrong, and suggestions
 async function details(S, sums, now) {
   const infos = {}, labels = {};
-  for (const pre of ['info/', 'label/']) { let cursor; do { const r = await S.list({ prefix: pre, ...(cursor ? { cursor } : {}) }); for (const b of r.blobs.slice(0, 500)) { const id = b.key.slice(pre.length); if (pre === 'info/') infos[id] = await S.get(b.key, { type: 'json' }); else labels[id] = await S.get(b.key); } cursor = r.cursor; } while (cursor); }
+  const lives = {};
+  for (const pre of ['info/', 'label/', 'live/']) { let cursor; do { const r = await S.list({ prefix: pre, ...(cursor ? { cursor } : {}) }); for (const b of r.blobs.slice(0, 500)) { const id = b.key.slice(pre.length); if (pre === 'info/') infos[id] = await S.get(b.key, { type: 'json' }); else if (pre === 'live/') lives[id] = await S.get(b.key, { type: 'json' }); else labels[id] = await S.get(b.key); } cursor = r.cursor; } while (cursor); }
   const hours = Array(24).fill(0), places = {}, errs = {}, stuck = {}, quits = {}, starts = {}, devs = {};
   for (const s of sums) for (const [id, x] of Object.entries(s.dev || {})) {
     const D = devs[id] = devs[id] || { id, mins: 0, days: 0, tales: 0, kids: {}, errs: 0, stuck: 0, fps: [0, 0, 0], last: s.date };
@@ -149,9 +161,10 @@ async function details(S, sums, now) {
   const fpsOf = f => f[1] ? Math.round(f[0] / f[1]) : null;
   const devices = Object.keys({ ...infos, ...devs }).map(id => { const I = infos[id] || {}, D = devs[id] || { mins: 0, days: 0, tales: 0, kids: {}, errs: 0, stuck: 0, fps: [0, 0, 0] };
     return { id, label: labels[id] || '', kind: I.kind || '?', os: I.os || '?', br: I.br || '?', screen: I.sc || '', app: !!I.app, build: I.build || '?', lang: I.lang || '?', loc: I.loc || null, first: I.first || '', last: I.last || D.last || '',
+      online: !!(lives[id] && lives[id].on && now - lives[id].at < LIVE_MS), seenAt: lives[id] ? new Date(lives[id].at).toISOString() : '', playingNow: lives[id] && lives[id].on && now - lives[id].at < LIVE_MS ? lives[id].kid || '' : '',
       mins: D.mins, days: D.days, tales: D.tales, errors: D.errs, stuck: D.stuck, fps: fpsOf(D.fps), slowMins: D.fps[2],
       kids: Object.values(D.kids).sort((a, b) => b.mins - a.mins).map(K => ({ ...K, games: Object.entries(K.games).sort((a, b) => b[1][0] - a[1][0]).slice(0, 10).map(([g, v]) => [g, ...v]), places: top(K.places, 8) })) }; })
-    .sort((a, b) => (b.last || '').localeCompare(a.last || '') || b.mins - a.mins).slice(0, 100);
+    .sort((a, b) => b.online - a.online || (b.last || '').localeCompare(a.last || '') || b.mins - a.mins).slice(0, 100);
   const count = f => { const o = {}; for (const d of devices) if (d.days) add(o, f(d)); return o; };
   const problems = {
     errors: Object.entries(errs).sort((a, b) => b[1].n - a[1].n).slice(0, 15).map(([k, e]) => [k, e.n, e.devices.size]),
@@ -170,7 +183,7 @@ async function details(S, sums, now) {
   const quiet = day(now - 7 * 864e5);
   for (const d of devices) if (d.last && d.last < quiet && d.days) tips.push({ k: 'quiet', d: who(d), last: d.last });
   for (const d of devices) for (const K of d.kids) if (K.age === 'little' && K.mins > 30 && K.simpleMins < K.mins * .2) tips.push({ k: 'simple', name: K.name, d: who(d) });
-  return { hours, places: top(places, 15), devices, os: count(d => d.os), browsers: count(d => d.br), locations: count(d => d.loc ? [d.loc.city, d.loc.region, d.loc.country].filter(Boolean).join(', ') : '?'), problems, tips: tips.slice(0, 20) };
+  return { onlineNow: devices.filter(d => d.online).length, hours, places: top(places, 15), devices, os: count(d => d.os), browsers: count(d => d.br), locations: count(d => d.loc ? [d.loc.city, d.loc.region, d.loc.country].filter(Boolean).join(', ') : '?'), problems, tips: tips.slice(0, 20) };
 }
 // a name the family gives a device in Studio ("Na's iPad")
 export async function setLabel(S, id, label) { if (!ID.test(id || '')) return false; const l = String(label || '').replace(/[<>\u0000-\u001f]/g, '').trim().slice(0, 40); if (l) await S.set('label/' + id, l); else await S.delete('label/' + id); return true; }
