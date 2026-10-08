@@ -5,6 +5,7 @@
 # Small server pieces (Git deploys only; a drag-and-drop zip has none of them):
 #   /api/hello        devices counting players, anonymously (netlify/functions/hello.mjs)
 #   /studio/api/*     Sparkle Studio online, behind the grown-ups' password (netlify/functions/studio.mjs)
+#   /api/turn         the voice relay details for friends on different networks (netlify/functions/turn.mjs)
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"

@@ -60,24 +60,44 @@ async function photoURL(p) {
     return URL.createObjectURL(await r.blob());
   } catch (e) { return p.url; }
 }
+// (round O, owner: "Real photos shows nothing") Wikipedia is retiring the old picture list this used (rest_v1
+// media-list), so the photos now come from Wikipedia's main API: the article's pictures with their sizes, captions,
+// photographers and licences in one request (generator=images + imageinfo), the article's own main picture first.
+// The old list is still tried when the main API gives nothing.
+const txt = h => { const d = document.createElement('div'); d.innerHTML = String(h || ''); return d.textContent.replace(/\s+/g, ' ').trim(); };
+async function apiPhotos(lang, title) {
+  const base = `https://${lang}.wikipedia.org/w/api.php?format=json&formatversion=2&origin=*&redirects=1&titles=${encodeURIComponent(title)}`;
+  const [lead, all] = await Promise.all([
+    fetch(base + '&action=query&prop=pageimages&piprop=name').then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(base + '&action=query&generator=images&gimlimit=60&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=1280').then(r => r.ok ? r.json() : null)
+  ]);
+  const leadName = ((((lead || {}).query || {}).pages || [])[0] || {}).pageimage || '';
+  let out = ((all && all.query && all.query.pages) || []).map(pg => ({ pg, ii: (pg.imageinfo || [])[0] })).filter(({ pg, ii }) => ii && /^image\/(jpeg|png|webp)$/.test(ii.mime || '') && !BAD.test(pg.title || ''))
+    .map(({ pg, ii }) => { const md = ii.extmetadata || {}, v = k => md[k] && md[k].value;
+      return { url: ii.thumburl || ii.url, file: pg.title, caption: txt(v('ImageDescription')).slice(0, 160), credit: [txt(v('Artist')).slice(0, 60), txt(v('LicenseShortName'))].filter(Boolean).join(' · '), lead: pg.title.replace(/^[^:]+:/, '').replace(/ /g, '_') === leadName.replace(/ /g, '_') }; })
+    .filter(p => { try { return new URL(p.url).hostname === 'upload.wikimedia.org'; } catch (e) { return false; } });
+  out.sort((a, b) => b.lead - a.lead);
+  return out.slice(0, 8);
+}
+async function restPhotos(lang, title) {
+  const t = encodeURIComponent(title.replace(/ /g, '_'));
+  const [ml, sum] = await Promise.all([fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${t}`, { headers: { accept: 'application/json' } }), fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${t}`).catch(() => null)]);
+  if (!ml.ok) return [];
+  const j = await ml.json(), lead = sum && sum.ok ? ((await sum.json()).originalimage || {}).source || '' : '';
+  const leadName = lead ? decodeURIComponent(lead.split('/').pop()).replace(/^\d+px-/, '') : '';
+  let out = (j.items || []).filter(it => it.type === 'image' && it.showInGallery !== false && !BAD.test(it.title || '') && it.srcset && it.srcset.length).map(it => {
+    const pick = it.srcset.find(x => x.scale === '2x') || it.srcset[it.srcset.length - 1], url = pick.src.startsWith('//') ? 'https:' + pick.src : pick.src;
+    return { url, file: it.title, caption: it.caption && it.caption.text ? it.caption.text : '' };
+  }).filter(p => { try { return new URL(p.url).hostname === 'upload.wikimedia.org'; } catch (e) { return false; } });
+  if (leadName) out.sort((a, b) => (b.file.replace(/^File:/, '').replace(/ /g, '_') === leadName) - (a.file.replace(/^File:/, '').replace(/ /g, '_') === leadName));
+  return out.slice(0, 8);
+}
 async function onlinePhotos(sources) {
   for (const s of sources) {
-    const [lang, title] = s.split(/:(.+)/), t = encodeURIComponent(title.replace(/ /g, '_'));
-    try {
-      const [ml, sum] = await Promise.all([fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${t}`, { headers: { accept: 'application/json' } }), fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${t}`).catch(() => null)]);
-      if (!ml.ok) continue;
-      const j = await ml.json(), lead = sum && sum.ok ? ((await sum.json()).originalimage || {}).source || '' : '';
-      const leadName = lead ? decodeURIComponent(lead.split('/').pop()).replace(/^\d+px-/, '') : '';
-      let out = (j.items || []).filter(it => it.type === 'image' && it.showInGallery !== false && !BAD.test(it.title || '') && it.srcset && it.srcset.length).map(it => {
-        // the 2x size is sharp enough for a phone and far smaller than the full original
-        const pick = it.srcset.find(x => x.scale === '2x') || it.srcset[it.srcset.length - 1], url = pick.src.startsWith('//') ? 'https:' + pick.src : pick.src;
-        return { url, file: it.title, caption: it.caption && it.caption.text ? it.caption.text : '' };
-      }).filter(p => { try { return new URL(p.url).hostname === 'upload.wikimedia.org'; } catch (e) { return false; } });
-      // the article's own main photo first: it is the one Wikipedia's editors judged the best picture of the place
-      if (leadName) out.sort((a, b) => (b.file.replace(/^File:/, '').replace(/ /g, '_') === leadName) - (a.file.replace(/^File:/, '').replace(/ /g, '_') === leadName));
-      out = out.slice(0, 8);
-      if (out.length) return out;
-    } catch (e) { /* offline or blocked: try the next one */ }
+    const [lang, title] = s.split(/:(.+)/);
+    for (const way of [apiPhotos, restPhotos]) {
+      try { const out = await way(lang, title); if (out && out.length) return out; } catch (e) { /* offline or blocked: try the next way */ }
+    }
   }
   return null;
 }

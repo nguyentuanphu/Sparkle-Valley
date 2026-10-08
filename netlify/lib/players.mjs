@@ -159,7 +159,7 @@ async function details(S, sums, now) {
   }
   const top = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
   const fpsOf = f => f[1] ? Math.round(f[0] / f[1]) : null;
-  const devices = Object.keys({ ...infos, ...devs }).map(id => { const I = infos[id] || {}, D = devs[id] || { mins: 0, days: 0, tales: 0, kids: {}, errs: 0, stuck: 0, fps: [0, 0, 0] };
+  const devices = Object.keys({ ...infos, ...devs, ...lives }).map(id => { const I = infos[id] || {}, D = devs[id] || { mins: 0, days: 0, tales: 0, kids: {}, errs: 0, stuck: 0, fps: [0, 0, 0] };
     return { id, label: labels[id] || '', kind: I.kind || '?', os: I.os || '?', br: I.br || '?', screen: I.sc || '', app: !!I.app, build: I.build || '?', lang: I.lang || '?', loc: I.loc || null, first: I.first || '', last: I.last || D.last || '',
       online: !!(lives[id] && lives[id].on && now - lives[id].at < LIVE_MS), seenAt: lives[id] ? new Date(lives[id].at).toISOString() : '', playingNow: lives[id] && lives[id].on && now - lives[id].at < LIVE_MS ? lives[id].kid || '' : '',
       mins: D.mins, days: D.days, tales: D.tales, errors: D.errs, stuck: D.stuck, fps: fpsOf(D.fps), slowMins: D.fps[2],

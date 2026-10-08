@@ -583,7 +583,7 @@ button { color: var(--text); }
 .hud.small .dk { width: 48px; height: 48px; border-radius: 15px; } .hud.small .dk span { font-size: 22px; } .hud.small .dk small { display: none; }
 .hud.small .dk.games { width: 60px; height: 60px; } .hud.small .dk.games span { font-size: 30px; }
 .hud.small .quest { max-width: 64%; } .hud.small .q-icon { width: 34px; height: 34px; font-size: 18px; } .hud.small .q-say { font-size: 13px; } .hud.small .q-go { height: 38px; font-size: 15px; padding: 0 10px; }
-.hud.small .pav { width: 36px; height: 36px; } .hud.small .pname { font-size: 13px; }
+.hud.small .pav { width: 36px; height: 36px; } .hud.small .pname { font-size: 13px; max-width: 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
 .hud.small .mini-wrap { width: 96px; height: 96px; } .hud.small .zoom button { width: 32px; height: 32px; font-size: 18px; }
 .hud.small .chips .chip { height: 28px; font-size: 12px; } .hud.small .chips .chip i { width: 20px; height: 20px; font-size: 12px; }
 .hud.small .act { font-size: 14px; } .hud.small .act .ai { width: 44px; height: 44px; font-size: 24px; }
@@ -1798,6 +1798,7 @@ body.calm .rv-img.on { animation: none; }
 .lvl-pick .btn b { font-size: 15px; letter-spacing: -2px; } .lvl-pick .btn small { font-size: 13px; }
 
 /* the real place inside the game (js/realworld.js openStreetView) */
+.modal.rvmap { z-index: 70; } /* (round O, owner) above the real photos it is opened from */
 .modal.rvmap .card { width: min(900px, 96vw); max-height: 92vh; display: flex; flex-direction: column; gap: 8px; }
 .rvm-tabs { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; padding-right: 44px; }
 .rvm-frame { flex: 1; min-height: min(62vh, 520px); border-radius: 14px; overflow: hidden; background: #dfe9f2; display: flex; align-items: center; justify-content: center; }
@@ -1845,9 +1846,12 @@ body.calm .sp-stop.next .sp-pic { animation: none; }
 .sp-tabs button { flex: 1; max-width: 140px; min-height: 76px; border: 0; background: none; border-radius: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #4a3d70; font-size: 16px; }
 .sp-tabs button .art, .sp-tabs button .emo { width: 40px; height: 40px; font-size: 34px; }
 .sp-tabs button.on { background: #efe6ff; color: #5b2fd0; font-weight: 700; }
-.simplesw { pointer-events: auto; display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 5px 12px 5px 6px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .92); color: #3b2a4f; font-family: inherit; font-weight: 800; font-size: 14px; box-shadow: 0 3px 0 rgba(59, 42, 79, .18), 0 6px 14px rgba(0, 0, 0, .12); cursor: pointer; }
+.simplesw { pointer-events: auto; display: flex; align-items: center; gap: 6px; margin-top: 6px; min-height: 44px; padding: 5px 14px 5px 8px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .92); color: #3b2a4f; font-family: inherit; font-weight: 800; font-size: 14px; box-shadow: 0 3px 0 rgba(59, 42, 79, .18), 0 6px 14px rgba(0, 0, 0, .12); cursor: pointer; }
 .simplesw .ico { width: 28px; height: 28px; } .simplesw:active { transform: translateY(2px); }
-.hud.small .simplesw { padding: 4px 10px 4px 4px; font-size: 12px; } .hud.small .simplesw .ico { width: 24px; height: 24px; }
+/* on phones: beside the player's card (the quest bar takes the row under it), the picture with its name small underneath */
+.hud.small .hud-tl { flex-direction: row; align-items: flex-start; } .hud.small .simplesw { margin-top: 0; }
+.hud.small .simplesw { flex-direction: column; gap: 0; width: 52px; min-height: 48px; padding: 4px 2px; border-radius: 16px; font-size: 10px; line-height: 1.1; } .hud.small .simplesw .ico { width: 26px; height: 26px; }
+.hud.small .simplesw b { font-weight: 800; white-space: nowrap; }
 .sp-grown { left: auto; bottom: auto; }
 .sp-grown .ring { position: absolute; inset: -5px; width: auto; height: auto; z-index: -1; }
 .sp-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

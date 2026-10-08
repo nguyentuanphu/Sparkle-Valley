@@ -942,11 +942,21 @@ if (!Array.isArray(settings.friends)) settings.friends = [];
 // online by default: a child who has friends on the list lets them see when they are playing (from round 28 on;
 // a grown-up or the child can still switch it off in the online panel)
 if (settings.friends.length && !settings.friendsOnR28) { settings.friendsOn = true; settings.friendsOnR28 = true; saveSettings(); }
-const onInvite = inv => {
+// leaving a room with friends in it to go to another one is asked first (round O)
+const leaveOk = async () => !(Net.role && Net.count > 1) || (await dialog(T('Your room', 'Phòng của con'), [[`You are playing with ${Object.values(Net.remotes).map(r => nm(r.name)).join(', ')}. Leave this room?`, `Con đang chơi với ${Object.values(Net.remotes).map(r => nm(r.name)).join(', ')}. Rời phòng này nhé?`, 'You are playing with friends. Leave this room?', 'Con đang chơi với các bạn. Rời phòng này nhé?']], [['✅ Leave and go', '✅ Rời và sang'], ['❌ Stay', '❌ Ở lại']])) === 0;
+const onInvite = async inv => {
   SFX.chime(); say('A friend invites you to play!', 'Một bạn mời con chơi cùng!');
-  dialog(T('Invitation', 'Lời mời'), [[`👫 ${inv.name} invites you to play together! Join their room ${inv.room}?`, `👫 ${inv.name} mời con chơi cùng! Vào phòng ${inv.room} nhé?`, 'A friend invites you to play together! Shall we join?', 'Một bạn mời con chơi cùng! Mình vào nhé?']], [['✅ Join', '✅ Vào'], ['❌ Not now', '❌ Để sau']])
-    .then(k => { if (k === 0) Net.join(inv.room, sendHello() || {}); });
+  const k = await dialog(T('Invitation', 'Lời mời'), [[`👫 ${inv.name} invites you to play together! Join their room ${inv.room}?`, `👫 ${inv.name} mời con chơi cùng! Vào phòng ${inv.room} nhé?`, 'A friend invites you to play together! Shall we join?', 'Một bạn mời con chơi cùng! Mình vào nhé?']], [['✅ Join', '✅ Vào'], ['❌ Not now', '❌ Để sau']]);
+  if (k === 0 && await leaveOk()) Net.join(inv.room, sendHello() || {});
 };
+// invite a friend: into my room, starting one first when I have none
+G.inviteFriend = async code => {
+  const h = G.heroes[0]; if (!Net.role) await Net.host(sendHello() || {});
+  if (Net.role !== 'host' && Net.role !== 'guest') return false;
+  const both = await Promise.all([Net.invite(code, h ? h.profile.name : ''), Net.cloudInvite(code, h ? h.profile.name : '')]);
+  return both[0] || both[1];
+};
+G.joinFriend = async room => { if (await leaveOk()) await Net.join(room, sendHello() || {}); };
 G.listenFriends = () => {
   if (settings.friendsOn && playing) Net.listenForFriends(settings.friendCode, onInvite); else Net.stopListening();
   // friends' status (online, where in the valley, which room) through the cloud relay
@@ -954,23 +964,33 @@ G.listenFriends = () => {
     Net.friendsStart({ code: settings.friendCode, share: !!settings.friendsOn, onInvite, onChange: () => { if (G.onNet) G.onNet(); G.autoMeet(); } }).then(() => { Net.friendsWatch(settings.friends.map(f => f.code)); G.shareStatus(); });
   } else Net.friendsStop();
 };
-// Friends meet by themselves: when a friend on the list is playing too, the two games open a room together, so
-// each sees the other's name and avatar straight away and they can walk over and talk. The friend whose code comes
-// first starts the room; the other joins it as soon as the room shows in that friend's status. A room the child
-// started with others in it is never left. Offline, nothing happens; it tries again when the internet is back.
-let meetBusy = false;
-G.autoMeet = async () => {
-  if (meetBusy || !playing || settings.autoMeet === false || !settings.friendsOn || navigator.onLine === false || !settings.friends.length) return;
-  const now = Date.now(), mine = settings.friendCode;
-  const on = settings.friends.map(f => ({ f, st: Net.friends.status[f.code] })).filter(o => o.st && o.st.online && now - (o.st.seen || 0) < 3 * 60000);
-  if (!on.length || Net.role === 'guest' || (Net.role === 'host' && Net.count > 1)) return;
-  const rooms = on.filter(o => o.st.room && o.st.room !== Net.code && (o.st.players || 1) < MAX_ROOM && ((o.st.players || 1) > 1 || o.f.code < mine));
-  meetBusy = true;
-  try {
-    if (rooms.length) { await Net.join(rooms[0].st.room, sendHello() || {}); return; }
-    if (!Net.role && on.some(o => !o.st.room && mine < o.f.code)) await Net.host(sendHello());
-  } catch (e) { } finally { meetBusy = false; G.shareStatus(); }
+// Friends: told, never moved (round O, owner: "if a friend comes online, don't put us in one room by ourselves, just
+// tell the player; if my friend and A are in one room and I have B in another, how would that work?"). When a friend
+// on the list starts playing, a small card says so once, with 📨 Invite (into my room; a room is started when I have
+// none) and, when they are already in a room, ▶ Go to their room (with friends in my room, it asks before leaving).
+// Nobody changes room unless they tap; the friend who is invited decides too.
+const told = new Set();
+G.autoMeet = () => {
+  if (!playing || settings.autoMeet === false || !settings.friendsOn || !settings.friends.length) return;
+  const now = Date.now();
+  for (const f of settings.friends) {
+    const st = Net.friends.status[f.code], on = st && st.online && now - (st.seen || 0) < 3 * 60000;
+    if (!on) { told.delete(f.code); continue; }
+    if (told.has(f.code) || (st.room && st.room === Net.code)) { told.add(f.code); continue; }
+    if (gameOpen() || (G.worldHidden && G.worldHidden() && !(G.simple && G.simple.open)) || document.querySelector('.friendnote, .storybook, .dialog, .modal, .theatre')) continue; // (later: not over a game, a story or a question)
+    told.add(f.code); friendNote(f, st);
+  }
 };
+function friendNote(f, st) {
+  const name = nm(st.name || f.name), where = st.at && REGION_NAMES[st.at] ? REGION_NAMES[st.at]() : '';
+  const pop = el('div', 'vc-pop friendnote', `<p class="vc-heard">🟢 ${esc(T(`${name} is playing!`, `${name} đang chơi!`))}</p><div class="ff-row"><div class="ff-txt"><small>${esc(where)}${st.room ? ' · ' + T('in a room', 'đang ở trong phòng') + ` (${(st.players || 1)}/${MAX_ROOM})` : ''}</small></div></div>
+    <div class="ff-btns"><button class="btn primary" data-inv>📨 ${T('Invite', 'Mời bạn')}</button>${st.room && (st.players || 1) < MAX_ROOM ? `<button class="btn" data-go>▶ ${T('Go to their room', 'Sang phòng bạn')}</button>` : ''}<button class="btn" data-no>${T('Later', 'Để sau')}</button></div>`);
+  document.body.appendChild(pop); SFX.chime(); say('Your friend is playing too!', 'Bạn của con cũng đang chơi!');
+  const close = () => { pop.remove(); clearTimeout(t); }, t = setTimeout(close, 45000);
+  pop.querySelector('[data-no]').onclick = () => { SFX.tap(); close(); };
+  pop.querySelector('[data-inv]').onclick = async () => { SFX.tap(); close(); const ok = await G.inviteFriend(f.code); toast(ok ? T('Invitation sent!', 'Đã gửi lời mời!') : T('Your friend is not online right now.', 'Bạn ấy đang không trực tuyến.')); };
+  const go = pop.querySelector('[data-go]'); if (go) go.onclick = () => { SFX.tap(); close(); G.joinFriend(st.room); };
+}
 setInterval(() => G.autoMeet(), 12000);
 // what my friends see about me: my name, the place I am in, and my room (only when sharing is switched on)
 G.shareStatus = () => { const h = G.heroes[0]; if (!h || !settings.friendsOn) return; Net.friendsShare({ name: h.profile.name, at: G.regionOf[0] || '', room: Net.role ? Net.code : null, players: Net.role ? Net.count : 0 }); };
@@ -999,15 +1019,15 @@ G.drawOnlinePanel = (body, redraw) => {
   const friendsBox = () => `<div class="ocard friends"><h3>👫 ${T('My friends', 'Bạn của con')}</h3>
       <p class="note">${T('My friend code', 'Mã bạn bè của con')}: <b class="fcode">${settings.friendCode}</b></p>
       <label class="tog"><input type="checkbox" id="fOn" ${settings.friendsOn ? 'checked' : ''}> ${T('Friends can see when I am playing and where, and invite me (needs the internet)', 'Bạn bè thấy khi con đang chơi, đang ở đâu, và mời con được (cần có mạng)')}</label>
-      <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}">▶ ${T('Join', 'Vào chơi')}</button>` : ''}${Net.role === 'host' ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
+      <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}">▶ ${T('Join', 'Vào chơi')}</button>` : ''}${(Net.friends.status[f.code] || {}).online && !(Net.code && Net.friends.status[f.code].room === Net.code) ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
       <div class="vrow"><input type="text" id="fAdd" maxlength="6" placeholder="${T('Friend code', 'Mã bạn bè')}" autocomplete="off"><button class="btn" id="fAddB">＋ ${T('Add', 'Thêm')}</button></div>
-      ${Net.role !== 'host' && settings.friends.length ? `<p class="note">${T('Start a room to invite your friends.', 'Tạo phòng để mời bạn bè.')}</p>` : ''}</div>`;
+      ${settings.friends.length ? `<p class="note">${T('Friends are never put in a room by themselves: 📨 Invite asks them, ▶ Join goes to theirs.', 'Bạn bè không bao giờ tự bị đưa vào phòng: 📨 Mời là hỏi bạn, ▶ Vào chơi là sang phòng bạn.')}</p>` : ''}</div>`;
   const bindFriends = () => {
     body.querySelector('#fOn').onchange = e => { settings.friendsOn = e.target.checked; saveSettings(); G.listenFriends(); };
     body.querySelector('#fAddB').onclick = () => { if (addFriend(body.querySelector('#fAdd').value)) { SFX.chime(); redraw(); } else toast(T('A friend code has 6 letters and numbers.', 'Mã bạn bè gồm 6 chữ và số.')); };
     body.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { settings.friends = settings.friends.filter(f => f.code !== b.dataset.rm); saveSettings(); redraw(); });
-    body.querySelectorAll('[data-joinf]').forEach(b => b.onclick = () => { SFX.tap(); Net.join(b.dataset.joinf, sendHello() || {}); redraw(); });
-    body.querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { b.disabled = true; const both = await Promise.all([Net.invite(b.dataset.inv, h ? h.profile.name : ''), Net.cloudInvite(b.dataset.inv, h ? h.profile.name : '')]); const ok = both[0] || both[1]; toast(ok ? T('Invitation sent!', 'Đã gửi lời mời!') : T('Your friend is not online right now.', 'Bạn ấy đang không trực tuyến.')); b.disabled = false; });
+    body.querySelectorAll('[data-joinf]').forEach(b => b.onclick = async () => { SFX.tap(); await G.joinFriend(b.dataset.joinf); redraw(); });
+    body.querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { b.disabled = true; const ok = await G.inviteFriend(b.dataset.inv); toast(ok ? T('Invitation sent!', 'Đã gửi lời mời!') : T('Your friend is not online right now.', 'Bạn ấy đang không trực tuyến.')); b.disabled = false; });
   };
   if (Net.connected || Net.role === 'host') {
     const list = Object.values(Net.remotes);

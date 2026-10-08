@@ -89,11 +89,11 @@ export function memoryBlobs() {
 }
 
 // ---------- a pretend Netlify: the site's files, netlify.toml's redirects and the two functions ----------
-export async function fakeNetlify({ port, env, players }) {
+export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs() }) {
   Object.assign(process.env, env);
   const { makeStudio } = await import(path.join(ROOT, 'netlify/functions/studio.mjs'));
   const { makeHello } = await import(path.join(ROOT, 'netlify/functions/hello.mjs'));
-  const adminStore = memoryBlobs(), studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore }), hello = makeHello({ playersStore: async () => players });
+  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore }), hello = makeHello({ playersStore: async () => players });
   const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2' };
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`); let p = decodeURIComponent(url.pathname);
@@ -118,8 +118,8 @@ export async function studioCheck(browser, open) {
   const repo = 'family/sparkle', PW = 'a-long-test-password-123', NPORT = 8791, SPORT = 8792, site = `http://localhost:${NPORT}`;
   const seed = {}; for (const f of ['index.html', 'sw.js', 'js/main.js', 'js/i18n.js', 'js/build.js', 'js/packhash.js']) seed[f] = fs.readFileSync(path.join(ROOT, f));
   seed['content/custom.json'] = JSON.stringify({ message: { en: 'Hello', vi: 'Xin chào' } }); seed['voices/en/f/0000aaaa.mp3'] = 'x'; seed['voices/manifest.json'] = JSON.stringify({ version: 2, cast: { en: ['f'] }, voices: {}, lines: { '0000aaaa': 'f' }, langOf: { '0000aaaa': 'en' } }); // (like the real pack: it lists what is recorded)
-  const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs();
-  const net = await fakeNetlify({ port: NPORT, players, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
+  const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs(), adminStore = memoryBlobs();
+  const net = await fakeNetlify({ port: NPORT, players, adminStore, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
   // the exe's own server, on a copy of a small game folder, with its settings in a folder of its own
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-studio-')), game = path.join(tmp, 'game'), appdata = path.join(tmp, 'appdata');
   fs.cpSync(path.join(ROOT, 'js'), path.join(game, 'js'), { recursive: true }); // the game's code (the pages read it)
@@ -165,6 +165,15 @@ export async function studioCheck(browser, open) {
       await live(0); r = (await call('/studio/api/players', { cookie: C })).j; d = (r.devices || []).find(x => x.id === 'livetest0001');
       ok(d && !d.online && d.seenAt, 'a device that left still shows online: ' + JSON.stringify(d));
       notes.push('online now: 🟢 while playing (with the child), ⚪ after leaving'); }
+    // 1d. the voice relay (round O): with Cloudflare's key in Netlify the game gets short-lived relay details (never the key)
+    { const { makeTurn } = await import(path.join(ROOT, 'netlify/functions/turn.mjs'));
+      const empty = await (await makeTurn({ fetchFn: async () => { throw new Error('no'); } })(new Request('http://x/api/turn'))).json();
+      ok(Array.isArray(empty.iceServers) && !empty.iceServers.length, 'the relay answered something without a key');
+      Object.assign(process.env, { CF_TURN_KEY_ID: 'kid123', CF_TURN_KEY_TOKEN: 'secret-token' }); let asked = null;
+      const got = await (await makeTurn({ fetchFn: async (u, o) => { asked = { u, auth: o.headers.Authorization }; return new Response(JSON.stringify({ iceServers: [{ urls: ['stun:stun.cloudflare.com:3478'] }, { urls: ['turn:turn.cloudflare.com:3478?transport=udp'], username: 'u1', credential: 'c1' }] })); } })(new Request('http://x/api/turn'))).json();
+      delete process.env.CF_TURN_KEY_ID; delete process.env.CF_TURN_KEY_TOKEN;
+      ok(asked && /kid123\/credentials\/generate-ice-servers$/.test(asked.u) && asked.auth === 'Bearer secret-token' && got.iceServers.length === 2 && got.iceServers[1].username === 'u1' && !JSON.stringify(got).includes('secret-token'), 'the relay details are wrong: ' + JSON.stringify({ asked, got }));
+      notes.push('voice relay: short-lived details from Cloudflare, the key never sent'); }
     const info = await call('/studio/api/info', { cookie: C }); ok(info.j && info.j.ok && info.j.online && info.j.voices === 1, 'online info: ' + JSON.stringify(info.j));
     // round K: changing page online is quick: the status and the family's content take a few small GitHub calls, never the list of every file
     { gh.log.length = 0; await call('/studio/api/info', { cookie: C }); await call('/studio/api/content', { cookie: C }); const calls = gh.log.slice();

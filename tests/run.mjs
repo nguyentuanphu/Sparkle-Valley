@@ -646,7 +646,8 @@ await check('simple', async () => {
   await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.locator('.sp-stop').first().click(); await P.page.waitForTimeout(300); await P.page.locator('.sp-stop:not(.sign)').first().click();
   r.tale = await P.page.waitForSelector('.theatre', { timeout: 10000 }).then(() => true, () => false);
   await P.page.evaluate(() => document.querySelector('.theatre .th-x').click());
-  await P.page.waitForFunction(() => __sv.simple.open, null, { timeout: 8000 }).catch(() => { });
+  for (let k=0;k<6;k++){ console.log('DBG', JSON.stringify(await P.page.evaluate(() => ({ open: __sv.simple.open, busy: __sv.simple.busy, th: document.querySelectorAll('.theatre').length, gl: !!document.querySelector('.gl'), paused: __sv.paused })))); await P.page.waitForTimeout(800);}
+  await P.page.waitForFunction(() => __sv.simple.open && !__sv.simple.busy && !document.querySelector('.theatre'), null, { timeout: 8000 }).catch(() => { }); // (the story fades out first)
   await P.page.evaluate(() => document.querySelectorAll('.dialog, .reward').forEach(d => d.remove()));
   await P.page.click('.sp-valley'); await P.page.waitForTimeout(500);
   r.valley = await P.page.evaluate(() => ({ open: __sv.simple.open, screen: __sv.heroes[0].profile.screen, dock: !document.querySelector('.simplesw').hidden, paused: __sv.paused }));
@@ -665,7 +666,7 @@ await check('simple', async () => {
   const S = await open(b, { w: 1280, h: 800, mode: 'split', screen: null }); await S.page.waitForTimeout(1500);
   r.split = await S.page.evaluate(() => ({ open: __sv.simple.open, dock: [...document.querySelectorAll('.simplesw')].some(d => !d.hidden) })); await S.ctx.close();
   ok(r.groupsFirst && !r.flash && r.game && r.back && r.tale && !r.valley.open && r.valley.screen === 'valley' && r.valley.dock && !r.valley.paused && r.reopen && r.wide.wide && r.wide.rail && r.wide.sideways && r.wide.inView && r.wide.big && !r.big && !r.split.open && !r.split.dock && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'under 5 starts on the path; a game and a story each one tap away, the path comes back after; Valley remembered; dock button reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
+  return 'under 5 starts on the path; a game and a story each one tap away, the path comes back after; Valley remembered; the “Big pictures” switch reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
 });
 
 await check('adventure', async () => {
@@ -842,6 +843,60 @@ await check('songs', async () => {
   ok(r.reef.length === 2 && r.reef.every(x => x.inside && x.under), 'water landmarks: ' + JSON.stringify(r.reef));
   ok(r.star.clear && !errs.length, JSON.stringify({ star: r.star, errs }));
   return `Trung Thu → ${r.trungthu}; Lotus Village → ${r.village}; family recordings first; Songs page: lullaby words, night, sleep timer, valley music left alone; Simple screen Music group starts with Songs; reef and Hạ Long inside the lake; star counter clear of the top bar`;
+});
+
+await check('realphotos', async () => {
+  // round O (owner: "Real photos and 360° show nothing"): the photos come from Wikipedia's main API (the old picture
+  // list is being retired), the article's main picture first, with the photographer's credit; and 360° opens on top
+  // of the photos instead of behind them. (Wikipedia is pretended here: the test machine has no internet.)
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+  await P.page.route('**/rest_v1/**', r => r.fulfill({ status: 404, body: '' }));
+  await P.page.route('**/w/api.php**', r => { const u = r.request().url();
+    if (/pageimages/.test(u)) return r.fulfill({ json: { query: { pages: [{ title: 'Saigon Central Post Office', pageimage: 'Lead_photo.jpg' }] } } });
+    return r.fulfill({ json: { query: { pages: [
+      { title: 'File:Other view.jpg', imageinfo: [{ mime: 'image/jpeg', url: 'https://upload.wikimedia.org/a/other.jpg', thumburl: 'https://upload.wikimedia.org/a/1280px-other.jpg', extmetadata: { Artist: { value: '<a>Someone</a>' }, LicenseShortName: { value: 'CC BY-SA 4.0' }, ImageDescription: { value: 'Inside the hall' } } }] },
+      { title: 'File:Lead photo.jpg', imageinfo: [{ mime: 'image/jpeg', url: 'https://upload.wikimedia.org/a/lead.jpg', thumburl: 'https://upload.wikimedia.org/a/1280px-lead.jpg', extmetadata: { Artist: { value: 'Photographer' }, LicenseShortName: { value: 'CC BY 2.0' } } }] },
+      { title: 'File:City map.svg', imageinfo: [{ mime: 'image/svg+xml', url: 'https://upload.wikimedia.org/a/map.svg' }] }] } } }); });
+  await P.page.route('https://upload.wikimedia.org/**', r => r.fulfill({ body: png, contentType: 'image/png', headers: { 'Access-Control-Allow-Origin': '*' } }));
+  await P.page.route('https://maps.google.com/**', r => r.fulfill({ body: '<html><body>map</body></html>', contentType: 'text/html' }));
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/realworld.js'), wait = ms => new Promise(x => setTimeout(x, ms));
+    W.openPhotos('Saigon Central Post Office', W.REAL.postoffice[0], { id: 'postoffice' });
+    for (let k = 0; k < 40 && !document.querySelector('.rv-img'); k++) await wait(150);
+    const cap = document.querySelector('.rv-cap a') ? document.querySelector('.rv-cap a').textContent : '', none = document.querySelector('.realview').classList.contains('none'), dots = document.querySelectorAll('.rv-dots i').length;
+    document.querySelector('.rv-360').click(); await wait(400);
+    const map = document.querySelector('.modal.rvmap'), q = map.querySelector('.card').getBoundingClientRect(), top = document.elementFromPoint(q.left + q.width / 2, q.top + 30);
+    return { none, dots, cap, onTop: !!(top && top.closest('.rvmap')) };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.none && r.dots === 2 && /Photographer/.test(r.cap) && r.onTop && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `2 photos from the main API (map left out), the article's own picture first, credit “${r.cap}”; 360° opens on top of the photos`;
+});
+
+await check('playhub', async () => {
+  // round O (owner): the pink button is "Play" with a 🎵 Songs tab (songs belong with the games, not in Settings);
+  // battery: on a phone the valley is drawn 30 times a second, and not at all behind the Simple screen or the Songs page
+  const P = await open(b, { w: 390, h: 844, touch: true, lang: 'vi' }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, wait = ms => new Promise(x => setTimeout(x, ms)), R = G.renderer, orig = R.render; let n = 0; R.render = function (...a) { n++; return orig.apply(this, a); };
+    const count = async ms => { n = 0; await wait(ms); return n; };
+    const out = { label: document.querySelector('.dk.games small').textContent, perSec: await count(2000) / 2 };
+    G.openQuick(0); await wait(300); out.settingsSongs = !!document.querySelector('#qSongs'); document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false;
+    G.openGamesHub(0); await wait(300); out.title = document.querySelector('.hub h2').textContent;
+    document.querySelector('.hubtabs [data-tab="songs"]').click(); await wait(300);
+    out.groups = [...document.querySelectorAll('[data-songs]')].map(b => b.dataset.songs);
+    document.querySelector('[data-songs="lullaby"]').click(); await wait(600);
+    out.songsPage = !!document.querySelector('.songs.night'); out.songsDraws = await count(1500);
+    document.querySelector('.songs .sg-x').click(); await wait(300);
+    G.simple.show(); await wait(400); out.simpleDraws = await count(1500); G.simple.hide(); await wait(300);
+    out.backDraws = await count(1000);
+    R.render = orig; return out;
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.label === 'Vui chơi' && /Vui chơi/.test(r.title) && !r.settingsSongs && r.groups.includes('lullaby') && r.groups.length >= 4 && r.songsPage, 'play hub: ' + JSON.stringify(r));
+  ok(r.perSec <= 34 && r.songsDraws === 0 && r.simpleDraws === 0 && r.backDraws > 0 && !errs.length, 'battery: ' + JSON.stringify(Object.assign(r, { errs })));
+  return `“${r.label}” with 🎵 ${r.groups.length} song groups (lullabies open the night page), none in Settings; phone draws ${r.perSec}/s, none behind the Songs page or the Simple screen`;
 });
 
 await check('a11y', async () => {
@@ -1077,12 +1132,15 @@ await check('iphone', async () => {
     N.on('status', s => said.push(s.key));
     // 1. the microphone: refused without a tap, works after one, goes into an open call
     let asks = 0, replaced = 0; const md = navigator.mediaDevices, real = md.getUserMedia.bind(md);
-    md.getUserMedia = async c => { asks++; if (asks <= 2) { const e = new Error('needs a tap'); e.name = 'NotAllowedError'; throw e; } return real({ audio: true }); };
+    md.getUserMedia = async c => { asks++; if (asks <= 1) { const e = new Error('needs a tap'); e.name = 'NotAllowedError'; throw e; } return real({ audio: true }); };
     N.calls.set('peer-y', { peerConnection: { getSenders: () => [{ track: { kind: 'audio' }, replaceTrack: async () => { replaced++; } }] } });
     N.mic = null; N.cloudOn = true; await N.getMic();
     const first = said.slice(), noMicYet = !N.mic;
-    document.body.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); for (let k = 0; k < 50 && !(N.mic && said.includes('micon')); k++) await wait(100);
-    const micAfterTap = !!N.mic, after = said.slice();
+    // round O: a tap anywhere no longer asks again (each ask could bring the iPhone's question up again)…
+    document.body.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); await wait(400); const askedOnTap = asks;
+    // …the 🎙️ Microphone on button (or the call button) does
+    await N.getMic(); for (let k = 0; k < 50 && !(N.mic && said.includes('micon')); k++) await wait(100);
+    const micAfterTap = !!N.mic, after = said.slice(), tapAsks = askedOnTap;
     md.getUserMedia = async () => { const e = new Error('none'); e.name = 'NotFoundError'; throw e; }; N.mic = null; said.length = 0; await N.getMic(); const reallyNone = said.slice();
     md.getUserMedia = real; N.calls.delete('peer-y'); N.cloudOn = false; N.mic = null;
     // 2. Pad → Friends with a player in the room: no button taller than two lines, all inside the card
@@ -1101,12 +1159,12 @@ await check('iphone', async () => {
     const c = chip.getBoundingClientRect(), hit = [...document.querySelectorAll('.hud .tools .dk, .hud .zoomer button, .hud .mini-wrap, .hud .zoom')].filter(e => e.offsetParent).filter(e => { const q = e.getBoundingClientRect(); return q.left < c.right && c.left < q.right && q.top < c.bottom && c.top < q.bottom; }).map(e => e.className);
     const onScreen = c.width > 60 && c.height > 20 && c.right <= innerWidth + 1 && c.left >= 0, chipText = chip.textContent;
     delete G.partners['peer-q']; G.huds[0].setCall(false, false, false);
-    return { first, noMicYet, micAfterTap, after, replaced, reallyNone, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
+    return { first, noMicYet, micAfterTap, after, replaced, reallyNone, tapAsks, asksBefore: 1, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
   });
   const errs = P.errors; await P.ctx.close();
-  ok((r.first.includes('mictap') || r.first.includes('micdenied')) && !r.first.includes('nomic') && r.noMicYet && r.micAfterTap && r.after.includes('micon') && r.replaced === 1 && r.reallyNone.includes('nomic')
+  ok((r.first.includes('mictap') || r.first.includes('micdenied')) && !r.first.includes('nomic') && r.noMicYet && r.tapAsks === 1 && r.micAfterTap && r.after.includes('micon') && r.replaced === 1 && r.reallyNone.includes('nomic')
     && r.buttons >= 4 && !r.tall.length && !r.outside && !r.hit.length && r.onScreen && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'microphone: "tap to talk" (not "no microphone"), on after the next tap and put into the open call; real "no microphone" still said; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
+  return 'microphone: "tap 🎙️ Microphone on" (not "no microphone"), not asked again on every tap, on from the button and put into the open call; real "no microphone" still said; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
 });
 
 await check('tienlen', async () => {
@@ -1309,21 +1367,29 @@ await check('saves', async () => {
 });
 
 await check('meet', async () => {
-  // friends meet by themselves: two friends on each other's list start playing and, with no room number read out,
-  // end up in one room seeing each other's names (the one whose code comes first starts it). One of them never
-  // switched "friends can see me" on: having a friend on the list switches it on from round 28.
+  // friends are told, never moved (round O, owner): two friends on each other's list start playing; each gets a card
+  // "🟢 … is playing" and nobody is put in a room by themselves; one taps 📨 Invite (a room starts), the other gets the
+  // invitation, taps Join, and they are in one room seeing each other's names. One of them never switched "friends
+  // can see me" on: having a friend on the list switches it on from round 28.
   const up = await fetch('http://127.0.0.1:9000/myapp/').then(r => r.ok).catch(() => false);
   if (!up) return 'skipped (no local PeerJS server on 127.0.0.1:9000)';
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9000, path: '/myapp', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
   const A = await open(b, { pre, w: 700, h: 500, settings: { friendCode: 'MEETA2', friendsOn: false, friends: [{ code: 'MEETB3', name: 'Bin' }] } });
   const B = await open(b, { pre, w: 700, h: 500, lang: 'vi', settings: { friendCode: 'MEETB3', friendsOn: true, friends: [{ code: 'MEETA2', name: 'Na' }] } });
   for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  await B.page.waitForSelector('.friendnote [data-inv]', { timeout: 90000 });
+  const noteText = await B.page.textContent('.friendnote');
+  await B.page.waitForTimeout(10000);
+  const alone = await Promise.all([A, B].map(P => P.page.evaluate(() => ({ partners: Object.keys(__sv.partners).length, role: __Net.role }))));
+  await B.page.click('.friendnote [data-inv]');
+  await A.page.waitForSelector('.dialog .dchoices button', { timeout: 60000 }); await A.page.waitForTimeout(600); await A.page.evaluate(() => document.querySelector('.dialog .dchoices button').click()); // (the choices bounce in)
   const met = P => P.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 90000 });
   await Promise.all([met(A), met(B)]);
   const r = await Promise.all([A, B].map(P => P.page.evaluate(() => ({ role: __Net.role, code: __Net.code, names: Object.values(__sv.partners).map(p => p.name) }))));
   const errs = A.errors.concat(B.errors); await A.ctx.close(); await B.ctx.close();
-  ok(r[0].role === 'host' && r[1].role === 'guest' && r[0].code === r[1].code && !errs.length, JSON.stringify({ r, errs }));
-  return `met in room ${r[0].code} by themselves, names shown`;
+  ok(alone.every(x => !x.partners && !x.role), 'friends were put in a room by themselves: ' + JSON.stringify(alone));
+  ok(r[1].role === 'host' && r[0].role === 'guest' && r[0].code === r[1].code && !errs.length, JSON.stringify({ r, errs }));
+  return `"${noteText.replace(/\s+/g, ' ').trim().slice(0, 60)}…"; nobody moved for 10 s; 📨 Invite → Join: room ${r[1].code}, names shown`;
 });
 
 await check('cloud', async () => {

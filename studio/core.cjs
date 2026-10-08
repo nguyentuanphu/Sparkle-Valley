@@ -172,7 +172,16 @@ const BADPIC = /\.(svg|gif|tif|tiff|webm|ogv|ogg|oga|wav|mp3|pdf)$|logo|flag of|
 async function bestPhotos(sources, max) {
   for (const s of sources) {
     const [lang, title] = s.split(/:(.+)/), t = encodeURIComponent(title.replace(/ /g, '_'));
-    const ml = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${t}`, { headers: UA }); if (!ml.ok) continue;
+    const ml = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${t}`, { headers: UA }).catch(() => null);
+    // (round O) Wikipedia is retiring that list: the article's pictures from the main API instead
+    if (!ml || !ml.ok) {
+      const base = `https://${lang}.wikipedia.org/w/api.php?format=json&formatversion=2&redirects=1&titles=${encodeURIComponent(title)}`;
+      const lead = await fetch(base + '&action=query&prop=pageimages&piprop=name', { headers: UA }).then(r => r.json()).then(j => ((j.query.pages || [])[0] || {}).pageimage || '').catch(() => '');
+      const im = await fetch(base + '&action=query&prop=images&imlimit=60', { headers: UA }).then(r => r.json()).then(j => (((j.query.pages || [])[0] || {}).images || []).map(x => x.title)).catch(() => []);
+      const files = im.filter(f => !BADPIC.test(f) && /\.(jpe?g|png|webp)$/i.test(f)).sort((a, b) => +(b.replace(/^[^:]+:/, '').replace(/ /g, '_') === lead.replace(/ /g, '_')) - +(a.replace(/^[^:]+:/, '').replace(/ /g, '_') === lead.replace(/ /g, '_')));
+      if (files.length) return files.slice(0, max).map(f => ({ file: 'File:' + f.replace(/^[^:]+:/, ''), caption: '' }));
+      continue;
+    }
     const j = await ml.json(); let lead = '';
     try { const sm = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${t}`, { headers: UA }); if (sm.ok) lead = decodeURIComponent(((await sm.json()).originalimage || {}).source || '').split('/').pop(); } catch (e) { }
     let items = (j.items || []).filter(it => it.type === 'image' && it.showInGallery !== false && !BADPIC.test(it.title || ''));

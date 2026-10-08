@@ -40,7 +40,21 @@ export async function iceServers() {
     if (!fetched || fetched.url !== r) { try { const res = await fetch(r); const j = await res.json(); fetched = { url: r, list: Array.isArray(j) ? j : j.iceServers || [] }; } catch (e) { fetched = { url: r, list: [] }; } }
     if (fetched.list.length) return STUN.concat(fetched.list);
   } else if (/^turns?:/i.test(r)) return STUN.concat([{ urls: r.split(/[\s,]+/).filter(Boolean), username: settings.turnUser || '', credential: settings.turnPass || '' }]);
+  // the family's own relay, set up once on the website (round O: netlify/functions/turn.mjs gives each game details
+  // that last a few hours; the key itself never leaves Netlify)
+  const own = await siteTurn(); if (own.length) return STUN.concat(own);
   return STUN.concat(PUBLIC_TURN);
+}
+let siteTurnAt = 0, siteTurnList = [];
+async function siteTurn() {
+  if (!/^https:$/.test(location.protocol) && !window.SV_TURN_TEST) return [];
+  if (Date.now() - siteTurnAt < 30 * 60e3) return siteTurnList;
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4000);
+    const r = await fetch((window.SV_TURN_TEST || '') + '/api/turn', { signal: ctl.signal }); clearTimeout(t);
+    const j = r.ok ? await r.json() : {}; siteTurnList = Array.isArray(j.iceServers) ? j.iceServers.filter(x => x && x.urls) : [];
+  } catch (e) { siteTurnList = []; }
+  siteTurnAt = Date.now(); return siteTurnList;
 }
 // PeerJS settings (the free public PeerJS server by default; tests can point it at a local one)
 let ICE = STUN.concat(PUBLIC_TURN);
