@@ -295,7 +295,7 @@ export function openGrownups(after) {
       ${extrasHTML()}
       
       </div></details>
-      <details class="gsec" data-sec="screen" ${gOpen.has('screen') ? 'open' : ''}><summary><span class="gi">🖥️</span><b>${T('Screen and world', 'Màn hình và thế giới')}</b></summary><div class="gbody">
+      <details class="gsec" data-sec="screen" ${gOpen.has('screen') ? 'open' : ''}><summary><span class="gi">📺</span><b>${T('Screen and world', 'Màn hình và thế giới')}</b></summary><div class="gbody">
       <div class="toggles">
         <label class="tog"><input type="checkbox" id="gDay" ${settings.alwaysDay ? 'checked' : ''}> ${T('Always daytime', 'Luôn là ban ngày')}</label>
         <label class="tog"><input type="checkbox" id="gRain" ${settings.noRain ? '' : 'checked'}> ${T('Rain showers and rainbows', 'Mưa rào và cầu vồng')}</label>
@@ -309,7 +309,7 @@ export function openGrownups(after) {
       <div class="field"><label>${T('Graphics', 'Đồ họa')}</label><div class="seg q">${['low', 'auto', 'high'].map(q => `<button data-q="${q}" class="${settings.quality === q ? 'on' : ''}">${{ low: T('Fast', 'Nhanh'), auto: T('Auto', 'Tự động'), high: T('Pretty', 'Đẹp') }[q]}</button>`).join('')}</div></div>
       
       </div></details>
-      <details class="gsec" data-sec="time" ${gOpen.has('time') ? 'open' : ''}><summary><span class="gi">⏰</span><b>${T('Play time', 'Giờ chơi')}</b></summary><div class="gbody">
+      <details class="gsec" data-sec="time" ${gOpen.has('time') ? 'open' : ''}><summary><span class="gi">🌙</span><b>${T('Play time', 'Giờ chơi')}</b></summary><div class="gbody">
 <h3>🌙 ${T('Rest time', 'Giờ nghỉ')}</h3>
       <p class="note">${T('After this much play in a day, the explorer yawns and says goodnight. A grown-up can hold a button for 10 more minutes. Counted on this device only.', 'Sau khoảng thời gian chơi này trong ngày, nhà thám hiểm sẽ ngáp và chúc ngủ ngon. Người lớn có thể giữ nút để chơi thêm 10 phút. Chỉ tính trên máy này.')} ${T('Today', 'Hôm nay')}: ${Math.round(settings.playDay === new Date().toDateString() ? settings.playMins || 0 : 0)} ${T('min', 'phút')}</p>
       <div class="seg rest">${['0', '15', '30', '45', '60'].map(k => `<button data-r="${k}" class="${String(settings.restMins || '0') === k ? 'on' : ''}">${k === '0' ? T('Off', 'Tắt') : k + ' ' + T('min', 'phút')}</button>`).join('')}</div>
