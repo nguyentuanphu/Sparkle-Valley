@@ -62,6 +62,7 @@ import { createRegionSites } from './regionsites.js';
 import { createVnFun } from './vnfun.js';
 import { createLotus } from './lotus.js';
 import { addFamilyBuildings, applyWorldEdits } from './worldedit.js';
+import { buildPowerLines } from './powerlines.js';
 import { CUSTOM } from './custom.js';
 import { createFolkShow } from './folkshow.js';
 import { createAds } from './ads.js';
@@ -1399,6 +1400,7 @@ createCities(G);
 createHawkers(G);
 createSuburbs(G); // speciality buildings along the roads out of each city (before the homes are made)
 world.familyBuilt = addFamilyBuildings(G); // houses and buildings the family added in Sparkle Studio (they become homes too)
+buildPowerLines(G); // power poles (when switched on in Studio) wired to each other by themselves
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 createSymbols(G, { sfx: SFX, dialog }); // each region's symbol animal, in a corner of its city square
 createRegionSites(G); // more famous places of each region, just outside its city
