@@ -12,7 +12,7 @@
 // apply() rebuilds the meshes when the look changes (G.traffic.apply(real) at the start of each session).
 import { THREE, blobShadow } from './gfx.js';
 import { build, seatRider } from './vehicles.js';
-import { CITIES, ROADS, VILLAGE, HOME, TOWN, AUSSIE, WATER, heightAt } from './world.js';
+import { CITIES, ROADS, VILLAGE, HOME, TOWN, AUSSIE, WATER, heightAt, roadDist } from './world.js';
 import { buildAvatar } from './avatar.js';
 import { featureOn } from './custom.js';
 import { TOWN_PARKED } from './town.js';
@@ -73,7 +73,9 @@ export function createTraffic(G) {
   // ---------- bicycles to ride ----------
   const rideSpots = [];
   if (featureOn('rideBikes', true)) {
-    const spot = (x0, z0, ids, cc, rideable = true) => { for (let k = 0; k < 24; k++) { const a = k * 2.4, d = 3 + k * .5, x = x0 + Math.cos(a) * d, z = z0 + Math.sin(a) * d; if (free(x, z, 1.2)) { ids.forEach((id, j) => { const px = x + j * .9, pz = z; if (free(px, pz, .8)) slots.push({ id, cc, x: px, z: pz, yaw: Math.PI / 2, rideable }); }); return; } } };
+    // bicycles wait beside the road, never on it (tests: roads)
+    const offRoad = (x, z, r) => { const d = roadDist(x, z); return !d.road || d.d > d.road.w / 2 + r; };
+    const spot = (x0, z0, ids, cc, rideable = true) => { for (let k = 0; k < 24; k++) { const a = k * 2.4, d = 3 + k * .5, x = x0 + Math.cos(a) * d, z = z0 + Math.sin(a) * d; if (free(x, z, 1.2) && offRoad(x, z, 1.2)) { ids.forEach((id, j) => { const px = x + j * .9, pz = z; if (free(px, pz, .8) && offRoad(px, pz, .8)) slots.push({ id, cc, x: px, z: pz, yaw: Math.PI / 2, rideable }); }); return; } } };
     spot(VILLAGE.x - 6, VILLAGE.z + 8, ['miniBike', 'roadster'], 'vn');
     spot(HOME.x + 8, HOME.z - 6, ['kidsBike', 'bmx'], 'au');
     spot((TOWN.x0 + TOWN.x1) / 2, TOWN.roadZ + 4, ['miniBike', 'bmx'], 'vn');
