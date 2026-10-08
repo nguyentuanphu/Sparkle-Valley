@@ -889,6 +889,27 @@ await check('firstplayer', async () => {
   return 'a new device shows “Make my character” and no ready-made players; the child made “Mai” and plays as Mai';
 });
 
+await check('grownupsui', async () => {
+  // round P (owner): on a phone the action button sits on the right above Jump and Run (the left half is the joystick's)
+  // and the spoken words near the top; Grown-ups in groups that open and close, the voice engine folded, no credits editor
+  const P = await open(b, { w: 390, h: 844, touch: true, lang: 'vi' }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const wait = ms => new Promise(x => setTimeout(x, ms)), h = __sv.huds[0];
+    h.setAction({ label: () => 'Nhặt Lá dong', icon: '🌿' }); await wait(300);
+    const a = h.q('.act').getBoundingClientRect(), mv = h.q('.hud-br').getBoundingClientRect();
+    const { say } = await import('/js/voice.js'); say('A test line.', 'Một câu thử.'); await wait(400);
+    const cap = document.querySelector('.caption'), c = cap ? cap.getBoundingClientRect() : null;
+    const { openGrownups } = await import('/js/ui.js'); openGrownups(); await wait(400);
+    const secs = [...document.querySelectorAll('.grownups details.gsec')].map(d => d.dataset.sec), open = [...document.querySelectorAll('.grownups details.gsec[open]')].map(d => d.dataset.sec);
+    const eng = document.querySelector('.grownups details.xeng'), credits = !!document.querySelector('.grownups #crName');
+    return { act: [a.left, a.top, a.right, a.bottom].map(Math.round), moves: Math.round(mv.top), w: innerWidth, cap: c ? [Math.round(c.top), Math.round(c.bottom)] : null, secs, open, engine: !!eng, engineOpen: !!(eng && eng.open), credits };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.act[0] > r.w / 2 - 40 && r.act[3] <= r.moves + 2 && r.cap && r.cap[0] < 220, 'phone layout: ' + JSON.stringify(r));
+  ok(r.secs.length >= 8 && r.secs.includes('sound') && r.secs.includes('online') && r.open.join() === 'players' && r.engine && !r.engineOpen && !r.credits && !errs.length, 'grown-ups: ' + JSON.stringify(Object.assign(r, { errs })));
+  return `action button on the right above Jump/Run (${r.act.join(',')}), words at the top (${r.cap.join('–')} px); Grown-ups: ${r.secs.length} groups (${r.secs.join(', ')}), the voice engine folded, no credits editor`;
+});
+
 await check('playhub', async () => {
   // round O (owner): the pink button is "Play" with a 🎵 Songs tab (songs belong with the games, not in Settings);
   // battery: on a phone the valley is drawn 30 times a second, and not at all behind the Simple screen or the Songs page

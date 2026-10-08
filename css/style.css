@@ -1663,6 +1663,14 @@ body.calm .rv-img.on { animation: none; }
 .buildtag { display: inline-block; margin-left: 6px; font: 600 11px/1.4 system-ui, sans-serif; color: var(--soft, #7a6a8f); opacity: .8; }
 
 /* Grown-ups: advanced settings fold away */
+/* Grown-ups in groups that open and close (round P) */
+.gsec { margin-top: 10px; background: rgba(255, 255, 255, .7); border: 1px solid rgba(120, 90, 160, .18); border-radius: 18px; }
+.gsec > summary { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 14px; cursor: pointer; list-style: none; font-size: 1.08em; }
+.gsec > summary::-webkit-details-marker { display: none; }
+.gsec > summary::after { content: '▸'; margin-left: auto; opacity: .55; } .gsec[open] > summary::after { content: '▾'; }
+.gsec .gi { font-size: 1.4em; } .gsec .gbody { padding: 0 14px 14px; } .gsec .gbody > h3:first-child { margin-top: 4px; }
+.xeng { margin: 10px 0; padding: 4px 10px; border-radius: 14px; background: rgba(120, 90, 160, .06); }
+.xeng > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; } .xeng[open] > summary { margin-bottom: 6px; }
 .g-adv { margin-top: 18px; border-top: 2px dashed rgba(120, 90, 160, .25); padding-top: 10px; }
 .g-adv > summary { cursor: pointer; font-weight: 700; font-size: 1.1em; padding: 10px 4px; list-style: none; }
 .g-adv > summary::before { content: '▸ '; } .g-adv[open] > summary::before { content: '▾ '; }
@@ -2015,3 +2023,16 @@ body.calm .sp-owl.cheer { animation: none; }
 .songs:not(.night) .sg-words { background: rgba(255, 255, 255, .7); }
 .sg-moon { position: fixed; right: 28px; top: calc(env(safe-area-inset-top) + 90px); width: 54px; height: 54px; border-radius: 50%; background: #fff6c2; box-shadow: 0 0 40px 10px rgba(255, 246, 194, .35); pointer-events: none; opacity: .85; }
 body.songs-on .htoast { display: none; } /* the valley's hints stay behind the Songs page (round N) */
+
+/* Phones and tablets (round P, owner: the joystick, the action button and the words overlapped, so a child moving the
+   joystick could tap the action by accident): the action button sits on the right above Jump and Run, the left half
+   stays free for the joystick, and the spoken words show near the top */
+@media (pointer: coarse) {
+  .hud .act, .hud.small .act { left: auto; right: calc(var(--pad) + env(safe-area-inset-right)); transform: none; bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 250px); max-width: min(300px, calc(100% - 150px)); }
+  .hud .act:active { transform: translateY(4px); }
+  .caption { top: calc(env(safe-area-inset-top) + 124px); bottom: auto; }
+}
+@media (pointer: coarse) and (max-height: 520px) {
+  .hud .act, .hud.small .act { right: calc(var(--pad) + env(safe-area-inset-right) + 120px); bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 8px); max-width: min(300px, calc(100% - 360px)); }
+  .caption { top: calc(env(safe-area-inset-top) + 64px); }
+}

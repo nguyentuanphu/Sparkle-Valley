@@ -19,7 +19,7 @@ import { showStory, storyList } from './story.js';
 import { SECRETS } from './secrets.js';
 import { LANDMARKS, VENDORS } from './regions.js';
 import { AUSSIE_SLANG, VN_WORDS, VN_SLANG } from './words.js';
-import { openCredits, creditsFields, bindCreditsFields } from './credits.js';
+import { openCredits } from './credits.js';
 import { openHowTo } from './howto.js';
 import { WILD } from './gather.js';
 import { snackOf, eatSnack } from './snacks.js';
@@ -258,7 +258,9 @@ function bindPackStatus(card, redraw) {
 }
 // ---------- Grown-ups ----------
 export function openGrownups(after) {
-  const m = modal('grownups', ''); let advOpen = false;
+  // (round P, owner: arrange it so it makes sense) everything in groups that open and close; which are open is kept
+  // while the page redraws
+  const m = modal('grownups', ''), gOpen = new Set(['players']);
   const card = m.querySelector('.card');
   const draw = () => {
     const vEn = voicesFor('en'), vVi = voicesFor('vi');
@@ -268,69 +270,92 @@ export function openGrownups(after) {
       <div class="g-install"></div>
       <h3>${T('Language', 'Ngôn ngữ')}</h3>${flagBtns()}${learnBtns()}
       <label class="tog"><input type="checkbox" id="gBil" ${settings.bilingual ? 'checked' : ''}> ${T('Bilingual voice: also say everything in the other language', 'Giọng song ngữ: nói thêm bằng ngôn ngữ còn lại')}</label>
-      <h3>${T('Sound and world', 'Âm thanh và thế giới')}</h3>
+            <details class="gsec" data-sec="players" ${gOpen.has('players') ? 'open' : ''}><summary><span class="gi">👧</span><b>${T('Children', 'Các con')}</b></summary><div class="gbody">
+
+      <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(nm(p.name))}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn ghost" data-rep="${p.id}" aria-label="${T('Play report', 'Báo cáo chơi')}">${pic('📊')}</button><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
+      <button class="btn wide" id="gAdd">+ ${T('Add a player', 'Thêm người chơi')}</button>
+      
+      </div></details>
+      <details class="gsec" data-sec="sound" ${gOpen.has('sound') ? 'open' : ''}><summary><span class="gi">🔊</span><b>${T('Sound and voices', 'Âm thanh và giọng nói')}</b></summary><div class="gbody">
       <div class="toggles">
         <label class="tog"><input type="checkbox" id="gVoice" ${settings.voice ? 'checked' : ''}> ${T('Talking voice', 'Giọng nói')}</label>
         <label class="tog"><input type="checkbox" id="gMusic" ${settings.music ? 'checked' : ''}> ${T('Music', 'Nhạc')}</label>
         <label class="tog"><input type="checkbox" id="gSound" ${settings.sound ? 'checked' : ''}> ${T('Sound effects', 'Hiệu ứng âm thanh')}</label>
+        <label class="tog"><input type="checkbox" id="gCap" ${settings.captions === false ? '' : 'checked'}> ${T('Captions: show everything that is said as text', 'Phụ đề: hiện chữ cho mọi câu được nói')}</label>
+      </div>
+<h3>🎙️ ${T('Voices', 'Giọng nói')}</h3>
+      ${packStatusHTML()}
+      <h3>${T('Family voice', 'Giọng của gia đình')}</h3>
+      <button class="btn primary wide big" id="gRec">🎙️ ${T('Record your voice for the game', 'Thu giọng của bạn cho trò chơi')}<small class="reccount">🇻🇳 ${clipCountFor('vi')}/${FAMILY_PHRASES.length} · 🇦🇺 ${clipCountFor('en')}/${FAMILY_PHRASES.length}</small></button>
+      <p class="note">${T('Each language has its own 11 lines. The game plays your real voice whenever it says one of those lines (praise, “try again”, “you did it”, hello…), in the language the game is set to. Everything else is read by the device voice, tuned towards your voice.', 'Mỗi ngôn ngữ có 11 câu riêng. Trò chơi phát đúng giọng thật của bạn mỗi khi nói một trong các câu đó (khen, “thử lại nhé”, “con làm được rồi”, chào…), theo ngôn ngữ đang chọn. Các câu khác do giọng máy đọc, được chỉnh gần với giọng bạn.')}</p>
+      <h3>📱 ${T('Phone voice (only for lines with no recording)', 'Giọng của máy (chỉ cho câu chưa có bản ghi)')}</h3>
+      <div class="field"><label>English</label><div class="vrow"><select id="vEn">${vEn.map(v => `<option ${v.name === settings.voiceEn ? 'selected' : ''}>${esc(v.name)}</option>`).join('') || `<option>${T('Default', 'Mặc định')}</option>`}</select><button class="btn" data-try="en">▶</button></div></div>
+      <div class="field"><label>Tiếng Việt</label><div class="vrow"><select id="vVi">${vVi.map(v => `<option ${v.name === settings.voiceVi ? 'selected' : ''}>${esc(v.name)}</option>`).join('') || `<option>${T('No Vietnamese voice found', 'Chưa có giọng tiếng Việt')}</option>`}</select><button class="btn" data-try="vi">▶</button></div></div>
+      <p class="note">${hasVietnamese() ? '' : T('To add a Vietnamese voice: iPhone/iPad → Settings → Accessibility → Spoken Content → Voices → Vietnamese. Android → Settings → Text-to-speech → Google → Install voice data → Vietnamese. ', 'Thêm giọng tiếng Việt: iPhone/iPad → Cài đặt → Trợ năng → Nội dung được đọc → Giọng nói → Tiếng Việt. Android → Cài đặt → Chuyển văn bản thành giọng nói → Google → Cài đặt dữ liệu giọng nói → Tiếng Việt. ')}${T('Choose an "Enhanced" or "Premium" voice for the most natural sound.', 'Chọn giọng "Nâng cao" hoặc "Cao cấp" để nghe tự nhiên nhất.')}</p>
+      ${extrasHTML()}
+      
+      </div></details>
+      <details class="gsec" data-sec="screen" ${gOpen.has('screen') ? 'open' : ''}><summary><span class="gi">🖥️</span><b>${T('Screen and world', 'Màn hình và thế giới')}</b></summary><div class="gbody">
+      <div class="toggles">
         <label class="tog"><input type="checkbox" id="gDay" ${settings.alwaysDay ? 'checked' : ''}> ${T('Always daytime', 'Luôn là ban ngày')}</label>
         <label class="tog"><input type="checkbox" id="gRain" ${settings.noRain ? '' : 'checked'}> ${T('Rain showers and rainbows', 'Mưa rào và cầu vồng')}</label>
         <label class="tog"><input type="checkbox" id="gCalm" ${settings.calm ? 'checked' : ''}> ${T('Calm mode: quieter music, fewer moving effects', 'Chế độ êm dịu: nhạc nhỏ hơn, ít hiệu ứng chuyển động')}</label>
-        <label class="tog"><input type="checkbox" id="gCap" ${settings.captions === false ? '' : 'checked'}> ${T('Captions: show everything that is said as text', 'Phụ đề: hiện chữ cho mọi câu được nói')}</label>
       </div>
-      <h3>🎙️ ${T('Voices', 'Giọng nói')}</h3>
-      ${packStatusHTML()}
-      <h3>🌙 ${T('Rest time', 'Giờ nghỉ')}</h3>
-      <p class="note">${T('After this much play in a day, the explorer yawns and says goodnight. A grown-up can hold a button for 10 more minutes. Counted on this device only.', 'Sau khoảng thời gian chơi này trong ngày, nhà thám hiểm sẽ ngáp và chúc ngủ ngon. Người lớn có thể giữ nút để chơi thêm 10 phút. Chỉ tính trên máy này.')} ${T('Today', 'Hôm nay')}: ${Math.round(settings.playDay === new Date().toDateString() ? settings.playMins || 0 : 0)} ${T('min', 'phút')}</p>
-      <div class="seg rest">${['0', '15', '30', '45', '60'].map(k => `<button data-r="${k}" class="${String(settings.restMins || '0') === k ? 'on' : ''}">${k === '0' ? T('Off', 'Tắt') : k + ' ' + T('min', 'phút')}</button>`).join('')}</div>
-      <h3>🔠 ${T('Text size', 'Cỡ chữ')}</h3>
+<h3>🔠 ${T('Text size', 'Cỡ chữ')}</h3>
       <div class="seg tsize">${[[0, 'A'], [1, 'A'], [2, 'A']].map(([k, l]) => `<button data-ts="${k}" class="${(settings.textSize || 0) === k ? 'on' : ''}" style="font-size:${16 + k * 5}px" aria-label="${[T('Normal', 'Bình thường'), T('Big', 'To'), T('Bigger', 'To hơn')][k]}">${l}</button>`).join('')}</div>
       <div>
       </div>
-      <h3>${T('Players', 'Người chơi')}</h3>
-      <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(nm(p.name))}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn ghost" data-rep="${p.id}" aria-label="${T('Play report', 'Báo cáo chơi')}">${pic('📊')}</button><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
-      <button class="btn wide" id="gAdd">+ ${T('Add a player', 'Thêm người chơi')}</button>
-      <h3>☁️ ${T('Backup to Google Drive or iCloud', 'Sao lưu lên Google Drive hoặc iCloud')}</h3>
-      <p class="note">${T('Progress saves automatically on this device. To keep a copy online, tap Save backup and choose Google Drive, or “Save to Files” → iCloud Drive on iPhone and iPad. To bring it back (or onto a new device), tap Open backup and pick the file from Drive or iCloud.', 'Tiến trình tự động lưu trên máy này. Để giữ một bản trên mạng, bấm Lưu bản sao rồi chọn Google Drive, hoặc “Lưu vào Tệp” → iCloud Drive trên iPhone và iPad. Để lấy lại (hoặc chuyển sang máy mới), bấm Mở bản sao và chọn tệp trong Drive hoặc iCloud.')}</p>
-      <p class="note backup-when${backupAge() > 7 ? ' old' : ''}">${settings.lastBackup ? T('Last backup: ', 'Lần sao lưu gần nhất: ') + new Date(settings.lastBackup).toLocaleDateString(settings.lang === 'vi' ? 'vi-VN' : 'en-AU') + (backupAge() > 7 ? T(' (over a week ago)', ' (hơn một tuần trước)') : '') : T('No backup saved yet.', 'Chưa có bản sao lưu nào.')}</p>
-      <div class="actions"><button class="btn" id="gExp">☁️ ${T('Save backup', 'Lưu bản sao')}</button><label class="btn" for="gImp">📂 ${T('Open backup', 'Mở bản sao')}</label><input type="file" id="gImp" accept=".txt,.json,text/plain,application/json" class="vh"></div>
-      <p class="note">${T('The file stays in your own Drive or iCloud: Sparkle Valley has no server and never sees it.', 'Tệp nằm trong Drive hoặc iCloud của bạn: Thung Lũng Lấp Lánh không có máy chủ và không bao giờ xem tệp này.')}</p>
-      <details class="g-adv" ${advOpen ? 'open' : ''}><summary>⚙️ ${T('Advanced settings', 'Cài đặt nâng cao')}</summary>
-      <h3>${T('Money', 'Tiền tệ')}</h3>
+            <div class="field"><label>${T('Camera', 'Góc nhìn')}</label><div class="seg cam"><button data-c="easy" class="${settings.camMode !== 'free' ? 'on' : ''}">🧸 ${T('Easy: fixed view from above', 'Dễ: nhìn từ trên, cố định')}</button><button data-c="free" class="${settings.camMode === 'free' ? 'on' : ''}">🧭 ${T('Explorer: drag to look around', 'Tự do: kéo để xoay')}</button></div></div>
+      <div class="field"><label>${T('Graphics', 'Đồ họa')}</label><div class="seg q">${['low', 'auto', 'high'].map(q => `<button data-q="${q}" class="${settings.quality === q ? 'on' : ''}">${{ low: T('Fast', 'Nhanh'), auto: T('Auto', 'Tự động'), high: T('Pretty', 'Đẹp') }[q]}</button>`).join('')}</div></div>
+      
+      </div></details>
+      <details class="gsec" data-sec="time" ${gOpen.has('time') ? 'open' : ''}><summary><span class="gi">⏰</span><b>${T('Play time', 'Giờ chơi')}</b></summary><div class="gbody">
+<h3>🌙 ${T('Rest time', 'Giờ nghỉ')}</h3>
+      <p class="note">${T('After this much play in a day, the explorer yawns and says goodnight. A grown-up can hold a button for 10 more minutes. Counted on this device only.', 'Sau khoảng thời gian chơi này trong ngày, nhà thám hiểm sẽ ngáp và chúc ngủ ngon. Người lớn có thể giữ nút để chơi thêm 10 phút. Chỉ tính trên máy này.')} ${T('Today', 'Hôm nay')}: ${Math.round(settings.playDay === new Date().toDateString() ? settings.playMins || 0 : 0)} ${T('min', 'phút')}</p>
+      <div class="seg rest">${['0', '15', '30', '45', '60'].map(k => `<button data-r="${k}" class="${String(settings.restMins || '0') === k ? 'on' : ''}">${k === '0' ? T('Off', 'Tắt') : k + ' ' + T('min', 'phút')}</button>`).join('')}</div>
+      
+      </div></details>
+      <details class="gsec" data-sec="money" ${gOpen.has('money') ? 'open' : ''}><summary><span class="gi">💰</span><b>${T('Money and farm', 'Tiền và nông trại')}</b></summary><div class="gbody">
+<h3>${T('Money', 'Tiền tệ')}</h3>
       <div class="seg cur"><button data-c="AUD" class="${settings.currency === 'AUD' ? 'on' : ''}">🇦🇺 AUD $</button><button data-c="VND" class="${settings.currency === 'VND' ? 'on' : ''}">🇻🇳 VND đ</button></div>
       <p class="note">${T('Prices and the market game switch currency. 10c = 2.000đ in this game.', 'Giá cả và trò chơi đi chợ sẽ đổi theo tiền tệ. Trong game, 10 xu Úc = 2.000đ.')}</p>
       <div class="field"><label>💰 ${T('Coins in the piggy bank', 'Tiền trong heo đất')}: <b id="gCoins">${fmt(farm.coins)}</b></label>
         <div class="actions coinadd">${[100, 500, 2000].map(n => `<button class="btn" data-add="${n}">+ ${fmt(n)}</button>`).join('')}</div></div>
       <p class="note">${T('Ran out? Top up the coins the whole family shares (for the shop, market and stalls).', 'Hết tiền? Nạp thêm tiền chung của cả nhà (dùng ở cửa hàng, chợ và các sạp).')}</p>
-      <h3>📱 ${T('Phone voice (only for lines with no recording)', 'Giọng của máy (chỉ cho câu chưa có bản ghi)')}</h3>
-      <div class="field"><label>English</label><div class="vrow"><select id="vEn">${vEn.map(v => `<option ${v.name === settings.voiceEn ? 'selected' : ''}>${esc(v.name)}</option>`).join('') || `<option>${T('Default', 'Mặc định')}</option>`}</select><button class="btn" data-try="en">▶</button></div></div>
-      <div class="field"><label>Tiếng Việt</label><div class="vrow"><select id="vVi">${vVi.map(v => `<option ${v.name === settings.voiceVi ? 'selected' : ''}>${esc(v.name)}</option>`).join('') || `<option>${T('No Vietnamese voice found', 'Chưa có giọng tiếng Việt')}</option>`}</select><button class="btn" data-try="vi">▶</button></div></div>
-      <p class="note">${hasVietnamese() ? '' : T('To add a Vietnamese voice: iPhone/iPad → Settings → Accessibility → Spoken Content → Voices → Vietnamese. Android → Settings → Text-to-speech → Google → Install voice data → Vietnamese. ', 'Thêm giọng tiếng Việt: iPhone/iPad → Cài đặt → Trợ năng → Nội dung được đọc → Giọng nói → Tiếng Việt. Android → Cài đặt → Chuyển văn bản thành giọng nói → Google → Cài đặt dữ liệu giọng nói → Tiếng Việt. ')}${T('Choose an "Enhanced" or "Premium" voice for the most natural sound.', 'Chọn giọng "Nâng cao" hoặc "Cao cấp" để nghe tự nhiên nhất.')}</p>
-      <h3>${T('Family voice', 'Giọng của gia đình')}</h3>
-      <button class="btn primary wide big" id="gRec">🎙️ ${T('Record your voice for the game', 'Thu giọng của bạn cho trò chơi')}<small class="reccount">🇻🇳 ${clipCountFor('vi')}/${FAMILY_PHRASES.length} · 🇦🇺 ${clipCountFor('en')}/${FAMILY_PHRASES.length}</small></button>
-      <p class="note">${T('Each language has its own 11 lines. The game plays your real voice whenever it says one of those lines (praise, “try again”, “you did it”, hello…), in the language the game is set to. Everything else is read by the device voice, tuned towards your voice.', 'Mỗi ngôn ngữ có 11 câu riêng. Trò chơi phát đúng giọng thật của bạn mỗi khi nói một trong các câu đó (khen, “thử lại nhé”, “con làm được rồi”, chào…), theo ngôn ngữ đang chọn. Các câu khác do giọng máy đọc, được chỉnh gần với giọng bạn.')}</p>
-      ${extrasHTML()}
-      <div class="field"><label>📊 ${T('Analytics', 'Phân tích')}</label><div class="seg cnt"><button data-c="1" class="${settings.countPlayers !== false ? 'on' : ''}">${T('On', 'Bật')}</button><button data-c="0" class="${settings.countPlayers === false ? 'on' : ''}">${T('Off', 'Tắt')}</button></div></div>
-      <div class="field"><label>${T('Camera', 'Góc nhìn')}</label><div class="seg cam"><button data-c="easy" class="${settings.camMode !== 'free' ? 'on' : ''}">🧸 ${T('Easy: fixed view from above', 'Dễ: nhìn từ trên, cố định')}</button><button data-c="free" class="${settings.camMode === 'free' ? 'on' : ''}">🧭 ${T('Explorer: drag to look around', 'Tự do: kéo để xoay')}</button></div></div>
-      <div class="field"><label>${T('Graphics', 'Đồ họa')}</label><div class="seg q">${['low', 'auto', 'high'].map(q => `<button data-q="${q}" class="${settings.quality === q ? 'on' : ''}">${{ low: T('Fast', 'Nhanh'), auto: T('Auto', 'Tự động'), high: T('Pretty', 'Đẹp') }[q]}</button>`).join('')}</div></div>
-      <h3>🏷️ ${T('Character names', 'Tên nhân vật')}</h3>
-      <p class="note">${T('Titles follow the language (Grandma / Bà, Auntie / Cô) and names stay as they are in each region. You can rename anyone, in English and in Vietnamese.', 'Danh xưng đổi theo ngôn ngữ (Grandma / Bà, Auntie / Cô) và tên giữ nguyên theo từng vùng. Bạn có thể đổi tên bất kỳ nhân vật nào, bằng tiếng Anh và tiếng Việt.')}</p>
-      <button class="btn wide" id="gNames">✏️ ${T('Rename characters', 'Đổi tên nhân vật')}</button>
-      <h3>ℹ️ ${T('Credits page', 'Trang giới thiệu')}</h3>${creditsFields()}<button class="btn wide" id="gCredits">ℹ️ ${T('Show the credits page', 'Xem trang giới thiệu')}</button>
       <h3>${T('Farm', 'Nông trại')}</h3>
       <button class="btn danger" id="gFarm">🔄 ${T('Start the farm over', 'Làm lại nông trại')}</button>
       <p class="note">${T('Clears crops, animals, pets, basket and coins. Players, photos, stickers and game levels are kept.', 'Xóa cây trồng, vật nuôi, thú cưng, giỏ hàng và tiền. Giữ lại người chơi, ảnh, hình dán và cấp độ trò chơi.')}</p>
-      <h3>🌐 ${T('Online play', 'Chơi trực tuyến')}</h3>
+      
+      </div></details>
+      <details class="gsec" data-sec="online" ${gOpen.has('online') ? 'open' : ''}><summary><span class="gi">🌐</span><b>${T('Playing online', 'Chơi trực tuyến')}</b></summary><div class="gbody">
+
       <p class="note">${T('Online play uses the free PeerJS service to connect two devices directly. Voice goes straight between the devices and is never recorded.', 'Chơi trực tuyến dùng dịch vụ miễn phí PeerJS để nối hai máy trực tiếp. Giọng nói đi thẳng giữa hai máy và không bao giờ được ghi lại.')}</p>
       <label class="tog"><input type="checkbox" id="gAutoMeet" ${settings.autoMeet !== false ? 'checked' : ''}> ${T('Tell me when a friend on the list starts playing (with buttons to invite them or go to their room; nobody is put in a room by themselves)', 'Báo khi một bạn trong danh sách bắt đầu chơi (có nút mời bạn hoặc sang phòng bạn; không ai tự bị đưa vào phòng)')}</label>
       <p class="note">${T('If a friend far away stays on “Connecting…”, your two networks need a relay (TURN server). Free public relays are tried automatically. For a reliable one, make a free account at a TURN service (for example metered.ca), then paste its credentials link here, or a turn: address with its name and password. Both devices need the same relay.', 'Nếu bạn ở xa cứ “Đang kết nối…” mãi, hai mạng cần một máy chủ trung chuyển (TURN). Trò chơi tự thử các máy chủ miễn phí công cộng. Để ổn định hơn, hãy tạo tài khoản miễn phí ở một dịch vụ TURN (ví dụ metered.ca), rồi dán đường link lấy thông tin vào đây, hoặc địa chỉ turn: kèm tên và mật khẩu. Cả hai máy cần dùng cùng máy chủ.')}</p>
       <div class="vrow"><input type="text" id="gTurn" placeholder="https://…/turn/credentials?apiKey=…  ${T('or', 'hoặc')}  turn:…" value="${esc(settings.turnUrl || '')}" autocomplete="off"></div>
       <div class="vrow ${/^turns?:/i.test(settings.turnUrl || '') ? '' : 'vh'}" id="gTurnCred"><input type="text" id="gTurnUser" placeholder="${T('Name', 'Tên')}" value="${esc(settings.turnUser || '')}" autocomplete="off"><input type="password" id="gTurnPass" placeholder="${T('Password', 'Mật khẩu')}" value="${esc(settings.turnPass || '')}" autocomplete="off"></div>
       <div class="actions"><button class="btn" id="gNetCheck">🔍 ${T('Test the connection', 'Kiểm tra kết nối')}</button></div><p class="note" id="gNetRes"></p>
-      </details>
+
+      </div></details>
+      <details class="gsec" data-sec="names" ${gOpen.has('names') ? 'open' : ''}><summary><span class="gi">🏷️</span><b>${T('Character names', 'Tên nhân vật')}</b></summary><div class="gbody">
+
+      <p class="note">${T('Titles follow the language (Grandma / Bà, Auntie / Cô) and names stay as they are in each region. You can rename anyone, in English and in Vietnamese.', 'Danh xưng đổi theo ngôn ngữ (Grandma / Bà, Auntie / Cô) và tên giữ nguyên theo từng vùng. Bạn có thể đổi tên bất kỳ nhân vật nào, bằng tiếng Anh và tiếng Việt.')}</p>
+      <button class="btn wide" id="gNames">✏️ ${T('Rename characters', 'Đổi tên nhân vật')}</button>
+      
+      </div></details>
+      <details class="gsec" data-sec="data" ${gOpen.has('data') ? 'open' : ''}><summary><span class="gi">📊</span><b>${T('Analytics and backup', 'Phân tích và sao lưu')}</b></summary><div class="gbody">
+      <div class="field"><label>📊 ${T('Analytics', 'Phân tích')}</label><div class="seg cnt"><button data-c="1" class="${settings.countPlayers !== false ? 'on' : ''}">${T('On', 'Bật')}</button><button data-c="0" class="${settings.countPlayers === false ? 'on' : ''}">${T('Off', 'Tắt')}</button></div></div>
+      <h3>☁️ ${T('Backup to Google Drive or iCloud', 'Sao lưu lên Google Drive hoặc iCloud')}</h3>
+      <p class="note">${T('Progress saves automatically on this device. To keep a copy online, tap Save backup and choose Google Drive, or “Save to Files” → iCloud Drive on iPhone and iPad. To bring it back (or onto a new device), tap Open backup and pick the file from Drive or iCloud.', 'Tiến trình tự động lưu trên máy này. Để giữ một bản trên mạng, bấm Lưu bản sao rồi chọn Google Drive, hoặc “Lưu vào Tệp” → iCloud Drive trên iPhone và iPad. Để lấy lại (hoặc chuyển sang máy mới), bấm Mở bản sao và chọn tệp trong Drive hoặc iCloud.')}</p>
+      <p class="note backup-when${backupAge() > 7 ? ' old' : ''}">${settings.lastBackup ? T('Last backup: ', 'Lần sao lưu gần nhất: ') + new Date(settings.lastBackup).toLocaleDateString(settings.lang === 'vi' ? 'vi-VN' : 'en-AU') + (backupAge() > 7 ? T(' (over a week ago)', ' (hơn một tuần trước)') : '') : T('No backup saved yet.', 'Chưa có bản sao lưu nào.')}</p>
+      <div class="actions"><button class="btn" id="gExp">☁️ ${T('Save backup', 'Lưu bản sao')}</button><label class="btn" for="gImp">📂 ${T('Open backup', 'Mở bản sao')}</label><input type="file" id="gImp" accept=".txt,.json,text/plain,application/json" class="vh"></div>
+      <p class="note">${T('The file stays in your own Drive or iCloud: Sparkle Valley has no server and never sees it.', 'Tệp nằm trong Drive hoặc iCloud của bạn: Thung Lũng Lấp Lánh không có máy chủ và không bao giờ xem tệp này.')}</p>
+      
+      </div></details>
+
       <button class="btn primary wide" id="gDone">💾 ${T('Save & close', 'Lưu và đóng')}</button>`;
     bindLang(card, () => { draw(); after && after(); }); bindLearn(card, () => draw());
-    card.querySelector('.g-adv').ontoggle = e => { advOpen = e.currentTarget.open; };
+    card.querySelectorAll('details.gsec').forEach(d => d.ontoggle = () => { if (d.open) gOpen.add(d.dataset.sec); else gOpen.delete(d.dataset.sec); });
     bindPackStatus(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelector('.x').onclick = card.querySelector('#gDone').onclick = () => { m.close(); after && after(); };
     jumpNav(card, card.querySelector('h2'));
@@ -373,7 +398,6 @@ export function openGrownups(after) {
     card.querySelector('#gExp').onclick = async () => { const how = await exportBackup(); if (how === 'cancelled') return; toast(how === 'shared' ? T('Backup saved!', 'Đã lưu bản sao!') : T('Backup downloaded. Put it in Drive or iCloud to keep it safe.', 'Đã tải bản sao. Hãy cất vào Drive hoặc iCloud cho an toàn.')); const y = m.scrollTop; draw(); m.scrollTop = y; };
     card.querySelector('#gRec').onclick = () => openRecorder(draw);
     { const b = installButton('btn wide installrow'); if (b) card.querySelector('.g-install').appendChild(b); }
-    bindCreditsFields(card); card.querySelector('#gCredits').onclick = () => openCredits();
     card.querySelector('#gNames').onclick = () => openRenamer(() => { const y = m.scrollTop; draw(); m.scrollTop = y; });
     bindExtras(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; }, toast);
     card.querySelector('#gFarm').onclick = () => { if (confirm(T('Start the farm over? Players and stickers are kept.', 'Làm lại nông trại? Người chơi và hình dán được giữ lại.'))) { resetFarm(); window.__sv && window.__sv.farm && (window.__sv.farm.syncAnimals(), window.__sv.farm.syncPets()); toast(T('A fresh new farm!', 'Nông trại mới tinh!')); } };

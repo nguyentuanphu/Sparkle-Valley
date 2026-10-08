@@ -245,7 +245,7 @@ let player = null, primed = false;
 unlockers.push(() => { if (primed) return; try { player = player || new Audio(); player.src = SILENT; const p = player.play(); if (p) p.then(() => { primed = true; player.pause(); }).catch(() => { }); } catch (e) { } });
 function playUrl(url, rate = 1) {
   if (!player) return Promise.resolve(false);
-  return new Promise(res => { try { player.pause(); player.src = url; player.playbackRate = rate; player.onended = () => res(true); player.onerror = () => res(false); player.play().catch(() => res(false)); } catch (e) { res(false); } });
+  return new Promise(res => { try { player.pause(); player.src = url; player.preservesPitch = player.webkitPreservesPitch = rate === 1; player.playbackRate = rate; player.onended = () => res(true); player.onerror = () => res(false); player.play().catch(() => res(false)); } catch (e) { res(false); } });
 }
 // why the recorded voice did or did not play last time (Grown-ups shows it, to help find phone problems)
 export const voiceDiag = { pack: 'loading', lastMiss: '', audio: '' };
@@ -315,7 +315,10 @@ function packFiles() {
   return urls;
 }
 const packSlot = (lang, text) => { const has = PACK && PACK.lines[packHash(lang, text)]; if (!has) return null; const k = speakerKind(); return k && k.gender === 'm' && has.includes('m') ? 'm' : has.includes('f') ? 'f' : has[0]; };
-const packRate = slot => { const k = speakerKind(); if (!k) return 1; let r = k.old ? .9 : k.kid ? 1.1 : 1; if (k.gender === 'm' && slot === 'f') r *= .86; return r; };
+// (round P, owner: "the 3 voice styles sound the same") the recordings play for almost every line, so the style changes
+// them too: Cute a little higher and quicker, Grandparent lower and slower (playing faster or slower moves the pitch)
+const STYLE_RATE = { natural: 1, cute: 1.13, grandpa: .88 };
+const packRate = slot => { const k = speakerKind(), st = STYLE_RATE[settings.voiceStyle] || 1; if (!k) return st; let r = k.old ? .9 : k.kid ? 1.1 : 1; if (k.gender === 'm' && slot === 'f') r *= .86; return r * st; };
 // Download every file of the pack so it plays with no internet (Grown-ups → "Save voices for offline")
 export async function savePackOffline(progress) {
   if (!PACK) return 0; const urls = packFiles();
