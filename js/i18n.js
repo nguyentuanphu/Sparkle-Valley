@@ -4,11 +4,16 @@ import { settings } from './state.js';
 import { events } from './core/events.js';
 import { CUSTOM, customName } from './custom.js';
 
-// People's titles follow the chosen language, but their names stay as they are in their own region:
-// in English "Bà Hai" is "Grandma Hai" and "Ông Cú" is "Grandpa Cú"; in Vietnamese "Mrs Kelly" is "Cô Kelly".
-// Grown-ups can also rename any character (settings.npcNames), per language.
+// NAMES (owner's rule, 9 Oct, round R): people's titles follow the chosen language and their given names stay as they
+// are in their own region: in English "Bà Hai" is "Grandma Hai", in Vietnamese "Mrs Kelly" is "Cô Kelly". A name that
+// is really a word (an animal, a thing, a nickname) is translated so an English-speaking child understands it:
+// "Ông Cú" is "Grandpa Owl", "Ông Bầu" the talking gourd is "Grandpa Gourd", "Bác Gấu" is "Mr. Bear", "Mây Cau Có" is
+// "Grumpy Cloud", the companions "Lấp Lánh" and "Rồng con" are "Sparkle" and "Little Dragon". Real places keep their
+// names (Hà Nội, Sydney); the valley's own places are translated (Làng Sen is Lotus Village). Dishes keep their
+// Vietnamese name with a few English words saying what it is ("bánh xèo, a crispy pancake"), said by the Vietnamese
+// voice. Grown-ups can also rename any character (settings.npcNames), per language.
 const NAMES_EN = {
-  'Ông Cú': 'Grandpa Cú', 'Ông Bầu': 'Grandpa Bầu', 'Mây Cau Có': 'Grumpy Cloud', 'Cô Mai': 'Auntie Mai', 'Bác Ba': 'Uncle Ba',
+  'Ông Cú': 'Grandpa Owl', 'Ông Bầu': 'Grandpa Gourd', 'Lấp Lánh': 'Sparkle', 'Rồng con': 'Little Dragon', 'Anh 2': 'Big Brother Hai', 'Anh Bảy': 'Big Brother Bảy', 'Mây Cau Có': 'Grumpy Cloud', 'Cô Mai': 'Auntie Mai', 'Bác Ba': 'Uncle Ba',
   'Cô Sáu': 'Auntie Sáu', 'Chú Tư': 'Uncle Tư', 'Anh Tuấn': 'Big Brother Tuấn', 'Bà Hai': 'Grandma Hai', 'Cô Thu': 'Auntie Thu',
   'O Lài': 'Auntie Lài', 'Chú Năm': 'Uncle Năm', 'Chú Tám': 'Uncle Tám', 'Cô Út': 'Auntie Út', 'Bà Năm': 'Grandma Năm', 'Bà Hạnh': 'Grandma Hạnh', 'Cô Mai': 'Auntie Mai', 'Ông Tú': 'Grandpa Tú', 'Chị Thơm': 'Big Sister Thơm', 'Cô Liên': 'Auntie Liên', 'Chú Hải': 'Uncle Hải', 'Dì Bảy': 'Auntie Bảy', 'Cô Vy': 'Auntie Vy',
   'Anh Hai': 'Big Brother Hai', 'Cô Hạnh': 'Miss Hạnh', 'Bác Gấu': 'Mr. Bear', 'Cô Mei': 'Miss Mei', 'Bà Lin': 'Grandma Lin', 'Bà Asha': 'Grandma Asha', 'Bà Huệ': 'Grandma Huệ', 'Ông Nghi': 'Grandpa Nghi', 'Bác 2': 'Uncle Hai', 'Bác 3': 'Uncle Ba', 'Bác 4': 'Uncle Tư', 'Cậu Tâm': 'Uncle Tâm', 'Mợ An': 'Auntie An', 'Cô Tam': 'Miss Tam', 'Chú Trung': 'Uncle Trung', 'Chú Thuận': 'Uncle Thuận', 'Mợ Phương': 'Auntie Phương', 'O Thủy': 'Auntie Thủy', 'O Thúy': 'Auntie Thúy', 'Bác Sơn': 'Uncle Sơn', 'Chú Sự': 'Uncle Sự', 'Em Hà': 'Little Hà', 'O Thương': 'Auntie Thương', 'Dượng Dũng': 'Uncle Dũng', 'Chị Thúy': 'Big Sister Thúy', 'Anh Ba': 'Big Brother Ba', 'Cu Bin': 'Little Bin', 'Út Lì': 'Little Lì', 'Bà Năm': 'Grandma Năm', 'Bà Hạnh': 'Grandma Hạnh', 'Cô Mai': 'Auntie Mai', 'Ông Tú': 'Grandpa Tú', 'Chị Thơm': 'Big Sister Thơm', 'Cô Liên': 'Auntie Liên', 'Chú Hải': 'Uncle Hải', 'Dì Bảy': 'Auntie Bảy', 'Cô Vy': 'Auntie Vy'

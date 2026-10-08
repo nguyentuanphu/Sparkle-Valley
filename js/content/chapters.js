@@ -51,6 +51,6 @@ export const STORY_TALES = {
 };
 
 export const COMPANIONS = {
-  firefly: { icon: '✨', en: 'Lấp Lánh the firefly', vi: 'Đom đóm Lấp Lánh', name: 'Lấp Lánh' },
-  dragon: { icon: '🐉', en: 'Rồng con, the baby dragon', vi: 'Rồng con', name: 'Rồng con' }
+  firefly: { icon: '✨', en: 'Sparkle the firefly', vi: 'Đom đóm Lấp Lánh', name: 'Lấp Lánh' },
+  dragon: { icon: '🐉', en: 'Little Dragon', vi: 'Rồng con', name: 'Rồng con' }
 };
