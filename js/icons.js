@@ -3,6 +3,8 @@
 const O = '#3b2a4f', W = 'stroke="' + O + '" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"';
 const svg = body => `<svg class="ico" viewBox="0 0 48 48" aria-hidden="true">${body}</svg>`;
 export const ICONS = {
+  // the Simple screen: four big picture tiles (round O, owner: the teddy did not say what it does)
+  bigTiles: svg(`<rect x="6" y="6" width="16" height="16" rx="5" fill="#ff7eb8" ${W}/><rect x="26" y="6" width="16" height="16" rx="5" fill="#ffd23f" ${W}/><rect x="6" y="26" width="16" height="16" rx="5" fill="#5fd39a" ${W}/><rect x="26" y="26" width="16" height="16" rx="5" fill="#5fd3ff" ${W}/>`),
   games: svg(`<rect x="5" y="15" width="38" height="22" rx="11" fill="#ff7eb8" ${W}/><path d="M15 21v10M10 26h10" ${W} fill="none"/><circle cx="31" cy="23" r="3" fill="#ffd23f" ${W}/><circle cx="37" cy="29" r="3" fill="#5fd3ff" ${W}/><path d="M24 6l2 4 4 .5-3 3 1 4-4-2-4 2 1-4-3-3 4-.5z" fill="#ffd23f" ${W}/>`),
   map: svg(`<path d="M6 12l11-4 14 4 11-4v28l-11 4-14-4-11 4z" fill="#a8e6a1" ${W}/><path d="M17 8v28M31 12v28" ${W} fill="none"/><path d="M24 16c-4 0-6 3-6 6 0 4 6 10 6 10s6-6 6-10c0-3-2-6-6-6z" fill="#ff5f7e" ${W}/><circle cx="24" cy="22" r="2" fill="#fff"/>`),
   bag: svg(`<path d="M14 16c0-6 4-9 10-9s10 3 10 9" fill="none" ${W}/><rect x="8" y="15" width="32" height="27" rx="10" fill="#ffb347" ${W}/><rect x="15" y="27" width="18" height="10" rx="4" fill="#ffd98a" ${W}/><path d="M24 18l1.6 3 3.4.4-2.5 2.3.7 3.3-3.2-1.7-3.2 1.7.7-3.3-2.5-2.3 3.4-.4z" fill="#fff" stroke="${O}" stroke-width="1.5" stroke-linejoin="round"/>`),

@@ -1845,7 +1845,9 @@ body.calm .sp-stop.next .sp-pic { animation: none; }
 .sp-tabs button { flex: 1; max-width: 140px; min-height: 76px; border: 0; background: none; border-radius: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #4a3d70; font-size: 16px; }
 .sp-tabs button .art, .sp-tabs button .emo { width: 40px; height: 40px; font-size: 34px; }
 .sp-tabs button.on { background: #efe6ff; color: #5b2fd0; font-weight: 700; }
-.dk.simple .art, .dk.simple .emo { width: 30px; height: 30px; font-size: 26px; }
+.simplesw { pointer-events: auto; display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 5px 12px 5px 6px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .92); color: #3b2a4f; font-family: inherit; font-weight: 800; font-size: 14px; box-shadow: 0 3px 0 rgba(59, 42, 79, .18), 0 6px 14px rgba(0, 0, 0, .12); cursor: pointer; }
+.simplesw .ico { width: 28px; height: 28px; } .simplesw:active { transform: translateY(2px); }
+.hud.small .simplesw { padding: 4px 10px 4px 4px; font-size: 12px; } .hud.small .simplesw .ico { width: 24px; height: 24px; }
 .sp-grown { left: auto; bottom: auto; }
 .sp-grown .ring { position: absolute; inset: -5px; width: auto; height: auto; z-index: -1; }
 .sp-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -2008,5 +2010,4 @@ body.calm .sp-owl.cheer { animation: none; }
 .sg-words p { margin: 4px 0; } .sg-words small { display: block; font-size: 15px; opacity: .75; }
 .songs:not(.night) .sg-words { background: rgba(255, 255, 255, .7); }
 .sg-moon { position: fixed; right: 28px; top: calc(env(safe-area-inset-top) + 90px); width: 54px; height: 54px; border-radius: 50%; background: #fff6c2; box-shadow: 0 0 40px 10px rgba(255, 246, 194, .35); pointer-events: none; opacity: .85; }
-.qs-songs { } /* (Settings card: same look as the festival card) */
 body.songs-on .htoast { display: none; } /* the valley's hints stay behind the Songs page (round N) */

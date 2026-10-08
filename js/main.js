@@ -745,7 +745,7 @@ G.toggleAudio = kind => {
   else { const on = !(settings.sound || settings.voice); settings.sound = on; settings.voice = on; if (!on) hush(); }
   saveSettings(); SFX.tap(); G.huds.forEach(h => h.refreshAudio());
 };
-G.toggleMute = () => { Net.setMuted(!Net.muted); Net.resumeAudio(); G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted)); };
+G.toggleMute = () => { if (!Net.mic) { Net.getMic(); return; } Net.setMuted(!Net.muted); Net.resumeAudio(); G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted)); };
 // Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
 addEventListener('keydown', e => {
   if (!playing || e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '')) return;
@@ -889,7 +889,9 @@ G.findFriend = i => {
   pop.querySelectorAll('[data-call]').forEach(b => b.onclick = () => { pop.remove(); G.askFriendToCome(h, b.dataset.call); });
   return null;
 };
-let qT = 0; Net.on('quality', () => { if (Date.now() - qT > 1900) { qT = Date.now(); if (G.onNet && document.querySelector('.pad .online.on')) G.onNet(); } });
+// the signal bars change every few seconds: only their words are updated (round O, owner: the Friends screen was
+// redrawn whole every two seconds, so a tap could land on a button that had just been replaced and ✕ seemed stuck)
+Net.on('quality', () => { const b = document.querySelector('.pad .online.on'); if (b && G.netTick) G.netTick(b); });
 addEventListener('online', () => { toast(T('Back online!', 'Có mạng lại rồi!')); G.listenFriends && G.listenFriends(); });
 addEventListener('offline', () => toast(T('No internet right now. Friends will come back when it returns.', 'Đang mất mạng. Khi có mạng lại, các bạn sẽ quay lại.')));
 Net.on('talking', on => G.huds.forEach(hd => hd.setCall(Net.connected, on, Net.muted)));
@@ -899,7 +901,7 @@ Net.on('status', s => {
   let msg = {
     waiting: T(`Room code: ${s.code}. Tell your friend this number!`, `Mã phòng: ${s.code}. Đọc số này cho bạn nhé!`), connecting: T('Connecting…', 'Đang kết nối…'), connected: T('Connected! You can talk now.', 'Đã kết nối! Giờ có thể nói chuyện rồi.'),
     nocode: T('No room with that number. Check the code.', 'Không có phòng số này. Kiểm tra lại mã nhé.'),
-    mictap: T('Tap anywhere to switch your microphone on and talk to your friend.', 'Chạm vào màn hình để bật micrô và nói chuyện với bạn nhé.'),
+    mictap: T('Tap 🎙️ Microphone on to talk to your friend.', 'Chạm nút 🎙️ Bật micrô để nói chuyện với bạn nhé.'),
     micdenied: T('The microphone is switched off for this game. A grown-up can allow it: iPhone Settings → Safari (or the game) → Microphone → Allow.', 'Micrô đang bị tắt cho trò chơi này. Người lớn có thể bật: Cài đặt iPhone → Safari (hoặc trò chơi) → Micrô → Cho phép.'),
     micon: T('Microphone on: your friend can hear you!', 'Đã bật micrô: bạn có thể nghe con nói rồi!'),
     nomic: T('No microphone: your friend will not hear you, but you can still play and use the talk buttons.', 'Không có micrô: bạn sẽ không nghe được con, nhưng vẫn chơi và dùng nút nói được.'),
@@ -912,7 +914,8 @@ Net.on('status', s => {
     stuck: T('Could not link the two devices. Try: both on Wi-Fi (or both on mobile data), start the room on the other device, or ask a grown-up to add a relay in Grown-ups → Online play.', 'Không nối được hai máy. Thử: cả hai dùng Wi-Fi (hoặc cả hai dùng 4G), để máy kia tạo phòng, hoặc nhờ người lớn thêm máy chủ trung chuyển trong mục Người lớn → Chơi trực tuyến.')
   }[s.key] || '';
   if (s.key === 'waiting') { const code = s.code; msg = T(`Room code: ${code} (${animalSay(code)}). Tell your friend!`, `Mã phòng: ${code} (${animalSay(code)}). Đọc cho bạn nhé!`); }
-  netStatus = msg; if (msg) toast(msg); if (G.onNet) G.onNet(); if (['waiting', 'connected', 'cloud', 'left'].includes(s.key)) G.shareStatus();
+  // with Friends open the message shows in it, not over its tabs (round O)
+  netStatus = msg; if (msg && !document.querySelector('.pad .online')) toast(msg); if (G.onNet) G.onNet(); if (['waiting', 'connected', 'cloud', 'left'].includes(s.key)) G.shareStatus();
 });
 // Knock knock: someone wants to come into my room. The room's starter sees their name and picture and decides;
 // they hear and see nothing of the room until then. Saved friends come straight in (net.js).
@@ -984,6 +987,12 @@ const friendStatus = f => {
   return `<small class="fst on">🟢 ${T('Online', 'Đang chơi')} · ${esc(where)}${st.room ? ' · ' + T('room', 'phòng') + ' ' + esc(st.room) : ''}</small>`;
 };
 const addFriend = (code, name) => { code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); if (code.length !== 6 || code === settings.friendCode) return false; const f = settings.friends.find(x => x.code === code); if (f) { if (name) f.name = name; } else settings.friends.push({ code, name: name || code }); settings.friendsOn = true; saveSettings(); G.listenFriends(); return true; };
+const netLineHTML = () => (n => `<p class="note center netline">📶 ${T('This device', 'Máy này')}: ${n.online ? (n.type ? esc(n.type) + ' · ' : '') + (n.eff ? esc(n.eff.toUpperCase()) + ' · ' : '') + (n.down ? n.down + ' Mbps · ' : '') : T('no internet!', 'mất mạng!') + ' · '}${n.cloud ? T(`cloud relay on (${n.brokers} server${n.brokers === 1 ? '' : 's'})`, `đang dùng mạng đám mây (${n.brokers} máy chủ)`) : T('direct link', 'kết nối trực tiếp')}${n.voice ? ' · 🎙️ ' + T('voice on', 'đang gọi') : n.cloud ? ' · ' + T('voices can’t travel over the cloud relay yet: use 💬', 'giọng nói chưa đi qua mạng đám mây được: dùng nút 💬') : ''}</p>`)(Net.netInfo());
+const pqHTML = id => (q => q ? `<small class="pq">${G.barsHTML(q.bars)} ${q.rtt != null ? q.rtt + ' ms' : '…'} · ${routeName(q.route)}${q.weak ? ' · ' + T('weak', 'yếu') : ''}</small>` : '')(Net.quality(id));
+G.netTick = body => {
+  const nl = body.querySelector('.netline'); if (nl) nl.outerHTML = netLineHTML();
+  body.querySelectorAll('.prow.roomp[data-pid]').forEach(row => { const old = row.querySelector('.pq'), now = pqHTML(row.dataset.pid); if (old) old.outerHTML = now || ''; else if (now) row.querySelector('.pw').insertAdjacentHTML('beforeend', now); });
+};
 G.drawOnlinePanel = (body, redraw) => {
   G.onNet = () => { if (document.body.contains(body)) redraw(); };
   const h = G.heroes[0];
@@ -1005,14 +1014,15 @@ G.drawOnlinePanel = (body, redraw) => {
     body.innerHTML = `<div class="online on">
       <p class="note center">${Net.code ? T(`Room code · ${Net.count}/6 players`, `Mã phòng · ${Net.count}/6 người chơi`) : ''}</p>${Net.code && Net.role === 'host' ? codeHTML(Net.code) : Net.code ? `<p class="center"><b class="bigcode">${Net.code}</b></p>` : ''}
       ${Net.role === 'host' && Net.knocks.size ? `<div class="ocard knocks"><h3>🚪 ${T('At the door', 'Đang gõ cửa')}</h3>${[...Net.knocks.values()].map(k => `<div class="prow"><img src="${avatarURL({ photo: k.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, k.look) })}" alt=""><div class="pw"><b>${esc(nm(k.name || T('Someone', 'Một bạn')))}</b></div><button class="btn primary" data-admit="${esc(k.id)}">✅ ${T('Let in', 'Cho vào')}</button><button class="btn" data-deny="${esc(k.id)}">❌</button></div>`).join('')}</div>` : ''}
-      ${(n => `<p class="note center netline">📶 ${T('This device', 'Máy này')}: ${n.online ? (n.type ? esc(n.type) + ' · ' : '') + (n.eff ? esc(n.eff.toUpperCase()) + ' · ' : '') + (n.down ? n.down + ' Mbps · ' : '') : T('no internet!', 'mất mạng!') + ' · '}${n.cloud ? T(`cloud relay on (${n.brokers} server${n.brokers === 1 ? '' : 's'})`, `đang dùng mạng đám mây (${n.brokers} máy chủ)`) : T('direct link', 'kết nối trực tiếp')}${n.voice ? ' · 🎙️ ' + T('voice on', 'đang gọi') : n.cloud ? ' · ' + T('voice needs a direct link', 'gọi giọng cần kết nối trực tiếp') : ''}</p>`)(Net.netInfo())}
-      <div class="plist">${list.map(r => `<div class="prow roomp"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(nm(r.name))}</b>${(q => q ? `<small class="pq">${G.barsHTML(q.bars)} ${q.rtt != null ? q.rtt + ' ms' : '…'} · ${routeName(q.route)}${q.weak ? ' · ' + T('weak', 'yếu') : ''}</small>` : '')(Net.quality(r.id))}</div>
+      ${netStatus ? `<p class="note center status">${esc(netStatus)}</p>` : ''}
+      ${netLineHTML()}
+      <div class="plist">${list.map(r => `<div class="prow roomp" data-pid="${esc(r.id)}"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(nm(r.name))}</b>${pqHTML(r.id)}</div>
         <div class="rp-btns"><button class="btn" data-walkf="${esc(r.id)}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${esc(r.id)}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${esc(r.id)}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${esc(r.id)}">🔄 ${T('Trade', 'Đổi đồ')}</button><button class="btn" data-caro="${esc(r.id)}">⭕ ${T('Caro', 'Caro')}</button><button class="btn ${G.heroes[0] && G.heroes[0].followId === r.id ? 'primary' : ''}" data-follow="${esc(r.id)}">🚶 ${G.heroes[0] && G.heroes[0].followId === r.id ? T('Stop following', 'Thôi đi theo') : T('Follow', 'Đi theo')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${esc(r.id)}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${esc(r.friend)}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div></div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
       ${list.length ? `<div class="actions center"><button class="btn" data-rpsall>✌️ ${T('Oẳn tù tì with everyone', 'Oẳn tù tì cả phòng')}</button><button class="btn" data-allg="memory">🃏 ${T('Memory Match together', 'Lật hình cùng nhau')}</button><button class="btn" data-allg="tienlen">🎴 ${T('Tiến Lên together', 'Tiến Lên cùng nhau')}</button></div>` : ''}
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
-      <div class="actions center"><button class="btn big" id="oMute">${Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
+      <div class="actions center"><button class="btn big${Net.mic ? '' : ' primary'}" id="oMute">${!Net.mic ? '🎙️ ' + T('Microphone on', 'Bật micrô') : Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
       ${friendsBox()}</div>`;
-    body.querySelector('#oMute').onclick = () => { G.toggleMute(); redraw(); };
+    body.querySelector('#oMute').onclick = async () => { SFX.tap(); if (!Net.mic) await Net.getMic(); else G.toggleMute(); redraw(); };
     bindCode(body);
     body.querySelectorAll('[data-admit]').forEach(b => b.onclick = () => { SFX.tap(); Net.admit(b.dataset.admit); });
     body.querySelectorAll('[data-deny]').forEach(b => b.onclick = () => { SFX.tap(); Net.deny(b.dataset.deny); });

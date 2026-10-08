@@ -82,10 +82,10 @@ export const Net = {
   get remote() { return Object.values(this.remotes)[0] || null; },  // older code: the first friend
 
   // The microphone (owner's iPhone bug, round F: "no microphone" although the phone has one). iPhones only open the
-  // microphone straight after a tap, and friends now meet by themselves with no tap, so the old single try failed and
-  // every failure said "no microphone". Now: ask with the clean-sound settings, then plainly; if the phone wants a tap,
-  // say "tap to talk" and open it on the child's next tap, then put it into the calls already open (no reconnecting).
-  // Only a phone with really no microphone hears "no microphone"; a blocked one gets how to allow it.
+  // microphone straight after a tap, so a try without one can fail; that says "tap 🎙️ Microphone on" and only a phone
+  // with really no microphone hears "no microphone"; a blocked one gets how to allow it. Round O (owner: the Friends
+  // screen got stuck and the microphone never came on): it no longer tries again on every tap anywhere on the screen
+  // (each try could bring the iPhone's question up again); the child taps the 🎙️ button in Friends or the call button.
   micError: null,
   async getMic() {
     if (this.mic) return this.mic;
@@ -95,22 +95,16 @@ export const Net = {
       if (!md || !md.getUserMedia) { this.micError = 'nomedia'; this.emit('status', { key: 'nomic' }); return null; }
       let err = null;
       for (const audio of [{ echoCancellation: true, noiseSuppression: true, autoGainControl: true }, true]) {
-        try { this.mic = await md.getUserMedia({ audio, video: false }); break; } catch (e) { err = e; if (e && e.name === 'NotFoundError') break; }
+        try { this.mic = await md.getUserMedia({ audio, video: false }); break; } catch (e) { err = e; if (e && (e.name === 'NotFoundError' || e.name === 'NotAllowedError')) break; }
       }
       if (this.mic) { this.micError = null; this._micOn(); return this.mic; }
       const name = (err && err.name) || 'Error', tapped = !!(navigator.userActivation && navigator.userActivation.isActive);
       this.micError = name;
       if (name === 'NotFoundError' || name === 'OverconstrainedError') this.emit('status', { key: 'nomic' });
-      else { this.emit('status', { key: name === 'NotAllowedError' && tapped ? 'micdenied' : 'mictap' }); this._micOnTap(); } // (always tried again on the next tap)
+      else this.emit('status', { key: name === 'NotAllowedError' && tapped ? 'micdenied' : 'mictap' });
       return null;
     })();
     try { return await this._micAsking; } finally { this._micAsking = null; }
-  },
-  // on the next tap anywhere, try the microphone again (once per tap, until it works or the room closes)
-  _micOnTap() {
-    if (this._micTapArmed) return; this._micTapArmed = true;
-    const go = () => { removeEventListener('pointerup', go, true); this._micTapArmed = false; if (!this.mic && (this.peer || this.cloudOn)) this.getMic(); };
-    addEventListener('pointerup', go, true);
   },
   // the microphone arrived after the calls started (they carried silence): send it in every open call
   _micOn() {

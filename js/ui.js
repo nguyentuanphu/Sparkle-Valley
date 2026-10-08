@@ -30,6 +30,7 @@ import { installButton } from './install.js';
 import { BUILD } from './build.js';
 import { VOICE_STYLES, clipCountFor, hush, setSpeaker, sayIn, sayDevice } from './voice.js';
 import { LEARN } from './words2.js';
+import { SONG_GROUPS, SONG_LIST, familySongs } from './content/songs.js';
 import { originFlags } from './icons.js';
 import { pic , labelArt } from './art.js';
 
@@ -390,7 +391,6 @@ export function openQuick(game, i) {
         ${row('voiceControl', '🎤', T('Voice control', 'Điều khiển bằng giọng nói'), s.voiceControl !== false)}${row('alwaysDay', '☀️', T('Always daytime', 'Luôn ban ngày'), s.alwaysDay)}
         <div class="qs-sub">${T('Text size', 'Cỡ chữ')}</div><div class="seg tsize">${[0, 1, 2].map(k => `<button data-ts="${k}" class="${(s.textSize || 0) === k ? 'on' : ''}" style="font-size:${16 + k * 5}px">A</button>`).join('')}</div></div>
       ${game.festivals ? `<button class="qs-fest" id="qFest"><span>🎉</span><b>${T('Festivals', 'Lễ hội')}</b><small>${T('Tết, Mid-Autumn, Diwali, Christmas, Australia Day: any day you like', 'Tết, Trung Thu, Diwali, Giáng Sinh, Ngày Nước Úc: ngày nào cũng được')}</small></button>` : ''}
-      <button class="qs-fest qs-songs" id="qSongs"><span>🎵</span><b>${T('Songs', 'Bài hát')}</b><small>${T('Lullabies, village tunes, festival songs', 'Hát ru, làng quê, nhạc lễ hội')}</small></button>
       <button class="grown qgrown"><span class="ring"></span>👨‍👩‍👧 ${T('Grown-ups settings', 'Cài đặt phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>
       <div class="actions floatbar"><button class="btn" id="qWho">👫 ${T('Change player', 'Đổi người chơi')}</button><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
     bindLang(card, draw);
@@ -408,7 +408,6 @@ export function openQuick(game, i) {
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { s.textSize = +b.dataset.ts; saveSettings(); applyComfort(); keep(draw); });
     card.querySelectorAll('.seg.vstyle button').forEach(b => b.onclick = () => { s.voiceStyle = b.dataset.v; saveSettings(); keep(draw); say('Hello! Do you like my voice?', 'Xin chào! Con có thích giọng này không?'); });
     const fb = card.querySelector('#qFest'); if (fb) fb.onclick = () => { SFX.tap(); m.close(); openFestivals(game, i); };
-    const sb = card.querySelector('#qSongs'); if (sb) sb.onclick = () => { SFX.tap(); m.close(); game.openSongs && game.openSongs(); };
     card.querySelector('#qWho').onclick = () => { m.close(); game.changePlayer(); };
     // the full Grown-ups settings, from inside the game (press and hold, so little fingers don't open it by accident)
     holdButton(card.querySelector('.qgrown'), () => openGrownups(() => { draw(); game.huds.forEach(h => { h.refreshAudio(); h.refreshWho(); }); }));
@@ -722,7 +721,15 @@ export function openPad(game, i, tab) {
     };
     body.querySelector('#toPhone').onclick = () => { if (big) { SFX.tap(); savePhoto(big); } };
   }
-  function drawFriend(body) { game.drawOnlinePanel(body, () => draw()); }
+  // Friends redraws only its own page, never the tabs and ✕; while a finger is down it waits (round O, owner: the
+  // screen got stuck: it was rebuilt whole as the signal changed, so taps landed on buttons that had just gone)
+  function drawFriend(body) {
+    let down = false, again = 0;
+    body.addEventListener('pointerdown', () => { down = true; }, true);
+    addEventListener('pointerup', () => { down = false; }, true);
+    const redraw = () => { clearTimeout(again); if (!body.isConnected) return; if (down) { again = setTimeout(redraw, 300); return; } game.drawOnlinePanel(body, redraw); };
+    game.drawOnlinePanel(body, redraw);
+  }
   draw();
   return { close };
 }
@@ -904,7 +911,7 @@ export function openGamesHub(game, i, onClose) {
   const m = modal('hub', ''), card = m.querySelector('.card');
   const close = () => { m.close(); onClose && onClose(); };
   // one category at a time, picked from a row of tabs (the whole list was too long to scroll on a phone)
-  const tabs = [...(game.festivals ? [{ key: 'fest', icon: '🎉', short: () => T('Festivals', 'Lễ hội') }] : []), ...HUB, ...(game.taleShelfHTML ? [{ key: 'tales', icon: '📖', short: () => T('Stories', 'Truyện') }] : [])];
+  const tabs = [...(game.festivals ? [{ key: 'fest', icon: '🎉', short: () => T('Festivals', 'Lễ hội') }] : []), ...HUB, ...(game.taleShelfHTML ? [{ key: 'tales', icon: '📖', short: () => T('Stories', 'Truyện') }] : []), ...(game.openSongs ? [{ key: 'songs', icon: '🎵', short: () => T('Songs', 'Bài hát') }] : [])];
   let cur = tabs.find(t => t.key === openGamesHub.last) ? openGamesHub.last : 'learn';
   const card2 = sec => `<div class="hubgrid">${sec.games.filter(id => GAMES[id]).map((id, k) => {
       const g = GAMES[id], lv = p.levels[id] || 1;
@@ -913,9 +920,14 @@ export function openGamesHub(game, i, onClose) {
   const body = key => {
     if (key === 'fest') return `<h3>🎉 ${T('Festivals: go any day', 'Lễ hội: đi ngày nào cũng được')}</h3><div class="festrow">${game.festivals.list().map(f => `<button class="festbtn${f.today ? ' today' : ''}" data-fest="${f.id}"><span>${pic(f.icon)}</span><b>${esc(f.name)}</b>${f.today ? `<small>${T('Today!', 'Hôm nay!')}</small>` : ''}</button>`).join('')}</div>`;
     if (key === 'tales') return `<h3>📖 ${T('Fairy tales', 'Truyện cổ tích')}</h3><p class="sub">${T('Tap a story: you fly to Grandma Storyteller and she reads it to you.', 'Chạm vào truyện: con bay đến chỗ Bà Kể Chuyện và bà kể cho con nghe.')}</p><div class="talelib">${game.taleShelfHTML(p)}</div>`;
+    if (key === 'songs') {
+      // (round O, owner: songs belong with the games, not in Settings) one big button per group; it opens the Songs page there
+      const fam = familySongs().length, groups = SONG_GROUPS.filter(g => g.key === 'family' ? fam : SONG_LIST.some(s => s.group === g.key && Music.has(s.key)));
+      return `<h3>🎵 ${T('Songs: tap to listen', 'Bài hát: chạm để nghe')}</h3><div class="festrow songrow">${groups.map(g => `<button class="festbtn" data-songs="${g.key}"><span>${pic(g.icon)}</span><b>${esc(g.name())}</b></button>`).join('')}</div>`;
+    }
     const sec = HUB.find(x => x.key === key); return `<h3>${sec.icon} ${esc(sec.title())}</h3>${card2(sec)}`;
   };
-  card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎮 ${T('Games', 'Trò chơi')}</h2>
+  card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎮 ${T('Play', 'Vui chơi')}</h2>
     <div class="hubtabs" role="tablist">${tabs.map(t => `<button role="tab" data-tab="${t.key}"><span>${pic(t.icon)}</span><small>${esc(t.short())}</small></button>`).join('')}</div>
     <div class="hubbody"></div>`;
   const draw = () => {
@@ -928,6 +940,7 @@ export function openGamesHub(game, i, onClose) {
   const bind = root => {
     root.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { close(); game.readTale(i, b.dataset.tale); });
     root.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.festivals.visit(i, b.dataset.fest); });
+    root.querySelectorAll('[data-songs]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.openSongs(b.dataset.songs); });
     root.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); game.meetAndPlay(i, id); });
     root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { close(); game.goToGame(i, b.dataset.go); });
     root.querySelectorAll('[data-how]').forEach(b => b.onclick = () => { const id = b.dataset.how; openHowTo(id, { onPlay: () => { close(); game.playGame(i, id, 'place'); } }); });
