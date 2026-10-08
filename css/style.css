@@ -1770,7 +1770,7 @@ body.calm .rv-img.on { animation: none; }
 .rep-games li { display: flex; align-items: center; gap: 8px; background: #fff7ec; border-radius: 10px; padding: 6px 10px; }
 .rep-games li span { font-size: 26px; } .rep-games li small { margin-left: auto; color: #7a6a8a; }
 .rep-list { padding-left: 18px; line-height: 1.7; }
-@media print { body.printing-report > *:not(.modal.report) { display: none !important; } body.printing-report .modal.report { position: static; background: #fff; } body.printing-report .modal.report .x, body.printing-report .modal.report .bar { display: none; } }
+@media print { body.printing-report > *:not(.modal.report) { display: none !important; } body.printing-report .modal.report { position: static; background: #fff; } body.printing-report .modal.report .x, body.printing-report .modal.report .rp-bar { display: none; } }
 
 /* players in the room (Pad → Friends): the photo and name on one line, the buttons in their own row below that wraps;
    a button never breaks its word into letters (owner's iPhone screenshot, round F) */
@@ -2036,3 +2036,6 @@ body.songs-on .htoast { display: none; } /* the valley's hints stay behind the S
   .hud .act, .hud.small .act { right: calc(var(--pad) + env(safe-area-inset-right) + 120px); bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 8px); max-width: min(300px, calc(100% - 360px)); }
   .caption { top: calc(env(safe-area-inset-top) + 64px); }
 }
+/* the play report's buttons (round P: its row borrowed a game's narrow ".bar" style and the words stood on end) */
+.rp-bar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 16px; }
+.rp-bar .btn { width: auto; min-height: 48px; white-space: nowrap; }
