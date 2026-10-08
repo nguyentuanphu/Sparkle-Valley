@@ -4,6 +4,10 @@ export const URL = process.env.SV_URL || 'http://localhost:8765/';
 export async function launch() {
   return chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--js-flags=--expose-gc'] });
 }
+// (round P: a new device starts with nobody; the checks play as two children made beforehand)
+export const seedPlayers = () => { try { if (!localStorage.getItem('sv2_profiles')) localStorage.setItem('sv2_profiles', JSON.stringify([
+    { id: 'kna', name: 'Bé Na', photo: null, age: 'little', difficulty: 'easy', look: { style: 'dress', color: '#ff5fa2', hat: 'bow', back: 'wings', hairStyle: 'buns' }, created: 1 },
+    { id: 'kbin', name: 'Bé Bin', photo: null, age: 'little', difficulty: 'easy', look: { style: 'shirt', color: '#3b6fe0', hat: 'cap', back: 'cape', hairStyle: 'short' }, created: 2 }])); } catch (e) { } };
 export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'solo', touch = false, settings = {}, play = true, pre = null, dpr = 1, fast = true, url = URL, screen = 'valley' } = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch, deviceScaleFactor: dpr });
   const page = await ctx.newPage();
@@ -13,9 +17,7 @@ export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'so
   page.on('console', m => { if (m.type() === 'error' && !/peerjs|0\.peerjs|ERR_|Failed to load resource|net::|WebSocket connection to/.test(m.text())) errors.push('console: ' + m.text()); });
   await page.addInitScript(([lang, s]) => { try { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang, voice: false, sound: false, music: false, quality: 'low', autoPack: false }, s); localStorage.setItem('sv2_settings', JSON.stringify(o)); } catch (e) { } }, [lang, settings]);
   // (round P: a new device starts with nobody; the checks play as two children made beforehand)
-  await page.addInitScript(() => { try { if (!localStorage.getItem('sv2_profiles')) localStorage.setItem('sv2_profiles', JSON.stringify([
-    { id: 'kna', name: 'Bé Na', photo: null, age: 'little', difficulty: 'easy', look: { style: 'dress', color: '#ff5fa2', hat: 'bow', back: 'wings', hairStyle: 'buns' }, created: 1 },
-    { id: 'kbin', name: 'Bé Bin', photo: null, age: 'little', difficulty: 'easy', look: { style: 'shirt', color: '#3b6fe0', hat: 'cap', back: 'cape', hairStyle: 'short' }, created: 2 }])); } catch (e) { } });
+  await page.addInitScript(seedPlayers);
   if (pre) await page.addInitScript(pre);
   await page.goto(url);
   await page.waitForSelector('.screen.title', { timeout: 90000 });

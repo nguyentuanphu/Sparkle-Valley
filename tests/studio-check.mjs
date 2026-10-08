@@ -11,7 +11,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
-import { start } from './harness.mjs';
+import { start, seedPlayers } from './harness.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // ---------- a pretend GitHub: blobs, trees, commits and branches in memory ----------
@@ -206,7 +206,8 @@ export async function studioCheck(browser, open) {
     await call('/studio/api/content', { cookie: C, headers: X, body: { message: { en: 'Never mind', vi: 'Thôi' } } });
     ok((await call('/studio/api/pending/discard', { cookie: C, headers: X, body: {} })).status === 200 && /online/.test((await call('/studio/api/content', { cookie: C })).j.message.en) && !(await call('/studio/api/pending', { cookie: C })).j.files.length, 'dropping the waiting changes failed');
     // a real photo taken off (✕) goes at once (read back straight away) and is never fetched again
-    { gh.commitOnMain('photos/index.json', JSON.stringify({ 'saigon-post': [{ src: 'photos/saigon-post/1.jpg', file: 'File:Wrong.jpg' }, { src: 'photos/saigon-post/2.jpg', file: 'File:Right.jpg' }] }), 'photos');
+    { await new Promise(r => setTimeout(r, 15500)); // (where the branches point is kept 15 s between requests)
+      gh.commitOnMain('photos/index.json', JSON.stringify({ 'saigon-post': [{ src: 'photos/saigon-post/1.jpg', file: 'File:Wrong.jpg' }, { src: 'photos/saigon-post/2.jpg', file: 'File:Right.jpg' }] }), 'photos'); await new Promise(r => setTimeout(r, 15500));
       ok((await call('/studio/api/photos/remove', { cookie: C, headers: X, body: { key: 'saigon-post', src: 'photos/saigon-post/1.jpg' } })).status === 200, 'photos/remove failed');
       const left = (await call('/studio/api/photos/index', { cookie: C })).j['saigon-post'] || [], bl = (await call('/studio/api/file/photos/blocked.json', { cookie: C })).j || {};
       ok(left.length === 1 && left[0].file === 'File:Right.jpg' && (bl['saigon-post'] || []).includes('File:Wrong.jpg'), 'a removed photo: ' + JSON.stringify({ left, bl }));
@@ -245,7 +246,7 @@ export async function studioCheck(browser, open) {
     {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true });
       await ctx.addInitScript(() => { window.__svHelloTest = 'manual'; localStorage.setItem('sv2_settings', JSON.stringify({ lang: 'vi', voice: false, sound: false, music: false, quality: 'low' })); });
-      const pg = await ctx.newPage(); await pg.goto(site + '/'); await start(pg);
+      const pg = await ctx.newPage(); await pg.addInitScript(seedPlayers); await pg.goto(site + '/'); await start(pg);
       const ymd = t => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
       const today = ymd(Date.now()), yday = ymd(Date.now() - 864e5);
       await ctx.setOffline(true);

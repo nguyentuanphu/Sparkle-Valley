@@ -123,6 +123,8 @@ const G = {
   fogMaps: {}, regionOf: [], interactables: [], gatherState: {}, bubbles: []
 };
 window.__sv = G; // handy for debugging in the browser console
+// phones and tablets (round P): the layout keeps the joystick's half of the screen free (css: body.touch)
+if (matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0) document.body.classList.add('touch');
 G.renderer = renderer;
 
 // ---------- people of the valley ----------

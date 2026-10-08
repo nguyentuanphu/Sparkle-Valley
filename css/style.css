@@ -1090,6 +1090,7 @@ body.biggertext .caption { font-size: clamp(21px, 5.4vw, 27px); }
 /* long labels ("Tìm hiểu: Vịnh Hạ Long") wrap onto two or three lines in a smaller size instead of being cut off */
 .hud .act.long .al { font-size: .82em; line-height: 1.1; } .hud .act.vlong .al { font-size: .7em; }
 @keyframes actIn { from { opacity: 0; transform: translate(-50%, 24px) scale(.9); } }
+@keyframes actInR { from { opacity: 0; transform: translateY(24px) scale(.9); } }
 @keyframes actGlow { 0%, 100% { box-shadow: 0 6px 0 #d08400, 0 0 0 0 rgba(255, 200, 40, .65), 0 12px 28px rgba(255, 160, 0, .45); } 50% { box-shadow: 0 6px 0 #d08400, 0 0 0 12px rgba(255, 200, 40, 0), 0 12px 28px rgba(255, 160, 0, .45); } }
 .hud .act:active { transform: translate(-50%, 4px); }
 body.calm .hud .act { animation: actIn .25s ease; }
@@ -2027,14 +2028,15 @@ body.songs-on .htoast { display: none; } /* the valley's hints stay behind the S
 /* Phones and tablets (round P, owner: the joystick, the action button and the words overlapped, so a child moving the
    joystick could tap the action by accident): the action button sits on the right above Jump and Run, the left half
    stays free for the joystick, and the spoken words show near the top */
-@media (pointer: coarse) {
-  .hud .act, .hud.small .act { left: auto; right: calc(var(--pad) + env(safe-area-inset-right)); transform: none; bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 250px); max-width: min(300px, calc(100% - 150px)); }
-  .hud .act:active { transform: translateY(4px); }
-  .caption { top: calc(env(safe-area-inset-top) + 124px); bottom: auto; }
+@media all {
+  body.touch .hud .act, body.touch .hud.small .act { left: auto; right: calc(var(--pad) + env(safe-area-inset-right)); transform: none; bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 250px); max-width: min(300px, calc(100% - 150px)); }
+  body.touch .hud .act:active { transform: translateY(4px); }
+  body.touch .hud .act { animation: actInR .25s ease, actGlow 1.6s ease-in-out .25s infinite; } body.calm.touch .hud .act { animation: actInR .25s ease; }
+  body.touch .caption { top: calc(env(safe-area-inset-top) + 206px); bottom: auto; }
 }
-@media (pointer: coarse) and (max-height: 520px) {
-  .hud .act, .hud.small .act { right: calc(var(--pad) + env(safe-area-inset-right) + 120px); bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 8px); max-width: min(300px, calc(100% - 360px)); }
-  .caption { top: calc(env(safe-area-inset-top) + 64px); }
+@media (max-height: 520px) {
+  body.touch .hud .act, body.touch .hud.small .act { right: calc(var(--pad) + env(safe-area-inset-right) + 120px); bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 8px); max-width: min(300px, calc(100% - 360px)); }
+  body.touch .caption { top: calc(env(safe-area-inset-top) + 8px); max-width: 46vw; }
 }
 /* the play report's buttons (round P: its row borrowed a game's narrow ".bar" style and the words stood on end) */
 .rp-bar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 16px; }

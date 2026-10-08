@@ -4,7 +4,7 @@
 //   node run.mjs --update-contract                     re-record the UI structure (only when the owner asked for a UI change)
 // Multiplayer runs when a local PeerJS server is up on 127.0.0.1:9000 (see the README in this folder).
 import fs from 'fs';
-import { launch, open, clear, start, URL } from './harness.mjs';
+import { launch, open, clear, start, URL, seedPlayers } from './harness.mjs';
 import { groundAudit } from './world-audit.mjs';
 import { studioCheck } from './studio-check.mjs';
 
@@ -405,6 +405,7 @@ await check('voicepack', async () => {
   // a fresh phone: its own browser profile, the cut-down pack list from the very first load, saving voices on
   const ctx = await b.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true }), page = await ctx.newPage(), errors = [];
   page.on('pageerror', e => errors.push(e.message));
+  await ctx.addInitScript(seedPlayers);
   await ctx.addInitScript(() => { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang: 'vi', voice: false, sound: false, music: false, quality: 'low', autoPack: true }); localStorage.setItem('sv2_settings', JSON.stringify(o)); });
   const P = { ctx, page, errors };
   await P.ctx.route('**/voices/manifest.json', async route => { const r = await route.fetch(), j = await r.json(), keep = Object.keys(j.lines).slice(0, 24), lines = {}, langOf = {}; for (const h of keep) { lines[h] = j.lines[h]; if (j.langOf) langOf[h] = j.langOf[h]; } await route.fulfill({ json: { ...j, lines, langOf, made: 'test' } }); });
@@ -895,7 +896,7 @@ await check('grownupsui', async () => {
   const P = await open(b, { w: 390, h: 844, touch: true, lang: 'vi' }); await clear(P.page);
   const r = await P.page.evaluate(async () => {
     const wait = ms => new Promise(x => setTimeout(x, ms)), h = __sv.huds[0];
-    h.setAction({ label: () => 'Nhặt Lá dong', icon: '🌿' }); await wait(300);
+    __sv.paused = true; h.setAction({ label: () => 'Nhặt Lá dong', icon: '🌿' }); await wait(300); // (paused: the valley's own loop would hide it again)
     const a = h.q('.act').getBoundingClientRect(), mv = h.q('.hud-br').getBoundingClientRect();
     const { say } = await import('/js/voice.js'); say('A test line.', 'Một câu thử.'); await wait(400);
     const cap = document.querySelector('.caption'), c = cap ? cap.getBoundingClientRect() : null;
@@ -905,7 +906,7 @@ await check('grownupsui', async () => {
     return { act: [a.left, a.top, a.right, a.bottom].map(Math.round), moves: Math.round(mv.top), w: innerWidth, cap: c ? [Math.round(c.top), Math.round(c.bottom)] : null, secs, open, engine: !!eng, engineOpen: !!(eng && eng.open), credits };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(r.act[0] > r.w / 2 - 40 && r.act[3] <= r.moves + 2 && r.cap && r.cap[0] < 220, 'phone layout: ' + JSON.stringify(r));
+  ok(r.act[0] > r.w / 2 - 40 && r.act[3] <= r.moves + 2 && r.cap && r.cap[0] < 260, 'phone layout: ' + JSON.stringify(r));
   ok(r.secs.length >= 8 && r.secs.includes('sound') && r.secs.includes('online') && r.open.join() === 'players' && r.engine && !r.engineOpen && !r.credits && !errs.length, 'grown-ups: ' + JSON.stringify(Object.assign(r, { errs })));
   return `action button on the right above Jump/Run (${r.act.join(',')}), words at the top (${r.cap.join('–')} px); Grown-ups: ${r.secs.length} groups (${r.secs.join(', ')}), the voice engine folded, no credits editor`;
 });
