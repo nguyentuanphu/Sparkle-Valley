@@ -2,29 +2,25 @@
 
 Every line becomes a switch in Sparkle Studio → 🚀 **Ra mắt** (Releases).
 
-## How a switch works
-- **States:**
-
-  | State | Who sees it |
-  |---|---|
-  | Off | Nobody |
-  | Test | Only the devices you mark as "test" |
-  | Live | Every player |
-  | Scheduled | Goes live by itself at a date and time (AEST) |
-
-- **Who gets it:** all players, my family only, under-5s or 5–8, or a share of devices (10 %, 50 %…).
+## How a switch works (owner's answers, 8 Oct AEST)
+- **On or Off**, for everyone at once. There is no test step and no gradual rollout.
+- **Defaults:** every feature, old and new, starts **On**. The owner switches off what they want. The "Suggested start" column below is only a suggestion.
+- **Days:**
+  - **Start in N days**, or at a date and time (AEST): the feature switches on by itself.
+  - **On for N days only:** a limited-time feature or event that switches off by itself; progress is kept.
+  - **"New" badge for N days:** default 7.
 - **"New!" moment when a feature goes live:**
-  - A ✨ MỚI badge on its button for 7 days.
-  - The companion (firefly or baby dragon) flies over and says what's new.
-  - A small "Có gì mới" (What's new) card the next time the child starts.
+  - A ✨ MỚI badge.
+  - The companion flies over, says what's new and can lead the child to it.
+  - A "Có gì mới" card the next time the child starts.
   - A gift the first time the child tries it.
 - **Turning a feature off:**
   - It hides at the next start, or within about 5 minutes while playing.
-  - It never deletes the child's progress: coins, items and homes stay and come back when it's switched on again.
+  - It never deletes the child's progress.
 - **Always on:** making a character, saving, Grown-ups, time limits and safety.
-- **Fast switches:** the switches live on the website (Netlify Blobs), not in the published files, so on/off needs no Publish and no deploy. Offline, the game uses the last switches it saw.
+- **Instant:** the switches live on the website (Netlify Blobs), so there is no Publish and no deploy. Offline, the game uses the last switches it saw.
 
-Columns below: **Suggested start** = Live (stays as now), Test (you try it first), or Off then drip (hide now, release later as "new").
+Columns below: **Suggested start** = my suggestion only (Live, or Off then drip = hide now and release later as "new"); the real default is On.
 
 ## A. World and places (already in the game)
 | Feature | Suggested start |
@@ -104,9 +100,9 @@ Columns below: **Suggested start** = Live (stays as now), Test (you try it first
 | Feature | Suggested start |
 |---|---|
 | Faster launch | Live (no switch) |
-| Companion (firefly / baby dragon) | Test, then Live |
-| First-day guide, one button at a time, map clouds, "Làm gì bây giờ?" | Test, then Live |
-| Starter quests (9) | Test, then Live |
+| Companion (firefly / baby dragon) | Live |
+| First-day guide, one button at a time, map clouds, "Làm gì bây giờ?" | Live |
+| Starter quests (9) | Live |
 | Cottage with 5 levels | Live with the guide |
 | Treehouse | Off then drip |
 | Stilt house | Off then drip |
@@ -121,7 +117,7 @@ Columns below: **Suggested start** = Live (stays as now), Test (you try it first
 | Hat, necklace, top, bottom, shoe and back-item collections | One switch each, drip "new collection" |
 | Money games (10), each its own switch | Off then drip |
 | Kite-like prizes | Live |
-| Mystery boxes (5–8, Medium/Hard) | Test, then Live |
+| Mystery boxes (5–8, Medium/Hard) | Live |
 | Family and friends rankings: one switch per category | Off then drip |
 | Collectibles: fairies, dragons, stickers, decorations | One switch per set |
 | Family missions | Off then drip |

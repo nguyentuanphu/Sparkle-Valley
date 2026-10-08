@@ -10,6 +10,7 @@ Reported to the owner on its own, so Halloween can go live around 12–14 Oct.
 - **Overlaps:** each festival decorates its own area, so two can run at once.
 - **On the day:** 08:00 greeting and treat, 15:00 festival game, 18:30 lanterns, parade or fireworks (17:30 for under-5s).
 - **Halloween:** cute only, nothing scary for under-5s. Pumpkins, costumes, trick-or-treat at houses, and a pumpkin-lantern keepsake.
+- **Studio 🚀 Ra mắt (Releases) page, first version:** switches on the website, start in N days, on for N days only, "New" badge for N days, and the "New!" moment (see `FEATURES.md`). Festivals are its first switches. Part 2 adds every other feature.
 - **Studio Festivals page:** the year's calendar; switch any festival on or off, move a date, change the build-up length, preview the decorations.
 
 ## Part 2: the rest, in this order
