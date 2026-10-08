@@ -78,3 +78,15 @@ Reported to the owner on its own, so Halloween can go live around 12–14 Oct.
 
 ## Notes
 - Tết 2030: the game's table says 3 Feb, but the Vietnamese calendar (UTC+7) gives 2 Feb; 3 Feb is the Chinese date. Check this when the calendar takes over.
+
+## Stories and guides redesign (proposal, 8 Oct; drawings and an animated sample on the concept page)
+- **A living pop-up book:** every page is a composed shot (wide, medium, close-up) of layered paper cut-outs that move with depth as the camera drifts; page turns like a real book.
+- **Characters who act:** each one different (age, clothes, face), acting the words; mouths move with their lines; faces show feelings. Props are used in the action (rice falls into the pot, the cake is wrapped), never floating.
+- **Words light up** as they're read; tap a word to hear it; the other language can show underneath.
+- **The child helps** every 2–3 pages (tie the bánh chưng, wake the turtle, choose the boat's way); under-5s: anything tapped wiggles and makes a sound.
+- **Three ways to read:** read to me, read myself, grown-up reads (no voice, bigger words).
+- **A book for each place:** Đông Hồ print colours for Vietnamese tales, bush watercolours for Australian, red paper-cut borders for Chinese, rangoli borders for Indian.
+- **Endings:** a one-line lesson, a "what would you do?" question, a keepsake sticker, and the story's place in the valley.
+- **How-to guides:** watch → the companion's glowing hand shows each move on the real game screen → "Tới lượt con!" with the first move guided; under 30 s; folk games add a drawn clip of children playing it and a how-to-play-at-home card for grown-ups.
+- **Opening story:** a 30-second narrated fly-over of the real 3D valley at dawn (mist, Ông Cú's lantern, lanterns waking, landing at the child's home), played while the world loads; skippable; replayable from the Pad.
+- Calm mode: no camera moves, gentle fades. Phones: a shared library of sets, characters and props moved with cheap transforms; Studio family stories use the same book.

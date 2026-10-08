@@ -595,6 +595,9 @@ add('⏱️ ⏱', `${circ(24, 27, 16, '#fff')}<path d="M24 27l6-7" ${W} ${N}/><r
 add('🎞️ 🎞', `<rect x="10" y="4" width="28" height="40" rx="3" fill="#3b2a4f"/><rect x="16" y="9" width="16" height="12" fill="#5fb6ff"/><rect x="16" y="27" width="16" height="12" fill="#ffd23f"/>${[8, 16, 24, 32, 40].map(y => `<rect x="11.5" y="${y - 1.5}" width="2.5" height="3" fill="#fff"/><rect x="34" y="${y - 1.5}" width="2.5" height="3" fill="#fff"/>`).join('')}`);
 add('🔓', `<rect x="10" y="20" width="28" height="22" rx="4" fill="#5fd39a" ${W}/><path d="M16 20v-6c0-6 4-9 8-9s8 3 8 7" ${W} ${N}/>${circ(24, 30, 3, O)}<path d="M24 31v5" ${W}/>`);
 
+add('⏮️ ⏮', g('a-nudge', `<rect x="5" y="10" width="5" height="28" fill="#5fd3ff" ${W}/><path d="M42 10L26 24l16 14zM26 10L10 24l16 14z" fill="#5fd3ff" ${W}/>`));
+add('⏯️ ⏯', `<path d="M5 10l17 14L5 38z" fill="#5fd36a" ${W}/><rect x="27" y="10" width="6" height="28" rx="2" fill="#ffd23f" ${W}/><rect x="37" y="10" width="6" height="28" rx="2" fill="#ffd23f" ${W}/>`);
+
 // (an emoji with or without its invisible "picture style" mark finds the same drawing)
 const keyOf = e => e == null ? null : ART[e] ? e : ART[e + '\uFE0F'] ? e + '\uFE0F' : ART[String(e).replace(/\uFE0F/g, '')] ? String(e).replace(/\uFE0F/g, '') : null;
 export const hasArt = e => !!keyOf(e);
