@@ -364,10 +364,16 @@ PAGES.play = async P => {
     <div><label>🔠 ${T('Text size', 'Cỡ chữ')}</label><select data-k="textSize">${keep}${opt('textSize', [[0, T('Normal', 'Bình thường')], [1, T('Big', 'To')], [2, T('Bigger', 'To hơn')]])}</select></div>
     <div><label>🎵 ${T('Music', 'Nhạc')}</label><select data-k="music">${keep}${opt('music', [['true', T('On', 'Bật')], ['false', T('Off', 'Tắt')]])}</select></div>
   </div>
+  <h2>🏙️ ${T('Things in the valley', 'Đồ vật trong thung lũng')}</h2><p class="sub">${T('Kept in the game, shown only when switched on.', 'Vẫn giữ trong game, chỉ hiện khi bật.')}</p>
+  <div class="card grid">
+    <div><label>🔌 ${T('Power poles and wires on Phố Hai Quê', 'Cột điện và dây điện ở Phố Hai Quê')}</label><select data-f="powerPoles">${[[false, T('Off', 'Tắt')], [true, T('On', 'Bật')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).powerPoles === true) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+  </div>
   <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   $('#save').onclick = () => {
     const out = {}; P.querySelectorAll('[data-k]').forEach(s => { const v = s.value; if (v === '') return; out[s.dataset.k] = v === 'true' ? true : v === 'false' ? false : /^\d+$/.test(v) ? +v : v; });
-    CONTENT.defaults = out; saveContent().catch(fail);
+    CONTENT.defaults = out;
+    const f = Object.assign({}, CONTENT.features); P.querySelectorAll('[data-f]').forEach(s => { f[s.dataset.f] = s.value === 'true'; }); CONTENT.features = f;
+    saveContent().catch(fail);
   };
 };
 // ---------- children: open a backup, see progress, change it, save a new backup ----------

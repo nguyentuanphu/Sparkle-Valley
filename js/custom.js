@@ -10,6 +10,8 @@
 //   activities { id: { area, little, hide } }   the Simple screen's areas: move a game, open it to under-5s, hide it (js/content/activities.js)
 //   music    [ { id, file, en, vi, tags } ]   the family's recordings (round N; file = 'content/music/….mp3'; tags: lullaby, tet, midautumn, christmas, diwali, ausday, vn, kids)
 //   album    [ { id, photo, en, vi, place } ]   family photos that become postcards (js/familycards.js; photo = 'content/album/….jpg')
+//   features { id: true|false }           things in the valley switched on or off from Studio (owner, round R: kept in the game,
+//                                         shown only when switched on). powerPoles: Phố Hai Quê's power poles and wires (off)
 let data = {};
 try {
   const r = await fetch('content/custom.json', { cache: 'no-cache' });
@@ -26,3 +28,5 @@ export const customAlbum = () => (Array.isArray(CUSTOM.album) ? CUSTOM.album : [
   .slice(0, 60).map(x => ({ id: String(x.id || x.photo).replace(/[^\w-]/g, '').slice(0, 30) || 'photo', photo: x.photo, en: str(x.en).slice(0, 120), vi: str(x.vi).slice(0, 120) || str(x.en).slice(0, 120), place: /^[a-z]{2,16}$/.test(x.place || '') ? x.place : 'home' }));
 export const customName = id => { const n = CUSTOM.names && CUSTOM.names[id]; return n && typeof n === 'object' ? n : null; };
 export const customFace = id => { const f = CUSTOM.faces && CUSTOM.faces[id]; return f && typeof f.photo === 'string' && /^content\/faces\/[\w.-]+\.(jpg|jpeg|png)$/.test(f.photo) ? f : null; };
+// a valley thing switched on or off in Studio (CUSTOM.features), or its default when Studio never set it
+export const featureOn = (id, def = true) => { const f = CUSTOM.features; return f && typeof f[id] === 'boolean' ? f[id] : def; };

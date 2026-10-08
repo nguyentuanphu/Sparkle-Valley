@@ -11,6 +11,7 @@ import { SFX } from './audio.js';
 import { heightAt, TOWN, PLAYGROUND } from './world.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
 import { dist2 } from './util.js';
+import { featureOn } from './custom.js';
 
 export const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 export const Cyl = (r1, r2, h, s = 8) => new THREE.CylinderGeometry(r1, r2, h, s);
@@ -164,11 +165,14 @@ export function createTown(G) {
   const fm = new THREE.Mesh(merge(fence), mat); fm.position.y = y0; fm.castShadow = true; scene.add(fm);
   world.boxes.push({ x0: 27.3, x1: 30.9, z0: N - .8, z1: N - .4 }, { x0: 33.7, x1: 37.3, z0: N - .8, z1: N - .4 });
 
-  // ---------- street lamps and power poles with sagging wires ----------
+  // ---------- street lamps, and power poles with sagging wires ----------
+  // (owner, round R: the power poles and wires are taken out of the street but kept here; Studio's "powerPoles"
+  // switch brings them back)
+  const POLES = featureOn('powerPoles', false);
   const poles = [];
   const pp = [];
   // spaced so none stands in front of a door on the south side (house 8's door at x 20.3 was blocked by one)
-  for (let x = 9; x <= 50; x += 8) {
+  if (POLES) for (let x = 9; x <= 50; x += 8) {
     const z = S - .7; poles.push(new THREE.Vector3(x, y0 + 8.4, z));
     pp.push(P(Cyl(.16, .2, 9, 6), '#7d7b70', [x, 4.5, z]), P(Box(1.6, .12, .12), '#6f6d64', [x, 8.4, z]));
     world.colliders.push({ x, z, r: .35 });
@@ -187,10 +191,12 @@ export function createTown(G) {
     const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
     const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, .025, 3, false), wireMat); scene.add(m);
   };
+  if (POLES) {
   for (let k = 0; k < poles.length - 1; k++) for (const off of [-.6, .6]) wire(poles[k].clone().setX(poles[k].x).add(new THREE.Vector3(0, 0, off)), poles[k + 1].clone().add(new THREE.Vector3(0, 0, off)), 1.1);
   // a wire across the road to the tube houses
   wire(poles[1].clone(), new THREE.Vector3(20.1, y0 + 8.6, N), 1.4);
   wire(poles[3].clone(), new THREE.Vector3(32.3, y0 + 6.2, N - 1.4), 1.2);
+  }
 
   // ---------- trees: jacaranda and gum trees (Sydney), banana and star-fruit trees (Bà Rịa) ----------
   const tree = (x, z, kind) => {
