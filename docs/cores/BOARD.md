@@ -7,6 +7,7 @@ Format for a request:
 
 ## 🚦 Release
 - Round O (r46) and Round P (r47) are on `round-o` / `round-p`, waiting for the owner's "yes, push" / "yes, deploy".
+- Round R plan (owner's answers, 8 Oct AEST): `docs/cores/ROUND-R.md`. Part 1 (festival calendar + Halloween) first, reported on its own.
 - The Google Drive mirror (`.github/workflows/drive-mirror.yml`) is not set up yet: ask the owner at every report.
 
 ## 🌏 World
