@@ -31,7 +31,7 @@ import { BUILD } from './build.js';
 import { VOICE_STYLES, clipCountFor, hush, setSpeaker, sayIn, sayDevice } from './voice.js';
 import { LEARN } from './words2.js';
 import { SONG_GROUPS, SONG_LIST, familySongs } from './content/songs.js';
-import { originFlags } from './icons.js';
+import { originFlags, ICONS } from './icons.js';
 import { pic , labelArt } from './art.js';
 
 const PET_ICON = { puppy: '🐶', kitty: '🐱', bunny: '🐰', panda: '🐼', joey: '🦘', calf: '🐃' };
@@ -103,6 +103,8 @@ export function showTitle(onStart) {
 }
 
 // ---------- Who's playing ----------
+// two players on one device: the way they sit now (Grown-ups 'auto' = face to face on touch screens; js/main.js rects)
+export const twoViewNow = () => settings.twoView === 'face' || settings.twoView === 'side' ? settings.twoView : document.body.classList.contains('touch') ? 'face' : 'side';
 export function showWho(onGo) {
   let mode = 'solo', chosen = [];
   const s = el('div', 'screen who sv2');
@@ -130,12 +132,14 @@ export function showWho(onGo) {
           <button data-m="split" class="${mode === 'split' ? 'on' : ''}"><span class="mi">👫</span><b>${T('Two players here', 'Hai bạn cùng máy')}</b></button>
           <button data-m="online" class="${mode === 'online' ? 'on' : ''}"><span class="mi">📞</span><b>${T('Friend far away', 'Bạn ở xa')}</b></button>
         </div>
+        ${mode === 'split' ? `<div class="views" role="group" aria-label="${T('How do you sit?', 'Hai bạn ngồi thế nào?')}">${[['face', ICONS.faceView, T('Face to face', 'Đối diện nhau')], ['side', ICONS.sideView, T('Side by side', 'Cạnh nhau')]].map(([k, ic, l]) => `<button data-v="${k}" class="${twoViewNow() === k ? 'on' : ''}">${ic}<b>${l}</b></button>`).join('')}</div>` : ''}
         <p class="hint">${mode === 'split' ? T('Pick two players', 'Chọn hai bạn') : T('Pick a player', 'Chọn người chơi')}</p>
         <div class="picks">${profiles.map(p => `<button class="pick ${chosen.includes(p.id) ? 'on' : ''}" data-id="${p.id}"><img src="${avatarURL(p)}" alt=""><span>${esc(nm(p.name || '?'))}</span>${chosen.includes(p.id) && need === 2 ? `<i class="num">${chosen.indexOf(p.id) + 1}</i>` : ''}</button>`).join('')}
           <button class="pick add"><span class="plus">+</span><span>${T('New', 'Thêm')}</span></button></div>
         <button class="go" ${chosen.length === need ? '' : 'disabled'}>${T("Let's go!", 'Đi thôi!')} ▶</button>
       </div>
       <button class="grown"><span class="ring"></span>${T('Grown-ups', 'Phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>`;
+    s.querySelectorAll('.views button').forEach(b => b.onclick = () => { settings.twoView = b.dataset.v; saveSettings(); SFX.tap(); draw(); });
     s.querySelectorAll('.modes button').forEach(b => b.onclick = () => { mode = b.dataset.m; chosen = chosen.slice(0, mode === 'split' ? 2 : 1); SFX.tap(); draw(); });
     s.querySelectorAll('.pick[data-id]').forEach(b => b.onclick = () => {
       const id = b.dataset.id; SFX.pop(chosen.length);

@@ -86,12 +86,29 @@ await check('facetoface', async () => {
     if (P.errors.length) out.push(`${w}x${h}: ${P.errors.join(' | ')}`);
     await P.page.screenshot({ path: `out/facetoface-${w}.png` }); await P.ctx.close();
   }
+  // the children choose: on "Who's playing?" with two players, and with the switch on the line while playing
+  { const P = await open(b, { w: 820, h: 1180, touch: true, play: false });
+    await P.page.click('.screen.title .press', { force: true }); await P.page.waitForSelector('.screen.who');
+    await P.page.click('.modes button[data-m=split]');
+    const views = await P.page.$$eval('.who .views button', bs => bs.map(x => x.dataset.v + (x.classList.contains('on') ? '*' : '')).join(','));
+    await P.page.click('.who .views button[data-v=side]');
+    const picked = await P.page.evaluate(async () => (await import('/js/state.js')).settings.twoView);
+    if (views !== 'face*,side' || picked !== 'side') out.push(`who screen: ${views} → ${picked}`);
+    await P.ctx.close(); }
+  { const P = await open(b, { w: 820, h: 1180, touch: true, mode: 'split' }); await clear(P.page);
+    const before = await P.page.evaluate(() => __sv.rects()[1].rot);
+    await P.page.click('#split .viewsw'); await P.page.waitForTimeout(200);
+    const after = await P.page.evaluate(() => __sv.rects().map(x => x.rot).join(','));
+    await P.page.click('#split .viewsw'); await P.page.waitForTimeout(200);
+    const back = await P.page.evaluate(() => __sv.rects()[1].rot);
+    if (!(before === 180 && after === '0,0' && back === 180)) out.push(`switch: ${before} → ${after} → ${back}`);
+    await P.ctx.close(); }
   // a computer keeps both halves the same way round, side by side
   const D = await open(b, { w: 1280, h: 800, mode: 'split' }); await clear(D.page);
   const side = await D.page.evaluate(() => __sv.rects().map(x => x.rot).join(',') + ' ' + __sv.rects()[1].x); await D.ctx.close();
   if (side !== '0,0 640') out.push('computer: ' + side);
   ok(!out.length, out.join(' · '));
-  return 'tablet tall and wide: the far half, its buttons, joystick and windows face the far child; a computer stays side by side';
+  return 'tablet tall and wide: the far half, its buttons, joystick and windows face the far child; a computer stays side by side; children choose face to face or side by side on Who\'s playing? and with the switch on the line';
 });
 
 await check('games', async () => {

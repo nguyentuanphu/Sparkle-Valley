@@ -5,6 +5,7 @@ import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js
 import { T, nm, onLang, registerName } from './i18n.js';
 import { say, hush, loadClips, setVoiceGenders } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
+import { ICONS } from './icons.js';
 import { openSongs } from './songs.js';
 import { songsFor, VN_AREAS, familySongs } from './content/songs.js';
 import { fmt } from './money.js';
@@ -1141,6 +1142,10 @@ function resize() {
   G.heroes.forEach((h, i) => { h.cam.aspect = r[i].w / r[i].h; h.cam.updateProjectionMatrix(); G.huds[i] && G.huds[i].layout(r[i], G.heroes.length > 1); });
   titleCam.aspect = innerWidth / innerHeight; titleCam.updateProjectionMatrix();
   const sp = $('#split'); sp.hidden = G.heroes.length < 2;
+  // a small round switch in the middle of the line: face to face ⇄ side by side, any time (round R, owner)
+  let sw = sp.querySelector('.viewsw');
+  if (!sw) { sw = document.createElement('button'); sw.className = 'viewsw'; sw.onpointerdown = e => { e.stopPropagation(); }; sw.onclick = e => { e.stopPropagation(); settings.twoView = faceToFace() ? 'side' : 'face'; saveSettings(); SFX.tap(); resize(); }; sp.appendChild(sw); }
+  sw.innerHTML = faceToFace() ? ICONS.sideView : ICONS.faceView; sw.setAttribute('aria-label', faceToFace() ? T('Sit side by side', 'Ngồi cạnh nhau') : T('Sit face to face', 'Ngồi đối diện nhau'));
   if (G.heroes.length > 1) { const v = innerWidth >= innerHeight && !faceToFace(); Object.assign(sp.style, v ? { left: innerWidth / 2 - 2 + 'px', top: 0, width: '4px', height: '100%' } : { top: innerHeight / 2 - 2 + 'px', left: 0, height: '4px', width: '100%' }); }
 }
 addEventListener('resize', resize);

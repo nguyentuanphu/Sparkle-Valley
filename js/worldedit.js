@@ -31,7 +31,7 @@ export const BUILD_TYPES = {
   postoffice: { ...landmark('postoffice'), name: ['Post office', 'Bưu điện'], icon: '🏤' },
   communal: { ...landmark('dendo'), name: ['Temple', 'Đền'], icon: '⛩️' },
   // (a power pole: shown and wired to its neighbours only while Studio's power-pole switch is on; js/powerlines.js)
-  powerpole: { pole: true, mk: () => ({ parts: [] }), name: ['Power pole', 'Cột điện'], icon: '🔌' }
+  powerpole: { pole: true, mk: () => ({ parts: [] }), name: ['Power pole', 'Cột điện'], icon: '⚡' }
 };
 const W = () => CUSTOM.world && typeof CUSTOM.world === 'object' ? CUSTOM.world : {};
 const num = v => typeof v === 'number' && isFinite(v);

@@ -3,6 +3,9 @@
 const O = '#3b2a4f', W = 'stroke="' + O + '" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"';
 const svg = body => `<svg class="ico" viewBox="0 0 48 48" aria-hidden="true">${body}</svg>`;
 export const ICONS = {
+  // two players: face to face (a tablet lying flat, one half turned to the far child) and side by side (round R, owner)
+  faceView: svg(`<rect x="12" y="4" width="24" height="40" rx="5" fill="#bfe3f2" ${W}/><path d="M12 24h24" ${W}/><circle cx="24" cy="34" r="4.5" fill="#ffb37a" ${W}/><path d="M19.5 33q4.5 -7 9 0" fill="#3b2a4f"/><circle cx="24" cy="14" r="4.5" fill="#ffb37a" ${W}/><path d="M19.5 15q4.5 7 9 0" fill="#3b2a4f"/><path d="M41 18v12M38 21l3 -3l3 3M38 27l3 3l3 -3" stroke="#ff7eb8" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`),
+  sideView: svg(`<rect x="4" y="11" width="40" height="26" rx="5" fill="#bfe3f2" ${W}/><path d="M24 11v26" ${W}/><circle cx="14" cy="26" r="4.5" fill="#ffb37a" ${W}/><path d="M9.5 25q4.5 -7 9 0" fill="#3b2a4f"/><circle cx="34" cy="26" r="4.5" fill="#ffb37a" ${W}/><path d="M29.5 25q4.5 -7 9 0" fill="#3b2a4f"/>`),
   // the Simple screen: four big picture tiles (round O, owner: the teddy did not say what it does)
   bigTiles: svg(`<rect x="6" y="6" width="16" height="16" rx="5" fill="#ff7eb8" ${W}/><rect x="26" y="6" width="16" height="16" rx="5" fill="#ffd23f" ${W}/><rect x="6" y="26" width="16" height="16" rx="5" fill="#5fd39a" ${W}/><rect x="26" y="26" width="16" height="16" rx="5" fill="#5fd3ff" ${W}/>`),
   games: svg(`<rect x="5" y="15" width="38" height="22" rx="11" fill="#ff7eb8" ${W}/><path d="M15 21v10M10 26h10" ${W} fill="none"/><circle cx="31" cy="23" r="3" fill="#ffd23f" ${W}/><circle cx="37" cy="29" r="3" fill="#5fd3ff" ${W}/><path d="M24 6l2 4 4 .5-3 3 1 4-4-2-4 2 1-4-3-3 4-.5z" fill="#ffd23f" ${W}/>`),
