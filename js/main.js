@@ -1294,7 +1294,7 @@ function frame(now) {
   if (playing) adaptResolution(now - last - (FRAME_MS ? FRAME_MS - 1000 / 60 : 0)); // (the wait between frames is not slowness)
   const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
   // the 3D world rests while a full-screen game, the storybook or a page that covers it is open (saves battery)
-  if (gameOpen() || document.querySelector('.storybook') || (G.paused && document.querySelector('.modal')) || (playing && worldHidden())) return;
+  if (gameOpen() || document.querySelector('.storybook, .theatre.film') || (G.paused && document.querySelector('.modal')) || (playing && worldHidden())) return;
   world.update(dt, t);
   if (!playing) {
     const a = t * .05;

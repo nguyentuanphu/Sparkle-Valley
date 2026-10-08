@@ -684,6 +684,53 @@ await check('festcal', async () => {
   return `build-up from 3 weeks before (stage 1→4), Halloween and Diwali at once, quiet days ${'3'} days before, ${r.rows} festivals coming up on the calendar, ${r.doors} pumpkin doors, a pumpkin lantern after 5 treats`;
 });
 
+await check('films', async () => {
+  // (round R, owner: "the animations should be detailed and comprehensive, not drawings standing for the scenes")
+  // every page of the pilot story and guide films plays to its end, the child's turn waits for a tap, and closing frees it
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const F = await import('/js/film.js'), C = await import('/js/content/films.js'), { MORE_TALES } = await import('/js/talesdata.js');
+    const { openTheatre } = await import('/js/tales.js'), { openHowTo } = await import('/js/howto.js');
+    const frame = () => new Promise(r => requestAnimationFrame(r)), out = { films: {}, bad: [] };
+    const run = async (id, n) => {
+      const f = F.filmNow(); if (!f) { out.bad.push(id + ': no film'); return; }
+      let helps = 0;
+      for (let k = 0; k < n; k++) {
+        const done = f.page(k); let ended = false; done.then(() => { ended = true; });
+        const p = f.now; if (!p.root.children.length) out.bad.push(`${id} p${k + 1}: empty set`);
+        // before the narrator finishes, the child's turn must not start
+        for (let i = 0; i < 400 && !p.waiting && p.t < p.len + 1; i++) { if (p.hold) out.bad.push(`${id} p${k + 1}: asked before the words were read`); p.t += .2; await frame(); }
+        if (ended && p.ev.some(e => e.help)) out.bad.push(`${id} p${k + 1}: ended without the child's turn`);
+        f.narrated();
+        for (let i = 0; i < 600 && !ended; i++) { if (p.hold) { helps++; p.release(true); } p.t += .2; await frame(); }
+        if (!ended) out.bad.push(`${id} p${k + 1}: did not end`);
+        if (!(p.actors.length || p.root.children.length > 3)) out.bad.push(`${id} p${k + 1}: nobody in it`);
+      }
+      out.films[id] = { pages: n, helps };
+    };
+    for (const id of Object.keys(C.FILMS)) {
+      openTheatre(MORE_TALES.find(t => t.id === id), { name: 'Na' }); await new Promise(r => setTimeout(r, 300));
+      document.querySelector('.th-auto').click();
+      if (!document.querySelector('.theatre.film canvas.th-film')) out.bad.push(id + ': no 3D stage');
+      await run(id, C.FILMS[id].pages.length);
+      document.querySelector('.th-x').click(); await new Promise(r => setTimeout(r, 400));
+      if (F.filmNow() || document.querySelector('canvas.th-film')) out.bad.push(id + ': not freed');
+    }
+    for (const id of Object.keys(C.GUIDES)) {
+      openHowTo(id, {}); await new Promise(r => setTimeout(r, 300)); document.querySelector('.ht-pp').click();
+      await run(id, C.GUIDES[id].pages.length);
+      document.querySelector('.ht-x').click(); await new Promise(r => setTimeout(r, 300));
+      if (F.filmNow()) out.bad.push(id + ': not freed');
+    }
+    return out;
+  });
+  const fails = [...r.bad];
+  for (const id of ['duahau', 'thanhgiong']) if (!r.films[id] || r.films[id].helps !== 2) fails.push(`${id}: the child should help twice`);
+  if (P.errors.length) fails.push(...P.errors.slice(0, 3));
+  await P.ctx.close();
+  if (fails.length) throw new Error(JSON.stringify({ fails, films: r.films }));
+  return Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps twice in each story';
+});
 await check('camcalm', async () => {
   // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:
   // the camera never swings faster than a slow steady pace, and a jump doesn't jerk the picture up and down

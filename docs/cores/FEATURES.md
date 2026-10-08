@@ -41,6 +41,7 @@ Columns below: **Suggested start** = my suggestion only (Live, or Off then drip 
 | Bicycles children can ride in the villages, farm, Two Homes Street and Aussie Corner (`rideBikes`) | Live |
 | Xích lô rides in Sài Gòn and Hà Nội (`xichloRides`) | Live |
 | Real-looking vehicles for older children (`realVehicles`) | Live |
+| Story and how-to films in 3D (`storyFilms`): pilot Sự tích dưa hấu, Thánh Gióng, Ô ăn quan, counting | Live (pilot) |
 | Power poles and wires (`powerPoles`) | Off (kept for later) |
 | River raft and ferry | Live |
 | Buffalo ride, buffalo cart, bicycles | Live |

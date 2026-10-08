@@ -20,7 +20,9 @@ const PATTERNS = [
   new RegExp(String.raw`\bS\(\s*${Q}\s*,\s*(${Q})\s*,\s*(${Q})\s*\)`, 'g'),
   // a speech-box line that shows a name but speaks recordable words: [`…${name}…`, `…`, 'say en', 'say vi']
   new RegExp(String.raw`\[\s*\x60[^\x60]*\x60\s*,\s*\x60[^\x60]*\x60\s*,\s*(${Q})\s*,\s*(${Q})\s*\]`, 'g'),
-  new RegExp(String.raw`\b(?:fact|story|hint|about)\s*:\s*\[\s*(${Q})\s*,\s*(${Q})`, 'g')
+  new RegExp(String.raw`\b(?:fact|story|hint|about)\s*:\s*\[\s*(${Q})\s*,\s*(${Q})`, 'g'),
+  // the child's turn in a film (js/content/films.js): S.help(time, en, vi, …)
+  new RegExp(String.raw`\bS\.help\(\s*[^,]+,\s*(${Q})\s*,\s*(${Q})`, 'g')
 ];
 export function collectLines() {
 const seen = new Map();
