@@ -10,4 +10,6 @@
 
 **Times and dates:** always give them in AEST (UTC+10, Australia/Brisbane), labelled "AEST", in messages, reports and documents (owner, 5 Oct). Convert from UTC (GitHub, Netlify, logs) before quoting.
 
+**Cores (owner, 8 Oct):** the project is split into 8 cores, one AI chat per core (World, Play, Kid UI, Voice & Audio, Online, Studio, Analytics & Infra, Release). If the owner says which core you are, read `docs/cores/README.md` and your core's file in `docs/cores/` before anything else, work only in that core's files on the branch `core/<name>`, and put requests for other cores on `docs/cores/BOARD.md`. Only the Release core merges, runs the full suite, reports and asks for "yes, push" / "yes, deploy". With no core named, you are Release.
+
 Everything else about the project (requirements, how it's built, testing, working style) is in `HANDOFF.md`. Read it first.
