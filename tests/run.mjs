@@ -636,6 +636,25 @@ await check('emoji', async () => {
   return out.trim().split('\n').pop() + '; no emoji in the docs';
 });
 
+await check('hubmap', async () => {
+  // (round R, owner: "rearrange the games menu so it is more logical; also the map and its destinations") the Play hub:
+  // every game in exactly one tab, grouped by kind; the Pad map: each country north to south, landmarks under their real place
+  const P = await open(b, { w: 1180, h: 820 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const ui = await import('/js/ui.js'); ui.openGamesHub(__sv, 0); await new Promise(r => setTimeout(r, 400));
+    const seen = {}; for (const t of [...document.querySelectorAll('.hubtabs [data-tab]')].map(b => b.dataset.tab)) { document.querySelector(`.hubtabs [data-tab="${t}"]`).click(); await new Promise(r => setTimeout(r, 100)); document.querySelectorAll('.hubbody [data-play]').forEach(b => { seen[b.dataset.play] = (seen[b.dataset.play] || 0) + 1; }); }
+    document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 600));
+    document.querySelector('.mapchips [data-g="vn"]').click(); await new Promise(r => setTimeout(r, 200));
+    const rows = [...document.querySelectorAll('.quick .qbtn')].map(b => (b.classList.contains('sub') ? '-' : '') + b.innerText.trim());
+    return { games: Object.keys(seen).length, all: Object.keys(__sv.GAMES || {}).length, dup: Object.entries(seen).filter(([, n]) => n > 1).map(([k]) => k), rows };
+  });
+  ok(!r.dup.length, 'games in two tabs: ' + r.dup.join(', ')); ok(r.games >= 60, 'games in the hub: ' + r.games);
+  const at = n => r.rows.findIndex(x => x.includes(n)), hn = at('Hà Nội') >= 0 ? at('Hà Nội') : at('Hanoi'), dn = at('Đà Nẵng'), hl = at('Hạ Long'), hue = at('Huế');
+  ok(hn >= 0 && dn > hn && hl > hn && hl < dn && hue > dn, 'map: Hạ Long should be under Hà Nội and Huế under Đà Nẵng: ' + r.rows.slice(0, 20).join(' | '));
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return `${r.games} games, each in one tab; the map lists Vietnam north to south with each landmark under its real place`;
+});
+
 await check('festcal', async () => {
   // (round R, owner) the festival calendar: real dates, 3 weeks of build-up that grows each week, two festivals at once
   // in their own places, quiet days only a few days before, the day's timetable, Halloween trick-or-treat and keepsake

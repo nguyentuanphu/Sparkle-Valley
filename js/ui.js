@@ -1,5 +1,6 @@
 // Screens and pop-ups: title, who's playing, grown-ups settings, photo editor, NPC dialogue,
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
+import { AREAS, gamesIn } from './content/activities.js';
 import { T, applyLang, nm, NPC_NAMES, defaultName } from './i18n.js';
 import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, backupAge, STYLES, OUTFIT_COLORS, HATS, BACKS, HAIR, SKIN, HAIRSTYLES, GLIDERS, farm, resetFarm, saveFarm, MAX_KIDS, reduceMotion } from './state.js';
 import { say, spoken, voicePack, voiceDiag, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
@@ -598,6 +599,15 @@ export { modal, dialog, dialogHooks, reward } from './popups.js';
 import { modal, dialog, dialogHooks, reward } from './popups.js';
 
 // ---------- the Sparkle Pad ----------
+// which place each landmark belongs to in the real world (the Pad map lists it under that place)
+const LANDMARK_HOME = { bnclock: 'bacninh', chuadau: 'bacninh', butthap: 'bacninh', dendo: 'bacninh', quanho: 'bacninh',
+  turtle: 'hanoi', onepillar: 'hanoi', vanmieu: 'hanoi', puppettheatre: 'hanoi', thehuc: 'hanoi', halong: 'hanoi', trangan: 'hanoi',
+  dragonbridge: 'danang', goldenbridge: 'danang', marble: 'danang', hoian: 'danang', chuacau: 'danang', myson: 'danang', hue: 'danang', phongnha: 'danang',
+  benthanh: 'saigon', cathedral: 'saigon', postoffice: 'saigon', cairang: 'saigon', bachdinh: 'saigon', nhatron: 'saigon', lighthouse: 'saigon',
+  wheel: 'brisbane', lonepine: 'brisbane', storybridge: 'brisbane', reef: 'brisbane', banana: 'sydney',
+  opera: 'sydney', harbour: 'sydney', sydneytower: 'sydney', lunapark: 'sydney', bondi: 'sydney', sisters: 'sydney',
+  flinders: 'melbourne', wtram: 'melbourne', exhibition: 'melbourne', apostles: 'melbourne', kakadu: 'uluru', uluru: 'uluru',
+  forbidden: 'china', heaven: 'china', terracotta: 'china', potala: 'china', qutub: 'india', redfort: 'india', konark: 'india', hampi: 'india', mahabodhi: 'india' };
 export function openPad(game, i, tab) {
   tab = tab || 'map';
   const hero = game.heroes[i], p = hero.profile;
@@ -633,15 +643,26 @@ export function openPad(game, i, tab) {
     // picked from chips (the full list was too long to scroll)
     const GROUPS = [['home', '🏡', T('Our valley', 'Thung lũng nhà mình')], ['vn', '🇻🇳', T('Vietnam', 'Việt Nam')], ['au', '🇦🇺', T('Australia', 'Nước Úc')], ['asia', '🌏', T('China and India', 'Trung Quốc và Ấn Độ')], ['homes', '🏠', T('Homes', 'Nhà')]];
     const named = game.homes ? game.homes.list.filter(hm => hm.H) : [];
-    const itemsOf = g => g === 'homes' ? named.map(hm => ({ icon: '🏠', name: hm.name, go: () => game.landBy(hero, hm.door.x, hm.door.z) }))
-      : game.PLACES.filter(pl => (pl.g || 'home') === g).sort((a, b) => a.z - b.z).map(pl => ({ icon: pl.icon, name: pl.name, go: () => game.travelTo(hero, pl.x, pl.z) }));
+    // (round R, owner: "the map and its destinations should be more logical") each country's places from north to south
+    // like the real map; under each place, what really belongs to it: its landmarks by real geography (Hạ Long and Tràng
+    // An with Hà Nội in the north, Huế and Hội An with Đà Nẵng in the centre, the Mekong with Sài Gòn), a shop or a stage
+    const itemsOf = g => {
+      if (g === 'homes') return named.map(hm => ({ icon: '🏠', name: hm.name, go: () => game.landBy(hero, hm.door.x, hm.door.z) }));
+      const all = game.PLACES.filter(pl => (pl.g || 'home') === g), tops = all.filter(pl => !pl.under).sort((a, b) => a.z - b.z), lms = game.LANDMARKS || [], out = [];
+      for (const t of tops) {
+        out.push({ icon: t.icon, name: t.name, go: () => game.travelTo(hero, t.x, t.z) });
+        all.filter(pl => pl.under && pl.under === t.key).forEach(pl => out.push({ sub: true, icon: pl.icon, name: pl.name, go: () => game.travelTo(hero, pl.x, pl.z) }));
+        lms.filter(l => LANDMARK_HOME[l.id] === t.key).forEach(l => out.push({ sub: true, icon: l.icon, name: l.name, go: () => game.travelTo(hero, l.x, l.z) }));
+      }
+      return out;
+    };
     const groups = GROUPS.filter(([g]) => itemsOf(g).length);
     let gsel = groups.find(([g]) => g === openPad.mapLast) ? openPad.mapLast : groups[0][0];
     const chips = el('div', 'hubtabs mapchips'), list = el('div', 'quick');
     groups.forEach(([g, gi, gname]) => { const c = el('button', '', `<span>${pic(gi)}</span><small>${esc(gname)}</small>`); c.dataset.g = g; c.onclick = () => { gsel = openPad.mapLast = g; SFX.tap(); fill(); }; chips.appendChild(c); });
     const fill = () => {
       chips.querySelectorAll('button').forEach(c => c.classList.toggle('on', c.dataset.g === gsel)); list.innerHTML = '';
-      itemsOf(gsel).forEach(it => { const b = el('button', 'qbtn', `<span>${pic(it.icon)}</span><small>${esc(it.name())}</small>`); b.onclick = () => { close(); it.go(); }; list.appendChild(b); });
+      itemsOf(gsel).forEach(it => { const b = el('button', 'qbtn' + (it.sub ? ' sub' : ''), `<span>${pic(it.icon)}</span><small>${esc(it.name())}</small>`); b.onclick = () => { close(); it.go(); }; list.appendChild(b); });
     };
     body.appendChild(chips); body.appendChild(list); fill();
     const quick = el('div', 'quick'); const ch = el('button', 'qbtn change', `<span>🔄</span><small>${T('Change player', 'Đổi người chơi')}</small>`); ch.onclick = () => { close(); game.changePlayer(); }; quick.appendChild(ch);
@@ -959,18 +980,27 @@ export function openRecorder(after) {
 }
 
 // ---------- Games hub ----------
-export const folkGames = () => HUB.find(h => h.key === 'folk').games; // the traditional games (js/folkshow.js runs them on a time table)
-export const HUB = [
-  { key: 'learn', icon: '📚', short: () => T('Learning', 'Học'), title: () => T('Learning: numbers, letters, time and more', 'Học: số, chữ, xem giờ và nhiều nữa'), games: ['familyquiz', 'counting', 'numbers', 'sums', 'letters', 'phonics', 'clock', 'shapes', 'colors', 'opposites', 'animalsounds', 'feelings', 'moreless', 'days', 'bodyparts', 'words', 'firstwords', 'pattern', 'sorting', 'memory'] },
-  { key: 'folk', icon: '🪁', short: () => T('Folk games', 'Dân gian'), title: () => T('Folk games of Australia, Vietnam, China and India', 'Trò chơi dân gian Úc, Việt Nam, Trung Quốc và Ấn Độ'), games: ['music', 'firstwords', 'tangram', 'snakes', 'rangoli', 'words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'tienlen', 'oantuti', 'nemlon', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
-  { key: 'cities', icon: '🏙️', short: () => T('Cities', 'Thành phố'), title: () => T('In the cities of Vietnam and Australia', 'Ở các thành phố Việt Nam và Úc'), games: ['puppets', 'dongho', 'dragonfire', 'traffic', 'ferries', 'tram', 'koala'] },
-  { key: 'farm', icon: '🏡', short: () => T('Farm', 'Nông trại'), title: () => T('At the farm', 'Ở nông trại'), games: ['bunny', 'eggs', 'balloon', 'bubbles', 'jigsaw', 'tower', 'order', 'sortout', 'duckmaze'] },
-  { key: 'village', icon: '🏮', short: () => T('Village', 'Làng Sen'), title: () => T('In Lotus Village', 'Ở Làng Sen'), games: ['market', 'tune', 'shapes', 'oddone', 'memory'] },
-  { key: 'shrine', icon: '✨', short: () => T('Puzzles', 'Đố vui'), title: () => T('Puzzle shrines', 'Đền đố vui'), games: ['pattern', 'counting', 'letters', 'numbers', 'colors', 'sorting', 'sudoku', 'hanoi', 'robot', 'maze'] }
+// the traditional games Lotus Village's hội làng runs on its time table (js/folkshow.js); unchanged in round R
+const FOLK_SHOW = ['music', 'firstwords', 'tangram', 'snakes', 'rangoli', 'words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'tienlen', 'oantuti', 'nemlon', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'];
+export const folkGames = () => FOLK_SHOW;
+// The Play hub's game tabs (round R, owner: "rearrange the menu so it is more logical"). Every game is in exactly one
+// tab, by what kind of game it is, from the same list as the Simple screen's areas (js/content/activities.js), so a
+// game the family moves in Studio moves in both. Inside a tab the games are grouped under their area's name.
+const HUB_TABS = [
+  { key: 'learn', icon: '📚', short: () => T('Learning', 'Học'), title: () => T('Numbers, letters, shapes and me', 'Số, chữ, hình và em'), areas: ['numbers', 'words', 'shapes', 'me'] },
+  { key: 'folk', icon: '🪁', short: () => T('Folk games', 'Dân gian'), title: () => T('Folk games to play together', 'Trò chơi dân gian chơi cùng nhau'), areas: ['vietnam', 'play'] },
+  { key: 'animals', icon: '🐶', short: () => T('Animals and music', 'Con vật, âm nhạc'), title: () => T('Animals and music', 'Con vật và âm nhạc'), areas: ['animals', 'music'] },
+  { key: 'art', icon: '🎨', short: () => T('Pictures', 'Tranh'), title: () => T('Colours, pictures and puzzles', 'Màu sắc, tranh và ghép hình'), areas: ['art'] },
+  { key: 'places', icon: '🚋', short: () => T('Going places', 'Đi đây đi đó'), title: () => T('Games in the cities and on the road', 'Trò chơi ở thành phố và trên đường'), areas: ['travel'] },
+  { key: 'thinking', icon: '🧠', short: () => T('Big thinkers', 'Suy nghĩ giỏi'), title: () => T('Big thinkers: puzzles and strategy', 'Suy nghĩ giỏi: đố và chiến thuật'), areas: ['thinking'] }
 ];
+const AREA_OF = Object.fromEntries(AREAS.map(a => [a.key, a]));
+// each tab with its games (built when asked, so the family's Studio changes are in it)
+const hubSections = () => HUB_TABS.map(t => ({ ...t, groups: t.areas.map(a => ({ area: AREA_OF[a], games: gamesIn(GAMES, a, false).map(g => g.id) })).filter(g => g.games.length) })).map(t => ({ ...t, games: t.groups.flatMap(g => g.games) }));
+export const HUB = HUB_TABS;
 // The game after this one in the Games hub (the tab the child last used first), for "Next game" after a win.
 export function nextGameAfter(id) {
-  const secs = [...HUB].sort((a, b) => (b.key === openGamesHub.last) - (a.key === openGamesHub.last));
+  const secs = hubSections().sort((a, b) => (b.key === openGamesHub.last) - (a.key === openGamesHub.last));
   for (const sec of secs) { const list = sec.games.filter(g => GAMES[g]), k = list.indexOf(id); if (k >= 0) return list[(k + 1) % list.length]; }
   return null;
 }
@@ -980,7 +1010,9 @@ export function openGamesHub(game, i, onClose) {
   const m = modal('hub', ''), card = m.querySelector('.card');
   const close = () => { m.close(); onClose && onClose(); };
   // one category at a time, picked from a row of tabs (the whole list was too long to scroll on a phone)
-  const tabs = [...(game.festivals ? [{ key: 'fest', icon: '🎉', short: () => T('Festivals', 'Lễ hội') }] : []), ...HUB, ...(game.taleShelfHTML ? [{ key: 'tales', icon: '📖', short: () => T('Stories', 'Truyện') }] : []), ...(game.openSongs ? [{ key: 'songs', icon: '🎵', short: () => T('Songs', 'Bài hát') }] : [])];
+  // games first (by kind), then things to watch and listen to, then the festival calendar
+  const SECS = hubSections();
+  const tabs = [...SECS, ...(game.taleShelfHTML ? [{ key: 'tales', icon: '📖', short: () => T('Stories', 'Truyện') }] : []), ...(game.openSongs ? [{ key: 'songs', icon: '🎵', short: () => T('Songs', 'Bài hát') }] : []), ...(game.festivals ? [{ key: 'fest', icon: '📅', short: () => T('Festivals', 'Lễ hội') }] : [])];
   let cur = tabs.find(t => t.key === openGamesHub.last) ? openGamesHub.last : 'learn';
   const card2 = sec => `<div class="hubgrid">${sec.games.filter(id => GAMES[id]).map((id, k) => {
       const g = GAMES[id], lv = p.levels[id] || 1;
@@ -994,7 +1026,7 @@ export function openGamesHub(game, i, onClose) {
       const fam = familySongs().length, groups = SONG_GROUPS.filter(g => g.key === 'family' ? fam : SONG_LIST.some(s => s.group === g.key && Music.has(s.key)));
       return `<h3>🎵 ${T('Songs: tap to listen', 'Bài hát: chạm để nghe')}</h3><div class="festrow songrow">${groups.map(g => `<button class="festbtn" data-songs="${g.key}"><span>${pic(g.icon)}</span><b>${esc(g.name())}</b></button>`).join('')}</div>`;
     }
-    const sec = HUB.find(x => x.key === key); return `<h3>${sec.icon} ${esc(sec.title())}</h3>${card2(sec)}`;
+    const sec = SECS.find(x => x.key === key) || SECS[0]; return `<h3>${sec.icon} ${esc(sec.title())}</h3>${sec.groups.map(g => `${sec.groups.length > 1 ? `<h4 class="hubarea">${pic(g.area.icon)} ${esc(g.area.name())}</h4>` : ''}${card2({ key: sec.key + g.area.key, games: g.games })}`).join('')}`;
   };
   card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎮 ${T('Play', 'Vui chơi')}</h2>
     <div class="hubtabs" role="tablist">${tabs.map(t => `<button role="tab" data-tab="${t.key}"><span>${pic(t.icon)}</span><small>${esc(t.short())}</small></button>`).join('')}</div>

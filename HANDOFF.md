@@ -1,6 +1,8 @@
 # Sparkle Valley · Thung Lũng Lấp Lánh — Handoff
 
 A bilingual (English / Tiếng Việt) 3D open-world browser game for the owner's children, aged 2–8.
+**Sổ tay artifact (round R, owner):** the picture handbook of the whole game, from A to Z (story, principles, hard rules, every place, house, person, animal, vehicle, food, game, story and festival, drawn with the valley's own pictures): https://claude.ai/artifact/CZX3LQ8mB8X6PbmkQ8VZxB. Update it at the end of every round with what was added (the generator reads the game's own data: keep its sections in step).
+
 Attach this file at the start of a new chat, with **`docs/SO-TAY-THIET-KE.md` (Sổ tay thiết kế, the design handbook)**, which holds every design, data, safety and release rule in one place, and **`docs/ARCHITECTURE.md`**, the authoritative architecture contract: layers, systems, entity model, ids, events, lifecycle, the SYSTEM-NNN hard rules, tests, the module audit and the migration plan. Read both before changing code. Code: **https://github.com/nguyentuanphu/Sparkle-Valley** (work on a `claude/…` branch, merged into `main` by pull request).
 
 ---
@@ -127,6 +129,7 @@ In each phase: run the suite before and after, take before/after screenshots fro
 | `tales` | All 38 tales, every page (259), and the tale shelf: every picture is drawn art or a cartoon actor, never a phone emoji |
 | `emoji` | Every emoji the game uses has a drawing in `js/art.js` (`tools/emoji-audit.mjs`) |
 | `noemoji` | No phone emoji shown anywhere: Who's playing, the valley, Vui chơi, every Pad tab, Grown-ups, a speech box and every game; painted labels use the drawings (`js/emojiswap.js`; the `studio` check does the same for Studio's pages) |
+| `hubmap` | The Play hub: every game in exactly one tab, by kind (Learning, Folk games, Animals and music, Pictures, Going places, Big thinkers; then Stories, Songs, Festivals), from the same areas as the Simple screen; the Pad map lists each country north to south with each landmark under its real place (owner, round R) |
 | `festcal` | Festivals on real dates (`js/content/festcal.js`, `js/lunar.js`; owner, round R): decorations grow over 3 weeks, two festivals at once in their own places, quiet days a few days before, the calendar on the Pad, Halloween trick-or-treat and the pumpkin-lantern keepsake (unit tests: dates for every festival 2026–2032, live releases) |
 | `camcalm` | A calm camera (owner, round R: \"it gives a headache when it moves\"): every automatic turn eases in and stays slow, the point it looks at glides, so turning round and jumping never jerk the picture |
 | `vehicles` | Vehicles of the two homes (`js/vehicles.js`, placed by `js/traffic.js`): every model in the valley, riders' hands on the grips, traffic moving and stopping for children, a child riding a bicycle and getting off (owner, round R) |

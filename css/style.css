@@ -2069,3 +2069,5 @@ body.songs-on .htoast { display: none; } /* the valley's hints stay behind the S
 .fcal-row:active { transform: translateY(2px); }
 .fest-pick { font-size: 16px; padding: 8px 10px; border-radius: 12px; min-height: 44px; }
 .newtag { font-style: normal; font-size: 11px; background: #ff4f9a; color: #fff; border-radius: 8px; padding: 1px 6px; vertical-align: middle; }
+.hubarea { font: 600 15px var(--font, inherit); margin: 14px 0 6px; display: flex; align-items: center; gap: 6px; } .hubarea .art { width: 26px; height: 26px; }
+.quick .qbtn.sub { transform: scale(.9); opacity: .92; background: rgba(255,255,255,.55); } .quick .qbtn.sub small { font-size: 11px; }

@@ -685,20 +685,21 @@ G.snapshot = (i, max = 720, q = .8) => {
   G.huds.forEach(x => x.root.style.visibility = '');
   return c.toDataURL('image/jpeg', q);
 };
+G.LANDMARKS = LANDMARKS; // (round R) the Pad map lists each place's landmarks under it
 G.PLACES = [
-  { g: 'home', icon: '🏡', name: () => T('Sunny Farm', 'Nông trại'), x: HOME.x - 4, z: HOME.z + 2 },
-  { g: 'vn', icon: '🏮', name: () => T('Lotus Village', 'Làng Sen'), x: VILLAGE.x - VILLAGE.r + 6, z: VILLAGE.z },
-  { g: 'asia', icon: '🐼', name: () => T('China Town', 'Làng Trung Hoa'), x: CHINA.x, z: CHINA.z + 12 },
-  { g: 'asia', icon: '🐘', name: () => T('India Village', 'Làng Ấn Độ'), x: INDIA.x, z: INDIA.z + 15 },
-  { g: 'home', icon: '🦉', name: () => T('Ông Cú', 'Ông Cú'), x: -2, z: -3 },
-  { g: 'vn', icon: '💃', name: () => T('Dance stage', 'Sân khấu'), x: VILLAGE.x - 6, z: VILLAGE.z + 25 },
-  { g: 'home', icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: 28, z: 52 },
+  { g: 'home', key: 'farm', icon: '🏡', name: () => T('Sunny Farm', 'Nông trại'), x: HOME.x - 4, z: HOME.z + 2 },
+  { g: 'vn', key: 'village', icon: '🏮', name: () => T('Lotus Village', 'Làng Sen'), x: VILLAGE.x - VILLAGE.r + 6, z: VILLAGE.z },
+  { g: 'asia', key: 'china', icon: '🐼', name: () => T('China Town', 'Làng Trung Hoa'), x: CHINA.x, z: CHINA.z + 12 },
+  { g: 'asia', key: 'india', icon: '🐘', name: () => T('India Village', 'Làng Ấn Độ'), x: INDIA.x, z: INDIA.z + 15 },
+  { g: 'home', icon: '🦉', name: () => T('Dawn Plateau (Ông Cú)', 'Cao nguyên Bình Minh (Ông Cú)'), x: -2, z: -3 },
+  { g: 'vn', icon: '💃', name: () => T('Village festival stage (Lotus Village)', 'Sân khấu hội làng (Làng Sen)'), x: VILLAGE.x - 6, z: VILLAGE.z + 25, under: 'village' },
+  { g: 'home', key: 'town', icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: 28, z: 52 },
   { g: 'home', icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: 6, z: 140 },
   { g: 'vn', icon: '🏮', name: () => T('Three Regions Market', 'Chợ Ba Miền'), x: 99, z: 83 },
   { g: 'au', icon: '🍦', name: () => T('Aussie Corner', 'Góc Nước Úc'), x: -121, z: -12 },
-  { g: 'au', icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: 92, z: 128 },
-  { g: 'au', icon: '🪨', name: () => T('Uluru', 'Uluru'), x: -128, z: 132 },
-  { g: 'home', icon: '🐻', name: () => T('Mr. Bear', 'Bác Gấu'), x: HOME.x - 21, z: HOME.z + 6 }
+  { g: 'au', icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: 92, z: 128, under: 'sydney' },   // (the older Opera House stands here; listed under Sydney)
+  { g: 'au', key: 'uluru', icon: '🪨', name: () => T('Uluru', 'Uluru'), x: -128, z: 132 },
+  { g: 'home', icon: '🐻', name: () => T('Mr. Bear’s shop (farm)', 'Cửa hàng Bác Gấu (nông trại)'), x: HOME.x - 21, z: HOME.z + 6, under: 'farm' }
 ];
 G.changePlayer = () => {
   save(); Net.close(); Net.stopListening(); playing = false; G.paused = true; $('#huds').hidden = true;

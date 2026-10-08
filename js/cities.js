@@ -222,7 +222,7 @@ export function createCities(G) {
       persona(id, '🎮', name, greet, role, c.cc === 'au' ? 'au' : c.id === 'danang' ? 'trung' : c.id === 'saigon' ? 'nam' : 'bac');
     }
     // the city's name on the map, and in Travel
-    G.PLACES.push({ g: c.cc, icon: c.icon, name: () => T(c.name[0], c.name[1]), x: gx + fx * 3, z: gz + fz * 3 });
+    G.PLACES.push({ g: c.cc, key: c.id, icon: c.icon, name: () => T(c.name[0], c.name[1]), x: gx + fx * 3, z: gz + fz * 3 });
   }
   world.updaters.push((dt, t) => spinners.forEach(w => { w.rotation.z = t * .12; }));
 
