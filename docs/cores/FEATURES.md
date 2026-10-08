@@ -7,16 +7,18 @@ Every line becomes a switch in Sparkle Studio → 🚀 **Ra mắt** (Releases).
 - **Defaults:** every feature, old and new, starts **On**. The owner switches off what they want. The "Suggested start" column below is only a suggestion.
 - **Days:**
   - **Start in N days**, or at a date and time (AEST): the feature switches on by itself.
-  - **On for N days only:** a limited-time feature or event that switches off by itself; progress is kept.
+  - **On for N days only:** a limited-time feature or event that switches off by itself; what children got from it stays theirs and usable.
   - **"New" badge for N days:** default 7.
 - **"New!" moment when a feature goes live:**
   - A ✨ MỚI badge.
   - The companion flies over, says what's new and can lead the child to it.
   - A "Có gì mới" card the next time the child starts.
   - A gift the first time the child tries it.
-- **Turning a feature off:**
-  - It hides at the next start, or within about 5 minutes while playing.
-  - It never deletes the child's progress.
+- **Turning a feature off (owner, 8 Oct): it only stops new things; it never takes away or hides what a child already has.**
+  - What stops, at the next start or within about 5 minutes while playing: the shop stops selling it, the event stops running, the surprise stops appearing, and children who never tried it no longer see it.
+  - What stays, visible and usable: everything the child owns or earned from it (coins, clothes, items, homes and their upgrades, pets, stickers, collectibles, stars, prizes).
+  - Games and places already played: children who already played a game or visited a place keep it and can go on using it. It just gets no "new" announcements.
+  - Switching it back on brings it back for everyone.
 - **Always on:** making a character, saving, Grown-ups, time limits and safety.
 - **Instant:** the switches live on the website (Netlify Blobs), so there is no Publish and no deploy. Offline, the game uses the last switches it saw.
 
