@@ -95,16 +95,20 @@ export function memoryBlobs() {
 }
 
 // ---------- a pretend Netlify: the site's files, netlify.toml's redirects and the two functions ----------
-export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs(), heldStore = memoryBlobs(), liveStore = memoryBlobs() }) {
+// (round R privacy) a clock the tests move on, so every sign-in has a fresh two-step code
+export const testClock = { t: Date.now() };
+export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs(), heldStore = memoryBlobs(), liveStore = memoryBlobs(), familyStore = memoryBlobs(), guardStore = memoryBlobs(), logStore = memoryBlobs() }) {
   Object.assign(process.env, env);
   const { makeStudio } = await import(path.join(ROOT, 'netlify/functions/studio.mjs'));
   const { makeHello } = await import(path.join(ROOT, 'netlify/functions/hello.mjs'));
   const { makeLive } = await import(path.join(ROOT, 'netlify/functions/live.mjs'));
-  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore, heldStore: async () => heldStore, liveStore: async () => liveStore }), hello = makeHello({ playersStore: async () => players }), live = makeLive({ liveStore: async () => liveStore });
+  const { makeFamily } = await import(path.join(ROOT, 'netlify/functions/family.mjs'));
+  const now = () => testClock.t, family = makeFamily({ familyStore: async () => familyStore, guardStore: async () => guardStore, now });
+  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore, heldStore: async () => heldStore, liveStore: async () => liveStore, familyStore: async () => familyStore, guardStore: async () => guardStore, logStore: async () => logStore, now }), hello = makeHello({ playersStore: async () => players, guardStore: async () => guardStore }), live = makeLive({ liveStore: async () => liveStore });
   const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2' };
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`); let p = decodeURIComponent(url.pathname);
-    const fn = p === '/api/hello' ? hello : p === '/api/live' ? live : (p.startsWith('/studio/api/') || p.startsWith('/studio/content/')) ? studio : null;
+    const fn = p === '/api/hello' ? hello : p === '/api/live' ? live : p.startsWith('/api/family/') ? family : (p.startsWith('/studio/api/') || p.startsWith('/studio/content/')) ? studio : null;
     if (fn) {
       const ch = []; for await (const c of req) ch.push(c);
       const r = await fn(new Request(url, { method: req.method, headers: req.headers, body: req.method === 'POST' ? Buffer.concat(ch) : undefined }), { geo: JSON.parse(req.headers['x-test-geo'] || '{}') }); // (Netlify gives the town from the connection; tests say it in a header)
@@ -125,13 +129,14 @@ export async function studioCheck(browser, open) {
   const repo = 'family/sparkle', PW = 'a-long-test-password-123', NPORT = 8791, SPORT = 8792, site = `http://localhost:${NPORT}`;
   const seed = {}; for (const f of ['index.html', 'sw.js', 'js/main.js', 'js/i18n.js', 'js/build.js', 'js/packhash.js']) seed[f] = fs.readFileSync(path.join(ROOT, f));
   seed['content/custom.json'] = JSON.stringify({ message: { en: 'Hello', vi: 'Xin chào' } }); seed['voices/en/f/0000aaaa.mp3'] = 'x'; seed['voices/manifest.json'] = JSON.stringify({ version: 2, cast: { en: ['f'] }, voices: {}, lines: { '0000aaaa': 'f' }, langOf: { '0000aaaa': 'en' } }); // (like the real pack: it lists what is recorded)
-  const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs(), adminStore = memoryBlobs();
-  const net = await fakeNetlify({ port: NPORT, players, adminStore, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
+  const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs(), adminStore = memoryBlobs(), familyStore = memoryBlobs(), logStore = memoryBlobs();
+  const admins = await import(path.join(ROOT, 'netlify/lib/admins.mjs')), secrets = {};
+  const net = await fakeNetlify({ port: NPORT, players, adminStore, familyStore, logStore, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
   // the exe's own server, on a copy of a small game folder, with its settings in a folder of its own
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-studio-')), game = path.join(tmp, 'game'), appdata = path.join(tmp, 'appdata');
   fs.cpSync(path.join(ROOT, 'js'), path.join(game, 'js'), { recursive: true }); // the game's code (the pages read it)
   for (const f of Object.keys(seed)) { fs.mkdirSync(path.dirname(path.join(game, f)), { recursive: true }); fs.writeFileSync(path.join(game, f), seed[f]); }
-  fs.mkdirSync(path.join(appdata, 'SparkleStudio'), { recursive: true }); fs.writeFileSync(path.join(appdata, 'SparkleStudio', 'settings.json'), JSON.stringify({ gameDir: game, siteUrl: site, studioPassword: PW, githubToken: 'test-token', githubRepo: repo }));
+  fs.mkdirSync(path.join(appdata, 'SparkleStudio'), { recursive: true }); fs.writeFileSync(path.join(appdata, 'SparkleStudio', 'settings.json'), JSON.stringify({ gameDir: game, siteUrl: site, githubToken: 'test-token', githubRepo: repo }));
   // the exe is its own process: it reaches the same pretend GitHub over http (STUDIO_GITHUB_API, tests only)
   const GPORT = 8793, ghNet = http.createServer((req, res) => { let d = ''; req.on('data', c => d += c); req.on('end', async () => { const r = await gh.handle(req.method, 'https://api.github.com' + req.url, d ? JSON.parse(d) : null); res.writeHead(r.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(r.j)); }); });
   await new Promise(r => ghNet.listen(GPORT, '127.0.0.1', r));
@@ -140,30 +145,37 @@ export async function studioCheck(browser, open) {
   try {
     for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://localhost:${SPORT}/studio/api/ping`)).ok) break; } catch (e) { } await new Promise(r => setTimeout(r, 200)); }
     const call = async (p, { body, cookie, headers = {} } = {}) => { const r = await fetch(site + p, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json', ...(cookie ? { cookie } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined }); return { status: r.status, j: await r.json().catch(() => null), cookie: (r.headers.get('set-cookie') || '').split(';')[0] }; };
-    // 1. the password
+    // 1. the password, then the two-step code (round R privacy): the first time sets it up, then a fresh code each time
+    const signIn = async (name, password) => { testClock.t += 31e3; const who = name || 'owner'; let r = await call('/studio/api/login', { body: { name, password } });
+      if (r.j && r.j.step === 'setup') { secrets[who] = r.j.secret; ok(/^otpauth:\/\/totp\//.test(r.j.otpauth), 'no otpauth link to set up two-step'); }
+      if (!r.j || !r.j.step) return r;
+      return call('/studio/api/login', { body: { name, password, code: admins.totpNow(secrets[who], testClock.t) } }); };
     ok((await call('/studio/api/info')).status === 401, 'online Studio answered without signing in');
     ok((await call('/studio/api/login', { body: { password: 'wrong' } })).status === 401, 'a wrong password was let in');
-    const li = await call('/studio/api/login', { body: { password: PW } }); ok(li.status === 200 && /^sv_studio=/.test(li.cookie), 'signing in failed');
+    const li = await signIn('', PW); ok(li.status === 200 && /^sv_studio=/.test(li.cookie), 'signing in failed');
+    ok((await call('/studio/api/login', { body: { password: PW } })).j.step === 'code', 'the password alone was enough');
     const C = li.cookie, X = { 'X-Studio': '1' };
     // 1b. other admins with their own accounts (round O): the owner adds them; a viewer only reads the analytics,
     // an editor can change things but not the admins; a new password or removing them signs them out
     { const add = (name, password, role) => call('/studio/api/admins/save', { body: { name, password, role }, cookie: C, headers: X });
       ok((await add('ba.nam', 'short', 'viewer')).status === 400, 'a short admin password was accepted');
+      ok((await add('ba.nam', 'viewer-pw-11', 'viewer')).status === 400, 'an 11-character admin password was accepted');
       ok((await add('ba.nam', 'viewer-password-1', 'viewer')).status === 200 && (await add('co.lan', 'editor-password-1', 'editor')).status === 200, 'the owner could not add admins');
       ok((await call('/studio/api/login', { body: { name: 'ba.nam', password: 'nope-nope-nope' } })).status === 401, 'a wrong admin password was let in');
-      const v = await call('/studio/api/login', { body: { name: 'Ba.Nam', password: 'viewer-password-1' } }); ok(v.status === 200 && /^sv_studio=a\./.test(v.cookie), 'a viewer could not sign in');
+      const v = await signIn('Ba.Nam', 'viewer-password-1'); ok(v.status === 200 && /^sv_studio=a\./.test(v.cookie), 'a viewer could not sign in');
       const vi = await call('/studio/api/info', { cookie: v.cookie }); ok(vi.status === 200 && vi.j && vi.j.me && vi.j.me.role === 'viewer', 'info does not say who is signed in: ' + JSON.stringify(vi.j && vi.j.me));
       ok((await call('/studio/api/players', { cookie: v.cookie })).status === 200, 'a viewer could not read the analytics');
       ok((await call('/studio/api/content', { body: { message: { en: 'x' } }, cookie: v.cookie, headers: X })).status === 403, 'a viewer could change the content');
       ok((await call('/studio/api/admins/list', { cookie: v.cookie })).status === 403, 'a viewer could see the admins');
-      const e = await call('/studio/api/login', { body: { name: 'co.lan', password: 'editor-password-1' } });
+      const e = await signIn('co.lan', 'editor-password-1');
       ok((await call('/studio/api/admins/save', { body: { name: 'x.y', password: 'editor-password-2', role: 'owner' }, cookie: e.cookie, headers: X })).status === 403, 'an editor could add admins');
       ok((await call('/studio/api/admins/me', { body: { old: 'editor-password-1', password: 'editor-password-2' }, cookie: e.cookie, headers: X })).status === 200, 'an editor could not change their own password');
       ok((await call('/studio/api/info', { cookie: e.cookie })).status === 401, 'the old sign-in still worked after the password changed');
       ok(!JSON.stringify([...adminStore._m.values()]).includes('viewer-password-1'), 'an admin password was kept as it is');
       await call('/studio/api/admins/remove', { body: { name: 'ba.nam' }, cookie: C, headers: X });
       ok((await call('/studio/api/players', { cookie: v.cookie })).status === 401, 'a removed admin could still read');
-      notes.push('admins: viewer reads analytics only, editor cannot manage admins, password change and removal sign out'); }
+      { const lg = (await call('/studio/api/log', { cookie: C })).j.entries; ok(lg.some(x => x.what === 'signin' && x.who === 'owner') && lg.some(x => x.what === 'analytics' && x.who === 'ba.nam'), 'the access log: ' + JSON.stringify(lg.slice(0, 5))); }
+      notes.push('admins: viewer reads analytics only, editor cannot manage admins, password change and removal sign out; two-step for everyone; access log'); }
     // 1c. online now (round O): "still here" from a device shows it playing in the Analytics, "gone" shows it offline
     { const live = on => fetch(site + '/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'livetest0001', live: on, kid: 'Na' }) });
       ok((await live(1)).status === 204, 'a live hello was refused');
@@ -192,20 +204,24 @@ export async function studioCheck(browser, open) {
     const saveCalls = gh.log.filter(c => /^(POST|PATCH)/.test(c)).length;
     ok(!saveCalls && /Hello/.test(gh.fileAt('main', 'content/custom.json')) && !gh.refs.has('studio-draft'), 'a save went to GitHub straight away: ' + gh.log.join(', '));
     ok(/online/.test((await call('/studio/api/content', { cookie: C })).j.message.en), 'the draft was not read back');
-    const face = await call('/studio/api/face', { cookie: C, headers: X, body: { id: 'Bà Năm', dataUrl: 'data:image/jpeg;base64,' + Buffer.from('JPEG').toString('base64') } });
-    ok(face.j && face.j.photo === 'content/faces/ba-nam.jpg', 'face upload: ' + JSON.stringify(face.j));
-    ok((await fetch(site + '/studio/api/file/content/faces/ba-nam.jpg', { headers: { cookie: C } })).ok, 'the face photo could not be shown');
-    // a family album photo (Studio → Family album) goes to content/album/ in the draft too
-    const alb = await call('/studio/api/albumphoto', { cookie: C, headers: X, body: { id: 'f1', dataUrl: 'data:image/jpeg;base64,' + Buffer.from('JPEG').toString('base64') } });
-    ok(alb.j && /^content\/album\/f1-[a-z0-9]+\.jpg$/.test(alb.j.photo), 'album photo upload: ' + JSON.stringify(alb.j));
+    // (round R privacy) a photo face and a family album photo go to the private family store (random name), never to content/
+    const JPG = 'data:image/jpeg;base64,' + Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from('JPEG')]).toString('base64');
+    const face = await call('/studio/api/face', { cookie: C, headers: X, body: { id: 'Bà Năm', dataUrl: JPG } });
+    ok(face.j && /^family:[\w-]{24,}$/.test(face.j.photo), 'face upload: ' + JSON.stringify(face.j));
+    ok((await fetch(site + '/studio/api/familyphoto/' + face.j.photo.slice(7), { headers: { cookie: C } })).ok, 'the face photo could not be shown in Studio');
+    const alb = await call('/studio/api/albumphoto', { cookie: C, headers: X, body: { id: 'f1', dataUrl: JPG } });
+    ok(alb.j && /^family:[\w-]{24,}$/.test(alb.j.photo), 'album photo upload: ' + JSON.stringify(alb.j));
     ok((await call('/studio/api/albumphoto', { cookie: C, headers: X, body: { id: 'f2', dataUrl: 'data:image/png;base64,AAAA' } })).status === 400, 'a PNG was taken as an album photo');
+    { const fc = (await call('/studio/api/family/code', { cookie: C })).j.code, u = site + '/api/family/' + alb.j.photo.slice(7);
+      ok((await fetch(u)).status === 401 && (await fetch(u, { headers: { 'x-family-code': fc } })).status === 200, 'a family photo was given without the family code (or not with it)'); }
+    await call('/studio/api/content', { cookie: C, headers: X, body: { message: { en: 'Hi from online', vi: 'Chào từ trên mạng' }, faces: { 'Bà Năm': { photo: face.j.photo } }, album: [{ id: 'f1', photo: alb.j.photo, place: 'home' }] } });
     { const inf = (await call('/studio/api/info', { cookie: C })).j, w = (await call('/studio/api/pending', { cookie: C })).j.files;
-      ok(inf.unpublished && inf.waiting === 3 && w.includes('content/custom.json') && w.includes('content/faces/ba-nam.jpg'), 'saved changes not shown as waiting: ' + JSON.stringify({ u: inf.unpublished, n: inf.waiting, w })); }
+      ok(inf.unpublished && inf.waiting === 1 && w.includes('content/custom.json') && !w.some(f => /^content\/(faces|album)\//.test(f)), 'saved changes not shown as waiting (or a photo became a file): ' + JSON.stringify({ u: inf.unpublished, n: inf.waiting, w })); }
     // 3. meanwhile the exe publishes something else to the live branch: Publish online must keep it
     gh.commitOnMain('content/ads/sign.jpg', 'AD', 'Family update from Sparkle Studio (1 files)');
     const pub = await call('/studio/api/github/publish', { cookie: C, headers: X, body: { message: 'From the test' } });
-    ok(pub.j && pub.j.end && pub.j.result.changed === 3, 'publish: ' + JSON.stringify(pub.j));
-    ok(/online/.test(gh.fileAt('main', 'content/custom.json')) && gh.fileAt('main', 'content/faces/ba-nam.jpg') && gh.fileAt('main', 'content/ads/sign.jpg') && gh.fileAt('main', alb.j.photo), 'publish lost a file');
+    ok(pub.j && pub.j.end && pub.j.result.changed === 1, 'publish: ' + JSON.stringify(pub.j));
+    ok(/online/.test(gh.fileAt('main', 'content/custom.json')) && gh.fileAt('main', 'content/ads/sign.jpg'), 'publish lost a file');
     ok(gh.refs.get('studio-draft') === gh.refs.get('main') && !(await call('/studio/api/info', { cookie: C })).j.unpublished, 'the draft did not start again after publishing');
     ok((await call('/studio/api/github/publish', { cookie: C, headers: X, body: {} })).j.result.changed === 0, 'a second publish found changes');
     ok(!(await call('/studio/api/pending', { cookie: C })).j.files.length, 'changes still waiting after Publish');
@@ -231,7 +247,7 @@ export async function studioCheck(browser, open) {
     ok(![...players._m.values()].some(v => /Lan/.test(v)), 'a name was kept');
     const rep = await call('/studio/api/players', { cookie: C });
     ok(rep.j && rep.j.today.devices === 3 && rep.j.today.mins === 22 && rep.j.games[0][0] === 'caro' && rep.j.games[0][1] === 3 && rep.j.allTime === 3 && rep.j.langs.vi === 1, 'players report: ' + JSON.stringify(rep.j && rep.j.today));
-    ok((await call('/studio/api/players', { headers: { 'X-Studio-Password': 'nope' } })).status === 401, 'the report was given without the password');
+    ok((await call('/studio/api/players', { headers: { 'X-Studio-Password': PW } })).status === 401, 'the report was given for the password alone (round R privacy: two steps, or the exe key)');
     // the missing lines inbox: devices send lines they had to say with the machine voice
     await hi({ id: 'aaaaaaaaaaaa', b: 'r37', l: 'vi', m: 1, v: [['vi', 'Chào con, con khỏe không?'], ['en', 'A brand new line!'], ['xx', 'bad'], ['vi', '<script>']] });
     await hi({ id: 'bbbbbbbbbbbb', b: 'r37', l: 'en', m: 1, v: [['en', 'A brand new line!']] });
@@ -278,6 +294,8 @@ export async function studioCheck(browser, open) {
     }
     // 5. the exe: same engine, its own folder; the players report through the website; the same version
     const ex = async (p, body) => { const r = await fetch(`http://localhost:${SPORT}/studio/api/` + p, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}); return { status: r.status, j: await r.json().catch(() => null) }; };
+    // (round R privacy) the exe reaches the website with a Studio key made online, never the password
+    { const key = (await call('/studio/api/keys/make', { cookie: C, headers: X, body: { label: 'Test PC' } })).j.key; ok((await ex('settings', { studioKey: key })).status === 200, 'the exe did not take the Studio key'); }
     const ei = await ex('info'); ok(ei.j && ei.j.ok && !ei.j.online && ei.j.studio === info.j.studio, 'exe info: ' + JSON.stringify(ei.j));
     ok((await ex('content', { message: { en: 'From the exe', vi: 'Từ máy' } })).status === 200 && /exe/.test(fs.readFileSync(path.join(game, 'content/custom.json'), 'utf8')), 'the exe did not save into its folder');
     ok(fs.readdirSync(path.join(game, 'content/old')).length === 1, 'the exe kept no backup of the old content');
@@ -290,20 +308,20 @@ export async function studioCheck(browser, open) {
     ok(!d1.error && d1.result.changed >= 1 && d1.result.draft && /exe/.test(gh.fileAt('studio-draft', 'content/custom.json')) && !/exe/.test(gh.fileAt('main', 'content/custom.json')), 'the exe draft: ' + JSON.stringify(d1));
     ok((await ex('info')).j.unpublished, 'the exe did not show the draft as waiting');
     const p1 = await job('github/publish', { message: 'Publish from the exe' });
-    ok(!p1.error && p1.result.changed >= 1 && /exe/.test(gh.fileAt('main', 'content/custom.json')) && gh.refs.get('studio-draft') === gh.refs.get('main') && gh.fileAt('main', 'content/faces/ba-nam.jpg'), 'the exe publish: ' + JSON.stringify(p1));
+    ok(!p1.error && p1.result.changed >= 1 && /exe/.test(gh.fileAt('main', 'content/custom.json')) && gh.refs.get('studio-draft') === gh.refs.get('main') && !gh.fileAt('main', 'content/faces/ba-nam.jpg'), 'the exe publish: ' + JSON.stringify(p1));
     ok((await job('github/draft', {})).result.changed === 0, 'a second exe draft found changes');
     notes.push('exe: saves to its folder with a backup, players via the website, same version; GitHub in two steps (draft, then Publish)');
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone
-    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals'], bad = [];
+    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode'], bad = [];
     for (const [w, h, touch] of [[1180, 800, false], [390, 800, true]]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch }), errs = [];
       const pg = await ctx.newPage(); pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/favicon|401|403/.test(m.text())) errs.push(m.text() + ' ' + (m.location().url || '')); });
-      await pg.goto(site + '/studio'); await pg.waitForSelector('#pw', { timeout: 15000 }); await pg.fill('#pw', PW); await pg.click('#si button'); await pg.waitForSelector('#tabs button', { timeout: 15000 });
+      await pg.goto(site + '/studio'); await pg.waitForSelector('#pw', { timeout: 15000 }); await pg.fill('#pw', PW); testClock.t += 31e3; await pg.fill('#code', admins.totpNow(secrets.owner, testClock.t)); await pg.click('#si button'); await pg.waitForSelector('#tabs button', { timeout: 15000 });
       // round K: five sections (a column on a computer, a bar at the bottom of a phone), each opening as cards
       const navOk = await pg.evaluate(touch => { const bs = [...document.querySelectorAll('#tabs button')], r = bs.map(b => b.getBoundingClientRect()); return bs.length === 5 && (touch ? r.every(x => x.bottom >= innerHeight - 2 - 40 && x.height >= 56) : r.every(x => x.left < 220)); }, touch);
       if (!navOk) bad.push(`online ${w}px: the five sections are not where they should be`);
       await pg.evaluate(() => document.querySelector('#tabs [data-k="family"]').click()); await pg.waitForTimeout(400);
-      if (await pg.evaluate(() => document.querySelectorAll('#page .pcard').length) !== 6) bad.push(`online ${w}px: the Family section does not show its six cards`);
+      if (await pg.evaluate(() => document.querySelectorAll('#page .pcard').length) !== 7) bad.push(`online ${w}px: the Family section does not show its seven cards`);
       for (const k of pages) { await pg.evaluate(k2 => { location.hash = k2; }, k); await pg.waitForTimeout(k === 'photos' ? 2500 : 900); const t = await pg.evaluate(() => document.querySelector('#page').innerText); if (await pg.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`online ${w}px ${k}: ${t.slice(0, 80)}`);
         if (await pg.evaluate(() => document.scrollingElement.scrollWidth > innerWidth + 1)) bad.push(`online ${w}px ${k}: page scrolls sideways`);
         const emo = await pg.evaluate(SHOWN_EMOJI); if (emo.length) bad.push(`online ${w}px ${k}: phone emoji shown: ${emo.join(' ')}`); }

@@ -2,14 +2,14 @@
 // published with the game. Read once at start (offline it comes from the saved copy). Everything in it is optional:
 //   message  { en, vi }                  a note from the grown-ups, shown once a day when the children start playing
 //   names    { id: { en, vi } }          default names for villagers (a name changed on the device still wins)
-//   faces    { id: { photo, skin } }     default photo faces (photo = 'content/faces/….jpg'; a face set on the device wins)
+//   faces    { id: { photo, skin } }     default photo faces (photo = 'family:<name>', see below; a face set on the device wins)
 //   tales    [ { id, flag, en, vi, pages: [[pictures, en, vi], …] } ]   the family's own stories (Stories shelf)
 //   quiz     [ { q: [en, vi], pic, answers: [[en, vi], …], right } ]   the Family Quiz game (Learning shelf)
 //   defaults { restMins }                a starting value for settings the device hasn't chosen yet
 //   ads      { enabled, perDay, items }  the family's own ads (js/ads.js); nothing shows unless enabled is true
 //   activities { id: { area, little, hide } }   the Simple screen's areas: move a game, open it to under-5s, hide it (js/content/activities.js)
 //   music    [ { id, file, en, vi, tags } ]   the family's recordings (round N; file = 'content/music/….mp3'; tags: lullaby, tet, midautumn, christmas, diwali, ausday, vn, kids)
-//   album    [ { id, photo, en, vi, place } ]   family photos that become postcards (js/familycards.js; photo = 'content/album/….jpg')
+//   album    [ { id, photo, en, vi, place } ]   family photos that become postcards (js/familycards.js; photo = 'family:<name>')
 //   releases { id: { on, start, days, newDays } }   Sparkle Studio's Ra mắt (Releases) page (round R): see liveRule below
 //   festivals { id: { on, date, buildup } }          Sparkle Studio's Festivals page (round R): see js/festivals.js
 //   features { id: true|false }           things in the valley switched on or off from Studio (owner, round R: kept in the game,
@@ -26,10 +26,65 @@ export const customTales = () => (Array.isArray(CUSTOM.tales) ? CUSTOM.tales : [
   .map(t => ({ id: 'my_' + String(t.id).replace(/[^\w-]/g, '').slice(0, 30), flag: str(t.flag) || '💛', en: str(t.en) || 'Our story', vi: str(t.vi) || 'Truyện của nhà mình', pages: t.pages.filter(p => Array.isArray(p)).map(p => [str(p[0]) || '📖', str(p[1]), str(p[2]) || str(p[1])]) }));
 export const customQuiz = () => (Array.isArray(CUSTOM.quiz) ? CUSTOM.quiz : []).filter(q => q && Array.isArray(q.q) && Array.isArray(q.answers) && q.answers.length >= 2 && q.right >= 0 && q.right < q.answers.length)
   .map(q => ({ q: [str(q.q[0]), str(q.q[1]) || str(q.q[0])], pic: str(q.pic), answers: q.answers.map(a => [str(a[0]), str(a[1]) || str(a[0])]), right: q.right | 0 }));
-export const customAlbum = () => (Array.isArray(CUSTOM.album) ? CUSTOM.album : []).filter(x => x && typeof x.photo === 'string' && /^content\/album\/[\w.-]+\.jpg$/.test(x.photo))
-  .slice(0, 60).map(x => ({ id: String(x.id || x.photo).replace(/[^\w-]/g, '').slice(0, 30) || 'photo', photo: x.photo, en: str(x.en).slice(0, 120), vi: str(x.vi).slice(0, 120) || str(x.en).slice(0, 120), place: /^[a-z]{2,16}$/.test(x.place || '') ? x.place : 'home' }));
+// ---------- family photos are family-only (owner, 9 Oct, round R privacy) ----------
+// Photo faces and album photos are "family:<name>" (Sparkle Studio keeps them in the website's private store, never as
+// public files). They are fetched from api/family/<name> with the family code a grown-up typed once on this device
+// (Grown-ups → Children → Family photos; kept in its own place, never in a backup) and kept in the "sv-family" cache
+// for offline days (the service worker never keeps them in the game's shared cache). With no code they are simply not
+// shown: villagers keep their drawn faces and the postcards wait. A code the website no longer takes clears the copies.
+// (Old packs that still name content/faces/… or content/album/… files keep working until Studio moves them.)
+const FAMREF = /^family:([\w-]{24,64})$/, OLDFACE = /^content\/faces\/[\w.-]+\.(jpg|jpeg|png)$/, OLDALBUM = /^content\/album\/[\w.-]+\.jpg$/;
+const FAM_KEY = 'sv2_familycode', FAM_CACHE = 'sv-family', famURL = new Map(), famFns = [];
+export const familyCode = () => { try { return localStorage.getItem(FAM_KEY) || ''; } catch (e) { return ''; } };
+export const onFamilyPhotos = f => famFns.push(f);
+const photoOf = p => { const m = FAMREF.exec(p || ''); return m ? famURL.get(m[1]) || '' : p; };
+export const familyRefs = () => { const out = new Set(), add = p => { const m = FAMREF.exec(p || ''); if (m) out.add(m[1]); };
+  for (const f of Object.values(CUSTOM.faces || {})) add(f && f.photo); for (const x of Array.isArray(CUSTOM.album) ? CUSTOM.album : []) add(x && x.photo); return [...out]; };
+export const customAlbum = () => (Array.isArray(CUSTOM.album) ? CUSTOM.album : []).filter(x => x && typeof x.photo === 'string' && (OLDALBUM.test(x.photo) || (FAMREF.test(x.photo) && photoOf(x.photo))))
+  .slice(0, 60).map(x => ({ id: String(x.id || x.photo).replace(/[^\w-]/g, '').slice(0, 30) || 'photo', photo: photoOf(x.photo), en: str(x.en).slice(0, 120), vi: str(x.vi).slice(0, 120) || str(x.en).slice(0, 120), place: /^[a-z]{2,16}$/.test(x.place || '') ? x.place : 'home' }));
 export const customName = id => { const n = CUSTOM.names && CUSTOM.names[id]; return n && typeof n === 'object' ? n : null; };
-export const customFace = id => { const f = CUSTOM.faces && CUSTOM.faces[id]; return f && typeof f.photo === 'string' && /^content\/faces\/[\w.-]+\.(jpg|jpeg|png)$/.test(f.photo) ? f : null; };
+export const customFace = id => { const f = CUSTOM.faces && CUSTOM.faces[id]; if (!f || typeof f.photo !== 'string') return null; if (OLDFACE.test(f.photo)) return f; const u = FAMREF.test(f.photo) && photoOf(f.photo); return u ? { ...f, photo: u } : null; };
+// the game itself (not Studio's pages that borrow its modules); the game run from SparkleStudio.exe (/studio/game/) asks
+// the exe on the same computer, which needs no code
+const inGame = typeof location !== 'undefined' && /^https?:/.test(location.protocol) && typeof document !== 'undefined' && document.title !== 'Sparkle Studio' && !/\/studio\/(?!game\/)/.test(location.pathname);
+const fromExe = () => typeof location !== 'undefined' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /\/studio\/game\//.test(location.pathname);
+const famKey = n => new URL('__family/' + n, location.href).href; // (the cache's own key, never the api address)
+const famCache = () => typeof caches !== 'undefined' ? caches.open(FAM_CACHE).catch(() => null) : Promise.resolve(null);
+async function famFromCache(names) {
+  const c = await famCache(); if (!c) return;
+  for (const n of names) if (!famURL.has(n)) { const r = await c.match(famKey(n)).catch(() => null); if (r) famURL.set(n, URL.createObjectURL(await r.blob())); }
+}
+export async function clearFamilyPhotos() { famURL.forEach(u => URL.revokeObjectURL(u)); famURL.clear(); try { if (typeof caches !== 'undefined') await caches.delete(FAM_CACHE); } catch (e) { } famFns.forEach(f => { try { f(); } catch (e) { } }); }
+// fetch what this device does not have yet: { ok, n, bad } (bad: the website did not take the code)
+export async function refreshFamilyPhotos({ all = false } = {}) {
+  const code = familyCode(), names = familyRefs(); if (!names.length) return { ok: true, n: 0 };
+  if (!code && !fromExe()) return { ok: false, n: famURL.size, nocode: true };
+  const c = await famCache(); let got = 0, bad = false;
+  // one photo is always asked for (even when all are kept), so a code that was changed in Studio is noticed
+  const want = names.filter(n => all || !famURL.has(n)), list = want.length ? want : names.slice(0, 1);
+  for (const n of list) {
+    let r; try { r = await fetch('api/family/' + n, { headers: code ? { 'x-family-code': code } : {}, cache: 'no-store' }); } catch (e) { break; } // offline: the kept copies stay
+    if (r.status === 401 && code) { bad = true; break; }
+    if (!r.ok || !/^image\//.test(r.headers.get('content-type') || '')) continue;
+    const b = await r.blob(); if (c) await c.put(famKey(n), new Response(b, { headers: { 'Content-Type': b.type || 'image/jpeg' } })).catch(() => { });
+    if (famURL.has(n)) URL.revokeObjectURL(famURL.get(n)); famURL.set(n, URL.createObjectURL(b)); got++;
+  }
+  if (bad) { await clearFamilyPhotos(); return { ok: false, n: 0, bad: true }; }
+  if (got) famFns.forEach(f => { try { f(); } catch (e) { } });
+  return { ok: true, n: names.filter(n => famURL.has(n)).length, of: names.length };
+}
+export async function setFamilyCode(code) {
+  const c = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 40);
+  try { if (c) localStorage.setItem(FAM_KEY, c); else localStorage.removeItem(FAM_KEY); } catch (e) { }
+  if (!c) { await clearFamilyPhotos(); return { ok: true, n: 0, cleared: true }; }
+  return refreshFamilyPhotos({ all: true });
+}
+export const familyPhotoCount = () => ({ have: familyRefs().filter(n => famURL.has(n)).length, of: familyRefs().length });
+// at start: the kept copies at once (a moment at most), then the rest from the website without waiting
+if (inGame && familyRefs().length && (familyCode() || fromExe())) {
+  await Promise.race([famFromCache(familyRefs()), new Promise(r => setTimeout(r, 1500))]).catch(() => { });
+  setTimeout(() => refreshFamilyPhotos().catch(() => { }), 2500);
+}
 // ---------- Releases and festivals, live from the website (round R, owner: "instant, no deploy") ----------
 // Sparkle Studio's Ra mắt (Releases) and Festivals pages save to the website (Netlify Blobs, /api/live). The game asks
 // for them when it opens, without waiting (a slow or missing connection never delays the start), keeps a copy for

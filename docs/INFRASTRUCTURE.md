@@ -48,14 +48,17 @@ A drag-and-drop zip (`build-netlify.sh`) still works as an emergency fallback, b
 
 | Where | Name | What for | Needed? |
 |---|---|---|---|
-| Netlify → Site configuration → Environment variables | `STUDIO_PASSWORD` | Online Studio login | required for `/studio/` |
+| Netlify → Site configuration → Environment variables | `STUDIO_PASSWORD` | Online Studio login, 12 characters or more (then a two-step code from an authenticator app) | required for `/studio/` |
+| 〃 | `FAMILY_CODE` | The family code the devices type to see family photos (else Studio makes one: Family → Family code) | optional |
 | 〃 | `GITHUB_TOKEN` | Fine-grained, this repo only, Contents read/write: the online Studio reads/saves family files | required for saving |
 | 〃 | `GITHUB_REPO`, `GITHUB_BRANCH` | Defaults: `nguyentuanphu/Sparkle-Valley`, `main` | optional |
 | GitHub → Settings → Secrets → Actions | `RCLONE_CONF`, `DRIVE_FOLDER_ID` | The Google Drive mirror (rclone config made by the owner with `rclone config`; the Drive folder's id) | for the Drive mirror |
 | Tests only | `STUDIO_GITHUB_API` | Points the exe at the pretend GitHub in `tests/studio-check.mjs`; never set for families | — |
 | 〃 | `AZURE_KEY`, `AZURE_REGION` | Making voices from the online Studio | optional |
 | 〃 | `NETLIFY_TOKEN`, `NETLIFY_SITE` | The Studio's Website page (deploys) | optional |
-| Windows PC | `%APPDATA%\SparkleStudio\settings.json` | The exe's keys: Azure, Netlify, GitHub token | as needed |
+| Windows PC | `%APPDATA%\SparkleStudio\settings.json` | The exe's keys: Azure, Netlify, GitHub token, the Studio key (made online: Setup → Security) | as needed |
+| Windows PC | `%APPDATA%\SparkleStudio\family-photos\` | The exe's copies of the family photos (never in the game folder) | — |
+| Each device | `localStorage sv2_familycode`, cache `sv-family` | The family code and the family photos (never in a backup, never in the game's cache) | when family photos are used |
 | Each device | `localStorage sv2_settings` | A grown-up's own keys typed in the game (Azure/ElevenLabs/Google voices, Anthropic chat, TURN relay) | optional |
 
 Netlify Blobs needs no key; it is attached to the site automatically.

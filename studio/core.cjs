@@ -179,6 +179,23 @@ const gitSha = b => crypto.createHash('sha1').update('blob ' + b.length + '\0').
 const CAST = { en: ['f', 'm'], vi: ['f', 'm'], zh: ['m'], hi: ['m'] };
 const AZ_VOICES = { en: { f: 'en-AU-NatashaNeural', m: 'en-AU-WilliamNeural' }, vi: { f: 'vi-VN-HoaiMyNeural', m: 'vi-VN-NamMinhNeural' }, zh: { m: 'zh-CN-YunxiNeural' }, hi: { m: 'hi-IN-MadhurNeural' } };
 const LOCALE = { en: 'en-AU', vi: 'vi-VN', zh: 'zh-CN', hi: 'hi-IN' };
+// ---------- family photos are family-only (owner, 9 Oct, round R privacy) ----------
+// Photo faces and Family album pictures are never written into the game's files (which are public on the website and
+// kept in GitHub). They go to a private family store under a random name, and content/custom.json says "family:<name>":
+//   online   Netlify Blobs "family-photos" (netlify/lib/family.mjs); the game fetches /api/family/<name> with the family code
+//   the exe  sent to the website's family store with the Studio key when the website is set in Settings, and kept in
+//            %APPDATA%\SparkleStudio\family-photos (the game run from the exe reads them there); never in the game folder
+// family = { where: 'site' | 'computer', put(name, buf), get(name), remove(name), code(), newCode() } (from studio.cjs / studio.mjs)
+const FAMREF = /^family:([\w-]{24,64})$/, FAMNAME = /^[\w-]{24,64}$/, OLDFAM = /^content\/(faces|album)\/[\w.-]+$/;
+const familyName = () => crypto.randomBytes(18).toString('base64url'); // 24 letters, nobody can guess one
+const isJpeg = b => b && b.length > 3 && b[0] === 0xff && b[1] === 0xd8;
+// every family photo the content pack names
+function familyRefs(c) {
+  const out = new Set(), add = p => { const m = FAMREF.exec(String(p || '')); if (m) out.add(m[1]); };
+  for (const f of Object.values((c && c.faces) || {})) add(f && f.photo);
+  for (const x of Array.isArray(c && c.album) ? c.album : []) add(x && x.photo);
+  return out;
+}
 
 // ---------- real photos of the landmarks (photos/<key>/n.jpg + photos/index.json) ----------
 // More places to look than the Wikipedia article (all free to reuse, with the photographer's credit kept):
@@ -247,9 +264,9 @@ async function gatherPhotos(sources, name, max) {
 /**
  * @typedef {{ tts?: Function, settings?: Function, build?: Function, deploy?: Function, open?: Function, players?: Function,
  *   info?: () => object, inbox?: Function, label?: (b: any) => Promise<any>, api?: Function, onlineVersion?: () => Promise<string> }} LocalHelpers
- * @param {{ store: any, conf: any, online?: boolean, local?: LocalHelpers }} opts
+ * @param {{ store: any, conf: any, online?: boolean, local?: LocalHelpers, family?: any }} opts
  */
-function createStudio({ store, conf, online = false, local = {} }) {
+function createStudio({ store, conf, online = false, local = {}, family = null }) {
   const S = store;
   const readJSON = async (rel, def) => { const b = await S.read(rel); if (!b) return def; try { return JSON.parse(b.toString('utf8')); } catch (e) { return def; } };
   const writeJSON = (rel, o, pretty = 1) => S.write(rel, Buffer.from(JSON.stringify(o, null, pretty)));
@@ -324,12 +341,14 @@ function createStudio({ store, conf, online = false, local = {} }) {
     const remote = await G.familyShas();
     const mine = [...await S.walk('content'), ...await S.walk('voices'), ...await S.walk('photos'), ...((await S.read('tools/voice-extra.json')) ? ['tools/voice-extra.json'] : [])].filter(rel => FAMILY(rel) && !rel.startsWith('content/old/'));
     const changed = []; for (const rel of mine) { const b = await S.read(rel); if (remote.get(rel) !== gitSha(b)) changed.push(rel); }
-    J.total = changed.length; if (!changed.length) return { changed: 0, note: 'Nothing new: GitHub already has everything.' };
-    const items = [];
+    // (round R privacy) family photos taken out of content/faces and content/album here are taken out of GitHub too
+    const have = new Set(mine), gone = [...remote.keys()].filter(rel => OLDFAM.test(rel) && !have.has(rel));
+    J.total = changed.length + gone.length; if (!J.total) return { changed: 0, note: 'Nothing new: GitHub already has everything.' };
+    const items = gone.map(rel => ({ path: rel, mode: '100644', type: 'blob', sha: null }));
     for (const rel of changed) { J.msg = rel; const b = await S.read(rel); const blob = await gh(`${R}/git/blobs`, { method: 'POST', body: JSON.stringify({ content: b.toString('base64'), encoding: 'base64' }) }); items.push({ path: rel, mode: '100644', type: 'blob', sha: blob.sha }); J.done++; }
     J.msg = 'Saving the draft…';
     const sha = await G.saveDraft(items, message || `Family changes from Sparkle Studio (${changed.length} files)`);
-    draftSeen = null; return { changed: changed.length, draft: true, commit: sha.slice(0, 7), url: `https://github.com/${conf.githubRepo}/commit/${sha}` };
+    draftSeen = null; return { changed: J.total, draft: true, commit: sha.slice(0, 7), url: `https://github.com/${conf.githubRepo}/commit/${sha}` };
   }
   let draftSeen = null; // (the exe asks GitHub whether a draft waits at most every 30 s)
   async function publishDraft(J, message) { J.msg = 'Publishing the draft…'; const r = await ghStore().publish(message); J.done = J.total = r.changed; draftSeen = null; return r; }
@@ -370,7 +389,12 @@ function createStudio({ store, conf, online = false, local = {} }) {
       const v = /VERSION = '([^']+)'/.exec(t); add(true, `Game version ${v ? v[1] : '?'}`, `Phiên bản ${v ? v[1] : '?'}`); } else add(false, 'sw.js could not be read', 'Không đọc được sw.js');
     const raw = await S.read('content/custom.json');
     if (raw) { try { JSON.parse(raw.toString('utf8')); add(true, 'The content pack is valid', 'Gói nội dung hợp lệ'); } catch (e) { add(false, 'content/custom.json is broken: ' + e.message, 'content/custom.json bị lỗi'); } } else add(true, 'No content pack yet (that is fine)', 'Chưa có gói nội dung (không sao)');
-    const c = await readContent(); for (const [id, f] of Object.entries(c.faces || {})) if (!(await S.read(f.photo || 'x/none'))) add(false, `Face photo missing for ${id}: ${f.photo}`, `Thiếu ảnh khuôn mặt của ${id}`);
+    const c = await readContent();
+    for (const [id, f] of Object.entries(c.faces || {})) { const m = FAMREF.exec((f && f.photo) || ''); if (m ? !(family && await family.get(m[1]).catch(() => null)) : !(await S.read((f && f.photo) || 'x/none'))) add(false, `Face photo missing for ${id}`, `Thiếu ảnh khuôn mặt của ${id}`); }
+    // (round R privacy) family photos still kept as public files: Family → Family code → Move family photos to private storage
+    const pub = [...await S.list('content/faces'), ...await S.list('content/album')].length;
+    if (pub) add(false, `${pub} family photo(s) are still public files (content/faces, content/album): Family → Family code → Move family photos to private storage`, `${pub} ảnh gia đình vẫn là tệp công khai (content/faces, content/album): Gia đình → Mã gia đình → Chuyển ảnh gia đình sang nơi riêng tư`);
+    else add(true, family && family.where === 'site' ? 'Family photos are private (on the website, only with the family code)' : 'Family photos are private (on this computer only)', family && family.where === 'site' ? 'Ảnh gia đình được giữ riêng (trên trang web, chỉ mở bằng mã gia đình)' : 'Ảnh gia đình được giữ riêng (chỉ trên máy này)');
     const n = countVoices(await voicesHave()); add(n > 0, n ? `Voice pack: ${n} recordings` : 'No voice pack yet', n ? `Gói giọng: ${n} bản ghi` : 'Chưa có gói giọng');
     // the exe and the online Studio are one program: the same version in both places
     if (local.onlineVersion) { const o = await local.onlineVersion().catch(() => null); if (o) add(o === STUDIO_VERSION, o === STUDIO_VERSION ? `Sparkle Studio ${STUDIO_VERSION}: the same here and online` : `This Studio is ${STUDIO_VERSION} but the online Studio is ${o}: get the new SparkleStudio.exe (it comes with each game update)`, o === STUDIO_VERSION ? `Sparkle Studio ${STUDIO_VERSION}: giống nhau trên máy và trên mạng` : `Studio trên máy là ${STUDIO_VERSION} còn trên mạng là ${o}: hãy lấy SparkleStudio.exe mới (đi kèm mỗi bản cập nhật game)`); }
@@ -401,20 +425,40 @@ function createStudio({ store, conf, online = false, local = {} }) {
       try { version = /VERSION = '([^']+)'/.exec((await S.read('sw.js')).toString('utf8'))[1]; } catch (e) { }
       let unpublished = false; try { if (S.unpublished) unpublished = await S.unpublished(); else if (gh && conf.githubRepo) { if (!draftSeen || Date.now() - draftSeen.t > 30e3) draftSeen = { t: Date.now(), v: await ghStore().unpublished() }; unpublished = draftSeen.v; } } catch (e) { }
       return ok(Object.assign({ game: S.where, ok: ready, version, voices: nv, studio: STUDIO_VERSION, online, store: S.kind, unpublished,
-        conf: { azure: !!conf.azureKey, azureRegion: conf.azureRegion || '', netlify: !!conf.netlifyToken, netlifySite: conf.netlifySite || '', github: !!conf.githubToken, githubRepo: conf.githubRepo || '', githubBranch: conf.githubBranch || 'main', piper: !!conf.piperExe, piperExe: conf.piperExe || '', piperModels: conf.piperModels || {}, siteUrl: conf.siteUrl || '', players: !!(online || (conf.siteUrl && conf.studioPassword)) } }, local.info ? local.info() : {}));
+        conf: { azure: !!conf.azureKey, azureRegion: conf.azureRegion || '', netlify: !!conf.netlifyToken, netlifySite: conf.netlifySite || '', github: !!conf.githubToken, githubRepo: conf.githubRepo || '', githubBranch: conf.githubBranch || 'main', piper: !!conf.piperExe, piperExe: conf.piperExe || '', piperModels: conf.piperModels || {}, siteUrl: conf.siteUrl || '', players: !!(online || (conf.siteUrl && conf.studioKey)), family: family ? family.where : '' } }, local.info ? local.info() : {}));
     }
     if (api === 'settings' && post) return local.settings ? local.settings(b) : bad('Online, the keys are set in Netlify: Site configuration → Environment variables.');
     if (!S.ok()) return bad('Choose the game folder in Settings first.');
-    if (api === 'content') { if (post) { await writeContent(b); return ok({ ok: true }); } return ok(await readContent()); }
-    if (api === 'names') return ok(await villagerNames());
-    if (api === 'face' && post) {
-      const m = /^data:image\/jpeg;base64,(.+)$/.exec(b.dataUrl || ''); if (!m) return bad('not a JPEG');
-      const rel = 'content/faces/' + slug(b.id) + '.jpg'; await S.write(rel, Buffer.from(m[1], 'base64')); return ok({ photo: rel });
+    if (api === 'content') {
+      if (!post) return ok(await readContent());
+      const before = familyRefs(await readContent()), after = familyRefs(b); await writeContent(b);
+      if (family) for (const n of before) if (!after.has(n)) await family.remove(n).catch(() => { }); // (round R privacy) a photo taken off is deleted from the family store
+      return ok({ ok: true });
     }
-    if (api === 'albumphoto' && post) { // a family photo that becomes a postcard in the game (content/album/), published with the content pack
-      const m = /^data:image\/jpeg;base64,(.+)$/.exec(b.dataUrl || ''); if (!m) return bad('Choose a photo (JPG).');
-      const buf = Buffer.from(m[1], 'base64'); if (buf.length > 600 * 1024) return bad('That photo is too big (over 600 KB).');
-      const rel = 'content/album/' + (slug(b.id || 'photo') || 'photo') + '-' + Date.now().toString(36) + '.jpg'; await S.write(rel, buf); return ok({ photo: rel });
+    if (api === 'names') return ok(await villagerNames());
+    // a photo face and a family photo that becomes a postcard in the game (js/familycards.js): (round R privacy) into the
+    // private family store under a random name, never into content/ (which is public on the website and kept in GitHub)
+    if ((api === 'face' || api === 'albumphoto') && post) {
+      const m = /^data:image\/jpeg;base64,(.+)$/.exec(b.dataUrl || ''); if (!m) return bad(api === 'face' ? 'not a JPEG' : 'Choose a photo (JPG).');
+      const buf = Buffer.from(m[1], 'base64'); if (!isJpeg(buf)) return bad('That is not a JPEG photo.'); if (buf.length > 600 * 1024) return bad('That photo is too big (over 600 KB).');
+      if (!family) return bad('Family photos need the private family store.');
+      const name = familyName(); await family.put(name, buf); return ok({ photo: 'family:' + name, where: family.where });
+    }
+    if (api.startsWith('familyphoto/')) { const n = api.slice(12); if (!family || !FAMNAME.test(n)) return bad('not found', 404); const f = await family.get(n).catch(() => null); return f ? raw(f, 'image/jpeg') : bad('not found', 404); }
+    if (api === 'family/code') { if (!family) return bad('no family store'); return ok(await family.code()); }
+    if (api === 'family/code/new' && post) { if (!family) return bad('no family store'); const r = await family.newCode(); return r.error ? bad(r.error) : ok(r); }
+    // (round R privacy) one click: the photos still kept as public files (content/faces, content/album) go into the
+    // private store, custom.json names them family:<name>, and the public files are removed (gone from the website
+    // with the next Publish)
+    if (api === 'family/migrate' && post) {
+      if (!family) return bad('no family store');
+      const c = await readContent(), moved = new Map(); let n = 0;
+      const move = async rel => { if (moved.has(rel)) return moved.get(rel); const buf = await S.read(rel); if (!buf) return null; const name = familyName(); await family.put(name, buf); n++; moved.set(rel, 'family:' + name); return 'family:' + name; };
+      for (const f of Object.values(c.faces || {})) if (f && OLDFAM.test(f.photo || '')) { const r = await move(f.photo); if (r) f.photo = r; }
+      for (const x of Array.isArray(c.album) ? c.album : []) if (x && OLDFAM.test(x.photo || '')) { const r = await move(x.photo); if (r) x.photo = r; }
+      if (n) await writeContent(c);
+      const gone = [...await S.walk('content/faces'), ...await S.walk('content/album')]; for (const rel of gone) await S.remove(rel);
+      return ok({ moved: n, removed: gone.length, where: family.where, content: c });
     }
     if (api === 'musicfile' && post) { // a family recording (round N): a lullaby, a festival song… (content/music/), published with the content pack
       const m = /^data:audio\/(?:mpeg|mp3);base64,(.+)$/.exec(b.dataUrl || ''); if (!m) return bad('Choose an MP3 file.');
@@ -480,4 +524,4 @@ const makeToken = (pw, days = 30) => { const exp = Date.now() + days * 864e5, si
 const checkToken = (pw, t) => { if (!pw || !t) return false; const [exp, sig] = String(t).split('.'); if (!(+exp > Date.now())) return false; const want = crypto.createHmac('sha256', tokenKey(pw)).update(String(exp)).digest('base64url'); return sig && sig.length === want.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(want)); };
 const samePassword = (pw, given) => { if (!pw || typeof given !== 'string') return false; const a = crypto.createHash('sha256').update(pw).digest(), b = crypto.createHash('sha256').update(given).digest(); return crypto.timingSafeEqual(a, b); };
 
-module.exports = { createStudio, folderStore, githubStore, ghApi, STUDIO_VERSION, MIME, mimeOf, slug, CAST, makeToken, checkToken, samePassword, FAMILY };
+module.exports = { createStudio, folderStore, githubStore, ghApi, STUDIO_VERSION, MIME, mimeOf, slug, CAST, makeToken, checkToken, samePassword, FAMILY, FAMREF, FAMNAME, familyRefs };
