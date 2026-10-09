@@ -5,6 +5,7 @@ import { T } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
 import { heightAt, VILLAGE, BAMBOO, LAKE, WATER } from './world.js';
+import { WORLD as MAP_WORLD } from './content/map.js';
 import { dist2, pick } from './util.js';
 
 export const SECRETS = [
@@ -105,8 +106,9 @@ export function createSecrets(G) {
   const bottle = sprite('🍾', .9); bottle.position.set(ox, Math.max(heightAt(ox, oz), WATER) + .45, oz); scene.add(bottle);
   hidden('bottle', ox, oz, 2.4, h => unlock(h, 'bottle'));
   // snowman on the highest summit
-  let best = { h: -1e9, x: 0, z: -150 };
-  for (let x = -150; x <= 150; x += 6) for (let z = -185; z <= -90; z += 6) { const y = heightAt(x, z); if (y > best.h && Math.abs(x) < 150 && z > -180) best = { h: y, x, z }; }
+  // (round T: where to look comes from the map, js/content/map.js WORLD.summit)
+  const SU = MAP_WORLD.summit; let best = { h: -1e9, x: (SU.x0 + SU.x1) / 2, z: -150 };
+  for (let x = SU.x0; x <= SU.x1; x += 6) for (let z = SU.z0; z <= SU.z1; z += 6) { const y = heightAt(x, z); if (y > best.h && x > SU.x0 && x < SU.x1 && z > SU.zMin) best = { h: y, x, z }; }
   const snow = sprite('⛄', 2); snow.position.set(best.x, best.h + 1.1, best.z); scene.add(snow);
   hidden('snowman', best.x, best.z, 3, h => unlock(h, 'snowman'), { y: best.h });
   S.summit = best;

@@ -6,7 +6,7 @@
 // Progress: profile.yard = { done: { stepId: true }, jobs: { relId: jobIndex } }. Studio switch 'story_yard'.
 import { THREE, P, merge, toonVC } from './gfx.js';
 import { T, nm } from './i18n.js';
-import { heightAt, YARD } from './world.js';
+import { heightAt, YARD, TOWN } from './world.js';
 import { featureOn } from './custom.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
 import { build } from './vehicles.js';
@@ -31,7 +31,7 @@ export function createYard(G, { dialog, say, reward, save }) {
 
   // ---------- where: its own levelled plot behind the north row of Phố Hai Quê (world.js YARD), facing the street;
   // drawn 18 x 14 and built at S = 0.8 of that ----------
-  const shop = G.interactables.find(i => i.id === 'npc_bahue') || { x: 13, z: 41 };
+  const shop = G.interactables.find(i => i.id === 'npc_bahue') || { x: TOWN.x - 19, z: TOWN.z - 12 };
   const S = .8, X = YARD.x, Z = YARD.z, Y0 = heightAt(X, Z), ry = YARD.rot;
   const spot = { x: X, z: Z, room: openRoom(G, X, Z) };
   const yard = new THREE.Group(); yard.position.set(X, Y0, Z); yard.rotation.y = ry; yard.scale.setScalar(S); scene.add(yard);

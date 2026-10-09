@@ -4,7 +4,7 @@
 // (Queensland). Each has an ℹ️ sign, a postcard, real photos and a 360° look round (js/realworld.js REAL).
 import { THREE, P, merge, toonVC, sprite, outline } from './gfx.js';
 import { T } from './i18n.js';
-import { heightAt, oldHeightAt, CITIES, roadDist, riverDist, WATER, BAMBOO, APOSTLES, LAKE } from './world.js';
+import { heightAt, oldHeightAt, CITIES, roadDist, riverDist, WATER, BAMBOO, APOSTLES, LAKE, ULURU, HALF } from './world.js';
 import { LANDMARKS, postcard } from './regions.js';
 import { REAL } from './realworld.js';
 
@@ -59,7 +59,7 @@ export function createRegionSites(G) {
   const findSpot = c => {
     for (let R = 22; R <= 64; R += 3) for (let k = 0; k < 24; k++) {
       const a = k / 24 * Math.PI * 2 + c.x * .01, x = c.x + Math.cos(a) * R, z = c.z + Math.sin(a) * R;
-      if (Math.abs(x) > 185 || Math.abs(z) > 185 || Math.hypot(x - BAMBOO.x, z - BAMBOO.z) < BAMBOO.r - 10 || Math.hypot(x + 128, z - 150) < 40 || Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r + 16 || riverDist(x, z) < 16 || roadDist(x, z).d < 11 || used.some(([ux, uz]) => Math.hypot(ux - x, uz - z) < 22)) continue;
+      if (Math.abs(x) > HALF - 15 || Math.abs(z) > HALF - 15 || Math.hypot(x - BAMBOO.x, z - BAMBOO.z) < BAMBOO.r - 10 || Math.hypot(x - ULURU.x, z - ULURU.z + 2) < 40 || Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r + 16 || riverDist(x, z) < 16 || roadDist(x, z).d < 11 || used.some(([ux, uz]) => Math.hypot(ux - x, uz - z) < 22)) continue;
       const hs = [[0, 0], [7, 0], [-7, 0], [0, 6], [0, -6]].map(([dx, dz]) => oldHeightAt(x + dx, z + dz));
       if (Math.min(...hs) < WATER + .5 || Math.max(...hs) - Math.min(...hs) > (R > 40 ? 3.2 : 2.2)) continue;
       if (world.boxes.some(b => x > b.x0 - 9 && x < b.x1 + 9 && z > b.z0 - 9 && z < b.z1 + 9) || world.colliders.some(o => o.r > .3 && Math.hypot(o.x - x, o.z - z) < o.r + 8)) continue;

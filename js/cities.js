@@ -5,7 +5,8 @@
 // Two Homes Street: Bạch Dinh (the White Villa) and Nhà Tròn (the Round House water tower).
 import { THREE, toonVC, P, merge, outline, sprite } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
-import { heightAt, roadDist, CITIES } from './world.js';
+import { heightAt, roadDist, CITIES, VILLAGE, TOWN, MARKET, AUSSIE, CHINA, INDIA } from './world.js';
+import { landmarkAt } from './content/map.js';
 import { roadTexture } from './roads.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
 import { LANDMARKS, VENDORS, postcard } from './regions.js';
@@ -229,7 +230,8 @@ export function createCities(G) {
   // ---------- kiosks, in the cities and in the older villages ----------
   // In the older villages the kiosks stand along the edge of the main street, facing it, never on it.
   // STREETS: the street's centre line [from, to] and how far from it the kiosk stands.
-  const STREETS = { village: [[84, 30], [92, 30], 4.4], town: [[14, 47], [44, 47], 7.2], market: [[108, 83], [144, 83], 5], aussie: [[-138, -12], [-96, -12], 8], china: [[100, -65], [100, -80], 5.2], india: [[-112, -61], [-112, -78], 5.2] };
+  // (round T: from each place's anchor in the map, js/content/map.js)
+  const STREETS = { village: [[VILLAGE.x - 26, VILLAGE.z], [VILLAGE.x - 18, VILLAGE.z], 4.4], town: [[TOWN.x - 18, TOWN.roadZ], [TOWN.x + 12, TOWN.roadZ], 7.2], market: [[MARKET.x - 13, MARKET.roadZ], [MARKET.x + 23, MARKET.roadZ], 5], aussie: [[AUSSIE.x - 21, AUSSIE.roadZ], [AUSSIE.x + 21, AUSSIE.roadZ], 8], china: [[CHINA.x, CHINA.z + 23], [CHINA.x, CHINA.z + 8], 5.2], india: [[INDIA.x, INDIA.z + 23], [INDIA.x, INDIA.z + 6], 5.2] };
   const free = (x, z, r) => world.colliders.every(o => dist2(o.x, o.z, x, z) > o.r + r) && world.boxes.every(b => x < b.x0 - r || x > b.x1 + r || z < b.z0 - r || z > b.z1 + r) && G.interactables.every(i => !Number.isFinite(i.x) || dist2(i.x, i.z, x, z) > 3.2);
   const flatAt = (x, z) => heightAt(x, z) > 1.2 && Math.abs(heightAt(x + 1.5, z) - heightAt(x - 1.5, z)) + Math.abs(heightAt(x, z + 1.5) - heightAt(x, z - 1.5)) < 1.2;
   const offRoad = (x, z) => { const r = roadDist(x, z); return r.d > r.road.w / 2 + 1.6; };
@@ -269,12 +271,12 @@ export function createCities(G) {
 
   // ---------- Two Homes Street: Bạch Dinh, Nhà Tròn and house number 8 ----------
   {
-    const [x, z] = [13, 72.5], rot = Math.atan2(30 - x, 47 - z);
+    const [x, z] = landmarkAt('bachdinh'), rot = Math.atan2(TOWN.x - 2 - x, TOWN.roadZ - z);
     place(MODELS.bachdinh(), x, z, rot); world.colliders.push({ x, z, r: 4.2 });
     addLandmark('bachdinh', '🏛️', 'vn', x + Math.sin(rot) * 6, z + Math.cos(rot) * 6, x, z, ['Bạch Dinh, the White Villa (Vũng Tàu)', 'Bạch Dinh (Vũng Tàu)'], ['Bạch Dinh, the White Villa, sits on a green hill above the sea in Vũng Tàu. It was built in 1898, all white with a red roof, and now it is a museum.', 'Bạch Dinh nằm trên đồi xanh nhìn ra biển Vũng Tàu. Biệt thự được xây năm 1898, sơn trắng mái ngói đỏ, nay là bảo tàng.']);
   }
   {
-    const [x, z] = [36.5, 63.5], rot = Math.atan2(28 - x, 52 - z);
+    const [x, z] = landmarkAt('nhatron'), rot = Math.atan2(TOWN.x - 4 - x, TOWN.z - 1 - z);
     place(MODELS.nhatron(), x, z, rot); world.colliders.push({ x, z, r: 3.4 });
     // at the top of every real hour its bell strikes the time (once at one o'clock … twelve times at twelve) and a
     // flock of swallows flies out from under the roof, circles and goes back in (a game hour is only 25 seconds)
@@ -301,10 +303,10 @@ export function createCities(G) {
     }
     addLandmark('nhatron', '💧', 'vn', x + Math.sin(rot) * 5.5, z + Math.cos(rot) * 5.5, x, z, ['Nhà Tròn, the Round House (Bà Rịa)', 'Nhà Tròn Bà Rịa'], ['Nhà Tròn in Bà Rịa is a round water tower, about 20 metres tall, standing on eight legs. It was built more than a hundred years ago to keep the town’s water, and people could look out over all the roads from the top.', 'Nhà Tròn ở Bà Rịa là tháp nước hình tròn cao khoảng 20 mét, đứng trên tám cột. Tháp được xây hơn một trăm năm trước để chứa nước cho thị xã, và từ trên cao có thể nhìn khắp các ngả đường.']);
   }
-  buildHueNghi(G, place, person, 15, 34.25);
+  buildHueNghi(G, place, person, TOWN.x - 17, TOWN.z - 18.75);
   // house number 8: a Bà Rịa family home, only its number is shown
   {
-    const [x, z] = [20.3, 57.7], rot = Math.PI; // on the flat south side of the street, facing it (the west end is the foot of the Dawn Plateau)
+    const [x, z] = [TOWN.x - 11.7, TOWN.z + 4.7], rot = Math.PI; // on the flat south side of the street, facing it (the west end is the foot of the Dawn Plateau)
     const parts = [
       P(B(6, .3, 7), '#b9b2a4', [0, .15, 0]),
       P(B(5.4, 3.2, 6), '#f6e3a8', [0, 1.75, -.3]), P(B(5.4, 3, 5.4), '#f6e3a8', [0, 4.85, -.6]),

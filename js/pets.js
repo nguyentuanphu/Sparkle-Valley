@@ -6,7 +6,7 @@ import { T, onLang } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
 import { profiles, saveProfiles, farm, saveFarm } from './state.js';
-import { WATER, heightAt, LEAFIES } from './world.js';
+import { WATER, heightAt, LEAFIES, HOME } from './world.js';
 import { animalModel, PETS } from './farm.js';
 import { fmt, spoken } from './money.js';
 import { el, esc, dist2, wait } from './util.js';
@@ -61,7 +61,7 @@ export function createPets(G) {
   P.forHero = h => live.filter(L => L.h === h);
 
   // ---------- the pet yard on the farm ----------
-  const yardC = G.farm && G.farm.spots && G.farm.spots.hutch ? { x: G.farm.spots.hutch.x + 5, z: G.farm.spots.hutch.z + 4 } : { x: -40, z: 116 };
+  const yardC = G.farm && G.farm.spots && G.farm.spots.hutch ? { x: G.farm.spots.hutch.x + 5, z: G.farm.spots.hutch.z + 4 } : { x: HOME.x - 14, z: HOME.z - 10 };
   let yard = []; // { pt, obj, tag, tx, tz, hop }
   {
     // a little picket fence and a sign

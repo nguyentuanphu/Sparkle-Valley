@@ -11,7 +11,8 @@ import { openSongs } from './songs.js';
 import { songsFor, VN_AREAS, familySongs } from './content/songs.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
-import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
+import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER, PLATEAU, TOWN, AUSSIE, LAKE, ULURU, HALF } from './world.js';
+import { landmarkAt } from './content/map.js';
 import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL, OUTLINED } from './avatar.js';
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
@@ -192,7 +193,7 @@ const V = VILLAGE;
 const kidLook = (style, color, h, hs, hat) => ({ style, color, hat, back: 'none', hair: h, hairStyle: hs, skin: '#f6c7a5', glider: 0 });
 let owl, gourd;
 function setupNPCs() {
-  owl = addNPC({ id: 'owl', name: 'Ông Cú', model: buildOwl(), x: -2, z: -8, face: .3, icon: '🦉', talk: owlTalk });
+  owl = addNPC({ id: 'owl', name: 'Ông Cú', model: buildOwl(), x: PLATEAU.x - 2, z: PLATEAU.z - 8, face: .3, icon: '🦉', talk: owlTalk });
   addNPC({ id: 'mai', name: 'Cô Mai', look: { style: 'aodai', color: '#e8435a', hat: 'nonla', back: 'none', hair: '#1d1412', hairStyle: 'long', skin: '#f6c7a5', glider: 0 }, x: V.x + 2, z: V.z - 11.6, face: 0, icon: '🛒', talk: maiTalk });
   addNPC({ id: 'ba', name: 'Bác Ba', look: { style: 'overalls', color: '#5b7fbf', hat: 'none', back: 'none', hair: '#8a8a8a', hairStyle: 'short', skin: '#e0aa80', glider: 0 }, x: V.x - 4.5, z: V.z + 13, face: .8, icon: '🍲', talk: baTalk });
   addNPC({ id: 'teo', name: 'Tèo', look: kidLook('shirt', '#ffb52e', '#1d1412', 'spiky', 'none'), x: V.x + 16, z: V.z + 19.6, face: 0, icon: '🪨', talk: h => kidTalk(h, 'oanquan', 'Tèo', ['Want to play Ô ăn quan with me? It is a clever counting game!', 'Chơi Ô ăn quan với tớ không? Trò này phải tính toán giỏi đấy!']) });
@@ -207,7 +208,7 @@ function setupNPCs() {
     talk: h => kidTalk(h, 'chuyen', 'Mít', ['Hi! I am Mít. In Vietnam we play Đánh chuyền with a ball and sticks. Jack calls it Knucklebones!', 'Chào bạn! Tớ là Mít. Ở Việt Nam tụi tớ chơi đánh chuyền với quả bóng và que. Jack gọi là Knucklebones đó!']) });
   addNPC({ id: 'bom', name: 'Bờm 🇻🇳', look: look('tunic', '#e8434a', '#1d1412', 'spiky', 'none'), x: PG.x + 5, z: PG.z - 4, face: -1, icon: '🐉',
     talk: h => kidTalk(h, 'dragon', 'Bờm', ['Let us be a dragon! Hold on tight and sing: Rồng rắn lên mây!', 'Mình làm rồng rắn nào! Bám chặt vào và hát: Rồng rắn lên mây!']) });
-  addNPC({ id: 'ruby', name: 'Ruby 🇦🇺', look: look('overalls', '#a66bff', '#a8432a', 'long', 'bow', '#ffe3d1'), x: 44.2, z: 56.4, face: 1.4, icon: '🔮',
+  addNPC({ id: 'ruby', name: 'Ruby 🇦🇺', look: look('overalls', '#a66bff', '#a8432a', 'long', 'bow', '#ffe3d1'), x: TOWN.x + 12.2, z: TOWN.z + 3.4, face: 1.4, icon: '🔮',
     talk: h => kidTalk(h, 'marbles', 'Ruby', ['I have got my lucky shooter marble! Can you knock the marbles out of the ring?', 'Tớ có viên bi cái may mắn nè! Bạn bắn được bi ra khỏi vòng không?']) });
   addNPC({ id: 'lan', name: 'Lan 🇻🇳', look: look('aodai', '#5fd39a', '#3b2618', 'ponytail', 'none'), x: PG.x - 6, z: PG.z + 3, face: 1.2, icon: '🪢',
     talk: h => kidTalk(h, 'skipping', 'Lan', ['Nhảy dây! Skipping! Jump when the rope comes down and count with me!', 'Nhảy dây nào! Nhảy lên khi dây quay xuống và đếm cùng tớ nhé!']) });
@@ -626,8 +627,8 @@ function questTarget(h) {
     case 'pot': return near(world.pots);
     case 'kids': return NPCS.find(n => n.id === 'teo');
     case 'playground': return NPCS.find(n => n.id === 'jack');
-    case 'market': return { x: 99, z: 83 };
-    case 'aussie': return { x: -121, z: -12 };
+    case 'market': return { x: MARKET.x - 22, z: MARKET.z };
+    case 'aussie': return { x: AUSSIE.x - 4, z: AUSSIE.z };
     case 'postcard': return near(LANDMARKS.filter(l => !(p.postcards || {})[l.id]).map(l => ({ x: l.x, z: l.z + 2 })));
     case 'buffalo': return near(world.buffalo.map(b => ({ x: b.mesh.position.x, z: b.mesh.position.z })));
     case 'leafy': return near(LEAFIES.filter(l => !p.leafies[l.id]));
@@ -730,14 +731,14 @@ G.PLACES = [
   { g: 'vn', key: 'village', icon: '🏮', name: () => T('Lotus Village', 'Làng Sen'), x: VILLAGE.x - VILLAGE.r + 6, z: VILLAGE.z },
   { g: 'asia', key: 'china', icon: '🐼', name: () => T('China Town', 'Làng Trung Hoa'), x: CHINA.x, z: CHINA.z + 12 },
   { g: 'asia', key: 'india', icon: '🐘', name: () => T('India Village', 'Làng Ấn Độ'), x: INDIA.x, z: INDIA.z + 15 },
-  { g: 'home', icon: '🦉', name: () => T('Dawn Plateau (Ông Cú)', 'Cao nguyên Bình Minh (Ông Cú)'), x: -2, z: -3 },
+  { g: 'home', icon: '🦉', name: () => T('Dawn Plateau (Ông Cú)', 'Cao nguyên Bình Minh (Ông Cú)'), x: PLATEAU.x - 2, z: PLATEAU.z - 3 },
   { g: 'vn', icon: '💃', name: () => T('Village festival stage (Lotus Village)', 'Sân khấu hội làng (Làng Sen)'), x: VILLAGE.x - 6, z: VILLAGE.z + 25, under: 'village' },
-  { g: 'home', key: 'town', icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: 28, z: 52 },
-  { g: 'home', icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: 6, z: 140 },
-  { g: 'vn', icon: '🏮', name: () => T('Three Regions Market', 'Chợ Ba Miền'), x: 99, z: 83 },
-  { g: 'au', icon: '🍦', name: () => T('Aussie Corner', 'Góc Nước Úc'), x: -121, z: -12 },
-  { g: 'au', icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: 92, z: 128, under: 'sydney' },   // (the older Opera House stands here; listed under Sydney)
-  { g: 'au', key: 'uluru', icon: '🪨', name: () => T('Uluru', 'Uluru'), x: -128, z: 132 },
+  { g: 'home', key: 'town', icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: TOWN.x - 4, z: TOWN.z - 1 },
+  { g: 'home', icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: LAKE.x - 49, z: LAKE.z + 15 },
+  { g: 'vn', icon: '🏮', name: () => T('Three Regions Market', 'Chợ Ba Miền'), x: MARKET.x - 22, z: MARKET.z },
+  { g: 'au', icon: '🍦', name: () => T('Aussie Corner', 'Góc Nước Úc'), x: AUSSIE.x - 4, z: AUSSIE.z },
+  { g: 'au', icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: landmarkAt('opera')[0] - 6, z: landmarkAt('opera')[1], under: 'sydney' },   // (the older Opera House stands here; listed under Sydney)
+  { g: 'au', key: 'uluru', icon: '🪨', name: () => T('Uluru', 'Uluru'), x: ULURU.x, z: ULURU.z - 20 },
   { g: 'home', icon: '🐻', name: () => T('Mr. Bear’s shop (farm)', 'Cửa hàng Bác Gấu (nông trại)'), x: HOME.x - 21, z: HOME.z + 6, under: 'farm' }
 ];
 G.changePlayer = () => {
@@ -1267,9 +1268,9 @@ G.zoomBy = (i, f, quiet) => {
 // A child comes back where they were (owner, round 30): the spot is saved every 5 s and when the game is put away.
 // It is only used if it is still a good place to stand (the valley may have changed since): on the map, on dry
 // ground, not inside a building, a wall or a tree; otherwise the child starts at the usual spot by the owl.
-const HOME_SPOT = i => ({ x: -3 + i * 2.5, z: -4 });
+const HOME_SPOT = i => ({ x: PLATEAU.x - 3 + i * 2.5, z: PLATEAU.z - 4 }); // (round T: by Ông Cú, from the map)
 G.goodSpot = (x, z) => {
-  const W = G.world; if (!Number.isFinite(x) || !Number.isFinite(z) || Math.abs(x) > 190 || Math.abs(z) > 190) return false;
+  const W = G.world; if (!Number.isFinite(x) || !Number.isFinite(z) || Math.abs(x) > HALF - 10 || Math.abs(z) > HALF - 10) return false;
   if (heightAt(x, z) < WATER + .3) return false;
   if (W.solidAt && [[0, 0], [.6, 0], [-.6, 0], [0, .6], [0, -.6]].some(([dx, dz]) => W.solidAt(x + dx, z + dz))) return false;
   return !W.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + .45) && !W.boxes.some(b => x > b.x0 - .45 && x < b.x1 + .45 && z > b.z0 - .45 && z < b.z1 + .45);
@@ -1366,7 +1367,7 @@ function frame(now) {
   world.update(dt, t);
   if (!playing) {
     const a = t * .05;
-    titleCam.position.set(Math.cos(a) * 70, 42, Math.sin(a) * 70); titleCam.lookAt(0, 16, 0);
+    titleCam.position.set(PLATEAU.x + Math.cos(a) * 70, 42, PLATEAU.z + Math.sin(a) * 70); titleCam.lookAt(PLATEAU.x, 16, PLATEAU.z); // (round T: round Ông Cú's home)
     world.updateSky(0, titleCam.position);
     renderer.setScissorTest(false); renderer.setViewport(0, 0, innerWidth, innerHeight); renderer.render(scene, titleCam);
     return;
@@ -1547,7 +1548,7 @@ setupTrading(G);
 // villagers the family added in Sparkle Studio (content pack "npcs"): placed where they were put on the map, saying
 // their own lines in both languages
 for (const c of (Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {
-  if (!c || !isFinite(c.x) || !isFinite(c.z) || Math.abs(c.x) > 190 || Math.abs(c.z) > 190) continue;
+  if (!c || !isFinite(c.x) || !isFinite(c.z) || Math.abs(c.x) > HALF - 10 || Math.abs(c.z) > HALF - 10) continue;
   const name = String(c.name || '').trim().slice(0, 40); if (!name) continue;
   const L = c.look || {}, hex = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v : null;
   const look = { style: ['dress', 'shirt', 'aodai', 'tunic', 'overalls', 'hoodie'].includes(L.style) ? L.style : 'shirt', color: hex(L.color) || '#5fb0ff', hat: 'none', back: 'none', hair: hex(L.hair) || '#2a1d14', hairStyle: ['buns', 'short', 'long', 'ponytail', 'spiky'].includes(L.hairStyle) ? L.hairStyle : 'short', skin: hex(L.skin) || '#f1c6a4', glider: 0, age: L.age === 'old' || L.age === 'kid' ? L.age : 'adult' };
