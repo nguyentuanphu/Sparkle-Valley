@@ -379,12 +379,13 @@ await check('phone', async () => {
         if (document.scrollingElement.scrollWidth > W + 1) out.push('page scrolls sideways (' + document.scrollingElement.scrollWidth + ' > ' + W + ')');
         const top = document.querySelector('.wardrobe, .hub, .pad, .howto, .theatre, .gl, .dialog:not(.out), .modal');
         if (top) for (const btn of top.querySelectorAll('button')) { const b = btn.getBoundingClientRect(), cs = getComputedStyle(btn); if (!b.width || cs.visibility === 'hidden' || btn.closest('[hidden]')) continue;
-          if (/^(x|th-x|ht-x|gl-x|dch|ht-play|th-next|gl-next)$/.test(btn.className.split(' ')[0]) && (b.left < -1 || b.right > W + 1 || b.top < -1 || b.bottom > H + 1)) out.push(`button "${(btn.textContent || btn.getAttribute('aria-label') || btn.className).trim().slice(0, 20)}" off screen`); }
+          if (/^(x|th-x|ht-x|gl-x|dch|ht-play|th-next|gl-next)$/.test(btn.className.split(' ')[0]) && (b.left < -1 || b.right > W + 1 || b.top < -1 || b.bottom > H + 1)) out.push(`button "${(btn.textContent || btn.getAttribute('aria-label') || btn.className).trim().slice(0, 20)}" off screen (${[b.left, b.top, b.right, b.bottom].map(Math.round)} in ${W}×${H}; on top: ${[...document.querySelectorAll('.dialog, .modal, .reward, .hub, .pad, .gl, .theatre, .songs')].map(e => e.className.split(' ').slice(0, 2).join('.')).join(',')})`); }
         for (const t of document.querySelectorAll('.pad-tabs small')) { const lh = parseFloat(getComputedStyle(t).lineHeight) || 13; if (t.getClientRects().length && t.getBoundingClientRect().height > lh * 1.6 + 2) out.push(`tab name "${t.firstChild && t.firstChild.textContent}" broken over lines`); }
         const md = document.querySelector('.modal'); if (md && /blur/.test(getComputedStyle(md).backdropFilter || '')) out.push('the window blurs the game behind it');
         return out;
       });
       r.forEach(x => bad.push(`${name} (${tag}): ${x}`));
+      if (r.length) await P.page.screenshot({ path: `/tmp/claude-0/-home-user-Sparkle-Valley/0f9897b3-04f2-58fa-a097-233218d3db1c/scratchpad/sv-phone-${name.replace(/\W+/g, '-')}-${tag}.png` }).catch(() => { });
       await P.page.evaluate(() => { document.querySelectorAll('.modal, .hub, .pad, .howto, .theatre, .gl, .dialog, .storybook, .vc-pop, .wardrobe').forEach(e => e.remove()); __sv.paused = false; __sv.closeUp = null; });
     }
   }
