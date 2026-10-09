@@ -3,7 +3,9 @@
 // valley's old adventure list (js/data.js QUESTS) is the goal as before. Progress: profile.lanterns =
 // { companion, done: { stepId: true }, chapters: { ch1: true }, carrying }.
 // Chapter 1 builds Làng Sen's đình (under soft mist until its lantern is hung, then lit) and drops the lantern among the
-// lotus leaves by the pond.
+// lotus leaves by the pond. Chapter 2 (Hà Nội) has its places built by js/content/chapter2hanoi.js: the Thê Húc bridge by
+// Hồ Gươm lights up red, and a Trung Thu parade walks round the lake. Each chapter's landmark, lantern spot, rope and
+// lights are in places[chapter id]. Steps marked big are only for big kids (5 to 8); an under-5 skips them.
 import { THREE, glow } from './gfx.js';
 import { T } from './i18n.js';
 import { VILLAGE, heightAt, roadDist, WATER } from './world.js';
@@ -14,18 +16,24 @@ import { buildDinh, buildLantern } from './dinh.js';
 import { createCompanions } from './companion.js';
 import { openSpot } from './openspot.js';
 import { pad, frames, slot, QUIT } from './handpad.js';
+import { createHanoi } from './content/chapter2hanoi.js';
 
 const V = VILLAGE;
 const released = ch => featureOn('story_' + ch.id, true);
 const st = p => { const s = p.lanterns = p.lanterns && typeof p.lanterns === 'object' ? p.lanterns : {}; s.done = s.done || {}; s.chapters = s.chapters || {}; return s; };
 const unnamed = s => String(s).replace(/,?\s*\{name\}/g, '');
+const big = p => p.age === 'big';
+// the game a step waits for: an under-5 plays the one made for them (A11Y-006)
+const gamesOf = (p, s) => (!big(p) && s.gameLittle) || s.game || [];
 const fill = (s, p) => String(s).replace(/\{name\}/g, p.name || '').replace(/\{companion\}/g, COMPANIONS[st(p).companion || 'firefly'].name);
 
 export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
+  let hanoi = null; // (chapter 2's places, built below)
   const { scene, world } = G;
   const stepDone = (p, s) => {
     const L = st(p);
     if (L.done[s.id]) return true;
+    if (s.big && !big(p)) return true; // (fewer steps for under-5s)
     if (s.owl) return !!L.companion;
     return false;
   };
@@ -85,32 +93,44 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   // ---------- something to do on each step (Studio switch storyActions, owner 9 Oct) ----------
   const actions = () => featureOn('storyActions', true);
   const A = p => { const L = st(p); L.act = L.act || {}; return L.act; };
-  // wind ribbons on the way into the village: walk through them or tap them
+  // chapter 2: Hà Nội's places (the Thê Húc bridge, Tèo, Cô Tam and Bà Năm there for Trung Thu, the stone turtles, the clues)
+  hanoi = createHanoi(G, { current, isOn, A, st, big, say, save, dialog, reward, actions, finish: (h, id) => finish(h, id), companions: () => companions });
+  Object.assign(spots, hanoi.spots);
+  G.landmarksStory.thehuc = { x: hanoi.front[0], z: hanoi.front[1] };
+  // each chapter's landmark: where the lantern is found, where it is hung (and the rope), its lights, and what follows
+  const places = {
+    ch1: { front, lanternAt, rope: { x: dinhAt[0] + Math.sin(face) * 3.1, z: dinhAt[1] + Math.cos(face) * 3.1, y0: heightAt(front[0], front[1]) + .5, y1: dinh.position.y + 3 }, paint: on => setLit(on) },
+    ch2: { front: hanoi.front, lanternAt: hanoi.lanternAt, rope: hanoi.rope, paint: hanoi.paint, after: () => hanoi.startParade(), film: () => import('./content/chapter2films.js') }
+  };
+  const catching = s => actions() && !!(s.ribbons || s.lights);
+  // wind ribbons on the way into the village (chapter 1) and lantern lights on the way to Hà Nội (chapter 2): walk
+  // through them or tap them
   const ribbonStep = CHAPTERS.flatMap(c => c.steps).find(s => s.ribbons);
-  const ribbons = [];
-  if (ribbonStep) {
+  const ribbons = [], rkey = s => s.lights ? 'rib_' + s.id : 'rib';
+  for (const rs of CHAPTERS.flatMap(c => c.steps).filter(s => s.ribbons || s.lights)) {
     // (beside the road, never on it: ROAD-004)
     const offRoad = (x, z) => { const d = roadDist(x, z); return !d.road || d.d > d.road.w / 2 + 1.2; };
-    const v = spots[ribbonStep.at](), okAt = (x, z) => heightAt(x, z) > WATER + .4 && offRoad(x, z) && !world.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + 1);
-    for (let k = 0; k < ribbonStep.ribbons; k++) {
+    const v = spots[rs.at](), okAt = (x, z) => heightAt(x, z) > WATER + .4 && offRoad(x, z) && !hanoi.onStreet(x, z, 1) && !world.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + 1);
+    for (let k = 0; k < (rs.ribbons || rs.lights); k++) {
       let at = null;
       for (let j = 0; j < 160 && !at; j++) { const a = k * 2.1 + j * .7, d = 5 + k * 4 + (j % 7), x = v.x + 4 + Math.cos(a) * d, z = v.z + Math.sin(a) * d; if (okAt(x, z)) at = [x, z]; }
       at = at || [v.x + 4 + k * 3, v.z + k];
       const g = new THREE.Group(); g.userData.noSolid = true;
-      const colors = ['#ff5a7a', '#ffd23f', '#5fb6ff'];
-      for (let i = 0; i < 3; i++) { const m = new THREE.Mesh(new THREE.PlaneGeometry(.22, 1.4), new THREE.MeshBasicMaterial({ color: colors[(k + i) % 3], side: THREE.DoubleSide })); m.position.set((i - 1) * .2, 0, 0); g.add(m); }
+      if (rs.lights) { const l = buildLantern(true); l.scale.setScalar(.6); g.add(l); const halo = new THREE.Mesh(new THREE.SphereGeometry(.55, 10, 8), glow('#ffcf6a', .22)); halo.material.depthWrite = false; g.add(halo); }
+      else { const colors = ['#ff5a7a', '#ffd23f', '#5fb6ff'];
+        for (let i = 0; i < 3; i++) { const m = new THREE.Mesh(new THREE.PlaneGeometry(.22, 1.4), new THREE.MeshBasicMaterial({ color: colors[(k + i) % 3], side: THREE.DoubleSide })); m.position.set((i - 1) * .2, 0, 0); g.add(m); } }
       g.position.set(at[0], heightAt(at[0], at[1]) + 1.3, at[1]); g.visible = false; scene.add(g);
-      ribbons.push({ k, x: at[0], z: at[1], g });
+      ribbons.push({ s: rs, k, x: at[0], z: at[1], g, id: (rs.lights ? 'story_light' : 'story_ribbon') + k });
     }
   }
-  const ribbonsLeft = p => ribbons.filter(r => !(A(p).rib || []).includes(r.k));
+  const ribbonsLeft = (p, s = ribbonStep) => ribbons.filter(r => r.s === s && !(A(p)[rkey(s)] || []).includes(r.k));
   const catchRibbon = (h, r) => {
-    const a = A(h.profile); a.rib = a.rib || []; if (a.rib.includes(r.k)) return; a.rib.push(r.k); save();
+    const a = A(h.profile), key = rkey(r.s); a[key] = a[key] || []; if (a[key].includes(r.k)) return; a[key].push(r.k); save();
     G.fx && G.fx(r.x, r.g.position.y, r.z, '✨');
-    if (!ribbonsLeft(h.profile).length) { say(...STORY_LINES.ribbonsAll); finish(h, ribbonStep.id); } else say(...STORY_LINES.ribbon);
+    if (!ribbonsLeft(h.profile, r.s).length) { say(...(r.s.lights ? STORY_LINES.lightsAll : STORY_LINES.ribbonsAll)); finish(h, r.s.id); } else say(...(r.s.lights ? STORY_LINES.light : STORY_LINES.ribbon));
   };
-  for (const r of ribbons) G.interactables.push({ id: 'story_ribbon' + r.k, x: r.x, z: r.z, r: 2.2, icon: '🎀', label: () => T('Catch the ribbon', 'Bắt dải lụa'),
-    visible: h => actions() && isOn(h.profile, ribbonStep.id) && ribbonsLeft(h.profile).includes(r), act: h => catchRibbon(h, r) });
+  for (const r of ribbons) G.interactables.push({ id: r.id, x: r.x, z: r.z, r: 2.2, icon: r.s.lights ? '🏮' : '🎀', label: () => r.s.lights ? T('Catch the light', 'Bắt đốm sáng') : T('Catch the ribbon', 'Bắt dải lụa'),
+    visible: h => actions() && isOn(h.profile, r.s.id) && ribbonsLeft(h.profile, r.s).includes(r), act: h => catchRibbon(h, r) });
   // lotus leaves by the pond: the lantern is under one of them (a different one each day)
   const leafStep = CHAPTERS.flatMap(c => c.steps).find(s => s.leaves);
   const leaves = [];
@@ -126,6 +146,9 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   const dayNo = () => Math.floor((Date.now() + 10 * 3600e3) / 864e5); // (a day in AEST, like js/kidplay.js)
   const rightLeaf = () => dayNo() % Math.max(1, leaves.length);
   const revealed = p => !!A(p).found;
+  // the lantern shows once the child has looked in the right place (lotus leaves in chapter 1, clue spots in chapter 2)
+  const revealedFor = (p, s) => s.leaves ? revealed(p) : s.clues ? hanoi.revealed(p) : true;
+  const jobbing = new Set();
   const liftLeaf = (h, L) => {
     const a = A(h.profile); a.lifted = a.lifted || []; if (!a.lifted.includes(L.k)) a.lifted.push(L.k);
     L.lift = 1;
@@ -137,13 +160,13 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   for (const L of leaves) G.interactables.push({ id: 'story_leaf' + L.k, x: L.x, z: L.z, r: 1.6, icon: '🪷', label: () => T('Lift the leaf', 'Lật lá sen'),
     visible: h => actions() && isOn(h.profile, leafStep.id) && !revealed(h.profile) && !(A(h.profile).lifted || []).includes(L.k), act: h => liftLeaf(h, L) });
   world.updaters.push((dt, t) => {
-    const anyRib = actions() && ribbonStep && G.heroes.some(h => isOn(h.profile, ribbonStep.id));
     for (const r of ribbons) {
-      r.g.visible = anyRib && G.heroes.some(h => isOn(h.profile, ribbonStep.id) && ribbonsLeft(h.profile).includes(r));
+      r.g.visible = actions() && G.heroes.some(h => isOn(h.profile, r.s.id) && ribbonsLeft(h.profile, r.s).includes(r));
       if (!r.g.visible) continue;
-      r.g.rotation.y = t * .8 + r.k; r.g.children.forEach((m, i) => { m.rotation.z = Math.sin(t * 3 + i) * .4; }); r.g.position.y = heightAt(r.x, r.z) + 1.3 + Math.sin(t * 2 + r.k) * .2;
-      // walking through a ribbon catches it
-      for (const h of G.heroes) if (isOn(h.profile, ribbonStep.id) && Math.hypot(h.pos.x - r.x, h.pos.z - r.z) < 1.4 && ribbonsLeft(h.profile).includes(r)) catchRibbon(h, r);
+      if (r.s.lights) r.g.rotation.z = Math.sin(t * 1.5 + r.k) * .15; else { r.g.rotation.y = t * .8 + r.k; r.g.children.forEach((m, i) => { m.rotation.z = Math.sin(t * 3 + i) * .4; }); }
+      r.g.position.y = heightAt(r.x, r.z) + 1.3 + Math.sin(t * 2 + r.k) * .2;
+      // walking through one catches it
+      for (const h of G.heroes) if (isOn(h.profile, r.s.id) && Math.hypot(h.pos.x - r.x, h.pos.z - r.z) < 1.4 && ribbonsLeft(h.profile, r.s).includes(r)) catchRibbon(h, r);
     }
     const anyLeaf = actions() && leafStep && G.heroes.some(h => isOn(h.profile, leafStep.id));
     for (const L of leaves) {
@@ -153,10 +176,9 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
     }
   });
   // hanging by hand: pull the rope and the lantern rises to its hook
-  async function hangByHand() {
+  async function hangByHand(pl) {
     G.paused = false;
-    const rope = buildLantern(true), y0 = heightAt(front[0], front[1]) + .5, y1 = dinh.position.y + 3;
-    const hx = dinhAt[0] + Math.sin(face) * 3.1, hz = dinhAt[1] + Math.cos(face) * 3.1; rope.position.set(hx, y0, hz); scene.add(rope);
+    const rope = buildLantern(true), { y0, y1 } = pl.rope; rope.position.set(pl.rope.x, y0, pl.rope.z); scene.add(rope);
     const p = pad(`<p>${T('Pull the rope to lift the lantern up!', 'Kéo dây để đưa đèn lồng lên cao!')}</p><div class="hp-slot" data-hp="rope"><b></b></div>`);
     say(...STORY_LINES.rope);
     const r = slot(p.querySelector('[data-hp=rope]'));
@@ -179,11 +201,22 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
           G.paused = false; finish(h, s.id);
         } });
     }
-    if (s.find) G.interactables.push({ id: 'story_' + s.id, x: lanternAt[0], z: lanternAt[1], r: 2.6, icon: '🏮', label: () => T('Pick up the lantern', 'Nhặt đèn lồng lên'), visible: h => isOn(h.profile, s.id) && (!actions() || !s.leaves || revealed(h.profile)),
+    const pl = places[ch.id], near = () => spots[s.at]() || { x: 0, z: -1e4 };
+    // Tèo's challenge: his line, then Play, How to play (the guide film) or Later
+    if (s.challenge) G.interactables.push({ id: 'story_' + s.id, get x() { return near().x + .8; }, get z() { return near().z + .8; }, r: 3, icon: s.icon, label: () => T(s.en, s.vi), visible: h => isOn(h.profile, s.id),
+      act: h => G.kidTalk(h, gamesOf(h.profile, s)[0], 'Tèo', big(h.profile) ? s.challenge.big : s.challenge.little) });
+    // a job with the hand controls (Bà Lan's bún chả)
+    if (s.job) G.interactables.push({ id: 'story_' + s.id, get x() { return near().x; }, get z() { return near().z; }, r: 3, icon: s.icon, label: () => T(s.en, s.vi), visible: h => isOn(h.profile, s.id) && !jobbing.has(h.profile),
+      act: async h => { if (jobbing.has(h.profile)) return; jobbing.add(h.profile); try { await hanoi.job(h); finish(h, s.id); } catch (e) { if (e !== QUIT) throw e; } finally { jobbing.delete(h.profile); G.paused = false; } } });
+    // Cô Tam's lesson: she starts it, then the child counts the stone turtles (js/content/chapter2hanoi.js)
+    if (s.lesson) G.interactables.push({ id: 'story_' + s.id, get x() { return near().x + .8; }, get z() { return near().z + .8; }, r: 3, icon: s.icon, label: () => T(s.en, s.vi), visible: h => isOn(h.profile, s.id) && !A(h.profile).lesson,
+      act: h => hanoi.lesson(h) });
+    if (s.find) G.interactables.push({ id: 'story_' + s.id, get x() { return pl.lanternAt[0]; }, get z() { return pl.lanternAt[1]; }, r: 2.6, icon: '🏮', label: () => T('Pick up the lantern', 'Nhặt đèn lồng lên'), visible: h => isOn(h.profile, s.id) && (!actions() || revealedFor(h.profile, s)),
       act: h => { st(h.profile).carrying = ch.id; say(`You found it! ${COMPANIONS[st(h.profile).companion || 'firefly'].name} will carry the lantern.`, `Tìm thấy rồi! ${COMPANIONS[st(h.profile).companion || 'firefly'].name} sẽ mang đèn lồng giúp con.`); finish(h, s.id); } });
-    if (s.hang) G.interactables.push({ id: 'story_' + s.id, x: front[0], z: front[1], r: 3.4, icon: '🏮', label: () => T('Hang the lantern', 'Treo đèn lồng'), visible: h => isOn(h.profile, s.id) && !hanging.has(h.profile),
+    if (s.hang) G.interactables.push({ id: 'story_' + s.id, x: pl.front[0], z: pl.front[1], r: 3.4, icon: '🏮', label: () => T('Hang the lantern', 'Treo đèn lồng'), visible: h => isOn(h.profile, s.id) && !hanging.has(h.profile),
       act: h => hang(h, ch, s) });
   }
+  // (one bún chả job at a time per child)
   // the village well (and anything else a step waits for): note it when the child uses it
   for (const ch of CHAPTERS) for (const s of ch.steps) if (s.act) {
     const it = G.interactables.find(i => i.id === s.act); if (!it) continue;
@@ -192,7 +225,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   // games: a folk game finished (won) while that is the step
   events.on('ActivityCompleted', e => {
     const gid = String(e.defId || '').split(':').pop();
-    for (const h of G.heroes) { const c = current(h.profile); if (c && c.s.game && c.s.game.includes(gid)) finish(h, c.s.id); }
+    for (const h of G.heroes) { const c = current(h.profile); if (c && c.s.game && gamesOf(h.profile, c.s).includes(gid)) finish(h, c.s.id); }
   });
 
   const hanging = new Set();
@@ -205,14 +238,19 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   async function hangOnce(h, ch, s, p, L) {
     G.paused = true;
     // (✕ on the rope panel: nothing is lost, the child can hang it later)
-    if (actions()) try { await hangByHand(); } catch (e) { G.paused = false; if (e === QUIT) return; throw e; }
+    const pl = places[ch.id];
+    if (actions()) try { await hangByHand(pl); } catch (e) { G.paused = false; if (e === QUIT) return; throw e; }
     const tl = STORY_TALES['lantern_' + ch.id];
+    if (pl.film) try { await pl.film(); } catch (e) { console.warn('film', e); } // (its festival film is loaded only now)
     if (tl) await openTheatre(storyTale(tl, p), { name: p.name });
     L.carrying = null; L.chapters[ch.id] = true; L.done[s.id] = true;
     if (ch.keepsake) { p.keepsakes = Array.isArray(p.keepsakes) ? p.keepsakes : []; if (!p.keepsakes.includes(ch.keepsake)) p.keepsakes.push(ch.keepsake); }
     save(); paint();
+    if (pl.after) pl.after(h);
     await reward('🏮', T(`The lantern of ${ch.en} is home!`, `Đèn lồng ${ch.vi} đã về nhà!`), T('A lantern for your house is waiting in your room.', 'Một chiếc đèn lồng đang chờ con trong phòng.'));
     if (ch.reward && G.addCoins) G.addCoins(ch.reward);
+    // the companion learns this chapter's trick (STORY.md: "learns a new trick each chapter")
+    if (ch.trick) { L.tricks = Array.isArray(L.tricks) ? L.tricks : []; if (!L.tricks.includes(ch.trick)) { L.tricks.push(ch.trick); save(); companions.trick(h, 'loop'); await dialog(COMPANIONS[L.companion || 'firefly'].name, [STORY_LINES.trick]); } }
     G.paused = false;
     G.checkQuests && G.checkQuests(h);
   }
@@ -241,7 +279,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
 
   const companions = createCompanions(G);
   // the đình is lit when any child playing has hung its lantern
-  const paint = () => setLit(G.heroes.some(h => st(h.profile).chapters.ch1));
+  const paint = () => { for (const [id, pl] of Object.entries(places)) pl.paint(G.heroes.some(h => st(h.profile).chapters[id])); };
   // the lantern in the pond shows while a child is looking for it; the mist drifts
   world.updaters.push((dt, t) => {
     found.visible = G.heroes.some(h => isOn(h.profile, 'c1_find') && (!actions() || revealed(h.profile)));
@@ -249,19 +287,21 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
     if (mist.visible) mist.rotation.y += dt * .05;
     if (!(t % 2 < dt)) return; paint();
     // a place step: done when the child is there (also if they were already there when the step began)
-    for (const h of G.heroes) { const c = current(h.profile); if (c && c.s.visit && !(actions() && c.s.ribbons) && G.regionOf[h.i] === c.s.visit) finish(h, c.s.id); }
+    for (const h of G.heroes) { const c = current(h.profile); if (c && c.s.visit && !catching(c.s) && G.regionOf[h.i] === c.s.visit) finish(h, c.s.id); }
   });
 
   // the quest the game's goal bar, arrow, Pad and Simple screen show
-  const asQuest = (p, c) => ({ id: 'L_' + c.s.id, icon: c.s.icon, story: true, title: () => fill(actions() && c.s.act_en ? T(c.s.act_en, c.s.act_vi) : T(c.s.en, c.s.vi), p),
-    tale: c.s.tale ? [c.s.tale[0], fill(c.s.tale[1], p), c.s.tale[2], c.s.tale[3]] : null, target: () => (actions() && c.s.ribbons && ribbonsLeft(p)[0]) || (spots[c.s.at] && spots[c.s.at]()) });
+  // (an under-5 is told the little ones' version when a step has one)
+  const asQuest = (p, c) => { const tale = (!big(p) && c.s.taleLittle) || c.s.tale;
+    return { id: 'L_' + c.s.id, icon: c.s.icon, story: true, title: () => fill(actions() && !big(p) && c.s.actL_en ? T(c.s.actL_en, c.s.actL_vi) : actions() && c.s.act_en ? T(c.s.act_en, c.s.act_vi) : T(c.s.en, c.s.vi), p),
+      tale: tale ? [tale[0], fill(tale[1], p), tale[2], tale[3]] : null, target: () => (catching(c.s) && ribbonsLeft(p, c.s)[0]) || (spots[c.s.at] && spots[c.s.at](p)) }; };
   return {
     quest: p => { const c = current(p); return c ? asQuest(p, c) : null; },
     // the old "talk to Ông Cú" opens the story's prologue instead (once)
     owl: async h => { const c = current(h.profile); if (c && c.s.owl) { await prologue(h); return true; } return false; },
     // regions the child walks into
-    onRegion: (h, rg) => { const c = current(h.profile); if (c && c.s.visit === rg && !(actions() && c.s.ribbons)) finish(h, c.s.id); },
-    current, companions, paint, dinh: { x: dinhAt[0], z: dinhAt[1], front }, lanternAt,
+    onRegion: (h, rg) => { const c = current(h.profile); if (c && c.s.visit === rg && !catching(c.s)) finish(h, c.s.id); },
+    current, companions, paint, dinh: { x: dinhAt[0], z: dinhAt[1], front }, lanternAt, hanoi, places,
     // (checks) do a step straight away
     _finish: finish
   };
