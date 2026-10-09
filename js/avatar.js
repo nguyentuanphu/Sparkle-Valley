@@ -117,8 +117,10 @@ function neckParts(it) {
 // a little backpack or a turtle shell on the back
 function backParts(it) {
   const c = it.color, t = it.trim || '#ffffff';
-  if (it.shape === 'shell') return [P(new THREE.SphereGeometry(.2, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), c, [0, .82, -.15], [-Math.PI / 2, 0, 0], [1.05, 1.25, .75]), P(new THREE.TorusGeometry(.2, .02, 6, 20), t, [0, .82, -.15], [0, 0, 0], [1.05, 1.25, 1]),
-    ...[[0, .9], [-.08, .78], [.08, .78], [0, .68]].map(([x, y]) => P(new THREE.CylinderGeometry(.04, .04, .02, 6), t, [x, y, -.29], [Math.PI / 2, 0, 0]))];
+  // (the dome is turned to face backwards, and P scales before it turns: the dome's own y is its depth, its z the height)
+  if (it.shape === 'shell') return [P(new THREE.SphereGeometry(.2, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), c, [0, .82, -.14], [-Math.PI / 2, 0, 0], [1.05, .75, 1.25]), P(new THREE.TorusGeometry(.2, .02, 6, 20), t, [0, .82, -.14], [0, 0, 0], [1.05, 1.25, 1]),
+    // the plates sit on the dome (an ellipsoid .21 wide, .25 tall, .15 deep)
+    ...[[0, .9], [-.08, .78], [.08, .78], [0, .68]].map(([x, y]) => P(new THREE.CylinderGeometry(.04, .04, .02, 6), t, [x, y, -.14 - .15 * Math.sqrt(Math.max(0, 1 - (x / .21) ** 2 - ((y - .82) / .25) ** 2)) - .005], [Math.PI / 2, 0, 0]))];
   return [P(new THREE.BoxGeometry(.26, .3, .13), c, [0, .82, -.2]), P(new THREE.BoxGeometry(.27, .1, .14), t, [0, .94, -.2]), P(new THREE.BoxGeometry(.16, .1, .04), t, [0, .74, -.275]),
     ...[-1, 1].map(s => P(new THREE.BoxGeometry(.03, .3, .03), c, [s * .09, .88, .02], [-.15, 0, 0]))];
 }
@@ -128,7 +130,12 @@ const HAT_PARTS = {
   bucket: it => [P(new THREE.CylinderGeometry(.4, .47, .3, 20), it.color, [0, .5, -.02]), P(new THREE.CylinderGeometry(.6, .72, .07, 22), it.color, [0, .35, -.02]), P(new THREE.CylinderGeometry(.475, .48, .05, 20), '#3a5a2a', [0, .4, -.02])],
   dino: it => [P(new THREE.SphereGeometry(.58, 20, 12, 0, Math.PI * 2, 0, Math.PI * .55), it.color, [0, .02, -.04], [-.25, 0, 0]), ...[0, 1, 2, 3, 4].map(i => P(new THREE.ConeGeometry(.08, .2, 6), it.trim, [0, .58 - i * i * .025, .25 - i * .19], [-.35 * i + .2, 0, 0]))],
   sunhat: it => [P(new THREE.CylinderGeometry(.8, .84, .04, 26), it.color, [0, .42, 0]), P(new THREE.CylinderGeometry(.34, .4, .26, 20), it.color, [0, .56, 0]), P(new THREE.CylinderGeometry(.405, .41, .07, 20), it.trim, [0, .47, 0]), P(new THREE.SphereGeometry(.08, 8, 6), it.trim, [.36, .48, .18])],
-  tiara: it => [P(new THREE.TorusGeometry(.43, .025, 6, 26, Math.PI), it.color, [0, .36, 0], [Math.PI / 2 - .35, 0, Math.PI]), ...[-2, -1, 0, 1, 2].map(i => P(new THREE.ConeGeometry(.035, i ? .1 : .16, 6), it.color, [Math.sin(i * .3) * .43, .5 + (i ? 0 : .03), Math.cos(i * .3) * .3])), P(new THREE.OctahedronGeometry(.05), it.trim, [0, .5, .33])],
+  // (a band round the front of the head just outside the hair (radius .46), tipped down at the front onto the hairline,
+  // with five points standing on it and a jewel in the middle)
+  tiara: it => { const r = .46, tip = .3, c = [0, .42, -.03], on = a => [Math.sin(a) * r, c[1] - Math.cos(a) * r * Math.sin(tip), c[2] + Math.cos(a) * r * Math.cos(tip)];
+    return [P(new THREE.TorusGeometry(r, .03, 6, 26, Math.PI), it.color, c, [Math.PI / 2 + tip, 0, 0]),
+      ...[-2, -1, 0, 1, 2].map(i => { const [x, y, z] = on(i * .42), hgt = i ? .15 : .24; return P(new THREE.ConeGeometry(.05, hgt, 6), it.color, [x, y + hgt / 2, z]); }),
+      P(new THREE.OctahedronGeometry(.065), it.trim, (([x, y, z]) => [x, y + .06, z + .03])(on(0)))]; },
   catears: it => [P(new THREE.TorusGeometry(.47, .025, 6, 24, Math.PI), it.color, [0, .25, -.05], [0, 0, 0]), ...[-1, 1].flatMap(s => [P(new THREE.ConeGeometry(.13, .26, 4), it.color, [s * .3, .6, -.05], [0, Math.PI / 4, -s * .3]), P(new THREE.ConeGeometry(.07, .16, 4), it.trim, [s * .3, .58, .0], [0, Math.PI / 4, -s * .3])])]
 };
 const STYLE_LEGS = { dress: 'skin', shirt: 'shorts', aodai: 'pants:#ffffff', tunic: 'pants:#7a5236', overalls: 'pants', hoodie: 'pants:#3a5a8a' };
