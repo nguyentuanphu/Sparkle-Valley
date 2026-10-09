@@ -15,9 +15,9 @@ const CELL = .5, HALF = 200, N = Math.round(HALF * 2 / CELL), LO = .35, HI = 1.6
 export function buildSolids(G) {
   const { scene, world: W } = G, grid = new Uint8Array(N * N);
   const idx = (x, z) => { const i = Math.floor((x + HALF) / CELL), j = Math.floor((z + HALF) / CELL); return i < 0 || j < 0 || i >= N || j >= N ? -1 : j * N + i; };
-  // (audit, 9 Oct) anything inside a hidden group is not a wall either: a building removed in Studio, the yard's coach before it
-  // comes, a Leafy rock already found
-  const skipTree = o => { for (let p = o; p && p !== scene; p = p.parent) { const u = p.userData || {}; if (!p.visible || u.avatar || u.road || u.walk || u.moving || u.noSolid) return true; } return false; };
+  // (audit, 9 Oct) things that come and go are marked noSolid where they are made (a building removed in Studio, the yard's
+  // coach and house): the map is the same for every child and every screen, so it can't follow what is shown now
+  const skipTree = o => { for (let p = o; p && p !== scene; p = p.parent) { const u = p.userData || {}; if (u.avatar || u.road || u.walk || u.moving || u.noSolid) return true; } return false; };
   const boats = new Set(); ((G.ferries && G.ferries.ferries) || []).forEach(F => F.model.traverse(o => boats.add(o)));
   // which meshes are still: their place now and a moment later
   const cand = [];

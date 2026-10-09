@@ -89,10 +89,12 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   const ribbonStep = CHAPTERS.flatMap(c => c.steps).find(s => s.ribbons);
   const ribbons = [];
   if (ribbonStep) {
-    const v = spots[ribbonStep.at](), okAt = (x, z) => heightAt(x, z) > WATER + .4 && !world.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + 1);
+    // (beside the road, never on it: ROAD-004)
+    const offRoad = (x, z) => { const d = roadDist(x, z); return !d.road || d.d > d.road.w / 2 + 1.2; };
+    const v = spots[ribbonStep.at](), okAt = (x, z) => heightAt(x, z) > WATER + .4 && offRoad(x, z) && !world.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + 1);
     for (let k = 0; k < ribbonStep.ribbons; k++) {
       let at = null;
-      for (let j = 0; j < 60 && !at; j++) { const a = k * 2.1 + j * .7, d = 5 + k * 4 + (j % 5), x = v.x + 4 + Math.cos(a) * d, z = v.z + Math.sin(a) * d; if (okAt(x, z)) at = [x, z]; }
+      for (let j = 0; j < 160 && !at; j++) { const a = k * 2.1 + j * .7, d = 5 + k * 4 + (j % 7), x = v.x + 4 + Math.cos(a) * d, z = v.z + Math.sin(a) * d; if (okAt(x, z)) at = [x, z]; }
       at = at || [v.x + 4 + k * 3, v.z + k];
       const g = new THREE.Group(); g.userData.noSolid = true;
       const colors = ['#ff5a7a', '#ffd23f', '#5fb6ff'];

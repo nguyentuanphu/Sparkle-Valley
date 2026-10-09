@@ -86,7 +86,7 @@ export function applyWorldEdits(G) {
       if (o.geometry) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); if (o.geometry.boundingSphere.radius > e.r * 2 + 8) continue; } // the ground, the sea, roads…
       if (!inside(o.position.x, o.position.z)) continue;
       if (move) { const [nx, nz] = to(o.position.x, o.position.z); o.position.y += heightAt(nx, nz) - heightAt(o.position.x, o.position.z); o.position.x = nx; o.position.z = nz; o.rotation.y += turn; }
-      else o.visible = false;
+      else { o.visible = false; o.userData.noSolid = true; } // (removed in Studio: no invisible wall left behind)
       n++;
     }
     const shift = (list, keyX = 'x', keyZ = 'z') => { for (let i = list.length - 1; i >= 0; i--) { const it = list[i]; if (!it || !num(it[keyX]) || !inside(it[keyX], it[keyZ])) continue; if (move) { const [nx, nz] = to(it[keyX], it[keyZ]); it[keyX] = nx; it[keyZ] = nz; } else list.splice(i, 1); } };

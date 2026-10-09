@@ -55,14 +55,14 @@ export function createYard(G, { dialog, say, reward, save }) {
   const SITE = [3, 1];
   const pit = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, .04, 24), new THREE.MeshToonMaterial({ color: '#5a4636' })); pit.scale.set(1.2, 1, .9); pit.position.set(SITE[0], .07, SITE[1]); yard.add(pit);
   const heap = new THREE.Mesh(new THREE.ConeGeometry(1.4, 1.2, 10), new THREE.MeshToonMaterial({ color: '#8a7a68' })); heap.position.set(SITE[0] - 4, .6, SITE[1] + 2.5); yard.add(heap);
-  const walls = new THREE.Group(); walls.position.set(SITE[0], .06, SITE[1]); yard.add(walls);
+  const walls = new THREE.Group(); walls.position.set(SITE[0], .06, SITE[1]); yard.add(walls); walls.userData.noSolid = true;
   walls.add(new THREE.Mesh(merge([P(new THREE.BoxGeometry(5, 1, .3), '#c8644a', [0, .5, -1.8]), ...[-1, 1].map(s => P(new THREE.BoxGeometry(.3, 1, 3.6), '#c8644a', [s * 2.35, .5, 0])),
     P(new THREE.BoxGeometry(1.6, 1, .3), '#c8644a', [-1.7, .5, 1.8]), P(new THREE.BoxGeometry(1.6, 1, .3), '#c8644a', [1.7, .5, 1.8]),
     ...[0, 1, 2].map(k => P(new THREE.BoxGeometry(5.04, .04, 3.64), '#e8dcc8', [0, .25 + k * .33, 0]))]), toonVC()));
   const roof = new THREE.Mesh(merge([P(new THREE.ConeGeometry(3.9, 1.6, 4), '#b8402e', [0, .8, 0], [0, Math.PI / 4, 0], [1, 1, .78])]), toonVC()); roof.position.set(SITE[0], 2.6, SITE[1]); yard.add(roof);
   // the coach (at the yard's open side), the dump truck and the excavator
   const coach = build('coach').o, truck = build('dumpTruck'), digger = build('excavator');
-  coach.position.set(-3, 0, 10.5); coach.rotation.y = Math.PI / 2; yard.add(coach);
+  coach.position.set(-3, 0, 10.5); coach.rotation.y = Math.PI / 2; yard.add(coach); coach.userData.noSolid = true; // (it comes and goes with the story: never an invisible wall)
   truck.o.position.set(-5.5, 0, 2.5); truck.o.rotation.y = Math.PI / 2; yard.add(truck.o);
   digger.o.position.set(SITE[0] + .5, 0, SITE[1] - 5); digger.o.rotation.y = 0; yard.add(digger.o);
   const TU = truck.o.userData, DU = digger.o.userData;
