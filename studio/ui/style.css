@@ -28,6 +28,7 @@ table { width: 100%; border-collapse: collapse; } td, th { padding: 6px 8px; bor
 canvas.crop { width: 100%; max-width: 360px; aspect-ratio: 1; border-radius: 16px; touch-action: none; cursor: grab; background: #eee; display: block; margin: 0 auto; }
 .lines { max-height: 420px; overflow: auto; } .lines td { font-size: 14px; }
 .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--line); font-size: 13px; }
+.pill.live { font-weight: 600; } .pill.live.on { background: #d6f5df; color: #14612f; }
 .mapgrid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: 12px; } @media (max-width: 900px) { .mapgrid { grid-template-columns: 1fr; } }
 .mapscroll { overflow: auto; max-height: 72vh; border-radius: 12px; } #mc { width: 800px; max-width: none; image-rendering: pixelated; cursor: crosshair; display: block; touch-action: none; }
 .swatches { display: flex; flex-wrap: wrap; gap: 6px; } .sw { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line); cursor: pointer; } .sw.on { border-color: var(--accent); transform: scale(1.12); }
@@ -82,3 +83,8 @@ h3.sec { margin: 22px 0 8px; font-size: 20px; }
 .kids { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-top: 8px; }
 .kid { border: 1px dashed var(--line); border-radius: 12px; padding: 10px 12px; }
 table.mini td, table.mini th { padding: 4px 6px; font-size: 14px; } table.mini th { color: var(--soft); font-weight: 600; }
+/* (round R) Releases and Festivals tables */
+table.rel { width: 100%; border-collapse: collapse; } table.rel td, table.rel th { padding: 6px 6px; text-align: left; vertical-align: top; border-bottom: 1px solid rgba(0,0,0,.06); }
+table.rel input[type=number] { width: 80px; } table.rel input[type=date] { min-width: 140px; }
+.mini { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; font-size: 12px; color: var(--soft); }
+@media (max-width: 700px) { table.rel thead { display: none; } table.rel tr { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,.08); } table.rel td { border: 0; padding: 2px; } table.rel td:first-child { grid-column: 1 / 3; font-weight: 700; } }

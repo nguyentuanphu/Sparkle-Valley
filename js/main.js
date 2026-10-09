@@ -1,10 +1,12 @@
 // Sparkle Valley: boot, the game loop, split-screen, NPCs, quests and rewards.
+import './emojiswap.js'; // (first: no phone emoji on the page or on any canvas)
 import { THREE, sprite, P, merge, toonVC } from './gfx.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';
 import { T, nm, onLang, registerName } from './i18n.js';
 import { say, hush, loadClips, setVoiceGenders } from './voice.js';
 import { SFX, Music, ac } from './audio.js';
+import { ICONS } from './icons.js';
 import { openSongs } from './songs.js';
 import { songsFor, VN_AREAS, familySongs } from './content/songs.js';
 import { fmt } from './money.js';
@@ -40,6 +42,9 @@ import { createFun, confetti } from './fun.js';
 import { createLearning } from './learn.js';
 import { createShowcase } from './showcase.js';
 import { createRoads, plantRoadside } from './roads.js';
+import { createTraffic } from './traffic.js';
+import { RELEASES } from './content/releases.js';
+import { releaseNew, featureOn } from './custom.js';
 import { cachedCanvas } from './worldcache.js';
 import { events } from './core/events.js';
 import { createPlaceBook } from './placebook.js';
@@ -61,7 +66,9 @@ import { createSymbols, regionLabel } from './symbols.js';
 import { createRegionSites } from './regionsites.js';
 import { createVnFun } from './vnfun.js';
 import { createLotus } from './lotus.js';
+import { openTheatre } from './tales.js';
 import { addFamilyBuildings, applyWorldEdits } from './worldedit.js';
+import { buildPowerLines } from './powerlines.js';
 import { CUSTOM } from './custom.js';
 import { createFolkShow } from './folkshow.js';
 import { createAds } from './ads.js';
@@ -109,20 +116,44 @@ const scene = new THREE.Scene();
   const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), .04).texture; pm.dispose();
 }
 // how long each start-up step takes (ms since this file began; tests/run.mjs "perf" and Grown-ups › Advanced read it)
-const BOOT0 = performance.now(), bootTimes = {}, bootMark = k => { bootTimes[k] = Math.round(performance.now() - BOOT0); };
-const world = createWorld(scene, quality); bootMark('world');
+const BOOT0 = performance.now(), bootTimes = { start: Math.round(BOOT0) }, bootMark = k => { bootTimes[k] = Math.round(performance.now() - BOOT0); };
+// (round R, faster launch) the title and "Who's playing?" show at once; the valley is built behind them in steps, with a
+// breath between steps so the screen keeps answering taps. Pressing Go before it is ready waits a moment (startWhenBuilt).
+let framesSeen = 0, framesDone = null; const firstFrames = new Promise(r => { framesDone = r; });
+let bootDone = null, booted = false; const bootReady = new Promise(r => { bootDone = () => { booted = true; r(); }; });
+const breathe = () => new Promise(r => setTimeout(r, 0));
+async function startWhenBuilt(mode, chosen) {
+  if (!booted) {
+    const w = document.createElement('div'); w.className = 'bootwait'; w.innerHTML = `<div class="spin"></div><p>${T('Getting the valley ready…', 'Đang chuẩn bị thung lũng…')}</p>`;
+    document.body.appendChild(w); await bootReady; w.remove();
+  }
+  startSession(mode, chosen);
+}
+document.getElementById('boot')?.remove();
+showTitle(() => showWho((mode, chosen) => startWhenBuilt(mode, chosen)));
+await breathe();
+const world = createWorld(scene, quality); bootMark('world'); await breathe();
 // the map picture: read back from the device when this build painted it before (js/worldcache.js)
-const mapPic = cachedCanvas('map', 256, paintMap); bootMark('map');
+const mapPic = cachedCanvas('map', 256, paintMap, bootReady); bootMark('map');
 mapPic.onReady = () => { G.fogMaps = {}; }; // (a map shown before the picture was ready is drawn again)
 const titleCam = new THREE.PerspectiveCamera(50, 1, .3, 1200);
 
 const G = {
   actCount: 0,
   events, // the event bus (js/core/events.js, architecture step 1)
-  settings, world, scene, pads, heroes: [], huds: [], mode: 'solo', paused: false, partner: null, zoom: 1,
+  settings, world, scene, pads, heroes: [], huds: [], mode: 'solo', partner: null, zoom: 1,
   fogMaps: {}, regionOf: [], interactables: [], gatherState: {}, bubbles: []
 };
+G.firstFrames = firstFrames; // (the valley has been drawn a few times: js/solids.js)
+// (round R, owner) two children on one screen: each child's windows sit in their own half and pause only that child, so
+// the other keeps playing. With two halves "paused" means the half of whoever touched last (G.lastPlayer); alone it is a flag.
+let pausedFlag = false;
+const twoHalves = () => G.heroes.length > 1;
+G.halfBusy = () => false;
+Object.defineProperty(G, 'paused', { get: () => twoHalves() ? G.halfBusy(G.lastPlayer) : pausedFlag, set: v => { pausedFlag = !!v; }, enumerable: true });
 window.__sv = G; // handy for debugging in the browser console
+// phones and tablets (round P): the layout keeps the joystick's half of the screen free (css: body.touch)
+if (matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0) document.body.classList.add('touch');
 G.renderer = renderer;
 
 // ---------- people of the valley ----------
@@ -141,6 +172,8 @@ function nameTag(name, color = '#ffffff') {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   onLang(() => { draw(); t.needsUpdate = true; });
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, depthTest: false })); s.scale.set(3, .75, 1); s.renderOrder = 5;
+  // (round R, owner: on phones a tag right in front of the camera filled the screen) fade it out when the camera is close
+  s.onBeforeRender = (r, sc, cam) => { s.material.opacity = Math.min(1, Math.max(0, (cam.position.distanceTo(s.position) - 5) / 5)); };
   return s;
 }
 function addNPC({ id, name, look, model, x, z, face = 0, icon = '💬', talk }) {
@@ -330,7 +363,8 @@ G.fx = (x, y, z, ch) => { const s = sprite(ch, 1.4); s.material = s.material.clo
 G.mount = (h, b) => { h.mount(b); h.profile.quests.buffalo = true; save(); say('Moo! Hold on tight!', 'Ụm bò! Bám chắc nhé!'); hudFor(h).toast(T('Press Jump to get off', 'Bấm Nhảy để xuống')); };
 
 async function playGame(i, id, source, shrine) {
-  const h = G.heroes[i]; if (!h || gameOpen()) return;
+  const h = G.heroes[i]; if (!h) return;
+  if (gameOpen()) { if (twoHalves()) hudFor(h).toast(T('Your friend is playing a game. Play it together, or wait a moment!', 'Bạn con đang chơi một trò. Chơi cùng bạn, hoặc chờ một chút nhé!')); return; }
   G.paused = true; hush();
   // friends in the room: play it together? (round H: every game can be played together)
   if (G.together() && source !== 'online' && !shrine) { G.paused = false; const k = await dialog(T('Play together?', 'Chơi cùng nhau?'), [['Your friends are here. Play this game together?', 'Các bạn đang ở đây. Chơi trò này cùng nhau nhé?']], [['👫 Together', '👫 Cùng nhau'], ['🙂 Just me', '🙂 Mình con']]); if (k === 0) { G.inviteGame(id); return; } G.paused = true; }
@@ -389,7 +423,7 @@ async function playGame(i, id, source, shrine) {
 G.playGame = playGame;
 G.job = (kind, n = 1, h) => jobProgress(G, kind, n, h);
 G.STICKERS = STICKERS;
-G.openWardrobe = i => { if (G.paused) return; G.paused = true; G.closeUp = i; openWardrobe(G, i, () => { G.paused = false; G.closeUp = null; }); };
+G.openWardrobe = i => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; G.closeUp = i; openWardrobe(G, i, () => { G.paused = false; G.closeUp = null; }); };
 
 async function foundLeafy(h, lf) {
   const p = h.profile; if (p.leafies[lf.id]) return;
@@ -406,6 +440,7 @@ async function foundLeafy(h, lf) {
 // ---------- NPC talks ----------
 async function owlTalk(h) {
   const p = h.profile; SFX.hoot();
+  if (G.lanterns && await G.lanterns.owl(h)) return; // (round R) the story's prologue, once
   if (!p.quests.owl) {
     await dialog('Ông Cú', [
       [`Hoo hoo! Good morning, ${p.name}! Welcome to Sparkle Valley.`, `Hú hú! Chào buổi sáng, ${p.name}! Chào mừng con đến Thung Lũng Lấp Lánh.`, 'Hoo hoo! Good morning, little one! Welcome to Sparkle Valley.', 'Hú hú! Chào buổi sáng con! Chào mừng con đến Thung Lũng Lấp Lánh.'],
@@ -455,10 +490,10 @@ async function kidTalk(h, game, name, line) {
 G.kidTalk = (h, game, name, line) => kidTalk(h, game, name, line);
 G.townTalk = async (h, who) => {
   if (who === 'sau') {
-    const k = await dialog('Cô Tám', [['Nước mía đây! Fresh sugarcane juice, cold and sweet. A glass gives you lots of energy!', 'Nước mía đây con! Mát lạnh, ngọt lịm. Uống một ly là khỏe re!']],
+    const k = await dialog('Cô Tam', [['School is out! Nước mía đây! Fresh sugarcane juice, cold and sweet. A glass gives you lots of energy!', 'Tan trường rồi! Nước mía đây con! Mát lạnh, ngọt lịm. Uống một ly là khỏe re!']],
       [[`🥤 Buy a glass (${fmt(5)})`, `🥤 Mua một ly (${fmt(5)})`], ['👋 Bye', '👋 Tạm biệt']]);
     if (k !== 0) return;
-    if (farm.coins < 5) { await dialog('Cô Tám', [['Not enough money? Here, this one is on me. Have a nice day!', 'Không đủ tiền hả? Thôi cô mời con ly này. Chúc con vui nhé!']]); }
+    if (farm.coins < 5) { await dialog('Cô Tam', [['Not enough money? Here, this one is on me. Have a nice day!', 'Không đủ tiền hả? Thôi cô mời con ly này. Chúc con vui nhé!']]); }
     else addMoney(null, -5);
     SFX.chime(); h.bonusStamina = Math.max(h.bonusStamina || 0, 1); // one extra stamina wheel h.stamina = h.staminaMax; h.hearts = Math.max(h.hearts, h.profile.hearts);
     await reward('🥤', T('Yum! Sugarcane juice!', 'Ngon quá! Nước mía!'), T('Full of energy: you can run and climb longer.', 'Tràn đầy năng lượng: chạy và leo được lâu hơn.'));
@@ -495,8 +530,8 @@ dialogHooks.chat = name => {
 const GAME_SPOT = { music: 'musiccorner', firstwords: 'g_firstwords', tangram: 'g_tangram', snakes: 'g_snakes', rangoli: 'g_rangoli', datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', tienlen: 'tienlen', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
   tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
 G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (G.GAME_SPOT || {})[id] || (SHRINES.find(s => s.game === id) || {}).id));
-G.openQuick = i => { if (G.paused) return; G.paused = true; openQuick(G, i); };
-G.openGamesHub = i => { if (G.paused) return; G.paused = true; openGamesHub(G, i, () => { G.paused = false; }); };
+G.openQuick = i => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; openQuick(G, i); };
+G.openGamesHub = i => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; openGamesHub(G, i, () => { G.paused = false; }); };
 // Games hub / map: fly straight to the friend who runs a game (or a place), then start it there
 const npcLike = it => /^(npc_|g_|v_|pc_|cards$|dacau$|musiccorner$|bear$|stall$)/.test(it.id || '');
 // the nearest open spot to (x, z): not inside a building, tree or stall, not in water. Travelling lands there.
@@ -520,7 +555,7 @@ G.travelTo = async (h, x, z) => { const n = G.npcNear(x, z); if (n) { await G.la
 G.goToGame = (i, id) => { const h = G.heroes[i], it = G.gameSpot(id); if (!h || !it) return; (async () => { if (dist2(h.pos.x, h.pos.z, it.x, it.z) > 45) await G.travel(h, it.x - 1.5, it.z + 2); goAndDo(h, it); })(); };
 // ---------- objective helpers ----------
 G.objectiveIcon = h => { const q = currentQuest(h.profile); return q ? q.icon : '🏆'; };
-G.sayObjective = i => { const h = G.heroes[i]; if (!h) return; const q = currentQuest(h.profile); if (!q) return; const tale = QUEST_TALES[q.id]; if (tale) say(tale[2], tale[3]); else say(q.title(), q.title()); };
+G.sayObjective = i => { const h = G.heroes[i]; if (!h) return; const q = currentQuest(h.profile); if (!q) return; const tale = q.tale || QUEST_TALES[q.id]; if (tale) say(tale[2], tale[3]); else say(q.title(), q.title()); };
 // "Go" button: walk to the goal (or fly there if it is far away) and start it on arrival.
 G.goToObjective = async i => {
   const h = G.heroes[i]; if (!h || G.paused) return;
@@ -567,10 +602,19 @@ async function statueTalk(h) {
 
 // ---------- quests ----------
 const questDone = (p, q) => !!p.quests[q.id] || !!(q.check && q.check(p));
-function currentQuest(p) { return QUESTS.find(q => !questDone(p, q)); }
+// (round R) the story's step comes first; when no chapter is open, the valley's adventure list as before
+// (round R, owner 9 Oct) the goal bar follows the lantern story; a side story (bà Huệ and ông Nghi's yard) shows there only
+// when the child chose to follow it on the Adventures page (profile.follow), or when the story has no step open right now
+const sideQuest = p => G.yard && G.yard.quest(p);
+function currentQuest(p) {
+  if (p.follow === 'yard' && sideQuest(p)) return sideQuest(p);
+  return (G.lanterns && G.lanterns.quest(p)) || sideQuest(p) || QUESTS.find(q => !questDone(p, q));
+}
+G.sideStories = () => G.yard && featureOn('story_yard', true) ? [G.yard.side] : [];
 G.currentQuest = currentQuest;
 function questTarget(h) {
   const p = h.profile, q = currentQuest(p); if (!q) return null;
+  if (q.target) return q.target();
   const near = list => list.slice().sort((a, b) => dist2(a.x, a.z, h.pos.x, h.pos.z) - dist2(b.x, b.z, h.pos.x, h.pos.z))[0];
   switch (q.at) {
     case 'owl': return { x: owl.x, z: owl.z };
@@ -594,6 +638,7 @@ function questTarget(h) {
 }
 G.questTarget = questTarget;
 G.objective = h => { const q = currentQuest(h.profile); return q ? q.title() : T('You finished the adventure! Keep exploring!', 'Con đã hoàn thành cuộc phiêu lưu! Tiếp tục khám phá nhé!'); };
+G.checkQuests = h => checkQuests(h);
 G.save = save; G.addCoins = xu => addMoney(null, xu); G.giveSticker = p => giveSticker(p); G.reward = reward; G.fmt = fmt;
 async function checkQuests(h) {
   const p = h.profile;
@@ -677,20 +722,21 @@ G.snapshot = (i, max = 720, q = .8) => {
   G.huds.forEach(x => x.root.style.visibility = '');
   return c.toDataURL('image/jpeg', q);
 };
+G.LANDMARKS = LANDMARKS; // (round R) the Pad map lists each place's landmarks under it
 G.PLACES = [
-  { g: 'home', icon: '🏡', name: () => T('Sunny Farm', 'Nông trại'), x: HOME.x - 4, z: HOME.z + 2 },
-  { g: 'vn', icon: '🏮', name: () => T('Lotus Village', 'Làng Sen'), x: VILLAGE.x - VILLAGE.r + 6, z: VILLAGE.z },
-  { g: 'asia', icon: '🐼', name: () => T('China Town', 'Làng Trung Hoa'), x: CHINA.x, z: CHINA.z + 12 },
-  { g: 'asia', icon: '🐘', name: () => T('India Village', 'Làng Ấn Độ'), x: INDIA.x, z: INDIA.z + 15 },
-  { g: 'home', icon: '🦉', name: () => T('Ông Cú', 'Ông Cú'), x: -2, z: -3 },
-  { g: 'vn', icon: '💃', name: () => T('Dance stage', 'Sân khấu'), x: VILLAGE.x - 6, z: VILLAGE.z + 25 },
-  { g: 'home', icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: 28, z: 52 },
+  { g: 'home', key: 'farm', icon: '🏡', name: () => T('Sunny Farm', 'Nông trại'), x: HOME.x - 4, z: HOME.z + 2 },
+  { g: 'vn', key: 'village', icon: '🏮', name: () => T('Lotus Village', 'Làng Sen'), x: VILLAGE.x - VILLAGE.r + 6, z: VILLAGE.z },
+  { g: 'asia', key: 'china', icon: '🐼', name: () => T('China Town', 'Làng Trung Hoa'), x: CHINA.x, z: CHINA.z + 12 },
+  { g: 'asia', key: 'india', icon: '🐘', name: () => T('India Village', 'Làng Ấn Độ'), x: INDIA.x, z: INDIA.z + 15 },
+  { g: 'home', icon: '🦉', name: () => T('Dawn Plateau (Ông Cú)', 'Cao nguyên Bình Minh (Ông Cú)'), x: -2, z: -3 },
+  { g: 'vn', icon: '💃', name: () => T('Village festival stage (Lotus Village)', 'Sân khấu hội làng (Làng Sen)'), x: VILLAGE.x - 6, z: VILLAGE.z + 25, under: 'village' },
+  { g: 'home', key: 'town', icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: 28, z: 52 },
   { g: 'home', icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: 6, z: 140 },
   { g: 'vn', icon: '🏮', name: () => T('Three Regions Market', 'Chợ Ba Miền'), x: 99, z: 83 },
   { g: 'au', icon: '🍦', name: () => T('Aussie Corner', 'Góc Nước Úc'), x: -121, z: -12 },
-  { g: 'au', icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: 92, z: 128 },
-  { g: 'au', icon: '🪨', name: () => T('Uluru', 'Uluru'), x: -128, z: 132 },
-  { g: 'home', icon: '🐻', name: () => T('Mr. Bear', 'Bác Gấu'), x: HOME.x - 21, z: HOME.z + 6 }
+  { g: 'au', icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: 92, z: 128, under: 'sydney' },   // (the older Opera House stands here; listed under Sydney)
+  { g: 'au', key: 'uluru', icon: '🪨', name: () => T('Uluru', 'Uluru'), x: -128, z: 132 },
+  { g: 'home', icon: '🐻', name: () => T('Mr. Bear’s shop (farm)', 'Cửa hàng Bác Gấu (nông trại)'), x: HOME.x - 21, z: HOME.z + 6, under: 'farm' }
 ];
 G.changePlayer = () => {
   save(); Net.close(); Net.stopListening(); playing = false; G.paused = true; $('#huds').hidden = true;
@@ -719,7 +765,7 @@ world.updaters.push((dt, t) => G.wanderers.forEach((w, k) => {
   else { sp = 2.2; w.yaw = Math.atan2(dx, dz); p.x += dx / d * sp * dt; p.z += dz / d * sp * dt; st = 'walk'; }
   world.collide(p, .4); p.y = world.groundAt(p.x, p.z, p.y + 1); w.av.root.rotation.y = w.yaw; w.av.anim(st, t + k, sp); w.tag.position.set(p.x, p.y + 2, p.z);
 }));
-G.openPad = (i, tab) => { if (G.paused) return; G.paused = true; openPad(G, i, tab); };
+G.openPad = (i, tab) => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; openPad(G, i, tab); };
 G.closePad = () => { G.paused = false; };
 
 // ---------- talking: quick phrases, speech bubbles, voice calls ----------
@@ -745,7 +791,7 @@ G.toggleAudio = kind => {
   else { const on = !(settings.sound || settings.voice); settings.sound = on; settings.voice = on; if (!on) hush(); }
   saveSettings(); SFX.tap(); G.huds.forEach(h => h.refreshAudio());
 };
-G.toggleMute = () => { Net.setMuted(!Net.muted); Net.resumeAudio(); G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted)); };
+G.toggleMute = () => { if (!Net.mic) { Net.getMic(); return; } Net.setMuted(!Net.muted); Net.resumeAudio(); G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted)); };
 // Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
 addEventListener('keydown', e => {
   if (!playing || e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '')) return;
@@ -889,7 +935,9 @@ G.findFriend = i => {
   pop.querySelectorAll('[data-call]').forEach(b => b.onclick = () => { pop.remove(); G.askFriendToCome(h, b.dataset.call); });
   return null;
 };
-let qT = 0; Net.on('quality', () => { if (Date.now() - qT > 1900) { qT = Date.now(); if (G.onNet && document.querySelector('.pad .online.on')) G.onNet(); } });
+// the signal bars change every few seconds: only their words are updated (round O, owner: the Friends screen was
+// redrawn whole every two seconds, so a tap could land on a button that had just been replaced and ✕ seemed stuck)
+Net.on('quality', () => { const b = document.querySelector('.pad .online.on'); if (b && G.netTick) G.netTick(b); });
 addEventListener('online', () => { toast(T('Back online!', 'Có mạng lại rồi!')); G.listenFriends && G.listenFriends(); });
 addEventListener('offline', () => toast(T('No internet right now. Friends will come back when it returns.', 'Đang mất mạng. Khi có mạng lại, các bạn sẽ quay lại.')));
 Net.on('talking', on => G.huds.forEach(hd => hd.setCall(Net.connected, on, Net.muted)));
@@ -899,7 +947,7 @@ Net.on('status', s => {
   let msg = {
     waiting: T(`Room code: ${s.code}. Tell your friend this number!`, `Mã phòng: ${s.code}. Đọc số này cho bạn nhé!`), connecting: T('Connecting…', 'Đang kết nối…'), connected: T('Connected! You can talk now.', 'Đã kết nối! Giờ có thể nói chuyện rồi.'),
     nocode: T('No room with that number. Check the code.', 'Không có phòng số này. Kiểm tra lại mã nhé.'),
-    mictap: T('Tap anywhere to switch your microphone on and talk to your friend.', 'Chạm vào màn hình để bật micrô và nói chuyện với bạn nhé.'),
+    mictap: T('Tap 🎙️ Microphone on to talk to your friend.', 'Chạm nút 🎙️ Bật micrô để nói chuyện với bạn nhé.'),
     micdenied: T('The microphone is switched off for this game. A grown-up can allow it: iPhone Settings → Safari (or the game) → Microphone → Allow.', 'Micrô đang bị tắt cho trò chơi này. Người lớn có thể bật: Cài đặt iPhone → Safari (hoặc trò chơi) → Micrô → Cho phép.'),
     micon: T('Microphone on: your friend can hear you!', 'Đã bật micrô: bạn có thể nghe con nói rồi!'),
     nomic: T('No microphone: your friend will not hear you, but you can still play and use the talk buttons.', 'Không có micrô: bạn sẽ không nghe được con, nhưng vẫn chơi và dùng nút nói được.'),
@@ -912,7 +960,8 @@ Net.on('status', s => {
     stuck: T('Could not link the two devices. Try: both on Wi-Fi (or both on mobile data), start the room on the other device, or ask a grown-up to add a relay in Grown-ups → Online play.', 'Không nối được hai máy. Thử: cả hai dùng Wi-Fi (hoặc cả hai dùng 4G), để máy kia tạo phòng, hoặc nhờ người lớn thêm máy chủ trung chuyển trong mục Người lớn → Chơi trực tuyến.')
   }[s.key] || '';
   if (s.key === 'waiting') { const code = s.code; msg = T(`Room code: ${code} (${animalSay(code)}). Tell your friend!`, `Mã phòng: ${code} (${animalSay(code)}). Đọc cho bạn nhé!`); }
-  netStatus = msg; if (msg) toast(msg); if (G.onNet) G.onNet(); if (['waiting', 'connected', 'cloud', 'left'].includes(s.key)) G.shareStatus();
+  // with Friends open the message shows in it, not over its tabs (round O)
+  netStatus = msg; if (msg && !document.querySelector('.pad .online')) toast(msg); if (G.onNet) G.onNet(); if (['waiting', 'connected', 'cloud', 'left'].includes(s.key)) G.shareStatus();
 });
 // Knock knock: someone wants to come into my room. The room's starter sees their name and picture and decides;
 // they hear and see nothing of the room until then. Saved friends come straight in (net.js).
@@ -939,11 +988,21 @@ if (!Array.isArray(settings.friends)) settings.friends = [];
 // online by default: a child who has friends on the list lets them see when they are playing (from round 28 on;
 // a grown-up or the child can still switch it off in the online panel)
 if (settings.friends.length && !settings.friendsOnR28) { settings.friendsOn = true; settings.friendsOnR28 = true; saveSettings(); }
-const onInvite = inv => {
+// leaving a room with friends in it to go to another one is asked first (round O)
+const leaveOk = async () => !(Net.role && Net.count > 1) || (await dialog(T('Your room', 'Phòng của con'), [[`You are playing with ${Object.values(Net.remotes).map(r => nm(r.name)).join(', ')}. Leave this room?`, `Con đang chơi với ${Object.values(Net.remotes).map(r => nm(r.name)).join(', ')}. Rời phòng này nhé?`, 'You are playing with friends. Leave this room?', 'Con đang chơi với các bạn. Rời phòng này nhé?']], [['✅ Leave and go', '✅ Rời và sang'], ['❌ Stay', '❌ Ở lại']])) === 0;
+const onInvite = async inv => {
   SFX.chime(); say('A friend invites you to play!', 'Một bạn mời con chơi cùng!');
-  dialog(T('Invitation', 'Lời mời'), [[`👫 ${inv.name} invites you to play together! Join their room ${inv.room}?`, `👫 ${inv.name} mời con chơi cùng! Vào phòng ${inv.room} nhé?`, 'A friend invites you to play together! Shall we join?', 'Một bạn mời con chơi cùng! Mình vào nhé?']], [['✅ Join', '✅ Vào'], ['❌ Not now', '❌ Để sau']])
-    .then(k => { if (k === 0) Net.join(inv.room, sendHello() || {}); });
+  const k = await dialog(T('Invitation', 'Lời mời'), [[`👫 ${inv.name} invites you to play together! Join their room ${inv.room}?`, `👫 ${inv.name} mời con chơi cùng! Vào phòng ${inv.room} nhé?`, 'A friend invites you to play together! Shall we join?', 'Một bạn mời con chơi cùng! Mình vào nhé?']], [['✅ Join', '✅ Vào'], ['❌ Not now', '❌ Để sau']]);
+  if (k === 0 && await leaveOk()) Net.join(inv.room, sendHello() || {});
 };
+// invite a friend: into my room, starting one first when I have none
+G.inviteFriend = async code => {
+  const h = G.heroes[0]; if (!Net.role) await Net.host(sendHello() || {});
+  if (Net.role !== 'host' && Net.role !== 'guest') return false;
+  const both = await Promise.all([Net.invite(code, h ? h.profile.name : ''), Net.cloudInvite(code, h ? h.profile.name : '')]);
+  return both[0] || both[1];
+};
+G.joinFriend = async room => { if (await leaveOk()) await Net.join(room, sendHello() || {}); };
 G.listenFriends = () => {
   if (settings.friendsOn && playing) Net.listenForFriends(settings.friendCode, onInvite); else Net.stopListening();
   // friends' status (online, where in the valley, which room) through the cloud relay
@@ -951,23 +1010,33 @@ G.listenFriends = () => {
     Net.friendsStart({ code: settings.friendCode, share: !!settings.friendsOn, onInvite, onChange: () => { if (G.onNet) G.onNet(); G.autoMeet(); } }).then(() => { Net.friendsWatch(settings.friends.map(f => f.code)); G.shareStatus(); });
   } else Net.friendsStop();
 };
-// Friends meet by themselves: when a friend on the list is playing too, the two games open a room together, so
-// each sees the other's name and avatar straight away and they can walk over and talk. The friend whose code comes
-// first starts the room; the other joins it as soon as the room shows in that friend's status. A room the child
-// started with others in it is never left. Offline, nothing happens; it tries again when the internet is back.
-let meetBusy = false;
-G.autoMeet = async () => {
-  if (meetBusy || !playing || settings.autoMeet === false || !settings.friendsOn || navigator.onLine === false || !settings.friends.length) return;
-  const now = Date.now(), mine = settings.friendCode;
-  const on = settings.friends.map(f => ({ f, st: Net.friends.status[f.code] })).filter(o => o.st && o.st.online && now - (o.st.seen || 0) < 3 * 60000);
-  if (!on.length || Net.role === 'guest' || (Net.role === 'host' && Net.count > 1)) return;
-  const rooms = on.filter(o => o.st.room && o.st.room !== Net.code && (o.st.players || 1) < MAX_ROOM && ((o.st.players || 1) > 1 || o.f.code < mine));
-  meetBusy = true;
-  try {
-    if (rooms.length) { await Net.join(rooms[0].st.room, sendHello() || {}); return; }
-    if (!Net.role && on.some(o => !o.st.room && mine < o.f.code)) await Net.host(sendHello());
-  } catch (e) { } finally { meetBusy = false; G.shareStatus(); }
+// Friends: told, never moved (round O, owner: "if a friend comes online, don't put us in one room by ourselves, just
+// tell the player; if my friend and A are in one room and I have B in another, how would that work?"). When a friend
+// on the list starts playing, a small card says so once, with 📨 Invite (into my room; a room is started when I have
+// none) and, when they are already in a room, ▶ Go to their room (with friends in my room, it asks before leaving).
+// Nobody changes room unless they tap; the friend who is invited decides too.
+const told = new Set();
+G.autoMeet = () => {
+  if (!playing || settings.autoMeet === false || !settings.friendsOn || !settings.friends.length) return;
+  const now = Date.now();
+  for (const f of settings.friends) {
+    const st = Net.friends.status[f.code], on = st && st.online && now - (st.seen || 0) < 3 * 60000;
+    if (!on) { told.delete(f.code); continue; }
+    if (told.has(f.code) || (st.room && st.room === Net.code)) { told.add(f.code); continue; }
+    if (gameOpen() || (G.worldHidden && G.worldHidden() && !(G.simple && G.simple.open)) || document.querySelector('.friendnote, .storybook, .dialog, .modal, .theatre')) continue; // (later: not over a game, a story or a question)
+    told.add(f.code); friendNote(f, st);
+  }
 };
+function friendNote(f, st) {
+  const name = nm(st.name || f.name), where = st.at && REGION_NAMES[st.at] ? REGION_NAMES[st.at]() : '';
+  const pop = el('div', 'vc-pop friendnote', `<p class="vc-heard">🟢 ${esc(T(`${name} is playing!`, `${name} đang chơi!`))}</p><div class="ff-row"><div class="ff-txt"><small>${esc(where)}${st.room ? ' · ' + T('in a room', 'đang ở trong phòng') + ` (${(st.players || 1)}/${MAX_ROOM})` : ''}</small></div></div>
+    <div class="ff-btns"><button class="btn primary" data-inv>📨 ${T('Invite', 'Mời bạn')}</button>${st.room && (st.players || 1) < MAX_ROOM ? `<button class="btn" data-go>▶ ${T('Go to their room', 'Sang phòng bạn')}</button>` : ''}<button class="btn" data-no>${T('Later', 'Để sau')}</button></div>`);
+  document.body.appendChild(pop); SFX.chime(); say('Your friend is playing too!', 'Bạn của con cũng đang chơi!');
+  const close = () => { pop.remove(); clearTimeout(t); }, t = setTimeout(close, 45000);
+  pop.querySelector('[data-no]').onclick = () => { SFX.tap(); close(); };
+  pop.querySelector('[data-inv]').onclick = async () => { SFX.tap(); close(); const ok = await G.inviteFriend(f.code); toast(ok ? T('Invitation sent!', 'Đã gửi lời mời!') : T('Your friend is not online right now.', 'Bạn ấy đang không trực tuyến.')); };
+  const go = pop.querySelector('[data-go]'); if (go) go.onclick = () => { SFX.tap(); close(); G.joinFriend(st.room); };
+}
 setInterval(() => G.autoMeet(), 12000);
 // what my friends see about me: my name, the place I am in, and my room (only when sharing is switched on)
 G.shareStatus = () => { const h = G.heroes[0]; if (!h || !settings.friendsOn) return; Net.friendsShare({ name: h.profile.name, at: G.regionOf[0] || '', room: Net.role ? Net.code : null, players: Net.role ? Net.count : 0 }); };
@@ -984,35 +1053,42 @@ const friendStatus = f => {
   return `<small class="fst on">🟢 ${T('Online', 'Đang chơi')} · ${esc(where)}${st.room ? ' · ' + T('room', 'phòng') + ' ' + esc(st.room) : ''}</small>`;
 };
 const addFriend = (code, name) => { code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); if (code.length !== 6 || code === settings.friendCode) return false; const f = settings.friends.find(x => x.code === code); if (f) { if (name) f.name = name; } else settings.friends.push({ code, name: name || code }); settings.friendsOn = true; saveSettings(); G.listenFriends(); return true; };
+const netLineHTML = () => (n => `<p class="note center netline">📶 ${T('This device', 'Máy này')}: ${n.online ? (n.type ? esc(n.type) + ' · ' : '') + (n.eff ? esc(n.eff.toUpperCase()) + ' · ' : '') + (n.down ? n.down + ' Mbps · ' : '') : T('no internet!', 'mất mạng!') + ' · '}${n.cloud ? T(`cloud relay on (${n.brokers} server${n.brokers === 1 ? '' : 's'})`, `đang dùng mạng đám mây (${n.brokers} máy chủ)`) : T('direct link', 'kết nối trực tiếp')}${n.voice ? ' · 🎙️ ' + T('voice on', 'đang gọi') : n.cloud ? ' · ' + T('voices can’t travel over the cloud relay yet: use 💬', 'giọng nói chưa đi qua mạng đám mây được: dùng nút 💬') : ''}</p>`)(Net.netInfo());
+const pqHTML = id => (q => q ? `<small class="pq">${G.barsHTML(q.bars)} ${q.rtt != null ? q.rtt + ' ms' : '…'} · ${routeName(q.route)}${q.weak ? ' · ' + T('weak', 'yếu') : ''}</small>` : '')(Net.quality(id));
+G.netTick = body => {
+  const nl = body.querySelector('.netline'); if (nl) nl.outerHTML = netLineHTML();
+  body.querySelectorAll('.prow.roomp[data-pid]').forEach(row => { const old = row.querySelector('.pq'), now = pqHTML(row.dataset.pid); if (old) old.outerHTML = now || ''; else if (now) row.querySelector('.pw').insertAdjacentHTML('beforeend', now); });
+};
 G.drawOnlinePanel = (body, redraw) => {
   G.onNet = () => { if (document.body.contains(body)) redraw(); };
   const h = G.heroes[0];
   const friendsBox = () => `<div class="ocard friends"><h3>👫 ${T('My friends', 'Bạn của con')}</h3>
       <p class="note">${T('My friend code', 'Mã bạn bè của con')}: <b class="fcode">${settings.friendCode}</b></p>
       <label class="tog"><input type="checkbox" id="fOn" ${settings.friendsOn ? 'checked' : ''}> ${T('Friends can see when I am playing and where, and invite me (needs the internet)', 'Bạn bè thấy khi con đang chơi, đang ở đâu, và mời con được (cần có mạng)')}</label>
-      <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}">▶ ${T('Join', 'Vào chơi')}</button>` : ''}${Net.role === 'host' ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
+      <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}">▶ ${T('Join', 'Vào chơi')}</button>` : ''}${(Net.friends.status[f.code] || {}).online && !(Net.code && Net.friends.status[f.code].room === Net.code) ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
       <div class="vrow"><input type="text" id="fAdd" maxlength="6" placeholder="${T('Friend code', 'Mã bạn bè')}" autocomplete="off"><button class="btn" id="fAddB">＋ ${T('Add', 'Thêm')}</button></div>
-      ${Net.role !== 'host' && settings.friends.length ? `<p class="note">${T('Start a room to invite your friends.', 'Tạo phòng để mời bạn bè.')}</p>` : ''}</div>`;
+      ${settings.friends.length ? `<p class="note">${T('Friends are never put in a room by themselves: 📨 Invite asks them, ▶ Join goes to theirs.', 'Bạn bè không bao giờ tự bị đưa vào phòng: 📨 Mời là hỏi bạn, ▶ Vào chơi là sang phòng bạn.')}</p>` : ''}</div>`;
   const bindFriends = () => {
     body.querySelector('#fOn').onchange = e => { settings.friendsOn = e.target.checked; saveSettings(); G.listenFriends(); };
     body.querySelector('#fAddB').onclick = () => { if (addFriend(body.querySelector('#fAdd').value)) { SFX.chime(); redraw(); } else toast(T('A friend code has 6 letters and numbers.', 'Mã bạn bè gồm 6 chữ và số.')); };
     body.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { settings.friends = settings.friends.filter(f => f.code !== b.dataset.rm); saveSettings(); redraw(); });
-    body.querySelectorAll('[data-joinf]').forEach(b => b.onclick = () => { SFX.tap(); Net.join(b.dataset.joinf, sendHello() || {}); redraw(); });
-    body.querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { b.disabled = true; const both = await Promise.all([Net.invite(b.dataset.inv, h ? h.profile.name : ''), Net.cloudInvite(b.dataset.inv, h ? h.profile.name : '')]); const ok = both[0] || both[1]; toast(ok ? T('Invitation sent!', 'Đã gửi lời mời!') : T('Your friend is not online right now.', 'Bạn ấy đang không trực tuyến.')); b.disabled = false; });
+    body.querySelectorAll('[data-joinf]').forEach(b => b.onclick = async () => { SFX.tap(); await G.joinFriend(b.dataset.joinf); redraw(); });
+    body.querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { b.disabled = true; const ok = await G.inviteFriend(b.dataset.inv); toast(ok ? T('Invitation sent!', 'Đã gửi lời mời!') : T('Your friend is not online right now.', 'Bạn ấy đang không trực tuyến.')); b.disabled = false; });
   };
   if (Net.connected || Net.role === 'host') {
     const list = Object.values(Net.remotes);
     body.innerHTML = `<div class="online on">
       <p class="note center">${Net.code ? T(`Room code · ${Net.count}/6 players`, `Mã phòng · ${Net.count}/6 người chơi`) : ''}</p>${Net.code && Net.role === 'host' ? codeHTML(Net.code) : Net.code ? `<p class="center"><b class="bigcode">${Net.code}</b></p>` : ''}
       ${Net.role === 'host' && Net.knocks.size ? `<div class="ocard knocks"><h3>🚪 ${T('At the door', 'Đang gõ cửa')}</h3>${[...Net.knocks.values()].map(k => `<div class="prow"><img src="${avatarURL({ photo: k.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, k.look) })}" alt=""><div class="pw"><b>${esc(nm(k.name || T('Someone', 'Một bạn')))}</b></div><button class="btn primary" data-admit="${esc(k.id)}">✅ ${T('Let in', 'Cho vào')}</button><button class="btn" data-deny="${esc(k.id)}">❌</button></div>`).join('')}</div>` : ''}
-      ${(n => `<p class="note center netline">📶 ${T('This device', 'Máy này')}: ${n.online ? (n.type ? esc(n.type) + ' · ' : '') + (n.eff ? esc(n.eff.toUpperCase()) + ' · ' : '') + (n.down ? n.down + ' Mbps · ' : '') : T('no internet!', 'mất mạng!') + ' · '}${n.cloud ? T(`cloud relay on (${n.brokers} server${n.brokers === 1 ? '' : 's'})`, `đang dùng mạng đám mây (${n.brokers} máy chủ)`) : T('direct link', 'kết nối trực tiếp')}${n.voice ? ' · 🎙️ ' + T('voice on', 'đang gọi') : n.cloud ? ' · ' + T('voice needs a direct link', 'gọi giọng cần kết nối trực tiếp') : ''}</p>`)(Net.netInfo())}
-      <div class="plist">${list.map(r => `<div class="prow roomp"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(nm(r.name))}</b>${(q => q ? `<small class="pq">${G.barsHTML(q.bars)} ${q.rtt != null ? q.rtt + ' ms' : '…'} · ${routeName(q.route)}${q.weak ? ' · ' + T('weak', 'yếu') : ''}</small>` : '')(Net.quality(r.id))}</div>
+      ${netStatus ? `<p class="note center status">${esc(netStatus)}</p>` : ''}
+      ${netLineHTML()}
+      <div class="plist">${list.map(r => `<div class="prow roomp" data-pid="${esc(r.id)}"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(nm(r.name))}</b>${pqHTML(r.id)}</div>
         <div class="rp-btns"><button class="btn" data-walkf="${esc(r.id)}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${esc(r.id)}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${esc(r.id)}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${esc(r.id)}">🔄 ${T('Trade', 'Đổi đồ')}</button><button class="btn" data-caro="${esc(r.id)}">⭕ ${T('Caro', 'Caro')}</button><button class="btn ${G.heroes[0] && G.heroes[0].followId === r.id ? 'primary' : ''}" data-follow="${esc(r.id)}">🚶 ${G.heroes[0] && G.heroes[0].followId === r.id ? T('Stop following', 'Thôi đi theo') : T('Follow', 'Đi theo')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${esc(r.id)}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${esc(r.friend)}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div></div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
       ${list.length ? `<div class="actions center"><button class="btn" data-rpsall>✌️ ${T('Oẳn tù tì with everyone', 'Oẳn tù tì cả phòng')}</button><button class="btn" data-allg="memory">🃏 ${T('Memory Match together', 'Lật hình cùng nhau')}</button><button class="btn" data-allg="tienlen">🎴 ${T('Tiến Lên together', 'Tiến Lên cùng nhau')}</button></div>` : ''}
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
-      <div class="actions center"><button class="btn big" id="oMute">${Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
+      <div class="actions center"><button class="btn big${Net.mic ? '' : ' primary'}" id="oMute">${!Net.mic ? '🎙️ ' + T('Microphone on', 'Bật micrô') : Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
       ${friendsBox()}</div>`;
-    body.querySelector('#oMute').onclick = () => { G.toggleMute(); redraw(); };
+    body.querySelector('#oMute').onclick = async () => { SFX.tap(); if (!Net.mic) await Net.getMic(); else G.toggleMute(); redraw(); };
     bindCode(body);
     body.querySelectorAll('[data-admit]').forEach(b => b.onclick = () => { SFX.tap(); Net.admit(b.dataset.admit); });
     body.querySelectorAll('[data-deny]').forEach(b => b.onclick = () => { SFX.tap(); Net.deny(b.dataset.deny); });
@@ -1064,18 +1140,65 @@ G.drawOnlinePanel = (body, redraw) => {
 };
 
 // ---------- layout ----------
+// Two players face to face (owner, round R: a tablet lying on the table with a child at each end): the screen is cut
+// across the middle; player 1 has the near half, player 2 the far half turned half a turn (rot 180) so it faces them.
+// On a computer or TV both halves face the same way, side by side ('side'). Grown-ups can pick either (settings.twoView).
+const faceToFace = () => settings.twoView === 'face' || (settings.twoView !== 'side' && document.body.classList.contains('touch'));
 function rects() {
   const W = innerWidth, H = innerHeight;
-  if (G.heroes.length < 2) return [{ x: 0, y: 0, w: W, h: H }];
-  return W >= H ? [{ x: 0, y: 0, w: W / 2, h: H }, { x: W / 2, y: 0, w: W / 2, h: H }] : [{ x: 0, y: 0, w: W, h: H / 2 }, { x: 0, y: H / 2, w: W, h: H / 2 }];
+  if (G.heroes.length < 2) return [{ x: 0, y: 0, w: W, h: H, rot: 0 }];
+  if (faceToFace()) return [{ x: 0, y: H / 2, w: W, h: H / 2, rot: 0 }, { x: 0, y: 0, w: W, h: H / 2, rot: 180 }];
+  return W >= H ? [{ x: 0, y: 0, w: W / 2, h: H, rot: 0 }, { x: W / 2, y: 0, w: W / 2, h: H, rot: 0 }] : [{ x: 0, y: 0, w: W, h: H / 2, rot: 0 }, { x: 0, y: H / 2, w: W, h: H / 2, rot: 0 }];
+}
+G.rects = rects; G.faceToFace = () => G.heroes.length > 1 && faceToFace();
+// Windows (the Pad, games, stories, dialogs, rewards) are added to the page. With two players each one is moved into a
+// holder over the half of the child who opened it (G.lastPlayer = whoever touched or pressed last); face to face the far
+// child's holder is turned half a turn, so their windows face them (round R, owner: "the other child can keep playing").
+G.lastPlayer = 0;
+const holders = [0, 1].map(() => { const w = document.createElement('div'); w.className = 'halfwrap'; return w; });
+G.halfBusy = i => !!holders[i] && holders[i].isConnected && [...holders[i].children].some(c => !c.classList.contains('out'));
+const NOT_A_WINDOW = /(^|\s)(hud|stick|facewrap|halfwrap|caption|title)(\s|$)/;
+function placeHolders() {
+  const r = rects(), two = twoHalves();
+  holders.forEach((w, i) => {
+    if (!two) { [...w.children].forEach(c => document.body.appendChild(c)); w.remove(); return; }
+    const q = r[i]; Object.assign(w.style, { left: q.x + 'px', top: q.y + 'px', width: q.w + 'px', height: q.h + 'px' });
+    w.classList.toggle('facewrap', q.rot === 180);
+  });
+}
+document.addEventListener('pointerdown', e => {
+  if (!twoHalves()) return;
+  const t = e.target instanceof Element ? e.target : null, w = t && t.closest('.halfwrap');
+  if (w) { G.lastPlayer = holders.indexOf(w); return; }
+  if (t && t.closest('.hud')) { const k = G.huds.findIndex(h => h.root.contains(t)); if (k >= 0) { G.lastPlayer = k; return; } }
+  const k = rects().findIndex(q => e.clientX >= q.x && e.clientX < q.x + q.w && e.clientY >= q.y && e.clientY < q.y + q.h); if (k >= 0) G.lastPlayer = k;
+}, true);
+new MutationObserver(list => {
+  if (!twoHalves()) { placeHolders(); return; }
+  for (const m of list) for (const n of m.addedNodes) {
+    if (!(n instanceof HTMLElement) || n.parentNode !== document.body || n.tagName === 'CANVAS' || n.tagName === 'SCRIPT' || n.id === 'split' || NOT_A_WINDOW.test(n.className)) continue;
+    const w = holders[G.lastPlayer] || holders[0];
+    if (!w.isConnected) { document.body.appendChild(w); placeHolders(); }
+    w.appendChild(n);
+  }
+}).observe(document.body, { childList: true });
+// a turned-round half: its picture is turned in the camera itself, so taps and the 3D view stay matched
+const _rotZ = new THREE.Matrix4().makeRotationZ(Math.PI);
+function aimCam(h, q) {
+  h.cam.aspect = q.w / q.h; h.cam.updateProjectionMatrix();
+  if (q.rot === 180) { h.cam.projectionMatrix.premultiply(_rotZ); h.cam.projectionMatrixInverse.copy(h.cam.projectionMatrix).invert(); }
 }
 function resize() {
   renderer.setSize(innerWidth, innerHeight);
   const r = rects();
   G.heroes.forEach((h, i) => { h.cam.aspect = r[i].w / r[i].h; h.cam.updateProjectionMatrix(); G.huds[i] && G.huds[i].layout(r[i], G.heroes.length > 1); });
-  titleCam.aspect = innerWidth / innerHeight; titleCam.updateProjectionMatrix();
+  titleCam.aspect = innerWidth / innerHeight; titleCam.updateProjectionMatrix(); placeHolders();
   const sp = $('#split'); sp.hidden = G.heroes.length < 2;
-  if (G.heroes.length > 1) { const v = innerWidth >= innerHeight; Object.assign(sp.style, v ? { left: innerWidth / 2 - 2 + 'px', top: 0, width: '4px', height: '100%' } : { top: innerHeight / 2 - 2 + 'px', left: 0, height: '4px', width: '100%' }); }
+  // a small round switch in the middle of the line: face to face ⇄ side by side, any time (round R, owner)
+  let sw = sp.querySelector('.viewsw');
+  if (!sw) { sw = document.createElement('button'); sw.className = 'viewsw'; sw.onpointerdown = e => { e.stopPropagation(); }; sw.onclick = e => { e.stopPropagation(); settings.twoView = faceToFace() ? 'side' : 'face'; saveSettings(); SFX.tap(); resize(); }; sp.appendChild(sw); }
+  sw.innerHTML = faceToFace() ? ICONS.sideView : ICONS.faceView; sw.setAttribute('aria-label', faceToFace() ? T('Sit side by side', 'Ngồi cạnh nhau') : T('Sit face to face', 'Ngồi đối diện nhau'));
+  if (G.heroes.length > 1) { const v = innerWidth >= innerHeight && !faceToFace(); Object.assign(sp.style, v ? { left: innerWidth / 2 - 2 + 'px', top: 0, width: '4px', height: '100%' } : { top: innerHeight / 2 - 2 + 'px', left: 0, height: '4px', width: '100%' }); }
 }
 addEventListener('resize', resize);
 // Phones (especially iPhone home-screen apps) sometimes report the wrong size after rotating or after the
@@ -1089,7 +1212,7 @@ function onTap(i, x, y) {
   const h = G.heroes[i]; if (!h || G.paused) return;
   if (h._dancing) { G.places.note(h); return; }
   const r = rects()[i]; ndc.set((x - r.x) / r.w * 2 - 1, -((y - r.y) / r.h) * 2 + 1);
-  ray.setFromCamera(ndc, h.cam);
+  aimCam(h, r); ray.setFromCamera(ndc, h.cam);
   // tapping a bubble, a water drop or a ripe crop walks there and does it
   const hitB = ray.intersectObjects([...(G.bubbleIcons || []), ...(G.tapTargets || [])], false).find(x => x.object.visible);
   if (hitB) { goAndDo(h, hitB.object.userData.it); return; }
@@ -1100,7 +1223,7 @@ function onTap(i, x, y) {
 }
 function goAndDo(h, it) {
   if (!it) return;
-  if (dist2(h.pos.x, h.pos.z, it.x, it.z) < (it.plot ? 7 : it.r)) { SFX.tap(); it.act(h, G); return; }
+  if (dist2(h.pos.x, h.pos.z, it.x, it.z) < (it.plot ? 7 : it.r)) { SFX.tap(); if (twoHalves()) G.lastPlayer = Math.max(0, G.heroes.indexOf(h)); it.act(h, G); return; }
   h.goal = approach(h, it); h.goalAct = it;
 }
 G.goAndDo = goAndDo;
@@ -1134,6 +1257,14 @@ G.goodSpot = (x, z) => {
   return !W.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + .45) && !W.boxes.some(b => x > b.x0 - .45 && x < b.x1 + .45 && z > b.z0 - .45 && z < b.z1 + .45);
 };
 const keepSpot = () => G.heroes.forEach(h => { if (h.profile && h.onGround && !h.towerClimb && !h.indoors && G.goodSpot(h.lastSafe.x, h.lastSafe.z)) h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; });
+// the "New!" moment (round R, owner): what Studio's Releases page marked new, once per child, at most three at a time
+async function newMoment(h) {
+  if (!h || !h.profile) return; const p = h.profile; p.seenNew = p.seenNew && typeof p.seenNew === 'object' ? p.seenNew : {};
+  const fresh = RELEASES.filter(r => releaseNew(r.id) && !p.seenNew[r.id]).slice(0, 3); if (!fresh.length) return;
+  for (let k = 0; k < 60 && document.querySelector('.storybook, .reward, .modal, .dialog'); k++) await new Promise(r => setTimeout(r, 500));
+  fresh.forEach(r => { p.seenNew[r.id] = new Date().toISOString().slice(0, 10); }); save();
+  await reward('🆕', T('New in the valley!', 'Mới trong thung lũng!'), fresh.map(r => T(r.en, r.vi)).join(' · '));
+}
 function startSession(mode, chosen) {
   G.mode = mode; G.heroes.forEach(h => scene.remove(h.av.root)); G.huds.forEach(h => h.destroy()); G.heroes = []; G.huds = [];
   chosen.forEach((p, i) => {
@@ -1150,12 +1281,19 @@ function startSession(mode, chosen) {
   TOWERS.forEach(t => world.setTowerDone(t.id, !!p0.towers[t.id]));
   LEAFIES.forEach(l => { const o = world.leafyMeshes[l.id]; if (o) o.visible = !chosen.every(p => p.leafies[l.id]); });
   setupWanderers(chosen);
+  // (round R) the vehicles' real look when every child playing is 5 or older, the toy look for under-5s
+  if (G.traffic) G.traffic.apply(chosen.every(p => p.age === 'big'));
   G.pets.sync(); G.pets.refreshInteractables(); G.kites.sync();
   G.festivals.greet(G.heroes[0]);
+  // (round R) a grown-up's festival preview from Sparkle Studio (?festival=halloween), once
+  { const pf = new URLSearchParams(location.search).get('festival'); if (pf && !G._previewed) { G._previewed = true; setTimeout(() => G.festivals.visit(0, pf), 1800); } }
+  // (round R) the "New!" moment: something Studio released in the last few days, shown once to each child
+  setTimeout(() => newMoment(G.heroes[0]), 4000);
   resize(); G.paused = false; playing = true; G.listenFriends();
   // a note from the grown-ups (Sparkle Studio), once a day
   { const M = CUSTOM.message, today = new Date().toDateString();
-    if (M && (M.en || M.vi) && settings.familyMsgDay !== today) { settings.familyMsgDay = today; saveSettings(); setTimeout(() => { if (!G.paused) { G.paused = true; dialog('💌 ' + T('From your family', 'Lời nhắn của gia đình'), [[String(M.en || M.vi).slice(0, 400), String(M.vi || M.en).slice(0, 400)]]).then(() => { G.paused = false; }); } }, 4000); } }
+    // (audit, 9 Oct) marked as seen only once it is really shown: it waits while a story, a game or a panel is open
+    if (M && (M.en || M.vi) && settings.familyMsgDay !== today) { let tries = 0; const tryShow = () => { if (settings.familyMsgDay === today || ++tries > 200) return; if (G.paused) { setTimeout(tryShow, 3000); return; } settings.familyMsgDay = today; saveSettings(); G.paused = true; dialog('💌 ' + T('From your family', 'Lời nhắn của gia đình'), [[String(M.en || M.vi).slice(0, 400), String(M.vi || M.en).slice(0, 400)]]).then(() => { G.paused = false; }); }; setTimeout(tryShow, 4000); } }
   $('#huds').hidden = false;
   const p = chosen[0];
   // the welcome is words on the screen, not a voice (owner, round 30: with the child's name in it, only the phone's
@@ -1191,12 +1329,22 @@ function adaptResolution(rawMs) {
   const next = ms < 19 ? Math.min(adapt.max, adapt.pr + .25) : ms > 30 ? Math.max(adapt.min, adapt.pr - .25) : adapt.pr;
   if (next !== adapt.pr) { adapt.pr = next; renderer.setPixelRatio(next); renderer.setSize(innerWidth, innerHeight, false); }
 }
+// Battery (owner, round O: "the game uses too much battery"): on phones and tablets the valley is drawn 30 times a
+// second (smooth enough for walking; half the work), unless Graphics is on "Pretty"; computers keep 60.
+const FRAME_MS = settings.quality !== 'high' && matchMedia('(pointer: coarse)').matches ? 1000 / 30 : 0;
+// pages that cover the whole screen: nothing of the valley shows, so it isn't drawn at all (the Simple screen, which
+// under-5s start on, the 🎵 Songs page, often left playing lullabies at bedtime, and the real photos)
+const worldHidden = () => (G.simple && G.simple.open) || !!document.querySelector('.songs, .realview');
+G.worldHidden = worldHidden;
 function frame(now) {
   requestAnimationFrame(frame);
-  if (playing) adaptResolution(now - last);
+  if (framesSeen < 4 && ++framesSeen === 4) framesDone(); // (js/solids.js waits for these)
+  if (FRAME_MS && now - last < FRAME_MS - 4) return;
+  if (playing) adaptResolution(now - last - (FRAME_MS ? FRAME_MS - 1000 / 60 : 0)); // (the wait between frames is not slowness)
   const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
-  // the 3D world rests while a full-screen game or the storybook is open (saves battery)
-  if (gameOpen() || document.querySelector('.storybook') || (G.paused && document.querySelector('.modal'))) return;
+  // the 3D world rests while a full-screen game, the storybook or a page that covers it is open (saves battery)
+  // (two players: the world rests only when both halves have a window open)
+  if (twoHalves() && playing ? G.halfBusy(0) && G.halfBusy(1) : gameOpen() || document.querySelector('.storybook, .theatre.film') || (G.paused && document.querySelector('.modal')) || (playing && worldHidden())) return;
   world.update(dt, t);
   if (!playing) {
     const a = t * .05;
@@ -1206,9 +1354,12 @@ function frame(now) {
     return;
   }
   poll(dt);
-  if (!G.paused && !gameOpen()) {
+  const two = twoHalves();
+  if (two || (!G.paused && !gameOpen())) {
     G.heroes.forEach((h, i) => {
-      if (pads[i].menu()) { G.openPad(i); return; }
+      // (two players) a child with a window open in their half waits; the other keeps playing
+      if (two && G.halfBusy(i)) { pads[i].act(); pads[i].jump(); pads[i].menu(); h.state = 'idle'; h.finish(dt, t, G, 0); return; }
+      if (pads[i].menu()) { G.lastPlayer = i; G.openPad(i); return; }
       // following a friend (owner, round G): walk behind them by yourself; touching the joystick stops it
       if (h.followId) {
         const P = G.partners[h.followId], pd = pads[i];
@@ -1219,12 +1370,12 @@ function frame(now) {
       h.update(dt, pads[i], t, G);
       if (i === 0) watchHero(h, pads[i], dt, G.regionOf[i]); // stuck: pushing to walk without moving (Studio's report)
       if (!h.profile.quests.owl && !G._owlAuto && dist2(h.pos.x, h.pos.z, owl.x, owl.z) < 6) { G._owlAuto = true; owlTalk(h); }
-      if (h.goalAct && !h.goal) { const it = h.goalAct; h.goalAct = null; if (dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r + .8) { SFX.tap(); it.act(h, G); } }
+      if (h.goalAct && !h.goal) { const it = h.goalAct; h.goalAct = null; if (dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r + .8) { SFX.tap(); (G.lastPlayer = i, it.act(h, G)); } }
       const it = h.carry ? h.carryIt || null : nearest(h);
-      if (it && it.auto) it.act(h, G);
+      if (it && it.auto) (G.lastPlayer = i, it.act(h, G));
       G.huds[i].setAction(it && !it.auto ? it : null);
       h._dancing = G.places.onStage(h);
-      if (pads[i].act() && it) { SFX.tap(); it.act(h, G); }
+      if (pads[i].act() && it) { SFX.tap(); (G.lastPlayer = i, it.act(h, G)); }
       // discover shrines and towers you walk near
       for (const s of SHRINES.concat(TOWERS)) if (!h.profile.discovered[s.id] && dist2(s.x, s.z, h.pos.x, h.pos.z) < 45) { h.profile.discovered[s.id] = true; save(); }
       const rg = h.indoors ? G.regionOf[i] : regionAt(h.pos.x, h.pos.z); // inside a house: still where the house is
@@ -1232,7 +1383,7 @@ function frame(now) {
         if (i === 0) setTimeout(() => G.shareStatus(), 50);
         if (G.regionOf[i] !== null) { const sub = regionLabel(rg); G.huds[i].showRegion(REGION_NAMES[rg]() + (sub ? ' · ' + sub : '')); }
         { const who = makeId('player', h.profile.id || 'guest'); if (G.regionOf[i]) events.emit('PlayerLeftVillage', { playerId: who, villageId: makeId('place', G.regionOf[i]) }); if (rg) events.emit('PlayerEnteredVillage', { playerId: who, villageId: makeId('place', rg), first: !(h.profile.visited || {})[rg] }); }
-        G.regionOf[i] = rg;
+        G.regionOf[i] = rg; if (G.lanterns) G.lanterns.onRegion(h, rg);
         const vis = h.profile.visited = h.profile.visited || {}; if (!vis[rg]) { vis[rg] = true; save(); }
         if (rg === 'village' && !h.profile.quests.village) { h.profile.quests.village = true; save(); hudFor(h).toast(T('Welcome to Lotus Village! Xin chào!', 'Chào mừng đến Làng Sen!')); checkQuests(h); } // (words, not a voice)
       }
@@ -1275,6 +1426,7 @@ function frame(now) {
     const q = r[i];
     renderer.setViewport(q.x, H - q.y - q.h, q.w, q.h); renderer.setScissor(q.x, H - q.y - q.h, q.w, q.h);
     G.showcaseCam(i, h, dt); // a landmark fly-around takes over the camera
+    if (r.length > 1) aimCam(h, q);
     world.updateSky(0, h.cam.position, h.pos);
     renderer.render(scene, h.cam);
     const p = h.profile;
@@ -1297,7 +1449,7 @@ function frame(now) {
 loadClips();
 createChatter(G);
 setupNPCs(); setupInteractables();
-bootMark('people'); G.farm = createFarm(G); world.updaters.push(G.farm.update);
+bootMark('people'); G.farm = createFarm(G); world.updaters.push(G.farm.update); await breathe();
 G.places = createPlaces(G); world.updaters.push(G.places.update);
 G.town = createTown(G);
 G.GAMES_ICON = id => (GAMES[id] || {}).icon || "🎮";
@@ -1320,11 +1472,13 @@ const walkedAway = () => {
 };
 onLang(() => G.huds.forEach(hd => hd.refreshWho && hd.refreshWho()));
 createAsia(G);
-bootMark('town'); createRoads(G); bootMark('roads');
+bootMark('town'); createRoads(G); bootMark('roads'); await breathe();
 createCities(G);
 createHawkers(G);
 createSuburbs(G); // speciality buildings along the roads out of each city (before the homes are made)
 world.familyBuilt = addFamilyBuildings(G); // houses and buildings the family added in Sparkle Studio (they become homes too)
+buildPowerLines(G); // power poles (when switched on in Studio) wired to each other by themselves
+bootMark('pretraffic'); createTraffic(G); bootMark('traffic'); await breathe(); // motorbikes, cars, buses, trams, xích lô and bicycles (js/traffic.js; Studio switches)
 createHeritage(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
 createSymbols(G, { sfx: SFX, dialog }); // each region's symbol animal, in a corner of its city square
 createRegionSites(G); // more famous places of each region, just outside its city
@@ -1345,6 +1499,15 @@ G.festivals = createFestivals(G);
 G.weather = createWeather(G);
 createFun(G);
 createLearning(G);
+// the main story, Đèn Lồng Thung Lũng (js/lanterns.js, chapters in js/content/chapters.js): after the storyteller and the villagers
+G.npcAt = id => (n => n && { x: n.x, z: n.z })(NPCS.find(n => n.id === id));
+// (loaded while the valley is built behind the title screen, so the title comes up sooner: PERF-001)
+const [{ createLanterns }, { createYard }, { createKidPlay }] = await Promise.all([import('./lanterns.js'), import('./yard.js'), import('./kidplay.js')]);
+G.lanterns = createLanterns(G, { dialog, say, reward, save, openTheatre });
+// bà Huệ and ông Nghi's yard near the Huệ Nghi shop (js/yard.js): a side story
+G.yard = createYard(G, { dialog, say, reward, save });
+// the companion grows, a coin goal, a gift every day (js/kidplay.js; Studio group 'For little ones')
+G.kidplay = createKidPlay(G, { say, save });
 createShowcase(G);
 world.updaters.push((dt, t) => tickAnimals(dt, t, G.heroes)); // every animal walks, hops, wags and looks around
 createGathering(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });
@@ -1374,11 +1537,11 @@ for (const c of (Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {
 G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 'buns', 'none'), kidLook('overalls', '#3cc7e8', '#3b2618', 'short', 'cap'), kidLook('dress', '#ffb52e', '#1d1412', 'ponytail', 'flower')] });
 // level land under every building, stall and landmark placed above (and anything added in future rounds)
 world.familyEdits = applyWorldEdits(G); // buildings the family moved or removed in Sparkle Studio
-bootMark('things'); widenFlatLand(world, scene); bootMark('wideland'); // more level land round every village and city, for new buildings (nothing moves on the map)
+bootMark('things'); widenFlatLand(world, scene); bootMark('wideland'); await breathe(); // more level land round every village and city, for new buildings (nothing moves on the map)
 createAds(G); // the family's own signboards (only when Sparkle Studio switched ads on)
-world.levelled = levelUnderBuildings(world, scene); bootMark('levelled');
+world.levelled = levelUnderBuildings(world, scene); bootMark('levelled'); await breathe();
 world.roadside = plantRoadside(G); // soft road edges and flowers, once everything stands
-bootMark('roadside'); G.solidsReady = buildSolids(G); bootMark('solids'); // nobody walks through houses and things (js/solids.js)
+bootMark('roadside'); G.solidsReady = buildSolids(G); bootMark('solids'); // (no breath here: the solid map is read once everything below is placed too) // nobody walks through houses and things (js/solids.js)
 startPackBar(); // the recorded voices downloading: a small bar at the bottom (js/packbar.js)
 startCounting(G); // how many children play, and what they play, for Studio's report (js/players.js; Grown-ups can switch it off)
 // solid things the camera must never go inside: big, opaque, still-standing meshes (collected once, refreshed
@@ -1410,11 +1573,12 @@ G.claims.wrap(); // (after every pickup exists: first come, first served online)
 setupBubbles(); setupAreaSigns(); setupGuides();
 $('#songBtn').onclick = () => G.places.nextSong();
 resize();
-$('#boot').remove();
-requestAnimationFrame(frame);
-showTitle(() => showWho((mode, chosen) => startSession(mode, chosen)));
+// (round R, faster launch) the first picture prepares every material's shader at once (a few seconds on a phone): the
+// title is already painted by then, and the valley is drawn behind it a frame later
+{ let go = false; const start = () => { if (go) return; go = true; bootMark('shaders'); requestAnimationFrame(frame); };
+  requestAnimationFrame(() => setTimeout(start, 30)); }
 import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { if (playing) keepSpot(); save(); hush(); } });
 addEventListener('pagehide', () => { if (playing) keepSpot(); saveProfiles(true); });
 if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) navigator.serviceWorker.register('sw.js').catch(() => { });
-bootMark('ready'); G.bootTimes = bootTimes;
+bootMark('ready'); G.bootTimes = bootTimes; bootDone();

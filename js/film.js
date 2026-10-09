@@ -1,0 +1,550 @@
+// Story films (round R): each page of a tale is a short 3D film where the story really happens on screen,
+// acted by the valley's own kind of people, animals and things, timed to the narration. A page is a script
+// (js/content/films.js) that builds its set, places the actors and lists what they do and when:
+//   S.walk(actor, t, [x, z])        walks there (turns first), returns when it arrives
+//   S.do(actor, t, 'kneel', dur)    a pose or action: kneel dig plant water eat point talk sad bow hug carry
+//                                   give pull swing throw stretch surprised sitground lie cheer wave ride
+//   S.mood(actor, t, 'happy')       the face: smile happy sad o (surprised) sleep; S.talk() moves the mouth
+//   S.tw(t, dur, k => …)            anything else that changes over time (grow, fall, change colour, fly…)
+//   S.cam(t, dur, pos, look)        the camera glides to a new shot (in calm mode it cuts instead)
+//   S.help(t, en, vi, act)          the child helps: the film waits for a tap anywhere on the picture
+// Everything is drawn by one small renderer that is made once and reused by every film, with no shadows
+// and few lights, so it runs on older phones. Tapping a character makes it wiggle (little ones love that).
+import { THREE, P, merge, toonVC, toon, glow } from './gfx.js';
+import { buildAvatar, drawFeatures, OUTLINED } from './avatar.js';
+import { reduceMotion } from './state.js';
+import { T } from './i18n.js';
+import { sayAsync } from './voice.js';
+import { SFX } from './audio.js';
+import { el, esc } from './util.js';
+import { pic } from './art.js';
+
+const H = Math.PI / 2;
+export const io = k => k < .5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+export const lin = k => k;
+export const outBack = k => 1 + 2.2 * (k - 1) ** 3 + 1.2 * (k - 1) ** 2;
+const lerp = (a, b, k) => a + (b - a) * k;
+const v3 = a => Array.isArray(a) ? new THREE.Vector3(...a) : a.clone();
+
+// ---------- shared shapes (made once) ----------
+const own = g => { g.userData.film = true; return g; };
+const VC = toonVC(); VC.userData.shared = true;
+export const mesh = parts => new THREE.Mesh(own(merge(parts)), VC);
+const S_ = (r, w = 14, h = 10) => new THREE.SphereGeometry(r, w, h);
+const Cyl = (a, b, h, s = 10) => new THREE.CylinderGeometry(a, b, h, s);
+const Cone = (r, h, s = 10) => new THREE.ConeGeometry(r, h, s);
+const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+export const G3 = { S: S_, Cyl, Cone, Box };
+export const mat = (c, extra) => { const m = toon(c, Object.assign({}, extra || {})); m.userData.film = true; return m; };
+const solid = (geo, c, extra) => new THREE.Mesh(own(geo), mat(c, extra));
+
+// ---------- faces that show feelings, and a mouth that moves while talking ----------
+const faces = {};
+function face(look, mood) {
+  const k = look.hair + look.skin + mood; if (faces[k]) return faces[k];
+  const S = 256, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
+  if (mood === 'smile' || mood === 'o') drawFeatures(x, S, look, mood);
+  else {
+    // the same eyes and cheeks as the valley's faces, with other brows and mouths
+    const eyeOpen = mood !== 'sleep';
+    [.36, .64].forEach(cx => {
+      if (eyeOpen) {
+        x.fillStyle = '#fff'; x.beginPath(); x.ellipse(cx * S, S * .55, S * .085, S * .075, 0, 0, 7); x.fill();
+        x.fillStyle = '#3a2418'; x.beginPath(); x.arc(cx * S, S * .56, S * .06, 0, 7); x.fill();
+        x.fillStyle = '#120a08'; x.beginPath(); x.arc(cx * S, S * .56, S * .03, 0, 7); x.fill();
+        x.fillStyle = '#fff'; x.beginPath(); x.arc(cx * S + S * .022, S * .535, S * .02, 0, 7); x.fill();
+      }
+      x.strokeStyle = '#2b1a14'; x.lineWidth = S * .022; x.lineCap = 'round'; x.beginPath();
+      if (eyeOpen) x.ellipse(cx * S, S * .55, S * .088, S * .078, 0, Math.PI * 1.08, Math.PI * 1.92); else x.arc(cx * S, S * .53, S * .07, Math.PI * .15, Math.PI * .85);
+      x.stroke();
+      // brows: sad ones slope down at the sides, happy ones lift
+      const d = cx < .5 ? -1 : 1, sad = mood === 'sad';
+      x.strokeStyle = look.hair; x.lineWidth = S * .024; x.beginPath();
+      x.moveTo(S * (cx - .07), S * (sad ? .43 + .025 * d : .42)); x.quadraticCurveTo(S * cx, S * (sad ? .41 : .39), S * (cx + .07), S * (sad ? .43 - .025 * d : .42)); x.stroke();
+    });
+    x.fillStyle = 'rgba(240,110,110,.4)'; [.24, .76].forEach(cx => { x.beginPath(); x.ellipse(cx * S, S * .67, S * .065, S * .04, 0, 0, 7); x.fill(); });
+    x.fillStyle = '#a3485a'; x.strokeStyle = '#a3485a'; x.lineWidth = S * .02; x.beginPath();
+    if (mood === 'sad') { x.moveTo(S * .44, S * .74); x.quadraticCurveTo(S * .5, S * .69, S * .56, S * .74); x.stroke(); }
+    else if (mood === 'sleep') { x.moveTo(S * .46, S * .72); x.lineTo(S * .54, S * .72); x.stroke(); }
+    else { x.moveTo(S * .42, S * .68); x.quadraticCurveTo(S * .5, S * .8, S * .58, S * .68); x.closePath(); x.fill(); x.fillStyle = '#fff'; x.fillRect(S * .45, S * .68, S * .1, S * .02); }
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return (faces[k] = t);
+}
+
+// ---------- the actors ----------
+export const LOOK = (o) => Object.assign({ style: 'shirt', color: '#3b6fe0', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#e0aa80', glider: 0, shoe: '#5a3a22' }, o);
+// the people's shapes and paints are shared with the valley, so a page never throws those away
+const KEEP = new WeakSet();
+function person(look, scale = 1) {
+  const A = buildAvatar(LOOK(look), null);
+  const i = OUTLINED.indexOf(A); if (i >= 0) OUTLINED.splice(i, 1); // the valley hides far outlines; a film keeps them
+  A.root.scale.setScalar(scale);
+  const a = { A, o: A.root, state: 'idle', speed: 0, mood: 'smile', talkUntil: -1, px: 0, pz: 0, yaw: 0, look: LOOK(look), wig: 0 };
+  A.root.userData.actor = a; A.faceMat.map = face(a.look, 'smile');
+  A.root.traverse(o => { if (o.geometry) KEEP.add(o.geometry); (Array.isArray(o.material) ? o.material : o.material ? [o.material] : []).forEach(m => KEEP.add(m)); });
+  return a;
+}
+// lean the body forward (+) or back (−) from the hips, taking the head along so it stays on the neck
+function lean(A, a, nod = 0) {
+  A.torso.rotation.x = a; A.torso.position.set(0, .6 - .6 * Math.cos(a), -.6 * Math.sin(a));
+  A.head.position.set(0, .6 + .73 * Math.cos(a), .73 * Math.sin(a)); A.head.rotation.x = a * .7 + nod;
+}
+const BASE = { walk: 'walk', ride: 'ride', sit: 'sit', cheer: 'cheer', wave: 'wave', dance: 'dance' };
+function pose(a, t) {
+  const A = a.A, s = a.state;
+  A.anim(BASE[s] || 'idle', t, s === 'walk' ? a.speed * 3 : s === 'ride' ? 4 : 0);
+  lean(A, 0);
+  const sw = Math.sin(t * 7);
+  switch (s) {
+    case 'kneel': case 'dig': case 'plant': case 'pick':
+      A.rig.position.y = -.3; A.legL.rotation.x = -1.5; A.legR.rotation.x = -.2; A.legR.rotation.z = -.1;
+      lean(A, s === 'kneel' ? .2 : .5);
+      if (s === 'dig') { A.armR.rotation.x = -1 + sw * .45; A.armL.rotation.x = -.9 - sw * .45; }
+      if (s === 'plant') { A.armR.rotation.x = -.8 + Math.max(0, sw) * .3; A.armL.rotation.x = -.5; }
+      if (s === 'pick') { A.armR.rotation.x = -1.1; A.armL.rotation.x = -1.1; A.armR.rotation.z = .2; A.armL.rotation.z = -.2; }
+      break;
+    case 'water': lean(A, .12); A.armR.rotation.x = -1.2; A.armR.rotation.z = -.05; A.armL.rotation.x = -.6; break;
+    case 'eat': A.armR.rotation.x = -2.1 + Math.sin(t * 6) * .25; A.armR.rotation.z = .45; A.armL.rotation.x = -1; lean(A, .05, Math.sin(t * 6) * .06); break;
+    case 'point': A.armR.rotation.x = -1.6; A.armR.rotation.z = -.1; lean(A, .05); break;
+    case 'talk': lean(A, 0, Math.sin(t * 5) * .07); A.armR.rotation.x = -.6 + Math.sin(t * 3) * .3; A.armL.rotation.x = -.3; break;
+    case 'sad': lean(A, .15, .25); A.armL.rotation.z = .05; A.armR.rotation.z = -.05; break;
+    case 'bow': lean(A, .75, .2); A.armL.rotation.x = -.4; A.armR.rotation.x = -.4; A.armL.rotation.z = -.25; A.armR.rotation.z = .25; break;
+    case 'hug': A.armL.rotation.set(-1.3, 0, -.55); A.armR.rotation.set(-1.3, 0, .55); lean(A, .1); break;
+    case 'carry': A.armL.rotation.set(-1.25, 0, -.2); A.armR.rotation.set(-1.25, 0, .2); break;
+    case 'give': A.armL.rotation.set(-1.4, 0, -.15); A.armR.rotation.set(-1.4, 0, .15); lean(A, .15); break;
+    case 'pull': A.armL.rotation.set(-2.6, 0, -.1); A.armR.rotation.set(-2.6, 0, .1); lean(A, -.25 + Math.sin(t * 9) * .05); break;
+    case 'swing': A.armR.rotation.set(-2.3 + Math.sin(t * 5) * 1.1, 0, -.2); A.armL.rotation.x = -.8; A.torso.rotation.y = Math.sin(t * 5) * .3; break;
+    case 'throw': A.armR.rotation.x = -2.8; lean(A, -.15); break;
+    case 'stretch': A.armL.rotation.z = 2.9; A.armR.rotation.z = -2.9; lean(A, -.12, -.2); break;
+    case 'surprised': A.armL.rotation.z = 2.1; A.armR.rotation.z = -2.1; lean(A, -.1, -.15); A.rig.position.y = Math.max(0, Math.sin(t * 9)) * .05; break;
+    case 'sitground': A.rig.position.y = -.5; A.legL.rotation.set(-1.45, 0, .12); A.legR.rotation.set(-1.45, 0, -.12); A.armL.rotation.x = -.5; A.armR.rotation.x = -.5; break;
+    case 'lie': A.rig.rotation.x = -H; A.rig.position.y = .14; A.rig.position.z = .55; A.armL.rotation.z = .3; A.armR.rotation.z = -.3; break;
+    case 'situp': A.rig.position.y = -.5; A.legL.rotation.x = -1.45; A.legR.rotation.x = -1.45; A.armL.rotation.z = .5; A.armR.rotation.z = -.5; break;
+    case 'ride': A.armL.rotation.x = -1; A.armR.rotation.x = -1; break;
+  }
+  if (a.hold) a.hold(A, t);
+  // a tap on a character: a happy little hop
+  if (a.wig > 0) { a.wig = Math.max(0, a.wig - 1 / 40); A.rig.position.y += Math.sin(a.wig * Math.PI) * .25; }
+  // the mouth moves while the character speaks
+  const m = t < a.talkUntil ? (Math.sin(t * 16) > 0 ? 'o' : a.mood === 'sad' ? 'sad' : 'smile') : a.mood;
+  if (a._face !== m) { a._face = m; A.faceMat.map = face(a.look, m); A.faceMat.needsUpdate = true; }
+}
+
+// ---------- the renderer (one for the whole session) ----------
+let R = null;
+function renderer() {
+  if (R) return R;
+  try {
+    const r = new THREE.WebGLRenderer({ antialias: (devicePixelRatio || 1) < 2, powerPreference: 'low-power' });
+    r.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5)); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.NoToneMapping;
+    r.domElement.className = 'th-film';
+    return (R = r);
+  } catch (e) { return null; }
+}
+
+// sky colours as a soft gradient
+function skyTex() {
+  const c = document.createElement('canvas'); c.width = 2; c.height = 128;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  t.paint = (top, bottom) => { const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, top); g.addColorStop(1, bottom); x.fillStyle = g; x.fillRect(0, 0, 2, 128); t.needsUpdate = true; };
+  return t;
+}
+const mixHex = (a, b, k) => '#' + new THREE.Color(a).lerp(new THREE.Color(b), k).getHexString();
+
+// A film: made when the theatre opens a tale that has one, gone when the theatre closes.
+export function createFilm(stage, script, ctx = {}) {
+  const r = renderer(); if (!r || !script) return null;
+  const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, 1, .1, 600);
+  const sky = skyTex(); scene.background = sky; scene.fog = new THREE.Fog('#cfefff', 60, 260);
+  const hemi = new THREE.HemisphereLight(0xffffff, 0xd9c79a, .85), sun = new THREE.DirectionalLight(0xffffff, 1.05);
+  sun.position.set(30, 50, 25); scene.add(hemi, sun);
+  stage.appendChild(r.domElement);
+  const help = el('div', 'film-help'); help.hidden = true; stage.appendChild(help);
+  const ring = el('div', 'film-ring'); ring.hidden = true; stage.appendChild(ring);
+  const calm = reduceMotion();
+  let page = null, alive = true, last = performance.now(), clock = 0, w = 0, h = 0;
+  const fit = () => { const W = stage.clientWidth, Hh = stage.clientHeight; if (W === w && Hh === h) return; w = W; h = Hh; r.setSize(W, Hh, false); r.domElement.style.width = W + 'px'; r.domElement.style.height = Hh + 'px'; cam.aspect = W / Math.max(1, Hh); cam.updateProjectionMatrix(); };
+  const _p = new THREE.Vector3();
+  const loop = now => {
+    if (!alive) return; requestAnimationFrame(loop);
+    const dt = Math.min(.05, (now - last) / 1000); last = now; clock += dt; fit();
+    if (page) page.tick(dt, clock);
+    r.render(scene, cam);
+    if (page && page.hold && page.hold.at) { const p = page.hold.at(); _p.copy(p).project(cam); ring.style.left = ((_p.x + 1) / 2 * w) + 'px'; ring.style.top = ((1 - _p.y) / 2 * h) + 'px'; }
+  };
+  requestAnimationFrame(loop);
+  // taps: help the story along, or make a character hop
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let down = null;
+  const onDown = e => { down = [e.clientX, e.clientY]; };
+  const onUp = e => {
+    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 14 || !page) return; down = null;
+    if (page.hold && page.hold.shown) { page.release(true); return; }
+    const b = r.domElement.getBoundingClientRect(); ndc.set((e.clientX - b.left) / b.width * 2 - 1, -(e.clientY - b.top) / b.height * 2 + 1);
+    ray.setFromCamera(ndc, cam);
+    for (const hit of ray.intersectObjects(page.root.children, true)) { let o = hit.object; while (o && !o.userData.actor && !o.userData.tap) o = o.parent; if (!o) continue; if (o.userData.actor) { o.userData.actor.wig = 1; SFX.tap(); } else o.userData.tap(); break; }
+  };
+  r.domElement.addEventListener('pointerdown', onDown); r.domElement.addEventListener('pointerup', onUp);
+
+  // ---------- one page ----------
+  function Page(k) {
+    const S = this; S.root = new THREE.Group(); scene.add(S.root);
+    S.ev = []; S.t = 0; S.len = 0; S.actors = []; S.tickers = []; S.hold = null; S.narrated = false; S.camT = null;
+    S.camPos = new THREE.Vector3(0, 3, 12); S.camLook = new THREE.Vector3(0, 1, 0); S.follow = null;
+    S.calm = calm; S.k = k; S.ctx = ctx || {}; // (story films: the child's own look, name and companion)
+    let resolve; S.done = new Promise(res => { resolve = res; });
+    S.tw = (t, dur, fn, e = io) => { S.ev.push({ t, dur: calm && fn.cam ? 0 : Math.max(0, dur), fn, e }); S.len = Math.max(S.len, t + dur); return t + dur; };
+    S.at = (t, fn) => S.tw(t, 0, (k, first) => { if (first) fn(); });
+    S.add = (o, x = 0, y = 0, z = 0, ry = 0) => { o.position.set(x, y, z); o.rotation.y = ry; S.root.add(o); o.traverse(c => { if (c.userData.tick) S.tickers.push(c.userData.tick); }); return o; };
+    S.every = f => S.tickers.push(f);
+    S.sky = (top, bottom, fog) => { sky.paint(top, bottom); scene.fog.color.set(fog || bottom); S.skyNow = [top, bottom]; };
+    S.skyTo = (t, dur, top, bottom) => { let from; return S.tw(t, dur, (k, first) => { if (first) from = S.skyNow.slice(); const a = mixHex(from[0], top, k), b = mixHex(from[1], bottom, k); sky.paint(a, b); scene.fog.color.set(b); if (k >= 1) S.skyNow = [top, bottom]; }, lin); };
+    S.light = (sunI = 1.05, hemiI = .85) => { sun.intensity = sunI; hemi.intensity = hemiI; };
+    S.lightTo = (t, dur, sunI, hemiI) => { let a, b; return S.tw(t, dur, (k, first) => { if (first) { a = sun.intensity; b = hemi.intensity; } sun.intensity = lerp(a, sunI, k); hemi.intensity = lerp(b, hemiI, k); }, lin); };
+    // actors
+    S.person = (look, x, z, yaw = 0, scale = 1) => { const a = person(look, scale); a.px = x; a.pz = z; a.yaw = yaw; S.add(a.o, x, 0, z, yaw); S.actors.push(a); return a; };
+    S.face = (a, t, yaw, dur = .45) => { if (Array.isArray(yaw)) yaw = Math.atan2(yaw[0] - a.px, yaw[1] - a.pz); let y0 = a.yaw, d = ((yaw - y0 + Math.PI * 3) % (Math.PI * 2)) - Math.PI; a.yaw = y0 + d; S.tw(t, dur, k => { a.o.rotation.y = y0 + d * k; }); return t + dur; };
+    S.walk = (a, t, to, speed = 1.3, state = 'walk') => {
+      const x0 = a.px, z0 = a.pz, d = Math.hypot(to[0] - x0, to[1] - z0), dur = d / speed;
+      if (d < .01) return t;
+      S.face(a, t, Math.atan2(to[0] - x0, to[1] - z0), .3);
+      S.tw(t, dur, (k, first) => { if (first) { a.state = state; a.speed = speed; } a.o.position.x = lerp(x0, to[0], k); a.o.position.z = lerp(z0, to[1], k); if (k >= 1) { a.state = 'idle'; a.speed = 0; } }, lin);
+      a.px = to[0]; a.pz = to[1]; return t + dur;
+    };
+    S.do = (a, t, state, dur = 0) => { S.at(t, () => { a.state = state; }); if (dur) S.at(t + dur, () => { if (a.state === state) a.state = 'idle'; }); S.len = Math.max(S.len, t + dur); return t + dur; };
+    S.mood = (a, t, m) => S.at(t, () => { a.mood = m; });
+    S.talk = (a, t, dur) => { S.at(t, () => { a.talkUntil = clock + dur; }); return t + dur; };
+    S.scale = (o, t, dur, s0, s1, e = io) => S.tw(t, dur, k => { o.scale.setScalar(lerp(s0, s1, k)); }, e);
+    S.move = (o, t, dur, to, e = io, arc = 0) => { let from; return S.tw(t, dur, (k, first) => { if (first) from = o.position.clone(); o.position.set(lerp(from.x, to[0], k), lerp(from.y, to[1], k) + Math.sin(k * Math.PI) * arc, lerp(from.z, to[2], k)); }, e); };
+    S.show = (o, t, on = true) => S.at(t, () => { o.visible = on; });
+    // hand a thing to an actor's hand (or put it back in the world)
+    S.grab = (a, t, o, pos = [0, -.5, .08], arm = 'armR', scale = 1) => S.at(t, () => { (arm === 'root' ? a.o : a.A[arm]).add(o); o.position.set(...pos); o.rotation.set(0, 0, 0); o.scale.setScalar(scale); });
+    S.drop = (o, t, pos) => S.at(t, () => { S.root.attach(o); if (pos) o.position.set(...pos); });
+    // camera: a position and a point to look at (arrays, or functions for a moving shot)
+    const val = v => typeof v === 'function' ? v() : v;
+    S.cam = (t, dur, pos, look) => {
+      const fn = (k, first) => { if (first) { S.follow = null; S.cf = [S.camPos.clone(), S.camLook.clone()]; } const p = val(pos), l = val(look); S.camPos.set(lerp(S.cf[0].x, p[0], k), lerp(S.cf[0].y, p[1], k), lerp(S.cf[0].z, p[2], k)); S.camLook.set(lerp(S.cf[1].x, l[0], k), lerp(S.cf[1].y, l[1], k), lerp(S.cf[1].z, l[2], k)); if (k >= 1 && (typeof pos === 'function' || typeof look === 'function')) S.follow = [pos, look]; };
+      fn.cam = true; return S.tw(t, dur, fn);
+    };
+    S.shot = (pos, look) => { S.camPos.set(...pos); S.camLook.set(...look); };
+    S.where = a => () => { const p = a.o.getWorldPosition(new THREE.Vector3()); return [p.x, p.y, p.z]; };
+    // the child's turn: once the narrator has finished, ask, then wait for a tap (or carry on by itself)
+    // (dur: how long what happens after the tap takes, so everything later in the page waits for it)
+    S.help = (t, en, vi, act, at, dur = 0) => { S.ev.push({ t, dur: 0, help: { en, vi, act, dur, at: at ? () => v3(val(at)) : null }, e: lin }); S.len = Math.max(S.len, t + .1); };
+    S.release = byChild => {
+      const hd = S.hold; if (!hd) return; S.hold = null; help.hidden = true; ring.hidden = true; clearTimeout(hd.timer);
+      if (byChild) { SFX.ok ? SFX.ok() : SFX.tap(); }
+      const n0 = S.ev.length; if (hd.act) hd.act(S.t);
+      if (hd.dur) { for (let i = 0; i < n0; i++) if (!S.ev[i].st && !S.ev[i].fin) S.ev[i].t += hd.dur; S.len += hd.dur; }
+    };
+    S.tick = (dt, time) => {
+      if (S.follow) { const p = val(S.follow[0]), l = val(S.follow[1]); S.camPos.lerp(new THREE.Vector3(...p), Math.min(1, dt * 3)); S.camLook.lerp(new THREE.Vector3(...l), Math.min(1, dt * 3)); }
+      if (!S.hold) {
+        let blocked = false;
+        for (const ev of S.ev) {
+          if (ev.fin || S.t < ev.t) continue;
+          if (ev.help) {
+            if (!S.narrated) { blocked = true; break; } // the help comes after the words
+            ev.fin = true; S.hold = ev.help; S.hold.shown = true;
+            help.innerHTML = `<span class="fh-hand">${pic('👆')}</span><b>${esc(T(ev.help.en, ev.help.vi))}</b>`; help.hidden = false; ring.hidden = !ev.help.at;
+            sayAsync(ev.help.en, ev.help.vi);
+            S.hold.timer = setTimeout(() => { if (S.hold === ev.help) S.release(false); }, 14000);
+            break;
+          }
+          const first = !ev.st; ev.st = true;
+          const k = ev.dur ? Math.min(1, (S.t - ev.t) / ev.dur) : 1;
+          ev.fn(ev.e(k), first); if (k >= 1) ev.fin = true;
+        }
+        S.waiting = blocked;
+        if (!S.hold && !blocked) S.t += dt;
+        if (S.t > S.len + .4 && !S.ended && !S.ev.some(e => e.help && !e.fin)) { S.ended = true; resolve(); }
+      }
+      for (const f of S.tickers) f(dt, time, S.t);
+      for (const a of S.actors) pose(a, time);
+      cam.position.copy(S.camPos); cam.lookAt(S.camLook);
+    };
+    S.dispose = () => {
+      scene.remove(S.root); help.hidden = true; ring.hidden = true; if (S.hold) clearTimeout(S.hold.timer);
+      S.root.traverse(o => {
+        if (o.geometry && !o.isSprite && !KEEP.has(o.geometry)) o.geometry.dispose();
+        const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+        for (const m of ms) { if (m.userData.shared || KEEP.has(m)) continue; if (m.map && m.map.userData.film) m.map.dispose(); m.dispose(); }
+      });
+    };
+    S.lib = SETS;
+  }
+
+  const api = current = {
+    get now() { return page; },
+    // play page k: builds its film and resolves when the film has played to its end
+    page(k) {
+      if (page) page.dispose();
+      page = new Page(k); scene.fog.near = 60; scene.fog.far = 260; sun.intensity = 1.05; hemi.intensity = .85;
+      try { script.pages[k] && script.pages[k](page); } catch (e) { console.warn('film page', k, e); }
+      page.ev.sort((a, b) => a.t - b.t);
+      cam.position.copy(page.camPos); cam.lookAt(page.camLook);
+      return page.done;
+    },
+    // the narrator finished reading this page (help questions wait for that)
+    narrated() { if (page) page.narrated = true; },
+    close() { alive = false; if (page) page.dispose(); page = null; r.domElement.removeEventListener('pointerdown', onDown); r.domElement.removeEventListener('pointerup', onUp); r.domElement.remove(); help.remove(); ring.remove(); r.renderLists.dispose(); if (current === api) current = null; }
+  };
+  return api;
+}
+// the film playing now (the checks look inside it)
+let current = null;
+export const filmNow = () => current;
+
+// ---------- props and sets (each film page builds what it needs) ----------
+const tex = (w, h, paint) => { const c = document.createElement('canvas'); c.width = w; c.height = h; paint(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.userData.film = true; return t; };
+
+export const SETS = {
+  // a sea that moves: a few gentle waves
+  sea(S, color = '#3cb0e8', y = -.35) {
+    const g = own(new THREE.PlaneGeometry(420, 420, 36, 36)); g.rotateX(-H);
+    const m = new THREE.Mesh(g, mat(color)); S.add(m, 0, y, 0);
+    const p = g.attributes.position, base = Float32Array.from(p.array);
+    S.every((dt, time) => { for (let i = 0; i < p.count; i++) { const x = base[i * 3], z = base[i * 3 + 2]; p.array[i * 3 + 1] = Math.sin(x * .18 + time * 1.3) * .12 + Math.cos(z * .21 + time) * .1; } p.needsUpdate = true; });
+    m.userData.waveAt = (x, z, time) => y + Math.sin(x * .18 + time * 1.3) * .12 + Math.cos(z * .21 + time) * .1;
+    return m;
+  },
+  island(S, r = 13) {
+    const g = new THREE.Group();
+    g.add(mesh([P(Cyl(r, r + 3, 1.2, 40), '#f0d9a0', [0, -.6, 0]), P(Cyl(r + 3.2, r + 5, .3, 40), '#9fe0e8', [0, -.62, 0])]));
+    // dunes, rocks and grass tufts
+    const parts = [];
+    for (let i = 0; i < 9; i++) { const a = i * 2.4, d = r * (.45 + (i % 3) * .15); parts.push(P(S_(1.6 + (i % 2), 10, 6), '#ead19a', [Math.cos(a) * d, -.9, Math.sin(a) * d], [0, 0, 0], [1.6, .55, 1.2])); }
+    for (let i = 0; i < 6; i++) { const a = i * 1.1 + 2, d = r - 1.5; parts.push(P(new THREE.DodecahedronGeometry(.5 + (i % 3) * .25), '#9a8f84', [Math.cos(a) * d, .05, Math.sin(a) * d], [i, i * 2, 0], [1.2, .7, 1])); }
+    for (let i = 0; i < 14; i++) { const a = i * .9, d = r * (.35 + (i % 4) * .14); parts.push(P(Cone(.18, .45, 5), '#8bc06a', [Math.cos(a) * d, .2, Math.sin(a) * d])); }
+    g.add(mesh(parts));
+    S.add(g); return g;
+  },
+  palm(S, x, z, lean = .3, ry = 0) {
+    const parts = [], n = 7; let px = 0, py = 0;
+    for (let i = 0; i < n; i++) { const k = i / n; parts.push(P(Cyl(.15 - k * .05, .18 - k * .05, .75, 8), i % 2 ? '#9a6a3c' : '#8a5c32', [px, py + .37, 0], [0, 0, -lean * k])); px += Math.sin(lean * k) * .75; py += Math.cos(lean * k) * .72; }
+    for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; parts.push(P(Cone(.32, 2.6, 4), i % 2 ? '#3f9a46' : '#56b24e', [px + Math.cos(a) * 1.1, py - .2, Math.sin(a) * 1.1], [Math.sin(a) * 1.9, 0, -Math.cos(a) * 1.9], [1, 1, .3])); }
+    parts.push(P(S_(.2), '#6a4a22', [px + .15, py - .2, .1]), P(S_(.2), '#6a4a22', [px - .1, py - .25, -.1]));
+    const m = mesh(parts); return S.add(m, x, 0, z, ry);
+  },
+  hut(S, x, z, ry = 0) {
+    const m = mesh([
+      P(Box(3, 1.8, 2.4), '#d8b88a', [0, .9, 0]), P(Box(.9, 1.4, .1), '#5a3a22', [0, .7, 1.21]),
+      P(Cone(2.6, 1.6, 4), '#c9a25a', [0, 2.5, 0], [0, Math.PI / 4, 0], [1.25, 1, 1]),
+      ...[-1.4, 1.4].flatMap(px => [-1.1, 1.1].map(pz => P(Cyl(.08, .08, 1.8, 6), '#7a5236', [px, .9, pz])))
+    ]);
+    return S.add(m, x, 0, z, ry);
+  },
+  // a village house of mud walls and a thatched roof, open at the front
+  house(S, x, z, ry = 0) {
+    const m = mesh([
+      P(Box(6, 2.4, 4), '#e2c79a', [0, 1.2, 0]), P(Box(1.4, 1.9, .12), '#4a3020', [0, .95, 2.01]),
+      P(Box(1, .8, .1), '#3a2a1a', [-1.9, 1.4, 2.01]), P(Box(1, .8, .1), '#3a2a1a', [1.9, 1.4, 2.01]),
+      P(Cone(4.6, 2.2, 4), '#c9a25a', [0, 3.5, 0], [0, Math.PI / 4, 0], [1.3, 1, .9]),
+      P(Box(7, .25, 1.6), '#c9a25a', [0, 2.45, 2.6]), ...[-3, -1, 1, 3].map(px => P(Cyl(.1, .1, 2.4, 6), '#6a4a2a', [px, 1.2, 3.3])),
+      P(Box(6.4, .15, 1.8), '#cbb27e', [0, .07, 2.8])
+    ]);
+    return S.add(m, x, 0, z, ry);
+  },
+  ground(S, color = '#8fcf6a', size = 300) { const g = own(new THREE.PlaneGeometry(size, size)); g.rotateX(-H); const m = new THREE.Mesh(g, mat(color)); return S.add(m, 0, -.01, 0); },
+  // a strip of rice field with water between the rows
+  paddy(S, x, z, w = 10, d = 8) {
+    const parts = [P(Box(w, .1, d), '#7ab8c8', [0, -.02, 0]), P(Box(w + .6, .25, .5), '#8a6a3a', [0, .05, d / 2 + .2]), P(Box(w + .6, .25, .5), '#8a6a3a', [0, .05, -d / 2 - .2])];
+    for (let i = 0; i < w * 1.5; i++) for (let j = 0; j < d * 1.2; j++) parts.push(P(Cone(.09, .5, 4), (i + j) % 3 ? '#7cc24a' : '#94d45a', [-w / 2 + .3 + i / 1.5, .25, -d / 2 + .3 + j / 1.2]));
+    return S.add(mesh(parts), x, 0, z);
+  },
+  mountains(S, z = -90, tint = '#7fa8b8') {
+    const parts = [];
+    [[-70, 30, 26], [-30, 44, 30], [10, 36, 24], [50, 48, 34], [90, 30, 22]].forEach(([x, h, r], i) => parts.push(P(Cone(r, h, 7), mixHex(tint, '#a8c8d0', i % 2 * .4), [x, h / 2 - 2, z - (i % 2) * 20])));
+    return S.add(mesh(parts));
+  },
+  // a clump of bamboo (its own colour, so a page can turn it gold)
+  bamboo(S, x, z, color = '#5fae4a', n = 7, hgt = 7) {
+    const g = new THREE.Group(), stalk = mat(color), leaf = mat(mixHex(color, '#2f7a32', .45));
+    for (let i = 0; i < n; i++) {
+      const a = i * 2.39, d = .25 + (i % 3) * .25, h = hgt * (.75 + (i % 4) * .1), s = new THREE.Group();
+      s.position.set(Math.cos(a) * d, 0, Math.sin(a) * d); s.rotation.set(Math.sin(a) * .12, 0, Math.cos(a) * .12);
+      for (let j = 0; j < 6; j++) { const seg = new THREE.Mesh(own(Cyl(.07, .08, h / 6 - .04, 6)), stalk); seg.position.y = h / 6 * (j + .5); s.add(seg); }
+      for (let j = 0; j < 5; j++) { const l = new THREE.Mesh(own(Cone(.35, 1.4, 4)), leaf); l.position.set(Math.cos(j * 1.3) * .5, h * (.55 + j * .09), Math.sin(j * 1.3) * .5); l.rotation.set(Math.sin(j) * 1.6, 0, Math.cos(j) * 1.6); l.scale.z = .3; s.add(l); }
+      g.add(s);
+    }
+    g.userData.mats = [stalk, leaf];
+    return S.add(g, x, 0, z);
+  },
+  banyan(S, x, z, s = 1) {
+    const parts = [P(Cyl(.6, .9, 4, 9), '#7a5a3a', [0, 2, 0])];
+    for (let i = 0; i < 8; i++) { const a = i * .8; parts.push(P(S_(2.2, 9, 7), i % 2 ? '#3f8a3a' : '#4f9e42', [Math.cos(a) * 2.4, 4.6 + (i % 3) * .6, Math.sin(a) * 2.4])); }
+    for (let i = 0; i < 6; i++) parts.push(P(Cyl(.05, .05, 3, 4), '#8a6a4a', [Math.cos(i) * 2.6, 1.5, Math.sin(i) * 2.6]));
+    const m = mesh(parts); m.scale.setScalar(s); return S.add(m, x, 0, z);
+  },
+  clouds(S, list) {
+    const g = new THREE.Group();
+    for (const [x, y, z, s] of list) { const parts = []; for (let i = 0; i < 5; i++) parts.push(P(S_(1.2 + (i % 2) * .5, 9, 7), '#ffffff', [(i - 2) * 1.3, Math.sin(i) * .3, (i % 2) * .5])); const c = mesh(parts); c.position.set(x, y, z); c.scale.setScalar(s || 1); g.add(c); }
+    S.every(dt => g.children.forEach((c, i) => { c.position.x += dt * (.3 + i % 3 * .1); }));
+    return S.add(g);
+  },
+  sun(S, x, y, z, r = 4, color = '#fff2a8') { const m = new THREE.Mesh(own(S_(r, 16, 12)), glow(color)); m.material.userData.film = true; m.material.fog = false; return S.add(m, x, y, z); },
+  // the palace yard: stone floor, red pillars, a curved roof, steps and the throne
+  palace(S) {
+    const g = new THREE.Group();
+    g.add(mesh([P(Box(40, .2, 30), '#e8d8b8', [0, -.1, -2])]));
+    const parts = [P(Box(16, .5, 7), '#d8c8a0', [0, .25, -9]), P(Box(16, .5, 1), '#c8b890', [0, .25, -5.2]), P(Box(14, 4.2, 6), '#f4e2c0', [0, 2.6, -9.5])];
+    for (let i = -3; i <= 3; i++) parts.push(P(Cyl(.25, .25, 4.2, 10), '#c62f2f', [i * 2.2, 2.6, -6.4]));
+    parts.push(P(Box(17, .4, 8), '#3a5a7a', [0, 4.9, -9.2]), P(Cone(9.8, 3, 4), '#2f4a6a', [0, 6.5, -9.2], [0, Math.PI / 4, 0], [1.25, 1, .6]));
+    [-8.6, 8.6].forEach(x => parts.push(P(Cone(.35, 1.5, 6), '#2f4a6a', [x, 5.6, -5.4], [-.6, 0, x > 0 ? -.9 : .9])));
+    parts.push(P(Box(2.2, 1.5, 1.2), '#c62f2f', [0, 1.25, -8]), P(Box(2.4, .25, 1.4), '#e8b62a', [0, 2.05, -8.1]), P(Box(2.4, 1.6, .3), '#e8b62a', [0, 2.4, -8.6]));
+    g.add(mesh(parts));
+    return S.add(g);
+  },
+  lantern(S, x, y, z, color = '#e8332a') {
+    const m = mesh([P(S_(.35, 10, 8), color, [0, 0, 0], [0, 0, 0], [1, 1.15, 1]), P(Cyl(.2, .2, .1, 8), '#e8b62a', [0, .4, 0]), P(Cyl(.2, .2, .1, 8), '#e8b62a', [0, -.4, 0]), P(Cyl(.02, .02, .9, 4), '#e8b62a', [0, -.8, 0])]);
+    S.every((dt, time) => { m.rotation.z = Math.sin(time * 1.4 + x) * .08; });
+    return S.add(m, x, y, z);
+  },
+  // a peach blossom tree for Tết
+  blossom(S, x, z) {
+    const parts = [P(Cyl(.15, .25, 2.2, 7), '#6a4a3a', [0, 1.1, 0], [0, 0, .12])];
+    for (let i = 0; i < 26; i++) { const a = i * 2.4, r = .6 + (i % 5) * .3; parts.push(P(S_(.22, 6, 5), i % 3 ? '#ff9ec8' : '#ffd0e2', [Math.cos(a) * r, 2.2 + (i % 4) * .35, Math.sin(a) * r])); }
+    return S.add(mesh(parts), x, 0, z);
+  },
+  // a small shrine (đền) with an incense pot
+  shrine(S, x, z, ry = 0) {
+    return S.add(mesh([P(Box(4, .5, 3), '#bfae90', [0, .25, 0]), P(Box(3.4, 2.4, 2.4), '#e8d2a8', [0, 1.7, -.2]), P(Box(1.2, 1.6, .1), '#8a2a20', [0, 1.3, 1.01]),
+      P(Cone(3.2, 1.4, 4), '#8a3a2a', [0, 3.5, -.2], [0, Math.PI / 4, 0], [1.2, 1, .9]), ...[-1, 1].map(s => P(Cone(.2, .8, 5), '#8a3a2a', [s * 2.2, 3.3, 1], [-.4, 0, s * -.9])),
+      P(Cyl(.35, .28, .5, 10), '#8a6a2a', [0, .75, 1.8])]), x, 0, z, ry);
+  }
+};
+
+export const PROPS = {
+  bird(color = '#3a3a44') {
+    const g = new THREE.Group(), body = mesh([P(S_(.16, 10, 8), color, [0, 0, 0], [0, 0, 0], [.9, .85, 1.4]), P(S_(.11, 10, 8), color, [0, .1, .18]), P(Cone(.04, .12, 6), '#f2a23a', [0, .09, .32], [H, 0, 0]), P(S_(.02, 6, 5), '#fff', [.06, .13, .26]), P(S_(.02, 6, 5), '#fff', [-.06, .13, .26]), P(Cone(.07, .25, 4), color, [0, .02, -.28], [-H - .3, 0, 0], [1, 1, .4])]);
+    g.add(body);
+    const wings = [-1, 1].map(s => { const w = new THREE.Group(); w.position.set(s * .1, .05, 0); w.add(mesh([P(Box(.42, .02, .2), color, [s * .21, 0, 0])])); g.add(w); return w; });
+    g.userData.flap = 1; g.userData.tick = (dt, time) => { const f = g.userData.flap; wings.forEach((w, i) => { w.rotation.z = (i ? -1 : 1) * (Math.sin(time * 16) * .9 * f + .1); }); };
+    return g;
+  },
+  seed() { return mesh([P(S_(.035, 6, 5), '#1a1410', [0, .035, 0], [0, 0, 0], [1, .7, 1.4])]); },
+  melon(r = .45) {
+    const t = tex(64, 64, (x, w, h) => { x.fillStyle = '#4a9a3a'; x.fillRect(0, 0, w, h); x.fillStyle = '#1f5a24'; for (let i = 0; i < 8; i++) { x.beginPath(); for (let y = 0; y <= h; y += 4) x.lineTo(i * 8 + Math.sin(y * .3) * 1.5, y); for (let y = h; y >= 0; y -= 4) x.lineTo(i * 8 + 3 + Math.sin(y * .3) * 1.5, y); x.fill(); } });
+    const m = new THREE.Mesh(own(S_(r, 20, 14)), toon('#ffffff', { map: t })); m.material.userData.film = true; m.scale.set(1, .9, 1.15); m.position.y = r * .9; const g = new THREE.Group(); g.add(m); g.userData.r = r; return g;
+  },
+  // a watermelon cut open: two halves, red inside with black seeds
+  melonHalves(r = .45) {
+    const inside = tex(64, 64, (x, w) => { x.fillStyle = '#3f8a34'; x.beginPath(); x.arc(32, 32, 32, 0, 7); x.fill(); x.fillStyle = '#f2f0c8'; x.beginPath(); x.arc(32, 32, 29, 0, 7); x.fill(); x.fillStyle = '#e8343a'; x.beginPath(); x.arc(32, 32, 26, 0, 7); x.fill(); x.fillStyle = '#1a1410'; for (let i = 0; i < 16; i++) { const a = i * 2.4, d = 8 + (i % 3) * 5; x.beginPath(); x.ellipse(32 + Math.cos(a) * d, 32 + Math.sin(a) * d, 1.5, 2.6, a, 0, 7); x.fill(); } });
+    const g = new THREE.Group(), halves = [];
+    for (const s of [-1, 1]) {
+      const h = new THREE.Group(), shell = new THREE.Mesh(own(new THREE.SphereGeometry(r, 18, 12, 0, Math.PI)), mat('#4a9a3a', { side: THREE.DoubleSide }));
+      shell.rotation.y = s > 0 ? -H : H; h.add(shell);
+      const cut = new THREE.Mesh(own(new THREE.CircleGeometry(r * .98, 24)), toon('#ffffff', { map: inside })); cut.material.userData.film = true; cut.rotation.y = s > 0 ? -H : H; h.add(cut);
+      h.position.set(s * .02, r, 0); h.scale.set(1, .9, 1.15); g.add(h); halves.push(h);
+    }
+    g.userData.halves = halves; return g;
+  },
+  slice() { return mesh([P(new THREE.CylinderGeometry(.22, .22, .06, 3, 1, false, 0, Math.PI * .5), '#e8343a', [0, 0, 0], [H, 0, 0]), P(new THREE.CylinderGeometry(.24, .24, .065, 6, 1, false, 0, Math.PI * .5), '#3f8a34', [0, 0, -.003], [H, 0, 0], [1, 1, .4])]); },
+  // creeping vines with big leaves and yellow flowers, that grow from nothing
+  vines(n = 40, spread = 4) {
+    const g = new THREE.Group();
+    for (let i = 0; i < n; i++) {
+      const a = i * 2.39, d = Math.sqrt(i / n) * spread, l = mesh([P(S_(.22, 7, 5), i % 2 ? '#3f9a3a' : '#57b24a', [0, .06, 0], [0, 0, 0], [1.2, .25, 1]), ...(i % 5 === 0 ? [P(S_(.06, 6, 5), '#ffd23f', [.1, .14, .05])] : []), P(Cyl(.015, .015, .5, 4), '#5a9a3a', [-.25, .04, 0], [0, 0, H])]);
+      l.position.set(Math.cos(a) * d, 0, Math.sin(a) * d); l.rotation.y = a; l.scale.setScalar(0); l.userData.d = d / spread; g.add(l);
+    }
+    g.userData.grow = k => g.children.forEach(l => { const s = Math.min(1, Math.max(0, (k - l.userData.d * .7) / .3)); l.scale.setScalar(s); });
+    return g;
+  },
+  sprout() { return mesh([P(Cyl(.012, .012, .16, 4), '#5aa84a', [0, .08, 0]), P(S_(.05, 6, 5), '#6cc45a', [.04, .16, 0], [0, 0, 0], [1.3, .4, .8]), P(S_(.05, 6, 5), '#6cc45a', [-.04, .16, 0], [0, 0, 0], [1.3, .4, .8])]); },
+  // a gourd for carrying water, and the drops it pours
+  gourd() { return mesh([P(S_(.12, 10, 8), '#c9a25a', [0, -.05, 0]), P(S_(.08, 10, 8), '#c9a25a', [0, .1, 0]), P(Cyl(.025, .03, .06, 6), '#8a6a3a', [0, .2, 0])]); },
+  drops(n = 12, spread = .12) {
+    const g = new THREE.Group(), m = glow('#9fe0ff', .85); m.userData.film = true;
+    for (let i = 0; i < n; i++) { const d = new THREE.Mesh(own(S_(.03, 5, 4)), m); d.userData.ph = i / n; g.add(d); }
+    g.visible = false;
+    g.userData.tick = (dt, time) => { if (g.visible) g.children.forEach(d => { const k = (time * 1.6 + d.userData.ph) % 1; d.position.set((d.userData.ph - .5) * spread * 2 + Math.sin(d.userData.ph * 20) * .03, -k * .9, k * .1); }); };
+    return g;
+  },
+  sparkle(color = '#ffe27a') {
+    const g = new THREE.Group(), m = glow(color, .9); m.userData.film = true;
+    for (let i = 0; i < 14; i++) { const s = new THREE.Mesh(own(new THREE.OctahedronGeometry(.08)), m); s.userData.a = i * 2.4; g.add(s); }
+    g.visible = false;
+    g.userData.tick = (dt, time) => { if (g.visible) g.children.forEach((s, i) => { const k = (time * .8 + i / 14) % 1; s.position.set(Math.cos(s.userData.a) * (.3 + k), k * 1.6, Math.sin(s.userData.a) * (.3 + k)); s.scale.setScalar(1 - k); s.rotation.y = time * 3; }); };
+    return g;
+  },
+  // a wooden sailing boat with a brown junk sail (thuyền buồm)
+  boat(len = 6, sail = '#b8643a') {
+    const g = new THREE.Group(), s = new THREE.Shape(), w = len / 2;
+    s.moveTo(-w, .5); s.quadraticCurveTo(-w * .7, -.4, 0, -.45); s.quadraticCurveTo(w * .7, -.4, w, .6); s.lineTo(-w, .5);
+    const hull = own(new THREE.ExtrudeGeometry(s, { depth: 1.8, bevelEnabled: false })); hull.translate(0, 0, -.9); hull.rotateY(H);
+    g.add(new THREE.Mesh(hull, mat('#8a5a32')));
+    g.add(mesh([P(Box(1.7, .08, len * .8), '#a8784a', [0, .35, 0]), P(Cyl(.06, .07, 4.2, 6), '#6a4a2a', [0, 2.4, .3]), P(S_(.12, 6, 5), '#e8332a', [0, 4.5, .3])]));
+    const sl = own(new THREE.PlaneGeometry(2.6, 3.2, 1, 4)); const sm = new THREE.Mesh(sl, mat(sail, { side: THREE.DoubleSide })); sm.position.set(0, 2.5, .2); sm.rotation.y = H * .25; g.add(sm);
+    for (let i = 0; i < 5; i++) g.add(mesh([P(Cyl(.02, .02, 2.7, 4), '#5a3a22', [0, 1 + i * .75, .2], [0, H * .25, H])]));
+    g.userData.deck = .4;
+    return g;
+  },
+  // a horse (the messenger's), or the iron horse that breathes fire
+  horse(color = '#8a5a3a', iron = false) {
+    const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+    const mane = iron ? '#2a2c30' : '#3a2618', c2 = iron ? '#6a7078' : color;
+    body.add(mesh([P(new THREE.CapsuleGeometry(.38, 1.1, 4, 10), c2, [0, 1.35, 0], [H, 0, 0]), P(S_(.4, 10, 8), c2, [0, 1.42, -.55])]));
+    const neck = new THREE.Group(); neck.position.set(0, 1.55, .6); body.add(neck);
+    neck.add(mesh([P(new THREE.CapsuleGeometry(.2, .6, 4, 8), c2, [0, .35, .12], [.5, 0, 0]), P(new THREE.CapsuleGeometry(.17, .42, 4, 8), c2, [0, .72, .42], [1.6, 0, 0]),
+      P(S_(.06, 6, 5), iron ? '#ff8a2a' : '#1a1a1a', [.14, .82, .38]), P(S_(.06, 6, 5), iron ? '#ff8a2a' : '#1a1a1a', [-.14, .82, .38]),
+      ...[-1, 1].map(s => P(Cone(.06, .18, 5), c2, [s * .09, .98, .26])), ...[0, 1, 2, 3, 4].map(i => P(Box(.06, .22, .14), mane, [0, .9 - i * .17, .12 - i * .1], [.4, 0, 0]))]));
+    const legs = [[.2, .55, 0], [-.2, .55, Math.PI], [.2, -.55, Math.PI], [-.2, -.55, 0]].map(([x, z, ph]) => { const l = new THREE.Group(); l.position.set(x, 1.15, z); l.add(mesh([P(Cyl(.09, .07, 1.1, 6), c2, [0, -.55, 0]), P(Cyl(.1, .1, .1, 6), iron ? '#3a3c40' : '#2a1a10', [0, -1.12, 0])])); body.add(l); return [l, ph]; });
+    const tail = new THREE.Group(); tail.position.set(0, 1.5, -.95); tail.add(mesh([P(Cone(.12, .9, 6), mane, [0, -.4, -.12], [Math.PI - .4, 0, 0])])); body.add(tail);
+    if (iron) body.add(mesh([P(Box(.82, .1, .9), '#3a3c40', [0, 1.78, -.05]), ...[-1, 1].map(s => P(Box(.05, .5, .05), '#3a3c40', [s * .42, 1.5, 0]))]));
+    // fire from the mouth
+    const fire = new THREE.Group(); fire.position.set(0, .7, .7); neck.add(fire); fire.visible = false;
+    if (iron) [['#ffd23f', .12, .7], ['#ff8a2a', .18, 1.1], ['#e8332a', .22, 1.5]].forEach(([c, r, l], i) => { const m = glow(c, .85); m.userData.film = true; const f = new THREE.Mesh(own(Cone(r, l, 8)), m); f.rotation.x = -H; f.position.z = l / 2; fire.add(f); });
+    g.userData.seat = [0, 1.78, -.05]; g.userData.fire = fire; g.userData.gait = 0;
+    g.userData.tick = (dt, time) => {
+      const k = g.userData.gait; // 0 stand, 1 walk, 2 gallop
+      legs.forEach(([l, ph]) => { l.rotation.x = Math.sin(time * (k > 1 ? 11 : 5) + ph) * (k > 1 ? .8 : k ? .45 : 0); });
+      body.position.y = k > 1 ? Math.abs(Math.sin(time * 11)) * .12 : 0; body.rotation.x = k > 1 ? Math.sin(time * 11) * .05 : 0;
+      tail.rotation.x = Math.sin(time * 3) * .15 + (k > 1 ? -.5 : 0); neck.rotation.x = k > 1 ? Math.sin(time * 11) * .08 : Math.sin(time * .9) * .04;
+      if (fire.visible) fire.children.forEach((f, i) => { f.scale.set(1, 1, .8 + Math.sin(time * 30 + i * 2) * .25); });
+    };
+    return g;
+  },
+  stick(len = 1.6, color = '#4a4e56') { const g = new THREE.Group(); const a = mesh([P(Cyl(.035, .035, len / 2, 6), color, [0, len / 4, 0])]), b = mesh([P(Cyl(.035, .035, len / 2, 6), color, [0, -len / 4, 0])]); g.add(a, b); g.userData.halves = [a, b]; return g; },
+  bowl(full = true) { return mesh([P(new THREE.SphereGeometry(.12, 10, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), '#f4f0e8', [0, .12, 0]), ...(full ? [P(S_(.105, 8, 6), '#ffffff', [0, .12, 0], [0, 0, 0], [1, .45, 1])] : [])]); },
+  pot() { return mesh([P(Cyl(.32, .26, .45, 12), '#3a3430', [0, .22, 0]), P(Cyl(.34, .34, .05, 12), '#5a504a', [0, .46, 0]), P(S_(.3, 10, 6), '#ffffff', [0, .44, 0], [0, 0, 0], [1, .3, 1])]); },
+  basket() { return mesh([P(Cyl(.3, .22, .3, 10), '#c9a25a', [0, .15, 0]), P(Cyl(.28, .28, .04, 10), '#f4f0e8', [0, .3, 0])]); },
+  sack() { return mesh([P(S_(.28, 9, 7), '#d8c48a', [0, .26, 0], [0, 0, 0], [1, 1.1, .8]), P(Cyl(.06, .1, .15, 6), '#b8a46a', [0, .55, 0])]); },
+  mat() { return mesh([P(Box(1.4, .03, 2), '#d8b870', [0, .015, 0]), ...[-.5, 0, .5].map(x => P(Box(.08, .035, 2), '#c0392b', [x, .02, 0]))]); },
+  table() { return mesh([P(Box(1.4, .08, .9), '#7a5236', [0, .42, 0]), ...[-1, 1].flatMap(sx => [-1, 1].map(sz => P(Cyl(.04, .04, .4, 5), '#6a4226', [sx * .6, .2, sz * .36])))]); },
+  flag(color = '#e8332a') { const g = new THREE.Group(); g.add(mesh([P(Cyl(.025, .025, 1.8, 5), '#6a4a2a', [0, .9, 0])])); const f = new THREE.Mesh(own(new THREE.PlaneGeometry(.6, .4, 4, 1)), mat(color, { side: THREE.DoubleSide })); f.position.set(.3, 1.6, 0); g.add(f); g.userData.tick = (dt, time) => { f.rotation.y = Math.sin(time * 4) * .3; }; return g; },
+  helmet() { return mesh([P(new THREE.SphereGeometry(.56, 14, 8, 0, Math.PI * 2, 0, Math.PI * .5), '#5a6068', [0, .12, 0]), P(Cone(.08, .5, 6), '#c62f2f', [0, .78, 0])]); },
+  fireworks(S, x, y, z) {
+    const g = new THREE.Group(), cols = ['#ffd23f', '#ff5fa2', '#5fd3ff', '#ff8a2a'];
+    for (let i = 0; i < 24; i++) { const m = glow(cols[i % 4], .95); m.userData.film = true; const s = new THREE.Mesh(own(S_(.12, 5, 4)), m); s.userData.dir = new THREE.Vector3(Math.cos(i * 2.4) * Math.sin(i * .7 + 1), Math.cos(i * .7 + 1), Math.sin(i * 2.4) * Math.sin(i * .7 + 1)); g.add(s); }
+    g.visible = false; g.userData.tick = (dt, time) => { if (!g.visible) return; const k = (time * .5) % 1; g.children.forEach(s => { s.position.copy(s.userData.dir).multiplyScalar(k * 4); s.position.y -= k * k * 1.5; s.scale.setScalar(1 - k * .8); }); };
+    return S.add(g, x, y, z);
+  }
+};
+
+// a number on a little board on a post (the counting guide); digits are drawn, not emoji
+PROPS.numberSign = (n, color = '#3b6fe0') => {
+  const t = tex(128, 128, (x, w) => { x.fillStyle = '#fffaf0'; x.fillRect(0, 0, w, w); x.strokeStyle = color; x.lineWidth = 10; x.strokeRect(5, 5, w - 10, w - 10); x.fillStyle = color; x.font = 'bold 92px system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(n), w / 2, w / 2 + 6); });
+  const g = new THREE.Group(); g.add(mesh([P(Cyl(.05, .05, 1, 6), '#8a6a4a', [0, .5, 0])]));
+  const b = new THREE.Mesh(own(new THREE.PlaneGeometry(.8, .8)), toon('#ffffff', { map: t, side: THREE.DoubleSide })); b.material.userData.film = true; b.position.y = 1.25; g.add(b);
+  g.userData.board = b; return g;
+};
+// a floating number that pops up over a thing being counted
+PROPS.countTag = (n) => {
+  const t = tex(64, 64, (x, w) => { x.fillStyle = '#ffd23f'; x.beginPath(); x.arc(32, 32, 30, 0, 7); x.fill(); x.fillStyle = '#3b2a4f'; x.font = 'bold 44px system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(n), 32, 35); });
+  const m = new THREE.SpriteMaterial({ map: t, depthTest: false }); m.userData.film = true; const s = new THREE.Sprite(m); s.scale.setScalar(.45); s.renderOrder = 5; return s;
+};
+// an Ô ăn quan board scratched in the dirt: two rows of five squares and a half moon (the quan) at each end
+PROPS.oanquan = () => {
+  const g = new THREE.Group(), line = '#6a4a2a';
+  g.add(mesh([P(Box(4.6, .02, 1.8), '#c8a878', [0, .01, 0])]));
+  const lines = new THREE.Group(); g.add(lines);
+  const L = (w, d, x, z) => { const m = mesh([P(Box(w, .015, d), line, [0, .025, 0])]); m.position.set(x, 0, z); lines.add(m); return m; };
+  [-.6, 0, .6].forEach(z => L(3, .035, 0, z));
+  for (let i = 0; i <= 5; i++) L(.035, 1.2, -1.5 + i * .6, 0);
+  [-1, 1].forEach(s => { const a = new THREE.Mesh(own(new THREE.TorusGeometry(.6, .018, 4, 20, Math.PI)), new THREE.MeshBasicMaterial({ color: line })); a.material.userData.film = true; a.rotation.set(-H, 0, s > 0 ? -H : H); a.position.set(s * 1.5, .03, 0); lines.add(a); });
+  g.userData.lines = lines;
+  // the squares, numbered round the board: 0–4 the near row (left to right), 5–9 the far row (right to left)
+  const sq = []; for (let i = 0; i < 5; i++) sq.push([-1.2 + i * .6, .3]); for (let i = 4; i >= 0; i--) sq.push([-1.2 + i * .6, -.3]);
+  g.userData.sq = sq;
+  g.userData.pebble = (i, j) => { const c = ['#e8e4dc', '#bfb8ac', '#d8cfc0', '#a8a094'][j % 4]; return mesh([P(new THREE.DodecahedronGeometry(.045), c, [0, .045, 0], [j, j * 2, 0], [1, .7, 1])]); };
+  return g;
+};

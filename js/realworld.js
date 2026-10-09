@@ -5,7 +5,7 @@
 // photos of the article (its main picture first) are added, and every photo shown is kept on this device, so next
 // time it works without the internet too. Street View needs the internet.
 import { T } from './i18n.js';
-import { el, esc } from './util.js';
+import { el, esc, flip } from './util.js';
 import { SFX } from './audio.js';
 import { say } from './voice.js';
 import { pic } from './art.js';
@@ -60,24 +60,46 @@ async function photoURL(p) {
     return URL.createObjectURL(await r.blob());
   } catch (e) { return p.url; }
 }
+// (round O, owner: "Real photos shows nothing") Wikipedia is retiring the old picture list this used (rest_v1
+// media-list), so the photos now come from Wikipedia's main API: the article's pictures with their sizes, captions,
+// photographers and licences in one request (generator=images + imageinfo), the article's own main picture first.
+// The old list is still tried when the main API gives nothing.
+// (audit, 9 Oct) captions come from Wikimedia as HTML: read as an inert document, so nothing in them can run
+const plain = h => new DOMParser().parseFromString(String(h || ''), 'text/html').body.textContent || '';
+const txt = h => plain(h).replace(/\s+/g, ' ').trim();
+async function apiPhotos(lang, title) {
+  const base = `https://${lang}.wikipedia.org/w/api.php?format=json&formatversion=2&origin=*&redirects=1&titles=${encodeURIComponent(title)}`;
+  const [lead, all] = await Promise.all([
+    fetch(base + '&action=query&prop=pageimages&piprop=name').then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(base + '&action=query&generator=images&gimlimit=60&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=1280').then(r => r.ok ? r.json() : null)
+  ]);
+  const leadName = ((((lead || {}).query || {}).pages || [])[0] || {}).pageimage || '';
+  let out = ((all && all.query && all.query.pages) || []).map(pg => ({ pg, ii: (pg.imageinfo || [])[0] })).filter(({ pg, ii }) => ii && /^image\/(jpeg|png|webp)$/.test(ii.mime || '') && !BAD.test(pg.title || ''))
+    .map(({ pg, ii }) => { const md = ii.extmetadata || {}, v = k => md[k] && md[k].value;
+      return { url: ii.thumburl || ii.url, file: pg.title, caption: txt(v('ImageDescription')).slice(0, 160), credit: [txt(v('Artist')).slice(0, 60), txt(v('LicenseShortName'))].filter(Boolean).join(' · '), lead: pg.title.replace(/^[^:]+:/, '').replace(/ /g, '_') === leadName.replace(/ /g, '_') }; })
+    .filter(p => { try { return new URL(p.url).hostname === 'upload.wikimedia.org'; } catch (e) { return false; } });
+  out.sort((a, b) => b.lead - a.lead);
+  return out.slice(0, 8);
+}
+async function restPhotos(lang, title) {
+  const t = encodeURIComponent(title.replace(/ /g, '_'));
+  const [ml, sum] = await Promise.all([fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${t}`, { headers: { accept: 'application/json' } }), fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${t}`).catch(() => null)]);
+  if (!ml.ok) return [];
+  const j = await ml.json(), lead = sum && sum.ok ? ((await sum.json()).originalimage || {}).source || '' : '';
+  const leadName = lead ? decodeURIComponent(lead.split('/').pop()).replace(/^\d+px-/, '') : '';
+  let out = (j.items || []).filter(it => it.type === 'image' && it.showInGallery !== false && !BAD.test(it.title || '') && it.srcset && it.srcset.length).map(it => {
+    const pick = it.srcset.find(x => x.scale === '2x') || it.srcset[it.srcset.length - 1], url = pick.src.startsWith('//') ? 'https:' + pick.src : pick.src;
+    return { url, file: it.title, caption: it.caption && it.caption.text ? it.caption.text : '' };
+  }).filter(p => { try { return new URL(p.url).hostname === 'upload.wikimedia.org'; } catch (e) { return false; } });
+  if (leadName) out.sort((a, b) => (b.file.replace(/^File:/, '').replace(/ /g, '_') === leadName) - (a.file.replace(/^File:/, '').replace(/ /g, '_') === leadName));
+  return out.slice(0, 8);
+}
 async function onlinePhotos(sources) {
   for (const s of sources) {
-    const [lang, title] = s.split(/:(.+)/), t = encodeURIComponent(title.replace(/ /g, '_'));
-    try {
-      const [ml, sum] = await Promise.all([fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${t}`, { headers: { accept: 'application/json' } }), fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${t}`).catch(() => null)]);
-      if (!ml.ok) continue;
-      const j = await ml.json(), lead = sum && sum.ok ? ((await sum.json()).originalimage || {}).source || '' : '';
-      const leadName = lead ? decodeURIComponent(lead.split('/').pop()).replace(/^\d+px-/, '') : '';
-      let out = (j.items || []).filter(it => it.type === 'image' && it.showInGallery !== false && !BAD.test(it.title || '') && it.srcset && it.srcset.length).map(it => {
-        // the 2x size is sharp enough for a phone and far smaller than the full original
-        const pick = it.srcset.find(x => x.scale === '2x') || it.srcset[it.srcset.length - 1], url = pick.src.startsWith('//') ? 'https:' + pick.src : pick.src;
-        return { url, file: it.title, caption: it.caption && it.caption.text ? it.caption.text : '' };
-      }).filter(p => { try { return new URL(p.url).hostname === 'upload.wikimedia.org'; } catch (e) { return false; } });
-      // the article's own main photo first: it is the one Wikipedia's editors judged the best picture of the place
-      if (leadName) out.sort((a, b) => (b.file.replace(/^File:/, '').replace(/ /g, '_') === leadName) - (a.file.replace(/^File:/, '').replace(/ /g, '_') === leadName));
-      out = out.slice(0, 8);
-      if (out.length) return out;
-    } catch (e) { /* offline or blocked: try the next one */ }
+    const [lang, title] = s.split(/:(.+)/);
+    for (const way of [apiPhotos, restPhotos]) {
+      try { const out = await way(lang, title); if (out && out.length) return out; } catch (e) { /* offline or blocked: try the next way */ }
+    }
   }
   return null;
 }
@@ -96,7 +118,7 @@ async function creditFor(file) {
   try {
     const r = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=extmetadata&titles=${encodeURIComponent(file)}`);
     const j = await r.json(), pg = Object.values((j.query || {}).pages || {})[0], md = pg && pg.imageinfo && pg.imageinfo[0].extmetadata || {};
-    const txt = h => { const d = document.createElement('div'); d.innerHTML = String(h || ''); return d.textContent.trim().slice(0, 80); };
+    const txt = h => plain(h).trim().slice(0, 80);
     return [txt(md.Artist && md.Artist.value), txt(md.LicenseShortName && md.LicenseShortName.value)].filter(Boolean).join(' · ');
   } catch (e) { return ''; }
 }
@@ -126,7 +148,7 @@ export function openPhotos(name, sources, { icon = '📷', id = null, onClose } 
   };
   const step = d => { SFX.tap(); clearInterval(auto); show(k + d); auto = setInterval(() => show(k + 1), 7000); };
   m.querySelector('.rv-prev').onclick = () => step(-1); m.querySelector('.rv-next').onclick = () => step(1);
-  let sx = null; stage.addEventListener('pointerdown', e => { sx = e.clientX; }); stage.addEventListener('pointerup', e => { if (sx != null && Math.abs(e.clientX - sx) > 40) step(e.clientX < sx ? 1 : -1); sx = null; });
+  let sx = null; stage.addEventListener('pointerdown', e => { sx = e.clientX; }); stage.addEventListener('pointerup', e => { if (sx != null && Math.abs(e.clientX - sx) > 40) step((e.clientX - sx) * flip(stage) < 0 ? 1 : -1); sx = null; });
   photosFor(sources).then(r => {
     if (closed) return;
     if (!r) {

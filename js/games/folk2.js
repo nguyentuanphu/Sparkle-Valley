@@ -7,7 +7,7 @@ import { T, numWord } from '../i18n.js';
 import { settings } from '../state.js';
 import { sayIn } from '../voice.js';
 import { tone } from '../audio.js';
-import { el, wait, pick, rand, clamp, shuffle } from '../util.js';
+import { el, wait, pick, rand, clamp, shuffle, local } from '../util.js';
 import { count, rightAt, makeCanvas, EMOJI_FONT } from './folk.js';
 import { AUSSIE_SLANG, VN_WORDS } from '../words.js';
 
@@ -60,7 +60,7 @@ register({
     const stars = [], birds = [];
     const addStar = () => stars.push({ x: rand(30, w - 30), y: rand(20, h * .55), t: 0 });
     for (let k = 0; k < 3; k++) addStar();
-    const pt = e => { const r = c.getBoundingClientRect(); fx = (e.clientX - r.left) * w / r.width; };
+    const pt = e => { const q = local(c, e); fx = q.x * w / q.r.width; };
     c.onpointerdown = e => { hold = true; pt(e); c.setPointerCapture(e.pointerId); api.sfx.tap(); };
     c.onpointermove = e => { if (hold) pt(e); };
     c.onpointerup = c.onpointercancel = () => { hold = false; };
@@ -148,7 +148,8 @@ register({
     const tick = now => {
       if (api.closed) return;
       const dt = Math.min(.04, (now - last) / 1000); last = now;
-      if (!ball && !hitBall) { wait0 -= dt; if (wait0 <= 0) { ball = { t: 0 }; bowled++; } }
+      // (audit, 9 Oct) big kids have a set number of balls; little ones keep batting until they reach the runs
+      if (!ball && !hitBall) { wait0 -= dt; if (wait0 <= 0 && (api.little || bowled < balls)) { ball = { t: 0 }; bowled++; } }
       if (swingT >= 0) { swingT += dt; if (swingT > .35) swingT = -1; }
       if (ball) {
         ball.t += dt * speed;
@@ -175,7 +176,7 @@ register({
       g.font = `bold ${h * .07}px Fredoka, sans-serif`; g.fillStyle = '#1f4a2a'; g.textAlign = 'left'; g.fillText(T(`Runs: ${runs}/${need}`, `Điểm: ${runs}/${need}`), 12, h * .1);
       if (!api.little) { g.textAlign = 'right'; g.fillText(T(`Balls: ${Math.max(0, balls - bowled)}`, `Còn: ${Math.max(0, balls - bowled)} bóng`), w - 12, h * .1); }
       if (msgT > 0) { msgT -= dt; g.textAlign = 'center'; g.font = `bold ${h * .12}px Fredoka, sans-serif`; g.fillStyle = '#ff5fa2'; g.fillText(msg, w / 2, h * .3); }
-      if (runs >= need || (bowled >= balls && !ball && !hitBall && wait0 <= 0)) { done(); return; }
+      if (runs >= need || (!api.little && bowled >= balls && !ball && !hitBall && wait0 <= 0)) { done(); return; }
       requestAnimationFrame(tick);
     };
     api.dots(need, 0); requestAnimationFrame(tick);

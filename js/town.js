@@ -1,6 +1,6 @@
 // Two Homes Street (Phố Hai Quê): a neighbourhood where Bà Rịa meets a Sydney suburb.
 // On one side: narrow Vietnamese tube houses with balconies and water tanks, a French-style villa and
-// Cô Tám's sugarcane juice cart; Bác 2, Bác 3 and Bác 4 play cards, and anh Ba and Con Vật play Tiến Lên, under the gum tree by the gate. On the other side: an Australian
+// Cô Tam's family sugarcane juice cart (Cô Tam teaches at the trường cấp 2 and helps there after school); Bác 2, Bác 3 and Bác 4 play cards, and anh Ba and Con Vật play Tiến Lên, under the gum tree by the gate. On the other side: an Australian
 // weatherboard house with a front porch, a brick house, a Hills hoist, and the park where kids play
 // folk games. Built from simple flat-coloured shapes in the "summer afternoon" style.
 import { THREE, toon, toonVC, P, merge, sprite, outline } from './gfx.js';
@@ -11,6 +11,7 @@ import { SFX } from './audio.js';
 import { heightAt, TOWN, PLAYGROUND } from './world.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
 import { dist2 } from './util.js';
+import { addPole, addDrop } from './powerlines.js';
 
 export const Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 export const Cyl = (r1, r2, h, s = 8) => new THREE.CylinderGeometry(r1, r2, h, s);
@@ -113,6 +114,8 @@ export function raisedHouse(w = 7.5, d = 7) {
   return { geo: merge(p), w, d };
 }
 
+// motorbikes parked on Two Homes Street's footpath: [x, z, turn, model] (js/traffic.js puts them there)
+export const TOWN_PARKED = [];
 export function createTown(G) {
   const { scene, world } = G, y0 = TOWN.h, RZ = TOWN.roadZ, N = 38, S = 54; // front lines of the north and south houses
   const mat = toonVC();
@@ -164,15 +167,12 @@ export function createTown(G) {
   const fm = new THREE.Mesh(merge(fence), mat); fm.position.y = y0; fm.castShadow = true; scene.add(fm);
   world.boxes.push({ x0: 27.3, x1: 30.9, z0: N - .8, z1: N - .4 }, { x0: 33.7, x1: 37.3, z0: N - .8, z1: N - .4 });
 
-  // ---------- street lamps and power poles with sagging wires ----------
-  const poles = [];
-  const pp = [];
+  // ---------- street lamps, and power poles (owner, round R: the poles are switched off for now but kept; when Studio's
+  // "powerPoles" switch is on they stand here and js/powerlines.js wires them to each other and to the tube houses) ----------
   // spaced so none stands in front of a door on the south side (house 8's door at x 20.3 was blocked by one)
-  for (let x = 9; x <= 50; x += 8) {
-    const z = S - .7; poles.push(new THREE.Vector3(x, y0 + 8.4, z));
-    pp.push(P(Cyl(.16, .2, 9, 6), '#7d7b70', [x, 4.5, z]), P(Box(1.6, .12, .12), '#6f6d64', [x, 8.4, z]));
-    world.colliders.push({ x, z, r: .35 });
-  }
+  for (let x = 9; x <= 50; x += 8) addPole(world, x, y0, S - .7);
+  addDrop(20.1, y0 + 8.6, N); addDrop(32.3, y0 + 6.2, N - 1.4);   // (power into two tube houses across the road)
+  const pp = [];
   for (const [x, side] of [[16, -1], [29, -1], [38, -1], [28, 1], [36, 1]]) {
     const z = side < 0 ? N + .9 : S - 1.4;
     pp.push(P(Cyl(.09, .12, 6.2, 6), '#6f7a66', [x, 3.1, z]));
@@ -181,16 +181,6 @@ export function createTown(G) {
     world.colliders.push({ x, z, r: .3 });
   }
   const pm = new THREE.Mesh(merge(pp), mat); pm.castShadow = true; pm.position.y = y0; scene.add(pm);
-  const wireMat = toon('#3d4447');
-  const wire = (a, b, sag) => {
-    const mid = a.clone().lerp(b, .5); mid.y -= sag;
-    const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
-    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, .025, 3, false), wireMat); scene.add(m);
-  };
-  for (let k = 0; k < poles.length - 1; k++) for (const off of [-.6, .6]) wire(poles[k].clone().setX(poles[k].x).add(new THREE.Vector3(0, 0, off)), poles[k + 1].clone().add(new THREE.Vector3(0, 0, off)), 1.1);
-  // a wire across the road to the tube houses
-  wire(poles[1].clone(), new THREE.Vector3(20.1, y0 + 8.6, N), 1.4);
-  wire(poles[3].clone(), new THREE.Vector3(32.3, y0 + 6.2, N - 1.4), 1.2);
 
   // ---------- trees: jacaranda and gum trees (Sydney), banana and star-fruit trees (Bà Rịa) ----------
   const tree = (x, z, kind) => {
@@ -208,7 +198,8 @@ export function createTown(G) {
   const bits = [];
   // scooters parked on the footpath
   const scooter = (x, z, col, rot) => [P(Box(.25, .5, 1.5), col, [x, .55, z], [0, rot, 0]), P(Cyl(.28, .28, .14, 10), '#2f3336', [x, .28, z + .6], [0, rot, Math.PI / 2]), P(Cyl(.28, .28, .14, 10), '#2f3336', [x, .28, z - .6], [0, rot, Math.PI / 2]), P(Box(.3, .14, .7), '#3a3030', [x, .85, z - .2], [0, rot, 0]), P(Box(.7, .06, .06), '#9aa', [x, 1.2, z + .7], [0, rot, 0])];
-  bits.push(...scooter(14.3, N + 2.4, '#d9483a', 0), ...scooter(15.5, N + 2.6, '#3a78c8', .1), ...scooter(25.6, N + 2.8, '#f2f2f2', -.1));
+  // (round R: the real motorbikes of js/vehicles.js now stand here, placed by js/traffic.js)
+  TOWN_PARKED.push([14.3, N + 2.4, 0, 'honda67'], [15.5, N + 2.6, .1, 'cub'], [25.6, N + 2.8, -.1, 'dream']);
   // wheelie bins on the kerb (red lid for rubbish, yellow lid for recycling)
   [[41.3, '#d9483a'], [42.2, '#e8c03a']].forEach(([x, lid]) => bits.push(P(Box(.7, 1, .7), '#3c5a44', [x, .5, S - .2]), P(Box(.76, .1, .8), lid, [x, 1.05, S - .2])));
   [[36.6, '#d9483a']].forEach(([x, lid]) => bits.push(P(Box(.7, 1, .7), '#3c5a44', [x, .5, N + .3]), P(Box(.76, .1, .8), lid, [x, 1.05, N + .3])));
@@ -254,7 +245,7 @@ export function createTown(G) {
   board(['Baby clothes', 'Quần áo em bé'], 16.3, y0 + 1.95, S + 1.1, Math.PI, 1.8);
   world.boxes.push({ x0: 40.1, x1: 42.6, z0: S - .6, z1: S + .2 });
 
-  // ---------- Cô Tám's sugarcane juice cart (nước mía) ----------
+  // ---------- the sugarcane juice cart (nước mía) where Cô Tam, a secondary-school teacher, helps after school ----------
   const cart = [], kx = 28.9, kz = N + 1.6;
   cart.push(P(Box(2.4, .9, 1), '#3a7fc2', [0, .75, 0]), P(Box(2.4, .9, .9), '#d6eef6', [0, 1.65, -.05]), P(Box(2.5, .08, 1.1), '#f4f4f4', [0, 2.12, 0]));
   cart.push(P(Cyl(.32, .32, .1, 12), '#2f3336', [-.9, .32, .55], [Math.PI / 2, 0, 0]), P(Cyl(.32, .32, .1, 12), '#2f3336', [.9, .32, .55], [Math.PI / 2, 0, 0]));
@@ -300,7 +291,7 @@ export function createTown(G) {
     person(L2('hoodie', '#3a78c8', '#1d1412', 'spiky'), cxL + 1, czL, -Math.PI / 2, true)
   ];
   players[5].root.scale.setScalar(.82);
-  ['Bác 2', 'Bác 3', 'Bác 4', 'Bi', 'Anh Ba', 'Con Vật'].forEach((n, k) => nameAvatar(players[k], n)); nameAvatar(sau, 'Cô Tám');
+  ['Bác 2', 'Bác 3', 'Bác 4', 'Bi', 'Anh Ba', 'Con Vật'].forEach((n, k) => nameAvatar(players[k], n)); nameAvatar(sau, 'Cô Tam');
   // teenagers kicking a shuttlecock (đá cầu) in the park
   const ring = [[29, 67.5], [32, 66], [31.5, 69.5]];
   const teens = ring.map(([x, z], k) => person(L2(['shirt', 'overalls', 'dress'][k], ['#3cc7e8', '#5fd39a', '#ff7eb8'][k], '#1d1412', ['spiky', 'short', 'ponytail'][k], 'none', '#e0aa80'), x, z, 0));
@@ -319,7 +310,7 @@ export function createTown(G) {
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; onLang(() => { draw(); t.needsUpdate = true; });
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set(3, .75, 1); s.position.set(x, y, z); scene.add(s); return s;
   };
-  tag('Cô Tám 🥤', kx, y0 + 2.6, kz - 1.1);
+  tag('Cô Tam 🥤', kx, y0 + 2.6, kz - 1.1);
   // the card players: Bác 2, Bác 3 and Bác 4 (and Bi from the villa watching)
   const yT = heightAt(cxT, czT), yL = heightAt(cxL, czL);
   tag('Bác 2', cxT - 1, yT + 2.05, czT); tag('Bác 3', cxT + 1, yT + 2.05, czT); tag('Bác 4', cxT, yT + 2.35, czT - .9);

@@ -32,7 +32,8 @@ globalThis.document = { documentElement: {} };            // i18n.js expects a b
 globalThis.localStorage = { getItem: () => null, setItem: () => { } };
 const { swapNames } = await import('../js/i18n.js');
 const { LEARN } = await import('../js/words2.js');
-const { packHash } = await import('../js/packhash.js');
+const { packHash, lineHash } = await import('../js/packhash.js');
+const { viRuns, mixed, mixedSsml } = await import('../js/viwords.js');
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -64,11 +65,13 @@ for (const [lang, L] of Object.entries(LEARN)) for (const w of L.words) jobs.pus
 }
 // lines built while playing (names, numbers, colours…), collected by tools/voice-harvest.mjs or sent from devices via Sparkle Studio
 try { for (const l of JSON.parse(fs.readFileSync(new URL('./voice-extra.json', import.meta.url), 'utf8'))) if (l && CAST[l.lang] && l.text) jobs.push({ lang: l.lang, text: String(l.text) }); } catch (e) { }
-const uniq = new Map(); jobs.forEach(j => uniq.set(packHash(j.lang, j.text), j));
+const uniq = new Map(); jobs.forEach(j => uniq.set(lineHash(j.lang, j.text), j));
 const list = [...uniq.entries()];
 
 // ---------- the cost ----------
 const PACK_DIR = path.join(ROOT, 'voices'), MAN = path.join(PACK_DIR, 'manifest.json');
+// the manifest's `other`: { vi: 'hash hash …', zh: …, hi: … } for every line not in English (English is the default)
+const otherOf = list => { const o = {}; for (const [h, j] of list) if (j.lang !== 'en') (o[j.lang] = o[j.lang] || []).push(h); return Object.fromEntries(Object.entries(o).map(([L, hs]) => [L, hs.join(' ')])); };
 const files = list.flatMap(([h, j]) => CAST[j.lang].map(s => [s, h, j]));
 const chars = files.reduce((a, [, , j]) => a + j.text.length, 0);
 const missing = files.filter(([s, h, j]) => !fs.existsSync(path.join(PACK_DIR, j.lang, s, h + '.mp3')));
@@ -126,9 +129,9 @@ for (const [L, slots] of Object.entries(CAST)) { voices[L] = {}; for (const s of
 console.log('Voices:'); for (const [L, v] of Object.entries(voices)) console.log(`  ${LANG_NAME[L]}: ` + Object.entries(v).map(([s, x]) => `${s === 'f' ? 'woman' : 'man'} ${x.name} (${x.id})`).join(', '));
 
 // ---------- make the files ----------
-const man = { version: 2, model: MODEL, made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, langOf: {} };
+const man = { version: 2, model: MODEL, made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, other: {} };
 const save = () => { fs.mkdirSync(PACK_DIR, { recursive: true }); fs.writeFileSync(MAN, JSON.stringify(man)); };
-for (const [h, j] of list) man.langOf[h] = j.lang;
+man.other = otherOf(list); // (the lines that are not English, per language; English is the default)
 // what exists on disk is the truth
 for (const [h, j] of list) for (const s of CAST[j.lang]) if (fs.existsSync(path.join(PACK_DIR, j.lang, s, h + '.mp3'))) man.lines[h] = (man.lines[h] || '') + s;
 const limit = +arg('limit', 1e9);
@@ -164,14 +167,16 @@ async function azure() {
   console.log('Voices:'); for (const [L, v] of Object.entries(voices)) console.log(`  ${LANG_NAME[L]}: ` + Object.entries(v).map(([sl, x]) => `${sl === 'f' ? 'woman' : 'man'} ${x.id}`).join(', '));
   const xml = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const LOCALE = { en: 'en-AU', vi: 'vi-VN', zh: 'zh-CN', hi: 'hi-IN' };
-  const man = { version: 2, engine: 'azure', made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, langOf: {} };
+  const man = { version: 2, engine: 'azure', made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, other: otherOf(list) };
   const save = () => { fs.mkdirSync(PACK_DIR, { recursive: true }); fs.writeFileSync(MAN, JSON.stringify(man)); };
-  for (const [h, j] of list) { man.langOf[h] = j.lang; for (const sl of CAST[j.lang]) if (fs.existsSync(path.join(PACK_DIR, j.lang, sl, h + '.mp3'))) man.lines[h] = (man.lines[h] || '') + sl; }
+  for (const [h, j] of list) { for (const sl of CAST[j.lang]) if (fs.existsSync(path.join(PACK_DIR, j.lang, sl, h + '.mp3'))) man.lines[h] = (man.lines[h] || '') + sl; }
   const limit = +arg('limit', 1e9), queue = missing.slice(0, limit), gap = 60000 / perMin;
   let done = 0, used = 0, next = Date.now();
   for (const [slot, h, j] of queue) {
     const wait = next - Date.now(); if (wait > 0) await new Promise(r => setTimeout(r, wait)); next = Date.now() + gap;
-    const v = voices[j.lang][slot].id, ssml = `<speak version='1.0' xml:lang='${LOCALE[j.lang]}'><voice name='${v}'>${xml(j.text)}</voice></speak>`;
+    const v = voices[j.lang][slot].id;
+    // (round R) Vietnamese names and dishes inside an English line are said by the Vietnamese voice of the same man or woman
+    const ssml = j.lang === 'en' && mixed(j.text) ? mixedSsml(viRuns(j.text), v, voices.vi[slot].id) : `<speak version='1.0' xml:lang='${LOCALE[j.lang]}'><voice name='${v}'>${xml(j.text)}</voice></speak>`;
     for (let attempt = 0; ; attempt++) {
       let r;
       // a dropped connection (socket closed, timeout) is tried again, like a busy server, instead of stopping the run
@@ -187,6 +192,10 @@ async function azure() {
       break;
     }
   }
+  // the old all-English recordings of those lines are not needed once both of their new ones are made
+  let gone = 0;
+  for (const [h, j] of list) if (j.lang === 'en' && h !== packHash('en', j.text) && CAST.en.every(sl => fs.existsSync(path.join(PACK_DIR, 'en', sl, h + '.mp3'))))
+    for (const sl of CAST.en) { const f = path.join(PACK_DIR, 'en', sl, packHash('en', j.text) + '.mp3'); if (fs.existsSync(f)) { fs.unlinkSync(f); gone++; } }
   save();
-  console.log(`Finished: ${done} new files (${used} characters). The pack is in voices/ — include that folder when you publish the game (./build-netlify.sh does).`);
+  console.log(`Finished: ${done} new files (${used} characters)${gone ? `, ${gone} old all-English files of mixed lines removed` : ''}. The pack is in voices/ — include that folder when you publish the game (./build-netlify.sh does).`);
 }

@@ -1,4 +1,5 @@
-// "📺 How to play": a short narrated film for every game. Each film is a few animated picture cards
+// "📺 How to play": a short narrated film for every game. Each film is a few animated picture cards (games with a
+// guide film in js/content/films.js are acted in 3D by village children instead)
 // with a voice telling the story of the game and how to play it. Folk games also tell where the game
 // comes from and how to play it for real with friends.
 // If a grown-up drops a real video into videos/<game id>.mp4, that video is played instead.
@@ -10,6 +11,7 @@ import { el, esc, wait } from './util.js';
 import { CAST, SCENES } from './cartoon.js';
 import { pic, hasArt } from './art.js';
 import { stageOf } from './tales.js';
+import { featureOn } from './custom.js';
 
 // [picture, English, Vietnamese]
 const S = (pic, en, vi) => ({ pic, en, vi });
@@ -252,9 +254,14 @@ export function openHowTo(id, { onPlay, onClose } = {}) {
   document.body.appendChild(m);
   const screen = m.querySelector('.ht-screen'), cap = m.querySelector('.ht-cap'), bar = m.querySelector('.ht-bar i'), pp = m.querySelector('.ht-pp');
   let k = 0, paused = false, closed = false, token = 0;
-  const close = () => { if (closed) return; closed = true; token++; hush(); m.remove(); Music.play(prevMusic || 'field'); onClose && onClose(); };
+  // (round R) games with a guide film: every card is acted in 3D by village children (js/film.js)
+  // (loaded only when a guide opens, so starting the game stays small)
+  let film = null;
+  const ready = featureOn('storyFilms', true) ? import('./content/films.js').then(async C => { if (!C.GUIDES[id] || closed) return; const F = await import('./film.js'); film = F.createFilm(screen, C.GUIDES[id]); if (film) m.classList.add('film'); }).catch(e => console.warn('film', e)) : Promise.resolve();
+  const close = () => { if (closed) return; closed = true; token++; hush(); if (film) film.close(); m.remove(); Music.play(prevMusic || 'field'); onClose && onClose(); };
   const show = async () => {
-    const my = ++token, c = cards[k];
+    const my = ++token; await ready; if (my !== token || closed) return;
+    const c = cards[k];
     bar.style.width = ((k + 1) / cards.length * 100) + '%';
     const pics = [...String(c.pic).matchAll(/\S+/g)].map(x => x[0]);
     // every card is a little cartoon scene: a painted backdrop that fits the words, a child who tells you how to
@@ -263,6 +270,7 @@ export function openHowTo(id, { onPlay, onClose } = {}) {
     const art = p => hasArt(p) ? pic(p) : graphemes(p).map(q => hasArt(q) ? pic(q) : `<span class="emo">${q}</span>`).join('');
     const scene = SCENES[st] ? `<svg class="sc ht-sc" viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${SCENES[st]()}</svg>` : '';
     screen.className = 'ht-screen' + (c.title ? ' title' : '') + (c.end ? ' end' : '');
+    if (film) return showFilm(my, c);
     screen.innerHTML = scene + (c.title ? `<div class="ht-titlecard"><span class="ht-big">${art(c.pic)}</span><b class="ht-name">${esc(T(c.en, c.vi))}</b>${originLabel(id) ? `<small>${esc(originLabel(id))}</small>` : ''}</div>`
       : `<span class="ht-host th-c in-l${k > 1 ? ' still' : ''}" style="--d:0s">${CAST[host]()}</span><div class="ht-props">${pics.map((p, i) => `<span class="ht-pic${p === '👆' || p === '👇' ? ' finger' : ''}" style="--d:${.3 + i * .35}s">${art(p)}</span>`).join('')}</div>`);
     setTimeout(() => { const hs = screen.querySelector('.ht-host'); if (hs) hs.classList.remove('walking'); }, 1500);
@@ -278,6 +286,19 @@ export function openHowTo(id, { onPlay, onClose } = {}) {
     if (my !== token || closed) return;
     if (k < cards.length - 1) { k++; show(); }
   };
+  const showFilm = async (my, c) => {
+    screen.querySelectorAll('.ht-titlecard').forEach(x => x.remove());
+    if (c.title) screen.appendChild(el('div', 'ht-titlecard', `<b class="ht-name">${esc(T(c.en, c.vi))}</b>${originLabel(id) ? `<small>${esc(originLabel(id))}</small>` : ''}`));
+    cap.textContent = c.title ? '' : T(c.en, c.vi);
+    SFX.pop && SFX.pop(k);
+    const played = film.page(k);
+    await sayAsync(c.title ? T('How to play ', 'Cách chơi ') + T(c.en, c.vi) : c.en, c.title ? T('How to play ', 'Cách chơi ') + c.vi : c.vi);
+    if (my !== token || closed) return;
+    film.narrated(); await played; await wait(500);
+    while (paused && my === token && !closed) await wait(200);
+    if (my !== token || closed) return;
+    if (k < cards.length - 1) { k++; show(); }
+  };
   m.querySelector('.ht-x').onclick = close;
   m.querySelector('.ht-prev').onclick = () => { k = Math.max(0, k - 1); paused = false; pp.textContent = '⏸'; hush(); show(); };
   m.querySelector('.ht-next').onclick = () => { k = Math.min(cards.length - 1, k + 1); paused = false; pp.textContent = '⏸'; hush(); show(); };
@@ -286,7 +307,7 @@ export function openHowTo(id, { onPlay, onClose } = {}) {
   // a real video, if one has been added for this game
   hasVideo(id).then(ok => {
     if (!ok || closed) return show();
-    token++; m.classList.add('video');
+    token++; m.classList.add('video'); if (film) { film.close(); m.classList.remove('film'); }
     const v = el('video', 'ht-video'); v.src = `videos/${id}.mp4`; v.controls = true; v.playsInline = true; v.autoplay = true;
     screen.replaceWith(v); cap.textContent = ''; m.querySelector('.ht-ctl').querySelectorAll('.ht-b').forEach(b => b.hidden = true);
     v.onerror = () => { v.replaceWith(screen); m.classList.remove('video'); m.querySelectorAll('.ht-b').forEach(b => b.hidden = false); show(); };

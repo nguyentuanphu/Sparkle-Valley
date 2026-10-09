@@ -1,13 +1,14 @@
 // The tale theatre: a fairy tale read aloud page by page (in the language chosen in settings), over a
-// living picture. Each page's pictures become little actors on a painted stage: birds fly, frogs hop,
+// living picture (tales with a film are acted in 3D instead: js/film.js, js/content/films.js). Each page's pictures become little actors on a painted stage: birds fly, frogs hop,
 // fish swim, rain falls, trees sway, the moon glows. The stage (sky, sea, forest, palace, night…) is
 // picked from the words on the page. Tap ◀ ▶ to turn pages, 🔊 to hear it again, ⏯ to read by itself.
 import { T } from './i18n.js';
 import { sayAsync, hush } from './voice.js';
 import { SFX, Music } from './audio.js';
-import { el, esc, wait } from './util.js';
+import { el, esc, wait, flip } from './util.js';
 import { CAST, SCENES } from './cartoon.js';
 import { pic, hasArt } from './art.js';
+import { featureOn } from './custom.js';
 
 const seg = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
 const graphemes = s => seg ? [...seg.segment(s)].map(x => x.segment).filter(x => x.trim()) : Array.from(s).filter(x => x.trim() && !/[‍️]/.test(x));
@@ -39,14 +40,20 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
     let k = startPage, auto = true, alive = true, token = 0;
     const prev = Music.key; Music.play('none');
     const m = el('div', 'theatre', `
-      <div class="th-top"><span class="th-flag">${tale.flag}</span><b class="th-title">${esc(tale.title())}</b><button class="th-x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
+      <div class="th-top"><span class="th-flag">${tale.flag}</span><b class="th-title">${esc(tale.title())}</b>${tale.story && featureOn('shortTalk', true) ? `<button class="th-skip">${pic('⏩')} ${T('Skip', 'Bỏ qua')}</button>` : ''}<button class="th-x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
       <div class="th-stage"><div class="th-bg"></div><div class="th-actors"></div><div class="th-fx"></div></div>
       <div class="th-text"></div>
       <div class="th-bar"><button class="th-prev" aria-label="${T('Back', 'Trang trước')}">◀</button><button class="th-hear" aria-label="${T('Hear it again', 'Nghe lại')}">${pic('🔊')}</button><button class="th-auto on" aria-label="${T('Read by itself', 'Tự đọc')}">⏯</button><div class="th-dots"></div><button class="th-next" aria-label="${T('Next', 'Trang sau')}">▶</button></div>`);
     document.body.appendChild(m);
     const stage = m.querySelector('.th-stage'), bg = m.querySelector('.th-bg'), actors = m.querySelector('.th-actors'), fx = m.querySelector('.th-fx'), text = m.querySelector('.th-text'), dots = m.querySelector('.th-dots');
+    // (round R) tales that have a film are acted in 3D instead of the picture stage (js/film.js)
+    // (loaded only when a story opens, so starting the game stays small)
+    let film = null;
+    const ready = featureOn('storyFilms', true) ? import('./content/films.js').then(async C => { if (!C.FILMS[tale.id] || !alive) return; const F = await import('./film.js'); film = F.createFilm(stage, C.FILMS[tale.id], tale.ctx); if (film) m.classList.add('film'); }).catch(e => console.warn('film', e)) : Promise.resolve();
     const draw = async () => {
-      const my = ++token, [pics, en, vi] = tale.pages[k], st = stageOf(en);
+      const my = ++token; await ready; if (!alive || my !== token) return;
+      const [pics, en, vi] = tale.pages[k], st = stageOf(en);
+      if (film) return drawFilm(my, en, vi);
       stage.className = 'th-stage st-' + st; bg.innerHTML = SCENES[st] ? `<svg class="sc" viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${SCENES[st]()}</svg>` : STAGE_ART[st] || '';
       // actors: spread across the stage, each entering from its side, then moving its own way
       // on a narrow (phone) stage fewer, smaller actors, spread over the whole width, so nobody overlaps
@@ -80,7 +87,23 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
       await wait(1100); if (!alive || my !== token || !auto) return;
       next();
     };
-    const finish = done => { if (!alive) return; alive = false; hush(); m.classList.add('out'); setTimeout(() => m.remove(), 300); Music.play(prev || 'field'); resolve(done); onDone && onDone(done); };
+    // a page of a film: the film and the narrator start together; the page is over when both have finished
+    const drawFilm = async (my, en, vi) => {
+      text.innerHTML = `<p>${esc(T(en, vi).replace(/\{name\}/g, name))}</p>`;
+      dots.innerHTML = tale.pages.map((_, i) => `<i class="${i === k ? 'on' : i < k ? 'done' : ''}"></i>`).join('');
+      if (sync && !fromFriend) sync.send(k);
+      m.querySelector('.th-prev').disabled = k === 0;
+      m.querySelector('.th-next').innerHTML = k === tale.pages.length - 1 ? pic('🏁') : '▶';
+      SFX.page ? SFX.page() : SFX.tap();
+      const played = film.page(k);
+      await wait(350); if (!alive || my !== token) return;
+      await sayAsync(en, vi); if (!alive || my !== token) return;
+      film.narrated();
+      await played; if (!alive || my !== token || !auto) return;
+      await wait(900); if (!alive || my !== token || !auto) return;
+      next();
+    };
+    const finish = done => { if (!alive) return; alive = false; hush(); if (film) film.close(); m.classList.add('out'); setTimeout(() => m.remove(), 300); Music.play(prev || 'field'); resolve(done); onDone && onDone(done); };
     const next = () => { if (k < tale.pages.length - 1) { k++; draw(); } else { SFX.chime && SFX.chime(); finish(true); } };
     // a friend turned the page
     if (sync) sync.listen(p => { if (!alive || p === k || p < 0 || p >= tale.pages.length) return; fromFriend = true; k = p; draw(); fromFriend = false; });
@@ -89,8 +112,10 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
     m.querySelector('.th-hear').onclick = () => { const [, en, vi] = tale.pages[k]; token++; sayAsync(en, vi); };
     m.querySelector('.th-auto').onclick = e => { auto = !auto; e.currentTarget.classList.toggle('on', auto); if (auto) draw(); };
     m.querySelector('.th-x').onclick = () => finish(false);
+    // (Studio switch shortTalk) the story's own films can be skipped with one big button
+    const sk = m.querySelector('.th-skip'); if (sk) sk.onclick = () => finish(false);
     // swipe left / right to turn the page
-    let sx = null; stage.addEventListener('pointerdown', e => { sx = e.clientX; }); stage.addEventListener('pointerup', e => { if (sx == null) return; const d = e.clientX - sx; sx = null; if (d < -50) next(); else if (d > 50 && k > 0) { k--; draw(); } });
+    let sx = null; stage.addEventListener('pointerdown', e => { sx = e.clientX; }); stage.addEventListener('pointerup', e => { if (sx == null) return; const d = (e.clientX - sx) * flip(stage); sx = null; if (d < -50) next(); else if (d > 50 && k > 0) { k--; draw(); } });
     const onKey = e => { if (!alive) return removeEventListener('keydown', onKey, true); if (e.code === 'ArrowRight' || e.code === 'Space') { e.preventDefault(); e.stopImmediatePropagation(); next(); } else if (e.code === 'ArrowLeft' && k > 0) { e.preventDefault(); e.stopImmediatePropagation(); k--; draw(); } else if (e.code === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); finish(false); } };
     addEventListener('keydown', onKey, true);
     draw();

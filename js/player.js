@@ -1,5 +1,6 @@
 // The explorer: walking, running, jumping, gliding, climbing slopes, swimming and riding,
 // with a stamina wheel. Nothing here can really hurt a child; long falls only cost a heart.
+import { seatRider } from './vehicles.js';
 import { THREE } from './gfx.js';
 import { buildAvatar } from './avatar.js';
 import { WATER, heightAt } from './world.js';
@@ -7,6 +8,9 @@ import { clamp, lerp, angleLerp } from './util.js';
 import { SFX } from './audio.js';
 
 const _ray = new THREE.Raycaster(), _dir = new THREE.Vector3();
+// (round R, owner: "the camera angles give a headache when it moves") every automatic turn of the camera eases in and
+// never goes faster than a slow, steady pace, however far it has to turn
+const easeYaw = (cur, want, dt, rate, maxSpeed) => { const d = Math.atan2(Math.sin(want - cur), Math.cos(want - cur)), step = d * Math.min(1, dt * rate), cap = maxSpeed * dt; return cur + Math.max(-cap, Math.min(cap, step)); };
 const GRAV = 22, WALK = 5.5, RUN = 9.5, SWIM = 3.4, CLIMB = 2.6, GLIDE = 8, RIDE = 11.5;
 
 export class Hero {
@@ -30,7 +34,7 @@ export class Hero {
     // ground, bridge or deck, but not a tower top (those are reached by climbing)
     let g = this.world.groundAt(x, z); if (y == null && g - heightAt(x, z) > 12) g = this.world.groundAt(x, z, heightAt(x, z) + 10);
     this.pos.set(x, y != null ? y : g, z); this.vy = 0; this.lastSafe.copy(this.pos);
-    this.camPos.set(x + Math.sin(this.camYaw) * this.camDist, this.pos.y + 4, z + Math.cos(this.camYaw) * this.camDist);
+    this.camPos.set(x + Math.sin(this.camYaw) * this.camDist, this.pos.y + 4, z + Math.cos(this.camYaw) * this.camDist); this.camLook = null;
   }
   get staminaMax() { return this.profile.staminaMax + this.bonusStamina; }
   useStamina(a) {
@@ -85,13 +89,16 @@ export class Hero {
     if (this.riding) {
       if (jump || pad.act()) { this.dismount(); }
       else {
-        const sp = RIDE * mag; this.speed = lerp(this.speed, sp, Math.min(1, dt * 4));
+        const b0 = this.riding, sp = (b0.speed || RIDE) * mag; this.speed = lerp(this.speed, sp, Math.min(1, dt * 4));
         if (mag > .05) this.yaw = angleLerp(this.yaw, Math.atan2(mx, mz), Math.min(1, dt * 6));
         const nx = p.x + Math.sin(this.yaw) * this.speed * dt, nz = p.z + Math.cos(this.yaw) * this.speed * dt;
         const g = heightAt(nx, nz);
         if (g > WATER - .4 && Math.abs(g - ground) < 1.5) { p.x = nx; p.z = nz; }
         W.collide(p, 1.2); p.y = W.groundAt(p.x, p.z);
         const b = this.riding; b.mesh.position.set(p.x, p.y, p.z); b.mesh.rotation.y = this.yaw; b.shadow.position.set(p.x, p.y + .05, p.z);
+        // (round R) a bicycle: its wheels roll, and the child sits on its saddle with hands on the grips and feet on the pedals
+        if (b.vehicle) { const v = b.vehicle; v.wheels.forEach(w => { w.rotation.x += this.speed * dt / v.wr; }); this.state = 'ride'; this.finish(dt, t, game, 0);
+          this.av.rig.position.y = 0; b.mesh.updateMatrixWorld(true); seatRider(this.av, v, v.seat, v.grips, v.feet, this.av.root.scale.x, false); return; }
         this.state = 'ride'; this.finish(dt, t, game, 1.6); return;
       }
     }
@@ -163,8 +170,8 @@ export class Hero {
     this.fallStart = null;
     if (fell > 14 && !this.gliding) game.hurt(this, fell > 30 ? 2 : 1);
   }
-  mount(b) { this.riding = b; b.rider = this; this.gliding = false; this.pos.copy(b.mesh.position); this.yaw = b.yaw; SFX.moo(); }
-  dismount() { const b = this.riding; if (!b) return; b.rider = null; b.tx = b.mesh.position.x; b.tz = b.mesh.position.z; this.riding = null; this.pos.x += Math.cos(this.yaw) * 1.8; this.pos.z -= Math.sin(this.yaw) * 1.8; this.pos.y = this.world.groundAt(this.pos.x, this.pos.z); }
+  mount(b) { this.riding = b; b.rider = this; this.gliding = false; this.pos.copy(b.mesh.position); this.yaw = b.yaw; if (!b.quiet) SFX.moo(); }
+  dismount() { const b = this.riding; if (!b) return; b.rider = null; b.tx = b.mesh.position.x; b.tz = b.mesh.position.z; if (b.slot) b.slot.taken = null; if (b.vehicle) this.av.torso.rotation.set(0, 0, 0), this.av.torso.position.set(0, 0, 0), this.av.head.position.set(0, 1.33, 0), this.av.armL.scale.y = this.av.armR.scale.y = 1; this.riding = null; this.pos.x += Math.cos(this.yaw) * 1.8; this.pos.z -= Math.sin(this.yaw) * 1.8; this.pos.y = this.world.groundAt(this.pos.x, this.pos.z); }
 
   startTowerClimb(tw) {
     const m = this.world.towerMeshes[tw.id];
@@ -195,24 +202,24 @@ export class Hero {
     if (easy) {
       if (this.speed > .8 && !this.towerClimb && this.manualCamT <= 0) { this.easyT = (this.easyT || 0) + dt; this.stillT = 0; // calmer: only after walking the same way for a moment, slowly, and it stops once roughly behind
         const off = Math.abs(Math.atan2(Math.sin(this.yaw + Math.PI - this.camYaw), Math.cos(this.yaw + Math.PI - this.camYaw)));
-        if (this.easyT > .8 && off > .3) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * .9)); }
+        if (this.easyT > 1.5 && off > .35) this.camYaw = easeYaw(this.camYaw, this.yaw + Math.PI, dt, .5, .45); }
       else { this.easyT = 0; this.stillT = (this.stillT || 0) + dt; }
       // standing still in front of a house: turn round to see its front (door, windows, shop sign). A house right
       // in front wins over a landmark further away; the choice is checked again if the child is moved (Go, travel).
       const facing = hs => { const fx = Math.sin(hs.rot), fz = Math.cos(hs.rot), vx = p.x - hs.x, vz = p.z - hs.z, ahead = vx * fx + vz * fz, side = Math.abs(vx * fz - vz * fx); return ahead > hs.d * .4 && ahead < hs.d * .5 + 7 && side < hs.d * .5 + 1.5; };
-      const calm = this.stillT > 1 && this.manualCamT <= 0 && !this.towerClimb;
+      const calm = this.stillT > 2 && this.manualCamT <= 0 && !this.towerClimb;
       if (!calm) this._houseFront = null;
       else if (!this._houseFront || !facing(this._houseFront)) this._houseFront = (this.world.houses || []).filter(facing).sort((a, b) => Math.hypot(p.x - a.x, p.z - a.z) - Math.hypot(p.x - b.x, p.z - b.z))[0] || null;
-      if (calm && this._houseFront) this.camYaw = angleLerp(this.camYaw, this._houseFront.rot, Math.min(1, dt * 1.4));
+      if (calm && this._houseFront) this.camYaw = easeYaw(this.camYaw, this._houseFront.rot, dt, .7, .4);
       // standing still next to a landmark: slowly turn so it is in front of the camera
-      else if (this._lm && (this._lmF || 0) > .25 && Math.hypot(p.x - this._lm.x, p.z - this._lm.z) > 2 && this.stillT > .8 && this.manualCamT <= 0 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, Math.atan2(p.x - this._lm.x, p.z - this._lm.z), Math.min(1, dt * 1.2));
+      else if (this._lm && (this._lmF || 0) > .25 && Math.hypot(p.x - this._lm.x, p.z - this._lm.z) > 2 && this.stillT > 2 && this.manualCamT <= 0 && !this.towerClimb) this.camYaw = easeYaw(this.camYaw, Math.atan2(p.x - this._lm.x, p.z - this._lm.z), dt, .6, .35);
       // near a landmark, step back and look more level so the whole building fits on screen
       const lf = this._lmF = lerp(this._lmF || 0, game.landmarkFrame ? game.landmarkFrame(this) : 0, Math.min(1, dt * 1.5));
       // camera views (🎥 button): behind (normal), high up, at street level, or the child's face
       const view = this.view || 'follow', base = view === 'high' ? 1.05 : view === 'street' ? .12 : .55;
-      this.camPitch += ((this.towerClimb ? .25 : game.lookUpT > 0 ? .1 : base - lf * .12 + Math.max(0, (this.zoom || 1) - 1) * .45) - this.camPitch) * Math.min(1, dt * 3);
+      this.camPitch += ((this.towerClimb ? .25 : game.lookUpT > 0 ? .1 : base - lf * .12 + Math.max(0, (this.zoom || 1) - 1) * .45) - this.camPitch) * Math.min(1, dt * 1.5);
     }
-    else if (this.manualCamT <= 0 && this.speed > 1 && !this.towerClimb) this.camYaw = angleLerp(this.camYaw, this.yaw + Math.PI, Math.min(1, dt * .6));
+    else if (this.manualCamT <= 0 && this.speed > 1 && !this.towerClimb) this.camYaw = easeYaw(this.camYaw, this.yaw + Math.PI, dt, .4, .4);
     // wardrobe close-up, or the "face" camera view while the child stands still
     const close = game.closeUp === this.i || (this.view === 'face' && this.speed < .6 && !this.towerClimb && !this.gliding);
     if (close) { this.camYaw = angleLerp(this.camYaw, this.yaw, Math.min(1, dt * 4)); this.camPitch += (.08 - this.camPitch) * Math.min(1, dt * 4); }
@@ -227,6 +234,10 @@ export class Hero {
     // rise a little over whatever was in the way (decided last frame), before checking for walls, so the lift never pokes into a roof
     if (!close && this._camLift) want.y += this._camLift * 2.2;
     let k = 1, lift = 0;
+    // (round R) a hillside behind the child: come in closer along the line to the child (smoothly, below) instead of
+    // shooting up over the hill, which swung the whole picture up and down
+    if (!close && !this.ferry) for (let tt = 1; tt >= .3; tt -= .1) { const x = target.x + (want.x - target.x) * tt, z = target.z + (want.z - target.z) * tt, y = target.y + (want.y - target.y) * tt;
+      if (this.world.groundAt(x, z) + .7 > y) k = Math.max(.3, tt - .12); }
     const bx = this.world.boxes; if (bx && bx.length && !close) {
       const dx = want.x - target.x, dz = want.z - target.z; let tmin = 1;
       for (const b of bx) {
@@ -256,7 +267,7 @@ export class Hero {
     if (close) { this._camK = 1; this._camLift = 0; this._camFreeT = 0; }
     else {
       const ck = this._camK == null ? k : this._camK;
-      if (k < ck - .01) { this._camK = ck + (k - ck) * Math.min(1, dt * 7); this._camFreeT = 0; }
+      if (k < ck - .01) { this._camK = ck + (k - ck) * Math.min(1, dt * 4); this._camFreeT = 0; }
       else { this._camFreeT = (this._camFreeT || 0) + dt; this._camK = this._camFreeT > .6 ? ck + (k - ck) * Math.min(1, dt * 1.1) : ck; }
       this._camLift = (this._camLift || 0) + (lift - (this._camLift || 0)) * Math.min(1, dt * (lift ? 2.5 : .8));
       const kk = this._camK;
@@ -267,7 +278,13 @@ export class Hero {
     if (this.ferry) { gy = Math.max(WATER, heightAt(want.x, want.z)) + .7; for (const pl of this.world.platforms) if (pl.y > target.y + 1.5 && want.x > pl.x0 - 1 && want.x < pl.x1 + 1 && want.z > pl.z0 - 1 && want.z < pl.z1 + 1) want.y = Math.min(want.y, pl.y - .8); }
     else gy = this.world.groundAt(want.x, want.z) + .7;
     if (want.y < gy) want.y = gy;
-    this.camPos.lerp(want, Math.min(1, dt * 5));
-    this.cam.position.copy(this.camPos); this.cam.lookAt(target);
+    // the camera glides (the same smoothness at any frame rate), and the point it looks at glides too, more slowly up and
+    // down, so jumps, steps, slopes and bumps never jerk the picture
+    this.camPos.lerp(want, 1 - Math.exp(-dt * 3.5));
+    if (!this.camLook) this.camLook = target.clone();
+    const kxz = 1 - Math.exp(-dt * 6), ky = 1 - Math.exp(-dt * (this.onGround || this.riding || close ? 2.5 : .8));
+    this.camLook.x += (target.x - this.camLook.x) * kxz; this.camLook.z += (target.z - this.camLook.z) * kxz; this.camLook.y += (target.y - this.camLook.y) * ky;
+    if (this.camLook.distanceTo(target) > 12) this.camLook.copy(target);   // (moved far away at once: Go, travel)
+    this.cam.position.copy(this.camPos); this.cam.lookAt(this.camLook);
   }
 }

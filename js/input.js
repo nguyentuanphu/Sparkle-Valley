@@ -17,10 +17,11 @@ export function initInput(canvas, rects, isBlocked, onTap) {
   canvas.addEventListener('pointerdown', e => {
     if (isBlocked()) return;
     const p = which(e.clientX, e.clientY); if (p < 0) return;
-    const r = rects()[p], left = e.clientX < r.x + r.w * .45;
+    // (a half turned round for the player at the far end: their left is the screen's right, their up the screen's down)
+    const r = rects()[p], s = r.rot === 180 ? -1 : 1, left = (s > 0 ? e.clientX - r.x : r.x + r.w - e.clientX) < r.w * .45;
     const kind = left && e.pointerType !== 'mouse' ? 'stick' : 'cam';
     if (kind === 'stick' && [...touches.values()].some(t => t.p === p && t.kind === 'stick')) return;
-    touches.set(e.pointerId, { p, kind, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t0: performance.now(), moved: 0 });
+    touches.set(e.pointerId, { p, kind, s, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t0: performance.now(), moved: 0 });
     if (kind === 'stick') { const s = stickEls[p]; s.style.left = e.clientX + 'px'; s.style.top = e.clientY + 'px'; s.firstChild.style.transform = ''; }
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { }
   });
@@ -30,9 +31,9 @@ export function initInput(canvas, rects, isBlocked, onTap) {
     if (t.kind === 'stick') {
       let dx = e.clientX - t.x0, dy = e.clientY - t.y0; const d = Math.hypot(dx, dy), R = 55;
       if (d > R) { dx = dx / d * R; dy = dy / d * R; }
-      if (t.moved + d > 14) { stickEls[t.p].hidden = false; pad.mx = dx / R; pad.mz = -dy / R; pad.goal = null; }
+      if (t.moved + d > 14) { stickEls[t.p].hidden = false; pad.mx = t.s * dx / R; pad.mz = -t.s * dy / R; pad.goal = null; }
       stickEls[t.p].firstChild.style.transform = `translate(${dx}px,${dy}px)`;
-    } else { pad.cdx += e.clientX - t.x; pad.cdy += e.clientY - t.y; }
+    } else { pad.cdx += t.s * (e.clientX - t.x); pad.cdy += t.s * (e.clientY - t.y); }
     t.moved += Math.abs(e.clientX - t.x) + Math.abs(e.clientY - t.y);
     t.x = e.clientX; t.y = e.clientY;
   });

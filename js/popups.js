@@ -48,7 +48,7 @@ export const dialogHooks = {};
 export function dialog(name, lines, choices) {
   return new Promise(res => {
     const little = dialogHooks.little && dialogHooks.little();
-    const d = el('div', 'dialog' + (little ? ' little' : ''), `<div class="dname">${esc(nm(name))}</div><div class="dtext"></div><div class="dchoices"></div><div class="dnext">▼</div>${little ? `<div class="dpics"><button class="dpic again" aria-label="${T('Hear it again', 'Nghe lại')}">🔁</button><button class="dpic ok" aria-label="${T('OK', 'Được')}">👍</button></div>` : ''}`);
+    const d = el('div', 'dialog' + (little ? ' little' : ''), `<div class="dname">${esc(nm(name))}</div><div class="dtext"></div><div class="dchoices"></div><div class="dnext">▼</div>`);
     if (dialogHooks.canChat && dialogHooks.canChat(name)) {
       const ask = el('button', 'dask', '💬 ' + T('Chat', 'Trò chuyện')); d.appendChild(ask);
       ask.onclick = e => { e.stopPropagation(); SFX.tap(); close(-1); dialogHooks.chat(name); };
@@ -56,7 +56,7 @@ export function dialog(name, lines, choices) {
     document.body.appendChild(d);
     let i = 0;
     const text = d.querySelector('.dtext'), ch = d.querySelector('.dchoices'), next = d.querySelector('.dnext');
-    let show = () => {
+    const show = () => {
       // (a line [en, vi, sayEn, sayVi] shows its words but speaks the recordable ones: names can't be recorded)
       const [en, vi, sEn, sVi] = lines[i]; text.textContent = T(en, vi); setSpeaker(name); say(sEn || en, sVi || vi);
       const last = i === lines.length - 1;
@@ -68,11 +68,8 @@ export function dialog(name, lines, choices) {
     // walking away closes the conversation by itself
     d._autoClose = () => close(-1); d._from = dialogHooks.where ? dialogHooks.where() : null;
     d.onclick = () => { if (choices && i === lines.length - 1 && choices.length) return; SFX.tap(); if (i < lines.length - 1) { i++; show(); } else close(-1); };
-    if (little) {
-      d.querySelector('.again').onclick = e => { e.stopPropagation(); SFX.tap(); const [en, vi, sEn, sVi] = lines[i]; setSpeaker(name); say(sEn || en, sVi || vi); };
-      const ok = d.querySelector('.ok'); ok.onclick = e => { e.stopPropagation(); d.onclick(); };
-      const upd = () => { ok.hidden = !!(choices && choices.length && i === lines.length - 1); }; const s0 = show; show = () => { s0(); upd(); };
-    }
+    // (round R, owner: "there shouldn't be any repeats, the child just taps the speech box as OK") no Hear-again or OK
+    // buttons, for any age: a tap anywhere on the box is the OK
     show();
   });
 }

@@ -11,10 +11,16 @@ import path from 'path';
 import crypto from 'crypto';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
-import { start } from './harness.mjs';
+import { start, seedPlayers } from './harness.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // ---------- a pretend GitHub: blobs, trees, commits and branches in memory ----------
+// emoji still shown as text on the page (round R: every emoji is the game's drawing, js/emojiswap.js)
+const SHOWN_EMOJI = () => { const EMO = /\p{Extended_Pictographic}(?:\uFE0F|[\u{1F3FB}-\u{1F3FF}])*(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|[\u{1F3FB}-\u{1F3FF}])*)*|[\u{1F1E6}-\u{1F1FF}]{2}/gu, out = new Set();
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let t = w.nextNode(); t; t = w.nextNode()) { const p = t.parentElement; if (!p || p.closest('script,style,svg,textarea,input') || !p.getClientRects().length) continue; const s = t.nodeValue; for (const m of s.matchAll(EMO)) if (s[m.index + m[0].length] !== '\uFE0E') out.add(m[0]); }
+  return [...out]; };
+
 export function fakeGitHub(repo, files) {
   const blobs = new Map(), trees = new Map(), commits = new Map(), refs = new Map(), log = [];
   const gitSha = b => crypto.createHash('sha1').update('blob ' + b.length + '\0').update(b).digest('hex');
@@ -89,15 +95,16 @@ export function memoryBlobs() {
 }
 
 // ---------- a pretend Netlify: the site's files, netlify.toml's redirects and the two functions ----------
-export async function fakeNetlify({ port, env, players }) {
+export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs(), heldStore = memoryBlobs(), liveStore = memoryBlobs() }) {
   Object.assign(process.env, env);
   const { makeStudio } = await import(path.join(ROOT, 'netlify/functions/studio.mjs'));
   const { makeHello } = await import(path.join(ROOT, 'netlify/functions/hello.mjs'));
-  const studio = makeStudio({ playersStore: async () => players }), hello = makeHello({ playersStore: async () => players });
+  const { makeLive } = await import(path.join(ROOT, 'netlify/functions/live.mjs'));
+  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore, heldStore: async () => heldStore, liveStore: async () => liveStore }), hello = makeHello({ playersStore: async () => players }), live = makeLive({ liveStore: async () => liveStore });
   const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2' };
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`); let p = decodeURIComponent(url.pathname);
-    const fn = p === '/api/hello' ? hello : (p.startsWith('/studio/api/') || p.startsWith('/studio/content/')) ? studio : null;
+    const fn = p === '/api/hello' ? hello : p === '/api/live' ? live : (p.startsWith('/studio/api/') || p.startsWith('/studio/content/')) ? studio : null;
     if (fn) {
       const ch = []; for await (const c of req) ch.push(c);
       const r = await fn(new Request(url, { method: req.method, headers: req.headers, body: req.method === 'POST' ? Buffer.concat(ch) : undefined }), { geo: JSON.parse(req.headers['x-test-geo'] || '{}') }); // (Netlify gives the town from the connection; tests say it in a header)
@@ -118,8 +125,8 @@ export async function studioCheck(browser, open) {
   const repo = 'family/sparkle', PW = 'a-long-test-password-123', NPORT = 8791, SPORT = 8792, site = `http://localhost:${NPORT}`;
   const seed = {}; for (const f of ['index.html', 'sw.js', 'js/main.js', 'js/i18n.js', 'js/build.js', 'js/packhash.js']) seed[f] = fs.readFileSync(path.join(ROOT, f));
   seed['content/custom.json'] = JSON.stringify({ message: { en: 'Hello', vi: 'Xin chào' } }); seed['voices/en/f/0000aaaa.mp3'] = 'x'; seed['voices/manifest.json'] = JSON.stringify({ version: 2, cast: { en: ['f'] }, voices: {}, lines: { '0000aaaa': 'f' }, langOf: { '0000aaaa': 'en' } }); // (like the real pack: it lists what is recorded)
-  const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs();
-  const net = await fakeNetlify({ port: NPORT, players, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
+  const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs(), adminStore = memoryBlobs();
+  const net = await fakeNetlify({ port: NPORT, players, adminStore, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
   // the exe's own server, on a copy of a small game folder, with its settings in a folder of its own
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-studio-')), game = path.join(tmp, 'game'), appdata = path.join(tmp, 'appdata');
   fs.cpSync(path.join(ROOT, 'js'), path.join(game, 'js'), { recursive: true }); // the game's code (the pages read it)
@@ -138,14 +145,52 @@ export async function studioCheck(browser, open) {
     ok((await call('/studio/api/login', { body: { password: 'wrong' } })).status === 401, 'a wrong password was let in');
     const li = await call('/studio/api/login', { body: { password: PW } }); ok(li.status === 200 && /^sv_studio=/.test(li.cookie), 'signing in failed');
     const C = li.cookie, X = { 'X-Studio': '1' };
+    // 1b. other admins with their own accounts (round O): the owner adds them; a viewer only reads the analytics,
+    // an editor can change things but not the admins; a new password or removing them signs them out
+    { const add = (name, password, role) => call('/studio/api/admins/save', { body: { name, password, role }, cookie: C, headers: X });
+      ok((await add('ba.nam', 'short', 'viewer')).status === 400, 'a short admin password was accepted');
+      ok((await add('ba.nam', 'viewer-password-1', 'viewer')).status === 200 && (await add('co.lan', 'editor-password-1', 'editor')).status === 200, 'the owner could not add admins');
+      ok((await call('/studio/api/login', { body: { name: 'ba.nam', password: 'nope-nope-nope' } })).status === 401, 'a wrong admin password was let in');
+      const v = await call('/studio/api/login', { body: { name: 'Ba.Nam', password: 'viewer-password-1' } }); ok(v.status === 200 && /^sv_studio=a\./.test(v.cookie), 'a viewer could not sign in');
+      const vi = await call('/studio/api/info', { cookie: v.cookie }); ok(vi.status === 200 && vi.j && vi.j.me && vi.j.me.role === 'viewer', 'info does not say who is signed in: ' + JSON.stringify(vi.j && vi.j.me));
+      ok((await call('/studio/api/players', { cookie: v.cookie })).status === 200, 'a viewer could not read the analytics');
+      ok((await call('/studio/api/content', { body: { message: { en: 'x' } }, cookie: v.cookie, headers: X })).status === 403, 'a viewer could change the content');
+      ok((await call('/studio/api/admins/list', { cookie: v.cookie })).status === 403, 'a viewer could see the admins');
+      const e = await call('/studio/api/login', { body: { name: 'co.lan', password: 'editor-password-1' } });
+      ok((await call('/studio/api/admins/save', { body: { name: 'x.y', password: 'editor-password-2', role: 'owner' }, cookie: e.cookie, headers: X })).status === 403, 'an editor could add admins');
+      ok((await call('/studio/api/admins/me', { body: { old: 'editor-password-1', password: 'editor-password-2' }, cookie: e.cookie, headers: X })).status === 200, 'an editor could not change their own password');
+      ok((await call('/studio/api/info', { cookie: e.cookie })).status === 401, 'the old sign-in still worked after the password changed');
+      ok(!JSON.stringify([...adminStore._m.values()]).includes('viewer-password-1'), 'an admin password was kept as it is');
+      await call('/studio/api/admins/remove', { body: { name: 'ba.nam' }, cookie: C, headers: X });
+      ok((await call('/studio/api/players', { cookie: v.cookie })).status === 401, 'a removed admin could still read');
+      notes.push('admins: viewer reads analytics only, editor cannot manage admins, password change and removal sign out'); }
+    // 1c. online now (round O): "still here" from a device shows it playing in the Analytics, "gone" shows it offline
+    { const live = on => fetch(site + '/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'livetest0001', live: on, kid: 'Na' }) });
+      ok((await live(1)).status === 204, 'a live hello was refused');
+      let r = (await call('/studio/api/players', { cookie: C })).j, d = (r.devices || []).find(x => x.id === 'livetest0001');
+      ok(r.onlineNow >= 1 && d && d.online && d.playingNow === 'Na', 'a device playing now is not shown online: ' + JSON.stringify(d));
+      await live(0); r = (await call('/studio/api/players', { cookie: C })).j; d = (r.devices || []).find(x => x.id === 'livetest0001');
+      ok(d && !d.online && d.seenAt, 'a device that left still shows online: ' + JSON.stringify(d));
+      notes.push('online now: 🟢 while playing (with the child), ⚪ after leaving'); }
+    // 1d. the voice relay (round O): with Cloudflare's key in Netlify the game gets short-lived relay details (never the key)
+    { const { makeTurn } = await import(path.join(ROOT, 'netlify/functions/turn.mjs'));
+      const empty = await (await makeTurn({ fetchFn: async () => { throw new Error('no'); } })(new Request('http://x/api/turn'))).json();
+      ok(Array.isArray(empty.iceServers) && !empty.iceServers.length, 'the relay answered something without a key');
+      Object.assign(process.env, { CF_TURN_KEY_ID: 'kid123', CF_TURN_KEY_TOKEN: 'secret-token' }); let asked = null;
+      const got = await (await makeTurn({ fetchFn: async (u, o) => { asked = { u, auth: o.headers.Authorization }; return new Response(JSON.stringify({ iceServers: [{ urls: ['stun:stun.cloudflare.com:3478'] }, { urls: ['turn:turn.cloudflare.com:3478?transport=udp'], username: 'u1', credential: 'c1' }] })); } })(new Request('http://x/api/turn'))).json();
+      delete process.env.CF_TURN_KEY_ID; delete process.env.CF_TURN_KEY_TOKEN;
+      ok(asked && /kid123\/credentials\/generate-ice-servers$/.test(asked.u) && asked.auth === 'Bearer secret-token' && got.iceServers.length === 2 && got.iceServers[1].username === 'u1' && !JSON.stringify(got).includes('secret-token'), 'the relay details are wrong: ' + JSON.stringify({ asked, got }));
+      notes.push('voice relay: short-lived details from Cloudflare, the key never sent'); }
     const info = await call('/studio/api/info', { cookie: C }); ok(info.j && info.j.ok && info.j.online && info.j.voices === 1, 'online info: ' + JSON.stringify(info.j));
     // round K: changing page online is quick: the status and the family's content take a few small GitHub calls, never the list of every file
     { gh.log.length = 0; await call('/studio/api/info', { cookie: C }); await call('/studio/api/content', { cookie: C }); const calls = gh.log.slice();
       ok(!calls.some(c => /\/git\/trees\//.test(c)) && calls.length <= 6, 'a page change online asked GitHub ' + calls.length + ' times: ' + calls.join(', ')); notes.push(`a page change online: ${calls.length} small GitHub calls`); }
-    // 2. saving goes to the draft, never straight to the live branch
+    // 2. saving waits on the website (round P: instant, no GitHub call), is read back at once, and never goes live by itself
     ok((await call('/studio/api/content', { cookie: C, body: { message: { en: 'x', vi: 'x' } } })).status === 403, 'a change without the Studio header was taken');
+    gh.log.length = 0;
     ok((await call('/studio/api/content', { cookie: C, headers: X, body: { message: { en: 'Hi from online', vi: 'Chào từ trên mạng' } } })).status === 200, 'saving online failed');
-    ok(gh.refs.has('studio-draft') && /Hello/.test(gh.fileAt('main', 'content/custom.json')) && /online/.test(gh.fileAt('studio-draft', 'content/custom.json')), 'the save did not go to the draft');
+    const saveCalls = gh.log.filter(c => /^(POST|PATCH)/.test(c)).length;
+    ok(!saveCalls && /Hello/.test(gh.fileAt('main', 'content/custom.json')) && !gh.refs.has('studio-draft'), 'a save went to GitHub straight away: ' + gh.log.join(', '));
     ok(/online/.test((await call('/studio/api/content', { cookie: C })).j.message.en), 'the draft was not read back');
     const face = await call('/studio/api/face', { cookie: C, headers: X, body: { id: 'Bà Năm', dataUrl: 'data:image/jpeg;base64,' + Buffer.from('JPEG').toString('base64') } });
     ok(face.j && face.j.photo === 'content/faces/ba-nam.jpg', 'face upload: ' + JSON.stringify(face.j));
@@ -154,7 +199,8 @@ export async function studioCheck(browser, open) {
     const alb = await call('/studio/api/albumphoto', { cookie: C, headers: X, body: { id: 'f1', dataUrl: 'data:image/jpeg;base64,' + Buffer.from('JPEG').toString('base64') } });
     ok(alb.j && /^content\/album\/f1-[a-z0-9]+\.jpg$/.test(alb.j.photo), 'album photo upload: ' + JSON.stringify(alb.j));
     ok((await call('/studio/api/albumphoto', { cookie: C, headers: X, body: { id: 'f2', dataUrl: 'data:image/png;base64,AAAA' } })).status === 400, 'a PNG was taken as an album photo');
-    ok((await call('/studio/api/info', { cookie: C })).j.unpublished, 'saved changes not shown as waiting');
+    { const inf = (await call('/studio/api/info', { cookie: C })).j, w = (await call('/studio/api/pending', { cookie: C })).j.files;
+      ok(inf.unpublished && inf.waiting === 3 && w.includes('content/custom.json') && w.includes('content/faces/ba-nam.jpg'), 'saved changes not shown as waiting: ' + JSON.stringify({ u: inf.unpublished, n: inf.waiting, w })); }
     // 3. meanwhile the exe publishes something else to the live branch: Publish online must keep it
     gh.commitOnMain('content/ads/sign.jpg', 'AD', 'Family update from Sparkle Studio (1 files)');
     const pub = await call('/studio/api/github/publish', { cookie: C, headers: X, body: { message: 'From the test' } });
@@ -162,9 +208,20 @@ export async function studioCheck(browser, open) {
     ok(/online/.test(gh.fileAt('main', 'content/custom.json')) && gh.fileAt('main', 'content/faces/ba-nam.jpg') && gh.fileAt('main', 'content/ads/sign.jpg') && gh.fileAt('main', alb.j.photo), 'publish lost a file');
     ok(gh.refs.get('studio-draft') === gh.refs.get('main') && !(await call('/studio/api/info', { cookie: C })).j.unpublished, 'the draft did not start again after publishing');
     ok((await call('/studio/api/github/publish', { cookie: C, headers: X, body: {} })).j.result.changed === 0, 'a second publish found changes');
+    ok(!(await call('/studio/api/pending', { cookie: C })).j.files.length, 'changes still waiting after Publish');
+    // dropping waiting changes: they are gone and nothing reaches GitHub
+    await call('/studio/api/content', { cookie: C, headers: X, body: { message: { en: 'Never mind', vi: 'Thôi' } } });
+    ok((await call('/studio/api/pending/discard', { cookie: C, headers: X, body: {} })).status === 200 && /online/.test((await call('/studio/api/content', { cookie: C })).j.message.en) && !(await call('/studio/api/pending', { cookie: C })).j.files.length, 'dropping the waiting changes failed');
+    // a real photo taken off (✕) goes at once (read back straight away) and is never fetched again
+    { await new Promise(r => setTimeout(r, 15500)); // (where the branches point is kept 15 s between requests)
+      gh.commitOnMain('photos/index.json', JSON.stringify({ 'saigon-post': [{ src: 'photos/saigon-post/1.jpg', file: 'File:Wrong.jpg' }, { src: 'photos/saigon-post/2.jpg', file: 'File:Right.jpg' }] }), 'photos'); await new Promise(r => setTimeout(r, 15500));
+      ok((await call('/studio/api/photos/remove', { cookie: C, headers: X, body: { key: 'saigon-post', src: 'photos/saigon-post/1.jpg' } })).status === 200, 'photos/remove failed');
+      const left = (await call('/studio/api/photos/index', { cookie: C })).j['saigon-post'] || [], bl = (await call('/studio/api/file/photos/blocked.json', { cookie: C })).j || {};
+      ok(left.length === 1 && left[0].file === 'File:Right.jpg' && (bl['saigon-post'] || []).includes('File:Wrong.jpg'), 'a removed photo: ' + JSON.stringify({ left, bl }));
+      await call('/studio/api/pending/discard', { cookie: C, headers: X, body: {} }); }
     // only the family's files can change online
     ok((await call('/studio/api/voices/extra', { cookie: C, headers: X, body: { lines: [{ lang: 'vi', text: 'Một câu mới' }] } })).j.added === 1, 'adding a voice line failed');
-    notes.push('online: password, draft, publish (keeps the exe\'s change)');
+    notes.push(`online: password; saves wait on the website (${saveCalls} GitHub writes per save), one Publish sends them all (keeps the exe's change); drop waiting changes`);
     // 4. players: devices say hello, the report counts them
     const hi = (b2) => fetch(site + '/api/hello', { method: 'POST', body: JSON.stringify(b2) }).then(r => r.status);
     ok(await hi({ id: 'aaaaaaaaaaaa', b: 'r37', l: 'vi', k: 2, m: 10, g: { caro: 2 }, t: 1, d: 'phone', a: true }) === 204, 'hello not taken');
@@ -196,7 +253,7 @@ export async function studioCheck(browser, open) {
     {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true });
       await ctx.addInitScript(() => { window.__svHelloTest = 'manual'; localStorage.setItem('sv2_settings', JSON.stringify({ lang: 'vi', voice: false, sound: false, music: false, quality: 'low' })); });
-      const pg = await ctx.newPage(); await pg.goto(site + '/'); await start(pg);
+      const pg = await ctx.newPage(); await pg.addInitScript(seedPlayers); await pg.goto(site + '/'); await start(pg);
       const ymd = t => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
       const today = ymd(Date.now()), yday = ymd(Date.now() - 864e5);
       await ctx.setOffline(true);
@@ -237,7 +294,7 @@ export async function studioCheck(browser, open) {
     ok((await job('github/draft', {})).result.changed === 0, 'a second exe draft found changes');
     notes.push('exe: saves to its folder with a backup, players via the website, same version; GitHub in two steps (draft, then Publish)');
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone
-    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos'], bad = [];
+    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals'], bad = [];
     for (const [w, h, touch] of [[1180, 800, false], [390, 800, true]]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch }), errs = [];
       const pg = await ctx.newPage(); pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/favicon|401|403/.test(m.text())) errs.push(m.text() + ' ' + (m.location().url || '')); });
@@ -248,12 +305,27 @@ export async function studioCheck(browser, open) {
       await pg.evaluate(() => document.querySelector('#tabs [data-k="family"]').click()); await pg.waitForTimeout(400);
       if (await pg.evaluate(() => document.querySelectorAll('#page .pcard').length) !== 6) bad.push(`online ${w}px: the Family section does not show its six cards`);
       for (const k of pages) { await pg.evaluate(k2 => { location.hash = k2; }, k); await pg.waitForTimeout(k === 'photos' ? 2500 : 900); const t = await pg.evaluate(() => document.querySelector('#page').innerText); if (await pg.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`online ${w}px ${k}: ${t.slice(0, 80)}`);
-        if (await pg.evaluate(() => document.scrollingElement.scrollWidth > innerWidth + 1)) bad.push(`online ${w}px ${k}: page scrolls sideways`); }
+        if (await pg.evaluate(() => document.scrollingElement.scrollWidth > innerWidth + 1)) bad.push(`online ${w}px ${k}: page scrolls sideways`);
+        const emo = await pg.evaluate(SHOWN_EMOJI); if (emo.length) bad.push(`online ${w}px ${k}: phone emoji shown: ${emo.join(' ')}`); }
       ok(/3/.test(await pg.evaluate(() => (document.querySelector('#tabs [data-k="players"]').click(), new Promise(r => setTimeout(() => r(document.querySelector('#page').innerText), 1500))))), 'online players page');
+      // (round R) Releases online: switch traffic off and Halloween to start in 3 days; the website hands it to every device
+      if (!touch) {
+        await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('tr[data-id="traffic"]', { timeout: 15000 });
+        await pg.evaluate(() => { document.querySelector('tr[data-id="traffic"] [data-r="on"]').value = 'false'; const t = document.querySelector('tr[data-id="fest_halloween"]'); t.querySelector('[data-in="3"]').click(); t.querySelector('[data-r="newDays"]').value = '5'; document.querySelector('#save').click(); });
+        await pg.waitForTimeout(1200);
+        const lv = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
+        if (!(lv.releases && lv.releases.traffic && lv.releases.traffic.on === false && lv.releases.fest_halloween && lv.releases.fest_halloween.newDays === 5 && /^\d{4}-/.test(lv.releases.fest_halloween.start))) bad.push('releases did not reach /api/live: ' + JSON.stringify(lv));
+        await pg.evaluate(() => { location.hash = 'game/festivals'; }); await pg.waitForSelector('tr[data-id="tet"]', { timeout: 15000 });
+        await pg.evaluate(() => { document.querySelector('tr[data-id="anzac"] [data-f="on"]').value = 'false'; document.querySelector('tr[data-id="halloween"] [data-f="buildup"]').value = '14'; document.querySelector('#save').click(); });
+        await pg.waitForTimeout(1200);
+        const lf = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
+        if (!(lf.festivals && lf.festivals.anzac && lf.festivals.anzac.on === false && lf.festivals.halloween.buildup === 14 && lf.releases.traffic)) bad.push('festival changes did not reach /api/live: ' + JSON.stringify(lf));
+      }
       await pg.screenshot({ path: `out/studio-online-${w}.png` });
       const pe = await ctx.newPage(); pe.on('pageerror', e => errs.push('exe: ' + e.message));
       await pe.goto(`http://localhost:${SPORT}/`); // (sends you on to /studio/) await pe.waitForSelector('#tabs button', { timeout: 15000 });
       for (const k of pages) { await pe.evaluate(k2 => { location.hash = k2; }, k); await pe.waitForTimeout(900); const t = await pe.evaluate(() => document.querySelector('#page').innerText); if (await pe.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`exe ${w}px ${k}: ${t.slice(0, 80)}`); }
+      { await pe.evaluate(() => { location.hash = 'home'; }); await pe.waitForTimeout(700); const emo = await pe.evaluate(SHOWN_EMOJI); if (emo.length) bad.push(`exe ${w}px: phone emoji shown: ${emo.join(' ')}`); }
       await pe.screenshot({ path: `out/studio-exe-${w}.png` });
       bad.push(...errs.map(e => `${w}px: ${e}`)); await ctx.close();
     }

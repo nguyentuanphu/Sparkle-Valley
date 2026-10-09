@@ -1,12 +1,13 @@
 // Screens and pop-ups: title, who's playing, grown-ups settings, photo editor, NPC dialogue,
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
+import { AREAS, gamesIn } from './content/activities.js';
 import { T, applyLang, nm, NPC_NAMES, defaultName } from './i18n.js';
 import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, backupAge, STYLES, OUTFIT_COLORS, HATS, BACKS, HAIR, SKIN, HAIRSTYLES, GLIDERS, farm, resetFarm, saveFarm, MAX_KIDS, reduceMotion } from './state.js';
 import { say, spoken, voicePack, voiceDiag, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
 import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt, cur, spoken as money } from './money.js';
-import { el, esc, $, clamp, wait } from './util.js';
+import { el, esc, $, clamp, wait, local } from './util.js';
 import { avatarURL, applyNpcFaces } from './avatar.js';
 import { confetti } from './popups.js';
 import { placeBookHTML, bindPlaceBook } from './placebook.js';
@@ -19,7 +20,7 @@ import { showStory, storyList } from './story.js';
 import { SECRETS } from './secrets.js';
 import { LANDMARKS, VENDORS } from './regions.js';
 import { AUSSIE_SLANG, VN_WORDS, VN_SLANG } from './words.js';
-import { openCredits, creditsFields, bindCreditsFields } from './credits.js';
+import { openCredits } from './credits.js';
 import { openHowTo } from './howto.js';
 import { WILD } from './gather.js';
 import { snackOf, eatSnack } from './snacks.js';
@@ -30,7 +31,8 @@ import { installButton } from './install.js';
 import { BUILD } from './build.js';
 import { VOICE_STYLES, clipCountFor, hush, setSpeaker, sayIn, sayDevice } from './voice.js';
 import { LEARN } from './words2.js';
-import { originFlags } from './icons.js';
+import { SONG_GROUPS, SONG_LIST, familySongs } from './content/songs.js';
+import { originFlags, ICONS } from './icons.js';
 import { pic , labelArt } from './art.js';
 
 const PET_ICON = { puppy: '🐶', kitty: '🐱', bunny: '🐰', panda: '🐼', joey: '🦘', calf: '🐃' };
@@ -79,7 +81,7 @@ export function showTitle(onStart) {
       <div class="tt-floaters" aria-hidden="true"><i>🪁</i><i>🏮</i><i>🌸</i><i>⭐</i><i>🦘</i><i>🪷</i></div>
       <div class="logo"><div class="logo-main"></div><div class="logo-sub"></div></div>
     </div>
-    <button class="press"><span class="tt-play">▶</span><span class="tt-press"></span></button>
+    <button class="press"><span class="tt-play">▶</span><span class="tt-press" elementtiming="title"></span></button>
     <div class="tt-panel"><div class="title-foot"></div><div class="title-learn"></div></div>
     <div class="tt-build" aria-hidden="true">${BUILD}</div>`);
   document.body.appendChild(s);
@@ -102,12 +104,27 @@ export function showTitle(onStart) {
 }
 
 // ---------- Who's playing ----------
+// two players on one device: the way they sit now (Grown-ups 'auto' = face to face on touch screens; js/main.js rects)
+export const twoViewNow = () => settings.twoView === 'face' || settings.twoView === 'side' ? settings.twoView : document.body.classList.contains('touch') ? 'face' : 'side';
 export function showWho(onGo) {
   let mode = 'solo', chosen = [];
   const s = el('div', 'screen who sv2');
   document.body.appendChild(s);
+  let asked = false;
   const draw = () => {
     const need = mode === 'split' ? 2 : 1;
+    // nobody yet (a new device): one big card to make your own character (round P)
+    if (!profiles.length) {
+      s.innerHTML = `<div class="who-card first"><h2>${T('Hello! Who are you?', 'Xin chào! Con là ai?')}</h2>
+        <p class="hint">${T('Make your own character: your name, how you look, and a photo if you like.', 'Tạo nhân vật của con: tên, trông thế nào, và ảnh nếu con thích.')}</p>
+        <button class="go make">✨ ${T('Make my character', 'Tạo nhân vật của con')}</button></div>
+        <button class="grown"><span class="ring"></span>${T('Grown-ups', 'Phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>`;
+      const make = () => { SFX.tap(); openEditor(null, p => { if (p && profiles.includes(p)) { chosen = [p.id]; toast(T(`Hi ${p.name}!`, `Chào ${p.name}!`)); } draw(); }); };
+      s.querySelector('.make').onclick = make;
+      holdButton(s.querySelector('.grown'), () => openGrownups(draw));
+      if (!asked) { asked = true; say('Hello! Make your own character.', 'Xin chào! Con hãy tạo nhân vật của mình nhé.'); }
+      return;
+    }
     s.innerHTML = `
       <div class="who-card">
         <h2>${T("Who's playing?", 'Ai chơi nào?')}</h2>
@@ -116,12 +133,14 @@ export function showWho(onGo) {
           <button data-m="split" class="${mode === 'split' ? 'on' : ''}"><span class="mi">👫</span><b>${T('Two players here', 'Hai bạn cùng máy')}</b></button>
           <button data-m="online" class="${mode === 'online' ? 'on' : ''}"><span class="mi">📞</span><b>${T('Friend far away', 'Bạn ở xa')}</b></button>
         </div>
+        ${mode === 'split' ? `<div class="views" role="group" aria-label="${T('How do you sit?', 'Hai bạn ngồi thế nào?')}">${[['face', ICONS.faceView, T('Face to face', 'Đối diện nhau')], ['side', ICONS.sideView, T('Side by side', 'Cạnh nhau')]].map(([k, ic, l]) => `<button data-v="${k}" class="${twoViewNow() === k ? 'on' : ''}">${ic}<b>${l}</b></button>`).join('')}</div>` : ''}
         <p class="hint">${mode === 'split' ? T('Pick two players', 'Chọn hai bạn') : T('Pick a player', 'Chọn người chơi')}</p>
         <div class="picks">${profiles.map(p => `<button class="pick ${chosen.includes(p.id) ? 'on' : ''}" data-id="${p.id}"><img src="${avatarURL(p)}" alt=""><span>${esc(nm(p.name || '?'))}</span>${chosen.includes(p.id) && need === 2 ? `<i class="num">${chosen.indexOf(p.id) + 1}</i>` : ''}</button>`).join('')}
           <button class="pick add"><span class="plus">+</span><span>${T('New', 'Thêm')}</span></button></div>
         <button class="go" ${chosen.length === need ? '' : 'disabled'}>${T("Let's go!", 'Đi thôi!')} ▶</button>
       </div>
       <button class="grown"><span class="ring"></span>${T('Grown-ups', 'Phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>`;
+    s.querySelectorAll('.views button').forEach(b => b.onclick = () => { settings.twoView = b.dataset.v; saveSettings(); SFX.tap(); draw(); });
     s.querySelectorAll('.modes button').forEach(b => b.onclick = () => { mode = b.dataset.m; chosen = chosen.slice(0, mode === 'split' ? 2 : 1); SFX.tap(); draw(); });
     s.querySelectorAll('.pick[data-id]').forEach(b => b.onclick = () => {
       const id = b.dataset.id; SFX.pop(chosen.length);
@@ -234,7 +253,7 @@ function packStatusHTML() {
     <div class="actions"><button class="btn" data-pv="f">▶ 👩 ${T('Woman', 'Giọng nữ')}</button><button class="btn" data-pv="m">▶ 👨 ${T('Man', 'Giọng nam')}</button></div>
     <p class="note">${T('Women, girls and grandmas speak with the woman’s voice; men, boys and grandpas with the man’s.', 'Phụ nữ, bé gái và bà nói bằng giọng nữ; đàn ông, bé trai và ông nói bằng giọng nam.')}</p>
     ${miss.length ? `<details class="g-miss"><summary>📝 ${T(`${miss.length} lines on this device had no recording yet`, `${miss.length} câu trên máy này chưa có bản ghi`)}</summary>
-      <p class="note">${T('Save a backup (below) and open it in Sparkle Studio → Voices: it records these for the next update.', 'Lưu bản sao (bên dưới) rồi mở trong Sparkle Studio → Giọng đọc: Studio sẽ thu các câu này cho bản cập nhật sau.')}</p>
+      <p class="note">${settings.countPlayers !== false ? T('They reach Sparkle Studio by themselves (Studio → 🎮 Game → 🎙️ Voices → inbox), without children’s names; record them there for the next update.', 'Các câu này tự gửi tới Sparkle Studio (Studio → 🎮 Trò chơi → 🎙️ Giọng đọc → hộp thư), không kèm tên các con; thu ở đó cho bản cập nhật sau.') : T('Analytics is off on this device, so they are not sent: save a backup (below) and open it in Sparkle Studio → Voices.', 'Phân tích đang tắt trên máy này nên các câu không được gửi: lưu bản sao (bên dưới) rồi mở trong Sparkle Studio → Giọng đọc.')}</p>
       <ol class="misslist">${miss.slice(0, 40).map(m => `<li>${m[0] === 'vi' ? '🇻🇳' : '🇦🇺'} ${esc(m[1])} <small>×${m[2]}</small></li>`).join('')}</ol>
       <button class="btn" id="gMissClear">🧹 ${T('Clear the list', 'Xóa danh sách')}</button></details>` : `<p class="note">✅ ${T('Every line said on this device so far had a recording.', 'Mọi câu đã nói trên máy này đều có bản ghi.')}</p>`}`;
 }
@@ -244,7 +263,9 @@ function bindPackStatus(card, redraw) {
 }
 // ---------- Grown-ups ----------
 export function openGrownups(after) {
-  const m = modal('grownups', ''); let advOpen = false;
+  // (round P, owner: arrange it so it makes sense) everything in groups that open and close; which are open is kept
+  // while the page redraws
+  const m = modal('grownups', ''), gOpen = new Set(['players']);
   const card = m.querySelector('.card');
   const draw = () => {
     const vEn = voicesFor('en'), vVi = voicesFor('vi');
@@ -254,69 +275,98 @@ export function openGrownups(after) {
       <div class="g-install"></div>
       <h3>${T('Language', 'Ngôn ngữ')}</h3>${flagBtns()}${learnBtns()}
       <label class="tog"><input type="checkbox" id="gBil" ${settings.bilingual ? 'checked' : ''}> ${T('Bilingual voice: also say everything in the other language', 'Giọng song ngữ: nói thêm bằng ngôn ngữ còn lại')}</label>
-      <h3>${T('Sound and world', 'Âm thanh và thế giới')}</h3>
+            <details class="gsec" data-sec="players" ${gOpen.has('players') ? 'open' : ''}><summary><span class="gi">👧</span><b>${T('Children', 'Các con')}</b></summary><div class="gbody">
+
+      <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(nm(p.name))}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn ghost" data-rep="${p.id}" aria-label="${T('Play report', 'Báo cáo chơi')}">${pic('📊')}</button><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
+      <button class="btn wide" id="gAdd">+ ${T('Add a player', 'Thêm người chơi')}</button>
+      
+      </div></details>
+      <details class="gsec" data-sec="sound" ${gOpen.has('sound') ? 'open' : ''}><summary><span class="gi">🔊</span><b>${T('Sound and voices', 'Âm thanh và giọng nói')}</b></summary><div class="gbody">
       <div class="toggles">
         <label class="tog"><input type="checkbox" id="gVoice" ${settings.voice ? 'checked' : ''}> ${T('Talking voice', 'Giọng nói')}</label>
         <label class="tog"><input type="checkbox" id="gMusic" ${settings.music ? 'checked' : ''}> ${T('Music', 'Nhạc')}</label>
         <label class="tog"><input type="checkbox" id="gSound" ${settings.sound ? 'checked' : ''}> ${T('Sound effects', 'Hiệu ứng âm thanh')}</label>
+        <label class="tog"><input type="checkbox" id="gCap" ${settings.captions === false ? '' : 'checked'}> ${T('Captions: show everything that is said as text', 'Phụ đề: hiện chữ cho mọi câu được nói')}</label>
+      </div>
+<h3>🎙️ ${T('Voices', 'Giọng nói')}</h3>
+      ${packStatusHTML()}
+      <h3>${T('Family voice', 'Giọng của gia đình')}</h3>
+      <button class="btn primary wide big" id="gRec">🎙️ ${T('Record your voice for the game', 'Thu giọng của bạn cho trò chơi')}<small class="reccount">🇻🇳 ${clipCountFor('vi')}/${FAMILY_PHRASES.length} · 🇦🇺 ${clipCountFor('en')}/${FAMILY_PHRASES.length}</small></button>
+      <p class="note">${T('Each language has its own 11 lines. The game plays your real voice whenever it says one of those lines (praise, “try again”, “you did it”, hello…), in the language the game is set to. Everything else is read by the device voice, tuned towards your voice.', 'Mỗi ngôn ngữ có 11 câu riêng. Trò chơi phát đúng giọng thật của bạn mỗi khi nói một trong các câu đó (khen, “thử lại nhé”, “con làm được rồi”, chào…), theo ngôn ngữ đang chọn. Các câu khác do giọng máy đọc, được chỉnh gần với giọng bạn.')}</p>
+      <h3>📱 ${T('Phone voice (only for lines with no recording)', 'Giọng của máy (chỉ cho câu chưa có bản ghi)')}</h3>
+      <div class="field"><label>English</label><div class="vrow"><select id="vEn">${vEn.map(v => `<option ${v.name === settings.voiceEn ? 'selected' : ''}>${esc(v.name)}</option>`).join('') || `<option>${T('Default', 'Mặc định')}</option>`}</select><button class="btn" data-try="en">▶</button></div></div>
+      <div class="field"><label>Tiếng Việt</label><div class="vrow"><select id="vVi">${vVi.map(v => `<option ${v.name === settings.voiceVi ? 'selected' : ''}>${esc(v.name)}</option>`).join('') || `<option>${T('No Vietnamese voice found', 'Chưa có giọng tiếng Việt')}</option>`}</select><button class="btn" data-try="vi">▶</button></div></div>
+      <p class="note">${hasVietnamese() ? '' : T('To add a Vietnamese voice: iPhone/iPad → Settings → Accessibility → Spoken Content → Voices → Vietnamese. Android → Settings → Text-to-speech → Google → Install voice data → Vietnamese. ', 'Thêm giọng tiếng Việt: iPhone/iPad → Cài đặt → Trợ năng → Nội dung được đọc → Giọng nói → Tiếng Việt. Android → Cài đặt → Chuyển văn bản thành giọng nói → Google → Cài đặt dữ liệu giọng nói → Tiếng Việt. ')}${T('Choose an "Enhanced" or "Premium" voice for the most natural sound.', 'Chọn giọng "Nâng cao" hoặc "Cao cấp" để nghe tự nhiên nhất.')}</p>
+      ${extrasHTML()}
+      
+      </div></details>
+      <details class="gsec" data-sec="screen" ${gOpen.has('screen') ? 'open' : ''}><summary><span class="gi">📺</span><b>${T('Screen and world', 'Màn hình và thế giới')}</b></summary><div class="gbody">
+      <div class="toggles">
         <label class="tog"><input type="checkbox" id="gDay" ${settings.alwaysDay ? 'checked' : ''}> ${T('Always daytime', 'Luôn là ban ngày')}</label>
         <label class="tog"><input type="checkbox" id="gRain" ${settings.noRain ? '' : 'checked'}> ${T('Rain showers and rainbows', 'Mưa rào và cầu vồng')}</label>
         <label class="tog"><input type="checkbox" id="gCalm" ${settings.calm ? 'checked' : ''}> ${T('Calm mode: quieter music, fewer moving effects', 'Chế độ êm dịu: nhạc nhỏ hơn, ít hiệu ứng chuyển động')}</label>
-        <label class="tog"><input type="checkbox" id="gCap" ${settings.captions === false ? '' : 'checked'}> ${T('Captions: show everything that is said as text', 'Phụ đề: hiện chữ cho mọi câu được nói')}</label>
       </div>
-      <h3>🎙️ ${T('Voices', 'Giọng nói')}</h3>
-      ${packStatusHTML()}
-      <h3>🌙 ${T('Rest time', 'Giờ nghỉ')}</h3>
-      <p class="note">${T('After this much play in a day, the explorer yawns and says goodnight. A grown-up can hold a button for 10 more minutes. Counted on this device only.', 'Sau khoảng thời gian chơi này trong ngày, nhà thám hiểm sẽ ngáp và chúc ngủ ngon. Người lớn có thể giữ nút để chơi thêm 10 phút. Chỉ tính trên máy này.')} ${T('Today', 'Hôm nay')}: ${Math.round(settings.playDay === new Date().toDateString() ? settings.playMins || 0 : 0)} ${T('min', 'phút')}</p>
-      <div class="seg rest">${['0', '15', '30', '45', '60'].map(k => `<button data-r="${k}" class="${String(settings.restMins || '0') === k ? 'on' : ''}">${k === '0' ? T('Off', 'Tắt') : k + ' ' + T('min', 'phút')}</button>`).join('')}</div>
-      <h3>🔠 ${T('Text size', 'Cỡ chữ')}</h3>
+<h3>👫 ${T('Two players on one device', 'Hai người chơi trên một máy')}</h3>
+      <div class="seg tview">${[['auto', T('Automatic', 'Tự động')], ['face', T('Face to face', 'Đối diện nhau')], ['side', T('Side by side', 'Cạnh nhau')]].map(([k, l]) => `<button data-tv="${k}" class="${(settings.twoView || 'auto') === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+      <p class="note">${T('Face to face: lay the tablet flat with a child at each end; each half of the screen faces its child. Automatic uses face to face on touch screens and side by side on a computer.', 'Đối diện nhau: đặt máy tính bảng nằm trên bàn, mỗi bé ngồi một đầu; mỗi nửa màn hình quay về phía bé đó. Tự động: đối diện trên màn hình cảm ứng, cạnh nhau trên máy tính.')}</p>
+<h3>🔠 ${T('Text size', 'Cỡ chữ')}</h3>
       <div class="seg tsize">${[[0, 'A'], [1, 'A'], [2, 'A']].map(([k, l]) => `<button data-ts="${k}" class="${(settings.textSize || 0) === k ? 'on' : ''}" style="font-size:${16 + k * 5}px" aria-label="${[T('Normal', 'Bình thường'), T('Big', 'To'), T('Bigger', 'To hơn')][k]}">${l}</button>`).join('')}</div>
       <div>
       </div>
-      <h3>${T('Players', 'Người chơi')}</h3>
-      <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(nm(p.name))}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn ghost" data-rep="${p.id}" aria-label="${T('Play report', 'Báo cáo chơi')}">${pic('📊')}</button><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
-      <button class="btn wide" id="gAdd">+ ${T('Add a player', 'Thêm người chơi')}</button>
-      <h3>☁️ ${T('Backup to Google Drive or iCloud', 'Sao lưu lên Google Drive hoặc iCloud')}</h3>
-      <p class="note">${T('Progress saves automatically on this device. To keep a copy online, tap Save backup and choose Google Drive, or “Save to Files” → iCloud Drive on iPhone and iPad. To bring it back (or onto a new device), tap Open backup and pick the file from Drive or iCloud.', 'Tiến trình tự động lưu trên máy này. Để giữ một bản trên mạng, bấm Lưu bản sao rồi chọn Google Drive, hoặc “Lưu vào Tệp” → iCloud Drive trên iPhone và iPad. Để lấy lại (hoặc chuyển sang máy mới), bấm Mở bản sao và chọn tệp trong Drive hoặc iCloud.')}</p>
-      <p class="note backup-when${backupAge() > 7 ? ' old' : ''}">${settings.lastBackup ? T('Last backup: ', 'Lần sao lưu gần nhất: ') + new Date(settings.lastBackup).toLocaleDateString(settings.lang === 'vi' ? 'vi-VN' : 'en-AU') + (backupAge() > 7 ? T(' (over a week ago)', ' (hơn một tuần trước)') : '') : T('No backup saved yet.', 'Chưa có bản sao lưu nào.')}</p>
-      <div class="actions"><button class="btn" id="gExp">☁️ ${T('Save backup', 'Lưu bản sao')}</button><label class="btn" for="gImp">📂 ${T('Open backup', 'Mở bản sao')}</label><input type="file" id="gImp" accept=".txt,.json,text/plain,application/json" class="vh"></div>
-      <p class="note">${T('The file stays in your own Drive or iCloud: Sparkle Valley has no server and never sees it.', 'Tệp nằm trong Drive hoặc iCloud của bạn: Thung Lũng Lấp Lánh không có máy chủ và không bao giờ xem tệp này.')}</p>
-      <details class="g-adv" ${advOpen ? 'open' : ''}><summary>⚙️ ${T('Advanced settings', 'Cài đặt nâng cao')}</summary>
-      <h3>${T('Money', 'Tiền tệ')}</h3>
+            <div class="field"><label>${T('Camera', 'Góc nhìn')}</label><div class="seg cam"><button data-c="easy" class="${settings.camMode !== 'free' ? 'on' : ''}">🧸 ${T('Easy: fixed view from above', 'Dễ: nhìn từ trên, cố định')}</button><button data-c="free" class="${settings.camMode === 'free' ? 'on' : ''}">🧭 ${T('Explorer: drag to look around', 'Tự do: kéo để xoay')}</button></div></div>
+      <div class="field"><label>${T('Graphics', 'Đồ họa')}</label><div class="seg q">${['low', 'auto', 'high'].map(q => `<button data-q="${q}" class="${settings.quality === q ? 'on' : ''}">${{ low: T('Fast', 'Nhanh'), auto: T('Auto', 'Tự động'), high: T('Pretty', 'Đẹp') }[q]}</button>`).join('')}</div></div>
+      
+      </div></details>
+      <details class="gsec" data-sec="time" ${gOpen.has('time') ? 'open' : ''}><summary><span class="gi">🌙</span><b>${T('Play time', 'Giờ chơi')}</b></summary><div class="gbody">
+<h3>🌙 ${T('Rest time', 'Giờ nghỉ')}</h3>
+      <p class="note">${T('After this much play in a day, the explorer yawns and says goodnight. A grown-up can hold a button for 10 more minutes. Counted on this device only.', 'Sau khoảng thời gian chơi này trong ngày, nhà thám hiểm sẽ ngáp và chúc ngủ ngon. Người lớn có thể giữ nút để chơi thêm 10 phút. Chỉ tính trên máy này.')} ${T('Today', 'Hôm nay')}: ${Math.round(settings.playDay === new Date().toDateString() ? settings.playMins || 0 : 0)} ${T('min', 'phút')}</p>
+      <div class="seg rest">${['0', '15', '30', '45', '60'].map(k => `<button data-r="${k}" class="${String(settings.restMins || '0') === k ? 'on' : ''}">${k === '0' ? T('Off', 'Tắt') : k + ' ' + T('min', 'phút')}</button>`).join('')}</div>
+      
+      </div></details>
+      <details class="gsec" data-sec="money" ${gOpen.has('money') ? 'open' : ''}><summary><span class="gi">💰</span><b>${T('Money and farm', 'Tiền và nông trại')}</b></summary><div class="gbody">
+<h3>${T('Money', 'Tiền tệ')}</h3>
       <div class="seg cur"><button data-c="AUD" class="${settings.currency === 'AUD' ? 'on' : ''}">🇦🇺 AUD $</button><button data-c="VND" class="${settings.currency === 'VND' ? 'on' : ''}">🇻🇳 VND đ</button></div>
       <p class="note">${T('Prices and the market game switch currency. 10c = 2.000đ in this game.', 'Giá cả và trò chơi đi chợ sẽ đổi theo tiền tệ. Trong game, 10 xu Úc = 2.000đ.')}</p>
       <div class="field"><label>💰 ${T('Coins in the piggy bank', 'Tiền trong heo đất')}: <b id="gCoins">${fmt(farm.coins)}</b></label>
         <div class="actions coinadd">${[100, 500, 2000].map(n => `<button class="btn" data-add="${n}">+ ${fmt(n)}</button>`).join('')}</div></div>
       <p class="note">${T('Ran out? Top up the coins the whole family shares (for the shop, market and stalls).', 'Hết tiền? Nạp thêm tiền chung của cả nhà (dùng ở cửa hàng, chợ và các sạp).')}</p>
-      <h3>📱 ${T('Phone voice (only for lines with no recording)', 'Giọng của máy (chỉ cho câu chưa có bản ghi)')}</h3>
-      <div class="field"><label>English</label><div class="vrow"><select id="vEn">${vEn.map(v => `<option ${v.name === settings.voiceEn ? 'selected' : ''}>${esc(v.name)}</option>`).join('') || `<option>${T('Default', 'Mặc định')}</option>`}</select><button class="btn" data-try="en">▶</button></div></div>
-      <div class="field"><label>Tiếng Việt</label><div class="vrow"><select id="vVi">${vVi.map(v => `<option ${v.name === settings.voiceVi ? 'selected' : ''}>${esc(v.name)}</option>`).join('') || `<option>${T('No Vietnamese voice found', 'Chưa có giọng tiếng Việt')}</option>`}</select><button class="btn" data-try="vi">▶</button></div></div>
-      <p class="note">${hasVietnamese() ? '' : T('To add a Vietnamese voice: iPhone/iPad → Settings → Accessibility → Spoken Content → Voices → Vietnamese. Android → Settings → Text-to-speech → Google → Install voice data → Vietnamese. ', 'Thêm giọng tiếng Việt: iPhone/iPad → Cài đặt → Trợ năng → Nội dung được đọc → Giọng nói → Tiếng Việt. Android → Cài đặt → Chuyển văn bản thành giọng nói → Google → Cài đặt dữ liệu giọng nói → Tiếng Việt. ')}${T('Choose an "Enhanced" or "Premium" voice for the most natural sound.', 'Chọn giọng "Nâng cao" hoặc "Cao cấp" để nghe tự nhiên nhất.')}</p>
-      <h3>${T('Family voice', 'Giọng của gia đình')}</h3>
-      <button class="btn primary wide big" id="gRec">🎙️ ${T('Record your voice for the game', 'Thu giọng của bạn cho trò chơi')}<small class="reccount">🇻🇳 ${clipCountFor('vi')}/${FAMILY_PHRASES.length} · 🇦🇺 ${clipCountFor('en')}/${FAMILY_PHRASES.length}</small></button>
-      <p class="note">${T('Each language has its own 11 lines. The game plays your real voice whenever it says one of those lines (praise, “try again”, “you did it”, hello…), in the language the game is set to. Everything else is read by the device voice, tuned towards your voice.', 'Mỗi ngôn ngữ có 11 câu riêng. Trò chơi phát đúng giọng thật của bạn mỗi khi nói một trong các câu đó (khen, “thử lại nhé”, “con làm được rồi”, chào…), theo ngôn ngữ đang chọn. Các câu khác do giọng máy đọc, được chỉnh gần với giọng bạn.')}</p>
-      ${extrasHTML()}
-      <div class="field"><label>📊 ${T('Analytics', 'Phân tích')}</label><div class="seg cnt"><button data-c="1" class="${settings.countPlayers !== false ? 'on' : ''}">${T('On', 'Bật')}</button><button data-c="0" class="${settings.countPlayers === false ? 'on' : ''}">${T('Off', 'Tắt')}</button></div></div>
-      <div class="field"><label>${T('Camera', 'Góc nhìn')}</label><div class="seg cam"><button data-c="easy" class="${settings.camMode !== 'free' ? 'on' : ''}">🧸 ${T('Easy: fixed view from above', 'Dễ: nhìn từ trên, cố định')}</button><button data-c="free" class="${settings.camMode === 'free' ? 'on' : ''}">🧭 ${T('Explorer: drag to look around', 'Tự do: kéo để xoay')}</button></div></div>
-      <div class="field"><label>${T('Graphics', 'Đồ họa')}</label><div class="seg q">${['low', 'auto', 'high'].map(q => `<button data-q="${q}" class="${settings.quality === q ? 'on' : ''}">${{ low: T('Fast', 'Nhanh'), auto: T('Auto', 'Tự động'), high: T('Pretty', 'Đẹp') }[q]}</button>`).join('')}</div></div>
-      <h3>🏷️ ${T('Character names', 'Tên nhân vật')}</h3>
-      <p class="note">${T('Titles follow the language (Grandma / Bà, Auntie / Cô) and names stay as they are in each region. You can rename anyone, in English and in Vietnamese.', 'Danh xưng đổi theo ngôn ngữ (Grandma / Bà, Auntie / Cô) và tên giữ nguyên theo từng vùng. Bạn có thể đổi tên bất kỳ nhân vật nào, bằng tiếng Anh và tiếng Việt.')}</p>
-      <button class="btn wide" id="gNames">✏️ ${T('Rename characters', 'Đổi tên nhân vật')}</button>
-      <h3>ℹ️ ${T('Credits page', 'Trang giới thiệu')}</h3>${creditsFields()}<button class="btn wide" id="gCredits">ℹ️ ${T('Show the credits page', 'Xem trang giới thiệu')}</button>
       <h3>${T('Farm', 'Nông trại')}</h3>
       <button class="btn danger" id="gFarm">🔄 ${T('Start the farm over', 'Làm lại nông trại')}</button>
       <p class="note">${T('Clears crops, animals, pets, basket and coins. Players, photos, stickers and game levels are kept.', 'Xóa cây trồng, vật nuôi, thú cưng, giỏ hàng và tiền. Giữ lại người chơi, ảnh, hình dán và cấp độ trò chơi.')}</p>
-      <h3>🌐 ${T('Online play', 'Chơi trực tuyến')}</h3>
+      
+      </div></details>
+      <details class="gsec" data-sec="online" ${gOpen.has('online') ? 'open' : ''}><summary><span class="gi">🌐</span><b>${T('Playing online', 'Chơi trực tuyến')}</b></summary><div class="gbody">
+
       <p class="note">${T('Online play uses the free PeerJS service to connect two devices directly. Voice goes straight between the devices and is never recorded.', 'Chơi trực tuyến dùng dịch vụ miễn phí PeerJS để nối hai máy trực tiếp. Giọng nói đi thẳng giữa hai máy và không bao giờ được ghi lại.')}</p>
-      <label class="tog"><input type="checkbox" id="gAutoMeet" ${settings.autoMeet !== false ? 'checked' : ''}> ${T('Meet friends by themselves: when a friend on the list is playing too, the two games join up (no room number needed)', 'Tự gặp bạn bè: khi một bạn trong danh sách cũng đang chơi, hai máy tự vào chung (không cần đọc mã phòng)')}</label>
+      <label class="tog"><input type="checkbox" id="gAutoMeet" ${settings.autoMeet !== false ? 'checked' : ''}> ${T('Tell me when a friend on the list starts playing (with buttons to invite them or go to their room; nobody is put in a room by themselves)', 'Báo khi một bạn trong danh sách bắt đầu chơi (có nút mời bạn hoặc sang phòng bạn; không ai tự bị đưa vào phòng)')}</label>
       <p class="note">${T('If a friend far away stays on “Connecting…”, your two networks need a relay (TURN server). Free public relays are tried automatically. For a reliable one, make a free account at a TURN service (for example metered.ca), then paste its credentials link here, or a turn: address with its name and password. Both devices need the same relay.', 'Nếu bạn ở xa cứ “Đang kết nối…” mãi, hai mạng cần một máy chủ trung chuyển (TURN). Trò chơi tự thử các máy chủ miễn phí công cộng. Để ổn định hơn, hãy tạo tài khoản miễn phí ở một dịch vụ TURN (ví dụ metered.ca), rồi dán đường link lấy thông tin vào đây, hoặc địa chỉ turn: kèm tên và mật khẩu. Cả hai máy cần dùng cùng máy chủ.')}</p>
       <div class="vrow"><input type="text" id="gTurn" placeholder="https://…/turn/credentials?apiKey=…  ${T('or', 'hoặc')}  turn:…" value="${esc(settings.turnUrl || '')}" autocomplete="off"></div>
       <div class="vrow ${/^turns?:/i.test(settings.turnUrl || '') ? '' : 'vh'}" id="gTurnCred"><input type="text" id="gTurnUser" placeholder="${T('Name', 'Tên')}" value="${esc(settings.turnUser || '')}" autocomplete="off"><input type="password" id="gTurnPass" placeholder="${T('Password', 'Mật khẩu')}" value="${esc(settings.turnPass || '')}" autocomplete="off"></div>
       <div class="actions"><button class="btn" id="gNetCheck">🔍 ${T('Test the connection', 'Kiểm tra kết nối')}</button></div><p class="note" id="gNetRes"></p>
-      </details>
+
+      </div></details>
+      <details class="gsec" data-sec="names" ${gOpen.has('names') ? 'open' : ''}><summary><span class="gi">🏷️</span><b>${T('Character names', 'Tên nhân vật')}</b></summary><div class="gbody">
+
+      <p class="note">${T('Titles follow the language (Grandma / Bà, Auntie / Cô) and names stay as they are in each region. You can rename anyone, in English and in Vietnamese.', 'Danh xưng đổi theo ngôn ngữ (Grandma / Bà, Auntie / Cô) và tên giữ nguyên theo từng vùng. Bạn có thể đổi tên bất kỳ nhân vật nào, bằng tiếng Anh và tiếng Việt.')}</p>
+      <button class="btn wide" id="gNames">✏️ ${T('Rename characters', 'Đổi tên nhân vật')}</button>
+      
+      </div></details>
+      <details class="gsec" data-sec="data" ${gOpen.has('data') ? 'open' : ''}><summary><span class="gi">📊</span><b>${T('Analytics and backup', 'Phân tích và sao lưu')}</b></summary><div class="gbody">
+      <div class="field"><label>📊 ${T('Analytics', 'Phân tích')}</label><div class="seg cnt"><button data-c="1" class="${settings.countPlayers !== false ? 'on' : ''}">${T('On', 'Bật')}</button><button data-c="0" class="${settings.countPlayers === false ? 'on' : ''}">${T('Off', 'Tắt')}</button></div></div>
+      <h3>☁️ ${T('Backup to Google Drive or iCloud', 'Sao lưu lên Google Drive hoặc iCloud')}</h3>
+      <p class="note">${T('Progress saves automatically on this device. To keep a copy online, tap Save backup and choose Google Drive, or “Save to Files” → iCloud Drive on iPhone and iPad. To bring it back (or onto a new device), tap Open backup and pick the file from Drive or iCloud.', 'Tiến trình tự động lưu trên máy này. Để giữ một bản trên mạng, bấm Lưu bản sao rồi chọn Google Drive, hoặc “Lưu vào Tệp” → iCloud Drive trên iPhone và iPad. Để lấy lại (hoặc chuyển sang máy mới), bấm Mở bản sao và chọn tệp trong Drive hoặc iCloud.')}</p>
+      <p class="note backup-when${backupAge() > 7 ? ' old' : ''}">${settings.lastBackup ? T('Last backup: ', 'Lần sao lưu gần nhất: ') + new Date(settings.lastBackup).toLocaleDateString(settings.lang === 'vi' ? 'vi-VN' : 'en-AU') + (backupAge() > 7 ? T(' (over a week ago)', ' (hơn một tuần trước)') : '') : T('No backup saved yet.', 'Chưa có bản sao lưu nào.')}</p>
+      <div class="actions"><button class="btn" id="gExp">☁️ ${T('Save backup', 'Lưu bản sao')}</button><label class="btn" for="gImp">📂 ${T('Open backup', 'Mở bản sao')}</label><input type="file" id="gImp" accept=".txt,.json,text/plain,application/json" class="vh"></div>
+      <p class="note">${T('The file stays in your own Drive or iCloud: Sparkle Valley has no server and never sees it.', 'Tệp nằm trong Drive hoặc iCloud của bạn: Thung Lũng Lấp Lánh không có máy chủ và không bao giờ xem tệp này.')}</p>
+      
+      </div></details>
+      <details class="gsec" data-sec="note" ${gOpen.has('note') ? 'open' : ''}><summary><span class="gi">📜</span><b>${T('Note for grown-ups', 'Lưu ý cho người lớn')}</b></summary><div class="gbody">
+      <ul class="gnote"><li>${T('Sparkle Valley is a free family game made for fun and learning. It is provided as it is, without any promise or warranty.', 'Thung Lũng Lấp Lánh là trò chơi gia đình miễn phí, làm ra để vui chơi và học hỏi. Trò chơi được cung cấp như hiện có, không kèm bất kỳ cam kết hay bảo đảm nào.')}</li><li>${T('A grown-up is responsible for the child’s play: when and how long they play, online play and chat, and the device itself.', 'Người lớn chịu trách nhiệm về việc chơi của trẻ: chơi lúc nào, chơi bao lâu, chơi trực tuyến, trò chuyện, và cả thiết bị.')}</li><li>${T('Games the valley suggests playing for real (tug of war, jump rope, hopscotch, đá cầu, kites, cooking…) need a grown-up watching, a safe place and the right equipment.', 'Các trò chơi được gợi ý chơi ngoài đời (kéo co, nhảy dây, nhảy lò cò, đá cầu, thả diều, nấu ăn…) cần có người lớn trông, chỗ chơi an toàn và dụng cụ phù hợp.')}</li><li>${T('Take a break every 20 to 30 minutes, and stop if a child feels unwell (tired eyes, dizziness, motion sickness).', 'Nghỉ giải lao sau mỗi 20 đến 30 phút, và dừng chơi nếu trẻ thấy khó chịu (mỏi mắt, chóng mặt, say xe).')}</li><li>${T('Places, festivals, food and history are told simply for children and may not be complete or exact.', 'Địa danh, lễ hội, món ăn và lịch sử được kể đơn giản cho trẻ, có thể chưa đầy đủ hoặc chưa chính xác hoàn toàn.')}</li><li>${T('Online friends, chat and real photos come from other people and services; the makers are not responsible for their content.', 'Bạn bè trực tuyến, trò chuyện và ảnh thật đến từ người khác và các dịch vụ khác; người làm game không chịu trách nhiệm về nội dung đó.')}</li><li>${T('As far as the law allows, the makers are not responsible for any loss, injury or damage from using the game.', 'Trong phạm vi pháp luật cho phép, người làm game không chịu trách nhiệm về bất kỳ mất mát, thương tích hay thiệt hại nào do việc sử dụng trò chơi.')}</li></ul>
+      </div></details>
+
       <button class="btn primary wide" id="gDone">💾 ${T('Save & close', 'Lưu và đóng')}</button>`;
     bindLang(card, () => { draw(); after && after(); }); bindLearn(card, () => draw());
-    card.querySelector('.g-adv').ontoggle = e => { advOpen = e.currentTarget.open; };
+    card.querySelectorAll('details.gsec').forEach(d => d.ontoggle = () => { if (d.open) gOpen.add(d.dataset.sec); else gOpen.delete(d.dataset.sec); });
     bindPackStatus(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelector('.x').onclick = card.querySelector('#gDone').onclick = () => { m.close(); after && after(); };
     jumpNav(card, card.querySelector('h2'));
@@ -345,6 +395,7 @@ export function openGrownups(after) {
     card.querySelector('#gRain').onchange = e => { settings.noRain = !e.target.checked; saveSettings(); };
     chk('#gCalm', 'calm', applyComfort);
     card.querySelector('#gCap').onchange = e => { settings.captions = e.target.checked; saveSettings(); };
+    card.querySelectorAll('.seg.tview button').forEach(b => b.onclick = () => { settings.twoView = b.dataset.tv; saveSettings(); dispatchEvent(new Event('resize')); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { settings.textSize = +b.dataset.ts; saveSettings(); applyComfort(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.rest button').forEach(b => b.onclick = () => { settings.restMins = b.dataset.r; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     chk('#gBil', 'bilingual'); chk('#gVoice', 'voice'); chk('#gMusic', 'music', () => settings.music ? Music.refresh() : Music.stop()); chk('#gSound', 'sound'); chk('#gDay', 'alwaysDay');
@@ -359,7 +410,6 @@ export function openGrownups(after) {
     card.querySelector('#gExp').onclick = async () => { const how = await exportBackup(); if (how === 'cancelled') return; toast(how === 'shared' ? T('Backup saved!', 'Đã lưu bản sao!') : T('Backup downloaded. Put it in Drive or iCloud to keep it safe.', 'Đã tải bản sao. Hãy cất vào Drive hoặc iCloud cho an toàn.')); const y = m.scrollTop; draw(); m.scrollTop = y; };
     card.querySelector('#gRec').onclick = () => openRecorder(draw);
     { const b = installButton('btn wide installrow'); if (b) card.querySelector('.g-install').appendChild(b); }
-    bindCreditsFields(card); card.querySelector('#gCredits').onclick = () => openCredits();
     card.querySelector('#gNames').onclick = () => openRenamer(() => { const y = m.scrollTop; draw(); m.scrollTop = y; });
     bindExtras(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; }, toast);
     card.querySelector('#gFarm').onclick = () => { if (confirm(T('Start the farm over? Players and stickers are kept.', 'Làm lại nông trại? Người chơi và hình dán được giữ lại.'))) { resetFarm(); window.__sv && window.__sv.farm && (window.__sv.farm.syncAnimals(), window.__sv.farm.syncPets()); toast(T('A fresh new farm!', 'Nông trại mới tinh!')); } };
@@ -390,7 +440,6 @@ export function openQuick(game, i) {
         ${row('voiceControl', '🎤', T('Voice control', 'Điều khiển bằng giọng nói'), s.voiceControl !== false)}${row('alwaysDay', '☀️', T('Always daytime', 'Luôn ban ngày'), s.alwaysDay)}
         <div class="qs-sub">${T('Text size', 'Cỡ chữ')}</div><div class="seg tsize">${[0, 1, 2].map(k => `<button data-ts="${k}" class="${(s.textSize || 0) === k ? 'on' : ''}" style="font-size:${16 + k * 5}px">A</button>`).join('')}</div></div>
       ${game.festivals ? `<button class="qs-fest" id="qFest"><span>🎉</span><b>${T('Festivals', 'Lễ hội')}</b><small>${T('Tết, Mid-Autumn, Diwali, Christmas, Australia Day: any day you like', 'Tết, Trung Thu, Diwali, Giáng Sinh, Ngày Nước Úc: ngày nào cũng được')}</small></button>` : ''}
-      <button class="qs-fest qs-songs" id="qSongs"><span>🎵</span><b>${T('Songs', 'Bài hát')}</b><small>${T('Lullabies, village tunes, festival songs', 'Hát ru, làng quê, nhạc lễ hội')}</small></button>
       <button class="grown qgrown"><span class="ring"></span>👨‍👩‍👧 ${T('Grown-ups settings', 'Cài đặt phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>
       <div class="actions floatbar"><button class="btn" id="qWho">👫 ${T('Change player', 'Đổi người chơi')}</button><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
     bindLang(card, draw);
@@ -408,7 +457,6 @@ export function openQuick(game, i) {
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { s.textSize = +b.dataset.ts; saveSettings(); applyComfort(); keep(draw); });
     card.querySelectorAll('.seg.vstyle button').forEach(b => b.onclick = () => { s.voiceStyle = b.dataset.v; saveSettings(); keep(draw); say('Hello! Do you like my voice?', 'Xin chào! Con có thích giọng này không?'); });
     const fb = card.querySelector('#qFest'); if (fb) fb.onclick = () => { SFX.tap(); m.close(); openFestivals(game, i); };
-    const sb = card.querySelector('#qSongs'); if (sb) sb.onclick = () => { SFX.tap(); m.close(); game.openSongs && game.openSongs(); };
     card.querySelector('#qWho').onclick = () => { m.close(); game.changePlayer(); };
     // the full Grown-ups settings, from inside the game (press and hold, so little fingers don't open it by accident)
     holdButton(card.querySelector('.qgrown'), () => openGrownups(() => { draw(); game.huds.forEach(h => { h.refreshAudio(); h.refreshWho(); }); }));
@@ -417,20 +465,38 @@ export function openQuick(game, i) {
   draw();
 }
 
+// ---------- Lịch lễ hội, the festival calendar (round R, owner) ----------
+// Today's festival with its timetable (08:00 present, 15:00 festival game, 18:30 show; 17:30 for under-5s), the ones
+// getting ready (decorations go up 3 weeks before), and the next ones with how many days to go. Any of them can be
+// visited now (the village decorates, the show plays and the festival table gives its present).
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const dayLabel = d => T(`${d.getDate()} ${MONTHS[d.getMonth()]}`, `${d.getDate()}/${d.getMonth() + 1}`);
+export function festCalendarHTML(game) {
+  const F = game.festivals; if (!F || !F.upcoming) return '';
+  const isNew = new Set(F.list().filter(f => f.isNew).map(f => f.id)), list = F.upcoming().map(n => ({ ...n, isNew: isNew.has(n.F.id) })), today = list.filter(n => n.on), soon = list.filter(n => !n.on).slice(0, 12), show = F.showTime();
+  const SHOW = { fireworks: ['Fireworks', 'Pháo hoa'], lanterns: ['Lantern parade', 'Rước đèn'], parade: ['Parade', 'Diễu hành'], lights: ['Light show', 'Trình diễn ánh sáng'] };
+  const plan = f => f.kind === 'quiet' ? `<li><b>${T('All day', 'Cả ngày')}</b> ${T('A quiet day of remembering', 'Một ngày yên lặng để tưởng nhớ')}</li>`
+    : `<li><b>08:00</b> ${T('A present at the festival table', 'Nhận quà ở bàn lễ hội')}</li><li><b>15:00</b> ${T('The festival game', 'Trò chơi lễ hội')}</li>${f.show && f.show !== 'none' ? `<li><b>${show}</b> ${T(...SHOW[f.show])}</li>` : ''}`;
+  const card = n => `<div class="fcal-today"><span class="fi">${pic(n.F.icon)}</span><div><b>${esc(T(n.F.en, n.F.vi))}</b><ul class="fplan">${plan(n.F)}</ul><button class="btn" data-fest="${n.F.id}">${T('Go there', 'Đến đó')}</button></div></div>`;
+  const row = n => { const gr = n.F.group === 'vn' ? 'vn' : n.F.group === 'au' ? 'au' : 'west', ready = n.daysTo <= (n.F.kind === 'quiet' ? 3 : 21);
+    return `<button class="fcal-row ${gr}${ready ? ' ready' : ''}" data-fest="${n.F.id}"><span class="fi">${pic(n.F.icon)}</span><b>${esc(T(n.F.en, n.F.vi))}${n.isNew ? ` <i class="newtag">${T('New', 'Mới')}</i>` : ''}</b><small>${dayLabel(n.start)}</small><em>${n.daysTo === 1 ? T('tomorrow', 'ngày mai') : T(`in ${n.daysTo} days`, `còn ${n.daysTo} ngày`)}${ready ? ' · ' + T('getting ready', 'đang trang trí') : ''}</em></button>`; };
+  return `${today.length ? `<h3>${T('Today', 'Hôm nay')}</h3>${today.map(card).join('')}` : ''}
+    <h3>${T('Coming up', 'Sắp tới')}</h3><div class="fcal-list">${soon.map(row).join('')}</div>
+    <p class="note">${T('Tap one to visit it now: the village decorates and you get a festival present.', 'Chạm vào một lễ hội để đến ngay: làng trang trí và con nhận quà lễ hội.')}</p>`;
+}
+
 // choose a festival to visit (any day of the year)
 export function openFestivals(game, i) {
-  const m = modal('festpick', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎉 ${T('Festivals', 'Lễ hội')}</h2>
-    <p class="sub">${T('Pick a festival: the village gets ready, fireworks go up and you get a festival present.', 'Chọn một lễ hội: làng trang trí, pháo hoa bay lên và con nhận quà lễ hội.')}</p>
-    <div class="festgrid">${game.festivals.list().map(f => `<button class="festbtn${f.today ? ' today' : ''}" data-fest="${f.id}"><span>${pic(f.icon)}</span><b>${esc(f.name)}</b>${f.today ? `<small>${T('Today!', 'Hôm nay!')}</small>` : ''}</button>`).join('')}</div>`);
+  const m = modal('festpick', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>📅 ${T('Festival calendar', 'Lịch lễ hội')}</h2>${festCalendarHTML(game)}`);
   const done = () => { m.close(); game.paused = false; };
   m.querySelector('.x').onclick = done;
   m.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); done(); game.festivals.visit(i, b.dataset.fest); });
   // the one place for festivals (round M, owner): which festival decorates the whole valley is here too, for grown-ups
   // (press and hold, as everywhere): by the calendar on this device, one festival all the time, or none
   const card = m.querySelector('.card'), box = el('div', 'fest-grown');
-  const deco = () => { box.innerHTML = `<h3>🏮 ${T('Festival decorations in the valley', 'Trang trí lễ hội trong thung lũng')}</h3><p class="note">${T('By date follows the calendar on this device: Tết, Mid-Autumn, Diwali, Christmas and Australia Day.', 'Theo lịch là theo lịch của máy này: Tết, Trung Thu, Diwali, Giáng Sinh và Ngày Nước Úc.')}</p>
-    <div class="seg fest">${[['auto', T('By date', 'Theo lịch')], ['tet', '🧧 Tết'], ['midautumn', '🥮 ' + T('Mid-Autumn', 'Trung Thu')], ['diwali', '🪔 Diwali'], ['christmas', '🎄 ' + T('Christmas', 'Giáng Sinh')], ['ausday', '🇦🇺 ' + T('Australia Day', 'Ngày Nước Úc')], ['none', T('Off', 'Tắt')]].map(([k, l]) => `<button data-f="${k}" class="${(settings.festival || 'auto') === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
-    box.querySelectorAll('.seg.fest button').forEach(b => b.onclick = () => { SFX.tap(); settings.festival = b.dataset.f; saveSettings(); window.__sv && window.__sv.festivals && window.__sv.festivals.rebuild(); deco(); }); };
+  const deco = () => { box.innerHTML = `<h3>🏮 ${T('Festival decorations in the valley', 'Trang trí lễ hội trong thung lũng')}</h3><p class="note">${T('By date follows the calendar: each festival decorates its own places for 3 weeks before (a few days for quiet days).', 'Theo lịch: mỗi lễ hội trang trí nơi của nó 3 tuần trước ngày lễ (ngày yên lặng thì vài ngày).')}</p>
+    <select class="fest-pick">${[['auto', T('By date', 'Theo lịch')], ['none', T('Off', 'Tắt')], ...game.festivals.list().map(f => [f.id, f.name])].map(([v, l]) => `<option value="${v}" ${(settings.festival || 'auto') === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+    box.querySelector('.fest-pick').onchange = e => { SFX.tap(); settings.festival = e.target.value; saveSettings(); window.__sv && window.__sv.festivals && window.__sv.festivals.rebuild(); }; };
   box.innerHTML = `<button class="grown fest-hold"><span class="ring"></span>🔒 <b>${T('Grown-ups: festival decorations', 'Người lớn: trang trí lễ hội')}</b> <small>${T('press and hold', 'nhấn giữ')}</small></button>`;
   card.appendChild(box); holdButton(box.querySelector('.fest-hold'), () => { SFX.chime && SFX.chime(); deco(); });
   say('Which festival shall we visit?', 'Mình đi lễ hội nào nhé?');
@@ -443,7 +509,7 @@ export function openEditor(profile, after) {
   const look = Object.assign({}, p.look);
   let photo = p.photo, img = null, zoom = 1, ox = 0, oy = 0;
   const m = modal('editor', `
-    <h2>${isNew ? T('New player', 'Người chơi mới') : T('Edit player', 'Sửa người chơi')}</h2>
+    <h2>${isNew ? T('Make a character', 'Tạo nhân vật') : T('Edit player', 'Sửa người chơi')}</h2>
     <div class="crop-wrap"><canvas id="crop" width="480" height="480"></canvas>
       <p class="note">${T('Use a close-up photo of their face. Drag to move, use the slider to zoom.', 'Dùng ảnh chụp gần khuôn mặt. Kéo để di chuyển, dùng thanh trượt để phóng to.')}</p>
       <label class="btn primary" for="file">📷 ${T('Take or choose a photo', 'Chụp hoặc chọn ảnh')}</label><input type="file" id="file" accept="image/*" class="vh">
@@ -527,7 +593,8 @@ export function openEditor(profile, after) {
   m.querySelector('#eSave').onclick = () => finish(true);
   m.querySelector('#eCancel').onclick = () => finish(false);
   const del = m.querySelector('#eDel');
-  if (del) del.onclick = () => { if (profiles.length <= 1) return toast(T('Keep at least one player.', 'Cần giữ ít nhất một người chơi.')); if (confirm(T(`Remove ${p.name} and all their progress?`, `Xóa ${p.name} và toàn bộ tiến trình?`))) { removeProfile(p.id); m.close(); after && after(); } };
+  // (the last player can go too: the next start asks for a new character, round P)
+  if (del) del.onclick = () => { if (confirm(T(`Remove ${p.name} and all their progress?`, `Xóa ${p.name} và toàn bộ tiến trình?`))) { removeProfile(p.id); m.close(); after && after(); } };
 }
 
 // (windows, NPC dialogue, the reward pop-up and confetti live in js/popups.js since architecture step 2; passed on from here)
@@ -535,12 +602,21 @@ export { modal, dialog, dialogHooks, reward } from './popups.js';
 import { modal, dialog, dialogHooks, reward } from './popups.js';
 
 // ---------- the Sparkle Pad ----------
+// which place each landmark belongs to in the real world (the Pad map lists it under that place)
+const LANDMARK_HOME = { bnclock: 'bacninh', chuadau: 'bacninh', butthap: 'bacninh', dendo: 'bacninh', quanho: 'bacninh',
+  turtle: 'hanoi', onepillar: 'hanoi', vanmieu: 'hanoi', puppettheatre: 'hanoi', thehuc: 'hanoi', halong: 'hanoi', trangan: 'hanoi',
+  dragonbridge: 'danang', goldenbridge: 'danang', marble: 'danang', hoian: 'danang', chuacau: 'danang', myson: 'danang', hue: 'danang', phongnha: 'danang',
+  benthanh: 'saigon', cathedral: 'saigon', postoffice: 'saigon', cairang: 'saigon', bachdinh: 'saigon', nhatron: 'saigon', lighthouse: 'saigon',
+  wheel: 'brisbane', lonepine: 'brisbane', storybridge: 'brisbane', reef: 'brisbane', banana: 'sydney',
+  opera: 'sydney', harbour: 'sydney', sydneytower: 'sydney', lunapark: 'sydney', bondi: 'sydney', sisters: 'sydney',
+  flinders: 'melbourne', wtram: 'melbourne', exhibition: 'melbourne', apostles: 'melbourne', kakadu: 'uluru', uluru: 'uluru',
+  forbidden: 'china', heaven: 'china', terracotta: 'china', potala: 'china', qutub: 'india', redfort: 'india', konark: 'india', hampi: 'india', mahabodhi: 'india' };
 export function openPad(game, i, tab) {
   tab = tab || 'map';
   const hero = game.heroes[i], p = hero.profile;
   const m = modal('pad', '');
   const card = m.querySelector('.card');
-  const TABS = [['map', '🗺️', T('Map', 'Bản đồ')], ['bag', '🎒', T('Backpack', 'Ba lô')], ['log', '📜', T('Adventures', 'Nhiệm vụ')], ['album', '⭐', T('Album', 'Bộ sưu tập')], ['passport', '🛂', T('Passport', 'Hộ chiếu')], ['games', '🎲', T('Games', 'Trò chơi')], ['cam', '📷', T('Camera', 'Máy ảnh')]];
+  const TABS = [['map', '🗺️', T('Map', 'Bản đồ')], ['bag', '🎒', T('Backpack', 'Ba lô')], ['log', '📜', T('Adventures', 'Nhiệm vụ')], ['album', '⭐', T('Album', 'Bộ sưu tập')], ['passport', '🛂', T('Passport', 'Hộ chiếu')], ['games', '🎲', T('Games', 'Trò chơi')], ['cam', '📷', T('Camera', 'Máy ảnh')], ['cal', '📅', T('Festivals', 'Lễ hội')]];
   if (game.mode === 'online' || game.mode === 'solo') TABS.push(['friend', '📞', T('Friend', 'Bạn bè')]);
   const draw = () => {
     const sl = card.querySelector('.pad-tabs') ? card.querySelector('.pad-tabs').scrollLeft : 0;
@@ -549,7 +625,7 @@ export function openPad(game, i, tab) {
     card.querySelectorAll('.pad-tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; SFX.tap(); draw(); });
     card.querySelector('.x').onclick = close;
     const body = card.querySelector('.pad-body');
-    ({ map: drawMap, bag: drawBag, log: drawLog, album: drawAlbum, games: drawGames, cam: drawCam, friend: drawFriend, passport: b => game.drawPassport(b, hero) })[tab](body);
+    ({ map: drawMap, bag: drawBag, log: drawLog, album: drawAlbum, games: drawGames, cam: drawCam, friend: drawFriend, passport: b => game.drawPassport(b, hero), cal: drawCal })[tab](body);
   };
   // computer keyboards: 1–8 pick a tab, ← → step through them, Esc closes
   const onKey = e => {
@@ -570,15 +646,26 @@ export function openPad(game, i, tab) {
     // picked from chips (the full list was too long to scroll)
     const GROUPS = [['home', '🏡', T('Our valley', 'Thung lũng nhà mình')], ['vn', '🇻🇳', T('Vietnam', 'Việt Nam')], ['au', '🇦🇺', T('Australia', 'Nước Úc')], ['asia', '🌏', T('China and India', 'Trung Quốc và Ấn Độ')], ['homes', '🏠', T('Homes', 'Nhà')]];
     const named = game.homes ? game.homes.list.filter(hm => hm.H) : [];
-    const itemsOf = g => g === 'homes' ? named.map(hm => ({ icon: '🏠', name: hm.name, go: () => game.landBy(hero, hm.door.x, hm.door.z) }))
-      : game.PLACES.filter(pl => (pl.g || 'home') === g).sort((a, b) => a.z - b.z).map(pl => ({ icon: pl.icon, name: pl.name, go: () => game.travelTo(hero, pl.x, pl.z) }));
+    // (round R, owner: "the map and its destinations should be more logical") each country's places from north to south
+    // like the real map; under each place, what really belongs to it: its landmarks by real geography (Hạ Long and Tràng
+    // An with Hà Nội in the north, Huế and Hội An with Đà Nẵng in the centre, the Mekong with Sài Gòn), a shop or a stage
+    const itemsOf = g => {
+      if (g === 'homes') return named.map(hm => ({ icon: '🏠', name: hm.name, go: () => game.landBy(hero, hm.door.x, hm.door.z) }));
+      const all = game.PLACES.filter(pl => (pl.g || 'home') === g), tops = all.filter(pl => !pl.under).sort((a, b) => a.z - b.z), lms = game.LANDMARKS || [], out = [];
+      for (const t of tops) {
+        out.push({ icon: t.icon, name: t.name, go: () => game.travelTo(hero, t.x, t.z) });
+        all.filter(pl => pl.under && pl.under === t.key).forEach(pl => out.push({ sub: true, icon: pl.icon, name: pl.name, go: () => game.travelTo(hero, pl.x, pl.z) }));
+        lms.filter(l => LANDMARK_HOME[l.id] === t.key).forEach(l => out.push({ sub: true, icon: l.icon, name: l.name, go: () => game.travelTo(hero, l.x, l.z) }));
+      }
+      return out;
+    };
     const groups = GROUPS.filter(([g]) => itemsOf(g).length);
     let gsel = groups.find(([g]) => g === openPad.mapLast) ? openPad.mapLast : groups[0][0];
     const chips = el('div', 'hubtabs mapchips'), list = el('div', 'quick');
     groups.forEach(([g, gi, gname]) => { const c = el('button', '', `<span>${pic(gi)}</span><small>${esc(gname)}</small>`); c.dataset.g = g; c.onclick = () => { gsel = openPad.mapLast = g; SFX.tap(); fill(); }; chips.appendChild(c); });
     const fill = () => {
       chips.querySelectorAll('button').forEach(c => c.classList.toggle('on', c.dataset.g === gsel)); list.innerHTML = '';
-      itemsOf(gsel).forEach(it => { const b = el('button', 'qbtn', `<span>${pic(it.icon)}</span><small>${esc(it.name())}</small>`); b.onclick = () => { close(); it.go(); }; list.appendChild(b); });
+      itemsOf(gsel).forEach(it => { const b = el('button', 'qbtn' + (it.sub ? ' sub' : ''), `<span>${pic(it.icon)}</span><small>${esc(it.name())}</small>`); b.onclick = () => { close(); it.go(); }; list.appendChild(b); });
     };
     body.appendChild(chips); body.appendChild(list); fill();
     const quick = el('div', 'quick'); const ch = el('button', 'qbtn change', `<span>🔄</span><small>${T('Change player', 'Đổi người chơi')}</small>`); ch.onclick = () => { close(); game.changePlayer(); }; quick.appendChild(ch);
@@ -609,7 +696,7 @@ export function openPad(game, i, tab) {
       spots.push({ x: P.pos.x, z: P.pos.z, name: P.name, r: 16, friend: P.id });
     });
     cv.onclick = e => {
-      const r = cv.getBoundingClientRect(), wx = (e.clientX - r.left) / r.width * SIZE - HALF, wz = (e.clientY - r.top) / r.height * SIZE - HALF;
+      const q = local(cv, e), r = q.r, wx = q.x / r.width * SIZE - HALF, wz = q.y / r.height * SIZE - HALF;
       const s = spots.slice().sort((a, b) => Math.hypot(a.x - wx, a.z - wz) - Math.hypot(b.x - wx, b.z - wz)).find(s => Math.hypot(s.x - wx, s.z - wz) < (s.r || 10)); if (!s) return;
       const ok = el('div', 'travel', `<p>${T('Travel to', 'Bay đến')} <b>${esc(s.name)}</b>?</p><button class="btn primary">✨ ${T('Fly there', 'Bay đến đó')}</button><button class="btn walk">👣 ${T('Walk there', 'Đi bộ đến đó')}</button><button class="btn no">${T('No', 'Không')}</button>`);
       body.appendChild(ok);
@@ -631,7 +718,7 @@ export function openPad(game, i, tab) {
     const bought = Object.entries(p.bought || {}).filter(([id, n]) => n > 0 && snackOf(id));
     const dishes = Object.entries(p.dishes).filter(([, n]) => n > 0);
     body.innerHTML = `
-      <button class="btn wide" id="bagPets">🐾 ${T('My pets', 'Thú cưng của con')}: ${(p.pets || []).map(pt => (PET_ICON[pt.kind] || '🐾') + ' ' + esc(pt.name || '')).join('  ')}</button>
+      ${(p.pets || []).length ? `<button class="btn wide" id="bagPets">🐾 ${T('My pets', 'Thú cưng của con')}: ${(p.pets || []).map(pt => (PET_ICON[pt.kind] || '🐾') + ' ' + esc(pt.name || '')).join('  ')}</button>` : ''}
       <div class="bag-top"><span class="chip">💰 ${fmt(farm.coins)}</span><span class="chip">🔮 ${p.orbs} ${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}</span><span class="chip">🍃 ${Object.keys(p.leafies).length}/24 Leafies</span></div>
       <h3>${T('Food', 'Món ăn')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
       <div class="slots">${dishes.map(([id, n]) => { const r = dishInfo(id) || { icon: '🥘', name: () => T('Mystery stew', 'Món hầm bí ẩn') }; return `<button class="slot" data-eat="${id}" title="${esc(r.name())}"><span>${r.icon}</span><b>${n}</b><small>${esc(r.name())}</small></button>`; }).join('') || `<p class="note">${T('Cook at a cooking pot to make food.', 'Nấu ăn ở nồi nấu để có món ăn.')}</p>`}</div>
@@ -656,17 +743,22 @@ export function openPad(game, i, tab) {
       sellPick = null; p.inv[id]--; if (p.inv[id] <= 0) delete p.inv[id]; farm.coins += w.sell; saveFarm(); game.save(); SFX.coin();
       say(`Sold! Now you have ${money(farm.coins)}.`, `Bán rồi! Giờ con có ${money(farm.coins)}.`); game.job && game.job('sell', 1, hero); draw();
     });
-    body.querySelector('#bagPets').onclick = () => { m.close(); game.closePad(i); setTimeout(() => game.pets.openAdopt(hero), 220); };
+    if (body.querySelector('#bagPets')) body.querySelector('#bagPets').onclick = () => { m.close(); game.closePad(i); setTimeout(() => game.pets.openAdopt(hero), 220); };
     body.querySelectorAll('[data-hat]').forEach(b => b.onclick = () => { p.look.hat = b.dataset.hat; saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); });
     body.querySelectorAll('[data-kite]').forEach(b => b.onclick = () => { p.kiteOn = p.kiteOn === false; saveProfiles(); game.kites.sync(); SFX.ok(); if (p.kiteOn) game.kites.whistle(hero); draw(); });
     body.querySelectorAll('[data-whistle]').forEach(b => b.onclick = () => { game.kites.whistle(hero); });
     body.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { p.look.glider = +b.dataset.gl; saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); });
   }
+  // (round R, owner 9 Oct) side stories in their own list: the child picks one to follow on the goal bar
+  const sideHTML = () => { const list = game.sideStories ? game.sideStories() : []; if (!list.length) return '';
+    return `<h3>${T('Side stories', 'Truyện phụ')}</h3><div class="sides">${list.map(sd => { const st = sd.status(p), on = p.follow === sd.id;
+      return `<div class="side ${st.done ? 'done' : ''}"><span>${pic(sd.icon)}</span><div><b>${esc(sd.title())}</b><small>${st.done ? T('Finished!', 'Xong rồi!') : esc(st.step)}</small></div>${st.done || !st.started ? '' : `<button class="btn ${on ? 'on' : ''}" data-follow="${sd.id}">${on ? T('Following', 'Đang theo') : T('Follow', 'Theo truyện này')}</button>`}</div>`; }).join('')}</div>`; };
   function drawLog(body) {
     const next = game.currentQuest(p);
-    body.innerHTML = (game.coop ? game.coop.html() : '') + (game.chests ? game.chests.html(p) : '') + `<h3>${T('Main adventure', 'Cuộc phiêu lưu chính')}</h3><ol class="quests">${QUESTS.map(q => { const done = !!p.quests[q.id] || (q.check && q.check(p)); return `<li class="${done ? 'done' : q === next ? 'now' : ''}"><span>${done ? '✅' : q.icon}</span>${esc(q.title())}</li>`; }).join('')}</ol>
+    body.innerHTML = sideHTML() + (game.coop ? game.coop.html() : '') + (game.chests ? game.chests.html(p) : '') + `<h3>${T('Main adventure', 'Cuộc phiêu lưu chính')}</h3><ol class="quests">${QUESTS.map(q => { const done = !!p.quests[q.id] || (q.check && q.check(p)); return `<li class="${done ? 'done' : q === next ? 'now' : ''}"><span>${done ? '✅' : q.icon}</span>${esc(q.title())}</li>`; }).join('')}</ol>
       <p class="note">✨ ${T('Shrines solved', 'Đền đã giải')}: ${Object.keys(p.shrines).length}/12 · 🗼 ${T('Towers', 'Tháp')}: ${Object.keys(p.towers).length}/4 · 🍳 ${T('Recipes', 'Công thức')}: ${Object.keys(p.dishes).length}/${RECIPES.length}</p>
       <h3>${T('Recipe book', 'Sổ công thức')}</h3><div class="recipes">${RECIPES.map(r => { const known = p.dishes[r.id] != null; return `<div class="rec ${known ? '' : 'unk'}"><span>${known ? r.icon : '❔'}</span><small>${known ? esc(r.name()) : r.need.map((n, k) => k === 0 ? ITEMS[n].icon : '❔').join(' + ')}</small></div>`; }).join('')}</div>`;
+    body.querySelectorAll('[data-follow]').forEach(b => b.onclick = () => { p.follow = p.follow === b.dataset.follow ? null : b.dataset.follow; saveProfiles(); SFX.ok(); game.checkQuests && game.checkQuests(hero); draw(); });
   }
   function drawAlbum(body) {
     const sec = p.secrets || {};
@@ -707,6 +799,11 @@ export function openPad(game, i, tab) {
     if (how === 'downloaded') toast(T('Saved to the phone: look in Photos or Gallery (Downloads).', 'Đã lưu vào máy: xem trong Ảnh hoặc Thư viện (Tải về).'));
     if (how === 'failed') toast(T('Could not save the picture on this device.', 'Không lưu được ảnh trên máy này.'));
   }
+  // the festival calendar (round R): tap a festival to go there now
+  function drawCal(body) {
+    body.innerHTML = `<div class="fcal">${festCalendarHTML(game)}</div>`;
+    body.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.festivals.visit(i, b.dataset.fest); });
+  }
   function drawCam(body) {
     const howTo = savesByShare() ? T('Then tap “Save to my photos” and choose “Save Image”.', 'Rồi chạm “Lưu vào ảnh của máy” và chọn “Lưu hình ảnh”.') : T('Then tap “Save to my photos”.', 'Rồi chạm “Lưu vào ảnh của máy”.');
     body.innerHTML = `<div class="cam-prev"></div><div class="actions center"><button class="btn primary big" id="snap">📷 ${T('Take picture', 'Chụp ảnh')}</button><button class="btn big" id="toPhone" hidden>📲 ${T('Save to my photos', 'Lưu vào ảnh của máy')}</button></div><p class="note center">${T('Pictures are kept in your Album.', 'Ảnh được giữ trong Bộ sưu tập.')} ${howTo}</p>`;
@@ -722,7 +819,15 @@ export function openPad(game, i, tab) {
     };
     body.querySelector('#toPhone').onclick = () => { if (big) { SFX.tap(); savePhoto(big); } };
   }
-  function drawFriend(body) { game.drawOnlinePanel(body, () => draw()); }
+  // Friends redraws only its own page, never the tabs and ✕; while a finger is down it waits (round O, owner: the
+  // screen got stuck: it was rebuilt whole as the signal changed, so taps landed on buttons that had just gone)
+  function drawFriend(body) {
+    let down = false, again = 0;
+    body.addEventListener('pointerdown', () => { down = true; }, true);
+    addEventListener('pointerup', () => { down = false; }, true);
+    const redraw = () => { clearTimeout(again); if (!body.isConnected) return; if (down) { again = setTimeout(redraw, 300); return; } game.drawOnlinePanel(body, redraw); };
+    game.drawOnlinePanel(body, redraw);
+  }
   draw();
   return { close };
 }
@@ -883,18 +988,27 @@ export function openRecorder(after) {
 }
 
 // ---------- Games hub ----------
-export const folkGames = () => HUB.find(h => h.key === 'folk').games; // the traditional games (js/folkshow.js runs them on a time table)
-export const HUB = [
-  { key: 'learn', icon: '📚', short: () => T('Learning', 'Học'), title: () => T('Learning: numbers, letters, time and more', 'Học: số, chữ, xem giờ và nhiều nữa'), games: ['familyquiz', 'counting', 'numbers', 'sums', 'letters', 'phonics', 'clock', 'shapes', 'colors', 'opposites', 'animalsounds', 'feelings', 'moreless', 'days', 'bodyparts', 'words', 'firstwords', 'pattern', 'sorting', 'memory'] },
-  { key: 'folk', icon: '🪁', short: () => T('Folk games', 'Dân gian'), title: () => T('Folk games of Australia, Vietnam, China and India', 'Trò chơi dân gian Úc, Việt Nam, Trung Quốc và Ấn Độ'), games: ['music', 'firstwords', 'tangram', 'snakes', 'rangoli', 'words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'tienlen', 'oantuti', 'nemlon', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'] },
-  { key: 'cities', icon: '🏙️', short: () => T('Cities', 'Thành phố'), title: () => T('In the cities of Vietnam and Australia', 'Ở các thành phố Việt Nam và Úc'), games: ['puppets', 'dongho', 'dragonfire', 'traffic', 'ferries', 'tram', 'koala'] },
-  { key: 'farm', icon: '🏡', short: () => T('Farm', 'Nông trại'), title: () => T('At the farm', 'Ở nông trại'), games: ['bunny', 'eggs', 'balloon', 'bubbles', 'jigsaw', 'tower', 'order', 'sortout', 'duckmaze'] },
-  { key: 'village', icon: '🏮', short: () => T('Village', 'Làng Sen'), title: () => T('In Lotus Village', 'Ở Làng Sen'), games: ['market', 'tune', 'shapes', 'oddone', 'memory'] },
-  { key: 'shrine', icon: '✨', short: () => T('Puzzles', 'Đố vui'), title: () => T('Puzzle shrines', 'Đền đố vui'), games: ['pattern', 'counting', 'letters', 'numbers', 'colors', 'sorting', 'sudoku', 'hanoi', 'robot', 'maze'] }
+// the traditional games Lotus Village's hội làng runs on its time table (js/folkshow.js); unchanged in round R
+const FOLK_SHOW = ['music', 'firstwords', 'tangram', 'snakes', 'rangoli', 'words', 'mrwolf', 'cricket', 'parcel', 'sackrace', 'chuyen', 'dragon', 'datnieu', 'kite', 'chichi', 'marbles', 'skipping', 'dacau', 'snap', 'tienlen', 'oantuti', 'nemlon', 'oanquan', 'hopscotch', 'tug', 'caro', 'goat'];
+export const folkGames = () => FOLK_SHOW;
+// The Play hub's game tabs (round R, owner: "rearrange the menu so it is more logical"). Every game is in exactly one
+// tab, by what kind of game it is, from the same list as the Simple screen's areas (js/content/activities.js), so a
+// game the family moves in Studio moves in both. Inside a tab the games are grouped under their area's name.
+const HUB_TABS = [
+  { key: 'learn', icon: '📚', short: () => T('Learning', 'Học'), title: () => T('Numbers, letters, shapes and me', 'Số, chữ, hình và em'), areas: ['numbers', 'words', 'shapes', 'me'] },
+  { key: 'folk', icon: '🪁', short: () => T('Folk games', 'Dân gian'), title: () => T('Folk games to play together', 'Trò chơi dân gian chơi cùng nhau'), areas: ['vietnam', 'play'] },
+  { key: 'animals', icon: '🐶', short: () => T('Animals and music', 'Con vật, âm nhạc'), title: () => T('Animals and music', 'Con vật và âm nhạc'), areas: ['animals', 'music'] },
+  { key: 'art', icon: '🎨', short: () => T('Pictures', 'Tranh'), title: () => T('Colours, pictures and puzzles', 'Màu sắc, tranh và ghép hình'), areas: ['art'] },
+  { key: 'places', icon: '🚋', short: () => T('Going places', 'Đi đây đi đó'), title: () => T('Games in the cities and on the road', 'Trò chơi ở thành phố và trên đường'), areas: ['travel'] },
+  { key: 'thinking', icon: '🧠', short: () => T('Big thinkers', 'Suy nghĩ giỏi'), title: () => T('Big thinkers: puzzles and strategy', 'Suy nghĩ giỏi: đố và chiến thuật'), areas: ['thinking'] }
 ];
+const AREA_OF = Object.fromEntries(AREAS.map(a => [a.key, a]));
+// each tab with its games (built when asked, so the family's Studio changes are in it)
+const hubSections = () => HUB_TABS.map(t => ({ ...t, groups: t.areas.map(a => ({ area: AREA_OF[a], games: gamesIn(GAMES, a, false).map(g => g.id) })).filter(g => g.games.length) })).map(t => ({ ...t, games: t.groups.flatMap(g => g.games) }));
+export const HUB = HUB_TABS;
 // The game after this one in the Games hub (the tab the child last used first), for "Next game" after a win.
 export function nextGameAfter(id) {
-  const secs = [...HUB].sort((a, b) => (b.key === openGamesHub.last) - (a.key === openGamesHub.last));
+  const secs = hubSections().sort((a, b) => (b.key === openGamesHub.last) - (a.key === openGamesHub.last));
   for (const sec of secs) { const list = sec.games.filter(g => GAMES[g]), k = list.indexOf(id); if (k >= 0) return list[(k + 1) % list.length]; }
   return null;
 }
@@ -904,18 +1018,25 @@ export function openGamesHub(game, i, onClose) {
   const m = modal('hub', ''), card = m.querySelector('.card');
   const close = () => { m.close(); onClose && onClose(); };
   // one category at a time, picked from a row of tabs (the whole list was too long to scroll on a phone)
-  const tabs = [...(game.festivals ? [{ key: 'fest', icon: '🎉', short: () => T('Festivals', 'Lễ hội') }] : []), ...HUB, ...(game.taleShelfHTML ? [{ key: 'tales', icon: '📖', short: () => T('Stories', 'Truyện') }] : [])];
+  // games first (by kind), then things to watch and listen to, then the festival calendar
+  const SECS = hubSections();
+  const tabs = [...SECS, ...(game.taleShelfHTML ? [{ key: 'tales', icon: '📖', short: () => T('Stories', 'Truyện') }] : []), ...(game.openSongs ? [{ key: 'songs', icon: '🎵', short: () => T('Songs', 'Bài hát') }] : []), ...(game.festivals ? [{ key: 'fest', icon: '📅', short: () => T('Festivals', 'Lễ hội') }] : [])];
   let cur = tabs.find(t => t.key === openGamesHub.last) ? openGamesHub.last : 'learn';
   const card2 = sec => `<div class="hubgrid">${sec.games.filter(id => GAMES[id]).map((id, k) => {
       const g = GAMES[id], lv = p.levels[id] || 1;
       return `<div class="hcard" style="--hc:${HUB_COLORS[(k + sec.key.length) % HUB_COLORS.length]}"><button class="hplay" data-play="${id}"><span class="hi">${pic(g.icon)}</span><b>${esc(g.name())}</b><small>${'⭐'.repeat(lv)}${'☆'.repeat(5 - lv)}</small></button><button class="hgo" data-go="${id}" aria-label="${T('Go there', 'Đi đến đó')}">📍</button><button class="hhow" data-how="${id}" aria-label="${T('How to play', 'Cách chơi')}">📺</button>${g.origin ? `<span class="hflag">${originFlags(g.origin)}</span>` : ''}</div>`;
     }).join('')}</div>`;
   const body = key => {
-    if (key === 'fest') return `<h3>🎉 ${T('Festivals: go any day', 'Lễ hội: đi ngày nào cũng được')}</h3><div class="festrow">${game.festivals.list().map(f => `<button class="festbtn${f.today ? ' today' : ''}" data-fest="${f.id}"><span>${pic(f.icon)}</span><b>${esc(f.name)}</b>${f.today ? `<small>${T('Today!', 'Hôm nay!')}</small>` : ''}</button>`).join('')}</div>`;
+    if (key === 'fest') return `<h3>📅 ${T('Festival calendar', 'Lịch lễ hội')}</h3>${festCalendarHTML(game)}`;
     if (key === 'tales') return `<h3>📖 ${T('Fairy tales', 'Truyện cổ tích')}</h3><p class="sub">${T('Tap a story: you fly to Grandma Storyteller and she reads it to you.', 'Chạm vào truyện: con bay đến chỗ Bà Kể Chuyện và bà kể cho con nghe.')}</p><div class="talelib">${game.taleShelfHTML(p)}</div>`;
-    const sec = HUB.find(x => x.key === key); return `<h3>${sec.icon} ${esc(sec.title())}</h3>${card2(sec)}`;
+    if (key === 'songs') {
+      // (round O, owner: songs belong with the games, not in Settings) one big button per group; it opens the Songs page there
+      const fam = familySongs().length, groups = SONG_GROUPS.filter(g => g.key === 'family' ? fam : SONG_LIST.some(s => s.group === g.key && Music.has(s.key)));
+      return `<h3>🎵 ${T('Songs: tap to listen', 'Bài hát: chạm để nghe')}</h3><div class="festrow songrow">${groups.map(g => `<button class="festbtn" data-songs="${g.key}"><span>${pic(g.icon)}</span><b>${esc(g.name())}</b></button>`).join('')}</div>`;
+    }
+    const sec = SECS.find(x => x.key === key) || SECS[0]; return `<h3>${sec.icon} ${esc(sec.title())}</h3>${sec.groups.map(g => `${sec.groups.length > 1 ? `<h4 class="hubarea">${pic(g.area.icon)} ${esc(g.area.name())}</h4>` : ''}${card2({ key: sec.key + g.area.key, games: g.games })}`).join('')}`;
   };
-  card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎮 ${T('Games', 'Trò chơi')}</h2>
+  card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🎮 ${T('Play', 'Vui chơi')}</h2>
     <div class="hubtabs" role="tablist">${tabs.map(t => `<button role="tab" data-tab="${t.key}"><span>${pic(t.icon)}</span><small>${esc(t.short())}</small></button>`).join('')}</div>
     <div class="hubbody"></div>`;
   const draw = () => {
@@ -928,6 +1049,7 @@ export function openGamesHub(game, i, onClose) {
   const bind = root => {
     root.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { close(); game.readTale(i, b.dataset.tale); });
     root.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.festivals.visit(i, b.dataset.fest); });
+    root.querySelectorAll('[data-songs]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.openSongs(b.dataset.songs); });
     root.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); game.meetAndPlay(i, id); });
     root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { close(); game.goToGame(i, b.dataset.go); });
     root.querySelectorAll('[data-how]').forEach(b => b.onclick = () => { const id = b.dataset.how; openHowTo(id, { onPlay: () => { close(); game.playGame(i, id, 'place'); } }); });

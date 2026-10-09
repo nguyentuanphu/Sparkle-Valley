@@ -4,7 +4,7 @@
 //   node run.mjs --update-contract                     re-record the UI structure (only when the owner asked for a UI change)
 // Multiplayer runs when a local PeerJS server is up on 127.0.0.1:9000 (see the README in this folder).
 import fs from 'fs';
-import { launch, open, clear, start, URL } from './harness.mjs';
+import { launch, open, clear, start, URL, seedPlayers } from './harness.mjs';
 import { groundAudit } from './world-audit.mjs';
 import { studioCheck } from './studio-check.mjs';
 
@@ -15,7 +15,14 @@ const check = async (name, fn) => {
   if (!want(name)) return;
   const t0 = Date.now();
   try { const note = await fn(); results.push([name, true, note || '']); console.log(`✅ ${name} (${((Date.now() - t0) / 1000).toFixed(0)}s) ${note || ''}`); }
-  catch (e) { results.push([name, false, e.message]); console.log(`❌ ${name}: ${e.message}`); }
+  catch (e) {
+    results.push([name, false, e.message]); console.log(`❌ ${name}: ${e.message}`);
+    // a picture of what was on screen when it failed (out/fail-<check>.png)
+    try { const pg = b.contexts().flatMap(c => c.pages()).pop(); if (pg) await pg.screenshot({ path: `out/fail-${name}.png`, timeout: 10000 }); } catch (e2) { }
+  }
+  // (round R) close every window the check left open, passed or failed: a failed check's window kept drawing the valley
+  // and slowed every later check until they timed out
+  finally { for (const c of b.contexts()) await c.close().catch(() => { }); }
 };
 const ok = (c, msg) => { if (!c) throw new Error(msg); };
 fs.mkdirSync('out', { recursive: true });
@@ -62,6 +69,53 @@ await check('two-players', async () => {
   const r = await P.page.evaluate(() => ({ heroes: __sv.heroes.length, huds: document.querySelectorAll('.hud').length, pets: __sv.pets.forHero(__sv.heroes[1]).length }));
   await P.page.screenshot({ path: 'out/two-players.png' }); await P.ctx.close();
   ok(r.heroes === 2 && r.huds === 2 && r.pets >= 1, JSON.stringify(r));
+});
+
+// Two players face to face (owner, round R): on a touch screen the far half (and the far player's controls and
+// windows) are turned half a turn so each child at each end sees their half the right way up
+await check('facetoface', async () => {
+  const out = [];
+  for (const [w, h] of [[820, 1180], [1180, 820]]) {
+    const P = await open(b, { w, h, touch: true, mode: 'split' }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      const cv = __sv.renderer.domElement, I = await import('/js/input.js'), q = __sv.rects();
+      const ev = (type, x, y, id) => cv.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, pointerId: id, pointerType: 'touch', bubbles: true }));
+      const far = q[1], near = q[0];
+      ev('pointerdown', far.x + far.w - 60, far.y + far.h / 2, 7); ev('pointermove', far.x + far.w - 60, far.y + far.h / 2 + 40, 7); ev('pointermove', far.x + far.w - 60, far.y + far.h / 2 + 60, 7);
+      const farMz = I.pads[1].mz; ev('pointerup', 0, 0, 7);
+      ev('pointerdown', near.x + 60, near.y + near.h / 2, 8); ev('pointermove', near.x + 60, near.y + near.h / 2 - 40, 8); ev('pointermove', near.x + 60, near.y + near.h / 2 - 60, 8);
+      const nearMz = I.pads[0].mz; ev('pointerup', 0, 0, 8);
+      __sv.lastPlayer = 1; __sv.openPad(1, 'map'); await new Promise(r => setTimeout(r, 400));
+      const turned = !!document.querySelector('.facewrap > *'); document.querySelectorAll('.modal').forEach(m => m.remove());
+      return { rot: q.map(x => x.rot), farTop: far.y === 0, hudFar: __sv.huds[1].root.classList.contains('far'), farMz, nearMz, turned };
+    });
+    if (!(r.rot[0] === 0 && r.rot[1] === 180 && r.farTop && r.hudFar && r.farMz > .9 && r.nearMz > .9 && r.turned)) out.push(`${w}x${h} ${JSON.stringify(r)}`);
+    if (P.errors.length) out.push(`${w}x${h}: ${P.errors.join(' | ')}`);
+    await P.page.screenshot({ path: `out/facetoface-${w}.png` }); await P.ctx.close();
+  }
+  // the children choose: on "Who's playing?" with two players, and with the switch on the line while playing
+  { const P = await open(b, { w: 820, h: 1180, touch: true, play: false });
+    await P.page.click('.screen.title .press', { force: true }); await P.page.waitForSelector('.screen.who');
+    await P.page.click('.modes button[data-m=split]');
+    const views = await P.page.$$eval('.who .views button', bs => bs.map(x => x.dataset.v + (x.classList.contains('on') ? '*' : '')).join(','));
+    await P.page.click('.who .views button[data-v=side]');
+    const picked = await P.page.evaluate(async () => (await import('/js/state.js')).settings.twoView);
+    if (views !== 'face*,side' || picked !== 'side') out.push(`who screen: ${views} → ${picked}`);
+    await P.ctx.close(); }
+  { const P = await open(b, { w: 820, h: 1180, touch: true, mode: 'split' }); await clear(P.page);
+    const before = await P.page.evaluate(() => __sv.rects()[1].rot);
+    await P.page.click('#split .viewsw'); await P.page.waitForTimeout(200);
+    const after = await P.page.evaluate(() => __sv.rects().map(x => x.rot).join(','));
+    await P.page.click('#split .viewsw'); await P.page.waitForTimeout(200);
+    const back = await P.page.evaluate(() => __sv.rects()[1].rot);
+    if (!(before === 180 && after === '0,0' && back === 180)) out.push(`switch: ${before} → ${after} → ${back}`);
+    await P.ctx.close(); }
+  // a computer keeps both halves the same way round, side by side
+  const D = await open(b, { w: 1280, h: 800, mode: 'split' }); await clear(D.page);
+  const side = await D.page.evaluate(() => __sv.rects().map(x => x.rot).join(',') + ' ' + __sv.rects()[1].x); await D.ctx.close();
+  if (side !== '0,0 640') out.push('computer: ' + side);
+  ok(!out.length, out.join(' · '));
+  return 'tablet tall and wide: the far half, its buttons, joystick and windows face the far child; a computer stays side by side; children choose face to face or side by side on Who\'s playing? and with the switch on the line';
 });
 
 await check('games', async () => {
@@ -116,7 +170,7 @@ await check('features', async () => {
   await P.page.evaluate(() => document.querySelector('.th-x')?.click());
   // tapping a game card flies to its host
   await clear(P.page); await P.page.evaluate(() => __sv.openGamesHub(0)); await P.page.waitForTimeout(400);
-  await P.page.evaluate(() => { document.querySelector('.hub [data-tab="cities"]').click(); document.querySelector('[data-play="traffic"]').click(); }); await P.page.waitForTimeout(3500);
+  await P.page.evaluate(() => { document.querySelector('.hub [data-tab="places"]').click(); document.querySelector('[data-play="traffic"]').click(); }); await P.page.waitForTimeout(3500);
   r.flewToHost = await P.page.evaluate(() => { const it = __sv.gameSpot('traffic'), h = __sv.heroes[0]; return Math.hypot(it.x - h.pos.x, it.z - h.pos.z) < 6 && !!document.querySelector('.gl'); });
   // folk-game friends chat: a bubble shows within a few seconds near the playground
   await P.page.evaluate(() => { document.querySelector('.gl .gl-x')?.click(); __sv.heroes[0].place(28, 66); });
@@ -293,9 +347,10 @@ await check('roadshape', async () => {
 });
 
 await check('phone', async () => {
-  // every main screen opened on a desktop and on a phone side by side: nothing spills off the side, every button
-  // (close, play, next…) is fully on the screen, and nothing goes wrong. Bugs that only phones show are caught here.
-  const D = await open(b, { w: 1180, h: 760 }), M = await open(b, { w: 390, h: 760, touch: true, lang: 'vi' });
+  // every main screen opened on a desktop, a phone and a tablet side by side (rule UI-006, owner round P: always check
+  // all three): nothing spills off the side, every button (close, play, next…) is fully on the screen, tab names are
+  // never broken in the middle of a word, windows dim the game without blurring it, and nothing goes wrong
+  const D = await open(b, { w: 1180, h: 760 }), M = await open(b, { w: 390, h: 760, touch: true, lang: 'vi' }), Tb = await open(b, { w: 820, h: 1180, touch: true });
   const SCREENS = [
     ['games hub', () => __sv.openGamesHub(0)], ['map', () => __sv.openPad(0, 'map')], ['bag', () => __sv.openPad(0, 'bag')], ['friends', () => __sv.openPad(0, 'friend')],
     ['quick settings', () => __sv.openQuick(0)], ['wardrobe', () => __sv.openWardrobe(0)],
@@ -305,9 +360,9 @@ await check('phone', async () => {
     ['dialog', () => { __sv.dialog('Bà Năm', [['Hello! Shall we play?', 'Chào cháu! Chơi nhé?']], [['▶ Play!', '▶ Chơi!'], ['👋 Later', '👋 Để sau']]); }]
   ];
   const bad = [];
-  for (const P of [D, M]) await clear(P.page);
+  for (const P of [D, M, Tb]) await clear(P.page);
   for (const [name, fn] of SCREENS) {
-    for (const [P, tag] of [[D, 'desktop'], [M, 'phone']]) {
+    for (const [P, tag] of [[D, 'desktop'], [M, 'phone'], [Tb, 'tablet']]) {
       await P.page.evaluate(`(${fn.toString()})()`); await P.page.waitForTimeout(1400);
       const r = await P.page.evaluate(() => {
         const W = innerWidth, H = innerHeight, out = [];
@@ -315,15 +370,17 @@ await check('phone', async () => {
         const top = document.querySelector('.wardrobe, .hub, .pad, .howto, .theatre, .gl, .dialog:not(.out), .modal');
         if (top) for (const btn of top.querySelectorAll('button')) { const b = btn.getBoundingClientRect(), cs = getComputedStyle(btn); if (!b.width || cs.visibility === 'hidden' || btn.closest('[hidden]')) continue;
           if (/^(x|th-x|ht-x|gl-x|dch|ht-play|th-next|gl-next)$/.test(btn.className.split(' ')[0]) && (b.left < -1 || b.right > W + 1 || b.top < -1 || b.bottom > H + 1)) out.push(`button "${(btn.textContent || btn.getAttribute('aria-label') || btn.className).trim().slice(0, 20)}" off screen`); }
+        for (const t of document.querySelectorAll('.pad-tabs small')) { const lh = parseFloat(getComputedStyle(t).lineHeight) || 13; if (t.getClientRects().length && t.getBoundingClientRect().height > lh * 1.6 + 2) out.push(`tab name "${t.firstChild && t.firstChild.textContent}" broken over lines`); }
+        const md = document.querySelector('.modal'); if (md && /blur/.test(getComputedStyle(md).backdropFilter || '')) out.push('the window blurs the game behind it');
         return out;
       });
       r.forEach(x => bad.push(`${name} (${tag}): ${x}`));
       await P.page.evaluate(() => { document.querySelectorAll('.modal, .hub, .pad, .howto, .theatre, .gl, .dialog, .storybook, .vc-pop, .wardrobe').forEach(e => e.remove()); __sv.paused = false; __sv.closeUp = null; });
     }
   }
-  const errs = D.errors.concat(M.errors); await D.ctx.close(); await M.ctx.close();
+  const errs = D.errors.concat(M.errors, Tb.errors); await D.ctx.close(); await M.ctx.close(); await Tb.ctx.close();
   ok(!bad.length && !errs.length, JSON.stringify({ bad, errs }));
-  return `${SCREENS.length} screens checked on desktop and phone`;
+  return `${SCREENS.length} screens checked on desktop, phone and tablet`;
 });
 
 await check('solid', async () => {
@@ -401,10 +458,11 @@ await check('voice', async () => {
 
 await check('voicepack', async () => {
   // HARD RULE (VOICE-001): the recorded voices are downloaded to the device by themselves, with a small quiet progress
-  // bar; every open checks they are all still there and fetches only what is missing. (A cut-down pack keeps it quick.)
+  // bar; every open checks quietly that they are still there and fetches only what is missing. (A cut-down pack keeps it quick.)
   // a fresh phone: its own browser profile, the cut-down pack list from the very first load, saving voices on
   const ctx = await b.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true }), page = await ctx.newPage(), errors = [];
   page.on('pageerror', e => errors.push(e.message));
+  await ctx.addInitScript(seedPlayers);
   await ctx.addInitScript(() => { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang: 'vi', voice: false, sound: false, music: false, quality: 'low', autoPack: true }); localStorage.setItem('sv2_settings', JSON.stringify(o)); });
   const P = { ctx, page, errors };
   await P.ctx.route('**/voices/manifest.json', async route => { const r = await route.fetch(), j = await r.json(), keep = Object.keys(j.lines).slice(0, 24), lines = {}, langOf = {}; for (const h of keep) { lines[h] = j.lines[h]; if (j.langOf) langOf[h] = j.langOf[h]; } await route.fulfill({ json: { ...j, lines, langOf, made: 'test' } }); });
@@ -415,10 +473,11 @@ await check('voicepack', async () => {
   const state = () => P.page.evaluate(async () => { const c = await caches.open('sv-voices'); return { files: (await c.keys()).filter(r => /\/voices\/.+\.mp3$/.test(r.url)).length, saved: JSON.parse(localStorage.getItem('sv2_settings')).packSaved || '' }; });
   const first = await openAgain(), s1 = await state();
   ok(first.some(x => /%/.test(x)) && first.some(x => /✓/.test(x)) && s1.files >= 24 && s1.saved === '24:2:test', 'first open: ' + JSON.stringify({ first: first.slice(0, 4), s1 }));
-  // next open: everything is there, so nothing downloads; the bar only says "ready ✓" for a moment (owner, round F)
+  // next open: everything is there, so nothing downloads and the bar says nothing (round O, owner: it looked as if the
+  // voices loaded on every start, and listing all the files each time cost battery)
   await P.page.reload(); await start(P.page); await clear(P.page); await P.page.waitForTimeout(10000);
   const second = await P.page.evaluate(() => window.__packLog);
-  ok(second.some(x => /✓/.test(x)) && !second.some(x => /%/.test(x)), 'next open: ' + JSON.stringify(second));
+  ok(!second.length, 'next open: ' + JSON.stringify(second));
   // the phone cleared some files: the next open fetches only those, quietly with the bar
   await P.page.evaluate(async () => { const c = await caches.open('sv-voices'); const ks = (await c.keys()).filter(r => /\.mp3$/.test(r.url)); for (const r of ks.slice(0, 5)) await c.delete(r); });
   const third = await openAgain(), s3 = await state();
@@ -426,7 +485,7 @@ await check('voicepack', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(third.some(x => /✓/.test(x)) && s3.files >= 24, 'missing files were not fetched again: ' + JSON.stringify({ third: third.slice(0, 3), s3 }));
   ok(!errs.length, errs.join(' | '));
-  return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open only says "${second[0] || ''}" for a moment, and files the phone lost are fetched again`;
+  return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open shows and downloads nothing, and files the phone lost are fetched again`;
 });
 
 await check('welcomevoice', async () => {
@@ -444,14 +503,15 @@ await check('welcomevoice', async () => {
     for (let k = 0; k < 40 && !V.voicePack(); k++) await wait(250);
     if (!document.querySelector('.dialog:not(.out)')) { h.profile.quests.owl = false; G._owlAuto = false; }
     const owl = G.interactables.find(i => /owl/i.test(i.id || '')); if (owl) { h.place(owl.x, owl.z + 1.5); }
-    for (let k = 0; k < 30 && !document.querySelector('.dialog:not(.out)'); k++) await wait(200);
+    // (round R) with the story on, Ông Cú's welcome is the prologue film, then "Who will fly with you, Kiwi?"
+    for (let k = 0; k < 60 && !document.querySelector('.dialog:not(.out)'); k++) { await wait(250); const x = document.querySelector('.theatre .th-x'); if (x && k > 8) x.click(); }
     const d = document.querySelector('.dialog .dtext'), shown = d ? d.textContent : '';
     return { shown, pack: !!V.voicePack() };
   });
-  const rec = await P.page.evaluate(async lines => { const V = await import('/js/voice.js'), hash = (await import('/js/packhash.js')).packHash, pack = V.voicePack(); return lines.map(t => [t, !!(pack && pack.lines[hash('en', t)])]); }, said);
+  const rec = await P.page.evaluate(async lines => { const V = await import('/js/voice.js'), hash = (await import('/js/packhash.js')).lineHash, pack = V.voicePack(); return lines.map(t => [t, !!(pack && pack.lines[hash('en', t)])]); }, said);
   const errs = P.errors; await P.ctx.close();
   const notRecorded = rec.filter(([, ok]) => !ok).map(([t]) => t);
-  ok(r.pack && /Good morning, Kiwi/.test(r.shown) && said.length && !notRecorded.length && !errs.length, JSON.stringify({ shown: r.shown, said, notRecorded, errs }));
+  ok(r.pack && /Good morning, Kiwi|with you, Kiwi/.test(r.shown) && said.length && !notRecorded.length && !errs.length, JSON.stringify({ shown: r.shown, said, notRecorded, errs }));
   return `Ông Cú's welcome shows the child's name ("${r.shown.slice(0, 40)}…") and every spoken line (${said.length}) has a recording`;
 });
 
@@ -572,9 +632,450 @@ await check('tales', async () => {
 
 await check('emoji', async () => {
   // every emoji the game uses has a drawing in js/art.js (tools/emoji-audit.mjs)
-  const { execFileSync } = await import('child_process');
+  const { execFileSync } = await import('child_process'), { fileURLToPath } = await import('url');
   let out = ''; try { out = execFileSync(process.execPath, ['../tools/emoji-audit.mjs'], { encoding: 'utf8' }); } catch (e) { out = (e.stdout || '') + ''; ok(false, out.split('\n').slice(0, 12).join(' | ')); }
-  return out.trim().split('\n').pop();
+  // (owner, round R: "don't use emoji at all, including in all our docs, only our drawings") no emoji in the docs either
+  const EMO = /\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}]/u, ARROWS = /^[\u2190-\u21FF\u25A0-\u25FF\u2B05-\u2B07\u23E9-\u23FA©®™‼⁉〰]$/u, inDocs = [];
+  for (const f of execFileSync('git', ['ls-files', '*.md', '*.txt'], { cwd: '..', encoding: 'utf8' }).split('\n').filter(Boolean)) {
+    if (f.includes('node_modules')) continue;
+    for (const ch of fs.readFileSync('../' + f, 'utf8')) if (EMO.test(ch) && !ARROWS.test(ch)) { inDocs.push(f + ' ' + ch); break; }
+  }
+  ok(!inDocs.length, 'emoji in the docs: ' + inDocs.join(', '));
+  return out.trim().split('\n').pop() + '; no emoji in the docs';
+});
+
+await check('hubmap', async () => {
+  // (round R, owner: "rearrange the games menu so it is more logical; also the map and its destinations") the Play hub:
+  // every game in exactly one tab, grouped by kind; the Pad map: each country north to south, landmarks under their real place
+  const P = await open(b, { w: 1180, h: 820 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const ui = await import('/js/ui.js'); ui.openGamesHub(__sv, 0); await new Promise(r => setTimeout(r, 400));
+    const seen = {}; for (const t of [...document.querySelectorAll('.hubtabs [data-tab]')].map(b => b.dataset.tab)) { document.querySelector(`.hubtabs [data-tab="${t}"]`).click(); await new Promise(r => setTimeout(r, 100)); document.querySelectorAll('.hubbody [data-play]').forEach(b => { seen[b.dataset.play] = (seen[b.dataset.play] || 0) + 1; }); }
+    document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 600));
+    document.querySelector('.mapchips [data-g="vn"]').click(); await new Promise(r => setTimeout(r, 200));
+    const rows = [...document.querySelectorAll('.quick .qbtn')].map(b => (b.classList.contains('sub') ? '-' : '') + b.innerText.trim());
+    return { games: Object.keys(seen).length, all: Object.keys(__sv.GAMES || {}).length, dup: Object.entries(seen).filter(([, n]) => n > 1).map(([k]) => k), rows };
+  });
+  ok(!r.dup.length, 'games in two tabs: ' + r.dup.join(', ')); ok(r.games >= 60, 'games in the hub: ' + r.games);
+  const at = n => r.rows.findIndex(x => x.includes(n)), hn = at('Hà Nội') >= 0 ? at('Hà Nội') : at('Hanoi'), dn = at('Đà Nẵng'), hl = at('Hạ Long'), hue = at('Huế');
+  ok(hn >= 0 && dn > hn && hl > hn && hl < dn && hue > dn, 'map: Hạ Long should be under Hà Nội and Huế under Đà Nẵng: ' + r.rows.slice(0, 20).join(' | '));
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return `${r.games} games, each in one tab; the map lists Vietnam north to south with each landmark under its real place`;
+});
+
+await check('festcal', async () => {
+  // (round R, owner) the festival calendar: real dates, 3 weeks of build-up that grows each week, two festivals at once
+  // in their own places, quiet days only a few days before, the day's timetable, Halloween trick-or-treat and keepsake
+  const P = await open(b, { w: 1180, h: 820 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const F = await import('/js/festivals.js'), st = d => F.activeFestivals(new Date(d + 'T10:00:00')).map(a => a.F.id + ':' + a.stage).sort().join(' ');
+    const out = { oct9: st('2026-10-09'), oct10: st('2026-10-10'), oct25: st('2026-10-25'), oct31: st('2026-10-31'), anzac20: st('2027-04-20'), anzac23: st('2027-04-23'), tet: st('2026-02-17') };
+    // the calendar on the Pad
+    __sv.openPad(0, 'cal'); await new Promise(r => setTimeout(r, 500));
+    out.rows = document.querySelectorAll('.pad .fcal-row').length; document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.paused = false;
+    // Halloween: knock at five doors for a pumpkin lantern
+    const h = __sv.heroes[0]; __sv.festivals.visit(0, 'halloween'); await new Promise(r => setTimeout(r, 2500));
+    document.querySelectorAll('.dialog, .reward, .modal').forEach(e => e.remove());
+    const doors = __sv.interactables.filter(i => i.id.startsWith('trick_')); out.doors = doors.length;
+    for (const d of doors.slice(0, 5)) { d.act(h); await new Promise(r => setTimeout(r, 100)); document.querySelectorAll('.reward').forEach(e => e.click()); }
+    out.keepsake = (h.profile.keepsakes || []).includes('pumpkin'); out.treats = h.profile.halloween && h.profile.halloween.treats;
+    return out;
+  });
+  ok(r.oct9 === '' || !r.oct9.includes('halloween'), 'Halloween decorated more than 3 weeks before: ' + r.oct9);
+  ok(r.oct10.includes('halloween:1'), 'Halloween 3 weeks before should be stage 1: ' + r.oct10);
+  ok(r.oct25.includes('halloween:3') && r.oct25.includes('diwali:2'), 'two festivals at once, each its own stage: ' + r.oct25);
+  ok(r.oct31.includes('halloween:4'), 'Halloween day: ' + r.oct31);
+  ok(!r.anzac20.includes('anzac') && r.anzac23.includes('anzac:2'), 'a quiet day shows only a few days before: ' + r.anzac20 + ' / ' + r.anzac23);
+  ok(r.tet.includes('tet:4'), 'Tết on its lunar date: ' + r.tet);
+  ok(r.rows >= 10, 'calendar rows: ' + r.rows); ok(r.doors >= 5, 'pumpkin doors: ' + r.doors); ok(r.keepsake && r.treats === 5, 'no pumpkin lantern after 5 treats');
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return `build-up from 3 weeks before (stage 1→4), Halloween and Diwali at once, quiet days ${'3'} days before, ${r.rows} festivals coming up on the calendar, ${r.doors} pumpkin doors, a pumpkin lantern after 5 treats`;
+});
+
+await check('films', async () => {
+  // (round R, owner: "the animations should be detailed and comprehensive, not drawings standing for the scenes")
+  // every page of the pilot story and guide films plays to its end, the child's turn waits for a tap, and closing frees it
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const F = await import('/js/film.js'), C = await import('/js/content/films.js'), { MORE_TALES } = await import('/js/talesdata.js');
+    const { openTheatre } = await import('/js/tales.js'), { openHowTo } = await import('/js/howto.js');
+    const frame = () => new Promise(r => requestAnimationFrame(r)), out = { films: {}, bad: [] };
+    const run = async (id, n) => {
+      const f = F.filmNow(); if (!f) { out.bad.push(id + ': no film'); return; }
+      let helps = 0;
+      for (let k = 0; k < n; k++) {
+        const done = f.page(k); let ended = false; done.then(() => { ended = true; });
+        const p = f.now; if (!p.root.children.length) out.bad.push(`${id} p${k + 1}: empty set`);
+        // before the narrator finishes, the child's turn must not start
+        for (let i = 0; i < 400 && !p.waiting && p.t < p.len + 1; i++) { if (p.hold) out.bad.push(`${id} p${k + 1}: asked before the words were read`); p.t += .2; await frame(); }
+        if (ended && p.ev.some(e => e.help)) out.bad.push(`${id} p${k + 1}: ended without the child's turn`);
+        f.narrated();
+        for (let i = 0; i < 600 && !ended; i++) { if (p.hold) { helps++; p.release(true); } p.t += .2; await frame(); }
+        if (!ended) out.bad.push(`${id} p${k + 1}: did not end`);
+        if (!(p.actors.length || p.root.children.length > 3)) out.bad.push(`${id} p${k + 1}: nobody in it`);
+      }
+      out.films[id] = { pages: n, helps };
+    };
+    for (const id of Object.keys(C.FILMS)) {
+      // (the story's own films come from js/content/chapters.js, the fairy tales from js/talesdata.js)
+      const { STORY_TALES } = await import('/js/content/chapters.js'), st = STORY_TALES[id];
+      openTheatre(MORE_TALES.find(t => t.id === id) || (st && { ...st, title: () => st.title[0], ctx: { name: 'Na', companion: 'firefly' } }), { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); // (loaded when the story opens)
+      document.querySelector('.th-auto').click();
+      if (!document.querySelector('.theatre.film canvas.th-film')) out.bad.push(id + ': no 3D stage');
+      await run(id, C.FILMS[id].pages.length);
+      document.querySelector('.th-x').click(); await new Promise(r => setTimeout(r, 400));
+      if (F.filmNow() || document.querySelector('canvas.th-film')) out.bad.push(id + ': not freed');
+    }
+    for (const id of Object.keys(C.GUIDES)) {
+      openHowTo(id, {}); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); document.querySelector('.ht-pp').click();
+      await run(id, C.GUIDES[id].pages.length);
+      document.querySelector('.ht-x').click(); await new Promise(r => setTimeout(r, 300));
+      if (F.filmNow()) out.bad.push(id + ': not freed');
+    }
+    return out;
+  });
+  const fails = [...r.bad];
+  for (const id of ['duahau', 'thanhgiong']) if (!r.films[id] || r.films[id].helps < 2) fails.push(`${id}: the child should help at least twice`);
+  if (P.errors.length) fails.push(...P.errors.slice(0, 3));
+  await P.ctx.close();
+  if (fails.length) throw new Error(JSON.stringify({ fails, films: r.films }));
+  return Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps at least twice in each story';
+});
+await check('halves', async () => {
+  // (round R, owner) two players: a window opens in its own child's half and pauses only that child; the other keeps playing
+  const out = [];
+  for (const [w, h, touch, tag] of [[1180, 760, false, 'side'], [820, 1180, true, 'face']]) {
+    const P = await open(b, { w, h, touch, mode: 'split' }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      const G = __sv, w = t => new Promise(r => setTimeout(r, t)), hold = () => document.querySelectorAll('.halfwrap');
+      G.openPad(1); await w(600);
+      const inHalf1 = !!(hold()[1] && hold()[1].querySelector('.modal')), busy = [G.halfBusy(0), G.halfBusy(1)];
+      const h0 = G.heroes[0], x0 = h0.pos.x, z0 = h0.pos.z; h0.goal = { x: x0 + 6, z: z0 + 2 };
+      const h1 = G.heroes[1], x1 = h1.pos.x, z1 = h1.pos.z; h1.goal = { x: x1 + 6, z: z1 }; await w(1500);
+      const moved0 = Math.hypot(h0.pos.x - x0, h0.pos.z - z0), moved1 = Math.hypot(h1.pos.x - x1, h1.pos.z - z1);
+      G.lastPlayer = 0; G.openPad(0); await w(600);
+      const both = [!!hold()[0].querySelector('.modal'), !!hold()[1].querySelector('.modal')], far = hold()[1].classList.contains('facewrap');
+      return { inHalf1, busy, moved0, moved1, both, far };
+    });
+    if (!r.inHalf1) out.push(tag + ': the window did not open in its child\'s half');
+    if (r.busy[0] || !r.busy[1]) out.push(tag + ': wrong child paused ' + JSON.stringify(r.busy));
+    if (!(r.moved0 > .3) || r.moved1 > .05) out.push(tag + ': the other child could not keep playing ' + JSON.stringify(r));
+    if (!r.both[0] || !r.both[1]) out.push(tag + ': both children could not have a window open');
+    if ((tag === 'face') !== r.far) out.push(tag + ': far half not turned to face its child');
+    if (P.errors.length) out.push(...P.errors.slice(0, 2));
+    await P.ctx.close();
+  }
+  if (out.length) throw new Error(out.join('; '));
+  return 'side by side and face to face: each window opens in its own child\'s half and pauses only that child; both can have one open';
+});
+await check('preload', async () => {
+  // (round R, faster launch) index.html lists every start-up script so the browser fetches them all at once
+  const { execFileSync } = await import('child_process'), { fileURLToPath } = await import('url');
+  try { return execFileSync(process.execPath, [fileURLToPath(new globalThis.URL('../tools/preload.mjs', import.meta.url)), '--check'], { encoding: 'utf8' }).trim(); }
+  catch (e) { throw new Error((e.stdout || e.message).trim()); }
+});
+await check('story', async () => {
+  // (round R, owner approved "Đèn Lồng Thung Lũng") the prologue and chapter 1 can be played from start to end: Ông Cú's
+  // film, choosing a companion, each step of Làng Sen in turn, finding and hanging the lantern; the đình wakes up, the
+  // keepsake goes home, and the old adventures follow. The đình stands in an open yard, not between houses.
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const pg = P.page, w = ms => pg.waitForTimeout(ms), seen = [];
+  const q = () => pg.evaluate(() => { const c = __sv.currentQuest(__sv.heroes[0].profile); return c && c.id; });
+  const calm = () => pg.evaluate(() => { document.querySelectorAll('.storybook,.dialog,.reward').forEach(e => e.remove()); __sv.paused = false; });
+  const act = id => pg.evaluate(id => { const it = __sv.interactables.find(i => i.id === id); it.act(__sv.heroes[0], __sv); }, id);
+  seen.push(await q());
+  await pg.evaluate(() => { if (!document.querySelector('.theatre')) __sv.lanterns.owl(__sv.heroes[0]); }); await w(2500);
+  const film = await pg.evaluate(() => !!document.querySelector('.theatre'));
+  await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(800);
+  await pg.evaluate(() => { const c = document.querySelectorAll('.dialog .dchoices button'); c[1] && c[1].click(); }); await w(800);
+  await calm(); await w(2500); await calm(); seen.push(await q());
+  await pg.evaluate(() => { const L = __sv.lanterns; __sv.heroes[0].place(L.dinh.front[0], L.dinh.front[1] + 6); }); await w(2500); await calm();
+  // (switch storyActions) being in the village is not enough: catch the wind ribbons
+  const ribbonsWaited = await q() === 'L_c1_village';
+  for (let k = 0; k < 3; k++) { await pg.evaluate(k => { const it = __sv.interactables.find(i => i.id === 'story_ribbon' + k); const h = __sv.heroes[0]; if (it && it.visible(h)) it.act(h); }, k); await w(300); }
+  await calm(); seen.push(await q());
+  await act('story_c1_nam'); await w(600);
+  for (let i = 0; i < 5; i++) { await pg.evaluate(() => document.querySelector('.dialog')?.click()); await w(400); }
+  await calm(); await w(2500); await calm(); seen.push(await q());
+  await act('lv_well'); await w(1800); await calm(); await w(2500); await calm(); seen.push(await q());
+  await pg.evaluate(async () => { const E = await import('/js/core/events.js'); E.events.emit('ActivityCompleted', { activityId: 'x', defId: 'game:oanquan', players: [], result: { won: true } }); });
+  await w(400); await calm(); await w(2500); await calm(); seen.push(await q());
+  await pg.evaluate(() => __sv.lanterns._finish(__sv.heroes[0], 'c1_tale')); await w(300); await calm(); await w(2500); await calm(); seen.push(await q());
+  // lift lotus leaves until the lantern shows, then pick it up
+  const lifted = await pg.evaluate(() => { const h = __sv.heroes[0]; let n = 0; for (let k = 0; k < 5; k++) { const it = __sv.interactables.find(i => i.id === 'story_leaf' + k); if (it && it.visible(h)) { it.act(h); n++; } if (h.profile.lanterns.act && h.profile.lanterns.act.found) break; } return n; });
+  await act('story_c1_find'); await w(600); await calm(); await w(2500); await calm();
+  const carrying = await pg.evaluate(() => __sv.heroes[0].profile.lanterns.carrying); seen.push(await q());
+  pg.evaluate(() => { const it = __sv.interactables.find(i => i.id === 'story_c1_hang'); it.act(__sv.heroes[0]); }); await w(1500);
+  // pull the rope (drag the handle down)
+  const roped = await pg.evaluate(() => { const el = document.querySelector('.handpad [data-hp=rope]'); if (!el) return false; const r = el.getBoundingClientRect(), ev = (t, y) => el.dispatchEvent(new PointerEvent(t, { bubbles: true, pointerId: 9, clientX: r.left + 20, clientY: r.top + r.height * y }));
+    ev('pointerdown', 0); ev('pointermove', 1); ev('pointerup', 1); return true; }); await w(2500);
+  await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(1200);
+  await pg.evaluate(() => document.querySelectorAll('.reward,.modal').forEach(e => e.click())); await w(800); await calm(); await w(1500);
+  seen.push(await q());
+  const end = await pg.evaluate(() => { const G = __sv, p = G.heroes[0].profile, D = G.lanterns.dinh;
+    const house = Math.min(...G.world.colliders.filter(c => c.r > 2 && c.top == null).map(c => Math.hypot(c.x - D.x, c.z - D.z) - c.r));
+    return { companion: p.lanterns.companion, ch1: !!p.lanterns.chapters.ch1, keep: (p.keepsakes || []).includes('lantern_ch1'), carrying: p.lanterns.carrying, house }; });
+  const want = ['L_p_owl', 'L_c1_village', 'L_c1_nam', 'L_c1_well', 'L_c1_teo', 'L_c1_tale', 'L_c1_find', 'L_c1_hang'], out = [];
+  want.forEach((id, i) => { if (seen[i] !== id) out.push(`step ${i + 1} was ${seen[i]}, expected ${id}`); });
+  if (!seen[8] || /^L_/.test(seen[8])) out.push('after chapter 1 the goal was ' + seen[8] + ', not an old adventure');
+  if (!film) out.push('Ông Cú\'s film did not play');
+  if (end.companion !== 'dragon') out.push('the companion was not chosen');
+  if (carrying !== 'ch1' || end.carrying) out.push('the lantern was not carried and then hung');
+  if (!end.ch1 || !end.keep) out.push('chapter 1 not finished ' + JSON.stringify(end));
+  if (!ribbonsWaited) out.push('walking into the village finished the step before the ribbons were caught');
+  if (!(lifted >= 1)) out.push('no lotus leaves to lift');
+  if (!roped) out.push('hanging did not ask to pull the rope');
+  if (!(end.house > 5)) out.push(`a building stands ${end.house.toFixed(1)} m from the đình`);
+  if (P.errors.length) out.push(...P.errors.slice(0, 2));
+  await P.ctx.close();
+  if (out.length) throw new Error(out.join('; '));
+  return `prologue and chapter 1 played through (${want.length} steps; ribbons caught, ${lifted} lotus leaves lifted, rope pulled); đình lit, keepsake home, then "${seen[8]}"; nearest building ${end.house.toFixed(1)} m away`;
+});
+await check('yard', async () => {
+  // (round R, owner: bà Huệ and ông Nghi's quest chain) the yard stands in an open spot near the Huệ Nghi shop; the side
+  // story plays from bà Huệ's start to the house-warming meal: the coach from Hà Tĩnh, a job for each relative (a wrong
+  // job is turned down kindly), the dump truck tips its load, the excavator digs, the house is built; the truck and the
+  // excavator stay for free play afterwards
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const pg = P.page, seen = [], handsUsed = new Set();
+  const goal = () => pg.evaluate(() => { const c = __sv.currentQuest(__sv.heroes[0].profile); return c && c.id; });
+  // tap through speech boxes, choosing answer `pick` when there is a choice, until the button's work is over
+  const use = async (id, pick = 0) => {
+    const ok = await pg.evaluate(id => { const h = __sv.heroes[0], it = __sv.interactables.find(i => i.id === id); if (!it || (it.visible && !it.visible(h))) return false; it.act(h, __sv); return true; }, id);
+    if (!ok) return false;
+    for (let i = 0; i < 200; i++) {
+      await pg.waitForTimeout(350);
+      // (switch yardHands) the panel of big controls: tap the buttons, hold the pedal, drag the handles like a child
+      const hp = await pg.evaluate(() => {
+        const ev = (el, type, y) => { const r = el.getBoundingClientRect(); el.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 9, clientX: r.left + r.width / 2, clientY: r.top + r.height * y })); };
+        const p = document.querySelector('.handpad'); if (!p) return '';
+        const b = p.querySelector('[data-hp=load], [data-hp=brick]'); if (b) { b.click(); return 'tap'; }
+        const ped = p.querySelector('[data-hp=pedal]'); if (ped) { if (!ped.classList.contains('on')) ev(ped, 'pointerdown', .5); return 'hold'; }
+        const sl = p.querySelector('[data-hp=lever], [data-hp=roof]'); if (sl) { ev(sl, 'pointerdown', 0); ev(sl, 'pointermove', 1); ev(sl, 'pointerup', 1); return 'pull'; }
+        const arm = p.querySelector('[data-hp=arm]'); if (arm) { window.__armY = window.__armY ? 0 : 1; ev(arm, 'pointerdown', window.__armY); ev(arm, 'pointerup', window.__armY); return 'dig'; }
+        return '';
+      });
+      if (hp) { handsUsed.add(hp); continue; }
+      const s = await pg.evaluate(pick => { const c = document.querySelectorAll('.dialog .dchoices button'); if (c.length) { c[Math.min(pick, c.length - 1)].click(); return 'c'; } const d = document.querySelector('.dialog'); if (d) { d.click(); return 'd'; } return document.querySelector('.reward') ? 'r' : ''; }, pick);
+      if (s === 'r') { await pg.evaluate(() => document.querySelectorAll('.reward').forEach(e => e.click())); }
+      if (!s && !(await pg.evaluate(() => __sv.paused || __sv.yard.busy()))) break;
+    }
+    await pg.evaluate(() => { document.querySelectorAll('.storybook,.reward').forEach(e => e.remove()); __sv.paused = false; });
+    return true;
+  };
+  const info = await pg.evaluate(() => { const Y = __sv.yard, sh = __sv.interactables.find(i => i.id === 'npc_bahue');
+    const house = Math.min(...__sv.world.colliders.filter(c => c.r > 2 && c.top == null).map(c => Math.hypot(c.x - Y.at.x, c.z - Y.at.z) - c.r));
+    return { far: Math.hypot(sh.x - Y.at.x, sh.z - Y.at.z), room: Y.at.room || 0, house }; });
+  seen.push(await goal()); await use('yard_start');
+  // (owner 9 Oct: a side story) starting it leaves the goal bar on the main story; Follow on the Adventures page puts it there
+  const stayed = await goal();
+  const followed = await pg.evaluate(async () => { __sv.openPad(0, 'log'); await new Promise(r => setTimeout(r, 600)); const b = document.querySelector('.pad [data-follow=yard]'); if (!b) return false; b.click(); await new Promise(r => setTimeout(r, 400)); document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false; return __sv.heroes[0].profile.follow === 'yard'; });
+  seen.push(await goal());
+  await use('yard_coach'); seen.push(await goal());
+  const rels = await pg.evaluate(async () => (await import('/js/content/yard.js')).RELATIVES.map(r => [r.id, r.job]));
+  await use('yard_job_' + rels[0][0], (rels[0][1] + 1) % 3); const wrongKept = await pg.evaluate(id => __sv.heroes[0].profile.yard.jobs[id] == null, rels[0][0]);
+  for (const [id, job] of rels) await use('yard_job_' + id, job);
+  seen.push(await goal());
+  await use('yard_truck'); const heap = await pg.evaluate(() => __sv.heroes[0].profile.yard.done.y_truck); seen.push(await goal());
+  await use('yard_dig'); seen.push(await goal());
+  await use('yard_build'); seen.push(await goal());
+  await use('yard_party'); seen.push(await goal());
+  const free = await pg.evaluate(() => { const h = __sv.heroes[0]; return ['yard_truck', 'yard_dig'].every(id => __sv.interactables.find(i => i.id === id).visible(h)); });
+  const want = ['', 'Y_y_coach', 'Y_y_jobs', 'Y_y_truck', 'Y_y_dig', 'Y_y_build', 'Y_y_party'], out = [];
+  want.forEach((id, i) => { if (i && seen[i] !== id) out.push(`goal ${i} was ${seen[i]}, expected ${id}`); });
+  if (/^Y_/.test(seen[0] || '') || /^Y_/.test(seen[7] || '')) out.push('the yard was the goal before it started or after it ended: ' + seen[0] + ' / ' + seen[7]);
+  if (/^Y_/.test(stayed || '')) out.push('starting the yard took over the goal bar (' + stayed + ')');
+  if (!followed) out.push('no Follow button for the yard on the Adventures page');
+  if (!wrongKept) out.push('a wrong job was accepted');
+  if (!heap) out.push('the truck run did not finish');
+  if (!free) out.push('the truck and excavator are not open for free play afterwards');
+  for (const k of ['tap', 'hold', 'pull', 'dig']) if (!handsUsed.has(k)) out.push(`the yard by hand never asked to ${k}`);
+  if (!(info.far < 70)) out.push(`the yard is ${info.far.toFixed(0)} m from the Huệ Nghi shop`);
+  if (!(info.house > 6)) out.push(`a building stands ${info.house.toFixed(1)} m from the middle of the yard`);
+  if (P.errors.length) out.push(...P.errors.slice(0, 2));
+  await P.ctx.close();
+  if (out.length) throw new Error(out.join('; '));
+  return `the yard ${info.far.toFixed(0)} m from the shop, ${info.room.toFixed(0)} m of room; a side story (goal bar stays on the lantern story until Follow); coach, jobs (a wrong one turned down), dump truck (load, hold the pedal, pull the lever), excavator (drag the arm), bricks and roof by hand, and the meal played through; free play after`;
+});
+await check('kidplay', async () => {
+  // (round R, owner 9 Oct: "add these in and add to the studio so we can switch on/off") the companion is fed once a day
+  // and grows (a trick from size 3), a coin goal buys it a hat, a gift waits by a landmark each day, the story's films
+  // have a Skip button, and each Studio switch turns its part off
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], w = t => new Promise(r => setTimeout(r, t)), C = (await import('/js/custom.js')).CUSTOM, S = await import('/js/state.js');
+    h.profile.lanterns = { companion: 'firefly', done: { p_owl: true }, chapters: {} }; G.lanterns.companions.sync(); await w(1500);
+    const out = {}, chip = c => G.huds[0].root.querySelector('.kidrow .' + c);
+    out.chips = !!chip('c-pet') && !chip('c-pet').hidden && !!chip('c-goal') && !chip('c-goal').hidden;
+    // feed: once a day; pretend the days pass
+    chip('c-pet').click(); const pet = h.profile.lanterns.pet; out.fed1 = pet.feeds;
+    chip('c-pet').click(); out.fedAgain = pet.feeds;
+    for (let k = 0; k < 4; k++) { pet.fed = -1; G.kidplay.feed(h); }
+    out.level = G.kidplay.level(h); await w(400);
+    out.scale = G.lanterns.companions.of(h).o.scale.x;
+    G.kidplay.feed(h); await w(100); out.trick = !!G.lanterns.companions.of(h).trick;
+    // the coin goal: a hat
+    const c0 = S.farm.coins; G.addCoins(100 - c0); await w(700); out.goalReady = chip('c-goal').classList.contains('ready');
+    chip('c-goal').click(); await w(400); out.hat = pet.hat; out.coinsAfter = S.farm.coins; out.hatOn = !!G.lanterns.companions.of(h).hat;
+    // the daily gift
+    const gift = G.interactables.find(i => i.id === 'gift_today'); out.giftSeen = gift.visible(h); const cg = S.farm.coins; gift.act(h); out.giftCoins = S.farm.coins - cg; out.giftAfter = gift.visible(h);
+    // the Skip button on a story film
+    const { openTheatre } = await import('/js/tales.js'), { STORY_TALES } = await import('/js/content/chapters.js'), t = STORY_TALES.lantern_prologue;
+    openTheatre({ ...t, story: true, title: () => t.title[0], ctx: { name: 'Na', companion: 'firefly' } }, { name: 'Na' }); await w(1500);
+    out.skip = !!document.querySelector('.theatre .th-skip'); document.querySelector('.th-skip')?.click(); await w(600); out.skipClosed = !document.querySelector('.theatre');
+    // the switches
+    C.features = C.features || {};
+    for (const id of ['companionGrow', 'saveGoal', 'dailySurprise', 'shortTalk', 'simpleStart', 'yardHands', 'storyActions']) C.features[id] = false;
+    h.profile.gift = null; await w(1200);
+    out.offChips = chip('c-pet').hidden && chip('c-goal').hidden; out.offGift = !gift.visible(h); out.offLevel = G.kidplay.level(h);
+    out.offSimple = (await import('/js/simple.js')).wantsSimple({ age: 'little' });
+    openTheatre({ ...t, story: true, title: () => t.title[0], ctx: { name: 'Na', companion: 'firefly' } }, { name: 'Na' }); await w(1200);
+    out.offSkip = !document.querySelector('.theatre .th-skip'); document.querySelector('.th-x')?.click(); await w(400);
+    for (const id of Object.keys(C.features)) delete C.features[id];
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [];
+  if (!r.chips) bad.push('no Feed or goal button beside the coins');
+  if (r.fed1 !== 1 || r.fedAgain !== 1) bad.push(`feeding is not once a day (${r.fed1}, ${r.fedAgain})`);
+  if (!(r.level >= 3) || !(r.scale > 1.2)) bad.push(`the companion did not grow (level ${r.level}, size ${r.scale})`);
+  if (!r.trick) bad.push('no trick at size 3');
+  if (!r.goalReady || r.hat !== 'party' || r.coinsAfter !== 70 || !r.hatOn) bad.push('the coin goal did not buy the hat ' + JSON.stringify(r));
+  if (!r.giftSeen || r.giftCoins !== 15 || r.giftAfter) bad.push('the daily gift ' + JSON.stringify({ seen: r.giftSeen, coins: r.giftCoins, after: r.giftAfter }));
+  if (!r.skip || !r.skipClosed) bad.push('no Skip button on the story film');
+  if (!r.offChips || !r.offGift || r.offLevel !== 1 || r.offSimple || !r.offSkip) bad.push('a Studio switch did not turn its part off ' + JSON.stringify(r));
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return `fed once a day, grew to size ${r.level} with a trick, bought the party hat (100 → 70 coins), opened today's gift (+15), Skip on story films; every switch turns its part off`;
+});
+await check('camcalm', async () => {
+  // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:
+  // the camera never swings faster than a slow steady pace, and a jump doesn't jerk the picture up and down
+  const P = await open(b, { w: 1180, h: 760 }); await clear(P.page);
+  const r = await P.page.evaluate(() => {
+    const h = __sv.heroes[0], dt = 1 / 60; let t = 0, maxTurn = 0, maxLookY = 0, at = -1;
+    h.place(h.pos.x, h.pos.z); h.manualCamT = 0;
+    const lookDir = () => { const d = new h.cam.position.constructor(); h.cam.getWorldDirection(d); return d; };
+    let prev = null;
+    for (let f = 0; f < 600; f++) {
+      t += dt; h.speed = 5; h.state = 'walk'; h.yaw = f < 200 ? 0 : f < 400 ? Math.PI : Math.PI / 2;   // sudden turn-rounds
+      h.onGround = !(f % 120 > 100); const jumpY = h.onGround ? 0 : .8; const y0 = h.pos.y; h.pos.y = y0 + jumpY;
+      h.finish(dt, t, __sv, 0); h.pos.y = y0;
+      const d = lookDir(); if (prev && f > 60) { const w = prev.angleTo(d) / dt; if (w > maxTurn) { maxTurn = w; at = f; } maxLookY = Math.max(maxLookY, Math.abs(d.y - prev.y) / dt); } prev = d;
+    }
+    return { maxTurn, maxLookY, at };
+  });
+  ok(r.maxTurn < 1.0, `the view turns too fast: ${r.maxTurn.toFixed(2)} rad/s (frame ${r.at})`);
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return `the view turns at most ${r.maxTurn.toFixed(2)} rad/s when the child turns round, and tips at most ${r.maxLookY.toFixed(2)}/s on a jump`;
+});
+
+await check('vehicles', async () => {
+  // (round R, owner: real xe 67, Cub, Dream, xích lô, Australian motorbikes, bicycles of every kind, cars, buses, trams;
+  // riders' hands on the grips and feet on the pegs; children can ride bicycles; all switchable in Studio)
+  const P = await open(b, { w: 1180, h: 760 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const T = __sv.traffic, ids = new Set(T.slots.map(s => s.id)), V = await import('/js/vehicles.js');
+    // the vehicles are made when a child comes near: go near a moving one and give them a moment
+    const m = T.slots.find(s => s.mover && s.id !== 'xichlo' && s.id !== 'tramModern'), [mx, mz] = T.where(m), h = __sv.heroes[0]; h.place(mx + 20, mz + 20);
+    T.slots.forEach(sl => { if (!sl.v) T.make(sl); });
+    // every rider holds the grips: each hand within 12 cm of its grip
+    const far = [];
+    for (const sl of T.slots) if (sl.rider && sl.v.grips) { sl.v.o.updateMatrixWorld(true); const A = sl.rider;
+      for (const [arm, g] of [[A.armL, sl.v.grips[0]], [A.armR, sl.v.grips[1]]]) { const hand = arm.children.find(c => Math.abs(c.position.y + .42) < .01); const hp = hand.getWorldPosition(new (hand.position.constructor)()), gp = sl.v.o.localToWorld(new (hand.position.constructor)(...g)); const d = hp.distanceTo(gp); if (d > .12) far.push(sl.id + ' ' + d.toFixed(2)); } }
+    // a moving one moves
+    const p0 = m.v.o.position.clone();
+    await new Promise(r => setTimeout(r, 1500)); const moved = m.v.o.position.distanceTo(p0);
+    // a child rides a bicycle and gets off again
+    const it = __sv.interactables.find(i => i.id.startsWith('bike_')); h.place(it.x + 1, it.z + 1); await new Promise(r => setTimeout(r, 400)); it.act(h, __sv);
+    const riding = !!(h.riding && h.riding.vehicle); h.dismount();
+    return { n: T.slots.length, ids: [...ids], all: Object.keys(V.VEHICLES).length, far, moved, riding, off: !h.riding };
+  });
+  for (const id of ['honda67', 'cub', 'dream', 'scooter', 'xichlo', 'postie', 'tramModern', 'touristCart', 'miniBike', 'roadster', 'sedan']) ok(r.ids.includes(id), 'missing in the valley: ' + id);
+  ok(!r.far.length, 'hands off the grips: ' + r.far.slice(0, 6).join(', '));
+  ok(r.moved > .5, 'traffic did not move (' + r.moved + ')'); ok(r.riding && r.off, 'could not ride a bicycle and get off');
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return `${r.all} models; ${r.n} vehicles in the valley; riders' hands on the grips; traffic moves; a child rides a bicycle and gets off`;
+});
+
+await check('dialogtap', async () => {
+  // (round R, owner: "there shouldn't be any repeats, the child just taps the speech box as OK") a speech box has no
+  // Hear-again or OK buttons for any age; a tap on the box goes on, and the last tap closes it
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  const r = [];
+  for (const age of ['little', 'big']) {
+    await P.page.evaluate(age => { __sv.heroes.forEach(h => { h.profile.age = age; }); __sv.dialog('Bà Năm', [['Hello!', 'Chào con!'], ['Shall we play?', 'Chơi nhé?']]); }, age);
+    await P.page.waitForSelector('.dialog:not(.out)');
+    const btns = await P.page.evaluate(() => [...document.querySelectorAll('.dialog:not(.out) button')].filter(e => !e.matches('.dask, .dch')).map(e => e.className));
+    ok(!btns.length, `${age}: extra buttons ${btns.join(', ')}`);
+    await P.page.click('.dialog:not(.out) .dtext'); await P.page.waitForTimeout(150);
+    ok(await P.page.evaluate(() => document.querySelector('.dialog:not(.out) .dtext').textContent.includes('play')), `${age}: a tap did not go on`);
+    await P.page.click('.dialog:not(.out) .dtext'); await P.page.waitForTimeout(400);
+    ok(await P.page.evaluate(() => !document.querySelector('.dialog:not(.out)')), `${age}: the last tap did not close it`);
+    r.push(age);
+  }
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return 'no repeat or OK buttons for under-5s or older children; tapping the box goes on and closes it';
+});
+
+await check('viwords', async () => {
+  // (round R, owner: "bánh khọt" and "nước mía" said by the English voice can't be understood) Vietnamese names and dishes
+  // inside English lines are cut out and said by the Vietnamese voice: by the recorded pack, the phone voice and online voices
+  const { viRuns } = await import('../js/viwords.js'), show = t => viRuns(t).map(([l, x]) => l === 'vi' ? '[' + x + ']' : x).join('');
+  const cases = [['Buy some bánh khọt?', 'Buy some [bánh khọt]?'], ['Welcome to Hội An and Bắc Ninh!', 'Welcome to [Hội An] and [Bắc Ninh]!'],
+    ['I am Bác 2. Every afternoon Bác 3, Bác 4 and I play cards.', 'I am [Bác 2]. Every afternoon [Bác 3], [Bác 4] and I play cards.'],
+    ['We went to Nha Trang and Vũng Tàu.', 'We went to [Nha Trang] and [Vũng Tàu].'], ['Phố Hai Quê is home.', '[Phố Hai Quê] is home.'],
+    ['Long ago, a kind girl called An Tiêm was sent', 'Long ago, a kind girl called [An Tiêm] was sent'], ['Xiè xie means thank you!', 'Xiè xie means thank you!'], ['Let us play a game!', 'Let us play a game!']];
+  for (const [t, want] of cases) ok(show(t) === want, `cut: ${show(t)} (wanted ${want})`);
+  const P = await open(b, { w: 1180, h: 820 }); await clear(P.page);
+  const line = "I am Miss Tam. I teach at the secondary school, trường cấp 2. After school I help at my family's sugarcane juice cart, nước mía, on Two Homes Street, just like in Bà Rịa."; // Cô Tam's line as English says it
+  const r = await P.page.evaluate(async line => {
+    // a phone with an English and a Vietnamese voice: record what each utterance says, and in which language
+    const said = [], fake = [{ name: 'Karen', lang: 'en-AU', localService: true }, { name: 'Linh', lang: 'vi-VN', localService: true }];
+    window.SpeechSynthesisUtterance = class { constructor(t) { this.text = t; } };
+    speechSynthesis.getVoices = () => fake; speechSynthesis.speak = u => { said.push([u.lang, u.text]); setTimeout(() => u.onend && u.onend(), 5); };
+    speechSynthesis.dispatchEvent(new Event('voiceschanged'));
+    const V = await import('/js/voice.js'), H = await import('/js/packhash.js');
+    await V.sayDevice('en', 'Buy some bánh khọt from Vũng Tàu, please!');
+    const pack = V.voicePack(), h = H.lineHash('en', line);
+    return { said, rec: pack && pack.lines[h], old: pack && pack.lines[H.packHash('en', line)], url: V.packUrl('en', line, 'f'), h };
+  }, line);
+  ok(JSON.stringify(r.said) === JSON.stringify([['en-AU', 'Buy some'], ['vi-VN', 'bánh khọt'], ['en-AU', 'from'], ['vi-VN', 'Vũng Tàu'], ['en-AU', ', please!']]), 'phone voice: ' + JSON.stringify(r.said));
+  ok(r.rec === 'fm' || r.rec === 'mf', `the pack has no two-voice recording of Cô Tam's line (${r.rec})`);
+  ok(!r.old && r.url.endsWith(r.h + '.mp3'), 'the old all-English recording is still used');
+  const mp3 = fs.statSync(`../voices/en/f/${r.h}.mp3`).size;
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return `${cases.length} lines cut right; the phone says the Vietnamese words with its Vietnamese voice; recorded lines use both voices (Cô Tam ${(mp3 / 1024).toFixed(0)} KB)`;
+});
+
+// No phone emoji anywhere (owner, round R): every emoji on screen is the game's own drawing (js/emojiswap.js), on the
+// page (menus, Grown-ups, games, speech boxes) and on canvases (signs, name tags, the mini-map)
+await check('noemoji', async () => {
+  const bad = [];
+  const scan = (P, where) => P.page.evaluate(w => {
+    const EMO = /\p{Extended_Pictographic}(?:️|[\u{1F3FB}-\u{1F3FF}])*(?:‍\p{Extended_Pictographic}(?:️|[\u{1F3FB}-\u{1F3FF}])*)*|[\u{1F1E6}-\u{1F1FF}]{2}/gu, out = new Set();
+    const t0 = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let t = t0.nextNode(); t; t = t0.nextNode()) { const p = t.parentElement; if (!p || p.closest('script,style,svg,textarea,input') || !p.getClientRects().length) continue; const s = t.nodeValue; for (const m of s.matchAll(EMO)) if (s[m.index + m[0].length] !== '︎') out.add(m[0] + ' (' + w + ')'); }
+    return [...out];
+  }, where).then(r => bad.push(...r));
+  { const P = await open(b, { w: 820, h: 1180, touch: true, play: false, lang: 'vi' });
+    await P.page.click('.screen.title .press', { force: true }); await P.page.waitForSelector('.screen.who'); await P.page.click('.modes button[data-m=split]'); await scan(P, 'who'); await P.ctx.close(); }
+  const P = await open(b, { w: 1180, h: 820, lang: 'vi' }); await clear(P.page);
+  await scan(P, 'valley');
+  await P.page.evaluate(() => __sv.openGamesHub(0)); await P.page.waitForTimeout(500); await scan(P, 'Vui chơi'); await clear(P.page);
+  for (const t of ['map', 'bag', 'log', 'album', 'passport', 'games', 'cam', 'friend']) { await P.page.evaluate(t => __sv.openPad(0, t), t); await P.page.waitForTimeout(400); await scan(P, 'Pad ' + t); await clear(P.page); }
+  await P.page.evaluate(async () => { (await import('/js/ui.js')).openGrownups(() => { }); }); await P.page.waitForTimeout(500);
+  await P.page.evaluate(() => document.querySelectorAll('details').forEach(d => { d.open = true; })); await P.page.waitForTimeout(300); await scan(P, 'Grown-ups'); await clear(P.page);
+  await P.page.evaluate(() => { __sv.dialog('Bà Năm', [['🌸 Hello! 🇻🇳 🇦🇺', '🌸 Chào con! 🇻🇳 🇦🇺']]); }); await P.page.waitForTimeout(400); await scan(P, 'speech box'); await clear(P.page);
+  const ids = await P.page.evaluate(async () => Object.keys((await import('/js/games/frame.js')).GAMES));
+  for (const id of ids) { await P.page.evaluate(id => { __sv.playGame(0, id, 'replay'); }, id); await P.page.waitForTimeout(400); await scan(P, 'game ' + id); await P.page.evaluate(() => { document.querySelector('.gl .gl-x')?.click(); }); await P.page.waitForTimeout(250); }
+  // a canvas label with a flag and a flower is painted with the drawings (blue from the Australian flag)
+  const cv = await P.page.evaluate(() => { const c = document.createElement('canvas'); c.width = 200; c.height = 60; const g = c.getContext('2d'); g.font = '40px sans-serif'; g.textBaseline = 'middle'; g.fillText('Jack 🇦🇺 🌸', 4, 30); const d = g.getImageData(0, 0, 200, 60).data; let blue = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 2] > 80 && d[i] < 30 && d[i + 1] < 60) blue++; return blue; });
+  if (cv < 200) bad.push('canvas labels still use phone emoji');
+  const noArt = await P.page.evaluate(() => [...(window.__svNoArt || [])]); if (noArt.length) bad.push('no drawing yet: ' + noArt.join(' '));
+  if (P.errors.length) bad.push(...P.errors);
+  await P.ctx.close();
+  ok(!bad.length, [...new Set(bad)].slice(0, 10).join(' · '));
+  return `no phone emoji on Who's playing, the valley, Vui chơi, 8 Pad tabs, Grown-ups, a speech box and ${ids.length} games; painted labels use the drawings`;
 });
 
 await check('arch', async () => {
@@ -645,11 +1146,12 @@ await check('simple', async () => {
   await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.locator('.sp-stop').first().click(); await P.page.waitForTimeout(300); await P.page.locator('.sp-stop:not(.sign)').first().click();
   r.tale = await P.page.waitForSelector('.theatre', { timeout: 10000 }).then(() => true, () => false);
   await P.page.evaluate(() => document.querySelector('.theatre .th-x').click());
-  await P.page.waitForFunction(() => __sv.simple.open, null, { timeout: 8000 }).catch(() => { });
+  for (let k=0;k<6;k++){ console.log('DBG', JSON.stringify(await P.page.evaluate(() => ({ open: __sv.simple.open, busy: __sv.simple.busy, th: document.querySelectorAll('.theatre').length, gl: !!document.querySelector('.gl'), paused: __sv.paused })))); await P.page.waitForTimeout(800);}
+  await P.page.waitForFunction(() => __sv.simple.open && !__sv.simple.busy && !document.querySelector('.theatre'), null, { timeout: 8000 }).catch(() => { }); // (the story fades out first)
   await P.page.evaluate(() => document.querySelectorAll('.dialog, .reward').forEach(d => d.remove()));
   await P.page.click('.sp-valley'); await P.page.waitForTimeout(500);
-  r.valley = await P.page.evaluate(() => ({ open: __sv.simple.open, screen: __sv.heroes[0].profile.screen, dock: !document.querySelector('.dk.simple').hidden, paused: __sv.paused }));
-  await P.page.click('.dk.simple'); r.reopen = await P.page.evaluate(() => __sv.simple.open);
+  r.valley = await P.page.evaluate(() => ({ open: __sv.simple.open, screen: __sv.heroes[0].profile.screen, dock: !document.querySelector('.simplesw').hidden, paused: __sv.paused }));
+  await P.page.click('.simplesw'); r.reopen = await P.page.evaluate(() => __sv.simple.open);
   const errs = P.errors; await P.ctx.close();
   // a big kid, and two players
   const B = await open(b, { w: 390, h: 844, touch: true, screen: null });
@@ -662,14 +1164,14 @@ await check('simple', async () => {
     return { wide: s.classList.contains('wide'), rail: t.left < 5 && t.height > 300, sideways: sc.scrollWidth > sc.clientWidth && sc.scrollHeight <= sc.clientHeight + 2, inView: pics.slice(0, 3).every(p => p.top >= 0 && p.bottom <= innerHeight), big: pics.every(p => p.width >= 64) && tabs.every(p => Math.min(p.width, p.height) >= 64) }; });
   await W.ctx.close();
   const S = await open(b, { w: 1280, h: 800, mode: 'split', screen: null }); await S.page.waitForTimeout(1500);
-  r.split = await S.page.evaluate(() => ({ open: __sv.simple.open, dock: [...document.querySelectorAll('.dk.simple')].some(d => !d.hidden) })); await S.ctx.close();
+  r.split = await S.page.evaluate(() => ({ open: __sv.simple.open, dock: [...document.querySelectorAll('.simplesw')].some(d => !d.hidden) })); await S.ctx.close();
   ok(r.groupsFirst && !r.flash && r.game && r.back && r.tale && !r.valley.open && r.valley.screen === 'valley' && r.valley.dock && !r.valley.paused && r.reopen && r.wide.wide && r.wide.rail && r.wide.sideways && r.wide.inView && r.wide.big && !r.big && !r.split.open && !r.split.dock && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'under 5 starts on the path; a game and a story each one tap away, the path comes back after; Valley remembered; dock button reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
+  return 'under 5 starts on the path; a game and a story each one tap away, the path comes back after; Valley remembered; the “Big pictures” switch reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
 });
 
 await check('adventure', async () => {
   // round J (owner's brief: "an adventure world containing places children want to visit"): one activity list places
-  // every game; an under-5 sees at most six stops at a time and every one is a drawn picture; a tap answers at once and a
+  // every game; an under-5 sees one group at a time on one page that scrolls (round P, owner; it was six a page) and every one is a drawn picture; a tap answers at once and a
   // second tap can't start a game twice; a big kid taps once to look and again to play, sees ✨ on new games and can
   // search; Discover jumps to any area; Ông Cú cheers a new star; the landscape stands still in Calm mode; opening and
   // closing the screen 25 times leaves no extra listeners or elements behind
@@ -736,7 +1238,7 @@ await check('adventure', async () => {
   r.big.search = await B.page.evaluate(() => [...document.querySelectorAll('.sp-found .sp-card b')].map(b => b.textContent));
   errs.push(...B.errors); await B.ctx.close();
   ok(!r.list.missing.length && !r.list.extra.length && !r.list.badArea.length, 'activity list: ' + JSON.stringify(r.list));
-  ok(r.walk.most <= 6 && r.walk.groupPages === 2 && !r.walk.missed.length && !r.walk.notDrawn.length && !r.walk.tooBig.length, 'under-5 path: ' + JSON.stringify(r.walk));
+  ok(r.walk.groupPages === 1 && r.walk.pages <= 12 && !r.walk.missed.length && !r.walk.notDrawn.length && !r.walk.tooBig.length, 'under-5 path: ' + JSON.stringify(r.walk));
   ok(r.find.cards >= 18 && !r.find.search && r.music === 'music', 'discover: ' + JSON.stringify(r.find) + ' ' + r.music);
   ok(r.starts === 1, 'a double tap started the game ' + r.starts + ' times');
   ok(r.owl.owl && r.owl.cheer, 'Ông Cú: ' + JSON.stringify(r.owl));
@@ -744,7 +1246,7 @@ await check('adventure', async () => {
   ok(r.leak.listeners <= 0 && r.leak.nodes <= 5 && r.leak.screens === 1, 'after 25 opens: ' + JSON.stringify(r.leak));
   ok(r.big.stops > 6 && r.big.dots && r.big.newOn.includes('Feed the Bunny') && r.big.newOn.length === 1 && !r.big.firstTap.game && r.big.firstTap.sel && r.big.secondTap && r.big.search.some(t => /Smash the Pot/.test(t)), 'big kid: ' + JSON.stringify(r.big));
   ok(!errs.length, errs.join(' | '));
-  return `${r.list.games} games in 11 areas; under-5 path ${r.walk.pages} pages of at most ${r.walk.most}, every one drawn; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
+  return `${r.list.games} games in 11 areas; under-5 path: every group on one scrolling page (round P; ${r.walk.pages} groups, up to ${r.walk.most} stops), every one drawn; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
 });
 
 await check('gamelevel', async () => {
@@ -764,10 +1266,11 @@ await check('gamelevel', async () => {
   // Festivals: in the main settings
   // Festivals in one place (owner): the Settings festival page; the valley's decorations there behind press-and-hold; none in Grown-ups
   r.fest = await P.page.evaluate(async () => { const U = await import('/js/ui.js'), w = t => new Promise(r => setTimeout(r, t));
-    U.openGrownups(); await w(300); const inGrown = !!document.querySelector('.seg.fest'); document.querySelectorAll('.modal').forEach(m => m.remove());
-    U.openFestivals(__sv, 0); await w(300); const before = !!document.querySelector('.festpick .seg.fest, .modal .seg.fest'), hold = document.querySelector('.fest-hold');
+    U.openGrownups(); await w(300); const inGrown = !!document.querySelector('.seg.fest, select.fest-pick'); document.querySelectorAll('.modal').forEach(m => m.remove());
+    U.openFestivals(__sv, 0); await w(300); const before = !!document.querySelector('.festpick .seg.fest, .modal .seg.fest, .modal select.fest-pick'), hold = document.querySelector('.fest-hold');
     hold.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await w(1900);
-    const seg = document.querySelector('.fest-grown .seg.fest'); if (seg) seg.querySelector('[data-f="tet"]').click(); await w(200);
+    // (round R: 24 festivals, so the grown-ups pick from a list)
+    const seg = document.querySelector('.fest-grown select.fest-pick'); if (seg) { seg.value = 'tet'; seg.dispatchEvent(new Event('change', { bubbles: true })); } await w(200);
     return { inGrown, before, after: !!seg, chosen: (await import('/js/state.js')).settings.festival }; });
   const errs = P.errors; await P.ctx.close();
   ok(/Easy/.test(r.first.text) && r.first.h >= 44 && r.first.inside && r.choices.join() === 'easy,medium,hard' && /Hard/.test(r.after.text || '') && r.after.saved === 'hard' && r.after.games === 1 && !r.fest.inGrown && !r.fest.before && r.fest.after && r.fest.chosen === 'tet' && !errs.length, JSON.stringify({ r, errs }));
@@ -841,6 +1344,96 @@ await check('songs', async () => {
   ok(r.reef.length === 2 && r.reef.every(x => x.inside && x.under), 'water landmarks: ' + JSON.stringify(r.reef));
   ok(r.star.clear && !errs.length, JSON.stringify({ star: r.star, errs }));
   return `Trung Thu → ${r.trungthu}; Lotus Village → ${r.village}; family recordings first; Songs page: lullaby words, night, sleep timer, valley music left alone; Simple screen Music group starts with Songs; reef and Hạ Long inside the lake; star counter clear of the top bar`;
+});
+
+await check('realphotos', async () => {
+  // round O (owner: "Real photos and 360° show nothing"): the photos come from Wikipedia's main API (the old picture
+  // list is being retired), the article's main picture first, with the photographer's credit; and 360° opens on top
+  // of the photos instead of behind them. (Wikipedia is pretended here: the test machine has no internet.)
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+  await P.page.route('**/rest_v1/**', r => r.fulfill({ status: 404, body: '' }));
+  await P.page.route('**/w/api.php**', r => { const u = r.request().url();
+    if (/pageimages/.test(u)) return r.fulfill({ json: { query: { pages: [{ title: 'Saigon Central Post Office', pageimage: 'Lead_photo.jpg' }] } } });
+    return r.fulfill({ json: { query: { pages: [
+      { title: 'File:Other view.jpg', imageinfo: [{ mime: 'image/jpeg', url: 'https://upload.wikimedia.org/a/other.jpg', thumburl: 'https://upload.wikimedia.org/a/1280px-other.jpg', extmetadata: { Artist: { value: '<a>Someone</a>' }, LicenseShortName: { value: 'CC BY-SA 4.0' }, ImageDescription: { value: 'Inside the hall' } } }] },
+      { title: 'File:Lead photo.jpg', imageinfo: [{ mime: 'image/jpeg', url: 'https://upload.wikimedia.org/a/lead.jpg', thumburl: 'https://upload.wikimedia.org/a/1280px-lead.jpg', extmetadata: { Artist: { value: 'Photographer' }, LicenseShortName: { value: 'CC BY 2.0' } } }] },
+      { title: 'File:City map.svg', imageinfo: [{ mime: 'image/svg+xml', url: 'https://upload.wikimedia.org/a/map.svg' }] }] } } }); });
+  await P.page.route('https://upload.wikimedia.org/**', r => r.fulfill({ body: png, contentType: 'image/png', headers: { 'Access-Control-Allow-Origin': '*' } }));
+  await P.page.route('https://maps.google.com/**', r => r.fulfill({ body: '<html><body>map</body></html>', contentType: 'text/html' }));
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/realworld.js'), wait = ms => new Promise(x => setTimeout(x, ms));
+    W.openPhotos('Saigon Central Post Office', W.REAL.postoffice[0], { id: 'postoffice' });
+    for (let k = 0; k < 40 && !document.querySelector('.rv-img'); k++) await wait(150);
+    const cap = document.querySelector('.rv-cap a') ? document.querySelector('.rv-cap a').textContent : '', none = document.querySelector('.realview').classList.contains('none'), dots = document.querySelectorAll('.rv-dots i').length;
+    document.querySelector('.rv-360').click(); await wait(400);
+    const map = document.querySelector('.modal.rvmap'), q = map.querySelector('.card').getBoundingClientRect(), top = document.elementFromPoint(q.left + q.width / 2, q.top + 30);
+    return { none, dots, cap, onTop: !!(top && top.closest('.rvmap')) };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.none && r.dots === 2 && /Photographer/.test(r.cap) && r.onTop && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `2 photos from the main API (map left out), the article's own picture first, credit “${r.cap}”; 360° opens on top of the photos`;
+});
+
+await check('firstplayer', async () => {
+  // round P (owner): no ready-made characters; a new device asks the child to make their own first (name, look, photo)
+  const P = await open(b, { w: 390, h: 844, touch: true, lang: 'vi', play: false, pre: () => { localStorage.setItem('sv2_profiles', '[]'); } });
+  await P.page.click('.screen.title .press', { force: true }); await P.page.waitForSelector('.screen.who');
+  const before = await P.page.evaluate(() => ({ first: !!document.querySelector('.who-card.first .make'), picks: document.querySelectorAll('.pick[data-id]').length }));
+  await P.page.click('.who .make'); await P.page.waitForSelector('.modal.editor #nm');
+  await P.page.fill('#nm', 'Mai'); await P.page.evaluate(() => document.querySelector('#eSave').click());
+  await P.page.waitForSelector('.who .go:not([disabled])', { timeout: 5000 });
+  await P.page.click('.who .go'); await P.page.waitForFunction(() => window.__sv && window.__sv.heroes.length > 0);
+  const r = await P.page.evaluate(() => ({ name: __sv.heroes[0].profile.name, saved: JSON.parse(localStorage.getItem('sv2_profiles')).map(p => p.name) }));
+  const errs = P.errors; await P.ctx.close();
+  ok(before.first && !before.picks && r.name === 'Mai' && r.saved.length === 1 && r.saved[0] === 'Mai' && !errs.length, JSON.stringify({ before, r, errs }));
+  return 'a new device shows “Make my character” and no ready-made players; the child made “Mai” and plays as Mai';
+});
+
+await check('grownupsui', async () => {
+  // round P (owner): on a phone the action button sits on the right above Jump and Run (the left half is the joystick's)
+  // and the spoken words near the top; Grown-ups in groups that open and close, the voice engine folded, no credits editor
+  const P = await open(b, { w: 390, h: 844, touch: true, lang: 'vi' }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const wait = ms => new Promise(x => setTimeout(x, ms)), h = __sv.huds[0];
+    __sv.paused = true; h.setAction({ label: () => 'Nhặt Lá dong', icon: '🌿' }); await wait(300); // (paused: the valley's own loop would hide it again)
+    const a = h.q('.act').getBoundingClientRect(), mv = h.q('.hud-br').getBoundingClientRect();
+    const { say } = await import('/js/voice.js'); say('A test line.', 'Một câu thử.'); await wait(400);
+    const cap = document.querySelector('.caption'), c = cap ? cap.getBoundingClientRect() : null;
+    const { openGrownups } = await import('/js/ui.js'); openGrownups(); await wait(400);
+    const secs = [...document.querySelectorAll('.grownups details.gsec')].map(d => d.dataset.sec), open = [...document.querySelectorAll('.grownups details.gsec[open]')].map(d => d.dataset.sec);
+    const eng = document.querySelector('.grownups details.xeng'), credits = !!document.querySelector('.grownups #crName');
+    return { act: [a.left, a.top, a.right, a.bottom].map(Math.round), moves: Math.round(mv.top), w: innerWidth, cap: c ? [Math.round(c.top), Math.round(c.bottom)] : null, secs, open, engine: !!eng, engineOpen: !!(eng && eng.open), credits };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.act[0] > r.w / 2 - 40 && r.act[3] <= r.moves + 2 && r.cap && r.cap[0] < 260, 'phone layout: ' + JSON.stringify(r));
+  ok(r.secs.length >= 8 && r.secs.includes('sound') && r.secs.includes('online') && r.open.join() === 'players' && r.engine && !r.engineOpen && !r.credits && !errs.length, 'grown-ups: ' + JSON.stringify(Object.assign(r, { errs })));
+  return `action button on the right above Jump/Run (${r.act.join(',')}), words at the top (${r.cap.join('–')} px); Grown-ups: ${r.secs.length} groups (${r.secs.join(', ')}), the voice engine folded, no credits editor`;
+});
+
+await check('playhub', async () => {
+  // round O (owner): the pink button is "Play" with a 🎵 Songs tab (songs belong with the games, not in Settings);
+  // battery: on a phone the valley is drawn 30 times a second, and not at all behind the Simple screen or the Songs page
+  const P = await open(b, { w: 390, h: 844, touch: true, lang: 'vi' }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, wait = ms => new Promise(x => setTimeout(x, ms)), R = G.renderer, orig = R.render; let n = 0; R.render = function (...a) { n++; return orig.apply(this, a); };
+    const count = async ms => { n = 0; await wait(ms); return n; };
+    const out = { label: document.querySelector('.dk.games small').textContent, perSec: await count(2000) / 2 };
+    G.openQuick(0); await wait(300); out.settingsSongs = !!document.querySelector('#qSongs'); document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false;
+    G.openGamesHub(0); await wait(300); out.title = document.querySelector('.hub h2').textContent;
+    document.querySelector('.hubtabs [data-tab="songs"]').click(); await wait(300);
+    out.groups = [...document.querySelectorAll('[data-songs]')].map(b => b.dataset.songs);
+    document.querySelector('[data-songs="lullaby"]').click(); await wait(600);
+    out.songsPage = !!document.querySelector('.songs.night'); out.songsDraws = await count(1500);
+    document.querySelector('.songs .sg-x').click(); await wait(300);
+    G.simple.show(); await wait(400); out.simpleDraws = await count(1500); G.simple.hide(); await wait(300);
+    out.backDraws = await count(1000);
+    R.render = orig; return out;
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.label === 'Vui chơi' && /Vui chơi/.test(r.title) && !r.settingsSongs && r.groups.includes('lullaby') && r.groups.length >= 4 && r.songsPage, 'play hub: ' + JSON.stringify(r));
+  ok(r.perSec <= 34 && r.songsDraws === 0 && r.simpleDraws === 0 && r.backDraws > 0 && !errs.length, 'battery: ' + JSON.stringify(Object.assign(r, { errs })));
+  return `“${r.label}” with 🎵 ${r.groups.length} song groups (lullabies open the night page), none in Settings; phone draws ${r.perSec}/s, none behind the Songs page or the Simple screen`;
 });
 
 await check('a11y', async () => {
@@ -1076,12 +1669,15 @@ await check('iphone', async () => {
     N.on('status', s => said.push(s.key));
     // 1. the microphone: refused without a tap, works after one, goes into an open call
     let asks = 0, replaced = 0; const md = navigator.mediaDevices, real = md.getUserMedia.bind(md);
-    md.getUserMedia = async c => { asks++; if (asks <= 2) { const e = new Error('needs a tap'); e.name = 'NotAllowedError'; throw e; } return real({ audio: true }); };
+    md.getUserMedia = async c => { asks++; if (asks <= 1) { const e = new Error('needs a tap'); e.name = 'NotAllowedError'; throw e; } return real({ audio: true }); };
     N.calls.set('peer-y', { peerConnection: { getSenders: () => [{ track: { kind: 'audio' }, replaceTrack: async () => { replaced++; } }] } });
     N.mic = null; N.cloudOn = true; await N.getMic();
     const first = said.slice(), noMicYet = !N.mic;
-    document.body.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); for (let k = 0; k < 50 && !(N.mic && said.includes('micon')); k++) await wait(100);
-    const micAfterTap = !!N.mic, after = said.slice();
+    // round O: a tap anywhere no longer asks again (each ask could bring the iPhone's question up again)…
+    document.body.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); await wait(400); const askedOnTap = asks;
+    // …the 🎙️ Microphone on button (or the call button) does
+    await N.getMic(); for (let k = 0; k < 50 && !(N.mic && said.includes('micon')); k++) await wait(100);
+    const micAfterTap = !!N.mic, after = said.slice(), tapAsks = askedOnTap;
     md.getUserMedia = async () => { const e = new Error('none'); e.name = 'NotFoundError'; throw e; }; N.mic = null; said.length = 0; await N.getMic(); const reallyNone = said.slice();
     md.getUserMedia = real; N.calls.delete('peer-y'); N.cloudOn = false; N.mic = null;
     // 2. Pad → Friends with a player in the room: no button taller than two lines, all inside the card
@@ -1100,12 +1696,12 @@ await check('iphone', async () => {
     const c = chip.getBoundingClientRect(), hit = [...document.querySelectorAll('.hud .tools .dk, .hud .zoomer button, .hud .mini-wrap, .hud .zoom')].filter(e => e.offsetParent).filter(e => { const q = e.getBoundingClientRect(); return q.left < c.right && c.left < q.right && q.top < c.bottom && c.top < q.bottom; }).map(e => e.className);
     const onScreen = c.width > 60 && c.height > 20 && c.right <= innerWidth + 1 && c.left >= 0, chipText = chip.textContent;
     delete G.partners['peer-q']; G.huds[0].setCall(false, false, false);
-    return { first, noMicYet, micAfterTap, after, replaced, reallyNone, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
+    return { first, noMicYet, micAfterTap, after, replaced, reallyNone, tapAsks, asksBefore: 1, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
   });
   const errs = P.errors; await P.ctx.close();
-  ok((r.first.includes('mictap') || r.first.includes('micdenied')) && !r.first.includes('nomic') && r.noMicYet && r.micAfterTap && r.after.includes('micon') && r.replaced === 1 && r.reallyNone.includes('nomic')
+  ok((r.first.includes('mictap') || r.first.includes('micdenied')) && !r.first.includes('nomic') && r.noMicYet && r.tapAsks === 1 && r.micAfterTap && r.after.includes('micon') && r.replaced === 1 && r.reallyNone.includes('nomic')
     && r.buttons >= 4 && !r.tall.length && !r.outside && !r.hit.length && r.onScreen && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'microphone: "tap to talk" (not "no microphone"), on after the next tap and put into the open call; real "no microphone" still said; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
+  return 'microphone: "tap 🎙️ Microphone on" (not "no microphone"), not asked again on every tap, on from the button and put into the open call; real "no microphone" still said; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
 });
 
 await check('tienlen', async () => {
@@ -1259,8 +1855,10 @@ await check('perf', async () => {
   const P = await open(b, { w: 1024, h: 700, play: false });
   const startMB = await P.page.evaluate(() => performance.getEntriesByType('resource').concat(performance.getEntriesByType('navigation')).reduce((a, e) => a + (e.encodedBodySize || e.transferSize || 0), 0) / 1e6);
   // the map picture: painted once after the title screen, then read back from the device on the next start
-  const pic = async () => { await P.page.waitForFunction(() => __sv.mapPic && __sv.mapPic.ready, null, { timeout: 60000 }); return P.page.evaluate(() => ({ from: __sv.mapPic.from, boot: __sv.bootTimes })); };
-  const first = await pic(); await P.page.waitForTimeout(800);
+  const pic = async () => { await P.page.waitForFunction(() => __sv.mapPic && __sv.mapPic.ready && __sv.bootTimes, null, { timeout: 60000 }); return P.page.evaluate(() => ({ from: __sv.mapPic.from, boot: __sv.bootTimes })); };
+  const first = await pic();
+  // (wait until the picture is really kept on the device, not a fixed time: saving it can take a moment while the valley finishes building)
+  for (let i = 0; i < 75; i++) { if (await P.page.evaluate(async () => { try { const k = await caches.open('sv-world'); return (await k.keys()).some(r => r.url.includes('/map.png')); } catch (e) { return true; } })) break; await P.page.waitForTimeout(200); }
   await P.page.reload(); await P.page.waitForSelector('.screen.title', { timeout: 90000 }); const second = await pic();
   await P.page.evaluate(() => { __sv.renderer.setPixelRatio(.35); dispatchEvent(new Event('resize')); });
   ok(first.from === 'painted' && second.from === 'cache', 'map picture: ' + JSON.stringify({ first, second }));
@@ -1308,21 +1906,29 @@ await check('saves', async () => {
 });
 
 await check('meet', async () => {
-  // friends meet by themselves: two friends on each other's list start playing and, with no room number read out,
-  // end up in one room seeing each other's names (the one whose code comes first starts it). One of them never
-  // switched "friends can see me" on: having a friend on the list switches it on from round 28.
+  // friends are told, never moved (round O, owner): two friends on each other's list start playing; each gets a card
+  // "🟢 … is playing" and nobody is put in a room by themselves; one taps 📨 Invite (a room starts), the other gets the
+  // invitation, taps Join, and they are in one room seeing each other's names. One of them never switched "friends
+  // can see me" on: having a friend on the list switches it on from round 28.
   const up = await fetch('http://127.0.0.1:9000/myapp/').then(r => r.ok).catch(() => false);
   if (!up) return 'skipped (no local PeerJS server on 127.0.0.1:9000)';
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9000, path: '/myapp', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
   const A = await open(b, { pre, w: 700, h: 500, settings: { friendCode: 'MEETA2', friendsOn: false, friends: [{ code: 'MEETB3', name: 'Bin' }] } });
   const B = await open(b, { pre, w: 700, h: 500, lang: 'vi', settings: { friendCode: 'MEETB3', friendsOn: true, friends: [{ code: 'MEETA2', name: 'Na' }] } });
   for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  await B.page.waitForSelector('.friendnote [data-inv]', { timeout: 90000 });
+  const noteText = await B.page.textContent('.friendnote');
+  await B.page.waitForTimeout(10000);
+  const alone = await Promise.all([A, B].map(P => P.page.evaluate(() => ({ partners: Object.keys(__sv.partners).length, role: __Net.role }))));
+  await B.page.click('.friendnote [data-inv]');
+  await A.page.waitForSelector('.dialog .dchoices button', { timeout: 60000 }); await A.page.waitForTimeout(600); await A.page.evaluate(() => document.querySelector('.dialog .dchoices button').click()); // (the choices bounce in)
   const met = P => P.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 90000 });
   await Promise.all([met(A), met(B)]);
   const r = await Promise.all([A, B].map(P => P.page.evaluate(() => ({ role: __Net.role, code: __Net.code, names: Object.values(__sv.partners).map(p => p.name) }))));
   const errs = A.errors.concat(B.errors); await A.ctx.close(); await B.ctx.close();
-  ok(r[0].role === 'host' && r[1].role === 'guest' && r[0].code === r[1].code && !errs.length, JSON.stringify({ r, errs }));
-  return `met in room ${r[0].code} by themselves, names shown`;
+  ok(alone.every(x => !x.partners && !x.role), 'friends were put in a room by themselves: ' + JSON.stringify(alone));
+  ok(r[1].role === 'host' && r[0].role === 'guest' && r[0].code === r[1].code && !errs.length, JSON.stringify({ r, errs }));
+  return `"${noteText.replace(/\s+/g, ' ').trim().slice(0, 60)}…"; nobody moved for 10 s; 📨 Invite → Join: room ${r[1].code}, names shown`;
 });
 
 await check('cloud', async () => {

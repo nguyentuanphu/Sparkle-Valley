@@ -40,13 +40,29 @@ export async function iceServers() {
     if (!fetched || fetched.url !== r) { try { const res = await fetch(r); const j = await res.json(); fetched = { url: r, list: Array.isArray(j) ? j : j.iceServers || [] }; } catch (e) { fetched = { url: r, list: [] }; } }
     if (fetched.list.length) return STUN.concat(fetched.list);
   } else if (/^turns?:/i.test(r)) return STUN.concat([{ urls: r.split(/[\s,]+/).filter(Boolean), username: settings.turnUser || '', credential: settings.turnPass || '' }]);
+  // the family's own relay, set up once on the website (round O: netlify/functions/turn.mjs gives each game details
+  // that last a few hours; the key itself never leaves Netlify)
+  const own = await siteTurn(); if (own.length) return STUN.concat(own);
   return STUN.concat(PUBLIC_TURN);
+}
+let siteTurnAt = 0, siteTurnList = [];
+async function siteTurn() {
+  if (!/^https:$/.test(location.protocol) && !window.SV_TURN_TEST) return [];
+  if (Date.now() - siteTurnAt < 30 * 60e3) return siteTurnList;
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4000);
+    const r = await fetch((window.SV_TURN_TEST || '') + '/api/turn', { signal: ctl.signal }); clearTimeout(t);
+    const j = r.ok ? await r.json() : {}; siteTurnList = Array.isArray(j.iceServers) ? j.iceServers.filter(x => x && x.urls) : [];
+  } catch (e) { siteTurnList = []; }
+  siteTurnAt = Date.now(); return siteTurnList;
 }
 // PeerJS settings (the free public PeerJS server by default; tests can point it at a local one)
 let ICE = STUN.concat(PUBLIC_TURN);
 const peerOpts = () => Object.assign({ debug: 0, config: { iceServers: ICE, iceCandidatePoolSize: 2 } }, window.SV_PEER || {});
 const prepare = async () => { await loadPeer(); ICE = await iceServers(); };
-const okPhoto = p => typeof p === 'string' && p.startsWith('data:image/') && p.length < 120000 ? p : null;
+// (audit, 9 Oct) a photo goes into <img src="…">, so only a plain base64 picture is accepted: no quotes, spaces or
+// anything else that could close the attribute and add code
+export const okPhoto = p => typeof p === 'string' && p.length < 120000 && /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+={0,2}$/.test(p) ? p : null;
 // ids and friend codes go into the page, so only plain letters, digits and dashes are accepted
 const okId = id => typeof id === 'string' && /^[\w-]{1,64}$/.test(id);
 const okLook = l => l && typeof l === 'object' && !Array.isArray(l) ? Object.fromEntries(Object.entries(l).filter(([k, v]) => /^\w{1,16}$/.test(k) && (typeof v === 'number' ? Number.isFinite(v) : typeof v === 'string' && v.length < 40 && /^[#\w -]*$/.test(v)))) : {};
@@ -82,10 +98,10 @@ export const Net = {
   get remote() { return Object.values(this.remotes)[0] || null; },  // older code: the first friend
 
   // The microphone (owner's iPhone bug, round F: "no microphone" although the phone has one). iPhones only open the
-  // microphone straight after a tap, and friends now meet by themselves with no tap, so the old single try failed and
-  // every failure said "no microphone". Now: ask with the clean-sound settings, then plainly; if the phone wants a tap,
-  // say "tap to talk" and open it on the child's next tap, then put it into the calls already open (no reconnecting).
-  // Only a phone with really no microphone hears "no microphone"; a blocked one gets how to allow it.
+  // microphone straight after a tap, so a try without one can fail; that says "tap 🎙️ Microphone on" and only a phone
+  // with really no microphone hears "no microphone"; a blocked one gets how to allow it. Round O (owner: the Friends
+  // screen got stuck and the microphone never came on): it no longer tries again on every tap anywhere on the screen
+  // (each try could bring the iPhone's question up again); the child taps the 🎙️ button in Friends or the call button.
   micError: null,
   async getMic() {
     if (this.mic) return this.mic;
@@ -95,22 +111,16 @@ export const Net = {
       if (!md || !md.getUserMedia) { this.micError = 'nomedia'; this.emit('status', { key: 'nomic' }); return null; }
       let err = null;
       for (const audio of [{ echoCancellation: true, noiseSuppression: true, autoGainControl: true }, true]) {
-        try { this.mic = await md.getUserMedia({ audio, video: false }); break; } catch (e) { err = e; if (e && e.name === 'NotFoundError') break; }
+        try { this.mic = await md.getUserMedia({ audio, video: false }); break; } catch (e) { err = e; if (e && (e.name === 'NotFoundError' || e.name === 'NotAllowedError')) break; }
       }
       if (this.mic) { this.micError = null; this._micOn(); return this.mic; }
       const name = (err && err.name) || 'Error', tapped = !!(navigator.userActivation && navigator.userActivation.isActive);
       this.micError = name;
       if (name === 'NotFoundError' || name === 'OverconstrainedError') this.emit('status', { key: 'nomic' });
-      else { this.emit('status', { key: name === 'NotAllowedError' && tapped ? 'micdenied' : 'mictap' }); this._micOnTap(); } // (always tried again on the next tap)
+      else this.emit('status', { key: name === 'NotAllowedError' && tapped ? 'micdenied' : 'mictap' });
       return null;
     })();
     try { return await this._micAsking; } finally { this._micAsking = null; }
-  },
-  // on the next tap anywhere, try the microphone again (once per tap, until it works or the room closes)
-  _micOnTap() {
-    if (this._micTapArmed) return; this._micTapArmed = true;
-    const go = () => { removeEventListener('pointerup', go, true); this._micTapArmed = false; if (!this.mic && (this.peer || this.cloudOn)) this.getMic(); };
-    addEventListener('pointerup', go, true);
   },
   // the microphone arrived after the calls started (they carried silence): send it in every open call
   _micOn() {

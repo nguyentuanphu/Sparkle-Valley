@@ -18,23 +18,23 @@ export const ITEMS = {
 // Recipes are checked by the set of ingredients (order does not matter).
 // heal = hearts restored, bonus = extra (yellow) stamina wheels.
 export const RECIPES = [
-  { id: 'pho', icon: '🍲', need: ['noodles', 'herb', 'egg'], name: () => T('Phở noodle soup', 'Phở'), heal: 3, bonus: .5 },
+  { id: 'pho', icon: '🍲', need: ['noodles', 'herb', 'egg'], name: () => T('Phở (noodle soup)', 'Phở'), heal: 3, bonus: .5 },
   { id: 'banhchung', icon: '🟩', need: ['rice', 'bean', 'leaf'], name: () => T('Bánh chưng (square rice cake)', 'Bánh chưng'), heal: 3, bonus: 1 },
-  { id: 'xoixoai', icon: '🥭', need: ['rice', 'mango'], name: () => T('Mango sticky rice', 'Xôi xoài'), heal: 2, bonus: .5 },
-  { id: 'chechuoi', icon: '🍧', need: ['banana', 'bean'], name: () => T('Banana sweet soup', 'Chè chuối'), heal: 2, bonus: .3 },
-  { id: 'canhchua', icon: '🥣', need: ['fish', 'herb'], name: () => T('Sour fish soup', 'Canh chua cá'), heal: 2, bonus: .3 },
+  { id: 'xoixoai', icon: '🥭', need: ['rice', 'mango'], name: () => T('Xôi xoài (mango sticky rice)', 'Xôi xoài'), heal: 2, bonus: .5 },
+  { id: 'chechuoi', icon: '🍧', need: ['banana', 'bean'], name: () => T('Chè chuối (banana sweet soup)', 'Chè chuối'), heal: 2, bonus: .3 },
+  { id: 'canhchua', icon: '🥣', need: ['fish', 'herb'], name: () => T('Canh chua (sour fish soup)', 'Canh chua cá'), heal: 2, bonus: .3 },
   { id: 'comchien', icon: '🍳', need: ['rice', 'egg'], name: () => T('Egg fried rice', 'Cơm chiên trứng'), heal: 2, bonus: 0 },
   { id: 'comnam', icon: '🍚', need: ['rice', 'mushroom'], name: () => T('Mushroom rice', 'Cơm nấm'), heal: 2, bonus: 0 },
-  { id: 'cakho', icon: '🐟', need: ['fish', 'rice'], name: () => T('Braised fish with rice', 'Cá kho với cơm'), heal: 2, bonus: .2 },
+  { id: 'cakho', icon: '🐟', need: ['fish', 'rice'], name: () => T('Cá kho (braised fish) with rice', 'Cá kho với cơm'), heal: 2, bonus: .2 },
   { id: 'taonuong', icon: '🍎', need: ['apple', 'apple'], name: () => T('Baked apples', 'Táo nướng'), heal: 1, bonus: 0 },
   { id: 'chuoinuong', icon: '🍌', need: ['banana'], name: () => T('Grilled banana', 'Chuối nướng'), heal: 1, bonus: 0 },
   { id: 'nam', icon: '🍢', need: ['mushroom'], name: () => T('Mushroom skewer', 'Nấm xiên nướng'), heal: 1, bonus: 0 },
   { id: 'fruit', icon: '🥗', need: ['apple', 'banana', 'mango'], name: () => T('Rainbow fruit salad', 'Salad trái cây'), heal: 3, bonus: .3 },
   // dishes from the four cultures, made with the crops that grow near each village
-  { id: 'raumuong', icon: '🥬', need: ['waterspinach', 'herb'], name: () => T('Stir-fried water spinach', 'Rau muống xào'), heal: 2, bonus: .2 },
+  { id: 'raumuong', icon: '🥬', need: ['waterspinach', 'herb'], name: () => T('Rau muống xào (stir-fried water spinach)', 'Rau muống xào'), heal: 2, bonus: .2 },
   { id: 'khoainuong', icon: '🍠', need: ['sweetpotato'], name: () => T('Grilled sweet potato', 'Khoai lang nướng'), heal: 1, bonus: .1 },
-  { id: 'chedua', icon: '🥥', need: ['coconut', 'bean'], name: () => T('Coconut and mung bean sweet soup', 'Chè dừa đậu xanh'), heal: 2, bonus: .3 },
-  { id: 'chemit', icon: '🍈', need: ['jackfruit', 'coconut'], name: () => T('Jackfruit and coconut dessert', 'Chè mít dừa'), heal: 2, bonus: .3 },
+  { id: 'chedua', icon: '🥥', need: ['coconut', 'bean'], name: () => T('Chè đậu xanh (coconut and mung bean sweet soup)', 'Chè dừa đậu xanh'), heal: 2, bonus: .3 },
+  { id: 'chemit', icon: '🍈', need: ['jackfruit', 'coconut'], name: () => T('Chè mít (jackfruit and coconut dessert)', 'Chè mít dừa'), heal: 2, bonus: .3 },
   { id: 'macbread', icon: '🍞', need: ['banana', 'macadamia'], name: () => T('Banana macadamia bread', 'Bánh chuối hạt mắc ca'), heal: 2, bonus: .3 },
   { id: 'quandongpie', icon: '🥧', need: ['quandong', 'apple'], name: () => T('Quandong pie', 'Bánh nướng quả quandong'), heal: 2, bonus: .3 },
   { id: 'limefish', icon: '🐠', need: ['fish', 'fingerlime'], name: () => T('Fish with finger lime', 'Cá sốt chanh ngón tay'), heal: 2, bonus: .4 },
@@ -49,7 +49,7 @@ export const RECIPES = [
 ];
 // Festival treats: given as presents during festivals (not cooked)
 export const FEAST = [
-  { id: 'mooncake', icon: '🥮', name: () => T('Mooncake', 'Bánh trung thu'), heal: 2, bonus: .5 },
+  { id: 'mooncake', icon: '🥮', name: () => T('Bánh trung thu (mooncake)', 'Bánh trung thu'), heal: 2, bonus: .5 },
   { id: 'ladoo', icon: '🟠', name: () => T('Ladoo sweets', 'Kẹo ladoo'), heal: 2, bonus: .3 },
   { id: 'lamington', icon: '🍰', name: () => T('Lamington cake', 'Bánh lamington'), heal: 2, bonus: .3 },
   { id: 'sizzle', icon: '🌭', name: () => T('Sausage sizzle', 'Xúc xích nướng kẹp bánh mì'), heal: 2, bonus: .2 },

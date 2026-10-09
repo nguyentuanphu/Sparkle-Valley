@@ -10,6 +10,7 @@ import { el, esc, clamp } from './util.js';
 import { SIZE, HALF } from './world.js';
 import { avatarURL } from './avatar.js';
 import { pic, hasArt as hasPic } from './art.js';
+import { SFX } from './audio.js';
 
 export const EMOTES = [
   { id: 'hi', icon: '👋', en: 'Hi!', vi: 'Xin chào!' },
@@ -30,6 +31,7 @@ export class Hud {
       <div class="hud-tl">
         <div class="pcard" role="button" aria-label="${T('Settings', 'Cài đặt')}"><img class="pav" alt=""><i class="pgear">${ICONS.gear}</i><div class="pinfo"><b class="pname"></b><div class="hearts"></div></div></div>
         <div class="chips"><span class="chip c-money"></span><span class="chip c-orbs"></span><span class="chip c-leafy"></span></div>
+        <button class="simplesw" aria-label="${T('Big pictures screen', 'Màn hình hình to')}"><span>${ICONS.bigTiles}</span><b>${T('Big pictures', 'Hình to')}</b></button>
       </div>
       <div class="quest">
         <button class="q-say" aria-label="${T('Hear the goal again', 'Nghe lại nhiệm vụ')}"><span class="q-icon">📍</span><span class="q-text"></span></button>
@@ -46,8 +48,7 @@ export class Hud {
       <div class="htoast"></div>
       <canvas class="wheel" width="96" height="96"></canvas>
       <div class="dock">
-        <button class="dk games"><span>${ICONS.games}</span><small>${T('Games', 'Trò chơi')}</small><kbd class="kb">G</kbd></button>
-        <button class="dk simple" aria-label="${T('Simple screen', 'Màn hình đơn giản')}"><span>${pic('🧸')}</span><small>${T('Simple', 'Đơn giản')}</small></button>
+        <button class="dk games" aria-label="${T('Play: games, festivals, stories and songs', 'Vui chơi: trò chơi, lễ hội, truyện và bài hát')}"><span>${ICONS.games}</span><small>${T('Play', 'Vui chơi')}</small><kbd class="kb">G</kbd></button>
         <button class="dk map"><span>${ICONS.map}</span><small>${T('Map', 'Bản đồ')}</small><kbd class="kb">M</kbd></button>
         <button class="dk bag"><span>${ICONS.bag}</span><small>${T('Bag', 'Ba lô')}</small><kbd class="kb">B</kbd></button>
         <button class="dk voicecmd" hidden><span>${ICONS.ask}</span><small>${T('Ask', 'Hỏi')}</small><kbd class="kb">K</kbd></button>
@@ -75,9 +76,10 @@ export class Hud {
     hold(this.q('.mv.run'), '_btnRun'); hold(this.q('.mv.jump'), '_btnJump');
     this.q('.act').addEventListener('pointerdown', e => { e.preventDefault(); pad._act = true; });
     this.q('.dk.games').onclick = () => game.openGamesHub(i);
-    // the Simple screen (js/simple.js): one player on this device only
-    this.q('.dk.simple').hidden = game.mode === 'split' || i > 0;
-    this.q('.dk.simple').onclick = () => game.simple && game.simple.show();
+    // the Simple screen (js/simple.js): one player on this device only. Round O (owner): a clear "Big pictures" switch
+    // up by the player's card, away from the play buttons (it used to be a teddy in the dock)
+    this.q('.simplesw').hidden = game.mode === 'split' || i > 0;
+    this.q('.simplesw').onclick = () => { SFX.tap(); game.simple && game.simple.show(); };
     this.q('.pcard').onclick = () => game.openQuick(i);
     this.q('.dk.map').onclick = () => game.openPad(i, 'map');
     this.q('.dk.bag').onclick = () => game.openPad(i, 'bag');
@@ -85,7 +87,9 @@ export class Hud {
     this.q('.dk.voicecmd').hidden = !game.voiceControlOn();
     this.q('.dk.voicecmd').onclick = () => game.voiceCommand(i);
     this.q('.dk.call').onclick = () => game.toggleMute();
-    this.q('.dk.mus').onclick = () => game.toggleAudio('music');
+    this.q('.dk.mus').onclick = () => { if (this._musHeld) { this._musHeld = false; return; } game.toggleAudio('music'); };
+    // press and hold Music: the Songs page (round O)
+    { const b = this.q('.dk.mus'); let t = 0; b.addEventListener('pointerdown', () => { clearTimeout(t); t = setTimeout(() => { this._musHeld = true; game.openSongs && game.openSongs(); }, 650); }); for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => clearTimeout(t)); }
     this.q('.dk.snd').onclick = () => game.toggleAudio('sound');
     this.q('.friendchip').onclick = () => { const r = game.findFriend(i); if (r) game.say && game.say(r[0], r[1]); };
     this.q('.q-say').onclick = () => game.sayObjective(i);
@@ -107,7 +111,8 @@ export class Hud {
   refreshWho() { const p = this.hero.profile; this.q('.pav').src = avatarURL(p); this.q('.pname').textContent = nm(p.name); }
   toggleEmotes(v) { const e = this.q('.emotes'); e.hidden = v == null ? !e.hidden : !v; }
   layout(r, two) {
-    Object.assign(this.root.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
+    Object.assign(this.root.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px', transform: r.rot ? `rotate(${r.rot}deg)` : '' });
+    this.root.classList.toggle('far', r.rot === 180);   // (two players face to face: this half is turned to the far end)
     const small = two || r.w < 560 || r.h < 420; this.root.classList.toggle('small', small); this.rect = r;
     // on phones the dock has room for four buttons only, so Talk, Music and Sound move to a small row under the clock
     const tools = this.q('.tools'), dock = this.q('.dock');

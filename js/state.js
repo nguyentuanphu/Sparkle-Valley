@@ -70,6 +70,7 @@ export const settings = Object.assign({
   sound: true, music: true, voice: true,
   voiceEn: '', voiceVi: '',
   bilingual: false,      // speak the other language too, after a short pause
+  twoView: 'auto',       // two players: 'face' (each half turned to its own end), 'side' (both one way), 'auto' = face on touch screens
   alwaysDay: false,
   quality: 'auto',       // 'auto' | 'low' | 'high'
   camSpeed: 1,
@@ -108,7 +109,7 @@ export const GLIDERS = ['#e7c37a', '#ff7eb8', '#5fd3ff', '#8be07a', '#b48cff'];
 function newProfile(i) {
   return {
     id: 'k' + Date.now().toString(36) + Math.floor(Math.random() * 1000),
-    name: i === 0 ? 'Bé Na' : 'Bé Bin',
+    name: '',
     photo: null,
     age: 'little',           // 'little' (under 5: everything spoken, can't lose) or 'big' (5 to 8: harder, real opponents)
     difficulty: 'easy',      // 'easy' | 'medium' | 'hard'
@@ -139,7 +140,9 @@ export function normalizeProfile(p) {
 }
 
 export let profiles = store.get(KEY_PROFILES, null);
-if (!Array.isArray(profiles) || !profiles.length) profiles = [newProfile(0), newProfile(1)];
+// (round P, owner: "remove the default characters and let a new user create their own") a new device starts with
+// nobody: the Who's playing screen asks the child to make their own character first
+if (!Array.isArray(profiles)) profiles = [];
 profiles = profiles.map(normalizeProfile);
 
 // ---------- the shared farm: coins, crops, animals, pets and daily jobs belong to everyone ----------
@@ -187,7 +190,9 @@ export async function exportBackup({ share = true } = {}) {
   const name = 'sparkle-valley-backup-' + new Date().toISOString().slice(0, 10) + '.txt';
   // the lines this device had to say without a recording travel along, so Sparkle Studio can record them
   let voiceMissing = []; try { voiceMissing = JSON.parse(localStorage.getItem('sv2_voicemiss') || '[]'); } catch (e) { }
-  const text = JSON.stringify({ app: 'sparkle-valley', v: 2, saved: Date.now(), build: BUILD, settings, profiles, farm, voiceMissing }, null, 1);
+  // (audit, 9 Oct) keys and passwords stay on this device: a backup may be shared to a cloud drive
+  const safe = Object.fromEntries(Object.entries(settings).filter(([k]) => !/key|pass|token|secret/i.test(k)));
+  const text = JSON.stringify({ app: 'sparkle-valley', v: 2, saved: Date.now(), build: BUILD, settings: safe, profiles, farm, voiceMissing }, null, 1);
   const done = how => { settings.lastBackup = Date.now(); saveSettings(); return how; };
   if (share && navigator.canShare) {
     try {

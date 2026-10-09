@@ -23,3 +23,8 @@ export const $ = s => document.querySelector(s);
 export function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 export function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 export const wait = ms => new Promise(r => setTimeout(r, ms));
+// Two players face to face (owner, round R): a window opened by the player at the far end sits in a .facewrap
+// turned half a turn, so a finger's screen position runs the other way inside it. These give the position as the
+// player sees it: local(el, e) → {x, y} from the element's own top-left; flip(el) → -1 when a drag runs backwards.
+export const flip = node => node && node.closest && node.closest('.facewrap') ? -1 : 1;
+export function local(node, e) { const r = node.getBoundingClientRect(); return flip(node) < 0 ? { x: r.right - e.clientX, y: r.bottom - e.clientY, r } : { x: e.clientX - r.left, y: e.clientY - r.top, r }; }

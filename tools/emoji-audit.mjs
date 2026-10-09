@@ -2,7 +2,7 @@
 //   node tools/emoji-audit.mjs            the undrawn emoji, with how often and where they are used
 //   node tools/emoji-audit.mjs --all      every emoji found, drawn or not
 //   node tools/emoji-audit.mjs --keys     only the undrawn emoji, space-separated (handy for a test page)
-// Scans js/**/*.js, index.html and content/*.json, leaving out comments. art.js is imported as it is (no DOM at module level).
+// Scans js/**/*.js, index.html, content/*.json and Sparkle Studio's pages (studio/ui), leaving out comments. art.js is imported as it is (no DOM at module level).
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -11,7 +11,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const { hasArt } = await import(pathToFileURL(join(ROOT, 'js/art.js')).href);
 const walk = d => readdirSync(d).flatMap(f => { const p = join(d, f); return statSync(p).isDirectory() ? walk(p) : [p]; });
 const files = [...walk(join(ROOT, 'js')).filter(f => f.endsWith('.js')), join(ROOT, 'index.html'),
-  ...readdirSync(join(ROOT, 'content')).filter(f => f.endsWith('.json')).map(f => join(ROOT, 'content', f))];
+  ...readdirSync(join(ROOT, 'content')).filter(f => f.endsWith('.json')).map(f => join(ROOT, 'content', f)),
+  // (round R: Sparkle Studio's pages too: they show the same drawings, js/emojiswap.js)
+  ...readdirSync(join(ROOT, 'studio/ui')).filter(f => /\.(js|html)$/.test(f)).map(f => join(ROOT, 'studio/ui', f))];
 
 // one emoji: a pictograph with its selector, skin tone and zero-width-joined parts; a flag; or a keycap
 const EMO = /\p{Extended_Pictographic}(?:️|[\u{1F3FB}-\u{1F3FF}])*(?:‍\p{Extended_Pictographic}(?:️|[\u{1F3FB}-\u{1F3FF}])*)*|[\u{1F1E6}-\u{1F1FF}]{2}|[0-9#*]️?⃣/gu;

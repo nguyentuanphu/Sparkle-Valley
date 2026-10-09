@@ -24,12 +24,14 @@ import { say } from './voice.js';
 import { pic } from './art.js';
 import { saveProfiles, reduceMotion } from './state.js';
 import { GAMES, gameOpen } from './games/frame.js';
-import { holdButton, openGrownups } from './ui.js';
-import { AREAS, TALE_AREAS, PLACE_AREAS, LITTLE_PAGE, gamesIn, pages } from './content/activities.js';
+import { holdButton, openGrownups, openFestivals } from './ui.js';
+import { AREAS, TALE_AREAS, PLACE_AREAS, gamesIn } from './content/activities.js';
+import { featureOn } from './custom.js';
 
 // a star drawn on the picture card (round I, owner: "stars without a strip, placed on the icon"): gold when earned
 const STAR = 'M12 1.8l3.1 6.4 7 1-5.1 4.9 1.2 7-6.2-3.3-6.2 3.3 1.2-7L1.9 9.2l7-1z';
-export const wantsSimple = p => (p.screen ? p.screen === 'simple' : p.age !== 'big');
+// (Studio switch simpleStart: when off, a child who has not chosen starts in the valley)
+export const wantsSimple = p => (p.screen ? p.screen === 'simple' : p.age !== 'big' && featureOn('simpleStart', true));
 // stars on the path: played once, twice, four times
 export const starsOf = (p, id) => { const w = (p.wins || {})[id] || 0; return w >= 4 ? 3 : w >= 2 ? 2 : w >= 1 ? 1 : 0; };
 const firstPic = s => (String(s).match(/\p{Extended_Pictographic}(?:️|‍\p{Extended_Pictographic}️?)*/u) || ['📖'])[0];
@@ -74,8 +76,10 @@ export function createSimple(G) {
       return TALE_AREAS.map(a => ({ area: a, items: tales.filter(x => a.key === '💛' ? !known.includes(x.flag) : x.flag === a.key)
         .map(x => ({ kind: 'tale', key: x.id, icon: firstPic(x.pages[0][0]), badge: x.flag, name: x.title(), voice: both(x.title), stars: (p.tales || {})[x.id] ? 1 : 0, max: 1 })) }));
     }
-    if (t === 'places') return PLACE_AREAS.map(a => ({ area: a, items: (G.PLACES || []).map((pl, k) => ({ pl, k })).filter(x => x.pl.g === a.key)
-      .map(({ pl, k }) => ({ kind: 'place', key: String(k), icon: pl.icon, name: pl.name(), voice: both(pl.name), stars: 0, max: 0 })) }));
+    // (round R) the festival calendar opens the places tab: festivals happen in places, each in its own ones
+    const cal = { kind: 'fest', key: 'cal', icon: '📅', name: T('Festival calendar', 'Lịch lễ hội'), voice: ['Festival calendar', 'Lịch lễ hội'], stars: 0, max: 0 };
+    if (t === 'places') return PLACE_AREAS.map((a, n) => ({ area: a, items: (n === 0 && G.festivals ? [cal] : []).concat((G.PLACES || []).map((pl, k) => ({ pl, k })).filter(x => x.pl.g === a.key)
+      .map(({ pl, k }) => ({ kind: 'place', key: String(k), icon: pl.icon, name: pl.name(), voice: both(pl.name), stars: 0, max: 0 }))) }));
     // (round N) the Music group starts with 🎵 Songs: lullabies, village tunes and festival songs to listen to
     const songs = { kind: 'songs', key: 'songs', icon: '🎵', name: T('Songs', 'Bài hát'), voice: ['Songs', 'Bài hát'], stars: 0, max: 0 };
     return AREAS.map(a => ({ area: a, items: (a.key === 'music' && G.openSongs ? [songs] : []).concat(gamesIn(GAMES, a.key, lt).map(g => ({ kind: 'game', key: g.id, icon: GAMES[g.id].icon, name: GAMES[g.id].name(), voice: both(GAMES[g.id].name), stars: starsOf(p, g.id), max: 3, level: g.level }))) }));
@@ -83,9 +87,10 @@ export function createSimple(G) {
   // the groups of a tab, as stops: each with its picture and name
   const tabOf = t => TABS.find(y => y.key === t);
   const groupsOf = t => areasOf(t).filter(a => a.items.length);
-  // the pages of the path: the groups, or the open group's stops; an under-5 gets at most six at a time, a big kid all
+  // the path: the groups, or the open group's stops, all on one page that scrolls down (round P, owner: "show it on
+  // one page and let the kid scroll down instead of tapping a button for the next page"; it used to be six at a time)
   function viewsOf(t) {
-    const split = items => little() ? pages(items, LITTLE_PAGE) : [items];
+    const split = items => [items];
     if (!group[t]) { const tb = tabOf(t), all = { key: 'groups', icon: tb.icon, name: tb.label }; const gs = groupsOf(t).map(({ area, items }) => ({ kind: 'group', key: area.key, icon: area.icon, name: area.name(), voice: both(area.name), stars: 0, max: 0, count: items.length }));
       return split(gs).map((items, i, ps) => ({ area: all, items, i, of: ps.length, groups: true })); }
     const a = groupsOf(t).find(x => x.area.key === group[t]); if (!a) { group[t] = null; return viewsOf(t); }
@@ -166,6 +171,7 @@ export function createSimple(G) {
     const top = () => { const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0; };
     if (s.kind === 'sign') { SFX.tap(); say(s.voice[0], s.voice[1]); if (s.key === 'group') { group[tab] = s.to; at[tab] = 0; } else if (s.key === 'first') at[tab] = 0; else at[tab]++; sel = null; draw(); top(); return; }
     if (s.kind === 'songs') { SFX.tap(); say(s.voice[0], s.voice[1]); G.openSongs(); return; }
+    if (s.kind === 'fest') { SFX.tap(); say('Festival calendar', 'Lịch lễ hội'); openFestivals(G, 0); return; }
     if (s.kind === 'group') { SFX.tap(); say(s.voice[0], s.voice[1]); group[tab] = s.key; at[tab] = 0; sel = null; draw(); top(); return; }
     if (!little() && sel !== idOf(s)) { // a big kid: the first tap shows it, the second one plays it
       SFX.tap(); sel = idOf(s); say(s.voice[0], s.voice[1]);

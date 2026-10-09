@@ -3,7 +3,8 @@
 import { settings, saveSettings } from './state.js';
 import { ac, unlockers } from './audio.js';
 import { swapNames } from './i18n.js';
-import { packHash } from './packhash.js';
+import { packHash, lineHash } from './packhash.js';
+import { viRuns, mixed, mixedSsml } from './viwords.js';
 import { CUSTOM } from './custom.js';
 
 let all = [];
@@ -92,11 +93,15 @@ function utter(text, lang) {
 function deviceSpeak(text, lang, my) {
   if (!window.speechSynthesis) return Promise.resolve();
   const parts = String(text).match(/[^.!?。…]+[.!?。…]*\s*/g) || [text];
-  const chunks = []; for (const p of parts) { const last = chunks.length - 1; if (last >= 0 && (chunks[last] + p).length < 160) chunks[last] += p; else chunks.push(p); }
+  let chunks = []; for (const p of parts) { const last = chunks.length - 1; if (last >= 0 && (chunks[last] + p).length < 160) chunks[last] += p; else chunks.push(p); }
+  // (round R, owner: "bánh khọt" and "nước mía" said by the English voice can't be understood) the Vietnamese words of an
+  // English line are said by the phone's Vietnamese voice when it has one
+  chunks = chunks.map(c => [lang, c]);
+  if (lang === 'en' && mixed(text) && voicesFor('vi').length) chunks = chunks.flatMap(([, c]) => viRuns(c)).filter(([, c]) => /[\p{L}\d]/u.test(c));
   return new Promise(res => {
     let left = chunks.length, ended = false;
     const end = () => { if (!ended) { ended = true; res(); } };
-    chunks.forEach(c => { const u = utter(c.trim(), lang); u.onend = u.onerror = () => { if (--left <= 0) end(); }; try { speechSynthesis.speak(u); } catch (e) { end(); } });
+    chunks.forEach(([l, c]) => { const u = utter(c.trim(), l); u.onend = u.onerror = () => { if (--left <= 0) end(); }; try { speechSynthesis.speak(u); } catch (e) { end(); } });
     // in case the device never reports the end
     setTimeout(end, 1500 + String(text).length * 95);
     const poll = setInterval(() => { if (my !== seq) { clearInterval(poll); end(); } if (ended) clearInterval(poll); }, 200);
@@ -143,6 +148,10 @@ async function speak(en, vi) {
 }
 const sentences = text => (String(text).match(/[^.!?。…]+[.!?。…]*\s*/g) || [text]).map(t => t.trim()).filter(Boolean);
 async function otherVoice(text, lang, my) {
+  if (cloudReady() && lang === 'en' && settings.tts !== 'azure' && mixed(text)) {
+    try { for (const [l, t] of viRuns(text)) { if (!/[\p{L}\d]/u.test(t)) continue; const buf = await cloudVoice(t.trim(), l); if (my !== seq) return; await playBuffer(buf); } return; }
+    catch (e) { console.warn('Natural voice failed, using the device voice', e); }
+  }
   if (cloudReady()) {
     try { const buf = await cloudVoice(text, lang); if (my !== seq) return; await playBuffer(buf); return; }
     catch (e) { console.warn('Natural voice failed, using the device voice', e); }
@@ -245,7 +254,7 @@ let player = null, primed = false;
 unlockers.push(() => { if (primed) return; try { player = player || new Audio(); player.src = SILENT; const p = player.play(); if (p) p.then(() => { primed = true; player.pause(); }).catch(() => { }); } catch (e) { } });
 function playUrl(url, rate = 1) {
   if (!player) return Promise.resolve(false);
-  return new Promise(res => { try { player.pause(); player.src = url; player.playbackRate = rate; player.onended = () => res(true); player.onerror = () => res(false); player.play().catch(() => res(false)); } catch (e) { res(false); } });
+  return new Promise(res => { try { player.pause(); player.src = url; player.preservesPitch = player.webkitPreservesPitch = rate === 1; player.playbackRate = rate; player.onended = () => res(true); player.onerror = () => res(false); player.play().catch(() => res(false)); } catch (e) { res(false); } });
 }
 // why the recorded voice did or did not play last time (Grown-ups shows it, to help find phone problems)
 export const voiceDiag = { pack: 'loading', lastMiss: '', audio: '' };
@@ -264,8 +273,13 @@ export const voicePack = () => PACK;
 // Lines asked for before the list has arrived (slow phone networks at start-up) wait for it, so they are spoken
 // with the recorded voice too instead of the phone's own voice.
 let packTried = false;
-const packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; voiceDiag.pack = 'ok'; autoSavePack(); } else { voiceDiag.pack = 'missing'; packEmit({ state: 'nopack' }); } }).catch(() => { voiceDiag.pack = 'offline'; packEmit({ state: 'nopack' }); }).finally(() => { packTried = true; });
-const waitPack = () => PACK || packTried ? null : Promise.race([packReady, new Promise(r => setTimeout(r, 12000))]);
+// (round R, PERF-001) fetched on the first tap or key press, or after 8 s, whichever is first: nothing is spoken before a
+// child taps, so the title screen comes up without it
+let packReady = null;
+const loadPack = () => packReady || (packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; voiceDiag.pack = 'ok'; autoSavePack(); } else { voiceDiag.pack = 'missing'; packEmit({ state: 'nopack' }); } }).catch(() => { voiceDiag.pack = 'offline'; packEmit({ state: 'nopack' }); }).finally(() => { packTried = true; }));
+for (const ev of ['pointerdown', 'keydown', 'touchstart']) addEventListener(ev, loadPack, { once: true, capture: true, passive: true });
+setTimeout(loadPack, 8000);
+const waitPack = () => PACK || packTried ? null : Promise.race([loadPack(), new Promise(r => setTimeout(r, 12000))]);
 // Keep the whole pack on the device by itself: a few seconds after the game opens (every time it opens), the voice
 // cache is checked against the list, and any file not there yet (first visit, a new pack, or a phone that cleared
 // space) is downloaded quietly, the child's own language first. A small bar shows it (js/packbar.js); every line
@@ -284,7 +298,16 @@ let checking = false;
 async function checkPack() {
   if (checking || !PACK) return; checking = true;
   try {
-    const cache = await caches.open('sv-voices'), have = new Set((await cache.keys()).map(r => r.url));
+    const cache = await caches.open('sv-voices');
+    // (round O, owner: "does it load the voice pack every time? it should be once, unless there are new voices") once
+    // the whole pack is on the device, a start only looks at 16 files picked at random, says nothing and downloads
+    // nothing; the full check (listing all ~8,000 files) runs only for a new pack, or when a file has gone missing
+    if (settings.packSaved === packSig()) {
+      const all = packFiles(), pick = all.length <= 64 ? all : Array.from({ length: 16 }, () => all[Math.floor(Math.random() * all.length)]);
+      const found = await Promise.all(pick.map(u => cache.match(u).then(Boolean)));
+      if (found.every(Boolean)) { packEmit({ state: 'ready', quiet: true, known: true, total: all.length }); return; }
+    }
+    const have = new Set((await cache.keys()).map(r => r.url));
     const missing = packFiles().filter(u => !have.has(new URL(u, location.href).href));
     if (!missing.length) { settings.packSaved = packSig(); saveSettings(); packEmit({ state: 'ready', quiet: true, total: packFiles().length }); return; }
     if (navigator.onLine === false) { packEmit({ state: 'waiting', left: missing.length }); return; }
@@ -301,12 +324,22 @@ const packSig = () => Object.keys(PACK.lines).length + ':' + (PACK.version || 1)
 // every file of the pack, the child's own language first
 function packFiles() {
   const urls = [], langs = ['en', 'vi', 'zh', 'hi'];
-  for (const [h, slots] of Object.entries(PACK.lines)) for (const s of slots) for (const L of PACK.langOf ? [PACK.langOf[h]] : langs) urls.push(`voices/${L}/${s}/${h}.mp3`);
+  // (round R) which language each line is in: `other` lists the lines that are not English, space-separated per
+  // language (half the size of the old `langOf`, which named every line's language; older packs still have that)
+  const other = new Map(); for (const [L, hs] of Object.entries(PACK.other || {})) for (const h of String(hs).split(' ')) if (h) other.set(h, L);
+  const langOf = h => (PACK.langOf && PACK.langOf[h]) || other.get(h) || (PACK.other ? 'en' : null);
+  for (const [h, slots] of Object.entries(PACK.lines)) { const L1 = langOf(h); for (const s of slots) for (const L of L1 ? [L1] : langs) urls.push(`voices/${L}/${s}/${h}.mp3`); }
   const mine = settings.lang === 'vi' ? 'voices/vi/' : 'voices/en/'; urls.sort((a, b) => b.startsWith(mine) - a.startsWith(mine));
   return urls;
 }
-const packSlot = (lang, text) => { const has = PACK && PACK.lines[packHash(lang, text)]; if (!has) return null; const k = speakerKind(); return k && k.gender === 'm' && has.includes('m') ? 'm' : has.includes('f') ? 'f' : has[0]; };
-const packRate = slot => { const k = speakerKind(); if (!k) return 1; let r = k.old ? .9 : k.kid ? 1.1 : 1; if (k.gender === 'm' && slot === 'f') r *= .86; return r; };
+// an English line with Vietnamese words has its own recording with both voices (js/packhash.js lineHash); an older pack
+// without it still plays its all-English recording
+const packKey = (lang, text) => { if (!PACK) return null; const h = lineHash(lang, text); if (PACK.lines[h]) return h; const o = packHash(lang, text); return PACK.lines[o] ? o : null; };
+const packSlot = (lang, text) => { const has = PACK && PACK.lines[packKey(lang, text)]; if (!has) return null; const k = speakerKind(); return k && k.gender === 'm' && has.includes('m') ? 'm' : has.includes('f') ? 'f' : has[0]; };
+// (round P, owner: "the 3 voice styles sound the same") the recordings play for almost every line, so the style changes
+// them too: Cute a little higher and quicker, Grandparent lower and slower (playing faster or slower moves the pitch)
+const STYLE_RATE = { natural: 1, cute: 1.13, grandpa: .88 };
+const packRate = slot => { const k = speakerKind(), st = STYLE_RATE[settings.voiceStyle] || 1; if (!k) return st; let r = k.old ? .9 : k.kid ? 1.1 : 1; if (k.gender === 'm' && slot === 'f') r *= .86; return r * st; };
 // Download every file of the pack so it plays with no internet (Grown-ups → "Save voices for offline")
 export async function savePackOffline(progress) {
   if (!PACK) return 0; const urls = packFiles();
@@ -317,7 +350,7 @@ export async function savePackOffline(progress) {
   }
   return n;
 }
-export const packUrl = (lang, text, slot) => `voices/${lang}/${slot}/${packHash(lang, text)}.mp3`;
+export const packUrl = (lang, text, slot) => `voices/${lang}/${slot}/${packKey(lang, text) || lineHash(lang, text)}.mp3`;
 async function playPack(lang, text, my) {
   const slot = packSlot(lang, text); if (!slot) return false;
   const k = 'pack|' + slot + '|' + lang + '|' + text;
@@ -374,7 +407,7 @@ const azureName = lang => {
   const pool = AZURE_VOICES[L][k.gender]; return pool[k.seed % pool.length];
 };
 const azureProsody = () => { const k = speakerKind(); return !k ? ['-4%', '+0%'] : k.old ? ['-14%', '-8%'] : k.kid ? ['-2%', '+14%'] : ['-4%', '+0%']; };
-const cloudKey = (text, lang) => [settings.tts, settings.tts === 'eleven' ? settings.elevenVoice || ELEVEN_DEFAULT : settings.tts === 'azure' ? azureName(lang) + azureProsody().join('') : googleName(lang) + googlePitch(), lang, text].join('|');
+const cloudKey = (text, lang) => [settings.tts, settings.tts === 'eleven' ? settings.elevenVoice || ELEVEN_DEFAULT : settings.tts === 'azure' ? azureName(lang) + azureProsody().join('') + (lang === 'en' && mixed(text) ? '+vi' : '') : googleName(lang) + googlePitch(), lang, text].join('|');
 const cloudCached = (text, lang) => mem.has(cloudKey(text, lang)) || known.has(cloudKey(text, lang));
 export const ELEVEN_DEFAULT = '21m00Tcm4TlvDq8ikWAM'; // a warm, friendly premade voice; grown-ups can paste any voice ID
 export const ELEVEN_MODEL = 'eleven_turbo_v2_5';     // speaks both English and Vietnamese
@@ -404,7 +437,8 @@ async function azureTTS(text, lang) {
   const region = (settings.azureRegion || 'australiaeast').trim().toLowerCase().replace(/\s+/g, ''), name = azureName(lang), [rate, pitch] = azureProsody();
   const xml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
   const loc = name.split('-').slice(0, 2).join('-');
-  const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${loc}"><voice name="${name}"><prosody rate="${rate}" pitch="${pitch}">${xml(text)}</prosody></voice></speak>`;
+  const ssml = lang === 'en' && mixed(text) ? mixedSsml(viRuns(text), name, azureName('vi'), `rate="${rate}" pitch="${pitch}"`)
+    : `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${loc}"><voice name="${name}"><prosody rate="${rate}" pitch="${pitch}">${xml(text)}</prosody></voice></speak>`;
   const r = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
     method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': settings.ttsKey, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': 'audio-24khz-48kbitrate-mono-mp3' }, body: ssml
   });

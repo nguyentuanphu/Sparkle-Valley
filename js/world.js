@@ -40,6 +40,10 @@ let LEVELS = null;
 export function levelAt(x, z) { if (LEVELS) for (const A of LEVELS) { if (A.r ? dist2(x, z, A.x, A.z) <= A.r : x >= A.x0 && x <= A.x1 && z >= A.z0 && z <= A.z1) return A.h; } return null; }
 // building lots along the roads out of each city (js/suburbs.js builds on them): levelled ground, no trees
 export const LOTS = [];
+// (round R story) bà Huệ and ông Nghi's yard (js/yard.js): its own levelled plot on the slope behind the north row of
+// Two Homes Street, facing the street (+z), clear of the river; nothing else is built on it and no trees grow there
+export const YARD = { x: 43, z: 14.5, w: 15.5, d: 12, rot: 0, h: 5.8 };
+LOTS.push({ city: 'yard', k: 0, ...YARD });
 // Level ground under every building, stall and landmark (filled in by levelUnderBuildings once the world is built):
 // each one gets a flat patch at the height it was placed at, easing back to the hillside over a few metres, so
 // whatever is added later always stands on its own level land. Kept in a 16 m grid so looking one up is quick.
@@ -500,7 +504,7 @@ export function createWorld(scene, quality) {
   };
   const spots = { round: [], apple: [], pine: [], snowpine: [], bamboo: [], palm: [], bush: [], rock: [] };
   const appleTrees = [];
-  const nearPOI = (x, z) => FLATS.some(F => x > F.x0 - 4 && x < F.x1 + 4 && z > F.z0 - 4 && z < F.z1 + 4) || LOTS.some(L => dist2(x, z, L.x, L.z) < 11) || dist2(x, z, -128, 150) < 34 || dist2(x, z, APOSTLES.x, APOSTLES.z) < 15 || Object.values(FESTGROUNDS).some(f => dist2(x, z, f.x, f.z) < 17) || dist2(x, z, 24, 170) < 14 || SHRINES.some(s => dist2(x, z, s.x, s.z) < 9) || TOWERS.some(s => dist2(x, z, s.x, s.z) < 10) || LEAFIES.some(s => dist2(x, z, s.x, s.z) < 3);
+  const nearPOI = (x, z) => FLATS.some(F => x > F.x0 - 4 && x < F.x1 + 4 && z > F.z0 - 4 && z < F.z1 + 4) || LOTS.some(L => dist2(x, z, L.x, L.z) < 11) || dist2(x, z, -128, 150) < 34 || dist2(x, z, APOSTLES.x, APOSTLES.z) < 15 || Object.values(FESTGROUNDS).some(f => dist2(x, z, f.x, f.z) < 17) || dist2(x, z, 24, 170) < 14 || SHRINES.some(s => dist2(x, z, s.x, s.z) < 9) || TOWERS.some(s => dist2(x, z, s.x, s.z) < 10) || LEAFIES.some(s => dist2(x, z, s.x, s.z) < 5); // (5 m: a tree's trunk and leaves never stand over a Leafy's spot)
   for (let i = 0; i < 9000; i++) {
     const x = (rnd() - .5) * (SIZE - 30), z = (rnd() - .5) * (SIZE - 30), h = heightAt(x, z);
     if (h < 1.5 || nearPOI(x, z)) continue;

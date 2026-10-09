@@ -51,7 +51,7 @@ export function openReport(p) {
       <li>${pic('📮')} ${T('Landmark postcards', 'Bưu thiếp danh lam')}: ${Object.keys(p.postcards || {}).length}${fam.length ? ` · ${pic('💌')} ${T('family postcards', 'bưu thiếp gia đình')}: ${famGot}/${fam.length}` : ''}</li>
       <li>${pic('🗣️')} ${T('Words learned', 'Từ đã học')}: ${Object.keys(p.words || {}).length} · ${pic('✨')} ${T('Shrines', 'Đền')}: ${Object.keys(p.shrines || {}).length}/12</li>
     </ul>
-    <div class="bar"><button class="btn" data-print>${pic('🖨️')} ${T('Print or save as PDF', 'In hoặc lưu PDF')}</button><button class="btn ghost" data-close>${T('Close', 'Đóng')}</button></div>`);
+    <div class="rp-bar actions"><button class="btn" data-print>${pic('🖨️')} ${T('Print or save as PDF', 'In hoặc lưu PDF')}</button><button class="btn ghost" data-close>${T('Close', 'Đóng')}</button></div>`);
   const close = () => m.close();
   m.querySelector('.x').onclick = close; m.querySelector('[data-close]').onclick = close;
   m.querySelector('[data-print]').onclick = () => { document.body.classList.add('printing-report'); print(); setTimeout(() => document.body.classList.remove('printing-report'), 500); };

@@ -6,21 +6,27 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 // The same page runs in SparkleStudio.exe (http://localhost:7777/studio/) and online on the game's website (/studio/),
 // at the same addresses: the API, the game and its files are under BASE in both. Online, a change needs the "X-Studio" header (other websites can't send it).
 const BASE = '/studio', GAME = BASE + '/game/', FILE = p => BASE + '/api/file/' + p;
+// the game's own drawings in place of phone emoji on every Studio page (owner, round R; js/emojiswap.js)
+import(GAME + 'js/emojiswap.js').catch(() => { });
 const api = async (p, body) => { const r = await fetch(BASE + '/api/' + p, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Studio': '1' }, body: JSON.stringify(body) }); const j = await r.json().catch(() => ({})); if (r.status === 401 && j.signin) { signIn(); throw Object.assign(new Error(T('Please sign in.', 'Vui lòng đăng nhập.')), { signin: true }); } if (!r.ok) throw new Error(j.error || r.status); return j; };
 const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); };
 const fail = e => toast('⚠️ ' + (e.message || e));
 let INFO = null, CONTENT = {};
-const saveContent = async () => { await api('content', CONTENT); if (INFO) { INFO.unpublished = true; head(); } toast(T('Saved. Publish to send it to the children’s devices.', 'Đã lưu. Bấm Phát hành để gửi tới máy của các con.')); };
+const saveContent = async () => { await api('content', CONTENT); if (INFO) { INFO.unpublished = true; head(); if (INFO.online) api('pending').then(j => { INFO.waiting = j.files.length; head(); }).catch(() => { }); } toast(T('Saved. Publish to send it to the children’s devices.', 'Đã lưu. Bấm Phát hành để gửi tới máy của các con.')); };
 
 // Five sections instead of seventeen tabs (round K, owner: "too many menus, confusing on the phone"): each section opens
 // as big cards, one per page; on a phone the sections are a bar at the bottom, on a computer a column on the left.
 const SECTIONS = [
   { k: 'home', i: '🏠', en: 'Home', vi: 'Trang chính', pages: ['home'] },
   { k: 'family', i: '💛', en: 'Family', vi: 'Gia đình', pages: ['message', 'children', 'album', 'quiz', 'stories', 'villagers'] },
-  { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['path', 'music', 'map', 'photos', 'play', 'voices', 'ads'] },
+  { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['releases', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads'] },
   { k: 'players', i: '📊', en: 'Analytics', vi: 'Phân tích', pages: ['players'] },
-  { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Cài đặt', pages: ['publish', 'site', 'check', 'settings'] }
+  { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Cài đặt', pages: ['publish', 'site', 'check', 'settings', 'admins'] }
 ];
+// who is signed in online (round O: each admin has an own account): a viewer sees the Analytics only; the 👥 Admins
+// page is online only (the exe on the family's computer is the owner's)
+const ROLE = () => (INFO && INFO.me && INFO.me.role) || 'owner';
+const SEC = () => ROLE() === 'viewer' ? SECTIONS.filter(x => x.k === 'players') : SECTIONS.map(x => x.k === 'setup' && !(INFO && INFO.online) ? { ...x, pages: x.pages.filter(k => k !== 'admins') } : x);
 // each page: its picture, its name and one line saying what it is for
 const ABOUT = {
   home: ['🏠', 'Home', 'Trang chính', '', ''],
@@ -30,6 +36,8 @@ const ABOUT = {
   quiz: ['💛', 'Family quiz', 'Đố vui gia đình', 'Your own questions: “What is Grandma’s name?”', 'Câu hỏi của nhà mình: “Bà tên gì?”'],
   stories: ['📖', 'Our stories', 'Truyện nhà mình', 'Write the family’s own picture stories', 'Viết truyện tranh của gia đình'],
   villagers: ['🧑', 'Villagers', 'Nhân vật', 'Names and photo faces of the people in the valley', 'Tên và ảnh khuôn mặt của mọi người trong thung lũng'],
+  releases: ['🆕', 'Releases', 'Ra mắt', 'Switch features on or off, start them on a day, for so many days, with a New badge', 'Bật tắt tính năng, cho ra mắt vào ngày nào, trong bao lâu, có nhãn Mới'],
+  festivals: ['📅', 'Festivals', 'Lễ hội', 'This year’s festivals: switch one off, move a date, change how early it decorates', 'Lễ hội năm nay: tắt, đổi ngày, đổi thời gian trang trí trước'],
   path: ['🧸', 'Simple screen', 'Màn hình đơn giản', 'Which games under-5s see, and in which area', 'Bé dưới 5 tuổi thấy trò nào, ở khu nào'],
   music: ['🎵', 'Music', 'Âm nhạc', 'Your own recordings: lullabies, Tết and Trung Thu songs, village songs', 'Bản ghi của nhà mình: hát ru, nhạc Tết, Trung Thu, làng quê'],
   map: ['🗺️', 'Map and building', 'Bản đồ & xây dựng', 'Move, add or remove buildings and land', 'Di chuyển, thêm hoặc bỏ nhà và đất'],
@@ -41,9 +49,10 @@ const ABOUT = {
   publish: ['🚀', 'Publish', 'Phát hành', 'Send your saved changes to the children’s devices', 'Gửi thay đổi đã lưu tới máy của các con'],
   site: ['🌐', 'Website', 'Trang web', 'The game’s website: updates and GitHub', 'Trang web của game: cập nhật và GitHub'],
   check: ['🩺', 'Check', 'Kiểm tra', 'Is everything set up and working?', 'Mọi thứ đã cài đặt và chạy tốt chưa?'],
-  settings: ['🔑', 'Settings', 'Cài đặt', 'Keys, the game folder, signing out', 'Khóa, thư mục game, đăng xuất']
+  settings: ['🔑', 'Settings', 'Cài đặt', 'Keys, the game folder, signing out', 'Khóa, thư mục game, đăng xuất'],
+  admins: ['👥', 'Admins', 'Quản trị viên', 'Other grown-ups sign in with their own name and password', 'Người lớn khác đăng nhập bằng tên và mật khẩu riêng']
 };
-const sectionOf = k => SECTIONS.find(x => x.k === k || x.pages.includes(k)) || SECTIONS[0];
+const sectionOf = k => SEC().find(x => x.k === k || x.pages.includes(k)) || SEC()[0];
 // #family → the Family cards; #family/quiz (or the old #quiz) → that page
 const route = () => { const h = location.hash.slice(1), [a, b] = h.split('/'); if (b && ABOUT[b]) return b; if (ABOUT[a] || SECTIONS.some(x => x.k === a)) return a; return 'home'; };
 let cur = route();
@@ -51,11 +60,11 @@ const go = k => { if (k === cur) return; cur = k; const sec = sectionOf(k); loca
 // the bar at the top: Publish when something is waiting, reload, language
 function head() {
   const pub = $('#pub'); if (!pub) return;
-  pub.hidden = !(INFO && INFO.unpublished); pub.textContent = '🚀 ' + T('Publish', 'Phát hành');
+  pub.hidden = !(INFO && INFO.unpublished) || ROLE() === 'viewer'; pub.textContent = '🚀 ' + T('Publish', 'Phát hành') + (INFO && INFO.waiting ? ` (${INFO.waiting})` : '');
 }
 function nav() {
   const sec = sectionOf(cur);
-  $('#tabs').innerHTML = SECTIONS.map(x => `<button data-k="${x.k}" class="${x === sec ? 'on' : ''}"><span>${x.i}</span><small>${T(x.en, x.vi)}</small></button>`).join('');
+  $('#tabs').innerHTML = SEC().map(x => `<button data-k="${x.k}" class="${x === sec ? 'on' : ''}"><span>${x.i}</span><small>${T(x.en, x.vi)}</small></button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.k));
   document.querySelectorAll('[data-t]').forEach(e => { const [en, vi] = e.dataset.t.split('|'); e.textContent = T(en, vi); });
   document.querySelectorAll('.lang button[data-l]').forEach(b => { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { LANG = b.dataset.l; localStorage.setItem('studioLang', LANG); render(); }; });
@@ -82,7 +91,8 @@ async function render(force) {
   if (!LOADED || force) P.innerHTML = `<div class="loading">✨ ${T('Loading…', 'Đang tải…')}</div>`;
   try {
     await load(force);
-    if (!INFO.ok && cur !== 'settings') { cur = 'settings'; nav(); toast(T('First, choose the game folder.', 'Trước tiên, chọn thư mục game.')); }
+    if (ROLE() === 'viewer' && cur !== 'players') { cur = 'players'; nav(); }
+    else if (!INFO.ok && cur !== 'settings') { cur = 'settings'; nav(); toast(T('First, choose the game folder.', 'Trước tiên, chọn thư mục game.')); }
     head();
     const sec = sectionOf(cur);
     if (sec.k === cur && sec.pages.length > 1) { crumb.innerHTML = ''; drawSection(P, sec); window.scrollTo(0, 0); return; }
@@ -358,10 +368,70 @@ PAGES.play = async P => {
     <div><label>🔠 ${T('Text size', 'Cỡ chữ')}</label><select data-k="textSize">${keep}${opt('textSize', [[0, T('Normal', 'Bình thường')], [1, T('Big', 'To')], [2, T('Bigger', 'To hơn')]])}</select></div>
     <div><label>🎵 ${T('Music', 'Nhạc')}</label><select data-k="music">${keep}${opt('music', [['true', T('On', 'Bật')], ['false', T('Off', 'Tắt')]])}</select></div>
   </div>
+  <h2>🏙️ ${T('Things in the valley', 'Đồ vật trong thung lũng')}</h2><p class="sub">${T('Kept in the game, shown only when switched on.', 'Vẫn giữ trong game, chỉ hiện khi bật.')}</p>
+  <div class="card grid">
+    <div><label>🔌 ${T('Power poles and wires on Phố Hai Quê', 'Cột điện và dây điện ở Phố Hai Quê')}</label><select data-f="powerPoles">${[[false, T('Off', 'Tắt')], [true, T('On', 'Bật')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).powerPoles === true) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div><label>🛵 ${T('Motorbikes, cars, buses on the roads', 'Xe máy, xe hơi, xe buýt trên đường')}</label><select data-f="traffic">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).traffic !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div><label>🚋 ${T('Parked bikes and cars, trams, xích lô and Hồ Gươm cart in the cities', 'Xe đậu, tàu điện, xích lô và xe điện Hồ Gươm trong thành phố')}</label><select data-f="cityVehicles">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).cityVehicles !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div><label>🚲 ${T('Bicycles children can ride', 'Xe đạp cho các con đạp')}</label><select data-f="rideBikes">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).rideBikes !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div><label>🚲 ${T('Xích lô rides in Sài Gòn and Hà Nội', 'Đi xích lô ở Sài Gòn và Hà Nội')}</label><select data-f="xichloRides">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).xichloRides !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div><label>🚗 ${T('Real-looking vehicles when every child playing is 5 or older', 'Xe trông như thật khi tất cả các con đang chơi từ 5 tuổi')}</label><select data-f="realVehicles">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).realVehicles !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div><label>🎬 ${T('Stories and how-to guides as 3D films (where a film is made)', 'Truyện và hướng dẫn thành phim 3D (khi đã có phim)')}</label><select data-f="storyFilms">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).storyFilms !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+  </div>
   <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   $('#save').onclick = () => {
     const out = {}; P.querySelectorAll('[data-k]').forEach(s => { const v = s.value; if (v === '') return; out[s.dataset.k] = v === 'true' ? true : v === 'false' ? false : /^\d+$/.test(v) ? +v : v; });
-    CONTENT.defaults = out; saveContent().catch(fail);
+    CONTENT.defaults = out;
+    const f = Object.assign({}, CONTENT.features); P.querySelectorAll('[data-f]').forEach(s => { f[s.dataset.f] = s.value === 'true'; }); CONTENT.features = f;
+    saveContent().catch(fail);
+  };
+};
+// ---------- Ra mắt (Releases) and Festivals (round R, owner: "instant, no deploy") ----------
+// Online, these save straight to the website and reach the devices the next time they open the game (festivals change
+// as soon as a device hears). On the family's computer (SparkleStudio.exe) they go into the content pack and need Publish.
+const loadLive = async () => INFO && INFO.online ? await api('live') : { releases: CONTENT.releases || {}, festivals: CONTENT.festivals || {} };
+const saveLive = async live => { if (INFO && INFO.online) { await api('live', live); toast(T('Saved. The children’s devices get it the next time they open the game.', 'Đã lưu. Máy của các con nhận được khi mở game lần tới.')); } else { CONTENT.releases = live.releases; CONTENT.festivals = live.festivals; await saveContent(); } };
+const isoDay = d => d.toISOString().slice(0, 10), plusDays = n => isoDay(new Date(Date.now() + n * 864e5));
+PAGES.releases = async P => {
+  const { RELEASES, RELEASE_GROUPS } = await import(GAME + 'js/content/releases.js'), live = await loadLive(), R = live.releases || {};
+  const row = x => { const r = R[x.id] || {}, on = typeof r.on === 'boolean' ? r.on : x.def;
+    return `<tr data-id="${x.id}"><td>${x.icon ? x.icon + ' ' : ''}${esc(T(x.en, x.vi))}</td>
+      <td><select data-r="on"><option value="true" ${on ? 'selected' : ''}>${T('On', 'Bật')}</option><option value="false" ${on ? '' : 'selected'}>${T('Off', 'Tắt')}</option></select></td>
+      <td><input type="date" data-r="start" value="${esc(r.start || '')}"><div class="mini">${[0, 1, 3, 7].map(n => `<button class="btn small ghost" data-in="${n}">${n ? T(`in ${n} d`, `${n} ngày nữa`) : T('today', 'hôm nay')}</button>`).join('')}</div></td>
+      <td><input type="number" min="0" max="3650" data-r="days" value="${r.days || ''}" placeholder="${T('always', 'luôn')}"></td>
+      <td><input type="number" min="0" max="365" data-r="newDays" value="${r.newDays || ''}" placeholder="0"></td></tr>`; };
+  P.innerHTML = `<h2>🆕 ${T('Releases', 'Ra mắt')}</h2><p class="sub">${T('Switch anything on or off, choose the day it starts, how many days it stays (empty: always), and how many days it shows a “New” badge (the children also get a “New!” moment). Switching off never takes away what a child already has.', 'Bật hoặc tắt bất cứ thứ gì, chọn ngày bắt đầu, ở lại bao nhiêu ngày (để trống: luôn luôn), và bao nhiêu ngày có nhãn “Mới” (các con cũng thấy khoảnh khắc “Mới!”). Tắt đi không lấy mất những gì con đã có.')}</p>
+    ${Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th>${T('Starts', 'Bắt đầu')}</th><th>${T('Days on', 'Số ngày')}</th><th>${T('“New” days', 'Ngày “Mới”')}</th></tr></thead><tbody>${RELEASES.filter(x => x.group === g).map(row).join('')}</tbody></table></div>`).join('')}
+    <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
+  P.querySelectorAll('[data-in]').forEach(b => b.onclick = () => { b.closest('td').querySelector('[data-r="start"]').value = plusDays(+b.dataset.in); });
+  $('#save').onclick = async () => {
+    const out = {};
+    P.querySelectorAll('tr[data-id]').forEach(tr => { const id = tr.dataset.id, x = RELEASES.find(y => y.id === id), v = k => tr.querySelector(`[data-r="${k}"]`).value;
+      const r = {}, on = v('on') === 'true'; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
+      if (Object.keys(r).length) out[id] = r; });
+    await saveLive({ releases: out, festivals: live.festivals || {} }).catch(fail);
+  };
+};
+PAGES.festivals = async P => {
+  const [{ FESTCAL, GROUPS }, L] = await Promise.all([import(GAME + 'js/content/festcal.js'), import(GAME + 'js/lunar.js')]), live = await loadLive(), F = live.festivals || {};
+  const pad = n => String(n).padStart(2, '0'), y = new Date().getFullYear();
+  // this year's (or next year's, once it has passed) date, worked out like the game does
+  const dateOf = (f, yr) => { const w = f.when; return w.lunar ? L.lunarDay(w.lunar[0], w.lunar[1], yr) : w.date ? `${yr}-${pad(w.date[0])}-${pad(w.date[1])}` : w.easter != null ? L.easter(yr) : w.nth ? L.nthWeekday(yr, ...w.nth) : w.table ? w.table[yr] : null; };
+  const next = f => { const a = dateOf(f, y), today = isoDay(new Date()); return a && a >= today ? a : dateOf(f, y + 1); };
+  const row = f => { const r = F[f.id] || {}, on = r.on !== false;
+    return `<tr data-id="${f.id}"><td>${f.icon} ${esc(T(f.en, f.vi))}<div class="mini">${f.kind === 'quiet' ? T('quiet day', 'ngày yên lặng') : ''}</div></td>
+      <td><select data-f="on"><option value="true" ${on ? 'selected' : ''}>${T('On', 'Bật')}</option><option value="false" ${on ? '' : 'selected'}>${T('Off', 'Tắt')}</option></select></td>
+      <td>${next(f) || '?'}</td><td><input type="date" data-f="date" value="${/^\d{4}/.test(r.date || '') ? r.date : ''}"></td>
+      <td><input type="number" min="0" max="60" data-f="buildup" value="${r.buildup ?? ''}" placeholder="${f.kind === 'quiet' ? 3 : 21}"></td>
+      <td><a class="btn small ghost" target="_blank" href="${GAME}?festival=${f.id}">${T('Preview', 'Xem thử')}</a></td></tr>`; };
+  P.innerHTML = `<h2>📅 ${T('Festivals', 'Lễ hội')}</h2><p class="sub">${T('Every festival on its real date (lunar dates are worked out each year). Party festivals decorate their places for 3 weeks before, quiet days a few days. On the day: 08:00 present, 15:00 festival game, 18:30 show (17:30 for under-5s).', 'Mỗi lễ hội đúng ngày thật (ngày âm lịch tự tính mỗi năm). Lễ hội vui trang trí 3 tuần trước, ngày yên lặng vài ngày. Đúng ngày: 08:00 nhận quà, 15:00 trò chơi lễ hội, 18:30 trình diễn (17:30 cho bé dưới 5 tuổi).')}</p>
+    ${Object.entries(GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th>${T('Next date', 'Ngày tới')}</th><th>${T('Move to', 'Đổi sang ngày')}</th><th>${T('Decorate days before', 'Trang trí trước (ngày)')}</th><th></th></tr></thead><tbody>${FESTCAL.filter(f => f.group === g).map(row).join('')}</tbody></table></div>`).join('')}
+    <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
+  $('#save').onclick = async () => {
+    const out = {};
+    P.querySelectorAll('tr[data-id]').forEach(tr => { const id = tr.dataset.id, v = k => tr.querySelector(`[data-f="${k}"]`).value, r = {};
+      if (v('on') === 'false') r.on = false; if (v('date')) r.date = v('date'); if (v('buildup') !== '') r.buildup = +v('buildup'); if (Object.keys(r).length) out[id] = r; });
+    await saveLive({ releases: live.releases || {}, festivals: out }).catch(fail);
   };
 };
 // ---------- children: open a backup, see progress, change it, save a new backup ----------
@@ -404,8 +474,8 @@ async function allJobs() {
   (c.tales || []).forEach(t => { add(t.en, t.vi); t.pages.forEach(p => add(p[1], p[2])); });
   (c.quiz || []).forEach(q => { add(q.q[0], q.q[1]); q.answers.forEach(a => add(a[0] + '!', a[1] + '!')); });
   if (c.message) add(c.message.en, c.message.vi);
-  const { swapNames } = await import(GAME + 'js/i18n.js'), { LEARN } = await import(GAME + 'js/words2.js'), { packHash } = await import(GAME + 'js/packhash.js');
-  const jobs = new Map(); const put = (lang, text) => { if (text) jobs.set(packHash(lang, text), { lang, text }); };
+  const { swapNames } = await import(GAME + 'js/i18n.js'), { LEARN } = await import(GAME + 'js/words2.js'), { lineHash: packHash } = await import(GAME + 'js/packhash.js'), { viRuns, mixed } = await import(GAME + 'js/viwords.js');
+  const jobs = new Map(); const put = (lang, text) => { if (text) jobs.set(packHash(lang, text), { lang, text, ...(lang === 'en' && mixed(text) ? { runs: viRuns(text) } : {}) }); };
   for (const [en, vi] of seen.values()) { put('en', swapNames(en, 'en')); put('vi', swapNames(vi, 'vi')); }
   for (const [lang, L] of Object.entries(LEARN)) for (const w of L.words) put(lang, w[3]);
   const cities = await (await fetch(GAME + 'js/cities.js')).text(), re = /\['([^'\\]+)', '(?:[^'\\]|\\.)*', '(?:[^'\\]|\\.)*', '(zh|hi)'\]/g; let m; while ((m = re.exec(cities))) put(m[2], m[1]);
@@ -444,7 +514,7 @@ PAGES.voices = async P => {
     const gap = engine === 'azure' ? 3200 : 0; let done = 0, errs = 0;
     for (const x of [...missing].filter(x => !only || x.asked)) {
       if (voiceStop) break; const t0 = Date.now();
-      try { await api('voice', { engine, lang: x.lang, slot: x.slot, hash: x.hash, text: x.text }); done++; missing.splice(missing.indexOf(x), 1); } catch (e) { errs++; $('#pt').textContent = '⚠️ ' + e.message; if (/key|region|Settings|Piper/.test(e.message)) break; }
+      try { await api('voice', { engine, lang: x.lang, slot: x.slot, hash: x.hash, text: x.text, runs: x.runs }); done++; missing.splice(missing.indexOf(x), 1); } catch (e) { errs++; $('#pt').textContent = '⚠️ ' + e.message; if (/key|region|Settings|Piper/.test(e.message)) break; }
       $('#pb').style.width = (done / (done + missing.length) * 100) + '%'; $('#pt').textContent = `${done} ${T('made', 'đã tạo')}, ${missing.length} ${T('to go', 'còn lại')}${errs ? `, ${errs} ⚠️` : ''}`;
       const w = gap - (Date.now() - t0); if (w > 0) await new Promise(r => setTimeout(r, w));
     }
@@ -486,6 +556,19 @@ PAGES.publish = async P => {
   ${INFO.online ? '' : `<div class="card"><h3>📦 ${T('Zip and Netlify', 'Tệp zip và Netlify')}</h3><button class="btn ghost" id="build">📦 ${T('Make the zip', 'Tạo tệp zip')}</button> <span id="bres" class="note"></span>
     <p class="note">${c.netlify ? T('Your Netlify site is set: ', 'Đã có trang Netlify: ') + esc(c.netlifySite) : T('Add a Netlify token and the site name in Settings for one-click upload, or drag the zip onto the site’s Deploys page.', 'Thêm khóa Netlify và tên trang trong Cài đặt để tải lên một chạm, hoặc kéo tệp zip vào trang Deploys.')}</p>
     <button class="btn ghost" id="deploy" ${c.netlify ? '' : 'disabled'}>☁️ ${T('Upload to Netlify', 'Tải lên Netlify')}</button> <span id="dres" class="note"></span></div>`}`;
+  // online (round P): every save waits here on the website; one Publish sends them all, or drop them
+  if (INFO.online && ROLE() !== 'viewer') {
+    const box = document.createElement('div'); box.className = 'card'; P.querySelector('.sub').after(box);
+    const drawWait = async () => {
+      let files = []; try { files = (await api('pending')).files; } catch (e) { }
+      const by = {}; for (const f of files) { const k = f.split('/').slice(0, 2).join('/'); by[k] = (by[k] || 0) + 1; }
+      box.innerHTML = `<h3>📝 ${T('Waiting to publish', 'Đang chờ phát hành')}: ${files.length}</h3>${files.length ? `<p class="note">${Object.entries(by).map(([k, n]) => `${esc(k)} (${n})`).join(' · ')}</p>
+        <p class="note">${T('Saving is instant now: changes wait here, and Publish sends them all to the children in one go.', 'Lưu giờ rất nhanh: thay đổi chờ ở đây, và Phát hành gửi tất cả tới các con trong một lần.')}</p>
+        <button class="btn ghost" id="wdrop">🗑️ ${T('Drop all waiting changes', 'Bỏ tất cả thay đổi đang chờ')}</button>` : `<p class="ok">✅ ${T('Nothing waiting.', 'Không có gì đang chờ.')}</p>`}`;
+      const d = box.querySelector('#wdrop'); if (d) d.onclick = async () => { if (!confirm(T(`Drop ${files.length} waiting change(s)? They will not be published.`, `Bỏ ${files.length} thay đổi đang chờ? Chúng sẽ không được phát hành.`))) return; try { await api('pending/discard', {}); LOADED = false; await load(true); head(); toast(T('Dropped.', 'Đã bỏ.')); drawWait(); } catch (e) { fail(e); } };
+    };
+    drawWait();
+  }
   if ($('#build')) $('#build').onclick = async () => { $('#bres').textContent = T('Packing…', 'Đang đóng gói…'); try { const r = await api('build', {}); $('#bres').innerHTML = `✅ ${r.files} ${T('files', 'tệp')}, ${(r.bytes / 1e6).toFixed(1)} MB · <a href="${BASE}/api/zip">⬇️ ${T('Download', 'Tải về')}</a>`; } catch (e) { $('#bres').textContent = '⚠️ ' + e.message; } };
   if ($('#deploy')) $('#deploy').onclick = async () => { if (c.github && !confirm(T('Your site is published from GitHub. Upload the zip to Netlify anyway?', 'Trang của bạn được phát hành từ GitHub. Vẫn tải tệp zip lên Netlify?'))) return; $('#dres').textContent = T('Uploading… (a minute or two)', 'Đang tải lên… (một hai phút)'); try { const r = await api('deploy', {}); $('#dres').innerHTML = `✅ ${T('Published!', 'Đã phát hành!')} <a href="${esc(r.url)}" target="_blank">${esc(r.url)}</a>`; } catch (e) { $('#dres').textContent = '⚠️ ' + e.message; } };
   const ghRun = async (what, btn) => {
@@ -661,12 +744,12 @@ PAGES.photos = async P => {
   const all = [...items.values()];
   const draw = async () => {
     const pix = await api('photos/index'), have = all.filter(x => pix[x.key] && pix[x.key].length).length;
-    P.innerHTML = `<h2>📷 ${T('Real photos', 'Ảnh thật')}</h2><p class="sub">${T('The best photos of each real place, from Wikipedia, Wikimedia Commons and Openverse (Creative Commons photos from Flickr and museums), the article’s main picture first, a few from each source. They are saved into the game with who took them and the licence, so children see them even with no internet. Runs on this computer; Publish to send them to the children.', 'Những ảnh đẹp nhất của từng nơi thật, lấy từ Wikipedia, Wikimedia Commons và Openverse (ảnh Creative Commons từ Flickr và các bảo tàng), ảnh chính của bài viết trước, mỗi nguồn vài ảnh. Ảnh được lưu vào game kèm tên người chụp và giấy phép, nên các con xem được cả khi không có mạng. Chạy trên máy này; bấm Phát hành để gửi tới các con.')}</p>
+    P.innerHTML = `<h2>📷 ${T('Real photos', 'Ảnh thật')}</h2><p class="sub">${T('The best photos of each real place, from Wikipedia, Wikimedia Commons and Openverse (Creative Commons photos from Flickr and museums), the article’s main picture first, a few from each source. They are saved into the game with who took them and the licence, so children see them even with no internet. Runs on this computer; Publish to send them to the children. ✕ takes off a photo that is not of the place, and it is never fetched again.', 'Những ảnh đẹp nhất của từng nơi thật, lấy từ Wikipedia, Wikimedia Commons và Openverse (ảnh Creative Commons từ Flickr và các bảo tàng), ảnh chính của bài viết trước, mỗi nguồn vài ảnh. Ảnh được lưu vào game kèm tên người chụp và giấy phép, nên các con xem được cả khi không có mạng. Chạy trên máy này; bấm Phát hành để gửi tới các con. ✕ bỏ ảnh không đúng nơi, và ảnh đó sẽ không bị tải lại.')}</p>
     <div class="card"><p><b>${have}</b> / ${all.length} ${T('places have photos saved', 'nơi đã có ảnh')}.</p>
       <div class="row"><div style="flex:0 0 160px"><label>${T('Photos per place', 'Số ảnh mỗi nơi')}</label><select id="pmax">${[3, 4, 6].map(n => `<option ${n === 4 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
       <button class="btn" id="pmiss">⬇️ ${T('Get photos for places without any', 'Tải ảnh cho nơi chưa có')}</button><button class="btn ghost" id="pall">🔄 ${T('Get them all again', 'Tải lại tất cả')}</button></div>
       <div class="prog"><i id="ppb"></i></div><p class="note" id="pres"></p></div>
-    <div class="grid">${all.map(x => `<div class="card"><b>${esc(x.name)}</b> <button class="btn small ghost" data-get="${esc(x.key)}">🔄</button><div class="thumbs">${(pix[x.key] || []).map(p => `<span class="thumb"><img src="${FILE(esc(p.src))}" title="${esc(p.credit || '')}"><button data-rm="${esc(x.key)}|${esc(p.src)}">✕</button></span>`).join('') || `<span class="note">${T('none yet', 'chưa có')}</span>`}</div></div>`).join('')}</div>`;
+    <div class="grid">${all.map(x => `<div class="card"><b>${esc(x.name)}</b> <button class="btn small ghost" data-get="${esc(x.key)}">🔄</button><div class="thumbs">${(pix[x.key] || []).map(p => `<span class="thumb"><img src="${FILE(esc(p.src))}" title="${esc(p.credit || '')}"><button data-rm="${esc(x.key)}|${esc(p.src)}" title="${T('Not this place: take it off (it won’t be fetched again)', 'Không phải nơi này: bỏ ảnh (sẽ không tải lại)')}" aria-label="${T('Remove this photo', 'Bỏ ảnh này')}">✕</button></span>`).join('') || `<span class="note">${T('none yet', 'chưa có')}</span>`}</div></div>`).join('')}</div>`;
     const go = async list => { // one place at a time (online each request must be short), the progress shown here
       P.querySelectorAll('button').forEach(b => b.disabled = true); let done = 0, errs = 0;
       for (const item of list) { $('#pres').textContent = `${done}/${list.length} · ${item.name}${errs ? ' · ⚠️ ' + errs : ''}`; try { await api('photos/get1', { item, max: +$('#pmax').value }); } catch (e) { errs++; } done++; $('#ppb').style.width = (done / list.length * 100) + '%'; }
@@ -674,7 +757,8 @@ PAGES.photos = async P => {
     $('#pmiss').onclick = () => go(all.filter(x => !(pix[x.key] && pix[x.key].length)));
     $('#pall').onclick = () => go(all);
     P.querySelectorAll('[data-get]').forEach(b => b.onclick = () => go(all.filter(x => x.key === b.dataset.get)));
-    P.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { const [key, src] = b.dataset.rm.split('|'); await api('photos/remove', { key, src }); draw(); });
+    // ✕ takes a photo off at once (it fades straight away; saving waits for Publish online) and it is never fetched again
+    P.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { const [key, src] = b.dataset.rm.split('|'), th = b.closest('.thumb'); th.style.opacity = .3; try { await api('photos/remove', { key, src }); th.remove(); if (INFO) { INFO.unpublished = true; head(); } } catch (e) { th.style.opacity = 1; fail(e); } });
   };
   await draw();
 };
@@ -749,6 +833,8 @@ PAGES.players = async P => {
   let GN = {}, PN = {};
   try { await import(GAME + 'js/games/all.js'); const { GAMES } = await import(GAME + 'js/games/registry.js'); for (const [id, g] of Object.entries(GAMES)) GN[id] = `${g.icon} ${g.name()}`; } catch (e) { }
   try { const W = await import(GAME + 'js/world.js'); for (const [id, f] of Object.entries(W.REGION_NAMES || {})) PN[id] = typeof f === 'function' ? f() : String(f); } catch (e) { }
+  // how long ago a device was last on the screen (round O)
+  const ago = iso => { const m = Math.max(1, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 60 ? T(`${m} min ago`, `${m} phút trước`) : m < 48 * 60 ? T(`${Math.round(m / 60)} h ago`, `${Math.round(m / 60)} giờ trước`) : T(`${Math.round(m / 1440)} days ago`, `${Math.round(m / 1440)} ngày trước`); };
   const gname = g => GN[g] || g, pname = p => PN[p] || p, when = d => d ? new Date(d + 'T12:00:00').toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { day: 'numeric', month: 'short' }) : '–';
   const kindName = k => ({ phone: T('Phone', 'Điện thoại'), tablet: T('Tablet', 'Máy tính bảng'), computer: T('Computer', 'Máy tính') }[k] || k);
   const locName = l => l ? [l.city, l.region, l.country].filter(Boolean).join(', ') : T('unknown', 'không rõ');
@@ -758,7 +844,7 @@ PAGES.players = async P => {
       ${K.games.length ? `<table class="mini"><thead><tr><th>${T('Game', 'Trò chơi')}</th><th>▶</th><th>🏆</th><th>🚪</th></tr></thead><tbody>${K.games.map(([g, st, w, q]) => `<tr><td>${esc(gname(g))}</td><td>${st}</td><td>${w}</td><td class="${q > w && q >= 2 ? 'warn' : ''}">${q}</td></tr>`).join('')}</tbody></table>` : ''}
       ${K.places.length ? `<p class="note">📍 ${K.places.map(([p, n]) => `${esc(pname(p))} (${n})`).join(' · ')}</p>` : ''}</div>`;
   const devCard = d => `<div class="card dev" data-id="${esc(d.id)}"><div class="row" style="align-items:flex-start"><div style="flex:2">
-      <h3>${{ phone: '📱', tablet: '📲', computer: '💻' }[d.kind] || '❔'} <span class="dlabel">${esc(devName(d))}</span> <button class="btn small ghost" data-rename>✏️ ${T('Name it', 'Đặt tên')}</button></h3>
+      <h3>${{ phone: '📱', tablet: '📲', computer: '💻' }[d.kind] || '❔'} <span class="dlabel">${esc(devName(d))}</span> ${d.online ? `<span class="pill live on">🟢 ${T('Playing now', 'Đang chơi')}${d.playingNow ? ' · ' + esc(d.playingNow) : ''}</span>` : `<span class="pill live">⚪ ${T('Offline', 'Không chơi')}${d.seenAt ? ' · ' + ago(d.seenAt) : ''}</span>`} <button class="btn small ghost" data-rename>✏️ ${T('Name it', 'Đặt tên')}</button></h3>
       <p class="note">${esc(d.os)} · ${esc(d.br)}${d.screen ? ' · ' + esc(d.screen) : ''}${d.app ? ' · ' + T('installed app', 'đã cài như ứng dụng') : ''} · ${esc(d.build)} · ${d.lang === 'vi' ? 'Tiếng Việt' : 'English'}<br>📍 ${esc(locName(d.loc))} · ${T('first seen', 'lần đầu')} ${when(d.first)} · ${T('last played', 'chơi gần nhất')} ${when(d.last)}</p></div>
       <div style="flex:1;min-width:150px"><p>⏱️ <b>${hrs(d.mins)}</b> ${T('in 30 days', 'trong 30 ngày')}<br>📅 ${d.days} ${T('days played', 'ngày có chơi')}${d.fps != null ? `<br>🎞️ ${d.fps} ${T('frames/s', 'khung hình/giây')}` : ''}${d.errors ? `<br><span class="badtxt">🐞 ${d.errors} ${T('errors', 'lỗi')}</span>` : ''}${d.stuck ? `<br><span class="warn">🧱 ${T('stuck', 'bị kẹt')} ${d.stuck}×</span>` : ''}</p></div></div>
       <div class="kids">${d.kids.map(kidCard).join('') || `<p class="note">${T('No per-child details yet (they start with version r43).', 'Chưa có chi tiết từng bé (bắt đầu từ bản r43).')}</p>`}</div></div>`;
@@ -777,7 +863,7 @@ PAGES.players = async P => {
   }[t.k] || (() => ''))();
   P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><p class="sub">${T('What the children play, from the game’s own website: per device and per child, for the last 30 days. Towns come from the internet connection (never GPS). A grown-up can switch it all off on the device: Grown-ups → Advanced → Analytics.', 'Các con chơi gì, từ trang web của game: theo từng máy và từng bé, trong 30 ngày qua. Thành phố lấy từ kết nối mạng (không bao giờ GPS). Người lớn có thể tắt hết trên máy: Người lớn → Nâng cao → Phân tích.')}</p>
   ${(r.tips || []).length ? `<div class="card tips"><h3>💡 ${T('Suggestions', 'Gợi ý')}</h3><ul>${r.tips.map(t => `<li>${esc(tipText(t))}</li>`).join('')}</ul></div>` : ''}
-  <div class="grid">${big(r.today.devices, 'devices playing today', 'máy chơi hôm nay')}${big(r.week.devices, 'this week', 'tuần này')}${big(r.month.devices, 'last 30 days', '30 ngày qua')}${big(r.allTime, 'devices ever', 'máy từ trước tới nay')}${big(r.week.newDevices, 'new this week', 'máy mới tuần này')}${big(hrs(r.minsPerDevice), 'a device plays a day', 'mỗi máy chơi mỗi ngày')}</div>
+  <div class="grid">${big(r.onlineNow || 0, '🟢 playing right now', '🟢 đang chơi lúc này')}${big(r.today.devices, 'devices playing today', 'máy chơi hôm nay')}${big(r.week.devices, 'this week', 'tuần này')}${big(r.month.devices, 'last 30 days', '30 ngày qua')}${big(r.allTime, 'devices ever', 'máy từ trước tới nay')}${big(r.week.newDevices, 'new this week', 'máy mới tuần này')}${big(hrs(r.minsPerDevice), 'a device plays a day', 'mỗi máy chơi mỗi ngày')}</div>
   <h3 class="sec">👨‍👩‍👧 ${T('Each device and child', 'Từng máy và từng bé')}</h3>${(r.devices || []).map(devCard).join('') || `<div class="card note">${T('No devices yet.', 'Chưa có máy nào.')}</div>`}
   <h3 class="sec">🌏 ${T('Everyone', 'Tất cả')}</h3>
   <div class="card"><h3>📅 ${T('Devices each day (pink: new)', 'Số máy mỗi ngày (hồng: máy mới)')}</h3><svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px">${bars}</svg></div>
@@ -799,15 +885,38 @@ PAGES.players = async P => {
     const l = prompt(T('A name for this device (e.g. “Na’s iPad”):', 'Tên cho máy này (ví dụ “iPad của Na”):'), cur); if (l === null) return;
     try { await api('players/label', { id, label: l }); card.querySelector('.dlabel').textContent = l || cur; toast(T('Saved.', 'Đã lưu.')); } catch (e) { fail(e); } });
 };
+// ---------- 👥 Admins (online, round O) ----------
+const ROLE_NAMES = { viewer: ['👀 Viewer: Analytics only', '👀 Xem: chỉ Phân tích'], editor: ['✏️ Editor: every page and Publish', '✏️ Sửa: mọi trang và Phát hành'], owner: ['👑 Owner: everything, also admins', '👑 Chủ: tất cả, cả quản trị viên'] };
+PAGES.admins = async P => {
+  const me = (INFO && INFO.me) || { name: 'owner', role: 'owner' };
+  const mine = me.name === 'owner' ? '' : `<div class="card"><h3>🔑 ${T('My password', 'Mật khẩu của tôi')} (${esc(me.name)})</h3>
+    <input type="password" id="op" autocomplete="current-password" placeholder="${T('Old password', 'Mật khẩu cũ')}"> <input type="password" id="np" autocomplete="new-password" placeholder="${T('New password (10+ characters)', 'Mật khẩu mới (từ 10 ký tự)')}"> <button class="btn" id="chg">${T('Change', 'Đổi')}</button></div>`;
+  if (me.role !== 'owner') { P.innerHTML = `<h2>👥 ${T('Admins', 'Quản trị viên')}</h2><p class="sub">${T('You are signed in as', 'Bạn đang đăng nhập là')} <b>${esc(me.name)}</b> · ${T(...ROLE_NAMES[me.role])}</p>${mine}`; bindMine(P); return; }
+  const { admins } = await api('admins/list'), opt = r => Object.keys(ROLE_NAMES).map(k => `<option value="${k}" ${k === r ? 'selected' : ''}>${T(...ROLE_NAMES[k])}</option>`).join('');
+  P.innerHTML = `<h2>👥 ${T('Admins', 'Quản trị viên')}</h2><p class="sub">${T('Other grown-ups sign in at this address with their own name and password; they never need a GitHub token (the website’s own is used). You see here who can do what.', 'Người lớn khác đăng nhập ở địa chỉ này bằng tên và mật khẩu riêng; họ không cần token GitHub (dùng token của trang web). Ở đây bạn thấy ai được làm gì.')}</p>
+    <div class="card"><h3>➕ ${T('Add someone', 'Thêm người')}</h3><div class="row" style="flex-wrap:wrap;gap:8px">
+      <input type="text" id="an" autocapitalize="none" spellcheck="false" placeholder="${T('Sign-in name, e.g. ba.nam', 'Tên đăng nhập, ví dụ ba.nam')}"><input type="password" id="ap" autocomplete="new-password" placeholder="${T('Their password (10+ characters)', 'Mật khẩu của họ (từ 10 ký tự)')}"><select id="ar">${opt('viewer')}</select><button class="btn" id="aadd">${T('Add', 'Thêm')}</button></div>
+      <p class="note">${T('Tell them the address (this page), their name and password yourself. They can change their password here after signing in.', 'Tự gửi cho họ địa chỉ (trang này), tên và mật khẩu. Sau khi đăng nhập họ có thể tự đổi mật khẩu ở đây.')}</p></div>
+    <div class="card"><h3>👥 ${T('Who can sign in', 'Ai có thể đăng nhập')}</h3><table class="mini"><tbody>
+      <tr><td><b>owner</b></td><td>${T(...ROLE_NAMES.owner)}</td><td class="note">${T('the Studio password (STUDIO_PASSWORD in Netlify)', 'mật khẩu Studio (STUDIO_PASSWORD trong Netlify)')}</td><td></td></tr>
+      ${admins.map(a => `<tr data-n="${esc(a.name)}"><td><b>${esc(a.name)}</b></td><td><select data-role>${opt(a.role)}</select></td><td class="note">${T('added', 'thêm')} ${esc(new Date(a.at).toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Brisbane' }))} · ${esc(a.by)}</td><td><button class="btn small ghost" data-pw>🔑 ${T('New password', 'Mật khẩu mới')}</button> <button class="btn small ghost" data-rm>🗑️</button></td></tr>`).join('')}
+    </tbody></table>${admins.length ? '' : `<p class="note">${T('Nobody else yet.', 'Chưa có ai khác.')}</p>`}</div>`;
+  $('#aadd').onclick = async () => { try { await api('admins/save', { name: $('#an').value, password: $('#ap').value, role: $('#ar').value }); toast(T('Added.', 'Đã thêm.')); PAGES.admins(P); } catch (e) { fail(e); } };
+  P.querySelectorAll('tr[data-n]').forEach(tr => { const name = tr.dataset.n;
+    tr.querySelector('[data-role]').onchange = async e => { try { await api('admins/save', { name, role: e.target.value }); toast(T('Saved.', 'Đã lưu.')); } catch (x) { fail(x); } };
+    tr.querySelector('[data-pw]').onclick = async () => { const pw = prompt(T(`A new password for ${name} (10+ characters):`, `Mật khẩu mới cho ${name} (từ 10 ký tự):`)); if (!pw) return; try { await api('admins/save', { name, password: pw, role: tr.querySelector('[data-role]').value }); toast(T('Changed: they are signed out everywhere.', 'Đã đổi: họ bị đăng xuất khỏi mọi nơi.')); } catch (e) { fail(e); } };
+    tr.querySelector('[data-rm]').onclick = async () => { if (!confirm(T(`Remove ${name}? They can no longer sign in.`, `Xóa ${name}? Họ sẽ không đăng nhập được nữa.`))) return; try { await api('admins/remove', { name }); PAGES.admins(P); } catch (e) { fail(e); } }; });
+};
+function bindMine(P) { const b = P.querySelector('#chg'); if (b) b.onclick = async () => { try { await api('admins/me', { old: $('#op').value, password: $('#np').value }); toast(T('Password changed. Please sign in again.', 'Đã đổi mật khẩu. Vui lòng đăng nhập lại.')); setTimeout(signIn, 1200); } catch (e) { fail(e); } }; }
 // ---------- signing in (online only) ----------
 function signIn() {
   LOADED = false; $('#tabs').innerHTML = ''; if ($('#crumb')) $('#crumb').innerHTML = ''; if ($('#pub')) $('#pub').hidden = true; document.body.classList.add('online');
-  $('#page').innerHTML = `<div class="card signin"><h2>✨ Sparkle Studio</h2><p class="sub">${T('The grown-ups’ dashboard, online. Enter the Studio password.', 'Bảng điều khiển của người lớn, trên mạng. Nhập mật khẩu Studio.')}</p>
-    <form id="si"><input type="password" id="pw" autocomplete="current-password" placeholder="${T('Password', 'Mật khẩu')}"><button class="btn" style="margin-top:10px">🔓 ${T('Sign in', 'Đăng nhập')}</button><p class="note" id="sires"></p></form></div>`;
+  $('#page').innerHTML = `<div class="card signin"><h2>✨ Sparkle Studio</h2><p class="sub">${T('The grown-ups’ dashboard, online. Sign in with your name and password (the owner leaves the name empty and uses the Studio password).', 'Bảng điều khiển của người lớn, trên mạng. Đăng nhập bằng tên và mật khẩu của bạn (chủ để trống tên và dùng mật khẩu Studio).')}</p>
+    <form id="si"><input type="text" id="nm" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="${T('Sign-in name (empty for the owner)', 'Tên đăng nhập (chủ để trống)')}" style="margin-bottom:8px"><input type="password" id="pw" autocomplete="current-password" placeholder="${T('Password', 'Mật khẩu')}"><button class="btn" style="margin-top:10px">🔓 ${T('Sign in', 'Đăng nhập')}</button><p class="note" id="sires"></p></form></div>`;
   $('#si').onsubmit = async e => { e.preventDefault(); $('#sires').textContent = '…';
-    const r = await fetch(BASE + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: $('#pw').value }) }); const j = await r.json().catch(() => ({}));
+    const r = await fetch(BASE + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('#nm').value, password: $('#pw').value }) }); const j = await r.json().catch(() => ({}));
     if (r.ok) render(true); else $('#sires').textContent = '⚠️ ' + (j.error || r.status); };
-  $('#pw').focus();
+  $('#nm').focus();
 }
 window.addEventListener('hashchange', () => { const k = route(); if (k !== cur) { cur = k; render(); } });
 render();

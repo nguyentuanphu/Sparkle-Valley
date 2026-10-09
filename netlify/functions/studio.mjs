@@ -9,6 +9,8 @@
 //   NETLIFY_TOKEN                                      the Website page                  optional
 import core from '../../studio/core.cjs';
 import { report, inbox, setLabel } from '../lib/players.mjs';
+import * as admins from '../lib/admins.mjs';
+import { readLive, saveLive } from '../lib/live.mjs';
 const { createStudio, githubStore, makeToken, checkToken, samePassword } = core;
 
 const env = k => ((globalThis.Netlify && globalThis.Netlify.env.get(k)) || process.env[k] || '').trim();
@@ -18,20 +20,58 @@ const COOKIE = 'sv_studio';
 
 // the players' store is Netlify Blobs on the website (tests hand in their own)
 const blobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'players', consistency: 'strong' }));
-export const makeStudio = ({ playersStore = blobs } = {}) => async req => {
+const adminBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'studio-admins', consistency: 'strong' }));
+const liveBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'live', consistency: 'strong' }));
+const heldBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'studio-pending', consistency: 'strong' }));
+// the saved changes waiting for Publish (round P), kept in Netlify Blobs: "index" lists them (path → size, or null for
+// a removed file) and "f/<path>" holds each file (base64)
+export const heldOn = S => ({
+  index: async () => (await S.get('index', { type: 'json' })) || {},
+  get: async rel => { const b = await S.get('f/' + rel); return b == null ? null : Buffer.from(String(b), 'base64'); },
+  put: async changes => { const ix = (await S.get('index', { type: 'json' })) || {};
+    for (const [rel, buf] of changes) { if (buf) { await S.set('f/' + rel, Buffer.from(buf).toString('base64')); ix[rel] = buf.length; } else { await S.delete('f/' + rel); ix[rel] = null; } }
+    await S.setJSON('index', ix); },
+  clear: async () => { const ix = (await S.get('index', { type: 'json' })) || {}; for (const rel of Object.keys(ix)) await S.delete('f/' + rel); await S.setJSON('index', {}); }
+});
+export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs, liveStore = liveBlobs } = {}) => async req => {
   const url = new URL(req.url), p = url.pathname, pw = env('STUDIO_PASSWORD'), post = req.method === 'POST';
   if (!pw) return json({ error: 'The online Studio is not set up yet: add STUDIO_PASSWORD in Netlify (Site configuration → Environment variables), then deploy again.', setup: true }, 503);
   // signing in and out
   if (p === '/studio/api/login' && post) {
-    const b = await req.json().catch(() => ({}));
-    if (!samePassword(pw, b.password)) { await new Promise(r => setTimeout(r, 1500)); return json({ error: 'That is not the password.' }, 401); } // slow, so guessing takes forever
-    return json({ ok: true }, 200, { 'Set-Cookie': `${COOKIE}=${makeToken(pw)}; Path=/studio; Max-Age=${30 * 86400}; HttpOnly; Secure; SameSite=Strict` });
+    const b = await req.json().catch(() => ({})), name = admins.cleanName(b.name);
+    const cookie = v => ({ 'Set-Cookie': `${COOKIE}=${v}; Path=/studio; Max-Age=${30 * 86400}; HttpOnly; Secure; SameSite=Strict` });
+    // no name (or "owner"): the owner's STUDIO_PASSWORD; a name: that admin's own password (round O)
+    if (!name || name === 'owner') { if (samePassword(pw, b.password)) return json({ ok: true, role: 'owner' }, 200, cookie(makeToken(pw))); }
+    else { const a = await admins.check(await adminStore(), name, b.password); if (a) return json({ ok: true, role: a.role }, 200, cookie(admins.makeCookie(pw, a))); }
+    await new Promise(r => setTimeout(r, 1500)); // slow, so guessing takes forever
+    return json({ error: name && name !== 'owner' ? 'That name and password don’t match.' : 'That is not the password.' }, 401);
   }
   if (p === '/studio/api/logout') return json({ ok: true }, 200, { 'Set-Cookie': `${COOKIE}=; Path=/studio; Max-Age=0; HttpOnly; Secure; SameSite=Strict` });
   // the exe asks for the players report with the password it keeps; the dashboard has the cookie
-  const signedIn = checkToken(pw, cookieOf(req, COOKIE)) || samePassword(pw, req.headers.get('x-studio-password') || undefined);
-  if (!signedIn) return json({ error: 'Please sign in.', signin: true }, 401);
+  const ck = cookieOf(req, COOKIE);
+  let me = checkToken(pw, ck) || samePassword(pw, req.headers.get('x-studio-password') || undefined) ? { name: 'owner', role: 'owner' } : null;
+  if (!me && ck.startsWith('a.')) { const a = await admins.fromCookie(await adminStore(), pw, ck).catch(() => null); if (a) me = { name: a.name, role: a.role }; }
+  if (!me) return json({ error: 'Please sign in.', signin: true }, 401);
   if (post && req.headers.get('x-studio') !== '1') return json({ error: 'no' }, 403); // only the dashboard itself sends changes
+  // what this admin may do (round O): a viewer reads the analytics only; only an owner manages the admins
+  const route = p.startsWith('/studio/content/') ? 'file' : decodeURIComponent(p.slice('/studio/api/'.length));
+  if (!admins.allowed(me.role, route.startsWith('file/') && !post ? 'info' : route, post)) return json({ error: me.role === 'viewer' ? 'Your account can look at the Analytics only.' : 'Only an owner can do that.' }, 403);
+  if (p === '/studio/api/whoami') return json(me);
+  if (p.startsWith('/studio/api/admins/')) {
+    const S = await adminStore(), b = post ? await req.json().catch(() => ({})) : {};
+    if (p === '/studio/api/admins/list') return json({ admins: await admins.list(S), me });
+    if (p === '/studio/api/admins/save' && post) { if (admins.cleanName(b.name) === 'owner') return json({ error: '“owner” is kept for the STUDIO_PASSWORD.' }, 400); const r = await admins.put(S, b, me.name); return json(r, r.error ? 400 : 200); }
+    if (p === '/studio/api/admins/remove' && post) return json(await admins.remove(S, b.name));
+    // anyone changes their own password (the owner's is STUDIO_PASSWORD, changed in Netlify)
+    if (p === '/studio/api/admins/me' && post) {
+      if (me.name === 'owner') return json({ error: 'The owner’s password is STUDIO_PASSWORD: change it in Netlify (Site configuration → Environment variables).' }, 400);
+      if (!await admins.check(S, me.name, b.old)) return json({ error: 'The old password is not right.' }, 401);
+      const r = await admins.put(S, { name: me.name, password: b.password, role: me.role }, me.name); return json(r, r.error ? 400 : 200);
+    }
+    return json({ error: 'no' }, 404);
+  }
+  // (round R) Releases and Festivals: saved straight to the website, so they reach the devices at once, no Publish
+  if (p === '/studio/api/live') return json(post ? await saveLive(await liveStore(), await req.json().catch(() => ({})), me.name) : await readLive(await liveStore()));
   const players = async () => report(await playersStore());
   if (p === '/studio/api/players') return json(await players());
   if (p === '/studio/api/inbox') return json(await inbox(await playersStore()));
@@ -40,7 +80,10 @@ export const makeStudio = ({ playersStore = blobs } = {}) => async req => {
   const conf = { azureKey: env('AZURE_KEY'), azureRegion: env('AZURE_REGION'), githubToken: env('GITHUB_TOKEN'), githubRepo: env('GITHUB_REPO') || 'nguyentuanphu/Sparkle-Valley', githubBranch: env('GITHUB_BRANCH') || 'main',
     netlifyToken: env('NETLIFY_TOKEN'), netlifySite: env('NETLIFY_SITE') || env('SITE_ID'), siteUrl: env('URL') };
   if (!conf.githubToken) return json({ error: 'Add GITHUB_TOKEN in Netlify (Site configuration → Environment variables) so the online Studio can read and save the family’s files.', setup: true }, 503);
-  const store = githubStore({ token: conf.githubToken, repo: conf.githubRepo, branch: conf.githubBranch });
+  const store = githubStore({ token: conf.githubToken, repo: conf.githubRepo, branch: conf.githubBranch, held: heldOn(await heldStore()) });
+  // the changes waiting for Publish, and dropping them (round P)
+  if (p === '/studio/api/pending') return json({ files: await store.waiting() });
+  if (p === '/studio/api/pending/discard' && post) return json(await store.discard());
   const studio = createStudio({ store, conf, online: true, local: { players, inbox: async () => inbox(await playersStore()) } });
   // the game's modules on the Map and Voices pages fetch content/custom.json from the page's own address
   const api = p.startsWith('/studio/content/') ? 'file/' + p.slice(8) : decodeURIComponent(p.slice('/studio/api/'.length));
@@ -48,6 +91,7 @@ export const makeStudio = ({ playersStore = blobs } = {}) => async req => {
     const body = post ? Buffer.from(await req.arrayBuffer()) : null;
     if (body && body.length > 5.5e6) return json({ error: 'That is too big to send online (over 5 MB).' }, 413);
     const r = await studio.handle(api, req.method, body);
+    if (api === 'info' && r.body && typeof r.body === 'object') { r.body.me = me; r.body.waiting = (await store.waiting()).length; } // who is signed in, and what they may do
     if (post && r.code < 400) await store.flush('Sparkle Studio online: ' + api);
     if (r.raw) return new Response(r.raw, { status: r.code, headers: { 'Content-Type': r.type, 'Cache-Control': 'no-store' } });
     if (api === 'file/content/custom.json' && r.code === 404) return json({});

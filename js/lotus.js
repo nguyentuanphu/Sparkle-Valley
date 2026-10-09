@@ -15,6 +15,7 @@ import { SFX } from './audio.js';
 import { heightAt, roadDist, VILLAGE, ROADS } from './world.js';
 import { buildAvatar } from './avatar.js';
 import { animalModel } from './animals.js';
+import { build, seatRider } from './vehicles.js';
 
 const V = VILLAGE, at = (dx, dz) => [V.x + dx, V.z + dz];
 const look = (style, color, hair, hairStyle, hat = 'none', skin = '#e0aa80') => ({ style, color, hair, hairStyle, hat, skin, back: 'none', glider: 0 });
@@ -127,17 +128,11 @@ export function createLotus(G, { say, toast }) {
   const route = R => { const pts = R.pts.map(p => p.slice()), cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); return { pts, cum, len: cum[cum.length - 1] }; };
   const pointAt = (r, s) => { s = Math.max(0, Math.min(r.len, s)); let i = 1; while (i < r.cum.length - 1 && r.cum[i] < s) i++; const k = (s - r.cum[i - 1]) / (r.cum[i] - r.cum[i - 1] || 1), [ax, az] = r.pts[i - 1], [bx, bz] = r.pts[i]; return [ax + (bx - ax) * k, az + (bz - az) * k, Math.atan2(bx - ax, bz - az)]; };
   const pondPath = ROADS.find(R => R.kind === 'footpath'), lane = ROADS.find(R => R.kind === 'dirt' && Math.abs(R.pts[0][1] - V.z) < 1 && R.pts[0][0] < V.x);
-  // the bicycle: a frame, two wheels, a flower basket in front and a fruit basket behind, and its rider in a nón lá
-  const bike = new THREE.Group();
-  bike.add(new THREE.Mesh(merge([
-    ...[-1, 1].map(s => P(new THREE.TorusGeometry(.34, .04, 6, 16), '#2f3336', [0, .36, s * .55])),
-    P(new THREE.CylinderGeometry(.03, .03, 1.1, 5), '#2fa9a0', [0, .62, 0], [Math.PI / 2, 0, 0]), P(new THREE.CylinderGeometry(.03, .03, .55, 5), '#2fa9a0', [0, .5, .3], [.5, 0, 0]),
-    P(new THREE.CylinderGeometry(.03, .03, .5, 5), '#2fa9a0', [0, .58, -.35], [-.3, 0, 0]), P(new THREE.BoxGeometry(.22, .05, .26), '#3a2a20', [0, .86, -.3]),
-    P(new THREE.CylinderGeometry(.02, .02, .55, 5), '#9aa', [0, .98, .52], [0, 0, Math.PI / 2]),
-    P(new THREE.CylinderGeometry(.2, .16, .2, 10), '#c9a24a', [0, .82, .72]), ...['#ff7eb8', '#ffd23f', '#ffffff', '#ff6b5a'].map((c, k) => P(new THREE.SphereGeometry(.07, 6, 5), c, [Math.cos(k * 1.6) * .1, .96, .72 + Math.sin(k * 1.6) * .1])),
-    P(new THREE.BoxGeometry(.4, .2, .3), '#a87a4a', [0, .82, -.75]), ...['#ff9a2e', '#5fbf4a', '#e8433a'].map((c, k) => P(new THREE.SphereGeometry(.08, 6, 5), c, [-.1 + k * .1, .96, -.75]))
-  ]), mat));
-  const rider = buildAvatar(look('aodai', '#ffffff', '#1d1412', 'long', 'nonla')); rider.root.position.set(0, .45, -.25); rider.root.scale.setScalar(.92); bike.add(rider.root);
+  // the bicycle (round R): Cô Hoa's mini city bike from js/vehicles.js, its basket full of flowers, and Cô Hoa in her
+  // áo dài and nón lá sitting on the saddle with her hands on the grips and her feet on the pedals
+  const vb = build('miniBike', { args: ['#2fa9a0'] }), bike = vb.o, wheels = vb.wheels, WR = vb.wr;
+  bike.add(new THREE.Mesh(merge(['#ff7eb8', '#ffd23f', '#ffffff', '#ff6b5a', '#ff9ab8'].map((c, k) => P(new THREE.SphereGeometry(.06, 6, 5), c, [Math.cos(k * 1.3) * .08, vb.grips[0][1] + .02, vb.grips[0][2] + .2 + Math.sin(k * 1.3) * .08]))), mat));
+  const rider = buildAvatar(look('aodai', '#ffffff', '#1d1412', 'long', 'nonla')); rider.anim('idle', 0, 0); seatRider(rider, vb, vb.seat, vb.grips, vb.feet);
   scene.add(bike);
   lines.bike = ['Kring kring! Cô Hoa rides her bicycle with flowers for the market.', 'Kính coong! Cô Hoa đạp xe chở hoa ra chợ.'];
   bike.userData.react = h => { SFX.ding(); talk(h, 'bike'); };
@@ -153,7 +148,7 @@ export function createLotus(G, { say, toast }) {
   scene.add(cart);
   lines.cart = ['Moo! The buffalo cart brings hay from the rice fields. It goes slowly, so we always walk beside it safely.', 'Nghé ọ! Xe trâu chở rơm từ cánh đồng về. Xe đi chậm, mình đi bên cạnh cho an toàn nhé.'];
   cart.userData.react = buffalo.userData.react = h => { SFX.moo(); talk(h, 'cart'); };
-  if (pondPath) movers.push({ o: bike, r: route(pondPath), s: 0, dir: 1, speed: .95, wait: 0, len: 1.2, anim: rider, rest: 3 });
+  if (pondPath) movers.push({ o: bike, r: route(pondPath), s: 0, dir: 1, speed: .95, wait: 0, len: 1.2, rest: 3, wheels, wr: WR });
   if (lane) movers.push({ o: cart, pull: buffalo, r: route(lane), s: 0, dir: 1, speed: .6, wait: 0, len: 4.2, rest: 6 });
   const AHEAD = 4;
   world.updaters.push((dt, t) => {
@@ -172,6 +167,7 @@ export function createLotus(G, { say, toast }) {
       m.o.position.set(x, heightAt(x, z), z); m.o.rotation.y = m.dyaw;
       if (m.pull) { const px = x + Math.sin(m.dyaw) * 1.7, pz = z + Math.cos(m.dyaw) * 1.7; m.pull.position.set(px, heightAt(px, pz), pz); m.pull.rotation.y = m.dyaw; }
       if (m.anim) m.anim.anim('ride', t, go ? 2 : 0);
+      if (m.wheels && go) m.wheels.forEach(w => { w.rotation.x += m.speed * dt / m.wr; });   // (the wheels roll as far as the bike goes)
     }
   });
   if (movers[0]) movers[0].s = movers[0].r.len * .4;

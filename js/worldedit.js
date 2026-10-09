@@ -7,6 +7,7 @@
 // inside the circle (the building, its people, stalls, trees, its tap spots) to the new place; the ground is
 // levelled under it afterwards like everywhere else.
 import { THREE, toonVC, merge, outline } from './gfx.js';
+import { addPole } from './powerlines.js';
 import { heightAt } from './world.js';
 import { houseTube, houseVilla, houseCottage, houseVillage } from './houses.js';
 import { raisedHouse } from './town.js';
@@ -28,7 +29,9 @@ export const BUILD_TYPES = {
   clocktower: { ...landmark('bnclock'), name: ['Clock tower', 'Tháp đồng hồ'], icon: '🕰️' },
   cathedral: { ...landmark('cathedral'), name: ['Red-brick church', 'Nhà thờ gạch đỏ'], icon: '⛪' },
   postoffice: { ...landmark('postoffice'), name: ['Post office', 'Bưu điện'], icon: '🏤' },
-  communal: { ...landmark('dendo'), name: ['Temple', 'Đền'], icon: '⛩️' }
+  communal: { ...landmark('dendo'), name: ['Temple', 'Đền'], icon: '⛩️' },
+  // (a power pole: shown and wired to its neighbours only while Studio's power-pole switch is on; js/powerlines.js)
+  powerpole: { pole: true, mk: () => ({ parts: [] }), name: ['Power pole', 'Cột điện'], icon: '⚡' }
 };
 const W = () => CUSTOM.world && typeof CUSTOM.world === 'object' ? CUSTOM.world : {};
 const num = v => typeof v === 'number' && isFinite(v);
@@ -40,6 +43,7 @@ export function addFamilyBuildings(G) {
   const { scene, world } = G; let n = 0;
   for (const b of (Array.isArray(W().build) ? W().build : []).slice(0, 80)) {
     const T = b && BUILD_TYPES[b.type]; if (!T || !num(b.x) || !num(b.z) || Math.abs(b.x) > 190 || Math.abs(b.z) > 190) continue;
+    if (T.pole) { if (addPole(world, b.x, heightAt(b.x, b.z), b.z)) n++; continue; }
     const rot = num(b.rot) ? b.rot : 0, y = heightAt(b.x, b.z), m = T.mk({ color: /^#[0-9a-f]{6}$/i.test(b.color || '') ? b.color : null });
     const obj = m.obj || new THREE.Mesh(m.geo || merge(m.parts), toonVC());
     obj.castShadow = obj.receiveShadow = true; obj.position.set(b.x, y - (m.parts ? .05 : 0), b.z); obj.rotation.y = rot; obj.userData.family = true; scene.add(obj);
@@ -82,7 +86,7 @@ export function applyWorldEdits(G) {
       if (o.geometry) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); if (o.geometry.boundingSphere.radius > e.r * 2 + 8) continue; } // the ground, the sea, roads…
       if (!inside(o.position.x, o.position.z)) continue;
       if (move) { const [nx, nz] = to(o.position.x, o.position.z); o.position.y += heightAt(nx, nz) - heightAt(o.position.x, o.position.z); o.position.x = nx; o.position.z = nz; o.rotation.y += turn; }
-      else o.visible = false;
+      else { o.visible = false; o.userData.noSolid = true; } // (removed in Studio: no invisible wall left behind)
       n++;
     }
     const shift = (list, keyX = 'x', keyZ = 'z') => { for (let i = list.length - 1; i >= 0; i--) { const it = list[i]; if (!it || !num(it[keyX]) || !inside(it[keyX], it[keyZ])) continue; if (move) { const [nx, nz] = to(it[keyX], it[keyZ]); it[keyX] = nx; it[keyZ] = nz; } else list.splice(i, 1); } };

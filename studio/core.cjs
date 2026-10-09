@@ -48,8 +48,12 @@ const TREES = new Map(), BLOBS = new Map(); // kept between requests while the f
 // where the branches point, kept for a few seconds between requests (round K: a tab change online cost several GitHub
 // calls each time); any save or publish from this server forgets it at once
 const REFS = new Map(), REFS_TTL = 15e3;
-function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api = ghApi(token) }) {
-  const R = `/repos/${repo}`, gh = api, pending = new Map(); let st = null;
+// held (round P, owner: "everything is very slow when clicking; combine all changes and push in one go"): online,
+// a save is kept on the website itself (Netlify Blobs) in a moment, and reads see it at once; nothing goes to GitHub
+// until Publish, which sends every waiting change as one commit. held = { index(): {rel: size|null}, get(rel), put(map), clear() }.
+function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api = ghApi(token), held = null }) {
+  const R = `/repos/${repo}`, gh = api, pending = new Map(); let st = null, idx = null;
+  const heldIndex = async () => held ? (idx || (idx = await held.index())) : {};
   const treeShaOf = async commit => TREES.has(commit) ? TREES.get(commit).sha : (await gh(`${R}/git/commits/${commit}`)).tree.sha;
   const treeOf = async commit => {
     if (TREES.has(commit)) return TREES.get(commit);
@@ -89,7 +93,7 @@ function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api
       if (!j) listed = true; else if (Array.isArray(j) && j.length < 1000) { for (const x of j) if (x.type === 'file') out.add(x.name); listed = true; }
     }
     if (!listed) { const t = await treeOf(c); for (const p of t.map.keys()) if (p.startsWith(pre) && (deep || !p.slice(pre.length).includes('/'))) out.add(deep ? p : p.slice(pre.length)); }
-    for (const [p, v] of pending) if (p.startsWith(pre) && (deep || !p.slice(pre.length).includes('/'))) { const k = deep ? p : p.slice(pre.length); if (v) out.add(k); else out.delete(k); }
+    for (const [p, v] of [...Object.entries(await heldIndex()), ...pending]) if (p.startsWith(pre) && (deep || !p.slice(pre.length).includes('/'))) { const k = deep ? p : p.slice(pre.length); if (v != null) out.add(k); else out.delete(k); }
     return [...out];
   };
   const commitOn = async (parent, items, message) => {
@@ -98,10 +102,37 @@ function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api
     return (await gh(`${R}/git/commits`, { method: 'POST', body: JSON.stringify({ message, tree, parents: [parent] }) })).sha;
   };
   const setRef = async (b, sha, force) => { try { await gh(`${R}/git/refs/heads/${encodeURIComponent(b)}`, { method: 'PATCH', body: JSON.stringify({ sha, force: !!force }) }); } catch (e) { if (e.status !== 422 && e.status !== 404) throw e; if (await refSha(b)) throw e; await gh(`${R}/git/refs`, { method: 'POST', body: JSON.stringify({ ref: 'refs/heads/' + b, sha }) }); } };
+  // everything this request (or the held changes) wrote: one commit on the draft branch
+  async function toDraft(message) {
+    forget(); // a change always starts from where the branches really are now
+    for (let a = 0; ; a++) {
+      const s = await state(), parent = s.d || s.main, items = [], have = [...pending.values()].some(v => !v) ? (await treeOf(parent)).map : new Map();
+      for (const [rel, buf] of pending) {
+        if (buf) items.push({ path: rel, mode: '100644', type: 'blob', sha: (await gh(`${R}/git/blobs`, { method: 'POST', body: JSON.stringify({ content: buf.toString('base64'), encoding: 'base64' }) })).sha });
+        else if (have.has(rel)) items.push({ path: rel, mode: '100644', type: 'blob', sha: null });
+      }
+      if (!items.length) { pending.clear(); return null; }
+      const sha = await commitOn(parent, items, message || 'Sparkle Studio online: draft');
+      try { await setRef(draft, sha, !s.d); pending.clear(); forget(); return sha; } // a draft with nothing unpublished is simply restarted from main
+      catch (e) { if (a > 1 || e.status !== 422) throw e; forget(); } // someone else saved at the same moment: once more on top of theirs
+    }
+  }
+  // the family's files that changed on the draft are put onto main as one commit, then the draft starts again from
+  // main. Files that changed only on main (e.g. published from the exe meanwhile) are left as they are.
+  async function publishDraft(message) {
+    forget(); const s = await full(); if (!s.d) return { changed: 0, note: 'Nothing new to publish: the website already has everything.' };
+    const base = (await treeOf(s.base)).map, mine = s.draftTree.map, items = [];
+    for (const p of new Set([...base.keys(), ...mine.keys()])) if (FAMILY(p) && base.get(p) !== mine.get(p)) items.push(mine.has(p) ? { path: p, mode: '100644', type: 'blob', sha: mine.get(p) } : s.mainTree.map.has(p) ? { path: p, mode: '100644', type: 'blob', sha: null } : null);
+    const list = items.filter(Boolean); if (!list.length) return { changed: 0, note: 'Nothing new to publish: the website already has everything.' };
+    const sha = await commitOn(s.main, list, message || `Family update from Sparkle Studio online (${list.length} files)`);
+    await setRef(branch, sha, false); await setRef(draft, sha, true); forget();
+    return { changed: list.length, commit: sha.slice(0, 7), url: `https://github.com/${repo}/commit/${sha}` };
+  }
   return {
-    kind: 'github', where: `${repo} · ${branch}`, backup: false, ok: () => true,
+    kind: 'github', where: `${repo} · ${branch}`, backup: false, ok: () => true, holds: !!held,
     read: async rel => {
       if (pending.has(rel)) return pending.get(rel);
+      const hi = await heldIndex(); if (rel in hi) return hi[rel] == null ? null : held.get(rel);
       const c = await commitFor(rel);
       if (!TREES.has(c)) { const j = await contents(rel, c); if (!j || Array.isArray(j) || j.type !== 'file') return null; if (BLOBS.has(j.sha)) return BLOBS.get(j.sha); if (j.encoding === 'base64' && j.content) { const b = Buffer.from(j.content, 'base64'); if (b.length < 400e3) BLOBS.set(j.sha, b); return b; } return blob(j.sha); }
       const sha = TREES.get(c).map.get(rel); return sha ? blob(sha) : null;
@@ -109,34 +140,22 @@ function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api
     write: async (rel, buf) => { if (!FAMILY(rel)) throw new Error('Online, only the family’s own files can change.'); pending.set(rel, Buffer.from(buf)); },
     remove: async rel => { if (!FAMILY(rel)) throw new Error('Online, only the family’s own files can change.'); pending.set(rel, null); },
     list: dir => names(dir, false), walk: dir => names(dir, true),
-    // one commit on the draft branch for everything this request changed
+    // what this request changed: kept on the website until Publish (held), or else one commit on the draft branch
     flush: async message => {
       if (!pending.size) return null;
-      forget(); // a change always starts from where the branches really are now
-      for (let a = 0; ; a++) {
-        const s = await state(), parent = s.d || s.main, items = [], have = [...pending.values()].some(v => !v) ? (await treeOf(parent)).map : new Map();
-        for (const [rel, buf] of pending) {
-          if (buf) items.push({ path: rel, mode: '100644', type: 'blob', sha: (await gh(`${R}/git/blobs`, { method: 'POST', body: JSON.stringify({ content: buf.toString('base64'), encoding: 'base64' }) })).sha });
-          else if (have.has(rel)) items.push({ path: rel, mode: '100644', type: 'blob', sha: null });
-        }
-        if (!items.length) { pending.clear(); return null; }
-        const sha = await commitOn(parent, items, message || 'Sparkle Studio online: draft');
-        try { await setRef(draft, sha, !s.d); pending.clear(); forget(); return sha; } // a draft with nothing unpublished is simply restarted from main
-        catch (e) { if (a > 1 || e.status !== 422) throw e; forget(); } // someone else saved at the same moment: once more on top of theirs
-      }
+      if (held) { await held.put(pending); idx = null; pending.clear(); return 'held'; }
+      return toDraft(message);
     },
-    // Publish: the family's files that changed on the draft are put onto main as one commit, then the draft starts
-    // again from main. Files that changed only on main (e.g. published from the exe meanwhile) are left as they are.
+    // the changes waiting on the website, and dropping them (the draft branch itself is left as it is)
+    waiting: async () => Object.keys(await heldIndex()).sort(),
+    discard: async () => { if (held) await held.clear(); idx = null; return { ok: true }; },
+    // Publish: every waiting change as one commit on the draft, then the draft onto main as one commit
     publish: async message => {
-      forget(); const s = await full(); if (!s.d) return { changed: 0, note: 'Nothing new to publish: the website already has everything.' };
-      const base = (await treeOf(s.base)).map, mine = s.draftTree.map, items = [];
-      for (const p of new Set([...base.keys(), ...mine.keys()])) if (FAMILY(p) && base.get(p) !== mine.get(p)) items.push(mine.has(p) ? { path: p, mode: '100644', type: 'blob', sha: mine.get(p) } : s.mainTree.map.has(p) ? { path: p, mode: '100644', type: 'blob', sha: null } : null);
-      const list = items.filter(Boolean); if (!list.length) return { changed: 0, note: 'Nothing new to publish: the website already has everything.' };
-      const sha = await commitOn(s.main, list, message || `Family update from Sparkle Studio online (${list.length} files)`);
-      await setRef(branch, sha, false); await setRef(draft, sha, true); forget();
-      return { changed: list.length, commit: sha.slice(0, 7), url: `https://github.com/${repo}/commit/${sha}` };
+      const hi = await heldIndex(), keys = Object.keys(hi);
+      if (keys.length) { for (const k of keys) pending.set(k, hi[k] == null ? null : await held.get(k)); await toDraft(`Sparkle Studio online: ${keys.length} saved change${keys.length === 1 ? '' : 's'}`); await held.clear(); idx = null; }
+      return publishDraft(message);
     },
-    unpublished: async () => !!(await state()).d,
+    unpublished: async () => Object.keys(await heldIndex()).length > 0 || !!(await state()).d,
     // (the exe) the family's files as GitHub has them now: the draft while it has unpublished changes, else main
     familyShas: async () => { const s = await full(), out = new Map(); for (const [p, sha] of (s.d ? s.draftTree : s.mainTree).map) if (FAMILY(p)) out.set(p, sha); return out; },
     // (the exe) files already uploaded as blobs → one commit on the draft branch (never on main)
@@ -172,7 +191,16 @@ const BADPIC = /\.(svg|gif|tif|tiff|webm|ogv|ogg|oga|wav|mp3|pdf)$|logo|flag of|
 async function bestPhotos(sources, max) {
   for (const s of sources) {
     const [lang, title] = s.split(/:(.+)/), t = encodeURIComponent(title.replace(/ /g, '_'));
-    const ml = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${t}`, { headers: UA }); if (!ml.ok) continue;
+    const ml = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${t}`, { headers: UA }).catch(() => null);
+    // (round O) Wikipedia is retiring that list: the article's pictures from the main API instead
+    if (!ml || !ml.ok) {
+      const base = `https://${lang}.wikipedia.org/w/api.php?format=json&formatversion=2&redirects=1&titles=${encodeURIComponent(title)}`;
+      const lead = await fetch(base + '&action=query&prop=pageimages&piprop=name', { headers: UA }).then(r => r.json()).then(j => ((j.query.pages || [])[0] || {}).pageimage || '').catch(() => '');
+      const im = await fetch(base + '&action=query&prop=images&imlimit=60', { headers: UA }).then(r => r.json()).then(j => (((j.query.pages || [])[0] || {}).images || []).map(x => x.title)).catch(() => []);
+      const files = im.filter(f => !BADPIC.test(f) && /\.(jpe?g|png|webp)$/i.test(f)).sort((a, b) => +(b.replace(/^[^:]+:/, '').replace(/ /g, '_') === lead.replace(/ /g, '_')) - +(a.replace(/^[^:]+:/, '').replace(/ /g, '_') === lead.replace(/ /g, '_')));
+      if (files.length) return files.slice(0, max).map(f => ({ file: 'File:' + f.replace(/^[^:]+:/, ''), caption: '' }));
+      continue;
+    }
     const j = await ml.json(); let lead = '';
     try { const sm = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${t}`, { headers: UA }); if (sm.ok) lead = decodeURIComponent(((await sm.json()).originalimage || {}).source || '').split('/').pop(); } catch (e) { }
     let items = (j.items || []).filter(it => it.type === 'image' && it.showInGallery !== false && !BADPIC.test(it.title || ''));
@@ -241,15 +269,23 @@ function createStudio({ store, conf, online = false, local = {} }) {
   const countVoices = h => Object.values(h).reduce((a, s) => a + Object.values(s).reduce((b, l) => b + l.length, 0), 0);
   async function addToManifest(lang, slot, hash) {
     const m = await readJSON('voices/manifest.json', { version: 2, engine: 'mixed', cast: CAST, voices: {}, lines: {}, langOf: {} });
-    m.lines = m.lines || {}; m.langOf = m.langOf || {}; m.cast = m.cast || CAST; m.voices = m.voices || {};
+    m.lines = m.lines || {}; if (!m.other) m.langOf = m.langOf || {}; m.cast = m.cast || CAST; m.voices = m.voices || {};
     if (!m.voices[lang]) m.voices[lang] = {}; if (!m.voices[lang][slot]) m.voices[lang][slot] = { id: AZ_VOICES[lang][slot], name: AZ_VOICES[lang][slot] };
-    m.langOf[hash] = lang; m.lines[hash] = (m.lines[hash] || '').replace(slot, '') + slot; m.made = new Date().toISOString().slice(0, 10);
+    if (m.other) { if (lang !== 'en' && !String(m.other[lang] || '').split(' ').includes(hash)) m.other[lang] = ((m.other[lang] || '') + ' ' + hash).trim(); } else m.langOf[hash] = lang; // (new packs list only the lines that are not English)
+    m.lines[hash] = (m.lines[hash] || '').replace(slot, '') + slot; m.made = new Date().toISOString().slice(0, 10);
     await S.write('voices/manifest.json', Buffer.from(JSON.stringify(m)));
   }
-  async function azureSay(lang, slot, text) {
+  async function azureSay(lang, slot, text, runs) {
     if (!conf.azureKey || !conf.azureRegion) throw new Error(online ? 'Add AZURE_KEY and AZURE_REGION in Netlify (Site configuration → Environment variables) first.' : 'Add your Azure Speech key and region in Settings first.');
     const v = (conf.voices && conf.voices[lang] && conf.voices[lang][slot]) || AZ_VOICES[lang][slot];
-    const ssml = `<speak version='1.0' xml:lang='${LOCALE[lang]}'><voice name='${v}'>${xml(text)}</voice></speak>`;
+    // (round R) an English line with Vietnamese words: those words in the Vietnamese voice of the same man or woman, with the
+    // pauses at each switch set by hand (the same as js/viwords.js mixedSsml, which the page has already cut the line with)
+    const vv = (conf.voices && conf.voices.vi && conf.voices.vi[slot]) || AZ_VOICES.vi[slot];
+    const ok = Array.isArray(runs) && runs.length > 1 && runs.every(r => Array.isArray(r) && (r[0] === 'en' || r[0] === 'vi') && typeof r[1] === 'string') && runs.map(r => r[1]).join('') === text;
+    const ssml = lang === 'en' && ok ? `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='http://www.w3.org/2001/mstts' xml:lang='en-AU'>` + runs.filter((r, i) => /[\p{L}\d]/u.test(r[1]) || i === runs.length - 1).map(([l, s], i, a) => {
+      const end = s.trimEnd(), tail = i === a.length - 1 ? '' : /[.!?…]["”')]?$/.test(end) ? '350ms' : /[,;:]$/.test(end) ? '180ms' : '40ms';
+      return `<voice name='${l === 'vi' ? vv : v}'>${i ? `<mstts:silence type='Leading-exact' value='0ms'/>` : ''}${tail ? `<mstts:silence type='Tailing-exact' value='${tail}'/>` : ''}${xml(s)}</voice>`; }).join('') + '</speak>'
+      : `<speak version='1.0' xml:lang='${LOCALE[lang]}'><voice name='${v}'>${xml(text)}</voice></speak>`;
     for (let a = 0; ; a++) {
       const r = await fetch(`https://${conf.azureRegion}.tts.speech.microsoft.com/cognitiveservices/v1`, { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': conf.azureKey, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': 'audio-16khz-32kbitrate-mono-mp3', 'User-Agent': 'sparkle-studio' }, body: ssml });
       if (r.status === 401 || r.status === 403) throw new Error('Azure did not accept the key or region (' + r.status + '). Check them in Settings.');
@@ -260,7 +296,9 @@ function createStudio({ store, conf, online = false, local = {} }) {
   }
   // one landmark's photos (the page asks for them one place at a time and shows the progress itself)
   async function getPhotos1({ key, sources, name }, max) {
-    const pix = await readJSON('photos/index.json', {}), picks = await gatherPhotos(sources, name, max), out = [];
+    // (round P, owner: "let me remove photos that aren't of the place") a photo taken off is never fetched again
+    const pix = await readJSON('photos/index.json', {}), blocked = new Set(((await readJSON('photos/blocked.json', {}))[key]) || []), out = [];
+    const picks = (await gatherPhotos(sources, name, max + blocked.size)).filter(p => !blocked.has(p.title) && !blocked.has(p.url)).slice(0, max);
     for (const p of picks) {
       const img = await fetch(p.url, { headers: { 'User-Agent': UA['User-Agent'] } }); if (!img.ok || !/image\//.test(img.headers.get('content-type') || 'image/')) continue;
       const rel = `photos/${key}/${out.length + 1}.jpg`; await S.write(rel, Buffer.from(await img.arrayBuffer()));
@@ -393,7 +431,9 @@ function createStudio({ store, conf, online = false, local = {} }) {
     if (api === 'job') return ok(JOB || {});
     if (api === 'photos/index') return ok(await readJSON('photos/index.json', {}));
     if (api === 'photos/get1' && post) { const x = b.item || {}; if (!/^[\p{L}\p{N}-]{1,60}$/u.test(x.key || '') || !Array.isArray(x.sources)) return bad('bad place'); return ok(await getPhotos1(x, Math.min(8, Math.max(1, +b.max || 4)))); }
-    if (api === 'photos/remove' && post) { const pix = await readJSON('photos/index.json', {}), L = pix[b.key] || []; const i = L.findIndex(p => p.src === b.src); if (i >= 0) { if (/^photos\/[\w./-]+$/.test(L[i].src)) await S.remove(L[i].src); L.splice(i, 1); if (L.length) pix[b.key] = L; else delete pix[b.key]; await writeJSON('photos/index.json', pix); } return ok({ ok: true }); }
+    if (api === 'photos/remove' && post) { const pix = await readJSON('photos/index.json', {}), L = pix[b.key] || []; const i = L.findIndex(p => p.src === b.src); if (i >= 0) {
+      if (L[i].file && b.block !== false) { const bl = await readJSON('photos/blocked.json', {}); bl[b.key] = [...new Set([...(bl[b.key] || []), L[i].file])].slice(-60); await writeJSON('photos/blocked.json', bl); } // not fetched again
+      if (/^photos\/[\w./-]+$/.test(L[i].src)) await S.remove(L[i].src); L.splice(i, 1); if (L.length) pix[b.key] = L; else delete pix[b.key]; await writeJSON('photos/index.json', pix); } return ok({ ok: true }); }
     if (api === 'voices/extra') {
       const L = await readJSON('tools/voice-extra.json', []);
       if (post) { const have = new Set(L.map(l => l.lang + '|' + l.text)); let n = 0; for (const l of b.lines || []) if (l && CAST[l.lang] && typeof l.text === 'string' && l.text.trim() && l.text.length < 400 && !have.has(l.lang + '|' + l.text)) { L.push({ lang: l.lang, text: l.text }); have.add(l.lang + '|' + l.text); n++; } if (n) await S.write('tools/voice-extra.json', Buffer.from(JSON.stringify(L, null, 0).replace(/\},\{/g, '},\n{') + '\n')); return ok({ added: n, total: L.length }); }
@@ -414,7 +454,7 @@ function createStudio({ store, conf, online = false, local = {} }) {
     if (api === 'voice' && post) {
       if (!CAST[b.lang] || !CAST[b.lang].includes(b.slot) || !/^[0-9a-f]{8}-?[0-9a-f]{1,8}$/.test(b.hash || '')) return bad('bad line');
       let mp3;
-      if (b.engine === 'azure') mp3 = await azureSay(b.lang, b.slot, String(b.text || ''));
+      if (b.engine === 'azure') mp3 = await azureSay(b.lang, b.slot, String(b.text || ''), b.runs);
       else if (b.engine === 'piper') { if (!local.tts) return bad('Piper runs on the family computer only (in SparkleStudio.exe).'); mp3 = await local.tts('piper', b.lang, String(b.text || '')); }
       else if (b.engine === 'upload') { const m = /^data:audio\/mpeg;base64,(.+)$/.exec(b.audio || ''); if (!m) return bad('not an MP3'); mp3 = Buffer.from(m[1], 'base64'); }
       else return bad('which engine?');
