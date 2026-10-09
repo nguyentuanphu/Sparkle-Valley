@@ -824,12 +824,15 @@ await check('story', async () => {
   await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(1200);
   await pg.evaluate(() => document.querySelectorAll('.reward,.modal').forEach(e => e.click())); await w(800); await calm(); await w(1500);
   seen.push(await q());
+  // (Play core, chapter 2) with Studio's story_ch2 switched off, the old adventures follow chapter 1 as before
+  const noCh2 = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), story_ch2: false }; const c = __sv.currentQuest(__sv.heroes[0].profile); C.features.story_ch2 = true; return c && c.id; });
   const end = await pg.evaluate(() => { const G = __sv, p = G.heroes[0].profile, D = G.lanterns.dinh;
     const house = Math.min(...G.world.colliders.filter(c => c.r > 2 && c.top == null).map(c => Math.hypot(c.x - D.x, c.z - D.z) - c.r));
     return { companion: p.lanterns.companion, ch1: !!p.lanterns.chapters.ch1, keep: (p.keepsakes || []).includes('lantern_ch1'), carrying: p.lanterns.carrying, house }; });
   const want = ['L_p_owl', 'L_c1_village', 'L_c1_nam', 'L_c1_well', 'L_c1_teo', 'L_c1_tale', 'L_c1_find', 'L_c1_hang'], out = [];
   want.forEach((id, i) => { if (seen[i] !== id) out.push(`step ${i + 1} was ${seen[i]}, expected ${id}`); });
-  if (!seen[8] || /^L_/.test(seen[8])) out.push('after chapter 1 the goal was ' + seen[8] + ', not an old adventure');
+  if (seen[8] !== 'L_c2_fly') out.push('after chapter 1 the goal was ' + seen[8] + ', not chapter 2');
+  if (!noCh2 || /^L_/.test(noCh2)) out.push('with chapter 2 switched off, the goal after chapter 1 was ' + noCh2 + ', not an old adventure');
   if (!film) out.push('Ông Cú\'s film did not play');
   if (end.companion !== 'dragon') out.push('the companion was not chosen');
   if (carrying !== 'ch1' || end.carrying) out.push('the lantern was not carried and then hung');
@@ -841,7 +844,7 @@ await check('story', async () => {
   if (P.errors.length) out.push(...P.errors.slice(0, 2));
   await P.ctx.close();
   if (out.length) throw new Error(out.join('; '));
-  return `prologue and chapter 1 played through (${want.length} steps; ribbons caught, ${lifted} lotus leaves lifted, rope pulled); đình lit, keepsake home, then "${seen[8]}"; nearest building ${end.house.toFixed(1)} m away`;
+  return `prologue and chapter 1 played through (${want.length} steps; ribbons caught, ${lifted} lotus leaves lifted, rope pulled); đình lit, keepsake home, then "${seen[8]}" (chapter 2 off: "${noCh2}"); nearest building ${end.house.toFixed(1)} m away`;
 });
 await check('chapter2', async () => {
   // (Play core, owner's go 10 Oct) chapter 2 of the lantern story, Hà Nội, played from the start to the Trung Thu parade,
