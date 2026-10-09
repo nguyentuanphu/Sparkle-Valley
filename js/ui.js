@@ -337,6 +337,9 @@ export function openGrownups(after) {
       </div></details>
       <details class="gsec" data-sec="online" ${gOpen.has('online') ? 'open' : ''}><summary><span class="gi">🌐</span><b>${T('Playing online', 'Chơi trực tuyến')}</b></summary><div class="gbody">
 
+      <label class="tog"><input type="checkbox" id="gOnline" ${settings.online ? 'checked' : ''}> <b>${T('Play with friends online', 'Chơi cùng bạn qua mạng')}</b></label>
+      <p class="note">${T('Off until you turn it on. While it is off the game makes no online connection: no rooms, no friends’ status, no invitations.', 'Tắt cho đến khi bạn bật. Khi tắt, trò chơi không kết nối mạng để chơi cùng: không phòng, không trạng thái bạn bè, không lời mời.')}</p>
+      <h3>👥 ${T('Who’s here', 'Ai đang ở đây')}</h3><div class="whohere" id="gWho"><p class="note">…</p></div>
       <p class="note">${T('Online play uses the free PeerJS service to connect two devices directly. Voice goes straight between the devices and is never recorded.', 'Chơi trực tuyến dùng dịch vụ miễn phí PeerJS để nối hai máy trực tiếp. Giọng nói đi thẳng giữa hai máy và không bao giờ được ghi lại.')}</p>
       <label class="tog"><input type="checkbox" id="gAutoMeet" ${settings.autoMeet !== false ? 'checked' : ''}> ${T('Tell me when a friend on the list starts playing (with buttons to invite them or go to their room; nobody is put in a room by themselves)', 'Báo khi một bạn trong danh sách bắt đầu chơi (có nút mời bạn hoặc sang phòng bạn; không ai tự bị đưa vào phòng)')}</label>
       <p class="note">${T('If a friend far away stays on “Connecting…”, your two networks need a relay (TURN server). Free public relays are tried automatically. For a reliable one, make a free account at a TURN service (for example metered.ca), then paste its credentials link here, or a turn: address with its name and password. Both devices need the same relay.', 'Nếu bạn ở xa cứ “Đang kết nối…” mãi, hai mạng cần một máy chủ trung chuyển (TURN). Trò chơi tự thử các máy chủ miễn phí công cộng. Để ổn định hơn, hãy tạo tài khoản miễn phí ở một dịch vụ TURN (ví dụ metered.ca), rồi dán đường link lấy thông tin vào đây, hoặc địa chỉ turn: kèm tên và mật khẩu. Cả hai máy cần dùng cùng máy chủ.')}</p>
@@ -377,6 +380,24 @@ export function openGrownups(after) {
     card.querySelectorAll('.seg.q button').forEach(b => b.onclick = () => { settings.quality = b.dataset.q; saveSettings(); draw(); toast(T('Restart the game to change graphics.', 'Mở lại trò chơi để đổi đồ họa.')); });
     const chk = (id, k, f) => card.querySelector(id).onchange = e => { settings[k] = e.target.checked; saveSettings(); f && f(); };
     card.querySelector('#gAutoMeet').onchange = e => { settings.autoMeet = e.target.checked; saveSettings(); };
+    // (round R privacy, 9 Oct, owner) online play: off until a grown-up turns it on here (Grown-ups opens only with press and hold)
+    card.querySelector('#gOnline').onchange = async e => {
+      settings.online = e.target.checked; saveSettings();
+      const { Net } = await import('./net.js');
+      if (!settings.online) { Net.close(true); Net.friendsStop(); Net.stopListening(); } else if (window.__sv && window.__sv.listenFriends) window.__sv.listenFriends();
+      drawWho();
+    };
+    // who is in the room now: name, friend or new, direct or cloud, when they came; the room's starter can remove someone
+    const drawWho = async () => {
+      const box = card.querySelector('#gWho'); if (!box) return;
+      const { Net } = await import('./net.js'), list = Net.who();
+      if (!document.body.contains(box)) return;
+      const when = t => t ? new Date(t).toLocaleTimeString(settings.lang === 'vi' ? 'vi-VN' : 'en-AU', { hour: 'numeric', minute: '2-digit' }) : '';
+      box.innerHTML = !settings.online ? `<p class="note">${T('Online play is off.', 'Chơi qua mạng đang tắt.')}</p>` : !list.length ? `<p class="note">${T('Not in a room right now.', 'Hiện không ở trong phòng nào.')}</p>`
+        : list.map(m => `<div class="prow whorow"><div class="pw"><b>${esc(nm(m.name || T('Someone', 'Một bạn')))}${m.me ? ' (' + T('this device', 'máy này') + ')' : ''}</b><small>${m.me ? (m.host ? T('started the room', 'chủ phòng') : T('joined', 'đã vào')) : (m.host ? T('started the room', 'chủ phòng') + ' · ' : '') + (m.friend ? (m.known ? T('friend (proven)', 'bạn (đã xác nhận)') : T('friend', 'bạn')) : T('new', 'người mới')) + ' · ' + (m.via === 'cloud' ? T('cloud relay', 'qua mạng đám mây') : T('direct', 'trực tiếp'))}${m.at ? ' · ' + T('since', 'từ') + ' ' + when(m.at) : ''}</small></div>${m.canRemove ? `<button class="btn danger" data-whokick="${esc(m.id)}">🚪 ${T('Remove', 'Mời ra')}</button>` : ''}</div>`).join('');
+      box.querySelectorAll('[data-whokick]').forEach(b => b.onclick = () => { if (confirm(T('Remove this player from the room?', 'Mời bạn này ra khỏi phòng?'))) { Net.kick(b.dataset.whokick); setTimeout(drawWho, 600); } });
+    };
+    drawWho();
     const turnIn = card.querySelector('#gTurn');
     turnIn.oninput = () => { settings.turnUrl = turnIn.value.trim(); saveSettings(); card.querySelector('#gTurnCred').classList.toggle('vh', !/^turns?:/i.test(settings.turnUrl)); };
     card.querySelector('#gTurnUser').oninput = e => { settings.turnUser = e.target.value; saveSettings(); };

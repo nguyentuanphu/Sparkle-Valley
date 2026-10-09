@@ -57,3 +57,13 @@ test('rpsWinners: rock, paper, scissors for any number of hands', () => {
   assert.deepEqual(rpsWinners([0, 1]), [1]); assert.deepEqual(rpsWinners([1, 2]), [1]); assert.deepEqual(rpsWinners([2, 0]), [1]);
   assert.deepEqual(rpsWinners([2, null, 1]), [0]);
 });
+test('(round R privacy) a game opens only after this child said yes to the one who asked', async () => {
+  const d = room(['A', 'B', 'C'], id => id !== 'C');
+  d.B.g.receive({ t: 'gstart', gid: 'zzz', game: 'caro', level: 1, seats: ['B', 'C'], from: 'B' }); // (nobody asked C)
+  d.C.g.receive({ t: 'gstart', gid: 'zzz', game: 'caro', level: 1, seats: ['B', 'C'], from: 'B' });
+  assert.equal(d.C.g.session, null);
+  d.A.g.invite('caro', 1, 'C'); await tick(); // C says no
+  assert.equal(d.C.g.session, null);
+  d.A.g.invite('caro', 1, 'B'); await tick(); // B says yes; a gstart for that game from someone else is still ignored
+  assert.equal(d.B.g.session.seats.join(), 'A,B');
+});

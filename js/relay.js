@@ -6,6 +6,9 @@
 //  · Everything is encrypted (AES-GCM) with a key made from the room code or friend code, and the topic name
 //    is a hash, so the broker only ever sees scrambled bytes. Photos get a second lock on top (a private key
 //    for each pair of players, see net.js), so only the friend they are for can open them.
+//  · (round R privacy, 9 Oct) a room has two channels (net.js): the door, made from the room code (knocks and the
+//    starter's answers, each locked for one player), and the members' channel, made from a random room secret that
+//    only players who were let in get. Knowing the room code no longer lets anyone read or write the room's traffic.
 //  · No account, no server of ours. Voice still needs a direct link or a TURN relay (see net.js).
 const enc = new TextEncoder(), dec = new TextDecoder();
 export const BROKERS = () => window.SV_MQTT || ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt', 'wss://test.mosquitto.org:8081/mqtt', 'wss://mqtt.eclipseprojects.io/mqtt'];

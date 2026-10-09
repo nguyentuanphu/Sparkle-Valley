@@ -84,7 +84,8 @@ export const settings = Object.assign({
   ttsKey: '', elevenVoice: '', googleVoiceEn: '', googleVoiceVi: '',
   voiceControl: true,    // show the 🎤 "talk to the game" button where speech recognition exists
   aiKey: '',             // optional Anthropic API key so villagers can chat freely (grown-ups only)
-  aiOn: false
+  aiOn: false,
+  online: false          // (round R privacy, 9 Oct) playing with friends online: off until a grown-up turns it on in Grown-ups (devices that played before start off too)
 }, store.get(KEY_SETTINGS, {}));
 // fewer moving effects: Calm mode, or the device's own "Reduce motion" setting (round I accessibility rule A11Y-001)
 export const reduceMotion = () => !!settings.calm || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
