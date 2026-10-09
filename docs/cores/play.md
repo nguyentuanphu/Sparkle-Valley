@@ -26,8 +26,7 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
 (one activity list: every game in exactly one area), STR-001.
 
 ## Checks you run
-`shop boxes games gamelevel tales songs playhub coop tienlen netgames together chests postcards myhouse adventure`
-`games gamelevel tales songs playhub coop tienlen netgames together chests postcards myhouse adventure hoilang surprises parents`, and `unit` (`tests/unit/roundS.test.mjs`)
+`games gamelevel tales songs playhub coop tienlen netgames together chests postcards myhouse adventure shop boxes hoilang surprises parents currency`, and `unit` (`tests/unit/roundS.test.mjs`)
 
 ## Talks to
 - **Kid UI**: the Simple screen and the Games hub show your lists; a new game needs a drawn icon (`js/art.js`) and a place in `activities.js`.
