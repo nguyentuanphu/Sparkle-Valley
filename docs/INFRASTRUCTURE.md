@@ -56,7 +56,7 @@ A drag-and-drop zip (`build-netlify.sh`) still works as an emergency fallback, b
 | 〃 | `AZURE_KEY`, `AZURE_REGION` | Making voices from the online Studio | optional |
 | 〃 | `NETLIFY_TOKEN`, `NETLIFY_SITE` | The Studio's Website page (deploys) | optional |
 | Windows PC | `%APPDATA%\SparkleStudio\settings.json` | The exe's keys: Azure, Netlify, GitHub token | as needed |
-| Each device | `localStorage sv2_settings` | A grown-up's own keys typed in the game (Azure/ElevenLabs/Google voices, Anthropic chat, TURN relay) | optional |
+| Each device | `localStorage sv2_settings` | A grown-up's own keys typed in the game (Anthropic chat, TURN relay); no voice keys since round R privacy (an old one is deleted on load) | optional |
 
 Netlify Blobs needs no key; it is attached to the site automatically.
 
@@ -70,7 +70,8 @@ Netlify Blobs needs no key; it is attached to the site automatically.
 | STUN (Google, Cloudflare) | Finding public addresses | Same as above |
 | Public TURN (Open Relay; may need an account now) | Voice across strict networks | A grown-up can add their own TURN in Grown-ups → Online play |
 | Public MQTT brokers: emqx, hivemq, mosquitto, eclipse (`wss://`) | Cloud relay, friends' status, invites | All four are used at once, so one being down doesn't matter |
-| Wikipedia / Wikimedia Commons / Openverse | The Studio's real-photo search | Studio photo search only |
+| Wikipedia / Wikimedia Commons / Openverse | The Studio's real-photo search; `tools/fetch-landmark-photos.mjs` (run by a developer) | Studio and the tool only: the game shows only the saved `photos/` (round R privacy) |
+| Google Maps / Street View (embedded) | A landmark's real place, inside the game | Opens only after a grown-up's press and hold (round R privacy) |
 | Microsoft Azure Speech | Making voice files (Studio, or `tools/make-voice-pack.mjs --engine azure`) | Making voices only; children play recorded files. (In the cloud sandbox Node needs `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` to reach Azure through the proxy; without it Azure answers 403 although the key is right.) |
 
 ## 5. Data that leaves a device (privacy summary; full table in handbook §10)

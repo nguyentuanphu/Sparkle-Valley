@@ -571,7 +571,7 @@ The template is the same for every system. Fields marked "—" mean none.
 
 ### 8.15 `voice` / `audio`
 - **voice:**
-  - which recording or voice speaks a `Text`: family recording → pack → cloud → device (VOICE-001);
+  - which recording or voice speaks a `Text`: family recording → pack → device (VOICE-001; no online voice on the device, PRIV-010);
   - misses noted;
   - speech recognition intents;
   - interface: `say(Text, {speaker})`, `sayAsync`, `hush()`, `diag()`.
@@ -726,6 +726,8 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | PRIV-002 | The hello sends only the whitelisted fields (handbook §10) and stops when switched off | BLOCKER | check `studio` (no names kept) + review |
 | PRIV-003 | Every incoming network, backup, content or Studio payload is validated (type, size, range) before use. Network messages: `js/netmsg.js` (one schema per kind, size and rate limits, unknown kinds dropped) | BLOCKER | check `netmsg` (+ `multiplayer`, `cloud`, `knock`); backups/content/Studio: review [IMPR] |
 | PRIV-004 | Online newcomers knock: until the room's starter lets them in they get nothing from the room (no names, moves, voices) and their own microphone is off; only saved friends (friend code on the list) come straight in; "No thanks" keeps them out of that room. The code is shown as digits and animal pictures only (the QR code was removed, owner round D) | BLOCKER | check `knock` (+ `multiplayer`, `cloud`) |
+| PRIV-010 | Voices are made in Studio only (owner, 9 Oct): the child's device never calls an online speech service, keeps no voice key (an old `ttsKey` is deleted on load and from a restored backup) and never copies (clones) anyone's voice; a line with no recording uses the device voice and is noted as missing for Studio | BLOCKER | check `voice` + review |
+| PRIV-011 | Landmark photos come only from the game's own site (owner, 9 Oct): the files listed in `photos/index.json`, inside `photos/`; the game never asks Wikipedia or Wikimedia (only Studio and `tools/fetch-landmark-photos.mjs` do); Google's map and street view of a real place open only after a grown-up's press and hold | BLOCKER | check `realphotos` (+ `together`) |
 | PERF-001 | First playable ≤ 8 s on a mid phone over 4G: ≤ 8 MB downloaded before the title screen; slow start-up work is kept on the device by build (`js/worldcache.js`: the map picture) | MAJOR | check `perf` (download, start-up times `G.bootTimes`, map picture read back) |
 | PERF-002 | ≥ 30 fps at quality Auto | MAJOR | real devices (the test browser draws in software) |
 | PERF-003 | < 250 draw calls and < 300k triangles a frame in a village (today about 1,000–1,400 and 0.6–0.75 M in Lotus Village: a ratchet that may only go down) | MAJOR | check `perf` |
@@ -850,7 +852,7 @@ Metrics are from the r37 measurement (§1.1). No module is dead code, so nothing
 
 | Module | Class | Why |
 |---|---|---|
-| `js/voice.js` | REFACTOR | Keep the behaviour (VOICE-001, fixed in round 30). Split pack, family, cloud and device providers behind `voice.say`; diagnostics stay |
+| `js/voice.js` | REFACTOR | Keep the behaviour (VOICE-001, fixed in round 30). Split pack, family and device providers behind `voice.say` (no cloud provider on the device: PRIV-010); diagnostics stay |
 | `js/audio.js` | KEEP | Web Audio graph, unlock (L4) |
 | `js/recorder.js`, `js/listen.js`, `js/commands.js` | KEEP | Family recording; speech recognition; voice intents (`commands` → emits intents, not `G` calls) |
 | `js/net.js`, `js/relay.js` | REFACTOR | Keep the transport. Add one message-schema module (types, size and rate limits, validation, PRIV-003) and emit events instead of calling `G` |

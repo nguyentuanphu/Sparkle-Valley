@@ -6,7 +6,8 @@ album…), menus, settings and Grown-ups, pop-ups, icons and pictures, text size
 
 ## You own
 - Screens and menus: `js/ui.js`, `js/hud.js`, `js/simple.js`, `js/songs.js` (the Songs page), `js/popups.js`, `js/packbar.js`, `js/install.js`, `js/credits.js`, `js/extras.js`, `js/report.js`, `js/chat.js`, `js/commands.js`, `js/listen.js`, `js/photos.js`
-- The real-photo viewer and 360° window: `js/realworld.js` (except the landmark list `REAL`, which World keeps)
+- The real-photo viewer and 360° window: `js/realworld.js` (except the landmark list `REAL`, which World keeps);
+  the photos themselves: `photos/` and `photos/index.json` (filled by Studio's Real photos page or `tools/fetch-landmark-photos.mjs`)
 - Pictures: `js/art.js`, `js/icons.js`, `js/symbols.js`, `js/avatar.js`
 - Words: `js/i18n.js` (English and Vietnamese)
 - Children's profiles and settings: `js/state.js`
@@ -19,7 +20,9 @@ screen tabs open on their groups), A11Y-005 (age modes change sizes, hints and v
 under-5 sees one group at a time, scrolling down, every stop a drawn picture), A11Y-007 (every tap answers at once);
 UI-006 (checked on a phone, a tablet and a computer: tidy on all three), UI-001 (everything in English and Vietnamese), UI-002 (no phone emoji: drawn pictures), UI-003 (Close/Save/Next always
 on screen at 320–390 px), UI-004 (touch targets ≥ 44 px, ≥ 64 px for under-5s); SAFE-001 (safe for ages 2–8);
-SAVE-001…003 (saves never lost, versioned, unknown parts dropped safely).
+SAVE-001…003 (saves never lost, versioned, unknown parts dropped safely); PRIV-011 (landmark photos only from our own
+`photos/`, never fetched from Wikipedia or Wikimedia by the game; Google's map and street view only after a grown-up's
+press and hold).
 
 ## Checks you run
 `contract language phone a11y simple adventure firstplayer playhub iphone emoji names quiet welcomevoice ages`
@@ -37,3 +40,10 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
 - The switch to it is “▦ Hình to / Big pictures” beside the player's card (round O).
 - A new device has no ready-made characters: the child makes their own (round P).
 - Festivals in one place (Settings → Lễ hội); Grown-ups shows only the Analytics switch, no explanation (round N).
+- Privacy (owner, 9 Oct, round R): a short notice at the top of Grown-ups (`privacyHTML` in `js/extras.js`, its own
+  block outside the groups): six plain lines on what the game keeps and sends. Grown-ups has no voice engine or voice
+  key (voices are made in Studio); the chat key stays.
+- Real photos (owner, 9 Oct): served from our own site only (`photos/index.json`, each photo `{ src: 'photos/<key>/n.jpg',
+  file, caption, credit }`, the key is `photoKey(REAL[id][0])`); a place with none shows "the photos are on their way";
+  the credit is shown as words, not a link. The real address (round H, map and street view inside the game) stays, behind
+  the press-and-hold gate (`holdButton`, now in `js/popups.js`), with a line saying it opens Google.
