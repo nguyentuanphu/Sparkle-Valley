@@ -175,7 +175,28 @@ export async function studioCheck(browser, open) {
       await call('/studio/api/admins/remove', { body: { name: 'ba.nam' }, cookie: C, headers: X });
       ok((await call('/studio/api/players', { cookie: v.cookie })).status === 401, 'a removed admin could still read');
       { const lg = (await call('/studio/api/log', { cookie: C })).j.entries; ok(lg.some(x => x.what === 'signin' && x.who === 'owner') && lg.some(x => x.what === 'analytics' && x.who === 'ba.nam'), 'the access log: ' + JSON.stringify(lg.slice(0, 5))); }
-      notes.push('admins: viewer reads analytics only, editor cannot manage admins, password change and removal sign out; two-step for everyone; access log'); }
+      // (owner, 9 Oct) the owner chooses two-step or the password only, for each admin and for the owner's own sign-in
+      { const two = (name, on, cookie = C) => call('/studio/api/admins/twostep', { body: { name, on }, cookie, headers: X });
+        ok((await add('ji.na', 'editor-password-9', 'editor')).status === 200, 'could not add ji.na');
+        const e2 = await signIn('co.lan', 'editor-password-2');
+        ok((await two('ji.na', false, e2.cookie)).status === 403, 'an editor could change how someone signs in');
+        ok((await two('ji.na', false)).status === 200, 'the owner could not choose password only');
+        const po = await call('/studio/api/login', { body: { name: 'ji.na', password: 'editor-password-9' } });
+        ok(po.status === 200 && /^sv_studio=a\./.test(po.cookie) && (await call('/studio/api/info', { cookie: po.cookie })).status === 200, 'password only did not let them in: ' + JSON.stringify(po.j));
+        ok((await call('/studio/api/admins/list', { cookie: C })).j.admins.find(a => a.name === 'ji.na').twoStepOn === false, 'the list does not show password only');
+        await two('ji.na', true);
+        ok((await call('/studio/api/info', { cookie: po.cookie })).status === 401, 'turning two-step on did not sign them out');
+        ok((await call('/studio/api/login', { body: { name: 'ji.na', password: 'editor-password-9' } })).j.step === 'setup', 'two-step on again did not ask to set it up');
+        // the owner's own: password only, then back to two-step
+        const off = await two('owner', false); ok(off.status === 200 && /^sv_studio=/.test(off.cookie), 'the owner could not choose password only for themselves');
+        ok((await call('/studio/api/info', { cookie: C })).status === 401, 'the old owner sign-in still worked after the change');
+        const opo = await call('/studio/api/login', { body: { password: PW } }); ok(opo.status === 200 && (await call('/studio/api/info', { cookie: opo.cookie })).status === 200, 'the owner with password only could not sign in');
+        ok((await two('owner', true, opo.cookie)).status === 200, 'the owner could not turn two-step back on');
+        ok((await call('/studio/api/login', { body: { password: PW } })).j.step === 'code', 'two-step back on, but the password alone was enough');
+        ok((await call('/studio/api/info', { cookie: opo.cookie })).status === 401, 'a password-only owner sign-in still worked with two-step on');
+        ok((await call('/studio/api/info', { cookie: C })).status === 200, 'the owner’s two-step sign-in did not come back');
+        await call('/studio/api/admins/remove', { body: { name: 'ji.na' }, cookie: C, headers: X }); }
+      notes.push('admins: viewer reads analytics only, editor cannot manage admins, password change and removal sign out; two-step or password only chosen by the owner for each person; access log'); }
     // 1c. online now (round O): "still here" from a device shows it playing in the Analytics, "gone" shows it offline
     { const live = on => fetch(site + '/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'livetest0001', live: on, kid: 'Na' }) });
       ok((await live(1)).status === 204, 'a live hello was refused');

@@ -81,4 +81,4 @@ Build the exe after changes: `bash studio/build-exe.sh`.
 - Admins have their own accounts: Viewer, Editor, Owner; nobody else needs a GitHub token (round O).
 - Saves wait and Publish sends them in one go; ✕ on a real photo takes it off for good (round P).
 - Family photos are private, loaded only by the family's devices with a family code; random names (round R privacy).
-- Two-step sign-in for everyone, 12+ character passwords, lockout, access log, Sign everyone out (round R privacy).
+- Two-step sign-in for everyone (the owner can choose password only for any account, their own too, in Setup → Admins; owner, 9 Oct), 12+ character passwords, lockout, access log, Sign everyone out (round R privacy).
