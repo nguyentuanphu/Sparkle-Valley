@@ -1,16 +1,18 @@
-// The real place behind every landmark: "📷 Real photos" shows photographs of the real thing (the pictures
-// Wikipedia's editors chose for its article, from Wikimedia Commons, with who took them), slowly panning like a
-// film; "🚶 Step inside (360°)" opens Google Street View at the real place, to look round as if standing there.
-// Photos saved with the game (photos/, made by Sparkle Studio) show first and work offline; when online, the best
-// photos of the article (its main picture first) are added, and every photo shown is kept on this device, so next
-// time it works without the internet too. Street View needs the internet.
+// The real place behind every landmark: "📷 Real photos" shows photographs of the real thing, slowly panning like a
+// film; "🚶 Step inside (360°)" opens Google's map and street view of the real place, inside the game.
+// (round R privacy, 9 Oct, owner: "landmark photos served from our own site") the photos are only the ones saved with
+// the game in photos/ (listed in photos/index.json, chosen by a grown-up in Studio's Real photos page or fetched by
+// tools/fetch-landmark-photos.mjs, each with who took it and its licence). The game never asks Wikipedia or Wikimedia
+// itself; a place with no saved photos shows "the photos are on their way". The service worker keeps the photos, so
+// they work offline. The map and street view open Google, so a grown-up says yes first (press and hold).
 import { T } from './i18n.js';
 import { el, esc, flip } from './util.js';
 import { SFX } from './audio.js';
 import { say } from './voice.js';
 import { pic } from './art.js';
+import { modal, holdButton } from './popups.js';
 
-// id → [Wikipedia article(s) to take the photos from (lang:Title), latitude, longitude]
+// id → [Wikipedia article(s) the photos are taken from in Studio (lang:Title; the first names the photos/ key), latitude, longitude]
 export const REAL = {
   opera: [['en:Sydney Opera House'], -33.8568, 151.2153], harbour: [['en:Sydney Harbour Bridge'], -33.8523, 151.2108], uluru: [['en:Uluru'], -25.3444, 131.0369],
   banana: [['en:Big Banana'], -30.2766, 153.1365], bondi: [['en:Bondi Beach'], -33.8915, 151.2767], lighthouse: [['vi:Hải đăng Vũng Tàu', 'en:Vũng Tàu'], 10.3348, 107.0773],
@@ -44,84 +46,20 @@ const SPECIAL = [[/phở/i, 'pho'], [/hàng mã/i, 'hangma'], [/đông hồ/i, '
   [/surf/i, 'surf'], [/terrace/i, 'terrace'], [/laneway|café/i, 'laneway'], [/footy/i, 'footy'], [/queenslander/i, 'queenslander'], [/lamington/i, 'lamington'], [/chè/i, 'che']];
 export function homeSources(name, kind) { const sp = SPECIAL.find(([re]) => re.test(name || '')); return REAL_KINDS[sp ? sp[1] : kind] || null; }
 const cache = {};
-const BAD = /\.(svg|gif|tif|tiff|webm|ogv|ogg|oga|wav|mp3|pdf)$|logo|flag of|map|locator|coat of arms|seal of|icon|diagram|signature|plan of|chart/i;
 export const photoKey = sources => sources[0].toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').slice(0, 60);
-let LOCAL = null; // photos/index.json: { key: [{ src, file, caption, credit }] }
-const localPhotos = async key => { if (!LOCAL) LOCAL = fetch('photos/index.json').then(r => r.ok ? r.json() : {}).catch(() => ({})); const L = await LOCAL; return (L[key] || []).map(p => ({ ...p, url: p.src, local: true })); };
-const KEEP = 'sv-photos';
-async function keptList(key) { try { const c = await caches.open(KEEP), r = await c.match('/photos-list/' + key); return r ? await r.json() : null; } catch (e) { return null; } }
-async function keepList(key, list) { try { const c = await caches.open(KEEP); await c.put('/photos-list/' + key, new Response(JSON.stringify(list), { headers: { 'Content-Type': 'application/json' } })); } catch (e) { } }
-// a photo from Wikimedia, kept on the device the first time it is shown (works offline afterwards)
-async function photoURL(p) {
-  if (p.local) return p.url;
-  try {
-    const c = await caches.open(KEEP); let r = await c.match(p.url);
-    if (!r) { r = await fetch(p.url, { mode: 'cors', referrerPolicy: 'no-referrer' }); if (!r.ok) return p.url; await c.put(p.url, r.clone()); }
-    return URL.createObjectURL(await r.blob());
-  } catch (e) { return p.url; }
-}
-// (round O, owner: "Real photos shows nothing") Wikipedia is retiring the old picture list this used (rest_v1
-// media-list), so the photos now come from Wikipedia's main API: the article's pictures with their sizes, captions,
-// photographers and licences in one request (generator=images + imageinfo), the article's own main picture first.
-// The old list is still tried when the main API gives nothing.
-// (audit, 9 Oct) captions come from Wikimedia as HTML: read as an inert document, so nothing in them can run
-const plain = h => new DOMParser().parseFromString(String(h || ''), 'text/html').body.textContent || '';
-const txt = h => plain(h).replace(/\s+/g, ' ').trim();
-async function apiPhotos(lang, title) {
-  const base = `https://${lang}.wikipedia.org/w/api.php?format=json&formatversion=2&origin=*&redirects=1&titles=${encodeURIComponent(title)}`;
-  const [lead, all] = await Promise.all([
-    fetch(base + '&action=query&prop=pageimages&piprop=name').then(r => r.ok ? r.json() : null).catch(() => null),
-    fetch(base + '&action=query&generator=images&gimlimit=60&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=1280').then(r => r.ok ? r.json() : null)
-  ]);
-  const leadName = ((((lead || {}).query || {}).pages || [])[0] || {}).pageimage || '';
-  let out = ((all && all.query && all.query.pages) || []).map(pg => ({ pg, ii: (pg.imageinfo || [])[0] })).filter(({ pg, ii }) => ii && /^image\/(jpeg|png|webp)$/.test(ii.mime || '') && !BAD.test(pg.title || ''))
-    .map(({ pg, ii }) => { const md = ii.extmetadata || {}, v = k => md[k] && md[k].value;
-      return { url: ii.thumburl || ii.url, file: pg.title, caption: txt(v('ImageDescription')).slice(0, 160), credit: [txt(v('Artist')).slice(0, 60), txt(v('LicenseShortName'))].filter(Boolean).join(' · '), lead: pg.title.replace(/^[^:]+:/, '').replace(/ /g, '_') === leadName.replace(/ /g, '_') }; })
-    .filter(p => { try { return new URL(p.url).hostname === 'upload.wikimedia.org'; } catch (e) { return false; } });
-  out.sort((a, b) => b.lead - a.lead);
-  return out.slice(0, 8);
-}
-async function restPhotos(lang, title) {
-  const t = encodeURIComponent(title.replace(/ /g, '_'));
-  const [ml, sum] = await Promise.all([fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${t}`, { headers: { accept: 'application/json' } }), fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${t}`).catch(() => null)]);
-  if (!ml.ok) return [];
-  const j = await ml.json(), lead = sum && sum.ok ? ((await sum.json()).originalimage || {}).source || '' : '';
-  const leadName = lead ? decodeURIComponent(lead.split('/').pop()).replace(/^\d+px-/, '') : '';
-  let out = (j.items || []).filter(it => it.type === 'image' && it.showInGallery !== false && !BAD.test(it.title || '') && it.srcset && it.srcset.length).map(it => {
-    const pick = it.srcset.find(x => x.scale === '2x') || it.srcset[it.srcset.length - 1], url = pick.src.startsWith('//') ? 'https:' + pick.src : pick.src;
-    return { url, file: it.title, caption: it.caption && it.caption.text ? it.caption.text : '' };
-  }).filter(p => { try { return new URL(p.url).hostname === 'upload.wikimedia.org'; } catch (e) { return false; } });
-  if (leadName) out.sort((a, b) => (b.file.replace(/^File:/, '').replace(/ /g, '_') === leadName) - (a.file.replace(/^File:/, '').replace(/ /g, '_') === leadName));
-  return out.slice(0, 8);
-}
-async function onlinePhotos(sources) {
-  for (const s of sources) {
-    const [lang, title] = s.split(/:(.+)/);
-    for (const way of [apiPhotos, restPhotos]) {
-      try { const out = await way(lang, title); if (out && out.length) return out; } catch (e) { /* offline or blocked: try the next way */ }
-    }
-  }
-  return null;
-}
+// photos/index.json: { key: [{ src: 'photos/<key>/1.jpg', file, caption, credit }] } (key = photoKey of the sources)
+let LOCAL = null;
+// (round R privacy, 9 Oct) only our own files: a src must be a path inside photos/, never a web address
+const ours = p => p && typeof p.src === 'string' && /^photos\/[\w\p{L}\p{N}./-]+\.(jpe?g|png|webp)$/iu.test(p.src) && !p.src.includes('..');
+const localPhotos = async key => { if (!LOCAL) LOCAL = fetch('photos/index.json').then(r => r.ok ? r.json() : {}).catch(() => ({})); const L = await LOCAL; return (Array.isArray(L[key]) ? L[key] : []).filter(ours); };
 async function photosFor(sources) {
   const key = photoKey(sources); if (cache[key]) return cache[key];
-  const local = await localPhotos(key);
-  const online = navigator.onLine === false ? null : await onlinePhotos(sources);
-  if (online) keepList(key, online);
-  const more = online || await keptList(key) || [];
-  const seen = new Set(local.map(p => p.file)), photos = [...local, ...more.filter(p => !seen.has(p.file))];
+  const photos = await localPhotos(key);
   if (!photos.length) return null;
   return (cache[key] = { photos });
 }
-// who took the photo and its licence (for the credit line)
-async function creditFor(file) {
-  try {
-    const r = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=extmetadata&titles=${encodeURIComponent(file)}`);
-    const j = await r.json(), pg = Object.values((j.query || {}).pages || {})[0], md = pg && pg.imageinfo && pg.imageinfo[0].extmetadata || {};
-    const txt = h => plain(h).trim().slice(0, 80);
-    return [txt(md.Artist && md.Artist.value), txt(md.LicenseShortName && md.LicenseShortName.value)].filter(Boolean).join(' · ');
-  } catch (e) { return ''; }
-}
+// (round R privacy, 9 Oct) photos from Wikimedia that an older version kept on this device are cleared once
+try { if (window.caches) caches.open('sv-photos').then(c => c.keys().then(ks => ks.forEach(r => { const u = new URL(r.url); if (u.origin !== location.origin || u.pathname.startsWith('/photos-list/')) c.delete(r); }))).catch(() => { }); } catch (e) { }
 
 // the photo viewer: big, slowly panning photos; swipe or ◀ ▶; the 360° button when there is a real place to stand in
 export function openPhotos(name, sources, { icon = '📷', id = null, onClose } = {}) {
@@ -139,12 +77,12 @@ export function openPhotos(name, sources, { icon = '📷', id = null, onClose } 
   const show = i => {
     if (!list.length) return; k = (i + list.length) % list.length; const p = list[k];
     const im = el('img', 'rv-img'); im.alt = name; im.referrerPolicy = 'no-referrer'; im.style.setProperty('--px', (k % 2 ? 1 : -1) * 3 + '%');
-    photoURL(p).then(u => { im.src = u; });
+    im.src = p.src;
     im.onload = () => { stage.querySelectorAll('.rv-img.on').forEach(o => { o.classList.remove('on'); setTimeout(() => o.remove(), 900); }); im.classList.add('on'); };
     stage.appendChild(im);
     dots.innerHTML = list.map((_, j) => `<i class="${j === k ? 'on' : ''}"></i>`).join('');
-    cap.innerHTML = `<span>📷 ${esc((p.caption || '').slice(0, 120))}</span><a href="https://commons.wikimedia.org/wiki/${encodeURIComponent(p.file)}" target="_blank" rel="noopener">${T('Photo', 'Ảnh')}: ${esc(p.credit || 'Wikimedia Commons')}</a>`;
-    if (!p.credit) creditFor(p.file).then(c => { if (c) { p.credit = c; if (list[k] === p) cap.querySelector('a').textContent = `${T('Photo', 'Ảnh')}: ${c}`; } });
+    // (round R privacy, 9 Oct) the credit is shown as words, not a link out of the game
+    cap.innerHTML = `<span>📷 ${esc((p.caption || '').slice(0, 120))}</span>${p.credit ? `<small class="rv-credit">${T('Photo', 'Ảnh')}: ${esc(p.credit)}</small>` : ''}`;
   };
   const step = d => { SFX.tap(); clearInterval(auto); show(k + d); auto = setInterval(() => show(k + 1), 7000); };
   m.querySelector('.rv-prev').onclick = () => step(-1); m.querySelector('.rv-next').onclick = () => step(1);
@@ -164,7 +102,22 @@ export function openPhotos(name, sources, { icon = '📷', id = null, onClose } 
 // The real place, inside the game (owner, round H: "show it in game instead of jumping to the web or an app"): a window
 // with the real spot from above (satellite map) and from the street (look around), both embedded; ✕ goes back to the
 // valley. Without the internet it says so instead.
+// (round R privacy, 9 Oct, owner: "real-world maps open Google only after a grown-up says yes") a grown-up presses and
+// holds first, as for Grown-ups; the window says that it opens Google.
 export function openStreetView(id) {
+  const r = REAL[id]; if (!r) return;
+  if (navigator.onLine === false) return showPlace(id);
+  const m = modal('rvmap rvgate', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
+    <h2>🗺️ ${T('The real place', 'Nơi thật')}</h2>
+    <p class="note">${T('This opens Google Maps and Street View inside the game. Google sees that this device is looking at the place. A grown-up says yes first.', 'Mục này mở Google Maps và Street View ngay trong trò chơi. Google sẽ biết máy này đang xem nơi đó. Người lớn đồng ý trước nhé.')}</p>
+    <button class="grown rv-ok"><span class="ring"></span>🔒 <b>${T('Grown-ups: open Google', 'Người lớn: mở Google')}</b> <small>${T('press and hold', 'nhấn giữ')}</small></button>
+    <div class="actions"><button class="btn" id="rvBack">${T('Back', 'Quay lại')}</button></div>`);
+  const close = () => { SFX.tap(); m.close(); };
+  m.querySelector('.x').onclick = close; m.querySelector('#rvBack').onclick = close;
+  holdButton(m.querySelector('.rv-ok'), () => { SFX.chime && SFX.chime(); m.close(); showPlace(id); });
+  return m;
+}
+function showPlace(id) {
   const r = REAL[id]; if (!r) return;
   const [, lat, lng] = r, hl = T('en', 'vi');
   const src = { map: `https://maps.google.com/maps?q=${lat},${lng}&t=k&z=18&hl=${hl}&output=embed`, street: `https://maps.google.com/maps?layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&hl=${hl}&output=svembed` };

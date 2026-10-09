@@ -27,21 +27,38 @@ const side = v => {
 };
 /** @type {Field} up to 6 player ids, each a word */
 const seats = v => Array.isArray(v) && v.length >= 2 && v.length <= 6 && v.every(x => typeof x === 'string' && /^[\w-]{1,64}$/.test(x)) ? v.slice() : undefined;
+/** @type {(max: number) => Record<string, Field>} a message locked for one player: the sender's key and the locked words */
+const sealed = max => ({ pub: text(100), iv: text(24), ct: text(max) });
+const SEALED = ['pub', 'iv', 'ct'];
 const W = 180; // world coordinates stay inside ±180 m (the valley is 400 m across)
 // kind → { fields, size (largest JSON in characters), per (at most this many…), sec (…in this many seconds), need (fields that must be there) }
 /** @type {Record<string, Kind>} */
 export const SCHEMA = {
-  hello: { fields: { name: text(40), look: any, photo: any, friend: word(8), pub: text(200) }, size: 130000, per: 6, sec: 10 },
+  // (round R privacy, 9 Oct) a hello never carries the photo (it goes after admission, locked, in 'photo'); w: "I have not
+  // heard the room's starter yet" (a newcomer let in through the cloud asks for the welcome again)
+  hello: { fields: { name: text(40), look: any, friend: word(8), pub: text(100), w: bool }, size: 3000, per: 6, sec: 10 },
   s: { fields: { x: num(-W, W), y: num(-60, 120), z: num(-W, W), yaw: num(-100, 100), st: word(16), sp: num(0, 50) }, need: ['x', 'y', 'z', 'yaw'], size: 600, per: 40, sec: 1 },
   ping: { fields: { ts: num(0, 1e14) }, size: 600, per: 3, sec: 2 },
   pong: { fields: { ts: num(0, 1e14) }, size: 600, per: 6, sec: 2 },
   bye: { fields: {}, size: 600, per: 4, sec: 5 },
   cloudon: { fields: {}, size: 600, per: 4, sec: 5 },
-  full: { fields: {}, size: 600, per: 4, sec: 5 },
-  kick: { fields: {}, size: 600, per: 4, sec: 5 },
-  nope: { fields: {}, size: 600, per: 4, sec: 5 },
-  door: { fields: {}, size: 600, per: 6, sec: 5 },
+  // (round R privacy, 9 Oct) everything the room's starter says to one player is locked for that player (pub: the starter's
+  // key; iv, ct: the locked words), so nobody else who knows the room code can say it in the starter's name (js/net.js)
+  full: { fields: sealed(400), need: SEALED, size: 1000, per: 4, sec: 5 },
+  kick: { fields: sealed(400), need: SEALED, size: 1000, per: 4, sec: 5 },
+  nope: { fields: sealed(400), need: SEALED, size: 1000, per: 4, sec: 5 },
+  door: { fields: sealed(400), need: SEALED, size: 1000, per: 6, sec: 5 },
+  admit: { fields: sealed(600), need: SEALED, size: 1200, per: 6, sec: 10 },   // let in: the room secret for the members' channel
+  chal: { fields: sealed(400), need: SEALED, size: 1000, per: 4, sec: 10 },    // a saved friend: prove it (a number only they can open)
+  chalr: { fields: { n: word(64) }, need: ['n'], size: 600, per: 4, sec: 10 }, // …the number, opened
+  rekey: { fields: sealed(600), need: SEALED, size: 1200, per: 4, sec: 10 },   // a new room secret after someone was removed
+  members: { fields: sealed(8000), need: SEALED, size: 9000, per: 4, sec: 5 }, // who is in the room (the grown-ups' list; who a guest may meet)
+  // friends' channel (js/net.js friendsStart): "playing now" and a token; where I am and invitations go locked for one friend
+  pres: { fields: { code: word(8), online: bool, ts: num(0, 1e14), tok: word(24) }, need: ['code'], size: 600, per: 6, sec: 10 },
+  note: { fields: sealed(1200), need: SEALED, size: 1800, per: 6, sec: 10 },
+  invite: { fields: sealed(1200), need: SEALED, size: 1800, per: 4, sec: 10 },
   photo: { fields: { iv: text(40), ct: text(160000) }, need: ['iv', 'ct'], size: 161000, per: 4, sec: 10 },
+  photoreq: { fields: {}, size: 600, per: 3, sec: 10 }, // ("I don't have your photo yet": the first one can go out while a newcomer is still at the door)
   emote: { fields: { id: word(24) }, need: ['id'], size: 600, per: 6, sec: 3 },
   meet: { fields: {}, size: 600, per: 2, sec: 4 },
   offer: { fields: { id: word(32), give: side, want: side }, need: ['id', 'give', 'want'], size: 2000, per: 3, sec: 5 },

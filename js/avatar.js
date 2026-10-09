@@ -1,7 +1,7 @@
 // Chibi characters whose face is the child's own photo.
 import { THREE, toon, glow, blobShadow, outline } from './gfx.js';
 import { GLIDERS, settings } from './state.js';
-import { customFace } from './custom.js';
+import { customFace, onFamilyPhotos } from './custom.js';
 
 const G = {
   head: new THREE.SphereGeometry(.5, 32, 24),
@@ -266,4 +266,5 @@ function setFace(A, f) {
   if (A.skinMat) A.skinMat.color.set(f && f.skin ? f.skin : A.look.skin);
 }
 export function applyNpcFaces() { for (const [id, list] of Object.entries(NAMED)) list.forEach(A => setFace(A, (settings.npcFaces || {})[id] || customFace(id) || null)); }
+onFamilyPhotos(() => applyNpcFaces()); // (round R privacy) the family's photo faces arrive after the start, with the family code
 export const namedVillagers = () => Object.keys(NAMED);

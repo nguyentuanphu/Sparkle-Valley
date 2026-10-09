@@ -16,6 +16,7 @@ export { defOf as onlineDef };
 
 export function createNetGames({ net, me, onAsk, onStart, onEnd, waitMs = 12000 }) {
   const asks = new Map();      // gid → { game, level, yes: Set, no: Set, asked: Set, timer } (I invited)
+  const said = new Map();     // gid → who asked (round R privacy, 9 Oct: a game opens only after this child said yes to that one)
   let session = null;          // the game being played: { gid, game, seats, mine, level, moves: Map(n → Map(seat → mv)), waiters }
   const api = {
     get session() { return session; },
@@ -31,7 +32,7 @@ export function createNetGames({ net, me, onAsk, onStart, onEnd, waitMs = 12000 
       return gid;
     },
     // my answer to an invitation
-    answer(d, yes) { net.send({ t: yes ? 'gyes' : 'gno', to: d.from, gid: d.gid }); },
+    answer(d, yes) { if (yes) { said.set(d.gid, d.from); if (said.size > 20) said.delete(said.keys().next().value); } net.send({ t: yes ? 'gyes' : 'gno', to: d.from, gid: d.gid }); },
     // a move of mine for step n (a Caro square, an Oẳn tù tì hand…)
     move(n, mv) { if (!session) return; record(session.mine, n, mv); net.send({ t: 'gmove', gid: session.gid, n, mv }); },
     // the move of seat s for step n, when it arrives (null if that player left)
@@ -50,7 +51,9 @@ export function createNetGames({ net, me, onAsk, onStart, onEnd, waitMs = 12000 
     receive(d) {
       if (d.t === 'gask') { if (!defOf(d.game) || session) return api.answer(d, false); onAsk && onAsk(d); return; }
       if (d.t === 'gyes' || d.t === 'gno') { const a = asks.get(d.gid); if (!a || !a.asked.has(d.from)) return; (d.t === 'gyes' ? a.yes : a.no).add(d.from); if (a.yes.size + a.no.size >= a.asked.size || a.yes.size + 1 >= defOf(a.game).max) go(d.gid); return; }
-      if (d.t === 'gstart') { if (session || !Array.isArray(d.seats) || !d.seats.includes(me())) return; begin(d.gid, d.game, d.level, d.seats); return; }
+      // (round R privacy, 9 Oct) before, any player could open a game here by naming this child in the seats; now only the
+      // one who asked, and only after this child said yes (the child who invites starts it themselves, in go())
+      if (d.t === 'gstart') { if (session || !Array.isArray(d.seats) || !d.seats.includes(me()) || said.get(d.gid) !== d.from) return; said.delete(d.gid); begin(d.gid, d.game, d.level, d.seats); return; }
       if (!session || d.gid !== session.gid) return;
       const s = session.seats.indexOf(d.from); if (s < 0) return;
       if (d.t === 'gmove') record(s, d.n, d.mv);

@@ -15,7 +15,8 @@ export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'so
   page.on('dialog', d => { errors.push('dialog: ' + d.message()); d.accept().catch(() => { }); });
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/peerjs|0\.peerjs|ERR_|Failed to load resource|net::|WebSocket connection to/.test(m.text())) errors.push('console: ' + m.text()); });
-  await page.addInitScript(([lang, s]) => { try { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang, voice: false, sound: false, music: false, quality: 'low', autoPack: false }, s); localStorage.setItem('sv2_settings', JSON.stringify(o)); } catch (e) { } }, [lang, settings]);
+  // (round R privacy, 9 Oct) online play is off on a new device; the checks play with it on unless they pass online: false
+  await page.addInitScript(([lang, s]) => { try { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang, voice: false, sound: false, music: false, quality: 'low', autoPack: false, online: true }, s); localStorage.setItem('sv2_settings', JSON.stringify(o)); } catch (e) { } }, [lang, settings]);
   // (round P: a new device starts with nobody; the checks play as two children made beforehand)
   await page.addInitScript(seedPlayers);
   if (pre) await page.addInitScript(pre);

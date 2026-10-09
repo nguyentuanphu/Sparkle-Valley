@@ -8,8 +8,10 @@ import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt, cur, spoken as money } from './money.js';
 import { el, esc, $, clamp, wait, local } from './util.js';
+import { familyCode, setFamilyCode, familyPhotoCount } from './custom.js';
 import { avatarURL, applyNpcFaces } from './avatar.js';
-import { confetti } from './popups.js';
+import { confetti, holdButton } from './popups.js';
+export { holdButton }; // (round R privacy, 9 Oct) moved to popups.js so the real-place window can ask a grown-up too
 import { placeBookHTML, bindPlaceBook } from './placebook.js';
 import { familyCardsHTML, bindFamilyCards } from './familycards.js';
 import { openReport } from './report.js';
@@ -25,7 +27,7 @@ import { openHowTo } from './howto.js';
 import { WILD } from './gather.js';
 import { snackOf, eatSnack } from './snacks.js';
 import { saveToDevice, savesByShare } from './photos.js';
-import { extrasHTML, bindExtras } from './extras.js';
+import { extrasHTML, bindExtras, privacyHTML } from './extras.js';
 import { canListen } from './listen.js';
 import { installButton } from './install.js';
 import { BUILD } from './build.js';
@@ -155,16 +157,6 @@ export function showWho(onGo) {
   };
   draw();
 }
-export function holdButton(b, fn) {
-  let t = null, start = 0, raf = 0;
-  const ring = b.querySelector('.ring');
-  const tick = () => { const k = clamp((performance.now() - start) / 1600, 0, 1); ring.style.setProperty('--p', k * 100 + '%'); if (k >= 1) { stop(); fn(); } else raf = requestAnimationFrame(tick); };
-  const stop = () => { cancelAnimationFrame(raf); ring.style.setProperty('--p', '0%'); t = null; };
-  b.addEventListener('pointerdown', e => { e.preventDefault(); start = performance.now(); t = 1; tick(); });
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => b.addEventListener(k, () => { if (t) stop(); }));
-  b.addEventListener('keydown', e => { if (e.key === 'Enter') fn(); });
-}
-
 // ---------- Rename characters ----------
 function openRenamer(after) {
   const m = modal('renamer', ''), card = m.querySelector('.card');
@@ -273,13 +265,17 @@ export function openGrownups(after) {
       <button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
       <h2>${T('Grown-ups', 'Phụ huynh')} <small class="buildtag">${T('Build', 'Bản')} ${BUILD}</small></h2>
       <div class="g-install"></div>
+      ${privacyHTML()}
       <h3>${T('Language', 'Ngôn ngữ')}</h3>${flagBtns()}${learnBtns()}
       <label class="tog"><input type="checkbox" id="gBil" ${settings.bilingual ? 'checked' : ''}> ${T('Bilingual voice: also say everything in the other language', 'Giọng song ngữ: nói thêm bằng ngôn ngữ còn lại')}</label>
             <details class="gsec" data-sec="players" ${gOpen.has('players') ? 'open' : ''}><summary><span class="gi">👧</span><b>${T('Children', 'Các con')}</b></summary><div class="gbody">
 
       <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(nm(p.name))}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn ghost" data-rep="${p.id}" aria-label="${T('Play report', 'Báo cáo chơi')}">${pic('📊')}</button><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
       <button class="btn wide" id="gAdd">+ ${T('Add a player', 'Thêm người chơi')}</button>
-      
+      <h3>🔒 ${T('Family photos', 'Ảnh gia đình')}</h3>
+      <p class="note">${T('Photo faces and family postcards are private. Type the family code from Sparkle Studio (Family → Family code) once on this device to see them.', 'Ảnh khuôn mặt và bưu thiếp gia đình được giữ riêng. Gõ mã gia đình từ Sparkle Studio (Gia đình → Mã gia đình) một lần trên máy này để xem.')}</p>
+      <div class="vrow"><input type="text" id="gFam" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="ABCD-EFGH-JKMN" value="${familyCode() ? '••••' + esc(familyCode().slice(-4)) : ''}"><button class="btn" id="gFamSave">${T('Save', 'Lưu')}</button></div>
+      <p class="note" id="gFamRes">${(() => { const c = familyPhotoCount(); return familyCode() ? T(`${c.have} of ${c.of} family photos on this device.`, `${c.have}/${c.of} ảnh gia đình trên máy này.`) : T('No family code on this device: family photos are not shown.', 'Máy này chưa có mã gia đình: ảnh gia đình không hiện.'); })()}</p>
       </div></details>
       <details class="gsec" data-sec="sound" ${gOpen.has('sound') ? 'open' : ''}><summary><span class="gi">🔊</span><b>${T('Sound and voices', 'Âm thanh và giọng nói')}</b></summary><div class="gbody">
       <div class="toggles">
@@ -337,6 +333,9 @@ export function openGrownups(after) {
       </div></details>
       <details class="gsec" data-sec="online" ${gOpen.has('online') ? 'open' : ''}><summary><span class="gi">🌐</span><b>${T('Playing online', 'Chơi trực tuyến')}</b></summary><div class="gbody">
 
+      <label class="tog"><input type="checkbox" id="gOnline" ${settings.online ? 'checked' : ''}> <b>${T('Play with friends online', 'Chơi cùng bạn qua mạng')}</b></label>
+      <p class="note">${T('Off until you turn it on. While it is off the game makes no online connection: no rooms, no friends’ status, no invitations.', 'Tắt cho đến khi bạn bật. Khi tắt, trò chơi không kết nối mạng để chơi cùng: không phòng, không trạng thái bạn bè, không lời mời.')}</p>
+      <h3>👥 ${T('Who’s here', 'Ai đang ở đây')}</h3><div class="whohere" id="gWho"><p class="note">…</p></div>
       <p class="note">${T('Online play uses the free PeerJS service to connect two devices directly. Voice goes straight between the devices and is never recorded.', 'Chơi trực tuyến dùng dịch vụ miễn phí PeerJS để nối hai máy trực tiếp. Giọng nói đi thẳng giữa hai máy và không bao giờ được ghi lại.')}</p>
       <label class="tog"><input type="checkbox" id="gAutoMeet" ${settings.autoMeet !== false ? 'checked' : ''}> ${T('Tell me when a friend on the list starts playing (with buttons to invite them or go to their room; nobody is put in a room by themselves)', 'Báo khi một bạn trong danh sách bắt đầu chơi (có nút mời bạn hoặc sang phòng bạn; không ai tự bị đưa vào phòng)')}</label>
       <p class="note">${T('If a friend far away stays on “Connecting…”, your two networks need a relay (TURN server). Free public relays are tried automatically. For a reliable one, make a free account at a TURN service (for example metered.ca), then paste its credentials link here, or a turn: address with its name and password. Both devices need the same relay.', 'Nếu bạn ở xa cứ “Đang kết nối…” mãi, hai mạng cần một máy chủ trung chuyển (TURN). Trò chơi tự thử các máy chủ miễn phí công cộng. Để ổn định hơn, hãy tạo tài khoản miễn phí ở một dịch vụ TURN (ví dụ metered.ca), rồi dán đường link lấy thông tin vào đây, hoặc địa chỉ turn: kèm tên và mật khẩu. Cả hai máy cần dùng cùng máy chủ.')}</p>
@@ -377,6 +376,24 @@ export function openGrownups(after) {
     card.querySelectorAll('.seg.q button').forEach(b => b.onclick = () => { settings.quality = b.dataset.q; saveSettings(); draw(); toast(T('Restart the game to change graphics.', 'Mở lại trò chơi để đổi đồ họa.')); });
     const chk = (id, k, f) => card.querySelector(id).onchange = e => { settings[k] = e.target.checked; saveSettings(); f && f(); };
     card.querySelector('#gAutoMeet').onchange = e => { settings.autoMeet = e.target.checked; saveSettings(); };
+    // (round R privacy, 9 Oct, owner) online play: off until a grown-up turns it on here (Grown-ups opens only with press and hold)
+    card.querySelector('#gOnline').onchange = async e => {
+      settings.online = e.target.checked; saveSettings();
+      const { Net } = await import('./net.js');
+      if (!settings.online) { Net.close(true); Net.friendsStop(); Net.stopListening(); } else if (window.__sv && window.__sv.listenFriends) window.__sv.listenFriends();
+      drawWho();
+    };
+    // who is in the room now: name, friend or new, direct or cloud, when they came; the room's starter can remove someone
+    const drawWho = async () => {
+      const box = card.querySelector('#gWho'); if (!box) return;
+      const { Net } = await import('./net.js'), list = Net.who();
+      if (!document.body.contains(box)) return;
+      const when = t => t ? new Date(t).toLocaleTimeString(settings.lang === 'vi' ? 'vi-VN' : 'en-AU', { hour: 'numeric', minute: '2-digit' }) : '';
+      box.innerHTML = !settings.online ? `<p class="note">${T('Online play is off.', 'Chơi qua mạng đang tắt.')}</p>` : !list.length ? `<p class="note">${T('Not in a room right now.', 'Hiện không ở trong phòng nào.')}</p>`
+        : list.map(m => `<div class="prow whorow"><div class="pw"><b>${esc(nm(m.name || T('Someone', 'Một bạn')))}${m.me ? ' (' + T('this device', 'máy này') + ')' : ''}</b><small>${m.me ? (m.host ? T('started the room', 'chủ phòng') : T('joined', 'đã vào')) : (m.host ? T('started the room', 'chủ phòng') + ' · ' : '') + (m.friend ? (m.known ? T('friend (proven)', 'bạn (đã xác nhận)') : T('friend', 'bạn')) : T('new', 'người mới')) + ' · ' + (m.via === 'cloud' ? T('cloud relay', 'qua mạng đám mây') : T('direct', 'trực tiếp'))}${m.at ? ' · ' + T('since', 'từ') + ' ' + when(m.at) : ''}</small></div>${m.canRemove ? `<button class="btn danger" data-whokick="${esc(m.id)}">🚪 ${T('Remove', 'Mời ra')}</button>` : ''}</div>`).join('');
+      box.querySelectorAll('[data-whokick]').forEach(b => b.onclick = () => { if (confirm(T('Remove this player from the room?', 'Mời bạn này ra khỏi phòng?'))) { Net.kick(b.dataset.whokick); setTimeout(drawWho, 600); } });
+    };
+    drawWho();
     const turnIn = card.querySelector('#gTurn');
     turnIn.oninput = () => { settings.turnUrl = turnIn.value.trim(); saveSettings(); card.querySelector('#gTurnCred').classList.toggle('vh', !/^turns?:/i.test(settings.turnUrl)); };
     card.querySelector('#gTurnUser').oninput = e => { settings.turnUser = e.target.value; saveSettings(); };
@@ -406,6 +423,10 @@ export function openGrownups(after) {
     });
     card.querySelectorAll('[data-rep]').forEach(b => b.onclick = () => { SFX.tap(); openReport(profiles.find(p => p.id === b.dataset.rep)); });
     card.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => openEditor(profiles.find(p => p.id === b.dataset.ed), () => { draw(); after && after(); }));
+    // (round R privacy) the family code: kept on this device only (never in a backup); empty removes it and the photos
+    card.querySelector('#gFamSave').onclick = async () => { const v = card.querySelector('#gFam').value.trim(), out = card.querySelector('#gFamRes'); if (/^•/.test(v)) return; out.textContent = '…';
+      const r = await setFamilyCode(v).catch(() => ({ ok: false }));
+      out.textContent = r.cleared ? T('Family code removed from this device.', 'Đã xóa mã gia đình khỏi máy này.') : r.bad ? T('That code is not right: check it in Sparkle Studio.', 'Mã chưa đúng: xem lại trong Sparkle Studio.') : r.ok ? T(`Saved: ${r.n || 0} of ${r.of || 0} family photos on this device.`, `Đã lưu: ${r.n || 0}/${r.of || 0} ảnh gia đình trên máy này.`) : T('Saved. The photos come the next time this device is online.', 'Đã lưu. Ảnh sẽ về khi máy có mạng.'); };
     card.querySelector('#gAdd').onclick = () => profiles.length >= MAX_KIDS ? toast(T(`Up to ${MAX_KIDS} players.`, `Tối đa ${MAX_KIDS} người chơi.`)) : openEditor(null, () => { draw(); after && after(); });
     card.querySelector('#gExp').onclick = async () => { const how = await exportBackup(); if (how === 'cancelled') return; toast(how === 'shared' ? T('Backup saved!', 'Đã lưu bản sao!') : T('Backup downloaded. Put it in Drive or iCloud to keep it safe.', 'Đã tải bản sao. Hãy cất vào Drive hoặc iCloud cho an toàn.')); const y = m.scrollTop; draw(); m.scrollTop = y; };
     card.querySelector('#gRec').onclick = () => openRecorder(draw);

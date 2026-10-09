@@ -7,6 +7,16 @@ import fs from 'fs';
 import { launch, open, clear, start, URL, seedPlayers } from './harness.mjs';
 import { groundAudit } from './world-audit.mjs';
 import { studioCheck } from './studio-check.mjs';
+// (round R privacy) friends save each other's device key when they first play together (＋👫); two test devices that are
+// already friends by code get each other's key here, the way that first game would have given it
+// the text of an element with each swapped drawing read back as its emoji (js/emojiswap.js keeps it in data-e)
+const withEmo = `window.withEmo = el => [...el.childNodes].map(n => n.nodeType === 3 ? n.textContent : n.dataset && n.dataset.e ? n.dataset.e : window.withEmo(n)).join('');`;
+async function pairKeys(A, B) {
+  const pub = P => P.page.evaluate(async () => (await import('/js/net.js')).myPub());
+  const [pa, pb] = [await pub(A), await pub(B)];
+  const put = (P, other) => P.page.evaluate(async other => { const S = await import('/js/state.js'); (S.settings.friends || []).forEach(f => { f.pub = other; }); S.saveSettings(); window.__sv.listenFriends && window.__sv.listenFriends(); }, other);
+  await put(A, pb); await put(B, pa);
+}
 
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
@@ -1347,32 +1357,39 @@ await check('songs', async () => {
 });
 
 await check('realphotos', async () => {
-  // round O (owner: "Real photos and 360° show nothing"): the photos come from Wikipedia's main API (the old picture
-  // list is being retired), the article's main picture first, with the photographer's credit; and 360° opens on top
-  // of the photos instead of behind them. (Wikipedia is pretended here: the test machine has no internet.)
+  // (round R privacy, 9 Oct, owner: "landmark photos served from our own site") the photos are only the ones listed in
+  // photos/index.json (paths inside photos/), with their credit as words; the game never asks Wikipedia or Wikimedia; a
+  // place with none says the photos are on their way; 360° (Google) opens only after a grown-up's press and hold.
+  // (round O) 360° opens on top of the photos.
   const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
-  await P.page.route('**/rest_v1/**', r => r.fulfill({ status: 404, body: '' }));
-  await P.page.route('**/w/api.php**', r => { const u = r.request().url();
-    if (/pageimages/.test(u)) return r.fulfill({ json: { query: { pages: [{ title: 'Saigon Central Post Office', pageimage: 'Lead_photo.jpg' }] } } });
-    return r.fulfill({ json: { query: { pages: [
-      { title: 'File:Other view.jpg', imageinfo: [{ mime: 'image/jpeg', url: 'https://upload.wikimedia.org/a/other.jpg', thumburl: 'https://upload.wikimedia.org/a/1280px-other.jpg', extmetadata: { Artist: { value: '<a>Someone</a>' }, LicenseShortName: { value: 'CC BY-SA 4.0' }, ImageDescription: { value: 'Inside the hall' } } }] },
-      { title: 'File:Lead photo.jpg', imageinfo: [{ mime: 'image/jpeg', url: 'https://upload.wikimedia.org/a/lead.jpg', thumburl: 'https://upload.wikimedia.org/a/1280px-lead.jpg', extmetadata: { Artist: { value: 'Photographer' }, LicenseShortName: { value: 'CC BY 2.0' } } }] },
-      { title: 'File:City map.svg', imageinfo: [{ mime: 'image/svg+xml', url: 'https://upload.wikimedia.org/a/map.svg' }] }] } } }); });
-  await P.page.route('https://upload.wikimedia.org/**', r => r.fulfill({ body: png, contentType: 'image/png', headers: { 'Access-Control-Allow-Origin': '*' } }));
+  const outside = []; P.page.on('request', q => { if (/wikipedia\.org|wikimedia\.org|openverse/.test(q.url())) outside.push(q.url()); });
+  await P.page.route('**/photos/index.json*', r => r.fulfill({ json: { 'en-saigon-central-post-office': [
+    { src: 'photos/en-saigon-central-post-office/1.jpg', file: 'File:Lead photo.jpg', caption: 'The post office', credit: 'Photographer · CC BY 2.0 · Wikipedia' },
+    { src: 'photos/en-saigon-central-post-office/2.jpg', file: 'File:Other view.jpg', caption: 'Inside the hall', credit: 'Someone · CC BY-SA 4.0' },
+    { src: 'https://upload.wikimedia.org/a/elsewhere.jpg', file: 'File:Elsewhere.jpg', caption: 'not ours', credit: 'x' }] } }));
+  await P.page.route('**/photos/en-saigon-central-post-office/*.jpg', r => r.fulfill({ body: png, contentType: 'image/png' }));
   await P.page.route('https://maps.google.com/**', r => r.fulfill({ body: '<html><body>map</body></html>', contentType: 'text/html' }));
   const r = await P.page.evaluate(async () => {
     const W = await import('/js/realworld.js'), wait = ms => new Promise(x => setTimeout(x, ms));
     W.openPhotos('Saigon Central Post Office', W.REAL.postoffice[0], { id: 'postoffice' });
     for (let k = 0; k < 40 && !document.querySelector('.rv-img'); k++) await wait(150);
-    const cap = document.querySelector('.rv-cap a') ? document.querySelector('.rv-cap a').textContent : '', none = document.querySelector('.realview').classList.contains('none'), dots = document.querySelectorAll('.rv-dots i').length;
-    document.querySelector('.rv-360').click(); await wait(400);
-    const map = document.querySelector('.modal.rvmap'), q = map.querySelector('.card').getBoundingClientRect(), top = document.elementFromPoint(q.left + q.width / 2, q.top + 30);
-    return { none, dots, cap, onTop: !!(top && top.closest('.rvmap')) };
+    const v = document.querySelector('.realview'), cap = v.querySelector('.rv-credit') ? v.querySelector('.rv-credit').textContent : '', none = v.classList.contains('none'), dots = v.querySelectorAll('.rv-dots i').length;
+    const srcs = [...v.querySelectorAll('.rv-img')].map(i => i.getAttribute('src')), links = v.querySelectorAll('.rv-cap a').length;
+    v.querySelector('.rv-360').click(); await wait(400);
+    const gate = document.querySelector('.modal.rvgate'), early = !!document.querySelector('.rvmap iframe'), says = gate ? /Google/.test(gate.textContent) : false;
+    const btn = gate.querySelector('.rv-ok'), tap = Math.round(btn.getBoundingClientRect().height);
+    btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await wait(1900);
+    const map = document.querySelector('.modal.rvmap:not(.rvgate)'), q = map.querySelector('.card').getBoundingClientRect(), top = document.elementFromPoint(q.left + q.width / 2, q.top + 30);
+    const opened = !!map.querySelector('iframe');
+    document.querySelectorAll('.realview, .modal').forEach(e => e.remove());
+    W.openPhotos('Uluru', W.REAL.uluru[0], { id: 'uluru' }); for (let k = 0; k < 30 && !document.querySelector('.realview.none'); k++) await wait(100);
+    const empty = !!document.querySelector('.realview.none');
+    return { none, dots, cap, srcs, links, gate: !!gate, early, says, tap, opened, onTop: !!(top && top.closest('.rvmap')), empty };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(!r.none && r.dots === 2 && /Photographer/.test(r.cap) && r.onTop && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return `2 photos from the main API (map left out), the article's own picture first, credit “${r.cap}”; 360° opens on top of the photos`;
+  ok(!r.none && r.dots === 2 && /Photographer/.test(r.cap) && r.srcs.every(x => /^photos\//.test(x)) && !r.links && r.gate && !r.early && r.says && r.tap >= 44 && r.opened && r.onTop && r.empty && !outside.length && !errs.length, JSON.stringify(Object.assign(r, { outside, errs })));
+  return `2 photos from photos/index.json (a web address left out), credit “${r.cap}” as words; nothing asked of Wikipedia or Wikimedia; a place with none says they are on their way; 360° asks a grown-up (says it opens Google), then opens on top of the photos`;
 });
 
 await check('firstplayer', async () => {
@@ -1392,7 +1409,8 @@ await check('firstplayer', async () => {
 
 await check('grownupsui', async () => {
   // round P (owner): on a phone the action button sits on the right above Jump and Run (the left half is the joystick's)
-  // and the spoken words near the top; Grown-ups in groups that open and close, the voice engine folded, no credits editor
+  // and the spoken words near the top; Grown-ups in groups that open and close, no credits editor; (round R privacy, 9 Oct)
+  // the privacy notice first and no voice engine or voice key
   const P = await open(b, { w: 390, h: 844, touch: true, lang: 'vi' }); await clear(P.page);
   const r = await P.page.evaluate(async () => {
     const wait = ms => new Promise(x => setTimeout(x, ms)), h = __sv.huds[0];
@@ -1402,13 +1420,15 @@ await check('grownupsui', async () => {
     const cap = document.querySelector('.caption'), c = cap ? cap.getBoundingClientRect() : null;
     const { openGrownups } = await import('/js/ui.js'); openGrownups(); await wait(400);
     const secs = [...document.querySelectorAll('.grownups details.gsec')].map(d => d.dataset.sec), open = [...document.querySelectorAll('.grownups details.gsec[open]')].map(d => d.dataset.sec);
-    const eng = document.querySelector('.grownups details.xeng'), credits = !!document.querySelector('.grownups #crName');
-    return { act: [a.left, a.top, a.right, a.bottom].map(Math.round), moves: Math.round(mv.top), w: innerWidth, cap: c ? [Math.round(c.top), Math.round(c.bottom)] : null, secs, open, engine: !!eng, engineOpen: !!(eng && eng.open), credits };
+    // (round R privacy, 9 Oct) no voice engine or voice key any more; the privacy notice is its own small block at the top
+    const eng = document.querySelector('.grownups details.xeng, .grownups #xKey, .grownups #xTts, .grownups #xClone'), credits = !!document.querySelector('.grownups #crName');
+    const priv = document.querySelector('.grownups details.g-priv'), firstSec = document.querySelector('.grownups details.gsec');
+    return { act: [a.left, a.top, a.right, a.bottom].map(Math.round), moves: Math.round(mv.top), w: innerWidth, cap: c ? [Math.round(c.top), Math.round(c.bottom)] : null, secs, open, engine: !!eng, privacy: priv ? priv.querySelectorAll('li').length : 0, privFirst: !!(priv && firstSec && priv.compareDocumentPosition(firstSec) & Node.DOCUMENT_POSITION_FOLLOWING), privTap: priv ? Math.round(priv.querySelector('summary').getBoundingClientRect().height) : 0, credits };
   });
   const errs = P.errors; await P.ctx.close();
   ok(r.act[0] > r.w / 2 - 40 && r.act[3] <= r.moves + 2 && r.cap && r.cap[0] < 260, 'phone layout: ' + JSON.stringify(r));
-  ok(r.secs.length >= 8 && r.secs.includes('sound') && r.secs.includes('online') && r.open.join() === 'players' && r.engine && !r.engineOpen && !r.credits && !errs.length, 'grown-ups: ' + JSON.stringify(Object.assign(r, { errs })));
-  return `action button on the right above Jump/Run (${r.act.join(',')}), words at the top (${r.cap.join('–')} px); Grown-ups: ${r.secs.length} groups (${r.secs.join(', ')}), the voice engine folded, no credits editor`;
+  ok(r.secs.length >= 8 && r.secs.includes('sound') && r.secs.includes('online') && r.open.join() === 'players' && !r.engine && r.privacy === 6 && r.privFirst && r.privTap >= 44 && !r.credits && !errs.length, 'grown-ups: ' + JSON.stringify(Object.assign(r, { errs })));
+  return `action button on the right above Jump/Run (${r.act.join(',')}), words at the top (${r.cap.join('–')} px); Grown-ups: ${r.secs.length} groups (${r.secs.join(', ')}), the privacy notice first (${r.privacy} lines), no voice engine or voice key, no credits editor`;
 });
 
 await check('playhub', async () => {
@@ -1553,6 +1573,26 @@ await check('postcards', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(r.got.length === 1 && r.got[0] === 'postcard:family/f1' && r.shown.on === 1 && r.shown.waiting === 1 && r.loaded && r.valid === 2 && r.studioSame && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return `a family photo for Lotus Village arrived once as a postcard, shows in the album and opens big; a photo from outside the game folder is ignored; Studio offers the same ${r.ids} places`;
+});
+
+await check('familyphotos', async () => {
+  // (round R privacy, 9 Oct) family photos are family-only: custom.json names them family:<name>; without the family code
+  // the game shows none (drawn faces stay); with it they come from api/family/<name> (the code in x-family-code), are kept
+  // in the "sv-family" cache for offline days, and a code the website no longer takes clears them
+  const P = await open(b, { w: 900, h: 640, play: false }), NAME = 'Abcdefghijklmnopqrstuvwx', CODE = 'ABCDEFGHJKMN';
+  const jpg = Buffer.from('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=', 'base64');
+  let asked = [], good = CODE;
+  await P.page.route('**/content/custom.json*', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ album: [{ id: 'f1', photo: 'family:' + NAME, en: 'Grandma', vi: 'Bà', place: 'village' }], faces: { 'Bà Năm': { photo: 'family:' + NAME, skin: '#f0c0a0' } } }) }));
+  await P.page.route('**/api/family/*', r => { const c = r.request().headers()['x-family-code'] || ''; asked.push(c); return c === good ? r.fulfill({ contentType: 'image/jpeg', headers: { 'Cache-Control': 'private, no-store' }, body: jpg }) : r.fulfill({ status: 401, body: 'no' }); });
+  await P.page.reload(); await start(P.page); await clear(P.page);
+  const r1 = await P.page.evaluate(async () => { const C = await import('/js/custom.js'); return { album: C.customAlbum().length, face: !!C.customFace('Bà Năm') }; });
+  const r2 = await P.page.evaluate(async code => { const C = await import('/js/custom.js'); const res = await C.setFamilyCode(code); const c = await caches.open('sv-family'), kept = (await c.keys()).length, swHas = (await Promise.all((await caches.keys()).filter(k => k !== 'sv-family').map(async k => (await (await caches.open(k)).keys()).some(q => /api\/family|__family/.test(q.url))))).some(Boolean);
+    return { res, album: C.customAlbum().length, photo: (C.customAlbum()[0] || {}).photo || '', face: !!C.customFace('Bà Năm'), kept, swHas }; }, CODE.toLowerCase().replace(/(.{4})/g, '$1-'));
+  good = 'SOMETHINGNEW';
+  const r3 = await P.page.evaluate(async () => { const C = await import('/js/custom.js'); const res = await C.refreshFamilyPhotos({ all: true }); return { res, album: C.customAlbum().length, caches: (await caches.keys()).includes('sv-family') }; });
+  const errs = P.errors; await P.ctx.close();
+  ok(r1.album === 0 && !r1.face && r2.res.ok && r2.album === 1 && /^blob:/.test(r2.photo) && r2.face && r2.kept === 1 && !r2.swHas && asked.includes(CODE) && r3.res.bad && r3.album === 0 && !r3.caches && !errs.length, JSON.stringify({ r1, r2, r3, asked, errs }));
+  return 'no code: no family photos; with the code: fetched with x-family-code, kept in sv-family (never the game cache), a changed code clears them';
 });
 
 await check('myhouse', async () => {
@@ -1736,6 +1776,7 @@ await check('netgames', async () => {
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
   const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'GAMEA2', friendsOn: true, autoMeet: false, friends: [{ code: 'GAMEB3', name: 'Bin' }] } });
   const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'GAMEB3', friendsOn: true, autoMeet: false, friends: [{ code: 'GAMEA2', name: 'Na' }] } });
+  await pairKeys(A, B);
   for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
   await A.page.evaluate(async () => __Net.host(__sv.sendHello())); await A.page.evaluate(() => __sv.shareStatus());
   await B.page.waitForFunction(() => { const s = __Net.friends.status.GAMEA2; return s && s.online && s.room; }, null, { timeout: 30000 });
@@ -1747,8 +1788,9 @@ await check('netgames', async () => {
   await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-caro]').click(); await new Promise(r => setTimeout(r, 400)); document.querySelector('.gamelevel [data-lvl="1"]')?.click(); });
   await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); const ask = await B.page.evaluate(() => document.querySelector('.dialog .dtext').textContent); await B.page.evaluate(() => document.querySelector('.dialog .dch').click());
   for (const P of [A, B]) await P.page.waitForSelector('.gl .caro', { timeout: 20000 });
-  const tap = async (P, i) => { await P.page.waitForFunction(i => { const c = document.querySelectorAll('.caro-c')[i]; return c && !c.textContent; }, i); await P.page.evaluate(i => document.querySelectorAll('.caro-c')[i].click(), i); };
-  const seen = async (P, i) => P.page.waitForFunction(i => !!document.querySelectorAll('.caro-c')[i].textContent, i, { timeout: 20000 });
+  // (a placed piece is marked .put: its emoji is swapped for a drawing, so the text is empty)
+  const tap = async (P, i) => { await P.page.waitForFunction(i => { const c = document.querySelectorAll('.caro-c')[i]; return c && !c.classList.contains('put'); }, i); await P.page.evaluate(i => document.querySelectorAll('.caro-c')[i].click(), i); };
+  const seen = async (P, i) => P.page.waitForFunction(i => document.querySelectorAll('.caro-c')[i].classList.contains('put'), i, { timeout: 20000 });
   for (const [P, Q, i] of [[A, B, 0], [B, A, 3], [A, B, 1], [B, A, 4], [A, B, 2]]) { await tap(P, i); await seen(Q, i); }
   for (const P of [A, B]) await P.page.waitForSelector('.gl-win', { timeout: 20000 });
   const caro = { a: await A.page.evaluate(() => document.querySelector('.gl-win p').textContent), b: await B.page.evaluate(() => document.querySelector('.gl-win p').textContent), wonCells: await B.page.evaluate(() => document.querySelectorAll('.caro-c.win').length) };
@@ -1760,8 +1802,8 @@ await check('netgames', async () => {
   let hands = null;
   for (let round = 0; round < 3; round++) {
     for (const [P, k] of [[A, 0], [B, 2]]) { await P.page.waitForFunction(() => document.querySelectorAll('.gl .choice:not([disabled])').length === 3, null, { timeout: 20000 }); await P.page.evaluate(k => document.querySelectorAll('.gl .choice')[k].click(), k); }
-    await A.page.waitForFunction(() => [...document.querySelectorAll('.rps-p .h')].every(e => !/❔|✅/.test(e.textContent)), null, { timeout: 20000 });
-    if (round === 0) hands = await B.page.evaluate(async () => { await new Promise(r => setTimeout(r, 300)); return [...document.querySelectorAll('.rps-p .h')].map(e => e.textContent); });
+    await A.page.waitForFunction(src => { eval(src); return [...document.querySelectorAll('.rps-p .h')].every(e => !/❔|✅/.test(window.withEmo(e))); }, withEmo, { timeout: 20000 });
+    if (round === 0) hands = await B.page.evaluate(async src => { eval(src); await new Promise(r => setTimeout(r, 300)); return [...document.querySelectorAll('.rps-p .h')].map(e => window.withEmo(e)); }, withEmo);
   }
   for (const P of [A, B]) await P.page.waitForSelector('.gl-win', { timeout: 20000 });
   const rps = { a: await A.page.evaluate(() => document.querySelector('.gl-win p').textContent), b: await B.page.evaluate(() => document.querySelector('.gl-win p').textContent) };
@@ -1779,6 +1821,7 @@ await check('together', async () => {
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
   const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'TOGA22', friendsOn: true, autoMeet: false, friends: [{ code: 'TOGB33', name: 'Bin' }] } });
   const B = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'TOGB33', friendsOn: true, autoMeet: false, friends: [{ code: 'TOGA22', name: 'Na' }] } });
+  await pairKeys(A, B);
   for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
   await A.page.evaluate(async () => __Net.host(__sv.sendHello())); await A.page.evaluate(() => __sv.shareStatus());
   await B.page.waitForFunction(() => { const s = __Net.friends.status.TOGA22; return s && s.online && s.room; }, null, { timeout: 30000 });
@@ -1800,7 +1843,7 @@ await check('together', async () => {
   for (const P of [A, B]) await P.page.waitForSelector('.gl .race', { timeout: 20000 });
   await A.page.evaluate(() => __sv.netGames.move(900, 3));
   await B.page.waitForFunction(() => /⭐3/.test(document.querySelector('.gl .race').textContent), null, { timeout: 15000 }).catch(() => { });
-  const race = await B.page.evaluate(() => document.querySelector('.gl .race').textContent.replace(/\s+/g, ' ').trim());
+  const race = await B.page.evaluate(src => { eval(src); return window.withEmo(document.querySelector('.gl .race')).replace(/\s+/g, ' ').trim(); }, withEmo);
   await clean();
   // 3. follow a friend: A stands 25 m away, B follows
   await A.page.evaluate(() => { const h = __sv.heroes[0]; h.place(h.pos.x + 25, h.pos.z); });
@@ -1815,10 +1858,11 @@ await check('together', async () => {
   await B.page.waitForFunction(id => { const it = __sv.interactables.find(i => i.id === id); return it && !it.visible() && it.st.by; }, pick, { timeout: 15000 }).catch(() => { });
   const claim = await B.page.evaluate(id => { const it = __sv.interactables.find(i => i.id === id); return { gone: !it.visible(), by: it.st.by || '' }; }, pick);
   // 5. the real place inside the game
-  const real = await A.page.evaluate(async () => { (await import('/js/realworld.js')).openStreetView('opera'); await new Promise(r => setTimeout(r, 300)); const f = document.querySelector('.rvmap iframe'); return { inGame: !!f, src: f ? f.src.slice(0, 40) : '' }; });
+  // (round R privacy, 9 Oct) a grown-up's press and hold first, as it opens Google
+  const real = await A.page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); (await import('/js/realworld.js')).openStreetView('opera'); await wait(300); const early = !!document.querySelector('.rvmap iframe'), g = document.querySelector('.rvgate .rv-ok'); if (g) { g.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await wait(1900); } const f = document.querySelector('.rvmap iframe'); return { gate: !!g && !early, inGame: !!f, src: f ? f.src.slice(0, 40) : '' }; });
   const errs = [...A.errors, ...B.errors].filter(e => !/maps\.google|google\.com/.test(e)); await A.ctx.close(); await B.ctx.close();
-  ok(tale.a === tale.b && /prince/.test(tale.b) && /⭐3/.test(race) && follow < 6 && claim.gone && claim.by && real.inGame && !errs.length, JSON.stringify({ tale, race, follow, claim, real, errs }));
-  return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game`;
+  ok(tale.a === tale.b && /prince/.test(tale.b) && /⭐3/.test(race) && follow < 6 && claim.gone && claim.by && real.gate && real.inGame && !errs.length, JSON.stringify({ tale, race, follow, claim, real, errs }));
+  return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game after a grown-up's press and hold`;
 });
 
 await check('chests', async () => {
@@ -1915,7 +1959,9 @@ await check('meet', async () => {
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9000, path: '/myapp', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
   const A = await open(b, { pre, w: 700, h: 500, settings: { friendCode: 'MEETA2', friendsOn: false, friends: [{ code: 'MEETB3', name: 'Bin' }] } });
   const B = await open(b, { pre, w: 700, h: 500, lang: 'vi', settings: { friendCode: 'MEETB3', friendsOn: true, friends: [{ code: 'MEETA2', name: 'Na' }] } });
-  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  await pairKeys(A, B);
+  // (the friend's card is shown once and may already be up: tidy everything else, keep it)
+  for (const P of [A, B]) await P.page.evaluate(async () => { document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); __sv.paused = false; window.__Net = (await import('/js/net.js')).Net; });
   await B.page.waitForSelector('.friendnote [data-inv]', { timeout: 90000 });
   const noteText = await B.page.textContent('.friendnote');
   await B.page.waitForTimeout(10000);
@@ -1940,6 +1986,7 @@ await check('cloud', async () => {
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
   const A = await open(b, { pre, w: 900, h: 640, lang: 'en', settings: { friendCode: 'AAAAA2', friendsOn: true, autoMeet: false, friends: [{ code: 'BBBBB3', name: 'Bin' }] } });
   const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'BBBBB3', friendsOn: true, autoMeet: false, friends: [{ code: 'AAAAA2', name: 'Na' }] } });
+  await pairKeys(A, B);
   // each player has a photo: it must reach the friend through the cloud too (locked with their pair key)
   const photo = c => { const k = document.createElement('canvas'); k.width = k.height = 64; const g = k.getContext('2d'); g.fillStyle = c; g.fillRect(0, 0, 64, 64); __sv.heroes[0].profile.photo = k.toDataURL('image/jpeg', .8); };
   for (const [P, c] of [[A, '#ff0000'], [B, '#0000ff']]) { await clear(P.page); await P.page.evaluate(async c => { window.__Net = (await import('/js/net.js')).Net; }, c); await P.page.evaluate(photo, c); }
@@ -2032,7 +2079,7 @@ await check('netmsg', async () => {
 });
 
 await check('knock', async () => {
-  // A 4-digit room code is easy to guess, so newcomers knock. Through the cloud relay only (the harder path):
+  // A room code can be guessed, so newcomers knock (6 digits from round R privacy, 9 Oct). Through the cloud relay only (the harder path):
   // the starter's panel shows the code as digits and animals (no QR code: owner, round 30); a child types the code with
   // the animal pad and knocks (microphone off, nothing of the room heard); "No thanks" sends them away for good; a
   // stranger who skips knocking and just sends moves is ignored; another child types the numbers and is let in.
@@ -2074,10 +2121,29 @@ await check('knock', async () => {
   await E.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 30000 });
 
   const errs = A.errors.concat(D.errors, E.errors).filter(e => !/WebSocket|ERR_CONNECTION|peerjs/i.test(e)); await A.ctx.close(); await E.ctx.close();
-  ok(panel && panel.digits === code && panel.animals === 4 && !panel.qr && aniKeys === 10 && atDoor.knocking && !atDoor.partners && atDoor.mic === false && atDoor.panel && !sentAway.remotes && !sentAway.knocks && !sentAway.pop && !stranger.remotes && !stranger.partners && !stranger.bubbles && !errs.length, JSON.stringify({ panel, aniKeys, atDoor, sentAway, stranger, errs }));
-  return `code ${code} shown as digits and 4 animals (no QR code); typed on the animal pad, knocked with the microphone off and nothing heard; "No thanks" sent them away; a stranger's moves without knocking ignored; another child typed the numbers and was let in`;
+  ok(panel && panel.digits === code && panel.animals === 6 && !panel.qr && aniKeys === 10 && atDoor.knocking && !atDoor.partners && atDoor.mic === false && atDoor.panel && !sentAway.remotes && !sentAway.knocks && !sentAway.pop && !stranger.remotes && !stranger.partners && !stranger.bubbles && !errs.length, JSON.stringify({ panel, aniKeys, atDoor, sentAway, stranger, errs }));
+  return `code ${code} shown as digits and 6 animals (no QR code); typed on the animal pad, knocked with the microphone off and nothing heard; "No thanks" sent them away; a stranger's moves without knocking ignored; another child typed the numbers and was let in`;
 });
 
+await check('onlineoff', async () => {
+  // PRIV-006 (round R privacy, 9 Oct, owner): a fresh device has online play off. The Friends tab says so with no Start or
+  // Join, Net makes no connection (no PeerJS, no cloud relay, no friends' status), and Grown-ups turns it on.
+  const P = await open(b, { w: 390, h: 760, touch: true, pre: () => { const s = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); delete s.online; localStorage.setItem('sv2_settings', JSON.stringify(s)); window.__wsOpened = 0; const W = window.WebSocket; window.WebSocket = function (...a) { window.__wsOpened++; return new W(...a); }; window.WebSocket.prototype = W.prototype; } }); // (the harness turns it on; this device has never had the setting)
+  await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const S = await import('/js/state.js'), N = (await import('/js/net.js')).Net, wait = ms => new Promise(r => setTimeout(r, ms));
+    const setting = S.settings.online;
+    __sv.openPad(0, 'friend'); await wait(500);
+    const body = document.querySelector('.pad-body') || document.body, text = body.textContent;
+    const off = /Playing with friends is off/.test(text), buttons = !!document.querySelector('#oHost, .padwrap, .numpad, [data-joinf]');
+    document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
+    const code = await N.host({ name: 'X' }); await N.join('123456', { name: 'X' }); __sv.listenFriends(); await wait(1500);
+    return { setting, off, buttons, code, role: N.role, peer: !!N.peer, door: !!N.door, cloud: !!N.cloud, beacon: !!N.beacon, pres: !!N.friends.ch, peerLoaded: !!window.Peer, ws: window.__wsOpened };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.setting === false && r.off && !r.buttons && r.code === null && !r.role && !r.peer && !r.door && !r.cloud && !r.beacon && !r.pres && !r.ws && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'a fresh device: "Playing with friends is off. Ask a grown-up to turn it on.", no Start or Join; host, join and friends make no connection';
+});
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);

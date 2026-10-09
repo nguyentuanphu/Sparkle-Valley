@@ -1,8 +1,12 @@
 // How many children play, and (round L) what each one plays, for the grown-ups' report in Sparkle Studio.
 // Each device makes up a random id the first time (js/players.js) and now and then says "hello": the build, the
 // language, how many children's profiles it has, minutes played and which games and stories were played since
-// the last hello. No names, no photos, no places, no IP addresses are kept. A grown-up can switch it off
-// (Grown-ups → Advanced → "Count players").
+// the last hello. (round R privacy, 9 Oct: said exactly) What is kept: per child the first name the family gave the
+// profile (letters only, up to 20) and the age group (under 5, or 5 and up), minutes, games, places in the valley and
+// stories; per device its kind, system, browser, screen size, build and language, and the town, state and country
+// Netlify works out from the connection; errors in the game's own code, stuck spots and smoothness; lines that had no
+// recording. Never kept: surnames, photos, voices, anything a child typed, GPS, or the connection's address (IP).
+// A grown-up can switch it all off (Grown-ups → Analytics and backup → Analytics).
 // It is kept in Netlify Blobs (store "players"):
 //   d/<day>/<id>   that device on that day          dev/<id>   the day it was first seen
 //   sum/<day>      a finished day, added up (the d/ records of days older than 60 days are removed)
@@ -11,8 +15,12 @@
 // online again, so each day is counted as the day it was played.
 //   line/<hash>    a line of the game's text that devices had to say with the machine voice (Sparkle Studio's
 //                  "missing lines inbox": the grown-up records them, and the next voice pack has them)
+//   vq/<day>/…     (round R privacy) how many such lines came that day from one device, one connection and in all:
+//                  10 a hello, 30 a device a day, 60 a connection a day and 200 new lines a day, so nobody can flood
+//                  the inbox (and the Azure budget spent recording it)
 import { createHash } from 'crypto';
 const ID = /^[a-z0-9]{10,24}$/, WORD = /^[\w-]{1,32}$/;
+export const LINES = { hello: 10, device: 30, ip: 60, newPerDay: 200 }; // (round R privacy) missing lines taken at most
 const day = (t = Date.now()) => new Date(t).toISOString().slice(0, 10);
 const int = (v, max) => Math.max(0, Math.min(max, Math.round(+v || 0)));
 const obj = o => o && typeof o === 'object' && !Array.isArray(o) ? o : {};
@@ -40,7 +48,7 @@ export function clean(b, now = Date.now()) {
   return { id: b.id, hid: /^[a-z0-9]{8,24}$/.test(b.h || '') ? b.h : '', build: WORD.test(b.b || '') ? b.b : '?', lang: /^(en|vi)$/.test(b.l) ? b.l : '?', kids: int(b.k, 8), days,
     kind: /^(phone|tablet|computer)$/.test(b.d) ? b.d : '?', app: !!b.a,
     os: /^(iOS|iPadOS|Android|ChromeOS|Windows|macOS|Linux|other)$/.test(b.os) ? b.os : '?', br: /^(Safari|Chrome|Edge|Firefox|Samsung|other)$/.test(b.br) ? b.br : '?', sc: /^\d{2,5}x\d{2,5}$/.test(b.sc || '') ? b.sc : '',
-    lines: (Array.isArray(b.v) ? b.v : []).slice(0, 15).filter(v => Array.isArray(v) && /^(en|vi|zh|hi)$/.test(v[0]) && typeof v[1] === 'string' && v[1].trim() && v[1].length <= 300 && !/[\u0000-\u001f<>]/.test(v[1])).map(v => [v[0], v[1].trim()]) }; // minutes with friends online
+    lines: (Array.isArray(b.v) ? b.v : []).slice(0, LINES.hello).filter(v => Array.isArray(v) && /^(en|vi|zh|hi)$/.test(v[0]) && typeof v[1] === 'string' && v[1].trim() && v[1].length <= 300 && !/[\u0000-\u001f<>]/.test(v[1])).map(v => [v[0], v[1].trim()]) }; // minutes with friends online
 }
 
 // a place name from the connection (Netlify's geo), cleaned
@@ -55,7 +63,8 @@ export async function live(S, b, now = Date.now()) {
   return true;
 }
 export const LIVE_MS = 5 * 60e3; // no "still here" for five minutes: offline (the phone died, or lost the internet)
-export async function hello(S, body, now = Date.now(), where = {}) {
+// opts.ip: a keyed hash of the connection (netlify/lib/guard.mjs), only to count its lines per day
+export async function hello(S, body, now = Date.now(), where = {}, opts = {}) {
   if (body && body.live != null) return live(S, body, now);
   const d = clean(body, now); if (!d) return false;
   const today = day(now);
@@ -88,8 +97,22 @@ export async function hello(S, body, now = Date.now(), where = {}) {
     if (x.d < today) await S.delete('sum/' + x.d); // a finished day that just got more play (from an outbox) is added up again
   }
   if (d.hid) await S.set('seen/' + d.hid, today); // only once it is all written
-  for (const [lang, text] of d.lines) { const k = 'line/' + createHash('sha1').update(lang + '|' + text).digest('hex').slice(0, 16), o = (await S.get(k, { type: 'json' })) || { lang, text, n: 0, first: today }; o.n++; o.last = today; await S.setJSON(k, o); }
+  if (d.lines.length) await addLines(S, d.id, opts.ip || '', d.lines, today);
   return true;
+}
+// the missing lines of one hello, within the day's limits for this device, this connection and new lines in all
+async function addLines(S, id, ip, lines, today) {
+  const num = async k => +(await S.get(k)) || 0;
+  const kd = `vq/${today}/d/${id}`, ki = `vq/${today}/i/${ip || 'none'}`, kn = `vq/${today}/new`;
+  let nd = await num(kd), ni = await num(ki), nn = await num(kn), took = 0;
+  for (const [lang, text] of lines) {
+    if (nd >= LINES.device || ni >= LINES.ip) break;
+    const k = 'line/' + createHash('sha1').update(lang + '|' + text).digest('hex').slice(0, 16), had = await S.get(k, { type: 'json' });
+    if (!had && nn >= LINES.newPerDay) continue;
+    const o = had || { lang, text, n: 0, first: today }; o.n++; o.last = today; await S.setJSON(k, o);
+    nd++; ni++; if (!had) nn++; took++;
+  }
+  if (took) { await S.set(kd, String(nd)); await S.set(ki, String(ni)); await S.set(kn, String(nn)); }
 }
 
 const add = (o, k, n = 1) => { o[k] = (o[k] || 0) + n; };
@@ -119,6 +142,7 @@ export async function report(S, now = Date.now()) {
   const old = day(now - 60 * 864e5);
   try { const { blobs } = await S.list({ prefix: 'd/' }); for (const b of blobs) if (b.key.slice(2, 12) < old) await S.delete(b.key); } catch (e) { }
   try { const { blobs } = await S.list({ prefix: 'seen/' }); for (const b of blobs) { const v = await S.get(b.key); if (!v || v < old) await S.delete(b.key); } } catch (e) { }
+  try { const { blobs } = await S.list({ prefix: 'vq/' }), yday = day(now - 2 * 864e5); for (const b of blobs) if (b.key.slice(3, 13) < yday) await S.delete(b.key); } catch (e) { } // (the daily line counts)
   const t = sums[sums.length - 1], w = last(7), deviceDays = sums.reduce((a, s) => a + s.ids.length, 0);
   const detail = await details(S, sums, now);
   return {

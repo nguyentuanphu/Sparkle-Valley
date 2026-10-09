@@ -7,7 +7,7 @@ import { say, setSpeaker } from './voice.js';
 import { SFX } from './audio.js';
 import { settings, reduceMotion } from './state.js';
 import { labelArt } from './art.js';
-import { el, esc, pick } from './util.js';
+import { el, esc, pick, clamp } from './util.js';
 
 // ---------- confetti ----------
 const COLORS = ['#ff4f9a', '#ffd23f', '#3cc7e8', '#5fd36a', '#ff9f43', '#a66bff'];
@@ -82,3 +82,14 @@ export function reward(big, line, sub) {
   return new Promise(res => { const go = () => { r.classList.add('out'); setTimeout(() => { r.remove(); res(); }, 250); }; r.onclick = go; setTimeout(go, 2600); });
 }
 
+// ---------- press and hold: the grown-up gate ----------
+// (round R privacy, 9 Oct) moved here from ui.js so any window (the real place's map too) can ask a grown-up first
+export function holdButton(b, fn) {
+  let t = null, start = 0, raf = 0;
+  const ring = b.querySelector('.ring');
+  const tick = () => { const k = clamp((performance.now() - start) / 1600, 0, 1); ring.style.setProperty('--p', k * 100 + '%'); if (k >= 1) { stop(); fn(); } else raf = requestAnimationFrame(tick); };
+  const stop = () => { cancelAnimationFrame(raf); ring.style.setProperty('--p', '0%'); t = null; };
+  b.addEventListener('pointerdown', e => { e.preventDefault(); start = performance.now(); t = 1; tick(); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => b.addEventListener(k, () => { if (t) stop(); }));
+  b.addEventListener('keydown', e => { if (e.key === 'Enter') fn(); });
+}
