@@ -58,10 +58,10 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
   - Hellos never carry photos. Photos go after being let in, as `photo` messages locked for each player (direct and cloud).
   - A newcomer's `hello` with `w: true` asks the starter for the welcome again (it may have gone out while the newcomer
     was still opening the `admit`).
-- **Saved friends must prove it.** ＋👫 in a room saves the friend's key with the friend (`settings.friends[].pub`).
+- **Saved friends must prove it.** The add-friend button in a room saves the friend's key with the friend (`settings.friends[].pub`).
   A knock claiming friend X comes straight in only if its key equals the saved key and it opens a number locked with
   that key (`chal` → `chalr`, 6 s); otherwise it is an ordinary knock the child must accept. Friends added by typing a
-  code have no key until they play together once and tap ＋👫.
+  code have no key until they play together once and tap the add-friend button.
 - **Friends' status** (presence) carries only "playing now" and a per-session token. Name, place, room code, number of
   players and "I started it" go as a `note` locked for each saved friend with a key (sent when they come online and every
   45 s); invitations are locked the same way (cloud inbox and the PeerJS beacon). No key, no invitation: the child is told
