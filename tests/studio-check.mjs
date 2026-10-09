@@ -312,7 +312,7 @@ export async function studioCheck(browser, open) {
     ok((await job('github/draft', {})).result.changed === 0, 'a second exe draft found changes');
     notes.push('exe: saves to its folder with a backup, players via the website, same version; GitHub in two steps (draft, then Publish)');
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone
-    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode'], bad = [];
+    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode', 'missions'], bad = [];
     for (const [w, h, touch] of [[1180, 800, false], [390, 800, true]]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch }), errs = [];
       const pg = await ctx.newPage(); pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/favicon|401|403/.test(m.text())) errs.push(m.text() + ' ' + (m.location().url || '')); });
@@ -321,7 +321,8 @@ export async function studioCheck(browser, open) {
       const navOk = await pg.evaluate(touch => { const bs = [...document.querySelectorAll('#tabs button')], r = bs.map(b => b.getBoundingClientRect()); return bs.length === 5 && (touch ? r.every(x => x.bottom >= innerHeight - 2 - 40 && x.height >= 56) : r.every(x => x.left < 220)); }, touch);
       if (!navOk) bad.push(`online ${w}px: the five sections are not where they should be`);
       await pg.evaluate(() => document.querySelector('#tabs [data-k="family"]').click()); await pg.waitForTimeout(400);
-      if (await pg.evaluate(() => document.querySelectorAll('#page .pcard').length) !== 7) bad.push(`online ${w}px: the Family section does not show its seven cards`);
+      // (round S: Family missions joined the Family section: eight cards)
+      if (await pg.evaluate(() => document.querySelectorAll('#page .pcard').length) !== 8) bad.push(`online ${w}px: the Family section does not show its eight cards`);
       for (const k of pages) { await pg.evaluate(k2 => { location.hash = k2; }, k); await pg.waitForTimeout(k === 'photos' ? 2500 : 900); const t = await pg.evaluate(() => document.querySelector('#page').innerText); if (await pg.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`online ${w}px ${k}: ${t.slice(0, 80)}`);
         if (await pg.evaluate(() => document.scrollingElement.scrollWidth > innerWidth + 1)) bad.push(`online ${w}px ${k}: page scrolls sideways`);
         const emo = await pg.evaluate(SHOWN_EMOJI); if (emo.length) bad.push(`online ${w}px ${k}: phone emoji shown: ${emo.join(' ')}`); }
