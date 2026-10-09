@@ -642,6 +642,7 @@ G.checkQuests = h => checkQuests(h);
 G.save = save; G.addCoins = xu => addMoney(null, xu); G.giveSticker = p => giveSticker(p); G.reward = reward; G.fmt = fmt;
 async function checkQuests(h) {
   const p = h.profile;
+  G.boxes && G.boxes.questDone(h, QUESTS.filter(q => questDone(p, q)).length); // (round S, owner plan 8 Oct) a finished quest earns a mystery box (js/boxes.js)
   // story chapters open when their quest is done (pause the world while the book is open)
   if (!G._reading) { G._reading = true; try { await storyCheck(G, h, id => questDone(p, QUESTS.find(q => q.id === id))); } finally { G._reading = false; } }
   const k = 'seen_' + (currentQuest(p) || { id: 'all' }).id;
@@ -1538,6 +1539,10 @@ setupTrading(G);
   const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(sx, y, sz); m.castShadow = true; scene.add(m); world.colliders.push({ x: sx, z: sz, r: 1.4 });
   G.interactables.push({ id: 'stall', x: sx, z: sz + 1.2, r: 3, icon: '🏪', label: () => T('My market stall: trade with friends', 'Sạp hàng của con: đổi đồ với bạn'), act: h => G.openTrade(h.i) });
 }
+// ---- (round S, owner plan 8 Oct: Round R Part 2 items 6 and 10) the clothes shop by the market and the wardrobe (js/shop.js);
+// mystery boxes, family rankings and the collection book for 5 to 8 year olds at Medium or Hard (js/boxes.js) ----
+{ const [{ createShop }, { createBoxes }] = await Promise.all([import('./shop.js'), import('./boxes.js')]); G.shop = createShop(G, { say, save }); G.boxes = createBoxes(G, { say, save }); }
+// ---- (round S) end ----
 // villagers the family added in Sparkle Studio (content pack "npcs"): placed where they were put on the map, saying
 // their own lines in both languages
 for (const c of (Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {

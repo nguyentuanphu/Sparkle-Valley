@@ -635,6 +635,15 @@ add('🔓', `<rect x="10" y="20" width="28" height="22" rx="4" fill="#5fd39a" ${
 add('⏮️ ⏮', g('a-nudge', `<rect x="5" y="10" width="5" height="28" fill="#5fd3ff" ${W}/><path d="M42 10L26 24l16 14zM26 10L10 24l16 14z" fill="#5fd3ff" ${W}/>`));
 add('⏯️ ⏯', `<path d="M5 10l17 14L5 38z" fill="#5fd36a" ${W}/><rect x="27" y="10" width="6" height="28" rx="2" fill="#ffd23f" ${W}/><rect x="37" y="10" width="6" height="28" rx="2" fill="#ffd23f" ${W}/>`);
 
+// (round S, owner plan 8 Oct) the clothes shop's tabs, the family rankings' medals and the collectibles' decorations
+add('👟', g('a-hop', `<path d="M5 32c0-9 4-15 12-15 4 6 10 7 15 7 7 0 11 3 11 8z" fill="#5fb6ff" ${W}/><path d="M4 32h40v5H4z" fill="#fff8ee" ${W}/><path d="M17 21l4 4M21 19l4 4M25 18l3 4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>`, '24px 37px'));
+add('📿', g('a-swing', `<path d="M10 6c0 18 6 26 14 26s14-8 14-26" stroke="${O}" stroke-width="1.4" ${N}/>${[0, 1, 2, 3, 4, 5, 6].map(i => { const a = Math.PI * i / 6; return circ(24 - Math.cos(a) * 14, 6 + Math.sin(a) * 26, 3.4, i % 2 ? '#ff7eb8' : '#fff8ee'); }).join('')}${circ(24, 40, 5, '#ffd23f')}`, '24px 6px'));
+const medal = (f, n) => g('a-swing', `<path d="M15 4l9 15 9-15" stroke="#5fb6ff" stroke-width="5" ${N}/><path d="M15 4l9 15 9-15" ${W} ${N}/>${circ(24, 31, 12, f)}<text x="24" y="37" font-size="15" font-weight="900" text-anchor="middle" fill="#fff" stroke="${O}" stroke-width="1" font-family="Fredoka,sans-serif">${n}</text>`, '24px 4px');
+add('🥇', medal('#ffc83a', 1)); add('🥈', medal('#c8d0da', 2)); add('🥉', medal('#d98a4a', 3));
+add('🎐', `<path d="M24 3v6" ${W}/>` + g('a-sway', `<path d="M13 20a11 11 0 0 1 22 0z" fill="#9fe0ff" ${W}/><path d="M24 20v8" ${W}/><rect x="19" y="28" width="10" height="15" rx="2" fill="#ff7eb8" ${W}/><path d="M22 33h4" stroke="#fff" stroke-width="2"/>`, '24px 9px'));
+add('🪴', `<path d="M13 30h22l-3 14H16z" fill="#e0805a" ${W}/><path d="M11 27h26v5H11z" fill="#f0a070" ${W}/>` + g('a-sway', `<path d="M24 27V14" ${W}/><path d="M24 20c-8 0-12-6-12-11 6 0 12 4 12 11zM24 16c6-1 10-6 10-10-6 0-10 4-10 10zM24 24c5 0 9-3 10-7-5-1-9 2-10 7z" fill="#5fd36a" ${W}/>`, '24px 27px'));
+add('🎏', `<path d="M8 4v42" ${W}/>` + g('a-flag', `<path d="M8 8c10-3 22-2 32 3l-5 4 5 4c-10 5-22 6-32 3z" fill="#e8434a" ${W}/>${circ(15, 15, 2.6, '#fff')}${dot(15, 15, 1.2)}<path d="M8 26c10-2 20-1 28 3l-4 4 4 4c-8 4-18 5-28 3z" fill="#5fb6ff" ${W}/>`, '8px 24px'));
+
 // (an emoji with or without its invisible "picture style" mark finds the same drawing)
 const keyOf = e => e == null ? null : ART[e] ? e : ART[e + '\uFE0F'] ? e + '\uFE0F' : ART[String(e).replace(/\uFE0F/g, '')] ? String(e).replace(/\uFE0F/g, '') : null;
 export const hasArt = e => !!keyOf(e);

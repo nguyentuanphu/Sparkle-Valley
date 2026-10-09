@@ -8,7 +8,8 @@ import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt, cur, spoken as money } from './money.js';
 import { el, esc, $, clamp, wait, local } from './util.js';
-import { familyCode, setFamilyCode, familyPhotoCount } from './custom.js';
+import { familyCode, setFamilyCode, familyPhotoCount, featureOn } from './custom.js';
+import { DEFAULT_OUTFITS, outfitOf } from './content/shop.js'; // (round S, owner plan 8 Oct) two starting outfits when the clothes shop is on
 import { avatarURL, applyNpcFaces } from './avatar.js';
 import { confetti, holdButton } from './popups.js';
 export { holdButton }; // (round R privacy, 9 Oct) moved to popups.js so the real-place window can ask a grown-up too
@@ -597,6 +598,7 @@ export function openEditor(profile, after) {
   diffBtns();
   chips('#cHair', HAIR, 'hair', v => `<span class="sw" style="background:${v}"></span>`);
   chips('#cSkin', SKIN, 'skin', v => `<span class="sw" style="background:${v}"></span>`);
+  if (featureOn('shop', true)) shopOutfits(m, look, isNew); // (round S) hats, necklaces and the rest come from the shop
   const finish = save => {
     if (save) {
       p.name = (m.querySelector('#nm').value.trim() || T('Explorer', 'Nhà thám hiểm')).slice(0, 16);
@@ -617,6 +619,17 @@ export function openEditor(profile, after) {
   // (the last player can go too: the next start asks for a new character, round P)
   if (del) del.onclick = () => { if (confirm(T(`Remove ${p.name} and all their progress?`, `Xóa ${p.name} và toàn bộ tiến trình?`))) { removeProfile(p.id); m.close(); after && after(); } };
 }
+
+// ---- (round S, owner plan 8 Oct: "only 2 default outfits, boy and girl; hair chosen at creation or in Grown-ups → Children
+// → Edit") with the clothes shop on, the Clothes row offers the two outfits; hats and backs are bought in the shop (js/shop.js)
+function shopOutfits(m, look, isNew) {
+  if (isNew) Object.assign(look, DEFAULT_OUTFITS[look.style === 'dress' ? 'girl' : 'boy']);
+  const box = m.querySelector('#cOut'), draw = () => { box.innerHTML = ''; for (const k of Object.keys(DEFAULT_OUTFITS)) {
+    const b = el('button', 'chip' + (outfitOf(look) === k ? ' on' : '')); b.dataset.outfit = k; b.innerHTML = `<span>${pic(k === 'girl' ? '👧' : '👦')}</span><small>${k === 'girl' ? T('Girl', 'Bé gái') : T('Boy', 'Bé trai')}</small>`;
+    b.onclick = () => { const o = DEFAULT_OUTFITS[k]; Object.assign(look, { style: o.style, color: o.color, top: 'none', bottom: 'none' }); draw(); }; box.appendChild(b); } };
+  draw(); m.querySelector('#cCol').hidden = true; ['#cHat', '#cBack'].forEach(id => { m.querySelector(id).closest('.field').hidden = true; });
+}
+// ---- (round S) end ----
 
 // (windows, NPC dialogue, the reward pop-up and confetti live in js/popups.js since architecture step 2; passed on from here)
 export { modal, dialog, dialogHooks, reward } from './popups.js';
@@ -918,6 +931,7 @@ export function openShop(game, i) {
 
 // ---------- wardrobe (for the children: pictures only, changes show live on the character) ----------
 export function openWardrobe(game, i, onClose) {
+  if (game.shop && game.shop.on()) return game.shop.openWardrobe(i, onClose); // (round S) what the child owns from the clothes shop
   const p = game.heroes[i].profile;
   const m = el('div', 'wardrobe');
   document.body.appendChild(m);
