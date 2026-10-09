@@ -1,6 +1,6 @@
 # Round T: Concept D valley layout, the staged plan
 
-Written 10 Oct 2026 (AEST) from the owner-approved spec in ROUND-R.md Part 2 item 2. Plan first, then go (HANDOFF rule 17).
+Written 10 Oct 2026 (AEST) from the owner-approved spec in ROUND-R.md Part 2 item 2. The owner's Concept D drawings (maps, road and water looks, art direction, village pattern) are copied into the repo at `docs/concept-d/index.html` (open it in a browser; the pictures sit beside it), taken from the live page on 10 Oct. Plan first, then go (HANDOFF rule 17).
 
 
 
