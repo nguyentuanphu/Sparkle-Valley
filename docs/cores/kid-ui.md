@@ -11,6 +11,7 @@ album…), menus, settings and Grown-ups, pop-ups, icons and pictures, text size
 - Words: `js/i18n.js` (English and Vietnamese)
 - Children's profiles and settings: `js/state.js`
 - Looks: `css/style.css` (other cores keep their own blocks), `index.html`, `fonts/`, `icons/`
+- Hands-on panels: `js/handpad.js` (tap, hold, pull and drag panels the stories use); no phone emoji: `js/emojiswap.js`
 
 ## Hard rules (§9.6)
 A11Y-001 (Reduce motion turns on Calm), A11Y-002 (every spoken line also shown as words, ≥ 16 px), A11Y-003 (Simple

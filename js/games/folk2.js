@@ -148,7 +148,8 @@ register({
     const tick = now => {
       if (api.closed) return;
       const dt = Math.min(.04, (now - last) / 1000); last = now;
-      if (!ball && !hitBall) { wait0 -= dt; if (wait0 <= 0) { ball = { t: 0 }; bowled++; } }
+      // (audit, 9 Oct) big kids have a set number of balls; little ones keep batting until they reach the runs
+      if (!ball && !hitBall) { wait0 -= dt; if (wait0 <= 0 && (api.little || bowled < balls)) { ball = { t: 0 }; bowled++; } }
       if (swingT >= 0) { swingT += dt; if (swingT > .35) swingT = -1; }
       if (ball) {
         ball.t += dt * speed;
@@ -175,7 +176,7 @@ register({
       g.font = `bold ${h * .07}px Fredoka, sans-serif`; g.fillStyle = '#1f4a2a'; g.textAlign = 'left'; g.fillText(T(`Runs: ${runs}/${need}`, `Điểm: ${runs}/${need}`), 12, h * .1);
       if (!api.little) { g.textAlign = 'right'; g.fillText(T(`Balls: ${Math.max(0, balls - bowled)}`, `Còn: ${Math.max(0, balls - bowled)} bóng`), w - 12, h * .1); }
       if (msgT > 0) { msgT -= dt; g.textAlign = 'center'; g.font = `bold ${h * .12}px Fredoka, sans-serif`; g.fillStyle = '#ff5fa2'; g.fillText(msg, w / 2, h * .3); }
-      if (runs >= need || (bowled >= balls && !ball && !hitBall && wait0 <= 0)) { done(); return; }
+      if (runs >= need || (!api.little && bowled >= balls && !ball && !hitBall && wait0 <= 0)) { done(); return; }
       requestAnimationFrame(tick);
     };
     api.dots(need, 0); requestAnimationFrame(tick);

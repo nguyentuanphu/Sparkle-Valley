@@ -245,7 +245,8 @@ export function createFestivals(G) {
     // the festival game opens at 15:00 (any time when visiting from the calendar)
     if (!preview && new Date() < todayAt('15:00')) { const sn = showName(F); await G.dialog(T(F.en, F.vi), [[`The festival game starts at 3 o'clock${F.show !== 'none' ? `, and the ${sn[0]} at ${showTime(little())}` : ''}. Come back then!`, `Trò chơi lễ hội bắt đầu lúc 3 giờ chiều${F.show !== 'none' ? `, ${sn[1]} lúc ${showTime(little())}` : ''}. Nhớ quay lại nhé!`, 'The festival game starts at three o’clock. Come back then!', 'Trò chơi lễ hội bắt đầu lúc ba giờ chiều. Nhớ quay lại nhé!']]); return; }   // (shows the times, speaks a recorded line)
     const k = await G.dialog(T(F.en, F.vi), [[`Shall we play a festival game?`, `Mình chơi một trò ngày lễ nhé?`]], [['🎉 Yes!', '🎉 Có!'], ['👋 Later', '👋 Để sau']]);
-    if (k === 0 && F.game) G.playGame(h.i, F.game, 'replay');
+    // (audit, 9 Oct) the Family Quiz only exists once the family has written one in Studio: otherwise a feelings game
+    if (k === 0 && F.game) { const { GAMES } = await import('./games/frame.js'); G.playGame(h.i, GAMES[F.game] ? F.game : 'feelings', 'replay'); }
   };
 
   // ---------- the evening show, on the real clock ----------

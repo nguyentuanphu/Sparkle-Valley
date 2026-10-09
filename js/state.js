@@ -190,7 +190,9 @@ export async function exportBackup({ share = true } = {}) {
   const name = 'sparkle-valley-backup-' + new Date().toISOString().slice(0, 10) + '.txt';
   // the lines this device had to say without a recording travel along, so Sparkle Studio can record them
   let voiceMissing = []; try { voiceMissing = JSON.parse(localStorage.getItem('sv2_voicemiss') || '[]'); } catch (e) { }
-  const text = JSON.stringify({ app: 'sparkle-valley', v: 2, saved: Date.now(), build: BUILD, settings, profiles, farm, voiceMissing }, null, 1);
+  // (audit, 9 Oct) keys and passwords stay on this device: a backup may be shared to a cloud drive
+  const safe = Object.fromEntries(Object.entries(settings).filter(([k]) => !/key|pass|token|secret/i.test(k)));
+  const text = JSON.stringify({ app: 'sparkle-valley', v: 2, saved: Date.now(), build: BUILD, settings: safe, profiles, farm, voiceMissing }, null, 1);
   const done = how => { settings.lastBackup = Date.now(); saveSettings(); return how; };
   if (share && navigator.canShare) {
     try {

@@ -49,7 +49,7 @@ export const CHAPTERS = [
 export const STORY_TALES = {
   lantern_prologue: { id: 'lantern_prologue', flag: '🏮', title: ['The Lanterns Blow Away', 'Đèn Lồng Bay Mất'], pages: [
     ['🏮🌳', 'The night before the great lantern festival, the magic lanterns of Sparkle Valley glowed on the old banyan tree.', 'Đêm trước lễ hội đèn lồng lớn, những chiếc đèn lồng thần kỳ của Thung Lũng Lấp Lánh sáng rực trên cây đa cổ thụ.'],
-    ['☁️💨🏮', 'Whoosh! The grumpy cloud Mây Cau Có huffed and puffed, and the wind carried every lantern far away, over Vietnam and Australia.', 'Vù vù! Đám mây khó tính Mây Cau Có phồng má thổi mạnh, gió cuốn hết đèn lồng bay thật xa, qua Việt Nam và nước Úc.'],
+    ['☁️💨🏮', 'Whoosh! Mây Cau Có huffed and puffed, and the wind carried every lantern far away, over Vietnam and Australia.', 'Vù vù! Đám mây khó tính Mây Cau Có phồng má thổi mạnh, gió cuốn hết đèn lồng bay thật xa, qua Việt Nam và nước Úc.'],
     ['🦉🧒', 'Ông Cú hooted: "Little explorer, will you bring our lanterns home? Choose a friend to fly with you!"', 'Ông Cú nói: "Nhà thám hiểm nhỏ ơi, con giúp mang đèn lồng về nhà nhé? Hãy chọn một người bạn bay cùng con!"']] },
   lantern_ch1: { id: 'lantern_ch1', flag: '🏮', title: ['The Lantern of Lotus Village', 'Đèn Lồng Làng Sen'], pages: [
     ['🏯🏮', 'Up went the lantern on the đình. It glowed warm and red, and the morning mist lifted from Lotus Village.', 'Chiếc đèn lồng được treo lên đình. Đèn sáng ấm áp màu đỏ, và màn sương sớm tan khỏi Làng Sen.'],

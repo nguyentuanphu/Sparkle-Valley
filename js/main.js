@@ -44,7 +44,7 @@ import { createShowcase } from './showcase.js';
 import { createRoads, plantRoadside } from './roads.js';
 import { createTraffic } from './traffic.js';
 import { RELEASES } from './content/releases.js';
-import { releaseNew } from './custom.js';
+import { releaseNew, featureOn } from './custom.js';
 import { cachedCanvas } from './worldcache.js';
 import { events } from './core/events.js';
 import { createPlaceBook } from './placebook.js';
@@ -610,7 +610,7 @@ function currentQuest(p) {
   if (p.follow === 'yard' && sideQuest(p)) return sideQuest(p);
   return (G.lanterns && G.lanterns.quest(p)) || sideQuest(p) || QUESTS.find(q => !questDone(p, q));
 }
-G.sideStories = () => G.yard ? [G.yard.side] : [];
+G.sideStories = () => G.yard && featureOn('story_yard', true) ? [G.yard.side] : [];
 G.currentQuest = currentQuest;
 function questTarget(h) {
   const p = h.profile, q = currentQuest(p); if (!q) return null;
@@ -1292,7 +1292,8 @@ function startSession(mode, chosen) {
   resize(); G.paused = false; playing = true; G.listenFriends();
   // a note from the grown-ups (Sparkle Studio), once a day
   { const M = CUSTOM.message, today = new Date().toDateString();
-    if (M && (M.en || M.vi) && settings.familyMsgDay !== today) { settings.familyMsgDay = today; saveSettings(); setTimeout(() => { if (!G.paused) { G.paused = true; dialog('💌 ' + T('From your family', 'Lời nhắn của gia đình'), [[String(M.en || M.vi).slice(0, 400), String(M.vi || M.en).slice(0, 400)]]).then(() => { G.paused = false; }); } }, 4000); } }
+    // (audit, 9 Oct) marked as seen only once it is really shown: it waits while a story, a game or a panel is open
+    if (M && (M.en || M.vi) && settings.familyMsgDay !== today) { let tries = 0; const tryShow = () => { if (settings.familyMsgDay === today || ++tries > 200) return; if (G.paused) { setTimeout(tryShow, 3000); return; } settings.familyMsgDay = today; saveSettings(); G.paused = true; dialog('💌 ' + T('From your family', 'Lời nhắn của gia đình'), [[String(M.en || M.vi).slice(0, 400), String(M.vi || M.en).slice(0, 400)]]).then(() => { G.paused = false; }); }; setTimeout(tryShow, 4000); } }
   $('#huds').hidden = false;
   const p = chosen[0];
   // the welcome is words on the screen, not a voice (owner, round 30: with the child's name in it, only the phone's

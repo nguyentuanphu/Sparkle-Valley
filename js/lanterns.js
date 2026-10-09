@@ -13,7 +13,7 @@ import { CHAPTERS, STORY_TALES, COMPANIONS, STORY_LINES } from './content/chapte
 import { buildDinh, buildLantern } from './dinh.js';
 import { createCompanions } from './companion.js';
 import { openSpot } from './openspot.js';
-import { pad, frames, slot } from './handpad.js';
+import { pad, frames, slot, QUIT } from './handpad.js';
 
 const V = VILLAGE;
 const released = ch => featureOn('story_' + ch.id, true);
@@ -121,13 +121,15 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
       pivot.visible = false; pivot.userData.noSolid = true; scene.add(pivot); leaves.push({ k, x, z, pivot, lift: 0 });
     }
   }
-  const dayNo = () => Math.floor(Date.now() / 864e5);
+  const dayNo = () => Math.floor((Date.now() + 10 * 3600e3) / 864e5); // (a day in AEST, like js/kidplay.js)
   const rightLeaf = () => dayNo() % Math.max(1, leaves.length);
   const revealed = p => !!A(p).found;
   const liftLeaf = (h, L) => {
     const a = A(h.profile); a.lifted = a.lifted || []; if (!a.lifted.includes(L.k)) a.lifted.push(L.k);
     L.lift = 1;
-    if (L.k === rightLeaf()) { a.found = true; say(...STORY_LINES.leafFound); } else { say(...STORY_LINES.leafFrog); G.fx && G.fx(L.x, L.pivot.position.y + .4, L.z, '🐸'); }
+    // (the right leaf is chosen once per child, so a new day never moves it under a leaf already lifted)
+    if (a.right == null) a.right = rightLeaf();
+    if (L.k === a.right || a.lifted.length >= leaves.length) { a.found = true; say(...STORY_LINES.leafFound); } else { say(...STORY_LINES.leafFrog); G.fx && G.fx(L.x, L.pivot.position.y + .4, L.z, '🐸'); }
     save();
   };
   for (const L of leaves) G.interactables.push({ id: 'story_leaf' + L.k, x: L.x, z: L.z, r: 1.6, icon: '🪷', label: () => T('Lift the leaf', 'Lật lá sen'),
@@ -156,8 +158,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
     const p = pad(`<p>${T('Pull the rope to lift the lantern up!', 'Kéo dây để đưa đèn lồng lên cao!')}</p><div class="hp-slot" data-hp="rope"><b></b></div>`);
     say(...STORY_LINES.rope);
     const r = slot(p.querySelector('[data-hp=rope]'));
-    await frames(() => { rope.position.y = y0 + (y1 - y0) * r.v; return r.v > .92; });
-    p.remove(); scene.remove(rope);
+    try { await frames(() => { rope.position.y = y0 + (y1 - y0) * r.v; return r.v > .92; }, p); } finally { p.remove(); scene.remove(rope); }
   }
 
   // ---------- buttons the story puts in the valley (only for the child on that step) ----------
@@ -172,13 +173,13 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
           // (Studio switch shortTalk) one line instead of a speech, when the step has a short version
           const lines = featureOn('shortTalk', true) && s.talk.short ? s.talk.short : s.talk.lines;
           await dialog(s.talk.who, lines.map(([en, vi]) => [fill(en, p), fill(vi, p), unnamed(en), unnamed(vi)]));
-          if (s.tale_id) { const { MORE_TALES } = await import('./talesdata.js'); const tl = MORE_TALES.find(x => x.id === s.tale_id); const ok = tl ? await openTheatre(tl, { name: p.name }) : true; G.paused = false; if (ok) finish(h, s.id); return; }
+          if (s.tale_id) { let ok = true; try { const { MORE_TALES } = await import('./talesdata.js'); const tl = MORE_TALES.find(x => x.id === s.tale_id); ok = tl ? await openTheatre(tl, { name: p.name }) : true; } finally { G.paused = false; } if (ok) finish(h, s.id); return; }
           G.paused = false; finish(h, s.id);
         } });
     }
     if (s.find) G.interactables.push({ id: 'story_' + s.id, x: lanternAt[0], z: lanternAt[1], r: 2.6, icon: '🏮', label: () => T('Pick up the lantern', 'Nhặt đèn lồng lên'), visible: h => isOn(h.profile, s.id) && (!actions() || !s.leaves || revealed(h.profile)),
       act: h => { st(h.profile).carrying = ch.id; say(`You found it! ${COMPANIONS[st(h.profile).companion || 'firefly'].name} will carry the lantern.`, `Tìm thấy rồi! ${COMPANIONS[st(h.profile).companion || 'firefly'].name} sẽ mang đèn lồng giúp con.`); finish(h, s.id); } });
-    if (s.hang) G.interactables.push({ id: 'story_' + s.id, x: front[0], z: front[1], r: 3.4, icon: '🏮', label: () => T('Hang the lantern', 'Treo đèn lồng'), visible: h => isOn(h.profile, s.id),
+    if (s.hang) G.interactables.push({ id: 'story_' + s.id, x: front[0], z: front[1], r: 3.4, icon: '🏮', label: () => T('Hang the lantern', 'Treo đèn lồng'), visible: h => isOn(h.profile, s.id) && !hanging.has(h.profile),
       act: h => hang(h, ch, s) });
   }
   // the village well (and anything else a step waits for): note it when the child uses it
@@ -192,10 +193,17 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
     for (const h of G.heroes) { const c = current(h.profile); if (c && c.s.game && c.s.game.includes(gid)) finish(h, c.s.id); }
   });
 
+  const hanging = new Set();
   async function hang(h, ch, s) {
     const p = h.profile, L = st(p);
+    // (once: the rope panel lets the valley run, so ▶ Go or the action key could start it again)
+    if (hanging.has(p)) return; hanging.add(p);
+    try { await hangOnce(h, ch, s, p, L); } finally { hanging.delete(p); }
+  }
+  async function hangOnce(h, ch, s, p, L) {
     G.paused = true;
-    if (actions()) await hangByHand();
+    // (✕ on the rope panel: nothing is lost, the child can hang it later)
+    if (actions()) try { await hangByHand(); } catch (e) { G.paused = false; if (e === QUIT) return; throw e; }
     const tl = STORY_TALES['lantern_' + ch.id];
     if (tl) await openTheatre(storyTale(tl, p), { name: p.name });
     L.carrying = null; L.chapters[ch.id] = true; L.done[s.id] = true;

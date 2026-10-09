@@ -75,7 +75,8 @@ export function faceTexture(look, photo) {
 export const OUTLINED = [];
 const avatarCache = {};
 export function avatarURL(p) {
-  if (p.photo) return p.photo;
+  // (audit, 9 Oct) the result goes into <img src="…">: only a plain base64 picture or a simple file path of our own
+  if (p.photo && (/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+={0,2}$/.test(p.photo) || /^[\w\/.-]+\.(png|jpe?g|webp)$/i.test(p.photo))) return p.photo;
   const k = p.look.hair + p.look.skin;
   if (!avatarCache[k]) { const c = document.createElement('canvas'); c.width = c.height = 160; drawDefaultFace(c.getContext('2d'), 160, p.look); avatarCache[k] = c.toDataURL(); }
   return avatarCache[k];

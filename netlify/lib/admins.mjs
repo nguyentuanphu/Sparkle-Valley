@@ -55,7 +55,8 @@ export async function fromCookie(S, pw, c) {
 export function allowed(role, api, post) {
   if (role === 'owner') return true;
   if (/^admins\//.test(api) && api !== 'admins/me') return false;
-  if (role === 'editor') return true;
+  // (audit, 9 Oct) putting code live (merging a pull request, bringing back an old deploy) stays with the owner
+  if (role === 'editor') return !(post && ['github/merge', 'site/restore'].includes(api));
   if (post) return api === 'admins/me';
   return ['info', 'whoami', 'content', 'players', 'inbox'].includes(api);
 }

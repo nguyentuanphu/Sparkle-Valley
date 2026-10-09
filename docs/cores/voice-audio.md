@@ -7,6 +7,7 @@ a fallback, the family's own voice lines, music and tunes, sound effects, and si
 - `js/voice.js`, `js/packhash.js`, `js/recorder.js`, `js/audio.js` (tunes, instruments, the Music player)
 - The pack: `voices/` (manifest and mp3 files), `tools/make-voice-pack.mjs`, `tools/voice-lines.mjs`, `tools/voice-harvest.mjs`, `tools/voice-extra.json`
 - Family music files' format: `content/music/` (uploads come through Studio)
+- Vietnamese words inside English lines: `js/viwords.js`
 
 ## Making voices
 `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt node tools/make-voice-pack.mjs --engine azure`

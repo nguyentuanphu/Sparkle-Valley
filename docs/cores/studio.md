@@ -9,6 +9,7 @@ villagers, Simple screen, music, map, real photos, play time, voices, ads, analy
 - `netlify/functions/studio.mjs`, `netlify/lib/admins.mjs`
 - `js/custom.js` (how the game reads `content/custom.json`) with Kid UI and Play
 - `tests/studio-check.mjs`
+- In-game ads made in Studio: `js/ads.js` (off unless Studio turns them on)
 
 ## How saving works (owner, round P)
 Online, a save waits on the website (Netlify Blobs store `studio-pending`) and is read back at once; Publish (N)

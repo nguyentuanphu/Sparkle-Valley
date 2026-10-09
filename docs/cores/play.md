@@ -12,6 +12,7 @@ Hard), stars, quests, rewards, co-op quests and the games played together online
 - Progress and rewards: `js/data.js` (items, quests, stickers), `js/money.js`, `js/passport.js`, `js/placebook.js`, `js/familycards.js`, `js/secrets.js`, `js/coop.js`, `js/twinchests.js`, `js/claims.js`, `js/trade.js`
 - Games with friends: `js/netgames.js` (the game rules; the connection is Online's)
 - The Games hub lists in `js/ui.js` (`HUB`, `openGamesHub` contents) together with Kid UI
+- Little ones' play (round R): `js/kidplay.js` (the companion growing, the hat goal, the daily gift; Studio group "For little ones")
 
 ## Hard rules (§9.6)
 ACT-001 (under-5 mode never punishes: no losing, no timers, no reading), ACT-002 (every game: both languages, a how-to

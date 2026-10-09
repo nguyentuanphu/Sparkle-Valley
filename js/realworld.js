@@ -64,7 +64,9 @@ async function photoURL(p) {
 // media-list), so the photos now come from Wikipedia's main API: the article's pictures with their sizes, captions,
 // photographers and licences in one request (generator=images + imageinfo), the article's own main picture first.
 // The old list is still tried when the main API gives nothing.
-const txt = h => { const d = document.createElement('div'); d.innerHTML = String(h || ''); return d.textContent.replace(/\s+/g, ' ').trim(); };
+// (audit, 9 Oct) captions come from Wikimedia as HTML: read as an inert document, so nothing in them can run
+const plain = h => new DOMParser().parseFromString(String(h || ''), 'text/html').body.textContent || '';
+const txt = h => plain(h).replace(/\s+/g, ' ').trim();
 async function apiPhotos(lang, title) {
   const base = `https://${lang}.wikipedia.org/w/api.php?format=json&formatversion=2&origin=*&redirects=1&titles=${encodeURIComponent(title)}`;
   const [lead, all] = await Promise.all([
@@ -116,7 +118,7 @@ async function creditFor(file) {
   try {
     const r = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=extmetadata&titles=${encodeURIComponent(file)}`);
     const j = await r.json(), pg = Object.values((j.query || {}).pages || {})[0], md = pg && pg.imageinfo && pg.imageinfo[0].extmetadata || {};
-    const txt = h => { const d = document.createElement('div'); d.innerHTML = String(h || ''); return d.textContent.trim().slice(0, 80); };
+    const txt = h => plain(h).trim().slice(0, 80);
     return [txt(md.Artist && md.Artist.value), txt(md.LicenseShortName && md.LicenseShortName.value)].filter(Boolean).join(' · ');
   } catch (e) { return ''; }
 }
