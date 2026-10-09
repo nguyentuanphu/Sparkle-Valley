@@ -868,6 +868,8 @@ await check('chapter2', async () => {
       p.lanterns = { companion: 'firefly', done: { p_owl: true }, chapters: { ch1: true } };
       for (const s of ['c1_village', 'c1_nam', 'c1_well', 'c1_teo', 'c1_tale', 'c1_find', 'c1_hang']) p.lanterns.done[s] = true;
       G.lanterns.companions.sync(); }, age);
+    // (chapter 2's places load once a child has finished chapter 1, not at start-up)
+    const lazy = await pg.evaluate(() => !__sv.lanterns.hanoi); await pg.evaluate(() => __sv.lanterns.loadHanoi()); await w(300);
     seen.push(await q());
     // walking into Hà Nội is not enough: follow the lantern lights
     await pg.evaluate(() => __sv.heroes[0].place(4, -60)); await w(2500); await calm();
@@ -947,6 +949,7 @@ await check('chapter2', async () => {
       return bad; });
     const want = age === 'big' ? ['L_c2_fly', 'L_c2_tam', 'L_c2_teo', 'L_c2_job', 'L_c2_vanmieu', 'L_c2_tale', 'L_c2_find', 'L_c2_hang'] : ['L_c2_fly', 'L_c2_teo', 'L_c2_vanmieu', 'L_c2_tale', 'L_c2_find', 'L_c2_hang'];
     want.forEach((id, i) => { if (seen[i] !== id) out.push(`step ${i + 1} was ${seen[i]}, expected ${id}`); });
+    if (!lazy) out.push('chapter 2 was loaded at start-up');
     if (!lightsWaited) out.push('walking into Hà Nội finished the step before the lights were followed');
     if (!teoBtn || teoChoices !== 3) out.push(`Tèo's challenge did not offer Play, How to play and Later (${teoChoices})`);
     if (otherGame !== 'L_c2_teo') out.push('the other age group\'s game finished Tèo\'s challenge');

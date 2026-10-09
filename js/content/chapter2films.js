@@ -6,6 +6,7 @@
 import { SETS as L, PROPS as Pp, LOOK, G3 } from '../film.js';
 import { THREE } from '../gfx.js';
 import { FILMS } from './films.js';
+import './chapter2text.js'; // (the film's words, STORY_TALES.lantern_ch2)
 import { buildLantern } from '../dinh.js';
 import { buildCompanion } from '../companion.js';
 import { buildBridge, buildBridgeLights, buildStarLantern, buildLionHead, buildMooncakes, bridgeY } from './chapter2props.js';

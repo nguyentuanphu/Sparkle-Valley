@@ -84,11 +84,13 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   bobbing or flutter. Studio switch `surprises`.
 
 ## The lantern story, Chapter 2: Hà Nội (owner's go, 10 Oct AEST; brief `tasks/play-chapter2.md`)
-- **Files:** steps, lines and the festival film's words in `js/content/chapters.js` (`ch2`, `STORY_LINES`, `COUNT`,
-  `STORY_TALES.lantern_ch2`); the runner `js/lanterns.js` (each chapter's landmark, lantern spot, rope and lights in
+- **Files:** the steps in `js/content/chapters.js` (`ch2`); their words, the lines said while doing them, `COUNT` and the
+  festival film's words in `js/content/chapter2text.js` (loaded with the places, so the start-up download stays under
+  PERF-001); the runner `js/lanterns.js` (each chapter's landmark, lantern spot, rope and lights in
   `places`); Hà Nội's pieces in `js/content/chapter2hanoi.js`; the star lantern, stone turtle, lion head, mooncakes and
   bridge in `js/content/chapter2props.js`; the festival film in `js/content/chapter2films.js` (loaded only when the
-  lantern is hung); the companion's new trick in `js/companion.js` (`lead`). Studio switch `story_ch2`. Check `chapter2`.
+  lantern is hung); the companion's new trick in `js/companion.js` (`lead`). Chapter 2's code and words load when a child playing has found
+  chapter 1's lantern. Studio switch `story_ch2`. Check `chapter2`.
 - **Steps:** follow 3 lantern lights to Hà Nội; say hello to Cô Tam at Văn Miếu (big kids); Tèo's challenge (big kids
   Ô ăn quan, with Play, How to play (the guide film) and Later; under-5s Oẳn tù tì, which they always win); help Bà Lan
   at the bún chả stall by hand: hold to fan the grill, tap three bowls (big kids); Cô Tam's lesson: count the stone

@@ -15,7 +15,8 @@ import { pic } from '../art.js';
 import { pad, frames, holdable, until } from '../handpad.js';
 import { buildLantern } from '../dinh.js';
 import { buildStarLantern, buildStoneTurtle, buildBridgeLights, bridgeY } from './chapter2props.js';
-import { STORY_LINES, COUNT } from './chapters.js';
+import { STORY_LINES } from './chapters.js';
+import { COUNT } from './chapter2text.js'; // (also adds the chapter's words to STORY_LINES)
 
 const LOOKS = {
   teo: { style: 'shirt', color: '#ffb52e', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'spiky', skin: '#f6c7a5', glider: 0 },
