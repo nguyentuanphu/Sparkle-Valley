@@ -1143,7 +1143,11 @@ await check('hoilang', async () => {
     // close what the world opened by itself, like the harness's clear(), then let the festival clock tick)
     // (the HUD has one toast line and the newest message takes it, e.g. the daily gift hint: keep every toast shown)
     const toasts = [], tEl = document.querySelector('.hud .htoast'), mo = new MutationObserver(() => toasts.push(tEl.textContent)); mo.observe(tEl, { childList: true, characterData: true, subtree: true });
-    at('2026-10-10T09:02'); await w(800); document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false; await w(2500);
+    at('2026-10-10T09:02'); await w(800);
+    // (the world rests while a pop-up is open, e.g. the passport stamp shown on arriving, so the festival clock does not
+    // tick: keep closing what opens by itself until the child has been told, for up to 8 s)
+    for (let k = 0; k < 16 && !toasts.some(x => /festival|Hội làng/.test(x)); k++) { document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false; await w(500); }
+    await w(1000);
     out.on = G.hoilang.clock().on; out.active = G.hoilang.active() === F;
     out.walkers = (G.hoilang.walkers() || []).filter(A => A.root.visible).length; out.crowd = (G.hoilang.crowd() || []).filter(A => A.root.visible).length;
     mo.disconnect(); out.toast = toasts.find(x => /festival|Hội làng/.test(x)) || toasts.join(' | ');
