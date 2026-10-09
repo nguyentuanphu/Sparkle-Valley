@@ -145,7 +145,7 @@ Measured in the test browser (390 px phone; the slow-phone figures use a 4x slow
 - **Checks:** `films` also plays the story films.
 
 ## Owner's decisions, 9 Oct (AEST): the family and privacy
-- **The yard family:** bà Huệ and ông Nghi brought chú Thuận, chú Trung, O Thủy, anh Quân, chú Hùng, chú Sơn Diệu and chú Sơn Cường from Hà Tĩnh; bà Huệ also brought cậu Tâm and chị Huyền. The other Two Homes Street families (O Thương and dượng Dũng, Cô Tam's family, Bác 2/3/4, anh Ba) are not part of it. In the yard story (owner: "you choose"): chú Thuận drives the dump truck, chú Hùng builds, anh Quân digs; chú Trung, O Thủy, chú Sơn Diệu and chú Sơn Cường come on the coach too.
+- **The yard family:** bà Huệ and ông Nghi brought chú Thuận, chú Trung, O Thủy, anh Quân, chú Hùng, chú Sơn Diệu and chú Sơn Cường from Hà Tĩnh; bà Huệ also brought cậu Tâm and chị Huyền. The other Two Homes Street families (O Thương and dượng Dũng, Cô Tam's family, Bác 2/3/4, anh Ba) are not part of it. In the yard story (owner: "you choose"): chú Thuận drives the dump truck, chú Hùng builds, anh Quân digs; chú Trung, O Thủy, chú Sơn Diệu and chú Sơn Cường come on the coach too. Cậu Tâm hauls sand and stone like chú Thuận (mợ An is his wife); chị Huyền is a niece who works at a school, her husband is anh Trọng: the three come to the house-warming meal.
 - **Privacy** (review: claude.ai artifact "Sparkle Valley Privacy Review", 9 Oct):
   - Family photos: **family-only** (stored privately, loaded only by the family's devices with a family code from Studio, random file names).
   - Play report: **keep as is** (on by default, with first names; Grown-ups can switch it off).

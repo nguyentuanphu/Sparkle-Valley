@@ -6,7 +6,8 @@
 //
 // The family (owner, 9 Oct): bà Huệ and ông Nghi brought chú Thuận, chú Trung, O Thủy, anh Quân, chú Hùng, chú Sơn Diệu and
 // chú Sơn Cường from Hà Tĩnh (bà Huệ also brought cậu Tâm and chị Huyền). Three of them take the yard's jobs here;
-// the others come on the coach too (COACH).
+// the others come on the coach too (COACH). Cậu Tâm hauls sand and stone like chú Thuận (his wife is mợ An); chị Huyền,
+// a niece, works at a school, and her husband is anh Trọng: the three come to the house-warming meal (GUESTS).
 export const RELATIVES = [
   { id: 'rel_driver', name: 'Chú Thuận', job: 0, look: ['shirt', '#4a7ab8', '#2a2a2a', 'short'],
     hello: ['I can drive anything with wheels! Sand, stones, bricks: I carry them all.', 'Chú lái được mọi thứ có bánh xe! Cát, đá, gạch: chú chở hết.'] },
@@ -17,6 +18,12 @@ export const RELATIVES = [
 ];
 // everyone else who came on the coach (they stand by it and wave)
 export const COACH = ['Chú Trung', 'O Thủy', 'Chú Sơn Diệu', 'Chú Sơn Cường'];
+// who comes to the house-warming meal at the Huệ Nghi shop, and what each says
+export const GUESTS = [
+  { name: 'Cậu Tâm', look: ['shirt', '#5b7fbf', '#2a2a2a', 'short'], line: ['Chú Thuận and I both carry sand and stone. Next time, ride with me in my blue truck!', 'Cậu với chú Thuận đều chở cát đá. Lần sau con đi xe tải xanh với cậu nha!'] },
+  { name: 'Chị Huyền', look: ['aodai', '#f2c4d8', '#2a2a2a', 'long'], line: ['I work at the school. When ông bà brought me here, they gave me a home to start from. Now we help each other.', 'Chị làm ở trường học. Hồi ông bà đưa chị vào, ông bà cho chị chỗ ở để bắt đầu. Giờ mọi người giúp nhau.'] },
+  { name: 'Anh Trọng', look: ['shirt', '#4a8a6a', '#2a2a2a', 'short'], line: ['I am chị Huyền\'s husband. Well done for helping build the house!', 'Anh là chồng chị Huyền. Con giỏi lắm, đã giúp xây nhà!'] }
+];
 export const JOBS = [['Driver', 'Lái xe'], ['Builder', 'Thợ xây'], ['Digger operator', 'Lái máy xúc']];
 export const ANH2 = { id: 'anh2', name: 'Anh 2', look: ['shirt', '#e8a83a', '#2a2a2a', 'short'] };
 
