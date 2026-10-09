@@ -8,8 +8,11 @@ import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt, cur, spoken as money } from './money.js';
 import { el, esc, $, clamp, wait, local } from './util.js';
+import { familyCode, setFamilyCode, familyPhotoCount, featureOn } from './custom.js';
+import { DEFAULT_OUTFITS, outfitOf } from './content/shop.js'; // (round S, owner plan 8 Oct) two starting outfits when the clothes shop is on
 import { avatarURL, applyNpcFaces } from './avatar.js';
-import { confetti } from './popups.js';
+import { confetti, holdButton } from './popups.js';
+export { holdButton }; // (round R privacy, 9 Oct) moved to popups.js so the real-place window can ask a grown-up too
 import { placeBookHTML, bindPlaceBook } from './placebook.js';
 import { familyCardsHTML, bindFamilyCards } from './familycards.js';
 import { openReport } from './report.js';
@@ -25,7 +28,7 @@ import { openHowTo } from './howto.js';
 import { WILD } from './gather.js';
 import { snackOf, eatSnack } from './snacks.js';
 import { saveToDevice, savesByShare } from './photos.js';
-import { extrasHTML, bindExtras } from './extras.js';
+import { extrasHTML, bindExtras, privacyHTML } from './extras.js';
 import { canListen } from './listen.js';
 import { installButton } from './install.js';
 import { BUILD } from './build.js';
@@ -155,16 +158,6 @@ export function showWho(onGo) {
   };
   draw();
 }
-export function holdButton(b, fn) {
-  let t = null, start = 0, raf = 0;
-  const ring = b.querySelector('.ring');
-  const tick = () => { const k = clamp((performance.now() - start) / 1600, 0, 1); ring.style.setProperty('--p', k * 100 + '%'); if (k >= 1) { stop(); fn(); } else raf = requestAnimationFrame(tick); };
-  const stop = () => { cancelAnimationFrame(raf); ring.style.setProperty('--p', '0%'); t = null; };
-  b.addEventListener('pointerdown', e => { e.preventDefault(); start = performance.now(); t = 1; tick(); });
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => b.addEventListener(k, () => { if (t) stop(); }));
-  b.addEventListener('keydown', e => { if (e.key === 'Enter') fn(); });
-}
-
 // ---------- Rename characters ----------
 function openRenamer(after) {
   const m = modal('renamer', ''), card = m.querySelector('.card');
@@ -273,13 +266,17 @@ export function openGrownups(after) {
       <button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
       <h2>${T('Grown-ups', 'Phụ huynh')} <small class="buildtag">${T('Build', 'Bản')} ${BUILD}</small></h2>
       <div class="g-install"></div>
+      ${privacyHTML()}
       <h3>${T('Language', 'Ngôn ngữ')}</h3>${flagBtns()}${learnBtns()}
       <label class="tog"><input type="checkbox" id="gBil" ${settings.bilingual ? 'checked' : ''}> ${T('Bilingual voice: also say everything in the other language', 'Giọng song ngữ: nói thêm bằng ngôn ngữ còn lại')}</label>
             <details class="gsec" data-sec="players" ${gOpen.has('players') ? 'open' : ''}><summary><span class="gi">👧</span><b>${T('Children', 'Các con')}</b></summary><div class="gbody">
 
       <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(nm(p.name))}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn ghost" data-rep="${p.id}" aria-label="${T('Play report', 'Báo cáo chơi')}">${pic('📊')}</button><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
       <button class="btn wide" id="gAdd">+ ${T('Add a player', 'Thêm người chơi')}</button>
-      
+      <h3>🔒 ${T('Family photos', 'Ảnh gia đình')}</h3>
+      <p class="note">${T('Photo faces and family postcards are private. Type the family code from Sparkle Studio (Family → Family code) once on this device to see them.', 'Ảnh khuôn mặt và bưu thiếp gia đình được giữ riêng. Gõ mã gia đình từ Sparkle Studio (Gia đình → Mã gia đình) một lần trên máy này để xem.')}</p>
+      <div class="vrow"><input type="text" id="gFam" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="ABCD-EFGH-JKMN" value="${familyCode() ? '••••' + esc(familyCode().slice(-4)) : ''}"><button class="btn" id="gFamSave">${T('Save', 'Lưu')}</button></div>
+      <p class="note" id="gFamRes">${(() => { const c = familyPhotoCount(); return familyCode() ? T(`${c.have} of ${c.of} family photos on this device.`, `${c.have}/${c.of} ảnh gia đình trên máy này.`) : T('No family code on this device: family photos are not shown.', 'Máy này chưa có mã gia đình: ảnh gia đình không hiện.'); })()}</p>
       </div></details>
       <details class="gsec" data-sec="sound" ${gOpen.has('sound') ? 'open' : ''}><summary><span class="gi">🔊</span><b>${T('Sound and voices', 'Âm thanh và giọng nói')}</b></summary><div class="gbody">
       <div class="toggles">
@@ -325,8 +322,8 @@ export function openGrownups(after) {
       </div></details>
       <details class="gsec" data-sec="money" ${gOpen.has('money') ? 'open' : ''}><summary><span class="gi">💰</span><b>${T('Money and farm', 'Tiền và nông trại')}</b></summary><div class="gbody">
 <h3>${T('Money', 'Tiền tệ')}</h3>
-      <div class="seg cur"><button data-c="AUD" class="${settings.currency === 'AUD' ? 'on' : ''}">🇦🇺 AUD $</button><button data-c="VND" class="${settings.currency === 'VND' ? 'on' : ''}">🇻🇳 VND đ</button></div>
-      <p class="note">${T('Prices and the market game switch currency. 10c = 2.000đ in this game.', 'Giá cả và trò chơi đi chợ sẽ đổi theo tiền tệ. Trong game, 10 xu Úc = 2.000đ.')}</p>
+      <div class="seg cur"><button data-c="auto" class="${!settings.curPinned ? 'on' : ''}">${T('Same as the language', 'Theo ngôn ngữ')}</button><button data-c="AUD" class="${settings.curPinned && settings.currency === 'AUD' ? 'on' : ''}">🇦🇺 AUD $</button><button data-c="VND" class="${settings.curPinned && settings.currency === 'VND' ? 'on' : ''}">🇻🇳 VND đ</button></div>
+      <p class="note">${T('Prices and the money games use this money. Same as the language: đồng in Vietnamese, dollars in English. 10c = 2.000đ in this game.', 'Giá cả và các trò chơi tiền dùng loại tiền này. Theo ngôn ngữ: tiếng Việt dùng đồng, tiếng Anh dùng đô la Úc. Trong game, 10 xu Úc = 2.000đ.')}</p>
       <div class="field"><label>💰 ${T('Coins in the piggy bank', 'Tiền trong heo đất')}: <b id="gCoins">${fmt(farm.coins)}</b></label>
         <div class="actions coinadd">${[100, 500, 2000].map(n => `<button class="btn" data-add="${n}">+ ${fmt(n)}</button>`).join('')}</div></div>
       <p class="note">${T('Ran out? Top up the coins the whole family shares (for the shop, market and stalls).', 'Hết tiền? Nạp thêm tiền chung của cả nhà (dùng ở cửa hàng, chợ và các sạp).')}</p>
@@ -337,6 +334,9 @@ export function openGrownups(after) {
       </div></details>
       <details class="gsec" data-sec="online" ${gOpen.has('online') ? 'open' : ''}><summary><span class="gi">🌐</span><b>${T('Playing online', 'Chơi trực tuyến')}</b></summary><div class="gbody">
 
+      <label class="tog"><input type="checkbox" id="gOnline" ${settings.online ? 'checked' : ''}> <b>${T('Play with friends online', 'Chơi cùng bạn qua mạng')}</b></label>
+      <p class="note">${T('Off until you turn it on. While it is off the game makes no online connection: no rooms, no friends’ status, no invitations.', 'Tắt cho đến khi bạn bật. Khi tắt, trò chơi không kết nối mạng để chơi cùng: không phòng, không trạng thái bạn bè, không lời mời.')}</p>
+      <h3>👥 ${T('Who’s here', 'Ai đang ở đây')}</h3><div class="whohere" id="gWho"><p class="note">…</p></div>
       <p class="note">${T('Online play uses the free PeerJS service to connect two devices directly. Voice goes straight between the devices and is never recorded.', 'Chơi trực tuyến dùng dịch vụ miễn phí PeerJS để nối hai máy trực tiếp. Giọng nói đi thẳng giữa hai máy và không bao giờ được ghi lại.')}</p>
       <label class="tog"><input type="checkbox" id="gAutoMeet" ${settings.autoMeet !== false ? 'checked' : ''}> ${T('Tell me when a friend on the list starts playing (with buttons to invite them or go to their room; nobody is put in a room by themselves)', 'Báo khi một bạn trong danh sách bắt đầu chơi (có nút mời bạn hoặc sang phòng bạn; không ai tự bị đưa vào phòng)')}</label>
       <p class="note">${T('If a friend far away stays on “Connecting…”, your two networks need a relay (TURN server). Free public relays are tried automatically. For a reliable one, make a free account at a TURN service (for example metered.ca), then paste its credentials link here, or a turn: address with its name and password. Both devices need the same relay.', 'Nếu bạn ở xa cứ “Đang kết nối…” mãi, hai mạng cần một máy chủ trung chuyển (TURN). Trò chơi tự thử các máy chủ miễn phí công cộng. Để ổn định hơn, hãy tạo tài khoản miễn phí ở một dịch vụ TURN (ví dụ metered.ca), rồi dán đường link lấy thông tin vào đây, hoặc địa chỉ turn: kèm tên và mật khẩu. Cả hai máy cần dùng cùng máy chủ.')}</p>
@@ -360,6 +360,7 @@ export function openGrownups(after) {
       <p class="note">${T('The file stays in your own Drive or iCloud: Sparkle Valley has no server and never sees it.', 'Tệp nằm trong Drive hoặc iCloud của bạn: Thung Lũng Lấp Lánh không có máy chủ và không bao giờ xem tệp này.')}</p>
       
       </div></details>
+      ${window.__sv && window.__sv.parents ? window.__sv.parents.grownupsHTML(gOpen.has('family')) : '' /* (round S) family missions, week note, cards, dance, bedtime, birthdays: js/parents.js */}
       <details class="gsec" data-sec="note" ${gOpen.has('note') ? 'open' : ''}><summary><span class="gi">📜</span><b>${T('Note for grown-ups', 'Lưu ý cho người lớn')}</b></summary><div class="gbody">
       <ul class="gnote"><li>${T('Sparkle Valley is a free family game made for fun and learning. It is provided as it is, without any promise or warranty.', 'Thung Lũng Lấp Lánh là trò chơi gia đình miễn phí, làm ra để vui chơi và học hỏi. Trò chơi được cung cấp như hiện có, không kèm bất kỳ cam kết hay bảo đảm nào.')}</li><li>${T('A grown-up is responsible for the child’s play: when and how long they play, online play and chat, and the device itself.', 'Người lớn chịu trách nhiệm về việc chơi của trẻ: chơi lúc nào, chơi bao lâu, chơi trực tuyến, trò chuyện, và cả thiết bị.')}</li><li>${T('Games the valley suggests playing for real (tug of war, jump rope, hopscotch, đá cầu, kites, cooking…) need a grown-up watching, a safe place and the right equipment.', 'Các trò chơi được gợi ý chơi ngoài đời (kéo co, nhảy dây, nhảy lò cò, đá cầu, thả diều, nấu ăn…) cần có người lớn trông, chỗ chơi an toàn và dụng cụ phù hợp.')}</li><li>${T('Take a break every 20 to 30 minutes, and stop if a child feels unwell (tired eyes, dizziness, motion sickness).', 'Nghỉ giải lao sau mỗi 20 đến 30 phút, và dừng chơi nếu trẻ thấy khó chịu (mỏi mắt, chóng mặt, say xe).')}</li><li>${T('Places, festivals, food and history are told simply for children and may not be complete or exact.', 'Địa danh, lễ hội, món ăn và lịch sử được kể đơn giản cho trẻ, có thể chưa đầy đủ hoặc chưa chính xác hoàn toàn.')}</li><li>${T('Online friends, chat and real photos come from other people and services; the makers are not responsible for their content.', 'Bạn bè trực tuyến, trò chuyện và ảnh thật đến từ người khác và các dịch vụ khác; người làm game không chịu trách nhiệm về nội dung đó.')}</li><li>${T('As far as the law allows, the makers are not responsible for any loss, injury or damage from using the game.', 'Trong phạm vi pháp luật cho phép, người làm game không chịu trách nhiệm về bất kỳ mất mát, thương tích hay thiệt hại nào do việc sử dụng trò chơi.')}</li></ul>
       </div></details>
@@ -370,13 +371,31 @@ export function openGrownups(after) {
     bindPackStatus(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelector('.x').onclick = card.querySelector('#gDone').onclick = () => { m.close(); after && after(); };
     jumpNav(card, card.querySelector('h2'));
-    card.querySelectorAll('.seg.cur button').forEach(b => b.onclick = () => { settings.currency = b.dataset.c; saveSettings(); draw(); });
+    card.querySelectorAll('.seg.cur button').forEach(b => b.onclick = () => { if (b.dataset.c === 'auto') settings.curPinned = false; else { settings.currency = b.dataset.c; settings.curPinned = true; } saveSettings(); draw(); });
     card.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const n = +b.dataset.add; if (window.__sv && window.__sv.addCoins) window.__sv.addCoins(n); else { farm.coins += n; saveFarm(); } SFX.coin ? SFX.coin() : SFX.chime(); card.querySelector('#gCoins').textContent = fmt(farm.coins); toast(T('Coins added: ', 'Đã thêm: ') + fmt(n)); });
     card.querySelectorAll('.seg.cam button').forEach(b => b.onclick = () => { settings.camMode = b.dataset.c; saveSettings(); draw(); });
     card.querySelectorAll('.seg.cnt button').forEach(b => b.onclick = () => { settings.countPlayers = b.dataset.c === '1'; saveSettings(); draw(); });
     card.querySelectorAll('.seg.q button').forEach(b => b.onclick = () => { settings.quality = b.dataset.q; saveSettings(); draw(); toast(T('Restart the game to change graphics.', 'Mở lại trò chơi để đổi đồ họa.')); });
     const chk = (id, k, f) => card.querySelector(id).onchange = e => { settings[k] = e.target.checked; saveSettings(); f && f(); };
     card.querySelector('#gAutoMeet').onchange = e => { settings.autoMeet = e.target.checked; saveSettings(); };
+    // (round R privacy, 9 Oct, owner) online play: off until a grown-up turns it on here (Grown-ups opens only with press and hold)
+    card.querySelector('#gOnline').onchange = async e => {
+      settings.online = e.target.checked; saveSettings();
+      const { Net } = await import('./net.js');
+      if (!settings.online) { Net.close(true); Net.friendsStop(); Net.stopListening(); } else if (window.__sv && window.__sv.listenFriends) window.__sv.listenFriends();
+      drawWho();
+    };
+    // who is in the room now: name, friend or new, direct or cloud, when they came; the room's starter can remove someone
+    const drawWho = async () => {
+      const box = card.querySelector('#gWho'); if (!box) return;
+      const { Net } = await import('./net.js'), list = Net.who();
+      if (!document.body.contains(box)) return;
+      const when = t => t ? new Date(t).toLocaleTimeString(settings.lang === 'vi' ? 'vi-VN' : 'en-AU', { hour: 'numeric', minute: '2-digit' }) : '';
+      box.innerHTML = !settings.online ? `<p class="note">${T('Online play is off.', 'Chơi qua mạng đang tắt.')}</p>` : !list.length ? `<p class="note">${T('Not in a room right now.', 'Hiện không ở trong phòng nào.')}</p>`
+        : list.map(m => `<div class="prow whorow"><div class="pw"><b>${esc(nm(m.name || T('Someone', 'Một bạn')))}${m.me ? ' (' + T('this device', 'máy này') + ')' : ''}</b><small>${m.me ? (m.host ? T('started the room', 'chủ phòng') : T('joined', 'đã vào')) : (m.host ? T('started the room', 'chủ phòng') + ' · ' : '') + (m.friend ? (m.known ? T('friend (proven)', 'bạn (đã xác nhận)') : T('friend', 'bạn')) : T('new', 'người mới')) + ' · ' + (m.via === 'cloud' ? T('cloud relay', 'qua mạng đám mây') : T('direct', 'trực tiếp'))}${m.at ? ' · ' + T('since', 'từ') + ' ' + when(m.at) : ''}</small></div>${m.canRemove ? `<button class="btn danger" data-whokick="${esc(m.id)}">🚪 ${T('Remove', 'Mời ra')}</button>` : ''}</div>`).join('');
+      box.querySelectorAll('[data-whokick]').forEach(b => b.onclick = () => { if (confirm(T('Remove this player from the room?', 'Mời bạn này ra khỏi phòng?'))) { Net.kick(b.dataset.whokick); setTimeout(drawWho, 600); } });
+    };
+    drawWho();
     const turnIn = card.querySelector('#gTurn');
     turnIn.oninput = () => { settings.turnUrl = turnIn.value.trim(); saveSettings(); card.querySelector('#gTurnCred').classList.toggle('vh', !/^turns?:/i.test(settings.turnUrl)); };
     card.querySelector('#gTurnUser').oninput = e => { settings.turnUser = e.target.value; saveSettings(); };
@@ -406,12 +425,17 @@ export function openGrownups(after) {
     });
     card.querySelectorAll('[data-rep]').forEach(b => b.onclick = () => { SFX.tap(); openReport(profiles.find(p => p.id === b.dataset.rep)); });
     card.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => openEditor(profiles.find(p => p.id === b.dataset.ed), () => { draw(); after && after(); }));
+    // (round R privacy) the family code: kept on this device only (never in a backup); empty removes it and the photos
+    card.querySelector('#gFamSave').onclick = async () => { const v = card.querySelector('#gFam').value.trim(), out = card.querySelector('#gFamRes'); if (/^•/.test(v)) return; out.textContent = '…';
+      const r = await setFamilyCode(v).catch(() => ({ ok: false }));
+      out.textContent = r.cleared ? T('Family code removed from this device.', 'Đã xóa mã gia đình khỏi máy này.') : r.bad ? T('That code is not right: check it in Sparkle Studio.', 'Mã chưa đúng: xem lại trong Sparkle Studio.') : r.ok ? T(`Saved: ${r.n || 0} of ${r.of || 0} family photos on this device.`, `Đã lưu: ${r.n || 0}/${r.of || 0} ảnh gia đình trên máy này.`) : T('Saved. The photos come the next time this device is online.', 'Đã lưu. Ảnh sẽ về khi máy có mạng.'); };
     card.querySelector('#gAdd').onclick = () => profiles.length >= MAX_KIDS ? toast(T(`Up to ${MAX_KIDS} players.`, `Tối đa ${MAX_KIDS} người chơi.`)) : openEditor(null, () => { draw(); after && after(); });
     card.querySelector('#gExp').onclick = async () => { const how = await exportBackup(); if (how === 'cancelled') return; toast(how === 'shared' ? T('Backup saved!', 'Đã lưu bản sao!') : T('Backup downloaded. Put it in Drive or iCloud to keep it safe.', 'Đã tải bản sao. Hãy cất vào Drive hoặc iCloud cho an toàn.')); const y = m.scrollTop; draw(); m.scrollTop = y; };
     card.querySelector('#gRec').onclick = () => openRecorder(draw);
     { const b = installButton('btn wide installrow'); if (b) card.querySelector('.g-install').appendChild(b); }
     card.querySelector('#gNames').onclick = () => openRenamer(() => { const y = m.scrollTop; draw(); m.scrollTop = y; });
     bindExtras(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; }, toast);
+    if (window.__sv && window.__sv.parents) window.__sv.parents.bindGrownups(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; }, toast); // (round S)
     card.querySelector('#gFarm').onclick = () => { if (confirm(T('Start the farm over? Players and stickers are kept.', 'Làm lại nông trại? Người chơi và hình dán được giữ lại.'))) { resetFarm(); window.__sv && window.__sv.farm && (window.__sv.farm.syncAnimals(), window.__sv.farm.syncPets()); toast(T('A fresh new farm!', 'Nông trại mới tinh!')); } };
     card.querySelector('#gImp').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { await importBackup(f); toast(T('Backup loaded!', 'Đã mở bản sao!')); draw(); after && after(); } catch (err) { toast(T('That file is not a Sparkle Valley backup.', 'Tệp này không phải bản sao của Thung Lũng Lấp Lánh.')); } };
   };
@@ -576,6 +600,7 @@ export function openEditor(profile, after) {
   diffBtns();
   chips('#cHair', HAIR, 'hair', v => `<span class="sw" style="background:${v}"></span>`);
   chips('#cSkin', SKIN, 'skin', v => `<span class="sw" style="background:${v}"></span>`);
+  if (featureOn('shop', true)) shopOutfits(m, look, isNew); // (round S) hats, necklaces and the rest come from the shop
   const finish = save => {
     if (save) {
       p.name = (m.querySelector('#nm').value.trim() || T('Explorer', 'Nhà thám hiểm')).slice(0, 16);
@@ -596,6 +621,17 @@ export function openEditor(profile, after) {
   // (the last player can go too: the next start asks for a new character, round P)
   if (del) del.onclick = () => { if (confirm(T(`Remove ${p.name} and all their progress?`, `Xóa ${p.name} và toàn bộ tiến trình?`))) { removeProfile(p.id); m.close(); after && after(); } };
 }
+
+// ---- (round S, owner plan 8 Oct: "only 2 default outfits, boy and girl; hair chosen at creation or in Grown-ups → Children
+// → Edit") with the clothes shop on, the Clothes row offers the two outfits; hats and backs are bought in the shop (js/shop.js)
+function shopOutfits(m, look, isNew) {
+  if (isNew) Object.assign(look, DEFAULT_OUTFITS[look.style === 'dress' ? 'girl' : 'boy']);
+  const box = m.querySelector('#cOut'), draw = () => { box.innerHTML = ''; for (const k of Object.keys(DEFAULT_OUTFITS)) {
+    const b = el('button', 'chip' + (outfitOf(look) === k ? ' on' : '')); b.dataset.outfit = k; b.innerHTML = `<span>${pic(k === 'girl' ? '👧' : '👦')}</span><small>${k === 'girl' ? T('Girl', 'Bé gái') : T('Boy', 'Bé trai')}</small>`;
+    b.onclick = () => { const o = DEFAULT_OUTFITS[k]; Object.assign(look, { style: o.style, color: o.color, top: 'none', bottom: 'none' }); draw(); }; box.appendChild(b); } };
+  draw(); m.querySelector('#cCol').hidden = true; ['#cHat', '#cBack'].forEach(id => { m.querySelector(id).closest('.field').hidden = true; });
+}
+// ---- (round S) end ----
 
 // (windows, NPC dialogue, the reward pop-up and confetti live in js/popups.js since architecture step 2; passed on from here)
 export { modal, dialog, dialogHooks, reward } from './popups.js';
@@ -732,6 +768,7 @@ export function openPad(game, i, tab) {
       <div class="slots">${HATS.concat(REWARD_HATS.filter(h => p.owned.hats.includes(h))).map(h => `<button class="slot ${p.look.hat === h ? 'on' : ''}" data-hat="${h}"><span>${HAT_ICON[h]}</span><small>${esc(HAT_NAME[h]())}</small></button>`).join('')}</div>
       <h3>🪁 ${T('Whistling kite', 'Diều sáo')}</h3>
       <div class="slots">${p.kite ? `<button class="slot ${p.kiteOn !== false ? 'on' : ''}" data-kite="1"><span>🪁</span><small>${p.kiteOn !== false ? T('Flying', 'Đang bay') : T('Put away', 'Cất đi')}</small></button><button class="slot" data-whistle="1"><span>🎶</span><small>${T('Whistle!', 'Thổi sáo!')}</small></button>` : `<p class="note">${T('Win the Kite Flying game to get a kite with a bamboo flute that sings in the wind!', 'Thắng trò Thả Diều để nhận diều sáo hát vi vu trong gió!')}</p>`}</div>
+      ${game.hoilang ? game.hoilang.bagHTML(p) : ''}
       <h3>${T('Glider', 'Cánh lượn')}</h3>
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
     jumpNav(body, body.querySelector('.bag-top'));
@@ -747,6 +784,7 @@ export function openPad(game, i, tab) {
     body.querySelectorAll('[data-hat]').forEach(b => b.onclick = () => { p.look.hat = b.dataset.hat; saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); });
     body.querySelectorAll('[data-kite]').forEach(b => b.onclick = () => { p.kiteOn = p.kiteOn === false; saveProfiles(); game.kites.sync(); SFX.ok(); if (p.kiteOn) game.kites.whistle(hero); draw(); });
     body.querySelectorAll('[data-whistle]').forEach(b => b.onclick = () => { game.kites.whistle(hero); });
+    game.hoilang && game.hoilang.bindBag(body, hero, draw); // (round S) carry a village festival prize, like the kite
     body.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { p.look.glider = +b.dataset.gl; saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); });
   }
   // (round R, owner 9 Oct) side stories in their own list: the child picks one to follow on the goal bar
@@ -755,10 +793,11 @@ export function openPad(game, i, tab) {
       return `<div class="side ${st.done ? 'done' : ''}"><span>${pic(sd.icon)}</span><div><b>${esc(sd.title())}</b><small>${st.done ? T('Finished!', 'Xong rồi!') : esc(st.step)}</small></div>${st.done || !st.started ? '' : `<button class="btn ${on ? 'on' : ''}" data-follow="${sd.id}">${on ? T('Following', 'Đang theo') : T('Follow', 'Theo truyện này')}</button>`}</div>`; }).join('')}</div>`; };
   function drawLog(body) {
     const next = game.currentQuest(p);
-    body.innerHTML = sideHTML() + (game.coop ? game.coop.html() : '') + (game.chests ? game.chests.html(p) : '') + `<h3>${T('Main adventure', 'Cuộc phiêu lưu chính')}</h3><ol class="quests">${QUESTS.map(q => { const done = !!p.quests[q.id] || (q.check && q.check(p)); return `<li class="${done ? 'done' : q === next ? 'now' : ''}"><span>${done ? '✅' : q.icon}</span>${esc(q.title())}</li>`; }).join('')}</ol>
+    body.innerHTML = (game.parents ? game.parents.logHTML(p) : '') + sideHTML() + (game.coop ? game.coop.html() : '') + (game.chests ? game.chests.html(p) : '') + `<h3>${T('Main adventure', 'Cuộc phiêu lưu chính')}</h3><ol class="quests">${QUESTS.map(q => { const done = !!p.quests[q.id] || (q.check && q.check(p)); return `<li class="${done ? 'done' : q === next ? 'now' : ''}"><span>${done ? '✅' : q.icon}</span>${esc(q.title())}</li>`; }).join('')}</ol>
       <p class="note">✨ ${T('Shrines solved', 'Đền đã giải')}: ${Object.keys(p.shrines).length}/12 · 🗼 ${T('Towers', 'Tháp')}: ${Object.keys(p.towers).length}/4 · 🍳 ${T('Recipes', 'Công thức')}: ${Object.keys(p.dishes).length}/${RECIPES.length}</p>
       <h3>${T('Recipe book', 'Sổ công thức')}</h3><div class="recipes">${RECIPES.map(r => { const known = p.dishes[r.id] != null; return `<div class="rec ${known ? '' : 'unk'}"><span>${known ? r.icon : '❔'}</span><small>${known ? esc(r.name()) : r.need.map((n, k) => k === 0 ? ITEMS[n].icon : '❔').join(' + ')}</small></div>`; }).join('')}</div>`;
     body.querySelectorAll('[data-follow]').forEach(b => b.onclick = () => { p.follow = p.follow === b.dataset.follow ? null : b.dataset.follow; saveProfiles(); SFX.ok(); game.checkQuests && game.checkQuests(hero); draw(); });
+    game.parents && game.parents.bindLog(body, hero, draw); // (round S) a grown-up holds ✓ on a family mission
   }
   function drawAlbum(body) {
     const sec = p.secrets || {};
@@ -897,6 +936,7 @@ export function openShop(game, i) {
 
 // ---------- wardrobe (for the children: pictures only, changes show live on the character) ----------
 export function openWardrobe(game, i, onClose) {
+  if (game.shop && game.shop.on()) return game.shop.openWardrobe(i, onClose); // (round S) what the child owns from the clothes shop
   const p = game.heroes[i].profile;
   const m = el('div', 'wardrobe');
   document.body.appendChild(m);
@@ -995,7 +1035,7 @@ export const folkGames = () => FOLK_SHOW;
 // tab, by what kind of game it is, from the same list as the Simple screen's areas (js/content/activities.js), so a
 // game the family moves in Studio moves in both. Inside a tab the games are grouped under their area's name.
 const HUB_TABS = [
-  { key: 'learn', icon: '📚', short: () => T('Learning', 'Học'), title: () => T('Numbers, letters, shapes and me', 'Số, chữ, hình và em'), areas: ['numbers', 'words', 'shapes', 'me'] },
+  { key: 'learn', icon: '📚', short: () => T('Learning', 'Học'), title: () => T('Numbers, letters, shapes and me', 'Số, chữ, hình và em'), areas: ['numbers', 'words', 'shapes', 'me', 'money'] }, // (round S: the money games join Learning)
   { key: 'folk', icon: '🪁', short: () => T('Folk games', 'Dân gian'), title: () => T('Folk games to play together', 'Trò chơi dân gian chơi cùng nhau'), areas: ['vietnam', 'play'] },
   { key: 'animals', icon: '🐶', short: () => T('Animals and music', 'Con vật, âm nhạc'), title: () => T('Animals and music', 'Con vật và âm nhạc'), areas: ['animals', 'music'] },
   { key: 'art', icon: '🎨', short: () => T('Pictures', 'Tranh'), title: () => T('Colours, pictures and puzzles', 'Màu sắc, tranh và ghép hình'), areas: ['art'] },

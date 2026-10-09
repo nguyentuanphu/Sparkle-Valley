@@ -13,3 +13,4 @@ import './asia.js';
 import './music.js';
 import './cities.js';
 import './learning.js';
+import './money.js'; // (round S, owner plan 8 Oct) the ten money games

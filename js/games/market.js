@@ -2,7 +2,7 @@
 import { register } from './frame.js';
 import { T } from '../i18n.js';
 import { settings } from '../state.js';
-import { CUR, fmtMinor, spokenMinor, moneyEl } from '../money.js';
+import { CUR, fmtMinor, spokenMinor, moneyEl, curCode } from '../money.js';
 import { el, wait, pick } from '../util.js';
 
 const ITEMS = [['🍌', 'bananas', 'chuối'], ['🥭', 'a mango', 'xoài'], ['🥖', 'a bánh mì', 'bánh mì'], ['🍦', 'an ice cream', 'kem'], ['🧃', 'a juice', 'nước ép'], ['🍬', 'some lollies', 'kẹo'], ['🍉', 'a watermelon', 'dưa hấu'], ['🌽', 'corn', 'bắp ngô']];
@@ -14,7 +14,7 @@ const PLAN = {
 register({
   id: 'market', icon: '🛒', name: () => T('Market Helper', 'Bé Đi Chợ'),
   async run(api) {
-    const code = settings.currency, cur = CUR[code];
+    const code = curCode(), cur = CUR[code];
     const [denoms, lo, hi, unit] = PLAN[code][Math.min(4, api.level - 1)];
     const rounds = 3;
     for (let r = 0; r < rounds; r++) {

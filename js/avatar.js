@@ -1,7 +1,8 @@
 // Chibi characters whose face is the child's own photo.
-import { THREE, toon, glow, blobShadow, outline } from './gfx.js';
+import { THREE, toon, glow, blobShadow, outline, P, merge, toonSmooth } from './gfx.js';
 import { GLIDERS, settings } from './state.js';
-import { customFace } from './custom.js';
+import { customFace, onFamilyPhotos } from './custom.js';
+import { wearing } from './content/shop.js';
 
 const G = {
   head: new THREE.SphereGeometry(.5, 32, 24),
@@ -99,24 +100,69 @@ const B = {
 };
 function V2(x, y) { return new THREE.Vector2(x, y); }
 B.cape.translate(0, -.31, 0);
+// (round S) shapes for the shop's clothes (shoe strap, boot, stripes, dragon wing)
+Object.assign(B, { strap: new THREE.TorusGeometry(.055, .014, 6, 14), boot: new THREE.CylinderGeometry(.08, .075, .2, 12), stripe: new THREE.TorusGeometry(.16, .014, 6, 24) });
+B.dwing = (() => { const s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(.42, .3); s.lineTo(.36, .02); s.lineTo(.44, -.12); s.lineTo(.26, -.08); s.lineTo(.22, -.24); s.closePath(); return new THREE.ShapeGeometry(s); })();
+B.dwingL = B.dwing.clone().scale(-1, 1, 1); // (the left one, mirrored)
+// necklaces sit round the neck and fall on the chest (torso coordinates: the neck is at y 1.08, the chest's front at z .14)
+function neckParts(it) {
+  const c = it.color, t = it.trim || it.color, ring = (r, k, n, col) => Array.from({ length: n }, (_, i) => { const a = Math.PI * (.15 + .7 * i / (n - 1)); return P(new THREE.SphereGeometry(r, 8, 6), typeof col === 'function' ? col(i) : col, [Math.cos(a) * .135 * k, 1.03 - Math.sin(a) * .07 * k, Math.sin(a) * .125 * k + .015]); });
+  if (it.shape === 'beads') return ring(.022, 1, 11, c);
+  if (it.shape === 'lei') return ring(.036, 1.05, 9, i => i % 2 ? t : c);
+  if (it.shape === 'scarf') return [P(new THREE.TorusGeometry(.12, .045, 8, 18), c, [0, 1.03, 0], [Math.PI / 2, 0, 0], [1, .85, 1]), P(new THREE.BoxGeometry(.07, .2, .03), c, [.06, .92, .13], [0, 0, .15]), P(new THREE.BoxGeometry(.072, .02, .032), t, [.06, .86, .131], [0, 0, .15])];
+  const chain = ring(.012, 1, 15, it.shape === 'medal' ? t : c);
+  if (it.shape === 'medal') return [...chain, P(new THREE.CylinderGeometry(.05, .05, .015, 16), c, [0, .9, .145], [Math.PI / 2, 0, 0]), P(new THREE.BoxGeometry(.03, .06, .01), t, [0, .96, .14])];
+  return [...chain, P(new THREE.SphereGeometry(.025, 8, 6), t, [-.017, .925, .145]), P(new THREE.SphereGeometry(.025, 8, 6), t, [.017, .925, .145]), P(new THREE.ConeGeometry(.035, .045, 8), t, [0, .9, .145], [Math.PI, 0, 0])]; // a heart locket
+}
+// a little backpack or a turtle shell on the back
+function backParts(it) {
+  const c = it.color, t = it.trim || '#ffffff';
+  // (the dome is turned to face backwards, and P scales before it turns: the dome's own y is its depth, its z the height)
+  if (it.shape === 'shell') return [P(new THREE.SphereGeometry(.2, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), c, [0, .82, -.14], [-Math.PI / 2, 0, 0], [1.05, .75, 1.25]), P(new THREE.TorusGeometry(.2, .02, 6, 20), t, [0, .82, -.14], [0, 0, 0], [1.05, 1.25, 1]),
+    // the plates sit on the dome (an ellipsoid .21 wide, .25 tall, .15 deep)
+    ...[[0, .9], [-.08, .78], [.08, .78], [0, .68]].map(([x, y]) => P(new THREE.CylinderGeometry(.04, .04, .02, 6), t, [x, y, -.14 - .15 * Math.sqrt(Math.max(0, 1 - (x / .21) ** 2 - ((y - .82) / .25) ** 2)) - .005], [Math.PI / 2, 0, 0]))];
+  return [P(new THREE.BoxGeometry(.26, .3, .13), c, [0, .82, -.2]), P(new THREE.BoxGeometry(.27, .1, .14), t, [0, .94, -.2]), P(new THREE.BoxGeometry(.16, .1, .04), t, [0, .74, -.275]),
+    ...[-1, 1].map(s => P(new THREE.BoxGeometry(.03, .3, .03), c, [s * .09, .88, .02], [-.15, 0, 0]))];
+}
+// the shop's new hats (head coordinates: the head is built at radius .5)
+const HAT_PARTS = {
+  beanie: it => [P(new THREE.SphereGeometry(.56, 20, 12, 0, Math.PI * 2, 0, Math.PI * .5), it.color, [0, .06, -.02]), P(new THREE.TorusGeometry(.53, .06, 8, 24), it.trim, [0, .1, -.02], [Math.PI / 2 - .1, 0, 0]), P(new THREE.SphereGeometry(.12, 10, 8), it.trim, [0, .66, -.04])],
+  bucket: it => [P(new THREE.CylinderGeometry(.4, .47, .3, 20), it.color, [0, .5, -.02]), P(new THREE.CylinderGeometry(.6, .72, .07, 22), it.color, [0, .35, -.02]), P(new THREE.CylinderGeometry(.475, .48, .05, 20), '#3a5a2a', [0, .4, -.02])],
+  dino: it => [P(new THREE.SphereGeometry(.58, 20, 12, 0, Math.PI * 2, 0, Math.PI * .55), it.color, [0, .02, -.04], [-.25, 0, 0]), ...[0, 1, 2, 3, 4].map(i => P(new THREE.ConeGeometry(.08, .2, 6), it.trim, [0, .58 - i * i * .025, .25 - i * .19], [-.35 * i + .2, 0, 0]))],
+  sunhat: it => [P(new THREE.CylinderGeometry(.8, .84, .04, 26), it.color, [0, .42, 0]), P(new THREE.CylinderGeometry(.34, .4, .26, 20), it.color, [0, .56, 0]), P(new THREE.CylinderGeometry(.405, .41, .07, 20), it.trim, [0, .47, 0]), P(new THREE.SphereGeometry(.08, 8, 6), it.trim, [.36, .48, .18])],
+  // (a band round the front of the head just outside the hair (radius .46), tipped down at the front onto the hairline,
+  // with five points standing on it and a jewel in the middle)
+  tiara: it => { const r = .46, tip = .3, c = [0, .42, -.03], on = a => [Math.sin(a) * r, c[1] - Math.cos(a) * r * Math.sin(tip), c[2] + Math.cos(a) * r * Math.cos(tip)];
+    return [P(new THREE.TorusGeometry(r, .03, 6, 26, Math.PI), it.color, c, [Math.PI / 2 + tip, 0, 0]),
+      ...[-2, -1, 0, 1, 2].map(i => { const [x, y, z] = on(i * .42), hgt = i ? .15 : .24; return P(new THREE.ConeGeometry(.05, hgt, 6), it.color, [x, y + hgt / 2, z]); }),
+      P(new THREE.OctahedronGeometry(.065), it.trim, (([x, y, z]) => [x, y + .06, z + .03])(on(0)))]; },
+  catears: it => [P(new THREE.TorusGeometry(.47, .025, 6, 24, Math.PI), it.color, [0, .25, -.05], [0, 0, 0]), ...[-1, 1].flatMap(s => [P(new THREE.ConeGeometry(.13, .26, 4), it.color, [s * .3, .6, -.05], [0, Math.PI / 4, -s * .3]), P(new THREE.ConeGeometry(.07, .16, 4), it.trim, [s * .3, .58, .0], [0, Math.PI / 4, -s * .3])])]
+};
 const STYLE_LEGS = { dress: 'skin', shirt: 'shorts', aodai: 'pants:#ffffff', tunic: 'pants:#7a5236', overalls: 'pants', hoodie: 'pants:#3a5a8a' };
+// (round S, owner plan 8 Oct) clothes from the shop (js/content/shop.js): a top takes the place of the outfit's own top
+const TOP_STYLE = { tee: 'shirt', hoodie: 'hoodie', aodai: 'aodai', tunic: 'tunic', overalls: 'overalls', dress: 'dress' };
 
 export function buildAvatar(look, photo) {
   const root = new THREE.Group(), rig = new THREE.Group(); root.add(rig); root.userData.avatar = true;
   const shadow = blobShadow(); root.add(shadow); shadow.position.y = .03; shadow.scale.setScalar(.65);
-  const style = look.style || 'shirt', col = look.color || '#3b6fe0';
+  const W = wearing(look), bot = W.bottom, ft = W.feet; // (round S) shop clothes: each piece one merged shape
+  const style = W.top ? TOP_STYLE[W.top.shape] || 'shirt' : look.style || 'shirt', col = W.top ? W.top.color : look.color || '#3b6fe0';
   const skin = toon(look.skin, { roughness: .6 }), hairM = toon(look.hair, { roughness: .45, metalness: .05 }), cloth = toon(col, { roughness: .92 });
-  const white = toon('#ffffff', { roughness: .9 }), shoeM = toon(look.shoe || '#7a4a35', { roughness: .45 }), soleM = toon('#fff8ee');
+  const white = toon('#ffffff', { roughness: .9 }), shoeM = toon(ft ? ft.color : look.shoe || '#7a4a35', { roughness: .45 }), soleM = toon('#fff8ee');
   const trim = toon(style === 'aodai' ? '#ffd84a' : '#f2d16b', { roughness: .7 });
   const A = { root, rig, skinMat: skin, look };
   // legs (pivot at the hip)
-  const legSpec = STYLE_LEGS[style] || 'skin';
+  const legSpec = bot ? (bot.shape === 'shorts' ? 'shorts' : bot.shape === 'skirt' ? 'skin' : 'pants:' + bot.color) : STYLE_LEGS[style] || 'skin';
+  const shortsCol = bot && bot.shape === 'shorts' ? bot.color : null;
   const legMat = legSpec === 'skin' ? skin : legSpec === 'shorts' ? skin : legSpec === 'pants' ? cloth : toon(legSpec.split(':')[1], { roughness: .9 });
   const mkLeg = sx => {
     const g = new THREE.Group(); g.position.set(sx, .6, 0);
     const l = new THREE.Mesh(legSpec.startsWith('pants') ? B.pants : B.leg, legMat); l.position.y = -.28; g.add(l);
-    if (legSpec === 'shorts') { const sh = new THREE.Mesh(B.shorts, toon(col === '#ffffff' ? '#3a5a8a' : '#2f3a5a', { roughness: .9 })); sh.position.y = -.08; g.add(sh); }
-    const s = new THREE.Mesh(B.shoe, shoeM); s.rotation.x = Math.PI / 2; s.position.set(0, -.54, .05); g.add(s); const so = new THREE.Mesh(B.sole, soleM); so.rotation.x = Math.PI / 2; so.scale.set(1, 1, .45); so.position.set(0, -.585, .05); g.add(so);
+    if (legSpec === 'shorts') { const sh = new THREE.Mesh(B.shorts, toon(shortsCol || (col === '#ffffff' ? '#3a5a8a' : '#2f3a5a'), { roughness: .9 })); sh.position.y = -.08; g.add(sh); }
+    const sandal = ft && ft.shape === 'sandal'; // (round S) sandals: bare toes on a coloured sole with a strap; boots come up the leg
+    const s = new THREE.Mesh(B.shoe, sandal ? skin : shoeM); s.rotation.x = Math.PI / 2; s.position.set(0, -.54, .05); if (sandal) s.scale.set(.9, .95, .8); g.add(s); const so = new THREE.Mesh(B.sole, sandal ? shoeM : soleM); so.rotation.x = Math.PI / 2; so.scale.set(1, 1, .45); so.position.set(0, -.585, .05); g.add(so);
+    if (sandal) { const st = new THREE.Mesh(B.strap, shoeM); st.rotation.x = Math.PI / 2; st.position.set(0, -.53, .07); g.add(st); }
+    if (ft && ft.shape === 'boot') { const bt = new THREE.Mesh(B.boot, shoeM); bt.position.set(0, -.45, 0); g.add(bt); }
     rig.add(g); return g;
   };
   A.legL = mkLeg(.08); A.legR = mkLeg(-.08);
@@ -124,13 +170,16 @@ export function buildAvatar(look, photo) {
   const torso = new THREE.Group(); rig.add(torso); A.torso = torso;
   const top = style === 'overalls' ? white : cloth;
   const t = new THREE.Mesh(B.torso, top); t.scale.set(1.12, 1, .82); torso.add(t);
-  const hips = new THREE.Mesh(B.hips, style === 'dress' || style === 'aodai' ? cloth : legSpec === 'shorts' ? toon('#2f3a5a', { roughness: .9 }) : legMat); hips.position.y = .6; hips.scale.set(1.05, 1, .85); torso.add(hips);
+  const hips = new THREE.Mesh(B.hips, bot && bot.shape !== 'shorts' && style !== 'dress' && style !== 'aodai' ? toon(bot.color, { roughness: .9 }) : style === 'dress' || style === 'aodai' ? cloth : legSpec === 'shorts' ? toon(shortsCol || '#2f3a5a', { roughness: .9 }) : legMat); hips.position.y = .6; hips.scale.set(1.05, 1, .85); torso.add(hips);
   if (style === 'dress') { const sk = new THREE.Mesh(B.skirt, cloth); sk.position.y = .5; torso.add(sk); const band = new THREE.Mesh(new THREE.TorusGeometry(.15, .018, 6, 24), white); band.rotation.x = Math.PI / 2; band.position.y = .68; torso.add(band); }
   if (style === 'aodai') { const ad = new THREE.Mesh(B.aodai, cloth); ad.position.y = .42; ad.scale.z = .75; torso.add(ad); const c = new THREE.Mesh(new THREE.CylinderGeometry(.055, .06, .06, 12), cloth); c.position.y = 1.06; torso.add(c); for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(.012, 6, 5), trim); b.position.set(.04 + i * .025, 1.0 - i * .07, .13); torso.add(b); } }
   if (style === 'tunic') { const tu = new THREE.Mesh(B.tunic, cloth); tu.position.y = .52; torso.add(tu); const belt = new THREE.Mesh(new THREE.TorusGeometry(.162, .022, 6, 24), toon('#6a4026', { roughness: .5 })); belt.rotation.x = Math.PI / 2; belt.position.y = .66; belt.scale.z = .84; torso.add(belt); }
   if (style === 'overalls') { const bib = new THREE.Mesh(new THREE.BoxGeometry(.2, .2, .03), cloth); bib.position.set(0, .78, .125); torso.add(bib); [.07, -.07].forEach(x => { const st = new THREE.Mesh(new THREE.BoxGeometry(.03, .28, .03), cloth); st.position.set(x, .9, .1); st.rotation.x = -.25; torso.add(st); }); }
   if (style === 'hoodie') { const hd = new THREE.Mesh(B.hood, cloth); hd.position.set(0, 1.02, -.12); hd.rotation.x = 2.2; torso.add(hd); const pk = new THREE.Mesh(new THREE.BoxGeometry(.16, .07, .02), cloth); pk.position.set(0, .7, .13); torso.add(pk); }
+  if (bot && bot.shape === 'skirt' && style !== 'dress') { const sk = new THREE.Mesh(B.skirt, toon(bot.color, { roughness: .8 })); sk.position.y = .5; if (bot.id === 'tutu') sk.scale.set(1.25, .6, 1.25), sk.position.y = .56; torso.add(sk); }
+  if (W.top && W.top.trim) torso.add(new THREE.Mesh(merge([.72, .8, .88].map(y => P(B.stripe, W.top.trim, [0, y, 0], [Math.PI / 2, 0, 0], [1.12, .84, 1])).concat(W.top.shape === 'dress' ? [P(B.stripe, W.top.trim, [0, .34, 0], [Math.PI / 2, 0, 0], [2.1, 2.1, 1])] : [])), toonSmooth()));
   const neck = new THREE.Mesh(B.neck, skin); neck.position.y = 1.08; torso.add(neck);
+  if (W.neck) torso.add(new THREE.Mesh(merge(neckParts(W.neck)), toonSmooth()));
   // arms (pivot at the shoulder)
   const longSleeve = style === 'hoodie' || style === 'aodai' || style === 'tunic';
   const mkArm = sx => {
@@ -142,15 +191,18 @@ export function buildAvatar(look, photo) {
   };
   A.armL = mkArm(1); A.armR = mkArm(-1);
   // back accessories
-  if (look.back === 'wings') {
-    const wm = new THREE.MeshStandardMaterial({ color: '#e9d6ff', emissive: '#7a5aa8', emissiveIntensity: .25, transparent: true, opacity: .72, side: THREE.DoubleSide, roughness: .2, metalness: .1 });
+  const bk = W.back; // (round S) the shop's backs: butterfly and dragon wings flap like the fairy wings
+  if (look.back === 'wings' || (bk && (bk.shape === 'wings' || bk.shape === 'dragonwings'))) {
+    const dragon = bk && bk.shape === 'dragonwings', wc = bk ? bk.color : '#e9d6ff';
+    const wm = dragon ? toon(wc, { side: THREE.DoubleSide, roughness: .6 }) : new THREE.MeshStandardMaterial({ color: wc, emissive: bk && bk.id !== 'wings' ? wc : '#7a5aa8', emissiveIntensity: .25, transparent: true, opacity: .72, side: THREE.DoubleSide, roughness: .2, metalness: .1 });
     A.wings = [-1, 1].map(s => { const g = new THREE.Group(); g.position.set(s * .04, .9, -.13);
-      const up = new THREE.Mesh(B.wing, wm); up.scale.set(1, 1.3, 1); up.position.set(s * .22, .14, 0); up.rotation.z = -s * .5; g.add(up);
-      const lo = new THREE.Mesh(B.wing, wm); lo.scale.set(.7, .9, 1); lo.position.set(s * .17, -.12, 0); lo.rotation.z = s * .5; g.add(lo);
+      const up = new THREE.Mesh(dragon ? (s > 0 ? B.dwing : B.dwingL) : B.wing, wm); up.scale.set(1, 1.3, 1); up.position.set(s * (dragon ? .04 : .22), .14, 0); up.rotation.z = -s * .5; g.add(up);
+      if (!dragon) { const lo = new THREE.Mesh(B.wing, wm); lo.scale.set(.7, .9, 1); lo.position.set(s * .17, -.12, 0); lo.rotation.z = s * .5; g.add(lo); }
       torso.add(g); return g; });
   }
+  if (bk && (bk.shape === 'backpack' || bk.shape === 'shell')) torso.add(new THREE.Mesh(merge(backParts(bk)), toonSmooth()));
   if (look.back === 'cape') {
-    const cape = new THREE.Mesh(B.cape, toon('#e8332a', { side: THREE.DoubleSide, roughness: .7 })); cape.position.set(0, 1.0, -.14); cape.rotation.x = .12; torso.add(cape); A.cape = cape;
+    const cape = new THREE.Mesh(B.cape, toon(bk ? bk.color : '#e8332a', { side: THREE.DoubleSide, roughness: .7 })); cape.position.set(0, 1.0, -.14); cape.rotation.x = .12; torso.add(cape); A.cape = cape;
     const clasp = new THREE.Mesh(new THREE.SphereGeometry(.025, 8, 6), toon('#ffcf3a', { metalness: .6, roughness: .3 })); clasp.position.set(0, 1.0, .12); torso.add(clasp);
   }
   // head (built big, then scaled down)
@@ -179,6 +231,7 @@ export function buildAvatar(look, photo) {
   if (look.hat === 'silkcap') { const c = new THREE.Mesh(new THREE.SphereGeometry(.43, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), toon('#2b2238', { roughness: .5 })); c.position.y = .3; hat.add(c); const rim = new THREE.Mesh(new THREE.TorusGeometry(.42, .03, 6, 24), toon('#c62828')); rim.rotation.x = Math.PI / 2; rim.position.y = .31; hat.add(rim); const k = new THREE.Mesh(new THREE.SphereGeometry(.08, 10, 8), toon('#e8433a')); k.position.y = .76; hat.add(k); }
   if (look.hat === 'pagri') { const cl = toon('#ff9f1a', { roughness: .8 }); for (let i = 0; i < 3; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(.36 - i * .07, .1, 8, 20), cl); r.rotation.x = Math.PI / 2; r.position.y = .42 + i * .12; hat.add(r); } const top = new THREE.Mesh(new THREE.SphereGeometry(.24, 12, 8), cl); top.position.y = .62; top.scale.y = .6; hat.add(top); const gem = new THREE.Mesh(new THREE.OctahedronGeometry(.06), toon('#3cc7e8', { metalness: .3, roughness: .2 })); gem.position.set(0, .52, .4); hat.add(gem); }
   if (look.hat === 'bow') { const bm = toon(col === '#ffffff' ? '#ff5fa2' : col, { roughness: .5 }); [-1, 1].forEach(s => { const l = new THREE.Mesh(new THREE.ConeGeometry(.16, .3, 12), bm); l.rotation.z = s * Math.PI / 2; l.position.set(s * .16, .55, -.05); hat.add(l); }); const k = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), bm); k.position.set(0, .55, -.05); hat.add(k); }
+  const nh = W.hat && HAT_PARTS[W.hat.shape]; if (nh) hat.add(new THREE.Mesh(merge(nh(W.hat)), toonSmooth())); // (round S) the shop's new hats
   // glider (hidden until gliding)
   const glider = new THREE.Group(); glider.visible = false; glider.position.y = 2.05;
   const gm = new THREE.Mesh(G.glider, toon(GLIDERS[look.glider || 0], { side: THREE.DoubleSide, roughness: .8 })); gm.rotation.x = -Math.PI / 2 + .25; glider.add(gm);
@@ -266,4 +319,5 @@ function setFace(A, f) {
   if (A.skinMat) A.skinMat.color.set(f && f.skin ? f.skin : A.look.skin);
 }
 export function applyNpcFaces() { for (const [id, list] of Object.entries(NAMED)) list.forEach(A => setFace(A, (settings.npcFaces || {})[id] || customFace(id) || null)); }
+onFamilyPhotos(() => applyNpcFaces()); // (round R privacy) the family's photo faces arrive after the start, with the family code
 export const namedVillagers = () => Object.keys(NAMED);

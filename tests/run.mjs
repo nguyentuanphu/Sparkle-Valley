@@ -4,9 +4,20 @@
 //   node run.mjs --update-contract                     re-record the UI structure (only when the owner asked for a UI change)
 // Multiplayer runs when a local PeerJS server is up on 127.0.0.1:9000 (see the README in this folder).
 import fs from 'fs';
+import os from 'os';
 import { launch, open, clear, start, URL, seedPlayers } from './harness.mjs';
 import { groundAudit } from './world-audit.mjs';
 import { studioCheck } from './studio-check.mjs';
+// (round R privacy) friends save each other's device key when they first play together (＋👫); two test devices that are
+// already friends by code get each other's key here, the way that first game would have given it
+// the text of an element with each swapped drawing read back as its emoji (js/emojiswap.js keeps it in data-e)
+const withEmo = `window.withEmo = el => [...el.childNodes].map(n => n.nodeType === 3 ? n.textContent : n.dataset && n.dataset.e ? n.dataset.e : window.withEmo(n)).join('');`;
+async function pairKeys(A, B) {
+  const pub = P => P.page.evaluate(async () => (await import('/js/net.js')).myPub());
+  const [pa, pb] = [await pub(A), await pub(B)];
+  const put = (P, other) => P.page.evaluate(async other => { const S = await import('/js/state.js'); (S.settings.friends || []).forEach(f => { f.pub = other; }); S.saveSettings(); window.__sv.listenFriends && window.__sv.listenFriends(); }, other);
+  await put(A, pb); await put(B, pa);
+}
 
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
@@ -369,12 +380,13 @@ await check('phone', async () => {
         if (document.scrollingElement.scrollWidth > W + 1) out.push('page scrolls sideways (' + document.scrollingElement.scrollWidth + ' > ' + W + ')');
         const top = document.querySelector('.wardrobe, .hub, .pad, .howto, .theatre, .gl, .dialog:not(.out), .modal');
         if (top) for (const btn of top.querySelectorAll('button')) { const b = btn.getBoundingClientRect(), cs = getComputedStyle(btn); if (!b.width || cs.visibility === 'hidden' || btn.closest('[hidden]')) continue;
-          if (/^(x|th-x|ht-x|gl-x|dch|ht-play|th-next|gl-next)$/.test(btn.className.split(' ')[0]) && (b.left < -1 || b.right > W + 1 || b.top < -1 || b.bottom > H + 1)) out.push(`button "${(btn.textContent || btn.getAttribute('aria-label') || btn.className).trim().slice(0, 20)}" off screen`); }
+          if (/^(x|th-x|ht-x|gl-x|dch|ht-play|th-next|gl-next)$/.test(btn.className.split(' ')[0]) && (b.left < -1 || b.right > W + 1 || b.top < -1 || b.bottom > H + 1)) out.push(`button "${(btn.textContent || btn.getAttribute('aria-label') || btn.className).trim().slice(0, 20)}" off screen (${[b.left, b.top, b.right, b.bottom].map(Math.round)} in ${W}×${H}; on top: ${[...document.querySelectorAll('.dialog, .modal, .reward, .hub, .pad, .gl, .theatre, .songs')].map(e => e.className.split(' ').slice(0, 2).join('.')).join(',')})`); }
         for (const t of document.querySelectorAll('.pad-tabs small')) { const lh = parseFloat(getComputedStyle(t).lineHeight) || 13; if (t.getClientRects().length && t.getBoundingClientRect().height > lh * 1.6 + 2) out.push(`tab name "${t.firstChild && t.firstChild.textContent}" broken over lines`); }
         const md = document.querySelector('.modal'); if (md && /blur/.test(getComputedStyle(md).backdropFilter || '')) out.push('the window blurs the game behind it');
         return out;
       });
       r.forEach(x => bad.push(`${name} (${tag}): ${x}`));
+      if (r.length) await P.page.screenshot({ path: `${os.tmpdir()}/sv-phone-${name.replace(/\W+/g, '-')}-${tag}.png` }).catch(() => { });
       await P.page.evaluate(() => { document.querySelectorAll('.modal, .hub, .pad, .howto, .theatre, .gl, .dialog, .storybook, .vc-pop, .wardrobe').forEach(e => e.remove()); __sv.paused = false; __sv.closeUp = null; });
     }
   }
@@ -947,6 +959,310 @@ await check('kidplay', async () => {
   if (bad.length) throw new Error(bad.join('; '));
   return `fed once a day, grew to size ${r.level} with a trick, bought the party hat (100 → 70 coins), opened today's gift (+15), Skip on story films; every switch turns its part off`;
 });
+await check('shop', async () => {
+  // (round S, owner plan 8 Oct: Round R Part 2 item 6) the clothes shop stands by the market off the roads; the Bag button
+  // takes the child there; the big card has picture tabs and coin prices (≥ 64 px for under-5s); buying takes game coins
+  // and puts the thing on; the wardrobe shows what is owned; what a child already wore counts as owned; the 3D character
+  // draws every new piece with few extra parts; the Studio switch puts the old Bag and wardrobe back
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, w = t => new Promise(r => setTimeout(r, t)), S = await import('/js/state.js'), W = await import('/js/world.js');
+    const C = (await import('/js/custom.js')).CUSTOM, SH = await import('/js/content/shop.js'), { buildAvatar } = await import('/js/avatar.js');
+    const out = {}, sp = G.shop.spot, rd = W.roadDist(sp.x, sp.z), M = W.MARKET;
+    out.spot = [Math.round(sp.x), Math.round(sp.z)]; out.offRoad = !rd.road || rd.d > rd.road.w / 2 + 1.5;
+    out.nearMarket = Math.hypot(Math.max(M.x0 - sp.x, 0, sp.x - M.x1), Math.max(M.z0 - sp.z, 0, sp.z - M.z1)) < 40;
+    out.dry = W.heightAt(sp.x, sp.z) > W.WATER + .3; out.tap = !!G.interactables.find(i => i.id === 'shop_clothes');
+    // the Bag button: off to the shop, and the shop opens
+    p.age = 'big'; G.addCoins(500 - S.farm.coins); G.huds[0].root.querySelector('.dk.bag').click(); await w(3200);
+    out.there = Math.hypot(h.pos.x - G.shop.front.x, h.pos.z - G.shop.front.z) < 8; const card = document.querySelector('.modal.shopk .card');
+    out.opened = !!card; out.tabs = card ? card.querySelectorAll('.ktab').length : 0;
+    // (nothing to read: each thing is a drawing and a number; the words inside a drawing, like the coin's "$", are part
+    // of the picture, so the text is read with the drawings taken out)
+    const words = b => { const c = b.cloneNode(true); c.querySelectorAll('svg, .arti, .flagi').forEach(e => e.remove()); return c.textContent.replace(/\s/g, ''); };
+    out.pics = card ? [...card.querySelectorAll('.kitem')].every(b => b.querySelector('svg') && /^\d*$/.test(words(b))) : false;
+    out.small = card ? [...card.querySelectorAll('.ktab, .kitem, .x')].filter(b => { const q = b.getBoundingClientRect(); return q.width < 44 || q.height < 44; }).length : -1;
+    // buy the tiara (hats tab), and it is worn
+    card.querySelector('[data-tab="hat"]').click(); await w(150); card.querySelector('[data-id="tiara"]').click(); await w(150);
+    const price = SH.priceOf(SH.ITEM.tiara), c0 = S.farm.coins; card.querySelector('.kyes').click(); await w(300);
+    out.bought = SH.owns(p, 'tiara') && p.look.hat === 'tiara' && S.farm.coins === c0 - price;
+    // not enough coins: nothing is bought
+    G.addCoins(-S.farm.coins); card.querySelector('[data-tab="back"]').click(); await w(150); card.querySelector('[data-id="dragon"]').click(); await w(150); card.querySelector('.kyes').click(); await w(300);
+    out.poorKept = !SH.owns(p, 'dragon') && S.farm.coins === 0;
+    card.querySelector('.x').click(); await w(400); out.closed = !document.querySelector('.modal.shopk') && !G.paused;
+    // under-5s: every button at least 64 px
+    p.age = 'little'; G.shop.openShop(0); await w(400);
+    out.little = [...document.querySelectorAll('.modal.shopk.little .ktab, .modal.shopk.little .kitem')].filter(b => { const q = b.getBoundingClientRect(); return q.width < 64 || q.height < 64; }).length;
+    document.querySelector('.modal.shopk .x').click(); await w(400);
+    // the wardrobe: what is owned, worn with a tap
+    G.openWardrobe(0); await w(400); const wd = document.querySelector('.wardrobe.kward');
+    out.wardrobe = !!wd && wd.querySelectorAll('.wrow').length === 6 && !!wd.querySelector('[data-v="tiara"]') && !wd.querySelector('[data-v="dragon"]');
+    wd.querySelector('[data-k="hat"][data-v="none"]').click(); await w(200); out.off = p.look.hat === 'none';
+    document.querySelector('.wardrobe.kward .x').click(); await w(300);
+    // a child who already wore wings and a crown keeps them
+    const old = { look: { back: 'wings', hat: 'crown' }, owned: { hats: ['none'] } }; SH.adoptWorn(old); out.kept = SH.owns(old, 'wings') && SH.owns(old, 'crown');
+    // the 3D character: every new piece, a few extra parts only (each new piece is one merged shape)
+    const meshes = A => { let n = 0; A.root.traverse(o => { if (o.isMesh && !o.userData.outline) n++; }); return n; };
+    const base = { style: 'shirt', color: '#3b6fe0', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#f6c7a5' }, n0 = meshes(buildAvatar(base));
+    out.drawn = {}; for (const it of SH.CLOTHES) { const L = Object.assign({}, base, { [it.slot]: it.id }); out.drawn[it.id] = meshes(buildAvatar(L)) - n0; }
+    out.allDrawn = Object.entries(out.drawn).filter(([id, d]) => Math.abs(d) > 12 || (SH.ITEM[id].slot === 'neck' || SH.ITEM[id].slot === 'back') && d < 1).map(([id, d]) => id + ':' + d); // (a top can drop the old sleeves and shorts)
+    // the switch off: the Bag opens the backpack, the stall goes, the old wardrobe is back
+    C.features = C.features || {}; C.features.shop = false; await w(300);
+    G.huds[0].root.querySelector('.dk.bag').click(); await w(500); out.offBag = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk');
+    out.offStall = !G.shop.stall.visible; document.querySelector('.modal.pad .x')?.click(); await w(400);
+    G.openWardrobe(0); await w(300); out.offWard = !!document.querySelector('.wardrobe') && !document.querySelector('.wardrobe.kward'); document.querySelector('.wardrobe .x')?.click(); await w(300);
+    delete C.features.shop;
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [];
+  if (!r.offRoad || !r.nearMarket || !r.dry || !r.tap) bad.push('the shop is not by the market on dry ground off the road ' + JSON.stringify(r.spot));
+  if (!r.there || !r.opened) bad.push('the Bag button did not take the child to the shop');
+  if (r.tabs !== 8 || !r.pics || r.small) bad.push(`the shop card: ${r.tabs} tabs, pictures ${r.pics}, ${r.small} buttons under 44 px`);
+  if (!r.bought || !r.poorKept || !r.closed) bad.push('buying ' + JSON.stringify({ bought: r.bought, poor: r.poorKept, closed: r.closed }));
+  if (r.little) bad.push(`${r.little} buttons under 64 px for an under-5`);
+  if (!r.wardrobe || !r.off) bad.push('the wardrobe does not show what is owned');
+  if (!r.kept) bad.push('what a child already wore is not owned');
+  if (r.allDrawn.length) bad.push('3D pieces: ' + r.allDrawn.join(' '));
+  if (!r.offBag || !r.offStall || !r.offWard) bad.push('the Studio switch did not put the old Bag and wardrobe back ' + JSON.stringify(r));
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return `the shop at ${r.spot} by the market, off the road; the Bag button went there; 8 picture tabs, coin prices, 64 px for under-5s; bought the tiara, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
+});
+await check('boxes', async () => {
+  // (round S, owner plan 8 Oct: Round R Part 2 item 10) a big kid at Medium or Hard: one free mystery box a day, one more
+  // for a finished quest (at most one a day), a second one becomes stars; family rankings on four boards; the collection
+  // book; little ones and Easy get none, and each Studio switch turns its part off
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, w = t => new Promise(r => setTimeout(r, t)), S = await import('/js/state.js');
+    const C = (await import('/js/custom.js')).CUSTOM, X = await import('/js/content/boxes.js');
+    const out = {}, chip = () => G.huds[0].root.querySelector('.bxrow .c-box');
+    p.age = 'big'; p.difficulty = 'medium'; delete p.boxes; delete p.collect; await w(1000);
+    out.chip = !!chip() && !chip().parentNode.hidden && chip().classList.contains('ready');
+    // the hub, then today's free box
+    chip().click(); await w(400); out.hub = document.querySelectorAll('.modal.bxhub .khb').length;
+    document.querySelector('.modal.bxhub [data-go="box"]').click(); await w(600);
+    document.querySelector('.modal.bxopen .kbox').click(); await w(500);
+    out.prize = !!document.querySelector('.modal.bxopen .kprize'); out.got = Object.keys(p.collect).length; out.left = X.ready(p.boxes, X.aestDay());
+    document.querySelector('.modal.bxopen .x').click(); await w(400);
+    G.boxes.openBoxCard(0); await w(400); out.empty = !!document.querySelector('.modal.bxopen .kempty'); document.querySelector('.modal.bxopen .x').click(); await w(400);
+    // a finished quest: one box, only one a day
+    p.boxes.last = undefined; G.boxes.questDone(h, 0); G.boxes.questDone(h, 1); out.earned = p.boxes.waiting; G.boxes.questDone(h, 2); out.once = p.boxes.waiting;
+    // a second one becomes stars
+    const first = Object.keys(p.collect)[0], it = X.CBY[first], R = X.COLLECTIBLES, tot = R.reduce((a, c) => a + X.RARITY[c.rare].weight, 0);
+    let acc = 0, rand = 0; for (const c of R) { if (c.id === first) { rand = (acc + .5) / tot; break; } acc += X.RARITY[c.rare].weight; }
+    const s0 = p.boxes.stars, dup = X.openBox(p, X.aestDay(), rand); out.dup = !!dup && dup.dup && p.boxes.stars === s0 + X.RARITY[it.rare].stars;
+    // rankings: every child on this device, four boards
+    G.boxes.openRanks(0); await w(400); out.ranks = document.querySelectorAll('.modal.bxrank .kranks li').length === S.profiles.length; out.boards = document.querySelectorAll('.modal.bxrank .ktab').length;
+    document.querySelector('.modal.bxrank [data-b="learn"]').click(); await w(200); out.board2 = !!document.querySelector('.modal.bxrank .ktab.on[data-b="learn"]'); document.querySelector('.modal.bxrank .x').click(); await w(400);
+    // the book: what was found, and shadows for the rest
+    G.boxes.openBook(0, it.kind); await w(400); out.book = !!document.querySelector(`.modal.bxbook [data-c="${first}"].got`) && !!document.querySelector('.modal.bxbook .kcol.miss');
+    out.bookSmall = [...document.querySelectorAll('.modal.bxbook .kcol, .modal.bxbook .ktab')].filter(b => b.getBoundingClientRect().height < 44).length; document.querySelector('.modal.bxbook .x').click(); await w(400);
+    // Easy, or an under-5: none of it
+    p.difficulty = 'easy'; await w(900); out.easyHidden = chip().parentNode.hidden && !G.boxes.can(h); p.difficulty = 'hard';
+    p.age = 'little'; await w(900); out.littleHidden = chip().parentNode.hidden; p.age = 'big'; await w(900);
+    // the switches
+    C.features = C.features || {}; for (const id of ['mysteryBox', 'rankings', 'collectibles']) C.features[id] = false; await w(900);
+    out.offHidden = chip().parentNode.hidden; G.boxes.openHub(0); await w(300); out.offHub = !document.querySelector('.modal.bxhub');
+    for (const id of ['mysteryBox', 'rankings', 'collectibles']) delete C.features[id];
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [];
+  if (!r.chip || r.hub !== 3) bad.push(`the gift chip (${r.chip}) or the three picture buttons (${r.hub})`);
+  if (!r.prize || r.got !== 1 || r.left !== 0 || !r.empty) bad.push('the free box ' + JSON.stringify(r));
+  if (r.earned !== 1 || r.once !== 1) bad.push(`quest boxes: ${r.earned} then ${r.once} (one a day)`);
+  if (!r.dup) bad.push('a second one did not become stars');
+  if (!r.ranks || r.boards !== 4 || !r.board2) bad.push('the family rankings');
+  if (!r.book || r.bookSmall) bad.push('the collection book');
+  if (!r.easyHidden || !r.littleHidden) bad.push('Easy or an under-5 still sees the boxes');
+  if (!r.offHidden || !r.offHub) bad.push('the Studio switches did not turn it off');
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return 'a big kid at Medium: the free box opened (then none left today), one quest box a day, a second one became stars, the family on 4 boards, the book with shadows; Easy, under-5s and the switches hide it';
+});
+// (round S, owner plan 8 Oct) Hội làng: every host game free (no 3-coin skip), three events a day on the AEST clock
+// (17:30 for under-5s), the parade and the crowd at the nearest village, late arrivals told, the prize like the kite
+await check('hoilang', async () => {
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, w = t => new Promise(r => setTimeout(r, t)), C = (await import('/js/custom.js')).CUSTOM, S = await import('/js/state.js');
+    delete C.features.hoilang; const realNow = Date.now, at = s => { const ms = Date.parse(s + ':00+10:00'); Date.now = () => ms; };
+    const out = {}, txt = () => [...document.querySelectorAll('.dialog')].map(d => d.textContent).join(' ');
+    // the games board: free, no price, a game opens and no coins go
+    const board = G.interactables.find(i => /^fs\d+$/.test(i.id)), c0 = S.farm.coins;
+    board.act(h); await w(500); out.boardChoices = [...document.querySelectorAll('.dialog .dch')].map(b => b.textContent).join('|');
+    document.querySelector('.dialog .dch').click(); await w(900); out.boardGame = !!document.querySelector('.gl'); out.boardCoins = S.farm.coins - c0;
+    document.querySelector('.gl .gl-x')?.click(); await w(700); document.querySelectorAll('.dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false;
+    // 09:02 AEST at the first village: the festival is on there
+    const F = G.hoilang.fests[0]; out.fests = G.hoilang.fests.length;
+    h.pos.set(F.x + 3, h.pos.y, F.z + 3); h.pos.y = (await import('/js/world.js')).heightAt(h.pos.x, h.pos.z) + .1;
+    // (walking into Lotus Village opens the main story's chapter page, and the world rests while a storybook is open:
+    // close what the world opened by itself, like the harness's clear(), then let the festival clock tick)
+    // (the HUD has one toast line and the newest message takes it, e.g. the daily gift hint: keep every toast shown)
+    const toasts = [], tEl = document.querySelector('.hud .htoast'), mo = new MutationObserver(() => toasts.push(tEl.textContent)); mo.observe(tEl, { childList: true, characterData: true, subtree: true });
+    at('2026-10-10T09:02'); await w(800); document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false; await w(2500);
+    out.on = G.hoilang.clock().on; out.active = G.hoilang.active() === F;
+    out.walkers = (G.hoilang.walkers() || []).filter(A => A.root.visible).length; out.crowd = (G.hoilang.crowd() || []).filter(A => A.root.visible).length;
+    mo.disconnect(); out.toast = toasts.find(x => /festival|Hội làng/.test(x)) || toasts.join(' | ');
+    // an under-5 joins: playing the festival game (even left early) gives the first prize, once
+    p.age = 'little'; p.hoilang = {}; G.hoilang.openFest(h, F); await w(500); document.querySelector('.dialog .dch').click(); await w(1200);
+    out.joinGame = !!document.querySelector('.gl'); document.querySelector('.gl .gl-x')?.click(); await w(4500);
+    out.prizes = (p.hoilang.prizes || []).join(','); out.keepsake = (p.keepsakes || []).includes('hl_drum'); out.carry = p.hoilang.carry;
+    document.querySelectorAll('.dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false;
+    G.hoilang.openFest(h, F); await w(500); out.already = /prize from this festival|quà của hội này/.test(txt()); document.querySelectorAll('.dialog').forEach(e => e.remove());
+    // a big kid who leaves without winning gets nothing (16:02)
+    p.age = 'big'; at('2026-10-10T16:02'); G.hoilang.openFest(h, F); await w(500); document.querySelector('.dialog .dch')?.click(); await w(1200); document.querySelector('.gl .gl-x')?.click(); await w(4500);
+    out.bigPrizes = (p.hoilang.prizes || []).length; document.querySelectorAll('.dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false;
+    // the evening one: 17:30 for under-5s, 19:00 for big kids
+    at('2026-10-10T17:40'); out.bigAt1740 = G.hoilang.clock().on; p.age = 'little'; out.littleAt1740 = G.hoilang.clock().on;
+    // too late: told when the next one is
+    at('2026-10-10T09:20'); G.hoilang.openFest(h, F); await w(500); out.next = /16:00/.test(txt()); document.querySelectorAll('.dialog').forEach(e => e.remove()); G.paused = false;
+    // the Backpack: carry the prize or put it away, like the kite
+    G.openPad(0, 'bag'); await w(600); const slot = document.querySelector('.pad [data-hlcarry]'); out.bag = !!slot; slot?.click(); await w(300); out.putAway = p.hoilang.carryOn === false;
+    document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false;
+    // the Studio switch
+    at('2026-10-10T09:02'); C.features.hoilang = false; await w(1500);
+    out.offPole = !G.interactables.find(i => i.id === 'hoilang' + F.k).visible(); out.offParade = !(G.hoilang.walkers() || []).some(A => A.root.visible);
+    Date.now = realNow; return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [];
+  if (/\$|coin/i.test(r.boardChoices) || !r.boardGame || r.boardCoins !== 0) bad.push('the games board is not free: ' + JSON.stringify([r.boardChoices, r.boardGame, r.boardCoins]));
+  if (!r.on || !r.active || r.walkers !== 4 || r.crowd !== 5) bad.push('no parade and crowd at 09:02 ' + JSON.stringify(r));
+  if (!/festival|Hội làng/.test(r.toast)) bad.push('the child was not told the festival is on: ' + r.toast);
+  if (!r.joinGame || r.prizes !== 'drum' || !r.keepsake || r.carry !== 'drum') bad.push('joining did not give the prize ' + JSON.stringify(r));
+  if (!r.already) bad.push('a second prize at the same festival');
+  if (r.bigPrizes !== 1) bad.push('a big kid got a prize without winning');
+  if (r.bigAt1740 || !r.littleAt1740) bad.push('the evening festival is not 17:30 for under-5s and 19:00 for big kids');
+  if (!r.next) bad.push('a late child was not told the next time');
+  if (!r.bag || !r.putAway) bad.push('the prize is not in the Backpack to carry or put away');
+  if (!r.offPole || !r.offParade) bad.push('the Studio switch does not turn it off');
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return `${r.fests} villages; games board free; 09:00 parade (4) and crowd (5); under-5 prize for joining, once; big kid needs a win; 17:30/19:00; next time told; carried like the kite; switch off`;
+});
+// (round S) surprises: at most 3 a session, only when free, never missed (they follow the child), each gives a sticker
+// or a keepsake, calm mode keeps them still
+await check('surprises', async () => {
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, w = t => new Promise(r => setTimeout(r, t)), C = (await import('/js/custom.js')).CUSTOM, S = await import('/js/state.js'), Sp = G.surprises;
+    const { SURPRISES } = await import('/js/content/surprises.js'), { heightAt } = await import('/js/world.js');
+    delete C.features.surprises; const out = { bad: [] }, near = c => Math.hypot(c.x - h.pos.x, c.z - h.pos.z);
+    const tidy = () => { document.querySelectorAll('.dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false; };
+    // not while a window is open
+    Sp.reset(); Sp.setPlay(1000); const m = document.createElement('div'); m.className = 'modal'; document.body.appendChild(m); await w(2500); out.whileBusy = !!Sp.current(); m.remove();
+    // the limit: found as soon as each comes, at most 3
+    // (the fairy glade starts with its first glowing stone in front of the child; the path leads ~14 m on to the ring)
+    const start = c => c.id === 'glade' && c.parts[0] ? { x: c.parts[0].position.x, z: c.parts[0].position.z } : c;
+    let n = 0; for (let k = 0; k < 6; k++) { Sp.setPlay(1000 + k * 400); await w(1600); const c = Sp.current(); if (c) { n++; if (near(start(c)) > 16 && c.id !== 'lotus') out.bad.push(c.id + ' far ' + near(start(c)).toFixed(0)); await Sp.found(h); tidy(); } }
+    out.count = n; out.shown = Sp.state().shown;
+    // every kind: placed, then found for its sticker or keepsake
+    for (const s of SURPRISES) {
+      Sp.reset(); const st0 = p.stickers.length, k0 = (p.keepsakes || []).length; if (s.id === 'chest') { p.surprises = { ...(p.surprises || {}), map: 3 }; }
+      const c = Sp.place(s.id, h); if (!c) { out.bad.push('could not place ' + s.id); continue; }
+      if (s.id === 'butterfly') { for (let k = 0; k < 3; k++) { h.pos.x = c.x; h.pos.z = c.z; h.pos.y = heightAt(c.x, c.z) + .1; await w(4500); } out.landed = c.hop >= 3 && c.it.visible(h); }
+      if (!c.it.visible(h)) { out.bad.push(s.id + ' not tappable'); continue; }
+      c.it.act(h); await w(400); tidy();
+      const gave = p.stickers.length > st0 || (p.keepsakes || []).length > k0 || s.id === 'map' || p.stickers.length === G.STICKERS.length;
+      if (!gave) out.bad.push(s.id + ' gave nothing'); if (Sp.current()) out.bad.push(s.id + ' still out after found');
+    }
+    out.mapPieces = p.surprises.map;
+    // never missed: walk far away and it comes back near the child
+    Sp.reset(); const c = Sp.place('butterfly', h); h.pos.x += 60; h.pos.y = heightAt(h.pos.x, h.pos.z) + .1; await w(5000); const c2 = Sp.current(); out.followed = !!c2 && near(c2) < 16;
+    // calm: one slow shooting star
+    S.settings.calm = true; Sp.reset(); const cs = Sp.place('stars', h); out.calmStreaks = cs ? cs.streaks.length : -1; S.settings.calm = false;
+    // the Studio switch
+    C.features.surprises = false; await w(1500); out.off = !Sp.current();
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [...r.bad];
+  if (r.whileBusy) bad.push('a surprise came while a window was open');
+  if (r.count !== 3 || r.shown !== 3) bad.push(`not 3 a session: ${r.count}/${r.shown}`);
+  if (!r.landed) bad.push('the golden butterfly did not fly on three times and land');
+  if (!r.followed) bad.push('a surprise left behind did not come back to the child');
+  if (r.calmStreaks !== 1) bad.push('calm mode: ' + r.calmStreaks + ' shooting stars');
+  if (!r.off) bad.push('the Studio switch does not take it away');
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return `3 a session, none while busy; all ${10} kinds give a sticker or keepsake (map piece ${r.mapPieces}/3, chest); the butterfly lands after 3 hops; follows the child; calm: one star; switch off`;
+});
+// (round S) for grown-ups: a family mission written in Grown-ups, shown to the child, ticked with a press-and-hold;
+// the weekly note; the certificate card saved as a picture (no print); the dance break and its Skip; bedtime (dim,
+// lullaby, goodnight, hold for 10 more minutes); the birthday surprise; the switches
+await check('parents', async () => {
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, w = t => new Promise(r => setTimeout(r, t)), C = (await import('/js/custom.js')).CUSTOM, S = await import('/js/state.js');
+    const out = {}, tidy = () => { document.querySelectorAll('.dialog, .modal, .reward, .songs').forEach(e => e.remove()); document.body.classList.remove('songs-on'); G.paused = false; };
+    const hold = async b => { const r = b.getBoundingClientRect(), o = { bubbles: true, clientX: r.x + 5, clientY: r.y + 5, pointerId: 3 }; b.dispatchEvent(new PointerEvent('pointerdown', o)); await w(2000); b.dispatchEvent(new PointerEvent('pointerup', o)); };
+    S.settings.missions = []; S.settings.bedtime = ''; p.stats.days = { [new Date().toISOString().slice(0, 10)]: { min: 30, games: 4 } };
+    // Grown-ups: write a mission; the weekly note and the cards are there
+    const { openGrownups } = await import('/js/ui.js'); openGrownups(); await w(500);
+    const g = document.querySelector('.modal.grownups'); g.querySelector('details[data-sec=family]').open = true;
+    g.querySelector('#fmEn').value = 'Help set the table'; g.querySelector('#fmVi').value = 'Giúp dọn bàn ăn'; g.querySelector('#fmAdd').click(); await w(400);
+    const g2 = document.querySelector('.modal.grownups'); out.listed = /Help set the table/.test(g2.textContent); out.note = !!g2.querySelector('.wknote p'); out.certBtn = !!g2.querySelector('[data-cert]');
+    tidy(); await w(6000);
+    // the child is told (a speech box with the family's words)
+    out.told = [...document.querySelectorAll('.dialog')].some(d => /Help set the table/.test(d.textContent)); tidy();
+    // Adventures: a grown-up holds ✓
+    const c0 = S.farm.coins; G.openPad(0, 'log'); await w(600); const t = document.querySelector('.pad .missions [data-mtick]'); out.mtick = t ? Math.round(t.getBoundingClientRect().width) : 0;
+    if (t) await hold(t); await w(500); out.coins = S.farm.coins - c0; out.open = G.parents.openFor(p).length; tidy();
+    // the certificate card: a picture, saved without a print window
+    let printed = false; const pr = window.print; window.print = () => { printed = true; };
+    const url = await G.parents.certificate(p); out.cert = url.startsWith('data:image/png') && url.length > 20000;
+    await G.parents.openCertificate(p); out.saveBtn = !!document.querySelector('.certcard [data-save]'); out.printed = printed; window.print = pr; tidy();
+    // the dance break after 20 minutes of play, with a big Skip
+    delete C.features.danceBreak; G.parents.setPlayMin(21); await w(6500);
+    const sk = document.querySelector('.dancebreak .db-skip'); out.dance = !!sk; out.skipH = sk ? Math.round(sk.getBoundingClientRect().height) : 0; sk?.click(); await w(300);
+    out.danceGone = !document.querySelector('.dancebreak') && !G.paused;
+    // bedtime 19:30 AEST: at 19:31 the valley dims and a lullaby plays; at 19:40 goodnight; hold for 10 more minutes
+    const realNow = Date.now, at = s => { const ms = Date.parse(s + ':00+10:00'); Date.now = () => ms; };
+    S.settings.bedtime = '19:30'; at('2026-10-10T19:31'); await w(9000); out.dim = !!document.querySelector('.bedtime-dim'); out.lullaby = !!document.querySelector('.songs');
+    at('2026-10-10T19:40'); await w(6000); const gn = document.querySelector('.resttime.bedtime'); out.goodnight = !!gn;
+    if (gn) await hold(gn.querySelector('.grownup')); await w(300); out.snoozed = !document.querySelector('.resttime.bedtime') && S.settings.bedSnooze > realNow();
+    S.settings.bedtime = ''; S.settings.bedSnooze = 0; tidy(); document.querySelector('.bedtime-dim')?.remove();
+    // the birthday: on the day (AEST), a surprise and a keepsake, once
+    // (the reward pop-up closes itself after 2.6 s: watch for it during the wait rather than look once at the end)
+    at('2026-10-10T10:00'); p.birthday = '10-10'; delete p.bdayDone; let pop = false; for (let k = 0; k < 26 && !pop; k++) { await w(250); pop = !!document.querySelector('.reward'); }
+    await w(300); out.bday = pop && (p.keepsakes || []).includes('bd_cake'); tidy();
+    Date.now = realNow;
+    // the switches
+    C.features.familyMissions = false; out.offMissions = G.parents.logHTML(p) === '' && !G.parents.openFor(p).length;
+    for (const id of ['familyMissions', 'weeklyNote', 'certCard', 'danceBreak', 'bedtime', 'birthday']) C.features[id] = false;
+    out.offGrownups = G.parents.grownupsHTML(true) === '';
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [];
+  if (!r.listed || !r.note || !r.certBtn) bad.push('Grown-ups: mission, weekly note or card missing ' + JSON.stringify(r));
+  if (!r.told) bad.push('the child was not shown the new mission');
+  if (r.mtick < 64 || r.coins !== 10 || r.open !== 0) bad.push('holding ✓ did not finish the mission ' + JSON.stringify([r.mtick, r.coins, r.open]));
+  if (!r.cert || !r.saveBtn || r.printed) bad.push('the certificate card ' + JSON.stringify([r.cert, r.saveBtn, r.printed]));
+  if (!r.dance || r.skipH < 64 || !r.danceGone) bad.push('the dance break ' + JSON.stringify([r.dance, r.skipH, r.danceGone]));
+  if (!r.dim || !r.lullaby || !r.goodnight || !r.snoozed) bad.push('bedtime ' + JSON.stringify([r.dim, r.lullaby, r.goodnight, r.snoozed]));
+  if (!r.bday) bad.push('no birthday surprise');
+  if (!r.offMissions || !r.offGrownups) bad.push('the Studio switches do not turn them off');
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return 'mission written, shown, ticked with a hold (+10); weekly note; certificate picture saved (no print); dance break with a 64 px Skip; bedtime dims, lullaby, goodnight, hold for 10 more; birthday surprise; switches off';
+});
+// (round S, owner 9 Oct) the money follows the language (Vietnamese: đồng, English: dollars) until a grown-up picks one
+await check('currency', async () => {
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const S = await import('/js/state.js'), M = await import('/js/money.js'), st = S.settings, out = {};
+    st.curPinned = false; st.lang = 'en'; out.en = M.curCode() + ' ' + M.fmtMinor(250);
+    st.lang = 'vi'; out.vi = M.curCode() + ' ' + M.fmtMinor(20000);
+    st.currency = 'AUD'; st.curPinned = true; out.pinned = M.curCode();
+    st.curPinned = false; st.lang = 'en';
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [];
+  if (r.en !== 'AUD $2.50') bad.push('English: ' + r.en);
+  if (r.vi !== 'VND 20.000đ') bad.push('Vietnamese: ' + r.vi);
+  if (r.pinned !== 'AUD') bad.push('a grown-up\'s pick did not stick: ' + r.pinned);
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return `English ${r.en}, Vietnamese ${r.vi}, a grown-up's AUD stays ${r.pinned} in Vietnamese`;
+});
 await check('camcalm', async () => {
   // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:
   // the camera never swings faster than a slow steady pace, and a jump doesn't jerk the picture up and down
@@ -1347,32 +1663,39 @@ await check('songs', async () => {
 });
 
 await check('realphotos', async () => {
-  // round O (owner: "Real photos and 360° show nothing"): the photos come from Wikipedia's main API (the old picture
-  // list is being retired), the article's main picture first, with the photographer's credit; and 360° opens on top
-  // of the photos instead of behind them. (Wikipedia is pretended here: the test machine has no internet.)
+  // (round R privacy, 9 Oct, owner: "landmark photos served from our own site") the photos are only the ones listed in
+  // photos/index.json (paths inside photos/), with their credit as words; the game never asks Wikipedia or Wikimedia; a
+  // place with none says the photos are on their way; 360° (Google) opens only after a grown-up's press and hold.
+  // (round O) 360° opens on top of the photos.
   const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
-  await P.page.route('**/rest_v1/**', r => r.fulfill({ status: 404, body: '' }));
-  await P.page.route('**/w/api.php**', r => { const u = r.request().url();
-    if (/pageimages/.test(u)) return r.fulfill({ json: { query: { pages: [{ title: 'Saigon Central Post Office', pageimage: 'Lead_photo.jpg' }] } } });
-    return r.fulfill({ json: { query: { pages: [
-      { title: 'File:Other view.jpg', imageinfo: [{ mime: 'image/jpeg', url: 'https://upload.wikimedia.org/a/other.jpg', thumburl: 'https://upload.wikimedia.org/a/1280px-other.jpg', extmetadata: { Artist: { value: '<a>Someone</a>' }, LicenseShortName: { value: 'CC BY-SA 4.0' }, ImageDescription: { value: 'Inside the hall' } } }] },
-      { title: 'File:Lead photo.jpg', imageinfo: [{ mime: 'image/jpeg', url: 'https://upload.wikimedia.org/a/lead.jpg', thumburl: 'https://upload.wikimedia.org/a/1280px-lead.jpg', extmetadata: { Artist: { value: 'Photographer' }, LicenseShortName: { value: 'CC BY 2.0' } } }] },
-      { title: 'File:City map.svg', imageinfo: [{ mime: 'image/svg+xml', url: 'https://upload.wikimedia.org/a/map.svg' }] }] } } }); });
-  await P.page.route('https://upload.wikimedia.org/**', r => r.fulfill({ body: png, contentType: 'image/png', headers: { 'Access-Control-Allow-Origin': '*' } }));
+  const outside = []; P.page.on('request', q => { if (/wikipedia\.org|wikimedia\.org|openverse/.test(q.url())) outside.push(q.url()); });
+  await P.page.route('**/photos/index.json*', r => r.fulfill({ json: { 'en-saigon-central-post-office': [
+    { src: 'photos/en-saigon-central-post-office/1.jpg', file: 'File:Lead photo.jpg', caption: 'The post office', credit: 'Photographer · CC BY 2.0 · Wikipedia' },
+    { src: 'photos/en-saigon-central-post-office/2.jpg', file: 'File:Other view.jpg', caption: 'Inside the hall', credit: 'Someone · CC BY-SA 4.0' },
+    { src: 'https://upload.wikimedia.org/a/elsewhere.jpg', file: 'File:Elsewhere.jpg', caption: 'not ours', credit: 'x' }] } }));
+  await P.page.route('**/photos/en-saigon-central-post-office/*.jpg', r => r.fulfill({ body: png, contentType: 'image/png' }));
   await P.page.route('https://maps.google.com/**', r => r.fulfill({ body: '<html><body>map</body></html>', contentType: 'text/html' }));
   const r = await P.page.evaluate(async () => {
     const W = await import('/js/realworld.js'), wait = ms => new Promise(x => setTimeout(x, ms));
     W.openPhotos('Saigon Central Post Office', W.REAL.postoffice[0], { id: 'postoffice' });
     for (let k = 0; k < 40 && !document.querySelector('.rv-img'); k++) await wait(150);
-    const cap = document.querySelector('.rv-cap a') ? document.querySelector('.rv-cap a').textContent : '', none = document.querySelector('.realview').classList.contains('none'), dots = document.querySelectorAll('.rv-dots i').length;
-    document.querySelector('.rv-360').click(); await wait(400);
-    const map = document.querySelector('.modal.rvmap'), q = map.querySelector('.card').getBoundingClientRect(), top = document.elementFromPoint(q.left + q.width / 2, q.top + 30);
-    return { none, dots, cap, onTop: !!(top && top.closest('.rvmap')) };
+    const v = document.querySelector('.realview'), cap = v.querySelector('.rv-credit') ? v.querySelector('.rv-credit').textContent : '', none = v.classList.contains('none'), dots = v.querySelectorAll('.rv-dots i').length;
+    const srcs = [...v.querySelectorAll('.rv-img')].map(i => i.getAttribute('src')), links = v.querySelectorAll('.rv-cap a').length;
+    v.querySelector('.rv-360').click(); await wait(400);
+    const gate = document.querySelector('.modal.rvgate'), early = !!document.querySelector('.rvmap iframe'), says = gate ? /Google/.test(gate.textContent) : false;
+    const btn = gate.querySelector('.rv-ok'), tap = Math.round(btn.getBoundingClientRect().height);
+    btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await wait(1900);
+    const map = document.querySelector('.modal.rvmap:not(.rvgate)'), q = map.querySelector('.card').getBoundingClientRect(), top = document.elementFromPoint(q.left + q.width / 2, q.top + 30);
+    const opened = !!map.querySelector('iframe');
+    document.querySelectorAll('.realview, .modal').forEach(e => e.remove());
+    W.openPhotos('Uluru', W.REAL.uluru[0], { id: 'uluru' }); for (let k = 0; k < 30 && !document.querySelector('.realview.none'); k++) await wait(100);
+    const empty = !!document.querySelector('.realview.none');
+    return { none, dots, cap, srcs, links, gate: !!gate, early, says, tap, opened, onTop: !!(top && top.closest('.rvmap')), empty };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(!r.none && r.dots === 2 && /Photographer/.test(r.cap) && r.onTop && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return `2 photos from the main API (map left out), the article's own picture first, credit “${r.cap}”; 360° opens on top of the photos`;
+  ok(!r.none && r.dots === 2 && /Photographer/.test(r.cap) && r.srcs.every(x => /^photos\//.test(x)) && !r.links && r.gate && !r.early && r.says && r.tap >= 44 && r.opened && r.onTop && r.empty && !outside.length && !errs.length, JSON.stringify(Object.assign(r, { outside, errs })));
+  return `2 photos from photos/index.json (a web address left out), credit “${r.cap}” as words; nothing asked of Wikipedia or Wikimedia; a place with none says they are on their way; 360° asks a grown-up (says it opens Google), then opens on top of the photos`;
 });
 
 await check('firstplayer', async () => {
@@ -1392,7 +1715,8 @@ await check('firstplayer', async () => {
 
 await check('grownupsui', async () => {
   // round P (owner): on a phone the action button sits on the right above Jump and Run (the left half is the joystick's)
-  // and the spoken words near the top; Grown-ups in groups that open and close, the voice engine folded, no credits editor
+  // and the spoken words near the top; Grown-ups in groups that open and close, no credits editor; (round R privacy, 9 Oct)
+  // the privacy notice first and no voice engine or voice key
   const P = await open(b, { w: 390, h: 844, touch: true, lang: 'vi' }); await clear(P.page);
   const r = await P.page.evaluate(async () => {
     const wait = ms => new Promise(x => setTimeout(x, ms)), h = __sv.huds[0];
@@ -1402,13 +1726,15 @@ await check('grownupsui', async () => {
     const cap = document.querySelector('.caption'), c = cap ? cap.getBoundingClientRect() : null;
     const { openGrownups } = await import('/js/ui.js'); openGrownups(); await wait(400);
     const secs = [...document.querySelectorAll('.grownups details.gsec')].map(d => d.dataset.sec), open = [...document.querySelectorAll('.grownups details.gsec[open]')].map(d => d.dataset.sec);
-    const eng = document.querySelector('.grownups details.xeng'), credits = !!document.querySelector('.grownups #crName');
-    return { act: [a.left, a.top, a.right, a.bottom].map(Math.round), moves: Math.round(mv.top), w: innerWidth, cap: c ? [Math.round(c.top), Math.round(c.bottom)] : null, secs, open, engine: !!eng, engineOpen: !!(eng && eng.open), credits };
+    // (round R privacy, 9 Oct) no voice engine or voice key any more; the privacy notice is its own small block at the top
+    const eng = document.querySelector('.grownups details.xeng, .grownups #xKey, .grownups #xTts, .grownups #xClone'), credits = !!document.querySelector('.grownups #crName');
+    const priv = document.querySelector('.grownups details.g-priv'), firstSec = document.querySelector('.grownups details.gsec');
+    return { act: [a.left, a.top, a.right, a.bottom].map(Math.round), moves: Math.round(mv.top), w: innerWidth, cap: c ? [Math.round(c.top), Math.round(c.bottom)] : null, secs, open, engine: !!eng, privacy: priv ? priv.querySelectorAll('li').length : 0, privFirst: !!(priv && firstSec && priv.compareDocumentPosition(firstSec) & Node.DOCUMENT_POSITION_FOLLOWING), privTap: priv ? Math.round(priv.querySelector('summary').getBoundingClientRect().height) : 0, credits };
   });
   const errs = P.errors; await P.ctx.close();
   ok(r.act[0] > r.w / 2 - 40 && r.act[3] <= r.moves + 2 && r.cap && r.cap[0] < 260, 'phone layout: ' + JSON.stringify(r));
-  ok(r.secs.length >= 8 && r.secs.includes('sound') && r.secs.includes('online') && r.open.join() === 'players' && r.engine && !r.engineOpen && !r.credits && !errs.length, 'grown-ups: ' + JSON.stringify(Object.assign(r, { errs })));
-  return `action button on the right above Jump/Run (${r.act.join(',')}), words at the top (${r.cap.join('–')} px); Grown-ups: ${r.secs.length} groups (${r.secs.join(', ')}), the voice engine folded, no credits editor`;
+  ok(r.secs.length >= 8 && r.secs.includes('sound') && r.secs.includes('online') && r.open.join() === 'players' && !r.engine && r.privacy === 6 && r.privFirst && r.privTap >= 44 && !r.credits && !errs.length, 'grown-ups: ' + JSON.stringify(Object.assign(r, { errs })));
+  return `action button on the right above Jump/Run (${r.act.join(',')}), words at the top (${r.cap.join('–')} px); Grown-ups: ${r.secs.length} groups (${r.secs.join(', ')}), the privacy notice first (${r.privacy} lines), no voice engine or voice key, no credits editor`;
 });
 
 await check('playhub', async () => {
@@ -1553,6 +1879,26 @@ await check('postcards', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(r.got.length === 1 && r.got[0] === 'postcard:family/f1' && r.shown.on === 1 && r.shown.waiting === 1 && r.loaded && r.valid === 2 && r.studioSame && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return `a family photo for Lotus Village arrived once as a postcard, shows in the album and opens big; a photo from outside the game folder is ignored; Studio offers the same ${r.ids} places`;
+});
+
+await check('familyphotos', async () => {
+  // (round R privacy, 9 Oct) family photos are family-only: custom.json names them family:<name>; without the family code
+  // the game shows none (drawn faces stay); with it they come from api/family/<name> (the code in x-family-code), are kept
+  // in the "sv-family" cache for offline days, and a code the website no longer takes clears them
+  const P = await open(b, { w: 900, h: 640, play: false }), NAME = 'Abcdefghijklmnopqrstuvwx', CODE = 'ABCDEFGHJKMN';
+  const jpg = Buffer.from('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=', 'base64');
+  let asked = [], good = CODE;
+  await P.page.route('**/content/custom.json*', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ album: [{ id: 'f1', photo: 'family:' + NAME, en: 'Grandma', vi: 'Bà', place: 'village' }], faces: { 'Bà Năm': { photo: 'family:' + NAME, skin: '#f0c0a0' } } }) }));
+  await P.page.route('**/api/family/*', r => { const c = r.request().headers()['x-family-code'] || ''; asked.push(c); return c === good ? r.fulfill({ contentType: 'image/jpeg', headers: { 'Cache-Control': 'private, no-store' }, body: jpg }) : r.fulfill({ status: 401, body: 'no' }); });
+  await P.page.reload(); await start(P.page); await clear(P.page);
+  const r1 = await P.page.evaluate(async () => { const C = await import('/js/custom.js'); return { album: C.customAlbum().length, face: !!C.customFace('Bà Năm') }; });
+  const r2 = await P.page.evaluate(async code => { const C = await import('/js/custom.js'); const res = await C.setFamilyCode(code); const c = await caches.open('sv-family'), kept = (await c.keys()).length, swHas = (await Promise.all((await caches.keys()).filter(k => k !== 'sv-family').map(async k => (await (await caches.open(k)).keys()).some(q => /api\/family|__family/.test(q.url))))).some(Boolean);
+    return { res, album: C.customAlbum().length, photo: (C.customAlbum()[0] || {}).photo || '', face: !!C.customFace('Bà Năm'), kept, swHas }; }, CODE.toLowerCase().replace(/(.{4})/g, '$1-'));
+  good = 'SOMETHINGNEW';
+  const r3 = await P.page.evaluate(async () => { const C = await import('/js/custom.js'); const res = await C.refreshFamilyPhotos({ all: true }); return { res, album: C.customAlbum().length, caches: (await caches.keys()).includes('sv-family') }; });
+  const errs = P.errors; await P.ctx.close();
+  ok(r1.album === 0 && !r1.face && r2.res.ok && r2.album === 1 && /^blob:/.test(r2.photo) && r2.face && r2.kept === 1 && !r2.swHas && asked.includes(CODE) && r3.res.bad && r3.album === 0 && !r3.caches && !errs.length, JSON.stringify({ r1, r2, r3, asked, errs }));
+  return 'no code: no family photos; with the code: fetched with x-family-code, kept in sv-family (never the game cache), a changed code clears them';
 });
 
 await check('myhouse', async () => {
@@ -1736,6 +2082,7 @@ await check('netgames', async () => {
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
   const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'GAMEA2', friendsOn: true, autoMeet: false, friends: [{ code: 'GAMEB3', name: 'Bin' }] } });
   const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'GAMEB3', friendsOn: true, autoMeet: false, friends: [{ code: 'GAMEA2', name: 'Na' }] } });
+  await pairKeys(A, B);
   for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
   await A.page.evaluate(async () => __Net.host(__sv.sendHello())); await A.page.evaluate(() => __sv.shareStatus());
   await B.page.waitForFunction(() => { const s = __Net.friends.status.GAMEA2; return s && s.online && s.room; }, null, { timeout: 30000 });
@@ -1747,8 +2094,9 @@ await check('netgames', async () => {
   await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-caro]').click(); await new Promise(r => setTimeout(r, 400)); document.querySelector('.gamelevel [data-lvl="1"]')?.click(); });
   await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); const ask = await B.page.evaluate(() => document.querySelector('.dialog .dtext').textContent); await B.page.evaluate(() => document.querySelector('.dialog .dch').click());
   for (const P of [A, B]) await P.page.waitForSelector('.gl .caro', { timeout: 20000 });
-  const tap = async (P, i) => { await P.page.waitForFunction(i => { const c = document.querySelectorAll('.caro-c')[i]; return c && !c.textContent; }, i); await P.page.evaluate(i => document.querySelectorAll('.caro-c')[i].click(), i); };
-  const seen = async (P, i) => P.page.waitForFunction(i => !!document.querySelectorAll('.caro-c')[i].textContent, i, { timeout: 20000 });
+  // (a placed piece is marked .put: its emoji is swapped for a drawing, so the text is empty)
+  const tap = async (P, i) => { await P.page.waitForFunction(i => { const c = document.querySelectorAll('.caro-c')[i]; return c && !c.classList.contains('put'); }, i); await P.page.evaluate(i => document.querySelectorAll('.caro-c')[i].click(), i); };
+  const seen = async (P, i) => P.page.waitForFunction(i => document.querySelectorAll('.caro-c')[i].classList.contains('put'), i, { timeout: 20000 });
   for (const [P, Q, i] of [[A, B, 0], [B, A, 3], [A, B, 1], [B, A, 4], [A, B, 2]]) { await tap(P, i); await seen(Q, i); }
   for (const P of [A, B]) await P.page.waitForSelector('.gl-win', { timeout: 20000 });
   const caro = { a: await A.page.evaluate(() => document.querySelector('.gl-win p').textContent), b: await B.page.evaluate(() => document.querySelector('.gl-win p').textContent), wonCells: await B.page.evaluate(() => document.querySelectorAll('.caro-c.win').length) };
@@ -1760,8 +2108,8 @@ await check('netgames', async () => {
   let hands = null;
   for (let round = 0; round < 3; round++) {
     for (const [P, k] of [[A, 0], [B, 2]]) { await P.page.waitForFunction(() => document.querySelectorAll('.gl .choice:not([disabled])').length === 3, null, { timeout: 20000 }); await P.page.evaluate(k => document.querySelectorAll('.gl .choice')[k].click(), k); }
-    await A.page.waitForFunction(() => [...document.querySelectorAll('.rps-p .h')].every(e => !/❔|✅/.test(e.textContent)), null, { timeout: 20000 });
-    if (round === 0) hands = await B.page.evaluate(async () => { await new Promise(r => setTimeout(r, 300)); return [...document.querySelectorAll('.rps-p .h')].map(e => e.textContent); });
+    await A.page.waitForFunction(src => { eval(src); return [...document.querySelectorAll('.rps-p .h')].every(e => !/❔|✅/.test(window.withEmo(e))); }, withEmo, { timeout: 20000 });
+    if (round === 0) hands = await B.page.evaluate(async src => { eval(src); await new Promise(r => setTimeout(r, 300)); return [...document.querySelectorAll('.rps-p .h')].map(e => window.withEmo(e)); }, withEmo);
   }
   for (const P of [A, B]) await P.page.waitForSelector('.gl-win', { timeout: 20000 });
   const rps = { a: await A.page.evaluate(() => document.querySelector('.gl-win p').textContent), b: await B.page.evaluate(() => document.querySelector('.gl-win p').textContent) };
@@ -1779,6 +2127,7 @@ await check('together', async () => {
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
   const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'TOGA22', friendsOn: true, autoMeet: false, friends: [{ code: 'TOGB33', name: 'Bin' }] } });
   const B = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'TOGB33', friendsOn: true, autoMeet: false, friends: [{ code: 'TOGA22', name: 'Na' }] } });
+  await pairKeys(A, B);
   for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
   await A.page.evaluate(async () => __Net.host(__sv.sendHello())); await A.page.evaluate(() => __sv.shareStatus());
   await B.page.waitForFunction(() => { const s = __Net.friends.status.TOGA22; return s && s.online && s.room; }, null, { timeout: 30000 });
@@ -1800,7 +2149,7 @@ await check('together', async () => {
   for (const P of [A, B]) await P.page.waitForSelector('.gl .race', { timeout: 20000 });
   await A.page.evaluate(() => __sv.netGames.move(900, 3));
   await B.page.waitForFunction(() => /⭐3/.test(document.querySelector('.gl .race').textContent), null, { timeout: 15000 }).catch(() => { });
-  const race = await B.page.evaluate(() => document.querySelector('.gl .race').textContent.replace(/\s+/g, ' ').trim());
+  const race = await B.page.evaluate(src => { eval(src); return window.withEmo(document.querySelector('.gl .race')).replace(/\s+/g, ' ').trim(); }, withEmo);
   await clean();
   // 3. follow a friend: A stands 25 m away, B follows
   await A.page.evaluate(() => { const h = __sv.heroes[0]; h.place(h.pos.x + 25, h.pos.z); });
@@ -1815,10 +2164,11 @@ await check('together', async () => {
   await B.page.waitForFunction(id => { const it = __sv.interactables.find(i => i.id === id); return it && !it.visible() && it.st.by; }, pick, { timeout: 15000 }).catch(() => { });
   const claim = await B.page.evaluate(id => { const it = __sv.interactables.find(i => i.id === id); return { gone: !it.visible(), by: it.st.by || '' }; }, pick);
   // 5. the real place inside the game
-  const real = await A.page.evaluate(async () => { (await import('/js/realworld.js')).openStreetView('opera'); await new Promise(r => setTimeout(r, 300)); const f = document.querySelector('.rvmap iframe'); return { inGame: !!f, src: f ? f.src.slice(0, 40) : '' }; });
+  // (round R privacy, 9 Oct) a grown-up's press and hold first, as it opens Google
+  const real = await A.page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); (await import('/js/realworld.js')).openStreetView('opera'); await wait(300); const early = !!document.querySelector('.rvmap iframe'), g = document.querySelector('.rvgate .rv-ok'); if (g) { g.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await wait(1900); } const f = document.querySelector('.rvmap iframe'); return { gate: !!g && !early, inGame: !!f, src: f ? f.src.slice(0, 40) : '' }; });
   const errs = [...A.errors, ...B.errors].filter(e => !/maps\.google|google\.com/.test(e)); await A.ctx.close(); await B.ctx.close();
-  ok(tale.a === tale.b && /prince/.test(tale.b) && /⭐3/.test(race) && follow < 6 && claim.gone && claim.by && real.inGame && !errs.length, JSON.stringify({ tale, race, follow, claim, real, errs }));
-  return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game`;
+  ok(tale.a === tale.b && /prince/.test(tale.b) && /⭐3/.test(race) && follow < 6 && claim.gone && claim.by && real.gate && real.inGame && !errs.length, JSON.stringify({ tale, race, follow, claim, real, errs }));
+  return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game after a grown-up's press and hold`;
 });
 
 await check('chests', async () => {
@@ -1915,7 +2265,9 @@ await check('meet', async () => {
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9000, path: '/myapp', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
   const A = await open(b, { pre, w: 700, h: 500, settings: { friendCode: 'MEETA2', friendsOn: false, friends: [{ code: 'MEETB3', name: 'Bin' }] } });
   const B = await open(b, { pre, w: 700, h: 500, lang: 'vi', settings: { friendCode: 'MEETB3', friendsOn: true, friends: [{ code: 'MEETA2', name: 'Na' }] } });
-  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  await pairKeys(A, B);
+  // (the friend's card is shown once and may already be up: tidy everything else, keep it)
+  for (const P of [A, B]) await P.page.evaluate(async () => { document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); __sv.paused = false; window.__Net = (await import('/js/net.js')).Net; });
   await B.page.waitForSelector('.friendnote [data-inv]', { timeout: 90000 });
   const noteText = await B.page.textContent('.friendnote');
   await B.page.waitForTimeout(10000);
@@ -1940,6 +2292,7 @@ await check('cloud', async () => {
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
   const A = await open(b, { pre, w: 900, h: 640, lang: 'en', settings: { friendCode: 'AAAAA2', friendsOn: true, autoMeet: false, friends: [{ code: 'BBBBB3', name: 'Bin' }] } });
   const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'BBBBB3', friendsOn: true, autoMeet: false, friends: [{ code: 'AAAAA2', name: 'Na' }] } });
+  await pairKeys(A, B);
   // each player has a photo: it must reach the friend through the cloud too (locked with their pair key)
   const photo = c => { const k = document.createElement('canvas'); k.width = k.height = 64; const g = k.getContext('2d'); g.fillStyle = c; g.fillRect(0, 0, 64, 64); __sv.heroes[0].profile.photo = k.toDataURL('image/jpeg', .8); };
   for (const [P, c] of [[A, '#ff0000'], [B, '#0000ff']]) { await clear(P.page); await P.page.evaluate(async c => { window.__Net = (await import('/js/net.js')).Net; }, c); await P.page.evaluate(photo, c); }
@@ -2032,7 +2385,7 @@ await check('netmsg', async () => {
 });
 
 await check('knock', async () => {
-  // A 4-digit room code is easy to guess, so newcomers knock. Through the cloud relay only (the harder path):
+  // A room code can be guessed, so newcomers knock (6 digits from round R privacy, 9 Oct). Through the cloud relay only (the harder path):
   // the starter's panel shows the code as digits and animals (no QR code: owner, round 30); a child types the code with
   // the animal pad and knocks (microphone off, nothing of the room heard); "No thanks" sends them away for good; a
   // stranger who skips knocking and just sends moves is ignored; another child types the numbers and is let in.
@@ -2074,10 +2427,29 @@ await check('knock', async () => {
   await E.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 30000 });
 
   const errs = A.errors.concat(D.errors, E.errors).filter(e => !/WebSocket|ERR_CONNECTION|peerjs/i.test(e)); await A.ctx.close(); await E.ctx.close();
-  ok(panel && panel.digits === code && panel.animals === 4 && !panel.qr && aniKeys === 10 && atDoor.knocking && !atDoor.partners && atDoor.mic === false && atDoor.panel && !sentAway.remotes && !sentAway.knocks && !sentAway.pop && !stranger.remotes && !stranger.partners && !stranger.bubbles && !errs.length, JSON.stringify({ panel, aniKeys, atDoor, sentAway, stranger, errs }));
-  return `code ${code} shown as digits and 4 animals (no QR code); typed on the animal pad, knocked with the microphone off and nothing heard; "No thanks" sent them away; a stranger's moves without knocking ignored; another child typed the numbers and was let in`;
+  ok(panel && panel.digits === code && panel.animals === 6 && !panel.qr && aniKeys === 10 && atDoor.knocking && !atDoor.partners && atDoor.mic === false && atDoor.panel && !sentAway.remotes && !sentAway.knocks && !sentAway.pop && !stranger.remotes && !stranger.partners && !stranger.bubbles && !errs.length, JSON.stringify({ panel, aniKeys, atDoor, sentAway, stranger, errs }));
+  return `code ${code} shown as digits and 6 animals (no QR code); typed on the animal pad, knocked with the microphone off and nothing heard; "No thanks" sent them away; a stranger's moves without knocking ignored; another child typed the numbers and was let in`;
 });
 
+await check('onlineoff', async () => {
+  // PRIV-006 (round R privacy, 9 Oct, owner): a fresh device has online play off. The Friends tab says so with no Start or
+  // Join, Net makes no connection (no PeerJS, no cloud relay, no friends' status), and Grown-ups turns it on.
+  const P = await open(b, { w: 390, h: 760, touch: true, pre: () => { const s = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); delete s.online; localStorage.setItem('sv2_settings', JSON.stringify(s)); window.__wsOpened = 0; const W = window.WebSocket; window.WebSocket = function (...a) { window.__wsOpened++; return new W(...a); }; window.WebSocket.prototype = W.prototype; } }); // (the harness turns it on; this device has never had the setting)
+  await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const S = await import('/js/state.js'), N = (await import('/js/net.js')).Net, wait = ms => new Promise(r => setTimeout(r, ms));
+    const setting = S.settings.online;
+    __sv.openPad(0, 'friend'); await wait(500);
+    const body = document.querySelector('.pad-body') || document.body, text = body.textContent;
+    const off = /Playing with friends is off/.test(text), buttons = !!document.querySelector('#oHost, .padwrap, .numpad, [data-joinf]');
+    document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
+    const code = await N.host({ name: 'X' }); await N.join('123456', { name: 'X' }); __sv.listenFriends(); await wait(1500);
+    return { setting, off, buttons, code, role: N.role, peer: !!N.peer, door: !!N.door, cloud: !!N.cloud, beacon: !!N.beacon, pres: !!N.friends.ch, peerLoaded: !!window.Peer, ws: window.__wsOpened };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.setting === false && r.off && !r.buttons && r.code === null && !r.role && !r.peer && !r.door && !r.cloud && !r.beacon && !r.pres && !r.ws && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'a fresh device: "Playing with friends is off. Ask a grown-up to turn it on.", no Start or Join; host, join and friends make no connection';
+});
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);

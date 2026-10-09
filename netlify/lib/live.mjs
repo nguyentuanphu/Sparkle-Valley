@@ -19,5 +19,7 @@ export function cleanLive(b) {
   }
   return out;
 }
+// (round R privacy, 9 Oct) what every device gets from /api/live: the rules and when they changed, never who changed them
+export const publicLive = v => { const o = { releases: (v && v.releases) || {}, festivals: (v && v.festivals) || {} }; if (v && v.at) o.at = v.at; return o; };
 export const readLive = async S => (await S.get('live', { type: 'json' }).catch(() => null)) || { releases: {}, festivals: {} };
 export const saveLive = async (S, body, by) => { const v = { ...cleanLive(body), at: new Date().toISOString(), by: String(by || '').slice(0, 40) }; await S.setJSON('live', v); return v; };

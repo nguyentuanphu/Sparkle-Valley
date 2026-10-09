@@ -605,8 +605,48 @@ add('⏱️ ⏱', `${circ(24, 27, 16, '#fff')}<path d="M24 27l6-7" ${W} ${N}/><r
 add('🎞️ 🎞', `<rect x="10" y="4" width="28" height="40" rx="3" fill="#3b2a4f"/><rect x="16" y="9" width="16" height="12" fill="#5fb6ff"/><rect x="16" y="27" width="16" height="12" fill="#ffd23f"/>${[8, 16, 24, 32, 40].map(y => `<rect x="11.5" y="${y - 1.5}" width="2.5" height="3" fill="#fff"/><rect x="34" y="${y - 1.5}" width="2.5" height="3" fill="#fff"/>`).join('')}`);
 add('🔓', `<rect x="10" y="20" width="28" height="22" rx="4" fill="#5fd39a" ${W}/><path d="M16 20v-6c0-6 4-9 8-9s8 3 8 7" ${W} ${N}/>${circ(24, 30, 3, O)}<path d="M24 31v5" ${W}/>`);
 
+// (round S, owner plan 8 Oct) the money games' coins and notes, drawn simply in the valley's style and never copied from
+// real banknotes: silver and gold Australian coins (the 50c with twelve sides, the gold $2 smaller than the $1), notes in
+// their colours with the clear window; Vietnamese notes in their colours, the window only on the plastic ones (10.000
+// and up). Keys are the currency and the value in cents or đồng ('aud50', 'vnd20000'; js/games/moneylogic.js).
+{
+  const lbl = (t, y, size, fill = O, line = '') => `<text x="24" y="${y}" font-size="${size}" font-weight="900" text-anchor="middle" fill="${fill}" ${line} font-family="Fredoka,sans-serif"${t.length > 5 ? ` textLength="${Math.min(38, t.length * 5)}" lengthAdjust="spacingAndGlyphs"` : ''}>${t}</text>`;
+  const poly = (r, sides) => [...Array(sides)].map((_, i) => { const a = i / sides * Math.PI * 2 - Math.PI / 2; return (i ? 'L' : 'M') + (24 + Math.cos(a) * r).toFixed(1) + ' ' + (24 + Math.sin(a) * r).toFixed(1); }).join('') + 'z';
+  const coin = (k, r, fill, rim, t, sides) => {
+    const shape = (rr, f, extra) => sides ? `<path d="${poly(rr, sides)}" fill="${f}" ${extra}/>` : `<circle cx="24" cy="24" r="${rr}" fill="${f}" ${extra}/>`;
+    add(k, shape(r, fill, W) + shape(r - 3.4, 'none', `stroke="${rim}" stroke-width="1.6" stroke-dasharray="2 2"`) + `<path d="M${(24 - r * .6).toFixed(1)} ${(24 - r * .3).toFixed(1)}q${(r * .2).toFixed(1)}-${(r * .4).toFixed(1)} ${(r * .6).toFixed(1)}-${(r * .5).toFixed(1)}" stroke="#fff" stroke-width="2.4" stroke-linecap="round" ${N} opacity=".8"/>` + lbl(t, 28.5, t.length > 2 ? 11 : 13));
+  };
+  const note = (k, fill, t, win) => add(k, `<rect x="2" y="11" width="44" height="26" rx="4" fill="${fill}" ${W}/><rect x="5" y="14" width="38" height="20" rx="2.5" fill="none" stroke="#fff" stroke-width="1.4" opacity=".7"/><circle cx="10.5" cy="29" r="4" fill="#fff" opacity=".55"/>`
+    + (win ? `<rect x="35" y="15.5" width="6" height="7" rx="2" fill="#e8f8ff" stroke="${O}" stroke-width="1.2"/>` : '') + lbl(t, 28.5, t.length > 3 ? 10 : 13, '#fff', `stroke="${O}" stroke-width="1.1" paint-order="stroke"`));
+  const SILVER = ['#e3e7ec', '#9aa4b8'], GOLD = ['#f5c842', '#c48a1a'];
+  coin('aud5', 15, ...SILVER, '5c'); coin('aud10', 17, ...SILVER, '10c'); coin('aud20', 19.5, ...SILVER, '20c'); coin('aud50', 21, ...SILVER, '50c', 12);
+  coin('aud100', 18, ...GOLD, '$1'); coin('aud200', 15.5, ...GOLD, '$2');
+  [[500, '#d97fb8', '$5'], [1000, '#4f8fd6', '$10'], [2000, '#e0614a', '$20'], [5000, '#e6b422', '$50'], [10000, '#4fae62', '$100']].forEach(([v, f, t]) => note('aud' + v, f, t, true));
+  [[1000, '#9a8a5a', '1.000'], [2000, '#a4785a', '2.000'], [5000, '#6c78b8', '5.000'], [10000, '#c9a54a', '10.000'], [20000, '#4f8fd6', '20.000'], [50000, '#d36aa0', '50.000'],
+    [100000, '#5fa86a', '100.000'], [200000, '#d7704a', '200.000'], [500000, '#3fa9b8', '500.000']].forEach(([v, f, t]) => note('vnd' + v, f, t + 'đ', v >= 10000));
+  // a red lì xì envelope with a gold flower (the 🧧 key keeps its old party drawing)
+  add('lixi', g('a-wiggle', `<rect x="10" y="5" width="28" height="38" rx="4" fill="#e8332a" ${W}/><path d="M10 9l14 10 14-10" fill="#c8241e" ${W}/>${[0, 1, 2, 3, 4].map(i => { const a = i * 1.2566 - 1.5708; return `<circle cx="${(24 + Math.cos(a) * 4.2).toFixed(1)}" cy="${(30 + Math.sin(a) * 4.2).toFixed(1)}" r="3" fill="#ffd23f" stroke="${O}" stroke-width="1.2"/>`; }).join('')}${circ(24, 30, 2.2, '#ff9f43')}`, '24px 43px'));
+  // the money plant in its pot, and two things everyone needs
+  add('🪴', g('a-sway', `<path d="M24 30V16" ${W}/><path d="M24 22c-8 0-12-5-12-11 7 0 12 4 12 11zM24 18c0-7 5-12 12-12 0 7-5 12-12 12z" fill="#5fd36a" ${W}/>`, '24px 30px') + `<path d="M12 30h24l-3 14H15z" fill="#d9774a" ${W}/><rect x="10" y="27" width="28" height="5" rx="2" fill="#e8925f" ${W}/>`);
+  add('🧼', g('a-bob', `<rect x="8" y="20" width="32" height="20" rx="8" fill="#9ad8ff" ${W}/><path d="M14 26h10" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>${circ(16, 13, 4, '#e8f8ff')}${circ(27, 10, 3, '#e8f8ff')}${circ(35, 15, 2.4, '#e8f8ff')}`));
+  add('🪥', g('a-wiggle', `<path d="M8 40L32 16" stroke="#ff7eb8" stroke-width="6" stroke-linecap="round"/><rect x="28" y="8" width="14" height="9" rx="2" fill="#fff" ${W} transform="rotate(-45 35 12)"/><path d="M31 6l3 3M35 3l3 3M39 7l3 3" stroke="#5fb6ff" stroke-width="2.4" stroke-linecap="round"/>`, '8px 40px'));
+}
+
 add('⏮️ ⏮', g('a-nudge', `<rect x="5" y="10" width="5" height="28" fill="#5fd3ff" ${W}/><path d="M42 10L26 24l16 14zM26 10L10 24l16 14z" fill="#5fd3ff" ${W}/>`));
 add('⏯️ ⏯', `<path d="M5 10l17 14L5 38z" fill="#5fd36a" ${W}/><rect x="27" y="10" width="6" height="28" rx="2" fill="#ffd23f" ${W}/><rect x="37" y="10" width="6" height="28" rx="2" fill="#ffd23f" ${W}/>`);
+
+// (round S, owner plan 8 Oct) the clothes shop's tabs, the family rankings' medals and the collectibles' decorations
+add('👟', g('a-hop', `<path d="M5 32c0-9 4-15 12-15 4 6 10 7 15 7 7 0 11 3 11 8z" fill="#5fb6ff" ${W}/><path d="M4 32h40v5H4z" fill="#fff8ee" ${W}/><path d="M17 21l4 4M21 19l4 4M25 18l3 4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>`, '24px 37px'));
+add('📿', g('a-swing', `<path d="M10 6c0 18 6 26 14 26s14-8 14-26" stroke="${O}" stroke-width="1.4" ${N}/>${[0, 1, 2, 3, 4, 5, 6].map(i => { const a = Math.PI * i / 6; return circ(24 - Math.cos(a) * 14, 6 + Math.sin(a) * 26, 3.4, i % 2 ? '#ff7eb8' : '#fff8ee'); }).join('')}${circ(24, 40, 5, '#ffd23f')}`, '24px 6px'));
+const medal = (f, n) => g('a-swing', `<path d="M15 4l9 15 9-15" stroke="#5fb6ff" stroke-width="5" ${N}/><path d="M15 4l9 15 9-15" ${W} ${N}/>${circ(24, 31, 12, f)}<text x="24" y="37" font-size="15" font-weight="900" text-anchor="middle" fill="#fff" stroke="${O}" stroke-width="1" font-family="Fredoka,sans-serif">${n}</text>`, '24px 4px');
+add('🥇', medal('#ffc83a', 1)); add('🥈', medal('#c8d0da', 2)); add('🥉', medal('#d98a4a', 3));
+add('🎐', `<path d="M24 3v6" ${W}/>` + g('a-sway', `<path d="M13 20a11 11 0 0 1 22 0z" fill="#9fe0ff" ${W}/><path d="M24 20v8" ${W}/><rect x="19" y="28" width="10" height="15" rx="2" fill="#ff7eb8" ${W}/><path d="M22 33h4" stroke="#fff" stroke-width="2"/>`, '24px 9px'));
+add('🪴', `<path d="M13 30h22l-3 14H16z" fill="#e0805a" ${W}/><path d="M11 27h26v5H11z" fill="#f0a070" ${W}/>` + g('a-sway', `<path d="M24 27V14" ${W}/><path d="M24 20c-8 0-12-6-12-11 6 0 12 4 12 11zM24 16c6-1 10-6 10-10-6 0-10 4-10 10zM24 24c5 0 9-3 10-7-5-1-9 2-10 7z" fill="#5fd36a" ${W}/>`, '24px 27px'));
+// (round S, owner plan 8 Oct) Hội làng's carp lantern, the surprises' treasure chest and fairy wand, the dance break's stretch
+add('🎏', `<path d="M10 4v40" ${W}/>` + g('a-sway', `<path d="M10 8c10-3 22 0 30 6-8 6-20 9-30 6z" fill="#ff5f7a" ${W}/><path d="M10 22c10-3 22 0 30 6-8 6-20 9-30 6z" fill="#5fb6ff" ${W}/>${dot(33, 13, 1.6)}${dot(33, 27, 1.6)}<path d="M18 11q3 3 0 6M18 25q3 3 0 6" ${W} ${N}/>`, '10px 24px'));
+add('🧰', `<rect x="6" y="20" width="36" height="20" rx="3" fill="#b06a32" ${W}/><path d="M6 20c0-8 8-12 18-12s18 4 18 12z" fill="#c97a3a" ${W}/><path d="M6 20h36M24 8v32" stroke="#ffd23f" stroke-width="4"/><rect x="20" y="18" width="8" height="8" rx="2" fill="#ffd23f" ${W}/>` + g('a-twinkle', sparkle(40, 8, 1), '40px 8px'));
+add('🪄', `<path d="M10 40L32 16" stroke="${O}" stroke-width="6" stroke-linecap="round"/><path d="M10 40L32 16" stroke="#8a5cf6" stroke-width="3" stroke-linecap="round"/>` + g('a-spin-slow', star5(35, 13, 9, '#ffd23f'), '35px 13px') + g('a-twinkle2', sparkle(14, 12, .9), '14px 12px'));
+add('🤸', g('a-wiggle', `${circ(13, 30, 5, '#c98a5a')}<path d="M17 27l10-8 10 6M27 19l-4-10M27 19l12-10" ${W} ${N}/><path d="M20 26l-8-8" ${W} ${N}/><path d="M23 16l8 6" stroke="#ff5f7a" stroke-width="7" stroke-linecap="round"/>`, '24px 30px'));
 
 // (an emoji with or without its invisible "picture style" mark finds the same drawing)
 const keyOf = e => e == null ? null : ART[e] ? e : ART[e + '\uFE0F'] ? e + '\uFE0F' : ART[String(e).replace(/\uFE0F/g, '')] ? String(e).replace(/\uFE0F/g, '') : null;

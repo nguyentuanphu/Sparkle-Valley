@@ -66,7 +66,8 @@ setTimeout(writeMirror, 4000);
 
 export const settings = Object.assign({
   lang: 'en',            // 'en' | 'vi'
-  currency: 'AUD',       // 'AUD' | 'VND'
+  currency: 'AUD',       // 'AUD' | 'VND', used only when curPinned (otherwise it follows the language: js/money.js curCode)
+  curPinned: false,
   sound: true, music: true, voice: true,
   voiceEn: '', voiceVi: '',
   bilingual: false,      // speak the other language too, after a short pause
@@ -80,12 +81,16 @@ export const settings = Object.assign({
   familyVoice: true,     // play the grown-up's recordings when there are some
   familyPitch: 0,        // speaking pitch matched to the recordings (0 = not set)
   voiceRate: 1, voicePitch: 1,
-  tts: 'device',         // 'device' | 'eleven' | 'google': optional natural online voice with the grown-up's own key
-  ttsKey: '', elevenVoice: '', googleVoiceEn: '', googleVoiceVi: '',
   voiceControl: true,    // show the 🎤 "talk to the game" button where speech recognition exists
   aiKey: '',             // optional Anthropic API key so villagers can chat freely (grown-ups only)
-  aiOn: false
+  aiOn: false,
+  online: false          // (round R privacy, 9 Oct) playing with friends online: off until a grown-up turns it on in Grown-ups (devices that played before start off too)
 }, store.get(KEY_SETTINGS, {}));
+// (round R privacy, 9 Oct, owner: "no voice keys on children's devices") voices are made in Studio only: an online voice
+// key saved by an older version, and its engine and voice choices, are deleted from this device
+const OLD_VOICE = ['tts', 'ttsKey', 'elevenVoice', 'googleVoiceEn', 'googleVoiceVi', 'azureRegion', 'azureVoiceEn', 'azureVoiceVi'];
+const dropOldVoice = () => { let n = 0; for (const k of OLD_VOICE) if (k in settings) { delete settings[k]; n++; } return n; };
+if (dropOldVoice()) store.set(KEY_SETTINGS, settings);
 // fewer moving effects: Calm mode, or the device's own "Reduce motion" setting (round I accessibility rule A11Y-001)
 export const reduceMotion = () => !!settings.calm || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
 export const saveSettings = () => store.set(KEY_SETTINGS, settings);
@@ -210,7 +215,7 @@ export async function importBackup(file) {
   const data = JSON.parse(await file.text());
   if (!data || data.app !== 'sparkle-valley' || !Array.isArray(data.profiles)) throw new Error('bad file');
   profiles.splice(0, profiles.length, ...data.profiles.map(normalizeProfile));
-  Object.assign(settings, data.settings || {});
+  Object.assign(settings, data.settings || {}); dropOldVoice(); // (round R privacy, 9 Oct) an old backup brings no voice key back
   if (data.farm) Object.assign(farm, newFarm(), data.farm);
   saveSettings(); saveProfiles(true);
 }

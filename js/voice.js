@@ -4,7 +4,7 @@ import { settings, saveSettings } from './state.js';
 import { ac, unlockers } from './audio.js';
 import { swapNames } from './i18n.js';
 import { packHash, lineHash } from './packhash.js';
-import { viRuns, mixed, mixedSsml } from './viwords.js';
+import { viRuns, mixed } from './viwords.js';
 import { CUSTOM } from './custom.js';
 
 let all = [];
@@ -147,17 +147,8 @@ async function speak(en, vi) {
   }
 }
 const sentences = text => (String(text).match(/[^.!?。…]+[.!?。…]*\s*/g) || [text]).map(t => t.trim()).filter(Boolean);
-async function otherVoice(text, lang, my) {
-  if (cloudReady() && lang === 'en' && settings.tts !== 'azure' && mixed(text)) {
-    try { for (const [l, t] of viRuns(text)) { if (!/[\p{L}\d]/u.test(t)) continue; const buf = await cloudVoice(t.trim(), l); if (my !== seq) return; await playBuffer(buf); } return; }
-    catch (e) { console.warn('Natural voice failed, using the device voice', e); }
-  }
-  if (cloudReady()) {
-    try { const buf = await cloudVoice(text, lang); if (my !== seq) return; await playBuffer(buf); return; }
-    catch (e) { console.warn('Natural voice failed, using the device voice', e); }
-  }
-  await deviceSpeak(text, lang, my);
-}
+// (round R privacy, 9 Oct) no recording: the phone's own voice, never an online speech service
+async function otherVoice(text, lang, my) { await deviceSpeak(text, lang, my); }
 // Lines the game had to say without a recording are noted on this device (most-said first). Grown-ups can send
 // the list to Sparkle Studio (it travels inside the backup file), which records them for the next pack.
 const MISS_KEY = 'sv2_voicemiss';
@@ -180,7 +171,6 @@ export function sayIn(lang, text) {
   try { speechSynthesis.cancel(); } catch (e) { }
   if (!PACK && !packTried) { waitPack().then(() => { packTried = true; if (my === seq) sayIn(lang, text); }); return; }
   if (packSlot(lang, text)) { playPack(lang, text, my).then(ok => { if (!ok && my === seq) deviceSpeak(text, lang, my); }).catch(() => deviceSpeak(text, lang, my)); return; }
-  if (cloudReady() && cloudCached(text, lang)) { cloudVoice(text, lang).then(b => my === seq && playBuffer(b)).catch(() => deviceSpeak(text, lang, my)); return; }
   deviceSpeak(text, lang, my);
 }
 // the phone's own voice only (Grown-ups → Advanced → Phone voice ▶), so the chosen voice is really heard
@@ -190,7 +180,7 @@ export function hush() { seq++; try { speechSynthesis.cancel(); } catch (e) { } 
 // ---------- Family voice: real recordings of a grown-up ----------
 // A grown-up records the game's most-used lines. Those lines are then played in their real voice,
 // and everything else is spoken by the device voice with its pitch moved towards theirs.
-// (A true copy of the voice needs an online service: see cloneFamilyVoice below, which a grown-up must choose to use.)
+// (round R privacy, 9 Oct, owner: "never clone children's voices") the recordings stay on this device: no voice is copied.
 export const FAMILY_PHRASES = [
   { id: 'hello', en: "Hello! Let's play!", vi: 'Xin chào! Cùng chơi nào!' },
   { id: 'great', en: 'Great job!', vi: 'Giỏi quá!' },
@@ -368,110 +358,13 @@ async function playPack(lang, text, my) {
   voiceDiag.audio = 'running'; await playBuffer(buf, packRate(slot)); return true;
 }
 
-// ---------- Natural voice (optional, online) ----------
-// A grown-up can add their own ElevenLabs or Google Cloud key. Each line is fetched once, then kept on this
-// device, so lines the game has said before play instantly and offline. Only the text of the line is sent.
-const mem = new Map(); // cache key -> decoded AudioBuffer (most recent ~120 lines)
-let tdbp = null;
-function tdb() {
-  if (!tdbp) tdbp = new Promise((res, rej) => { try { const r = indexedDB.open('sparkle-valley-tts', 1); r.onupgradeneeded = () => r.result.createObjectStore('lines'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } });
-  return tdbp;
-}
-const tget = async k => { const d = await tdb(); return new Promise(res => { const r = d.transaction('lines').objectStore('lines').get(k); r.onsuccess = () => res(r.result); r.onerror = () => res(null); }); };
-const tput = async (k, v) => { const d = await tdb(); return new Promise(res => { const t = d.transaction('lines', 'readwrite'); t.objectStore('lines').put(v, k); t.oncomplete = res; t.onerror = res; }); };
-const known = new Set();
-export const cloudReady = () => settings.tts && settings.tts !== 'device' && !!settings.ttsKey && navigator.onLine !== false;
-// Google voices for characters: women, men, grandparents and kids each get their own natural voice.
-const GOOGLE_VOICES = {
-  vi: { f: ['vi-VN-Neural2-A', 'vi-VN-Wavenet-A', 'vi-VN-Wavenet-C'], m: ['vi-VN-Neural2-D', 'vi-VN-Wavenet-B', 'vi-VN-Wavenet-D'] },
-  en: { f: ['en-AU-Neural2-C', 'en-AU-Neural2-A', 'en-AU-Wavenet-C'], m: ['en-AU-Neural2-B', 'en-AU-Neural2-D', 'en-AU-Wavenet-B'] }
-};
-const googleName = lang => {
-  if (lang === 'zh') return 'cmn-CN-Wavenet-A'; if (lang === 'hi') return 'hi-IN-Wavenet-A';
-  const mine = lang === 'vi' ? settings.googleVoiceVi : settings.googleVoiceEn, k = speakerKind();
-  if (!k) return mine || (lang === 'vi' ? 'vi-VN-Neural2-A' : 'en-AU-Neural2-C');
-  const pool = GOOGLE_VOICES[lang === 'vi' ? 'vi' : 'en'][k.gender];
-  return pool[k.seed % pool.length];
-};
-const googlePitch = () => { const k = speakerKind(); return !k ? 0 : k.old ? -3 : k.kid ? 4 : 0; };
-// Microsoft Azure neural voices: Vietnamese (Hoài My, Nam Minh), Australian English, and Chinese / Hindi
-const AZURE_VOICES = {
-  vi: { f: ['vi-VN-HoaiMyNeural'], m: ['vi-VN-NamMinhNeural'] },
-  en: { f: ['en-AU-NatashaNeural', 'en-AU-AnnetteNeural', 'en-AU-CarlyNeural', 'en-AU-FreyaNeural', 'en-AU-JoanneNeural', 'en-AU-TinaNeural'], m: ['en-AU-WilliamNeural', 'en-AU-DarrenNeural', 'en-AU-DuncanNeural', 'en-AU-KenNeural', 'en-AU-NeilNeural', 'en-AU-TimNeural'] }
-};
-const azureName = lang => {
-  if (lang === 'zh') return 'zh-CN-XiaoxiaoNeural'; if (lang === 'hi') return 'hi-IN-SwaraNeural';
-  const k = speakerKind(), L = lang === 'vi' ? 'vi' : 'en';
-  if (!k) return (lang === 'vi' ? settings.azureVoiceVi : settings.azureVoiceEn) || AZURE_VOICES[L].f[0];
-  if (k.kid && L === 'en') return k.gender === 'f' ? 'en-AU-CarlyNeural' : 'en-AU-KenNeural';
-  const pool = AZURE_VOICES[L][k.gender]; return pool[k.seed % pool.length];
-};
-const azureProsody = () => { const k = speakerKind(); return !k ? ['-4%', '+0%'] : k.old ? ['-14%', '-8%'] : k.kid ? ['-2%', '+14%'] : ['-4%', '+0%']; };
-const cloudKey = (text, lang) => [settings.tts, settings.tts === 'eleven' ? settings.elevenVoice || ELEVEN_DEFAULT : settings.tts === 'azure' ? azureName(lang) + azureProsody().join('') + (lang === 'en' && mixed(text) ? '+vi' : '') : googleName(lang) + googlePitch(), lang, text].join('|');
-const cloudCached = (text, lang) => mem.has(cloudKey(text, lang)) || known.has(cloudKey(text, lang));
-export const ELEVEN_DEFAULT = '21m00Tcm4TlvDq8ikWAM'; // a warm, friendly premade voice; grown-ups can paste any voice ID
-export const ELEVEN_MODEL = 'eleven_turbo_v2_5';     // speaks both English and Vietnamese
-async function cloudVoice(text, lang) {
-  const k = cloudKey(text, lang);
-  if (mem.has(k)) { const b = mem.get(k); mem.delete(k); mem.set(k, b); return b; }
-  let data = await tget(k).catch(() => null);
-  if (!data) {
-    data = settings.tts === 'eleven' ? await elevenTTS(text, lang) : settings.tts === 'azure' ? await azureTTS(text, lang) : await googleTTS(text, lang);
-    tput(k, data).catch(() => { });
-  }
-  known.add(k);
-  const buf = await decode(data);
-  mem.set(k, buf); if (mem.size > 120) mem.delete(mem.keys().next().value);
-  return buf;
-}
-async function elevenTTS(text, lang) {
-  const voice = settings.elevenVoice || ELEVEN_DEFAULT;
-  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice)}?output_format=mp3_44100_64`, {
-    method: 'POST', headers: { 'xi-api-key': settings.ttsKey, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
-    body: JSON.stringify({ text, model_id: ELEVEN_MODEL, language_code: lang, voice_settings: { stability: .45, similarity_boost: .8, style: .25, use_speaker_boost: true } })
-  });
-  if (!r.ok) throw new Error('ElevenLabs ' + r.status + ' ' + (await r.text()).slice(0, 200));
-  return r.arrayBuffer();
-}
-async function azureTTS(text, lang) {
-  const region = (settings.azureRegion || 'australiaeast').trim().toLowerCase().replace(/\s+/g, ''), name = azureName(lang), [rate, pitch] = azureProsody();
-  const xml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
-  const loc = name.split('-').slice(0, 2).join('-');
-  const ssml = lang === 'en' && mixed(text) ? mixedSsml(viRuns(text), name, azureName('vi'), `rate="${rate}" pitch="${pitch}"`)
-    : `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${loc}"><voice name="${name}"><prosody rate="${rate}" pitch="${pitch}">${xml(text)}</prosody></voice></speak>`;
-  const r = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
-    method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': settings.ttsKey, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': 'audio-24khz-48kbitrate-mono-mp3' }, body: ssml
-  });
-  if (!r.ok) throw new Error('Azure ' + r.status + (r.status === 401 ? ' (check the key and the region)' : ' ' + (await r.text()).slice(0, 200)));
-  return r.arrayBuffer();
-}
-async function googleTTS(text, lang) {
-  const name = googleName(lang);
-  const r = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key=' + encodeURIComponent(settings.ttsKey), {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ input: { text }, voice: { languageCode: name.split('-').slice(0, 2).join('-'), name }, audioConfig: { audioEncoding: 'MP3', speakingRate: speakerKind() && speakerKind().old ? .88 : .95, pitch: googlePitch() } })
-  });
-  if (!r.ok) throw new Error('Google TTS ' + r.status + ' ' + (await r.text()).slice(0, 200));
-  const j = await r.json(), bin = atob(j.audioContent), out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out.buffer;
-}
-// Try the natural voice once, and report a clear error to the grown-up if it does not work.
-export async function testCloudVoice(lang) {
-  const text = lang === 'vi' ? 'Xin chào! Cùng chơi ở Thung Lũng Lấp Lánh nào!' : "Hello! Let's play in Sparkle Valley!";
-  setSpeaker(null); // the test uses the main voice, not the last character who spoke
-  const buf = await cloudVoice(text, lang); await playBuffer(buf); return true;
-}
-// Make an ElevenLabs voice from the family recordings (this uploads the recordings to ElevenLabs).
-export async function cloneFamilyVoice(name) {
-  const fd = new FormData(); fd.append('name', name || 'Sparkle Valley family voice');
-  fd.append('description', 'Made from family recordings in Sparkle Valley');
-  let n = 0; for (const k in clips) { fd.append('files', new Blob([clips[k].data], { type: clips[k].type || 'audio/wav' }), k.replace(':', '-') + '.wav'); n++; }
-  if (!n) throw new Error('No recordings yet');
-  const r = await fetch('https://api.elevenlabs.io/v1/voices/add', { method: 'POST', headers: { 'xi-api-key': settings.ttsKey }, body: fd });
-  if (!r.ok) throw new Error('ElevenLabs ' + r.status + ' ' + (await r.text()).slice(0, 200));
-  const j = await r.json(); return j.voice_id;
-}
+// ---------- Recorded lines kept in memory ----------
+// (round R privacy, 9 Oct, owner: "no voice keys on children's devices") voices are made in Studio only. The device
+// never calls a speech service: a line with no recording uses the phone's own voice and is noted as missing for Studio.
+const mem = new Map(); // pack file -> decoded AudioBuffer (most recent ~120 lines)
+// (round R privacy, 9 Oct) the old natural-voice cache from a grown-up's own key is not needed any more (a no-op once gone)
+try { if (window.indexedDB) indexedDB.deleteDatabase('sparkle-valley-tts'); } catch (e) { }
+
 // Estimate how high or low a recorded voice is (average pitch in Hz) using autocorrelation.
 export async function estimatePitch(blob) {
   try {

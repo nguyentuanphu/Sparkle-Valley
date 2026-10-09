@@ -7,6 +7,13 @@
 // Kept in Netlify Blobs (store "studio-admins"), a/<name> = { name, role, salt, hash, at, by }: the password itself is
 // never kept, only a slow scrypt hash of it. A sign-in lasts 30 days; changing someone's password or removing them
 // signs them out everywhere (their cookie carries part of the hash), and changing STUDIO_PASSWORD signs out everyone.
+// (round R privacy, 9 Oct) Everyone, the owner too, signs in in two steps: the password, then the 6-digit code of an
+// authenticator app (TOTP: HMAC-SHA1, 30 s, one step either side; node's crypto, no extra package). The first sign-in
+// shows the secret to add to the app (a otpauth:// link and the letters), and is finished with the first code.
+// (owner, 9 Oct) The owner chooses for each account, the owner's own too, two-step or the password only (Setup → Admins);
+// two-step is the default. Changing it signs that person out.
+// Passwords are 12 characters or more. A key for SparkleStudio.exe (k/<id>) lets the family computer reach the
+// players report and the family photos without the two steps; only its hash is kept, and the owner can remove it.
 import crypto from 'crypto';
 
 export const ROLES = ['viewer', 'editor', 'owner'];
@@ -14,13 +21,15 @@ export const NAME = /^[a-z0-9][a-z0-9._@+-]{1,59}$/;
 const key = name => 'a/' + name;
 const hashOf = (pw, salt) => crypto.scryptSync(String(pw), salt, 32, { N: 16384, r: 8, p: 1 }).toString('base64url');
 const secret = pw => crypto.createHash('sha256').update('sparkle-studio-admin:' + pw).digest();
-const sigOf = (pw, a, exp) => crypto.createHmac('sha256', secret(pw)).update(`${a.name}|${exp}|${a.hash.slice(0, 16)}`).digest('base64url');
-const same = (x, y) => typeof x === 'string' && typeof y === 'string' && x.length === y.length && crypto.timingSafeEqual(Buffer.from(x), Buffer.from(y));
+// (round R privacy) the cookie also carries part of the two-step secret: setting up two-step again signs them out
+const sigOf = (pw, a, exp) => crypto.createHmac('sha256', secret(pw)).update(`${a.name}|${exp}|${a.hash.slice(0, 16)}|${String(a.totp || '').slice(0, 8)}|${a.noTwoStep ? 'p' : ''}`).digest('base64url');
+export const MIN_PW = 12;
+export const same = (x, y) => typeof x === 'string' && typeof y === 'string' && x.length === y.length && crypto.timingSafeEqual(Buffer.from(x), Buffer.from(y));
 export const cleanName = n => String(n || '').trim().toLowerCase();
 
 export async function list(S) {
   const { blobs } = await S.list({ prefix: 'a/' }), out = [];
-  for (const b of blobs.slice(0, 200)) { const a = await S.get(b.key, { type: 'json' }); if (a) out.push({ name: a.name, role: a.role, at: a.at, by: a.by || '' }); }
+  for (const b of blobs.slice(0, 200)) { const a = await S.get(b.key, { type: 'json' }); if (a) out.push({ name: a.name, role: a.role, at: a.at, by: a.by || '', twoStep: !!a.totp, twoStepOn: !a.noTwoStep }); }
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 export async function get(S, name) { name = cleanName(name); return NAME.test(name) ? S.get(key(name), { type: 'json' }) : null; }
@@ -31,7 +40,7 @@ export async function put(S, { name, password, role }, by) {
   if (!ROLES.includes(role)) role = 'viewer';
   const old = await get(S, name);
   if (!old && !password) return { error: 'Choose a password for them.' };
-  if (password && String(password).length < 10) return { error: 'A password needs at least 10 characters.' };
+  if (password && String(password).length < MIN_PW) return { error: `A password needs at least ${MIN_PW} characters.` };
   const a = old || { name, at: new Date().toISOString(), by };
   a.role = role;
   if (password) { a.salt = crypto.randomBytes(16).toString('base64url'); a.hash = hashOf(password, a.salt); }
@@ -54,9 +63,49 @@ export async function fromCookie(S, pw, c) {
 // what each role may reach: a viewer only reads the analytics (and what the dashboard needs to open)
 export function allowed(role, api, post) {
   if (role === 'owner') return true;
-  if (/^admins\//.test(api) && api !== 'admins/me') return false;
+  // (round R privacy) SparkleStudio.exe's key: the players report, the inbox and the family photos, nothing else
+  if (role === 'exe') return post ? ['players/label', 'family/upload', 'family/remove', 'family/code/new'].includes(api) : ['whoami', 'players', 'inbox', 'family/code'].includes(api) || /^familyphoto\/[\w-]+$/.test(api);
+  if (/^(admins|keys|security)\//.test(api) && api !== 'admins/me') return false;
+  if (api === 'log') return false; // the access log is the owner's
   // (audit, 9 Oct) putting code live (merging a pull request, bringing back an old deploy) stays with the owner
-  if (role === 'editor') return !(post && ['github/merge', 'site/restore'].includes(api));
+  if (role === 'editor') return !(post && ['github/merge', 'site/restore', 'family/code/new'].includes(api));
   if (post) return api === 'admins/me';
   return ['info', 'whoami', 'content', 'players', 'inbox'].includes(api);
+}
+
+// ---------- two-step sign-in (round R privacy, 9 Oct): TOTP, RFC 6238 ----------
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+export const b32 = buf => { let v = 0, bits = 0, out = ''; for (const x of buf) { v = ((v << 8) | x) & 0xffffff; bits += 8; while (bits >= 5) { out += B32[(v >>> (bits - 5)) & 31]; bits -= 5; } } if (bits) out += B32[(v << (5 - bits)) & 31]; return out; };
+export const unb32 = s => { let v = 0, bits = 0; const out = []; for (const ch of String(s).toUpperCase().replace(/[^A-Z2-7]/g, '')) { v = ((v << 5) | B32.indexOf(ch)) & 0xffffff; bits += 5; if (bits >= 8) { out.push((v >>> (bits - 8)) & 255); bits -= 8; } } return Buffer.from(out); };
+export const newSecret = () => b32(crypto.randomBytes(20));
+export const STEP = 30e3;
+export function totpAt(sec, step) { const c = Buffer.alloc(8); c.writeBigUInt64BE(BigInt(step)); const h = crypto.createHmac('sha1', unb32(sec)).update(c).digest(), o = h[h.length - 1] & 15; return String((h.readUInt32BE(o) & 0x7fffffff) % 1e6).padStart(6, '0'); }
+export const totpNow = (sec, now = Date.now()) => totpAt(sec, Math.floor(now / STEP));
+// the step a code belongs to (now, or one step either side), or -1; every candidate is compared, in constant time
+export function totpStep(sec, code, now = Date.now()) {
+  code = String(code || '').replace(/\s/g, ''); if (!sec || !/^\d{6}$/.test(code)) return -1;
+  const t = Math.floor(now / STEP); let hit = -1; for (const s of [t - 1, t, t + 1]) if (same(totpAt(sec, s), code)) hit = s; return hit;
+}
+export const otpauth = (name, sec) => `otpauth://totp/${encodeURIComponent('Sparkle Studio:' + name)}?secret=${sec}&issuer=${encodeURIComponent('Sparkle Studio')}&algorithm=SHA1&digits=6&period=30`;
+// an admin's two-step: set (after the first code), used (a code is never taken twice), reset by the owner
+export async function setTotp(S, name, sec, step) { const a = await get(S, name); if (!a) return false; a.totp = sec; a.totpLast = step; await S.setJSON(key(a.name), a); return true; }
+export async function usedTotp(S, a, step) { a.totpLast = step; await S.setJSON(key(a.name), a); }
+// (owner, 9 Oct) two-step on or off for one admin (off: the password only)
+export async function setTwoStep(S, name, on) { const a = await get(S, name); if (!a) return false; if (on) delete a.noTwoStep; else a.noTwoStep = true; await S.setJSON(key(a.name), a); return true; }
+export async function resetTotp(S, name) { const a = await get(S, name); if (!a) return false; delete a.totp; delete a.totpLast; await S.setJSON(key(a.name), a); return true; }
+
+// ---------- keys for SparkleStudio.exe (round R privacy) ----------
+// "svk.<id>.<secret>": shown once when made; kept as a hash, with the sign-out generation (Sign everyone out ends them)
+const keyHash = s => crypto.createHash('sha256').update('sparkle-studio-key:' + s).digest('base64url');
+export async function makeKey(S, label, by, gen) {
+  const id = crypto.randomBytes(5).toString('hex'), sec = crypto.randomBytes(24).toString('base64url');
+  await S.setJSON('k/' + id, { id, label: String(label || 'SparkleStudio.exe').replace(/[<>\u0000-\u001f]/g, '').trim().slice(0, 40) || 'SparkleStudio.exe', hash: keyHash(sec), at: new Date().toISOString(), by, gen });
+  return `svk.${id}.${sec}`;
+}
+export async function listKeys(S) { const { blobs } = await S.list({ prefix: 'k/' }), out = []; for (const b of blobs.slice(0, 50)) { const k = await S.get(b.key, { type: 'json' }); if (k) out.push({ id: k.id, label: k.label, at: k.at, by: k.by }); } return out; }
+export async function removeKey(S, id) { if (/^[0-9a-f]{10}$/.test(id || '')) await S.delete('k/' + id); return { ok: true }; }
+export async function fromKey(S, given, gen) {
+  const m = /^svk\.([0-9a-f]{10})\.([\w-]{20,64})$/.exec(String(given || '').trim()); if (!m) return null;
+  const k = await S.get('k/' + m[1], { type: 'json' }).catch(() => null); if (!k || (k.gen || 0) !== (gen || 0)) return null;
+  return same(keyHash(m[2]), k.hash) ? k : null;
 }

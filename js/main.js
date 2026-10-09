@@ -16,7 +16,7 @@ import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
 import { pads, initInput } from './input.js';
-import { Net, MAX_ROOM } from './net.js';
+import { Net, MAX_ROOM, ROOM_LEN, okPub } from './net.js';
 import { showTitle, showWho, dialog, dialogHooks, reward, openPad, openCooking, openShop, toast, modal } from './ui.js';
 import { pic } from './art.js';
 import { openChat, personaByName, PERSONAS } from './chat.js';
@@ -82,6 +82,7 @@ import { codeHTML, bindCode, padHTML, boxHTML, animalSay } from './roomcode.js';
   if (D && typeof D === 'object' && settings.packDefaults !== sig) {
     const ok = { restMins: v => +v >= 0 && +v <= 120 && String(+v), lang: v => ['en', 'vi'].includes(v) && v, currency: v => ['AUD', 'VND'].includes(v) && v, bilingual: v => typeof v === 'boolean' && { v }, captions: v => typeof v === 'boolean' && { v }, calm: v => typeof v === 'boolean' && { v }, music: v => typeof v === 'boolean' && { v }, textSize: v => [0, 1, 2].includes(+v) && { v: +v } };
     for (const [k, f] of Object.entries(ok)) if (k in D) { const r = f(D[k]); if (r !== false && r != null) settings[k] = typeof r === 'object' ? r.v : r; }
+    if (['AUD', 'VND'].includes(D.currency)) settings.curPinned = true; // (round S) a family's own pick stops it following the language
     settings.packDefaults = sig; saveSettings();
   } }
 import { setupTrading, openTrade } from './trade.js';
@@ -642,6 +643,7 @@ G.checkQuests = h => checkQuests(h);
 G.save = save; G.addCoins = xu => addMoney(null, xu); G.giveSticker = p => giveSticker(p); G.reward = reward; G.fmt = fmt;
 async function checkQuests(h) {
   const p = h.profile;
+  G.boxes && G.boxes.questDone(h, QUESTS.filter(q => questDone(p, q)).length); // (round S, owner plan 8 Oct) a finished quest earns a mystery box (js/boxes.js)
   // story chapters open when their quest is done (pause the world while the book is open)
   if (!G._reading) { G._reading = true; try { await storyCheck(G, h, id => questDone(p, QUESTS.find(q => q.id === id))); } finally { G._reading = false; } }
   const k = 'seen_' + (currentQuest(p) || { id: 'all' }).id;
@@ -953,6 +955,7 @@ Net.on('status', s => {
     nomic: T('No microphone: your friend will not hear you, but you can still play and use the talk buttons.', 'Không có micrô: bạn sẽ không nghe được con, nhưng vẫn chơi và dùng nút nói được.'),
     left: T('The room has closed.', 'Phòng đã đóng.'), full: T('That room is full (6 players). Start your own room!', 'Phòng đã đủ 6 người. Hãy tạo phòng mới nhé!'), tapaudio: T('Tap the 🎙️ button to hear your friend.', 'Chạm nút 🎙️ để nghe bạn nói.'), cloud: T('Connected through the cloud relay! You can play and use the talk buttons. (Voice calls need a direct link: try both on Wi-Fi, or ask a grown-up to add a relay.)', 'Đã kết nối qua mạng đám mây! Chơi và dùng nút nói được. (Gọi bằng giọng nói cần kết nối trực tiếp: thử cả hai dùng Wi-Fi, hoặc nhờ người lớn thêm máy chủ trung chuyển.)'), error: T('Could not connect. Check the internet and try again.', 'Không kết nối được. Kiểm tra mạng rồi thử lại.'),
     removed: T('The room’s starter asked you to leave the room.', 'Chủ phòng đã mời con ra khỏi phòng.'),
+    off: T('Playing with friends is off. Ask a grown-up to turn it on.', 'Chơi cùng bạn đang tắt. Nhờ người lớn bật lên nhé.'),
     knocking: T('Knock knock! Waiting for the room’s starter to let you in…', 'Cốc cốc! Đang chờ chủ phòng cho con vào…'),
     denied: T('The room’s starter said not this time. You can start your own room!', 'Chủ phòng chưa cho vào lần này. Con có thể tự tạo phòng nhé!'),
     noanswer: T('Nobody opened the door. Ask your friend to tap “Let in”, or start your own room.', 'Chưa ai mở cửa. Nhờ bạn chạm “Cho vào”, hoặc tự tạo phòng nhé.'),
@@ -986,25 +989,35 @@ const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 if (!settings.friendCode) { settings.friendCode = Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join(''); saveSettings(); }
 if (!Array.isArray(settings.friends)) settings.friends = [];
 // online by default: a child who has friends on the list lets them see when they are playing (from round 28 on;
-// a grown-up or the child can still switch it off in the online panel)
-if (settings.friends.length && !settings.friendsOnR28) { settings.friendsOn = true; settings.friendsOnR28 = true; saveSettings(); }
+// a grown-up or the child can still switch it off in the online panel). (round R privacy, 9 Oct) only once a grown-up
+// has turned online play on: until then nothing is shared at all
+if (settings.online && settings.friends.length && !settings.friendsOnR28) { settings.friendsOn = true; settings.friendsOnR28 = true; saveSettings(); }
 // leaving a room with friends in it to go to another one is asked first (round O)
 const leaveOk = async () => !(Net.role && Net.count > 1) || (await dialog(T('Your room', 'Phòng của con'), [[`You are playing with ${Object.values(Net.remotes).map(r => nm(r.name)).join(', ')}. Leave this room?`, `Con đang chơi với ${Object.values(Net.remotes).map(r => nm(r.name)).join(', ')}. Rời phòng này nhé?`, 'You are playing with friends. Leave this room?', 'Con đang chơi với các bạn. Rời phòng này nhé?']], [['✅ Leave and go', '✅ Rời và sang'], ['❌ Stay', '❌ Ở lại']])) === 0;
 const onInvite = async inv => {
   SFX.chime(); say('A friend invites you to play!', 'Một bạn mời con chơi cùng!');
+  if (!settings.online) return;
   const k = await dialog(T('Invitation', 'Lời mời'), [[`👫 ${inv.name} invites you to play together! Join their room ${inv.room}?`, `👫 ${inv.name} mời con chơi cùng! Vào phòng ${inv.room} nhé?`, 'A friend invites you to play together! Shall we join?', 'Một bạn mời con chơi cùng! Mình vào nhé?']], [['✅ Join', '✅ Vào'], ['❌ Not now', '❌ Để sau']]);
-  if (k === 0 && await leaveOk()) Net.join(inv.room, sendHello() || {});
+  // (round R privacy) the invitation came locked from a saved friend; when they started the room, only their key may answer the knock
+  if (k === 0 && await leaveOk()) Net.join(inv.room, sendHello() || {}, { hostPub: inv.hostPub });
 };
 // invite a friend: into my room, starting one first when I have none
+// (round R privacy, 9 Oct) an invitation carries my room number locked for that friend, so it needs the friend's key, saved
+// when the two played together and tapped ＋👫: 'nokey' without it (the child is told to say the room number instead)
 G.inviteFriend = async code => {
+  if (!settings.online) return false;
+  if (!Net.canInvite(code)) return 'nokey';
   const h = G.heroes[0]; if (!Net.role) await Net.host(sendHello() || {});
   if (Net.role !== 'host' && Net.role !== 'guest') return false;
   const both = await Promise.all([Net.invite(code, h ? h.profile.name : ''), Net.cloudInvite(code, h ? h.profile.name : '')]);
   return both[0] || both[1];
 };
-G.joinFriend = async room => { if (await leaveOk()) await Net.join(room, sendHello() || {}); };
+const inviteToast = ok => toast(ok === 'nokey' ? T('Invitations work after you have played together once and tapped ＋👫. For now, tell your friend your room number.', 'Lời mời dùng được sau khi hai bạn đã chơi cùng một lần và chạm ＋👫. Bây giờ con đọc số phòng cho bạn nhé.') : ok ? T('Invitation sent!', 'Đã gửi lời mời!') : T('Your friend is not online right now.', 'Bạn ấy đang không trực tuyến.'));
+G.joinFriend = async (room, hostPub) => { if (await leaveOk()) await Net.join(room, sendHello() || {}, { hostPub }); };
 G.listenFriends = () => {
-  if (settings.friendsOn && playing) Net.listenForFriends(settings.friendCode, onInvite); else Net.stopListening();
+  // (round R privacy, 9 Oct) online play off: no listening, no status, nothing shared
+  if (!settings.online || !playing) { Net.stopListening(); Net.friendsStop(); return; }
+  if (settings.friendsOn) Net.listenForFriends(settings.friendCode, onInvite); else Net.stopListening();
   // friends' status (online, where in the valley, which room) through the cloud relay
   if (playing && (settings.friendsOn || settings.friends.length)) {
     Net.friendsStart({ code: settings.friendCode, share: !!settings.friendsOn, onInvite, onChange: () => { if (G.onNet) G.onNet(); G.autoMeet(); } }).then(() => { Net.friendsWatch(settings.friends.map(f => f.code)); G.shareStatus(); });
@@ -1017,7 +1030,7 @@ G.listenFriends = () => {
 // Nobody changes room unless they tap; the friend who is invited decides too.
 const told = new Set();
 G.autoMeet = () => {
-  if (!playing || settings.autoMeet === false || !settings.friendsOn || !settings.friends.length) return;
+  if (!playing || !settings.online || settings.autoMeet === false || !settings.friendsOn || !settings.friends.length) return;
   const now = Date.now();
   for (const f of settings.friends) {
     const st = Net.friends.status[f.code], on = st && st.online && now - (st.seen || 0) < 3 * 60000;
@@ -1034,12 +1047,13 @@ function friendNote(f, st) {
   document.body.appendChild(pop); SFX.chime(); say('Your friend is playing too!', 'Bạn của con cũng đang chơi!');
   const close = () => { pop.remove(); clearTimeout(t); }, t = setTimeout(close, 45000);
   pop.querySelector('[data-no]').onclick = () => { SFX.tap(); close(); };
-  pop.querySelector('[data-inv]').onclick = async () => { SFX.tap(); close(); const ok = await G.inviteFriend(f.code); toast(ok ? T('Invitation sent!', 'Đã gửi lời mời!') : T('Your friend is not online right now.', 'Bạn ấy đang không trực tuyến.')); };
-  const go = pop.querySelector('[data-go]'); if (go) go.onclick = () => { SFX.tap(); close(); G.joinFriend(st.room); };
+  pop.querySelector('[data-inv]').onclick = async () => { SFX.tap(); close(); inviteToast(await G.inviteFriend(f.code)); };
+  const go = pop.querySelector('[data-go]'); if (go) go.onclick = () => { SFX.tap(); close(); G.joinFriend(st.room, st.host ? f.pub : null); };
 }
 setInterval(() => G.autoMeet(), 12000);
-// what my friends see about me: my name, the place I am in, and my room (only when sharing is switched on)
-G.shareStatus = () => { const h = G.heroes[0]; if (!h || !settings.friendsOn) return; Net.friendsShare({ name: h.profile.name, at: G.regionOf[0] || '', room: Net.role ? Net.code : null, players: Net.role ? Net.count : 0 }); };
+// what my friends see about me (only when sharing is switched on): (round R privacy, 9 Oct) everyone with my friend code
+// sees only "playing now"; my name, the place I am in and my room go locked to each saved friend whose key I have (net.js)
+G.shareStatus = () => { const h = G.heroes[0]; if (!h || !settings.online || !settings.friendsOn) return; Net.friendsShare({ name: h.profile.name, at: G.regionOf[0] || '', room: Net.role && !Net.knocking ? Net.code : null, players: Net.role ? Net.count : 0, host: Net.role === 'host' }); };
 setInterval(() => { if (playing) G.shareStatus(); }, 45000);
 // signal bars: ▂▄▆█ with the strong ones lit
 G.netQuality = id => Net.quality(id);
@@ -1052,7 +1066,9 @@ const friendStatus = f => {
   const where = st.at && REGION_NAMES[st.at] ? REGION_NAMES[st.at]() : T('in the valley', 'trong thung lũng');
   return `<small class="fst on">🟢 ${T('Online', 'Đang chơi')} · ${esc(where)}${st.room ? ' · ' + T('room', 'phòng') + ' ' + esc(st.room) : ''}</small>`;
 };
-const addFriend = (code, name) => { code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); if (code.length !== 6 || code === settings.friendCode) return false; const f = settings.friends.find(x => x.code === code); if (f) { if (name) f.name = name; } else settings.friends.push({ code, name: name || code }); settings.friendsOn = true; saveSettings(); G.listenFriends(); return true; };
+// (round R privacy, 9 Oct) a friend made in a room (＋👫) is saved with their key: it lets them straight into my room later
+// (if they can prove it), and locks invitations and "where I am" notes for them alone
+const addFriend = (code, name, pub) => { code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); if (code.length !== 6 || code === settings.friendCode) return false; let f = settings.friends.find(x => x.code === code); if (f) { if (name) f.name = name; } else settings.friends.push(f = { code, name: name || code }); if (okPub(pub)) f.pub = pub; settings.friendsOn = true; saveSettings(); G.listenFriends(); return true; };
 const netLineHTML = () => (n => `<p class="note center netline">📶 ${T('This device', 'Máy này')}: ${n.online ? (n.type ? esc(n.type) + ' · ' : '') + (n.eff ? esc(n.eff.toUpperCase()) + ' · ' : '') + (n.down ? n.down + ' Mbps · ' : '') : T('no internet!', 'mất mạng!') + ' · '}${n.cloud ? T(`cloud relay on (${n.brokers} server${n.brokers === 1 ? '' : 's'})`, `đang dùng mạng đám mây (${n.brokers} máy chủ)`) : T('direct link', 'kết nối trực tiếp')}${n.voice ? ' · 🎙️ ' + T('voice on', 'đang gọi') : n.cloud ? ' · ' + T('voices can’t travel over the cloud relay yet: use 💬', 'giọng nói chưa đi qua mạng đám mây được: dùng nút 💬') : ''}</p>`)(Net.netInfo());
 const pqHTML = id => (q => q ? `<small class="pq">${G.barsHTML(q.bars)} ${q.rtt != null ? q.rtt + ' ms' : '…'} · ${routeName(q.route)}${q.weak ? ' · ' + T('weak', 'yếu') : ''}</small>` : '')(Net.quality(id));
 G.netTick = body => {
@@ -1062,18 +1078,20 @@ G.netTick = body => {
 G.drawOnlinePanel = (body, redraw) => {
   G.onNet = () => { if (document.body.contains(body)) redraw(); };
   const h = G.heroes[0];
+  // (round R privacy, 9 Oct, owner) online play is off until a grown-up turns it on (Grown-ups → Playing online): no Start, no Join
+  if (!settings.online) { body.innerHTML = `<div class="online off"><p class="note center onlineoff">🔒 ${T('Playing with friends is off. Ask a grown-up to turn it on.', 'Chơi cùng bạn đang tắt. Nhờ người lớn bật lên nhé.')}</p></div>`; return; }
   const friendsBox = () => `<div class="ocard friends"><h3>👫 ${T('My friends', 'Bạn của con')}</h3>
       <p class="note">${T('My friend code', 'Mã bạn bè của con')}: <b class="fcode">${settings.friendCode}</b></p>
       <label class="tog"><input type="checkbox" id="fOn" ${settings.friendsOn ? 'checked' : ''}> ${T('Friends can see when I am playing and where, and invite me (needs the internet)', 'Bạn bè thấy khi con đang chơi, đang ở đâu, và mời con được (cần có mạng)')}</label>
-      <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}">▶ ${T('Join', 'Vào chơi')}</button>` : ''}${(Net.friends.status[f.code] || {}).online && !(Net.code && Net.friends.status[f.code].room === Net.code) ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
+      <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}" data-fc="${esc(f.code)}">▶ ${T('Join', 'Vào chơi')}</button>` : ''}${(Net.friends.status[f.code] || {}).online && !(Net.code && Net.friends.status[f.code].room === Net.code) ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
       <div class="vrow"><input type="text" id="fAdd" maxlength="6" placeholder="${T('Friend code', 'Mã bạn bè')}" autocomplete="off"><button class="btn" id="fAddB">＋ ${T('Add', 'Thêm')}</button></div>
       ${settings.friends.length ? `<p class="note">${T('Friends are never put in a room by themselves: 📨 Invite asks them, ▶ Join goes to theirs.', 'Bạn bè không bao giờ tự bị đưa vào phòng: 📨 Mời là hỏi bạn, ▶ Vào chơi là sang phòng bạn.')}</p>` : ''}</div>`;
   const bindFriends = () => {
     body.querySelector('#fOn').onchange = e => { settings.friendsOn = e.target.checked; saveSettings(); G.listenFriends(); };
     body.querySelector('#fAddB').onclick = () => { if (addFriend(body.querySelector('#fAdd').value)) { SFX.chime(); redraw(); } else toast(T('A friend code has 6 letters and numbers.', 'Mã bạn bè gồm 6 chữ và số.')); };
     body.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { settings.friends = settings.friends.filter(f => f.code !== b.dataset.rm); saveSettings(); redraw(); });
-    body.querySelectorAll('[data-joinf]').forEach(b => b.onclick = async () => { SFX.tap(); await G.joinFriend(b.dataset.joinf); redraw(); });
-    body.querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { b.disabled = true; const ok = await G.inviteFriend(b.dataset.inv); toast(ok ? T('Invitation sent!', 'Đã gửi lời mời!') : T('Your friend is not online right now.', 'Bạn ấy đang không trực tuyến.')); b.disabled = false; });
+    body.querySelectorAll('[data-joinf]').forEach(b => b.onclick = async () => { SFX.tap(); const f = settings.friends.find(x => x.code === b.dataset.fc), st = Net.friends.status[b.dataset.fc] || {}; await G.joinFriend(b.dataset.joinf, f && st.host ? f.pub : null); redraw(); });
+    body.querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { b.disabled = true; inviteToast(await G.inviteFriend(b.dataset.inv)); b.disabled = false; });
   };
   if (Net.connected || Net.role === 'host') {
     const list = Object.values(Net.remotes);
@@ -1083,7 +1101,7 @@ G.drawOnlinePanel = (body, redraw) => {
       ${netStatus ? `<p class="note center status">${esc(netStatus)}</p>` : ''}
       ${netLineHTML()}
       <div class="plist">${list.map(r => `<div class="prow roomp" data-pid="${esc(r.id)}"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(nm(r.name))}</b>${pqHTML(r.id)}</div>
-        <div class="rp-btns"><button class="btn" data-walkf="${esc(r.id)}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${esc(r.id)}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${esc(r.id)}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${esc(r.id)}">🔄 ${T('Trade', 'Đổi đồ')}</button><button class="btn" data-caro="${esc(r.id)}">⭕ ${T('Caro', 'Caro')}</button><button class="btn ${G.heroes[0] && G.heroes[0].followId === r.id ? 'primary' : ''}" data-follow="${esc(r.id)}">🚶 ${G.heroes[0] && G.heroes[0].followId === r.id ? T('Stop following', 'Thôi đi theo') : T('Follow', 'Đi theo')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${esc(r.id)}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend) ? `<button class="btn" data-addf="${esc(r.friend)}" data-n="${esc(r.name)}">＋👫</button>` : ''}</div></div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
+        <div class="rp-btns"><button class="btn" data-walkf="${esc(r.id)}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${esc(r.id)}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${esc(r.id)}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${esc(r.id)}">🔄 ${T('Trade', 'Đổi đồ')}</button><button class="btn" data-caro="${esc(r.id)}">⭕ ${T('Caro', 'Caro')}</button><button class="btn ${G.heroes[0] && G.heroes[0].followId === r.id ? 'primary' : ''}" data-follow="${esc(r.id)}">🚶 ${G.heroes[0] && G.heroes[0].followId === r.id ? T('Stop following', 'Thôi đi theo') : T('Follow', 'Đi theo')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${esc(r.id)}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend && f.pub && f.pub === r.pub) ? `<button class="btn" data-addf="${esc(r.friend)}" data-n="${esc(r.name)}" data-pid="${esc(r.id)}" aria-label="${T('Add as a friend', 'Thêm làm bạn')}">＋👫</button>` : ''}</div></div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
       ${list.length ? `<div class="actions center"><button class="btn" data-rpsall>✌️ ${T('Oẳn tù tì with everyone', 'Oẳn tù tì cả phòng')}</button><button class="btn" data-allg="memory">🃏 ${T('Memory Match together', 'Lật hình cùng nhau')}</button><button class="btn" data-allg="tienlen">🎴 ${T('Tiến Lên together', 'Tiến Lên cùng nhau')}</button></div>` : ''}
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
       <div class="actions center"><button class="btn big${Net.mic ? '' : ' primary'}" id="oMute">${!Net.mic ? '🎙️ ' + T('Microphone on', 'Bật micrô') : Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
@@ -1103,7 +1121,7 @@ G.drawOnlinePanel = (body, redraw) => {
     body.querySelectorAll('[data-caro]').forEach(b => b.onclick = () => { SFX.tap(); G.inviteGame('caro', b.dataset.caro); });
     { const r = body.querySelector('[data-rpsall]'); if (r) r.onclick = () => { SFX.tap(); G.inviteGame('oantuti'); }; }
     body.querySelectorAll('[data-allg]').forEach(b => b.onclick = () => { SFX.tap(); G.inviteGame(b.dataset.allg); });
-    body.querySelectorAll('[data-addf]').forEach(b => b.onclick = () => { addFriend(b.dataset.addf, b.dataset.n); SFX.chime(); toast(T('Friend added!', 'Đã thêm bạn!')); redraw(); });
+    body.querySelectorAll('[data-addf]').forEach(b => b.onclick = () => { addFriend(b.dataset.addf, b.dataset.n, (Net.remotes[b.dataset.pid] || {}).pub); SFX.chime(); toast(T('Friend added!', 'Đã thêm bạn!')); redraw(); });
     bindFriends();
     return;
   }
@@ -1130,9 +1148,9 @@ G.drawOnlinePanel = (body, redraw) => {
     wrap.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { SFX.tap(); animals = b.dataset.mode === 'ani'; settings.padAnimals = animals; saveSettings(); drawPad(); });
     wrap.querySelectorAll('.numpad button').forEach(b => b.onclick = () => {
       const v = b.dataset.v; SFX.tap();
-      if (v === 'back') code = code.slice(0, -1); else if (v === 'ok') { if (code.length === 4) go(); } else if (code.length < 4) code += v;
+      if (v === 'back') code = code.slice(0, -1); else if (v === 'ok') { if (code.length === ROOM_LEN) go(); } else if (code.length < ROOM_LEN) code += v;
       show();
-      if (code.length === 4 && v !== 'ok') go();
+      if (code.length === ROOM_LEN && v !== 'ok') go();
     });
   };
   drawPad();
@@ -1522,6 +1540,10 @@ setupTrading(G);
   const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(sx, y, sz); m.castShadow = true; scene.add(m); world.colliders.push({ x: sx, z: sz, r: 1.4 });
   G.interactables.push({ id: 'stall', x: sx, z: sz + 1.2, r: 3, icon: '🏪', label: () => T('My market stall: trade with friends', 'Sạp hàng của con: đổi đồ với bạn'), act: h => G.openTrade(h.i) });
 }
+// ---- (round S, owner plan 8 Oct: Round R Part 2 items 6 and 10) the clothes shop by the market and the wardrobe (js/shop.js);
+// mystery boxes, family rankings and the collection book for 5 to 8 year olds at Medium or Hard (js/boxes.js) ----
+{ const [{ createShop }, { createBoxes }] = await Promise.all([import('./shop.js'), import('./boxes.js')]); G.shop = createShop(G, { say, save }); G.boxes = createBoxes(G, { say, save }); }
+// ---- (round S) end ----
 // villagers the family added in Sparkle Studio (content pack "npcs"): placed where they were put on the map, saying
 // their own lines in both languages
 for (const c of (Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {
@@ -1535,6 +1557,10 @@ for (const c of (Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {
 }
 // each village's games time table (with a countdown board) and its singer; after every host is in place
 G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 'buns', 'none'), kidLook('overalls', '#3cc7e8', '#3b2618', 'short', 'cap'), kidLook('dress', '#ffb52e', '#1d1412', 'ponytail', 'flower')] });
+// (round S, owner plan 8 Oct) Hội làng three times a day, surprises, and the grown-ups' features: each in its own file,
+// loaded while the valley is built (js/hoilang.js after the games boards it uses; Studio switches in the 'kids' group)
+{ const [{ createHoiLang }, { createSurprises }, { createParents }] = await Promise.all([import('./hoilang.js'), import('./surprises.js'), import('./parents.js')]);
+  G.hoilang = createHoiLang(G, { say, save, reward }); G.surprises = createSurprises(G, { say, reward }); G.parents = createParents(G, { say, save, reward }); }
 // level land under every building, stall and landmark placed above (and anything added in future rounds)
 world.familyEdits = applyWorldEdits(G); // buildings the family moved or removed in Sparkle Studio
 bootMark('things'); widenFlatLand(world, scene); bootMark('wideland'); await breathe(); // more level land round every village and city, for new buildings (nothing moves on the map)

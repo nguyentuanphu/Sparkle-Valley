@@ -2,14 +2,24 @@
 // engine (studio/core.cjs), on the game's own website, behind the grown-ups' password.
 // The family's files are kept in GitHub: saves go to the "studio-draft" branch, Publish puts them live (main).
 // Set these in Netlify → Site configuration → Environment variables (never in the code):
-//   STUDIO_PASSWORD   the grown-ups' password (long, not used anywhere else)          required
+//   STUDIO_PASSWORD   the grown-ups' password (12 characters or more, not used anywhere else)  required
 //   GITHUB_TOKEN      fine-grained token: this repository only, Contents read and write  for saving
 //   GITHUB_REPO       e.g. nguyentuanphu/Sparkle-Valley (the default)                    optional
 //   AZURE_KEY, AZURE_REGION                            to make voices online             optional
 //   NETLIFY_TOKEN                                      the Website page                  optional
+//   FAMILY_CODE                                        the family code (else Studio makes one)  optional
+// (round R privacy, 9 Oct) Signing in takes two steps for everyone, the owner too: the password, then the 6-digit
+// code of an authenticator app (netlify/lib/admins.mjs). Ten wrong tries from one connection or on one account lock
+// it for 15 minutes (netlify/lib/guard.mjs). Every sign-in and every look at the players report goes into the access
+// log (netlify/lib/accesslog.mjs). "Sign everyone out" counts a generation up, and every cookie and exe key is
+// signed with it. Family photos live in the private store (netlify/lib/family.mjs), never in GitHub.
+import crypto from 'crypto';
 import core from '../../studio/core.cjs';
 import { report, inbox, setLabel } from '../lib/players.mjs';
 import * as admins from '../lib/admins.mjs';
+import * as family from '../lib/family.mjs';
+import * as accessLog from '../lib/accesslog.mjs';
+import { ipOf, ipKey, locked, failed, cleared, tidy } from '../lib/guard.mjs';
 import { readLive, saveLive } from '../lib/live.mjs';
 const { createStudio, githubStore, makeToken, checkToken, samePassword } = core;
 
@@ -17,12 +27,19 @@ const env = k => ((globalThis.Netlify && globalThis.Netlify.env.get(k)) || proce
 const json = (o, status = 200, headers = {}) => new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers } });
 const cookieOf = (req, name) => { const m = new RegExp('(?:^|;\\s*)' + name + '=([^;]+)').exec(req.headers.get('cookie') || ''); return m ? decodeURIComponent(m[1]) : ''; };
 const COOKIE = 'sv_studio';
+const setCookie = v => ({ 'Set-Cookie': `${COOKIE}=${v}; Path=/studio; Max-Age=${v ? 30 * 86400 : 0}; HttpOnly; Secure; SameSite=Strict` });
 
-// the players' store is Netlify Blobs on the website (tests hand in their own)
-const blobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'players', consistency: 'strong' }));
-const adminBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'studio-admins', consistency: 'strong' }));
-const liveBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'live', consistency: 'strong' }));
-const heldBlobs = () => import('@netlify/blobs').then(m => m.getStore({ name: 'studio-pending', consistency: 'strong' }));
+// Netlify Blobs on the website (tests hand in their own)
+const store = name => () => import('@netlify/blobs').then(m => m.getStore({ name, consistency: 'strong' }));
+const blobs = store('players'), adminBlobs = store('studio-admins'), liveBlobs = store('live'), heldBlobs = store('studio-pending');
+const familyBlobs = store('family-photos'), guardBlobs = store('guard'), logBlobs = store('studio-log');
+// (round R privacy) what signs a cookie: the owner's with the password, the sign-out generation and part of the two-step
+// secret; an admin's with the password and the generation (plus their own hash and secret, admins.mjs)
+const ownerKey = (pw, gen, t, off) => `${pw}\u0000${gen}\u0000${t && t.secret ? String(t.secret).slice(0, 8) : ''}${off ? '\u0000p' : ''}`;
+const adminKey = (pw, gen) => `${pw}\u0000${gen}`;
+// the owner's two-step belongs to this STUDIO_PASSWORD: a new password (set in Netlify) means setting it up again
+const ownerTag = pw => crypto.createHash('sha256').update('sv-owner-2step:' + pw).digest('hex').slice(0, 16);
+
 // the saved changes waiting for Publish (round P), kept in Netlify Blobs: "index" lists them (path → size, or null for
 // a removed file) and "f/<path>" holds each file (base64)
 export const heldOn = S => ({
@@ -33,66 +50,136 @@ export const heldOn = S => ({
     await S.setJSON('index', ix); },
   clear: async () => { const ix = (await S.get('index', { type: 'json' })) || {}; for (const rel of Object.keys(ix)) await S.delete('f/' + rel); await S.setJSON('index', {}); }
 });
-export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs, liveStore = liveBlobs } = {}) => async req => {
+// the family photos for the engine (core.cjs): the private store on the website
+export const familyOn = F => ({ where: 'site', put: (n, b) => family.put(F, n, b), get: n => family.get(F, n), remove: n => family.remove(F, n), code: () => family.code(F), newCode: () => family.newCode(F) });
+const isJpeg = b => b && b.length > 3 && b[0] === 0xff && b[1] === 0xd8;
+
+export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs, liveStore = liveBlobs, familyStore = familyBlobs, guardStore = guardBlobs, logStore = logBlobs, now = () => Date.now() } = {}) => async (req, ctx) => {
   const url = new URL(req.url), p = url.pathname, pw = env('STUDIO_PASSWORD'), post = req.method === 'POST';
   if (!pw) return json({ error: 'The online Studio is not set up yet: add STUDIO_PASSWORD in Netlify (Site configuration → Environment variables), then deploy again.', setup: true }, 503);
-  // signing in and out
+  const A = await adminStore(), gen = +(await A.get('gen').catch(() => 0)) || 0, t = now();
+  const log = async (who, role, what, note) => accessLog.add(await logStore(), { who, role, what, ctx, note }, t);
+  // (owner, 9 Oct) the owner's own sign-in: two-step (the default) or the password only, chosen in Setup → Admins
+  const ownerOff = async () => !!((await A.get('policy/owner', { type: 'json' }).catch(() => null)) || {}).noTwoStep;
+  const ownerSig = async () => ownerKey(pw, gen, await A.get('totp/owner', { type: 'json' }).catch(() => null), await ownerOff());
+  // ---------- signing in: the password, then the code (round R privacy) ----------
   if (p === '/studio/api/login' && post) {
-    const b = await req.json().catch(() => ({})), name = admins.cleanName(b.name);
-    const cookie = v => ({ 'Set-Cookie': `${COOKIE}=${v}; Path=/studio; Max-Age=${30 * 86400}; HttpOnly; Secure; SameSite=Strict` });
-    // no name (or "owner"): the owner's STUDIO_PASSWORD; a name: that admin's own password (round O)
-    if (!name || name === 'owner') { if (samePassword(pw, b.password)) return json({ ok: true, role: 'owner' }, 200, cookie(makeToken(pw))); }
-    else { const a = await admins.check(await adminStore(), name, b.password); if (a) return json({ ok: true, role: a.role }, 200, cookie(admins.makeCookie(pw, a))); }
-    await new Promise(r => setTimeout(r, 1500)); // slow, so guessing takes forever
-    return json({ error: name && name !== 'owner' ? 'That name and password don’t match.' : 'That is not the password.' }, 401);
+    if (pw.length < admins.MIN_PW) return json({ error: `STUDIO_PASSWORD is too short: it needs ${admins.MIN_PW} characters or more. Change it in Netlify (Site configuration → Environment variables), deploy again, then sign in.`, setup: true }, 503);
+    const b = await req.json().catch(() => ({})), name = admins.cleanName(b.name), owner = !name || name === 'owner', who = owner ? 'owner' : name;
+    const G = await guardStore(), ipk = 'ip/' + await ipKey(G, ipOf(req, ctx)), acct = 'acct/' + (owner ? 'owner' : admins.NAME.test(name) ? name : '?');
+    const mins = await locked(G, [ipk, acct], t);
+    if (mins) { await log(who, '', 'locked'); return json({ error: `Too many wrong tries: signing in is locked for ${mins} more minute${mins === 1 ? '' : 's'}.`, locked: mins }, 429); }
+    const wrong = async (error, what = 'signin-failed') => { await failed(G, [ipk, acct], t); await log(who, '', what); await new Promise(r => setTimeout(r, 800)); return json({ error }, 401); };
+    // 1. the password
+    let acc = null;
+    if (owner) { if (!samePassword(pw, b.password)) return wrong('That is not the password.'); }
+    else {
+      acc = await admins.check(A, name, b.password); if (!acc) return wrong('That name and password don’t match.');
+      if (String(b.password).length < admins.MIN_PW) return json({ error: `Your password is shorter than ${admins.MIN_PW} characters now: ask the owner for a new one (Setup → Admins → New password).` }, 403);
+    }
+    // 2. the code from the authenticator app (the first time: set it up, finished with its first code), unless the owner
+    // chose the password only for this account
+    const twoStep = owner ? !await ownerOff() : !acc.noTwoStep;
+    const tag = ownerTag(pw), T0 = owner ? await A.get('totp/owner', { type: 'json' }).catch(() => null) : null, ot = T0 && T0.tag === tag ? T0 : null;
+    const sec = owner ? ot && ot.secret : acc.totp, last = owner ? ot && ot.last : acc.totpLast;
+    if (!twoStep) { /* the password only */ }
+    else if (!sec) {
+      const pk = 'setup/' + who; let pend = await A.get(pk, { type: 'json' }).catch(() => null);
+      if (!pend || !(pend.exp > t)) { pend = { secret: admins.newSecret(), exp: t + 15 * 60e3 }; await A.setJSON(pk, pend); }
+      if (!b.code) return json({ step: 'setup', name: who, secret: pend.secret, otpauth: admins.otpauth(who, pend.secret) });
+      const st = admins.totpStep(pend.secret, b.code, t); if (st < 0) return wrong('That code is not right: type the 6 numbers the app shows now.', 'code-failed');
+      if (owner) await A.setJSON('totp/owner', { secret: pend.secret, tag, last: st, at: new Date(t).toISOString() }); else await admins.setTotp(A, name, pend.secret, st);
+      await A.delete(pk); await log(who, owner ? 'owner' : acc.role, 'two-step-set');
+    } else {
+      if (!b.code) return json({ step: 'code', error: 'Type the 6-digit code from your authenticator app.' }, 401); // (not a wrong try)
+      const st = admins.totpStep(sec, b.code, t); if (st < 0 || st <= (last == null ? -1 : last)) return wrong('That code is not right (or was used already): type the 6 numbers the app shows now.', 'code-failed');
+      if (owner) await A.setJSON('totp/owner', { ...ot, last: st }); else await admins.usedTotp(A, acc, st);
+    }
+    await cleared(G, [acct]);
+    if (owner) { await log('owner', 'owner', 'signin'); return json({ ok: true, role: 'owner' }, 200, setCookie(makeToken(await ownerSig()))); }
+    const fresh = await admins.get(A, name); await log(name, fresh.role, 'signin');
+    return json({ ok: true, role: fresh.role }, 200, setCookie(admins.makeCookie(adminKey(pw, gen), fresh)));
   }
-  if (p === '/studio/api/logout') return json({ ok: true }, 200, { 'Set-Cookie': `${COOKIE}=; Path=/studio; Max-Age=0; HttpOnly; Secure; SameSite=Strict` });
-  // the exe asks for the players report with the password it keeps; the dashboard has the cookie
-  const ck = cookieOf(req, COOKIE);
-  let me = checkToken(pw, ck) || samePassword(pw, req.headers.get('x-studio-password') || undefined) ? { name: 'owner', role: 'owner' } : null;
-  if (!me && ck.startsWith('a.')) { const a = await admins.fromCookie(await adminStore(), pw, ck).catch(() => null); if (a) me = { name: a.name, role: a.role }; }
+  if (p === '/studio/api/logout') return json({ ok: true }, 200, setCookie(''));
+  // ---------- who is asking: the cookie (the dashboard), or SparkleStudio.exe's key ----------
+  const ck = cookieOf(req, COOKIE); let me = null;
+  if (ck && !ck.startsWith('a.') && checkToken(await ownerSig(), ck)) me = { name: 'owner', role: 'owner' };
+  if (!me && ck.startsWith('a.')) { const a = await admins.fromCookie(A, adminKey(pw, gen), ck).catch(() => null); if (a && (a.totp || a.noTwoStep)) me = { name: a.name, role: a.role }; }
+  const xk = req.headers.get('x-studio-key');
+  if (!me && xk) {
+    const G = await guardStore(), ipk = 'ip/' + await ipKey(G, ipOf(req, ctx));
+    if (await locked(G, [ipk], t)) return json({ error: 'Too many wrong tries: wait 15 minutes.' }, 429);
+    const k = await admins.fromKey(A, xk, gen); if (k) me = { name: 'exe:' + k.label, role: 'exe' };
+    else { await failed(G, [ipk], t); return json({ error: 'That Studio key is not right, or was removed: make a new one online (Setup → Security) and put it in Settings.', signin: true }, 401); }
+  }
   if (!me) return json({ error: 'Please sign in.', signin: true }, 401);
   if (post && req.headers.get('x-studio') !== '1') return json({ error: 'no' }, 403); // only the dashboard itself sends changes
   // what this admin may do (round O): a viewer reads the analytics only; only an owner manages the admins
   const route = p.startsWith('/studio/content/') ? 'file' : decodeURIComponent(p.slice('/studio/api/'.length));
   if (!admins.allowed(me.role, route.startsWith('file/') && !post ? 'info' : route, post)) return json({ error: me.role === 'viewer' ? 'Your account can look at the Analytics only.' : 'Only an owner can do that.' }, 403);
+  const body = async () => post ? await req.json().catch(() => ({})) : {};
   if (p === '/studio/api/whoami') return json(me);
   if (p.startsWith('/studio/api/admins/')) {
-    const S = await adminStore(), b = post ? await req.json().catch(() => ({})) : {};
-    if (p === '/studio/api/admins/list') return json({ admins: await admins.list(S), me });
-    if (p === '/studio/api/admins/save' && post) { if (admins.cleanName(b.name) === 'owner') return json({ error: '“owner” is kept for the STUDIO_PASSWORD.' }, 400); const r = await admins.put(S, b, me.name); return json(r, r.error ? 400 : 200); }
-    if (p === '/studio/api/admins/remove' && post) return json(await admins.remove(S, b.name));
+    const b = await body();
+    if (p === '/studio/api/admins/list') return json({ admins: await admins.list(A), me, ownerTwoStep: !await ownerOff() });
+    // (owner, 9 Oct) two-step or the password only, for one account; the owner's own is kept in policy/owner
+    if (p === '/studio/api/admins/twostep' && post) {
+      const n = admins.cleanName(b.name), on = b.on !== false;
+      if (n === 'owner') { await A.setJSON('policy/owner', on ? {} : { noTwoStep: true }); await log(me.name, me.role, on ? 'two-step-on' : 'two-step-off', 'owner');
+        return json({ ok: true }, 200, me.name === 'owner' ? setCookie(makeToken(await ownerSig())) : {}); }
+      const ok = await admins.setTwoStep(A, n, on); if (ok) await log(me.name, me.role, on ? 'two-step-on' : 'two-step-off', n); return json({ ok });
+    }
+    if (p === '/studio/api/admins/save' && post) { if (admins.cleanName(b.name) === 'owner') return json({ error: '“owner” is kept for the STUDIO_PASSWORD.' }, 400); const r = await admins.put(A, b, me.name); return json(r, r.error ? 400 : 200); }
+    if (p === '/studio/api/admins/remove' && post) return json(await admins.remove(A, b.name));
+    // (round R privacy) a new phone: the owner clears someone's two-step, and they set it up again at their next sign-in
+    if (p === '/studio/api/admins/reset2fa' && post) { if (admins.cleanName(b.name) === 'owner') return json({ error: 'The owner’s two-step is set up again by changing STUDIO_PASSWORD in Netlify.' }, 400); const ok = await admins.resetTotp(A, b.name); if (ok) await log(me.name, me.role, 'two-step-reset', admins.cleanName(b.name)); return json({ ok }); }
     // anyone changes their own password (the owner's is STUDIO_PASSWORD, changed in Netlify)
     if (p === '/studio/api/admins/me' && post) {
       if (me.name === 'owner') return json({ error: 'The owner’s password is STUDIO_PASSWORD: change it in Netlify (Site configuration → Environment variables).' }, 400);
-      if (!await admins.check(S, me.name, b.old)) return json({ error: 'The old password is not right.' }, 401);
-      const r = await admins.put(S, { name: me.name, password: b.password, role: me.role }, me.name); return json(r, r.error ? 400 : 200);
+      if (!await admins.check(A, me.name, b.old)) return json({ error: 'The old password is not right.' }, 401);
+      const r = await admins.put(A, { name: me.name, password: b.password, role: me.role }, me.name); return json(r, r.error ? 400 : 200);
     }
     return json({ error: 'no' }, 404);
   }
+  // (round R privacy) Sign everyone out: every cookie and every exe key made so far stops working
+  if (p === '/studio/api/security/signout-all' && post) { await A.set('gen', String(gen + 1)); await log(me.name, me.role, 'signout-all'); return json({ ok: true }, 200, setCookie('')); }
+  if (p === '/studio/api/keys/list') return json({ keys: await admins.listKeys(A) });
+  if (p === '/studio/api/keys/make' && post) { const b = await body(), k = await admins.makeKey(A, b.label, me.name, gen); await log(me.name, me.role, 'key-made', String(b.label || '')); return json({ key: k }); }
+  if (p === '/studio/api/keys/remove' && post) { const b = await body(); await log(me.name, me.role, 'key-removed'); return json(await admins.removeKey(A, b.id)); }
+  if (p === '/studio/api/log') { tidy(await guardStore(), t).catch(() => { }); return json({ entries: await accessLog.list(await logStore()) }); }
+  // (round R privacy) the family photos and the family code: the private store, never GitHub
+  if (p === '/studio/api/family/code') return json(await family.code(await familyStore()));
+  if (p === '/studio/api/family/code/new' && post) { const r = await family.newCode(await familyStore()); if (!r.error) await log(me.name, me.role, 'family-code'); return json(r, r.error ? 400 : 200); }
+  if (p === '/studio/api/family/upload' && post) { // from SparkleStudio.exe
+    const b = await body(), buf = Buffer.from(String(b.data || ''), 'base64');
+    if (!family.NAME.test(b.name || '') || !isJpeg(buf) || buf.length > 600 * 1024) return json({ error: 'Send a JPEG photo (under 600 KB) with a good name.' }, 400);
+    await family.put(await familyStore(), b.name, buf); return json({ ok: true });
+  }
+  if (p === '/studio/api/family/remove' && post) { const b = await body(); await family.remove(await familyStore(), b.name); return json({ ok: true }); }
+  if (p.startsWith('/studio/api/familyphoto/')) { const b = await family.get(await familyStore(), p.slice('/studio/api/familyphoto/'.length)); return b ? new Response(b, { status: 200, headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, no-store' } }) : json({ error: 'not found' }, 404); }
   // (round R) Releases and Festivals: saved straight to the website, so they reach the devices at once, no Publish
   if (p === '/studio/api/live') return json(post ? await saveLive(await liveStore(), await req.json().catch(() => ({})), me.name) : await readLive(await liveStore()));
   const players = async () => report(await playersStore());
-  if (p === '/studio/api/players') return json(await players());
+  if (p === '/studio/api/players') { await log(me.name, me.role, 'analytics'); return json(await players()); }
   if (p === '/studio/api/inbox') return json(await inbox(await playersStore()));
   // a name for a device in the play report ("Na's iPad"), round L
-  if (p === '/studio/api/players/label' && post) { const b = await req.json().catch(() => ({})); return json({ ok: await setLabel(await playersStore(), b.id, b.label) }); }
+  if (p === '/studio/api/players/label' && post) { const b = await body(); return json({ ok: await setLabel(await playersStore(), b.id, b.label) }); }
   const conf = { azureKey: env('AZURE_KEY'), azureRegion: env('AZURE_REGION'), githubToken: env('GITHUB_TOKEN'), githubRepo: env('GITHUB_REPO') || 'nguyentuanphu/Sparkle-Valley', githubBranch: env('GITHUB_BRANCH') || 'main',
     netlifyToken: env('NETLIFY_TOKEN'), netlifySite: env('NETLIFY_SITE') || env('SITE_ID'), siteUrl: env('URL') };
   if (!conf.githubToken) return json({ error: 'Add GITHUB_TOKEN in Netlify (Site configuration → Environment variables) so the online Studio can read and save the family’s files.', setup: true }, 503);
-  const store = githubStore({ token: conf.githubToken, repo: conf.githubRepo, branch: conf.githubBranch, held: heldOn(await heldStore()) });
+  const gstore = githubStore({ token: conf.githubToken, repo: conf.githubRepo, branch: conf.githubBranch, held: heldOn(await heldStore()) });
   // the changes waiting for Publish, and dropping them (round P)
-  if (p === '/studio/api/pending') return json({ files: await store.waiting() });
-  if (p === '/studio/api/pending/discard' && post) return json(await store.discard());
-  const studio = createStudio({ store, conf, online: true, local: { players, inbox: async () => inbox(await playersStore()) } });
+  if (p === '/studio/api/pending') return json({ files: await gstore.waiting() });
+  if (p === '/studio/api/pending/discard' && post) return json(await gstore.discard());
+  const studio = createStudio({ store: gstore, conf, online: true, family: familyOn(await familyStore()), local: { players, inbox: async () => inbox(await playersStore()) } });
   // the game's modules on the Map and Voices pages fetch content/custom.json from the page's own address
   const api = p.startsWith('/studio/content/') ? 'file/' + p.slice(8) : decodeURIComponent(p.slice('/studio/api/'.length));
   try {
-    const body = post ? Buffer.from(await req.arrayBuffer()) : null;
-    if (body && body.length > 5.5e6) return json({ error: 'That is too big to send online (over 5 MB).' }, 413);
-    const r = await studio.handle(api, req.method, body);
-    if (api === 'info' && r.body && typeof r.body === 'object') { r.body.me = me; r.body.waiting = (await store.waiting()).length; } // who is signed in, and what they may do
-    if (post && r.code < 400) await store.flush('Sparkle Studio online: ' + api);
+    const raw = post ? Buffer.from(await req.arrayBuffer()) : null;
+    if (raw && raw.length > 5.5e6) return json({ error: 'That is too big to send online (over 5 MB).' }, 413);
+    const r = await studio.handle(api, req.method, raw);
+    if (api === 'info' && r.body && typeof r.body === 'object') { r.body.me = me; r.body.waiting = (await gstore.waiting()).length; } // who is signed in, and what they may do
+    if (post && r.code < 400) await gstore.flush('Sparkle Studio online: ' + api);
     if (r.raw) return new Response(r.raw, { status: r.code, headers: { 'Content-Type': r.type, 'Cache-Control': 'no-store' } });
     if (api === 'file/content/custom.json' && r.code === 404) return json({});
     return json(r.body, r.code);

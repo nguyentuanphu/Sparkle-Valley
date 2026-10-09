@@ -1680,8 +1680,6 @@ body.calm .rv-img.on { animation: none; }
 .gsec > summary::-webkit-details-marker { display: none; }
 .gsec > summary::after { content: '▸'; margin-left: auto; opacity: .55; } .gsec[open] > summary::after { content: '▾'; }
 .gsec .gi { font-size: 1.4em; } .gsec .gbody { padding: 0 14px 14px; } .gsec .gbody > h3:first-child { margin-top: 4px; }
-.xeng { margin: 10px 0; padding: 4px 10px; border-radius: 14px; background: rgba(120, 90, 160, .06); }
-.xeng > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; } .xeng[open] > summary { margin-bottom: 6px; }
 .g-adv { margin-top: 18px; border-top: 2px dashed rgba(120, 90, 160, .25); padding-top: 10px; }
 .g-adv > summary { cursor: pointer; font-weight: 700; font-size: 1.1em; padding: 10px 4px; list-style: none; }
 .g-adv > summary::before { content: '▸ '; } .g-adv[open] > summary::before { content: '▾ '; }
@@ -1739,6 +1737,9 @@ body.calm .rv-img.on { animation: none; }
 .knockpop { top: 22%; z-index: 60; } .knockpop .ff-btns { display: flex; gap: 8px; justify-content: center; margin: 10px 0 6px; flex-wrap: wrap; }
 .knockpop .ff-btns .btn { font-size: 18px; padding: 10px 18px; }
 .ocard.knocks { border: 2px solid #ffb84d; }
+/* (round R privacy, 9 Oct) 6-digit room codes: the digits and the typed boxes shrink to fit a 390 px phone; keypad keys stay 56 px */
+@media (max-width: 480px) { .rdigits { gap: 4px; } .rd { min-width: 0; flex: 1 1 0; max-width: 50px; padding: 4px 2px; } .rd b { font-size: 24px; } .rd .ranimal { font-size: 24px; }
+  .codebox { gap: 3px; } .codebox .cb { min-width: 30px; } .codebox .ranimal { font-size: 26px; } }
 
 /* little ones (under 5) in a game: bigger answer buttons, and a gentle wiggle on the right one after 10 s or two misses */
 .gl.little .choice { width: clamp(104px, 23vw, 170px); height: clamp(104px, 23vw, 170px); }
@@ -2003,6 +2004,16 @@ body.calm .sp-owl.cheer { animation: none; }
 .fest-grown { margin-top: 18px; border-top: 2px dashed rgba(138, 92, 246, .25); padding-top: 14px; }
 .fest-grown .grown.fest-hold { position: relative; left: auto; bottom: auto; right: auto; top: auto; display: flex; align-items: center; gap: 8px; width: 100%; min-height: 56px; border-radius: 18px; padding: 10px 16px; font: inherit; color: inherit; }
 .fest-grown .fest-hold small { margin-left: auto; opacity: .7; }
+/* (round R privacy, 9 Oct) the real place's map asks a grown-up first: the same press-and-hold button, in the window */
+.modal.rvgate .card { width: min(520px, 94vw); }
+.rvgate .grown.rv-ok { position: relative; left: auto; bottom: auto; right: auto; top: auto; display: flex; align-items: center; gap: 8px; width: 100%; min-height: 56px; border-radius: 18px; padding: 10px 16px; margin: 8px 0; font: inherit; color: inherit; }
+.rvgate .rv-ok small { margin-left: auto; opacity: .7; }
+.rvgate .actions .btn { min-height: 44px; }
+.rv-credit { font-size: 12px; opacity: .85; }
+/* (round R privacy, 9 Oct) what the game keeps and sends, at the top of Grown-ups */
+.g-priv { margin: 10px 0; padding: 8px 14px; border-radius: 14px; background: rgba(60, 199, 232, .08); }
+.g-priv > summary { min-height: 44px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; }
+.g-priv ul { margin: 4px 0 8px; padding-left: 20px; } .g-priv li { margin: 4px 0; line-height: 1.4; }
 .fest-grown .ring { position: absolute; inset: -4px; width: auto; height: auto; z-index: -1; }
 /* round N (owner's iPhone screenshot): the star counter sat over 📺 because the top bar moves down by the notch while
    the counter did not; it now sits just under the top bar, whatever the notch */
@@ -2137,3 +2148,86 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .sides .side small { display: block; opacity: .8; }
 .sides .side .btn.on { background: #2f7f73; color: #fff; }
 .sides .side.done { opacity: .7; }
+/* (round R privacy, 9 Oct) Grown-ups → Playing online → Who's here: one row per player, Remove at least 44 px */
+.whohere .whorow { display: flex; align-items: center; gap: 8px; } .whohere .whorow .pw { flex: 1; min-width: 0; } .whohere .whorow small { display: block; }
+.whohere .whorow .btn { min-height: 44px; min-width: 44px; flex: none; }
+.online.off .onlineoff { font-size: 20px; padding: 24px 8px; }
+
+/* ---------- (round S, owner plan 8 Oct) the shared big card: the clothes shop (js/shop.js), mystery boxes, rankings and
+   the collection book (js/boxes.js). Round ✕, picture buttons at least 48 px (64 px and more for under-5s: .little) ---------- */
+.modal.kcard .card { width: min(620px, 96vw); display: flex; flex-direction: column; gap: 12px; }
+.kcard .khead { display: flex; align-items: center; gap: 10px; padding-right: 56px; }
+.kcard .khead h2 { margin: 0; font-size: 18px; flex: 1; min-width: 0; }
+.kcard .kbig .art { width: 56px; height: 56px; }
+.kcoin { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; color: #e08a00; }
+.kcoin .art { width: 24px; height: 24px; } .khead .kcoin { font-size: 22px; } .khead .kcoin .art { width: 34px; height: 34px; }
+.kcard .kcount { font-weight: 800; color: #e08a00; font-size: 18px; }
+.kcard .ktabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.kcard .ktab { width: 56px; height: 56px; border-radius: 16px; border: 0; background: #fff; box-shadow: 0 3px 0 rgba(90, 60, 130, .12); display: flex; align-items: center; justify-content: center; padding: 0; }
+.kcard .ktab .art { width: 38px; height: 38px; } .kcard .ktab.on { background: #ffe9a8; box-shadow: 0 0 0 3px #ffb020; } .kcard .ktab.alt { background: #eef7ff; }
+.kcard .kgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 10px; }
+.kcard .kitem { position: relative; min-height: 96px; border: 0; border-radius: 18px; background: #fff; box-shadow: 0 3px 0 rgba(90, 60, 130, .1), 0 0 0 2px rgba(90, 60, 130, .06); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px; }
+.kcard .kitem .kpic { width: 56px; height: 56px; } .kcard .kitem.on { box-shadow: 0 0 0 4px #43c463; } .kcard .kitem.poor .kcoin { color: #d0607a; }
+.kcard .kitem .ktick .art { width: 24px; height: 24px; }
+.kcard .kask { position: absolute; inset: 0; z-index: 5; background: rgba(60, 30, 90, .35); display: flex; align-items: center; justify-content: center; border-radius: inherit; }
+.modal.kcard .card { position: relative; }
+.kcard .kaskbox { background: #fffdf8; border-radius: 26px; padding: 18px; display: flex; flex-direction: column; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(60, 30, 90, .3); }
+.kcard .kaskbox .kpic { width: 120px; height: 120px; } .kcard .kaskbox .kcoin { font-size: 28px; } .kcard .kaskbox .kcoin .art { width: 40px; height: 40px; }
+.kcard .kbtns { display: flex; gap: 16px; justify-content: center; }
+.kcard .kbtns button { width: 72px; height: 72px; border-radius: 50%; border: 0; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 0 rgba(60, 30, 90, .18); }
+.kcard .kbtns .art { width: 44px; height: 44px; }
+.kcard .kyes, .kcard .kagain { background: #43c463; } .kcard .kno { background: #fff; color: #6a4a8a; } .kcard .kto { background: #eef7ff; }
+.kcard .kyes.poor { background: #d8d0e0; } .kcard .shake { animation: shake .4s; }
+.kcard.little .ktab { width: 72px; height: 72px; } .kcard.little .ktab .art { width: 50px; height: 50px; }
+.kcard.little .kgrid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); } .kcard.little .kitem { min-height: 112px; } .kcard.little .kitem .kpic { width: 68px; height: 68px; }
+.kcard.little .kbtns button { width: 88px; height: 88px; }
+.wardrobe.kward .wslot { flex: none; width: 44px; display: flex; align-items: center; justify-content: center; opacity: .8; } .wardrobe.kward .wslot .art { width: 34px; height: 34px; }
+.wardrobe.kward .chip .kpic, .wardrobe.kward .chip .art { width: 42px; height: 42px; } .wardrobe.kward .chip.none { opacity: .7; }
+.wardrobe.kward.little .wrow .chip { min-width: 72px; height: 72px; }
+/* mystery boxes, rankings, the collection book */
+.kcard .khub { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; padding: 8px 0 12px; }
+.kcard .khb { position: relative; width: 112px; height: 112px; border-radius: 28px; border: 0; background: #fff; box-shadow: 0 4px 0 rgba(90, 60, 130, .14); display: flex; align-items: center; justify-content: center; }
+.kcard .khb .art { width: 72px; height: 72px; } .kcard .khb b { position: absolute; top: 6px; right: 10px; font-size: 20px; color: #e08a00; }
+.kcard .khb.ready, .kcard .kbox { animation: chipPulse 1.6s ease-in-out infinite; }
+.kcard .kbox { align-self: center; width: 180px; height: 180px; border: 0; border-radius: 40px; background: #fff3d0; display: flex; align-items: center; justify-content: center; margin-top: 30px; }
+.kcard .kbox .art { width: 140px; height: 140px; } .kcard .kmore, .kcard .kstars, .kcard .knew { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 22px; font-weight: 800; color: #e08a00; margin: 0; }
+.kcard .kmore .art, .kcard .kstars .art, .kcard .knew .art { width: 34px; height: 34px; }
+.kcard .kempty { display: flex; justify-content: center; padding: 30px 0; } .kcard .kempty .art { width: 120px; height: 120px; opacity: .7; }
+.kcard .kprize { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 30px; } .kcard .kpz { display: inline-flex; } .kcard .kpz .art { width: 150px; height: 150px; }
+.kcard .kprize.rare .kpz { filter: drop-shadow(0 0 10px #5fb6ff); } .kcard .kprize.magic .kpz { filter: drop-shadow(0 0 14px #ffd23f); }
+.kcard .kranks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.kcard .kranks li { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 18px; padding: 6px 14px 6px 6px; min-height: 56px; box-shadow: 0 2px 0 rgba(90, 60, 130, .1); }
+.kcard .kranks li.me { box-shadow: 0 0 0 3px #ffb020; } .kcard .kranks .kpl .art { width: 40px; height: 40px; }
+.kcard .kranks img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; } .kcard .kranks small { flex: 1; min-width: 0; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kcard .kranks b { font-size: 22px; color: #e08a00; }
+.kcard .kbook { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 10px; }
+.kcard .kcol { position: relative; height: 96px; border: 0; border-radius: 20px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 0 rgba(90, 60, 130, .1); }
+.kcard .kcol .art { width: 62px; height: 62px; } .kcard .kcol.miss > span { filter: brightness(0) opacity(.18); }
+.kcard .kcol.rare { background: #eaf6ff; } .kcard .kcol.magic { background: #fff6d0; } .kcard .kcol b { position: absolute; bottom: 4px; right: 8px; font-size: 14px; color: #e08a00; }
+.hud .bxrow .chip small { font-weight: 800; color: #e08a00; }
+@media (prefers-reduced-motion: reduce) { .kcard .khb.ready, .kcard .kbox { animation: none; } }
+/* ---------- (round S) end ---------- */
+/* (round S, owner plan 8 Oct) the grown-ups' features (js/parents.js) and the village festival prizes (js/hoilang.js) */
+.dancebreak { position: fixed; inset: 0; z-index: 72; display: grid; place-items: center; padding: 16px; background: radial-gradient(circle at 50% 30%, #ffe0f0, #b9a2ff); animation: fadein .4s; }
+.db-card { width: min(440px, 100%); text-align: center; background: #fff6e4; border-radius: 28px; padding: 18px 16px 20px; box-shadow: var(--shadow); color: #3a2a20; }
+.db-card h2 { margin: 0 0 6px; font-size: clamp(24px, 7vw, 34px); display: flex; align-items: center; justify-content: center; gap: 8px; } .db-card h2 .art { width: 40px; height: 40px; }
+.db-pic .art, .db-pic .emo { width: min(46vw, 180px); height: min(46vw, 180px); font-size: 120px; animation: db-bounce 1s ease-in-out infinite; }
+.db-card p { font-size: 22px; font-weight: 700; margin: 8px 0 12px; }
+.db-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; } .db-dots i { width: 14px; height: 14px; border-radius: 50%; background: #e8ddf8; } .db-dots i.on { background: #ff6fae; } .db-dots i.done { background: #8a5cf6; }
+.db-skip { min-height: 64px; min-width: 160px; font-size: 20px; }
+.dancebreak.still .db-pic .art, .dancebreak.still .db-pic .emo, body.calm .db-pic .art { animation: none; }
+@keyframes db-bounce { 50% { transform: translateY(-14px) scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { .db-pic .art, .db-pic .emo { animation: none; } }
+.bedtime-dim { position: fixed; inset: 0; z-index: 45; pointer-events: none; background: #0b0b2a; opacity: 0; transition: opacity 4s linear; }
+.resttime.bedtime .rt-moon .art { width: 96px; height: 96px; } .resttime.bedtime .rt-zz .art { width: 44px; height: 44px; }
+.missions .mtick { position: relative; min-width: 64px; min-height: 64px; font-size: 26px; border-radius: 50%; display: grid; place-items: center; }
+.missions .mtick .ring { position: absolute; inset: -4px; width: auto; height: auto; z-index: -1; }
+.gsec.family .fmrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 0; border-bottom: 1px solid rgba(0, 0, 0, .08); }
+.gsec.family .fmrow .pw { flex: 1 1 160px; min-width: 0; } .gsec.family .fmrow small { display: block; opacity: .75; }
+.gsec.family .fmrow .btn, .gsec.family .fmcards .btn, .gsec.family .vrow .btn { min-height: 44px; min-width: 44px; }
+.gsec.family .fmdone { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; } .gsec.family .fmdone .art { width: 22px; height: 22px; }
+.gsec.family .fmcards { display: flex; flex-wrap: wrap; gap: 8px; }
+.gsec.family .wknote { padding: 8px 10px; margin: 6px 0; border-radius: 12px; background: rgba(138, 92, 246, .08); } .gsec.family .wknote p { margin: 4px 0; font-size: 15px; }
+.gsec.family .bday { display: flex; align-items: center; gap: 8px; } .gsec.family .bday select { min-height: 44px; }
+.gsec.family input[type=time] { min-height: 44px; font-size: 18px; }
+.certcard .cert-img { width: 100%; height: auto; border-radius: 12px; box-shadow: var(--shadow); margin: 8px 0; }

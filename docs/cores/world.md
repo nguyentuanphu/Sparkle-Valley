@@ -33,3 +33,10 @@ Plus `node tests/world-audit.mjs` after moving buildings, land or roads.
 - Flat villages; roads never steeper than 8 % (dirt 12 %); the reef and Hạ Long sit inside the lake on ground under the water (round N).
 - Houses and objects are solid; the camera stays calm near houses and trees.
 - Phones draw the valley 30 times a second and nothing behind full-screen pages (round O, battery).
+- Hội làng (round S, `js/hoilang.js`): a festival pole (cây nêu with flags, one merged mesh and a 0.4 m collider) on clear
+  ground off the roads 4–14 m from each games board. The parade walks the nearest non-footpath road within 30 m of the
+  singer's stage, 3.4 m to one side of its middle (on the verge, out of the traffic), up to 20 m each way; with no road
+  it circles the stage. The 9 people are built once and reused, visible only at the village nearest a child while an
+  event is on.
+- Surprises (round S, `js/surprises.js`): placed with `G.clearSpot` off the roads (`w/2 + 1.5 m`, G5) and off the water;
+  the rainbow lotus floats on Lotus Village's lotus pond; at most one in the valley at a time, removed when found.

@@ -15,7 +15,8 @@ export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'so
   page.on('dialog', d => { errors.push('dialog: ' + d.message()); d.accept().catch(() => { }); });
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/peerjs|0\.peerjs|ERR_|Failed to load resource|net::|WebSocket connection to/.test(m.text())) errors.push('console: ' + m.text()); });
-  await page.addInitScript(([lang, s]) => { try { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang, voice: false, sound: false, music: false, quality: 'low', autoPack: false }, s); localStorage.setItem('sv2_settings', JSON.stringify(o)); } catch (e) { } }, [lang, settings]);
+  // (round R privacy, 9 Oct) online play is off on a new device; the checks play with it on unless they pass online: false
+  await page.addInitScript(([lang, s]) => { try { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang, voice: false, sound: false, music: false, quality: 'low', autoPack: false, online: true }, s); localStorage.setItem('sv2_settings', JSON.stringify(o)); } catch (e) { } }, [lang, settings]);
   // (round P: a new device starts with nobody; the checks play as two children made beforehand)
   await page.addInitScript(seedPlayers);
   if (pre) await page.addInitScript(pre);
@@ -44,6 +45,10 @@ export async function start(page, mode = 'solo', screen = 'valley') {
   // skip the prologue
   for (let i = 0; i < 40; i++) { const sb = await page.$('.storybook'); if (!sb) break; await page.evaluate(() => { const b = document.querySelector('.storybook .sb-next, .storybook .next, .storybook button:last-of-type'); b && b.click(); }); await page.waitForTimeout(80); }
   await page.evaluate(() => { document.querySelectorAll('.storybook').forEach(e => e.remove()); window.__sv.paused = false; });
+  // (round S) the village festival (real clock), surprises (after 2.5 min of play) and the dance break (after 20 min) come
+  // by themselves: the checks start with them off, so they never land in another check; hoilang, surprises and parents
+  // switch them back on
+  await page.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), hoilang: false, surprises: false, danceBreak: false }; });
   await page.waitForTimeout(500);
 }
 // close story pages, dialogs and pop-ups that the world opens by itself
