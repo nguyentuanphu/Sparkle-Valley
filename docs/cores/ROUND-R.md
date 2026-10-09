@@ -143,3 +143,12 @@ Measured in the test browser (390 px phone; the slow-phone figures use a 4x slow
 - **Start-up size (PERF-001):** the story and the yard load while the valley is built; the voice pack's list (`voices/manifest.json`) now names only the lines that are not English (`other`, per language) instead of every line's language (`langOf`): 211 KB to 144 KB. The game, `tools/make-voice-pack.mjs` and Studio read both forms.
 - **Map picture cache:** the service worker no longer clears `sv-world` (the cache deletes old builds' pictures itself); the perf check waits until the picture is saved instead of a fixed 0.8 s.
 - **Checks:** `films` also plays the story films.
+
+## Owner's decisions, 9 Oct (AEST): the family and privacy
+- **The yard family:** bà Huệ and ông Nghi brought chú Thuận, chú Trung, O Thủy, anh Quân, chú Hùng, chú Sơn Diệu and chú Sơn Cường from Hà Tĩnh; bà Huệ also brought cậu Tâm and chị Huyền. The other Two Homes Street families (O Thương and dượng Dũng, Cô Tam's family, Bác 2/3/4, anh Ba) are not part of it. In the yard story (owner: "you choose"): chú Thuận drives the dump truck, chú Hùng builds, anh Quân digs; chú Trung, O Thủy, chú Sơn Diệu and chú Sơn Cường come on the coach too.
+- **Privacy** (review: claude.ai artifact "Sparkle Valley Privacy Review", 9 Oct):
+  - Family photos: **family-only** (stored privately, loaded only by the family's devices with a family code from Studio, random file names).
+  - Play report: **keep as is** (on by default, with first names; Grown-ups can switch it off).
+  - Online play: **off until a grown-up turns it on**, longer room codes, a "who's here" list a grown-up can check.
+  - Chat character key: **keep as is**.
+  - Also: voices made in Studio only (no voice keys on children's devices, never clone children's voices); landmark photos served from our own site; Studio admin two-step sign-in, long passwords, a log of who opens the players report; a short privacy notice in Grown-ups.

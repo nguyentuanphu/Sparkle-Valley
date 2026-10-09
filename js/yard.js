@@ -11,7 +11,7 @@ import { featureOn } from './custom.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
 import { build } from './vehicles.js';
 import { openRoom } from './openspot.js';
-import { YARD_STEPS, YARD_LINES, RELATIVES, JOBS, ANH2 } from './content/yard.js';
+import { YARD_STEPS, YARD_LINES, RELATIVES, JOBS, ANH2, COACH } from './content/yard.js';
 
 const st = p => { const s = p.yard = p.yard && typeof p.yard === 'object' ? p.yard : {}; s.done = s.done || {}; s.jobs = s.jobs || {}; return s; };
 const look = ([style, color, hair, hairStyle]) => ({ style, color, hat: 'none', back: 'none', hair, hairStyle, skin: '#e2b088', glider: 0 });
@@ -72,6 +72,9 @@ export function createYard(G, { dialog, say, reward, save }) {
   const person = (lk, name) => { const A = nameAvatar(buildAvatar(look(lk), null), name); scene.add(A.root); people.push(A); return A; };
   const anh2 = person(ANH2.look, ANH2.name);
   const rel = RELATIVES.map(r => ({ r, A: person(r.look, r.name) }));
+  // the rest of the family off the coach, waving beside it until everyone has a job
+  const COLORS = ['#7a5aa8', '#d8a83a', '#3a8a8a', '#a84a5a'];
+  const others = COACH.map((n, k) => person(['shirt', COLORS[k % 4], '#2a2a2a', /^O |^Chị /.test(n) ? 'long' : 'short'], n));
   const JOB_AT = [[-5.5, 5.2], [SITE[0] - 3.2, SITE[1] + 3.2], [SITE[0] + 3.5, SITE[1] - 5]];
   const putAt = (A, lx, lz, face = 0) => { const c = W(lx, lz); A.root.position.set(c.x, heightAt(c.x, c.z), c.z); A.root.rotation.y = ry + face; A.root.userData.lx = lx; A.root.userData.lz = lz; };
   putAt(anh2, 5.2, -2.8, .3);
@@ -84,6 +87,7 @@ export function createYard(G, { dialog, say, reward, save }) {
       A.root.visible = arrived;
       if (!met) putAt(A, -4.5 + k * 1.3, 8.3, Math.PI); else putAt(A, ...JOB_AT[k], Math.PI);
     });
+    others.forEach((A, k) => { A.root.visible = coach.visible; putAt(A, 1 + k * 1.3, 8.6, Math.PI); });
     heap.visible = anyDone('y_truck') && !anyDone('y_build');
     pit.scale.set(anyDone('y_dig') ? 1.2 : .01, 1, anyDone('y_dig') ? .9 : .01); pit.visible = anyDone('y_dig');
     const built = anyDone('y_build');

@@ -4,15 +4,19 @@
 // shop on Phố Hai Quê; their son Anh 2 runs it. js/yard.js runs this chain (a side story the child starts by asking
 // bà Huệ; Studio switch 'story_yard'). Lesson: helping your family and giving everyone a chance.
 //
-// The three relatives use PLACEHOLDER names until the owner sends the real names and jobs (change them here).
+// The family (owner, 9 Oct): bà Huệ and ông Nghi brought chú Thuận, chú Trung, O Thủy, anh Quân, chú Hùng, chú Sơn Diệu and
+// chú Sơn Cường from Hà Tĩnh (bà Huệ also brought cậu Tâm and chị Huyền). Three of them take the yard's jobs here;
+// the others come on the coach too (COACH).
 export const RELATIVES = [
-  { id: 'rel_driver', name: 'Chú Tư', job: 0, look: ['shirt', '#4a7ab8', '#2a2a2a', 'short'],
-    hello: ['I can drive anything with wheels! Back home I drove the rice cart every day.', 'Chú lái được mọi thứ có bánh xe! Ở quê ngày nào chú cũng đánh xe chở lúa.'] },
-  { id: 'rel_builder', name: 'Cô Sáu', job: 1, look: ['shirt', '#c8503a', '#2a2a2a', 'buns'],
-    hello: ['I love making things with my hands. I helped build our school in Hà Tĩnh!', 'Cô thích làm mọi thứ bằng tay. Cô đã giúp xây ngôi trường ở Hà Tĩnh đó!'] },
-  { id: 'rel_digger', name: 'Anh Bảy', job: 2, look: ['shirt', '#5a9a4a', '#2a2a2a', 'short'],
+  { id: 'rel_driver', name: 'Chú Thuận', job: 0, look: ['shirt', '#4a7ab8', '#2a2a2a', 'short'],
+    hello: ['I can drive anything with wheels! Sand, stones, bricks: I carry them all.', 'Chú lái được mọi thứ có bánh xe! Cát, đá, gạch: chú chở hết.'] },
+  { id: 'rel_builder', name: 'Chú Hùng', job: 1, look: ['shirt', '#c8503a', '#2a2a2a', 'short'],
+    hello: ['I love making things with my hands. I helped build our school in Hà Tĩnh!', 'Chú thích làm mọi thứ bằng tay. Chú đã giúp xây ngôi trường ở Hà Tĩnh đó!'] },
+  { id: 'rel_digger', name: 'Anh Quân', job: 2, look: ['shirt', '#5a9a4a', '#2a2a2a', 'short'],
     hello: ['I am strong and patient. I can dig a well all by myself!', 'Anh khỏe và kiên nhẫn lắm. Anh tự đào được cả một cái giếng!'] }
 ];
+// everyone else who came on the coach (they stand by it and wave)
+export const COACH = ['Chú Trung', 'O Thủy', 'Chú Sơn Diệu', 'Chú Sơn Cường'];
 export const JOBS = [['Driver', 'Lái xe'], ['Builder', 'Thợ xây'], ['Digger operator', 'Lái máy xúc']];
 export const ANH2 = { id: 'anh2', name: 'Anh 2', look: ['shirt', '#e8a83a', '#2a2a2a', 'short'] };
 
@@ -24,11 +28,11 @@ export const YARD_STEPS = [
   { id: 'y_jobs', icon: '👷', en: 'Give everyone a job', vi: 'Giao việc cho mọi người', at: 'relatives',
     tale: ['👷🏗️', 'Anh 2', 'Welcome to the yard! Ask each of them what they are good at, then give them the right job.', 'Chào mừng đến công trường! Con hỏi mỗi người giỏi việc gì, rồi giao cho họ việc phù hợp nhé.'] },
   { id: 'y_truck', icon: '🚚', en: 'Drive the dump truck with earth and stone', vi: 'Lái xe ben chở đất đá', at: 'truck',
-    tale: ['🚚🪨', 'Chú Tư', 'Jump in, we will drive together! Load up at the stone pile, then tip it out at the building site.', 'Lên xe nào, mình cùng lái nhé! Xúc đá ở bãi đá, rồi đổ xuống chỗ xây nhà.'] },
+    tale: ['🚚🪨', 'Chú Thuận', 'Jump in, we will drive together! Load up at the stone pile, then tip it out at the building site.', 'Lên xe nào, mình cùng lái nhé! Xúc đá ở bãi đá, rồi đổ xuống chỗ xây nhà.'] },
   { id: 'y_dig', icon: '🏗️', en: 'Dig the foundations with the excavator', vi: 'Đào móng bằng máy xúc', at: 'digger',
-    tale: ['🏗️💪', 'Anh Bảy', 'A strong house needs deep foundations. Pull the levers with me and dig!', 'Nhà chắc phải có móng sâu. Con kéo cần cùng anh rồi đào nhé!'] },
+    tale: ['🏗️💪', 'Anh Quân', 'A strong house needs deep foundations. Pull the levers with me and dig!', 'Nhà chắc phải có móng sâu. Con kéo cần cùng anh rồi đào nhé!'] },
   { id: 'y_build', icon: '🧱', en: 'Build the house together', vi: 'Cùng nhau xây nhà', at: 'site',
-    tale: ['🧱🏠', 'Cô Sáu', 'Brick by brick, everyone together! Then we lift the roof on.', 'Từng viên gạch, mọi người cùng làm! Rồi mình lợp mái nhé.'] },
+    tale: ['🧱🏠', 'Chú Hùng', 'Brick by brick, everyone together! Then we lift the roof on.', 'Từng viên gạch, mọi người cùng làm! Rồi mình lợp mái nhé.'] },
   { id: 'y_party', icon: '🍲', en: 'Come to the house-warming meal at the Huệ Nghi shop', vi: 'Về tiệm Huệ Nghi ăn mừng nhà mới', at: 'hue',
     tale: ['🏠🎉', 'Anh 2', 'The house is finished! Mẹ is cooking a big meal at the shop. Let us all go and eat together!', 'Nhà xong rồi! Mẹ đang nấu một bữa thật ngon ở tiệm. Mình cùng về ăn mừng nhé!'] }
 ];
