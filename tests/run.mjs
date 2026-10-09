@@ -974,8 +974,10 @@ await check('shop', async () => {
     p.age = 'big'; G.addCoins(500 - S.farm.coins); G.huds[0].root.querySelector('.dk.bag').click(); await w(3200);
     out.there = Math.hypot(h.pos.x - G.shop.front.x, h.pos.z - G.shop.front.z) < 8; const card = document.querySelector('.modal.shopk .card');
     out.opened = !!card; out.tabs = card ? card.querySelectorAll('.ktab').length : 0;
-    // (nothing to read: each thing is a drawing and a number; drawings carry no text)
-    out.pics = card ? [...card.querySelectorAll('.kitem')].every(b => b.querySelector('svg') && /^\d*$/.test(b.textContent.replace(/\s/g, ''))) : false;
+    // (nothing to read: each thing is a drawing and a number; the words inside a drawing, like the coin's "$", are part
+    // of the picture, so the text is read with the drawings taken out)
+    const words = b => { const c = b.cloneNode(true); c.querySelectorAll('svg, .arti, .flagi').forEach(e => e.remove()); return c.textContent.replace(/\s/g, ''); };
+    out.pics = card ? [...card.querySelectorAll('.kitem')].every(b => b.querySelector('svg') && /^\d*$/.test(words(b))) : false;
     out.small = card ? [...card.querySelectorAll('.ktab, .kitem, .x')].filter(b => { const q = b.getBoundingClientRect(); return q.width < 44 || q.height < 44; }).length : -1;
     // buy the tiara (hats tab), and it is worn
     card.querySelector('[data-tab="hat"]').click(); await w(150); card.querySelector('[data-id="tiara"]').click(); await w(150);
@@ -1091,10 +1093,14 @@ await check('hoilang', async () => {
     // 09:02 AEST at the first village: the festival is on there
     const F = G.hoilang.fests[0]; out.fests = G.hoilang.fests.length;
     h.pos.set(F.x + 3, h.pos.y, F.z + 3); h.pos.y = (await import('/js/world.js')).heightAt(h.pos.x, h.pos.z) + .1;
-    at('2026-10-10T09:02'); await w(2500);
+    // (walking into Lotus Village opens the main story's chapter page, and the world rests while a storybook is open:
+    // close what the world opened by itself, like the harness's clear(), then let the festival clock tick)
+    // (the HUD has one toast line and the newest message takes it, e.g. the daily gift hint: keep every toast shown)
+    const toasts = [], tEl = document.querySelector('.hud .htoast'), mo = new MutationObserver(() => toasts.push(tEl.textContent)); mo.observe(tEl, { childList: true, characterData: true, subtree: true });
+    at('2026-10-10T09:02'); await w(800); document.querySelectorAll('.storybook, .dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false; await w(2500);
     out.on = G.hoilang.clock().on; out.active = G.hoilang.active() === F;
     out.walkers = (G.hoilang.walkers() || []).filter(A => A.root.visible).length; out.crowd = (G.hoilang.crowd() || []).filter(A => A.root.visible).length;
-    out.toast = document.querySelector('.hud .htoast')?.textContent || '';
+    mo.disconnect(); out.toast = toasts.find(x => /festival|Hội làng/.test(x)) || toasts.join(' | ');
     // an under-5 joins: playing the festival game (even left early) gives the first prize, once
     p.age = 'little'; p.hoilang = {}; G.hoilang.openFest(h, F); await w(500); document.querySelector('.dialog .dch').click(); await w(1200);
     out.joinGame = !!document.querySelector('.gl'); document.querySelector('.gl .gl-x')?.click(); await w(4500);
@@ -1143,7 +1149,9 @@ await check('surprises', async () => {
     // not while a window is open
     Sp.reset(); Sp.setPlay(1000); const m = document.createElement('div'); m.className = 'modal'; document.body.appendChild(m); await w(2500); out.whileBusy = !!Sp.current(); m.remove();
     // the limit: found as soon as each comes, at most 3
-    let n = 0; for (let k = 0; k < 6; k++) { Sp.setPlay(1000 + k * 400); await w(1600); const c = Sp.current(); if (c) { n++; if (near(c) > 16 && c.id !== 'lotus') out.bad.push(c.id + ' far ' + near(c).toFixed(0)); await Sp.found(h); tidy(); } }
+    // (the fairy glade starts with its first glowing stone in front of the child; the path leads ~14 m on to the ring)
+    const start = c => c.id === 'glade' && c.parts[0] ? { x: c.parts[0].position.x, z: c.parts[0].position.z } : c;
+    let n = 0; for (let k = 0; k < 6; k++) { Sp.setPlay(1000 + k * 400); await w(1600); const c = Sp.current(); if (c) { n++; if (near(start(c)) > 16 && c.id !== 'lotus') out.bad.push(c.id + ' far ' + near(start(c)).toFixed(0)); await Sp.found(h); tidy(); } }
     out.count = n; out.shown = Sp.state().shown;
     // every kind: placed, then found for its sticker or keepsake
     for (const s of SURPRISES) {
@@ -1211,7 +1219,9 @@ await check('parents', async () => {
     if (gn) await hold(gn.querySelector('.grownup')); await w(300); out.snoozed = !document.querySelector('.resttime.bedtime') && S.settings.bedSnooze > realNow();
     S.settings.bedtime = ''; S.settings.bedSnooze = 0; tidy(); document.querySelector('.bedtime-dim')?.remove();
     // the birthday: on the day (AEST), a surprise and a keepsake, once
-    at('2026-10-10T10:00'); p.birthday = '10-10'; delete p.bdayDone; await w(6500); out.bday = !!document.querySelector('.reward') && (p.keepsakes || []).includes('bd_cake'); tidy();
+    // (the reward pop-up closes itself after 2.6 s: watch for it during the wait rather than look once at the end)
+    at('2026-10-10T10:00'); p.birthday = '10-10'; delete p.bdayDone; let pop = false; for (let k = 0; k < 26 && !pop; k++) { await w(250); pop = !!document.querySelector('.reward'); }
+    await w(300); out.bday = pop && (p.keepsakes || []).includes('bd_cake'); tidy();
     Date.now = realNow;
     // the switches
     C.features.familyMissions = false; out.offMissions = G.parents.logHTML(p) === '' && !G.parents.openFor(p).length;
