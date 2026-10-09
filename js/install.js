@@ -6,7 +6,7 @@ import { el } from './util.js';
 let deferred = null;
 const listeners = [];
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; listeners.forEach(f => f()); });
-window.addEventListener('appinstalled', () => { deferred = null; localStorage.setItem('sv-installed', '1'); listeners.forEach(f => f()); });
+window.addEventListener('appinstalled', () => { deferred = null; try { localStorage.setItem('sv-installed', '1'); } catch (e) { } listeners.forEach(f => f()); });
 
 const ua = navigator.userAgent;
 const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);

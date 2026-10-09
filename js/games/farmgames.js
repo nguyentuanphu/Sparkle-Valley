@@ -287,7 +287,7 @@ register({
         if (box.children.length > 9) return;
         const b = el('button', 'bub', Math.random() < .2 ? '⭐' : ''); const s = 60 + Math.random() * 60;
         b.style.width = b.style.height = s + 'px'; b.style.left = Math.random() * 85 + '%'; b.style.animationDuration = (6 + Math.random() * 4) + 's';
-        b.onclick = () => { popped++; SFX.pop(popped); api.dots(goal, Math.min(goal, popped)); if (b.textContent) { SFX.coin(); } b.classList.add('popped'); setTimeout(() => b.remove(), 200); if (popped >= goal) { clearInterval(timer); res(); } };
+        b.onclick = () => { if (b.classList.contains('popped')) return; popped++; /* (audit: a popping bubble counts once) */ SFX.pop(popped); api.dots(goal, Math.min(goal, popped)); if (b.textContent) { SFX.coin(); } b.classList.add('popped'); setTimeout(() => b.remove(), 200); if (popped >= goal) { clearInterval(timer); res(); } };
         b.addEventListener('animationend', () => b.remove());
         box.appendChild(b);
       }, 500);

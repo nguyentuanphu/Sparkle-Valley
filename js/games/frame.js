@@ -80,7 +80,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
         // then the child chooses: the next game, this one again, or stop (after a long wait: stop)
         setTimeout(() => c.classList.add('ask'), 1600);
         // tapping anywhere outside the two buttons finishes (there is no Done button any more)
-        const next = await new Promise(r => { let t = 0, fin = false; const done = k => { if (fin) return; fin = true; clearTimeout(t); removeEventListener('pointerdown', out, true); r(k); }; const out = e => { if (e.target.closest && e.target.closest('.gl-nx, .gl-ad')) return; e.stopPropagation(); e.preventDefault(); SFX.tap(); done('stop'); }; t = setTimeout(() => done('stop'), 30000); setTimeout(() => { if (!fin) addEventListener('pointerdown', out, true); }, 400); c.querySelectorAll('.gl-nx').forEach(b => { b.onclick = e => { e.stopPropagation(); SFX.tap(); done(b.dataset.n); }; }); });
+        const next = await new Promise(r => { let t = 0, fin = false; const done = k => { if (fin) return; fin = true; clearTimeout(t); removeEventListener('pointerdown', out, true); r(k); }; const out = e => { if (e.target.closest && e.target.closest('.gl-nx, .gl-ad')) return; if (!layer.contains(e.target)) return; /* (audit: the other child's half keeps its taps) */ e.stopPropagation(); e.preventDefault(); SFX.tap(); done('stop'); }; t = setTimeout(() => done('stop'), 30000); setTimeout(() => { if (!fin) addEventListener('pointerdown', out, true); }, 400); c.querySelectorAll('.gl-nx').forEach(b => { b.onclick = e => { e.stopPropagation(); SFX.tap(); done(b.dataset.n); }; }); });
         finish(true, Object.assign({ stars: n, next }, extra));
       }
     };

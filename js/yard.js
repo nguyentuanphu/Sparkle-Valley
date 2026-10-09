@@ -99,6 +99,9 @@ export function createYard(G, { dialog, say, reward, save }) {
     const built = anyDone('y_build');
     walls.visible = built; walls.scale.y = 2.6; roof.visible = built; roof.position.y = 2.6; roof.rotation.y = 0;
   }
+  // (audit, 9 Oct) the yard is drawn before a child is chosen: draw it again whenever the children playing change
+  let who = '';
+  world.updaters.push(() => { const k = G.heroes.map(h => h.profile && h.profile.id).join(','); if (k !== who) { who = k; paint(); } });
   world.updaters.push((dt, t) => {
     if (!G.heroes.some(h => Math.abs(h.pos.x - X) < 60 && Math.abs(h.pos.z - Z) < 60)) return;
     people.forEach((A, k) => { if (A.root.visible) A.anim('idle', t + k * .9, 0); });
