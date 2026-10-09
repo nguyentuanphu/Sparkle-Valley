@@ -35,7 +35,7 @@ const blobs = store('players'), adminBlobs = store('studio-admins'), liveBlobs =
 const familyBlobs = store('family-photos'), guardBlobs = store('guard'), logBlobs = store('studio-log');
 // (round R privacy) what signs a cookie: the owner's with the password, the sign-out generation and part of the two-step
 // secret; an admin's with the password and the generation (plus their own hash and secret, admins.mjs)
-const ownerKey = (pw, gen, t) => `${pw}\u0000${gen}\u0000${t && t.secret ? String(t.secret).slice(0, 8) : ''}`;
+const ownerKey = (pw, gen, t, off) => `${pw}\u0000${gen}\u0000${t && t.secret ? String(t.secret).slice(0, 8) : ''}${off ? '\u0000p' : ''}`;
 const adminKey = (pw, gen) => `${pw}\u0000${gen}`;
 // the owner's two-step belongs to this STUDIO_PASSWORD: a new password (set in Netlify) means setting it up again
 const ownerTag = pw => crypto.createHash('sha256').update('sv-owner-2step:' + pw).digest('hex').slice(0, 16);
@@ -59,6 +59,9 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
   if (!pw) return json({ error: 'The online Studio is not set up yet: add STUDIO_PASSWORD in Netlify (Site configuration → Environment variables), then deploy again.', setup: true }, 503);
   const A = await adminStore(), gen = +(await A.get('gen').catch(() => 0)) || 0, t = now();
   const log = async (who, role, what, note) => accessLog.add(await logStore(), { who, role, what, ctx, note }, t);
+  // (owner, 9 Oct) the owner's own sign-in: two-step (the default) or the password only, chosen in Setup → Admins
+  const ownerOff = async () => !!((await A.get('policy/owner', { type: 'json' }).catch(() => null)) || {}).noTwoStep;
+  const ownerSig = async () => ownerKey(pw, gen, await A.get('totp/owner', { type: 'json' }).catch(() => null), await ownerOff());
   // ---------- signing in: the password, then the code (round R privacy) ----------
   if (p === '/studio/api/login' && post) {
     if (pw.length < admins.MIN_PW) return json({ error: `STUDIO_PASSWORD is too short: it needs ${admins.MIN_PW} characters or more. Change it in Netlify (Site configuration → Environment variables), deploy again, then sign in.`, setup: true }, 503);
@@ -74,10 +77,13 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
       acc = await admins.check(A, name, b.password); if (!acc) return wrong('That name and password don’t match.');
       if (String(b.password).length < admins.MIN_PW) return json({ error: `Your password is shorter than ${admins.MIN_PW} characters now: ask the owner for a new one (Setup → Admins → New password).` }, 403);
     }
-    // 2. the code from the authenticator app (the first time: set it up, finished with its first code)
+    // 2. the code from the authenticator app (the first time: set it up, finished with its first code), unless the owner
+    // chose the password only for this account
+    const twoStep = owner ? !await ownerOff() : !acc.noTwoStep;
     const tag = ownerTag(pw), T0 = owner ? await A.get('totp/owner', { type: 'json' }).catch(() => null) : null, ot = T0 && T0.tag === tag ? T0 : null;
     const sec = owner ? ot && ot.secret : acc.totp, last = owner ? ot && ot.last : acc.totpLast;
-    if (!sec) {
+    if (!twoStep) { /* the password only */ }
+    else if (!sec) {
       const pk = 'setup/' + who; let pend = await A.get(pk, { type: 'json' }).catch(() => null);
       if (!pend || !(pend.exp > t)) { pend = { secret: admins.newSecret(), exp: t + 15 * 60e3 }; await A.setJSON(pk, pend); }
       if (!b.code) return json({ step: 'setup', name: who, secret: pend.secret, otpauth: admins.otpauth(who, pend.secret) });
@@ -90,15 +96,15 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
       if (owner) await A.setJSON('totp/owner', { ...ot, last: st }); else await admins.usedTotp(A, acc, st);
     }
     await cleared(G, [acct]);
-    if (owner) { await log('owner', 'owner', 'signin'); return json({ ok: true, role: 'owner' }, 200, setCookie(makeToken(ownerKey(pw, gen, await A.get('totp/owner', { type: 'json' }))))); }
+    if (owner) { await log('owner', 'owner', 'signin'); return json({ ok: true, role: 'owner' }, 200, setCookie(makeToken(await ownerSig()))); }
     const fresh = await admins.get(A, name); await log(name, fresh.role, 'signin');
     return json({ ok: true, role: fresh.role }, 200, setCookie(admins.makeCookie(adminKey(pw, gen), fresh)));
   }
   if (p === '/studio/api/logout') return json({ ok: true }, 200, setCookie(''));
   // ---------- who is asking: the cookie (the dashboard), or SparkleStudio.exe's key ----------
   const ck = cookieOf(req, COOKIE); let me = null;
-  if (ck && !ck.startsWith('a.') && checkToken(ownerKey(pw, gen, await A.get('totp/owner', { type: 'json' }).catch(() => null)), ck)) me = { name: 'owner', role: 'owner' };
-  if (!me && ck.startsWith('a.')) { const a = await admins.fromCookie(A, adminKey(pw, gen), ck).catch(() => null); if (a && a.totp) me = { name: a.name, role: a.role }; }
+  if (ck && !ck.startsWith('a.') && checkToken(await ownerSig(), ck)) me = { name: 'owner', role: 'owner' };
+  if (!me && ck.startsWith('a.')) { const a = await admins.fromCookie(A, adminKey(pw, gen), ck).catch(() => null); if (a && (a.totp || a.noTwoStep)) me = { name: a.name, role: a.role }; }
   const xk = req.headers.get('x-studio-key');
   if (!me && xk) {
     const G = await guardStore(), ipk = 'ip/' + await ipKey(G, ipOf(req, ctx));
@@ -115,7 +121,14 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
   if (p === '/studio/api/whoami') return json(me);
   if (p.startsWith('/studio/api/admins/')) {
     const b = await body();
-    if (p === '/studio/api/admins/list') return json({ admins: await admins.list(A), me });
+    if (p === '/studio/api/admins/list') return json({ admins: await admins.list(A), me, ownerTwoStep: !await ownerOff() });
+    // (owner, 9 Oct) two-step or the password only, for one account; the owner's own is kept in policy/owner
+    if (p === '/studio/api/admins/twostep' && post) {
+      const n = admins.cleanName(b.name), on = b.on !== false;
+      if (n === 'owner') { await A.setJSON('policy/owner', on ? {} : { noTwoStep: true }); await log(me.name, me.role, on ? 'two-step-on' : 'two-step-off', 'owner');
+        return json({ ok: true }, 200, me.name === 'owner' ? setCookie(makeToken(await ownerSig())) : {}); }
+      const ok = await admins.setTwoStep(A, n, on); if (ok) await log(me.name, me.role, on ? 'two-step-on' : 'two-step-off', n); return json({ ok });
+    }
     if (p === '/studio/api/admins/save' && post) { if (admins.cleanName(b.name) === 'owner') return json({ error: '“owner” is kept for the STUDIO_PASSWORD.' }, 400); const r = await admins.put(A, b, me.name); return json(r, r.error ? 400 : 200); }
     if (p === '/studio/api/admins/remove' && post) return json(await admins.remove(A, b.name));
     // (round R privacy) a new phone: the owner clears someone's two-step, and they set it up again at their next sign-in

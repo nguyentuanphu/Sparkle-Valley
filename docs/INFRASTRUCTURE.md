@@ -48,7 +48,7 @@ A drag-and-drop zip (`build-netlify.sh`) still works as an emergency fallback, b
 
 | Where | Name | What for | Needed? |
 |---|---|---|---|
-| Netlify → Site configuration → Environment variables | `STUDIO_PASSWORD` | Online Studio login, 12 characters or more (then a two-step code from an authenticator app) | required for `/studio/` |
+| Netlify → Site configuration → Environment variables | `STUDIO_PASSWORD` | Online Studio login, 12 characters or more (then a two-step code from an authenticator app, unless the owner chose password only in Setup → Admins) | required for `/studio/` |
 | 〃 | `FAMILY_CODE` | The family code the devices type to see family photos (else Studio makes one: Family → Family code) | optional |
 | 〃 | `GITHUB_TOKEN` | Fine-grained, this repo only, Contents read/write: the online Studio reads/saves family files | required for saving |
 | 〃 | `GITHUB_REPO`, `GITHUB_BRANCH` | Defaults: `nguyentuanphu/Sparkle-Valley`, `main` | optional |

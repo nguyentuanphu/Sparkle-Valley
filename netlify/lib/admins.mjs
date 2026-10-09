@@ -10,6 +10,8 @@
 // (round R privacy, 9 Oct) Everyone, the owner too, signs in in two steps: the password, then the 6-digit code of an
 // authenticator app (TOTP: HMAC-SHA1, 30 s, one step either side; node's crypto, no extra package). The first sign-in
 // shows the secret to add to the app (a otpauth:// link and the letters), and is finished with the first code.
+// (owner, 9 Oct) The owner chooses for each account, the owner's own too, two-step or the password only (Setup → Admins);
+// two-step is the default. Changing it signs that person out.
 // Passwords are 12 characters or more. A key for SparkleStudio.exe (k/<id>) lets the family computer reach the
 // players report and the family photos without the two steps; only its hash is kept, and the owner can remove it.
 import crypto from 'crypto';
@@ -20,14 +22,14 @@ const key = name => 'a/' + name;
 const hashOf = (pw, salt) => crypto.scryptSync(String(pw), salt, 32, { N: 16384, r: 8, p: 1 }).toString('base64url');
 const secret = pw => crypto.createHash('sha256').update('sparkle-studio-admin:' + pw).digest();
 // (round R privacy) the cookie also carries part of the two-step secret: setting up two-step again signs them out
-const sigOf = (pw, a, exp) => crypto.createHmac('sha256', secret(pw)).update(`${a.name}|${exp}|${a.hash.slice(0, 16)}|${String(a.totp || '').slice(0, 8)}`).digest('base64url');
+const sigOf = (pw, a, exp) => crypto.createHmac('sha256', secret(pw)).update(`${a.name}|${exp}|${a.hash.slice(0, 16)}|${String(a.totp || '').slice(0, 8)}|${a.noTwoStep ? 'p' : ''}`).digest('base64url');
 export const MIN_PW = 12;
 export const same = (x, y) => typeof x === 'string' && typeof y === 'string' && x.length === y.length && crypto.timingSafeEqual(Buffer.from(x), Buffer.from(y));
 export const cleanName = n => String(n || '').trim().toLowerCase();
 
 export async function list(S) {
   const { blobs } = await S.list({ prefix: 'a/' }), out = [];
-  for (const b of blobs.slice(0, 200)) { const a = await S.get(b.key, { type: 'json' }); if (a) out.push({ name: a.name, role: a.role, at: a.at, by: a.by || '', twoStep: !!a.totp }); }
+  for (const b of blobs.slice(0, 200)) { const a = await S.get(b.key, { type: 'json' }); if (a) out.push({ name: a.name, role: a.role, at: a.at, by: a.by || '', twoStep: !!a.totp, twoStepOn: !a.noTwoStep }); }
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 export async function get(S, name) { name = cleanName(name); return NAME.test(name) ? S.get(key(name), { type: 'json' }) : null; }
@@ -88,6 +90,8 @@ export const otpauth = (name, sec) => `otpauth://totp/${encodeURIComponent('Spar
 // an admin's two-step: set (after the first code), used (a code is never taken twice), reset by the owner
 export async function setTotp(S, name, sec, step) { const a = await get(S, name); if (!a) return false; a.totp = sec; a.totpLast = step; await S.setJSON(key(a.name), a); return true; }
 export async function usedTotp(S, a, step) { a.totpLast = step; await S.setJSON(key(a.name), a); }
+// (owner, 9 Oct) two-step on or off for one admin (off: the password only)
+export async function setTwoStep(S, name, on) { const a = await get(S, name); if (!a) return false; if (on) delete a.noTwoStep; else a.noTwoStep = true; await S.setJSON(key(a.name), a); return true; }
 export async function resetTotp(S, name) { const a = await get(S, name); if (!a) return false; delete a.totp; delete a.totpLast; await S.setJSON(key(a.name), a); return true; }
 
 // ---------- keys for SparkleStudio.exe (round R privacy) ----------
