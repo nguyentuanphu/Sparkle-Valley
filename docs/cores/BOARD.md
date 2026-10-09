@@ -15,7 +15,12 @@ Format for a request:
 - (nothing open)
 
 ## Play
-- (nothing open)
+- Lantern story Chapter 2, Hà Nội (brief `tasks/play-chapter2.md`) built on `core/play`, Studio switch `story_ch2` (on by default, like the other story switches). Waiting for the owner's "yes, push".
+- [ ] (Play → Release) Done as the allowed one-line fixes, please keep when merging: three new files in `sw.js` FILES (`js/content/chapter2hanoi.js`, `js/content/chapter2props.js`, `js/content/chapter2films.js`), and the star-lantern keepsake `lantern_ch2` in `js/myhouse.js` DECOR (without it the keepsake has no place in the house) · 10 Oct AEST
+- [ ] (Play → Release) The `story` check now expects Chapter 2's first step after Chapter 1 (it expected an old adventure because there was no Chapter 2 yet); the new `chapter2` check plays Chapter 2 for an under-5 and a big kid · `tests/run.mjs` · 10 Oct AEST
+- [ ] (Play → World) Chapter 2 needs real spots in Hà Nội for Tèo, Cô Tam (beside Văn Miếu, with 3 to 5 stone turtles), Bà Năm and the clues by Hồ Gươm; until then `js/content/chapter2hanoi.js` finds free ground off the roads and Hà Nội's main street. Note: the Thê Húc bridge (Hồ Gươm) stands outside Hà Nội's square, about 30 m south-east, and Tháp Rùa (`turtle`) is far away across the valley · 10 Oct AEST
+- [ ] (Play → Voice & Audio) New spoken lines to record (none has a child's name): Chapter 2's steps, talks and tales in `js/content/chapters.js` (`ch2` steps: `en`/`vi`, `act_*`, `actL_*`, `tale`, `taleLittle`, `talk.lines`, `talk.short`, `challenge`), `STORY_LINES` from `light` to `secret`, `COUNT` (one to five), `STORY_TALES.lantern_ch2` · 10 Oct AEST
+- [ ] (Play → Kid UI) Bà Năm tells Sự tích Hồ Gươm (`hoguom`) in Chapter 2 as a picture story; if your films brief makes it a 3D film, the chapter picks it up by itself · 10 Oct AEST
 
 ## Kid UI
 - (nothing open)

@@ -82,3 +82,29 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   chest after 3 pieces) and only when the child is free; one at a time; if the child walks 35 m away it comes back to
   them (never missed). Each gives a sticker or a keepsake (`sp_*` in the house). Calm mode: one slow shooting star, no
   bobbing or flutter. Studio switch `surprises`.
+
+## The lantern story, Chapter 2: Hà Nội (owner's go, 10 Oct AEST; brief `tasks/play-chapter2.md`)
+- **Files:** steps, lines and the festival film's words in `js/content/chapters.js` (`ch2`, `STORY_LINES`, `COUNT`,
+  `STORY_TALES.lantern_ch2`); the runner `js/lanterns.js` (each chapter's landmark, lantern spot, rope and lights in
+  `places`); Hà Nội's pieces in `js/content/chapter2hanoi.js`; the star lantern, stone turtle, lion head, mooncakes and
+  bridge in `js/content/chapter2props.js`; the festival film in `js/content/chapter2films.js` (loaded only when the
+  lantern is hung); the companion's new trick in `js/companion.js` (`lead`). Studio switch `story_ch2`. Check `chapter2`.
+- **Steps:** follow 3 lantern lights to Hà Nội; say hello to Cô Tam at Văn Miếu (big kids); Tèo's challenge (big kids
+  Ô ăn quan, with Play, How to play (the guide film) and Later; under-5s Oẳn tù tì, which they always win); help Bà Lan
+  at the bún chả stall by hand: hold to fan the grill, tap three bowls (big kids); Cô Tam's lesson: count the stone
+  turtles (3 for under-5s; 5 for big kids, then "how many?" with a gentle second try, and the word "học"); Bà Năm tells
+  Sự tích Hồ Gươm; find the lantern by the lake (big kids read the clue "where the old turtle rests" and look at three
+  spots; an under-5's companion flies over the right one); pull the rope to hang it on Cầu Thê Húc. Under-5s: 6 steps,
+  big kids: 8.
+- **Festival night:** the film (the bridge lights up red over Hồ Gươm; the Trung Thu parade with star lanterns, the lion
+  dance and mooncakes, and the child taps to light the star lanterns), then the bridge stays lit and six children with
+  star lanterns walk round the lake for about 80 seconds. Keepsake: the star lantern (`lantern_ch2`). The companion learns
+  its trick, lighting the way (`profile.lanterns.tricks`). Big kids' bonus secret: a golden turtle comes up in the lake
+  once, with a turtle sticker.
+
+## Owner's decisions (Chapter 2, 10 Oct AEST; the owner said "go" to the plan and its suggestions)
+- Tèo, Cô Tam and Bà Năm come to Hà Nội for Trung Thu: they stand there only while a child is in Chapter 2 (spots found
+  with free ground, not new map positions); their usual places stay as they are.
+- Bà Năm's Hà Nội tale is Sự tích Hồ Gươm (already in the game).
+- Under-5s play Oẳn tù tì in Tèo's challenge (Ô ăn quan is a 5+ game).
+
