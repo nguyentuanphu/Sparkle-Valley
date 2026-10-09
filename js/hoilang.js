@@ -146,12 +146,14 @@ export function createHoiLang(G, { say, save, reward }) {
   // ---------- telling the children ----------
   const told = new Set();
   const tell = (h, key, msg, line) => { const k = h.profile.id + '|' + key; if (told.has(k)) return; told.add(k); G.toast(h, msg); if (!G.paused) say(...line); };
-  let E = clock(), acc = 1;
+  // (the festival follows the real clock, so it is looked at once a second of real time: the frame's dt is capped at
+  // 0.05 s, and on a slow phone a second of game time could be many real seconds)
+  let E = clock(), lastLook = -1e9;
   world.updaters.push((dt, t) => {
     if (!on() || !fests.length || !G.heroes.length) { hideAll(); carried.forEach(c => c.s.visible = false); return; }
-    acc += dt;
-    if (acc >= 1) {
-      acc = 0; E = clock();
+    const nowMs = performance.now();
+    if (nowMs - lastLook >= 1000) {
+      lastLook = nowMs; E = clock();
       // a player changed (Who's playing?): the carried prizes follow the new children
       if (carried.some(c => !G.heroes.includes(c.h)) || G.heroes.length !== (sync.n ?? G.heroes.length)) sync(); sync.n = G.heroes.length;
       for (const h of G.heroes) {

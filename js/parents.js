@@ -125,12 +125,16 @@ export function createParents(G, { say, save, reward }) {
     return true;
   }
 
-  // ---------- the clock: every 5 seconds ----------
-  let acc = 0, busy = false;
-  G.world.updaters.push(dt => {
+  // ---------- the clock: every 2 seconds of real time ----------
+  // (minutes of play are counted only while the valley runs; the clock itself runs on its own timer: the world rests
+  // behind the Songs page, which bedtime opens for the lullaby, and goodnight must still come; a frame's dt is also
+  // capped at 0.05 s, so on a slow phone "5 seconds" of game time could be a minute of real time)
+  let busy = false;
+  G.world.updaters.push(dt => { if (G.heroes.length && isFree()) playMin += dt / 60; });
+  setInterval(() => {
     if (!G.heroes.length) return;
-    if (isFree()) playMin += dt / 60;
-    acc += dt; if (acc < 5 || busy) return; acc = 0;
+    // (a speech box or reward taken away without a tap never answers: once neither is on screen, the clock goes on)
+    if (busy && !document.querySelector('.dialog, .reward')) busy = false;
     // bedtime first (it can pause everything)
     const B = feat('bedtime') && !snoozed() ? bedtimePhase(Date.now(), settings.bedtime) : { phase: 'off' }, today = aestDate();
     if (B.phase === 'soon' && warned !== today) { warned = today; say(...PARENT_LINES.bedSoon); G.heroes.forEach(h => G.toast(h, '🌙 ' + T(`Bedtime at ${settings.bedtime}. Nearly time to sleep!`, `Giờ đi ngủ lúc ${settings.bedtime}. Sắp đến giờ ngủ rồi!`))); }
@@ -139,13 +143,13 @@ export function createParents(G, { say, save, reward }) {
     else if (dim && B.phase !== 'night') setDim(0);
     if (B.phase === 'night') { goodnight(); return; }
     if (B.phase === 'bed') return;
-    if (!isFree()) return;
+    if (busy || !isFree()) return;
     // a birthday, a new mission, then the dance break: one at a time, only when the child is free
     const run = async f => { busy = true; try { await f(); } finally { busy = false; } };
     for (const h of G.heroes) if (feat('birthday') && isBirthday(h.profile.birthday, Date.now()) && h.profile.bdayDone !== today.slice(0, 4)) { run(() => birthday(h)); return; }
     for (const h of G.heroes) if (openFor(h.profile).some(m => !(h.profile.missionsSeen || []).includes(m.id))) { run(() => announce(h)); return; }
     if (feat('danceBreak') && settings.danceBreak !== false && danceDue(playMin, lastDance)) { lastDance = playMin; openDance(); }
-  });
+  }, 2000);
 
   // ---------- (d) the certificate card: a picture ----------
   const loadImg = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });

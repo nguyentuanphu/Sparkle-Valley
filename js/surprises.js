@@ -101,7 +101,7 @@ export function createSurprises(G, { say, reward }) {
     const i = G.interactables.indexOf(C.it); if (i >= 0) G.interactables.splice(i, 1);
   }
   const giveSticker = (p, e) => { if (e && G.STICKERS && G.STICKERS.includes(e) && !p.stickers.includes(e)) { p.stickers.push(e); return e; } return G.giveSticker ? G.giveSticker(p) : null; };
-  const giveKeepsake = (p, k) => { p.keepsakes = Array.isArray(p.keepsakes) ? p.keepsakes : []; if (!p.keepsakes.includes(k)) p.keepsakes.push(k); };
+  const giveKeepsake = (p, k) => { p.keepsakes = Array.isArray(p.keepsakes) ? p.keepsakes : []; if (p.keepsakes.includes(k)) return false; p.keepsakes.push(k); return true; };
   async function found(h, C) {
     if (cur !== C) return;
     const p = h.profile, s = rec(p), S = C.S; cur = null; st = surpriseFound(st);
@@ -112,7 +112,10 @@ export function createSurprises(G, { say, reward }) {
     else if (C.id === 'chest') { s.chest = true; G.addCoins && G.addCoins(25); giveKeepsake(p, S.keepsake); sub = T('+25 coins and a treasure chest for your house.', '+25 đồng và một rương kho báu cho nhà con.'); line = SP_LINES.keepsake; }
     else if (C.id === 'glade') { giveKeepsake(p, S.keepsake); giveSticker(p, null); sub = T('A ring of mushrooms for your house, and a sticker.', 'Một vòng nấm cho nhà con, và một hình dán.'); line = SP_LINES.glade; }
     else if (C.id === 'stars') { const e = giveSticker(p, S.sticker); sub = e ? T(`A new sticker ${e}!`, `Hình dán mới ${e}!`) : ''; line = SP_LINES.wish; }
-    else { if (S.keepsake) giveKeepsake(p, S.keepsake); const e = S.sticker ? giveSticker(p, S.sticker) : null; sub = [S.keepsake ? T('A keepsake for your house.', 'Một kỷ vật cho nhà con.') : '', e ? T(`A new sticker ${e}!`, `Hình dán mới ${e}!`) : ''].filter(Boolean).join(' '); line = S.keepsake ? SP_LINES.keepsake : SP_LINES.found; }
+    else {
+      // (a visitor met again: its keepsake is already in the house, so a sticker instead; never nothing)
+      const kept = S.keepsake ? giveKeepsake(p, S.keepsake) : false, e = S.sticker || (S.keepsake && !kept) ? giveSticker(p, S.sticker || null) : null;
+      sub = [kept ? T('A keepsake for your house.', 'Một kỷ vật cho nhà con.') : '', e ? T(`A new sticker ${e}!`, `Hình dán mới ${e}!`) : ''].filter(Boolean).join(' '); line = kept ? SP_LINES.keepsake : SP_LINES.found; }
     saveProfiles();
     // a visitor waves goodbye first; everything else goes at once
     if (C.visitor && C.visitor.userData.A) C.visitor.userData.A.anim('wave', 0, 0);
@@ -121,13 +124,15 @@ export function createSurprises(G, { say, reward }) {
   }
 
   // ---------- choosing and waiting ----------
-  let acc = 0, farT = 0, toldWait = false;
+  // (looked at once a second of real time: a frame's dt is capped at 0.05 s, so on a slow phone a second of game time
+  // could be many real seconds; the free-play minutes still count game time)
+  let lastLook = -1e9, farT = 0, toldWait = false;
   world.updaters.push((dt, t) => {
     if (!on() || !G.heroes.length) { if (cur) { remove(cur); cur = null; st = surpriseFound(st); st.shown = Math.max(0, st.shown - 1); } return; }
     const free = isFree(); if (free) play += dt;
     // the thing that is out moves a little
     if (cur) animate(cur, dt, t);
-    acc += dt; if (acc < 1) return; acc = 0;
+    const nowMs = performance.now(); if (nowMs - lastLook < 1000) return; lastLook = nowMs;
     const h = G.heroes.reduce((b, x) => !cur ? b : dist2(x.pos.x, x.pos.z, cur.x, cur.z) < dist2(b.pos.x, b.pos.z, cur.x, cur.z) ? x : b, G.heroes[0]);
     if (cur) {
       // waiting: if the child went far away, it comes back to them when they are free (never missed); the lotus stays on its pond
