@@ -2,7 +2,8 @@
 // Double-click SparkleStudio.exe (or run `node studio/studio.cjs`): it starts a small private web server on this
 // computer only (http://localhost:7777) and opens the dashboard in the browser. It edits the game folder it sits in
 // (or the folder chosen in Settings):
-//   · content/custom.json + content/faces/  the family's content pack (message, names, faces, stories, quiz, defaults)
+//   · content/custom.json                   the family's content pack (message, names, faces, stories, quiz, defaults)
+//   · family photos (faces, album)         never in the game folder (round R privacy, 9 Oct): see "family photos" below
 //   · voices/                               the offline voice pack (new lines made with Azure, Piper or the microphone)
 //   · photos/                               real photos of the landmarks (from Wikipedia/Commons, with credits)
 //   · sparkle-valley-netlify.zip            the publish zip, and an optional one-click deploy to Netlify
@@ -20,6 +21,7 @@ const asset = name => { if (sea) { try { return Buffer.from(sea.getAsset(name));
 // ---------- settings (on this computer only) ----------
 const CONF_DIR = path.join(process.env.APPDATA || path.join(os.homedir(), '.config'), 'SparkleStudio'), CONF = path.join(CONF_DIR, 'settings.json');
 let conf = {}; try { conf = JSON.parse(fs.readFileSync(CONF, 'utf8')); } catch (e) { conf = {}; }
+delete conf.studioPassword; // (round R privacy) the website now takes a Studio key, never the password: the old one is not kept
 const saveConf = () => { fs.mkdirSync(CONF_DIR, { recursive: true }); fs.writeFileSync(CONF, JSON.stringify(conf, null, 1)); };
 const isGame = d => d && fs.existsSync(path.join(d, 'index.html')) && fs.existsSync(path.join(d, 'js', 'main.js'));
 function findGame() {
@@ -88,6 +90,33 @@ function zipFolder(root, items, out) {
 }
 const PUBLISH = ['index.html', 'manifest.webmanifest', 'sw.js', 'netlify.toml', 'css', 'fonts', 'icons', 'js', 'vendor', 'videos', 'content', 'voices', 'photos'];
 
+// ---------- family photos (owner, 9 Oct, round R privacy: family-only, random names, never public files) ----------
+// Why both places: the children's devices can only reach the website, so when the website and a Studio key are set in
+// Settings, every photo is sent to the website's private family store (the online Studio API, X-Studio-Key) and the
+// devices fetch it there with the family code. A copy also stays here, in %APPDATA%\SparkleStudio\family-photos (outside
+// the game folder, so it is never zipped, drafted or published), and the game run from this Studio reads it from
+// there (/studio/game/api/family/<name>, this computer only). With no website set they stay on this computer only.
+const FAM_DIR = path.join(CONF_DIR, 'family-photos'), FAMNAME = /^[\w-]{24,64}$/;
+const linked = () => !!(conf.siteUrl && conf.studioKey);
+async function siteApi(p, body) {
+  const r = await fetch(site() + '/studio/api/' + p, body === undefined ? { headers: { 'X-Studio-Key': conf.studioKey || '' } } : { method: 'POST', headers: { 'X-Studio-Key': conf.studioKey || '', 'X-Studio': '1', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || 'The website said ' + r.status); }
+  return r;
+}
+const famFile = name => { if (!FAMNAME.test(name || '')) throw new Error('bad name'); return path.join(FAM_DIR, name + '.jpg'); };
+const family = {
+  get where() { return linked() ? 'site' : 'computer'; },
+  put: async (name, buf) => { if (linked()) await siteApi('family/upload', { name, data: Buffer.from(buf).toString('base64') }); fs.mkdirSync(FAM_DIR, { recursive: true }); fs.writeFileSync(famFile(name), buf); },
+  get: async name => {
+    const f = famFile(name); if (fs.existsSync(f)) return fs.readFileSync(f);
+    if (!linked()) return null;
+    try { const b = Buffer.from(await (await siteApi('familyphoto/' + name)).arrayBuffer()); fs.mkdirSync(FAM_DIR, { recursive: true }); fs.writeFileSync(f, b); return b; } catch (e) { return null; }
+  },
+  remove: async name => { try { fs.unlinkSync(famFile(name)); } catch (e) { } if (linked()) await siteApi('family/remove', { name }).catch(() => { }); },
+  code: async () => linked() ? (await siteApi('family/code')).json() : { code: '', local: true },
+  newCode: async () => { if (!linked()) return { error: 'Set the website and a Studio key in Settings first.' }; return (await siteApi('family/code/new', {})).json(); }
+};
+
 // ---------- the server ----------
 // Everything a page asks for is done by the Studio engine (core.cjs, the same as online); this file adds what only
 // a computer can do: the game folder, keys saved here, Piper, the publish zip, opening folders and closing.
@@ -97,19 +126,17 @@ const local = {
   tts: (engine, lang, text) => piperSay(lang, text),
   settings: b => {
     for (const k of ['azureRegion', 'netlifySite', 'piperExe', 'githubRepo', 'githubBranch', 'siteUrl']) if (typeof b[k] === 'string') conf[k] = b[k].trim();
-    for (const k of ['azureKey', 'netlifyToken', 'githubToken', 'studioPassword']) if (typeof b[k] === 'string' && b[k].trim()) conf[k] = b[k].trim(); // empty = keep the saved one
+    for (const k of ['azureKey', 'netlifyToken', 'githubToken', 'studioKey']) if (typeof b[k] === 'string' && b[k].trim()) conf[k] = b[k].trim(); // empty = keep the saved one
     if (b.forget) for (const k of [].concat(b.forget)) delete conf[k];
     if (b.piperModels && typeof b.piperModels === 'object') conf.piperModels = Object.assign(conf.piperModels || {}, b.piperModels);
     if (typeof b.gameDir === 'string' && b.gameDir.trim()) { if (!isGame(b.gameDir.trim())) return { code: 400, body: { error: 'That folder has no game in it (index.html and js/main.js).' } }; conf.gameDir = path.resolve(b.gameDir.trim()); GAME = conf.gameDir; }
     saveConf(); studio = null; return { code: 200, body: { ok: true } }; // keys changed: the engine starts again with them
   },
-  // the players report lives on the website (Netlify): asked for with the Studio password saved here
-  players: async () => {
-    const r = await fetch(site() + '/studio/api/players', { headers: { 'X-Studio-Password': conf.studioPassword || '' } });
-    const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'The website said ' + r.status); return j;
-  },
-  label: async b => { const r = await fetch(site() + '/studio/api/players/label', { method: 'POST', headers: { 'X-Studio-Password': conf.studioPassword || '', 'X-Studio': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ id: b.id, label: b.label }) }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'The website said ' + r.status); return j; },
-  inbox: async () => { if (!conf.studioPassword) return []; const r = await fetch(site() + '/studio/api/inbox', { headers: { 'X-Studio-Password': conf.studioPassword } }); return r.ok ? r.json() : []; },
+  // the players report lives on the website (Netlify): asked for with the Studio key saved here (round R privacy: the
+  // website signs people in with two steps, so this computer has its own key, made online in Setup → Security)
+  players: async () => { if (!conf.studioKey) throw new Error('Make a Studio key online (Setup → Security) and put it in Settings.'); return (await siteApi('players')).json(); },
+  label: async b => (await siteApi('players/label', { id: b.id, label: b.label })).json(),
+  inbox: async () => { if (!conf.studioKey) return []; try { return await (await siteApi('inbox')).json(); } catch (e) { return []; } },
   onlineVersion: async () => { const r = await fetch(site() + '/studio/version.json', { cache: 'no-store' }); return r.ok ? (await r.json()).studio : null; },
   api: async (api, method, b) => {
     if (api === 'build' && method === 'POST') { const out = G('sparkle-valley-netlify.zip'); return { code: 200, body: Object.assign({ path: out }, zipFolder(GAME, PUBLISH, out)) }; }
@@ -126,7 +153,7 @@ const local = {
   }
 };
 let studio = null, studioFor = null;
-const engine = () => { if (!studio || studioFor !== GAME) { studio = createStudio({ store: store(), conf, local }); studioFor = GAME; } return studio; };
+const engine = () => { if (!studio || studioFor !== GAME) { studio = createStudio({ store: store(), conf, local, family }); studioFor = GAME; } return studio; };
 const PORT = +(process.env.STUDIO_PORT || 7777);
 const server = http.createServer(async (req, res) => {
   try {
@@ -137,6 +164,9 @@ const server = http.createServer(async (req, res) => {
     if (p === '/' || p === '/index.html' || p === '/studio') { res.writeHead(302, { Location: '/studio/' }); return res.end(); }
     if (p === '/studio/') return send(res, 200, asset('index.html'), MIME['.html']);
     if (p.startsWith('/studio/ui/')) { const b = asset(p.slice(11)); return b ? send(res, 200, b, MIME[path.extname(p)] || 'application/octet-stream') : send(res, 404, 'not found', 'text/plain'); }
+    // (round R privacy) a family photo for the game run from here (this computer only, so no family code is asked)
+    const fm = /^\/studio\/game\/api\/family\/([\w-]{24,64})$/.exec(p);
+    if (fm) { const b = await family.get(fm[1]); if (!b) return send(res, 404, 'not found', 'text/plain'); res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, no-store' }); return res.end(b); }
     // the game itself, to try things out (and the game's modules the pages load: they fetch content/ and voices/
     // from the page's own address)
     const gp = p.startsWith('/studio/game/') ? p.slice(13) : /^\/studio\/(content|voices)\//.test(p) ? p.slice(8) : null;

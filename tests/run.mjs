@@ -1573,6 +1573,26 @@ await check('postcards', async () => {
   return `a family photo for Lotus Village arrived once as a postcard, shows in the album and opens big; a photo from outside the game folder is ignored; Studio offers the same ${r.ids} places`;
 });
 
+await check('familyphotos', async () => {
+  // (round R privacy, 9 Oct) family photos are family-only: custom.json names them family:<name>; without the family code
+  // the game shows none (drawn faces stay); with it they come from api/family/<name> (the code in x-family-code), are kept
+  // in the "sv-family" cache for offline days, and a code the website no longer takes clears them
+  const P = await open(b, { w: 900, h: 640, play: false }), NAME = 'Abcdefghijklmnopqrstuvwx', CODE = 'ABCDEFGHJKMN';
+  const jpg = Buffer.from('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=', 'base64');
+  let asked = [], good = CODE;
+  await P.page.route('**/content/custom.json*', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ album: [{ id: 'f1', photo: 'family:' + NAME, en: 'Grandma', vi: 'Bà', place: 'village' }], faces: { 'Bà Năm': { photo: 'family:' + NAME, skin: '#f0c0a0' } } }) }));
+  await P.page.route('**/api/family/*', r => { const c = r.request().headers()['x-family-code'] || ''; asked.push(c); return c === good ? r.fulfill({ contentType: 'image/jpeg', headers: { 'Cache-Control': 'private, no-store' }, body: jpg }) : r.fulfill({ status: 401, body: 'no' }); });
+  await P.page.reload(); await start(P.page); await clear(P.page);
+  const r1 = await P.page.evaluate(async () => { const C = await import('/js/custom.js'); return { album: C.customAlbum().length, face: !!C.customFace('Bà Năm') }; });
+  const r2 = await P.page.evaluate(async code => { const C = await import('/js/custom.js'); const res = await C.setFamilyCode(code); const c = await caches.open('sv-family'), kept = (await c.keys()).length, swHas = (await Promise.all((await caches.keys()).filter(k => k !== 'sv-family').map(async k => (await (await caches.open(k)).keys()).some(q => /api\/family|__family/.test(q.url))))).some(Boolean);
+    return { res, album: C.customAlbum().length, photo: (C.customAlbum()[0] || {}).photo || '', face: !!C.customFace('Bà Năm'), kept, swHas }; }, CODE.toLowerCase().replace(/(.{4})/g, '$1-'));
+  good = 'SOMETHINGNEW';
+  const r3 = await P.page.evaluate(async () => { const C = await import('/js/custom.js'); const res = await C.refreshFamilyPhotos({ all: true }); return { res, album: C.customAlbum().length, caches: (await caches.keys()).includes('sv-family') }; });
+  const errs = P.errors; await P.ctx.close();
+  ok(r1.album === 0 && !r1.face && r2.res.ok && r2.album === 1 && /^blob:/.test(r2.photo) && r2.face && r2.kept === 1 && !r2.swHas && asked.includes(CODE) && r3.res.bad && r3.album === 0 && !r3.caches && !errs.length, JSON.stringify({ r1, r2, r3, asked, errs }));
+  return 'no code: no family photos; with the code: fetched with x-family-code, kept in sv-family (never the game cache), a changed code clears them';
+});
+
 await check('myhouse', async () => {
   // decorate your house (js/myhouse.js): the farmhouse door leads into the child's own room with 8 spots; a free
   // teddy goes on the floor, a clock costs 12 coins (refused with 5, bought with 50), a family postcard can hang on a
