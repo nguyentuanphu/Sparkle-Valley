@@ -1016,7 +1016,7 @@ export const folkGames = () => FOLK_SHOW;
 // tab, by what kind of game it is, from the same list as the Simple screen's areas (js/content/activities.js), so a
 // game the family moves in Studio moves in both. Inside a tab the games are grouped under their area's name.
 const HUB_TABS = [
-  { key: 'learn', icon: '📚', short: () => T('Learning', 'Học'), title: () => T('Numbers, letters, shapes and me', 'Số, chữ, hình và em'), areas: ['numbers', 'words', 'shapes', 'me'] },
+  { key: 'learn', icon: '📚', short: () => T('Learning', 'Học'), title: () => T('Numbers, letters, shapes and me', 'Số, chữ, hình và em'), areas: ['numbers', 'words', 'shapes', 'me', 'money'] }, // (round S: the money games join Learning)
   { key: 'folk', icon: '🪁', short: () => T('Folk games', 'Dân gian'), title: () => T('Folk games to play together', 'Trò chơi dân gian chơi cùng nhau'), areas: ['vietnam', 'play'] },
   { key: 'animals', icon: '🐶', short: () => T('Animals and music', 'Con vật, âm nhạc'), title: () => T('Animals and music', 'Con vật và âm nhạc'), areas: ['animals', 'music'] },
   { key: 'art', icon: '🎨', short: () => T('Pictures', 'Tranh'), title: () => T('Colours, pictures and puzzles', 'Màu sắc, tranh và ghép hình'), areas: ['art'] },

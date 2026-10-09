@@ -63,6 +63,14 @@ Reported to the owner on its own, so Halloween can go live around 12–14 Oct.
    - Backpack button teleports to the shop.
    - Prices: about one day of play for a nice item.
 7. **Money games (all, AUD or VND, game coins only):** Heo Đất, Coin or Note?, Need or Want?, Ba Hũ (Save/Spend/Share), Lì Xì Count, Bé Bán Hàng, Shopping List, Which Is Cheaper?, Wait and Grow, Đổi Hàng.
+   - **Built (round S, 9 Oct AEST):** all ten, in `js/games/money.js`, with their sums in `js/games/moneylogic.js`
+     (change-making, totals in both currencies, cheaper, jar splits, simple interest, fair trades; `tests/unit/money.test.mjs`).
+     The currency is the existing Grown-ups money setting (AUD or VND). Coins and notes are new drawings in `js/art.js`
+     (simple shapes in each note's colour, the clear window on plastic notes, never copied banknote art), plus a red
+     lì xì envelope, a plant pot, soap and a toothbrush. Each game has Easy, Medium and Hard (`api.level`), a how-to
+     film (`js/howto.js`) and a place in `js/content/activities.js` (new area "Money and shopping", in the Play hub's
+     Learning tab). Little ones can never lose. Ids: heodat, coinnote, needwant, bahu, lixi, shopkeep, shoplist,
+     cheaper, waitgrow, barter.
 8. **Festivals:** all four groups.
    - Vietnamese lunar days.
    - Vietnamese calendar days (1/6, 20/11, 2/9).
