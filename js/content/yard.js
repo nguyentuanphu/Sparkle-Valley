@@ -21,8 +21,8 @@ export const COACH = ['Chú Trung', 'O Thủy', 'Chú Sơn Diệu', 'Chú Sơn C
 // who comes to the house-warming meal at the Huệ Nghi shop, and what each says
 export const GUESTS = [
   { name: 'Cậu Tâm', look: ['shirt', '#5b7fbf', '#2a2a2a', 'short'], line: ['Chú Thuận and I both carry sand and stone. Next time, ride with me in my blue truck!', 'Cậu với chú Thuận đều chở cát đá. Lần sau con đi xe tải xanh với cậu nha!'] },
-  { name: 'Chị Huyền', look: ['aodai', '#f2c4d8', '#2a2a2a', 'long'], line: ['I work at the school. When ông bà brought me here, they gave me a home to start from. Now we help each other.', 'Chị làm ở trường học. Hồi ông bà đưa chị vào, ông bà cho chị chỗ ở để bắt đầu. Giờ mọi người giúp nhau.'] },
-  { name: 'Anh Trọng', look: ['shirt', '#4a8a6a', '#2a2a2a', 'short'], line: ['I am chị Huyền\'s husband. Well done for helping build the house!', 'Anh là chồng chị Huyền. Con giỏi lắm, đã giúp xây nhà!'] }
+  { name: 'Chị Huyền', look: ['aodai', '#f2c4d8', '#2a2a2a', 'long'], line: ['I work at the school. When Grandma and Grandpa brought me here, they gave me a home to start from. Now we help each other.', 'Chị làm ở trường học. Hồi ông bà đưa chị vào, ông bà cho chị chỗ ở để bắt đầu. Giờ mọi người giúp nhau.'] },
+  { name: 'Anh Trọng', look: ['shirt', '#4a8a6a', '#2a2a2a', 'short'], line: ['I am Huyền\'s husband. Well done for helping build the house!', 'Anh là chồng chị Huyền. Con giỏi lắm, đã giúp xây nhà!'] }
 ];
 export const JOBS = [['Driver', 'Lái xe'], ['Builder', 'Thợ xây'], ['Digger operator', 'Lái máy xúc']];
 export const ANH2 = { id: 'anh2', name: 'Anh 2', look: ['shirt', '#e8a83a', '#2a2a2a', 'short'] };
@@ -31,7 +31,7 @@ export const ANH2 = { id: 'anh2', name: 'Anh 2', look: ['shirt', '#e8a83a', '#2a
 export const YARD_STEPS = [
   { id: 'y_start', icon: '👵', en: 'Ask Bà Huệ about the new yard', vi: 'Hỏi bà Huệ về công trường mới', at: 'hue' },
   { id: 'y_coach', icon: '🚌', en: 'Meet the coach from Hà Tĩnh', vi: 'Đón xe khách từ Hà Tĩnh', at: 'coach',
-    tale: ['👵🚌', 'Bà Huệ', 'When ông Nghi and I started out, we brought the young ones from Hà Tĩnh to work with us. Today more of the family are coming! Please meet their coach.', 'Hồi bà với ông Nghi mới lập nghiệp, ông bà đưa các em từ Hà Tĩnh vào làm cùng. Hôm nay lại có thêm người nhà vào! Con ra đón xe khách giúp bà nhé.'] },
+    tale: ['👵🚌', 'Bà Huệ', 'When Grandpa Nghi and I started out, we brought the young ones from Hà Tĩnh to work with us. Today more of the family are coming! Please meet their coach.', 'Hồi bà với ông Nghi mới lập nghiệp, ông bà đưa các em từ Hà Tĩnh vào làm cùng. Hôm nay lại có thêm người nhà vào! Con ra đón xe khách giúp bà nhé.'] },
   { id: 'y_jobs', icon: '👷', en: 'Give everyone a job', vi: 'Giao việc cho mọi người', at: 'relatives',
     tale: ['👷🏗️', 'Anh 2', 'Welcome to the yard! Ask each of them what they are good at, then give them the right job.', 'Chào mừng đến công trường! Con hỏi mỗi người giỏi việc gì, rồi giao cho họ việc phù hợp nhé.'] },
   { id: 'y_truck', icon: '🚚', en: 'Drive the dump truck with earth and stone', vi: 'Lái xe ben chở đất đá', at: 'truck',
@@ -41,15 +41,15 @@ export const YARD_STEPS = [
   { id: 'y_build', icon: '🧱', en: 'Build the house together', vi: 'Cùng nhau xây nhà', at: 'site',
     tale: ['🧱🏠', 'Chú Hùng', 'Brick by brick, everyone together! Then we lift the roof on.', 'Từng viên gạch, mọi người cùng làm! Rồi mình lợp mái nhé.'] },
   { id: 'y_party', icon: '🍲', en: 'Come to the house-warming meal at the Huệ Nghi shop', vi: 'Về tiệm Huệ Nghi ăn mừng nhà mới', at: 'hue',
-    tale: ['🏠🎉', 'Anh 2', 'The house is finished! Mẹ is cooking a big meal at the shop. Let us all go and eat together!', 'Nhà xong rồi! Mẹ đang nấu một bữa thật ngon ở tiệm. Mình cùng về ăn mừng nhé!'] }
+    tale: ['🏠🎉', 'Anh 2', 'The house is finished! Mum is cooking a big meal at the shop. Let us all go and eat together!', 'Nhà xong rồi! Mẹ đang nấu một bữa thật ngon ở tiệm. Mình cùng về ăn mừng nhé!'] }
 ];
 
 // what is said along the way ([en, vi]; the child's name is never in a spoken line so the recordings fit everyone)
 export const YARD_LINES = {
-  start: [['A long time ago, ông Nghi and I started with one old truck. We carried bricks and steel all over Bà Rịa.', 'Ngày xưa, ông Nghi với bà bắt đầu chỉ với một chiếc xe tải cũ. Ông bà chở gạch, sắt thép đi khắp Bà Rịa.'],
+  start: [['A long time ago, Grandpa Nghi and I started with one old truck. We carried bricks and steel all over Bà Rịa.', 'Ngày xưa, ông Nghi với bà bắt đầu chỉ với một chiếc xe tải cũ. Ông bà chở gạch, sắt thép đi khắp Bà Rịa.'],
     ['When we had work, we brought the young ones from Hà Tĩnh to work with us. Family helps family.', 'Có việc rồi, ông bà đưa các em từ Hà Tĩnh vào làm cùng. Người nhà thì giúp nhau.'],
     ['Now our son, Anh 2, has opened a yard here. Will you help us?', 'Giờ con trai bà, Anh 2, mở một công trường ở đây. Con giúp ông bà nhé?']],
-  startShort: [['Ông Nghi and I brought the family from Hà Tĩnh to work with us. Will you help our new yard?', 'Ông bà đưa người nhà từ Hà Tĩnh vào làm cùng. Con giúp công trường mới nhé?']],
+  startShort: [['Grandpa Nghi and I brought the family from Hà Tĩnh to work with us. Will you help our new yard?', 'Ông bà đưa người nhà từ Hà Tĩnh vào làm cùng. Con giúp công trường mới nhé?']],
   coach: [['Phew, what a long ride from Hà Tĩnh! Thank you for meeting us!', 'Phù, đi từ Hà Tĩnh vào xa ghê! Cảm ơn con đã ra đón!']],
   jobAsk: ['What job should they do?', 'Người này nên làm việc gì?'],
   jobRight: ['That is just right for me. Thank you!', 'Đúng việc mình thích rồi. Cảm ơn con!'],

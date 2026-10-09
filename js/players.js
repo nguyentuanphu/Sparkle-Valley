@@ -117,7 +117,7 @@ function sampleFps() { let n = 0; const t0 = performance.now(); const tick = () 
 export function sendLive(on, G) {
   if (settings.countPlayers === false || !onSite()) return;
   const me = id(); if (!me) return;
-  const p = G && G.heroes && G.heroes[0] && G.heroes[0].profile, kid = p ? String(p.name || '').trim().split(/\s+/)[0].slice(0, 20) : '';
+  const p = G && G.heroes && G.heroes[0] && G.heroes[0].profile, kid = p && settings.reportNames !== false ? String(p.name || '').trim().split(/\s+/)[0].slice(0, 20) : ''; // (audit: no name when names are off)
   const body = JSON.stringify({ id: me, live: on ? 1 : 0, kid });
   try { if (!on && navigator.sendBeacon) { navigator.sendBeacon('/api/hello', new Blob([body], { type: 'application/json' })); return; } } catch (e) { }
   if (navigator.onLine !== false) fetch('/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => { });

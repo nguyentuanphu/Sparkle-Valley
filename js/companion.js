@@ -64,6 +64,7 @@ export function createCompanions(G) {
       const o = c.o, u = o.userData, yaw = h.yaw || 0, side = h.i % 2 ? -1 : 1;
       // just behind and beside the child's shoulder, a little above the head
       _t.set(h.pos.x - Math.sin(yaw) * .9 + Math.cos(yaw) * .75 * side, h.pos.y + 1.9 + Math.sin(t * 2.2 + h.i) * .12, h.pos.z - Math.cos(yaw) * .9 - Math.sin(yaw) * .75 * side);
+      o.position.y -= c.off || 0; c.off = 0; // (a trick's lift is taken off first, so it never builds up)
       if (o.position.distanceTo(_t) > 25) o.position.copy(_t); // after a jump across the map
       o.position.lerp(_t, Math.min(1, dt * 3.2));
       o.rotation.y += ((((yaw - o.rotation.y) % (Math.PI * 2)) + Math.PI * 3) % (Math.PI * 2) - Math.PI) * Math.min(1, dt * 4);
@@ -76,11 +77,12 @@ export function createCompanions(G) {
       if (c.trick && c.trick.start == null) c.trick.start = t;
       if (c.trick && t - c.trick.start > c.trick.len) c.trick = null;
       if (c.trick) { const k = (t - c.trick.start) / c.trick.len;
-        if (c.trick.kind === 'loop') { u.body.rotation.x = k * Math.PI * 2; o.position.y += Math.sin(k * Math.PI) * 1.2; }
-        else { u.body.rotation.y = k * Math.PI * 4; o.position.y += Math.sin(k * Math.PI * 2) * .4; } }
+        if (c.trick.kind === 'loop') { u.body.rotation.x = k * Math.PI * 2; c.off = Math.sin(k * Math.PI) * 1.2; }
+        else { u.body.rotation.y = k * Math.PI * 4; c.off = Math.sin(k * Math.PI * 2) * .4; }
+        o.position.y += c.off; }
       else u.body.rotation.y = 0;
-      if (u.glow && grow >= 2) u.glow.material.color.setHSL(.12 + grow * .03, 1, .62 + Math.sin(t * 3) * .1);
-      if (u.glow) u.glow.material.color.setHSL(.2, 1, .6 + Math.sin(t * 3) * .1);
+      // (the glow warms as it grows)
+      if (u.glow) { if (grow >= 2) u.glow.material.color.setHSL(.12 + grow * .03, 1, .62 + Math.sin(t * 3) * .1); else u.glow.material.color.setHSL(.2, 1, .6 + Math.sin(t * 3) * .1); }
       c.lantern.visible = !!(h.profile.lanterns && h.profile.lanterns.carrying);
     }
   });

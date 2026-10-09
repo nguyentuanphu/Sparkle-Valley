@@ -44,7 +44,7 @@ import { createShowcase } from './showcase.js';
 import { createRoads, plantRoadside } from './roads.js';
 import { createTraffic } from './traffic.js';
 import { RELEASES } from './content/releases.js';
-import { releaseNew } from './custom.js';
+import { releaseNew, featureOn } from './custom.js';
 import { cachedCanvas } from './worldcache.js';
 import { events } from './core/events.js';
 import { createPlaceBook } from './placebook.js';
@@ -610,7 +610,7 @@ function currentQuest(p) {
   if (p.follow === 'yard' && sideQuest(p)) return sideQuest(p);
   return (G.lanterns && G.lanterns.quest(p)) || sideQuest(p) || QUESTS.find(q => !questDone(p, q));
 }
-G.sideStories = () => G.yard ? [G.yard.side] : [];
+G.sideStories = () => G.yard && featureOn('story_yard', true) ? [G.yard.side] : [];
 G.currentQuest = currentQuest;
 function questTarget(h) {
   const p = h.profile, q = currentQuest(p); if (!q) return null;

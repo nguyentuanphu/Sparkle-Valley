@@ -60,7 +60,9 @@ async function siteTurn() {
 let ICE = STUN.concat(PUBLIC_TURN);
 const peerOpts = () => Object.assign({ debug: 0, config: { iceServers: ICE, iceCandidatePoolSize: 2 } }, window.SV_PEER || {});
 const prepare = async () => { await loadPeer(); ICE = await iceServers(); };
-const okPhoto = p => typeof p === 'string' && p.startsWith('data:image/') && p.length < 120000 ? p : null;
+// (audit, 9 Oct) a photo goes into <img src="…">, so only a plain base64 picture is accepted: no quotes, spaces or
+// anything else that could close the attribute and add code
+export const okPhoto = p => typeof p === 'string' && p.length < 120000 && /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+={0,2}$/.test(p) ? p : null;
 // ids and friend codes go into the page, so only plain letters, digits and dashes are accepted
 const okId = id => typeof id === 'string' && /^[\w-]{1,64}$/.test(id);
 const okLook = l => l && typeof l === 'object' && !Array.isArray(l) ? Object.fromEntries(Object.entries(l).filter(([k, v]) => /^\w{1,16}$/.test(k) && (typeof v === 'number' ? Number.isFinite(v) : typeof v === 'string' && v.length < 40 && /^[#\w -]*$/.test(v)))) : {};

@@ -26,7 +26,8 @@ self.addEventListener('fetch', e => {
     return;
   }
   // the family's content pack (Sparkle Studio): the newest when online, the saved copy when offline
-  if (url.pathname.includes('/content/')) {
+  // (audit, 9 Oct) js/content/*.js is game code: it stays with the rest of the game's files, never fetched on its own
+  if (url.pathname.includes('/content/') && !url.pathname.includes('/js/content/')) {
     e.respondWith(caches.open(VERSION).then(c => fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => c.match(req, { ignoreSearch: true }).then(hit => hit || new Response('{}', { headers: { 'Content-Type': 'application/json' } })))));
     return;
   }

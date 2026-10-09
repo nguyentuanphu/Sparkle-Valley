@@ -2100,7 +2100,7 @@ body.songs-on .htoast { display: none; } /* the valley's hints stay behind the S
 
 /* (round R) the yard by hand: a panel of big controls at the bottom of the child's half (js/yard.js, switch yardHands) */
 .handpad { position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 90; pointer-events: auto; }
-.handpad .hp-in { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 18px; border-radius: 22px; background: rgba(255, 252, 244, .96); box-shadow: 0 8px 24px rgba(40, 30, 60, .25); min-width: min(320px, 86vw); }
+.handpad .hp-in { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 18px; border-radius: 22px; background: rgba(255, 252, 244, .96); box-shadow: 0 8px 24px rgba(40, 30, 60, .25); min-width: min(320px, 86vw); }
 .handpad p { margin: 0; font: 700 1.05rem/1.25 Fredoka, 'Baloo 2', sans-serif; color: #3a2e4a; text-align: center; }
 .handpad .hp-big { width: 112px; height: 112px; border-radius: 50%; border: 0; background: #ffd23f; box-shadow: 0 6px 0 #d4a20f; font-size: 0; cursor: pointer; touch-action: none; display: grid; place-items: center; }
 .handpad .hp-big .art, .handpad .hp-big .emo { width: 70px; height: 70px; font-size: 56px; }
@@ -2116,17 +2116,20 @@ body.songs-on .htoast { display: none; } /* the valley's hints stay behind the S
 .handpad .hp-count i.on { background: #7ed37a; }
 /* (round R) feed the companion and the coin goal, beside the coins (js/kidplay.js) */
 .hud .kidrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; pointer-events: auto; }
-.hud .kidrow .chip { height: 40px; min-width: 0; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .92); box-shadow: var(--shadow); font: inherit; font-size: 14px; color: inherit; padding: 0 12px 0 6px; gap: 4px; display: inline-flex; align-items: center; cursor: pointer; }
+.hud .kidrow .chip { height: 44px; min-width: 0; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .92); box-shadow: var(--shadow); font: inherit; font-size: 14px; color: inherit; padding: 0 12px 0 6px; gap: 4px; display: inline-flex; align-items: center; cursor: pointer; }
 .hud .kidrow .chip .art { width: 28px; height: 28px; }
-.hud.small .kidrow .chip { height: 34px; font-size: 12px; } .hud.small .kidrow .chip .art { width: 22px; height: 22px; }
+.hud.small .kidrow .chip { height: 44px; font-size: 12px; } .hud.small .kidrow .chip .art { width: 22px; height: 22px; }
 .hud .kidrow .chip.ready { border-color: #ffd23f; background: rgba(255, 210, 63, .25); animation: chipPulse 1.6s ease-in-out infinite; }
 @keyframes chipPulse { 50% { transform: scale(1.06); } }
 @media (prefers-reduced-motion: reduce) { .hud .kidrow .chip.ready { animation: none; } }
 /* (round R, switch shortTalk) a big Skip button on the story's own films */
-.th-skip { position: absolute; right: 14px; bottom: 14px; z-index: 5; border: 0; border-radius: 999px; padding: 10px 18px; font: 700 1.05rem Fredoka, 'Baloo 2', sans-serif; background: #ffd23f; color: #3a2e4a; box-shadow: 0 4px 0 #d4a20f; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+/* (in the top bar beside ✕, never over the ▶ Next button at the bottom right) */
+.th-skip { flex: none; min-height: 48px; border: 0; border-radius: 999px; padding: 10px 18px; font: 700 1.05rem Fredoka, 'Baloo 2', sans-serif; background: #ffd23f; color: #3a2e4a; box-shadow: 0 4px 0 #d4a20f; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .th-skip .art { width: 26px; height: 26px; }
 /* while a hands-on panel is open, the "walk up and tap" button stays out of the way */
 body:has(.handpad) .hud .bigprompt { display: none !important; }
+/* ✕ Later: a child can always leave a hands-on panel and come back to it */
+.handpad .hp-x { position: absolute; top: -14px; right: -14px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: #fff; color: #3a2e4a; font-size: 20px; box-shadow: 0 3px 8px rgba(40, 30, 60, .3); cursor: pointer; }
 /* (round R) side stories on the Adventures page */
 .sides { display: grid; gap: 8px; margin-bottom: 10px; }
 .sides .side { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 14px; background: rgba(47, 127, 115, .1); }
