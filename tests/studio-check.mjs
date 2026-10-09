@@ -159,7 +159,7 @@ export async function studioCheck(browser, open) {
     // an editor can change things but not the admins; a new password or removing them signs them out
     { const add = (name, password, role) => call('/studio/api/admins/save', { body: { name, password, role }, cookie: C, headers: X });
       ok((await add('ba.nam', 'short', 'viewer')).status === 400, 'a short admin password was accepted');
-      ok((await add('ba.nam', 'viewer-pw-11', 'viewer')).status === 400, 'an 11-character admin password was accepted');
+      ok((await add('ba.nam', 'viewer-pw-1', 'viewer')).status === 400, 'an 11-character admin password was accepted');
       ok((await add('ba.nam', 'viewer-password-1', 'viewer')).status === 200 && (await add('co.lan', 'editor-password-1', 'editor')).status === 200, 'the owner could not add admins');
       ok((await call('/studio/api/login', { body: { name: 'ba.nam', password: 'nope-nope-nope' } })).status === 401, 'a wrong admin password was let in');
       const v = await signIn('Ba.Nam', 'viewer-password-1'); ok(v.status === 200 && /^sv_studio=a\./.test(v.cookie), 'a viewer could not sign in');
