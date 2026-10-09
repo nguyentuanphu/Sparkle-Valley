@@ -252,8 +252,20 @@ Every stage ends with the full suite green, `node tests/world-audit.mjs` clean a
 - /home/user/sv-t/tests/world-audit.mjs
 - /home/user/sv-t/js/content/map.js (new)
 ## Progress (for the next chat to pick up)
-**10 Oct 2026, about 02:30 AEST: stage T0, steps 1 and 2 of 6.**
-- Done and committed: `js/content/map.js` (MAP_VERSION 'C', today's anchors, roads, bridges, landmarks, LEGACY.C).
-- In progress: `js/world.js` building its exports from `map.js` (also `js/roads.js`, `js/ferry.js`); check the last commit on this branch to see how far it got.
-- Still to do in T0: step 3 (rewrite the hard-coded positions in regions.js, vendors.js, cities.js, town.js, homes.js, hawkers.js, places.js, main.js, ui.js, solids.js, validate.js, heritage.js), step 4 (posMap stamp, MAP_VERSION in the cache signatures), step 5 (tests without coordinates, `tests/unit/map.test.mjs`), step 6 (the before/after comparison: same positions within 0.01 m, same screenshots; make the "before" pictures and position dump from `main` at r54 first).
-- Then: the regression set listed in T0, the full suite, and a report to the owner. T1 starts only after T0 is merged.
+**10 Oct 2026, about 07:30 AEST: stage T0 built (steps 1 to 6), release r55 under test (Release core chat, branch `round-t`, not pushed).**
+- Step 1: `js/content/map.js` (MAP_VERSION 'C'). Step 2: `world.js`, `roads.js`, `ferry.js` from the map. Step 3: every builder
+  places its things from its place's anchor (regions, vendors, cities, town, homes with fixed ids, hawkers, places, pets, yard,
+  heritage, main, ui, solids, validate, traffic, gather, secrets, regionsites, vnfun); MAP_VERSION in the solids and
+  worldcache signatures. Step 4: `profile.posMap`; no stamp means 'C'; another layout starts at home once with "The valley has
+  grown!"; Studio map content from another layout is parked (`STUDIO_ON_MAP`, `PARKED` in world.js, `G.parked`). Step 5: the
+  checks lost their fixed positions; new `tests/unit/map.test.mjs`, `mapcoords` (r54 had 103 stray positions, now 0),
+  `migrate`; `perf` adds `drawCallsHome` (r54: 2335) and `worldMs` (r54: 4700 ms, +25 % allowed). Step 6: positions match r54
+  within 0.01 m; the 17 screenshots differ from r54 no more than two r54 runs differ from each other.
+- The "before" reference from r54 is outside the repo (the chat's scratchpad: `ref/dump.mjs`, `ref/compare.py`); a new chat
+  rebuilds it from main if needed.
+- Found while checking the plan: also hard-coded were `traffic.js`, `gather.js`, `secrets.js`, `pets.js`, `regionsites.js`,
+  `vnfun.js`, `main.js` (title camera, ±190), and things by Ông Cú's plateau (at 0,0); all from the map now.
+- Open for the owner: the start-up download check (`perf` startMB) already fails on r54 about 3 runs in 4 (3.33–3.37 MB against
+  3.2 MB + 3 %); T0 adds about 22 KB. Board: Analytics & Infra (smaller start-up download), Online (netmsg size and map in the
+  hello), Studio (stamp `world.map`, list parked items) before T1.
+- Next: r55 full suite, packages, report; then the T1 plan (wait for the owner's "go").

@@ -10,6 +10,8 @@
 - **Reminder each round:** the Google Drive mirror (`.github/workflows/drive-mirror.yml`) is not set up yet; the owner will do it later (rclone on Windows: `net stop winnat` as admin before signing in, own Google client ID, then `net start winnat`; GitHub secrets `RCLONE_CONF`, `DRIVE_FOLDER_ID`). Ask the owner about it at every round report until they say it is done.
 - **Reminder each round (owner, 9 Oct): the voice relay (TURN) is not set up yet.** Netlify → Site configuration → Environment variables: `CF_TURN_KEY_ID` and `CF_TURN_KEY_TOKEN` (Cloudflare → Realtime → TURN Server → Create), or `METERED_DOMAIN` and `METERED_API_KEY`, then redeploy; check that `/api/turn` lists `turn:` servers (`netlify/functions/turn.mjs`). Remind the owner at every round report, together with the Drive mirror, until they say it is done.
 
+**Questions as pop-ups (owner, 10 Oct): "Always ask me in popup questions".** Every question to the owner (yes, push; yes, deploy; go; any choice) is asked with the pop-up question tool, not only written in the message.
+
 **Phone, tablet and computer (owner, 8 Oct):** every change is checked on a phone, a tablet and a computer so it looks tidy on all three (rule UI-006, check `phone`); look at screenshots of all three before reporting a round.
 
 **Times and dates:** always give them in AEST (UTC+10, Australia/Brisbane), labelled "AEST", in messages, reports and documents (owner, 5 Oct). Convert from UTC (GitHub, Netlify, logs) before quoting.

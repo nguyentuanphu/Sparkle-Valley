@@ -13,6 +13,11 @@ import * as MAP from './content/map.js';
 // (round T) every position comes from js/content/map.js: the exports below are built from it, so the files that
 // import them (VILLAGE, TOWN, CITIES, RIVER, BRIDGE…) need no change, and moving a place there moves everything in it
 export const MAP_VERSION = MAP.MAP_VERSION;
+// (round T) the family's Studio map content ("world": land, buildings, moves; "npcs": villagers) is stamped with the layout
+// it was made on (CUSTOM.world.map; none means 'C'). On a different layout it is put aside (parked), never applied at the
+// wrong spot: Studio lists it to place again (G.parked, js/main.js).
+export const STUDIO_ON_MAP = MAP.onThisMap(CUSTOM.world && typeof CUSTOM.world === 'object' ? CUSTOM.world.map : null);
+export const PARKED = STUDIO_ON_MAP ? null : { map: (CUSTOM.world && CUSTOM.world.map) || 'C', world: CUSTOM.world || null, npcs: CUSTOM.npcs || null };
 export const SIZE = MAP.WORLD.size, HALF = SIZE / 2, WATER = MAP.WORLD.water;
 const MTN = MAP.WORLD.mountains, EDGE = MAP.WORLD.edge, SADDLES = MAP.SADDLES;
 const PL = id => MAP.PLACES.find(p => p.id === id);
@@ -922,7 +927,7 @@ function reshapeGround(world, scene, change) {
 
 // More level land drawn by the family in Sparkle Studio (content pack "world.land"): each rectangle becomes flat
 // ground at the height of its middle, with the same gentle edge as the towns, ready for new houses.
-for (const L of (CUSTOM.world && Array.isArray(CUSTOM.world.land) ? CUSTOM.world.land : []).slice(0, 40)) {
+for (const L of (STUDIO_ON_MAP && CUSTOM.world && Array.isArray(CUSTOM.world.land) ? CUSTOM.world.land : []).slice(0, 40)) {
   if (!L || ![L.x0, L.x1, L.z0, L.z1].every(v => typeof v === 'number' && isFinite(v))) continue;
   const x0 = Math.max(-HALF + 10, Math.min(L.x0, L.x1)), x1 = Math.min(HALF - 10, Math.max(L.x0, L.x1)), z0 = Math.max(-HALF + 10, Math.min(L.z0, L.z1)), z1 = Math.min(HALF - 10, Math.max(L.z0, L.z1));
   if (x1 - x0 < 2 || z1 - z0 < 2 || x1 - x0 > 120 || z1 - z0 > 120) continue;

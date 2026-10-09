@@ -29,3 +29,8 @@ asked separately; the full suite green before a report; times in AEST; no keys o
 
 ## Checks you run
 All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
+
+## Owner's decisions
+- (10 Oct AEST) Always ask the owner with pop-up questions (also in CLAUDE.md).
+- (10 Oct AEST) The start-up download ratchet (`tests/perf-baseline.json` startMB) is 3.4 MB for now; lower it again when the smaller start-up download lands (Analytics & Infra).
+- (10 Oct AEST) Round T0 (r55): "yes, push"; not deployed yet.

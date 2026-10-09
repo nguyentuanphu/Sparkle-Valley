@@ -6,6 +6,9 @@
 // MAP_VERSION names the layout: 'C' is the valley as it was up to round S. A saved spot (profile.pos) is stamped with
 // it (profile.posMap), so a later layout knows the spot belongs to an older map (js/main.js migratePos).
 export const MAP_VERSION = 'C';
+// Is a saved spot, or the family's Studio content, made on this layout? Anything saved before round T has no stamp: it
+// belongs to map 'C'. (A spot or Studio edit from an older layout is never used at the wrong place: js/main.js, js/world.js.)
+export const onThisMap = stamp => (stamp || 'C') === MAP_VERSION;
 
 export const WORLD = {
   size: 400, north: '-z', water: 0,
@@ -13,7 +16,8 @@ export const WORLD = {
   mountains: { z0: -55, z1: -165, pines: -60, region: -75 }, // the snowy belt in the north: starts rising at z0, full at z1; pines north of `pines`; "Snowcap Peaks" north of `region`
   wild: { x0: -170, x1: 170, z0: -120, z1: 170 },  // where wild dig spots, bushes and rocks are scattered (js/gather.js)
   summit: { x0: -150, x1: 150, z0: -185, z1: -90, zMin: -180 }, // where the snowman looks for the highest summit (js/secrets.js)
-  keepLeft: [[-1e9, -85, -1e9, 1e9], [-1e9, -20, 20, 70]]   // [x0, x1, z0, z1]: traffic keeps left here, as in Australia (js/traffic.js)
+  keepLeft: [[-1e9, -85, -1e9, 1e9], [-1e9, -20, 20, 70]],  // [x0, x1, z0, z1]: traffic keeps left here, as in Australia (js/traffic.js)
+  rooms: [-176, -176, 420]                          // [x, z, height]: inside a house, the room is built high above the far north-west corner, where nothing else is (js/homes.js)
 };
 
 // Places: `at` is the anchor [x, z]. Circles have r; boxes have w, d (half the width and depth, like the cities), so

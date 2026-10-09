@@ -6,6 +6,7 @@
 import { THREE, P, merge, toonVC, sprite } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
 import { heightAt, regionAt, REGION_NAMES, TOWN } from './world.js';
+import { WORLD as MAP_WORLD } from './content/map.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
 import { PERSONAS } from './chat.js';
 import { ITEMS } from './data.js';
@@ -16,40 +17,41 @@ const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), C = (r1, r2, h, s = 12) =
 const look = (style, color, hair, hairStyle, hat = 'none', skin = '#e8b48c') => ({ style, color, hair, hairStyle, hat, skin, back: 'none', glider: 0 });
 const GREY = '#cfcfcf', BLACK = '#1d1412';
 
-// The families of Two Homes Street (matched to their house by position). Names are shown as written; the
+// The families of Two Homes Street (matched to their house by position: round T, an offset from the street's anchor,
+// with a fixed id). Names are shown as written; the
 // English game calls them Uncle / Auntie (js/i18n.js).
 // people: [name, look, kid?, line [en, vi], [where outside: sideways from the door, out from the wall]]
 export const HOMES = [
-  { at: [20.1, 34.3], kind: 'tube', room: 'che', name: ['Uncle Trung and Auntie Thủy’s Chè shop', 'Quán chè chú Trung, O Thủy'],
+  { id: 'che', at: [TOWN.x - 11.9, TOWN.z - 18.7], kind: 'tube', room: 'che', name: ['Uncle Trung and Auntie Thủy’s Chè shop', 'Quán chè chú Trung, O Thủy'],
     about: ['A nhà ống (tube house) with a chè shop downstairs. Chè is a sweet dessert soup: mung beans, red beans, jelly, coconut milk and crushed ice in a tall glass. Chú Trung cooks the beans every morning and O Thủy, who comes from Huế, makes the coconut cream.', 'Nhà ống có quán chè ở tầng dưới. Chè đậu xanh, đậu đỏ, thạch, nước cốt dừa và đá bào trong ly cao. Sáng nào chú Trung cũng nấu đậu, còn O Thủy quê Huế làm nước cốt dừa.'],
     people: [['Chú Trung', look('shirt', '#f2f2f2', BLACK, 'short'), 0, ['Chè đậu, chè thạch, chè bắp! Which colour do you want: green, red or yellow?', 'Chè đậu, chè thạch, chè bắp đây con! Con thích màu nào: xanh, đỏ hay vàng?'], [-1.6, .7]],
       ['O Thủy', look('aodai', '#7a4aa0', BLACK, 'long', 'nonla'), 0, ['Chào cháu! In Huế we eat chè on hot afternoons. Try the coconut one, it is my favourite.', 'Chào cháu! Ở Huế trời nóng là ăn chè. Cháu thử chè dừa đi, O thích nhất đó.'], [1.7, .7]]] },
-  { at: [24.6, 34.3], kind: 'tube', room: 'sand', name: ['Uncle Thuận and Auntie Phương’s sand and stone shop', 'Cửa hàng cát đá chú Thuận, mợ Phương'],
+  { id: 'sand', at: [TOWN.x - 7.4, TOWN.z - 18.7], kind: 'tube', room: 'sand', name: ['Uncle Thuận and Auntie Phương’s sand and stone shop', 'Cửa hàng cát đá chú Thuận, mợ Phương'],
     about: ['A tube house that sells building things: yellow sand, grey stones, bricks and bags of cement. When a family builds a house, chú Thuận brings the sand and stones, and mợ Phương writes everything in her big book.', 'Nhà ống bán vật liệu xây dựng: cát vàng, đá xám, gạch và bao xi măng. Nhà ai xây nhà là chú Thuận chở cát đá tới, còn mợ Phương ghi hết vào cuốn sổ lớn.'],
     people: [['Chú Thuận', look('tunic', '#6b4a2a', BLACK, 'short', 'cap'), 0, ['Sand for the walls, stones for the floor! Want to see how heavy one bag is?', 'Cát để xây tường, đá để đổ nền! Con muốn biết một bao nặng cỡ nào không?'], [-1, 1.3]],
       ['Mợ Phương', look('aodai', '#3cb0a0', BLACK, 'long'), 0, ['Come in, come in! One truck of sand, two trucks of stones… I write it all down.', 'Vào nhà chơi con! Một xe cát, hai xe đá… mợ ghi hết vô sổ nè.'], [1, 1.3]],
       ['Chú Sự', look('shirt', '#3a78c8', BLACK, 'short', 'cap'), 0, ['I drive a xe ôm, a motorbike taxi. I know every street in town!', 'Chú chạy xe ôm. Đường nào trong phố chú cũng biết hết!'], [0, 2.6]]] },
-  { at: [32.3, 33.1], kind: 'villa', room: 'phones', name: ['Uncle Tâm and Auntie An’s phones and trucks', 'Nhà cậu Tâm, mợ An: điện thoại và xe tải'],
+  { id: 'phones', at: [TOWN.x + .3, TOWN.z - 19.9], kind: 'villa', room: 'phones', name: ['Uncle Tâm and Auntie An’s phones and trucks', 'Nhà cậu Tâm, mợ An: điện thoại và xe tải'],
     about: ['An old French-style villa with tall green shutters. Cậu Tâm drives trucks carrying sand, stone and goods from town to town, just like chú Thuận (his blue truck is parked outside), and his wife mợ An sells phones in the front room. Their two boys, Tí and Bi, help after school.', 'Biệt thự kiểu Pháp xưa, cửa chớp xanh cao. Cậu Tâm chạy xe tải chở cát, đá và hàng hóa đi khắp nơi, giống chú Thuận (xe tải xanh đậu ngoài kia), còn mợ An, vợ cậu, bán điện thoại ở phòng trước. Hai đứa con Tí và Bi phụ ba mẹ sau giờ học.'],
     people: [['Cậu Tâm', look('shirt', '#5b7fbf', BLACK, 'short'), 0, ['That blue truck is mine! I carry sand and stone, like chú Thuận. Tomorrow I drive all the way to Sài Gòn.', 'Xe tải xanh kia là của cậu đó! Cậu chở cát đá, giống chú Thuận. Mai cậu chạy xe lên tận Sài Gòn.'], [-.9, 2]],
       ['Mợ An', look('aodai', '#e8a0c0', BLACK, 'long'), 0, ['Do you want to call Grandma? With a phone you can see her face while you talk!', 'Con muốn gọi cho bà không? Có điện thoại là vừa nói chuyện vừa thấy mặt bà luôn!'], [1.3, 2]],
       ['Tí', look('overalls', '#5fd39a', BLACK, 'spiky'), 1, ['I’m Tí! I’m the big brother. I know every truck’s name!', 'Mình là Tí! Mình là anh hai. Xe tải nào mình cũng biết tên!'], [2.6, 3]],
       ['Bi', look('hoodie', '#ff9f43', BLACK, 'short'), 1, ['I’m Bi! Let’s play hide and seek!', 'Mình là Bi! Chơi trốn tìm đi!'], [3.9, 2.4]]] },
-  { at: [41.6, 30.6], kind: 'brick', room: 'brick', name: ['Uncle Sơn and Thúy’s house', 'Nhà bác Sơn và chị Thúy'],
+  { id: 'brick', at: [TOWN.x + 9.6, TOWN.z - 22.4], kind: 'brick', room: 'brick', name: ['Uncle Sơn and Thúy’s house', 'Nhà bác Sơn và chị Thúy'],
     about: ['A solid brick house with a tiled roof. Bác Sơn and chị Thúy live here together. Bác Sơn keeps bonsai trees and songbirds in the front yard, and chị Thúy grows herbs in pots by the door.', 'Ngôi nhà gạch mái ngói chắc chắn. Bác Sơn và chị Thúy sống chung ở đây. Bác Sơn chơi cây cảnh, nuôi chim hót trước sân, còn chị Thúy trồng rau thơm trong chậu cạnh cửa.'],
     people: [['Bác Sơn', look('tunic', '#8a6a4a', GREY, 'short'), 0, ['Listen to my bird sing! And look at this little bonsai: it is older than your parents!', 'Nghe chim nhà bác hót nè! Còn cây bonsai nhỏ xíu này già hơn cả ba mẹ con đó!'], [-1.4, 1.9]],
       ['Chị Thúy', look('aodai', '#9a6ac0', BLACK, 'buns'), 0, ['Smell this: mint, basil and perilla. We put them in everything!', 'Con ngửi thử nè: húng, quế với tía tô. Món gì nhà chị cũng bỏ rau thơm!'], [1.4, 1.9]]] },
-  { at: [13.5, 59], kind: 'raised', room: 'baby', name: ['Auntie Thương and Uncle Dũng’s baby clothes', 'Nhà O Thương, dượng Dũng: quần áo em bé'],
+  { id: 'baby', at: [TOWN.x - 18.5, TOWN.z + 6], kind: 'raised', room: 'baby', name: ['Auntie Thương and Uncle Dũng’s baby clothes', 'Nhà O Thương, dượng Dũng: quần áo em bé'],
     about: ['A raised house on posts, like a Queenslander, so the breeze blows underneath. O Thương sews baby clothes and dượng Dũng sells them from the rack downstairs. Their little girls bé Hà and bé Trà try everything on first!', 'Nhà sàn trên cột như nhà Queenslander bên Úc, gió thổi mát bên dưới. O Thương may quần áo em bé, dượng Dũng bán ở cái giá dưới nhà. Hai bé Hà và bé Trà lúc nào cũng mặc thử trước!'],
     people: [['O Thương', look('aodai', '#ff9ec4', BLACK, 'long'), 0, ['Tiny shirts, tiny hats, tiny socks! Everything for little babies.', 'Áo nhỏ xíu, nón nhỏ xíu, vớ nhỏ xíu! Đủ thứ cho em bé hết nè.'], [-1.9, .9]],
       ['Dượng Dũng', look('shirt', '#5fa860', BLACK, 'short'), 0, ['Welcome! Do you have a baby brother or sister? This little hat would fit!', 'Chào con! Con có em bé không? Cái nón nhỏ này vừa lắm nè!'], [1.2, .9]],
       ['Bé Hà', look('dress', '#ffd23f', BLACK, 'buns'), 1, ['Hi! Do you want to skip rope with me?', 'Chào bạn! Bạn nhảy dây với Hà không?'], [-.6, 2.1]],
       ['Bé Trà', look('dress', '#8fd3ff', BLACK, 'ponytail'), 1, ['I’m Trà, Hà’s little sister! Look at my new dress!', 'Mình là Trà, em của Hà! Nhìn cái đầm mới của mình nè!'], [.8, 2.2]]] },
-  { at: [45, 63.2], kind: 'cottage', room: 'cottage', name: ['Ruby’s family cottage', 'Nhà gỗ của gia đình Ruby'],
+  { id: 'cottage', at: [TOWN.x + 13, TOWN.z + 10.2], kind: 'cottage', room: 'cottage', name: ['Ruby’s family cottage', 'Nhà gỗ của gia đình Ruby'],
     about: ['An Australian weatherboard cottage with a verandah, a Hills Hoist clothesline out the back and a cricket bat by the door.', 'Nhà gỗ ván kiểu Úc có hiên, sân sau có dây phơi đồ xoay Hills Hoist và cây gậy cricket để cạnh cửa.'], people: [] },
-  { at: [20.3, 57.7], kind: 'home8', room: 'home8', name: ['Number 8', 'Nhà số 8'],
+  { id: 'home8', at: [TOWN.x - 11.7, TOWN.z + 4.7], kind: 'home8', room: 'home8', name: ['Number 8', 'Nhà số 8'],
     about: ['A Bà Rịa family home with a balcony full of flowers. Knock and you are always welcome: there is always rice, fruit and a big hug here.', 'Ngôi nhà của một gia đình Bà Rịa, ban công đầy hoa. Gõ cửa là lúc nào cũng được đón: ở đây lúc nào cũng có cơm, trái cây và một cái ôm thật chặt.'], people: [] },
-  { at: [15, 34.25], kind: 'shop', room: 'huenghi', name: ['Huệ Nghi', 'Huệ Nghi'],
+  { id: 'huenghi', at: [TOWN.x - 17, TOWN.z - 18.75], kind: 'shop', room: 'huenghi', name: ['Huệ Nghi', 'Huệ Nghi'],
     about: ['The Huệ Nghi shop: transport of goods, and steel, old and new. Bà Huệ keeps the books and ông Nghi knows every kind of steel bar by heart.', 'Cửa hàng Huệ Nghi: vận chuyển hàng hóa, sắt thép cũ và mới. Bà Huệ giữ sổ sách, ông Nghi thuộc làu từng loại sắt thép.'], people: [] }
 ];
 
@@ -82,7 +84,7 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
   const { scene, world } = G;
   const homes = [];
   // the room is built high above the far north-west corner of the map, where nothing else is
-  const RX = -176, RZ = -176, RY = 420;
+  const [RX, RZ, RY] = MAP_WORLD.rooms;
   world.platforms.push({ x0: RX - 8, x1: RX + 8, z0: RZ - 7, z1: RZ + 7, y: RY });
 
   const tagSprite = (name, y, temp = false) => {
