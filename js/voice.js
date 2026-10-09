@@ -273,8 +273,13 @@ export const voicePack = () => PACK;
 // Lines asked for before the list has arrived (slow phone networks at start-up) wait for it, so they are spoken
 // with the recorded voice too instead of the phone's own voice.
 let packTried = false;
-const packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; voiceDiag.pack = 'ok'; autoSavePack(); } else { voiceDiag.pack = 'missing'; packEmit({ state: 'nopack' }); } }).catch(() => { voiceDiag.pack = 'offline'; packEmit({ state: 'nopack' }); }).finally(() => { packTried = true; });
-const waitPack = () => PACK || packTried ? null : Promise.race([packReady, new Promise(r => setTimeout(r, 12000))]);
+// (round R, PERF-001) fetched on the first tap or key press, or after 8 s, whichever is first: nothing is spoken before a
+// child taps, so the title screen comes up without it
+let packReady = null;
+const loadPack = () => packReady || (packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; voiceDiag.pack = 'ok'; autoSavePack(); } else { voiceDiag.pack = 'missing'; packEmit({ state: 'nopack' }); } }).catch(() => { voiceDiag.pack = 'offline'; packEmit({ state: 'nopack' }); }).finally(() => { packTried = true; }));
+for (const ev of ['pointerdown', 'keydown', 'touchstart']) addEventListener(ev, loadPack, { once: true, capture: true, passive: true });
+setTimeout(loadPack, 8000);
+const waitPack = () => PACK || packTried ? null : Promise.race([loadPack(), new Promise(r => setTimeout(r, 12000))]);
 // Keep the whole pack on the device by itself: a few seconds after the game opens (every time it opens), the voice
 // cache is checked against the list, and any file not there yet (first visit, a new pack, or a phone that cleared
 // space) is downloaded quietly, the child's own language first. A small bar shows it (js/packbar.js); every line

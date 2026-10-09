@@ -25,7 +25,7 @@ Under-5s get the same story with fewer steps and no reading. Big children (5 to 
 | 1 | Làng Sen | Helping the village get ready (well, pond, hens, bánh) | Làng Sen's đình (village hall) | Hội làng | mid Oct |
 | 2 | Hà Nội | Tèo's Ô ăn quan challenge; Cô Tam's lesson at Văn Miếu | Cầu Thê Húc, lit red over Hồ Gươm | Trung Thu lantern parade | late Oct |
 | 3 | Sydney | Chi shows the harbour; Jack and Ruby's cricket game | Opera House light show | Fireworks on the harbour | Nov |
-| 4 | Huế and Đà Nẵng | Bà Huệ and ông Nghi's yard; the dragon bridge | Cầu Rồng breathing fire | Lantern boats on the river | Dec |
+| 4 | Huế and Đà Nẵng | The dragon bridge (the yard is now a side story, see below) | Cầu Rồng breathing fire | Lantern boats on the river | Dec |
 | 5 | Melbourne and Uluru | The tram ride; a desert night with stars | Uluru at sunset | Australia Day picnic | Jan |
 | Finale | Sài Gòn and the whole valley | Every friend brings something | Every landmark lit at once | Tết: flower street, lì xì, fireworks, family photos on the lanterns | Tết (about 6 Feb 2027) |
 
@@ -35,26 +35,28 @@ Season 2 (after Tết): China town and India village, Memory Village, new friend
 
 | Character | Who | Personality | Arc |
 |---|---|---|---|
-| Ông Cú | The wise owl guide | Kind, a little forgetful, funny | Remembers the old lantern songs as each lantern returns |
-| Lấp Lánh or Rồng con | The companion the child picks | Brave, curious, sometimes silly | Learns a new trick each chapter (lights the way, flies higher, carries more) |
+| Ông Cú (Grandpa Owl) | The wise owl guide | Kind, a little forgetful, funny | Remembers the old lantern songs as each lantern returns |
+| Lấp Lánh (Sparkle) or Rồng con (Little Dragon) | The companion the child picks | Brave, curious, sometimes silly | Learns a new trick each chapter (lights the way, flies higher, carries more) |
 | Tèo (7) | The cheeky village boy | Show-off, best at Ô ăn quan | From rival to loyal friend in chapter 2 |
 | Chi | A friend between two homes (half Australian, half Vietnamese) | Gentle, explains words in both languages | Learns to be proud of both homes; leads chapter 3 |
 | Cô Tam | Lower secondary school teacher; helps at her family's juice cart after school | Patient, loves questions | Gives the learning quests; her class makes lanterns for the finale |
 | Bà Năm | The storyteller | Warm, dramatic voice | Opens every story film |
 | Jack and Ruby | Aussie Corner kids | Sporty, cheeky slang | Lead the Australian chapters |
 | Anh 2 | Bà Huệ and ông Nghi's son | Hard-working, helpful, grew up in the shop and the yard | Runs the yard with the younger ones from Hà Tĩnh |
-| Bà Huệ and ông Nghi | The Huệ Nghi shop on Phố Hai Quê | Generous, hard-working | Their own quest chain (below) |
+| Bà Huệ and ông Nghi | The Huệ Nghi shop on Phố Hai Quê | Generous, hard-working | Their own side story (below) |
 
 Lan the jump-rope girl and Bác Sơn stay in the valley as they are.
 
-## Quest chain: bà Huệ and ông Nghi's yard
+## Side story: bà Huệ and ông Nghi's yard
+Decided 9 Oct (owner): the yard is a side story with its own list, not part of the main lantern story. It starts when the child asks bà Huệ, and it never takes over the goal bar from the lantern chapters. It shows in the Pad, Adventures tab, under "Side stories", with a Follow button: when the child follows it, its steps show in the goal bar; tap Follow again to go back to the lanterns. Goal order: a followed side story, then the lantern chapter, then an active side story, then the older quests. Studio switch: `story_yard`.
+
 When they started out, bà Huệ and ông Nghi helped their younger relatives, bringing them from Hà Tĩnh to work with them and building jobs in transport, construction and hauling earth and stone. In the game they open a transport and construction yard next to their shop.
-1. **The coach from Hà Tĩnh:** meet the coach at the bus stop and welcome the younger ones (names: placeholders until the owner sends them).
+1. **The coach from Hà Tĩnh:** meet the coach at the bus stop and welcome the younger ones (chú Thuận, chú Hùng and anh Quân take the jobs; chú Trung, O Thủy, chú Sơn Diệu and chú Sơn Cường come on the coach too).
 2. **A job for everyone:** ask each one what they are good at and give them a job: driver, builder, digger operator.
 3. **Earth and stone:** drive the dump truck (xe ben) from the quarry to the building site; tip the load in the right place.
 4. **Dig:** use the excavator to dig the foundations (a small steering game).
 5. **Build together:** stack bricks and lift the roof with everyone helping.
-6. **The new house:** a house-warming meal at the Huệ Nghi shop; the yard stays open for free play (trucks to drive, sand to dig).
+6. **The new house:** a house-warming meal at the Huệ Nghi shop with cậu Tâm, chị Huyền and anh Trọng; the yard stays open for free play (trucks to drive, sand to dig).
 Lesson: helping your family and giving everyone a chance.
 
 ## Things already in the game that the story reuses

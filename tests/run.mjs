@@ -789,7 +789,11 @@ await check('story', async () => {
   await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(800);
   await pg.evaluate(() => { const c = document.querySelectorAll('.dialog .dchoices button'); c[1] && c[1].click(); }); await w(800);
   await calm(); await w(2500); await calm(); seen.push(await q());
-  await pg.evaluate(() => { const L = __sv.lanterns; __sv.heroes[0].place(L.dinh.front[0], L.dinh.front[1] + 6); }); await w(2500); await calm(); seen.push(await q());
+  await pg.evaluate(() => { const L = __sv.lanterns; __sv.heroes[0].place(L.dinh.front[0], L.dinh.front[1] + 6); }); await w(2500); await calm();
+  // (switch storyActions) being in the village is not enough: catch the wind ribbons
+  const ribbonsWaited = await q() === 'L_c1_village';
+  for (let k = 0; k < 3; k++) { await pg.evaluate(k => { const it = __sv.interactables.find(i => i.id === 'story_ribbon' + k); const h = __sv.heroes[0]; if (it && it.visible(h)) it.act(h); }, k); await w(300); }
+  await calm(); seen.push(await q());
   await act('story_c1_nam'); await w(600);
   for (let i = 0; i < 5; i++) { await pg.evaluate(() => document.querySelector('.dialog')?.click()); await w(400); }
   await calm(); await w(2500); await calm(); seen.push(await q());
@@ -797,9 +801,14 @@ await check('story', async () => {
   await pg.evaluate(async () => { const E = await import('/js/core/events.js'); E.events.emit('ActivityCompleted', { activityId: 'x', defId: 'game:oanquan', players: [], result: { won: true } }); });
   await w(400); await calm(); await w(2500); await calm(); seen.push(await q());
   await pg.evaluate(() => __sv.lanterns._finish(__sv.heroes[0], 'c1_tale')); await w(300); await calm(); await w(2500); await calm(); seen.push(await q());
+  // lift lotus leaves until the lantern shows, then pick it up
+  const lifted = await pg.evaluate(() => { const h = __sv.heroes[0]; let n = 0; for (let k = 0; k < 5; k++) { const it = __sv.interactables.find(i => i.id === 'story_leaf' + k); if (it && it.visible(h)) { it.act(h); n++; } if (h.profile.lanterns.act && h.profile.lanterns.act.found) break; } return n; });
   await act('story_c1_find'); await w(600); await calm(); await w(2500); await calm();
   const carrying = await pg.evaluate(() => __sv.heroes[0].profile.lanterns.carrying); seen.push(await q());
-  pg.evaluate(() => { const it = __sv.interactables.find(i => i.id === 'story_c1_hang'); it.act(__sv.heroes[0]); }); await w(2500);
+  pg.evaluate(() => { const it = __sv.interactables.find(i => i.id === 'story_c1_hang'); it.act(__sv.heroes[0]); }); await w(1500);
+  // pull the rope (drag the handle down)
+  const roped = await pg.evaluate(() => { const el = document.querySelector('.handpad [data-hp=rope]'); if (!el) return false; const r = el.getBoundingClientRect(), ev = (t, y) => el.dispatchEvent(new PointerEvent(t, { bubbles: true, pointerId: 9, clientX: r.left + 20, clientY: r.top + r.height * y }));
+    ev('pointerdown', 0); ev('pointermove', 1); ev('pointerup', 1); return true; }); await w(2500);
   await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(1200);
   await pg.evaluate(() => document.querySelectorAll('.reward,.modal').forEach(e => e.click())); await w(800); await calm(); await w(1500);
   seen.push(await q());
@@ -813,11 +822,14 @@ await check('story', async () => {
   if (end.companion !== 'dragon') out.push('the companion was not chosen');
   if (carrying !== 'ch1' || end.carrying) out.push('the lantern was not carried and then hung');
   if (!end.ch1 || !end.keep) out.push('chapter 1 not finished ' + JSON.stringify(end));
+  if (!ribbonsWaited) out.push('walking into the village finished the step before the ribbons were caught');
+  if (!(lifted >= 1)) out.push('no lotus leaves to lift');
+  if (!roped) out.push('hanging did not ask to pull the rope');
   if (!(end.house > 5)) out.push(`a building stands ${end.house.toFixed(1)} m from the đình`);
   if (P.errors.length) out.push(...P.errors.slice(0, 2));
   await P.ctx.close();
   if (out.length) throw new Error(out.join('; '));
-  return `prologue and chapter 1 played through (${want.length} steps); đình lit, keepsake home, then "${seen[8]}"; nearest building ${end.house.toFixed(1)} m away`;
+  return `prologue and chapter 1 played through (${want.length} steps; ribbons caught, ${lifted} lotus leaves lifted, rope pulled); đình lit, keepsake home, then "${seen[8]}"; nearest building ${end.house.toFixed(1)} m away`;
 });
 await check('yard', async () => {
   // (round R, owner: bà Huệ and ông Nghi's quest chain) the yard stands in an open spot near the Huệ Nghi shop; the side
@@ -825,17 +837,28 @@ await check('yard', async () => {
   // job is turned down kindly), the dump truck tips its load, the excavator digs, the house is built; the truck and the
   // excavator stay for free play afterwards
   const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
-  const pg = P.page, seen = [];
+  const pg = P.page, seen = [], handsUsed = new Set();
   const goal = () => pg.evaluate(() => { const c = __sv.currentQuest(__sv.heroes[0].profile); return c && c.id; });
   // tap through speech boxes, choosing answer `pick` when there is a choice, until the button's work is over
   const use = async (id, pick = 0) => {
     const ok = await pg.evaluate(id => { const h = __sv.heroes[0], it = __sv.interactables.find(i => i.id === id); if (!it || (it.visible && !it.visible(h))) return false; it.act(h, __sv); return true; }, id);
     if (!ok) return false;
-    for (let i = 0; i < 80; i++) {
+    for (let i = 0; i < 200; i++) {
       await pg.waitForTimeout(350);
+      // (switch yardHands) the panel of big controls: tap the buttons, hold the pedal, drag the handles like a child
+      const hp = await pg.evaluate(() => {
+        const ev = (el, type, y) => { const r = el.getBoundingClientRect(); el.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 9, clientX: r.left + r.width / 2, clientY: r.top + r.height * y })); };
+        const p = document.querySelector('.handpad'); if (!p) return '';
+        const b = p.querySelector('[data-hp=load], [data-hp=brick]'); if (b) { b.click(); return 'tap'; }
+        const ped = p.querySelector('[data-hp=pedal]'); if (ped) { if (!ped.classList.contains('on')) ev(ped, 'pointerdown', .5); return 'hold'; }
+        const sl = p.querySelector('[data-hp=lever], [data-hp=roof]'); if (sl) { ev(sl, 'pointerdown', 0); ev(sl, 'pointermove', 1); ev(sl, 'pointerup', 1); return 'pull'; }
+        const arm = p.querySelector('[data-hp=arm]'); if (arm) { window.__armY = window.__armY ? 0 : 1; ev(arm, 'pointerdown', window.__armY); ev(arm, 'pointerup', window.__armY); return 'dig'; }
+        return '';
+      });
+      if (hp) { handsUsed.add(hp); continue; }
       const s = await pg.evaluate(pick => { const c = document.querySelectorAll('.dialog .dchoices button'); if (c.length) { c[Math.min(pick, c.length - 1)].click(); return 'c'; } const d = document.querySelector('.dialog'); if (d) { d.click(); return 'd'; } return document.querySelector('.reward') ? 'r' : ''; }, pick);
       if (s === 'r') { await pg.evaluate(() => document.querySelectorAll('.reward').forEach(e => e.click())); }
-      if (!s && !(await pg.evaluate(() => __sv.paused))) break;
+      if (!s && !(await pg.evaluate(() => __sv.paused || __sv.yard.busy()))) break;
     }
     await pg.evaluate(() => { document.querySelectorAll('.storybook,.reward').forEach(e => e.remove()); __sv.paused = false; });
     return true;
@@ -843,7 +866,11 @@ await check('yard', async () => {
   const info = await pg.evaluate(() => { const Y = __sv.yard, sh = __sv.interactables.find(i => i.id === 'npc_bahue');
     const house = Math.min(...__sv.world.colliders.filter(c => c.r > 2 && c.top == null).map(c => Math.hypot(c.x - Y.at.x, c.z - Y.at.z) - c.r));
     return { far: Math.hypot(sh.x - Y.at.x, sh.z - Y.at.z), room: Y.at.room || 0, house }; });
-  seen.push(await goal()); await use('yard_start'); seen.push(await goal());
+  seen.push(await goal()); await use('yard_start');
+  // (owner 9 Oct: a side story) starting it leaves the goal bar on the main story; Follow on the Adventures page puts it there
+  const stayed = await goal();
+  const followed = await pg.evaluate(async () => { __sv.openPad(0, 'log'); await new Promise(r => setTimeout(r, 600)); const b = document.querySelector('.pad [data-follow=yard]'); if (!b) return false; b.click(); await new Promise(r => setTimeout(r, 400)); document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false; return __sv.heroes[0].profile.follow === 'yard'; });
+  seen.push(await goal());
   await use('yard_coach'); seen.push(await goal());
   const rels = await pg.evaluate(async () => (await import('/js/content/yard.js')).RELATIVES.map(r => [r.id, r.job]));
   await use('yard_job_' + rels[0][0], (rels[0][1] + 1) % 3); const wrongKept = await pg.evaluate(id => __sv.heroes[0].profile.yard.jobs[id] == null, rels[0][0]);
@@ -857,15 +884,68 @@ await check('yard', async () => {
   const want = ['', 'Y_y_coach', 'Y_y_jobs', 'Y_y_truck', 'Y_y_dig', 'Y_y_build', 'Y_y_party'], out = [];
   want.forEach((id, i) => { if (i && seen[i] !== id) out.push(`goal ${i} was ${seen[i]}, expected ${id}`); });
   if (/^Y_/.test(seen[0] || '') || /^Y_/.test(seen[7] || '')) out.push('the yard was the goal before it started or after it ended: ' + seen[0] + ' / ' + seen[7]);
+  if (/^Y_/.test(stayed || '')) out.push('starting the yard took over the goal bar (' + stayed + ')');
+  if (!followed) out.push('no Follow button for the yard on the Adventures page');
   if (!wrongKept) out.push('a wrong job was accepted');
   if (!heap) out.push('the truck run did not finish');
   if (!free) out.push('the truck and excavator are not open for free play afterwards');
+  for (const k of ['tap', 'hold', 'pull', 'dig']) if (!handsUsed.has(k)) out.push(`the yard by hand never asked to ${k}`);
   if (!(info.far < 70)) out.push(`the yard is ${info.far.toFixed(0)} m from the Huệ Nghi shop`);
   if (!(info.house > 6)) out.push(`a building stands ${info.house.toFixed(1)} m from the middle of the yard`);
   if (P.errors.length) out.push(...P.errors.slice(0, 2));
   await P.ctx.close();
   if (out.length) throw new Error(out.join('; '));
-  return `the yard ${info.far.toFixed(0)} m from the shop, ${info.room.toFixed(0)} m of room; coach, jobs (a wrong one turned down), dump truck, excavator, building and the meal played through; free play after`;
+  return `the yard ${info.far.toFixed(0)} m from the shop, ${info.room.toFixed(0)} m of room; a side story (goal bar stays on the lantern story until Follow); coach, jobs (a wrong one turned down), dump truck (load, hold the pedal, pull the lever), excavator (drag the arm), bricks and roof by hand, and the meal played through; free play after`;
+});
+await check('kidplay', async () => {
+  // (round R, owner 9 Oct: "add these in and add to the studio so we can switch on/off") the companion is fed once a day
+  // and grows (a trick from size 3), a coin goal buys it a hat, a gift waits by a landmark each day, the story's films
+  // have a Skip button, and each Studio switch turns its part off
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], w = t => new Promise(r => setTimeout(r, t)), C = (await import('/js/custom.js')).CUSTOM, S = await import('/js/state.js');
+    h.profile.lanterns = { companion: 'firefly', done: { p_owl: true }, chapters: {} }; G.lanterns.companions.sync(); await w(1500);
+    const out = {}, chip = c => G.huds[0].root.querySelector('.kidrow .' + c);
+    out.chips = !!chip('c-pet') && !chip('c-pet').hidden && !!chip('c-goal') && !chip('c-goal').hidden;
+    // feed: once a day; pretend the days pass
+    chip('c-pet').click(); const pet = h.profile.lanterns.pet; out.fed1 = pet.feeds;
+    chip('c-pet').click(); out.fedAgain = pet.feeds;
+    for (let k = 0; k < 4; k++) { pet.fed = -1; G.kidplay.feed(h); }
+    out.level = G.kidplay.level(h); await w(400);
+    out.scale = G.lanterns.companions.of(h).o.scale.x;
+    G.kidplay.feed(h); await w(100); out.trick = !!G.lanterns.companions.of(h).trick;
+    // the coin goal: a hat
+    const c0 = S.farm.coins; G.addCoins(100 - c0); await w(700); out.goalReady = chip('c-goal').classList.contains('ready');
+    chip('c-goal').click(); await w(400); out.hat = pet.hat; out.coinsAfter = S.farm.coins; out.hatOn = !!G.lanterns.companions.of(h).hat;
+    // the daily gift
+    const gift = G.interactables.find(i => i.id === 'gift_today'); out.giftSeen = gift.visible(h); const cg = S.farm.coins; gift.act(h); out.giftCoins = S.farm.coins - cg; out.giftAfter = gift.visible(h);
+    // the Skip button on a story film
+    const { openTheatre } = await import('/js/tales.js'), { STORY_TALES } = await import('/js/content/chapters.js'), t = STORY_TALES.lantern_prologue;
+    openTheatre({ ...t, story: true, title: () => t.title[0], ctx: { name: 'Na', companion: 'firefly' } }, { name: 'Na' }); await w(1500);
+    out.skip = !!document.querySelector('.theatre .th-skip'); document.querySelector('.th-skip')?.click(); await w(600); out.skipClosed = !document.querySelector('.theatre');
+    // the switches
+    C.features = C.features || {};
+    for (const id of ['companionGrow', 'saveGoal', 'dailySurprise', 'shortTalk', 'simpleStart', 'yardHands', 'storyActions']) C.features[id] = false;
+    h.profile.gift = null; await w(1200);
+    out.offChips = chip('c-pet').hidden && chip('c-goal').hidden; out.offGift = !gift.visible(h); out.offLevel = G.kidplay.level(h);
+    out.offSimple = (await import('/js/simple.js')).wantsSimple({ age: 'little' });
+    openTheatre({ ...t, story: true, title: () => t.title[0], ctx: { name: 'Na', companion: 'firefly' } }, { name: 'Na' }); await w(1200);
+    out.offSkip = !document.querySelector('.theatre .th-skip'); document.querySelector('.th-x')?.click(); await w(400);
+    for (const id of Object.keys(C.features)) delete C.features[id];
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [];
+  if (!r.chips) bad.push('no Feed or goal button beside the coins');
+  if (r.fed1 !== 1 || r.fedAgain !== 1) bad.push(`feeding is not once a day (${r.fed1}, ${r.fedAgain})`);
+  if (!(r.level >= 3) || !(r.scale > 1.2)) bad.push(`the companion did not grow (level ${r.level}, size ${r.scale})`);
+  if (!r.trick) bad.push('no trick at size 3');
+  if (!r.goalReady || r.hat !== 'party' || r.coinsAfter !== 70 || !r.hatOn) bad.push('the coin goal did not buy the hat ' + JSON.stringify(r));
+  if (!r.giftSeen || r.giftCoins !== 15 || r.giftAfter) bad.push('the daily gift ' + JSON.stringify({ seen: r.giftSeen, coins: r.giftCoins, after: r.giftAfter }));
+  if (!r.skip || !r.skipClosed) bad.push('no Skip button on the story film');
+  if (!r.offChips || !r.offGift || r.offLevel !== 1 || r.offSimple || !r.offSkip) bad.push('a Studio switch did not turn its part off ' + JSON.stringify(r));
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return `fed once a day, grew to size ${r.level} with a trick, bought the party hat (100 → 70 coins), opened today's gift (+15), Skip on story films; every switch turns its part off`;
 });
 await check('camcalm', async () => {
   // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:
@@ -1775,7 +1855,7 @@ await check('perf', async () => {
   const P = await open(b, { w: 1024, h: 700, play: false });
   const startMB = await P.page.evaluate(() => performance.getEntriesByType('resource').concat(performance.getEntriesByType('navigation')).reduce((a, e) => a + (e.encodedBodySize || e.transferSize || 0), 0) / 1e6);
   // the map picture: painted once after the title screen, then read back from the device on the next start
-  const pic = async () => { await P.page.waitForFunction(() => __sv.mapPic && __sv.mapPic.ready, null, { timeout: 60000 }); return P.page.evaluate(() => ({ from: __sv.mapPic.from, boot: __sv.bootTimes })); };
+  const pic = async () => { await P.page.waitForFunction(() => __sv.mapPic && __sv.mapPic.ready && __sv.bootTimes, null, { timeout: 60000 }); return P.page.evaluate(() => ({ from: __sv.mapPic.from, boot: __sv.bootTimes })); };
   const first = await pic();
   // (wait until the picture is really kept on the device, not a fixed time: saving it can take a moment while the valley finishes building)
   for (let i = 0; i < 75; i++) { if (await P.page.evaluate(async () => { try { const k = await caches.open('sv-world'); return (await k.keys()).some(r => r.url.includes('/map.png')); } catch (e) { return true; } })) break; await P.page.waitForTimeout(200); }

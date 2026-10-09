@@ -26,10 +26,12 @@ import { saveProfiles, reduceMotion } from './state.js';
 import { GAMES, gameOpen } from './games/frame.js';
 import { holdButton, openGrownups, openFestivals } from './ui.js';
 import { AREAS, TALE_AREAS, PLACE_AREAS, gamesIn } from './content/activities.js';
+import { featureOn } from './custom.js';
 
 // a star drawn on the picture card (round I, owner: "stars without a strip, placed on the icon"): gold when earned
 const STAR = 'M12 1.8l3.1 6.4 7 1-5.1 4.9 1.2 7-6.2-3.3-6.2 3.3 1.2-7L1.9 9.2l7-1z';
-export const wantsSimple = p => (p.screen ? p.screen === 'simple' : p.age !== 'big');
+// (Studio switch simpleStart: when off, a child who has not chosen starts in the valley)
+export const wantsSimple = p => (p.screen ? p.screen === 'simple' : p.age !== 'big' && featureOn('simpleStart', true));
 // stars on the path: played once, twice, four times
 export const starsOf = (p, id) => { const w = (p.wins || {})[id] || 0; return w >= 4 ? 3 : w >= 2 ? 2 : w >= 1 ? 1 : 0; };
 const firstPic = s => (String(s).match(/\p{Extended_Pictographic}(?:️|‍\p{Extended_Pictographic}️?)*/u) || ['📖'])[0];

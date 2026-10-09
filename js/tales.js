@@ -40,7 +40,7 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
     let k = startPage, auto = true, alive = true, token = 0;
     const prev = Music.key; Music.play('none');
     const m = el('div', 'theatre', `
-      <div class="th-top"><span class="th-flag">${tale.flag}</span><b class="th-title">${esc(tale.title())}</b><button class="th-x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
+      <div class="th-top"><span class="th-flag">${tale.flag}</span><b class="th-title">${esc(tale.title())}</b><button class="th-x" aria-label="${T('Close', 'Đóng')}">✕</button></div>${tale.story && featureOn('shortTalk', true) ? `<button class="th-skip">${pic('⏩')} ${T('Skip', 'Bỏ qua')}</button>` : ''}
       <div class="th-stage"><div class="th-bg"></div><div class="th-actors"></div><div class="th-fx"></div></div>
       <div class="th-text"></div>
       <div class="th-bar"><button class="th-prev" aria-label="${T('Back', 'Trang trước')}">◀</button><button class="th-hear" aria-label="${T('Hear it again', 'Nghe lại')}">${pic('🔊')}</button><button class="th-auto on" aria-label="${T('Read by itself', 'Tự đọc')}">⏯</button><div class="th-dots"></div><button class="th-next" aria-label="${T('Next', 'Trang sau')}">▶</button></div>`);
@@ -112,6 +112,8 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
     m.querySelector('.th-hear').onclick = () => { const [, en, vi] = tale.pages[k]; token++; sayAsync(en, vi); };
     m.querySelector('.th-auto').onclick = e => { auto = !auto; e.currentTarget.classList.toggle('on', auto); if (auto) draw(); };
     m.querySelector('.th-x').onclick = () => finish(false);
+    // (Studio switch shortTalk) the story's own films can be skipped with one big button
+    const sk = m.querySelector('.th-skip'); if (sk) sk.onclick = () => finish(false);
     // swipe left / right to turn the page
     let sx = null; stage.addEventListener('pointerdown', e => { sx = e.clientX; }); stage.addEventListener('pointerup', e => { if (sx == null) return; const d = (e.clientX - sx) * flip(stage); sx = null; if (d < -50) next(); else if (d > 50 && k > 0) { k--; draw(); } });
     const onKey = e => { if (!alive) return removeEventListener('keydown', onKey, true); if (e.code === 'ArrowRight' || e.code === 'Space') { e.preventDefault(); e.stopImmediatePropagation(); next(); } else if (e.code === 'ArrowLeft' && k > 0) { e.preventDefault(); e.stopImmediatePropagation(); k--; draw(); } else if (e.code === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); finish(false); } };

@@ -133,7 +133,7 @@ Measured in the test browser (390 px phone; the slow-phone figures use a 4x slow
 
 ## Story: bà Huệ and ông Nghi's yard (built 9 Oct)
 - `js/yard.js` (content in `js/content/yard.js`): a transport and building yard on open, flat ground near the Huệ Nghi shop (found with `js/openspot.js`, which the đình also uses), with a site office and sign, a stone pile, a building site, a coach (xe khách), a dump truck (xe ben) and an excavator (máy xúc) (new models in `js/vehicles.js`). Anh 2, their son, runs it.
-- **The side story** (the child starts it by asking bà Huệ; while it runs it is the child's goal, then the main story carries on): bà Huệ tells how she and ông Nghi brought the young ones from Hà Tĩnh; meet the coach; ask each relative what they are good at and give them the right job (a wrong one is turned down kindly); haul earth and stone in the dump truck and tip it at the site; dig the foundations with the excavator; lay the bricks and lift the roof together; the house-warming meal at the shop. Afterwards the truck and the excavator are open for free play.
+- **The side story** (the child starts it by asking bà Huệ; owner, 9 Oct: a side story with its own list, Pad → Adventures → Side stories, with Follow; it never takes the goal bar from the lantern story unless the child follows it): bà Huệ tells how she and ông Nghi brought the young ones from Hà Tĩnh; meet the coach; ask each relative what they are good at and give them the right job (a wrong one is turned down kindly); haul earth and stone in the dump truck and tip it at the site; dig the foundations with the excavator; lay the bricks and lift the roof together; the house-warming meal at the shop. Afterwards the truck and the excavator are open for free play.
 - **Placeholder names** until the owner sends the real ones: Chú Tư (driver), Cô Sáu (builder), Anh Bảy (digger operator). Change them in `js/content/yard.js`.
 - Voices recorded (Azure). Studio switch `story_yard` (on).
 - **Test start:** the harness now starts the checks without Ông Cú's prologue film (it plays by itself for a new child); the welcome-voice check follows the story's welcome ("Who will fly with you, …?").
@@ -152,3 +152,20 @@ Measured in the test browser (390 px phone; the slow-phone figures use a 4x slow
   - Online play: **off until a grown-up turns it on**, longer room codes, a "who's here" list a grown-up can check.
   - Chat character key: **keep as is**.
   - Also: voices made in Studio only (no voice keys on children's devices, never clone children's voices); landmark photos served from our own site; Studio admin two-step sign-in, long passwords, a log of who opens the players report; a short privacy notice in Grown-ups.
+
+## What keeps little ones playing (owner 9 Oct: "add these in and add to the studio so we can switch on/off")
+Each is a Studio switch in the new group **For little ones** (Ra mắt page), all on:
+- **yardHands:** the yard by hand. Tap the stones to load the truck, hold the green pedal to drive (the child walks beside it and the camera follows), pull the lever down to tip; drag the excavator handle down and up to dig four scoops; tap nine times to lay the bricks, then drag the roof down onto the house. Off: the old speech-box buttons.
+- **simpleStart:** under-5s start on the Simple screen until they choose (this was already the rule; now it can be switched off). Tap-to-walk in the valley was already there.
+- **storyActions:** chapter 1 steps have something to do: catch three wind ribbons on the way into Làng Sen (walk through them or tap), lift the lotus leaves to find the lantern (a different leaf each day; a frog under the others), pull the rope to raise the lantern at the đình. Off: as before.
+- **companionGrow:** a Feed button beside the coins, once a day; every two days of food the companion grows a little and glows warmer; from size 3 the button asks for a loop-the-loop.
+- **saveGoal:** a coin goal beside Feed: hats for the companion in order (party hat 30, flower crown 45, little nón lá 60, golden crown 80); when there are enough coins it pulses and a tap buys it. On a phone it shows only when it can be bought.
+- **dailySurprise:** a gift box by a different landmark each day (AEST); the child is told where on their first look of the day; opening it gives 15 coins.
+- **shortTalk:** Bà Năm's request and bà Huệ's story in one line each, and a big Skip button on the story's own films.
+- Checks: `kidplay` (new), `yard` and `story` now play the hands-on parts like a child would.
+
+### Also in this round (9 Oct)
+- **Side stories list:** goal order is a followed side story, then the lantern chapter, then an active side story, then the older quests (`currentQuest` in js/main.js; `G.sideStories()`; Follow saved as `profile.follow`). Check `yard` proves the goal bar stays on the lantern story after the yard starts and that Follow works.
+- **Long speeches kept:** the Studio switch "Short talk" (`shortTalk`) picks separate short lines (`startShort`, `talk.short`); the long ones stay in the files and come back when it is off.
+- **Voice list loaded later:** voices/manifest.json loads on the first tap or key, or after 8 s, so start-up stays under the PERF-001 download budget.
+- **Not done yet:** the English spoken lines still say "ông Nghi" (changing them needs new recordings); the code is not yet split per core (docs/cores only describes them; task: infrastructure round).

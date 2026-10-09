@@ -11,6 +11,8 @@ import { featureOn } from './custom.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
 import { build } from './vehicles.js';
 import { openRoom } from './openspot.js';
+import { pic } from './art.js';
+import { pad, frames, holdable, slot } from './handpad.js';
 import { YARD_STEPS, YARD_LINES, RELATIVES, JOBS, ANH2, COACH, GUESTS } from './content/yard.js';
 
 const st = p => { const s = p.yard = p.yard && typeof p.yard === 'object' ? p.yard : {}; s.done = s.done || {}; s.jobs = s.jobs || {}; return s; };
@@ -107,13 +109,14 @@ export function createYard(G, { dialog, say, reward, save }) {
     hue: () => ({ x: shop.x, z: shop.z }),
     coach: () => W(-1.5, 9.2), relatives: () => W(-1, 4), truck: () => W(-5.5, 5), digger: () => W(SITE[0] + 3, SITE[1] - 3), site: () => W(SITE[0], SITE[1] + 3.5)
   };
-  const btn = (id, at, r, icon, label, visible, act) => { const g = () => (typeof at === 'function' ? at() : at); G.interactables.push({ id, get x() { return g().x; }, get z() { return g().z; }, r, icon, label, visible, act }); };
+  const btn = (id, at, r, icon, label, visible, act) => { const g = () => (typeof at === 'function' ? at() : at); G.interactables.push({ id, get x() { return g().x; }, get z() { return g().z; }, r, icon, label, visible: h => !busy.size && visible(h), act }); };
   const busy = new Set(); // (one thing at a time in the yard)
   const run = async (key, h, fn) => { if (busy.has(key)) return; busy.add(key); G.paused = true; try { await fn(); } finally { busy.delete(key); G.paused = false; } };
 
   // 1. bà Huệ tells how it began
   btn('yard_start', () => ({ x: shop.x + 1.2, z: shop.z + 1.6 }), 2.4, '🏗️', () => T('Ask about the new yard', 'Hỏi về công trường mới'), h => on() && !done(h.profile, 'y_start'),
-    h => run('start', h, async () => { await dialog('Bà Huệ', YARD_LINES.start); finish(h, 'y_start'); }));
+    h => run('start', h, async () => { await dialog('Bà Huệ', featureOn('shortTalk', true) ? YARD_LINES.startShort : YARD_LINES.start); finish(h, 'y_start');
+      const hud = G.huds && G.huds[h.i]; hud && hud.toast && hud.toast(T('Bà Huệ\'s yard is in your side stories (Pad, Adventures)', 'Công trường của bà Huệ có trong truyện phụ (Sổ tay, Nhiệm vụ)')); }));
   // 2. the coach
   btn('yard_coach', spots.coach, 3, '🚌', () => T('Welcome the family', 'Đón người nhà'), h => isOn(h.profile, 'y_coach'),
     h => run('coach', h, async () => { await dialog(RELATIVES[0].name, YARD_LINES.coach); finish(h, 'y_coach'); }));
@@ -144,12 +147,69 @@ export function createYard(G, { dialog, say, reward, save }) {
     await tween(1, u => { TU.bed.rotation.x = -(1 - u) * .9; });
   }
   async function parkTruck() { const a = truck.o.position.clone(); await tween(2, u => { truck.o.position.set(a.x + (-5.5 - a.x) * u, 0, a.z + (2.5 - a.z) * u); }); truck.o.rotation.y = Math.PI / 2; }
+  // ---------- by hand (Studio switch yardHands, owner 9 Oct: "more doing, less watching") ----------
+  // A small panel at the bottom of the child's own half: big buttons and handles a 4-year-old can hold and drag. Every
+  // part speaks what to do. data-hp names each control (the checks press them like a child would).
+  const hands = () => featureOn('yardHands', true);
+  let driver = null;
+  async function truckByHand() {
+    G.paused = false; // (the valley keeps running so the camera follows; the yard's buttons hide while this is open)
+    // load: tap the stones three times
+    const from = [-5.5, -1.2], to = [SITE[0] - 4, SITE[1] + 4.5];
+    await tween(1, u => { truck.o.position.set(-5.5, 0, 2.5 + (from[1] - 2.5) * u); });
+    let p = pad(`<p>${T('Tap the stones to load the truck!', 'Chạm vào đá để xúc lên xe!')}</p><button class="hp-big" data-hp="load">${pic('🪨')}</button><div class="hp-bar"><i></i></div>`);
+    say(...YARD_LINES.handLoad);
+    await new Promise(res => { let n = 0; p.querySelector('[data-hp=load]').onclick = () => { n++; TU.load.visible = true; TU.load.scale.set(.4 + n * .2, .15 + n * .1, .6 + n * .4); p.querySelector('.hp-bar i').style.width = (n / 3 * 100) + '%'; if (n >= 3) res(); }; });
+    p.remove();
+    // drive: hold the pedal; the truck rolls to the building site while it is held
+    p = pad(`<p>${T('Hold the pedal to drive!', 'Giữ bàn đạp để lái xe!')}</p><button class="hp-big hp-pedal" data-hp="pedal">${pic('🚚')}</button><div class="hp-bar"><i></i></div>`);
+    say(...YARD_LINES.handDrive);
+    const pedal = holdable(p.querySelector('[data-hp=pedal]')), a0 = truck.o.position.clone(), turn0 = truck.o.rotation.y; let u = 0;
+    await frames(dt => { if (pedal.down) { u = Math.min(1, u + dt * .3); truck.wheels.forEach(w => { w.rotation.x += dt * 6; }); }
+      truck.o.position.set(a0.x + (to[0] + 1.5 - a0.x) * u, 0, a0.z + (to[1] - 2.5 - a0.z) * u);
+      // the child walks beside the cab, so the camera follows the truck
+      if (driver) { const c = W(truck.o.position.x / S + 2.2, truck.o.position.z / S + 1); driver.pos.x = c.x; driver.pos.z = c.z; } truck.o.rotation.y = turn0 + Math.sin(u * Math.PI) * .25; p.querySelector('.hp-bar i').style.width = (u * 100) + '%'; return u >= 1; });
+    p.remove();
+    // tip: pull the lever down
+    p = pad(`<p>${T('Pull the lever down to tip it out!', 'Kéo cần xuống để đổ đất đá!')}</p><div class="hp-slot" data-hp="lever"><b></b></div>`);
+    say(...YARD_LINES.handTip);
+    const lever = slot(p.querySelector('[data-hp=lever]'));
+    heap.visible = true;
+    await frames(() => { TU.bed.rotation.x = -lever.v * .9; heap.scale.setScalar(.05 + lever.v * .95); return lever.v > .9; });
+    TU.load.visible = false; heap.scale.setScalar(1); p.remove();
+    await tween(1, k => { TU.bed.rotation.x = -(1 - k) * .9; });
+  }
+  async function digByHand(n = 4) {
+    G.paused = false; // (the valley keeps running so the camera follows; the yard's buttons hide while this is open)
+    const p = pad(`<p>${T('Drag down to dig, then up to lift!', 'Kéo xuống để đào, rồi kéo lên!')}</p><div class="hp-slot" data-hp="arm"><b></b></div><div class="hp-count">${'<i></i>'.repeat(n)}</div>`);
+    say(...YARD_LINES.handDig);
+    const arm = slot(p.querySelector('[data-hp=arm]')); let k = 0, low = false;
+    await frames(() => { const v = arm.v; DU.boom.rotation.x = -.5 + v * .55; DU.arm.rotation.x = 1.3 + v * .4; DU.bucket.rotation.x = .4 - v * .9;
+      if (v > .85) low = true;
+      if (low && v < .15) { low = false; k++; pit.visible = true; pit.scale.set(1.2 * k / n, 1, .9 * k / n); const dots = p.querySelectorAll('.hp-count i'); if (dots[k - 1]) dots[k - 1].className = 'on'; }
+      return k >= n; });
+    p.remove();
+  }
+  async function buildByHand(n = 9) {
+    G.paused = false; // (the valley keeps running so the camera follows; the yard's buttons hide while this is open)
+    walls.visible = true; walls.scale.y = .01; roof.visible = false;
+    let p = pad(`<p>${T('Tap to lay the bricks!', 'Chạm để xây gạch!')}</p><button class="hp-big" data-hp="brick">${pic('🧱')}</button><div class="hp-bar"><i></i></div>`);
+    say(...YARD_LINES.handBrick);
+    await new Promise(res => { let k = 0; p.querySelector('[data-hp=brick]').onclick = () => { k++; const a = walls.scale.y, b = k / n * 2.6; tween(.25, u => { walls.scale.y = a + (b - a) * u; }); p.querySelector('.hp-bar i').style.width = (k / n * 100) + '%'; if (k >= n) setTimeout(res, 300); }; });
+    p.remove();
+    // the roof: drag it down onto the walls
+    roof.visible = true; roof.position.y = 5.6;
+    p = pad(`<p>${T('Drag the roof down onto the house!', 'Kéo mái nhà xuống lợp lên nhà!')}</p><div class="hp-slot" data-hp="roof"><b></b></div>`);
+    say(...YARD_LINES.handRoof);
+    const r = slot(p.querySelector('[data-hp=roof]'));
+    await frames(() => { roof.position.y = 5.6 - r.v * 3; roof.rotation.y = (1 - r.v) * .6; return r.v > .92; });
+    roof.position.y = 2.6; roof.rotation.y = 0; p.remove();
+  }
   btn('yard_truck', spots.truck, 3, '🚚', () => T('Drive the dump truck', 'Lái xe ben'), h => on() && (isOn(h.profile, 'y_truck') || done(h.profile, 'y_party')),
     h => run('truck', h, async () => {
       const story = isOn(h.profile, 'y_truck');
-      await haul();
-      await dialog(RELATIVES[0].name, [YARD_LINES.truckTip], [YARD_LINES.truckTip]);
-      await tip();
+      if (hands()) { driver = h; try { await truckByHand(); } finally { driver = null; } }
+      else { await haul(); await dialog(RELATIVES[0].name, [YARD_LINES.truckTip], [YARD_LINES.truckTip]); await tip(); }
       await dialog(RELATIVES[0].name, [YARD_LINES.truckDone]);
       await parkTruck();
       if (story) finish(h, 'y_truck'); else paint();
@@ -166,17 +226,21 @@ export function createYard(G, { dialog, say, reward, save }) {
   btn('yard_dig', spots.digger, 3, '🏗️', () => T('Dig with the excavator', 'Đào bằng máy xúc'), h => on() && (isOn(h.profile, 'y_dig') || done(h.profile, 'y_party')),
     h => run('dig', h, async () => {
       const story = isOn(h.profile, 'y_dig'), n = 4;
-      for (let k = 0; k < n; k++) { await dialog(RELATIVES[2].name, [YARD_LINES.dig], [YARD_LINES.dig]); await scoop(k, n); }
+      if (hands()) await digByHand(n);
+      else for (let k = 0; k < n; k++) { await dialog(RELATIVES[2].name, [YARD_LINES.dig], [YARD_LINES.dig]); await scoop(k, n); }
       await dialog(RELATIVES[2].name, [YARD_LINES.digDone]);
       if (story) finish(h, 'y_dig'); else paint();
     }));
   // 6. build together: three rows of bricks, then the roof
   btn('yard_build', spots.site, 3, '🧱', () => T('Build the house', 'Xây nhà'), h => isOn(h.profile, 'y_build'),
     h => run('build', h, async () => {
-      walls.visible = true; walls.scale.y = .01; roof.visible = false;
-      for (let k = 0; k < 3; k++) { await dialog(RELATIVES[1].name, [YARD_LINES.brick], [YARD_LINES.brick]); const a = walls.scale.y; await tween(.9, u => { walls.scale.y = a + ((k + 1) * 2.6 / 3 - a) * u; }); }
-      await dialog('Anh 2', [YARD_LINES.roof], [YARD_LINES.roof]);
-      roof.visible = true; await tween(1.4, u => { roof.position.y = 2.6 + (1 - u) * 3; roof.rotation.y = (1 - u) * .6; });
+      if (hands()) await buildByHand();
+      else {
+        walls.visible = true; walls.scale.y = .01; roof.visible = false;
+        for (let k = 0; k < 3; k++) { await dialog(RELATIVES[1].name, [YARD_LINES.brick], [YARD_LINES.brick]); const a = walls.scale.y; await tween(.9, u => { walls.scale.y = a + ((k + 1) * 2.6 / 3 - a) * u; }); }
+        await dialog('Anh 2', [YARD_LINES.roof], [YARD_LINES.roof]);
+        roof.visible = true; await tween(1.4, u => { roof.position.y = 2.6 + (1 - u) * 3; roof.rotation.y = (1 - u) * .6; });
+      }
       await dialog(RELATIVES[1].name, [YARD_LINES.buildDone]);
       finish(h, 'y_build');
     }));
@@ -194,7 +258,10 @@ export function createYard(G, { dialog, say, reward, save }) {
   const asQuest = (p, s) => ({ id: 'Y_' + s.id, icon: s.icon, story: true, title: () => T(s.en, s.vi), tale: s.tale || null, target: () => spots[s.at] && spots[s.at]() });
   return {
     quest: p => { const s = current(p); return s ? asQuest(p, s) : null; },
-    current, paint, at: { x: X, z: Z, room: spot.room }, W,
+    // (owner 9 Oct: a side story in its own list) what the Adventures page shows: started? which step? done?
+    side: { id: 'yard', icon: '🏗️', title: () => T('Grandma Huệ and Grandpa Nghi\'s yard', 'Công trường của bà Huệ và ông Nghi'),
+      status: p => { const c = current(p); return { started: done(p, 'y_start'), done: done(p, 'y_party'), step: c ? T(c.en, c.vi) : T('Ask Bà Huệ at the Huệ Nghi shop', 'Hỏi bà Huệ ở tiệm Huệ Nghi') }; } },
+    current, paint, at: { x: X, z: Z, room: spot.room }, W, busy: () => busy.size > 0,
     _finish: finish // (checks)
   };
 }

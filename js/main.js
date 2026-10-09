@@ -603,8 +603,14 @@ async function statueTalk(h) {
 // ---------- quests ----------
 const questDone = (p, q) => !!p.quests[q.id] || !!(q.check && q.check(p));
 // (round R) the story's step comes first; when no chapter is open, the valley's adventure list as before
-// (a side story the child chose to start, such as bà Huệ and ông Nghi's yard, comes before the chapter's step)
-function currentQuest(p) { return (G.yard && G.yard.quest(p)) || (G.lanterns && G.lanterns.quest(p)) || QUESTS.find(q => !questDone(p, q)); }
+// (round R, owner 9 Oct) the goal bar follows the lantern story; a side story (bà Huệ and ông Nghi's yard) shows there only
+// when the child chose to follow it on the Adventures page (profile.follow), or when the story has no step open right now
+const sideQuest = p => G.yard && G.yard.quest(p);
+function currentQuest(p) {
+  if (p.follow === 'yard' && sideQuest(p)) return sideQuest(p);
+  return (G.lanterns && G.lanterns.quest(p)) || sideQuest(p) || QUESTS.find(q => !questDone(p, q));
+}
+G.sideStories = () => G.yard ? [G.yard.side] : [];
 G.currentQuest = currentQuest;
 function questTarget(h) {
   const p = h.profile, q = currentQuest(p); if (!q) return null;
@@ -1495,10 +1501,12 @@ createLearning(G);
 // the main story, Đèn Lồng Thung Lũng (js/lanterns.js, chapters in js/content/chapters.js): after the storyteller and the villagers
 G.npcAt = id => (n => n && { x: n.x, z: n.z })(NPCS.find(n => n.id === id));
 // (loaded while the valley is built behind the title screen, so the title comes up sooner: PERF-001)
-const [{ createLanterns }, { createYard }] = await Promise.all([import('./lanterns.js'), import('./yard.js')]);
+const [{ createLanterns }, { createYard }, { createKidPlay }] = await Promise.all([import('./lanterns.js'), import('./yard.js'), import('./kidplay.js')]);
 G.lanterns = createLanterns(G, { dialog, say, reward, save, openTheatre });
 // bà Huệ and ông Nghi's yard near the Huệ Nghi shop (js/yard.js): a side story
 G.yard = createYard(G, { dialog, say, reward, save });
+// the companion grows, a coin goal, a gift every day (js/kidplay.js; Studio group 'For little ones')
+G.kidplay = createKidPlay(G, { say, save });
 createShowcase(G);
 world.updaters.push((dt, t) => tickAnimals(dt, t, G.heroes)); // every animal walks, hops, wags and looks around
 createGathering(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) });

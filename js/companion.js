@@ -69,9 +69,22 @@ export function createCompanions(G) {
       o.rotation.y += ((((yaw - o.rotation.y) % (Math.PI * 2)) + Math.PI * 3) % (Math.PI * 2) - Math.PI) * Math.min(1, dt * 4);
       u.wings.forEach((w, i) => { w.rotation.z = (i ? -1 : 1) * Math.sin(t * u.flap) * .6; });
       u.body.rotation.x = Math.sin(t * 1.7) * .08;
+      // (Studio switch companionGrow, js/kidplay.js) it grows as it is fed, wears the hat the child saved for, and does tricks
+      const L = h.profile.lanterns || {}, pet = L.pet || {}, grow = G.petLevel ? G.petLevel(h) : 1;
+      const sc = 1 + (grow - 1) * .14; o.scale.setScalar(sc);
+      if (pet.hat !== c.hatId) { if (c.hat) u.body.remove(c.hat); c.hat = pet.hat && G.buildHat ? G.buildHat(pet.hat) : null; if (c.hat) u.body.add(c.hat); c.hatId = pet.hat; }
+      if (c.trick && c.trick.start == null) c.trick.start = t;
+      if (c.trick && t - c.trick.start > c.trick.len) c.trick = null;
+      if (c.trick) { const k = (t - c.trick.start) / c.trick.len;
+        if (c.trick.kind === 'loop') { u.body.rotation.x = k * Math.PI * 2; o.position.y += Math.sin(k * Math.PI) * 1.2; }
+        else { u.body.rotation.y = k * Math.PI * 4; o.position.y += Math.sin(k * Math.PI * 2) * .4; } }
+      else u.body.rotation.y = 0;
+      if (u.glow && grow >= 2) u.glow.material.color.setHSL(.12 + grow * .03, 1, .62 + Math.sin(t * 3) * .1);
       if (u.glow) u.glow.material.color.setHSL(.2, 1, .6 + Math.sin(t * 3) * .1);
       c.lantern.visible = !!(h.profile.lanterns && h.profile.lanterns.carrying);
     }
   });
-  return { of: h => list.get(h) || null, sync };
+  // a trick: 'loop' (a loop-the-loop) or 'spin'
+  const trick = (h, kind) => { const c = list.get(h); if (c) c.trick = { kind, len: 1.6, start: null }; };
+  return { of: h => list.get(h) || null, sync, trick };
 }
