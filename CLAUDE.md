@@ -15,4 +15,17 @@
 
 **Cores (owner, 8 Oct):** the project is split into 8 cores, one AI chat per core (World, Play, Kid UI, Voice & Audio, Online, Studio, Analytics & Infra, Release). If the owner says which core you are, read `docs/cores/README.md` and your core's file in `docs/cores/` before anything else, work only in that core's files on the branch `core/<name>`, and put requests for other cores on `docs/cores/BOARD.md`. Only the Release core merges, runs the full suite, reports and asks for "yes, push" / "yes, deploy". With no core named, you are Release.
 
+**Helper chats (owner, 10 Oct): every chat that is told it is a core (not Release) keeps these rules, whether or not the owner pastes them.**
+1. Read this file, `HANDOFF.md`, `docs/cores/README.md`, your core's file in `docs/cores/` and, if the owner names one, your task brief in `docs/cores/tasks/`. The brief says what to build; this file and the docs say how. If they disagree, the docs win: say so.
+2. **Plan first and wait:** before changing anything, show the owner your plan (what you will build, which files, which checks, what is left for later) and wait for the owner's "go".
+3. Work only in your core's files and the files your brief allows. A change another core owns goes on `docs/cores/BOARD.md` (what, why, which file).
+4. **The map is being rebuilt (Round T, Release core):** do not change world positions or these files: `js/world.js`, `js/roads.js`, `js/regions.js`, `js/cities.js`, `js/town.js`, `js/homes.js`, `js/vendors.js`, `js/hawkers.js`, `js/places.js`, `js/solids.js`, `js/content/map.js`. Use places and characters by their id only.
+5. Do not bump the version (`sw.js` VERSION, `js/build.js`, `studio/version.json`), do not merge into `main`, do not deploy. Commit locally as you go.
+6. **Push only after the owner says "yes, push"**, and only to this chat's own branch (the one the session was given, or `core/<name>`), never to `main`. If a pull request is opened, keep it a draft: only Release merges.
+7. No emoji in docs; any emoji in the game needs a drawing in `js/art.js`. Touch targets 44 px or more (64 px for under-5s). English and Vietnamese for everything a child sees or hears. Times in AEST.
+8. Never weaken, skip or delete a check to make it pass: fix the code. If a check is wrong, explain why before changing it.
+9. New spoken lines: if `AZURE_SPEECH_KEY` is set, record them with `node tools/make-voice-pack.mjs --engine azure` (never print or commit the key); otherwise list them in the report. Lines with a child's name are never recorded (HANDOFF rule 11).
+10. Before reporting, run your core's checks, the checks your brief names and any new ones, then the full suite (`cd tests && node run.mjs`). Online checks may say "skipped" in a helper chat: say so.
+11. **The report** lists: what changed (files), every check with pass, fail or skipped, the screenshots you looked at (phone, tablet, computer), new spoken lines (recorded or not), anything not done, decisions the owner made (also written into your core file under "Owner's decisions"), your branch name and last commit id.
+
 Everything else about the project (requirements, how it's built, testing, working style) is in `HANDOFF.md`. Read it first.
