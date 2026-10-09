@@ -26,6 +26,15 @@ export const RELEASES = [
   { id: 'mysteryBox', en: 'Mystery boxes: one free a day and one for a finished quest (5 to 8, Medium or Hard)', vi: 'Hộp bí ẩn: mỗi ngày một hộp và thêm một hộp khi xong nhiệm vụ (5 đến 8 tuổi, Vừa hoặc Khó)', group: 'rewards', def: true },
   { id: 'rankings', en: 'Family rankings: stars and quests, collections, kindness, learning (5 to 8, Medium or Hard)', vi: 'Bảng thành tích gia đình: sao và nhiệm vụ, bộ sưu tập, tốt bụng, học hỏi (5 đến 8 tuổi, Vừa hoặc Khó)', group: 'rewards', def: true },
   { id: 'collectibles', en: 'Collection book: fairies, dragons, stickers, decorations (5 to 8, Medium or Hard)', vi: 'Sổ sưu tập: nàng tiên, rồng, hình dán, đồ trang trí (5 đến 8 tuổi, Vừa hoặc Khó)', group: 'rewards', def: true },
+  // (round S, owner plan 8 Oct: ROUND-R items 5, 9 and 11) the village festival, surprises and the grown-ups' features
+  { id: 'hoilang', en: 'Village festival (Hội làng) three times a day: parade, crowd and a special prize', vi: 'Hội làng ba lần mỗi ngày: rước, đông vui và quà đặc biệt', group: 'kids', def: true },
+  { id: 'surprises', en: 'Surprises (rainbow lotus, golden butterfly, treasure map, fairy glade, rare visitors…), up to 3 a visit', vi: 'Điều bất ngờ (sen cầu vồng, bướm vàng, bản đồ kho báu, rừng tiên, khách quý…), tối đa 3 lần mỗi lượt chơi', group: 'kids', def: true },
+  { id: 'familyMissions', en: 'Family missions a grown-up writes and ticks', vi: 'Nhiệm vụ gia đình do người lớn viết và đánh dấu', group: 'kids', def: true },
+  { id: 'weeklyNote', en: 'A weekly note for grown-ups', vi: 'Ghi chú hằng tuần cho người lớn', group: 'kids', def: true },
+  { id: 'certCard', en: 'Certificate card with the stickers earned (save the picture)', vi: 'Thiệp khen với các hình dán đã nhận (lưu ảnh)', group: 'kids', def: true },
+  { id: 'danceBreak', en: 'A dance break after 20 minutes of play', vi: 'Giờ nhảy múa sau 20 phút chơi', group: 'kids', def: true },
+  { id: 'bedtime', en: 'Bedtime: the valley dims, lullabies, goodnight', vi: 'Giờ đi ngủ: thung lũng tối dần, hát ru, chúc ngủ ngon', group: 'kids', def: true },
+  { id: 'birthday', en: 'A birthday surprise (birthday kept on the device only)', vi: 'Quà bất ngờ ngày sinh nhật (ngày sinh chỉ lưu trên máy)', group: 'kids', def: true },
   ...FESTCAL.map(F => ({ id: 'fest_' + F.id, en: F.en, vi: F.vi, group: 'festivals', def: true, icon: F.icon }))
 ];
 export const RELEASE_GROUPS = { story: ['The lantern story', 'Truyện đèn lồng'], kids: ['For little ones', 'Cho các bé'], rewards: ['Shop and rewards', 'Cửa hàng và phần thưởng'], world: ['In the valley', 'Trong thung lũng'], festivals: ['Festivals', 'Lễ hội'] };

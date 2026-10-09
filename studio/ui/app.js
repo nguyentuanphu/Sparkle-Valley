@@ -22,7 +22,7 @@ const saveContent = async () => { await api('content', CONTENT); if (INFO) { INF
 // as big cards, one per page; on a phone the sections are a bar at the bottom, on a computer a column on the left.
 const SECTIONS = [
   { k: 'home', i: '🏠', en: 'Home', vi: 'Trang chính', pages: ['home'] },
-  { k: 'family', i: '💛', en: 'Family', vi: 'Gia đình', pages: ['message', 'children', 'album', 'quiz', 'stories', 'villagers', 'familycode'] },
+  { k: 'family', i: '💛', en: 'Family', vi: 'Gia đình', pages: ['message', 'missions', 'children', 'album', 'quiz', 'stories', 'villagers', 'familycode'] },
   { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['releases', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads'] },
   { k: 'players', i: '📊', en: 'Analytics', vi: 'Phân tích', pages: ['players'] },
   { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Cài đặt', pages: ['publish', 'site', 'check', 'settings', 'admins', 'security', 'accesslog'] }
@@ -37,6 +37,7 @@ const SEC = () => ROLE() === 'viewer' ? SECTIONS.filter(x => x.k === 'players') 
 const ABOUT = {
   home: ['🏠', 'Home', 'Trang chính', '', ''],
   message: ['💌', 'Message', 'Lời nhắn', 'A note the children see when they start playing', 'Lời nhắn các con thấy khi bắt đầu chơi'],
+  missions: ['📝', 'Family missions', 'Nhiệm vụ gia đình', 'Real-life jobs the children see in the game (“Help set the table”); a grown-up ticks them on the device', 'Việc ngoài đời các con thấy trong game (“Giúp dọn bàn ăn”); người lớn đánh dấu trên máy'],
   children: ['👧', 'Children', 'Các con', 'Each child’s name, age, photo and progress', 'Tên, tuổi, ảnh và tiến bộ của từng con'],
   album: ['📸', 'Family album', 'Album gia đình', 'Family photos that arrive as postcards in the game', 'Ảnh gia đình đến thành bưu thiếp trong game'],
   quiz: ['💛', 'Family quiz', 'Đố vui gia đình', 'Your own questions: “What is Grandma’s name?”', 'Câu hỏi của nhà mình: “Bà tên gì?”'],
@@ -231,6 +232,16 @@ PAGES.message = async P => {
   <div class="bar"><button class="btn ghost" id="clear">${T('No message', 'Không nhắn')}</button><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   $('#save').onclick = () => { CONTENT.message = { en: $('#en').value.trim(), vi: $('#vi').value.trim() }; if (!CONTENT.message.en && !CONTENT.message.vi) delete CONTENT.message; saveContent().catch(fail); };
   $('#clear').onclick = () => { delete CONTENT.message; saveContent().then(render).catch(fail); };
+};
+// ---------- family missions (round S, owner plan 8 Oct): content pack "missions", read by js/parents.js ----------
+PAGES.missions = async P => {
+  const list = Array.isArray(CONTENT.missions) ? CONTENT.missions : [];
+  P.innerHTML = `<h2>📝 ${T('Family missions', 'Nhiệm vụ gia đình')}</h2><p class="sub">${T('A real-life job for the children (“Help set the table”). They see it in the game; when it is done, a grown-up ticks ✓ on the device (Grown-ups, or a press-and-hold in the child’s Adventures page) and the child gets coins and a sticker. Up to 12.', 'Một việc ngoài đời cho các con (“Giúp dọn bàn ăn”). Các con thấy trong game; làm xong, người lớn đánh dấu ✓ trên máy (mục Phụ huynh, hoặc giữ nút trong trang Nhiệm vụ của con) và con được tiền cùng hình dán. Tối đa 12.')}</p>
+  <div class="card"><label>🇦🇺 English</label><input id="men" maxlength="120" placeholder="Help set the table"><label>🇻🇳 Tiếng Việt</label><input id="mvi" maxlength="120" placeholder="Giúp dọn bàn ăn">
+  <div class="bar"><button class="btn" id="madd">+ ${T('Add', 'Thêm')}</button></div></div>
+  <div class="card">${list.map((m, k) => `<div class="row"><span>📝 <b>${esc(m.en)}</b> · ${esc(m.vi)}</span><button class="btn ghost" data-mdel="${k}">✕</button></div>`).join('') || `<p class="note">${T('No missions yet.', 'Chưa có nhiệm vụ.')}</p>`}</div>`;
+  $('#madd').onclick = () => { const en = $('#men').value.trim(), vi = $('#mvi').value.trim(); if (!en && !vi) return; CONTENT.missions = [{ id: 'm' + Date.now().toString(36), en: en || vi, vi: vi || en }, ...list].slice(0, 12); saveContent().then(render).catch(fail); };
+  P.querySelectorAll('[data-mdel]').forEach(b => b.onclick = () => { CONTENT.missions = list.filter((_, k) => k !== +b.dataset.mdel); if (!CONTENT.missions.length) delete CONTENT.missions; saveContent().then(render).catch(fail); });
 };
 // ---------- villagers: names and photo faces ----------
 PAGES.villagers = async P => {

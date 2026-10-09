@@ -16,6 +16,7 @@ album…), menus, settings and Grown-ups, pop-ups, icons and pictures, text size
   `.ktab`, coin prices `.kcoin` (a coin drawing and a number), 64 px and more for under-5s (`.kcard.little`); used by the
   clothes shop and the mystery box, rankings and collection book screens (Play's `js/shop.js`, `js/boxes.js`)
 - Hands-on panels: `js/handpad.js` (tap, hold, pull and drag panels the stories use); no phone emoji: `js/emojiswap.js`
+- Grown-ups' features (round S, with Play): `js/parents.js` (its Grown-ups group, the dance break, bedtime and certificate screens; its CSS block at the end of `css/style.css`)
 
 ## Hard rules (§9.6)
 A11Y-001 (Reduce motion turns on Calm), A11Y-002 (every spoken line also shown as words, ≥ 16 px), A11Y-003 (Simple
@@ -28,7 +29,7 @@ SAVE-001…003 (saves never lost, versioned, unknown parts dropped safely); PRIV
 press and hold).
 
 ## Checks you run
-`contract language phone a11y simple adventure firstplayer playhub iphone emoji names quiet welcomevoice ages`
+`contract language phone a11y simple adventure firstplayer playhub iphone emoji names quiet welcomevoice ages parents`
 A changed screen layout is re-recorded with `node run.mjs contract --update-contract`, only when the owner asked for it.
 
 ## Talks to
@@ -57,3 +58,16 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
   shop"); the backpack is the shop's last tab and still a Pad tab. Big kids at Medium or Hard get a gift chip under the
   name card (`chip.c-box`, recorded in `tests/ui-contract.json`) for mystery boxes, rankings and the collection book.
 - New drawings in `js/art.js` (round S): shoes, necklace, three medals, wind chime, pot plant, carp streamer.
+- Grown-ups' features (round S, owner plan 8 Oct; each a Studio switch in the 'kids' group):
+  - one new Grown-ups group, "Family: missions, week, bedtime" (`data-sec="family"`), before the note for grown-ups,
+    drawn by `G.parents.grownupsHTML` (ui.js only calls it);
+  - family missions: written there or in Studio → Family → Family missions (content pack `missions`); a new one is
+    shown once in a speech box (the family's words shown, a recorded line spoken); Pad → Adventures lists them first
+    with a 64 px ✓ that a grown-up holds (the press-and-hold gate); +10 coins and a sticker;
+  - weekly note: plain sentences per child from the play report's days; certificate card: a 1200 × 850 picture with
+    the stickers in the valley's drawings, "Save picture" through `js/photos.js` (no print window);
+  - dance break after 20 minutes of free play (six moves, 7 s each, family "kids" song first, 64 px Skip; still in
+    Calm mode); bedtime in AEST (10 min warning, the valley dims over 3 min, a lullaby on the Songs page with the
+    family's own lullaby first, a goodnight card after 6 min that a grown-up holds for 10 more minutes); a birthday
+    (month and day, `profile.birthday`, on this device; also in its backup file) with a cake keepsake, coins and a sticker.
+- Backpack (round S): "Village festival prizes" after the kite: tap a prize to carry it or put it away.

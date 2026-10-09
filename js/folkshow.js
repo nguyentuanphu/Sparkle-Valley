@@ -1,8 +1,9 @@
 // Village games time and village singers.
 // · In every village the folk-game hosts take turns putting on their game, one after another in a fixed order:
 //   friends run over and play with them for a while, then there is a short break before the next game.
-//   A board on a post shows what is on now and counts down to the next one. Paying a few coins starts the
-//   next game straight away. The clock is the real one, so friends playing together see the same time table.
+//   A board on a post shows what is on now and counts down to the next one. Every host game is free to play any time
+//   (round S, owner plan 8 Oct: the 3-coin skip is gone). The clock is the real one, so friends playing together see
+//   the same time table. The three big village festivals a day (Hội làng) are js/hoilang.js.
 // · Each village also has a singer on a little round stage: tap them and they sing a Vietnamese folk song
 //   (traditional songs, played on the game's own synthesiser, with the words shown in a bubble).
 //   Their names are in the villager list, so the grown-ups can rename them (Grown-ups, or Sparkle Studio).
@@ -10,8 +11,6 @@ import { THREE, P, merge, toonVC } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
 import { say } from './voice.js';
 import { SFX, Music, tone, noise, ac } from './audio.js';
-import { farm, saveFarm } from './state.js';
-import { fmt } from './money.js';
 import { dialog, folkGames } from './ui.js';
 import { dist2 } from './util.js';
 import { heightAt, roadDist, WATER, VILLAGE, TOWN, AUSSIE, MARKET, CHINA, INDIA, CITIES } from './world.js';
@@ -19,7 +18,6 @@ import { buildAvatar, nameAvatar } from './avatar.js';
 import { GAMES } from './games/frame.js';
 
 export const SLOT = 150, ON = 75; // a game every two and a half minutes; friends play it for the first 75 s
-export const PRICE = 3;            // coins to start the next game now
 // the village children in Lotus Village and at the playground (their talk opens the game)
 const KIDS = { npc_teo: 'oanquan', npc_ti: 'hopscotch', npc_bong: 'caro', npc_su: 'tug', npc_jack: 'mrwolf', npc_mit: 'chuyen', npc_bom: 'dragon', npc_ruby: 'marbles', npc_lan: 'skipping' };
 const gameOf = it => KIDS[it.id] || (/^g_/.test(it.id) ? it.id.slice(2) : /^pg_/.test(it.id) ? it.id.split('_')[1] : null);
@@ -140,21 +138,20 @@ export function createFolkShow(G, { looks = [] } = {}) {
     return into < ON ? { on: true, host: cur, left: ON - into, next } : { on: false, host: null, left: SLOT - into, next }; };
   G.folkState = S => state(S);
   const gname = h => GAMES[h.game].name();
+  // (round S, owner plan 8 Oct) every host game is free any time: the board offers the one on now, or any of the
+  // village's games straight away (the 3-coin "start it now" is gone)
   async function openBoard(h, S) {
     const st = state(S), n = S.hosts.length, order = S.hosts.map(o => gname(o)).join(' → ');
     const w = soon(st.left), line = st.on ? [`Now playing: ${gname(st.host)}! Come and join in!`, `Đang chơi: ${gname(st.host)}! Lại chơi cùng nhé!`]
-      : [`Next game: ${gname(st.next)}, ${w[0]}.`, `Trò tiếp theo: ${gname(st.next)}, ${w[1]}.`];
+      : [`Next game: ${gname(st.next)}, ${w[0]}. Every game here is free: play any of them now!`, `Trò tiếp theo: ${gname(st.next)}, ${w[1]}. Mọi trò ở đây đều miễn phí: chơi trò nào ngay cũng được!`];
     if (n > 1) { line[0] += ` Games here, in turn: ${order}.`; line[1] += ` Các trò ở đây, lần lượt: ${order}.`; }
-    const choices = [st.on ? ['▶ Join in now', '▶ Vào chơi ngay'] : [`⏩ Start it now (${fmt(PRICE)})`, `⏩ Bắt đầu ngay (${fmt(PRICE)})`], ['👋 Okay', '👋 Được rồi']];
+    const games = st.on ? [st.host, ...S.hosts.filter(o => o !== st.host)] : [st.next, ...S.hosts.filter(o => o !== st.next)];
+    const choices = [...games.slice(0, 4).map((o, k) => k === 0 && st.on ? ['▶ Join in now', '▶ Vào chơi ngay'] : ['▶ ' + gname(o), '▶ ' + gname(o)]), ['👋 Okay', '👋 Được rồi']];
     const k = await dialog(T('Games time', 'Giờ chơi') + ' · ' + S.where(), [line], choices);
-    if (k !== 0) return;
-    if (st.on) { G.playGame(h.i, st.host.game, 'folk'); return; }
-    if (farm.coins < PRICE) { SFX.no(); say(`That costs ${fmt(PRICE)}. Play a game to earn some money, or wait a little!`, `Cần ${fmt(PRICE)} con ơi. Chơi một trò để kiếm tiền, hoặc đợi một chút nhé!`); return; }
-    farm.coins -= PRICE; saveFarm(); SFX.coin();
-    S.off += st.left + .01; // jump the clock to the start of the next game
-    say(`Here we go: ${gname(st.next)}!`, `Bắt đầu nào: ${gname(st.next)}!`);
+    if (k < 0 || k >= Math.min(4, games.length)) return;
+    G.playGame(h.i, games[k].game, 'folk');
   }
-  G.folkStartNow = S => { const st = state(S); if (!st.on) S.off += st.left + .01; }; // for the tests
+  G.folkStartNow = S => { const st = state(S); if (!st.on) S.off += st.left + .01; }; // for the tests (moves the board's clock; nothing is paid)
 
   // ---- friends who come and play the game that is on: a few children dance round the host ----
   let crew = null; const ring = new THREE.Mesh(new THREE.RingGeometry(2.3, 2.6, 32), new THREE.MeshBasicMaterial({ color: '#ffd23f', transparent: true, opacity: .75, depthWrite: false }));
@@ -169,7 +166,7 @@ export function createFolkShow(G, { looks = [] } = {}) {
       const d = Math.min(...hs.map(h => dist2(h.pos.x, h.pos.z, S.x, S.z)));
       if (d < 90 && (redraw || !S.st)) { const st = state(S); S.st = st;
         S.board.draw('🎪 ' + T('Games time', 'Giờ chơi') + ' · ' + S.where(), st.on ? '▶ ' + T('Now: ', 'Đang chơi: ') + gname(st.host) : '⏳ ' + T('Next: ', 'Tiếp theo: ') + gname(st.next),
-          st.on ? T(`${mmss(st.left)} left · tap the board`, `còn ${mmss(st.left)} · chạm bảng`) : T(`in ${mmss(st.left)} · ${fmt(PRICE)} to start now`, `sau ${mmss(st.left)} · ${fmt(PRICE)} để chơi ngay`), st.on); }
+          st.on ? T(`${mmss(st.left)} left · tap the board`, `còn ${mmss(st.left)} · chạm bảng`) : T(`in ${mmss(st.left)} · free, play any time`, `sau ${mmss(st.left)} · miễn phí, chơi lúc nào cũng được`), st.on); }
       S.board.visible = d < 90;
       if (S.st && S.st.on && d < bd) { bd = d; best = S; }
     }

@@ -642,7 +642,11 @@ const medal = (f, n) => g('a-swing', `<path d="M15 4l9 15 9-15" stroke="#5fb6ff"
 add('🥇', medal('#ffc83a', 1)); add('🥈', medal('#c8d0da', 2)); add('🥉', medal('#d98a4a', 3));
 add('🎐', `<path d="M24 3v6" ${W}/>` + g('a-sway', `<path d="M13 20a11 11 0 0 1 22 0z" fill="#9fe0ff" ${W}/><path d="M24 20v8" ${W}/><rect x="19" y="28" width="10" height="15" rx="2" fill="#ff7eb8" ${W}/><path d="M22 33h4" stroke="#fff" stroke-width="2"/>`, '24px 9px'));
 add('🪴', `<path d="M13 30h22l-3 14H16z" fill="#e0805a" ${W}/><path d="M11 27h26v5H11z" fill="#f0a070" ${W}/>` + g('a-sway', `<path d="M24 27V14" ${W}/><path d="M24 20c-8 0-12-6-12-11 6 0 12 4 12 11zM24 16c6-1 10-6 10-10-6 0-10 4-10 10zM24 24c5 0 9-3 10-7-5-1-9 2-10 7z" fill="#5fd36a" ${W}/>`, '24px 27px'));
-add('🎏', `<path d="M8 4v42" ${W}/>` + g('a-flag', `<path d="M8 8c10-3 22-2 32 3l-5 4 5 4c-10 5-22 6-32 3z" fill="#e8434a" ${W}/>${circ(15, 15, 2.6, '#fff')}${dot(15, 15, 1.2)}<path d="M8 26c10-2 20-1 28 3l-4 4 4 4c-8 4-18 5-28 3z" fill="#5fb6ff" ${W}/>`, '8px 24px'));
+// (round S, owner plan 8 Oct) Hội làng's carp lantern, the surprises' treasure chest and fairy wand, the dance break's stretch
+add('🎏', `<path d="M10 4v40" ${W}/>` + g('a-sway', `<path d="M10 8c10-3 22 0 30 6-8 6-20 9-30 6z" fill="#ff5f7a" ${W}/><path d="M10 22c10-3 22 0 30 6-8 6-20 9-30 6z" fill="#5fb6ff" ${W}/>${dot(33, 13, 1.6)}${dot(33, 27, 1.6)}<path d="M18 11q3 3 0 6M18 25q3 3 0 6" ${W} ${N}/>`, '10px 24px'));
+add('🧰', `<rect x="6" y="20" width="36" height="20" rx="3" fill="#b06a32" ${W}/><path d="M6 20c0-8 8-12 18-12s18 4 18 12z" fill="#c97a3a" ${W}/><path d="M6 20h36M24 8v32" stroke="#ffd23f" stroke-width="4"/><rect x="20" y="18" width="8" height="8" rx="2" fill="#ffd23f" ${W}/>` + g('a-twinkle', sparkle(40, 8, 1), '40px 8px'));
+add('🪄', `<path d="M10 40L32 16" stroke="${O}" stroke-width="6" stroke-linecap="round"/><path d="M10 40L32 16" stroke="#8a5cf6" stroke-width="3" stroke-linecap="round"/>` + g('a-spin-slow', star5(35, 13, 9, '#ffd23f'), '35px 13px') + g('a-twinkle2', sparkle(14, 12, .9), '14px 12px'));
+add('🤸', g('a-wiggle', `${circ(13, 30, 5, '#c98a5a')}<path d="M17 27l10-8 10 6M27 19l-4-10M27 19l12-10" ${W} ${N}/><path d="M20 26l-8-8" ${W} ${N}/><path d="M23 16l8 6" stroke="#ff5f7a" stroke-width="7" stroke-linecap="round"/>`, '24px 30px'));
 
 // (an emoji with or without its invisible "picture style" mark finds the same drawing)
 const keyOf = e => e == null ? null : ART[e] ? e : ART[e + '\uFE0F'] ? e + '\uFE0F' : ART[String(e).replace(/\uFE0F/g, '')] ? String(e).replace(/\uFE0F/g, '') : null;

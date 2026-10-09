@@ -45,6 +45,10 @@ export async function start(page, mode = 'solo', screen = 'valley') {
   // skip the prologue
   for (let i = 0; i < 40; i++) { const sb = await page.$('.storybook'); if (!sb) break; await page.evaluate(() => { const b = document.querySelector('.storybook .sb-next, .storybook .next, .storybook button:last-of-type'); b && b.click(); }); await page.waitForTimeout(80); }
   await page.evaluate(() => { document.querySelectorAll('.storybook').forEach(e => e.remove()); window.__sv.paused = false; });
+  // (round S) the village festival (real clock), surprises (after 2.5 min of play) and the dance break (after 20 min) come
+  // by themselves: the checks start with them off, so they never land in another check; hoilang, surprises and parents
+  // switch them back on
+  await page.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), hoilang: false, surprises: false, danceBreak: false }; });
   await page.waitForTimeout(500);
 }
 // close story pages, dialogs and pop-ups that the world opens by itself
