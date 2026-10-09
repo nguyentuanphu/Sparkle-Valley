@@ -6,6 +6,9 @@
 // MAP_VERSION names the layout: 'C' is the valley as it was up to round S. A saved spot (profile.pos) is stamped with
 // it (profile.posMap), so a later layout knows the spot belongs to an older map (js/main.js migratePos).
 export const MAP_VERSION = 'C';
+// Is a saved spot, or the family's Studio content, made on this layout? Anything saved before round T has no stamp: it
+// belongs to map 'C'. (A spot or Studio edit from an older layout is never used at the wrong place: js/main.js, js/world.js.)
+export const onThisMap = stamp => (stamp || 'C') === MAP_VERSION;
 
 export const WORLD = {
   size: 400, north: '-z', water: 0,

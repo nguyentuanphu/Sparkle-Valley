@@ -252,8 +252,19 @@ Every stage ends with the full suite green, `node tests/world-audit.mjs` clean a
 - /home/user/sv-t/tests/world-audit.mjs
 - /home/user/sv-t/js/content/map.js (new)
 ## Progress (for the next chat to pick up)
-**10 Oct 2026, about 02:30 AEST: stage T0, steps 1 and 2 of 6.**
-- Done and committed: `js/content/map.js` (MAP_VERSION 'C', today's anchors, roads, bridges, landmarks, LEGACY.C).
-- In progress: `js/world.js` building its exports from `map.js` (also `js/roads.js`, `js/ferry.js`); check the last commit on this branch to see how far it got.
-- Still to do in T0: step 3 (rewrite the hard-coded positions in regions.js, vendors.js, cities.js, town.js, homes.js, hawkers.js, places.js, main.js, ui.js, solids.js, validate.js, heritage.js), step 4 (posMap stamp, MAP_VERSION in the cache signatures), step 5 (tests without coordinates, `tests/unit/map.test.mjs`), step 6 (the before/after comparison: same positions within 0.01 m, same screenshots; make the "before" pictures and position dump from `main` at r54 first).
-- Then: the regression set listed in T0, the full suite, and a report to the owner. T1 starts only after T0 is merged.
+**10 Oct 2026, about 08:00 AEST: stage T0, step 3 of 6 done (Release core chat, branch `round-t`, not pushed).**
+- Done and committed: step 1 (`js/content/map.js`), step 2 (`world.js`, `roads.js`, `ferry.js` from the map), step 3 (every
+  builder places its things from its place's anchor: regions, vendors, cities, town, homes with fixed ids, hawkers, places,
+  pets, yard, heritage, main, ui, solids, validate, traffic, gather, secrets, regionsites, vnfun; MAP_VERSION in the
+  solids and worldcache signatures).
+- The "before" reference from r54 (main) is outside the repo, in the chat's scratchpad: `ref/dump.mjs <url> <dir> [shots]`
+  dumps every position (and 17 screenshots at 1180x760); `ref/compare.py A B noise` compares two dumps. Steps 1-3 match r54:
+  the same ground at 40,401 spots, colliders, boxes, platforms, houses, interactables, landmarks, vendors, homes and
+  places, every still mesh within 0.01 m. A new chat must rebuild the reference (check out main at r54 into a folder and run
+  the dump there).
+- Found while checking the plan: also hard-coded were `traffic.js` (keep-left zone), `gather.js`, `secrets.js`, `pets.js`,
+  `regionsites.js` and `vnfun.js` (edge limits 185, an Uluru spot), `main.js` (title camera, ±190), and things by Ông Cú's
+  plateau written as plain numbers because the plateau is at 0,0: all now from the map.
+- Still to do in T0: step 4 (posMap stamp: a save without one counts as map 'C'; Studio parking wired, inactive for 'C'),
+  step 5 (tests without coordinates, `tests/unit/map.test.mjs`, the stray-coordinates check, perf `worldMs` and
+  `drawCallsHome`), step 6 (screenshots compared), then release r55 (bump, full suite, packages, report).
