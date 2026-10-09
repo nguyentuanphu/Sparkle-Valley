@@ -10,6 +10,7 @@ infrastructure notes.
 - `netlify.toml`, `manifest.webmanifest`, `sw.js` with Release (the VERSION line is Release's)
 - `docs/INFRASTRUCTURE.md`, `.github/workflows/` (including the Google Drive mirror waiting for the owner)
 - The analytics view's data shape (Studio draws it)
+- Shared helpers: `js/util.js` (passes on `js/core/`)
 
 ## Hard rules (§9.6)
 PRIV-001…005 (no addresses, GPS, photos or keys; a grown-up can switch analytics off: Grown-ups → Advanced →

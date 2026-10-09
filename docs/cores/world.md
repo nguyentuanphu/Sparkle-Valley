@@ -11,6 +11,7 @@ people, animals and vehicles standing in it, what is solid, and how fast it draw
 - Moving about: `js/player.js`, `js/input.js`, `js/solids.js`, the camera code in `js/main.js` (`cycleView`, `zoomBy`, its block)
 - Checks on the world: `js/validate.js`, `tests/world-audit.mjs`
 - The real landmarks' data: `js/realworld.js` `REAL` (where each landmark is); the photo viewer itself is Kid UI's
+- Traffic and wires: `js/traffic.js` (cars, buses and bikes on the roads), `js/powerlines.js`
 
 ## Hard rules (docs/ARCHITECTURE.md §9.3 to §9.5)
 WORLD-001…012, ROAD-001…013 (roads ≤ 8 % asphalt and 12 % dirt, smooth, junctions 60–120°, gates on road ends,

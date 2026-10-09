@@ -6,8 +6,9 @@ Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
 ## Release
-- Round O (r46) and Round P (r47) are on `round-o` / `round-p`, waiting for the owner's "yes, push" / "yes, deploy".
-- Round R plan (owner's answers, 8 Oct AEST): `docs/cores/ROUND-R.md`. Part 1 (festival calendar + Halloween) first, reported on its own.
+- Round R: r50 pushed to GitHub (9 Oct AEST), not deployed to Netlify yet. r51 (kid-play switches, hands-on story steps, the yard as a side story) on `round-r`, waiting for "yes, push" / "yes, deploy".
+- Halloween decorations start growing about three weeks before 31 Oct: they only reach players once a round is deployed.
+- Still to build from the Round R plan (`docs/cores/ROUND-R.md`, Part 2): items 2 to 12 (Concept D layout, child's journey, homes, surprises, shop and wardrobe, money games, the rest of the festival groups, Hội làng times, 5–8 challenges, parent features, voice pack by area); the owner's privacy decisions of 9 Oct; splitting the code into per-core folders (infrastructure round).
 - The Google Drive mirror (`.github/workflows/drive-mirror.yml`) is not set up yet: ask the owner at every report.
 
 ## World
