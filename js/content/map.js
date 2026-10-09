@@ -144,7 +144,7 @@ export const LEAFIES = [
   ['sparkle', 55, 125], ['rock', 30, 150], ['sparkle', 140, 140], ['rock', 150, 10], ['sparkle', 112, 30], ['rock', 120, -70], ['sparkle', 80, -80],
   ['rock', -10, -150], ['sparkle', -60, -140], ['rock', 50, -150], ['sparkle', -150, -32], ['rock', -150, 40], ['sparkle', 0, 60], ['rock', 70, 60],
   ['sparkle', -62, 152], ['rock', 170, -120], ['sparkle', 95, -15]
-].map(([kind, x, z], i) => ({ id: 'lf' + i, kind, at: [x, z] }));
+].map(([kind, x, z], i) => ({ id: 'lf' + i, kind, at: [x, z], ...(i === 7 ? { inWater: true } : {}) })); // (lf7 sparkles over the middle of the lake on purpose)
 
 // Where each landmark stands: its place and the offset from that place's anchor (js/regions.js, js/cities.js,
 // js/heritage.js). For the UNESCO sites it is only where to start looking for a clear spot (js/heritage.js).
