@@ -34,8 +34,8 @@ function swapText(node) {
     if (k === 'text' && s[m.index + e.length] === '︎') continue;
     if (k === 'none') { noArt.add(e); continue; }   // (no drawing yet: left as it is, and noted; never swapped for itself)
     frag.appendChild(document.createTextNode(s.slice(at, m.index))); at = m.index + e.length; changed = true;
-    if (k === 'flag') { const w = document.createElement('span'); w.className = 'flagi'; w.innerHTML = FLAGS[FLAG_OF[e]]; frag.appendChild(w); }
-    else if (k === 'art') { const w = document.createElement('span'); w.className = 'arti'; w.innerHTML = pic(e); frag.appendChild(w); }
+    if (k === 'flag') { const w = document.createElement('span'); w.className = 'flagi'; w.dataset.e = e; w.innerHTML = FLAGS[FLAG_OF[e]]; frag.appendChild(w); }
+    else if (k === 'art') { const w = document.createElement('span'); w.className = 'arti'; w.dataset.e = e; w.innerHTML = pic(e); frag.appendChild(w); } // (data-e: which picture it is, for checks)
     else if (k === 'text') frag.appendChild(document.createTextNode(e.replace(/️/g, '') + '︎'));
   }
   if (!changed) return;
