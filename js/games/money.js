@@ -5,13 +5,13 @@
 import { register, untilRight, choiceButtons, HINT_AFTER } from './frame.js';
 import { T } from '../i18n.js';
 import { settings } from '../state.js';
-import { fmtMinor, spokenMinor } from '../money.js';
+import { fmtMinor, spokenMinor, curCode } from '../money.js';
 import { pic } from '../art.js';
 import { shuffle, pick, el, wait } from '../util.js';
 import * as M from './moneylogic.js';
 
 // ---------- shared pieces ----------
-const home = () => M.CODES.includes(settings.currency) ? settings.currency : 'AUD';
+const home = () => M.CODES.includes(curCode()) ? curCode() : 'AUD';
 // 0 (youngest) … 4 (hardest): under-5s stay on the first two steps (owner: small numbers for little ones)
 const step = api => api.little ? Math.min(1, api.level - 1) : Math.min(4, Math.max(0, api.level - 1));
 const fmt = (v, code) => fmtMinor(v, code);

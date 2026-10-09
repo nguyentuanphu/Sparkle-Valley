@@ -66,7 +66,8 @@ setTimeout(writeMirror, 4000);
 
 export const settings = Object.assign({
   lang: 'en',            // 'en' | 'vi'
-  currency: 'AUD',       // 'AUD' | 'VND'
+  currency: 'AUD',       // 'AUD' | 'VND', used only when curPinned (otherwise it follows the language: js/money.js curCode)
+  curPinned: false,
   sound: true, music: true, voice: true,
   voiceEn: '', voiceVi: '',
   bilingual: false,      // speak the other language too, after a short pause

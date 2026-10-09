@@ -1232,6 +1232,25 @@ await check('parents', async () => {
   if (bad.length) throw new Error(bad.join('; '));
   return 'mission written, shown, ticked with a hold (+10); weekly note; certificate picture saved (no print); dance break with a 64 px Skip; bedtime dims, lullaby, goodnight, hold for 10 more; birthday surprise; switches off';
 });
+// (round S, owner 9 Oct) the money follows the language (Vietnamese: đồng, English: dollars) until a grown-up picks one
+await check('currency', async () => {
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const S = await import('/js/state.js'), M = await import('/js/money.js'), st = S.settings, out = {};
+    st.curPinned = false; st.lang = 'en'; out.en = M.curCode() + ' ' + M.fmtMinor(250);
+    st.lang = 'vi'; out.vi = M.curCode() + ' ' + M.fmtMinor(20000);
+    st.currency = 'AUD'; st.curPinned = true; out.pinned = M.curCode();
+    st.curPinned = false; st.lang = 'en';
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [];
+  if (r.en !== 'AUD $2.50') bad.push('English: ' + r.en);
+  if (r.vi !== 'VND 20.000đ') bad.push('Vietnamese: ' + r.vi);
+  if (r.pinned !== 'AUD') bad.push('a grown-up\'s pick did not stick: ' + r.pinned);
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return `English ${r.en}, Vietnamese ${r.vi}, a grown-up's AUD stays ${r.pinned} in Vietnamese`;
+});
 await check('camcalm', async () => {
   // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:
   // the camera never swings faster than a slow steady pace, and a jump doesn't jerk the picture up and down

@@ -82,6 +82,7 @@ import { codeHTML, bindCode, padHTML, boxHTML, animalSay } from './roomcode.js';
   if (D && typeof D === 'object' && settings.packDefaults !== sig) {
     const ok = { restMins: v => +v >= 0 && +v <= 120 && String(+v), lang: v => ['en', 'vi'].includes(v) && v, currency: v => ['AUD', 'VND'].includes(v) && v, bilingual: v => typeof v === 'boolean' && { v }, captions: v => typeof v === 'boolean' && { v }, calm: v => typeof v === 'boolean' && { v }, music: v => typeof v === 'boolean' && { v }, textSize: v => [0, 1, 2].includes(+v) && { v: +v } };
     for (const [k, f] of Object.entries(ok)) if (k in D) { const r = f(D[k]); if (r !== false && r != null) settings[k] = typeof r === 'object' ? r.v : r; }
+    if (['AUD', 'VND'].includes(D.currency)) settings.curPinned = true; // (round S) a family's own pick stops it following the language
     settings.packDefaults = sig; saveSettings();
   } }
 import { setupTrading, openTrade } from './trade.js';

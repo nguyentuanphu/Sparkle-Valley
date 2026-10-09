@@ -33,11 +33,14 @@ export const CUR = {
   }
 };
 
-export const cur = () => CUR[settings.currency] || CUR.AUD;
+// (round S, owner 9 Oct) the money follows the language (Vietnamese: đồng, English: Australian dollars) unless a
+// grown-up picked one in Grown-ups (settings.curPinned)
+export const curCode = () => settings.curPinned && CUR[settings.currency] ? settings.currency : (settings.lang === 'vi' ? 'VND' : 'AUD');
+export const cur = () => CUR[curCode()];
 export const toMinor = xu => xu * cur().perXu;
 
 // Format an amount in minor units (cents or đồng).
-export function fmtMinor(v, code = settings.currency) {
+export function fmtMinor(v, code = curCode()) {
   if (code === 'VND') return v.toLocaleString('vi-VN').replace(/,/g, '.') + 'đ';
   if (v < 100) return v + 'c';
   return '$' + (v % 100 ? (v / 100).toFixed(2) : String(v / 100));
@@ -45,7 +48,7 @@ export function fmtMinor(v, code = settings.currency) {
 export const fmt = xu => fmtMinor(toMinor(xu));
 
 // Words for the talking voice.
-export function spokenMinor(v, lang = settings.lang, code = settings.currency) {
+export function spokenMinor(v, lang = settings.lang, code = curCode()) {
   if (code === 'VND') {
     if (lang === 'vi') return v.toLocaleString('vi-VN').replace(/,/g, '.') + ' đồng';
     return v.toLocaleString('en-US') + ' dong';
