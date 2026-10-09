@@ -251,6 +251,33 @@ Every stage ends with the full suite green, `node tests/world-audit.mjs` clean a
 - /home/user/sv-t/tests/run.mjs
 - /home/user/sv-t/tests/world-audit.mjs
 - /home/user/sv-t/js/content/map.js (new)
+## 3b. The plan checked against the Concept D drawings (10 Oct AEST)
+The owner's approved map is the SVG in `docs/concept-d/index.html` ("Thung Lũng Hai Quê"). It is drawn on a 420 × 420 grid:
+metres = (drawing − 210) × 8/7 (480 m valley, centre 0,0, north up). `docs/cores/round-t/t1-vs-concept-d.png` shows it next
+to the T1 layout taken from it.
+
+Where the plan above differed from the drawing (the drawing wins):
+- The main river is one river from the northern mountains straight to the sea (x about 0 to +25), splitting only round a
+  small home island at about (9, −11); it does not end in a lake.
+- Hồ Gương (Mirror Lake) is a lake by Làng Sen, between the river and the Vietnam road, at about (103, −46), not in the south.
+- The ring road (drawn about 106 × 92 m round the island) carries the two island bridges; the roads to each bank leave it east
+  and west at the island's latitude (z about −11).
+- Vietnam road straight north–south at x about 153 (Hà Nội −135, Đà Nẵng 7, Hội An 91, TP. HCM 149); Bắc Ninh is north-east of
+  Hà Nội at about (215, −162); Làng Sen east of the road at about (192, −37); Chợ Ba Miền east of the road between Hội An and
+  TP. HCM. Australia road at x about −114 (Brisbane −137, Sydney −11 west of the road, Melbourne 126); Aussie Corner east of
+  the road between Brisbane and Sydney; Sydney Harbour between Sydney and the river.
+- Uluru stands west, about (−210, 59), beyond the Great Dividing Range (x about −178 to −142); a billabong at (−201, 9).
+- China Town about (107, −169) and India Village about (−94, −174), on the purple mountain road from Brisbane to Hà Nội over the
+  north, which crosses the river.
+- The Trường Sơn range stands between the river and the Vietnam road (x about 48 to 78); the road east from the island crosses
+  it (Hải Vân pass, T3).
+- Memory Villages: east (46..103, 64..103), west (−80..−23, 48..87): kept free from T1.
+
+Where the drawing and the written spec disagree (asked to the owner):
+- Bắc Ninh: the written list says Hà Nội, Bắc Ninh north to south; the drawing puts Bắc Ninh north-east of Hà Nội (real geography).
+- The island is drawn about 68 × 60 m, too small for Ông Cú's plateau, Phố Hai Quê and Sunny Farm (decisions 1 and 2).
+- Main roads are drawn 6.4 m wide ("Vietnam main road (6.4 m)"); the hard rule R1 / ROAD-001 says asphalt 5.2 m (T4).
+
 ## Progress (for the next chat to pick up)
 **10 Oct 2026, about 07:30 AEST: stage T0 built (steps 1 to 6), release r55 under test (Release core chat, branch `round-t`, not pushed).**
 - Step 1: `js/content/map.js` (MAP_VERSION 'C'). Step 2: `world.js`, `roads.js`, `ferry.js` from the map. Step 3: every builder
