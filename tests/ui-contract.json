@@ -3,6 +3,7 @@
   "simplesw",
   "chip.c-pet",
   "chip.c-goal",
+  "chip.c-box",
   "q-say",
   "q-go",
   "friendchip",

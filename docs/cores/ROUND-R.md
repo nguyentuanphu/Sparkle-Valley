@@ -62,6 +62,7 @@ Reported to the owner on its own, so Halloween can go live around 12–14 Oct.
    - Shop: hats and nón, necklaces, tops, bottoms, shoes and sandals, back items; about 2× the options for boys and girls.
    - Backpack button teleports to the shop.
    - Prices: about one day of play for a nice item.
+   - **Built (round S, 9 Oct, branch round-s-sa):** the clothes shop stall by Chợ Ba Miền (placed with `openSpot`, off the roads), the shop screen in the new shared big card (picture tabs, coin pictures and numbers, 64 px for under-5s), 50 things in six kinds balanced for girls and boys, prices from `DAY_COINS` (70 coins a day of play: 30, 70, 120), `profile.owned.clothes` (what a child already wore counts as owned), the wardrobe of owned things, every new piece drawn on the 3D character as one merged shape (`js/avatar.js`), two default outfits when making a character, the Bag button going to the shop. Files: `js/shop.js`, `js/content/shop.js`; Studio switch `shop`; check `shop`, unit tests `tests/unit/shop.test.mjs`. Details in `play.md`.
 7. **Money games (all, AUD or VND, game coins only):** Heo Đất, Coin or Note?, Need or Want?, Ba Hũ (Save/Spend/Share), Lì Xì Count, Bé Bán Hàng, Shopping List, Which Is Cheaper?, Wait and Grow, Đổi Hàng.
 8. **Festivals:** all four groups.
    - Vietnamese lunar days.
@@ -74,6 +75,7 @@ Reported to the owner on its own, so Halloween can go live around 12–14 Oct.
    - Rankings, family and friends only: stars and quests, collections, kindness, learning.
    - Collectibles: fairies, dragons, stickers, decorations.
    - Never real money.
+   - **Built (round S, 9 Oct, branch round-s-sa):** for big kids at Medium or Hard, a gift chip under the name card opens mystery boxes (one free a day by the AEST day, one more for a finished quest, at most one a day, never sold; a second one becomes stars), the family rankings (every child on this device; four boards) and the collection book (25 fairies, dragons, stickers and decorations). Files: `js/boxes.js`, `js/content/boxes.js`; Studio switches `mysteryBox`, `rankings`, `collectibles`; check `boxes`, unit tests `tests/unit/boxes.test.mjs`. Not yet: friends' numbers online (TODO in `play.md`), decorations placed in homes.
 11. **Parent features:** family missions (a grown-up ticks ✓), family voices recorded in Studio, a weekly note, cards to print, a dance break after 20 min, bedtime mode, an optional birthday (kept on the device only).
 12. **Voice pack:** own language only; a 5–8 MB core pack ships with the game; the rest downloads on Wi-Fi, area by area; name templating and a coverage check so no line is missed.
 

@@ -957,6 +957,124 @@ await check('kidplay', async () => {
   if (bad.length) throw new Error(bad.join('; '));
   return `fed once a day, grew to size ${r.level} with a trick, bought the party hat (100 → 70 coins), opened today's gift (+15), Skip on story films; every switch turns its part off`;
 });
+await check('shop', async () => {
+  // (round S, owner plan 8 Oct: Round R Part 2 item 6) the clothes shop stands by the market off the roads; the Bag button
+  // takes the child there; the big card has picture tabs and coin prices (≥ 64 px for under-5s); buying takes game coins
+  // and puts the thing on; the wardrobe shows what is owned; what a child already wore counts as owned; the 3D character
+  // draws every new piece with few extra parts; the Studio switch puts the old Bag and wardrobe back
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, w = t => new Promise(r => setTimeout(r, t)), S = await import('/js/state.js'), W = await import('/js/world.js');
+    const C = (await import('/js/custom.js')).CUSTOM, SH = await import('/js/content/shop.js'), { buildAvatar } = await import('/js/avatar.js');
+    const out = {}, sp = G.shop.spot, rd = W.roadDist(sp.x, sp.z), M = W.MARKET;
+    out.spot = [Math.round(sp.x), Math.round(sp.z)]; out.offRoad = !rd.road || rd.d > rd.road.w / 2 + 1.5;
+    out.nearMarket = Math.hypot(Math.max(M.x0 - sp.x, 0, sp.x - M.x1), Math.max(M.z0 - sp.z, 0, sp.z - M.z1)) < 40;
+    out.dry = W.heightAt(sp.x, sp.z) > W.WATER + .3; out.tap = !!G.interactables.find(i => i.id === 'shop_clothes');
+    // the Bag button: off to the shop, and the shop opens
+    p.age = 'big'; G.addCoins(500 - S.farm.coins); G.huds[0].root.querySelector('.dk.bag').click(); await w(3200);
+    out.there = Math.hypot(h.pos.x - G.shop.front.x, h.pos.z - G.shop.front.z) < 8; const card = document.querySelector('.modal.shopk .card');
+    out.opened = !!card; out.tabs = card ? card.querySelectorAll('.ktab').length : 0;
+    // (nothing to read: each thing is a drawing and a number; drawings carry no text)
+    out.pics = card ? [...card.querySelectorAll('.kitem')].every(b => b.querySelector('svg') && /^\d*$/.test(b.textContent.replace(/\s/g, ''))) : false;
+    out.small = card ? [...card.querySelectorAll('.ktab, .kitem, .x')].filter(b => { const q = b.getBoundingClientRect(); return q.width < 44 || q.height < 44; }).length : -1;
+    // buy the tiara (hats tab), and it is worn
+    card.querySelector('[data-tab="hat"]').click(); await w(150); card.querySelector('[data-id="tiara"]').click(); await w(150);
+    const price = SH.priceOf(SH.ITEM.tiara), c0 = S.farm.coins; card.querySelector('.kyes').click(); await w(300);
+    out.bought = SH.owns(p, 'tiara') && p.look.hat === 'tiara' && S.farm.coins === c0 - price;
+    // not enough coins: nothing is bought
+    G.addCoins(-S.farm.coins); card.querySelector('[data-tab="back"]').click(); await w(150); card.querySelector('[data-id="dragon"]').click(); await w(150); card.querySelector('.kyes').click(); await w(300);
+    out.poorKept = !SH.owns(p, 'dragon') && S.farm.coins === 0;
+    card.querySelector('.x').click(); await w(400); out.closed = !document.querySelector('.modal.shopk') && !G.paused;
+    // under-5s: every button at least 64 px
+    p.age = 'little'; G.shop.openShop(0); await w(400);
+    out.little = [...document.querySelectorAll('.modal.shopk.little .ktab, .modal.shopk.little .kitem')].filter(b => { const q = b.getBoundingClientRect(); return q.width < 64 || q.height < 64; }).length;
+    document.querySelector('.modal.shopk .x').click(); await w(400);
+    // the wardrobe: what is owned, worn with a tap
+    G.openWardrobe(0); await w(400); const wd = document.querySelector('.wardrobe.kward');
+    out.wardrobe = !!wd && wd.querySelectorAll('.wrow').length === 6 && !!wd.querySelector('[data-v="tiara"]') && !wd.querySelector('[data-v="dragon"]');
+    wd.querySelector('[data-k="hat"][data-v="none"]').click(); await w(200); out.off = p.look.hat === 'none';
+    document.querySelector('.wardrobe.kward .x').click(); await w(300);
+    // a child who already wore wings and a crown keeps them
+    const old = { look: { back: 'wings', hat: 'crown' }, owned: { hats: ['none'] } }; SH.adoptWorn(old); out.kept = SH.owns(old, 'wings') && SH.owns(old, 'crown');
+    // the 3D character: every new piece, a few extra parts only (each new piece is one merged shape)
+    const meshes = A => { let n = 0; A.root.traverse(o => { if (o.isMesh && !o.userData.outline) n++; }); return n; };
+    const base = { style: 'shirt', color: '#3b6fe0', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#f6c7a5' }, n0 = meshes(buildAvatar(base));
+    out.drawn = {}; for (const it of SH.CLOTHES) { const L = Object.assign({}, base, { [it.slot]: it.id }); out.drawn[it.id] = meshes(buildAvatar(L)) - n0; }
+    out.allDrawn = Object.entries(out.drawn).filter(([id, d]) => Math.abs(d) > 12 || (SH.ITEM[id].slot === 'neck' || SH.ITEM[id].slot === 'back') && d < 1).map(([id, d]) => id + ':' + d); // (a top can drop the old sleeves and shorts)
+    // the switch off: the Bag opens the backpack, the stall goes, the old wardrobe is back
+    C.features = C.features || {}; C.features.shop = false; await w(300);
+    G.huds[0].root.querySelector('.dk.bag').click(); await w(500); out.offBag = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk');
+    out.offStall = !G.shop.stall.visible; document.querySelector('.modal.pad .x')?.click(); await w(400);
+    G.openWardrobe(0); await w(300); out.offWard = !!document.querySelector('.wardrobe') && !document.querySelector('.wardrobe.kward'); document.querySelector('.wardrobe .x')?.click(); await w(300);
+    delete C.features.shop;
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [];
+  if (!r.offRoad || !r.nearMarket || !r.dry || !r.tap) bad.push('the shop is not by the market on dry ground off the road ' + JSON.stringify(r.spot));
+  if (!r.there || !r.opened) bad.push('the Bag button did not take the child to the shop');
+  if (r.tabs !== 8 || !r.pics || r.small) bad.push(`the shop card: ${r.tabs} tabs, pictures ${r.pics}, ${r.small} buttons under 44 px`);
+  if (!r.bought || !r.poorKept || !r.closed) bad.push('buying ' + JSON.stringify({ bought: r.bought, poor: r.poorKept, closed: r.closed }));
+  if (r.little) bad.push(`${r.little} buttons under 64 px for an under-5`);
+  if (!r.wardrobe || !r.off) bad.push('the wardrobe does not show what is owned');
+  if (!r.kept) bad.push('what a child already wore is not owned');
+  if (r.allDrawn.length) bad.push('3D pieces: ' + r.allDrawn.join(' '));
+  if (!r.offBag || !r.offStall || !r.offWard) bad.push('the Studio switch did not put the old Bag and wardrobe back ' + JSON.stringify(r));
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return `the shop at ${r.spot} by the market, off the road; the Bag button went there; 8 picture tabs, coin prices, 64 px for under-5s; bought the tiara, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
+});
+await check('boxes', async () => {
+  // (round S, owner plan 8 Oct: Round R Part 2 item 10) a big kid at Medium or Hard: one free mystery box a day, one more
+  // for a finished quest (at most one a day), a second one becomes stars; family rankings on four boards; the collection
+  // book; little ones and Easy get none, and each Studio switch turns its part off
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, w = t => new Promise(r => setTimeout(r, t)), S = await import('/js/state.js');
+    const C = (await import('/js/custom.js')).CUSTOM, X = await import('/js/content/boxes.js');
+    const out = {}, chip = () => G.huds[0].root.querySelector('.bxrow .c-box');
+    p.age = 'big'; p.difficulty = 'medium'; delete p.boxes; delete p.collect; await w(1000);
+    out.chip = !!chip() && !chip().parentNode.hidden && chip().classList.contains('ready');
+    // the hub, then today's free box
+    chip().click(); await w(400); out.hub = document.querySelectorAll('.modal.bxhub .khb').length;
+    document.querySelector('.modal.bxhub [data-go="box"]').click(); await w(600);
+    document.querySelector('.modal.bxopen .kbox').click(); await w(500);
+    out.prize = !!document.querySelector('.modal.bxopen .kprize'); out.got = Object.keys(p.collect).length; out.left = X.ready(p.boxes, X.aestDay());
+    document.querySelector('.modal.bxopen .x').click(); await w(400);
+    G.boxes.openBoxCard(0); await w(400); out.empty = !!document.querySelector('.modal.bxopen .kempty'); document.querySelector('.modal.bxopen .x').click(); await w(400);
+    // a finished quest: one box, only one a day
+    p.boxes.last = undefined; G.boxes.questDone(h, 0); G.boxes.questDone(h, 1); out.earned = p.boxes.waiting; G.boxes.questDone(h, 2); out.once = p.boxes.waiting;
+    // a second one becomes stars
+    const first = Object.keys(p.collect)[0], it = X.CBY[first], R = X.COLLECTIBLES, tot = R.reduce((a, c) => a + X.RARITY[c.rare].weight, 0);
+    let acc = 0, rand = 0; for (const c of R) { if (c.id === first) { rand = (acc + .5) / tot; break; } acc += X.RARITY[c.rare].weight; }
+    const s0 = p.boxes.stars, dup = X.openBox(p, X.aestDay(), rand); out.dup = !!dup && dup.dup && p.boxes.stars === s0 + X.RARITY[it.rare].stars;
+    // rankings: every child on this device, four boards
+    G.boxes.openRanks(0); await w(400); out.ranks = document.querySelectorAll('.modal.bxrank .kranks li').length === S.profiles.length; out.boards = document.querySelectorAll('.modal.bxrank .ktab').length;
+    document.querySelector('.modal.bxrank [data-b="learn"]').click(); await w(200); out.board2 = !!document.querySelector('.modal.bxrank .ktab.on[data-b="learn"]'); document.querySelector('.modal.bxrank .x').click(); await w(400);
+    // the book: what was found, and shadows for the rest
+    G.boxes.openBook(0, it.kind); await w(400); out.book = !!document.querySelector(`.modal.bxbook [data-c="${first}"].got`) && !!document.querySelector('.modal.bxbook .kcol.miss');
+    out.bookSmall = [...document.querySelectorAll('.modal.bxbook .kcol, .modal.bxbook .ktab')].filter(b => b.getBoundingClientRect().height < 44).length; document.querySelector('.modal.bxbook .x').click(); await w(400);
+    // Easy, or an under-5: none of it
+    p.difficulty = 'easy'; await w(900); out.easyHidden = chip().parentNode.hidden && !G.boxes.can(h); p.difficulty = 'hard';
+    p.age = 'little'; await w(900); out.littleHidden = chip().parentNode.hidden; p.age = 'big'; await w(900);
+    // the switches
+    C.features = C.features || {}; for (const id of ['mysteryBox', 'rankings', 'collectibles']) C.features[id] = false; await w(900);
+    out.offHidden = chip().parentNode.hidden; G.boxes.openHub(0); await w(300); out.offHub = !document.querySelector('.modal.bxhub');
+    for (const id of ['mysteryBox', 'rankings', 'collectibles']) delete C.features[id];
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [];
+  if (!r.chip || r.hub !== 3) bad.push(`the gift chip (${r.chip}) or the three picture buttons (${r.hub})`);
+  if (!r.prize || r.got !== 1 || r.left !== 0 || !r.empty) bad.push('the free box ' + JSON.stringify(r));
+  if (r.earned !== 1 || r.once !== 1) bad.push(`quest boxes: ${r.earned} then ${r.once} (one a day)`);
+  if (!r.dup) bad.push('a second one did not become stars');
+  if (!r.ranks || r.boards !== 4 || !r.board2) bad.push('the family rankings');
+  if (!r.book || r.bookSmall) bad.push('the collection book');
+  if (!r.easyHidden || !r.littleHidden) bad.push('Easy or an under-5 still sees the boxes');
+  if (!r.offHidden || !r.offHub) bad.push('the Studio switches did not turn it off');
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return 'a big kid at Medium: the free box opened (then none left today), one quest box a day, a second one became stars, the family on 4 boards, the book with shadows; Easy, under-5s and the switches hide it';
+});
 await check('camcalm', async () => {
   // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:
   // the camera never swings faster than a slow steady pace, and a jump doesn't jerk the picture up and down

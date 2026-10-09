@@ -12,6 +12,9 @@ album…), menus, settings and Grown-ups, pop-ups, icons and pictures, text size
 - Words: `js/i18n.js` (English and Vietnamese)
 - Children's profiles and settings: `js/state.js`
 - Looks: `css/style.css` (other cores keep their own blocks), `index.html`, `fonts/`, `icons/`
+- The shared big card (round S, CSS block "the shared big card" in `css/style.css`): `.modal.kcard`, round ✕, picture tabs
+  `.ktab`, coin prices `.kcoin` (a coin drawing and a number), 64 px and more for under-5s (`.kcard.little`); used by the
+  clothes shop and the mystery box, rankings and collection book screens (Play's `js/shop.js`, `js/boxes.js`)
 - Hands-on panels: `js/handpad.js` (tap, hold, pull and drag panels the stories use); no phone emoji: `js/emojiswap.js`
 
 ## Hard rules (§9.6)
@@ -47,3 +50,10 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
   file, caption, credit }`, the key is `photoKey(REAL[id][0])`); a place with none shows "the photos are on their way";
   the credit is shown as words, not a link. The real address (round H, map and street view inside the game) stays, behind
   the press-and-hold gate (`holdButton`, now in `js/popups.js`), with a line saying it opens Google.
+- Character making with the clothes shop on (round S, owner plan 8 Oct: "only 2 default outfits, boy and girl; hair is chosen at
+  creation or in Grown-ups, Children, Edit"): the Clothes row offers Girl and Boy; the colour, Hat and On-the-back rows are
+  hidden (they come from the shop). Hair, skin and the rest stay. The new wardrobe has no hair rows (hair is set in Edit).
+- The Bag button in the dock goes to the clothes shop when the shop switch is on (owner: "Backpack button teleports to the
+  shop"); the backpack is the shop's last tab and still a Pad tab. Big kids at Medium or Hard get a gift chip under the
+  name card (`chip.c-box`, recorded in `tests/ui-contract.json`) for mystery boxes, rankings and the collection book.
+- New drawings in `js/art.js` (round S): shoes, necklace, three medals, wind chime, pot plant, carp streamer.

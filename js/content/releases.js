@@ -21,6 +21,11 @@ export const RELEASES = [
   { id: 'shortTalk', en: 'Shorter speeches and a big Skip button on story films', vi: 'Lời nói ngắn hơn và nút Bỏ qua lớn trên phim truyện', group: 'kids', def: true },
   { id: 'dailySurprise', en: 'A surprise gift somewhere in the valley every day', vi: 'Mỗi ngày có một món quà bất ngờ trong thung lũng', group: 'kids', def: true },
   { id: 'saveGoal', en: 'A coin goal to save for (hats for the companion)', vi: 'Mục tiêu để dành tiền (mũ cho bạn đồng hành)', group: 'kids', def: true },
+  // (round S, owner plan 8 Oct: Round R Part 2 items 6 and 10) the clothes shop, and for 5 to 8 year olds at Medium or Hard
+  { id: 'shop', en: 'Clothes shop by the market and the wardrobe (two starting outfits; the Bag button goes to the shop)', vi: 'Cửa hàng quần áo cạnh chợ và tủ đồ (hai bộ đồ ban đầu; nút Ba lô đưa đến cửa hàng)', group: 'rewards', def: true },
+  { id: 'mysteryBox', en: 'Mystery boxes: one free a day and one for a finished quest (5 to 8, Medium or Hard)', vi: 'Hộp bí ẩn: mỗi ngày một hộp và thêm một hộp khi xong nhiệm vụ (5 đến 8 tuổi, Vừa hoặc Khó)', group: 'rewards', def: true },
+  { id: 'rankings', en: 'Family rankings: stars and quests, collections, kindness, learning (5 to 8, Medium or Hard)', vi: 'Bảng thành tích gia đình: sao và nhiệm vụ, bộ sưu tập, tốt bụng, học hỏi (5 đến 8 tuổi, Vừa hoặc Khó)', group: 'rewards', def: true },
+  { id: 'collectibles', en: 'Collection book: fairies, dragons, stickers, decorations (5 to 8, Medium or Hard)', vi: 'Sổ sưu tập: nàng tiên, rồng, hình dán, đồ trang trí (5 đến 8 tuổi, Vừa hoặc Khó)', group: 'rewards', def: true },
   ...FESTCAL.map(F => ({ id: 'fest_' + F.id, en: F.en, vi: F.vi, group: 'festivals', def: true, icon: F.icon }))
 ];
-export const RELEASE_GROUPS = { story: ['The lantern story', 'Truyện đèn lồng'], kids: ['For little ones', 'Cho các bé'], world: ['In the valley', 'Trong thung lũng'], festivals: ['Festivals', 'Lễ hội'] };
+export const RELEASE_GROUPS = { story: ['The lantern story', 'Truyện đèn lồng'], kids: ['For little ones', 'Cho các bé'], rewards: ['Shop and rewards', 'Cửa hàng và phần thưởng'], world: ['In the valley', 'Trong thung lũng'], festivals: ['Festivals', 'Lễ hội'] };

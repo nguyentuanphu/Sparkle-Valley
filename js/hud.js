@@ -82,7 +82,7 @@ export class Hud {
     this.q('.simplesw').onclick = () => { SFX.tap(); game.simple && game.simple.show(); };
     this.q('.pcard').onclick = () => game.openQuick(i);
     this.q('.dk.map').onclick = () => game.openPad(i, 'map');
-    this.q('.dk.bag').onclick = () => game.openPad(i, 'bag');
+    this.q('.dk.bag').onclick = () => game.openBag ? game.openBag(i) : game.openPad(i, 'bag'); // (round S, owner plan 8 Oct) the Bag goes to the clothes shop (js/shop.js)
     this.q('.dk.chat').onclick = () => this.toggleEmotes();
     this.q('.dk.voicecmd').hidden = !game.voiceControlOn();
     this.q('.dk.voicecmd').onclick = () => game.voiceCommand(i);
