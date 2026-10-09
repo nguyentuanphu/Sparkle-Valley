@@ -1,6 +1,8 @@
 {
  "hud": [
   "simplesw",
+  "chip.c-pet",
+  "chip.c-goal",
   "q-say",
   "q-go",
   "friendchip",
