@@ -15,7 +15,14 @@ const check = async (name, fn) => {
   if (!want(name)) return;
   const t0 = Date.now();
   try { const note = await fn(); results.push([name, true, note || '']); console.log(`✅ ${name} (${((Date.now() - t0) / 1000).toFixed(0)}s) ${note || ''}`); }
-  catch (e) { results.push([name, false, e.message]); console.log(`❌ ${name}: ${e.message}`); }
+  catch (e) {
+    results.push([name, false, e.message]); console.log(`❌ ${name}: ${e.message}`);
+    // a picture of what was on screen when it failed (out/fail-<check>.png)
+    try { const pg = b.contexts().flatMap(c => c.pages()).pop(); if (pg) await pg.screenshot({ path: `out/fail-${name}.png`, timeout: 10000 }); } catch (e2) { }
+  }
+  // (round R) close every window the check left open, passed or failed: a failed check's window kept drawing the valley
+  // and slowed every later check until they timed out
+  finally { for (const c of b.contexts()) await c.close().catch(() => { }); }
 };
 const ok = (c, msg) => { if (!c) throw new Error(msg); };
 fs.mkdirSync('out', { recursive: true });

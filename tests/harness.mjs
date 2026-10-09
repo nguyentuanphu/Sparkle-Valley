@@ -31,14 +31,15 @@ export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'so
 // screen: which start screen the children chose (js/simple.js); the checks walk the valley unless they say 'simple'
 export async function start(page, mode = 'solo', screen = 'valley') {
   await page.waitForSelector('.screen.title', { timeout: 90000 });
-  await page.click('.screen.title .press', { force: true });
-  await page.waitForSelector('.screen.who');
-  if (mode !== 'solo') await page.click(`.modes button[data-m=${mode}]`);
-  await page.locator('.pick[data-id]').nth(0).click(); if (mode === 'split') await page.locator('.pick[data-id]').nth(1).click();
+  // (90 s like the title wait: with three software-drawn windows open, each frame takes half a second and a tap waits for one)
+  await page.click('.screen.title .press', { force: true, timeout: 90000 });
+  await page.waitForSelector('.screen.who', { timeout: 90000 });
+  if (mode !== 'solo') await page.click(`.modes button[data-m=${mode}]`, { timeout: 90000 });
+  await page.locator('.pick[data-id]').nth(0).click({ timeout: 90000 }); if (mode === 'split') await page.locator('.pick[data-id]').nth(1).click({ timeout: 90000 });
   if (screen) await page.evaluate(async scr => { const S = await import('/js/state.js'); S.profiles.forEach(p => { p.screen = scr; }); }, screen);
   // (round R) Ông Cú's prologue film starts by itself for a new child; the checks start without it unless they ask
   await page.evaluate(() => { if (window.__sv) window.__sv._owlAuto = true; });
-  await page.click('.who .go');
+  await page.click('.who .go', { timeout: 90000 });
   await page.waitForFunction(() => window.__sv && window.__sv.heroes.length > 0);
   // skip the prologue
   for (let i = 0; i < 40; i++) { const sb = await page.$('.storybook'); if (!sb) break; await page.evaluate(() => { const b = document.querySelector('.storybook .sb-next, .storybook .next, .storybook button:last-of-type'); b && b.click(); }); await page.waitForTimeout(80); }
