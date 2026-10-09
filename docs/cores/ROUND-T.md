@@ -252,7 +252,7 @@ Every stage ends with the full suite green, `node tests/world-audit.mjs` clean a
 - /home/user/sv-t/tests/world-audit.mjs
 - /home/user/sv-t/js/content/map.js (new)
 ## Progress (for the next chat to pick up)
-**10 Oct 2026, about 10:30 AEST: stage T0 built (steps 1 to 6), release r55 under test (Release core chat, branch `round-t`, not pushed).**
+**10 Oct 2026, about 07:30 AEST: stage T0 built (steps 1 to 6), release r55 under test (Release core chat, branch `round-t`, not pushed).**
 - Step 1: `js/content/map.js` (MAP_VERSION 'C'). Step 2: `world.js`, `roads.js`, `ferry.js` from the map. Step 3: every builder
   places its things from its place's anchor (regions, vendors, cities, town, homes with fixed ids, hawkers, places, pets, yard,
   heritage, main, ui, solids, validate, traffic, gather, secrets, regionsites, vnfun); MAP_VERSION in the solids and
