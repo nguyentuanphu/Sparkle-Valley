@@ -9,7 +9,8 @@ import { SFX, Music, ac } from './audio.js';
 import { fmt, cur, spoken as money } from './money.js';
 import { el, esc, $, clamp, wait, local } from './util.js';
 import { avatarURL, applyNpcFaces } from './avatar.js';
-import { confetti } from './popups.js';
+import { confetti, holdButton } from './popups.js';
+export { holdButton }; // (round R privacy, 9 Oct) moved to popups.js so the real-place window can ask a grown-up too
 import { placeBookHTML, bindPlaceBook } from './placebook.js';
 import { familyCardsHTML, bindFamilyCards } from './familycards.js';
 import { openReport } from './report.js';
@@ -25,7 +26,7 @@ import { openHowTo } from './howto.js';
 import { WILD } from './gather.js';
 import { snackOf, eatSnack } from './snacks.js';
 import { saveToDevice, savesByShare } from './photos.js';
-import { extrasHTML, bindExtras } from './extras.js';
+import { extrasHTML, bindExtras, privacyHTML } from './extras.js';
 import { canListen } from './listen.js';
 import { installButton } from './install.js';
 import { BUILD } from './build.js';
@@ -155,16 +156,6 @@ export function showWho(onGo) {
   };
   draw();
 }
-export function holdButton(b, fn) {
-  let t = null, start = 0, raf = 0;
-  const ring = b.querySelector('.ring');
-  const tick = () => { const k = clamp((performance.now() - start) / 1600, 0, 1); ring.style.setProperty('--p', k * 100 + '%'); if (k >= 1) { stop(); fn(); } else raf = requestAnimationFrame(tick); };
-  const stop = () => { cancelAnimationFrame(raf); ring.style.setProperty('--p', '0%'); t = null; };
-  b.addEventListener('pointerdown', e => { e.preventDefault(); start = performance.now(); t = 1; tick(); });
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => b.addEventListener(k, () => { if (t) stop(); }));
-  b.addEventListener('keydown', e => { if (e.key === 'Enter') fn(); });
-}
-
 // ---------- Rename characters ----------
 function openRenamer(after) {
   const m = modal('renamer', ''), card = m.querySelector('.card');
@@ -273,6 +264,7 @@ export function openGrownups(after) {
       <button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
       <h2>${T('Grown-ups', 'Phụ huynh')} <small class="buildtag">${T('Build', 'Bản')} ${BUILD}</small></h2>
       <div class="g-install"></div>
+      ${privacyHTML()}
       <h3>${T('Language', 'Ngôn ngữ')}</h3>${flagBtns()}${learnBtns()}
       <label class="tog"><input type="checkbox" id="gBil" ${settings.bilingual ? 'checked' : ''}> ${T('Bilingual voice: also say everything in the other language', 'Giọng song ngữ: nói thêm bằng ngôn ngữ còn lại')}</label>
             <details class="gsec" data-sec="players" ${gOpen.has('players') ? 'open' : ''}><summary><span class="gi">👧</span><b>${T('Children', 'Các con')}</b></summary><div class="gbody">

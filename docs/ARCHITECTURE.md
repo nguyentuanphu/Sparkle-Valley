@@ -571,7 +571,7 @@ The template is the same for every system. Fields marked "—" mean none.
 
 ### 8.15 `voice` / `audio`
 - **voice:**
-  - which recording or voice speaks a `Text`: family recording → pack → cloud → device (VOICE-001);
+  - which recording or voice speaks a `Text`: family recording → pack → device (VOICE-001; no online voice on the device, PRIV-010);
   - misses noted;
   - speech recognition intents;
   - interface: `say(Text, {speaker})`, `sayAsync`, `hush()`, `diag()`.
@@ -729,6 +729,8 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | PRIV-006 | Online play is off until a grown-up turns it on (Grown-ups → Playing online, behind press and hold); while off the game makes no online connection of any kind (no PeerJS, no cloud relay, no friends' status or invitations) and the Friends tab says so with no Start or Join (owner, round R privacy, 9 Oct) | BLOCKER | check `onlineoff` |
 | PRIV-007 | The cloud relay's room-code channel carries only knocks and the starter's answers, each locked for the one who knocked; all room traffic goes on a channel made from a random room secret handed, locked, only to players let in (a new secret when someone is removed); a guest meets only players the starter introduces; the starter's words (door, admit, full, nope, kick, members, rekey) are believed only with the starter's key (round R privacy, 9 Oct) | BLOCKER | check `knock`, `cloud` + review |
 | PRIV-008 | Friends' status says only "playing now" and a token made fresh each session; names, places and room codes go only inside notes and invitations locked for one saved friend with the key saved when they played together (＋👫) (round R privacy, 9 Oct) | BLOCKER | check `meet`, `cloud` + review |
+| PRIV-010 | Voices are made in Studio only (owner, 9 Oct): the child's device never calls an online speech service, keeps no voice key (an old `ttsKey` is deleted on load and from a restored backup) and never copies (clones) anyone's voice; a line with no recording uses the device voice and is noted as missing for Studio | BLOCKER | check `voice` + review |
+| PRIV-011 | Landmark photos come only from the game's own site (owner, 9 Oct): the files listed in `photos/index.json`, inside `photos/`; the game never asks Wikipedia or Wikimedia (only Studio and `tools/fetch-landmark-photos.mjs` do); Google's map and street view of a real place open only after a grown-up's press and hold | BLOCKER | check `realphotos` (+ `together`) |
 | PERF-001 | First playable ≤ 8 s on a mid phone over 4G: ≤ 8 MB downloaded before the title screen; slow start-up work is kept on the device by build (`js/worldcache.js`: the map picture) | MAJOR | check `perf` (download, start-up times `G.bootTimes`, map picture read back) |
 | PERF-002 | ≥ 30 fps at quality Auto | MAJOR | real devices (the test browser draws in software) |
 | PERF-003 | < 250 draw calls and < 300k triangles a frame in a village (today about 1,000–1,400 and 0.6–0.75 M in Lotus Village: a ratchet that may only go down) | MAJOR | check `perf` |
@@ -853,7 +855,7 @@ Metrics are from the r37 measurement (§1.1). No module is dead code, so nothing
 
 | Module | Class | Why |
 |---|---|---|
-| `js/voice.js` | REFACTOR | Keep the behaviour (VOICE-001, fixed in round 30). Split pack, family, cloud and device providers behind `voice.say`; diagnostics stay |
+| `js/voice.js` | REFACTOR | Keep the behaviour (VOICE-001, fixed in round 30). Split pack, family and device providers behind `voice.say` (no cloud provider on the device: PRIV-010); diagnostics stay |
 | `js/audio.js` | KEEP | Web Audio graph, unlock (L4) |
 | `js/recorder.js`, `js/listen.js`, `js/commands.js` | KEEP | Family recording; speech recognition; voice intents (`commands` → emits intents, not `G` calls) |
 | `js/net.js`, `js/relay.js` | REFACTOR | Keep the transport. Add one message-schema module (types, size and rate limits, validation, PRIV-003) and emit events instead of calling `G` |
