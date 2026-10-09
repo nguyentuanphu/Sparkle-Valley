@@ -957,6 +957,163 @@ await check('kidplay', async () => {
   if (bad.length) throw new Error(bad.join('; '));
   return `fed once a day, grew to size ${r.level} with a trick, bought the party hat (100 → 70 coins), opened today's gift (+15), Skip on story films; every switch turns its part off`;
 });
+// (round S, owner plan 8 Oct) Hội làng: every host game free (no 3-coin skip), three events a day on the AEST clock
+// (17:30 for under-5s), the parade and the crowd at the nearest village, late arrivals told, the prize like the kite
+await check('hoilang', async () => {
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, w = t => new Promise(r => setTimeout(r, t)), C = (await import('/js/custom.js')).CUSTOM, S = await import('/js/state.js');
+    delete C.features.hoilang; const realNow = Date.now, at = s => { const ms = Date.parse(s + ':00+10:00'); Date.now = () => ms; };
+    const out = {}, txt = () => [...document.querySelectorAll('.dialog')].map(d => d.textContent).join(' ');
+    // the games board: free, no price, a game opens and no coins go
+    const board = G.interactables.find(i => /^fs\d+$/.test(i.id)), c0 = S.farm.coins;
+    board.act(h); await w(500); out.boardChoices = [...document.querySelectorAll('.dialog .dch')].map(b => b.textContent).join('|');
+    document.querySelector('.dialog .dch').click(); await w(900); out.boardGame = !!document.querySelector('.gl'); out.boardCoins = S.farm.coins - c0;
+    document.querySelector('.gl .gl-x')?.click(); await w(700); document.querySelectorAll('.dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false;
+    // 09:02 AEST at the first village: the festival is on there
+    const F = G.hoilang.fests[0]; out.fests = G.hoilang.fests.length;
+    h.pos.set(F.x + 3, h.pos.y, F.z + 3); h.pos.y = (await import('/js/world.js')).heightAt(h.pos.x, h.pos.z) + .1;
+    at('2026-10-10T09:02'); await w(2500);
+    out.on = G.hoilang.clock().on; out.active = G.hoilang.active() === F;
+    out.walkers = (G.hoilang.walkers() || []).filter(A => A.root.visible).length; out.crowd = (G.hoilang.crowd() || []).filter(A => A.root.visible).length;
+    out.toast = document.querySelector('.hud .htoast')?.textContent || '';
+    // an under-5 joins: playing the festival game (even left early) gives the first prize, once
+    p.age = 'little'; p.hoilang = {}; G.hoilang.openFest(h, F); await w(500); document.querySelector('.dialog .dch').click(); await w(1200);
+    out.joinGame = !!document.querySelector('.gl'); document.querySelector('.gl .gl-x')?.click(); await w(4500);
+    out.prizes = (p.hoilang.prizes || []).join(','); out.keepsake = (p.keepsakes || []).includes('hl_drum'); out.carry = p.hoilang.carry;
+    document.querySelectorAll('.dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false;
+    G.hoilang.openFest(h, F); await w(500); out.already = /prize from this festival|quà của hội này/.test(txt()); document.querySelectorAll('.dialog').forEach(e => e.remove());
+    // a big kid who leaves without winning gets nothing (16:02)
+    p.age = 'big'; at('2026-10-10T16:02'); G.hoilang.openFest(h, F); await w(500); document.querySelector('.dialog .dch')?.click(); await w(1200); document.querySelector('.gl .gl-x')?.click(); await w(4500);
+    out.bigPrizes = (p.hoilang.prizes || []).length; document.querySelectorAll('.dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false;
+    // the evening one: 17:30 for under-5s, 19:00 for big kids
+    at('2026-10-10T17:40'); out.bigAt1740 = G.hoilang.clock().on; p.age = 'little'; out.littleAt1740 = G.hoilang.clock().on;
+    // too late: told when the next one is
+    at('2026-10-10T09:20'); G.hoilang.openFest(h, F); await w(500); out.next = /16:00/.test(txt()); document.querySelectorAll('.dialog').forEach(e => e.remove()); G.paused = false;
+    // the Backpack: carry the prize or put it away, like the kite
+    G.openPad(0, 'bag'); await w(600); const slot = document.querySelector('.pad [data-hlcarry]'); out.bag = !!slot; slot?.click(); await w(300); out.putAway = p.hoilang.carryOn === false;
+    document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false;
+    // the Studio switch
+    at('2026-10-10T09:02'); C.features.hoilang = false; await w(1500);
+    out.offPole = !G.interactables.find(i => i.id === 'hoilang' + F.k).visible(); out.offParade = !(G.hoilang.walkers() || []).some(A => A.root.visible);
+    Date.now = realNow; return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [];
+  if (/\$|coin/i.test(r.boardChoices) || !r.boardGame || r.boardCoins !== 0) bad.push('the games board is not free: ' + JSON.stringify([r.boardChoices, r.boardGame, r.boardCoins]));
+  if (!r.on || !r.active || r.walkers !== 4 || r.crowd !== 5) bad.push('no parade and crowd at 09:02 ' + JSON.stringify(r));
+  if (!/festival|Hội làng/.test(r.toast)) bad.push('the child was not told the festival is on: ' + r.toast);
+  if (!r.joinGame || r.prizes !== 'drum' || !r.keepsake || r.carry !== 'drum') bad.push('joining did not give the prize ' + JSON.stringify(r));
+  if (!r.already) bad.push('a second prize at the same festival');
+  if (r.bigPrizes !== 1) bad.push('a big kid got a prize without winning');
+  if (r.bigAt1740 || !r.littleAt1740) bad.push('the evening festival is not 17:30 for under-5s and 19:00 for big kids');
+  if (!r.next) bad.push('a late child was not told the next time');
+  if (!r.bag || !r.putAway) bad.push('the prize is not in the Backpack to carry or put away');
+  if (!r.offPole || !r.offParade) bad.push('the Studio switch does not turn it off');
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return `${r.fests} villages; games board free; 09:00 parade (4) and crowd (5); under-5 prize for joining, once; big kid needs a win; 17:30/19:00; next time told; carried like the kite; switch off`;
+});
+// (round S) surprises: at most 3 a session, only when free, never missed (they follow the child), each gives a sticker
+// or a keepsake, calm mode keeps them still
+await check('surprises', async () => {
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, w = t => new Promise(r => setTimeout(r, t)), C = (await import('/js/custom.js')).CUSTOM, S = await import('/js/state.js'), Sp = G.surprises;
+    const { SURPRISES } = await import('/js/content/surprises.js'), { heightAt } = await import('/js/world.js');
+    delete C.features.surprises; const out = { bad: [] }, near = c => Math.hypot(c.x - h.pos.x, c.z - h.pos.z);
+    const tidy = () => { document.querySelectorAll('.dialog, .modal, .reward').forEach(e => e.remove()); G.paused = false; };
+    // not while a window is open
+    Sp.reset(); Sp.setPlay(1000); const m = document.createElement('div'); m.className = 'modal'; document.body.appendChild(m); await w(2500); out.whileBusy = !!Sp.current(); m.remove();
+    // the limit: found as soon as each comes, at most 3
+    let n = 0; for (let k = 0; k < 6; k++) { Sp.setPlay(1000 + k * 400); await w(1600); const c = Sp.current(); if (c) { n++; if (near(c) > 16 && c.id !== 'lotus') out.bad.push(c.id + ' far ' + near(c).toFixed(0)); await Sp.found(h); tidy(); } }
+    out.count = n; out.shown = Sp.state().shown;
+    // every kind: placed, then found for its sticker or keepsake
+    for (const s of SURPRISES) {
+      Sp.reset(); const st0 = p.stickers.length, k0 = (p.keepsakes || []).length; if (s.id === 'chest') { p.surprises = { ...(p.surprises || {}), map: 3 }; }
+      const c = Sp.place(s.id, h); if (!c) { out.bad.push('could not place ' + s.id); continue; }
+      if (s.id === 'butterfly') { for (let k = 0; k < 3; k++) { h.pos.x = c.x; h.pos.z = c.z; h.pos.y = heightAt(c.x, c.z) + .1; await w(4500); } out.landed = c.hop >= 3 && c.it.visible(h); }
+      if (!c.it.visible(h)) { out.bad.push(s.id + ' not tappable'); continue; }
+      c.it.act(h); await w(400); tidy();
+      const gave = p.stickers.length > st0 || (p.keepsakes || []).length > k0 || s.id === 'map' || p.stickers.length === G.STICKERS.length;
+      if (!gave) out.bad.push(s.id + ' gave nothing'); if (Sp.current()) out.bad.push(s.id + ' still out after found');
+    }
+    out.mapPieces = p.surprises.map;
+    // never missed: walk far away and it comes back near the child
+    Sp.reset(); const c = Sp.place('butterfly', h); h.pos.x += 60; h.pos.y = heightAt(h.pos.x, h.pos.z) + .1; await w(5000); const c2 = Sp.current(); out.followed = !!c2 && near(c2) < 16;
+    // calm: one slow shooting star
+    S.settings.calm = true; Sp.reset(); const cs = Sp.place('stars', h); out.calmStreaks = cs ? cs.streaks.length : -1; S.settings.calm = false;
+    // the Studio switch
+    C.features.surprises = false; await w(1500); out.off = !Sp.current();
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [...r.bad];
+  if (r.whileBusy) bad.push('a surprise came while a window was open');
+  if (r.count !== 3 || r.shown !== 3) bad.push(`not 3 a session: ${r.count}/${r.shown}`);
+  if (!r.landed) bad.push('the golden butterfly did not fly on three times and land');
+  if (!r.followed) bad.push('a surprise left behind did not come back to the child');
+  if (r.calmStreaks !== 1) bad.push('calm mode: ' + r.calmStreaks + ' shooting stars');
+  if (!r.off) bad.push('the Studio switch does not take it away');
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return `3 a session, none while busy; all ${10} kinds give a sticker or keepsake (map piece ${r.mapPieces}/3, chest); the butterfly lands after 3 hops; follows the child; calm: one star; switch off`;
+});
+// (round S) for grown-ups: a family mission written in Grown-ups, shown to the child, ticked with a press-and-hold;
+// the weekly note; the certificate card saved as a picture (no print); the dance break and its Skip; bedtime (dim,
+// lullaby, goodnight, hold for 10 more minutes); the birthday surprise; the switches
+await check('parents', async () => {
+  const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, w = t => new Promise(r => setTimeout(r, t)), C = (await import('/js/custom.js')).CUSTOM, S = await import('/js/state.js');
+    const out = {}, tidy = () => { document.querySelectorAll('.dialog, .modal, .reward, .songs').forEach(e => e.remove()); document.body.classList.remove('songs-on'); G.paused = false; };
+    const hold = async b => { const r = b.getBoundingClientRect(), o = { bubbles: true, clientX: r.x + 5, clientY: r.y + 5, pointerId: 3 }; b.dispatchEvent(new PointerEvent('pointerdown', o)); await w(2000); b.dispatchEvent(new PointerEvent('pointerup', o)); };
+    S.settings.missions = []; S.settings.bedtime = ''; p.stats.days = { [new Date().toISOString().slice(0, 10)]: { min: 30, games: 4 } };
+    // Grown-ups: write a mission; the weekly note and the cards are there
+    const { openGrownups } = await import('/js/ui.js'); openGrownups(); await w(500);
+    const g = document.querySelector('.modal.grownups'); g.querySelector('details[data-sec=family]').open = true;
+    g.querySelector('#fmEn').value = 'Help set the table'; g.querySelector('#fmVi').value = 'Giúp dọn bàn ăn'; g.querySelector('#fmAdd').click(); await w(400);
+    const g2 = document.querySelector('.modal.grownups'); out.listed = /Help set the table/.test(g2.textContent); out.note = !!g2.querySelector('.wknote p'); out.certBtn = !!g2.querySelector('[data-cert]');
+    tidy(); await w(6000);
+    // the child is told (a speech box with the family's words)
+    out.told = [...document.querySelectorAll('.dialog')].some(d => /Help set the table/.test(d.textContent)); tidy();
+    // Adventures: a grown-up holds ✓
+    const c0 = S.farm.coins; G.openPad(0, 'log'); await w(600); const t = document.querySelector('.pad .missions [data-mtick]'); out.mtick = t ? Math.round(t.getBoundingClientRect().width) : 0;
+    if (t) await hold(t); await w(500); out.coins = S.farm.coins - c0; out.open = G.parents.openFor(p).length; tidy();
+    // the certificate card: a picture, saved without a print window
+    let printed = false; const pr = window.print; window.print = () => { printed = true; };
+    const url = await G.parents.certificate(p); out.cert = url.startsWith('data:image/png') && url.length > 20000;
+    await G.parents.openCertificate(p); out.saveBtn = !!document.querySelector('.certcard [data-save]'); out.printed = printed; window.print = pr; tidy();
+    // the dance break after 20 minutes of play, with a big Skip
+    delete C.features.danceBreak; G.parents.setPlayMin(21); await w(6500);
+    const sk = document.querySelector('.dancebreak .db-skip'); out.dance = !!sk; out.skipH = sk ? Math.round(sk.getBoundingClientRect().height) : 0; sk?.click(); await w(300);
+    out.danceGone = !document.querySelector('.dancebreak') && !G.paused;
+    // bedtime 19:30 AEST: at 19:31 the valley dims and a lullaby plays; at 19:40 goodnight; hold for 10 more minutes
+    const realNow = Date.now, at = s => { const ms = Date.parse(s + ':00+10:00'); Date.now = () => ms; };
+    S.settings.bedtime = '19:30'; at('2026-10-10T19:31'); await w(9000); out.dim = !!document.querySelector('.bedtime-dim'); out.lullaby = !!document.querySelector('.songs');
+    at('2026-10-10T19:40'); await w(6000); const gn = document.querySelector('.resttime.bedtime'); out.goodnight = !!gn;
+    if (gn) await hold(gn.querySelector('.grownup')); await w(300); out.snoozed = !document.querySelector('.resttime.bedtime') && S.settings.bedSnooze > realNow();
+    S.settings.bedtime = ''; S.settings.bedSnooze = 0; tidy(); document.querySelector('.bedtime-dim')?.remove();
+    // the birthday: on the day (AEST), a surprise and a keepsake, once
+    at('2026-10-10T10:00'); p.birthday = '10-10'; delete p.bdayDone; await w(6500); out.bday = !!document.querySelector('.reward') && (p.keepsakes || []).includes('bd_cake'); tidy();
+    Date.now = realNow;
+    // the switches
+    C.features.familyMissions = false; out.offMissions = G.parents.logHTML(p) === '' && !G.parents.openFor(p).length;
+    for (const id of ['familyMissions', 'weeklyNote', 'certCard', 'danceBreak', 'bedtime', 'birthday']) C.features[id] = false;
+    out.offGrownups = G.parents.grownupsHTML(true) === '';
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close(); const bad = [];
+  if (!r.listed || !r.note || !r.certBtn) bad.push('Grown-ups: mission, weekly note or card missing ' + JSON.stringify(r));
+  if (!r.told) bad.push('the child was not shown the new mission');
+  if (r.mtick < 64 || r.coins !== 10 || r.open !== 0) bad.push('holding ✓ did not finish the mission ' + JSON.stringify([r.mtick, r.coins, r.open]));
+  if (!r.cert || !r.saveBtn || r.printed) bad.push('the certificate card ' + JSON.stringify([r.cert, r.saveBtn, r.printed]));
+  if (!r.dance || r.skipH < 64 || !r.danceGone) bad.push('the dance break ' + JSON.stringify([r.dance, r.skipH, r.danceGone]));
+  if (!r.dim || !r.lullaby || !r.goodnight || !r.snoozed) bad.push('bedtime ' + JSON.stringify([r.dim, r.lullaby, r.goodnight, r.snoozed]));
+  if (!r.bday) bad.push('no birthday surprise');
+  if (!r.offMissions || !r.offGrownups) bad.push('the Studio switches do not turn them off');
+  if (errs.length) bad.push(...errs.slice(0, 2));
+  if (bad.length) throw new Error(bad.join('; '));
+  return 'mission written, shown, ticked with a hold (+10); weekly note; certificate picture saved (no print); dance break with a 64 px Skip; bedtime dims, lullaby, goodnight, hold for 10 more; birthday surprise; switches off';
+});
 await check('camcalm', async () => {
   // (round R, owner: "the camera angles give a headache when it moves") walking, turning round suddenly and jumping:
   // the camera never swings faster than a slow steady pace, and a jump doesn't jerk the picture up and down

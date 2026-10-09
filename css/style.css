@@ -2152,3 +2152,27 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .whohere .whorow { display: flex; align-items: center; gap: 8px; } .whohere .whorow .pw { flex: 1; min-width: 0; } .whohere .whorow small { display: block; }
 .whohere .whorow .btn { min-height: 44px; min-width: 44px; flex: none; }
 .online.off .onlineoff { font-size: 20px; padding: 24px 8px; }
+/* (round S, owner plan 8 Oct) the grown-ups' features (js/parents.js) and the village festival prizes (js/hoilang.js) */
+.dancebreak { position: fixed; inset: 0; z-index: 72; display: grid; place-items: center; padding: 16px; background: radial-gradient(circle at 50% 30%, #ffe0f0, #b9a2ff); animation: fadein .4s; }
+.db-card { width: min(440px, 100%); text-align: center; background: #fff6e4; border-radius: 28px; padding: 18px 16px 20px; box-shadow: var(--shadow); color: #3a2a20; }
+.db-card h2 { margin: 0 0 6px; font-size: clamp(24px, 7vw, 34px); display: flex; align-items: center; justify-content: center; gap: 8px; } .db-card h2 .art { width: 40px; height: 40px; }
+.db-pic .art, .db-pic .emo { width: min(46vw, 180px); height: min(46vw, 180px); font-size: 120px; animation: db-bounce 1s ease-in-out infinite; }
+.db-card p { font-size: 22px; font-weight: 700; margin: 8px 0 12px; }
+.db-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; } .db-dots i { width: 14px; height: 14px; border-radius: 50%; background: #e8ddf8; } .db-dots i.on { background: #ff6fae; } .db-dots i.done { background: #8a5cf6; }
+.db-skip { min-height: 64px; min-width: 160px; font-size: 20px; }
+.dancebreak.still .db-pic .art, .dancebreak.still .db-pic .emo, body.calm .db-pic .art { animation: none; }
+@keyframes db-bounce { 50% { transform: translateY(-14px) scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { .db-pic .art, .db-pic .emo { animation: none; } }
+.bedtime-dim { position: fixed; inset: 0; z-index: 45; pointer-events: none; background: #0b0b2a; opacity: 0; transition: opacity 4s linear; }
+.resttime.bedtime .rt-moon .art { width: 96px; height: 96px; } .resttime.bedtime .rt-zz .art { width: 44px; height: 44px; }
+.missions .mtick { position: relative; min-width: 64px; min-height: 64px; font-size: 26px; border-radius: 50%; display: grid; place-items: center; }
+.missions .mtick .ring { position: absolute; inset: -4px; width: auto; height: auto; z-index: -1; }
+.gsec.family .fmrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 0; border-bottom: 1px solid rgba(0, 0, 0, .08); }
+.gsec.family .fmrow .pw { flex: 1 1 160px; min-width: 0; } .gsec.family .fmrow small { display: block; opacity: .75; }
+.gsec.family .fmrow .btn, .gsec.family .fmcards .btn, .gsec.family .vrow .btn { min-height: 44px; min-width: 44px; }
+.gsec.family .fmdone { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; } .gsec.family .fmdone .art { width: 22px; height: 22px; }
+.gsec.family .fmcards { display: flex; flex-wrap: wrap; gap: 8px; }
+.gsec.family .wknote { padding: 8px 10px; margin: 6px 0; border-radius: 12px; background: rgba(138, 92, 246, .08); } .gsec.family .wknote p { margin: 4px 0; font-size: 15px; }
+.gsec.family .bday { display: flex; align-items: center; gap: 8px; } .gsec.family .bday select { min-height: 44px; }
+.gsec.family input[type=time] { min-height: 44px; font-size: 18px; }
+.certcard .cert-img { width: 100%; height: auto; border-radius: 12px; box-shadow: var(--shadow); margin: 8px 0; }

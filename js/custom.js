@@ -10,6 +10,7 @@
 //   activities { id: { area, little, hide } }   the Simple screen's areas: move a game, open it to under-5s, hide it (js/content/activities.js)
 //   music    [ { id, file, en, vi, tags } ]   the family's recordings (round N; file = 'content/music/….mp3'; tags: lullaby, tet, midautumn, christmas, diwali, ausday, vn, kids)
 //   album    [ { id, photo, en, vi, place } ]   family photos that become postcards (js/familycards.js; photo = 'family:<name>')
+//   missions [ { id, en, vi, who } ]   family missions written in Studio (round S; js/parents.js: the child sees them, a grown-up ticks ✓)
 //   releases { id: { on, start, days, newDays } }   Sparkle Studio's Ra mắt (Releases) page (round R): see liveRule below
 //   festivals { id: { on, date, buildup } }          Sparkle Studio's Festivals page (round R): see js/festivals.js
 //   features { id: true|false }           things in the valley switched on or off from Studio (owner, round R: kept in the game,

@@ -608,6 +608,12 @@ add('🔓', `<rect x="10" y="20" width="28" height="22" rx="4" fill="#5fd39a" ${
 add('⏮️ ⏮', g('a-nudge', `<rect x="5" y="10" width="5" height="28" fill="#5fd3ff" ${W}/><path d="M42 10L26 24l16 14zM26 10L10 24l16 14z" fill="#5fd3ff" ${W}/>`));
 add('⏯️ ⏯', `<path d="M5 10l17 14L5 38z" fill="#5fd36a" ${W}/><rect x="27" y="10" width="6" height="28" rx="2" fill="#ffd23f" ${W}/><rect x="37" y="10" width="6" height="28" rx="2" fill="#ffd23f" ${W}/>`);
 
+// (round S, owner plan 8 Oct) Hội làng's carp lantern, the surprises' treasure chest and fairy wand, the dance break's stretch
+add('🎏', `<path d="M10 4v40" ${W}/>` + g('a-sway', `<path d="M10 8c10-3 22 0 30 6-8 6-20 9-30 6z" fill="#ff5f7a" ${W}/><path d="M10 22c10-3 22 0 30 6-8 6-20 9-30 6z" fill="#5fb6ff" ${W}/>${dot(33, 13, 1.6)}${dot(33, 27, 1.6)}<path d="M18 11q3 3 0 6M18 25q3 3 0 6" ${W} ${N}/>`, '10px 24px'));
+add('🧰', `<rect x="6" y="20" width="36" height="20" rx="3" fill="#b06a32" ${W}/><path d="M6 20c0-8 8-12 18-12s18 4 18 12z" fill="#c97a3a" ${W}/><path d="M6 20h36M24 8v32" stroke="#ffd23f" stroke-width="4"/><rect x="20" y="18" width="8" height="8" rx="2" fill="#ffd23f" ${W}/>` + g('a-twinkle', sparkle(40, 8, 1), '40px 8px'));
+add('🪄', `<path d="M10 40L32 16" stroke="${O}" stroke-width="6" stroke-linecap="round"/><path d="M10 40L32 16" stroke="#8a5cf6" stroke-width="3" stroke-linecap="round"/>` + g('a-spin-slow', star5(35, 13, 9, '#ffd23f'), '35px 13px') + g('a-twinkle2', sparkle(14, 12, .9), '14px 12px'));
+add('🤸', g('a-wiggle', `${circ(13, 30, 5, '#c98a5a')}<path d="M17 27l10-8 10 6M27 19l-4-10M27 19l12-10" ${W} ${N}/><path d="M20 26l-8-8" ${W} ${N}/><path d="M23 16l8 6" stroke="#ff5f7a" stroke-width="7" stroke-linecap="round"/>`, '24px 30px'));
+
 // (an emoji with or without its invisible "picture style" mark finds the same drawing)
 const keyOf = e => e == null ? null : ART[e] ? e : ART[e + '\uFE0F'] ? e + '\uFE0F' : ART[String(e).replace(/\uFE0F/g, '')] ? String(e).replace(/\uFE0F/g, '') : null;
 export const hasArt = e => !!keyOf(e);
