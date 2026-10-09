@@ -58,6 +58,7 @@ export const SCHEMA = {
   note: { fields: sealed(1200), need: SEALED, size: 1800, per: 6, sec: 10 },
   invite: { fields: sealed(1200), need: SEALED, size: 1800, per: 4, sec: 10 },
   photo: { fields: { iv: text(40), ct: text(160000) }, need: ['iv', 'ct'], size: 161000, per: 4, sec: 10 },
+  photoreq: { fields: {}, size: 600, per: 3, sec: 10 }, // ("I don't have your photo yet": the first one can go out while a newcomer is still at the door)
   emote: { fields: { id: word(24) }, need: ['id'], size: 600, per: 6, sec: 3 },
   meet: { fields: {}, size: 600, per: 2, sec: 4 },
   offer: { fields: { id: word(32), give: side, want: side }, need: ['id', 'give', 'want'], size: 2000, per: 3, sec: 5 },

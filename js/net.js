@@ -325,6 +325,7 @@ export const Net = {
     }
     if (d.t === 'bye') { this._gone(from); return; }
     if (d.t === 'photo') { this._openPhoto(d, from); return; }
+    if (d.t === 'photoreq') { if (this.remotes[from] && this._photoTo) { const r = this.remotes[from]; this._photoTo.delete(from + r.pub); } this._sendPhoto(from); return; }
     if (d.t === 's') { if (this.remotes[from]) this.remotes[from].s = d; return; }
     if (!this.remotes[from]) return; // (game messages only from players in the room)
     this.emit(d.t, Object.assign({}, d, { from }));
@@ -358,7 +359,7 @@ export const Net = {
     if (d.t === 'kick') { this.emit('status', { key: 'removed' }); this.close(true); return; }
     if (this.knocking) return;
     if (d.t === 'rekey') { if (okSecret(o.s)) { this.secret = o.s; this._startMembers(); } return; }
-    if (d.t === 'members') { this.roster = cleanRoster(o.list); this._flushPending(); this.emit('roster', this.roster); }
+    if (d.t === 'members') { this.roster = cleanRoster(o.list); this._flushPending(); this.emit('roster', this.roster); this._askPhotos(); }
   },
   // (a guest at the door) answer the starter: on the direct link, or through the door
   _toHost(d, direct) { const c = this.conns.get(this.hostId); if (direct && c && c.open) { try { c.send(d); } catch (e) { } } else this._doorSend(Object.assign({ to: this.hostId }, d)); },
@@ -559,6 +560,12 @@ export const Net = {
       if (this.remotes[id] === r) this.send({ t: 'photo', to: id, iv: b64(iv), ct: b64(ct), mid: 'p' + hex(rnd(5)) });
     } catch (e) { this._photoTo.delete(id + r.pub); }
   },
+  // (a newcomer's first photos can be sent while it is still opening "come in": a few seconds after joining it asks
+  // anyone whose photo it has not got, twice at most each)
+  _askPhotos() {
+    clearTimeout(this._askT); this._askT = setTimeout(() => { this._asked = this._asked || {};
+      for (const r of Object.values(this.remotes)) if (!r.photo && okPub(r.pub) && (this._asked[r.id] || 0) < 2) { this._asked[r.id] = (this._asked[r.id] || 0) + 1; this.send({ t: 'photoreq', to: r.id }); } }, 4000);
+  },
   async _openPhoto(d, from) {
     const r = this.remotes[from]; if (!r || !r.pub || typeof d.ct !== 'string' || d.ct.length > 160000) return;
     try {
@@ -733,7 +740,7 @@ export const Net = {
     for (const a of this.audios.values()) a.srcObject = null;
     Object.keys(this.remotes).forEach(id => this._gone(id));
     this.calls.clear(); this.conns.clear(); this.audios.clear();
-    this.peer = null; this.role = null; this.me = null; this.code = null; this._banned = null; this._photoTo = null;
+    this.peer = null; this.role = null; this.me = null; this.code = null; this._banned = null; this._photoTo = null; this._asked = null; clearTimeout(this._askT);
     this.secret = null; this.hostPub = null; this._pinWeak = false; this.roster = null; this._pending = []; this.members.clear();
     for (const c of this._chal.values()) clearTimeout(c.t); this._chal.clear();
     const hadKnocks = this.knocks.size > 0; this.knocks.clear(); this._admitted = new Set(); this.knocking = false; this._heard = 0; if (hadKnocks) this.emit('knock', null);
