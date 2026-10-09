@@ -70,6 +70,8 @@ const list = [...uniq.entries()];
 
 // ---------- the cost ----------
 const PACK_DIR = path.join(ROOT, 'voices'), MAN = path.join(PACK_DIR, 'manifest.json');
+// the manifest's `other`: { vi: 'hash hash …', zh: …, hi: … } for every line not in English (English is the default)
+const otherOf = list => { const o = {}; for (const [h, j] of list) if (j.lang !== 'en') (o[j.lang] = o[j.lang] || []).push(h); return Object.fromEntries(Object.entries(o).map(([L, hs]) => [L, hs.join(' ')])); };
 const files = list.flatMap(([h, j]) => CAST[j.lang].map(s => [s, h, j]));
 const chars = files.reduce((a, [, , j]) => a + j.text.length, 0);
 const missing = files.filter(([s, h, j]) => !fs.existsSync(path.join(PACK_DIR, j.lang, s, h + '.mp3')));
@@ -127,9 +129,9 @@ for (const [L, slots] of Object.entries(CAST)) { voices[L] = {}; for (const s of
 console.log('Voices:'); for (const [L, v] of Object.entries(voices)) console.log(`  ${LANG_NAME[L]}: ` + Object.entries(v).map(([s, x]) => `${s === 'f' ? 'woman' : 'man'} ${x.name} (${x.id})`).join(', '));
 
 // ---------- make the files ----------
-const man = { version: 2, model: MODEL, made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, langOf: {} };
+const man = { version: 2, model: MODEL, made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, other: {} };
 const save = () => { fs.mkdirSync(PACK_DIR, { recursive: true }); fs.writeFileSync(MAN, JSON.stringify(man)); };
-for (const [h, j] of list) man.langOf[h] = j.lang;
+man.other = otherOf(list); // (the lines that are not English, per language; English is the default)
 // what exists on disk is the truth
 for (const [h, j] of list) for (const s of CAST[j.lang]) if (fs.existsSync(path.join(PACK_DIR, j.lang, s, h + '.mp3'))) man.lines[h] = (man.lines[h] || '') + s;
 const limit = +arg('limit', 1e9);
@@ -165,9 +167,9 @@ async function azure() {
   console.log('Voices:'); for (const [L, v] of Object.entries(voices)) console.log(`  ${LANG_NAME[L]}: ` + Object.entries(v).map(([sl, x]) => `${sl === 'f' ? 'woman' : 'man'} ${x.id}`).join(', '));
   const xml = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const LOCALE = { en: 'en-AU', vi: 'vi-VN', zh: 'zh-CN', hi: 'hi-IN' };
-  const man = { version: 2, engine: 'azure', made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, langOf: {} };
+  const man = { version: 2, engine: 'azure', made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, other: otherOf(list) };
   const save = () => { fs.mkdirSync(PACK_DIR, { recursive: true }); fs.writeFileSync(MAN, JSON.stringify(man)); };
-  for (const [h, j] of list) { man.langOf[h] = j.lang; for (const sl of CAST[j.lang]) if (fs.existsSync(path.join(PACK_DIR, j.lang, sl, h + '.mp3'))) man.lines[h] = (man.lines[h] || '') + sl; }
+  for (const [h, j] of list) { for (const sl of CAST[j.lang]) if (fs.existsSync(path.join(PACK_DIR, j.lang, sl, h + '.mp3'))) man.lines[h] = (man.lines[h] || '') + sl; }
   const limit = +arg('limit', 1e9), queue = missing.slice(0, limit), gap = 60000 / perMin;
   let done = 0, used = 0, next = Date.now();
   for (const [slot, h, j] of queue) {

@@ -3,7 +3,8 @@
 // device"). The world is the same for everyone on the same build, so a picture is painted once, saved in the
 // "sv-world" cache under the build number, and read back on the next start instead of being painted again.
 // Today: the map picture (js/world.js paintMap), the slowest step at start (3 of 9 s in the test browser).
-// A new build paints it again (old builds' pictures are deleted, and the service worker clears this cache on update).
+// A new build paints it again (old builds' pictures are deleted here; the service worker leaves this cache alone, since
+// clearing it on the first install could wipe a picture saved moments before).
 // Without the cache (an old browser, private mode) the picture is simply painted, as before.
 //   const pic = cachedCanvas('map', 256, paintMap)  →  pic.canvas (filled once ready), pic.now() (paint now if needed)
 import { BUILD } from './build.js';

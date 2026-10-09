@@ -319,7 +319,11 @@ const packSig = () => Object.keys(PACK.lines).length + ':' + (PACK.version || 1)
 // every file of the pack, the child's own language first
 function packFiles() {
   const urls = [], langs = ['en', 'vi', 'zh', 'hi'];
-  for (const [h, slots] of Object.entries(PACK.lines)) for (const s of slots) for (const L of PACK.langOf ? [PACK.langOf[h]] : langs) urls.push(`voices/${L}/${s}/${h}.mp3`);
+  // (round R) which language each line is in: `other` lists the lines that are not English, space-separated per
+  // language (half the size of the old `langOf`, which named every line's language; older packs still have that)
+  const other = new Map(); for (const [L, hs] of Object.entries(PACK.other || {})) for (const h of String(hs).split(' ')) if (h) other.set(h, L);
+  const langOf = h => (PACK.langOf && PACK.langOf[h]) || other.get(h) || (PACK.other ? 'en' : null);
+  for (const [h, slots] of Object.entries(PACK.lines)) { const L1 = langOf(h); for (const s of slots) for (const L of L1 ? [L1] : langs) urls.push(`voices/${L}/${s}/${h}.mp3`); }
   const mine = settings.lang === 'vi' ? 'voices/vi/' : 'voices/en/'; urls.sort((a, b) => b.startsWith(mine) - a.startsWith(mine));
   return urls;
 }

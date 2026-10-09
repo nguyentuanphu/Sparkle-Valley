@@ -4,7 +4,7 @@
 // to knock on.
 import { THREE, toon, toonVC, P, merge, outline, sprite } from './gfx.js';
 import { T, nm, registerName } from './i18n.js';
-import { heightAt, oldHeightAt, roadDist, VILLAGE, MARKET, AUSSIE, CHINA, INDIA, LAKE, WATER, APOSTLES, FESTGROUNDS } from './world.js';
+import { heightAt, oldHeightAt, roadDist, VILLAGE, MARKET, AUSSIE, CHINA, INDIA, LAKE, WATER, APOSTLES, FESTGROUNDS, LEAFIES } from './world.js';
 import { buildAvatar } from './avatar.js';
 import { LANDMARKS, postcard } from './regions.js';
 import { ITEMS } from './data.js';
@@ -70,15 +70,20 @@ const MODELS = {
 export let CULTURE_CROPS = {};
 export function createHeritage(G, { give, sfx, say, toast }) {
   const { scene, world } = G;
-  // find a clear, fairly flat spot near (x, z)
-  const free = (x, z, r) => [APOSTLES, ...Object.values(FESTGROUNDS)].every(f => dist2(f.x, f.z, x, z) > 17 + r) && world.colliders.every(c => dist2(c.x, c.z, x, z) > c.r + r) && world.boxes.every(b => x < b.x0 - r || x > b.x1 + r || z < b.z0 - r || z > b.z1 + r);
-  function spot(x, z, r, water = false) {
-    for (let k = 0; k < 400; k++) {
+  // find a clear, fairly flat spot near (x, z) (never over a hidden Leafy or another landmark's sign: round R, a landmark
+  // covered two Leafies and Qutub Minar stood on Hampi's sign)
+  const signs = [];
+  const free = (x, z, r) => [APOSTLES, ...Object.values(FESTGROUNDS)].every(f => dist2(f.x, f.z, x, z) > 17 + r) && LEAFIES.every(l => dist2(l.x, l.z, x, z) > r + 4) && signs.every(q => dist2(q.x, q.z, x, z) > r + 3) && world.colliders.every(c => dist2(c.x, c.z, x, z) > c.r + r) && world.boxes.every(b => x < b.x0 - r || x > b.x1 + r || z < b.z0 - r || z > b.z1 + r);
+  function spot(x, z, r, water = false, ok = null, wide = false) {
+    for (let k = 0; k < (wide ? 1200 : 400); k++) {
       const a = k * 2.399, d = Math.sqrt(k) * 2.2, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d, h = oldHeightAt(px, pz);
       const slope = Math.abs(oldHeightAt(px + r * .6, pz) - oldHeightAt(px - r * .6, pz)) + Math.abs(oldHeightAt(px, pz + r * .6) - oldHeightAt(px, pz - r * .6));
       const rd = roadDist(px, pz); // never on a road
-      if ((water || h > WATER + 1.2) && h < 26 && slope < (water ? 99 : 3.5) && free(px, pz, r) && (water || rd.d > rd.road.w / 2 + Math.min(r, 7) + .5)) return [px, pz];
+      if ((water || h > WATER + 1.2) && h < 26 && slope < (water ? 99 : 3.5) && free(px, pz, r) && (water || rd.d > rd.road.w / 2 + Math.min(r, 7) + .5) && (!ok || ok(px, pz))) return [px, pz];
     }
+    // nothing clear close by (a crowded corner such as India Village): look further out with a little less room before
+    // falling back to the spot on the plan (round R: Hampi fell back and its sign stood on another landmark)
+    if (ok && !wide) return spot(x, z, r * .8, water, ok, true);
     return [x, z];
   }
   const place = (parts, x, z, rot, ol = true) => { const m = new THREE.Mesh(merge(parts), toonVC()); const y = Math.min(heightAt(x, z), heightAt(x + 2, z), heightAt(x - 2, z), heightAt(x, z + 2), heightAt(x, z - 2)); m.position.set(x, y - .05, z); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; scene.add(m); if (ol) outline(m, .03, '#4a3a3f'); return m; };
@@ -96,7 +101,10 @@ export function createHeritage(G, { give, sfx, say, toast }) {
       const m = new THREE.Mesh(merge(MODELS[model]()), toonVC()); m.position.set(x, WATER - (id === 'halong' ? 2.2 : .12), z); m.rotation.y = a; scene.add(m); outline(m, .03, '#4a3a3f'); mx = x; mz = z;
       x = LAKE.x + Math.cos(a) * (LAKE.r + 3); z = LAKE.z + Math.sin(a) * (LAKE.r + 3); [x, z] = spot(x, z, 1.5);
     } else {
-      [x, z] = spot(nx, nz, 9); mx = x; mz = z;
+      // (and its sign, which stands in front facing the place it belongs to, is on open ground too)
+      const out = model === 'cave' ? 13 : model === 'hue' || model === 'forbidden' || model === 'exhibition' ? 10 : 8.5;
+      const signClear = (px, pz) => { const a = face(px, pz, cen[cc][0], cen[cc][1]), sx = px + Math.sin(a) * out, sz = pz + Math.cos(a) * out; return world.colliders.every(c => dist2(c.x, c.z, sx, sz) > c.r + 2); };
+      [x, z] = spot(nx, nz, 9, false, signClear); mx = x; mz = z;
       const rot = face(x, z, cen[cc][0], cen[cc][1]);
       place(MODELS[model](), x, z, rot); world.colliders.push({ x, z, r: id === 'kakadu' ? 5 : model === 'cave' ? 9.5 : 7 });
       if (id === 'kakadu') { // painted animals on the rock face
@@ -109,10 +117,9 @@ export function createHeritage(G, { give, sfx, say, toast }) {
         const pl = new THREE.Mesh(new THREE.PlaneGeometry(10, 4.4), new THREE.MeshBasicMaterial({ map: t })); pl.position.set(x + Math.sin(rot) * 2.75, heightAt(x, z) + 2.4, z + Math.cos(rot) * 2.75); pl.rotation.y = rot; scene.add(pl);
       }
       // the sign stands in front
-      const out = model === 'cave' ? 13 : model === 'hue' || model === 'forbidden' || model === 'exhibition' ? 10 : 8.5;
       x += Math.sin(rot) * out; z += Math.cos(rot) * out;
     }
-    info(x, heightAt(x, z) + 3.2, z);
+    info(x, heightAt(x, z) + 3.2, z); signs.push({ x, z });
     const lm = { id, icon, cc, x, z, mx, mz, name: () => T(name[0], name[1]), fact };
     LANDMARKS.push(lm);
     G.interactables.push({ id: 'pc_' + id, x, z, r: 3.4, icon: 'ℹ️', label: () => T('About: ', 'Tìm hiểu: ') + lm.name(), act: h => postcard(G, h, lm) });

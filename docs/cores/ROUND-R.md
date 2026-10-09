@@ -137,3 +137,9 @@ Measured in the test browser (390 px phone; the slow-phone figures use a 4x slow
 - **Placeholder names** until the owner sends the real ones: Chú Tư (driver), Cô Sáu (builder), Anh Bảy (digger operator). Change them in `js/content/yard.js`.
 - Voices recorded (Azure). Studio switch `story_yard` (on).
 - **Test start:** the harness now starts the checks without Ông Cú's prologue film (it plays by itself for a new child); the welcome-voice check follows the story's welcome ("Who will fly with you, …?").
+
+## Fixes from the r50 full run (10 Oct)
+- **Placement rules** (moving the trees for the yard plot shifted other things): trees keep 5 m from every Leafy; UNESCO landmarks keep clear of Leafies and of other landmarks' signs, only pick a spot whose sign stands on open ground, and look further out before falling back to their planned spot; gathering spots and dig spots never sit under a building or landmark.
+- **Start-up size (PERF-001):** the story and the yard load while the valley is built; the voice pack's list (`voices/manifest.json`) now names only the lines that are not English (`other`, per language) instead of every line's language (`langOf`): 211 KB to 144 KB. The game, `tools/make-voice-pack.mjs` and Studio read both forms.
+- **Map picture cache:** the service worker no longer clears `sv-world` (the cache deletes old builds' pictures itself); the perf check waits until the picture is saved instead of a fixed 0.8 s.
+- **Checks:** `films` also plays the story films.

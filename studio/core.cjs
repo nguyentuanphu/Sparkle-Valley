@@ -269,9 +269,10 @@ function createStudio({ store, conf, online = false, local = {} }) {
   const countVoices = h => Object.values(h).reduce((a, s) => a + Object.values(s).reduce((b, l) => b + l.length, 0), 0);
   async function addToManifest(lang, slot, hash) {
     const m = await readJSON('voices/manifest.json', { version: 2, engine: 'mixed', cast: CAST, voices: {}, lines: {}, langOf: {} });
-    m.lines = m.lines || {}; m.langOf = m.langOf || {}; m.cast = m.cast || CAST; m.voices = m.voices || {};
+    m.lines = m.lines || {}; if (!m.other) m.langOf = m.langOf || {}; m.cast = m.cast || CAST; m.voices = m.voices || {};
     if (!m.voices[lang]) m.voices[lang] = {}; if (!m.voices[lang][slot]) m.voices[lang][slot] = { id: AZ_VOICES[lang][slot], name: AZ_VOICES[lang][slot] };
-    m.langOf[hash] = lang; m.lines[hash] = (m.lines[hash] || '').replace(slot, '') + slot; m.made = new Date().toISOString().slice(0, 10);
+    if (m.other) { if (lang !== 'en' && !String(m.other[lang] || '').split(' ').includes(hash)) m.other[lang] = ((m.other[lang] || '') + ' ' + hash).trim(); } else m.langOf[hash] = lang; // (new packs list only the lines that are not English)
+    m.lines[hash] = (m.lines[hash] || '').replace(slot, '') + slot; m.made = new Date().toISOString().slice(0, 10);
     await S.write('voices/manifest.json', Buffer.from(JSON.stringify(m)));
   }
   async function azureSay(lang, slot, text, runs) {
