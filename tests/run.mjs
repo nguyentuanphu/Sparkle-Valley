@@ -4,6 +4,7 @@
 //   node run.mjs --update-contract                     re-record the UI structure (only when the owner asked for a UI change)
 // Multiplayer runs when a local PeerJS server is up on 127.0.0.1:9000 (see the README in this folder).
 import fs from 'fs';
+import os from 'os';
 import { launch, open, clear, start, URL, seedPlayers } from './harness.mjs';
 import { groundAudit } from './world-audit.mjs';
 import { studioCheck } from './studio-check.mjs';
@@ -385,7 +386,7 @@ await check('phone', async () => {
         return out;
       });
       r.forEach(x => bad.push(`${name} (${tag}): ${x}`));
-      if (r.length) await P.page.screenshot({ path: `/tmp/claude-0/-home-user-Sparkle-Valley/0f9897b3-04f2-58fa-a097-233218d3db1c/scratchpad/sv-phone-${name.replace(/\W+/g, '-')}-${tag}.png` }).catch(() => { });
+      if (r.length) await P.page.screenshot({ path: `${os.tmpdir()}/sv-phone-${name.replace(/\W+/g, '-')}-${tag}.png` }).catch(() => { });
       await P.page.evaluate(() => { document.querySelectorAll('.modal, .hub, .pad, .howto, .theatre, .gl, .dialog, .storybook, .vc-pop, .wardrobe').forEach(e => e.remove()); __sv.paused = false; __sv.closeUp = null; });
     }
   }
