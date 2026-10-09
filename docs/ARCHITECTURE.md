@@ -666,7 +666,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 
 | Id | Alias | Rule | Sev. | Validation | Failure behaviour |
 |---|---|---|---|---|---|
-| ROAD-001 | R1 | Classes with constant width: asphalt 5.2 m, dirt 3.4 m, footpath 1.6 m (footpaths exist from round 30: Lotus Village) | MAJOR | `js/validate.js` (check `validate`) | — |
+| ROAD-001 | R1 | Classes with constant width: asphalt 6.4 m (owner, 10 Oct: was 5.2 m; the Concept D drawings), dirt 3.4 m, footpath 1.6 m (footpaths exist from round 30: Lotus Village) | MAJOR | `js/validate.js` (check `validate`) | — |
 | ROAD-002 | R2 | Straight runs joined by true circular arcs; no step turn > 8°; min radius 10 / 6 / 3 m; no S-bends within 15 m | BLOCKER | check `roadshape`; data | generator fillets |
 | ROAD-003 | R3 | Surface on the ground, never > 0.3 m above it; grade ≤ **8 % asphalt / 12 % dirt** (owner, round 30; `ROAD_GRADE` in roads.js), no allowance: a place too high for its road is lowered; every change of slope rounded | BLOCKER | check `roadshape`, `ground` | generator spreads the grade |
 | ROAD-004 | R4/G5 | Clear corridor `w/2 + 1.5 m`: no props, trees, rocks, grass, flowers, pickups, NPC spots; trees ≥ `w/2 + 2.5`; buildings 2–4 m back | BLOCKER | check `roads` | placement rejects the spot |

@@ -49,7 +49,7 @@ Merged from the owner's "Vietnamese Village Hard Prompts" and the game's measura
 - **G11 No clutter:** at most one big focal object per 10 m of street, ≥ 40 % open ground, nothing blocking a walking line.
 
 **Roads**
-- **R1** Three classes, constant width end to end: asphalt 5.2 m (villages and cities), dirt 3.4 m (quiet places), footpath 1.6 m (inside villages, round ponds, along paddy bunds).
+- **R1** Three classes, constant width end to end: asphalt 6.4 m (villages and cities; owner, 10 Oct: was 5.2 m, Concept D), dirt 3.4 m (quiet places), footpath 1.6 m (inside villages, round ponds, along paddy bunds).
 - **R2 Continuous curvature:** min radius 10 m asphalt, 6 m dirt, 3 m footpath; no S-bends within 15 m, no zigzags. *(The game meets this with true circular arcs, fillets of 24 m asphalt / 16 m dirt, rather than Chaikin smoothing; checked: `roadshape`, no step turns more than 8°.)*
 - **R3 Surface:** max `heightAt` of the centre and 4 points 1.4 m away + 0.08 m; never > 0.3 m above the ground (flatten instead); grade ≤ 8 % asphalt, 12 % dirt, 15 % footpath (steps above). *(Enforced exactly by `roadshape` since round 30.)*
 - **R4 Clear corridor:** `w/2 + 1.5 m` (0.8 m for footpaths); trees ≥ `w/2 + 2.5 m`; buildings 2–4 m back from the edge.

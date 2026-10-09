@@ -10,6 +10,9 @@ export const MAP_VERSION = 'C';
 // belongs to map 'C'. (A spot or Studio edit from an older layout is never used at the wrong place: js/main.js, js/world.js.)
 export const onThisMap = stamp => (stamp || 'C') === MAP_VERSION;
 
+// Road classes and their widths (rule R1 / ROAD-001; owner, 10 Oct AEST: asphalt 6.4 m, as the Concept D drawings show)
+export const ROAD_WIDTH = { asphalt: 6.4, dirt: 3.4, footpath: 1.6 };
+
 export const WORLD = {
   size: 400, north: '-z', water: 0,
   edge: [150, 195],                                // the wall of hills round the edge rises between these distances from the middle

@@ -46,3 +46,5 @@ z; `bridgeAt`, `bridgeBox`, `waterAt`, `waterDist` in `js/world.js` work for any
   event is on.
 - Surprises (round S, `js/surprises.js`): placed with `G.clearSpot` off the roads (`w/2 + 1.5 m`, G5) and off the water;
   the rainbow lotus floats on Lotus Village's lotus pond; at most one in the valley at a time, removed when found.
+- (owner, 10 Oct AEST) Asphalt roads are 6.4 m wide (rule R1 / ROAD-001, was 5.2 m), from the Concept D drawings; `ROAD_WIDTH` in `js/content/map.js`.
+- (owner, 10 Oct AEST) The Concept D map in `docs/concept-d/index.html` is the approved valley; Round T places every town, river, bridge and road where it shows them.

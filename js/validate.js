@@ -5,6 +5,7 @@
 import { ROADS, roadDist, VILLAGE } from './world.js';
 import { ROAD_GRADE } from './roads.js';
 import { RULES } from './content/rules.js';
+import { ROAD_WIDTH } from './content/map.js';
 
 export function validateWorld(G) {
   const W = G.world, out = [], add = (rule, msg) => { if (!RULES[rule]) throw new Error(`validate.js uses ${rule}, which is not in the rule registry`); if (out.length < 200) out.push({ rule, severity: RULES[rule].severity, msg }); }, f = v => v.toFixed(0);
@@ -21,8 +22,8 @@ export function validateWorld(G) {
       }
     }
   });
-  // ROAD-001 widths (asphalt 5.2, dirt 3.4, footpath 1.6)
-  const WIDTH = { asphalt: 5.2, dirt: 3.4, footpath: 1.6 };
+  // ROAD-001 widths (asphalt 6.4, dirt 3.4, footpath 1.6: js/content/map.js ROAD_WIDTH)
+  const WIDTH = ROAD_WIDTH;
   ROADS.forEach((R, k) => { if (WIDTH[R.kind] !== R.w) add('ROAD-001', `road ${k} is ${R.kind} ${R.w} m wide`); });
   // G5 / ROAD-004: nothing solid or tappable standing on a road
   const on = (x, z, r) => { const d = roadDist(x, z); return d.road && d.d < d.road.w / 2 + r; };

@@ -87,7 +87,7 @@ export const bridgeBox = (B, a, b, l, r) => B.axis === 'z' ? { x0: B.c + l, x1: 
 // Roads: asphalt roads join every village and city; dirt roads link the quieter places to each other (the map has
 // them and says why each runs where it does). Each has an id, a kind, its points and the place at each end (gates).
 export const ROADS = MAP.ROADS.map(R => { const o = { id: R.id, kind: R.kind, pts: R.pts.map(p => p.slice()) }; if (R.gates) o.gates = R.gates.slice(); return o; });
-ROADS.forEach(R => { R.w = R.kind === 'asphalt' ? 5.2 : R.kind === 'dirt' ? 3.4 : 1.6; });
+ROADS.forEach(R => { R.w = MAP.ROAD_WIDTH[R.kind]; }); // (rule R1: asphalt 6.4 m, dirt 3.4 m, footpath 1.6 m)
 // HARD RULE: roads are straight lines joined by perfect circular curves (asphalt bends round a 24 m circle, dirt
 // roads round 16 m, tighter only where two bends are close), and every road runs straight for its last 14 m into
 // a village or city gate. A side road that ends on another road is joined back onto that road's new line.

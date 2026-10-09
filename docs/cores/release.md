@@ -34,3 +34,4 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - (10 Oct AEST) Always ask the owner with pop-up questions (also in CLAUDE.md).
 - (10 Oct AEST) The start-up download ratchet (`tests/perf-baseline.json` startMB) is 3.4 MB for now; lower it again when the smaller start-up download lands (Analytics & Infra).
 - (10 Oct AEST) Round T0 (r55): "yes, push"; not deployed yet.
+- (10 Oct AEST) T1 from the Concept D map (`docs/concept-d/index.html`): a bigger home island (about 110 x 130 m) so Ông Cú, Phố Hai Quê and Sunny Farm fit; Bắc Ninh north-east of Hà Nội, as drawn; the ring road in T1; asphalt roads 6.4 m (rule R1 / ROAD-001 changed); Release makes the one Studio stamp change (`world.map`) in T1, noted on the board.

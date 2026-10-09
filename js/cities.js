@@ -6,7 +6,7 @@
 import { THREE, toonVC, P, merge, outline, sprite } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
 import { heightAt, roadDist, CITIES, VILLAGE, TOWN, MARKET, AUSSIE, CHINA, INDIA } from './world.js';
-import { landmarkAt } from './content/map.js';
+import { landmarkAt, ROAD_WIDTH } from './content/map.js';
 import { roadTexture } from './roads.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
 import { LANDMARKS, VENDORS, postcard } from './regions.js';
@@ -188,7 +188,7 @@ export function createCities(G) {
     // the main street, from the gate straight through the square
     {
       const t = roadTexture('asphalt'); t.repeat.set(1, len * 2 / 9);
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(5.2, len * 2 - .4), new THREE.MeshToonMaterial({ map: t, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_WIDTH.asphalt, len * 2 - .4), new THREE.MeshToonMaterial({ map: t, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
       m.rotation.order = 'YXZ'; m.rotation.set(-Math.PI / 2, toward, 0); m.position.set(c.x, c.h + .08, c.z); m.receiveShadow = true; scene.add(m);
     }
     // landmarks: set back on both sides of the street (Bắc Ninh: around the roundabout)
