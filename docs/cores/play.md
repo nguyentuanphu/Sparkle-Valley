@@ -13,6 +13,7 @@ Hard), stars, quests, rewards, co-op quests and the games played together online
 - Games with friends: `js/netgames.js` (the game rules; the connection is Online's)
 - The Games hub lists in `js/ui.js` (`HUB`, `openGamesHub` contents) together with Kid UI
 - Little ones' play (round R): `js/kidplay.js` (the companion growing, the hat goal, the daily gift; Studio group "For little ones")
+- Money games (round S, owner plan 8 Oct, item 7): `js/games/money.js` (the ten games), `js/games/moneylogic.js` (their sums, no screen: unit-tested in `tests/unit/money.test.mjs`); the coins, notes and lì xì envelope are drawn in `js/art.js` (keys `aud5` … `aud10000`, `vnd1000` … `vnd500000`, `lixi`)
 
 ## Hard rules (§9.6)
 ACT-001 (under-5 mode never punishes: no losing, no timers, no reading), ACT-002 (every game: both languages, a how-to
@@ -33,3 +34,9 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
 - Stars only (no difficulty dots); Easy · Medium · Hard inside each game, remembered per game and child (round M).
 - Songs live with the games: the pink button is “Vui chơi / Play” with a Songs tab (round O).
 - Festival music during festivals; Vietnamese tunes in the Vietnam areas; family recordings first (round N).
+- Money games (round S): in the child's home currency, the Grown-ups money setting (`settings.currency`, AUD or VND);
+  game coins only, never real money. AUD uses the real coins (5c to $2) and notes ($5 to $100); VND uses notes only
+  (1.000 to 500.000), so for VND "Coin or Note?" becomes "Tiền lẻ hay tiền chẵn?" (under 10.000 is small change).
+  Under-5s get the two easiest steps of each game (counting one kind of coin, pictures, no budget) and can never
+  lose: too much is gently refused and the right one wiggles after two misses. They live in their own Simple-screen
+  area "Money and shopping" (`money`), shown in the Play hub's Learning tab.

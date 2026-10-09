@@ -19,7 +19,9 @@ export const AREAS = [
   { key: 'play', icon: '🪁', name: () => T('Play outside', 'Chơi ngoài trời') },
   { key: 'vietnam', icon: '🇻🇳', name: () => T('Vietnamese games', 'Trò chơi Việt Nam') },
   { key: 'travel', icon: '🚋', name: () => T('Going places', 'Đi đây đi đó') },
-  { key: 'thinking', icon: '🧠', name: () => T('Big thinkers', 'Suy nghĩ giỏi') }
+  { key: 'thinking', icon: '🧠', name: () => T('Big thinkers', 'Suy nghĩ giỏi') },
+  // (round S, owner plan 8 Oct) the money games, in the child's home currency
+  { key: 'money', icon: '💰', name: () => T('Money and shopping', 'Tiền và mua sắm') }
 ];
 
 // id: [area, youngest age (2 = everyone, 5 = big kids), how hard (1 easy · 2 a bit harder · 3 hardest)]
@@ -34,7 +36,8 @@ export const GAME_INFO = {
   kite: ['play', 2, 1], hopscotch: ['play', 3, 1], tug: ['play', 2, 1], skipping: ['play', 3, 2], sackrace: ['play', 3, 1], nemlon: ['play', 3, 1], marbles: ['play', 4, 2], cricket: ['play', 5, 2], mrwolf: ['play', 3, 2], dacau: ['play', 4, 2],
   dragon: ['vietnam', 3, 1], datnieu: ['vietnam', 2, 1], oantuti: ['vietnam', 3, 1], chuyen: ['vietnam', 5, 2], oanquan: ['vietnam', 5, 3], caro: ['vietnam', 5, 3], tienlen: ['vietnam', 5, 3],
   traffic: ['travel', 2, 1], ferries: ['travel', 3, 1], tram: ['travel', 3, 1], balloon: ['travel', 2, 1], bubbles: ['travel', 2, 1], market: ['travel', 3, 2], sortout: ['travel', 3, 2], order: ['travel', 5, 2],
-  robot: ['thinking', 5, 3], maze: ['thinking', 5, 2], snakes: ['thinking', 5, 2], snap: ['thinking', 3, 2]
+  robot: ['thinking', 5, 3], maze: ['thinking', 5, 2], snakes: ['thinking', 5, 2], snap: ['thinking', 3, 2],
+  heodat: ['money', 2, 1], coinnote: ['money', 2, 1], lixi: ['money', 2, 1], needwant: ['money', 3, 1], cheaper: ['money', 3, 1], bahu: ['money', 3, 2], shoplist: ['money', 3, 2], waitgrow: ['money', 3, 2], shopkeep: ['money', 4, 2], barter: ['money', 4, 2]
 };
 // a game the family's Studio changed (hand-edited files can't break it: anything odd is ignored)
 const custom = id => { const c = CUSTOM.activities && CUSTOM.activities[id]; return c && typeof c === 'object' ? c : {}; };
