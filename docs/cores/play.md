@@ -137,7 +137,8 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   has an admin schedule Halloween for its trick-or-treat test, since a child's tap no longer starts it).
 
 ## The lantern story, Chapter 3: Sydney (owner's go, 10 Oct AEST)
-- **Files:** steps in `js/content/chapters.js` (`ch3`); words in `js/content/chapter3text.js`; places in
+- **Files:** steps and words in `js/content/chapter3text.js` (it adds `ch3` to `CHAPTERS` when it loads, so the start-up
+  download stays small; chapter 2 does the same in `chapter2text.js`); places in
   `js/content/chapter3sydney.js`; shapes (Opera House sails, Harbour Bridge, ferry, gum tree, koala) in
   `js/content/chapter3props.js`; festival film in `js/content/chapter3films.js`. `js/lanterns.js` loads every later chapter
   the same way (`LATER`), once a child playing has found the chapter before's lantern. Studio switch `story_ch3` (off).
@@ -155,3 +156,19 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
 - **Chi** (new, owner: "you choose"): about 8, ponytail, yellow top; half Australian, half Vietnamese; says each word in
   both languages. Her look can be changed later in Studio.
 
+## Progress notes (festivals and Chapter 3)
+- **Full suite, 11 Oct 00:15 AEST, commit 08e238a** (`core/play`, `main` 3399198 merged in): 82 of 83 passed.
+  Passed: boot, spill, language, two-players, facetoface, games, features, camera, contract, roads, flat, roadshape, phone,
+  solid, voice, voicepack, welcomevoice, studio, ground, resume, village, validate, tales, emoji, hubmap, festcal,
+  festivals, films, halves, preload, story, chapter2, chapter3, yard, kidplay, shop, boxes, hoilang, surprises, currency,
+  camcalm, vehicles, dialogtap, viwords, noemoji, arch, walkaway, ages, simple, adventure, gamelevel, quiet, songs,
+  realphotos, firstplayer, grownupsui, playhub, a11y, unit, events, postcards, familyphotos, myhouse, names, rules, coop,
+  report, iphone, tienlen, chests, types, perf, saves, photo, netmsg, onlineoff. Skipped (no local
+  PeerJS or MQTT server in a helper chat; they report as passed): multiplayer, meet, netgames, together, cloud, knock.
+  Failed: `parents` ("bedtime [true,true,true,false]"): it fails the same way on `main` 3399198; the check plays bedtime
+  at the fixed date 2026-10-10 and the run was after midnight AEST on 11 Oct, so it is not from this branch (on the board).
+- `perf`: triangles 793k to 805k in three runs (limit 824k); startMB 3.344 or 3.374 for the same code (limit 3.346);
+  `main` measures 3.373 twice, so the start-up budget is over on `main` too (on the board). Halloween's decorations go up
+  from today (10 Oct is three weeks before), on `main` and here alike.
+- Screenshots looked at: the `phone` check's phone, tablet and computer views (passed); the chapter 3 word panel (pictures
+  for an under-5, words for a big kid) and the festival film pages during the checks.
