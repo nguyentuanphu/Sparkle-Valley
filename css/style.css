@@ -2053,11 +2053,17 @@ body.songs-on .htoast { display: none; } /* the valley's hints stay behind the S
   body.touch .hud .act, body.touch .hud.small .act { left: auto; right: calc(var(--pad) + env(safe-area-inset-right)); transform: none; bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 250px); max-width: min(300px, calc(100% - 150px)); }
   body.touch .hud .act:active { transform: translateY(4px); }
   body.touch .hud .act { animation: actInR .25s ease, actGlow 1.6s ease-in-out .25s infinite; } body.calm.touch .hud .act { animation: actInR .25s ease; }
-  body.touch .caption { top: calc(env(safe-area-inset-top) + 206px); bottom: auto; }
+  /* Bug #27: on a phone the words stack in their own lanes, clear of the quest bar, the buttons and each other:
+     toast under the quest bar, caption under the toast, the valley's hint above the dock */
+  body.touch #toast { top: calc(env(safe-area-inset-top) + 100px); }
+  body.touch .caption { top: calc(env(safe-area-inset-top) + 152px); bottom: auto; }
+  body.touch .htoast { bottom: calc(env(safe-area-inset-bottom) + 96px); }
 }
 @media (max-height: 520px) {
   body.touch .hud .act, body.touch .hud.small .act { right: calc(var(--pad) + env(safe-area-inset-right) + 120px); bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 8px); max-width: min(300px, calc(100% - 360px)); }
   body.touch .caption { top: calc(env(safe-area-inset-top) + 8px); max-width: 46vw; }
+  body.touch #toast { top: calc(env(safe-area-inset-top) + 64px); }
+  body.touch .htoast { bottom: calc(env(safe-area-inset-bottom) + 72px); }
 }
 /* the play report's buttons (round P: its row borrowed a game's narrow ".bar" style and the words stood on end) */
 .rp-bar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 16px; }
