@@ -55,3 +55,6 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
   robot). The review runs when a pull request is opened, reopened or marked ready, and again when the label `ai-review`
   is added; not on every push. The round's pull request into `main` is reviewed too, before "yes, deploy".
 - 10 Oct AEST: `claude/kind-volta-1iv5ea` (offline start, Use the internet switch, packed start-up scripts on Netlify, GitHub checks) merged into the next round at the owner's yes.
+- 10 Oct AEST (r56 report): "yes, deploy" for r56. T1 goes out before the online map-version check (online play is off until a grown-up turns it on; devices update within days); the map version in the online hello goes into r57.
+- 10 Oct AEST: PERF-001 (start-up download) should measure the packed copy the website serves (2.6 MB), not the plain scripts; Analytics & Infra changes the check.
+- 10 Oct AEST: the Google Drive mirror and the voice relay (TURN) are done; stop asking about them.

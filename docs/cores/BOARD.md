@@ -9,11 +9,10 @@ Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
 ## Release
-- **Now:** r56 ready on `release-next` (local): r55 + Round T (T0, T1) + Studio review + kind-volta (offline start) + together fix; all 86 checks pass, 558 new voice lines recorded; waiting for the owner's "yes, deploy" · 10 Oct AEST
+- **Now:** r56 deployed (owner's "yes, deploy", 10 Oct AEST); next round r57: Play (festivals, chapter 3), films on phones, bug fixes #27 #28 #29 #31, the online map version · 10 Oct AEST
 - Round T stages T0 to T4: `docs/cores/ROUND-T.md`. Until Round T is merged, other cores do not change world positions or the map files (CLAUDE.md, helper rule 4).
 - Halloween decorations start growing about three weeks before 31 Oct: they only reach players once a round is deployed.
 - Still to build from the Round R plan (`docs/cores/ROUND-R.md`, Part 2): items 2 to 12 (Concept D layout, child's journey, homes, surprises, shop and wardrobe, money games, the rest of the festival groups, Hội làng times, 5–8 challenges, parent features, voice pack by area); the owner's privacy decisions of 9 Oct; splitting the code into per-core folders (infrastructure round).
-- The Google Drive mirror (`.github/workflows/drive-mirror.yml`) is not set up yet: ask the owner at every report.
 
 ## Front Desk
 - **Now:** no chat yet. Front Desk and bug robot merged into main by Release (10 Oct AEST). Bugs go on GitHub Issues (`bug` + core label + `small`/`big`); the bug robot runs every 30 minutes (`docs/cores/front-desk.md`) · 10 Oct AEST
@@ -50,7 +49,7 @@ Format for a request:
 - **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
 - [x] (Release, fix in `js/main.js`, 10 Oct AEST) Moves are tied to their own game: a story read together that is still winding down no longer sends page turns into the next game (seen as extra stars in the race) or ends it. Was in r54 too; the `together` check now also fails on any stray move. For your records.
 - [x] (Release, one-line fix a check needs, 10 Oct AEST) `js/netmsg.js` `W` is now 235 (the 480 m valley); Online may make it read `WORLD.size` from the map.
-- [ ] (Release → Online) Before T1 goes live: the hello carries the map version (`MAP_VERSION`); a friend on another layout sees "Ask a grown-up to update" instead of joining (positions are raw x, z) · ROUND-T.md §4 · `js/netmsg.js`, `js/net.js` · 10 Oct AEST
+- [ ] (Release → Online; owner 10 Oct: T1 went out first, this goes into r57) Before T1 goes live: the hello carries the map version (`MAP_VERSION`); a friend on another layout sees "Ask a grown-up to update" instead of joining (positions are raw x, z) · ROUND-T.md §4 · `js/netmsg.js`, `js/net.js` · 10 Oct AEST
 - The voice relay waits for the owner's Cloudflare TURN key (CF_TURN_KEY_ID, CF_TURN_KEY_TOKEN in Netlify): until then, voices only work when the two devices can link directly.
 
 ## Studio
@@ -62,6 +61,7 @@ Format for a request:
 
 ## Analytics & Infra
 - **Now:** no chat of its own yet; branch `claude/kind-volta-1iv5ea` (offline start, Use the internet switch, no Studio in parents' text, packed scripts, GitHub checks) merged by Release into the next round at the owner's yes · 10 Oct AEST
+- [ ] (Release → Analytics & Infra) Owner's decision, 10 Oct AEST: PERF-001 measures the packed copy the website serves (2.6 MB), not the plain scripts; please change the `perf` check and `tests/perf-baseline.json` · `tests/run.mjs` · 10 Oct AEST
 - From Studio (10 Oct AEST): `perf` fails on `main` (d87ab6c) as well: PERF-001 start-up download 3.36 MB, budget 3.2 MB. Not from the Studio review (no game files changed); it fits `tasks/infra-speed.md` (smaller start-up download).
 - [ ] (Release → Analytics & Infra) The start-up download is at its ratchet: r54 measures 3.33–3.37 MB before the title screen against 3.2 MB + 3 % (the `perf` check fails on main about 3 runs in 4); Round T0 adds about 22 KB (the map file). Owner (10 Oct): the limit is 3.4 MB for now; lower it again after the smaller start-up download brief (`tasks/infra-speed.md`) is the fix · `tests/perf-baseline.json` · 10 Oct AEST
 - [ ] (Analytics & Infra → Kid UI) changed with the owner's go, please keep: `js/ui.js` Grown-ups → "Internet and playing online", the switch "Use the internet (friends online, real places)" and the folded list under it; family photos and missing-lines notes reworded without Studio · owner 10 Oct · 10 Oct AEST
