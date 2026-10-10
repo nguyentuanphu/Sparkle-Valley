@@ -2735,13 +2735,12 @@ await check('onlineoff', async () => {
     // (bug #37) a grown-ups' note names the real section and switch in both languages, with a press-and-hold Grown-ups button
     const guide = {}, hold = document.querySelector('.gunote .gu-hold');
     guide.en = /Internet and playing online → tick Use the internet/.test(text) && !/Studio/.test(text);
-    document.querySelectorAll('.modal').forEach(m => m.remove()); S.settings.lang = 'vi'; __sv.openPad(0, 'friend'); await wait(400);
-    const vt = (document.querySelector('.pad-body') || document.body).textContent; S.settings.lang = 'en';
-    guide.vi = /Internet và chơi trực tuyến → chọn Dùng internet/.test(vt) && !/Studio/.test(vt);
     guide.hold = !!hold && hold.getBoundingClientRect().height >= 44 && !!hold.querySelector('.ring');
     hold.click(); await wait(200); guide.tapNoOpen = !document.querySelector('.modal.grownups'); // a plain tap opens nothing
-    const h2 = document.querySelector('.gunote .gu-hold'); h2.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); await wait(300);
+    hold.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); await wait(300);
     const sec = document.querySelector('.modal.grownups details[data-sec="online"]'); guide.opens = !!sec && sec.open;
+    S.settings.lang = 'vi'; const vbox = document.createElement('div'); __sv.drawOnlinePanel(vbox, () => { }); S.settings.lang = 'en';
+    guide.vi = /Internet và chơi trực tuyến → chọn Dùng internet/.test(vbox.textContent) && !/Studio/.test(vbox.textContent);
     document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
     const code = await N.host({ name: 'X' }); await N.join('123456', { name: 'X' }); __sv.listenFriends(); await wait(1500);
     return { setting, off, buttons, guide, code, role: N.role, peer: !!N.peer, door: !!N.door, cloud: !!N.cloud, beacon: !!N.beacon, pres: !!N.friends.ch, peerLoaded: !!window.Peer, ws: window.__wsOpened };
