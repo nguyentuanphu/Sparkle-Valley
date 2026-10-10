@@ -887,7 +887,7 @@ await check('story', async () => {
   // (Play core, chapter 2; owner 10 Oct: it is off until an admin switches it on or schedules it) switched on in Studio,
   // chapter 2 follows chapter 1; off, the old adventures follow as before
   const noCh2 = seen[8];
-  seen[8] = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), story_ch2: true }; const c = __sv.currentQuest(__sv.heroes[0].profile); delete C.features.story_ch2; return c && c.id; });
+  seen[8] = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), story_ch2: true }; await __sv.lanterns.loadCh('ch2'); const c = __sv.currentQuest(__sv.heroes[0].profile); delete C.features.story_ch2; return c && c.id; });
   const end = await pg.evaluate(() => { const G = __sv, p = G.heroes[0].profile, D = G.lanterns.dinh;
     const house = Math.min(...G.world.colliders.filter(c => c.r > 2 && c.top == null).map(c => Math.hypot(c.x - D.x, c.z - D.z) - c.r));
     return { companion: p.lanterns.companion, ch1: !!p.lanterns.chapters.ch1, keep: (p.keepsakes || []).includes('lantern_ch1'), carrying: p.lanterns.carrying, house }; });
@@ -1065,7 +1065,9 @@ await check('chapter3', async () => {
     const step = async () => { await w(400); await calm(); await w(2200); await calm(); seen.push(await q()); };
     const emit = gid => pg.evaluate(async gid => { const E = await import('/js/core/events.js'); E.events.emit('ActivityCompleted', { activityId: 'x', defId: 'game:' + gid, players: [], result: { won: true } }); }, gid);
     // chapter 2 done; chapter 3 is off until an admin switches it on
+    // (chapter 2's steps come with its file, which the game loads once chapter 1's lantern is found)
     const offFirst = await pg.evaluate(async age => { const G = __sv, p = G.heroes[0].profile, C = (await import('/js/custom.js')).CUSTOM, { CHAPTERS } = await import('/js/content/chapters.js');
+      C.features = { ...(C.features || {}), story_ch2: true }; await G.lanterns.loadCh('ch2');
       p.age = age; p.lanterns = { companion: 'firefly', done: { p_owl: true }, chapters: { ch1: true, ch2: true } };
       for (const c of CHAPTERS.slice(1, 3)) for (const s of c.steps) p.lanterns.done[s.id] = true;
       C.features = { ...(C.features || {}), story_ch2: true }; const before = G.currentQuest(p);
@@ -1082,8 +1084,13 @@ await check('chapter3', async () => {
     // (a big kid's answers are words that can be read; an under-5's are pictures)
     const wordBtn = await pg.evaluate(() => { const b = document.querySelector('.handpad [data-hp=w0]'); if (!b) return null; const cs = getComputedStyle(b); return { text: b.textContent.trim(), size: parseFloat(cs.fontSize), pic: !!b.querySelector('.art, .emo, svg, img'), h: b.getBoundingClientRect().height }; });
     let rounds = 0, wrongs = 0;
-    for (let i = 0; i < 20; i++) { const r = await pg.evaluate(() => { const b = [...document.querySelectorAll('.handpad [data-hp^=w]')].find(x => x.style.visibility !== 'hidden'); if (!b) return null; const word = document.querySelector('.handpad p b').textContent; b.click(); return word; }); if (r == null) break; await w(700);
-      const still = await pg.evaluate(() => { const b = document.querySelector('.handpad p b'); return b && b.textContent; }); if (still === r) wrongs++; else rounds++; }
+    for (let i = 0; i < 20; i++) {
+      const r = await pg.evaluate(() => { const bs = [...document.querySelectorAll('.handpad [data-hp^=w]')], b = bs.find(x => x.style.visibility !== 'hidden'); if (!b) return null; const word = document.querySelector('.handpad p b').textContent; b.click(); return { word, hidden: bs.filter(x => x.style.visibility === 'hidden').length }; });
+      if (r == null) break;
+      // (right: the next word comes, or the game ends; wrong: that button hides)
+      const res = await pg.evaluate(async r => { for (let k = 0; k < 40; k++) { await new Promise(x => setTimeout(x, 150)); const b = document.querySelector('.handpad p b'), bs = [...document.querySelectorAll('.handpad [data-hp^=w]')];
+        if (!b || b.textContent !== r.word) return 'right'; if (bs.filter(x => x.style.visibility === 'hidden').length > r.hidden) return 'wrong'; } return 'none'; }, r);
+      if (res === 'right') rounds++; else if (res === 'wrong') wrongs++; else break; }
     await step();
     if (age === 'big') { await emit('ferries'); await step(); }
     const jackBtn = await act('story_c3_jack'); await w(600);

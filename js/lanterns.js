@@ -4,7 +4,7 @@
 // { companion, done: { stepId: true }, chapters: { ch1: true }, carrying }.
 // Chapter 1 builds Làng Sen's đình (under soft mist until its lantern is hung, then lit) and drops the lantern among the
 // lotus leaves by the pond. Each later chapter brings its own places file (LATER below), loaded once a child playing has
-// found the chapter before's lantern. Chapter 2 (Hà Nội) has its places built by js/content/chapter2hanoi.js: the Thê Húc bridge by
+// found the chapter before's lantern; its file also brings the chapter's steps (only chapter 1's are in chapters.js). Chapter 2 (Hà Nội) has its places built by js/content/chapter2hanoi.js: the Thê Húc bridge by
 // Hồ Gươm lights up red, and a Trung Thu parade walks round the lake. Each chapter's landmark, lantern spot, rope and
 // lights are in places[chapter id]. Steps marked big are only for big kids (5 to 8); an under-5 skips them. Chapter 2's
 // code and words are loaded only once a child playing has found chapter 1's lantern (PERF-001: the start-up download
@@ -28,7 +28,7 @@ const released = ch => featureOn('story_' + ch.id, (RELEASES.find(r => r.id === 
 const st = p => { const s = p.lanterns = p.lanterns && typeof p.lanterns === 'object' ? p.lanterns : {}; s.done = s.done || {}; s.chapters = s.chapters || {}; return s; };
 const unnamed = s => String(s).replace(/,?\s*\{name\}/g, '');
 const big = p => p.age === 'big';
-const chOf = Object.fromEntries(CHAPTERS.flatMap(c => c.steps.map(s => [s.id, c.id]))); // (a step's chapter)
+const chOf = id => (CHAPTERS.find(c => c.steps.some(s => s.id === id)) || {}).id; // (a step's chapter)
 // the game a step waits for: an under-5 plays the one made for them (A11Y-006)
 const gamesOf = (p, s) => (!big(p) && s.gameLittle) || s.game || [];
 const fill = (s, p) => String(s).replace(/\{name\}/g, p.name || '').replace(/\{companion\}/g, COMPANIONS[st(p).companion || 'firefly'].name);
@@ -110,12 +110,12 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
     ch3: [() => import('./content/chapter3sydney.js'), () => import('./content/chapter3films.js'), 'c2_find'] };
   const loadCh = id => loadingCh[id] || (loadingCh[id] = LATER[id][0]().then(M => {
     const P = mods[id] = M.create(G, { current, isOn, A, st, big, gamesOf, say, save, dialog, reward, actions, finish: (h, id) => finish(h, id), companions: () => companions });
-    Object.assign(spots, P.spots); G.landmarksStory[id] = { x: P.front[0], z: P.front[1] };
+    Object.assign(spots, P.spots); G.landmarksStory[id] = { x: P.front[0], z: P.front[1] }; addButtons(CHAPTERS.find(c => c.id === id));
     places[id] = { front: P.front, lanternAt: P.lanternAt, rope: P.rope, paint: P.paint, after: () => P.startParade(), film: LATER[id][1], revealed: P.revealed };
     for (const rs of CHAPTERS.find(c => c.id === id).steps.filter(s => s.lights)) addCatchers(rs);
     paint();
   }).catch(e => { loadingCh[id] = null; console.warn('chapter', id, e); }));
-  const wanted = id => CHAPTERS.some(c => c.id === id && released(c)) && G.heroes.some(h => st(h.profile).done[LATER[id][2]]);
+  const wanted = id => released({ id }) && G.heroes.some(h => st(h.profile).done[LATER[id][2]]);
   const onStreet = (x, z) => Object.values(mods).some(M => M.onStreet && M.onStreet(x, z, 1));
   const catching = s => actions() && !!(s.ribbons || s.lights);
   // wind ribbons on the way into the village (chapter 1) and lantern lights on the way to Hà Nội (chapter 2): walk
@@ -164,7 +164,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   const rightLeaf = () => dayNo() % Math.max(1, leaves.length);
   const revealed = p => !!A(p).found;
   // the lantern shows once the child has looked in the right place (lotus leaves in chapter 1, clue spots in chapter 2)
-  const revealedFor = (p, s) => s.leaves ? revealed(p) : s.clues ? (pl => !!pl && pl.revealed(p))(places[chOf[s.id]]) : true;
+  const revealedFor = (p, s) => s.leaves ? revealed(p) : s.clues ? (pl => !!pl && pl.revealed(p))(places[chOf(s.id)]) : true;
   const liftLeaf = (h, L) => {
     const a = A(h.profile); a.lifted = a.lifted || []; if (!a.lifted.includes(L.k)) a.lifted.push(L.k);
     L.lift = 1;
@@ -202,7 +202,8 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   }
 
   // ---------- buttons the story puts in the valley (only for the child on that step) ----------
-  for (const ch of CHAPTERS) for (const s of ch.steps) {
+  // (chapter 1's now; each later chapter's when its file brings its steps: loadCh)
+  const addButtons = ch => { for (const s of ch.steps) {
     if (s.talk) {
       // (no spot yet: no position, so the button is never in reach)
       const near = () => { const q = spots[s.at] && spots[s.at](); return q || { x: NaN, z: NaN }; };
@@ -225,8 +226,8 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
       act: h => { st(h.profile).carrying = ch.id; say(`You found it! ${COMPANIONS[st(h.profile).companion || 'firefly'].name} will carry the lantern.`, `Tìm thấy rồi! ${COMPANIONS[st(h.profile).companion || 'firefly'].name} sẽ mang đèn lồng giúp con.`); finish(h, s.id); } });
     if (s.hang) G.interactables.push({ id: 'story_' + s.id, get x() { return pl() ? pl().front[0] : NaN; }, get z() { return pl() ? pl().front[1] : NaN; }, r: 3.4, icon: '🏮', label: () => T('Hang the lantern', 'Treo đèn lồng'), visible: h => !!pl() && isOn(h.profile, s.id) && !hanging.has(h.profile),
       act: h => hang(h, ch, s) });
-  }
-  // (one bún chả job at a time per child)
+  } };
+  CHAPTERS.forEach(addButtons);
   // the village well (and anything else a step waits for): note it when the child uses it
   for (const ch of CHAPTERS) for (const s of ch.steps) if (s.act) {
     const it = G.interactables.find(i => i.id === s.act); if (!it) continue;
