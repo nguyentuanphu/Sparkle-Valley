@@ -1,4 +1,4 @@
-# The bug robot (owner, 10 Oct AEST): every 3 hours it looks at the open bugs on GitHub Issues and lets Claude work on
+# The bug robot (owner, 10 Oct AEST): every 30 minutes (owner, 10 Oct; was 3 hours) it looks at the open bugs on GitHub Issues and lets Claude work on
 # them as the core that owns them. Rules: CLAUDE.md ("Bug robot") and docs/cores/front-desk.md.
 #
 #   - Only issues labelled `bug` plus one core label are picked up. Labels can only be set by people with access to the
@@ -8,12 +8,12 @@
 #   - Nothing ever goes to `main`, so nothing reaches Netlify: Claude runs with a read-only token and no git
 #     credentials; only the last job pushes, and only to refs/heads/bugfix/*. Release merges, after "yes, deploy".
 #
-# Needs the secret CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token`); CLAUDE_CODE_OAUTH_TOKEN_BACKUP (another account) is
-# tried when the first one fails. Times: the cron is UTC; 2,5,8,…,23 UTC is 12, 3, 6 and 9 o'clock am and pm AEST.
+# Needs the secret CLAUDE_CODE_OAUTH_TOKEN or CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY (`claude setup-token`); CLAUDE_CODE_OAUTH_TOKEN_BACKUP (another account) is
+# tried when the first one fails. The cron runs at :07 and :37 past every hour (UTC and AEST alike).
 name: Bug robot
 on:
   schedule:
-    - cron: '7 2,5,8,11,14,17,20,23 * * *'
+    - cron: '7,37 * * * *'
   workflow_dispatch:
     inputs:
       issue:
@@ -109,6 +109,7 @@ jobs:
       N: ${{ matrix.bug.n }}
       CORE: ${{ matrix.bug.core }}
       MODE: ${{ matrix.bug.mode }}
+      HAS_KEY: ${{ (secrets.CLAUDE_CODE_OAUTH_TOKEN || secrets.CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY) != '' }}
       HAS_BACKUP: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_BACKUP != '' }}
     steps:
       - uses: actions/checkout@v4
@@ -121,8 +122,9 @@ jobs:
           git config user.name 'Sparkle Valley bug robot'
           git config user.email 'bug-robot@users.noreply.github.com'
           b="bugfix/$CORE-$N"
-          if git ls-remote --exit-code --heads origin "$b" >/dev/null; then
-            git fetch origin "$b" && git checkout -B "$b" FETCH_HEAD
+          # Every branch was fetched by the checkout (fetch-depth 0); there are no git credentials after it.
+          if git rev-parse --verify -q "origin/$b" >/dev/null; then
+            git checkout -B "$b" "origin/$b"
           else
             git checkout -B "$b" origin/main
           fi
@@ -134,12 +136,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh issue view "$N" --comments > .bugfix/issue.md
+          # Title, labels, description and every comment ("gh issue view --comments" alone prints only the comments).
+          gh issue view "$N" --json title,body,labels,comments --jq '
+            "# " + .title + "\n\nLabels: " + ([.labels[].name] | join(", ")) + "\n\n" + (.body // "")
+            + "\n\n## Comments\n" + ([.comments[] | "\n### " + .author.login + " (" + .createdAt + ")\n" + .body] | join("\n"))
+          ' > .bugfix/issue.md
+          [ -s .bugfix/issue.md ] || { echo "could not read issue #$N"; exit 1; }
           cat .bugfix/issue.md
 
       - name: Get the checks ready (browser and test server)
         run: |
-          cd tests && npm ci && npx playwright install --with-deps chromium
+          # tests/package-lock.json points playwright at a folder on the Claude machines: install from package.json
+          cd tests && npm install --no-package-lock --no-save --no-audit --no-fund && npx playwright install --with-deps chromium
           cd .. && (python3 -m http.server 8765 >/dev/null 2>&1 &)
 
       - name: Write Claude's instructions
@@ -178,7 +186,7 @@ jobs:
         continue-on-error: true
         uses: anthropics/claude-code-action@v1
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN || secrets.CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY }}
           github_token: ${{ github.token }}
           prompt: 'Read .bugfix/task.md and do exactly what it says.'
           claude_args: '--max-turns 120 --allowedTools Bash,Read,Write,Edit,Glob,Grep --disallowedTools "Bash(git push:*)"'
@@ -197,7 +205,9 @@ jobs:
         if: always()
         run: |
           mkdir -p out
-          [ -s .bugfix/result.md ] && cp .bugfix/result.md out/result.md || printf 'STATUS: stuck\nThe robot stopped without writing a result (it may have run out of usage or time). See the run log.\n' > out/result.md
+          if [ -s .bugfix/result.md ]; then cp .bugfix/result.md out/result.md
+          elif [ "$HAS_KEY" != true ]; then printf 'STATUS: stuck\nGitHub has no Claude key: add the repository secret CLAUDE_CODE_OAUTH_TOKEN (Settings, Secrets and variables, Actions, Repository secrets).\n' > out/result.md
+          else printf 'STATUS: stuck\nThe robot stopped without writing a result (it may have run out of usage or time). See the run log.\n' > out/result.md; fi
           git status --short | grep -v '^?? .bugfix/' > out/uncommitted.txt || true
           git format-patch "$BASE_SHA..HEAD" -o out/patches >/dev/null || true
           echo "$BASE_SHA" > out/base.txt
@@ -217,6 +227,7 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+      actions: write   # to start the quick checks and the AI review on the robot's pull request
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -245,13 +256,15 @@ jobs:
           now=$(TZ=Australia/Brisbane date '+%-d %b, %-I:%M %p AEST')
           b="bugfix/$CORE-$N"
           case "$b" in bugfix/*-[0-9]*) ;; *) echo "refusing to push to $b"; exit 1 ;; esac
-          [ -s out/result.md ] || printf 'STATUS: stuck\nThe robot did not finish (no result).\n' > out/result.md
+          mkdir -p out; [ -s out/result.md ] || printf 'STATUS: stuck\nThe robot did not finish (no result).\n' > out/result.md
           status=$(head -1 out/result.md | sed -n 's/^STATUS: *\([a-z]*\).*/\1/p')
           body=$(tail -n +2 out/result.md)
-          patches=$(ls out/patches/*.patch 2>/dev/null | wc -l)
-          if [ "$status" = fixed ] && [ "$patches" -eq 0 ]; then status=stuck; body="$body"$'\n\n'"(The robot said fixed but made no commit.)"; fi
+          patches=0; if [ -d out/patches ]; then patches=$(find out/patches -name '*.patch' | wc -l); fi
+          # A fix already on the bug's branch from an earlier run counts: nothing new to push, just the pull request.
+          ahead=$(git rev-list --count "origin/main..origin/$b" 2>/dev/null || echo 0)
+          if [ "$status" = fixed ] && [ "$patches" -eq 0 ] && [ "$ahead" -eq 0 ]; then status=stuck; body="$body"$'\n\n'"(The robot said fixed but made no commit.)"; fi
 
-          if [ "$status" = fixed ]; then
+          if [ "$status" = fixed ] && [ "$patches" -gt 0 ]; then
             git config user.name 'Sparkle Valley bug robot'
             git config user.email 'bug-robot@users.noreply.github.com'
             git checkout -q "$(cat out/base.txt)" && git checkout -q -B "$b" && git am -q out/patches/*.patch \
@@ -269,14 +282,22 @@ jobs:
             pr=$(gh pr list --head "$b" --state open --json url -q '.[0].url')
             if [ -z "$pr" ]; then
               pr=$(gh pr create --draft --base main --head "$b" --title "$title" --body "$pr_body" 2>/dev/null \
-                || gh pr create --base main --head "$b" --title "[Robot fix, do not merge before Release] $title" --body "$pr_body")
+                || gh pr create --base main --head "$b" --title "[Robot fix, do not merge before Release] $title" --body "$pr_body") || pr=''
             fi
-            note="Fixed on the branch \`$b\` ($now). Draft pull request: $pr
+            if [ -n "$pr" ]; then
+              # Pull requests made with this token do not start other workflows by themselves: start them here.
+              gh workflow run pr-checks.yml -f pr="${pr##*/}" || true
+              gh workflow run ai-review.yml -f pr="${pr##*/}" || true
+              where="Draft pull request: $pr"
+            else
+              where="GitHub did not let the robot open the pull request (turn on Settings, Actions, General, Workflow permissions, \"Allow GitHub Actions to create and approve pull requests\"). Open it by hand: $GITHUB_SERVER_URL/$GH_REPO/compare/main...$b"
+            fi
+            note="Fixed on the branch \`$b\` ($now). $where
           It is **not live**: Release merges it and asks you \"yes, deploy\" before Netlify gets it."
             gh issue edit "$N" --add-label fixed-on-branch --remove-label needs-go >/dev/null
           elif [ "$status" = plan ]; then
             note="A plan is ready ($now). Nothing was changed. To let the robot do it, reply on this issue with **go**
-          (or tell the Front Desk \"go for #$N\"). The robot picks it up at its next run (every 3 hours)."
+          (or tell the Front Desk \"go for #$N\"). The robot picks it up at its next run (every 30 minutes)."
             gh issue edit "$N" --add-label needs-go --remove-label small >/dev/null
             gh issue edit "$N" --add-label big >/dev/null
           else
@@ -288,4 +309,4 @@ jobs:
           $body
 
           ---
-          _Sparkle Valley bug robot, run $RUN_URL_"
+          _Sparkle Valley bug robot, run ${RUN_URL}_"
