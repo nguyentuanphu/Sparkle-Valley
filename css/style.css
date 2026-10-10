@@ -460,7 +460,6 @@ canvas.sky { width: min(96vw, 900px); height: min(62vh, 520px); border-radius: 2
 .quick { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
 .qbtn { min-height: 76px; border: 1px solid var(--line); background: rgba(255, 255, 255, .08); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
 .qbtn span { font-size: 32px; } .qbtn small { font-size: 12px; text-align: center; }
-.qbtn.change { border-color: var(--gold); }
 .stories { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
 .storybook { position: fixed; inset: 0; z-index: 55; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px 20px calc(env(safe-area-inset-bottom) + 20px);
   background: radial-gradient(ellipse at 50% 30%, #fff8e6, #f2d9a6); color: #4a3020; cursor: pointer; text-align: center; animation: fadein .4s; }
