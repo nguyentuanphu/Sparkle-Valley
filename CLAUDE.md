@@ -21,7 +21,7 @@
 
 **Working together across chats and Claude accounts (owner, 10 Oct).** Chats, even on different Claude accounts, cannot see or message each other; the GitHub repo is their only shared memory, and the owner carries messages between them.
 1. **Start of every session:** `git fetch` and `git pull` your branch, merge `main` into it, then read `docs/cores/BOARD.md` (the whole board, not only your section) and your progress notes.
-2. **The board is the status page.** Keep your core's "Now" line on `docs/cores/BOARD.md` current: what you are doing, your branch, your last commit, and what you are waiting for. Requests to another core go there in the board's format. Update it before every report.
+2. **The board is the status page.** Keep your core's "Now" line on `docs/cores/BOARD.md` current: what you are doing, your branch, your last commit, and what you are waiting for. When your work is finished and pushed, write **"ready for Release"** in it: Release checks every branch once an hour and merges the ones marked ready (owner, 10 Oct). Requests to another core go there in the board's format. Update it before every report.
 3. **Pull before every push** (`git pull --no-rebase` on your branch, fix any conflict, run the checks again if code changed). Never force-push.
 4. **Decisions the owner makes in your chat go into your core file** under "Owner's decisions" in the same session, so other chats and Release know them.
 5. **Designs and pages from claude.ai go into the repo** (`docs/<name>/`), because chats on other accounts cannot open another account's artifacts.
