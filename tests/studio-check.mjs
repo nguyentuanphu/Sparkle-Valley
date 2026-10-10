@@ -165,7 +165,8 @@ export async function studioCheck(browser, open) {
     ok((await call('/studio/api/info')).status === 401, 'online Studio answered without signing in');
     ok((await call('/studio/api/login', { body: { password: 'wrong' } })).status === 401, 'a wrong password was let in');
     const li = await signIn('', PW); ok(li.status === 200 && /^sv_studio=/.test(li.cookie), 'signing in failed');
-    ok((await call('/studio/api/login', { body: { password: PW } })).j.step === 'code', 'the password alone was enough');
+    // (owner, 11 Oct) the owner signs in with the password only; admins keep two-step (below)
+    { const o2 = await call('/studio/api/login', { body: { password: PW } }); ok(o2.status === 200 && !o2.j.step, 'the owner was asked for a two-step code'); }
     const C = li.cookie, X = { 'X-Studio': '1' };
     // 1b. other admins with their own accounts (round O): the owner adds them; a viewer only reads the analytics,
     // an editor can change things but not the admins; a new password or removing them signs them out
@@ -199,16 +200,12 @@ export async function studioCheck(browser, open) {
         await two('ji.na', true);
         ok((await call('/studio/api/info', { cookie: po.cookie })).status === 401, 'turning two-step on did not sign them out');
         ok((await call('/studio/api/login', { body: { name: 'ji.na', password: 'editor-password-9' } })).j.step === 'setup', 'two-step on again did not ask to set it up');
-        // the owner's own: password only, then back to two-step
-        const off = await two('owner', false); ok(off.status === 200 && /^sv_studio=/.test(off.cookie), 'the owner could not choose password only for themselves');
-        ok((await call('/studio/api/info', { cookie: C })).status === 401, 'the old owner sign-in still worked after the change');
-        const opo = await call('/studio/api/login', { body: { password: PW } }); ok(opo.status === 200 && (await call('/studio/api/info', { cookie: opo.cookie })).status === 200, 'the owner with password only could not sign in');
-        ok((await two('owner', true, opo.cookie)).status === 200, 'the owner could not turn two-step back on');
-        ok((await call('/studio/api/login', { body: { password: PW } })).j.step === 'code', 'two-step back on, but the password alone was enough');
-        ok((await call('/studio/api/info', { cookie: opo.cookie })).status === 401, 'a password-only owner sign-in still worked with two-step on');
-        ok((await call('/studio/api/info', { cookie: C })).status === 200, 'the owner’s two-step sign-in did not come back');
+        // the owner's own: always the password only (owner, 11 Oct); it cannot be switched to two-step
+        ok((await two('owner', true)).status === 400, 'the owner’s sign-in could be switched to two-step');
+        ok((await call('/studio/api/info', { cookie: C })).status === 200, 'the owner’s sign-in stopped working');
+        { const e3 = await signIn('ji.na', 'editor-password-9'); ok(e3.status === 200, 'an admin with two-step on again could not sign in with the code'); }
         await call('/studio/api/admins/remove', { body: { name: 'ji.na' }, cookie: C, headers: X }); }
-      notes.push('admins: viewer reads analytics only, editor cannot manage admins, password change and removal sign out; two-step or password only chosen by the owner for each person; access log'); }
+      notes.push('admins: viewer reads analytics only, editor cannot manage admins, password change and removal sign out; two-step or password only chosen by the owner for each admin, the owner by password only; access log'); }
     // 1c. online now (round O): "still here" from a device shows it playing in the Analytics, "gone" shows it offline
     { const live = on => fetch(site + '/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'livetest0001', live: on, kid: 'Na' }) });
       ok((await live(1)).status === 204, 'a live hello was refused');
@@ -354,7 +351,7 @@ export async function studioCheck(browser, open) {
     for (const [w, h, touch] of [[1180, 800, false], [820, 1180, true], [390, 800, true]]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch }), errs = [];
       const pg = await ctx.newPage(); pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/favicon|401|403/.test(m.text())) errs.push(m.text() + ' ' + (m.location().url || '')); });
-      await pg.goto(site + '/studio'); await pg.waitForSelector('#pw', { timeout: 15000 }); await pg.fill('#pw', PW); testClock.t += 31e3; await pg.fill('#code', admins.totpNow(secrets.owner, testClock.t)); await pg.click('#si button'); await pg.waitForSelector('#tabs button', { timeout: 15000 });
+      await pg.goto(site + '/studio'); await pg.waitForSelector('#pw', { timeout: 15000 }); await pg.fill('#pw', PW); await pg.click('#si button'); await pg.waitForSelector('#tabs button', { timeout: 15000 });
       // round K: five sections (a column on a computer, a bar at the bottom of a phone), each opening as cards
       const navOk = await pg.evaluate(touch => { const bs = [...document.querySelectorAll('#tabs button')], r = bs.map(b => b.getBoundingClientRect()); return bs.length === 5 && (touch ? r.every(x => x.bottom >= innerHeight - 2 - 40 && x.height >= 56) : r.every(x => x.left < 220)); }, touch);
       if (!navOk) bad.push(`online ${w}px: the five sections are not where they should be`);

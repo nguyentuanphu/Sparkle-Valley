@@ -43,11 +43,11 @@ Photo faces and Family album pictures never go into `content/` (the site publish
 - Saving the content pack deletes from the store any family photo it no longer names.
 
 ## Signing in online (owner, round R privacy, 9 Oct)
-- Two steps for everyone, the owner too: password, then a TOTP code (`admins.mjs`: HMAC-SHA1, 30 s, one step either
+- Two steps for every admin: password, then a TOTP code (`admins.mjs`: HMAC-SHA1, 30 s, one step either
   side, node `crypto`, no package; a code is taken once). The first sign-in returns the secret and an `otpauth://`
   link (shown as text and a link; there is no QR helper in the project and the owner chose no QR codes in round D) and
-  is finished with the first code. An admin with a new phone: Admins → New phone. The owner: change `STUDIO_PASSWORD`
-  in Netlify and set it up again (the owner's two-step belongs to that password).
+  is finished with the first code. An admin with a new phone: Admins → New phone. **The owner signs in with
+  `STUDIO_PASSWORD` only** (owner, 11 Oct: "only admins need this"; it was a choice in Setup → Admins).
 - Passwords: 12 characters or more for admins; a `STUDIO_PASSWORD` shorter than 12 makes sign-in refuse with the reason.
   An admin whose old password is shorter is asked to get a new one from the owner.
 - Ten wrong passwords or codes on an account or from a connection lock signing in for 15 minutes (Blobs store `guard`,
@@ -94,11 +94,12 @@ Build the exe after changes: `bash studio/build-exe.sh`.
 - **World**: the map and building page writes their world format.
 - **Release**: the exe goes into each round's packages.
 
-## Owner's decisions to keep
+## Owner's decisions
+- **11 Oct AEDT: no two-step for the owner.** The owner signs in with `STUDIO_PASSWORD` only; two-step is for admins (`netlify/functions/studio.mjs`, Setup → Admins shows the owner as "password only"). to keep
 - Five sections, big cards, fast page changes (round K).
 - Everything sent back to Studio is labelled “Analytics” (round L).
 - Admins have their own accounts: Viewer, Editor, Owner; nobody else needs a GitHub token (round O).
 - Saves wait and Publish sends them in one go; ✕ on a real photo takes it off for good (round P).
 - Family photos are private, loaded only by the family's devices with a family code; random names (round R privacy).
-- Two-step sign-in for everyone (the owner can choose password only for any account, their own too, in Setup → Admins; owner, 9 Oct), 12+ character passwords, lockout, access log, Sign everyone out (round R privacy).
+- Two-step sign-in for admins (the owner can choose password only for any admin in Setup → Admins; owner, 9 Oct); the owner signs in with the password only (owner, 11 Oct), 12+ character passwords, lockout, access log, Sign everyone out (round R privacy).
 - Studio review (owner, 10 Oct, "go all"): changes not saved ask before leaving; clear results after Save and Publish; everything in Vietnamese; 44 px buttons and boxes; Villagers as cards on a phone or tablet; Releases folds its dates on a phone; Home buttons first on a phone; "Defaults for every device" card; Releases wins over Defaults for the valley's things (said beside them); pictures chosen from the game's drawings.
