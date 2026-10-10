@@ -19,9 +19,9 @@ album…), menus, settings and Grown-ups, pop-ups, icons and pictures, text size
 - Grown-ups' features (round S, with Play): `js/parents.js` (its Grown-ups group, the dance break, bedtime and certificate screens; its CSS block at the end of `css/style.css`)
 
 ## Hard rules (§9.6)
-A11Y-001 (Reduce motion turns on Calm), A11Y-002 (every spoken line also shown as words, ≥ 16 px), A11Y-003 (Simple
-screen tabs open on their groups), A11Y-005 (age modes change sizes, hints and voice, not the screen), A11Y-006 (an
-under-5 sees one group at a time, scrolling down, every stop a drawn picture), A11Y-007 (every tap answers at once);
+A11Y-001 (Reduce motion turns on Calm), A11Y-002 (every spoken line also shown as words, ≥ 16 px), A11Y-003 (each Simple
+screen tab is one road), A11Y-005 (age modes change sizes, hints and voice, not the screen), A11Y-006 (an
+under-5 sees one road per tab, scrolling down, category after category, every stop a drawn picture), A11Y-007 (every tap answers at once);
 UI-006 (checked on a phone, a tablet and a computer: tidy on all three), UI-001 (everything in English and Vietnamese), UI-002 (no phone emoji: drawn pictures), UI-003 (Close/Save/Next always
 on screen at 320–390 px), UI-004 (touch targets ≥ 44 px, ≥ 64 px for under-5s); SAFE-001 (safe for ages 2–8);
 SAVE-001…003 (saves never lost, versioned, unknown parts dropped safely); PRIV-011 (landmark photos only from our own
@@ -40,7 +40,10 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
 
 ## Owner's decisions to keep
 - Under-5s start on the Simple screen, big kids in the valley; each child switches either way (round I).
-- The Simple screen: groups first, one page per group that scrolls down, no “next page” buttons (round P).
+- The Simple screen (bug #30, owner, 10 Oct; replaces round P's groups): each bottom tab (Trò chơi, Truyện, Nơi chốn) is one
+  long road that scrolls down; a category's stops end and the next category starts on the same road, after a drawn heading
+  stop. No group pages, no way-back arrow, no top destinations button (`.sp-area` is gone). Khám phá stays as the one
+  search and jump button; its cards scroll to that category. In places, China and India always come last.
 - The switch to it is “▦ Hình to / Big pictures” beside the player's card (round O).
 - A new device has no ready-made characters: the child makes their own (round P).
 - Festivals in one place (Settings → Lễ hội); Grown-ups shows only the Analytics switch, no explanation (round N).
