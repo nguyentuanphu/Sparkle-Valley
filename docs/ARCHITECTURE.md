@@ -628,7 +628,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 
 | Id | Rule | Reason | Sev. | Validation | Failure behaviour |
 |---|---|---|---|---|---|
-| PROC-001 | Nothing reaches `main` without the owner's explicit "yes, deploy" (one per round, asked by Release after the full suite is green and the round is reported); helper cores push their own branches without asking (owner, 10 Oct; CLAUDE.md) | Owner control | BLOCKER | process | — |
+| PROC-001 | Nothing reaches `main` without the owner's explicit "yes, deploy" (one per round, asked by Release after the full suite is green and the round is reported); helper cores, and the bug robot (only to `bugfix/*` branches as draft PRs), push their own branches without asking (owner, 10 Oct; CLAUDE.md) | Owner control | BLOCKER | process | — |
 | PROC-002 | Existing features and UI unchanged unless asked | The children know the game | BLOCKER | check `contract`, `spill`, `phone` | — |
 | PROC-003 | Run the suite before and after; desktop and phone side by side | Phone-only bugs | BLOCKER | process + `phone` | — |
 | PROC-004 | Bump `VERSION` (sw.js), `BUILD`, `studio/version.json` together; new files in `FILES` | Devices update | BLOCKER | check `ground`, `studio` | old version keeps running offline |

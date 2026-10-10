@@ -15,6 +15,11 @@ one "yes, deploy" per round before anything reaches `main` (owner, 10 Oct: Relea
 | 6 | Studio | [studio.md](studio.md) | Sparkle Studio (exe and online), admins, saving and Publish, family content and photos |
 | 7 | Analytics & Infra | [analytics-infra.md](analytics-infra.md) | The analytics report, Netlify functions and settings, privacy, the service worker and caching |
 | 8 | Release | [release.md](release.md) | Merging, the full regression suite, version, voices, packages, reports, push and deploy |
+| – | Front Desk (not a core) | [front-desk.md](front-desk.md) | The owner's first stop for bugs and questions: finds the core, files the bug for the bug robot; never changes code |
+
+**Bugs (owner, 10 Oct):** tell the Front Desk. It files a GitHub issue labelled `bug` and the core's label; the bug
+robot (`.github/workflows/bug-fixer.yml`, every 3 hours) fixes small bugs on `bugfix/<core>-<issue>` branches with a
+draft pull request, and writes a plan for big ones that waits for the owner's "go". Release merges, after "yes, deploy".
 
 ## How to start a chat for a core
 

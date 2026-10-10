@@ -10,6 +10,7 @@
 **Release is the master release of all work (owner, 10 Oct):**
 - Helper chats (every core that is not Release) push to their own branch (`core/<name>` or the branch their session was given) whenever their checks pass, without asking the owner. Never to `main`.
 - Release collects every branch, merges them, runs the full suite, reports the round (what changed, how tested, Netlify zip and local bundle), then asks the owner **one pop-up question per round: "yes, deploy"**. That one answer covers pushing the release branch and merging it into `main` (Netlify publishes). Nothing reaches `main` without it, and it covers that round only.
+- **The bug robot (owner, 10 Oct)** works like a helper chat: the GitHub workflow `.github/workflows/bug-fixer.yml` runs every 3 hours, picks up open GitHub issues labelled `bug` plus a core label (only the Front Desk files them, `docs/cores/front-desk.md`), and lets Claude work on them as that core. A **small** bug (the small-bug rule in `docs/cores/front-desk.md`) is fixed, checked and pushed without asking, only to its own branch `bugfix/<core>-<issue>` with a draft pull request; a **big** bug gets a plan on the issue and waits for the owner's "go". It never pushes to `main`: Release merges its pull requests in a round, under that round's "yes, deploy".
 
 **Phone, tablet and computer (owner, 8 Oct):** every change is checked on a phone, a tablet and a computer so it looks tidy on all three (rule UI-006, check `phone`); look at screenshots of all three before reporting a round.
 
@@ -18,6 +19,8 @@
 **Times and dates:** always give them in AEST (UTC+10, Australia/Brisbane), labelled "AEST", in messages, reports and documents (owner, 5 Oct). Convert from UTC (GitHub, Netlify, logs) before quoting.
 
 **Cores (owner, 8 Oct):** the project is split into 8 cores, one AI chat per core (World, Play, Kid UI, Voice & Audio, Online, Studio, Analytics & Infra, Release). If the owner says which core you are, read `docs/cores/README.md` and your core's file in `docs/cores/` before anything else, work only in that core's files on the branch `core/<name>`, and put requests for other cores on `docs/cores/BOARD.md`. Only the Release core merges, runs the full suite, reports, collects every branch and asks for "yes, deploy". With no core named, you are Release.
+
+**Front Desk (owner, 10 Oct):** one more chat, not a core, is the owner's first stop for bugs and questions. If you are told you are the Front Desk, read `docs/cores/front-desk.md`: you find the core that owns a bug and file it as a GitHub issue for the bug robot; you never change the game's code, never push code and never deploy.
 
 **Working together across chats and Claude accounts (owner, 10 Oct).** Chats, even on different Claude accounts, cannot see or message each other; the GitHub repo is their only shared memory, and the owner carries messages between them.
 1. **Start of every session:** `git fetch` and `git pull` your branch, merge `main` into it, then read `docs/cores/BOARD.md` (the whole board, not only your section) and your progress notes.
