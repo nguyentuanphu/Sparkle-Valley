@@ -262,7 +262,7 @@ export function heightAt(x, z) {
 }
 
 export function regionAt(x, z) {
-  if (dist2(x, z, PLATEAU.x, PLATEAU.z) < PLATEAU.r + 8 && heightAt(x, z) > 12) return 'plateau';
+  if (dist2(x, z, PLATEAU.x, PLATEAU.z) < PLATEAU.r + 8 && heightAt(x, z) > PLATEAU.h - 2) return 'plateau'; // its top, from the map (round T lowered it to 8 m)
   for (const c of CITIES) if (x > c.x0 - 4 && x < c.x1 + 4 && z > c.z0 - 4 && z < c.z1 + 4) return c.id;
   if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r + 10) return 'village';
   if (dist2(x, z, CHINA.x, CHINA.z) < CHINA.r + 8) return 'china';

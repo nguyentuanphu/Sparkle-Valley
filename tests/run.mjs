@@ -1457,6 +1457,27 @@ await check('mapcoords', async () => {
   return `no world positions outside js/content/map.js in ${FILES.length} files`;
 });
 
+await check('regions', async () => {
+  // (round T) every named area can be stood in somewhere in the valley, and the big places read as themselves at their
+  // middle: the Dawn Plateau at home (it read as meadow once the plateau was lowered: no passport, songs or "you were in")
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), seen = new Set();
+    for (let x = -W.HALF + 2; x < W.HALF - 2; x += 2) for (let z = -W.HALF + 2; z < W.HALF - 2; z += 2) seen.add(W.regionAt(x, z));
+    const missing = Object.keys(W.REGION_NAMES).filter(k => !seen.has(k));
+    const at = { plateau: [W.PLATEAU.x, W.PLATEAU.z], village: [W.VILLAGE.x, W.VILLAGE.z], town: [W.TOWN.x, W.TOWN.z], market: [W.MARKET.x, W.MARKET.z], aussie: [W.AUSSIE.x, W.AUSSIE.z] };
+    const wrong = Object.entries(at).filter(([k, [x, z]]) => W.regionAt(x, z) !== k).map(([k, [x, z]]) => `${k} reads ${W.regionAt(x, z)}`);
+    const home = W.regionAt(W.PLATEAU.x - 3, W.PLATEAU.z - 4);
+    return { missing, wrong, home, n: Object.keys(W.REGION_NAMES).length };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.missing.length, `areas nowhere in the valley: ${r.missing.join(', ')}`);
+  ok(!r.wrong.length, r.wrong.join('; '));
+  ok(r.home === 'plateau', `the home spot reads ${r.home}, not plateau`);
+  ok(!errs.length, errs.join(' | '));
+  return `${r.n} areas all in the valley; home, Lotus Village, Phố Hai Quê, Chợ Ba Miền and Aussie Corner read as themselves`;
+});
+
 await check('walkaway', async () => {
   // a villager's words and the chat window stay while the child stands near, and close by themselves once the child
   // walks away (6 m; owner, round 30)
