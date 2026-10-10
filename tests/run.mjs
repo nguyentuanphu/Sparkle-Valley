@@ -1343,10 +1343,14 @@ await check('shop', async () => {
     out.spot = [Math.round(sp.x), Math.round(sp.z)]; out.offRoad = !rd.road || rd.d > rd.road.w / 2 + 1.5;
     out.nearMarket = Math.hypot(Math.max(M.x0 - sp.x, 0, sp.x - M.x1), Math.max(M.z0 - sp.z, 0, sp.z - M.z1)) < 40;
     out.dry = W.heightAt(sp.x, sp.z) > W.WATER + .3; out.tap = !!G.interactables.find(i => i.id === 'shop_clothes');
-    // the Bag button: off to the shop, and the shop opens
-    p.age = 'big'; G.addCoins(500 - S.farm.coins); G.huds[0].root.querySelector('.dk.bag').click(); await w(3200);
-    out.there = Math.hypot(h.pos.x - G.shop.front.x, h.pos.z - G.shop.front.z) < 8; const card = document.querySelector('.modal.shopk .card');
-    out.opened = !!card; out.tabs = card ? card.querySelectorAll('.ktab').length : 0;
+    // the Bag button (Bug #29, owner 10 Oct: "bag is bag"): it opens the backpack, with one small shop button that opens the
+    // shop right there, no travel; the stall in the valley stays
+    p.age = 'big'; G.addCoins(500 - S.farm.coins); const pos0 = { x: h.pos.x, z: h.pos.z }; G.huds[0].root.querySelector('.dk.bag').click(); await w(500);
+    const sb = document.querySelector('.modal.pad .bagshop'); out.bagOpens = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk') && !!sb;
+    out.bagShopBtn = sb ? (() => { const q = sb.getBoundingClientRect(); return q.width >= 44 && q.height >= 44; })() : false;
+    sb && sb.click(); await w(700);
+    out.there = Math.hypot(h.pos.x - pos0.x, h.pos.z - pos0.z) < 1 && !document.querySelector('.modal.pad'); const card = document.querySelector('.modal.shopk .card');
+    out.opened = !!card; out.tabs = card ? card.querySelectorAll('.ktab').length : 0; out.noBagTab = card ? !card.querySelector('[data-go="bag"]') : false;
     // (nothing to read: each thing is a drawing and a number; the words inside a drawing, like the coin's "$", are part
     // of the picture, so the text is read with the drawings taken out)
     const words = b => { const c = b.cloneNode(true); c.querySelectorAll('svg, .arti, .flagi').forEach(e => e.remove()); return c.textContent.replace(/\s/g, ''); };
@@ -1364,8 +1368,13 @@ await check('shop', async () => {
     p.age = 'little'; G.shop.openShop(0); await w(400);
     out.little = [...document.querySelectorAll('.modal.shopk.little .ktab, .modal.shopk.little .kitem')].filter(b => { const q = b.getBoundingClientRect(); return q.width < 64 || q.height < 64; }).length;
     document.querySelector('.modal.shopk .x').click(); await w(400);
-    // the wardrobe: what is owned, worn with a tap
+    // the wardrobe: what is owned, worn with a tap; no shop button on a row; the Done button covers no chip; no chip cut off or overlapping
     G.openWardrobe(0); await w(400); const wd = document.querySelector('.wardrobe.kward');
+    out.noRowShop = !wd.querySelector('.toshop, [data-shop]');
+    { const dn = wd.querySelector('.x').getBoundingClientRect(), chips = [...wd.querySelectorAll('.chip')].map(c => c.getBoundingClientRect()), box = wd.getBoundingClientRect();
+      const hit = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      out.wardClear = chips.every(c => !hit(c, dn)) && chips.every((c, k) => chips.every((d, j) => j <= k || !hit(c, d))) && wd.scrollWidth <= wd.clientWidth + 1;
+      out.wardRowsFit = [...wd.querySelectorAll('.wrow')].every(r => { const q = r.getBoundingClientRect(); return [...r.querySelectorAll('.chip')].every(c => { const z = c.getBoundingClientRect(); return z.top >= q.top - 1 && z.bottom <= q.bottom + 1; }); }); void box; }
     out.wardrobe = !!wd && wd.querySelectorAll('.wrow').length === 6 && !!wd.querySelector('[data-v="tiara"]') && !wd.querySelector('[data-v="dragon"]');
     wd.querySelector('[data-k="hat"][data-v="none"]').click(); await w(200); out.off = p.look.hat === 'none';
     document.querySelector('.wardrobe.kward .x').click(); await w(300);
@@ -1386,17 +1395,19 @@ await check('shop', async () => {
   });
   const errs = P.errors; await P.ctx.close(); const bad = [];
   if (!r.offRoad || !r.nearMarket || !r.dry || !r.tap) bad.push('the shop is not by the market on dry ground off the road ' + JSON.stringify(r.spot));
-  if (!r.there || !r.opened) bad.push('the Bag button did not take the child to the shop');
-  if (r.tabs !== 8 || !r.pics || r.small) bad.push(`the shop card: ${r.tabs} tabs, pictures ${r.pics}, ${r.small} buttons under 44 px`);
+  if (!r.bagOpens || !r.bagShopBtn) bad.push('the Bag button does not open the backpack with one small shop button ' + JSON.stringify({ o: r.bagOpens, b: r.bagShopBtn }));
+  if (!r.there || !r.opened) bad.push('the shop button in the bag did not open the shop right there (no travel)');
+  if (r.tabs !== 7 || !r.noBagTab || !r.pics || r.small) bad.push(`the shop card: ${r.tabs} tabs, pictures ${r.pics}, ${r.small} buttons under 44 px`);
   if (!r.bought || !r.poorKept || !r.closed) bad.push('buying ' + JSON.stringify({ bought: r.bought, poor: r.poorKept, closed: r.closed }));
   if (r.little) bad.push(`${r.little} buttons under 64 px for an under-5`);
   if (!r.wardrobe || !r.off) bad.push('the wardrobe does not show what is owned');
+  if (!r.noRowShop || !r.wardClear || !r.wardRowsFit) bad.push('the wardrobe: shop button on a row, or items overlap, are cut off or sit under the Done button ' + JSON.stringify({ s: r.noRowShop, c: r.wardClear, f: r.wardRowsFit }));
   if (!r.kept) bad.push('what a child already wore is not owned');
   if (r.allDrawn.length) bad.push('3D pieces: ' + r.allDrawn.join(' '));
   if (!r.offBag || !r.offStall || !r.offWard) bad.push('the Studio switch did not put the old Bag and wardrobe back ' + JSON.stringify(r));
   if (errs.length) bad.push(...errs.slice(0, 2));
   if (bad.length) throw new Error(bad.join('; '));
-  return `the shop at ${r.spot} by the market, off the road; the Bag button went there; 8 picture tabs, coin prices, 64 px for under-5s; bought the tiara, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
+  return `the shop at ${r.spot} by the market, off the road; the Bag opens the backpack and its small shop button opens the shop without travel; 7 picture tabs, coin prices, 64 px for under-5s; bought the tiara, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
 });
 await check('boxes', async () => {
   // (round S, owner plan 8 Oct: Round R Part 2 item 10) a big kid at Medium or Hard: one free mystery box a day, one more
