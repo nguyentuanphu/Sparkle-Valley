@@ -9,7 +9,7 @@ Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
 ## Release
-- **Now:** Round T on `round-t`: T2 (r57: rivers, lakes, bridge landmarks, road colours, boats) built on top of T1 (r56, pushed to pull request #21, not deployed); full suite running · branch `round-t` · waiting for the owner's "yes, push" / "yes, deploy" for r57 (and Online's map version in the hello before Round T goes live) · 10 Oct, 6:10 pm AEST
+- **Now:** Round T on `round-t`: T2 (r57: rivers, lakes, bridge landmarks, road colours, boats) built and reported, full suite 86/86, on top of T1 (r56, pushed to pull request #21, not deployed) · branch `round-t` · waiting for the owner's "yes, push" / "yes, deploy" for r57 (and Online's map version in the hello before Round T goes live) · 11 Oct, 3:45 am AEST
 - r54 is live (10 Oct, 1:29 am AEST). Round T stages T0 to T4: `docs/cores/ROUND-T.md`. Until Round T is merged, other cores do not change world positions or the map files (CLAUDE.md, helper rule 4).
 - Halloween decorations start growing about three weeks before 31 Oct: they only reach players once a round is deployed.
 - Still to build from the Round R plan (`docs/cores/ROUND-R.md`, Part 2): items 2 to 12 (Concept D layout, child's journey, homes, surprises, shop and wardrobe, money games, the rest of the festival groups, Hội làng times, 5–8 challenges, parent features, voice pack by area); the owner's privacy decisions of 9 Oct; splitting the code into per-core folders (infrastructure round).
