@@ -1280,6 +1280,7 @@ const keepSpot = () => G.heroes.forEach(h => { if (h.profile && h.onGround && !h
 // (round T) once, when a child who already played opens the valley's new layout
 async function grownMoment() {
   for (let k = 0; k < 60 && document.querySelector('.storybook, .reward, .modal, .dialog'); k++) await new Promise(r => setTimeout(r, 500));
+  say('The valley has grown! New rivers, bridges and places to visit.', 'Thung lũng đã lớn hơn rồi! Có sông mới, cầu mới và nhiều nơi mới để đi chơi.'); // (read aloud: under-5s can't read it)
   await reward('🗺️', T('The valley has grown!', 'Thung lũng đã lớn hơn rồi!'), T('New rivers, bridges and places to visit. Your stickers, stories, farm and house are all still here.', 'Có sông mới, cầu mới và nhiều nơi mới để đi chơi. Nhãn dán, truyện, nông trại và nhà của con vẫn còn nguyên.'));
 }
 async function newMoment(h) {
