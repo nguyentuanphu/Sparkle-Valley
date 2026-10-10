@@ -60,6 +60,17 @@ export const CHAPTERS = [
     { id: 'c2_tale', icon: '📖', en: 'Hear Bà Năm tell the story of Hồ Gươm', vi: 'Nghe Bà Năm kể Sự tích Hồ Gươm', at: 'nam2', tale_id: 'hoguom', talk: { who: 'Bà Năm', label: ['Listen to the story', 'Nghe kể chuyện'] } },
     { id: 'c2_find', icon: '🐢', en: 'Find the lantern by Hồ Gươm', vi: 'Tìm đèn lồng bên Hồ Gươm', at: 'clues', find: true, clues: 3 },
     { id: 'c2_hang', icon: '🌉', en: 'Hang the lantern on Cầu Thê Húc', vi: 'Treo đèn lồng trên Cầu Thê Húc', at: 'bridge', hang: true }
+  ] },
+  // (its words: js/content/chapter3text.js; its places: js/content/chapter3sydney.js; owner's go 10 Oct)
+  { id: 'ch3', en: 'Sydney', vi: 'Sydney', landmark: 'opera', keepsake: 'lantern_ch3', reward: 40, trick: 'higher', steps: [
+    { id: 'c3_fly', icon: '🏮', en: 'Fly to Sydney with your friend', vi: 'Cùng bạn đồng hành bay đến Sydney', at: 'sydney', visit: 'sydney', lights: 3 },
+    { id: 'c3_chi', icon: '👧', en: 'Meet Chi in Sydney', vi: 'Gặp Chi ở Sydney', at: 'chi3', big: true, talk: { who: 'Chi', label: ['Say hello', 'Chào bạn'] } },
+    { id: 'c3_words', icon: '💬', en: 'Learn Aussie words with Chi', vi: 'Học từ tiếng Úc cùng Chi', at: 'chi3', words: true },
+    { id: 'c3_ferry', icon: '⛴️', en: 'Help Captain Molly with the ferries', vi: 'Giúp thuyền trưởng Molly đưa phà', at: 'molly', game: ['ferries'], big: true },
+    { id: 'c3_jack', icon: '🏏', en: 'Play with Jack and Ruby', vi: 'Chơi với Jack và Ruby', at: 'jack3', game: ['cricket'], gameLittle: ['tug'], challenge: {} },
+    { id: 'c3_tale', icon: '📖', en: 'Hear Bà Năm tell The Magic Pudding', vi: 'Nghe Bà Năm kể chuyện Chiếc bánh pudding thần kỳ', at: 'nam3', tale_id: 'magicpudding', talk: { who: 'Bà Năm', label: ['Listen to the story', 'Nghe kể chuyện'] } },
+    { id: 'c3_find', icon: '🔭', en: 'Find the lantern by the harbour', vi: 'Tìm đèn lồng bên bến cảng', at: 'clues3', find: true, clues: 3 },
+    { id: 'c3_hang', icon: '🎭', en: 'Hang the lantern at the Opera House', vi: 'Treo đèn lồng ở Nhà hát Opera', at: 'opera', hang: true }
   ] }
 ];
 

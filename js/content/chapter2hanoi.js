@@ -154,7 +154,8 @@ export function createHanoi(G, ctx) {
     clueObjs.forEach(c => { c.o.visible = looking.length > 0; c.spark.visible = looking.some(h => !looked(h.profile).includes(c.k) && !clueFound(h.profile)); c.spark.position.y = 1.3 + Math.sin(t * 3 + c.k) * .12; });
     found.visible = looking.some(h => clueFound(h.profile)); if (found.visible) found.position.y = heightAt(lanternAt.x, lanternAt.z) + .45 + Math.sin(t * 2) * .06;
     // (an under-5's companion flies over the right spot and glows: its new trick, lighting the way)
-    for (const h of G.heroes) ctx.companions().lead(h, isOn(h.profile, 'c2_find') && !big(h.profile) && !clueFound(h.profile) ? { x: lanternAt.x, y: heightAt(lanternAt.x, lanternAt.z) + 1.8, z: lanternAt.z } : null);
+    // (only its own lead: chapter 3 leads the same companion later)
+    for (const h of G.heroes) if (isOn(h.profile, 'c2_find') || ctx.companions().of(h)?.lead?.c2) ctx.companions().lead(h, isOn(h.profile, 'c2_find') && !big(h.profile) && !clueFound(h.profile) ? { x: lanternAt.x, y: heightAt(lanternAt.x, lanternAt.z) + 1.8, z: lanternAt.z, c2: true } : null);
     if (mist.visible) mist.children.forEach((m, i) => { m.position.y = 1.4 + (i % 3) * .7 + Math.sin(t * .6 + i) * .15; });
     if (lights.visible) lights.children.forEach((l, i) => { if (l.geometry && l.geometry.type === 'SphereGeometry') l.scale.setScalar(1 + Math.sin(t * 3 + i) * .08); });
     // the parade walks round the lake, star lanterns bobbing
@@ -242,3 +243,4 @@ export function createHanoi(G, ctx) {
     bridge: { x: mx, z: mz, y: by, rot }, clues: clueObjs.map(c => ({ k: c.k, x: c.x, z: c.z })), people: people.map(q => ({ id: q.id, x: q.x, z: q.z })), turtles: turtles.map(t => ({ k: t.k, x: t.x, z: t.z }))
   };
 }
+export const create = createHanoi; // (js/lanterns.js loads every later chapter the same way)

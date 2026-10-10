@@ -1047,6 +1047,122 @@ await check('chapter2', async () => {
   if (bad.length) throw new Error(bad.join('; '));
   return `under-5: ${little.steps} steps (${little.counted} turtles, the companion lit the way); big kid: ${big.steps} steps (Ô ăn quan, bún chả by hand, ${big.counted} turtles and a question, clues); rope, film (2 pages), Cầu Thê Húc lit, parade, keepsake, new trick, golden turtle for the big kid; then "${big.after}"`;
 });
+await check('chapter3', async () => {
+  // (Play core, owner's go 10 Oct) chapter 3 of the lantern story, Sydney, played from the start to the fireworks, once as
+  // an under-5 and once as a big kid: off until an admin switches it on; lantern lights to Sydney, Chi (big kids), Chi's
+  // Aussie words (pictures for an under-5, meanings for a big kid; a wrong answer is never punished), Captain Molly's
+  // ferries (big kids), Jack and Ruby's challenge (cricket for a big kid, tug of war for an under-5: the other game does not
+  // count), Bà Năm's Magic Pudding, the clues by the harbour (the under-5's companion flies high and leads), the rope, the
+  // festival film (both pages played through), the Opera House lit, fireworks, the keepsake, the new trick (flying higher)
+  // and the big kids' koala. Nothing stands on a road, a city street or in the water.
+  const play = async age => {
+    const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+    const pg = P.page, w = ms => pg.waitForTimeout(ms), seen = [], out = [];
+    const q = () => pg.evaluate(() => { const c = __sv.currentQuest(__sv.heroes[0].profile); return c && c.id; });
+    const calm = () => pg.evaluate(() => { document.querySelectorAll('.storybook,.dialog,.reward').forEach(e => e.remove()); __sv.paused = false; });
+    const act = id => pg.evaluate(id => { const it = __sv.interactables.find(i => i.id === id), h = __sv.heroes[0]; if (!it || (it.visible && !it.visible(h))) return false; it.act(h, __sv); return true; }, id);
+    const tapDialog = (n = 6) => pg.evaluate(async n => { for (let i = 0; i < n; i++) { const d = document.querySelector('.dialog:not(.out)'); if (!d || d.querySelector('.dch')) break; d.click(); await new Promise(r => setTimeout(r, 250)); } }, n);
+    const step = async () => { await w(400); await calm(); await w(2200); await calm(); seen.push(await q()); };
+    const emit = gid => pg.evaluate(async gid => { const E = await import('/js/core/events.js'); E.events.emit('ActivityCompleted', { activityId: 'x', defId: 'game:' + gid, players: [], result: { won: true } }); }, gid);
+    // chapter 2 done; chapter 3 is off until an admin switches it on
+    const offFirst = await pg.evaluate(async age => { const G = __sv, p = G.heroes[0].profile, C = (await import('/js/custom.js')).CUSTOM, { CHAPTERS } = await import('/js/content/chapters.js');
+      p.age = age; p.lanterns = { companion: 'firefly', done: { p_owl: true }, chapters: { ch1: true, ch2: true } };
+      for (const c of CHAPTERS.slice(1, 3)) for (const s of c.steps) p.lanterns.done[s.id] = true;
+      C.features = { ...(C.features || {}), story_ch2: true }; const before = G.currentQuest(p);
+      C.features.story_ch3 = true; G.lanterns.companions.sync(); return !/^L_c3/.test(before && before.id || ''); }, age);
+    await pg.evaluate(() => __sv.lanterns.loadCh('ch3')); await w(300);
+    seen.push(await q());
+    await pg.evaluate(() => __sv.heroes[0].place(-36, 52)); await w(2500); await calm();
+    const lightsWaited = await q() === 'L_c3_fly';
+    for (let k = 0; k < 3; k++) { await act('story_light_c3_fly_' + k); await w(300); }
+    await step();
+    if (age === 'big') { await act('story_c3_chi'); await w(500); await tapDialog(); await step(); }
+    // Chi's words: tap the buttons until each word is right (a wrong one just hides)
+    await act('story_c3_words'); await w(800);
+    // (a big kid's answers are words that can be read; an under-5's are pictures)
+    const wordBtn = await pg.evaluate(() => { const b = document.querySelector('.handpad [data-hp=w0]'); if (!b) return null; const cs = getComputedStyle(b); return { text: b.textContent.trim(), size: parseFloat(cs.fontSize), pic: !!b.querySelector('.art, .emo, svg, img'), h: b.getBoundingClientRect().height }; });
+    let rounds = 0, wrongs = 0;
+    for (let i = 0; i < 20; i++) { const r = await pg.evaluate(() => { const b = [...document.querySelectorAll('.handpad [data-hp^=w]')].find(x => x.style.visibility !== 'hidden'); if (!b) return null; const word = document.querySelector('.handpad p b').textContent; b.click(); return word; }); if (r == null) break; await w(700);
+      const still = await pg.evaluate(() => { const b = document.querySelector('.handpad p b'); return b && b.textContent; }); if (still === r) wrongs++; else rounds++; }
+    await step();
+    if (age === 'big') { await emit('ferries'); await step(); }
+    const jackBtn = await act('story_c3_jack'); await w(600);
+    const jackChoices = await pg.evaluate(() => document.querySelectorAll('.dialog:not(.out) .dch').length); await calm();
+    await emit(age === 'big' ? 'tug' : 'cricket'); await w(400); const otherGame = await q();
+    await emit(age === 'big' ? 'cricket' : 'tug'); await step();
+    const namBtn = await act('story_c3_tale'); await w(600); await calm(); await pg.evaluate(() => document.querySelector('.th-x')?.click());
+    await pg.evaluate(() => __sv.lanterns._finish(__sv.heroes[0], 'c3_tale')); await step();
+    // the clues by the harbour
+    await pg.evaluate(() => { const S = __sv.lanterns.sydney; __sv.heroes[0].place(S.front[0], S.front[1] + 1); }); await w(2500); await calm();
+    const lead = await pg.evaluate(() => { const c = __sv.lanterns.companions.of(__sv.heroes[0]); return c && c.lead ? !!c.lead.high : false; });
+    await act('story_clue3_1'); await w(300);
+    const wrongFound = await pg.evaluate(() => !!(__sv.heroes[0].profile.lanterns.act || {}).clue3);
+    await act('story_clue3_0'); await w(300); await act('story_c3_find'); await step();
+    const carrying = await pg.evaluate(() => __sv.heroes[0].profile.lanterns.carrying);
+    pg.evaluate(() => { const it = __sv.interactables.find(i => i.id === 'story_c3_hang'); it.act(__sv.heroes[0]); }); await w(1500);
+    const roped = await pg.evaluate(() => { const el = document.querySelector('.handpad [data-hp=rope]'); if (!el) return false; const r = el.getBoundingClientRect(), ev = (t, y) => el.dispatchEvent(new PointerEvent(t, { bubbles: true, pointerId: 9, clientX: r.left + 20, clientY: r.top + r.height * y }));
+      ev('pointerdown', 0); ev('pointermove', 1); ev('pointerup', 1); return true; });
+    let film = false; for (let i = 0; i < 30 && !film; i++) { await w(300); film = await pg.evaluate(() => !!document.querySelector('.theatre.film canvas.th-film')); }
+    await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(1200);
+    await pg.evaluate(() => document.querySelectorAll('.reward').forEach(e => e.click())); await w(800); await tapDialog(); await w(400); await calm(); await w(1500);
+    const end = await pg.evaluate(() => { const G = __sv, p = G.heroes[0].profile, S = G.lanterns.sydney;
+      return { ch3: !!p.lanterns.chapters.ch3, keep: (p.keepsakes || []).includes('lantern_ch3'), carrying: p.lanterns.carrying, tricks: p.lanterns.tricks || [], lit: S.lit(), show: S.showOn(),
+        secret: G.interactables.find(i => i.id === 'story_c3_secret').visible(G.heroes[0]), after: (q => q && q.id)(G.currentQuest(p)) }; });
+    let sticker = false;
+    if (age === 'big' && end.secret) { await act('story_c3_secret'); await w(400); await pg.evaluate(() => document.querySelectorAll('.reward').forEach(e => e.click())); await w(400); sticker = await pg.evaluate(() => __sv.heroes[0].profile.stickers.includes('🐨')); }
+    const placed = await pg.evaluate(async () => { const W = await import('/js/world.js'), S = __sv.lanterns.sydney, bad = [];
+      const pts = [['front', S.front[0], S.front[1]], ...S.clues.map(c => ['clue' + c.k, c.x, c.z]), ...S.people.map(c => [c.id, c.x, c.z]), ['koala', S.koala.x, S.koala.z],
+        ...__sv.interactables.filter(i => /^story_light_c3/.test(i.id)).map(i => [i.id, i.x, i.z])];
+      for (const [id, x, z] of pts) { const d = W.roadDist(x, z); if (d.road && d.d < d.road.w / 2 + .5) bad.push(id + ' on a road');
+        for (const c of W.CITIES) if (c.layout && x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && Math.abs((x - c.x) * Math.cos(c.layout.toward) - (z - c.z) * Math.sin(c.layout.toward)) < 2.6) bad.push(id + ' on ' + c.id + "'s street");
+        if (W.heightAt(x, z) < W.WATER + .3) bad.push(id + ' in the water'); }
+      return bad; });
+    const filmRun = await pg.evaluate(async () => {
+      const F = await import('/js/film.js'), C = await import('/js/content/films.js'); await import('/js/content/chapter3films.js');
+      const { STORY_TALES } = await import('/js/content/chapters.js'), { openTheatre } = await import('/js/tales.js'), st = STORY_TALES.lantern_ch3, bad = [];
+      openTheatre({ ...st, story: true, title: () => st.title[0], ctx: { name: 'Na', companion: 'dragon' } }, { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100));
+      document.querySelector('.th-auto')?.click(); const f = F.filmNow(); if (!f) return ['no film'];
+      const frame = () => new Promise(r => requestAnimationFrame(r)); let helps = 0;
+      for (let k = 0; k < C.FILMS.lantern_ch3.pages.length; k++) { const done = f.page(k); let ended = false; done.then(() => { ended = true; }); const p = f.now; f.narrated();
+        for (let i = 0; i < 600 && !ended; i++) { if (p.hold) { helps++; p.release(true); } p.t += .2; await frame(); }
+        if (!ended) bad.push('page ' + (k + 1) + ' did not end'); if (!p.actors.length) bad.push('page ' + (k + 1) + ': nobody in it'); }
+      if (!helps) bad.push('the child never helped');
+      document.querySelector('.th-x')?.click(); await new Promise(r => setTimeout(r, 400)); if (F.filmNow()) bad.push('not freed');
+      return bad; });
+    const want = age === 'big' ? ['L_c3_fly', 'L_c3_chi', 'L_c3_words', 'L_c3_ferry', 'L_c3_jack', 'L_c3_tale', 'L_c3_find', 'L_c3_hang'] : ['L_c3_fly', 'L_c3_words', 'L_c3_jack', 'L_c3_tale', 'L_c3_find', 'L_c3_hang'];
+    want.forEach((id, i) => { if (seen[i] !== id) out.push(`step ${i + 1} was ${seen[i]}, expected ${id}`); });
+    if (!offFirst) out.push('chapter 3 started before an admin switched it on');
+    if (!lightsWaited) out.push('walking into Sydney finished the step before the lights were followed');
+    if (!wordBtn) out.push('no word buttons');
+    else if (age === 'big' ? !(wordBtn.text && wordBtn.size >= 16) : !wordBtn.pic) out.push('word buttons: ' + JSON.stringify(wordBtn));
+    else if (wordBtn.h < (age === 'big' ? 44 : 64)) out.push('word buttons too small: ' + wordBtn.h);
+    if (rounds !== (age === 'big' ? 4 : 2)) out.push(`${rounds} words with Chi, expected ${age === 'big' ? 4 : 2}`);
+    if (!jackBtn || jackChoices !== 3) out.push(`Jack and Ruby's challenge did not offer Play, How to play and Later (${jackChoices})`);
+    if (otherGame !== 'L_c3_jack') out.push('the other age group\'s game finished Jack and Ruby\'s challenge');
+    if (!namBtn) out.push('no button for Bà Năm\'s story');
+    if (age !== 'big' && !lead) out.push('the companion did not fly high to lead the way');
+    if (age === 'big' && lead) out.push('the companion led a big kid');
+    if (wrongFound) out.push('the lantern showed at the wrong spot');
+    if (carrying !== 'ch3' || end.carrying) out.push('the lantern was not carried and then hung');
+    if (!roped) out.push('hanging did not ask to pull the rope');
+    if (!film) out.push('the festival film did not open');
+    if (!end.ch3 || !end.keep) out.push('chapter 3 not finished ' + JSON.stringify(end));
+    if (!end.lit) out.push('the Opera House did not light up');
+    if (!end.show) out.push('no fireworks');
+    if (!end.tricks.includes('higher')) out.push('the companion did not learn its trick');
+    if (!end.after || /^L_c3/.test(end.after)) out.push('after chapter 3 the goal was ' + end.after);
+    if (age === 'big' && (!end.secret || !sticker)) out.push('no koala secret for a big kid');
+    if (age !== 'big' && end.secret) out.push('the koala showed for an under-5');
+    out.push(...placed, ...filmRun.map(x => 'film: ' + x));
+    if (P.errors.length) out.push(...P.errors.slice(0, 2));
+    await P.ctx.close();
+    return { out, steps: want.length, rounds, wrongs, after: end.after };
+  };
+  const little = await play('little'), big = await play('big');
+  const bad = [...little.out.map(x => 'under-5: ' + x), ...big.out.map(x => 'big kid: ' + x)];
+  if (bad.length) throw new Error(bad.join('; '));
+  return `under-5: ${little.steps} steps (${little.rounds} picture words, the companion flew high to lead); big kid: ${big.steps} steps (${big.rounds} Aussie words, ferries, cricket, clues); rope, film (2 pages, the child starts the fireworks), Opera House lit, fireworks, keepsake, new trick, koala for the big kid; then "${big.after}"`;
+});
 await check('yard', async () => {
   // (round R, owner: bà Huệ and ông Nghi's quest chain) the yard stands in an open spot near the Huệ Nghi shop; the side
   // story plays from bà Huệ's start to the house-warming meal: the coach from Hà Tĩnh, a job for each relative (a wrong
