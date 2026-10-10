@@ -29,7 +29,7 @@ Format for a request:
 
 ## World
 - **Now:** (r55 is now taken by chapter 2: Round T ships as r56) Round T is run by a Release chat on branch `round-t` (see `docs/cores/ROUND-T.md`, Progress); no separate World chat until Round T is merged · 10 Oct AEST
-- (nothing open)
+- [ ] (Studio → World) the game could prefer `place` + `off` over raw `x`, `z` for Studio's villagers (`CUSTOM.npcs`, js/main.js) and buildings (`CUSTOM.world.build`, js/worldedit.js) when the map changes again: Studio now saves both (`place` = a `PLACES` id from js/content/map.js, `off` = [dx, dz] from its anchor) · ROUND-T.md §4 · `js/main.js`, `js/worldedit.js` · 11 Oct AEDT
 
 ## Play
 - **Now:** festivals brief and story Chapter 3 (Sydney, switch `story_ch3` off) done, full suite 82/83 (`parents` fails on `main` too), **ready for Release** · `core/play` · 08e238a (+ this note) · waiting for Release · 11 Oct AEST
@@ -79,10 +79,10 @@ Format for a request:
 - The voice relay waits for the owner's Cloudflare TURN key (CF_TURN_KEY_ID, CF_TURN_KEY_TOKEN in Netlify): until then, voices only work when the two devices can link directly.
 
 ## Studio
-- **Now:** Studio review (branch `claude/quirky-meitner-dsxo5i`, last commit ca787a8) merged by Release into the next round · waiting for nothing · 10 Oct AEST
+- **Now:** **ready for Release**: Map page lists things kept aside from the old map (place again via `LEGACY.C`, or forget); saved villagers and buildings carry `place` + `off`; full suite 86/86 (6 online checks skipped); the exe needs rebuilding · branch `claude/quirky-meitner-dsxo5i`, last commit d5c24042 · waiting for nothing (T3 Plots page is later) · 11 Oct 09:25 AEDT (Sydney)
 - [x] (Studio → Release, added to HANDOFF) Studio review, 10 Oct AEST, branch `claude/quirky-meitner-dsxo5i`): please add to `HANDOFF.md`'s checks table, `studio` row: "(Studio review) every server message has Vietnamese (`studio/ui/vi.js`); leaving a page with changes not saved asks; save and Publish say what happened; 44 px buttons and boxes on 21 pages on a tablet and a phone; the game's names follow Studio's language; the pages open on a computer, a tablet and a phone". New Studio file `studio/ui/vi.js` (already in `studio/build-exe.sh`; not a game file, so not in `sw.js`). SparkleStudio.exe needs rebuilding (`bash studio/build-exe.sh`).
 - [x] (Release, owner's T1 answer, 10 Oct AEST) the stamp itself is done in `studio/ui/app.js` (Map page: older edits go to `CONTENT.parked`, then `world.map` = MAP_VERSION). Still for Studio: the Map page lists parked items to place again.
-- [ ] (Release → Studio) Was "before T1" (the stamp part is done): when Studio saves the family's map content (`world` build/edits/land, `npcs`), stamp `world.map` with `MAP_VERSION` from `js/content/map.js`. Content with no stamp counts as map 'C'; on any other layout the game parks it (`G.parked`) and never places it. Then the Map page lists parked items to place again (old place plus offset via `LEGACY.C`), and new features store a `placeId` and offset, never raw x, z · ROUND-T.md §4, owner's decision 5 · `studio/ui`, `studio/core.cjs` · 10 Oct AEST
+- [x] (Release → Studio) Was "before T1" (the stamp part is done): when Studio saves the family's map content (`world` build/edits/land, `npcs`), stamp `world.map` with `MAP_VERSION` from `js/content/map.js`. Content with no stamp counts as map 'C'; on any other layout the game parks it (`G.parked`) and never places it. Then the Map page lists parked items to place again (old place plus offset via `LEGACY.C`), and new features store a `placeId` and offset, never raw x, z · ROUND-T.md §4, owner's decision 5 · `studio/ui`, `studio/core.cjs` · 10 Oct AEST · done by Studio, 11 Oct AEDT: the Map page lists parked items to place again or forget; saved villagers and buildings carry `place` and `off`
 - [ ] (Release → Studio) T3: a Plots page for the Memory Village plots (`PLOTS` in the map) · ROUND-R.md item 2 · later
 
 ## Analytics & Infra

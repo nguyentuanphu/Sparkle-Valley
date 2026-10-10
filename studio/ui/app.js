@@ -740,7 +740,7 @@ PAGES.map = async P => {
   $('#mapwrap').outerHTML = `<div class="card"><div class="row modes">${MODES.map(([m, i, l]) => `<button class="btn small ${mapMode === m ? '' : 'ghost'}" data-mode="${m}">${i} ${l}</button>`).join('')}
       <button class="btn small pink" id="snap">🔎 ${SNAP ? T('Buildings shown', 'Đang hiện nhà cửa') : T('Show the buildings that are there now', 'Hiện nhà cửa đang có')}</button><span class="note" id="snapres"></span></div><p class="note" id="modehelp"></p></div>
     <div class="mapgrid"><div class="card mapbox"><div class="row modes" style="margin-bottom:6px"><span class="note">${T('Zoom', 'Phóng to')}</span>${[1, 2, 3].map(z => `<button class="btn small ghost" data-z="${z}">${z}×</button>`).join('')}</div><div class="mapscroll"><canvas id="mc" width="${S}" height="${S}"></canvas></div></div><div class="card" id="npcform"></div></div>
-    <div class="card"><h3>📋 ${T('Your changes', 'Thay đổi của bạn')}</h3><div id="npclist"></div></div><div class="bar"><button class="btn" id="save">💾 ${T('Save the map', 'Lưu bản đồ')}</button></div>`;
+    <div class="card"><h3>📋 ${T('Your changes', 'Thay đổi của bạn')}</h3><div id="npclist"></div></div><div id="parkedbox"></div><div class="bar"><button class="btn" id="save">💾 ${T('Save the map', 'Lưu bản đồ')}</button></div>`;
   const cv = $('#mc'), g = cv.getContext('2d'); let sel = null, drag = null, zoom = 1, rect = null;
   const HELP = { npc: T('Tap the map to add someone; drag a marker to move them; tap a marker to change or remove them.', 'Chạm bản đồ để thêm người; kéo dấu để dời; chạm dấu để sửa hoặc xóa.'),
     build: T('Choose a building on the right, then tap the map where it should stand. Drag it to move; turn it with the slider.', 'Chọn loại nhà bên phải, rồi chạm vào chỗ muốn xây. Kéo để dời; xoay bằng thanh trượt.'),
@@ -751,6 +751,41 @@ PAGES.map = async P => {
   const PL = k => { const p = ALBUM_PLACES.find(x => x[0] === k); return p ? T(p[1], p[2]) : k; };
   const places = [...W.CITIES.map(c => [c.x, c.z, T(c.name[0], c.name[1]), c.icon, c]), [W.VILLAGE.x, W.VILLAGE.z, PL('village'), '🪷'], [W.CHINA.x, W.CHINA.z, PL('china'), '🏮'], [W.INDIA.x, W.INDIA.z, PL('india'), '🪔'], [W.HOME.x, W.HOME.z, PL('home'), '🏡'], [(W.TOWN.x0 + W.TOWN.x1) / 2, W.TOWN.roadZ, PL('town'), '🏘️', W.TOWN], [(W.MARKET.x0 + W.MARKET.x1) / 2, W.MARKET.roadZ, PL('market'), '🧺', W.MARKET], [(W.AUSSIE.x0 + W.AUSSIE.x1) / 2, W.AUSSIE.roadZ, PL('aussie'), '🦘', W.AUSSIE]];
   const where = (x, z) => { if (W.heightAt(x, z) < W.WATER + .4) return ['bad', T('in the water', 'dưới nước')]; const rd = W.roadDist(x, z); if (rd.road && rd.d < rd.road.w / 2 + .8) return ['bad', T('on a road', 'giữa đường')]; return ['ok', '']; };
+  // ---------- (round T, board) things kept aside from an older map: place them again, or forget them ----------
+  // A villager or a building goes next to the same place on the new map: the old place nearest to it (LEGACY in
+  // js/content/map.js), with the same offset from its centre; in water or on a road, on the place's centre instead.
+  const M = await import(GAME + 'js/content/map.js'), OLD = M.LEGACY || {};
+  const nearest = (anchors, x, z) => { let best = null, bd = Infinity; for (const [id, a] of anchors) { const d = Math.hypot(x - a[0], z - a[1]); if (d < bd) { bd = d; best = [id, a]; } } return best; };
+  const NOW = M.PLACES.filter(p => p.kind !== 'island' && p.kind !== 'river').map(p => [p.id, M.anchorOf(p.id)]).filter(([, a]) => a);
+  const reproject = (map, x, z) => { const n = nearest(Object.entries(OLD[map] || OLD.C || {}).filter(([id]) => M.anchorOf(id)), x, z); if (!n) return null;
+    const [id, [ax, az]] = n, [nx, nz] = M.anchorOf(id); let X = +(nx + x - ax).toFixed(1), Z = +(nz + z - az).toFixed(1); if (where(X, Z)[0] !== 'ok') { X = nx; Z = nz; }
+    return { x: X, z: Z, place: id, off: [+(X - nx).toFixed(1), +(Z - nz).toFixed(1)] }; };
+  // everything saved from here also names its place and the offset from it (round T: new features never rely on raw x, z alone)
+  const placeOf = it => { const n = nearest(NOW, it.x, it.z); if (n) { it.place = n[0]; it.off = [+(it.x - n[1][0]).toFixed(1), +(it.z - n[1][1]).toFixed(1)]; } return it; };
+  const pname = id => { const p = ALBUM_PLACES.find(x => x[0] === id), c = W.CITIES.find(x => x.id === id); return p ? T(p[1], p[2]) : c ? T(c.name[0], c.name[1]) : id; };
+  function parkedCard() {
+    const box = $('#parkedbox'); if (!box) return; const PK = Array.isArray(CONTENT.parked) ? CONTENT.parked : [];
+    PK.forEach(g => { g.world = g.world || {}; g.npcs = g.npcs || []; g.world.build = g.world.build || []; g.world.edits = g.world.edits || []; g.world.land = g.world.land || []; });
+    const rows = [], circles = PK.reduce((a, g) => a + g.world.edits.length + g.world.land.length, 0);
+    PK.forEach((g, gi) => { g.npcs.forEach((c, i) => rows.push({ gi, kind: 'npcs', i, label: (c.gender === 'm' ? '👨 ' : '👩 ') + (c.name || '?'), it: c }));
+      g.world.build.forEach((b, i) => rows.push({ gi, kind: 'build', i, label: ((TYPES[b.type] || {}).icon || '🏠') + ' ' + ((b.name && (b.name[1] || b.name[0])) || T(...((TYPES[b.type] || {}).name || ['A building', 'Một ngôi nhà']))), it: b })); });
+    if (!PK.length) { box.innerHTML = ''; return; }
+    box.innerHTML = `<div class="card parked"><h3>📦 ${T('Kept aside from the old map', 'Cất riêng từ bản đồ cũ')} (${rows.length})</h3>
+      <p class="note">${T('The valley has a new map, so these were not put in the game. “Place again” puts each one next to the same place on the new map (you can drag it after). Then Save.', 'Thung lũng có bản đồ mới, nên những thứ này chưa được đặt vào game. “Đặt lại” đặt từng thứ cạnh đúng nơi đó trên bản đồ mới (sau đó kéo được). Rồi bấm Lưu.')}</p>
+      ${rows.map((r, k) => { const to = reproject(PK[r.gi].map || 'C', r.it.x, r.it.z); return `<div class="row prow"><span><b>${esc(r.label)}</b><br><span class="note">📍 ${to ? esc(T('next to ', 'cạnh ') + pname(to.place)) : T('no place found', 'không tìm thấy nơi')}</span></span>
+        <button class="btn small" data-place="${k}" ${to ? '' : 'disabled'}>📍 ${T('Place again', 'Đặt lại')}</button><button class="btn small ghost" data-forget="${k}">🗑️ ${T('Forget', 'Bỏ')}</button></div>`; }).join('')}
+      ${circles ? `<div class="row prow"><span class="note">🧹 ${T(`${circles} move, remove or flat-land change(s) cannot be carried over (they pointed at buildings of the old map): make them again on this map if you still want them.`, `${circles} thay đổi dời, xóa hoặc đất bằng không chuyển sang được (chúng chỉ vào nhà của bản đồ cũ): hãy làm lại trên bản đồ này nếu vẫn cần.`)}</span><button class="btn small ghost" data-forgetc>🗑️ ${T('Forget them', 'Bỏ chúng')}</button></div>` : ''}
+      <div class="row" style="justify-content:flex-end">${rows.length ? `<button class="btn" data-placeall>📍 ${T('Place them all again', 'Đặt lại tất cả')}</button>` : ''}<button class="btn ghost" data-forgetall>🗑️ ${T('Forget everything kept aside', 'Bỏ hết những thứ cất riêng')}</button></div></div>`;
+    const tidy = () => { CONTENT.parked = PK.filter(g => g.npcs.length || g.world.build.length || g.world.edits.length || g.world.land.length); if (!CONTENT.parked.length) delete CONTENT.parked; };
+    const place = r => { const to = reproject(PK[r.gi].map || 'C', r.it.x, r.it.z); if (!to) return; const it = { ...r.it, ...to }; (r.kind === 'npcs' ? CONTENT.npcs : WD.build).push(it); return it; };
+    const drop = list => { list.sort((a, b) => b.i - a.i).forEach(r => { (r.kind === 'npcs' ? PK[r.gi].npcs : PK[r.gi].world.build).splice(r.i, 1); }); tidy(); };
+    const again = () => { draw(); form(); list(); parkedCard(); paintState(); };
+    box.querySelectorAll('[data-place]').forEach(b => b.onclick = () => { const r = rows[+b.dataset.place]; if (place(r)) { drop([r]); sel = { list: r.kind, i: (r.kind === 'npcs' ? CONTENT.npcs : WD.build).length - 1 }; again(); } });
+    box.querySelectorAll('[data-forget]').forEach(b => b.onclick = () => { if (!confirm(T('Forget this one? It will not come back.', 'Bỏ mục này? Sẽ không lấy lại được.'))) return; drop([rows[+b.dataset.forget]]); again(); });
+    const fc = box.querySelector('[data-forgetc]'); if (fc) fc.onclick = () => { PK.forEach(g => { g.world.edits = []; g.world.land = []; }); tidy(); again(); };
+    const pa = box.querySelector('[data-placeall]'); if (pa) pa.onclick = () => { const done = rows.filter(r => place(r)); drop(done); again(); toast('📍 ' + T(`${done.length} placed again. Check them on the map, then Save.`, `Đã đặt lại ${done.length}. Xem trên bản đồ rồi bấm Lưu.`), 'good'); };
+    box.querySelector('[data-forgetall]').onclick = () => { if (!confirm(T('Forget everything kept aside from the old map? It will not come back.', 'Bỏ hết những thứ cất riêng từ bản đồ cũ? Sẽ không lấy lại được.'))) return; delete CONTENT.parked; again(); };
+  }
   const draw = () => {
     g.drawImage(mapCanvas, 0, 0, S, S); g.font = 'bold 13px Segoe UI, sans-serif'; g.textAlign = 'center';
     for (const L of WD.land) { const [a, b2] = toPx(L.x0, L.z0), [c, d] = toPx(L.x1, L.z1); g.fillStyle = 'rgba(190,140,70,.45)'; g.fillRect(a, b2, c - a, d - b2); g.strokeStyle = sel && sel.list === 'land' && WD.land[sel.i] === L ? '#8a5cf6' : '#8a5a2a'; g.lineWidth = 2; g.strokeRect(a, b2, c - a, d - b2); }
@@ -857,8 +892,8 @@ PAGES.map = async P => {
     $('#npclist').innerHTML = html.join('') || `<p class="note">${T('No changes yet.', 'Chưa có thay đổi.')}</p>`;
     $('#npclist').querySelectorAll('[data-l]').forEach(b => b.onclick = () => { sel = { list: b.dataset.l, i: +b.dataset.i }; draw(); form(); list(); });
   }
-  draw(); form(); list();
-  $('#save').onclick = () => { CONTENT.npcs = CONTENT.npcs.filter(c => c.name && c.name.trim()).map(c => ({ ...c, name: c.name.trim(), lines: (c.lines || []).filter(l => l[0] || l[1]) })); saveContent().then(() => list()).catch(fail); };
+  draw(); form(); list(); parkedCard();
+  $('#save').onclick = () => { CONTENT.npcs = CONTENT.npcs.filter(c => c.name && c.name.trim()).map(c => placeOf({ ...c, name: c.name.trim(), lines: (c.lines || []).filter(l => l[0] || l[1]) })); WD.build.forEach(placeOf); WD.map = W.MAP_VERSION; saveContent().then(() => list()).catch(fail); };
 };
 // ---------- real photos of every landmark, saved into the game so they work offline ----------
 PAGES.photos = async P => {

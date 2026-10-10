@@ -136,3 +136,6 @@ table.rel td.opt select[data-in] { margin-top: 6px; width: auto; min-width: 140p
 @media (max-width: 420px) { .brand b { font-size: 16px; } }
 .picrow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 48px; margin-bottom: 6px; }
 .bar { flex-wrap: wrap; } .bar .btn { white-space: nowrap; }
+/* (round T) things kept aside from the old map, on the Map page */
+.parked { border-color: var(--warn); } .parked .prow { padding: 8px 0; border-bottom: 1px solid var(--line); } .parked .prow > span { flex: 3 1 220px; } .parked .prow > .btn { flex: 0 0 auto; min-width: 0; }
+@media (max-width: 500px) { .parked .prow > span { flex-basis: 100%; } }
