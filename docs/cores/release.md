@@ -63,3 +63,5 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
   robot chat after r57, before T2.
 - **No local bundle (11 Oct AEDT):** the round report gives the Netlify zip but no local bundle; the owner gets the offline
   files from GitHub and the Google Drive mirror.
+- 11 Oct AEDT: Release collects every 5 minutes (session job, hourly routine as backup): merges every branch marked "ready for Release" and the robot's bugfix branches whose issue says fixed-on-branch (Kid UI ones together), runs the full suite, looks at phone, tablet and computer screenshots, then reports and asks one "yes, deploy". Messages to the owner only for a round report, a yes-deploy question or a blocker. Times in Sydney time.
+- 11 Oct AEDT: two Release chats: the robot chat runs r57 (robot fixes #27 #28 #29 #31 #41 and the robot workflows); this round chat runs r58 on top of it.
