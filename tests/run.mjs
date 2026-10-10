@@ -709,14 +709,20 @@ await check('hubmap', async () => {
     const seen = {}; for (const t of [...document.querySelectorAll('.hubtabs [data-tab]')].map(b => b.dataset.tab)) { document.querySelector(`.hubtabs [data-tab="${t}"]`).click(); await new Promise(r => setTimeout(r, 100)); document.querySelectorAll('.hubbody [data-play]').forEach(b => { seen[b.dataset.play] = (seen[b.dataset.play] || 0) + 1; }); }
     document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 600));
     document.querySelector('.mapchips [data-g="vn"]').click(); await new Promise(r => setTimeout(r, 200));
-    const rows = [...document.querySelectorAll('.quick .qbtn')].map(b => (b.classList.contains('sub') ? '-' : '') + b.innerText.trim());
-    return { games: Object.keys(seen).length, all: Object.keys(__sv.GAMES || {}).length, dup: Object.entries(seen).filter(([, n]) => n > 1).map(([k]) => k), rows };
+    // (owner, bug #28, 11 Oct) a row of city buttons, north to south; the list shows the chosen city's places only
+    const cities = [...document.querySelectorAll('.mapcities button')].map(b => b.innerText.trim());
+    const placesOf = async name => { const c = [...document.querySelectorAll('.mapcities button')].find(b => b.innerText.includes(name)); if (!c) return null;
+      c.click(); await new Promise(r => setTimeout(r, 200)); return [...document.querySelectorAll('.mapplaces .qbtn')].map(b => b.innerText.trim()); };
+    const hanoi = (await placesOf('Hà Nội')) || (await placesOf('Hanoi')), danang = await placesOf('Đà Nẵng');
+    return { games: Object.keys(seen).length, all: Object.keys(__sv.GAMES || {}).length, dup: Object.entries(seen).filter(([, n]) => n > 1).map(([k]) => k), cities, hanoi, danang };
   });
   ok(!r.dup.length, 'games in two tabs: ' + r.dup.join(', ')); ok(r.games >= 60, 'games in the hub: ' + r.games);
-  const at = n => r.rows.findIndex(x => x.includes(n)), hn = at('Hà Nội') >= 0 ? at('Hà Nội') : at('Hanoi'), dn = at('Đà Nẵng'), hl = at('Hạ Long'), hue = at('Huế');
-  ok(hn >= 0 && dn > hn && hl > hn && hl < dn && hue > dn, 'map: Hạ Long should be under Hà Nội and Huế under Đà Nẵng: ' + r.rows.slice(0, 20).join(' | '));
+  const at = n => r.cities.findIndex(x => x.includes(n)), hn = at('Hà Nội') >= 0 ? at('Hà Nội') : at('Hanoi'), dn = at('Đà Nẵng');
+  ok(hn >= 0 && dn > hn, 'map: the Vietnam cities are not north to south (Hà Nội before Đà Nẵng): ' + r.cities.join(' | '));
+  ok(r.hanoi && r.hanoi.some(x => x.includes('Hạ Long')), 'map: Hạ Long should be under Hà Nội: ' + (r.hanoi || []).join(' | '));
+  ok(r.danang && r.danang.some(x => x.includes('Huế')) && !r.hanoi.some(x => x.includes('Huế')), 'map: Huế should be under Đà Nẵng only: ' + (r.danang || []).join(' | '));
   ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
-  return `${r.games} games, each in one tab; the map lists Vietnam north to south with each landmark under its real place`;
+  return `${r.games} games, each in one tab; the map's Vietnam cities run north to south, each with its landmarks (${r.cities.length} cities)`;
 });
 
 await check('festcal', async () => {
