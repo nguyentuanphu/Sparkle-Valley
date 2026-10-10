@@ -78,4 +78,8 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
   `perf` now measures PERF-001 on the packed copy (2.6 MB, ratchet 2.7). Start-up times added to Analytics (PRIV-005).
   Tried: pauses between building steps in `js/main.js` gave nothing measurable (each freeze is one World function), so
   that change was not kept. The fix is World's (board request): keep the built valley on the device, build in pieces.
+- **11 Oct, #36 step 5 (56d9578).** Packing only: minified stylesheet, no kept names. Checked on the packed copy:
+  `startup` (first start 1032 KB, title 0.9-1.0 s, ready 17.9-18.2 s; second start 0 KB, ready 17.2-17.5 s, longest
+  freeze 4.4-4.5 s), `perf`, `boot`, `offline` pass; fast checks unit rules preload emoji arch types names pass;
+  title, Who's playing, the valley's HUD and the first panel identical to the plain copy on phone, tablet and computer.
 
