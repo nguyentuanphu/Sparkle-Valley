@@ -28,7 +28,7 @@ import { openHowTo } from './howto.js';
 import { WILD } from './gather.js';
 import { snackOf, eatSnack } from './snacks.js';
 import { saveToDevice, savesByShare } from './photos.js';
-import { extrasHTML, bindExtras, privacyHTML } from './extras.js';
+import { extrasHTML, bindExtras, privacyHTML, netListHTML } from './extras.js';
 import { canListen } from './listen.js';
 import { installButton } from './install.js';
 import { BUILD } from './build.js';
@@ -246,7 +246,7 @@ function packStatusHTML() {
     <div class="actions"><button class="btn" data-pv="f">▶ 👩 ${T('Woman', 'Giọng nữ')}</button><button class="btn" data-pv="m">▶ 👨 ${T('Man', 'Giọng nam')}</button></div>
     <p class="note">${T('Women, girls and grandmas speak with the woman’s voice; men, boys and grandpas with the man’s.', 'Phụ nữ, bé gái và bà nói bằng giọng nữ; đàn ông, bé trai và ông nói bằng giọng nam.')}</p>
     ${miss.length ? `<details class="g-miss"><summary>📝 ${T(`${miss.length} lines on this device had no recording yet`, `${miss.length} câu trên máy này chưa có bản ghi`)}</summary>
-      <p class="note">${settings.countPlayers !== false ? T('They reach Sparkle Studio by themselves (Studio → 🎮 Game → 🎙️ Voices → inbox), without children’s names; record them there for the next update.', 'Các câu này tự gửi tới Sparkle Studio (Studio → 🎮 Trò chơi → 🎙️ Giọng đọc → hộp thư), không kèm tên các con; thu ở đó cho bản cập nhật sau.') : T('Analytics is off on this device, so they are not sent: save a backup (below) and open it in Sparkle Studio → Voices.', 'Phân tích đang tắt trên máy này nên các câu không được gửi: lưu bản sao (bên dưới) rồi mở trong Sparkle Studio → Giọng đọc.')}</p>
+      <p class="note">${settings.countPlayers !== false ? T('They are sent by themselves, without children’s names, and recorded for the next update.', 'Các câu này tự được gửi đi, không kèm tên các con, và sẽ được thu cho bản cập nhật sau.') : T('Analytics is off on this device, so they are not sent. They are kept in the backup file (below).', 'Phân tích đang tắt trên máy này nên các câu không được gửi. Các câu được giữ trong tệp sao lưu (bên dưới).')}</p>
       <ol class="misslist">${miss.slice(0, 40).map(m => `<li>${m[0] === 'vi' ? '🇻🇳' : '🇦🇺'} ${esc(m[1])} <small>×${m[2]}</small></li>`).join('')}</ol>
       <button class="btn" id="gMissClear">🧹 ${T('Clear the list', 'Xóa danh sách')}</button></details>` : `<p class="note">✅ ${T('Every line said on this device so far had a recording.', 'Mọi câu đã nói trên máy này đều có bản ghi.')}</p>`}`;
 }
@@ -274,7 +274,7 @@ export function openGrownups(after) {
       <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(nm(p.name))}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn ghost" data-rep="${p.id}" aria-label="${T('Play report', 'Báo cáo chơi')}">${pic('📊')}</button><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
       <button class="btn wide" id="gAdd">+ ${T('Add a player', 'Thêm người chơi')}</button>
       <h3>🔒 ${T('Family photos', 'Ảnh gia đình')}</h3>
-      <p class="note">${T('Photo faces and family postcards are private. Type the family code from Sparkle Studio (Family → Family code) once on this device to see them.', 'Ảnh khuôn mặt và bưu thiếp gia đình được giữ riêng. Gõ mã gia đình từ Sparkle Studio (Gia đình → Mã gia đình) một lần trên máy này để xem.')}</p>
+      <p class="note">${T('Your family’s own photos (on villagers’ faces and on postcards) are private. Type the family code once on this device to download them; ask the grown-up who set up the game for it.', 'Ảnh của gia đình (trên mặt dân làng và trên bưu thiếp) được giữ riêng. Gõ mã gia đình một lần trên máy này để tải ảnh về; hỏi người lớn đã cài trò chơi để lấy mã.')}</p>
       <div class="vrow"><input type="text" id="gFam" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="ABCD-EFGH-JKMN" value="${familyCode() ? '••••' + esc(familyCode().slice(-4)) : ''}"><button class="btn" id="gFamSave">${T('Save', 'Lưu')}</button></div>
       <p class="note" id="gFamRes">${(() => { const c = familyPhotoCount(); return familyCode() ? T(`${c.have} of ${c.of} family photos on this device.`, `${c.have}/${c.of} ảnh gia đình trên máy này.`) : T('No family code on this device: family photos are not shown.', 'Máy này chưa có mã gia đình: ảnh gia đình không hiện.'); })()}</p>
       </div></details>
@@ -332,10 +332,11 @@ export function openGrownups(after) {
       <p class="note">${T('Clears crops, animals, pets, basket and coins. Players, photos, stickers and game levels are kept.', 'Xóa cây trồng, vật nuôi, thú cưng, giỏ hàng và tiền. Giữ lại người chơi, ảnh, hình dán và cấp độ trò chơi.')}</p>
       
       </div></details>
-      <details class="gsec" data-sec="online" ${gOpen.has('online') ? 'open' : ''}><summary><span class="gi">🌐</span><b>${T('Playing online', 'Chơi trực tuyến')}</b></summary><div class="gbody">
+      <details class="gsec" data-sec="online" ${gOpen.has('online') ? 'open' : ''}><summary><span class="gi">🌐</span><b>${T('Internet and playing online', 'Internet và chơi trực tuyến')}</b></summary><div class="gbody">
 
-      <label class="tog"><input type="checkbox" id="gOnline" ${settings.online ? 'checked' : ''}> <b>${T('Play with friends online', 'Chơi cùng bạn qua mạng')}</b></label>
-      <p class="note">${T('Off until you turn it on. While it is off the game makes no online connection: no rooms, no friends’ status, no invitations.', 'Tắt cho đến khi bạn bật. Khi tắt, trò chơi không kết nối mạng để chơi cùng: không phòng, không trạng thái bạn bè, không lời mời.')}</p>
+      <label class="tog"><input type="checkbox" id="gOnline" ${settings.online ? 'checked' : ''}> <b>${T('Use the internet (friends online, real places)', 'Dùng internet (chơi cùng bạn, nơi thật)')}</b></label>
+      <p class="note">${T('Off until you turn it on. While it is off the game makes no online connection: no rooms, no friends’ status, no invitations, no real-place maps. When it is on, the game does not ask again.', 'Tắt cho đến khi bạn bật. Khi tắt, trò chơi không kết nối mạng: không phòng, không trạng thái bạn bè, không lời mời, không bản đồ nơi thật. Khi đã bật, trò chơi không hỏi lại.')}</p>
+      ${netListHTML()}
       <h3>👥 ${T('Who’s here', 'Ai đang ở đây')}</h3><div class="whohere" id="gWho"><p class="note">…</p></div>
       <p class="note">${T('Online play uses the free PeerJS service to connect two devices directly. Voice goes straight between the devices and is never recorded.', 'Chơi trực tuyến dùng dịch vụ miễn phí PeerJS để nối hai máy trực tiếp. Giọng nói đi thẳng giữa hai máy và không bao giờ được ghi lại.')}</p>
       <label class="tog"><input type="checkbox" id="gAutoMeet" ${settings.autoMeet !== false ? 'checked' : ''}> ${T('Tell me when a friend on the list starts playing (with buttons to invite them or go to their room; nobody is put in a room by themselves)', 'Báo khi một bạn trong danh sách bắt đầu chơi (có nút mời bạn hoặc sang phòng bạn; không ai tự bị đưa vào phòng)')}</label>
@@ -428,7 +429,7 @@ export function openGrownups(after) {
     // (round R privacy) the family code: kept on this device only (never in a backup); empty removes it and the photos
     card.querySelector('#gFamSave').onclick = async () => { const v = card.querySelector('#gFam').value.trim(), out = card.querySelector('#gFamRes'); if (/^•/.test(v)) return; out.textContent = '…';
       const r = await setFamilyCode(v).catch(() => ({ ok: false }));
-      out.textContent = r.cleared ? T('Family code removed from this device.', 'Đã xóa mã gia đình khỏi máy này.') : r.bad ? T('That code is not right: check it in Sparkle Studio.', 'Mã chưa đúng: xem lại trong Sparkle Studio.') : r.ok ? T(`Saved: ${r.n || 0} of ${r.of || 0} family photos on this device.`, `Đã lưu: ${r.n || 0}/${r.of || 0} ảnh gia đình trên máy này.`) : T('Saved. The photos come the next time this device is online.', 'Đã lưu. Ảnh sẽ về khi máy có mạng.'); };
+      out.textContent = r.cleared ? T('Family code removed from this device.', 'Đã xóa mã gia đình khỏi máy này.') : r.bad ? T('That code is not right: check it with the grown-up who set up the game.', 'Mã chưa đúng: hỏi lại người lớn đã cài trò chơi.') : r.ok ? T(`Saved: ${r.n || 0} of ${r.of || 0} family photos on this device.`, `Đã lưu: ${r.n || 0}/${r.of || 0} ảnh gia đình trên máy này.`) : T('Saved. The photos come the next time this device is online.', 'Đã lưu. Ảnh sẽ về khi máy có mạng.'); };
     card.querySelector('#gAdd').onclick = () => profiles.length >= MAX_KIDS ? toast(T(`Up to ${MAX_KIDS} players.`, `Tối đa ${MAX_KIDS} người chơi.`)) : openEditor(null, () => { draw(); after && after(); });
     card.querySelector('#gExp').onclick = async () => { const how = await exportBackup(); if (how === 'cancelled') return; toast(how === 'shared' ? T('Backup saved!', 'Đã lưu bản sao!') : T('Backup downloaded. Put it in Drive or iCloud to keep it safe.', 'Đã tải bản sao. Hãy cất vào Drive hoặc iCloud cho an toàn.')); const y = m.scrollTop; draw(); m.scrollTop = y; };
     card.querySelector('#gRec').onclick = () => openRecorder(draw);
