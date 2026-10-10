@@ -554,8 +554,8 @@ await check('resume', async () => {
   // a child comes back where they were (owner, round 30), with a "welcome back"; a spot that is no longer good
   // (in the lake, inside a building) starts them at the usual place instead
   const P = await open(b, { w: 800, h: 600 }); await clear(P.page);
-  // (round T: a spot on the road from Brisbane to Hà Nội, from the map; home is by Ông Cú on the plateau)
-  const [rx, rz] = await P.page.evaluate(async () => (await import('/js/content/map.js')).ROADS.find(R => R.id === 'brisbane_hanoi').pts[3]);
+  // (round T: a spot on a road far from home, from the map; home is by Ông Cú on the plateau)
+  const [rx, rz] = await P.page.evaluate(async () => { const R = (await import('/js/content/map.js')).ROADS.find(R => R.id === 'vn_north'), [a, b] = [R.pts[0], R.pts[R.pts.length - 1]]; return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; }); // (the middle of the Vietnam road, north part)
   const { home, lake } = await P.page.evaluate(async () => { const W = await import('/js/world.js'); return { home: { x: W.PLATEAU.x - 3, z: W.PLATEAU.z - 4 }, lake: { x: W.LAKE.x, z: W.LAKE.z } }; });
   await P.page.evaluate(([x, z]) => { __sv.heroes[0].place(x, z); }, [rx, rz]); await P.page.waitForTimeout(1500); await clear(P.page);
   await P.page.waitForFunction(([x, z]) => { const p = __sv.heroes[0].profile.pos; return p && Math.hypot(p.x - x, p.z - z) < 2; }, [rx, rz], { timeout: 15000 }).catch(() => { });

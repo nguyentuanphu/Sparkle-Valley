@@ -175,7 +175,7 @@ export function createRegions(G) {
   // the Big Banana: a banana-smoothie shop wearing a giant banana
   { const p = [P(Box(7, 3.4, 6), '#fff3c4', [0, 1.7, 0]), P(Box(7.2, .4, 6.2), '#e8c03a', [0, 3.6, 0])];
     for (let k = 0; k <= 10; k++) { const a = -1.1 + k * .22, r = 6; p.push(P(new THREE.SphereGeometry(1.35 - Math.abs(k - 5) * .1, 10, 8), k === 0 || k === 10 ? '#6b5a2a' : '#f2d23a', [Math.sin(a) * r, 4.2 + Math.cos(a) * r - r + 3.2, 0])); }
-    put(merge(p), A.x + 18, az - 8); box(A.x + 14.5, A.x + 21.5, az - 11, az - 5); signAt(['THE BIG BANANA', 'QUẢ CHUỐI KHỔNG LỒ'], A.x + 18, 2.9, az - 4.95, 0, '#e8c03a', '#5a3a1a', 5, .8); }
+    put(merge(p), A.x + 12, az - 8); box(A.x + 8.5, A.x + 15.5, az - 11, az - 5); signAt(['THE BIG BANANA', 'QUẢ CHUỐI KHỔNG LỒ'], A.x + 12, 2.9, az - 4.95, 0, '#e8c03a', '#5a3a1a', 5, .8); }
   // ice-cream van parked on the kerb
   const van = new THREE.Group();
   { const p = [P(Box(5, 2.2, 2.2), '#f7c6d9', [0, 1.5, 0]), P(Box(5.02, .5, 2.22), '#ffffff', [0, 2.4, 0]), P(Box(1.4, 1.5, 2.1), '#f7c6d9', [3.1, 1.15, 0]), P(Box(.05, .8, 1.8), '#9fd2ee', [3.82, 1.5, 0]),
@@ -209,8 +209,8 @@ export function createRegions(G) {
     put(merge(p), A.x + 15, az + 18); }
   // a gum tree with a koala, and kangaroos hopping on the edge of the oval
   { const t = [P(Cyl(.25, .4, 6, 6), '#e9e1d2', [0, 3, 0]), P(new THREE.IcosahedronGeometry(1.8, 0), '#7f9a6a', [0, 6.8, 0], [0, 0, 0], [1.3, .7, 1.3]), P(new THREE.IcosahedronGeometry(1.3, 0), '#8aa676', [1.3, 6, .4], [0, 0, 0], [1.2, .7, 1.2])];
-    put(merge(t), A.x + 25, az + 24); world.colliders.push({ x: A.x + 25, z: az + 24, r: .5 });
-    const koala = sprite('🐨', 1.1); koala.position.set(A.x + 25.4, heightAt(A.x + 25, az + 24) + 4.6, az + 24.3); scene.add(koala); }
+    put(merge(t), A.x + 17, az + 24); world.colliders.push({ x: A.x + 17, z: az + 24, r: .5 }); // (round T: inside the corner, clear of the ring road)
+    const koala = sprite('🐨', 1.1); koala.position.set(A.x + 17.4, heightAt(A.x + 17, az + 24) + 4.6, az + 24.3); scene.add(koala); }
   const roos = [0, 1, 2].map(k => { const s = sprite('🦘', 1.6); scene.add(s); return { s, a: k * 2.1 }; });
 
   // shopkeepers

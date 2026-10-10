@@ -11,7 +11,7 @@ import path from 'path';
 export const FILES = ['world.js', 'roads.js', 'regions.js', 'regionsites.js', 'cities.js', 'town.js', 'suburbs.js', 'lotus.js', 'heritage.js', 'asia.js', 'houses.js',
   'homes.js', 'myhouse.js', 'places.js', 'showcase.js', 'chatter.js', 'hawkers.js', 'vendors.js', 'animals.js', 'pets.js', 'farm.js', 'gather.js', 'snacks.js',
   'folkshow.js', 'player.js', 'solids.js', 'validate.js', 'traffic.js', 'powerlines.js', 'ferry.js', 'kite.js', 'weather.js', 'secrets.js', 'vnfun.js', 'yard.js',
-  'openspot.js', 'twinchests.js', 'hoilang.js', 'surprises.js', 'lanterns.js', 'dinh.js', 'worldedit.js', 'shop.js', 'boxes.js', 'kidplay.js', 'companion.js', 'parents.js', 'coop.js', 'main.js', 'ui.js'];
+  'openspot.js', 'twinchests.js', 'hoilang.js', 'surprises.js', 'lanterns.js', 'dinh.js', 'worldedit.js', 'shop.js', 'boxes.js', 'kidplay.js', 'companion.js', 'parents.js', 'coop.js', 'data.js', 'main.js', 'ui.js'];
 const N = String.raw`-?\d{2,3}(?:\.\d+)?`;           // a number of two or three digits: a world position, not a model's own size
 const PATTERNS = [
   ['{ x, z }', new RegExp(String.raw`\bx: ?${N}, ?(?:y: ?[^,]+, ?)?z: ?${N}\b`)],

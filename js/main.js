@@ -136,7 +136,7 @@ showTitle(() => showWho((mode, chosen) => startWhenBuilt(mode, chosen)));
 await breathe();
 const world = createWorld(scene, quality); bootMark('world'); await breathe();
 // the map picture: read back from the device when this build painted it before (js/worldcache.js)
-const mapPic = cachedCanvas('map', 256, paintMap, bootReady); bootMark('map');
+const mapPic = cachedCanvas('map', 320, paintMap, bootReady); // (round T: 320 px for the 480 m valley) bootMark('map');
 mapPic.onReady = () => { G.fogMaps = {}; }; // (a map shown before the picture was ready is drawn again)
 const titleCam = new THREE.PerspectiveCamera(50, 1, .3, 1200);
 
@@ -734,7 +734,7 @@ G.PLACES = [
   { g: 'home', icon: '🦉', name: () => T('Dawn Plateau (Ông Cú)', 'Cao nguyên Bình Minh (Ông Cú)'), x: PLATEAU.x - 2, z: PLATEAU.z - 3 },
   { g: 'vn', icon: '💃', name: () => T('Village festival stage (Lotus Village)', 'Sân khấu hội làng (Làng Sen)'), x: VILLAGE.x - 6, z: VILLAGE.z + 25, under: 'village' },
   { g: 'home', key: 'town', icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: TOWN.x - 4, z: TOWN.z - 1 },
-  { g: 'home', icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: LAKE.x - 49, z: LAKE.z + 15 },
+  { g: 'home', icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: landmarkAt('bondi')[0] + 6, z: landmarkAt('bondi')[1] - 4 },   // (round T: the southern beach)
   { g: 'vn', icon: '🏮', name: () => T('Three Regions Market', 'Chợ Ba Miền'), x: MARKET.x - 22, z: MARKET.z },
   { g: 'au', icon: '🍦', name: () => T('Aussie Corner', 'Góc Nước Úc'), x: AUSSIE.x - 4, z: AUSSIE.z },
   { g: 'au', icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: landmarkAt('opera')[0] - 6, z: landmarkAt('opera')[1], under: 'sydney' },   // (the older Opera House stands here; listed under Sydney)

@@ -5,7 +5,7 @@ import { T } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
 import { heightAt, VILLAGE, BAMBOO, LAKE, WATER } from './world.js';
-import { WORLD as MAP_WORLD } from './content/map.js';
+import { WORLD as MAP_WORLD, landmarkAt } from './content/map.js';
 import { dist2, pick } from './util.js';
 
 export const SECRETS = [
@@ -102,7 +102,7 @@ export function createSecrets(G) {
   const post = new THREE.Mesh(new THREE.BoxGeometry(2.2, .15, .15), new THREE.MeshStandardMaterial({ color: '#7a5236' })); post.position.set(bx, heightAt(bx, bz) + 2.9, bz); scene.add(post);
   hidden('bell', bx, bz, 2.6, h => { [0, .6, 1.2].forEach(d => setTimeout(() => SFX.chime(), d * 1000)); unlock(h, 'bell'); });
   // bottle on the beach
-  const ox = LAKE.x - 16, oz = LAKE.z + 44;
+  const [beachX, beachZ] = landmarkAt('bondi'), ox = beachX + 14, oz = beachZ + 4; // (round T: on the southern beach)
   const bottle = sprite('🍾', .9); bottle.position.set(ox, Math.max(heightAt(ox, oz), WATER) + .45, oz); scene.add(bottle);
   hidden('bottle', ox, oz, 2.4, h => unlock(h, 'bottle'));
   // snowman on the highest summit
@@ -113,7 +113,7 @@ export function createSecrets(G) {
   hidden('snowman', best.x, best.z, 3, h => unlock(h, 'snowman'), { y: best.h });
   S.summit = best;
   // ducks of Mirror Lake
-  const dx = LAKE.x - 30, dz = LAKE.z - 30;
+  const dx = LAKE.x - LAKE.r * .78, dz = LAKE.z - LAKE.r * .78; // (on the shore, from the lake's own size)
   G.interactables.push({ id: 'secret_ducks', x: dx, z: dz, r: 3, icon: '🦆', label: () => T('Feed the ducks', 'Cho vịt ăn'), act: h => {
     SFX.quack(); G.fx(dx, heightAt(dx, dz) + 1, dz, '🍞'); h.profile.duckFeeds = (h.profile.duckFeeds || 0) + 1; G.save();
     if (h.profile.duckFeeds >= 3) unlock(h, 'ducks'); else say('Quack! More please!', 'Cạp cạp! Cho thêm nữa đi!');

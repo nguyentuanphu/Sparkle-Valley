@@ -77,7 +77,7 @@ export function createFerries(G) {
   // ---------- Mirror Lake: four piers, one ferry going round ----------
   const R = LAKE.r;
   // (round T: where the piers stand comes from the map; their names stay here)
-  const DOCK_NAMES = { north: () => T('North Beach', 'Bãi Bắc'), farm: () => T('Sunny Farm', 'Nông Trại'), town: () => T('Two Homes Street', 'Phố Hai Quê'), market: () => T('Three Regions Market', 'Chợ Ba Miền') };
+  const DOCK_NAMES = { north: () => T('North Beach', 'Bãi Bắc'), village: () => T('Lotus Village', 'Làng Sen'), danang: () => T('Đà Nẵng', 'Đà Nẵng'), island: () => T('Home Island', 'Đảo Nhà') };
   const DOCKS = BOATS.find(b => b.id === 'lakeferry').docks.map(d => ({ a: d.a, name: DOCK_NAMES[d.id] || (() => '') }));
   const [reefX, reefZ] = landmarkAt('reef'), REEF_A = Math.atan2(reefZ - LAKE.z, reefX - LAKE.x) * 180 / Math.PI; // keep clear of the coral reef
   const lakePath = [], lakeStops = [];

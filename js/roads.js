@@ -35,6 +35,7 @@ export function roadTexture(kind) {
 function segDist(x, z, pts) { let best = 1e9; for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))); best = Math.min(best, Math.hypot(x - ax - dx * t, z - az - dz * t)); } return best; }
 function trimmed(R) {
   let pts = R.pts.map(p => p.slice());
+  if (R.loop) return pts; // (round T: a road that closes on itself has no ends)
   for (const end of [0, 1]) {
     if ((R.gates || [])[end]) continue;
     const [x, z] = end ? pts[pts.length - 1] : pts[0];
@@ -320,9 +321,11 @@ export function createRoads(G) {
   { const B = DRAGON; world.platforms.push({ ...bridgeBox(B, B.a0 - 2, B.a1 + 2, -B.w / 2, B.w / 2), y: B.h + .1 }); }
   buildRoads(G, mats);
   // ---------- Đà Nẵng's Dragon Bridge (Cầu Rồng): a golden dragon arching along the road ----------
-  // (round T: its model is drawn along the x axis; a Dragon Bridge along z would turn it and its mouth too, in T2)
+  // (round T: its model is drawn along the x axis, head at the far end; a bridge along z turns it, its mouth and its spray)
   {
     const B = DRAGON, len = B.a1 - B.a0, y = B.h, hw = B.w / 2, gold = '#f2c230';
+    const mid = (B.a0 + B.a1) / 2, alongZ = B.axis === 'z', W = (lx, lz) => alongZ ? [B.c - lz, mid + lx] : [mid + lx, B.c + lz]; // (the model's own x, z to the valley's)
+    const FWD = alongZ ? [0, 1] : [1, 0], SIDE = alongZ ? [-1, 0] : [0, 1];
     const parts = [P(new THREE.BoxGeometry(len + 2, .5, B.w), '#7d858a', [0, -.25, 0]), P(new THREE.BoxGeometry(len + 2, .08, B.w - 1.6), '#6f747a', [0, .03, 0])];
     for (const s of [-1, 1]) parts.push(P(new THREE.BoxGeometry(len + 2, .8, .12), '#e8e4d8', [0, .4, s * hw]));
     for (const px of [-.25, .25]) parts.push(P(new THREE.CylinderGeometry(.6, .8, 10, 8), '#9a948a', [px * len, -5, 0]));
@@ -364,12 +367,12 @@ export function createRoads(G) {
       for (let k = 0; k < 4; k++) parts.push(P(new THREE.ConeGeometry(.06, .22, 4), '#ffffff', [x0 + 1.2 + k * .2, y0 - .2, (k % 2 ? 1 : -1) * .26], [Math.PI, 0, 0])); // teeth
     }
     { const T0 = curve.getPointAt(0); parts.push(P(new THREE.ConeGeometry(.6, 1.4, 3), orange, [T0.x - .6, T0.y + .2, 0], [0, 0, Math.PI / 2], [1, 1, .3])); } // tail fin
-    const br = new THREE.Mesh(merge(parts), toonVC()); br.position.set((B.a0 + B.a1) / 2, y, B.c); br.castShadow = true; scene.add(br); outline(br, .02, '#6a4a10');
+    const br = new THREE.Mesh(merge(parts), toonVC()); br.position.set(...(alongZ ? [B.c, y, mid] : [mid, y, B.c])); if (alongZ) br.rotation.y = -Math.PI / 2; br.castShadow = true; scene.add(br); outline(br, .02, '#6a4a10');
     // fire, then water, from the dragon's mouth: every 40 s (as the real bridge does on weekend nights), or when tapped
-    const mouth = new THREE.Vector3(br.position.x + curve.getPointAt(1).x + 2.4, y + curve.getPointAt(1).y - .2, B.c), NP = 70;
+    const mouth = new THREE.Vector3(...((m => [m[0], y + curve.getPointAt(1).y - .2, m[1]])(W(curve.getPointAt(1).x + 2.4, 0)))), NP = 70;
     const spray = new THREE.InstancedMesh(new THREE.SphereGeometry(.35, 8, 6), new THREE.MeshBasicMaterial({ transparent: true, opacity: .85, depthWrite: false }), NP);
     spray.frustumCulled = false; spray.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(NP * 3), 3); scene.add(spray);
-    const pp = Array.from({ length: NP }, () => ({ life: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, fire: true })), m4 = new THREE.Matrix4(), col = new THREE.Color();
+    const pp = Array.from({ length: NP }, () => ({ life: 0, x: 0, y: 0, z: 0, vl: 0, vy: 0, vs: 0, fire: true })), m4 = new THREE.Matrix4(), col = new THREE.Color();
     let showT = -1, emitAcc = 0, idle = 25;
     const start = (at = 0) => { if (showT < 0) showT = at; };
     G.dragonShow = start;
@@ -380,14 +383,14 @@ export function createRoads(G) {
         showT += dt; const fire = showT < 6, water = showT > 7.5 && showT < 13.5;
         if ((fire || water) && near) { emitAcc += dt * (fire ? 34 : 40);
           while (emitAcc > 1) { emitAcc--; const q = pp.find(o => o.life <= 0); if (!q) break; q.life = fire ? 1.1 : 1.6; q.fire = fire; q.x = mouth.x; q.y = mouth.y; q.z = mouth.z;
-            q.vx = (fire ? 11 : 13) + Math.random() * 3; q.vy = fire ? 1 + Math.random() * 1.5 : 5 + Math.random() * 2; q.vz = (Math.random() - .5) * (fire ? 2.5 : 3.5); } }
+            q.vl = (fire ? 11 : 13) + Math.random() * 3; q.vy = fire ? 1 + Math.random() * 1.5 : 5 + Math.random() * 2; q.vs = (Math.random() - .5) * (fire ? 2.5 : 3.5); } }
         if (showT > 0 && showT < dt * 1.5 && near) { SFX.whoosh(); }
         if (showT > 7.5 && showT < 7.5 + dt * 1.5 && near) { SFX.splash(); }
         if (showT > 16) showT = -1;
       }
       let any = false;
       pp.forEach((q, i) => {
-        if (q.life > 0) { any = true; q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt; q.vy += (q.fire ? 2 : -9.8) * dt; q.vx *= q.fire ? .97 : .995;
+        if (q.life > 0) { any = true; q.life -= dt; q.x += (FWD[0] * q.vl + SIDE[0] * q.vs) * dt; q.y += q.vy * dt; q.z += (FWD[1] * q.vl + SIDE[1] * q.vs) * dt; q.vy += (q.fire ? 2 : -9.8) * dt; q.vl *= q.fire ? .97 : .995;
           const k = Math.max(0, q.life / (q.fire ? 1.1 : 1.6)), sc = q.fire ? .6 + (1 - k) * 2.2 : .45 + (1 - k) * .9;
           m4.makeScale(sc, sc, sc).setPosition(q.x, q.y, q.z); col.set(q.fire ? (k > .6 ? '#fff2a0' : k > .3 ? '#ffa020' : '#e0401a') : (k > .5 ? '#e8f8ff' : '#7fd0ff')); }
         else m4.makeScale(0, 0, 0);
@@ -395,7 +398,7 @@ export function createRoads(G) {
       });
       spray.visible = any; if (any) { spray.instanceMatrix.needsUpdate = true; spray.instanceColor.needsUpdate = true; }
     });
-    G.interactables.push({ id: 'dragonshow', x: B.a1 + 3, z: B.c + hw + 2.5, r: 3, icon: '🐉', label: () => T('Ask the dragon to breathe fire and water', 'Nhờ rồng phun lửa và nước'), act: () => { start(0); SFX.tap(); } });
+    G.interactables.push({ id: 'dragonshow', ...(([x, z]) => ({ x, z }))(W(len / 2 + 3, hw + 2.5)), r: 3, icon: '🐉', label: () => T('Ask the dragon to breathe fire and water', 'Nhờ rồng phun lửa và nước'), act: () => { start(0); SFX.tap(); } });
     world.boxes.push(bridgeBox(B, B.a0, B.a1, hw - .1, hw + .3), bridgeBox(B, B.a0, B.a1, -hw - .3, -hw + .1));
     G.dragonBridge = br;
   }
@@ -405,7 +408,7 @@ export function createRoads(G) {
   for (const R of ROADS) (R.gates || []).forEach((id, k) => {
     if (!id) return;
     const n = R.pts.length, [x, z] = R.pts[k ? n - 1 : 0], [px, pz] = R.pts[k ? n - 2 : 1];
-    localGate(scene, world, x, z, Math.atan2(x - px, z - pz), () => T('Welcome to ', 'Chào mừng đến ') + REGION_NAMES[id](), GATE_STYLE[id] || 'golden', 7.5);
+    localGate(scene, world, x, z, Math.atan2(x - px, z - pz), () => T('Welcome to ', 'Chào mừng đến ') + REGION_NAMES[id](), GATE_STYLE[id] || 'golden', Math.max(7.5, R.w + 2.3)); // (R7: the opening is the road plus more than 1 m each side)
   });
   G.goldenGate = (x, z, r, t, span) => goldenGate(scene, world, x, z, r, t, span);
 }
