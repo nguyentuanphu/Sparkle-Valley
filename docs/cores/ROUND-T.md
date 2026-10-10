@@ -279,6 +279,33 @@ Where the drawing and the written spec disagree (asked to the owner):
 - Main roads are drawn 6.4 m wide ("Vietnam main road (6.4 m)"); the hard rule R1 / ROAD-001 says asphalt 5.2 m (T4).
 
 ## Progress (for the next chat to pick up)
+**10 Oct 2026, T2 built: release r57 (Release core chat, branch `round-t`, local commits; waiting for the owner's "yes, push" / "yes, deploy").**
+The owner said "go" for T2 (10 Oct) with: Chùa Cầu a footbridge beside the road; the western rivers join the main river;
+road colours as tinted asphalt (`docs/cores/release.md`, Owner's decisions).
+- Water (`js/world.js`, `js/content/map.js` WATERS): rivers have a width (`w`, against the main river's) and a `tone`; small
+  round lakes (`kind: 'pond'`, `PONDS`, `pondDist`). New: Sông Hồng (red-brown, from the north-east hills past Hà Nội's south,
+  through Hồ Gương, under the ring road into the main river), the Hội An canal (off Sông Hàn), Sông Sài Gòn (main river to
+  the sea past TP. HCM), two Mekong channels, the Brisbane River, Sydney Harbour (wide, main river to Sydney), the Yarra,
+  the Murray, Hồ Gươm by Hà Nội (Turtle Tower on its island, Thê Húc bridge on it) and a billabong by Uluru.
+- Bridges (`BRIDGES`): Long Biên (truss), Chùa Cầu (covered footbridge, `foot`), the Harbour Bridge (moved to Sydney
+  Harbour, on the ring road), the Story Bridge (cantilever), Princes Bridge (stone arches); plain bridges for the ring road
+  over Sông Hồng and the Vietnam road over the canal; the island's east bridge is plain. Postcards for Long Biên and Princes
+  Bridge; the market's small copies of the Turtle Tower and Chùa Cầu are gone (the real ones stand in place).
+- Moved to make room: Aussie Corner 6 m south, the paddies (210, −98) r 16, the Chợ Trâu ground (75, −146), the Đua bò
+  ground (108, 106), Mỹ Sơn, Phong Nha, Tràng An. MAP_VERSION 'D2' (a spot saved on D1 starts at home once).
+- Roads: each asphalt road has a `tone` (`ROAD_TONES`: red Vietnam, orange Australia, purple mountains, blue coast, plain
+  grey home), one material per colour, white lines kept.
+- Boats: the raft line stops by every bridge it passes under (`bridgeStops`, a footpath to each pier); the Sydney Harbour
+  ferry (Sydney quay to the island, under the Harbour Bridge); the lake ferry keeps two piers (Làng Sen and Đà Nẵng, each
+  with a footpath); no crossing rafts (Concept D lists none). The raft's roof is 0.4 m lower, the harbour ferry has no flag,
+  so both pass under every deck.
+- Checks: new `bridges` (RIVER-004), `boats` (RIVER-002/005/006), `roadtone` (ROAD-014); rules added to ARCHITECTURE §9.
+- Speed: crop plants and fruit bushes are drawn as two pieces each (home 1,094 draws, village 690 / 695k triangles). The
+  world builds about 0.9 s slower than r56 (6.8–7.0 s against 5.9–6.1 s side by side; limit 7.4 s): more water, bridges and
+  roads in every height look-up.
+- Pictures: `docs/cores/round-t/t2-sky-pad-vs-concept-d.jpg`. Next: T3 (Vũng Tàu and its boats, the Memory Villages, the
+  Trường Sơn range and Hải Vân pass), plan first and the owner's "go".
+
 **10 Oct 2026, T1 built: release r56 (Release core chat, branch `round-t`, local commits; waiting for the owner's "yes, push" / "yes, deploy").** r55 (T0) was pushed as pull
 request #21 (not merged, not deployed). The owner said "go, build T1" with these answers (10 Oct): a bigger home island so Ông
 Cú, Phố Hai Quê and Sunny Farm fit; Bắc Ninh north-east of Hà Nội as drawn; the ring road in T1; asphalt roads 6.4 m (rule R1
