@@ -7,7 +7,10 @@
 //     (17:30 when an under-5 is playing): fireworks, lantern parade or lights.
 //   · Halloween: smiling pumpkins at doors; knock for "Trick or treat!", five treats make a pumpkin lantern keepsake.
 //   · Grown-ups: Sparkle Studio switches a festival off, moves its date or changes its build-up (CUSTOM.festivals, live
-//     from the website); on the device, the children's Festivals page can follow the calendar, show one festival or none.
+//     from the website), or schedules it on its Releases page (fest_<id>: a start date and how many days); on the device,
+//     the grown-ups' press-and-hold setting can follow the calendar, show one festival or none.
+//   · (owner, 10 Oct) Only in season or when an admin schedules one: children never start a festival; whole places are
+//     decorated along their streets (js/festdecor.js, which also tells a child about a festival from the calendar).
 // The decorations are the valley's own 3D things (lanterns, bunting, pumpkins, trees, lamps), never pictures.
 import { THREE, P, merge, toonVC, outline } from './gfx.js';
 import { T } from './i18n.js';
@@ -52,18 +55,22 @@ export function nextOf(F, now = new Date()) {
 // every festival in date order, the soonest first (the calendar page)
 export const upcoming = (now = new Date()) => FESTCAL.filter(enabled).map(F => nextOf(F, now)).filter(Boolean).sort((a, b) => a.start - b.start);
 const byId = id => FESTCAL.find(F => F.id === id);
-let visiting = null;   // a festival a child chose to visit from the calendar (this session only)
+let previewing = null;   // a grown-up's preview from Sparkle Studio (?festival=<id>), this session only
+let scheduled = () => false; // (an admin's schedule in Studio, fest_<id>: js/festdecor.js, once a child plays)
 // what decorates the valley now: each festival in its build-up or on its day, with how far along (stage 1–4)
 export function activeFestivals(now = new Date()) {
   const pickOne = settings.festival || 'auto', out = [];
   if (pickOne !== 'none') {
     if (pickOne !== 'auto' && byId(pickOne)) out.push({ F: byId(pickOne), stage: 4, daysTo: 0, on: true });
-    else for (const n of upcoming(now)) {
-      const b = buildupOf(n.F); if (n.daysTo > b) continue;
-      out.push({ ...n, stage: n.on ? 4 : n.F.kind === 'quiet' ? 2 : n.daysTo <= 7 ? 3 : n.daysTo <= 14 ? 2 : 1 });
+    else {
+      for (const n of upcoming(now)) {
+        const b = buildupOf(n.F); if (n.daysTo > b) continue;
+        out.push({ ...n, stage: n.on ? 4 : n.F.kind === 'quiet' ? 2 : n.daysTo <= 7 ? 3 : n.daysTo <= 14 ? 2 : 1 });
+      }
+      for (const F of FESTCAL) if (scheduled(F, now)) { const k = out.findIndex(a => a.F.id === F.id), v = { F, stage: 4, daysTo: 0, on: true, admin: true }; if (k >= 0) out[k] = v; else out.push(v); }
     }
   }
-  if (visiting && byId(visiting)) { const k = out.findIndex(a => a.F.id === visiting); const v = { F: byId(visiting), stage: 4, daysTo: 0, on: true }; if (k >= 0) out[k] = v; else out.push(v); }
+  if (previewing && byId(previewing)) { const k = out.findIndex(a => a.F.id === previewing); const v = { F: byId(previewing), stage: 4, daysTo: 0, on: true }; if (k >= 0) out[k] = v; else out.push(v); }
   return out;
 }
 // (older code and saves call this: the one festival that is on today, or null)
@@ -161,12 +168,18 @@ export function createFestivals(G) {
   const bursts = [], tables = [], doors = [];
   let active = [], glowMeshes = [];
   const free = (x, z, r = 1) => heightAt(x, z) > WATER + .3 && !W.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + r) && !W.boxes.some(b => x > b.x0 - r && x < b.x1 + r && z > b.z0 - r && z < b.z1 + r);
+  // (owner, 10 Oct) the street spots: js/festdecor.js, loaded once a child plays (PERF-001), then the decorations are built
+  let D = null, loadingD = null, waitD = false;
+  const loadD = () => loadingD || (loadingD = import('./festdecor.js').then(m => { D = { ...m.createDecor(free), tell: m.tell }; scheduled = m.scheduled; build(); }).catch(e => { loadingD = null; console.warn('festdecor', e); }));
+  const streetSpots = (key, o) => D ? D.streetSpots(key, o) : [];
   const unhook = list => { list.forEach(it => { const k = G.interactables.indexOf(it); if (k >= 0) G.interactables.splice(k, 1); }); list.length = 0; };
   const addMeshes = (parts, glows) => {
     if (parts.length) { const m = new THREE.Mesh(merge(parts), mat); m.castShadow = true; outline(m, .012, '#3a2a20'); group.add(m); }
     if (glows.length) { const g = new THREE.Mesh(merge(glows), mat); group.add(g); glowMeshes.push(g); }
   };
   const build = () => {
+    // (festdecor loads once a child is in the valley, not behind the title screen)
+    if (!D) { active = activeFestivals(); if (G.heroes.length) loadD(); else if (!waitD) { waitD = true; W.updaters.push(() => { if (G.heroes.length && !loadingD) loadD(); }); } return; }
     group.traverse(o => { if (o.isMesh && o.geometry && !o.userData.outline) o.geometry.dispose(); });
     group.clear(); bursts.length = 0; glowMeshes = []; unhook(tables); unhook(doors);
     active = activeFestivals();
@@ -176,14 +189,16 @@ export function createFestivals(G) {
       F.where.forEach((key, w) => {
         const o = places[key]; if (!o) return; const c = centre(o);
         if (taken.has(key + F.theme)) return; taken.add(key + F.theme);
-        // pieces round the place, more each week (a quiet day: only a few)
-        const n = Math.round((F.kind === 'quiet' ? 6 : 16) * full);
-        for (let i = 0, k = 0; i < n && k < 80; k++) { const a = k * 2.399 + w, r = 7 + (k % 5) * 2.2, x = c.x + Math.cos(a) * r, z = c.z + Math.sin(a) * r;
-          if (!free(x, z, 1.1)) continue; const q = piece(F.theme, i, x, heightAt(x, z), z, a + Math.PI); parts.push(...q.parts); glows.push(...q.glows); i++; }
-        // bunting strung across the place (from the second week)
-        const [bc, bk] = THEME_BUNTING[F.theme] || [['#ff4f9a', '#ffd23f'], 'flag'], nb = F.kind === 'quiet' ? 0 : Math.max(0, A.stage - 1) * 2;
-        for (let j = 0, k = 0; j < nb && k < 30; k++) { const a = k * 1.7 + w, r = 10, x1 = c.x + Math.cos(a) * r, z1 = c.z + Math.sin(a) * r, x2 = c.x + Math.cos(a + .9) * r, z2 = c.z + Math.sin(a + .9) * r;
-          if (!free(x1, z1, .6) || !free(x2, z2, .6)) continue; const q = bunting([x1, heightAt(x1, z1) + 3.2, z1], [x2, heightAt(x2, z2) + 3.2, z2], bc, bk); parts.push(...q.parts); glows.push(...q.glows); j++; }
+        // (owner, 10 Oct) the whole place, along its streets (js/festdecor.js); without streets, a ring round the middle
+        const [bc, bk] = THEME_BUNTING[F.theme] || [['#ff4f9a', '#ffd23f'], 'flag'], q = D.decorate(key, o, F, A, piece, bunting, bc, bk);
+        if (q) { parts.push(...q.parts); glows.push(...q.glows); } else {
+          const n = Math.round((F.kind === 'quiet' ? 6 : 16) * full);
+          for (let i = 0, k = 0; i < n && k < 80; k++) { const a = k * 2.399 + w, r = 7 + (k % 5) * 2.2, x = c.x + Math.cos(a) * r, z = c.z + Math.sin(a) * r;
+            if (!free(x, z, 1.1)) continue; const q = piece(F.theme, i, x, heightAt(x, z), z, a + Math.PI); parts.push(...q.parts); glows.push(...q.glows); i++; }
+          const nb = F.kind === 'quiet' ? 0 : Math.max(0, A.stage - 1) * 2;
+          for (let j = 0, k = 0; j < nb && k < 30; k++) { const a = k * 1.7 + w, r = 10, x1 = c.x + Math.cos(a) * r, z1 = c.z + Math.sin(a) * r, x2 = c.x + Math.cos(a + .9) * r, z2 = c.z + Math.sin(a + .9) * r;
+            if (!free(x1, z1, .6) || !free(x2, z2, .6)) continue; const q = bunting([x1, heightAt(x1, z1) + 3.2, z1], [x2, heightAt(x2, z2) + 3.2, z2], bc, bk); parts.push(...q.parts); glows.push(...q.glows); j++; }
+        }
         // the festival table, on the day, in its first place
         if (A.on && w === 0) {
           let x = c.x - 3, z = c.z + 3; for (let k = 0; k < 12 && !free(x, z, 1.4); k++) { x = c.x + Math.cos(k) * (4 + k * .5); z = c.z + Math.sin(k) * (4 + k * .5); }
@@ -230,7 +245,7 @@ export function createFestivals(G) {
   // ---------- the festival table ----------
   const little = () => G.heroes.some(h => h.profile && h.profile.age !== 'big');
   const visit = async (h, F) => {
-    const p = h.profile, today = new Date().toDateString(), preview = visiting === F.id;
+    const p = h.profile, today = new Date().toDateString(), preview = previewing === F.id;
     p.festivals = p.festivals || {};
     await G.dialog(T(F.en, F.vi), F.lines);
     if (p.festivals[F.id] !== today) {
@@ -281,12 +296,18 @@ export function createFestivals(G) {
   let dayKey = new Date().toDateString(), dayT = 0; W.updaters.push(dt => { if ((dayT -= dt) > 0) return; dayT = 30; const k = new Date().toDateString(); if (k !== dayKey) { dayKey = k; build(); } });
   return {
     rebuild: build,
+    // (checks) the spots along a place's streets, and each active festival's places
+    streetSpots: key => { const o = PLACES()[key]; return o ? streetSpots(key, o).map(q => ({ x: q.x, z: q.z })) : []; },
+    plan: (key, id, stage) => { const o = PLACES()[key], F = byId(id); return o && F && D ? D.plan(key, o, F, stage) : []; },
     active: () => active,
     current: () => { const a = active.find(x => x.on); return a ? a.F.id : null; },
-    // any festival, any day: decorate, fly the child to the festival table, the evening show, then the festival visit
+    // (owner, 10 Oct) a child taps a festival on the calendar: one that is on now takes them to it; one still to come is
+    // told about (days to go), and nothing starts. A grown-up's Preview link from Studio shows any festival once.
     visit: async (i, id) => {
-      const h = G.heroes[i]; if (!h || !byId(id)) return;
-      visiting = id; build();
+      const h = G.heroes[i], F = byId(id); if (!h || !F) return;
+      const pv = new URLSearchParams(location.search).get('festival');
+      if (pv === id && !G._festPreviewed) { G._festPreviewed = true; previewing = id; build(); }
+      else { await loadD(); const A = active.find(a => a.F.id === id); if (!A || !A.on) { const o = PLACES()[F.where[0]]; return D.tell(G, h, F, A, nextOf(F, new Date()), o && centre(o)); } }
       const it = tables.find(t => t.id === 'festival_' + id);
       if (it) await G.landBy(h, it.x, it.z);
       showT = 14; SFX.chime && SFX.chime();

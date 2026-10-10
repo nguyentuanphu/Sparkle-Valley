@@ -735,8 +735,10 @@ await check('festcal', async () => {
     // the calendar on the Pad
     __sv.openPad(0, 'cal'); await new Promise(r => setTimeout(r, 500));
     out.rows = document.querySelectorAll('.pad .fcal-row').length; document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.paused = false;
-    // Halloween: knock at five doors for a pumpkin lantern
-    const h = __sv.heroes[0]; __sv.festivals.visit(0, 'halloween'); await new Promise(r => setTimeout(r, 2500));
+    // Halloween: knock at five doors for a pumpkin lantern (owner, 10 Oct: children cannot start a festival, so the check
+    // has an admin schedule it for today in Studio, as a grown-up would)
+    const h = __sv.heroes[0], C = (await import('/js/custom.js')).CUSTOM, d = new Date(), ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    C.releases = { ...(C.releases || {}), fest_halloween: { on: true, start: ymd, days: 1 } }; __sv.festivals.rebuild(); await new Promise(r => setTimeout(r, 2500));
     document.querySelectorAll('.dialog, .reward, .modal').forEach(e => e.remove());
     const doors = __sv.interactables.filter(i => i.id.startsWith('trick_')); out.doors = doors.length;
     for (const d of doors.slice(0, 5)) { d.act(h); await new Promise(r => setTimeout(r, 100)); document.querySelectorAll('.reward').forEach(e => e.click()); }
@@ -752,6 +754,64 @@ await check('festcal', async () => {
   ok(r.rows >= 10, 'calendar rows: ' + r.rows); ok(r.doors >= 5, 'pumpkin doors: ' + r.doors); ok(r.keepsake && r.treats === 5, 'no pumpkin lantern after 5 treats');
   ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
   return `build-up from 3 weeks before (stage 1→4), Halloween and Diwali at once, quiet days ${'3'} days before, ${r.rows} festivals coming up on the calendar, ${r.doors} pumpkin doors, a pumpkin lantern after 5 treats`;
+});
+
+await check('festivals', async () => {
+  // (Play core, owner 10 Oct) festivals come only in their season (from 3 weeks before) or when an admin schedules them in
+  // Studio; a child cannot start one (the calendar only tells about it); a festival decorates its whole place: pieces
+  // along every street, more each week, never on a road, a city street or a place's own street.
+  const P = await open(b, { w: 1180, h: 820 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, F = await import('/js/festivals.js'), W = await import('/js/world.js'), C = (await import('/js/custom.js')).CUSTOM, { FESTCAL } = await import('/js/content/festcal.js');
+    const wait = ms => new Promise(r => setTimeout(r, ms)), out = {};
+    // a festival out of its season: the calendar tap tells about it and starts nothing
+    const far = F.upcoming().filter(n => n.daysTo > 30).pop(); out.far = far && far.F.id;
+    G.festivals.visit(0, far.F.id); await wait(800);
+    out.toldDays = (document.querySelector('.dialog .dtext') || {}).textContent || '';
+    document.querySelectorAll('.dialog').forEach(e => e.remove()); G.paused = false;
+    out.startedByChild = G.festivals.active().some(a => a.F.id === far.F.id) || G.interactables.some(i => i.id === 'festival_' + far.F.id);
+    __sv.openPad(0, 'cal'); await wait(500); out.calNote = (document.querySelector('.pad .note') || {}).textContent || ''; document.querySelectorAll('.modal').forEach(e => e.remove()); G.paused = false;
+    // an admin schedules it for today in Studio: it is on, with its table
+    const d = new Date(), ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    C.releases = { ...(C.releases || {}), ['fest_' + far.F.id]: { on: true, start: ymd, days: 1 } }; G.festivals.rebuild(); await wait(300);
+    out.adminOn = G.festivals.active().some(a => a.F.id === far.F.id && a.on) && G.interactables.some(i => i.id === 'festival_' + far.F.id);
+    delete C.releases['fest_' + far.F.id]; G.festivals.rebuild(); await wait(300);
+    out.adminOff = !G.festivals.active().some(a => a.F.id === far.F.id);
+    // whole places: every festival place with streets gets pieces spread along them, more each week
+    const places = [...new Set(FESTCAL.flatMap(f => f.where))], bad = [], sizes = {};
+    const streetOf = (x, z) => { for (const c of W.CITIES) if (c.layout && x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && Math.abs((x - c.x) * Math.cos(c.layout.toward) - (z - c.z) * Math.sin(c.layout.toward)) < 2.6 + 1.5) return c.id; return null; };
+    const inner = [['town', W.TOWN, 6, 44, 3.5], ['aussie', W.AUSSIE, W.AUSSIE.x0, W.AUSSIE.x1, 3.5], ['market', W.MARKET, W.MARKET.x0, W.MARKET.x1, 4]];
+    for (const key of places) {
+      const f = FESTCAL.find(x => x.where.includes(key) && x.kind === 'party'); if (!f) continue;
+      const s1 = G.festivals.plan(key, f.id, 1), s2 = G.festivals.plan(key, f.id, 2), s4 = G.festivals.plan(key, f.id, 4), all = G.festivals.streetSpots(key);
+      sizes[key] = [s1.length, s2.length, s4.length, all.length];
+      if (all.length < 6) continue; // (a place without streets keeps its ring of pieces round the middle)
+      if (!(s1.length > 0 && s1.length < s2.length && s2.length < s4.length)) bad.push(`${key}: not more each week (${s1.length}, ${s2.length}, ${s4.length})`);
+      // spread over the whole place, not bunched: the pieces reach far apart
+      let span = 0; for (const a of s4) for (const q of s4) span = Math.max(span, Math.hypot(a.x - q.x, a.z - q.z));
+      const o = { ...W.CITIES.reduce((m, c) => (m[c.id] = c, m), {}), village: W.VILLAGE, china: W.CHINA, india: W.INDIA, aussie: W.AUSSIE, town: W.TOWN, market: W.MARKET, home: W.HOME }[key];
+      const size = o.x0 != null ? Math.hypot(o.x1 - o.x0, o.z1 - o.z0) : (o.r || 24) * 2;
+      if (span < size * .4) bad.push(`${key}: pieces bunched in ${span.toFixed(0)} m of a ${size.toFixed(0)} m place`);
+      for (const q of all) { const rd = W.roadDist(q.x, q.z); if (rd.road && rd.d < rd.road.w / 2 + 1.5) bad.push(`${key}: a piece on a road at ${q.x},${q.z}`);
+        const st = streetOf(q.x, q.z); if (st) bad.push(`${key}: a piece on ${st}'s main street`);
+        for (const [k, b, x0, x1, hw] of inner) if (q.x > x0 && q.x < x1 && Math.abs(q.z - b.roadZ) < hw + 1.5) bad.push(`${key}: a piece on ${k}'s street`);
+        if (W.heightAt(q.x, q.z) < W.WATER + .3) bad.push(`${key}: a piece in the water`); }
+    }
+    out.bad = bad.slice(0, 6); out.sizes = sizes;
+    return out;
+  });
+  const out = [];
+  if (r.startedByChild) out.push(`a child's tap started ${r.far}`);
+  if (!/\d/.test(r.toldDays)) out.push(`the calendar tap did not say how many days to ${r.far}: "${r.toldDays}"`);
+  if (/visit it now/i.test(r.calNote)) out.push('the calendar still says "visit it now"');
+  if (!r.adminOn) out.push(`an admin's schedule did not start ${r.far}`);
+  if (!r.adminOff) out.push(`${r.far} stayed on after the admin's schedule was removed`);
+  out.push(...r.bad);
+  if (P.errors.length) out.push(...P.errors.slice(0, 2));
+  await P.ctx.close();
+  if (out.length) throw new Error(out.join('; '));
+  const z = Object.entries(r.sizes).filter(([, v]) => v[3] >= 6);
+  return `${r.far} out of season: told the days, not started by a child; on when an admin schedules it, off again after; ${z.length} places decorated along their streets (week 1 → day: ${z.map(([k, v]) => `${k} ${v[0]}→${v[2]}`).join(', ')}), none on a road or street`;
 });
 
 await check('films', async () => {
@@ -877,7 +937,7 @@ await check('story', async () => {
   // (Play core, chapter 2; owner 10 Oct: it is off until an admin switches it on or schedules it) switched on in Studio,
   // chapter 2 follows chapter 1; off, the old adventures follow as before
   const noCh2 = seen[8];
-  seen[8] = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), story_ch2: true }; const c = __sv.currentQuest(__sv.heroes[0].profile); delete C.features.story_ch2; return c && c.id; });
+  seen[8] = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), story_ch2: true }; await __sv.lanterns.loadCh('ch2'); const c = __sv.currentQuest(__sv.heroes[0].profile); delete C.features.story_ch2; return c && c.id; });
   const end = await pg.evaluate(() => { const G = __sv, p = G.heroes[0].profile, D = G.lanterns.dinh;
     const house = Math.min(...G.world.colliders.filter(c => c.r > 2 && c.top == null).map(c => Math.hypot(c.x - D.x, c.z - D.z) - c.r));
     return { companion: p.lanterns.companion, ch1: !!p.lanterns.chapters.ch1, keep: (p.keepsakes || []).includes('lantern_ch1'), carrying: p.lanterns.carrying, house }; });
@@ -1036,6 +1096,129 @@ await check('chapter2', async () => {
   const bad = [...little.out.map(x => 'under-5: ' + x), ...big.out.map(x => 'big kid: ' + x)];
   if (bad.length) throw new Error(bad.join('; '));
   return `under-5: ${little.steps} steps (${little.counted} turtles, the companion lit the way); big kid: ${big.steps} steps (Ô ăn quan, bún chả by hand, ${big.counted} turtles and a question, clues); rope, film (2 pages), Cầu Thê Húc lit, parade, keepsake, new trick, golden turtle for the big kid; then "${big.after}"`;
+});
+await check('chapter3', async () => {
+  // (Play core, owner's go 10 Oct) chapter 3 of the lantern story, Sydney, played from the start to the fireworks, once as
+  // an under-5 and once as a big kid: off until an admin switches it on; lantern lights to Sydney, Chi (big kids), Chi's
+  // Aussie words (pictures for an under-5, meanings for a big kid; a wrong answer is never punished), Captain Molly's
+  // ferries (big kids), Jack and Ruby's challenge (cricket for a big kid, tug of war for an under-5: the other game does not
+  // count), Bà Năm's Magic Pudding, the clues by the harbour (the under-5's companion flies high and leads), the rope, the
+  // festival film (both pages played through), the Opera House lit, fireworks, the keepsake, the new trick (flying higher)
+  // and the big kids' koala. Nothing stands on a road, a city street or in the water.
+  const play = async age => {
+    const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+    const pg = P.page, w = ms => pg.waitForTimeout(ms), seen = [], out = [];
+    const q = () => pg.evaluate(() => { const c = __sv.currentQuest(__sv.heroes[0].profile); return c && c.id; });
+    const calm = () => pg.evaluate(() => { document.querySelectorAll('.storybook,.dialog,.reward').forEach(e => e.remove()); __sv.paused = false; });
+    const act = id => pg.evaluate(id => { const it = __sv.interactables.find(i => i.id === id), h = __sv.heroes[0]; if (!it || (it.visible && !it.visible(h))) return false; it.act(h, __sv); return true; }, id);
+    const tapDialog = (n = 6) => pg.evaluate(async n => { for (let i = 0; i < n; i++) { const d = document.querySelector('.dialog:not(.out)'); if (!d || d.querySelector('.dch')) break; d.click(); await new Promise(r => setTimeout(r, 250)); } }, n);
+    const step = async () => { await w(400); await calm(); await w(2200); await calm(); seen.push(await q()); };
+    const emit = gid => pg.evaluate(async gid => { const E = await import('/js/core/events.js'); E.events.emit('ActivityCompleted', { activityId: 'x', defId: 'game:' + gid, players: [], result: { won: true } }); }, gid);
+    // chapter 2 done; chapter 3 is off until an admin switches it on
+    // (chapter 2's steps come with its file, which the game loads once chapter 1's lantern is found)
+    const offFirst = await pg.evaluate(async age => { const G = __sv, p = G.heroes[0].profile, C = (await import('/js/custom.js')).CUSTOM, { CHAPTERS } = await import('/js/content/chapters.js');
+      C.features = { ...(C.features || {}), story_ch2: true }; await G.lanterns.loadCh('ch2');
+      p.age = age; p.lanterns = { companion: 'firefly', done: { p_owl: true }, chapters: { ch1: true, ch2: true } };
+      for (const c of CHAPTERS.slice(1, 3)) for (const s of c.steps) p.lanterns.done[s.id] = true;
+      C.features = { ...(C.features || {}), story_ch2: true }; const before = G.currentQuest(p);
+      C.features.story_ch3 = true; G.lanterns.companions.sync(); return !/^L_c3/.test(before && before.id || ''); }, age);
+    await pg.evaluate(() => __sv.lanterns.loadCh('ch3')); await w(300);
+    seen.push(await q());
+    await pg.evaluate(() => __sv.heroes[0].place(-36, 52)); await w(2500); await calm();
+    const lightsWaited = await q() === 'L_c3_fly';
+    for (let k = 0; k < 3; k++) { await act('story_light_c3_fly_' + k); await w(300); }
+    await step();
+    if (age === 'big') { await act('story_c3_chi'); await w(500); await tapDialog(); await step(); }
+    // Chi's words: tap the buttons until each word is right (a wrong one just hides)
+    await act('story_c3_words'); await w(800);
+    // (a big kid's answers are words that can be read; an under-5's are pictures)
+    const wordBtn = await pg.evaluate(() => { const b = document.querySelector('.handpad [data-hp=w0]'); if (!b) return null; const cs = getComputedStyle(b); return { text: b.textContent.trim(), size: parseFloat(cs.fontSize), pic: !!b.querySelector('.art, .emo, svg, img'), h: b.getBoundingClientRect().height }; });
+    let rounds = 0, wrongs = 0;
+    for (let i = 0; i < 20; i++) {
+      const r = await pg.evaluate(() => { const bs = [...document.querySelectorAll('.handpad [data-hp^=w]')], b = bs.find(x => x.style.visibility !== 'hidden'); if (!b) return null; const word = document.querySelector('.handpad p b').textContent, hidden = bs.filter(x => x.style.visibility === 'hidden').length; b.click(); return { word, hidden }; });
+      if (r == null) break;
+      // (right: the next word comes, or the game ends; wrong: that button hides)
+      const res = await pg.evaluate(async r => { for (let k = 0; k < 40; k++) { await new Promise(x => setTimeout(x, 150)); const b = document.querySelector('.handpad p b'), bs = [...document.querySelectorAll('.handpad [data-hp^=w]')];
+        if (!b || b.textContent !== r.word) return 'right'; if (bs.filter(x => x.style.visibility === 'hidden').length > r.hidden) return 'wrong'; } return 'none'; }, r);
+      if (res === 'right') rounds++; else if (res === 'wrong') wrongs++; else break; }
+    await step();
+    if (age === 'big') { await emit('ferries'); await step(); }
+    const jackBtn = await act('story_c3_jack'); await w(600);
+    const jackChoices = await pg.evaluate(() => document.querySelectorAll('.dialog:not(.out) .dch').length); await calm();
+    await emit(age === 'big' ? 'tug' : 'cricket'); await w(400); const otherGame = await q();
+    await emit(age === 'big' ? 'cricket' : 'tug'); await step();
+    const namBtn = await act('story_c3_tale'); await w(600); await calm(); await pg.evaluate(() => document.querySelector('.th-x')?.click());
+    await pg.evaluate(() => __sv.lanterns._finish(__sv.heroes[0], 'c3_tale')); await step();
+    // the clues by the harbour
+    await pg.evaluate(() => { const S = __sv.lanterns.sydney; __sv.heroes[0].place(S.front[0], S.front[1] + 1); }); await w(2500); await calm();
+    const lead = await pg.evaluate(() => { const c = __sv.lanterns.companions.of(__sv.heroes[0]); return c && c.lead ? !!c.lead.high : false; });
+    await act('story_clue3_1'); await w(300);
+    const wrongFound = await pg.evaluate(() => !!(__sv.heroes[0].profile.lanterns.act || {}).clue3);
+    await act('story_clue3_0'); await w(300); await act('story_c3_find'); await step();
+    const carrying = await pg.evaluate(() => __sv.heroes[0].profile.lanterns.carrying);
+    pg.evaluate(() => { const it = __sv.interactables.find(i => i.id === 'story_c3_hang'); it.act(__sv.heroes[0]); }); await w(1500);
+    const roped = await pg.evaluate(() => { const el = document.querySelector('.handpad [data-hp=rope]'); if (!el) return false; const r = el.getBoundingClientRect(), ev = (t, y) => el.dispatchEvent(new PointerEvent(t, { bubbles: true, pointerId: 9, clientX: r.left + 20, clientY: r.top + r.height * y }));
+      ev('pointerdown', 0); ev('pointermove', 1); ev('pointerup', 1); return true; });
+    let film = false; for (let i = 0; i < 30 && !film; i++) { await w(300); film = await pg.evaluate(() => !!document.querySelector('.theatre.film canvas.th-film')); }
+    await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(1200);
+    await pg.evaluate(() => document.querySelectorAll('.reward').forEach(e => e.click())); await w(800); await tapDialog(); await w(400); await calm(); await w(1500);
+    const end = await pg.evaluate(() => { const G = __sv, p = G.heroes[0].profile, S = G.lanterns.sydney;
+      return { ch3: !!p.lanterns.chapters.ch3, keep: (p.keepsakes || []).includes('lantern_ch3'), carrying: p.lanterns.carrying, tricks: p.lanterns.tricks || [], lit: S.lit(), show: S.showOn(),
+        secret: G.interactables.find(i => i.id === 'story_c3_secret').visible(G.heroes[0]), after: (q => q && q.id)(G.currentQuest(p)) }; });
+    let sticker = false;
+    if (age === 'big' && end.secret) { await act('story_c3_secret'); await w(400); await pg.evaluate(() => document.querySelectorAll('.reward').forEach(e => e.click())); await w(400); sticker = await pg.evaluate(() => __sv.heroes[0].profile.stickers.includes('🐨')); }
+    const placed = await pg.evaluate(async () => { const W = await import('/js/world.js'), S = __sv.lanterns.sydney, bad = [];
+      const pts = [['front', S.front[0], S.front[1]], ...S.clues.map(c => ['clue' + c.k, c.x, c.z]), ...S.people.map(c => [c.id, c.x, c.z]), ['koala', S.koala.x, S.koala.z],
+        ...__sv.interactables.filter(i => /^story_light_c3/.test(i.id)).map(i => [i.id, i.x, i.z])];
+      for (const [id, x, z] of pts) { const d = W.roadDist(x, z); if (d.road && d.d < d.road.w / 2 + .5) bad.push(id + ' on a road');
+        for (const c of W.CITIES) if (c.layout && x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && Math.abs((x - c.x) * Math.cos(c.layout.toward) - (z - c.z) * Math.sin(c.layout.toward)) < 2.6) bad.push(id + ' on ' + c.id + "'s street");
+        if (W.heightAt(x, z) < W.WATER + .3) bad.push(id + ' in the water'); }
+      return bad; });
+    const filmRun = await pg.evaluate(async () => {
+      const F = await import('/js/film.js'), C = await import('/js/content/films.js'); await import('/js/content/chapter3films.js');
+      const { STORY_TALES } = await import('/js/content/chapters.js'), { openTheatre } = await import('/js/tales.js'), st = STORY_TALES.lantern_ch3, bad = [];
+      openTheatre({ ...st, story: true, title: () => st.title[0], ctx: { name: 'Na', companion: 'dragon' } }, { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100));
+      document.querySelector('.th-auto')?.click(); const f = F.filmNow(); if (!f) return ['no film'];
+      const frame = () => new Promise(r => requestAnimationFrame(r)); let helps = 0;
+      for (let k = 0; k < C.FILMS.lantern_ch3.pages.length; k++) { const done = f.page(k); let ended = false; done.then(() => { ended = true; }); const p = f.now; f.narrated();
+        for (let i = 0; i < 600 && !ended; i++) { if (p.hold) { helps++; p.release(true); } p.t += .2; await frame(); }
+        if (!ended) bad.push('page ' + (k + 1) + ' did not end'); if (!p.actors.length) bad.push('page ' + (k + 1) + ': nobody in it'); }
+      if (!helps) bad.push('the child never helped');
+      document.querySelector('.th-x')?.click(); await new Promise(r => setTimeout(r, 400)); if (F.filmNow()) bad.push('not freed');
+      return bad; });
+    const want = age === 'big' ? ['L_c3_fly', 'L_c3_chi', 'L_c3_words', 'L_c3_ferry', 'L_c3_jack', 'L_c3_tale', 'L_c3_find', 'L_c3_hang'] : ['L_c3_fly', 'L_c3_words', 'L_c3_jack', 'L_c3_tale', 'L_c3_find', 'L_c3_hang'];
+    want.forEach((id, i) => { if (seen[i] !== id) out.push(`step ${i + 1} was ${seen[i]}, expected ${id}`); });
+    if (!offFirst) out.push('chapter 3 started before an admin switched it on');
+    if (!lightsWaited) out.push('walking into Sydney finished the step before the lights were followed');
+    if (!wordBtn) out.push('no word buttons');
+    else if (age === 'big' ? !(wordBtn.text && wordBtn.size >= 16) : !wordBtn.pic) out.push('word buttons: ' + JSON.stringify(wordBtn));
+    else if (wordBtn.h < (age === 'big' ? 44 : 64)) out.push('word buttons too small: ' + wordBtn.h);
+    if (rounds !== (age === 'big' ? 4 : 2)) out.push(`${rounds} words with Chi, expected ${age === 'big' ? 4 : 2}`);
+    if (!jackBtn || jackChoices !== 3) out.push(`Jack and Ruby's challenge did not offer Play, How to play and Later (${jackChoices})`);
+    if (otherGame !== 'L_c3_jack') out.push('the other age group\'s game finished Jack and Ruby\'s challenge');
+    if (!namBtn) out.push('no button for Bà Năm\'s story');
+    if (age !== 'big' && !lead) out.push('the companion did not fly high to lead the way');
+    if (age === 'big' && lead) out.push('the companion led a big kid');
+    if (wrongFound) out.push('the lantern showed at the wrong spot');
+    if (carrying !== 'ch3' || end.carrying) out.push('the lantern was not carried and then hung');
+    if (!roped) out.push('hanging did not ask to pull the rope');
+    if (!film) out.push('the festival film did not open');
+    if (!end.ch3 || !end.keep) out.push('chapter 3 not finished ' + JSON.stringify(end));
+    if (!end.lit) out.push('the Opera House did not light up');
+    if (!end.show) out.push('no fireworks');
+    if (!end.tricks.includes('higher')) out.push('the companion did not learn its trick');
+    if (!end.after || /^L_c3/.test(end.after)) out.push('after chapter 3 the goal was ' + end.after);
+    if (age === 'big' && (!end.secret || !sticker)) out.push('no koala secret for a big kid');
+    if (age !== 'big' && end.secret) out.push('the koala showed for an under-5');
+    out.push(...placed, ...filmRun.map(x => 'film: ' + x));
+    if (P.errors.length) out.push(...P.errors.slice(0, 2));
+    await P.ctx.close();
+    return { out, steps: want.length, rounds, wrongs, after: end.after };
+  };
+  const little = await play('little'), big = await play('big');
+  const bad = [...little.out.map(x => 'under-5: ' + x), ...big.out.map(x => 'big kid: ' + x)];
+  if (bad.length) throw new Error(bad.join('; '));
+  return `under-5: ${little.steps} steps (${little.rounds} picture words, the companion flew high to lead); big kid: ${big.steps} steps (${big.rounds} Aussie words, ferries, cricket, clues); rope, film (2 pages, the child starts the fireworks), Opera House lit, fireworks, keepsake, new trick, koala for the big kid; then "${big.after}"`;
 });
 await check('yard', async () => {
   // (round R, owner: bà Huệ and ông Nghi's quest chain) the yard stands in an open spot near the Huệ Nghi shop; the side

@@ -114,5 +114,60 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
 - Festivals (owner, 10 Oct AEST): every festival is on, but runs only from 3 weeks before its day or when an admin
   switches it on or schedules it; children can never start one; a festival decorates the whole town or village, not a few
   scattered things. Brief: `docs/cores/tasks/play-festivals.md` (its own Play chat).
-- This chat works on story Chapter 2 only; Kid UI, Voice & Audio and the World layout are run in their own chats (owner, 10 Oct AEST): their parts go on the board, never built here.
+- Next in this chat (owner, 10 Oct AEST): the festivals brief (`tasks/play-festivals.md`) and story Chapter 3 (Sydney),
+  both in one round. Chapter 3: Bà Năm tells The Magic Pudding; under-5s play tug of war with Jack and Ruby (cricket is
+  5+); Chi's look chosen by Play (changeable in Studio); switch `story_ch3` off until an admin switches it on.
+- (earlier) This chat works on story Chapter 2 only; Kid UI, Voice & Audio and the World layout are run in their own chats (owner, 10 Oct AEST): their parts go on the board, never built here.
 
+## Festivals on a schedule, whole places decorated (owner, 10 Oct AEST; brief `tasks/play-festivals.md`)
+- **In season only:** a festival shows from 3 weeks before its day (a quiet day: a few days before), or when an admin
+  schedules it in Studio's Releases page (`fest_<id>` with a start date and a number of days: on from that day). The
+  grown-ups' press-and-hold setting (by date, off, one festival) stays. Studio's Preview link (`?festival=<id>`) still
+  shows any festival once, for grown-ups.
+- **Children never start one:** a tap on the calendar tells about a festival still to come (days to go) or, in its
+  build-up, takes the child to see the decorations going up; on its day it takes them to the festival table as before.
+  The calendar's words now say so (`js/ui.js`, one line, noted on the board).
+- **Whole places:** pieces along every street, lane and footpath of each place in `where` (beside the road, off its verge,
+  G5), beside a city's main street and round its square, and on the footpaths of the streets Two Homes Street, Aussie
+  Corner and the market draw themselves; spread over the whole place at every stage (every 4th spot in week 1 ... all on
+  the day, at most 48 a place), bunting along the streets from week 2. A place without streets keeps its ring.
+- **Files:** `js/festivals.js` (rules, calendar), `js/festdecor.js` (street spots, admin schedule, the calendar's words;
+  loaded once a child plays, so the start-up download stays within PERF-001). Checks `festivals` (new), `festcal` (now
+  has an admin schedule Halloween for its trick-or-treat test, since a child's tap no longer starts it).
+
+## The lantern story, Chapter 3: Sydney (owner's go, 10 Oct AEST)
+- **Files:** steps and words in `js/content/chapter3text.js` (it adds `ch3` to `CHAPTERS` when it loads, so the start-up
+  download stays small; chapter 2 does the same in `chapter2text.js`); places in
+  `js/content/chapter3sydney.js`; shapes (Opera House sails, Harbour Bridge, ferry, gum tree, koala) in
+  `js/content/chapter3props.js`; festival film in `js/content/chapter3films.js`. `js/lanterns.js` loads every later chapter
+  the same way (`LATER`), once a child playing has found the chapter before's lantern. Studio switch `story_ch3` (off).
+  Check `chapter3`.
+- **Steps:** follow 3 lantern lights to Sydney; meet Chi (big kids); Chi's Aussie words (an under-5 hears two words and
+  taps the picture; a big kid reads four and picks what each means; a wrong answer just hides); Captain Molly's ferry
+  game (big kids); Jack and Ruby's challenge (cricket for big kids, tug of war for under-5s; cheeky at first, friends
+  after); Bà Năm tells The Magic Pudding; find the lantern by the harbour (big kids read "where the ferries wait" and look
+  at three spots; an under-5's companion flies high, then down over the right one); pull the rope to hang it at the Opera
+  House. Under-5s: 6 steps, big kids: 8.
+- **Festival night:** the film (the Opera House's sails light up in colours at dusk; fireworks over the Harbour Bridge,
+  started by the child's tap), then the sails stay lit and fireworks burst over the harbour for a minute. Keepsake: the
+  Opera House night-light (`lantern_ch3`). Trick learned: flying higher. Big kids' secret: a koala in a gum tree, with a
+  koala sticker.
+- **Chi** (new, owner: "you choose"): about 8, ponytail, yellow top; half Australian, half Vietnamese; says each word in
+  both languages. Her look can be changed later in Studio.
+
+## Progress notes (festivals and Chapter 3)
+- **Full suite, 11 Oct 00:15 AEST, commit 08e238a** (`core/play`, `main` 3399198 merged in): 82 of 83 passed.
+  Passed: boot, spill, language, two-players, facetoface, games, features, camera, contract, roads, flat, roadshape, phone,
+  solid, voice, voicepack, welcomevoice, studio, ground, resume, village, validate, tales, emoji, hubmap, festcal,
+  festivals, films, halves, preload, story, chapter2, chapter3, yard, kidplay, shop, boxes, hoilang, surprises, currency,
+  camcalm, vehicles, dialogtap, viwords, noemoji, arch, walkaway, ages, simple, adventure, gamelevel, quiet, songs,
+  realphotos, firstplayer, grownupsui, playhub, a11y, unit, events, postcards, familyphotos, myhouse, names, rules, coop,
+  report, iphone, tienlen, chests, types, perf, saves, photo, netmsg, onlineoff. Skipped (no local
+  PeerJS or MQTT server in a helper chat; they report as passed): multiplayer, meet, netgames, together, cloud, knock.
+  Failed: `parents` ("bedtime [true,true,true,false]"): it fails the same way on `main` 3399198; the check plays bedtime
+  at the fixed date 2026-10-10 and the run was after midnight AEST on 11 Oct, so it is not from this branch (on the board).
+- `perf`: triangles 793k to 805k in three runs (limit 824k); startMB 3.344 or 3.374 for the same code (limit 3.346);
+  `main` measures 3.373 twice, so the start-up budget is over on `main` too (on the board). Halloween's decorations go up
+  from today (10 Oct is three weeks before), on `main` and here alike.
+- Screenshots looked at: the `phone` check's phone, tablet and computer views (passed); the chapter 3 word panel (pictures
+  for an under-5, words for a big kid) and the festival film pages during the checks.
