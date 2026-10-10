@@ -4,6 +4,7 @@ import { settings, saveSettings } from './state.js';
 import { say, hush } from './voice.js';
 import { Music } from './audio.js';
 import { el, esc } from './util.js';
+import { hideCaption } from './ui.js';
 
 export const CREDIT_DEFAULTS = {
   creator: 'Henry Nguyen',
@@ -43,7 +44,18 @@ export function openCredits() {
     </div>`);
   document.body.appendChild(c);
   say(val('why'), val('why'));
-  const close = () => { hush(); c.remove(); Music.play(prevMusic || 'field'); };
+  // the page rolls by itself, but a finger or the wheel can scroll it; it rolls on again after 3 s of quiet
+  let raf = 0, pause = performance.now() + 2500, pos = 0, last = 0;
+  const touch = () => { pause = performance.now() + 3000; };
+  ['pointerdown', 'wheel', 'touchstart', 'touchmove', 'keydown'].forEach(e => c.addEventListener(e, touch, { passive: true }));
+  const roll = now => {
+    raf = requestAnimationFrame(roll);
+    const dt = Math.min(64, now - last); last = now;
+    if (now < pause) { pos = c.scrollTop; return; }
+    pos += dt * 0.025; c.scrollTop = pos;
+  };
+  raf = requestAnimationFrame(roll);
+  const close = () => { cancelAnimationFrame(raf); hush(); hideCaption(); c.remove(); Music.play(prevMusic || 'field'); };
   c.querySelector('.cr-x').onclick = close;
 }
 
