@@ -8,8 +8,8 @@ Then read `CLAUDE.md`, `docs/cores/README.md` and `docs/cores/BOARD.md`.
 
 ## Owner's decisions (10 Oct AEST)
 - **Only the Front Desk adds bugs.** The owner tells the Front Desk; the Front Desk opens the GitHub issue.
-- **The bug robot** (`.github/workflows/bug-fixer.yml`) runs every 3 hours (about 12, 3, 6 and 9 o'clock, am and pm
-  AEST). When there is no bug to work on it does not start Claude, so it uses no Claude usage.
+- **The bug robot** (`.github/workflows/bug-fixer.yml`) runs every 30 minutes (at about :07 and :37 past
+  each hour; the owner changed it from 3 hours on 10 Oct, and it stays so until the owner changes it). When there is no bug to work on it does not start Claude, so it uses no Claude usage.
 - **Small bugs are fixed and pushed to GitHub without asking**, only to a branch `bugfix/<core>-<issue>` with a draft
   pull request. **Big bugs get a plan first** and wait for the owner's "go".
 - **Nothing goes to Netlify by itself.** Only Release merges into `main`, under the round's "yes, deploy".
@@ -81,6 +81,11 @@ Reported by the owner, <date and time> AEST.
 - **"Leave it."** Add `on-hold`; the robot then leaves the bug alone.
 - **The robot fixed it** (`fixed-on-branch`): it is not live yet. Release merges the draft pull request, and the
   owner's "yes, deploy" makes it live; merging closes the issue.
+
+## Keeping track (for the owner)
+- GitHub → Issues: every bug; the labels say where it is; closed means live.
+- GitHub → Pull requests: each robot fix ("Bug #12 (play): ..."), with its **Quick checks** and **AI review** marks.
+- GitHub → Actions: every run of the bug robot, the quick checks and the AI review.
 
 ## Questions that are not bugs
 Answer from the docs and the code. When the answer means changing the game, say which core would do it and offer to

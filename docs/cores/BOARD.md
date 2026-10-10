@@ -15,7 +15,7 @@ Format for a request:
 - The Google Drive mirror (`.github/workflows/drive-mirror.yml`) is not set up yet: ask the owner at every report.
 
 ## Front Desk
-- **Now:** no chat yet. Front Desk and bug robot merged into main by Release (10 Oct AEST). Bugs go on GitHub Issues (`bug` + core label + `small`/`big`); the bug robot runs every 3 hours (`docs/cores/front-desk.md`) · 10 Oct AEST
+- **Now:** no chat yet. Front Desk and bug robot merged into main by Release (10 Oct AEST). Bugs go on GitHub Issues (`bug` + core label + `small`/`big`); the bug robot runs every 30 minutes (`docs/cores/front-desk.md`) · 10 Oct AEST
 - [ ] (Release → Analytics & Infra) for your records: `.github/workflows/bug-fixer.yml` (the bug robot) added by Release on the owner's request; it is yours to look after like the other workflows · 10 Oct AEST
 
 ## World
