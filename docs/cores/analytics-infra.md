@@ -58,3 +58,9 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
 - (10 Oct) Parents and children never see “Sparkle Studio” or “Studio”: it is for the admin only (check `nostudio`).
 - (10 Oct) The website serves a packed copy of the scripts (`tools/bundle.mjs`, Netlify build and `build-netlify.sh`);
   the fast checks run on GitHub for every pull request (`.github/workflows/checks.yml`).
+- (11 Oct, #36 slow start) Go for the whole start-up plan: a `startup` check at tablet speed on the packed copy (time to
+  title, "Who's playing?", valley ready, longest freeze, each a ratchet); PERF-001 measures the packed copy; the
+  breathing between building steps in `js/main.js` may be changed by this core (noted on the board); a request to World
+  for a saved, piece-by-piece valley; a smaller first download.
+- (11 Oct) Analytics also keeps each device's start-up times (about 5 numbers a start, no names; PRIV-005), so real
+  phone and tablet times show in Studio's Analytics; nothing is sent when Analytics is off.
