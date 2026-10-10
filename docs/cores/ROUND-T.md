@@ -279,7 +279,7 @@ Where the drawing and the written spec disagree (asked to the owner):
 - Main roads are drawn 6.4 m wide ("Vietnam main road (6.4 m)"); the hard rule R1 / ROAD-001 says asphalt 5.2 m (T4).
 
 ## Progress (for the next chat to pick up)
-**10 Oct 2026, T1 in progress (Release core chat, branch `round-t`, local commits not pushed).** r55 (T0) was pushed as pull
+**10 Oct 2026, T1 built: release r56 (Release core chat, branch `round-t`, local commits; waiting for the owner's "yes, push" / "yes, deploy").** r55 (T0) was pushed as pull
 request #21 (not merged, not deployed). The owner said "go, build T1" with these answers (10 Oct): a bigger home island so Ông
 Cú, Phố Hai Quê and Sunny Farm fit; Bắc Ninh north-east of Hà Nội as drawn; the ring road in T1; asphalt roads 6.4 m (rule R1
 changed, `ROAD_WIDTH` in the map); Release stamps Studio map edits (`studio/ui/app.js` Map page: older edits go to
@@ -303,6 +303,18 @@ changed, `ROAD_WIDTH` in the map); Release stamps Studio map edits (`studio/ui/a
   pixel) (`G.farCull` in `js/main.js`). Now 714k triangles, 701 draws in the village, 1,085 draws at home (r54: 2,335).
   `perf-baseline.json`: draw calls lowered to what T1 measures; `worldMs` set to r54's own median measured side by side
   (r54 5.7–6.1 s, T1 5.8–6.1 s, six starts each; the 4.7 s from T0 came from a quieter machine), +25 % unchanged.
+- Found by the full suite and the screenshots, fixed: the water buffalo rests now and then and was marked solid where it stood
+  (the phone and desktop solid maps differed; it is `moving` now); the `solid` check walked into spots from the old 400 m grid
+  (now from the valley's size); the lowered Dawn Plateau no longer counted as the plateau (`regionAt` wanted ground above 12 m;
+  now the plateau's height from the map), so home read as meadow: new check `regions` (every area somewhere in the valley, the
+  big places read as themselves). Ông Cú says "The valley has grown!" aloud too (recorded with Azure, en and vi).
+- Looked at: the sky view and the Pad map next to the Concept D map (`docs/cores/round-t/t1-sky-pad-vs-concept-d.jpg`); phone,
+  tablet and computer at home, Phố Hai Quê, Lotus Village, Đà Nẵng and Sydney; a low fly-over of 23 places (nothing floating
+  or sunk). Seen, left for later: the Pad map's names overlap on the east side (Village festival stage over Đà Nẵng, Three
+  Regions Market over Hồ Chí Minh City) and Hội An is not in its list yet (Kid UI on the board; the drawn Pad map is T4).
+  Walking into Phố Hai Quê gives the Australia "visit" stamp (the town has always counted for Australia; in r54 its middle
+  read as meadow): kept as it is.
+- Next: T2 (real water: the named rivers and lakes, the bridge landmarks, road colours, boats; the ring road is already in T1), plan first and the owner's "go".
 
 **Earlier: 10 Oct 2026, about 07:30 AEST: stage T0 built (steps 1 to 6), release r55.**
 - Step 1: `js/content/map.js` (MAP_VERSION 'C'). Step 2: `world.js`, `roads.js`, `ferry.js` from the map. Step 3: every builder
