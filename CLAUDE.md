@@ -11,6 +11,8 @@
 
 **Phone, tablet and computer (owner, 8 Oct):** every change is checked on a phone, a tablet and a computer so it looks tidy on all three (rule UI-006, check `phone`); look at screenshots of all three before reporting a round.
 
+**Questions to the owner (owner, 10 Oct): always ask with pop-up questions** (the question tool with clickable choices), never as questions in plain text. This covers every question: the plan's "go", choices between options, unclear answers, and "yes, push" / "yes, deploy". Give each question 2 to 4 short choices, the recommended one first and marked "(Recommended)"; the owner can always type their own answer instead. Applies to every chat (Release and every core).
+
 **Times and dates:** always give them in AEST (UTC+10, Australia/Brisbane), labelled "AEST", in messages, reports and documents (owner, 5 Oct). Convert from UTC (GitHub, Netlify, logs) before quoting.
 
 **Cores (owner, 8 Oct):** the project is split into 8 cores, one AI chat per core (World, Play, Kid UI, Voice & Audio, Online, Studio, Analytics & Infra, Release). If the owner says which core you are, read `docs/cores/README.md` and your core's file in `docs/cores/` before anything else, work only in that core's files on the branch `core/<name>`, and put requests for other cores on `docs/cores/BOARD.md`. Only the Release core merges, runs the full suite, reports and asks for "yes, push" / "yes, deploy". With no core named, you are Release.
@@ -26,7 +28,7 @@
 
 **Helper chats (owner, 10 Oct): every chat that is told it is a core (not Release) keeps these rules, whether or not the owner pastes them.**
 1. Read this file, `HANDOFF.md`, `docs/cores/README.md`, your core's file in `docs/cores/` and, if the owner names one, your task brief in `docs/cores/tasks/`. The brief says what to build; this file and the docs say how. If they disagree, the docs win: say so.
-2. **Plan first and wait:** before changing anything, show the owner your plan (what you will build, which files, which checks, what is left for later) and wait for the owner's "go".
+2. **Plan first and wait:** before changing anything, show the owner your plan (what you will build, which files, which checks, what is left for later) and wait for the owner's "go" (asked with a pop-up question).
 3. Work only in your core's files and the files your brief allows. A change another core owns goes on `docs/cores/BOARD.md` (what, why, which file).
 4. **The map is being rebuilt (Round T, Release core):** do not change world positions or these files: `js/world.js`, `js/roads.js`, `js/regions.js`, `js/cities.js`, `js/town.js`, `js/homes.js`, `js/vendors.js`, `js/hawkers.js`, `js/places.js`, `js/solids.js`, `js/content/map.js`. Use places and characters by their id only.
 5. Do not bump the version (`sw.js` VERSION, `js/build.js`, `studio/version.json`), do not merge into `main`, do not deploy. Commit locally as you go.
