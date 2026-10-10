@@ -303,6 +303,10 @@ road colours as tinted asphalt (`docs/cores/release.md`, Owner's decisions).
 - Speed: crop plants and fruit bushes are drawn as two pieces each (home 1,094 draws, village 690 / 695k triangles). The
   world builds about 0.9 s slower than r56 (6.8–7.0 s against 5.9–6.1 s side by side; limit 7.4 s): more water, bridges and
   roads in every height look-up.
+- Found by the full suite, fixed: the new water reached the colours shrine (Brisbane River), the lake tower (Sông Hồng's
+  mouth), a Leafy (the Yarra) and two pickups (beside Mỹ Sơn and Phong Nha after they moved): each moved a few metres onto
+  dry ground; Hồ Gươm has a real islet (`islet` in the map) for the Turtle Tower; Thê Húc's temple stands on the shore;
+  Sydney Harbour is a little narrower and stops short of Sydney's square, which stays level and dry.
 - Pictures: `docs/cores/round-t/t2-sky-pad-vs-concept-d.jpg`. Next: T3 (Vũng Tàu and its boats, the Memory Villages, the
   Trường Sơn range and Hải Vân pass), plan first and the owner's "go".
 
