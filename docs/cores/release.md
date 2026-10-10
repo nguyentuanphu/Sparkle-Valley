@@ -58,3 +58,6 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - 10 Oct AEST (r56 report): "yes, deploy" for r56. T1 goes out before the online map-version check (online play is off until a grown-up turns it on; devices update within days); the map version in the online hello goes into r57.
 - 10 Oct AEST: PERF-001 (start-up download) should measure the packed copy the website serves (2.6 MB), not the plain scripts; Analytics & Infra changes the check.
 - 10 Oct AEST: the Google Drive mirror and the voice relay (TURN) are done; stop asking about them.
+- **Tidy streets (11 Oct AEDT):** stalls, kiosks and sellers follow the Concept D street rules (one market row per place,
+  one side of the main street, facing it, spacing rules checked by `validate.js`); stage T1b in `ROUND-T.md`, built by the
+  robot chat after r57, before T2.
