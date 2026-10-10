@@ -227,7 +227,7 @@ export function createSimple(G) {
         <div class="sp-find" hidden></div>`;
       document.body.appendChild(m);
       m.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { if (busy) return; SFX.tap(); discover(false); tab = b.dataset.tab; group[tab] = null; at[tab] = 0; sel = null; draw(); const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0; const x = TABS.find(y => y.key === tab); say(x.say[0], x.say[1]); });
-      m.querySelector('.sp-again').onclick = () => { const x = TABS.find(y => y.key === tab); say(x.say[0], x.say[1]); };
+      m.querySelector('.sp-again').onclick = () => { SFX.tap(); const x = TABS.find(y => y.key === tab); say(x.say[0], x.say[1]); };
       m.querySelector('.sp-discover').onclick = () => { if (busy) return; SFX.tap(); discover(!finding); if (finding) say('Where shall we go?', 'Mình đi đâu nào?'); };
       // the chip: in a group, back to all the groups; otherwise Discover
       m.querySelector('.sp-area').onclick = () => { if (busy) return; SFX.tap(); if (group[tab]) { group[tab] = null; at[tab] = 0; sel = null; draw(); const x = tabOf(tab); say(x.say[0], x.say[1]); } else { discover(!finding); if (finding) say('Where shall we go?', 'Mình đi đâu nào?'); } };
