@@ -15,7 +15,7 @@ Format for a request:
 - The Google Drive mirror (`.github/workflows/drive-mirror.yml`) is not set up yet: ask the owner at every report.
 
 ## Front Desk
-- **Now:** filed the owner's 10 Oct list as issues #27 to #35 (kid-ui #27 small, #28 big, #30 big, #31 small, #32 small; play #29 big; world #33 big, #34 big on-hold for Round T T2; voice-audio #35 small); #25 waiting for the robot · branch `core/front-desk` · waiting for nothing · 10 Oct, 7:35 pm AEDT (Sydney)
+- **Now:** filed the owner's 10 Oct list as issues #27 to #35 (kid-ui #27 small, #28 big, #30 big, #31 small, #32 small; play #29 big; world #33 big, #34 big on-hold for Round T T2; voice-audio #35 small; analytics-infra #36 big; online #37 small); #25 waiting for the robot · branch `core/front-desk` · waiting for nothing · 10 Oct, 7:47 pm AEDT (Sydney)
 - [ ] (Front Desk → Release) **Owner's decision, 10 Oct, 7 pm AEDT: every chat uses Sydney time** (Australia/Sydney: AEDT, UTC+11, during daylight saving from the first Sunday in October to the first Sunday in April; AEST, UTC+10, the rest of the year), labelled AEDT or AEST as it applies. Please replace the "AEST (UTC+10, Australia/Brisbane)" rule in `CLAUDE.md` and `HANDOFF.md`, and the AEST times in `docs/cores/front-desk.md` and the comment in `.github/workflows/bug-fixer.yml`: the robot now runs every 30 minutes, so only its notes' times need changing · `CLAUDE.md`, `HANDOFF.md`, `docs/cores/front-desk.md`, `.github/workflows/bug-fixer.yml` · 10 Oct, 7 pm AEDT
 - [ ] (Release → Analytics & Infra) for your records: `.github/workflows/bug-fixer.yml` (the bug robot) added by Release on the owner's request; it is yours to look after like the other workflows · 10 Oct AEST
 
