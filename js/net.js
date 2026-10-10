@@ -152,19 +152,28 @@ export const Net = {
   micError: null,
   // Bug #55: on iPhone an earlier try made without a tap can stay pending for ever, and every later tap was handed that
   // same pending answer (nothing happened, no question). A tap (`fromTap`) now drops the old try and starts a fresh one;
-  // getUserMedia is called before any await, so it still runs inside the tap.
+  // getUserMedia is called before any await, so it still runs inside the tap. An old try that answers late never opens a
+  // second microphone (its stream is stopped) and says nothing while a newer try is still asking. Every outcome of a tap
+  // is said on screen (asking, on, blocked with how to allow it, none, iPhone too old), as nobody can test it on a real
+  // iPhone but the owner. Home-screen games on iPhone get a microphone only from iOS 14.3.
   async getMic(fromTap) {
     if (this.mic) return this.mic;
     if (this._micAsking && !fromTap) return this._micAsking;
+    const md = navigator.mediaDevices, ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
     const asking = this._micAsking = (async () => {
-      const md = navigator.mediaDevices;
-      if (!md || !md.getUserMedia) { this.micError = 'nomedia'; this.emit('status', { key: 'nomic' }); return null; }
-      let err = null;
-      for (const audio of [{ echoCancellation: true, noiseSuppression: true, autoGainControl: true }, true]) {
-        try { this.mic = await md.getUserMedia({ audio, video: false }); break; } catch (e) { err = e; if (e && (e.name === 'NotFoundError' || e.name === 'NotAllowedError')) break; }
+      if (!md || !md.getUserMedia) { this.micError = 'nomedia'; this.emit('status', { key: ios ? 'micold' : 'nomic' }); return null; }
+      const stale = () => this._micAsking && this._micAsking !== asking;   // a newer tap is asking now
+      let err = null, first = md.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
+      if (fromTap) this.emit('status', { key: 'micask' });
+      for (const audio of [null, true]) {
+        try {
+          const s = await (audio ? md.getUserMedia({ audio, video: false }) : first);
+          if (this.mic && this.mic !== s) { s.getTracks().forEach(t => t.stop()); return this.mic; }
+          this.mic = s; this.micError = null; this._micOn(); return s;
+        } catch (e) { err = e; if (this.mic || (e && (e.name === 'NotFoundError' || e.name === 'NotAllowedError'))) break; }
       }
-      if (this.mic) { this.micError = null; this._micOn(); return this.mic; }
-      const name = (err && err.name) || 'Error', tapped = !!(navigator.userActivation && navigator.userActivation.isActive);
+      if (this.mic || stale()) return this.mic;   // (another try got it, or is still asking: it speaks for itself)
+      const name = (err && err.name) || 'Error', tapped = !!fromTap || !!(navigator.userActivation && navigator.userActivation.isActive);
       this.micError = name;
       if (name === 'NotFoundError' || name === 'OverconstrainedError') this.emit('status', { key: 'nomic' });
       else this.emit('status', { key: name === 'NotAllowedError' && tapped ? 'micdenied' : 'mictap' });

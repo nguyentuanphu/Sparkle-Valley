@@ -2251,6 +2251,23 @@ await check('iphone', async () => {
     await N.getMic(); for (let k = 0; k < 50 && !(N.mic && said.includes('micon')); k++) await wait(100);
     const micAfterTap = !!N.mic, after = said.slice(), tapAsks = askedOnTap;
     md.getUserMedia = async () => { const e = new Error('none'); e.name = 'NotFoundError'; throw e; }; N.mic = null; said.length = 0; await N.getMic(); const reallyNone = said.slice();
+    // bug #55 (owner's iPhone: a tap on the microphone did nothing): a try made without a tap hangs for ever; a tap
+    // still asks afresh (says "Asking…", then "on"); when the old try answers late its microphone is stopped, not used
+    const replacedFirst = replaced; md.getUserMedia = real; N.mic = null; said.length = 0;
+    let late = null; md.getUserMedia = () => new Promise(res => { late = res; });
+    const hung = N.getMic(); await wait(100);
+    let fresh = 0; md.getUserMedia = c => { fresh++; return real({ audio: true }); };
+    const tapMic = await N.getMic(true), tapSaid = said.slice();
+    const extra = await real({ audio: true }); late(extra); const hungGot = await hung; await wait(100);
+    const lateStopped = extra.getAudioTracks().every(t => t.readyState === 'ended'), kept = N.mic === tapMic && hungGot === tapMic, micons = said.filter(k => k === 'micon').length;
+    // blocked after a tap (iPhone has no userActivation): how to allow it, not "tap Microphone on"
+    N.mic.getTracks().forEach(t => t.stop()); N.mic = null; said.length = 0;
+    md.getUserMedia = async () => { const e = new Error('blocked'); e.name = 'NotAllowedError'; throw e; }; await N.getMic(true); const blocked = said.slice();
+    // an iPhone home-screen game older than iOS 14.3 has no getUserMedia: say so, not "no microphone"
+    said.length = 0; md.getUserMedia = undefined; Object.defineProperty(navigator, 'userAgent', { get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)', configurable: true });
+    await N.getMic(true); const old = said.slice(); delete navigator.userAgent;
+    // a status still tells friends (it was once cut off by a comment): 'left' shares the new status
+    const share = G.shareStatus; let shared = 0; G.shareStatus = () => { shared++; }; N.emit('status', { key: 'left' }); G.shareStatus = share;
     md.getUserMedia = real; N.calls.delete('peer-y'); N.cloudOn = false; N.mic = null;
     // 2. Pad → Friends with a player in the room: no button taller than two lines, all inside the card
     Object.defineProperty(N, 'connected', { get: () => true, configurable: true }); N.code = '1234'; N.remotes['peer-z'] = { id: 'peer-z', name: 'Mít', look: {}, friend: 'ABCDE2' };
@@ -2259,6 +2276,10 @@ await check('iphone', async () => {
     const btns = row ? [...row.querySelectorAll('.btn')] : [], lh = btns.length ? parseFloat(getComputedStyle(btns[0]).lineHeight) || 20 : 20;
     const tall = btns.filter(x => x.getBoundingClientRect().height > lh * 2 + 24).map(x => x.textContent.trim());
     const cr = row ? row.getBoundingClientRect() : null, outside = btns.filter(x => { const q = x.getBoundingClientRect(); return cr && (q.right > cr.right + 1 || q.left < cr.left - 1); }).length;
+    // the 🎙️ button in Friends: what happened shows in the panel (blocked here)
+    const mute = document.querySelector('#oMute'); md.getUserMedia = async () => { const e = new Error('blocked'); e.name = 'NotAllowedError'; throw e; };
+    if (mute) mute.click(); await wait(400); md.getUserMedia = real; N.mic = null;
+    const panelSays = (document.querySelector('.pad .online .status') || {}).textContent || '';
     document.querySelector('.modal .x')?.click(); await wait(300);
     delete N.remotes['peer-z']; delete N.connected; N.code = null;
     // 3. the friend bar and the round buttons under the map never overlap
@@ -2268,12 +2289,14 @@ await check('iphone', async () => {
     const c = chip.getBoundingClientRect(), hit = [...document.querySelectorAll('.hud .tools .dk, .hud .zoomer button, .hud .mini-wrap, .hud .zoom')].filter(e => e.offsetParent).filter(e => { const q = e.getBoundingClientRect(); return q.left < c.right && c.left < q.right && q.top < c.bottom && c.top < q.bottom; }).map(e => e.className);
     const onScreen = c.width > 60 && c.height > 20 && c.right <= innerWidth + 1 && c.left >= 0, chipText = chip.textContent;
     delete G.partners['peer-q']; G.huds[0].setCall(false, false, false);
-    return { first, noMicYet, micAfterTap, after, replaced, reallyNone, tapAsks, asksBefore: 1, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
+    return { first, noMicYet, micAfterTap, after, replaced: replacedFirst, reallyNone, tapAsks, fresh, tapSaid, lateStopped, kept, micons, blocked, old, mute: !!mute, panelSays, shared, asksBefore: 1, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
   });
   const errs = P.errors; await P.ctx.close();
   ok((r.first.includes('mictap') || r.first.includes('micdenied')) && !r.first.includes('nomic') && r.noMicYet && r.tapAsks === 1 && r.micAfterTap && r.after.includes('micon') && r.replaced === 1 && r.reallyNone.includes('nomic')
+    && r.fresh === 1 && r.tapSaid[0] === 'micask' && r.tapSaid.includes('micon') && r.lateStopped && r.kept && r.micons === 1 && r.blocked.includes('micdenied') && !r.blocked.includes('mictap')
+    && r.old.includes('micold') && !r.old.includes('nomic') && r.mute && /Safari/.test(r.panelSays) && r.shared === 1
     && r.buttons >= 4 && !r.tall.length && !r.outside && !r.hit.length && r.onScreen && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'microphone: "tap 🎙️ Microphone on" (not "no microphone"), not asked again on every tap, on from the button and put into the open call; real "no microphone" still said; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
+  return 'microphone: "tap 🎙️ Microphone on" (not "no microphone"), not asked again on every tap, on from the button and put into the open call; real "no microphone" still said; #55: a hung try does not block a tap (asks afresh, "Asking…" then on, the late answer stopped), blocked after a tap says how to allow it (also in the Friends panel), an iPhone older than 14.3 is told so; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
 });
 
 await check('tienlen', async () => {
