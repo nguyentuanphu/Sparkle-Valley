@@ -162,6 +162,7 @@ function writeAreas(man, dry) {
   console.log('Areas (MB of recordings: English, Vietnamese, Chinese, Hindi):');
   for (const a of order) console.log(`  ${a.padEnd(10)} ${String(groups[a].length).padStart(5)} lines  en ${mb(size[a].en).padStart(5)}  vi ${mb(size[a].vi).padStart(5)}  zh ${mb(size[a].zh)}  hi ${mb(size[a].hi)}`);
 }
+if (flag('areas-only')) { writeAreas(JSON.parse(fs.readFileSync(MAN, 'utf8'))); process.exit(0); } // (voices/areas.json alone, while a recording run owns the manifest)
 if (flag('sizes')) { writeAreas(JSON.parse(fs.readFileSync(MAN, 'utf8')), true); process.exit(0); } // (only print the areas' sizes)
 if (flag('areas')) {
   // rewrite the templates and the areas for the recordings already made (no key needed)
@@ -269,8 +270,10 @@ async function azure() {
   for (const [h, j] of list) { for (const sl of CAST[j.lang]) if (fs.existsSync(path.join(PACK_DIR, j.lang, sl, h + '.mp3'))) man.lines[h] = (man.lines[h] || '') + sl; }
   const limit = +arg('limit', 1e9), queue = missing.slice(0, limit), gap = 60000 / perMin;
   let done = 0, used = 0, next = Date.now();
-  for (const [slot, h, j] of queue) {
-    const wait = next - Date.now(); if (wait > 0) await new Promise(r => setTimeout(r, wait)); next = Date.now() + gap;
+  // (round R item 12) a few requests at once (--parallel, default 3): each waits its turn, so the rate stays --per-minute,
+  // but a slow answer no longer holds up the next one
+  const one = async ([slot, h, j]) => {
+    const wait = next - Date.now(); next = Math.max(next, Date.now()) + gap; if (wait > 0) await new Promise(r => setTimeout(r, wait));
     const v = voices[j.lang][slot].id;
     // (round R) Vietnamese names and dishes inside an English line are said by the Vietnamese voice of the same man or woman
     const ssml = j.lang === 'en' && mixed(j.text) ? mixedSsml(viRuns(j.text), v, voices.vi[slot].id) : `<speak version='1.0' xml:lang='${LOCALE[j.lang]}'><voice name='${v}'>${xml(j.text)}</voice></speak>`;
@@ -288,7 +291,9 @@ async function azure() {
       if (done % 20 === 0) { save(); console.log(`${done}/${queue.length} files, ${used} characters`); }
       break;
     }
-  }
+  };
+  const work = queue.slice();
+  await Promise.all(Array.from({ length: Math.max(1, +arg('parallel', 3)) }, async () => { while (work.length) await one(work.shift()); }));
   // the old all-English recordings of those lines are not needed once both of their new ones are made
   let gone = 0;
   for (const [h, j] of list) if (j.lang === 'en' && h !== packHash('en', j.text) && CAST.en.every(sl => fs.existsSync(path.join(PACK_DIR, 'en', sl, h + '.mp3'))))
