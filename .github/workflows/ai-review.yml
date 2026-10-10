@@ -5,7 +5,8 @@
 # To keep Claude usage down it runs when a pull request is opened, reopened or marked ready, not on every push.
 # To review again after more pushes, add the label `ai-review` to the pull request (the label is then taken off).
 # The bug robot starts it by hand for its own pull requests (workflow_dispatch with the pull request number).
-# Uses the same Claude account as the bug robot: CLAUDE_CODE_OAUTH_TOKEN, then CLAUDE_CODE_OAUTH_TOKEN_BACKUP.
+# Uses the same Claude account as the bug robot: CLAUDE_CODE_OAUTH_TOKEN (or CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY, the
+# name the owner gave it), then CLAUDE_CODE_OAUTH_TOKEN_BACKUP.
 name: AI review
 on:
   pull_request:
@@ -36,7 +37,7 @@ jobs:
       pull-requests: read
     env:
       N: ${{ github.event.pull_request.number || inputs.pr }}
-      HAS_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+      HAS_KEY: ${{ (secrets.CLAUDE_CODE_OAUTH_TOKEN || secrets.CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY) != '' }}
       HAS_BACKUP: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_BACKUP != '' }}
     steps:
       - name: Find the pull request
@@ -89,7 +90,7 @@ jobs:
         continue-on-error: true
         uses: anthropics/claude-code-action@v1
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN || secrets.CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY }}
           github_token: ${{ github.token }}
           prompt: 'Read .bugfix/task.md and do exactly what it says.'
           claude_args: '--max-turns 60 --allowedTools Bash(git diff:*),Bash(git log:*),Bash(git show:*),Read,Write,Glob,Grep'

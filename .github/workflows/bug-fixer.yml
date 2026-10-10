@@ -8,7 +8,7 @@
 #   - Nothing ever goes to `main`, so nothing reaches Netlify: Claude runs with a read-only token and no git
 #     credentials; only the last job pushes, and only to refs/heads/bugfix/*. Release merges, after "yes, deploy".
 #
-# Needs the secret CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token`); CLAUDE_CODE_OAUTH_TOKEN_BACKUP (another account) is
+# Needs the secret CLAUDE_CODE_OAUTH_TOKEN or CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY (`claude setup-token`); CLAUDE_CODE_OAUTH_TOKEN_BACKUP (another account) is
 # tried when the first one fails. Times: the cron is UTC; 2,5,8,…,23 UTC is 12, 3, 6 and 9 o'clock am and pm AEST.
 name: Bug robot
 on:
@@ -109,7 +109,7 @@ jobs:
       N: ${{ matrix.bug.n }}
       CORE: ${{ matrix.bug.core }}
       MODE: ${{ matrix.bug.mode }}
-      HAS_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+      HAS_KEY: ${{ (secrets.CLAUDE_CODE_OAUTH_TOKEN || secrets.CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY) != '' }}
       HAS_BACKUP: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_BACKUP != '' }}
     steps:
       - uses: actions/checkout@v4
@@ -181,7 +181,7 @@ jobs:
         continue-on-error: true
         uses: anthropics/claude-code-action@v1
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN || secrets.CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY }}
           github_token: ${{ github.token }}
           prompt: 'Read .bugfix/task.md and do exactly what it says.'
           claude_args: '--max-turns 120 --allowedTools Bash,Read,Write,Edit,Glob,Grep --disallowedTools "Bash(git push:*)"'
