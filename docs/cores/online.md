@@ -30,6 +30,10 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
 - The microphone comes on with a button, not on every tap; over the cloud relay say plainly that voices can't travel there (round O).
 - One TURN key for everyone, kept in Netlify (CF_TURN_KEY_ID, CF_TURN_KEY_TOKEN), handed out a few hours at a time (round O).
 - Up to 6 players a room.
+- **Friends tab guide for grown-ups (owner, 11 Oct AEDT, bug #37: "Go, plus a button"):** the Friends tab (and "Friend
+  far away", which opens it) shows a small grown-ups' note naming the real place of the switch, Grown-ups → "Internet and
+  playing online" → "Use the internet", in English and Vietnamese with no "Studio"; on when off, off when on. Beside it
+  a Grown-ups button that opens with **press and hold only** (never a tap) straight at that section. Checked by `onlineoff`.
 
 ## Privacy round (owner, 9 Oct, round R privacy)
 - **Online play is off until a grown-up turns it on** (`settings.online`, default `false`, also on devices that played

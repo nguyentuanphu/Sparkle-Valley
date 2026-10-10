@@ -18,7 +18,8 @@ import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
 import { pads, initInput } from './input.js';
 import { Net, MAX_ROOM, ROOM_LEN, okPub } from './net.js';
-import { showTitle, showWho, dialog, dialogHooks, reward, openPad, openCooking, openShop, toast, modal } from './ui.js';
+import { showTitle, showWho, dialog, dialogHooks, reward, openPad, openCooking, openShop, toast, modal, openGrownups } from './ui.js';
+import { holdButton } from './popups.js';
 import { pic } from './art.js';
 import { openChat, personaByName, PERSONAS } from './chat.js';
 import { voiceCommand, voiceControlOn } from './commands.js';
@@ -963,7 +964,7 @@ Net.on('status', s => {
     denied: T('The room’s starter said not this time. You can start your own room!', 'Chủ phòng chưa cho vào lần này. Con có thể tự tạo phòng nhé!'),
     noanswer: T('Nobody opened the door. Ask your friend to tap “Let in”, or start your own room.', 'Chưa ai mở cửa. Nhờ bạn chạm “Cho vào”, hoặc tự tạo phòng nhé.'),
     slow: T('Still connecting… This can take a little longer when you are on different networks.', 'Vẫn đang kết nối… Khi hai máy ở hai mạng khác nhau có thể lâu hơn một chút.'),
-    stuck: T('Could not link the two devices. Try: both on Wi-Fi (or both on mobile data), start the room on the other device, or ask a grown-up to add a relay in Grown-ups → Online play.', 'Không nối được hai máy. Thử: cả hai dùng Wi-Fi (hoặc cả hai dùng 4G), để máy kia tạo phòng, hoặc nhờ người lớn thêm máy chủ trung chuyển trong mục Người lớn → Chơi trực tuyến.')
+    stuck: T('Could not link the two devices. Try: both on Wi-Fi (or both on mobile data), start the room on the other device, or ask a grown-up to add a relay in Grown-ups → Internet and playing online.', 'Không nối được hai máy. Thử: cả hai dùng Wi-Fi (hoặc cả hai dùng 4G), để máy kia tạo phòng, hoặc nhờ người lớn thêm máy chủ trung chuyển trong mục Phụ huynh → Internet và chơi trực tuyến.')
   }[s.key] || '';
   if (s.key === 'waiting') { const code = s.code; msg = T(`Room code: ${code} (${animalSay(code)}). Tell your friend!`, `Mã phòng: ${code} (${animalSay(code)}). Đọc cho bạn nhé!`); }
   // with Friends open the message shows in it, not over its tabs (round O)
@@ -1078,23 +1079,33 @@ G.netTick = body => {
   const nl = body.querySelector('.netline'); if (nl) nl.outerHTML = netLineHTML();
   body.querySelectorAll('.prow.roomp[data-pid]').forEach(row => { const old = row.querySelector('.pq'), now = pqHTML(row.dataset.pid); if (old) old.outerHTML = now || ''; else if (now) row.querySelector('.pw').insertAdjacentHTML('beforeend', now); });
 };
-// (bug #37) a small note for grown-ups: where the switch is (Grown-ups opens with press and hold; section "Playing online")
-const gUHow = on => on
-  ? T('Grown-ups: press and hold Grown-ups → Playing online → untick "Play with friends online" to switch it off.', 'Dành cho người lớn: nhấn giữ nút Phụ huynh → Chơi trực tuyến → bỏ chọn "Chơi cùng bạn qua mạng" để tắt.')
-  : T('Grown-ups: press and hold Grown-ups → Playing online → tick "Play with friends online" to switch it on.', 'Dành cho người lớn: nhấn giữ nút Phụ huynh → Chơi trực tuyến → chọn "Chơi cùng bạn qua mạng" để bật.');
+// (bug #37, owner 11 Oct) a small note for grown-ups saying where the switch is (Grown-ups → "Internet and playing online"
+// → "Use the internet"), with the Grown-ups button right here: press and hold only, so a child can't switch it on
+const gUHow = on => `<div class="gunote"><p class="note">${on
+  ? T('For grown-ups: press and hold Grown-ups → Internet and playing online → untick Use the internet to switch playing with friends off.', 'Dành cho người lớn: nhấn giữ nút Phụ huynh → Internet và chơi trực tuyến → bỏ chọn Dùng internet để tắt chơi cùng bạn.')
+  : T('For grown-ups: press and hold Grown-ups → Internet and playing online → tick Use the internet to switch playing with friends on.', 'Dành cho người lớn: nhấn giữ nút Phụ huynh → Internet và chơi trực tuyến → chọn Dùng internet để bật chơi cùng bạn.')}</p>
+  <button class="grown gu-hold"><span class="ring"></span>${T('Grown-ups', 'Phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button></div>`;
+const bindGUHow = (body, redraw) => {
+  const b = body.querySelector('.gu-hold'); if (!b) return;
+  holdButton(b, () => {
+    openGrownups(() => { if (document.body.contains(body)) redraw(); });
+    const d = document.querySelector('.modal.grownups details[data-sec="online"]'); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); }
+  });
+};
 G.drawOnlinePanel = (body, redraw) => {
   G.onNet = () => { if (document.body.contains(body)) redraw(); };
   const h = G.heroes[0];
   // (round R privacy, 9 Oct, owner) online play is off until a grown-up turns it on (Grown-ups → Playing online): no Start, no Join
   if (!settings.online) { body.innerHTML = `<div class="online off"><p class="note center onlineoff">🔒 ${T('Playing with friends is off. Ask a grown-up to turn it on.', 'Chơi cùng bạn đang tắt. Nhờ người lớn bật lên nhé.')}</p>
-    <p class="note center gunote">${gUHow(false)}</p></div>`; return; }
+    ${gUHow(false)}</div>`; bindGUHow(body, redraw); return; }
   const friendsBox = () => `<div class="ocard friends"><h3>👫 ${T('My friends', 'Bạn của con')}</h3>
       <p class="note">${T('My friend code', 'Mã bạn bè của con')}: <b class="fcode">${settings.friendCode}</b></p>
       <label class="tog"><input type="checkbox" id="fOn" ${settings.friendsOn ? 'checked' : ''}> ${T('Friends can see when I am playing and where, and invite me (needs the internet)', 'Bạn bè thấy khi con đang chơi, đang ở đâu, và mời con được (cần có mạng)')}</label>
       <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}" data-fc="${esc(f.code)}">▶ ${T('Join', 'Vào chơi')}</button>` : ''}${(Net.friends.status[f.code] || {}).online && !(Net.code && Net.friends.status[f.code].room === Net.code) ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
       <div class="vrow"><input type="text" id="fAdd" maxlength="6" placeholder="${T('Friend code', 'Mã bạn bè')}" autocomplete="off"><button class="btn" id="fAddB">＋ ${T('Add', 'Thêm')}</button></div>
-      ${settings.friends.length ? `<p class="note">${T('Friends are never put in a room by themselves: 📨 Invite asks them, ▶ Join goes to theirs.', 'Bạn bè không bao giờ tự bị đưa vào phòng: 📨 Mời là hỏi bạn, ▶ Vào chơi là sang phòng bạn.')}</p>` : ''}<p class="note gunote">${gUHow(true)}</p></div>`;
+      ${settings.friends.length ? `<p class="note">${T('Friends are never put in a room by themselves: 📨 Invite asks them, ▶ Join goes to theirs.', 'Bạn bè không bao giờ tự bị đưa vào phòng: 📨 Mời là hỏi bạn, ▶ Vào chơi là sang phòng bạn.')}</p>` : ''}${gUHow(true)}</div>`;
   const bindFriends = () => {
+    bindGUHow(body, redraw);
     body.querySelector('#fOn').onchange = e => { settings.friendsOn = e.target.checked; saveSettings(); G.listenFriends(); };
     body.querySelector('#fAddB').onclick = () => { if (addFriend(body.querySelector('#fAdd').value)) { SFX.chime(); redraw(); } else toast(T('A friend code has 6 letters and numbers.', 'Mã bạn bè gồm 6 chữ và số.')); };
     body.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { settings.friends = settings.friends.filter(f => f.code !== b.dataset.rm); saveSettings(); redraw(); });

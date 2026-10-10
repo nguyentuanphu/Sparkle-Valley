@@ -2732,13 +2732,23 @@ await check('onlineoff', async () => {
     __sv.openPad(0, 'friend'); await wait(500);
     const body = document.querySelector('.pad-body') || document.body, text = body.textContent;
     const off = /Playing with friends is off/.test(text), buttons = !!document.querySelector('#oHost, .padwrap, .numpad, [data-joinf]');
+    // (bug #37) a grown-ups' note names the real section and switch in both languages, with a press-and-hold Grown-ups button
+    const guide = {}, hold = document.querySelector('.gunote .gu-hold');
+    guide.en = /Internet and playing online → tick Use the internet/.test(text) && !/Studio/.test(text);
+    document.querySelectorAll('.modal').forEach(m => m.remove()); S.settings.lang = 'vi'; __sv.openPad(0, 'friend'); await wait(400);
+    const vt = (document.querySelector('.pad-body') || document.body).textContent; S.settings.lang = 'en';
+    guide.vi = /Internet và chơi trực tuyến → chọn Dùng internet/.test(vt) && !/Studio/.test(vt);
+    guide.hold = !!hold && hold.getBoundingClientRect().height >= 44 && !!hold.querySelector('.ring');
+    hold.click(); await wait(200); guide.tapNoOpen = !document.querySelector('.modal.grownups'); // a plain tap opens nothing
+    const h2 = document.querySelector('.gunote .gu-hold'); h2.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); await wait(300);
+    const sec = document.querySelector('.modal.grownups details[data-sec="online"]'); guide.opens = !!sec && sec.open;
     document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
     const code = await N.host({ name: 'X' }); await N.join('123456', { name: 'X' }); __sv.listenFriends(); await wait(1500);
-    return { setting, off, buttons, code, role: N.role, peer: !!N.peer, door: !!N.door, cloud: !!N.cloud, beacon: !!N.beacon, pres: !!N.friends.ch, peerLoaded: !!window.Peer, ws: window.__wsOpened };
+    return { setting, off, buttons, guide, code, role: N.role, peer: !!N.peer, door: !!N.door, cloud: !!N.cloud, beacon: !!N.beacon, pres: !!N.friends.ch, peerLoaded: !!window.Peer, ws: window.__wsOpened };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(r.setting === false && r.off && !r.buttons && r.code === null && !r.role && !r.peer && !r.door && !r.cloud && !r.beacon && !r.pres && !r.ws && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'a fresh device: "Playing with friends is off. Ask a grown-up to turn it on.", no Start or Join; host, join and friends make no connection';
+  ok(r.setting === false && r.off && !r.buttons && Object.values(r.guide).every(Boolean) && Object.keys(r.guide).length === 5 && r.code === null && !r.role && !r.peer && !r.door && !r.cloud && !r.beacon && !r.pres && !r.ws && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'a fresh device: "Playing with friends is off. Ask a grown-up to turn it on.", no Start or Join; a grown-ups\' note names Internet and playing online → Use the internet (EN and VI, no Studio) and its press-and-hold button opens that section (a tap does not); host, join and friends make no connection';
 });
 await b.close();
 const failed = results.filter(r => !r[1]);
