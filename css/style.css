@@ -2237,3 +2237,12 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .gsec.family .bday { display: flex; align-items: center; gap: 8px; } .gsec.family .bday select { min-height: 44px; }
 .gsec.family input[type=time] { min-height: 44px; font-size: 18px; }
 .certcard .cert-img { width: 100%; height: auto; border-radius: 12px; box-shadow: var(--shadow); margin: 8px 0; }
+/* the Map pad: a fixed row of city chips, the picked city's places under it, arrows at the sides (bug 28) */
+.mapcities { position: static; margin-top: 6px; }
+.mapcities button { min-height: 64px; flex: 0 0 auto; }
+.mapnav { display: flex; align-items: stretch; gap: 6px; margin-top: 8px; }
+.mapnav .mapplaces { flex: 1; min-width: 0; align-content: start; }
+.mapnav .mapstep { flex: 0 0 64px; min-width: 64px; min-height: 64px; align-self: center; }
+.mapnav .mapstep span { font-size: 40px; line-height: 1; }
+.mapnav .mapstep small { font-size: 12px; }
+.mapnav[hidden], .mapcities[hidden] { display: none; }
