@@ -54,6 +54,8 @@ let hideCaption = () => { };
   let cap = null, timers = [];
   const stop = () => { timers.forEach(clearTimeout); timers = []; };
   hideCaption = () => { stop(); cap && cap.classList.remove('show'); };
+  // credits.js asks for this with an event (it cannot import ui.js: ui.js opens the credits)
+  window.addEventListener('sv-hide-caption', () => hideCaption());
   // a long line is shown a sentence or two at a time, so the box never grows to cover the screen
   const chunks = text => {
     const out = []; let cur = '';

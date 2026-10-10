@@ -4,7 +4,6 @@ import { settings, saveSettings } from './state.js';
 import { say, hush } from './voice.js';
 import { Music } from './audio.js';
 import { el, esc } from './util.js';
-import { hideCaption } from './ui.js';
 
 export const CREDIT_DEFAULTS = {
   creator: 'Henry Nguyen',
@@ -55,7 +54,7 @@ export function openCredits() {
     pos += dt * 0.025; c.scrollTop = pos;
   };
   raf = requestAnimationFrame(roll);
-  const close = () => { cancelAnimationFrame(raf); hush(); hideCaption(); c.remove(); Music.play(prevMusic || 'field'); };
+  const close = () => { cancelAnimationFrame(raf); hush(); window.dispatchEvent(new Event('sv-hide-caption')); c.remove(); Music.play(prevMusic || 'field'); };
   c.querySelector('.cr-x').onclick = close;
 }
 
