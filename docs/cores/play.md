@@ -109,5 +109,11 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   with free ground, not new map positions); their usual places stay as they are.
 - Bà Năm's Hà Nội tale is Sự tích Hồ Gươm (already in the game).
 - Under-5s play Oẳn tù tì in Tèo's challenge (Ô ăn quan is a 5+ game).
+- Chapter 2's festival night (film and parade) is the story's ending and plays on any day the lantern is hung; the real
+  Trung Thu festival in the valley still follows the calendar (owner, 10 Oct AEST).
+- Chapter 2 (`story_ch2`) is off by default; an admin switches it on or schedules it in Studio (owner, 10 Oct AEST).
+- Festivals (owner, 10 Oct AEST): every festival is on, but runs only from 3 weeks before its day or when an admin
+  switches it on or schedules it; children can never start one; a festival decorates the whole town or village, not a few
+  scattered things. Brief: `docs/cores/tasks/play-festivals.md` (its own Play chat).
 - This chat works on story Chapter 2 only; Kid UI, Voice & Audio and the World layout are run in their own chats (owner, 10 Oct AEST): their parts go on the board, never built here.
 

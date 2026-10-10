@@ -31,6 +31,7 @@ The rules for helper chats are in `CLAUDE.md` (read automatically), so nothing e
 | [voice-by-area.md](tasks/voice-by-area.md) | Voice & Audio | Voice pack by area (Round R item 12) |
 | [infra-speed.md](tasks/infra-speed.md) | Analytics & Infra | Smaller start-up download, checks on every pull request |
 | [studio-review.md](tasks/studio-review.md) | Studio | Studio review and improvements |
+| [play-festivals.md](tasks/play-festivals.md) | Play | Festivals on a schedule, whole places decorated |
 
 **Without a brief**, paste this as the first message (change the core):
 
