@@ -10,7 +10,7 @@ import os from 'os';
 import path from 'path';
 import crypto from 'crypto';
 import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { start, seedPlayers } from './harness.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -135,6 +135,7 @@ export async function studioCheck(browser, open) {
   // the exe's own server, on a copy of a small game folder, with its settings in a folder of its own
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-studio-')), game = path.join(tmp, 'game'), appdata = path.join(tmp, 'appdata');
   fs.cpSync(path.join(ROOT, 'js'), path.join(game, 'js'), { recursive: true }); // the game's code (the pages read it)
+  fs.cpSync(path.join(ROOT, 'vendor'), path.join(game, 'vendor'), { recursive: true }); // (the game list on the Simple screen page loads the 3D library too)
   for (const f of Object.keys(seed)) { fs.mkdirSync(path.dirname(path.join(game, f)), { recursive: true }); fs.writeFileSync(path.join(game, f), seed[f]); }
   fs.mkdirSync(path.join(appdata, 'SparkleStudio'), { recursive: true }); fs.writeFileSync(path.join(appdata, 'SparkleStudio', 'settings.json'), JSON.stringify({ gameDir: game, siteUrl: site, githubToken: 'test-token', githubRepo: repo }));
   // the exe is its own process: it reaches the same pretend GitHub over http (STUDIO_GITHUB_API, tests only)
@@ -144,6 +145,17 @@ export async function studioCheck(browser, open) {
   const notes = [];
   try {
     for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://localhost:${SPORT}/studio/api/ping`)).ok) break; } catch (e) { } await new Promise(r => setTimeout(r, 200)); }
+    // (Studio review, owner 10 Oct) every message the Studio's servers can send has its Vietnamese (studio/ui/vi.js)
+    { const { viMessage } = await import(pathToFileURL(path.join(ROOT, 'studio/ui/vi.js')).href), seen = new Set(), miss = [];
+      const NOT_SHOWN = /^(attachment;|private, no-store|error: |Sparkle Studio is already open)/;
+      for (const f of ['studio/core.cjs', 'studio/studio.cjs', 'netlify/functions/studio.mjs', 'netlify/lib/admins.mjs', 'netlify/lib/family.mjs', 'netlify/lib/guard.mjs', 'netlify/lib/accesslog.mjs'])
+        for (const line of fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n')) { if (!/Error\(|error:|\bbad\(|\.msg = |note: /.test(line)) continue;
+          for (const m of line.matchAll(/'((?:[^'\\]|\\.)*)'|`((?:[^`\\]|\\.)*)`/g)) { let t = m[1] ?? m[2]; if (!/^[A-Za-z“]/.test(t) || !/ /.test(t) || t.length < 6 || NOT_SHOWN.test(t)) continue;
+            t = t.replace(/(?<=[a-z])\$\{[^}]*\}/g, '').replace(/\$\{[^}]*\}/g, '12'); // a number, or the plural "s" left off
+            t = /\($/.test(t) ? t + '401).' : /: $/.test(t) ? t + 'x' : / $/.test(t) ? t + '500' : t; // the start of a message joined with +
+            seen.add(t); if (viMessage(t) === t) miss.push(t); } }
+      ok(seen.size > 60 && !miss.length, `server messages with no Vietnamese (${miss.length} of ${seen.size}): ` + miss.join(' | '));
+      notes.push(`${seen.size} server messages, each shown in Vietnamese too`); }
     const call = async (p, { body, cookie, headers = {} } = {}) => { const r = await fetch(site + p, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json', ...(cookie ? { cookie } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined }); return { status: r.status, j: await r.json().catch(() => null), cookie: (r.headers.get('set-cookie') || '').split(';')[0] }; };
     // 1. the password, then the two-step code (round R privacy): the first time sets it up, then a fresh code each time
     const signIn = async (name, password) => { testClock.t += 31e3; const who = name || 'owner'; let r = await call('/studio/api/login', { body: { name, password } });
@@ -333,8 +345,13 @@ export async function studioCheck(browser, open) {
     ok((await job('github/draft', {})).result.changed === 0, 'a second exe draft found changes');
     notes.push('exe: saves to its folder with a backup, players via the website, same version; GitHub in two steps (draft, then Publish)');
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone
-    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode', 'missions'], bad = [];
-    for (const [w, h, touch] of [[1180, 800, false], [390, 800, true]]) {
+    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode', 'missions', 'villagers', 'path', 'play', 'quiz', 'stories'], bad = [];
+    // (Studio review, owner 10 Oct) every button and box 44 px or more on a phone and a tablet: these pages
+    const TAPS = ['home', 'message', 'missions', 'album', 'quiz', 'stories', 'villagers', 'familycode', 'releases', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads', 'publish', 'site', 'check', 'settings'];
+    const SMALL = () => [...document.querySelectorAll('header button:not([hidden]), #crumb button, #page button, #page a.btn, #page select, #page textarea, #page input:not([type=checkbox]):not([type=radio]):not([type=hidden]), #page label:has(> input[type=checkbox]), #page label:has(> input[type=radio])')]
+      .filter(e => { const r = e.getBoundingClientRect(); return r.width && r.height && (r.height < 43.5 || (e.tagName === 'BUTTON' && r.width < 43.5)); })
+      .map(e => `${e.id || e.className || e.tagName} “${(e.innerText || e.value || '').trim().slice(0, 16)}” ${Math.round(e.getBoundingClientRect().width)}×${Math.round(e.getBoundingClientRect().height)}`);
+    for (const [w, h, touch] of [[1180, 800, false], [820, 1180, true], [390, 800, true]]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch }), errs = [];
       const pg = await ctx.newPage(); pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/favicon|401|403/.test(m.text())) errs.push(m.text() + ' ' + (m.location().url || '')); });
       await pg.goto(site + '/studio'); await pg.waitForSelector('#pw', { timeout: 15000 }); await pg.fill('#pw', PW); testClock.t += 31e3; await pg.fill('#code', admins.totpNow(secrets.owner, testClock.t)); await pg.click('#si button'); await pg.waitForSelector('#tabs button', { timeout: 15000 });
@@ -351,7 +368,7 @@ export async function studioCheck(browser, open) {
       // (round R) Releases online: switch traffic off and Halloween to start in 3 days; the website hands it to every device
       if (!touch) {
         await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('tr[data-id="traffic"]', { timeout: 15000 });
-        await pg.evaluate(() => { document.querySelector('tr[data-id="traffic"] [data-r="on"]').value = 'false'; const t = document.querySelector('tr[data-id="fest_halloween"]'); t.querySelector('[data-in="3"]').click(); t.querySelector('[data-r="newDays"]').value = '5'; document.querySelector('#save').click(); });
+        await pg.evaluate(() => { document.querySelector('tr[data-id="traffic"] [data-r="on"]').value = 'false'; const t = document.querySelector('tr[data-id="fest_halloween"]'); const q = t.querySelector('[data-in]'); q.value = '3'; q.dispatchEvent(new Event('change', { bubbles: true })); t.querySelector('[data-r="newDays"]').value = '5'; document.querySelector('#save').click(); });
         await pg.waitForTimeout(1200);
         const lv = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
         if (!(lv.releases && lv.releases.traffic && lv.releases.traffic.on === false && lv.releases.fest_halloween && lv.releases.fest_halloween.newDays === 5 && /^\d{4}-/.test(lv.releases.fest_halloween.start))) bad.push('releases did not reach /api/live: ' + JSON.stringify(lv));
@@ -361,16 +378,48 @@ export async function studioCheck(browser, open) {
         const lf = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
         if (!(lf.festivals && lf.festivals.anzac && lf.festivals.anzac.on === false && lf.festivals.halloween.buildup === 14 && lf.releases.traffic)) bad.push('festival changes did not reach /api/live: ' + JSON.stringify(lf));
       }
+      if (!touch) {
+        await pg.evaluate(() => { location.hash = 'family/message'; }); await pg.waitForSelector('#en');
+        await pg.fill('#en', 'Hello from the review'); await pg.click('#save'); await pg.waitForTimeout(900);
+        const shown = await pg.evaluate(() => ({ pub: !document.querySelector('#pub').hidden, state: (document.querySelector('.savestate') || {}).textContent, toast: document.querySelector('#toast').className }));
+        await pg.click('#pub'); await pg.waitForSelector('#gpub'); await pg.click('#gpub'); await pg.waitForSelector('#gres.result', { timeout: 15000 }); await pg.waitForTimeout(500);
+        const after = await pg.evaluate(() => ({ pub: !document.querySelector('#pub').hidden, res: document.querySelector('#gres').className + ' ' + document.querySelector('#gres').innerText }));
+        if (!(shown.pub && /Saved|Đã lưu/.test(shown.state) && /good/.test(shown.toast) && !after.pub && /good/.test(after.res) && /(next time|lần tới)/.test(after.res))) bad.push('online: save and Publish feedback: ' + JSON.stringify({ shown, after }));
+      }
       await pg.screenshot({ path: `out/studio-online-${w}.png` });
       const pe = await ctx.newPage(); pe.on('pageerror', e => errs.push('exe: ' + e.message));
       await pe.goto(`http://localhost:${SPORT}/`); // (sends you on to /studio/) await pe.waitForSelector('#tabs button', { timeout: 15000 });
       for (const k of pages) { await pe.evaluate(k2 => { location.hash = k2; }, k); await pe.waitForTimeout(900); const t = await pe.evaluate(() => document.querySelector('#page').innerText); if (await pe.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`exe ${w}px ${k}: ${t.slice(0, 80)}`); }
       { await pe.evaluate(() => { location.hash = 'home'; }); await pe.waitForTimeout(700); const emo = await pe.evaluate(SHOWN_EMOJI); if (emo.length) bad.push(`exe ${w}px: phone emoji shown: ${emo.join(' ')}`); }
+      // (Studio review) touch targets on a phone and a tablet, and Villagers as cards that fit a phone
+      if (touch) { for (const k of TAPS) { await pe.evaluate(k2 => { location.hash = k2; }, k); await pe.waitForTimeout(['voices', 'map', 'path', 'photos'].includes(k) ? 2500 : 900); const sm = await pe.evaluate(SMALL); if (sm.length) bad.push(`exe ${w}px ${k}: ${sm.length} smaller than 44 px: ${sm.slice(0, 4).join(', ')}`); }
+        await pe.evaluate(() => { location.hash = 'family/villagers'; }); await pe.waitForSelector('table.vill tbody tr');
+        const vw = await pe.evaluate(() => Math.min(...[...document.querySelectorAll('table.vill tbody tr:not([hidden]) input')].slice(0, 40).map(i => i.getBoundingClientRect().width)));
+        if (vw < (w < 500 ? 280 : 500)) bad.push(`exe ${w}px villagers: a name box is only ${Math.round(vw)} px wide`); }
+      if (!touch) {
+        // (Studio review) changes not saved: leaving asks; No keeps you there with your words, Yes leaves and puts the content back
+        await pe.evaluate(() => { location.hash = 'family/message'; }); await pe.waitForSelector('#en'); const before = await pe.inputValue('#en');
+        await pe.fill('#en', 'Words not saved'); const st = await pe.evaluate(() => (document.querySelector('.savestate') || {}).textContent);
+        let asked = 0; pe.once('dialog', d => { asked++; d.dismiss(); }); await pe.click('#tabs [data-k="home"]'); await pe.waitForTimeout(500);
+        const stayed = await pe.evaluate(() => document.querySelector('#en') && document.querySelector('#en').value);
+        pe.once('dialog', d => { asked++; d.dismiss(); }); await pe.evaluate(() => { location.hash = 'players'; }); await pe.waitForTimeout(500);
+        const stayed2 = await pe.evaluate(() => !!document.querySelector('#en') && /message/.test(location.hash));
+        pe.once('dialog', d => { asked++; d.accept(); }); await pe.click('#tabs [data-k="home"]'); await pe.waitForTimeout(800);
+        const left = await pe.evaluate(() => !document.querySelector('#en'));
+        await pe.evaluate(() => { location.hash = 'family/message'; }); await pe.waitForSelector('#en'); const back = await pe.inputValue('#en');
+        await pe.fill('#en', before); await pe.click('#save'); await pe.waitForTimeout(800); const saved = await pe.evaluate(() => (document.querySelector('.savestate') || {}).textContent);
+        let askedAfter = 0; const cnt = d => { askedAfter++; d.dismiss(); }; pe.on('dialog', cnt); await pe.click('#tabs [data-k="home"]'); await pe.waitForTimeout(500); pe.off('dialog', cnt);
+        if (!(asked === 3 && /Not saved|Chưa lưu/.test(st) && stayed === 'Words not saved' && stayed2 && left && back === before && /Saved|Đã lưu/.test(saved) && !askedAfter)) bad.push('changes not saved: ' + JSON.stringify({ asked, st, stayed, stayed2, left, back, before, saved, askedAfter }));
+        // (Studio review) in Vietnamese the game's own names follow: the Simple screen shows "Cho Thỏ Ăn", in English "Feed the Bunny"
+        const names = async l => { await pe.evaluate(l2 => document.querySelector(`.lang [data-l="${l2}"]`).click(), l); await pe.evaluate(() => { location.hash = 'game/path'; }); await pe.waitForSelector('tr[data-id]', { timeout: 15000 }).catch(() => { }); await pe.waitForTimeout(300); return pe.evaluate(() => location.hash + ' ' + document.querySelector('#page').innerText.slice(0, 3000)); };
+        const vi = await names('vi'), en = await names('en'); await names('vi');
+        if (!(/Cho Thỏ Ăn/.test(vi) && !/Feed the Bunny/.test(vi) && /Feed the Bunny/.test(en))) bad.push('the Simple screen page does not follow Studio\'s language: ' + vi.slice(0, 200) + ' / ' + en.slice(0, 200));
+      }
       await pe.screenshot({ path: `out/studio-exe-${w}.png` });
       bad.push(...errs.map(e => `${w}px: ${e}`)); await ctx.close();
     }
     ok(!bad.length, bad.slice(0, 8).join(' · '));
-    notes.push(`${pages.length} pages open online and in the exe, desktop and phone`);
+    notes.push(`${pages.length} pages open online and in the exe on a computer, a tablet and a phone; ${TAPS.length} pages with every button and box 44 px or more on a tablet and a phone; leaving with changes not saved asks; save and Publish say what happened; the game's names follow Studio's language`);
     return notes.join('; ');
   } finally { exe.kill(); net.close(); ghNet.close(); unroute(); fs.rmSync(tmp, { recursive: true, force: true }); }
 }

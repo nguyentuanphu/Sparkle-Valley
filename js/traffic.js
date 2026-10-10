@@ -13,6 +13,8 @@
 import { THREE, blobShadow } from './gfx.js';
 import { build, seatRider } from './vehicles.js';
 import { CITIES, ROADS, VILLAGE, HOME, TOWN, AUSSIE, WATER, heightAt, roadDist } from './world.js';
+import { WORLD as MAP_WORLD } from './content/map.js';
+const KEEP_LEFT = MAP_WORLD.keepLeft;
 import { buildAvatar } from './avatar.js';
 import { featureOn } from './custom.js';
 import { TOWN_PARKED } from './town.js';
@@ -37,7 +39,7 @@ export function createTraffic(G) {
   const slots = [];        // every vehicle: { id, args, x, z, yaw, mover?, rider?, ride?, cc }
   const ground = (x, z) => (W.groundAt ? W.groundAt(x, z) : heightAt(x, z));
   const free = (x, z, r = 1.4) => heightAt(x, z) > WATER + .3 && !W.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + r) && !W.boxes.some(b => x > b.x0 - r && x < b.x1 + r && z > b.z0 - r && z < b.z1 + r);
-  const ccAt = (x, z) => { let best = 'vn', bd = 1e9; for (const c of CITIES) { const d = Math.hypot(c.x - x, c.z - z); if (d < bd) { bd = d; best = c.cc; } } return x < -85 || (x < -20 && z > 20 && z < 70) ? 'au' : best; };
+  const ccAt = (x, z) => { let best = 'vn', bd = 1e9; for (const c of CITIES) { const d = Math.hypot(c.x - x, c.z - z); if (d < bd) { bd = d; best = c.cc; } } return KEEP_LEFT.some(([x0, x1, z0, z1]) => x > x0 && x < x1 && z > z0 && z < z1) ? 'au' : best; }; // (the map's Australian side, js/content/map.js)
 
   // ---------- the roads between places ----------
   if (featureOn('traffic', true)) {

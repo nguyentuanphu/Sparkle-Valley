@@ -3,7 +3,7 @@
 // backpack like kiosk food (snacks.js), and eating it fills the food passport.
 import { THREE, toonVC, P, merge, sprite } from './gfx.js';
 import { T, nm, registerName } from './i18n.js';
-import { heightAt, CITIES } from './world.js';
+import { heightAt, CITIES, TOWN, MARKET, VILLAGE } from './world.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
 import { VENDORS } from './regions.js';
 import { PERSONAS } from './chat.js';
@@ -30,7 +30,7 @@ const HAWKERS = [
 function routeFor(where) {
   const city = CITIES.find(c => c.id === where);
   if (city && city.layout) { const L = city.layout.L; return [L(-1.8, city.layout.len - 3), L(-1.8, -city.layout.len + 3)]; }
-  return { town: [[12, 51.8], [42, 51.8]], market: [[104, 85.6], [142, 85.6]], village: [[82, 27.6], [96, 27.6]] }[where] || [[0, 0], [0, 0]];
+  return { town: [[TOWN.x - 20, TOWN.roadZ + 4.8], [TOWN.x + 10, TOWN.roadZ + 4.8]], market: [[MARKET.x - 17, MARKET.roadZ + 2.6], [MARKET.x + 21, MARKET.roadZ + 2.6]], village: [[VILLAGE.x - 28, VILLAGE.z - 2.4], [VILLAGE.x - 14, VILLAGE.z - 2.4]] }[where] || [[0, 0], [0, 0]]; // (round T: from each place's anchor)
 }
 
 function poleModel(goods) {

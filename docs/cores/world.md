@@ -20,8 +20,14 @@ NPC-001…002, ANIMAL-001, VEH-001, RIVER-001…003, PERF-001…005 (draw-call b
 Read the full wording in §9 before changing anything they cover.
 
 ## Checks you run
-`boot spill features camera roads flat roadshape solid ground resume village validate walkaway perf phone`
+`boot spill features camera roads flat roadshape solid ground resume migrate village validate walkaway mapcoords unit perf phone`
 Plus `node tests/world-audit.mjs` after moving buildings, land or roads.
+
+**Round T: the map file.** Every world position lives in `js/content/map.js` (places with anchors, roads, bridges, waters,
+landmarks, shrines, towers, Leafies, boats). A builder places its things as an offset from its place's anchor
+(`TOWN.x + 4`, `landmarkAt('opera')`), never at a position written as plain numbers (`mapcoords`). Bridges run along x or
+z; `bridgeAt`, `bridgeBox`, `waterAt`, `waterDist` in `js/world.js` work for any of them. A new layout gets a new
+`MAP_VERSION` (saved spots and Studio content follow it: `migrate`).
 
 ## Talks to
 - **Play**: where each game's host and each festival stands (`js/content/activities.js` is Play's; positions are yours).
@@ -40,3 +46,5 @@ Plus `node tests/world-audit.mjs` after moving buildings, land or roads.
   event is on.
 - Surprises (round S, `js/surprises.js`): placed with `G.clearSpot` off the roads (`w/2 + 1.5 m`, G5) and off the water;
   the rainbow lotus floats on Lotus Village's lotus pond; at most one in the valley at a time, removed when found.
+- (owner, 10 Oct AEST) Asphalt roads are 6.4 m wide (rule R1 / ROAD-001, was 5.2 m), from the Concept D drawings; `ROAD_WIDTH` in `js/content/map.js`.
+- (owner, 10 Oct AEST) The Concept D map in `docs/concept-d/index.html` is the approved valley; Round T places every town, river, bridge and road where it shows them.

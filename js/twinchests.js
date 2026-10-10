@@ -17,7 +17,7 @@ import { stream } from './core/rng.js';
 import { pic } from './art.js';
 
 // where the six chests are (near these places; each finds clear ground off the roads by itself)
-const NEAR = [['farm', HOME.x + 14, HOME.z - 6], ['village', VILLAGE.x - 20, VILLAGE.z - 16], ['lake', LAKE.x - 30, LAKE.z - 30], ['bamboo', BAMBOO.x + 20, BAMBOO.z - 10], ['paddies', PADDIES.x - 22, PADDIES.z + 10], ['meadow', 10, 40]];
+const NEAR = [['farm', HOME.x + 14, HOME.z - 6], ['village', VILLAGE.x - 20, VILLAGE.z - 16], ['lake', LAKE.x - 30, LAKE.z - 30], ['bamboo', BAMBOO.x + 20, BAMBOO.z - 10], ['paddies', PADDIES.x - 22, PADDIES.z + 10], ['meadow', VILLAGE.x - 60, VILLAGE.z + 30]];
 export const PLATE_R = 1.1, PRIZE_COINS = 20;
 const TREATS = ['mango', 'banana', 'egg', 'fish', 'mushroom', 'bean'];
 

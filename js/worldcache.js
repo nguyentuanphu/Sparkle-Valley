@@ -9,10 +9,11 @@
 //   const pic = cachedCanvas('map', 256, paintMap)  →  pic.canvas (filled once ready), pic.now() (paint now if needed)
 import { BUILD } from './build.js';
 import { CUSTOM } from './custom.js';
+import { MAP_VERSION } from './content/map.js';
 
 const CACHE = 'sv-world';
 // (audit, 9 Oct) the family's land and buildings from Studio change the map too, so they are part of the name
-const SIG = (() => { let h = 0; const t = JSON.stringify(CUSTOM || {}); for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return BUILD + '_' + (h >>> 0).toString(36); })();
+const SIG = (() => { let h = 0; const t = JSON.stringify(CUSTOM || {}); for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return BUILD + '_' + MAP_VERSION + '_' + (h >>> 0).toString(36); })(); // (round T: and the layout of the valley)
 const urlOf = name => `./__sv-world/${SIG}/${name}.png`;
 
 /**

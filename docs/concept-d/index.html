@@ -1,0 +1,1438 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Sparkle Valley Layout Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;500;700&display=swap">
+<style>
+/* Layout: a planner's sketchbook. Each concept = one big drawn map + its rules beside it; stacks on phones. */
+:root{
+  --bg:#f3f6ee; --paper:#ffffff; --ink:#22301f; --muted:#5d6b58; --line:#d5dfcc;
+  --grass:#cfe6b4; --grass2:#b9d99a; --water:#7ec3e8; --road:#6f7378; --path:#c9a46b;
+  --vn:#d9443b; --vn2:#f2b632; --au:#e08a2e; --au2:#1f8f8a; --asia:#8a5cc7; --home:#e05c9a; --nature:#3f8f4a;
+  --accent:#d9443b; --chip:#eef3e7;
+  --display:'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+  --body:'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a13; --paper:#1d251b; --ink:#e9f0e3; --muted:#a6b39f; --line:#334030;
+  --grass:#2f4a27; --grass2:#3a5a30; --water:#2f6f93; --road:#9aa0a6; --path:#a8865a;
+  --chip:#26301f; --accent:#ff6b5f; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#141a13; --paper:#1d251b; --ink:#e9f0e3; --muted:#a6b39f; --line:#334030;
+  --grass:#2f4a27; --grass2:#3a5a30; --water:#2f6f93; --road:#9aa0a6; --path:#a8865a;
+  --chip:#26301f; --accent:#ff6b5f; color-scheme:dark }
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:28px 64px;display:grid;gap:44px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,3.1rem);font-weight:800}
+h2{font-size:clamp(1.5rem,3.4vw,2.1rem);font-weight:800}
+h3{font-size:1.15rem;font-weight:600}
+p{margin:0;max-width:66ch}
+.lede{color:var(--muted);font-size:1.05rem}
+.eyebrow{font:700 .78rem/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+header{display:grid;gap:10px}
+section{display:grid;gap:18px}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:22px;align-items:start}
+.pair>*{min-width:0}
+figure{margin:0;display:grid;gap:8px}
+figure img,figure svg{width:100%;height:auto;border-radius:14px;border:1px solid var(--line);background:var(--paper);display:block}
+figcaption{font-size:.86rem;color:var(--muted)}
+ul,ol{margin:0;padding-left:1.2em;display:grid;gap:6px}
+li{max-width:66ch}
+.problems li::marker{color:var(--accent);font-weight:700}
+.concept{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:22px;display:grid;gap:18px}
+.tag{display:inline-block;font:700 .75rem/1 var(--body);padding:6px 10px;border-radius:99px;background:var(--chip);color:var(--ink)}
+.tag.rec{background:var(--accent);color:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
+.rule{border-top:3px solid var(--line);padding-top:10px;display:grid;gap:4px}
+.rule b{font-family:var(--display);font-size:1.05rem}
+.rule span{color:var(--muted);font-size:.93rem}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+.tbl{overflow-x:auto}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--display);font-weight:600}
+svg text{font-family:var(--body)}
+.mapt{font:700 9px var(--body);fill:var(--ink)}
+.maps{font:500 7.5px var(--body);fill:var(--muted)}
+.mapt,.maps{paint-order:stroke;stroke:var(--grass);stroke-width:3px;stroke-linejoin:round}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.shots>*,.swatches>*{min-width:0}
+.swatches{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:20px}
+svg .cap{font:600 10px var(--body);fill:var(--ink)}
+
+/* animated sample page of the redesigned storybook */
+.book { position: relative; border-radius: 18px; overflow: hidden; background: #f7ecd2; max-width: 100%; }
+.book .bk-scene { display: block; width: 100%; height: auto; border: 0; border-radius: 0; }
+.bk-far { animation: bkFar 14s ease-in-out infinite alternate; }
+.bk-mid { animation: bkMid 14s ease-in-out infinite alternate; }
+.bk-near { animation: bkNear 14s ease-in-out infinite alternate; }
+@keyframes bkFar { from { transform: translateX(0) } to { transform: translateX(-10px) } }
+@keyframes bkMid { from { transform: translateX(0) } to { transform: translateX(-26px) } }
+@keyframes bkNear { from { transform: translateX(0) scale(1) } to { transform: translateX(-46px) scale(1.04) } }
+.bk-sway { animation: bkSway 3s ease-in-out infinite alternate; }
+@keyframes bkSway { from { transform: rotate(-3deg) } to { transform: rotate(3deg) } }
+.bk-blink { animation: bkBlink 4s infinite; transform-origin: 0 12px; transform-box: fill-box; }
+@keyframes bkBlink { 0%, 92%, 100% { transform: scaleY(1) } 95% { transform: scaleY(.1) } }
+.bk-mouth { animation: bkTalk .35s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 0; }
+@keyframes bkTalk { from { transform: scaleY(.4) } to { transform: scaleY(1.3) } }
+.bk-arm { animation: bkArm 1.2s ease-in-out infinite alternate; }
+@keyframes bkArm { from { transform: rotate(-12deg) } to { transform: rotate(14deg) } }
+.bk-grains circle { animation: bkFall 2.4s ease-in infinite; }
+.bk-grains circle:nth-child(2) { animation-delay: .6s } .bk-grains circle:nth-child(3) { animation-delay: 1.2s } .bk-grains circle:nth-child(4) { animation-delay: 1.8s }
+@keyframes bkFall { from { transform: translateY(-40px); opacity: 0 } 20% { opacity: 1 } to { transform: translateY(70px); opacity: 0 } }
+.bk-cake { animation: bkCake 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes bkCake { 0%, 100% { transform: translate(400px, 330px) scale(1) } 50% { transform: translate(400px, 330px) scale(1.06) } }
+.bk-ring { animation: bkRing 1.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes bkRing { from { transform: scale(.8); opacity: 1 } to { transform: scale(1.6); opacity: 0 } }
+.bk-words { position: absolute; left: 4%; right: 4%; bottom: 4%; background: rgba(255,250,240,.94); border-radius: 14px; padding: 10px 16px; font: 700 clamp(14px, 2.2vw, 22px)/1.35 var(--display); color: #3b2a4f; }
+.bk-words span { animation: bkWord 14s linear infinite; border-radius: 6px; padding: 0 2px; }
+.bk-words span:nth-child(1) { animation-delay: 0.0s }
+.bk-words span:nth-child(2) { animation-delay: 0.6s }
+.bk-words span:nth-child(3) { animation-delay: 1.2s }
+.bk-words span:nth-child(4) { animation-delay: 1.8s }
+.bk-words span:nth-child(5) { animation-delay: 2.4s }
+.bk-words span:nth-child(6) { animation-delay: 3.0s }
+.bk-words span:nth-child(7) { animation-delay: 3.6s }
+.bk-words span:nth-child(8) { animation-delay: 4.2s }
+.bk-words span:nth-child(9) { animation-delay: 4.8s }
+.bk-words span:nth-child(10) { animation-delay: 5.4s }
+.bk-words span:nth-child(11) { animation-delay: 6.0s }
+.bk-words span:nth-child(12) { animation-delay: 6.6s }
+.bk-words span:nth-child(13) { animation-delay: 7.2s }
+.bk-words span:nth-child(14) { animation-delay: 7.8s }
+
+@keyframes bkWord { 0% { background: transparent } 1% { background: #ffd23f } 5% { background: #ffd23f } 6%, 100% { background: transparent } }
+.bk-help { position: absolute; right: 4%; top: 6%; background: #e05c9a; color: #fff; font: 700 clamp(12px, 1.8vw, 17px) var(--body); padding: 8px 14px; border-radius: 99px; box-shadow: 0 4px 12px rgba(0,0,0,.18); animation: bkHelp 3s ease-in-out infinite; }
+@keyframes bkHelp { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-4px) } }
+@media (prefers-reduced-motion: reduce) { .book * { animation: none !important; } }
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">Sparkle Valley · world redesign · draft 8 Oct (AEST)</span>
+  <h1>Valley layout concepts</h1>
+  <p class="lede">How the villages, towns, houses, kiosks and roads will be laid out so a 3–8 year old always knows where they are and where to go next. Below: what the valley looks like now, the chosen combined design, the three concepts it comes from, and one set of rules for every village and road.</p>
+</header>
+
+<section>
+  <h2>The valley now</h2>
+  <div class="pair">
+    <figure><img src="now-air.jpg" alt="The whole valley from the sky, today"><figcaption>From the sky today (r47): a 400 × 400 m valley, the river down the middle, Ông Cú's plateau in the centre.</figcaption></figure>
+    <figure><img src="now-map.jpg" alt="The in-game map today"><figcaption>The in-game map today: names pile up in the middle and on the east bank.</figcaption></figure>
+  </div>
+  <ol class="problems">
+    <li><b>Countries are mixed.</b> Sydney sits next to TP. Hồ Chí Minh, Brisbane next to Hà Nội, and the Sydney Opera House is far away at the lake in the south-east. Children can't build a picture of "Vietnam" and "Australia".</li>
+    <li><b>Crowded labels.</b> Sydney, Phố Hai Quê and TP. HCM overlap; so do Làng Sen, Chợ Ba Miền, Đà Nẵng and Làng Trung Hoa.</li>
+    <li><b>Roads are separate pieces.</b> There is no loop. Many places are reached only across grass, so "follow the road" doesn't work.</li>
+    <li><b>Home is far from the start.</b> A child starts at Ông Cú in the middle, but Sunny Farm is near the bottom edge.</li>
+    <li><b>Uneven space.</b> The east bank is packed; the north-west and south-west are big empty forest.</li>
+    <li><b>The plateau blocks the middle.</b> The round hill makes every trip across the valley go around it.</li>
+  </ol>
+</section>
+
+<!-- CONCEPT D: the owner's pick -->
+<article class="concept" id="combined">
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="tag rec">Chosen (owner, 8 Oct)</span><span class="tag">Concept D = A + B + C</span></div>
+  <h2>Thung Lũng Hai Quê: All three together, with more water and mountains</h2>
+  <p>The two banks from A, the ring road and coloured roads from B, and the numbered first-week stops from C. Added: more rivers and lakes, real mountain ranges with passes, and the China and India towns in the northern mountains.</p>
+  <div class="pair">
+    <figure>
+      <svg viewBox="0 0 420 420" role="img" aria-label="Concept D map: two banks, home island with ring road, rivers with bridge landmarks, ferries and raft, Memory Villages on both banks, Bà Rịa–Vũng Tàu on the coast">
+        <rect width="420" height="420" fill="var(--grass)"/>
+        <!-- northern snow mountains -->
+        <path d="M0 0H420V58L390 40 356 62 320 30 286 56 252 26 226 50 210 36 194 52 166 24 134 56 104 30 72 60 40 34 0 58Z" fill="#c9ccd1"/>
+        <g fill="#ffffff" opacity=".85"><path d="M320 30l-10 14h20z"/><path d="M252 26l-9 13h18z"/><path d="M166 24l-9 13h18z"/><path d="M104 30l-9 13h18z"/></g>
+        <!-- ranges -->
+        <g fill="#a9b59a"><path d="M248 86l13-20 13 20z"/><path d="M252 130l13-20 13 20z"/><path d="M252 226l13-20 13 20z"/></g>
+        <g fill="#b8a98a"><path d="M60 92l13-20 13 20z"/><path d="M54 140l13-20 13 20z"/><path d="M60 262l13-20 13 20z"/></g>
+        <!-- southern sea -->
+        <path d="M0 388C80 376 150 398 220 388 290 378 340 400 420 382V420H0Z" fill="var(--water)"/>
+        <!-- main river -->
+        <path d="M204 40C208 90 222 120 214 160 208 185 200 205 208 240 216 280 220 330 214 390H232C238 330 234 280 226 240 218 205 226 185 232 160 240 120 226 90 220 40Z" fill="var(--water)"/>
+        <!-- side rivers: Sông Hồng (Hà Nội), Sông Hàn (Đà Nẵng), Hội An canal, Sông Sài Gòn + Mekong; Brisbane River, Yarra, Murray -->
+        <g stroke="var(--water)" fill="none" stroke-linecap="round">
+          
+          <path d="M420 238C392 240 372 236 352 232" stroke-width="8"/>
+          <path d="M420 272C396 270 380 274 360 270" stroke-width="4"/>
+          <path d="M226 300C268 306 300 320 330 346 344 360 356 372 362 388" stroke-width="7"/>
+          <path d="M312 352l-12 32M326 356l-6 30" stroke-width="4"/>
+          <path d="M0 104C34 106 60 100 98 110 112 114 120 112 132 108" stroke-width="7"/>
+          <path d="M0 316C30 312 60 318 96 310 112 306 124 310 136 304" stroke-width="6"/>
+          <path d="M16 356C60 346 110 356 150 344 180 336 196 344 212 342" stroke-width="6"/>
+        </g>
+        <path d="M420 92C396 100 372 110 344 118C318 126 280 128 228 130" stroke="var(--water)" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <!-- lakes and Sydney Harbour -->
+        <ellipse cx="318" cy="96" rx="9" ry="6" fill="var(--water)"/>
+        <path d="M120 196C140 186 168 190 192 200 168 214 140 214 120 206Z" fill="var(--water)"/>
+        <ellipse cx="34" cy="218" rx="12" ry="8" fill="var(--water)"/>
+        <ellipse cx="300" cy="170" rx="13" ry="8" fill="var(--water)"/>
+        <!-- home island + ring road -->
+        <ellipse cx="218" cy="200" rx="30" ry="26" fill="var(--grass2)" stroke="var(--home)" stroke-width="2.5"/>
+        <ellipse cx="218" cy="200" rx="46" ry="40" fill="none" stroke="var(--road)" stroke-width="4.5"/>
+        <!-- coloured roads -->
+        <path d="M344 80V352" stroke="var(--vn)" stroke-width="5" stroke-linecap="round"/>
+        <path d="M110 80V330" stroke="var(--au)" stroke-width="5" stroke-linecap="round"/>
+        <path d="M264 200H344" stroke="var(--vn)" stroke-width="4.5"/><path d="M110 200H172" stroke="var(--au)" stroke-width="4.5"/>
+        <path d="M110 80Q218 64 344 80" stroke="var(--asia)" stroke-width="4" fill="none"/>
+        <path d="M344 352Q370 362 386 368" stroke="var(--vn)" stroke-width="4" fill="none"/>
+        <path d="M110 330Q160 344 210 340" stroke="var(--au)" stroke-width="3.5" fill="none"/>
+        <!-- bridges (landmarks) -->
+        <g stroke="var(--vn2)" stroke-width="4" stroke-linecap="round">
+          <path d="M344 226V244"/><!-- Dragon Bridge over Sông Hàn -->
+          <path d="M344 264V278"/><!-- Chùa Cầu over the Hội An canal -->
+          <path d="M344 110V127"/><!-- Long Biên over Sông Hồng -->
+        </g>
+        <g stroke="var(--au2)" stroke-width="4" stroke-linecap="round">
+          <path d="M110 100V118"/><!-- Story Bridge over Brisbane River -->
+          <path d="M110 190V210"/><!-- Harbour Bridge -->
+          <path d="M110 300V318"/><!-- Princes Bridge over the Yarra -->
+        </g>
+        <g stroke="var(--home)" stroke-width="4" stroke-linecap="round"><path d="M182 200H200"/><path d="M236 200H254"/></g>
+        <!-- ferries and raft -->
+        <g stroke="#ffffff" stroke-width="1.6" fill="none" stroke-dasharray="3 3">
+          <path d="M214 60C218 120 206 170 218 240 226 300 226 350 222 384"/>
+          <path d="M128 200C150 192 170 196 188 202"/>
+          <path d="M336 340C356 352 372 362 382 372"/>
+          <path d="M300 372C320 380 350 384 382 378"/>
+        </g>
+        <!-- Memory Villages on both banks -->
+        <g fill="var(--grass2)" stroke="var(--home)" stroke-width="1.6" stroke-dasharray="3 2">
+          <rect x="250" y="266" width="50" height="34" rx="6"/>
+          <rect x="140" y="252" width="50" height="34" rx="6"/>
+        </g>
+        <g fill="none" stroke="var(--home)" stroke-width="1"><path d="M256 272h8v6h-8zM268 272h8v6h-8zM280 272h8v6h-8zM256 284h8v6h-8zM268 284h8v6h-8zM280 284h8v6h-8zM146 258h8v6h-8zM158 258h8v6h-8zM170 258h8v6h-8zM146 270h8v6h-8zM158 270h8v6h-8zM170 270h8v6h-8z"/></g>
+        <g fill="var(--grass2)" stroke="var(--home)" stroke-width="1.2" stroke-dasharray="2 1.5">
+          <rect x="360" y="98" width="7" height="7"/><rect x="392" y="168" width="7" height="7"/><rect x="356" y="250" width="7" height="7"/><rect x="356" y="322" width="7" height="7"/><rect x="396" y="350" width="7" height="7"/>
+          <rect x="92" y="122" width="7" height="7"/><rect x="92" y="220" width="7" height="7"/><rect x="92" y="290" width="7" height="7"/><rect x="38" y="242" width="7" height="7"/>
+          <rect x="298" y="78" width="7" height="7"/><rect x="122" y="72" width="7" height="7"/>
+        </g>
+        <!-- places -->
+        <g fill="var(--vn)"><circle cx="344" cy="92" r="10"/><circle cx="398" cy="68" r="7"/><circle cx="378" cy="178" r="11"/><circle cx="344" cy="216" r="9"/><circle cx="344" cy="290" r="8"/><circle cx="344" cy="340" r="11"/></g>
+        <g fill="var(--vn)"><circle cx="390" cy="370" r="10"/></g>
+        <path d="M390 356v-12" stroke="#fff" stroke-width="2.5"/><circle cx="390" cy="343" r="2.5" fill="var(--vn2)"/>
+        <rect x="360" y="302" width="44" height="16" rx="4" fill="var(--vn2)"/>
+        <g fill="var(--au)"><circle cx="110" cy="90" r="10"/><circle cx="96" cy="200" r="11"/><circle cx="110" cy="320" r="10"/><circle cx="26" cy="262" r="12"/></g>
+        <rect x="124" y="140" width="34" height="16" rx="4" fill="var(--au2)"/>
+        <g fill="var(--asia)"><rect x="284" y="52" width="40" height="20" rx="5"/><rect x="108" y="48" width="40" height="20" rx="5"/></g>
+        <circle cx="218" cy="200" r="8" fill="var(--home)"/>
+        <g class="mapt">
+          <text x="330" y="82" text-anchor="end">Hà Nội</text><text x="416" y="88" text-anchor="end">Bắc Ninh</text><text x="350" y="164">Làng Sen</text>
+          <text x="336" y="214" text-anchor="end">Đà Nẵng</text><text x="336" y="294" text-anchor="end">Hội An</text><text x="334" y="344" text-anchor="end">TP. HCM</text>
+          <text x="414" y="314" font-size="7.5" text-anchor="end">Chợ Ba Miền</text>
+          <text x="416" y="398" text-anchor="end" font-size="8.5">Bà Rịa–Vũng Tàu</text>
+          <text x="84" y="76">Brisbane</text><text x="60" y="186">Sydney</text><text x="84" y="344">Melbourne</text><text x="10" y="286">Uluru</text><text x="124" y="136" font-size="7.5">Aussie Corner</text>
+          <text x="276" y="46">Làng Trung Hoa</text><text x="108" y="44">Làng Ấn Độ</text>
+          <text x="194" y="182">Nhà + Ông Cú</text>
+          <text x="248" y="312" font-size="7.5">Làng Kỷ Niệm</text><text x="138" y="298" font-size="7.5">Làng Kỷ Niệm</text>
+        </g>
+        <g class="maps">
+          <text x="352" y="252">Cầu Rồng</text><text x="352" y="284">Chùa Cầu</text><text x="350" y="134">Long Biên</text>
+          <text x="116" y="122">Story Bridge</text><text x="116" y="230">Harbour Bridge</text><text x="116" y="314">Princes Br.</text>
+          <text x="300" y="110">Hồ Gươm</text><text x="282" y="160">Hồ Gương</text><text x="18" y="236">billabong</text>
+          <text x="374" y="230">Sông Hàn</text><text x="24" y="100">Brisbane River</text><text x="20" y="310">Yarra</text><text x="30" y="370">Murray River</text>
+          <text x="262" y="330">Sông Sài Gòn</text><text x="292" y="406">Mekong</text><text x="30" y="406">Bondi beach</text>
+          <text x="194" y="252">Phố Hai Quê</text><text x="232" y="66">raft</text>
+        </g>
+        <!-- numbered first-week stops -->
+        <g font-family="var(--display)" font-weight="800" font-size="8.5" text-anchor="middle">
+          <g><circle cx="234" cy="214" r="7" fill="#fff" stroke="var(--home)" stroke-width="2"/><text x="234" y="217" fill="#22301f">1</text></g>
+          <g><circle cx="366" cy="178" r="7" fill="#fff" stroke="var(--vn)" stroke-width="2"/><text x="366" y="181" fill="#22301f">2</text></g>
+          <g><circle cx="410" cy="296" r="7" fill="#fff" stroke="var(--vn2)" stroke-width="2"/><text x="410" y="299" fill="#22301f">3</text></g>
+          <g><circle cx="84" cy="200" r="7" fill="#fff" stroke="var(--au)" stroke-width="2"/><text x="84" y="203" fill="#22301f">4</text></g>
+          <g><circle cx="358" cy="88" r="7" fill="#fff" stroke="var(--vn)" stroke-width="2"/><text x="358" y="91" fill="#22301f">5</text></g>
+          <g><circle cx="98" cy="90" r="7" fill="#fff" stroke="var(--au)" stroke-width="2"/><text x="98" y="93" fill="#22301f">6</text></g>
+          <g><circle cx="304" cy="62" r="7" fill="#fff" stroke="var(--asia)" stroke-width="2"/><text x="304" y="65" fill="#22301f">7</text></g>
+          <g><circle cx="402" cy="370" r="7" fill="#fff" stroke="var(--vn)" stroke-width="2"/><text x="402" y="373" fill="#22301f">8</text></g>
+        </g>
+      </svg>
+      <figcaption>Concept D. Coloured roads: red Vietnam, orange Australia, purple to the mountains. Gold and teal bars: bridge landmarks over real rivers. Pink bars: the two bridges to the home island. Dashed white: the river raft and ferries. Pink dashed boxes: the two Memory Villages and the spare plots. White circles 1–8: the first-week stops.</figcaption>
+    </figure>
+    <div style="display:grid;gap:14px;min-width:0">
+      <h3>From each concept</h3>
+      <ul>
+        <li><b>A, two banks:</b> Vietnam east, Australia west, each north to south like the real country; home and Ông Cú on the island in the middle.</li>
+        <li><b>B, lotus hub:</b> a ring road around the home island; every road painted in its region's colour (red Vietnam, orange Australia, purple to the mountains, blue along the coast).</li>
+        <li><b>C, journey stops:</b> numbered first-week stops, one new place each day: 1 home, 2 Làng Sen, 3 Chợ Ba Miền, 4 Sydney, 5 Hà Nội, 6 Brisbane, 7 China and India, 8 Bà Rịa–Vũng Tàu.</li>
+      </ul>
+      <h3>New water and land</h3>
+      <ul>
+        <li><b>Rivers:</b> the main river; Sông Hồng, Sông Hàn, the Hội An canal and Sông Sài Gòn on the Vietnam side; the Brisbane River, the Yarra and the Murray on the Australian side; the Mekong delta in the south-east.</li>
+        <li><b>Lakes:</b> Hồ Gươm in Hà Nội, Sydney Harbour, Hồ Gương (Mirror Lake) by Làng Sen, and a billabong near Uluru. The southern coast has Bondi beach and the Mekong delta.</li>
+        <li><b>Mountains:</b> snowy peaks across the north, the Trường Sơn range along the Vietnam side with the Hải Vân pass, and the Great Dividing Range on the Australian side, with the outback and Uluru beyond.</li>
+        <li><b>China and India towns</b> sit high in the northern mountains, joined by the purple mountain road, as the neighbours across the hills.</li>
+      </ul>
+      <h3>Rivers, bridges and boats</h3>
+      <ul>
+        <li><b>Every bridge landmark crosses real water:</b> Cầu Rồng (Dragon Bridge) over Sông Hàn in Đà Nẵng, Chùa Cầu over the Hội An canal, Long Biên over Sông Hồng in Hà Nội, the Harbour Bridge in Sydney, the Story Bridge over the Brisbane River, and Princes Bridge over the Yarra in Melbourne.</li>
+        <li><b>Two bridges join the home island</b> to the two banks; Phố Hai Quê sits on the south side of the island.</li>
+        <li><b>Boats that connect:</b> the river raft runs the length of the main river with a stop at every bridge; a Sydney Harbour ferry; a boat from TP. HCM down Sông Sài Gòn to Vũng Tàu; a coast boat past the Mekong delta to Vũng Tàu. Every pier joins a road, and a check rides every boat end to end.</li>
+      </ul>
+      <h3>Bà Rịa–Vũng Tàu</h3>
+      <ul>
+        <li>A coastal village just south-east of TP. HCM, reached by the red road and by boat.</li>
+        <li>Vũng Tàu Lighthouse on the hill, Bạch Dinh (the White Villa), Bãi Sau beach, fishing boats, and bánh khọt stalls. The lighthouse and Bạch Dinh move here; Nhà Tròn stays on Phố Hai Quê.</li>
+        <li>First-week stop 8.</li>
+      </ul>
+      <h3>Room for family memories (owner, 8 Oct)</h3>
+      <ul>
+        <li><b>Two Memory Villages (Làng Kỷ Niệm), one on each bank</b> beside the home island, about 20 plots each, plus 2–3 spare plots in every town and village: about 60 plots in all.</li>
+        <li>Three plot sizes: small (a stall, a shrine, a bench), house, and big (a school, a shop, a café). Every plot is already flat and joined to a road.</li>
+        <li>Until a plot is used it is a little garden (flowers, a bench, a tree); a building simply replaces the garden.</li>
+        <li>Every player sees the family buildings. To keep children safe, a building shows only a family nickname, never photos of children, full names or real addresses, and goes up only after the owner places it in Studio.</li>
+      </ul>
+      <h3>Rules that stay</h3>
+      <ul>
+        <li>Roads no steeper than 8 % (dirt 12 %); passes wind gently through the mountains.</li>
+        <li>Flat villages; every village uses the village pattern below.</li>
+        <li>The valley grows by about a fifth (about 480 m) to make room for the extra water, mountains and the 60 plots, as long as the speed checks still pass on phones.</li>
+      </ul>
+    </div>
+  </div>
+</article>
+
+<!-- CONCEPT A -->
+<article class="concept" id="two-banks">
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="tag">Concept A</span></div>
+  <h2>Hai Bờ Sông: Two banks, two homelands</h2>
+  <p>The river becomes the story of the family: <b>Vietnam on the east bank, Australia on the west bank</b>, each laid out top to bottom like the real country. Home and Ông Cú sit on an island in the middle, joined to both banks by bridges, so every trip starts from home. China and India are "neighbours over the mountains" in the north.</p>
+  <div class="pair">
+    <figure>
+      <svg viewBox="0 0 400 400" role="img" aria-label="Concept A map: Vietnam east of the river, Australia west, home island in the middle">
+        <rect width="400" height="400" fill="var(--grass)"/>
+        <path d="M0 0H400V46C330 30 270 52 200 40 130 28 70 50 0 38Z" fill="#c9ccd1" opacity=".8"/>
+        <path d="M188 0C192 60 210 90 202 140 196 170 186 200 196 240 206 280 212 320 205 400H222C230 320 224 280 216 240 208 200 216 170 222 140 230 90 210 60 206 0Z" fill="var(--water)"/>
+        <ellipse cx="290" cy="372" rx="70" ry="26" fill="var(--water)"/>
+        <ellipse cx="80" cy="384" rx="90" ry="22" fill="var(--water)"/>
+        <!-- home island -->
+        <ellipse cx="208" cy="195" rx="34" ry="30" fill="var(--grass2)" stroke="var(--home)" stroke-width="2.5"/>
+        <!-- spine roads -->
+        <path d="M120 70V330M300 70V330" stroke="var(--road)" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M120 195H300" stroke="var(--road)" stroke-width="5"/>
+        <path d="M120 105H300M120 290H300" stroke="var(--road)" stroke-width="3.5" stroke-dasharray="0" opacity=".85"/>
+        <path d="M200 46V70M120 70Q200 62 300 70" stroke="var(--road)" stroke-width="3" fill="none"/>
+        <!-- Vietnam east bank -->
+        <g fill="var(--vn)"><circle cx="300" cy="88" r="13"/><circle cx="338" cy="110" r="9"/><circle cx="345" cy="160" r="15"/><circle cx="300" cy="200" r="12"/><circle cx="300" cy="250" r="11"/><circle cx="300" cy="320" r="14"/></g>
+        <rect x="320" y="290" width="50" height="22" rx="4" fill="var(--vn2)"/>
+        <g class="mapt"><text x="286" y="74">Hà Nội</text><text x="350" y="106">Bắc Ninh</text><text x="326" y="140">Làng Sen</text><text x="312" y="196">Đà Nẵng</text><text x="312" y="254">Hội An</text><text x="276" y="344">TP. HCM</text><text x="322" y="304" font-size="7.5">Chợ Ba Miền</text></g>
+        <text x="300" y="384" class="maps">Mekong delta + beach</text>
+        <!-- Australia west bank -->
+        <g fill="var(--au)"><circle cx="120" cy="88" r="12"/><circle cx="120" cy="200" r="15"/><circle cx="120" cy="300" r="12"/><circle cx="46" cy="240" r="16"/></g>
+        <rect x="64" y="118" width="40" height="20" rx="4" fill="var(--au2)"/>
+        <g class="mapt"><text x="94" y="74">Brisbane</text><text x="98" y="226">Sydney</text><text x="92" y="322">Melbourne</text><text x="30" y="268">Uluru</text><text x="58" y="112" font-size="7.5">Aussie Corner</text></g>
+        <text x="40" y="372" class="maps">Bondi beach</text>
+        <!-- Asia north -->
+        <g fill="var(--asia)"><circle cx="150" cy="30" r="11"/><circle cx="260" cy="30" r="11"/></g>
+        <g class="mapt"><text x="118" y="16">Làng Ấn Độ</text><text x="240" y="16">Làng Trung Hoa</text></g>
+        <!-- home -->
+        <circle cx="208" cy="195" r="9" fill="var(--home)"/>
+        <g class="mapt"><text x="181" y="176">Nhà + Ông Cú</text></g>
+        <text x="186" y="234" class="maps">Phố Hai Quê</text>
+        <text x="186" y="243" class="maps">(on the main bridge)</text>
+        <!-- raft line -->
+        <path d="M206 60C210 120 196 160 208 230 214 290 214 340 212 380" stroke="#fff" stroke-width="1.4" stroke-dasharray="3 4" fill="none" opacity=".9"/>
+      </svg>
+      <figcaption>Concept A. Red: Vietnam (north at the top). Orange/teal: Australia. Purple: neighbours over the mountains. Pink: home island. Dashed white: the raft line.</figcaption>
+    </figure>
+    <div style="display:grid;gap:14px;min-width:0">
+      <h3>Why it works for children</h3>
+      <ul>
+        <li><b>One sentence explains the whole map:</b> "Vietnam this side, Australia that side, home in the middle."</li>
+        <li><b>Real geography for free:</b> Hà Nội is north of Đà Nẵng, which is north of TP. HCM; Brisbane north of Sydney, north of Melbourne; Uluru far inland.</li>
+        <li><b>Two roads you can't get lost on:</b> one long street down each bank, joined by three bridges (north, middle, south).</li>
+        <li><b>Phố Hai Quê sits on the main bridge,</b> the place where both homelands meet, like the family.</li>
+        <li><b>Home is the centre of every trip,</b> which suits the first-day guide and the new homes.</li>
+      </ul>
+      <h3>What moves</h3>
+      <ul>
+        <li>Sydney, Brisbane, Melbourne and the Opera House move to the west bank; Đà Nẵng, Hội An and Chợ Ba Miền line up on the east bank.</li>
+        <li>Sunny Farm and Ông Cú move onto the island; the plateau becomes the mountains in the north.</li>
+        <li>Buildings, villagers and games keep their designs; only where they stand changes.</li>
+      </ul>
+    </div>
+  </div>
+</article>
+
+<!-- CONCEPT B -->
+<article class="concept" id="lotus">
+  <div><span class="tag">Concept B</span></div>
+  <h2>Bông Sen: The lotus hub</h2>
+  <p>Home and Ông Cú in a round square in the middle, a <b>ring road</b> around it, and six "petals", each a zone with its own colour. Every petal is about a minute's walk from home, and each spoke road is painted in its petal's colour.</p>
+  <div class="pair">
+    <figure>
+      <svg viewBox="0 0 400 400" role="img" aria-label="Concept B map: a central home square, ring road and six coloured petals">
+        <rect width="400" height="400" fill="var(--grass)"/>
+        <g transform="translate(200 200)">
+          <g opacity=".9">
+            <ellipse rx="52" ry="110" transform="rotate(0) translate(0 -118)" fill="var(--vn)" opacity=".28"/>
+            <ellipse rx="52" ry="110" transform="rotate(60) translate(0 -118)" fill="var(--vn2)" opacity=".35"/>
+            <ellipse rx="52" ry="110" transform="rotate(120) translate(0 -118)" fill="var(--water)" opacity=".5"/>
+            <ellipse rx="52" ry="110" transform="rotate(180) translate(0 -118)" fill="var(--au)" opacity=".3"/>
+            <ellipse rx="52" ry="110" transform="rotate(240) translate(0 -118)" fill="var(--au2)" opacity=".3"/>
+            <ellipse rx="52" ry="110" transform="rotate(300) translate(0 -118)" fill="var(--asia)" opacity=".3"/>
+          </g>
+          <circle r="92" fill="none" stroke="var(--road)" stroke-width="6"/>
+          <g stroke-width="5" stroke-linecap="round">
+            <path d="M0 -40V-180" stroke="var(--vn)"/><path d="M0 -40V-180" stroke="var(--vn2)" transform="rotate(60)"/>
+            <path d="M0 -40V-180" stroke="var(--water)" transform="rotate(120)"/><path d="M0 -40V-180" stroke="var(--au)" transform="rotate(180)"/>
+            <path d="M0 -40V-180" stroke="var(--au2)" transform="rotate(240)"/><path d="M0 -40V-180" stroke="var(--asia)" transform="rotate(300)"/>
+          </g>
+          <circle r="40" fill="var(--grass2)" stroke="var(--home)" stroke-width="3"/>
+          <circle r="10" fill="var(--home)"/>
+          <text y="26" text-anchor="middle" class="mapt">Nhà + Ông Cú</text>
+          <g class="mapt" text-anchor="middle">
+            <text x="0" y="-150">Miền Bắc</text><text x="0" y="-139" class="maps">Hà Nội · Làng Sen · Bắc Ninh</text>
+            <text x="138" y="-70">Miền Trung–Nam</text><text x="138" y="-59" class="maps">Đà Nẵng · Hội An · TP. HCM</text>
+            <text x="134" y="82">Sông &amp; Hồ</text><text x="134" y="93" class="maps">raft · lake · beach · reef</text>
+            <text x="0" y="158">Úc: thành phố</text><text x="0" y="169" class="maps">Sydney · Brisbane · Melbourne</text>
+            <text x="-136" y="82">Úc: thiên nhiên</text><text x="-136" y="93" class="maps">Uluru · outback · koalas</text>
+            <text x="-136" y="-70">Bạn châu Á</text><text x="-136" y="-59" class="maps">Trung Hoa · Ấn Độ</text>
+          </g>
+        </g>
+      </svg>
+      <figcaption>Concept B. Six coloured petals around one ring road. Each spoke road matches its petal's colour.</figcaption>
+    </figure>
+    <div style="display:grid;gap:14px;min-width:0">
+      <h3>Strengths</h3>
+      <ul>
+        <li>Shortest trips: nothing is more than one petal away from home.</li>
+        <li>Colours teach direction before reading: "take the red road to Miền Bắc".</li>
+        <li>Fits the Simple screen perfectly: six big petal buttons.</li>
+      </ul>
+      <h3>Weaknesses</h3>
+      <ul>
+        <li>The river has to bend around the ring, so the raft ride gets shorter.</li>
+        <li>Less real geography than Concept A.</li>
+        <li>Feels more like a theme park than a valley.</li>
+      </ul>
+    </div>
+  </div>
+</article>
+
+<!-- CONCEPT C -->
+<article class="concept" id="journey">
+  <div><span class="tag">Concept C</span></div>
+  <h2>Con Đường Hành Trình: The journey road</h2>
+  <p>One long scenic road snakes through the valley like a board game, with <b>numbered stops in story order</b>. The first week's unlocks follow the stops: day 1 home and Làng Sen, day 2 the market, and so on. Shortcuts and a little tram open as the child explores.</p>
+  <div class="pair">
+    <figure>
+      <svg viewBox="0 0 400 400" role="img" aria-label="Concept C map: one winding road with numbered stops">
+        <rect width="400" height="400" fill="var(--grass)"/>
+        <path d="M330 0C320 80 350 120 330 180 310 240 340 300 320 400H338C358 300 328 240 348 180 368 120 338 80 348 0Z" fill="var(--water)"/>
+        <path d="M60 350C140 350 160 300 120 270 80 240 90 200 160 200 240 200 250 160 200 130 150 100 160 60 240 60 300 60 300 110 270 150 240 190 300 230 280 280 260 330 300 360 360 360" stroke="var(--road)" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <path d="M120 270L270 150M160 200L280 280" stroke="var(--path)" stroke-width="2.4" stroke-dasharray="5 4" fill="none"/>
+        <g font-family="var(--display)" font-weight="800" font-size="10" text-anchor="middle">
+          <g><circle cx="60" cy="350" r="11" fill="var(--home)"/><text x="60" y="354" fill="#fff">1</text></g>
+          <g><circle cx="120" cy="270" r="11" fill="var(--vn)"/><text x="120" y="274" fill="#fff">2</text></g>
+          <g><circle cx="160" cy="200" r="11" fill="var(--vn2)"/><text x="160" y="204" fill="#22301f">3</text></g>
+          <g><circle cx="200" cy="130" r="11" fill="var(--vn)"/><text x="200" y="134" fill="#fff">4</text></g>
+          <g><circle cx="240" cy="60" r="11" fill="var(--asia)"/><text x="240" y="64" fill="#fff">5</text></g>
+          <g><circle cx="270" cy="150" r="11" fill="var(--au)"/><text x="270" y="154" fill="#fff">6</text></g>
+          <g><circle cx="280" cy="280" r="11" fill="var(--au2)"/><text x="280" y="284" fill="#fff">7</text></g>
+          <g><circle cx="360" cy="360" r="11" fill="var(--water)"/><text x="360" y="364" fill="#22301f">8</text></g>
+        </g>
+        <g class="maps">
+          <text x="34" y="376">Home + Ông Cú</text><text x="62" y="296">Làng Sen</text><text x="96" y="226">Chợ Ba Miền</text>
+          <text x="140" y="118">Hà Nội · Bắc Ninh</text><text x="206" y="44">China · India</text><text x="282" y="140">Sydney</text>
+          <text x="214" y="302">Uluru · Melbourne</text><text x="300" y="392">Beach + reef</text>
+        </g>
+        <text x="120" y="250" class="maps" transform="rotate(-38 120 250)">shortcut opens later</text>
+      </svg>
+      <figcaption>Concept C. One road, eight stops in story order. Dashed: shortcuts that open later.</figcaption>
+    </figure>
+    <div style="display:grid;gap:14px;min-width:0">
+      <h3>Strengths</h3>
+      <ul>
+        <li>Impossible to get lost: there is only one road, and the next stop is always "the next number".</li>
+        <li>Matches the starter quests and the "new place each day" plan exactly.</li>
+        <li>Great for under-5s: same order on the Simple screen.</li>
+      </ul>
+      <h3>Weaknesses</h3>
+      <ul>
+        <li>Long trips for older children until the shortcuts open.</li>
+        <li>Fixed order is less open-world for 6–8 year olds.</li>
+      </ul>
+    </div>
+  </div>
+</article>
+
+<!-- VILLAGE TEMPLATE -->
+<section id="village">
+  <h2>Inside every village: one simple pattern</h2>
+  <p>Whichever concept wins, every village and town follows the same grammar, so a child who learns one place knows them all: the host is always in the square, food stalls always line the market street, houses are always behind.</p>
+  <div class="pair">
+    <figure>
+      <svg viewBox="0 0 400 300" role="img" aria-label="Village template: gate, main street, square, market row, houses, fields">
+        <rect width="400" height="300" fill="var(--grass)"/>
+        <rect x="0" y="230" width="400" height="70" fill="var(--grass2)"/>
+        <g stroke="var(--grass)" stroke-width="1.2" opacity=".7"><path d="M0 245H400M0 260H400M0 275H400M0 290H400"/></g>
+        <ellipse cx="335" cy="70" rx="44" ry="26" fill="var(--water)"/>
+        <!-- main street -->
+        <rect x="186" y="0" width="28" height="230" fill="var(--road)" opacity=".85"/>
+        <!-- gate -->
+        <rect x="176" y="208" width="48" height="10" rx="2" fill="var(--vn)"/><rect x="178" y="200" width="6" height="22" fill="var(--vn)"/><rect x="216" y="200" width="6" height="22" fill="var(--vn)"/>
+        <!-- square -->
+        <circle cx="200" cy="95" r="44" fill="var(--path)" opacity=".55"/>
+        <circle cx="200" cy="95" r="12" fill="var(--nature)"/>
+        <rect x="168" y="46" width="64" height="16" rx="3" fill="var(--vn2)"/>
+        <!-- market row (one side) -->
+        <g fill="var(--au)"><rect x="152" y="132" width="26" height="14" rx="2"/><rect x="152" y="152" width="26" height="14" rx="2"/><rect x="152" y="172" width="26" height="14" rx="2"/></g>
+        <!-- houses back lanes -->
+        <path d="M20 120H150M250 120H380M20 180H150M250 180H380" stroke="var(--path)" stroke-width="5" stroke-linecap="round"/>
+        <g fill="var(--home)" opacity=".85">
+          <rect x="34" y="98" width="20" height="16" rx="2"/><rect x="74" y="98" width="20" height="16" rx="2"/><rect x="114" y="98" width="20" height="16" rx="2"/>
+          <rect x="34" y="186" width="20" height="16" rx="2"/><rect x="74" y="186" width="20" height="16" rx="2"/><rect x="114" y="186" width="20" height="16" rx="2"/>
+          <rect x="266" y="126" width="20" height="16" rx="2"/><rect x="306" y="126" width="20" height="16" rx="2"/><rect x="346" y="126" width="20" height="16" rx="2"/>
+          <rect x="266" y="186" width="20" height="16" rx="2"/><rect x="306" y="186" width="20" height="16" rx="2"/><rect x="346" y="186" width="20" height="16" rx="2"/>
+        </g>
+        <!-- footpath loop -->
+        <rect x="12" y="20" width="376" height="206" rx="30" fill="none" stroke="var(--path)" stroke-width="2" stroke-dasharray="5 5"/>
+        <g class="mapt"><text x="166" y="240" font-size="9">① Cổng làng</text><text x="222" y="150">② Phố chợ</text><text x="248" y="96">③ Sân đình</text><text x="172" y="40">④ Sân khấu</text><text x="26" y="92">⑤ Nhà dân</text><text x="300" y="34">⑥ Ao</text><text x="16" y="272">⑦ Ruộng</text></g>
+      </svg>
+      <figcaption>The village pattern, drawn for a Vietnamese village. An Australian town uses the same pattern: gate → main street → park → shops → houses.</figcaption>
+    </figure>
+    <div class="rules">
+      <div class="rule"><b>① Gate on the road</b><span>Every village has one gate where the main road arrives, with its name and picture. You always know when you've arrived.</span></div>
+      <div class="rule"><b>② Market street</b><span>Kiosks and stalls stand in one row on one side of the main street, all facing it. No stall alone in a field.</span></div>
+      <div class="rule"><b>③ The square</b><span>The game host, the banyan or big tree, the well and the festival table always stand here. "Games are in the square."</span></div>
+      <div class="rule"><b>④ Stage at the end</b><span>The singer's stage and the hội làng events close the view at the end of the street, so you see it from the gate.</span></div>
+      <div class="rule"><b>⑤ Houses behind</b><span>Houses sit on quiet back lanes with gardens, away from the busy street, so the main street stays clear.</span></div>
+      <div class="rule"><b>⑥⑦ Nature outside</b><span>Pond, fields and animals around the edge, with a footpath loop for walking and surprises.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- LOOKS -->
+<section id="looks">
+  <h2>How roads, paths and rivers will look</h2>
+  <p>Today every road is the same grey highway, village paths fade into bare sand, and every river is the same flat blue. In the new valley each kind of road and water has its own look, and the Vietnam and Australia sides look different, so a child can tell where they are just by the ground under their feet.</p>
+  <h3>Today in the game</h3>
+  <div class="shots">
+    <figure><img src="now-road-town.jpg" alt="Phố Hai Quê street today"><figcaption>Phố Hai Quê: grey road, white dashes.</figcaption></figure>
+    <figure><img src="now-road-junction.jpg" alt="Aussie Corner junction today"><figcaption>Aussie Corner: the same grey road.</figcaption></figure>
+    <figure><img src="now-dirt-village.jpg" alt="Làng Sen square today"><figcaption>Làng Sen: paths fade into bare sand.</figcaption></figure>
+    <figure><img src="now-river.jpg" alt="The river and a bridge today"><figcaption>River: flat blue, smooth sand banks.</figcaption></figure>
+    <figure><img src="now-bridge-dragon.jpg" alt="Dragon Bridge today"><figcaption>Cầu Rồng: works, but the river under it is plain.</figcaption></figure>
+    <figure><img src="now-lake-ferry.jpg" alt="Mirror Lake today"><figcaption>Hồ Gương: white glare spots on the water.</figcaption></figure>
+  </div>
+
+  <h3>The new look, drawn from above</h3>
+  <div class="swatches">
+
+    <figure>
+      <svg viewBox="0 0 400 150" role="img" aria-label="Vietnam main road from above">
+        <rect width="400" height="150" fill="var(--grass)"/>
+        <g fill="#f4a3c4"><circle cx="20" cy="18" r="4"/><circle cx="80" cy="14" r="4"/><circle cx="150" cy="20" r="4"/><circle cx="230" cy="15" r="4"/><circle cx="300" cy="19" r="4"/><circle cx="370" cy="14" r="4"/><circle cx="40" cy="134" r="4"/><circle cx="120" cy="138" r="4"/><circle cx="210" cy="133" r="4"/><circle cx="290" cy="137" r="4"/><circle cx="360" cy="134" r="4"/></g>
+        <rect y="30" width="400" height="10" fill="#cfcac0"/><rect y="110" width="400" height="10" fill="#cfcac0"/>
+        <rect y="40" width="400" height="70" fill="#5f6266"/>
+        <path d="M0 46H400M0 104H400" stroke="#ffffff" stroke-width="2"/>
+        <path d="M0 75H400" stroke="#f2c230" stroke-width="3" stroke-dasharray="22 14"/>
+        <g fill="var(--vn)"><circle cx="60" cy="35" r="5"/><circle cx="200" cy="35" r="5"/><circle cx="340" cy="35" r="5"/></g>
+        <g><rect x="110" y="56" width="10" height="6" rx="2" fill="#e85d4a"/><rect x="250" y="88" width="10" height="6" rx="2" fill="#3b6fe0"/></g>
+      </svg>
+      <figcaption><b>Vietnam main road (6.4 m).</b> Grey asphalt, yellow centre dashes, white edge lines for motorbikes, a stone kerb, red lamp posts and bougainvillea along the verge.</figcaption>
+    </figure>
+
+    <figure>
+      <svg viewBox="0 0 400 150" role="img" aria-label="Australia main road from above">
+        <rect width="400" height="150" fill="#c9d9a6"/>
+        <g fill="#6f8f5a"><circle cx="30" cy="12" r="10"/><circle cx="130" cy="14" r="10"/><circle cx="250" cy="11" r="10"/><circle cx="350" cy="13" r="10"/><circle cx="80" cy="140" r="10"/><circle cx="200" cy="140" r="10"/><circle cx="320" cy="140" r="10"/></g>
+        <rect y="24" width="400" height="12" fill="#d8d4cc"/><rect y="114" width="400" height="12" fill="#d8d4cc"/>
+        <rect y="36" width="400" height="4" fill="#9a9a95"/><rect y="110" width="400" height="4" fill="#9a9a95"/>
+        <rect y="40" width="400" height="70" fill="#45484c"/>
+        <path d="M0 75H400" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="26 16"/>
+        <g fill="var(--au)"><circle cx="100" cy="30" r="5"/><circle cx="260" cy="30" r="5"/></g>
+        <rect x="170" y="40" width="22" height="70" fill="none"/><g fill="#ffffff"><rect x="174" y="42" width="4" height="66"/><rect x="182" y="42" width="4" height="66"/><rect x="190" y="42" width="4" height="66"/><rect x="198" y="42" width="4" height="66"/></g>
+      </svg>
+      <figcaption><b>Australia main road (6.4 m).</b> Darker asphalt, white centre dashes, concrete footpaths with gutters, zebra crossings near shops, gum trees and orange lamp posts.</figcaption>
+    </figure>
+
+    <figure>
+      <svg viewBox="0 0 400 150" role="img" aria-label="Vietnamese village street paved in red brick">
+        <rect width="400" height="150" fill="var(--grass)"/>
+        <rect y="40" width="400" height="70" fill="#b5553f"/>
+        <g stroke="#8e3f2e" stroke-width="1.2">
+          <path d="M0 52H400M0 64H400M0 76H400M0 88H400M0 100H400"/>
+          <path d="M12 40V52M36 52V64M12 64V76M36 76V88M12 88V100M36 100V110M60 40V52M84 52V64M60 64V76M84 76V88M60 88V100M84 100V110M108 40V52M132 52V64M108 64V76M132 76V88M108 88V100M132 100V110M156 40V52M180 52V64M156 64V76M180 76V88M156 88V100M180 100V110M204 40V52M228 52V64M204 64V76M228 76V88M204 88V100M228 100V110M252 40V52M276 52V64M252 64V76M276 76V88M252 88V100M276 100V110M300 40V52M324 52V64M300 64V76M324 76V88M300 88V100M324 100V110M348 40V52M372 52V64M348 64V76M372 76V88M348 88V100M372 100V110"/>
+        </g>
+        <path d="M0 22Q100 36 200 22T400 22" stroke="#6b4a2a" stroke-width="1.2" fill="none"/>
+        <g fill="#e2382f"><ellipse cx="50" cy="28" rx="5" ry="7"/><ellipse cx="150" cy="30" rx="5" ry="7"/><ellipse cx="250" cy="28" rx="5" ry="7"/><ellipse cx="350" cy="30" rx="5" ry="7"/></g>
+        <g fill="#7a9a3a"><circle cx="20" cy="128" r="8"/><circle cx="120" cy="130" r="8"/><circle cx="220" cy="128" r="8"/><circle cx="320" cy="130" r="8"/></g>
+      </svg>
+      <figcaption><b>Village street, Vietnam side (4 m).</b> Red brick paving, lanterns strung across, potted plants by the doors. Australian towns use pale paving stones with benches and bins.</figcaption>
+    </figure>
+
+    <figure>
+      <svg viewBox="0 0 400 150" role="img" aria-label="Dirt footpath from above">
+        <rect width="400" height="150" fill="var(--grass)"/>
+        <path d="M0 80C60 66 120 92 200 76S330 64 400 80" stroke="#b9653e" stroke-width="34" fill="none" stroke-linecap="round"/>
+        <path d="M0 72C60 58 120 84 200 68S330 56 400 72M0 88C60 74 120 100 200 84S330 72 400 88" stroke="#9a4f2e" stroke-width="5" fill="none"/>
+        <path d="M0 80C60 66 120 92 200 76S330 64 400 80" stroke="#7fae5a" stroke-width="3" fill="none" stroke-dasharray="4 10"/>
+        <g fill="#a8a29a"><circle cx="30" cy="58" r="4"/><circle cx="90" cy="64" r="4"/><circle cx="160" cy="62" r="4"/><circle cx="240" cy="54" r="4"/><circle cx="320" cy="52" r="4"/><circle cx="60" cy="104" r="4"/><circle cx="140" cy="108" r="4"/><circle cx="220" cy="100" r="4"/><circle cx="300" cy="94" r="4"/><circle cx="380" cy="102" r="4"/></g>
+        <g fill="#ffd23f"><circle cx="50" cy="40" r="3"/><circle cx="200" cy="40" r="3"/><circle cx="350" cy="34" r="3"/></g><g fill="#f08ab0"><circle cx="110" cy="124" r="3"/><circle cx="260" cy="122" r="3"/></g>
+      </svg>
+      <figcaption><b>Dirt path (1.6 m).</b> Warm red earth, like Bà Rịa's đất đỏ, with two darker wheel tracks, grass down the middle, edging stones and wildflowers. Near Uluru it turns orange outback red; in forests, bark chips.</figcaption>
+    </figure>
+
+    <figure>
+      <svg viewBox="0 0 400 150" role="img" aria-label="Paddy dike path from above">
+        <rect width="400" height="150" fill="#9fcf6a"/>
+        <g stroke="#b6dc85" stroke-width="2"><path d="M0 12H400M0 24H400M0 36H400M0 48H400M0 102H400M0 114H400M0 126H400M0 138H400"/></g>
+        <rect y="62" width="400" height="26" fill="#7a9a4a"/>
+        <rect y="68" width="400" height="14" fill="#a8754a"/>
+        <g fill="#6aa0c8" opacity=".55"><rect y="56" width="400" height="6"/><rect y="88" width="400" height="6"/></g>
+      </svg>
+      <figcaption><b>Paddy dike (bờ ruộng).</b> A narrow raised earth path between flooded rice fields with water glinting on both sides; buffalo and egrets nearby.</figcaption>
+    </figure>
+
+    <figure>
+      <svg viewBox="0 0 400 150" role="img" aria-label="River from above">
+        <rect width="400" height="150" fill="var(--grass)"/>
+        <path d="M0 30C100 22 300 38 400 28V122C300 132 100 116 0 124Z" fill="#e5d3a8"/>
+        <path d="M0 40C100 32 300 48 400 38V112C300 122 100 106 0 114Z" fill="#7ec3e8"/>
+        <path d="M0 52C100 46 300 58 400 50V100C300 108 100 94 0 102Z" fill="#4f9fd0"/>
+        <g stroke="#ffffff" stroke-width="1.6" opacity=".7" fill="none"><path d="M40 70q10 -4 20 0"/><path d="M140 80q10 -4 20 0"/><path d="M240 66q10 -4 20 0"/><path d="M330 84q10 -4 20 0"/></g>
+        <g fill="#4f8a3a"><circle cx="30" cy="42" r="4"/><circle cx="42" cy="44" r="3"/><circle cx="150" cy="40" r="4"/><circle cx="300" cy="44" r="4"/></g>
+        <g fill="#b48be0"><circle cx="40" cy="38" r="2"/><circle cx="152" cy="36" r="2"/></g>
+        <g stroke="#5f8a3a" stroke-width="2"><path d="M80 112v-10M86 112v-12M92 112v-9M260 108v-10M266 108v-12M272 108v-9"/></g>
+        <rect x="190" y="64" width="20" height="12" rx="2" fill="#c9a06a"/>
+      </svg>
+      <figcaption><b>River.</b> Sandy banks, shallow light water at the edges and deeper blue in the middle, gentle moving ripples, reeds and purple water hyacinth (lục bình), and the bamboo raft. No more glare spots.</figcaption>
+    </figure>
+
+    <figure>
+      <svg viewBox="0 0 400 150" role="img" aria-label="Each river with its own colour">
+        <rect width="400" height="150" fill="var(--paper)"/>
+        <g font-family="var(--body)" font-size="11" fill="var(--ink)">
+          <rect x="10" y="12" width="120" height="26" rx="6" fill="#b5654a"/><text x="140" y="29">Sông Hồng: red-brown, like its name</text>
+          <rect x="10" y="44" width="120" height="26" rx="6" fill="#3f8fc4"/><text x="140" y="61">Sông Hàn and Harbour: clear blue</text>
+          <rect x="10" y="76" width="120" height="26" rx="6" fill="#8a8a5a"/><text x="140" y="93">Mekong and Yarra: green-brown</text>
+          <rect x="10" y="108" width="120" height="26" rx="6" fill="#5fb6a8"/><text x="140" y="125">Mountain streams: clear, with rocks</text>
+        </g>
+      </svg>
+      <figcaption><b>Every river looks like the real one.</b> A small lesson for free: "Sông Hồng means Red River, and look, it is red!"</figcaption>
+    </figure>
+
+    <figure>
+      <svg viewBox="0 0 400 150" role="img" aria-label="Coast at Vũng Tàu from above">
+        <rect width="400" height="150" fill="#e9d9ae"/>
+        <path d="M0 70C80 60 160 80 240 66S360 58 400 68V150H0Z" fill="#59b3d6"/>
+        <path d="M0 70C80 60 160 80 240 66S360 58 400 68" stroke="#ffffff" stroke-width="5" fill="none" opacity=".9"/>
+        <path d="M0 84C80 74 160 94 240 80S360 72 400 82" stroke="#ffffff" stroke-width="2" fill="none" opacity=".5"/>
+        <g fill="#2f7fb0"><circle cx="90" cy="112" r="9"/><circle cx="150" cy="122" r="9"/><circle cx="300" cy="110" r="9"/></g>
+        <g fill="#7a5a3a"><path d="M250 120h34l-6 8h-22z"/></g>
+        <g fill="#3f8f4a"><circle cx="40" cy="24" r="8"/><circle cx="160" cy="18" r="8"/><circle cx="330" cy="22" r="8"/></g>
+        <g fill="#e2382f"><path d="M220 30l10 -14 10 14z"/></g>
+      </svg>
+      <figcaption><b>Coast at Vũng Tàu and Bondi.</b> Pale sand, a white foam line that moves with the waves, round basket boats (thúng chai) and a fishing boat.</figcaption>
+    </figure>
+
+  </div>
+  <div class="rules">
+    <div class="rule"><b>Phones stay fast</b><span>Moving water and ripples are drawn by one shared, cheap effect; patterns like bricks and wheel tracks are painted into a few shared pictures, so the draw-call budget stays the same.</span></div>
+    <div class="rule"><b>Hard rules stay</b><span>Roads ≤ 8 % and dirt ≤ 12 %; smooth curves; junctions 60–120°; walking stays smooth on every surface.</span></div>
+    <div class="rule"><b>Sounds match the ground</b><span>Footsteps sound different on asphalt, brick, dirt and sand; rivers and the sea have their own soft sound.</span></div>
+  </div>
+</section>
+
+<!-- ANIMALS -->
+<section id="animals">
+  <h2>Animals that roam and can be ridden</h2>
+  <p>Each country's animals live freely in their own landscape: buffalo in the rice fields, horses in the northern mountains, kangaroos in the outback. They wander, graze, drink at the river and sleep at night. A child can walk up, feed them and, for the gentle ones, tap <b>Cưỡi</b> (Ride). Each one moves in its own way. Today the game has 22 animal models but only the water buffalo can be ridden.</p>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Animal</th><th>Where it roams</th><th>Ride?</th><th>How it feels</th></tr></thead>
+    <tbody>
+      <tr><th colspan="4" style="color:var(--vn)">Vietnam</th></tr>
+      <tr><td>Trâu (water buffalo)</td><td>Rice fields around Làng Sen</td><td>Yes (already)</td><td>Slow and steady, walks through paddy water</td></tr>
+      <tr><td>Ngựa (Hmong horse)</td><td>Northern mountains near Hà Nội</td><td>Yes</td><td>Fast trot on mountain paths</td></tr>
+      <tr><td>Voi (elephant)</td><td>Tây Nguyên forest by the Trường Sơn range</td><td>Yes</td><td>Tall and swaying, wades across shallow rivers, sprays water</td></tr>
+      <tr><td>Bò kéo xe (ox cart)</td><td>Village roads</td><td>Yes, sit in the cart</td><td>A slow tour between villages</td></tr>
+      <tr><td>Đàn vịt (duck flock)</td><td>Paddies and canals</td><td>No</td><td>Herd them with a bamboo pole, they follow in a line</td></tr>
+      <tr><td>Sếu đầu đỏ (red-crowned crane)</td><td>Mekong wetlands</td><td>No</td><td>Dances when you dance; a rare visitor</td></tr>
+      <tr><td>Voọc chà vá (red-shanked douc)</td><td>Sơn Trà trees near Đà Nẵng</td><td>No</td><td>Swings in trees, waves back</td></tr>
+      <tr><td>Rùa Hồ Gươm (turtle)</td><td>Hồ Gươm</td><td>No</td><td>Pops up to hear the legend of the returned sword</td></tr>
+      <tr><td>Cá heo (dolphin)</td><td>Sea off Vũng Tàu</td><td>Swim beside</td><td>Jumps beside the boat</td></tr>
+      <tr><th colspan="4" style="color:var(--au)">Australia</th></tr>
+      <tr><td>Kangaroo</td><td>Outback meadows</td><td>Yes</td><td>Big bouncy hops, jumps higher than walking</td></tr>
+      <tr><td>Emu</td><td>Open plains</td><td>Yes</td><td>Fastest runner; emu races</td></tr>
+      <tr><td>Camel</td><td>Desert near Uluru</td><td>Yes</td><td>Rocking sway, crosses sand</td></tr>
+      <tr><td>Brumby (wild horse)</td><td>Great Dividing Range</td><td>Yes</td><td>Gallops across hills</td></tr>
+      <tr><td>Sea turtle</td><td>Reef and Bondi</td><td>Yes, swimming</td><td>Glides underwater past fish</td></tr>
+      <tr><td>Koala</td><td>Gum trees</td><td>No</td><td>Rides on your shoulder for a while</td></tr>
+      <tr><td>Wombat, platypus</td><td>Creeks and burrows</td><td>No</td><td>Follow them home; platypus dives and pops up</td></tr>
+      <tr><td>Kookaburra, cockatoo</td><td>Trees everywhere</td><td>No</td><td>Laughs, perches on your arm</td></tr>
+      <tr><th colspan="4" style="color:var(--asia)">China, India and magic</th></tr>
+      <tr><td>Panda</td><td>Bamboo by Làng Trung Hoa</td><td>No</td><td>Sits and munches bamboo with you</td></tr>
+      <tr><td>Decorated elephant</td><td>Làng Ấn Độ</td><td>Yes</td><td>Festival ride with flowers and bells (Diwali)</td></tr>
+      <tr><td>Peacock</td><td>Làng Ấn Độ gardens</td><td>No</td><td>Opens its tail when you clap</td></tr>
+      <tr><td>Your dragon (rồng)</td><td>With you</td><td>Yes, when grown</td><td>The baby dragon companion grows up and flies you across the valley: a big long-term goal</td></tr>
+      <tr><td>Unicorn</td><td>Fairy glade (secret)</td><td>Yes</td><td>Rare surprise ride with a rainbow trail</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="rules">
+    <div class="rule"><b>Friends first</b><span>Feed or brush an animal a few times and it becomes your friend: it comes when you call and you can ride it. That builds a bond over days.</span></div>
+    <div class="rule"><b>Gentle and kind</b><span>Animals are never hurt, never scary, and never chase. No wild dangerous animals (no crocodiles or tigers near paths).</span></div>
+    <div class="rule"><b>They live their day</b><span>Graze in the morning, drink at the river at noon, rest in the shade, sleep at night; babies follow their mothers.</span></div>
+    <div class="rule"><b>Learn as you ride</b><span>A short spoken fact each ride in both languages: "Kangaroos carry their babies in a pouch."</span></div>
+    <div class="rule"><b>Together online</b><span>Friends see each other riding; two children can share an ox cart or elephant.</span></div>
+    <div class="rule"><b>Phones stay fast</b><span>Only animals near the child move; far herds stand still and are drawn simply.</span></div>
+  </div>
+</section>
+
+<!-- ART -->
+<section id="art">
+  <h2>Redesigning houses, buildings, characters, animals and trees</h2>
+  <p>The one idea behind every model: a <b>storybook toy world</b>. Everything looks like a soft, chunky wooden or clay toy you'd want to pick up, with rounded edges, a warm colour that is lighter on top and darker underneath, and one or two details that say exactly where it comes from. Vietnam, Australia, China and India each get their own shapes and colours, so a child knows where they are at a glance.</p>
+
+  <h3>Fixed now: the bicycle</h3>
+  <div class="pair">
+    <figure><img src="bike-before.jpg" alt="Bicycle before: wheels turned sideways"><figcaption>Before: the wheels were turned sideways (thin lines from the side, flat rings from the front), the frame didn't reach the wheels, and the wheels never turned.</figcaption></figure>
+    <figure><img src="bike-after.jpg" alt="Bicycle after: upright spoked wheels"><figcaption>After (on the <code>round-r</code> branch, not pushed): upright wheels with rims, hubs and spokes that roll as she rides; frame, fork, pedals, saddle, rack and baskets all joined.</figcaption></figure>
+  </div>
+
+  <h3>Today in the game</h3>
+  <div class="shots">
+    <figure><img src="art-character.jpg" alt="Player character today"><figcaption>Characters: a flat face sticker on a round head, stiff arms and legs.</figcaption></figure>
+    <figure><img src="art-village-houses.jpg" alt="Làng Sen houses today"><figcaption>Village houses: plain beige boxes with one red roof each, all alike.</figcaption></figure>
+    <figure><img src="art-town-street.jpg" alt="Phố Hai Quê today"><figcaption>Town: lots going on, but the buildings are simple blocks.</figcaption></figure>
+    <figure><img src="art-sydney.jpg" alt="Sydney today"><figcaption>Sydney: big grey squares, few buildings that feel Australian.</figcaption></figure>
+    <figure><img src="art-trees-bamboo.jpg" alt="Bamboo forest today"><figcaption>Trees: one round blob per tree; bamboo looks like green spikes.</figcaption></figure>
+    <figure><img src="art-animals.jpg" alt="Buffalo today"><figcaption>Animals: recognisable, but blocky and expressionless.</figcaption></figure>
+  </div>
+
+  <h3>Houses</h3>
+  <figure>
+    <svg viewBox="0 0 800 260" role="img" aria-label="Six house designs: Vietnamese village house, tube house, Hội An house, Queenslander, Sydney bungalow, Melbourne terrace">
+      <rect width="800" height="260" fill="var(--paper)"/>
+      <rect y="214" width="800" height="46" fill="var(--grass)"/>
+      <!-- 1 nhà ba gian -->
+      <g transform="translate(14 0)">
+        <rect x="6" y="150" width="112" height="64" rx="6" fill="#e9c77a"/>
+        <path d="M-4 152Q62 92 128 152Q120 140 62 104Q4 140 -4 152Z" fill="#a8452f"/>
+        <path d="M-4 152L62 100L128 152Z" fill="#b9533a"/><path d="M-6 154q-6 -10 2 -12M130 154q6 -10 -2 -12" stroke="#a8452f" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <g stroke="#933a28" stroke-width="1.4"><path d="M20 140L104 140M30 130L94 130M42 120L82 120"/></g>
+        <g fill="#7a4a2a"><rect x="14" y="166" width="22" height="48" rx="2"/><rect x="51" y="166" width="22" height="48" rx="2"/><rect x="88" y="166" width="22" height="48" rx="2"/></g>
+        <g fill="#c9933a"><rect x="12" y="156" width="6" height="58"/><rect x="106" y="156" width="6" height="58"/></g>
+        <ellipse cx="132" cy="206" rx="9" ry="10" fill="#8a5a3a"/><g fill="#5fae4a"><path d="M-8 214q-6 -36 6 -60q4 30 -6 60"/><path d="M-8 214q12 -30 -2 -56"/></g>
+        <text x="62" y="250" text-anchor="middle" class="cap">Nhà ba gian (village)</text>
+      </g>
+      <!-- 2 nhà ống -->
+      <g transform="translate(160 0)">
+        <rect x="10" y="70" width="40" height="144" fill="#f2a6b8"/><rect x="50" y="90" width="40" height="124" fill="#9ad0e6"/><rect x="90" y="80" width="36" height="134" fill="#f7d36a"/>
+        <g fill="#ffffff" opacity=".85"><rect x="18" y="82" width="24" height="16" rx="2"/><rect x="18" y="114" width="24" height="16" rx="2"/><rect x="58" y="102" width="24" height="16" rx="2"/><rect x="58" y="134" width="24" height="16" rx="2"/><rect x="96" y="92" width="24" height="16" rx="2"/><rect x="96" y="124" width="24" height="16" rx="2"/></g>
+        <g fill="#5fae4a"><rect x="14" y="100" width="32" height="5" rx="2"/><rect x="54" y="120" width="32" height="5" rx="2"/><rect x="94" y="110" width="28" height="5" rx="2"/></g>
+        <g fill="#e2382f"><path d="M8 170h44l-4 10h-36z"/></g><g fill="#2f7fb0"><path d="M48 176h44l-4 10h-36z"/></g>
+        <g fill="#8a8a8a"><rect x="14" y="184" width="32" height="30"/><rect x="54" y="190" width="32" height="24"/><rect x="94" y="182" width="28" height="32"/></g>
+        <path d="M0 60Q60 76 140 58" stroke="#333" stroke-width="1.2" fill="none"/>
+        <text x="68" y="250" text-anchor="middle" class="cap">Nhà ống</text>
+      </g>
+      <!-- 3 Hội An -->
+      <g transform="translate(306 0)">
+        <rect x="8" y="132" width="110" height="82" fill="#f2c94c"/>
+        <path d="M-2 134L20 100H106L128 134Z" fill="#8a3a2a"/>
+        <g fill="#2f6f4a"><rect x="20" y="148" width="18" height="26" rx="2"/><rect x="88" y="148" width="18" height="26" rx="2"/></g>
+        <rect x="48" y="160" width="30" height="54" rx="2" fill="#7a4a2a"/>
+        <g fill="#e2382f"><ellipse cx="30" cy="124" rx="7" ry="9"/><ellipse cx="96" cy="124" rx="7" ry="9"/></g><g fill="#ffd23f"><ellipse cx="63" cy="126" rx="7" ry="9"/></g>
+        <path d="M100 214v-46q10 -14 20 0v46" fill="#e86aa8" opacity=".85"/>
+        <text x="63" y="250" text-anchor="middle" class="cap">Hội An shophouse</text>
+      </g>
+      <!-- 4 Queenslander -->
+      <g transform="translate(452 0)">
+        <g fill="#8a6a4a"><rect x="14" y="184" width="6" height="30"/><rect x="58" y="184" width="6" height="30"/><rect x="104" y="184" width="6" height="30"/></g>
+        <rect x="8" y="128" width="110" height="56" fill="#f4f1e8"/>
+        <path d="M-4 130L63 88L130 130Z" fill="#a9c4b8"/><g stroke="#8fae9f" stroke-width="1.5"><path d="M10 124L63 92M30 128L63 104M96 128L63 104M116 124L63 92"/></g>
+        <rect x="2" y="168" width="122" height="5" fill="#ffffff"/><g stroke="#ffffff" stroke-width="2"><path d="M6 168V184M24 168V184M42 168V184M60 168V184M78 168V184M96 168V184M114 168V184"/></g>
+        <g fill="#6aa0c8"><rect x="22" y="138" width="18" height="18" rx="2"/><rect x="86" y="138" width="18" height="18" rx="2"/></g><rect x="52" y="136" width="22" height="32" fill="#2f7f6a"/>
+        <path d="M74 214l14 -30h30" stroke="#8a6a4a" stroke-width="4" fill="none"/>
+        <circle cx="134" cy="150" r="18" fill="#9b7fd4"/><rect x="132" y="160" width="4" height="54" fill="#7a5a3a"/>
+        <text x="63" y="250" text-anchor="middle" class="cap">Queenslander</text>
+      </g>
+      <!-- 5 Federation bungalow -->
+      <g transform="translate(606 0)">
+        <rect x="10" y="150" width="96" height="64" fill="#b8573e"/>
+        <g stroke="#9a4630" stroke-width="1"><path d="M10 160H106M10 170H106M10 180H106M10 190H106M10 200H106"/></g>
+        <path d="M0 152L58 108L116 152Z" fill="#c6503a"/><path d="M40 152L58 136L76 152Z" fill="#f4f1e8"/>
+        <g fill="#f4f1e8"><rect x="20" y="166" width="22" height="22" rx="2"/><rect x="74" y="166" width="22" height="22" rx="2"/></g><rect x="48" y="174" width="20" height="40" fill="#2f4f7f"/>
+        <rect x="0" y="206" width="120" height="8" fill="#f4f1e8"/><g stroke="#f4f1e8" stroke-width="2"><path d="M4 206v-10M16 206v-10M28 206v-10M88 206v-10M100 206v-10M112 206v-10"/></g>
+        <text x="58" y="250" text-anchor="middle" class="cap">Sydney</text>
+      </g>
+      <!-- 6 Melbourne terrace -->
+      <g transform="translate(730 0)" opacity=".98">
+        <rect x="0" y="120" width="60" height="94" fill="#d9c7a8"/>
+        <path d="M-2 122h64v-10h-64z" fill="#6b6b6b"/>
+        <rect x="4" y="160" width="52" height="6" fill="#3a3a3a"/><g stroke="#3a3a3a" stroke-width="1.5" fill="none"><path d="M6 166q6 8 12 0q6 8 12 0q6 8 12 0q6 8 12 0"/></g>
+        <g fill="#5a7aa0"><rect x="8" y="132" width="16" height="20" rx="2"/><rect x="36" y="132" width="16" height="20" rx="2"/></g><rect x="22" y="178" width="16" height="36" fill="#7a2a3a"/>
+        <text x="30" y="250" text-anchor="middle" class="cap">Melbourne</text>
+      </g>
+    </svg>
+    <figcaption>Every house has a shape that belongs to its place: curved tile roofs and a front yard with a water jar in Vietnamese villages; narrow, colourful tube houses with balconies, awnings and tangled wires in towns; yellow Hội An shophouses with lanterns; Queenslanders on stilts with verandahs and a jacaranda; red-brick Sydney bungalows; Melbourne terraces with iron lace. Doors are big and clear, and each house's front faces its road.</figcaption>
+  </figure>
+
+  <h3>Characters</h3>
+  <figure>
+    <svg viewBox="0 0 800 280" role="img" aria-label="Character redesign: today's character next to four new characters">
+      <rect width="800" height="280" fill="var(--paper)"/>
+      <rect y="250" width="800" height="30" fill="var(--grass)"/>
+      <!-- today -->
+      <g transform="translate(40 40)">
+        <circle cx="50" cy="56" r="40" fill="#c9926a"/><path d="M12 50q38 -50 76 0v-14q-38 -40 -76 0z" fill="#2a1d18"/>
+        <circle cx="36" cy="58" r="6" fill="#222"/><circle cx="64" cy="58" r="6" fill="#222"/><path d="M42 78q8 6 16 0" stroke="#222" stroke-width="2" fill="none"/>
+        <rect x="26" y="96" width="48" height="66" rx="4" fill="#e8559a"/><rect x="30" y="162" width="14" height="44" fill="#c9926a"/><rect x="56" y="162" width="14" height="44" fill="#c9926a"/>
+        <rect x="8" y="100" width="14" height="50" fill="#c9926a"/><rect x="78" y="100" width="14" height="50" fill="#c9926a"/>
+        <text x="50" y="236" text-anchor="middle" class="cap">Today</text>
+      </g>
+      <path d="M170 140h40" stroke="var(--muted)" stroke-width="3" marker-end="url(#arr)"/>
+      <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>
+      <!-- new: girl in áo bà ba with nón lá -->
+      <g transform="translate(236 30)">
+        <path d="M6 44L50 18L94 44Z" fill="#e9d29a"/><circle cx="50" cy="68" r="42" fill="#e8b48e"/>
+        <path d="M10 62q4 -36 40 -36q36 0 40 36q-10 -16 -40 -14q-30 -2 -40 14z" fill="#2a1d18"/><path d="M86 66q16 30 4 64q-6 -30 -10 -50z" fill="#2a1d18"/>
+        <ellipse cx="34" cy="72" rx="8" ry="10" fill="#2a1d18"/><ellipse cx="66" cy="72" rx="8" ry="10" fill="#2a1d18"/><circle cx="37" cy="68" r="3" fill="#fff"/><circle cx="69" cy="68" r="3" fill="#fff"/>
+        <ellipse cx="24" cy="88" rx="7" ry="4" fill="#f29a9a" opacity=".7"/><ellipse cx="76" cy="88" rx="7" ry="4" fill="#f29a9a" opacity=".7"/>
+        <path d="M40 92q10 10 20 0" stroke="#7a2a2a" stroke-width="3" fill="#c94a4a" stroke-linecap="round"/>
+        <path d="M26 110h48l6 60h-60z" fill="#5fb3d6"/><path d="M50 110v60" stroke="#ffffff" stroke-width="2"/><g fill="#ffffff"><circle cx="54" cy="124" r="2"/><circle cx="54" cy="140" r="2"/></g>
+        <path d="M20 170h60l4 44h-24l-10 -30l-10 30h-24z" fill="#2a2a3a"/>
+        <path d="M26 114q-20 20 -14 44" stroke="#e8b48e" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M74 114q22 -6 26 -34" stroke="#e8b48e" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <g fill="#a8452f"><ellipse cx="34" cy="216" rx="12" ry="6"/><ellipse cx="66" cy="216" rx="12" ry="6"/></g>
+        <text x="50" y="246" text-anchor="middle" class="cap">Áo bà ba + nón lá</text>
+      </g>
+      <!-- new: boy in AU school uniform -->
+      <g transform="translate(372 30)">
+        <ellipse cx="50" cy="36" rx="46" ry="10" fill="#2f4f7f"/><path d="M18 36q0 -26 32 -26t32 26z" fill="#2f4f7f"/>
+        <circle cx="50" cy="68" r="40" fill="#f2c9a8"/><path d="M14 58q6 -22 36 -22t36 22q-14 -8 -36 -8t-36 8z" fill="#c9862a"/>
+        <circle cx="34" cy="72" r="8" fill="#2f5f9a"/><circle cx="66" cy="72" r="8" fill="#2f5f9a"/><circle cx="37" cy="68" r="3" fill="#fff"/><circle cx="69" cy="68" r="3" fill="#fff"/>
+        <g fill="#c98a5a" opacity=".6"><circle cx="30" cy="84" r="1.5"/><circle cx="36" cy="86" r="1.5"/><circle cx="64" cy="86" r="1.5"/><circle cx="70" cy="84" r="1.5"/></g>
+        <path d="M38 90q12 12 24 0" stroke="#7a2a2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <rect x="24" y="108" width="52" height="56" rx="10" fill="#ffd23f"/><path d="M38 108l12 12l12 -12" fill="#2f4f7f"/>
+        <rect x="26" y="160" width="48" height="24" rx="4" fill="#2f4f7f"/><rect x="30" y="184" width="14" height="28" fill="#f2c9a8"/><rect x="56" y="184" width="14" height="28" fill="#f2c9a8"/>
+        <path d="M24 116q-18 16 -16 40" stroke="#f2c9a8" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M76 116q18 16 16 40" stroke="#f2c9a8" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <g fill="#2a2a2a"><ellipse cx="36" cy="216" rx="12" ry="6"/><ellipse cx="64" cy="216" rx="12" ry="6"/></g>
+        <text x="50" y="246" text-anchor="middle" class="cap">AU school uniform</text>
+      </g>
+      <!-- grandma in áo dài -->
+      <g transform="translate(508 30)">
+        <circle cx="50" cy="70" r="38" fill="#e2b08a"/><path d="M14 64q4 -32 36 -32q32 0 36 32q-12 -14 -36 -12q-24 -2 -36 12z" fill="#d8d8d8"/><circle cx="50" cy="30" r="12" fill="#d8d8d8"/>
+        <path d="M30 72q6 -6 12 0M58 72q6 -6 12 0" stroke="#2a1d18" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <rect x="24" y="66" width="22" height="12" rx="6" fill="none" stroke="#7a5a3a" stroke-width="2"/><rect x="54" y="66" width="22" height="12" rx="6" fill="none" stroke="#7a5a3a" stroke-width="2"/>
+        <path d="M40 90q10 8 20 0" stroke="#7a2a2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M28 108h44l10 110h-64z" fill="#7a4a8a"/><path d="M30 108h40l-6 30h-28z" fill="#8a5a9a"/>
+        <path d="M28 112q-18 20 -12 46" stroke="#e2b08a" stroke-width="11" fill="none" stroke-linecap="round"/><path d="M72 112q18 20 12 46" stroke="#e2b08a" stroke-width="11" fill="none" stroke-linecap="round"/>
+        <text x="50" y="246" text-anchor="middle" class="cap">Bà nội in áo dài</text>
+      </g>
+      <!-- farmer AU with akubra -->
+      <g transform="translate(644 30)">
+        <ellipse cx="50" cy="38" rx="48" ry="9" fill="#8a6a3a"/><path d="M20 38q0 -24 30 -24t30 24z" fill="#9a7a4a"/>
+        <circle cx="50" cy="70" r="38" fill="#d9a07a"/><path d="M22 92q28 22 56 0q-4 18 -28 22q-24 -4 -28 -22z" fill="#a8743a"/>
+        <circle cx="35" cy="72" r="7" fill="#3a5a3a"/><circle cx="65" cy="72" r="7" fill="#3a5a3a"/><circle cx="37" cy="69" r="2.5" fill="#fff"/><circle cx="67" cy="69" r="2.5" fill="#fff"/>
+        <rect x="22" y="108" width="56" height="62" rx="10" fill="#3f7fc0"/><g stroke="#2f6fa0" stroke-width="2"><path d="M22 128h56M22 148h56M40 108v62M60 108v62"/></g>
+        <rect x="26" y="168" width="48" height="44" rx="4" fill="#3a3a4a"/>
+        <path d="M22 116q-18 18 -14 42" stroke="#d9a07a" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M78 116q18 18 14 42" stroke="#d9a07a" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <g fill="#5a3a2a"><ellipse cx="36" cy="216" rx="13" ry="6"/><ellipse cx="64" cy="216" rx="13" ry="6"/></g>
+        <text x="50" y="246" text-anchor="middle" class="cap">Farmer in an Akubra</text>
+      </g>
+    </svg>
+    <figcaption>Bigger, rounder heads with real hair shapes (fringes, buns, ponytails, curls), shiny eyes, eyebrows and rosy cheeks; the face shows feelings (happy, surprised, sleepy) and the mouth moves when they talk. Bodies are softer, with bendy arms and simple clothes patterns. Villagers wear what their job and place would: nón lá, áo bà ba, áo dài, school uniforms, an Akubra hat, a chef's hat. Children's own characters use the same style and the new shop clothes.</figcaption>
+  </figure>
+
+  <h3>Animals</h3>
+  <figure>
+    <svg viewBox="0 0 800 220" role="img" aria-label="Animal redesign: plush-toy buffalo, kangaroo with joey, koala, elephant, panda">
+      <rect width="800" height="220" fill="var(--paper)"/><rect y="186" width="800" height="34" fill="var(--grass)"/>
+      <!-- buffalo -->
+      <g transform="translate(20 40)">
+        <ellipse cx="80" cy="96" rx="64" ry="40" fill="#5a5f66"/><g fill="#4a4f56"><rect x="34" y="120" width="16" height="30" rx="7"/><rect x="104" y="120" width="16" height="30" rx="7"/></g>
+        <circle cx="26" cy="72" r="30" fill="#62676e"/><path d="M4 50q-20 -20 -6 -34q4 18 18 22M48 50q20 -20 6 -34q-4 18 -18 22" fill="#e9e1cf"/>
+        <ellipse cx="18" cy="86" rx="16" ry="11" fill="#8a8f96"/><circle cx="12" cy="86" r="2.5" fill="#333"/><circle cx="24" cy="86" r="2.5" fill="#333"/>
+        <circle cx="16" cy="66" r="6" fill="#fff"/><circle cx="17" cy="67" r="3.5" fill="#222"/><circle cx="38" cy="66" r="6" fill="#fff"/><circle cx="39" cy="67" r="3.5" fill="#222"/>
+        <path d="M144 90q16 10 10 30" stroke="#4a4f56" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M60 58q14 -16 28 0z" fill="#ffffff" opacity=".9"/><circle cx="66" cy="50" r="5" fill="#f2f2f2"/>
+        <text x="80" y="170" text-anchor="middle" class="cap">Trâu + egret</text>
+      </g>
+      <!-- kangaroo -->
+      <g transform="translate(200 20)">
+        <ellipse cx="60" cy="110" rx="30" ry="44" fill="#c98a52"/><ellipse cx="62" cy="124" rx="16" ry="18" fill="#e8c29a"/>
+        <circle cx="70" cy="132" r="9" fill="#d9a06a"/><circle cx="73" cy="130" r="2" fill="#222"/>
+        <circle cx="66" cy="54" r="22" fill="#c98a52"/><path d="M52 38q-6 -26 4 -30q6 12 4 28M74 36q4 -26 14 -26q0 14 -8 28" fill="#c98a52"/>
+        <circle cx="60" cy="52" r="5" fill="#fff"/><circle cx="61" cy="53" r="3" fill="#222"/><circle cx="76" cy="52" r="5" fill="#fff"/><circle cx="77" cy="53" r="3" fill="#222"/><ellipse cx="80" cy="64" rx="5" ry="3.5" fill="#5a3a2a"/>
+        <path d="M34 140q-30 10 -34 30" stroke="#c98a52" stroke-width="12" fill="none" stroke-linecap="round"/><g fill="#b07a46"><ellipse cx="54" cy="164" rx="18" ry="6"/><ellipse cx="80" cy="164" rx="18" ry="6"/></g>
+        <text x="60" y="190" text-anchor="middle" class="cap">Kangaroo + joey</text>
+      </g>
+      <!-- koala -->
+      <g transform="translate(340 40)">
+        <ellipse cx="60" cy="102" rx="36" ry="38" fill="#9aa0a6"/><ellipse cx="60" cy="110" rx="20" ry="22" fill="#e9e6e0"/>
+        <circle cx="60" cy="56" r="32" fill="#a8aeb4"/><circle cx="26" cy="44" r="18" fill="#a8aeb4"/><circle cx="94" cy="44" r="18" fill="#a8aeb4"/><circle cx="26" cy="44" r="10" fill="#f0e6e0"/><circle cx="94" cy="44" r="10" fill="#f0e6e0"/>
+        <ellipse cx="60" cy="64" rx="10" ry="13" fill="#3a3a3a"/><circle cx="46" cy="52" r="4" fill="#222"/><circle cx="74" cy="52" r="4" fill="#222"/><circle cx="47" cy="50" r="1.5" fill="#fff"/><circle cx="75" cy="50" r="1.5" fill="#fff"/>
+        <path d="M96 88q24 -6 30 -40" stroke="#6a8a5a" stroke-width="6" fill="none"/><g fill="#7fae6a"><ellipse cx="128" cy="44" rx="8" ry="4"/><ellipse cx="120" cy="58" rx="8" ry="4"/></g>
+        <text x="60" y="166" text-anchor="middle" class="cap">Koala</text>
+      </g>
+      <!-- elephant -->
+      <g transform="translate(500 30)">
+        <ellipse cx="80" cy="96" rx="58" ry="46" fill="#9a9aa8"/><g fill="#8a8a98"><rect x="40" y="124" width="22" height="34" rx="9"/><rect x="100" y="124" width="22" height="34" rx="9"/></g>
+        <circle cx="36" cy="72" r="34" fill="#a6a6b4"/><ellipse cx="62" cy="70" rx="22" ry="28" fill="#b6b6c4"/><path d="M14 86q-10 30 6 52q8 -2 6 -10q-10 -16 0 -38" fill="#a6a6b4"/>
+        <circle cx="30" cy="66" r="5" fill="#fff"/><circle cx="31" cy="67" r="3" fill="#222"/>
+        <path d="M60 52h50l-6 22h-38z" fill="#e2382f"/><g fill="#ffd23f"><circle cx="70" cy="62" r="3"/><circle cx="84" cy="62" r="3"/><circle cx="98" cy="62" r="3"/></g>
+        <text x="80" y="176" text-anchor="middle" class="cap">Elephant</text>
+      </g>
+      <!-- panda -->
+      <g transform="translate(660 40)">
+        <ellipse cx="60" cy="100" rx="40" ry="40" fill="#ffffff" stroke="#e2e2e2"/><g fill="#2a2a2a"><ellipse cx="30" cy="120" rx="14" ry="20"/><ellipse cx="90" cy="120" rx="14" ry="20"/></g>
+        <circle cx="60" cy="54" r="32" fill="#ffffff" stroke="#e2e2e2"/><g fill="#2a2a2a"><circle cx="34" cy="28" r="11"/><circle cx="86" cy="28" r="11"/><ellipse cx="46" cy="54" rx="9" ry="12" transform="rotate(-20 46 54)"/><ellipse cx="74" cy="54" rx="9" ry="12" transform="rotate(20 74 54)"/></g>
+        <circle cx="47" cy="52" r="3" fill="#fff"/><circle cx="73" cy="52" r="3" fill="#fff"/><ellipse cx="60" cy="68" rx="6" ry="4" fill="#2a2a2a"/>
+        <path d="M86 92l26 -40" stroke="#7fbf4a" stroke-width="5"/><g fill="#5fae4a"><ellipse cx="112" cy="50" rx="10" ry="4" transform="rotate(-40 112 50)"/></g>
+        <text x="60" y="166" text-anchor="middle" class="cap">Panda</text>
+      </g>
+    </svg>
+    <figcaption>Animals become soft plush toys: round bodies, big friendly eyes with a shine, short legs, and faces that show happy, sleepy (zzz) or hungry. Babies follow their mothers (a joey in the pouch, a calf beside the buffalo), and small friends ride along (an egret on the buffalo). Every animal has its own walk, sound and idle moves.</figcaption>
+  </figure>
+
+  <h3>Trees and plants</h3>
+  <figure>
+    <svg viewBox="0 0 800 230" role="img" aria-label="Tree redesign: banyan, bamboo, banana, coconut, flame tree, gum tree, jacaranda, wattle, willow, plum blossom">
+      <rect width="800" height="230" fill="var(--paper)"/><rect y="186" width="800" height="44" fill="var(--grass)"/>
+      <!-- banyan -->
+      <g transform="translate(6 0)"><rect x="34" y="96" width="16" height="90" fill="#7a5a3a"/><g stroke="#8a6a4a" stroke-width="2"><path d="M18 100v86M26 104v82M60 104v82M68 100v86"/></g>
+        <circle cx="22" cy="80" r="26" fill="#4f8f3a"/><circle cx="62" cy="80" r="26" fill="#4f8f3a"/><circle cx="42" cy="58" r="30" fill="#5fa04a"/><circle cx="34" cy="50" r="12" fill="#7fbf5a" opacity=".7"/>
+        <text x="42" y="214" text-anchor="middle" class="cap">Cây đa</text></g>
+      <!-- bamboo -->
+      <g transform="translate(92 0)"><g stroke="#7fbf4a" stroke-width="7" stroke-linecap="round"><path d="M20 186q-4 -90 6 -150"/><path d="M38 186q2 -100 -2 -166"/><path d="M56 186q6 -80 14 -130"/></g>
+        <g stroke="#5f9f3a" stroke-width="1.5"><path d="M14 140h12M30 120h12M50 150h12M30 70h12M54 96h12"/></g>
+        <g fill="#5fae4a"><ellipse cx="14" cy="50" rx="12" ry="4" transform="rotate(-30 14 50)"/><ellipse cx="46" cy="28" rx="12" ry="4" transform="rotate(20 46 28)"/><ellipse cx="76" cy="60" rx="12" ry="4" transform="rotate(30 76 60)"/><ellipse cx="28" cy="90" rx="10" ry="3.5" transform="rotate(-40 28 90)"/><ellipse cx="62" cy="104" rx="10" ry="3.5" transform="rotate(35 62 104)"/></g>
+        <text x="40" y="214" text-anchor="middle" class="cap">Tre</text></g>
+      <!-- banana -->
+      <g transform="translate(172 0)"><rect x="34" y="110" width="12" height="76" rx="5" fill="#8fae5a"/>
+        <g fill="#6fbf4a"><path d="M40 110q-40 -10 -42 -40q24 6 42 40z"/><path d="M40 110q40 -14 44 -44q-26 8 -44 44z"/><path d="M40 112q-10 -50 6 -80q10 34 -6 80z"/></g>
+        <g fill="#f2d24a"><ellipse cx="50" cy="124" rx="6" ry="10"/><ellipse cx="58" cy="128" rx="6" ry="10"/></g>
+        <text x="40" y="214" text-anchor="middle" class="cap">Chuối</text></g>
+      <!-- coconut -->
+      <g transform="translate(252 0)"><path d="M30 186q-6 -80 14 -140" stroke="#9a7a4a" stroke-width="9" fill="none" stroke-linecap="round"/>
+        <g fill="#5fae4a"><path d="M44 46q-40 -6 -50 20q26 -16 50 -20z"/><path d="M44 46q40 -8 50 18q-26 -14 -50 -18z"/><path d="M44 46q-20 -34 -46 -30q28 6 46 30z"/><path d="M44 46q22 -32 48 -26q-30 4 -48 26z"/></g>
+        <g fill="#7a5a2a"><circle cx="40" cy="54" r="5"/><circle cx="48" cy="56" r="5"/></g>
+        <text x="40" y="214" text-anchor="middle" class="cap">Dừa</text></g>
+      <!-- flame tree -->
+      <g transform="translate(332 0)"><rect x="36" y="100" width="10" height="86" fill="#6a4a3a"/>
+        <ellipse cx="42" cy="84" rx="44" ry="26" fill="#4f8f3a"/><g fill="#e8432a"><circle cx="18" cy="76" r="8"/><circle cx="36" cy="68" r="9"/><circle cx="56" cy="72" r="8"/><circle cx="72" cy="84" r="7"/><circle cx="26" cy="92" r="7"/><circle cx="48" cy="90" r="8"/></g>
+        <text x="42" y="214" text-anchor="middle" class="cap">Phượng vĩ</text></g>
+      <!-- gum -->
+      <g transform="translate(420 0)"><path d="M40 186q-4 -60 4 -110M44 110q10 -20 22 -30M42 120q-10 -20 -22 -28" stroke="#e8e2d6" stroke-width="8" fill="none" stroke-linecap="round"/>
+        <g fill="#8aaa7a" opacity=".95"><ellipse cx="22" cy="80" rx="20" ry="14"/><ellipse cx="66" cy="70" rx="22" ry="14"/><ellipse cx="44" cy="54" rx="24" ry="16"/></g>
+        <text x="44" y="214" text-anchor="middle" class="cap">Gum</text></g>
+      <!-- jacaranda -->
+      <g transform="translate(508 0)"><rect x="38" y="100" width="10" height="86" fill="#6a4a3a"/>
+        <g fill="#9b7fd4"><circle cx="22" cy="84" r="20"/><circle cx="64" cy="84" r="20"/><circle cx="42" cy="64" r="26"/></g><g fill="#b9a0e8"><circle cx="34" cy="56" r="8"/><circle cx="58" cy="70" r="6"/></g>
+        <g fill="#9b7fd4" opacity=".7"><circle cx="20" cy="182" r="3"/><circle cx="34" cy="184" r="3"/><circle cx="62" cy="182" r="3"/></g>
+        <text x="44" y="214" text-anchor="middle" class="cap">Jacaranda</text></g>
+      <!-- wattle -->
+      <g transform="translate(596 0)"><rect x="36" y="110" width="9" height="76" fill="#6a4a3a"/>
+        <g fill="#7f9f5a"><circle cx="24" cy="94" r="20"/><circle cx="58" cy="94" r="20"/><circle cx="40" cy="74" r="22"/></g>
+        <g fill="#ffd23f"><circle cx="16" cy="88" r="5"/><circle cx="30" cy="70" r="5"/><circle cx="46" cy="64" r="5"/><circle cx="60" cy="84" r="5"/><circle cx="40" cy="96" r="5"/><circle cx="70" cy="100" r="4"/></g>
+        <text x="40" y="214" text-anchor="middle" class="cap">Wattle</text></g>
+      <!-- willow -->
+      <g transform="translate(676 0)"><rect x="34" y="100" width="10" height="86" fill="#6a4a3a"/>
+        <ellipse cx="40" cy="80" rx="34" ry="24" fill="#8fbf5a"/><g stroke="#8fbf5a" stroke-width="3"><path d="M10 84v50M20 92v56M30 96v50M50 96v52M60 92v54M70 84v48"/></g>
+        <text x="40" y="214" text-anchor="middle" class="cap">Willow</text></g>
+    </svg>
+    <figcaption>Trees grow in clusters of soft rounded clumps, lighter on top and darker underneath, and sway gently in the wind. Each region has its own: cây đa (banyan) with hanging roots, feathery bamboo, banana and coconut palms, the red flame tree (phượng vĩ) in summer; gum trees, jacaranda and wattle in Australia; willow and plum blossom in China. Trees flower with the real season and the festivals: hoa mai and hoa đào at Tết, jacaranda in October and November.</figcaption>
+  </figure>
+
+  <h3>Buildings and landmarks</h3>
+  <div class="rules">
+    <div class="rule"><b>Chunky and recognisable</b><span>Landmarks keep their real shape but are a little shorter and rounder, with their famous features made bigger: the Opera House sails, Chùa Một Cột's single pillar, Cầu Rồng's dragon head.</span></div>
+    <div class="rule"><b>City blocks with life</b><span>Australian cities get shops with awnings, cafés with tables outside, a tram in Melbourne and a CityCat ferry in Brisbane, in place of big grey squares.</span></div>
+    <div class="rule"><b>Insides to visit</b><span>Every building with a door can be entered: a simple cosy room with things to tap, using the same few shared furniture pieces.</span></div>
+    <div class="rule"><b>Day and night</b><span>Windows glow warm at night, lanterns light up, and shop signs switch on.</span></div>
+  </div>
+
+  <h3>Keeping phones fast</h3>
+  <div class="rules">
+    <div class="rule"><b>Same tricks as now</b><span>Shapes stay simple and merged; colours live in the model, not in big pictures; trees and animals of one kind are drawn together in one go.</span></div>
+    <div class="rule"><b>Less detail far away</b><span>Close up you see the spokes, faces and leaves; far away each thing turns into a simpler version.</span></div>
+    <div class="rule"><b>One step at a time</b><span>The redesign happens place by place along with the new map, and the speed check runs after each step.</span></div>
+  </div>
+</section>
+
+<section id="in3d">
+  <h2>Animals and trees, built in the game's own 3D</h2>
+  <p>These are real 3D samples made with the game's own shading, not drawings: what children will see. The code is kept in the project (<code>tools/art-proto</code>) for building the real ones.</p>
+  <figure><img src="proto-scene.jpg" alt="A corner of the valley with the new animals and trees"><figcaption>A corner of the valley: the buffalo with its egret friend, an elephant, a kangaroo with her joey, a panda with bamboo, under a banyan, a flame tree and a bamboo clump, beside a red-earth path.</figcaption></figure>
+  <figure><img src="proto-animals.jpg" alt="Five new animals in a row"><figcaption>Buffalo and egret, kangaroo and joey, koala hugging a gum branch, elephant with a festival cloth, panda with bamboo: round plush shapes, shiny eyes, rosy cheeks, soft shading from light on top to darker underneath, and a thin outline.</figcaption></figure>
+  <figure><img src="proto-trees.jpg" alt="Six new trees in a row"><figcaption>Cây đa with hanging roots, feathery bamboo with joints, a white gum tree, a jacaranda dropping purple petals, a flame tree (phượng vĩ) covered in red flowers, and a coconut palm with drooping leaves.</figcaption></figure>
+</section>
+
+<section id="twoplayer">
+  <h2>Done on the round-r branch: two players face to face, and self-wiring power poles</h2>
+  <figure><img src="face-all.jpg" alt="Two players face to face on a tablet"><figcaption>Two players on a tablet lying flat: the far half, its buttons and joystick are turned to face the child at the far end (tall and wide); a window that child opens (here the map) faces them too. Computers keep side by side. Grown-ups → Screen and world → "Two players on one device": Automatic, Face to face, Side by side.</figcaption></figure>
+  <figure><img src="wires.jpg" alt="Power poles wired automatically"><figcaption>With the power-pole switch on: every pole, including any placed in Studio's map (new "Power pole"), is wired to its nearest neighbours by itself, crossarms facing their wires, and houses get a drop from the nearest pole. Off by default.</figcaption></figure>
+</section>
+
+<!-- STORIES -->
+<section id="stories">
+  <h2>Stories and guides, redesigned</h2>
+  <p>Today the fairy tales are one flat backdrop with look-alike characters standing in a row, the opening story is a still card, and the how-to guides are slides in a TV frame. The redesign: a <b>living pop-up book</b>. Every page is a little theatre of layered paper cut-outs that move with depth, characters who act, words that light up as they're read, and a moment on most pages where the child helps the story along.</p>
+  <h3>Today</h3>
+  <div class="shots">
+    <figure><img src="story-prologue.jpg" alt="Opening story today"><figcaption>Opening story: three icons and a sentence.</figcaption></figure>
+    <figure><img src="story-tale-1.jpg" alt="Fairy tale today, page 1"><figcaption>Bánh Chưng Bánh Giầy: the same palace for every page; the king's three sons are copies of each other.</figcaption></figure>
+    <figure><img src="story-tale-2.jpg" alt="Fairy tale today, page 3"><figcaption>Lang Liêu's rice, beans and leaves float in the sky with nobody using them.</figcaption></figure>
+    <figure><img src="story-howto-2.jpg" alt="How-to guide today"><figcaption>How to play: a boy, coins and a plus sign in a TV frame.</figcaption></figure>
+  </div>
+
+  <h3>A redesigned page (animated sample)</h3>
+  <figure>
+    <div class="book" id="book" role="img" aria-label="Animated sample: Lang Liêu wraps bánh chưng in his garden; the words light up as they are read; a hand invites the child to help">
+      <svg viewBox="0 0 800 450" class="bk-scene">
+        <defs>
+          <pattern id="paper" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#f7ecd2"/><circle cx="1" cy="1" r=".6" fill="#e8d9b4"/></pattern>
+          <linearGradient id="skyB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe2b8"/><stop offset="1" stop-color="#fff4dc"/></linearGradient>
+        </defs>
+        <rect width="800" height="450" fill="url(#skyB)"/>
+        <!-- far layer: hills and the sun (moves slowest) -->
+        <g class="bk-far">
+          <circle cx="640" cy="90" r="40" fill="#ffd23f"/>
+          <path d="M-40 250 Q120 160 260 230 T560 215 T860 225 V450 H-40Z" fill="#c9dca0"/>
+          <path d="M-40 270 Q200 205 380 255 T840 250 V450 H-40Z" fill="#b2d08a"/>
+        </g>
+        <!-- middle layer: rice paddies and the hut -->
+        <g class="bk-mid">
+          <path d="M-60 300 H860 V450 H-60Z" fill="#9fcf6a"/>
+          <g stroke="#b9dc85" stroke-width="3"><path d="M-60 320 H860M-60 345 H860M-60 372 H860"/></g>
+          <g transform="translate(520 205)"><path d="M0 70 L60 20 L120 70Z" fill="#c9a24a" stroke="#6b4a2a" stroke-width="3"/><rect x="12" y="70" width="96" height="60" fill="#e9c77a" stroke="#6b4a2a" stroke-width="3"/><rect x="48" y="92" width="24" height="38" fill="#7a4a2a"/></g>
+          <g class="bk-sway" style="transform-origin:120px 300px"><rect x="116" y="220" width="8" height="80" fill="#8fae5a"/><path d="M120 225 q-40 -10 -44 -40 q26 6 44 40z M120 225 q40 -14 44 -44 q-28 8 -44 44z M120 228 q-6 -46 6 -70 q8 34 -6 70z" fill="#5fae4a"/></g>
+        </g>
+        <!-- near layer: Lang Liêu and the bánh chưng -->
+        <g class="bk-near">
+          <g class="bk-boy" transform="translate(300 250)">
+            <ellipse cx="0" cy="118" rx="44" ry="8" fill="#000" opacity=".12"/>
+            <path d="M-30 46 q30 -12 60 0 l8 64 h-76z" fill="#5f8fbf" stroke="#3b2a4f" stroke-width="3"/>
+            <circle cx="0" cy="10" r="36" fill="#f0c49a" stroke="#3b2a4f" stroke-width="3"/>
+            <path d="M-36 4 q4 -40 36 -40 q32 0 36 40 q-14 -16 -36 -14 q-22 -2 -36 14z" fill="#2a1d18"/>
+            <g class="bk-blink"><ellipse cx="-13" cy="12" rx="5" ry="7" fill="#2a1d18"/><ellipse cx="13" cy="12" rx="5" ry="7" fill="#2a1d18"/></g>
+            <circle cx="-11" cy="9" r="2" fill="#fff"/><circle cx="15" cy="9" r="2" fill="#fff"/>
+            <ellipse cx="-22" cy="24" rx="6" ry="3.5" fill="#f29a9a" opacity=".7"/><ellipse cx="22" cy="24" rx="6" ry="3.5" fill="#f29a9a" opacity=".7"/>
+            <path class="bk-mouth" d="M-8 28 q8 7 16 0" stroke="#7a2a2a" stroke-width="3" fill="#c94a4a"/>
+            <g class="bk-arm" style="transform-origin:24px 54px"><path d="M24 54 q30 14 46 40" stroke="#f0c49a" stroke-width="13" fill="none" stroke-linecap="round"/></g>
+            <path d="M-24 54 q-26 18 -24 46" stroke="#f0c49a" stroke-width="13" fill="none" stroke-linecap="round"/>
+          </g>
+          <g class="bk-cake" transform="translate(400 330)">
+            <rect x="-34" y="-34" width="68" height="68" rx="6" fill="#3f8f4a" stroke="#2a5a2a" stroke-width="3"/>
+            <path d="M-34 -6 H34 M-34 6 H34 M-6 -34 V34 M6 -34 V34" stroke="#d9c79a" stroke-width="4"/>
+          </g>
+          <g class="bk-grains"><circle cx="372" cy="250" r="5" fill="#fff6dc" stroke="#c9b48a"/><circle cx="392" cy="240" r="5" fill="#fff6dc" stroke="#c9b48a"/><circle cx="412" cy="252" r="5" fill="#fff6dc" stroke="#c9b48a"/><circle cx="430" cy="244" r="5" fill="#f2b630" stroke="#a8743a"/></g>
+          <!-- tap-to-help hand -->
+          <g class="bk-hand" transform="translate(470 360)"><circle r="26" fill="#fff" opacity=".85"/><path d="M-6 10 v-22 a5 5 0 0 1 10 0 v12 l10 2 a6 6 0 0 1 4 8 l-6 16 h-18 z" fill="#ffd8b8" stroke="#3b2a4f" stroke-width="2.5"/><circle r="26" fill="none" stroke="#e05c9a" stroke-width="3" class="bk-ring"/></g>
+        </g>
+        <!-- book frame: Đông Hồ style border -->
+        <rect x="6" y="6" width="788" height="438" rx="16" fill="none" stroke="#b9533a" stroke-width="10"/>
+        <rect x="18" y="18" width="764" height="414" rx="10" fill="none" stroke="#e9c77a" stroke-width="3" stroke-dasharray="2 8"/>
+      </svg>
+      <div class="bk-words"><span>Lang</span> <span>Liêu</span> <span>gói</span> <span>gạo</span> <span>nếp,</span> <span>đậu</span> <span>xanh</span> <span>trong</span> <span>lá</span> <span>dong,</span> <span>vuông</span> <span>như</span> <span>mặt</span> <span>đất.</span></div>
+      <div class="bk-help">Con giúp Lang Liêu buộc lạt nhé! <b>Chạm vào bánh</b></div>
+    </div>
+    <figcaption>Animated sample of the redesigned Bánh Chưng Bánh Giầy page. The hills, the paddies and Lang Liêu move at different speeds as the camera drifts (depth like a pop-up book); he blinks, talks and wraps the square bánh chưng while rice grains fall in; each word lights up as the voice reads it; then a hand invites the child to tap the cake and tie the strings. The red-and-gold frame follows Đông Hồ folk prints.</figcaption>
+  </figure>
+
+  <h3>What changes</h3>
+  <div class="rules">
+    <div class="rule"><b>Every page is a shot</b><span>Wide, medium or close-up, like a picture book or a cartoon: the camera drifts, pans to the next character, or zooms in on the important thing. No more everyone standing in a row.</span></div>
+    <div class="rule"><b>Characters who act</b><span>Each character is different (age, clothes, face) and acts the words: walks in, points, cries, laughs, bows. Mouths move with their lines; faces change with feelings.</span></div>
+    <div class="rule"><b>Props that are used</b><span>Rice falls into the pot, the cake is wrapped, the bamboo grows: objects are part of the action, not floating stickers.</span></div>
+    <div class="rule"><b>Words light up</b><span>Each word lights up as it is read (it helps early readers), big and clear. Tap a word to hear it; the other language can show underneath.</span></div>
+    <div class="rule"><b>The child helps</b><span>Every 2–3 pages: tie the bánh chưng, wake the sleeping turtle, choose which way the boat goes. Under-5s: anything they tap wiggles and makes a sound.</span></div>
+    <div class="rule"><b>Three ways to read</b><span>"Đọc cho con" (read to me, automatic), "Con tự đọc" (turn pages yourself), and "Bố mẹ đọc" (no voice, bigger words, for a grown-up reading aloud).</span></div>
+    <div class="rule"><b>A book for each place</b><span>Vietnamese tales in Đông Hồ print colours on warm paper; Australian stories in soft bush watercolours; Chinese tales with red paper-cut borders; Indian tales with rangoli borders.</span></div>
+    <div class="rule"><b>A real ending</b><span>A one-line lesson, a "what would you do?" question, and a keepsake sticker; the story then points to its place in the valley (bánh chưng at Tết, the turtle at Hồ Gươm).</span></div>
+  </div>
+
+  <h3>The how-to guides</h3>
+  <figure>
+    <svg viewBox="0 0 800 260" role="img" aria-label="Storyboard for a how-to guide: watch, step by step with a helper's hand, then your turn">
+      <rect width="800" height="260" fill="var(--paper)"/>
+      <g font-family="var(--body)">
+        <g transform="translate(16 16)"><rect width="240" height="180" rx="16" fill="#fff4e0" stroke="#e9c77a" stroke-width="3"/>
+          <rect x="20" y="24" width="200" height="110" rx="10" fill="#bfe3f2"/><rect x="70" y="58" width="100" height="70" rx="8" fill="#f2c94c"/><path d="M60 58h120l-12-20h-96z" fill="#e2382f"/>
+          <circle cx="198" cy="40" r="12" fill="#ffd23f" opacity=".9"/><circle cx="198" cy="40" r="20" fill="#ffd23f" opacity=".25"/>
+          <text x="120" y="160" text-anchor="middle" font-size="15" font-weight="700" fill="#3b2a4f">1 · Xem nè</text></g>
+        <g transform="translate(280 16)"><rect width="240" height="180" rx="16" fill="#fff4e0" stroke="#e9c77a" stroke-width="3"/>
+          <rect x="20" y="24" width="200" height="110" rx="10" fill="#f7ecd2"/><rect x="40" y="40" width="60" height="40" rx="6" fill="#fff" stroke="#3b2a4f" stroke-width="2"/><text x="70" y="66" text-anchor="middle" font-size="16" font-weight="800" fill="#3b2a4f">5.000đ</text>
+          <circle cx="150" cy="104" r="16" fill="#f2c94c" stroke="#a8743a" stroke-width="3"/><circle cx="186" cy="104" r="16" fill="#f2c94c" stroke="#a8743a" stroke-width="3"/>
+          <path d="M150 80 q-20 -30 -60 -24" stroke="#e05c9a" stroke-width="3" stroke-dasharray="5 5" fill="none"/><g transform="translate(150 104)"><circle r="22" fill="none" stroke="#e05c9a" stroke-width="3"/></g>
+          <circle cx="170" cy="70" r="9" fill="#ffd23f"/><circle cx="170" cy="70" r="16" fill="#ffd23f" opacity=".3"/>
+          <text x="120" y="160" text-anchor="middle" font-size="15" font-weight="700" fill="#3b2a4f">2 · Lấp Lánh chỉ cách</text></g>
+        <g transform="translate(544 16)"><rect width="240" height="180" rx="16" fill="#e2f6e4" stroke="#5fd36a" stroke-width="3"/>
+          <rect x="20" y="24" width="200" height="110" rx="10" fill="#f7ecd2"/><circle cx="90" cy="80" r="26" fill="#f2c94c" stroke="#a8743a" stroke-width="3"/>
+          <path d="M150 104 v-22 a6 6 0 0 1 12 0 v12 l12 2 a7 7 0 0 1 5 9 l-7 18 h-22 z" fill="#ffd8b8" stroke="#3b2a4f" stroke-width="2.5"/>
+          <text x="120" y="160" text-anchor="middle" font-size="15" font-weight="700" fill="#2f7f4a">3 · Tới lượt con!</text></g>
+        <g font-size="13" fill="var(--ink)"><text x="16" y="226">Under 30 seconds, on the real game screen, the companion's glowing hand shows each move; dots show the steps; any step can be watched again.</text>
+          <text x="16" y="246">Folk games add a short drawn clip of real children playing it, and a card for grown-ups: how to play at home with friends.</text></g>
+      </g>
+    </svg>
+    <figcaption>How to play: watch → the companion shows each move on the real game screen → "Tới lượt con!" (your turn), with the first move guided.</figcaption>
+  </figure>
+
+  <h3>The opening story</h3>
+  <figure>
+    <svg viewBox="0 0 800 200" role="img" aria-label="Storyboard for the opening: the valley asleep in fog, Ông Cú lights a lantern, lanterns wake across the valley, the child arrives at home">
+      <rect width="800" height="200" fill="#2d2350"/>
+      <g font-family="var(--body)" font-size="12" font-weight="700" fill="#fff">
+        <g transform="translate(12 12)"><rect width="184" height="140" rx="12" fill="#4a4f7a"/><g fill="#8a90b8" opacity=".9"><ellipse cx="66" cy="90" rx="56" ry="20"/><ellipse cx="128" cy="100" rx="50" ry="16"/></g><path d="M0 120q60-40 110-10t74-10v30H0z" fill="#3a5a4a"/><text x="92" y="168" text-anchor="middle">Valley asleep</text></g>
+        <g transform="translate(208 12)"><rect width="184" height="140" rx="12" fill="#3a3a6a"/><circle cx="92" cy="62" r="26" fill="#a87a4a"/><circle cx="82" cy="58" r="8" fill="#fff"/><circle cx="102" cy="58" r="8" fill="#fff"/><circle cx="82" cy="58" r="4" fill="#222"/><circle cx="102" cy="58" r="4" fill="#222"/><g transform="translate(130 92)"><ellipse rx="10" ry="13" fill="#e2382f"/><circle r="22" fill="#ffd23f" opacity=".3"/></g><text x="92" y="168" text-anchor="middle">Ông Cú's lantern</text></g>
+        <g transform="translate(404 12)"><rect width="184" height="140" rx="12" fill="#2f3f6a"/><path d="M0 110q60-30 110-8t74-8v46H0z" fill="#3a5a4a"/><g><circle cx="30" cy="96" r="5" fill="#ffd23f"/><circle cx="62" cy="88" r="5" fill="#ffd23f"/><circle cx="96" cy="100" r="5" fill="#ffd23f"/><circle cx="128" cy="90" r="5" fill="#ffd23f"/><circle cx="160" cy="98" r="5" fill="#ffd23f"/></g><text x="92" y="168" text-anchor="middle">Lanterns wake</text></g>
+        <g transform="translate(600 12)"><rect width="188" height="140" rx="12" fill="#bfe3f2"/><path d="M0 100h188v40H0z" fill="#9fcf6a"/><path d="M110 100l30-26 30 26z" fill="#b9533a"/><rect x="118" y="100" width="44" height="30" fill="#e9c77a"/><circle cx="70" cy="96" r="12" fill="#f0c49a"/><rect x="62" y="108" width="16" height="22" rx="4" fill="#e8559a"/><circle cx="90" cy="80" r="6" fill="#ffd23f"/><text x="94" y="168" text-anchor="middle" fill="#fff">Arriving home</text></g>
+      </g>
+    </svg>
+    <figcaption>The opening becomes a 30-second fly-over of the real 3D valley at dawn, narrated, while the world finishes loading behind it (so it also hides the wait): mist, Ông Cú lights a lantern, lanterns wake across the valley, the camera lands on the child's own home with their companion. It plays once, can be skipped, and can be watched again from the Pad.</figcaption>
+  </figure>
+
+  <div class="rules">
+    <div class="rule"><b>Calm mode</b><span>No camera drift or zooms; gentle fades only; no flashing.</span></div>
+    <div class="rule"><b>Light on phones</b><span>Layers are a few shared drawings moved with cheap transforms; the 38 tales reuse a library of sets, characters and props.</span></div>
+    <div class="rule"><b>Family stories too</b><span>Stories made in Studio use the same book, sets and characters, so they look as good as the built-in ones.</span></div>
+  </div>
+</section>
+
+<!-- MORE DESIGNS -->
+<section id="tags-map">
+  <h2>Name tags and the Pad map</h2>
+  <div class="pair">
+    <figure><img src="art-town-street.jpg" alt="Today: many name tags and icons overlapping on Phố Hai Quê"><figcaption>Today: every villager's name, every ⓘ and every bubble shows at once, at every distance, so they pile up.</figcaption></figure>
+    <figure>
+      <svg viewBox="0 0 660 440" role="img" aria-label="New name tags: only nearby people show a small tag, one has a speech marker">
+        <rect width="660" height="440" fill="#bfe3f2"/><rect y="250" width="660" height="190" fill="#8f949a"/><rect y="230" width="660" height="22" fill="#d8d2c4"/>
+        <g fill="#f2c94c"><rect x="30" y="110" width="120" height="120"/></g><path d="M20 112L90 70L160 112Z" fill="#b9533a"/>
+        <g fill="#9ad0e6"><rect x="470" y="80" width="80" height="150"/></g><g fill="#f2a6b8"><rect x="550" y="100" width="80" height="130"/></g>
+        <!-- far people: no tags -->
+        <g><circle cx="230" cy="214" r="7" fill="#e8b48e"/><rect x="224" y="221" width="12" height="18" rx="3" fill="#3f7fc0"/></g>
+        <g><circle cx="410" cy="214" r="7" fill="#e8b48e"/><rect x="404" y="221" width="12" height="18" rx="3" fill="#e2382f"/></g>
+        <!-- near person with tag + talk marker -->
+        <g transform="translate(300 250)"><circle cx="0" cy="0" r="22" fill="#e8b48e"/><path d="M-26 -10l26 -20l26 20z" fill="#e9d29a"/><rect x="-18" y="22" width="36" height="52" rx="8" fill="#5fb3d6"/></g>
+        <g transform="translate(300 178)"><rect x="-58" y="-16" width="116" height="30" rx="15" fill="#ffffff" stroke="#e05c9a" stroke-width="2"/><text x="6" y="5" text-anchor="middle" font-family="var(--body)" font-weight="700" font-size="14" fill="#22301f">Cô Mai</text><circle cx="-40" cy="-1" r="9" fill="#f2c94c"/></g>
+        <g transform="translate(300 140)"><circle r="14" fill="#e05c9a"/><text y="6" text-anchor="middle" font-family="var(--body)" font-weight="800" font-size="16" fill="#fff">!</text></g>
+        <!-- second near person, tag smaller and faded -->
+        <g transform="translate(150 262)"><circle cx="0" cy="0" r="16" fill="#d9a07a"/><rect x="-13" y="16" width="26" height="38" rx="6" fill="#3f7fc0"/></g>
+        <g transform="translate(150 222)" opacity=".75"><rect x="-44" y="-13" width="88" height="24" rx="12" fill="#ffffff"/><text y="4" text-anchor="middle" font-family="var(--body)" font-weight="700" font-size="12" fill="#22301f">Chú Sáu</text></g>
+        <!-- player -->
+        <g transform="translate(470 330)"><circle r="26" fill="#e8b48e"/><path d="M-24 -6q2 -26 24 -26q22 0 24 26q-8 -10 -24 -10q-16 0 -24 10z" fill="#2a1d18"/><rect x="-20" y="26" width="40" height="56" rx="10" fill="#e8559a"/></g>
+      </svg>
+      <figcaption>New: only the few nearest people (at most 4) show a small name tag, fading with distance; a pink "!" marks who has something for you; ⓘ appears only when you're close. Tags never cover each other or a face.</figcaption>
+    </figure>
+  </div>
+  <figure>
+    <svg viewBox="0 0 800 470" role="img" aria-label="New Pad map: illustrated valley with regions, clean labels, you-are-here, friends, clouds over unvisited places, festival and stop markers">
+      <rect width="800" height="470" rx="22" fill="var(--paper)"/>
+      <g font-family="var(--body)" font-size="12" font-weight="700">
+        <rect x="16" y="14" width="88" height="34" rx="17" fill="#e05c9a"/><text x="60" y="36" text-anchor="middle" fill="#fff">Bản đồ</text>
+        <rect x="112" y="14" width="88" height="34" rx="17" fill="var(--chip)"/><text x="156" y="36" text-anchor="middle" fill="var(--ink)">Ba lô</text>
+        <rect x="208" y="14" width="88" height="34" rx="17" fill="var(--chip)"/><text x="252" y="36" text-anchor="middle" fill="var(--ink)">Nhiệm vụ</text>
+      </g>
+      <g transform="translate(20 60) scale(.95)">
+        <rect width="420" height="420" rx="16" fill="#cfe6b4"/>
+        <path d="M0 0H420V50L380 36 340 54 300 30 260 52 220 28 180 50 140 28 100 52 60 30 0 50Z" fill="#c9ccd1"/>
+        <path d="M204 40C208 90 222 120 214 160 208 185 200 205 208 240 216 280 220 330 214 390H232C238 330 234 280 226 240 218 205 226 185 232 160 240 120 226 90 220 40Z" fill="#7ec3e8"/>
+        <path d="M0 388C80 376 150 398 220 388 290 378 340 400 420 382V420H0Z" fill="#7ec3e8"/>
+        <rect x="236" y="56" width="184" height="330" fill="#d9443b" opacity=".08"/><rect x="0" y="56" width="200" height="330" fill="#e08a2e" opacity=".08"/>
+        <!-- clouds over unvisited -->
+        <g fill="#ffffff" opacity=".92"><circle cx="40" cy="250" r="26"/><circle cx="66" cy="262" r="22"/><circle cx="20" cy="270" r="18"/><circle cx="110" cy="70" r="22"/><circle cx="134" cy="62" r="18"/><circle cx="300" cy="66" r="22"/><circle cx="322" cy="58" r="18"/></g>
+        <!-- places as round picture badges -->
+        <g stroke="#fff" stroke-width="3">
+          <circle cx="344" cy="100" r="16" fill="#d9443b"/><circle cx="366" cy="178" r="16" fill="#d9443b"/><circle cx="344" cy="230" r="16" fill="#d9443b"/><circle cx="344" cy="330" r="16" fill="#d9443b"/>
+          <circle cx="110" cy="200" r="16" fill="#e08a2e"/><circle cx="110" cy="320" r="16" fill="#e08a2e"/>
+          <circle cx="218" cy="200" r="20" fill="#e05c9a"/>
+        </g>
+        <g font-family="var(--body)" font-weight="700" font-size="11" fill="#22301f" style="paint-order:stroke;stroke:#cfe6b4;stroke-width:3px">
+          <text x="344" y="130" text-anchor="middle">Hà Nội</text><text x="366" y="208" text-anchor="middle">Làng Sen</text><text x="344" y="260" text-anchor="middle">Đà Nẵng</text><text x="344" y="360" text-anchor="middle">TP. HCM</text>
+          <text x="110" y="230" text-anchor="middle">Sydney</text><text x="110" y="350" text-anchor="middle">Melbourne</text><text x="218" y="236" text-anchor="middle">Nhà</text>
+        </g>
+        <!-- you are here -->
+        <g transform="translate(260 200)"><circle r="14" fill="#ffffff"/><path d="M0 -10L8 8L0 3L-8 8Z" fill="#e05c9a"/></g>
+        <!-- friend -->
+        <g transform="translate(150 200)"><circle r="11" fill="#5fb3d6" stroke="#fff" stroke-width="3"/><text y="4" text-anchor="middle" font-family="var(--body)" font-size="10" font-weight="800" fill="#fff">B</text></g>
+        <!-- festival marker -->
+        <g transform="translate(372 300)"><circle r="10" fill="#f28c28"/><text y="4" text-anchor="middle" font-size="10" font-weight="800" fill="#fff" font-family="var(--body)">★</text></g>
+        <!-- next stop -->
+        <g transform="translate(384 160)"><circle r="9" fill="#fff" stroke="#d9443b" stroke-width="2"/><text y="4" text-anchor="middle" font-size="10" font-weight="800" fill="#22301f" font-family="var(--body)">2</text></g>
+      </g>
+      <g font-family="var(--body)" fill="var(--ink)">
+        <text x="440" y="90" font-size="16" font-weight="800">Tap a place to go there</text>
+        <g font-size="13">
+          <circle cx="452" cy="122" r="9" fill="#e05c9a"/><text x="470" y="127">Home and Ông Cú</text>
+          <circle cx="452" cy="150" r="9" fill="#d9443b"/><text x="470" y="155">Vietnam</text>
+          <circle cx="452" cy="178" r="9" fill="#e08a2e"/><text x="470" y="183">Australia</text>
+          <circle cx="452" cy="206" r="9" fill="#fff" stroke="#e05c9a" stroke-width="2"/><text x="470" y="211">You are here</text>
+          <circle cx="452" cy="234" r="9" fill="#5fb3d6"/><text x="470" y="239">A friend (tap to go to them)</text>
+          <circle cx="452" cy="262" r="9" fill="#f28c28"/><text x="470" y="267">A festival today</text>
+          <circle cx="452" cy="290" r="9" fill="#fff" stroke="#d9443b" stroke-width="2"/><text x="470" y="295">Your next stop</text>
+          <circle cx="452" cy="318" r="9" fill="#ffffff" stroke="#c9ccd1"/><text x="470" y="323">Clouds: not visited yet</text>
+        </g>
+        <g><rect x="440" y="360" width="56" height="56" rx="16" fill="var(--chip)"/><text x="468" y="396" text-anchor="middle" font-size="26" font-weight="800">+</text><rect x="506" y="360" width="56" height="56" rx="16" fill="var(--chip)"/><text x="534" y="396" text-anchor="middle" font-size="26" font-weight="800">−</text></g>
+        <text x="576" y="384" font-size="12" fill="var(--muted)">Zoom in to see</text><text x="576" y="400" font-size="12" fill="var(--muted)">towns and shops</text>
+      </g>
+    </svg>
+    <figcaption>New Pad map: a drawn picture of the new valley. Regions are lightly tinted in their colour; each place is a round picture badge with one clear name that never overlaps; zooming in shows town names and shops. It shows you, your friends, today's festival, your next first-week stop, and clouds over places you haven't been.</figcaption>
+  </figure>
+</section>
+
+<section id="screens">
+  <h2>New Round R screens</h2>
+  <p>All new screens share one frame: a big rounded card, a clear title with a drawn picture, large tap targets (at least 64 px for under-5s), a round ✕ that's always in reach, and nothing that needs reading to use.</p>
+  <figure>
+    <svg viewBox="0 0 800 760" role="img" aria-label="Eight new screens: shop, home upgrade, festival calendar, what's new, mystery box, rankings, collectibles, treasure map">
+      <rect width="800" height="760" fill="var(--bg)"/>
+      <g font-family="var(--body)">
+      <!-- card frame helper drawn per card -->
+      <!-- 1 shop -->
+      <g transform="translate(10 10)">
+        <rect width="188" height="360" rx="20" fill="var(--paper)" stroke="var(--line)"/><text x="16" y="34" font-size="15" font-weight="800" fill="var(--ink)">Cửa hàng</text><circle cx="166" cy="26" r="12" fill="var(--chip)"/><text x="166" y="31" text-anchor="middle" font-size="13" font-weight="800" fill="var(--ink)">✕</text>
+        <g font-size="10" font-weight="700" fill="var(--ink)"><rect x="12" y="48" width="38" height="24" rx="12" fill="#e05c9a"/><text x="31" y="64" text-anchor="middle" fill="#fff">Nón</text><rect x="54" y="48" width="38" height="24" rx="12" fill="var(--chip)"/><text x="73" y="64" text-anchor="middle">Áo</text><rect x="96" y="48" width="38" height="24" rx="12" fill="var(--chip)"/><text x="115" y="64" text-anchor="middle">Giày</text><rect x="138" y="48" width="38" height="24" rx="12" fill="var(--chip)"/><text x="157" y="64" text-anchor="middle">Lưng</text></g>
+        <circle cx="94" cy="130" r="40" fill="#f2c9a8"/><path d="M50 112L94 84L138 112Z" fill="#e9d29a"/><rect x="66" y="170" width="56" height="50" rx="12" fill="#5fb3d6"/>
+        <g><rect x="12" y="236" width="52" height="52" rx="12" fill="var(--chip)"/><path d="M20 268L38 252L56 268Z" fill="#e9d29a"/><rect x="68" y="236" width="52" height="52" rx="12" fill="var(--chip)" stroke="#e05c9a" stroke-width="3"/><ellipse cx="94" cy="264" rx="18" ry="8" fill="#2f4f7f"/><rect x="124" y="236" width="52" height="52" rx="12" fill="var(--chip)"/><path d="M134 268q16 -24 32 0z" fill="#e2382f"/></g>
+        <g font-size="10" font-weight="700" fill="var(--muted)"><text x="38" y="300" text-anchor="middle">●12</text><text x="94" y="300" text-anchor="middle">●20</text><text x="150" y="300" text-anchor="middle">●35</text></g>
+        <rect x="12" y="312" width="164" height="36" rx="18" fill="#3fae5a"/><text x="94" y="335" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">Mua ● 20</text>
+        <text x="94" y="388" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">Shop and wardrobe</text>
+      </g>
+      <!-- 2 home upgrade -->
+      <g transform="translate(208 10)">
+        <rect width="188" height="360" rx="20" fill="var(--paper)" stroke="var(--line)"/><text x="16" y="34" font-size="15" font-weight="800" fill="var(--ink)">Nhà của con</text>
+        <path d="M30 150L94 100L158 150Z" fill="#b9533a"/><rect x="40" y="150" width="108" height="64" fill="#e9c77a"/><rect x="80" y="172" width="28" height="42" fill="#7a4a2a"/>
+        <g fill="var(--chip)"><circle cx="40" cy="244" r="12"/><circle cx="72" cy="244" r="12"/><circle cx="104" cy="244" r="12"/><circle cx="136" cy="244" r="12"/></g><g fill="#3fae5a"><circle cx="40" cy="244" r="12"/><circle cx="72" cy="244" r="12"/></g><text x="94" y="276" text-anchor="middle" font-size="11" font-weight="700" fill="var(--muted)">Level 2 of 5</text>
+        <g font-size="11" font-weight="700" fill="var(--ink)"><rect x="12" y="286" width="52" height="22" rx="11" fill="var(--chip)"/><text x="38" y="301" text-anchor="middle">Tre 3/5</text><rect x="68" y="286" width="52" height="22" rx="11" fill="var(--chip)"/><text x="94" y="301" text-anchor="middle">Gạch 2/2</text><rect x="124" y="286" width="52" height="22" rx="11" fill="var(--chip)"/><text x="150" y="301" text-anchor="middle">★ 1/1</text></g>
+        <rect x="12" y="316" width="164" height="36" rx="18" fill="#c9ccd1"/><text x="94" y="339" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">Mái ngói: cần 2 tre</text>
+        <text x="94" y="388" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">Home upgrade</text>
+      </g>
+      <!-- 3 festival calendar -->
+      <g transform="translate(406 10)">
+        <rect width="188" height="360" rx="20" fill="var(--paper)" stroke="var(--line)"/><text x="16" y="34" font-size="15" font-weight="800" fill="var(--ink)">Lịch lễ hội</text>
+        <rect x="12" y="48" width="164" height="96" rx="14" fill="#f28c28"/><text x="24" y="74" font-size="14" font-weight="800" fill="#fff">Halloween</text><text x="24" y="96" font-size="12" fill="#fff">còn 23 ngày</text><circle cx="148" cy="94" r="24" fill="#ff9f3a"/><path d="M136 88l6 -6 6 6M152 88l6 -6 6 6" stroke="#5a2a00" stroke-width="3" fill="none"/>
+        <g font-size="11" fill="var(--ink)"><rect x="12" y="154" width="164" height="38" rx="12" fill="var(--chip)"/><text x="22" y="177" font-weight="700">Ngày Nhà giáo</text><text x="168" y="177" text-anchor="end" fill="var(--muted)">20/11</text>
+          <rect x="12" y="198" width="164" height="38" rx="12" fill="var(--chip)"/><text x="22" y="221" font-weight="700">Giáng Sinh</text><text x="168" y="221" text-anchor="end" fill="var(--muted)">25/12</text>
+          <rect x="12" y="242" width="164" height="38" rx="12" fill="var(--chip)"/><text x="22" y="265" font-weight="700">Tết</text><text x="168" y="265" text-anchor="end" fill="var(--muted)">6/2</text></g>
+        <rect x="12" y="290" width="164" height="58" rx="12" fill="#fff4e0"/><text x="22" y="312" font-size="11" font-weight="700" fill="var(--ink)">Hôm nay</text><text x="22" y="334" font-size="11" fill="var(--muted)">15:00 game · 18:30 lanterns</text>
+        <text x="94" y="388" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">Festival calendar</text>
+      </g>
+      <!-- 4 what's new -->
+      <g transform="translate(604 10)">
+        <rect width="188" height="360" rx="20" fill="#2d2350"/><text x="94" y="40" text-anchor="middle" font-size="16" font-weight="800" fill="#ffd23f">✨ Có gì mới</text>
+        <circle cx="94" cy="140" r="70" fill="#463a7a"/><g fill="#ffd23f"><circle cx="40" cy="80" r="3"/><circle cx="150" cy="70" r="2"/><circle cx="160" cy="180" r="3"/><circle cx="30" cy="190" r="2"/></g>
+        <path d="M60 168L94 110L128 168Z" fill="#9b7fd4"/><rect x="74" y="168" width="40" height="30" fill="#e9c77a"/>
+        <text x="94" y="244" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">Nhà trên cây</text><text x="94" y="266" text-anchor="middle" font-size="11" fill="#cfc4f2">Con xây được rồi!</text>
+        <rect x="12" y="300" width="164" height="44" rx="22" fill="#ffd23f"/><text x="94" y="328" text-anchor="middle" font-size="13" font-weight="800" fill="#2d2350">Đi xem ▶</text>
+        <text x="94" y="388" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">What's new card</text>
+      </g>
+      <!-- 5 mystery box -->
+      <g transform="translate(10 400)">
+        <rect width="188" height="340" rx="20" fill="var(--paper)" stroke="var(--line)"/><text x="16" y="34" font-size="15" font-weight="800" fill="var(--ink)">Hộp bí ẩn</text>
+        <g transform="translate(94 160)"><g fill="#ffd23f" opacity=".5"><path d="M0 -90l6 30h-12z"/><path d="M80 -40l-30 14l-4 -10z"/><path d="M-80 -40l30 14l4 -10z"/></g><rect x="-50" y="-30" width="100" height="80" rx="10" fill="#9b7fd4"/><rect x="-56" y="-46" width="112" height="24" rx="8" fill="#b9a0e8" transform="rotate(-10)"/><rect x="-8" y="-30" width="16" height="80" fill="#ffd23f"/><text y="20" text-anchor="middle" font-size="30" font-weight="800" fill="#fff">?</text></g>
+        <text x="94" y="262" text-anchor="middle" font-size="12" fill="var(--muted)">1 free box today</text>
+        <rect x="12" y="280" width="164" height="40" rx="20" fill="#e05c9a"/><text x="94" y="305" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">Mở hộp</text>
+        <text x="94" y="372" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">Mystery box (5–8)</text>
+      </g>
+      <!-- 6 rankings -->
+      <g transform="translate(208 400)">
+        <rect width="188" height="340" rx="20" fill="var(--paper)" stroke="var(--line)"/><text x="16" y="34" font-size="15" font-weight="800" fill="var(--ink)">Bảng sao</text>
+        <g font-size="9" font-weight="700"><rect x="12" y="46" width="40" height="20" rx="10" fill="#e05c9a"/><text x="32" y="60" text-anchor="middle" fill="#fff">Sao</text><rect x="56" y="46" width="40" height="20" rx="10" fill="var(--chip)"/><text x="76" y="60" text-anchor="middle" fill="var(--ink)">Sưu tập</text><rect x="100" y="46" width="40" height="20" rx="10" fill="var(--chip)"/><text x="120" y="60" text-anchor="middle" fill="var(--ink)">Tử tế</text><rect x="144" y="46" width="34" height="20" rx="10" fill="var(--chip)"/><text x="161" y="60" text-anchor="middle" fill="var(--ink)">Học</text></g>
+        <g><rect x="22" y="150" width="44" height="60" rx="6" fill="#c9ccd1"/><rect x="72" y="120" width="44" height="90" rx="6" fill="#ffd23f"/><rect x="122" y="170" width="44" height="40" rx="6" fill="#d9a06a"/>
+          <circle cx="44" cy="134" r="14" fill="#f2c9a8"/><circle cx="94" cy="104" r="14" fill="#e8b48e"/><circle cx="144" cy="154" r="14" fill="#d9a07a"/></g>
+        <g font-size="11" fill="var(--ink)"><rect x="12" y="226" width="164" height="30" rx="10" fill="var(--chip)"/><text x="22" y="246" font-weight="700">1 Bé Na</text><text x="168" y="246" text-anchor="end">★ 86</text>
+          <rect x="12" y="262" width="164" height="30" rx="10" fill="var(--chip)"/><text x="22" y="282" font-weight="700">2 Bé Bin</text><text x="168" y="282" text-anchor="end">★ 71</text>
+          <rect x="12" y="298" width="164" height="30" rx="10" fill="var(--chip)"/><text x="22" y="318" font-weight="700">3 Bạn Mia</text><text x="168" y="318" text-anchor="end">★ 54</text></g>
+        <text x="94" y="372" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">Family + friends rankings</text>
+      </g>
+      <!-- 7 collectibles -->
+      <g transform="translate(406 400)">
+        <rect width="188" height="340" rx="20" fill="var(--paper)" stroke="var(--line)"/><text x="16" y="34" font-size="15" font-weight="800" fill="var(--ink)">Sổ sưu tập</text>
+        <g><rect x="12" y="50" width="52" height="60" rx="10" fill="#fde2ef"/><circle cx="38" cy="78" r="12" fill="#f29ac0"/><path d="M26 70q-12 -10 -4 -16M50 70q12 -10 4 -16" stroke="#b9a0e8" stroke-width="5" fill="none"/>
+          <rect x="68" y="50" width="52" height="60" rx="10" fill="#e2f2e0"/><path d="M80 94q14 -34 28 0z" fill="#3fae5a"/><circle cx="104" cy="70" r="5" fill="#3fae5a"/>
+          <rect x="124" y="50" width="52" height="60" rx="10" fill="var(--chip)"/><text x="150" y="88" text-anchor="middle" font-size="22" font-weight="800" fill="var(--muted)">?</text>
+          <rect x="12" y="116" width="52" height="60" rx="10" fill="var(--chip)"/><text x="38" y="154" text-anchor="middle" font-size="22" font-weight="800" fill="var(--muted)">?</text>
+          <rect x="68" y="116" width="52" height="60" rx="10" fill="#fff4cc"/><circle cx="94" cy="146" r="14" fill="#ffd23f"/>
+          <rect x="124" y="116" width="52" height="60" rx="10" fill="var(--chip)"/><text x="150" y="154" text-anchor="middle" font-size="22" font-weight="800" fill="var(--muted)">?</text></g>
+        <rect x="12" y="190" width="164" height="12" rx="6" fill="var(--chip)"/><rect x="12" y="190" width="70" height="12" rx="6" fill="#3fae5a"/><text x="94" y="222" text-anchor="middle" font-size="11" fill="var(--muted)">Tiên: 3 of 8 found</text>
+        <g font-size="10" font-weight="700" fill="var(--ink)"><rect x="12" y="238" width="80" height="26" rx="13" fill="var(--chip)"/><text x="52" y="255" text-anchor="middle">Tiên</text><rect x="96" y="238" width="80" height="26" rx="13" fill="var(--chip)"/><text x="136" y="255" text-anchor="middle">Rồng</text><rect x="12" y="270" width="80" height="26" rx="13" fill="var(--chip)"/><text x="52" y="287" text-anchor="middle">Hình dán</text><rect x="96" y="270" width="80" height="26" rx="13" fill="var(--chip)"/><text x="136" y="287" text-anchor="middle">Đồ trang trí</text></g>
+        <text x="94" y="372" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">Collectibles book</text>
+      </g>
+      <!-- 8 treasure map -->
+      <g transform="translate(604 400)">
+        <rect width="188" height="340" rx="20" fill="#e9d6a8"/><text x="16" y="34" font-size="15" font-weight="800" fill="#5a3a1a">Bản đồ kho báu</text>
+        <path d="M20 60l70 -6l-4 80l-70 6z" fill="#f2e2b8" stroke="#a8743a"/><path d="M96 54l70 6l-6 80l-68 -6z" fill="#f2e2b8" stroke="#a8743a"/><path d="M16 150l146 -6l-4 70l-144 4z" fill="#d9c79a" stroke="#a8743a" stroke-dasharray="5 4"/>
+        <path d="M40 120q30 -40 60 -10t50 -30" stroke="#a8452f" stroke-width="3" stroke-dasharray="6 5" fill="none"/><path d="M142 72l12 12M154 72l-12 12" stroke="#e2382f" stroke-width="4"/>
+        <text x="88" y="190" text-anchor="middle" font-size="11" font-weight="700" fill="#7a5a2a">Last piece: on the river</text>
+        <g fill="#5a3a1a" font-size="12" font-weight="800"><circle cx="40" cy="262" r="18" fill="#3fae5a"/><text x="40" y="267" text-anchor="middle" fill="#fff">1</text><circle cx="94" cy="262" r="18" fill="#3fae5a"/><text x="94" y="267" text-anchor="middle" fill="#fff">2</text><circle cx="148" cy="262" r="18" fill="#c9b48a"/><text x="148" y="267" text-anchor="middle">3</text></g>
+        <text x="94" y="372" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">Treasure map</text>
+      </g>
+      </g>
+    </svg>
+    <figcaption>Shop (tabs for hats, tops, shoes and back items, a big preview of your child, prices in game coins); home upgrade (level dots and the materials still needed); festival calendar (the next festival big with a countdown, today's times); What's new card (shown once, with "Go and see"); mystery box (one free a day for 5–8, opens with sparkles); family and friends rankings in four categories; the collectibles book with "?" for ones still to find; and the treasure map that fills in piece by piece.</figcaption>
+  </figure>
+</section>
+
+<section id="vehicles">
+  <h2>Vehicles and street things</h2>
+  <figure>
+    <svg viewBox="0 0 800 300" role="img" aria-label="Vehicles: motorbike, cyclo, bus, Melbourne tram, small car, bamboo raft, ferry, basket boat">
+      <rect width="800" height="300" fill="var(--paper)"/><rect y="200" width="800" height="100" fill="#8f949a"/><path d="M0 250H800" stroke="#f2c230" stroke-width="3" stroke-dasharray="20 14"/>
+      <!-- motorbike -->
+      <g transform="translate(20 110)">
+        <circle cx="20" cy="80" r="17" fill="#2f3336"/><circle cx="20" cy="80" r="7" fill="#b8c0c4"/><circle cx="96" cy="80" r="17" fill="#2f3336"/><circle cx="96" cy="80" r="7" fill="#b8c0c4"/>
+        <path d="M14 66q30 -26 60 -10l22 10q-10 -30 -20 -34" fill="#e2382f"/><rect x="30" y="44" width="40" height="10" rx="5" fill="#3a2a20"/><path d="M76 32l8 -14h12" stroke="#555" stroke-width="4" fill="none"/>
+        <g><circle cx="44" cy="20" r="11" fill="#e8b48e"/><path d="M33 18q11 -18 22 0" fill="#3f7fc0"/><rect x="36" y="30" width="18" height="18" rx="5" fill="#5fb3d6"/></g>
+        <g><circle cx="64" cy="22" r="8" fill="#e8b48e"/><path d="M56 20q8 -14 16 0" fill="#ffd23f"/></g>
+        <text x="58" y="122" text-anchor="middle" class="cap">Xe máy (helmets on)</text>
+      </g>
+      <!-- cyclo -->
+      <g transform="translate(160 110)">
+        <circle cx="20" cy="80" r="16" fill="#2f3336"/><circle cx="64" cy="80" r="16" fill="#2f3336"/><circle cx="110" cy="80" r="16" fill="#2f3336"/>
+        <path d="M6 60h52v-30h-44q-8 0 -8 10z" fill="#2f7f6a"/><path d="M4 32q24 -24 56 0" fill="#e2382f"/><path d="M58 60h52M100 30l10 50" stroke="#2f3336" stroke-width="4" fill="none"/>
+        <g><circle cx="100" cy="14" r="10" fill="#d9a07a"/><path d="M88 14l12 -12l12 12z" fill="#e9d29a"/></g>
+        <text x="62" y="122" text-anchor="middle" class="cap">Xích lô</text>
+      </g>
+      <!-- bus -->
+      <g transform="translate(310 80)">
+        <rect x="0" y="20" width="150" height="80" rx="16" fill="#f2c94c"/><rect x="0" y="70" width="150" height="14" fill="#3fae5a"/>
+        <g fill="#bfe3f2"><rect x="10" y="32" width="26" height="26" rx="4"/><rect x="42" y="32" width="26" height="26" rx="4"/><rect x="74" y="32" width="26" height="26" rx="4"/><rect x="106" y="32" width="34" height="34" rx="4"/></g>
+        <circle cx="34" cy="106" r="14" fill="#2f3336"/><circle cx="118" cy="106" r="14" fill="#2f3336"/>
+        <text x="75" y="152" text-anchor="middle" class="cap">Xe buýt</text>
+      </g>
+      <!-- tram -->
+      <g transform="translate(476 80)">
+        <path d="M6 20h4M86 20h4" stroke="#555" stroke-width="2"/><path d="M48 0l-10 20M48 0l10 20" stroke="#555" stroke-width="2"/>
+        <rect x="0" y="20" width="100" height="80" rx="12" fill="#3f8f4a"/><rect x="0" y="74" width="100" height="10" fill="#f2c94c"/>
+        <g fill="#bfe3f2"><rect x="10" y="32" width="22" height="28" rx="4"/><rect x="39" y="32" width="22" height="28" rx="4"/><rect x="68" y="32" width="22" height="28" rx="4"/></g>
+        <circle cx="24" cy="106" r="10" fill="#2f3336"/><circle cx="76" cy="106" r="10" fill="#2f3336"/>
+        <text x="50" y="152" text-anchor="middle" class="cap">Melbourne tram</text>
+      </g>
+      <!-- car -->
+      <g transform="translate(596 120)">
+        <path d="M6 50q0 -20 20 -24l20 -20h44l20 20q16 4 16 24v12h-120z" fill="#5fb3d6"/><g fill="#e6f4fb"><path d="M52 12h18v18h-34z"/><path d="M76 12h12l16 18h-28z"/></g>
+        <circle cx="34" cy="66" r="13" fill="#2f3336"/><circle cx="102" cy="66" r="13" fill="#2f3336"/>
+        <text x="66" y="112" text-anchor="middle" class="cap">Little car</text>
+      </g>
+      <!-- boats row -->
+      <g transform="translate(0 0)">
+        <rect x="0" y="0" width="800" height="70" fill="#59b3d6" opacity=".25"/>
+        <g transform="translate(40 20)"><rect x="0" y="20" width="110" height="14" rx="6" fill="#c9a06a"/><g stroke="#9a7a4a" stroke-width="2"><path d="M14 20v14M30 20v14M46 20v14M62 20v14M78 20v14M94 20v14"/></g><path d="M86 20l20 -24" stroke="#7a5a3a" stroke-width="3"/><text x="55" y="50" text-anchor="middle" class="cap">Bamboo raft</text></g>
+        <g transform="translate(260 10)"><path d="M0 30h150l-16 16h-120z" fill="#f4f1e8"/><rect x="24" y="12" width="100" height="18" rx="4" fill="#2f7f6a"/><rect x="50" y="2" width="40" height="12" rx="3" fill="#f2c94c"/><text x="75" y="60" text-anchor="middle" class="cap">Ferry</text></g>
+        <g transform="translate(660 20)"><ellipse cx="30" cy="30" rx="30" ry="12" fill="#7a5a3a"/><ellipse cx="30" cy="26" rx="24" ry="8" fill="#9a7a4a"/><text x="30" y="56" text-anchor="middle" class="cap">Thúng chai</text></g>
+      </g>
+      </svg>
+    <figcaption>Vehicles in the same toy style, with wheels that roll and everyone in a helmet: the Vietnamese family motorbike, a xích lô, a yellow-green bus, a little car, and the green-and-gold Melbourne tram. On the water: the bamboo raft, the ferry and round thúng chai basket boats. Vehicles keep to their roads, go slowly and always stop for a child.</figcaption>
+  </figure>
+  <figure>
+    <svg viewBox="0 0 800 220" role="img" aria-label="Street things: xe đẩy cart, gánh, kiosk, two lamp posts, picture signpost, bench, bin, red letterbox">
+      <rect width="800" height="220" fill="var(--paper)"/><rect y="176" width="800" height="44" fill="#d8d2c4"/>
+      <!-- xe đẩy -->
+      <g transform="translate(14 60)"><rect x="0" y="40" width="90" height="56" rx="6" fill="#f4f1e8" stroke="#2f7fb0" stroke-width="3"/><rect x="0" y="40" width="90" height="14" fill="#2f7fb0"/><path d="M-6 30h102l-8 10h-86z" fill="#e2382f"/><circle cx="18" cy="104" r="10" fill="#2f3336"/><circle cx="72" cy="104" r="10" fill="#2f3336"/><text x="45" y="140" text-anchor="middle" class="cap">Xe đẩy stall</text></g>
+      <!-- gánh -->
+      <g transform="translate(130 50)"><path d="M0 40q50 -12 100 0" stroke="#9a7a4a" stroke-width="5" fill="none"/><g stroke="#7a5a3a" stroke-width="1.5"><path d="M8 40l-6 50M8 40l14 50M92 40l-14 50M92 40l6 50"/></g><ellipse cx="10" cy="98" rx="22" ry="10" fill="#c9a24a"/><ellipse cx="90" cy="98" rx="22" ry="10" fill="#c9a24a"/><g fill="#ff9a2e"><circle cx="4" cy="90" r="6"/><circle cx="16" cy="90" r="6"/></g><g fill="#5fbf4a"><circle cx="84" cy="90" r="6"/><circle cx="96" cy="90" r="6"/></g><text x="50" y="150" text-anchor="middle" class="cap">Gánh</text></g>
+      <!-- kiosk -->
+      <g transform="translate(250 40)"><rect x="0" y="50" width="90" height="86" fill="#f2a6b8"/><path d="M-8 50h106l-8 -24h-90z" fill="#ffffff"/><g fill="#e05c9a"><path d="M-8 50l10 -24h12l-8 24z"/><path d="M22 50l8 -24h12l-6 24z"/><path d="M52 50l6 -24h12l-4 24z"/><path d="M82 50l4 -24h12l-2 24z"/></g><rect x="10" y="66" width="70" height="34" rx="4" fill="#fff4e0"/><text x="45" y="160" text-anchor="middle" class="cap">Kiosk</text></g>
+      <!-- lamp VN -->
+      <g transform="translate(370 20)"><rect x="18" y="40" width="8" height="116" fill="#7a2a2a"/><path d="M22 44q24 -10 34 6" stroke="#7a2a2a" stroke-width="5" fill="none"/><ellipse cx="56" cy="58" rx="9" ry="12" fill="#e2382f"/><circle cx="56" cy="58" r="4" fill="#ffd23f"/><text x="30" y="180" text-anchor="middle" class="cap">Lamp (VN)</text></g>
+      <!-- lamp AU -->
+      <g transform="translate(450 20)"><rect x="18" y="40" width="7" height="116" fill="#55585c"/><path d="M22 42h30" stroke="#55585c" stroke-width="5"/><rect x="40" y="44" width="22" height="8" rx="3" fill="#f2c94c"/><text x="34" y="180" text-anchor="middle" class="cap">Lamp (AU)</text></g>
+      <!-- signpost -->
+      <g transform="translate(530 30)"><rect x="34" y="20" width="8" height="126" fill="#9a7a4a"/><path d="M42 30h50l12 12l-12 12h-50z" fill="#d9443b"/><circle cx="58" cy="42" r="7" fill="#ffd23f"/><g fill="#fff"><circle cx="74" cy="42" r="2"/><circle cx="82" cy="42" r="2"/><circle cx="90" cy="42" r="2"/></g><path d="M34 66h-50l-12 12l12 12h50z" fill="#e08a2e"/><circle cx="16" cy="78" r="7" fill="#9aa0a6"/><text x="38" y="170" text-anchor="middle" class="cap">Picture signpost</text></g>
+      <!-- bench, bin, letterbox -->
+      <g transform="translate(650 90)"><rect x="0" y="30" width="70" height="8" rx="3" fill="#9a6a3e"/><rect x="0" y="14" width="70" height="8" rx="3" fill="#9a6a3e"/><rect x="6" y="38" width="6" height="40" fill="#555"/><rect x="58" y="38" width="6" height="40" fill="#555"/>
+        <rect x="80" y="40" width="22" height="38" rx="4" fill="#3fae5a"/><rect x="78" y="34" width="26" height="8" rx="3" fill="#e2382f"/>
+        <rect x="112" y="30" width="22" height="26" rx="4" fill="#e2382f"/><rect x="120" y="56" width="6" height="22" fill="#555"/><text x="68" y="114" text-anchor="middle" class="cap">Bench, bin, letterbox</text></g>
+    </svg>
+    <figcaption>Street things: xe đẩy and gánh stalls with real food, striped kiosks, red lantern lamps on the Vietnamese side and simple street lamps on the Australian side, picture signposts with arrows in the region colours and dots for distance, benches, bins (red lid for rubbish, yellow for recycling) and the Australian red letterbox. The power poles are switched off for now (see below).</figcaption>
+  </figure>
+  <div class="pair">
+    <figure><img src="poles-on.jpg" alt="Phố Hai Quê with power poles and wires"><figcaption>Studio switch on: power poles and wires.</figcaption></figure>
+    <figure><img src="poles-off.jpg" alt="Phố Hai Quê without power poles"><figcaption>Now (default, on the <code>round-r</code> branch): no power poles or wires; the street lamps stay. Studio → Defaults → "Things in the valley" switches them back on.</figcaption></figure>
+  </div>
+</section>
+
+<section id="sky">
+  <h2>Sky, nature, the companion and pets</h2>
+  <figure>
+    <svg viewBox="0 0 800 200" role="img" aria-label="Sky through the day: dawn, day, sunset, night with stars and moon, and rain with a rainbow">
+      <defs>
+        <linearGradient id="dawn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fb7e6"/><stop offset="1" stop-color="#ffc9a8"/></linearGradient>
+        <linearGradient id="day" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fb3e6"/><stop offset="1" stop-color="#cfeefa"/></linearGradient>
+        <linearGradient id="sunset" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a5fbf"/><stop offset=".6" stop-color="#f2788a"/><stop offset="1" stop-color="#ffc06a"/></linearGradient>
+        <linearGradient id="night" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1f4a"/><stop offset="1" stop-color="#3a3f7a"/></linearGradient>
+        <linearGradient id="rain" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a96a8"/><stop offset="1" stop-color="#c8d2dc"/></linearGradient>
+      </defs>
+      <g><rect x="0" width="160" height="200" fill="url(#dawn)"/><circle cx="80" cy="150" r="24" fill="#ffd8a0"/><rect x="0" y="160" width="160" height="40" fill="#8fbf7a"/><text x="80" y="22" text-anchor="middle" class="cap">Dawn</text></g>
+      <g><rect x="160" width="160" height="200" fill="url(#day)"/><circle cx="280" cy="50" r="22" fill="#fff4a0"/><g fill="#fff"><ellipse cx="210" cy="70" rx="28" ry="12"/><ellipse cx="230" cy="62" rx="20" ry="12"/></g><rect x="160" y="160" width="160" height="40" fill="#8fcf6a"/><text x="240" y="22" text-anchor="middle" class="cap">Day</text></g>
+      <g><rect x="320" width="160" height="200" fill="url(#sunset)"/><circle cx="400" cy="156" r="26" fill="#ffd06a"/><rect x="320" y="160" width="160" height="40" fill="#7a8f5a"/><text x="400" y="22" text-anchor="middle" class="cap" style="fill:#fff">Sunset</text></g>
+      <g><rect x="480" width="160" height="200" fill="url(#night)"/><circle cx="600" cy="54" r="18" fill="#f4f1d0"/><circle cx="608" cy="48" r="16" fill="#1f2452"/><g fill="#fff"><circle cx="510" cy="40" r="2"/><circle cx="540" cy="70" r="1.5"/><circle cx="560" cy="30" r="2"/><circle cx="520" cy="100" r="1.5"/><circle cx="620" cy="110" r="2"/></g><rect x="480" y="160" width="160" height="40" fill="#2f3f2a"/><g fill="#ffd23f"><rect x="510" y="132" width="10" height="10"/><rect x="560" y="138" width="10" height="10"/></g><text x="560" y="22" text-anchor="middle" class="cap" style="fill:#fff">Night</text></g>
+      <g><rect x="640" width="160" height="200" fill="url(#rain)"/><g stroke="#ffffff" stroke-width="1.5" opacity=".8"><path d="M660 40l-6 14M690 60l-6 14M720 36l-6 14M750 70l-6 14M780 44l-6 14"/></g><path d="M650 170a70 70 0 0 1 140 0" stroke="#e2382f" stroke-width="5" fill="none"/><path d="M658 170a62 62 0 0 1 124 0" stroke="#ffd23f" stroke-width="5" fill="none"/><path d="M666 170a54 54 0 0 1 108 0" stroke="#3fae5a" stroke-width="5" fill="none"/><path d="M674 170a46 46 0 0 1 92 0" stroke="#5fb3e6" stroke-width="5" fill="none"/><rect x="640" y="170" width="160" height="30" fill="#7faf5a"/><text x="720" y="22" text-anchor="middle" class="cap">Rain → rainbow</text></g>
+    </svg>
+    <figcaption>The sky follows the real time of day: a soft dawn, a bright day with puffy clouds, a pink-and-gold sunset, and a starry night with a moon that has its real phase (full at Trung Thu). Windows and lanterns glow at night. Gentle rain sometimes passes and leaves a rainbow (one of the surprises). No glare spots on water.</figcaption>
+  </figure>
+  <figure>
+    <svg viewBox="0 0 800 230" role="img" aria-label="Nature details: grass and flowers, rocks, cliff, snow peak, beach; small creatures: butterfly, dragonfly, frog, fish, birds">
+      <rect width="800" height="230" fill="var(--paper)"/>
+      <g transform="translate(10 40)"><rect width="140" height="120" rx="12" fill="#a8d88a"/><g stroke="#6fae4a" stroke-width="3" stroke-linecap="round"><path d="M20 110v-20M26 110v-26M60 110v-18M66 110v-24M110 110v-22M116 110v-16"/></g><g fill="#ffd23f"><circle cx="40" cy="70" r="5"/></g><g fill="#f29ac0"><circle cx="90" cy="60" r="5"/><circle cx="100" cy="86" r="4"/></g><g fill="#fff"><circle cx="30" cy="40" r="4"/></g><text x="70" y="146" text-anchor="middle" class="cap">Grass + wildflowers</text></g>
+      <g transform="translate(170 40)"><rect width="140" height="120" rx="12" fill="#cfe6b4"/><path d="M20 110q10 -40 40 -40q30 0 34 40z" fill="#a8a29a"/><path d="M30 104q10 -26 30 -26" stroke="#c8c2ba" stroke-width="5" fill="none"/><path d="M90 110q6 -20 22 -20q16 0 18 20z" fill="#9a948c"/><text x="70" y="146" text-anchor="middle" class="cap">Round rocks + moss</text></g>
+      <g transform="translate(330 40)"><rect width="140" height="120" rx="12" fill="#bfe3f2"/><path d="M0 120L50 30L80 70L104 40L140 120Z" fill="#9aa48a"/><path d="M50 30L38 52L50 48L62 52Z" fill="#fff"/><path d="M104 40L96 54L104 52L112 56Z" fill="#fff"/><text x="70" y="146" text-anchor="middle" class="cap">Mountains + snow</text></g>
+      <g transform="translate(490 40)"><rect width="140" height="120" rx="12" fill="#59b3d6"/><path d="M0 60q70 -16 140 0v60h-140z" fill="#ecdcae"/><path d="M0 60q70 -16 140 0" stroke="#fff" stroke-width="5" fill="none"/><g fill="#f2a6b8"><circle cx="40" cy="90" r="5"/></g><text x="70" y="146" text-anchor="middle" class="cap">Beach + shells</text></g>
+      <g transform="translate(650 30)"><g><path d="M20 30q-14 -18 -2 -22q8 4 2 22q10 -16 18 -8q-2 10 -18 8z" fill="#ffd23f"/><path d="M20 30v8" stroke="#5a3a1a" stroke-width="2"/></g>
+        <g transform="translate(70 10)"><path d="M0 10h40" stroke="#2f7fb0" stroke-width="3"/><ellipse cx="14" cy="4" rx="10" ry="4" fill="#bfe3f2"/><ellipse cx="26" cy="4" rx="10" ry="4" fill="#bfe3f2"/></g>
+        <g transform="translate(10 60)"><ellipse cx="20" cy="20" rx="20" ry="12" fill="#5fbf4a"/><circle cx="10" cy="10" r="6" fill="#5fbf4a"/><circle cx="30" cy="10" r="6" fill="#5fbf4a"/><circle cx="10" cy="10" r="3" fill="#222"/><circle cx="30" cy="10" r="3" fill="#222"/></g>
+        <g transform="translate(70 70)"><ellipse cx="20" cy="10" rx="18" ry="9" fill="#f28c28"/><path d="M36 10l12 -8v16z" fill="#f28c28"/><circle cx="10" cy="8" r="2" fill="#222"/></g>
+        <g stroke="#3a3a3a" stroke-width="2" fill="none"><path d="M20 120q6 -6 12 0q6 -6 12 0"/><path d="M70 110q5 -5 10 0q5 -5 10 0"/></g>
+        <text x="60" y="156" text-anchor="middle" class="cap">Small life</text></g>
+    </svg>
+    <figcaption>Nature: soft grass with tufts and wildflowers instead of bare sand squares, round rocks with moss, mountains with snowy tops, beaches with shells and a foam line. Small life everywhere: butterflies near flowers, dragonflies over ponds, frogs on lily pads, fish that jump, and birds that fly off when you run near. Each has a little sound and a tap reaction.</figcaption>
+  </figure>
+  <figure>
+    <svg viewBox="0 0 800 250" role="img" aria-label="Companions: firefly Lấp Lánh, and the baby dragon growing from egg to rideable dragon; pets: puppy and kitty">
+      <rect width="800" height="250" fill="#2d2350"/>
+      <!-- firefly -->
+      <g transform="translate(70 110)"><circle r="46" fill="#ffd23f" opacity=".18"/><circle r="28" fill="#ffd23f" opacity=".3"/><ellipse cx="0" cy="6" rx="14" ry="18" fill="#ffe680"/><circle cx="0" cy="-14" r="12" fill="#5a4a8a"/><circle cx="-4" cy="-16" r="3" fill="#fff"/><circle cx="5" cy="-16" r="3" fill="#fff"/><path d="M-6 -24q-8 -12 -14 -8M6 -24q8 -12 14 -8" stroke="#5a4a8a" stroke-width="2" fill="none"/><ellipse cx="-16" cy="-4" rx="12" ry="7" fill="#bfe3f2" opacity=".8"/><ellipse cx="16" cy="-4" rx="12" ry="7" fill="#bfe3f2" opacity=".8"/>
+        <g fill="#ffd23f"><circle cx="40" cy="40" r="3"/><circle cx="60" cy="56" r="2"/><circle cx="76" cy="66" r="2"/></g>
+        <text y="110" text-anchor="middle" class="cap" style="fill:#fff">Lấp Lánh</text></g>
+      <!-- dragon growth -->
+      <g transform="translate(190 140)"><ellipse cx="0" cy="0" rx="20" ry="26" fill="#e9f2e0"/><g fill="#7fbf6a"><circle cx="-6" cy="-8" r="4"/><circle cx="8" cy="6" r="5"/></g><text y="80" text-anchor="middle" class="cap" style="fill:#fff">Egg</text></g>
+      <g transform="translate(290 140)"><ellipse cx="0" cy="8" rx="22" ry="18" fill="#5fbf8a"/><circle cx="0" cy="-16" r="18" fill="#5fbf8a"/><circle cx="-6" cy="-18" r="5" fill="#fff"/><circle cx="-5" cy="-17" r="3" fill="#222"/><circle cx="8" cy="-18" r="5" fill="#fff"/><circle cx="9" cy="-17" r="3" fill="#222"/><path d="M-10 -32l-4 -10M10 -32l4 -10" stroke="#ffd23f" stroke-width="3"/><path d="M20 4q16 -6 18 -20q-12 4 -18 10z" fill="#ffd23f"/><text y="80" text-anchor="middle" class="cap" style="fill:#fff">Baby (rồng con)</text></g>
+      <g transform="translate(420 140)"><path d="M-40 10q20 -30 60 -20q20 6 30 -10" stroke="#3fa87a" stroke-width="20" fill="none" stroke-linecap="round"/><circle cx="54" cy="-26" r="16" fill="#3fa87a"/><circle cx="58" cy="-30" r="4" fill="#fff"/><path d="M0 -10q-10 -30 -30 -36q10 20 6 36z" fill="#ffd23f"/><text x="10" y="80" text-anchor="middle" class="cap" style="fill:#fff">Young</text></g>
+      <g transform="translate(600 130)"><path d="M-70 20q30 -50 90 -30q40 14 60 -16" stroke="#2f9a6a" stroke-width="28" fill="none" stroke-linecap="round"/><circle cx="84" cy="-34" r="22" fill="#2f9a6a"/><circle cx="90" cy="-40" r="5" fill="#fff"/><path d="M76 -54l-6 -16M90 -54l6 -16" stroke="#ffd23f" stroke-width="4"/><path d="M-10 -10q-20 -50 -60 -60q24 34 20 66z" fill="#ffd23f"/><path d="M30 -16q20 -50 60 -60q-24 34 -20 66z" fill="#ffd23f" opacity=".85"/>
+        <g transform="translate(10 -30)"><circle r="10" fill="#e8b48e"/><rect x="-8" y="8" width="16" height="16" rx="4" fill="#e8559a"/></g>
+        <text x="10" y="90" text-anchor="middle" class="cap" style="fill:#fff">Grown: flies you across the valley</text></g>
+    </svg>
+    <figcaption>The companion: Lấp Lánh is a round glowing firefly with big eyes and a sparkle trail; the baby dragon (rồng con) hatches from an egg and grows over days of play, from baby to young to grown, when it can fly the child across the valley. It's drawn in the Vietnamese dragon style (long body, golden whiskers and fins) but soft and friendly.</figcaption>
+  </figure>
+  <div class="rules">
+    <div class="rule"><b>Pets</b><span>The puppy and kitty get the plush style too: bigger eyes, fluffy ears and tails, sit and roll-over tricks, a bed and bowl at home, and they follow their child.</span></div>
+    <div class="rule"><b>Seasons</b><span>Australian and Vietnamese seasons show: jacaranda purple in October, phượng red in summer, rice fields green then gold, hoa mai and hoa đào at Tết.</span></div>
+    <div class="rule"><b>Calm mode</b><span>Weather and night stay gentle: no thunder, no dark scary nights; Calm mode keeps it daytime and still.</span></div>
+  </div>
+</section>
+
+<!-- ROADS -->
+<section id="roads">
+  <h2>Roads, signs and kiosks: the rules</h2>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Road</th><th>Width</th><th>Where</th><th>Look</th></tr></thead>
+    <tbody>
+      <tr><td>Main road (đường lớn)</td><td>6.4 m</td><td>Between villages and towns; one connected network, no dead ends</td><td>Asphalt, lamp posts in the region's colour</td></tr>
+      <tr><td>Village street</td><td>4 m</td><td>Gate → square → stage</td><td>Brick or stone paving</td></tr>
+      <tr><td>Footpath</td><td>1.6 m</td><td>Loops around villages, to ponds, viewpoints and secrets</td><td>Dirt with flowers along the edge</td></tr>
+      <tr><td>River and tram</td><td>-</td><td>Raft stops at every bridge; a small tram or bus between the big towns</td><td>Stops double as fast travel</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="rules">
+    <div class="rule"><b>Picture signposts</b><span>A signpost at every junction with pictures (lantern for Làng Sen, koala for Brisbane) and footsteps for distance, so non-readers can choose.</span></div>
+    <div class="rule"><b>Landmarks at road ends</b><span>Each long road points at a landmark (Tháp Rùa, the Opera House, the pagoda), so children walk toward something they can see.</span></div>
+    <div class="rule"><b>Kiosks in groups</b><span>Food stalls, toy stalls and the shop are grouped in market rows near squares. Gánh vendors walk set loops between them.</span></div>
+    <div class="rule"><b>Breathing room</b><span>Busy places alternate with nature: a forest, a meadow or rice fields between every two towns, so the map never feels crowded.</span></div>
+    <div class="rule"><b>Map labels never overlap</b><span>One label per zone on the big map; town names only when zoomed in.</span></div>
+    <div class="rule"><b>Hard rules stay</b><span>Roads ≤ 8 % (dirt 12 %), flat villages, junctions 60–120°, nothing standing on a road.</span></div>
+  </div>
+</section>
+
+<section id="pick">
+  <h2>Decision (owner, 8 Oct)</h2>
+  <p><b>Concept D:</b> all three concepts together, with more rivers, lakes, hills and mountains, and the China and India towns in the north. It is built inside Round R, after Halloween and the faster launch and before the new homes, so the first-day guide and the homes are built on the new map once.</p>
+  <p>Places move and roads are rebuilt; the world checks run again on every road and building. Buildings, villagers and games keep their designs. The camera, the map, the Simple screen and the raft follow the new positions.</p>
+</section>
+</div>
+
+</body></html>
