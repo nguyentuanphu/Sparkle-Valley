@@ -67,6 +67,8 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
 - (11 Oct) Once the owner has said go, this chat checks the board, its branch and its GitHub issues every 5 minutes,
   acts on anything new, pushes its own branch when its checks pass and keeps its Now line current; the check-ins pause
   while waiting for the owner's go (said in one line). Times for the owner in Sydney time (AEDT).
+- (11 Oct) Step 5 of #36 (a smaller first download) done anyway although the gain is small: only in the packing step
+  (minified stylesheet in bundle/, no kept names), 1058 -> 1032 KB on the first start.
 
 ## Progress notes
 - **11 Oct, #36 slow start (branch `core/analytics-infra`, code at 5be6481, docs after).** Full suite on 5be6481:
