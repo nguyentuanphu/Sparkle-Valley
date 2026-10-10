@@ -230,7 +230,8 @@ export function heightAt(x, z) {
   // (round T2) ponds: a round hollow with a gentle shore (after the places' flat ground, so a pond by a city stays wet)
   let dpd = 1e9; for (const P of PONDS) { const d = dist2(x, z, P.x, P.z); if (d > P.r + 8) continue; dpd = Math.min(dpd, d - P.r); h = lerp(h, Math.min(h, 1), 1 - smooth(P.r, P.r + 6, d)); h = lerp(h, -2.4, 1 - smooth(P.r * .55, P.r, d)); }
   // Raised banks either side of each bridge.
-  for (const B of BRIDGES) { const u = bridgeAlong(B, x, z), v = bridgeAcross(B, x, z); if (!(Math.abs(v) < 8 && u > B.a0 - 10 && u < B.a1 + 16 && dr > 7)) continue; // (never over the river itself: boats pass under)
+  if (dr > 7) for (const B of BRIDGES) { const K = B.bank || (B.bank = bridgeBox(B, B.a0 - 10, B.a1 + 16, -8, 8)); if (x <= K.x0 || x >= K.x1 || z <= K.z0 || z >= K.z1) continue; // (round T2: a quick box test first, 13 bridges now)
+    const u = bridgeAlong(B, x, z), v = bridgeAcross(B, x, z); // (never over the river itself: boats pass under)
     // level ground at deck height at both ends, easing back to the natural hills further away; the river in the middle is left alone
     const west = smooth(B.a0 + 8, B.a0 + 3, u), east = smooth(B.a1 - 8, B.a1 - 3, u) * (1 - smooth(B.a1 + 4, B.a1 + 16, u));
     const w = (1 - smooth(4, 8, Math.abs(v))) * (west + east);
