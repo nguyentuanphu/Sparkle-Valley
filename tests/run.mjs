@@ -1660,7 +1660,7 @@ await check('boats', async () => {
     const W = await import('/js/world.js'), M = await import('/js/content/map.js'), G = __sv, bad = [], THREE = await import('/vendor/three.module.js');
     const F = G.ferries.ferries, info = [];
     for (const f of F) {
-      const box = new THREE.Box3().setFromObject(f.model), tall = box.max.y - W.WATER, name = f.harbour ? 'harbour ferry' : f.line ? 'raft line' : f.loop ? 'lake ferry' : 'crossing raft';
+      const box = new THREE.Box3().setFromObject(f.model), tall = box.max.y - W.WATER, name = f.boat === 'vtboat' ? 'Vũng Tàu boat' : f.harbour ? 'harbour ferry' : f.line ? 'raft line' : f.loop ? 'lake ferry' : 'crossing raft';
       let shallow = 0, low = 0, first = '';
       const stopPts = f.stops.map(s => f.path[s.i]);
       for (let i = 0; i < f.path.length - (f.loop ? 0 : 1); i++) { const a = f.path[i], c = f.path[(i + 1) % f.path.length], L = Math.hypot(c.x - a.x, c.z - a.z), n = Math.max(1, Math.ceil(L));
@@ -1676,12 +1676,54 @@ await check('boats', async () => {
     const raft = F.find(f => f.line), want = (M.BOATS.find(b => b.id === 'raft').bridgeStops || []).map(s => s.bridge), have = raft ? raft.stops.map(s => s.bridge).filter(Boolean) : [];
     const missing = want.filter(id => !have.includes(id)); if (missing.length) bad.push('the raft does not stop by ' + missing.join(', '));
     if (!F.some(f => f.harbour)) bad.push('no Sydney Harbour ferry');
+    // (round T3) every boat the map gives two piers runs: the Sydney Harbour ferry and the Sài Gòn boat to Vũng Tàu
+    for (const B of M.BOATS.filter(B => B.piers)) if (!F.some(f => f.boat === B.id)) bad.push(`no boat ${B.id}`);
     return { bad, info };
   });
   const errs = P.errors; await P.ctx.close();
   ok(!r.bad.length, r.bad.slice(0, 10).join('; '));
   ok(!errs.length, errs.join(' | '));
   return r.info.join(', ') + '; every route deep enough, under high enough decks, every pier on a road or path';
+});
+
+await check('plots', async () => {
+  // (round T3, ROUND-T.md T3) the garden plots: at least 60 (two Memory Villages and two spare by each city); each level
+  // within 5 cm, off every road and all water, its front within 2 m of a road's edge, a unique id and address, and nothing
+  // standing on it (no solid cell, no collider, no building box); one garden mesh for all of them
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), G = __sv, bad = []; await G.solidsReady;
+    const PL = W.PLOTS, ids = new Set(), en = new Set(), vi = new Set(), by = {};
+    for (const p of PL) {
+      const B = W.plotBox(p), tag = `${p.id} (${p.x.toFixed(0)},${p.z.toFixed(0)})`; by[p.village] = (by[p.village] || 0) + 1;
+      if (ids.has(p.id)) bad.push('two plots called ' + p.id); ids.add(p.id);
+      if (en.has(p.address[0]) || vi.has(p.address[1])) bad.push(`${tag}: address ${p.address[0]} used twice`); en.add(p.address[0]); vi.add(p.address[1]);
+      let lo = 1e9, hi = -1e9, road = '', wet = false, solid = 0;
+      for (let x = B.x0 + .15; x <= B.x1 - .15; x += .5) for (let z = B.z0 + .15; z <= B.z1 - .15; z += .5) {
+        const h = W.heightAt(x, z); lo = Math.min(lo, h); hi = Math.max(hi, h);
+        const rd = W.roadDist(x, z); if (rd.road && rd.d < rd.road.w / 2) road = rd.road.id;
+        if (h < W.WATER + .5 || W.waterAt(x, z, 4)) wet = true;
+        if (G.world.solidAt(x, z)) solid++;
+      }
+      if (hi - lo > .05) bad.push(`${tag}: not level (${(hi - lo).toFixed(2)} m)`);
+      if (road) bad.push(`${tag}: on the road ${road}`);
+      if (wet) bad.push(`${tag}: in the water`);
+      if (solid) bad.push(`${tag}: ${solid} solid cells on it`);
+      const fx = p.x + Math.sin(p.rot) * p.d / 2, fz = p.z + Math.cos(p.rot) * p.d / 2, fr = W.roadDist(fx, fz);
+      if (!fr.road || fr.d - fr.road.w / 2 > 2) bad.push(`${tag}: its front is ${(fr.d - (fr.road ? fr.road.w / 2 : 0)).toFixed(1)} m from a road`);
+      const inside = (x, z, m = 0) => x > B.x0 - m && x < B.x1 + m && z > B.z0 - m && z < B.z1 + m;
+      const col = G.world.colliders.find(c => inside(c.x, c.z, c.r * .5)); if (col) bad.push(`${tag}: something stands on it (${col.x.toFixed(0)},${col.z.toFixed(0)})`);
+      const box = G.world.boxes.find(o => !o.room && o.x1 > B.x0 && o.x0 < B.x1 && o.z1 > B.z0 && o.z0 < B.z1); if (box) bad.push(`${tag}: a building box overlaps it`);
+    }
+    let gardens = 0; G.scene.traverse(o => { if (o.userData.plots) gardens++; });
+    return { n: PL.length, bad, by, gardens, count: G.plots ? G.plots.count : 0 };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.n >= 60, `only ${r.n} plots (want 60 or more)`);
+  ok(!r.bad.length, r.bad.slice(0, 10).join('; ') + (r.bad.length > 10 ? ` … ${r.bad.length} in all` : ''));
+  ok(r.gardens === 1 && r.count === r.n, `the gardens are ${r.gardens} meshes for ${r.count} of ${r.n} plots (want one mesh for all)`);
+  ok(!errs.length, errs.join(' | '));
+  return `${r.n} plots (${Object.entries(r.by).map(([k, v]) => `${k} ${v}`).join(', ')}): each level, dry, off the roads, its front by a road, a unique address, nothing on it; one garden mesh`;
 });
 
 await check('roadtone', async () => {

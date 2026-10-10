@@ -223,7 +223,6 @@ export function createRegions(G) {
   const HOSTS = [
     ['datnieu', 'Bông', L('dress', '#ff7eb8', '#1d1412', 'buns'), M.x - 4, mz - 7.5, 0, ['Đập niêu! I will blindfold you, and we all shout where the pot is!', 'Đập niêu nè! Tớ bịt mắt bạn, cả nhóm sẽ hô cho bạn biết niêu ở đâu!']],
     ['chichi', 'Bà Năm', L('aodai', '#5b7fbf', '#d8d8d8', 'buns'), M.x + 7, mz - 8.5, 0, ['Come, grandchild. Put your finger in my hand: chi chi chành chành!', 'Lại đây cháu. Đặt ngón tay vào tay bà nào: chi chi chành chành!']],
-    ['kite', 'Anh Hai', L('shirt', '#3cc7e8', '#1d1412', 'spiky', 'nonla', '#e0aa80'), M.x + 21, mz + 10.5, Math.PI, ['The wind is perfect for flying kites, like on the beach at Vũng Tàu!', 'Gió đẹp quá, thả diều thôi em, giống như trên bãi biển Vũng Tàu vậy!']],
     ['words', 'Cô Hạnh', L('aodai', '#ffffff', '#1d1412', 'long'), M.x - 21, mz + 4.6, Math.PI, ['I am a teacher. Did you know a bowl is "bát" in the north and "chén" in the south? Want to learn more?', 'Cô là cô giáo. Con có biết miền Bắc gọi là "bát", miền Nam gọi là "chén" không? Học thêm nhé?']],
     ['sackrace', 'Noah', L('overalls', '#2f7ac8', '#e8c26a', 'short', 'cap', '#ffe3d1'), A.x - 20, az + 10.5, Math.PI, ['Sack race! Like at our school sports day. Ready, set, hop!', 'Đua nhảy bao bố! Giống ngày hội thể thao ở trường tớ. Chuẩn bị, nhảy!']],
     ['parcel', 'Chloe', L('dress', '#ffd23f', '#a8432a', 'long', 'bow', '#ffe3d1'), A.x, az + 23, -1.4, ["It's my birthday party! Let's play pass the parcel!", 'Hôm nay sinh nhật tớ! Chơi chuyền quà đi!']],
@@ -239,9 +238,6 @@ export function createRegions(G) {
   { const t = [P(Box(.15, 3.2, .15), '#6b4a32', [-2.5, 1.6, 0]), P(Box(.15, 3.2, .15), '#6b4a32', [2.5, 1.6, 0]), P(Box(5.2, .12, .12), '#6b4a32', [0, 3.2, 0])];
     for (let k = 0; k < 4; k++) t.push(P(Cyl(.02, .02, .7, 3), '#a08060', [-1.8 + k * 1.2, 2.85, 0]), P(new THREE.SphereGeometry(.32, 8, 6), '#a0603a', [-1.8 + k * 1.2, 2.35, 0], [0, 0, 0], [1, .85, 1]));
     put(merge(t), M.x - 4, mz - 10); world.colliders.push({ x: M.x - 6.5, z: mz - 10, r: .3 }, { x: M.x - 1.5, z: mz - 10, r: .3 }); }
-  const kiteS = sprite('🪁', 1.6); scene.add(kiteS);
-  const kline = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), new THREE.LineBasicMaterial({ color: '#5a4a3a' })); scene.add(kline);
-  world.updaters.push((dt, t) => { const k = new THREE.Vector3(M.x + 19 + Math.sin(t * .5) * 3, M.h + 16 + Math.sin(t * .9) * 1.5, mz + 17 + Math.cos(t * .4) * 2); kiteS.position.copy(k); kline.geometry.setFromPoints([new THREE.Vector3(M.x + 21, M.h + 1.2, mz + 10.2), k]); });
 
   // ================= landmarks in the wider valley =================
   const [ox, oz] = landmarkAt('opera'), [bx, bz] = landmarkAt('bondi'), [hx, hz] = landmarkAt('lighthouse');

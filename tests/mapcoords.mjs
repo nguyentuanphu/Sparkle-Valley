@@ -8,7 +8,7 @@
 import fs from 'fs';
 import path from 'path';
 // the files that place things in the valley (World core, the wiring in main.js, the Pad map, Studio's world edits)
-export const FILES = ['world.js', 'roads.js', 'regions.js', 'regionsites.js', 'cities.js', 'town.js', 'suburbs.js', 'lotus.js', 'heritage.js', 'asia.js', 'houses.js',
+export const FILES = ['world.js', 'roads.js', 'regions.js', 'regionsites.js', 'cities.js', 'town.js', 'suburbs.js', 'plots.js', 'lotus.js', 'heritage.js', 'asia.js', 'houses.js',
   'homes.js', 'myhouse.js', 'places.js', 'showcase.js', 'chatter.js', 'hawkers.js', 'vendors.js', 'animals.js', 'pets.js', 'farm.js', 'gather.js', 'snacks.js',
   'folkshow.js', 'player.js', 'solids.js', 'validate.js', 'traffic.js', 'powerlines.js', 'ferry.js', 'kite.js', 'weather.js', 'secrets.js', 'vnfun.js', 'yard.js',
   'openspot.js', 'twinchests.js', 'hoilang.js', 'surprises.js', 'lanterns.js', 'dinh.js', 'worldedit.js', 'shop.js', 'boxes.js', 'kidplay.js', 'companion.js', 'parents.js', 'coop.js', 'data.js', 'main.js', 'ui.js'];

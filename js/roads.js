@@ -258,6 +258,11 @@ const STYLES = {
     ...[-1, 1].flatMap(s => [P(B3(.9, 6.2, .9), '#f4f4f0', [s * hs, 3.1, 0]), P(B3(1, .3, 1), '#3a78c8', [s * hs, 2, 0]), P(B3(1, .3, 1), '#3a78c8', [s * hs, 4, 0])]),
     halfRing(hs, .28, '#3a78c8', 6), halfRing(hs - .7, .12, '#ffd23f', 6)
   ], sign: { y: 5.3, w: 6.4, h: 1.1, bg: '#ffffff', fg: '#1f4f9a' }, posts: hs }),
+  // (round T3) Vũng Tàu: white posts striped sea blue, a wave-blue arch and a little white sail on top
+  seaside: hs => ({ parts: [
+    ...[-1, 1].flatMap(s => [P(B3(.8, 5.8, .8), '#ffffff', [s * hs, 2.9, 0]), P(B3(.9, .35, .9), '#2f9ad8', [s * hs, 1.4, 0]), P(B3(.9, .35, .9), '#2f9ad8', [s * hs, 3.2, 0]), P(B3(1.1, .3, 1.1), '#f2d27a', [s * hs, 5.9, 0])]),
+    halfRing(hs, .26, '#2f9ad8', 5.8), P(new THREE.ConeGeometry(.9, 1.8, 3), '#ffffff', [0, 5.8 + hs + .7, 0], [0, 0, 0], [.4, 1, 1])
+  ], sign: { y: 4.9, w: 6.4, h: 1.1, bg: '#ffffff', fg: '#1f6f9a' }, posts: hs }),
   // Sydney: a little steel coat-hanger arch between two stone pylons
   coathanger: hs => ({ parts: [
     ...[-1, 1].flatMap(s => [P(B3(1.6, 3.6, 1.6), '#cfc6b0', [s * (hs + .4), 1.8, 0]), P(B3(1.9, .35, 1.9), '#b8ae96', [s * (hs + .4), 3.8, 0])]),
@@ -306,7 +311,7 @@ const STYLES = {
     P(B3(hs, .45, .8), '#c0553a', [-hs / 2, 5.3, 0]), P(B3(hs, .45, .8), '#f4f1e8', [hs / 2, 5.3, 0])
   ], sign: { y: 4.5, w: 6.2, h: 1, bg: '#ffffff', fg: '#4a2a78' }, posts: hs })
 };
-export const GATE_STYLE = { hanoi: 'ohquan', bacninh: 'kinhbac', danang: 'golden', saigon: 'saigon', sydney: 'coathanger', melbourne: 'iron', brisbane: 'queenslander', aussie: 'timber', china: 'paifang', india: 'mughal', home: 'farm', town: 'twohomes' };
+export const GATE_STYLE = { hanoi: 'ohquan', bacninh: 'kinhbac', danang: 'golden', saigon: 'saigon', vungtau: 'seaside', sydney: 'coathanger', melbourne: 'iron', brisbane: 'queenslander', aussie: 'timber', china: 'paifang', india: 'mughal', home: 'farm', town: 'twohomes' };
 export function localGate(scene, world, x, z, rot, text, style, span = 7.5) {
   const make = STYLES[style]; if (!make) return goldenGate(scene, world, x, z, rot, text, span);
   const hs = span / 2, g = make(hs);

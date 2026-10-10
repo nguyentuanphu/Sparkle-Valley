@@ -165,13 +165,15 @@ export function createFerries(G) {
     if (stops.length >= 3) { const f = makeFerry({ model: bambooRaft(), path, loop: false, stops, speed: 4.2 }); f.line = true; f.at = stops[0].i; f.seg = stops[0].i; const p0 = path[stops[0].i]; f.model.position.set(p0.x, WATER, p0.z); }
   }
 
-  // ---------- (round T2) the Sydney Harbour ferry: from Sydney's quay along the harbour, under the Harbour Bridge, to the island ----------
-  { const HF = BOATS.find(b => b.id === 'harbourferry');
-    if (HF) { const [A, Bp] = HF.piers, path = [], pts = [A.to, [A.to[0], -2], [Bp.to[0] - 6, -2], Bp.to];
-      for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 4)); for (let k = 0; k < n; k++) path.push({ x: ax + (bx - ax) * k / n, z: az + (bz - az) * k / n }); }
-      path.push({ x: Bp.to[0], z: Bp.to[1] });
-      const stopOf = (P0, i) => ({ i, name: () => T(P0.name[0], P0.name[1]), dock: { pier: pier(P0.at[0], P0.at[1], P0.to[0] + Math.sign(P0.at[0] - P0.to[0]) * 1.4, P0.to[1] + Math.sign(P0.at[1] - P0.to[1]) * 1.4) } });
-      const f = makeFerry({ model: ferryBoat(false), path, loop: false, stops: [stopOf(A, 0), stopOf(Bp, path.length - 1)], speed: 5 }); f.harbour = true; } }
+  // ---------- boats between two piers (round T2: the Sydney Harbour ferry, under the Harbour Bridge to the island; round
+  // T3: the Sài Gòn boat down Sông Sài Gòn and along the coast to Vũng Tàu): from one pier along `via` to the other ----------
+  for (const HF of BOATS.filter(b => b.piers)) {
+    const [A, Bp] = HF.piers, path = [], pts = [A.to, ...(HF.via || []), Bp.to];
+    for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 4)); for (let k = 0; k < n; k++) path.push({ x: ax + (bx - ax) * k / n, z: az + (bz - az) * k / n }); }
+    path.push({ x: Bp.to[0], z: Bp.to[1] });
+    const stopOf = (P0, i) => ({ i, name: () => T(P0.name[0], P0.name[1]), dock: { pier: pier(P0.at[0], P0.at[1], P0.to[0] + Math.sign(P0.at[0] - P0.to[0]) * 1.4, P0.to[1] + Math.sign(P0.at[1] - P0.to[1]) * 1.4) } });
+    const f = makeFerry({ model: ferryBoat(false), path, loop: false, stops: [stopOf(A, 0), stopOf(Bp, path.length - 1)], speed: 5 }); f.harbour = true; f.boat = HF.id;
+  }
 
   // ---------- riding ----------
   const _q = new THREE.Vector3();

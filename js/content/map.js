@@ -7,7 +7,7 @@
 // approved map, docs/concept-d/index.html: two banks, the home island with its ring road, mountains in the north, the
 // coast in the south). A saved spot (profile.pos) is stamped with it (profile.posMap), so a later layout knows the spot
 // belongs to an older map (js/main.js).
-export const MAP_VERSION = 'D2';
+export const MAP_VERSION = 'D3';
 // Is a saved spot, or the family's Studio content, made on this layout? Anything saved before round T has no stamp: it
 // belongs to map 'C'. (A spot or Studio edit from an older layout is never used at the wrong place: js/main.js, js/world.js.)
 export const onThisMap = stamp => (stamp || 'C') === MAP_VERSION;
@@ -51,7 +51,10 @@ export const PLACES = [
   { id: 'danang', kind: 'city', cc: 'vn', at: [153, 7], w: 13, d: 11, h: 3, icon: '🐉', name: ['Đà Nẵng', 'Đà Nẵng'], gates: [[0, -11], [0, 11], [-13, 0]] },
   { id: 'hoian', kind: 'site', cc: 'vn', at: [170, 90], r: 14 },   // Hội An (the old town comes in a later stage; for now its landmark)
   { id: 'market', kind: 'street', cc: 'vn', at: [197, 114], w: 25, d: 13, h: 6, street: { roadZ: 0 } },   // Chợ Ba Miền, the Three Regions market
-  { id: 'saigon', kind: 'city', cc: 'vn', at: [153, 151], w: 13, d: 11, h: 4, icon: '🛵', name: ['Hồ Chí Minh City', 'TP. Hồ Chí Minh'], gates: [[0, -11]] },
+  { id: 'saigon', kind: 'city', cc: 'vn', at: [153, 151], w: 13, d: 11, h: 4, icon: '🛵', name: ['Hồ Chí Minh City', 'TP. Hồ Chí Minh'], gates: [[0, -11], [13, 0]] },
+  // (round T3) Bà Rịa–Vũng Tàu, the seaside town south-east of TP. HCM: the lighthouse on the beach, Bạch Dinh, the kite
+  // flyers of Bãi Sau, bánh khọt; reached by the red road from TP. HCM and by the boat down Sông Sài Gòn
+  { id: 'vungtau', kind: 'city', cc: 'vn', at: [205, 151], w: 13, d: 11, h: 3.5, icon: '🏖️', name: ['Bà Rịa–Vũng Tàu', 'Bà Rịa–Vũng Tàu'], gates: [[-13, 0]] },
   // the west bank: Australia, north to south (Brisbane, Aussie Corner, Sydney, Melbourne; Uluru in the outback beyond the Great Dividing Range)
   { id: 'brisbane', kind: 'city', cc: 'au', at: [-132, -137], w: 13, d: 11, h: 3, icon: '🐨', name: ['Brisbane', 'Brisbane'], gates: [[0, 11], [0, -11]] },
   { id: 'aussie', kind: 'street', cc: 'au', at: [-100, -65], w: 18, d: 28, h: 4, street: { roadZ: 0 } },   // Aussie Corner (round T2: 6 m south, clear of the Brisbane River)
@@ -65,7 +68,11 @@ export const PLACES = [
   { id: 'india', kind: 'village', cc: 'asia', at: [-94, -200], r: 22, h: 5.5 },
   // festival grounds (js/vnfun.js), kept free of trees: the buffalo pushing ring near Hà Nội and Bắc Ninh, the bull-race field west of Sài Gòn
   { id: 'choitrau', kind: 'ground', cc: 'vn', at: [75, -146] },   // (round T2: north of the ring road; Hồ Gươm took its old place)
-  { id: 'duabo', kind: 'ground', cc: 'vn', at: [108, 106] },     // (round T2: between the ring road and the Vietnam road; Sông Sài Gòn and the Mekong took its old place)
+  { id: 'duabo', kind: 'ground', cc: 'vn', at: [108, 106] },
+  // (round T3) the two Memory Villages (Làng Kỷ Niệm), one on each bank: lanes of garden plots where families will put
+  // the homes they remember (PLOTS below); the anchor is where the first lane leaves the main road
+  { id: 'memory_e', kind: 'plots', cc: 'vn', at: [156, 38], name: ['Memory Village (east)', 'Làng Kỷ Niệm (bờ đông)'] },
+  { id: 'memory_w', kind: 'plots', cc: 'au', at: [-129, 44], name: ['Memory Village (west)', 'Làng Kỷ Niệm (bờ tây)'] },     // (round T2: between the ring road and the Vietnam road; Sông Sài Gòn and the Mekong took its old place)
   // places inside places
   { id: 'playground', kind: 'site', place: 'town', off: [-4, 9], r: 13, h: 4.6 },   // the park on Two Homes Street, where kids from Australia and Vietnam play
   // (round R story) bà Huệ and ông Nghi's yard (js/yard.js): its own levelled plot behind the north row of Two Homes
@@ -137,6 +144,13 @@ export const ROADS = [
   // the Vietnam road, north to south
   { id: 'vn_north', kind: 'asphalt', tone: 'vn', pts: [[153, -122], [153, -4]], gates: ['hanoi', 'danang'] },
   { id: 'vn_south', kind: 'asphalt', tone: 'vn', pts: [[153, 18], [153, 140]], gates: ['danang', 'saigon'] },   // over Cầu Rồng
+  { id: 'vn_vungtau', kind: 'asphalt', tone: 'vn', pts: [[166, 151], [192, 151]], gates: ['saigon', 'vungtau'] },   // (round T3) TP. HCM to Vũng Tàu
+  { id: 'vt_beach', kind: 'footpath', pts: [[198, 162], [198, 181]] },
+  // (round T3) the Memory Villages' lanes, off the Vietnam road and the Australia road
+  { id: 'mv_e1', kind: 'dirt', pts: [[153, 38], [216, 38]] },
+  { id: 'mv_e2', kind: 'dirt', pts: [[153, 57], [216, 57]] },
+  { id: 'mv_w1', kind: 'dirt', pts: [[-132, 44], [-84, 44]] },
+  { id: 'mv_w2', kind: 'dirt', pts: [[-132, 63], [-84, 63]] },   // (round T3) down to the Sài Gòn boat's pier on Bãi Sau
   { id: 'village_link', kind: 'asphalt', tone: 'vn', pts: [[153, -42], [171, -42]], gates: [null, null] },   // Lotus Village has its own old gate (cổng làng)
   { id: 'market_link', kind: 'asphalt', tone: 'vn', pts: [[153, 114], [172, 114]], gates: [null, null] },     // the market has its own gate
   // the Australia road, north to south
@@ -175,7 +189,10 @@ export const ROADS = [
 // (none in this layout: the saddle where the Sydney road crossed the old plateau's ramp)
 export const SADDLES = [];
 // the Great Dividing Range: a low ridge between the Australian towns and the outback, with a pass for the Uluru track
-export const RELIEF = [{ id: 'gdr', pts: [[-166, -96], [-166, 120]], h: 14, w: 12, pass: { at: [-166, 60], h: 4.5, w: 14 } }];
+export const RELIEF = [{ id: 'gdr', pts: [[-166, -96], [-166, 120]], h: 14, w: 12, pass: { at: [-166, 60], h: 4.5, w: 14 } },
+  // (round T3) the Trường Sơn range between the ring road and the Vietnam road, with the Hải Vân pass where the road to
+  // Đà Nẵng crosses it (a low saddle, the road at 8 % or less: owner's default 3)
+  { id: 'truongson', pts: [[123, -30], [122, 30]], h: 14, w: 10, pass: { at: [122, 7], h: 4, w: 14 } }];
 
 // Spots kept free of trees ([x, z, r]): round Uluru.
 export const CLEARINGS = [{ id: 'uluru', place: 'uluru', off: [0, -2], r: 34 }];
@@ -186,7 +203,7 @@ export const SHRINES = [
   { id: 'sh_pattern', game: 'pattern', at: [-7, -84] },
   { id: 'sh_count', game: 'counting', at: [25, -86] },
   { id: 'sh_letters', game: 'letters', at: [22, -62] },
-  { id: 'sh_memory', game: 'memory', at: [-102, 44] },
+  { id: 'sh_memory', game: 'memory', at: [-104, 24] },   // (round T3: moved off the western Memory Village)
   { id: 'sh_hanoi', game: 'hanoi', at: [104, -146] },
   { id: 'sh_robot', game: 'robot', at: [64, 150] },
   { id: 'sh_goat', game: 'goat', at: [-196, 110] },
@@ -207,7 +224,7 @@ export const LEAFIES = [
   ['rock', -12, -90], ['sparkle', 30, -60], ['rock', 34, 48], ['sparkle', -100, -150], ['rock', -105, 20], ['sparkle', -186, 0], ['rock', -150, 96],
   ['sparkle', 120, -60], ['rock', 60, 130], ['sparkle', 186, 156], ['rock', 200, -14], ['sparkle', 214, -40], ['rock', 175, -125], ['sparkle', 130, -190],
   ['rock', -30, -195], ['sparkle', -60, -150], ['rock', 70, -195], ['sparkle', -200, -60], ['rock', -200, 30], ['sparkle', -30, 118], ['rock', 110, 60],
-  ['sparkle', -90, 170], ['rock', 210, -200], ['sparkle', 186, 60]
+  ['sparkle', -90, 170], ['rock', 210, -200], ['sparkle', 164, 64]
 ].map(([kind, x, z], i) => ({ id: 'lf' + i, kind, at: [x, z], ...(i === 7 ? { inWater: true } : {}) })); // (lf7 sparkles over the middle of Hồ Gương on purpose)
 
 // things to pick up (herbs, mushrooms, eggs, rice, fruit, a fish…: js/data.js GATHER, in this order): [item, place, dx, dz]
@@ -226,7 +243,7 @@ export const LANDMARK_AT = {
   uluru: { place: 'uluru', off: [0, -16] },      // the postcard, in front of the rock
   banana: { place: 'aussie', off: [9, -6] },
   bondi: { place: 'melbourne', off: [26, 50] },  // the lifesavers' tower on the southern beach
-  lighthouse: { place: 'saigon', off: [52, 30] }, // on the coast (it moves to Bà Rịa–Vũng Tàu in stage T3)
+  lighthouse: { place: 'vungtau', off: [12, 30] }, // on the beach below Vũng Tàu (round T3: moved here with Bạch Dinh)
   turtle: { place: 'hanoi', off: [-29, 3] },     // in Hồ Gươm by Hà Nội (round T2; was a small copy in the market)
   onepillar: { place: 'market', off: [-10, -10] },
   chuacau: { place: 'hoian', off: [0, -18] },    // the middle of Chùa Cầu over the Hội An canal (round T2; was a small copy in the market)
@@ -235,7 +252,7 @@ export const LANDMARK_AT = {
   princes: { place: 'melbourne', off: [0, -36] },  // the middle of Princes Bridge
   benthanh: { place: 'market', off: [24, -4] },
   // Two Homes Street (js/cities.js)
-  bachdinh: { place: 'town', off: [-19, 19.5] },
+  bachdinh: { place: 'vungtau', off: [-14, -17] },   // (round T3) on the green slope behind Vũng Tàu's square, facing it
   nhatron: { place: 'town', off: [4.5, 10.5] },
   // the UNESCO sites (js/heritage.js)
   halong: { place: 'lake', off: [-9, -5] },
@@ -261,11 +278,30 @@ export const LANDMARK_AT = {
 export const LANDMARK_HOME = { bnclock: 'bacninh', chuadau: 'bacninh', butthap: 'bacninh', dendo: 'bacninh', quanho: 'bacninh',
   turtle: 'hanoi', longbien: 'hanoi', onepillar: 'hanoi', vanmieu: 'hanoi', puppettheatre: 'hanoi', thehuc: 'hanoi', halong: 'hanoi', trangan: 'hanoi',
   dragonbridge: 'danang', goldenbridge: 'danang', marble: 'danang', hoian: 'danang', chuacau: 'danang', myson: 'danang', hue: 'danang', phongnha: 'danang',
-  benthanh: 'saigon', cathedral: 'saigon', postoffice: 'saigon', cairang: 'saigon', bachdinh: 'saigon', nhatron: 'saigon', lighthouse: 'saigon',
+  benthanh: 'saigon', cathedral: 'saigon', postoffice: 'saigon', cairang: 'saigon', bachdinh: 'vungtau', nhatron: 'saigon', lighthouse: 'vungtau',
   wheel: 'brisbane', lonepine: 'brisbane', storybridge: 'brisbane', reef: 'brisbane', banana: 'sydney',
   opera: 'sydney', harbour: 'sydney', sydneytower: 'sydney', lunapark: 'sydney', bondi: 'sydney', sisters: 'sydney',
   flinders: 'melbourne', princes: 'melbourne', wtram: 'melbourne', exhibition: 'melbourne', apostles: 'melbourne', kakadu: 'uluru', uluru: 'uluru',
   forbidden: 'china', heaven: 'china', terracotta: 'china', potala: 'china', qutub: 'india', redfort: 'india', konark: 'india', hampi: 'india', mahabodhi: 'india' };
+
+// (round T3) Memory Village plots: { id, village, size, off: [dx, dz] from the village's anchor, rot (the way the front
+// faces: 0 = +z, π = −z), w (along the lane), d (deep), address: [en, vi] }. Each is levelled, joined to a lane
+// (`mv_*` in ROADS), and shows a garden until a family puts a home on it (js/plots.js; Studio's Plots page later).
+// Two lanes in each village, six plots on each side of a lane, numbered like a street: odd on the north side, even on
+// the south side.
+export const PLOTS = (() => {
+  const out = [], W = 6, D = 7, LANE = 1.7, GAP = .5;
+  const village = (id, lanes, first, step, en, vi) => lanes.forEach((dz, li) => {
+    for (let k = 0; k < 6; k++) for (const side of [-1, 1]) {
+      const n = k * 2 + (side < 0 ? 1 : 2), off = [first + k * step, dz + side * (LANE + GAP + D / 2)];
+      out.push({ id: `${id}_${li + 1}_${n}`, village: id, size: 'house', off, rot: side < 0 ? 0 : Math.PI, w: W, d: D,
+        address: [`${n} ${en} ${li + 1}`, `Số ${n}, ${vi} ${li + 1}`] });
+    }
+  });
+  village('memory_e', [0, 19], 21, 6.5, 'Memory Lane', 'ngõ Kỷ Niệm');   // east of the Vietnam road, north of the Hội An canal
+  village('memory_w', [0, 19], 7, 6.5, 'Memory Lane', 'ngõ Kỷ Niệm');    // east of the Australia road, south of Sydney
+  return out;
+})();
 
 // Boats (js/ferry.js): the lake ferry's piers (degrees round the lake, 0 = east, 90 = south) and the river rafts.
 export const BOATS = [
@@ -274,7 +310,9 @@ export const BOATS = [
     // (round T2, Concept D) and by every bridge it passes under: each pier's land end, joined to the road by a footpath
     bridgeStops: [{ bridge: 'north', at: [12, -152] }, { bridge: 'ring_n', at: [16, -114] }, { bridge: 'haique', at: [60, -6] }, { bridge: 'ring_s', at: [22, 124] }] },
   // (round T2) the Sydney Harbour ferry: from Sydney's quay by the road to the ring, under the Harbour Bridge, to the home island
-  { id: 'harbourferry', water: 'sydney_harbour', piers: [{ id: 'sydney', at: [-108, 24], to: [-106, 1], name: ['Sydney Harbour', 'Bến cảng Sydney'] }, { id: 'island', at: [-37, -3], to: [-48, -3], name: ['Two Homes Island', 'Đảo Hai Quê'] }] },
+  { id: 'harbourferry', water: 'sydney_harbour', via: [[-106, -2], [-54, -2]], piers: [{ id: 'sydney', at: [-108, 24], to: [-106, 1], name: ['Sydney Harbour', 'Bến cảng Sydney'] }, { id: 'island', at: [-37, -3], to: [-48, -3], name: ['Two Homes Island', 'Đảo Hai Quê'] }] },
+  // (round T3) the boat from TP. HCM down Sông Sài Gòn and along the coast to Bãi Sau at Vũng Tàu
+  { id: 'vtboat', water: 'saigon_r', via: [[131, 196], [198, 198]], piers: [{ id: 'saigon', at: [139, 156], to: [131, 156], name: ['TP. Hồ Chí Minh', 'TP. Hồ Chí Minh'] }, { id: 'vungtau', at: [198, 181], to: [198, 190], name: ['Bãi Sau, Vũng Tàu', 'Bãi Sau, Vũng Tàu'] }] },
   { id: 'crossing', water: 'main_n', count: 0 }            // (round T2, Concept D: no crossing rafts; bridges join every bank and the raft line stops by each)
 ];
 

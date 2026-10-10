@@ -283,6 +283,7 @@ export function regionAt(x, z) {
   if (x > MARKET.x0 - 3 && x < MARKET.x1 + 3 && z > MARKET.z0 - 3 && z < MARKET.z1 + 3) return 'market';
   if (x > AUSSIE.x0 - 3 && x < AUSSIE.x1 + 3 && z > AUSSIE.z0 - 3 && z < AUSSIE.z1 + 3) return 'aussie';
   if (dist2(x, z, HOIAN.x, HOIAN.z) < HOIAN.r + 6) return 'hoian';
+  for (const V of MEMORY) if (x > V.x0 && x < V.x1 && z > V.z0 && z < V.z1) return V.id;   // (round T3) the Memory Villages
   if (dist2(x, z, LAKE.x, LAKE.z) < LAKE.r + 12) return 'lake';
   if (dist2(x, z, BAMBOO.x, BAMBOO.z) < BAMBOO.r + 6) return 'bamboo';
   if (z < MTN.region) return 'mountain';
@@ -300,6 +301,7 @@ export const REGION_NAMES = {
   paddies: () => T('Golden Rice Fields', 'Cánh Đồng Lúa Vàng'),
   lake: () => T('Mirror Lake', 'Hồ Gương'),
   hoian: () => T('Hội An', 'Hội An'),
+  ...Object.fromEntries(MAP.PLACES.filter(p => p.kind === 'plots').map(p => [p.id, () => T(p.name[0], p.name[1])])),
   bamboo: () => T('Whispering Bamboo', 'Rừng Tre Thì Thầm'),
   mountain: () => T('Snowcap Peaks', 'Núi Tuyết Trắng'),
   meadow: () => T('Breezy Meadows', 'Đồng Cỏ Lộng Gió')
@@ -315,6 +317,23 @@ export const LEAFIES = MAP.LEAFIES.map(({ id, kind, at, inWater }) => ({ id, kin
 PADS = [...SHRINES, ...LEAFIES.filter(l => l.kind === 'rock')];
 
 // ---------- the world object ----------
+// ---------- (round T3) garden plots: the Memory Villages' (from the map) and two spare ones by the roads out of each city ----------
+// { id, village (or city), x, z, rot (the way the front faces), w (along the lane), d, address: [en, vi], h }. Each is also a
+// lot (so trees and suburbs keep off it); once the roads are made it is levelled at the height of the lane in front of it
+// (levelUnderBuildings). Families put the homes they remember on them later (Studio's Plots page); until then, a garden.
+export const PLOTS = [];
+{
+  const add = P => { const fx = Math.sin(P.rot), fz = Math.cos(P.rot), sx = Math.cos(P.rot), sz = -Math.sin(P.rot), hs = [];
+    for (const u of [-.5, 0, .5]) for (const v of [-.5, 0, .5]) hs.push(heightAt(P.x + sx * P.w * u + fx * P.d * v, P.z + sz * P.w * u + fz * P.d * v));
+    P.h = hs.reduce((p, q) => p + q, 0) / hs.length; PLOTS.push(P); LOTS.push({ city: 'plot', k: PLOTS.length - 1, x: P.x, z: P.z, rot: P.rot, w: P.w, d: P.d, h: P.h }); };
+  for (const p of MAP.PLOTS) { const [ax, az] = MAP.anchorOf(p.village); add({ id: p.id, village: p.village, x: ax + p.off[0], z: az + p.off[1], rot: p.rot, w: p.w, d: p.d, address: p.address }); }
+  PLOTS.spareFrom = PLOTS.length;
+}
+// (round T3) each Memory Village's area: its plots and lanes, 4 m round them
+export const MEMORY = MAP.PLACES.filter(p => p.kind === 'plots').map(p => { const B = { id: p.id, x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9 };
+  for (const P of PLOTS) if (P.village === p.id) { B.x0 = Math.min(B.x0, P.x - 8); B.x1 = Math.max(B.x1, P.x + 8); B.z0 = Math.min(B.z0, P.z - 8); B.z1 = Math.max(B.z1, P.z + 8); } return B; });
+export const plotBox = P => { const c = Math.abs(Math.cos(P.rot)), s = Math.abs(Math.sin(P.rot)), hx = (P.w * c + P.d * s) / 2, hz = (P.w * s + P.d * c) / 2; return { x0: P.x - hx, x1: P.x + hx, z0: P.z - hz, z1: P.z + hz }; };
+
 // ---------- building lots round the cities ----------
 // Walk out along each road from a city gate (10–70 m) and keep the first spots, on either side, that are
 // dry, not too steep to level, clear of the road and of every other place. Two per city.
@@ -358,6 +377,42 @@ PADS = [...SHRINES, ...LEAFIES.filter(l => l.kind === 'rock')];
       const lo = Math.min(...hs), hi = Math.max(...hs);
       if (onRoad || hi - lo > 3 || lo < WATER + 1.6) continue;
       LOTS.push({ city: c.id, k: n, x, z, rot, w: W, d: D, h: hs.reduce((p, q) => p + q, 0) / hs.length }); n++;
+    }
+  }
+}
+
+// (round T3) two spare garden plots by the roads out of each city, 20–80 m from the gate, the front 1 m from the road's
+// edge, kept clear like the lots (and off them)
+{
+  const W = 6, D = 7, circles = [VILLAGE, CHINA, INDIA, HOME, PLAYGROUND, PLATEAU, PADDIES, LAKE];
+  const clear = (x, z) => !FLATS.some(F => x > F.x0 - 5 && x < F.x1 + 5 && z > F.z0 - 5 && z < F.z1 + 5) && !circles.some(c => dist2(x, z, c.x, c.z) < c.r + 6)
+    && !SHRINES.some(s => dist2(x, z, s.x, s.z) < 10) && !TOWERS.some(s => dist2(x, z, s.x, s.z) < 10) && !LEAFIES.some(s => dist2(x, z, s.x, s.z) < 7)
+    && !bridgeAt(x, z, 14, 14) && riverDist(x, z) > 13 && pondDist(x, z) > 8 && !LOTS.some(L => dist2(x, z, L.x, L.z) < (L.city === 'plot' ? 8 : 14));
+  for (const c of CITIES) {
+    let n = 0;
+    for (const [gx, gz] of c.gates) for (const R of ROADS) {
+      if (n >= 2 || R.kind === 'footpath') break;
+      const a = R.pts[0], b = R.pts[R.pts.length - 1];
+      const pts = Math.hypot(a[0] - gx, a[1] - gz) < 1.5 ? R.pts : Math.hypot(b[0] - gx, b[1] - gz) < 1.5 ? R.pts.slice().reverse() : null; if (!pts) continue;
+      let along = 0;
+      for (let i = 0; i < pts.length - 1 && n < 2; i++) {
+        const [ax, az] = pts[i], [bx, bz] = pts[i + 1], L = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / L, dz = (bz - az) / L;
+        for (let t = 0; t < L && n < 2; t += 2) {
+          const run = along + t; if (run < 20 || run > 80) continue;
+          for (const side of [1, -1]) {
+            const off = R.w / 2 + 1 + D / 2, x = ax + dx * t - dz * off * side, z = az + dz * t + dx * off * side, rot = Math.atan2(dz * side, -dx * side);
+            if (!clear(x, z)) continue;
+            const fx = Math.sin(rot), fz = Math.cos(rot), sx = Math.cos(rot), sz = -Math.sin(rot), hs = [];
+            let bad = false;
+            for (const u of [-.5, 0, .5]) for (const v of [-.5, 0, .5]) { const px = x + sx * W * u + fx * D * v, pz = z + sz * W * u + fz * D * v; hs.push(heightAt(px, pz)); const r = roadDist(px, pz); if (r.d < r.road.w / 2 + .6) bad = true; }
+            const lo = Math.min(...hs), hi = Math.max(...hs);
+            if (bad || hi - lo > 2.5 || lo < WATER + 1.6) continue;
+            n++; const P = { id: `sp_${c.id}_${n}`, village: c.id, x, z, rot, w: W, d: D, address: [`Plot ${n}, ${c.name[0]}`, `Lô ${n}, ${c.name[1]}`], h: hs.reduce((p, q) => p + q, 0) / hs.length };
+            PLOTS.push(P); LOTS.push({ city: 'plot', k: PLOTS.length - 1, x, z, rot, w: W, d: D, h: P.h }); break;
+          }
+        }
+        along += L;
+      }
     }
   }
 }
@@ -443,7 +498,7 @@ export function createWorld(scene, quality) {
   const tg = new THREE.PlaneGeometry(SIZE, SIZE, seg, seg); tg.rotateX(-Math.PI / 2);
   const pa = tg.attributes.position, cols = new Float32Array(pa.count * 3), c = new THREE.Color();
   const C = { sand: new THREE.Color('#ecd6a4'), grassA: new THREE.Color('#7fbf8c'), grassB: new THREE.Color('#62a878'), dry: new THREE.Color('#e3cf9c'),
-    rock: new THREE.Color('#d9cfba'), snow: new THREE.Color('#f6f8fb'), dirt: new THREE.Color('#e6d2a2'), paddy: new THREE.Color('#a7d67c'), bamboo: new THREE.Color('#6eae78'), deep: new THREE.Color('#cdb88e') };
+    rock: new THREE.Color('#d9cfba'), snow: new THREE.Color('#f6f8fb'), dirt: new THREE.Color('#e6d2a2'), paddy: new THREE.Color('#a7d67c'), bamboo: new THREE.Color('#6eae78'), deep: new THREE.Color('#cdb88e'), outback: new THREE.Color('#d98f58') };
   // (round T2) the slope from the next grid points east and south (already worked out), scaled to 1.5 m as before:
   // two more heightAt calls per point made the valley a quarter of a second slower to build
   const row = seg + 1, step = SIZE / seg, HS = new Float32Array(pa.count);
@@ -461,6 +516,8 @@ export function createWorld(scene, quality) {
     if (dv < VILLAGE.r - 4 && (Math.abs(x - VILLAGE.x) < 3 || Math.abs(z - VILLAGE.z) < 3 || Math.abs(dv - 14) < 2.2)) c.copy(C.dirt);
     const dh = dist2(x, z, HOME.x, HOME.z);
     if (dh < HOME.r - 4 && (Math.abs(x - HOME.x) < 2 || Math.abs(z - HOME.z) < 2)) c.copy(C.dirt);
+    // (round T3, Concept D) beyond the Great Dividing Range the ground turns the orange-red of the outback round Uluru
+    { const ob = smooth(-174, -192, x); if (ob > 0) c.lerp(C.outback, ob * .8); }
     if (sl > 2.2) c.lerp(C.rock, clamp((sl - 2.2) / 1.5, 0, 1));
     if (h > 34) c.lerp(C.snow, clamp((h - 34) / 6, 0, 1));
     if (h < 1.6) c.copy(C.sand);
@@ -969,6 +1026,10 @@ export function levelUnderBuildings(world, scene) {
   for (const b of world.boxes) { if (b.room || b.x1 - b.x0 > 40 || b.z1 - b.z0 > 40) continue; want.push({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1 }); }
   for (const c of world.colliders) if (c.r >= 2.5 && c.r <= 12) want.push({ x0: c.x - c.r * .8, x1: c.x + c.r * .8, z0: c.z - c.r * .8, z1: c.z + c.r * .8 });
   let n = 0;
+  // (round T3) each garden plot: level at the height of the lane just in front of it, easing back over its sides
+  for (const P of PLOTS) { const B = plotBox(P), fx = Math.sin(P.rot), fz = Math.cos(P.rot);
+    const h = heightAt(P.x + fx * (P.d / 2 + .4), P.z + fz * (P.d / 2 + .4)); P.h = h;
+    fpAdd({ ...B, pad: 1.2, h, plot: P.id }); n++; }
   for (const F of want) {
     const cx = (F.x0 + F.x1) / 2, cz = (F.z0 + F.z1) / 2, h = heightAt(cx, cz);
     if (h < WATER + .6 || riverDist(cx, cz) < 12) continue;
