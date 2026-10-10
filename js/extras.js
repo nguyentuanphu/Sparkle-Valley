@@ -10,10 +10,11 @@ import { esc } from './util.js';
 // (round R privacy, 9 Oct, owner) what the game keeps and sends, in plain words: a small block at the top of Grown-ups
 // (its own block, so the Grown-ups groups stay as they are)
 export function privacyHTML() {
-  // (Analytics & Infra, 10 Oct, owner) plain words for parents: the grown-ups' admin tools are never named here
+  // (Analytics & Infra, 10 Oct, owner) plain words for parents: the grown-ups' admin tools are never named here; the play
+  // report is named only by its Grown-ups group, "Analytics and Backup" (owner, 10 Oct)
   const L = [
     ['Saves stay on this device.', 'Dữ liệu chơi được lưu trên máy này.'],
-    ['A small play report (first names, minutes, games and places, the kind of device and the town) is sent to the people who make the game, to improve it. Switch it off in Analytics and backup → Analytics.', 'Một báo cáo chơi nhỏ (tên gọi, số phút, trò chơi và nơi đã đến, loại máy và thành phố) được gửi tới người làm trò chơi để cải thiện. Tắt trong mục Phân tích và sao lưu → Phân tích.'],
+    ['Analytics and Backup', 'Phân tích và sao lưu'],
     ['Online play and the internet are off until a grown-up turns them on. Friends see a name, look and photo only after being let in.', 'Chơi trực tuyến và internet tắt cho tới khi người lớn bật. Bạn bè chỉ thấy tên, hình nhân vật và ảnh sau khi được cho vào.'],
     ['Family photos (your own photos on villagers’ faces and on postcards) download only after the family code is typed in Children → Family photos.', 'Ảnh gia đình (ảnh của nhà mình trên mặt dân làng và trên bưu thiếp) chỉ tải về khi đã gõ mã gia đình trong Các con → Ảnh gia đình.'],
     ['The voices are recorded ahead of time and come with the game. There are no voice keys on this device.', 'Giọng đọc được thu sẵn và đi kèm trò chơi. Máy này không có key giọng đọc.'],
@@ -32,7 +33,7 @@ export function netListHTML() {
     ['Recorded voices: downloaded once, then kept for offline play.', 'Giọng đọc đã thu: tải một lần, rồi giữ lại để chơi không cần mạng.'],
     ['Messages, stories, festivals and names set by your family.', 'Lời nhắn, truyện, lễ hội và tên do gia đình đặt.'],
     ['Family photos, only after the family code is typed (Children → Family photos).', 'Ảnh gia đình, chỉ khi đã gõ mã gia đình (Các con → Ảnh gia đình).'],
-    ['The play report, unless Analytics is off (Analytics and backup).', 'Báo cáo chơi, trừ khi đã tắt Phân tích (Phân tích và sao lưu).'],
+    ['Analytics and Backup', 'Phân tích và sao lưu'],
     ['Talking to the game (🎤) and villager chat (AI), only when switched on below.', 'Nói chuyện với trò chơi (🎤) và dân làng trò chuyện (AI), chỉ khi được bật bên dưới.']];
   const ul = L => `<ul>${L.map(([en, vi]) => `<li>${T(en, vi)}</li>`).join('')}</ul>`;
   return `<details class="g-priv g-net"><summary>🌐 ${T('What uses the internet', 'Những gì dùng internet')}</summary>
