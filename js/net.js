@@ -150,10 +150,13 @@ export const Net = {
   // screen got stuck and the microphone never came on): it no longer tries again on every tap anywhere on the screen
   // (each try could bring the iPhone's question up again); the child taps the 🎙️ button in Friends or the call button.
   micError: null,
-  async getMic() {
+  // Bug #55: on iPhone an earlier try made without a tap can stay pending for ever, and every later tap was handed that
+  // same pending answer (nothing happened, no question). A tap (`fromTap`) now drops the old try and starts a fresh one;
+  // getUserMedia is called before any await, so it still runs inside the tap.
+  async getMic(fromTap) {
     if (this.mic) return this.mic;
-    if (this._micAsking) return this._micAsking;
-    this._micAsking = (async () => {
+    if (this._micAsking && !fromTap) return this._micAsking;
+    const asking = this._micAsking = (async () => {
       const md = navigator.mediaDevices;
       if (!md || !md.getUserMedia) { this.micError = 'nomedia'; this.emit('status', { key: 'nomic' }); return null; }
       let err = null;
@@ -167,7 +170,7 @@ export const Net = {
       else this.emit('status', { key: name === 'NotAllowedError' && tapped ? 'micdenied' : 'mictap' });
       return null;
     })();
-    try { return await this._micAsking; } finally { this._micAsking = null; }
+    try { return await asking; } finally { if (this._micAsking === asking) this._micAsking = null; }
   },
   // the microphone arrived after the calls started (they carried silence): send it in every open call
   _micOn() {
