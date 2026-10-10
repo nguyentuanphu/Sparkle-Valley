@@ -16,6 +16,12 @@
 // With Studio's storyActions on (owner 9 Oct: every step something to do): ribbons: n wind ribbons to catch on the way,
 // leaves: n lotus leaves to lift (the lantern is under one), and hanging is done by pulling the rope; act_en/act_vi is
 // the goal shown then. Lines for these are in STORY_LINES.
+// Chapter 2 (Hà Nội, Play core, 10 Oct) adds: big: true (only for big kids, 5 to 8: an under-5 skips the step),
+// gameLittle (the game an under-5 plays instead), taleLittle / actL_en / actL_vi (what an under-5 is told instead),
+// lights: n (lantern lights to follow, like the ribbons), challenge (Tèo's challenge: a line each for big and little,
+// then the game), job (help someone with the hand controls), lesson (Cô Tam's lesson: count the stone turtles) and
+// clues: n (spots by the lake to look at; an under-5's companion lights the way to the right one). Its places are built
+// by js/content/chapter2hanoi.js; its words by js/content/chapter2text.js; its festival film is in js/content/chapter2films.js.
 export const CHAPTERS = [
   { id: 'prologue', en: 'The Lanterns Blow Away', vi: 'Đèn Lồng Bay Mất', steps: [
     { id: 'p_owl', icon: '🦉', en: 'Talk to Ông Cú', vi: 'Nói chuyện với Ông Cú', at: 'owl', owl: true }
@@ -42,6 +48,18 @@ export const CHAPTERS = [
       tale: ['👵🪷', 'Bà Năm', 'Like Mai An Tiêm, you never gave up. Now look among the lotus leaves by the pond. Something red is shining there!', 'Giống như Mai An Tiêm, con không bao giờ bỏ cuộc. Giờ con tìm giữa những lá sen bên hồ nhé. Có gì đó màu đỏ đang sáng ở đó!'] },
     { id: 'c1_hang', icon: '🏯', en: 'Hang the lantern at the đình', vi: 'Treo đèn lồng ở đình làng', at: 'landmark', hang: true,
       tale: ['🏮✨', 'Lấp Lánh', 'We found it! The đình is sleeping in the mist. Let us hang the lantern there and wake it up!', 'Tìm thấy rồi! Đình làng đang ngủ trong sương. Mình treo đèn lồng lên để đánh thức đình nhé!'] }
+  ] }
+  ,
+  // (its words: js/content/chapter2text.js, loaded with chapter 2's places so the valley starts no slower: PERF-001)
+  { id: 'ch2', en: 'Hà Nội', vi: 'Hà Nội', landmark: 'thehuc', keepsake: 'lantern_ch2', reward: 40, trick: 'light', steps: [
+    { id: 'c2_fly', icon: '🏮', en: 'Fly to Hà Nội with your friend', vi: 'Cùng bạn đồng hành bay đến Hà Nội', at: 'hanoi', visit: 'hanoi', lights: 3 },
+    { id: 'c2_tam', icon: '👩‍🏫', en: 'Say hello to Cô Tam at Văn Miếu', vi: 'Chào Cô Tam ở Văn Miếu', at: 'tam2', big: true, talk: { who: 'Cô Tam', label: ['Say hello', 'Chào cô'] } },
+    { id: 'c2_teo', icon: '🧒', en: 'Take up Tèo\'s challenge', vi: 'Nhận lời thách đấu của Tèo', at: 'teo2', game: ['oanquan'], gameLittle: ['oantuti'], challenge: {} },
+    { id: 'c2_job', icon: '🍲', en: 'Help Bà Lan at the bún chả stall', vi: 'Giúp Bà Lan ở quán bún chả', at: 'bunca', job: true, big: true },
+    { id: 'c2_vanmieu', icon: '📚', en: 'Cô Tam\'s lesson at Văn Miếu', vi: 'Học cùng Cô Tam ở Văn Miếu', at: 'tam2', lesson: true },
+    { id: 'c2_tale', icon: '📖', en: 'Hear Bà Năm tell the story of Hồ Gươm', vi: 'Nghe Bà Năm kể Sự tích Hồ Gươm', at: 'nam2', tale_id: 'hoguom', talk: { who: 'Bà Năm', label: ['Listen to the story', 'Nghe kể chuyện'] } },
+    { id: 'c2_find', icon: '🐢', en: 'Find the lantern by Hồ Gươm', vi: 'Tìm đèn lồng bên Hồ Gươm', at: 'clues', find: true, clues: 3 },
+    { id: 'c2_hang', icon: '🌉', en: 'Hang the lantern on Cầu Thê Húc', vi: 'Treo đèn lồng trên Cầu Thê Húc', at: 'bridge', hang: true }
   ] }
 ];
 

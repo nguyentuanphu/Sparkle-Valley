@@ -1,6 +1,8 @@
 // The child's companion (round R story, owner's choice: "child picks one"): Lấp Lánh the firefly or Rồng con the baby
 // dragon. It flies just behind the child's shoulder, bobbing and flapping, turns the way the child goes, and carries the
 // chapter's lantern after it is found (profile.lanterns.carrying). One per child playing; rebuilt when they change.
+// (story chapter 2) Its new trick, lighting the way: lead(h, point) sends it to fly over a spot with a warm light round
+// it, so an under-5 can follow it (profile.lanterns.tricks lists the tricks learned).
 import { THREE, P, merge, toonVC, glow } from './gfx.js';
 import { buildLantern } from './dinh.js';
 
@@ -52,7 +54,9 @@ export function createCompanions(G) {
       if (c && c.kind !== kind) { G.scene.remove(c.o); list.delete(h); c = null; }
       if (!c && kind) {
         const o = buildCompanion(kind), lantern = buildLantern(true); lantern.scale.setScalar(.5); lantern.position.set(0, -.32, .05); lantern.visible = false; o.userData.body.add(lantern);
-        o.position.set(h.pos.x, h.pos.y + 2, h.pos.z); G.scene.add(o); c = { kind, o, lantern }; list.set(h, c);
+        // (the light it shines when it lights the way)
+        const beam = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex(), color: '#ffe27a', transparent: true, depthWrite: false, opacity: .85 })); beam.scale.setScalar(2.2); beam.visible = false; o.add(beam);
+        o.position.set(h.pos.x, h.pos.y + 2, h.pos.z); G.scene.add(o); c = { kind, o, lantern, beam, lead: null }; list.set(h, c);
       }
     }
     for (const [h, c] of list) if (!G.heroes.includes(h)) { G.scene.remove(c.o); list.delete(h); }
@@ -64,6 +68,10 @@ export function createCompanions(G) {
       const o = c.o, u = o.userData, yaw = h.yaw || 0, side = h.i % 2 ? -1 : 1;
       // just behind and beside the child's shoulder, a little above the head
       _t.set(h.pos.x - Math.sin(yaw) * .9 + Math.cos(yaw) * .75 * side, h.pos.y + 1.9 + Math.sin(t * 2.2 + h.i) * .12, h.pos.z - Math.cos(yaw) * .9 - Math.sin(yaw) * .75 * side);
+      // lighting the way: it flies on ahead over the spot (a little ahead of the child while far away, so it stays in view)
+      if (c.lead) { const dx = c.lead.x - h.pos.x, dz = c.lead.z - h.pos.z, d = Math.hypot(dx, dz), k = d > 9 ? 6 / d : 1;
+        _t.set(h.pos.x + dx * k, (k < 1 ? h.pos.y + 2.2 : c.lead.y) + Math.sin(t * 2.2) * .15, h.pos.z + dz * k); }
+      c.beam.visible = !!c.lead; if (c.lead) { c.beam.scale.setScalar(2 + Math.sin(t * 4) * .3); c.beam.material.opacity = .65 + Math.sin(t * 4) * .2; }
       o.position.y -= c.off || 0; c.off = 0; // (a trick's lift is taken off first, so it never builds up)
       if (o.position.distanceTo(_t) > 25) o.position.copy(_t); // after a jump across the map
       o.position.lerp(_t, Math.min(1, dt * 3.2));
@@ -88,5 +96,7 @@ export function createCompanions(G) {
   });
   // a trick: 'loop' (a loop-the-loop) or 'spin'
   const trick = (h, kind) => { const c = list.get(h); if (c) c.trick = { kind, len: 1.6, start: null }; };
-  return { of: h => list.get(h) || null, sync, trick };
+  // lighting the way (chapter 2): fly over a point { x, y, z }, or null to come back to the child's shoulder
+  const lead = (h, at) => { const c = list.get(h); if (c) c.lead = at || null; };
+  return { of: h => list.get(h) || null, sync, trick, lead };
 }

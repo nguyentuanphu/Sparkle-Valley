@@ -3,7 +3,7 @@
 // never edit this file by hand (the "rules" check compares the two).
 // Checkers report problems by id (js/validate.js); RULES tells how serious each one is.
 export const RULES = {
-  "PROC-001": { "text": "No git push and no PR opened or updated without the owner's explicit \"yes, push\" (one per push); since 4 Oct the owner's standing instruction lets each planned round be pushed once its full suite is green (CLAUDE.md)", "severity": "BLOCKER", "check": "process" },
+  "PROC-001": { "text": "Nothing reaches main without the owner's explicit \"yes, deploy\" (one per round, asked by Release after the full suite is green and the round is reported); helper cores push their own branches without asking (owner, 10 Oct; CLAUDE.md)", "severity": "BLOCKER", "check": "process" },
   "PROC-002": { "text": "Existing features and UI unchanged unless asked", "severity": "BLOCKER", "check": "check contract, spill, phone" },
   "PROC-003": { "text": "Run the suite before and after; desktop and phone side by side", "severity": "BLOCKER", "check": "process + phone" },
   "PROC-004": { "text": "Bump VERSION (sw.js), BUILD, studio/version.json together; new files in FILES", "severity": "BLOCKER", "check": "check ground, studio" },
