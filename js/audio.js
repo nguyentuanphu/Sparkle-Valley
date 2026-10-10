@@ -66,9 +66,25 @@ export function noise(dur, o = {}) {
   const t = o.when != null ? o.when : a.currentTime + (o.at || 0);
   const s = a.createBufferSource(); s.buffer = noiseBuf;
   const f = a.createBiquadFilter(); f.type = o.type || 'bandpass'; f.frequency.value = o.freq || 2000; f.Q.value = o.q || 1;
-  const g = a.createGain(); g.gain.setValueAtTime(o.vol || .15, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  const g = a.createGain(); const at = Math.min(.025, dur / 3); // a soft start, so short bursts never click
+  g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(o.vol || .15, t + at); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
   s.connect(f); f.connect(g); g.connect(o.bus === 'music' ? musicBus : sfxBus); s.start(t); s.stop(t + dur + .02);
 }
+// Rain: a gentle steady hush (looped noise, low-passed, slow fade in and out); on only while it rains and Sound effects is on.
+let rainNode = null;
+export const Rain = {
+  set(on) {
+    const a = ac(); if (!a) return; on = !!on && !!settings.sound;
+    if (!rainNode) {
+      if (!on) return;
+      const s = a.createBufferSource(), lo = a.createBiquadFilter(), hi = a.createBiquadFilter(), g = a.createGain();
+      s.buffer = noiseBuf; s.loop = true; lo.type = 'lowpass'; lo.frequency.value = 1500; hi.type = 'highpass'; hi.frequency.value = 300; g.gain.value = 0;
+      s.connect(lo); lo.connect(hi); hi.connect(g); g.connect(sfxBus); s.start(); rainNode = { s, g, on: false };
+    }
+    if (rainNode.on === on) return; rainNode.on = on;
+    rainNode.g.gain.setTargetAtTime(on ? .05 : 0, a.currentTime, on ? 1.5 : 1);
+  }
+};
 
 const PENTA = [72, 74, 76, 79, 81, 84, 86, 88];
 export const SFX = {
@@ -82,10 +98,10 @@ export const SFX = {
   secret() { [67, 71, 74, 79, 83, 86].forEach((m, i) => tone(midi(m), .5, { type: 'triangle', at: i * .09, vol: .1 })); noise(.6, { at: .5, freq: 7000, vol: .05 }); },
   fanfare() { [[72, 0], [76, .15], [79, .3], [84, .45], [79, .7], [84, .85]].forEach(([m, t], i) => { tone(midi(m), i === 5 ? .9 : .22, { type: 'square', at: t, vol: .05 }); tone(midi(m - 12), i === 5 ? .9 : .22, { type: 'triangle', at: t, vol: .1 }); }); },
   coin() { tone(midi(83), .08, { type: 'square', vol: .05 }); tone(midi(88), .3, { type: 'square', at: .08, vol: .05 }); },
-  step() { noise(.05, { freq: rand(500, 900), vol: .05, q: .8 }); },
+  step() { noise(.09, { type: 'lowpass', freq: rand(400, 600), vol: .05 }); },
   jump() { tone(300, .2, { to: 600, type: 'triangle', vol: .08 }); },
   glide() { noise(.5, { freq: 600, vol: .08, q: .5 }); },
-  splash() { noise(.4, { freq: 1300, vol: .12, q: .5 }); },
+  splash() { noise(.5, { type: 'lowpass', freq: 1000, vol: .09 }); },
   whoosh() { noise(.4, { freq: 900, vol: .1, q: .6 }); },
   hee() { for (let i = 0; i < 4; i++) { const f = rand(900, 1200) + i * 40; tone(f, .08, { at: i * .09, to: f * 1.25, vol: .1 }); } },
   cook() { for (let i = 0; i < 8; i++) noise(.08, { at: i * .09, freq: rand(2500, 5000), vol: .06 }); },
