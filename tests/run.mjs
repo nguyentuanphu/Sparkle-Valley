@@ -2442,7 +2442,7 @@ await check('offline', async () => {
   // answers (Wi-Fi with no internet): nothing at start may wait on the network. The game is served here from its own
   // little server on 127.0.0.2 (the game skips its service worker on localhost) that can stop answering.
   const http = await import('http'), path = await import('path');
-  const root = path.resolve('..'), TY = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.woff2': 'font/woff2' };
+  const root = path.resolve(process.env.SV_ROOT || '..'), TY = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.woff2': 'font/woff2' };
   let hang = false;
   const srv = http.createServer((q, r) => {
     if (hang) return;

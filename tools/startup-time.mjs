@@ -8,7 +8,8 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import { launch } from '../tests/harness.mjs';
+import zlib from 'zlib';
+import { launch, seedPlayers } from '../tests/harness.mjs';
 const root = path.resolve(process.argv[2] || path.join(path.dirname(new URL(import.meta.url).pathname), '..'));
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml' };
 let hang = false;
@@ -17,12 +18,23 @@ const srv = http.createServer((q, r) => {
   let p = decodeURIComponent(q.url.split('?')[0]); if (p.endsWith('/')) p += 'index.html';
   const f = path.join(root, p);
   if (!f.startsWith(root) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { r.writeHead(404); return r.end(); }
-  r.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache' }); fs.createReadStream(f).pipe(r);
+  // compressed like Netlify does (gzip here, Netlify uses brotli or gzip), so the download is measured as a phone gets it
+  const type = TYPES[path.extname(f)] || 'application/octet-stream', zip = /text|javascript|json|manifest|svg/.test(type) && /gzip/.test(q.headers['accept-encoding'] || '');
+  r.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache', ...(zip ? { 'Content-Encoding': 'gzip' } : {}) });
+  (zip ? fs.createReadStream(f).pipe(zlib.createGzip()) : fs.createReadStream(f)).pipe(r);
 });
 await new Promise(res => srv.listen(0, '127.0.0.2', res));
 const url = `http://127.0.0.2:${srv.address().port}/`;
 const b = await launch();
-const prep = async ctx => ctx.addInitScript(() => { try { localStorage.setItem('sv2_settings', JSON.stringify({ voice: false, sound: false, music: false, quality: 'low', autoPack: false })); } catch (e) { } });
+const prep = async ctx => { await ctx.addInitScript(seedPlayers); return ctx.addInitScript(() => { try { localStorage.setItem('sv2_settings', JSON.stringify({ voice: false, sound: false, music: false, quality: 'low', autoPack: false })); } catch (e) { } }); };
+// from tapping the title to walking in the valley (a child already made; the story's first film skipped)
+async function enter(page) {
+  const t0 = Date.now();
+  await page.click('.screen.title .press', { force: true }); await page.waitForSelector('.screen.who', { timeout: 90000 });
+  await page.evaluate(() => { window.__sv._owlAuto = true; }); await page.locator('.pick[data-id]').nth(0).click(); await page.click('.who .go');
+  await page.waitForFunction(() => window.__sv && window.__sv.heroes.length > 0, null, { timeout: 120000 });
+  return Date.now() - t0;
+}
 async function first(ctx, page, { slow = false } = {}) {
   if (slow) { const c = await ctx.newCDPSession(page); await c.send('Network.enable'); await c.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: 1.6e6 / 8, uploadThroughput: 750e3 / 8 }); }
   const t0 = Date.now(); await page.goto(url); await page.waitForSelector('.screen.title', { timeout: 180000 });
@@ -31,7 +43,7 @@ async function first(ctx, page, { slow = false } = {}) {
   return { ms, mb: +mb.toFixed(2) };
 }
 const out = {};
-{ const ctx = await b.newContext(); await prep(ctx); const p = await ctx.newPage(); out.fresh = await first(ctx, p); await ctx.close(); }
+{ const ctx = await b.newContext(); await prep(ctx); const p = await ctx.newPage(); out.fresh = await first(ctx, p); out.fresh.enterMs = await enter(p); await ctx.close(); }
 { const ctx = await b.newContext(); await prep(ctx); const p = await ctx.newPage(); out.slow4g = await first(ctx, p, { slow: true }); await ctx.close(); }
 {
   const ctx = await b.newContext(); await prep(ctx); const p = await ctx.newPage();

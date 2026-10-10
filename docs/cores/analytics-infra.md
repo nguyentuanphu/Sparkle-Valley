@@ -33,7 +33,7 @@ nothing while hidden).
 - What the analytics keep is written exactly at the top of `netlify/lib/players.mjs`.
 
 ## Checks you run
-`studio report saves cloud photo boot unit familyphotos`
+`studio report saves cloud photo boot unit familyphotos offline nostudio`
 (`studio` covers the players report, online-now, admins and the voice relay function on a pretend Netlify.)
 
 ## Environment variables (set by the owner in Netlify, never in the code)
@@ -50,3 +50,11 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
 - Analytics per device and per child, with first names, device and browser, city and country (round L).
 - green dot Playing now / grey dot Offline per device in Studio (round O).
 - GitHub and Netlify are separate steps: “yes, push” then “yes, deploy”.
+- (10 Oct) The game must start and play with no internet and on a connection that never answers: nothing at start waits
+  on the network (check `offline`).
+- (10 Oct) One switch for the internet: Grown-ups → Internet and playing online → “Use the internet (friends online, real
+  places)”, with a folded list of everything that uses the internet. When it is on, the game never asks again (the real
+  place's Google map opens straight away; PRIV-011 reworded).
+- (10 Oct) Parents and children never see “Sparkle Studio” or “Studio”: it is for the admin only (check `nostudio`).
+- (10 Oct) The website serves a packed copy of the scripts (`tools/bundle.mjs`, Netlify build and `build-netlify.sh`);
+  the fast checks run on GitHub for every pull request (`.github/workflows/checks.yml`).

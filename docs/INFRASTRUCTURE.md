@@ -12,12 +12,13 @@ Keep this file current in the same round as any change to hosting, servers, keys
 
 | Piece | What it is | Where it runs | Source |
 |---|---|---|---|
-| **The game** | Plain JS ES modules + three.js, PWA, no build step | The child's browser / Home Screen app | repo root: `index.html`, `js/`, `css/`, `vendor/`, `fonts/`, `icons/`, `content/`, `sw.js` |
+| **The game** | Plain JS ES modules + three.js, PWA, no build step to run it. The website serves a packed copy (`tools/bundle.mjs`, see §2) | The child's browser / Home Screen app | repo root: `index.html`, `js/`, `css/`, `vendor/`, `fonts/`, `icons/`, `content/`, `sw.js` |
 | **Voices** | Recorded Azure voice pack (EN/VI, ~7,400 files, ~140 MB) | Downloaded to each device (Cache Storage `sv-voices`), played offline | `voices/` in **GitHub** (tracked) |
 | **World pictures** | Pictures worked out from the world at start (today: the map), stored by build | Cache Storage `sv-world` on each device (painted once per build; the service worker clears it on update) | `js/worldcache.js` |
 | **Real photos** | Landmark photos chosen in the Studio | Cached on the device once seen | `photos/` (from the Studio; none yet) |
 | **Family content** | Message, names, faces, tales, quiz, villagers, buildings, defaults, the Family album (postcards) | Read at start by `js/custom.js` | `content/custom.json`, `content/faces/`, `content/album/` (photos ≤ 1000 px, ≤ 600 KB) |
-| **Live website** | Netlify site **sparklevalley**, linked to GitHub `main` | Netlify CDN | whole repo (`netlify.toml`: publish `.`) |
+| **Live website** | Netlify site **sparklevalley**, linked to GitHub `main` | Netlify CDN | whole repo (`netlify.toml`: publish `.`, build command `node tools/bundle.mjs .`) |
+| **Checks on GitHub** | The fast checks on every pull request and branch push (unit, rules, preload, emoji, arch, types, names) and a packed Netlify zip | GitHub Actions | `.github/workflows/checks.yml` |
 | **Player counter** | Anonymous "hello" from devices | Netlify Function `/api/hello` + Netlify Blobs store `players` | `netlify/functions/hello.mjs`, `netlify/lib/players.mjs`, `js/players.js` |
 | **Sparkle Studio online** | Grown-ups' dashboard at `/studio/` | Netlify Function `/studio/api/*` | `netlify/functions/studio.mjs` + `studio/core.cjs` + `studio/ui/` |
 | **Sparkle Studio exe** | The same dashboard on Windows | `SparkleStudio.exe` → local server 127.0.0.1:7777 | `studio/studio.cjs` + `studio/core.cjs` + `studio/ui/` (built by `studio/build-exe.sh`) |
@@ -31,6 +32,9 @@ Keep this file current in the same round as any change to hosting, servers, keys
    - **HARD RULE:** nothing is pushed until the owner has checked it and said "yes, push".
 2. A pushed branch gets a draft PR. Netlify makes a **deploy preview** for each PR.
 3. Merge to `main` → Netlify rebuilds `sparklevalley` in 1–2 minutes. The functions are bundled by esbuild (`[functions]` in `netlify.toml`).
+   - **The start-up scripts are packed** (10 Oct, Analytics & Infra): Netlify's build runs `node tools/bundle.mjs .` in its own copy. js/main.js and everything it imports become a few minified files in `bundle/` (names carry a content hash); `index.html` starts `bundle/main-….js` and preloads its start-up chunks; `sw.js` FILES lists `bundle/` instead of the game's js/ files. js/ stays on the site because Sparkle Studio's pages read it. A small import map points `/js/state.js`, `/js/custom.js`, `/js/world.js` and `/js/games/frame.js` at their packed entries, so the checks reach the game's running copy. esbuild (pinned version) is installed in the system's temp folder, never published. If packing cannot run, the site keeps the plain modules, which work the same. `build-netlify.sh` packs the zip the same way.
+   - Start-up before and after (`tools/startup-time.mjs`, compressed as Netlify serves it): 1.17 MB → 0.95 MB, about 150 files → 19, a slow phone connection 11.1 s → 9.3 s to the first screen.
+   - **Offline and slow networks:** nothing at start waits on the network. The family's content pack (`content/custom.json`) and the photo list come from the network if it answers within 1.5 s, otherwise from the saved copy (the answer still refreshes the copy); `js/custom.js` gives up after 4 s on a device with no saved copy. Checked by `offline` (no connection, and a connection that never answers).
 4. Devices pick up the new version the next time the game opens online.
    - The service worker `sw.js` has `VERSION = 'sv-<date>-r<NN>'`.
    - `js/build.js` `BUILD` must match it (the `ground` check enforces this).
@@ -74,10 +78,12 @@ Netlify Blobs needs no key; it is attached to the site automatically.
 | Public TURN (Open Relay; may need an account now) | Voice across strict networks | A grown-up can add their own TURN in Grown-ups → Online play |
 | Public MQTT brokers: emqx, hivemq, mosquitto, eclipse (`wss://`) | Cloud relay, friends' status, invites | All four are used at once, so one being down doesn't matter |
 | Wikipedia / Wikimedia Commons / Openverse | The Studio's real-photo search; `tools/fetch-landmark-photos.mjs` (run by a developer) | Studio and the tool only: the game shows only the saved `photos/` (round R privacy) |
-| Google Maps / Street View (embedded) | A landmark's real place, inside the game | Opens only after a grown-up's press and hold (round R privacy) |
+| Google Maps / Street View (embedded) | A landmark's real place, inside the game | Opens only after a grown-up's press and hold (round R privacy), or straight away once a grown-up has turned on Grown-ups → Internet and playing online → Use the internet (owner, 10 Oct) |
 | Microsoft Azure Speech | Making voice files (Studio, or `tools/make-voice-pack.mjs --engine azure`) | Making voices only; children play recorded files. (In the cloud sandbox Node needs `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` to reach Azure through the proxy; without it Azure answers 403 although the key is right.) |
 
 ## 5. Data that leaves a device (privacy summary; full table in handbook §10)
+
+Parents see the same list in plain words, folded under the Use the internet switch (`netListHTML` in `js/extras.js`). Nothing a parent or child sees names Sparkle Studio (owner, 10 Oct: it is for the admin only; check `nostudio`).
 
 - **Player hello:** random device id, build, language, number of profiles, minutes, games, stories, device type, installed or not, minutes online, and ≤ 15 game lines that had no recording.
   - Never names, photos, places or anything typed.
@@ -115,6 +121,9 @@ Netlify Blobs needs no key; it is attached to the site automatically.
 
 In `tests/`, run `npm install` once (Playwright, and TypeScript for the `types` check), then `node run.mjs [check…]`. The full list is in HANDOFF §2.
 - **`unit`** runs `node --test` on `tests/unit/` (no browser).
+- **On GitHub:** `.github/workflows/checks.yml` runs `unit rules preload emoji arch types names` and builds the packed zip on every pull request and every push to a branch (not `main`; Netlify deploys that). Nothing is deployed.
+- **`offline`** serves the game itself on 127.0.0.2 (the game skips its service worker on localhost) and can stop answering. `SV_ROOT=../netlify-site` runs it on the packed copy.
+- **Start-up numbers for a report:** `cd tests && node ../tools/startup-time.mjs [folder]` (fresh, slow phone connection, saved, offline, no answer; time to walk into the valley).
 - **`perf`** compares against `tests/perf-baseline.json` (PERF budgets; numbers may only go down). The test browser draws in software, so frames per second is measured on real phones.
 - **Online checks:** `multiplayer`, `meet`, `cloud`, `knock` need a local PeerJS server (127.0.0.1:9000) and an MQTT broker (127.0.0.1:9001). The commands are in `tests/README.md`; without them those checks say "skipped".
 - **`studio`** uses a fake GitHub and fake Netlify (ports 8791/8792) built into `tests/studio-check.mjs`.

@@ -30,4 +30,10 @@ Format for a request:
 - (nothing open)
 
 ## Analytics & Infra
-- (nothing open)
+- Branch `claude/kind-volta-1iv5ea` (10 Oct AEST), owner asked for it directly: offline start, one Use the internet switch, no Studio in parents' text, packed scripts, GitHub checks. Waiting for "yes, push".
+- [ ] (Analytics & Infra → Kid UI) changed with the owner's go, please keep: `js/ui.js` Grown-ups → "Internet and playing online", the switch "Use the internet (friends online, real places)" and the folded list under it; family photos and missing-lines notes reworded without Studio · owner 10 Oct · 10 Oct AEST
+- [ ] (Analytics & Infra → Play) changed with the owner's go: `js/parents.js` family missions and family voices notes without Studio; a family mission's tag reads "Family" · owner 10 Oct · 10 Oct AEST
+- [ ] (Analytics & Infra → Voice & Audio) changed with the owner's go: `js/extras.js` voice pack notes without Studio · owner 10 Oct · 10 Oct AEST
+- [ ] (Analytics & Infra → Studio) changed with the owner's go: `js/custom.js` waits at most 4 s for content/custom.json; `js/realworld.js` opens the real place's map straight away when Use the internet is on (PRIV-011 reworded) · owner 10 Oct · 10 Oct AEST
+- [ ] (Analytics & Infra → Release) new checks `offline` and `nostudio` for the HANDOFF §2 table; the PR checks workflow and the packing step for `docs/INFRASTRUCTURE.md` (written) and the release checklist; `perf` fails on the plain modules since round S (start 3.37 MB > 3.2 MB budget) but passes on the packed copy the website serves (2.6 MB): the owner to decide whether PERF-001 measures the packed copy · 10 Oct AEST
+- [ ] (Analytics & Infra → All cores) never write "Sparkle Studio" or "Studio" in text a parent or child sees (owner, 10 Oct; check `nostudio`) · 10 Oct AEST
