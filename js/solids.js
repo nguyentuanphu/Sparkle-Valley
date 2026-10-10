@@ -8,10 +8,12 @@
 import { THREE } from './gfx.js';
 import { BUILD } from './build.js';
 import { CUSTOM } from './custom.js';
+import { MAP_VERSION, WORLD } from './content/map.js';
 
-// the saved map belongs to one build and one family content pack (moved or added buildings change it)
-const SIG = (() => { let h = 0; const t = JSON.stringify(CUSTOM || {}); for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return BUILD + '_' + (h >>> 0).toString(36); })();
-const CELL = .5, HALF = 200, N = Math.round(HALF * 2 / CELL), LO = .35, HI = 1.6;
+// the saved map belongs to one build, one layout of the valley (round T: js/content/map.js) and one family content
+// pack (moved or added buildings change it)
+const SIG = (() => { let h = 0; const t = JSON.stringify(CUSTOM || {}); for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return BUILD + '_' + MAP_VERSION + '_' + (h >>> 0).toString(36); })();
+const CELL = .5, HALF = WORLD.size / 2, N = Math.round(HALF * 2 / CELL), LO = .35, HI = 1.6;
 export function buildSolids(G) {
   const { scene, world: W } = G, grid = new Uint8Array(N * N);
   const idx = (x, z) => { const i = Math.floor((x + HALF) / CELL), j = Math.floor((z + HALF) / CELL); return i < 0 || j < 0 || i >= N || j >= N ? -1 : j * N + i; };

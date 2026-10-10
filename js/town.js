@@ -117,7 +117,9 @@ export function raisedHouse(w = 7.5, d = 7) {
 // motorbikes parked on Two Homes Street's footpath: [x, z, turn, model] (js/traffic.js puts them there)
 export const TOWN_PARKED = [];
 export function createTown(G) {
-  const { scene, world } = G, y0 = TOWN.h, RZ = TOWN.roadZ, N = 38, S = 54; // front lines of the north and south houses
+  // (round T) every position is an offset from the street's anchor in the map (js/content/map.js), so the street moves with it
+  const X = dx => TOWN.x + dx, Z = dz => TOWN.z + dz;
+  const { scene, world } = G, y0 = TOWN.h, RZ = TOWN.roadZ, N = Z(-15), S = Z(1); // front lines of the north and south houses
   const mat = toonVC();
   const put = (geo, x, z, rot = 0, collide = null) => {
     const m = new THREE.Mesh(geo, mat); m.position.set(x, heightAt(x, z), z); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; scene.add(m);
@@ -130,12 +132,12 @@ export function createTown(G) {
   };
 
   // ---------- the road, footpaths, lines and a zebra crossing ----------
-  const g = [], x0 = 6, x1 = 44, L = x1 - x0, cx = (x0 + x1) / 2;
+  const g = [], x0 = X(-26), x1 = X(12), L = x1 - x0, cx = (x0 + x1) / 2;
   g.push(P(Box(L, .06, 7), '#b4b9bc', [cx, .03, RZ]));
   g.push(P(Box(L, .07, 5.5), '#e8d5a8', [cx, .035, RZ - 6.25]), P(Box(L, .07, 3.6), '#e8d5a8', [cx, .035, RZ + 5.3])); // the north footpath is wide: shop fronts open onto it
   g.push(P(Box(L, .08, .16), '#f6f1e4', [cx, .05, RZ - 3.2]), P(Box(L, .08, .16), '#f6f1e4', [cx, .05, RZ + 3.2]));
-  for (let x = x0 + 2; x < x1 - 2; x += 4) if (Math.abs(x - 28) > 3) g.push(P(Box(1.8, .08, .16), '#f6f1e4', [x, .05, RZ]));
-  for (let k = -3; k <= 3; k++) g.push(P(Box(.6, .08, 5.6), '#f6f1e4', [28 + k * 1.1, .055, RZ]));
+  for (let x = x0 + 2; x < x1 - 2; x += 4) if (Math.abs(x - X(-4)) > 3) g.push(P(Box(1.8, .08, .16), '#f6f1e4', [x, .05, RZ]));
+  for (let k = -3; k <= 3; k++) g.push(P(Box(.6, .08, 5.6), '#f6f1e4', [X(-4) + k * 1.1, .055, RZ]));
   const road = new THREE.Mesh(merge(g), mat); road.position.y = y0; road.receiveShadow = true; scene.add(road);
 
   // ---------- houses ----------
@@ -149,31 +151,31 @@ export function createTown(G) {
   const houseOld = (b, x, front, south, kind) => { house(b, x, front, south); const m = scene.children[scene.children.length - 1]; outline(m, .03, '#4a3a3f'); if (kind) world.houses.push({ x, z: south ? front + b.d / 2 : front - b.d / 2, rot: south ? Math.PI : 0, d: b.d, kind }); };
   // Bà Rịa side (north): tube houses with shops downstairs, then the French villa
   // (x 12–18 is the Huệ Nghi shop and x 17.5–23 on the south side is house number 8, both built in js/cities.js)
-  place(houseTube({ wall: '#f6c8a8', floors: 3, d: 7.4, sign: ['Sweet soup · Chè', 'Chè'] }), 20.1, N);
-  place(houseTube({ wall: '#f6e09a', floors: 2, d: 7.4, sign: ['Sand & Stone', 'Cát · Đá'] }), 24.6, N);
-  const villa = Object.assign(houseVilla(), { kind: 'villa' }); place(villa, 32.3, N - 1.2);
+  place(houseTube({ wall: '#f6c8a8', floors: 3, d: 7.4, sign: ['Sweet soup · Chè', 'Chè'] }), X(-11.9), N);
+  place(houseTube({ wall: '#f6e09a', floors: 2, d: 7.4, sign: ['Sand & Stone', 'Cát · Đá'] }), X(-7.4), N);
+  const villa = Object.assign(houseVilla(), { kind: 'villa' }); place(villa, X(.3), N - 1.2);
   // Bác Sơn's house: west of the bridge tower, with its door and garden path open to the footpath
-  houseOld(brickHouse(7, 8), 41.6, N - 2.5, false, 'brick');
+  houseOld(brickHouse(7, 8), X(9.6), N - 2.5, false, 'brick');
   // Sydney side (south)
-  houseOld(raisedHouse(), 13.5, S + 1.5, true, 'raised');
-  place(Object.assign(houseCottage({ yard: false }), { kind: 'cottage' }), 45, S + 4.5, true);
+  houseOld(raisedHouse(), X(-18.5), S + 1.5, true, 'raised');
+  place(Object.assign(houseCottage({ yard: false }), { kind: 'cottage' }), X(13), S + 4.5, true);
   // garden walls and fences
   const fence = [];
-  fence.push(P(Box(10, 1, .25), '#f6ead0', [32.3, .5, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [31.1, .8, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [33.5, .8, N - .6]));
-  for (let k = 0; k < 12; k++) if (k < 5 || k > 6) fence.push(P(Box(.12, .9, .12), '#ffffff', [40.6 + k * .8, .45, S + .6]));
-  fence.push(P(Box(3.6, .1, .1), '#ffffff', [42.4, .75, S + .6]), P(Box(3.6, .1, .1), '#ffffff', [47.6, .75, S + .6]));
-  fence.push(P(Box(.25, 1, .25), '#c0392b', [42.3, .5, S + .4]), P(Box(.5, .4, .4), '#c0392b', [42.3, 1.1, S + .4]));       // letterbox
-  fence.push(P(Box(1.3, .7, .3), '#b5654a', [38.75, .35, N - .5]), P(Box(3.9, .7, .3), '#b5654a', [43.15, .35, N - .5]));   // low brick fence with a gap for the path to Bác Sơn's door
+  fence.push(P(Box(10, 1, .25), '#f6ead0', [X(.3), .5, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [X(-.9), .8, N - .6]), P(Box(.5, 1.6, .5), '#f6ead0', [X(1.5), .8, N - .6]));
+  for (let k = 0; k < 12; k++) if (k < 5 || k > 6) fence.push(P(Box(.12, .9, .12), '#ffffff', [X(8.6) + k * .8, .45, S + .6]));
+  fence.push(P(Box(3.6, .1, .1), '#ffffff', [X(10.4), .75, S + .6]), P(Box(3.6, .1, .1), '#ffffff', [X(15.6), .75, S + .6]));
+  fence.push(P(Box(.25, 1, .25), '#c0392b', [X(10.3), .5, S + .4]), P(Box(.5, .4, .4), '#c0392b', [X(10.3), 1.1, S + .4]));       // letterbox
+  fence.push(P(Box(1.3, .7, .3), '#b5654a', [X(6.75), .35, N - .5]), P(Box(3.9, .7, .3), '#b5654a', [X(11.15), .35, N - .5]));   // low brick fence with a gap for the path to Bác Sơn's door
   const fm = new THREE.Mesh(merge(fence), mat); fm.position.y = y0; fm.castShadow = true; scene.add(fm);
-  world.boxes.push({ x0: 27.3, x1: 30.9, z0: N - .8, z1: N - .4 }, { x0: 33.7, x1: 37.3, z0: N - .8, z1: N - .4 });
+  world.boxes.push({ x0: X(-4.7), x1: X(-1.1), z0: N - .8, z1: N - .4 }, { x0: X(1.7), x1: X(5.3), z0: N - .8, z1: N - .4 });
 
   // ---------- street lamps, and power poles (owner, round R: the poles are switched off for now but kept; when Studio's
   // "powerPoles" switch is on they stand here and js/powerlines.js wires them to each other and to the tube houses) ----------
   // spaced so none stands in front of a door on the south side (house 8's door at x 20.3 was blocked by one)
-  for (let x = 9; x <= 50; x += 8) addPole(world, x, y0, S - .7);
-  addDrop(20.1, y0 + 8.6, N); addDrop(32.3, y0 + 6.2, N - 1.4);   // (power into two tube houses across the road)
+  for (let x = X(-23); x <= X(18); x += 8) addPole(world, x, y0, S - .7);
+  addDrop(X(-11.9), y0 + 8.6, N); addDrop(X(.3), y0 + 6.2, N - 1.4);   // (power into two tube houses across the road)
   const pp = [];
-  for (const [x, side] of [[16, -1], [29, -1], [38, -1], [28, 1], [36, 1]]) {
+  for (const [x, side] of [[X(-16), -1], [X(-3), -1], [X(6), -1], [X(-4), 1], [X(4), 1]]) {
     const z = side < 0 ? N + .9 : S - 1.4;
     pp.push(P(Cyl(.09, .12, 6.2, 6), '#6f7a66', [x, 3.1, z]));
     pp.push(P(new THREE.TorusGeometry(.7, .05, 4, 10, Math.PI * .7), '#6f7a66', [x, 6.2, z + side * -.6], [0, Math.PI / 2, 0]));
@@ -191,47 +193,47 @@ export function createTown(G) {
     if (kind === 'frangipani') { t.push(P(Cyl(.14, .22, 2, 6), '#8a7a6a', [0, 1, 0])); [[0, 2.4, 0, 1], [.7, 2.2, .3, .7]].forEach(([a, b, c, r]) => t.push(P(new THREE.IcosahedronGeometry(r, 1), '#4f9a62', [a, b, c]))); for (let k = 0; k < 8; k++) t.push(P(new THREE.SphereGeometry(.12, 5, 4), '#fff6dc', [Math.cos(k) * .7, 2.9 + (k % 3) * .1, Math.sin(k) * .7])); }
     put(merge(t), x, z); world.colliders.push({ x, z, r: kind === 'banana' ? .4 : .5 });
   };
-  tree(19.5, 64.5, 'jacaranda'); tree(37, 72, 'jacaranda'); tree(50, 36, 'gum'); tree(51, 66, 'gum'); tree(4.6, 37, 'gum');
-  tree(12, 31, 'banana'); tree(10.4, 32.6, 'banana'); tree(47.6, 31, 'frangipani'); tree(18, 71, 'frangipani');
+  tree(X(-12.5), Z(11.5), 'jacaranda'); tree(X(5), Z(19), 'jacaranda'); tree(X(18), Z(-17), 'gum'); tree(X(19), Z(13), 'gum'); tree(X(-27.4), Z(-16), 'gum');
+  tree(X(-20), Z(-22), 'banana'); tree(X(-21.6), Z(-20.4), 'banana'); tree(X(15.6), Z(-22), 'frangipani'); tree(X(-14), Z(18), 'frangipani');
 
   // ---------- little things that make it feel lived in ----------
   const bits = [];
   // scooters parked on the footpath
   const scooter = (x, z, col, rot) => [P(Box(.25, .5, 1.5), col, [x, .55, z], [0, rot, 0]), P(Cyl(.28, .28, .14, 10), '#2f3336', [x, .28, z + .6], [0, rot, Math.PI / 2]), P(Cyl(.28, .28, .14, 10), '#2f3336', [x, .28, z - .6], [0, rot, Math.PI / 2]), P(Box(.3, .14, .7), '#3a3030', [x, .85, z - .2], [0, rot, 0]), P(Box(.7, .06, .06), '#9aa', [x, 1.2, z + .7], [0, rot, 0])];
   // (round R: the real motorbikes of js/vehicles.js now stand here, placed by js/traffic.js)
-  TOWN_PARKED.push([14.3, N + 2.4, 0, 'honda67'], [15.5, N + 2.6, .1, 'cub'], [25.6, N + 2.8, -.1, 'dream']);
+  TOWN_PARKED.push([X(-17.7), N + 2.4, 0, 'honda67'], [X(-16.5), N + 2.6, .1, 'cub'], [X(-6.4), N + 2.8, -.1, 'dream']);
   // wheelie bins on the kerb (red lid for rubbish, yellow lid for recycling)
-  [[41.3, '#d9483a'], [42.2, '#e8c03a']].forEach(([x, lid]) => bits.push(P(Box(.7, 1, .7), '#3c5a44', [x, .5, S - .2]), P(Box(.76, .1, .8), lid, [x, 1.05, S - .2])));
-  [[36.6, '#d9483a']].forEach(([x, lid]) => bits.push(P(Box(.7, 1, .7), '#3c5a44', [x, .5, N + .3]), P(Box(.76, .1, .8), lid, [x, 1.05, N + .3])));
+  [[X(9.3), '#d9483a'], [X(10.2), '#e8c03a']].forEach(([x, lid]) => bits.push(P(Box(.7, 1, .7), '#3c5a44', [x, .5, S - .2]), P(Box(.76, .1, .8), lid, [x, 1.05, S - .2])));
+  [[X(4.6), '#d9483a']].forEach(([x, lid]) => bits.push(P(Box(.7, 1, .7), '#3c5a44', [x, .5, N + .3]), P(Box(.76, .1, .8), lid, [x, 1.05, N + .3])));
   // Hills hoist clothes line in the backyard
-  const hx = 45, hz = S + 17.5;
+  const hx = X(13), hz = S + 17.5;
   bits.push(P(Cyl(.06, .06, 2.4, 6), '#b8bcbf', [hx, 1.2, hz]));
   for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2; bits.push(P(Box(2.6, .05, .05), '#b8bcbf', [hx + Math.cos(a) * 1.3, 2.3, hz + Math.sin(a) * 1.3], [0, -a, 0])); }
   [['#ff7eb8', .7], ['#7fd8ff', -.6], ['#ffd23f', 1.4]].forEach(([c, o], k) => bits.push(P(Box(.6, .7, .04), c, [hx + o, 1.9, hz + (k - 1) * .8])));
   // lanterns strung along the balconies
-  for (let k = 0; k < 9; k++) bits.push(P(new THREE.SphereGeometry(.22, 8, 6), k % 3 === 2 ? '#ffcf3a' : '#e8332a', [14 + k * 1.4, 3.2 - Math.sin(k / 8 * Math.PI) * .4, N + 1.6], [0, 0, 0], [1, 1.3, 1]));
-  bits.push(P(Cyl(.02, .02, 12, 3), '#5a3a2a', [19.6, 3.35, N + 1.6], [0, 0, Math.PI / 2]));
+  for (let k = 0; k < 9; k++) bits.push(P(new THREE.SphereGeometry(.22, 8, 6), k % 3 === 2 ? '#ffcf3a' : '#e8332a', [X(-18) + k * 1.4, 3.2 - Math.sin(k / 8 * Math.PI) * .4, N + 1.6], [0, 0, 0], [1, 1.3, 1]));
+  bits.push(P(Cyl(.02, .02, 12, 3), '#5a3a2a', [X(-12.4), 3.35, N + 1.6], [0, 0, Math.PI / 2]));
   // the park: grass edging, a swing set and a slide
-  bits.push(P(Box(1.2, .06, 1.2), '#c9a77a', [35, .03, 70.5]));
-  [[33.4, 70.5], [36.6, 70.5]].forEach(([x, z]) => bits.push(P(Box(.12, 2.6, .12), '#e8433a', [x, 1.3, z - .8], [.25, 0, 0]), P(Box(.12, 2.6, .12), '#e8433a', [x, 1.3, z + .8], [-.25, 0, 0])));
-  bits.push(P(Cyl(.06, .06, 3.4, 6), '#e8433a', [35, 2.5, 70.5], [0, 0, Math.PI / 2]));
-  [34.3, 35.7].forEach(x => bits.push(P(Box(.04, 1.6, .04), '#666', [x, 1.7, 70.5]), P(Box(.5, .06, .25), '#3a78c8', [x, .9, 70.5])));
-  bits.push(P(Box(.8, .1, 3.2), '#ffd23f', [24, 1, 72], [-.55, 0, 0]), P(Box(.8, 2, .8), '#3cc7e8', [24, 1, 70.2]), P(Box(.06, 2.4, .06), '#e8e8e8', [23.6, 1.2, 70.2]), P(Box(.06, 2.4, .06), '#e8e8e8', [24.4, 1.2, 70.2]));
-  world.colliders.push({ x: 35, z: 70.5, r: 1.5 }, { x: 24, z: 70.8, r: 1.2 });
+  bits.push(P(Box(1.2, .06, 1.2), '#c9a77a', [X(3), .03, Z(17.5)]));
+  [[X(1.4), Z(17.5)], [X(4.6), Z(17.5)]].forEach(([x, z]) => bits.push(P(Box(.12, 2.6, .12), '#e8433a', [x, 1.3, z - .8], [.25, 0, 0]), P(Box(.12, 2.6, .12), '#e8433a', [x, 1.3, z + .8], [-.25, 0, 0])));
+  bits.push(P(Cyl(.06, .06, 3.4, 6), '#e8433a', [X(3), 2.5, Z(17.5)], [0, 0, Math.PI / 2]));
+  [X(2.3), X(3.7)].forEach(x => bits.push(P(Box(.04, 1.6, .04), '#666', [x, 1.7, Z(17.5)]), P(Box(.5, .06, .25), '#3a78c8', [x, .9, Z(17.5)])));
+  bits.push(P(Box(.8, .1, 3.2), '#ffd23f', [X(-8), 1, Z(19)], [-.55, 0, 0]), P(Box(.8, 2, .8), '#3cc7e8', [X(-8), 1, Z(17.2)]), P(Box(.06, 2.4, .06), '#e8e8e8', [X(-8.4), 1.2, Z(17.2)]), P(Box(.06, 2.4, .06), '#e8e8e8', [X(-7.6), 1.2, Z(17.2)]));
+  world.colliders.push({ x: X(3), z: Z(17.5), r: 1.5 }, { x: X(-8), z: Z(17.8), r: 1.2 });
   // chú Thuận and mợ Phương's sand and stone shop: a heap of yellow sand and one of grey stones by the door, and sacks
-  bits.push(P(new THREE.ConeGeometry(.5, .55, 9), '#e2c27a', [22.85, .27, N + .65]), P(new THREE.DodecahedronGeometry(.42, 0), '#8f8f8a', [26.35, .25, N + .65], [0, .4, 0], [1, .6, 1]));
-  [[23.3, .35], [26, .25]].forEach(([x, dz]) => bits.push(P(Box(.45, .3, .3), '#e9e2cc', [x, .15, N + .3 + dz])));
-  world.colliders.push({ x: 22.85, z: N + .65, r: .5 }, { x: 26.35, z: N + .65, r: .45 });
+  bits.push(P(new THREE.ConeGeometry(.5, .55, 9), '#e2c27a', [X(-9.15), .27, N + .65]), P(new THREE.DodecahedronGeometry(.42, 0), '#8f8f8a', [X(-5.65), .25, N + .65], [0, .4, 0], [1, .6, 1]));
+  [[X(-8.7), .35], [X(-6), .25]].forEach(([x, dz]) => bits.push(P(Box(.45, .3, .3), '#e9e2cc', [x, .15, N + .3 + dz])));
+  world.colliders.push({ x: X(-9.15), z: N + .65, r: .5 }, { x: X(-5.65), z: N + .65, r: .45 });
   // O Thương and dượng Dũng's baby clothes, on a rack under the raised house
-  bits.push(P(Box(.06, 1.5, .06), '#d0d0d0', [15.6, .75, S + 1.1]), P(Box(.06, 1.5, .06), '#d0d0d0', [17, .75, S + 1.1]), P(Box(1.5, .05, .05), '#d0d0d0', [16.3, 1.48, S + 1.1]));
-  ['#ff9ec4', '#8fd3ff', '#ffe27a', '#b9f0a8'].forEach((c, k) => bits.push(P(Box(.3, .38, .04), c, [15.8 + k * .33, 1.2, S + 1.1]), P(Box(.42, .1, .045), c, [15.8 + k * .33, 1.36, S + 1.1])));
-  world.colliders.push({ x: 16.3, z: S + 1.1, r: .7 });
+  bits.push(P(Box(.06, 1.5, .06), '#d0d0d0', [X(-16.4), .75, S + 1.1]), P(Box(.06, 1.5, .06), '#d0d0d0', [X(-15), .75, S + 1.1]), P(Box(1.5, .05, .05), '#d0d0d0', [X(-15.7), 1.48, S + 1.1]));
+  ['#ff9ec4', '#8fd3ff', '#ffe27a', '#b9f0a8'].forEach((c, k) => bits.push(P(Box(.3, .38, .04), c, [X(-16.2) + k * .33, 1.2, S + 1.1]), P(Box(.42, .1, .045), c, [X(-16.2) + k * .33, 1.36, S + 1.1])));
+  world.colliders.push({ x: X(-15.7), z: S + 1.1, r: .7 });
   // cậu Tâm's little truck, parked at the kerb outside the villa (the family run trucks and sell phones)
   {
     const t = [P(Box(3.2, 1.3, 1.5), '#3a78c8', [-.5, 1.05, 0]), P(Box(1.2, 1.1, 1.45), '#f2f2f2', [1.6, .95, 0]), P(Box(.05, .5, 1.2), '#9fd3e8', [2.21, 1.2, 0]), P(Box(4.4, .2, 1.4), '#4a4a4a', [.1, .35, 0])];
     [[-1.4, .75], [-1.4, -.75], [1.5, .75], [1.5, -.75]].forEach(([x, z]) => t.push(P(Cyl(.32, .32, .2, 12), '#2f3336', [x, .32, z], [Math.PI / 2, 0, 0])));
-    const tm = new THREE.Mesh(merge(t), mat); tm.position.set(36.2, y0, 44.5); tm.castShadow = true; scene.add(tm);
-    world.boxes.push({ x0: 33.9, x1: 38.5, z0: 43.7, z1: 45.3 });
+    const tm = new THREE.Mesh(merge(t), mat); tm.position.set(X(4.2), y0, Z(-8.5)); tm.castShadow = true; scene.add(tm);
+    world.boxes.push({ x0: X(1.9), x1: X(6.5), z0: Z(-9.3), z1: Z(-7.7) });
   }
   const bm = new THREE.Mesh(merge(bits), mat); bm.position.y = y0; bm.castShadow = true; scene.add(bm);
   // shop boards in both languages
@@ -241,12 +243,12 @@ export function createTown(G) {
     draw(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; onLang(() => { draw(); t.needsUpdate = true; });
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w / 4), new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide })); m.position.set(x, y, z); m.rotation.y = rot; scene.add(m);
   };
-  board(['Phones · Trucks', 'Điện thoại · Xe tải'], 32.3, y0 + 1.55, N - .45, 0, 2.6);
-  board(['Baby clothes', 'Quần áo em bé'], 16.3, y0 + 1.95, S + 1.1, Math.PI, 1.8);
-  world.boxes.push({ x0: 40.1, x1: 42.6, z0: S - .6, z1: S + .2 });
+  board(['Phones · Trucks', 'Điện thoại · Xe tải'], X(.3), y0 + 1.55, N - .45, 0, 2.6);
+  board(['Baby clothes', 'Quần áo em bé'], X(-15.7), y0 + 1.95, S + 1.1, Math.PI, 1.8);
+  world.boxes.push({ x0: X(8.1), x1: X(10.6), z0: S - .6, z1: S + .2 });
 
   // ---------- the sugarcane juice cart (nước mía) where Cô Tam, a secondary-school teacher, helps after school ----------
-  const cart = [], kx = 28.9, kz = N + 1.6;
+  const cart = [], kx = X(-3.1), kz = N + 1.6;
   cart.push(P(Box(2.4, .9, 1), '#3a7fc2', [0, .75, 0]), P(Box(2.4, .9, .9), '#d6eef6', [0, 1.65, -.05]), P(Box(2.5, .08, 1.1), '#f4f4f4', [0, 2.12, 0]));
   cart.push(P(Cyl(.32, .32, .1, 12), '#2f3336', [-.9, .32, .55], [Math.PI / 2, 0, 0]), P(Cyl(.32, .32, .1, 12), '#2f3336', [.9, .32, .55], [Math.PI / 2, 0, 0]));
   cart.push(P(Box(.7, .6, .6), '#c8ccd0', [.7, 2.45, 0]), P(Cyl(.32, .32, .1, 12), '#8a9095', [.7, 2.5, .36], [Math.PI / 2, 0, 0]));
@@ -268,7 +270,7 @@ export function createTown(G) {
     const m = new THREE.Mesh(merge(t), mat); m.position.set(cx, heightAt(cx, cz), cz); m.castShadow = true; scene.add(m);
     world.colliders.push({ x: cx, z: cz, r: 1.6 });
   };
-  const cxT = 8.4, czT = 40.2, cxL = 8.6, czL = 35.2;
+  const cxT = X(-23.6), czT = Z(-12.8), cxL = X(-23.4), czL = Z(-17.8);
   cardTable(cxT, czT); cardTable(cxL, czL);
 
   // ---------- people ----------
@@ -293,7 +295,7 @@ export function createTown(G) {
   players[5].root.scale.setScalar(.82);
   ['Bác 2', 'Bác 3', 'Bác 4', 'Bi', 'Anh Ba', 'Con Vật'].forEach((n, k) => nameAvatar(players[k], n)); nameAvatar(sau, 'Cô Tam');
   // teenagers kicking a shuttlecock (đá cầu) in the park
-  const ring = [[29, 67.5], [32, 66], [31.5, 69.5]];
+  const ring = [[X(-3), Z(14.5)], [X(0), Z(13)], [X(-.5), Z(16.5)]];
   const teens = ring.map(([x, z], k) => person(L2(['shirt', 'overalls', 'dress'][k], ['#3cc7e8', '#5fd39a', '#ff7eb8'][k], '#1d1412', ['spiky', 'short', 'ponytail'][k], 'none', '#e0aa80'), x, z, 0));
   teens.forEach((A, k) => { const c = ring.reduce((a, b) => [a[0] + b[0] / 3, a[1] + b[1] / 3], [0, 0]); A.root.rotation.y = Math.atan2(c[0] - ring[k][0], c[1] - ring[k][1]); world.colliders.push({ x: ring[k][0], z: ring[k][1], r: .4 }); });
   const cau = new THREE.Mesh(merge([P(Cyl(.12, .12, .06, 8), '#e8433a', [0, 0, 0]), ...[0, 1, 2, 3].map(k => P(Box(.05, .3, .12), ['#ffd23f', '#5fd39a', '#3cc7e8', '#ff7eb8'][k], [Math.cos(k * 1.57) * .06, .17, Math.sin(k * 1.57) * .06], [0, k * 1.57, 0]))]), mat);
@@ -315,7 +317,7 @@ export function createTown(G) {
   const yT = heightAt(cxT, czT), yL = heightAt(cxL, czL);
   tag('Bác 2', cxT - 1, yT + 2.05, czT); tag('Bác 3', cxT + 1, yT + 2.05, czT); tag('Bác 4', cxT, yT + 2.35, czT - .9);
   tag('Anh Ba', cxL - 1, yL + 2.05, czL); tag('Con Vật', cxL + 1, yL + 1.8, czL);
-  tag('Anh Tuấn 🏸', 30.8, y0 + 2.6, 67.7);
+  tag('Anh Tuấn 🏸', X(-1.2), y0 + 2.6, Z(14.7));
   const bubble = sprite('💬', .9); bubble.visible = false; scene.add(bubble);
   const CHATTER = ['🃏', '😆', '🎉', '🤔', '💬'];
 
@@ -324,12 +326,12 @@ export function createTown(G) {
   I('nuocmia', kx, kz + 1.8, 3, '🥤', () => T('Sugarcane juice', 'Nước mía'), h => G.townTalk(h, 'sau'));
   I('cards', cxT + 1.9, czT + .4, 2.6, '🃏', () => T('Card game', 'Đánh bài'), h => G.townTalk(h, 'tu'));
   I('tienlen', cxL + 1.9, czL + .4, 2.6, '🎴', () => T('Tiến Lên with anh Ba and Con Vật', 'Tiến Lên với anh Ba và Con Vật'), h => G.townTalk(h, 'tienlen'));
-  I('dacau', 30.8, 66, 3.2, '🏸', () => T('Shuttlecock kicking', 'Đá cầu'), h => G.townTalk(h, 'tuan'));
+  I('dacau', X(-1.2), Z(13), 3.2, '🏸', () => T('Shuttlecock kicking', 'Đá cầu'), h => G.townTalk(h, 'tuan'));
 
   // ---------- life: a sugarcane press turning, card players chatting, the shuttlecock flying ----------
   let hop = 0, from = 0, to = 1, chatT = 2;
   world.updaters.push((dt, t) => {
-    if (!G.heroes.some(h => dist2(h.pos.x, h.pos.z, 28, 50) < 75)) return;
+    if (!G.heroes.some(h => dist2(h.pos.x, h.pos.z, X(-4), Z(-3)) < 75)) return;
     sau.armR.rotation.x = -1 + Math.sin(t * 3) * .5; sau.rig.position.y = Math.sin(t * 2) * .02;
     players.forEach((A, k) => { A.armR.rotation.x = -.9 + Math.sin(t * 1.3 + k * 2) * .3; A.head && (A.head.rotation.y = Math.sin(t * .7 + k) * .3); });
     // shuttlecock: arcs from one teen to the next; whoever receives it kicks

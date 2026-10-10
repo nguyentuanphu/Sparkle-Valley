@@ -8,7 +8,7 @@
 // levelled under it afterwards like everywhere else.
 import { THREE, toonVC, merge, outline } from './gfx.js';
 import { addPole } from './powerlines.js';
-import { heightAt } from './world.js';
+import { heightAt, STUDIO_ON_MAP } from './world.js';
 import { houseTube, houseVilla, houseCottage, houseVillage } from './houses.js';
 import { raisedHouse } from './town.js';
 import { MODELS } from './cities.js';
@@ -33,7 +33,7 @@ export const BUILD_TYPES = {
   // (a power pole: shown and wired to its neighbours only while Studio's power-pole switch is on; js/powerlines.js)
   powerpole: { pole: true, mk: () => ({ parts: [] }), name: ['Power pole', 'Cột điện'], icon: '⚡' }
 };
-const W = () => CUSTOM.world && typeof CUSTOM.world === 'object' ? CUSTOM.world : {};
+const W = () => STUDIO_ON_MAP && CUSTOM.world && typeof CUSTOM.world === 'object' ? CUSTOM.world : {}; // (round T: content made on an older layout is parked, js/world.js)
 const num = v => typeof v === 'number' && isFinite(v);
 const str = (v, n = 80) => typeof v === 'string' ? v.slice(0, n) : '';
 const pair = v => Array.isArray(v) ? [str(v[0], 300), str(v[1] || v[0], 300)] : null;

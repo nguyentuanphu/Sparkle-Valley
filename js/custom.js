@@ -16,10 +16,14 @@
 //   features { id: true|false }           things in the valley switched on or off from Studio (owner, round R: kept in the game,
 //                                         shown only when switched on). powerPoles: Phố Hai Quê's power poles and wires (off)
 let data = {};
+// (Analytics & Infra, 10 Oct) never more than a few seconds: a connection that never answers must not keep the game from
+// starting (the service worker already answers with the saved copy after 1.5 s)
 try {
-  const r = await fetch('content/custom.json', { cache: 'no-cache' });
+  const ac = typeof AbortController === 'function' ? new AbortController() : null, t = ac && setTimeout(() => ac.abort(), 4000);
+  const r = await fetch('content/custom.json', { cache: 'no-cache', signal: ac ? ac.signal : undefined });
   if (r.ok) data = await r.json();
-} catch (e) { /* offline and never saved: no content pack */ }
+  clearTimeout(t);
+} catch (e) { /* offline and never saved, or no answer: no content pack */ }
 export const CUSTOM = data && typeof data === 'object' ? data : {};
 const str = v => typeof v === 'string' ? v.slice(0, 600) : '';
 // only well-formed pieces are used, so a hand-edited file can't break the game

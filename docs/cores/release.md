@@ -45,9 +45,16 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - 10 Oct AEST: Release checks every branch once an hour (routine "Release: hourly branch collection", about 26 minutes past each hour): fetch, read each branch's Now line, merge the core branches marked "ready for Release" into the Release branch locally and run `types unit arch rules`; never pushes or merges into main without the round's "yes, deploy". `studio-draft` and old `claude/*` branches are merged only after asking the owner.
 - 10 Oct AEST: no double suite runs. Release reruns the full suite only when the merged code differs from what a helper tested (two or more branches merged, or Release changed code itself); otherwise it runs the quick checks (`types unit arch rules ground studio`) and relies on the helper's recorded full-suite result (commit id and every check, in that core's progress notes).
 - 10 Oct AEST: r55 (chapter 2) deployed at the owner's "Deploy now" with the full suite still running (2 of 81 checks done, both passed); the rest reported when it finished.
+- (10 Oct AEST) The start-up download ratchet (`tests/perf-baseline.json` startMB) is 3.4 MB for now; lower it again when the smaller start-up download lands (Analytics & Infra).
+- (10 Oct AEST) Round T0: "yes, push"; not deployed yet. (Planned as r55; r55 went to chapter 2, so T0 and T1 go out together as r56.)
+- (10 Oct AEST) T1 from the Concept D map (`docs/concept-d/index.html`): a bigger home island (about 110 x 130 m) so Ông Cú, Phố Hai Quê and Sunny Farm fit; Bắc Ninh north-east of Hà Nội, as drawn; the ring road in T1; asphalt roads 6.4 m (rule R1 / ROAD-001 changed); Release makes the one Studio stamp change (`world.map`) in T1, noted on the board.
 - **Audit on every pull request (10 Oct AEST):** `.github/workflows/pr-checks.yml` runs the quick checks
   (`rules unit types arch emoji noemoji preload boot`, free GitHub minutes; `phone` stays in the full suite,
   too slow on GitHub's machines) and `.github/workflows/ai-review.yml`
   has a second Claude review the changes against the rules and post one comment (Claude usage, same account as the bug
   robot). The review runs when a pull request is opened, reopened or marked ready, and again when the label `ai-review`
   is added; not on every push. The round's pull request into `main` is reviewed too, before "yes, deploy".
+- 10 Oct AEST: `claude/kind-volta-1iv5ea` (offline start, Use the internet switch, packed start-up scripts on Netlify, GitHub checks) merged into the next round at the owner's yes.
+- 10 Oct AEST (r56 report): "yes, deploy" for r56. T1 goes out before the online map-version check (online play is off until a grown-up turns it on; devices update within days); the map version in the online hello goes into r57.
+- 10 Oct AEST: PERF-001 (start-up download) should measure the packed copy the website serves (2.6 MB), not the plain scripts; Analytics & Infra changes the check.
+- 10 Oct AEST: the Google Drive mirror and the voice relay (TURN) are done; stop asking about them.

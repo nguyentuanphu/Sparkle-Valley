@@ -54,7 +54,7 @@ Sources merged here:
 
 | Rule | What | Checked |
 |---|---|---|
-| R1 | Classes, constant width end to end: asphalt 5.2 m, dirt 3.4 m, footpath 1.6 m | (footpaths to build) |
+| R1 | Classes, constant width end to end: asphalt 6.4 m (owner, 10 Oct), dirt 3.4 m, footpath 1.6 m | (footpaths to build) |
 | R2 | Continuous curvature, no zigzags; min radius 10 m asphalt / 6 m dirt / 3 m footpath; no S-bends within 15 m. **Done with true circular arcs (fillets 24 m / 16 m)**, not Chaikin | `roadshape` (no step turn > 8°) |
 | R3 | Surface on the ground (never > 0.3 m above it); grade limits | `roadshape`, `ground` (see §13: limits to decide) |
 | R4 / G5 | Corridor `w/2 + 1.5 m` clear: no props, trees, rocks, grass, flowers, pickups, NPC spots; trees ≥ `w/2 + 2.5 m`; buildings 2–4 m back | `roads` (colliders, boxes, interactables, grass and flowers) |

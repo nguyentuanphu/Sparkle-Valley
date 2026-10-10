@@ -59,6 +59,25 @@ Photo faces and Family album pictures never go into `content/` (the site publish
   and Studio keys for SparkleStudio.exe (`svk.<id>.<secret>`, shown once, kept as a hash; they reach only the players
   report, the missing-lines inbox, device names and the family photos). The exe no longer sends `STUDIO_PASSWORD`.
 
+## Studio review (owner, 10 Oct: "go all")
+- Pages where you change things (Message, Missions, Children, Album, Quiz, Stories, Villagers, Releases, Festivals,
+  Simple screen, Music, Map, Defaults, Ads, the exe's Settings) show "Not saved yet / Saved / No changes" by Save; leaving
+  (another section, Back, the browser's Back, the language, reload, closing) asks first, and leaving without saving puts
+  the family's content back as it was.
+- Saving and Publish say clearly what happened and what comes next (a bigger message, above the bottom bar on a phone);
+  after Publish the waiting count at the top clears at once. Releases and Festivals say at the top whether Save puts it
+  live at once (online) or needs Publish (the exe).
+- Everything in Vietnamese: the game's own names (games, areas, places) follow Studio's language, and every message the
+  servers send is shown in Vietnamese (`studio/ui/vi.js`; the `studio` check fails if a server message has none).
+- Every Studio button and box is 44 px or more on a phone and a tablet (checked on 21 pages). Villagers is one card per
+  person on a phone or tablet; Releases on a phone shows name, on/off and More (the dates fold under More); one quick
+  start-day list replaces the four small buttons. Home on a phone shows the buttons first and the numbers small.
+- The "Play time" card is now "Defaults for every device", like its page; the Setup section is "Thiết lập" in
+  Vietnamese (Settings stays "Cài đặt"). The valley's things can be switched on Defaults and in Releases: when Releases
+  has a setting, it wins (as `featureOn` in `js/custom.js` already did), and Defaults says so beside that switch.
+- Stories and the Family quiz choose pictures from the game's drawings (+ Picture); the chosen ones show as drawings.
+- The Voices page reads the game's files once while Studio is open (↻ reads them again).
+
 ## Hard rules (§9.6)
 STUDIO-001 (the exe and online Studio are one program, the same version as the game), STUDIO-002 (online saves wait
 until Publish; only the family's files change), PRIV rules (no keys in the repository; passwords kept only as hashes;
@@ -82,3 +101,4 @@ Build the exe after changes: `bash studio/build-exe.sh`.
 - Saves wait and Publish sends them in one go; ✕ on a real photo takes it off for good (round P).
 - Family photos are private, loaded only by the family's devices with a family code; random names (round R privacy).
 - Two-step sign-in for everyone (the owner can choose password only for any account, their own too, in Setup → Admins; owner, 9 Oct), 12+ character passwords, lockout, access log, Sign everyone out (round R privacy).
+- Studio review (owner, 10 Oct, "go all"): changes not saved ask before leaving; clear results after Save and Publish; everything in Vietnamese; 44 px buttons and boxes; Villagers as cards on a phone or tablet; Releases folds its dates on a phone; Home buttons first on a phone; "Defaults for every device" card; Releases wins over Defaults for the valley's things (said beside them); pictures chosen from the game's drawings.
