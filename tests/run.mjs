@@ -799,6 +799,10 @@ await check('festivals', async () => {
     const d = new Date(), ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     C.releases = { ...(C.releases || {}), ['fest_' + far.F.id]: { on: true, start: ymd, days: 1 } }; G.festivals.rebuild(); await wait(300);
     out.adminOn = G.festivals.active().some(a => a.F.id === far.F.id && a.on) && G.interactables.some(i => i.id === 'festival_' + far.F.id);
+    // (owner, 11 Oct, #32) even on its day, a calendar tap only tells: nobody is sent to the festival
+    { const h = G.heroes[0], p0 = { x: h.pos.x, z: h.pos.z }; G.festivals.visit(0, far.F.id); await wait(2500);
+      out.toldToday = (document.querySelector('.dialog .dtext') || {}).textContent || ''; out.moved = Math.hypot(h.pos.x - p0.x, h.pos.z - p0.z);
+      document.querySelectorAll('.dialog').forEach(e => e.remove()); G.paused = false; }
     delete C.releases['fest_' + far.F.id]; G.festivals.rebuild(); await wait(300);
     out.adminOff = !G.festivals.active().some(a => a.F.id === far.F.id);
     // whole places: every festival place with streets gets pieces spread along them, more each week
@@ -829,13 +833,14 @@ await check('festivals', async () => {
   if (!/\d/.test(r.toldDays)) out.push(`the calendar tap did not say how many days to ${r.far}: "${r.toldDays}"`);
   if (/visit it now/i.test(r.calNote)) out.push('the calendar still says "visit it now"');
   if (!r.adminOn) out.push(`an admin's schedule did not start ${r.far}`);
+  if (r.moved > 1 || !/today|hôm nay/i.test(r.toldToday)) out.push(`a calendar tap on ${r.far}'s day sent the child ${r.moved.toFixed(1)} m or did not say it is today: "${r.toldToday}"`);
   if (!r.adminOff) out.push(`${r.far} stayed on after the admin's schedule was removed`);
   out.push(...r.bad);
   if (P.errors.length) out.push(...P.errors.slice(0, 2));
   await P.ctx.close();
   if (out.length) throw new Error(out.join('; '));
   const z = Object.entries(r.sizes).filter(([, v]) => v[3] >= 6);
-  return `${r.far} out of season: told the days, not started by a child; on when an admin schedules it, off again after; ${z.length} places decorated along their streets (week 1 → day: ${z.map(([k, v]) => `${k} ${v[0]}→${v[2]}`).join(', ')}), none on a road or street`;
+  return `${r.far} out of season: told the days, not started by a child; on when an admin schedules it, and a tap on its day only tells (nobody travels), off again after; ${z.length} places decorated along their streets (week 1 → day: ${z.map(([k, v]) => `${k} ${v[0]}→${v[2]}`).join(', ')}), none on a road or street`;
 });
 
 await check('films', async () => {

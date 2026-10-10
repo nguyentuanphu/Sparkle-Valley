@@ -103,6 +103,14 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   its trick, lighting the way (`profile.lanterns.tricks`). Big kids' bonus secret: a golden turtle comes up in the lake
   once, with a turtle sticker.
 
+## Owner's decisions (11 Oct AEST)
+- Item 1 of the owner's work list (11 Oct): the robot's #29 fix (`bugfix/play-29`, PR #43) is merged into `core/play`, checked
+  on phone, tablet and computer screenshots; the wardrobe's chips wrap beside their row's picture and an under-5's are 64 px on
+  short screens, so all six rows show on a phone.
+- #32 (owner's correction, 11 Oct): nothing in the game sends a child to a festival; Play's part is `festivals.visit`, which now
+  only tells (no travel), checked by `festivals`. The rest of #32 (the calendar box in settings, removing `settings.festival`)
+  is Kid UI's (the robot's fix).
+
 ## Owner's decisions (Chapter 2, 10 Oct AEST; the owner said "go" to the plan and its suggestions)
 - Tèo, Cô Tam and Bà Năm come to Hà Nội for Trung Thu: they stand there only while a child is in Chapter 2 (spots found
   with free ground, not new map positions); their usual places stay as they are.
@@ -124,9 +132,10 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   schedules it in Studio's Releases page (`fest_<id>` with a start date and a number of days: on from that day). The
   grown-ups' press-and-hold setting (by date, off, one festival) stays. Studio's Preview link (`?festival=<id>`) still
   shows any festival once, for grown-ups.
-- **Children never start one:** a tap on the calendar tells about a festival still to come (days to go) or, in its
-  build-up, takes the child to see the decorations going up; on its day it takes them to the festival table as before.
-  The calendar's words now say so (`js/ui.js`, one line, noted on the board).
+- **Children never start one, and nothing sends them to one** (owner, 11 Oct, #32): a tap on the calendar only tells about
+  the festival (days to go, decorations going up, or on today) and never moves the child (`tell` in `js/festdecor.js`).
+  Only Studio's Preview link (an admin) takes a child to a festival. The calendar's words say so (`js/ui.js`, one line,
+  noted on the board).
 - **Whole places:** pieces along every street, lane and footpath of each place in `where` (beside the road, off its verge,
   G5), beside a city's main street and round its square, and on the footpaths of the streets Two Homes Street, Aussie
   Corner and the market draw themselves; spread over the whole place at every stage (every 4th spot in week 1 ... all on

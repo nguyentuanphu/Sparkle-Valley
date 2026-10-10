@@ -77,11 +77,12 @@ export function createDecor(free) {
 
 // a festival tapped on the calendar that is not on today: still to come (days to go; nothing starts), or in its
 // build-up (the child is taken to see the decorations going up). n: its next dates; at: its first place's middle
-export async function tell(G, h, F, A, n, at) {
+export async function tell(G, h, F, A, n) {
   const s = d => d === 1 ? '' : 's';
+  // (owner, 11 Oct, #32) the calendar only tells: it never takes the child anywhere
+  if (A && A.on) return G.dialog(T(F.en, F.vi), [[`It's ${F.en} today! Its place is all decorated.`, `Hôm nay là ${F.vi}! Nơi tổ chức đã trang trí xong rồi.`]]);
   if (!A) { const d = n ? n.daysTo : null;
     return G.dialog(T(F.en, F.vi), [[d != null ? `${F.en} is in ${d} day${s(d)}. The decorations come by themselves three weeks before. See you then!` : `${F.en} is not on now.`,
       d != null ? `Còn ${d} ngày nữa là đến ${F.vi}. Ba tuần trước ngày lễ, nơi đó sẽ tự trang trí. Hẹn gặp con nhé!` : `${F.vi} chưa đến đâu con.`]]); }
-  if (at) await G.landBy(h, at.x, at.z);
-  return G.dialog(T(F.en, F.vi), [[`${F.en} is in ${A.daysTo} day${s(A.daysTo)}! Look, the decorations are going up.`, `Còn ${A.daysTo} ngày nữa là đến ${F.vi}! Con xem, mọi người đang trang trí kìa.`]]);
+  return G.dialog(T(F.en, F.vi), [[`${F.en} is in ${A.daysTo} day${s(A.daysTo)}! The decorations are going up.`, `Còn ${A.daysTo} ngày nữa là đến ${F.vi}! Mọi người đang trang trí rồi.`]]);
 }
