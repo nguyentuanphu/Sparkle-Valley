@@ -12,7 +12,8 @@ when the owner says so.
 
 ## A round, step by step
 1. Read `BOARD.md`; merge each ready core branch and each bug robot pull request (`bugfix/*` branches, label
-   `fixed-on-branch`: read the fix and its checks first); fix conflicts with the core's owner on the board.
+   `fixed-on-branch`: read the fix and its checks first). Every pull request into `main` shows two marks: **Quick checks**
+   and **AI review**; fix (or send back) every problem the AI review lists before merging; fix conflicts with the core's owner on the board.
 2. Bump r-number in `js/build.js`, `sw.js` VERSION and `studio/version.json`.
 3. Record new voices (`tools/make-voice-pack.mjs --engine azure`, see Voice & Audio).
 4. Run the **full suite** (`node run.mjs`, about an hour; one browser run at a time). Fix or send back every failure.
@@ -36,8 +37,9 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - **Bug robot (10 Oct AEST):** small bugs filed by the Front Desk are fixed and pushed by `.github/workflows/bug-fixer.yml`
   to `bugfix/<core>-<issue>` branches with draft pull requests, without asking; big bugs wait for the owner's "go". Release
   merges those pull requests in a round like any core branch (they close their issue), and deploying still needs
-  "yes, deploy". Robot runs use the Claude account in the GitHub secret `CLAUDE_CODE_OAUTH_TOKEN` (backup:
-  `CLAUDE_CODE_OAUTH_TOKEN_BACKUP`).
+  "yes, deploy". Robot runs use the Claude account in the GitHub secret `CLAUDE_CODE_OAUTH_TOKEN` or
+  `CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY` (backup: `CLAUDE_CODE_OAUTH_TOKEN_BACKUP`). The robot runs every 30 minutes
+  (owner, 10 Oct).
 - 10 Oct AEST: Release is the master release of all work. Helper chats push their own branches without asking; Release collects every branch, merges, runs the full suite, reports, and asks one pop-up "yes, deploy" per round, which covers pushing and merging into `main`.
 - 10 Oct AEST: every question to the owner is a pop-up question with clickable choices (`CLAUDE.md`, HANDOFF rule 19).
 - 10 Oct AEST: Release checks every branch once an hour (routine "Release: hourly branch collection", about 26 minutes past each hour): fetch, read each branch's Now line, merge the core branches marked "ready for Release" into the Release branch locally and run `types unit arch rules`; never pushes or merges into main without the round's "yes, deploy". `studio-draft` and old `claude/*` branches are merged only after asking the owner.
@@ -46,3 +48,9 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - (10 Oct AEST) The start-up download ratchet (`tests/perf-baseline.json` startMB) is 3.4 MB for now; lower it again when the smaller start-up download lands (Analytics & Infra).
 - (10 Oct AEST) Round T0: "yes, push"; not deployed yet. (Planned as r55; r55 went to chapter 2, so T0 and T1 go out together as r56.)
 - (10 Oct AEST) T1 from the Concept D map (`docs/concept-d/index.html`): a bigger home island (about 110 x 130 m) so Ông Cú, Phố Hai Quê and Sunny Farm fit; Bắc Ninh north-east of Hà Nội, as drawn; the ring road in T1; asphalt roads 6.4 m (rule R1 / ROAD-001 changed); Release makes the one Studio stamp change (`world.map`) in T1, noted on the board.
+- **Audit on every pull request (10 Oct AEST):** `.github/workflows/pr-checks.yml` runs the quick checks
+  (`rules unit types arch emoji noemoji preload boot`, free GitHub minutes; `phone` stays in the full suite,
+  too slow on GitHub's machines) and `.github/workflows/ai-review.yml`
+  has a second Claude review the changes against the rules and post one comment (Claude usage, same account as the bug
+  robot). The review runs when a pull request is opened, reopened or marked ready, and again when the label `ai-review`
+  is added; not on every push. The round's pull request into `main` is reviewed too, before "yes, deploy".
