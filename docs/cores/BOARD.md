@@ -41,12 +41,22 @@ Format for a request:
 
 ## Kid UI
 - **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
+- [ ] (Front Desk → Kid UI) **Owner, 11 Oct, 6:10 am AEDT: a Kid UI chat starts now. Work in this order:**
+  1. **Bring the robot's five Kid UI fixes together** on `core/kid-ui`: merge `bugfix/kid-ui-27` (#40), `bugfix/kid-ui-28` (#42), `bugfix/kid-ui-31` (#44), `bugfix/kid-ui-41` (#46) and `bugfix/kid-ui-30` (#48) into it. They all touch `js/ui.js`, `js/simple.js` and `css/style.css`: fix clashes, run the Kid UI checks and the full suite, look at phone, tablet and computer screenshots (the robot could not), then write "ready for Release". Do not close the robot's pull requests; say in each which branch now carries it.
+  2. #32 (festival calendar, owner's corrected brief on the issue) if the robot has not fixed it by then.
+  3. The open Kid UI requests below (speech box keyframe, Pad map names overlapping, new place ids).
+  4. Then the brief `tasks/kid-ui-films.md`.
 - [ ] (Play → Kid UI) A speech box slides in from the right for 0.3 s: `@keyframes rise` (`css/style.css`) sets `transform` without the `.dialog`'s `translateX(-50%)`, so while it plays the box sits half its width to the right. The `phone` check then sometimes finds its buttons off screen ("button \"Chơi!\" off screen ... on top: dialog.little"); seen 2 times in 5 runs on `core/play` and not on `main` in 2, at the same frame speed, so it is chance, not Chapter 2. Fix idea: a dialog keyframe that keeps `translateX(-50%)` · `css/style.css` · 10 Oct AEST
 - [ ] (Release → Kid UI) T1: the Pad map's names overlap on the east side (Village festival stage over Đà Nẵng, Three Regions Market over Hồ Chí Minh City), seen at 1200×1200 · screenshots in ROUND-T.md Progress · `js/ui.js` · 10 Oct AEST
 - [ ] (Release → Kid UI) T1: new place ids (`hoian` first; later `vungtau`, `harbour`, `memory_e`, `memory_w`) in `PLACE_AREAS` and the Pad map's list; T4: the drawn Pad map from `PLACES`/`WATERS` in `js/content/map.js` · ROUND-T.md T1, T4 · `js/ui.js`, `js/simple.js` · 10 Oct AEST
 
 ## Voice & Audio
 - **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
+- [ ] (Front Desk → Voice & Audio) **Owner, 11 Oct, 6:10 am AEDT: a Voice & Audio chat starts now. Work in this order:**
+  1. #35 (Simple screen speaker button silent on iPhone; the bottom tabs do speak, so the audio wake-up before `say()` is the lead). The robot is trying it now: if it is `fixed-on-branch`, check its branch on the iPhone rule; if `robot-stuck`, take it over.
+  2. Check the robot's #39 rain fix (`bugfix/voice-audio-39`, #50): listen that it is soft and real, then merge it into `core/voice-audio`.
+  3. Record the waiting new spoken lines (Play's Chapter 2 lines, Round T place names, any from the robot's fixes) with `AZURE_SPEECH_KEY`, or list them for Release.
+  4. Then the brief `tasks/voice-by-area.md`.
 - [ ] (Release → Voice & Audio) T1/T3: the new areas (`hoian`, then `vungtau`) in `VN_AREAS` (`js/content/songs.js`), and the place names in the voice pack · ROUND-T.md · 10 Oct AEST
 - Lullabies with real voices: the owner may paste titles or words (soha.vn could not be reached), or record them in Studio → Music.
 
@@ -66,6 +76,11 @@ Format for a request:
 
 ## Analytics & Infra
 - **Now:** no chat of its own yet; branch `claude/kind-volta-1iv5ea` (offline start, Use the internet switch, no Studio in parents' text, packed scripts, GitHub checks) merged by Release into the next round at the owner's yes · 10 Oct AEST
+- [ ] (Front Desk → Analytics & Infra) **Owner, 11 Oct, 6:10 am AEDT: an Analytics & Infra chat starts now. Work in this order:**
+  1. **#36 slow start** is yours (the robot leaves it on hold for you): owner timed 22 s on r56; Release measured 5 to 7 s on the test machine (numbers on the issue). Plan first, with the owner's go: measure on a real phone and tablet, show the title and "Who's playing?" before the valley is built, build the valley in pieces near the child first, and make the second start truly cached.
+  2. PERF-001 on the packed copy and the start-up ratchet (requests below).
+  3. The `parents` check fails on "bedtime" on `main` (found by the robot on #28 and #29): find out why.
+  4. Look after the bug robot (`bug-fixer.yml`) once Release merges #47: watch its first instant runs.
 - [ ] (Release → Analytics & Infra) Owner's decision, 10 Oct AEST: PERF-001 measures the packed copy the website serves (2.6 MB), not the plain scripts; please change the `perf` check and `tests/perf-baseline.json` · `tests/run.mjs` · 10 Oct AEST
 - From Studio (10 Oct AEST): `perf` fails on `main` (d87ab6c) as well: PERF-001 start-up download 3.36 MB, budget 3.2 MB. Not from the Studio review (no game files changed); it fits `tasks/infra-speed.md` (smaller start-up download).
 - [ ] (Release → Analytics & Infra) The start-up download is at its ratchet: r54 measures 3.33–3.37 MB before the title screen against 3.2 MB + 3 % (the `perf` check fails on main about 3 runs in 4); Round T0 adds about 22 KB (the map file). Owner (10 Oct): the limit is 3.4 MB for now; lower it again after the smaller start-up download brief (`tasks/infra-speed.md`) is the fix · `tests/perf-baseline.json` · 10 Oct AEST
