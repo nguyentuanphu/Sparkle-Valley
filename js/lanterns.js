@@ -201,7 +201,8 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   // ---------- buttons the story puts in the valley (only for the child on that step) ----------
   for (const ch of CHAPTERS) for (const s of ch.steps) {
     if (s.talk) {
-      const near = () => { const q = spots[s.at] && spots[s.at](); return q || { x: 0, z: -1e4 }; };
+      // (no spot yet: no position, so the button is never in reach)
+      const near = () => { const q = spots[s.at] && spots[s.at](); return q || { x: NaN, z: NaN }; };
       G.interactables.push({ id: 'story_' + s.id, get x() { return near().x + .8; }, get z() { return near().z + .8; }, r: 3, icon: s.icon,
         label: () => T(...s.talk.label), visible: h => isOn(h.profile, s.id),
         act: async h => {
@@ -215,7 +216,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
         } });
     }
     // (chapter 2's places come later: its buttons wait for them)
-    const pl = () => places[ch.id], near = () => (spots[s.at] && spots[s.at]()) || { x: 0, z: -1e4 }, ready = () => !!spots[s.at];
+    const pl = () => places[ch.id], near = () => (spots[s.at] && spots[s.at]()) || { x: NaN, z: NaN }, ready = () => !!spots[s.at];
     // Tèo's challenge: his line, then Play, How to play (the guide film) or Later
     if (s.challenge) G.interactables.push({ id: 'story_' + s.id, get x() { return near().x + .8; }, get z() { return near().z + .8; }, r: 3, icon: s.icon, label: () => T(s.en, s.vi), visible: h => ready() && isOn(h.profile, s.id),
       act: h => G.kidTalk(h, gamesOf(h.profile, s)[0], 'Tèo', big(h.profile) ? s.challenge.big : s.challenge.little) });
@@ -225,9 +226,9 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
     // Cô Tam's lesson: she starts it, then the child counts the stone turtles (js/content/chapter2hanoi.js)
     if (s.lesson) G.interactables.push({ id: 'story_' + s.id, get x() { return near().x + .8; }, get z() { return near().z + .8; }, r: 3, icon: s.icon, label: () => T(s.en, s.vi), visible: h => ready() && isOn(h.profile, s.id) && !A(h.profile).lesson,
       act: h => hanoi.lesson(h) });
-    if (s.find) G.interactables.push({ id: 'story_' + s.id, get x() { return pl() ? pl().lanternAt[0] : 0; }, get z() { return pl() ? pl().lanternAt[1] : -1e4; }, r: 2.6, icon: '🏮', label: () => T('Pick up the lantern', 'Nhặt đèn lồng lên'), visible: h => !!pl() && isOn(h.profile, s.id) && (!actions() || revealedFor(h.profile, s)),
+    if (s.find) G.interactables.push({ id: 'story_' + s.id, get x() { return pl() ? pl().lanternAt[0] : NaN; }, get z() { return pl() ? pl().lanternAt[1] : NaN; }, r: 2.6, icon: '🏮', label: () => T('Pick up the lantern', 'Nhặt đèn lồng lên'), visible: h => !!pl() && isOn(h.profile, s.id) && (!actions() || revealedFor(h.profile, s)),
       act: h => { st(h.profile).carrying = ch.id; say(`You found it! ${COMPANIONS[st(h.profile).companion || 'firefly'].name} will carry the lantern.`, `Tìm thấy rồi! ${COMPANIONS[st(h.profile).companion || 'firefly'].name} sẽ mang đèn lồng giúp con.`); finish(h, s.id); } });
-    if (s.hang) G.interactables.push({ id: 'story_' + s.id, get x() { return pl() ? pl().front[0] : 0; }, get z() { return pl() ? pl().front[1] : -1e4; }, r: 3.4, icon: '🏮', label: () => T('Hang the lantern', 'Treo đèn lồng'), visible: h => !!pl() && isOn(h.profile, s.id) && !hanging.has(h.profile),
+    if (s.hang) G.interactables.push({ id: 'story_' + s.id, get x() { return pl() ? pl().front[0] : NaN; }, get z() { return pl() ? pl().front[1] : NaN; }, r: 3.4, icon: '🏮', label: () => T('Hang the lantern', 'Treo đèn lồng'), visible: h => !!pl() && isOn(h.profile, s.id) && !hanging.has(h.profile),
       act: h => hang(h, ch, s) });
   }
   // (one bún chả job at a time per child)
