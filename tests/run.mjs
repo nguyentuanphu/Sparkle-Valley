@@ -579,7 +579,8 @@ await check('voicearea', async () => {
   // a computer that can't tell its connection counts as Wi-Fi: past the core with no question
   const C = await open(b, { w: 1180, h: 760, play: false, pre: `Object.defineProperty(navigator, 'connection', { get: () => undefined, configurable: true });`, settings: { autoPack: true, lang: 'vi', bilingual: false } });
   const got3 = watch(C); await start(C.page); await clear(C.page); await C.page.mouse.click(590, 380);
-  for (let k = 0; k < 240 && !got3.some(x => x.g !== 'core'); k++) await C.page.waitForTimeout(500);
+  // (the core, about 550 files, comes first: in the full suite that can take a few minutes)
+  for (let k = 0; k < 720 && !got3.some(x => x.g !== 'core'); k++) await C.page.waitForTimeout(500);
   const asked3 = !!(await C.page.$('.packask')), en3 = got3.filter(x => x.lang === 'en').length; await C.ctx.close();
   ok(got3.some(x => x.g !== 'core') && !asked3 && !en3, `a computer: past the core ${got3.some(x => x.g !== 'core')}, asked ${asked3}, English files for a Vietnamese family ${en3}`);
   ok(!errs.length, errs.join(' | '));
