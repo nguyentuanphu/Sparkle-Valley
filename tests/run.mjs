@@ -37,6 +37,35 @@ const check = async (name, fn) => {
 };
 const ok = (c, msg) => { if (!c) throw new Error(msg); };
 fs.mkdirSync('out', { recursive: true });
+// ---- (Analytics & Infra, 11 Oct, #36) the packed copy the website serves (tools/bundle.mjs), built once a run in
+// out/packed (the big folders are linked, not copied), and a little server for a folder on 127.0.0.2 (the game skips its
+// service worker on localhost): compressed like Netlify when asked, and able to stop answering (a dead connection) ----
+let packedDir = null;
+async function packedSite() {
+  if (packedDir) return packedDir;
+  const path = await import('path'), { execFileSync } = await import('child_process'), dir = path.resolve('out/packed'), repo = path.resolve('..');
+  fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
+  for (const f of ['index.html', 'sw.js']) fs.copyFileSync(path.join(repo, f), path.join(dir, f));
+  for (const f of ['manifest.webmanifest', 'css', 'fonts', 'icons', 'js', 'vendor', 'content', 'videos', 'voices', 'photos']) if (fs.existsSync(path.join(repo, f))) fs.symlinkSync(path.join(repo, f), path.join(dir, f));
+  execFileSync(process.execPath, [path.join(repo, 'tools/bundle.mjs'), dir], { encoding: 'utf8' });
+  ok(fs.existsSync(path.join(dir, 'bundle')), 'the packed copy was not built (tools/bundle.mjs: esbuild missing?)');
+  return (packedDir = dir);
+}
+async function serveFolder(root, { gzip = false } = {}) {
+  const http = await import('http'), path = await import('path'), zlib = await import('zlib');
+  const TY = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.jpg': 'image/jpeg' };
+  const S = { hang: false };
+  const srv = http.createServer((q, r) => {
+    if (S.hang) return;
+    let f = decodeURIComponent(q.url.split('?')[0]); if (f.endsWith('/')) f += 'index.html'; f = path.join(root, f);
+    if (!f.startsWith(root) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { r.writeHead(404); return r.end(); }
+    const type = TY[path.extname(f)] || 'application/octet-stream', z = gzip && /text|javascript|json|manifest/.test(type) && /gzip/.test(q.headers['accept-encoding'] || '');
+    r.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache', ...(z ? { 'Content-Encoding': 'gzip' } : {}) });
+    (z ? fs.createReadStream(f).pipe(zlib.createGzip()) : fs.createReadStream(f)).pipe(r);
+  });
+  await new Promise(res => srv.listen(0, '127.0.0.2', res));
+  return Object.assign(S, { url: `http://127.0.0.2:${srv.address().port}/`, close: () => { srv.closeAllConnections(); srv.close(); } });
+}
 const b = await launch();
 
 await check('boot', async () => {
@@ -2430,8 +2459,12 @@ await check('perf', async () => {
   // performance budgets (PERF-001…006, tests/perf-baseline.json): each number may only go down. The test browser draws
   // in software, so frames per second (PERF-002, ≥ 30 at quality Auto) is measured on real phones, not here.
   const base = JSON.parse(fs.readFileSync('perf-baseline.json', 'utf8'));
+  // PERF-001's download is measured on the packed copy the website serves (owner, 10 Oct AEST), before compression
+  const startMB = await (async () => { const S = await serveFolder(await packedSite()); try {
+    const Q = await open(b, { w: 1024, h: 700, play: false, url: S.url });
+    const mb = await Q.page.evaluate(() => performance.getEntriesByType('resource').concat(performance.getEntriesByType('navigation')).reduce((a, e) => a + (e.encodedBodySize || e.transferSize || 0), 0) / 1e6);
+    await Q.ctx.close(); return mb; } finally { S.close(); } })();
   const P = await open(b, { w: 1024, h: 700, play: false });
-  const startMB = await P.page.evaluate(() => performance.getEntriesByType('resource').concat(performance.getEntriesByType('navigation')).reduce((a, e) => a + (e.encodedBodySize || e.transferSize || 0), 0) / 1e6);
   // the map picture: painted once after the title screen, then read back from the device on the next start
   const pic = async () => { await P.page.waitForFunction(() => __sv.mapPic && __sv.mapPic.ready && __sv.bootTimes, null, { timeout: 60000 }); return P.page.evaluate(() => ({ from: __sv.mapPic.from, boot: __sv.bootTimes })); };
   const first = await pic();
@@ -2469,6 +2502,37 @@ await check('perf', async () => {
   for (const [k, B] of Object.entries(base)) { if (k.startsWith('/')) continue; const v = got[k]; if (v > B.max * (k === 'worldMs' ? 1.25 : 1.03) + (k === 'startMB' ? .05 : 0)) over.push(`${B.rule} ${k} ${+v.toFixed(2)} > ${B.max}`); if (v > B.target) gap.push(`${k} ${Math.round(v)} (budget ${B.target})`); }
   ok(r.frames > 0 && r.games === 10 && !over.length && !errs.length, JSON.stringify({ over, got, errs }));
   return `start ${startMB.toFixed(1)} MB in ${(second.boot.ready / 1000).toFixed(1)} s (map picture kept on the device), home ${r.drawCallsHome} draws, village ${r.drawCalls} draws / ${(r.triangles / 1000).toFixed(0)}k triangles, largest texture ${r.texturePx}px, after 10 games +${r.heapGrowMB.toFixed(1)} MB and ${r.domGrow} elements` + (gap.length ? `; over budget (being reduced): ${gap.join(', ')}` : '');
+});
+
+await check('startup', async () => {
+  // (Analytics & Infra, 11 Oct, #36, owner: "start-up is slow every time") the packed copy the website serves, at tablet
+  // speed (the processor 4 times slower, compressed like Netlify), with the service worker on: the first start (download,
+  // title painted, valley ready) and the second start from the device's saved copy (valley ready, the longest time the
+  // page froze). Each number is a ratchet in startup-baseline.json (may only go down; timings wander, so 25 % slack).
+  const base = JSON.parse(fs.readFileSync('startup-baseline.json', 'utf8'));
+  const S = await serveFolder(await packedSite(), { gzip: true });
+  try {
+    const ctx = await b.newContext({ viewport: { width: 820, height: 1180 }, hasTouch: true, isMobile: true });
+    await ctx.addInitScript(seedPlayers);
+    await ctx.addInitScript(() => { try { localStorage.setItem('sv2_settings', JSON.stringify({ voice: false, sound: false, music: false, autoPack: false, quality: 'low' })); } catch (e) { }
+      window.__st = { frames: [] }; const f = () => { const t = Math.round(performance.now()); __st.frames.push(t); if (!__st.title && document.querySelector('.screen.title')) __st.title = t; requestAnimationFrame(f); }; requestAnimationFrame(f); }); // (the clock, not the frame's own time stamp: a busy page hands out frames stamped before it was busy)
+    const page = await ctx.newPage(), errs = []; page.on('pageerror', e => errs.push(e.message));
+    const cdp = await ctx.newCDPSession(page); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+    const read = async () => { await page.waitForFunction(() => window.__sv && __sv.bootTimes, null, { timeout: 300000 }); await page.waitForTimeout(1000);
+      return page.evaluate(() => { const end = __sv.bootTimes.start + __sv.bootTimes.ready, fr = __st.frames.filter(t => t <= end); let gap = 0; for (let i = 1; i < fr.length; i++) gap = Math.max(gap, fr[i] - fr[i - 1]);
+        const all = performance.getEntriesByType('resource').concat(performance.getEntriesByType('navigation'));
+        return { kb: Math.round(all.reduce((a, e) => a + (e.transferSize || 0), 0) / 1024), title: __st.title, ready: end, freeze: gap, steps: __sv.bootTimes }; }); };
+    await page.goto(S.url); const first = await read();
+    await page.waitForFunction(async () => !!(await navigator.serviceWorker.getRegistration())?.active, null, { timeout: 300000 }); await page.waitForTimeout(2000);
+    await page.reload(); const second = await read();
+    await ctx.close();
+    const got = { firstKB: first.kb, firstTitleMs: first.title, firstReadyMs: first.ready, secondReadyMs: second.ready, secondFreezeMs: second.freeze, secondKB: second.kb }, over = [];
+    for (const [k, B] of Object.entries(base)) { if (k.startsWith('/')) continue; if (!(got[k] <= B.max * (k.endsWith('KB') ? 1.03 : 1.25))) over.push(`${B.rule} ${k} ${got[k]} > ${B.max}`); }
+    // the slowest building steps on the second start, for the report (G.bootTimes: ms since the game's code began)
+    const st = Object.entries(second.steps).filter(([k]) => k !== 'start').sort((x, y) => x[1] - y[1]), slow = st.map(([k, v], i) => [k, v - (i ? st[i - 1][1] : 0)]).sort((x, y) => y[1] - x[1]).slice(0, 4).map(([k, v]) => `${k} ${(v / 1000).toFixed(1)} s`);
+    ok(!over.length && !errs.length, JSON.stringify({ over, got, errs }));
+    return `tablet speed: first start ${first.kb} KB, title ${(first.title / 1000).toFixed(1)} s, valley ready ${(first.ready / 1000).toFixed(1)} s; second start ${second.kb} KB from the network, ready ${(second.ready / 1000).toFixed(1)} s, longest freeze ${(second.freeze / 1000).toFixed(1)} s; slowest steps ${slow.join(', ')}`;
+  } finally { S.close(); }
 });
 
 await check('saves', async () => {

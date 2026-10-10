@@ -1,6 +1,6 @@
 {
   "//": "Performance budgets (hard rules PERF-001…006, owner round 30; docs/ARCHITECTURE.md §9). 'max' is today's allowed number: a ratchet that may only go down (lower it when a round improves it). 'target' is the agreed budget; where max is above target the gap is reported every run.",
-  "startMB":     { "max": 3.4, "target": 8,   "rule": "PERF-001", "what": "MB downloaded before the title screen (8 s on 4G ≈ 8 MB). Owner, 10 Oct AEST: 3.4 for now (r54 already measured 3.33–3.37, Round T0 adds the map file); lowered again when the smaller start-up download (docs/cores/tasks/infra-speed.md) lands" },
+  "startMB":     { "max": 2.7, "target": 8,   "rule": "PERF-001", "what": "MB downloaded before the title screen, measured on the packed copy the website serves, before compression (owner, 10 Oct AEST; 11 Oct: 2.6 MB on main 6300d4b, so the ratchet is 2.7, was 3.4 on the plain scripts)" },
   "drawCalls":   { "max": 900, "target": 250, "rule": "PERF-003", "what": "draw calls per frame in Lotus Village (round T1: 702–887 with far small things not drawn)" },
   "triangles":   { "max": 800000, "target": 300000, "rule": "PERF-003", "what": "triangles per frame in Lotus Village" },
   "texturePx":   { "max": 1024, "target": 1024, "rule": "PERF-004", "what": "largest texture side in pixels" },
