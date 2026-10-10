@@ -297,7 +297,7 @@ export function openGrownups(after) {
 
       <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(nm(p.name))}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn ghost" data-rep="${p.id}" aria-label="${T('Play report', 'Báo cáo chơi')}">${pic('📊')}</button><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
       <button class="btn wide" id="gAdd">+ ${T('Add a player', 'Thêm người chơi')}</button>
-      ${window.__sv && window.__sv.heroes && window.__sv.heroes.length ? `<button class="btn wide" id="gWho">👫 ${T('Change player', 'Đổi người chơi')}</button>` : ''}
+      ${window.__sv && window.__sv.heroes && window.__sv.heroes.length ? `<button class="btn wide" id="gChange">👫 ${T('Change player', 'Đổi người chơi')}</button>` : ''}
       <h3>🔒 ${T('Family photos', 'Ảnh gia đình')}</h3>
       <p class="note">${T('Your family’s own photos (on villagers’ faces and on postcards) are private. Type the family code once on this device to download them; ask the grown-up who set up the game for it.', 'Ảnh của gia đình (trên mặt dân làng và trên bưu thiếp) được giữ riêng. Gõ mã gia đình một lần trên máy này để tải ảnh về; hỏi người lớn đã cài trò chơi để lấy mã.')}</p>
       <div class="vrow"><input type="text" id="gFam" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="ABCD-EFGH-JKMN" value="${familyCode() ? '••••' + esc(familyCode().slice(-4)) : ''}"><button class="btn" id="gFamSave">${T('Save', 'Lưu')}</button></div>
@@ -454,7 +454,7 @@ export function openGrownups(after) {
     card.querySelector('#gFamSave').onclick = async () => { const v = card.querySelector('#gFam').value.trim(), out = card.querySelector('#gFamRes'); if (/^•/.test(v)) return; out.textContent = '…';
       const r = await setFamilyCode(v).catch(() => ({ ok: false }));
       out.textContent = r.cleared ? T('Family code removed from this device.', 'Đã xóa mã gia đình khỏi máy này.') : r.bad ? T('That code is not right: check it with the grown-up who set up the game.', 'Mã chưa đúng: hỏi lại người lớn đã cài trò chơi.') : r.ok ? T(`Saved: ${r.n || 0} of ${r.of || 0} family photos on this device.`, `Đã lưu: ${r.n || 0}/${r.of || 0} ảnh gia đình trên máy này.`) : T('Saved. The photos come the next time this device is online.', 'Đã lưu. Ảnh sẽ về khi máy có mạng.'); };
-    const gw = card.querySelector('#gWho'); if (gw) gw.onclick = () => { m.close(); window.__sv.changePlayer(); };
+    const gw = card.querySelector('#gChange'); if (gw) gw.onclick = () => { m.close(); window.__sv.changePlayer(); };
     card.querySelector('#gAdd').onclick = () => profiles.length >= MAX_KIDS ? toast(T(`Up to ${MAX_KIDS} players.`, `Tối đa ${MAX_KIDS} người chơi.`)) : openEditor(null, () => { draw(); after && after(); });
     card.querySelector('#gExp').onclick = async () => { const how = await exportBackup(); if (how === 'cancelled') return; toast(how === 'shared' ? T('Backup saved!', 'Đã lưu bản sao!') : T('Backup downloaded. Put it in Drive or iCloud to keep it safe.', 'Đã tải bản sao. Hãy cất vào Drive hoặc iCloud cho an toàn.')); const y = m.scrollTop; draw(); m.scrollTop = y; };
     card.querySelector('#gRec').onclick = () => openRecorder(draw);
