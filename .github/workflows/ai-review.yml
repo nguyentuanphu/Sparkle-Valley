@@ -2,8 +2,8 @@
 # A second Claude reads the pull request's changes against the project's rules (CLAUDE.md, HANDOFF.md, the core
 # files) and posts one review comment: "Looks fine" or the problems it found. It does not change code or approve.
 #
-# It runs when a pull request is opened, reopened, marked ready and on every push to it (owner, 11 Oct). To review again
-# without a push, add the label `ai-review` to the pull request (the label is then taken off).
+# To keep Claude usage down it runs when a pull request is opened, reopened or marked ready, not on every push (owner,
+# 11 Oct). To review again after more pushes, add the label `ai-review` to the pull request (the label is then taken off).
 # The bug robot starts it by hand for its own pull requests (workflow_dispatch with the pull request number).
 # Uses the same Claude account as the bug robot: CLAUDE_CODE_OAUTH_TOKEN (or CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY, the
 # name the owner gave it), then CLAUDE_CODE_OAUTH_TOKEN_BACKUP.
@@ -11,7 +11,7 @@ name: AI review
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, ready_for_review, labeled]   # synchronize: every push (owner, 11 Oct)
+    types: [opened, reopened, ready_for_review, labeled]   # not on every push (owner, 11 Oct): saves Claude usage
   workflow_dispatch:
     inputs:
       pr:
