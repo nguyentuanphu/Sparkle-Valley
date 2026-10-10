@@ -136,7 +136,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh issue view "$N" --comments > .bugfix/issue.md
+          # Title, labels, description and every comment ("gh issue view --comments" alone prints only the comments).
+          gh issue view "$N" --json title,body,labels,comments --jq '
+            "# " + .title + "\n\nLabels: " + ([.labels[].name] | join(", ")) + "\n\n" + (.body // "")
+            + "\n\n## Comments\n" + ([.comments[] | "\n### " + .author.login + " (" + .createdAt + ")\n" + .body] | join("\n"))
+          ' > .bugfix/issue.md
+          [ -s .bugfix/issue.md ] || { echo "could not read issue #$N"; exit 1; }
           cat .bugfix/issue.md
 
       - name: Get the checks ready (browser and test server)
@@ -255,9 +260,11 @@ jobs:
           status=$(head -1 out/result.md | sed -n 's/^STATUS: *\([a-z]*\).*/\1/p')
           body=$(tail -n +2 out/result.md)
           patches=0; if [ -d out/patches ]; then patches=$(find out/patches -name '*.patch' | wc -l); fi
-          if [ "$status" = fixed ] && [ "$patches" -eq 0 ]; then status=stuck; body="$body"$'\n\n'"(The robot said fixed but made no commit.)"; fi
+          # A fix already on the bug's branch from an earlier run counts: nothing new to push, just the pull request.
+          ahead=$(git rev-list --count "origin/main..origin/$b" 2>/dev/null || echo 0)
+          if [ "$status" = fixed ] && [ "$patches" -eq 0 ] && [ "$ahead" -eq 0 ]; then status=stuck; body="$body"$'\n\n'"(The robot said fixed but made no commit.)"; fi
 
-          if [ "$status" = fixed ]; then
+          if [ "$status" = fixed ] && [ "$patches" -gt 0 ]; then
             git config user.name 'Sparkle Valley bug robot'
             git config user.email 'bug-robot@users.noreply.github.com'
             git checkout -q "$(cat out/base.txt)" && git checkout -q -B "$b" && git am -q out/patches/*.patch \
@@ -275,12 +282,17 @@ jobs:
             pr=$(gh pr list --head "$b" --state open --json url -q '.[0].url')
             if [ -z "$pr" ]; then
               pr=$(gh pr create --draft --base main --head "$b" --title "$title" --body "$pr_body" 2>/dev/null \
-                || gh pr create --base main --head "$b" --title "[Robot fix, do not merge before Release] $title" --body "$pr_body")
+                || gh pr create --base main --head "$b" --title "[Robot fix, do not merge before Release] $title" --body "$pr_body") || pr=''
             fi
-            # Pull requests made with this token do not start other workflows by themselves: start them here.
-            gh workflow run pr-checks.yml -f pr="${pr##*/}" || true
-            gh workflow run ai-review.yml -f pr="${pr##*/}" || true
-            note="Fixed on the branch \`$b\` ($now). Draft pull request: $pr
+            if [ -n "$pr" ]; then
+              # Pull requests made with this token do not start other workflows by themselves: start them here.
+              gh workflow run pr-checks.yml -f pr="${pr##*/}" || true
+              gh workflow run ai-review.yml -f pr="${pr##*/}" || true
+              where="Draft pull request: $pr"
+            else
+              where="GitHub did not let the robot open the pull request (turn on Settings, Actions, General, Workflow permissions, \"Allow GitHub Actions to create and approve pull requests\"). Open it by hand: $GITHUB_SERVER_URL/$GH_REPO/compare/main...$b"
+            fi
+            note="Fixed on the branch \`$b\` ($now). $where
           It is **not live**: Release merges it and asks you \"yes, deploy\" before Netlify gets it."
             gh issue edit "$N" --add-label fixed-on-branch --remove-label needs-go >/dev/null
           elif [ "$status" = plan ]; then
