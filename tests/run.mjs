@@ -2021,8 +2021,8 @@ await check('coop', async () => {
     const friend = { id: 'peer-x', pos: { x: 0, y: 0, z: 0 } }; G.partners['peer-x'] = friend;
     G.coop.tick(); const quest = G.coop.quest, coins0 = S.farm.coins;
     const spot = id => { // a point inside the place, found from the map
-      for (let r2 = 0; r2 < 200; r2 += 4) for (let a = 0; a < 6.28; a += .5) { const x = Math.cos(a) * r2, z = Math.sin(a) * r2; if (W.regionAt(x, z) === id) return [x, z]; }
-      for (let x = -190; x < 190; x += 3) for (let z = -190; z < 190; z += 3) if (W.regionAt(x, z) === id) return [x, z];
+      for (let r2 = 0; r2 < W.HALF; r2 += 4) for (let a = 0; a < 6.28; a += .5) { const x = Math.cos(a) * r2, z = Math.sin(a) * r2; if (W.regionAt(x, z) === id) return [x, z]; }
+      for (let x = -W.HALF + 10; x < W.HALF - 10; x += 3) for (let z = -W.HALF + 10; z < W.HALF - 10; z += 3) if (W.regionAt(x, z) === id) return [x, z]; // (round T: the whole valley, from the map's size)
     };
     const [ax, az] = spot(quest[0]); h.place(ax, az); friend.pos = { x: ax + 40, y: h.pos.y, z: az }; await wait(200); G.coop.tick();
     const alone = !!G.coop.done[quest[0]];

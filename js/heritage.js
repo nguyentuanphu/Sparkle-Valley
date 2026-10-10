@@ -5,7 +5,7 @@
 import { THREE, toon, toonVC, P, merge, outline, sprite } from './gfx.js';
 import { T, nm, registerName } from './i18n.js';
 import { landmarkAt } from './content/map.js';
-import { heightAt, oldHeightAt, roadDist, VILLAGE, MARKET, AUSSIE, CHINA, INDIA, LAKE, WATER, APOSTLES, FESTGROUNDS, LEAFIES } from './world.js';
+import { heightAt, oldHeightAt, roadDist, VILLAGE, MARKET, AUSSIE, CHINA, INDIA, LAKE, WATER, APOSTLES, FESTGROUNDS, LEAFIES, HALF } from './world.js';
 import { buildAvatar } from './avatar.js';
 import { LANDMARKS, postcard } from './regions.js';
 import { ITEMS } from './data.js';
@@ -177,7 +177,8 @@ export function createHeritage(G, { give, sfx, say, toast }) {
       if (!ITEMS[key]) ITEMS[key] = { icon, name: WILD[key].name };
       for (let k = 0; k < 2; k++) {
         const a = (li * 2 + k) / (list.length * 2) * Math.PI * 2 + (cc === 'au' ? .5 : 0), [cx, cz, r] = near[cc];
-        const [x, z] = spot(cx + Math.cos(a) * r, cz + Math.sin(a) * r, 1.6);
+        const inV = v => Math.max(-HALF + 14, Math.min(HALF - 14, v)); // (round T: never past the edge of the valley)
+        const [x, z] = spot(inV(cx + Math.cos(a) * r), inV(cz + Math.sin(a) * r), 1.6);
         const g = new THREE.Group(), fruit = new THREE.Group();
         if (type === 'tree') {
           { const t = new THREE.Mesh(C(.18, .26, 2.6, 8), toon(key === 'coconut' ? '#9a7a52' : '#7a5236')); t.position.y = 1.3; g.add(t); }

@@ -40,7 +40,7 @@ export const PLACES = [
   { id: 'town', kind: 'street', cc: 'home', at: [9, -22], w: 26, d: 21, h: 4.6, street: { roadZ: -6 } },   // Two Homes Street (Phố Hai Quê): Bà Rịa meets a Sydney suburb
   { id: 'home', kind: 'village', cc: 'home', at: [9, 40], r: 28, h: 4 },   // Sunny Farm: house, field, barn and Mr. Bear's market
   // the east bank: Vietnam, north to south (Hà Nội, Bắc Ninh north-east of it, Làng Sen, Đà Nẵng, Hội An, Chợ Ba Miền, TP. HCM)
-  { id: 'hanoi', kind: 'city', cc: 'vn', at: [153, -135], w: 13, d: 13, h: 5, icon: '🐢', name: ['Hà Nội', 'Hà Nội'], gates: [[0, 13], [0, -13]] },
+  { id: 'hanoi', kind: 'city', cc: 'vn', at: [153, -135], w: 13, d: 13, h: 5, icon: '🐢', name: ['Hà Nội', 'Hà Nội'], gates: [[0, 13]] },
   { id: 'bacninh', kind: 'city', cc: 'vn', at: [200, -172], w: 16, d: 13, h: 6, icon: '🕰️', name: ['Bắc Ninh', 'Bắc Ninh'], gates: [[-16, 0]] },
   { id: 'paddies', kind: 'site', cc: 'vn', at: [204, -102], r: 18, h: 3 },   // the rice fields
   { id: 'village', kind: 'village', cc: 'vn', at: [204, -42], r: 34, h: 2.4 },   // Lotus Village (Làng Sen)
@@ -61,7 +61,7 @@ export const PLACES = [
   { id: 'china', kind: 'village', cc: 'asia', at: [107, -200], r: 22, h: 5.5 },
   { id: 'india', kind: 'village', cc: 'asia', at: [-94, -200], r: 22, h: 5.5 },
   // festival grounds (js/vnfun.js), kept free of trees: the buffalo pushing ring near Hà Nội and Bắc Ninh, the bull-race field west of Sài Gòn
-  { id: 'choitrau', kind: 'ground', cc: 'vn', at: [118, -112] },
+  { id: 'choitrau', kind: 'ground', cc: 'vn', at: [106, -120] },
   { id: 'duabo', kind: 'ground', cc: 'vn', at: [108, 160] },
   // places inside places
   { id: 'playground', kind: 'site', place: 'town', off: [-4, 9], r: 13, h: 4.6 },   // the park on Two Homes Street, where kids from Australia and Vietnam play
@@ -116,7 +116,6 @@ export const ROADS = [
   { id: 'aussie_road', kind: 'asphalt', pts: [[-132, -71], [-118, -71]], gates: [null, 'aussie'] },   // a square T off the Australia road (R5)
   // the mountain road over the north, from Brisbane to Hà Nội, with China Town and India Village
   { id: 'mountain', kind: 'asphalt', pts: [[-132, -148], [-132, -172], [-104, -172], [-60, -172], [60, -172], [120, -172], [184, -172]], gates: ['brisbane', 'bacninh'] },
-  { id: 'hanoi_n', kind: 'asphalt', pts: [[153, -172], [153, -148]], gates: [null, 'hanoi'] },   // Hà Nội's north gate, a square T off the mountain road
   { id: 'china_road', kind: 'asphalt', pts: [[107, -172], [107, -178]], gates: [null, 'china'] },
   { id: 'india_road', kind: 'asphalt', pts: [[-94, -172], [-94, -178]], gates: [null, 'india'] },
   // on the island: Sunny Farm, and the path up to Ông Cú
@@ -160,7 +159,7 @@ export const SHRINES = [
   { id: 'sh_numbers', game: 'numbers', at: [-96, 84] }
 ];
 export const TOWERS = [
-  { id: 'tw_plateau', at: [9, -92] },
+  { id: 'tw_plateau', at: [10, -66] },
   { id: 'tw_bamboo', at: [-176, -100] },
   { id: 'tw_peaks', at: [40, -208] },
   { id: 'tw_lake', at: [118, -92] }
@@ -175,7 +174,7 @@ export const LEAFIES = [
 
 // things to pick up (herbs, mushrooms, eggs, rice, fruit, a fish…: js/data.js GATHER, in this order): [item, place, dx, dz]
 export const GATHER_AT = [
-  ['herb', 'bamboo', 10, 22], ['herb', 'bamboo', -14, 6], ['herb', 'sydney', -30, 40], ['herb', 'melbourne', 30, -32], ['mushroom', 'bamboo', 2, -22], ['mushroom', 'brisbane', 30, -22], ['mushroom', 'plateau', -18, 12], ['mushroom', 'india', 30, 30],
+  ['herb', 'bamboo', 10, 22], ['herb', 'bamboo', -14, 6], ['herb', 'sydney', -30, 40], ['herb', 'melbourne', 30, -32], ['mushroom', 'bamboo', 2, -22], ['mushroom', 'brisbane', 30, -22], ['mushroom', 'plateau', -18, 12], ['mushroom', 'india', 30, 16],
   ['herb', 'plateau', 26, 4], ['mushroom', 'home', -30, -20], ['egg', 'village', -6, -18], ['egg', 'village', -12, -14], ['rice', 'paddies', -7, -2], ['rice', 'paddies', 6, 8], ['rice', 'paddies', -12, 10], ['banana', 'saigon', -30, -20],
   ['banana', 'saigon', -45, 10], ['banana', 'hoian', -25, 20], ['fish', 'lake', 0, -30], ['mango', 'market', 10, -24], ['mango', 'danang', 30, 18], ['leaf', 'bamboo', 20, -9], ['bean', 'paddies', 13, -8], ['herb', 'danang', -25, -35]
 ];

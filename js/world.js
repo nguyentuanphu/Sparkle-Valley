@@ -518,7 +518,7 @@ export function createWorld(scene, quality) {
     if (type !== 'bush') W.colliders.push({ x, z, r: type === 'rock' ? 1.1 * s : type === 'bamboo' ? 1 : .6 });
   }
   // A few apple trees right on the plateau so the cooking quest is easy to start.
-  [[-20, 4], [22, 6], [-8, -22]].map(([dx, dz]) => [PLATEAU.x + dx, PLATEAU.z + dz]).forEach(([x, z]) => { spots.apple.push([x, heightAt(x, z) - .1, z, 0, 1]); appleTrees.push({ x, z }); W.colliders.push({ x, z, r: .6 }); });
+  [[-.62, .12], [.69, .19], [-.25, -.69]].map(([dx, dz]) => [PLATEAU.x + dx * PLATEAU.r, PLATEAU.z + dz * PLATEAU.r]) // (round T: spread by the plateau's own size).forEach(([x, z]) => { spots.apple.push([x, heightAt(x, z) - .1, z, 0, 1]); appleTrees.push({ x, z }); W.colliders.push({ x, z, r: .6 }); });
   const o3 = new THREE.Object3D(), tint = new THREE.Color();
   // Each kind of tree is split into 100 m tiles of the map, so the tiles behind the camera (and outside the
   // sun's shadow area) are skipped instead of drawing every tree in the valley every frame (phones).

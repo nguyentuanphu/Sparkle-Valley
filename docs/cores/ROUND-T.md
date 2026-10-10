@@ -279,7 +279,25 @@ Where the drawing and the written spec disagree (asked to the owner):
 - Main roads are drawn 6.4 m wide ("Vietnam main road (6.4 m)"); the hard rule R1 / ROAD-001 says asphalt 5.2 m (T4).
 
 ## Progress (for the next chat to pick up)
-**10 Oct 2026, about 07:30 AEST: stage T0 built (steps 1 to 6), release r55 under test (Release core chat, branch `round-t`, not pushed).**
+**10 Oct 2026, T1 in progress (Release core chat, branch `round-t`, local commits not pushed).** r55 (T0) was pushed as pull
+request #21 (not merged, not deployed). The owner said "go, build T1" with these answers (10 Oct): a bigger home island so Ông
+Cú, Phố Hai Quê and Sunny Farm fit; Bắc Ninh north-east of Hà Nội as drawn; the ring road in T1; asphalt roads 6.4 m (rule R1
+changed, `ROAD_WIDTH` in the map); Release stamps Studio map edits (`studio/ui/app.js` Map page: older edits go to
+`CONTENT.parked`, then `world.map` = MAP_VERSION).
+- Built so far: `js/content/map.js` MAP_VERSION 'D1' from the Concept D map (§3b; `docs/cores/round-t/t1-vs-concept-d.png`):
+  480 m valley, the home island (plateau r 24 h 8, Phố Hai Quê, Sunny Farm), the main river split round it (`main_n`, `main_w`,
+  `main_e`, `main_s`), Sông Hàn with Cầu Rồng along z, the ring road (`loop: true`) with plain bridges north and south, the
+  island bridges (Harbour style east, plain west), Vietnam road at x 153, Australia road at x −132, the mountain road Brisbane →
+  India → China → Bắc Ninh, the coast in the south (`WORLD.coast`), the Great Dividing Range (`RELIEF`), Hồ Gương by Làng Sen.
+  `world.js`: river distance over every river in a 16 m grid (`RIVERS`, `RIVER` = the raft line), coast, ridge, edge only east,
+  west and north, the open ground never below water by itself, loop fillet, plain bridges; `roads.js`: loops untrimmed, gates
+  as wide as their road, Cầu Rồng turns with its bridge; pick-ups moved from `js/data.js` into the map (`GATHER_AT`).
+- Checks passing so far: unit (with the new `banks` test), mapcoords, flat, roadshape, ground, features, camera, village.
+- Still to do in T1: the wider checks (roads, validate, solid, story, yard, migrate, resume, hubmap…), perf (rebaseline
+  `worldMs` with at most +25 %), the full suite, the sky view and in-game map next to the Concept D map for the report,
+  board notes (Online: netmsg size before release), bump to r56, packages, report.
+
+**Earlier: 10 Oct 2026, about 07:30 AEST: stage T0 built (steps 1 to 6), release r55.**
 - Step 1: `js/content/map.js` (MAP_VERSION 'C'). Step 2: `world.js`, `roads.js`, `ferry.js` from the map. Step 3: every builder
   places its things from its place's anchor (regions, vendors, cities, town, homes with fixed ids, hawkers, places, pets, yard,
   heritage, main, ui, solids, validate, traffic, gather, secrets, regionsites, vnfun); MAP_VERSION in the solids and
