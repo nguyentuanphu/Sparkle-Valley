@@ -114,10 +114,9 @@ export function createRegions(G) {
   // Tháp Rùa (Turtle Tower) on its little island in Hồ Gươm by Hà Nội (round T2: the real lake, js/content/map.js)
   const pond = (cx, cz, w, d) => { put(merge([P(Box(w + .8, .3, d + .8), '#b9b09c', [0, .15, 0]), P(Box(w, .32, d), '#5f9fb0', [0, .17, 0])]), cx, cz); box(cx - w / 2 - .4, cx + w / 2 + .4, cz - d / 2 - .4, cz + d / 2 + .4); };
   const TURTLE = landmarkAt('turtle'), PILLAR = landmarkAt('onepillar');
-  put(merge([P(new THREE.CylinderGeometry(2.4, 2.8, 3.4, 10), '#8a8a6a', [0, -1.6, 0]), P(new THREE.CylinderGeometry(2.6, 2.6, .2, 10), '#6f9a52', [0, .1, 0])]), TURTLE[0], TURTLE[1], 0, WATER - heightAt(...TURTLE) + .2);
-  world.colliders.push({ x: TURTLE[0], z: TURTLE[1], r: 2.6 });
+  world.colliders.push({ x: TURTLE[0], z: TURTLE[1], r: 2.6 }); // (the island itself is in the map: js/content/map.js, Hồ Gươm's islet)
   put(merge([P(Box(1.6, 1.2, 1.6), '#d8cdb6', [0, .8, 0]), P(Box(1.3, 1, 1.3), '#d8cdb6', [0, 1.9, 0]), P(Box(1, .9, 1), '#d8cdb6', [0, 2.85, 0]), P(new THREE.ConeGeometry(.9, .7, 4), '#8a7a5a', [0, 3.6, 0], [0, Math.PI / 4, 0]),
-    P(new THREE.SphereGeometry(.6, 8, 6), '#3f7d5c', [-1.6, .3, .5], [0, 0, 0], [1.4, .4, 1]), P(Box(.35, .7, .05), '#5a4a3a', [0, 1.9, .66])]), TURTLE[0], TURTLE[1], 0, WATER - heightAt(...TURTLE) + .3);
+    P(new THREE.SphereGeometry(.6, 8, 6), '#3f7d5c', [-1.6, .3, .5], [0, 0, 0], [1.4, .4, 1]), P(Box(.35, .7, .05), '#5a4a3a', [0, 1.9, .66])]), ...TURTLE);
   // Chùa Một Cột (One Pillar Pagoda) on its own little pond
   pond(...PILLAR, 4.4, 4.4);
   put(merge([P(Cyl(.25, .3, 1.8, 8), '#cfc3a6', [0, 1, 0]), P(Box(1.9, .2, 1.9), '#8a5a3b', [0, 1.95, 0]), P(Box(1.5, 1, 1.5), '#a24e3a', [0, 2.5, 0]),

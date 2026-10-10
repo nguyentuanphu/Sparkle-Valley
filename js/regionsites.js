@@ -74,7 +74,8 @@ export function createRegionSites(G) {
     const [x, z, y] = s; used.push([x, z]);
     const rot = id === 'thehuc' ? Math.PI / 2 : Math.atan2(c.x - x, c.z - z); // facing the city (the Thê Húc bridge reaches out across the lake)
     if (!bridge) { const m = new THREE.Mesh(merge(MODELS[model]()), mat); m.position.set(x, y - .05, z); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; scene.add(m); outline(m, .025, '#4a3a3f');
-      world.colliders.push({ x, z, r: id === 'thehuc' ? 3 : 6 }); }
+      if (id === 'thehuc') world.colliders.push({ x: x + Math.cos(rot) * 8.2, z: z - Math.sin(rot) * 8.2, r: 1.9 }); // (only its temple, on the shore: the bridge reaches out over the water)
+      else world.colliders.push({ x, z, r: 6 }); }
     // the ℹ️ sign stands on the side facing the city, outside the model
     const [ix, iz] = bridge ? [x, z] : id === 'thehuc' ? [x - 7, z] : [x + Math.sin(rot) * 9, z + Math.cos(rot) * 9]; // (on the shore for the lake, by the bridge's end for a bridge)
     const sg = sprite('ℹ️', 1.5); sg.position.set(ix, heightAt(ix, iz) + 3.2, iz); scene.add(sg); world.updaters.push((dt, t) => { sg.position.y = heightAt(ix, iz) + 3.2 + Math.sin(t * 2 + x) * .25; });

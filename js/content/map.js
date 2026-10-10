@@ -94,11 +94,11 @@ export const WATERS = [
   // Australia: the Brisbane River from the western hills under the Story Bridge to the main river; Sydney Harbour, wide,
   // from the main river to Sydney under the Harbour Bridge; the Yarra under Princes Bridge; the Murray to the main river
   { id: 'brisbane_r', kind: 'river', w: .75, pts: [[-238, -66], [-196, -70], [-170, -84], [-156, -100], [-148, -106], [-116, -106], [-96, -114], [-70, -134], [-40, -150], [1, -156]] },
-  { id: 'sydney_harbour', kind: 'river', w: 1.6, pts: [[-112, -2], [-54, -2]] },
+  { id: 'sydney_harbour', kind: 'river', w: 1.2, pts: [[-102, -2], [-54, -2]] },   // (its west end stops short of Sydney's square, which stays level and dry)
   { id: 'yarra', kind: 'river', w: .6, pts: [[-156, 84], [-146, 90], [-118, 90], [-96, 98], [-70, 118], [-36, 130], [12, 136]] },
   { id: 'murray', kind: 'river', w: .7, pts: [[-238, 150], [-190, 154], [-132, 154], [-80, 156], [-30, 162], [14, 168]] },
   // small round lakes: Hồ Gươm (Hoàn Kiếm Lake) by Hà Nội with the Turtle Tower in it; a billabong in the outback
-  { id: 'hoguom', kind: 'pond', place: 'hanoi', off: [-29, 3], r: 8 },
+  { id: 'hoguom', kind: 'pond', place: 'hanoi', off: [-29, 3], r: 8, islet: 2.6 },   // (the Turtle Tower stands on its little island)
   { id: 'billabong', kind: 'pond', at: [-204, 22], r: 8 }
 ];
 
@@ -192,7 +192,7 @@ export const SHRINES = [
   { id: 'sh_goat', game: 'goat', at: [-196, 110] },
   { id: 'sh_sort', game: 'sorting', at: [200, 14] },
   { id: 'sh_shapes', game: 'shapes', at: [-60, 150] },
-  { id: 'sh_colors', game: 'colors', at: [-104, -112] },
+  { id: 'sh_colors', game: 'colors', at: [-104, -128] },   // (round T2: clear of the Brisbane River)
   { id: 'sh_maze', game: 'maze', at: [52, -150] },
   { id: 'sh_numbers', game: 'numbers', at: [-96, 84] }
 ];
@@ -200,13 +200,13 @@ export const TOWERS = [
   { id: 'tw_plateau', at: [10, -66] },
   { id: 'tw_bamboo', at: [-176, -100] },
   { id: 'tw_peaks', at: [40, -208] },
-  { id: 'tw_lake', at: [118, -92] }
+  { id: 'tw_lake', at: [140, -60] }   // (round T2: on the lake's east shore; Sông Hồng comes in on the north)
 ];
 // hidden Leafies under rocks or as a sparkle (their ids are lf0, lf1… in this order: saved in profiles)
 export const LEAFIES = [
   ['rock', -12, -90], ['sparkle', 30, -60], ['rock', 34, 48], ['sparkle', -100, -150], ['rock', -105, 20], ['sparkle', -186, 0], ['rock', -150, 96],
   ['sparkle', 120, -60], ['rock', 60, 130], ['sparkle', 186, 156], ['rock', 200, -14], ['sparkle', 214, -40], ['rock', 175, -125], ['sparkle', 130, -190],
-  ['rock', -30, -195], ['sparkle', -60, -150], ['rock', 70, -195], ['sparkle', -200, -60], ['rock', -200, 30], ['sparkle', -30, 130], ['rock', 110, 60],
+  ['rock', -30, -195], ['sparkle', -60, -150], ['rock', 70, -195], ['sparkle', -200, -60], ['rock', -200, 30], ['sparkle', -30, 118], ['rock', 110, 60],
   ['sparkle', -90, 170], ['rock', 210, -200], ['sparkle', 186, 60]
 ].map(([kind, x, z], i) => ({ id: 'lf' + i, kind, at: [x, z], ...(i === 7 ? { inWater: true } : {}) })); // (lf7 sparkles over the middle of Hồ Gương on purpose)
 
@@ -214,7 +214,7 @@ export const LEAFIES = [
 export const GATHER_AT = [
   ['herb', 'bamboo', 10, 22], ['herb', 'bamboo', -14, 6], ['herb', 'sydney', -30, 40], ['herb', 'melbourne', 30, -32], ['mushroom', 'bamboo', 2, -22], ['mushroom', 'brisbane', 30, -22], ['mushroom', 'plateau', -18, 12], ['mushroom', 'india', 30, 16],
   ['herb', 'plateau', 26, 4], ['mushroom', 'home', -30, -20], ['egg', 'village', -6, -18], ['egg', 'village', -12, -14], ['rice', 'paddies', -7, -2], ['rice', 'paddies', 6, 8], ['rice', 'paddies', -12, 10], ['banana', 'saigon', -30, -20],
-  ['banana', 'saigon', -45, 10], ['banana', 'hoian', -25, 20], ['fish', 'lake', 0, -30], ['mango', 'market', 10, -24], ['mango', 'danang', 30, 18], ['leaf', 'bamboo', 20, -9], ['bean', 'paddies', 13, -8], ['herb', 'danang', -25, -35]
+  ['banana', 'saigon', -45, 10], ['banana', 'hoian', -25, 20], ['fish', 'lake', 0, -30], ['mango', 'market', 17, -22], ['mango', 'danang', 30, 18], ['leaf', 'bamboo', 20, -9], ['bean', 'paddies', 4, -8], ['herb', 'danang', -25, -35]
 ];
 
 // Where each landmark stands: its place and the offset from that place's anchor (js/regions.js, js/cities.js,
@@ -274,7 +274,7 @@ export const BOATS = [
     // (round T2, Concept D) and by every bridge it passes under: each pier's land end, joined to the road by a footpath
     bridgeStops: [{ bridge: 'north', at: [12, -152] }, { bridge: 'ring_n', at: [16, -114] }, { bridge: 'haique', at: [60, -6] }, { bridge: 'ring_s', at: [22, 124] }] },
   // (round T2) the Sydney Harbour ferry: from Sydney's quay by the road to the ring, under the Harbour Bridge, to the home island
-  { id: 'harbourferry', water: 'sydney_harbour', piers: [{ id: 'sydney', at: [-112, 24], to: [-112, 5], name: ['Sydney Harbour', 'Bến cảng Sydney'] }, { id: 'island', at: [-37, -3], to: [-48, -3], name: ['Two Homes Island', 'Đảo Hai Quê'] }] },
+  { id: 'harbourferry', water: 'sydney_harbour', piers: [{ id: 'sydney', at: [-108, 24], to: [-106, 1], name: ['Sydney Harbour', 'Bến cảng Sydney'] }, { id: 'island', at: [-37, -3], to: [-48, -3], name: ['Two Homes Island', 'Đảo Hai Quê'] }] },
   { id: 'crossing', water: 'main_n', count: 0 }            // (round T2, Concept D: no crossing rafts; bridges join every bank and the raft line stops by each)
 ];
 
