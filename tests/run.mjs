@@ -709,12 +709,21 @@ await check('hubmap', async () => {
     const seen = {}; for (const t of [...document.querySelectorAll('.hubtabs [data-tab]')].map(b => b.dataset.tab)) { document.querySelector(`.hubtabs [data-tab="${t}"]`).click(); await new Promise(r => setTimeout(r, 100)); document.querySelectorAll('.hubbody [data-play]').forEach(b => { seen[b.dataset.play] = (seen[b.dataset.play] || 0) + 1; }); }
     document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 600));
     document.querySelector('.mapchips [data-g="vn"]').click(); await new Promise(r => setTimeout(r, 200));
-    const rows = [...document.querySelectorAll('.quick .qbtn')].map(b => (b.classList.contains('sub') ? '-' : '') + b.innerText.trim());
-    return { games: Object.keys(seen).length, all: Object.keys(__sv.GAMES || {}).length, dup: Object.entries(seen).filter(([, n]) => n > 1).map(([k]) => k), rows };
+    // (bug 28) the map shows one city at a time under a row of city chips: walk every chip in order, the city first
+    // and its places after it, so the list reads as the old long one did
+    const rows = [], pages = {};
+    for (let k = 0; k < document.querySelectorAll('.mapcities button').length; k++) {
+      document.querySelectorAll('.mapcities button')[k].click(); await new Promise(r => setTimeout(r, 100));
+      const page = [...document.querySelectorAll('.mapplaces .qbtn')].map((b, i) => (i ? '-' : '') + b.innerText.trim());
+      pages[page[0]] = page.slice(1).join(' | '); rows.push(...page);
+    }
+    return { games: Object.keys(seen).length, all: Object.keys(__sv.GAMES || {}).length, dup: Object.entries(seen).filter(([, n]) => n > 1).map(([k]) => k), rows, pages };
   });
   ok(!r.dup.length, 'games in two tabs: ' + r.dup.join(', ')); ok(r.games >= 60, 'games in the hub: ' + r.games);
   const at = n => r.rows.findIndex(x => x.includes(n)), hn = at('Hà Nội') >= 0 ? at('Hà Nội') : at('Hanoi'), dn = at('Đà Nẵng'), hl = at('Hạ Long'), hue = at('Huế');
   ok(hn >= 0 && dn > hn && hl > hn && hl < dn && hue > dn, 'map: Hạ Long should be under Hà Nội and Huế under Đà Nẵng: ' + r.rows.slice(0, 20).join(' | '));
+  const page = n => Object.entries(r.pages).find(([c]) => c.includes(n))?.[1] || '';
+  ok((page('Hà Nội') || page('Hanoi')).includes('Hạ Long') && page('Đà Nẵng').includes('Huế'), 'map: Hạ Long should be on Hà Nội\'s page and Huế on Đà Nẵng\'s: ' + JSON.stringify(r.pages).slice(0, 300));
   ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
   return `${r.games} games, each in one tab; the map lists Vietnam north to south with each landmark under its real place`;
 });
