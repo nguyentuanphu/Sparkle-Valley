@@ -56,6 +56,7 @@ Format for a request:
 - [ ] (Play → Kid UI) A speech box slides in from the right for 0.3 s: `@keyframes rise` (`css/style.css`) sets `transform` without the `.dialog`'s `translateX(-50%)`, so while it plays the box sits half its width to the right. The `phone` check then sometimes finds its buttons off screen ("button \"Chơi!\" off screen ... on top: dialog.little"); seen 2 times in 5 runs on `core/play` and not on `main` in 2, at the same frame speed, so it is chance, not Chapter 2. Fix idea: a dialog keyframe that keeps `translateX(-50%)` · `css/style.css` · 10 Oct AEST
 - [ ] (Play → Release) The `parents` check fails after midnight AEST on 11 Oct, on `main` (3399198) too: "bedtime [true,true,true,false]" (no goodnight at the faked 19:40); it plays bedtime at the fixed date 2026-10-10, so a check that uses today's date may be needed (owner of `js/parents.js`) · `tests/run.mjs` (parents) · 11 Oct AEST
 - [ ] (Play → Release, Analytics & Infra) PERF-001 update: `main` 3399198 measured 3.373 MB twice (limit 3.346); `core/play` 3.344 or 3.374 for the same code, so the start-up budget is over on `main` itself · 11 Oct AEST
+- Films, second batch (10 Oct AEST) on `claude/affectionate-wozniak-2jek7i`: Bánh Chưng Bánh Giầy and Cây khế story films, Bắn bi and Lật hình guide films with the real game playing by itself. No new files (nothing to add to `sw.js` FILES). Release: version not bumped.
 
 ## Voice & Audio
 - **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
