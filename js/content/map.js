@@ -51,7 +51,7 @@ export const PLACES = [
   { id: 'danang', kind: 'city', cc: 'vn', at: [153, 7], w: 13, d: 11, h: 3, icon: '🐉', name: ['Đà Nẵng', 'Đà Nẵng'], gates: [[0, -11], [0, 11], [-13, 0]] },
   { id: 'hoian', kind: 'site', cc: 'vn', at: [170, 90], r: 14 },   // Hội An (the old town comes in a later stage; for now its landmark)
   { id: 'market', kind: 'street', cc: 'vn', at: [197, 114], w: 25, d: 13, h: 6, street: { roadZ: 0 } },   // Chợ Ba Miền, the Three Regions market
-  { id: 'saigon', kind: 'city', cc: 'vn', at: [153, 151], w: 13, d: 11, h: 4, icon: '🛵', name: ['Hồ Chí Minh City', 'TP. Hồ Chí Minh'], gates: [[0, -11], [13, 0]] },
+  { id: 'saigon', kind: 'city', cc: 'vn', at: [153, 151], w: 13, d: 11, h: 4, icon: '🛵', name: ['Hồ Chí Minh City', 'TP. Hồ Chí Minh'], gates: [[0, -11], [13, -6]] },
   // (round T3) Bà Rịa–Vũng Tàu, the seaside town south-east of TP. HCM: the lighthouse on the beach, Bạch Dinh, the kite
   // flyers of Bãi Sau, bánh khọt; reached by the red road from TP. HCM and by the boat down Sông Sài Gòn
   { id: 'vungtau', kind: 'city', cc: 'vn', at: [205, 151], w: 13, d: 11, h: 3.5, icon: '🏖️', name: ['Bà Rịa–Vũng Tàu', 'Bà Rịa–Vũng Tàu'], gates: [[-13, 0]] },
@@ -68,10 +68,10 @@ export const PLACES = [
   { id: 'india', kind: 'village', cc: 'asia', at: [-94, -200], r: 22, h: 5.5 },
   // festival grounds (js/vnfun.js), kept free of trees: the buffalo pushing ring near Hà Nội and Bắc Ninh, the bull-race field west of Sài Gòn
   { id: 'choitrau', kind: 'ground', cc: 'vn', at: [75, -146] },   // (round T2: north of the ring road; Hồ Gươm took its old place)
-  { id: 'duabo', kind: 'ground', cc: 'vn', at: [108, 106] },
+  { id: 'duabo', kind: 'ground', cc: 'vn', at: [76, 110] },     // (round T3: outside the ring road's south-east bend; the eastern Memory Village took its old place)
   // (round T3) the two Memory Villages (Làng Kỷ Niệm), one on each bank: lanes of garden plots where families will put
   // the homes they remember (PLOTS below); the anchor is where the first lane leaves the main road
-  { id: 'memory_e', kind: 'plots', cc: 'vn', at: [156, 38], name: ['Memory Village (east)', 'Làng Kỷ Niệm (bờ đông)'] },
+  { id: 'memory_e', kind: 'plots', cc: 'vn', at: [153, 90], name: ['Memory Village (east)', 'Làng Kỷ Niệm (bờ đông)'] },
   { id: 'memory_w', kind: 'plots', cc: 'au', at: [-129, 44], name: ['Memory Village (west)', 'Làng Kỷ Niệm (bờ tây)'] },     // (round T2: between the ring road and the Vietnam road; Sông Sài Gòn and the Mekong took its old place)
   // places inside places
   { id: 'playground', kind: 'site', place: 'town', off: [-4, 9], r: 13, h: 4.6 },   // the park on Two Homes Street, where kids from Australia and Vietnam play
@@ -144,11 +144,12 @@ export const ROADS = [
   // the Vietnam road, north to south
   { id: 'vn_north', kind: 'asphalt', tone: 'vn', pts: [[153, -122], [153, -4]], gates: ['hanoi', 'danang'] },
   { id: 'vn_south', kind: 'asphalt', tone: 'vn', pts: [[153, 18], [153, 140]], gates: ['danang', 'saigon'] },   // over Cầu Rồng
-  { id: 'vn_vungtau', kind: 'asphalt', tone: 'vn', pts: [[166, 151], [192, 151]], gates: ['saigon', 'vungtau'] },   // (round T3) TP. HCM to Vũng Tàu
+  { id: 'vn_vungtau', kind: 'asphalt', tone: 'vn', pts: [[166, 145], [174, 145], [184, 151], [192, 151]], gates: ['saigon', 'vungtau'] },
+  { id: 'sg_quay', kind: 'footpath', pts: [[140, 156], [136, 156]] },   // (round T3) from TP. HCM's square to the boat's pier on Sông Sài Gòn   // (round T3) TP. HCM to Vũng Tàu
   { id: 'vt_beach', kind: 'footpath', pts: [[198, 162], [198, 181]] },
   // (round T3) the Memory Villages' lanes, off the Vietnam road and the Australia road
-  { id: 'mv_e1', kind: 'dirt', pts: [[153, 38], [216, 38]] },
-  { id: 'mv_e2', kind: 'dirt', pts: [[153, 57], [216, 57]] },
+  { id: 'mv_e1', kind: 'dirt', pts: [[153, 90], [96, 90]] },
+  { id: 'mv_e2', kind: 'dirt', pts: [[153, 110], [96, 110]] },
   { id: 'mv_w1', kind: 'dirt', pts: [[-132, 44], [-84, 44]] },
   { id: 'mv_w2', kind: 'dirt', pts: [[-132, 63], [-84, 63]] },   // (round T3) down to the Sài Gòn boat's pier on Bãi Sau
   { id: 'village_link', kind: 'asphalt', tone: 'vn', pts: [[153, -42], [171, -42]], gates: [null, null] },   // Lotus Village has its own old gate (cổng làng)
@@ -224,14 +225,14 @@ export const LEAFIES = [
   ['rock', -12, -90], ['sparkle', 30, -60], ['rock', 34, 48], ['sparkle', -100, -150], ['rock', -105, 20], ['sparkle', -186, 0], ['rock', -150, 96],
   ['sparkle', 120, -60], ['rock', 60, 130], ['sparkle', 186, 156], ['rock', 200, -14], ['sparkle', 214, -40], ['rock', 175, -125], ['sparkle', 130, -190],
   ['rock', -30, -195], ['sparkle', -60, -150], ['rock', 70, -195], ['sparkle', -200, -60], ['rock', -200, 30], ['sparkle', -30, 118], ['rock', 110, 60],
-  ['sparkle', -90, 170], ['rock', 210, -200], ['sparkle', 164, 64]
+  ['sparkle', -90, 170], ['rock', 210, -200], ['sparkle', 108, 52]
 ].map(([kind, x, z], i) => ({ id: 'lf' + i, kind, at: [x, z], ...(i === 7 ? { inWater: true } : {}) })); // (lf7 sparkles over the middle of Hồ Gương on purpose)
 
 // things to pick up (herbs, mushrooms, eggs, rice, fruit, a fish…: js/data.js GATHER, in this order): [item, place, dx, dz]
 export const GATHER_AT = [
   ['herb', 'bamboo', 10, 22], ['herb', 'bamboo', -14, 6], ['herb', 'sydney', -30, 40], ['herb', 'melbourne', 30, -32], ['mushroom', 'bamboo', 2, -22], ['mushroom', 'brisbane', 30, -22], ['mushroom', 'plateau', -18, 12], ['mushroom', 'india', 30, 16],
   ['herb', 'plateau', 26, 4], ['mushroom', 'home', -30, -20], ['egg', 'village', -6, -18], ['egg', 'village', -12, -14], ['rice', 'paddies', -7, -2], ['rice', 'paddies', 6, 8], ['rice', 'paddies', -12, 10], ['banana', 'saigon', -30, -20],
-  ['banana', 'saigon', -45, 10], ['banana', 'hoian', -25, 20], ['fish', 'lake', 0, -30], ['mango', 'market', 17, -22], ['mango', 'danang', 30, 18], ['leaf', 'bamboo', 20, -9], ['bean', 'paddies', 4, -8], ['herb', 'danang', -25, -35]
+  ['banana', 'saigon', -45, 10], ['banana', 'hoian', -25, 36], ['fish', 'lake', 0, -30], ['mango', 'market', 17, -22], ['mango', 'danang', 30, 18], ['leaf', 'bamboo', 20, -9], ['bean', 'paddies', 4, -8], ['herb', 'danang', -25, -35]
 ];
 
 // Where each landmark stands: its place and the offset from that place's anchor (js/regions.js, js/cities.js,
@@ -287,19 +288,18 @@ export const LANDMARK_HOME = { bnclock: 'bacninh', chuadau: 'bacninh', butthap: 
 // (round T3) Memory Village plots: { id, village, size, off: [dx, dz] from the village's anchor, rot (the way the front
 // faces: 0 = +z, π = −z), w (along the lane), d (deep), address: [en, vi] }. Each is levelled, joined to a lane
 // (`mv_*` in ROADS), and shows a garden until a family puts a home on it (js/plots.js; Studio's Plots page later).
-// Two lanes in each village, six plots on each side of a lane, numbered like a street: odd on the north side, even on
-// the south side.
+// Numbered like a street along each lane: odd on the north side, even on the south side.
 export const PLOTS = (() => {
   const out = [], W = 6, D = 7, LANE = 1.7, GAP = .5;
-  const village = (id, lanes, first, step, en, vi) => lanes.forEach((dz, li) => {
-    for (let k = 0; k < 6; k++) for (const side of [-1, 1]) {
-      const n = k * 2 + (side < 0 ? 1 : 2), off = [first + k * step, dz + side * (LANE + GAP + D / 2)];
-      out.push({ id: `${id}_${li + 1}_${n}`, village: id, size: 'house', off, rot: side < 0 ? 0 : Math.PI, w: W, d: D,
-        address: [`${n} ${en} ${li + 1}`, `Số ${n}, ${vi} ${li + 1}`] });
-    }
-  });
-  village('memory_e', [0, 19], 21, 6.5, 'Memory Lane', 'ngõ Kỷ Niệm');   // east of the Vietnam road, north of the Hội An canal
-  village('memory_w', [0, 19], 7, 6.5, 'Memory Lane', 'ngõ Kỷ Niệm');    // east of the Australia road, south of Sydney
+  // one lane: `xs` are the plots' middles along it, from the village's anchor (the lane's line); the same on both sides
+  const lane = (id, li, dz, xs, en, vi) => xs.forEach((x, k) => { for (const side of [-1, 1]) {
+    const n = k * 2 + (side < 0 ? 1 : 2);
+    out.push({ id: `${id}_${li}_${n}`, village: id, size: 'house', off: [x, dz + side * (LANE + GAP + D / 2)], rot: side < 0 ? 0 : Math.PI, w: W, d: D,
+      address: [`${n} ${en} ${li}`, `Số ${n}, ${vi} ${li}`] }); } });
+  // east (where Concept D draws it): two lanes west of the Vietnam road, between the Hội An canal and Sông Sài Gòn
+  for (const li of [1, 2]) lane('memory_e', li, (li - 1) * 20, [-8, -14.5, -21, -27.5, -34, -40.5, -47, -53.5], 'Memory Lane', 'ngõ Kỷ Niệm');
+  // west: two lanes east of the Australia road, south of Sydney
+  for (const li of [1, 2]) lane('memory_w', li, (li - 1) * 19, [7, 13.5, 20, 26.5, 33, 39.5], 'Wattle Lane', 'ngõ Keo Vàng');   // (golden wattle, Australia's flower)
   return out;
 })();
 
@@ -312,7 +312,7 @@ export const BOATS = [
   // (round T2) the Sydney Harbour ferry: from Sydney's quay by the road to the ring, under the Harbour Bridge, to the home island
   { id: 'harbourferry', water: 'sydney_harbour', via: [[-106, -2], [-54, -2]], piers: [{ id: 'sydney', at: [-108, 24], to: [-106, 1], name: ['Sydney Harbour', 'Bến cảng Sydney'] }, { id: 'island', at: [-37, -3], to: [-48, -3], name: ['Two Homes Island', 'Đảo Hai Quê'] }] },
   // (round T3) the boat from TP. HCM down Sông Sài Gòn and along the coast to Bãi Sau at Vũng Tàu
-  { id: 'vtboat', water: 'saigon_r', via: [[131, 196], [198, 198]], piers: [{ id: 'saigon', at: [139, 156], to: [131, 156], name: ['TP. Hồ Chí Minh', 'TP. Hồ Chí Minh'] }, { id: 'vungtau', at: [198, 181], to: [198, 190], name: ['Bãi Sau, Vũng Tàu', 'Bãi Sau, Vũng Tàu'] }] },
+  { id: 'vtboat', water: 'saigon_r', via: [[131, 196], [198, 198]], piers: [{ id: 'saigon', at: [136, 156], to: [131, 156], name: ['TP. Hồ Chí Minh', 'TP. Hồ Chí Minh'] }, { id: 'vungtau', at: [198, 181], to: [198, 190], name: ['Bãi Sau, Vũng Tàu', 'Bãi Sau, Vũng Tàu'] }] },
   { id: 'crossing', water: 'main_n', count: 0 }            // (round T2, Concept D: no crossing rafts; bridges join every bank and the raft line stops by each)
 ];
 

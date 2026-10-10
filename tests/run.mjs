@@ -149,7 +149,7 @@ await check('features', async () => {
     const o = {};
     o.cities = W.CITIES.length; o.roads = W.ROADS.length; o.landmarks = R.LANDMARKS.length;
     o.kiosks = G.interactables.filter(i => /^v_k_/.test(i.id)).length;
-    o.hosts = ['puppets', 'dongho', 'dragonfire', 'traffic', 'ferries', 'tram', 'koala'].filter(g => G.gameSpot(g)).length;
+    o.hosts = ['puppets', 'dongho', 'dragonfire', 'traffic', 'kite', 'ferries', 'tram', 'koala'].filter(g => G.gameSpot(g)).length;
     o.house8 = !!G.interactables.find(i => i.id === 'house8');
     o.tales = G.TALES.length; o.vnTales = G.TALES.filter(t => t.flag === '🇻🇳').length;
     // the Dragon Bridge deck is walkable over the river
@@ -190,7 +190,8 @@ await check('features', async () => {
   r.chatter = seen;
   const errs = P.errors.slice(); await P.ctx.close();
   const fails = [];
-  if (r.cities !== 7) fails.push('cities'); if (r.kiosks < 26) fails.push('kiosks'); if (r.hosts !== 7) fails.push('hosts'); if (r.landmarks < 47) fails.push('landmarks');
+  // (round T3: Bà Rịa–Vũng Tàu is the eighth city, Anh Hai's kites its host; two more kiosks)
+  if (r.cities !== 8) fails.push('cities'); if (r.kiosks < 28) fails.push('kiosks'); if (r.hosts !== 8) fails.push('hosts'); if (r.landmarks < 47) fails.push('landmarks');
   if (!r.house8) fails.push('house8'); if (r.tales < 32 || r.vnTales < 18) fails.push('tales'); if (!(r.deck > r.river + 3)) fails.push('dragon deck');
   if (r.pets !== 'kitty+puppy' && r.pets !== 'puppy+kitty' && r.pets.split('+').length !== 2) fails.push('pets ' + r.pets); if (!r.petsVisible) fails.push('pets hidden');
   for (const k of ['dialogClosed', 'keyMap', 'zoom', 'theatre', 'flewToHost', 'chatter']) if (!r[k]) fails.push(k);
@@ -1687,7 +1688,7 @@ await check('boats', async () => {
 });
 
 await check('plots', async () => {
-  // (round T3, ROUND-T.md T3) the garden plots: at least 60 (two Memory Villages and two spare by each city); each level
+  // (round T3, ROUND-T.md T3) the garden plots: at least 60 (two Memory Villages and up to three spare by each city); each level
   // within 5 cm, off every road and all water, its front within 2 m of a road's edge, a unique id and address, and nothing
   // standing on it (no solid cell, no collider, no building box); one garden mesh for all of them
   const P = await open(b, { w: 900, h: 640 }); await clear(P.page);

@@ -661,7 +661,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | WORLD-010 | Every activity location, entrance and landmark is reachable from the player's start | Child never stuck | MAJOR | data (nav reachability) [IMPR] | nav offers the nearest reachable point |
 | WORLD-011 | Scale: child 1.6 m, adult 2.0 m, grandparent 1.8 m; doors ≥ 1.4 × 2.4 m; steps ≤ 0.4 m (G2) | Consistency | MINOR | data (catalogue) | — |
 | WORLD-012 | No clutter: ≤ 1 big focal object per 10 m of street; ≥ 40 % open ground (G11) | Readability | MINOR | data [IMPR] + visual | — |
-| WORLD-013 | Garden plots (round T3): at least 60 (two Memory Villages, two spare by each city); each level within 5 cm, off roads and water, its front within 2 m of a road's edge, a unique id and address, nothing standing on it; one garden mesh for all | Families place the homes they remember | MAJOR | check `plots` | plot kept as a garden |
+| WORLD-013 | Garden plots (round T3): at least 60 (two Memory Villages, up to three spare by each city); each level within 5 cm, off roads and water, its front within 2 m of a road's edge, a unique id and address, nothing standing on it; one garden mesh for all | Families place the homes they remember | MAJOR | check `plots` | plot kept as a garden |
 
 ### 9.4 Roads (R1–R12)
 

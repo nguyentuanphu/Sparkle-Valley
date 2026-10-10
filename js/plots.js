@@ -1,4 +1,4 @@
-// (round T3) Garden plots: the two Memory Villages (Làng Kỷ Niệm) and two spare plots by the roads out of each city
+// (round T3) Garden plots: the two Memory Villages (Làng Kỷ Niệm) and up to three spare plots by the roads out of each city
 // (PLOTS in js/world.js, from js/content/map.js). Until a family puts the home they remember on one (Studio's Plots page,
 // later), each shows a small garden: a lawn, a low hedge round the back and sides, and flowers. Every garden is one
 // instance of one mesh, so all of them together are a single draw. Nothing in a garden is taller than 30 cm, so the

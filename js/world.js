@@ -317,7 +317,7 @@ export const LEAFIES = MAP.LEAFIES.map(({ id, kind, at, inWater }) => ({ id, kin
 PADS = [...SHRINES, ...LEAFIES.filter(l => l.kind === 'rock')];
 
 // ---------- the world object ----------
-// ---------- (round T3) garden plots: the Memory Villages' (from the map) and two spare ones by the roads out of each city ----------
+// ---------- (round T3) garden plots: the Memory Villages' (from the map) and up to three spare ones by the roads out of each city ----------
 // { id, village (or city), x, z, rot (the way the front faces), w (along the lane), d, address: [en, vi], h }. Each is also a
 // lot (so trees and suburbs keep off it); once the roads are made it is levelled at the height of the lane in front of it
 // (levelUnderBuildings). Families put the homes they remember on them later (Studio's Plots page); until then, a garden.
@@ -381,7 +381,7 @@ export const plotBox = P => { const c = Math.abs(Math.cos(P.rot)), s = Math.abs(
   }
 }
 
-// (round T3) two spare garden plots by the roads out of each city, 20–80 m from the gate, the front 1 m from the road's
+// (round T3) up to three spare garden plots by the roads out of each city, 15–110 m from the gate, the front 1 m from the road's
 // edge, kept clear like the lots (and off them)
 {
   const W = 6, D = 7, circles = [VILLAGE, CHINA, INDIA, HOME, PLAYGROUND, PLATEAU, PADDIES, LAKE];
@@ -391,20 +391,22 @@ export const plotBox = P => { const c = Math.abs(Math.cos(P.rot)), s = Math.abs(
   for (const c of CITIES) {
     let n = 0;
     for (const [gx, gz] of c.gates) for (const R of ROADS) {
-      if (n >= 2 || R.kind === 'footpath') break;
+      if (n >= 3) break; if (R.kind === 'footpath') continue;
       const a = R.pts[0], b = R.pts[R.pts.length - 1];
       const pts = Math.hypot(a[0] - gx, a[1] - gz) < 1.5 ? R.pts : Math.hypot(b[0] - gx, b[1] - gz) < 1.5 ? R.pts.slice().reverse() : null; if (!pts) continue;
       let along = 0;
-      for (let i = 0; i < pts.length - 1 && n < 2; i++) {
+      for (let i = 0; i < pts.length - 1 && n < 3; i++) {
         const [ax, az] = pts[i], [bx, bz] = pts[i + 1], L = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / L, dz = (bz - az) / L;
-        for (let t = 0; t < L && n < 2; t += 2) {
-          const run = along + t; if (run < 20 || run > 80) continue;
+        for (let t = 0; t < L && n < 3; t += 2) {
+          const run = along + t; if (run < 15 || run > 110) continue;
           for (const side of [1, -1]) {
             const off = R.w / 2 + 1 + D / 2, x = ax + dx * t - dz * off * side, z = az + dz * t + dx * off * side, rot = Math.atan2(dz * side, -dx * side);
-            if (!clear(x, z)) continue;
+            // (only where the road runs north–south or east–west: a plot is square to the map, so its box is the plot)
+            if (Math.abs(Math.sin(rot * 2)) > .01 || !clear(x, z)) continue;
             const fx = Math.sin(rot), fz = Math.cos(rot), sx = Math.cos(rot), sz = -Math.sin(rot), hs = [];
             let bad = false;
-            for (const u of [-.5, 0, .5]) for (const v of [-.5, 0, .5]) { const px = x + sx * W * u + fx * D * v, pz = z + sz * W * u + fz * D * v; hs.push(heightAt(px, pz)); const r = roadDist(px, pz); if (r.d < r.road.w / 2 + .6) bad = true; }
+            // (about every metre over the plot: a bend in the road can cut a corner between coarser samples)
+            for (let u = -.5; u <= .5; u += 1 / 6) for (let v = -.5; v <= .5; v += 1 / 7) { const px = x + sx * W * u + fx * D * v, pz = z + sz * W * u + fz * D * v; hs.push(heightAt(px, pz)); const r = roadDist(px, pz); if (r.d < r.road.w / 2 + .6) bad = true; }
             const lo = Math.min(...hs), hi = Math.max(...hs);
             if (bad || hi - lo > 2.5 || lo < WATER + 1.6) continue;
             n++; const P = { id: `sp_${c.id}_${n}`, village: c.id, x, z, rot, w: W, d: D, address: [`Plot ${n}, ${c.name[0]}`, `Lô ${n}, ${c.name[1]}`], h: hs.reduce((p, q) => p + q, 0) / hs.length };
@@ -1026,10 +1028,6 @@ export function levelUnderBuildings(world, scene) {
   for (const b of world.boxes) { if (b.room || b.x1 - b.x0 > 40 || b.z1 - b.z0 > 40) continue; want.push({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1 }); }
   for (const c of world.colliders) if (c.r >= 2.5 && c.r <= 12) want.push({ x0: c.x - c.r * .8, x1: c.x + c.r * .8, z0: c.z - c.r * .8, z1: c.z + c.r * .8 });
   let n = 0;
-  // (round T3) each garden plot: level at the height of the lane just in front of it, easing back over its sides
-  for (const P of PLOTS) { const B = plotBox(P), fx = Math.sin(P.rot), fz = Math.cos(P.rot);
-    const h = heightAt(P.x + fx * (P.d / 2 + .4), P.z + fz * (P.d / 2 + .4)); P.h = h;
-    fpAdd({ ...B, pad: 1.2, h, plot: P.id }); n++; }
   for (const F of want) {
     const cx = (F.x0 + F.x1) / 2, cz = (F.z0 + F.z1) / 2, h = heightAt(cx, cz);
     if (h < WATER + .6 || riverDist(cx, cz) < 12) continue;
@@ -1038,6 +1036,23 @@ export function levelUnderBuildings(world, scene) {
     const rd = roadDist(cx, cz), half = rd.road ? rd.road.w / 2 : 0, room = rd.d - half - Math.max(F.x1 - F.x0, F.z1 - F.z0) / 2;
     F.pad = Math.max(1.2, Math.min(4, room - 1)); F.h = h; fpAdd(F); n++;
   }
+  // (round T3) the spare plots by the cities were chosen from the map alone: one that a building, its levelled ground, a
+  // collider or anything standing (35 cm to 1.6 m up) has since landed on is dropped (the Memory Villages' are kept clear by design)
+  const stands = [];
+  if (scene) { scene.updateMatrixWorld(true); const bb = new THREE.Box3();
+    scene.traverse(o => { if (!o.isMesh || o.isInstancedMesh || o === world.terrain || !o.visible || o.userData.plots) return;
+      for (let q = o; q; q = q.parent) { const u = q.userData || {}; if (u.road || u.walk || u.avatar || u.moving) return; }
+      bb.setFromObject(o); if (bb.max.y - bb.min.y > .3 && bb.max.x - bb.min.x < 40 && bb.max.z - bb.min.z < 40) stands.push(bb.clone()); }); }   // (not the sky, the sea or the ground)
+  for (let i = PLOTS.length - 1; i >= PLOTS.spareFrom; i--) { const P = PLOTS[i], B = plotBox(P), y = heightAt(P.x, P.z);
+    const hit = (x0, x1, z0, z1) => x1 > B.x0 && x0 < B.x1 && z1 > B.z0 && z0 < B.z1;
+    if (FOOTPRINTS.some(F => !F.plot && hit(F.x0 - F.pad, F.x1 + F.pad, F.z0 - F.pad, F.z1 + F.pad)) || world.boxes.some(b => !b.room && hit(b.x0, b.x1, b.z0, b.z1))
+      || world.colliders.some(c => c.r >= .3 && hit(c.x - c.r, c.x + c.r, c.z - c.r, c.z + c.r))
+      || stands.some(b => hit(b.min.x, b.max.x, b.min.z, b.max.z) && b.min.y < y + 1.6 && b.max.y > y + .35)) PLOTS.splice(i, 1);
+  }
+  // (round T3) each garden plot: level at the height of the lane just in front of it, easing back over its sides
+  for (const P of PLOTS) { const B = plotBox(P), fx = Math.sin(P.rot), fz = Math.cos(P.rot);
+    const h = heightAt(P.x + fx * (P.d / 2 + .4), P.z + fz * (P.d / 2 + .4)); P.h = h;
+    fpAdd({ ...B, pad: .25, h, plot: P.id }); n++; }   // (pad: half the 0.5 m gap between two plots, so one never tilts the next)
   // reshape the terrain where anything changed
   const t = world.terrain; if (!t || !n) return n;
   const pa = t.geometry.attributes.position;
