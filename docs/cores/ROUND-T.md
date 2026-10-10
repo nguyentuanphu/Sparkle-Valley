@@ -279,6 +279,16 @@ Where the drawing and the written spec disagree (asked to the owner):
 - Main roads are drawn 6.4 m wide ("Vietnam main road (6.4 m)"); the hard rule R1 / ROAD-001 says asphalt 5.2 m (T4).
 
 ## Progress (for the next chat to pick up)
+**11 Oct 2026, T3 built: release r59 (Release core chat, branch `round-t`, local commits; waiting for the owner's "yes, push" / "yes, deploy").** Owner: "go with the plan", one release (built in steps). MAP_VERSION 'D3'.
+- Bà Rịa–Vũng Tàu (`vungtau`, a city at (205, 151), south-east of TP. HCM): a seaside gate (`seaside` in `js/roads.js`), Anh Hai with his kites on Bãi Sau (he moved from the Three Regions Market, so `g_kite` is his), bánh khọt (Cô Tư) and coconut (Chú Sáu) stalls; the lighthouse on the beach below the town and Bạch Dinh on the slope behind its square (moved off Phố Hai Quê; Nhà Tròn stays). The red road `vn_vungtau` from TP. HCM's new east gate.
+- The Sài Gòn boat (`vtboat`): from a pier on Sông Sài Gòn by TP. HCM (footpath `sg_quay`) down the river and along the coast to Bãi Sau (footpath `vt_beach`). Boats with two piers are one builder now (`via` points in the map; the Sydney Harbour ferry too). The coast boat past the Mekong delta is left for later.
+- Mountains: the Trường Sơn range (`RELIEF` `truongson`) between the ring road and the Vietnam road, with the Hải Vân pass where the road to Đà Nẵng crosses it (a low saddle, roads at 8 % or less); the outback's orange-red ground west of the Great Dividing Range round Uluru. China and India were already at their northern spots (T1).
+- Memory Villages (`PLOTS`, `js/plots.js`): east, where Concept D draws it, two Memory Lanes west of the Vietnam road between the Hội An canal and Sông Sài Gòn (32 plots; the Đua bò ground moved to (76, 110) beside it); west, two Wattle Lanes (ngõ Keo Vàng) east of the Australia road south of Sydney (24 plots); spare plots by the roads out of the cities (11 today: Hà Nội 1, Bắc Ninh 2, Đà Nẵng 3, Brisbane 2, Melbourne 3; TP. HCM, Vũng Tàu and Sydney have no free level land by their roads). Each plot is levelled to the lane in front of it, has an address (en and vi) and a garden (one instanced mesh, nothing taller than 30 cm). A spare plot that a building, collider or standing thing landed on is dropped when the valley is levelled.
+- Checks: new `plots` (WORLD-013); `boats` also needs every two-pier boat (RIVER-007); `features` counts eight cities and eight hosts (Vũng Tàu). The map unit test checks plots and piers.
+- Moved: the Sparkle Leafy by the Hội An footpath (to (108, 52)), the memory shrine off the western village, a banana pickup off a lane.
+- Voices: 30 new files (Azure, en and vi).
+- Pictures: `docs/cores/round-t/t3-sky-pad-vs-concept-d.jpg`, `docs/cores/round-t/t3-places.jpg`.
+
 **10 Oct 2026, T2 built: release r57, renumbered r58 on 11 Oct because the Play round takes r57 (Release core chat, branch `round-t`, local commits; waiting for the owner's "yes, push" / "yes, deploy").**
 The owner said "go" for T2 (10 Oct) with: Chùa Cầu a footbridge beside the road; the western rivers join the main river;
 road colours as tinted asphalt (`docs/cores/release.md`, Owner's decisions).
