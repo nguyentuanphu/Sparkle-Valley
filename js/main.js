@@ -794,7 +794,7 @@ G.toggleAudio = kind => {
   else { const on = !(settings.sound || settings.voice); settings.sound = on; settings.voice = on; if (!on) hush(); }
   saveSettings(); SFX.tap(); G.huds.forEach(h => h.refreshAudio());
 };
-G.toggleMute = () => { if (!Net.mic) { Net.getMic(); return; } Net.setMuted(!Net.muted); Net.resumeAudio(); G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted)); };
+G.toggleMute = () => { if (!Net.mic) { Net.getMic(true); return; } Net.setMuted(!Net.muted); Net.resumeAudio(); G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted)); };
 // Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
 addEventListener('keydown', e => {
   if (!playing || e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '')) return;
@@ -1109,7 +1109,7 @@ G.drawOnlinePanel = (body, redraw) => {
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
       <div class="actions center"><button class="btn big${Net.mic ? '' : ' primary'}" id="oMute">${!Net.mic ? '🎙️ ' + T('Microphone on', 'Bật micrô') : Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
       ${friendsBox()}</div>`;
-    body.querySelector('#oMute').onclick = async () => { SFX.tap(); if (!Net.mic) await Net.getMic(); else G.toggleMute(); redraw(); };
+    body.querySelector('#oMute').onclick = async () => { SFX.tap(); if (!Net.mic) await Net.getMic(true); else G.toggleMute(); redraw(); };
     bindCode(body);
     body.querySelectorAll('[data-admit]').forEach(b => b.onclick = () => { SFX.tap(); Net.admit(b.dataset.admit); });
     body.querySelectorAll('[data-deny]').forEach(b => b.onclick = () => { SFX.tap(); Net.deny(b.dataset.deny); });
