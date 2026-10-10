@@ -1,6 +1,9 @@
 # Netlify settings (used for both drag-and-drop and Git deploys).
 [build]
   publish = "."
+  # (Analytics & Infra, 10 Oct) pack the start-up scripts in Netlify's own copy (tools/bundle.mjs); a drag-and-drop zip
+  # is already packed by build-netlify.sh. If packing cannot run, the site keeps the plain modules.
+  command = "node tools/bundle.mjs . || true"
 
 # Small server pieces (Git deploys only; a drag-and-drop zip has none of them):
 #   /api/hello        devices counting players, anonymously (netlify/functions/hello.mjs)

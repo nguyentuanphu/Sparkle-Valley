@@ -88,3 +88,51 @@ table.rel { width: 100%; border-collapse: collapse; } table.rel td, table.rel th
 table.rel input[type=number] { width: 80px; } table.rel input[type=date] { min-width: 140px; }
 .mini { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; font-size: 12px; color: var(--soft); }
 @media (max-width: 700px) { table.rel thead { display: none; } table.rel tr { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,.08); } table.rel td { border: 0; padding: 2px; } table.rel td:first-child { grid-column: 1 / 3; font-weight: 700; } }
+/* ---------- Studio review (owner, 10 Oct) ---------- */
+/* every button and box 44 px or more, on every screen (touch targets, rule UI) */
+input:not([type]), .btn, .btn.small, input[type=text], input[type=password], input[type=number], input[type=date], input[type=file], select, textarea { min-height: 44px; }
+.btn.small { min-width: 44px; padding: 8px 12px; } a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+label:has(> input[type=checkbox]), label:has(> input[type=radio]) { display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; }
+input[type=checkbox], input[type=radio] { width: 22px; height: 22px; margin: 0; flex: 0 0 auto; }
+input[type=range] { height: 44px; width: 100%; }
+.sw { width: 44px; height: 44px; }
+.face { width: 56px; height: 56px; }
+.thumb img { width: 120px; height: 86px; } .thumb button { width: 44px; height: 44px; top: 0; right: 0; font-size: 18px; }
+#crumb .back { min-height: 44px; }
+.actions .icon, .actions .icon:is(button) { width: 44px; height: 44px; } .lang button { min-height: 44px; min-width: 44px; } .actions .pub { min-height: 44px; }
+/* the bigger message after a save or a problem, above the bar at the bottom of a phone */
+#toast { font-size: 17px; font-weight: 600; padding: 14px 22px; border-radius: 16px; max-width: min(560px, calc(100vw - 32px)); width: max-content; text-align: center; box-shadow: 0 6px 24px rgba(40, 20, 60, .3); }
+#toast.good { background: #1f7a45; } #toast.bad { background: #b0202a; }
+.savestate { align-self: center; margin-right: auto; white-space: nowrap; padding: 8px 12px; border-radius: 999px; font-weight: 700; font-size: 15px; background: var(--card); border: 1px solid var(--line); }
+.result { margin-top: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); }
+.result.good { border-color: var(--ok); } .result.bad { border-color: var(--bad); color: var(--bad); }
+.livenote p { margin: 0; font-weight: 600; }
+/* the picture chooser (Stories, Family quiz) */
+.picker { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.picker .pk, .picrow .pk { width: 48px; height: 48px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); font-size: 26px; cursor: pointer; padding: 0; }
+/* Releases: one quick choice for the start day; the day boxes side by side */
+table.rel td.opt select[data-in] { margin-top: 6px; width: auto; min-width: 140px; display: block; } table.rel select[data-r="on"], table.rel select[data-f="on"] { min-width: 96px; } table.rel .more { display: none; }
+/* the search box on Villagers stays in view (the card itself does not scroll) */
+.card.vcard { overflow: visible; } #find { position: sticky; top: 72px; z-index: 4; }
+@media (max-width: 899px) {
+  #toast { bottom: calc(env(safe-area-inset-bottom) + 84px); }
+  #find { top: 64px; }
+  /* Villagers: one card per person */
+  table.vill thead { display: none; } table.vill, table.vill tbody { display: block; }
+  table.vill tr { display: grid; grid-template-columns: 64px 1fr; gap: 4px 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  table.vill td { border: 0; padding: 0; } table.vill td.vface { grid-row: 1; } table.vill td.vname { align-self: center; }
+  table.vill td[data-label] { grid-column: 1 / 3; } table.vill td[data-label]::before { content: attr(data-label); display: block; font-size: 13px; font-weight: 600; color: var(--soft); margin: 2px 0; }
+  .actions { gap: 4px; } .actions .icon { width: 44px; height: 44px; } .lang button { padding: 6px 8px; }
+}
+@media (max-width: 700px) {
+  table.rel td[data-label]::before { content: attr(data-label); display: block; font-size: 12px; font-weight: 600; color: var(--soft); }
+  /* Releases on a phone: the name, on or off, and More; the days only when opened */
+  table.rel .more { display: block; } table.rel td.opt { display: none; grid-column: 1 / 3; } table.rel tr.open td.opt { display: block; }
+  table.rel td.more .btn { width: 100%; }
+  /* Home: the buttons first, the numbers in a small row */
+  .home { display: flex; flex-direction: column; } .home .stats { order: 3; } .home .hact, .home .hwait { order: 2; } .home h2, .home .sub { order: 1; }
+  .grid.stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; } .grid.stats .card { margin: 0; padding: 10px 12px; } .grid.stats .stat b { font-size: 19px; word-break: break-all; } .grid.stats .stat span { font-size: 13px; }
+}
+@media (max-width: 420px) { .brand b { font-size: 16px; } }
+.picrow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 48px; margin-bottom: 6px; }
+.bar { flex-wrap: wrap; } .bar .btn { white-space: nowrap; }

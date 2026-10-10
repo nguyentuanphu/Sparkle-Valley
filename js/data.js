@@ -1,5 +1,6 @@
 // Items, recipes, shop, quests and stickers.
 import { T } from './i18n.js';
+import { GATHER_AT, anchorOf } from './content/map.js';
 
 export const ITEMS = {
   apple: { icon: '🍎', name: () => T('Apple', 'Táo') },
@@ -75,11 +76,8 @@ export const HAT_NAME = { none: () => T('No hat', 'Không đội mũ'), nonla: (
 export const REWARD_HATS = ['khanran', 'akubra', 'silkcap', 'pagri'];
 
 // Things to gather around the world (they grow back after a while).
-export const GATHER = [
-  ['herb', -100, 70], ['herb', -86, 98], ['herb', -120, 84], ['herb', -70, 110], ['mushroom', -95, 60], ['mushroom', -60, -80], ['mushroom', -20, -70], ['mushroom', 30, -90],
-  ['herb', 10, -30], ['mushroom', -26, -4], ['egg', 104, 12], ['egg', 98, 16], ['rice', 105, -40], ['rice', 118, -30], ['rice', 100, -28], ['banana', 30, 115],
-  ['banana', 80, 150], ['banana', 20, 140], ['fish', 38, 98], ['mango', 140, 60], ['mango', 150, 100], ['leaf', -80, 76], ['bean', 125, -46], ['herb', 70, 20]
-];
+// (round T: where each one lies comes from the map, js/content/map.js GATHER_AT, as an offset from its place)
+export const GATHER = GATHER_AT.map(([item, place, dx, dz]) => { const [x, z] = anchorOf(place); return [item, x + dx, z + dz]; });
 
 export const STICKERS = ['🦄', '🌈', '🧁', '🍓', '🐱', '🐶', '🦋', '🦖', '🍭', '🚂', '👑', '🐬', '🐣', '🍉', '🌻', '🚀', '🍦', '🐼', '🦊', '🐸', '🐞', '🌙', '☀️', '🏮', '🐢', '🦜', '🐙', '🪁', '🐉', '🪷'];
 

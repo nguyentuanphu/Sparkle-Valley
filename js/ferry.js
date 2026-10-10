@@ -6,7 +6,8 @@ import { THREE, P, merge, toonVC, outline, sprite } from './gfx.js';
 import { T, onLang } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
-import { WATER, LAKE, RIVER, BRIDGE, DRAGON, CITIES, VILLAGE, TOWN, MARKET, CHINA, INDIA, HOME, AUSSIE, heightAt, regionAt, REGION_NAMES } from './world.js';
+import { landmarkAt, BOATS } from './content/map.js';
+import { WATER, LAKE, RIVER, BRIDGES, bridgeAt, bridgeDist, CITIES, VILLAGE, TOWN, MARKET, CHINA, INDIA, HOME, AUSSIE, heightAt, regionAt, REGION_NAMES } from './world.js';
 import { dist2 } from './util.js';
 
 const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), C = (r1, r2, h, s = 10) => new THREE.CylinderGeometry(r1, r2, h, s);
@@ -75,13 +76,10 @@ export function createFerries(G) {
 
   // ---------- Mirror Lake: four piers, one ferry going round ----------
   const R = LAKE.r;
-  const DOCKS = [
-    { a: 100, name: () => T('North Beach', 'Bãi Bắc') },
-    { a: 160, name: () => T('Sunny Farm', 'Nông Trại') },
-    { a: 243, name: () => T('Two Homes Street', 'Phố Hai Quê') },
-    { a: 330, name: () => T('Three Regions Market', 'Chợ Ba Miền') }
-  ];
-  const REEF_A = Math.atan2(160 - LAKE.z, 76 - LAKE.x) * 180 / Math.PI; // keep clear of the coral reef
+  // (round T: where the piers stand comes from the map; their names stay here)
+  const DOCK_NAMES = { north: () => T('North Beach', 'Bãi Bắc'), village: () => T('Lotus Village', 'Làng Sen'), danang: () => T('Đà Nẵng', 'Đà Nẵng'), island: () => T('Home Island', 'Đảo Nhà') };
+  const DOCKS = BOATS.find(b => b.id === 'lakeferry').docks.map(d => ({ a: d.a, name: DOCK_NAMES[d.id] || (() => '') }));
+  const [reefX, reefZ] = landmarkAt('reef'), REEF_A = Math.atan2(reefZ - LAKE.z, reefX - LAKE.x) * 180 / Math.PI; // keep clear of the coral reef
   const lakePath = [], lakeStops = [];
   for (let a = 100; a < 460; a += 6) {
     const ang = a % 360, near = DOCKS.find(d => Math.abs(d.a - ang) < 3);
@@ -107,7 +105,7 @@ export function createFerries(G) {
     { x: (TOWN.x0 + TOWN.x1) / 2, z: TOWN.roadZ, name: () => T('Two Homes Street', 'Phố Hai Quê') }, { x: (MARKET.x0 + MARKET.x1) / 2, z: MARKET.roadZ, name: () => T('Three Regions Market', 'Chợ Ba Miền') },
     { x: CHINA.x, z: CHINA.z, name: () => T('China Town', 'Phố Tàu') }, { x: INDIA.x, z: INDIA.z, name: () => T('India Village', 'Làng Ấn Độ') }, { x: HOME.x, z: HOME.z, name: () => T('Sunny Farm', 'Nông Trại Nắng') }, { x: (AUSSIE.x0 + AUSSIE.x1) / 2, z: AUSSIE.roadZ, name: () => T('Aussie Corner', 'Góc nước Úc') }];
   const nearest = (x, z) => { let b = null, bd = 1e9; for (const p of PLACES) { const d = Math.hypot(p.x - x, p.z - z); if (d < bd) { bd = d; b = p; } } return [b, bd]; };
-  const bridgeD = (x, z) => Math.min(...[BRIDGE, DRAGON].map(B => Math.hypot(Math.max(B.x0 - x, 0, x - B.x1), z - B.z)));
+  const bridgeD = (x, z) => Math.min(...BRIDGES.map(B => bridgeDist(B, x, z)));
   const cands = [];
   for (let i = 1; i < RIVER.length - 1; i++) for (let t = .1; t < .95; t += .1) {
     const [ax, az] = RIVER[i], [bx, bz] = RIVER[i + 1], x = ax + (bx - ax) * t, z = az + (bz - az) * t;
@@ -137,7 +135,7 @@ export function createFerries(G) {
   {
     const path = []; for (let i = 1; i < RIVER.length - 1; i++) { const [ax, az] = RIVER[i], [bx, bz] = RIVER[i + 1], L = Math.hypot(bx - ax, bz - az), n = Math.ceil(L / 4); for (let k = 0; k < n; k++) path.push({ x: ax + (bx - ax) * k / n, z: az + (bz - az) * k / n }); }
     const wet = path.filter(p => heightAt(p.x, p.z) < WATER - .6); path.length = 0; path.push(...wet);
-    const under = (x, z) => [BRIDGE, DRAGON].some(B => x > B.x0 - 18 && x < B.x1 + 18 && Math.abs(z - B.z) < 18);
+    const under = (x, z) => !!bridgeAt(x, z, 18, 18);
     const stops = [];
     const byRiver = PLACES.map(pl => ({ pl, d: Math.min(...path.map(p => Math.hypot(p.x - pl.x, p.z - pl.z))) })).sort((a, b) => a.d - b.d).map(o => o.pl); // the towns nearest the river first
     for (const pl of byRiver) {
