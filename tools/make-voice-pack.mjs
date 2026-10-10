@@ -26,7 +26,7 @@
 // Keep the key secret: it is only used for this run and is never written into the game.
 import fs from 'fs';
 import path from 'path';
-import { collectLines, collectTemplates, partText, NUMBERS, areaOfLine, areaOfFile, readWhere, GROUPS, dynamicSays } from './voice-lines.mjs';
+import { collectLines, collectTemplates, partText, NUMBERS, areaOfLine, areaOfFile, readWhere, GROUPS, dynamicSays, corePri, nonCoreArea } from './voice-lines.mjs';
 
 globalThis.document = { documentElement: {} };            // i18n.js expects a browser
 globalThis.localStorage = { getItem: () => null, setItem: () => { } };
@@ -54,10 +54,25 @@ const LANG_NAME = { en: 'English', vi: 'Vietnamese', zh: 'Chinese', hi: 'Hindi' 
 // ---------- what to say ----------
 // (round R item 12) every line also gets the area it downloads with (tools/voice-lines.mjs areaOfLine)
 const jobs = [], where = readWhere(), heard = (lang, text) => where[lang + '|' + text];
-for (const l of collectLines()) {
-  const from = l.from.split(',');
-  for (const [lang, t] of [['en', l.en], ['vi', l.vi]]) { const text = swapNames(t, lang); jobs.push({ lang, text, area: areaOfLine(from, heard(lang, text)) }); } // exactly what the game says (js/voice.js speak)
+// a line and its translation download together: the area either was heard in. A line in a file that holds many places
+// (js/cities.js, js/heritage.js…) that was not heard while playing goes with the nearest line in the same file that was
+// (within a few screens of code: the places' lines are written together), else with 'world'.
+const pairs = collectLines().map(l => {
+  const from = l.from.split(','), en = swapNames(l.en, 'en'), vi = swapNames(l.vi, 'vi');
+  const areas = [areaOfLine(from, heard('en', en)), areaOfLine(from, heard('vi', vi))].sort((a, b) => (a === 'core' ? -1 : b === 'core' ? 1 : 0) || (GROUPS.includes(a) - GROUPS.includes(b)));
+  return { l, from, en, vi, area: areas[0] };
+});
+{
+  const src = {}, at = p => { if (p.from.length !== 1) return -1; const f = p.from[0], t = src[f] || (src[f] = fs.readFileSync(path.join(ROOT, f), 'utf8')); return t.indexOf(p.l.en.slice(0, 40)); };
+  const placed = {}; for (const p of pairs) if (!GROUPS.includes(p.area)) { const i = at(p); if (i >= 0) (placed[p.from[0]] = placed[p.from[0]] || []).push([i, p.area]); }
+  for (const p of pairs) {
+    if (p.area !== 'world' || !placed[p.from[0]]) continue;
+    const i = at(p); if (i < 0) continue;
+    const near = placed[p.from[0]].map(([j, a]) => [Math.abs(j - i), a]).sort((x, y) => x[0] - y[0])[0];
+    if (near && near[0] < 4000) p.area = near[1];
+  }
 }
+for (const p of pairs) { const pri = corePri(p.from), alt = pri >= 40 ? 'games' : nonCoreArea(p.from); jobs.push({ lang: 'en', text: p.en, area: p.area, pri, alt }); jobs.push({ lang: 'vi', text: p.vi, area: p.area, pri, alt }); } // exactly what the game says (js/voice.js speak)
 for (const [lang, L] of Object.entries(LEARN)) for (const w of L.words) jobs.push({ lang, text: w[3], area: 'games' });
 // Chinese and Hindi sayings taught at the kiosks (js/cities.js: [words, meaning en, meaning vi, 'zh' | 'hi'])
 {
@@ -75,23 +90,36 @@ for (const t of collectTemplates()) {
   const pieces = t.pieces.map(p => swapNames(p, t.lang)), area = areaOfFile(t.from);
   if (!pieces.some(p => /\p{L}/u.test(p))) continue;
   TPL[t.lang].push(pieces); tplParts.push({ lang: t.lang, pieces, re: tplRe(pieces), area });
-  for (const p of pieces) { const x = partText(p); if (x) jobs.push({ lang: t.lang, text: x, area, part: true }); }
-  for (const opts of t.fills) for (const w of opts) jobs.push({ lang: t.lang, text: swapNames(w, t.lang), area, part: true });
+  const pri = corePri([t.from]), alt = 'world';
+  for (const p of pieces) { const x = partText(p); if (x) jobs.push({ lang: t.lang, text: x, area, part: true, pri, alt }); }
+  for (const opts of t.fills) for (const w of opts) jobs.push({ lang: t.lang, text: swapNames(w, t.lang), area, part: true, pri, alt });
 }
-for (const lang of ['en', 'vi']) for (const n of NUMBERS) jobs.push({ lang, text: n, area: +n <= 20 ? 'core' : 'games', part: true });
+for (const lang of ['en', 'vi']) for (const n of NUMBERS) jobs.push({ lang, text: n, area: +n <= 20 ? 'core' : 'games', part: true, pri: 0 });
 // lines built while playing (names, numbers, colours…), collected by tools/voice-harvest.mjs or sent from devices via Sparkle Studio
 try {
   for (const l of JSON.parse(fs.readFileSync(new URL('./voice-extra.json', import.meta.url), 'utf8'))) {
     if (!l || !CAST[l.lang] || !l.text) continue;
     const text = String(l.text);
-    jobs.push({ lang: l.lang, text, area: areaOfLine([], heard(l.lang, text)) });
+    jobs.push({ lang: l.lang, text, area: areaOfLine([], heard(l.lang, text)), pri: 40, alt: 'games' });
     // a harvested line made from a template gives the words that filled its gaps (a colour, a dish, a place): recorded as parts
-    for (const t of tplParts) { if (t.lang !== l.lang) continue; const m = t.re.exec(text); if (!m) continue; for (const w of m.slice(1)) { const x = partText(w); if (x && !CHILD.test(x) && x.length < 60) jobs.push({ lang: l.lang, text: x, area: t.area, part: true }); } break; }
+    for (const t of tplParts) { if (t.lang !== l.lang) continue; const m = t.re.exec(text); if (!m) continue; for (const w of m.slice(1)) { const x = partText(w); if (x && !CHILD.test(x) && x.length < 60) jobs.push({ lang: l.lang, text: x, area: t.area, part: true, pri: 39, alt: 'world' }); } break; }
   }
 } catch (e) { }
 // one job per recording; a line used in several areas downloads with the first it is needed in (the core first)
 const RANK = a => a === 'core' ? 0 : a === 'world' ? 3 : GROUPS.includes(a) ? 2 : 1;
 const uniq = new Map(); jobs.forEach(j => { const h = lineHash(j.lang, j.text), o = uniq.get(h); if (!o || RANK(j.area) < RANK(o.area)) uniq.set(h, j); });
+// the core stays 5–8 MB per language (round R item 12): its lines in order (the start first), and once a language's
+// core is over CORE_MB the rest go to their own area. Recorded files count their real size, new ones an estimate.
+const CORE_MB = 7;
+{
+  const sizeOf = (h, j) => { let n = 0; for (const sl of CAST[j.lang]) { try { n += fs.statSync(path.join(ROOT, 'voices', j.lang, sl, h + '.mp3')).size; } catch (e) { n += 2400 + j.text.length * 900; } } return n; };
+  const used = {};
+  for (const [h, j] of [...uniq.entries()].filter(([, j]) => j.area === 'core').sort((a, b) => (a[1].pri ?? 40) - (b[1].pri ?? 40))) {
+    const n = sizeOf(h, j);
+    if ((used[j.lang] || 0) + n > CORE_MB * 1048576) { j.area = j.alt || 'world'; continue; }
+    used[j.lang] = (used[j.lang] || 0) + n;
+  }
+}
 const list = [...uniq.entries()];
 
 // ---------- the cost ----------

@@ -139,7 +139,7 @@ export const GROUPS = ['core', 'games', 'stories', 'festivals', 'world'];
 const FILE_AREA = {
   core: ['js/main.js', 'js/ui.js', 'js/simple.js', 'js/hud.js', 'js/content/activities.js', 'js/games/frame.js', 'js/kidplay.js', 'js/companion.js',
     'js/extras.js', 'js/commands.js', 'js/lotus.js', 'js/lanterns.js', 'js/dinh.js', 'js/content/chapters.js', 'js/farm.js', 'js/pets.js',
-    'js/myhouse.js', 'js/install.js', 'js/players.js', 'js/parents.js', 'js/content/parents.js', 'js/report.js', 'js/popups.js'],
+    'js/myhouse.js', 'js/popups.js'],
   village: ['js/chatter.js', 'js/folkshow.js'],
   town: ['js/town.js', 'js/yard.js', 'js/content/yard.js', 'js/homes.js'],
   aussie: ['js/suburbs.js'],
@@ -149,6 +149,11 @@ const FILE_AREA = {
   festivals: ['js/festivals.js', 'js/content/festcal.js', 'js/hoilang.js', 'js/content/hoilang.js', 'js/content/songs.js', 'js/songs.js', 'js/content/releases.js']
 };
 const AREA_OF = new Map(Object.entries(FILE_AREA).flatMap(([a, fs]) => fs.map(f => [f, a])));
+// how early a core line comes (the order of FILE_AREA.core: the start first): when the core is over its size, the
+// last ones go to their own area instead (tools/make-voice-pack.mjs CORE_MB); 40 = a line said in many games
+export const corePri = fromFiles => Math.min(40, ...fromFiles.map(f => { const i = FILE_AREA.core.indexOf(f); return i < 0 ? 40 : i; }));
+// where a core line goes if the core is full: the area of its other files, else the games or the world
+export const nonCoreArea = fromFiles => { const a = [...new Set(fromFiles.map(areaOfFile))].filter(x => x !== 'core').sort((x, y) => (x === 'world') - (y === 'world'))[0]; return a || (fromFiles.some(f => f.startsWith('js/games/')) ? 'games' : 'world'); };
 export const areaOfFile = f => AREA_OF.get(f) || (f.startsWith('js/games/') ? 'games' : 'world');
 // the area of a line: the core wins (wherever else it is used), then where it was heard (the area most often, or a
 // game), then its file
