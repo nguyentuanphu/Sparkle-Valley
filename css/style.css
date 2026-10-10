@@ -2190,6 +2190,11 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .wardrobe.kward .whead .x { position: static; width: 60px; height: 60px; flex: none; }
 .wardrobe.kward .wrow { flex: none; flex-wrap: wrap; overflow: visible; padding: 5px 4px; align-items: center; }
 .wardrobe.kward .wrow .chip { flex: none; padding: 0; }
+/* Play, 11 Oct (#29 on phones): a row's chips wrap beside its picture, never under it; on short screens an under-5's chips are
+   64 px (their minimum) and the Done strip is slimmer, so all six rows show without scrolling on a phone */
+.wardrobe.kward .wrow { flex-wrap: nowrap; align-items: flex-start; } .wardrobe.kward .wslot { align-self: stretch; }
+.wardrobe.kward .wchips { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; min-width: 0; }
+@media (max-height: 820px) { .wardrobe.kward.little .wrow .chip { min-width: 64px; height: 64px; } .wardrobe.kward .wrow { padding: 3px 4px; } .wardrobe.kward { max-height: 84dvh; } }
 .bag-top .bagshop { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--line); background: #fff; display: inline-flex; align-items: center; justify-content: center; padding: 0; flex: none; } .bag-top .bagshop .art { width: 30px; height: 30px; } .bag-top .bagshop.little { width: 64px; height: 64px; }
 /* mystery boxes, rankings, the collection book */
 .kcard .khub { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; padding: 8px 0 12px; }

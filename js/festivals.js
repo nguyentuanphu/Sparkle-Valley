@@ -301,13 +301,14 @@ export function createFestivals(G) {
     plan: (key, id, stage) => { const o = PLACES()[key], F = byId(id); return o && F && D ? D.plan(key, o, F, stage) : []; },
     active: () => active,
     current: () => { const a = active.find(x => x.on); return a ? a.F.id : null; },
-    // (owner, 10 Oct) a child taps a festival on the calendar: one that is on now takes them to it; one still to come is
-    // told about (days to go), and nothing starts. A grown-up's Preview link from Studio shows any festival once.
+    // (owner, 10 Oct; 11 Oct, #32: nothing sends a child to a festival) a child taps a festival on the calendar: it is told
+    // about (on today, decorations going up, or days to go), nothing starts and nobody travels. Only a grown-up's Preview
+    // link from Studio (an admin) takes the child to a festival, once.
     visit: async (i, id) => {
       const h = G.heroes[i], F = byId(id); if (!h || !F) return;
       const pv = new URLSearchParams(location.search).get('festival');
       if (pv === id && !G._festPreviewed) { G._festPreviewed = true; previewing = id; build(); }
-      else { await loadD(); const A = active.find(a => a.F.id === id); if (!A || !A.on) { const o = PLACES()[F.where[0]]; return D.tell(G, h, F, A, nextOf(F, new Date()), o && centre(o)); } }
+      else { await loadD(); return D.tell(G, h, F, active.find(a => a.F.id === id), nextOf(F, new Date())); }
       const it = tables.find(t => t.id === 'festival_' + id);
       if (it) await G.landBy(h, it.x, it.z);
       showT = 14; SFX.chime && SFX.chime();
