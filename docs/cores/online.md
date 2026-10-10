@@ -35,12 +35,12 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
   playing online" → "Use the internet", in English and Vietnamese with no "Studio"; on when off, off when on. Beside it
   a Grown-ups button that opens with **press and hold only** (never a tap) straight at that section. Checked by `onlineoff`.
 - **Map version (owner, 11 Oct AEDT, item 2 "Go"; ROUND-T §4, for r57):** friends play together only on the same map
-  layout (`MAP_VERSION`; no version = map 'C', a game older than round T). The knock carries it, every word the starter
+  layout (`MAP_VERSION`). **No version** (a game older than r57) **plays as before** (owner, 11 Oct: "let them in", because
+  r56 already has the new map; a game older still updates itself the next time it opens online). The knock carries it, every word the starter
   locks for a knocker carries the starter's, and friends' notes and invitations carry it. On another layout **only the one
   joining is told**: a card with a map picture, a voice and one big OK, "Your friend has a different valley. Ask a grown-up
   to update the game."; the starter sees no knock card. The friends list shows a map button instead of Join (tap: the
-  same card); the friend note has no "Go to their room". Checked by `mapver`. Known limit: a game older than r57 that knocks
-  on an r57 room hears "not this time" (it can't show the new card).
+  same card); the friend note has no "Go to their room". Checked by `mapver`.
 
 ## Privacy round (owner, 9 Oct, round R privacy)
 - **Online play is off until a grown-up turns it on** (`settings.online`, default `false`, also on devices that played

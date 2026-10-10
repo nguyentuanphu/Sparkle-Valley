@@ -2723,8 +2723,8 @@ await check('nostudio', async () => {
 
 await check('mapver', async () => {
   // (Online, r57, ROUND-T §4) positions travel as raw x, z, so friends play together only on the same map layout. A knock
-  // carries the knocker's layout; the starter's locked answers carry the starter's; a game older than round T sends none
-  // (map 'C'). Another layout: the one knocking sees "Ask a grown-up to update" (a card with a picture, a voice and a 64 px OK) and is not let in,
+  // carries the knocker's layout; the starter's locked answers carry the starter's; a game older than r57 sends none and
+  // plays as before (owner, 11 Oct: r56 already has the new map). Another layout: the one knocking sees "Ask a grown-up to update" (a card with a picture, a voice and a 64 px OK) and is not let in,
   // and the starter sees no knock card (owner, 11 Oct: only the one joining is told). The same layout knocks as before.
   // The friends list shows "Different valley" instead of Join for a friend on another layout.
   const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
@@ -2749,8 +2749,9 @@ await check('mapver', async () => {
   await B.page.evaluate(() => { __Net.mapVersion = 'C'; });
   await knockFrom(B, code); out.oldGuest = await told(B); await A.page.waitForTimeout(1500); out.oldGuestA = await knockCards();
   await B.page.evaluate(() => document.querySelectorAll('.modal.mapcard').forEach(d => d.remove()));
-  // 3. the same map: the knock card comes up as before, and Let in works
-  await B.page.evaluate(async () => { const M = await import('/js/content/map.js'); __Net.mapVersion = M.MAP_VERSION; });
+  // 3. a knock with no map version (a game older than r57, like r56 with the same map): the knock card comes up as before,
+  // and Let in works
+  await B.page.evaluate(async () => { const M = await import('/js/content/map.js'); __Net.mapVersion = M.MAP_VERSION; const k = __Net._knockHello; __Net._knockHello = function () { const h = k.call(this); delete h.map; return h; }; });
   await knockFrom(B, code);
   out.sameKnock = await A.page.waitForSelector('.knockpop [data-in]', { timeout: 45000 }).then(() => true, () => false);
   if (out.sameKnock) { await A.page.evaluate(() => document.querySelector('.knockpop [data-in]').click()); out.sameIn = await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 30000 }).then(() => true, () => false); }
@@ -2768,7 +2769,7 @@ await check('mapver', async () => {
   const errs = A.errors.concat(B.errors).filter(e => !/WebSocket|ERR_CONNECTION|peerjs/i.test(e)); await A.ctx.close(); await B.ctx.close();
   const l = out.list;
   ok(out.oldStarter && !out.oldStarterA.knocks && !out.oldStarterA.pop && !out.oldStarterA.remotes && /Nhờ người lớn cập nhật/.test(out.cardVi) && /\[art\] \[big\]/.test(out.cardVi) && out.oldGuest && !out.oldGuestA.knocks && !out.oldGuestA.pop && !out.oldGuestA.remotes && out.sameKnock && out.sameIn && !l.oldJoin && l.oldDiff && l.newJoin && !l.newDiff && l.card && !errs.length, JSON.stringify(Object.assign(out, { errs })));
-  return 'starter on an older map: the knocker sees "Ask a grown-up to update" (VI) and is not let in, no knock card for the starter; guest on an older map: turned away the same way; same map: knock card and Let in as before; friends list: "Different valley" instead of Join for a friend on another map';
+  return 'starter on an older map: the knocker sees "Ask a grown-up to update" (VI) and is not let in, no knock card for the starter; guest on an older map: turned away the same way; no map version (r56): knock card and Let in as before; friends list: "Different valley" instead of Join for a friend on another map';
 });
 await check('onlineoff', async () => {
   // PRIV-006 (round R privacy, 9 Oct, owner): a fresh device has online play off. The Friends tab says so with no Start or

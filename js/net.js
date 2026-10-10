@@ -122,9 +122,10 @@ const HOSTONLY = /^(door|admit|chal|full|nope|kick|rekey|members)$/;
 export const Net = {
   // (Online, r57, ROUND-T §4) positions travel as raw x, z, so two devices play together only on the same map layout.
   // The knock carries it; every word the starter locks for a knocker carries the starter's; a word or knock without one
-  // comes from a game older than round T (map 'C'). (Tests may change it to act as another layout.)
+  // comes from a game older than r57, which can't be told apart: r56 already has map 'D1', so it plays as before (owner,
+  // 11 Oct: "let them in"; a game older still updates itself the next time it opens online). (Tests may change it.)
   mapVersion: MAP_VERSION,
-  sameMap(m) { return (m || 'C') === this.mapVersion; },
+  sameMap(m) { return m == null || m === this.mapVersion; },
   peer: null, conns: new Map(), calls: new Map(), cloud: null, door: null, cloudOn: false, _seen: new Set(), hostId: null, audios: new Map(), mic: null, code: null, role: null, muted: false, me: null, hello: null,
   knocking: false,           // (a newcomer) waiting at the door for the room's starter
   knocks: new Map(),         // (the room's starter) who is at the door: id -> {id, name, look, friend, pub, via, d}
@@ -396,7 +397,7 @@ export const Net = {
     const h = Object.assign(cleanHello(d, id), { via, d: Object.assign({}, d, { photo: undefined }) });
     if (!h.pub) return; // (a knock must bring its key: every answer is locked with it)
     // (r57) a knock from another map layout is turned away without a knock card; the answer carries my layout, so the
-    // knocker's game (round T or later) shows "Ask a grown-up to update"
+    // knocker's game (r57 or later) shows "Ask a grown-up to update"
     if (!this.sameMap(d.map)) { this._toDoor(id, await this._seal('nope', id, h.pub), via); return; }
     const m = this.members.get(id);
     if (this._admitted.has(id)) { if (m && m.pub === h.pub) this._toDoor(id, await this._seal('admit', id, h.pub, { s: this.secret, code: this.code }), via); return; } // (the answer got lost: say it again)
@@ -694,7 +695,7 @@ export const Net = {
     if ((d.t === 'note' || d.t === 'invite') && d._topic === F.inboxTopic) {
       const o = await this._openFriend(d); if (!o || !settings.online) return;
       if (d.t === 'invite') { if (o.room) F.onInvite && F.onInvite(o); return; }
-      F.status[o.code] = Object.assign({}, F.status[o.code], { name: o.name, at: o.at, room: o.room, players: o.players, host: o.host, map: o.map || 'C', noteAt: Date.now() });
+      F.status[o.code] = Object.assign({}, F.status[o.code], { name: o.name, at: o.at, room: o.room, players: o.players, host: o.host, map: o.map, noteAt: Date.now() });
       F.onChange && F.onChange(o.code);
     }
   },
