@@ -136,7 +136,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh issue view "$N" --comments > .bugfix/issue.md
+          # Title, labels, description and every comment ("gh issue view --comments" alone prints only the comments).
+          gh issue view "$N" --json title,body,labels,comments --jq '
+            "# " + .title + "\n\nLabels: " + ([.labels[].name] | join(", ")) + "\n\n" + (.body // "")
+            + "\n\n## Comments\n" + ([.comments[] | "\n### " + .author.login + " (" + .createdAt + ")\n" + .body] | join("\n"))
+          ' > .bugfix/issue.md
+          [ -s .bugfix/issue.md ] || { echo "could not read issue #$N"; exit 1; }
           cat .bugfix/issue.md
 
       - name: Get the checks ready (browser and test server)
