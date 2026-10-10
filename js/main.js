@@ -1,6 +1,7 @@
 // Sparkle Valley: boot, the game loop, split-screen, NPCs, quests and rewards.
 import './emojiswap.js'; // (first: no phone emoji on the page or on any canvas)
 import { THREE, sprite, P, merge, toonVC } from './gfx.js';
+import { createSeeThrough } from './seethrough.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';
 import { T, nm, onLang, registerName } from './i18n.js';
@@ -1431,6 +1432,7 @@ function frame(now) {
     if (G.closeUp != null && G.heroes[G.closeUp]) { const h = G.heroes[G.closeUp]; h.state = 'idle'; h.finish(dt, t, G, 0); }
   }
   walkedAway();
+  if (G.seeThrough) G.seeThrough.step(dt);
   // music follows the first player
   const h0 = G.heroes[0];
   // (round N) during a festival its own songs play; in the Vietnam areas, Vietnamese tunes (a family's recordings from
@@ -1611,6 +1613,7 @@ startCounting(G); // how many children play, and what they play, for Studio's re
   let at = -1e9;
   let mats = [];
   G.camBlockerMats = () => mats;
+  G.seeThrough = createSeeThrough(G); // (bug #33) things between the camera and a child fade instead of pulling the camera in
   G.camBlockers = () => { const now = performance.now(); if (now - at > 8000) { at = now; collect(); } return list; };
 }
 // (round T, PERF-003) far small things: in the 480 m valley a child can see right across it, and the fog hides what is

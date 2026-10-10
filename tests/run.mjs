@@ -208,15 +208,39 @@ await check('camera', async () => {
     const out = [], ray = new THREE.Raycaster();
     for (const lm of R.LANDMARKS) for (const yaw of [0, 1.57, 3.14, 4.71]) {
       h.place(lm.x, lm.z); h.camYaw = yaw; h.camPos = h.camPos || h.cam.position.clone();
-      for (let k = 0; k < 40; k++) h.finish(.05, k * .05, G, 0);
+      for (let k = 0; k < 39; k++) h.finish(.05, k * .05, G, 0);
+      G.seeThrough.marked.clear(); h.finish(.05, 2, G, 0); // (bug #33) the things in the way on the last frame
       const c = h.cam.position, inBox = G.world.boxes.some(b => c.x > b.x0 && c.x < b.x1 && c.z > b.z0 && c.z < b.z1 && c.y < G.world.groundAt(c.x, c.z) + 6);
       const to = new THREE.Vector3(h.pos.x, h.pos.y + 1.2, h.pos.z), d = to.clone().sub(c); const L = d.length(); ray.set(c, d.normalize()); ray.far = L - .6;
       const hit = ray.intersectObjects(G.camBlockers(), false)[0];
-      if (inBox || hit) out.push(lm.id + '@' + yaw);
+      // (bug #33) the camera stays where it is, so a house in the way is fine as long as it is fading to see-through
+      const fades = hit ? G.seeThrough.marked.has(G.seeThrough.rootOf(hit.object)) : G.seeThrough.marked.size > 0;
+      if ((inBox || hit) && !fades) out.push(lm.id + '@' + yaw);
     }
-    return { n: R.LANDMARKS.length * 4, stuck: out };
+    // (bug #33) next to a landmark the thing in the way really turns see-through, the camera keeps its distance, and
+    // everything goes back to solid once the way is clear
+    const S = G.seeThrough; let fade = null;
+    for (const lm of R.LANDMARKS) {
+      h.place(lm.x, lm.z);
+      for (const yaw of [0, 1.57, 3.14, 4.71]) {
+        h.camYaw = yaw; for (let k = 0; k < 60; k++) { h.finish(.05, k * .05, G, 0); S.step(.05); }
+        if (S.active()) { fade = { lm: lm.id, yaw }; break; }
+      }
+      if (fade) break;
+    }
+    let seen = null, back = null;
+    if (fade) {
+      seen = S.active(); h.finish(.05, 9, G, 0); S.step(1);
+      let minOp = 1; G.scene.traverse(o => { if (o.isMesh && o.material && !Array.isArray(o.material) && o.material.transparent && o.material.opacity < minOp && o.material.depthWrite === false && o.material.opacity > 0) minOp = o.material.opacity; });
+      const dist = h.cam.position.distanceTo(h.pos);
+      h.place(0, -230); for (let k = 0; k < 60; k++) { h.finish(.05, k * .05, G, 0); S.step(.05); }
+      back = { minOp, dist, left: S.active() };
+    }
+    return { n: R.LANDMARKS.length * 4, stuck: out, fade, seen, back };
   });
   await P.ctx.close();
+  ok(stuck.fade && stuck.seen > 0, 'nothing turned see-through next to any landmark');
+  ok(stuck.back.minOp <= .3 && stuck.back.left === 0, 'see-through ' + JSON.stringify(stuck.back));
   ok(stuck.stuck.length <= Math.ceil(stuck.n * .03), `${stuck.stuck.length}/${stuck.n} blocked: ${stuck.stuck.join(', ')}`);
   return `${stuck.n - stuck.stuck.length}/${stuck.n} clear${stuck.stuck.length ? ' (grazing: ' + stuck.stuck.join(', ') + ')' : ''}`;
 });
