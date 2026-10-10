@@ -13,6 +13,9 @@ export const MAP_VERSION = 'D1';
 export const onThisMap = stamp => (stamp || 'C') === MAP_VERSION;
 
 // Road classes and their widths (rule R1 / ROAD-001; owner, 10 Oct AEST: asphalt 6.4 m, as the Concept D drawings show)
+// (round T2, Concept D "B", owner: tinted asphalt) each asphalt road is tinted in its region's colour, white lines kept:
+// red Vietnam, orange Australia, purple to the mountains, blue along the coast; 'home' is the plain grey of the island and its ring
+export const ROAD_TONES = { home: null, vn: '#c0392b', au: '#e07b26', mountain: '#7d4fb0', coast: '#2f7ac8' };
 export const ROAD_WIDTH = { asphalt: 6.4, dirt: 3.4, footpath: 1.6 };
 
 // (Concept D map: drawing units × 8/7 = metres, the drawing's middle (210, 210) is (0, 0); north up)
@@ -101,11 +104,11 @@ export const WATERS = [
 
 // Bridges run along the x or the z axis, never diagonally: from a0 to a1 along it, centred on c across it; h is the deck.
 export const BRIDGES = [
-  { id: 'haique', axis: 'x', a0: 54, a1: 84, c: -28, w: 7.6, h: 4, over: 'main_e', style: 'plain' },   // the home island's east bridge, from Phố Hai Quê to the ring road (round T2: the Harbour Bridge moved to Sydney)
+  { id: 'haique', axis: 'x', a0: 54, a1: 84, c: -28, w: 7.6, h: 3.7, over: 'main_e', style: 'plain', name: ['Phố Hai Quê Bridge', 'Cầu Phố Hai Quê'] },   // the home island's east bridge, from Phố Hai Quê to the ring road (round T2: the Harbour Bridge moved to Sydney)
   { id: 'island_w', axis: 'x', a0: -68, a1: -38, c: -28, w: 7.6, h: 4.2, over: 'main_w', style: 'plain' },   // the home island's west bridge
-  { id: 'ring_n', axis: 'x', a0: -10, a1: 18, c: -130, w: 7.6, h: 5.4, over: 'main_n', style: 'plain' },   // the ring road over the river, north of the island
-  { id: 'ring_s', axis: 'x', a0: -2, a1: 26, c: 104, w: 7.6, h: 5.4, over: 'main_s', style: 'plain' },   // and south of it
-  { id: 'north', axis: 'x', a0: -12, a1: 16, c: -172, w: 7.6, h: 6, over: 'main_n', style: 'plain' },   // the mountain road over the river
+  { id: 'ring_n', axis: 'x', a0: -10, a1: 18, c: -130, w: 7.6, h: 5.4, over: 'main_n', style: 'plain', name: ['North Ring Bridge', 'Cầu Vành Đai Bắc'] },   // the ring road over the river, north of the island
+  { id: 'ring_s', axis: 'x', a0: -2, a1: 26, c: 104, w: 7.6, h: 5.4, over: 'main_s', style: 'plain', name: ['South Ring Bridge', 'Cầu Vành Đai Nam'] },   // and south of it
+  { id: 'north', axis: 'x', a0: -12, a1: 16, c: -172, w: 7.6, h: 6, over: 'main_n', style: 'plain', name: ['Mountain Road Bridge', 'Cầu Đường Núi'] },   // the mountain road over the river
   { id: 'rong', axis: 'z', a0: 24, a1: 52, c: 153, w: 7.6, h: 4.4, over: 'han', style: 'dragon', landmark: 'dragonbridge' },   // Đà Nẵng's golden Dragon Bridge carrying the Vietnam road south over Sông Hàn
   // (round T2) every bridge landmark over its real water, and plain bridges where roads cross the new rivers
   { id: 'longbien', axis: 'z', a0: -113, a1: -87, c: 153, w: 7.6, h: 4.8, over: 'hong', style: 'longbien', landmark: 'longbien' },   // Long Biên: the Vietnam road over Sông Hồng, south of Hà Nội
@@ -124,33 +127,41 @@ export const BRIDGES = [
 // js/world.js rounds the corners (fillets) and joins side roads onto the road they end on.
 export const ROADS = [
   // the ring road round the home island (Concept D), over the river north and south of it
-  { id: 'ring', kind: 'asphalt', loop: true, pts: [[-30, -130], [48, -130], [96, -82], [96, 62], [48, 104], [-30, 104], [-78, 62], [-78, -82]] },
+  { id: 'ring', kind: 'asphalt', tone: 'home', loop: true, pts: [[-30, -130], [48, -130], [96, -82], [96, 62], [48, 104], [-30, 104], [-78, 62], [-78, -82]] },
   // Phố Hai Quê runs across the island; a bridge at each end to the ring road
-  { id: 'island_e', kind: 'asphalt', pts: [[21, -28], [96, -28]], gates: ['town', null] },
-  { id: 'island_w', kind: 'asphalt', pts: [[-17, -28], [-78, -28]], gates: ['town', null] },
+  { id: 'island_e', kind: 'asphalt', tone: 'home', pts: [[21, -28], [96, -28]], gates: ['town', null] },
+  { id: 'island_w', kind: 'asphalt', tone: 'home', pts: [[-17, -28], [-78, -28]], gates: ['town', null] },
   // from the ring to each bank: Đà Nẵng in the east, Sydney in the west
-  { id: 'link_vn', kind: 'asphalt', pts: [[96, 7], [140, 7]], gates: [null, 'danang'] },
-  { id: 'link_au', kind: 'asphalt', pts: [[-78, 30], [-132, 30]], gates: [null, null] },   // a square T onto the Australia road just south of Sydney
+  { id: 'link_vn', kind: 'asphalt', tone: 'vn', pts: [[96, 7], [140, 7]], gates: [null, 'danang'] },
+  { id: 'link_au', kind: 'asphalt', tone: 'au', pts: [[-78, 30], [-132, 30]], gates: [null, null] },   // a square T onto the Australia road just south of Sydney
   // the Vietnam road, north to south
-  { id: 'vn_north', kind: 'asphalt', pts: [[153, -122], [153, -4]], gates: ['hanoi', 'danang'] },
-  { id: 'vn_south', kind: 'asphalt', pts: [[153, 18], [153, 140]], gates: ['danang', 'saigon'] },   // over Cầu Rồng
-  { id: 'village_link', kind: 'asphalt', pts: [[153, -42], [171, -42]], gates: [null, null] },   // Lotus Village has its own old gate (cổng làng)
-  { id: 'market_link', kind: 'asphalt', pts: [[153, 114], [172, 114]], gates: [null, null] },     // the market has its own gate
+  { id: 'vn_north', kind: 'asphalt', tone: 'vn', pts: [[153, -122], [153, -4]], gates: ['hanoi', 'danang'] },
+  { id: 'vn_south', kind: 'asphalt', tone: 'vn', pts: [[153, 18], [153, 140]], gates: ['danang', 'saigon'] },   // over Cầu Rồng
+  { id: 'village_link', kind: 'asphalt', tone: 'vn', pts: [[153, -42], [171, -42]], gates: [null, null] },   // Lotus Village has its own old gate (cổng làng)
+  { id: 'market_link', kind: 'asphalt', tone: 'vn', pts: [[153, 114], [172, 114]], gates: [null, null] },     // the market has its own gate
   // the Australia road, north to south
-  { id: 'au_north', kind: 'asphalt', pts: [[-132, -126], [-132, -17]], gates: ['brisbane', 'sydney'] },
-  { id: 'au_south', kind: 'asphalt', pts: [[-132, 9], [-132, 113]], gates: ['sydney', 'melbourne'] },
-  { id: 'aussie_road', kind: 'asphalt', pts: [[-132, -65], [-118, -65]], gates: [null, 'aussie'] },   // a square T off the Australia road (R5)
+  { id: 'au_north', kind: 'asphalt', tone: 'au', pts: [[-132, -126], [-132, -17]], gates: ['brisbane', 'sydney'] },
+  { id: 'au_south', kind: 'asphalt', tone: 'au', pts: [[-132, 9], [-132, 113]], gates: ['sydney', 'melbourne'] },
+  { id: 'aussie_road', kind: 'asphalt', tone: 'au', pts: [[-132, -65], [-118, -65]], gates: [null, 'aussie'] },   // a square T off the Australia road (R5)
   // the mountain road over the north, from Brisbane to Hà Nội, with China Town and India Village
-  { id: 'mountain', kind: 'asphalt', pts: [[-132, -148], [-132, -172], [-104, -172], [-60, -172], [60, -172], [120, -172], [184, -172]], gates: ['brisbane', 'bacninh'] },
-  { id: 'china_road', kind: 'asphalt', pts: [[107, -172], [107, -178]], gates: [null, 'china'] },
-  { id: 'india_road', kind: 'asphalt', pts: [[-94, -172], [-94, -178]], gates: [null, 'india'] },
+  { id: 'mountain', kind: 'asphalt', tone: 'mountain', pts: [[-132, -148], [-132, -172], [-104, -172], [-60, -172], [60, -172], [120, -172], [184, -172]], gates: ['brisbane', 'bacninh'] },
+  { id: 'china_road', kind: 'asphalt', tone: 'mountain', pts: [[107, -172], [107, -178]], gates: [null, 'china'] },
+  { id: 'india_road', kind: 'asphalt', tone: 'mountain', pts: [[-94, -172], [-94, -178]], gates: [null, 'india'] },
   // on the island: Sunny Farm, and the path up to Ông Cú
-  { id: 'farm_road', kind: 'asphalt', pts: [[40, -28], [40, -2], [29, 16]], gates: [null, 'home'] },
+  { id: 'farm_road', kind: 'asphalt', tone: 'home', pts: [[40, -28], [40, -2], [29, 16]], gates: [null, 'home'] },
   // dirt roads
   { id: 'plateau_ramp', kind: 'dirt', pts: [[-6, -60], [-24, -44], [-24, -28]] },                  // down from the Dawn Plateau to the island road
   { id: 'village_lane', kind: 'dirt', pts: [[172, -42], [185, -42]] },                          // Lotus Village's lane, in through its old gate
   { id: 'paddies_lane', kind: 'dirt', pts: [[206, -76], [205, -86]] },                          // Lotus Village to the rice fields
   { id: 'hoian_walk', kind: 'footpath', pts: [[153, 96], [170, 96], [170, 56]] },                   // (round T2) into Hội An and north over Chùa Cầu to the canal's far bank
+  // (round T2) footpaths down to the piers: the raft's stops by the bridges and the harbour ferry on the island
+  { id: 'quay_north', kind: 'footpath', pts: [[22, -172], [22, -152], [12, -152]] },
+  { id: 'quay_ring_n', kind: 'footpath', pts: [[24, -130], [24, -114], [16, -114]] },
+  { id: 'quay_haique', kind: 'footpath', pts: [[50, -28], [50, -6], [60, -6]] },
+  { id: 'quay_ring_s', kind: 'footpath', pts: [[32, 104], [32, 124], [22, 124]] },
+  { id: 'quay_lake_e', kind: 'footpath', pts: [[153, -79], [139, -79]] },   // to the lake ferry's Làng Sen pier
+  { id: 'quay_lake_s', kind: 'footpath', pts: [[153, -51], [124, -51]] },   // to the lake ferry's Đà Nẵng pier
+  { id: 'quay_island', kind: 'footpath', pts: [[-30, -28], [-30, -3], [-37, -3]] },
   { id: 'uluru_track', kind: 'dirt', pts: [[-132, 64], [-150, 64], [-168, 56], [-184, 46]] },   // over the Great Dividing Range to Uluru
   // footpaths (R1, 1.6 m; Phase 2, round 30): Lotus Village's pond path (R11) carries on from the village lane round the
   // lotus pond's north and east sides, 8 m from its middle (1.5–2.5 m from the water), and ends at a bench; a short
@@ -258,9 +269,13 @@ export const LANDMARK_HOME = { bnclock: 'bacninh', chuadau: 'bacninh', butthap: 
 
 // Boats (js/ferry.js): the lake ferry's piers (degrees round the lake, 0 = east, 90 = south) and the river rafts.
 export const BOATS = [
-  { id: 'lakeferry', water: 'lake', docks: [{ id: 'north', a: 270 }, { id: 'village', a: 345 }, { id: 'danang', a: 80 }, { id: 'island', a: 190 }] },
-  { id: 'raft', water: ['main_n', 'main_e', 'main_s'], stops: 'places' },   // the raft line down the river past the island's east side, stopping by the towns (under the bridges)
-  { id: 'crossing', water: 'main_n', count: 2 }            // two rafts crossing to the other bank, well away from the bridges
+  { id: 'lakeferry', water: 'lake', docks: [{ id: 'village', a: 345 }, { id: 'danang', a: 80 }] },   // (round T2: Sông Hồng and the ring road's bridge took the north and island shores; each pier has a footpath to the Vietnam road)
+  { id: 'raft', water: ['main_n', 'main_e', 'main_s'], stops: 'places',   // the raft line down the river past the island's east side, stopping by the towns (under the bridges)
+    // (round T2, Concept D) and by every bridge it passes under: each pier's land end, joined to the road by a footpath
+    bridgeStops: [{ bridge: 'north', at: [12, -152] }, { bridge: 'ring_n', at: [16, -114] }, { bridge: 'haique', at: [60, -6] }, { bridge: 'ring_s', at: [22, 124] }] },
+  // (round T2) the Sydney Harbour ferry: from Sydney's quay by the road to the ring, under the Harbour Bridge, to the home island
+  { id: 'harbourferry', water: 'sydney_harbour', piers: [{ id: 'sydney', at: [-112, 24], to: [-112, 5], name: ['Sydney Harbour', 'Bến cảng Sydney'] }, { id: 'island', at: [-37, -3], to: [-48, -3], name: ['Two Homes Island', 'Đảo Hai Quê'] }] },
+  { id: 'crossing', water: 'main_n', count: 0 }            // (round T2, Concept D: no crossing rafts; bridges join every bank and the raft line stops by each)
 ];
 
 // ---------- looking things up ----------

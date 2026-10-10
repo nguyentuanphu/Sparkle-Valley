@@ -97,7 +97,7 @@ export const bridgeDist = (B, x, z) => { const u = bridgeAlong(B, x, z); return 
 export const bridgeBox = (B, a, b, l, r) => B.axis === 'z' ? { x0: B.c + l, x1: B.c + r, z0: a, z1: b } : { x0: a, x1: b, z0: B.c + l, z1: B.c + r };
 // Roads: asphalt roads join every village and city; dirt roads link the quieter places to each other (the map has
 // them and says why each runs where it does). Each has an id, a kind, its points and the place at each end (gates).
-export const ROADS = MAP.ROADS.map(R => { const o = { id: R.id, kind: R.kind, pts: R.pts.map(p => p.slice()) }; if (R.gates) o.gates = R.gates.slice(); if (R.loop) o.loop = true; return o; });
+export const ROADS = MAP.ROADS.map(R => { const o = { id: R.id, kind: R.kind, pts: R.pts.map(p => p.slice()) }; if (R.gates) o.gates = R.gates.slice(); if (R.loop) o.loop = true; if (R.tone) o.tone = R.tone; return o; });
 ROADS.forEach(R => { R.w = MAP.ROAD_WIDTH[R.kind]; }); // (rule R1: asphalt 6.4 m, dirt 3.4 m, footpath 1.6 m)
 // HARD RULE: roads are straight lines joined by perfect circular curves (asphalt bends round a 24 m circle, dirt
 // roads round 16 m, tighter only where two bends are close), and every road runs straight for its last 14 m into
@@ -239,7 +239,8 @@ export function heightAt(x, z) {
   // road beds (js/roads.js): the ground under and beside every road is shaped to the road's own smooth height,
   // so the road never floats, never sinks into a bump, and walking on it is walking on the ground
   RB_COV = false;
-  if (RB_ON && dr > 6.5) { const list = RB_GRID.get(fpKey(Math.floor(x / 8), Math.floor(z / 8))); if (list) { // (never fills the river: bridges carry roads over it)
+  // (round T2: road beds never fill the lake or a pond either)
+  if (RB_ON && dr > 6.5 && dl > LAKE.r * .82 && dpd > 0) { const list = RB_GRID.get(fpKey(Math.floor(x / 8), Math.floor(z / 8))); if (list) { // (never fills the river: bridges carry roads over it)
     // each road's nearest piece gives its height here; where two roads overlap (a junction) the higher one is the
     // one you see, so the ground follows that one
     let bd = 1e9, by = 0, bw = 0, cover = -1e9; RB_T.length = 0;
