@@ -74,3 +74,5 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
     family's own lullaby first, a goodnight card after 6 min that a grown-up holds for 10 more minutes); a birthday
     (month and day, `profile.birthday`, on this device; also in its backup file) with a cake keepsake, coins and a sticker.
 - Backpack (round S): "Village festival prizes" after the kite: tap a prize to carry it or put it away.
+- Films, second batch (owner, 10 Oct: "go as suggested"): the tales Bánh Chưng Bánh Giầy and Cây khế (in Cây khế the greedy brother's bag of gold falls into the sea, never the brother); the guides Bắn bi and Lật hình. A guide's real game plays by itself inside the guide (`demo` in `GUIDES`, run by `demoKit` in `js/howto.js`), with the game's own code and a quiet copy of the game's api, so the Play core's game files are not changed.
+- Films on tall phone screens (owner, 10 Oct: "fix the screen issue"): the film camera opens up on a narrow screen so it shows as much across as a 16:9 screen (at most 75° top to bottom), so nothing at the sides is cut off.
