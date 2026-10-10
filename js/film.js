@@ -163,7 +163,11 @@ export function createFilm(stage, script, ctx = {}) {
   const ring = el('div', 'film-ring'); ring.hidden = true; stage.appendChild(ring);
   const calm = reduceMotion();
   let page = null, alive = true, last = performance.now(), clock = 0, w = 0, h = 0;
-  const fit = () => { const W = stage.clientWidth, Hh = stage.clientHeight; if (W === w && Hh === h) return; w = W; h = Hh; r.setSize(W, Hh, false); r.domElement.style.width = W + 'px'; r.domElement.style.height = Hh + 'px'; cam.aspect = W / Math.max(1, Hh); cam.updateProjectionMatrix(); };
+  const fit = () => { const W = stage.clientWidth, Hh = stage.clientHeight; if (W === w && Hh === h) return; w = W; h = Hh; r.setSize(W, Hh, false); r.domElement.style.width = W + 'px'; r.domElement.style.height = Hh + 'px'; cam.aspect = W / Math.max(1, Hh);
+    // (owner, 10 Oct: "fix the screen issue") the shots are framed for a wide screen; on a tall phone screen the camera
+    // opens up so the sides are not cut off (as much across as a 16:9 screen shows, at most 75° top to bottom)
+    cam.fov = cam.aspect >= 16 / 9 ? 42 : Math.min(75, 2 * Math.atan(Math.tan(21 * Math.PI / 180) * (16 / 9) / cam.aspect) * 180 / Math.PI);
+    cam.updateProjectionMatrix(); };
   const _p = new THREE.Vector3();
   let paused = false; // (a guide's real game is on screen instead: nothing to draw)
   const loop = now => {
