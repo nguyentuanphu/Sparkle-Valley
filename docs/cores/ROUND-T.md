@@ -279,7 +279,7 @@ Where the drawing and the written spec disagree (asked to the owner):
 - Main roads are drawn 6.4 m wide ("Vietnam main road (6.4 m)"); the hard rule R1 / ROAD-001 says asphalt 5.2 m (T4).
 
 ## Progress (for the next chat to pick up)
-**10 Oct 2026, T2 built: release r57 (Release core chat, branch `round-t`, local commits; waiting for the owner's "yes, push" / "yes, deploy").**
+**10 Oct 2026, T2 built: release r57, renumbered r58 on 11 Oct because the Play round takes r57 (Release core chat, branch `round-t`, local commits; waiting for the owner's "yes, push" / "yes, deploy").**
 The owner said "go" for T2 (10 Oct) with: Chùa Cầu a footbridge beside the road; the western rivers join the main river;
 road colours as tinted asphalt (`docs/cores/release.md`, Owner's decisions).
 - Water (`js/world.js`, `js/content/map.js` WATERS): rivers have a width (`w`, against the main river's) and a `tone`; small

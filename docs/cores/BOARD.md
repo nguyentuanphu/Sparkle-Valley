@@ -9,7 +9,7 @@ Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
 ## Release
-- **Now:** Round T on `round-t`: T1 went live as r56 (merged into main by Release, 10 Oct); T2 (r57: rivers, lakes, bridge landmarks, road colours, boats) built, full suite 86/86, pushed to pull request #21 at the owner's "yes, push" (11 Oct); not deployed; next T3 (plan first). Note: the other Release round planned as r57 (Play: festivals, chapter 3, films on phones, bug fixes #27 #28 #29 #31, the online map version) needs the next free number when it lands · branch `round-t` · 11 Oct AEST
+- **Now:** Round T on `round-t`: T1 went live as r56 (merged into main by Release, 10 Oct); T2 (r58, renumbered from r57 at the owner's word: rivers, lakes, bridge landmarks, road colours, boats) built, full suite 86/86, pushed to pull request #21 at the owner's "yes, push" (11 Oct); not deployed; T3 next (owner: "go with the plan", one release). The Play round (festivals, chapter 3, films on phones, bug fixes, the online map version) keeps r57 · branch `round-t` · 11 Oct AEST
 - Round T stages T0 to T4: `docs/cores/ROUND-T.md`. Until Round T is merged, other cores do not change world positions or the map files (CLAUDE.md, helper rule 4).
 - Halloween decorations start growing about three weeks before 31 Oct: they only reach players once a round is deployed.
 - Still to build from the Round R plan (`docs/cores/ROUND-R.md`, Part 2): items 2 to 12 (Concept D layout, child's journey, homes, surprises, shop and wardrobe, money games, the rest of the festival groups, Hội làng times, 5–8 challenges, parent features, voice pack by area); the owner's privacy decisions of 9 Oct; splitting the code into per-core folders (infrastructure round).
