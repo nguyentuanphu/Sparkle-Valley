@@ -109,4 +109,5 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   with free ground, not new map positions); their usual places stay as they are.
 - Bà Năm's Hà Nội tale is Sự tích Hồ Gươm (already in the game).
 - Under-5s play Oẳn tù tì in Tèo's challenge (Ô ăn quan is a 5+ game).
+- This chat works on story Chapter 2 only; Kid UI, Voice & Audio and the World layout are run in their own chats (owner, 10 Oct AEST): their parts go on the board, never built here.
 
