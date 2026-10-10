@@ -5,7 +5,7 @@
 import { THREE, sprite } from './gfx.js';
 import { T } from './i18n.js';
 import { say } from './voice.js';
-import { SFX, noise } from './audio.js';
+import { SFX, Rain } from './audio.js';
 import { settings, farm, saveFarm } from './state.js';
 import { heightAt, WATER } from './world.js';
 import { dist2 } from './util.js';
@@ -46,7 +46,7 @@ export function createWeather(G) {
   const stop = () => { if (S.state !== 'rain') return; S.state = 'after'; S.t = 50; S.rainbowT = 50;
     G.heroes.forEach(h => G.toast(h, '🌈 ' + T('The rain stopped. Look, a rainbow!', 'Tạnh mưa rồi. Nhìn kìa, cầu vồng!'))); say('Look up! A rainbow!', 'Nhìn lên kìa! Cầu vồng!'); SFX.chime(); G.lookUpT = 8; };
 
-  let soundT = 0, cropT = 0, spawnT = 0;
+  let cropT = 0, spawnT = 0;
   const _f = new THREE.Vector3();
   world.updaters.push((dt, t) => {
     if (!G.heroes.length) return;
@@ -63,8 +63,8 @@ export function createWeather(G) {
       m.material.opacity = world.overcast * (settings.calm ? .35 : .6);
       m.position.set(h.pos.x, h.pos.y - 2 + 26 - ((t * 22 + i * 7) % 26), h.pos.z);
     });
+    Rain.set(raining);
     if (raining) {
-      soundT -= dt; if (soundT <= 0 && settings.sound) { soundT = .55; noise(.7, { freq: 2600, vol: .025, q: .4 }); }
       // water the farm
       cropT -= dt; if (cropT <= 0) {
         cropT = 4; let n = 0; farm.plots.forEach(p => { if (p && !p.water && p.stage < 3) { p.water = true; p.t = Date.now(); n++; } });
