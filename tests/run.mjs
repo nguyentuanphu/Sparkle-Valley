@@ -1897,14 +1897,14 @@ await check('simple', async () => {
   await P.page.waitForSelector('.simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
   await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
   const r = { start: true };
-  r.groupsFirst = await P.page.evaluate(() => __sv.simple.view.groups);
-  await P.page.locator('.sp-stop').first().click(); await P.page.waitForTimeout(300); // a group
+  // bug #30: each tab is one long road, category headings and their stops on the same page; no top destinations button, no way-back arrow
+  r.groupsFirst = await P.page.evaluate(() => { const v = __sv.simple.view; return v.cats.length > 3 && v.stops.length > 10 && !document.querySelector('.sp-area, .sp-backarrow') && document.querySelectorAll('.sp-discover').length === 1; });
   // round M: the game opens straight over the Simple screen (it never hides first, so the valley does not flash up)
   await P.page.evaluate(() => { window.__flash = false; const t = setInterval(() => { if (!__sv.simple.open) window.__flash = true; if (document.querySelector('.gl')) clearInterval(t); }, 20); });
-  await P.page.locator('.sp-stop:not(.sign)').first().click(); await P.page.waitForSelector('.gl', { timeout: 10000 }); r.game = true; r.flash = await P.page.evaluate(() => window.__flash);
+  await P.page.locator('.sp-stop:not(.grp)').first().click(); await P.page.waitForSelector('.gl', { timeout: 10000 }); r.game = true; r.flash = await P.page.evaluate(() => window.__flash);
   await P.page.evaluate(() => document.querySelector('.gl-x').click());
   r.back = await P.page.waitForFunction(() => __sv.simple.open && !__sv.simple.busy && !document.querySelector('.gl'), null, { timeout: 8000 }).then(() => true, () => false); // free again at once
-  await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.locator('.sp-stop').first().click(); await P.page.waitForTimeout(300); await P.page.locator('.sp-stop:not(.sign)').first().click();
+  await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.waitForTimeout(300); await P.page.locator('.sp-stop:not(.grp)').first().click();
   r.tale = await P.page.waitForSelector('.theatre', { timeout: 10000 }).then(() => true, () => false);
   await P.page.evaluate(() => document.querySelector('.theatre .th-x').click());
   for (let k=0;k<6;k++){ console.log('DBG', JSON.stringify(await P.page.evaluate(() => ({ open: __sv.simple.open, busy: __sv.simple.busy, th: document.querySelectorAll('.theatre').length, gl: !!document.querySelector('.gl'), paused: __sv.paused })))); await P.page.waitForTimeout(800);}
@@ -1943,31 +1943,25 @@ await check('adventure', async () => {
   // the list: every game is placed exactly once, and nothing is listed that isn't a game
   r.list = await P.page.evaluate(async () => { const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), ids = Object.keys(GAMES), keys = Object.keys(A.GAME_INFO);
     return { missing: ids.filter(i => !A.GAME_INFO[i]), extra: keys.filter(k => !GAMES[k] && k !== 'familyquiz') /* Family Quiz is there only once the family has written questions in Studio */, badArea: keys.filter(k => !A.AREAS.some(a => a.key === A.GAME_INFO[k][0])), games: ids.length }; });
-  // walk the whole under-5 path page by page with the signposts
+  // walk the whole under-5 road (bug #30: one scrolling road, every category one after another)
   r.walk = await P.page.evaluate(async () => {
-    const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), out = { pages: 0, most: 0, seen: [], notDrawn: [], tooBig: [] };
-    // round M: the groups first (at most six at a time too), then each group's pages
-    out.groupPages = __sv.simple.view.pages; out.most = Math.max(out.most, __sv.simple.view.stops.length);
-    for (const a of A.AREAS) {
-      if (!Object.keys(GAMES).some(id => A.gameInfo(id).area === a.key && A.gameInfo(id).ageMin < 5)) continue;
-      __sv.simple.openGroup('games', a.key); await new Promise(r => setTimeout(r, 40));
-      for (let n = 0; n < 10; n++) {
-        const v = __sv.simple.view; out.pages++; out.most = Math.max(out.most, v.stops.length); out.seen.push(...v.stops);
-        document.querySelectorAll('.sp-stop:not(.sign) .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push(p.parentElement.getAttribute('aria-label')); });
-        out.tooBig.push(...v.stops.filter(id => id !== 'songs' && A.gameInfo(id).ageMin >= 5));
-        if (v.page >= v.of - 1) break;
-        document.querySelector('.sp-stop.sign').click(); await new Promise(r => setTimeout(r, 40));
-      }
-    }
+    const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), out = { notDrawn: [], tooBig: [] };
+    const v = __sv.simple.view;
+    document.querySelectorAll('.sp-stop .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push(p.parentElement.getAttribute('aria-label')); });
+    out.tooBig.push(...v.stops.filter(id => id !== 'songs' && A.gameInfo(id).ageMin >= 5));
     const want = Object.keys(GAMES).filter(id => A.gameInfo(id).ageMin < 5);
-    return { groupPages: out.groupPages, pages: out.pages, most: out.most, missed: want.filter(id => !out.seen.includes(id)), notDrawn: out.notDrawn, tooBig: out.tooBig };
+    const order = A.AREAS.map(a => a.key).filter(k => v.cats.includes(k));
+    return { cats: v.cats.length, inOrder: JSON.stringify(order) === JSON.stringify(v.cats), heads: document.querySelectorAll('.sp-stop.grp').length, missed: want.filter(id => !v.stops.includes(id)), notDrawn: out.notDrawn, tooBig: out.tooBig, stops: v.stops.length };
   });
+  // places: China and India (asia) always come last
+  r.placesLast = await P.page.evaluate(() => { __sv.simple.show('places'); const c = __sv.simple.view.cats; return c[c.length - 1]; });
+  await P.page.evaluate(() => __sv.simple.show('games'));
   // Discover: a big picture for every area; tapping Music goes there
   await P.page.click('.sp-discover'); await P.page.waitForSelector('.sp-find:not([hidden]) .sp-card');
   r.find = await P.page.evaluate(() => ({ cards: document.querySelectorAll('.sp-card').length, search: !!document.querySelector('.sp-q') }));
-  await P.page.click('.sp-card[data-t="games"][data-a="music"]'); r.music = await P.page.evaluate(() => __sv.simple.view.area);
+  await P.page.click('.sp-card[data-t="games"][data-a="music"]'); await P.page.waitForTimeout(200); r.music = await P.page.evaluate(() => { const sc = document.querySelector('.sp-scroll'), h = [...document.querySelectorAll('.sp-stop.grp')].find(b => /Music|Âm nhạc/.test(b.getAttribute('aria-label'))), r = h && h.getBoundingClientRect(); return sc.scrollTop > 0 && r && r.top >= 0 && r.top < innerHeight / 2 ? 'music' : 'lost'; });
   // a double tap starts the game once
-  await P.page.evaluate(() => { window.__starts = 0; const pg = __sv.playGame; __sv.playGame = (...a) => { window.__starts++; return pg(...a); }; const s = [...document.querySelectorAll('.sp-stop:not(.sign)')].find(x => !/^(Songs|Bài hát)$/.test(x.getAttribute('aria-label'))); s.click(); s.click(); setTimeout(() => s.click(), 120); }); // (a game, not the Music group's 🎵 Songs)
+  await P.page.evaluate(() => { window.__starts = 0; const pg = __sv.playGame; __sv.playGame = (...a) => { window.__starts++; return pg(...a); }; const s = [...document.querySelectorAll('.sp-stop:not(.grp)')].find(x => !/^(Songs|Bài hát)$/.test(x.getAttribute('aria-label'))); s.click(); s.click(); setTimeout(() => s.click(), 120); }); // (a game, not the Music group's 🎵 Songs)
   await P.page.waitForSelector('.gl', { timeout: 10000 }); await P.page.waitForTimeout(400);
   r.starts = await P.page.evaluate(() => window.__starts);
   await P.page.evaluate(() => document.querySelector('.gl-x').click());
@@ -1987,9 +1981,9 @@ await check('adventure', async () => {
   const errs = P.errors; await P.ctx.close();
   // a big kid: the first tap shows, the second plays; ✨ on a game that came after the last look; search finds "Đập Niêu" without accents
   const B = await open(b, { w: 390, h: 844, touch: true, screen: 'simple' });
-  await B.page.evaluate(() => { const p = __sv.heroes[0].profile; p.age = 'big'; p.seenActs = undefined; __sv.simple.hide(); __sv.simple.show(); p.seenActs = p.seenActs.filter(x => x !== 'game:bunny'); __sv.simple.hide(); __sv.simple.show('games'); __sv.simple.openGroup('games', 'animals'); document.querySelectorAll('.dialog').forEach(d => d.remove()); });
+  await B.page.evaluate(() => { const p = __sv.heroes[0].profile; p.age = 'big'; p.seenActs = undefined; __sv.simple.hide(); __sv.simple.show(); p.seenActs = p.seenActs.filter(x => x !== 'game:bunny'); __sv.simple.hide(); __sv.simple.show('games'); document.querySelectorAll('.dialog').forEach(d => d.remove()); });
   r.big = await B.page.evaluate(() => ({ stops: __sv.simple.view.stops.length, newOn: [...document.querySelectorAll('.sp-stop')].filter(s => s.querySelector('.sp-new')).map(s => s.getAttribute('aria-label')), dots: document.querySelectorAll('.sp-level').length === 0 })); // stars only: no difficulty dots (owner)
-  await B.page.locator('.sp-stop:not(.sign)').first().click(); await B.page.waitForTimeout(700);
+  await B.page.locator('.sp-stop:not(.grp)').first().click(); await B.page.waitForTimeout(700);
   r.big.firstTap = await B.page.evaluate(() => ({ game: !!document.querySelector('.gl'), sel: !!document.querySelector('.sp-stop.sel .sp-play') }));
   await B.page.locator('.sp-stop.sel').click(); r.big.secondTap = await B.page.waitForSelector('.gl', { timeout: 10000 }).then(() => true, () => false);
   await B.page.evaluate(() => document.querySelector('.gl-x').click());
@@ -1999,7 +1993,7 @@ await check('adventure', async () => {
   r.big.search = await B.page.evaluate(() => [...document.querySelectorAll('.sp-found .sp-card b')].map(b => b.textContent));
   errs.push(...B.errors); await B.ctx.close();
   ok(!r.list.missing.length && !r.list.extra.length && !r.list.badArea.length, 'activity list: ' + JSON.stringify(r.list));
-  ok(r.walk.groupPages === 1 && r.walk.pages <= 12 && !r.walk.missed.length && !r.walk.notDrawn.length && !r.walk.tooBig.length, 'under-5 path: ' + JSON.stringify(r.walk));
+  ok(r.walk.cats >= 5 && r.walk.heads === r.walk.cats && r.walk.inOrder && r.placesLast === 'asia' && !r.walk.missed.length && !r.walk.notDrawn.length && !r.walk.tooBig.length, 'under-5 path: ' + JSON.stringify(r.walk));
   ok(r.find.cards >= 18 && !r.find.search && r.music === 'music', 'discover: ' + JSON.stringify(r.find) + ' ' + r.music);
   ok(r.starts === 1, 'a double tap started the game ' + r.starts + ' times');
   ok(r.owl.owl && r.owl.cheer, 'Ông Cú: ' + JSON.stringify(r.owl));
@@ -2007,7 +2001,7 @@ await check('adventure', async () => {
   ok(r.leak.listeners <= 0 && r.leak.nodes <= 5 && r.leak.screens === 1, 'after 25 opens: ' + JSON.stringify(r.leak));
   ok(r.big.stops > 6 && r.big.dots && r.big.newOn.includes('Feed the Bunny') && r.big.newOn.length === 1 && !r.big.firstTap.game && r.big.firstTap.sel && r.big.secondTap && r.big.search.some(t => /Smash the Pot/.test(t)), 'big kid: ' + JSON.stringify(r.big));
   ok(!errs.length, errs.join(' | '));
-  return `${r.list.games} games in 11 areas; under-5 path: every group on one scrolling page (round P; ${r.walk.pages} groups, up to ${r.walk.most} stops), every one drawn; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
+  return `${r.list.games} games in 11 areas; under-5 road: ${r.walk.cats} categories one after another on one scrolling road (${r.walk.stops} stops), every one drawn, China and India last in places; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
 });
 
 await check('gamelevel', async () => {
@@ -2092,7 +2086,7 @@ await check('songs', async () => {
   });
   // the Simple screen's Music group starts with 🎵 Songs; Settings has a Songs card
   await P.page.evaluate(() => { __sv.simple.show(); __sv.simple.openGroup('games', 'music'); document.querySelectorAll('.dialog').forEach(d => d.remove()); });
-  r.simple = await P.page.evaluate(async () => { const first = __sv.simple.view.stops[0]; document.querySelector('.sp-stop').click(); await new Promise(res => setTimeout(res, 400)); const open = !!document.querySelector('.songs'); document.querySelector('.songs .sg-x').click(); __sv.simple.hide(); return { first, open }; });
+  r.simple = await P.page.evaluate(async () => { const first = __sv.simple.view.stops.find(x => x === 'songs'); [...document.querySelectorAll('.sp-stop')].find(b => /^(Songs|Bài hát)$/.test(b.getAttribute('aria-label'))).click(); await new Promise(res => setTimeout(res, 400)); const open = !!document.querySelector('.songs'); document.querySelector('.songs .sg-x').click(); __sv.simple.hide(); return { first, open }; });
   // the star counter sits under the game's top bar (it covered 📺 on notched phones)
   await P.page.evaluate(() => { __sv.playGame(0, 'counting'); }); await P.page.waitForSelector('.gl .starbox'); // (not waiting for the game to end)
   r.star = await P.page.evaluate(() => { const s = document.querySelector('.gl .starbox').getBoundingClientRect(), hb = [...document.querySelectorAll('.gl-head button')].map(b => b.getBoundingClientRect()); return { clear: hb.every(b => s.top >= b.bottom - 1 || s.bottom <= b.top || s.right <= b.left || s.left >= b.right) }; });
