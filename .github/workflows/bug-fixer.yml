@@ -121,8 +121,9 @@ jobs:
           git config user.name 'Sparkle Valley bug robot'
           git config user.email 'bug-robot@users.noreply.github.com'
           b="bugfix/$CORE-$N"
-          if git ls-remote --exit-code --heads origin "$b" >/dev/null; then
-            git fetch origin "$b" && git checkout -B "$b" FETCH_HEAD
+          # Every branch was fetched by the checkout (fetch-depth 0); there are no git credentials after it.
+          if git rev-parse --verify -q "origin/$b" >/dev/null; then
+            git checkout -B "$b" "origin/$b"
           else
             git checkout -B "$b" origin/main
           fi

@@ -57,7 +57,6 @@ jobs:
       - name: Write down the changes for Claude
         run: |
           mkdir -p .bugfix
-          git fetch -q origin main
           base=$(git merge-base origin/main HEAD)
           jq -r '"# " + .title + "\n\n" + (.body // "")' "$RUNNER_TEMP/pr.json" > .bugfix/pr.md
           git diff --stat "$base" HEAD > .bugfix/diffstat.txt
