@@ -81,3 +81,13 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
 - On the cloud only (no direct link), someone who knows the code and answers the knock first is believed (the first key
   that answers is kept); a direct link or a saved friend's invitation outranks it.
 - Friends added by typing a code can't be invited or see the room until they have played together once.
+
+## Progress notes
+- **11 Oct, 9:25 am AEDT, branch `core/online`, commit c6ebc651** (bug #37, robot's `bugfix/online-37` merged in and
+  corrected): the Friends tab's grown-ups' note names Grown-ups → "Internet and playing online" → "Use the internet"
+  (EN and VI, no "Studio"), with a press-and-hold Grown-ups button that opens that section; the "could not link" message
+  names the same section. Files: `js/main.js` (Online block), `css/style.css` (new Online block at the end),
+  `tests/run.mjs` (`onlineoff`). Checks: `onlineoff multiplayer meet cloud knock netmsg iphone together netgames coop`
+  all pass (local PeerJS and MQTT servers, none skipped), `tests/unit/netgames.test.mjs` pass; full suite 86/86 pass.
+  Screenshots looked at: phone 390×760, tablet 820×1180, computer 1280×800, EN and VI, friends off and on, and the
+  held button. No new spoken lines.

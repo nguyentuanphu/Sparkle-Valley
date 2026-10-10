@@ -46,7 +46,7 @@ Format for a request:
 - Lullabies with real voices: the owner may paste titles or words (soha.vn could not be reached), or record them in Studio → Music.
 
 ## Online
-- **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
+- **Now:** #37 done (robot's fix corrected: real section and switch names, press-and-hold Grown-ups button; owner's go 11 Oct) · branch `core/online` · last commit c6ebc651 · **ready for Release** (full suite 86/86, notes in `online.md`); next: map version in the hello (r57) · 11 Oct, 9:25 am AEDT
 - [x] (Release, fix in `js/main.js`, 10 Oct AEST) Moves are tied to their own game: a story read together that is still winding down no longer sends page turns into the next game (seen as extra stars in the race) or ends it. Was in r54 too; the `together` check now also fails on any stray move. For your records.
 - [x] (Release, one-line fix a check needs, 10 Oct AEST) `js/netmsg.js` `W` is now 235 (the 480 m valley); Online may make it read `WORLD.size` from the map.
 - [ ] (Release → Online; owner 10 Oct: T1 went out first, this goes into r57) Before T1 goes live: the hello carries the map version (`MAP_VERSION`); a friend on another layout sees "Ask a grown-up to update" instead of joining (positions are raw x, z) · ROUND-T.md §4 · `js/netmsg.js`, `js/net.js` · 10 Oct AEST
