@@ -1375,6 +1375,7 @@ function frame(now) {
   // (two players: the world rests only when both halves have a window open)
   if (twoHalves() && playing ? G.halfBusy(0) && G.halfBusy(1) : gameOpen() || document.querySelector('.storybook, .theatre.film') || (G.paused && document.querySelector('.modal')) || (playing && worldHidden())) return;
   world.update(dt, t);
+  if (playing) G.farCull(now); // (round T: small things far from every camera are not drawn)
   if (!playing) {
     const a = t * .05;
     titleCam.position.set(PLATEAU.x + Math.cos(a) * 70, 42, PLATEAU.z + Math.sin(a) * 70); titleCam.lookAt(PLATEAU.x, 16, PLATEAU.z); // (round T: round Ông Cú's home)
@@ -1603,6 +1604,48 @@ startCounting(G); // how many children play, and what they play, for Studio's re
   let mats = [];
   G.camBlockerMats = () => mats;
   G.camBlockers = () => { const now = performance.now(); if (now - at > 8000) { at = now; collect(); } return list; };
+}
+// (round T, PERF-003) far small things: in the 480 m valley a child can see right across it, and the fog hides what is
+// far away anyway. Each small thing (a person, a stall, a house, a motorbike: a top-level shape no wider than SMALL m,
+// taken whole so its parts go together) further from every camera than its size allows is not drawn: a 1 m lantern
+// from 110 m, a 7 m house from 230 m, never more than FAR m. Busy little things (people, vehicles: thousands of
+// triangles per metre of size) go from DETAIL m, where a child is about 15 px tall. The dark outlines go from OUTLINE m:
+// they are about 0.01 m wide, a sixth of a pixel there (characters already hide theirs from 30 m). What is not drawn
+// moves to layer 1, which the cameras do not show (`visible` is left alone). Checked twice a second; the list is
+// gathered again every 30 s, and what is added to the scene joins it straight away.
+{
+  const FAR = 240, DETAIL = 65, OUTLINE = 40, SMALL = 14, BUSY = 4000, units = [], box = new THREE.Box3(), s = new THREE.Sphere(), v = new THREE.Vector3();
+  let at = -1e9, next = 0, count = -1, seen = new WeakSet();
+  const skip = o => o === world.terrain || o.userData.road || o.userData.noFar || o.isInstancedMesh || o.isLight || o.isCamera;
+  const visit = (o, top, heroes) => {
+    if (skip(o) || heroes.has(o)) return;
+    box.setFromObject(o); if (box.isEmpty()) return; box.getBoundingSphere(s);
+    if (s.radius > SMALL) { o.children.forEach(c => visit(c, top, heroes)); return; }
+    const meshes = []; let tris = 0;
+    o.traverse(m => { if (!m.isMesh || skip(m)) return; meshes.push(m); const g = m.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; });
+    if (!meshes.length) return;
+    const d = Math.min(FAR, 90 + 20 * s.radius, tris > BUSY * Math.max(1, s.radius) ? DETAIL : FAR);
+    o.updateMatrixWorld(); units.push({ o, top, c: o.worldToLocal(s.center.clone()), far2: d * d, meshes });
+  };
+  // (all of it every 30 s; in between only what was added to the scene, which takes no time)
+  const gather = full => {
+    const heroes = new Set(G.heroes.map(h => h.av.root));
+    const drop = u => u.meshes.forEach(m => m.layers.set(0)); // (shown again; measured afresh if it comes back)
+    if (full) { units.forEach(drop); units.length = 0; seen = new WeakSet(); }
+    else for (let i = units.length; i--;) if (units[i].top.parent !== scene) { drop(units[i]); seen.delete(units[i].top); units.splice(i, 1); }
+    for (const o of scene.children) if (!seen.has(o)) { seen.add(o); visit(o, o, heroes); }
+  };
+  G.farCull = now => {
+    if (now < next || !G.heroes.length) return; next = now + 500;
+    if (now - at > 30000) { at = now; count = scene.children.length; gather(true); }
+    else if (scene.children.length !== count) { count = scene.children.length; gather(false); } // (vehicles are made when a child comes near)
+    const cams = G.heroes.map(h => h.cam.position), O2 = OUTLINE * OUTLINE;
+    for (const u of units) {
+      v.copy(u.c).applyMatrix4(u.o.matrixWorld); let d2 = 1e12;
+      for (const c of cams) d2 = Math.min(d2, (c.x - v.x) ** 2 + (c.z - v.z) ** 2);
+      for (const m of u.meshes) m.layers.set(d2 > u.far2 || (m.userData.outline && d2 > O2) ? 1 : 0);
+    }
+  };
 }
 G.openTrade = (i, id) => { if (G.paused) return; openTrade(G, G.heroes[i], id); };
 G.secrets = createSecrets(G);
