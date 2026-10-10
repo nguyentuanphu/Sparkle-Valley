@@ -18,14 +18,19 @@ when the owner says so.
 5. Update `HANDOFF.md` (round history and checks table) and `docs/ARCHITECTURE.md` §9 if rules changed (`node tools/rules-from-doc.mjs`).
 6. Packages: the Netlify zip (`git archive --format=zip -o <dir>/sparkle-valley-netlify-rNN-game.zip HEAD index.html sw.js manifest.webmanifest netlify.toml css js fonts icons vendor videos content`), the local bundle in parts (`tools/make-bundle.sh <dir> --parts`), the Studio exe (`bash studio/build-exe.sh`).
 7. Report to the owner: what changed (plain words), how it was tested, the packages, times in AEST.
-8. Ask two questions: “yes, push” (GitHub: push the branch, open or update the pull request) and “yes, deploy”
-   (merge into main, which makes Netlify publish). Each answer covers that one push or deploy only.
+8. Ask one pop-up question per round: “yes, deploy”. It covers pushing the release branch and merging it into main
+   (which makes Netlify publish), for that round only (owner, 10 Oct: Release is the master release; helper chats push
+   their own branches without asking).
 9. Ask about the Google Drive mirror until the owner says it is set up.
 10. After deploying, check the live deploy in Netlify and say when it went live (AEST).
 
 ## Hard rules (§9.1)
-PROC-001…006 (read their wording in §9.1): plan first; never push without the owner's “yes, push”; GitHub and Netlify
-asked separately; the full suite green before a report; times in AEST; no keys or personal data in the repository.
+PROC-001…006 (read their wording in §9.1): plan first; nothing reaches main without the owner's “yes, deploy” (one per
+round); the full suite green before a report; times in AEST; no keys or personal data in the repository.
 
 ## Checks you run
 All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
+
+## Owner's decisions
+- 10 Oct AEST: Release is the master release of all work. Helper chats push their own branches without asking; Release collects every branch, merges, runs the full suite, reports, and asks one pop-up "yes, deploy" per round, which covers pushing and merging into `main`.
+- 10 Oct AEST: every question to the owner is a pop-up question with clickable choices (`CLAUDE.md`, HANDOFF rule 19).
