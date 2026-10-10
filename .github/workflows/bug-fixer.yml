@@ -109,6 +109,7 @@ jobs:
       N: ${{ matrix.bug.n }}
       CORE: ${{ matrix.bug.core }}
       MODE: ${{ matrix.bug.mode }}
+      HAS_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
       HAS_BACKUP: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_BACKUP != '' }}
     steps:
       - uses: actions/checkout@v4
@@ -199,7 +200,9 @@ jobs:
         if: always()
         run: |
           mkdir -p out
-          [ -s .bugfix/result.md ] && cp .bugfix/result.md out/result.md || printf 'STATUS: stuck\nThe robot stopped without writing a result (it may have run out of usage or time). See the run log.\n' > out/result.md
+          if [ -s .bugfix/result.md ]; then cp .bugfix/result.md out/result.md
+          elif [ "$HAS_KEY" != true ]; then printf 'STATUS: stuck\nGitHub has no Claude key: add the repository secret CLAUDE_CODE_OAUTH_TOKEN (Settings, Secrets and variables, Actions, Repository secrets).\n' > out/result.md
+          else printf 'STATUS: stuck\nThe robot stopped without writing a result (it may have run out of usage or time). See the run log.\n' > out/result.md; fi
           git status --short | grep -v '^?? .bugfix/' > out/uncommitted.txt || true
           git format-patch "$BASE_SHA..HEAD" -o out/patches >/dev/null || true
           echo "$BASE_SHA" > out/base.txt

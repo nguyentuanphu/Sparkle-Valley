@@ -36,6 +36,7 @@ jobs:
       pull-requests: read
     env:
       N: ${{ github.event.pull_request.number || inputs.pr }}
+      HAS_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
       HAS_BACKUP: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_BACKUP != '' }}
     steps:
       - name: Find the pull request
@@ -107,7 +108,9 @@ jobs:
         if: always()
         run: |
           mkdir -p out
-          [ -s .bugfix/review.md ] && cp .bugfix/review.md out/review.md || printf 'VERDICT: none\nThe AI review did not finish (it may have run out of usage or time).\n' > out/review.md
+          if [ -s .bugfix/review.md ]; then cp .bugfix/review.md out/review.md
+          elif [ "$HAS_KEY" != true ]; then printf 'VERDICT: none\nGitHub has no Claude key: add the repository secret CLAUDE_CODE_OAUTH_TOKEN (Settings, Secrets and variables, Actions, Repository secrets).\n' > out/review.md
+          else printf 'VERDICT: none\nThe AI review did not finish (it may have run out of usage or time).\n' > out/review.md; fi
           echo "${{ steps.pr.outputs.sha }}" > out/sha.txt
           cat out/review.md
 
