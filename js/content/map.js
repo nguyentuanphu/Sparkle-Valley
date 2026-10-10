@@ -42,7 +42,7 @@ export const PLACES = [
   // the east bank: Vietnam, north to south (Hà Nội, Bắc Ninh north-east of it, Làng Sen, Đà Nẵng, Hội An, Chợ Ba Miền, TP. HCM)
   { id: 'hanoi', kind: 'city', cc: 'vn', at: [153, -135], w: 13, d: 13, h: 5, icon: '🐢', name: ['Hà Nội', 'Hà Nội'], gates: [[0, 13]] },
   { id: 'bacninh', kind: 'city', cc: 'vn', at: [200, -172], w: 16, d: 13, h: 6, icon: '🕰️', name: ['Bắc Ninh', 'Bắc Ninh'], gates: [[-16, 0]] },
-  { id: 'paddies', kind: 'site', cc: 'vn', at: [204, -102], r: 18, h: 3 },   // the rice fields
+  { id: 'paddies', kind: 'site', cc: 'vn', at: [210, -98], r: 16, h: 3 },   // the rice fields (round T2: a little south-east, clear of Sông Hồng)
   { id: 'village', kind: 'village', cc: 'vn', at: [204, -42], r: 34, h: 2.4 },   // Lotus Village (Làng Sen)
   { id: 'lake', kind: 'lake', at: [120, -74], r: 22 },   // Mirror Lake (Hồ Gương) by Làng Sen, with Hạ Long Bay and the reef inside
   { id: 'danang', kind: 'city', cc: 'vn', at: [153, 7], w: 13, d: 11, h: 3, icon: '🐉', name: ['Đà Nẵng', 'Đà Nẵng'], gates: [[0, -11], [0, 11], [-13, 0]] },
@@ -51,7 +51,7 @@ export const PLACES = [
   { id: 'saigon', kind: 'city', cc: 'vn', at: [153, 151], w: 13, d: 11, h: 4, icon: '🛵', name: ['Hồ Chí Minh City', 'TP. Hồ Chí Minh'], gates: [[0, -11]] },
   // the west bank: Australia, north to south (Brisbane, Aussie Corner, Sydney, Melbourne; Uluru in the outback beyond the Great Dividing Range)
   { id: 'brisbane', kind: 'city', cc: 'au', at: [-132, -137], w: 13, d: 11, h: 3, icon: '🐨', name: ['Brisbane', 'Brisbane'], gates: [[0, 11], [0, -11]] },
-  { id: 'aussie', kind: 'street', cc: 'au', at: [-100, -71], w: 18, d: 28, h: 4, street: { roadZ: 0 } },   // Aussie Corner
+  { id: 'aussie', kind: 'street', cc: 'au', at: [-100, -65], w: 18, d: 28, h: 4, street: { roadZ: 0 } },   // Aussie Corner (round T2: 6 m south, clear of the Brisbane River)
   { id: 'sydney', kind: 'city', cc: 'au', at: [-132, -4], w: 13, d: 13, h: 4, icon: '⛴️', name: ['Sydney', 'Sydney'], gates: [[0, -13], [0, 13]] },
   { id: 'melbourne', kind: 'city', cc: 'au', at: [-132, 126], w: 13, d: 13, h: 4, icon: '🚋', name: ['Melbourne', 'Melbourne'], gates: [[0, -13]] },
   { id: 'uluru', kind: 'site', cc: 'au', at: [-196, 62] },   // Uluru, the big red rock in the outback
@@ -61,8 +61,8 @@ export const PLACES = [
   { id: 'china', kind: 'village', cc: 'asia', at: [107, -200], r: 22, h: 5.5 },
   { id: 'india', kind: 'village', cc: 'asia', at: [-94, -200], r: 22, h: 5.5 },
   // festival grounds (js/vnfun.js), kept free of trees: the buffalo pushing ring near Hà Nội and Bắc Ninh, the bull-race field west of Sài Gòn
-  { id: 'choitrau', kind: 'ground', cc: 'vn', at: [106, -120] },
-  { id: 'duabo', kind: 'ground', cc: 'vn', at: [108, 160] },
+  { id: 'choitrau', kind: 'ground', cc: 'vn', at: [75, -146] },   // (round T2: north of the ring road; Hồ Gươm took its old place)
+  { id: 'duabo', kind: 'ground', cc: 'vn', at: [108, 106] },     // (round T2: between the ring road and the Vietnam road; Sông Sài Gòn and the Mekong took its old place)
   // places inside places
   { id: 'playground', kind: 'site', place: 'town', off: [-4, 9], r: 13, h: 4.6 },   // the park on Two Homes Street, where kids from Australia and Vietnam play
   // (round R story) bà Huệ and ông Nghi's yard (js/yard.js): its own levelled plot behind the north row of Two Homes
@@ -78,17 +78,43 @@ export const WATERS = [
   { id: 'main_e', kind: 'river', pts: [[9, -104], [43, -96], [65, -70], [72, -14], [65, 42], [43, 74], [9, 86]] },
   { id: 'main_s', kind: 'river', pts: [[9, 86], [12, 120], [14, 160], [12, 200], [10, 252]] },
   { id: 'han', kind: 'river', pts: [[252, 37], [200, 36], [153, 37], [116, 37]] },
-  { id: 'lake', kind: 'lake', place: 'lake' }
+  { id: 'lake', kind: 'lake', place: 'lake' },
+  // (round T2, the Concept D map) w: width against the main river's; tone: a tinted surface
+  // Vietnam: Sông Hồng (the red river) from the north-east hills, past Hà Nội's south under Long Biên, through Hồ Gương and
+  // under the ring road into the main river; the Hội An canal off Sông Hàn, under the Vietnam road and Chùa Cầu; Sông
+  // Sài Gòn from the main river past TP. HCM to the sea; two Mekong channels down to the sea
+  { id: 'hong', kind: 'river', w: .9, tone: '#b0643c', pts: [[238, -142], [196, -140], [180, -114], [166, -100], [140, -100], [126, -86], [110, -66], [104, -62], [66, -62]] },
+  { id: 'hoian_canal', kind: 'river', w: .45, pts: [[125, 37], [125, 72], [238, 76]] },
+  { id: 'saigon_r', kind: 'river', w: .8, pts: [[14, 142], [60, 140], [110, 140], [128, 146], [130, 160], [132, 186], [134, 204]] },
+  { id: 'mekong1', kind: 'river', w: .45, pts: [[90, 140], [86, 170], [84, 204]] },
+  { id: 'mekong2', kind: 'river', w: .45, pts: [[112, 140], [110, 172], [106, 204]] },
+  // Australia: the Brisbane River from the western hills under the Story Bridge to the main river; Sydney Harbour, wide,
+  // from the main river to Sydney under the Harbour Bridge; the Yarra under Princes Bridge; the Murray to the main river
+  { id: 'brisbane_r', kind: 'river', w: .75, pts: [[-238, -66], [-196, -70], [-170, -84], [-156, -100], [-148, -106], [-116, -106], [-96, -114], [-70, -134], [-40, -150], [1, -156]] },
+  { id: 'sydney_harbour', kind: 'river', w: 1.6, pts: [[-112, -2], [-54, -2]] },
+  { id: 'yarra', kind: 'river', w: .6, pts: [[-156, 84], [-146, 90], [-118, 90], [-96, 98], [-70, 118], [-36, 130], [12, 136]] },
+  { id: 'murray', kind: 'river', w: .7, pts: [[-238, 150], [-190, 154], [-132, 154], [-80, 156], [-30, 162], [14, 168]] },
+  // small round lakes: Hồ Gươm (Hoàn Kiếm Lake) by Hà Nội with the Turtle Tower in it; a billabong in the outback
+  { id: 'hoguom', kind: 'pond', place: 'hanoi', off: [-29, 3], r: 8 },
+  { id: 'billabong', kind: 'pond', at: [-204, 22], r: 8 }
 ];
 
 // Bridges run along the x or the z axis, never diagonally: from a0 to a1 along it, centred on c across it; h is the deck.
 export const BRIDGES = [
-  { id: 'haique', axis: 'x', a0: 54, a1: 84, c: -28, w: 7.6, h: 4, over: 'main_e', style: 'harbour', landmark: 'harbour' },   // the Harbour-style bridge from Phố Hai Quê east to the ring road
+  { id: 'haique', axis: 'x', a0: 54, a1: 84, c: -28, w: 7.6, h: 4, over: 'main_e', style: 'plain' },   // the home island's east bridge, from Phố Hai Quê to the ring road (round T2: the Harbour Bridge moved to Sydney)
   { id: 'island_w', axis: 'x', a0: -68, a1: -38, c: -28, w: 7.6, h: 4.2, over: 'main_w', style: 'plain' },   // the home island's west bridge
   { id: 'ring_n', axis: 'x', a0: -10, a1: 18, c: -130, w: 7.6, h: 5.4, over: 'main_n', style: 'plain' },   // the ring road over the river, north of the island
   { id: 'ring_s', axis: 'x', a0: -2, a1: 26, c: 104, w: 7.6, h: 5.4, over: 'main_s', style: 'plain' },   // and south of it
   { id: 'north', axis: 'x', a0: -12, a1: 16, c: -172, w: 7.6, h: 6, over: 'main_n', style: 'plain' },   // the mountain road over the river
-  { id: 'rong', axis: 'z', a0: 24, a1: 52, c: 153, w: 7.6, h: 4.4, over: 'han', style: 'dragon', landmark: 'dragonbridge' }   // Đà Nẵng's golden Dragon Bridge carrying the Vietnam road south over Sông Hàn
+  { id: 'rong', axis: 'z', a0: 24, a1: 52, c: 153, w: 7.6, h: 4.4, over: 'han', style: 'dragon', landmark: 'dragonbridge' },   // Đà Nẵng's golden Dragon Bridge carrying the Vietnam road south over Sông Hàn
+  // (round T2) every bridge landmark over its real water, and plain bridges where roads cross the new rivers
+  { id: 'longbien', axis: 'z', a0: -113, a1: -87, c: 153, w: 7.6, h: 4.8, over: 'hong', style: 'longbien', landmark: 'longbien' },   // Long Biên: the Vietnam road over Sông Hồng, south of Hà Nội
+  { id: 'ring_e', axis: 'z', a0: -75, a1: -49, c: 96, w: 7.6, h: 4.4, over: 'hong', style: 'plain' },   // the ring road over Sông Hồng
+  { id: 'hoian_rd', axis: 'z', a0: 61, a1: 83, c: 153, w: 7.6, h: 3.6, over: 'hoian_canal', style: 'plain' },   // the Vietnam road over the Hội An canal
+  { id: 'chuacau', axis: 'z', a0: 65, a1: 79, c: 170, w: 3.2, h: 2.6, over: 'hoian_canal', style: 'chuacau', landmark: 'chuacau', foot: true },   // Chùa Cầu, the covered footbridge in Hội An, beside the road (owner, T2)
+  { id: 'harbour', axis: 'z', a0: -22, a1: 18, c: -78, w: 7.6, h: 5.2, over: 'sydney_harbour', style: 'harbour', landmark: 'harbour' },   // the Sydney Harbour Bridge: the ring road over the harbour
+  { id: 'story', axis: 'z', a0: -119, a1: -93, c: -132, w: 7.6, h: 4.4, over: 'brisbane_r', style: 'story', landmark: 'storybridge' },   // the Story Bridge: the Australia road over the Brisbane River
+  { id: 'princes', axis: 'z', a0: 78, a1: 102, c: -132, w: 7.6, h: 4, over: 'yarra', style: 'princes', landmark: 'princes' }   // Princes Bridge: the Australia road over the Yarra, north of Melbourne
 ];
 
 // Roads: asphalt roads join every village and city; dirt roads link the quieter places to each other.
@@ -113,7 +139,7 @@ export const ROADS = [
   // the Australia road, north to south
   { id: 'au_north', kind: 'asphalt', pts: [[-132, -126], [-132, -17]], gates: ['brisbane', 'sydney'] },
   { id: 'au_south', kind: 'asphalt', pts: [[-132, 9], [-132, 113]], gates: ['sydney', 'melbourne'] },
-  { id: 'aussie_road', kind: 'asphalt', pts: [[-132, -71], [-118, -71]], gates: [null, 'aussie'] },   // a square T off the Australia road (R5)
+  { id: 'aussie_road', kind: 'asphalt', pts: [[-132, -65], [-118, -65]], gates: [null, 'aussie'] },   // a square T off the Australia road (R5)
   // the mountain road over the north, from Brisbane to Hà Nội, with China Town and India Village
   { id: 'mountain', kind: 'asphalt', pts: [[-132, -148], [-132, -172], [-104, -172], [-60, -172], [60, -172], [120, -172], [184, -172]], gates: ['brisbane', 'bacninh'] },
   { id: 'china_road', kind: 'asphalt', pts: [[107, -172], [107, -178]], gates: [null, 'china'] },
@@ -124,6 +150,7 @@ export const ROADS = [
   { id: 'plateau_ramp', kind: 'dirt', pts: [[-6, -60], [-24, -44], [-24, -28]] },                  // down from the Dawn Plateau to the island road
   { id: 'village_lane', kind: 'dirt', pts: [[172, -42], [185, -42]] },                          // Lotus Village's lane, in through its old gate
   { id: 'paddies_lane', kind: 'dirt', pts: [[206, -76], [205, -86]] },                          // Lotus Village to the rice fields
+  { id: 'hoian_walk', kind: 'footpath', pts: [[153, 96], [170, 96], [170, 56]] },                   // (round T2) into Hội An and north over Chùa Cầu to the canal's far bank
   { id: 'uluru_track', kind: 'dirt', pts: [[-132, 64], [-150, 64], [-168, 56], [-184, 46]] },   // over the Great Dividing Range to Uluru
   // footpaths (R1, 1.6 m; Phase 2, round 30): Lotus Village's pond path (R11) carries on from the village lane round the
   // lotus pond's north and east sides, 8 m from its middle (1.5–2.5 m from the water), and ends at a bench; a short
@@ -184,14 +211,17 @@ export const GATHER_AT = [
 export const LANDMARK_AT = {
   // postcards (js/regions.js)
   opera: { place: 'sydney', off: [34, 24] },     // by the water east of Sydney, like Bennelong Point
-  harbour: { place: 'town', off: [57, -6] },     // the middle of the Harbour Bridge (the postcard is on the street's south footpath)
+  harbour: { place: 'sydney', off: [54, 2] },    // the middle of the Harbour Bridge over Sydney Harbour (round T2; the postcard is by its south end)
   uluru: { place: 'uluru', off: [0, -16] },      // the postcard, in front of the rock
   banana: { place: 'aussie', off: [9, -6] },
   bondi: { place: 'melbourne', off: [26, 50] },  // the lifesavers' tower on the southern beach
   lighthouse: { place: 'saigon', off: [52, 30] }, // on the coast (it moves to Bà Rịa–Vũng Tàu in stage T3)
-  turtle: { place: 'market', off: [-18, 10.5] },
+  turtle: { place: 'hanoi', off: [-29, 3] },     // in Hồ Gươm by Hà Nội (round T2; was a small copy in the market)
   onepillar: { place: 'market', off: [-10, -10] },
-  chuacau: { place: 'market', off: [0, 10.5] },
+  chuacau: { place: 'hoian', off: [0, -18] },    // the middle of Chùa Cầu over the Hội An canal (round T2; was a small copy in the market)
+  longbien: { place: 'hanoi', off: [0, 35] },     // the middle of Long Biên bridge
+  storybridge: { place: 'brisbane', off: [0, 31] }, // the middle of the Story Bridge
+  princes: { place: 'melbourne', off: [0, -36] },  // the middle of Princes Bridge
   benthanh: { place: 'market', off: [24, -4] },
   // Two Homes Street (js/cities.js)
   bachdinh: { place: 'town', off: [-19, 19.5] },
@@ -199,9 +229,9 @@ export const LANDMARK_AT = {
   // the UNESCO sites (js/heritage.js)
   halong: { place: 'lake', off: [-9, -5] },
   hue: { place: 'danang', off: [42, -14] },
-  myson: { place: 'hoian', off: [28, -18] },
-  phongnha: { place: 'paddies', off: [-10, -30] },
-  trangan: { place: 'hanoi', off: [-36, -6] },
+  myson: { place: 'hoian', off: [32, -6] },
+  phongnha: { place: 'paddies', off: [24, -20] },
+  trangan: { place: 'hanoi', off: [-30, -22] },
   reef: { place: 'lake', off: [8, 9] },
   sisters: { place: 'sydney', off: [-30, -40] },
   exhibition: { place: 'melbourne', off: [-30, 10] },
@@ -218,12 +248,12 @@ export const LANDMARK_AT = {
 };
 // which place each landmark belongs to in the real world (the Pad map lists it under that place; moved from js/ui.js)
 export const LANDMARK_HOME = { bnclock: 'bacninh', chuadau: 'bacninh', butthap: 'bacninh', dendo: 'bacninh', quanho: 'bacninh',
-  turtle: 'hanoi', onepillar: 'hanoi', vanmieu: 'hanoi', puppettheatre: 'hanoi', thehuc: 'hanoi', halong: 'hanoi', trangan: 'hanoi',
+  turtle: 'hanoi', longbien: 'hanoi', onepillar: 'hanoi', vanmieu: 'hanoi', puppettheatre: 'hanoi', thehuc: 'hanoi', halong: 'hanoi', trangan: 'hanoi',
   dragonbridge: 'danang', goldenbridge: 'danang', marble: 'danang', hoian: 'danang', chuacau: 'danang', myson: 'danang', hue: 'danang', phongnha: 'danang',
   benthanh: 'saigon', cathedral: 'saigon', postoffice: 'saigon', cairang: 'saigon', bachdinh: 'saigon', nhatron: 'saigon', lighthouse: 'saigon',
   wheel: 'brisbane', lonepine: 'brisbane', storybridge: 'brisbane', reef: 'brisbane', banana: 'sydney',
   opera: 'sydney', harbour: 'sydney', sydneytower: 'sydney', lunapark: 'sydney', bondi: 'sydney', sisters: 'sydney',
-  flinders: 'melbourne', wtram: 'melbourne', exhibition: 'melbourne', apostles: 'melbourne', kakadu: 'uluru', uluru: 'uluru',
+  flinders: 'melbourne', princes: 'melbourne', wtram: 'melbourne', exhibition: 'melbourne', apostles: 'melbourne', kakadu: 'uluru', uluru: 'uluru',
   forbidden: 'china', heaven: 'china', terracotta: 'china', potala: 'china', qutub: 'india', redfort: 'india', konark: 'india', hampi: 'india', mahabodhi: 'india' };
 
 // Boats (js/ferry.js): the lake ferry's piers (degrees round the lake, 0 = east, 90 = south) and the river rafts.

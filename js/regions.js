@@ -11,7 +11,7 @@ import { THREE, toon, toonVC, P, merge, sprite } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
 import { say } from './voice.js';
 import { SFX, tone } from './audio.js';
-import { heightAt, MARKET, AUSSIE, WATER, ULURU, BRIDGE } from './world.js';
+import { heightAt, MARKET, AUSSIE, WATER, ULURU, BRIDGES } from './world.js';
 import { landmarkAt } from './content/map.js';
 import { buildAvatar } from './avatar.js';
 import { Box, Cyl, gable, hip, win } from './town.js';
@@ -77,6 +77,8 @@ export const LANDMARKS = [
   { id: 'turtle', icon: '🐢', ...at('turtle'), name: () => T('Turtle Tower', 'Tháp Rùa'), fact: ['Tháp Rùa stands in Hoàn Kiếm Lake in Hà Nội. Legend says a golden turtle took back a magic sword there after peace came.', 'Tháp Rùa nằm giữa Hồ Hoàn Kiếm ở Hà Nội. Truyền thuyết kể rằng Rùa Vàng đã nhận lại thanh gươm thần ở đó khi đất nước thanh bình.'] },
   { id: 'onepillar', icon: '🪷', ...at('onepillar'), name: () => T('One Pillar Pagoda', 'Chùa Một Cột'), fact: ['Chùa Một Cột in Hà Nội stands on one stone pillar, like a lotus flower rising from the water.', 'Chùa Một Cột ở Hà Nội đứng trên một cột đá, giống như bông sen vươn lên khỏi mặt nước.'] },
   { id: 'chuacau', icon: '🌉', ...at('chuacau'), name: () => T('Hội An Covered Bridge', 'Chùa Cầu Hội An'), fact: ['Chùa Cầu in Hội An is a covered bridge about 400 years old. At night the old town glows with silk lanterns.', 'Chùa Cầu ở Hội An là cây cầu có mái che khoảng 400 năm tuổi. Ban đêm, phố cổ lung linh đèn lồng.'] },
+  { id: 'longbien', icon: '🌉', ...at('longbien'), name: () => T('Long Biên Bridge', 'Cầu Long Biên'), fact: ['Long Biên Bridge in Hà Nội is more than 120 years old. Trains, bicycles and motorbikes cross the Red River on its long steel frame.', 'Cầu Long Biên ở Hà Nội đã hơn 120 tuổi. Tàu hoả, xe đạp và xe máy đi qua sông Hồng trên khung thép dài của cầu.'] },
+  { id: 'princes', icon: '🌉', ...at('princes'), name: () => T('Princes Bridge', 'Cầu Princes'), fact: ['Princes Bridge in Melbourne crosses the Yarra River on three big stone arches. Trams rattle over it every day.', 'Cầu Princes ở Melbourne bắc qua sông Yarra bằng ba vòm đá lớn. Ngày nào tàu điện cũng chạy lách cách qua cầu.'] },
   { id: 'benthanh', icon: '🕰️', ...at('benthanh'), name: () => T('Bến Thành Clock Tower', 'Tháp Đồng Hồ Chợ Bến Thành'), fact: ['Chợ Bến Thành in Sài Gòn is famous for its clock tower. Inside you can find almost anything to eat!', 'Chợ Bến Thành ở Sài Gòn nổi tiếng với tháp đồng hồ. Bên trong có gần như đủ món ngon!'] }
 ];
 
@@ -109,20 +111,18 @@ export function createRegions(G) {
   for (let k = 0; k < 14; k++) { const l = sprite('🏮', .7); l.position.set(M.x - 7 + k, M.h + 4.3 - Math.sin(k / 13 * Math.PI) * .6, mz + (k % 2 ? 1.2 : -1.2)); scene.add(l); }
 
   // ---- landmarks inside the market ----
-  // Hồ Gươm with Tháp Rùa (Turtle Tower)
+  // Tháp Rùa (Turtle Tower) on its little island in Hồ Gươm by Hà Nội (round T2: the real lake, js/content/map.js)
   const pond = (cx, cz, w, d) => { put(merge([P(Box(w + .8, .3, d + .8), '#b9b09c', [0, .15, 0]), P(Box(w, .32, d), '#5f9fb0', [0, .17, 0])]), cx, cz); box(cx - w / 2 - .4, cx + w / 2 + .4, cz - d / 2 - .4, cz + d / 2 + .4); };
-  const TURTLE = landmarkAt('turtle'), PILLAR = landmarkAt('onepillar'), CAU = landmarkAt('chuacau');
-  pond(...TURTLE, 8, 4.4);
+  const TURTLE = landmarkAt('turtle'), PILLAR = landmarkAt('onepillar');
+  put(merge([P(new THREE.CylinderGeometry(2.4, 2.8, 3.4, 10), '#8a8a6a', [0, -1.6, 0]), P(new THREE.CylinderGeometry(2.6, 2.6, .2, 10), '#6f9a52', [0, .1, 0])]), TURTLE[0], TURTLE[1], 0, WATER - heightAt(...TURTLE) + .2);
+  world.colliders.push({ x: TURTLE[0], z: TURTLE[1], r: 2.6 });
   put(merge([P(Box(1.6, 1.2, 1.6), '#d8cdb6', [0, .8, 0]), P(Box(1.3, 1, 1.3), '#d8cdb6', [0, 1.9, 0]), P(Box(1, .9, 1), '#d8cdb6', [0, 2.85, 0]), P(new THREE.ConeGeometry(.9, .7, 4), '#8a7a5a', [0, 3.6, 0], [0, Math.PI / 4, 0]),
-    P(new THREE.SphereGeometry(.6, 8, 6), '#3f7d5c', [-1.6, .3, .5], [0, 0, 0], [1.4, .4, 1]), P(Box(.35, .7, .05), '#5a4a3a', [0, 1.9, .66])]), ...TURTLE);
+    P(new THREE.SphereGeometry(.6, 8, 6), '#3f7d5c', [-1.6, .3, .5], [0, 0, 0], [1.4, .4, 1]), P(Box(.35, .7, .05), '#5a4a3a', [0, 1.9, .66])]), TURTLE[0], TURTLE[1], 0, WATER - heightAt(...TURTLE) + .3);
   // Chùa Một Cột (One Pillar Pagoda) on its own little pond
   pond(...PILLAR, 4.4, 4.4);
   put(merge([P(Cyl(.25, .3, 1.8, 8), '#cfc3a6', [0, 1, 0]), P(Box(1.9, .2, 1.9), '#8a5a3b', [0, 1.95, 0]), P(Box(1.5, 1, 1.5), '#a24e3a', [0, 2.5, 0]),
     P(new THREE.ConeGeometry(1.6, .9, 4), '#5a4a3a', [0, 3.4, 0], [0, Math.PI / 4, 0]), ...[0, 1, 2, 3].map(k => P(new THREE.ConeGeometry(.12, .5, 4), '#5a4a3a', [Math.cos(k * 1.571 + .785) * 1.1, 3.1, Math.sin(k * 1.571 + .785) * 1.1], [0, 0, 0]))]), ...PILLAR);
-  // Chùa Cầu Hội An (covered bridge) over a small canal
-  pond(...CAU, 3, 5);
-  put(merge([P(Box(7, .3, 2.6), '#8a5a3b', [0, .9, 0]), ...[-3, -1, 1, 3].flatMap(x => [P(Box(.2, 1.8, .2), '#c0392b', [x, 1.9, 1.1]), P(Box(.2, 1.8, .2), '#c0392b', [x, 1.9, -1.1])])]), ...CAU, Math.PI / 2);
-  { const r = []; gable(r, 7, 2.6, 1, 2.8, '#a24e3a', '#e8c03a'); put(merge(r), ...CAU, Math.PI / 2); }
+  // (Chùa Cầu is the real covered footbridge over the Hội An canal now: js/world.js builds it from the map's bridges)
   // Bến Thành clock tower on the east end
   { const p = [P(Box(3, 6, 10), '#f2e6c2', [0, 3, 0]), P(Box(2.4, 3, 2.4), '#f2e6c2', [0, 7.5, 0]), P(new THREE.ConeGeometry(1.8, 1.4, 4), '#a24e3a', [0, 9.7, 0], [0, Math.PI / 4, 0]),
       P(Cyl(.8, .8, .1, 16), '#ffffff', [-1.22, 7.6, 0], [0, 0, Math.PI / 2]), P(Box(.05, .6, .08), '#333', [-1.3, 7.75, 0]), P(Box(.05, .08, .45), '#333', [-1.3, 7.6, .15]),
@@ -270,11 +270,12 @@ export function createRegions(G) {
   // Children must not be able to walk inside a landmark (the camera would end up inside its walls), and
   // the postcard spot stands outside on open ground, where the whole building can be seen.
   box(ox - 7, ox + 5, oz - 8, oz + 8); box(bx - 6, bx + 7, bz - 1, bz + 4); // the Opera House and the lifesavers' tower
-  const OUT = { opera: 11, bondi: 8, lighthouse: 6.5, banana: 8.5, turtle: 7, onepillar: 6.5, chuacau: 7, benthanh: 8 };
+  const OUT = { opera: 11, bondi: 8, lighthouse: 6.5, banana: 8.5, turtle: 10, onepillar: 6.5, chuacau: 7, benthanh: 8 };
   const clear = (x, z) => heightAt(x, z) > WATER + .4 && world.boxes.every(b => x < b.x0 - .8 || x > b.x1 + .8 || z < b.z0 - .8 || z > b.z1 + .8) && world.colliders.every(c => Math.hypot(c.x - x, c.z - z) > c.r + .8);
   for (const lm of LANDMARKS) {
     if (lm.id === 'uluru') { lm.mx = ULURU.x; lm.mz = ULURU.z; }
-    else if (lm.id === 'harbour') { lm.mx = lm.x; lm.mz = lm.z; lm.x = BRIDGE.a0 + 3.6; lm.z = BRIDGE.c + 5.7; } // on the street's south footpath by the bridge, not down in the river
+    else if (BRIDGES.some(B => B.landmark === lm.id)) { const B = BRIDGES.find(B => B.landmark === lm.id); lm.mx = lm.x; lm.mz = lm.z; // (round T2) on land by the bridge's far end, beside the road, not down in the river
+      const u = B.a1 + 3, v = B.w / 2 + 2.6; [lm.x, lm.z] = B.axis === 'z' ? [B.c + v, u] : [u, B.c + v]; }
     else if (OUT[lm.id]) {
       const a0 = Math.atan2(-lm.z, -lm.x); // start looking on the side facing the middle of the valley
       for (let r = OUT[lm.id]; r < OUT[lm.id] + 8; r += 2) {
