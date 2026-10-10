@@ -518,8 +518,8 @@ export function createWorld(scene, quality) {
     if (dv < VILLAGE.r - 4 && (Math.abs(x - VILLAGE.x) < 3 || Math.abs(z - VILLAGE.z) < 3 || Math.abs(dv - 14) < 2.2)) c.copy(C.dirt);
     const dh = dist2(x, z, HOME.x, HOME.z);
     if (dh < HOME.r - 4 && (Math.abs(x - HOME.x) < 2 || Math.abs(z - HOME.z) < 2)) c.copy(C.dirt);
-    // (round T3, Concept D) beyond the Great Dividing Range the ground turns the orange-red of the outback round Uluru
-    { const ob = smooth(-174, -192, x); if (ob > 0) c.lerp(C.outback, ob * .8); }
+    // (round T3, Concept D) beyond the Great Dividing Range, round Uluru, the ground turns the orange-red of the outback
+    { const ob = smooth(-174, -192, x) * smooth(-90, -60, z); if (ob > 0) c.lerp(C.outback, ob * .8); }   // (not under the bamboo forest or the snowy north)
     if (sl > 2.2) c.lerp(C.rock, clamp((sl - 2.2) / 1.5, 0, 1));
     if (h > 34) c.lerp(C.snow, clamp((h - 34) / 6, 0, 1));
     if (h < 1.6) c.copy(C.sand);
