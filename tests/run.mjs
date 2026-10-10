@@ -1819,17 +1819,15 @@ await check('gamelevel', async () => {
   r.after = await P.page.evaluate(() => ({ text: (document.querySelector('.gl:not(.out) .gl-lvl') || {}).textContent, saved: (__sv.heroes[0].profile.gameDiff || {}).counting, games: document.querySelectorAll('.gl:not(.out)').length }));
   await P.page.evaluate(() => document.querySelector('.gl:not(.out) .gl-x').click()); await P.page.waitForTimeout(500);
   // Festivals: in the main settings
-  // Festivals in one place (owner): the Settings festival page; the valley's decorations there behind press-and-hold; none in Grown-ups
+  // Festival calendar: only a calendar; no decorations choice in the game or in Grown-ups
   r.fest = await P.page.evaluate(async () => { const U = await import('/js/ui.js'), w = t => new Promise(r => setTimeout(r, t));
     U.openGrownups(); await w(300); const inGrown = !!document.querySelector('.seg.fest, select.fest-pick'); document.querySelectorAll('.modal').forEach(m => m.remove());
-    U.openFestivals(__sv, 0); await w(300); const before = !!document.querySelector('.festpick .seg.fest, .modal .seg.fest, .modal select.fest-pick'), hold = document.querySelector('.fest-hold');
-    hold.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await w(1900);
-    // (round R: 24 festivals, so the grown-ups pick from a list)
-    const seg = document.querySelector('.fest-grown select.fest-pick'); if (seg) { seg.value = 'tet'; seg.dispatchEvent(new Event('change', { bubbles: true })); } await w(200);
-    return { inGrown, before, after: !!seg, chosen: (await import('/js/state.js')).settings.festival }; });
+    // (bug #32, owner 11 Oct) the calendar is only a calendar: nothing to visit, no decorations choice in the game
+    U.openFestivals(__sv, 0); await w(300); before = !!document.querySelector('.modal select.fest-pick, .fest-hold, .fest-grown'), visit = document.querySelectorAll('.modal [data-fest]').length, rows = document.querySelectorAll('.modal .fcal-row').length;
+    return { inGrown, before, visit, rows }; });
   const errs = P.errors; await P.ctx.close();
-  ok(/Easy/.test(r.first.text) && r.first.h >= 44 && r.first.inside && r.choices.join() === 'easy,medium,hard' && /Hard/.test(r.after.text || '') && r.after.saved === 'hard' && r.after.games === 1 && !r.fest.inGrown && !r.fest.before && r.fest.after && r.fest.chosen === 'tet' && !errs.length, JSON.stringify({ r, errs }));
-  return 'Easy · Medium · Hard in the game bar (44 px, on screen at 390 px); Hard starts it again at Hard and is remembered; Festivals in one place: the Settings festival page, decorations behind press-and-hold';
+  ok(/Easy/.test(r.first.text) && r.first.h >= 44 && r.first.inside && r.choices.join() === 'easy,medium,hard' && /Hard/.test(r.after.text || '') && r.after.saved === 'hard' && r.after.games === 1 && !r.fest.inGrown && !r.fest.before && r.fest.visit === 0 && r.fest.rows > 0 && !errs.length, JSON.stringify({ r, errs }));
+  return 'Easy · Medium · Hard in the game bar (44 px, on screen at 390 px); Hard starts it again at Hard and is remembered; the festival calendar is only a calendar (nothing to visit, no decorations choice)';
 });
 
 await check('quiet', async () => {
