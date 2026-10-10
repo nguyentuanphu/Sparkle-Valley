@@ -63,6 +63,110 @@ for (const f of files.filter(f => f.startsWith('js/games/') || f === 'js/learn.j
 }
 return [...seen.values()].map(l => ({ en: l.en, vi: l.vi, from: [...l.files].join(',') }));
 }
+
+// ---------- (round R item 12) lines with changing words, recorded as parts ----------
+// say(`You found ${P.name}! Say hello!`, `…`): the fixed pieces ("You found", "Say hello!") are recorded on their own,
+// and so are the words that can fill a gap when the code names them (`${w ? 'blue' : 'red'}`) and the numbers 0–100.
+// The game finds the template a line was made from (manifest `tpl`) and plays the pieces in order; a gap filled with a
+// child's, friend's or pet's name is never recorded, so it is left out of what is spoken (HANDOFF rule 11).
+// read a JS string or template literal starting at src[i]: { end, pieces, exprs } (pieces.length = exprs.length + 1)
+function readLit(src, i) {
+  const q = src[i]; if (q !== "'" && q !== '"' && q !== '`') return null;
+  let j = i + 1, cur = ''; const pieces = [], exprs = [];
+  while (j < src.length) {
+    const c = src[j];
+    if (c === '\\') { const n = src[j + 1]; cur += n === 'n' ? ' ' : n; j += 2; continue; }
+    if (c === q) { pieces.push(cur); return { end: j + 1, pieces, exprs }; }
+    if (q !== '`' && c === '\n') return null;
+    if (q === '`' && c === '$' && src[j + 1] === '{') {
+      let k = j + 2, depth = 1; const start = k;
+      while (k < src.length && depth) {
+        const d = src[k];
+        if (d === "'" || d === '"' || d === '`') { const r = readLit(src, k); if (!r) return null; k = r.end; continue; }
+        if (d === '{') depth++; else if (d === '}') depth--;
+        k++;
+      }
+      exprs.push(src.slice(start, k - 1)); pieces.push(cur); cur = ''; j = k; continue;
+    }
+    cur += c; j++;
+  }
+  return null;
+}
+// the words of a piece that are worth saying on their own (js/packhash.js, shared with the game)
+export { partText } from '../js/packhash.js';
+// words a gap can be filled with that the code names: the two sides of a ternary (`${w ? 'blue' : 'red'}`)
+const fillWords = expr => { const out = [], re = /[?:]\s*('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")/g; let m; while ((m = re.exec(expr))) { const t = m[1].slice(1, -1).trim(); if (/\p{L}/u.test(t) && !/^[a-z_]+$/.test(t) || /\s/.test(t)) out.push(t); } return out; };
+const SAY = /\b(?:say|sayAsync|api\.say|\.say)\(\s*/g;
+// every say(en, vi) whose English or Vietnamese is a template literal with ${…}: { lang, pieces, fills, from }
+export function collectTemplates() {
+  const out = [], seen = new Set();
+  for (const f of files) {
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8'); SAY.lastIndex = 0; let m;
+    while ((m = SAY.exec(src))) {
+      const a = readLit(src, SAY.lastIndex); if (!a) continue;
+      let k = a.end; while (/\s/.test(src[k])) k++; if (src[k] !== ',') continue; k++; while (/\s/.test(src[k])) k++;
+      const b = readLit(src, k); if (!b) continue;
+      if (!a.exprs.length && !b.exprs.length) continue; // a plain line: collectLines() has it
+      for (const [lang, L] of [['en', a], ['vi', b]]) {
+        if (!L.pieces.some(p => /\p{L}/u.test(p))) continue;
+        const key = lang + '\u0000' + L.pieces.join('\u0001');
+        if (seen.has(key)) continue; seen.add(key);
+        out.push({ lang, pieces: L.pieces, fills: L.exprs.map(fillWords), from: f });
+      }
+    }
+  }
+  return out;
+}
+// say(…) calls whose words are not written in the call (a variable, a list, a function): their lines are built while
+// playing, so tools/voice-harvest.mjs collects them into tools/voice-extra.json; counted for the coverage check
+export function dynamicSays() {
+  const out = [];
+  for (const f of files) {
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8'); SAY.lastIndex = 0; let m;
+    while ((m = SAY.exec(src))) { const c = src[SAY.lastIndex]; if (c === "'" || c === '"' || c === '`' || c === ')') continue; if (/function\s+$|=>\s*$/.test(src.slice(Math.max(0, m.index - 12), m.index))) continue; out.push(f + ':' + (src.slice(0, m.index).split('\n').length)); }
+  }
+  return out;
+}
+// numbers said on their own ("4!", "You rolled 4") are recorded once each, 0–100
+export const NUMBERS = Array.from({ length: 101 }, (_, i) => String(i));
+
+// ---------- (round R item 12) which area each line belongs to ----------
+// The pack downloads area by area: a small core first (the start, home, Làng Sen, the menus, the Simple screen, the
+// commonest game lines), then on Wi-Fi the place the child is in, the places they have been, and the rest. Areas are
+// place ids (the game's regions: village, town, hanoi…), never positions; lines used everywhere go in games, stories,
+// festivals or world. Where a line was heard while playing (tools/voice-where.json) wins over the file it is in.
+export const GROUPS = ['core', 'games', 'stories', 'festivals', 'world'];
+const FILE_AREA = {
+  core: ['js/main.js', 'js/ui.js', 'js/simple.js', 'js/hud.js', 'js/content/activities.js', 'js/games/frame.js', 'js/kidplay.js', 'js/companion.js',
+    'js/extras.js', 'js/commands.js', 'js/lotus.js', 'js/lanterns.js', 'js/dinh.js', 'js/content/chapters.js', 'js/farm.js', 'js/pets.js',
+    'js/myhouse.js', 'js/install.js', 'js/players.js', 'js/parents.js', 'js/content/parents.js', 'js/report.js', 'js/popups.js'],
+  village: ['js/chatter.js', 'js/folkshow.js'],
+  town: ['js/town.js', 'js/yard.js', 'js/content/yard.js', 'js/homes.js'],
+  aussie: ['js/suburbs.js'],
+  lake: ['js/ferry.js'],
+  games: ['js/howto.js', 'js/learn.js', 'js/words.js', 'js/words2.js', 'js/symbols.js', 'js/vnfun.js', 'js/content/films.js', 'js/netgames.js', 'js/coop.js', 'js/twinchests.js'],
+  stories: ['js/talesdata.js', 'js/tales.js', 'js/story.js'],
+  festivals: ['js/festivals.js', 'js/content/festcal.js', 'js/hoilang.js', 'js/content/hoilang.js', 'js/content/songs.js', 'js/songs.js', 'js/content/releases.js']
+};
+const AREA_OF = new Map(Object.entries(FILE_AREA).flatMap(([a, fs]) => fs.map(f => [f, a])));
+export const areaOfFile = f => AREA_OF.get(f) || (f.startsWith('js/games/') ? 'games' : 'world');
+// the area of a line: the core wins (wherever else it is used), then where it was heard (the area most often, or a
+// game), then its file
+const RANK = a => a === 'core' ? 0 : a === 'world' ? 3 : GROUPS.includes(a) ? 2 : 1;
+export function areaOfLine(fromFiles, heard) {
+  const byFile = [...new Set(fromFiles.map(areaOfFile))].sort((a, b) => RANK(a) - RANK(b));
+  if (byFile[0] === 'core') return 'core';
+  if (heard) {
+    const games = Object.keys(heard.g || {}).length;
+    if (games >= 3) return 'core'; // said in many games: one of the commonest lines
+    const a = Object.entries(heard.a || {}).sort((x, y) => y[1] - x[1])[0];
+    if (a) return a[0];
+    if (games) return 'games';
+  }
+  return byFile[0] || 'world';
+}
+export function readWhere() { try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/voice-where.json'), 'utf8')); } catch (e) { return {}; } }
+
 if (process.argv[1] && process.argv[1].endsWith('voice-lines.mjs')) {
 const lines = collectLines();
 const chars = lines.reduce((a, l) => a + l.en.length + l.vi.length, 0);

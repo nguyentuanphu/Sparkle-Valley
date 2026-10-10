@@ -25,7 +25,8 @@ self.addEventListener('fetch', e => {
   // game keeps its own copy in the "sv-family" cache); nor anything else under api/
   if (url.pathname.includes('/api/')) return;
   // the voice pack: kept in its own cache (it survives game updates) and stored as lines are played
-  if (url.pathname.endsWith('/voices/manifest.json')) { // the saved list at once (slow phone data must never mean the phone's voice), refreshed behind
+  // (round R item 12) voices/areas.json, which lines download with which area, is kept the same way
+  if (url.pathname.endsWith('/voices/manifest.json') || url.pathname.endsWith('/voices/areas.json')) { // the saved list at once (slow phone data must never mean the phone's voice), refreshed behind
     e.respondWith(caches.open('sv-voices').then(c => c.match(req).then(hit => { const fresh = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }); if (hit) { e.waitUntil(fresh.catch(() => { })); return hit; } return fresh.catch(() => new Response('{}', { status: 404 })); })));
     return;
   }

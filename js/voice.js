@@ -1,9 +1,10 @@
 // Talking voice in English and Vietnamese using the device's own natural voices.
 // Premium/enhanced/neural voices are picked first; grown-ups can choose a voice in settings.
-import { settings, saveSettings } from './state.js';
+import { settings, saveSettings, profiles } from './state.js';
 import { ac, unlockers } from './audio.js';
 import { swapNames } from './i18n.js';
-import { packHash, lineHash } from './packhash.js';
+import { packHash, lineHash, partText } from './packhash.js';
+import { events } from './core/events.js';
 import { viRuns, mixed } from './viwords.js';
 import { CUSTOM } from './custom.js';
 
@@ -132,12 +133,14 @@ async function speak(en, vi) {
     if (my !== seq) return;
     if (window.__svVoiceLog) window.__svVoiceLog(lang, text, !!packSlot(lang, text)); // for tools/voice-harvest.mjs
     try { if (await playPack(lang, text, my)) continue; } catch (e) { }
+    // (round R item 12) a line with changing words (a number, an item, a name) is put together from its recorded parts
+    try { if (await playParts(lang, text, my)) continue; } catch (e) { }
     // Not recorded as a whole: recorded sentences inside it still play from the pack; only the rest uses another voice.
     const bits = sentences(text);
-    if (PACK && bits.length > 1 && bits.some(b => packSlot(lang, b))) {
+    if (PACK && bits.length > 1 && bits.some(b => packSlot(lang, b) || tplMatch(lang, b))) {
       for (const b of bits) {
         if (my !== seq) return;
-        let ok = false; try { ok = await playPack(lang, b, my); } catch (e) { }
+        let ok = false; try { ok = await playPack(lang, b, my) || await playParts(lang, b, my); } catch (e) { }
         if (!ok) { noteMiss(lang, b); await otherVoice(b, lang, my); }
       }
       continue;
@@ -146,6 +149,42 @@ async function speak(en, vi) {
     await otherVoice(text, lang, my);
   }
 }
+// ---------- (round R item 12) lines put together from recorded parts ----------
+// The pack lists the templates of lines with changing words (manifest `tpl`, from tools/voice-lines.mjs): the fixed
+// pieces are recorded on their own, and so are the numbers 0–100 and the words that fill a gap. A line that matches a
+// template plays its pieces and gaps in order. A gap with no recording that is a name (a child's, a friend's, a pet's)
+// is left out: names are never recorded and never spoken by another voice (HANDOFF rule 11); any other word with no
+// recording is said by the phone's voice and noted as missing.
+let TPLS = null;
+const esc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function tplMatch(lang, text) {
+  if (!PACK || !PACK.tpl || !PACK.tpl[lang]) return null;
+  TPLS = TPLS && TPLS.pack === PACK ? TPLS : { pack: PACK };
+  const list = TPLS[lang] || (TPLS[lang] = PACK.tpl[lang].map(ps => ({ ps, w: ps.join('').replace(/[^\p{L}]/gu, '').length, re: new RegExp('^\\s*' + ps.map(p => esc(p).replace(/\s+/g, '\\s*')).join('(.+?)') + '\\s*$', 'u') })).filter(t => t.w > 1).sort((a, b) => b.w - a.w));
+  const t = String(text).replace(/\s+/g, ' ').trim();
+  for (const x of list) {
+    const m = x.re.exec(t); if (!m) continue;
+    const parts = [];
+    x.ps.forEach((p, i) => { const q = partText(p); if (q) parts.push([0, q]); if (i < m.length - 1) { const f = m[i + 1].replace(/^[\s.,!?:;…'"“”()]+|[\s,:;'"“”()]+$/g, ''); if (/[\p{L}\d]/u.test(f)) parts.push([1, f]); } });
+    // only worth it when every fixed piece is recorded
+    if (parts.some(([k]) => !k) && parts.every(([k, q]) => k || packSlot(lang, q))) return parts;
+  }
+  return null;
+}
+// a gap word that is someone's name: one of this device's children, or one or two capitalised words with no recording
+const isName = w => (profiles || []).some(p => p && p.name && (p.name === w || p.name.replace(/^(Bé|Em|Little|Út)\s+/iu, '') === w)) || /^\p{Lu}[\p{L}'’-]*(\s\p{Lu}[\p{L}'’-]*)?$/u.test(w);
+async function playParts(lang, text, my) {
+  const parts = tplMatch(lang, text); if (!parts) return false;
+  for (const [, q] of parts) {
+    if (my !== seq) return true;
+    let ok = false; try { ok = await playPack(lang, q, my); } catch (e) { }
+    if (ok || isName(q)) continue;
+    noteMiss(lang, q); await otherVoice(q, lang, my);
+  }
+  return true;
+}
+// (for the checks: what a line would be made of)
+export const lineParts = (lang, text) => tplMatch(lang, swapNames(text, lang));
 const sentences = text => (String(text).match(/[^.!?。…]+[.!?。…]*\s*/g) || [text]).map(t => t.trim()).filter(Boolean);
 // (round R privacy, 9 Oct) no recording: the phone's own voice, never an online speech service
 async function otherVoice(text, lang, my) { await deviceSpeak(text, lang, my); }
@@ -270,10 +309,15 @@ const loadPack = () => packReady || (packReady = fetch('voices/manifest.json').t
 for (const ev of ['pointerdown', 'keydown', 'touchstart']) addEventListener(ev, loadPack, { once: true, capture: true, passive: true });
 setTimeout(loadPack, 8000);
 const waitPack = () => PACK || packTried ? null : Promise.race([loadPack(), new Promise(r => setTimeout(r, 12000))]);
-// Keep the whole pack on the device by itself: a few seconds after the game opens (every time it opens), the voice
-// cache is checked against the list, and any file not there yet (first visit, a new pack, or a phone that cleared
-// space) is downloaded quietly, the child's own language first. A small bar shows it (js/packbar.js); every line
-// then plays with the recorded voice, offline too.
+// Keep the pack on the device by itself: a few seconds after the game opens (every time it opens), the voice cache is
+// checked against the list, and any file not there yet (first visit, a new pack, or a phone that cleared space) is
+// downloaded quietly. A small bar shows it (js/packbar.js); every line then plays with the recorded voice, offline too.
+// (round R item 12, owner 10 Oct: "wifi should automatically, ask user to allow download over mobile") only the
+// languages this family's children hear are downloaded; a small core (the start, home, Làng Sen, the menus, the Simple
+// screen, the commonest game lines) comes first on any connection, then on Wi-Fi the rest area by area (voices/areas.json,
+// made by tools/make-voice-pack.mjs): the place the child is in, the places they have been, games, stories, festivals,
+// the other places. On mobile data a grown-up is asked first (press and hold); the answer is kept, and Grown-ups can
+// change it. A line not downloaded yet still plays its recording from the internet (and is kept).
 const packListeners = []; let packLast = null;
 export const onPackProgress = f => { packListeners.push(f); if (packLast) try { f(packLast); } catch (x) { } }; // (a late listener hears where it is now)
 const packEmit = e => { packLast = e; packListeners.forEach(f => { try { f(e); } catch (x) { } }); };
@@ -282,7 +326,57 @@ function autoSavePack() {
   if (!('caches' in window)) { setTimeout(() => packEmit({ state: 'nostore', total: packFiles().length }), 3000); return; }
   if (settings.autoPack === false) return;
   setTimeout(() => { checkPack().catch(() => { }); }, 6000);
-  addEventListener('online', () => { checkPack().catch(() => { }); });
+  let againT = 0; const again = () => { clearTimeout(againT); againT = setTimeout(() => checkPack().catch(() => { }), 1500); };
+  addEventListener('online', again);
+  try { const c = navigator.connection; if (c && c.addEventListener) c.addEventListener('change', again); } catch (e) { } // (onto Wi-Fi: the rest goes on)
+  events.on('LanguageChanged', again); // (a new language, or both spoken: its core, then its areas)
+  events.on('SettingsChanged', again);
+}
+// the languages this device's children hear: the game's language, and the other one too when both are spoken
+export const packLangs = () => { const L = [settings.lang === 'vi' ? 'vi' : 'en']; if (settings.bilingual) L.push(L[0] === 'vi' ? 'en' : 'vi'); return L; };
+// 'wifi', 'mobile' or 'off'. iPhones, iPads and most computers can't tell: a computer counts as Wi-Fi (or a cable), a
+// phone or tablet as mobile data, so a grown-up is asked once (owner, 10 Oct)
+export function packNet() {
+  if (navigator.onLine === false) return 'off';
+  const c = navigator.connection, t = c && c.type;
+  if (c && c.saveData) return 'mobile';
+  if (t === 'wifi' || t === 'ethernet') return 'wifi';
+  if (t === 'cellular' || t === 'wimax' || t === 'bluetooth') return 'mobile';
+  let touch = false; try { touch = matchMedia('(pointer: coarse)').matches; } catch (e) { }
+  return touch ? 'mobile' : 'wifi';
+}
+// may the rest (beyond the core) download now? On Wi-Fi yes; on mobile data only once a grown-up said yes
+const mayFetchRest = () => packNet() === 'wifi' || settings.packCell === true;
+// a grown-up's answer to "download the rest on mobile data?": yes (kept), or not now (asked again in a week)
+export function allowMobilePack(yes) {
+  if (yes) { settings.packCell = true; delete settings.packAskAt; } else { settings.packCell = false; settings.packAskAt = Date.now(); }
+  saveSettings(); if (yes) checkPack().catch(() => { });
+}
+const askDue = () => settings.packCell !== true && (settings.packCell !== false || Date.now() - (settings.packAskAt || 0) > 7 * 864e5);
+// the area the child is in (a place id, from the event bus: never a position) and the places the children have been
+let hereArea = null;
+events.on('PlayerEnteredVillage', e => { const a = String(e && e.villageId || '').split(':')[1]; if (a) hereArea = a; });
+let AREAS = null, areasTried = null;
+const loadAreas = () => areasTried || (areasTried = fetch('voices/areas.json').then(r => r.ok ? r.json() : null).then(j => { AREAS = j && j.groups ? j : null; }).catch(() => { }).finally(() => { if (!AREAS) areasTried = null; })); // (tried again next time if it failed)
+let groupOfHash = null;
+// which area each line downloads with; a line not listed (added later in Studio) goes with 'world'. With no areas list
+// (an older pack) everything is the core, as before.
+function groupOf(h) {
+  if (!AREAS) return 'core';
+  if (!groupOfHash) { groupOfHash = new Map(); for (const [g, hs] of Object.entries(AREAS.groups)) for (const x of String(hs).split(' ')) if (x) groupOfHash.set(x, g); }
+  return groupOfHash.get(h) || 'world';
+}
+const NOT_PLACES = ['core', 'games', 'stories', 'festivals', 'world'];
+// the order the areas download in: the core, where the child is, where the children have been, the games, stories and
+// festivals, the other places, and last the lines that belong nowhere in particular
+export function packOrder() {
+  const all = AREAS ? Object.keys(AREAS.groups) : ['core'], out = [], add = g => { if (all.includes(g) && !out.includes(g)) out.push(g); };
+  add('core'); if (hereArea) add(hereArea);
+  const seen = {}; for (const p of profiles || []) for (const k of Object.keys((p && p.visited) || {})) seen[k] = (seen[k] || 0) + 1;
+  Object.keys(seen).sort((a, b) => seen[b] - seen[a]).forEach(add);
+  ['games', 'stories', 'festivals'].forEach(add);
+  all.filter(g => !NOT_PLACES.includes(g)).forEach(add); add('world'); all.forEach(add);
+  return out;
 }
 let checking = false;
 async function checkPack() {
@@ -291,35 +385,74 @@ async function checkPack() {
     const cache = await caches.open('sv-voices');
     // (round O, owner: "does it load the voice pack every time? it should be once, unless there are new voices") once
     // the whole pack is on the device, a start only looks at 16 files picked at random, says nothing and downloads
-    // nothing; the full check (listing all ~8,000 files) runs only for a new pack, or when a file has gone missing
-    if (settings.packSaved === packSig()) {
-      const all = packFiles(), pick = all.length <= 64 ? all : Array.from({ length: 16 }, () => all[Math.floor(Math.random() * all.length)]);
-      const found = await Promise.all(pick.map(u => cache.match(u).then(Boolean)));
-      if (found.every(Boolean)) { packEmit({ state: 'ready', quiet: true, known: true, total: all.length }); return; }
+    // nothing; the full check (listing every file) runs only for a new pack, or when a file has gone missing
+    const quick = async list => { const pick = list.length <= 64 ? list : Array.from({ length: 16 }, () => list[Math.floor(Math.random() * list.length)]); return (await Promise.all(pick.map(u => cache.match(u).then(Boolean)))).every(Boolean); };
+    if (packIsSaved() && await quick(packFiles())) { packEmit({ state: 'ready', quiet: true, known: true, total: packFiles().length }); return; }
+    await loadAreas();
+    // a pack made by area whose list could not be fetched (a bad connection): nothing is downloaded until it can be,
+    // so a phone on mobile data never takes the whole pack by mistake
+    if (PACK.areas && !AREAS) return;
+    const order = packOrder(), core = packFiles(['core']);
+    // only the core is wanted for now (mobile data, no yes yet) and it is all here: nothing to show, maybe a question
+    if (!mayFetchRest() && settings.packCore === packSig() + '|' + packLangs().join('') && await quick(core)) { packEmit({ state: 'ready', quiet: true, known: true, core: true, total: core.length }); askRest().catch(() => { }); return; }
+    const have = new Set((await cache.keys()).map(r => r.url)), abs = u => new URL(u, location.href).href;
+    const missingOf = gs => packFiles(gs).filter(u => !have.has(abs(u)));
+    const want = mayFetchRest() ? order : ['core'];
+    let total = missingOf(want).length, done = 0;
+    if (!total) { donePack(want); packEmit({ state: 'ready', quiet: true, total: packFiles(want).length, core: want.length === 1 }); if (want.length === 1) askRest().catch(() => { }); return; }
+    if (navigator.onLine === false) { packEmit({ state: 'waiting', left: total }); return; }
+    packEmit({ state: 'loading', done, total });
+    // one area at a time, the next chosen again after each (the child may have walked somewhere new meanwhile)
+    const left = new Set(want);
+    while (left.size) {
+      const g = packOrder().find(x => left.has(x)) || [...left][0]; left.delete(g);
+      if (g !== 'core' && !mayFetchRest()) break; // (left the Wi-Fi: the rest waits)
+      const miss = missingOf([g]);
+      for (let i = 0; i < miss.length; i += 6) {
+        await Promise.all(miss.slice(i, i + 6).map(async u => { try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); have.add(abs(u)); done++; } } catch (e) { } }));
+        packEmit({ state: 'loading', done, total, area: g });
+        if (navigator.onLine === false) { packEmit({ state: 'waiting', left: total - done }); return; } // goes on when the internet is back
+      }
+      if (g === 'core' && !missingOf(['core']).length) settings.packCore = packSig() + '|' + packLangs().join('');
     }
-    const have = new Set((await cache.keys()).map(r => r.url));
-    const missing = packFiles().filter(u => !have.has(new URL(u, location.href).href));
-    if (!missing.length) { settings.packSaved = packSig(); saveSettings(); packEmit({ state: 'ready', quiet: true, total: packFiles().length }); return; }
-    if (navigator.onLine === false) { packEmit({ state: 'waiting', left: missing.length }); return; }
-    let done = 0; packEmit({ state: 'loading', done, total: missing.length });
-    for (let i = 0; i < missing.length; i += 6) {
-      await Promise.all(missing.slice(i, i + 6).map(async u => { try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); done++; } } catch (e) { } }));
-      packEmit({ state: 'loading', done, total: missing.length });
-      if (navigator.onLine === false) { packEmit({ state: 'waiting', left: missing.length - done }); return; } // goes on when the internet is back
-    }
-    if (done >= missing.length) { settings.packSaved = packSig(); saveSettings(); packEmit({ state: 'ready' }); } else packEmit({ state: 'waiting', left: missing.length - done });
+    if (!missingOf(want).length) { donePack(want); packEmit({ state: 'ready', core: want.length === 1 }); if (want.length === 1) askRest().catch(() => { }); }
+    else if (!mayFetchRest() && !missingOf(['core']).length) { saveSettings(); packEmit({ state: 'ready', core: true }); askRest().catch(() => { }); }
+    else packEmit({ state: 'waiting', left: missingOf(want).length });
   } finally { checking = false; }
 }
+function donePack(want) {
+  if (want.length === 1) settings.packCore = packSig() + '|' + packLangs().join('');
+  else { settings.packSaved = packSig(); settings.packLangs = packLangs().join(''); settings.packCore = packSig() + '|' + packLangs().join(''); }
+  saveSettings();
+}
+// the whole pack is here for these languages (a device that saved it before round R item 12 kept every language)
+const packIsSaved = () => settings.packSaved === packSig() && (!settings.packLangs || packLangs().every(L => settings.packLangs.includes(L)));
+// on mobile data with the core done: ask a grown-up about the rest (js/packbar.js shows the question)
+async function askRest() {
+  if (mayFetchRest() || !askDue() || packNet() === 'off') return;
+  const rest = packOrder().filter(g => g !== 'core'); if (!rest.length) return;
+  // how much is still to come (a device that kept an older pack has most of it already)
+  const all = packFiles(rest); if (!all.length) return;
+  const have = new Set((await (await caches.open('sv-voices')).keys()).map(r => r.url)), miss = all.filter(u => !have.has(new URL(u, location.href).href)).length;
+  if (!miss) return;
+  let bytes = 0; for (const g of rest) for (const L of packLangs().concat(['zh', 'hi'])) bytes += (AREAS && AREAS.size && AREAS.size[g] && AREAS.size[g][L]) || 0;
+  packEmit({ state: 'ask', mb: Math.max(1, Math.round(bytes * miss / all.length / 1048576)) });
+}
 const packSig = () => Object.keys(PACK.lines).length + ':' + (PACK.version || 1) + ':' + (PACK.made || '');
-// every file of the pack, the child's own language first
-function packFiles() {
-  const urls = [], langs = ['en', 'vi', 'zh', 'hi'];
+// the files of the pack in these areas (all areas when none are named), in the children's own languages (Chinese and
+// Hindi only come with the places and games that speak them)
+function packFiles(groups) {
+  const urls = [], langs = ['en', 'vi', 'zh', 'hi'], mine = packLangs(), want = groups && new Set(groups);
   // (round R) which language each line is in: `other` lists the lines that are not English, space-separated per
   // language (half the size of the old `langOf`, which named every line's language; older packs still have that)
   const other = new Map(); for (const [L, hs] of Object.entries(PACK.other || {})) for (const h of String(hs).split(' ')) if (h) other.set(h, L);
   const langOf = h => (PACK.langOf && PACK.langOf[h]) || other.get(h) || (PACK.other ? 'en' : null);
-  for (const [h, slots] of Object.entries(PACK.lines)) { const L1 = langOf(h); for (const s of slots) for (const L of L1 ? [L1] : langs) urls.push(`voices/${L}/${s}/${h}.mp3`); }
-  const mine = settings.lang === 'vi' ? 'voices/vi/' : 'voices/en/'; urls.sort((a, b) => b.startsWith(mine) - a.startsWith(mine));
+  for (const [h, slots] of Object.entries(PACK.lines)) {
+    if (want && !want.has(groupOf(h))) continue;
+    const L1 = langOf(h);
+    for (const s of slots) for (const L of L1 ? [L1] : langs) if (!(L === 'en' || L === 'vi') || mine.includes(L)) urls.push(`voices/${L}/${s}/${h}.mp3`);
+  }
+  const first = 'voices/' + mine[0] + '/'; urls.sort((a, b) => b.startsWith(first) - a.startsWith(first));
   return urls;
 }
 // an English line with Vietnamese words has its own recording with both voices (js/packhash.js lineHash); an older pack

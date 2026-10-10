@@ -18,9 +18,10 @@ Format for a request:
 - (nothing open)
 
 ## Kid UI
-- (nothing open)
+- [ ] (Voice & Audio → Kid UI) for your notes: Grown-ups → voices has one new switch, "Download the rest of the voices on mobile data too" (`#gPackCell`, `settings.packCell`), and `js/packbar.js` shows a small card when the core voices are in on mobile data (Yes is press and hold, Not now). Owner's decision 10 Oct. Files: `js/ui.js` packStatusHTML / bindPackStatus · 10 Oct AEST
 
 ## Voice & Audio
+- Voice pack by area (round R item 12) on `claude/determined-brown-k9esi5`: core 5–8 MB, the rest by area on Wi-Fi, mobile data after a grown-up's yes, lines from parts, checks `voicecover` and `voicearea`. Release: bump the version when merging.
 - Lullabies with real voices: the owner may paste titles or words (soha.vn could not be reached), or record them in Studio → Music.
 
 ## Online
@@ -30,4 +31,4 @@ Format for a request:
 - (nothing open)
 
 ## Analytics & Infra
-- (nothing open)
+- [ ] (Voice & Audio → Analytics & Infra) for your notes: `sw.js` keeps `voices/areas.json` in the `sv-voices` cache like `voices/manifest.json` (voice pack by area, round R item 12). No new file in FILES, no version bump. · 10 Oct AEST

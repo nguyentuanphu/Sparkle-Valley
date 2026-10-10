@@ -26,7 +26,7 @@
 // Keep the key secret: it is only used for this run and is never written into the game.
 import fs from 'fs';
 import path from 'path';
-import { collectLines } from './voice-lines.mjs';
+import { collectLines, collectTemplates, partText, NUMBERS, areaOfLine, areaOfFile, readWhere, GROUPS, dynamicSays } from './voice-lines.mjs';
 
 globalThis.document = { documentElement: {} };            // i18n.js expects a browser
 globalThis.localStorage = { getItem: () => null, setItem: () => { } };
@@ -52,20 +52,46 @@ const CAST = { en: ['f', 'm'], vi: ['f', 'm'], zh: ['m'], hi: ['m'] };
 const LANG_NAME = { en: 'English', vi: 'Vietnamese', zh: 'Chinese', hi: 'Hindi' };
 
 // ---------- what to say ----------
-const jobs = [];
+// (round R item 12) every line also gets the area it downloads with (tools/voice-lines.mjs areaOfLine)
+const jobs = [], where = readWhere(), heard = (lang, text) => where[lang + '|' + text];
 for (const l of collectLines()) {
-  jobs.push({ lang: 'en', text: swapNames(l.en, 'en') });   // exactly what the game says (js/voice.js speak)
-  jobs.push({ lang: 'vi', text: swapNames(l.vi, 'vi') });
+  const from = l.from.split(',');
+  for (const [lang, t] of [['en', l.en], ['vi', l.vi]]) { const text = swapNames(t, lang); jobs.push({ lang, text, area: areaOfLine(from, heard(lang, text)) }); } // exactly what the game says (js/voice.js speak)
 }
-for (const [lang, L] of Object.entries(LEARN)) for (const w of L.words) jobs.push({ lang, text: w[3] });
+for (const [lang, L] of Object.entries(LEARN)) for (const w of L.words) jobs.push({ lang, text: w[3], area: 'games' });
 // Chinese and Hindi sayings taught at the kiosks (js/cities.js: [words, meaning en, meaning vi, 'zh' | 'hi'])
 {
   const src = fs.readFileSync(path.join(ROOT, 'js/cities.js'), 'utf8'), re = /\['([^'\\]+)', '(?:[^'\\]|\\.)*', '(?:[^'\\]|\\.)*', '(zh|hi)'\]/g; let m;
-  while ((m = re.exec(src))) jobs.push({ lang: m[2], text: m[1] });
+  while ((m = re.exec(src))) jobs.push({ lang: m[2], text: m[1], area: m[2] === 'zh' ? 'china' : 'india' });
 }
+// (round R item 12) lines with changing words, recorded as parts: the fixed pieces, the words the code names for a gap,
+// and the numbers 0–100 (the game puts them together: js/voice.js playParts). The templates go into the manifest.
+const TPL = { en: [], vi: [] };
+// the test players' names (tests/harness.mjs) are a child's name: never recorded, even if a harvested line had one
+const CHILD = /\b(Na|Bin|Kiwi)\b/;
+const tplRe = pieces => new RegExp('^\\s*' + pieces.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*')).join('(.+?)') + '\\s*$', 'u');
+const tplParts = [];
+for (const t of collectTemplates()) {
+  const pieces = t.pieces.map(p => swapNames(p, t.lang)), area = areaOfFile(t.from);
+  if (!pieces.some(p => /\p{L}/u.test(p))) continue;
+  TPL[t.lang].push(pieces); tplParts.push({ lang: t.lang, pieces, re: tplRe(pieces), area });
+  for (const p of pieces) { const x = partText(p); if (x) jobs.push({ lang: t.lang, text: x, area, part: true }); }
+  for (const opts of t.fills) for (const w of opts) jobs.push({ lang: t.lang, text: swapNames(w, t.lang), area, part: true });
+}
+for (const lang of ['en', 'vi']) for (const n of NUMBERS) jobs.push({ lang, text: n, area: +n <= 20 ? 'core' : 'games', part: true });
 // lines built while playing (names, numbers, colours…), collected by tools/voice-harvest.mjs or sent from devices via Sparkle Studio
-try { for (const l of JSON.parse(fs.readFileSync(new URL('./voice-extra.json', import.meta.url), 'utf8'))) if (l && CAST[l.lang] && l.text) jobs.push({ lang: l.lang, text: String(l.text) }); } catch (e) { }
-const uniq = new Map(); jobs.forEach(j => uniq.set(lineHash(j.lang, j.text), j));
+try {
+  for (const l of JSON.parse(fs.readFileSync(new URL('./voice-extra.json', import.meta.url), 'utf8'))) {
+    if (!l || !CAST[l.lang] || !l.text) continue;
+    const text = String(l.text);
+    jobs.push({ lang: l.lang, text, area: areaOfLine([], heard(l.lang, text)) });
+    // a harvested line made from a template gives the words that filled its gaps (a colour, a dish, a place): recorded as parts
+    for (const t of tplParts) { if (t.lang !== l.lang) continue; const m = t.re.exec(text); if (!m) continue; for (const w of m.slice(1)) { const x = partText(w); if (x && !CHILD.test(x) && x.length < 60) jobs.push({ lang: l.lang, text: x, area: t.area, part: true }); } break; }
+  }
+} catch (e) { }
+// one job per recording; a line used in several areas downloads with the first it is needed in (the core first)
+const RANK = a => a === 'core' ? 0 : a === 'world' ? 3 : GROUPS.includes(a) ? 2 : 1;
+const uniq = new Map(); jobs.forEach(j => { const h = lineHash(j.lang, j.text), o = uniq.get(h); if (!o || RANK(j.area) < RANK(o.area)) uniq.set(h, j); });
 const list = [...uniq.entries()];
 
 // ---------- the cost ----------
@@ -90,6 +116,49 @@ console.log(`  In all: ${files.length} files, ${chars} characters = about ${Math
 console.log(`  Still to make: ${missing.length} files, ${need} characters (about ${Math.ceil(need * RATE)} credits).`);
 }
 console.log(`  Size: about ${Math.round(chars * 0.075 * 4 / 1024)} MB of MP3 (32 kbps).`);
+// ---------- (round R item 12) the areas ----------
+// voices/areas.json: which lines download with which area (place ids, plus core, games, stories, festivals, world) and
+// how big each area is per language, so the game can download the core first and the rest area by area on Wi-Fi.
+// It is read only while the pack is downloading, so the list fetched at start-up (manifest.json) stays small.
+function writeAreas(man, dry) {
+  const groups = {}, size = {};
+  for (const [h, j] of list) {
+    if (!man.lines[h]) continue;
+    (groups[j.area] = groups[j.area] || []).push(h);
+    const z = size[j.area] = size[j.area] || {};
+    for (const sl of man.lines[h]) { try { z[j.lang] = (z[j.lang] || 0) + fs.statSync(path.join(PACK_DIR, j.lang, sl, h + '.mp3')).size; } catch (e) { } }
+  }
+  const order = Object.keys(groups).sort((a, b) => (a === 'core' ? -1 : b === 'core' ? 1 : 0) || a.localeCompare(b));
+  if (!dry) fs.writeFileSync(path.join(PACK_DIR, 'areas.json'), JSON.stringify({ made: man.made, groups: Object.fromEntries(order.map(a => [a, groups[a].join(' ')])), size: Object.fromEntries(order.map(a => [a, size[a]])) }));
+  const mb = n => ((n || 0) / 1048576).toFixed(1);
+  console.log('Areas (MB of recordings: English, Vietnamese, Chinese, Hindi):');
+  for (const a of order) console.log(`  ${a.padEnd(10)} ${String(groups[a].length).padStart(5)} lines  en ${mb(size[a].en).padStart(5)}  vi ${mb(size[a].vi).padStart(5)}  zh ${mb(size[a].zh)}  hi ${mb(size[a].hi)}`);
+}
+if (flag('sizes')) { writeAreas(JSON.parse(fs.readFileSync(MAN, 'utf8')), true); process.exit(0); } // (only print the areas' sizes)
+if (flag('areas')) {
+  // rewrite the templates and the areas for the recordings already made (no key needed)
+  const man = JSON.parse(fs.readFileSync(MAN, 'utf8')); man.tpl = TPL; man.areas = 1;
+  fs.writeFileSync(MAN, JSON.stringify(man)); writeAreas(man); process.exit(0);
+}
+// (round R item 12) the coverage check (tests: voicecover): every line the game can speak has its recordings, in the
+// pack's list and in an area; what can't be listed in advance is counted with its reason
+if (flag('cover')) {
+  const man = JSON.parse(fs.readFileSync(MAN, 'utf8')), areas = JSON.parse(fs.readFileSync(path.join(PACK_DIR, 'areas.json'), 'utf8'));
+  const inArea = new Set(Object.values(areas.groups).flatMap(hs => String(hs).split(' ')));
+  const bad = [];
+  for (const [h, j] of list) {
+    const want = CAST[j.lang].filter(sl => !String(man.lines[h] || '').includes(sl) || !fs.existsSync(path.join(PACK_DIR, j.lang, sl, h + '.mp3')));
+    if (want.length) bad.push(`not recorded (${j.lang} ${want.join('')}${j.part ? ', a part' : ''}): ${j.text.slice(0, 80)}`);
+    else if (!inArea.has(h)) bad.push(`in no area (${j.lang}): ${j.text.slice(0, 80)}`);
+  }
+  const tpl = (man.tpl && (man.tpl.en || []).length + (man.tpl.vi || []).length) || 0;
+  if (!tpl) bad.push('the manifest lists no templates (run --areas)');
+  const dyn = dynamicSays(), parts = list.filter(([, j]) => j.part).length;
+  const res = { lines: list.length - parts, parts, templates: tpl, areas: Object.keys(areas.groups).length,
+    reasons: { 'built while playing (say with a variable): collected by tools/voice-harvest.mjs into tools/voice-extra.json': dyn.length, 'a child\'s, friend\'s or pet\'s name: shown, never recorded or spoken (HANDOFF rule 11)': 'every gap that is a name' }, bad };
+  console.log(JSON.stringify(res));
+  process.exit(bad.length ? 1 : 0);
+}
 if (flag('count')) process.exit(0);
 if (!KEY) { console.error(ENGINE === 'azure' ? 'Add your Azure Speech key and region: --key <KEY 1> --region <Location/Region>. Use --count to see the cost without a key.' : 'Add your key: --key sk_... (or set ELEVEN_KEY). Use --count to see the cost without a key.'); process.exit(1); }
 if (ENGINE === 'azure') { await azure(); process.exit(0); }
@@ -129,7 +198,7 @@ for (const [L, slots] of Object.entries(CAST)) { voices[L] = {}; for (const s of
 console.log('Voices:'); for (const [L, v] of Object.entries(voices)) console.log(`  ${LANG_NAME[L]}: ` + Object.entries(v).map(([s, x]) => `${s === 'f' ? 'woman' : 'man'} ${x.name} (${x.id})`).join(', '));
 
 // ---------- make the files ----------
-const man = { version: 2, model: MODEL, made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, other: {} };
+const man = { version: 2, model: MODEL, made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, other: {}, tpl: TPL, areas: 1 };
 const save = () => { fs.mkdirSync(PACK_DIR, { recursive: true }); fs.writeFileSync(MAN, JSON.stringify(man)); };
 man.other = otherOf(list); // (the lines that are not English, per language; English is the default)
 // what exists on disk is the truth
@@ -155,7 +224,7 @@ async function make([slot, h, j]) {
 }
 const queue = missing.slice(0, limit);
 await Promise.all(Array.from({ length: 3 }, async () => { while (queue.length) await make(queue.shift()); }));
-save();
+save(); writeAreas(man);
 console.log(`Finished: ${done} new files (${used} characters). The pack is in voices/ — include that folder when you publish the game (./build-netlify.sh does).`);
 
 // ---------- Microsoft Azure ----------
@@ -167,7 +236,7 @@ async function azure() {
   console.log('Voices:'); for (const [L, v] of Object.entries(voices)) console.log(`  ${LANG_NAME[L]}: ` + Object.entries(v).map(([sl, x]) => `${sl === 'f' ? 'woman' : 'man'} ${x.id}`).join(', '));
   const xml = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const LOCALE = { en: 'en-AU', vi: 'vi-VN', zh: 'zh-CN', hi: 'hi-IN' };
-  const man = { version: 2, engine: 'azure', made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, other: otherOf(list) };
+  const man = { version: 2, engine: 'azure', made: new Date().toISOString().slice(0, 10), cast: CAST, voices, lines: {}, other: otherOf(list), tpl: TPL, areas: 1 };
   const save = () => { fs.mkdirSync(PACK_DIR, { recursive: true }); fs.writeFileSync(MAN, JSON.stringify(man)); };
   for (const [h, j] of list) { for (const sl of CAST[j.lang]) if (fs.existsSync(path.join(PACK_DIR, j.lang, sl, h + '.mp3'))) man.lines[h] = (man.lines[h] || '') + sl; }
   const limit = +arg('limit', 1e9), queue = missing.slice(0, limit), gap = 60000 / perMin;
@@ -196,6 +265,6 @@ async function azure() {
   let gone = 0;
   for (const [h, j] of list) if (j.lang === 'en' && h !== packHash('en', j.text) && CAST.en.every(sl => fs.existsSync(path.join(PACK_DIR, 'en', sl, h + '.mp3'))))
     for (const sl of CAST.en) { const f = path.join(PACK_DIR, 'en', sl, packHash('en', j.text) + '.mp3'); if (fs.existsSync(f)) { fs.unlinkSync(f); gone++; } }
-  save();
+  save(); writeAreas(man);
   console.log(`Finished: ${done} new files (${used} characters)${gone ? `, ${gone} old all-English files of mixed lines removed` : ''}. The pack is in voices/ — include that folder when you publish the game (./build-netlify.sh does).`);
 }

@@ -22,6 +22,26 @@ and noted as missing (`sv2_voicemiss`), which reaches Studio's voice inbox in th
 online-voice cache (IndexedDB `sparkle-valley-tts`) is deleted. Studio's own Azure making (`tools/make-voice-pack.mjs`,
 the voice inbox in `studio/core.cjs`) is unchanged. Family recordings stay on the device.
 
+## The pack by area (round R item 12)
+- **Own language only:** a device downloads the languages its children hear (the game's language, and the other one
+  too when both are spoken); Chinese and Hindi come only with the places and games that speak them.
+- **A core of 5–8 MB per language** downloads first on any connection: the start, home, Làng Sen, the menus, the
+  Simple screen, numbers 0–20 and the lines said in three or more games.
+- **The rest area by area:** `voices/areas.json` (made by `tools/make-voice-pack.mjs`, `--areas` rewrites it without a
+  key) lists which lines download with which area: place ids (`village`, `town`, `hanoi`…) and `games`, `stories`,
+  `festivals`, `world`. Where a line was heard while playing (`tools/voice-where.json`, written by
+  `tools/voice-harvest.mjs`) wins over the file it is written in (`tools/voice-lines.mjs` FILE_AREA). The order: the
+  place the child is in (from the event bus, never a position), places the children have been, games, stories,
+  festivals, the other places, the rest.
+- **Wi-Fi by itself, mobile data after a grown-up's yes** (owner, 10 Oct): `js/packbar.js` asks once the core is in
+  (Yes is a press and hold; Not now asks again in a week); Grown-ups → voices has the same switch (`packCell`). A phone
+  or tablet that can't tell (iPhone, iPad) counts as mobile data; a computer that can't tell counts as Wi-Fi.
+- **Lines from parts:** `say()` lines with `${…}` are templates (manifest `tpl`); their fixed pieces, the words the code
+  names for a gap, the gap words found in harvested lines, and the numbers 0–100 are recorded as parts, and
+  `js/voice.js` plays them in order. A gap that is a name is never recorded and is left out (HANDOFF rule 11).
+- After new lines: `node tools/voice-harvest.mjs`, then `node tools/make-voice-pack.mjs --engine azure` (it rewrites
+  the manifest and `voices/areas.json`), then the `voicecover` check.
+
 ## Hard rules (§9.6)
 VOICE-001…003: the recorded voice is the voice (the device voice only for lines with a name in them); the pack is
 downloaded to the device by itself with a small quiet bar; once on the device a start checks a few files and shows
@@ -29,7 +49,7 @@ nothing; it plays offline. PRIV rules for family recordings; PRIV-010 (no online
 device).
 
 ## Checks you run
-`voice voicepack welcomevoice songs quiet`
+`voice voicepack welcomevoice songs quiet voicecover voicearea`
 
 ## Talks to
 - **Every core** that adds a line a child hears: they list it on the board; you record it.
@@ -42,3 +62,7 @@ device).
 - Silence in the background (switching app, locked phone) (round M).
 - Load the voice pack once; only new voices are downloaded (round O, battery).
 - Hát ru: traditional words over original soft tunes until the family adds real recordings (round N).
+- Voice pack by area (10 Oct): on Wi-Fi the rest of the voices download by themselves; on mobile data a grown-up is
+  asked first ("ask user to allow download over mobile, wifi should automatically"). A device that can't tell (iPhone,
+  iPad) is asked too; a computer counts as Wi-Fi. The core pack downloads by itself first, not inside the game's
+  install files.

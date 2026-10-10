@@ -472,10 +472,12 @@ await check('voicepack', async () => {
   // HARD RULE (VOICE-001): the recorded voices are downloaded to the device by themselves, with a small quiet progress
   // bar; every open checks quietly that they are still there and fetches only what is missing. (A cut-down pack keeps it quick.)
   // a fresh phone: its own browser profile, the cut-down pack list from the very first load, saving voices on
+  // (round R item 12: a phone on mobile data downloads beyond the core only after a grown-up's yes, packCell; this check
+  // is about the quiet download itself, so the yes is given; voicearea checks the question)
   const ctx = await b.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true }), page = await ctx.newPage(), errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await ctx.addInitScript(seedPlayers);
-  await ctx.addInitScript(() => { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang: 'vi', voice: false, sound: false, music: false, quality: 'low', autoPack: true }); localStorage.setItem('sv2_settings', JSON.stringify(o)); });
+  await ctx.addInitScript(() => { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang: 'vi', voice: false, sound: false, music: false, quality: 'low', autoPack: true, packCell: true }); localStorage.setItem('sv2_settings', JSON.stringify(o)); });
   const P = { ctx, page, errors };
   await P.ctx.route('**/voices/manifest.json', async route => { const r = await route.fetch(), j = await r.json(), keep = Object.keys(j.lines).slice(0, 24), lines = {}, langOf = {}; for (const h of keep) { lines[h] = j.lines[h]; if (j.langOf) langOf[h] = j.langOf[h]; } await route.fulfill({ json: { ...j, lines, langOf, made: 'test' } }); });
   // every text the bar shows is written down as it changes
@@ -498,6 +500,90 @@ await check('voicepack', async () => {
   ok(third.some(x => /✓/.test(x)) && s3.files >= 24, 'missing files were not fetched again: ' + JSON.stringify({ third: third.slice(0, 3), s3 }));
   ok(!errs.length, errs.join(' | '));
   return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open shows and downloads nothing, and files the phone lost are fetched again`;
+});
+
+await check('voicecover', async () => {
+  // (round R item 12) the coverage check: every line the game can speak has its recordings (both voices), is in the
+  // pack's list and in an area; lines with changing words are templates whose fixed pieces, gap words and numbers are
+  // recorded as parts; what can't be listed in advance is counted with its reason (tools/make-voice-pack.mjs --cover)
+  const { execFileSync } = await import('child_process');
+  let out = ''; try { out = execFileSync(process.execPath, ['../tools/make-voice-pack.mjs', '--cover'], { encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { out = (e.stdout || '') + ''; }
+  const r = JSON.parse(out.trim().split('\n').pop());
+  ok(!r.bad.length, `${r.bad.length} lines not covered: ` + r.bad.slice(0, 12).join(' | '));
+  // in the game: a line with a number is put together from recorded parts, and a gap that is a name is left out; the
+  // phone's own voice is never used for either
+  const pre = `window.__speaks = 0; window.__srcs = 0; speechSynthesis.speak = u => { window.__speaks++; setTimeout(() => u.onend && u.onend(), 10); };
+    const st = AudioBufferSourceNode.prototype.start; AudioBufferSourceNode.prototype.start = function (...a) { if (this.buffer && this.buffer.length > 1) { window.__srcs++; setTimeout(() => this.onended && this.onended(), 30); } return st.apply(this, a); };`;
+  const P = await open(b, { w: 900, h: 640, pre, settings: { voice: true, bilingual: false } }); await clear(P.page);
+  const g = await P.page.evaluate(async () => {
+    const V = await import('/js/voice.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    for (let k = 0; k < 60 && !V.voicePack(); k++) await wait(250);
+    const res = {};
+    for (const [key, line] of [['number', 'You rolled 47! Count with me.'], ['name', 'Zorbly is here! Hold on and kick your legs: tap, tap, tap!']]) {
+      window.__speaks = 0; window.__srcs = 0; res[key] = { parts: V.lineParts('en', line) };
+      await V.sayAsync(line, line); res[key].speaks = window.__speaks; res[key].srcs = window.__srcs;
+    }
+    return res;
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(g.number.parts && g.number.parts.some(p => p[1] === '47') && !g.number.speaks && g.number.srcs >= 3, 'a line with a number: ' + JSON.stringify(g.number));
+  ok(g.name.parts && g.name.parts.some(p => p[1] === 'Zorbly') && !g.name.speaks && g.name.srcs >= 1, 'a line with a name: ' + JSON.stringify(g.name));
+  ok(!errs.length, errs.join(' | '));
+  return `${r.lines} lines and ${r.parts} parts recorded, ${r.templates} templates, ${r.areas} areas; ${Object.entries(r.reasons).map(([k, v]) => `${v} × ${k}`).join('; ')}; "You rolled 47!" plays from ${g.number.srcs} recorded parts and a name in a gap is left out, never the phone's voice`;
+});
+
+await check('voicearea', async () => {
+  // (round R item 12, owner 10 Oct: "wifi should automatically, ask user to allow download over mobile") a new phone on
+  // mobile data downloads only the core, only in its children's language, then asks a grown-up (press and hold); Not now
+  // keeps it at the core; on Wi-Fi the rest comes area by area, the place the child is in first; a computer that can't
+  // tell counts as Wi-Fi; a start with the core already there downloads nothing
+  const areas = JSON.parse(fs.readFileSync('../voices/areas.json', 'utf8')), groupOf = new Map();
+  for (const [g, hs] of Object.entries(areas.groups)) for (const h of String(hs).split(' ')) groupOf.set(h, g);
+  const mb = n => n / 1048576, core = areas.size.core;
+  ok(mb(core.en) >= 5 && mb(core.en) <= 8 && mb(core.vi) >= 5 && mb(core.vi) <= 8, `the core pack is not 5–8 MB per language: en ${mb(core.en).toFixed(1)}, vi ${mb(core.vi).toFixed(1)}`);
+  const place = ['hanoi', 'village', 'town', 'market'].find(g => areas.groups[g] && g !== 'core') || Object.keys(areas.groups).find(g => !['core', 'games', 'stories', 'festivals', 'world'].includes(g));
+  // a pretend connection the check can switch: navigator.connection.type 'cellular' or 'wifi'
+  const net = type => `(() => { const c = new EventTarget(); c.type = '${type}'; c.saveData = false; Object.defineProperty(navigator, 'connection', { get: () => c, configurable: true }); window.__setNet = t => { c.type = t; c.dispatchEvent(new Event('change')); }; })();`;
+  const watch = P => { const got = []; P.page.on('request', q => { const m = /\/voices\/(\w+)\/(\w)\/([\w-]+)\.mp3/.exec(q.url()); if (m) got.push({ lang: m[1], g: groupOf.get(m[3]) || 'world' }); }); return got; };
+  const P = await open(b, { w: 390, h: 760, touch: true, play: false, pre: net('cellular'), settings: { autoPack: true, lang: 'en', bilingual: false } });
+  const got = watch(P);
+  await start(P.page); await clear(P.page);
+  await P.page.mouse.click(195, 380);
+  await P.page.waitForSelector('.packask', { timeout: 180000 });
+  await P.page.waitForTimeout(1500);
+  const n1 = got.length, notCore = got.filter(x => x.g !== 'core'), notEn = got.filter(x => x.lang !== 'en');
+  const text = await P.page.$eval('.packask', e => e.textContent);
+  await P.page.screenshot({ path: 'out/voicearea-phone.png' });
+  ok(n1 > 50 && !notCore.length && !notEn.length, `mobile data: ${n1} files, ${notCore.length} not in the core (${JSON.stringify(notCore.slice(0, 3))}), ${notEn.length} not English`);
+  ok(/mobile data/.test(text) && /\d+ MB/.test(text), 'the question: ' + text);
+  // a quick tap on Yes is not a yes (a little one's finger); Not now closes it and nothing more downloads
+  await P.page.click('.packask button'); await P.page.waitForTimeout(400);
+  ok(await P.page.$('.packask'), 'a quick tap on Yes said yes');
+  await P.page.click('.packask button:last-child'); await P.page.waitForTimeout(3000);
+  ok(!(await P.page.$('.packask')) && got.length === n1, `after Not now: ${got.length - n1} more files`);
+  // onto Wi-Fi, in a place: the rest downloads by itself, that place first
+  await P.page.evaluate(async place => { const { events } = await import('/js/core/events.js'); events.emit('PlayerEnteredVillage', { playerId: 'player:test', villageId: 'place:' + place }); window.__setNet('wifi'); }, place);
+  for (let k = 0; k < 60 && got.length < n1 + 12; k++) await P.page.waitForTimeout(500);
+  const next = got.slice(n1, n1 + 12);
+  ok(next.length >= 12 && next.every(x => x.g === place) && next.every(x => x.lang === 'en'), `on Wi-Fi the first files after the core: ${JSON.stringify(next.slice(0, 4))} (wanted ${place})`);
+  await P.ctx.close();
+  // the next start on mobile data, core there, Not now said: nothing downloads and nothing is asked
+  const Q = await open(b, { w: 390, h: 760, touch: true, play: false, pre: net('cellular'), settings: { autoPack: true, lang: 'en', bilingual: false } });
+  // (a fresh profile: give it the core first, with the grown-up's answer already given)
+  const got2 = watch(Q); await start(Q.page); await clear(Q.page); await Q.page.mouse.click(195, 380);
+  await Q.page.waitForSelector('.packask', { timeout: 180000 }); await Q.page.click('.packask button:last-child');
+  const n2 = got2.length; await Q.page.reload(); await start(Q.page); await clear(Q.page); await Q.page.mouse.click(195, 380); await Q.page.waitForTimeout(10000);
+  const again = got2.length - n2, asked = !!(await Q.page.$('.packask'));
+  const errs = Q.errors.concat(P.errors); await Q.ctx.close();
+  ok(!again && !asked, `next start with the core there: ${again} files downloaded, asked again: ${asked}`);
+  // a computer that can't tell its connection counts as Wi-Fi: past the core with no question
+  const C = await open(b, { w: 1180, h: 760, play: false, pre: `Object.defineProperty(navigator, 'connection', { get: () => undefined, configurable: true });`, settings: { autoPack: true, lang: 'vi', bilingual: false } });
+  const got3 = watch(C); await start(C.page); await clear(C.page); await C.page.mouse.click(590, 380);
+  for (let k = 0; k < 240 && !got3.some(x => x.g !== 'core'); k++) await C.page.waitForTimeout(500);
+  const asked3 = !!(await C.page.$('.packask')), en3 = got3.filter(x => x.lang === 'en').length; await C.ctx.close();
+  ok(got3.some(x => x.g !== 'core') && !asked3 && !en3, `a computer: past the core ${got3.some(x => x.g !== 'core')}, asked ${asked3}, English files for a Vietnamese family ${en3}`);
+  ok(!errs.length, errs.join(' | '));
+  return `core ${mb(core.en).toFixed(1)} MB (English) / ${mb(core.vi).toFixed(1)} MB (Vietnamese) of ${(Object.values(areas.size).reduce((a, z) => a + (z.en || 0) + (z.vi || 0) + (z.zh || 0) + (z.hi || 0), 0) / 1048576).toFixed(0)} MB; mobile data: ${n1} core files in English only, then "${text.slice(0, 50)}…" (hold for yes); Wi-Fi: ${place} first; the next start downloads nothing; a computer goes on by itself`;
 });
 
 await check('welcomevoice', async () => {
