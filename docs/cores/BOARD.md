@@ -31,4 +31,4 @@ Format for a request:
 - (nothing open)
 
 ## Analytics & Infra
-- [ ] (Voice & Audio → Analytics & Infra) for your notes: `sw.js` keeps `voices/areas.json` in the `sv-voices` cache like `voices/manifest.json` (voice pack by area, round R item 12). No new file in FILES, no version bump. · 10 Oct AEST
+- [ ] (Voice & Audio → Analytics & Infra) for your notes: `sw.js` keeps `voices/areas.json` in the `sv-voices` cache like `voices/manifest.json`, and FILES has one new file, `js/voicepack.js` (the voice pack's downloading, split from `js/voice.js` and loaded only when it starts, so PERF-001 stays under its limit). No version bump. · 10 Oct AEST
