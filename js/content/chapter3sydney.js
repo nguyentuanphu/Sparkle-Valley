@@ -14,6 +14,7 @@ import { buildAvatar, nameAvatar } from '../avatar.js';
 import { pic } from '../art.js';
 import { pad, until, QUIT } from '../handpad.js';
 import { buildLantern } from '../dinh.js';
+import { CUSTOM } from '../custom.js';
 import { buildSailLights, buildFerry, buildGumTree, buildKoala } from './chapter3props.js';
 import { STORY_LINES, CHAPTERS } from './chapters.js';
 import { WORDS } from './chapter3text.js'; // (also adds the chapter's words to its steps and STORY_LINES)
@@ -24,6 +25,16 @@ const LOOKS = {
   ruby: { style: 'overalls', color: '#a66bff', hat: 'bow', back: 'none', hair: '#a8432a', hairStyle: 'long', skin: '#ffe3d1', glider: 0 },
   nam: { style: 'aodai', color: '#8a4a8a', hat: 'none', back: 'none', hair: '#e8e8e8', hairStyle: 'buns', skin: '#e8b48c', glider: 0 }
 };
+// (owner, 10 Oct: "Chi's look can be changed in Studio") Studio's content pack may change Chi, Jack and Ruby's looks:
+// looks: { chi: { style, color, hair, hairStyle, skin }, jack: {...}, ruby: {...} }, the same choices as a Studio villager;
+// anything missing or not well formed keeps the look above
+const hex = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v : null;
+export function lookOf(id, looks = CUSTOM.looks) {
+  const base = LOOKS[id], L = looks && typeof looks === 'object' && id !== 'nam' ? looks[id] : null;
+  if (!L || typeof L !== 'object') return base;
+  return { ...base, style: ['dress', 'shirt', 'aodai', 'tunic', 'overalls', 'hoodie'].includes(L.style) ? L.style : base.style, color: hex(L.color) || base.color,
+    hair: hex(L.hair) || base.hair, hairStyle: ['buns', 'short', 'long', 'ponytail', 'spiky'].includes(L.hairStyle) ? L.hairStyle : base.hairStyle, skin: hex(L.skin) || base.skin };
+}
 
 export function create(G, ctx) {
   const { scene, world } = G, { say, save, A, isOn, st, big } = ctx;
@@ -87,7 +98,7 @@ export function create(G, ctx) {
   const jackAt = near(city.x + 6, city.z + 6, 3, 14, 1.4, 3);
   const host = G.interactables.find(i => i.id === 'g_ferries'), mollyAt = host ? { x: host.x, z: host.z } : { x: city.x, z: city.z };
   const people = [['chi', 'Chi', chiAt], ['jack', 'Jack', jackAt], ['ruby', 'Ruby', near(jackAt.x + 1.4, jackAt.z, 0, 5, .8, 1.2)], ['nam', 'Bà Năm', namAt]].map(([id, name, q]) => {
-    const A_ = nameAvatar(buildAvatar(LOOKS[id], null), name), x = q.x, z = q.z;
+    const A_ = nameAvatar(buildAvatar(lookOf(id), null), name), x = q.x, z = q.z;
     A_.root.position.set(x, heightAt(x, z), z); A_.root.rotation.y = id === 'nam' ? Math.atan2(ox - x, oz - z) + Math.PI : Math.atan2(city.x - x, city.z - z) || 0;
     if (id !== 'nam') A_.root.scale.setScalar(.82); A_.root.visible = false; A_.root.userData.noSolid = true; scene.add(A_.root);
     return { id, x, z, A: A_ };
