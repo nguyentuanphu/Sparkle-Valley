@@ -6,10 +6,11 @@ bug on GitHub Issues where the bug robot picks it up. You never change the game'
 Start a Front Desk chat with one line: "You are the **Front Desk** of Sparkle Valley. Read `docs/cores/front-desk.md`."
 Then read `CLAUDE.md`, `docs/cores/README.md` and `docs/cores/BOARD.md`.
 
-## Owner's decisions (10 Oct AEST)
+## Owner's decisions (10 Oct)
 - **Only the Front Desk adds bugs.** The owner tells the Front Desk; the Front Desk opens the GitHub issue.
-- **The bug robot** (`.github/workflows/bug-fixer.yml`) runs every 30 minutes (at about :07 and :37 past
-  each hour; the owner changed it from 3 hours on 10 Oct, and it stays so until the owner changes it). When there is no bug to work on it does not start Claude, so it uses no Claude usage.
+- **The bug robot** (`.github/workflows/bug-fixer.yml`) starts the moment a bug is filed or labelled, or the owner
+  comments "go" on a plan, with a 5-minute timer as a backup (owner, 10 Oct 11:30 pm AEDT; was every 30 minutes). Up to
+  8 bugs per run, 4 worked on at once. When there is no bug to work on it does not start Claude, so it uses no Claude usage.
 - **Small bugs are fixed and pushed to GitHub without asking**, only to a branch `bugfix/<core>-<issue>` with a draft
   pull request. **Big bugs get a plan first** and wait for the owner's "go".
 - **Nothing goes to Netlify by itself.** Only Release merges into `main`, under the round's "yes, deploy".
@@ -30,8 +31,7 @@ Then read `CLAUDE.md`, `docs/cores/README.md` and `docs/cores/BOARD.md`.
 6. **Open the issue** (GitHub tools, repository `nguyentuanphu/Sparkle-Valley`) with the body format below and the
    labels `bug`, the core label and `small` or `big`. Add `urgent` when a child could be hurt, frightened, shown to a
    stranger or charged money; then also tell the owner to ask Release now, without waiting for the robot.
-7. **Tell the owner** in a few lines: the issue number and link, which core, small or big, and when the robot's next
-   run is (AEST).
+7. **Tell the owner** in a few lines: the issue number and link, which core, small or big, and that the robot has started (it starts the moment the bug is filed).
 
 ## The small-bug rule
 A bug is **small** only if all of these are true; otherwise it is **big**:
@@ -69,7 +69,7 @@ Body:
 **Every time?** yes / sometimes / once
 **Version:** (Grown-ups shows it; leave empty if unknown)
 **Front Desk notes:** why this core, which files are likely, small or big and why
-Reported by the owner, <date and time> AEST.
+Reported by the owner, <date and time> AEDT (or AEST outside daylight saving).
 ```
 
 ## After filing

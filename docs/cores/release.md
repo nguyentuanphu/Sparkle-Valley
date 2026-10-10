@@ -38,8 +38,8 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
   to `bugfix/<core>-<issue>` branches with draft pull requests, without asking; big bugs wait for the owner's "go". Release
   merges those pull requests in a round like any core branch (they close their issue), and deploying still needs
   "yes, deploy". Robot runs use the Claude account in the GitHub secret `CLAUDE_CODE_OAUTH_TOKEN` or
-  `CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY` (backup: `CLAUDE_CODE_OAUTH_TOKEN_BACKUP`). The robot runs every 30 minutes
-  (owner, 10 Oct).
+  `CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY` (backup: `CLAUDE_CODE_OAUTH_TOKEN_BACKUP`). The robot starts the moment a bug
+  is filed (5-minute backup timer; owner, 10 Oct).
 - 10 Oct AEST: Release is the master release of all work. Helper chats push their own branches without asking; Release collects every branch, merges, runs the full suite, reports, and asks one pop-up "yes, deploy" per round, which covers pushing and merging into `main`.
 - 10 Oct AEST: every question to the owner is a pop-up question with clickable choices (`CLAUDE.md`, HANDOFF rule 19).
 - 10 Oct AEST: Release checks every branch once an hour (routine "Release: hourly branch collection", about 26 minutes past each hour): fetch, read each branch's Now line, merge the core branches marked "ready for Release" into the Release branch locally and run `types unit arch rules`; never pushes or merges into main without the round's "yes, deploy". `studio-draft` and old `claude/*` branches are merged only after asking the owner.

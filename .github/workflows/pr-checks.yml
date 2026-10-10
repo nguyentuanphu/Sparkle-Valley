@@ -1,19 +1,20 @@
-# Quick checks on every pull request (owner, 10 Oct AEST: "auto checks on every PR and AI review").
+# Quick checks (browser checks) on every push to a branch (owner, 10 Oct: "auto checks on every PR and AI review";
+# 11 Oct: on every push). The fast checks without a browser are in checks.yml.
 # Every pull request into main gets a pass or fail mark from the fast checks before Release looks at it. Uses free
 # GitHub minutes, no Claude usage. The full suite (about an hour) stays Release's job before every "yes, deploy".
 # The bug robot's pull requests are made with the workflow's own token, which GitHub does not let start other
 # workflows, so the robot starts this one by hand (workflow_dispatch with the pull request number).
 name: Quick checks
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches-ignore: [main]   # every push to a branch (owner, 11 Oct); a pull request's head is such a branch
   workflow_dispatch:
     inputs:
       pr:
         description: 'Pull request number'
         required: true
 concurrency:
-  group: quick-checks-${{ github.event.pull_request.number || inputs.pr }}
+  group: quick-checks-${{ inputs.pr || github.ref }}
   cancel-in-progress: true
 permissions:
   contents: read
@@ -35,9 +36,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          N: ${{ github.event.pull_request.number || inputs.pr }}
+          N: ${{ inputs.pr }}
         run: |
-          sha=$(gh pr view "$N" --json headRefOid -q .headRefOid)
+          if [ -n "$N" ]; then sha=$(gh pr view "$N" --json headRefOid -q .headRefOid); else sha=$GITHUB_SHA; fi
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           gh api "repos/$GH_REPO/statuses/$sha" -f state=pending -f context='Quick checks' \
             -f description='Running' -f target_url="$GITHUB_SERVER_URL/$GH_REPO/actions/runs/$GITHUB_RUN_ID" >/dev/null

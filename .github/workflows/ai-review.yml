@@ -2,8 +2,8 @@
 # A second Claude reads the pull request's changes against the project's rules (CLAUDE.md, HANDOFF.md, the core
 # files) and posts one review comment: "Looks fine" or the problems it found. It does not change code or approve.
 #
-# To keep Claude usage down it runs when a pull request is opened, reopened or marked ready, not on every push.
-# To review again after more pushes, add the label `ai-review` to the pull request (the label is then taken off).
+# It runs when a pull request is opened, reopened, marked ready and on every push to it (owner, 11 Oct). To review again
+# without a push, add the label `ai-review` to the pull request (the label is then taken off).
 # The bug robot starts it by hand for its own pull requests (workflow_dispatch with the pull request number).
 # Uses the same Claude account as the bug robot: CLAUDE_CODE_OAUTH_TOKEN (or CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY, the
 # name the owner gave it), then CLAUDE_CODE_OAUTH_TOKEN_BACKUP.
@@ -11,7 +11,7 @@ name: AI review
 on:
   pull_request:
     branches: [main]
-    types: [opened, reopened, ready_for_review, labeled]
+    types: [opened, synchronize, reopened, ready_for_review, labeled]   # synchronize: every push (owner, 11 Oct)
   workflow_dispatch:
     inputs:
       pr:
@@ -82,7 +82,7 @@ jobs:
           - a core changing files it does not own (docs/cores/README.md, "Who owns shared files").
           Do not comment on style or taste. Do not change any file except .bugfix/review.md.
 
-          Write .bugfix/review.md for the owner in plain English, no jargon, no emoji, times in AEST:
+          Write .bugfix/review.md for the owner in plain English, no jargon, no emoji, times in Sydney time (AEDT or AEST):
           the first line exactly "VERDICT: fine" or "VERDICT: problems"; then for each problem: the file and line,
           what is wrong, why it matters, and the fix in one or two lines; blocking problems first. Keep it short.
           EOF
@@ -145,7 +145,7 @@ jobs:
 
       - name: Post the review on the pull request
         run: |
-          now=$(TZ=Australia/Brisbane date '+%-d %b, %-I:%M %p AEST')
+          now=$(TZ=Australia/Sydney date '+%-d %b, %-I:%M %p %Z')
           mkdir -p out; [ -s out/review.md ] || printf 'VERDICT: none\nThe AI review did not finish.\n' > out/review.md
           verdict=$(head -1 out/review.md | sed -n 's/^VERDICT: *\([a-z]*\).*/\1/p')
           case "$verdict" in
