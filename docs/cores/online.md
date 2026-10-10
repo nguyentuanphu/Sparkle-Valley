@@ -41,6 +41,11 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
   joining is told**: a card with a map picture, a voice and one big OK, "Your friend has a different valley. Ask a grown-up
   to update the game."; the starter sees no knock card. The friends list shows a map button instead of Join (tap: the
   same card); the friend note has no "Go to their room". Checked by `mapver`.
+- **Microphone on iPhone (owner, 11 Oct AEDT, bug #55, "Go"):** a tap on the microphone (the Friends microphone button or the call button)
+  always asks afresh (`Net.getMic(true)`), even while an earlier try made without a tap hangs; an old try that answers
+  late is stopped, never a second microphone. Every outcome of a tap is said on screen, EN and VI (asking, on, blocked
+  with Settings → Safari → Microphone, no microphone, iPhone or iPad older than iOS 14.3), so the owner can see on a real
+  iPhone what happened. Checked by `iphone`; needs a real iPhone try once live.
 
 ## Privacy round (owner, 9 Oct, round R privacy)
 - **Online play is off until a grown-up turns it on** (`settings.online`, default `false`, also on devices that played
