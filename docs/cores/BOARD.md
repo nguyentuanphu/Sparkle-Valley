@@ -9,13 +9,13 @@ Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
 ## Release
-- **Now:** master release (owner, 10 Oct): collecting every branch; merged `core/play` (chapter 2) into `claude/exciting-feynman-5nxzz8`, full suite running; next: Round T (`round-t`), then one "yes, deploy" · 10 Oct AEST
+- **Now:** r55 (story chapter 2, Hà Nội; switch `story_ch2` off by default) deployed at the owner's "Deploy now"; full suite finishing on the merged code; Round T next, as r56 · branch `claude/exciting-feynman-5nxzz8` · 10 Oct AEST
 - Halloween decorations start growing about three weeks before 31 Oct: they only reach players once a round is deployed.
 - Still to build from the Round R plan (`docs/cores/ROUND-R.md`, Part 2): items 2 to 12 (Concept D layout, child's journey, homes, surprises, shop and wardrobe, money games, the rest of the festival groups, Hội làng times, 5–8 challenges, parent features, voice pack by area); the owner's privacy decisions of 9 Oct; splitting the code into per-core folders (infrastructure round).
 - The Google Drive mirror (`.github/workflows/drive-mirror.yml`) is not set up yet: ask the owner at every report.
 
 ## World
-- **Now:** Round T is run by a Release chat on branch `round-t` (see `docs/cores/ROUND-T.md`, Progress); no separate World chat until Round T is merged · 10 Oct AEST
+- **Now:** (r55 is now taken by chapter 2: Round T ships as r56) Round T is run by a Release chat on branch `round-t` (see `docs/cores/ROUND-T.md`, Progress); no separate World chat until Round T is merged · 10 Oct AEST
 - (nothing open)
 
 ## Play
