@@ -292,10 +292,17 @@ changed, `ROAD_WIDTH` in the map); Release stamps Studio map edits (`studio/ui/a
   `world.js`: river distance over every river in a 16 m grid (`RIVERS`, `RIVER` = the raft line), coast, ridge, edge only east,
   west and north, the open ground never below water by itself, loop fillet, plain bridges; `roads.js`: loops untrimmed, gates
   as wide as their road, Cầu Rồng turns with its bridge; pick-ups moved from `js/data.js` into the map (`GATHER_AT`).
-- Checks passing so far: unit (with the new `banks` test), mapcoords, flat, roadshape, ground, features, camera, village.
-- Still to do in T1: the wider checks (roads, validate, solid, story, yard, migrate, resume, hubmap…), perf (rebaseline
-  `worldMs` with at most +25 %), the full suite, the sky view and in-game map next to the Concept D map for the report,
-  board notes (Online: netmsg size before release), bump to r56, packages, report.
+- Fixed on the way: gate posts as wide as the 6.4 m roads; side gates that hit city sites removed (Hà Nội east, Sydney east;
+  Bắc Ninh is reached by the mountain road, `link_au` meets the Australia road south of Sydney); Bondi up the beach out of
+  the sea; plateau apples spread by the plateau's size (they fell into the river); trees kept off the riverbanks; the lake
+  tower on flat ground; crops kept inside the valley; the Chợ Trâu festival ground moved clear; a pick-up off the mountain
+  road; `js/netmsg.js` positions ±235 m (board: Online); the `coop` check searches the whole valley.
+- Speed (PERF-003): from Lotus Village a child now sees across the river to Đà Nẵng, so the village view drew 1.0M triangles
+  (limit 800k). Not drawn any more: small things far from every camera, each taken whole (a lantern from 110 m, a house from
+  230 m, busy little things such as people and vehicles from 65 m, the dark outlines from 40 m, where they are a sixth of a
+  pixel) (`G.farCull` in `js/main.js`). Now 714k triangles, 701 draws in the village, 1,085 draws at home (r54: 2,335).
+  `perf-baseline.json`: draw calls lowered to what T1 measures; `worldMs` set to r54's own median measured side by side
+  (r54 5.7–6.1 s, T1 5.8–6.1 s, six starts each; the 4.7 s from T0 came from a quieter machine), +25 % unchanged.
 
 **Earlier: 10 Oct 2026, about 07:30 AEST: stage T0 built (steps 1 to 6), release r55.**
 - Step 1: `js/content/map.js` (MAP_VERSION 'C'). Step 2: `world.js`, `roads.js`, `ferry.js` from the map. Step 3: every builder
