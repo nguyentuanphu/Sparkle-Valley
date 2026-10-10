@@ -141,7 +141,7 @@ jobs:
       - name: Post the review on the pull request
         run: |
           now=$(TZ=Australia/Brisbane date '+%-d %b, %-I:%M %p AEST')
-          [ -s out/review.md ] || printf 'VERDICT: none\nThe AI review did not finish.\n' > out/review.md
+          mkdir -p out; [ -s out/review.md ] || printf 'VERDICT: none\nThe AI review did not finish.\n' > out/review.md
           verdict=$(head -1 out/review.md | sed -n 's/^VERDICT: *\([a-z]*\).*/\1/p')
           case "$verdict" in
             fine) head='**AI review: looks fine.**'; state=success; desc='Looks fine' ;;
@@ -153,7 +153,7 @@ jobs:
           $(tail -n +2 out/review.md)
 
           ---
-          _Sparkle Valley AI review, run $RUN_URL_"
-          sha=$(cat out/sha.txt 2>/dev/null)
+          _Sparkle Valley AI review, run ${RUN_URL}_"
+          sha=$(cat out/sha.txt 2>/dev/null || true)
           [ -n "$sha" ] && gh api "repos/$GH_REPO/statuses/$sha" -f state=$state -f context='AI review' -f description="$desc" -f target_url="$RUN_URL" >/dev/null || true
           gh pr edit "$N" --remove-label ai-review >/dev/null 2>&1 || true

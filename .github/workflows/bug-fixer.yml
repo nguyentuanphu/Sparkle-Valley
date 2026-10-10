@@ -246,10 +246,10 @@ jobs:
           now=$(TZ=Australia/Brisbane date '+%-d %b, %-I:%M %p AEST')
           b="bugfix/$CORE-$N"
           case "$b" in bugfix/*-[0-9]*) ;; *) echo "refusing to push to $b"; exit 1 ;; esac
-          [ -s out/result.md ] || printf 'STATUS: stuck\nThe robot did not finish (no result).\n' > out/result.md
+          mkdir -p out; [ -s out/result.md ] || printf 'STATUS: stuck\nThe robot did not finish (no result).\n' > out/result.md
           status=$(head -1 out/result.md | sed -n 's/^STATUS: *\([a-z]*\).*/\1/p')
           body=$(tail -n +2 out/result.md)
-          patches=$(ls out/patches/*.patch 2>/dev/null | wc -l)
+          patches=0; if [ -d out/patches ]; then patches=$(find out/patches -name '*.patch' | wc -l); fi
           if [ "$status" = fixed ] && [ "$patches" -eq 0 ]; then status=stuck; body="$body"$'\n\n'"(The robot said fixed but made no commit.)"; fi
 
           if [ "$status" = fixed ]; then
@@ -292,4 +292,4 @@ jobs:
           $body
 
           ---
-          _Sparkle Valley bug robot, run $RUN_URL_"
+          _Sparkle Valley bug robot, run ${RUN_URL}_"
