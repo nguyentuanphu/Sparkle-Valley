@@ -775,7 +775,7 @@ export function createWorld(scene, quality) {
   ]);
   W.buffalo = [];
   [[PADDIES.x - 6, PADDIES.z + 4], [V.x - 26, V.z + 18]].forEach(([x, z], i) => {
-    const m = new THREE.Mesh(buffaloGeo, toonVC()); m.position.set(x, heightAt(x, z), z); scene.add(m);
+    const m = new THREE.Mesh(buffaloGeo, toonVC()); m.position.set(x, heightAt(x, z), z); m.userData.moving = true; scene.add(m); // it wanders and rests: never part of the solid map (js/solids.js)
     const sh = blobShadow(); sh.scale.setScalar(2.2); scene.add(sh);
     const b = { id: 'buffalo' + i, mesh: m, shadow: sh, home: [x, z], tx: x, tz: z, rider: null, yaw: 0 };
     W.buffalo.push(b);
