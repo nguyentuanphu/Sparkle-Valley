@@ -17,7 +17,7 @@ channel, PRIV-008 friends' status), ARCH rule on checked messages (every network
 the friends' channel too).
 
 ## Checks you run
-`multiplayer meet cloud knock netmsg iphone together netgames coop onlineoff` (and the unit file `tests/unit/netgames.test.mjs`)
+`multiplayer meet cloud knock netmsg iphone together netgames coop onlineoff mapver` (and the unit file `tests/unit/netgames.test.mjs`)
 They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs` (PeerJS on 9000, MQTT on 9001).
 
 ## Talks to
@@ -34,6 +34,13 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
   far away", which opens it) shows a small grown-ups' note naming the real place of the switch, Grown-ups → "Internet and
   playing online" → "Use the internet", in English and Vietnamese with no "Studio"; on when off, off when on. Beside it
   a Grown-ups button that opens with **press and hold only** (never a tap) straight at that section. Checked by `onlineoff`.
+- **Map version (owner, 11 Oct AEDT, item 2 "Go"; ROUND-T §4, for r57):** friends play together only on the same map
+  layout (`MAP_VERSION`; no version = map 'C', a game older than round T). The knock carries it, every word the starter
+  locks for a knocker carries the starter's, and friends' notes and invitations carry it. On another layout **only the one
+  joining is told**: a card with a map picture, a voice and one big OK, "Your friend has a different valley. Ask a grown-up
+  to update the game."; the starter sees no knock card. The friends list shows a map button instead of Join (tap: the
+  same card); the friend note has no "Go to their room". Checked by `mapver`. Known limit: a game older than r57 that knocks
+  on an r57 room hears "not this time" (it can't show the new card).
 
 ## Privacy round (owner, 9 Oct, round R privacy)
 - **Online play is off until a grown-up turns it on** (`settings.online`, default `false`, also on devices that played

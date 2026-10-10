@@ -961,14 +961,16 @@ Net.on('status', s => {
     removed: T('The room’s starter asked you to leave the room.', 'Chủ phòng đã mời con ra khỏi phòng.'),
     off: T('Playing with friends is off. Ask a grown-up to turn it on.', 'Chơi cùng bạn đang tắt. Nhờ người lớn bật lên nhé.'),
     knocking: T('Knock knock! Waiting for the room’s starter to let you in…', 'Cốc cốc! Đang chờ chủ phòng cho con vào…'),
+    oldmap: T('Your friend has a different valley. Ask a grown-up to update the game.', 'Thung lũng của bạn khác với của con. Nhờ người lớn cập nhật trò chơi nhé.'),
     denied: T('The room’s starter said not this time. You can start your own room!', 'Chủ phòng chưa cho vào lần này. Con có thể tự tạo phòng nhé!'),
     noanswer: T('Nobody opened the door. Ask your friend to tap “Let in”, or start your own room.', 'Chưa ai mở cửa. Nhờ bạn chạm “Cho vào”, hoặc tự tạo phòng nhé.'),
     slow: T('Still connecting… This can take a little longer when you are on different networks.', 'Vẫn đang kết nối… Khi hai máy ở hai mạng khác nhau có thể lâu hơn một chút.'),
     stuck: T('Could not link the two devices. Try: both on Wi-Fi (or both on mobile data), start the room on the other device, or ask a grown-up to add a relay in Grown-ups → Internet and playing online.', 'Không nối được hai máy. Thử: cả hai dùng Wi-Fi (hoặc cả hai dùng 4G), để máy kia tạo phòng, hoặc nhờ người lớn thêm máy chủ trung chuyển trong mục Phụ huynh → Internet và chơi trực tuyến.')
   }[s.key] || '';
+  if (s.key === 'oldmap') G.mapCard();
   if (s.key === 'waiting') { const code = s.code; msg = T(`Room code: ${code} (${animalSay(code)}). Tell your friend!`, `Mã phòng: ${code} (${animalSay(code)}). Đọc cho bạn nhé!`); }
   // with Friends open the message shows in it, not over its tabs (round O)
-  netStatus = msg; if (msg && !document.querySelector('.pad .online')) toast(msg); if (G.onNet) G.onNet(); if (['waiting', 'connected', 'cloud', 'left'].includes(s.key)) G.shareStatus();
+  netStatus = msg; if (msg && s.key !== 'oldmap' && !document.querySelector('.pad .online')) toast(msg); // (the map card says it) if (G.onNet) G.onNet(); if (['waiting', 'connected', 'cloud', 'left'].includes(s.key)) G.shareStatus();
 });
 // Knock knock: someone wants to come into my room. The room's starter sees their name and picture and decides;
 // they hear and see nothing of the room until then. Saved friends come straight in (net.js).
@@ -998,9 +1000,20 @@ if (!Array.isArray(settings.friends)) settings.friends = [];
 if (settings.online && settings.friends.length && !settings.friendsOnR28) { settings.friendsOn = true; settings.friendsOnR28 = true; saveSettings(); }
 // leaving a room with friends in it to go to another one is asked first (round O)
 const leaveOk = async () => !(Net.role && Net.count > 1) || (await dialog(T('Your room', 'Phòng của con'), [[`You are playing with ${Object.values(Net.remotes).map(r => nm(r.name)).join(', ')}. Leave this room?`, `Con đang chơi với ${Object.values(Net.remotes).map(r => nm(r.name)).join(', ')}. Rời phòng này nhé?`, 'You are playing with friends. Leave this room?', 'Con đang chơi với các bạn. Rời phòng này nhé?']], [['✅ Leave and go', '✅ Rời và sang'], ['❌ Stay', '❌ Ở lại']])) === 0;
+// (Online, r57, ROUND-T §4) a friend on another map layout can't play together (positions are raw x, z): a picture card
+// with a voice instead of joining (owner, 11 Oct: only the one who wanted to join is told)
+G.mapCard = () => {
+  document.querySelectorAll('.modal.mapcard').forEach(m => m.remove());
+  const m = modal('mapcard', `<div class="mc-pic">${pic('🗺️')}</div><h2>${T('Different valley', 'Thung lũng khác')}</h2>
+    <p class="center">${T('Your friend has a different valley. Ask a grown-up to update the game.', 'Thung lũng của bạn khác với của con. Nhờ người lớn cập nhật trò chơi nhé.')}</p>
+    <div class="actions center"><button class="btn primary big" data-ok>${T('OK', 'Được rồi')}</button></div>`);
+  say('Your friend has a different valley. Ask a grown-up to update the game.', 'Thung lũng của bạn khác với của con. Nhờ người lớn cập nhật trò chơi nhé.');
+  m.querySelector('[data-ok]').onclick = () => { SFX.tap(); m.close(); };
+};
 const onInvite = async inv => {
-  SFX.chime(); say('A friend invites you to play!', 'Một bạn mời con chơi cùng!');
   if (!settings.online) return;
+  if (!Net.sameMap(inv.map)) { SFX.chime(); G.mapCard(); return; } // (r57) another map layout: the card instead of joining
+  SFX.chime(); say('A friend invites you to play!', 'Một bạn mời con chơi cùng!');
   const k = await dialog(T('Invitation', 'Lời mời'), [[`👫 ${inv.name} invites you to play together! Join their room ${inv.room}?`, `👫 ${inv.name} mời con chơi cùng! Vào phòng ${inv.room} nhé?`, 'A friend invites you to play together! Shall we join?', 'Một bạn mời con chơi cùng! Mình vào nhé?']], [['✅ Join', '✅ Vào'], ['❌ Not now', '❌ Để sau']]);
   // (round R privacy) the invitation came locked from a saved friend; when they started the room, only their key may answer the knock
   if (k === 0 && await leaveOk()) Net.join(inv.room, sendHello() || {}, { hostPub: inv.hostPub });
@@ -1047,7 +1060,7 @@ G.autoMeet = () => {
 function friendNote(f, st) {
   const name = nm(st.name || f.name), where = st.at && REGION_NAMES[st.at] ? REGION_NAMES[st.at]() : '';
   const pop = el('div', 'vc-pop friendnote', `<p class="vc-heard">🟢 ${esc(T(`${name} is playing!`, `${name} đang chơi!`))}</p><div class="ff-row"><div class="ff-txt"><small>${esc(where)}${st.room ? ' · ' + T('in a room', 'đang ở trong phòng') + ` (${(st.players || 1)}/${MAX_ROOM})` : ''}</small></div></div>
-    <div class="ff-btns"><button class="btn primary" data-inv>📨 ${T('Invite', 'Mời bạn')}</button>${st.room && (st.players || 1) < MAX_ROOM ? `<button class="btn" data-go>▶ ${T('Go to their room', 'Sang phòng bạn')}</button>` : ''}<button class="btn" data-no>${T('Later', 'Để sau')}</button></div>`);
+    <div class="ff-btns"><button class="btn primary" data-inv>📨 ${T('Invite', 'Mời bạn')}</button>${st.room && (st.players || 1) < MAX_ROOM && Net.sameMap(st.map) ? `<button class="btn" data-go>▶ ${T('Go to their room', 'Sang phòng bạn')}</button>` : ''}<button class="btn" data-no>${T('Later', 'Để sau')}</button></div>`);
   document.body.appendChild(pop); SFX.chime(); say('Your friend is playing too!', 'Bạn của con cũng đang chơi!');
   const close = () => { pop.remove(); clearTimeout(t); }, t = setTimeout(close, 45000);
   pop.querySelector('[data-no]').onclick = () => { SFX.tap(); close(); };
@@ -1101,11 +1114,12 @@ G.drawOnlinePanel = (body, redraw) => {
   const friendsBox = () => `<div class="ocard friends"><h3>👫 ${T('My friends', 'Bạn của con')}</h3>
       <p class="note">${T('My friend code', 'Mã bạn bè của con')}: <b class="fcode">${settings.friendCode}</b></p>
       <label class="tog"><input type="checkbox" id="fOn" ${settings.friendsOn ? 'checked' : ''}> ${T('Friends can see when I am playing and where, and invite me (needs the internet)', 'Bạn bè thấy khi con đang chơi, đang ở đâu, và mời con được (cần có mạng)')}</label>
-      <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}" data-fc="${esc(f.code)}">▶ ${T('Join', 'Vào chơi')}</button>` : ''}${(Net.friends.status[f.code] || {}).online && !(Net.code && Net.friends.status[f.code].room === Net.code) ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
+      <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? (Net.sameMap(Net.friends.status[f.code].map) ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}" data-fc="${esc(f.code)}">▶ ${T('Join', 'Vào chơi')}</button>` : `<button class="btn mapdiff" data-mapdiff aria-label="${T('Different valley', 'Thung lũng khác')}" title="${T('Different valley', 'Thung lũng khác')}">🗺️</button>`) : ''}${(Net.friends.status[f.code] || {}).online && !(Net.code && Net.friends.status[f.code].room === Net.code) ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
       <div class="vrow"><input type="text" id="fAdd" maxlength="6" placeholder="${T('Friend code', 'Mã bạn bè')}" autocomplete="off"><button class="btn" id="fAddB">＋ ${T('Add', 'Thêm')}</button></div>
       ${settings.friends.length ? `<p class="note">${T('Friends are never put in a room by themselves: 📨 Invite asks them, ▶ Join goes to theirs.', 'Bạn bè không bao giờ tự bị đưa vào phòng: 📨 Mời là hỏi bạn, ▶ Vào chơi là sang phòng bạn.')}</p>` : ''}${gUHow(true)}</div>`;
   const bindFriends = () => {
     bindGUHow(body, redraw);
+    body.querySelectorAll('[data-mapdiff]').forEach(b => b.onclick = () => { SFX.tap(); G.mapCard(); });
     body.querySelector('#fOn').onchange = e => { settings.friendsOn = e.target.checked; saveSettings(); G.listenFriends(); };
     body.querySelector('#fAddB').onclick = () => { if (addFriend(body.querySelector('#fAdd').value)) { SFX.chime(); redraw(); } else toast(T('A friend code has 6 letters and numbers.', 'Mã bạn bè gồm 6 chữ và số.')); };
     body.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { settings.friends = settings.friends.filter(f => f.code !== b.dataset.rm); saveSettings(); redraw(); });

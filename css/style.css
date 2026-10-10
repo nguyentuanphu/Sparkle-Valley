@@ -2236,3 +2236,9 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .gunote .note { font-size: 13px; opacity: .85; text-align: center; margin: 0; }
 .gunote .grown.gu-hold { position: relative; left: auto; bottom: auto; right: auto; top: auto; display: flex; align-items: center; gap: 8px; min-height: 48px; border-radius: 18px; padding: 8px 16px; font: inherit; color: inherit; }
 .gunote .gu-hold small { margin-left: 6px; opacity: .7; }
+/* (Online, r57) a friend on another map layout: the "Different valley" card (picture, words, voice, one big OK) */
+.modal.mapcard .card { width: min(440px, 92vw); text-align: center; }
+.mapcard .mc-pic svg.art, .mapcard .mc-pic .emo { width: 96px; height: 96px; font-size: 80px; }
+.mapcard .btn.big { min-height: 64px; min-width: 160px; font-size: 20px; }
+.mapcard h2 { justify-content: center; text-align: center; }
+.frow .btn.mapdiff { min-width: 56px; min-height: 44px; }

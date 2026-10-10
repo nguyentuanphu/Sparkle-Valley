@@ -20,6 +20,7 @@
 import { settings } from './state.js';
 import { Channel } from './relay.js';
 import { checkMsg } from './netmsg.js';
+import { MAP_VERSION } from './content/map.js';
 const PREFIX = 'sparkle-valley-v2-';
 export const MAX_ROOM = 6;
 // (round R privacy, 9 Oct) room codes have 6 digits (4 were easy to guess)
@@ -119,6 +120,11 @@ const cleanRoster = list => Array.isArray(list) ? list.slice(0, MAX_ROOM).filter
 const HOSTONLY = /^(door|admit|chal|full|nope|kick|rekey|members)$/;
 
 export const Net = {
+  // (Online, r57, ROUND-T §4) positions travel as raw x, z, so two devices play together only on the same map layout.
+  // The knock carries it; every word the starter locks for a knocker carries the starter's; a word or knock without one
+  // comes from a game older than round T (map 'C'). (Tests may change it to act as another layout.)
+  mapVersion: MAP_VERSION,
+  sameMap(m) { return (m || 'C') === this.mapVersion; },
   peer: null, conns: new Map(), calls: new Map(), cloud: null, door: null, cloudOn: false, _seen: new Set(), hostId: null, audios: new Map(), mic: null, code: null, role: null, muted: false, me: null, hello: null,
   knocking: false,           // (a newcomer) waiting at the door for the room's starter
   knocks: new Map(),         // (the room's starter) who is at the door: id -> {id, name, look, friend, pub, via, d}
@@ -337,7 +343,7 @@ export const Net = {
   // (a newcomer) waiting at the door: the microphone stays off until the room's starter lets us in
   _knock(on) { this.knocking = on; if (!on) this._heard = 0; if (this.mic) this.mic.getAudioTracks().forEach(t => t.enabled = !on && !this.muted); },
   // what a knock says: name, look, friend code and key (round R privacy: never the photo)
-  _knockHello() { const h = this.hello || {}; return { name: h.name, look: h.look, friend: h.friend, pub: this.pub }; },
+  _knockHello() { const h = this.hello || {}; return { name: h.name, look: h.look, friend: h.friend, pub: this.pub, map: this.mapVersion }; },
   _knockCloud() { this._doorSend(Object.assign({ t: 'hello', to: this.hostId }, this._knockHello())); },
   // (a guest) the starter's words to me: each one locked for me with the starter's key. The first key that answers my knock
   // is kept (the direct link to the room's own id outranks the cloud, a saved friend's key outranks both), and every
@@ -351,6 +357,8 @@ export const Net = {
     if (this.role !== 'guest' || !okPub(d.pub)) return;
     const direct = via === this.hostId, o = await openFrom(d.pub, d);
     if (!o || o.k !== d.t || o.id !== this.me || this.role !== 'guest' || !this._pin(d.pub, direct)) return;
+    // (r57) the room is on another map layout: don't come in; the child is told to ask a grown-up to update
+    if (this.knocking && !this.sameMap(o.map)) { this.emit('status', { key: 'oldmap' }); this.close(true); return; }
     if (d.t === 'door') { if (this.knocking) { if (!this._heard) this.emit('status', { key: 'knocking' }); this._heard = Date.now(); } return; }
     if (d.t === 'chal') { if (this.knocking && typeof o.n === 'string' && /^[0-9a-f]{32}$/.test(o.n)) this._toHost({ t: 'chalr', n: o.n }, direct); return; }
     if (d.t === 'admit') { if (o.code === this.code && okSecret(o.s) && (this.knocking || o.s !== this.secret)) this._letIn(o.s, direct); return; }
@@ -387,6 +395,9 @@ export const Net = {
     if (this.role !== 'host' || (this._banned && this._banned.has(id))) return;
     const h = Object.assign(cleanHello(d, id), { via, d: Object.assign({}, d, { photo: undefined }) });
     if (!h.pub) return; // (a knock must bring its key: every answer is locked with it)
+    // (r57) a knock from another map layout is turned away without a knock card; the answer carries my layout, so the
+    // knocker's game (round T or later) shows "Ask a grown-up to update"
+    if (!this.sameMap(d.map)) { this._toDoor(id, await this._seal('nope', id, h.pub), via); return; }
     const m = this.members.get(id);
     if (this._admitted.has(id)) { if (m && m.pub === h.pub) this._toDoor(id, await this._seal('admit', id, h.pub, { s: this.secret, code: this.code }), via); return; } // (the answer got lost: say it again)
     const ch = this._chal.get(id), was = this.knocks.get(id) || (ch && ch.h);
@@ -411,7 +422,7 @@ export const Net = {
   // a saved friend opened the number: straight in
   _chalr(d, id) { const c = this._chal.get(id); if (!c || d.n !== c.n) return; clearTimeout(c.t); this._chal.delete(id); this.knocks.set(id, Object.assign(c.h, { at: Date.now(), proven: true })); this.admit(id); },
   // the starter's words for one player, locked for them
-  async _seal(kind, id, pub, extra) { return Object.assign({ t: kind, pub: this.pub }, await sealFor(pub, Object.assign({ k: kind, id }, extra || {}))); },
+  async _seal(kind, id, pub, extra) { return Object.assign({ t: kind, pub: this.pub }, await sealFor(pub, Object.assign({ k: kind, id, map: this.mapVersion }, extra || {}))); },
   _toDoor(id, d, via) { const c = this.conns.get(id); if (c && c.open) { try { c.send(Object.assign({ from: this.me }, d)); } catch (e) { } } if (this.door && (via === 'cloud' || !c || !c.open)) this._doorSend(Object.assign({ to: id }, d)); },
   // the welcome: my hello and everyone already in the room
   _welcome(id, via) {
@@ -634,7 +645,7 @@ export const Net = {
   // ---------- friends ----------
   // (round R privacy, 9 Oct) invitations and "where I am" notes are locked for one saved friend with the key saved with
   // them (an envelope: my friend code, my key, the locked words); a friend saved without a key gets neither
-  async _friendEnv(kind, f, o) { const pub = await myPub(); return Object.assign({ t: kind, from: settings.friendCode, pub }, await sealFor(f.pub, Object.assign({ k: kind, to: f.code, from: settings.friendCode, ts: Date.now() }, o))); },
+  async _friendEnv(kind, f, o) { const pub = await myPub(); return Object.assign({ t: kind, from: settings.friendCode, pub }, await sealFor(f.pub, Object.assign({ k: kind, to: f.code, from: settings.friendCode, ts: Date.now(), map: this.mapVersion }, o))); },
   // an envelope from a saved friend, opened: only with the key saved with that friend, made for me, not too old
   async _openFriend(d) {
     const f = friendEntry(d.from); if (!f || !okPub(f.pub) || d.pub !== f.pub) return null;
@@ -683,7 +694,7 @@ export const Net = {
     if ((d.t === 'note' || d.t === 'invite') && d._topic === F.inboxTopic) {
       const o = await this._openFriend(d); if (!o || !settings.online) return;
       if (d.t === 'invite') { if (o.room) F.onInvite && F.onInvite(o); return; }
-      F.status[o.code] = Object.assign({}, F.status[o.code], { name: o.name, at: o.at, room: o.room, players: o.players, host: o.host, noteAt: Date.now() });
+      F.status[o.code] = Object.assign({}, F.status[o.code], { name: o.name, at: o.at, room: o.room, players: o.players, host: o.host, map: o.map || 'C', noteAt: Date.now() });
       F.onChange && F.onChange(o.code);
     }
   },
