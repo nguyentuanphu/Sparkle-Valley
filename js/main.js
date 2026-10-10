@@ -862,13 +862,15 @@ G.netGames = createNetGames({
   onStart: (s, ask) => {
     if (!s) { toast(T('Nobody could play just now. Try again later!', 'Lúc này chưa bạn nào chơi được. Lát nữa thử lại nhé!')); return; }
     const names = s.seats.map(id => id === Net.me ? G.heroes[0].profile.name : remoteName(id));
-    const online = { mine: s.mine, names, seed: s.gid, onMove: f => G.netGames.onMove(f), move: (n, mv) => G.netGames.move(n, mv), next: (n, seat) => G.netGames.next(n, seat), all: n => G.netGames.all(n) };
+    // every move is tied to this game: a story or game that is still winding down can't send into (or end) a newer one
+    const live = () => !!G.netGames.session && G.netGames.session.gid === s.gid, end = () => { if (live()) G.netGames.leave(); };
+    const online = { mine: s.mine, names, seed: s.gid, onMove: f => live() && G.netGames.onMove(f), move: (n, mv) => live() && G.netGames.move(n, mv), next: (n, seat) => live() ? G.netGames.next(n, seat) : Promise.resolve(null), all: n => live() ? G.netGames.all(n) : Promise.resolve([]) };
     if (/^tale-/.test(s.game)) { // a tale read together: page turns travel as moves
-      const t = (G.TALES || []).find(x => 'tale-' + x.id === s.game); if (!t || !G.readTaleNow) { G.netGames.leave(); return; }
+      const t = (G.TALES || []).find(x => 'tale-' + x.id === s.game); if (!t || !G.readTaleNow) { end(); return; }
       let seq = 0; const sync = { send: p => online.move(seq++, p), listen: fn => online.onMove((seat, n, mv) => { if (seat !== s.mine) fn(mv); }) };
-      G.readTaleNow(G.heroes[0], t, sync).finally(() => G.netGames.leave()); return;
+      G.readTaleNow(G.heroes[0], t, sync).finally(end); return;
     }
-    G.playGameOnline(s.game, s.level || 1, online).finally(() => G.netGames.leave());
+    G.playGameOnline(s.game, s.level || 1, online).finally(end);
   },
   onEnd: id => toast(T(`${remoteName(id)} left the game.`, `${remoteName(id)} đã rời trò chơi.`))
 });
