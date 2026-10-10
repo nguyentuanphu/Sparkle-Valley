@@ -20,8 +20,10 @@ permissions:
   pull-requests: read
   statuses: write
 
+# `phone` (screens on phone, tablet and computer) is left to Release's full suite: on GitHub's small machines its 3D
+# screens run out of time (first run, 10 Oct: boot took 156 s there against 66 s on the Claude machines).
 env:
-  CHECKS: 'rules unit types arch emoji noemoji preload boot phone'
+  CHECKS: 'rules unit types arch emoji noemoji preload boot'
 
 jobs:
   checks:

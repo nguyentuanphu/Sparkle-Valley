@@ -46,7 +46,8 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - 10 Oct AEST: no double suite runs. Release reruns the full suite only when the merged code differs from what a helper tested (two or more branches merged, or Release changed code itself); otherwise it runs the quick checks (`types unit arch rules ground studio`) and relies on the helper's recorded full-suite result (commit id and every check, in that core's progress notes).
 - 10 Oct AEST: r55 (chapter 2) deployed at the owner's "Deploy now" with the full suite still running (2 of 81 checks done, both passed); the rest reported when it finished.
 - **Audit on every pull request (10 Oct AEST):** `.github/workflows/pr-checks.yml` runs the quick checks
-  (`rules unit types arch emoji noemoji preload boot phone`, free GitHub minutes) and `.github/workflows/ai-review.yml`
+  (`rules unit types arch emoji noemoji preload boot`, free GitHub minutes; `phone` stays in the full suite,
+  too slow on GitHub's machines) and `.github/workflows/ai-review.yml`
   has a second Claude review the changes against the rules and post one comment (Claude usage, same account as the bug
   robot). The review runs when a pull request is opened, reopened or marked ready, and again when the label `ai-review`
   is added; not on every push. The round's pull request into `main` is reviewed too, before "yes, deploy".
