@@ -49,16 +49,34 @@ applyComfort();
 try { matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => applyComfort()); } catch (e) { }
 // Captions: every spoken line also appears as text at the bottom (unless a speech box, game or storybook
 // is already showing those words). On by default; grown-ups can switch it off.
+let hideCaption = () => { };
 {
-  let cap = null, t = 0;
+  let cap = null, timers = [];
+  const stop = () => { timers.forEach(clearTimeout); timers = []; };
+  hideCaption = () => { stop(); cap && cap.classList.remove('show'); };
+  // a long line is shown a sentence or two at a time, so the box never grows to cover the screen
+  const chunks = text => {
+    const out = []; let cur = '';
+    for (const p of text.split(/(?<=[.!?。…])\s+/)) {
+      if (cur && (cur + ' ' + p).length > 90) { out.push(cur); cur = p; } else cur = cur ? cur + ' ' + p : p;
+    }
+    if (cur) out.push(cur);
+    return out;
+  };
   spoken.push(text => {
     if (settings.captions === false || !text) return;
-    if (document.querySelector('.dialog:not(.out), .storybook, .gl, .howto')) return;
+    if (document.querySelector('.dialog:not(.out), .storybook, .gl, .howto, .credits')) return;
     if (!cap) { cap = el('div', 'caption'); cap.setAttribute('role', 'status'); cap.setAttribute('aria-live', 'polite'); document.body.appendChild(cap); }
-    cap.textContent = text; cap.classList.add('show'); clearTimeout(t);
-    t = setTimeout(() => cap.classList.remove('show'), 2200 + text.length * 70);
+    stop(); let at = 0;
+    chunks(text).forEach(c => {
+      const ms = 2200 + c.length * 70;
+      timers.push(setTimeout(() => { cap.textContent = c; cap.classList.add('show'); }, at));
+      at += ms;
+    });
+    timers.push(setTimeout(() => cap.classList.remove('show'), at));
   });
 }
+export { hideCaption };
 export function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3200); }
 
 const flagBtns = () => `<div class="seg lang"><button data-l="en" class="${settings.lang === 'en' ? 'on' : ''}">${originFlags('au')} English</button><button data-l="vi" class="${settings.lang === 'vi' ? 'on' : ''}">${originFlags('vn')} Tiếng Việt</button></div>`;
