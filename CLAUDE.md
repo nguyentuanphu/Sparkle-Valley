@@ -2,14 +2,14 @@
 
 **HARD RULE: nothing reaches `main` (and so Netlify) until the owner has checked the round and clearly said "yes, deploy".**
 - Commit locally as you go.
-- When a round is done, show what changed and how it was tested. No Netlify zip or local bundle (owner, 11 Oct: "no need to provide offline files since I can get everything on GitHub and Google Drive").
+- When a round is done, show what changed and how it was tested, and give the Netlify zip. No local bundle (owner, 11 Oct: the offline files are on GitHub and Google Drive; the Netlify zip is still wanted).
 - History: 4 Oct standing "push without asking" ended 5 Oct ("ask me every time"); 5 Oct "ask GitHub and Netlify separately" replaced 10 Oct by the rule below.
 - **Artifacts always go into the repo (owner, 10 Oct: "Always allow adding artifact to repo").** Whenever a design, plan or drawing page is made or updated as a claude.ai artifact, put a copy in the repo (the page and its pictures, under `docs/<name>/`) and link it from the docs that use it, so every chat can read it. This is allowed without asking, and the push of such a docs-only commit to the working branch needs no separate "yes, push". Merging into `main` still needs "yes, deploy", and anything that changes the game still needs "yes, push".
 - The Google Drive mirror and the voice relay (TURN) are set up (owner, 10 Oct AEST): no more reminders.
 
 **Release is the master release of all work (owner, 10 Oct):**
 - Helper chats (every core that is not Release) push to their own branch (`core/<name>` or the branch their session was given) whenever their checks pass, without asking the owner. Never to `main`.
-- Release collects every branch, merges them, runs the full suite, reports the round (what changed, how tested), then asks the owner **one pop-up question per round: "yes, deploy"**. That one answer covers pushing the release branch and merging it into `main` (Netlify publishes). Nothing reaches `main` without it, and it covers that round only.
+- Release collects every branch, merges them, runs the full suite, reports the round (what changed, how tested, the Netlify zip), then asks the owner **one pop-up question per round: "yes, deploy"**. That one answer covers pushing the release branch and merging it into `main` (Netlify publishes). Nothing reaches `main` without it, and it covers that round only.
 - **The bug robot (owner, 10 Oct)** works like a helper chat: the GitHub workflow `.github/workflows/bug-fixer.yml` starts the moment a bug is filed, labelled or gets the owner's "go", with a 5-minute timer as a backup (owner, 10 Oct), picks up open GitHub issues labelled `bug` plus a core label (only the Front Desk files them, `docs/cores/front-desk.md`), and lets Claude work on them as that core. A **small** bug (the small-bug rule in `docs/cores/front-desk.md`) is fixed, checked and pushed without asking, only to its own branch `bugfix/<core>-<issue>` with a draft pull request; a **big** bug gets a plan on the issue and waits for the owner's "go". It never pushes to `main`: Release merges its pull requests in a round, under that round's "yes, deploy".
 
 **Phone, tablet and computer (owner, 8 Oct):** every change is checked on a phone, a tablet and a computer so it looks tidy on all three (rule UI-006, check `phone`); look at screenshots of all three before reporting a round.

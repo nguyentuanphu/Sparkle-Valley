@@ -18,9 +18,8 @@ when the owner says so.
 3. Record new voices (`tools/make-voice-pack.mjs --engine azure`, see Voice & Audio).
 4. Run the **full suite** (`node run.mjs`, about an hour; one browser run at a time). Fix or send back every failure.
 5. Update `HANDOFF.md` (round history and checks table) and `docs/ARCHITECTURE.md` §9 if rules changed (`node tools/rules-from-doc.mjs`).
-6. Packages: **none for the owner any more** (owner, 11 Oct: everything is on GitHub and the Google Drive mirror). Build the
-   Studio exe only when `studio/` changed (`bash studio/build-exe.sh`).
-7. Report to the owner: what changed (plain words), how it was tested, times in Sydney time (AEDT/AEST).
+6. Packages: the Netlify zip (`git archive --format=zip -o <dir>/sparkle-valley-netlify-rNN-game.zip HEAD index.html sw.js manifest.webmanifest netlify.toml css js fonts icons vendor videos content`). **No local bundle** (owner, 11 Oct: the offline files are on GitHub and the Google Drive mirror). The Studio exe when `studio/` changed (`bash studio/build-exe.sh`).
+7. Report to the owner: what changed (plain words), how it was tested, the Netlify zip, times in Sydney time (AEDT/AEST).
 8. Ask one pop-up question per round: “yes, deploy”. It covers pushing the release branch and merging it into main
    (which makes Netlify publish), for that round only (owner, 10 Oct: Release is the master release; helper chats push
    their own branches without asking).
@@ -62,5 +61,5 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - **Tidy streets (11 Oct AEDT):** stalls, kiosks and sellers follow the Concept D street rules (one market row per place,
   one side of the main street, facing it, spacing rules checked by `validate.js`); stage T1b in `ROUND-T.md`, built by the
   robot chat after r57, before T2.
-- **No offline files (11 Oct AEDT):** the round report has no Netlify zip and no local bundle; the owner gets everything from
-  GitHub and the Google Drive mirror.
+- **No local bundle (11 Oct AEDT):** the round report gives the Netlify zip but no local bundle; the owner gets the offline
+  files from GitHub and the Google Drive mirror.
