@@ -64,3 +64,6 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
   for a saved, piece-by-piece valley; a smaller first download.
 - (11 Oct) Analytics also keeps each device's start-up times (about 5 numbers a start, no names; PRIV-005), so real
   phone and tablet times show in Studio's Analytics; nothing is sent when Analytics is off.
+- (11 Oct) Once the owner has said go, this chat checks the board, its branch and its GitHub issues every 5 minutes,
+  acts on anything new, pushes its own branch when its checks pass and keeps its Now line current; the check-ins pause
+  while waiting for the owner's go (said in one line). Times for the owner in Sydney time (AEDT).
