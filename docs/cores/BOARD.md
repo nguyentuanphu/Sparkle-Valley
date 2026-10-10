@@ -9,11 +9,11 @@ Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
 ## Release
-- **Now:** Round T on `round-t`: T2 (r57: rivers, lakes, bridge landmarks, road colours, boats) built and reported, full suite 86/86, on top of T1 (r56, pushed to pull request #21, not deployed) · branch `round-t` · waiting for the owner's "yes, push" / "yes, deploy" for r57 (and Online's map version in the hello before Round T goes live) · 11 Oct, 3:45 am AEST
+- **Now:** Round T on `round-t`: T2 (r57: rivers, lakes, bridge landmarks, road colours, boats) built and reported, full suite 86/86, on top of T1 (r56, pushed to pull request #21, not deployed) · branch `round-t` · owner said "not yet" to push and deploy for r57 (11 Oct); waiting for the next word (and Online's map version in the hello before Round T goes live) · 11 Oct, 3:45 am AEST
 - r54 is live (10 Oct, 1:29 am AEST). Round T stages T0 to T4: `docs/cores/ROUND-T.md`. Until Round T is merged, other cores do not change world positions or the map files (CLAUDE.md, helper rule 4).
 - Halloween decorations start growing about three weeks before 31 Oct: they only reach players once a round is deployed.
 - Still to build from the Round R plan (`docs/cores/ROUND-R.md`, Part 2): items 2 to 12 (Concept D layout, child's journey, homes, surprises, shop and wardrobe, money games, the rest of the festival groups, Hội làng times, 5–8 challenges, parent features, voice pack by area); the owner's privacy decisions of 9 Oct; splitting the code into per-core folders (infrastructure round).
-- The Google Drive mirror (`.github/workflows/drive-mirror.yml`) is not set up yet: ask the owner at every report.
+- The Google Drive mirror is set up (owner, 11 Oct AEST).
 
 ## World
 - **Now:** Round T is run by a Release chat on branch `round-t` (see `docs/cores/ROUND-T.md`, Progress); no separate World chat until Round T is merged · 10 Oct AEST
@@ -37,7 +37,7 @@ Format for a request:
 - **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
 - [x] (Release, one-line fix a check needs, 10 Oct AEST) `js/netmsg.js` `W` is now 235 (the 480 m valley); Online may make it read `WORLD.size` from the map.
 - [ ] (Release → Online) Before T1 goes live: the hello carries the map version (`MAP_VERSION`); a friend on another layout sees "Ask a grown-up to update" instead of joining (positions are raw x, z) · ROUND-T.md §4 · `js/netmsg.js`, `js/net.js` · 10 Oct AEST
-- The voice relay waits for the owner's Cloudflare TURN key (CF_TURN_KEY_ID, CF_TURN_KEY_TOKEN in Netlify): until then, voices only work when the two devices can link directly.
+- The voice relay (TURN) is set up in Netlify (owner, 11 Oct AEST): check `/api/turn` lists `turn:` servers when voices are next tested.
 
 ## Studio
 - **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST

@@ -20,7 +20,7 @@ when the owner says so.
 7. Report to the owner: what changed (plain words), how it was tested, the packages, times in AEST.
 8. Ask two questions: “yes, push” (GitHub: push the branch, open or update the pull request) and “yes, deploy”
    (merge into main, which makes Netlify publish). Each answer covers that one push or deploy only.
-9. Ask about the Google Drive mirror until the owner says it is set up.
+9. (Done 11 Oct AEST: the Google Drive mirror and the voice relay are set up; no more reminders.)
 10. After deploying, check the live deploy in Netlify and say when it went live (AEST).
 
 ## Hard rules (§9.1)
@@ -38,3 +38,4 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - (10 Oct AEST) Round T1 (r56): "yes, push" (pull request #21, with T0); deploy "not yet". The Google Drive mirror and the voice relay (TURN): neither set up yet.
 - (10 Oct AEST) T2 "go", with: Chùa Cầu is a footbridge for walking beside the Vietnam road (the road crosses the Hội An canal on a plain bridge next to it); the Brisbane River, the Yarra and the Murray join the main river (plain bridges where they pass the ring road); road colours as tinted asphalt (red Vietnam, orange Australia, purple to the mountains, blue along the coast), white lines kept.
 - (10 Oct AEST, evening) The start-up speed ratchet (`worldMs` in `tests/perf-baseline.json`): re-measure on today's slower test machine and set it to r56's median (6600 ms; ten second starts each side by side, r57 median 6850 ms), still +25 % allowed.
+- (11 Oct AEST) Round T2 (r57, full suite 86/86): push "not yet"; deploy "not yet". The Google Drive mirror and the voice relay (TURN): both set up (no more reminders).
