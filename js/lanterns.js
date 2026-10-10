@@ -12,6 +12,7 @@ import { THREE, glow } from './gfx.js';
 import { T } from './i18n.js';
 import { VILLAGE, heightAt, roadDist, WATER } from './world.js';
 import { featureOn } from './custom.js';
+import { RELEASES } from './content/releases.js';
 import { events } from './core/events.js';
 import { CHAPTERS, STORY_TALES, COMPANIONS, STORY_LINES } from './content/chapters.js';
 import { buildDinh, buildLantern } from './dinh.js';
@@ -20,7 +21,9 @@ import { openSpot } from './openspot.js';
 import { pad, frames, slot, QUIT } from './handpad.js';
 
 const V = VILLAGE;
-const released = ch => featureOn('story_' + ch.id, true);
+// (each chapter's switch starts as its default in js/content/releases.js: chapter 2 is off until an admin switches it on or
+// schedules it in Studio, owner 10 Oct)
+const released = ch => featureOn('story_' + ch.id, (RELEASES.find(r => r.id === 'story_' + ch.id) || { def: true }).def);
 const st = p => { const s = p.lanterns = p.lanterns && typeof p.lanterns === 'object' ? p.lanterns : {}; s.done = s.done || {}; s.chapters = s.chapters || {}; return s; };
 const unnamed = s => String(s).replace(/,?\s*\{name\}/g, '');
 const big = p => p.age === 'big';

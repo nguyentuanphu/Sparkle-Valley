@@ -67,10 +67,12 @@ export function buildBridge() {
   for (const x of [-6, -2, 2, 6]) parts.push(P(new THREE.CylinderGeometry(.14, .16, 1.4, 8), '#a8281e', [x, bridgeY((x + 7) / 14) - .6, 0]));
   const g = new THREE.Group(); const m = new THREE.Mesh(merge(parts), toonVC()); m.castShadow = true; g.add(m); g.userData.rail = rail; return g;
 }
-// the lights along the bridge's rails: small red lanterns and a warm red glow under the deck (shown when it is lit)
+// the lights along the bridge's rails: small red and gold lanterns on both rails, and a thin red line of light along each
+// rail top (shown when it is lit). rail: points in pairs, one per side, plank by plank (as buildBridge makes them)
 export function buildBridgeLights(rail) {
-  const g = new THREE.Group(), red = glow('#ff3a2a'), gold = glow('#ffd23f');
-  rail.forEach((v, i) => { if (i % 2) return; const l = new THREE.Mesh(new THREE.SphereGeometry(.16, 10, 8), i % 4 ? gold : red); l.scale.y = 1.2; l.position.copy(v); l.position.y += .2; g.add(l); });
-  for (let i = 0; i < 6; i++) { const t = (i + .5) / 6, w = new THREE.Mesh(new THREE.BoxGeometry(2.3, .06, 2.2), glow('#ff5a3a', .55)); w.position.set(-7 + t * 14, bridgeY(t) - .14, 0); w.rotation.z = Math.cos(t * Math.PI) * -.35; w.material.depthWrite = false; g.add(w); }
+  const g = new THREE.Group(), red = glow('#ff3a2a'), gold = glow('#ffd23f'), line = glow('#ff5a3a', .85); line.depthWrite = false;
+  rail.forEach((v, i) => { const plank = i >> 1; if (plank % 2) return; const l = new THREE.Mesh(new THREE.SphereGeometry(.16, 10, 8), plank % 4 ? gold : red); l.scale.y = 1.2; l.position.copy(v); l.position.y += .2; g.add(l); });
+  for (let i = 0; i + 2 < rail.length; i++) { const a = rail[i], b = rail[i + 2], d = Math.hypot(b.x - a.x, b.y - a.y);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(d, .07, .09), line); m.position.set((a.x + b.x) / 2, (a.y + b.y) / 2 - .08, a.z); m.rotation.z = Math.atan2(b.y - a.y, b.x - a.x); g.add(m); }
   return g;
 }

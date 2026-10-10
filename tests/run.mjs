@@ -824,15 +824,17 @@ await check('story', async () => {
   await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(1200);
   await pg.evaluate(() => document.querySelectorAll('.reward,.modal').forEach(e => e.click())); await w(800); await calm(); await w(1500);
   seen.push(await q());
-  // (Play core, chapter 2) with Studio's story_ch2 switched off, the old adventures follow chapter 1 as before
-  const noCh2 = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), story_ch2: false }; const c = __sv.currentQuest(__sv.heroes[0].profile); C.features.story_ch2 = true; return c && c.id; });
+  // (Play core, chapter 2; owner 10 Oct: it is off until an admin switches it on or schedules it) switched on in Studio,
+  // chapter 2 follows chapter 1; off, the old adventures follow as before
+  const noCh2 = seen[8];
+  seen[8] = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), story_ch2: true }; const c = __sv.currentQuest(__sv.heroes[0].profile); delete C.features.story_ch2; return c && c.id; });
   const end = await pg.evaluate(() => { const G = __sv, p = G.heroes[0].profile, D = G.lanterns.dinh;
     const house = Math.min(...G.world.colliders.filter(c => c.r > 2 && c.top == null).map(c => Math.hypot(c.x - D.x, c.z - D.z) - c.r));
     return { companion: p.lanterns.companion, ch1: !!p.lanterns.chapters.ch1, keep: (p.keepsakes || []).includes('lantern_ch1'), carrying: p.lanterns.carrying, house }; });
   const want = ['L_p_owl', 'L_c1_village', 'L_c1_nam', 'L_c1_well', 'L_c1_teo', 'L_c1_tale', 'L_c1_find', 'L_c1_hang'], out = [];
   want.forEach((id, i) => { if (seen[i] !== id) out.push(`step ${i + 1} was ${seen[i]}, expected ${id}`); });
   if (seen[8] !== 'L_c2_fly') out.push('after chapter 1 the goal was ' + seen[8] + ', not chapter 2');
-  if (!noCh2 || /^L_/.test(noCh2)) out.push('with chapter 2 switched off, the goal after chapter 1 was ' + noCh2 + ', not an old adventure');
+  if (!noCh2 || /^L_/.test(noCh2)) out.push('with chapter 2 not switched on (its default), the goal after chapter 1 was ' + noCh2 + ', not an old adventure');
   if (!film) out.push('Ông Cú\'s film did not play');
   if (end.companion !== 'dragon') out.push('the companion was not chosen');
   if (carrying !== 'ch1' || end.carrying) out.push('the lantern was not carried and then hung');
@@ -844,7 +846,7 @@ await check('story', async () => {
   if (P.errors.length) out.push(...P.errors.slice(0, 2));
   await P.ctx.close();
   if (out.length) throw new Error(out.join('; '));
-  return `prologue and chapter 1 played through (${want.length} steps; ribbons caught, ${lifted} lotus leaves lifted, rope pulled); đình lit, keepsake home, then "${seen[8]}" (chapter 2 off: "${noCh2}"); nearest building ${end.house.toFixed(1)} m away`;
+  return `prologue and chapter 1 played through (${want.length} steps; ribbons caught, ${lifted} lotus leaves lifted, rope pulled); đình lit, keepsake home, then "${noCh2}" (chapter 2 switched on: "${seen[8]}"); nearest building ${end.house.toFixed(1)} m away`;
 });
 await check('chapter2', async () => {
   // (Play core, owner's go 10 Oct) chapter 2 of the lantern story, Hà Nội, played from the start to the Trung Thu parade,
@@ -864,6 +866,10 @@ await check('chapter2', async () => {
     const tapDialog = (n = 6) => pg.evaluate(async n => { for (let i = 0; i < n; i++) { const d = document.querySelector('.dialog:not(.out)'); if (!d || d.querySelector('.dch')) break; d.click(); await new Promise(r => setTimeout(r, 250)); } }, n);
     const choose = k => pg.evaluate(k => { const c = document.querySelectorAll('.dialog:not(.out) .dch'); if (!c[k]) return false; c[k].click(); return true; }, k);
     const step = async () => { await w(400); await calm(); await w(2200); await calm(); seen.push(await q()); };
+    // (off by default: an admin switches it on in Studio)
+    const offFirst = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM, h = __sv.heroes[0], p = h.profile; p.lanterns = { companion: 'firefly', done: { p_owl: true }, chapters: { ch1: true } };
+      for (const s of ['c1_village', 'c1_nam', 'c1_well', 'c1_teo', 'c1_tale', 'c1_find', 'c1_hang']) p.lanterns.done[s] = true;
+      const q = __sv.currentQuest(p); C.features = { ...(C.features || {}), story_ch2: true }; return !/^L_c2/.test(q && q.id || ''); });
     await pg.evaluate(age => { const G = __sv, h = G.heroes[0], p = h.profile; p.age = age;
       p.lanterns = { companion: 'firefly', done: { p_owl: true }, chapters: { ch1: true } };
       for (const s of ['c1_village', 'c1_nam', 'c1_well', 'c1_teo', 'c1_tale', 'c1_find', 'c1_hang']) p.lanterns.done[s] = true;
@@ -949,6 +955,7 @@ await check('chapter2', async () => {
       return bad; });
     const want = age === 'big' ? ['L_c2_fly', 'L_c2_tam', 'L_c2_teo', 'L_c2_job', 'L_c2_vanmieu', 'L_c2_tale', 'L_c2_find', 'L_c2_hang'] : ['L_c2_fly', 'L_c2_teo', 'L_c2_vanmieu', 'L_c2_tale', 'L_c2_find', 'L_c2_hang'];
     want.forEach((id, i) => { if (seen[i] !== id) out.push(`step ${i + 1} was ${seen[i]}, expected ${id}`); });
+    if (!offFirst) out.push('chapter 2 started before an admin switched it on');
     if (!lazy) out.push('chapter 2 was loaded at start-up');
     if (!lightsWaited) out.push('walking into Hà Nội finished the step before the lights were followed');
     if (!teoBtn || teoChoices !== 3) out.push(`Tèo's challenge did not offer Play, How to play and Later (${teoChoices})`);
