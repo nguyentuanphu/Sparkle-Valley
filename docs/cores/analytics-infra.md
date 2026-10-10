@@ -33,7 +33,7 @@ nothing while hidden).
 - What the analytics keep is written exactly at the top of `netlify/lib/players.mjs`.
 
 ## Checks you run
-`studio report saves cloud photo boot unit familyphotos offline nostudio`
+`studio report saves cloud photo boot unit familyphotos offline nostudio startup`
 (`studio` covers the players report, online-now, admins and the voice relay function on a pretend Netlify.)
 
 ## Environment variables (set by the owner in Netlify, never in the code)
@@ -58,3 +58,22 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
 - (10 Oct) Parents and children never see “Sparkle Studio” or “Studio”: it is for the admin only (check `nostudio`).
 - (10 Oct) The website serves a packed copy of the scripts (`tools/bundle.mjs`, Netlify build and `build-netlify.sh`);
   the fast checks run on GitHub for every pull request (`.github/workflows/checks.yml`).
+- (11 Oct, #36 slow start) Go for the whole start-up plan: a `startup` check at tablet speed on the packed copy (time to
+  title, "Who's playing?", valley ready, longest freeze, each a ratchet); PERF-001 measures the packed copy; the
+  breathing between building steps in `js/main.js` may be changed by this core (noted on the board); a request to World
+  for a saved, piece-by-piece valley; a smaller first download.
+- (11 Oct) Analytics also keeps each device's start-up times (about 5 numbers a start, no names; PRIV-005), so real
+  phone and tablet times show in Studio's Analytics; nothing is sent when Analytics is off.
+- (11 Oct) Once the owner has said go, this chat checks the board, its branch and its GitHub issues every 5 minutes,
+  acts on anything new, pushes its own branch when its checks pass and keeps its Now line current; the check-ins pause
+  while waiting for the owner's go (said in one line). Times for the owner in Sydney time (AEDT).
+
+## Progress notes
+- **11 Oct, #36 slow start (branch `core/analytics-infra`, code at 5be6481, docs after).** Full suite on 5be6481:
+  **87/87 passed, none skipped** (local PeerJS and MQTT servers up; finished 8:02 am AEDT). New check `startup`
+  (packed copy, service worker on, processor 4x slower): first start 1058 KB, title 1.0-1.1 s, valley ready 19 s;
+  second start 0 KB, ready 18-20 s, longest freeze 4.5-5.0 s; slowest steps things 5.6 s, land 5.0 s, roads 2.0 s.
+  `perf` now measures PERF-001 on the packed copy (2.6 MB, ratchet 2.7). Start-up times added to Analytics (PRIV-005).
+  Tried: pauses between building steps in `js/main.js` gave nothing measurable (each freeze is one World function), so
+  that change was not kept. The fix is World's (board request): keep the built valley on the device, build in pieces.
+

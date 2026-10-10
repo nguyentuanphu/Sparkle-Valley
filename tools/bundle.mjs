@@ -45,7 +45,7 @@ fs.rmSync(out, { recursive: true, force: true });
 const res = await esbuild.build({
   entryPoints: { main: path.join(dir, 'js/main.js'), ...Object.fromEntries(SHARED.map(f => [f.replace(/^js\//, '').replace(/\.js$/, '').replace(/\//g, '-'), path.join(dir, f)])) }, bundle: true, splitting: true, format: 'esm', target: 'es2022',
   minify: true, keepNames: true, legalComments: 'none', charset: 'utf8', outdir: out, chunkNames: 'c-[hash]', entryNames: '[name]-[hash]',
-  metafile: true, logLevel: 'error'
+  metafile: true, logLevel: 'error', preserveSymlinks: true // (a copy with linked folders, as the checks build it, keeps its own paths)
 });
 const rel = f => path.relative(dir, path.resolve(f)).split(path.sep).join('/');
 const outputs = res.metafile.outputs, files = Object.keys(outputs).map(rel).filter(f => f.endsWith('.js')).sort();
