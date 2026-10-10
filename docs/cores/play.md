@@ -52,10 +52,9 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   the old choice for each. Prices: `DAY_COINS` = 70 coins is about a day of play; small things 30, nice things 70,
   special things 120 (`priceOf`). Game coins only (`farm.coins`). Bought things go in `profile.owned.clothes`; what a child
   already wore when the shop came counts as owned (`adoptWorn`), and so do hats won elsewhere (`profile.owned.hats`).
-- **Bag button:** with the switch on, the dock's Bag goes to the shop (a fade, then the shop opens); the old backpack is the
-  last picture tab in the shop and stays in the Pad. Switch off: everything is as before.
+- **Bag button** (owner, 10 Oct, Bug #29, replaces "Backpack button teleports to the shop"): the Bag opens the backpack. Inside it is one small shop button (`js/ui.js`, `drawBag`) that opens the clothes shop right there, no travel; the stall in the valley stays. The shop has no backpack tab and the wardrobe has no shop button on its rows.
 - **Wardrobe:** `G.openWardrobe` shows a row per kind with only what the child owns (plus passport hats), one tap to wear;
-  a kind with nothing yet has a shop picture that goes to the shop.
+  a kind with nothing yet just shows the empty face. The Done button has its own strip at the top; rows wrap, so nothing overlaps or is cut off.
 - **Mystery boxes** (`js/boxes.js`, rules `js/content/boxes.js`, switch `mysteryBox`): only for big kids (5 to 8) at Medium or
   Hard. One free box a day (AEST day, as `js/kidplay.js`) and one more when a quest or story step is finished (at most one a
   day, kept up to 3), hooked into `checkQuests` in `js/main.js`. Boxes are never sold. A second one of anything turns into

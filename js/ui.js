@@ -768,7 +768,7 @@ export function openPad(game, i, tab) {
     const dishes = Object.entries(p.dishes).filter(([, n]) => n > 0);
     body.innerHTML = `
       ${(p.pets || []).length ? `<button class="btn wide" id="bagPets">🐾 ${T('My pets', 'Thú cưng của con')}: ${(p.pets || []).map(pt => (PET_ICON[pt.kind] || '🐾') + ' ' + esc(pt.name || '')).join('  ')}</button>` : ''}
-      <div class="bag-top"><span class="chip">💰 ${fmt(farm.coins)}</span><span class="chip">🔮 ${p.orbs} ${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}</span><span class="chip">🍃 ${Object.keys(p.leafies).length}/24 Leafies</span></div>
+      <div class="bag-top"><span class="chip">💰 ${fmt(farm.coins)}</span><span class="chip">🔮 ${p.orbs} ${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}</span><span class="chip">🍃 ${Object.keys(p.leafies).length}/24 Leafies</span>${game.shop && game.shop.on() && game.heroes.length < 2 ? `<button class="bagshop${p.age !== 'big' ? ' little' : ''}" id="bagShop" aria-label="${T('Clothes shop', 'Cửa hàng quần áo')}">${pic('🛍️')}</button>` : ''}</div>
       <h3>${T('Food', 'Món ăn')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
       <div class="slots">${dishes.map(([id, n]) => { const r = dishInfo(id) || { icon: '🥘', name: () => T('Mystery stew', 'Món hầm bí ẩn') }; return `<button class="slot" data-eat="${id}" title="${esc(r.name())}"><span>${r.icon}</span><b>${n}</b><small>${esc(r.name())}</small></button>`; }).join('') || `<p class="note">${T('Cook at a cooking pot to make food.', 'Nấu ăn ở nồi nấu để có món ăn.')}</p>`}</div>
       <h3>🛍️ ${T('From shops and stalls', 'Mua ở quán và sạp')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
@@ -785,6 +785,7 @@ export function openPad(game, i, tab) {
       <h3>${T('Glider', 'Cánh lượn')}</h3>
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
     jumpNav(body, body.querySelector('.bag-top'));
+    const toShop = body.querySelector('#bagShop'); if (toShop) toShop.onclick = () => { SFX.tap(); close(); setTimeout(() => game.shop.openShop(i), 220); }; // (Bug #29) one small way into the clothes shop, right here, no travel
     body.querySelectorAll('[data-eat]').forEach(b => b.onclick = () => { game.eat(hero, b.dataset.eat); draw(); });
     body.querySelectorAll('[data-snack]').forEach(b => b.onclick = () => { eatSnack(game, hero, b.dataset.snack, true); draw(); });
     body.querySelectorAll('[data-sellgem]').forEach(b => b.onclick = () => {

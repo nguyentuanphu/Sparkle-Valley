@@ -2190,6 +2190,13 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .wardrobe.kward .wslot { flex: none; width: 44px; display: flex; align-items: center; justify-content: center; opacity: .8; } .wardrobe.kward .wslot .art { width: 34px; height: 34px; }
 .wardrobe.kward .chip .kpic, .wardrobe.kward .chip .art { width: 42px; height: 42px; } .wardrobe.kward .chip.none { opacity: .7; }
 .wardrobe.kward.little .wrow .chip { min-width: 72px; height: 72px; }
+/* Bug #29: the Done button sits in its own strip (covers no row); rows wrap so no chip is cut off or overlaps; the sheet grows to fit */
+.wardrobe.kward { max-height: 78dvh; gap: 6px; }
+.wardrobe.kward .whead { display: flex; justify-content: flex-end; flex: none; }
+.wardrobe.kward .whead .x { position: static; width: 60px; height: 60px; flex: none; }
+.wardrobe.kward .wrow { flex: none; flex-wrap: wrap; overflow: visible; padding: 5px 4px; align-items: center; }
+.wardrobe.kward .wrow .chip { flex: none; padding: 0; }
+.bag-top .bagshop { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--line); background: #fff; display: inline-flex; align-items: center; justify-content: center; padding: 0; flex: none; } .bag-top .bagshop .art { width: 30px; height: 30px; } .bag-top .bagshop.little { width: 64px; height: 64px; }
 /* mystery boxes, rankings, the collection book */
 .kcard .khub { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; padding: 8px 0 12px; }
 .kcard .khb { position: relative; width: 112px; height: 112px; border-radius: 28px; border: 0; background: #fff; box-shadow: 0 4px 0 rgba(90, 60, 130, .14); display: flex; align-items: center; justify-content: center; }
