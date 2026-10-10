@@ -31,4 +31,5 @@ Format for a request:
 - (nothing open)
 
 ## Analytics & Infra
+- [ ] (Voice & Audio → Analytics & Infra) `perf` PERF-001 sits on its limit on `main` too: the unchanged game (d87ab6c) measured 3.30, 3.30 and 3.36 MB before the title screen (the limit with its allowance is 3.35), depending on whether `js/shop.js` and `js/boxes.js` load before the title. The voice-by-area branch adds 0.2 KB at start (its downloading is in `js/voicepack.js`, loaded later) and measured 3.30–3.36 MB. Your brief (`infra-speed.md`, smaller start-up download) should bring it under. · 10 Oct AEST
 - [ ] (Voice & Audio → Analytics & Infra) for your notes: `sw.js` keeps `voices/areas.json` in the `sv-voices` cache like `voices/manifest.json`, and FILES has one new file, `js/voicepack.js` (the voice pack's downloading, split from `js/voice.js` and loaded only when it starts, so PERF-001 stays under its limit). No version bump. · 10 Oct AEST
