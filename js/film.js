@@ -165,9 +165,10 @@ export function createFilm(stage, script, ctx = {}) {
   let page = null, alive = true, last = performance.now(), clock = 0, w = 0, h = 0;
   const fit = () => { const W = stage.clientWidth, Hh = stage.clientHeight; if (W === w && Hh === h) return; w = W; h = Hh; r.setSize(W, Hh, false); r.domElement.style.width = W + 'px'; r.domElement.style.height = Hh + 'px'; cam.aspect = W / Math.max(1, Hh); cam.updateProjectionMatrix(); };
   const _p = new THREE.Vector3();
+  let paused = false; // (a guide's real game is on screen instead: nothing to draw)
   const loop = now => {
     if (!alive) return; requestAnimationFrame(loop);
-    const dt = Math.min(.05, (now - last) / 1000); last = now; clock += dt; fit();
+    const dt = Math.min(.05, (now - last) / 1000); last = now; if (paused) return; clock += dt; fit();
     if (page) page.tick(dt, clock);
     r.render(scene, cam);
     if (page && page.hold && page.hold.at) { const p = page.hold.at(); _p.copy(p).project(cam); ring.style.left = ((_p.x + 1) / 2 * w) + 'px'; ring.style.top = ((1 - _p.y) / 2 * h) + 'px'; }
@@ -278,6 +279,7 @@ export function createFilm(stage, script, ctx = {}) {
     // play page k: builds its film and resolves when the film has played to its end
     page(k) {
       if (page) page.dispose();
+      paused = false; r.domElement.hidden = false;
       page = new Page(k); scene.fog.near = 60; scene.fog.far = 260; sun.intensity = 1.05; hemi.intensity = .85;
       try { script.pages[k] && script.pages[k](page); } catch (e) { console.warn('film page', k, e); }
       page.ev.sort((a, b) => a.t - b.t);
@@ -286,6 +288,8 @@ export function createFilm(stage, script, ctx = {}) {
     },
     // the narrator finished reading this page (help questions wait for that)
     narrated() { if (page) page.narrated = true; },
+    // hide the film while a guide's real game plays on the same screen (the next page() brings it back)
+    pause() { if (page) { page.dispose(); page = null; } paused = true; r.domElement.hidden = true; },
     close() { alive = false; if (page) page.dispose(); page = null; r.domElement.removeEventListener('pointerdown', onDown); r.domElement.removeEventListener('pointerup', onUp); r.domElement.remove(); help.remove(); ring.remove(); r.renderLists.dispose(); if (current === api) current = null; }
   };
   return api;
@@ -546,5 +550,90 @@ PROPS.oanquan = () => {
   const sq = []; for (let i = 0; i < 5; i++) sq.push([-1.2 + i * .6, .3]); for (let i = 4; i >= 0; i--) sq.push([-1.2 + i * .6, -.3]);
   g.userData.sq = sq;
   g.userData.pebble = (i, j) => { const c = ['#e8e4dc', '#bfb8ac', '#d8cfc0', '#a8a094'][j % 4]; return mesh([P(new THREE.DodecahedronGeometry(.045), c, [0, .045, 0], [j, j * 2, 0], [1, .7, 1])]); };
+  return g;
+};
+
+// ---------- props for the next films (Kid UI, 10 Oct: Bánh Chưng Bánh Giầy, Cây khế, Bắn bi, Lật hình) ----------
+// a star shape (a starfruit cut across, a gold star on a card)
+const starShape = (r1, r2, n = 5) => { const s = new THREE.Shape(); for (let i = 0; i < n * 2; i++) { const a = i / (n * 2) * Math.PI * 2 + H, r = i % 2 ? r2 : r1; i ? s.lineTo(Math.cos(a) * r, Math.sin(a) * r) : s.moveTo(Math.cos(a) * r, Math.sin(a) * r); } return s; };
+// a starfruit (quả khế): a fat yellow five-pointed star, a little long
+PROPS.starfruit = (s = 1, color = '#f2c834') => {
+  const g = new THREE.ExtrudeGeometry(starShape(.1, .055), { depth: .2, bevelEnabled: true, bevelSize: .025, bevelThickness: .03, bevelSegments: 1 }); g.translate(0, 0, -.1);
+  const m = mesh([P(g, color), P(Cyl(.01, .012, .06, 4), '#6a8a3a', [0, 0, .15], [H, 0, 0])]); m.scale.setScalar(s); return m;
+};
+// the starfruit tree (cây khế): a short trunk, a round green crown and fruit that can be picked one by one
+PROPS.starTree = (n = 12) => {
+  const g = new THREE.Group();
+  g.add(mesh([P(Cyl(.22, .32, 2.2, 8), '#7a5236', [0, 1.1, 0]), P(Cyl(.08, .12, 1.2, 6), '#7a5236', [.45, 2.1, 0], [0, 0, -.7]), P(Cyl(.08, .12, 1.2, 6), '#7a5236', [-.4, 2.2, .2], [.3, 0, .7]),
+    ...[0, 1, 2, 3, 4, 5, 6].map(i => P(S_(1.05, 10, 8), i % 2 ? '#4f9e42' : '#5fae4a', [Math.cos(i * .9) * (i ? 1.05 : 0), 3 + (i % 3) * .35, Math.sin(i * .9) * (i ? 1.05 : 0)]))]));
+  const fruits = [];
+  for (let i = 0; i < n; i++) { const a = i * 2.39, d = 1.3 + (i % 3) * .25, f = PROPS.starfruit(1.5); f.position.set(Math.cos(a) * d, 2.05 + (i % 4) * .2, Math.sin(a) * d); f.rotation.set(H, 0, a); g.add(f); fruits.push(f); } // (hanging under the leaves, where they can be seen)
+  g.userData.fruits = fruits; return g;
+};
+// the great bird of Cây khế: big, kind and colourful, with a seat on its back for a rider
+PROPS.bigBird = () => {
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  body.add(mesh([P(S_(.9, 16, 12), '#e85a3a', [0, 1.6, 0], [0, 0, 0], [1, .9, 1.5]), P(S_(.7, 14, 10), '#ffd23f', [0, 1.45, .55], [0, 0, 0], [1, .9, 1]),
+    P(S_(.55, 14, 10), '#e85a3a', [0, 2.45, 1.05]), P(Cone(.16, .55, 8), '#ffb020', [0, 2.38, 1.7], [H, 0, 0]),
+    P(S_(.15, 10, 8), '#ffffff', [.25, 2.6, 1.42]), P(S_(.15, 10, 8), '#ffffff', [-.25, 2.6, 1.42]), P(S_(.08, 8, 6), '#1a1410', [.27, 2.6, 1.55]), P(S_(.08, 8, 6), '#1a1410', [-.27, 2.6, 1.55]),
+    P(S_(.03, 6, 5), '#ffffff', [.3, 2.64, 1.62]), P(S_(.03, 6, 5), '#ffffff', [-.24, 2.64, 1.62]),
+    ...[-.2, 0, .2].map((x, i) => P(Cone(.09, .5, 6), ['#ffd23f', '#3cc7e8', '#ffd23f'][i], [x, 3.05, .95], [-.4, 0, -x])),
+    ...[-2, -1, 0, 1, 2].map(i => P(Cone(.2, 1.9, 6), ['#3cc7e8', '#7ee35a', '#ffd23f', '#7ee35a', '#3cc7e8'][i + 2], [i * .22, 1.85, -1.95], [-1.15, 0, i * .22], [1, 1, .35])),
+    P(Cyl(.06, .05, .7, 6), '#ffb020', [.3, .55, .1]), P(Cyl(.06, .05, .7, 6), '#ffb020', [-.3, .55, .1]), P(Box(.3, .06, .4), '#ffb020', [.3, .2, .22]), P(Box(.3, .06, .4), '#ffb020', [-.3, .2, .22])]));
+  const wings = [-1, 1].map(s => { const w = new THREE.Group(); w.position.set(s * .75, 1.9, 0); w.add(mesh([P(Box(1.6, .1, 1), '#e85a3a', [s * .8, 0, 0]), ...[0, 1, 2, 3].map(i => P(Box(.5, .06, .3), ['#3cc7e8', '#7ee35a', '#ffd23f', '#3cc7e8'][i], [s * (1.75 + i * .1), 0, .3 - i * .28], [0, s * i * .15, 0]))])); body.add(w); return w; });
+  g.userData.flap = 0; g.userData.seat = [0, 2.35, -.35];
+  g.userData.tick = (dt, time) => { const f = g.userData.flap; wings.forEach((w, i) => { w.rotation.z = (i ? -1 : 1) * (f ? Math.sin(time * (4 + f * 4)) * .7 * f : -.15); }); body.position.y = f ? Math.sin(time * (4 + f * 4)) * .08 : 0; };
+  return g;
+};
+// gold: shining nuggets, a little pile or a big one
+PROPS.gold = (n = 8, spread = .3) => {
+  const parts = []; for (let i = 0; i < n; i++) { const a = i * 2.39, d = Math.sqrt(i / n) * spread; parts.push(P(new THREE.DodecahedronGeometry(.06 + (i % 3) * .015), i % 3 ? '#ffcf33' : '#ffe27a', [Math.cos(a) * d, .05 + (1 - d / Math.max(.01, spread)) * spread * .5, Math.sin(a) * d], [i, i * 2, 0])); }
+  return mesh(parts);
+};
+// a cloth bag with a tie at the neck (the bag "three hands long", or the greedy brother's huge one)
+PROPS.bag = (color = '#c8784a') => mesh([P(S_(.2, 10, 8), color, [0, .2, 0], [0, 0, 0], [1, 1.05, .85]), P(Cyl(.06, .1, .12, 8), color, [0, .42, 0]), P(Cyl(.07, .07, .03, 8), '#6a3a1a', [0, .4, 0]), P(Cone(.09, .1, 8), color, [0, .52, 0], [Math.PI, 0, 0])]);
+// Bánh chưng: a square green cake tied with bamboo strings; Bánh giầy: a round white cake on a leaf
+PROPS.squareCake = () => mesh([P(Box(.5, .2, .5), '#3f8a3a', [0, .1, 0]), P(Box(.46, .01, .46), '#57a84a', [0, .205, 0]),
+  ...[-.12, .12].flatMap(x => [P(Box(.03, .22, .52), '#e8d8a8', [x, .1, 0]), P(Box(.52, .22, .03), '#e8d8a8', [0, .1, x])])]);
+PROPS.roundCake = () => mesh([P(S_(.2, 16, 10), '#fbf8ee', [0, .07, 0], [0, 0, 0], [1, .4, 1]), P(S_(.24, 12, 6), '#57a84a', [0, .005, 0], [0, 0, 0], [1, .04, 1])]);
+// a big dong leaf (lá dong) to wrap the cake in
+PROPS.leaf = () => mesh([P(S_(.3, 10, 6), '#4fa04a', [0, .01, 0], [0, 0, 0], [.7, .03, 1.2]), P(Box(.015, .02, .66), '#7ec46a', [0, .02, 0])]);
+// a wooden mortar (cối) and its pestle (chày), for pounding sticky rice
+PROPS.mortar = () => mesh([P(Cyl(.32, .26, .55, 14), '#8a5a32', [0, .28, 0]), P(Cyl(.25, .25, .02, 14), '#fbf8ee', [0, .56, 0])]);
+PROPS.pestle = () => mesh([P(Cyl(.05, .05, 1.1, 8), '#a8784a', [0, 0, 0]), P(Cyl(.08, .07, .25, 8), '#8a5a32', [0, -.55, 0])]);
+// the cooking pot over a little fire, with steam (the cakes cook all night)
+PROPS.firePot = () => {
+  const g = new THREE.Group();
+  g.add(mesh([P(Cyl(.5, .42, .7, 14), '#3a3430', [0, .6, 0]), P(Cyl(.53, .53, .06, 14), '#5a504a', [0, .96, 0]), ...[0, 1, 2].map(i => P(new THREE.DodecahedronGeometry(.16), '#9a8f84', [Math.cos(i * 2.1) * .42, .1, Math.sin(i * 2.1) * .42]))]));
+  const fire = new THREE.Group(); g.add(fire);
+  [['#ffd23f', .12, .4], ['#ff8a2a', .16, .3], ['#e8332a', .14, .25]].forEach(([c, r, h], i) => { const m = glow(c, .9); m.userData.film = true; const f = new THREE.Mesh(own(Cone(r, h, 7)), m); f.position.set((i - 1) * .14, .2, (i % 2) * .1); fire.add(f); });
+  const sm = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .5, depthWrite: false }); sm.userData.film = true;
+  const steam = [0, 1, 2, 3].map(i => { const s = new THREE.Mesh(own(S_(.14, 8, 6)), sm); g.add(s); return s; });
+  g.userData.tick = (dt, time) => { fire.children.forEach((f, i) => { f.scale.y = 1 + Math.sin(time * 12 + i * 2) * .25; }); steam.forEach((s, i) => { const k = (time * .4 + i / 4) % 1; s.position.set(Math.sin(i * 2 + time) * .15, 1.05 + k * 1.2, 0); s.scale.setScalar(.6 + k * 1.2); }); };
+  return g;
+};
+// rare treats the older princes bring: a red lobster and a jar of honey
+PROPS.lobster = () => mesh([...[0, 1, 2, 3].map(i => P(S_(.09 - i * .012, 10, 8), '#e8432a', [0, .07, -i * .12], [0, 0, 0], [1.2, .75, 1])), P(Cone(.09, .12, 6), '#e8432a', [0, .07, -.5], [-H, 0, 0], [1.4, 1, .4]),
+  ...[-1, 1].flatMap(s => [P(Cyl(.015, .015, .25, 4), '#c8321e', [s * .12, .07, .14], [H, 0, s * .6]), P(S_(.06, 8, 6), '#e8432a', [s * .2, .07, .26], [0, 0, 0], [1, .6, 1.5])]), P(S_(.02, 6, 5), '#1a1410', [.04, .13, .08]), P(S_(.02, 6, 5), '#1a1410', [-.04, .13, .08])]);
+PROPS.honey = () => mesh([P(S_(.16, 12, 8), '#e8a832', [0, .17, 0], [0, 0, 0], [1, 1.1, 1]), P(Cyl(.1, .1, .08, 10), '#8a5a32', [0, .36, 0]), P(Cyl(.13, .13, .03, 10), '#c84a3a', [0, .4, 0])]);
+// marbles: a chalk circle on the ground, coloured marbles, the big white shooter
+PROPS.chalkRing = (r = 1) => { const parts = []; for (let i = 0; i < 28; i++) { const a = i / 28 * Math.PI * 2; parts.push(P(Box(.16 * r, .012, .035), '#fdfdf6', [Math.cos(a) * r, .012, Math.sin(a) * r], [0, -a, 0])); } return mesh(parts); };
+PROPS.marble = (color = '#ff5f7e', r = .05) => mesh([P(S_(r, 12, 10), color, [0, r, 0]), P(S_(r * .3, 6, 5), '#ffffff', [-r * .35, r * 1.4, r * .5])]);
+// a picture card for Memory Match: an orange back with a star, a white front with a drawn picture
+const CARD_PICS = {
+  apple: (x, s) => { x.fillStyle = '#e8332a'; x.beginPath(); x.arc(s * .44, s * .56, s * .22, 0, 7); x.arc(s * .58, s * .56, s * .22, 0, 7); x.fill(); x.fillStyle = '#4f9e42'; x.beginPath(); x.ellipse(s * .6, s * .27, s * .1, s * .05, -.5, 0, 7); x.fill(); x.strokeStyle = '#6a4a2a'; x.lineWidth = s * .03; x.beginPath(); x.moveTo(s * .5, s * .36); x.lineTo(s * .52, s * .24); x.stroke(); },
+  fish: (x, s) => { x.fillStyle = '#3cc7e8'; x.beginPath(); x.ellipse(s * .45, s * .5, s * .26, s * .16, 0, 0, 7); x.fill(); x.beginPath(); x.moveTo(s * .68, s * .5); x.lineTo(s * .86, s * .34); x.lineTo(s * .86, s * .66); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(s * .33, s * .46, s * .05, 0, 7); x.fill(); x.fillStyle = '#1a1410'; x.beginPath(); x.arc(s * .33, s * .46, s * .025, 0, 7); x.fill(); },
+  flower: (x, s) => { x.fillStyle = '#ff7eb8'; for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; x.beginPath(); x.arc(s * .5 + Math.cos(a) * s * .17, s * .5 + Math.sin(a) * s * .17, s * .12, 0, 7); x.fill(); } x.fillStyle = '#ffd23f'; x.beginPath(); x.arc(s * .5, s * .5, s * .11, 0, 7); x.fill(); },
+  star: (x, s) => { x.fillStyle = '#ffb020'; x.beginPath(); for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 - H, r = i % 2 ? s * .15 : s * .34; x.lineTo(s * .5 + Math.cos(a) * r, s * .52 + Math.sin(a) * r); } x.fill(); }
+};
+PROPS.card = (front = 'apple') => {
+  const back = tex(64, 64, (x, s) => { const g = x.createLinearGradient(0, 0, s, s); g.addColorStop(0, '#ff9a3a'); g.addColorStop(1, '#e8434a'); x.fillStyle = g; x.fillRect(0, 0, s, s); CARD_PICS.star(x, s); });
+  const face = tex(64, 64, (x, s) => { x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s); x.strokeStyle = '#ffd0a0'; x.lineWidth = 4; x.strokeRect(2, 2, s - 4, s - 4); CARD_PICS[front](x, s); });
+  const g = new THREE.Group(), card = new THREE.Group(); g.add(card);
+  const top = new THREE.Mesh(own(new THREE.PlaneGeometry(.36, .36)), toon('#ffffff', { map: back })); top.rotation.x = -H; top.position.y = .012; top.material.userData.film = true;
+  const bot = new THREE.Mesh(own(new THREE.PlaneGeometry(.36, .36)), toon('#ffffff', { map: face })); bot.rotation.x = H; bot.position.y = -.002; bot.material.userData.film = true;
+  card.add(top, bot, new THREE.Mesh(own(Box(.36, .01, .36)), mat('#f4e2c0'))); card.children[2].position.y = .005;
+  // open 0 → 1: lifts and turns over to show its picture
+  g.userData.open = k => { card.rotation.z = k * Math.PI; card.position.y = Math.sin(k * Math.PI) * .2 + k * .012; };
   return g;
 };

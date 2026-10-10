@@ -18,7 +18,7 @@ Format for a request:
 - (nothing open)
 
 ## Kid UI
-- (nothing open)
+- Films, second batch (10 Oct AEST) on `claude/affectionate-wozniak-2jek7i`: Bánh Chưng Bánh Giầy and Cây khế story films, Bắn bi and Lật hình guide films with the real game playing by itself. No new files (nothing to add to `sw.js` FILES). Release: version not bumped.
 
 ## Voice & Audio
 - Lullabies with real voices: the owner may paste titles or words (soha.vn could not be reached), or record them in Studio → Music.

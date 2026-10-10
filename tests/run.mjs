@@ -709,7 +709,8 @@ await check('films', async () => {
   // every page of the pilot story and guide films plays to its end, the child's turn waits for a tap, and closing frees it
   const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
   const r = await P.page.evaluate(async () => {
-    const F = await import('/js/film.js'), C = await import('/js/content/films.js'), { MORE_TALES } = await import('/js/talesdata.js');
+    const F = await import('/js/film.js'), C = await import('/js/content/films.js'), { MORE_TALES: more } = await import('/js/talesdata.js'), { TALES } = await import('/js/learn.js');
+    const MORE_TALES = [...TALES, ...more]; // (Bánh chưng is one of the first tales, in js/learn.js)
     const { openTheatre } = await import('/js/tales.js'), { openHowTo } = await import('/js/howto.js');
     const frame = () => new Promise(r => requestAnimationFrame(r)), out = { films: {}, bad: [] };
     const run = async (id, n) => {
@@ -741,17 +742,40 @@ await check('films', async () => {
     for (const id of Object.keys(C.GUIDES)) {
       openHowTo(id, {}); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); document.querySelector('.ht-pp').click();
       await run(id, C.GUIDES[id].pages.length);
+      // (Kid UI films, 10 Oct) the real game plays its first moves by itself with the glowing hand, then waits for the child
+      if (C.GUIDES[id].demo) {
+        const m = document.querySelector('.howto'), sleep = ms => new Promise(r => setTimeout(r, ms));
+        for (let i = 0; i < 12 && !m.querySelector('.ht-demo'); i++) { m.querySelector('.ht-next').click(); await sleep(300); }
+        const D = m.__demo; if (!D) { out.bad.push(id + ': the real game does not play by itself'); }
+        else {
+          if (!m.querySelector('canvas.th-film').hidden) out.bad.push(id + ': the film still shows under the real game');
+          for (let i = 0; i < 400 && !D.turn; i++) await sleep(150);
+          const hand = m.querySelector('.ht-hand');
+          out.demo = out.demo || {}; out.demo[id] = { moves: D.moves, turn: D.turn, pairs: m.querySelectorAll('.ht-demo .mem.got').length, hand: !!hand };
+          if (!D.turn) out.bad.push(id + ': the demo did not reach the child\'s turn'); if (D.moves < 2) out.bad.push(id + ': the hand made ' + D.moves + ' moves');
+          if (id === 'memory' && !m.querySelector('.ht-demo .mem.got')) out.bad.push('memory: the demo found no pair');
+          // the child has a go: two cards, or one shot
+          const ev = (e, type, x, y) => e.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, pointerId: 3, bubbles: true }));
+          if (id === 'memory') for (const c of [...m.querySelectorAll('.ht-demo .mem:not(.flip)')].slice(0, 2)) { const r = c.getBoundingClientRect(); ev(c, 'pointerup', r.left + 5, r.top + 5); c.click(); await sleep(200); }
+          else { const c = m.querySelector('.ht-demo canvas'), r = c.getBoundingClientRect(); ev(c, 'pointerdown', r.left + r.width / 2, r.top + r.height * .86); ev(c, 'pointermove', r.left + r.width / 2, r.top + r.height * .98); ev(c, 'pointerup', r.left + r.width / 2, r.top + r.height * .98); }
+          for (let i = 0; i < 200 && m.querySelector('.ht-demo'); i++) await sleep(150);
+          if (m.querySelector('.ht-demo')) out.bad.push(id + ': the guide did not go on after the child\'s turn');
+          else if (m.querySelector('canvas.th-film').hidden) out.bad.push(id + ': the film did not come back after the real game');
+          out.demo[id].taps = D.taps;
+        }
+      }
       document.querySelector('.ht-x').click(); await new Promise(r => setTimeout(r, 300));
       if (F.filmNow()) out.bad.push(id + ': not freed');
     }
     return out;
   });
   const fails = [...r.bad];
-  for (const id of ['duahau', 'thanhgiong']) if (!r.films[id] || r.films[id].helps < 2) fails.push(`${id}: the child should help at least twice`);
+  for (const id of ['duahau', 'thanhgiong', 'banhchung', 'caykhe']) if (!r.films[id] || r.films[id].helps < 2) fails.push(`${id}: the child should help at least twice`);
+  for (const id of ['marbles', 'memory']) if (!r.demo || !r.demo[id]) fails.push(`${id}: no real game playing by itself`);
   if (P.errors.length) fails.push(...P.errors.slice(0, 3));
   await P.ctx.close();
   if (fails.length) throw new Error(JSON.stringify({ fails, films: r.films }));
-  return Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps at least twice in each story';
+  return Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps at least twice in each story; the real game plays by itself (' + Object.entries(r.demo).map(([id, d]) => `${id}: ${d.moves} moves with the hand, the child's go`).join(', ') + ')';
 });
 await check('halves', async () => {
   // (round R, owner) two players: a window opens in its own child's half and pauses only that child; the other keeps playing

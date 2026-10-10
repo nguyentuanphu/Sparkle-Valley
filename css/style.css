@@ -1192,6 +1192,27 @@ body.calm .hud .act { animation: actIn .25s ease; }
 .film-ring { position: absolute; width: 74px; height: 74px; margin: -37px 0 0 -37px; border-radius: 50%; border: 5px solid #ffe27a; box-shadow: 0 0 18px #ffe27a; pointer-events: none; animation: fhring 1.2s ease-in-out infinite; }
 @keyframes fhring { 50% { transform: scale(1.25); opacity: .55; } }
 @media (prefers-reduced-motion: reduce) { .film-help .fh-hand, .film-ring { animation: none; } }
+/* ---------- guide films: the real game plays by itself, with a glowing hand (Kid UI, 10 Oct) ---------- */
+.th-film[hidden] { display: none; }
+.howto.film .ht-screen.demo { aspect-ratio: auto; height: min(60vh, 560px); max-height: none; background: linear-gradient(180deg, #8fd8ff 0%, #c8ecff 45%, #fde8ff 100%); }
+.ht-demo { position: absolute; inset: 0; display: flex; flex-direction: column; color: var(--text); }
+.ht-demo .gl-help { font-size: clamp(15px, 2.4vw, 20px); padding: 6px 12px 0; min-height: 1.3em; }
+.ht-demo .gl-stage { flex: 1; min-height: 0; padding: 6px; gap: 6px; overflow: hidden; }
+.ht-demo .folk-cv { width: auto !important; height: auto !important; max-width: 100%; max-height: calc(min(60vh, 560px) - 52px); touch-action: none; }
+.ht-demo .mem-grid { grid-template-columns: repeat(var(--cols), clamp(56px, min(13vw, 17vh), 104px)); }
+.ht-hand { position: absolute; width: 64px; height: 64px; margin: -11px 0 0 -32px; /* (the fingertip on the spot) */ z-index: 5; pointer-events: none; filter: drop-shadow(0 0 6px #fff6a0) drop-shadow(0 0 14px #ffb020); }
+.ht-hand.glide { transition: left .8s ease-in-out, top .8s ease-in-out; }
+.ht-hand .art { width: 100%; height: 100%; display: block; }
+.ht-hand .art .a-tap { animation: none; } .ht-hand .art .a-ripple { display: none; } /* (it taps only when it really taps) */
+.ht-hand::after { content: ''; position: absolute; left: 50%; top: 11px; width: 34px; height: 34px; margin: -17px; border-radius: 50%; border: 4px solid #ffe27a; box-shadow: 0 0 12px #ffe27a; opacity: 0; }
+.ht-hand.press { animation: htPush .35s ease-in-out; } .ht-hand.press::after { animation: htPress .6s ease-out; }
+.ht-hand.lift { transform: translateY(-10px); transition: transform .3s; }
+.ht-hand.hint { animation: htHint 1.1s ease-in-out infinite; }
+@keyframes htPush { 50% { transform: scale(.82) translateY(4px); } }
+@keyframes htPress { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(2.2); } }
+@keyframes htHint { 50% { transform: translateY(8px) scale(.92); } }
+@media (prefers-reduced-motion: reduce) { .ht-hand.hint, .ht-hand.press, .ht-hand.press::after { animation: none; } }
+body.calm .ht-hand.hint { animation: none; }
 .th-top { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
 .th-flag { font-size: 26px; } .th-title { flex: 1; font-size: clamp(17px, 3.4vw, 26px); line-height: 1.15; }
 .th-x { width: 48px; height: 48px; border-radius: 50%; border: 0; background: rgba(255,255,255,.9); font-size: 20px; color: #3b2a4f; flex: none; }
