@@ -3,7 +3,7 @@
 The project is split into **8 cores** (owner, 8 Oct, round Q). Each AI chat works on **one core**. It reads that
 core's file before doing anything, changes only that core's files, and hands work for other cores over through
 [`BOARD.md`](BOARD.md). Only the **Release** core merges, runs the full suite, packages, reports, and asks the owner
-for "yes, push" and "yes, deploy".
+one "yes, deploy" per round before anything reaches `main` (owner, 10 Oct: Release is the master release).
 
 | # | Core | File | In one line |
 |---|------|------|-------------|
@@ -36,6 +36,7 @@ The rules for helper chats are in `CLAUDE.md` (read automatically), so nothing e
 | [voice-by-area.md](tasks/voice-by-area.md) | Voice & Audio | Voice pack by area (Round R item 12) |
 | [infra-speed.md](tasks/infra-speed.md) | Analytics & Infra | Smaller start-up download, checks on every pull request |
 | [studio-review.md](tasks/studio-review.md) | Studio | Studio review and improvements |
+| [play-festivals.md](tasks/play-festivals.md) | Play | Festivals on a schedule, whole places decorated |
 
 **Without a brief**, paste this as the first message (change the core):
 
@@ -49,10 +50,10 @@ The Release core is started the same way: "You are the **Release** core…".
 These come from `CLAUDE.md`, `HANDOFF.md` and `docs/ARCHITECTURE.md` §9, which stay the source of truth.
 
 1. **Plan first.** Show the owner the plan, then do it (HANDOFF rule 17). Ask when a choice is the owner's to make.
-2. **Push only your own branch, only after the owner's "yes, push".** Commit on the core's own branch (the one the
-   chat's session was given, or `core/<name>`, e.g. `core/online`). Never push to `main`, never deploy; a pull request
-   stays a draft. Release merges, and asks for "yes, push" and, separately, "yes, deploy" (the helper chat rules are in
-   `CLAUDE.md`).
+2. **Push only your own branch; no need to ask** (owner, 10 Oct). Commit on the core's own branch (the one the
+   chat's session was given, or `core/<name>`, e.g. `core/online`) and push it once your checks pass. Never push to
+   `main`, never deploy; a pull request stays a draft. Release collects every branch, merges, and asks the owner one
+   "yes, deploy" per round (the helper chat rules are in `CLAUDE.md`).
 3. **Stay in your files.** Each core file lists what it owns. To change another core's file, write the request on
    `BOARD.md` (what, why, which file). A one-line fix that a check needs is allowed if it is noted on the board.
 4. **Rules are checked.** A core changes its own hard rules (`docs/ARCHITECTURE.md` §9) only when the owner asks. It

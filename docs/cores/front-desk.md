@@ -12,7 +12,7 @@ Then read `CLAUDE.md`, `docs/cores/README.md` and `docs/cores/BOARD.md`.
   AEST). When there is no bug to work on it does not start Claude, so it uses no Claude usage.
 - **Small bugs are fixed and pushed to GitHub without asking**, only to a branch `bugfix/<core>-<issue>` with a draft
   pull request. **Big bugs get a plan first** and wait for the owner's "go".
-- **Nothing goes to Netlify by itself.** Only Release merges into `main`, after the owner's "yes, deploy".
+- **Nothing goes to Netlify by itself.** Only Release merges into `main`, under the round's "yes, deploy".
 - The robot runs on the Claude account whose key is the GitHub secret `CLAUDE_CODE_OAUTH_TOKEN`
   (`CLAUDE_CODE_OAUTH_TOKEN_BACKUP`, another account, is tried if the first fails). The owner's other accounts are
   not used by the robot.
@@ -84,5 +84,5 @@ Reported by the owner, <date and time> AEST.
 
 ## Questions that are not bugs
 Answer from the docs and the code. When the answer means changing the game, say which core would do it and offer to
-put it on `docs/cores/BOARD.md` for that core. That is the only file you change in the repository, and you push it
-only after the owner's "yes, push", like every other chat.
+put it on `docs/cores/BOARD.md` for that core. That is the only file you change in the repository; push it to your own branch like
+any helper chat, never to `main`.
