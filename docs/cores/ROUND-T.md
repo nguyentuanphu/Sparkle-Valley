@@ -304,9 +304,10 @@ road colours as tinted asphalt (`docs/cores/release.md`, Owner's decisions).
   water, bridges and roads make every height look-up about a quarter slower; the ground's slope colours now read the next
   grid points instead of two extra look-ups per point (about 0.2 s saved, the same colours in the sky view). Measured side
   by side late on 10 Oct (the test machine was slower than when the baseline was set): r56 6.8–7.8 s, r57 6.8–8.2 s, so
-  r57 is about 0.3 s slower than r56; the limit is 7.4 s (5.9 s + 25 %) and a run can pass or fail it on noise alone (the
-  shader compile in the test browser wanders by up to 0.8 s). Lowering it for real is the start-up brief
-  (`tasks/infra-speed.md`).
+  r57 is about 0.3 s slower than r56. The full suite then measured 7.86 s against the 7.4 s limit (5.9 s + 25 %), so the
+  owner said to re-measure the baseline: ten second starts each side by side, r56 6.27–6.91 s (median 6.6 s), r57
+  6.59–7.26 s (median 6.85 s); `worldMs` is now 6600 (+25 % allowed, limit 8.25 s). Lowering it for real is the start-up
+  brief (`tasks/infra-speed.md`).
 - Found by the full suite on the evening of 10 Oct: the `parents` check set the clock to 19:40 AEST on 10 Oct but
   compared the snooze with the real clock, so it failed after 19:50 AEST that day; it now checks the snooze is exactly
   10 minutes after the clock it set (as strict as before).
