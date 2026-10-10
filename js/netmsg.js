@@ -30,7 +30,7 @@ const seats = v => Array.isArray(v) && v.length >= 2 && v.length <= 6 && v.every
 /** @type {(max: number) => Record<string, Field>} a message locked for one player: the sender's key and the locked words */
 const sealed = max => ({ pub: text(100), iv: text(24), ct: text(max) });
 const SEALED = ['pub', 'iv', 'ct'];
-const W = 180; // world coordinates stay inside ±180 m (the valley is 400 m across)
+const W = 235; // world coordinates stay inside ±235 m (round T: the valley is 480 m across, js/content/map.js WORLD.size)
 // kind → { fields, size (largest JSON in characters), per (at most this many…), sec (…in this many seconds), need (fields that must be there) }
 /** @type {Record<string, Kind>} */
 export const SCHEMA = {

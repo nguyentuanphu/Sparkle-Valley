@@ -6,8 +6,9 @@ export async function groundAudit(page) {
   return page.evaluate(async () => {
     const W = await import('/js/world.js'), G = __sv, w = G.world, bad = [];
     const named = (x, z) => { let best = null, bd = 9; for (const it of G.interactables) { const d = Math.hypot(it.x - x, it.z - z); if (d < bd) { bd = d; best = it; } } try { return best ? (typeof best.label === 'function' ? best.label({ i: 0, profile: {}, pos: { y: 0 } }) : best.id) : ''; } catch (e) { return best.id || ''; } };
-    const onBridge = (x, z) => [W.BRIDGE, W.DRAGON].some(B => B && x > B.x0 - 4 && x < B.x1 + 4 && Math.abs(z - B.z) < B.w);
-    const lakeD = (x, z) => Math.hypot(x - W.LAKE.x, z - W.LAKE.z);
+    // (round T: every bridge and every water of the map, by its own axis and id)
+    const onBridge = (x, z) => W.BRIDGES.some(B => Math.abs(W.bridgeAcross(B, x, z)) < B.w && W.bridgeAlong(B, x, z) > B.a0 - 4 && W.bridgeAlong(B, x, z) < B.a1 + 4);
+    const wetOK = new Set(W.LEAFIES.filter(L => L.inWater).map(L => L.id)); // (a Leafy meant to sparkle over the water)
     const things = [];
     for (const b of w.boxes) if (!b.room && b.x1 - b.x0 < 40 && b.z1 - b.z0 < 40 && b.x1 - b.x0 > 1.2 && b.z1 - b.z0 > 1.2) things.push(['box', b.x0, b.x1, b.z0, b.z1]);
     // (natural boulders scattered over the hills have odd sizes like 2.0377 and may sit on slopes or in streams)
@@ -18,7 +19,7 @@ export async function groundAudit(page) {
       let lo = 1e9, hi = -1e9, wet = 0, n = 0;
       for (let x = x0; x <= x1 + .01; x += Math.max(.5, (x1 - x0) / 6)) for (let z = z0; z <= z1 + .01; z += Math.max(.5, (z1 - z0) / 6)) {
         const h = W.heightAt(x, z); lo = Math.min(lo, h); hi = Math.max(hi, h); n++;
-        if (h < W.WATER + .3 || W.riverDist(x, z) < 6 || lakeD(x, z) < W.LAKE.r * .62) wet++;
+        if (h < W.WATER + .3 || W.waterAt(x, z, 6)) wet++;
       }
       if (wet) bad.push({ what: 'over water', k, at: [+cx.toFixed(1), +cz.toFixed(1)], size: [+(x1 - x0).toFixed(1), +(z1 - z0).toFixed(1)], wet: `${wet}/${n}`, near: named(cx, cz) });
       else if (hi - lo > 1.6) bad.push({ what: 'uneven ground', k, at: [+cx.toFixed(1), +cz.toFixed(1)], size: [+(x1 - x0).toFixed(1), +(z1 - z0).toFixed(1)], drop: +(hi - lo).toFixed(2), near: named(cx, cz) });
@@ -39,13 +40,13 @@ export async function groundAudit(page) {
           const THREE = G.THREE || (await import('/vendor/three.module.js')); const rc = new THREE.Raycaster(new THREE.Vector3(x, y + 6, z), new THREE.Vector3(0, -1, 0)); const hit = rc.intersectObjects(roads.filter(r => r !== o), false)[0];
           if (!hit || hit.point.y < y) why = 'road buried'; }
         else if (y > g + 1.4) why = 'road floating';
-        else if (g < W.WATER + .2 || W.riverDist(x, z) < 4.5) why = 'road in water';
+        else if (g < W.WATER + .2 || W.waterAt(x, z, 4.5) === 'main') why = 'road in water';
         if (why && !rbad.has(key)) rbad.set(key, { what: why, at: [+x.toFixed(1), +z.toFixed(1)], road: o.name || '', dy: +(y - g).toFixed(2) });
       }
     }
     // the boats stay on the water, and nothing you can tap stands in it (the sparkle in the middle of the lake is meant to be there)
     if (G.ferries) G.ferries.ferries.forEach((F, fi) => { const n = F.path.length; for (let i = 0; i < (F.loop ? n : n - 1); i++) { const a = F.path[i], c = F.path[(i + 1) % n]; for (let t = 0; t < 1; t += .1) { const x = a.x + (c.x - a.x) * t, z = a.z + (c.z - a.z) * t; if (W.heightAt(x, z) > W.WATER - .3 && Math.hypot(x - a.x, z - a.z) > 3 && Math.hypot(x - c.x, z - c.z) > 3) { bad.push({ what: 'boat route over land', ferry: fi, at: [+x.toFixed(1), +z.toFixed(1)] }); return; } } } });
-    for (const it of G.interactables) if (!/^ferry|^fish|^lf7$|^g\d|^wr/.test(it.id) && W.heightAt(it.x, it.z) < W.WATER + .3) bad.push({ what: 'tap spot in water', id: it.id, at: [+it.x.toFixed(1), +it.z.toFixed(1)] });
+    for (const it of G.interactables) if (!/^ferry|^fish|^g\d|^wr/.test(it.id) && !wetOK.has(it.id) && W.heightAt(it.x, it.z) < W.WATER + .3) bad.push({ what: 'tap spot in water', id: it.id, at: [+it.x.toFixed(1), +it.z.toFixed(1)] });
     return { buildings: things.length, bad, roads: roads.length, roadBad: [...rbad.values()] };
   });
 }

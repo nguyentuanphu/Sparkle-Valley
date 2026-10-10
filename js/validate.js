@@ -5,6 +5,7 @@
 import { ROADS, roadDist, VILLAGE } from './world.js';
 import { ROAD_GRADE } from './roads.js';
 import { RULES } from './content/rules.js';
+import { ROAD_WIDTH } from './content/map.js';
 
 export function validateWorld(G) {
   const W = G.world, out = [], add = (rule, msg) => { if (!RULES[rule]) throw new Error(`validate.js uses ${rule}, which is not in the rule registry`); if (out.length < 200) out.push({ rule, severity: RULES[rule].severity, msg }); }, f = v => v.toFixed(0);
@@ -21,8 +22,8 @@ export function validateWorld(G) {
       }
     }
   });
-  // ROAD-001 widths (asphalt 5.2, dirt 3.4, footpath 1.6)
-  const WIDTH = { asphalt: 5.2, dirt: 3.4, footpath: 1.6 };
+  // ROAD-001 widths (asphalt 6.4, dirt 3.4, footpath 1.6: js/content/map.js ROAD_WIDTH)
+  const WIDTH = ROAD_WIDTH;
   ROADS.forEach((R, k) => { if (WIDTH[R.kind] !== R.w) add('ROAD-001', `road ${k} is ${R.kind} ${R.w} m wide`); });
   // G5 / ROAD-004: nothing solid or tappable standing on a road
   const on = (x, z, r) => { const d = roadDist(x, z); return d.road && d.d < d.road.w / 2 + r; };
@@ -31,7 +32,7 @@ export function validateWorld(G) {
   // (a street seller walking along the pavement may cross a side street on the way: walking, not standing; skipped)
   for (const i of G.interactables || []) if (Number.isFinite(i.x) && !i.walks && on(i.x, i.z, -.5)) add('ROAD-004', `"${i.id}" stands on a road`);
   // ROAD-011: Lotus Village's pond path keeps 1.5–2.5 m between its edge and the water
-  const pond = [VILLAGE.x - 10, VILLAGE.z + 4], pp = ROADS.find(R => R.kind === 'footpath');
+  const pond = [VILLAGE.x - 10, VILLAGE.z + 4], pp = ROADS.find(R => R.id === 'lv_pond'); // (round T: by its id in the map, not "the first footpath")
   if (pp) pp.pts.slice(3).forEach(([x, z]) => { const g = Math.hypot(x - pond[0], z - pond[1]) - 5.2 - pp.w / 2; if (g < 1.45 || g > 2.55) add('ROAD-011', `pond path ${g.toFixed(1)} m from the water at ${f(x)},${f(z)}`); });
   // VEH-001: riders at walking pace or slower (js/lotus.js)
   for (const m of (G.lotus && G.lotus.movers) || []) if (m.speed > 1) add('VEH-001', `a rider goes ${m.speed} m/s on a ${m.r ? 'path' : 'road'}`);

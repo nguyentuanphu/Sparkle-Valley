@@ -1,6 +1,7 @@
 # Đèn Lồng Thung Lũng (The Valley Lanterns): story plan
 
 Status: approved by the owner on 9 Oct 2026 (AEST): build it, Prologue and Chapter 1 first.
+Chapter 2 (Hà Nội) built by the Play core on `core/play`, 10 Oct 2026 (AEST): Studio switch `story_ch2`; waiting for Release to merge.
 
 ## The story in one breath
 The night before the great lantern festival, a strong wind blows the valley's magic lanterns away across Vietnam and Australia. Ông Cú asks the child and their companion to bring them home. In each region the child helps its people, learns its games and hears its stories, and finds that region's lantern. When it is hung, the region's landmark lights up and there is a festival night. When every lantern is home, the whole valley celebrates Tết together.

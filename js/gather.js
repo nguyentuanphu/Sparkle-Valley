@@ -6,6 +6,8 @@ import { THREE, toon, toonVC, P, merge } from './gfx.js';
 import { T } from './i18n.js';
 import { ITEMS } from './data.js';
 import { heightAt, regionAt, roadDist, riverDist, WATER, LOTS, APOSTLES, FESTGROUNDS } from './world.js';
+import { WORLD as MAP_WORLD } from './content/map.js';
+const COUNTRY = MAP_WORLD.wild; // (round T) where the countryside is, from the map
 import { seeded, dist2 } from './util.js';
 
 export const WILD = {
@@ -49,7 +51,7 @@ let SOLID = null; // the world's buildings and landmarks (set by createGathering
 function spots(n, seed, minGap, used) {
   const rnd = seeded(seed), out = [];
   for (let tries = 0; out.length < n && tries < 4000; tries++) {
-    const x = -170 + rnd() * 340, z = -120 + rnd() * 290, h = heightAt(x, z), rg = regionAt(x, z);
+    const x = COUNTRY.x0 + rnd() * (COUNTRY.x1 - COUNTRY.x0), z = COUNTRY.z0 + rnd() * (COUNTRY.z1 - COUNTRY.z0), h = heightAt(x, z), rg = regionAt(x, z);
     if (h < WATER + 1.6 || h > 22 || riverDist(x, z) < 12 || Math.abs(heightAt(x + 1.5, z) - heightAt(x - 1.5, z)) + Math.abs(heightAt(x, z + 1.5) - heightAt(x, z - 1.5)) > 2.2 || !['meadow', 'bamboo', 'plateau'].includes(rg) || roadDist(x, z).d < 6 || LOTS.some(L => dist2(L.x, L.z, x, z) < 12) || [APOSTLES, ...Object.values(FESTGROUNDS)].some(f => dist2(f.x, f.z, x, z) < 17) || (SOLID && SOLID.boxes.some(b => x > b.x0 - 2 && x < b.x1 + 2 && z > b.z0 - 2 && z < b.z1 + 2))) continue;
     if ([...used, ...out].some(([ux, uz]) => dist2(ux, uz, x, z) < minGap)) continue;
     // (never under something already standing: round R, a landmark covered a dig spot)

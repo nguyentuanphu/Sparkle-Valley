@@ -12,6 +12,7 @@ export const RELEASES = [
   { id: 'powerPoles', en: 'Power poles and wires', vi: 'Cột điện và dây điện', group: 'world', def: false },
   { id: 'story_prologue', en: 'Story: The Lanterns Blow Away (prologue, companion)', vi: 'Truyện: Đèn Lồng Bay Mất (mở đầu, bạn đồng hành)', group: 'story', def: true },
   { id: 'story_ch1', en: 'Story chapter 1: Lotus Village', vi: 'Truyện chương 1: Làng Sen', group: 'story', def: true },
+  { id: 'story_ch2', en: 'Story chapter 2: Hà Nội (Tèo\'s challenge, Văn Miếu, Cầu Thê Húc lights up, Trung Thu parade)', vi: 'Truyện chương 2: Hà Nội (Tèo thách đấu, Văn Miếu, Cầu Thê Húc sáng đèn, rước đèn Trung Thu)', group: 'story', def: false }, // (owner 10 Oct: off until an admin switches it on or schedules it)
   { id: 'story_yard', en: 'Story: Bà Huệ and ông Nghi\'s yard (coach from Hà Tĩnh, dump truck, excavator, a house built together)', vi: 'Truyện: Công trường của bà Huệ và ông Nghi (xe khách từ Hà Tĩnh, xe ben, máy xúc, cùng xây nhà)', group: 'story', def: true },
   // (round R, owner 9 Oct: "add these in and add to the studio so we can switch on/off") what keeps little ones playing
   { id: 'yardHands', en: 'The yard by hand: steer the dump truck, drag the excavator arm, stack the bricks', vi: 'Công trường tự tay làm: lái xe ben, kéo cần máy xúc, xếp gạch', group: 'kids', def: true },

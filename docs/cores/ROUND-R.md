@@ -16,7 +16,7 @@ Reported to the owner on its own, so Halloween can go live around 12–14 Oct.
 
 ## Part 2: the rest, in this order
 1. **Faster launch:** the title screen shows early, the world builds in steps (target well under 15 s on a phone).
-2. **New valley layout, Concept D** (owner, 8 Oct; drawings: https://claude.ai/artifact/JHJUUBRk3GSGSMBpYgD2C8). Built before the homes, so the guide and homes are built on the new map once.
+2. **New valley layout, Concept D** (owner, 8 Oct; drawings: https://claude.ai/artifact/JHJUUBRk3GSGSMBpYgD2C8, copy in the repo: `docs/concept-d/index.html` with its pictures). Built before the homes, so the guide and homes are built on the new map once.
    - **Two banks:** Vietnam on the east bank, Australia on the west, each north to south like the real country (Hà Nội, Bắc Ninh, Làng Sen, Đà Nẵng, Hội An, Chợ Ba Miền, TP. HCM; Brisbane, Aussie Corner, Sydney, Melbourne, Uluru). Home and Ông Cú on an island in the middle; Phố Hai Quê on the main bridge.
    - **Ring and colours:** a ring road around the home island; roads in each region's colour (red Vietnam, orange Australia, purple mountain road to China and India, blue coast road).
    - **Journey stops:** numbered first-week stops, one new place each day.

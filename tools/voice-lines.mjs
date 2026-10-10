@@ -144,6 +144,7 @@ const FILE_AREA = {
   town: ['js/town.js', 'js/yard.js', 'js/content/yard.js', 'js/homes.js'],
   aussie: ['js/suburbs.js'],
   lake: ['js/ferry.js'],
+  hanoi: ['js/content/chapter2hanoi.js', 'js/content/chapter2props.js', 'js/content/chapter2films.js', 'js/content/chapter2text.js'], // (story chapter 2 happens in Hà Nội)
   games: ['js/howto.js', 'js/learn.js', 'js/words.js', 'js/words2.js', 'js/symbols.js', 'js/vnfun.js', 'js/content/films.js', 'js/netgames.js', 'js/coop.js', 'js/twinchests.js'],
   stories: ['js/talesdata.js', 'js/tales.js', 'js/story.js'],
   festivals: ['js/festivals.js', 'js/content/festcal.js', 'js/hoilang.js', 'js/content/hoilang.js', 'js/content/songs.js', 'js/songs.js', 'js/content/releases.js']

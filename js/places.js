@@ -4,7 +4,7 @@ import { THREE, toon, toonVC, P, merge, sprite } from './gfx.js';
 import { T } from './i18n.js';
 import { say } from './voice.js';
 import { SFX, Music, PARTY } from './audio.js';
-import { heightAt, VILLAGE, PLAYGROUND } from './world.js';
+import { heightAt, VILLAGE, PLAYGROUND, LAKE, TOWN } from './world.js';
 import { dist2 } from './util.js';
 
 export function createPlaces(G) {
@@ -34,7 +34,7 @@ export function createPlaces(G) {
   const fr = PL.frog = { x: V.x - 10, z: V.z + 4 };
   const frog = sprite('🐸', 1.2); frog.position.set(fr.x + 2, heightAt(fr.x, fr.z) + .5, fr.z - 1.5); scene.add(frog);
   // treasure chest on the lake beach
-  const ch = PL.chest = { x: 10, z: 146 };
+  const ch = PL.chest = { x: LAKE.x - 45, z: LAKE.z + 21 };
   const chest = new THREE.Mesh(merge([P(new THREE.BoxGeometry(1.4, .8, .9), '#8a5a3b', [0, .4, 0]), P(new THREE.CylinderGeometry(.45, .45, 1.4, 12, 1, false, 0, Math.PI), '#a0703a', [0, .8, 0], [0, 0, Math.PI / 2]), P(new THREE.BoxGeometry(.25, .3, .1), '#ffd23f', [0, .7, .46])]), toonVC({ roughness: .6 }));
   chest.castShadow = true; add(chest, ch.x, ch.z, .4); world.colliders.push({ x: ch.x, z: ch.z, r: 1 });
 
@@ -51,7 +51,7 @@ export function createPlaces(G) {
   deco.receiveShadow = true; add(deco, pg.x, pg.z, 0, -.02);
   // little marbles inside the chalk ring
   // Ruby's chalk marble ring on the front lawn of the Aussie house across the park
-  const mr = { x: 47.5, z: 56.6 };
+  const mr = { x: TOWN.x + 15.5, z: TOWN.z + 3.6 };
   const ringM = new THREE.Mesh(new THREE.TorusGeometry(1.4, .06, 4, 32).rotateX(Math.PI / 2), toon('#f4f0e8')); ringM.position.set(mr.x, heightAt(mr.x, mr.z) + .03, mr.z); scene.add(ringM);
   ['🔴', '🔵', '🟢', '🟡'].forEach((m, k) => { const sp = sprite(m, .35); sp.position.set(mr.x + Math.cos(k * 1.6) * .6, gy + .2, mr.z + Math.sin(k * 1.6) * .6); scene.add(sp); });
 

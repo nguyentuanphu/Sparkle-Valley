@@ -4,7 +4,8 @@
 // to knock on.
 import { THREE, toon, toonVC, P, merge, outline, sprite } from './gfx.js';
 import { T, nm, registerName } from './i18n.js';
-import { heightAt, oldHeightAt, roadDist, VILLAGE, MARKET, AUSSIE, CHINA, INDIA, LAKE, WATER, APOSTLES, FESTGROUNDS, LEAFIES } from './world.js';
+import { landmarkAt } from './content/map.js';
+import { heightAt, oldHeightAt, roadDist, VILLAGE, MARKET, AUSSIE, CHINA, INDIA, LAKE, WATER, APOSTLES, FESTGROUNDS, LEAFIES, HALF } from './world.js';
 import { buildAvatar } from './avatar.js';
 import { LANDMARKS, postcard } from './regions.js';
 import { ITEMS } from './data.js';
@@ -17,30 +18,31 @@ const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), C = (r1, r2, h, s = 12) =
 const look = (style, color, hair, hairStyle, skin = '#f6c7a5', hat = 'none') => ({ style, color, hat, back: 'none', hair, hairStyle, skin, glider: 0 });
 
 // ---------- the landmarks ----------
-// [id, country, icon, near x, near z, name en/vi, fact en/vi, model]
+// [id, country, icon, name en/vi, fact en/vi, model]; where to start looking for a clear spot comes from the map
+// (round T: js/content/map.js LANDMARK_AT)
 const SITES = [
   // Vietnam
-  ['halong', 'vn', '⛰️', 22, 118, ['Hạ Long Bay', 'Vịnh Hạ Long'], ['Hạ Long Bay has almost two thousand limestone islands rising out of green water. It is a UNESCO World Heritage site. Legend says a dragon made it!', 'Vịnh Hạ Long có gần hai nghìn hòn đảo đá vôi nhô lên khỏi mặt nước xanh. Đây là Di sản Thế giới UNESCO. Truyền thuyết kể rằng rồng mẹ đã tạo nên vịnh!'], 'halong'],
-  ['hue', 'vn', '🏯', 150, 18, ['Huế Imperial City', 'Kinh thành Huế'], ['Huế was the home of the last Vietnamese emperors. The palace has golden roofs, red columns and a big moat. UNESCO World Heritage.', 'Huế là nơi ở của các vị vua cuối cùng của Việt Nam. Cung điện có mái vàng, cột đỏ và hào nước lớn. Di sản Thế giới UNESCO.'], 'hue'],
-  ['myson', 'vn', '🧱', 152, 50, ['Mỹ Sơn Sanctuary', 'Thánh địa Mỹ Sơn'], ['Mỹ Sơn has red brick towers built by the Cham people more than a thousand years ago, in the jungle of central Vietnam. UNESCO World Heritage.', 'Mỹ Sơn có những tháp gạch đỏ do người Chăm xây hơn một nghìn năm trước, giữa rừng miền Trung. Di sản Thế giới UNESCO.'], 'myson'],
-  ['phongnha', 'vn', '🦇', 128, -60, ['Phong Nha caves', 'Hang động Phong Nha'], ['Phong Nha–Kẻ Bàng has huge caves with underground rivers. Sơn Đoòng, the biggest cave in the world, is there! UNESCO World Heritage.', 'Phong Nha–Kẻ Bàng có những hang động khổng lồ với sông ngầm. Hang Sơn Đoòng, hang động lớn nhất thế giới, nằm ở đây! Di sản Thế giới UNESCO.'], 'cave'],
-  ['trangan', 'vn', '🛶', 82, -28, ['Tràng An', 'Tràng An'], ['In Tràng An, Ninh Bình, people row little boats with their feet between tall rocky hills and through caves. UNESCO World Heritage.', 'Ở Tràng An, Ninh Bình, người ta chèo thuyền bằng chân giữa những núi đá cao và xuyên qua hang. Di sản Thế giới UNESCO.'], 'trangan'],
+  ['halong', 'vn', '⛰️', ['Hạ Long Bay', 'Vịnh Hạ Long'], ['Hạ Long Bay has almost two thousand limestone islands rising out of green water. It is a UNESCO World Heritage site. Legend says a dragon made it!', 'Vịnh Hạ Long có gần hai nghìn hòn đảo đá vôi nhô lên khỏi mặt nước xanh. Đây là Di sản Thế giới UNESCO. Truyền thuyết kể rằng rồng mẹ đã tạo nên vịnh!'], 'halong'],
+  ['hue', 'vn', '🏯', ['Huế Imperial City', 'Kinh thành Huế'], ['Huế was the home of the last Vietnamese emperors. The palace has golden roofs, red columns and a big moat. UNESCO World Heritage.', 'Huế là nơi ở của các vị vua cuối cùng của Việt Nam. Cung điện có mái vàng, cột đỏ và hào nước lớn. Di sản Thế giới UNESCO.'], 'hue'],
+  ['myson', 'vn', '🧱', ['Mỹ Sơn Sanctuary', 'Thánh địa Mỹ Sơn'], ['Mỹ Sơn has red brick towers built by the Cham people more than a thousand years ago, in the jungle of central Vietnam. UNESCO World Heritage.', 'Mỹ Sơn có những tháp gạch đỏ do người Chăm xây hơn một nghìn năm trước, giữa rừng miền Trung. Di sản Thế giới UNESCO.'], 'myson'],
+  ['phongnha', 'vn', '🦇', ['Phong Nha caves', 'Hang động Phong Nha'], ['Phong Nha–Kẻ Bàng has huge caves with underground rivers. Sơn Đoòng, the biggest cave in the world, is there! UNESCO World Heritage.', 'Phong Nha–Kẻ Bàng có những hang động khổng lồ với sông ngầm. Hang Sơn Đoòng, hang động lớn nhất thế giới, nằm ở đây! Di sản Thế giới UNESCO.'], 'cave'],
+  ['trangan', 'vn', '🛶', ['Tràng An', 'Tràng An'], ['In Tràng An, Ninh Bình, people row little boats with their feet between tall rocky hills and through caves. UNESCO World Heritage.', 'Ở Tràng An, Ninh Bình, người ta chèo thuyền bằng chân giữa những núi đá cao và xuyên qua hang. Di sản Thế giới UNESCO.'], 'trangan'],
   // Australia
-  ['reef', 'au', '🐠', 76, 160, ['Great Barrier Reef', 'Rạn san hô Great Barrier'], ['The Great Barrier Reef is the biggest coral reef in the world. You can see it from space! Turtles, clownfish and dolphins live there. UNESCO World Heritage.', 'Rạn san hô Great Barrier là rạn san hô lớn nhất thế giới. Nhìn từ vũ trụ cũng thấy! Rùa biển, cá hề và cá heo sống ở đó. Di sản Thế giới UNESCO.'], 'reef'],
-  ['sisters', 'au', '🏔️', -160, 40, ['The Three Sisters, Blue Mountains', 'Ba Chị Em, Núi Xanh'], ['In the Blue Mountains, three tall rocks called the Three Sisters stand together. The gum trees make a blue haze in the air. UNESCO World Heritage.', 'Ở dãy Núi Xanh, ba tảng đá cao tên là Ba Chị Em đứng cạnh nhau. Rừng bạch đàn tỏa hơi xanh trong không khí. Di sản Thế giới UNESCO.'], 'sisters'],
-  ['exhibition', 'au', '🏛️', -160, -24, ['Royal Exhibition Building', 'Tòa nhà Triển lãm Hoàng gia'], ['The Royal Exhibition Building in Melbourne has a big dome. It was built in 1880 for a world fair. UNESCO World Heritage.', 'Tòa nhà Triển lãm Hoàng gia ở Melbourne có mái vòm lớn. Nó được xây năm 1880 cho một hội chợ thế giới. Di sản Thế giới UNESCO.'], 'exhibition'],
-  ['kakadu', 'au', '🎨', -78, 44, ['Kakadu rock art', 'Tranh đá Kakadu'], ['In Kakadu, Aboriginal people have painted animals and stories on the rocks for tens of thousands of years. UNESCO World Heritage.', 'Ở Kakadu, người Thổ dân Úc đã vẽ con vật và câu chuyện lên vách đá từ hàng chục nghìn năm nay. Di sản Thế giới UNESCO.'], 'kakadu'],
+  ['reef', 'au', '🐠', ['Great Barrier Reef', 'Rạn san hô Great Barrier'], ['The Great Barrier Reef is the biggest coral reef in the world. You can see it from space! Turtles, clownfish and dolphins live there. UNESCO World Heritage.', 'Rạn san hô Great Barrier là rạn san hô lớn nhất thế giới. Nhìn từ vũ trụ cũng thấy! Rùa biển, cá hề và cá heo sống ở đó. Di sản Thế giới UNESCO.'], 'reef'],
+  ['sisters', 'au', '🏔️', ['The Three Sisters, Blue Mountains', 'Ba Chị Em, Núi Xanh'], ['In the Blue Mountains, three tall rocks called the Three Sisters stand together. The gum trees make a blue haze in the air. UNESCO World Heritage.', 'Ở dãy Núi Xanh, ba tảng đá cao tên là Ba Chị Em đứng cạnh nhau. Rừng bạch đàn tỏa hơi xanh trong không khí. Di sản Thế giới UNESCO.'], 'sisters'],
+  ['exhibition', 'au', '🏛️', ['Royal Exhibition Building', 'Tòa nhà Triển lãm Hoàng gia'], ['The Royal Exhibition Building in Melbourne has a big dome. It was built in 1880 for a world fair. UNESCO World Heritage.', 'Tòa nhà Triển lãm Hoàng gia ở Melbourne có mái vòm lớn. Nó được xây năm 1880 cho một hội chợ thế giới. Di sản Thế giới UNESCO.'], 'exhibition'],
+  ['kakadu', 'au', '🎨', ['Kakadu rock art', 'Tranh đá Kakadu'], ['In Kakadu, Aboriginal people have painted animals and stories on the rocks for tens of thousands of years. UNESCO World Heritage.', 'Ở Kakadu, người Thổ dân Úc đã vẽ con vật và câu chuyện lên vách đá từ hàng chục nghìn năm nay. Di sản Thế giới UNESCO.'], 'kakadu'],
   // China
-  ['forbidden', 'cn', '🏯', 128, -70, ['The Forbidden City', 'Tử Cấm Thành'], ['The Forbidden City in Beijing was the emperors’ palace. It has almost a thousand buildings with golden roofs! UNESCO World Heritage.', 'Tử Cấm Thành ở Bắc Kinh là cung điện của các hoàng đế. Nó có gần một nghìn tòa nhà mái vàng! Di sản Thế giới UNESCO.'], 'forbidden'],
-  ['heaven', 'cn', '⛩️', 72, -72, ['Temple of Heaven', 'Thiên Đàn'], ['The Temple of Heaven in Beijing is round with three blue roofs. Emperors prayed there for good harvests. UNESCO World Heritage.', 'Thiên Đàn ở Bắc Kinh hình tròn với ba tầng mái xanh. Các hoàng đế cầu mùa màng tốt tươi ở đó. Di sản Thế giới UNESCO.'], 'heaven'],
-  ['terracotta', 'cn', '🗿', 124, -102, ['Terracotta Army', 'Đội quân đất nung'], ['In Xi’an there are thousands of clay soldiers, horses and chariots, made more than 2,000 years ago. Every face is different! UNESCO World Heritage.', 'Ở Tây An có hàng nghìn chiến binh, ngựa và xe bằng đất nung, làm từ hơn 2.000 năm trước. Mỗi khuôn mặt đều khác nhau! Di sản Thế giới UNESCO.'], 'terracotta'],
-  ['potala', 'cn', '🏔️', 76, -104, ['Potala Palace', 'Cung điện Potala'], ['The Potala Palace in Lhasa sits high on a mountain, painted white and red. It has more than a thousand rooms. UNESCO World Heritage.', 'Cung điện Potala ở Lhasa nằm trên núi cao, sơn trắng và đỏ. Nó có hơn một nghìn căn phòng. Di sản Thế giới UNESCO.'], 'potala'],
+  ['forbidden', 'cn', '🏯', ['The Forbidden City', 'Tử Cấm Thành'], ['The Forbidden City in Beijing was the emperors’ palace. It has almost a thousand buildings with golden roofs! UNESCO World Heritage.', 'Tử Cấm Thành ở Bắc Kinh là cung điện của các hoàng đế. Nó có gần một nghìn tòa nhà mái vàng! Di sản Thế giới UNESCO.'], 'forbidden'],
+  ['heaven', 'cn', '⛩️', ['Temple of Heaven', 'Thiên Đàn'], ['The Temple of Heaven in Beijing is round with three blue roofs. Emperors prayed there for good harvests. UNESCO World Heritage.', 'Thiên Đàn ở Bắc Kinh hình tròn với ba tầng mái xanh. Các hoàng đế cầu mùa màng tốt tươi ở đó. Di sản Thế giới UNESCO.'], 'heaven'],
+  ['terracotta', 'cn', '🗿', ['Terracotta Army', 'Đội quân đất nung'], ['In Xi’an there are thousands of clay soldiers, horses and chariots, made more than 2,000 years ago. Every face is different! UNESCO World Heritage.', 'Ở Tây An có hàng nghìn chiến binh, ngựa và xe bằng đất nung, làm từ hơn 2.000 năm trước. Mỗi khuôn mặt đều khác nhau! Di sản Thế giới UNESCO.'], 'terracotta'],
+  ['potala', 'cn', '🏔️', ['Potala Palace', 'Cung điện Potala'], ['The Potala Palace in Lhasa sits high on a mountain, painted white and red. It has more than a thousand rooms. UNESCO World Heritage.', 'Cung điện Potala ở Lhasa nằm trên núi cao, sơn trắng và đỏ. Nó có hơn một nghìn căn phòng. Di sản Thế giới UNESCO.'], 'potala'],
   // India
-  ['qutub', 'in', '🗼', -138, -66, ['Qutub Minar', 'Tháp Qutub Minar'], ['Qutub Minar in Delhi is a very tall brick tower with carved stripes, more than 800 years old. UNESCO World Heritage.', 'Tháp Qutub Minar ở Delhi là tòa tháp gạch rất cao có hoa văn khắc, hơn 800 năm tuổi. Di sản Thế giới UNESCO.'], 'qutub'],
-  ['redfort', 'in', '🏰', -86, -104, ['Red Fort', 'Pháo đài Đỏ'], ['The Red Fort in Delhi has huge red sandstone walls and little domed pavilions. On India’s Independence Day the flag is raised there. UNESCO World Heritage.', 'Pháo đài Đỏ ở Delhi có tường đá sa thạch đỏ khổng lồ và những đình nhỏ mái vòm. Vào Ngày Độc lập của Ấn Độ, lá cờ được kéo lên ở đó. Di sản Thế giới UNESCO.'], 'redfort'],
-  ['konark', 'in', '☸️', -86, -68, ['Konark Sun Temple', 'Đền Mặt Trời Konark'], ['The Konark Sun Temple is shaped like a giant stone chariot for the Sun, with 24 carved wheels and seven horses. UNESCO World Heritage.', 'Đền Mặt Trời Konark có hình cỗ xe đá khổng lồ của Thần Mặt Trời, với 24 bánh xe chạm khắc và bảy con ngựa. Di sản Thế giới UNESCO.'], 'konark'],
-  ['hampi', 'in', '🛕', -138, -102, ['Hampi stone chariot', 'Cỗ xe đá Hampi'], ['In Hampi there is a chariot made completely of stone, among giant round boulders. Long ago its wheels could turn! UNESCO World Heritage.', 'Ở Hampi có một cỗ xe làm hoàn toàn bằng đá, giữa những tảng đá tròn khổng lồ. Ngày xưa bánh xe còn quay được! Di sản Thế giới UNESCO.'], 'hampi'],
-  ['mahabodhi', 'in', '🙏', -152, -84, ['Mahabodhi Temple', 'Đền Mahabodhi'], ['The Mahabodhi Temple in Bodh Gaya has a tall tower. People say the Buddha sat under a tree there. UNESCO World Heritage.', 'Đền Mahabodhi ở Bồ Đề Đạo Tràng có một tòa tháp cao. Người ta kể Đức Phật đã ngồi dưới gốc cây ở đó. Di sản Thế giới UNESCO.'], 'mahabodhi']
+  ['qutub', 'in', '🗼', ['Qutub Minar', 'Tháp Qutub Minar'], ['Qutub Minar in Delhi is a very tall brick tower with carved stripes, more than 800 years old. UNESCO World Heritage.', 'Tháp Qutub Minar ở Delhi là tòa tháp gạch rất cao có hoa văn khắc, hơn 800 năm tuổi. Di sản Thế giới UNESCO.'], 'qutub'],
+  ['redfort', 'in', '🏰', ['Red Fort', 'Pháo đài Đỏ'], ['The Red Fort in Delhi has huge red sandstone walls and little domed pavilions. On India’s Independence Day the flag is raised there. UNESCO World Heritage.', 'Pháo đài Đỏ ở Delhi có tường đá sa thạch đỏ khổng lồ và những đình nhỏ mái vòm. Vào Ngày Độc lập của Ấn Độ, lá cờ được kéo lên ở đó. Di sản Thế giới UNESCO.'], 'redfort'],
+  ['konark', 'in', '☸️', ['Konark Sun Temple', 'Đền Mặt Trời Konark'], ['The Konark Sun Temple is shaped like a giant stone chariot for the Sun, with 24 carved wheels and seven horses. UNESCO World Heritage.', 'Đền Mặt Trời Konark có hình cỗ xe đá khổng lồ của Thần Mặt Trời, với 24 bánh xe chạm khắc và bảy con ngựa. Di sản Thế giới UNESCO.'], 'konark'],
+  ['hampi', 'in', '🛕', ['Hampi stone chariot', 'Cỗ xe đá Hampi'], ['In Hampi there is a chariot made completely of stone, among giant round boulders. Long ago its wheels could turn! UNESCO World Heritage.', 'Ở Hampi có một cỗ xe làm hoàn toàn bằng đá, giữa những tảng đá tròn khổng lồ. Ngày xưa bánh xe còn quay được! Di sản Thế giới UNESCO.'], 'hampi'],
+  ['mahabodhi', 'in', '🙏', ['Mahabodhi Temple', 'Đền Mahabodhi'], ['The Mahabodhi Temple in Bodh Gaya has a tall tower. People say the Buddha sat under a tree there. UNESCO World Heritage.', 'Đền Mahabodhi ở Bồ Đề Đạo Tràng có một tòa tháp cao. Người ta kể Đức Phật đã ngồi dưới gốc cây ở đó. Di sản Thế giới UNESCO.'], 'mahabodhi']
 ];
 
 // models, built around (0,0) facing +z
@@ -92,7 +94,8 @@ export function createHeritage(G, { give, sfx, say, toast }) {
 
   // ---------- landmarks ----------
   const cen = { vn: [VILLAGE.x, VILLAGE.z], au: [(AUSSIE.x0 + AUSSIE.x1) / 2, (AUSSIE.z0 + AUSSIE.z1) / 2], cn: [CHINA.x, CHINA.z], in: [INDIA.x, INDIA.z] };
-  for (const [id, cc, icon, nx, nz, name, fact, model] of SITES) {
+  for (const [id, cc, icon, name, fact, model] of SITES) {
+    const [nx, nz] = landmarkAt(id);
     const water = id === 'halong' || id === 'reef';
     let x = nx, z = nz, mx, mz;
     if (water) { // in the lake's shallows, with the sign on the beach
@@ -174,7 +177,8 @@ export function createHeritage(G, { give, sfx, say, toast }) {
       if (!ITEMS[key]) ITEMS[key] = { icon, name: WILD[key].name };
       for (let k = 0; k < 2; k++) {
         const a = (li * 2 + k) / (list.length * 2) * Math.PI * 2 + (cc === 'au' ? .5 : 0), [cx, cz, r] = near[cc];
-        const [x, z] = spot(cx + Math.cos(a) * r, cz + Math.sin(a) * r, 1.6);
+        const inV = v => Math.max(-HALF + 14, Math.min(HALF - 14, v)); // (round T: never past the edge of the valley)
+        const [x, z] = spot(inV(cx + Math.cos(a) * r), inV(cz + Math.sin(a) * r), 1.6);
         const g = new THREE.Group(), fruit = new THREE.Group();
         if (type === 'tree') {
           { const t = new THREE.Mesh(C(.18, .26, 2.6, 8), toon(key === 'coconut' ? '#9a7a52' : '#7a5236')); t.position.y = 1.3; g.add(t); }
