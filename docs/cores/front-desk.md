@@ -82,6 +82,11 @@ Reported by the owner, <date and time> AEST.
 - **The robot fixed it** (`fixed-on-branch`): it is not live yet. Release merges the draft pull request, and the
   owner's "yes, deploy" makes it live; merging closes the issue.
 
+## Keeping track (for the owner)
+- GitHub → Issues: every bug; the labels say where it is; closed means live.
+- GitHub → Pull requests: each robot fix ("Bug #12 (play): ..."), with its **Quick checks** and **AI review** marks.
+- GitHub → Actions: every run of the bug robot, the quick checks and the AI review.
+
 ## Questions that are not bugs
 Answer from the docs and the code. When the answer means changing the game, say which core would do it and offer to
 put it on `docs/cores/BOARD.md` for that core. That is the only file you change in the repository; push it to your own branch like

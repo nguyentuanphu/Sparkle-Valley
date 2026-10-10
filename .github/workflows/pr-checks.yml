@@ -1,0 +1,73 @@
+# Quick checks on every pull request (owner, 10 Oct AEST: "auto checks on every PR and AI review").
+# Every pull request into main gets a pass or fail mark from the fast checks before Release looks at it. Uses free
+# GitHub minutes, no Claude usage. The full suite (about an hour) stays Release's job before every "yes, deploy".
+# The bug robot's pull requests are made with the workflow's own token, which GitHub does not let start other
+# workflows, so the robot starts this one by hand (workflow_dispatch with the pull request number).
+name: Quick checks
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'Pull request number'
+        required: true
+concurrency:
+  group: quick-checks-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: write
+
+env:
+  CHECKS: 'rules unit types arch emoji noemoji preload boot phone'
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Find the pull request's code
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          N: ${{ github.event.pull_request.number || inputs.pr }}
+        run: |
+          sha=$(gh pr view "$N" --json headRefOid -q .headRefOid)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          gh api "repos/$GH_REPO/statuses/$sha" -f state=pending -f context='Quick checks' \
+            -f description='Running' -f target_url="$GITHUB_SERVER_URL/$GH_REPO/actions/runs/$GITHUB_RUN_ID" >/dev/null
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Get the checks ready (browser and test server)
+        run: |
+          cd tests && npm ci && npx playwright install --with-deps chromium
+          cd .. && (python3 -m http.server 8765 >/dev/null 2>&1 &)
+
+      - name: Run the quick checks
+        id: run
+        run: cd tests && SV_URL=http://localhost:8765/ node run.mjs $CHECKS 2>&1 | tee ../checks.log; exit "${PIPESTATUS[0]}"
+
+      - name: Mark the pull request
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ steps.pr.outputs.sha }}
+          OUTCOME: ${{ steps.run.outcome }}
+        run: |
+          [ -n "$SHA" ] || exit 0
+          sum=$(grep -E 'checks passed|failed' checks.log 2>/dev/null | tail -1 | cut -c1-120)
+          if [ "$OUTCOME" = success ]; then state=success; else state=failure; fi
+          gh api "repos/$GH_REPO/statuses/$SHA" -f state=$state -f context='Quick checks' \
+            -f description="${sum:-$OUTCOME}" -f target_url="$GITHUB_SERVER_URL/$GH_REPO/actions/runs/$GITHUB_RUN_ID" >/dev/null

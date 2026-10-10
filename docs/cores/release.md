@@ -12,7 +12,8 @@ when the owner says so.
 
 ## A round, step by step
 1. Read `BOARD.md`; merge each ready core branch and each bug robot pull request (`bugfix/*` branches, label
-   `fixed-on-branch`: read the fix and its checks first); fix conflicts with the core's owner on the board.
+   `fixed-on-branch`: read the fix and its checks first). Every pull request into `main` shows two marks: **Quick checks**
+   and **AI review**; fix (or send back) every problem the AI review lists before merging; fix conflicts with the core's owner on the board.
 2. Bump r-number in `js/build.js`, `sw.js` VERSION and `studio/version.json`.
 3. Record new voices (`tools/make-voice-pack.mjs --engine azure`, see Voice & Audio).
 4. Run the **full suite** (`node run.mjs`, about an hour; one browser run at a time). Fix or send back every failure.
@@ -46,3 +47,8 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - 10 Oct AEST: no double suite runs. Release reruns the full suite only when the merged code differs from what a helper tested (two or more branches merged, or Release changed code itself); otherwise it runs the quick checks (`types unit arch rules ground studio`) and relies on the helper's recorded full-suite result (commit id and every check, in that core's progress notes).
 - 10 Oct AEST: r55 (chapter 2) deployed at the owner's "Deploy now" with the full suite still running (2 of 81 checks done, both passed); the rest reported when it finished.
 >>>>>>> origin/main
+- **Audit on every pull request (10 Oct AEST):** `.github/workflows/pr-checks.yml` runs the quick checks
+  (`rules unit types arch emoji noemoji preload boot phone`, free GitHub minutes) and `.github/workflows/ai-review.yml`
+  has a second Claude review the changes against the rules and post one comment (Claude usage, same account as the bug
+  robot). The review runs when a pull request is opened, reopened or marked ready, and again when the label `ai-review`
+  is added; not on every push. The round's pull request into `main` is reviewed too, before "yes, deploy".

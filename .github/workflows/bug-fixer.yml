@@ -217,6 +217,7 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+      actions: write   # to start the quick checks and the AI review on the robot's pull request
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -271,6 +272,9 @@ jobs:
               pr=$(gh pr create --draft --base main --head "$b" --title "$title" --body "$pr_body" 2>/dev/null \
                 || gh pr create --base main --head "$b" --title "[Robot fix, do not merge before Release] $title" --body "$pr_body")
             fi
+            # Pull requests made with this token do not start other workflows by themselves: start them here.
+            gh workflow run pr-checks.yml -f pr="${pr##*/}" || true
+            gh workflow run ai-review.yml -f pr="${pr##*/}" || true
             note="Fixed on the branch \`$b\` ($now). Draft pull request: $pr
           It is **not live**: Release merges it and asks you \"yes, deploy\" before Netlify gets it."
             gh issue edit "$N" --add-label fixed-on-branch --remove-label needs-go >/dev/null
