@@ -140,7 +140,8 @@ jobs:
 
       - name: Get the checks ready (browser and test server)
         run: |
-          cd tests && npm ci && npx playwright install --with-deps chromium
+          # tests/package-lock.json points playwright at a folder on the Claude machines: install from package.json
+          cd tests && npm install --no-package-lock --no-save --no-audit --no-fund && npx playwright install --with-deps chromium
           cd .. && (python3 -m http.server 8765 >/dev/null 2>&1 &)
 
       - name: Write Claude's instructions
