@@ -115,5 +115,8 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
 - Festivals (owner, 10 Oct AEST): every festival is on, but runs only from 3 weeks before its day or when an admin
   switches it on or schedules it; children can never start one; a festival decorates the whole town or village, not a few
   scattered things. Brief: `docs/cores/tasks/play-festivals.md` (its own Play chat).
-- This chat works on story Chapter 2 only; Kid UI, Voice & Audio and the World layout are run in their own chats (owner, 10 Oct AEST): their parts go on the board, never built here.
+- Next in this chat (owner, 10 Oct AEST): the festivals brief (`tasks/play-festivals.md`) and story Chapter 3 (Sydney),
+  both in one round. Chapter 3: Bà Năm tells The Magic Pudding; under-5s play tug of war with Jack and Ruby (cricket is
+  5+); Chi's look chosen by Play (changeable in Studio); switch `story_ch3` off until an admin switches it on.
+- (earlier) This chat works on story Chapter 2 only; Kid UI, Voice & Audio and the World layout are run in their own chats (owner, 10 Oct AEST): their parts go on the board, never built here.
 
