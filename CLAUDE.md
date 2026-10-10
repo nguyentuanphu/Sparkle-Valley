@@ -18,6 +18,15 @@
 
 **Cores (owner, 8 Oct):** the project is split into 8 cores, one AI chat per core (World, Play, Kid UI, Voice & Audio, Online, Studio, Analytics & Infra, Release). If the owner says which core you are, read `docs/cores/README.md` and your core's file in `docs/cores/` before anything else, work only in that core's files on the branch `core/<name>`, and put requests for other cores on `docs/cores/BOARD.md`. Only the Release core merges, runs the full suite, reports and asks for "yes, push" / "yes, deploy". With no core named, you are Release.
 
+**Working together across chats and Claude accounts (owner, 10 Oct).** Chats, even on different Claude accounts, cannot see or message each other; the GitHub repo is their only shared memory, and the owner carries messages between them.
+1. **Start of every session:** `git fetch` and `git pull` your branch, merge `main` into it, then read `docs/cores/BOARD.md` (the whole board, not only your section) and your progress notes.
+2. **The board is the status page.** Keep your core's "Now" line on `docs/cores/BOARD.md` current: what you are doing, your branch, your last commit, and what you are waiting for. Requests to another core go there in the board's format. Update it before every report.
+3. **Pull before every push** (`git pull --no-rebase` on your branch, fix any conflict, run the checks again if code changed). Never force-push.
+4. **Decisions the owner makes in your chat go into your core file** under "Owner's decisions" in the same session, so other chats and Release know them.
+5. **Designs and pages from claude.ai go into the repo** (`docs/<name>/`), because chats on other accounts cannot open another account's artifacts.
+6. **Keys live in each account's environment settings**, never in the repo. A chat without `AZURE_SPEECH_KEY` lists new spoken lines on the board for Release to record.
+7. **Only Release merges into `main` and deploys.** Release reads the board, every branch on GitHub and each progress note before merging, and gives the owner a status summary when asked "what's the status?".
+
 **Helper chats (owner, 10 Oct): every chat that is told it is a core (not Release) keeps these rules, whether or not the owner pastes them.**
 1. Read this file, `HANDOFF.md`, `docs/cores/README.md`, your core's file in `docs/cores/` and, if the owner names one, your task brief in `docs/cores/tasks/`. The brief says what to build; this file and the docs say how. If they disagree, the docs win: say so.
 2. **Plan first and wait:** before changing anything, show the owner your plan (what you will build, which files, which checks, what is left for later) and wait for the owner's "go".
