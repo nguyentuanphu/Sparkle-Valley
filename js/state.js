@@ -91,7 +91,7 @@ export const settings = Object.assign({
 const OLD_VOICE = ['tts', 'ttsKey', 'elevenVoice', 'googleVoiceEn', 'googleVoiceVi', 'azureRegion', 'azureVoiceEn', 'azureVoiceVi'];
 const dropOldVoice = () => { let n = 0; for (const k of OLD_VOICE) if (k in settings) { delete settings[k]; n++; } return n; };
 // (bug #32, owner 11 Oct) festival decorations are set in Sparkle Studio only: an old saved choice on this device is ignored
-const dropOldFestival = () => 'festival' in settings && delete settings.festival;
+const dropOldFestival = () => { if (!('festival' in settings)) return 0; delete settings.festival; return 1; };
 if (dropOldVoice() | dropOldFestival()) store.set(KEY_SETTINGS, settings);
 // fewer moving effects: Calm mode, or the device's own "Reduce motion" setting (round I accessibility rule A11Y-001)
 export const reduceMotion = () => !!settings.calm || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
