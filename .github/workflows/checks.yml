@@ -1,0 +1,43 @@
+# Fast checks on every pull request and every push to a branch (Analytics & Infra, 10 Oct, task infra-speed).
+# The same checks a contributor runs locally (cd tests && node run.mjs <checks>), no game server needed:
+#   unit     Node unit tests (tests/unit)
+#   rules    js/content/rules.js matches docs/ARCHITECTURE.md §9 (tools/rules-from-doc.mjs --check)
+#   preload  index.html lists every start-up script (tools/preload.mjs --check)
+#   emoji    every emoji has a drawing in js/art.js, none in the docs (tools/emoji-audit.mjs)
+#   arch     no files import each other in a circle (tests/arch.mjs)
+#   types    type checking; names: no undefined names in js/
+# Then the Netlify zip is built and packed (build-netlify.sh, tools/bundle.mjs), so a packing problem shows here first.
+# Nothing is deployed: Netlify makes its own deploy previews of pull requests. The full browser suite stays local
+# (Release runs it before every push).
+name: Checks
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the test tools
+        working-directory: tests
+        run: npm ci --no-audit --no-fund
+      # the runner opens a browser at start even for checks that need none
+      - name: Install Chromium
+        working-directory: tests
+        run: npx playwright install --with-deps chromium
+      - name: Fast checks
+        working-directory: tests
+        run: node run.mjs unit rules preload emoji arch types names
+      - name: Build and pack the Netlify zip
+        run: ./build-netlify.sh && test -d netlify-site/bundle && grep -q 'src="bundle/main-' netlify-site/index.html

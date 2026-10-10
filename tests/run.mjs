@@ -868,12 +868,17 @@ await check('story', async () => {
   await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(1200);
   await pg.evaluate(() => document.querySelectorAll('.reward,.modal').forEach(e => e.click())); await w(800); await calm(); await w(1500);
   seen.push(await q());
+  // (Play core, chapter 2; owner 10 Oct: it is off until an admin switches it on or schedules it) switched on in Studio,
+  // chapter 2 follows chapter 1; off, the old adventures follow as before
+  const noCh2 = seen[8];
+  seen[8] = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), story_ch2: true }; const c = __sv.currentQuest(__sv.heroes[0].profile); delete C.features.story_ch2; return c && c.id; });
   const end = await pg.evaluate(() => { const G = __sv, p = G.heroes[0].profile, D = G.lanterns.dinh;
     const house = Math.min(...G.world.colliders.filter(c => c.r > 2 && c.top == null).map(c => Math.hypot(c.x - D.x, c.z - D.z) - c.r));
     return { companion: p.lanterns.companion, ch1: !!p.lanterns.chapters.ch1, keep: (p.keepsakes || []).includes('lantern_ch1'), carrying: p.lanterns.carrying, house }; });
   const want = ['L_p_owl', 'L_c1_village', 'L_c1_nam', 'L_c1_well', 'L_c1_teo', 'L_c1_tale', 'L_c1_find', 'L_c1_hang'], out = [];
   want.forEach((id, i) => { if (seen[i] !== id) out.push(`step ${i + 1} was ${seen[i]}, expected ${id}`); });
-  if (!seen[8] || /^L_/.test(seen[8])) out.push('after chapter 1 the goal was ' + seen[8] + ', not an old adventure');
+  if (seen[8] !== 'L_c2_fly') out.push('after chapter 1 the goal was ' + seen[8] + ', not chapter 2');
+  if (!noCh2 || /^L_/.test(noCh2)) out.push('with chapter 2 not switched on (its default), the goal after chapter 1 was ' + noCh2 + ', not an old adventure');
   if (!film) out.push('Ông Cú\'s film did not play');
   if (end.companion !== 'dragon') out.push('the companion was not chosen');
   if (carrying !== 'ch1' || end.carrying) out.push('the lantern was not carried and then hung');
@@ -885,7 +890,146 @@ await check('story', async () => {
   if (P.errors.length) out.push(...P.errors.slice(0, 2));
   await P.ctx.close();
   if (out.length) throw new Error(out.join('; '));
-  return `prologue and chapter 1 played through (${want.length} steps; ribbons caught, ${lifted} lotus leaves lifted, rope pulled); đình lit, keepsake home, then "${seen[8]}"; nearest building ${end.house.toFixed(1)} m away`;
+  return `prologue and chapter 1 played through (${want.length} steps; ribbons caught, ${lifted} lotus leaves lifted, rope pulled); đình lit, keepsake home, then "${noCh2}" (chapter 2 switched on: "${seen[8]}"); nearest building ${end.house.toFixed(1)} m away`;
+});
+await check('chapter2', async () => {
+  // (Play core, owner's go 10 Oct) chapter 2 of the lantern story, Hà Nội, played from the start to the Trung Thu parade,
+  // once as an under-5 and once as a big kid: lantern lights to Hà Nội, Cô Tam (big kids), Tèo's challenge (Ô ăn quan for
+  // a big kid, Oẳn tù tì for an under-5: another game does not count), Bà Lan's bún chả by hand (big kids), counting the
+  // stone turtles at Văn Miếu (a big kid answers how many and is asked again after a wrong answer), Bà Năm's story, the
+  // clues by Hồ Gươm (the under-5's companion lights the way), the rope, the festival film (both pages played through),
+  // Cầu Thê Húc lit, the parade, the keepsake, the new trick, and the big kids' golden turtle. Nothing stands on a road,
+  // a city street or in the water.
+  const shots = process.env.SV_SHOTS;
+  const play = async age => {
+    const P = await open(b, { w: 1000, h: 700, fast: !shots }); await clear(P.page);
+    const pg = P.page, w = ms => pg.waitForTimeout(ms), seen = [], out = [];
+    const q = () => pg.evaluate(() => { const c = __sv.currentQuest(__sv.heroes[0].profile); return c && c.id; });
+    const calm = () => pg.evaluate(() => { document.querySelectorAll('.storybook,.dialog,.reward').forEach(e => e.remove()); __sv.paused = false; });
+    const act = id => pg.evaluate(id => { const it = __sv.interactables.find(i => i.id === id), h = __sv.heroes[0]; if (!it || (it.visible && !it.visible(h))) return false; it.act(h, __sv); return true; }, id);
+    const tapDialog = (n = 6) => pg.evaluate(async n => { for (let i = 0; i < n; i++) { const d = document.querySelector('.dialog:not(.out)'); if (!d || d.querySelector('.dch')) break; d.click(); await new Promise(r => setTimeout(r, 250)); } }, n);
+    const choose = k => pg.evaluate(k => { const c = document.querySelectorAll('.dialog:not(.out) .dch'); if (!c[k]) return false; c[k].click(); return true; }, k);
+    const step = async () => { await w(400); await calm(); await w(2200); await calm(); seen.push(await q()); };
+    // (off by default: an admin switches it on in Studio)
+    const offFirst = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM, h = __sv.heroes[0], p = h.profile; p.lanterns = { companion: 'firefly', done: { p_owl: true }, chapters: { ch1: true } };
+      for (const s of ['c1_village', 'c1_nam', 'c1_well', 'c1_teo', 'c1_tale', 'c1_find', 'c1_hang']) p.lanterns.done[s] = true;
+      const q = __sv.currentQuest(p); C.features = { ...(C.features || {}), story_ch2: true }; return !/^L_c2/.test(q && q.id || ''); });
+    await pg.evaluate(age => { const G = __sv, h = G.heroes[0], p = h.profile; p.age = age;
+      p.lanterns = { companion: 'firefly', done: { p_owl: true }, chapters: { ch1: true } };
+      for (const s of ['c1_village', 'c1_nam', 'c1_well', 'c1_teo', 'c1_tale', 'c1_find', 'c1_hang']) p.lanterns.done[s] = true;
+      G.lanterns.companions.sync(); }, age);
+    // (chapter 2's places load once a child has finished chapter 1, not at start-up)
+    const lazy = await pg.evaluate(() => !__sv.lanterns.hanoi); await pg.evaluate(() => __sv.lanterns.loadHanoi()); await w(300);
+    seen.push(await q());
+    // walking into Hà Nội is not enough: follow the lantern lights
+    await pg.evaluate(() => __sv.heroes[0].place(4, -60)); await w(2500); await calm();
+    const lightsWaited = await q() === 'L_c2_fly';
+    for (let k = 0; k < 3; k++) { await act('story_light' + k); await w(300); }
+    await step();
+    if (age === 'big') { if (!await act('story_c2_tam')) out.push('no Cô Tam button'); await w(500); await tapDialog(); await step(); }
+    // Tèo's challenge: his line with Play, How to play and Later
+    const teoBtn = await act('story_c2_teo'); await w(600);
+    const teoChoices = await pg.evaluate(() => document.querySelectorAll('.dialog:not(.out) .dch').length); await calm();
+    const emit = gid => pg.evaluate(async gid => { const E = await import('/js/core/events.js'); E.events.emit('ActivityCompleted', { activityId: 'x', defId: 'game:' + gid, players: [], result: { won: true } }); }, gid);
+    await emit(age === 'big' ? 'oantuti' : 'oanquan'); await w(400);
+    const otherGame = await q();
+    await emit(age === 'big' ? 'oanquan' : 'oantuti'); await step();
+    let fanned = false, bowls = 0;
+    if (age === 'big') {
+      await act('story_c2_job'); await w(800);
+      fanned = await pg.evaluate(async () => { const b = document.querySelector('.handpad [data-hp=fan]'); if (!b) return false; b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); for (let i = 0; i < 100 && !document.querySelector('.handpad [data-hp=bowl]'); i++) await new Promise(r => setTimeout(r, 200)); b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true })); return true; });
+      await w(600);
+      bowls = await pg.evaluate(async () => { let n = 0; for (let i = 0; i < 3; i++) { const b = document.querySelector('.handpad [data-hp=bowl]'); if (!b) break; b.click(); n++; await new Promise(r => setTimeout(r, 200)); } return n; });
+      await step();
+    }
+    // Cô Tam's lesson: count the stone turtles
+    await act('story_c2_vanmieu'); await w(600); await tapDialog(); await w(500);
+    const n = age === 'big' ? 5 : 3; let counted = 0;
+    for (let k = 0; k < 5; k++) { if (await act('story_turtle' + k)) counted++; await w(300); }
+    await w(600);
+    let askedAgain = false;
+    if (age === 'big') { await choose(0); await w(500); await tapDialog(1); await w(500); askedAgain = await choose(1); await w(500); }
+    await tapDialog(); await step();
+    // Bà Năm's story (Sự tích Hồ Gươm): the button opens her words (the theatre is checked by 'tales')
+    const namBtn = await act('story_c2_tale'); await w(600); await calm(); await pg.evaluate(() => document.querySelector('.th-x')?.click());
+    await pg.evaluate(() => __sv.lanterns._finish(__sv.heroes[0], 'c2_tale')); await step();
+    // the clues by the lake: an under-5's companion flies over the right one
+    await pg.evaluate(() => { const H = __sv.lanterns.hanoi; __sv.heroes[0].place(H.front[0], H.front[1] + 1); }); await w(2500); await calm();
+    const lead = await pg.evaluate(() => { const c = __sv.lanterns.companions.of(__sv.heroes[0]); return !!(c && c.lead); });
+    const target = await pg.evaluate(() => { const t = __sv.currentQuest(__sv.heroes[0].profile).target(), L = __sv.lanterns.hanoi.lanternAt; return Math.hypot(t.x - L[0], t.z - L[1]); });
+    const pickEarly = await pg.evaluate(() => { const it = __sv.interactables.find(i => i.id === 'story_c2_find'); return it.visible(__sv.heroes[0]); });
+    await act('story_clue1'); await w(300);
+    const wrongFound = await pg.evaluate(() => !!__sv.heroes[0].profile.lanterns.act.clue);
+    await act('story_clue0'); await w(300);
+    await act('story_c2_find'); await step();
+    const carrying = await pg.evaluate(() => __sv.heroes[0].profile.lanterns.carrying);
+    // hang it on the bridge: pull the rope, the festival film, the reward, the new trick
+    pg.evaluate(() => { const it = __sv.interactables.find(i => i.id === 'story_c2_hang'); it.act(__sv.heroes[0]); }); await w(1500);
+    const roped = await pg.evaluate(() => { const el = document.querySelector('.handpad [data-hp=rope]'); if (!el) return false; const r = el.getBoundingClientRect(), ev = (t, y) => el.dispatchEvent(new PointerEvent(t, { bubbles: true, pointerId: 9, clientX: r.left + 20, clientY: r.top + r.height * y }));
+      ev('pointerdown', 0); ev('pointermove', 1); ev('pointerup', 1); return true; });
+    let film = false; for (let i = 0; i < 30 && !film; i++) { await w(300); film = await pg.evaluate(async () => !!document.querySelector('.theatre.film canvas.th-film')); }
+    if (shots) { await w(2500); await pg.screenshot({ path: `${shots}/ch2_film_${age}.png` }); }
+    await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(1200);
+    await pg.evaluate(() => document.querySelectorAll('.reward').forEach(e => e.click())); await w(800); await tapDialog(); await w(400); await calm(); await w(1500);
+    const end = await pg.evaluate(() => { const G = __sv, p = G.heroes[0].profile, H = G.lanterns.hanoi;
+      return { ch2: !!p.lanterns.chapters.ch2, keep: (p.keepsakes || []).includes('lantern_ch2'), carrying: p.lanterns.carrying, tricks: p.lanterns.tricks || [], lit: H.lit(), parade: H.paradeOn(),
+        secret: (it => it.visible(G.heroes[0]))(G.interactables.find(i => i.id === 'story_c2_secret')), after: (q => q && q.id)(G.currentQuest(p)) }; });
+    if (shots) { await pg.evaluate(() => { const H = __sv.lanterns.hanoi; __sv.heroes[0].place(H.front[0], H.front[1] + 3); }); await w(4000); await calm(); await pg.screenshot({ path: `${shots}/ch2_parade_${age}.png` }); }
+    let sticker = false;
+    if (age === 'big' && end.secret) { await act('story_c2_secret'); await w(400); await pg.evaluate(() => document.querySelectorAll('.reward').forEach(e => e.click())); await w(400); sticker = await pg.evaluate(() => __sv.heroes[0].profile.stickers.includes('🐢') && !__sv.interactables.find(i => i.id === 'story_c2_secret').visible(__sv.heroes[0])); }
+    // nothing of the chapter on a road, a city street or in the water
+    const placed = await pg.evaluate(async () => { const W = await import('/js/world.js'), H = __sv.lanterns.hanoi, bad = [];
+      const pts = [['front', H.front[0], H.front[1]], ...H.clues.map(c => ['clue' + c.k, c.x, c.z]), ...H.people.map(c => [c.id, c.x, c.z]), ...H.turtles.map(t => ['turtle' + t.k, t.x, t.z]),
+        ...__sv.interactables.filter(i => /^story_light/.test(i.id)).map(i => [i.id, i.x, i.z])];
+      for (const [id, x, z] of pts) { const d = W.roadDist(x, z); if (d.road && d.d < d.road.w / 2 + .5) bad.push(id + ' on a road');
+        for (const c of W.CITIES) if (c.layout && x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && Math.abs((x - c.x) * Math.cos(c.layout.toward) - (z - c.z) * Math.sin(c.layout.toward)) < 2.6) bad.push(id + ' on ' + c.id + "'s street");
+        if (W.heightAt(x, z) < W.WATER + .3) bad.push(id + ' in the water'); }
+      return bad; });
+    // the festival film: both pages play to their end
+    const filmRun = await pg.evaluate(async () => {
+      const F = await import('/js/film.js'), C = await import('/js/content/films.js'); await import('/js/content/chapter2films.js');
+      const { STORY_TALES } = await import('/js/content/chapters.js'), { openTheatre } = await import('/js/tales.js'), st = STORY_TALES.lantern_ch2, bad = [];
+      openTheatre({ ...st, story: true, title: () => st.title[0], ctx: { name: 'Na', companion: 'dragon' } }, { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100));
+      document.querySelector('.th-auto')?.click(); const f = F.filmNow(); if (!f) return ['no film'];
+      const frame = () => new Promise(r => requestAnimationFrame(r));
+      for (let k = 0; k < C.FILMS.lantern_ch2.pages.length; k++) { const done = f.page(k); let ended = false; done.then(() => { ended = true; }); const p = f.now; f.narrated();
+        for (let i = 0; i < 600 && !ended; i++) { if (p.hold) p.release(true); p.t += .2; await frame(); }
+        if (!ended) bad.push('page ' + (k + 1) + ' did not end'); if (!p.actors.length) bad.push('page ' + (k + 1) + ': nobody in it'); }
+      document.querySelector('.th-x')?.click(); await new Promise(r => setTimeout(r, 400)); if (F.filmNow()) bad.push('not freed');
+      return bad; });
+    const want = age === 'big' ? ['L_c2_fly', 'L_c2_tam', 'L_c2_teo', 'L_c2_job', 'L_c2_vanmieu', 'L_c2_tale', 'L_c2_find', 'L_c2_hang'] : ['L_c2_fly', 'L_c2_teo', 'L_c2_vanmieu', 'L_c2_tale', 'L_c2_find', 'L_c2_hang'];
+    want.forEach((id, i) => { if (seen[i] !== id) out.push(`step ${i + 1} was ${seen[i]}, expected ${id}`); });
+    if (!offFirst) out.push('chapter 2 started before an admin switched it on');
+    if (!lazy) out.push('chapter 2 was loaded at start-up');
+    if (!lightsWaited) out.push('walking into Hà Nội finished the step before the lights were followed');
+    if (!teoBtn || teoChoices !== 3) out.push(`Tèo's challenge did not offer Play, How to play and Later (${teoChoices})`);
+    if (otherGame !== 'L_c2_teo') out.push('the other age group\'s game finished Tèo\'s challenge');
+    if (age === 'big' && (!fanned || bowls !== 3)) out.push(`the bún chả job was not done by hand (fan ${fanned}, bowls ${bowls})`);
+    if (counted !== n) out.push(`${counted} stone turtles to count, expected ${n}`);
+    if (age === 'big' && !askedAgain) out.push('a wrong count was not asked again');
+    if (!namBtn) out.push('no button for Bà Năm\'s story');
+    if (age !== 'big' && (!lead || target > .5)) out.push(`the companion did not light the way (lead ${lead}, arrow ${target.toFixed(1)} m from the lantern)`);
+    if (age === 'big' && lead) out.push('the companion led a big kid');
+    if (pickEarly || wrongFound) out.push('the lantern showed before the right spot was found');
+    if (carrying !== 'ch2' || end.carrying) out.push('the lantern was not carried and then hung');
+    if (!roped) out.push('hanging did not ask to pull the rope');
+    if (!film) out.push('the festival film did not open');
+    if (!end.ch2 || !end.keep) out.push('chapter 2 not finished ' + JSON.stringify(end));
+    if (!end.lit) out.push('Cầu Thê Húc did not light up');
+    if (!end.parade) out.push('no Trung Thu parade');
+    if (!end.tricks.includes('light')) out.push('the companion did not learn its trick');
+    if (!end.after || /^L_c2/.test(end.after)) out.push('after chapter 2 the goal was ' + end.after);
+    if (age === 'big' && (!end.secret || !sticker)) out.push('no golden turtle secret for a big kid');
+    if (age !== 'big' && end.secret) out.push('the golden turtle showed for an under-5');
+    out.push(...placed, ...filmRun.map(x => 'film: ' + x));
+    if (P.errors.length) out.push(...P.errors.slice(0, 2));
+    await P.ctx.close();
+    return { out, steps: want.length, counted, after: end.after };
+  };
+  const little = await play('little'), big = await play('big');
+  const bad = [...little.out.map(x => 'under-5: ' + x), ...big.out.map(x => 'big kid: ' + x)];
+  if (bad.length) throw new Error(bad.join('; '));
+  return `under-5: ${little.steps} steps (${little.counted} turtles, the companion lit the way); big kid: ${big.steps} steps (Ô ăn quan, bún chả by hand, ${big.counted} turtles and a question, clues); rope, film (2 pages), Cầu Thê Húc lit, parade, keepsake, new trick, golden turtle for the big kid; then "${big.after}"`;
 });
 await check('yard', async () => {
   // (round R, owner: bà Huệ and ông Nghi's quest chain) the yard stands in an open spot near the Huệ Nghi shop; the side
@@ -1266,9 +1410,7 @@ await check('parents', async () => {
     const realNow = Date.now, at = s => { const ms = Date.parse(s + ':00+10:00'); Date.now = () => ms; };
     S.settings.bedtime = '19:30'; at('2026-10-10T19:31'); await w(9000); out.dim = !!document.querySelector('.bedtime-dim'); out.lullaby = !!document.querySelector('.songs');
     at('2026-10-10T19:40'); await w(6000); const gn = document.querySelector('.resttime.bedtime'); out.goodnight = !!gn;
-    // (the snooze is 10 minutes after the clock this check set, not the real clock: after 19:50 AEST on the real
-    // 10 Oct the old "later than now" test failed although the game was right)
-    if (gn) await hold(gn.querySelector('.grownup')); await w(300); out.snoozed = !document.querySelector('.resttime.bedtime') && S.settings.bedSnooze === Date.now() + 10 * 60e3;
+    if (gn) await hold(gn.querySelector('.grownup')); await w(300); out.snoozed = !document.querySelector('.resttime.bedtime') && S.settings.bedSnooze - Date.now() === 10 * 60e3; // (10 Oct) against the pretend clock: the real one made this pass only before 19:50 AEST on 10 Oct 2026
     S.settings.bedtime = ''; S.settings.bedSnooze = 0; tidy(); document.querySelector('.bedtime-dim')?.remove();
     // the birthday: on the day (AEST), a surprise and a keepsake, once
     // (the reward pop-up closes itself after 2.6 s: watch for it during the wait rather than look once at the end)
@@ -1839,20 +1981,25 @@ await check('realphotos', async () => {
     for (let k = 0; k < 40 && !document.querySelector('.rv-img'); k++) await wait(150);
     const v = document.querySelector('.realview'), cap = v.querySelector('.rv-credit') ? v.querySelector('.rv-credit').textContent : '', none = v.classList.contains('none'), dots = v.querySelectorAll('.rv-dots i').length;
     const srcs = [...v.querySelectorAll('.rv-img')].map(i => i.getAttribute('src')), links = v.querySelectorAll('.rv-cap a').length;
+    // (10 Oct, owner) Use the internet off: a grown-up presses and holds first; on: the map opens straight away
+    const S = await import('/js/state.js'); S.settings.online = false;
     v.querySelector('.rv-360').click(); await wait(400);
     const gate = document.querySelector('.modal.rvgate'), early = !!document.querySelector('.rvmap iframe'), says = gate ? /Google/.test(gate.textContent) : false;
     const btn = gate.querySelector('.rv-ok'), tap = Math.round(btn.getBoundingClientRect().height);
     btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await wait(1900);
     const map = document.querySelector('.modal.rvmap:not(.rvgate)'), q = map.querySelector('.card').getBoundingClientRect(), top = document.elementFromPoint(q.left + q.width / 2, q.top + 30);
     const opened = !!map.querySelector('iframe');
+    document.querySelectorAll('.modal').forEach(e => e.remove());
+    S.settings.online = true; v.querySelector('.rv-360').click(); await wait(400);
+    const direct = !document.querySelector('.modal.rvgate') && !!document.querySelector('.rvmap iframe');
     document.querySelectorAll('.realview, .modal').forEach(e => e.remove());
     W.openPhotos('Uluru', W.REAL.uluru[0], { id: 'uluru' }); for (let k = 0; k < 30 && !document.querySelector('.realview.none'); k++) await wait(100);
     const empty = !!document.querySelector('.realview.none');
-    return { none, dots, cap, srcs, links, gate: !!gate, early, says, tap, opened, onTop: !!(top && top.closest('.rvmap')), empty };
+    return { none, dots, cap, srcs, links, gate: !!gate, early, says, tap, opened, onTop: !!(top && top.closest('.rvmap')), empty, direct };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(!r.none && r.dots === 2 && /Photographer/.test(r.cap) && r.srcs.every(x => /^photos\//.test(x)) && !r.links && r.gate && !r.early && r.says && r.tap >= 44 && r.opened && r.onTop && r.empty && !outside.length && !errs.length, JSON.stringify(Object.assign(r, { outside, errs })));
-  return `2 photos from photos/index.json (a web address left out), credit “${r.cap}” as words; nothing asked of Wikipedia or Wikimedia; a place with none says they are on their way; 360° asks a grown-up (says it opens Google), then opens on top of the photos`;
+  ok(!r.none && r.dots === 2 && /Photographer/.test(r.cap) && r.srcs.every(x => /^photos\//.test(x)) && !r.links && r.gate && !r.early && r.says && r.tap >= 44 && r.opened && r.onTop && r.direct && r.empty && !outside.length && !errs.length, JSON.stringify(Object.assign(r, { outside, errs })));
+  return `2 photos from photos/index.json (a web address left out), credit “${r.cap}” as words; nothing asked of Wikipedia or Wikimedia; a place with none says they are on their way; 360° asks a grown-up (says it opens Google) while Use the internet is off, then opens on top of the photos; with it on, opens straight away`;
 });
 
 await check('firstplayer', async () => {
@@ -2306,6 +2453,8 @@ await check('together', async () => {
   for (const P of [A, B]) await P.page.waitForSelector('.gl .race', { timeout: 20000 });
   await A.page.evaluate(() => __sv.netGames.move(900, 3));
   await B.page.waitForFunction(() => /⭐3/.test(document.querySelector('.gl .race').textContent), null, { timeout: 15000 }).catch(() => { });
+  // (10 Oct) only A's one move may be in the race: a story still winding down must not send its page turns into it
+  const stray = await B.page.evaluate(() => [...__sv.netGames.session.moves.keys()].filter(n => n !== 900));
   const race = await B.page.evaluate(src => { eval(src); return window.withEmo(document.querySelector('.gl .race')).replace(/\s+/g, ' ').trim(); }, withEmo);
   await clean();
   // 3. follow a friend: A stands 25 m away, B follows
@@ -2320,12 +2469,12 @@ await check('together', async () => {
   const pick = await A.page.evaluate(() => { const it = __sv.interactables.find(i => /^g\d+$/.test(i.id) && i.visible()); it.act(__sv.heroes[0], __sv); return it.id; });
   await B.page.waitForFunction(id => { const it = __sv.interactables.find(i => i.id === id); return it && !it.visible() && it.st.by; }, pick, { timeout: 15000 }).catch(() => { });
   const claim = await B.page.evaluate(id => { const it = __sv.interactables.find(i => i.id === id); return { gone: !it.visible(), by: it.st.by || '' }; }, pick);
-  // 5. the real place inside the game
+  // 5. the real place inside the game (playing online means a grown-up turned on Use the internet: no second gate, 10 Oct)
   // (round R privacy, 9 Oct) a grown-up's press and hold first, as it opens Google
-  const real = await A.page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); (await import('/js/realworld.js')).openStreetView('opera'); await wait(300); const early = !!document.querySelector('.rvmap iframe'), g = document.querySelector('.rvgate .rv-ok'); if (g) { g.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await wait(1900); } const f = document.querySelector('.rvmap iframe'); return { gate: !!g && !early, inGame: !!f, src: f ? f.src.slice(0, 40) : '' }; });
+  const real = await A.page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); (await import('/js/realworld.js')).openStreetView('opera'); await wait(300); const early = !!document.querySelector('.rvmap iframe'), g = document.querySelector('.rvgate .rv-ok'); if (g) { g.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await wait(1900); } const f = document.querySelector('.rvmap iframe'); return { gate: !!g && !early, direct: !g && early, inGame: !!f, src: f ? f.src.slice(0, 40) : '' }; });
   const errs = [...A.errors, ...B.errors].filter(e => !/maps\.google|google\.com/.test(e)); await A.ctx.close(); await B.ctx.close();
-  ok(tale.a === tale.b && /prince/.test(tale.b) && /⭐3/.test(race) && follow < 6 && claim.gone && claim.by && real.gate && real.inGame && !errs.length, JSON.stringify({ tale, race, follow, claim, real, errs }));
-  return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game after a grown-up's press and hold`;
+  ok(tale.a === tale.b && /prince/.test(tale.b) && /⭐3/.test(race) && !stray.length && follow < 6 && claim.gone && claim.by && real.direct && real.inGame && !errs.length, JSON.stringify({ tale, race, stray, follow, claim, real, errs }));
+  return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game straight away (Use the internet is on: owner, 10 Oct; the gate itself is checked by realphotos)`;
 });
 
 await check('chests', async () => {
@@ -2590,6 +2739,64 @@ await check('knock', async () => {
   const errs = A.errors.concat(D.errors, E.errors).filter(e => !/WebSocket|ERR_CONNECTION|peerjs/i.test(e)); await A.ctx.close(); await E.ctx.close();
   ok(panel && panel.digits === code && panel.animals === 6 && !panel.qr && aniKeys === 10 && atDoor.knocking && !atDoor.partners && atDoor.mic === false && atDoor.panel && !sentAway.remotes && !sentAway.knocks && !sentAway.pop && !stranger.remotes && !stranger.partners && !stranger.bubbles && !errs.length, JSON.stringify({ panel, aniKeys, atDoor, sentAway, stranger, errs }));
   return `code ${code} shown as digits and 6 animals (no QR code); typed on the animal pad, knocked with the microphone off and nothing heard; "No thanks" sent them away; a stranger's moves without knocking ignored; another child typed the numbers and was let in`;
+});
+
+await check('offline', async () => {
+  // (Analytics & Infra, 10 Oct, owner: "cant even play offline when there is no internet connection") once the game is
+  // saved on the device (service worker), it starts and plays with no connection, and with a connection that never
+  // answers (Wi-Fi with no internet): nothing at start may wait on the network. The game is served here from its own
+  // little server on 127.0.0.2 (the game skips its service worker on localhost) that can stop answering.
+  const http = await import('http'), path = await import('path');
+  const root = path.resolve(process.env.SV_ROOT || '..'), TY = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.woff2': 'font/woff2' };
+  let hang = false;
+  const srv = http.createServer((q, r) => {
+    if (hang) return;
+    let f = decodeURIComponent(q.url.split('?')[0]); if (f.endsWith('/')) f += 'index.html'; f = path.join(root, f);
+    if (!f.startsWith(root) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { r.writeHead(404); return r.end(); }
+    r.writeHead(200, { 'Content-Type': TY[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache' }); fs.createReadStream(f).pipe(r);
+  });
+  await new Promise(res => srv.listen(0, '127.0.0.2', res));
+  try {
+    const url = `http://127.0.0.2:${srv.address().port}/`;
+    const P = await open(b, { w: 390, h: 760, touch: true, url, play: false });
+    await P.page.waitForFunction(async () => { const r = await navigator.serviceWorker.getRegistration(); return !!(r && r.active); }, null, { timeout: 120000 });
+    await P.page.waitForTimeout(1000);
+    const again = async () => { const t0 = Date.now(); await P.page.reload({ timeout: 30000 }).catch(() => { }); const got = await P.page.waitForSelector('.screen.title', { timeout: Math.max(1000, 30000 - (Date.now() - t0)) }).then(() => true, () => false); return got ? Date.now() - t0 : -1; };
+    const saved = await again();
+    await P.ctx.setOffline(true); const off = await again();
+    // offline the whole way in: Who's playing?, into the valley
+    let played = false; if (off > 0) { await start(P.page); played = await P.page.evaluate(() => window.__sv.heroes.length === 1); }
+    await P.ctx.setOffline(false);
+    hang = true; const none = await again(); hang = false;
+    const errs = P.errors.filter(e => !/Failed to fetch|NetworkError|ERR_INTERNET_DISCONNECTED|aborted/i.test(e)); await P.ctx.close();
+    ok(saved > 0 && off > 0 && played && none > 0 && none < 15000 && !errs.length, JSON.stringify({ saved, off, played, none, errs }));
+    return `first screen: saved ${(saved / 1000).toFixed(1)} s, offline ${(off / 1000).toFixed(1)} s (played into the valley), connection that never answers ${(none / 1000).toFixed(1)} s`;
+  } finally { srv.closeAllConnections(); srv.close(); }
+});
+
+await check('nostudio', async () => {
+  // (10 Oct, owner: "Parents or users wont know what Sparkle Studio is and this is for admin so it should not be mentioned
+  // anywhere at all") Grown-ups with every group open, the parents' pages and every Pad tab never name Studio
+  const P = await open(b, { w: 1024, h: 768 }); await clear(P.page);
+  const bad = await P.page.evaluate(async () => {
+    const w = ms => new Promise(r => setTimeout(r, ms)), out = [], C = (await import('/js/custom.js')).CUSTOM;
+    C.missions = [{ id: 'fam1', en: 'Water the plants', vi: 'Tưới cây' }];
+    const look = (where, root) => { const t = [root.textContent, ...[...root.querySelectorAll('[title],[aria-label],[placeholder],[alt]')].flatMap(e => [e.title, e.getAttribute('aria-label'), e.placeholder, e.alt])].join(' '); const m = t.match(/.{0,40}studio.{0,40}/i); if (m) out.push(where + ': ' + m[0]); };
+    for (const lang of ['en', 'vi']) {
+      const S = await import('/js/state.js'); S.settings.lang = lang;
+      const { openGrownups } = await import('/js/ui.js'); openGrownups(() => { }); await w(500);
+      const g = document.querySelector('.modal.grownups'); g.querySelectorAll('details').forEach(d => { d.open = true; }); look(lang + ' Grown-ups', g);
+      document.querySelectorAll('.modal').forEach(e => e.remove());
+      const G = window.__sv; if (G.parents && G.parents.grownupsHTML) { const d = document.createElement('div'); d.innerHTML = G.parents.grownupsHTML(true); look(lang + ' parents', d); }
+      G.openPad(0, 'map'); await w(400);
+      for (const t of [...document.querySelectorAll('.pad-tabs [data-t]')].map(x => x.dataset.t)) { document.querySelector(`.pad-tabs [data-t="${t}"]`).click(); await w(250); const pad = document.querySelector('.pad, .sparkpad, .pad-body'); if (pad) look(lang + ' pad-' + t, pad.closest('.modal') || pad); }
+      document.querySelectorAll('.modal, .pad').forEach(e => e.remove()); window.__sv.paused = false;
+    }
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!bad.length && !errs.length, JSON.stringify({ bad, errs }));
+  return 'Grown-ups (every group open), the parents\' pages and every Pad tab, English and Vietnamese: Studio never named';
 });
 
 await check('onlineoff', async () => {

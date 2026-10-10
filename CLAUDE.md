@@ -1,26 +1,30 @@
 # Sparkle Valley: rules for the assistant
 
-**HARD RULE: do not `git push`, and do not open or update a pull request, until the owner has checked the work and clearly confirmed.**
+**HARD RULE: nothing reaches `main` (and so Netlify) until the owner has checked the round and clearly said "yes, deploy".**
 - Commit locally as you go.
-- When a round is done, show what changed and how it was tested, and give the Netlify zip.
-- Then wait for an explicit "yes, push" before pushing. Each confirmation covers that one push only.
-- **Ended by the owner (5 Oct, after Round I): "ask me every time".** The earlier standing instruction (4 Oct, after Round E: "Yes push, all other rounds keep running without asking me") no longer applies. Every push again needs its own "yes, push" from the owner, after the round's full regression suite is green and the round has been reported (what changed, how tested, Netlify zip and local bundle).
-- **GitHub and Netlify are asked for separately (owner, 5 Oct): "split the push to GitHub and Netlify, sometimes I only want to push to GitHub, so ask me for both".** "Yes, push" covers pushing the branch to GitHub only (and opening or updating its pull request). Merging into `main`, which makes Netlify publish the game, needs its own "yes, deploy" (or "yes, Netlify"). At every round report ask both questions.
+- When a round is done, show what changed and how it was tested, and give the Netlify zip and the local bundle.
+- History: 4 Oct standing "push without asking" ended 5 Oct ("ask me every time"); 5 Oct "ask GitHub and Netlify separately" replaced 10 Oct by the rule below.
 - **Artifacts always go into the repo (owner, 10 Oct: "Always allow adding artifact to repo").** Whenever a design, plan or drawing page is made or updated as a claude.ai artifact, put a copy in the repo (the page and its pictures, under `docs/<name>/`) and link it from the docs that use it, so every chat can read it. This is allowed without asking, and the push of such a docs-only commit to the working branch needs no separate "yes, push". Merging into `main` still needs "yes, deploy", and anything that changes the game still needs "yes, push".
-- **Done (owner, 11 Oct AEST): the Google Drive mirror is set up** (`.github/workflows/drive-mirror.yml`, GitHub secrets `RCLONE_CONF`, `DRIVE_FOLDER_ID`); no more reminders. If it fails, the steps are at the top of that file.
-- **Done (owner, 11 Oct AEST): the voice relay (TURN) is set up** in Netlify (`netlify/functions/turn.mjs`, `/api/turn` lists `turn:` servers); no more reminders.
+- The Google Drive mirror and the voice relay (TURN) are set up (owner, 10 Oct AEST): no more reminders.
 
-**Questions as pop-ups (owner, 10 Oct): "Always ask me in popup questions".** Every question to the owner (yes, push; yes, deploy; go; any choice) is asked with the pop-up question tool, not only written in the message.
+**Release is the master release of all work (owner, 10 Oct):**
+- Helper chats (every core that is not Release) push to their own branch (`core/<name>` or the branch their session was given) whenever their checks pass, without asking the owner. Never to `main`.
+- Release collects every branch, merges them, runs the full suite, reports the round (what changed, how tested, Netlify zip and local bundle), then asks the owner **one pop-up question per round: "yes, deploy"**. That one answer covers pushing the release branch and merging it into `main` (Netlify publishes). Nothing reaches `main` without it, and it covers that round only.
+- **The bug robot (owner, 10 Oct)** works like a helper chat: the GitHub workflow `.github/workflows/bug-fixer.yml` runs every 30 minutes (owner, 10 Oct), picks up open GitHub issues labelled `bug` plus a core label (only the Front Desk files them, `docs/cores/front-desk.md`), and lets Claude work on them as that core. A **small** bug (the small-bug rule in `docs/cores/front-desk.md`) is fixed, checked and pushed without asking, only to its own branch `bugfix/<core>-<issue>` with a draft pull request; a **big** bug gets a plan on the issue and waits for the owner's "go". It never pushes to `main`: Release merges its pull requests in a round, under that round's "yes, deploy".
 
 **Phone, tablet and computer (owner, 8 Oct):** every change is checked on a phone, a tablet and a computer so it looks tidy on all three (rule UI-006, check `phone`); look at screenshots of all three before reporting a round.
 
+**Questions to the owner (owner, 10 Oct): always ask with pop-up questions** (the question tool with clickable choices), never as questions in plain text. This covers every question: the plan's "go", choices between options, unclear answers, and "yes, deploy". Give each question 2 to 4 short choices, the recommended one first and marked "(Recommended)"; the owner can always type their own answer instead. Applies to every chat (Release and every core).
+
 **Times and dates:** always give them in AEST (UTC+10, Australia/Brisbane), labelled "AEST", in messages, reports and documents (owner, 5 Oct). Convert from UTC (GitHub, Netlify, logs) before quoting.
 
-**Cores (owner, 8 Oct):** the project is split into 8 cores, one AI chat per core (World, Play, Kid UI, Voice & Audio, Online, Studio, Analytics & Infra, Release). If the owner says which core you are, read `docs/cores/README.md` and your core's file in `docs/cores/` before anything else, work only in that core's files on the branch `core/<name>`, and put requests for other cores on `docs/cores/BOARD.md`. Only the Release core merges, runs the full suite, reports and asks for "yes, push" / "yes, deploy". With no core named, you are Release.
+**Cores (owner, 8 Oct):** the project is split into 8 cores, one AI chat per core (World, Play, Kid UI, Voice & Audio, Online, Studio, Analytics & Infra, Release). If the owner says which core you are, read `docs/cores/README.md` and your core's file in `docs/cores/` before anything else, work only in that core's files on the branch `core/<name>`, and put requests for other cores on `docs/cores/BOARD.md`. Only the Release core merges, runs the full suite, reports, collects every branch and asks for "yes, deploy". With no core named, you are Release.
+
+**Front Desk (owner, 10 Oct):** one more chat, not a core, is the owner's first stop for bugs and questions. If you are told you are the Front Desk, read `docs/cores/front-desk.md`: you find the core that owns a bug and file it as a GitHub issue for the bug robot; you never change the game's code, never push code and never deploy.
 
 **Working together across chats and Claude accounts (owner, 10 Oct).** Chats, even on different Claude accounts, cannot see or message each other; the GitHub repo is their only shared memory, and the owner carries messages between them.
 1. **Start of every session:** `git fetch` and `git pull` your branch, merge `main` into it, then read `docs/cores/BOARD.md` (the whole board, not only your section) and your progress notes.
-2. **The board is the status page.** Keep your core's "Now" line on `docs/cores/BOARD.md` current: what you are doing, your branch, your last commit, and what you are waiting for. Requests to another core go there in the board's format. Update it before every report.
+2. **The board is the status page.** Keep your core's "Now" line on `docs/cores/BOARD.md` current: what you are doing, your branch, your last commit, and what you are waiting for. When your work is finished and pushed, write **"ready for Release"** in it: Release checks every branch once an hour and merges the ones marked ready (owner, 10 Oct). Requests to another core go there in the board's format. Update it before every report.
 3. **Pull before every push** (`git pull --no-rebase` on your branch, fix any conflict, run the checks again if code changed). Never force-push.
 4. **Decisions the owner makes in your chat go into your core file** under "Owner's decisions" in the same session, so other chats and Release know them.
 5. **Designs and pages from claude.ai go into the repo** (`docs/<name>/`), because chats on other accounts cannot open another account's artifacts.
@@ -29,15 +33,15 @@
 
 **Helper chats (owner, 10 Oct): every chat that is told it is a core (not Release) keeps these rules, whether or not the owner pastes them.**
 1. Read this file, `HANDOFF.md`, `docs/cores/README.md`, your core's file in `docs/cores/` and, if the owner names one, your task brief in `docs/cores/tasks/`. The brief says what to build; this file and the docs say how. If they disagree, the docs win: say so.
-2. **Plan first and wait:** before changing anything, show the owner your plan (what you will build, which files, which checks, what is left for later) and wait for the owner's "go".
+2. **Plan first and wait:** before changing anything, show the owner your plan (what you will build, which files, which checks, what is left for later) and wait for the owner's "go" (asked with a pop-up question).
 3. Work only in your core's files and the files your brief allows. A change another core owns goes on `docs/cores/BOARD.md` (what, why, which file).
 4. **The map is being rebuilt (Round T, Release core):** do not change world positions or these files: `js/world.js`, `js/roads.js`, `js/regions.js`, `js/cities.js`, `js/town.js`, `js/homes.js`, `js/vendors.js`, `js/hawkers.js`, `js/places.js`, `js/solids.js`, `js/content/map.js`. Use places and characters by their id only.
 5. Do not bump the version (`sw.js` VERSION, `js/build.js`, `studio/version.json`), do not merge into `main`, do not deploy. Commit locally as you go.
-6. **Push only after the owner says "yes, push"**, and only to this chat's own branch (the one the session was given, or `core/<name>`), never to `main`. If a pull request is opened, keep it a draft: only Release merges.
+6. **Push your own branch without asking once your checks pass** (owner, 10 Oct), and only to this chat's own branch (the one the session was given, or `core/<name>`), never to `main`. Run `git pull --no-rebase` first. If a pull request is opened, keep it a draft: only Release merges.
 7. No emoji in docs; any emoji in the game needs a drawing in `js/art.js`. Touch targets 44 px or more (64 px for under-5s). English and Vietnamese for everything a child sees or hears. Times in AEST.
 8. Never weaken, skip or delete a check to make it pass: fix the code. If a check is wrong, explain why before changing it.
 9. New spoken lines: if `AZURE_SPEECH_KEY` is set, record them with `node tools/make-voice-pack.mjs --engine azure` (never print or commit the key); otherwise list them in the report. Lines with a child's name are never recorded (HANDOFF rule 11).
-10. Before reporting, run your core's checks, the checks your brief names and any new ones, then the full suite (`cd tests && node run.mjs`). Online checks may say "skipped" in a helper chat: say so.
+10. Before reporting, run your core's checks, the checks your brief names and any new ones, then the full suite (`cd tests && node run.mjs`). Online checks may say "skipped" in a helper chat: say so. **Record the result in your core file's progress notes** (commit id, every check with pass, fail or skipped, date AEST): Release reuses it instead of running the suite again when it merges only your branch (owner, 10 Oct).
 11. **The report** lists: what changed (files), every check with pass, fail or skipped, the screenshots you looked at (phone, tablet, computer), new spoken lines (recorded or not), anything not done, decisions the owner made (also written into your core file under "Owner's decisions"), your branch name and last commit id.
 
 Everything else about the project (requirements, how it's built, testing, working style) is in `HANDOFF.md`. Read it first.

@@ -16,3 +16,4 @@ content/old/
 studio/dist/
 studio/.build/
 .claude/worktrees/
+.bugfix/
