@@ -14,6 +14,24 @@ const FILES = [
   'js/shop.js', 'js/content/shop.js', 'js/boxes.js', 'js/content/boxes.js', // (round S: the clothes shop, mystery boxes, rankings, collectibles)
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'
 ];
+// (Analytics & Infra, 10 Oct, owner: "can't even play offline when there is no internet") the newest copy when the
+// network answers quickly, otherwise the saved copy after a short wait: a connection that never answers (Wi-Fi with no
+// internet, weak phone signal) must never keep the game from starting. The network's answer still refreshes the copy.
+const QUICK = 1500;
+function quick(e, cacheName, req, fallback) {
+  return caches.open(cacheName).then(c => {
+    const net = fetch(req).then(r => { if (r.ok) return c.put(req, r.clone()).catch(() => { }).then(() => r); return r; });
+    e.waitUntil(net.catch(() => { })); // (the refresh finishes even when the saved copy answered)
+    const saved = () => c.match(req, { ignoreSearch: true });
+    return new Promise(done => {
+      let over = false;
+      const giveSaved = () => saved().then(hit => { if (hit) { over = true; done(hit); } else if (!over) net.then(done, () => done(fallback())); });
+      const t = setTimeout(giveSaved, QUICK);
+      net.then(r => { if (over) return; clearTimeout(t); if (r.ok) { over = true; done(r); } else giveSaved(); }, () => { clearTimeout(t); if (!over) giveSaved(); });
+    });
+  });
+}
+const emptyJSON = () => new Response('{}', { headers: { 'Content-Type': 'application/json' } });
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION && k !== 'sv-voices' && k !== 'sv-save' && k !== 'sv-photos' && k !== 'sv-world' && k !== 'sv-family').map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
@@ -32,12 +50,12 @@ self.addEventListener('fetch', e => {
   // the family's content pack (Sparkle Studio): the newest when online, the saved copy when offline
   // (audit, 9 Oct) js/content/*.js is game code: it stays with the rest of the game's files, never fetched on its own
   if (url.pathname.includes('/content/') && !url.pathname.includes('/js/content/')) {
-    e.respondWith(caches.open(VERSION).then(c => fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => c.match(req, { ignoreSearch: true }).then(hit => hit || new Response('{}', { headers: { 'Content-Type': 'application/json' } })))));
+    e.respondWith(quick(e, VERSION, req, emptyJSON));
     return;
   }
   // real photos of the landmarks saved with the game (Sparkle Studio → Photos): the list newest-first, photos kept once seen
   if (url.pathname.endsWith('/photos/index.json')) {
-    e.respondWith(caches.open('sv-photos').then(c => fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => c.match(req).then(hit => hit || new Response('{}', { headers: { 'Content-Type': 'application/json' } })))));
+    e.respondWith(quick(e, 'sv-photos', req, emptyJSON));
     return;
   }
   if (url.pathname.includes('/photos/')) {

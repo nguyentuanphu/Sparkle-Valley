@@ -1903,20 +1903,25 @@ await check('realphotos', async () => {
     for (let k = 0; k < 40 && !document.querySelector('.rv-img'); k++) await wait(150);
     const v = document.querySelector('.realview'), cap = v.querySelector('.rv-credit') ? v.querySelector('.rv-credit').textContent : '', none = v.classList.contains('none'), dots = v.querySelectorAll('.rv-dots i').length;
     const srcs = [...v.querySelectorAll('.rv-img')].map(i => i.getAttribute('src')), links = v.querySelectorAll('.rv-cap a').length;
+    // (10 Oct, owner) Use the internet off: a grown-up presses and holds first; on: the map opens straight away
+    const S = await import('/js/state.js'); S.settings.online = false;
     v.querySelector('.rv-360').click(); await wait(400);
     const gate = document.querySelector('.modal.rvgate'), early = !!document.querySelector('.rvmap iframe'), says = gate ? /Google/.test(gate.textContent) : false;
     const btn = gate.querySelector('.rv-ok'), tap = Math.round(btn.getBoundingClientRect().height);
     btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await wait(1900);
     const map = document.querySelector('.modal.rvmap:not(.rvgate)'), q = map.querySelector('.card').getBoundingClientRect(), top = document.elementFromPoint(q.left + q.width / 2, q.top + 30);
     const opened = !!map.querySelector('iframe');
+    document.querySelectorAll('.modal').forEach(e => e.remove());
+    S.settings.online = true; v.querySelector('.rv-360').click(); await wait(400);
+    const direct = !document.querySelector('.modal.rvgate') && !!document.querySelector('.rvmap iframe');
     document.querySelectorAll('.realview, .modal').forEach(e => e.remove());
     W.openPhotos('Uluru', W.REAL.uluru[0], { id: 'uluru' }); for (let k = 0; k < 30 && !document.querySelector('.realview.none'); k++) await wait(100);
     const empty = !!document.querySelector('.realview.none');
-    return { none, dots, cap, srcs, links, gate: !!gate, early, says, tap, opened, onTop: !!(top && top.closest('.rvmap')), empty };
+    return { none, dots, cap, srcs, links, gate: !!gate, early, says, tap, opened, onTop: !!(top && top.closest('.rvmap')), empty, direct };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(!r.none && r.dots === 2 && /Photographer/.test(r.cap) && r.srcs.every(x => /^photos\//.test(x)) && !r.links && r.gate && !r.early && r.says && r.tap >= 44 && r.opened && r.onTop && r.empty && !outside.length && !errs.length, JSON.stringify(Object.assign(r, { outside, errs })));
-  return `2 photos from photos/index.json (a web address left out), credit “${r.cap}” as words; nothing asked of Wikipedia or Wikimedia; a place with none says they are on their way; 360° asks a grown-up (says it opens Google), then opens on top of the photos`;
+  ok(!r.none && r.dots === 2 && /Photographer/.test(r.cap) && r.srcs.every(x => /^photos\//.test(x)) && !r.links && r.gate && !r.early && r.says && r.tap >= 44 && r.opened && r.onTop && r.direct && r.empty && !outside.length && !errs.length, JSON.stringify(Object.assign(r, { outside, errs })));
+  return `2 photos from photos/index.json (a web address left out), credit “${r.cap}” as words; nothing asked of Wikipedia or Wikimedia; a place with none says they are on their way; 360° asks a grown-up (says it opens Google) while Use the internet is off, then opens on top of the photos; with it on, opens straight away`;
 });
 
 await check('firstplayer', async () => {
@@ -2386,12 +2391,12 @@ await check('together', async () => {
   const pick = await A.page.evaluate(() => { const it = __sv.interactables.find(i => /^g\d+$/.test(i.id) && i.visible()); it.act(__sv.heroes[0], __sv); return it.id; });
   await B.page.waitForFunction(id => { const it = __sv.interactables.find(i => i.id === id); return it && !it.visible() && it.st.by; }, pick, { timeout: 15000 }).catch(() => { });
   const claim = await B.page.evaluate(id => { const it = __sv.interactables.find(i => i.id === id); return { gone: !it.visible(), by: it.st.by || '' }; }, pick);
-  // 5. the real place inside the game
+  // 5. the real place inside the game (playing online means a grown-up turned on Use the internet: no second gate, 10 Oct)
   // (round R privacy, 9 Oct) a grown-up's press and hold first, as it opens Google
-  const real = await A.page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); (await import('/js/realworld.js')).openStreetView('opera'); await wait(300); const early = !!document.querySelector('.rvmap iframe'), g = document.querySelector('.rvgate .rv-ok'); if (g) { g.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await wait(1900); } const f = document.querySelector('.rvmap iframe'); return { gate: !!g && !early, inGame: !!f, src: f ? f.src.slice(0, 40) : '' }; });
+  const real = await A.page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); (await import('/js/realworld.js')).openStreetView('opera'); await wait(300); const early = !!document.querySelector('.rvmap iframe'), g = document.querySelector('.rvgate .rv-ok'); if (g) { g.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await wait(1900); } const f = document.querySelector('.rvmap iframe'); return { gate: !!g && !early, direct: !g && early, inGame: !!f, src: f ? f.src.slice(0, 40) : '' }; });
   const errs = [...A.errors, ...B.errors].filter(e => !/maps\.google|google\.com/.test(e)); await A.ctx.close(); await B.ctx.close();
-  ok(tale.a === tale.b && /prince/.test(tale.b) && /⭐3/.test(race) && !stray.length && follow < 6 && claim.gone && claim.by && real.gate && real.inGame && !errs.length, JSON.stringify({ tale, race, stray, follow, claim, real, errs }));
-  return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game after a grown-up's press and hold`;
+  ok(tale.a === tale.b && /prince/.test(tale.b) && /⭐3/.test(race) && !stray.length && follow < 6 && claim.gone && claim.by && real.direct && real.inGame && !errs.length, JSON.stringify({ tale, race, stray, follow, claim, real, errs }));
+  return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game straight away (Use the internet is on: owner, 10 Oct; the gate itself is checked by realphotos)`;
 });
 
 await check('chests', async () => {
@@ -2656,6 +2661,64 @@ await check('knock', async () => {
   const errs = A.errors.concat(D.errors, E.errors).filter(e => !/WebSocket|ERR_CONNECTION|peerjs/i.test(e)); await A.ctx.close(); await E.ctx.close();
   ok(panel && panel.digits === code && panel.animals === 6 && !panel.qr && aniKeys === 10 && atDoor.knocking && !atDoor.partners && atDoor.mic === false && atDoor.panel && !sentAway.remotes && !sentAway.knocks && !sentAway.pop && !stranger.remotes && !stranger.partners && !stranger.bubbles && !errs.length, JSON.stringify({ panel, aniKeys, atDoor, sentAway, stranger, errs }));
   return `code ${code} shown as digits and 6 animals (no QR code); typed on the animal pad, knocked with the microphone off and nothing heard; "No thanks" sent them away; a stranger's moves without knocking ignored; another child typed the numbers and was let in`;
+});
+
+await check('offline', async () => {
+  // (Analytics & Infra, 10 Oct, owner: "cant even play offline when there is no internet connection") once the game is
+  // saved on the device (service worker), it starts and plays with no connection, and with a connection that never
+  // answers (Wi-Fi with no internet): nothing at start may wait on the network. The game is served here from its own
+  // little server on 127.0.0.2 (the game skips its service worker on localhost) that can stop answering.
+  const http = await import('http'), path = await import('path');
+  const root = path.resolve(process.env.SV_ROOT || '..'), TY = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.woff2': 'font/woff2' };
+  let hang = false;
+  const srv = http.createServer((q, r) => {
+    if (hang) return;
+    let f = decodeURIComponent(q.url.split('?')[0]); if (f.endsWith('/')) f += 'index.html'; f = path.join(root, f);
+    if (!f.startsWith(root) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { r.writeHead(404); return r.end(); }
+    r.writeHead(200, { 'Content-Type': TY[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache' }); fs.createReadStream(f).pipe(r);
+  });
+  await new Promise(res => srv.listen(0, '127.0.0.2', res));
+  try {
+    const url = `http://127.0.0.2:${srv.address().port}/`;
+    const P = await open(b, { w: 390, h: 760, touch: true, url, play: false });
+    await P.page.waitForFunction(async () => { const r = await navigator.serviceWorker.getRegistration(); return !!(r && r.active); }, null, { timeout: 120000 });
+    await P.page.waitForTimeout(1000);
+    const again = async () => { const t0 = Date.now(); await P.page.reload({ timeout: 30000 }).catch(() => { }); const got = await P.page.waitForSelector('.screen.title', { timeout: Math.max(1000, 30000 - (Date.now() - t0)) }).then(() => true, () => false); return got ? Date.now() - t0 : -1; };
+    const saved = await again();
+    await P.ctx.setOffline(true); const off = await again();
+    // offline the whole way in: Who's playing?, into the valley
+    let played = false; if (off > 0) { await start(P.page); played = await P.page.evaluate(() => window.__sv.heroes.length === 1); }
+    await P.ctx.setOffline(false);
+    hang = true; const none = await again(); hang = false;
+    const errs = P.errors.filter(e => !/Failed to fetch|NetworkError|ERR_INTERNET_DISCONNECTED|aborted/i.test(e)); await P.ctx.close();
+    ok(saved > 0 && off > 0 && played && none > 0 && none < 15000 && !errs.length, JSON.stringify({ saved, off, played, none, errs }));
+    return `first screen: saved ${(saved / 1000).toFixed(1)} s, offline ${(off / 1000).toFixed(1)} s (played into the valley), connection that never answers ${(none / 1000).toFixed(1)} s`;
+  } finally { srv.closeAllConnections(); srv.close(); }
+});
+
+await check('nostudio', async () => {
+  // (10 Oct, owner: "Parents or users wont know what Sparkle Studio is and this is for admin so it should not be mentioned
+  // anywhere at all") Grown-ups with every group open, the parents' pages and every Pad tab never name Studio
+  const P = await open(b, { w: 1024, h: 768 }); await clear(P.page);
+  const bad = await P.page.evaluate(async () => {
+    const w = ms => new Promise(r => setTimeout(r, ms)), out = [], C = (await import('/js/custom.js')).CUSTOM;
+    C.missions = [{ id: 'fam1', en: 'Water the plants', vi: 'Tưới cây' }];
+    const look = (where, root) => { const t = [root.textContent, ...[...root.querySelectorAll('[title],[aria-label],[placeholder],[alt]')].flatMap(e => [e.title, e.getAttribute('aria-label'), e.placeholder, e.alt])].join(' '); const m = t.match(/.{0,40}studio.{0,40}/i); if (m) out.push(where + ': ' + m[0]); };
+    for (const lang of ['en', 'vi']) {
+      const S = await import('/js/state.js'); S.settings.lang = lang;
+      const { openGrownups } = await import('/js/ui.js'); openGrownups(() => { }); await w(500);
+      const g = document.querySelector('.modal.grownups'); g.querySelectorAll('details').forEach(d => { d.open = true; }); look(lang + ' Grown-ups', g);
+      document.querySelectorAll('.modal').forEach(e => e.remove());
+      const G = window.__sv; if (G.parents && G.parents.grownupsHTML) { const d = document.createElement('div'); d.innerHTML = G.parents.grownupsHTML(true); look(lang + ' parents', d); }
+      G.openPad(0, 'map'); await w(400);
+      for (const t of [...document.querySelectorAll('.pad-tabs [data-t]')].map(x => x.dataset.t)) { document.querySelector(`.pad-tabs [data-t="${t}"]`).click(); await w(250); const pad = document.querySelector('.pad, .sparkpad, .pad-body'); if (pad) look(lang + ' pad-' + t, pad.closest('.modal') || pad); }
+      document.querySelectorAll('.modal, .pad').forEach(e => e.remove()); window.__sv.paused = false;
+    }
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!bad.length && !errs.length, JSON.stringify({ bad, errs }));
+  return 'Grown-ups (every group open), the parents\' pages and every Pad tab, English and Vietnamese: Studio never named';
 });
 
 await check('onlineoff', async () => {

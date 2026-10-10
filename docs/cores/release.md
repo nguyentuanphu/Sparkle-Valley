@@ -54,3 +54,4 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
   has a second Claude review the changes against the rules and post one comment (Claude usage, same account as the bug
   robot). The review runs when a pull request is opened, reopened or marked ready, and again when the label `ai-review`
   is added; not on every push. The round's pull request into `main` is reviewed too, before "yes, deploy".
+- 10 Oct AEST: `claude/kind-volta-1iv5ea` (offline start, Use the internet switch, packed start-up scripts on Netlify, GitHub checks) merged into the next round at the owner's yes.

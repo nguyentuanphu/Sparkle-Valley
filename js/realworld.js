@@ -11,6 +11,7 @@ import { SFX } from './audio.js';
 import { say } from './voice.js';
 import { pic } from './art.js';
 import { modal, holdButton } from './popups.js';
+import { settings } from './state.js';
 
 // id → [Wikipedia article(s) the photos are taken from in Studio (lang:Title; the first names the photos/ key), latitude, longitude]
 export const REAL = {
@@ -104,9 +105,11 @@ export function openPhotos(name, sources, { icon = '📷', id = null, onClose } 
 // valley. Without the internet it says so instead.
 // (round R privacy, 9 Oct, owner: "real-world maps open Google only after a grown-up says yes") a grown-up presses and
 // holds first, as for Grown-ups; the window says that it opens Google.
+// (Analytics & Infra, 10 Oct, owner: "if parents enable internet use then in games should not be asking again") once a
+// grown-up has turned on Use the internet (Grown-ups, behind press and hold) the map opens straight away
 export function openStreetView(id) {
   const r = REAL[id]; if (!r) return;
-  if (navigator.onLine === false) return showPlace(id);
+  if (navigator.onLine === false || settings.online) return showPlace(id);
   const m = modal('rvmap rvgate', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
     <h2>🗺️ ${T('The real place', 'Nơi thật')}</h2>
     <p class="note">${T('This opens Google Maps and Street View inside the game. Google sees that this device is looking at the place. A grown-up says yes first.', 'Mục này mở Google Maps và Street View ngay trong trò chơi. Google sẽ biết máy này đang xem nơi đó. Người lớn đồng ý trước nhé.')}</p>

@@ -61,6 +61,12 @@ Format for a request:
 - [ ] (Release → Studio) T3: a Plots page for the Memory Village plots (`PLOTS` in the map) · ROUND-R.md item 2 · later
 
 ## Analytics & Infra
-- **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
+- **Now:** no chat of its own yet; branch `claude/kind-volta-1iv5ea` (offline start, Use the internet switch, no Studio in parents' text, packed scripts, GitHub checks) merged by Release into the next round at the owner's yes · 10 Oct AEST
 - From Studio (10 Oct AEST): `perf` fails on `main` (d87ab6c) as well: PERF-001 start-up download 3.36 MB, budget 3.2 MB. Not from the Studio review (no game files changed); it fits `tasks/infra-speed.md` (smaller start-up download).
 - [ ] (Release → Analytics & Infra) The start-up download is at its ratchet: r54 measures 3.33–3.37 MB before the title screen against 3.2 MB + 3 % (the `perf` check fails on main about 3 runs in 4); Round T0 adds about 22 KB (the map file). Owner (10 Oct): the limit is 3.4 MB for now; lower it again after the smaller start-up download brief (`tasks/infra-speed.md`) is the fix · `tests/perf-baseline.json` · 10 Oct AEST
+- [ ] (Analytics & Infra → Kid UI) changed with the owner's go, please keep: `js/ui.js` Grown-ups → "Internet and playing online", the switch "Use the internet (friends online, real places)" and the folded list under it; family photos and missing-lines notes reworded without Studio · owner 10 Oct · 10 Oct AEST
+- [ ] (Analytics & Infra → Play) changed with the owner's go: `js/parents.js` family missions and family voices notes without Studio; a family mission's tag reads "Family" · owner 10 Oct · 10 Oct AEST
+- [ ] (Analytics & Infra → Voice & Audio) changed with the owner's go: `js/extras.js` voice pack notes without Studio · owner 10 Oct · 10 Oct AEST
+- [ ] (Analytics & Infra → Studio) changed with the owner's go: `js/custom.js` waits at most 4 s for content/custom.json; `js/realworld.js` opens the real place's map straight away when Use the internet is on (PRIV-011 reworded) · owner 10 Oct · 10 Oct AEST
+- [ ] (Analytics & Infra → Release; the HANDOFF rows are done) new checks `offline` and `nostudio` for the HANDOFF §2 table; the PR checks workflow and the packing step for `docs/INFRASTRUCTURE.md` (written) and the release checklist; `perf` fails on the plain modules since round S (start 3.37 MB > 3.2 MB budget) but passes on the packed copy the website serves (2.6 MB): the owner to decide whether PERF-001 measures the packed copy · 10 Oct AEST
+- [ ] (Analytics & Infra → All cores) never write "Sparkle Studio" or "Studio" in text a parent or child sees (owner, 10 Oct; check `nostudio`) · 10 Oct AEST
