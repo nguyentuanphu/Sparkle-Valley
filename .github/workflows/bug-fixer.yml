@@ -260,9 +260,11 @@ jobs:
           status=$(head -1 out/result.md | sed -n 's/^STATUS: *\([a-z]*\).*/\1/p')
           body=$(tail -n +2 out/result.md)
           patches=0; if [ -d out/patches ]; then patches=$(find out/patches -name '*.patch' | wc -l); fi
-          if [ "$status" = fixed ] && [ "$patches" -eq 0 ]; then status=stuck; body="$body"$'\n\n'"(The robot said fixed but made no commit.)"; fi
+          # A fix already on the bug's branch from an earlier run counts: nothing new to push, just the pull request.
+          ahead=$(git rev-list --count "origin/main..origin/$b" 2>/dev/null || echo 0)
+          if [ "$status" = fixed ] && [ "$patches" -eq 0 ] && [ "$ahead" -eq 0 ]; then status=stuck; body="$body"$'\n\n'"(The robot said fixed but made no commit.)"; fi
 
-          if [ "$status" = fixed ]; then
+          if [ "$status" = fixed ] && [ "$patches" -gt 0 ]; then
             git config user.name 'Sparkle Valley bug robot'
             git config user.email 'bug-robot@users.noreply.github.com'
             git checkout -q "$(cat out/base.txt)" && git checkout -q -B "$b" && git am -q out/patches/*.patch \
