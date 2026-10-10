@@ -65,3 +65,4 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
   files from GitHub and the Google Drive mirror.
 - 11 Oct AEDT: Release collects every 5 minutes (session job, hourly routine as backup): merges every branch marked "ready for Release" and the robot's bugfix branches whose issue says fixed-on-branch (Kid UI ones together), runs the full suite, looks at phone, tablet and computer screenshots, then reports and asks one "yes, deploy". Messages to the owner only for a round report, a yes-deploy question or a blocker. Times in Sydney time.
 - 11 Oct AEDT: two Release chats: the robot chat runs r57 (robot fixes #27 #28 #29 #31 #41 and the robot workflows); this round chat runs r58 on top of it.
+- 11 Oct, 9:30 am AEDT: owner: hold both r57 and r58 for further advice; Release keeps collecting and testing locally, no deploy.
