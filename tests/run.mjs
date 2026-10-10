@@ -1266,7 +1266,9 @@ await check('parents', async () => {
     const realNow = Date.now, at = s => { const ms = Date.parse(s + ':00+10:00'); Date.now = () => ms; };
     S.settings.bedtime = '19:30'; at('2026-10-10T19:31'); await w(9000); out.dim = !!document.querySelector('.bedtime-dim'); out.lullaby = !!document.querySelector('.songs');
     at('2026-10-10T19:40'); await w(6000); const gn = document.querySelector('.resttime.bedtime'); out.goodnight = !!gn;
-    if (gn) await hold(gn.querySelector('.grownup')); await w(300); out.snoozed = !document.querySelector('.resttime.bedtime') && S.settings.bedSnooze > realNow();
+    // (the snooze is 10 minutes after the clock this check set, not the real clock: after 19:50 AEST on the real
+    // 10 Oct the old "later than now" test failed although the game was right)
+    if (gn) await hold(gn.querySelector('.grownup')); await w(300); out.snoozed = !document.querySelector('.resttime.bedtime') && S.settings.bedSnooze === Date.now() + 10 * 60e3;
     S.settings.bedtime = ''; S.settings.bedSnooze = 0; tidy(); document.querySelector('.bedtime-dim')?.remove();
     // the birthday: on the day (AEST), a surprise and a keepsake, once
     // (the reward pop-up closes itself after 2.6 s: watch for it during the wait rather than look once at the end)

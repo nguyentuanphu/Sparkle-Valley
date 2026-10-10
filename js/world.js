@@ -444,9 +444,14 @@ export function createWorld(scene, quality) {
   const pa = tg.attributes.position, cols = new Float32Array(pa.count * 3), c = new THREE.Color();
   const C = { sand: new THREE.Color('#ecd6a4'), grassA: new THREE.Color('#7fbf8c'), grassB: new THREE.Color('#62a878'), dry: new THREE.Color('#e3cf9c'),
     rock: new THREE.Color('#d9cfba'), snow: new THREE.Color('#f6f8fb'), dirt: new THREE.Color('#e6d2a2'), paddy: new THREE.Color('#a7d67c'), bamboo: new THREE.Color('#6eae78'), deep: new THREE.Color('#cdb88e') };
+  // (round T2) the slope from the next grid points east and south (already worked out), scaled to 1.5 m as before:
+  // two more heightAt calls per point made the valley a quarter of a second slower to build
+  const row = seg + 1, step = SIZE / seg, HS = new Float32Array(pa.count);
+  for (let i = 0; i < pa.count; i++) { HS[i] = heightAt(pa.getX(i), pa.getZ(i)); pa.setY(i, HS[i]); }
   for (let i = 0; i < pa.count; i++) {
-    const x = pa.getX(i), z = pa.getZ(i), h = heightAt(x, z); pa.setY(i, h);
-    const sl = Math.abs(heightAt(x + 1.5, z) - h) + Math.abs(heightAt(x, z + 1.5) - h);
+    const x = pa.getX(i), z = pa.getZ(i), h = HS[i];
+    const ex = i % row < seg ? HS[i + 1] : HS[i - 1], sz = i < pa.count - row ? HS[i + row] : HS[i - row];
+    const sl = (Math.abs(ex - h) + Math.abs(sz - h)) * 1.5 / step;
     const n = fbm(x * .03, z * .03, 2);
     c.copy(C.grassA).lerp(C.grassB, clamp(n + .5, 0, 1));
     if (n > .4) c.lerp(C.dry, clamp((n - .4) * 6, 0, 1)); // sandy patches between the grass, like a dry summer
