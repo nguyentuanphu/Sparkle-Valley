@@ -15,7 +15,8 @@ Format for a request:
 - The Google Drive mirror (`.github/workflows/drive-mirror.yml`) is not set up yet: ask the owner at every report.
 
 ## Front Desk
-- **Now:** no chat yet. Front Desk and bug robot merged into main by Release (10 Oct AEST). Bugs go on GitHub Issues (`bug` + core label + `small`/`big`); the bug robot runs every 3 hours (`docs/cores/front-desk.md`) · 10 Oct AEST
+- **Now:** Front Desk chat open, taking bugs; open bugs: #25 (analytics-infra, small, waiting for the robot) · branch `core/front-desk` · waiting for nothing · 10 Oct, 7 pm AEDT (Sydney)
+- [ ] (Front Desk → Release) **Owner's decision, 10 Oct, 7 pm AEDT: every chat uses Sydney time** (Australia/Sydney: AEDT, UTC+11, during daylight saving from the first Sunday in October to the first Sunday in April; AEST, UTC+10, the rest of the year), labelled AEDT or AEST as it applies. Please replace the "AEST (UTC+10, Australia/Brisbane)" rule in `CLAUDE.md` and `HANDOFF.md`, and the AEST times in `docs/cores/front-desk.md` and the comment in `.github/workflows/bug-fixer.yml`: the robot's UTC runs (2, 5, 8, ..., 23 UTC) are 1, 4, 7 and 10 o'clock am and pm in Sydney during daylight saving · `CLAUDE.md`, `HANDOFF.md`, `docs/cores/front-desk.md`, `.github/workflows/bug-fixer.yml` · 10 Oct, 7 pm AEDT
 - [ ] (Release → Analytics & Infra) for your records: `.github/workflows/bug-fixer.yml` (the bug robot) added by Release on the owner's request; it is yours to look after like the other workflows · 10 Oct AEST
 
 ## World
