@@ -410,6 +410,23 @@ export async function studioCheck(browser, open) {
         await pe.fill('#en', before); await pe.click('#save'); await pe.waitForTimeout(800); const saved = await pe.evaluate(() => (document.querySelector('.savestate') || {}).textContent);
         let askedAfter = 0; const cnt = d => { askedAfter++; d.dismiss(); }; pe.on('dialog', cnt); await pe.click('#tabs [data-k="home"]'); await pe.waitForTimeout(500); pe.off('dialog', cnt);
         if (!(asked === 3 && /Not saved|Chưa lưu/.test(st) && stayed === 'Words not saved' && stayed2 && left && back === before && /Saved|Đã lưu/.test(saved) && !askedAfter)) bad.push('changes not saved: ' + JSON.stringify({ asked, st, stayed, stayed2, left, back, before, saved, askedAfter }));
+        // (round T) villagers and buildings made on the old map are kept aside: the Map page lists them, "Place again" puts one next to the
+        // same place on the new map (named, with its offset, and the content stamped with the map), "Forget" drops one, the old circles can be forgotten
+        { const M = await import(pathToFileURL(path.join(ROOT, 'js/content/map.js')).href), [vx, vz] = M.anchorOf('village'), keep = (await ex('content')).j;
+          await ex('content', { ...keep, npcs: [{ name: 'Cô Ba', gender: 'f', x: 115, z: 30, look: {}, lines: [['Hello!', 'Xin chào!']] }], world: { build: [{ type: 'tube', x: 35, z: 55, rot: 0, name: ['', ''], owner: { name: '', line: ['', ''] } }], edits: [{ op: 'remove', x: 0, z: 0, r: 3 }], land: [] } });
+          await pe.evaluate(() => { location.hash = 'players'; }); await pe.waitForTimeout(300); await pe.click('#reload'); await pe.waitForTimeout(800);
+          await pe.evaluate(() => { location.hash = 'game/map'; }); await pe.waitForSelector('.parked [data-place]', { timeout: 20000 });
+          const listed = await pe.evaluate(() => ({ n: document.querySelectorAll('.parked [data-place]').length, txt: document.querySelector('.parked').innerText }));
+          await pe.click('.parked [data-place="0"]'); await pe.waitForTimeout(300);
+          pe.once('dialog', d => d.accept()); await pe.click('.parked [data-forget="0"]'); await pe.waitForTimeout(300);
+          await pe.click('.parked [data-forgetc]'); await pe.waitForTimeout(300);
+          const gone = await pe.evaluate(() => !document.querySelector('.parked'));
+          await pe.click('#save'); await pe.waitForTimeout(900);
+          const got = (await ex('content')).j, c = (got.npcs || [])[0] || {};
+          const near = Math.hypot(c.x - (vx + 5), c.z - vz) < 0.2 || Math.hypot(c.x - vx, c.z - vz) < 0.2;
+          if (!(listed.n === 2 && /Cô Ba/.test(listed.txt) && gone && near && c.place === 'village' && Array.isArray(c.off) && got.world && got.world.map === M.MAP_VERSION && !got.parked && !(got.world.build || []).length))
+            bad.push('parked map items: ' + JSON.stringify({ listed, gone, c, map: got.world && got.world.map, parked: got.parked, build: got.world && got.world.build }));
+          await ex('content', keep); }
         // (Studio review) in Vietnamese the game's own names follow: the Simple screen shows "Cho Thỏ Ăn", in English "Feed the Bunny"
         const names = async l => { await pe.evaluate(l2 => document.querySelector(`.lang [data-l="${l2}"]`).click(), l); await pe.evaluate(() => { location.hash = 'game/path'; }); await pe.waitForSelector('tr[data-id]', { timeout: 15000 }).catch(() => { }); await pe.waitForTimeout(300); return pe.evaluate(() => location.hash + ' ' + document.querySelector('#page').innerText.slice(0, 3000)); };
         const vi = await names('vi'), en = await names('en'); await names('vi');
