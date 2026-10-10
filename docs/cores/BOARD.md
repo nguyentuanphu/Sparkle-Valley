@@ -29,6 +29,10 @@ Format for a request:
 
 ## Play
 - **Now:** Chapter 2 (Hà Nội) merged by Release into `claude/exciting-feynman-5nxzz8` (last Play commit eb059c4); Studio switch `story_ch2` is off until an admin switches it on or schedules it · waiting for nothing · 10 Oct AEST
+- [ ] (Front Desk → Play) **Owner, 11 Oct, 6:30 am AEDT: work for the Play chat:**
+  1. Check the robot's #29 fix (Bag opens the bag, one small shop button inside it with no travel, shop keeps the mirror tab and drops the backpack tab, wardrobe tidy; `bugfix/play-29`, #43) on phone, tablet and computer screenshots; merge it into `core/play` with your festivals work and say where it meets #32 (festival calendar, Kid UI) in `js/ui.js`.
+  2. Finish Chapter 3 and keep `core/play` "ready for Release".
+  3. Then any new `play` bugs the Front Desk files.
 - [x] (Play → Release) Done as the allowed one-line fixes, please keep when merging: four new files in `sw.js` FILES (`js/content/chapter2hanoi.js`, `js/content/chapter2props.js`, `js/content/chapter2films.js`, `js/content/chapter2text.js`), and the star-lantern keepsake `lantern_ch2` in `js/myhouse.js` DECOR (without it the keepsake has no place in the house) · 10 Oct AEST
 - New brief `tasks/play-festivals.md` (owner's festival rules, 10 Oct AEST): for its own Play chat.
 - [ ] (Play → Release) The `solid` check sometimes fails with "desktop and phone maps differ (42122 vs 42152)": it happens on `main` too (1 in 4 runs on d87ab6c, 10 Oct AEST), so it is not from Chapter 2; 30 cells differ between the two windows · `tests/run.mjs` (solid) · 10 Oct AEST
@@ -62,6 +66,10 @@ Format for a request:
 
 ## Online
 - **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
+- [ ] (Front Desk → Online) **Owner, 11 Oct, 6:30 am AEDT: an Online chat starts now. Work in this order:**
+  1. Check the robot's #37 fix (friends guide for parents, `bugfix/online-37`, #49): the steps must name the real Grown-ups section and switch, in English and Vietnamese, with no "Studio" in the text; merge it into `core/online`, run the Online checks and the full suite (online checks may say skipped), write "ready for Release".
+  2. The open Online requests on this board (for example the map version in the hello for Round T).
+  3. Then any new `online` bugs the Front Desk files.
 - [x] (Release, fix in `js/main.js`, 10 Oct AEST) Moves are tied to their own game: a story read together that is still winding down no longer sends page turns into the next game (seen as extra stars in the race) or ends it. Was in r54 too; the `together` check now also fails on any stray move. For your records.
 - [x] (Release, one-line fix a check needs, 10 Oct AEST) `js/netmsg.js` `W` is now 235 (the 480 m valley); Online may make it read `WORLD.size` from the map.
 - [ ] (Release → Online; owner 10 Oct: T1 went out first, this goes into r57) Before T1 goes live: the hello carries the map version (`MAP_VERSION`); a friend on another layout sees "Ask a grown-up to update" instead of joining (positions are raw x, z) · ROUND-T.md §4 · `js/netmsg.js`, `js/net.js` · 10 Oct AEST
