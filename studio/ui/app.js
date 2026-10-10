@@ -1,4 +1,5 @@
 // Sparkle Studio dashboard (runs in the browser, talks to studio.cjs on this computer).
+import { viMessage } from './vi.js';
 const $ = s => document.querySelector(s);
 let LANG = localStorage.getItem('studioLang') || 'vi';
 const T = (en, vi) => LANG === 'vi' ? vi : en;
@@ -12,11 +13,40 @@ const OLDPICS = () => [...Object.values(CONTENT.faces || {}).map(f => f && f.pho
 const whenAEST = iso => new Date(iso).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Brisbane', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' AEST';
 // the game's own drawings in place of phone emoji on every Studio page (owner, round R; js/emojiswap.js)
 import(GAME + 'js/emojiswap.js').catch(() => { });
-const api = async (p, body) => { const r = await fetch(BASE + '/api/' + p, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Studio': '1' }, body: JSON.stringify(body) }); const j = await r.json().catch(() => ({})); if (r.status === 401 && j.signin) { signIn(); throw Object.assign(new Error(T('Please sign in.', 'Vui lòng đăng nhập.')), { signin: true }); } if (!r.ok) throw new Error(j.error || r.status); return j; };
-const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); };
-const fail = e => toast('⚠️ ' + (e.message || e));
+// (owner, 10 Oct) the servers answer in English: in Vietnamese, every answer is shown in Vietnamese (studio/ui/vi.js)
+const say = m => LANG === 'vi' ? viMessage(m) : String(m ?? '');
+// e.raw keeps the server's own words (the Voices page looks at them to stop early)
+const api = async (p, body) => { const r = await fetch(BASE + '/api/' + p, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Studio': '1' }, body: JSON.stringify(body) }); const j = await r.json().catch(() => ({})); if (r.status === 401 && j.signin) { signIn(); throw Object.assign(new Error(T('Please sign in.', 'Vui lòng đăng nhập.')), { signin: true }); } if (!r.ok) { const raw = String(j.error || r.status); throw Object.assign(new Error(say(raw)), { raw }); } return j; };
+// (owner, 10 Oct: "missing feedback after a save") the message is bigger, sits above the bar at the bottom of a phone,
+// stays 5 seconds (7 for a problem) and is green when something worked
+const toast = (m, kind = '') => { const t = $('#toast'); t.textContent = m; t.className = 'on ' + kind; clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), kind === 'bad' ? 7000 : 5000); };
+const fail = e => toast('⚠️ ' + say(e.message || e), 'bad');
 let INFO = null, CONTENT = {};
-const saveContent = async () => { await api('content', CONTENT); if (INFO) { INFO.unpublished = true; head(); if (INFO.online) api('pending').then(j => { INFO.waiting = j.files.length; head(); }).catch(() => { }); } toast(T('Saved. Publish to send it to the children’s devices.', 'Đã lưu. Bấm Phát hành để gửi tới máy của các con.')); };
+const saveContent = async () => { await api('content', CONTENT); markSaved(); if (INFO) { INFO.unpublished = true; head(); if (INFO.online) api('pending').then(j => { INFO.waiting = j.files.length; head(); }).catch(() => { }); } toast('✅ ' + T('Saved. Press Publish (at the top) to send it to the children’s devices.', 'Đã lưu. Bấm Phát hành (ở trên cùng) để gửi tới máy của các con.'), 'good'); };
+// ---------- changes not saved yet (owner, 10 Oct: "edits disappear without warning") ----------
+// On the pages where you change things, a label by Save says "Not saved yet" or "Saved", and leaving the page (another
+// section, Back, the language, reload, closing) asks first. Leaving without saving puts the family's content back as it was.
+const GUARD = new Set(['message', 'missions', 'children', 'album', 'quiz', 'stories', 'villagers', 'releases', 'festivals', 'path', 'music', 'map', 'play', 'ads', 'settings']);
+let KEPT = '', DIRTY = false, SAVED_HERE = '';
+const contentNow = () => JSON.stringify(CONTENT);
+const unsaved = () => GUARD.has(cur) && (DIRTY || (!!KEPT && contentNow() !== KEPT));
+function markSaved() { DIRTY = false; KEPT = contentNow(); SAVED_HERE = cur; paintState(); }
+function leaveOk() {
+  if (!unsaved()) return true;
+  if (!confirm(T('This page has changes that are not saved. Leave without saving them?', 'Trang này có thay đổi chưa lưu. Rời trang mà không lưu?'))) return false;
+  if (KEPT) CONTENT = JSON.parse(KEPT); DIRTY = false; return true;
+}
+function paintState() {
+  const P = $('#page'); if (!P || !GUARD.has(cur)) return; const u = unsaved();
+  const txt = u ? T('Not saved yet', 'Chưa lưu') : SAVED_HERE === cur ? T('Saved', 'Đã lưu') : T('No changes', 'Chưa đổi');
+  P.querySelectorAll('.bar').forEach(b => { if (!b.querySelector('.btn:not(.ghost)')) return; let s = b.querySelector('.savestate'); if (!s) { s = document.createElement('span'); b.prepend(s); }
+    const cls = 'savestate ' + (u ? 'warn' : SAVED_HERE === cur ? 'ok' : 'note'); if (s.className !== cls) s.className = cls; if (s.textContent !== txt) s.textContent = txt; });
+}
+// typing or choosing on a page marks it changed (not the search boxes or a file chooser)
+const touched = e => { const t = e.target; if (!t.closest || !t.closest('#page') || t.type === 'file' || t.closest('[data-nodirty]')) return; DIRTY = true; paintState(); };
+document.addEventListener('input', touched, true); document.addEventListener('change', touched, true);
+['click', 'pointerup'].forEach(k => document.addEventListener(k, () => setTimeout(paintState, 0), true));
+window.addEventListener('beforeunload', e => { if (unsaved()) { e.preventDefault(); e.returnValue = ''; } });
 
 // Five sections instead of seventeen tabs (round K, owner: "too many menus, confusing on the phone"): each section opens
 // as big cards, one per page; on a phone the sections are a bar at the bottom, on a computer a column on the left.
@@ -25,7 +55,7 @@ const SECTIONS = [
   { k: 'family', i: '💛', en: 'Family', vi: 'Gia đình', pages: ['message', 'missions', 'children', 'album', 'quiz', 'stories', 'villagers', 'familycode'] },
   { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['releases', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads'] },
   { k: 'players', i: '📊', en: 'Analytics', vi: 'Phân tích', pages: ['players'] },
-  { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Cài đặt', pages: ['publish', 'site', 'check', 'settings', 'admins', 'security', 'accesslog'] }
+  { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Thiết lập', pages: ['publish', 'site', 'check', 'settings', 'admins', 'security', 'accesslog'] }
 ];
 // who is signed in online (round O: each admin has an own account): a viewer sees the Analytics only; the 👥 Admins
 // page is online only (the exe on the family's computer is the owner's)
@@ -50,7 +80,7 @@ const ABOUT = {
   music: ['🎵', 'Music', 'Âm nhạc', 'Your own recordings: lullabies, Tết and Trung Thu songs, village songs', 'Bản ghi của nhà mình: hát ru, nhạc Tết, Trung Thu, làng quê'],
   map: ['🗺️', 'Map and building', 'Bản đồ & xây dựng', 'Move, add or remove buildings and land', 'Di chuyển, thêm hoặc bỏ nhà và đất'],
   photos: ['📷', 'Real photos', 'Ảnh thật', 'Real photos of the landmarks', 'Ảnh thật của các địa danh'],
-  play: ['⏰', 'Play time', 'Giờ chơi', 'Rest reminders and other starting settings', 'Nhắc nghỉ và các cài đặt ban đầu khác'],
+  play: ['⏰', 'Defaults for every device', 'Mặc định cho mọi máy', 'Rest reminder, language, captions, music, and things in the valley', 'Nhắc nghỉ, ngôn ngữ, phụ đề, nhạc, và đồ vật trong thung lũng'],
   voices: ['🎙️', 'Voices', 'Giọng đọc', 'Recordings for new lines, and the children’s inbox', 'Bản ghi cho câu mới, và hộp thư của các con'],
   ads: ['📣', 'Ads (off)', 'Quảng cáo (tắt)', 'Your own ads; nothing shows unless you turn them on', 'Quảng cáo của bạn; không hiện gì trừ khi bật'],
   players: ['📊', 'Analytics', 'Phân tích', '', ''],
@@ -66,7 +96,7 @@ const sectionOf = k => SEC().find(x => x.k === k || x.pages.includes(k)) || SEC(
 // #family → the Family cards; #family/quiz (or the old #quiz) → that page
 const route = () => { const h = location.hash.slice(1), [a, b] = h.split('/'); if (b && ABOUT[b]) return b; if (ABOUT[a] || SECTIONS.some(x => x.k === a)) return a; return 'home'; };
 let cur = route();
-const go = k => { if (k === cur) return; cur = k; const sec = sectionOf(k); location.hash = sec.k === k || sec.pages.length === 1 ? sec.k : sec.k + '/' + k; render(); };
+const go = k => { if (k === cur || !leaveOk()) return; cur = k; const sec = sectionOf(k); location.hash = sec.k === k || sec.pages.length === 1 ? sec.k : sec.k + '/' + k; render(); };
 // the bar at the top: Publish when something is waiting, reload, language
 function head() {
   const pub = $('#pub'); if (!pub) return;
@@ -77,15 +107,16 @@ function nav() {
   $('#tabs').innerHTML = SEC().map(x => `<button data-k="${x.k}" class="${x === sec ? 'on' : ''}"><span>${x.i}</span><small>${T(x.en, x.vi)}</small></button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => go(b.dataset.k));
   document.querySelectorAll('[data-t]').forEach(e => { const [en, vi] = e.dataset.t.split('|'); e.textContent = T(en, vi); });
-  document.querySelectorAll('.lang button[data-l]').forEach(b => { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { LANG = b.dataset.l; localStorage.setItem('studioLang', LANG); render(); }; });
+  document.querySelectorAll('.lang button[data-l]').forEach(b => { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { if (b.dataset.l === LANG || !leaveOk()) return; LANG = b.dataset.l; localStorage.setItem('studioLang', LANG); render(); }; });
   if ($('#pub')) $('#pub').onclick = () => go('publish');
-  if ($('#reload')) $('#reload').onclick = () => render(true);
+  if ($('#reload')) $('#reload').onclick = () => { if (leaveOk()) render(true); };
   head();
 }
 // the status and the family's content are fetched once and kept while you move between pages (round K: online, every
 // tab used to ask GitHub again); they are fetched again after Publish, after signing in, and with ↻
 let LOADED = false;
 async function load(force) {
+  if (force) SRC = null; // ↻ reads the game's files again (the Voices page keeps them while Studio is open)
   if (LOADED && !force) return;
   INFO = await api('info'); document.body.classList.toggle('online', !!INFO.online);
   CONTENT = INFO.ok ? await api('content') : {};
@@ -97,7 +128,7 @@ const drawSection = (P, sec) => {
   P.querySelectorAll('.pcard').forEach(b => b.onclick = () => go(b.dataset.p));
 };
 async function render(force) {
-  nav(); const P = $('#page'), crumb = $('#crumb');
+  nav(); const P = $('#page'), crumb = $('#crumb'); DIRTY = false; KEPT = ''; if (SAVED_HERE !== cur) SAVED_HERE = '';
   if (!LOADED || force) P.innerHTML = `<div class="loading">✨ ${T('Loading…', 'Đang tải…')}</div>`;
   try {
     await load(force);
@@ -105,10 +136,10 @@ async function render(force) {
     else if (!INFO.ok && cur !== 'settings') { cur = 'settings'; nav(); toast(T('First, choose the game folder.', 'Trước tiên, chọn thư mục game.')); }
     head();
     const sec = sectionOf(cur);
-    if (sec.k === cur && sec.pages.length > 1) { crumb.innerHTML = ''; drawSection(P, sec); window.scrollTo(0, 0); return; }
+    if (sec.k === cur && sec.pages.length > 1) { crumb.innerHTML = ''; drawSection(P, sec); KEPT = contentNow(); HASH = location.hash; window.scrollTo(0, 0); return; }
     crumb.innerHTML = sec.pages.length > 1 ? `<button class="back">← ${sec.i} ${T(sec.en, sec.vi)}</button>` : '';
     if (crumb.firstChild) crumb.firstChild.onclick = () => go(sec.k);
-    await PAGES[cur](P); window.scrollTo(0, 0);
+    await PAGES[cur](P); KEPT = contentNow(); HASH = location.hash; paintState(); window.scrollTo(0, 0);
   } catch (e) { if (!e.signin) P.innerHTML = `<div class="card badtxt">${esc(e.message)}</div>`; }
 }
 
@@ -116,21 +147,23 @@ const PAGES = {};
 // ---------- home ----------
 PAGES.home = async P => {
   const c = CONTENT;
-  P.innerHTML = `<h2>🏠 ${T('Welcome!', 'Xin chào!')}</h2><p class="sub">${T('Change the game for your family here, then press Publish.', 'Chỉnh trò chơi cho gia đình ở đây, rồi bấm Phát hành.')}</p>
-  <div class="grid">
+  // (owner, 10 Oct) on a phone the buttons come first and the numbers sit in a small row under them
+  const waiting = INFO.unpublished && ROLE() !== 'viewer' ? `<div class="card hwait"><p class="warn">✏️ ${T('You have saved changes that are not live yet: press Publish to send them to the children.', 'Bạn có thay đổi đã lưu nhưng chưa phát hành: bấm Phát hành để gửi tới các con.')}</p><button class="btn" id="hpub">🚀 ${T('Publish', 'Phát hành')}${INFO.waiting ? ` (${INFO.waiting})` : ''}</button></div>` : '';
+  P.innerHTML = `<div class="home"><h2>🏠 ${T('Welcome!', 'Xin chào!')}</h2><p class="sub">${T('Change the game for your family here, then press Publish.', 'Chỉnh trò chơi cho gia đình ở đây, rồi bấm Phát hành.')}</p>${waiting}
+  <div class="grid stats">
     <div class="card stat"><b>${esc(INFO.version)}</b><span>${T('Game version', 'Phiên bản game')}</span></div>
     <div class="card stat"><b>${INFO.voices}</b><span>${T('Voice recordings', 'Bản ghi giọng đọc')}</span></div>
     <div class="card stat"><b>${(c.tales || []).length}</b><span>${T('Family stories', 'Truyện của nhà mình')}</span></div>
     <div class="card stat"><b>${(c.quiz || []).length}</b><span>${T('Quiz questions', 'Câu đố')}</span></div>
     <div class="card stat"><b>${Object.keys(c.faces || {}).length}</b><span>${T('Photo faces', 'Ảnh khuôn mặt')}</span></div>
   </div>
-  ${INFO.online ? `<div class="card"><p>☁️ ${T('Sparkle Studio online. The family’s files are kept in GitHub', 'Sparkle Studio trên mạng. Tệp của gia đình được giữ trong GitHub')}: <code>${esc(INFO.game)}</code></p>
-    ${INFO.unpublished ? `<p class="warn">✏️ ${T('You have saved changes that are not live yet: press Publish to send them to the children.', 'Bạn có thay đổi đã lưu nhưng chưa phát hành: bấm Phát hành để gửi tới các con.')}</p>` : ''}
+  ${INFO.online ? `<div class="card hact"><p>☁️ ${T('Sparkle Studio online. The family’s files are kept in GitHub', 'Sparkle Studio trên mạng. Tệp của gia đình được giữ trong GitHub')}: <code>${esc(INFO.game)}</code></p>
     <div class="row" style="max-width:520px"><button class="btn" id="play">▶ ${T('Open the game', 'Mở game')}</button><button class="btn ghost" id="out">🚪 ${T('Sign out', 'Đăng xuất')}</button></div>
     <p class="note">${T('Changes you save here wait in a draft until you Publish; the game shows them after that. The same Studio is in SparkleStudio.exe on the family computer.', 'Thay đổi bạn lưu ở đây chờ trong bản nháp cho tới khi bạn Phát hành; game hiện chúng sau đó. Studio này cũng có trong SparkleStudio.exe trên máy tính gia đình.')}</p></div>`
-  : `<div class="card"><p>${T('Game folder', 'Thư mục game')}: <code>${esc(INFO.game)}</code></p>
+  : `<div class="card hact"><p>${T('Game folder', 'Thư mục game')}: <code>${esc(INFO.game)}</code></p>
     <div class="row" style="max-width:520px"><button class="btn" id="play">▶ ${T('Try the game here', 'Chơi thử tại đây')}</button><button class="btn ghost" id="folder">📂 ${T('Open the folder', 'Mở thư mục')}</button></div>
-    <p class="note">${T('Trying the game here uses this computer only; the children see changes after you Publish.', 'Chơi thử ở đây chỉ trên máy này; các con thấy thay đổi sau khi bạn Phát hành.')}</p></div>`}`;
+    <p class="note">${T('Trying the game here uses this computer only; the children see changes after you Publish.', 'Chơi thử ở đây chỉ trên máy này; các con thấy thay đổi sau khi bạn Phát hành.')}</p></div>`}</div>`;
+  if ($('#hpub')) $('#hpub').onclick = () => go('publish');
   $('#play').onclick = () => window.open(INFO.online ? '/' : GAME, '_blank');
   if ($('#folder')) $('#folder').onclick = () => api('open', { folder: true }).catch(fail);
   if ($('#out')) $('#out').onclick = async () => { await fetch(BASE + '/api/logout'); signIn(); };
@@ -214,8 +247,8 @@ PAGES.familycode = async P => {
   const where = INFO.conf.family, owner = ROLE() === 'owner';
   let c = {}; try { c = await api('family/code'); } catch (e) { c = { error: e.message }; }
   P.innerHTML = `<h2>🔒 ${T('Family code', 'Mã gia đình')}</h2><p class="sub">${T('Family photos (photo faces and the Family album) are private: they are never public files of the website. A child’s device shows them only after a grown-up types this code once, in the game: Grown-ups → Children → Family photos.', 'Ảnh gia đình (ảnh khuôn mặt và Album gia đình) được giữ riêng: không bao giờ là tệp công khai của trang web. Máy của con chỉ hiện ảnh sau khi người lớn gõ mã này một lần, trong game: Phụ huynh → Các con → Ảnh gia đình.')}</p>
-  ${c.local ? `<div class="card"><p class="warn">💻 ${T('The family photos are kept on this computer only, so only the game you try here shows them. To send them to the children’s devices, put the website and a Studio key in Settings (make the key online: Setup → Security).', 'Ảnh gia đình chỉ được giữ trên máy này, nên chỉ game chơi thử ở đây hiện được. Để gửi tới máy của các con, điền trang web và khóa Studio trong Cài đặt (tạo khóa trên mạng: Cài đặt → Bảo mật).')}</p></div>`
-    : c.error ? `<div class="card"><p class="badtxt">⚠️ ${esc(c.error)}</p></div>`
+  ${c.local ? `<div class="card"><p class="warn">💻 ${T('The family photos are kept on this computer only, so only the game you try here shows them. To send them to the children’s devices, put the website and a Studio key in Settings (make the key online: Setup → Security).', 'Ảnh gia đình chỉ được giữ trên máy này, nên chỉ game chơi thử ở đây hiện được. Để gửi tới máy của các con, điền trang web và khóa Studio trong Cài đặt (tạo khóa trên mạng: Thiết lập → Bảo mật).')}</p></div>`
+    : c.error ? `<div class="card"><p class="badtxt">⚠️ ${esc(say(c.error))}</p></div>`
     : `<div class="card"><p class="note">${T('The family code', 'Mã gia đình')}</p><p style="font-size:2rem;letter-spacing:.12em;font-family:monospace;margin:.2em 0"><b id="fcode">${esc(c.code)}</b></p>
       <p class="note">${T('Keep it in the family. Anyone with this code and the website’s address can see the family photos.', 'Hãy giữ trong gia đình. Ai có mã này và địa chỉ trang web đều xem được ảnh gia đình.')}</p>
       ${owner ? (c.fromEnv ? `<p class="note">${T('This code is FAMILY_CODE in Netlify: change it there.', 'Mã này là FAMILY_CODE trong Netlify: hãy đổi ở đó.')}</p>` : `<button class="btn ghost" id="fnew">🔄 ${T('Make a new code', 'Tạo mã mới')}</button><p class="note">${T('A new code stops every device until a grown-up types the new one there (their saved copies are cleared the next time they go online).', 'Mã mới làm mọi máy ngừng hiện ảnh cho tới khi người lớn gõ mã mới ở đó (bản đã lưu sẽ bị xóa lần tới máy có mạng).')}</p>`) : ''}</div>`}
@@ -239,19 +272,19 @@ PAGES.missions = async P => {
   P.innerHTML = `<h2>📝 ${T('Family missions', 'Nhiệm vụ gia đình')}</h2><p class="sub">${T('A real-life job for the children (“Help set the table”). They see it in the game; when it is done, a grown-up ticks ✓ on the device (Grown-ups, or a press-and-hold in the child’s Adventures page) and the child gets coins and a sticker. Up to 12.', 'Một việc ngoài đời cho các con (“Giúp dọn bàn ăn”). Các con thấy trong game; làm xong, người lớn đánh dấu ✓ trên máy (mục Phụ huynh, hoặc giữ nút trong trang Nhiệm vụ của con) và con được tiền cùng hình dán. Tối đa 12.')}</p>
   <div class="card"><label>🇦🇺 English</label><input id="men" maxlength="120" placeholder="Help set the table"><label>🇻🇳 Tiếng Việt</label><input id="mvi" maxlength="120" placeholder="Giúp dọn bàn ăn">
   <div class="bar"><button class="btn" id="madd">+ ${T('Add', 'Thêm')}</button></div></div>
-  <div class="card">${list.map((m, k) => `<div class="row"><span>📝 <b>${esc(m.en)}</b> · ${esc(m.vi)}</span><button class="btn ghost" data-mdel="${k}">✕</button></div>`).join('') || `<p class="note">${T('No missions yet.', 'Chưa có nhiệm vụ.')}</p>`}</div>`;
+  <div class="card">${list.map((m, k) => `<div class="row"><span>📝 <b>${esc(m.en)}</b> · ${esc(m.vi)}</span><button class="btn ghost" data-mdel="${k}" aria-label="${T('Take it off', 'Bỏ')}" style="flex:0 0 auto;min-width:44px">✕</button></div>`).join('') || `<p class="note">${T('No missions yet.', 'Chưa có nhiệm vụ.')}</p>`}</div>`;
   $('#madd').onclick = () => { const en = $('#men').value.trim(), vi = $('#mvi').value.trim(); if (!en && !vi) return; CONTENT.missions = [{ id: 'm' + Date.now().toString(36), en: en || vi, vi: vi || en }, ...list].slice(0, 12); saveContent().then(render).catch(fail); };
-  P.querySelectorAll('[data-mdel]').forEach(b => b.onclick = () => { CONTENT.missions = list.filter((_, k) => k !== +b.dataset.mdel); if (!CONTENT.missions.length) delete CONTENT.missions; saveContent().then(render).catch(fail); });
+  P.querySelectorAll('[data-mdel]').forEach(b => b.onclick = () => { if (!confirm(T('Take this mission off?', 'Bỏ nhiệm vụ này?'))) return; CONTENT.missions = list.filter((_, k) => k !== +b.dataset.mdel); if (!CONTENT.missions.length) delete CONTENT.missions; saveContent().then(render).catch(fail); });
 };
 // ---------- villagers: names and photo faces ----------
 PAGES.villagers = async P => {
   const list = await api('names'); CONTENT.names = CONTENT.names || {}; CONTENT.faces = CONTENT.faces || {}; CONTENT.genders = CONTENT.genders || {};
   P.innerHTML = `<h2>🧑 ${T('Villagers: names and faces', 'Nhân vật: tên và khuôn mặt')}</h2><p class="sub">${T('Give anyone a different name, or a real face from a photo. A name or face changed on a child’s device still wins there.', 'Đổi tên ai cũng được, hoặc gắn khuôn mặt thật từ ảnh. Tên hay khuôn mặt đã đổi trên máy của con vẫn được ưu tiên ở máy đó.')}</p>
-  <div class="card"><input type="text" id="find" placeholder="🔎 ${T('Find someone…', 'Tìm nhân vật…')}"><table><thead><tr><th></th><th>${T('Name in the game', 'Tên trong game')}</th><th>🇦🇺 English</th><th>🇻🇳 Tiếng Việt</th><th>${T('Voice', 'Giọng')}</th></tr></thead><tbody>${list.map(n => {
+  <div class="card vcard"><input type="text" id="find" data-nodirty placeholder="🔎 ${T('Find someone…', 'Tìm nhân vật…')}"><table class="vill"><thead><tr><th></th><th>${T('Name in the game', 'Tên trong game')}</th><th>🇦🇺 English</th><th>🇻🇳 Tiếng Việt</th><th>${T('Voice', 'Giọng')}</th></tr></thead><tbody>${list.map(n => {
     const nm = CONTENT.names[n.id] || {}, f = CONTENT.faces[n.id];
-    return `<tr data-id="${esc(n.id)}"><td><button class="face" title="${T('Photo face', 'Ảnh khuôn mặt')}">${f ? `<img class="face" src="${esc(PIC(f.photo))}?${Date.now()}">` : '📷'}</button></td><td><b>${esc(n.id)}</b><br><span class="note">${esc(n.en)}</span></td>
-      <td><input type="text" data-l="en" value="${esc(nm.en || '')}" placeholder="${esc(n.en)}"></td><td><input type="text" data-l="vi" value="${esc(nm.vi || '')}" placeholder="${esc(n.id)}"></td>
-      <td><select data-g><option value="">${T('auto', 'tự động')}</option><option value="f" ${CONTENT.genders[n.id] === 'f' ? 'selected' : ''}>👩 ${T('woman/girl', 'nữ')}</option><option value="m" ${CONTENT.genders[n.id] === 'm' ? 'selected' : ''}>👨 ${T('man/boy', 'nam')}</option></select></td></tr>`; }).join('')}</tbody></table></div>
+    return `<tr data-id="${esc(n.id)}"><td class="vface"><button class="face" title="${T('Photo face', 'Ảnh khuôn mặt')}" aria-label="${T('Photo face', 'Ảnh khuôn mặt')}">${f ? `<img class="face" src="${esc(PIC(f.photo))}?${Date.now()}">` : '📷'}</button></td><td class="vname"><b>${esc(n.id)}</b><br><span class="note">${esc(n.en)}</span></td>
+      <td data-label="${T('Name in English', 'Tên tiếng Anh')}"><input type="text" data-l="en" value="${esc(nm.en || '')}" placeholder="${esc(n.en)}"></td><td data-label="${T('Name in Vietnamese', 'Tên tiếng Việt')}"><input type="text" data-l="vi" value="${esc(nm.vi || '')}" placeholder="${esc(n.id)}"></td>
+      <td data-label="${T('Voice', 'Giọng')}"><select data-g><option value="">${T('auto', 'tự động')}</option><option value="f" ${CONTENT.genders[n.id] === 'f' ? 'selected' : ''}>👩 ${T('woman/girl', 'nữ')}</option><option value="m" ${CONTENT.genders[n.id] === 'm' ? 'selected' : ''}>👨 ${T('man/boy', 'nam')}</option></select></td></tr>`; }).join('')}</tbody></table></div>
   <div class="bar"><button class="btn" id="save">💾 ${T('Save names and faces', 'Lưu tên và khuôn mặt')}</button></div>${oldPicsNote()}`;
   bindOldPics(P);
   $('#find').oninput = e => { const q = e.target.value.toLowerCase(); P.querySelectorAll('tbody tr').forEach(r => r.hidden = q && !r.textContent.toLowerCase().includes(q) && !r.dataset.id.toLowerCase().includes(q)); };
@@ -290,8 +323,28 @@ function cropper(id, done) {
     m.remove(); done({ photo: o.toDataURL('image/jpeg', .85), skin: '#' + hx(r) + hx(g) + hx(b) });
   };
 }
+// ---------- a picture chooser (owner, 10 Oct: "type or paste emoji" was confusing): the game's own drawings, tap to add ----------
+const PICKS = ['👧', '👦', '👩', '👨', '👵', '👴', '👶', '🧒', '🐶', '🐱', '🐰', '🐻', '🐼', '🐯', '🦁', '🐮', '🐃', '🐷', '🐸', '🐵', '🐔', '🦆', '🐟', '🐢', '🐉', '🦋', '🐝', '🐘', '🌸', '🪷', '🌳', '🎋', '🌾', '🌊', '🌙', '⭐', '☀️', '🌈', '☁️', '🌧️', '🏠', '🏡', '🏫', '🏮', '🚲', '🚌', '⛵', '🛶', '🍚', '🍜', '🥭', '🍉', '🍌', '🎂', '🎁', '🎈', '📚', '⚽', '🎵', '💛', '❤️', '❓'];
+let PICK_OK = null;
+// the pictures chosen so far are shown as the game's drawings (tap one to take it off); the box holding them is hidden
+const graphemes = v => [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(v || '')].map(x => x.segment).filter(x => x.trim());
+const showPics = (row, input) => { row.innerHTML = graphemes(input.value).map((e, i) => `<button type="button" class="pk" data-k="${i}" aria-label="${T('Take this picture off', 'Bỏ hình này')}">${e}</button>`).join('') || `<span class="note">${T('No pictures yet.', 'Chưa có hình.')}</span>`;
+  row.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const g = graphemes(input.value); g.splice(+b.dataset.k, 1); input.value = g.join(''); input.dispatchEvent(new Event('input', { bubbles: true })); }); };
+async function picker(btn, input) {
+  const host = btn.closest('.row') || btn.parentElement, open = host.nextElementSibling && host.nextElementSibling.classList.contains('picker') ? host.nextElementSibling : null; if (open) { open.remove(); return; }
+  if (!PICK_OK) { try { const A = await import(GAME + 'js/art.js'); PICK_OK = PICKS.filter(A.hasArt); } catch (e) { PICK_OK = PICKS; } }
+  const box = document.createElement('div'); box.className = 'picker';
+  box.innerHTML = PICK_OK.map(e => `<button type="button" class="pk" aria-label="${T('Add this picture', 'Thêm hình này')}">${e}</button>`).join('') + `<button type="button" class="btn small ghost pkx">${T('Clear', 'Xóa hết')}</button>`;
+  host.after(box);
+  box.querySelectorAll('.pk').forEach((b, i) => b.onclick = () => { input.value = input.dataset.f === 'pic' ? PICK_OK[i] : input.value + PICK_OK[i]; input.dispatchEvent(new Event('input', { bubbles: true })); });
+  box.querySelector('.pkx').onclick = () => { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); };
+}
+const pickBtn = () => `<div class="picrow"></div><button type="button" class="btn small ghost" data-pick>+ ${T('Picture', 'Hình')}</button>`;
+const bindPick = root => root.querySelectorAll('[data-pick]').forEach(b => { const input = b.parentElement.querySelector('input'), row = b.parentElement.querySelector('.picrow');
+  input.hidden = true; showPics(row, input); input.addEventListener('input', () => showPics(row, input)); b.onclick = () => picker(b, input); });
 // ---------- stories ----------
-const FLAGS = ['💛', '🇻🇳', '🇦🇺', '🇨🇳', '🇮🇳'];
+// (a list box cannot show the game's drawings, so each flag is named in words; the story keeps the flag itself)
+const FLAGS = [['💛', 'Our family', 'Nhà mình'], ['🇻🇳', 'Vietnam', 'Việt Nam'], ['🇦🇺', 'Australia', 'Úc'], ['🇨🇳', 'China', 'Trung Quốc'], ['🇮🇳', 'India', 'Ấn Độ']];
 PAGES.stories = async P => {
   CONTENT.tales = CONTENT.tales || []; let edit = null;
   const list = () => {
@@ -304,18 +357,18 @@ PAGES.stories = async P => {
   };
   const editor = () => {
     const t = CONTENT.tales[edit];
-    P.innerHTML = `<h2>✏️ ${T('Story', 'Truyện')}</h2><div class="card"><div class="row"><div><label>${T('Flag', 'Cờ')}</label><select id="flag">${FLAGS.map(f => `<option ${f === t.flag ? 'selected' : ''}>${f}</option>`).join('')}</select></div>
+    P.innerHTML = `<h2>✏️ ${T('Story', 'Truyện')}</h2><div class="card"><div class="row"><div><label>${T('Flag', 'Cờ')}</label><select id="flag">${FLAGS.map(([f, en, vi]) => `<option value="${f}" ${f === t.flag ? 'selected' : ''}>${T(en, vi)}</option>`).join('')}</select></div>
       <div style="flex:3"><label>🇦🇺 ${T('Title', 'Tên truyện')}</label><input type="text" id="ten" value="${esc(t.en)}"></div><div style="flex:3"><label>🇻🇳 ${T('Title', 'Tên truyện')}</label><input type="text" id="tvi" value="${esc(t.vi)}"></div></div></div>
       <div id="pages"></div><div class="bar"><button class="btn ghost" id="add">➕ ${T('Add a page', 'Thêm trang')}</button><button class="btn ghost" id="back">← ${T('Back', 'Quay lại')}</button><button class="btn" id="save">💾 ${T('Save story', 'Lưu truyện')}</button></div>
-      <p class="note">${T('Pictures: type or paste emoji (🐉🌊👧). People and animals in them come alive in the story theatre.', 'Hình: gõ hoặc dán biểu tượng cảm xúc (🐉🌊👧). Người và con vật trong đó sẽ cử động trên sân khấu truyện.')}</p>`;
-    const pages = () => { $('#pages').innerHTML = t.pages.map((p, i) => `<div class="card page-card" data-i="${i}"><div class="row"><div><label>${T('Page', 'Trang')} ${i + 1} · ${T('pictures', 'hình')}</label><input type="text" class="pics" data-k="0" value="${esc(p[0])}"></div>
+      <p class="note">${T('Pictures: tap “+ Picture” on a page and choose the game’s drawings. People and animals in them come alive in the story theatre.', 'Hình: bấm “+ Hình” ở mỗi trang và chọn hình vẽ của game. Người và con vật trong đó sẽ cử động trên sân khấu truyện.')}</p>`;
+    const pages = () => { $('#pages').innerHTML = t.pages.map((p, i) => `<div class="card page-card" data-i="${i}"><div class="row"><div><label>${T('Page', 'Trang')} ${i + 1} · ${T('pictures', 'hình')}</label><input type="text" class="pics" data-k="0" value="${esc(p[0])}">${pickBtn()}</div>
       <div class="row" style="flex:0 0 auto"><button class="btn small ghost" data-up>⬆️</button><button class="btn small ghost" data-dn>⬇️</button><button class="btn small bad" data-rm>🗑️</button></div></div>
       <label>🇦🇺 English</label><textarea data-k="1">${esc(p[1])}</textarea><label>🇻🇳 Tiếng Việt</label><textarea data-k="2">${esc(p[2])}</textarea></div>`).join('');
       $('#pages').querySelectorAll('.page-card').forEach(c => { const i = +c.dataset.i;
         c.querySelectorAll('[data-k]').forEach(f => f.oninput = () => { t.pages[i][+f.dataset.k] = f.value; });
         c.querySelector('[data-up]').onclick = () => { if (i) { [t.pages[i - 1], t.pages[i]] = [t.pages[i], t.pages[i - 1]]; pages(); } };
         c.querySelector('[data-dn]').onclick = () => { if (i < t.pages.length - 1) { [t.pages[i + 1], t.pages[i]] = [t.pages[i], t.pages[i + 1]]; pages(); } };
-        c.querySelector('[data-rm]').onclick = () => { if (t.pages.length > 1) { t.pages.splice(i, 1); pages(); } }; }); };
+        c.querySelector('[data-rm]').onclick = () => { if (t.pages.length > 1) { t.pages.splice(i, 1); pages(); } }; }); bindPick($('#pages')); };
     pages();
     $('#add').onclick = () => { t.pages.push(['', '', '']); pages(); };
     $('#back').onclick = list;
@@ -328,7 +381,7 @@ PAGES.quiz = async P => {
   CONTENT.quiz = CONTENT.quiz || [];
   const draw = () => {
     P.innerHTML = `<h2>💛 ${T('Family quiz', 'Đố vui gia đình')}</h2><p class="sub">${T('Your own questions (“What is Grandma’s name?”). The game “Family Quiz” appears first on the Learning shelf.', 'Câu hỏi của nhà mình (“Bà tên gì?”). Trò “Đố Vui Gia Đình” hiện đầu tiên trên kệ Học.')}</p>
-    ${CONTENT.quiz.map((q, i) => `<div class="card" data-i="${i}"><div class="row"><div style="flex:0 0 90px"><label>${T('Picture', 'Hình')}</label><input type="text" data-f="pic" value="${esc(q.pic || '')}"></div>
+    ${CONTENT.quiz.map((q, i) => `<div class="card" data-i="${i}"><div class="row"><div style="flex:0 0 140px"><label>${T('Picture', 'Hình')}</label><input type="text" data-f="pic" value="${esc(q.pic || '')}">${pickBtn()}</div>
       <div><label>🇦🇺 ${T('Question', 'Câu hỏi')}</label><input type="text" data-f="q0" value="${esc(q.q[0])}"></div><div><label>🇻🇳 ${T('Question', 'Câu hỏi')}</label><input type="text" data-f="q1" value="${esc(q.q[1])}"></div><button class="btn small bad" data-rm style="flex:0 0 auto">🗑️</button></div>
       ${q.answers.map((a, j) => `<div class="row"><label style="flex:0 0 auto"><input type="radio" name="r${i}" data-right="${j}" ${q.right === j ? 'checked' : ''}> ${T('right', 'đúng')}</label><input type="text" data-a="${j}" data-l="0" value="${esc(a[0])}" placeholder="English"><input type="text" data-a="${j}" data-l="1" value="${esc(a[1])}" placeholder="Tiếng Việt"></div>`).join('')}
       ${q.answers.length < 4 ? `<button class="btn small ghost" data-more>➕ ${T('Another answer', 'Thêm đáp án')}</button>` : ''}</div>`).join('')}
@@ -339,6 +392,7 @@ PAGES.quiz = async P => {
       c.querySelectorAll('[data-right]').forEach(f => f.onchange = () => { q.right = +f.dataset.right; });
       c.querySelector('[data-rm]').onclick = () => { CONTENT.quiz.splice(+c.dataset.i, 1); draw(); };
       const mo = c.querySelector('[data-more]'); if (mo) mo.onclick = () => { q.answers.push(['', '']); draw(); }; });
+    bindPick(P);
     $('#new').onclick = () => { CONTENT.quiz.push({ q: ['', ''], pic: '❓', answers: [['', ''], ['', '']], right: 0 }); draw(); };
     $('#save').onclick = () => { CONTENT.quiz = CONTENT.quiz.map(q => ({ ...q, answers: q.answers.filter(a => a[0] || a[1]) })).filter(q => (q.q[0] || q.q[1]) && q.answers.length >= 2 && q.right < q.answers.length); saveContent().then(draw).catch(fail); };
   };
@@ -348,7 +402,7 @@ PAGES.quiz = async P => {
 PAGES.path = async P => {
   await import(GAME + 'js/games/all.js');
   const { GAMES } = await import(GAME + 'js/games/registry.js'), A = await import(GAME + 'js/content/activities.js'), I18 = await import(GAME + 'js/i18n.js');
-  void I18; const nm = f => typeof f === 'function' ? f() : f;
+  void I18; await gameLang(); const nm = f => typeof f === 'function' ? f() : f;
   CONTENT.activities = CONTENT.activities || {};
   // what this page shows comes from the choices made here (not yet published), over the usual ones
   const info = id => { const c = CONTENT.activities[id] || {}, base = A.GAME_INFO[id] || ['thinking', 5, 2]; return { area: c.area || base[0], little: c.little === undefined ? base[1] < 5 : c.little, hide: !!c.hide, base, changed: c.little !== undefined }; };
@@ -400,6 +454,9 @@ PAGES.music = async P => {
 };
 // ---------- defaults sent to every device (applied once each time they change here) ----------
 PAGES.play = async P => {
+  // (owner, 10 Oct) the valley's things can also be switched in Releases, with dates: when Releases has a setting, it wins (js/custom.js featureOn)
+  let LR = {}; try { LR = (await loadLive()).releases || {}; } catch (e) { }
+  const wins = id => LR[id] ? `<p class="note warn">${T('Releases has its own setting for this, and that one wins.', 'Ra mắt có cài đặt riêng cho mục này, và cài đặt đó được dùng.')} <button class="btn small ghost" data-torel>${T('Open Releases', 'Mở Ra mắt')}</button></p>` : '';
   const d = CONTENT.defaults || {}, opt = (k, list) => list.map(([v, l]) => `<option value="${v}" ${String(d[k] ?? '') === String(v) ? 'selected' : ''}>${l}</option>`).join('');
   const keep = `<option value="">${T('(leave as each device has it)', '(giữ như trên từng máy)')}</option>`;
   P.innerHTML = `<h2>⏰ ${T('Defaults for every device', 'Mặc định cho mọi máy')}</h2><p class="sub">${T('Choose here once for all the children’s devices. Each device takes the new values the next time it opens the game online; a grown-up can still change them on the device.', 'Chọn ở đây một lần cho mọi máy của các con. Mỗi máy nhận giá trị mới khi mở game có mạng lần tới; người lớn vẫn đổi được trên máy.')}</p>
@@ -413,17 +470,18 @@ PAGES.play = async P => {
     <div><label>🔠 ${T('Text size', 'Cỡ chữ')}</label><select data-k="textSize">${keep}${opt('textSize', [[0, T('Normal', 'Bình thường')], [1, T('Big', 'To')], [2, T('Bigger', 'To hơn')]])}</select></div>
     <div><label>🎵 ${T('Music', 'Nhạc')}</label><select data-k="music">${keep}${opt('music', [['true', T('On', 'Bật')], ['false', T('Off', 'Tắt')]])}</select></div>
   </div>
-  <h2>🏙️ ${T('Things in the valley', 'Đồ vật trong thung lũng')}</h2><p class="sub">${T('Kept in the game, shown only when switched on.', 'Vẫn giữ trong game, chỉ hiện khi bật.')}</p>
+  <h2>🏙️ ${T('Things in the valley', 'Đồ vật trong thung lũng')}</h2><p class="sub">${T('Kept in the game, shown only when switched on. Game → Releases can switch these too, from a chosen day; when Releases has a setting for one, that one wins.', 'Vẫn giữ trong game, chỉ hiện khi bật. Trò chơi → Ra mắt cũng bật tắt được các mục này, từ ngày bạn chọn; khi Ra mắt có cài đặt cho mục nào, cài đặt đó được dùng.')}</p>
   <div class="card grid">
-    <div><label>🔌 ${T('Power poles and wires on Phố Hai Quê', 'Cột điện và dây điện ở Phố Hai Quê')}</label><select data-f="powerPoles">${[[false, T('Off', 'Tắt')], [true, T('On', 'Bật')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).powerPoles === true) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-    <div><label>🛵 ${T('Motorbikes, cars, buses on the roads', 'Xe máy, xe hơi, xe buýt trên đường')}</label><select data-f="traffic">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).traffic !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-    <div><label>🚋 ${T('Parked bikes and cars, trams, xích lô and Hồ Gươm cart in the cities', 'Xe đậu, tàu điện, xích lô và xe điện Hồ Gươm trong thành phố')}</label><select data-f="cityVehicles">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).cityVehicles !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-    <div><label>🚲 ${T('Bicycles children can ride', 'Xe đạp cho các con đạp')}</label><select data-f="rideBikes">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).rideBikes !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-    <div><label>🚲 ${T('Xích lô rides in Sài Gòn and Hà Nội', 'Đi xích lô ở Sài Gòn và Hà Nội')}</label><select data-f="xichloRides">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).xichloRides !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-    <div><label>🚗 ${T('Real-looking vehicles when every child playing is 5 or older', 'Xe trông như thật khi tất cả các con đang chơi từ 5 tuổi')}</label><select data-f="realVehicles">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).realVehicles !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-    <div><label>🎬 ${T('Stories and how-to guides as 3D films (where a film is made)', 'Truyện và hướng dẫn thành phim 3D (khi đã có phim)')}</label><select data-f="storyFilms">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).storyFilms !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div><label>🔌 ${T('Power poles and wires on Phố Hai Quê', 'Cột điện và dây điện ở Phố Hai Quê')}</label><select data-f="powerPoles">${[[false, T('Off', 'Tắt')], [true, T('On', 'Bật')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).powerPoles === true) === v ? 'selected' : ''}>${l}</option>`).join('')}</select>${wins('powerPoles')}</div>
+    <div><label>🛵 ${T('Motorbikes, cars, buses on the roads', 'Xe máy, xe hơi, xe buýt trên đường')}</label><select data-f="traffic">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).traffic !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select>${wins('traffic')}</div>
+    <div><label>🚋 ${T('Parked bikes and cars, trams, xích lô and Hồ Gươm cart in the cities', 'Xe đậu, tàu điện, xích lô và xe điện Hồ Gươm trong thành phố')}</label><select data-f="cityVehicles">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).cityVehicles !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select>${wins('cityVehicles')}</div>
+    <div><label>🚲 ${T('Bicycles children can ride', 'Xe đạp cho các con đạp')}</label><select data-f="rideBikes">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).rideBikes !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select>${wins('rideBikes')}</div>
+    <div><label>🚲 ${T('Xích lô rides in Sài Gòn and Hà Nội', 'Đi xích lô ở Sài Gòn và Hà Nội')}</label><select data-f="xichloRides">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).xichloRides !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select>${wins('xichloRides')}</div>
+    <div><label>🚗 ${T('Real-looking vehicles when every child playing is 5 or older', 'Xe trông như thật khi tất cả các con đang chơi từ 5 tuổi')}</label><select data-f="realVehicles">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).realVehicles !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select>${wins('realVehicles')}</div>
+    <div><label>🎥 ${T('Stories and how-to guides as 3D films (where a film is made)', 'Truyện và hướng dẫn thành phim 3D (khi đã có phim)')}</label><select data-f="storyFilms">${[[true, T('On', 'Bật')], [false, T('Off', 'Tắt')]].map(([v, l]) => `<option value="${v}" ${((CONTENT.features || {}).storyFilms !== false) === v ? 'selected' : ''}>${l}</option>`).join('')}</select>${wins('storyFilms')}</div>
   </div>
   <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
+  P.querySelectorAll('[data-torel]').forEach(b => b.onclick = () => go('releases'));
   $('#save').onclick = () => {
     const out = {}; P.querySelectorAll('[data-k]').forEach(s => { const v = s.value; if (v === '') return; out[s.dataset.k] = v === 'true' ? true : v === 'false' ? false : /^\d+$/.test(v) ? +v : v; });
     CONTENT.defaults = out;
@@ -434,21 +492,28 @@ PAGES.play = async P => {
 // ---------- Ra mắt (Releases) and Festivals (round R, owner: "instant, no deploy") ----------
 // Online, these save straight to the website and reach the devices the next time they open the game (festivals change
 // as soon as a device hears). On the family's computer (SparkleStudio.exe) they go into the content pack and need Publish.
+// (owner, 10 Oct) game names and areas come from the game, in the game's language: set it to Studio's
+const gameLang = async () => { try { const S = await import(GAME + 'js/state.js'); S.settings.lang = LANG; } catch (e) { } };
 const loadLive = async () => INFO && INFO.online ? await api('live') : { releases: CONTENT.releases || {}, festivals: CONTENT.festivals || {} };
-const saveLive = async live => { if (INFO && INFO.online) { await api('live', live); toast(T('Saved. The children’s devices get it the next time they open the game.', 'Đã lưu. Máy của các con nhận được khi mở game lần tới.')); } else { CONTENT.releases = live.releases; CONTENT.festivals = live.festivals; await saveContent(); } };
+const saveLive = async live => { if (INFO && INFO.online) { await api('live', live); markSaved(); toast('✅ ' + T('Saved and live now (no Publish needed): the children’s devices get it the next time they open the game.', 'Đã lưu và có hiệu lực ngay (không cần Phát hành): máy của các con nhận được khi mở game lần tới.'), 'good'); } else { CONTENT.releases = live.releases; CONTENT.festivals = live.festivals; await saveContent(); } };
 const isoDay = d => d.toISOString().slice(0, 10), plusDays = n => isoDay(new Date(Date.now() + n * 864e5));
+// (owner, 10 Oct) these two pages save differently from the others: said at the top of each
+const liveNote = () => `<div class="card livenote"><p class="${INFO && INFO.online ? 'ok' : 'note'}">${INFO && INFO.online ? '⚡ ' + T('Save here puts it live at once: no Publish needed. Each device gets it the next time it opens the game.', 'Bấm Lưu ở đây là có hiệu lực ngay: không cần Phát hành. Mỗi máy nhận được khi mở game lần tới.') : '✏️ ' + T('On this computer, Save keeps it with the family’s files: press Publish afterwards to send it to the children.', 'Trên máy này, Lưu giữ cùng tệp của gia đình: sau đó bấm Phát hành để gửi tới các con.')}</p></div>`;
+const moreBtn = () => `<td class="more"><button class="btn small ghost" data-more>${T('More', 'Thêm')} ▾</button></td>`;
+const bindMore = P => P.querySelectorAll('[data-more]').forEach(b => b.onclick = () => b.closest('tr').classList.toggle('open'));
 PAGES.releases = async P => {
   const { RELEASES, RELEASE_GROUPS } = await import(GAME + 'js/content/releases.js'), live = await loadLive(), R = live.releases || {};
   const row = x => { const r = R[x.id] || {}, on = typeof r.on === 'boolean' ? r.on : x.def;
-    return `<tr data-id="${x.id}"><td>${x.icon ? x.icon + ' ' : ''}${esc(T(x.en, x.vi))}</td>
-      <td><select data-r="on"><option value="true" ${on ? 'selected' : ''}>${T('On', 'Bật')}</option><option value="false" ${on ? '' : 'selected'}>${T('Off', 'Tắt')}</option></select></td>
-      <td><input type="date" data-r="start" value="${esc(r.start || '')}"><div class="mini">${[0, 1, 3, 7].map(n => `<button class="btn small ghost" data-in="${n}">${n ? T(`in ${n} d`, `${n} ngày nữa`) : T('today', 'hôm nay')}</button>`).join('')}</div></td>
-      <td><input type="number" min="0" max="3650" data-r="days" value="${r.days || ''}" placeholder="${T('always', 'luôn')}"></td>
-      <td><input type="number" min="0" max="365" data-r="newDays" value="${r.newDays || ''}" placeholder="0"></td></tr>`; };
+    return `<tr data-id="${x.id}" class="${r.start || r.days || r.newDays ? 'open' : ''}"><td>${x.icon ? x.icon + ' ' : ''}${esc(T(x.en, x.vi))}</td>
+      <td data-label="${T('Now', 'Hiện')}"><select data-r="on"><option value="true" ${on ? 'selected' : ''}>${T('On', 'Bật')}</option><option value="false" ${on ? '' : 'selected'}>${T('Off', 'Tắt')}</option></select></td>${moreBtn()}
+      <td class="opt" data-label="${T('Starts', 'Bắt đầu')}"><input type="date" data-r="start" value="${esc(r.start || '')}"><select data-in><option value="">${T('Quick choice…', 'Chọn nhanh…')}</option>${[0, 1, 3, 7].map(n => `<option value="${n}">${n ? T(`in ${n} days`, `${n} ngày nữa`) : T('today', 'hôm nay')}</option>`).join('')}</select></td>
+      <td class="opt" data-label="${T('Days on (empty: always)', 'Số ngày (trống: luôn luôn)')}"><input type="number" min="0" max="3650" data-r="days" value="${r.days || ''}" placeholder="${T('always', 'luôn')}"></td>
+      <td class="opt" data-label="${T('“New” days', 'Ngày “Mới”')}"><input type="number" min="0" max="365" data-r="newDays" value="${r.newDays || ''}" placeholder="0"></td></tr>`; };
   P.innerHTML = `<h2>🆕 ${T('Releases', 'Ra mắt')}</h2><p class="sub">${T('Switch anything on or off, choose the day it starts, how many days it stays (empty: always), and how many days it shows a “New” badge (the children also get a “New!” moment). Switching off never takes away what a child already has.', 'Bật hoặc tắt bất cứ thứ gì, chọn ngày bắt đầu, ở lại bao nhiêu ngày (để trống: luôn luôn), và bao nhiêu ngày có nhãn “Mới” (các con cũng thấy khoảnh khắc “Mới!”). Tắt đi không lấy mất những gì con đã có.')}</p>
-    ${Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th>${T('Starts', 'Bắt đầu')}</th><th>${T('Days on', 'Số ngày')}</th><th>${T('“New” days', 'Ngày “Mới”')}</th></tr></thead><tbody>${RELEASES.filter(x => x.group === g).map(row).join('')}</tbody></table></div>`).join('')}
+    ${Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th class="more"></th><th>${T('Starts', 'Bắt đầu')}</th><th>${T('Days on', 'Số ngày')}</th><th>${T('“New” days', 'Ngày “Mới”')}</th></tr></thead><tbody>${RELEASES.filter(x => x.group === g).map(row).join('')}</tbody></table></div>`).join('')}
     <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
-  P.querySelectorAll('[data-in]').forEach(b => b.onclick = () => { b.closest('td').querySelector('[data-r="start"]').value = plusDays(+b.dataset.in); });
+  P.querySelector('.sub').after(document.createRange().createContextualFragment(liveNote())); bindMore(P);
+  P.querySelectorAll('[data-in]').forEach(b => b.onchange = () => { if (b.value === '') return; b.closest('td').querySelector('[data-r="start"]').value = plusDays(+b.value); b.value = ''; });
   $('#save').onclick = async () => {
     const out = {};
     P.querySelectorAll('tr[data-id]').forEach(tr => { const id = tr.dataset.id, x = RELEASES.find(y => y.id === id), v = k => tr.querySelector(`[data-r="${k}"]`).value;
@@ -465,12 +530,12 @@ PAGES.festivals = async P => {
   const next = f => { const a = dateOf(f, y), today = isoDay(new Date()); return a && a >= today ? a : dateOf(f, y + 1); };
   const row = f => { const r = F[f.id] || {}, on = r.on !== false;
     return `<tr data-id="${f.id}"><td>${f.icon} ${esc(T(f.en, f.vi))}<div class="mini">${f.kind === 'quiet' ? T('quiet day', 'ngày yên lặng') : ''}</div></td>
-      <td><select data-f="on"><option value="true" ${on ? 'selected' : ''}>${T('On', 'Bật')}</option><option value="false" ${on ? '' : 'selected'}>${T('Off', 'Tắt')}</option></select></td>
-      <td>${next(f) || '?'}</td><td><input type="date" data-f="date" value="${/^\d{4}/.test(r.date || '') ? r.date : ''}"></td>
-      <td><input type="number" min="0" max="60" data-f="buildup" value="${r.buildup ?? ''}" placeholder="${f.kind === 'quiet' ? 3 : 21}"></td>
+      <td data-label="${T('Now', 'Hiện')}"><select data-f="on"><option value="true" ${on ? 'selected' : ''}>${T('On', 'Bật')}</option><option value="false" ${on ? '' : 'selected'}>${T('Off', 'Tắt')}</option></select></td>
+      <td data-label="${T('Next date', 'Ngày tới')}">${next(f) || '?'}</td><td data-label="${T('Move to', 'Đổi sang ngày')}"><input type="date" data-f="date" value="${/^\d{4}/.test(r.date || '') ? r.date : ''}"></td>
+      <td data-label="${T('Decorate days before', 'Trang trí trước (ngày)')}"><input type="number" min="0" max="60" data-f="buildup" value="${r.buildup ?? ''}" placeholder="${f.kind === 'quiet' ? 3 : 21}"></td>
       <td><a class="btn small ghost" target="_blank" href="${GAME}?festival=${f.id}">${T('Preview', 'Xem thử')}</a></td></tr>`; };
   P.innerHTML = `<h2>📅 ${T('Festivals', 'Lễ hội')}</h2><p class="sub">${T('Every festival on its real date (lunar dates are worked out each year). Party festivals decorate their places for 3 weeks before, quiet days a few days. On the day: 08:00 present, 15:00 festival game, 18:30 show (17:30 for under-5s).', 'Mỗi lễ hội đúng ngày thật (ngày âm lịch tự tính mỗi năm). Lễ hội vui trang trí 3 tuần trước, ngày yên lặng vài ngày. Đúng ngày: 08:00 nhận quà, 15:00 trò chơi lễ hội, 18:30 trình diễn (17:30 cho bé dưới 5 tuổi).')}</p>
-    ${Object.entries(GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th>${T('Next date', 'Ngày tới')}</th><th>${T('Move to', 'Đổi sang ngày')}</th><th>${T('Decorate days before', 'Trang trí trước (ngày)')}</th><th></th></tr></thead><tbody>${FESTCAL.filter(f => f.group === g).map(row).join('')}</tbody></table></div>`).join('')}
+    ${liveNote()}${Object.entries(GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th>${T('Next date', 'Ngày tới')}</th><th>${T('Move to', 'Đổi sang ngày')}</th><th>${T('Decorate days before', 'Trang trí trước (ngày)')}</th><th></th></tr></thead><tbody>${FESTCAL.filter(f => f.group === g).map(row).join('')}</tbody></table></div>`).join('')}
     <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   $('#save').onclick = async () => {
     const out = {};
@@ -496,7 +561,7 @@ PAGES.children = async P => {
       $('#kids').querySelectorAll('[data-i]').forEach(c => { const p = data.profiles[+c.dataset.i]; p.name = c.querySelector('[data-n]').value.trim().slice(0, 16) || p.name; p.age = c.querySelector('[data-a]').value; });
       data.farm = data.farm || {}; data.farm.coins = Math.max(0, Math.min(99999, +$('#coins').value || 0)); data.saved = Date.now();
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'text/plain' })); a.download = 'sparkle-valley-backup-' + new Date().toISOString().slice(0, 10) + '-studio.txt'; a.click();
-      toast(T('Saved. Open it on the device: Grown-ups → Open backup.', 'Đã lưu. Mở trên máy: Người lớn → Mở bản sao.'));
+      markSaved(); toast('✅ ' + T('Saved. Open it on the device: Grown-ups → Open backup.', 'Đã lưu. Mở trên máy: Người lớn → Mở bản sao.'), 'good');
     };
   };
 };
@@ -509,10 +574,12 @@ const Q = String.raw`(?:'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|\x60(?:[^\x60\\$
 const unq = s => s.slice(1, -1).replace(/\\(['"\x60\\])/g, '$1').replace(/\\n/g, ' ');
 const PATTERNS = [String.raw`\b(?:say|sayAsync|api\.say|\.say)\(\s*(${Q})\s*,\s*(${Q})`, String.raw`\[\s*(${Q})\s*,\s*(${Q})\s*\]`, String.raw`\[\s*${Q}\s*,\s*(${Q})\s*,\s*(${Q})\s*\]`, String.raw`\bS\(\s*${Q}\s*,\s*(${Q})\s*,\s*(${Q})\s*\)`, String.raw`\b(?:fact|story|hint|about)\s*:\s*\[\s*(${Q})\s*,\s*(${Q})`];
 const CAST = { en: ['f', 'm'], vi: ['f', 'm'], zh: ['m'], hi: ['m'] };
+// (owner, 10 Oct: "Voices is slow to open") the game's files are read once while Studio is open; ↻ reads them again
+let SRC = null;
 async function allJobs() {
-  const files = await api('srcfiles'), seen = new Map();
-  for (const f of files) {
-    const src = await (await fetch(GAME + f)).text();
+  if (!SRC) { const files = await api('srcfiles'); SRC = { files: await Promise.all(files.map(async f => (await fetch(GAME + f)).text())), cities: await (await fetch(GAME + 'js/cities.js')).text() }; }
+  const seen = new Map();
+  for (const src of SRC.files) {
     for (const p of PATTERNS) { const re = new RegExp(p, 'g'); let m; while ((m = re.exec(src))) { const en = unq(m[1]).trim(), vi = unq(m[2]).trim(); if (!en || !vi || en.length < 2) continue; if (/^[a-z]{2}:/.test(en) || /^[a-z]{2}:/.test(vi)) continue; if (!VI.test(vi) && en === vi) continue; if (/^[\p{Emoji}\s✓✕+−=]+$/u.test(en)) continue; if (en.split(/\s+/).length < 2 && !/[!?.]$/.test(en)) continue; seen.set(en + '\0' + vi, [en, vi]); } }
   }
   const c = CONTENT, add = (en, vi) => { if (en || vi) seen.set((en || vi) + '\0' + (vi || en), [en || vi, vi || en]); };
@@ -523,7 +590,7 @@ async function allJobs() {
   const jobs = new Map(); const put = (lang, text) => { if (text) jobs.set(packHash(lang, text), { lang, text, ...(lang === 'en' && mixed(text) ? { runs: viRuns(text) } : {}) }); };
   for (const [en, vi] of seen.values()) { put('en', swapNames(en, 'en')); put('vi', swapNames(vi, 'vi')); }
   for (const [lang, L] of Object.entries(LEARN)) for (const w of L.words) put(lang, w[3]);
-  const cities = await (await fetch(GAME + 'js/cities.js')).text(), re = /\['([^'\\]+)', '(?:[^'\\]|\\.)*', '(?:[^'\\]|\\.)*', '(zh|hi)'\]/g; let m; while ((m = re.exec(cities))) put(m[2], m[1]);
+  const cities = SRC.cities, re = /\['([^'\\]+)', '(?:[^'\\]|\\.)*', '(?:[^'\\]|\\.)*', '(zh|hi)'\]/g; let m; while ((m = re.exec(cities))) put(m[2], m[1]);
   // lines built while playing (names, numbers, colours…): collected by tools/voice-harvest.mjs and sent from devices
   for (const l of await api('voices/extra').catch(() => [])) if (CAST[l.lang]) put(l.lang, l.text);
   // the inbox: lines the children's devices had to say with the machine voice, sent by themselves
@@ -559,7 +626,7 @@ PAGES.voices = async P => {
     const gap = engine === 'azure' ? 3200 : 0; let done = 0, errs = 0;
     for (const x of [...missing].filter(x => !only || x.asked)) {
       if (voiceStop) break; const t0 = Date.now();
-      try { await api('voice', { engine, lang: x.lang, slot: x.slot, hash: x.hash, text: x.text, runs: x.runs }); done++; missing.splice(missing.indexOf(x), 1); } catch (e) { errs++; $('#pt').textContent = '⚠️ ' + e.message; if (/key|region|Settings|Piper/.test(e.message)) break; }
+      try { await api('voice', { engine, lang: x.lang, slot: x.slot, hash: x.hash, text: x.text, runs: x.runs }); done++; missing.splice(missing.indexOf(x), 1); } catch (e) { errs++; $('#pt').textContent = '⚠️ ' + e.message; if (/key|region|Settings|Piper/.test(e.raw || e.message)) break; }
       $('#pb').style.width = (done / (done + missing.length) * 100) + '%'; $('#pt').textContent = `${done} ${T('made', 'đã tạo')}, ${missing.length} ${T('to go', 'còn lại')}${errs ? `, ${errs} ⚠️` : ''}`;
       const w = gap - (Date.now() - t0); if (w > 0) await new Promise(r => setTimeout(r, w));
     }
@@ -585,10 +652,10 @@ PAGES.voices = async P => {
   }
 };
 // ---------- publish ----------
-let jobTimer = 0;
+let jobTimer = 0, redrawWait = null;
 const watchJob = (out, done) => { clearInterval(jobTimer); jobTimer = setInterval(async () => { const j = await api('job').catch(() => ({})); if (!j.kind) return; out(j); if (j.end) { clearInterval(jobTimer); done && done(j); } }, 1000); };
 PAGES.publish = async P => {
-  const c = INFO.conf;
+  const c = INFO.conf; redrawWait = null;
   P.innerHTML = `<h2>🚀 ${T('Publish', 'Phát hành')}</h2><p class="sub">${T('Send what you changed here to the children’s devices.', 'Gửi những gì bạn đã đổi ở đây tới máy của các con.')}</p>
   ${INFO.online ? `<div class="card"><h3>🔗 ${T('How it reaches the children', 'Cách đến với các con')}</h3><p>${T('Everything you save here online waits in a draft (the “studio-draft” branch on GitHub). Publish puts all of it live as one change; Netlify updates the website in a minute or two, and each device picks it up the next time the game opens with internet.', 'Mọi thứ bạn lưu ở đây trên mạng nằm chờ trong bản nháp (nhánh “studio-draft” trên GitHub). Phát hành đưa tất cả lên cùng lúc; Netlify cập nhật trang sau một hai phút, và mỗi máy nhận khi mở game có mạng.')}</p>
     <p class="${INFO.unpublished ? 'warn' : 'ok'}">${INFO.unpublished ? '✏️ ' + T('There are saved changes waiting.', 'Có thay đổi đang chờ.') : '✅ ' + T('Nothing waiting: the website has everything.', 'Không có gì đang chờ: trang web đã có đủ.')}</p></div>` : `<div class="card"><h3>🔗 ${T('How it reaches the website', 'Cách đưa lên trang web')}</h3>
@@ -604,7 +671,7 @@ PAGES.publish = async P => {
   // online (round P): every save waits here on the website; one Publish sends them all, or drop them
   if (INFO.online && ROLE() !== 'viewer') {
     const box = document.createElement('div'); box.className = 'card'; P.querySelector('.sub').after(box);
-    const drawWait = async () => {
+    const drawWait = redrawWait = async () => {
       let files = []; try { files = (await api('pending')).files; } catch (e) { }
       const by = {}; for (const f of files) { const k = f.split('/').slice(0, 2).join('/'); by[k] = (by[k] || 0) + 1; }
       box.innerHTML = `<h3>📝 ${T('Waiting to publish', 'Đang chờ phát hành')}: ${files.length}</h3>${files.length ? `<p class="note">${Object.entries(by).map(([k, n]) => `${esc(k)} (${n})`).join(' · ')}</p>
@@ -620,11 +687,15 @@ PAGES.publish = async P => {
     ['#gpub', '#gdraft'].forEach(k => { if ($(k)) $(k).disabled = true; }); $('#gres').textContent = T('Starting…', 'Bắt đầu…'); let j0;
     const again = () => ['#gpub', '#gdraft'].forEach(k => { if ($(k)) $(k).disabled = false; });
     try { j0 = await api('github/' + what, { message: $('#gmsg').value }); } catch (e) { $('#gres').textContent = '⚠️ ' + e.message; again(); return; }
-    const show = j => { $('#gpb').style.width = (j.total ? j.done / j.total * 100 : 5) + '%'; $('#gres').textContent = `${j.done}/${j.total || '?'} · ${j.msg || ''}`; };
+    const show = j => { $('#gpb').style.width = (j.total ? j.done / j.total * 100 : 5) + '%'; $('#gres').textContent = `${j.done}/${j.total || '?'} · ${say(j.msg || '')}`; };
     const fin = j => {
       again();
       const r = j.result || {}, draft = what === 'draft';
-      $('#gres').innerHTML = j.error ? '⚠️ ' + esc(j.error) : r.changed ? `✅ ${r.changed} ${draft ? T('files saved in the draft', 'tệp đã lưu vào bản nháp') : T('files published', 'tệp đã phát hành')} · <a href="${esc(r.url)}" target="_blank">${T('see the change', 'xem thay đổi')}</a>. ${draft ? T('The website has not changed yet: press 2. Publish when you are ready.', 'Trang web chưa đổi: bấm 2. Phát hành khi bạn sẵn sàng.') : T('Netlify updates the site in a minute or two.', 'Netlify cập nhật trang sau một hai phút.')}` : '✅ ' + esc(r.note || T('Nothing new.', 'Không có gì mới.'));
+      // (owner, 10 Oct) a clear result, with what happens next
+      const next = T('Netlify updates the website in a minute or two; each child’s device gets it the next time the game opens with internet.', 'Netlify cập nhật trang web sau một hai phút; máy của mỗi con nhận được khi mở game có mạng lần tới.');
+      $('#gres').className = 'result ' + (j.error ? 'bad' : 'good');
+      $('#gres').innerHTML = j.error ? '⚠️ ' + esc(say(j.error)) : r.changed ? `✅ <b>${r.changed} ${draft ? T('files saved in the draft', 'tệp đã lưu vào bản nháp') : T('files published', 'tệp đã phát hành')}</b> · <a href="${esc(r.url)}" target="_blank">${T('see the change', 'xem thay đổi')}</a><br>${draft ? T('The website has not changed yet: press 2. Publish when you are ready.', 'Trang web chưa đổi: bấm 2. Phát hành khi bạn sẵn sàng.') : next}` : '✅ ' + esc(say(r.note || T('Nothing new.', 'Không có gì mới.')));
+      if (!j.error && !draft) { INFO.unpublished = false; INFO.waiting = 0; head(); if (redrawWait) redrawWait(); if (r.changed) toast('🚀 ' + T('Published.', 'Đã phát hành.') + ' ' + next, 'good'); }
       if (!j.error && $('#gwait')) { const waiting = draft ? (r.changed > 0 || INFO.unpublished) : false; INFO.unpublished = waiting; head(); $('#gwait').className = waiting ? 'warn' : 'ok'; $('#gwait').textContent = waiting ? '✏️ ' + T('A draft is waiting on GitHub: press Publish to put it live.', 'Có bản nháp đang chờ trên GitHub: bấm Phát hành để đưa lên.') : '✅ ' + T('No draft waiting.', 'Không có bản nháp đang chờ.'); }
     };
     if (j0.end) { show(j0); fin(j0); } else watchJob(show, fin); // online it is done straight away
@@ -669,7 +740,8 @@ PAGES.map = async P => {
     remove: T('Tap what should go. Everything inside the red circle is taken away (make the circle bigger or smaller on the right).', 'Chạm vào thứ cần bỏ. Mọi thứ trong vòng tròn đỏ sẽ bị xóa (chỉnh vòng to nhỏ ở bên phải).'),
     land: T('Drag a rectangle on the map to make it flat land for new houses, or grow a whole place on the right.', 'Kéo một hình chữ nhật trên bản đồ để làm đất bằng cho nhà mới, hoặc mở rộng cả một nơi ở bên phải.') };
   let buildType = 'tube';
-  const places = [...W.CITIES.map(c => [c.x, c.z, c.name[1], c.icon, c]), [W.VILLAGE.x, W.VILLAGE.z, 'Làng Sen', '🪷'], [W.CHINA.x, W.CHINA.z, 'China Town', '🏮'], [W.INDIA.x, W.INDIA.z, 'India Village', '🪔'], [W.HOME.x, W.HOME.z, 'Sunny Farm', '🏡'], [(W.TOWN.x0 + W.TOWN.x1) / 2, W.TOWN.roadZ, 'Two Homes Street', '🏘️', W.TOWN], [(W.MARKET.x0 + W.MARKET.x1) / 2, W.MARKET.roadZ, 'Chợ Ba Miền', '🧺', W.MARKET], [(W.AUSSIE.x0 + W.AUSSIE.x1) / 2, W.AUSSIE.roadZ, 'Aussie Corner', '🦘', W.AUSSIE]];
+  const PL = k => { const p = ALBUM_PLACES.find(x => x[0] === k); return p ? T(p[1], p[2]) : k; };
+  const places = [...W.CITIES.map(c => [c.x, c.z, T(c.name[0], c.name[1]), c.icon, c]), [W.VILLAGE.x, W.VILLAGE.z, PL('village'), '🪷'], [W.CHINA.x, W.CHINA.z, PL('china'), '🏮'], [W.INDIA.x, W.INDIA.z, PL('india'), '🪔'], [W.HOME.x, W.HOME.z, PL('home'), '🏡'], [(W.TOWN.x0 + W.TOWN.x1) / 2, W.TOWN.roadZ, PL('town'), '🏘️', W.TOWN], [(W.MARKET.x0 + W.MARKET.x1) / 2, W.MARKET.roadZ, PL('market'), '🧺', W.MARKET], [(W.AUSSIE.x0 + W.AUSSIE.x1) / 2, W.AUSSIE.roadZ, PL('aussie'), '🦘', W.AUSSIE]];
   const where = (x, z) => { if (W.heightAt(x, z) < W.WATER + .4) return ['bad', T('in the water', 'dưới nước')]; const rd = W.roadDist(x, z); if (rd.road && rd.d < rd.road.w / 2 + .8) return ['bad', T('on a road', 'giữa đường')]; return ['ok', '']; };
   const draw = () => {
     g.drawImage(mapCanvas, 0, 0, S, S); g.font = 'bold 13px Segoe UI, sans-serif'; g.textAlign = 'center';
@@ -815,13 +887,13 @@ PAGES.site = async P => {
   const n = s.netlify, g = s.github;
   P.innerHTML = `<h2>🌐 ${T('The website', 'Trang web')}</h2>
   <div class="card"><h3>☁️ Netlify ${n ? `· <a href="${esc(n.url)}" target="_blank">${esc(n.url)}</a>` : ''}</h3>
-    ${s.netlifyError ? `<p class="badtxt">⚠️ ${esc(s.netlifyError)}</p>` : !n ? `<p class="note">${T('Add your Netlify token and site in Settings to see the website here.', 'Thêm khóa Netlify và tên trang trong Cài đặt để xem trang web ở đây.')}</p>` : `
+    ${s.netlifyError ? `<p class="badtxt">⚠️ ${esc(say(s.netlifyError))}</p>` : !n ? `<p class="note">${T('Add your Netlify token and site in Settings to see the website here.', 'Thêm khóa Netlify và tên trang trong Cài đặt để xem trang web ở đây.')}</p>` : `
       <p class="note">${n.repo ? T('Built from ', 'Dựng từ ') + esc(n.repo) + ' · ' + esc(n.branch || '') : T('Not linked to GitHub (uploads only).', 'Chưa nối với GitHub (chỉ tải lên).')}</p>
       <table><tbody>${n.deploys.map(d => `<tr><td>${STATE[d.state] || '•'} ${d.live ? `<span class="pill">${T('LIVE', 'ĐANG CHẠY')}</span>` : ''}</td><td>${esc(when(d.at))}<br><span class="note">${esc(d.context === 'production' ? T('website', 'trang chính') : T('preview', 'bản xem trước'))} · ${esc(d.branch || '')} ${esc(d.commit)}</span></td><td>${esc(d.title).slice(0, 80)}${d.error ? `<br><span class="badtxt">${esc(d.error).slice(0, 120)}</span>` : ''}</td>
         <td>${d.url ? `<a href="${esc(d.url)}" target="_blank">${T('open', 'mở')}</a>` : ''} ${!d.live && d.state === 'ready' && d.context === 'production' ? `<button class="btn small ghost" data-restore="${esc(d.id)}">↩️ ${T('make this live', 'đưa bản này lên')}</button>` : ''}</td></tr>`).join('')}</tbody></table>
       <div class="row" style="margin-top:8px"><button class="btn" id="rebuild">🔄 ${T('Rebuild the website now', 'Dựng lại trang web ngay')}</button>${n.admin ? `<a class="btn ghost" href="${esc(n.admin)}" target="_blank">⚙️ ${T('Open Netlify', 'Mở Netlify')}</a>` : ''}</div>`}</div>
   <div class="card"><h3>🐙 GitHub ${g ? '· ' + esc(g.repo) : ''}</h3>
-    ${s.githubError ? `<p class="badtxt">⚠️ ${esc(s.githubError)}</p>` : !g ? `<p class="note">${T('Add your GitHub token and repository in Settings.', 'Thêm khóa GitHub và tên kho trong Cài đặt.')}</p>` : `
+    ${s.githubError ? `<p class="badtxt">⚠️ ${esc(say(s.githubError))}</p>` : !g ? `<p class="note">${T('Add your GitHub token and repository in Settings.', 'Thêm khóa GitHub và tên kho trong Cài đặt.')}</p>` : `
       <h4>📬 ${T('Updates waiting to go live (pull requests)', 'Bản cập nhật chờ đưa lên (pull request)')}</h4>
       ${g.pulls.length ? `<table><tbody>${g.pulls.map(p => `<tr><td>#${p.n}</td><td><a href="${esc(p.url)}" target="_blank">${esc(p.title)}</a><br><span class="note">${esc(p.branch)} · ${esc(when(p.at))}${p.draft ? ' · ' + T('draft', 'bản nháp') : ''}</span></td><td><a href="${esc(p.url)}" target="_blank">${T('preview & check', 'xem & kiểm tra')}</a> <button class="btn small" data-merge="${p.n}">✅ ${T('Merge (put it live)', 'Gộp (đưa lên trang)')}</button></td></tr>`).join('')}</tbody></table>` : `<p class="note">${T('None waiting.', 'Không có bản nào đang chờ.')}</p>`}
       <h4>🕘 ${T('Latest changes on', 'Thay đổi mới nhất trên')} ${esc(g.branch)}</h4>
@@ -859,10 +931,10 @@ PAGES.settings = async P => {
     <p class="note">${T('Netlify → User settings → Applications → New access token.', 'Netlify → User settings → Applications → New access token.')}</p></div>
   <div class="card"><h3>🐙 GitHub</h3><div class="row"><div><label>${T('Fine-grained token (Contents: read and write)', 'Khóa fine-grained (Contents: đọc và ghi)')} ${c.github ? '✅' : ''}</label><input type="password" id="gt" placeholder="${c.github ? T('(saved, type to replace)', '(đã lưu, gõ để thay)') : 'github_pat_…'}"></div><div><label>${T('Repository', 'Kho')}</label><input type="text" id="gr" value="${esc(c.githubRepo)}" placeholder="nguyentuanphu/Sparkle-Valley"></div><div><label>${T('Branch', 'Nhánh')}</label><input type="text" id="gb" value="${esc(c.githubBranch || 'main')}"></div></div>
     <p class="note">${T('github.com → Settings → Developer settings → Fine-grained tokens → Generate: only this repository, permissions Contents: Read and write, Pull requests: Read and write.', 'github.com → Settings → Developer settings → Fine-grained tokens → Generate: chỉ kho này, quyền Contents: Read and write và Pull requests: Read and write.')}</p></div>
-  <div class="card"><h3>📊 ${T('Players and the online Studio', 'Người chơi và Studio trên mạng')}</h3><div class="row"><div><label>${T('The game’s website', 'Trang web của game')}</label><input type="text" id="su" value="${esc(c.siteUrl)}" placeholder="https://sparklevalley.netlify.app"></div><div><label>${T('Studio key (made online: Setup → Security)', 'Khóa Studio (tạo trên mạng: Cài đặt → Bảo mật)')} ${c.players ? '✅' : ''}</label><input type="password" id="sp" placeholder="${c.players ? T('(saved, type to replace)', '(đã lưu, gõ để thay)') : 'svk.…'}"></div></div>
+  <div class="card"><h3>📊 ${T('Players and the online Studio', 'Người chơi và Studio trên mạng')}</h3><div class="row"><div><label>${T('The game’s website', 'Trang web của game')}</label><input type="text" id="su" value="${esc(c.siteUrl)}" placeholder="https://sparklevalley.netlify.app"></div><div><label>${T('Studio key (made online: Setup → Security)', 'Khóa Studio (tạo trên mạng: Thiết lập → Bảo mật)')} ${c.players ? '✅' : ''}</label><input type="password" id="sp" placeholder="${c.players ? T('(saved, type to replace)', '(đã lưu, gõ để thay)') : 'svk.…'}"></div></div>
     <p class="note">${T('The same Studio is online at the website’s /studio/ page (sign in there with your password and the code from your authenticator app). This computer uses a Studio key instead: the Analytics page and the family photos (they go to the website’s private store, never into the game folder) reach the website with it.', 'Studio này cũng có trên mạng ở trang /studio/ của trang web (đăng nhập ở đó bằng mật khẩu và mã từ ứng dụng xác thực). Máy này dùng khóa Studio: trang Phân tích và ảnh gia đình (gửi vào kho riêng của trang web, không bao giờ vào thư mục game) đến trang web bằng khóa này.')}</p></div>
   <div class="bar"><button class="btn ghost" id="forget">🗑️ ${T('Forget the keys', 'Xóa các khóa')}</button><button class="btn" id="save">💾 ${T('Save settings', 'Lưu cài đặt')}</button></div>`;
-  $('#save').onclick = async () => { try { await api('settings', { gameDir: $('#gd').value, azureKey: $('#ak').value, azureRegion: $('#ar').value, piperExe: $('#pe').value, piperModels: { en: $('#pen').value.trim(), vi: $('#pvi').value.trim() }, netlifyToken: $('#nt').value, netlifySite: $('#ns').value, githubToken: $('#gt').value, githubRepo: $('#gr').value, githubBranch: $('#gb').value, siteUrl: $('#su').value, studioKey: $('#sp').value }); toast(T('Settings saved.', 'Đã lưu cài đặt.')); render(true); } catch (e) { fail(e); } };
+  $('#save').onclick = async () => { try { await api('settings', { gameDir: $('#gd').value, azureKey: $('#ak').value, azureRegion: $('#ar').value, piperExe: $('#pe').value, piperModels: { en: $('#pen').value.trim(), vi: $('#pvi').value.trim() }, netlifyToken: $('#nt').value, netlifySite: $('#ns').value, githubToken: $('#gt').value, githubRepo: $('#gr').value, githubBranch: $('#gb').value, siteUrl: $('#su').value, studioKey: $('#sp').value }); markSaved(); toast('✅ ' + T('Settings saved.', 'Đã lưu cài đặt.'), 'good'); render(true); } catch (e) { fail(e); } };
   $('#forget').onclick = async () => { if (!confirm(T('Forget the Azure, Netlify and GitHub keys on this computer?', 'Xóa khóa Azure, Netlify và GitHub trên máy này?'))) return; await api('settings', { forget: ['azureKey', 'netlifyToken', 'githubToken', 'studioKey'] }); toast(T('Keys forgotten.', 'Đã xóa khóa.')); render(); };
 };
 // ---------- players: how many children play (anonymous counts from the website, netlify/lib/players.mjs) ----------
@@ -876,6 +948,7 @@ PAGES.players = async P => {
   const table = (o, name) => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<tr><td>${esc(name ? name(k) : k)}</td><td>${n}</td><td>${pct(n, tw)}</td></tr>`).join('');
   // round L: names for games and places from the game itself; each device with its children, problems, suggestions
   let GN = {}, PN = {};
+  await gameLang();
   try { await import(GAME + 'js/games/all.js'); const { GAMES } = await import(GAME + 'js/games/registry.js'); for (const [id, g] of Object.entries(GAMES)) GN[id] = `${g.icon} ${g.name()}`; } catch (e) { }
   try { const W = await import(GAME + 'js/world.js'); for (const [id, f] of Object.entries(W.REGION_NAMES || {})) PN[id] = typeof f === 'function' ? f() : String(f); } catch (e) { }
   // how long ago a device was last on the screen (round O)
@@ -963,7 +1036,7 @@ function bindMine(P) { const b = P.querySelector('#chg'); if (b) b.onclick = asy
 PAGES.security = async P => {
   const { keys } = await api('keys/list');
   P.innerHTML = `<h2>🛡️ ${T('Security', 'Bảo mật')}</h2><p class="sub">${T('Everyone signs in with their password (12 characters or more), and, unless the owner chose password only for them in Admins, the 6-digit code of an authenticator app on their phone. Ten wrong tries lock signing in for 15 minutes.', 'Mọi người đăng nhập bằng mật khẩu (từ 12 ký tự), và nếu chủ không chọn “chỉ mật khẩu” cho họ ở Quản trị viên, thêm mã 6 số của ứng dụng xác thực trên điện thoại. Sai mười lần thì khóa đăng nhập 15 phút.')}</p>
-  <div class="card"><h3>📱 ${T('Two-step sign-in', 'Đăng nhập hai bước')}</h3><p class="note">${T('Each person sets it up at their first sign-in. For someone with a new phone: Setup → Admins → New phone. For the owner: change STUDIO_PASSWORD in Netlify, deploy, and set it up again at the next sign-in.', 'Mỗi người cài đặt ở lần đăng nhập đầu tiên. Ai đổi điện thoại: Cài đặt → Quản trị viên → Điện thoại mới. Với chủ: đổi STUDIO_PASSWORD trong Netlify, deploy, rồi cài lại khi đăng nhập lần tới.')}</p></div>
+  <div class="card"><h3>📱 ${T('Two-step sign-in', 'Đăng nhập hai bước')}</h3><p class="note">${T('Each person sets it up at their first sign-in. For someone with a new phone: Setup → Admins → New phone. For the owner: change STUDIO_PASSWORD in Netlify, deploy, and set it up again at the next sign-in.', 'Mỗi người cài đặt ở lần đăng nhập đầu tiên. Ai đổi điện thoại: Thiết lập → Quản trị viên → Điện thoại mới. Với chủ: đổi STUDIO_PASSWORD trong Netlify, deploy, rồi cài lại khi đăng nhập lần tới.')}</p></div>
   <div class="card"><h3>🚪 ${T('Sign everyone out', 'Đăng xuất mọi người')}</h3><p class="note">${T('Every sign-in on every device ends, yours too, and every Studio key below stops working. Use it if a phone or computer was lost.', 'Mọi phiên đăng nhập trên mọi máy kết thúc, cả của bạn, và mọi khóa Studio bên dưới ngừng hoạt động. Dùng khi mất điện thoại hay máy tính.')}</p><button class="btn" id="allout">🚪 ${T('Sign everyone out', 'Đăng xuất mọi người')}</button></div>
   <div class="card"><h3>🔑 ${T('Keys for SparkleStudio.exe', 'Khóa cho SparkleStudio.exe')}</h3><p class="note">${T('The family computer’s Studio reaches the website with a key instead of signing in: the Analytics, the missing lines and the family photos, nothing else. Make one, paste it into SparkleStudio.exe → Settings; it is shown only once.', 'Studio trên máy tính gia đình đến trang web bằng khóa thay vì đăng nhập: Phân tích, câu còn thiếu và ảnh gia đình, không gì khác. Tạo khóa, dán vào SparkleStudio.exe → Cài đặt; khóa chỉ hiện một lần.')}</p>
     <table class="mini"><tbody>${keys.map(k => `<tr data-id="${esc(k.id)}"><td><b>${esc(k.label)}</b></td><td class="note">${esc(whenAEST(k.at))} · ${esc(k.by)}</td><td><button class="btn small ghost" data-krm>🗑️</button></td></tr>`).join('') || `<tr><td class="note">${T('No keys yet.', 'Chưa có khóa nào.')}</td></tr>`}</tbody></table>
@@ -995,15 +1068,17 @@ function signIn() {
       $('#sires').textContent = T('Type the code from the app, then Sign in.', 'Gõ mã từ ứng dụng, rồi Đăng nhập.'); $('#code').value = ''; $('#code').focus(); return; }
     if (r.ok) { render(true); return; }
     if (j.step === 'code') $('#code').focus();
-    $('#sires').textContent = '⚠️ ' + (j.error || r.status); };
+    $('#sires').textContent = '⚠️ ' + say(j.error || r.status); };
   $('#nm').focus();
 }
-window.addEventListener('hashchange', () => { const k = route(); if (k !== cur) { cur = k; render(); } });
+// (the browser's Back button, or a typed address: a page with changes not saved asks first, and stays if you say no)
+let HASH = location.hash;
+window.addEventListener('hashchange', () => { const k = route(); if (k === cur) { HASH = location.hash; return; } if (!leaveOk()) { history.replaceState(null, '', HASH || '#'); return; } HASH = location.hash; cur = k; render(); });
 render();
 // keep the Studio running while this window is open; ⏻ stops it
 setInterval(() => { if (INFO && !INFO.online) fetch(BASE + '/api/ping').catch(() => { }); }, 20000);
 $('#quit').onclick = async () => {
-  if (!confirm(T('Close Sparkle Studio?', 'Đóng Sparkle Studio?'))) return;
+  if (!leaveOk() || !confirm(T('Close Sparkle Studio?', 'Đóng Sparkle Studio?'))) return;
   await fetch(BASE + '/api/quit', { method: 'POST' }).catch(() => { });
   document.body.innerHTML = `<main><div class="card"><h2>👋 ${T('Sparkle Studio is closed.', 'Đã đóng Sparkle Studio.')}</h2><p class="sub">${T('You can close this window. Double-click SparkleStudio.exe to open it again.', 'Bạn có thể đóng cửa sổ này. Bấm đúp SparkleStudio.exe để mở lại.')}</p></div></main>`;
   window.close();
