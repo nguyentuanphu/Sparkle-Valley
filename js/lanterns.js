@@ -104,7 +104,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   // chapter 2: Hà Nội's places (the Thê Húc bridge, Tèo, Cô Tam and Bà Năm there for Trung Thu, the stone turtles, the
   // clues) and its words, loaded the first time a child playing has found chapter 1's lantern
   const loadHanoi = () => hanoiLoading || (hanoiLoading = import('./content/chapter2hanoi.js').then(M => {
-    hanoi = M.createHanoi(G, { current, isOn, A, st, big, say, save, dialog, reward, actions, finish: (h, id) => finish(h, id), companions: () => companions });
+    hanoi = M.createHanoi(G, { current, isOn, A, st, big, gamesOf, say, save, dialog, reward, actions, finish: (h, id) => finish(h, id), companions: () => companions });
     Object.assign(spots, hanoi.spots);
     G.landmarksStory.thehuc = { x: hanoi.front[0], z: hanoi.front[1] };
     places.ch2 = { front: hanoi.front, lanternAt: hanoi.lanternAt, rope: hanoi.rope, paint: hanoi.paint, after: () => hanoi.startParade(), film: () => import('./content/chapter2films.js') };
@@ -161,7 +161,6 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
   const revealed = p => !!A(p).found;
   // the lantern shows once the child has looked in the right place (lotus leaves in chapter 1, clue spots in chapter 2)
   const revealedFor = (p, s) => s.leaves ? revealed(p) : s.clues ? !!hanoi && hanoi.revealed(p) : true;
-  const jobbing = new Set();
   const liftLeaf = (h, L) => {
     const a = A(h.profile); a.lifted = a.lifted || []; if (!a.lifted.includes(L.k)) a.lifted.push(L.k);
     L.lift = 1;
@@ -216,16 +215,8 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
         } });
     }
     // (chapter 2's places come later: its buttons wait for them)
-    const pl = () => places[ch.id], near = () => (spots[s.at] && spots[s.at]()) || { x: NaN, z: NaN }, ready = () => !!spots[s.at];
-    // Tèo's challenge: his line, then Play, How to play (the guide film) or Later
-    if (s.challenge) G.interactables.push({ id: 'story_' + s.id, get x() { return near().x + .8; }, get z() { return near().z + .8; }, r: 3, icon: s.icon, label: () => T(s.en, s.vi), visible: h => ready() && isOn(h.profile, s.id),
-      act: h => G.kidTalk(h, gamesOf(h.profile, s)[0], 'Tèo', big(h.profile) ? s.challenge.big : s.challenge.little) });
-    // a job with the hand controls (Bà Lan's bún chả)
-    if (s.job) G.interactables.push({ id: 'story_' + s.id, get x() { return near().x; }, get z() { return near().z; }, r: 3, icon: s.icon, label: () => T(s.en, s.vi), visible: h => ready() && isOn(h.profile, s.id) && !jobbing.has(h.profile),
-      act: async h => { if (jobbing.has(h.profile)) return; jobbing.add(h.profile); try { await hanoi.job(h); finish(h, s.id); } catch (e) { if (e !== QUIT) throw e; } finally { jobbing.delete(h.profile); G.paused = false; } } });
-    // Cô Tam's lesson: she starts it, then the child counts the stone turtles (js/content/chapter2hanoi.js)
-    if (s.lesson) G.interactables.push({ id: 'story_' + s.id, get x() { return near().x + .8; }, get z() { return near().z + .8; }, r: 3, icon: s.icon, label: () => T(s.en, s.vi), visible: h => ready() && isOn(h.profile, s.id) && !A(h.profile).lesson,
-      act: h => hanoi.lesson(h) });
+    const pl = () => places[ch.id];
+    // (chapter 2's challenge, job and lesson buttons come with its places: js/content/chapter2hanoi.js)
     if (s.find) G.interactables.push({ id: 'story_' + s.id, get x() { return pl() ? pl().lanternAt[0] : NaN; }, get z() { return pl() ? pl().lanternAt[1] : NaN; }, r: 2.6, icon: '🏮', label: () => T('Pick up the lantern', 'Nhặt đèn lồng lên'), visible: h => !!pl() && isOn(h.profile, s.id) && (!actions() || revealedFor(h.profile, s)),
       act: h => { st(h.profile).carrying = ch.id; say(`You found it! ${COMPANIONS[st(h.profile).companion || 'firefly'].name} will carry the lantern.`, `Tìm thấy rồi! ${COMPANIONS[st(h.profile).companion || 'firefly'].name} sẽ mang đèn lồng giúp con.`); finish(h, s.id); } });
     if (s.hang) G.interactables.push({ id: 'story_' + s.id, get x() { return pl() ? pl().front[0] : NaN; }, get z() { return pl() ? pl().front[1] : NaN; }, r: 3.4, icon: '🏮', label: () => T('Hang the lantern', 'Treo đèn lồng'), visible: h => !!pl() && isOn(h.profile, s.id) && !hanging.has(h.profile),

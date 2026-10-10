@@ -685,8 +685,10 @@ await check('festcal', async () => {
     // the calendar on the Pad
     __sv.openPad(0, 'cal'); await new Promise(r => setTimeout(r, 500));
     out.rows = document.querySelectorAll('.pad .fcal-row').length; document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.paused = false;
-    // Halloween: knock at five doors for a pumpkin lantern
-    const h = __sv.heroes[0]; __sv.festivals.visit(0, 'halloween'); await new Promise(r => setTimeout(r, 2500));
+    // Halloween: knock at five doors for a pumpkin lantern (owner, 10 Oct: children cannot start a festival, so the check
+    // has an admin schedule it for today in Studio, as a grown-up would)
+    const h = __sv.heroes[0], C = (await import('/js/custom.js')).CUSTOM, d = new Date(), ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    C.releases = { ...(C.releases || {}), fest_halloween: { on: true, start: ymd, days: 1 } }; __sv.festivals.rebuild(); await new Promise(r => setTimeout(r, 2500));
     document.querySelectorAll('.dialog, .reward, .modal').forEach(e => e.remove());
     const doors = __sv.interactables.filter(i => i.id.startsWith('trick_')); out.doors = doors.length;
     for (const d of doors.slice(0, 5)) { d.act(h); await new Promise(r => setTimeout(r, 100)); document.querySelectorAll('.reward').forEach(e => e.click()); }
@@ -702,6 +704,64 @@ await check('festcal', async () => {
   ok(r.rows >= 10, 'calendar rows: ' + r.rows); ok(r.doors >= 5, 'pumpkin doors: ' + r.doors); ok(r.keepsake && r.treats === 5, 'no pumpkin lantern after 5 treats');
   ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
   return `build-up from 3 weeks before (stage 1→4), Halloween and Diwali at once, quiet days ${'3'} days before, ${r.rows} festivals coming up on the calendar, ${r.doors} pumpkin doors, a pumpkin lantern after 5 treats`;
+});
+
+await check('festivals', async () => {
+  // (Play core, owner 10 Oct) festivals come only in their season (from 3 weeks before) or when an admin schedules them in
+  // Studio; a child cannot start one (the calendar only tells about it); a festival decorates its whole place: pieces
+  // along every street, more each week, never on a road, a city street or a place's own street.
+  const P = await open(b, { w: 1180, h: 820 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, F = await import('/js/festivals.js'), W = await import('/js/world.js'), C = (await import('/js/custom.js')).CUSTOM, { FESTCAL } = await import('/js/content/festcal.js');
+    const wait = ms => new Promise(r => setTimeout(r, ms)), out = {};
+    // a festival out of its season: the calendar tap tells about it and starts nothing
+    const far = F.upcoming().filter(n => n.daysTo > 30).pop(); out.far = far && far.F.id;
+    G.festivals.visit(0, far.F.id); await wait(800);
+    out.toldDays = (document.querySelector('.dialog .dtext') || {}).textContent || '';
+    document.querySelectorAll('.dialog').forEach(e => e.remove()); G.paused = false;
+    out.startedByChild = G.festivals.active().some(a => a.F.id === far.F.id) || G.interactables.some(i => i.id === 'festival_' + far.F.id);
+    __sv.openPad(0, 'cal'); await wait(500); out.calNote = (document.querySelector('.pad .note') || {}).textContent || ''; document.querySelectorAll('.modal').forEach(e => e.remove()); G.paused = false;
+    // an admin schedules it for today in Studio: it is on, with its table
+    const d = new Date(), ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    C.releases = { ...(C.releases || {}), ['fest_' + far.F.id]: { on: true, start: ymd, days: 1 } }; G.festivals.rebuild(); await wait(300);
+    out.adminOn = G.festivals.active().some(a => a.F.id === far.F.id && a.on) && G.interactables.some(i => i.id === 'festival_' + far.F.id);
+    delete C.releases['fest_' + far.F.id]; G.festivals.rebuild(); await wait(300);
+    out.adminOff = !G.festivals.active().some(a => a.F.id === far.F.id);
+    // whole places: every festival place with streets gets pieces spread along them, more each week
+    const places = [...new Set(FESTCAL.flatMap(f => f.where))], bad = [], sizes = {};
+    const streetOf = (x, z) => { for (const c of W.CITIES) if (c.layout && x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && Math.abs((x - c.x) * Math.cos(c.layout.toward) - (z - c.z) * Math.sin(c.layout.toward)) < 2.6 + 1.5) return c.id; return null; };
+    const inner = [['town', W.TOWN, 6, 44, 3.5], ['aussie', W.AUSSIE, W.AUSSIE.x0, W.AUSSIE.x1, 3.5], ['market', W.MARKET, W.MARKET.x0, W.MARKET.x1, 4]];
+    for (const key of places) {
+      const f = FESTCAL.find(x => x.where.includes(key) && x.kind === 'party'); if (!f) continue;
+      const s1 = G.festivals.plan(key, f.id, 1), s2 = G.festivals.plan(key, f.id, 2), s4 = G.festivals.plan(key, f.id, 4), all = G.festivals.streetSpots(key);
+      sizes[key] = [s1.length, s2.length, s4.length, all.length];
+      if (all.length < 6) continue; // (a place without streets keeps its ring of pieces round the middle)
+      if (!(s1.length > 0 && s1.length < s2.length && s2.length < s4.length)) bad.push(`${key}: not more each week (${s1.length}, ${s2.length}, ${s4.length})`);
+      // spread over the whole place, not bunched: the pieces reach far apart
+      let span = 0; for (const a of s4) for (const q of s4) span = Math.max(span, Math.hypot(a.x - q.x, a.z - q.z));
+      const o = { ...W.CITIES.reduce((m, c) => (m[c.id] = c, m), {}), village: W.VILLAGE, china: W.CHINA, india: W.INDIA, aussie: W.AUSSIE, town: W.TOWN, market: W.MARKET, home: W.HOME }[key];
+      const size = o.x0 != null ? Math.hypot(o.x1 - o.x0, o.z1 - o.z0) : (o.r || 24) * 2;
+      if (span < size * .4) bad.push(`${key}: pieces bunched in ${span.toFixed(0)} m of a ${size.toFixed(0)} m place`);
+      for (const q of all) { const rd = W.roadDist(q.x, q.z); if (rd.road && rd.d < rd.road.w / 2 + 1.5) bad.push(`${key}: a piece on a road at ${q.x},${q.z}`);
+        const st = streetOf(q.x, q.z); if (st) bad.push(`${key}: a piece on ${st}'s main street`);
+        for (const [k, b, x0, x1, hw] of inner) if (q.x > x0 && q.x < x1 && Math.abs(q.z - b.roadZ) < hw + 1.5) bad.push(`${key}: a piece on ${k}'s street`);
+        if (W.heightAt(q.x, q.z) < W.WATER + .3) bad.push(`${key}: a piece in the water`); }
+    }
+    out.bad = bad.slice(0, 6); out.sizes = sizes;
+    return out;
+  });
+  const out = [];
+  if (r.startedByChild) out.push(`a child's tap started ${r.far}`);
+  if (!/\d/.test(r.toldDays)) out.push(`the calendar tap did not say how many days to ${r.far}: "${r.toldDays}"`);
+  if (/visit it now/i.test(r.calNote)) out.push('the calendar still says "visit it now"');
+  if (!r.adminOn) out.push(`an admin's schedule did not start ${r.far}`);
+  if (!r.adminOff) out.push(`${r.far} stayed on after the admin's schedule was removed`);
+  out.push(...r.bad);
+  if (P.errors.length) out.push(...P.errors.slice(0, 2));
+  await P.ctx.close();
+  if (out.length) throw new Error(out.join('; '));
+  const z = Object.entries(r.sizes).filter(([, v]) => v[3] >= 6);
+  return `${r.far} out of season: told the days, not started by a child; on when an admin schedules it, off again after; ${z.length} places decorated along their streets (week 1 → day: ${z.map(([k, v]) => `${k} ${v[0]}→${v[2]}`).join(', ')}), none on a road or street`;
 });
 
 await check('films', async () => {

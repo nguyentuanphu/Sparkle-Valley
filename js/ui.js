@@ -506,7 +506,7 @@ export function festCalendarHTML(game) {
     return `<button class="fcal-row ${gr}${ready ? ' ready' : ''}" data-fest="${n.F.id}"><span class="fi">${pic(n.F.icon)}</span><b>${esc(T(n.F.en, n.F.vi))}${n.isNew ? ` <i class="newtag">${T('New', 'Mới')}</i>` : ''}</b><small>${dayLabel(n.start)}</small><em>${n.daysTo === 1 ? T('tomorrow', 'ngày mai') : T(`in ${n.daysTo} days`, `còn ${n.daysTo} ngày`)}${ready ? ' · ' + T('getting ready', 'đang trang trí') : ''}</em></button>`; };
   return `${today.length ? `<h3>${T('Today', 'Hôm nay')}</h3>${today.map(card).join('')}` : ''}
     <h3>${T('Coming up', 'Sắp tới')}</h3><div class="fcal-list">${soon.map(row).join('')}</div>
-    <p class="note">${T('Tap one to visit it now: the village decorates and you get a festival present.', 'Chạm vào một lễ hội để đến ngay: làng trang trí và con nhận quà lễ hội.')}</p>`;
+    <p class="note">${T('Tap one to hear about it. Each festival comes by itself on its days, and its places decorate from three weeks before.', 'Chạm vào một lễ hội để nghe kể về lễ hội đó. Mỗi lễ hội tự đến vào đúng ngày, và nơi tổ chức trang trí từ ba tuần trước.')}</p>`;
 }
 
 // choose a festival to visit (any day of the year)
