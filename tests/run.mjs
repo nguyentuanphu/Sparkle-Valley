@@ -2436,6 +2436,64 @@ await check('knock', async () => {
   return `code ${code} shown as digits and 6 animals (no QR code); typed on the animal pad, knocked with the microphone off and nothing heard; "No thanks" sent them away; a stranger's moves without knocking ignored; another child typed the numbers and was let in`;
 });
 
+await check('offline', async () => {
+  // (Analytics & Infra, 10 Oct, owner: "cant even play offline when there is no internet connection") once the game is
+  // saved on the device (service worker), it starts and plays with no connection, and with a connection that never
+  // answers (Wi-Fi with no internet): nothing at start may wait on the network. The game is served here from its own
+  // little server on 127.0.0.2 (the game skips its service worker on localhost) that can stop answering.
+  const http = await import('http'), path = await import('path');
+  const root = path.resolve('..'), TY = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.woff2': 'font/woff2' };
+  let hang = false;
+  const srv = http.createServer((q, r) => {
+    if (hang) return;
+    let f = decodeURIComponent(q.url.split('?')[0]); if (f.endsWith('/')) f += 'index.html'; f = path.join(root, f);
+    if (!f.startsWith(root) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { r.writeHead(404); return r.end(); }
+    r.writeHead(200, { 'Content-Type': TY[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache' }); fs.createReadStream(f).pipe(r);
+  });
+  await new Promise(res => srv.listen(0, '127.0.0.2', res));
+  try {
+    const url = `http://127.0.0.2:${srv.address().port}/`;
+    const P = await open(b, { w: 390, h: 760, touch: true, url, play: false });
+    await P.page.waitForFunction(async () => { const r = await navigator.serviceWorker.getRegistration(); return !!(r && r.active); }, null, { timeout: 120000 });
+    await P.page.waitForTimeout(1000);
+    const again = async () => { const t0 = Date.now(); await P.page.reload({ timeout: 30000 }).catch(() => { }); const got = await P.page.waitForSelector('.screen.title', { timeout: Math.max(1000, 30000 - (Date.now() - t0)) }).then(() => true, () => false); return got ? Date.now() - t0 : -1; };
+    const saved = await again();
+    await P.ctx.setOffline(true); const off = await again();
+    // offline the whole way in: Who's playing?, into the valley
+    let played = false; if (off > 0) { await start(P.page); played = await P.page.evaluate(() => window.__sv.heroes.length === 1); }
+    await P.ctx.setOffline(false);
+    hang = true; const none = await again(); hang = false;
+    const errs = P.errors.filter(e => !/Failed to fetch|NetworkError|ERR_INTERNET_DISCONNECTED|aborted/i.test(e)); await P.ctx.close();
+    ok(saved > 0 && off > 0 && played && none > 0 && none < 15000 && !errs.length, JSON.stringify({ saved, off, played, none, errs }));
+    return `first screen: saved ${(saved / 1000).toFixed(1)} s, offline ${(off / 1000).toFixed(1)} s (played into the valley), connection that never answers ${(none / 1000).toFixed(1)} s`;
+  } finally { srv.closeAllConnections(); srv.close(); }
+});
+
+await check('nostudio', async () => {
+  // (10 Oct, owner: "Parents or users wont know what Sparkle Studio is and this is for admin so it should not be mentioned
+  // anywhere at all") Grown-ups with every group open, the parents' pages and every Pad tab never name Studio
+  const P = await open(b, { w: 1024, h: 768 }); await clear(P.page);
+  const bad = await P.page.evaluate(async () => {
+    const w = ms => new Promise(r => setTimeout(r, ms)), out = [], C = (await import('/js/custom.js')).CUSTOM;
+    C.missions = [{ id: 'fam1', en: 'Water the plants', vi: 'Tưới cây' }];
+    const look = (where, root) => { const t = [root.textContent, ...[...root.querySelectorAll('[title],[aria-label],[placeholder],[alt]')].flatMap(e => [e.title, e.getAttribute('aria-label'), e.placeholder, e.alt])].join(' '); const m = t.match(/.{0,40}studio.{0,40}/i); if (m) out.push(where + ': ' + m[0]); };
+    for (const lang of ['en', 'vi']) {
+      const S = await import('/js/state.js'); S.settings.lang = lang;
+      const { openGrownups } = await import('/js/ui.js'); openGrownups(() => { }); await w(500);
+      const g = document.querySelector('.modal.grownups'); g.querySelectorAll('details').forEach(d => { d.open = true; }); look(lang + ' Grown-ups', g);
+      document.querySelectorAll('.modal').forEach(e => e.remove());
+      const G = window.__sv; if (G.parents && G.parents.grownupsHTML) { const d = document.createElement('div'); d.innerHTML = G.parents.grownupsHTML(true); look(lang + ' parents', d); }
+      G.openPad(0, 'map'); await w(400);
+      for (const t of [...document.querySelectorAll('.pad-tabs [data-t]')].map(x => x.dataset.t)) { document.querySelector(`.pad-tabs [data-t="${t}"]`).click(); await w(250); const pad = document.querySelector('.pad, .sparkpad, .pad-body'); if (pad) look(lang + ' pad-' + t, pad.closest('.modal') || pad); }
+      document.querySelectorAll('.modal, .pad').forEach(e => e.remove()); window.__sv.paused = false;
+    }
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!bad.length && !errs.length, JSON.stringify({ bad, errs }));
+  return 'Grown-ups (every group open), the parents\' pages and every Pad tab, English and Vietnamese: Studio never named';
+});
+
 await check('onlineoff', async () => {
   // PRIV-006 (round R privacy, 9 Oct, owner): a fresh device has online play off. The Friends tab says so with no Start or
   // Join, Net makes no connection (no PeerJS, no cloud relay, no friends' status), and Grown-ups turns it on.
