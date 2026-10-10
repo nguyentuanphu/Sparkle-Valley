@@ -300,9 +300,16 @@ road colours as tinted asphalt (`docs/cores/release.md`, Owner's decisions).
   with a footpath); no crossing rafts (Concept D lists none). The raft's roof is 0.4 m lower, the harbour ferry has no flag,
   so both pass under every deck.
 - Checks: new `bridges` (RIVER-004), `boats` (RIVER-002/005/006), `roadtone` (ROAD-014); rules added to ARCHITECTURE §9.
-- Speed: crop plants and fruit bushes are drawn as two pieces each (home 1,094 draws, village 690 / 695k triangles). The
-  world builds about 0.9 s slower than r56 (6.8–7.0 s against 5.9–6.1 s side by side; limit 7.4 s): more water, bridges and
-  roads in every height look-up.
+- Speed: crop plants and fruit bushes are drawn as two pieces each (home 1,094 draws, village 690 / 695k triangles). More
+  water, bridges and roads make every height look-up about a quarter slower; the ground's slope colours now read the next
+  grid points instead of two extra look-ups per point (about 0.2 s saved, the same colours in the sky view). Measured side
+  by side late on 10 Oct (the test machine was slower than when the baseline was set): r56 6.8–7.8 s, r57 6.8–8.2 s, so
+  r57 is about 0.3 s slower than r56; the limit is 7.4 s (5.9 s + 25 %) and a run can pass or fail it on noise alone (the
+  shader compile in the test browser wanders by up to 0.8 s). Lowering it for real is the start-up brief
+  (`tasks/infra-speed.md`).
+- Found by the full suite on the evening of 10 Oct: the `parents` check set the clock to 19:40 AEST on 10 Oct but
+  compared the snooze with the real clock, so it failed after 19:50 AEST that day; it now checks the snooze is exactly
+  10 minutes after the clock it set (as strict as before).
 - Found by the full suite, fixed: the new water reached the colours shrine (Brisbane River), the lake tower (Sông Hồng's
   mouth), a Leafy (the Yarra) and two pickups (beside Mỹ Sơn and Phong Nha after they moved): each moved a few metres onto
   dry ground; Hồ Gươm has a real islet (`islet` in the map) for the Turtle Tower; Thê Húc's temple stands on the shore;
