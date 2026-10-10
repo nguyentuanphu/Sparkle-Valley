@@ -238,32 +238,9 @@ export class Hero {
     // shooting up over the hill, which swung the whole picture up and down
     if (!close && !this.ferry) for (let tt = 1; tt >= .3; tt -= .1) { const x = target.x + (want.x - target.x) * tt, z = target.z + (want.z - target.z) * tt, y = target.y + (want.y - target.y) * tt;
       if (this.world.groundAt(x, z) + .7 > y) k = Math.max(.3, tt - .12); }
-    const bx = this.world.boxes; if (bx && bx.length && !close) {
-      const dx = want.x - target.x, dz = want.z - target.z; let tmin = 1;
-      for (const b of bx) {
-        if (target.x > b.x0 && target.x < b.x1 && target.z > b.z0 && target.z < b.z1) continue;
-        let t0 = 0, t1 = 1;
-        for (const [o, d, lo, hi] of [[target.x, dx, b.x0 - .3, b.x1 + .3], [target.z, dz, b.z0 - .3, b.z1 + .3]]) {
-          if (Math.abs(d) < 1e-6) { if (o < lo || o > hi) { t0 = 2; break; } continue; }
-          let a = (lo - o) / d, c = (hi - o) / d; if (a > c) [a, c] = [c, a];
-          t0 = Math.max(t0, a); t1 = Math.min(t1, c); if (t0 > t1) break;
-        }
-        if (t0 <= t1 && t0 < tmin) tmin = t0;
-      }
-      if (tmin < 1) { k = Math.max(.3, tmin - .04); lift = 1; }
-    }
-    // anything big and solid (houses, landmarks, boats…) between the child and the camera
-    const bl = game.camBlockers && !close ? game.camBlockers() : null;
-    if (bl && bl.length) {
-      _dir.subVectors(want, target); const full = _dir.length(); _dir.divideScalar(full || 1);
-      _ray.set(target, _dir); _ray.far = full + .8;
-      // check both sides of every surface (roof overhangs and walls seen from inside count too)
-      const mats = game.camBlockerMats(); mats.forEach(m => { m._side = m.side; m.side = THREE.DoubleSide; });
-      const hit = _ray.intersectObjects(bl, false)[0];
-      mats.forEach(m => { m.side = m._side; });
-      if (hit) { k = Math.min(k, Math.max(1.6, hit.distance - .8) / (full || 1)); lift = 1; }
-      this._camHitRay = !!hit;
-    }
+    // (bug #33) houses, stalls, trees and other solid things between the child and the camera no longer pull the camera in:
+    // they fade to see-through instead (js/seethrough.js), and the camera stays where it is
+    if (!close && game.seeThrough) game.seeThrough.mark(target, want);
     if (close) { this._camK = 1; this._camLift = 0; this._camFreeT = 0; }
     else {
       const ck = this._camK == null ? k : this._camK;
