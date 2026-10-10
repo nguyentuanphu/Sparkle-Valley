@@ -23,6 +23,7 @@ Keep this file current in the same round as any change to hosting, servers, keys
 | **Sparkle Studio exe** | The same dashboard on Windows | `SparkleStudio.exe` → local server 127.0.0.1:7777 | `studio/studio.cjs` + `studio/core.cjs` + `studio/ui/` (built by `studio/build-exe.sh`) |
 | **Online play** | Rooms of up to 6, voice, friends | Peer-to-peer (PeerJS/WebRTC) + public MQTT brokers as the cloud relay | `js/net.js`, `js/relay.js`, `js/roomcode.js` |
 | **Google Drive mirror** | A second source of truth: every pushed branch, copied file by file | GitHub Action `drive-mirror.yml` (rclone) → the owner's Drive folder "Sparkle Valley" / "GitHub mirror" / branch | `.github/workflows/drive-mirror.yml` (secrets `RCLONE_CONF`, `DRIVE_FOLDER_ID`) |
+| **Bug robot** | Every 30 minutes it picks up open GitHub issues labelled `bug` plus a core label; small bugs are fixed and pushed to their own `bugfix/<core>-<issue>` branch with a draft pull request, big bugs get a plan and wait for the owner's "go"; it never pushes to `main` (see `docs/cores/front-desk.md`) | GitHub Action `bug-fixer.yml` | `.github/workflows/bug-fixer.yml` |
 | **GitHub Pages** (optional) | Second copy of the site | GitHub Actions on push to `main` | `.github/workflows/pages.yml` (needs Settings → Pages → Source: GitHub Actions) |
 
 ## 2. How a change reaches children
