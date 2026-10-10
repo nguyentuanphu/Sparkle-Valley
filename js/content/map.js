@@ -3,11 +3,11 @@
 // places (VILLAGE, TOWN, CITIES, RIVER, BRIDGE…) from it, and every builder places its things as an offset from its
 // place's anchor, so moving a place here moves everything in it.
 // x runs east, z runs south (north is −z); 1 unit = 1 m.
-// MAP_VERSION names the layout: 'C' is the valley as it was up to round S; 'D1' is Concept D stage T1 (the owner's
+// MAP_VERSION names the layout: 'C' is the valley as it was up to round S; 'D1' is Concept D stage T1 and 'D2' stage T2 (new rivers and lakes; a few places moved) (the owner's
 // approved map, docs/concept-d/index.html: two banks, the home island with its ring road, mountains in the north, the
 // coast in the south). A saved spot (profile.pos) is stamped with it (profile.posMap), so a later layout knows the spot
 // belongs to an older map (js/main.js).
-export const MAP_VERSION = 'D1';
+export const MAP_VERSION = 'D2';
 // Is a saved spot, or the family's Studio content, made on this layout? Anything saved before round T has no stamp: it
 // belongs to map 'C'. (A spot or Studio edit from an older layout is never used at the wrong place: js/main.js, js/world.js.)
 export const onThisMap = stamp => (stamp || 'C') === MAP_VERSION;
