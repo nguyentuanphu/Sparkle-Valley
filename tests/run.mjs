@@ -405,13 +405,13 @@ await check('solid', async () => {
   // · the second start uses the saved map
   const D = await open(b, { w: 1180, h: 760 }), M = await open(b, { w: 390, h: 760, touch: true, lang: 'vi' });
   const audit = P => P.page.evaluate(async () => {
-    const G = __sv, W = G.world, st = await G.solidsReady, N = 800, bad = [];
+    const G = __sv, W = G.world, st = await G.solidsReady, N = Math.round(Math.sqrt(W.solid.length)), H = N / 4, bad = []; // the grid's size comes from the valley (round T: 480 m)
     let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
     const covered = (x, z) => W.colliders.some(c => Math.hypot(c.x - x, c.z - z) < c.r) || W.boxes.some(b => x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1);
     const cells = []; for (let k = 0; k < N * N; k++) if (W.solid[k]) cells.push(k);
     let tried = 0;
     for (let n = 0; n < 4000 && tried < 250; n++) {
-      const k = cells[Math.floor(rnd() * cells.length)], cx = (k % N) * .5 - 200 + .25, cz = Math.floor(k / N) * .5 - 200 + .25;
+      const k = cells[Math.floor(rnd() * cells.length)], cx = (k % N) * .5 - H + .25, cz = Math.floor(k / N) * .5 - H + .25;
       if (covered(cx, cz)) continue;
       const an = rnd() * Math.PI * 2, sx = cx + Math.cos(an) * 3, sz = cz + Math.sin(an) * 3;
       const p = { x: sx, z: sz, y: W.groundAt(sx, sz) }, q = { ...p }; W.collide(q, .45); if (Math.hypot(q.x - p.x, q.z - p.z) > .01) continue; // start on open ground
