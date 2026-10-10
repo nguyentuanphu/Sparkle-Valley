@@ -1,4 +1,4 @@
-# The bug robot (owner, 10 Oct AEST): every 3 hours it looks at the open bugs on GitHub Issues and lets Claude work on
+# The bug robot (owner, 10 Oct AEST): every 30 minutes (owner, 10 Oct; was 3 hours) it looks at the open bugs on GitHub Issues and lets Claude work on
 # them as the core that owns them. Rules: CLAUDE.md ("Bug robot") and docs/cores/front-desk.md.
 #
 #   - Only issues labelled `bug` plus one core label are picked up. Labels can only be set by people with access to the
@@ -9,11 +9,11 @@
 #     credentials; only the last job pushes, and only to refs/heads/bugfix/*. Release merges, after "yes, deploy".
 #
 # Needs the secret CLAUDE_CODE_OAUTH_TOKEN or CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY (`claude setup-token`); CLAUDE_CODE_OAUTH_TOKEN_BACKUP (another account) is
-# tried when the first one fails. Times: the cron is UTC; 2,5,8,…,23 UTC is 12, 3, 6 and 9 o'clock am and pm AEST.
+# tried when the first one fails. The cron runs at :07 and :37 past every hour (UTC and AEST alike).
 name: Bug robot
 on:
   schedule:
-    - cron: '7 2,5,8,11,14,17,20,23 * * *'
+    - cron: '7,37 * * * *'
   workflow_dispatch:
     inputs:
       issue:
@@ -285,7 +285,7 @@ jobs:
             gh issue edit "$N" --add-label fixed-on-branch --remove-label needs-go >/dev/null
           elif [ "$status" = plan ]; then
             note="A plan is ready ($now). Nothing was changed. To let the robot do it, reply on this issue with **go**
-          (or tell the Front Desk \"go for #$N\"). The robot picks it up at its next run (every 3 hours)."
+          (or tell the Front Desk \"go for #$N\"). The robot picks it up at its next run (every 30 minutes)."
             gh issue edit "$N" --add-label needs-go --remove-label small >/dev/null
             gh issue edit "$N" --add-label big >/dev/null
           else
