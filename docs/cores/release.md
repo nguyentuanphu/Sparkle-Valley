@@ -11,7 +11,8 @@ when the owner says so.
 - Packages: `tools/make-bundle.sh`, `tools/bundle-parts.py`, `studio/build-exe.sh` (run)
 
 ## A round, step by step
-1. Read `BOARD.md`; merge each ready core branch; fix conflicts with the core's owner on the board.
+1. Read `BOARD.md`; merge each ready core branch and each bug robot pull request (`bugfix/*` branches, label
+   `fixed-on-branch`: read the fix and its checks first); fix conflicts with the core's owner on the board.
 2. Bump r-number in `js/build.js`, `sw.js` VERSION and `studio/version.json`.
 3. Record new voices (`tools/make-voice-pack.mjs --engine azure`, see Voice & Audio).
 4. Run the **full suite** (`node run.mjs`, about an hour; one browser run at a time). Fix or send back every failure.
@@ -29,3 +30,10 @@ asked separately; the full suite green before a report; times in AEST; no keys o
 
 ## Checks you run
 All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
+
+## Owner's decisions
+- **Bug robot (10 Oct AEST):** small bugs filed by the Front Desk are fixed and pushed by `.github/workflows/bug-fixer.yml`
+  to `bugfix/<core>-<issue>` branches with draft pull requests, without asking; big bugs wait for the owner's "go". Release
+  merges those pull requests in a round like any core branch (they close their issue), and deploying still needs
+  "yes, deploy". Robot runs use the Claude account in the GitHub secret `CLAUDE_CODE_OAUTH_TOKEN` (backup:
+  `CLAUDE_CODE_OAUTH_TOKEN_BACKUP`).
