@@ -18,14 +18,15 @@ const NAM = LOOK({ style: 'aodai', color: '#8a4a8a', hairStyle: 'buns', hair: '#
 const KIDS = [['dress', '#ff7eb8', 'buns'], ['shirt', '#3b6fe0', 'short'], ['shirt', '#43c463', 'spiky'], ['dress', '#ffd23f', 'ponytail']].map(([style, color, hairStyle]) => LOOK({ style, color, hairStyle, skin: '#e0aa80' }));
 const kidOf = S => LOOK(Object.assign({ style: 'shirt', color: '#3b6fe0', hairStyle: 'short' }, (S.ctx && S.ctx.look) || {}, { back: 'none', glider: 0 }));
 const flap = (S, c, y = 1.5) => S.every((dt, time) => { c.position.y = y + Math.sin(time * 2.2) * .12; c.userData.wings.forEach((w, j) => { w.rotation.z = (j ? -1 : 1) * Math.sin(time * c.userData.flap) * .6; }); });
-// Hồ Gươm: a wide lake with soft shores, the red bridge across to a little temple island with a tree
+// Hồ Gươm: a lake the red bridge crosses (both ends on the shore), the little temple at its far end, a tree
 function lake(S, bridge = true) {
   L.ground(S, '#7fbf5e');
-  const water = new THREE.Mesh(G3.Cyl(14, 14, .05, 40), new THREE.MeshToonMaterial({ color: '#4fa8d8' })); water.scale.z = .6; S.add(water, 0, .02, -6);
-  const isle = new THREE.Mesh(G3.Cyl(3, 3.4, .5, 20), new THREE.MeshToonMaterial({ color: '#8fcf6a' })); S.add(isle, 9, .1, -8);
+  const water = new THREE.Mesh(G3.Cyl(1, 1, .05, 40), new THREE.MeshToonMaterial({ color: '#4fa8d8' })); water.scale.set(5.2, 1, 5.6); S.add(water, 1, .02, -6.6);
+  const water2 = new THREE.Mesh(G3.Cyl(1, 1, .05, 40), new THREE.MeshToonMaterial({ color: '#4fa8d8' })); water2.scale.set(9, 1, 4); S.add(water2, -2, .015, -16);
+  const isle = new THREE.Mesh(G3.Cyl(3, 3.4, .3, 20), new THREE.MeshToonMaterial({ color: '#9ad470' })); S.add(isle, 11.5, .02, -7.6);
   const temple = new THREE.Group(); const wall = new THREE.Mesh(G3.Box(3, 1.6, 2), new THREE.MeshToonMaterial({ color: '#e8d8b0' })); wall.position.y = 1.1; temple.add(wall);
-  const roof = new THREE.Mesh(G3.Cone(2.4, 1.2, 4), new THREE.MeshToonMaterial({ color: '#8a3a2a' })); roof.position.y = 2.5; roof.rotation.y = PI / 4; roof.scale.set(1, 1, .7); temple.add(roof); S.add(temple, 9, .3, -8.6);
-  L.banyan(S, 11, -9.5, .6); L.bamboo(S, -14, -12); L.bamboo(S, 15, -14, '#5fae4a', 6);
+  const roof = new THREE.Mesh(G3.Cone(2.4, 1.2, 4), new THREE.MeshToonMaterial({ color: '#8a3a2a' })); roof.position.y = 2.5; roof.rotation.y = PI / 4; roof.scale.set(1, 1, .7); temple.add(roof); S.add(temple, 11.5, .2, -8.2, -PI / 2);
+  L.banyan(S, 13, -11, .6); L.bamboo(S, -14, -12); L.bamboo(S, 15, -14, '#5fae4a', 6);
   if (!bridge) return null;
   const b = buildBridge(); S.add(b, 1, 0, -6.6, 0); return b;
 }
@@ -37,11 +38,11 @@ FILMS.lantern_ch2 = { pages: [
     const lights = buildBridgeLights(b.userData.rail); lights.visible = false; S.add(lights, 1, 0, -6.6);
     const mm = new THREE.MeshBasicMaterial({ color: '#f4f7fb', transparent: true, opacity: .45, depthWrite: false });
     const mist = [...Array(9)].map((_, i) => { const s = new THREE.Mesh(G3.S(2.2 + (i % 3) * .5, 12, 8), mm); s.scale.y = .55; return S.add(s, -5 + i * 1.5, 1.4 + (i % 3) * .6, -6.6 + Math.sin(i * 2.4) * 1.2); });
-    const kid = S.person(kidOf(S), -7, 2, PI * .8, .72);
+    const kid = S.person(kidOf(S), -9, 1.5, PI * .8, .72);
     const lan = buildLantern(true); lan.scale.setScalar(.8); S.add(lan); S.grab(kid, 0, lan, [0, -.5, .1]);
     const comp = buildCompanion(S.ctx.companion || 'firefly'); S.add(comp, -6.2, 1.6, 2.2); flap(S, comp, 1.6);
     S.shot([-2, 3, 11], [0, 1.5, -5]);
-    S.walk(kid, .4, [-4.6, -4.4], 1.3); S.move(comp, .4, 3.4, [-3.6, 1.8, -4], k => k);
+    S.walk(kid, .4, [-7, -5.6], 1.3); S.move(comp, .4, 3.4, [-5.6, 1.8, -5], k => k);
     S.do(kid, 4, 'give', 1.4);
     const top = [1, bridgeY(.5) + 1.3, -6.6];
     S.drop(lan, 4.4); S.move(lan, 4.42, 1.4, top, undefined, .6);
@@ -49,7 +50,7 @@ FILMS.lantern_ch2 = { pages: [
     S.tw(6, 2.6, k => { mm.opacity = .45 * (1 - k); mist.forEach(m => m.scale.set(1 + k * .6, .55 + k * .3, 1 + k * .6)); }, k => k);
     S.skyTo(5.6, 3, '#3a2a6a', '#e86a4a'); S.lightTo(5.6, 3, .45, .6);
     S.mood(kid, 6.2, 'happy'); S.do(kid, 6.8, 'cheer', 2.4);
-    S.cam(3.8, 2, [-4, 2.4, 4], [0, 2.4, -6]); S.cam(6.4, 3, [3, 4, 13], [1, 2, -6]);
+    S.cam(3.8, 2, [-7, 2.4, 2.5], [0, 2.2, -6.6]); S.cam(6.4, 3, [3, 4, 13], [1, 2, -6]);
     S.at(10.5, () => { });
   },
   // 2. Trung Thu night: the parade with star lanterns round the lake, the lion dance, mooncakes under the full moon
