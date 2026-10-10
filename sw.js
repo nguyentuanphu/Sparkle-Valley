@@ -18,9 +18,10 @@ const FILES = [
 // network answers quickly, otherwise the saved copy after a short wait: a connection that never answers (Wi-Fi with no
 // internet, weak phone signal) must never keep the game from starting. The network's answer still refreshes the copy.
 const QUICK = 1500;
-function quick(cacheName, req, fallback) {
+function quick(e, cacheName, req, fallback) {
   return caches.open(cacheName).then(c => {
-    const net = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; });
+    const net = fetch(req).then(r => { if (r.ok) return c.put(req, r.clone()).catch(() => { }).then(() => r); return r; });
+    e.waitUntil(net.catch(() => { })); // (the refresh finishes even when the saved copy answered)
     const saved = () => c.match(req, { ignoreSearch: true });
     return new Promise(done => {
       let over = false;
@@ -49,12 +50,12 @@ self.addEventListener('fetch', e => {
   // the family's content pack (Sparkle Studio): the newest when online, the saved copy when offline
   // (audit, 9 Oct) js/content/*.js is game code: it stays with the rest of the game's files, never fetched on its own
   if (url.pathname.includes('/content/') && !url.pathname.includes('/js/content/')) {
-    e.respondWith(quick(VERSION, req, emptyJSON));
+    e.respondWith(quick(e, VERSION, req, emptyJSON));
     return;
   }
   // real photos of the landmarks saved with the game (Sparkle Studio → Photos): the list newest-first, photos kept once seen
   if (url.pathname.endsWith('/photos/index.json')) {
-    e.respondWith(quick('sv-photos', req, emptyJSON));
+    e.respondWith(quick(e, 'sv-photos', req, emptyJSON));
     return;
   }
   if (url.pathname.includes('/photos/')) {
