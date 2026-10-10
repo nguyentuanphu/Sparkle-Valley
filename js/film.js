@@ -567,7 +567,7 @@ PROPS.starTree = (n = 12) => {
   g.add(mesh([P(Cyl(.22, .32, 2.2, 8), '#7a5236', [0, 1.1, 0]), P(Cyl(.08, .12, 1.2, 6), '#7a5236', [.45, 2.1, 0], [0, 0, -.7]), P(Cyl(.08, .12, 1.2, 6), '#7a5236', [-.4, 2.2, .2], [.3, 0, .7]),
     ...[0, 1, 2, 3, 4, 5, 6].map(i => P(S_(1.05, 10, 8), i % 2 ? '#4f9e42' : '#5fae4a', [Math.cos(i * .9) * (i ? 1.05 : 0), 3 + (i % 3) * .35, Math.sin(i * .9) * (i ? 1.05 : 0)]))]));
   const fruits = [];
-  for (let i = 0; i < n; i++) { const a = i * 2.39, d = 1.3 + (i % 3) * .25, f = PROPS.starfruit(1.5); f.position.set(Math.cos(a) * d, 2.05 + (i % 4) * .2, Math.sin(a) * d); f.rotation.set(H, 0, a); g.add(f); fruits.push(f); } // (hanging under the leaves, where they can be seen)
+  for (let i = 0; i < n; i++) { const a = i * 2.39, d = 1.3 + (i % 3) * .25, f = PROPS.starfruit(1.5); f.position.set(Math.cos(a) * d, 2.05 + (i % 4) * .2, Math.sin(a) * d); f.rotation.set(.25, i % 2 ? .5 : -.5, i * .7); /* (the star shows from the front) */ g.add(f); fruits.push(f); } // (hanging under the leaves, where they can be seen)
   g.userData.fruits = fruits; return g;
 };
 // the great bird of Cây khế: big, kind and colourful, with a seat on its back for a rider

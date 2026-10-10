@@ -1198,7 +1198,7 @@ body.calm .hud .act { animation: actIn .25s ease; }
 .ht-demo { position: absolute; inset: 0; display: flex; flex-direction: column; color: var(--text); }
 .ht-demo .gl-help { font-size: clamp(15px, 2.4vw, 20px); padding: 6px 12px 0; min-height: 1.3em; }
 .ht-demo .gl-stage { flex: 1; min-height: 0; padding: 6px; gap: 6px; overflow: hidden; }
-.ht-demo .folk-cv { width: auto !important; height: auto !important; max-width: 100%; max-height: calc(min(60vh, 560px) - 52px); touch-action: none; }
+.ht-demo .folk-cv { width: auto !important; height: auto !important; max-width: 100%; max-height: calc(min(60vh, 560px) - 110px); margin-bottom: 52px; touch-action: none; } /* (room under it for the hand) */
 .ht-demo .mem-grid { grid-template-columns: repeat(var(--cols), clamp(56px, min(13vw, 17vh), 104px)); }
 .ht-hand { position: absolute; width: 64px; height: 64px; margin: -11px 0 0 -32px; /* (the fingertip on the spot) */ z-index: 5; pointer-events: none; filter: drop-shadow(0 0 6px #fff6a0) drop-shadow(0 0 14px #ffb020); }
 .ht-hand.glide { transition: left .8s ease-in-out, top .8s ease-in-out; }
