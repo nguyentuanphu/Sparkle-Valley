@@ -9,7 +9,8 @@ Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
 ## Release
-- **Now:** r55 (story chapter 2, Hà Nội; switch `story_ch2` off by default) deployed at the owner's "Deploy now"; full suite finishing on the merged code; Round T next, as r56 · branch `claude/exciting-feynman-5nxzz8` · 10 Oct AEST
+- **Now:** next round r56 on branch `release-next` (local): Round T (T0 + T1, the Concept D valley) + the Studio review on top of r55 (chapter 2, live 10 Oct 4:43 pm AEST); full suite on the combined code next, then one "yes, deploy" · 10 Oct AEST
+- Round T stages T0 to T4: `docs/cores/ROUND-T.md`. Until Round T is merged, other cores do not change world positions or the map files (CLAUDE.md, helper rule 4).
 - Halloween decorations start growing about three weeks before 31 Oct: they only reach players once a round is deployed.
 - Still to build from the Round R plan (`docs/cores/ROUND-R.md`, Part 2): items 2 to 12 (Concept D layout, child's journey, homes, surprises, shop and wardrobe, money games, the rest of the festival groups, Hội làng times, 5–8 challenges, parent features, voice pack by area); the owner's privacy decisions of 9 Oct; splitting the code into per-core folders (infrastructure round).
 - The Google Drive mirror (`.github/workflows/drive-mirror.yml`) is not set up yet: ask the owner at every report.
@@ -32,23 +33,33 @@ Format for a request:
 - [ ] (Play → World) Chapter 2 needs real spots in Hà Nội for Tèo, Cô Tam (beside Văn Miếu, with 3 to 5 stone turtles), Bà Năm and the clues by Hồ Gươm; until then `js/content/chapter2hanoi.js` finds free ground off the roads and Hà Nội's main street. Note: the Thê Húc bridge (Hồ Gươm) stands outside Hà Nội's square, about 30 m south-east, and Tháp Rùa (`turtle`) is far away across the valley · 10 Oct AEST
 - [ ] (Play → Voice & Audio) New spoken lines to record (none has a child's name): Chapter 2's step names in `js/content/chapters.js` (`ch2`), and all its words in the new `js/content/chapter2text.js` (`STEP_WORDS`, `LINES`, `COUNT` one to five, `TALE`); they live there so the start-up download stays small, so `tools/voice-harvest.mjs` needs to read that file too · 10 Oct AEST
 - [ ] (Play → Kid UI) Bà Năm tells Sự tích Hồ Gươm (`hoguom`) in Chapter 2 as a picture story; if your films brief makes it a 3D film, the chapter picks it up by itself · 10 Oct AEST
+- [ ] (Release → Play) T1/T3: festival `where` ids for the new places (`hoian`, `vungtau`) in `js/content/festcal.js` · ROUND-T.md · 10 Oct AEST
 
 ## Kid UI
 - **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
 - [ ] (Play → Kid UI) A speech box slides in from the right for 0.3 s: `@keyframes rise` (`css/style.css`) sets `transform` without the `.dialog`'s `translateX(-50%)`, so while it plays the box sits half its width to the right. The `phone` check then sometimes finds its buttons off screen ("button \"Chơi!\" off screen ... on top: dialog.little"); seen 2 times in 5 runs on `core/play` and not on `main` in 2, at the same frame speed, so it is chance, not Chapter 2. Fix idea: a dialog keyframe that keeps `translateX(-50%)` · `css/style.css` · 10 Oct AEST
+- [ ] (Release → Kid UI) T1: the Pad map's names overlap on the east side (Village festival stage over Đà Nẵng, Three Regions Market over Hồ Chí Minh City), seen at 1200×1200 · screenshots in ROUND-T.md Progress · `js/ui.js` · 10 Oct AEST
+- [ ] (Release → Kid UI) T1: new place ids (`hoian` first; later `vungtau`, `harbour`, `memory_e`, `memory_w`) in `PLACE_AREAS` and the Pad map's list; T4: the drawn Pad map from `PLACES`/`WATERS` in `js/content/map.js` · ROUND-T.md T1, T4 · `js/ui.js`, `js/simple.js` · 10 Oct AEST
 
 ## Voice & Audio
 - **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
+- [ ] (Release → Voice & Audio) T1/T3: the new areas (`hoian`, then `vungtau`) in `VN_AREAS` (`js/content/songs.js`), and the place names in the voice pack · ROUND-T.md · 10 Oct AEST
 - Lullabies with real voices: the owner may paste titles or words (soha.vn could not be reached), or record them in Studio → Music.
 
 ## Online
 - **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
+- [x] (Release, one-line fix a check needs, 10 Oct AEST) `js/netmsg.js` `W` is now 235 (the 480 m valley); Online may make it read `WORLD.size` from the map.
+- [ ] (Release → Online) Before T1 goes live: the hello carries the map version (`MAP_VERSION`); a friend on another layout sees "Ask a grown-up to update" instead of joining (positions are raw x, z) · ROUND-T.md §4 · `js/netmsg.js`, `js/net.js` · 10 Oct AEST
 - The voice relay waits for the owner's Cloudflare TURN key (CF_TURN_KEY_ID, CF_TURN_KEY_TOKEN in Netlify): until then, voices only work when the two devices can link directly.
 
 ## Studio
 - **Now:** Studio review (branch `claude/quirky-meitner-dsxo5i`, last commit ca787a8) merged by Release into the next round · waiting for nothing · 10 Oct AEST
 - [x] (Studio → Release, added to HANDOFF) Studio review, 10 Oct AEST, branch `claude/quirky-meitner-dsxo5i`): please add to `HANDOFF.md`'s checks table, `studio` row: "(Studio review) every server message has Vietnamese (`studio/ui/vi.js`); leaving a page with changes not saved asks; save and Publish say what happened; 44 px buttons and boxes on 21 pages on a tablet and a phone; the game's names follow Studio's language; the pages open on a computer, a tablet and a phone". New Studio file `studio/ui/vi.js` (already in `studio/build-exe.sh`; not a game file, so not in `sw.js`). SparkleStudio.exe needs rebuilding (`bash studio/build-exe.sh`).
+- [x] (Release, owner's T1 answer, 10 Oct AEST) the stamp itself is done in `studio/ui/app.js` (Map page: older edits go to `CONTENT.parked`, then `world.map` = MAP_VERSION). Still for Studio: the Map page lists parked items to place again.
+- [ ] (Release → Studio) Was "before T1" (the stamp part is done): when Studio saves the family's map content (`world` build/edits/land, `npcs`), stamp `world.map` with `MAP_VERSION` from `js/content/map.js`. Content with no stamp counts as map 'C'; on any other layout the game parks it (`G.parked`) and never places it. Then the Map page lists parked items to place again (old place plus offset via `LEGACY.C`), and new features store a `placeId` and offset, never raw x, z · ROUND-T.md §4, owner's decision 5 · `studio/ui`, `studio/core.cjs` · 10 Oct AEST
+- [ ] (Release → Studio) T3: a Plots page for the Memory Village plots (`PLOTS` in the map) · ROUND-R.md item 2 · later
 
 ## Analytics & Infra
 - **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
 - From Studio (10 Oct AEST): `perf` fails on `main` (d87ab6c) as well: PERF-001 start-up download 3.36 MB, budget 3.2 MB. Not from the Studio review (no game files changed); it fits `tasks/infra-speed.md` (smaller start-up download).
+- [ ] (Release → Analytics & Infra) The start-up download is at its ratchet: r54 measures 3.33–3.37 MB before the title screen against 3.2 MB + 3 % (the `perf` check fails on main about 3 runs in 4); Round T0 adds about 22 KB (the map file). Owner (10 Oct): the limit is 3.4 MB for now; lower it again after the smaller start-up download brief (`tasks/infra-speed.md`) is the fix · `tests/perf-baseline.json` · 10 Oct AEST

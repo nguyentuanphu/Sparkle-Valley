@@ -726,6 +726,14 @@ PAGES.map = async P => {
   CONTENT.npcs = CONTENT.npcs || []; CONTENT.world = CONTENT.world || {}; const WD = CONTENT.world; WD.build = WD.build || []; WD.edits = WD.edits || []; WD.land = WD.land || [];
   P.innerHTML = `<h2>🗺️ ${T('Map: build and change the world', 'Bản đồ: xây dựng và sửa thế giới')}</h2><p class="sub">${T('Add villagers and buildings, move or remove what is there, and make more flat land for new towns. Changes appear in the game after you publish.', 'Thêm nhân vật và nhà cửa, dời hoặc xóa những gì đang có, và làm thêm đất bằng cho phố mới. Thay đổi xuất hiện trong game sau khi phát hành.')}</p><div class="card" id="mapwrap">${T('Drawing the map…', 'Đang vẽ bản đồ…')}</div>`;
   const W = await import(GAME + 'js/world.js'), WE = await import(GAME + 'js/worldedit.js'), TYPES = WE.BUILD_TYPES;
+  // (round T) the map's edits belong to one layout of the valley (world.map). Edits made on an older layout are put aside
+  // (CONTENT.parked), never placed at the wrong spot; everything saved from here is stamped with this layout
+  if ((WD.map || 'C') !== W.MAP_VERSION && (WD.build.length || WD.edits.length || WD.land.length || CONTENT.npcs.length)) {
+    CONTENT.parked = (CONTENT.parked || []).concat([{ map: WD.map || 'C', world: { build: WD.build, edits: WD.edits, land: WD.land }, npcs: CONTENT.npcs, at: new Date().toISOString() }]);
+    WD.build = []; WD.edits = []; WD.land = []; CONTENT.npcs = [];
+    toast(T('The valley has a new map. Your earlier villagers and buildings are kept aside, to place again.', 'Thung lũng có bản đồ mới. Nhân vật và nhà cửa bạn đã thêm trước đây được cất riêng, để đặt lại.'));
+  }
+  WD.map = W.MAP_VERSION;
   const S = 800, k = S / W.SIZE, toPx = (x, z) => [(x + W.HALF) * k, (z + W.HALF) * k], toW = (px, py) => [px / k - W.HALF, py / k - W.HALF];
   if (!mapCanvas) mapCanvas = W.paintMap(S);
   const MODES = [['npc', '👥', T('Villagers', 'Nhân vật')], ['build', '🏠', T('Build', 'Xây')], ['move', '↔️', T('Move', 'Dời')], ['remove', '🧹', T('Remove', 'Xóa bỏ')], ['land', '🟫', T('Flat land', 'Đất bằng')]];

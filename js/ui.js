@@ -18,6 +18,7 @@ import { familyCardsHTML, bindFamilyCards } from './familycards.js';
 import { openReport } from './report.js';
 import { ITEMS, RECIPES, findRecipe, SHOP, HAT_ICON, HAT_NAME, REWARD_HATS, dishInfo, QUESTS, STICKERS } from './data.js';
 import { SIZE, HALF, SHRINES, TOWERS } from './world.js';
+import { LANDMARK_HOME } from './content/map.js';
 import { GAMES } from './games/frame.js';
 import { showStory, storyList } from './story.js';
 import { SECRETS } from './secrets.js';
@@ -638,15 +639,8 @@ export { modal, dialog, dialogHooks, reward } from './popups.js';
 import { modal, dialog, dialogHooks, reward } from './popups.js';
 
 // ---------- the Sparkle Pad ----------
-// which place each landmark belongs to in the real world (the Pad map lists it under that place)
-const LANDMARK_HOME = { bnclock: 'bacninh', chuadau: 'bacninh', butthap: 'bacninh', dendo: 'bacninh', quanho: 'bacninh',
-  turtle: 'hanoi', onepillar: 'hanoi', vanmieu: 'hanoi', puppettheatre: 'hanoi', thehuc: 'hanoi', halong: 'hanoi', trangan: 'hanoi',
-  dragonbridge: 'danang', goldenbridge: 'danang', marble: 'danang', hoian: 'danang', chuacau: 'danang', myson: 'danang', hue: 'danang', phongnha: 'danang',
-  benthanh: 'saigon', cathedral: 'saigon', postoffice: 'saigon', cairang: 'saigon', bachdinh: 'saigon', nhatron: 'saigon', lighthouse: 'saigon',
-  wheel: 'brisbane', lonepine: 'brisbane', storybridge: 'brisbane', reef: 'brisbane', banana: 'sydney',
-  opera: 'sydney', harbour: 'sydney', sydneytower: 'sydney', lunapark: 'sydney', bondi: 'sydney', sisters: 'sydney',
-  flinders: 'melbourne', wtram: 'melbourne', exhibition: 'melbourne', apostles: 'melbourne', kakadu: 'uluru', uluru: 'uluru',
-  forbidden: 'china', heaven: 'china', terracotta: 'china', potala: 'china', qutub: 'india', redfort: 'india', konark: 'india', hampi: 'india', mahabodhi: 'india' };
+// which place each landmark belongs to in the real world (the Pad map lists it under that place): round T, in the map
+// (js/content/map.js LANDMARK_HOME)
 export function openPad(game, i, tab) {
   tab = tab || 'map';
   const hero = game.heroes[i], p = hero.profile;

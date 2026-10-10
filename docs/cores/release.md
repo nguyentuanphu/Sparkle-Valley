@@ -33,16 +33,16 @@ round); the full suite green before a report; times in AEST; no keys or personal
 All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 
 ## Owner's decisions
-<<<<<<< HEAD
 - **Bug robot (10 Oct AEST):** small bugs filed by the Front Desk are fixed and pushed by `.github/workflows/bug-fixer.yml`
   to `bugfix/<core>-<issue>` branches with draft pull requests, without asking; big bugs wait for the owner's "go". Release
   merges those pull requests in a round like any core branch (they close their issue), and deploying still needs
   "yes, deploy". Robot runs use the Claude account in the GitHub secret `CLAUDE_CODE_OAUTH_TOKEN` (backup:
   `CLAUDE_CODE_OAUTH_TOKEN_BACKUP`).
-=======
 - 10 Oct AEST: Release is the master release of all work. Helper chats push their own branches without asking; Release collects every branch, merges, runs the full suite, reports, and asks one pop-up "yes, deploy" per round, which covers pushing and merging into `main`.
 - 10 Oct AEST: every question to the owner is a pop-up question with clickable choices (`CLAUDE.md`, HANDOFF rule 19).
 - 10 Oct AEST: Release checks every branch once an hour (routine "Release: hourly branch collection", about 26 minutes past each hour): fetch, read each branch's Now line, merge the core branches marked "ready for Release" into the Release branch locally and run `types unit arch rules`; never pushes or merges into main without the round's "yes, deploy". `studio-draft` and old `claude/*` branches are merged only after asking the owner.
 - 10 Oct AEST: no double suite runs. Release reruns the full suite only when the merged code differs from what a helper tested (two or more branches merged, or Release changed code itself); otherwise it runs the quick checks (`types unit arch rules ground studio`) and relies on the helper's recorded full-suite result (commit id and every check, in that core's progress notes).
 - 10 Oct AEST: r55 (chapter 2) deployed at the owner's "Deploy now" with the full suite still running (2 of 81 checks done, both passed); the rest reported when it finished.
->>>>>>> origin/main
+- (10 Oct AEST) The start-up download ratchet (`tests/perf-baseline.json` startMB) is 3.4 MB for now; lower it again when the smaller start-up download lands (Analytics & Infra).
+- (10 Oct AEST) Round T0: "yes, push"; not deployed yet. (Planned as r55; r55 went to chapter 2, so T0 and T1 go out together as r56.)
+- (10 Oct AEST) T1 from the Concept D map (`docs/concept-d/index.html`): a bigger home island (about 110 x 130 m) so Ông Cú, Phố Hai Quê and Sunny Farm fit; Bắc Ninh north-east of Hà Nội, as drawn; the ring road in T1; asphalt roads 6.4 m (rule R1 / ROAD-001 changed); Release makes the one Studio stamp change (`world.map`) in T1, noted on the board.

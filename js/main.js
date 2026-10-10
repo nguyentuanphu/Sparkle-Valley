@@ -11,7 +11,8 @@ import { openSongs } from './songs.js';
 import { songsFor, VN_AREAS, familySongs } from './content/songs.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
-import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER } from './world.js';
+import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER, PLATEAU, TOWN, AUSSIE, LAKE, ULURU, HALF, STUDIO_ON_MAP, PARKED } from './world.js';
+import { landmarkAt, MAP_VERSION, onThisMap } from './content/map.js';
 import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL, OUTLINED } from './avatar.js';
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
@@ -106,7 +107,7 @@ document.getElementById('stage').appendChild(renderer.domElement);
 {
   let lostT = 0;
   renderer.domElement.addEventListener('webglcontextlost', e => {
-    e.preventDefault(); try { G.heroes.forEach(h => { if (h.profile && h.onGround && !h.towerClimb && !h.indoors) h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; }); saveProfiles(true); } catch (err) { }
+    e.preventDefault(); try { G.heroes.forEach(h => { if (h.profile && h.onGround && !h.towerClimb && !h.indoors) { h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; h.profile.posMap = MAP_VERSION; } }); saveProfiles(true); } catch (err) { }
     if (!document.querySelector('.ctxlost')) document.body.appendChild(el('div', 'ctxlost', `<div>🌈</div><p>${T('One moment, the valley is coming back…', 'Chờ một chút, thung lũng đang trở lại…')}</p>`));
     clearTimeout(lostT); lostT = setTimeout(() => location.reload(), 4000);
   });
@@ -135,7 +136,7 @@ showTitle(() => showWho((mode, chosen) => startWhenBuilt(mode, chosen)));
 await breathe();
 const world = createWorld(scene, quality); bootMark('world'); await breathe();
 // the map picture: read back from the device when this build painted it before (js/worldcache.js)
-const mapPic = cachedCanvas('map', 256, paintMap, bootReady); bootMark('map');
+const mapPic = cachedCanvas('map', 320, paintMap, bootReady); // (round T: 320 px for the 480 m valley) bootMark('map');
 mapPic.onReady = () => { G.fogMaps = {}; }; // (a map shown before the picture was ready is drawn again)
 const titleCam = new THREE.PerspectiveCamera(50, 1, .3, 1200);
 
@@ -192,7 +193,7 @@ const V = VILLAGE;
 const kidLook = (style, color, h, hs, hat) => ({ style, color, hat, back: 'none', hair: h, hairStyle: hs, skin: '#f6c7a5', glider: 0 });
 let owl, gourd;
 function setupNPCs() {
-  owl = addNPC({ id: 'owl', name: 'Ông Cú', model: buildOwl(), x: -2, z: -8, face: .3, icon: '🦉', talk: owlTalk });
+  owl = addNPC({ id: 'owl', name: 'Ông Cú', model: buildOwl(), x: PLATEAU.x - 2, z: PLATEAU.z - 8, face: .3, icon: '🦉', talk: owlTalk });
   addNPC({ id: 'mai', name: 'Cô Mai', look: { style: 'aodai', color: '#e8435a', hat: 'nonla', back: 'none', hair: '#1d1412', hairStyle: 'long', skin: '#f6c7a5', glider: 0 }, x: V.x + 2, z: V.z - 11.6, face: 0, icon: '🛒', talk: maiTalk });
   addNPC({ id: 'ba', name: 'Bác Ba', look: { style: 'overalls', color: '#5b7fbf', hat: 'none', back: 'none', hair: '#8a8a8a', hairStyle: 'short', skin: '#e0aa80', glider: 0 }, x: V.x - 4.5, z: V.z + 13, face: .8, icon: '🍲', talk: baTalk });
   addNPC({ id: 'teo', name: 'Tèo', look: kidLook('shirt', '#ffb52e', '#1d1412', 'spiky', 'none'), x: V.x + 16, z: V.z + 19.6, face: 0, icon: '🪨', talk: h => kidTalk(h, 'oanquan', 'Tèo', ['Want to play Ô ăn quan with me? It is a clever counting game!', 'Chơi Ô ăn quan với tớ không? Trò này phải tính toán giỏi đấy!']) });
@@ -207,7 +208,7 @@ function setupNPCs() {
     talk: h => kidTalk(h, 'chuyen', 'Mít', ['Hi! I am Mít. In Vietnam we play Đánh chuyền with a ball and sticks. Jack calls it Knucklebones!', 'Chào bạn! Tớ là Mít. Ở Việt Nam tụi tớ chơi đánh chuyền với quả bóng và que. Jack gọi là Knucklebones đó!']) });
   addNPC({ id: 'bom', name: 'Bờm 🇻🇳', look: look('tunic', '#e8434a', '#1d1412', 'spiky', 'none'), x: PG.x + 5, z: PG.z - 4, face: -1, icon: '🐉',
     talk: h => kidTalk(h, 'dragon', 'Bờm', ['Let us be a dragon! Hold on tight and sing: Rồng rắn lên mây!', 'Mình làm rồng rắn nào! Bám chặt vào và hát: Rồng rắn lên mây!']) });
-  addNPC({ id: 'ruby', name: 'Ruby 🇦🇺', look: look('overalls', '#a66bff', '#a8432a', 'long', 'bow', '#ffe3d1'), x: 44.2, z: 56.4, face: 1.4, icon: '🔮',
+  addNPC({ id: 'ruby', name: 'Ruby 🇦🇺', look: look('overalls', '#a66bff', '#a8432a', 'long', 'bow', '#ffe3d1'), x: TOWN.x + 12.2, z: TOWN.z + 3.4, face: 1.4, icon: '🔮',
     talk: h => kidTalk(h, 'marbles', 'Ruby', ['I have got my lucky shooter marble! Can you knock the marbles out of the ring?', 'Tớ có viên bi cái may mắn nè! Bạn bắn được bi ra khỏi vòng không?']) });
   addNPC({ id: 'lan', name: 'Lan 🇻🇳', look: look('aodai', '#5fd39a', '#3b2618', 'ponytail', 'none'), x: PG.x - 6, z: PG.z + 3, face: 1.2, icon: '🪢',
     talk: h => kidTalk(h, 'skipping', 'Lan', ['Nhảy dây! Skipping! Jump when the rope comes down and count with me!', 'Nhảy dây nào! Nhảy lên khi dây quay xuống và đếm cùng tớ nhé!']) });
@@ -626,8 +627,8 @@ function questTarget(h) {
     case 'pot': return near(world.pots);
     case 'kids': return NPCS.find(n => n.id === 'teo');
     case 'playground': return NPCS.find(n => n.id === 'jack');
-    case 'market': return { x: 99, z: 83 };
-    case 'aussie': return { x: -121, z: -12 };
+    case 'market': return { x: MARKET.x - 22, z: MARKET.z };
+    case 'aussie': return { x: AUSSIE.x - 4, z: AUSSIE.z };
     case 'postcard': return near(LANDMARKS.filter(l => !(p.postcards || {})[l.id]).map(l => ({ x: l.x, z: l.z + 2 })));
     case 'buffalo': return near(world.buffalo.map(b => ({ x: b.mesh.position.x, z: b.mesh.position.z })));
     case 'leafy': return near(LEAFIES.filter(l => !p.leafies[l.id]));
@@ -730,14 +731,14 @@ G.PLACES = [
   { g: 'vn', key: 'village', icon: '🏮', name: () => T('Lotus Village', 'Làng Sen'), x: VILLAGE.x - VILLAGE.r + 6, z: VILLAGE.z },
   { g: 'asia', key: 'china', icon: '🐼', name: () => T('China Town', 'Làng Trung Hoa'), x: CHINA.x, z: CHINA.z + 12 },
   { g: 'asia', key: 'india', icon: '🐘', name: () => T('India Village', 'Làng Ấn Độ'), x: INDIA.x, z: INDIA.z + 15 },
-  { g: 'home', icon: '🦉', name: () => T('Dawn Plateau (Ông Cú)', 'Cao nguyên Bình Minh (Ông Cú)'), x: -2, z: -3 },
+  { g: 'home', icon: '🦉', name: () => T('Dawn Plateau (Ông Cú)', 'Cao nguyên Bình Minh (Ông Cú)'), x: PLATEAU.x - 2, z: PLATEAU.z - 3 },
   { g: 'vn', icon: '💃', name: () => T('Village festival stage (Lotus Village)', 'Sân khấu hội làng (Làng Sen)'), x: VILLAGE.x - 6, z: VILLAGE.z + 25, under: 'village' },
-  { g: 'home', key: 'town', icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: 28, z: 52 },
-  { g: 'home', icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: 6, z: 140 },
-  { g: 'vn', icon: '🏮', name: () => T('Three Regions Market', 'Chợ Ba Miền'), x: 99, z: 83 },
-  { g: 'au', icon: '🍦', name: () => T('Aussie Corner', 'Góc Nước Úc'), x: -121, z: -12 },
-  { g: 'au', icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: 92, z: 128, under: 'sydney' },   // (the older Opera House stands here; listed under Sydney)
-  { g: 'au', key: 'uluru', icon: '🪨', name: () => T('Uluru', 'Uluru'), x: -128, z: 132 },
+  { g: 'home', key: 'town', icon: '🏘️', name: () => T('Two Homes Street', 'Phố Hai Quê'), x: TOWN.x - 4, z: TOWN.z - 1 },
+  { g: 'home', icon: '🏖️', name: () => T('Beach', 'Bãi biển'), x: landmarkAt('bondi')[0] + 6, z: landmarkAt('bondi')[1] - 4 },   // (round T: the southern beach)
+  { g: 'vn', icon: '🏮', name: () => T('Three Regions Market', 'Chợ Ba Miền'), x: MARKET.x - 22, z: MARKET.z },
+  { g: 'au', icon: '🍦', name: () => T('Aussie Corner', 'Góc Nước Úc'), x: AUSSIE.x - 4, z: AUSSIE.z },
+  { g: 'au', icon: '🎭', name: () => T('Opera House', 'Nhà hát Opera'), x: landmarkAt('opera')[0] - 6, z: landmarkAt('opera')[1], under: 'sydney' },   // (the older Opera House stands here; listed under Sydney)
+  { g: 'au', key: 'uluru', icon: '🪨', name: () => T('Uluru', 'Uluru'), x: ULURU.x, z: ULURU.z - 20 },
   { g: 'home', icon: '🐻', name: () => T('Mr. Bear’s shop (farm)', 'Cửa hàng Bác Gấu (nông trại)'), x: HOME.x - 21, z: HOME.z + 6, under: 'farm' }
 ];
 G.changePlayer = () => {
@@ -1267,15 +1268,21 @@ G.zoomBy = (i, f, quiet) => {
 // A child comes back where they were (owner, round 30): the spot is saved every 5 s and when the game is put away.
 // It is only used if it is still a good place to stand (the valley may have changed since): on the map, on dry
 // ground, not inside a building, a wall or a tree; otherwise the child starts at the usual spot by the owl.
-const HOME_SPOT = i => ({ x: -3 + i * 2.5, z: -4 });
+const HOME_SPOT = i => ({ x: PLATEAU.x - 3 + i * 2.5, z: PLATEAU.z - 4 }); // (round T: by Ông Cú, from the map)
 G.goodSpot = (x, z) => {
-  const W = G.world; if (!Number.isFinite(x) || !Number.isFinite(z) || Math.abs(x) > 190 || Math.abs(z) > 190) return false;
+  const W = G.world; if (!Number.isFinite(x) || !Number.isFinite(z) || Math.abs(x) > HALF - 10 || Math.abs(z) > HALF - 10) return false;
   if (heightAt(x, z) < WATER + .3) return false;
   if (W.solidAt && [[0, 0], [.6, 0], [-.6, 0], [0, .6], [0, -.6]].some(([dx, dz]) => W.solidAt(x + dx, z + dz))) return false;
   return !W.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + .45) && !W.boxes.some(b => x > b.x0 - .45 && x < b.x1 + .45 && z > b.z0 - .45 && z < b.z1 + .45);
 };
-const keepSpot = () => G.heroes.forEach(h => { if (h.profile && h.onGround && !h.towerClimb && !h.indoors && G.goodSpot(h.lastSafe.x, h.lastSafe.z)) h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; });
+const keepSpot = () => G.heroes.forEach(h => { if (h.profile && h.onGround && !h.towerClimb && !h.indoors && G.goodSpot(h.lastSafe.x, h.lastSafe.z)) { h.profile.pos = { x: +h.lastSafe.x.toFixed(1), z: +h.lastSafe.z.toFixed(1) }; h.profile.posMap = MAP_VERSION; } }); // (round T: stamped with the layout)
 // the "New!" moment (round R, owner): what Studio's Releases page marked new, once per child, at most three at a time
+// (round T) once, when a child who already played opens the valley's new layout
+async function grownMoment() {
+  for (let k = 0; k < 60 && document.querySelector('.storybook, .reward, .modal, .dialog'); k++) await new Promise(r => setTimeout(r, 500));
+  say('The valley has grown! New rivers, bridges and places to visit.', 'Thung lũng đã lớn hơn rồi! Có sông mới, cầu mới và nhiều nơi mới để đi chơi.'); // (read aloud: under-5s can't read it)
+  await reward('🗺️', T('The valley has grown!', 'Thung lũng đã lớn hơn rồi!'), T('New rivers, bridges and places to visit. Your stickers, stories, farm and house are all still here.', 'Có sông mới, cầu mới và nhiều nơi mới để đi chơi. Nhãn dán, truyện, nông trại và nhà của con vẫn còn nguyên.'));
+}
 async function newMoment(h) {
   if (!h || !h.profile) return; const p = h.profile; p.seenNew = p.seenNew && typeof p.seenNew === 'object' ? p.seenNew : {};
   const fresh = RELEASES.filter(r => releaseNew(r.id) && !p.seenNew[r.id]).slice(0, 3); if (!fresh.length) return;
@@ -1287,6 +1294,10 @@ function startSession(mode, chosen) {
   G.mode = mode; G.heroes.forEach(h => scene.remove(h.av.root)); G.huds.forEach(h => h.destroy()); G.heroes = []; G.huds = [];
   chosen.forEach((p, i) => {
     const h = new Hero(i, p, scene, world);
+    // (round T) a spot saved on an older layout of the valley is not used: the child starts at home, once, with "The valley
+    // has grown!" (stickers, stories, the farm and the house are kept: they are not places on the map)
+    if (i === 0) G.valleyGrew = false;
+    if (p.pos && !onThisMap(p.posMap)) { p.pos = null; p.posMap = MAP_VERSION; G.valleyGrew = true; save(); }
     const back = p.pos && G.goodSpot(p.pos.x, p.pos.z), start = back ? p.pos : HOME_SPOT(i);
     h.place(start.x, start.z); h.camYaw = Math.PI * .85;
     if (i === 0) G.resumedAway = false;
@@ -1307,6 +1318,7 @@ function startSession(mode, chosen) {
   { const pf = new URLSearchParams(location.search).get('festival'); if (pf && !G._previewed) { G._previewed = true; setTimeout(() => G.festivals.visit(0, pf), 1800); } }
   // (round R) the "New!" moment: something Studio released in the last few days, shown once to each child
   setTimeout(() => newMoment(G.heroes[0]), 4000);
+  if (G.valleyGrew) setTimeout(grownMoment, 2500);
   resize(); G.paused = false; playing = true; G.listenFriends();
   // a note from the grown-ups (Sparkle Studio), once a day
   { const M = CUSTOM.message, today = new Date().toDateString();
@@ -1364,9 +1376,10 @@ function frame(now) {
   // (two players: the world rests only when both halves have a window open)
   if (twoHalves() && playing ? G.halfBusy(0) && G.halfBusy(1) : gameOpen() || document.querySelector('.storybook, .theatre.film') || (G.paused && document.querySelector('.modal')) || (playing && worldHidden())) return;
   world.update(dt, t);
+  if (playing) G.farCull(now); // (round T: small things far from every camera are not drawn)
   if (!playing) {
     const a = t * .05;
-    titleCam.position.set(Math.cos(a) * 70, 42, Math.sin(a) * 70); titleCam.lookAt(0, 16, 0);
+    titleCam.position.set(PLATEAU.x + Math.cos(a) * 70, 42, PLATEAU.z + Math.sin(a) * 70); titleCam.lookAt(PLATEAU.x, 16, PLATEAU.z); // (round T: round Ông Cú's home)
     world.updateSky(0, titleCam.position);
     renderer.setScissorTest(false); renderer.setViewport(0, 0, innerWidth, innerHeight); renderer.render(scene, titleCam);
     return;
@@ -1546,8 +1559,9 @@ setupTrading(G);
 // ---- (round S) end ----
 // villagers the family added in Sparkle Studio (content pack "npcs"): placed where they were put on the map, saying
 // their own lines in both languages
-for (const c of (Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {
-  if (!c || !isFinite(c.x) || !isFinite(c.z) || Math.abs(c.x) > 190 || Math.abs(c.z) > 190) continue;
+G.parked = PARKED; // (round T) the family's Studio map content made on an older layout: put aside, never placed
+for (const c of (STUDIO_ON_MAP && Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : []).slice(0, 60)) {
+  if (!c || !isFinite(c.x) || !isFinite(c.z) || Math.abs(c.x) > HALF - 10 || Math.abs(c.z) > HALF - 10) continue;
   const name = String(c.name || '').trim().slice(0, 40); if (!name) continue;
   const L = c.look || {}, hex = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v : null;
   const look = { style: ['dress', 'shirt', 'aodai', 'tunic', 'overalls', 'hoodie'].includes(L.style) ? L.style : 'shirt', color: hex(L.color) || '#5fb0ff', hat: 'none', back: 'none', hair: hex(L.hair) || '#2a1d14', hairStyle: ['buns', 'short', 'long', 'ponytail', 'spiky'].includes(L.hairStyle) ? L.hairStyle : 'short', skin: hex(L.skin) || '#f1c6a4', glider: 0, age: L.age === 'old' || L.age === 'kid' ? L.age : 'adult' };
@@ -1591,6 +1605,48 @@ startCounting(G); // how many children play, and what they play, for Studio's re
   let mats = [];
   G.camBlockerMats = () => mats;
   G.camBlockers = () => { const now = performance.now(); if (now - at > 8000) { at = now; collect(); } return list; };
+}
+// (round T, PERF-003) far small things: in the 480 m valley a child can see right across it, and the fog hides what is
+// far away anyway. Each small thing (a person, a stall, a house, a motorbike: a top-level shape no wider than SMALL m,
+// taken whole so its parts go together) further from every camera than its size allows is not drawn: a 1 m lantern
+// from 110 m, a 7 m house from 230 m, never more than FAR m. Busy little things (people, vehicles: thousands of
+// triangles per metre of size) go from DETAIL m, where a child is about 15 px tall. The dark outlines go from OUTLINE m:
+// they are about 0.01 m wide, a sixth of a pixel there (characters already hide theirs from 30 m). What is not drawn
+// moves to layer 1, which the cameras do not show (`visible` is left alone). Checked twice a second; the list is
+// gathered again every 30 s, and what is added to the scene joins it straight away.
+{
+  const FAR = 240, DETAIL = 65, OUTLINE = 40, SMALL = 14, BUSY = 4000, units = [], box = new THREE.Box3(), s = new THREE.Sphere(), v = new THREE.Vector3();
+  let at = -1e9, next = 0, count = -1, seen = new WeakSet();
+  const skip = o => o === world.terrain || o.userData.road || o.userData.noFar || o.isInstancedMesh || o.isLight || o.isCamera;
+  const visit = (o, top, heroes) => {
+    if (skip(o) || heroes.has(o)) return;
+    box.setFromObject(o); if (box.isEmpty()) return; box.getBoundingSphere(s);
+    if (s.radius > SMALL) { o.children.forEach(c => visit(c, top, heroes)); return; }
+    const meshes = []; let tris = 0;
+    o.traverse(m => { if (!m.isMesh || skip(m)) return; meshes.push(m); const g = m.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; });
+    if (!meshes.length) return;
+    const d = Math.min(FAR, 90 + 20 * s.radius, tris > BUSY * Math.max(1, s.radius) ? DETAIL : FAR);
+    o.updateMatrixWorld(); units.push({ o, top, c: o.worldToLocal(s.center.clone()), far2: d * d, meshes });
+  };
+  // (all of it every 30 s; in between only what was added to the scene, which takes no time)
+  const gather = full => {
+    const heroes = new Set(G.heroes.map(h => h.av.root));
+    const drop = u => u.meshes.forEach(m => m.layers.set(0)); // (shown again; measured afresh if it comes back)
+    if (full) { units.forEach(drop); units.length = 0; seen = new WeakSet(); }
+    else for (let i = units.length; i--;) if (units[i].top.parent !== scene) { drop(units[i]); seen.delete(units[i].top); units.splice(i, 1); }
+    for (const o of scene.children) if (!seen.has(o)) { seen.add(o); visit(o, o, heroes); }
+  };
+  G.farCull = now => {
+    if (now < next || !G.heroes.length) return; next = now + 500;
+    if (now - at > 30000) { at = now; count = scene.children.length; gather(true); }
+    else if (scene.children.length !== count) { count = scene.children.length; gather(false); } // (vehicles are made when a child comes near)
+    const cams = G.heroes.map(h => h.cam.position), O2 = OUTLINE * OUTLINE;
+    for (const u of units) {
+      v.copy(u.c).applyMatrix4(u.o.matrixWorld); let d2 = 1e12;
+      for (const c of cams) d2 = Math.min(d2, (c.x - v.x) ** 2 + (c.z - v.z) ** 2);
+      for (const m of u.meshes) m.layers.set(d2 > u.far2 || (m.userData.outline && d2 > O2) ? 1 : 0);
+    }
+  };
 }
 G.openTrade = (i, id) => { if (G.paused) return; openTrade(G, G.heroes[i], id); };
 G.secrets = createSecrets(G);
