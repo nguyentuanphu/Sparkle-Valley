@@ -3401,7 +3401,6 @@ await check('onlineoff', async () => {
   ok(r.setting === false && r.off && !r.buttons && Object.values(r.guide).every(Boolean) && Object.keys(r.guide).length === 5 && r.code === null && !r.role && !r.peer && !r.door && !r.cloud && !r.beacon && !r.pres && !r.ws && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return 'a fresh device: "Playing with friends is off. Ask a grown-up to turn it on.", no Start or Join; a grown-ups\' note names Internet and playing online → Use the internet (EN and VI, no Studio) and its press-and-hold button opens that section (a tap does not); host, join and friends make no connection';
 });
-await b.close();
 // (Play reading trial, owner 11 Oct 2026 AEDT; docs/cores/play-reading.md) the ten reading games behind Studio's readingTrial
 await check('reading', async () => {
   const { solveReading } = await import('./readsolve.mjs'), RD = await import('../js/content/reading.js');
@@ -3454,6 +3453,7 @@ await check('reading', async () => {
   return `switch off: nothing loads or shows; on: 10 games in the Reading corner (7 for under-5s), all finish at Easy, Medium, Hard and for under-5s in English and Vietnamese; ${en} English and ${vi} Vietnamese lines`;
 });
 
+await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
 process.exit(failed.length ? 1 : 0);
