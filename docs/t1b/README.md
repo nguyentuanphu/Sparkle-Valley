@@ -40,3 +40,30 @@ sides), `cities.js` `streetSpot` (2.2 m from houses, 1.6 m from the road, falls 
    then the round report with the Netlify zip and the owner's "yes, deploy".
 Files: `js/content/map.js`, `js/vendors.js`, `js/cities.js` (kiosks), `js/hawkers.js`, `js/validate.js`,
 `docs/ARCHITECTURE.md`, `js/content/rules.js`, a new check in `tests/run.mjs`. No new spoken lines.
+
+## Built (r61, 11 Oct AEDT, after the owner's "go")
+The owner said "go" at about 5:25 pm AEDT, with the ice-cream van and Uncle Robbo's sausage sizzle joining Aussie
+Corner's row.
+- **Rules first:** STALL-001…004 in `docs/ARCHITECTURE.md` §9.5 (and `js/content/rules.js`), measured on each stall's own
+  footprint in `js/validate.js` (`world.stalls`, `world.walks`, filled by the builders), new check `stalls`. On r60
+  they found **97 problems** (`rules-r60.txt`; the r60 measurement above missed the market's trade stall, Music Corner
+  and clothes shop, the three "alone in the grass", and the walking sellers). After: **0** (`stalls.mjs`).
+- **One market row per place** in `js/content/map.js`: `STALL` (the distances), `MARKET_ROWS` (street, width, side,
+  first slot, spacing; the cities' rows come from their main gate), `rowSlot(place, i, depth)` (1.5 m back from the
+  street's edge, worked out from its width) and `walkPath(place)` (the footpath across the street from the row).
+  `js/vendors.js`, `js/regions.js`, `js/cities.js` (kiosks), `js/hawkers.js`, `js/main.js` (trade stall),
+  `js/learn.js` (Music Corner) and `js/shop.js` (clothes shop) take their spots from it.
+- **Each place** (`sky-r61/`):
+  - Three Regions Market: all 11 stalls in one row on the north side, north to south Vietnam from the gate; the game
+    hosts (Bông, Bà Năm, the pots) on the south side; Chùa Một Cột's pond 3.5 m further back.
+  - Aussie Corner: the row on the south footpath, facing the shops: the ice-cream van in its own paved bay, the vanilla
+    slice kiosk, then past the crossing Uncle Robbo's sausage sizzle and the pavlova kiosk. The shopkeepers stay at their
+    shop doors; their tap spots are on the footpath, no longer on the road.
+  - Two Homes Street: the two kiosks on the south footpath east of the crossing, clear of the brick houses.
+  - The cities: two kiosks on one side just inside the main gate (Bắc Ninh: the south side, clear of the Quan họ boat);
+    the landmarks 1 m further back (u ±9, v −4) so the kiosks and the sellers' footpath keep 3 m from them.
+  - Lotus Village: the kiosks on the north side of the lane in from the old gate. China, India: one side, just inside
+    the gate.
+  - Walking sellers: on the footpath across the street from each row (the market: the far half of its walking street).
+- **Not changed:** Lotus Village's three umbrella stalls round its square (a market-day group, not street stalls), Mr.
+  Bear's stall at Sunny Farm, and the villagers standing on Two Homes Street's north footpath.

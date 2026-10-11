@@ -795,7 +795,7 @@ await check('validate', async () => {
   const r = await P.page.evaluate(async () => (await import('/js/validate.js')).validateWorld(__sv));
   const errs = P.errors; await P.ctx.close();
   ok(!r.length && !errs.length, JSON.stringify(r.slice(0, 12)) + JSON.stringify(errs));
-  return 'ROAD-001/002/003/004/011 and VEH-001 hold';
+  return 'ROAD-001/002/003/004/011, VEH-001 and STALL-001…004 hold';
 });
 
 await check('stalls', async () => {
