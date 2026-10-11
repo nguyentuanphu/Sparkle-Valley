@@ -2703,6 +2703,40 @@ await check('names', async () => {
   return `${fs.readdirSync('../js', { recursive: true }).filter(f => String(f).endsWith('.js')).length} game files: every name is defined or imported`;
 });
 
+await check('hscroll', async () => {
+  // (Round U, owner 11 Oct: "I can't drag left and right on phone or desktop"; "on a tablet I can't scroll down the Map")
+  // the Backpack's tab row moves sideways and the Pad's Map page moves down, on a phone and a tablet by finger (also with
+  // the browser's own touch scrolling switched off, as strict as Safari: js/scrollhelp.js moves them by hand) and on a
+  // computer by mouse drag and wheel
+  const out = [];
+  for (const [name, w, h, touch] of [['phone', 390, 760, true], ['tablet', 820, 1180, true], ['computer', 1280, 800, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page); const page = P.page, cdp = await page.context().newCDPSession(page);
+    await page.waitForTimeout(600);
+    const at = sel => page.evaluate(s => { const e = document.querySelector(s); if (!e) return null; const q = e.getBoundingClientRect(); return { x: q.x + q.width / 2, y: q.y + Math.min(q.height / 2, 300) }; }, sel);
+    const finger = async (sel, dx, dy) => { const r = await at(sel); if (!r) return; await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: r.x, y: r.y }] }); for (let k = 1; k <= 10; k++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: r.x + dx * k / 10, y: r.y + dy * k / 10 }] }); await page.waitForTimeout(20); } await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await page.waitForTimeout(250); };
+    const mouse = async (sel, dx) => { const r = await at(sel); if (!r) return; await page.mouse.move(r.x, r.y); await page.mouse.down(); for (let k = 1; k <= 8; k++) await page.mouse.move(r.x + dx * k / 8, r.y); await page.mouse.up(); await page.waitForTimeout(200); };
+    const read = () => page.evaluate(() => { const j = document.querySelector('.jumpnav'), b = document.querySelector('.pad-body'); return { jn: j ? Math.round(j.scrollLeft) : -1, jnMax: j ? j.scrollWidth - j.clientWidth : -1, body: b ? Math.round(b.scrollTop) : -1, bodyMax: b ? b.scrollHeight - b.clientHeight : -1 }; });
+    for (const strict of touch ? [false, true] : [false]) {
+      if (strict) await page.addStyleTag({ content: '.jumpnav, .pad-body, .modal, .jumpnav button { touch-action: none !important; }' });
+      await page.evaluate(() => { document.querySelectorAll('.modal .x').forEach(x => x.click()); __sv.openPad(0, 'bag'); }); await page.waitForTimeout(700);
+      if (touch) await finger('.jumpnav', -200, 0); else await mouse('.jumpnav', -200);
+      const bag = await read();
+      if (!touch) { await page.evaluate(() => { const j = document.querySelector('.jumpnav'); j.scrollLeft = 0; }); const r = await at('.jumpnav'); await page.mouse.move(r.x, r.y); await page.mouse.wheel(0, 200); await page.waitForTimeout(250); }
+      const wheel = await read();
+      await page.evaluate(() => { document.querySelectorAll('.modal .x').forEach(x => x.click()); __sv.openPad(0, 'map'); }); await page.waitForTimeout(700);
+      if (touch) await finger('.pad-body', 0, -350); else { const r = await at('.pad-body'); await page.mouse.move(r.x, r.y); await page.mouse.wheel(0, 600); await page.waitForTimeout(300); }
+      const map = await read();
+      const tag = name + (strict ? ' (strict)' : '');
+      if (bag.jnMax > 4 && bag.jn < 40) out.push(`${tag}: the Backpack row did not move (${JSON.stringify(bag)})`);
+      if (!touch && bag.jnMax > 4 && wheel.jn < 40) out.push(`${tag}: the wheel did not move the Backpack row`);
+      if (map.bodyMax > 4 && map.body < Math.min(60, map.bodyMax)) out.push(`${tag}: the Map page did not move down (${JSON.stringify(map)})`);
+    }
+    const errs = P.errors; await P.ctx.close(); if (errs.length) out.push(name + ': ' + errs.join(' '));
+  }
+  ok(!out.length, out.join(' | '));
+  return 'the Backpack row moves by finger (phone, tablet, also as strict as Safari), by mouse drag and by wheel; the Map page moves down on every size';
+});
+
 await check('bilingual', async () => {
   // (Round U, owner 11 Oct: Grandma Huệ spoke Vietnamese with English set) no English slot of an [English, Vietnamese]
   // pair (an array, T(…, …) or { en, vi }) holds a Vietnamese sentence; names, songs and sayings that stay Vietnamese

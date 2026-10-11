@@ -1698,6 +1698,8 @@ resize();
 // title is already painted by then, and the valley is drawn behind it a frame later
 { let go = false; const start = () => { if (go) return; go = true; bootMark('shaders'); requestAnimationFrame(frame); };
   requestAnimationFrame(() => setTimeout(start, 30)); }
+// (Round U, owner: rows and pages scroll by finger and mouse everywhere: js/scrollhelp.js; loaded after the title)
+import('./scrollhelp.js').then(m => m.installScrollHelp());
 import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { if (playing) keepSpot(); save(); hush(); } });
 addEventListener('pagehide', () => { if (playing) keepSpot(); saveProfiles(true); });
