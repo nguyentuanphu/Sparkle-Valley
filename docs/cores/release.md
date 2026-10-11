@@ -83,3 +83,4 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - (11 Oct AEDT) r61 (T4a): no Netlify zip this round (owner); T4a is r61 because r60 went out from the other Release chat.
 - (11 Oct AEDT) r61 report (full suite 98/99, `startup` red as on main r60): owner said "push": round-t pushed to GitHub; not merged into main or deployed (no "yes, deploy" yet).
 - (11 Oct AEDT) r61 went live from the other Release chat (T1b) at 7:35 pm AEDT: T4a becomes r62, main merged in, full suite again before "yes, deploy" (owner).
+- (11 Oct AEDT, 10:45 pm) r62 (T4a) report, full suite 99/100 (`startup` red as on main r61): owner said "not yet" to deploy; round-t stays pushed, nothing merged into main.
