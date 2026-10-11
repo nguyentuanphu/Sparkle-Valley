@@ -9,7 +9,7 @@ Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
 ## Release
-- **Now:** building Round T4a for r60 (road surfaces by region, water colours and foam, reeds, footsteps) on `round-t`; T2 and T3 are live (r59, 11 Oct, 1:40 pm AEST); T4b is briefed for a Kid UI chat (`docs/cores/tasks/kid-ui-t4b.md`) · branch `round-t` · waiting for nothing · 11 Oct AEST
+- **Now:** Round T4a for r60 paused at the owner's word: roads, water map, footsteps and reeds written but not tested (ROUND-T.md Progress has the to-do list); a new Release chat picks it up on `round-t` · branch `round-t` · 11 Oct AEST
 - Round T stages T0 to T4: `docs/cores/ROUND-T.md`. Until Round T is merged, other cores do not change world positions or the map files (CLAUDE.md, helper rule 4).
 - Halloween decorations start growing about three weeks before 31 Oct: they only reach players once a round is deployed.
 - Still to build from the Round R plan (`docs/cores/ROUND-R.md`, Part 2): items 2 to 12 (Concept D layout, child's journey, homes, surprises, shop and wardrobe, money games, the rest of the festival groups, Hội làng times, 5–8 challenges, parent features, voice pack by area); the owner's privacy decisions of 9 Oct; splitting the code into per-core folders (infrastructure round).

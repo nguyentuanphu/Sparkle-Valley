@@ -271,6 +271,17 @@ export function heightAt(x, z) {
   return h;
 }
 
+// (round T4a) what a child is walking on at (x, z) (y: their feet): 'wood' on a bridge deck, 'water' in the shallows,
+// 'road' on asphalt or a town's paving, 'dirt' on a dirt road or footpath, 'sand' on the beach, else 'grass' (footsteps)
+export function surfaceAt(x, z, y = null) {
+  const h = heightAt(x, z);
+  if (y != null && y > h + .4 && bridgeAt(x, z, 4.5)) return 'wood';
+  if (h < WATER + .15) return 'water';
+  const rd = roadDist(x, z); if (rd.road && rd.d < rd.road.w / 2) return rd.road.kind === 'asphalt' ? 'road' : 'dirt';
+  if (CITIES.some(c => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1)) return 'road';
+  if (h < 1.6 && z > COAST.z - 40) return 'sand';
+  return 'grass';
+}
 export function regionAt(x, z) {
   if (dist2(x, z, PLATEAU.x, PLATEAU.z) < PLATEAU.r + 8 && heightAt(x, z) > PLATEAU.h - 2) return 'plateau'; // its top, from the map (round T lowered it to 8 m)
   for (const c of CITIES) if (x > c.x0 - 4 && x < c.x1 + 4 && z > c.z0 - 4 && z < c.z1 + 4) return c.id;
@@ -540,24 +551,26 @@ export function createWorld(scene, quality) {
   wx.fillStyle = '#ffffff'; wx.fillRect(0, 0, 128, 128); wx.strokeStyle = 'rgba(160,220,255,.9)'; wx.lineWidth = 3;
   for (let i = 0; i < 14; i++) { const x0 = Math.random() * 128, y0 = Math.random() * 128; wx.beginPath(); wx.arc(x0, y0, 6 + Math.random() * 10, .2, 1.4); wx.stroke(); }
   const wtex = new THREE.CanvasTexture(wc); wtex.wrapS = wtex.wrapT = THREE.RepeatWrapping; wtex.repeat.set(60, 60); wtex.colorSpace = THREE.SRGBColorSpace;
+  // (round T4a) the water map (paintWater, kept on the device like the map picture): each river, lake and the sea its own
+  // colour, deeper water darker, and a white foam line that moves along every shore; until it is ready (the first start
+  // paints it after the valley is built) the water is the plain blue of before. Still one plane, one draw.
+  const WU = { uWaterMap: { value: new THREE.Texture() }, uReady: { value: 0 }, uTime: { value: 0 }, uSize: { value: SIZE } };
   const waterMat = new THREE.MeshStandardMaterial({ color: '#2f8fc8', map: wtex, transparent: true, opacity: .8, roughness: .08, metalness: .25 });
+  waterMat.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, WU);
+    sh.vertexShader = 'varying vec2 vWXZ;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vWXZ = position.xz;');
+    sh.fragmentShader = 'uniform sampler2D uWaterMap; uniform float uReady, uTime, uSize; varying vec2 vWXZ;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+  if (uReady > .5) {
+    vec4 wm = texture2D(uWaterMap, clamp(vWXZ / uSize + .5, 0., 1.));
+    diffuseColor.rgb *= pow(wm.rgb, vec3(2.2)) / pow(vec3(.184, .561, .784), vec3(2.2));
+    float shore = clamp((wm.a - .2) / .8, 0., 1.), foam = smoothstep(.5, .95, shore) * (.55 + .45 * sin(uTime * 1.6 + shore * 14.));
+    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.), foam * .7);
+  }`);
+  };
+  waterMat.customProgramCacheKey = () => 'svwater';
   const water = new THREE.Mesh(new THREE.PlaneGeometry(SIZE + 400, SIZE + 400).rotateX(-Math.PI / 2), waterMat); water.position.y = WATER; scene.add(water);
-  W.updaters.push((dt, t) => { wtex.offset.set(t * .01, t * .006); });
-  // (round T2) a river with a tone (Sông Hồng, the red river) gets a tinted strip on its water: one mesh per tone,
-  // left out inside the lake it runs through
-  const tones = {}; for (const R of RIVERS) if (R.tone) (tones[R.tone] = tones[R.tone] || []).push(R);
-  for (const [tone, list] of Object.entries(tones)) {
-    const pos = [], idx = [];
-    for (const R of list) { const hw = 7 * R.w, pts = []; for (let i = 0; i < R.pts.length - 1; i++) { const [ax, az] = R.pts[i], [bx, bz] = R.pts[i + 1], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 2)); for (let k = 0; k < n; k++) pts.push([ax + (bx - ax) * k / n, az + (bz - az) * k / n]); } pts.push(R.pts[R.pts.length - 1]);
-      let open = false;
-      for (let i = 0; i < pts.length; i++) { const [x, z] = pts[i], [px, pz] = pts[Math.max(0, i - 1)], [nx, nz] = pts[Math.min(pts.length - 1, i + 1)], dx = nx - px, dz = nz - pz, l = Math.hypot(dx, dz) || 1;
-        if (dist2(x, z, LAKE.x, LAKE.z) < LAKE.r + 2) { open = false; continue; }
-        const v = pos.length / 3; pos.push(x - dz / l * hw, WATER + .03, z + dx / l * hw, x + dz / l * hw, WATER + .03, z - dx / l * hw);
-        if (open) idx.push(v - 2, v - 1, v, v - 1, v + 1, v); open = true; } }
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
-    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: tone, transparent: true, opacity: .9, roughness: .3, depthWrite: false, side: THREE.DoubleSide }));
-    m.userData.noFar = true; m.renderOrder = 1; scene.add(m);
-  }
+  W.updaters.push((dt, t) => { wtex.offset.set(t * .01, t * .006); WU.uTime.value = t; });
+  W.waterMap = cv => { const tx = new THREE.CanvasTexture(cv); tx.minFilter = tx.magFilter = THREE.LinearFilter; tx.generateMipmaps = false; WU.uWaterMap.value = tx; WU.uReady.value = 1; };
 
   // ---------- trees & plants (instanced) ----------
   const geos = {
@@ -982,6 +995,22 @@ export function createWorld(scene, quality) {
 }
 
 // Paint a top-down picture of the world for the map and minimap.
+// (round T4a) the water map: rgb the colour of the water at each spot of the valley (each river its own, deeper darker),
+// alpha how near the shore it is (0.2 deep … 1 at the water's edge: the foam line). Painted once, kept on the device.
+const WATER_COLOURS = { hong: '#a8714c', mekong1: '#8f8a58', mekong2: '#8f8a58', saigon_r: '#5f8c8f', brisbane_r: '#5f8f86', yarra: '#7a8462', murray: '#7c8660',
+  hoguom: '#5d9a72', billabong: '#6c8c66', lake: '#3fb0c6', sydney_harbour: '#2f7fbf', hoian_canal: '#4f9aa6', sea: '#2a7fc0' };
+export function paintWater(size = 256) {
+  const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d');
+  const img = x.createImageData(size, size), d = img.data, step = SIZE / size, base = new THREE.Color('#2f8fc8'), col = new THREE.Color();
+  for (let j = 0; j < size; j++) for (let i = 0; i < size; i++) {
+    const wx = -HALF + (i + .5) * step, wz = -HALF + (j + .5) * step, h = heightAt(wx, wz), deep = Math.max(0, WATER - h);
+    const id = waterAt(wx, wz, 40) || (wz > COAST.z - 30 ? 'sea' : null);
+    col.set(WATER_COLOURS[id] || base); col.multiplyScalar(1 - clamp(deep / 7, 0, 1) * .3);
+    const shore = h >= WATER ? 1 : 1 - smooth(0, 1.5, deep), k = (j * size + i) * 4;
+    d[k] = col.r * 255; d[k + 1] = col.g * 255; d[k + 2] = col.b * 255; d[k + 3] = (.2 + .8 * shore) * 255;
+  }
+  x.putImageData(img, 0, 0); return c;
+}
 export function paintMap(size = 256) {
   const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d');
   const img = x.createImageData(size, size), d = img.data, step = SIZE / size;

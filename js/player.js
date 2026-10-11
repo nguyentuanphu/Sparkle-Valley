@@ -3,7 +3,7 @@
 import { seatRider } from './vehicles.js';
 import { THREE } from './gfx.js';
 import { buildAvatar } from './avatar.js';
-import { WATER, heightAt } from './world.js';
+import { WATER, heightAt, surfaceAt } from './world.js';
 import { clamp, lerp, angleLerp } from './util.js';
 import { SFX } from './audio.js';
 
@@ -158,7 +158,7 @@ export class Hero {
     // remember a safe place to come back to
     this.safeTimer -= dt;
     if (this.onGround && !swimming && g > WATER + .5 && this.safeTimer <= 0) { this.lastSafe.copy(p); this.safeTimer = 1; }
-    if (want === 'walk' && this.onGround) { this.stepTimer -= dt * speed; if (this.stepTimer <= 0) { SFX.step(); this.stepTimer = 2.2; game.stats(this, speed); } }
+    if (want === 'walk' && this.onGround) { this.stepTimer -= dt * speed; if (this.stepTimer <= 0) { SFX.step(surfaceAt(p.x, p.z, p.y)); this.stepTimer = 2.2; game.stats(this, speed); } }
 
     this.speed = speed; this.state = this.cheerT > 0 ? 'cheer' : this.emoteT > 0 && want === 'idle' ? 'wave' : want === 'idle' && this._dancing ? 'dance' : want;
     this.cheerT -= dt; this.emoteT -= dt;
