@@ -169,6 +169,11 @@ Every stage ends with the full suite green, `node tests/world-audit.mjs` clean a
   - Online friends on different builds: see §4.
 
 ### T1b: Tidy streets (owner, 11 Oct AEDT; robot chat `claude/peaceful-hopper-un7oym`, after r57; T2 waits for it)
+**Status (11 Oct AEDT):** measured on r60 (T2 and T3 went first); findings, sky views and the measuring scripts in
+`docs/t1b/README.md`. Owner's "go" (11 Oct, about 5:25 pm AEDT; the van and Uncle Robbo's sausage sizzle join Aussie
+Corner's row). **Built as r61** on `claude/peaceful-hopper-un7oym`: rules STALL-001…004 and the `stalls` check (97
+problems on r60, 0 after), one market row per place in `js/content/map.js`; results and sky views before and after in
+`docs/t1b/README.md`. Waiting for the owner's "yes, deploy".
 The owner saw r56: stalls, kiosks and sellers stand cramped next to houses and roads, against the Concept D rules ("Kiosks
 and stalls stand in one row on one side of the main street, all facing it. No stall alone in a field"; "Food stalls, toy
 stalls and the shop are grouped in market rows near squares. Gánh vendors walk set loops between them").
@@ -298,11 +303,11 @@ Where the drawing and the written spec disagree (asked to the owner):
 - Main roads are drawn 6.4 m wide ("Vietnam main road (6.4 m)"); the hard rule R1 / ROAD-001 says asphalt 5.2 m (T4).
 
 ## Progress (for the next chat to pick up)
-**11 Oct 2026, T4a built and tested: release r61 (new Release core chat, branch `round-t`; waiting for the owner's "yes, deploy").** r60 went out from the other Release chat (the Play round and the bug fixes), so T4a is r61 (owner, 11 Oct AEDT). `main` (r60) merged into `round-t` first.
+**11 Oct 2026, T4a built and tested: release r62 (new Release core chat, branch `round-t`; waiting for the owner's "yes, deploy").** r60 (the Play round and the bug fixes) and r61 (T1b, tidy streets) went out from the other Release chat first, so T4a is r62 (owner, 11 Oct AEDT; first renumbered r61, then r62 when T1b took r61 at 7:35 pm AEDT). Both merged into `round-t`. `main` (r60) merged into `round-t` first.
 - Fixed in the code the earlier chat wrote: a syntax slip; the water map's colours were written as linear values and came out far too dark (now sRGB bytes); the picture was read upside down (north-up now, `flipY` off); Sông Hồng's colour spilled over the whole lake (the lake and the ponds now come before the rivers); the edges where two waters meet are softened (a small blur of the colours, not the foam); hyacinth floated just under the surface; reeds also keep 2 m off every deck and pier end to end; a pier sounds wooden, not like water.
 - Wired in: `createReeds(G)` after the plots (`G.reeds`), `js/reeds.js` in `sw.js` FILES, `index.html` modulepreload and `tests/mapcoords.mjs` FILES; `G.waterPic` for the checks. 137 reeds, 127 hyacinth.
 - Looked at (pictures in `tests/out/t4a`, not committed): the water on the first start and from the cache, Sông Hồng into the lake, the sea with its foam line, the Mekong and Sài Gòn, a Vietnam road (yellow dash), an Australia road (kerbs), Hà Nội's brick street, Melbourne's paving, the red-earth Memory Lanes, reeds and hyacinth close up, a sky view.
-- Checks: new `water` (RIVER-008/009) and `surface` (WORLD-014); `roadtone` also checks the markings (ROAD-015); rules in ARCHITECTURE §9 and `js/content/rules.js`. Full suite on r61 (11 Oct, 5:55-7:25 pm AEDT): 98/99; `startup` red (first start 1079 KB > 1035, title 1.8 s > 1.13 s), the same on main r60 measured side by side (1077 KB, title 1.7 s), so not T4a's (T4a adds 2 KB, `js/reeds.js`); `meet`, `cloud`, `knock`, `mapver`, `multiplayer` skipped (no local servers). `perf`: village 691 draws (r60 695), no rise. No new voice lines. No Netlify zip (owner).
+- Checks: new `water` (RIVER-008/009) and `surface` (WORLD-014); `roadtone` also checks the markings (ROAD-015); rules in ARCHITECTURE §9 and `js/content/rules.js`. Full suite as r61, before T1b was merged (11 Oct, 5:55-7:25 pm AEDT): 98/99; `startup` red (first start 1079 KB > 1035, title 1.8 s > 1.13 s), the same on main r60 measured side by side (1077 KB, title 1.7 s), so not T4a's (T4a adds 2 KB, `js/reeds.js`); `meet`, `cloud`, `knock`, `mapver`, `multiplayer` skipped (no local servers). `perf`: village 691 draws (r60 695), no rise. No new voice lines. No Netlify zip (owner).
 
 **11 Oct 2026, T4a started for r60, then paused at the owner's word (Release core chat, branch `round-t`, NOT TESTED, not deployed).** Owner: r60 is T4a only (World); T4b (signposts, name tags, the drawn Pad map) is a separate Kid UI chat (brief `docs/cores/tasks/kid-ui-t4b.md`). Decisions: Vietnam's roads get a yellow centre dash, Australia white with kerbs; footsteps from the game's own sound maker for now.
 - Written (code only, never run in a browser yet):

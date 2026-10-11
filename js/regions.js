@@ -12,7 +12,7 @@ import { T, nm, onLang, registerName } from './i18n.js';
 import { say } from './voice.js';
 import { SFX, tone } from './audio.js';
 import { heightAt, MARKET, AUSSIE, WATER, ULURU, BRIDGES } from './world.js';
-import { landmarkAt } from './content/map.js';
+import { landmarkAt, rowSlot, STALL } from './content/map.js';
 import { buildAvatar } from './avatar.js';
 import { Box, Cyl, gable, hip, win } from './town.js';
 import { dialog, reward } from './popups.js';
@@ -86,6 +86,8 @@ export function createRegions(G) {
   const { scene, world } = G, mat = toonVC();
   const put = (geo, x, z, rot = 0, dy = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, heightAt(x, z) + dy, z); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; scene.add(m); return m; };
   const box = (x0, x1, z0, z1) => world.boxes.push({ x0, x1, z0, z1 });
+  // the solid box round a footprint w × d (w along the street) turned to face `face`
+  const boxAround = (x, z, w, d, face) => { const hx = Math.abs(Math.cos(face)) * w / 2 + Math.abs(Math.sin(face)) * d / 2, hz = Math.abs(Math.sin(face)) * w / 2 + Math.abs(Math.cos(face)) * d / 2; box(x - hx, x + hx, z - hz, z + hz); };
   const signAt = (text, x, y, z, rot = 0, bg, fg, w, h) => { const s = signMesh(text, bg, fg, w, h); s.position.set(x, heightAt(x, z) + y, z); s.rotation.y = rot; scene.add(s); return s; };
   const people = [];
   const person = (look, x, z, face) => { const A = buildAvatar(look, null); A.root.position.set(x, heightAt(x, z), z); A.root.rotation.y = face; scene.add(A.root); people.push(A); world.colliders.push({ x, z, r: .4 }); return A; };
@@ -130,22 +132,23 @@ export function createRegions(G) {
     signAt(['BẾN THÀNH MARKET', 'CHỢ BẾN THÀNH'], M.x1 + .25, 5.2, mz - 4, -Math.PI / 2, '#2f7ac8', '#ffffff', 5, .8); }
 
   // ---- market stalls and vendors ----
+  // (T1b) each stall in its slot of the market row (js/content/map.js), its seller behind the counter (js/vendors.js)
   for (const v of VENDORS.filter(v => v.region !== 'au')) {
-    const south = Math.abs(v.face) > 1;
+    const s = rowSlot(v.row.place, v.row.i, v.row.d), f = (k, n) => [s.x + s.fx * k + s.ax * n, s.z + s.fz * k + s.az * n];
     if (v.stall) {
-      const sx = v.x, sz = v.z + (south ? -1.4 : 1.4);
-      put(stall(v.stall[0], v.stall[1]), sx, sz, south ? Math.PI : 0);
-      signAt(v.sign, sx, 3.2, sz + (south ? -1.15 : 1.15), south ? Math.PI : 0, v.stall[0], '#fff8e0', 3, .55);
-      v.goods.forEach((gd, k) => { const s = sprite(gd, .55); s.position.set(sx - .7 + k * 1.2, M.h + 1.25, sz); scene.add(s); });
-      box(sx - 1.6, sx + 1.6, sz - .9, sz + .9);
-    }
+      put(stall(v.stall[0], v.stall[1], 2.8), s.x, s.z, s.face);
+      const [nx, nz] = f(1.15, 0); signAt(v.sign, nx, 3.2, nz, s.face, v.stall[0], '#fff8e0', 2.8, .55);
+      v.goods.forEach((gd, k) => { const sp = sprite(gd, .55), [gx, gz] = f(0, -.6 + k * 1.2); sp.position.set(gx, M.h + 1.25, gz); scene.add(sp); });
+      boxAround(s.x, s.z, 2.8, 1.6, s.face);
+      world.stalls.push({ id: v.id, place: 'market', kind: 'stall', x: s.x, z: s.z, w: 2.8, d: 1.6, face: s.face, tap: 'v_' + v.id });
+    } else if (v.pole) world.stalls.push({ id: v.id, place: 'market', kind: 'pole', x: s.x, z: s.z, w: .8, d: 2.4, face: s.face, tap: 'v_' + v.id });
     const A = person(v.look, v.x, v.z, v.face);
     if (v.pole) { // gánh hàng rong: a bamboo pole with two baskets on her shoulder
       const pole = new THREE.Mesh(merge([P(Box(2.4, .07, .07), '#c9a35a', [0, 0, 0]), ...[-1.1, 1.1].flatMap(x => [P(Cyl(.32, .25, .35, 10), '#b98a4a', [x, -.75, 0]), P(new THREE.SphereGeometry(.26, 8, 5), '#7fc45a', [x, -.55, 0], [0, 0, 0], [1, .5, 1]), P(Box(.02, .6, .02), '#7a5a3a', [x, -.3, 0])])]), mat);
       pole.position.set(0, 1.18, .02); A.root.add(pole);
     }
     tag(scene, v.name, v.x, M.h + 2.5, v.z);
-    I('v_' + v.id, v.x, v.z + (south ? -2.6 : 2.6), 3, v.food[0], () => nm(v.name), h => vendorTalk(G, h, v));
+    const [tx, tz] = f(v.row.d / 2 + .75, 0); I('v_' + v.id, tx, tz, 3, v.food[0], () => nm(v.name), h => vendorTalk(G, h, v));
   }
 
   // ================= Aussie Corner =================
@@ -175,17 +178,23 @@ export function createRegions(G) {
   { const p = [P(Box(7, 3.4, 6), '#fff3c4', [0, 1.7, 0]), P(Box(7.2, .4, 6.2), '#e8c03a', [0, 3.6, 0])];
     for (let k = 0; k <= 10; k++) { const a = -1.1 + k * .22, r = 6; p.push(P(new THREE.SphereGeometry(1.35 - Math.abs(k - 5) * .1, 10, 8), k === 0 || k === 10 ? '#6b5a2a' : '#f2d23a', [Math.sin(a) * r, 4.2 + Math.cos(a) * r - r + 3.2, 0])); }
     put(merge(p), A.x + 12, az - 8); box(A.x + 8.5, A.x + 15.5, az - 11, az - 5); signAt(['THE BIG BANANA', 'QUẢ CHUỐI KHỔNG LỒ'], A.x + 12, 2.9, az - 4.95, 0, '#e8c03a', '#5a3a1a', 5, .8); }
-  // ice-cream van parked on the kerb
+  // the ice-cream van
   const van = new THREE.Group();
   { const p = [P(Box(5, 2.2, 2.2), '#f7c6d9', [0, 1.5, 0]), P(Box(5.02, .5, 2.22), '#ffffff', [0, 2.4, 0]), P(Box(1.4, 1.5, 2.1), '#f7c6d9', [3.1, 1.15, 0]), P(Box(.05, .8, 1.8), '#9fd2ee', [3.82, 1.5, 0]),
       P(Box(2, 1, .05), '#3a3030', [-.4, 1.7, 1.12]), P(Box(2.2, .1, .5), '#ffffff', [-.4, 1.15, 1.3]),
       ...[[-1.6, 1], [-1.6, -1], [2.8, 1], [2.8, -1]].map(([x, z]) => P(Cyl(.42, .42, .25, 12), '#2f3336', [x, .42, z * 1.05], [Math.PI / 2, 0, 0])),
       P(new THREE.ConeGeometry(.5, 1.2, 10), '#e8b36a', [-.5, 3.3, 0], [Math.PI, 0, 0]), P(new THREE.SphereGeometry(.55, 10, 8), '#ffe0ec', [-.5, 4.1, 0]), P(new THREE.SphereGeometry(.2, 8, 6), '#e8433a', [-.5, 4.65, 0])];
-    van.add(new THREE.Mesh(merge(p), mat)); van.position.set(A.x + 14, A.h, az + 4.2); van.rotation.y = Math.PI; scene.add(van); box(A.x + 11, A.x + 17, az + 3, az + 5.4); }
+    van.add(new THREE.Mesh(merge(p), mat));
+    // (T1b) parked in its own bay in the market row, its hatch to the street: a paved bay from the kerb to its back
+    const V = VENDORS.find(v => v.id === 'gazza').row, s = rowSlot(V.place, V.i, V.d), W2 = 6.4, d2 = V.d + STALL.road;
+    van.position.set(s.x - Math.cos(s.face) * .66, A.h, s.z + Math.sin(s.face) * .66); van.rotation.y = s.face; scene.add(van); boxAround(s.x, s.z, W2, V.d, s.face);
+    put(new THREE.BoxGeometry(W2 + .6, .06, d2).translate(0, .04, 0), s.x + s.fx * (STALL.road / 2), s.z + s.fz * (STALL.road / 2), s.face).material = toon('#c3c7c9');
+    world.stalls.push({ id: 'gazza', place: 'aussie', kind: 'van', x: s.x, z: s.z, w: W2, d: V.d, face: s.face, tap: 'v_gazza' }); }
   // sausage sizzle tent with a barbie
   { const p = [P(Box(2.4, .9, 1.2), '#4a4a4a', [0, .45, 0]), P(Box(2.2, .06, 1), '#2a2a2a', [0, .93, 0]), ...[-.6, -.2, .2, .6].map(x => P(Cyl(.08, .08, .9, 6), '#b5483c', [x, 1, .1], [0, 0, Math.PI / 2])),
       ...[[-1.6, -1.4], [1.6, -1.4], [-1.6, 1.4], [1.6, 1.4]].map(([x, z]) => P(Box(.08, 2.6, .08), '#dddddd', [x, 1.3, z])), P(Box(3.4, .1, 3), '#2f7ac8', [0, 2.6, 0]), P(new THREE.ConeGeometry(2.4, .7, 4), '#ffffff', [0, 3, 0], [0, Math.PI / 4, 0])];
-    put(merge(p), A.x + 3, az + 9.8); box(A.x + 1.7, A.x + 4.3, az + 9.1, az + 10.5); const smoke = sprite('💨', .8); smoke.position.set(A.x + 3, A.h + 1.6, az + 9.8); scene.add(smoke); world.updaters.push((dt, t) => { smoke.position.y = A.h + 1.5 + (t * .6 % 1); smoke.material.opacity = 1 - (t * .6 % 1); }); }
+    const R = VENDORS.find(v => v.id === 'robbo').row, s = rowSlot(R.place, R.i, R.d);   // (T1b) in the market row, facing the street
+    put(merge(p), s.x, s.z, s.face); boxAround(s.x, s.z, 2.6, 1.4, s.face); world.stalls.push({ id: 'robbo', place: 'aussie', kind: 'tent', x: s.x, z: s.z, w: 3.4, d: 3, face: s.face, tap: 'v_robbo' }); const smoke = sprite('💨', .8); smoke.position.set(s.x, A.h + 1.6, s.z); scene.add(smoke); world.updaters.push((dt, t) => { smoke.position.y = A.h + 1.5 + (t * .6 % 1); smoke.material.opacity = 1 - (t * .6 % 1); }); }
 
   // the playground: flying fox, merry-go-round, see-saw
   const play = [];
@@ -215,14 +224,18 @@ export function createRegions(G) {
   // shopkeepers
   for (const v of VENDORS.filter(v => v.region === 'au')) {
     person(v.look, v.x, v.z, v.face);
-    tag(scene, v.name, v.x, A.h + 2.5, v.z);
-    I('v_' + v.id, v.x, v.z + (Math.abs(v.face) > 1 ? -2.4 : 2.6), 3, v.food[0], () => nm(v.name), h => vendorTalk(G, h, v));
+    if (!v.row) world.stalls.push({ id: v.id, place: 'aussie', kind: 'shop', x: v.x, z: v.z, w: .8, d: .8, face: v.face, tap: 'v_' + v.id });
+    tag(scene, v.name, v.x, A.h + (v.id === 'gazza' ? 2.9 : 2.5), v.z);
+    // (T1b) the spot a child taps is just in front of the seller (Uncle Robbo: in front of his tent), on the footpath, never on the road
+    const ahead = v.id === 'robbo' ? 3.85 : v.row ? 1.6 : 1;
+    I('v_' + v.id, v.x + Math.sin(v.face) * ahead, v.z + Math.cos(v.face) * ahead, 3, v.food[0], () => nm(v.name), h => vendorTalk(G, h, v));
   }
 
   // ---- kids and grown-ups who host the folk games ----
   const HOSTS = [
-    ['datnieu', 'Bông', L('dress', '#ff7eb8', '#1d1412', 'buns'), M.x - 4, mz - 7.5, 0, ['Đập niêu! I will blindfold you, and we all shout where the pot is!', 'Đập niêu nè! Tớ bịt mắt bạn, cả nhóm sẽ hô cho bạn biết niêu ở đâu!']],
-    ['chichi', 'Bà Năm', L('aodai', '#5b7fbf', '#d8d8d8', 'buns'), M.x + 7, mz - 8.5, 0, ['Come, grandchild. Put your finger in my hand: chi chi chành chành!', 'Lại đây cháu. Đặt ngón tay vào tay bà nào: chi chi chành chành!']],
+    // (T1b) the market's game hosts stand on the south side, across the street from its market row
+    ['datnieu', 'Bông', L('dress', '#ff7eb8', '#1d1412', 'buns'), M.x - 4, mz + 7.5, Math.PI, ['Đập niêu! I will blindfold you, and we all shout where the pot is!', 'Đập niêu nè! Tớ bịt mắt bạn, cả nhóm sẽ hô cho bạn biết niêu ở đâu!']],
+    ['chichi', 'Bà Năm', L('aodai', '#5b7fbf', '#d8d8d8', 'buns'), M.x + 7, mz + 8.5, Math.PI, ['Come, grandchild. Put your finger in my hand: chi chi chành chành!', 'Lại đây cháu. Đặt ngón tay vào tay bà nào: chi chi chành chành!']],
     ['words', 'Cô Hạnh', L('aodai', '#ffffff', '#1d1412', 'long'), M.x - 21, mz + 4.6, Math.PI, ['I am a teacher. Did you know a bowl is "bát" in the north and "chén" in the south? Want to learn more?', 'Cô là cô giáo. Con có biết miền Bắc gọi là "bát", miền Nam gọi là "chén" không? Học thêm nhé?']],
     ['sackrace', 'Noah', L('overalls', '#2f7ac8', '#e8c26a', 'short', 'cap', '#ffe3d1'), A.x - 20, az + 10.5, Math.PI, ['Sack race! Like at our school sports day. Ready, set, hop!', 'Đua nhảy bao bố! Giống ngày hội thể thao ở trường tớ. Chuẩn bị, nhảy!']],
     ['parcel', 'Chloe', L('dress', '#ffd23f', '#a8432a', 'long', 'bow', '#ffe3d1'), A.x, az + 23, -1.4, ["It's my birthday party! Let's play pass the parcel!", 'Hôm nay sinh nhật tớ! Chơi chuyền quà đi!']],
@@ -237,7 +250,7 @@ export function createRegions(G) {
     put(merge(t), A.x - 2, az + 23); world.colliders.push({ x: A.x - 2, z: az + 23, r: 1.2 }); ['🎈', '🎂', '🎁'].forEach((e, k) => { const sp = sprite(e, .7); sp.position.set(A.x - 2.8 + k * .8, A.h + 1.2 + (k === 0 ? .8 : 0), az + 23); scene.add(sp); }); }
   { const t = [P(Box(.15, 3.2, .15), '#6b4a32', [-2.5, 1.6, 0]), P(Box(.15, 3.2, .15), '#6b4a32', [2.5, 1.6, 0]), P(Box(5.2, .12, .12), '#6b4a32', [0, 3.2, 0])];
     for (let k = 0; k < 4; k++) t.push(P(Cyl(.02, .02, .7, 3), '#a08060', [-1.8 + k * 1.2, 2.85, 0]), P(new THREE.SphereGeometry(.32, 8, 6), '#a0603a', [-1.8 + k * 1.2, 2.35, 0], [0, 0, 0], [1, .85, 1]));
-    put(merge(t), M.x - 4, mz - 10); world.colliders.push({ x: M.x - 6.5, z: mz - 10, r: .3 }, { x: M.x - 1.5, z: mz - 10, r: .3 }); }
+    put(merge(t), M.x - 4, mz + 10); world.colliders.push({ x: M.x - 6.5, z: mz + 10, r: .3 }, { x: M.x - 1.5, z: mz + 10, r: .3 }); }
 
   // ================= landmarks in the wider valley =================
   const [ox, oz] = landmarkAt('opera'), [bx, bz] = landmarkAt('bondi'), [hx, hz] = landmarkAt('lighthouse');
