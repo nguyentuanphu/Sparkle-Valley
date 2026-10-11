@@ -45,6 +45,8 @@ import { createFun, confetti } from './fun.js';
 import { createLearning } from './learn.js';
 import { createShowcase } from './showcase.js';
 import { createRoads, plantRoadside } from './roads.js';
+import { createSignposts } from './signposts.js';
+import { createNameTags } from './nametags.js';
 import { createTraffic } from './traffic.js';
 import { RELEASES } from './content/releases.js';
 import { releaseNew, featureOn } from './custom.js';
@@ -1499,6 +1501,7 @@ function frame(now) {
     if (r.length > 1) aimCam(h, q);
     world.updateSky(0, h.cam.position, h.pos);
     renderer.render(scene, h.cam);
+    if (G.nameTags) G.nameTags.update(i, h, q);
     const p = h.profile;
     // what the minimap shows, worked out only when it is redrawn
     const markersFor = () => { const markers = [];
@@ -1622,6 +1625,8 @@ world.levelled = levelUnderBuildings(world, scene); bootMark('levelled'); await 
 G.plots = createPlots(G); // (round T3) the Memory Villages' garden plots and the spare ones by each city, on their levelled ground
 G.reeds = createReeds(G); // (round T4a) reeds along the banks, water hyacinth in the quiet waters (two draws)
 world.roadside = plantRoadside(G); // soft road edges and flowers, once everything stands
+G.signposts = createSignposts(G); // (round T4b, js/signposts.js) a picture signpost at every road junction
+G.nameTags = createNameTags(G); // (round T4b, js/nametags.js) names float over the places nearby, at most 4
 bootMark('roadside'); G.solidsReady = buildSolids(G); bootMark('solids'); // (no breath here: the solid map is read once everything below is placed too) // nobody walks through houses and things (js/solids.js)
 startPackBar(); // the recorded voices downloading: a small bar at the bottom (js/packbar.js)
 startCounting(G); // how many children play, and what they play, for Studio's report (js/players.js; Grown-ups can switch it off)
