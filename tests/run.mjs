@@ -178,7 +178,7 @@ await check('features', async () => {
     const o = {};
     o.cities = W.CITIES.length; o.roads = W.ROADS.length; o.landmarks = R.LANDMARKS.length;
     o.kiosks = G.interactables.filter(i => /^v_k_/.test(i.id)).length;
-    o.hosts = ['puppets', 'dongho', 'dragonfire', 'traffic', 'ferries', 'tram', 'koala'].filter(g => G.gameSpot(g)).length;
+    o.hosts = ['puppets', 'dongho', 'dragonfire', 'traffic', 'kite', 'ferries', 'tram', 'koala'].filter(g => G.gameSpot(g)).length;
     o.house8 = !!G.interactables.find(i => i.id === 'house8');
     o.tales = G.TALES.length; o.vnTales = G.TALES.filter(t => t.flag === '🇻🇳').length;
     // the Dragon Bridge deck is walkable over the river
@@ -219,7 +219,8 @@ await check('features', async () => {
   r.chatter = seen;
   const errs = P.errors.slice(); await P.ctx.close();
   const fails = [];
-  if (r.cities !== 7) fails.push('cities'); if (r.kiosks < 26) fails.push('kiosks'); if (r.hosts !== 7) fails.push('hosts'); if (r.landmarks < 47) fails.push('landmarks');
+  // (round T3: Bà Rịa–Vũng Tàu is the eighth city, Anh Hai's kites its host; two more kiosks)
+  if (r.cities !== 8) fails.push('cities'); if (r.kiosks < 28) fails.push('kiosks'); if (r.hosts !== 8) fails.push('hosts'); if (r.landmarks < 47) fails.push('landmarks');
   if (!r.house8) fails.push('house8'); if (r.tales < 32 || r.vnTales < 18) fails.push('tales'); if (!(r.deck > r.river + 3)) fails.push('dragon deck');
   if (r.pets !== 'kitty+puppy' && r.pets !== 'puppy+kitty' && r.pets.split('+').length !== 2) fails.push('pets ' + r.pets); if (!r.petsVisible) fails.push('pets hidden');
   for (const k of ['dialogClosed', 'keyMap', 'zoom', 'theatre', 'flewToHost', 'chatter']) if (!r[k]) fails.push(k);
@@ -2005,6 +2006,126 @@ await check('regions', async () => {
   ok(r.home === 'plateau', `the home spot reads ${r.home}, not plateau`);
   ok(!errs.length, errs.join(' | '));
   return `${r.n} areas all in the valley; home, Lotus Village, Phố Hai Quê, Chợ Ba Miền and Aussie Corner read as themselves`;
+});
+
+await check('bridges', async () => {
+  // (round T2, RIVER-004, ROAD-009) every bridge spans its own water: at least 4 m of water under the middle of the span,
+  // both ends on land, the deck is walkable; every bridge landmark stands on its bridge; and no road runs through water anywhere
+  // except on a bridge deck
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), M = await import('/js/content/map.js'), G = __sv, bad = [];
+    const at = (B, u, v = 0) => B.axis === 'z' ? [B.c + v, u] : [u, B.c + v];
+    for (const B of W.BRIDGES) {
+      // the water under the deck: at least 4 m of it, all within the middle 60 % of the span (the ends rest on raised banks)
+      const span = B.a1 - B.a0; let wet = 0, first = null, last = null; for (let u = B.a0; u <= B.a1; u += .25) { const [x, z] = at(B, u); if (W.heightAt(x, z) < W.WATER - .3) { wet += .25; if (first == null) first = u; last = u; } }
+      if (wet < 4 || first < B.a0 + span * .2 || last > B.a1 - span * .2) bad.push(`${B.id}: ${wet} m of water under it, from ${first} to ${last} (span ${B.a0} to ${B.a1})`);
+      for (const u of [B.a0 - 1.5, B.a1 + 1.5]) { const [x, z] = at(B, u); if (W.heightAt(x, z) < W.WATER + .5) bad.push(`${B.id}: an end is not on land (${x},${z})`); }
+      const [mx, mz] = at(B, (B.a0 + B.a1) / 2), y = G.world.groundAt(mx, mz, B.h + 2); if (Math.abs(y - B.h) > .6) bad.push(`${B.id}: deck not walkable (${y.toFixed(1)} vs ${B.h})`);
+      if (B.over && !W.RIVERS.some(R => R.id === B.over)) bad.push(`${B.id}: over unknown water ${B.over}`);
+      // (the Dragon Bridge is its own landmark, built with the roads: no postcard spot in the map)
+      if (B.landmark && M.landmarkAt(B.landmark)) { const [lx, lz] = M.landmarkAt(B.landmark); if (!W.bridgeAt(lx, lz, B.w / 2 + .1)) bad.push(`${B.id}: its landmark ${B.landmark} is not on it`); }
+    }
+    let wetRoad = 0; const where = [];
+    for (const L of G.world.roadLines) L.pts.forEach(([x, z], i) => { if (!L.deck[i] && W.heightAt(x, z) < W.WATER - .2) { wetRoad++; if (where.length < 6) where.push(`${x.toFixed(0)},${z.toFixed(0)}`); } });
+    if (wetRoad) bad.push(`${wetRoad} road points in water off any deck: ${where.join(' ')}`);
+    return { bad, n: W.BRIDGES.length, lm: W.BRIDGES.filter(B => B.landmark).map(B => B.landmark) };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.bad.length, r.bad.slice(0, 10).join('; '));
+  ok(!errs.length, errs.join(' | '));
+  return `${r.n} bridges each over its water, ends on land, decks walkable; landmarks on their bridges: ${r.lm.join(', ')}; no road in water`;
+});
+
+await check('boats', async () => {
+  // (round T2, RIVER-002/005/006) ride every boat end to end, 1 m at a time: the water under it and 1.5 m either side
+  // is deep enough (at the piers a little shallower), every deck it passes is high enough over it, and every pier's land
+  // end joins a road or footpath; the raft stops by every bridge it passes under
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), M = await import('/js/content/map.js'), G = __sv, bad = [], THREE = await import('/vendor/three.module.js');
+    const F = G.ferries.ferries, info = [];
+    for (const f of F) {
+      const box = new THREE.Box3().setFromObject(f.model), tall = box.max.y - W.WATER, name = f.boat === 'vtboat' ? 'Vũng Tàu boat' : f.harbour ? 'harbour ferry' : f.line ? 'raft line' : f.loop ? 'lake ferry' : 'crossing raft';
+      let shallow = 0, low = 0, first = '';
+      const stopPts = f.stops.map(s => f.path[s.i]);
+      for (let i = 0; i < f.path.length - (f.loop ? 0 : 1); i++) { const a = f.path[i], c = f.path[(i + 1) % f.path.length], L = Math.hypot(c.x - a.x, c.z - a.z), n = Math.max(1, Math.ceil(L));
+        for (let k = 0; k < n; k++) { const x = a.x + (c.x - a.x) * k / n, z = a.z + (c.z - a.z) * k / n, ux = -(c.z - a.z) / (L || 1), uz = (c.x - a.x) / (L || 1);
+          const nearStop = stopPts.some(p => Math.hypot(p.x - x, p.z - z) < 6), lim = nearStop ? W.WATER - .25 : W.WATER - .8;
+          const hs = [0, -1.5, 1.5].map(o => W.heightAt(x + ux * o, z + uz * o)); if ((nearStop ? hs[0] : Math.max(...hs)) > lim) { shallow++; if (!first) first = `${x.toFixed(0)},${z.toFixed(0)}`; }
+          const B = W.bridgeAt(x, z, 4); if (B && B.h - tall < .5) low++; } }
+      if (shallow) bad.push(`${name}: ${shallow} m too shallow (first at ${first})`);
+      if (low) bad.push(`${name}: ${low} m under a deck too low for it`);
+      for (const s of f.stops) { const p = s.dock && s.dock.pier && s.dock.pier.land; if (!p) continue; const rd = W.roadDist(p.x, p.z); if (!rd.road || rd.d > rd.road.w / 2 + 3) bad.push(`${name}: the pier at ${p.x.toFixed(0)},${p.z.toFixed(0)} (${s.name()}) joins no road (${rd.d.toFixed(1)} m)`); }
+      info.push(`${name} ${f.stops.length} stops`);
+    }
+    const raft = F.find(f => f.line), want = (M.BOATS.find(b => b.id === 'raft').bridgeStops || []).map(s => s.bridge), have = raft ? raft.stops.map(s => s.bridge).filter(Boolean) : [];
+    const missing = want.filter(id => !have.includes(id)); if (missing.length) bad.push('the raft does not stop by ' + missing.join(', '));
+    if (!F.some(f => f.harbour)) bad.push('no Sydney Harbour ferry');
+    // (round T3) every boat the map gives two piers runs: the Sydney Harbour ferry and the Sài Gòn boat to Vũng Tàu
+    for (const B of M.BOATS.filter(B => B.piers)) if (!F.some(f => f.boat === B.id)) bad.push(`no boat ${B.id}`);
+    return { bad, info };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.bad.length, r.bad.slice(0, 10).join('; '));
+  ok(!errs.length, errs.join(' | '));
+  return r.info.join(', ') + '; every route deep enough, under high enough decks, every pier on a road or path';
+});
+
+await check('plots', async () => {
+  // (round T3, ROUND-T.md T3) the garden plots: at least 60 (two Memory Villages and up to three spare by each city); each level
+  // within 5 cm, off every road and all water, its front within 2 m of a road's edge, a unique id and address, and nothing
+  // standing on it (no solid cell, no collider, no building box); one garden mesh for all of them
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), G = __sv, bad = []; await G.solidsReady;
+    const PL = W.PLOTS, ids = new Set(), en = new Set(), vi = new Set(), by = {};
+    for (const p of PL) {
+      const B = W.plotBox(p), tag = `${p.id} (${p.x.toFixed(0)},${p.z.toFixed(0)})`; by[p.village] = (by[p.village] || 0) + 1;
+      if (ids.has(p.id)) bad.push('two plots called ' + p.id); ids.add(p.id);
+      if (en.has(p.address[0]) || vi.has(p.address[1])) bad.push(`${tag}: address ${p.address[0]} used twice`); en.add(p.address[0]); vi.add(p.address[1]);
+      let lo = 1e9, hi = -1e9, road = '', wet = false, solid = 0;
+      for (let x = B.x0 + .15; x <= B.x1 - .15; x += .5) for (let z = B.z0 + .15; z <= B.z1 - .15; z += .5) {
+        const h = W.heightAt(x, z); lo = Math.min(lo, h); hi = Math.max(hi, h);
+        const rd = W.roadDist(x, z); if (rd.road && rd.d < rd.road.w / 2) road = rd.road.id;
+        if (h < W.WATER + .5 || W.waterAt(x, z, 4)) wet = true;
+        if (G.world.solidAt(x, z)) solid++;
+      }
+      if (hi - lo > .05) bad.push(`${tag}: not level (${(hi - lo).toFixed(2)} m)`);
+      if (road) bad.push(`${tag}: on the road ${road}`);
+      if (wet) bad.push(`${tag}: in the water`);
+      if (solid) bad.push(`${tag}: ${solid} solid cells on it`);
+      const fx = p.x + Math.sin(p.rot) * p.d / 2, fz = p.z + Math.cos(p.rot) * p.d / 2, fr = W.roadDist(fx, fz);
+      if (!fr.road || fr.d - fr.road.w / 2 > 2) bad.push(`${tag}: its front is ${(fr.d - (fr.road ? fr.road.w / 2 : 0)).toFixed(1)} m from a road`);
+      const inside = (x, z, m = 0) => x > B.x0 - m && x < B.x1 + m && z > B.z0 - m && z < B.z1 + m;
+      const col = G.world.colliders.find(c => inside(c.x, c.z, c.r * .5)); if (col) bad.push(`${tag}: something stands on it (${col.x.toFixed(0)},${col.z.toFixed(0)})`);
+      const box = G.world.boxes.find(o => !o.room && o.x1 > B.x0 && o.x0 < B.x1 && o.z1 > B.z0 && o.z0 < B.z1); if (box) bad.push(`${tag}: a building box overlaps it`);
+    }
+    let gardens = 0; G.scene.traverse(o => { if (o.userData.plots) gardens++; });
+    return { n: PL.length, bad, by, gardens, count: G.plots ? G.plots.count : 0 };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.n >= 60, `only ${r.n} plots (want 60 or more)`);
+  ok(!r.bad.length, r.bad.slice(0, 10).join('; ') + (r.bad.length > 10 ? ` … ${r.bad.length} in all` : ''));
+  ok(r.gardens === 1 && r.count === r.n, `the gardens are ${r.gardens} meshes for ${r.count} of ${r.n} plots (want one mesh for all)`);
+  ok(!errs.length, errs.join(' | '));
+  return `${r.n} plots (${Object.entries(r.by).map(([k, v]) => `${k} ${v}`).join(', ')}): each level, dry, off the roads, its front by a road, a unique address, nothing on it; one garden mesh`;
+});
+
+await check('roadtone', async () => {
+  // (round T2, ROAD-014, Concept D "B") every asphalt road carries its region's colour, one shared material per colour,
+  // and the ring road round the home island is closed
+  const M = await import('../js/content/map.js'), bad = [];
+  for (const R of M.ROADS) if (R.kind === 'asphalt' && !(R.tone in M.ROAD_TONES)) bad.push(`${R.id} has no colour`);
+  const ring = M.ROADS.find(R => R.id === 'ring'); if (!ring || !ring.loop) bad.push('the ring road is not a closed loop');
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const mats = await P.page.evaluate(() => { const s = new Set(); __sv.scene.traverse(o => { if (o.userData.road && o.material && o.material.map) s.add(o.material.uuid); }); return s.size; });
+  const errs = P.errors; await P.ctx.close();
+  const tones = new Set(M.ROADS.filter(R => R.kind === 'asphalt').map(R => M.ROAD_TONES[R.tone] || 'grey'));
+  ok(!bad.length, bad.join('; '));
+  ok(mats <= tones.size + 2, `${mats} road materials for ${tones.size} asphalt colours (one each, plus dirt and footpath)`);
+  ok(!errs.length, errs.join(' | '));
+  return `${M.ROADS.filter(R => R.kind === 'asphalt').length} asphalt roads in ${tones.size} colours, ${mats} road materials; the ring road is closed`;
 });
 
 await check('walkaway', async () => {

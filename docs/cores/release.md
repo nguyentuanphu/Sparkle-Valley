@@ -23,7 +23,7 @@ when the owner says so.
 8. Ask one pop-up question per round: “yes, deploy”. It covers pushing the release branch and merging it into main
    (which makes Netlify publish), for that round only (owner, 10 Oct: Release is the master release; helper chats push
    their own branches without asking).
-9. Ask about the Google Drive mirror until the owner says it is set up.
+9. (Done 10 Oct AEST: the Google Drive mirror and the voice relay are set up; no more reminders.)
 10. After deploying, check the live deploy in Netlify and say when it went live (AEST).
 
 ## Hard rules (§9.1)
@@ -66,3 +66,10 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - 11 Oct AEDT: Release collects every 5 minutes (session job, hourly routine as backup): merges every branch marked "ready for Release" and the robot's bugfix branches whose issue says fixed-on-branch (Kid UI ones together), runs the full suite, looks at phone, tablet and computer screenshots, then reports and asks one "yes, deploy". Messages to the owner only for a round report, a yes-deploy question or a blocker. Times in Sydney time.
 - 11 Oct AEDT: two Release chats: the robot chat runs r57 (robot fixes #27 #28 #29 #31 #41 and the robot workflows); this round chat runs r58 on top of it.
 - 11 Oct, 9:30 am AEDT: owner: hold both r57 and r58 for further advice; Release keeps collecting and testing locally, no deploy.
+
+- (10 Oct AEST) Round T1 (r56): "yes, push" (pull request #21, with T0); deploy "not yet". The Google Drive mirror and the voice relay (TURN): neither set up yet.
+- (10 Oct AEST) T2 "go", with: Chùa Cầu is a footbridge for walking beside the Vietnam road (the road crosses the Hội An canal on a plain bridge next to it); the Brisbane River, the Yarra and the Murray join the main river (plain bridges where they pass the ring road); road colours as tinted asphalt (red Vietnam, orange Australia, purple to the mountains, blue along the coast), white lines kept.
+- (10 Oct AEST, evening) The start-up speed ratchet (`worldMs` in `tests/perf-baseline.json`): re-measure on today's slower test machine and set it to r56's median (6600 ms; ten second starts each side by side, T2 (r58) median 6850 ms), still +25 % allowed.
+- (11 Oct AEST) Round T2 (built as r57, full suite 86/86): push "not yet"; deploy "not yet". The Google Drive mirror and the voice relay (TURN): both set up (no more reminders).
+- (11 Oct AEST) "Yes, push" for T2. The version clash with the Play round: the other round keeps r57, T2 becomes r58. T3 is one release (built in two steps: Vũng Tàu and the mountains, then the plots), "go with the plan".
+- (11 Oct AEST) r59 (T3, full suite 90/90): "yes, deploy" for T2 (r58) and T3 (r59) together.

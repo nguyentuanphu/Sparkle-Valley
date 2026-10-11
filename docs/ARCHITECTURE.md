@@ -661,6 +661,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | WORLD-010 | Every activity location, entrance and landmark is reachable from the player's start | Child never stuck | MAJOR | data (nav reachability) [IMPR] | nav offers the nearest reachable point |
 | WORLD-011 | Scale: child 1.6 m, adult 2.0 m, grandparent 1.8 m; doors ≥ 1.4 × 2.4 m; steps ≤ 0.4 m (G2) | Consistency | MINOR | data (catalogue) | — |
 | WORLD-012 | No clutter: ≤ 1 big focal object per 10 m of street; ≥ 40 % open ground (G11) | Readability | MINOR | data [IMPR] + visual | — |
+| WORLD-013 | Garden plots (round T3): at least 60 (two Memory Villages, up to three spare by each city); each level within 5 cm, off roads and water, its front within 2 m of a road's edge, a unique id and address, nothing standing on it; one garden mesh for all | Families place the homes they remember | MAJOR | check `plots` | plot kept as a garden |
 
 ### 9.4 Roads (R1–R12)
 
@@ -679,6 +680,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | ROAD-011 | R11 | Pond footpaths 1.5–2.5 m from water (measured from the path's edge) | MINOR | checks `village`, `validate` | — |
 | ROAD-012 | R12 | Soft verge blend 0.3–0.5 m with flowers along it | MINOR | visual | — |
 | ROAD-013 | — | Inside a village a road takes the village's level; at a junction the side road takes the through road's exact height | BLOCKER | check `flat`, `roadshape` | — |
+| ROAD-014 | — | Every asphalt road carries its region's colour (red Vietnam, orange Australia, purple mountains, blue coast, plain grey home); the ring road is closed (round T2) | MINOR | check `roadtone` | — |
 
 ### 9.5 Buildings, NPCs, animals, vehicles, river
 
@@ -696,6 +698,10 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | RIVER-001 | Bridges meet both banks at valid crossing points | MAJOR | data |
 | RIVER-002 | Ferry and raft routes stay on water and stop only at piers | BLOCKER | check `features` (raft) + data |
 | RIVER-003 | A rider is never left on water: a blocked route returns to a pier | BLOCKER | integration [IMPR] |
+| RIVER-004 | Every bridge landmark spans its own water: most of the span is over water, both ends on land, the deck walkable (round T2) | MAJOR | check `bridges` |
+| RIVER-005 | Every boat route stays in water deep enough for its hull and fits under every deck it passes (round T2) | BLOCKER | check `boats` |
+| RIVER-006 | Every pier's land end joins a road or footpath (round T2) | MAJOR | check `boats` |
+| RIVER-007 | Every boat the map gives two piers runs between them (the Sydney Harbour ferry; the Sài Gòn boat to Vũng Tàu, round T3) | MAJOR | check `boats` |
 
 ### 9.6 Activities, UI, content, voice, privacy, Studio
 

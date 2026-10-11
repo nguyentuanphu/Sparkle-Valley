@@ -211,7 +211,7 @@ const ALBUM_PLACES = [['home', 'Sunny Farm', 'Nông Trại Nắng Mai'], ['villa
   ['aussie', 'Aussie Corner', 'Góc Nước Úc'], ['china', 'China Town', 'Làng Trung Hoa'], ['india', 'India Village', 'Làng Ấn Độ'], ['paddies', 'Golden Rice Fields', 'Cánh Đồng Lúa Vàng'],
   ['lake', 'Mirror Lake', 'Hồ Gương'], ['bamboo', 'Whispering Bamboo', 'Rừng Tre Thì Thầm'], ['mountain', 'Snowcap Peaks', 'Núi Tuyết Trắng'], ['meadow', 'Breezy Meadows', 'Đồng Cỏ Lộng Gió'],
   ['plateau', 'Dawn Plateau', 'Cao Nguyên Bình Minh'], ['danang', 'Đà Nẵng', 'Đà Nẵng'], ['bacninh', 'Bắc Ninh', 'Bắc Ninh'], ['hanoi', 'Hà Nội', 'Hà Nội'], ['saigon', 'Hồ Chí Minh City', 'TP. Hồ Chí Minh'],
-  ['brisbane', 'Brisbane', 'Brisbane'], ['melbourne', 'Melbourne', 'Melbourne'], ['sydney', 'Sydney', 'Sydney']];
+  ['vungtau', 'Bà Rịa–Vũng Tàu', 'Bà Rịa–Vũng Tàu'], ['brisbane', 'Brisbane', 'Brisbane'], ['melbourne', 'Melbourne', 'Melbourne'], ['sydney', 'Sydney', 'Sydney']];
 // a photo made small enough for a postcard: at most 1000 px on its long side, JPEG
 const shrinkPhoto = file => new Promise((res, rej) => { const img = new Image(); img.onload = () => { const k = Math.min(1, 1000 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); res(c.toDataURL('image/jpeg', .82)); }; img.onerror = () => rej(new Error(T('That file is not a photo.', 'Tệp đó không phải là ảnh.'))); img.src = URL.createObjectURL(file); });
 PAGES.album = async P => {
