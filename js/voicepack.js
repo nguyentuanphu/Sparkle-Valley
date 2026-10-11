@@ -89,7 +89,10 @@ async function checkPack() {
     const have = new Set((await cache.keys()).map(r => r.url)), abs = u => new URL(u, location.href).href;
     const missingOf = gs => packFiles(gs).filter(u => !have.has(abs(u)));
     const want = mayFetchRest() ? order : ['core'];
-    let total = missingOf(want).length, done = 0;
+    // (r63, owner: the bar showed 108 %) the files to fetch are fixed now: a language or setting changed while it runs
+    // (both languages switched on, say) used to add files to an area's list that the total never counted
+    const pending = new Set(missingOf(want));
+    let total = pending.size, done = 0;
     if (!total) { donePack(want); packEmit({ state: 'ready', quiet: true, total: packFiles(want).length, core: want.length === 1 }); if (want.length === 1) askRest().catch(() => { }); return; }
     if (navigator.onLine === false) { packEmit({ state: 'waiting', left: total }); return; }
     packEmit({ state: 'loading', done, total });
@@ -98,9 +101,9 @@ async function checkPack() {
     while (left.size) {
       const g = packOrder().find(x => left.has(x)) || [...left][0]; left.delete(g);
       if (g !== 'core' && !mayFetchRest()) break; // (left the Wi-Fi: the rest waits)
-      const miss = missingOf([g]);
+      const miss = missingOf([g]).filter(u => pending.has(u));
       for (let i = 0; i < miss.length; i += 6) {
-        await Promise.all(miss.slice(i, i + 6).map(async u => { try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); have.add(abs(u)); done++; } } catch (e) { } }));
+        await Promise.all(miss.slice(i, i + 6).map(async u => { try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); have.add(abs(u)); pending.delete(u); done = Math.min(total, done + 1); } } catch (e) { } }));
         packEmit({ state: 'loading', done, total, area: g });
         if (navigator.onLine === false) { packEmit({ state: 'waiting', left: total - done }); return; } // goes on when the internet is back
       }

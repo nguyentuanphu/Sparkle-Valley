@@ -21,7 +21,7 @@ export function startPackBar() {
   onPackProgress(e => {
     // (round R item 12) on mobile data with the core voices in: a grown-up is asked about the rest (js/voicepack.js)
     if (e.state === 'ask') { import('./voicepack.js').then(m => m.askCard(e.mb)).catch(() => { }); return; }
-    if (e.state === 'loading') show(T('Getting the voices ready…', 'Đang tải giọng đọc…') + ' ' + Math.floor(e.done / e.total * 100) + '%', e.done / e.total * 100);
+    if (e.state === 'loading') { const pc = Math.max(0, Math.min(100, Math.floor(e.done / (e.total || 1) * 100))); show(T('Getting the voices ready…', 'Đang tải giọng đọc…') + ' ' + pc + '%', pc); } // (r63: never past 100 %)
     else if (e.state === 'ready' && e.known) { /* already on the device from an earlier start: nothing to say (round O) */ }
     else if (e.state === 'ready') { show(T('Voices ready', 'Giọng đọc đã sẵn sàng') + ' ✓' + (e.total ? ` (${e.total.toLocaleString()})` : ''), 100); hide(e.quiet ? 2500 : 3000); }
     else if (e.state === 'nostore') { show(T('Voices play from the internet here: this address can’t keep them on the device (use the https website to keep them)', 'Ở địa chỉ này giọng đọc phát qua mạng, không lưu được trên máy (dùng trang https để lưu)'), null); hide(8000); }

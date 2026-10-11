@@ -636,9 +636,12 @@ await check('voicearea', async () => {
   // a computer that can't tell its connection counts as Wi-Fi: past the core with no question
   const C = await open(b, { w: 1180, h: 760, play: false, pre: `Object.defineProperty(navigator, 'connection', { get: () => undefined, configurable: true });`, settings: { autoPack: true, lang: 'vi', bilingual: false } });
   const got3 = watch(C); await start(C.page); await clear(C.page); await C.page.mouse.click(590, 380);
+  // (r63, owner: the bar said 108 %) every progress report stays at or under 100 %, the bar's words too
+  await C.page.evaluate(async () => { const V = await import('/js/voice.js'); window.__packOver = []; V.onPackProgress(e => { if (e.state === 'loading' && e.done > e.total) window.__packOver.push(e.done + '/' + e.total); const t = document.querySelector('.packbar') && document.querySelector('.packbar').textContent; const m = t && /(\d+)\s*%/.exec(t); if (m && +m[1] > 100) window.__packOver.push(t); }); });
   // (the core, about 550 files, comes first: in the full suite that can take a few minutes)
   for (let k = 0; k < 720 && !got3.some(x => x.g !== 'core'); k++) await C.page.waitForTimeout(500);
-  const asked3 = !!(await C.page.$('.packask')), en3 = got3.filter(x => x.lang === 'en').length; await C.ctx.close();
+  const asked3 = !!(await C.page.$('.packask')), en3 = got3.filter(x => x.lang === 'en').length, over3 = await C.page.evaluate(() => window.__packOver); await C.ctx.close();
+  ok(!over3.length, `the voices bar went past 100 %: ${over3.slice(0, 3).join(', ')}`);
   ok(got3.some(x => x.g !== 'core') && !asked3 && !en3, `a computer: past the core ${got3.some(x => x.g !== 'core')}, asked ${asked3}, English files for a Vietnamese family ${en3}`);
   ok(!errs.length, errs.join(' | '));
   return `core ${mb(core.en).toFixed(1)} MB (English) / ${mb(core.vi).toFixed(1)} MB (Vietnamese) of ${(Object.values(areas.size).reduce((a, z) => a + (z.en || 0) + (z.vi || 0) + (z.zh || 0) + (z.hi || 0), 0) / 1048576).toFixed(0)} MB; mobile data: ${n1} core files in English only, then "${text.slice(0, 50)}…" (hold for yes); Wi-Fi: ${place} first; the next start downloads nothing; a computer goes on by itself`;
