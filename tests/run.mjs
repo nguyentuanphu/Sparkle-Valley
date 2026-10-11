@@ -2157,6 +2157,38 @@ await check('roadtone', async () => {
   return `${M.ROADS.filter(R => R.kind === 'asphalt').length} asphalt roads in ${tones.size} colours, ${mats} road materials; the ring road is closed; a yellow centre dash in Vietnam, kerbs in Australia`;
 });
 
+await check('micoff', async () => {
+  // (r63, owner: "the microphone should always be off until the user turns it on"; on an iPhone the tap did nothing)
+  // starting or joining a room never asks for the microphone; the HUD's Mic button starts off; one tap asks (inside the
+  // tap) and turns it on; the next tap turns it off (the track goes quiet), the next on again
+  const P = await open(b, { w: 900, h: 640, pre: `(() => { window.__gum = 0; const md = navigator.mediaDevices; if (!md) return; const real = md.getUserMedia.bind(md);
+    md.getUserMedia = c => { window.__gum++; const a = new AudioContext(), o = a.createOscillator(), d = a.createMediaStreamDestination(); o.connect(d); o.start(); return Promise.resolve(d.stream); }; })()` });
+  await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const { Net } = await import('/js/net.js'), G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), said = [];
+    Net.on('status', s => said.push(s.key));
+    const startMuted = Net.muted;
+    Net.host({ name: 'Bé Na' }).catch(() => { }); await wait(1500);
+    const asked = window.__gum, hint = said.includes('mictap');
+    const btn = () => document.querySelector('.dk.call'), label = () => btn() && btn().querySelector('small').textContent;
+    G.huds.forEach(hd => hd.setCall(true, false, Net.muted || !Net.mic)); const before = label();
+    await G.toggleMute(); const on = { mic: !!Net.mic, muted: Net.muted, live: Net.mic && Net.mic.getAudioTracks()[0].enabled, label: label(), asked: window.__gum };
+    await G.toggleMute(); const off = { muted: Net.muted, live: Net.mic.getAudioTracks()[0].enabled, label: label(), asked: window.__gum };
+    await G.toggleMute(); const again = { muted: Net.muted, live: Net.mic.getAudioTracks()[0].enabled };
+    try { Net.close(); } catch (e) { }
+    return { startMuted, asked, hint, before, on, off, again };
+  });
+  const errs = P.errors.filter(e => !/peer|Peer|socket|lost connection/i.test(e)); await P.ctx.close();
+  ok(r.startMuted && r.asked === 0, `starting a room asked for the microphone ${r.asked} times (muted at start: ${r.startMuted})`);
+  ok(r.hint, 'no "your microphone is off" hint when the room started');
+  ok(r.before === 'Mic off', `the Mic button says "${r.before}" before a tap`);
+  ok(r.on.mic && !r.on.muted && r.on.live && r.on.label === 'Mic on' && r.on.asked === 1, 'the first tap: ' + JSON.stringify(r.on));
+  ok(r.off.muted && !r.off.live && r.off.label === 'Mic off' && r.off.asked === 1, 'the second tap: ' + JSON.stringify(r.off));
+  ok(!r.again.muted && r.again.live, 'the third tap: ' + JSON.stringify(r.again));
+  ok(!errs.length, errs.join(' | '));
+  return 'a room starts with the microphone off and asks for nothing; Mic off → one tap asks and turns it on → off → on';
+});
+
 await check('gates', async () => {
   // (r63, ROAD-016; owner: "at the gate of Hà Nội it is blocked and I can't go through") a child walks through every
   // gate on a road's end, from 8 m outside to 3 m inside (through the gate onto the square), along the road: nothing
