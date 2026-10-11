@@ -2703,6 +2703,32 @@ await check('names', async () => {
   return `${fs.readdirSync('../js', { recursive: true }).filter(f => String(f).endsWith('.js')).length} game files: every name is defined or imported`;
 });
 
+await check('soundsw', async () => {
+  // (Round U, owner 11 Oct: "there are no sounds and voices option to turn on and off") the Simple screen's Sound button
+  // and the valley's Sound button open three big switches (music, sounds, voice); each turns only its own sound on or off
+  const out = [];
+  const P = await open(b, { w: 390, h: 844, touch: true, screen: null }); const page = P.page;
+  await page.waitForSelector('.simple-screen:not([hidden]) .sp-sound', { timeout: 20000 });
+  await page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
+  const flip = async (k, want) => { await page.click(`.soundsheet .ss-sw[data-k="${k}"]`); await page.waitForTimeout(200); const v = await page.evaluate(() => { const s = __sv.settings; return { music: !!s.music, sound: !!s.sound, voice: !!s.voice }; }); return v; };
+  await page.click('.sp-sound'); await page.waitForSelector('.soundsheet .ss-sw', { timeout: 5000 }).catch(() => out.push('Simple screen: no Sound switches'));
+  if (!out.length) {
+    const s0 = await page.evaluate(() => ({ music: !!__sv.settings.music, sound: !!__sv.settings.sound, voice: !!__sv.settings.voice }));
+    const s1 = await flip('voice'); if (s1.voice === s0.voice || s1.sound !== s0.sound || s1.music !== s0.music) out.push('voice switch: ' + JSON.stringify([s0, s1]));
+    const s2 = await flip('music'); if (s2.music === s1.music || s2.voice !== s1.voice) out.push('music switch: ' + JSON.stringify([s1, s2]));
+    const s3 = await flip('sound'); if (s3.sound === s2.sound || s3.voice !== s2.voice) out.push('sound switch: ' + JSON.stringify([s2, s3]));
+    const n = await page.evaluate(() => document.querySelectorAll('.soundsheet .ss-sw').length); if (n !== 3) out.push(n + ' switches');
+    await page.click('.soundsheet .ss-done'); await page.waitForTimeout(300);
+  }
+  // the valley: the dock's Sound button (computer size, where the dock shows it)
+  const Q = await open(b, { w: 1280, h: 800 }); await clear(Q.page);
+  await Q.page.click('.hud .dk.snd'); const v = await Q.page.waitForSelector('.soundsheet .ss-sw', { timeout: 5000 }).then(() => true, () => false);
+  if (!v) out.push('valley: the Sound button opens no switches');
+  const errs = P.errors.concat(Q.errors); await P.ctx.close(); await Q.ctx.close();
+  ok(!out.length && !errs.length, out.join(' | ') + JSON.stringify(errs));
+  return 'Sound on the Simple screen and in the valley: music, sounds and voice, each switched on its own';
+});
+
 await check('chips', async () => {
   // (Round U, owner 11 Oct: "these buttons should tell what they are when hover or tap") the coin, orb and Leafy chips on
   // the top bar and in the Backpack: each has a name to hover (title) and a tap shows a card with its name and what it is

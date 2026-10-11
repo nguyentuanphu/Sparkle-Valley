@@ -90,7 +90,7 @@ export class Hud {
     this.q('.dk.mus').onclick = () => { if (this._musHeld) { this._musHeld = false; return; } game.toggleAudio('music'); };
     // press and hold Music: the Songs page (round O)
     { const b = this.q('.dk.mus'); let t = 0; b.addEventListener('pointerdown', () => { clearTimeout(t); t = setTimeout(() => { this._musHeld = true; game.openSongs && game.openSongs(); }, 650); }); for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => clearTimeout(t)); }
-    this.q('.dk.snd').onclick = () => game.toggleAudio('sound');
+    this.q('.dk.snd').onclick = () => game.openSound();   // (Round U) the three Sound switches: music, sounds, voice
     this.q('.friendchip').onclick = () => { const r = game.findFriend(i); if (r) game.say && game.say(r[0], r[1]); };
     this.q('.q-say').onclick = () => game.sayObjective(i);
     this.q('.q-go').onclick = () => game.goToObjective(i);

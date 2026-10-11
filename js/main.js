@@ -797,6 +797,14 @@ G.toggleAudio = kind => {
   else { const on = !(settings.sound || settings.voice); settings.sound = on; settings.voice = on; if (!on) hush(); }
   saveSettings(); SFX.tap(); G.huds.forEach(h => h.refreshAudio());
 };
+// (Round U) one switch at a time: music, sound effects or the talking voice (the Sound switches: js/soundsheet.js)
+G.setAudio = (kind, on) => {
+  settings[kind] = !!on;
+  if (kind === 'music') { if (on) Music.refresh(); else Music.stop(); }
+  if (kind === 'voice' && !on) hush();
+  saveSettings(); G.huds.forEach(h => h.refreshAudio());
+};
+G.openSound = () => import('./soundsheet.js').then(m => m.openSoundSheet(G));
 G.toggleMute = () => { if (!Net.mic) { Net.getMic(true); return; } Net.setMuted(!Net.muted); Net.resumeAudio(); G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted)); };
 // Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
 addEventListener('keydown', e => {
