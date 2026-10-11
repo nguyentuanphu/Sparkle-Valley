@@ -423,7 +423,7 @@ export const plotBox = P => { const c = Math.abs(Math.cos(P.rot)), s = Math.abs(
 export function oldHeightAt(x, z) { const w = WIDE; WIDE = 0; try { return heightAt(x, z); } finally { WIDE = w; } }
 export function createWorld(scene, quality) {
   const W = {
-    colliders: [], boxes: [], platforms: [], houses: [], plants: [], overcast: 0, interactables: [], updaters: [], lanterns: [], shrineMeshes: {}, towerMeshes: {}, leafyMeshes: {},
+    colliders: [], boxes: [], platforms: [], stalls: [], walks: [], houses: [], plants: [], overcast: 0, interactables: [], updaters: [], lanterns: [], shrineMeshes: {}, towerMeshes: {}, leafyMeshes: {},
     time: .36
   };
   const rnd = seeded(20250921);
