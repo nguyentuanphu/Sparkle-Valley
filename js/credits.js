@@ -20,7 +20,8 @@ const val = (k) => {
   return own || T(d.en, d.vi);
 };
 
-export function openCredits() {
+// (bug 41) onClose: the caller's clean-up (ui.js hides the caption); passed in so this file does not import ui.js
+export function openCredits(onClose) {
   const prevMusic = Music.key; Music.play('twinkle');
   const teach = [
     ['🧠', T('Thinking & strategy', 'Tư duy và chiến thuật')], ['🔤', T('Letters & numbers in two languages', 'Chữ và số bằng hai thứ tiếng')],
@@ -43,7 +44,18 @@ export function openCredits() {
     </div>`);
   document.body.appendChild(c);
   say(val('why'), val('why'));
-  const close = () => { hush(); c.remove(); Music.play(prevMusic || 'field'); };
+  // the page rolls by itself, but a finger or the wheel can scroll it; it rolls on again after 3 s of quiet
+  let raf = 0, pause = performance.now() + 2500, pos = 0, last = 0;
+  const touch = () => { pause = performance.now() + 3000; };
+  ['pointerdown', 'wheel', 'touchstart', 'touchmove', 'keydown'].forEach(e => c.addEventListener(e, touch, { passive: true }));
+  const roll = now => {
+    raf = requestAnimationFrame(roll);
+    const dt = Math.min(64, now - last); last = now;
+    if (now < pause) { pos = c.scrollTop; return; }
+    pos += dt * 0.025; c.scrollTop = pos;
+  };
+  raf = requestAnimationFrame(roll);
+  const close = () => { cancelAnimationFrame(raf); hush(); if (typeof onClose === 'function') onClose(); window.dispatchEvent(new Event('sv-hide-caption')); c.remove(); Music.play(prevMusic || 'field'); };
   c.querySelector('.cr-x').onclick = close;
 }
 

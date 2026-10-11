@@ -31,7 +31,8 @@ jobs:
           node-version: 22
       - name: Install the test tools
         working-directory: tests
-        run: npm ci --no-audit --no-fund
+        # tests/package-lock.json points playwright at a folder on the Claude machines: install from package.json
+        run: npm install --no-package-lock --no-save --no-audit --no-fund
       # the runner opens a browser at start even for checks that need none
       - name: Install Chromium
         working-directory: tests

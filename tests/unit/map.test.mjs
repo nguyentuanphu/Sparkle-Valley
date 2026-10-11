@@ -6,7 +6,7 @@ import * as M from '../../js/content/map.js';
 
 const HALF = M.WORLD.size / 2;
 const placeIds = new Set(M.PLACES.map(p => p.id));
-const lists = { PLACES: M.PLACES, WATERS: M.WATERS, BRIDGES: M.BRIDGES, ROADS: M.ROADS, SADDLES: M.SADDLES, CLEARINGS: M.CLEARINGS, SHRINES: M.SHRINES, TOWERS: M.TOWERS, LEAFIES: M.LEAFIES, BOATS: M.BOATS };
+const lists = { PLACES: M.PLACES, WATERS: M.WATERS, BRIDGES: M.BRIDGES, ROADS: M.ROADS, SADDLES: M.SADDLES, CLEARINGS: M.CLEARINGS, SHRINES: M.SHRINES, TOWERS: M.TOWERS, LEAFIES: M.LEAFIES, BOATS: M.BOATS, PLOTS: M.PLOTS };
 const inside = ([x, z], pad = 0) => Number.isFinite(x) && Number.isFinite(z) && Math.abs(x) <= HALF - pad && Math.abs(z) <= HALF - pad;
 
 test('map: every id is unique in its list and well-formed (WORLD-008)', () => {
@@ -29,10 +29,14 @@ test('map: every reference resolves (WORLD-009)', () => {
   for (const b of M.BOATS) for (const w of [].concat(b.water)) assert.ok(waters.has(w), `boat ${b.id} on unknown water ${w}`);
   for (const [item, place] of M.GATHER_AT) assert.ok(placeIds.has(place), `a ${item} to pick up by an unknown place ${place}`);
   for (const id of Object.keys(M.LEGACY.C)) assert.ok(placeIds.has(id), `old anchor for an unknown place ${id}`);
+  // (round T3) every plot is in a Memory Village of the map, and every boat with piers has two
+  for (const p of M.PLOTS) assert.ok(M.PLACES.some(q => q.id === p.village && q.kind === 'plots'), `plot ${p.id} in an unknown village ${p.village}`);
+  for (const b of M.BOATS) if (b.piers) assert.equal(b.piers.length, 2, `boat ${b.id}: two piers`);
 });
 
 test('map: every place, road, bridge, landmark and spot is inside the valley', () => {
   for (const p of M.PLACES) assert.ok(inside(M.anchorOf(p.id), 5), `place ${p.id} outside`);
+  for (const p of M.PLOTS) { const [x, z] = M.anchorOf(p.village); assert.ok(inside([x + p.off[0], z + p.off[1]], 12), `plot ${p.id} outside`); }
   for (const R of M.ROADS) R.pts.forEach((pt, i) => assert.ok(inside(pt, 5), `road ${R.id} point ${i} outside`));
   // (a river may come in from beyond the edge, out of the mountains, and run out to sea: most of it is inside, and none far out)
   for (const W of M.WATERS) if (W.pts) { assert.ok(W.pts.every(pt => inside(pt, -40)), `water ${W.id} far outside`); assert.ok(W.pts.filter(pt => inside(pt)).length >= W.pts.length / 2, `water ${W.id} mostly outside`); }

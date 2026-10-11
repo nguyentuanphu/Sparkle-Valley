@@ -171,6 +171,8 @@ export function createHeritage(G, { give, sfx, say, toast }) {
     in: [['mango', '🥭', 'tree', 8, ['Mango', 'Xoài'], '#ffb020'], ['brinjal', '🍆', 'veg', 5, ['Brinjal (eggplant)', 'Cà tím'], '#6a3a8a'], ['ginger', '🫚', 'veg', 6, ['Ginger', 'Gừng'], '#d9b86a'], ['marigold', '🌼', 'veg', 5, ['Marigold flowers', 'Hoa cúc vạn thọ'], '#ff9f1a']]
   };
   const near = { vn: [VILLAGE.x, VILLAGE.z, VILLAGE.r + 8], au: [(AUSSIE.x0 + AUSSIE.x1) / 2, AUSSIE.z1 + 14, 14], cn: [CHINA.x, CHINA.z, CHINA.r + 6], in: [INDIA.x, INDIA.z, INDIA.r + 6] };
+  // one mesh for all of a group's parts, coloured as they were (a plant's trunk and leaves, or its fruit)
+  const bake = grp => { const parts = []; for (const m of [...grp.children]) if (m.isMesh) { m.updateMatrix(); parts.push(P(m.geometry.clone().applyMatrix4(m.matrix), '#' + m.material.color.getHexString())); grp.remove(m); } if (parts.length) { const one = new THREE.Mesh(merge(parts), toonVC()); one.castShadow = true; grp.add(one); } };
   for (const [cc, list] of Object.entries(CROPS)) {
     list.forEach(([key, icon, type, sell, name, color], li) => {
       if (!WILD[key]) WILD[key] = { kind: 'crop', icon, sell, name: () => T(name[0], name[1]) };
@@ -190,6 +192,7 @@ export function createHeritage(G, { give, sfx, say, toast }) {
           { const bed = new THREE.Mesh(B(2.4, .2, 1.6), toon('#8a5a3b')); bed.position.y = .1; g.add(bed); }
           for (let i = 0; i < 6; i++) { const l = new THREE.Mesh(new THREE.IcosahedronGeometry(.3, 0), toon('#5fa04e')); l.position.set(-.9 + (i % 3) * .9, .35, i < 3 ? -.4 : .4); g.add(l); const f = new THREE.Mesh(key === 'brinjal' ? S(.16, 10, 8).scale(1, 1.6, 1) : S(.14, 10, 8), toon(color)); f.position.set(-.9 + (i % 3) * .9 + .15, .55, (i < 3 ? -.4 : .4) + .1); fruit.add(f); }
         }
+        bake(g); bake(fruit); // (round T2) each plant drawn as two pieces, not up to eleven
         g.add(fruit); g.position.set(x, heightAt(x, z), z); scene.add(g);
         const st = { ready: 0 };
         world.updaters.push(() => { fruit.visible = performance.now() > st.ready; });

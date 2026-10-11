@@ -178,7 +178,7 @@ await check('features', async () => {
     const o = {};
     o.cities = W.CITIES.length; o.roads = W.ROADS.length; o.landmarks = R.LANDMARKS.length;
     o.kiosks = G.interactables.filter(i => /^v_k_/.test(i.id)).length;
-    o.hosts = ['puppets', 'dongho', 'dragonfire', 'traffic', 'ferries', 'tram', 'koala'].filter(g => G.gameSpot(g)).length;
+    o.hosts = ['puppets', 'dongho', 'dragonfire', 'traffic', 'kite', 'ferries', 'tram', 'koala'].filter(g => G.gameSpot(g)).length;
     o.house8 = !!G.interactables.find(i => i.id === 'house8');
     o.tales = G.TALES.length; o.vnTales = G.TALES.filter(t => t.flag === '🇻🇳').length;
     // the Dragon Bridge deck is walkable over the river
@@ -219,7 +219,8 @@ await check('features', async () => {
   r.chatter = seen;
   const errs = P.errors.slice(); await P.ctx.close();
   const fails = [];
-  if (r.cities !== 7) fails.push('cities'); if (r.kiosks < 26) fails.push('kiosks'); if (r.hosts !== 7) fails.push('hosts'); if (r.landmarks < 47) fails.push('landmarks');
+  // (round T3: Bà Rịa–Vũng Tàu is the eighth city, Anh Hai's kites its host; two more kiosks)
+  if (r.cities !== 8) fails.push('cities'); if (r.kiosks < 28) fails.push('kiosks'); if (r.hosts !== 8) fails.push('hosts'); if (r.landmarks < 47) fails.push('landmarks');
   if (!r.house8) fails.push('house8'); if (r.tales < 32 || r.vnTales < 18) fails.push('tales'); if (!(r.deck > r.river + 3)) fails.push('dragon deck');
   if (r.pets !== 'kitty+puppy' && r.pets !== 'puppy+kitty' && r.pets.split('+').length !== 2) fails.push('pets ' + r.pets); if (!r.petsVisible) fails.push('pets hidden');
   for (const k of ['dialogClosed', 'keyMap', 'zoom', 'theatre', 'flewToHost', 'chatter']) if (!r[k]) fails.push(k);
@@ -237,15 +238,39 @@ await check('camera', async () => {
     const out = [], ray = new THREE.Raycaster();
     for (const lm of R.LANDMARKS) for (const yaw of [0, 1.57, 3.14, 4.71]) {
       h.place(lm.x, lm.z); h.camYaw = yaw; h.camPos = h.camPos || h.cam.position.clone();
-      for (let k = 0; k < 40; k++) h.finish(.05, k * .05, G, 0);
+      for (let k = 0; k < 39; k++) h.finish(.05, k * .05, G, 0);
+      G.seeThrough.marked.clear(); h.finish(.05, 2, G, 0); // (bug #33) the things in the way on the last frame
       const c = h.cam.position, inBox = G.world.boxes.some(b => c.x > b.x0 && c.x < b.x1 && c.z > b.z0 && c.z < b.z1 && c.y < G.world.groundAt(c.x, c.z) + 6);
       const to = new THREE.Vector3(h.pos.x, h.pos.y + 1.2, h.pos.z), d = to.clone().sub(c); const L = d.length(); ray.set(c, d.normalize()); ray.far = L - .6;
       const hit = ray.intersectObjects(G.camBlockers(), false)[0];
-      if (inBox || hit) out.push(lm.id + '@' + yaw);
+      // (bug #33) the camera stays where it is, so a house in the way is fine as long as it is fading to see-through
+      const fades = hit ? G.seeThrough.marked.has(G.seeThrough.rootOf(hit.object)) : G.seeThrough.marked.size > 0;
+      if ((inBox || hit) && !fades) out.push(lm.id + '@' + yaw);
     }
-    return { n: R.LANDMARKS.length * 4, stuck: out };
+    // (bug #33) next to a landmark the thing in the way really turns see-through, the camera keeps its distance, and
+    // everything goes back to solid once the way is clear
+    const S = G.seeThrough; let fade = null;
+    for (const lm of R.LANDMARKS) {
+      h.place(lm.x, lm.z);
+      for (const yaw of [0, 1.57, 3.14, 4.71]) {
+        h.camYaw = yaw; for (let k = 0; k < 60; k++) { h.finish(.05, k * .05, G, 0); S.step(.05); }
+        if (S.active()) { fade = { lm: lm.id, yaw }; break; }
+      }
+      if (fade) break;
+    }
+    let seen = null, back = null;
+    if (fade) {
+      seen = S.active(); h.finish(.05, 9, G, 0); S.step(1);
+      let minOp = 1; G.scene.traverse(o => { if (o.isMesh && o.material && !Array.isArray(o.material) && o.material.transparent && o.material.opacity < minOp && o.material.depthWrite === false && o.material.opacity > 0) minOp = o.material.opacity; });
+      const dist = h.cam.position.distanceTo(h.pos);
+      h.place(0, -230); for (let k = 0; k < 60; k++) { h.finish(.05, k * .05, G, 0); S.step(.05); }
+      back = { minOp, dist, left: S.active() };
+    }
+    return { n: R.LANDMARKS.length * 4, stuck: out, fade, seen, back };
   });
   await P.ctx.close();
+  ok(stuck.fade && stuck.seen > 0, 'nothing turned see-through next to any landmark');
+  ok(stuck.back.minOp <= .3 && stuck.back.left === 0, 'see-through ' + JSON.stringify(stuck.back));
   ok(stuck.stuck.length <= Math.ceil(stuck.n * .03), `${stuck.stuck.length}/${stuck.n} blocked: ${stuck.stuck.join(', ')}`);
   return `${stuck.n - stuck.stuck.length}/${stuck.n} clear${stuck.stuck.length ? ' (grazing: ' + stuck.stuck.join(', ') + ')' : ''}`;
 });
@@ -504,10 +529,12 @@ await check('voicepack', async () => {
   // HARD RULE (VOICE-001): the recorded voices are downloaded to the device by themselves, with a small quiet progress
   // bar; every open checks quietly that they are still there and fetches only what is missing. (A cut-down pack keeps it quick.)
   // a fresh phone: its own browser profile, the cut-down pack list from the very first load, saving voices on
+  // (round R item 12: a phone on mobile data downloads beyond the core only after a grown-up's yes, packCell; this check
+  // is about the quiet download itself, so the yes is given; voicearea checks the question)
   const ctx = await b.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true }), page = await ctx.newPage(), errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await ctx.addInitScript(seedPlayers);
-  await ctx.addInitScript(() => { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang: 'vi', voice: false, sound: false, music: false, quality: 'low', autoPack: true }); localStorage.setItem('sv2_settings', JSON.stringify(o)); });
+  await ctx.addInitScript(() => { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang: 'vi', voice: false, sound: false, music: false, quality: 'low', autoPack: true, packCell: true }); localStorage.setItem('sv2_settings', JSON.stringify(o)); });
   const P = { ctx, page, errors };
   await P.ctx.route('**/voices/manifest.json', async route => { const r = await route.fetch(), j = await r.json(), keep = Object.keys(j.lines).slice(0, 24), lines = {}, langOf = {}; for (const h of keep) { lines[h] = j.lines[h]; if (j.langOf) langOf[h] = j.langOf[h]; } await route.fulfill({ json: { ...j, lines, langOf, made: 'test' } }); });
   // every text the bar shows is written down as it changes
@@ -530,6 +557,91 @@ await check('voicepack', async () => {
   ok(third.some(x => /✓/.test(x)) && s3.files >= 24, 'missing files were not fetched again: ' + JSON.stringify({ third: third.slice(0, 3), s3 }));
   ok(!errs.length, errs.join(' | '));
   return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open shows and downloads nothing, and files the phone lost are fetched again`;
+});
+
+await check('voicecover', async () => {
+  // (round R item 12) the coverage check: every line the game can speak has its recordings (both voices), is in the
+  // pack's list and in an area; lines with changing words are templates whose fixed pieces, gap words and numbers are
+  // recorded as parts; what can't be listed in advance is counted with its reason (tools/make-voice-pack.mjs --cover)
+  const { execFileSync } = await import('child_process');
+  let out = ''; try { out = execFileSync(process.execPath, ['../tools/make-voice-pack.mjs', '--cover'], { encoding: 'utf8', maxBuffer: 1 << 26 }); } catch (e) { out = (e.stdout || '') + ''; }
+  const r = JSON.parse(out.trim().split('\n').pop());
+  ok(!r.bad.length, `${r.bad.length} lines not covered: ` + r.bad.slice(0, 12).join(' | '));
+  // in the game: a line with a number is put together from recorded parts, and a gap that is a name is left out; the
+  // phone's own voice is never used for either
+  const pre = `window.__speaks = 0; window.__srcs = 0; speechSynthesis.speak = u => { window.__speaks++; setTimeout(() => u.onend && u.onend(), 10); };
+    const st = AudioBufferSourceNode.prototype.start; AudioBufferSourceNode.prototype.start = function (...a) { if (this.buffer && this.buffer.length > 1) { window.__srcs++; setTimeout(() => this.onended && this.onended(), 30); } return st.apply(this, a); };`;
+  const P = await open(b, { w: 900, h: 640, pre, settings: { voice: true, bilingual: false } }); await clear(P.page);
+  const g = await P.page.evaluate(async () => {
+    const V = await import('/js/voice.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    for (let k = 0; k < 60 && !V.voicePack(); k++) await wait(250);
+    const res = {};
+    for (const [key, line] of [['number', 'You rolled 47! Count with me.'], ['name', 'Zorbly is here! Hold on and kick your legs: tap, tap, tap!']]) {
+      window.__speaks = 0; window.__srcs = 0; res[key] = { parts: V.lineParts('en', line) };
+      await V.sayAsync(line, line); res[key].speaks = window.__speaks; res[key].srcs = window.__srcs;
+    }
+    return res;
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(g.number.parts && g.number.parts.some(p => p[1] === '47') && !g.number.speaks && g.number.srcs >= 3, 'a line with a number: ' + JSON.stringify(g.number));
+  ok(g.name.parts && g.name.parts.some(p => p[1] === 'Zorbly') && !g.name.speaks && g.name.srcs >= 1, 'a line with a name: ' + JSON.stringify(g.name));
+  ok(!errs.length, errs.join(' | '));
+  return `${r.lines} lines and ${r.parts} parts recorded, ${r.templates} templates, ${r.areas} areas; ${Object.entries(r.reasons).map(([k, v]) => `${v} × ${k}`).join('; ')}; "You rolled 47!" plays from ${g.number.srcs} recorded parts and a name in a gap is left out, never the phone's voice`;
+});
+
+await check('voicearea', async () => {
+  // (round R item 12, owner 10 Oct: "wifi should automatically, ask user to allow download over mobile") a new phone on
+  // mobile data downloads only the core, only in its children's language, then asks a grown-up (press and hold); Not now
+  // keeps it at the core; on Wi-Fi the rest comes area by area, the place the child is in first; a computer that can't
+  // tell counts as Wi-Fi; a start with the core already there downloads nothing
+  const areas = JSON.parse(fs.readFileSync('../voices/areas.json', 'utf8')), groupOf = new Map();
+  for (const [g, hs] of Object.entries(areas.groups)) for (const h of String(hs).split(' ')) groupOf.set(h, g);
+  const mb = n => n / 1048576, core = areas.size.core;
+  ok(mb(core.en) >= 5 && mb(core.en) <= 8 && mb(core.vi) >= 5 && mb(core.vi) <= 8, `the core pack is not 5–8 MB per language: en ${mb(core.en).toFixed(1)}, vi ${mb(core.vi).toFixed(1)}`);
+  const place = ['hanoi', 'village', 'town', 'market'].find(g => areas.groups[g] && g !== 'core') || Object.keys(areas.groups).find(g => !['core', 'games', 'stories', 'festivals', 'world'].includes(g));
+  // a pretend connection the check can switch: navigator.connection.type 'cellular' or 'wifi'
+  const net = type => `(() => { const c = new EventTarget(); c.type = '${type}'; c.saveData = false; Object.defineProperty(navigator, 'connection', { get: () => c, configurable: true }); window.__setNet = t => { c.type = t; c.dispatchEvent(new Event('change')); }; })();`;
+  const watch = P => { const got = []; P.page.on('request', q => { const m = /\/voices\/(\w+)\/(\w)\/([\w-]+)\.mp3/.exec(q.url()); if (m) got.push({ lang: m[1], g: groupOf.get(m[3]) || 'world' }); }); return got; };
+  const P = await open(b, { w: 390, h: 760, touch: true, play: false, pre: net('cellular'), settings: { autoPack: true, lang: 'en', bilingual: false } });
+  const got = watch(P);
+  await start(P.page); await clear(P.page);
+  await P.page.mouse.click(195, 380);
+  await P.page.waitForSelector('.packask', { timeout: 180000 });
+  await P.page.waitForTimeout(1500);
+  const n1 = got.length, notCore = got.filter(x => x.g !== 'core'), notEn = got.filter(x => x.lang !== 'en');
+  const text = await P.page.$eval('.packask', e => e.textContent);
+  await P.page.screenshot({ path: 'out/voicearea-phone.png' });
+  ok(n1 > 50 && !notCore.length && !notEn.length, `mobile data: ${n1} files, ${notCore.length} not in the core (${JSON.stringify(notCore.slice(0, 3))}), ${notEn.length} not English`);
+  ok(/mobile data/.test(text) && /\d+ MB/.test(text), 'the question: ' + text);
+  // a quick tap on Yes is not a yes (a little one's finger); Not now closes it and nothing more downloads
+  await P.page.click('.packask button'); await P.page.waitForTimeout(400);
+  ok(await P.page.$('.packask'), 'a quick tap on Yes said yes');
+  await P.page.click('.packask button:last-child'); await P.page.waitForTimeout(3000);
+  ok(!(await P.page.$('.packask')) && got.length === n1, `after Not now: ${got.length - n1} more files`);
+  // onto Wi-Fi, in a place: the rest downloads by itself, that place first
+  await P.page.evaluate(async place => { const { events } = await import('/js/core/events.js'); events.emit('PlayerEnteredVillage', { playerId: 'player:test', villageId: 'place:' + place }); window.__setNet('wifi'); }, place);
+  for (let k = 0; k < 60 && got.length < n1 + 12; k++) await P.page.waitForTimeout(500);
+  const next = got.slice(n1, n1 + 12);
+  ok(next.length >= 12 && next.every(x => x.g === place) && next.every(x => x.lang === 'en'), `on Wi-Fi the first files after the core: ${JSON.stringify(next.slice(0, 4))} (wanted ${place})`);
+  await P.ctx.close();
+  // the next start on mobile data, core there, Not now said: nothing downloads and nothing is asked
+  const Q = await open(b, { w: 390, h: 760, touch: true, play: false, pre: net('cellular'), settings: { autoPack: true, lang: 'en', bilingual: false } });
+  // (a fresh profile: give it the core first, with the grown-up's answer already given)
+  const got2 = watch(Q); await start(Q.page); await clear(Q.page); await Q.page.mouse.click(195, 380);
+  await Q.page.waitForSelector('.packask', { timeout: 180000 }); await Q.page.click('.packask button:last-child');
+  const n2 = got2.length; await Q.page.reload(); await start(Q.page); await clear(Q.page); await Q.page.mouse.click(195, 380); await Q.page.waitForTimeout(10000);
+  const again = got2.length - n2, asked = !!(await Q.page.$('.packask'));
+  const errs = Q.errors.concat(P.errors); await Q.ctx.close();
+  ok(!again && !asked, `next start with the core there: ${again} files downloaded, asked again: ${asked}`);
+  // a computer that can't tell its connection counts as Wi-Fi: past the core with no question
+  const C = await open(b, { w: 1180, h: 760, play: false, pre: `Object.defineProperty(navigator, 'connection', { get: () => undefined, configurable: true });`, settings: { autoPack: true, lang: 'vi', bilingual: false } });
+  const got3 = watch(C); await start(C.page); await clear(C.page); await C.page.mouse.click(590, 380);
+  // (the core, about 550 files, comes first: in the full suite that can take a few minutes)
+  for (let k = 0; k < 720 && !got3.some(x => x.g !== 'core'); k++) await C.page.waitForTimeout(500);
+  const asked3 = !!(await C.page.$('.packask')), en3 = got3.filter(x => x.lang === 'en').length; await C.ctx.close();
+  ok(got3.some(x => x.g !== 'core') && !asked3 && !en3, `a computer: past the core ${got3.some(x => x.g !== 'core')}, asked ${asked3}, English files for a Vietnamese family ${en3}`);
+  ok(!errs.length, errs.join(' | '));
+  return `core ${mb(core.en).toFixed(1)} MB (English) / ${mb(core.vi).toFixed(1)} MB (Vietnamese) of ${(Object.values(areas.size).reduce((a, z) => a + (z.en || 0) + (z.vi || 0) + (z.zh || 0) + (z.hi || 0), 0) / 1048576).toFixed(0)} MB; mobile data: ${n1} core files in English only, then "${text.slice(0, 50)}…" (hold for yes); Wi-Fi: ${place} first; the next start downloads nothing; a computer goes on by itself`;
 });
 
 await check('welcomevoice', async () => {
@@ -738,14 +850,20 @@ await check('hubmap', async () => {
     const seen = {}; for (const t of [...document.querySelectorAll('.hubtabs [data-tab]')].map(b => b.dataset.tab)) { document.querySelector(`.hubtabs [data-tab="${t}"]`).click(); await new Promise(r => setTimeout(r, 100)); document.querySelectorAll('.hubbody [data-play]').forEach(b => { seen[b.dataset.play] = (seen[b.dataset.play] || 0) + 1; }); }
     document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 600));
     document.querySelector('.mapchips [data-g="vn"]').click(); await new Promise(r => setTimeout(r, 200));
-    const rows = [...document.querySelectorAll('.quick .qbtn')].map(b => (b.classList.contains('sub') ? '-' : '') + b.innerText.trim());
-    return { games: Object.keys(seen).length, all: Object.keys(__sv.GAMES || {}).length, dup: Object.entries(seen).filter(([, n]) => n > 1).map(([k]) => k), rows };
+    // (owner, bug #28, 11 Oct) a row of city buttons, north to south; the list shows the chosen city's places only
+    const cities = [...document.querySelectorAll('.mapcities button')].map(b => b.innerText.trim());
+    const placesOf = async name => { const c = [...document.querySelectorAll('.mapcities button')].find(b => b.innerText.includes(name)); if (!c) return null;
+      c.click(); await new Promise(r => setTimeout(r, 200)); return [...document.querySelectorAll('.mapplaces .qbtn')].map(b => b.innerText.trim()); };
+    const hanoi = (await placesOf('Hà Nội')) || (await placesOf('Hanoi')), danang = await placesOf('Đà Nẵng');
+    return { games: Object.keys(seen).length, all: Object.keys(__sv.GAMES || {}).length, dup: Object.entries(seen).filter(([, n]) => n > 1).map(([k]) => k), cities, hanoi, danang };
   });
   ok(!r.dup.length, 'games in two tabs: ' + r.dup.join(', ')); ok(r.games >= 60, 'games in the hub: ' + r.games);
-  const at = n => r.rows.findIndex(x => x.includes(n)), hn = at('Hà Nội') >= 0 ? at('Hà Nội') : at('Hanoi'), dn = at('Đà Nẵng'), hl = at('Hạ Long'), hue = at('Huế');
-  ok(hn >= 0 && dn > hn && hl > hn && hl < dn && hue > dn, 'map: Hạ Long should be under Hà Nội and Huế under Đà Nẵng: ' + r.rows.slice(0, 20).join(' | '));
+  const at = n => r.cities.findIndex(x => x.includes(n)), hn = at('Hà Nội') >= 0 ? at('Hà Nội') : at('Hanoi'), dn = at('Đà Nẵng');
+  ok(hn >= 0 && dn > hn, 'map: the Vietnam cities are not north to south (Hà Nội before Đà Nẵng): ' + r.cities.join(' | '));
+  ok(r.hanoi && r.hanoi.some(x => x.includes('Hạ Long')), 'map: Hạ Long should be under Hà Nội: ' + (r.hanoi || []).join(' | '));
+  ok(r.danang && r.danang.some(x => x.includes('Huế')) && !r.hanoi.some(x => x.includes('Huế')), 'map: Huế should be under Đà Nẵng only: ' + (r.danang || []).join(' | '));
   ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
-  return `${r.games} games, each in one tab; the map lists Vietnam north to south with each landmark under its real place`;
+  return `${r.games} games, each in one tab; the map's Vietnam cities run north to south, each with its landmarks (${r.cities.length} cities)`;
 });
 
 await check('festcal', async () => {
@@ -758,8 +876,10 @@ await check('festcal', async () => {
     // the calendar on the Pad
     __sv.openPad(0, 'cal'); await new Promise(r => setTimeout(r, 500));
     out.rows = document.querySelectorAll('.pad .fcal-row').length; document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.paused = false;
-    // Halloween: knock at five doors for a pumpkin lantern
-    const h = __sv.heroes[0]; __sv.festivals.visit(0, 'halloween'); await new Promise(r => setTimeout(r, 2500));
+    // Halloween: knock at five doors for a pumpkin lantern (owner, 10 Oct: children cannot start a festival, so the check
+    // has an admin schedule it for today in Studio, as a grown-up would)
+    const h = __sv.heroes[0], C = (await import('/js/custom.js')).CUSTOM, d = new Date(), ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    C.releases = { ...(C.releases || {}), fest_halloween: { on: true, start: ymd, days: 1 } }; __sv.festivals.rebuild(); await new Promise(r => setTimeout(r, 2500));
     document.querySelectorAll('.dialog, .reward, .modal').forEach(e => e.remove());
     const doors = __sv.interactables.filter(i => i.id.startsWith('trick_')); out.doors = doors.length;
     for (const d of doors.slice(0, 5)) { d.act(h); await new Promise(r => setTimeout(r, 100)); document.querySelectorAll('.reward').forEach(e => e.click()); }
@@ -777,12 +897,76 @@ await check('festcal', async () => {
   return `build-up from 3 weeks before (stage 1→4), Halloween and Diwali at once, quiet days ${'3'} days before, ${r.rows} festivals coming up on the calendar, ${r.doors} pumpkin doors, a pumpkin lantern after 5 treats`;
 });
 
+await check('festivals', async () => {
+  // (Play core, owner 10 Oct) festivals come only in their season (from 3 weeks before) or when an admin schedules them in
+  // Studio; a child cannot start one (the calendar only tells about it); a festival decorates its whole place: pieces
+  // along every street, more each week, never on a road, a city street or a place's own street.
+  const P = await open(b, { w: 1180, h: 820 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, F = await import('/js/festivals.js'), W = await import('/js/world.js'), C = (await import('/js/custom.js')).CUSTOM, { FESTCAL } = await import('/js/content/festcal.js');
+    const wait = ms => new Promise(r => setTimeout(r, ms)), out = {};
+    // a festival out of its season: the calendar tap tells about it and starts nothing
+    const far = F.upcoming().filter(n => n.daysTo > 30).pop(); out.far = far && far.F.id;
+    G.festivals.visit(0, far.F.id); await wait(800);
+    out.toldDays = (document.querySelector('.dialog .dtext') || {}).textContent || '';
+    document.querySelectorAll('.dialog').forEach(e => e.remove()); G.paused = false;
+    out.startedByChild = G.festivals.active().some(a => a.F.id === far.F.id) || G.interactables.some(i => i.id === 'festival_' + far.F.id);
+    __sv.openPad(0, 'cal'); await wait(500); out.calNote = (document.querySelector('.pad .note') || {}).textContent || ''; document.querySelectorAll('.modal').forEach(e => e.remove()); G.paused = false;
+    // an admin schedules it for today in Studio: it is on, with its table
+    const d = new Date(), ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    C.releases = { ...(C.releases || {}), ['fest_' + far.F.id]: { on: true, start: ymd, days: 1 } }; G.festivals.rebuild(); await wait(300);
+    out.adminOn = G.festivals.active().some(a => a.F.id === far.F.id && a.on) && G.interactables.some(i => i.id === 'festival_' + far.F.id);
+    // (owner, 11 Oct, #32) even on its day, a calendar tap only tells: nobody is sent to the festival
+    { const h = G.heroes[0], p0 = { x: h.pos.x, z: h.pos.z }; G.festivals.visit(0, far.F.id); await wait(2500);
+      out.toldToday = (document.querySelector('.dialog .dtext') || {}).textContent || ''; out.moved = Math.hypot(h.pos.x - p0.x, h.pos.z - p0.z);
+      document.querySelectorAll('.dialog').forEach(e => e.remove()); G.paused = false; }
+    delete C.releases['fest_' + far.F.id]; G.festivals.rebuild(); await wait(300);
+    out.adminOff = !G.festivals.active().some(a => a.F.id === far.F.id);
+    // whole places: every festival place with streets gets pieces spread along them, more each week
+    const places = [...new Set(FESTCAL.flatMap(f => f.where))], bad = [], sizes = {};
+    const streetOf = (x, z) => { for (const c of W.CITIES) if (c.layout && x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && Math.abs((x - c.x) * Math.cos(c.layout.toward) - (z - c.z) * Math.sin(c.layout.toward)) < 2.6 + 1.5) return c.id; return null; };
+    const inner = [['town', W.TOWN, 6, 44, 3.5], ['aussie', W.AUSSIE, W.AUSSIE.x0, W.AUSSIE.x1, 3.5], ['market', W.MARKET, W.MARKET.x0, W.MARKET.x1, 4]];
+    for (const key of places) {
+      const f = FESTCAL.find(x => x.where.includes(key) && x.kind === 'party'); if (!f) continue;
+      const s1 = G.festivals.plan(key, f.id, 1), s2 = G.festivals.plan(key, f.id, 2), s4 = G.festivals.plan(key, f.id, 4), all = G.festivals.streetSpots(key);
+      sizes[key] = [s1.length, s2.length, s4.length, all.length];
+      if (all.length < 6) continue; // (a place without streets keeps its ring of pieces round the middle)
+      if (!(s1.length > 0 && s1.length < s2.length && s2.length < s4.length)) bad.push(`${key}: not more each week (${s1.length}, ${s2.length}, ${s4.length})`);
+      // spread over the whole place, not bunched: the pieces reach far apart
+      let span = 0; for (const a of s4) for (const q of s4) span = Math.max(span, Math.hypot(a.x - q.x, a.z - q.z));
+      const o = { ...W.CITIES.reduce((m, c) => (m[c.id] = c, m), {}), village: W.VILLAGE, china: W.CHINA, india: W.INDIA, aussie: W.AUSSIE, town: W.TOWN, market: W.MARKET, home: W.HOME }[key];
+      const size = o.x0 != null ? Math.hypot(o.x1 - o.x0, o.z1 - o.z0) : (o.r || 24) * 2;
+      if (span < size * .4) bad.push(`${key}: pieces bunched in ${span.toFixed(0)} m of a ${size.toFixed(0)} m place`);
+      for (const q of all) { const rd = W.roadDist(q.x, q.z); if (rd.road && rd.d < rd.road.w / 2 + 1.5) bad.push(`${key}: a piece on a road at ${q.x},${q.z}`);
+        const st = streetOf(q.x, q.z); if (st) bad.push(`${key}: a piece on ${st}'s main street`);
+        for (const [k, b, x0, x1, hw] of inner) if (q.x > x0 && q.x < x1 && Math.abs(q.z - b.roadZ) < hw + 1.5) bad.push(`${key}: a piece on ${k}'s street`);
+        if (W.heightAt(q.x, q.z) < W.WATER + .3) bad.push(`${key}: a piece in the water`); }
+    }
+    out.bad = bad.slice(0, 6); out.sizes = sizes;
+    return out;
+  });
+  const out = [];
+  if (r.startedByChild) out.push(`a child's tap started ${r.far}`);
+  if (!/\d/.test(r.toldDays)) out.push(`the calendar tap did not say how many days to ${r.far}: "${r.toldDays}"`);
+  if (/visit it now/i.test(r.calNote)) out.push('the calendar still says "visit it now"');
+  if (!r.adminOn) out.push(`an admin's schedule did not start ${r.far}`);
+  if (r.moved > 1 || !/today|hôm nay/i.test(r.toldToday)) out.push(`a calendar tap on ${r.far}'s day sent the child ${r.moved.toFixed(1)} m or did not say it is today: "${r.toldToday}"`);
+  if (!r.adminOff) out.push(`${r.far} stayed on after the admin's schedule was removed`);
+  out.push(...r.bad);
+  if (P.errors.length) out.push(...P.errors.slice(0, 2));
+  await P.ctx.close();
+  if (out.length) throw new Error(out.join('; '));
+  const z = Object.entries(r.sizes).filter(([, v]) => v[3] >= 6);
+  return `${r.far} out of season: told the days, not started by a child; on when an admin schedules it, and a tap on its day only tells (nobody travels), off again after; ${z.length} places decorated along their streets (week 1 → day: ${z.map(([k, v]) => `${k} ${v[0]}→${v[2]}`).join(', ')}), none on a road or street`;
+});
+
 await check('films', async () => {
   // (round R, owner: "the animations should be detailed and comprehensive, not drawings standing for the scenes")
   // every page of the pilot story and guide films plays to its end, the child's turn waits for a tap, and closing frees it
   const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
   const r = await P.page.evaluate(async () => {
-    const F = await import('/js/film.js'), C = await import('/js/content/films.js'), { MORE_TALES } = await import('/js/talesdata.js');
+    const F = await import('/js/film.js'), C = await import('/js/content/films.js'), { MORE_TALES: more } = await import('/js/talesdata.js'), { TALES } = await import('/js/learn.js');
+    const MORE_TALES = [...TALES, ...more]; // (Bánh chưng is one of the first tales, in js/learn.js)
     const { openTheatre } = await import('/js/tales.js'), { openHowTo } = await import('/js/howto.js');
     const frame = () => new Promise(r => requestAnimationFrame(r)), out = { films: {}, bad: [] };
     const run = async (id, n) => {
@@ -814,17 +998,40 @@ await check('films', async () => {
     for (const id of Object.keys(C.GUIDES)) {
       openHowTo(id, {}); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); document.querySelector('.ht-pp').click();
       await run(id, C.GUIDES[id].pages.length);
+      // (Kid UI films, 10 Oct) the real game plays its first moves by itself with the glowing hand, then waits for the child
+      if (C.GUIDES[id].demo) {
+        const m = document.querySelector('.howto'), sleep = ms => new Promise(r => setTimeout(r, ms));
+        for (let i = 0; i < 12 && !m.querySelector('.ht-demo'); i++) { m.querySelector('.ht-next').click(); await sleep(300); }
+        const D = m.__demo; if (!D) { out.bad.push(id + ': the real game does not play by itself'); }
+        else {
+          if (!m.querySelector('canvas.th-film').hidden) out.bad.push(id + ': the film still shows under the real game');
+          for (let i = 0; i < 400 && !D.turn; i++) await sleep(150);
+          const hand = m.querySelector('.ht-hand');
+          out.demo = out.demo || {}; out.demo[id] = { moves: D.moves, turn: D.turn, pairs: m.querySelectorAll('.ht-demo .mem.got').length, hand: !!hand };
+          if (!D.turn) out.bad.push(id + ': the demo did not reach the child\'s turn'); if (D.moves < 2) out.bad.push(id + ': the hand made ' + D.moves + ' moves');
+          if (id === 'memory' && !m.querySelector('.ht-demo .mem.got')) out.bad.push('memory: the demo found no pair');
+          // the child has a go: two cards, or one shot
+          const ev = (e, type, x, y) => e.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, pointerId: 3, bubbles: true }));
+          if (id === 'memory') for (const c of [...m.querySelectorAll('.ht-demo .mem:not(.flip)')].slice(0, 2)) { const r = c.getBoundingClientRect(); ev(c, 'pointerup', r.left + 5, r.top + 5); c.click(); await sleep(200); }
+          else { const c = m.querySelector('.ht-demo canvas'), r = c.getBoundingClientRect(); ev(c, 'pointerdown', r.left + r.width / 2, r.top + r.height * .86); ev(c, 'pointermove', r.left + r.width / 2, r.top + r.height * .98); ev(c, 'pointerup', r.left + r.width / 2, r.top + r.height * .98); }
+          for (let i = 0; i < 200 && m.querySelector('.ht-demo'); i++) await sleep(150);
+          if (m.querySelector('.ht-demo')) out.bad.push(id + ': the guide did not go on after the child\'s turn');
+          else if (m.querySelector('canvas.th-film').hidden) out.bad.push(id + ': the film did not come back after the real game');
+          out.demo[id].taps = D.taps;
+        }
+      }
       document.querySelector('.ht-x').click(); await new Promise(r => setTimeout(r, 300));
       if (F.filmNow()) out.bad.push(id + ': not freed');
     }
     return out;
   });
   const fails = [...r.bad];
-  for (const id of ['duahau', 'thanhgiong']) if (!r.films[id] || r.films[id].helps < 2) fails.push(`${id}: the child should help at least twice`);
+  for (const id of ['duahau', 'thanhgiong', 'banhchung', 'caykhe']) if (!r.films[id] || r.films[id].helps < 2) fails.push(`${id}: the child should help at least twice`);
+  for (const id of ['marbles', 'memory']) if (!r.demo || !r.demo[id]) fails.push(`${id}: no real game playing by itself`);
   if (P.errors.length) fails.push(...P.errors.slice(0, 3));
   await P.ctx.close();
   if (fails.length) throw new Error(JSON.stringify({ fails, films: r.films }));
-  return Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps at least twice in each story';
+  return Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps at least twice in each story; the real game plays by itself (' + Object.entries(r.demo).map(([id, d]) => `${id}: ${d.moves} moves with the hand, the child's go`).join(', ') + ')';
 });
 await check('halves', async () => {
   // (round R, owner) two players: a window opens in its own child's half and pauses only that child; the other keeps playing
@@ -900,7 +1107,7 @@ await check('story', async () => {
   // (Play core, chapter 2; owner 10 Oct: it is off until an admin switches it on or schedules it) switched on in Studio,
   // chapter 2 follows chapter 1; off, the old adventures follow as before
   const noCh2 = seen[8];
-  seen[8] = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), story_ch2: true }; const c = __sv.currentQuest(__sv.heroes[0].profile); delete C.features.story_ch2; return c && c.id; });
+  seen[8] = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), story_ch2: true }; await __sv.lanterns.loadCh('ch2'); const c = __sv.currentQuest(__sv.heroes[0].profile); delete C.features.story_ch2; return c && c.id; });
   const end = await pg.evaluate(() => { const G = __sv, p = G.heroes[0].profile, D = G.lanterns.dinh;
     const house = Math.min(...G.world.colliders.filter(c => c.r > 2 && c.top == null).map(c => Math.hypot(c.x - D.x, c.z - D.z) - c.r));
     return { companion: p.lanterns.companion, ch1: !!p.lanterns.chapters.ch1, keep: (p.keepsakes || []).includes('lantern_ch1'), carrying: p.lanterns.carrying, house }; });
@@ -1057,8 +1264,147 @@ await check('chapter2', async () => {
   };
   const little = await play('little'), big = await play('big');
   const bad = [...little.out.map(x => 'under-5: ' + x), ...big.out.map(x => 'big kid: ' + x)];
+  // (owner, 10 Oct: "Chi's look can be changed in Studio") Studio's looks change Chi, Jack and Ruby; a bad value keeps the
+  // chapter's own look, and Bà Năm keeps hers
+  { const P = await open(b, { w: 800, h: 600 }); const L = await P.page.evaluate(async () => { const { lookOf } = await import('/js/content/chapter3sydney.js');
+      return { chi: lookOf('chi'), set: lookOf('chi', { chi: { color: '#ff0000', style: 'dress', hairStyle: 'nope', hair: 'red' } }), nam: lookOf('nam', { nam: { color: '#ff0000' } }), bad: lookOf('jack', 'x') }; });
+    await P.ctx.close();
+    if (L.chi.hairStyle !== 'ponytail' || L.chi.color !== '#ffd23f') bad.push('Chi\'s own look changed: ' + JSON.stringify(L.chi));
+    if (L.set.color !== '#ff0000' || L.set.style !== 'dress' || L.set.hairStyle !== 'ponytail' || L.set.hair !== L.chi.hair) bad.push('Studio\'s look for Chi was not used safely: ' + JSON.stringify(L.set));
+    if (L.nam.color === '#ff0000' || L.bad.color !== '#3b6fe0') bad.push('Bà Năm or a bad pack changed a look'); }
   if (bad.length) throw new Error(bad.join('; '));
   return `under-5: ${little.steps} steps (${little.counted} turtles, the companion lit the way); big kid: ${big.steps} steps (Ô ăn quan, bún chả by hand, ${big.counted} turtles and a question, clues); rope, film (2 pages), Cầu Thê Húc lit, parade, keepsake, new trick, golden turtle for the big kid; then "${big.after}"`;
+});
+await check('chapter3', async () => {
+  // (Play core, owner's go 10 Oct) chapter 3 of the lantern story, Sydney, played from the start to the fireworks, once as
+  // an under-5 and once as a big kid: off until an admin switches it on; lantern lights to Sydney, Chi (big kids), Chi's
+  // Aussie words (pictures for an under-5, meanings for a big kid; a wrong answer is never punished), Captain Molly's
+  // ferries (big kids), Jack and Ruby's challenge (cricket for a big kid, tug of war for an under-5: the other game does not
+  // count), Bà Năm's Magic Pudding, the clues by the harbour (the under-5's companion flies high and leads), the rope, the
+  // festival film (both pages played through), the Opera House lit, fireworks, the keepsake, the new trick (flying higher)
+  // and the big kids' koala. Nothing stands on a road, a city street or in the water.
+  const play = async age => {
+    const P = await open(b, { w: 1000, h: 700 }); await clear(P.page);
+    const pg = P.page, w = ms => pg.waitForTimeout(ms), seen = [], out = [];
+    const q = () => pg.evaluate(() => { const c = __sv.currentQuest(__sv.heroes[0].profile); return c && c.id; });
+    const calm = () => pg.evaluate(() => { document.querySelectorAll('.storybook,.dialog,.reward').forEach(e => e.remove()); __sv.paused = false; });
+    const act = id => pg.evaluate(id => { const it = __sv.interactables.find(i => i.id === id), h = __sv.heroes[0]; if (!it || (it.visible && !it.visible(h))) return false; it.act(h, __sv); return true; }, id);
+    const tapDialog = (n = 6) => pg.evaluate(async n => { for (let i = 0; i < n; i++) { const d = document.querySelector('.dialog:not(.out)'); if (!d || d.querySelector('.dch')) break; d.click(); await new Promise(r => setTimeout(r, 250)); } }, n);
+    const step = async () => { await w(400); await calm(); await w(2200); await calm(); seen.push(await q()); };
+    const emit = gid => pg.evaluate(async gid => { const E = await import('/js/core/events.js'); E.events.emit('ActivityCompleted', { activityId: 'x', defId: 'game:' + gid, players: [], result: { won: true } }); }, gid);
+    // chapter 2 done; chapter 3 is off until an admin switches it on
+    // (chapter 2's steps come with its file, which the game loads once chapter 1's lantern is found)
+    const offFirst = await pg.evaluate(async age => { const G = __sv, p = G.heroes[0].profile, C = (await import('/js/custom.js')).CUSTOM, { CHAPTERS } = await import('/js/content/chapters.js');
+      C.features = { ...(C.features || {}), story_ch2: true }; await G.lanterns.loadCh('ch2');
+      p.age = age; p.lanterns = { companion: 'firefly', done: { p_owl: true }, chapters: { ch1: true, ch2: true } };
+      for (const c of CHAPTERS.slice(1, 3)) for (const s of c.steps) p.lanterns.done[s.id] = true;
+      C.features = { ...(C.features || {}), story_ch2: true }; const before = G.currentQuest(p);
+      C.features.story_ch3 = true; G.lanterns.companions.sync(); return !/^L_c3/.test(before && before.id || ''); }, age);
+    await pg.evaluate(() => __sv.lanterns.loadCh('ch3')); await w(300);
+    seen.push(await q());
+    await pg.evaluate(() => __sv.heroes[0].place(-36, 52)); await w(2500); await calm();
+    const lightsWaited = await q() === 'L_c3_fly';
+    for (let k = 0; k < 3; k++) { await act('story_light_c3_fly_' + k); await w(300); }
+    await step();
+    if (age === 'big') { await act('story_c3_chi'); await w(500); await tapDialog(); await step(); }
+    // Chi's words: tap the buttons until each word is right (a wrong one just hides)
+    await act('story_c3_words'); await w(800);
+    // (a big kid's answers are words that can be read; an under-5's are pictures)
+    const wordBtn = await pg.evaluate(() => { const b = document.querySelector('.handpad [data-hp=w0]'); if (!b) return null; const cs = getComputedStyle(b); return { text: b.textContent.trim(), size: parseFloat(cs.fontSize), pic: !!b.querySelector('.art, .emo, svg, img'), h: b.getBoundingClientRect().height }; });
+    let rounds = 0, wrongs = 0;
+    for (let i = 0; i < 20; i++) {
+      const r = await pg.evaluate(() => { const bs = [...document.querySelectorAll('.handpad [data-hp^=w]')], b = bs.find(x => x.style.visibility !== 'hidden'); if (!b) return null; const word = document.querySelector('.handpad p b').textContent, hidden = bs.filter(x => x.style.visibility === 'hidden').length; b.click(); return { word, hidden }; });
+      if (r == null) break;
+      // (right: the next word comes, or the game ends; wrong: that button hides)
+      const res = await pg.evaluate(async r => { for (let k = 0; k < 40; k++) { await new Promise(x => setTimeout(x, 150)); const b = document.querySelector('.handpad p b'), bs = [...document.querySelectorAll('.handpad [data-hp^=w]')];
+        if (!b || b.textContent !== r.word) return 'right'; if (bs.filter(x => x.style.visibility === 'hidden').length > r.hidden) return 'wrong'; } return 'none'; }, r);
+      if (res === 'right') rounds++; else if (res === 'wrong') wrongs++; else break; }
+    await step();
+    if (age === 'big') { await emit('ferries'); await step(); }
+    const jackBtn = await act('story_c3_jack'); await w(600);
+    const jackChoices = await pg.evaluate(() => document.querySelectorAll('.dialog:not(.out) .dch').length); await calm();
+    await emit(age === 'big' ? 'tug' : 'cricket'); await w(400); const otherGame = await q();
+    await emit(age === 'big' ? 'cricket' : 'tug'); await step();
+    const namBtn = await act('story_c3_tale'); await w(600); await calm(); await pg.evaluate(() => document.querySelector('.th-x')?.click());
+    await pg.evaluate(() => __sv.lanterns._finish(__sv.heroes[0], 'c3_tale')); await step();
+    // the clues by the harbour
+    await pg.evaluate(() => { const S = __sv.lanterns.sydney; __sv.heroes[0].place(S.front[0], S.front[1] + 1); }); await w(2500); await calm();
+    const lead = await pg.evaluate(() => { const c = __sv.lanterns.companions.of(__sv.heroes[0]); return c && c.lead ? !!c.lead.high : false; });
+    await act('story_clue3_1'); await w(300);
+    const wrongFound = await pg.evaluate(() => !!(__sv.heroes[0].profile.lanterns.act || {}).clue3);
+    await act('story_clue3_0'); await w(300); await act('story_c3_find'); await step();
+    const carrying = await pg.evaluate(() => __sv.heroes[0].profile.lanterns.carrying);
+    pg.evaluate(() => { const it = __sv.interactables.find(i => i.id === 'story_c3_hang'); it.act(__sv.heroes[0]); }); await w(1500);
+    const roped = await pg.evaluate(() => { const el = document.querySelector('.handpad [data-hp=rope]'); if (!el) return false; const r = el.getBoundingClientRect(), ev = (t, y) => el.dispatchEvent(new PointerEvent(t, { bubbles: true, pointerId: 9, clientX: r.left + 20, clientY: r.top + r.height * y }));
+      ev('pointerdown', 0); ev('pointermove', 1); ev('pointerup', 1); return true; });
+    let film = false; for (let i = 0; i < 30 && !film; i++) { await w(300); film = await pg.evaluate(() => !!document.querySelector('.theatre.film canvas.th-film')); }
+    await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(1200);
+    await pg.evaluate(() => document.querySelectorAll('.reward').forEach(e => e.click())); await w(800); await tapDialog(); await w(400); await calm(); await w(1500);
+    const end = await pg.evaluate(() => { const G = __sv, p = G.heroes[0].profile, S = G.lanterns.sydney;
+      return { ch3: !!p.lanterns.chapters.ch3, keep: (p.keepsakes || []).includes('lantern_ch3'), carrying: p.lanterns.carrying, tricks: p.lanterns.tricks || [], lit: S.lit(), show: S.showOn(),
+        secret: G.interactables.find(i => i.id === 'story_c3_secret').visible(G.heroes[0]), after: (q => q && q.id)(G.currentQuest(p)) }; });
+    let sticker = false;
+    if (age === 'big' && end.secret) { await act('story_c3_secret'); await w(400); await pg.evaluate(() => document.querySelectorAll('.reward').forEach(e => e.click())); await w(400); sticker = await pg.evaluate(() => __sv.heroes[0].profile.stickers.includes('🐨')); }
+    const placed = await pg.evaluate(async () => { const W = await import('/js/world.js'), S = __sv.lanterns.sydney, bad = [];
+      const pts = [['front', S.front[0], S.front[1]], ...S.clues.map(c => ['clue' + c.k, c.x, c.z]), ...S.people.map(c => [c.id, c.x, c.z]), ['koala', S.koala.x, S.koala.z],
+        ...__sv.interactables.filter(i => /^story_light_c3/.test(i.id)).map(i => [i.id, i.x, i.z])];
+      for (const [id, x, z] of pts) { const d = W.roadDist(x, z); if (d.road && d.d < d.road.w / 2 + .5) bad.push(id + ' on a road');
+        for (const c of W.CITIES) if (c.layout && x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1 && Math.abs((x - c.x) * Math.cos(c.layout.toward) - (z - c.z) * Math.sin(c.layout.toward)) < 2.6) bad.push(id + ' on ' + c.id + "'s street");
+        if (W.heightAt(x, z) < W.WATER + .3) bad.push(id + ' in the water'); }
+      return bad; });
+    const filmRun = await pg.evaluate(async () => {
+      const F = await import('/js/film.js'), C = await import('/js/content/films.js'); await import('/js/content/chapter3films.js');
+      const { STORY_TALES } = await import('/js/content/chapters.js'), { openTheatre } = await import('/js/tales.js'), st = STORY_TALES.lantern_ch3, bad = [];
+      openTheatre({ ...st, story: true, title: () => st.title[0], ctx: { name: 'Na', companion: 'dragon' } }, { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100));
+      document.querySelector('.th-auto')?.click(); const f = F.filmNow(); if (!f) return ['no film'];
+      const frame = () => new Promise(r => requestAnimationFrame(r)); let helps = 0;
+      for (let k = 0; k < C.FILMS.lantern_ch3.pages.length; k++) { const done = f.page(k); let ended = false; done.then(() => { ended = true; }); const p = f.now; f.narrated();
+        for (let i = 0; i < 600 && !ended; i++) { if (p.hold) { helps++; p.release(true); } p.t += .2; await frame(); }
+        if (!ended) bad.push('page ' + (k + 1) + ' did not end'); if (!p.actors.length) bad.push('page ' + (k + 1) + ': nobody in it'); }
+      if (!helps) bad.push('the child never helped');
+      document.querySelector('.th-x')?.click(); await new Promise(r => setTimeout(r, 400)); if (F.filmNow()) bad.push('not freed');
+      return bad; });
+    const want = age === 'big' ? ['L_c3_fly', 'L_c3_chi', 'L_c3_words', 'L_c3_ferry', 'L_c3_jack', 'L_c3_tale', 'L_c3_find', 'L_c3_hang'] : ['L_c3_fly', 'L_c3_words', 'L_c3_jack', 'L_c3_tale', 'L_c3_find', 'L_c3_hang'];
+    want.forEach((id, i) => { if (seen[i] !== id) out.push(`step ${i + 1} was ${seen[i]}, expected ${id}`); });
+    if (!offFirst) out.push('chapter 3 started before an admin switched it on');
+    if (!lightsWaited) out.push('walking into Sydney finished the step before the lights were followed');
+    if (!wordBtn) out.push('no word buttons');
+    else if (age === 'big' ? !(wordBtn.text && wordBtn.size >= 16) : !wordBtn.pic) out.push('word buttons: ' + JSON.stringify(wordBtn));
+    else if (wordBtn.h < (age === 'big' ? 44 : 64)) out.push('word buttons too small: ' + wordBtn.h);
+    if (rounds !== (age === 'big' ? 4 : 2)) out.push(`${rounds} words with Chi, expected ${age === 'big' ? 4 : 2}`);
+    if (!jackBtn || jackChoices !== 3) out.push(`Jack and Ruby's challenge did not offer Play, How to play and Later (${jackChoices})`);
+    if (otherGame !== 'L_c3_jack') out.push('the other age group\'s game finished Jack and Ruby\'s challenge');
+    if (!namBtn) out.push('no button for Bà Năm\'s story');
+    if (age !== 'big' && !lead) out.push('the companion did not fly high to lead the way');
+    if (age === 'big' && lead) out.push('the companion led a big kid');
+    if (wrongFound) out.push('the lantern showed at the wrong spot');
+    if (carrying !== 'ch3' || end.carrying) out.push('the lantern was not carried and then hung');
+    if (!roped) out.push('hanging did not ask to pull the rope');
+    if (!film) out.push('the festival film did not open');
+    if (!end.ch3 || !end.keep) out.push('chapter 3 not finished ' + JSON.stringify(end));
+    if (!end.lit) out.push('the Opera House did not light up');
+    if (!end.show) out.push('no fireworks');
+    if (!end.tricks.includes('higher')) out.push('the companion did not learn its trick');
+    if (!end.after || /^L_c3/.test(end.after)) out.push('after chapter 3 the goal was ' + end.after);
+    if (age === 'big' && (!end.secret || !sticker)) out.push('no koala secret for a big kid');
+    if (age !== 'big' && end.secret) out.push('the koala showed for an under-5');
+    out.push(...placed, ...filmRun.map(x => 'film: ' + x));
+    if (P.errors.length) out.push(...P.errors.slice(0, 2));
+    await P.ctx.close();
+    return { out, steps: want.length, rounds, wrongs, after: end.after };
+  };
+  const little = await play('little'), big = await play('big');
+  const bad = [...little.out.map(x => 'under-5: ' + x), ...big.out.map(x => 'big kid: ' + x)];
+  // (owner, 10 Oct: "Chi's look can be changed in Studio") Studio's looks change Chi, Jack and Ruby; a bad value keeps the
+  // chapter's own look, and Bà Năm keeps hers
+  { const P = await open(b, { w: 800, h: 600 }); const L = await P.page.evaluate(async () => { const { lookOf } = await import('/js/content/chapter3sydney.js');
+      return { chi: lookOf('chi'), set: lookOf('chi', { chi: { color: '#ff0000', style: 'dress', hairStyle: 'nope', hair: 'red' } }), nam: lookOf('nam', { nam: { color: '#ff0000' } }), bad: lookOf('jack', 'x') }; });
+    await P.ctx.close();
+    if (L.chi.hairStyle !== 'ponytail' || L.chi.color !== '#ffd23f') bad.push('Chi\'s own look changed: ' + JSON.stringify(L.chi));
+    if (L.set.color !== '#ff0000' || L.set.style !== 'dress' || L.set.hairStyle !== 'ponytail' || L.set.hair !== L.chi.hair) bad.push('Studio\'s look for Chi was not used safely: ' + JSON.stringify(L.set));
+    if (L.nam.color === '#ff0000' || L.bad.color !== '#3b6fe0') bad.push('Bà Năm or a bad pack changed a look'); }
+  if (bad.length) throw new Error(bad.join('; '));
+  return `under-5: ${little.steps} steps (${little.rounds} picture words, the companion flew high to lead); big kid: ${big.steps} steps (${big.rounds} Aussie words, ferries, cricket, clues); rope, film (2 pages, the child starts the fireworks), Opera House lit, fireworks, keepsake, new trick, koala for the big kid; Studio can change Chi, Jack and Ruby's looks; then "${big.after}"`;
 });
 await check('yard', async () => {
   // (round R, owner: bà Huệ and ông Nghi's quest chain) the yard stands in an open spot near the Huệ Nghi shop; the side
@@ -1189,10 +1535,14 @@ await check('shop', async () => {
     out.spot = [Math.round(sp.x), Math.round(sp.z)]; out.offRoad = !rd.road || rd.d > rd.road.w / 2 + 1.5;
     out.nearMarket = Math.hypot(Math.max(M.x0 - sp.x, 0, sp.x - M.x1), Math.max(M.z0 - sp.z, 0, sp.z - M.z1)) < 40;
     out.dry = W.heightAt(sp.x, sp.z) > W.WATER + .3; out.tap = !!G.interactables.find(i => i.id === 'shop_clothes');
-    // the Bag button: off to the shop, and the shop opens
-    p.age = 'big'; G.addCoins(500 - S.farm.coins); G.huds[0].root.querySelector('.dk.bag').click(); await w(3200);
-    out.there = Math.hypot(h.pos.x - G.shop.front.x, h.pos.z - G.shop.front.z) < 8; const card = document.querySelector('.modal.shopk .card');
-    out.opened = !!card; out.tabs = card ? card.querySelectorAll('.ktab').length : 0;
+    // the Bag button (Bug #29, owner 10 Oct: "bag is bag"): it opens the backpack, with one small shop button that opens the
+    // shop right there, no travel; the stall in the valley stays
+    p.age = 'big'; G.addCoins(500 - S.farm.coins); const pos0 = { x: h.pos.x, z: h.pos.z }; G.huds[0].root.querySelector('.dk.bag').click(); await w(500);
+    const sb = document.querySelector('.modal.pad .bagshop'); out.bagOpens = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk') && !!sb;
+    out.bagShopBtn = sb ? (() => { const q = sb.getBoundingClientRect(); return q.width >= 44 && q.height >= 44; })() : false;
+    sb && sb.click(); await w(700);
+    out.there = Math.hypot(h.pos.x - pos0.x, h.pos.z - pos0.z) < 1 && !document.querySelector('.modal.pad'); const card = document.querySelector('.modal.shopk .card');
+    out.opened = !!card; out.tabs = card ? card.querySelectorAll('.ktab').length : 0; out.noBagTab = card ? !card.querySelector('[data-go="bag"]') : false;
     // (nothing to read: each thing is a drawing and a number; the words inside a drawing, like the coin's "$", are part
     // of the picture, so the text is read with the drawings taken out)
     const words = b => { const c = b.cloneNode(true); c.querySelectorAll('svg, .arti, .flagi').forEach(e => e.remove()); return c.textContent.replace(/\s/g, ''); };
@@ -1210,8 +1560,13 @@ await check('shop', async () => {
     p.age = 'little'; G.shop.openShop(0); await w(400);
     out.little = [...document.querySelectorAll('.modal.shopk.little .ktab, .modal.shopk.little .kitem')].filter(b => { const q = b.getBoundingClientRect(); return q.width < 64 || q.height < 64; }).length;
     document.querySelector('.modal.shopk .x').click(); await w(400);
-    // the wardrobe: what is owned, worn with a tap
+    // the wardrobe: what is owned, worn with a tap; no shop button on a row; the Done button covers no chip; no chip cut off or overlapping
     G.openWardrobe(0); await w(400); const wd = document.querySelector('.wardrobe.kward');
+    out.noRowShop = !wd.querySelector('.toshop, [data-shop]');
+    { const dn = wd.querySelector('.x').getBoundingClientRect(), chips = [...wd.querySelectorAll('.chip')].map(c => c.getBoundingClientRect()), box = wd.getBoundingClientRect();
+      const hit = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      out.wardClear = chips.every(c => !hit(c, dn)) && chips.every((c, k) => chips.every((d, j) => j <= k || !hit(c, d))) && wd.scrollWidth <= wd.clientWidth + 1;
+      out.wardRowsFit = [...wd.querySelectorAll('.wrow')].every(r => { const q = r.getBoundingClientRect(); return [...r.querySelectorAll('.chip')].every(c => { const z = c.getBoundingClientRect(); return z.top >= q.top - 1 && z.bottom <= q.bottom + 1; }); }); void box; }
     out.wardrobe = !!wd && wd.querySelectorAll('.wrow').length === 6 && !!wd.querySelector('[data-v="tiara"]') && !wd.querySelector('[data-v="dragon"]');
     wd.querySelector('[data-k="hat"][data-v="none"]').click(); await w(200); out.off = p.look.hat === 'none';
     document.querySelector('.wardrobe.kward .x').click(); await w(300);
@@ -1232,17 +1587,19 @@ await check('shop', async () => {
   });
   const errs = P.errors; await P.ctx.close(); const bad = [];
   if (!r.offRoad || !r.nearMarket || !r.dry || !r.tap) bad.push('the shop is not by the market on dry ground off the road ' + JSON.stringify(r.spot));
-  if (!r.there || !r.opened) bad.push('the Bag button did not take the child to the shop');
-  if (r.tabs !== 8 || !r.pics || r.small) bad.push(`the shop card: ${r.tabs} tabs, pictures ${r.pics}, ${r.small} buttons under 44 px`);
+  if (!r.bagOpens || !r.bagShopBtn) bad.push('the Bag button does not open the backpack with one small shop button ' + JSON.stringify({ o: r.bagOpens, b: r.bagShopBtn }));
+  if (!r.there || !r.opened) bad.push('the shop button in the bag did not open the shop right there (no travel)');
+  if (r.tabs !== 7 || !r.noBagTab || !r.pics || r.small) bad.push(`the shop card: ${r.tabs} tabs, pictures ${r.pics}, ${r.small} buttons under 44 px`);
   if (!r.bought || !r.poorKept || !r.closed) bad.push('buying ' + JSON.stringify({ bought: r.bought, poor: r.poorKept, closed: r.closed }));
   if (r.little) bad.push(`${r.little} buttons under 64 px for an under-5`);
   if (!r.wardrobe || !r.off) bad.push('the wardrobe does not show what is owned');
+  if (!r.noRowShop || !r.wardClear || !r.wardRowsFit) bad.push('the wardrobe: shop button on a row, or items overlap, are cut off or sit under the Done button ' + JSON.stringify({ s: r.noRowShop, c: r.wardClear, f: r.wardRowsFit }));
   if (!r.kept) bad.push('what a child already wore is not owned');
   if (r.allDrawn.length) bad.push('3D pieces: ' + r.allDrawn.join(' '));
   if (!r.offBag || !r.offStall || !r.offWard) bad.push('the Studio switch did not put the old Bag and wardrobe back ' + JSON.stringify(r));
   if (errs.length) bad.push(...errs.slice(0, 2));
   if (bad.length) throw new Error(bad.join('; '));
-  return `the shop at ${r.spot} by the market, off the road; the Bag button went there; 8 picture tabs, coin prices, 64 px for under-5s; bought the tiara, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
+  return `the shop at ${r.spot} by the market, off the road; the Bag opens the backpack and its small shop button opens the shop without travel; 7 picture tabs, coin prices, 64 px for under-5s; bought the tiara, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
 });
 await check('boxes', async () => {
   // (round S, owner plan 8 Oct: Round R Part 2 item 10) a big kid at Medium or Hard: one free mystery box a day, one more
@@ -1651,6 +2008,126 @@ await check('regions', async () => {
   return `${r.n} areas all in the valley; home, Lotus Village, Phố Hai Quê, Chợ Ba Miền and Aussie Corner read as themselves`;
 });
 
+await check('bridges', async () => {
+  // (round T2, RIVER-004, ROAD-009) every bridge spans its own water: at least 4 m of water under the middle of the span,
+  // both ends on land, the deck is walkable; every bridge landmark stands on its bridge; and no road runs through water anywhere
+  // except on a bridge deck
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), M = await import('/js/content/map.js'), G = __sv, bad = [];
+    const at = (B, u, v = 0) => B.axis === 'z' ? [B.c + v, u] : [u, B.c + v];
+    for (const B of W.BRIDGES) {
+      // the water under the deck: at least 4 m of it, all within the middle 60 % of the span (the ends rest on raised banks)
+      const span = B.a1 - B.a0; let wet = 0, first = null, last = null; for (let u = B.a0; u <= B.a1; u += .25) { const [x, z] = at(B, u); if (W.heightAt(x, z) < W.WATER - .3) { wet += .25; if (first == null) first = u; last = u; } }
+      if (wet < 4 || first < B.a0 + span * .2 || last > B.a1 - span * .2) bad.push(`${B.id}: ${wet} m of water under it, from ${first} to ${last} (span ${B.a0} to ${B.a1})`);
+      for (const u of [B.a0 - 1.5, B.a1 + 1.5]) { const [x, z] = at(B, u); if (W.heightAt(x, z) < W.WATER + .5) bad.push(`${B.id}: an end is not on land (${x},${z})`); }
+      const [mx, mz] = at(B, (B.a0 + B.a1) / 2), y = G.world.groundAt(mx, mz, B.h + 2); if (Math.abs(y - B.h) > .6) bad.push(`${B.id}: deck not walkable (${y.toFixed(1)} vs ${B.h})`);
+      if (B.over && !W.RIVERS.some(R => R.id === B.over)) bad.push(`${B.id}: over unknown water ${B.over}`);
+      // (the Dragon Bridge is its own landmark, built with the roads: no postcard spot in the map)
+      if (B.landmark && M.landmarkAt(B.landmark)) { const [lx, lz] = M.landmarkAt(B.landmark); if (!W.bridgeAt(lx, lz, B.w / 2 + .1)) bad.push(`${B.id}: its landmark ${B.landmark} is not on it`); }
+    }
+    let wetRoad = 0; const where = [];
+    for (const L of G.world.roadLines) L.pts.forEach(([x, z], i) => { if (!L.deck[i] && W.heightAt(x, z) < W.WATER - .2) { wetRoad++; if (where.length < 6) where.push(`${x.toFixed(0)},${z.toFixed(0)}`); } });
+    if (wetRoad) bad.push(`${wetRoad} road points in water off any deck: ${where.join(' ')}`);
+    return { bad, n: W.BRIDGES.length, lm: W.BRIDGES.filter(B => B.landmark).map(B => B.landmark) };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.bad.length, r.bad.slice(0, 10).join('; '));
+  ok(!errs.length, errs.join(' | '));
+  return `${r.n} bridges each over its water, ends on land, decks walkable; landmarks on their bridges: ${r.lm.join(', ')}; no road in water`;
+});
+
+await check('boats', async () => {
+  // (round T2, RIVER-002/005/006) ride every boat end to end, 1 m at a time: the water under it and 1.5 m either side
+  // is deep enough (at the piers a little shallower), every deck it passes is high enough over it, and every pier's land
+  // end joins a road or footpath; the raft stops by every bridge it passes under
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), M = await import('/js/content/map.js'), G = __sv, bad = [], THREE = await import('/vendor/three.module.js');
+    const F = G.ferries.ferries, info = [];
+    for (const f of F) {
+      const box = new THREE.Box3().setFromObject(f.model), tall = box.max.y - W.WATER, name = f.boat === 'vtboat' ? 'Vũng Tàu boat' : f.harbour ? 'harbour ferry' : f.line ? 'raft line' : f.loop ? 'lake ferry' : 'crossing raft';
+      let shallow = 0, low = 0, first = '';
+      const stopPts = f.stops.map(s => f.path[s.i]);
+      for (let i = 0; i < f.path.length - (f.loop ? 0 : 1); i++) { const a = f.path[i], c = f.path[(i + 1) % f.path.length], L = Math.hypot(c.x - a.x, c.z - a.z), n = Math.max(1, Math.ceil(L));
+        for (let k = 0; k < n; k++) { const x = a.x + (c.x - a.x) * k / n, z = a.z + (c.z - a.z) * k / n, ux = -(c.z - a.z) / (L || 1), uz = (c.x - a.x) / (L || 1);
+          const nearStop = stopPts.some(p => Math.hypot(p.x - x, p.z - z) < 6), lim = nearStop ? W.WATER - .25 : W.WATER - .8;
+          const hs = [0, -1.5, 1.5].map(o => W.heightAt(x + ux * o, z + uz * o)); if ((nearStop ? hs[0] : Math.max(...hs)) > lim) { shallow++; if (!first) first = `${x.toFixed(0)},${z.toFixed(0)}`; }
+          const B = W.bridgeAt(x, z, 4); if (B && B.h - tall < .5) low++; } }
+      if (shallow) bad.push(`${name}: ${shallow} m too shallow (first at ${first})`);
+      if (low) bad.push(`${name}: ${low} m under a deck too low for it`);
+      for (const s of f.stops) { const p = s.dock && s.dock.pier && s.dock.pier.land; if (!p) continue; const rd = W.roadDist(p.x, p.z); if (!rd.road || rd.d > rd.road.w / 2 + 3) bad.push(`${name}: the pier at ${p.x.toFixed(0)},${p.z.toFixed(0)} (${s.name()}) joins no road (${rd.d.toFixed(1)} m)`); }
+      info.push(`${name} ${f.stops.length} stops`);
+    }
+    const raft = F.find(f => f.line), want = (M.BOATS.find(b => b.id === 'raft').bridgeStops || []).map(s => s.bridge), have = raft ? raft.stops.map(s => s.bridge).filter(Boolean) : [];
+    const missing = want.filter(id => !have.includes(id)); if (missing.length) bad.push('the raft does not stop by ' + missing.join(', '));
+    if (!F.some(f => f.harbour)) bad.push('no Sydney Harbour ferry');
+    // (round T3) every boat the map gives two piers runs: the Sydney Harbour ferry and the Sài Gòn boat to Vũng Tàu
+    for (const B of M.BOATS.filter(B => B.piers)) if (!F.some(f => f.boat === B.id)) bad.push(`no boat ${B.id}`);
+    return { bad, info };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.bad.length, r.bad.slice(0, 10).join('; '));
+  ok(!errs.length, errs.join(' | '));
+  return r.info.join(', ') + '; every route deep enough, under high enough decks, every pier on a road or path';
+});
+
+await check('plots', async () => {
+  // (round T3, ROUND-T.md T3) the garden plots: at least 60 (two Memory Villages and up to three spare by each city); each level
+  // within 5 cm, off every road and all water, its front within 2 m of a road's edge, a unique id and address, and nothing
+  // standing on it (no solid cell, no collider, no building box); one garden mesh for all of them
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), G = __sv, bad = []; await G.solidsReady;
+    const PL = W.PLOTS, ids = new Set(), en = new Set(), vi = new Set(), by = {};
+    for (const p of PL) {
+      const B = W.plotBox(p), tag = `${p.id} (${p.x.toFixed(0)},${p.z.toFixed(0)})`; by[p.village] = (by[p.village] || 0) + 1;
+      if (ids.has(p.id)) bad.push('two plots called ' + p.id); ids.add(p.id);
+      if (en.has(p.address[0]) || vi.has(p.address[1])) bad.push(`${tag}: address ${p.address[0]} used twice`); en.add(p.address[0]); vi.add(p.address[1]);
+      let lo = 1e9, hi = -1e9, road = '', wet = false, solid = 0;
+      for (let x = B.x0 + .15; x <= B.x1 - .15; x += .5) for (let z = B.z0 + .15; z <= B.z1 - .15; z += .5) {
+        const h = W.heightAt(x, z); lo = Math.min(lo, h); hi = Math.max(hi, h);
+        const rd = W.roadDist(x, z); if (rd.road && rd.d < rd.road.w / 2) road = rd.road.id;
+        if (h < W.WATER + .5 || W.waterAt(x, z, 4)) wet = true;
+        if (G.world.solidAt(x, z)) solid++;
+      }
+      if (hi - lo > .05) bad.push(`${tag}: not level (${(hi - lo).toFixed(2)} m)`);
+      if (road) bad.push(`${tag}: on the road ${road}`);
+      if (wet) bad.push(`${tag}: in the water`);
+      if (solid) bad.push(`${tag}: ${solid} solid cells on it`);
+      const fx = p.x + Math.sin(p.rot) * p.d / 2, fz = p.z + Math.cos(p.rot) * p.d / 2, fr = W.roadDist(fx, fz);
+      if (!fr.road || fr.d - fr.road.w / 2 > 2) bad.push(`${tag}: its front is ${(fr.d - (fr.road ? fr.road.w / 2 : 0)).toFixed(1)} m from a road`);
+      const inside = (x, z, m = 0) => x > B.x0 - m && x < B.x1 + m && z > B.z0 - m && z < B.z1 + m;
+      const col = G.world.colliders.find(c => inside(c.x, c.z, c.r * .5)); if (col) bad.push(`${tag}: something stands on it (${col.x.toFixed(0)},${col.z.toFixed(0)})`);
+      const box = G.world.boxes.find(o => !o.room && o.x1 > B.x0 && o.x0 < B.x1 && o.z1 > B.z0 && o.z0 < B.z1); if (box) bad.push(`${tag}: a building box overlaps it`);
+    }
+    let gardens = 0; G.scene.traverse(o => { if (o.userData.plots) gardens++; });
+    return { n: PL.length, bad, by, gardens, count: G.plots ? G.plots.count : 0 };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.n >= 60, `only ${r.n} plots (want 60 or more)`);
+  ok(!r.bad.length, r.bad.slice(0, 10).join('; ') + (r.bad.length > 10 ? ` … ${r.bad.length} in all` : ''));
+  ok(r.gardens === 1 && r.count === r.n, `the gardens are ${r.gardens} meshes for ${r.count} of ${r.n} plots (want one mesh for all)`);
+  ok(!errs.length, errs.join(' | '));
+  return `${r.n} plots (${Object.entries(r.by).map(([k, v]) => `${k} ${v}`).join(', ')}): each level, dry, off the roads, its front by a road, a unique address, nothing on it; one garden mesh`;
+});
+
+await check('roadtone', async () => {
+  // (round T2, ROAD-014, Concept D "B") every asphalt road carries its region's colour, one shared material per colour,
+  // and the ring road round the home island is closed
+  const M = await import('../js/content/map.js'), bad = [];
+  for (const R of M.ROADS) if (R.kind === 'asphalt' && !(R.tone in M.ROAD_TONES)) bad.push(`${R.id} has no colour`);
+  const ring = M.ROADS.find(R => R.id === 'ring'); if (!ring || !ring.loop) bad.push('the ring road is not a closed loop');
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const mats = await P.page.evaluate(() => { const s = new Set(); __sv.scene.traverse(o => { if (o.userData.road && o.material && o.material.map) s.add(o.material.uuid); }); return s.size; });
+  const errs = P.errors; await P.ctx.close();
+  const tones = new Set(M.ROADS.filter(R => R.kind === 'asphalt').map(R => M.ROAD_TONES[R.tone] || 'grey'));
+  ok(!bad.length, bad.join('; '));
+  ok(mats <= tones.size + 2, `${mats} road materials for ${tones.size} asphalt colours (one each, plus dirt and footpath)`);
+  ok(!errs.length, errs.join(' | '));
+  return `${M.ROADS.filter(R => R.kind === 'asphalt').length} asphalt roads in ${tones.size} colours, ${mats} road materials; the ring road is closed`;
+});
+
 await check('walkaway', async () => {
   // a villager's words and the chat window stay while the child stands near, and close by themselves once the child
   // walks away (6 m; owner, round 30)
@@ -1702,14 +2179,14 @@ await check('simple', async () => {
   await P.page.waitForSelector('.simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
   await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
   const r = { start: true };
-  r.groupsFirst = await P.page.evaluate(() => __sv.simple.view.groups);
-  await P.page.locator('.sp-stop').first().click(); await P.page.waitForTimeout(300); // a group
+  // bug #30: each tab is one long road, category headings and their stops on the same page; no top destinations button, no way-back arrow
+  r.groupsFirst = await P.page.evaluate(() => { const v = __sv.simple.view; return v.cats.length > 3 && v.stops.length > 10 && !document.querySelector('.sp-area, .sp-backarrow') && document.querySelectorAll('.sp-discover').length === 1; });
   // round M: the game opens straight over the Simple screen (it never hides first, so the valley does not flash up)
   await P.page.evaluate(() => { window.__flash = false; const t = setInterval(() => { if (!__sv.simple.open) window.__flash = true; if (document.querySelector('.gl')) clearInterval(t); }, 20); });
-  await P.page.locator('.sp-stop:not(.sign)').first().click(); await P.page.waitForSelector('.gl', { timeout: 10000 }); r.game = true; r.flash = await P.page.evaluate(() => window.__flash);
+  await P.page.locator('.sp-stop:not(.grp)').first().click(); await P.page.waitForSelector('.gl', { timeout: 10000 }); r.game = true; r.flash = await P.page.evaluate(() => window.__flash);
   await P.page.evaluate(() => document.querySelector('.gl-x').click());
   r.back = await P.page.waitForFunction(() => __sv.simple.open && !__sv.simple.busy && !document.querySelector('.gl'), null, { timeout: 8000 }).then(() => true, () => false); // free again at once
-  await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.locator('.sp-stop').first().click(); await P.page.waitForTimeout(300); await P.page.locator('.sp-stop:not(.sign)').first().click();
+  await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.waitForTimeout(300); await P.page.locator('.sp-stop:not(.grp)').first().click();
   r.tale = await P.page.waitForSelector('.theatre', { timeout: 10000 }).then(() => true, () => false);
   await P.page.evaluate(() => document.querySelector('.theatre .th-x').click());
   for (let k=0;k<6;k++){ console.log('DBG', JSON.stringify(await P.page.evaluate(() => ({ open: __sv.simple.open, busy: __sv.simple.busy, th: document.querySelectorAll('.theatre').length, gl: !!document.querySelector('.gl'), paused: __sv.paused })))); await P.page.waitForTimeout(800);}
@@ -1748,31 +2225,25 @@ await check('adventure', async () => {
   // the list: every game is placed exactly once, and nothing is listed that isn't a game
   r.list = await P.page.evaluate(async () => { const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), ids = Object.keys(GAMES), keys = Object.keys(A.GAME_INFO);
     return { missing: ids.filter(i => !A.GAME_INFO[i]), extra: keys.filter(k => !GAMES[k] && k !== 'familyquiz') /* Family Quiz is there only once the family has written questions in Studio */, badArea: keys.filter(k => !A.AREAS.some(a => a.key === A.GAME_INFO[k][0])), games: ids.length }; });
-  // walk the whole under-5 path page by page with the signposts
+  // walk the whole under-5 road (bug #30: one scrolling road, every category one after another)
   r.walk = await P.page.evaluate(async () => {
-    const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), out = { pages: 0, most: 0, seen: [], notDrawn: [], tooBig: [] };
-    // round M: the groups first (at most six at a time too), then each group's pages
-    out.groupPages = __sv.simple.view.pages; out.most = Math.max(out.most, __sv.simple.view.stops.length);
-    for (const a of A.AREAS) {
-      if (!Object.keys(GAMES).some(id => A.gameInfo(id).area === a.key && A.gameInfo(id).ageMin < 5)) continue;
-      __sv.simple.openGroup('games', a.key); await new Promise(r => setTimeout(r, 40));
-      for (let n = 0; n < 10; n++) {
-        const v = __sv.simple.view; out.pages++; out.most = Math.max(out.most, v.stops.length); out.seen.push(...v.stops);
-        document.querySelectorAll('.sp-stop:not(.sign) .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push(p.parentElement.getAttribute('aria-label')); });
-        out.tooBig.push(...v.stops.filter(id => id !== 'songs' && A.gameInfo(id).ageMin >= 5));
-        if (v.page >= v.of - 1) break;
-        document.querySelector('.sp-stop.sign').click(); await new Promise(r => setTimeout(r, 40));
-      }
-    }
+    const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), out = { notDrawn: [], tooBig: [] };
+    const v = __sv.simple.view;
+    document.querySelectorAll('.sp-stop .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push(p.parentElement.getAttribute('aria-label')); });
+    out.tooBig.push(...v.stops.filter(id => id !== 'songs' && A.gameInfo(id).ageMin >= 5));
     const want = Object.keys(GAMES).filter(id => A.gameInfo(id).ageMin < 5);
-    return { groupPages: out.groupPages, pages: out.pages, most: out.most, missed: want.filter(id => !out.seen.includes(id)), notDrawn: out.notDrawn, tooBig: out.tooBig };
+    const order = A.AREAS.map(a => a.key).filter(k => v.cats.includes(k));
+    return { cats: v.cats.length, inOrder: JSON.stringify(order) === JSON.stringify(v.cats), heads: document.querySelectorAll('.sp-stop.grp').length, missed: want.filter(id => !v.stops.includes(id)), notDrawn: out.notDrawn, tooBig: out.tooBig, stops: v.stops.length };
   });
+  // places: China and India (asia) always come last
+  r.placesLast = await P.page.evaluate(() => { __sv.simple.show('places'); const c = __sv.simple.view.cats; return c[c.length - 1]; });
+  await P.page.evaluate(() => __sv.simple.show('games'));
   // Discover: a big picture for every area; tapping Music goes there
   await P.page.click('.sp-discover'); await P.page.waitForSelector('.sp-find:not([hidden]) .sp-card');
   r.find = await P.page.evaluate(() => ({ cards: document.querySelectorAll('.sp-card').length, search: !!document.querySelector('.sp-q') }));
-  await P.page.click('.sp-card[data-t="games"][data-a="music"]'); r.music = await P.page.evaluate(() => __sv.simple.view.area);
+  await P.page.click('.sp-card[data-t="games"][data-a="music"]'); await P.page.waitForTimeout(200); r.music = await P.page.evaluate(() => { const sc = document.querySelector('.sp-scroll'), h = [...document.querySelectorAll('.sp-stop.grp')].find(b => /Music|Âm nhạc/.test(b.getAttribute('aria-label'))), r = h && h.getBoundingClientRect(); return sc.scrollTop > 0 && r && r.top >= 0 && r.top < innerHeight / 2 ? 'music' : 'lost'; });
   // a double tap starts the game once
-  await P.page.evaluate(() => { window.__starts = 0; const pg = __sv.playGame; __sv.playGame = (...a) => { window.__starts++; return pg(...a); }; const s = [...document.querySelectorAll('.sp-stop:not(.sign)')].find(x => !/^(Songs|Bài hát)$/.test(x.getAttribute('aria-label'))); s.click(); s.click(); setTimeout(() => s.click(), 120); }); // (a game, not the Music group's 🎵 Songs)
+  await P.page.evaluate(() => { window.__starts = 0; const pg = __sv.playGame; __sv.playGame = (...a) => { window.__starts++; return pg(...a); }; const s = [...document.querySelectorAll('.sp-stop:not(.grp)')].find(x => !/^(Songs|Bài hát)$/.test(x.getAttribute('aria-label'))); s.click(); s.click(); setTimeout(() => s.click(), 120); }); // (a game, not the Music group's 🎵 Songs)
   await P.page.waitForSelector('.gl', { timeout: 10000 }); await P.page.waitForTimeout(400);
   r.starts = await P.page.evaluate(() => window.__starts);
   await P.page.evaluate(() => document.querySelector('.gl-x').click());
@@ -1792,9 +2263,9 @@ await check('adventure', async () => {
   const errs = P.errors; await P.ctx.close();
   // a big kid: the first tap shows, the second plays; ✨ on a game that came after the last look; search finds "Đập Niêu" without accents
   const B = await open(b, { w: 390, h: 844, touch: true, screen: 'simple' });
-  await B.page.evaluate(() => { const p = __sv.heroes[0].profile; p.age = 'big'; p.seenActs = undefined; __sv.simple.hide(); __sv.simple.show(); p.seenActs = p.seenActs.filter(x => x !== 'game:bunny'); __sv.simple.hide(); __sv.simple.show('games'); __sv.simple.openGroup('games', 'animals'); document.querySelectorAll('.dialog').forEach(d => d.remove()); });
+  await B.page.evaluate(() => { const p = __sv.heroes[0].profile; p.age = 'big'; p.seenActs = undefined; __sv.simple.hide(); __sv.simple.show(); p.seenActs = p.seenActs.filter(x => x !== 'game:bunny'); __sv.simple.hide(); __sv.simple.show('games'); document.querySelectorAll('.dialog').forEach(d => d.remove()); });
   r.big = await B.page.evaluate(() => ({ stops: __sv.simple.view.stops.length, newOn: [...document.querySelectorAll('.sp-stop')].filter(s => s.querySelector('.sp-new')).map(s => s.getAttribute('aria-label')), dots: document.querySelectorAll('.sp-level').length === 0 })); // stars only: no difficulty dots (owner)
-  await B.page.locator('.sp-stop:not(.sign)').first().click(); await B.page.waitForTimeout(700);
+  await B.page.locator('.sp-stop:not(.grp)').first().click(); await B.page.waitForTimeout(700);
   r.big.firstTap = await B.page.evaluate(() => ({ game: !!document.querySelector('.gl'), sel: !!document.querySelector('.sp-stop.sel .sp-play') }));
   await B.page.locator('.sp-stop.sel').click(); r.big.secondTap = await B.page.waitForSelector('.gl', { timeout: 10000 }).then(() => true, () => false);
   await B.page.evaluate(() => document.querySelector('.gl-x').click());
@@ -1804,7 +2275,7 @@ await check('adventure', async () => {
   r.big.search = await B.page.evaluate(() => [...document.querySelectorAll('.sp-found .sp-card b')].map(b => b.textContent));
   errs.push(...B.errors); await B.ctx.close();
   ok(!r.list.missing.length && !r.list.extra.length && !r.list.badArea.length, 'activity list: ' + JSON.stringify(r.list));
-  ok(r.walk.groupPages === 1 && r.walk.pages <= 12 && !r.walk.missed.length && !r.walk.notDrawn.length && !r.walk.tooBig.length, 'under-5 path: ' + JSON.stringify(r.walk));
+  ok(r.walk.cats >= 5 && r.walk.heads === r.walk.cats && r.walk.inOrder && r.placesLast === 'asia' && !r.walk.missed.length && !r.walk.notDrawn.length && !r.walk.tooBig.length, 'under-5 path: ' + JSON.stringify(r.walk));
   ok(r.find.cards >= 18 && !r.find.search && r.music === 'music', 'discover: ' + JSON.stringify(r.find) + ' ' + r.music);
   ok(r.starts === 1, 'a double tap started the game ' + r.starts + ' times');
   ok(r.owl.owl && r.owl.cheer, 'Ông Cú: ' + JSON.stringify(r.owl));
@@ -1812,7 +2283,7 @@ await check('adventure', async () => {
   ok(r.leak.listeners <= 0 && r.leak.nodes <= 5 && r.leak.screens === 1, 'after 25 opens: ' + JSON.stringify(r.leak));
   ok(r.big.stops > 6 && r.big.dots && r.big.newOn.includes('Feed the Bunny') && r.big.newOn.length === 1 && !r.big.firstTap.game && r.big.firstTap.sel && r.big.secondTap && r.big.search.some(t => /Smash the Pot/.test(t)), 'big kid: ' + JSON.stringify(r.big));
   ok(!errs.length, errs.join(' | '));
-  return `${r.list.games} games in 11 areas; under-5 path: every group on one scrolling page (round P; ${r.walk.pages} groups, up to ${r.walk.most} stops), every one drawn; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
+  return `${r.list.games} games in 11 areas; under-5 road: ${r.walk.cats} categories one after another on one scrolling road (${r.walk.stops} stops), every one drawn, China and India last in places; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
 });
 
 await check('gamelevel', async () => {
@@ -1830,17 +2301,15 @@ await check('gamelevel', async () => {
   r.after = await P.page.evaluate(() => ({ text: (document.querySelector('.gl:not(.out) .gl-lvl') || {}).textContent, saved: (__sv.heroes[0].profile.gameDiff || {}).counting, games: document.querySelectorAll('.gl:not(.out)').length }));
   await P.page.evaluate(() => document.querySelector('.gl:not(.out) .gl-x').click()); await P.page.waitForTimeout(500);
   // Festivals: in the main settings
-  // Festivals in one place (owner): the Settings festival page; the valley's decorations there behind press-and-hold; none in Grown-ups
+  // Festival calendar: only a calendar; no decorations choice in the game or in Grown-ups
   r.fest = await P.page.evaluate(async () => { const U = await import('/js/ui.js'), w = t => new Promise(r => setTimeout(r, t));
     U.openGrownups(); await w(300); const inGrown = !!document.querySelector('.seg.fest, select.fest-pick'); document.querySelectorAll('.modal').forEach(m => m.remove());
-    U.openFestivals(__sv, 0); await w(300); const before = !!document.querySelector('.festpick .seg.fest, .modal .seg.fest, .modal select.fest-pick'), hold = document.querySelector('.fest-hold');
-    hold.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await w(1900);
-    // (round R: 24 festivals, so the grown-ups pick from a list)
-    const seg = document.querySelector('.fest-grown select.fest-pick'); if (seg) { seg.value = 'tet'; seg.dispatchEvent(new Event('change', { bubbles: true })); } await w(200);
-    return { inGrown, before, after: !!seg, chosen: (await import('/js/state.js')).settings.festival }; });
+    // (bug #32, owner 11 Oct) the calendar is only a calendar: nothing to visit, no decorations choice in the game
+    U.openFestivals(__sv, 0); await w(300); before = !!document.querySelector('.modal select.fest-pick, .fest-hold, .fest-grown'), visit = document.querySelectorAll('.modal [data-fest]').length, rows = document.querySelectorAll('.modal .fcal-row').length;
+    return { inGrown, before, visit, rows }; });
   const errs = P.errors; await P.ctx.close();
-  ok(/Easy/.test(r.first.text) && r.first.h >= 44 && r.first.inside && r.choices.join() === 'easy,medium,hard' && /Hard/.test(r.after.text || '') && r.after.saved === 'hard' && r.after.games === 1 && !r.fest.inGrown && !r.fest.before && r.fest.after && r.fest.chosen === 'tet' && !errs.length, JSON.stringify({ r, errs }));
-  return 'Easy · Medium · Hard in the game bar (44 px, on screen at 390 px); Hard starts it again at Hard and is remembered; Festivals in one place: the Settings festival page, decorations behind press-and-hold';
+  ok(/Easy/.test(r.first.text) && r.first.h >= 44 && r.first.inside && r.choices.join() === 'easy,medium,hard' && /Hard/.test(r.after.text || '') && r.after.saved === 'hard' && r.after.games === 1 && !r.fest.inGrown && !r.fest.before && r.fest.visit === 0 && r.fest.rows > 0 && !errs.length, JSON.stringify({ r, errs }));
+  return 'Easy · Medium · Hard in the game bar (44 px, on screen at 390 px); Hard starts it again at Hard and is remembered; the festival calendar is only a calendar (nothing to visit, no decorations choice)';
 });
 
 await check('quiet', async () => {
@@ -1864,6 +2333,27 @@ await check('quiet', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(r.before.state === 'running' && r.away.state === 'suspended' && !r.away.scheduling && r.away.videoPaused && r.back.state === 'running' && !errs.length, JSON.stringify({ r, errs }));
   return 'in the background: audio asleep, no music scheduled, videos paused (a sound effect does not wake it); back on screen: sound again';
+});
+
+await check('rain', async () => {
+  // bug #39 (owner: the rain was a repeating noise): rain is one soft steady hush that fades in and out with the
+  // weather, and it never carries on over a game, a story or the Simple screen (the valley rests behind them)
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  await P.page.mouse.click(200, 400);
+  const r = await P.page.evaluate(async () => {
+    const A = await import('/js/audio.js'), S = await import('/js/state.js'), w = t => new Promise(res => setTimeout(res, t)), G = __sv, out = {};
+    S.settings.sound = true; S.settings.noRain = false; await A.ac().resume().catch(() => { });
+    out.dry = A.Rain.on;
+    G.weather.start(); await w(1500); out.raining = A.Rain.on;
+    G.playGame(0, 'caro', 'replay'); await w(1500); out.game = A.Rain.on; out.gameOpen = !!document.querySelector('.gl');
+    document.querySelector('.gl .gl-x')?.click(); await w(1500); out.back = A.Rain.on;
+    S.settings.sound = false; await w(800); out.soundOff = A.Rain.on; S.settings.sound = true; await w(800);
+    G.weather.stop(); await w(1500); out.stopped = A.Rain.on;
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.dry && r.raining && r.gameOpen && !r.game && r.back && !r.soundOff && !r.stopped && !errs.length, JSON.stringify({ r, errs }));
+  return 'rain hush on while it rains, off under a game and back after it, off with Sound effects off, off when the rain stops';
 });
 
 await check('songs', async () => {
@@ -1897,7 +2387,7 @@ await check('songs', async () => {
   });
   // the Simple screen's Music group starts with 🎵 Songs; Settings has a Songs card
   await P.page.evaluate(() => { __sv.simple.show(); __sv.simple.openGroup('games', 'music'); document.querySelectorAll('.dialog').forEach(d => d.remove()); });
-  r.simple = await P.page.evaluate(async () => { const first = __sv.simple.view.stops[0]; document.querySelector('.sp-stop').click(); await new Promise(res => setTimeout(res, 400)); const open = !!document.querySelector('.songs'); document.querySelector('.songs .sg-x').click(); __sv.simple.hide(); return { first, open }; });
+  r.simple = await P.page.evaluate(async () => { const first = __sv.simple.view.stops.find(x => x === 'songs'); [...document.querySelectorAll('.sp-stop')].find(b => /^(Songs|Bài hát)$/.test(b.getAttribute('aria-label'))).click(); await new Promise(res => setTimeout(res, 400)); const open = !!document.querySelector('.songs'); document.querySelector('.songs .sg-x').click(); __sv.simple.hide(); return { first, open }; });
   // the star counter sits under the game's top bar (it covered 📺 on notched phones)
   await P.page.evaluate(() => { __sv.playGame(0, 'counting'); }); await P.page.waitForSelector('.gl .starbox'); // (not waiting for the game to end)
   r.star = await P.page.evaluate(() => { const s = document.querySelector('.gl .starbox').getBoundingClientRect(), hb = [...document.querySelectorAll('.gl-head button')].map(b => b.getBoundingClientRect()); return { clear: hb.every(b => s.top >= b.bottom - 1 || s.bottom <= b.top || s.right <= b.left || s.left >= b.right) }; });
@@ -2280,6 +2770,23 @@ await check('iphone', async () => {
     await N.getMic(); for (let k = 0; k < 50 && !(N.mic && said.includes('micon')); k++) await wait(100);
     const micAfterTap = !!N.mic, after = said.slice(), tapAsks = askedOnTap;
     md.getUserMedia = async () => { const e = new Error('none'); e.name = 'NotFoundError'; throw e; }; N.mic = null; said.length = 0; await N.getMic(); const reallyNone = said.slice();
+    // bug #55 (owner's iPhone: a tap on the microphone did nothing): a try made without a tap hangs for ever; a tap
+    // still asks afresh (says "Asking…", then "on"); when the old try answers late its microphone is stopped, not used
+    const replacedFirst = replaced; md.getUserMedia = real; N.mic = null; said.length = 0;
+    let late = null; md.getUserMedia = () => new Promise(res => { late = res; });
+    const hung = N.getMic(); await wait(100);
+    let fresh = 0; md.getUserMedia = c => { fresh++; return real({ audio: true }); };
+    const tapMic = await N.getMic(true), tapSaid = said.slice();
+    const extra = await real({ audio: true }); late(extra); const hungGot = await hung; await wait(100);
+    const lateStopped = extra.getAudioTracks().every(t => t.readyState === 'ended'), kept = N.mic === tapMic && hungGot === tapMic, micons = said.filter(k => k === 'micon').length;
+    // blocked after a tap (iPhone has no userActivation): how to allow it, not "tap Microphone on"
+    N.mic.getTracks().forEach(t => t.stop()); N.mic = null; said.length = 0;
+    md.getUserMedia = async () => { const e = new Error('blocked'); e.name = 'NotAllowedError'; throw e; }; await N.getMic(true); const blocked = said.slice();
+    // an iPhone home-screen game older than iOS 14.3 has no getUserMedia: say so, not "no microphone"
+    said.length = 0; md.getUserMedia = undefined; Object.defineProperty(navigator, 'userAgent', { get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)', configurable: true });
+    await N.getMic(true); const old = said.slice(); delete navigator.userAgent;
+    // a status still tells friends (it was once cut off by a comment): 'left' shares the new status
+    const share = G.shareStatus; let shared = 0; G.shareStatus = () => { shared++; }; N.emit('status', { key: 'left' }); G.shareStatus = share;
     md.getUserMedia = real; N.calls.delete('peer-y'); N.cloudOn = false; N.mic = null;
     // 2. Pad → Friends with a player in the room: no button taller than two lines, all inside the card
     Object.defineProperty(N, 'connected', { get: () => true, configurable: true }); N.code = '1234'; N.remotes['peer-z'] = { id: 'peer-z', name: 'Mít', look: {}, friend: 'ABCDE2' };
@@ -2288,6 +2795,10 @@ await check('iphone', async () => {
     const btns = row ? [...row.querySelectorAll('.btn')] : [], lh = btns.length ? parseFloat(getComputedStyle(btns[0]).lineHeight) || 20 : 20;
     const tall = btns.filter(x => x.getBoundingClientRect().height > lh * 2 + 24).map(x => x.textContent.trim());
     const cr = row ? row.getBoundingClientRect() : null, outside = btns.filter(x => { const q = x.getBoundingClientRect(); return cr && (q.right > cr.right + 1 || q.left < cr.left - 1); }).length;
+    // the 🎙️ button in Friends: what happened shows in the panel (blocked here)
+    const mute = document.querySelector('#oMute'); md.getUserMedia = async () => { const e = new Error('blocked'); e.name = 'NotAllowedError'; throw e; };
+    if (mute) mute.click(); await wait(400); md.getUserMedia = real; N.mic = null;
+    const panelSays = (document.querySelector('.pad .online .status') || {}).textContent || '';
     document.querySelector('.modal .x')?.click(); await wait(300);
     delete N.remotes['peer-z']; delete N.connected; N.code = null;
     // 3. the friend bar and the round buttons under the map never overlap
@@ -2297,12 +2808,14 @@ await check('iphone', async () => {
     const c = chip.getBoundingClientRect(), hit = [...document.querySelectorAll('.hud .tools .dk, .hud .zoomer button, .hud .mini-wrap, .hud .zoom')].filter(e => e.offsetParent).filter(e => { const q = e.getBoundingClientRect(); return q.left < c.right && c.left < q.right && q.top < c.bottom && c.top < q.bottom; }).map(e => e.className);
     const onScreen = c.width > 60 && c.height > 20 && c.right <= innerWidth + 1 && c.left >= 0, chipText = chip.textContent;
     delete G.partners['peer-q']; G.huds[0].setCall(false, false, false);
-    return { first, noMicYet, micAfterTap, after, replaced, reallyNone, tapAsks, asksBefore: 1, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
+    return { first, noMicYet, micAfterTap, after, replaced: replacedFirst, reallyNone, tapAsks, fresh, tapSaid, lateStopped, kept, micons, blocked, old, mute: !!mute, panelSays, shared, asksBefore: 1, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
   });
   const errs = P.errors; await P.ctx.close();
   ok((r.first.includes('mictap') || r.first.includes('micdenied')) && !r.first.includes('nomic') && r.noMicYet && r.tapAsks === 1 && r.micAfterTap && r.after.includes('micon') && r.replaced === 1 && r.reallyNone.includes('nomic')
+    && r.fresh === 1 && r.tapSaid[0] === 'micask' && r.tapSaid.includes('micon') && r.lateStopped && r.kept && r.micons === 1 && r.blocked.includes('micdenied') && !r.blocked.includes('mictap')
+    && r.old.includes('micold') && !r.old.includes('nomic') && r.mute && /Safari/.test(r.panelSays) && r.shared === 1
     && r.buttons >= 4 && !r.tall.length && !r.outside && !r.hit.length && r.onScreen && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'microphone: "tap 🎙️ Microphone on" (not "no microphone"), not asked again on every tap, on from the button and put into the open call; real "no microphone" still said; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
+  return 'microphone: "tap 🎙️ Microphone on" (not "no microphone"), not asked again on every tap, on from the button and put into the open call; real "no microphone" still said; #55: a hung try does not block a tap (asks afresh, "Asking…" then on, the late answer stopped), blocked after a tap says how to allow it (also in the Friends panel), an iPhone older than 14.3 is told so; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
 });
 
 await check('tienlen', async () => {
@@ -2785,6 +3298,56 @@ await check('nostudio', async () => {
   return 'Grown-ups (every group open), the parents\' pages and every Pad tab, English and Vietnamese: Studio never named';
 });
 
+await check('mapver', async () => {
+  // (Online, r57, ROUND-T §4) positions travel as raw x, z, so friends play together only on the same map layout. A knock
+  // carries the knocker's layout; the starter's locked answers carry the starter's; a game older than r57 sends none and
+  // plays as before (owner, 11 Oct: r56 already has the new map). Another layout: the one knocking sees "Ask a grown-up to update" (a card with a picture, a voice and a 64 px OK) and is not let in,
+  // and the starter sees no knock card (owner, 11 Oct: only the one joining is told). The same layout knocks as before.
+  // The friends list shows "Different valley" instead of Join for a friend on another layout.
+  const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
+  if (!up) return 'skipped (no local MQTT broker on 127.0.0.1:9001)';
+  const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const A = await open(b, { pre, w: 900, h: 700, settings: { autoMeet: false } });
+  const B = await open(b, { pre, w: 390, h: 760, touch: true, lang: 'vi', settings: { autoMeet: false } });
+  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  const knockFrom = async (P, code) => { await P.page.evaluate(c => { __Net.join(c, __sv.sendHello()); }, code); };
+  const told = P => P.page.waitForFunction(() => !__Net.role && /Nhờ người lớn cập nhật|Ask a grown-up to update/.test((document.querySelector('.mapcard') || {}).textContent || ''), null, { timeout: 40000 }).then(() => true, () => false);
+  const knockCards = () => A.page.evaluate(() => ({ knocks: __Net.knocks.size, pop: !!document.querySelector('.knockpop'), remotes: Object.keys(__Net.remotes).length }));
+  const out = {};
+  // 1. the starter has an older map ('C'): a round T guest is told, not let in
+  let code = await A.page.evaluate(async () => { __Net.mapVersion = 'C'; return __Net.host(__sv.sendHello()); });
+  await knockFrom(B, code); out.oldStarter = await told(B); out.oldStarterA = await knockCards();
+  await B.page.screenshot({ path: 'out/mapver-card.png' });
+  out.cardVi = await B.page.evaluate(() => { const c = document.querySelector('.mapcard'), ok = c.querySelector('[data-ok]').getBoundingClientRect(); return c.textContent + (c.querySelector('svg.art') ? ' [art]' : '') + (ok.height >= 64 ? ' [big]' : ''); });
+  await B.page.evaluate(() => document.querySelectorAll('.modal.mapcard').forEach(d => d.remove()));
+  await A.page.evaluate(() => { __Net.close(); });
+  // 2. the guest has an older map: the starter turns the knock away without a knock card
+  code = await A.page.evaluate(async () => { const M = await import('/js/content/map.js'); __Net.mapVersion = M.MAP_VERSION; return __Net.host(__sv.sendHello()); });
+  await B.page.evaluate(() => { __Net.mapVersion = 'C'; });
+  await knockFrom(B, code); out.oldGuest = await told(B); await A.page.waitForTimeout(1500); out.oldGuestA = await knockCards();
+  await B.page.evaluate(() => document.querySelectorAll('.modal.mapcard').forEach(d => d.remove()));
+  // 3. a knock with no map version (a game older than r57, like r56 with the same map): the knock card comes up as before,
+  // and Let in works
+  await B.page.evaluate(async () => { const M = await import('/js/content/map.js'); __Net.mapVersion = M.MAP_VERSION; const k = __Net._knockHello; __Net._knockHello = function () { const h = k.call(this); delete h.map; return h; }; });
+  await knockFrom(B, code);
+  out.sameKnock = await A.page.waitForSelector('.knockpop [data-in]', { timeout: 45000 }).then(() => true, () => false);
+  if (out.sameKnock) { await A.page.evaluate(() => document.querySelector('.knockpop [data-in]').click()); out.sameIn = await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 30000 }).then(() => true, () => false); }
+  // 4. the friends list: Join only for a friend on the same map
+  out.list = await A.page.evaluate(async () => {
+    const S = await import('/js/state.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    S.settings.friends = [{ code: 'MAPOLD', name: 'Old' }, { code: 'MAPNEW', name: 'New' }]; S.settings.friendsOn = true;
+    const now = Date.now(); __Net.friends.status.MAPOLD = { online: true, seen: now, room: '111111', map: 'C' }; __Net.friends.status.MAPNEW = { online: true, seen: now, room: '222222', map: __Net.mapVersion };
+    const box = document.createElement('div'); document.body.appendChild(box); __sv.drawOnlinePanel(box, () => { });
+    const rows = [...box.querySelectorAll('.frow')], r = { oldJoin: !!rows[0].querySelector('[data-joinf]'), oldDiff: !!rows[0].querySelector('[data-mapdiff]'), newJoin: !!rows[1].querySelector('[data-joinf]'), newDiff: !!rows[1].querySelector('[data-mapdiff]') };
+    rows[0].querySelector('[data-mapdiff]').click(); await wait(300); r.card = /Ask a grown-up to update/.test((document.querySelector('.mapcard') || {}).textContent || '');
+    box.remove(); document.querySelectorAll('.modal.mapcard').forEach(d => d.remove()); S.settings.friends = []; delete __Net.friends.status.MAPOLD; delete __Net.friends.status.MAPNEW;
+    return r;
+  });
+  const errs = A.errors.concat(B.errors).filter(e => !/WebSocket|ERR_CONNECTION|peerjs/i.test(e)); await A.ctx.close(); await B.ctx.close();
+  const l = out.list;
+  ok(out.oldStarter && !out.oldStarterA.knocks && !out.oldStarterA.pop && !out.oldStarterA.remotes && /Nhờ người lớn cập nhật/.test(out.cardVi) && /\[art\] \[big\]/.test(out.cardVi) && out.oldGuest && !out.oldGuestA.knocks && !out.oldGuestA.pop && !out.oldGuestA.remotes && out.sameKnock && out.sameIn && !l.oldJoin && l.oldDiff && l.newJoin && !l.newDiff && l.card && !errs.length, JSON.stringify(Object.assign(out, { errs })));
+  return 'starter on an older map: the knocker sees "Ask a grown-up to update" (VI) and is not let in, no knock card for the starter; guest on an older map: turned away the same way; no map version (r56): knock card and Let in as before; friends list: "Different valley" instead of Join for a friend on another map';
+});
 await check('onlineoff', async () => {
   // PRIV-006 (round R privacy, 9 Oct, owner): a fresh device has online play off. The Friends tab says so with no Start or
   // Join, Net makes no connection (no PeerJS, no cloud relay, no friends' status), and Grown-ups turns it on.
@@ -2796,13 +3359,22 @@ await check('onlineoff', async () => {
     __sv.openPad(0, 'friend'); await wait(500);
     const body = document.querySelector('.pad-body') || document.body, text = body.textContent;
     const off = /Playing with friends is off/.test(text), buttons = !!document.querySelector('#oHost, .padwrap, .numpad, [data-joinf]');
+    // (bug #37) a grown-ups' note names the real section and switch in both languages, with a press-and-hold Grown-ups button
+    const guide = {}, hold = document.querySelector('.gunote .gu-hold');
+    guide.en = /Internet and playing online → tick Use the internet/.test(text) && !/Studio/.test(text);
+    guide.hold = !!hold && hold.getBoundingClientRect().height >= 44 && !!hold.querySelector('.ring');
+    hold.click(); await wait(200); guide.tapNoOpen = !document.querySelector('.modal.grownups'); // a plain tap opens nothing
+    hold.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); await wait(300);
+    const sec = document.querySelector('.modal.grownups details[data-sec="online"]'); guide.opens = !!sec && sec.open;
+    S.settings.lang = 'vi'; const vbox = document.createElement('div'); __sv.drawOnlinePanel(vbox, () => { }); S.settings.lang = 'en';
+    guide.vi = /Internet và chơi trực tuyến → chọn Dùng internet/.test(vbox.textContent) && !/Studio/.test(vbox.textContent);
     document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
     const code = await N.host({ name: 'X' }); await N.join('123456', { name: 'X' }); __sv.listenFriends(); await wait(1500);
-    return { setting, off, buttons, code, role: N.role, peer: !!N.peer, door: !!N.door, cloud: !!N.cloud, beacon: !!N.beacon, pres: !!N.friends.ch, peerLoaded: !!window.Peer, ws: window.__wsOpened };
+    return { setting, off, buttons, guide, code, role: N.role, peer: !!N.peer, door: !!N.door, cloud: !!N.cloud, beacon: !!N.beacon, pres: !!N.friends.ch, peerLoaded: !!window.Peer, ws: window.__wsOpened };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(r.setting === false && r.off && !r.buttons && r.code === null && !r.role && !r.peer && !r.door && !r.cloud && !r.beacon && !r.pres && !r.ws && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'a fresh device: "Playing with friends is off. Ask a grown-up to turn it on.", no Start or Join; host, join and friends make no connection';
+  ok(r.setting === false && r.off && !r.buttons && Object.values(r.guide).every(Boolean) && Object.keys(r.guide).length === 5 && r.code === null && !r.role && !r.peer && !r.door && !r.cloud && !r.beacon && !r.pres && !r.ws && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'a fresh device: "Playing with friends is off. Ask a grown-up to turn it on.", no Start or Join; a grown-ups\' note names Internet and playing online → Use the internet (EN and VI, no Studio) and its press-and-hold button opens that section (a tap does not); host, join and friends make no connection';
 });
 await b.close();
 const failed = results.filter(r => !r[1]);

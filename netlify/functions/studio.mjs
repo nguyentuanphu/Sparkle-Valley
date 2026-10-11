@@ -59,8 +59,8 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
   if (!pw) return json({ error: 'The online Studio is not set up yet: add STUDIO_PASSWORD in Netlify (Site configuration → Environment variables), then deploy again.', setup: true }, 503);
   const A = await adminStore(), gen = +(await A.get('gen').catch(() => 0)) || 0, t = now();
   const log = async (who, role, what, note) => accessLog.add(await logStore(), { who, role, what, ctx, note }, t);
-  // (owner, 9 Oct) the owner's own sign-in: two-step (the default) or the password only, chosen in Setup → Admins
-  const ownerOff = async () => !!((await A.get('policy/owner', { type: 'json' }).catch(() => null)) || {}).noTwoStep;
+  // (owner, 11 Oct) the owner signs in with the password only; two-step is for the admins (was a choice in Setup → Admins)
+  const ownerOff = async () => true;
   const ownerSig = async () => ownerKey(pw, gen, await A.get('totp/owner', { type: 'json' }).catch(() => null), await ownerOff());
   // ---------- signing in: the password, then the code (round R privacy) ----------
   if (p === '/studio/api/login' && post) {
@@ -121,18 +121,17 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
   if (p === '/studio/api/whoami') return json(me);
   if (p.startsWith('/studio/api/admins/')) {
     const b = await body();
-    if (p === '/studio/api/admins/list') return json({ admins: await admins.list(A), me, ownerTwoStep: !await ownerOff() });
-    // (owner, 9 Oct) two-step or the password only, for one account; the owner's own is kept in policy/owner
+    if (p === '/studio/api/admins/list') return json({ admins: await admins.list(A), me });
+    // (owner, 9 Oct) two-step or the password only, for one admin (the owner always signs in with the password only, 11 Oct)
     if (p === '/studio/api/admins/twostep' && post) {
       const n = admins.cleanName(b.name), on = b.on !== false;
-      if (n === 'owner') { await A.setJSON('policy/owner', on ? {} : { noTwoStep: true }); await log(me.name, me.role, on ? 'two-step-on' : 'two-step-off', 'owner');
-        return json({ ok: true }, 200, me.name === 'owner' ? setCookie(makeToken(await ownerSig())) : {}); }
+      if (n === 'owner') return json({ error: 'The owner signs in with the password only: two-step is for admins.' }, 400);
       const ok = await admins.setTwoStep(A, n, on); if (ok) await log(me.name, me.role, on ? 'two-step-on' : 'two-step-off', n); return json({ ok });
     }
     if (p === '/studio/api/admins/save' && post) { if (admins.cleanName(b.name) === 'owner') return json({ error: '“owner” is kept for the STUDIO_PASSWORD.' }, 400); const r = await admins.put(A, b, me.name); return json(r, r.error ? 400 : 200); }
     if (p === '/studio/api/admins/remove' && post) return json(await admins.remove(A, b.name));
     // (round R privacy) a new phone: the owner clears someone's two-step, and they set it up again at their next sign-in
-    if (p === '/studio/api/admins/reset2fa' && post) { if (admins.cleanName(b.name) === 'owner') return json({ error: 'The owner’s two-step is set up again by changing STUDIO_PASSWORD in Netlify.' }, 400); const ok = await admins.resetTotp(A, b.name); if (ok) await log(me.name, me.role, 'two-step-reset', admins.cleanName(b.name)); return json({ ok }); }
+    if (p === '/studio/api/admins/reset2fa' && post) { if (admins.cleanName(b.name) === 'owner') return json({ error: 'The owner signs in with the password only: two-step is for admins.' }, 400); const ok = await admins.resetTotp(A, b.name); if (ok) await log(me.name, me.role, 'two-step-reset', admins.cleanName(b.name)); return json({ ok }); }
     // anyone changes their own password (the owner's is STUDIO_PASSWORD, changed in Netlify)
     if (p === '/studio/api/admins/me' && post) {
       if (me.name === 'owner') return json({ error: 'The owner’s password is STUDIO_PASSWORD: change it in Netlify (Site configuration → Environment variables).' }, 400);

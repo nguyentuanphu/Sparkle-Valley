@@ -4,6 +4,7 @@
 // The child helps on two pages of each film: S.help(time, English, Vietnamese, what happens after the tap).
 import { SETS as L, PROPS as Pp, LOOK, G3 } from '../film.js';
 import { THREE, P, merge } from '../gfx.js';
+import { SFX } from '../audio.js';
 
 const PI = Math.PI, H = PI / 2;
 // the cast
@@ -659,3 +660,532 @@ FILMS.lantern_ch1 = { pages: [
     S.at(10, () => { });
   }
 ] };
+
+// ---------------- The next films (Kid UI, 10 Oct): two tales and two guides ----------------
+const PRINCE1 = LOOK({ style: 'tunic', color: '#3b6fe0', hat: 'silkcap', skin: '#e0aa80' });
+const PRINCE2 = LOOK({ style: 'tunic', color: '#3a9a6a', hat: 'silkcap', skin: '#d8a070' });
+const LIEU = LOOK({ style: 'tunic', color: '#b89a6a', hairStyle: 'short', skin: '#d8a070' });
+// the palace at Tết: blossom trees, red lanterns and the king on his step
+function palaceYard(S) {
+  S.sky('#9fd4f4', '#fff1d8'); L.ground(S, '#cbb88a'); L.palace(S); L.blossom(S, -8, -2.5); L.blossom(S, 8, -2.5);
+  const lanterns = [-6, -3, 0, 3, 6].map(x => L.lantern(S, x, 4.3, -6.2));
+  const king = S.person(KING, 0, -5.9, 0); king.o.position.y = .5;
+  return { king, lanterns };
+}
+// light the lanterns from inside (night falls at a festival)
+const glowUp = (S, t, lanterns) => lanterns.forEach(l => S.at(t, () => { l.traverse(o => { if (o.isMesh) { o.material = new THREE.MeshBasicMaterial({ vertexColors: true }); o.material.userData.film = true; } }); }));
+// Lang Liêu's garden: his little house, rice, a row of bean plants and a clump of dong leaves
+function garden(S) {
+  village(S, [0, -7]);
+  const beans = new THREE.Group(); for (let i = 0; i < 5; i++) { const b = new THREE.Group(); b.add(new THREE.Mesh(G3.S(.3, 8, 6), new THREE.MeshToonMaterial({ color: i % 2 ? '#5fae4a' : '#6cbc52' }))); b.children[0].scale.set(1, .8, 1); b.children[0].position.y = .3; [0, 1, 2].forEach(j => { const p = new THREE.Mesh(G3.Cyl(.03, .03, .2, 5), new THREE.MeshToonMaterial({ color: '#d8c84a' })); p.position.set(Math.cos(j * 2.1) * .28, .25, Math.sin(j * 2.1) * .28); p.rotation.z = .4; b.add(p); }); b.position.set(-4 + i * .8, 0, 1.2); beans.add(b); } S.add(beans);
+  const leaves = new THREE.Group(); for (let i = 0; i < 9; i++) { const l = Pp.leaf(); l.scale.setScalar(1.6); l.rotation.set(-1.1 + (i % 3) * .2, i * .7, 0); l.position.set(Math.cos(i * .7) * .25, .5 + (i % 3) * .2, Math.sin(i * .7) * .25); leaves.add(l); } S.add(leaves, 4, 0, .4);
+  return { beans, leaves };
+}
+
+FILMS.banhchung = { pages: [
+  // 1. The king asks his sons for the most special food in the land, for the New Year.
+  S => {
+    const { king } = palaceYard(S);
+    const p1 = S.person(PRINCE1, -1.8, 9, PI), p2 = S.person(PRINCE2, 0, 9.4, PI), lieu = S.person(LIEU, 1.8, 9.8, PI);
+    S.shot([0, 4.6, 22], [0, 2, -3]);
+    S.walk(p1, .2, [-1.8, -2.4], 2); S.walk(p2, .4, [0, -2.4], 2); S.walk(lieu, .6, [1.8, -2.4], 2);
+    S.cam(.4, 5, [6, 2.6, 4], [0, 1.5, -4]);
+    [p1, p2, lieu].forEach((a, i) => S.do(a, 6.9 + i * .15, 'bow', 1.8));
+    S.mood(king, 6, 'happy'); S.talk(king, 7.6, 3); S.do(king, 7.6, 'talk', 3);
+    S.cam(7.4, 1.4, [1.4, 2.6, -2], [0, 2, -5.9]);
+    // the princes look at each other: what could it be?
+    S.face(p1, 10.8, [0, -2.4]); S.face(lieu, 10.8, [0, -2.4]); S.mood(p2, 11, 'o'); S.mood(lieu, 11.2, 'o');
+    S.cam(10.6, 1.6, [0, 1.9, 2.4], [0, 1.4, -2.4]);
+    S.walk(p1, 12.4, [-9, 4], 2.2); S.walk(p2, 12.6, [9, 4], 2.2); S.face(lieu, 12.6, [0, 6]); S.do(lieu, 13, 'sad', 2);
+    S.cam(12.4, 2, [3, 3, 9], [0, 1.4, -1]);
+  },
+  // 2. The older princes search far and wide for rare treats from the sea and the mountains.
+  S => {
+    S.sky('#7cc8f0', '#e8f6ff'); L.sea(S); L.mountains(S, -90); L.sun(S, -60, 50, -170, 9);
+    const land = L.ground(S, '#8fcf6a', 100); land.position.x = -50; // land on the left, the sea on the right
+    L.bamboo(S, -12, -6); L.banyan(S, -20, -14, 1);
+    L.clouds(S, [[-40, 26, -90, 2], [30, 30, -100, 2.2]]);
+    const horse = Pp.horse('#8a5a3a'); S.add(horse, -22, 0, -40, .37); horse.userData.gait = 2;
+    const p1 = S.person(PRINCE1, 0, 0, 0); board(p1, horse, [0, 1.18, -.05]); S.do(p1, 0, 'ride');
+    const honey = Pp.honey(); S.add(honey); S.grab(p1, 0, honey, [0, -.55, .12]);
+    S.tw(0, 5, k => { horse.position.set(-22 + k * 17, 0, -40 + k * 44); }, k => k);
+    S.at(5, () => { horse.userData.gait = 0; }); S.mood(p1, 4, 'happy');
+    S.shot([-14, 4, -20], [-20, 1.5, -36]);
+    S.cam(0, 5, () => [horse.position.x + 5, 2.6, horse.position.z + 7], () => [horse.position.x, 1.6, horse.position.z]);
+    // the other prince sails home with a red lobster
+    const boat = afloat(S, Pp.boat(6, '#c8783a'), 9, 40, PI);
+    const p2 = S.person(PRINCE2, 0, 0, 0); board(p2, boat.children[0], [0, .4, 1.6], 0);
+    const lob = Pp.lobster(); S.add(lob); S.grab(p2, 0, lob, [0, .55, .4], 'torso'); S.do(p2, 0, 'carry');
+    S.tw(5, 5, k => { boat.position.set(9 - k * 6, -.3, 40 - k * 34); }, k => 1 - (1 - k) ** 2);
+    S.cam(5.2, 1.2, [16, 4, 26], [8, 1, 32]);
+    S.cam(6.6, 3.4, [12, 2.6, 14], [5, 1, 6]);
+    S.mood(p2, 8, 'happy');
+    hopOff(S, p2, 10.2, [-.8, 5.6], -H);
+    hopOff(S, p1, 10.4, [-2.6, 6.4], H); S.do(p1, 10.4, 'idle');
+    S.do(p1, 11.2, 'cheer', 2); S.do(p2, 11.3, 'cheer', 2);
+    S.cam(10.2, 1.6, [-1.6, 2.2, 11.5], [-1.8, 1.2, 6]);
+    S.at(13.6, () => { });
+  },
+  // 3. The youngest prince, Lang Liêu, was poor: he only had rice, beans and leaves from his garden.
+  S => {
+    const { beans, leaves } = garden(S);
+    const lieu = S.person(LIEU, .4, 2.6, 0);
+    const bowl = Pp.bowl(false); S.add(bowl); S.grab(lieu, 0, bowl, [0, -.5, .12]);
+    S.do(lieu, 0, 'sitground'); S.mood(lieu, 0, 'sad');
+    S.shot([.4, 1.6, 7.2], [.4, .9, 2.4]);
+    S.cam(.2, 2.8, [2.4, 1.5, 6], [.4, .8, 2.6]);
+    // an idea: what grows right here
+    S.mood(lieu, 3.2, 'o'); S.do(lieu, 3.4, 'idle'); S.show(bowl, 3.4, false); S.mood(lieu, 4, 'happy');
+    const rice = Pp.basket(); S.add(rice, -1.2, 0, 3.4);
+    S.walk(lieu, 4.2, [-1.2, 2.8]); S.do(lieu, 5.6, 'point', 1);
+    S.cam(4, 1.6, [-.6, 1.6, 6.4], [-1.2, .5, 3.4]);
+    S.walk(lieu, 6.7, [-2.4, 1.9]); S.do(lieu, 7.9, 'pick', 1.2);
+    S.cam(6.6, 1.4, [-1.4, 1.6, 5], [-2.4, .4, 1.2]);
+    const pods = Pp.basket(); pods.scale.setScalar(.6); pods.visible = false; S.add(pods, -2.4, 0, 2.4); S.show(pods, 8.6);
+    S.walk(lieu, 9.2, [3.2, 1.8], 2.4); S.face(lieu, 11.6, [4, .4]);
+    S.cam(9.4, 1.8, [4.4, 1.8, 5.4], [3.6, .6, .8]);
+    const pile = new THREE.Group(); [0, 1, 2, 3].forEach(i => { const l = Pp.leaf(); l.position.y = i * .02; l.rotation.y = i * .5; pile.add(l); }); pile.scale.setScalar(0); S.add(pile, 2.6, 0, 2.8);
+    const sp = Pp.sparkle('#9fe07a'); S.add(sp, 4, .4, .4);
+    S.help(12, 'Tap to pick the big green leaves!', 'Chạm để hái những chiếc lá dong to nhé!', t => {
+      S.do(lieu, t, 'pick', 1.6); S.show(sp, t); S.show(sp, t + 1.8, false);
+      leaves.children.slice(0, 4).forEach((l, i) => S.move(l, t + .3 + i * .2, .5, [-1.4, .1 + i * .02, 2.4], undefined, .5));
+      leaves.children.slice(0, 4).forEach((l, i) => S.show(l, t + .8 + i * .2, false));
+      S.scale(pile, t + .6, .8, 0, 1);
+      S.do(lieu, t + 2, 'cheer', 1.6); S.mood(lieu, t + 1.8, 'happy');
+      S.cam(t + 1.6, 1.6, [2.2, 1.8, 6.4], [1.2, .5, 2.4]);
+    }, [4, 1, .4], 3.6);
+  },
+  // 4. He made a square green cake for the earth and a round white cake for the sky.
+  S => {
+    garden(S);
+    const lieu = S.person(LIEU, 0, 2.2, 0); S.mood(lieu, 0, 'happy');
+    S.add(Pp.mat(), 0, 0, 3.4, H);
+    const leafs = [0, 1, 2, 3].map(i => { const l = Pp.leaf(); l.rotation.y = i * H + PI / 4; l.visible = false; return S.add(l, Math.cos(i * H) * .18, .02, 3.4 + Math.sin(i * H) * .18); });
+    const rice = new THREE.Mesh(G3.S(.2, 10, 6), new THREE.MeshToonMaterial({ color: '#ffffff', emissive: '#a8a49a' })); rice.scale.set(1, .3, 1); rice.visible = false; S.add(rice, 0, .05, 3.4);
+    const bean = new THREE.Mesh(G3.S(.1, 8, 6), new THREE.MeshToonMaterial({ color: '#e8c84a' })); bean.scale.set(1, .4, 1); bean.visible = false; S.add(bean, 0, .1, 3.4);
+    const sq = Pp.squareCake(); sq.scale.setScalar(0); S.add(sq, 0, .02, 3.4, PI / 4);
+    S.do(lieu, 0, 'kneel');
+    S.shot([1.6, 2.2, 6.2], [0, .3, 3.2]);
+    leafs.forEach((l, i) => S.show(l, .6 + i * .4)); S.do(lieu, .5, 'plant', 1.8);
+    S.show(rice, 2.6); S.scale(rice, 2.6, .6, .2, 1); S.show(bean, 3.4); S.do(lieu, 2.5, 'give', 1.4);
+    S.cam(.4, 3.4, [.8, 1.5, 4.8], [0, .1, 3.4]);
+    const sp = Pp.sparkle(); S.add(sp, 0, .1, 3.4);
+    S.help(4.6, 'Tap to wrap the square cake!', 'Chạm để gói bánh chưng vuông nào!', t => {
+      S.do(lieu, t, 'plant', 1.4);
+      leafs.forEach((l, i) => S.tw(t, .7, k => { l.rotation.x = k * (i % 2 ? 1 : -1) * 1.2; l.scale.setScalar(1 - k * .6); }));
+      S.show(rice, t + .6, false); S.show(bean, t + .6, false); leafs.forEach(l => S.show(l, t + .8, false));
+      S.scale(sq, t + .6, .6, .3, 1, k => 1 + 2.2 * (k - 1) ** 3 + 1.2 * (k - 1) ** 2); S.show(sp, t + .7); S.show(sp, t + 2.2, false);
+      S.do(lieu, t + 1.6, 'cheer', 1.4);
+      S.cam(t + .4, 1, [.6, 1, 4.6], [0, .15, 3.4]);
+    }, [0, .2, 3.4], 3.2);
+    // the round cake: pound the sticky rice in the mortar
+    const mortar = Pp.mortar(); S.add(mortar, 1.8, 0, 2.4);
+    const pestle = Pp.pestle(); S.add(pestle, 2.3, .55, 2.3);
+    S.do(lieu, 5.4, 'idle'); S.walk(lieu, 5.6, [1.8, 1.6]); S.face(lieu, 7.1, [1.8, 2.4]);
+    S.grab(lieu, 7.3, pestle, [0, -.75, .25]); S.do(lieu, 7.3, 'carry');
+    S.cam(5.6, 1.6, [3.6, 1.8, 4.8], [1.8, .7, 2.2]);
+    const round = Pp.roundCake(); round.scale.setScalar(0); S.add(round, .55, .02, 3.6);
+    const sp2 = Pp.sparkle('#ffffff'); S.add(sp2, 1.8, .55, 2.4);
+    S.help(7.8, 'Tap to pound the rice!', 'Chạm để giã gạo nếp nào!', t => {
+      // (arms are set after the pose, so they go up and down with the pestle)
+      S.at(t, () => { lieu.hold = (A, tt) => { const b = Math.abs(Math.sin(tt * 5)); A.armL.rotation.x = A.armR.rotation.x = -1.3 - b * .9; }; SFX.tap(); });
+      S.at(t + 2.4, () => { lieu.hold = null; });
+      S.show(sp2, t); S.show(sp2, t + 2.6, false);
+      S.walk(lieu, t + 2.6, [.6, 2.6]); S.drop(pestle, t + 2.6, [2.3, .55, 2.3]);
+      S.scale(round, t + 3.4, .6, .2, 1, k => 1 + 2.2 * (k - 1) ** 3 + 1.2 * (k - 1) ** 2);
+      S.do(lieu, t + 3.9, 'kneel', 1); S.mood(lieu, t + 3.6, 'happy');
+      S.cam(t + 2.8, 1.6, [.4, 1.4, 5.6], [.3, .2, 3.5]);
+      // a square cake for the earth, a round cake for the sky
+      S.do(lieu, t + 5, 'stretch', 2.4);
+      S.cam(t + 5, 2.6, [0, 3.2, 9], [0, 2.6, 0]);
+    }, [1.8, .6, 2.4], 8);
+  },
+  // 5. The king tastes them and smiles; that is why we make bánh chưng at Tết.
+  S => {
+    const { king, lanterns } = palaceYard(S);
+    const table = Pp.table(); table.scale.setScalar(1.5); S.add(table, 0, 0, -3.6);
+    const lob = Pp.lobster(); lob.scale.setScalar(1.8); S.add(lob, -1.3, .7, -3.6, H); const hon = Pp.honey(); S.add(hon, -.6, .7, -3.7);
+    const p1 = S.person(PRINCE1, -3, -2.6, PI - .3), p2 = S.person(PRINCE2, -4.4, -2, PI - .3);
+    const lieu = S.person(LIEU, 0, 7, PI), sq = Pp.squareCake(), round = Pp.roundCake();
+    S.add(sq); S.grab(lieu, 0, sq, [0, .55, .45], 'torso'); S.do(lieu, 0, 'carry');
+    S.add(round, .9, .7, -3.5); round.visible = false;
+    S.shot([0, 4, 16], [0, 1.6, -3]);
+    S.walk(lieu, .3, [.4, -2.4], 1.6); S.do(lieu, 6.2, 'carry');
+    S.cam(.6, 4, [5, 2.4, 1.6], [0, 1.2, -3.6]);
+    S.do(lieu, 6.4, 'give', 1); S.drop(sq, 7.2, [.4, .7, -3.6]); S.show(round, 7.2); S.do(lieu, 7.4, 'bow', 1.6);
+    S.cam(7, 1.4, [1.6, 2.2, -.6], [.2, 1, -3.8]);
+    // the king tastes, and smiles
+    const bite = new THREE.Mesh(G3.S(.07, 10, 8), new THREE.MeshToonMaterial({ color: '#ffffff', emissive: '#a8a49a' })); bite.scale.set(1, .5, 1); bite.visible = false; S.add(bite);
+    S.walk(king, 8.6, [.6, -5.2], 1); S.grab(king, 9.8, bite, [0, -.5, .12]); S.show(bite, 9.8); S.do(king, 10, 'eat', 2.2);
+    S.cam(9.2, 1.4, [2.4, 2.4, -1.6], [.4, 1.8, -5.2]);
+    S.mood(king, 12.2, 'happy'); S.show(bite, 12.2, false); S.talk(king, 12.4, 2.4); S.do(king, 12.4, 'talk', 2.4);
+    S.mood(lieu, 12.6, 'happy'); S.mood(p1, 13, 'happy'); S.mood(p2, 13.2, 'happy');
+    // Tết night: the lanterns glow, fireworks, everyone cheers
+    const fw = [[0, 13, -16], [-9, 11, -15], [9, 12, -15]].map(p => Pp.fireworks(S, ...p));
+    S.skyTo(15, 2.5, '#20225a', '#f09a5a'); S.lightTo(15, 2.5, .55, .6); glowUp(S, 15.5, lanterns);
+    fw.forEach((f, i) => S.show(f, 16 + i * .5));
+    [lieu, p1, p2].forEach((a, i) => S.do(a, 16.2 + i * .2, 'cheer', 3)); S.do(king, 16.4, 'wave', 3);
+    S.cam(15, 3, [0, 3, 12], [0, 5, -7]);
+    S.at(20, () => { });
+  }
+] };
+
+// ---------------- Cây khế (The Starfruit Tree) ----------------
+const OLDER = LOOK({ style: 'tunic', color: '#7a4a9a', hairStyle: 'short', skin: '#d8a070' });
+const YOUNGER = LOOK({ style: 'shirt', color: '#4a9a5a', hat: 'nonla', hairStyle: 'short', skin: '#d8a070' });
+// the brothers' village: the big house on the left, the little hut and the starfruit tree on the right
+function khe(S, { house = true, sea = false } = {}) {
+  if (sea) { S.sky('#7cc8f0', '#e8f6ff'); L.ground(S, '#8fcf6a', 34); if (house) L.house(S, -6, -7); L.bamboo(S, -9, -3); L.bamboo(S, -12, 6, '#5fae4a', 6, 6); L.sun(S, -60, 55, -170, 9); L.clouds(S, [[-40, 28, -90, 2], [30, 34, -110, 2.4]]); }
+  else village(S, house ? [-6, -7] : null);
+  L.hut(S, 5, -3.5, -.3);
+  const tree = Pp.starTree(); S.add(tree, 7.6, 0, -.8);
+  return { tree };
+}
+// the island of gold far out at sea (at z −70), and the sea between
+function goldIsle(S) {
+  L.sea(S); const isle = L.island(S, 12); isle.position.z = -70;
+  L.palm(S, -6, -76, .3); L.palm(S, 7, -78, .4, 2);
+  const piles = [[-2.6, -67, 1.6], [2.4, -68.5, 1.3], [0, -72, 1.9]].map(([x, z, s]) => { const g = Pp.gold(26, .5); g.scale.setScalar(s); return S.add(g, x, 0, z); });
+  piles.forEach(p => { const sp = Pp.sparkle(); sp.visible = true; S.add(sp, p.position.x, 0, p.position.z); });
+  return piles;
+}
+// the bird flies a rider along a path of [x, y, z] points in dur seconds
+function fly(S, bird, t, dur, pts) {
+  S.at(t, () => { bird.userData.flap = 1; });
+  const seg = dur / (pts.length - 1);
+  pts.slice(1).forEach((p, i) => { const a = pts[i]; S.at(t + i * seg, () => { bird.rotation.y = Math.atan2(p[0] - a[0], p[2] - a[2]); }); S.move(bird, t + i * seg, seg, p, i === 0 ? (k => k * k) : i === pts.length - 2 ? (k => 1 - (1 - k) ** 2) : (k => k)); });
+  S.at(t + dur, () => { bird.userData.flap = 0; });
+  return t + dur;
+}
+
+FILMS.caykhe = { pages: [
+  // 1. Two brothers share; the older takes nearly everything, the younger only gets a starfruit tree.
+  S => {
+    khe(S);
+    const things = [Pp.sack(), Pp.basket(), Pp.basket()].map((it, i) => S.add(it, -.4 + i * .5, 0, 2.2 + (i % 2) * .3));
+    const older = S.person(OLDER, -1.6, 3, H), younger = S.person(YOUNGER, 2.2, 3.4, -H);
+    S.shot([0, 3.2, 12], [0, 1, 0]);
+    S.cam(.2, 2, [0, 2.2, 8], [0, .8, 1.5]);
+    // the older brother piles everything up in his arms and takes it all to the big house
+    let t = S.walk(older, .6, [-.4, 3]); S.do(older, t, 'pick', 1.2);
+    things.forEach((it, i) => S.grab(older, t + .4 + i * .3, it, [0, .45 + i * .32, .42], 'torso'));
+    S.do(older, t + 1.4, 'carry'); S.mood(older, t + 1.4, 'happy');
+    t = S.walk(older, t + 1.6, [-5, -3.4], 1.8); things.forEach(it => S.show(it, t, false)); S.do(older, t, 'idle');
+    S.face(older, t + .2, [0, 4]); S.do(older, t + .6, 'cheer', 1.4);
+    S.cam(3, 4, [-1, 3.4, 9], [-2.6, 1, -1]);
+    S.mood(younger, 1.5, 'o'); S.face(younger, 2, [-1, 2]);
+    // all that is left: the starfruit tree
+    t = S.walk(younger, t + 1.4, [6.6, 1]); S.face(younger, t, [7.6, -.8]); S.do(younger, t + .4, 'point', 1.4); S.mood(younger, t + .4, 'happy');
+    S.cam(t - 1.6, 2, [9.6, 2.4, 5.4], [7.4, 2.2, -.6]);
+    S.at(t + 2.4, () => { });
+  },
+  // 2. A giant bird comes to eat the starfruits: "Eat a fruit, pay in gold. Make a bag three hands long."
+  S => {
+    const { tree } = khe(S, { house: false });
+    const younger = S.person(YOUNGER, 9.6, 2.4, -H - .5);
+    const bird = Pp.bigBird(); S.add(bird, -24, 16, -26);
+    S.shot([3, 2.4, 11], [6.6, 2.6, -.6]);
+    fly(S, bird, .4, 4, [[-24, 16, -26], [-6, 9, -8], [4.6, 0, 1.6]]);
+    S.at(4.5, () => { bird.rotation.y = Math.atan2(7.6 - 4.6, -.8 - 1.6); });
+    S.cam(.4, 4, () => [bird.position.x + 6, bird.position.y + 2, bird.position.z + 10], () => [bird.position.x, bird.position.y + 1.5, bird.position.z]);
+    S.mood(younger, 3.6, 'o'); S.do(younger, 3.8, 'surprised', 1.4);
+    // it eats: one fruit after another goes
+    const fr = tree.userData.fruits;
+    S.tw(5, 3, k => { bird.children[0].rotation.x = Math.max(0, Math.sin(k * PI * 6)) * .35; }, k => k);
+    fr.slice(0, 6).forEach((f, i) => S.show(f, 5.2 + i * .45, false));
+    S.cam(4.8, 1.6, [7.4, 3, 9.4], [6.6, 1.8, 0]);
+    S.mood(younger, 8, 'sad');
+    const gift = Pp.starfruit(1.4); gift.visible = false; S.add(gift);
+    const sp = Pp.sparkle(); S.add(sp, 4.6, 2, 1.6);
+    S.help(8.4, 'Tap to give the bird a starfruit!', 'Chạm để cho chim ăn một quả khế nhé!', t => {
+      S.mood(younger, t, 'happy'); S.show(fr[6], t, false); S.grab(younger, t, gift, [0, -.52, .1]); S.show(gift, t);
+      S.walk(younger, t + .2, [6, 2.4], 1.6); S.do(younger, t + 2.6, 'give', 1.2);
+      S.show(gift, t + 3.6, false); S.tw(t + 3.4, .6, k => { bird.children[0].rotation.x = Math.sin(k * PI) * .4; });
+      S.show(sp, t + 3.6); S.at(t + 4, () => { bird.userData.flap = .4; }); S.at(t + 5.4, () => { bird.userData.flap = 0; }); S.show(sp, t + 5.6, false);
+      // the bird bows its head: it will pay in gold
+      S.tw(t + 4.2, 1.4, k => { bird.children[0].rotation.x = Math.sin(k * PI) * .5; });
+      S.do(younger, t + 5.8, 'bow', 1.4);
+      S.cam(t, 1.6, [7.2, 2.4, 7.4], [5.2, 1.6, 1.6]);
+    }, [4.6, 2.2, 1.6], 7.6);
+  },
+  // 3. The younger brother sews a small bag; the bird flies him to an island of gold; he takes only a little.
+  S => {
+    S.sky('#6fc0ee', '#d8f0ff'); L.sun(S, 70, 45, -160, 9);
+    const piles = goldIsle(S); L.ground(S, '#8fcf6a', 30); L.hut(S, 2, -4, -.3); L.bamboo(S, -6, -6);
+    L.clouds(S, [[-40, 24, -100, 2], [20, 30, -110, 2.4]]);
+    const younger = S.person(YOUNGER, 0, 2, 0), bird = Pp.bigBird(); S.add(bird, 3.4, 0, -1.4, -H - .6);
+    const bag = Pp.bag(); bag.scale.setScalar(0); S.add(bag); S.grab(younger, 0, bag, [0, -.52, .15]);
+    S.do(younger, 0, 'sitground'); S.do(younger, .2, 'plant', 2.4); S.scale(bag, .3, 2.2, 0, .6, k => k);
+    S.shot([1.4, 1.6, 6], [0, .8, 2]);
+    S.cam(.2, 2.4, [.6, 1.1, 4.4], [0, .6, 2]);
+    // up on the bird's back, and away over the sea
+    S.do(younger, 2.8, 'idle'); S.mood(younger, 2.8, 'happy');
+    S.at(3.4, () => { board(younger, bird, bird.userData.seat, 0, 1); younger.state = 'ride'; });
+    S.cam(3, 1.2, [2.2, 2.6, 8], [2, 1.6, 0]);
+    fly(S, bird, 3.8, 6, [[3.4, 0, -1.4], [2, 7, -20], [3, 7, -48], [3.8, 0, -64]]);
+    S.cam(4.4, 1, () => [bird.position.x + 5, bird.position.y + 3, bird.position.z + 9], () => [bird.position.x, bird.position.y + 1.6, bird.position.z]);
+    hopOff(S, younger, 10.2, [1.4, -64.4], PI);
+    S.cam(10, 1.6, [-1, 2.4, -58], [-.6, .8, -66]);
+    S.mood(younger, 10.8, 'o'); S.do(younger, 10.9, 'surprised', 1.2);
+    const little = Pp.gold(5, .08); little.visible = false; S.add(little);
+    const sp = Pp.sparkle(); S.add(sp, -2.6, .2, -67);
+    S.help(12.4, 'Tap to take just a little gold!', 'Chạm để lấy một ít vàng thôi nhé!', t => {
+      S.walk(younger, t, [-2.2, -66.2], 1.8); S.do(younger, t + 1.6, 'pick', 1.6); S.show(sp, t + 1.6); S.show(sp, t + 3.3, false);
+      S.tw(t + 1.9, .5, k => { piles[0].scale.setScalar(1.6 - k * .15); });
+      S.grab(younger, t + 3.1, little, [0, -.48, .12]); S.show(little, t + 3.1);
+      S.do(younger, t + 3.3, 'carry', 2); S.mood(younger, t + 3.3, 'happy');
+      S.cam(t + 1.4, 1.4, [-1, 1.6, -63], [-2.4, .6, -66.4]);
+      S.walk(younger, t + 5.3, [1.6, -64.4]); S.do(younger, t + 7.6, 'wave', 1.4);
+      S.cam(t + 5.3, 1.6, [-2.6, 2.6, -57.5], [1, 1.2, -65]);
+    }, [-2.6, .4, -67], 8.6);
+  },
+  // 4. The older brother swaps for the tree, sews a huge bag and fills it until it is far too heavy.
+  S => {
+    const { tree } = khe(S, { sea: true });
+    const piles = goldIsle(S);
+    const older = S.person(OLDER, 5.4, 2.8, -H + .4), younger = S.person(YOUNGER, 3.4, 3.4, H - .3);
+    S.shot([4.4, 2, 8.6], [4.4, 1.2, 2.6]);
+    S.talk(older, .4, 2); S.do(older, .4, 'point', 2); S.mood(older, .4, 'happy');
+    S.face(older, 2.6, [7.6, -.8]);
+    S.talk(younger, 2.8, 1.4); S.do(younger, 2.8, 'wave', 1.6); S.mood(younger, 2.8, 'smile');
+    S.walk(younger, 4.4, [-4.6, -2.6], 1.6);
+    S.cam(2.6, 2, [6, 2.4, 9], [3, 1.2, 0]);
+    // a bag twelve hands long
+    const big = Pp.bag('#a8583a'); big.scale.setScalar(.4); S.add(big, 6, 0, 3.2);
+    S.walk(older, 5, [6.6, 3.2]); S.do(older, 6.1, 'plant', 2.4);
+    S.scale(big, 6.2, 2.2, .4, 2.2, k => k);
+    S.cam(5.6, 1.6, [8.6, 2, 7.2], [6.4, .8, 3]);
+    // cut: on the island, stuffing in gold
+    const o2 = S.person(OLDER, 1, -66, PI); S.mood(o2, 0, 'happy');
+    const bird = Pp.bigBird(); S.add(bird, -4.6, 0, -64.6, 2.2);
+    const big2 = Pp.bag('#a8583a'); big2.scale.setScalar(2.2); S.add(big2, .2, 0, -67.6);
+    S.cam(8.6, 0, [4, 2.6, -60], [0, .8, -67]);
+    S.do(o2, 8.8, 'pick', 4.4);
+    piles.forEach((p, i) => S.tw(9 + i * .9, 1.4, (k, first) => { if (first) p.userData.s0 = p.scale.x; p.scale.setScalar(p.userData.s0 * (1 - k * .8)); }));
+    S.scale(big2, 9, 3.6, 2.2, 3.8, k => k);
+    S.cam(8.8, 3.6, [2.6, 2, -62], [.4, 1, -67.4]);
+    // far too heavy to lift
+    S.do(o2, 13.4, 'pull', 2.6); S.mood(o2, 13.4, 'o');
+    S.tw(13.4, 2.6, k => { big2.position.y = Math.max(0, Math.sin(k * PI * 3)) * .05; });
+    S.mood(o2, 16, 'sad');
+    S.at(16.6, () => { });
+  },
+  // 5. The bird cannot fly with so much; the heavy bag slips into the sea; the older brother comes home with nothing.
+  S => {
+    S.sky('#6fc0ee', '#d8f0ff'); L.sun(S, 70, 45, -160, 9);
+    goldIsle(S); khe(S, { sea: true });
+    const bird = Pp.bigBird(); S.add(bird, 0, 4, -40, 0);
+    const older = S.person(OLDER, 0, 0, 0); board(older, bird, bird.userData.seat, 0, 1); older.state = 'ride'; S.mood(older, 0, 'o');
+    const big = Pp.bag('#a8583a'); S.add(big); S.grab(older, 0, big, [0, -.2, .5], 'root', 2.4);
+    S.at(0, () => { bird.userData.flap = 1.8; });
+    // the bird works hard and dips lower and lower over the waves
+    S.tw(0, 5, k => { bird.position.set(0, 4 - k * 2.6 + Math.sin(k * PI * 5) * .4, -40 + k * 14); }, k => k);
+    S.shot([7, 3.6, -26], [0, 2.6, -36]);
+    S.cam(0, 5, () => [bird.position.x + 7, bird.position.y + 1.6, bird.position.z + 10], () => [bird.position.x, bird.position.y + 1, bird.position.z]);
+    // the bag slips: splash
+    S.drop(big, 5);
+    S.move(big, 5.02, .9, [0, -.9, -24], k => k * k);
+    const splash = Pp.sparkle('#9fe0ff'); splash.scale.setScalar(2.4); S.add(splash, 0, -.3, -24); S.show(splash, 5.9); S.show(splash, 7.4, false);
+    S.mood(older, 5.2, 'sad');
+    S.tw(5.6, 4, k => { bird.position.set(k * 3, 1.4 + Math.sin(k * PI) * 3, -26 + k * 26); }, k => k);
+    S.at(5.6, () => { bird.userData.flap = 1; bird.rotation.y = Math.atan2(3, 26); });
+    S.cam(5, 1, [6, 2, -16], [0, 0, -24]);
+    S.cam(6.6, 3, [9, 3, 8], [3, 1.6, 0]);
+    S.at(9.6, () => { bird.userData.flap = 0; });
+    hopOff(S, older, 9.8, [4.6, 1.6], 0);
+    S.do(older, 10.6, 'sad', 3); S.face(older, 11, [8, 6]);
+    S.cam(9.8, 1.6, [6, 1.8, 6], [4.6, 1, 1.6]);
+    S.at(13.4, () => { });
+  },
+  // 6. The lesson: be kind, and do not be greedy. A little is enough.
+  S => {
+    const { tree } = khe(S);
+    const older = S.person(OLDER, 5, 2.6, H - .2), younger = S.person(YOUNGER, 6.8, 2.6, -H + .2);
+    S.mood(older, 0, 'sad'); S.do(older, 0, 'sad');
+    const bird = Pp.bigBird(); S.add(bird, -16, 12, -20); bird.scale.setScalar(.8);
+    S.shot([5.9, 1.8, 8.6], [5.9, 1.4, 2.4]);
+    S.cam(.2, 2.6, [6.8, 1.6, 6.2], [5.9, 1.3, 2.4]);
+    const fruit = Pp.starfruit(1.4); fruit.visible = false; S.add(fruit);
+    const sp = Pp.sparkle('#ff9ec8'); S.add(sp, 5.9, .4, 2.6);
+    S.help(3, 'Tap to share a starfruit!', 'Chạm để chia quả khế nào!', t => {
+      S.show(tree.userData.fruits[0], t, false); S.grab(younger, t, fruit, [0, -.52, .1]); S.show(fruit, t);
+      S.do(younger, t + .3, 'give', 1.4); S.grab(older, t + 1.7, fruit, [0, -.52, .1]); S.do(younger, t + 1.7, 'idle');
+      S.do(older, t + 1.9, 'eat', 1.8); S.mood(older, t + 1.9, 'happy'); S.show(fruit, t + 3.7, false);
+      S.walk(older, t + 3.8, [6, 2.6], .8); S.do(older, t + 5.1, 'hug', 2.4); S.do(younger, t + 5.1, 'hug', 2.4); S.mood(younger, t + 4.4, 'happy');
+      S.show(sp, t + 4.4);
+      fly(S, bird, t + 2, 5, [[-16, 12, -20], [0, 8, -10], [10, 7, -4], [16, 9, 6]]);
+      S.cam(t + 4, 3, [5.9, 3, 10], [5.9, 2.4, 0]);
+    }, [5.9, 1.2, 2.6], 7.4);
+  }
+] };
+
+// ---------------- Guides: Bắn bi (Marbles) and Lật hình (Memory Match) ----------------
+const MARBLE_COLS = ['#ff5f7e', '#3cc7e8', '#ffd23f', '#7ee35a', '#b598ff', '#ff9f43'];
+// the marbles yard: a patch of dirt, a chalk circle, six marbles in it, the white shooter, and three friends
+function marbleYard(S, { ring = true, inside = true } = {}) {
+  S.sky('#7cc8f0', '#e8f6ff'); L.ground(S, '#8fcf6a'); L.banyan(S, -5, -6, .9); L.house(S, 3, -12); L.bamboo(S, 7, -5, '#5fae4a', 6, 6);
+  S.add(new THREE.Mesh(G3.Cyl(2.2, 2.2, .02, 28), new THREE.MeshToonMaterial({ color: '#d9b98a' })), 0, 0, .3);
+  const circle = Pp.chalkRing(.9); S.add(circle, 0, 0, 0); if (!ring) circle.scale.setScalar(.001);
+  const marbles = MARBLE_COLS.map((c, i) => { const m = Pp.marble(c); const a = i * 1.1, d = i ? .22 + (i % 3) * .12 : 0; return S.add(m, Math.cos(a) * d, 0, Math.sin(a) * d - .05); });
+  if (!inside) marbles.forEach(m => { m.visible = false; });
+  const shooter = Pp.marble('#f4f4ff', .065); S.add(shooter, 0, 0, 1.45);
+  const teo = S.person(TEO, 0, 1.95, PI, .72), lan = S.person(LAN, -1.5, .6, H, .72), bong = S.person(BONG, 1.4, -.6, -H - .4, .72);
+  return { circle, marbles, shooter, teo, lan, bong };
+}
+// a dotted line on the ground from a to b (where the shooter will go)
+function dotted(S, a, b, n = 9) { const g = new THREE.Group(), m = new THREE.MeshBasicMaterial({ color: '#ffffff' }); for (let i = 0; i < n; i++) { const d = new THREE.Mesh(G3.S(.018, 6, 4), m); const k = i / (n - 1); d.position.set(a[0] + (b[0] - a[0]) * k, .03, a[1] + (b[1] - a[1]) * k); g.add(d); } return S.add(g); }
+
+GUIDES.marbles = { pages: [
+  // the title: three friends round the chalk circle
+  S => { const { teo, lan, bong } = marbleYard(S); [teo, lan, bong].forEach((a, i) => { S.mood(a, 0, 'happy'); S.do(a, .5 + i * .3, 'wave', 2); }); S.shot([3.4, 2.6, 5], [0, .3, 0]); S.cam(.3, 3, [2.2, 1.6, 3.6], [0, .2, .2]); S.at(3.6, () => { }); },
+  // where it comes from: children in Vietnam and in Australia draw a circle and put marbles in it
+  S => {
+    const { circle, marbles, teo, lan, bong } = marbleYard(S, { ring: false, inside: false });
+    const stick = Pp.stick(.8, '#8a6a4a'); S.add(stick); S.grab(teo, 0, stick, [0, -.42, .1]);
+    S.do(teo, .2, 'dig', 3); S.tw(.4, 2.6, k => { circle.scale.setScalar(Math.max(.001, k)); circle.rotation.y = -k * 2; });
+    S.shot([2.4, 2.8, 4], [0, 0, .2]); S.cam(.4, 3, [-.6, 2.4, 3.2], [0, 0, 0]);
+    S.show(stick, 3.4, false); S.do(teo, 3.4, 'kneel');
+    S.do(lan, 3.2, 'give', 2.4); S.mood(lan, 3.2, 'happy');
+    marbles.forEach((m, i) => { const t = 3.6 + i * .22, y = m.position.y; S.show(m, t); m.position.y = .9; S.move(m, t, .4, [m.position.x, y, m.position.z], k => k * k); });
+    S.do(bong, 5.4, 'cheer', 1.6);
+    S.cam(3.6, 2, [0, 2.6, 3], [0, 0, 0]);
+    S.at(7, () => { });
+  },
+  // step 1: a finger on the big white marble, and pull back
+  S => {
+    const { shooter, teo } = marbleYard(S);
+    S.do(teo, 0, 'kneel');
+    S.shot([1.6, 1.4, 3.4], [0, .1, 1.3]);
+    const ring = Pp.sparkle(); S.add(ring, 0, 0, 1.45); S.show(ring, .4); S.show(ring, 2.2, false);
+    S.do(teo, 1, 'pick', 3);
+    S.move(shooter, 1.8, 1.2, [0, 0, 1.75]);
+    const line = dotted(S, [0, 1.6], [0, .1]); line.visible = false; S.show(line, 3);
+    S.cam(.4, 2.6, [.9, .8, 2.6], [0, .05, 1.4]);
+    S.at(4.6, () => { });
+  },
+  // step 2: let go to shoot; the shooter runs along the dotted line
+  S => {
+    const { shooter, marbles, teo, lan } = marbleYard(S);
+    shooter.position.z = 1.75; S.do(teo, 0, 'pick');
+    const line = dotted(S, [0, 1.6], [0, .1]);
+    S.shot([1.6, 1.2, 3.2], [0, .1, 1.2]);
+    S.do(teo, .8, 'throw', .6); S.show(line, .9, false);
+    S.move(shooter, .9, .6, [0, 0, .08], k => k);
+    S.move(marbles[0], 1.45, .5, [0, 0, -.35], k => 1 - (1 - k) ** 2);
+    S.move(shooter, 1.5, .5, [0, 0, .2], k => 1 - (1 - k) ** 2);
+    S.cam(.6, 1.4, [1.2, 1.2, 1.6], [0, 0, .2]);
+    S.do(teo, 1.6, 'kneel'); S.mood(lan, 2, 'o'); S.do(lan, 2.2, 'surprised', 1.2);
+    S.at(3.6, () => { });
+  },
+  // step 3: knock the marbles out of the chalk circle to win them
+  S => {
+    const { shooter, marbles, teo, bong } = marbleYard(S);
+    S.do(teo, 0, 'kneel'); S.shot([2.6, 2.6, 3], [0, 0, 0]);
+    S.do(teo, .6, 'throw', .5);
+    S.move(shooter, .7, .5, [.25, 0, .2], k => k);
+    S.move(marbles[2], 1.2, .9, [.4, 0, -1.25], k => 1 - (1 - k) ** 2);
+    const sp = Pp.sparkle(); S.add(sp, .4, 0, -1.25); S.show(sp, 2.1);
+    const tag = Pp.countTag(1); tag.visible = false; S.add(tag, .4, .4, -1.25); S.show(tag, 2.2);
+    S.cam(.8, 1.6, [-1.2, 1.4, -.1], [.3, 0, -.9]);
+    S.walk(teo, 2.4, [.45, -.75], 1.4); S.do(teo, 4.4, 'pick', 1); S.show(marbles[2], 5, false); S.show(tag, 5, false);
+    S.do(teo, 5.4, 'cheer', 1.8); S.mood(teo, 5.2, 'happy'); S.talk(bong, 5.4, 1);
+    S.cam(3.8, 1.6, [1.6, 1.6, 1.6], [.3, .5, -.6]);
+    S.at(7.2, () => { });
+  },
+  // for real: a circle in the dirt, marbles in the middle, flick the shooter with your thumb
+  S => {
+    const { shooter, marbles, teo, lan, bong } = marbleYard(S);
+    S.walk(lan, .2, [-.4, 1.6], 1.2); S.face(lan, 1.4, [0, 0]); S.do(lan, 1.8, 'kneel');
+    S.do(teo, .2, 'kneel'); S.walk(teo, .2, [.8, 1.7], .8, 'kneel');
+    S.shot([0, 3.4, 5], [0, .2, 0]);
+    S.do(lan, 2.6, 'throw', .5);
+    S.move(shooter, 2.7, .5, [0, 0, .1], k => k);
+    marbles.forEach((m, i) => { const a = i * 1.1 + .3; S.move(m, 3.15 + i * .03, 1, [Math.cos(a) * (.7 + (i % 2) * .5), 0, Math.sin(a) * (.7 + (i % 2) * .5) - .1], k => 1 - (1 - k) ** 2); });
+    S.cam(1, 2.4, [1.6, 1.6, 2.6], [0, 0, .3]);
+    [teo, lan, bong].forEach((a, i) => { S.mood(a, 4, 'happy'); S.do(a, 4.4 + i * .2, 'cheer', 2); });
+    S.at(6.6, () => { });
+  },
+  // your turn
+  S => { const { teo, lan, bong } = marbleYard(S); [teo, lan, bong].forEach(a => { S.mood(a, 0, 'happy'); S.face(a, .2, [0, 6]); S.do(a, .6, 'wave', 2.4); }); S.shot([0, 1.6, 5], [0, .5, 0]); S.cam(.2, 2.4, [0, 1.3, 4], [0, .5, 0]); S.at(3.2, () => { }); }
+],
+  // the real game plays its first two shots by itself (js/howto.js runs it and moves the glowing hand)
+  demo: {
+    async play(D) {
+      const c = await D.find('canvas'), w = c._w, h = c._h, sh = [w / 2, h * .86];
+      await D.say('Watch! Put your finger on the big white marble.', 'Xem nhé! Đặt ngón tay lên viên bi cái màu trắng.');
+      await D.down(c, sh);
+      await D.say('Pull back…', 'Kéo về phía sau…', D.move(c, [sh[0] - w * .05, sh[1] + w * .13], 1400));
+      await D.say('…and let go!', '…rồi thả tay ra!'); await D.up(c);
+      await D.wait(2600);
+      await D.say('Again: pull back the other way, and let go.', 'Lần nữa: kéo về phía bên kia, rồi thả tay.');
+      await D.down(c, sh); await D.move(c, [sh[0] + w * .05, sh[1] + w * .13], 1200); await D.up(c);
+      await D.wait(2600);
+      await D.say('Knock the marbles out of the circle to win them!', 'Bắn bi văng ra khỏi vòng là được bi đó!');
+    },
+    async turn(D) {
+      const c = await D.find('canvas'), w = c._w, h = c._h, sh = [w / 2, h * .86];
+      D.ghost(c, sh, [sh[0], sh[1] + w * .12]);
+      if (await D.until(() => D.taps >= 1, 20000)) await D.wait(2600);
+    }
+  }
+};
+
+// Memory Match: a low table under the tree, six cards face down, Bống and Tèo
+function memoryTable(S) {
+  S.sky('#7cc8f0', '#eaf8ff'); L.ground(S, '#9ad470'); L.house(S, -6, -9, .3); L.banyan(S, 5, -6, .8);
+  const table = Pp.table(); table.scale.setScalar(1.3); S.add(table, 0, 0, 0);
+  const pics = ['apple', 'fish', 'flower', 'apple', 'flower', 'fish'];
+  const cards = pics.map((p, i) => S.add(Pp.card(p), -.55 + (i % 3) * .55, .6, -.25 + Math.floor(i / 3) * .5));
+  const bong = S.person(BONG, -.2, 1.1, PI, .72), teo = S.person(TEO, 1.2, .6, -H - .4, .72);
+  return { cards, bong, teo };
+}
+const flipCard = (S, c, t, open = true) => S.tw(t, .45, k => c.userData.open(open ? k : 1 - k));
+
+GUIDES.memory = { pages: [
+  // the title
+  S => { const { bong, teo } = memoryTable(S); [bong, teo].forEach((a, i) => { S.mood(a, 0, 'happy'); S.do(a, .5 + i * .3, 'wave', 2); }); S.shot([2.6, 2.4, 4], [0, .6, 0]); S.cam(.3, 3, [1.4, 1.8, 2.6], [0, .5, 0]); S.at(3.6, () => { }); },
+  // step 1: turn over two cards (an apple and a fish: not the same, so they turn back)
+  S => {
+    const { cards, bong, teo } = memoryTable(S);
+    S.shot([.4, 2.2, 2.4], [0, .5, 0]);
+    S.do(bong, .4, 'point', 1); flipCard(S, cards[0], .9);
+    S.do(bong, 2, 'point', 1); flipCard(S, cards[1], 2.4);
+    S.mood(bong, 3.4, 'o'); S.mood(teo, 3.4, 'o');
+    flipCard(S, cards[0], 4.4, false); flipCard(S, cards[1], 4.4, false);
+    S.cam(.4, 2, [1.2, 1.7, 1.3], [-.1, .5, 0]);
+    S.mood(bong, 5, 'smile'); S.at(5.6, () => { });
+  },
+  // step 2: find the pairs, and remember where they are (the two apples stay up)
+  S => {
+    const { cards, bong, teo } = memoryTable(S);
+    S.shot([.4, 2.2, 2.4], [0, .5, 0]);
+    S.do(bong, .4, 'point', 1); flipCard(S, cards[0], .9);
+    S.do(bong, 2, 'point', 1); flipCard(S, cards[3], 2.4);
+    const sp = Pp.sparkle(); S.add(sp, -.3, .6, 0); S.show(sp, 3.1);
+    [cards[0], cards[3]].forEach(c => S.tw(3.2, .6, (k, first) => { if (first) c.userData.y0 = c.position.y; c.position.y = c.userData.y0 + Math.sin(k * PI) * .15; }));
+    S.mood(bong, 3.2, 'happy'); S.do(bong, 3.6, 'cheer', 1.8); S.do(teo, 3.8, 'cheer', 1.6);
+    S.cam(.4, 2, [1.2, 1.7, 1.3], [-.2, .5, 0]);
+    S.at(5.8, () => { });
+  },
+  // your turn
+  S => { const { bong, teo } = memoryTable(S); [bong, teo].forEach(a => { S.mood(a, 0, 'happy'); S.face(a, .2, [0, 6]); S.do(a, .6, 'wave', 2.4); }); S.shot([0, 1.6, 4.4], [0, .6, 0]); S.cam(.2, 2.4, [0, 1.3, 3.4], [0, .6, 0]); S.at(3.2, () => { }); }
+],
+  demo: {
+    async play(D) {
+      await D.find('.mem');
+      const cs = D.all('.mem'), a = cs[0], miss = cs.find(c => c !== a && c._v !== a._v), pair = cs.find(c => c !== a && c._v === a._v);
+      await D.say('Watch! Tap a card to turn it over.', 'Xem nhé! Chạm vào một thẻ để lật lên.', D.tap(a));
+      await D.say('Now tap another card.', 'Giờ chạm thẻ khác.', D.tap(miss));
+      await D.wait(700);
+      await D.say('Not the same, so they turn back. Remember where they are!', 'Không giống nhau nên thẻ úp lại. Nhớ chỗ của chúng nhé!');
+      await D.say('This one again…', 'Lại thẻ này…', D.tap(a));
+      await D.say('…and its friend!', '…và bạn của nó!', D.tap(pair));
+      await D.wait(700);
+      await D.say('The same! A pair stays open.', 'Giống nhau! Cặp thẻ được mở luôn.');
+    },
+    async turn(D) {
+      const left = D.all('.mem:not(.flip)'); if (left[0]) D.point(left[0]);
+      if (await D.until(() => D.taps >= 2, 20000)) await D.wait(1200);
+    }
+  }
+};

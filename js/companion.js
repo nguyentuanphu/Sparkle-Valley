@@ -2,7 +2,8 @@
 // dragon. It flies just behind the child's shoulder, bobbing and flapping, turns the way the child goes, and carries the
 // chapter's lantern after it is found (profile.lanterns.carrying). One per child playing; rebuilt when they change.
 // (story chapter 2) Its new trick, lighting the way: lead(h, point) sends it to fly over a spot with a warm light round
-// it, so an under-5 can follow it (profile.lanterns.tricks lists the tricks learned).
+// it, so an under-5 can follow it (profile.lanterns.tricks lists the tricks learned). Chapter 3's trick, flying higher:
+// lead(h, { ..., high: true }) flies up high while still far away, as if spotting the lantern from the sky.
 import { THREE, P, merge, toonVC, glow } from './gfx.js';
 import { buildLantern } from './dinh.js';
 
@@ -70,7 +71,7 @@ export function createCompanions(G) {
       _t.set(h.pos.x - Math.sin(yaw) * .9 + Math.cos(yaw) * .75 * side, h.pos.y + 1.9 + Math.sin(t * 2.2 + h.i) * .12, h.pos.z - Math.cos(yaw) * .9 - Math.sin(yaw) * .75 * side);
       // lighting the way: it flies on ahead over the spot (a little ahead of the child while far away, so it stays in view)
       if (c.lead) { const dx = c.lead.x - h.pos.x, dz = c.lead.z - h.pos.z, d = Math.hypot(dx, dz), k = d > 9 ? 6 / d : 1;
-        _t.set(h.pos.x + dx * k, (k < 1 ? h.pos.y + 2.2 : c.lead.y) + Math.sin(t * 2.2) * .15, h.pos.z + dz * k); }
+        _t.set(h.pos.x + dx * k, (k < 1 ? h.pos.y + (c.lead.high ? 6 : 2.2) : c.lead.y) + Math.sin(t * 2.2) * .15, h.pos.z + dz * k); }
       c.beam.visible = !!c.lead; if (c.lead) { c.beam.scale.setScalar(2 + Math.sin(t * 4) * .3); c.beam.material.opacity = .65 + Math.sin(t * 4) * .2; }
       o.position.y -= c.off || 0; c.off = 0; // (a trick's lift is taken off first, so it never builds up)
       if (o.position.distanceTo(_t) > 25) o.position.copy(_t); // after a jump across the map
