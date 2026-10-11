@@ -63,3 +63,4 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - (10 Oct AEST, evening) The start-up speed ratchet (`worldMs` in `tests/perf-baseline.json`): re-measure on today's slower test machine and set it to r56's median (6600 ms; ten second starts each side by side, T2 (r58) median 6850 ms), still +25 % allowed.
 - (11 Oct AEST) Round T2 (built as r57, full suite 86/86): push "not yet"; deploy "not yet". The Google Drive mirror and the voice relay (TURN): both set up (no more reminders).
 - (11 Oct AEST) "Yes, push" for T2. The version clash with the Play round: the other round keeps r57, T2 becomes r58. T3 is one release (built in two steps: Vũng Tàu and the mountains, then the plots), "go with the plan".
+- (11 Oct AEST) r59 (T3, full suite 90/90): "yes, deploy" for T2 (r58) and T3 (r59) together.
