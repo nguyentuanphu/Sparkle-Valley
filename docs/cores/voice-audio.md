@@ -66,3 +66,9 @@ device).
   asked first ("ask user to allow download over mobile, wifi should automatically"). A device that can't tell (iPhone,
   iPad) is asked too; a computer counts as Wi-Fi. The core pack downloads by itself first, not inside the game's
   install files.
+- Check-ins (11 Oct): while working through a list, check the board, the branches and the voice issues every 5 minutes and push when checks pass; paused when waiting for the owner's go, and stopped by the owner at 9:41 am AEST, 11 Oct, until further notice.
+
+## Progress notes
+- **11 Oct, 10:36 am AEST, `claude/determined-brown-k9esi5` at 4521090** (voice pack by area, with main r56 merged in; 816 new lines recorded with Azure, 0 missing, core 7.0 MB en / 7.0 MB vi): full suite 88/88 passed, none skipped. Before it: boot, voice, voicepack, voicecover, voicearea, welcomevoice, viwords, simple, quiet, songs, iphone, perf passed.
+- **11 Oct, `core/voice-audio` at 9eefe7c** (#39 rain merged with the fade-out fix and the new `rain` check; Hội An and Vũng Tàu in `VN_AREAS`): voice, voicepack, welcomevoice, songs, quiet, rain, iphone, simple, perf passed; full suite not run on this branch (its changes are `js/audio.js`, `js/weather.js`, `js/content/songs.js` and the `rain` check).
+- **#35** (`bugfix/voice-audio-35`, robot): iphone, simple, voice, voicepack, welcomevoice, quiet, songs passed; needs a real iPhone tap once live; leave out `.bugfix/result.md` when merging.
