@@ -49,6 +49,9 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
 ## Owner's decisions to keep
 - 11 Oct, 3 pm AEDT: next task (watch the bug robot and workflows on r60; #36 beyond step 5 only with a go, after
   measuring on a real phone and tablet) waits until r60 is on `main` with `docs/cores/LOG-r60.md`; `main` was r59.
+- (11 Oct, 5:30 pm AEDT) Go for the 4-part plan after r60: the GitHub Pages workflow only by hand; the bug robot started
+  once by hand on r60 to test it; the `startup` check's time limits follow the machine's measured speed in the same run
+  (never by raising the limits); the owner reads #36's real phone and tablet times in Studio; no #36 game changes.
 - Analytics per device and per child, with first names, device and browser, city and country (round L).
 - green dot Playing now / grey dot Offline per device in Studio (round O).
 - GitHub and Netlify are separate steps: “yes, push” then “yes, deploy”.
