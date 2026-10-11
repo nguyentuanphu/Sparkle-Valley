@@ -86,3 +86,4 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - (11 Oct AEDT, 10:45 pm) r62 (T4a) report, full suite 99/100 (`startup` red as on main r61): owner said "not yet" to deploy; round-t stays pushed, nothing merged into main.
 - (11 Oct AEDT, 11:57 pm) "Yes, deploy" for r62 (Round T4a): round-t merged into main by pull request.
 - (12 Oct AEDT, 12:05 am) r62 live on Netlify (pull request #62). The AI review did not finish twice (out of usage); the owner said merge without it.
+- (12 Oct AEDT, about 2:30 am) Owner to the Play chat: "push, check other branches and deploy altogether", then "this chat does it now" (act as Release for one round). r63 = live r62 + core/play, core/kid-ui, core/voice-audio, core/studio, core/online on `claude/clever-faraday-w5vqs9`; full suite 103/104 (`startup` red, as on live r62).
