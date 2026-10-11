@@ -239,7 +239,8 @@ register({
 // device (shuffled from the game's own code); players take turns; a pair scores and that player goes again; the most
 // pairs wins. Every flip is one move, so everyone sees every card turn over.
 async function memoryOnline(api) {
-  const O = api.online, n = O.names.length, pairs = n > 2 ? 8 : 6, r = stream('memory/' + O.seed);
+  // (r63, owner: the children choose how hard it is) the level the inviter picked sets the pairs, as when playing alone
+  const O = api.online, n = O.names.length, pairs = Math.max([3, 4, 6, 6, 8][Math.min(4, Math.max(1, api.level || 1) - 1)], n > 2 ? 6 : 3), r = stream('memory/' + O.seed);
   const faces = r.shuffle([...ANIMALS, ...FRUIT]).slice(0, pairs), deck = r.shuffle([...faces, ...faces]);
   const score = O.names.map(() => 0);
   const head = el('div', 'rps-room'), grid = el('div', 'mem-grid'); grid.style.setProperty('--cols', 4);
