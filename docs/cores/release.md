@@ -86,3 +86,4 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - (11 Oct AEDT, 10:45 pm) r62 (T4a) report, full suite 99/100 (`startup` red as on main r61): owner said "not yet" to deploy; round-t stays pushed, nothing merged into main.
 - (11 Oct AEDT, 11:57 pm) "Yes, deploy" for r62 (Round T4a): round-t merged into main by pull request.
 - (12 Oct AEDT, 12:05 am) r62 live on Netlify (pull request #62). The AI review did not finish twice (out of usage); the owner said merge without it.
+- (12 Oct AEDT) r63 bug round (owner, from iPhone screenshots), fixed by Release in this chat: remove the Pad map's Back/Next buttons; the Hà Nội gate is blocked; the voice bar goes past 100%; friends' games are children only (no computer players, e.g. Tiến Lên) and the children choose the level (Easy/Medium/Hard) and Caro's board size (9, 13, 15, 19); the microphone starts off on every device and the iPhone microphone does not react to a tap.
