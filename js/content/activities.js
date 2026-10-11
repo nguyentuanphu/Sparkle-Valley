@@ -49,18 +49,19 @@ export function gameInfo(id) {
 export const gamesIn = (games, area, little) => Object.keys(games).map(gameInfo).filter(g => g.area === area && !g.hidden && (!little || g.ageMin < 5));
 
 // stories by where they come from, places by where they are
+// (bug #30, owner) China and India always come last: after "Our own stories" and after Australia
 export const TALE_AREAS = [
   { key: '🇻🇳', icon: '🇻🇳', name: () => T('Stories from Vietnam', 'Truyện Việt Nam') },
   { key: '🇦🇺', icon: '🇦🇺', name: () => T('Stories from Australia', 'Truyện Úc') },
+  { key: '💛', icon: '💛', name: () => T('Our own stories', 'Truyện nhà mình') },
   { key: '🇨🇳', icon: '🇨🇳', name: () => T('Stories from China', 'Truyện Trung Quốc') },
-  { key: '🇮🇳', icon: '🇮🇳', name: () => T('Stories from India', 'Truyện Ấn Độ') },
-  { key: '💛', icon: '💛', name: () => T('Our own stories', 'Truyện nhà mình') }
+  { key: '🇮🇳', icon: '🇮🇳', name: () => T('Stories from India', 'Truyện Ấn Độ') }
 ];
 export const PLACE_AREAS = [
   { key: 'home', icon: '🏡', name: () => T('Around the farm', 'Quanh nông trại') },
   { key: 'vn', icon: '🏮', name: () => T('Vietnam', 'Việt Nam') },
-  { key: 'asia', icon: '🐼', name: () => T('China and India', 'Trung Hoa và Ấn Độ') },
-  { key: 'au', icon: '🦘', name: () => T('Australia', 'Nước Úc') }
+  { key: 'au', icon: '🦘', name: () => T('Australia', 'Nước Úc') },
+  { key: 'asia', icon: '🐼', name: () => T('China and India', 'Trung Hoa và Ấn Độ') }
 ];
 
 // a page of the path never holds more than this many stops for an under-5 (the brief: 4–7 at once)

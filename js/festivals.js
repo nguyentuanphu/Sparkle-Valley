@@ -17,7 +17,7 @@ import { T } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
 import { settings, saveProfiles, farm, saveFarm, reduceMotion } from './state.js';
-import { heightAt, WATER, VILLAGE, CHINA, INDIA, AUSSIE, TOWN, MARKET, HOME, CITIES } from './world.js';
+import { heightAt, WATER, VILLAGE, CHINA, INDIA, AUSSIE, TOWN, MARKET, HOME, HOIAN, CITIES } from './world.js';
 import { FEAST } from './data.js';
 import { FESTCAL, DAY_PLAN, BUILDUP, GROUPS } from './content/festcal.js';
 import { lunarDay, easter, nthWeekday } from './lunar.js';
@@ -81,7 +81,8 @@ const todayAt = (hm, now = new Date()) => { const [h, m] = hm.split(':').map(Num
 export const showTime = little => { const p = DAY_PLAN.find(x => x.what === 'show'); return (little && p.little) || p.at; };
 
 // ---------- where ----------
-const PLACES = () => ({ village: VILLAGE, china: CHINA, india: INDIA, aussie: AUSSIE, town: TOWN, market: MARKET, home: HOME, ...Object.fromEntries(CITIES.map(c => [c.id, c])) });
+// (round T) Hội An is a site for now (a circle, no streets): it gets the ring of pieces round its middle; Vũng Tàu is a city
+const PLACES = () => ({ village: VILLAGE, china: CHINA, india: INDIA, aussie: AUSSIE, town: TOWN, market: MARKET, home: HOME, hoian: HOIAN, ...Object.fromEntries(CITIES.map(c => [c.id, c])) });
 const centre = o => o.x != null ? { x: o.x, z: o.z } : { x: (o.x0 + o.x1) / 2, z: (o.z0 + o.z1) / 2 };
 
 // ---------- decorations: the valley's own 3D things ----------

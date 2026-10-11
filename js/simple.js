@@ -71,7 +71,7 @@ export function createSimple(G) {
   function areasOf(t) {
     const p = hero().profile, lt = little();
     if (t === 'tales') {
-      const tales = G.TALES || [], known = TALE_AREAS.slice(0, 4).map(a => a.key);
+      const tales = G.TALES || [], known = TALE_AREAS.filter(a => a.key !== '💛').map(a => a.key);
       return TALE_AREAS.map(a => ({ area: a, items: tales.filter(x => a.key === '💛' ? !known.includes(x.flag) : x.flag === a.key)
         .map(x => ({ kind: 'tale', key: x.id, icon: firstPic(x.pages[0][0]), badge: x.flag, name: x.title(), voice: both(x.title), stars: (p.tales || {})[x.id] ? 1 : 0, max: 1 })) }));
     }
