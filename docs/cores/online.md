@@ -46,6 +46,9 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
   late is stopped, never a second microphone. Every outcome of a tap is said on screen, EN and VI (asking, on, blocked
   with Settings → Safari → Microphone, no microphone, iPhone or iPad older than iOS 14.3), so the owner can see on a real
   iPhone what happened. Checked by `iphone`; needs a real iPhone try once live.
+- **Wait for r60 (owner, 11 Oct, 3 pm AEDT):** the r60 brief (check the map-version card and #55 on the live r60, the
+  friends row's Join button with Kid UI) waits until Release publishes r60. At that time `main` and the live site were
+  r59 without `core/online`, and `docs/cores/LOG-r60.md` did not exist. Nothing is changed until then.
 
 ## Privacy round (owner, 9 Oct, round R privacy)
 - **Online play is off until a grown-up turns it on** (`settings.online`, default `false`, also on devices that played
