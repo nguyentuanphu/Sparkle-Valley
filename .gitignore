@@ -17,3 +17,10 @@ studio/dist/
 studio/.build/
 .claude/worktrees/
 .bugfix/
+marketing/source/frames5/
+marketing/source/out5/
+marketing/source/music5-*.wav
+marketing/source/log5-*.txt
+marketing/source/preview5-*.jpg
+marketing/source/make5-*.log
+tests/ads-*.mjs
