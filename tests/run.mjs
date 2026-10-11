@@ -447,9 +447,24 @@ await check('phone', async () => {
       await P.page.evaluate(() => { document.querySelectorAll('.modal, .hub, .pad, .howto, .theatre, .gl, .dialog, .storybook, .vc-pop, .wardrobe').forEach(e => e.remove()); __sv.paused = false; __sv.closeUp = null; });
     }
   }
+  // (Online's request, 11 Oct) a friend's row: the Join button never lies over the friend's status, and every button is
+  // 44 px or more, on the computer, the phone and the tablet
+  for (const [tag, Q] of [['desktop', D], ['phone', M], ['tablet', Tb]]) {
+    const fr = await Q.page.evaluate(async () => {
+      const { settings } = await import('/js/state.js'), { Net } = await import('/js/net.js');
+      settings.online = true; settings.friendsOn = true; settings.lang = 'vi'; settings.friends = [{ code: 'KIWI-2468', name: 'Bé Bin Nguyễn' }];   // (as reported: Vietnamese, a long status)
+      Net.friends.status['KIWI-2468'] = { online: true, seen: Date.now(), name: 'Bé Bin Nguyễn', room: 'ROOM42', where: 'Thành phố Hồ Chí Minh' };
+      const box = document.createElement('div'); box.className = 'modal pad'; box.innerHTML = '<div class="card"><div class="tbody"></div></div>'; document.body.appendChild(box);
+      const body = box.querySelector('.tbody'); __sv.drawOnlinePanel(body, () => { }); await new Promise(r => setTimeout(r, 200));
+      const row = body.querySelector('.flist .frow'), st = row.querySelector('.fst').getBoundingClientRect(), btns = [...row.querySelectorAll('.btn')].map(e => e.getBoundingClientRect());
+      const out = { join: !!row.querySelector('[data-joinf]'), over: btns.filter(q => st.left < q.right && q.left < st.right && st.top < q.bottom && q.top < st.bottom).length, small: btns.filter(q => q.height < 44).length };
+      box.remove(); return out;
+    });
+    if (!fr.join || fr.over || fr.small) bad.push(`${tag}: friends row: Join shown ${fr.join}, buttons over the status ${fr.over}, under 44 px ${fr.small}`);
+  }
   const errs = D.errors.concat(M.errors, Tb.errors); await D.ctx.close(); await M.ctx.close(); await Tb.ctx.close();
   ok(!bad.length && !errs.length, JSON.stringify({ bad, errs }));
-  return `${SCREENS.length} screens checked on desktop, phone and tablet`;
+  return `${SCREENS.length} screens checked on desktop, phone and tablet; a friend's Join button clear of the status`;
 });
 
 await check('solid', async () => {

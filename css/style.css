@@ -2299,6 +2299,8 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 @media (prefers-reduced-motion: reduce) { .mapcloud.puff { animation-duration: .01s; } }
 /* (Online's request, 11 Oct) on a phone a friend's row puts the name and status on their own line and the Join, Invite
    and remove buttons on a line under it, so the Join button never lies over the status */
+.flist .frow .fwho { justify-content: flex-start; }
+.flist .frow .fwho > span { flex: 0 0 auto; }   /* (the drawn face sits beside the name, on every screen) */
 @media (max-width: 560px) {
   .flist .frow { flex-wrap: wrap; justify-content: flex-end; }
   .flist .frow .fwho { flex: 1 1 100%; }
