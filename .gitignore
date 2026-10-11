@@ -24,3 +24,5 @@ marketing/source/log5-*.txt
 marketing/source/preview5-*.jpg
 marketing/source/make5-*.log
 tests/ads-*.mjs
+marketing/source/filmtest*.mjs
+marketing/source/runvalley.log
