@@ -72,7 +72,7 @@ export async function film({ w, h, dpr = 1, lang, dir, screen = 'valley', mode =
 export async function cine(page, spec) {
   await page.evaluate(spec => {
     const G = window.__sv, R = G.renderer;
-    if (!R.__cineHooked) { const orig = R.render.bind(R); R.render = (s, c) => { if (window.__cine) try { document.querySelectorAll('.storybook, .region-banner, .banner, .vc-pop, .toast, .modal, .dialog').forEach(e => e.remove()); G.paused = false; window.__cine(c); } catch (e) { } return orig(s, c); }; R.__cineHooked = true; }
+    if (!R.__cineHooked) { const orig = R.render.bind(R); R.render = (s, c) => { if (window.__cine) try { document.querySelectorAll('.theatre, .storybook, .region-banner, .banner, .vc-pop, .toast, .modal, .dialog').forEach(e => e.remove()); G.paused = false; window.__cine(c); } catch (e) { } return orig(s, c); }; R.__cineHooked = true; }
     if (!spec) { window.__cine = null; document.querySelector('#huds').style.visibility = ''; return; }
     document.querySelector('#huds').style.visibility = spec.hud ? '' : 'hidden';
     const g = (x, z) => G.world.groundAt(x, z), t0 = performance.now(), h = G.heroes[0];
