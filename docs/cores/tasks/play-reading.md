@@ -24,8 +24,15 @@ The first Play chat is busy on `core/play`, so this brief is done by a **second 
 2. They are **our own games**, inspired by the kinds of early-reading activity Khan Academy Kids has (tracing, letter
    sounds, blending, rhyme, sight words, read-along). Never copy their names, characters, pictures, sounds or screens:
    Sparkle Valley's own drawings (`js/art.js`), villagers (Ông Cú, Bà Năm, the companion) and voices.
-3. English and Vietnamese for everything (Vietnamese is not a translation of English phonics: use real Vietnamese
-   reading steps, letters with marks, tones, vần, tiếng).
+3. **Every game in both English and Vietnamese, so Australian children can play them too** (owner, 11 Oct, 8 pm AEDT).
+   The game's language setting picks which one a child learns to read; each game is a full reading game in each
+   language, not a translation:
+   - **English mode is Australian English**, for children learning to read at school in Australia: Australian spelling
+     and words (colour, mum, footy, ute, kangaroo, lolly; never color, mom, candy), the letter Z said "zed", the
+     recorded Australian voices the pack already uses (`en-AU` Natasha, William, Freya), and the order of sounds
+     taught in Australian early years (s a t p i n first) for Sound Pond and Word Builder.
+   - **Vietnamese mode** uses real Vietnamese reading steps: letters with their marks, the six tones, vần, tiếng.
+   - Both lists are checked by the new `reading` check (every word has both languages and a picture).
 
 ## What is there now (check it first, do not duplicate)
 - The area "Letters and words" (`words` in `js/content/activities.js`): Letter Hunt (`letters`, `js/games/thinking.js`),
