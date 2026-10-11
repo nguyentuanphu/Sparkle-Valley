@@ -52,6 +52,9 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
 - (11 Oct, 5:30 pm AEDT) Go for the 4-part plan after r60: the GitHub Pages workflow only by hand; the bug robot started
   once by hand on r60 to test it; the `startup` check's time limits follow the machine's measured speed in the same run
   (never by raising the limits); the owner reads #36's real phone and tablet times in Studio; no #36 game changes.
+- (11 Oct, 7:20 pm AEDT) "You can deploy by using this chat for now until I say no, and then you can proceed on the
+  tasks": this chat may merge its own branch into `main` (Netlify publishes) until the owner says no; then it carries on
+  with its waiting tasks (bug robot's first instant run, `startup` ratchet, Studio's start-up times, #36 numbers).
 - Analytics per device and per child, with first names, device and browser, city and country (round L).
 - green dot Playing now / grey dot Offline per device in Studio (round O).
 - GitHub and Netlify are separate steps: “yes, push” then “yes, deploy”.
