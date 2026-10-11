@@ -70,3 +70,11 @@ Sleep", "A Day at the Beach"; Vietnamese "Chú Mèo Con", "Đi Chợ Với Bà",
   is on": the surprise-gift and passport toasts came at the same moment, as already noted in `docs/cores/play.md`),
   then passed twice in a row on this branch (6:10 am AEDT), and passed twice on a clean `main` copy: a timing flake, not
   from the reading games. `reading`, `voicecover`, `perf`, `phone`, `noemoji`, `emoji`, `arch` passed.
+- **After merging `main` r63 (6fa1b6fe; merge 31c88886, voice list rebuilt from both sides' recordings, coverage
+  clean): full suite 12 Oct, 9:00 am AEDT, 104 of 105 passed** (skipped as before: multiplayer, meet, netgames,
+  together, cloud, knock, mapver; `hoilang` and `reading` passed). Failed: `startup` only, on time to the title. Run
+  again twice each on this branch and on a clean `main` r63 copy (12 Oct, about 9:30 am AEDT): `main` fails the same
+  way (title 1711 and 1755 ms against about 1170), this branch 1786 ms (one slow first run, 2444 ms); first download
+  982 KB here against 979 KB on `main` (under the 1035 KB limit on both). So the trial adds 3 KB at start (the voice
+  list), nothing else.
+
