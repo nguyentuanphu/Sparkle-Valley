@@ -78,6 +78,13 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
 - Films on tall phone screens (owner, 10 Oct: "fix the screen issue"): the film camera opens up on a narrow screen so it shows as much across as a 16:9 screen (at most 75° top to bottom), so nothing at the sides is cut off.
 - Kid UI chat, 11 Oct (owner, AEDT): "Go, also bring the films": the films branch is merged into `core/kid-ui` with the robot's fixes.
 
+- Round T4b, finding your way (owner, 11 Oct AEDT: "Go"; brief `docs/cores/tasks/kid-ui-t4b.md` on `round-t`):
+  - a picture signpost at every junction of two asphalt or dirt roads (`js/signposts.js`): one board per road leaving it, naming where that road leads (the town it passes or ends at, or the town the next side road goes to), the child's language first;
+  - name tags over places within 40 m (`js/nametags.js`): at most 4, the nearest first, never covering each other, none in calm mode or films;
+  - the Pad map drawn from the map data (land by height, rivers, ponds, roads in their region colours), with clouds over places not yet visited that lift with one puff;
+  - the Memory Villages and Hội An join the place lists by their ids (`withSitePlaces` in `js/content/activities.js`).
+- r60 (11 Oct AEDT): `main` already gives the speech box its own `dlg-rise` animation, so the item 3 commit's `rise-dialog` was dropped when merging; the `mapnames` check only tests that the box starts in the middle.
+
 ## Progress notes
 - **11 Oct 2026, 11:40 am AEDT, `core/kid-ui`:** the robot's Kid UI fixes merged: #27 (`bugfix/kid-ui-27`, PR #40), #28 (#42), #31 (#44), #41 (#46), #30 (#48), #32 (#53), plus the films branch.
   - Clashes settled:
