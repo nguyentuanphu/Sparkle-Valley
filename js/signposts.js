@@ -109,7 +109,7 @@ export function createSignposts(G) {
   // the posts: a round wooden post with a little roof cap, all merged into one mesh
   const parts = [];
   for (const s of posts) {
-    const h = 1.5 + s.boards.length * .62;
+    const h = 1.95 + s.boards.length * .6;   // (the boards start above a child's head: only the post is solid, js/solids.js)
     parts.push(P(new THREE.CylinderGeometry(.13, .16, h, 8), '#8a5a34', [s.x, s.y + h / 2, s.z]));
     parts.push(P(new THREE.ConeGeometry(.3, .28, 8), '#c0392b', [s.x, s.y + h + .12, s.z]));
     parts.push(P(new THREE.CylinderGeometry(.3, .34, .16, 8), '#6e4a2c', [s.x, s.y + .08, s.z]));
@@ -140,7 +140,7 @@ export function createSignposts(G) {
   const pos = [], uv = [], idx = [];
   let k = 0;
   for (const s of posts) s.boards.forEach((b, j) => {
-    const y0 = s.y + 1.2 + j * .62, ca = Math.cos(b.angle), sa = Math.sin(b.angle), cell = all.indexOf(b), u0 = (cell % COLS) * CW / ATLAS, u1 = u0 + CW / ATLAS;
+    const y0 = s.y + 1.7 + j * .6, ca = Math.cos(b.angle), sa = Math.sin(b.angle), cell = all.indexOf(b), u0 = (cell % COLS) * CW / ATLAS, u1 = u0 + CW / ATLAS;
     const v1 = 1 - Math.floor(cell / COLS) * CH / cv.height, v0 = v1 - CH / cv.height, tipU = u0 + 2 / ATLAS, tipV = v0 + 2 / cv.height;
     const at = (l, h, side) => [s.x + ca * l - sa * side * .03, y0 + h, s.z + sa * l + ca * side * .03];
     for (const side of [1, -1]) {
