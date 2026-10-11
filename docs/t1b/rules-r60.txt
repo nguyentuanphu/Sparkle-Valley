@@ -1,0 +1,126 @@
+42 stalls, kiosks and shop fronts, 5 walking sellers; 97 problems
+
+market: bahai (stall), cothu (pole), olai (stall), chunam (stall), chutam (stall), cout (stall), k_banhcuon (kiosk), k_banhbo (kiosk), musiccorner (stall), stall (stall), shop_clothes (stall); walks: hk_h_bunrieu
+  STALL-001 "bahai" (market) at 179.0,109.8 is -0.6 m from the edge of a road or street (1.5 m or more)
+  STALL-001 "cothu" (market) at 184.5,118.6 is -0.6 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "cothu" (market) at 184.5,118.6 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "cothu" (market) at 184.5,118.6 does not face its street
+  STALL-001 "olai" (market) at 194.0,109.8 is -0.6 m from the edge of a road or street (1.5 m or more)
+  STALL-001 "chunam" (market) at 200.0,118.2 is -0.6 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "chunam" (market) at 200.0,118.2 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "chunam" (market) at 200.0,118.2 does not face its street
+  STALL-001 "chutam" (market) at 210.0,109.8 is -0.6 m from the edge of a road or street (1.5 m or more)
+  STALL-001 "cout" (market) at 216.0,118.2 is -0.6 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "cout" (market) at 216.0,118.2 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "cout" (market) at 216.0,118.2 does not face its street
+  STALL-001 "k_banhcuon" (market) at 185.5,109.0 is 0.3 m from the edge of a road or street (1.5 m or more)
+  STALL-001 "k_banhcuon" (market) at 185.5,109.0 is 1.7 m from a building at 187.0,104.0 (3 m or more)
+  STALL-001 "k_banhbo" (market) at 188.5,119.0 is 0.3 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "k_banhbo" (market) at 188.5,119.0 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "k_banhbo" (market) at 188.5,119.0 does not face its street
+  STALL-001 "musiccorner" (market) at 205.0,120.0 is 1.3 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "musiccorner" (market) at 205.0,120.0 is on the wrong side of the street (the row is on the other side)
+  STALL-001 "stall" (market) at 176.0,109.5 is -0.2 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "shop_clothes" (market) at 203.6,130.7 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "shop_clothes" (market) at 203.6,130.7 does not face its street
+  STALL-002 "bahai" and "stall" (market) are 0.1 m apart (1.2 m or more)
+
+aussie: gazza (van), robbo (tent), kelly (shop), davo (shop), bev (shop), k_vanilla (kiosk), k_pavlova (kiosk)
+  STALL-002 "gazza" (aussie) at -86.0,-60.8: its tap point is on a road (-0.1 m)
+  STALL-001 "gazza" (aussie) at -86.0,-60.8 is -0.5 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "robbo" (aussie) at -97.0,-55.2 is out of the row (3.3 m behind it, 21.0 m along the street)
+  STALL-002 "kelly" (aussie) at -119.0,-70.4: its tap point is on a road (-0.5 m)
+  STALL-002 "davo" (aussie) at -109.0,-70.4: its tap point is on a road (-0.7 m)
+  STALL-002 "bev" (aussie) at -99.0,-70.4: its tap point is on a road (-0.7 m)
+  STALL-003 "k_vanilla" (aussie) at -116.5,-57.0 is out of the row (2.3 m behind it, 1.5 m along the street)
+  STALL-003 "k_pavlova" (aussie) at -112.0,-57.0 is out of the row (2.3 m behind it, 6.0 m along the street)
+
+hanoi: k_bunca (kiosk), k_kemtt (kiosk); walks: hk_h_bunoc
+  STALL-002 "k_bunca" (hanoi) at 157.6,-126.5: its tap point is on a road (-1.0 m)
+  STALL-001 "k_bunca" (hanoi) at 157.6,-126.5 is 0.7 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "k_bunca" (hanoi) at 157.6,-126.5 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "k_bunca" (hanoi) at 157.6,-126.5 does not face its street
+  STALL-002 "k_kemtt" (hanoi) at 148.4,-126.5: its tap point is on a road (-1.0 m)
+  STALL-001 "k_kemtt" (hanoi) at 148.4,-126.5 is 0.7 m from the edge of a road or street (1.5 m or more)
+  STALL-004 "hk_h_bunoc" (hanoi) walks on a road at 151.2,-125.0
+
+bacninh: k_phuthe (kiosk), k_dongho (kiosk)
+  STALL-002 "k_phuthe" (bacninh) at 187.5,-167.4: its tap point is on a road (-1.0 m)
+  STALL-001 "k_phuthe" (bacninh) at 187.5,-167.4 is 0.7 m from the edge of a road or street (1.5 m or more)
+  STALL-002 "k_dongho" (bacninh) at 187.5,-176.6: its tap point is on a road (-1.0 m)
+  STALL-001 "k_dongho" (bacninh) at 187.5,-176.6 is 0.7 m from the edge of a road or street (1.5 m or more)
+  STALL-001 "k_dongho" (bacninh) at 187.5,-176.6 is 2.8 m from a building at 193.5,-182.0 (3 m or more)
+  STALL-003 "k_dongho" (bacninh) at 187.5,-176.6 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "k_dongho" (bacninh) at 187.5,-176.6 does not face its street
+
+danang: k_miquang (kiosk), k_banhtrang (kiosk)
+  STALL-002 "k_miquang" (danang) at 148.4,0.5: its tap point is on a road (-1.0 m)
+  STALL-001 "k_miquang" (danang) at 148.4,0.5 is 0.7 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "k_miquang" (danang) at 148.4,0.5 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "k_miquang" (danang) at 148.4,0.5 does not face its street
+  STALL-002 "k_banhtrang" (danang) at 157.6,0.5: its tap point is on a road (-1.0 m)
+  STALL-001 "k_banhtrang" (danang) at 157.6,0.5 is 0.7 m from the edge of a road or street (1.5 m or more)
+
+saigon: k_comtam (kiosk), k_banhxeo (kiosk); walks: hk_h_tauhu
+  STALL-002 "k_comtam" (saigon) at 148.4,144.5: its tap point is on a road (-1.0 m)
+  STALL-001 "k_comtam" (saigon) at 148.4,144.5 is 0.7 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "k_comtam" (saigon) at 148.4,144.5 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "k_comtam" (saigon) at 148.4,144.5 does not face its street
+  STALL-002 "k_banhxeo" (saigon) at 157.6,144.5: its tap point is on a road (-1.0 m)
+  STALL-001 "k_banhxeo" (saigon) at 157.6,144.5 is 0.7 m from the edge of a road or street (1.5 m or more)
+  STALL-004 "hk_h_tauhu" (saigon) walks on a road at 154.8,143.0
+
+vungtau: k_banhkhot (kiosk), k_dua (kiosk)
+  STALL-002 "k_banhkhot" (vungtau) at 196.5,155.6: its tap point is behind it, away from the street
+  STALL-001 "k_banhkhot" (vungtau) at 196.5,155.6 is 0.7 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "k_banhkhot" (vungtau) at 196.5,155.6 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "k_banhkhot" (vungtau) at 196.5,155.6 does not face its street
+  STALL-002 "k_dua" (vungtau) at 196.5,146.4: its tap point is on a road (-1.0 m)
+  STALL-001 "k_dua" (vungtau) at 196.5,146.4 is 0.7 m from the edge of a road or street (1.5 m or more)
+
+sydney: k_anzac (kiosk), k_fairybread (kiosk)
+  STALL-002 "k_anzac" (sydney) at -136.6,-12.5: its tap point is on a road (-1.0 m)
+  STALL-001 "k_anzac" (sydney) at -136.6,-12.5 is 0.7 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "k_anzac" (sydney) at -136.6,-12.5 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "k_anzac" (sydney) at -136.6,-12.5 does not face its street
+  STALL-002 "k_fairybread" (sydney) at -127.4,-12.5: its tap point is on a road (-1.0 m)
+  STALL-001 "k_fairybread" (sydney) at -127.4,-12.5 is 0.7 m from the edge of a road or street (1.5 m or more)
+
+melbourne: k_babycino (kiosk), k_dimsim (kiosk)
+  STALL-002 "k_babycino" (melbourne) at -136.6,117.5: its tap point is on a road (-1.0 m)
+  STALL-001 "k_babycino" (melbourne) at -136.6,117.5 is 0.7 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "k_babycino" (melbourne) at -136.6,117.5 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "k_babycino" (melbourne) at -136.6,117.5 does not face its street
+  STALL-002 "k_dimsim" (melbourne) at -127.4,117.5: its tap point is on a road (-1.0 m)
+  STALL-001 "k_dimsim" (melbourne) at -127.4,117.5 is 0.7 m from the edge of a road or street (1.5 m or more)
+
+brisbane: k_mango (kiosk), k_lamington (kiosk)
+  STALL-002 "k_mango" (brisbane) at -127.4,-130.5: its tap point is on a road (-1.0 m)
+  STALL-001 "k_mango" (brisbane) at -127.4,-130.5 is 0.7 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "k_mango" (brisbane) at -127.4,-130.5 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "k_mango" (brisbane) at -127.4,-130.5 does not face its street
+  STALL-002 "k_lamington" (brisbane) at -136.6,-130.5: its tap point is on a road (-1.0 m)
+  STALL-001 "k_lamington" (brisbane) at -136.6,-130.5 is 0.7 m from the edge of a road or street (1.5 m or more)
+
+village: k_trongnuoc (kiosk), k_banhduc (kiosk); walks: hk_h_banhda
+  STALL-004 "hk_h_banhda" (village) walks on a road at 188.0,-44.4
+
+town: k_banhkhot (kiosk), k_vegemite (kiosk); walks: hk_h_traicay
+  STALL-001 "k_banhkhot" (town) at -3.0,-20.8 is 1.6 m from a building at -9.5,-16.0 (3 m or more)
+  STALL-001 "k_vegemite" (town) at 1.5,-20.8 is 0.0 m from a building at -2.7,-17.3 (3 m or more)
+
+china: k_tanghulu (kiosk), k_baozi (kiosk)
+  STALL-002 "k_tanghulu" (china) at 101.8,-181.5: its tap point is on a road (-0.4 m)
+  STALL-001 "k_tanghulu" (china) at 101.8,-181.5 is 1.3 m from the edge of a road or street (1.5 m or more)
+  STALL-002 "k_baozi" (china) at 112.2,-181.5: its tap point is on a road (-0.4 m)
+  STALL-001 "k_baozi" (china) at 112.2,-181.5 is 1.3 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "k_baozi" (china) at 112.2,-181.5 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "k_baozi" (china) at 112.2,-181.5 does not face its street
+
+india: k_samosa (kiosk), k_lassi (kiosk)
+  STALL-002 "k_samosa" (india) at -99.2,-181.5: its tap point is on a road (-0.4 m)
+  STALL-001 "k_samosa" (india) at -99.2,-181.5 is 1.3 m from the edge of a road or street (1.5 m or more)
+  STALL-002 "k_lassi" (india) at -88.8,-181.5: its tap point is on a road (-0.4 m)
+  STALL-001 "k_lassi" (india) at -88.8,-181.5 is 1.3 m from the edge of a road or street (1.5 m or more)
+  STALL-003 "k_lassi" (india) at -88.8,-181.5 is on the wrong side of the street (the row is on the other side)
+  STALL-002 "k_lassi" (india) at -88.8,-181.5 does not face its street

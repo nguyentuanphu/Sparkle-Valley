@@ -1,0 +1,314 @@
+[
+ {
+  "place": "market",
+  "id": "v_bahai",
+  "edge": 4.4,
+  "road": "asphalt",
+  "bld": 7,
+  "nb": 6.5
+ },
+ {
+  "place": "market",
+  "id": "v_cothu",
+  "edge": 9.5,
+  "road": "asphalt",
+  "bld": 9.4,
+  "nb": 4
+ },
+ {
+  "place": "market",
+  "id": "v_olai",
+  "edge": 19,
+  "road": "asphalt",
+  "bld": 6.2,
+  "nb": 7.8
+ },
+ {
+  "place": "market",
+  "id": "v_chunam",
+  "edge": 25,
+  "road": "asphalt",
+  "bld": 14.7,
+  "nb": 8.5
+ },
+ {
+  "place": "market",
+  "id": "v_chutam",
+  "edge": 34.9,
+  "road": "asphalt",
+  "bld": 10.9,
+  "nb": 8.5
+ },
+ {
+  "place": "market",
+  "id": "v_cout",
+  "edge": 38.4,
+  "road": "asphalt",
+  "bld": 6.6,
+  "nb": 8.5
+ },
+ {
+  "place": "aussie",
+  "id": "v_kelly",
+  "edge": -0.4,
+  "road": "asphalt",
+  "bld": 3.8,
+  "nb": 8.8
+ },
+ {
+  "place": "aussie",
+  "id": "v_davo",
+  "edge": 6.2,
+  "road": "asphalt",
+  "bld": 3.8,
+  "nb": 8.9
+ },
+ {
+  "place": "aussie",
+  "id": "v_bev",
+  "edge": 16,
+  "road": "asphalt",
+  "bld": 3.8,
+  "nb": 10
+ },
+ {
+  "place": "aussie",
+  "id": "v_gazza",
+  "edge": 0.8,
+  "road": "asphalt",
+  "bld": 1,
+  "nb": 16
+ },
+ {
+  "place": "aussie",
+  "id": "v_robbo",
+  "edge": 15.8,
+  "road": "asphalt",
+  "bld": 8.8,
+  "nb": 12
+ },
+ {
+  "place": "hanoi",
+  "id": "v_k_bunca",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 9.1,
+  "nb": 4.4
+ },
+ {
+  "place": "hanoi",
+  "id": "v_k_kemtt",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 9.1,
+  "nb": 4.4
+ },
+ {
+  "place": "bacninh",
+  "id": "v_k_phuthe",
+  "edge": 0.9,
+  "road": "asphalt",
+  "bld": 8.9,
+  "nb": 4.4
+ },
+ {
+  "place": "bacninh",
+  "id": "v_k_dongho",
+  "edge": 0.9,
+  "road": "asphalt",
+  "bld": 6,
+  "nb": 4.4
+ },
+ {
+  "place": "danang",
+  "id": "v_k_miquang",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 10.1,
+  "nb": 4.4
+ },
+ {
+  "place": "danang",
+  "id": "v_k_banhtrang",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 7.3,
+  "nb": 4.4
+ },
+ {
+  "place": "saigon",
+  "id": "v_k_comtam",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 7.3,
+  "nb": 4.4
+ },
+ {
+  "place": "saigon",
+  "id": "v_k_banhxeo",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 7.3,
+  "nb": 4.4
+ },
+ {
+  "place": "vungtau",
+  "id": "v_k_banhkhot",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 15.8,
+  "nb": 4.4
+ },
+ {
+  "place": "vungtau",
+  "id": "v_k_dua",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 11.6,
+  "nb": 4.4
+ },
+ {
+  "place": "sydney",
+  "id": "v_k_anzac",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 9.1,
+  "nb": 4.4
+ },
+ {
+  "place": "sydney",
+  "id": "v_k_fairybread",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 9.1,
+  "nb": 4.4
+ },
+ {
+  "place": "melbourne",
+  "id": "v_k_babycino",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 9.1,
+  "nb": 4.4
+ },
+ {
+  "place": "melbourne",
+  "id": "v_k_dimsim",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 9.1,
+  "nb": 4.4
+ },
+ {
+  "place": "brisbane",
+  "id": "v_k_mango",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 7.3,
+  "nb": 4.4
+ },
+ {
+  "place": "brisbane",
+  "id": "v_k_lamington",
+  "edge": 1.8,
+  "road": "asphalt",
+  "bld": 7.3,
+  "nb": 4.4
+ },
+ {
+  "place": "village",
+  "id": "v_k_trongnuoc",
+  "edge": 0.3,
+  "road": "dirt",
+  "bld": 8.5,
+  "nb": 4.5
+ },
+ {
+  "place": "village",
+  "id": "v_k_banhduc",
+  "edge": 0.3,
+  "road": "dirt",
+  "bld": 7.1,
+  "nb": 4.5
+ },
+ {
+  "place": "town",
+  "id": "v_k_banhkhot",
+  "edge": 11.6,
+  "road": "asphalt",
+  "bld": 2.5,
+  "nb": 4.5
+ },
+ {
+  "place": "town",
+  "id": "v_k_vegemite",
+  "edge": 15.9,
+  "road": "asphalt",
+  "bld": 2.8,
+  "nb": 4.5
+ },
+ {
+  "place": "china",
+  "id": "v_k_tanghulu",
+  "edge": 1.3,
+  "road": "asphalt",
+  "bld": 7.9,
+  "nb": 5.6
+ },
+ {
+  "place": "china",
+  "id": "v_k_baozi",
+  "edge": 1.3,
+  "road": "asphalt",
+  "bld": 8.7,
+  "nb": 5.6
+ },
+ {
+  "place": "india",
+  "id": "v_k_samosa",
+  "edge": 1.3,
+  "road": "asphalt",
+  "bld": 8,
+  "nb": 5.6
+ },
+ {
+  "place": "india",
+  "id": "v_k_lassi",
+  "edge": 1.3,
+  "road": "asphalt",
+  "bld": 8,
+  "nb": 5.6
+ },
+ {
+  "place": "aussie",
+  "id": "v_k_vanilla",
+  "edge": 2.6,
+  "road": "asphalt",
+  "bld": 12.2,
+  "nb": 4.5
+ },
+ {
+  "place": "aussie",
+  "id": "v_k_pavlova",
+  "edge": 5,
+  "road": "asphalt",
+  "bld": 12.2,
+  "nb": 4.5
+ },
+ {
+  "place": "market",
+  "id": "v_k_banhcuon",
+  "edge": 10.5,
+  "road": "asphalt",
+  "bld": 4.8,
+  "nb": 4.7
+ },
+ {
+  "place": "market",
+  "id": "v_k_banhbo",
+  "edge": 13.5,
+  "road": "asphalt",
+  "bld": 10,
+  "nb": 4
+ }
+]
