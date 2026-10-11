@@ -114,3 +114,16 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
   looked at: phone 390x760, tablet 820x1180, computer 1280x800, EN and VI: Different valley card and friends row;
   microphone asking, blocked and iPhone-too-old messages. New spoken line (not recorded here, no key; on the board for
   Voice & Audio): the Different valley card. The microphone messages are on screen only.
+
+## Left to do (handover, 11 Oct, 2:40 pm AEDT)
+Everything is pushed on `core/online` (last code commit b4d449b8) and marked ready for Release. Hourly check-ins stopped
+by the owner until further notice. Left:
+- **Release:** merge `core/online` (it already holds the robot's PRs #49 and #56; those can be closed after the merge,
+  and issues #37 and #55 closed once live).
+- **Voice & Audio:** record the Different valley card's line (request on the board).
+- **Owner:** try #55 on a real iPhone once live (Friends, tap the microphone; the screen says what happened).
+- **Kid UI (request on the board):** on a phone the friends row's Join button lies over the friend's status text (seen
+  before this round's changes).
+- **Known limit:** a game older than Round T (map C) sends no map version, so it is let in like r56 until it updates.
+- **Waiting:** the voice relay still needs the owner's Cloudflare TURN key (CF_TURN_KEY_ID, CF_TURN_KEY_TOKEN in Netlify).
+- **Next for Online:** any new `online` bugs the Front Desk files.
