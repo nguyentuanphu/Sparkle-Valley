@@ -325,15 +325,16 @@ export const BOATS = [
 export const STALL = { road: 1.5, building: 3, gap: 1.2, path: .9, alone: 12 };
 // street: the main street's centre line [from, to], from the place's anchor; w: its width (ROAD_WIDTH, or a walking
 // street's own paving); walking: no traffic, so customers may stand on it; side: 1 = the row is on the left of
-// from → to (seen from above, north up), −1 on the right; at: metres from `from` to the first slot's middle; pitch: metres
+// from → to (seen from above, north up), −1 on the right; plain: the way in from the gate, not a paved street (China
+// and India; Round U: plants may grow there); at: metres from `from` to the first slot's middle; pitch: metres
 // between slots' middles. The cities' rows are made from their main gate below.
 const ROWS = [
   { place: 'market', street: [[-24, 0], [24, 0]], w: 8, walking: true, side: 1, at: 2, pitch: 4 },   // north side, north to south Vietnam from the gate; the hosts and the hawker on the south
   { place: 'aussie', street: [[-18, 0], [18, 0]], w: 7, side: -1, at: 0, pitch: 1 },   // south side, facing the shops across the road; slots in metres (the crossing in the middle stays clear)
   { place: 'town', street: [[-26, -6], [26, -6]], w: ROAD_WIDTH.asphalt, side: -1, at: 26.5, pitch: 4 },   // south footpath, east of the crossing, by the park
   { place: 'village', street: [[-32, 0], [-18, 0]], w: ROAD_WIDTH.dirt, side: 1, at: 3, pitch: 4 },          // the lane in from the old gate, north side
-  { place: 'china', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 1.6, pitch: 3.8 },   // just inside the gate, west side
-  { place: 'india', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 1.6, pitch: 3.8 }
+  { place: 'china', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 1.6, pitch: 3.8, plain: true },   // just inside the gate, west side
+  { place: 'india', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 1.6, pitch: 3.8, plain: true }
 ];
 // the cities: the main street from the main gate straight through the square; the kiosks just inside the gate on the
 // host's side (Bắc Ninh: the south side, clear of the Quan họ boat)
@@ -346,7 +347,7 @@ export const rowOf = place => ROW_OF.get(place) || null;
 export function rowStreet(place) {
   const R = ROW_OF.get(place); if (!R) return null; const [ox, oz] = anchorOf(place);
   const a = [ox + R.street[0][0], oz + R.street[0][1]], b = [ox + R.street[1][0], oz + R.street[1][1]], len = Math.hypot(b[0] - a[0], b[1] - a[1]), dx = (b[0] - a[0]) / len, dz = (b[1] - a[1]) / len;
-  return { place, a, b, w: R.w, walking: !!R.walking, len, dx, dz, nx: dz * R.side, nz: -dx * R.side };
+  return { place, a, b, w: R.w, walking: !!R.walking, plain: !!R.plain, len, dx, dz, nx: dz * R.side, nz: -dx * R.side };
 }
 // slot i of a place's row for something `d` metres deep (across the street) and `span` slots long: where its middle
 // stands { x, z }, which way it faces (face: the yaw that looks at the street, as avatars and models use it), the step

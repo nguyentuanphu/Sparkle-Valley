@@ -4,7 +4,7 @@
 import { THREE, toonVC, P, merge, outline } from './gfx.js';
 import { T, onLang } from './i18n.js';
 import { SFX } from './audio.js';
-import { heightAt, levelAt, riverDist, roadDist, ROADS, DRAGON, WATER, REGION_NAMES, setRoadBeds, roadBedsOn, bridgeAt, bridgeBox } from './world.js';
+import { heightAt, levelAt, riverDist, roadDist, edgeDist, ROADS, DRAGON, WATER, REGION_NAMES, setRoadBeds, roadBedsOn, bridgeAt, bridgeBox } from './world.js';
 import { settings } from './state.js';
 import { ROAD_TONES } from './content/map.js';
 // HARD RULE (owner, round 30): the steepest a road may climb: asphalt 8 %, dirt 12 % (checked by `roadshape`)
@@ -177,7 +177,7 @@ export function plantRoadside(G) {
       const [px, pz] = L.pts[i - 1], [x, z] = L.pts[i], D = Math.hypot(x - px, z - pz) || 1, ux = -(z - pz) / D, uz = (x - px) / D;
       for (const sd of [-1, 1]) { if (Math.random() < .15) continue;
         const o = hw + 1.7 + Math.random() * 1.4, cx = x + ux * sd * o, cz = z + uz * sd * o;
-        const rd = roadDist(cx, cz); if (rd.d < rd.road.w / 2 + 1.1 || riverDist(cx, cz) < 6 || !free(cx, cz, .5)) continue;
+        if (edgeDist(cx, cz) < 1.1 || riverDist(cx, cz) < 6 || !free(cx, cz, .5)) continue;   // (Round U: off places' streets too)
         const c = COLS[Math.floor(Math.random() * COLS.length)], m = 2 + Math.floor(Math.random() * 3);
         for (let f = 0; f < m; f++) { const fx = cx + (Math.random() - .5) * .9, fz = cz + (Math.random() - .5) * .9, fy = heightAt(fx, fz); if (fy < WATER + .4) continue; spots.push([fx, fy, fz, 1.6 + Math.random() * .8, Math.random() * 6.28, c]); }
       }

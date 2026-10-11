@@ -356,6 +356,12 @@ await check('roads', async () => {
     // G5/R4: no grass tuft or flower on a road
     const cover = G.world.groundCover; if (!cover) out.push('world.groundCover missing'); let tufts = 0;
     if (cover) { const m = new (await import('/js/gfx.js')).THREE.Matrix4(); for (const im of cover) for (let i = 0; i < im.count; i++) { im.getMatrixAt(i, m); const x = m.elements[12], z = m.elements[14], d = W.roadDist(x, z); tufts++; if (d.d < d.road.w / 2 + .3) out.push(`grass on a road at ${x.toFixed(1)},${z.toFixed(1)}`); } }
+    // (Round U, owner: "weeds still grow inside the asphalt road") nothing that grows or lies on the ground (every repeated
+    // small thing: grass, flowers, bushes, rocks) stands on a road or a place's paved street (W.edgeDist)
+    { const THREE = (await import('/js/gfx.js')).THREE, m4 = new THREE.Matrix4(), v = new THREE.Vector3(), sz = new THREE.Vector3(); let seen = 0;
+      G.scene.traverse(o => { if (!o.isInstancedMesh || o.userData.onRoad) return; const g = o.geometry; if (!g.boundingBox) g.computeBoundingBox(); g.boundingBox.getSize(sz); if (sz.x > 3 || sz.z > 3 || sz.y > 4) return;
+        for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4); v.setFromMatrixPosition(m4).applyMatrix4(o.matrixWorld); seen++; if (W.edgeDist(v.x, v.z) < -.1) { out.push(`something growing on a road or street at ${v.x.toFixed(0)},${v.z.toFixed(0)}`); break; } } });
+      if (seen < 1000) out.push('only ' + seen + ' small things looked at'); }
     // roadDist skips far roads by their boxes: the same answers as looking at every road, and faster
     let diff = 0, seed = 1; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647, brute = (x, z) => { let bd = 1e9, br = null; for (const R of W.ROADS) for (let i = 0; i < R.pts.length - 1; i++) { const [ax, az] = R.pts[i], [bx, bz] = R.pts[i + 1], dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))), d = Math.hypot(x - ax - dx * t, z - az - dz * t); if (d < bd) { bd = d; br = R; } } return { d: bd, road: br }; };
     const pts = Array.from({ length: 20000 }, () => [(rnd() - .5) * W.SIZE, (rnd() - .5) * W.SIZE]);
