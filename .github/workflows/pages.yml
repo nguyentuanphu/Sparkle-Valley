@@ -1,9 +1,8 @@
-# Publishes the game to GitHub Pages (free hosting) every time main changes.
-# One-time setup: GitHub repo → Settings → Pages → "Build and deployment" → Source: "GitHub Actions".
+# Publishes the game to GitHub Pages (free hosting). Only started by hand (owner, 11 Oct AEDT): the game lives on
+# Netlify and Pages is not switched on, so running on every merge into main only failed ("Get Pages site failed").
+# To use it: GitHub repo → Settings → Pages → "Build and deployment" → Source: "GitHub Actions", then Actions → Run.
 name: Deploy to GitHub Pages
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
