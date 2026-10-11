@@ -82,4 +82,14 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
   `startup` (first start 1032 KB, title 0.9-1.0 s, ready 17.9-18.2 s; second start 0 KB, ready 17.2-17.5 s, longest
   freeze 4.4-4.5 s), `perf`, `boot`, `offline` pass; fast checks unit rules preload emoji arch types names pass;
   title, Who's playing, the valley's HUD and the first panel identical to the plain copy on phone, tablet and computer.
+- **11 Oct, 2:40 pm AEDT: session paused, hand-off.** Owner: "stop checking until further notice"; the 5-minute
+  check-ins are stopped. Everything is pushed (`core/analytics-infra`, c72d815 plus this note), ready for Release.
+  Left for the next Analytics & Infra chat:
+  1. Item 4: once Release merges PR #47 (instant bug robot, and the `checks.yml` fix that installs Playwright), watch
+     the robot's first instant runs (`bug-fixer.yml`): it starts on a new `bug` issue and on a "go" comment, the
+     5-minute backup timer fires, and no run pushes outside `bugfix/<core>-<issue>`. Check `checks.yml` goes green.
+  2. #36: when World (Round T) lands the keep-the-built-valley or build-in-pieces change, run `startup` and lower the
+     maxima in `tests/startup-baseline.json` (never raise them); post the new numbers on issue #36.
+  3. When Studio shows `startup` on the Analytics page, check it reads the report's `startup` correctly.
+  4. Item 3 (`parents` failing on "bedtime" on `main`) was already fixed on `main` (2fa7043): nothing to do.
 
