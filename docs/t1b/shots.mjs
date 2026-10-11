@@ -12,9 +12,9 @@ for (const [name, w, h, touch] of SIZES) {
     await P.page.evaluate(async ([place, t]) => {
       const { rowStreet } = await import('/js/content/map.js'); const S = rowStreet(place), G = __sv, hero = G.heroes[0];
       document.querySelectorAll('.gl-x, .dialog .x').forEach(e => e.click());
-      // stand on the far side of the street, looking across at the row
-      const x = S.a[0] + S.dx * t - S.nx * (S.w / 2 + 1), z = S.a[1] + S.dz * t - S.nz * (S.w / 2 + 1);
-      hero.place(x, z); hero.camYaw = Math.atan2(-S.nx, -S.nz);
+      // stand in the middle of the street, the camera looking across at the row
+      const x = S.a[0] + S.dx * t, z = S.a[1] + S.dz * t;
+      hero.place(x, z); hero.camYaw = Math.atan2(S.nx, S.nz);
     }, [place, t]);
     await P.page.waitForTimeout(2500);
     await P.page.screenshot({ path: `${out}/${name}-${place}.png` });

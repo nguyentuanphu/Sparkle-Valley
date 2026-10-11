@@ -67,3 +67,6 @@ Corner's row.
   - Walking sellers: on the footpath across the street from each row (the market: the far half of its walking street).
 - **Not changed:** Lotus Village's three umbrella stalls round its square (a market-day group, not street stalls), Mr.
   Bear's stall at Sunny Farm, and the villagers standing on Two Homes Street's north footpath.
+- **Looked at:** sky views (`sky-r61/`) and phone, tablet and computer screenshots side by side (`shots-r61/`, made by
+  `shots.mjs`). Full suite 97/98: `startup` red as on r60 (first download 1088 KB, the voice manifest; title 1.6 s; on
+  the board for Voice & Audio and World).
