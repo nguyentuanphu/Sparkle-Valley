@@ -866,6 +866,87 @@ await check('hubmap', async () => {
   return `${r.games} games, each in one tab; the map's Vietnam cities run north to south, each with its landmarks (${r.cities.length} cities)`;
 });
 
+await check('signs', async () => {
+  // (round T4b, finding your way) a picture signpost at every junction of two asphalt or dirt roads (found from the road
+  // data, never written-down positions); every board names a real place; posts stand off the road and are solid; all the
+  // signposts together are two meshes (one shared board picture, at most 1024 px)
+  const P = await open(b, { w: 1180, h: 760 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const S = __sv.signposts, SP = await import('/js/signposts.js'), W = await import('/js/world.js'), J = SP.findJunctions();
+    const names = new Set([...__sv.PLACES, ...__sv.LANDMARKS].map(p => p.name()));
+    const missing = J.filter(j => !S.posts.some(s => Math.hypot(s.x - j.x, s.z - j.z) < 14)).map(j => `${Math.round(j.x)},${Math.round(j.z)}`);
+    const bad = S.posts.flatMap(s => s.boards.filter(b => !names.has(b.place.name())).map(b => b.place.name()));
+    const onRoad = S.posts.filter(s => { const q = W.roadDist(s.x, s.z); return q.road && q.d < q.road.w / 2 + .8; }).map(s => `${Math.round(s.x)},${Math.round(s.z)}`);
+    const solid = S.posts.filter(s => !__sv.world.colliders.some(c => Math.hypot(c.x - s.x, c.z - s.z) < .1)).length;
+    const img = S.texture.image;
+    return { junctions: J.length, posts: S.posts.length, boards: S.posts.reduce((a, s) => a + s.boards.length, 0), empty: S.posts.filter(s => !s.boards.length).length,
+      missing, bad, onRoad, solid, meshes: S.meshes.length, tex: Math.max(img.width, img.height) };
+  });
+  ok(r.junctions >= 10 && !r.missing.length, `junctions without a signpost: ${r.missing.join('; ')} (of ${r.junctions})`);
+  ok(!r.bad.length && !r.empty, `boards naming no real place: ${r.bad.join(', ')}; posts with no board: ${r.empty}`);
+  ok(!r.onRoad.length, 'signposts on the road: ' + r.onRoad.join('; '));
+  ok(!r.solid, `${r.solid} signposts a child can walk through`);
+  ok(r.meshes <= 2 && r.tex <= 1024, `signposts cost ${r.meshes} meshes, board picture ${r.tex} px`);
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return `${r.posts} signposts at ${r.junctions} junctions, ${r.boards} boards, each naming a real place; off the road, solid; ${r.meshes} meshes, one ${r.tex} px picture`;
+});
+
+await check('nametags', async () => {
+  // (round T4b) names float over the places nearby: at most 4 at once, never covering each other, on a phone, a tablet
+  // and a computer; none in calm mode
+  const out = [];
+  for (const [w, h, touch, tag] of [[390, 844, true, 'phone'], [820, 1180, true, 'tablet'], [1180, 760, false, 'computer']]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    // the busiest spot: the place with the most places and landmarks within 40 m
+    await P.page.evaluate(() => { const all = [...__sv.PLACES, ...__sv.LANDMARKS], n = p => all.filter(o => Math.hypot(o.x - p.x, o.z - p.z) < 40).length;
+      const best = all.slice().sort((a, b) => n(b) - n(a))[0]; window.__busy = best.name(); __sv.travelTo(__sv.heroes[0], best.x + 6, best.z + 14); });
+    await P.page.waitForTimeout(5000);
+    const r = await P.page.evaluate(() => { const on = [...document.querySelectorAll('.nametag.on')].map(e => e.getBoundingClientRect());
+      const over = []; on.forEach((a, i) => on.slice(i + 1).forEach(q => { if (a.left < q.right && q.left < a.right && a.top < q.bottom && q.top < a.bottom) over.push(i); }));
+      return { n: on.length, over: over.length, busy: window.__busy, names: [...document.querySelectorAll('.nametag.on')].map(e => e.textContent) }; });
+    ok(r.n >= 1 && r.n <= 4, `${tag}: ${r.n} name tags at ${r.busy} (want 1 to 4)`);
+    ok(!r.over, `${tag}: name tags overlap: ${r.names.join(', ')}`);
+    await P.page.evaluate(async () => { const st = await import('/js/state.js'); st.settings.calm = true; });
+    await P.page.waitForTimeout(1500);
+    const calm = await P.page.evaluate(() => document.querySelectorAll('.nametag.on').length);
+    ok(!calm, `${tag}: ${calm} name tags in calm mode`);
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+    out.push(`${tag} ${r.n} (${r.names.join(', ')})`);
+  }
+  return 'at most 4, apart, none in calm mode: ' + out.join('; ');
+});
+
+await check('padmap', async () => {
+  // (round T4b) the Pad map is drawn from the map data: every place's name on it, names never overlapping at 390, 1180
+  // and 1366 px wide; clouds over the places not visited yet, lifting once with a puff after a visit
+  const out = [];
+  for (const [w, h, touch] of [[390, 844, true], [1180, 760, false], [1366, 768, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 500));
+      const cv = document.querySelector('canvas.bigmap'), L = cv.labels || [], names = new Set(L.map(l => l.name));
+      const missing = __sv.PLACES.map(p => p.name()).filter(n => !names.has(n));
+      const hit = (a, q) => a.x < q.x + q.w && q.x < a.x + a.w && a.y < q.y + q.h && q.y < a.y + a.h, over = [];
+      L.forEach((a, i) => L.slice(i + 1).forEach(q => { if (hit(a, q)) over.push(a.name + ' / ' + q.name); }));
+      const clouds = cv.clouds.slice(), pic = !cv.toDataURL().startsWith('data:,');
+      // visit the first clouded place, then open the map again: its cloud puffs away, once
+      const h = __sv.heroes[0], c = clouds[0], W = await import('/js/world.js');
+      h.profile.visited = h.profile.visited || {}; h.profile.visited[c.region] = true;
+      document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.paused = false; __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 200));
+      const after = document.querySelector('canvas.bigmap').clouds, puff = document.querySelectorAll('.mapcloud.puff').length;
+      document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.paused = false; __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 200));
+      const again = document.querySelectorAll('.mapcloud.puff').length;
+      return { n: L.length, missing, over, clouds: clouds.length, region: c.region, still: after.some(o => o.region === c.region), puff, again, pic };
+    });
+    ok(r.pic && !r.missing.length, `${w}px: places missing from the drawn map: ${r.missing.join(', ')}`);
+    ok(!r.over.length, `${w}px: map names overlap: ${r.over.join('; ')}`);
+    ok(r.clouds > 0 && !r.still && r.puff > 0 && !r.again, `${w}px: clouds ${r.clouds}, after visiting ${r.region}: still clouded ${r.still}, puffs ${r.puff}, puffs again ${r.again}`);
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+    out.push(`${w}px ${r.n} names, ${r.clouds} clouds`);
+  }
+  return 'drawn from the map data: ' + out.join('; ') + '; a cloud lifts with one puff after a visit';
+});
+
 await check('mapnames', async () => {
   // (Release requests, round T1) the Pad map's names never cover each other (the festival stage lay over Đà Nẵng, the
   // market over Hồ Chí Minh City), on a phone, a tablet and a computer; Hội An is a place of its own in the Vietnam
