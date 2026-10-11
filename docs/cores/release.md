@@ -65,3 +65,4 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - (11 Oct AEST) "Yes, push" for T2. The version clash with the Play round: the other round keeps r57, T2 becomes r58. T3 is one release (built in two steps: Vũng Tàu and the mountains, then the plots), "go with the plan".
 - (11 Oct AEST) r59 (T3, full suite 90/90): "yes, deploy" for T2 (r58) and T3 (r59) together.
 - (11 Oct AEST) The next release is r60 (whichever round ships next, Round T4 or the Play round); r57 is no longer kept for the Play round.
+- (11 Oct AEST) r60 is Round T4a (World: road surfaces by region, water colours and foam, reeds, footsteps), built by Release; T4b (signposts, name tags, the drawn Pad map) goes to a separate Kid UI chat (brief `docs/cores/tasks/kid-ui-t4b.md`). Vietnam's roads get yellow centre dashes (Australia stays white, with kerbs); footsteps use the game's own sound maker for now (Voice & Audio may replace them).

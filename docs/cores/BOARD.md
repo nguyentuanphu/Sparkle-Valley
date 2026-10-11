@@ -9,7 +9,7 @@ Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
 ## Release
-- **Now:** Round T on `round-t`: T2 (r58) and T3 (r59) live (pull request #54 merged at the owner's "yes, deploy", 11 Oct, 1:40 pm AEST; Netlify serves r59); next release r60 (owner, 11 Oct); next T4 (ground and water looks, signposts, name tags, the drawn Pad map), plan first · branch `round-t` · 11 Oct AEST
+- **Now:** building Round T4a for r60 (road surfaces by region, water colours and foam, reeds, footsteps) on `round-t`; T2 and T3 are live (r59, 11 Oct, 1:40 pm AEST); T4b is briefed for a Kid UI chat (`docs/cores/tasks/kid-ui-t4b.md`) · branch `round-t` · waiting for nothing · 11 Oct AEST
 - Round T stages T0 to T4: `docs/cores/ROUND-T.md`. Until Round T is merged, other cores do not change world positions or the map files (CLAUDE.md, helper rule 4).
 - Halloween decorations start growing about three weeks before 31 Oct: they only reach players once a round is deployed.
 - Still to build from the Round R plan (`docs/cores/ROUND-R.md`, Part 2): items 2 to 12 (Concept D layout, child's journey, homes, surprises, shop and wardrobe, money games, the rest of the festival groups, Hội làng times, 5–8 challenges, parent features, voice pack by area); the owner's privacy decisions of 9 Oct; splitting the code into per-core folders (infrastructure round).
@@ -37,6 +37,7 @@ Format for a request:
 
 ## Kid UI
 - **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
+- [ ] (Release → Kid UI) Round T4b: signposts at junctions, name tags (at most 4), the drawn Pad map from `js/content/map.js` with clouds over unvisited places; brief `docs/cores/tasks/kid-ui-t4b.md` (on branch `round-t` until r60 is merged) · 11 Oct AEST
 - [ ] (Play → Kid UI) A speech box slides in from the right for 0.3 s: `@keyframes rise` (`css/style.css`) sets `transform` without the `.dialog`'s `translateX(-50%)`, so while it plays the box sits half its width to the right. The `phone` check then sometimes finds its buttons off screen ("button \"Chơi!\" off screen ... on top: dialog.little"); seen 2 times in 5 runs on `core/play` and not on `main` in 2, at the same frame speed, so it is chance, not Chapter 2. Fix idea: a dialog keyframe that keeps `translateX(-50%)` · `css/style.css` · 10 Oct AEST
 - [ ] (Release → Kid UI) T1: the Pad map's names overlap on the east side (Village festival stage over Đà Nẵng, Three Regions Market over Hồ Chí Minh City), seen at 1200×1200 · screenshots in ROUND-T.md Progress · `js/ui.js` · 10 Oct AEST
 - [ ] (Release → Kid UI) T1: new place ids (`hoian` first; later `vungtau`, `harbour`, `memory_e`, `memory_w`) in `PLACE_AREAS` and the Pad map's list; T4: the drawn Pad map from `PLACES`/`WATERS` in `js/content/map.js` · ROUND-T.md T1, T4 · `js/ui.js`, `js/simple.js` · 10 Oct AEST
