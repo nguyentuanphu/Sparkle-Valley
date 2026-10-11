@@ -5,8 +5,8 @@
 // Two Homes Street: Bạch Dinh (the White Villa) and Nhà Tròn (the Round House water tower).
 import { THREE, toonVC, P, merge, outline, sprite } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
-import { heightAt, roadDist, CITIES, VILLAGE, TOWN, MARKET, AUSSIE, CHINA, INDIA } from './world.js';
-import { landmarkAt, ROAD_WIDTH } from './content/map.js';
+import { heightAt, CITIES, TOWN } from './world.js';
+import { landmarkAt, ROAD_WIDTH, rowSlot } from './content/map.js';
 import { roadTexture } from './roads.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
 import { LANDMARKS, VENDORS, postcard } from './regions.js';
@@ -199,7 +199,7 @@ export function createCities(G) {
     }
     // landmarks: set back on both sides of the street (Bắc Ninh: around the roundabout)
     D.sites.forEach(([id, icon, u0, v0, model, name, fact], k) => {
-      const u = D.custom ? u0 : (k % 2 ? 8 : -8), v = D.custom ? v0 : -3 - Math.floor(k / 2) * 9;
+      const u = D.custom ? u0 : (k % 2 ? 8.6 : -8.6), v = D.custom ? v0 : -4 - Math.floor(k / 2) * 9;   // (T1b: further back, clear of the kiosks and the sellers' footpath; TP. HCM's pier path keeps its corridor)
       const [x, z] = L(u, v), rot = D.custom || model === 'wtram' ? toward : faceStreet(u);
       const m = place(MODELS[model](), x, z, rot, c.h - .05);
       const r = model === 'bnclock' ? 4 : model === 'quanho' || model === 'puppetstage' ? 4.6 : model === 'wtram' ? 4.6 : 4.2;
@@ -241,41 +241,26 @@ export function createCities(G) {
   }
 
   // ---------- kiosks, in the cities and in the older villages ----------
-  // In the older villages the kiosks stand along the edge of the main street, facing it, never on it.
-  // STREETS: the street's centre line [from, to] and how far from it the kiosk stands.
-  // (round T: from each place's anchor in the map, js/content/map.js)
-  const STREETS = { village: [[VILLAGE.x - 26, VILLAGE.z], [VILLAGE.x - 18, VILLAGE.z], 4.4], town: [[TOWN.x - 18, TOWN.roadZ], [TOWN.x + 12, TOWN.roadZ], 7.2], market: [[MARKET.x - 13, MARKET.roadZ], [MARKET.x + 23, MARKET.roadZ], 5], aussie: [[AUSSIE.x - 21, AUSSIE.roadZ], [AUSSIE.x + 21, AUSSIE.roadZ], 8], china: [[CHINA.x, CHINA.z + 23], [CHINA.x, CHINA.z + 8], 5.2], india: [[INDIA.x, INDIA.z + 23], [INDIA.x, INDIA.z + 6], 5.2] };
-  const free = (x, z, r) => world.colliders.every(o => dist2(o.x, o.z, x, z) > o.r + r) && world.boxes.every(b => x < b.x0 - r || x > b.x1 + r || z < b.z0 - r || z > b.z1 + r) && G.interactables.every(i => !Number.isFinite(i.x) || dist2(i.x, i.z, x, z) > 3.2);
-  const flatAt = (x, z) => heightAt(x, z) > 1.2 && Math.abs(heightAt(x + 1.5, z) - heightAt(x - 1.5, z)) + Math.abs(heightAt(x, z + 1.5) - heightAt(x, z - 1.5)) < 1.2;
-  const offRoad = (x, z) => { const r = roadDist(x, z); return r.d > r.road.w / 2 + 1.6; };
-  const streetSpot = ([[ax, az], [bx, bz], off], n) => {
-    const L = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / L, dz = (bz - az) / L;
-    for (let t = 0; t <= L; t += 1.5) for (const side of n % 2 ? [-1, 1] : [1, -1]) {
-      const sx = ax + dx * t, sz = az + dz * t, x = sx - dz * off * side, z = sz + dx * off * side;
-      // the kiosk, its seller behind it and the customer in front must all fit
-      if (flatAt(x, z) && offRoad(x, z) && free(x, z, 2.2) && free(x + dz * side * 1.2, z - dx * side * 1.2, .8)) return [x, z, Math.atan2(sx - x, sz - z)];
-    }
-    return [ax, az, 0];
-  };
-  const cityOf = id => CITIES.find(c => c.id === id);
+  // (T1b, owner 11 Oct) each kiosk takes the next slot of its place's one market row (js/content/map.js MARKET_ROWS,
+  // rowSlot): on one side of the main street, facing it, 1.5 m back from its edge. SLOTS: which slots, where the row
+  // also holds stalls (the market: north, centre and south dishes among the stalls; Aussie Corner: in metres, either side
+  // of the crossing).
+  const SLOTS = { market: [2, 7], aussie: [9.1, 24.9] };
   const counts = {};
   for (const [id, where, name, lk, food, saying, greet] of KIOSKS) {
-    const n = counts[where] = (counts[where] || 0) + 1, c = cityOf(where);
-    let x, z, face;
-    if (c) { const u = n % 2 ? 4.6 : -4.6; [x, z] = c.layout.L(u, c.layout.len - (c.id === 'bacninh' ? 3.5 : 4.5) - Math.floor((n - 1) / 2) * 4); face = Math.atan2(-Math.cos(c.layout.toward) * Math.sign(u), Math.sin(c.layout.toward) * Math.sign(u)); }
-    else [x, z, face] = streetSpot(STREETS[where], n);
+    const n = counts[where] = (counts[where] || 0) + 1, sl = rowSlot(where, SLOTS[where] ? SLOTS[where][n - 1] : n - 1, 1.4), { x, z, face } = sl;
     // the kiosk: a little hut with a striped awning, a sign and its food on the counter
     const parts = [P(B(2.6, 1, 1.4), '#c98a4a', [0, .5, 0]), P(B(2.8, .1, 1.6), '#f6e7c8', [0, 1.05, 0])];
     for (const [ex, ez] of [[-1.25, -.6], [1.25, -.6], [-1.25, .6], [1.25, .6]]) parts.push(P(C(.06, .06, 2.4, 6), '#8a5a3b', [ex, 1.2, ez]));
     for (let k = 0; k < 6; k++) parts.push(P(B(.5, .08, 1.9), k % 2 ? '#ffffff' : (where === 'aussie' || where === 'sydney' || where === 'melbourne' || where === 'brisbane' ? '#2f7a4a' : where === 'china' ? '#c0392b' : where === 'india' ? '#ff9f43' : '#e8433a'), [-1.25 + k * .5, 2.45, 0], [.14, 0, 0]));
     const km = new THREE.Mesh(merge(parts), toonVC()); km.position.set(x, heightAt(x, z), z); km.rotation.y = face; km.castShadow = true; scene.add(km);
-    world.colliders.push({ x, z, r: 1.3 });
+    world.colliders.push({ x, z, r: 1.3 }); world.stalls.push({ id, place: where, kind: 'kiosk', x, z, w: 2.6, d: 1.4, face, tap: 'v_' + id });
     const sg = kioskSign([food[1].replace(/^(a|an) /, '').replace(/^\w/, ch => ch.toUpperCase()), food[2].replace(/^\w/, ch => ch.toUpperCase())]); sg.position.set(0, 2.95, .5); km.add(sg);
     const goods = sprite(food[0], .9); goods.position.set(0, 1.55, .35); km.add(goods);
     // the seller stands behind the counter
     const bx = x - Math.sin(face) * 1.1, bz = z - Math.cos(face) * 1.1;
     person(lk, bx, bz, face, name);
-    const ix = x + Math.sin(face) * 2.4, iz = z + Math.cos(face) * 2.4;
+    const ix = x + Math.sin(face) * 1.45, iz = z + Math.cos(face) * 1.45;   // (T1b) the customer's spot, in front of the counter
     const v = { id, name, region: saying[3] === 'en' ? 'au' : saying[3] === 'vi' ? 'nam' : saying[3], food, greet, saying, kiosk: true, x: ix, z: iz };
     VENDORS.push(v); // shows up in the food passport
     G.interactables.push({ id: 'v_' + id, x: ix, z: iz, r: 3, icon: food[0], bubble: food[0], label: () => nm(name), act: h => kioskTalk(G, h, v) });
