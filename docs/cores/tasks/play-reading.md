@@ -70,7 +70,7 @@ the six Vietnamese tones on "ma"); list how each is made. If `AZURE_SPEECH_KEY` 
 ## You may change
 `js/games/reading.js` (new), `js/content/reading.js` (new), `js/content/activities.js` (the new area and its games),
 `js/content/releases.js` (the `readingTrial` line only), `js/art.js` (new drawings: tell Kid UI on the board),
-`sw.js` FILES (the two new files only, noted on the board), `tests/run.mjs` (your checks), `docs/cores/play.md`.
+`sw.js` FILES (the two new files only, noted on the board), `tests/run.mjs` (your checks), `docs/cores/play-reading.md` (new); all on `core/play-reading`.
 The Games hub lists in `js/ui.js` together with Kid UI (note it on the board). Do not bump the version.
 
 ## Checks
