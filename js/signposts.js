@@ -7,7 +7,7 @@
 import { THREE, toonVC, P, merge } from './gfx.js';
 import { onLang, both } from './i18n.js';
 import { settings } from './state.js';
-import { heightAt, roadDist, ROADS, WATER } from './world.js';
+import { heightAt, roadDist, ROADS, WATER, PLOTS, plotBox } from './world.js';
 import { withSitePlaces } from './content/activities.js';
 
 const ATLAS = 1024, COLS = 4, CW = ATLAS / COLS;
@@ -81,11 +81,15 @@ function nextPlace(J, way, places, landmarks, junctions, depth = 0) {
   return { place: best.p, angle: Math.atan2(path[1][1] - J.z, path[1][0] - J.x), far: best.s };
 }
 
-// a spot by the junction that is off every road and dry: tried in a ring of growing sizes round the corner
-function postSpot(J) {
-  for (const r of [6, 7.5, 9, 11]) for (let a = 0; a < 16; a++) {
+// a spot by the junction that is off every road, dry, off every garden plot and clear of anything solid already
+// standing there: tried in a ring of growing sizes round the corner
+function postSpot(J, colliders, BOXES) {
+  for (const r of [6, 7.5, 9, 11, 13]) for (let a = 0; a < 16; a++) {
     const ang = (a + .5) / 16 * Math.PI * 2, x = J.x + Math.cos(ang) * r, z = J.z + Math.sin(ang) * r, q = roadDist(x, z);
-    if (q.d > (q.road ? q.road.w / 2 : 0) + 1.2 && heightAt(x, z) > WATER + .3) return { x, z };
+    if (q.d <= (q.road ? q.road.w / 2 : 0) + 1.2 || heightAt(x, z) <= WATER + .3) continue;
+    if (BOXES.some(B => x > B.x0 - 1 && x < B.x1 + 1 && z > B.z0 - 1 && z < B.z1 + 1)) continue;
+    if (colliders.some(c => Math.hypot(c.x - x, c.z - z) < c.r + .9)) continue;
+    return { x, z };
   }
   return null;
 }
@@ -93,9 +97,9 @@ function postSpot(J) {
 export function createSignposts(G) {
   const { scene, world } = G, places = (withSitePlaces(G.PLACES) || []).filter(p => p.name), landmarks = (G.LANDMARKS || []).filter(l => l.name);
   const posts = [];
-  const junctions = findJunctions();
+  const junctions = findJunctions(), boxes = PLOTS.map(p => plotBox(p));   // (the plots are laid out by now)
   for (const J of junctions) {
-    const spot = postSpot(J); if (!spot) continue;
+    const spot = postSpot(J, world.colliders, boxes); if (!spot) continue;
     const boards = [];
     for (const w of J.ways) { const b = nextPlace(J, w, places, landmarks, junctions); if (b && !boards.some(o => o.place === b.place)) boards.push(b); }
     if (!boards.length) continue;
