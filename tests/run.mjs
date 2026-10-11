@@ -1575,11 +1575,13 @@ await check('shop', async () => {
     out.pics = card ? [...card.querySelectorAll('.kitem')].every(b => b.querySelector('svg') && /^\d*$/.test(words(b))) : false;
     out.small = card ? [...card.querySelectorAll('.ktab, .kitem, .x')].filter(b => { const q = b.getBoundingClientRect(); return q.width < 44 || q.height < 44; }).length : -1;
     // buy the tiara (hats tab), and it is worn
-    card.querySelector('[data-tab="hat"]').click(); await w(150); card.querySelector('[data-id="tiara"]').click(); await w(150);
+    // (Round U: a child's own set shows first; another set's thing is behind More)
+    const item = async id => { let e = card.querySelector(`[data-id="${id}"]`); if (!e && card.querySelector('.kmore')) { card.querySelector('.kmore').click(); await w(150); e = card.querySelector(`[data-id="${id}"]`); } return e; };
+    card.querySelector('[data-tab="hat"]').click(); await w(150); (await item('tiara')).click(); await w(150);
     const price = SH.priceOf(SH.ITEM.tiara), c0 = S.farm.coins; card.querySelector('.kyes').click(); await w(300);
     out.bought = SH.owns(p, 'tiara') && p.look.hat === 'tiara' && S.farm.coins === c0 - price;
     // not enough coins: nothing is bought
-    G.addCoins(-S.farm.coins); card.querySelector('[data-tab="back"]').click(); await w(150); card.querySelector('[data-id="dragon"]').click(); await w(150); card.querySelector('.kyes').click(); await w(300);
+    G.addCoins(-S.farm.coins); card.querySelector('[data-tab="back"]').click(); await w(150); (await item('dragon')).click(); await w(150); card.querySelector('.kyes').click(); await w(300);
     out.poorKept = !SH.owns(p, 'dragon') && S.farm.coins === 0;
     card.querySelector('.x').click(); await w(400); out.closed = !document.querySelector('.modal.shopk') && !G.paused;
     // under-5s: every button at least 64 px
@@ -2892,6 +2894,35 @@ await check('familymissions', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(r.ready === 15 && r.on === 3 && r.guide === 4 && r.child >= 3 && r.help && r.kinds.day === 5 && r.kinds.week === 5 && r.kinds.bedtime === 5 && r.afterTick === 0 && r.nextDay === 1 && !r.bad.length && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return '15 ready-made missions (5 day, 5 week, 5 bedtime) with switches, 3 on to start, the family-play guide for grown-ups and the child (?), a day mission back the next day';
+});
+
+await check('wearbag', async () => {
+  // (Round U, owner 11 Oct: "all clothes and accessories when bought should show in the wear area unless they are worn;
+  // clothes as per gender") the Backpack lists everything bought and not worn (tap to wear) and what is worn (tap to take
+  // off); the shop shows a girl the girls' things and the ones for both first, the rest behind More
+  const P = await open(b, { w: 900, h: 700 }); await clear(P.page); const page = P.page;
+  const r = await page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, S = await import('/js/content/shop.js'), st = await import('/js/state.js'), w = t => new Promise(r => setTimeout(r, t));
+    p.look.set = 'girl'; p.owned.clothes = []; const top = S.CLOTHES.find(it => it.slot === 'top' && it.for !== 'b'), feet = S.CLOTHES.find(it => it.slot === 'feet' && it.for !== 'b');
+    st.farm.coins = 999; S.buy(p, 999, top.id); S.buy(p, 999, feet.id); S.wear(p, 'top', 'none'); S.wear(p, 'feet', 'none');
+    const out = {};
+    for (let k = 0; k < 20 && !document.querySelector('.pad [data-wear]'); k++) { if (!document.querySelector('.pad')) { G.paused = false; G.openPad(0, 'bag'); } await w(300); }
+    const ids = () => [...document.querySelectorAll('.pad [data-wear]')].map(b => b.dataset.wear), worn = () => [...document.querySelectorAll('.pad [data-unwear]')].map(b => b.dataset.unwear);
+    out.before = ids(); document.querySelector(`.pad [data-wear="${top.id}"]`)?.click(); await w(300);
+    out.after = ids(); out.worn = worn(); out.look = p.look.top === top.id;
+    document.querySelector('.pad [data-unwear="top"]')?.click(); await w(300); out.back = ids().includes(top.id);
+    document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false;
+    // the shop: a girl sees no boys-only thing until More
+    if (G.shop && G.shop.on()) { G.shop.openShop(0); await w(400); const boys = new Set(S.CLOTHES.filter(it => it.for === 'b').map(it => it.id));
+      const seen = () => [...document.querySelectorAll('.shopk .kitem')].map(b => b.dataset.id);
+      let any = false; for (const tab of document.querySelectorAll('.shopk [data-tab]')) { tab.click(); await w(150); if (seen().some(id => boys.has(id) && !S.owns(p, id))) any = true; }
+      out.boysFirst = any; const more = document.querySelector('.shopk .kmore'); if (more) { more.click(); await w(200); } out.more = !!more;
+      document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false; } else out.noShop = true;
+    return { ...out, top: top.id, feet: feet.id };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.before.includes(r.top) && r.before.includes(r.feet) && !r.after.includes(r.top) && r.worn.includes('top') && r.look && r.back && (r.noShop || (!r.boysFirst && r.more)) && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `bought clothes wait in the Backpack (tap to wear, tap to take off); the shop shows a girl's set first${r.noShop ? ' (shop off here)' : ', the rest behind More'}`;
 });
 
 await check('bilingual', async () => {

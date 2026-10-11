@@ -66,7 +66,8 @@ export function createParents(G, { say, save, reward }) {
   // a new mission is shown once in a speech box (the family's words are shown; a recorded line is spoken)
   async function announce(h) {
     const p = h.profile, seen = p.missionsSeen = Array.isArray(p.missionsSeen) ? p.missionsSeen.slice(-30) : [];
-    const m = openFor(p).find(x => !seen.includes(x.id)); if (!m) return false;
+    // (Round U) a ready-made mission is told only once a grown-up turned it on themselves; the three that start on wait quietly in Adventures
+    const m = openFor(p).find(x => !seen.includes(x.id) && (!x.ready || (settings.readyMissions && settings.readyMissions[x.id.slice(2)] === true))); if (!m) return false;
     if (!p.familyGuideSeen) { p.familyGuideSeen = true; saveProfiles(); await guide(); }   // (Round U) the first time: what family play is
     seen.push(m.id); saveProfiles(); G.paused = true;
     await G.dialog('💌 ' + T('Family mission', 'Nhiệm vụ gia đình'), [[m.en, m.vi, ...PARENT_LINES.mission]]);
