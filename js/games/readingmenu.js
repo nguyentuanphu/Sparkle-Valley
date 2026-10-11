@@ -5,6 +5,7 @@
 import { register } from './registry.js';
 import { HOWTO } from '../howto.js';
 import { T } from '../i18n.js';
+import { GAME_INFO } from '../content/activities.js';
 
 const S = (pic, en, vi) => ({ pic, en, vi });
 const game = def => register({ ...def, async run(api) { const m = await import('./reading.js'); return m.play(def.id, api); } });
@@ -19,6 +20,13 @@ game({ id: 'rd_syllable', icon: '🥁', name: () => T('Syllable Drum', 'Trống 
 game({ id: 'rd_match', icon: '🖼️', name: () => T('Word and Picture', 'Chữ và Hình') });
 game({ id: 'rd_sentence', icon: '🚂', name: () => T('Sentence Train', 'Tàu Câu') });
 game({ id: 'rd_readalong', icon: '📖', name: () => T('Read With Me', 'Cùng Đọc') });
+
+// their place in the one activity list (UI-005): [area, youngest age, how hard]; Word Balloons, Word and Picture and
+// Sentence Train are for 5 to 8 only (A11Y-006)
+Object.assign(GAME_INFO, {
+  rd_trace: ['reading', 2, 1], rd_sounds: ['reading', 3, 1], rd_build: ['reading', 4, 2], rd_rhyme: ['reading', 4, 2], rd_sight: ['reading', 5, 2],
+  rd_tones: ['reading', 4, 2], rd_syllable: ['reading', 3, 1], rd_match: ['reading', 5, 2], rd_sentence: ['reading', 5, 3], rd_readalong: ['reading', 3, 1]
+});
 
 // the how-to cards (ACT-002), read aloud in the child's language
 Object.assign(HOWTO, {

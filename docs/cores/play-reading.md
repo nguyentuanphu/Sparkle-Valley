@@ -41,10 +41,26 @@ Sleep", "A Day at the Beach"; Vietnamese "Chú Mèo Con", "Đi Chợ Với Bà",
 ## Voices
 - Every word, letter name, sound, đánh vần line, sentence, book page and question is in `readingLines()`
   (`js/content/reading.js`): 254 English and 287 Vietnamese lines; instructions are normal say() lines in both languages.
-- Recorded with Azure (en-AU Natasha and William, vi-VN Hoài My and Nam Minh), 11 Oct AEDT: 1160 files, coverage clean
+- Recorded with Azure (en-AU Natasha and William, vi-VN Hoài My and Nam Minh), 11 Oct AEDT: 1160 files (580 lines: 541 reading lines and 39 other cores' lines that were not recorded yet), coverage clean
   (`voicecover`). English sounds from IPA (`SOUND_IPA`): s, m, n, f, l, r, v, z, sh, th are held ("sss"), stops are
   short (t, p, k with a breath). Nobody has listened to them yet: the owner is asked to.
 - None has a child's name.
 
 ## Progress notes
 - 11 Oct, 8:05 pm AEDT: plan agreed; building.
+- **Full suite, 12 Oct, 3:20 am AEDT, commit a62b9ee (`core/play-reading`, from `main` 9c1e2334, `main` unchanged since):
+  97 of 99 passed.** Skipped (no local PeerJS or MQTT server in a helper chat; they report as passed): multiplayer, meet,
+  netgames, together, cloud, knock, mapver. Failed: `startup` (PERF-001 first download 1099 KB > 1035, title 1.8 s): it
+  fails on `main` too, measured in this chat the same night at 1088 KB and 1.78 s; the 11 KB more here is only
+  `voices/manifest.json` (580 more recorded lines, read at start), not the games' code. `adventure` failed ("the
+  activity list has ten games that do not exist" with the switch off): fixed by adding the ten games' ages to the
+  activity list only when the switch is on (`js/games/readingmenu.js`); then games, adventure, hubmap, ages, simple,
+  playhub all passed again (12 Oct AEDT).
+- Own checks (11 to 12 Oct AEDT): `reading` (new) passed: switch off, nothing of the trial loads or shows; switch on,
+  10 games in the Reading corner (7 for under-5s), all 74 versions finish (each game at Easy, Medium, Hard and the
+  under-5 version, English and Vietnamese). `noemoji`, `emoji`, `phone`, `voicecover`, `perf`, `arch` passed.
+- Screenshots looked at (12 Oct AEDT): every game, big kid and under-5, on phone 390x760 (English), tablet 820x1180
+  (Vietnamese) and computer 1280x800: no button under 44 px, nothing off screen, no scrolling. Fixed from them: the
+  drum and the train engine were drawn tiny; a balloon was cut off at a phone's edge; short words in Read With Me were
+  under 44 px. Not ours, seen on a phone in every game: the star counter covers the end of a long instruction (board,
+  Kid UI).

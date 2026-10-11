@@ -69,10 +69,6 @@ export const LITTLE_PAGE = 6;
 export const pages = (list, n) => { const k = Math.max(1, Math.ceil(list.length / n)), size = Math.ceil(list.length / k), out = []; for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size)); return out.length ? out : [[]]; };
 
 // (Play reading trial, owner 11 Oct 2026 AEDT; docs/cores/play-reading.md) "Reading corner", right after "Letters and words".
-// Its ten games are registered only while Studio's readingTrial switch is on (js/games/readingmenu.js), so with the
-// switch off the area has no games and is never shown.
+// Its ten games, with their ages, are added only while Studio's readingTrial switch is on (js/games/readingmenu.js), so
+// with the switch off the area has no games and is never shown.
 AREAS.splice(AREAS.findIndex(a => a.key === 'words') + 1, 0, { key: 'reading', icon: '📖', name: () => T('Reading corner', 'Góc đọc') });
-Object.assign(GAME_INFO, {
-  rd_trace: ['reading', 2, 1], rd_sounds: ['reading', 3, 1], rd_build: ['reading', 4, 2], rd_rhyme: ['reading', 4, 2], rd_sight: ['reading', 5, 2],
-  rd_tones: ['reading', 4, 2], rd_syllable: ['reading', 3, 1], rd_match: ['reading', 5, 2], rd_sentence: ['reading', 5, 3], rd_readalong: ['reading', 3, 1]
-});
