@@ -94,4 +94,13 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
      maxima in `tests/startup-baseline.json` (never raise them); post the new numbers on issue #36.
   3. When Studio shows `startup` on the Analytics page, check it reads the report's `startup` correctly.
   4. Item 3 (`parents` failing on "bedtime" on `main`) was already fixed on `main` (2fa7043): nothing to do.
-
+- **11 Oct, 5:15 pm AEDT: r60 live, plan waiting for the owner's go (session ended for usage).** Branch now has `main`
+  (r60) merged in. Found: (1) `pages.yml` (Deploy to GitHub Pages) fails on every merge into `main` since 10 Oct because
+  Pages is not switched on (the game is on Netlify); proposed: run it only by hand. Checks is green on r60; branches
+  older than r60 fail Checks until they merge `main`. (2) The bug robot has not run on r60 yet (last run 11 Oct, 12:47
+  pm AEDT, on r56); only #34 and #36 are open, both on hold; check the 5-minute timer fires and a new bug starts it.
+  (3) `startup` is red on r60 (Release: 96/97): first download 1088 KB (voice list, asked of Voice & Audio), slower
+  build since T2/T3 (asked of World); proposed: measure on `main` here and make the time limits fair on slower machines
+  by measuring the machine's speed in the same run, never by raising the limits. (4) #36 on a real phone and tablet:
+  no Studio key here, so the owner opens the game twice on each device and reads the start-up times in Studio; no #36
+  game changes without a new go. The owner has not said go to any of this yet.
