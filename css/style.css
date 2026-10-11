@@ -2280,3 +2280,9 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .mapcard .btn.big { min-height: 64px; min-width: 160px; font-size: 20px; }
 .mapcard h2 { justify-content: center; text-align: center; }
 .frow .btn.mapdiff { min-width: 56px; min-height: 44px; }
+
+/* ---------- (round T4b, Kid UI) finding your way: name tags over places nearby (js/nametags.js) ---------- */
+.nametags { position: fixed; inset: 0; pointer-events: none; z-index: 3; overflow: hidden; }
+.nametag { position: absolute; left: 0; top: 0; padding: 4px 12px; border-radius: 999px; background: rgba(40, 24, 70, .72); color: #fff;
+  font: 700 15px Fredoka, "Baloo 2", sans-serif; white-space: nowrap; opacity: 0; transition: opacity .5s ease; will-change: transform, opacity; }
+.nametag.on { opacity: 1; }

@@ -65,16 +65,19 @@ export const PLACE_AREAS = [
 ];
 
 // (Release request, round T1) new places of the rebuilt valley that are not cities, by their id in js/content/map.js:
-// each joins the place list (the Pad map and the Simple screen's Places road) once the map holds it. Vũng Tàu, the
-// harbour and the memory places join here by id when the World core builds them.
+// each joins the place list (the Pad map and the Simple screen's Places road) once the map holds it. Vũng Tàu is a
+// city and lists itself; the harbour is a landmark (the Harbour Bridge), listed under Sydney.
 const SITE_PLACES = [
-  { id: 'hoian', g: 'vn', icon: '🏮', name: () => T('Hội An', 'Hội An') }
+  { id: 'hoian', g: 'vn', icon: '🏮', name: () => T('Hội An', 'Hội An') },
+  // (round T2) the two Memory Villages, where families build a little house of their own; named as on the map
+  { id: 'memory_e', g: 'vn', icon: '🏘️' },
+  { id: 'memory_w', g: 'au', icon: '🏘️' }
 ];
 export function withSitePlaces(list) {
   if (!list) return list;
   for (const s of SITE_PLACES) {
     const m = MAP_PLACES.find(p => p.id === s.id); if (!m || list.some(pl => pl.key === s.id)) continue;
-    list.push({ g: s.g, key: s.id, icon: s.icon, name: s.name, x: m.at[0], z: m.at[1] + (m.r || 10) + 3 });   // the stop just south of the place
+    list.push({ g: s.g, key: s.id, icon: s.icon, name: s.name || (() => T(m.name[0], m.name[1])), x: m.at[0], z: m.at[1] + (m.r || 10) + 3 });   // the stop just south of the place
   }
   return list;
 }
