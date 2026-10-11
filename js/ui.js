@@ -123,7 +123,7 @@ export function showTitle(onStart) {
     const b = installButton(); if (b) top.appendChild(b);
   };
   redraw();
-  s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(); };
+  s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(hideCaption); };
   s.addEventListener('click', e => { if (e.target.closest('.seg') || e.target.closest('.about') || e.target.closest('.installchip') || e.target.closest('.learnrow')) return; ac(); SFX.chime(); s.remove(); onStart(); });
 }
 

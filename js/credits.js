@@ -20,7 +20,8 @@ const val = (k) => {
   return own || T(d.en, d.vi);
 };
 
-export function openCredits() {
+// (bug 41) onClose: the caller's clean-up (ui.js hides the caption); passed in so this file does not import ui.js
+export function openCredits(onClose) {
   const prevMusic = Music.key; Music.play('twinkle');
   const teach = [
     ['🧠', T('Thinking & strategy', 'Tư duy và chiến thuật')], ['🔤', T('Letters & numbers in two languages', 'Chữ và số bằng hai thứ tiếng')],
@@ -54,7 +55,7 @@ export function openCredits() {
     pos += dt * 0.025; c.scrollTop = pos;
   };
   raf = requestAnimationFrame(roll);
-  const close = () => { cancelAnimationFrame(raf); hush(); window.dispatchEvent(new Event('sv-hide-caption')); c.remove(); Music.play(prevMusic || 'field'); };
+  const close = () => { cancelAnimationFrame(raf); hush(); if (typeof onClose === 'function') onClose(); window.dispatchEvent(new Event('sv-hide-caption')); c.remove(); Music.play(prevMusic || 'field'); };
   c.querySelector('.cr-x').onclick = close;
 }
 
