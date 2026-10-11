@@ -5,6 +5,10 @@ fully in Vietnamese (voice and captions). Made 11 Oct 2026 (Sydney time) from re
 The voice is Azure neural speech (English: en-AU Natasha; Vietnamese: vi-VN Hoài My); the music is the ad kit's own
 generated jingle (no samples, no licence issues). For TikTok, Instagram Reels, YouTube Shorts and Facebook Stories.
 
+**Every video has a thumbnail** (owner, 11 Oct): `<video>-thumb.jpg` next to it (1080 × 1920, the ad's headline, its key picture, the logo and sparklevalley.au), also built into each mp4 as its cover picture. Upload it as the cover on TikTok, Reels, Shorts and Facebook.
+
+**The website is sparklevalley.au** (owner, 11 Oct): every end card and caption sends people there.
+
 | Ad | English file | Vietnamese file | Best for |
 |---|---|---|---|
 | 1. For parents | `sparkle-valley-parents-en.mp4` | `sparkle-valley-parents-vi.mp4` | Parent groups, paid ads to parents |
@@ -86,12 +90,12 @@ Not claimed on purpose: "no ads" (the game has an ads feature, switched off) and
 **English (any ad)**
 > Sparkle Valley is a gentle 3D world for kids aged 2–8, in English and Tiếng Việt. 77 little games, Vietnamese tales
 > and festivals, Sydney and Hà Nội to explore, and grown-up controls you'll actually use. Works offline. Open
-> sparklevalley.netlify.app in your browser and tap "Add to Home Screen".
+> sparklevalley.au in your browser and tap "Add to Home Screen".
 
 **Tiếng Việt (bất kỳ video nào)**
 > Thung Lũng Lấp Lánh là thế giới 3D hiền hoà cho bé 2–8 tuổi, bằng tiếng Anh và tiếng Việt. 77 trò chơi nhỏ, truyện cổ
 > và lễ hội Việt Nam, Sydney và Hà Nội để khám phá, cùng các cài đặt cho bố mẹ. Chơi được khi không có mạng. Mở
-> sparklevalley.netlify.app trên trình duyệt rồi bấm "Thêm vào màn hình chính".
+> sparklevalley.au trên trình duyệt rồi bấm "Thêm vào màn hình chính".
 
 **Hashtags:** #SparkleValley #ThungLungLapLanh #BilingualKids #SongNgu #HocTiengViet #VietnameseAustralian
 #NguoiVietOUc #KidsGames #Preschool #ScreenTimeDoneRight #TrungThu
@@ -108,5 +112,6 @@ cd marketing/source
 node voice5.mjs                       # only lines whose mp3 is missing are recorded
 python3 -m http.server 8770 &         # serves the stage
 ./make5.sh                            # all five, both languages -> out5/sparkle-valley-<ad>-<lang>.mp4
+node render5.mjs <ad> <lang> thumb    # the thumbnail -> out5/sparkle-valley-<ad>-<lang>-thumb.jpg
 ./make5.sh parents                    # just one ad (LANGS=en ./make5.sh for English only)
 ```

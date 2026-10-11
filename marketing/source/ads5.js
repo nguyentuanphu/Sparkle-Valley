@@ -90,7 +90,7 @@ window.ADS5_BUILD = (name, lang) => {
       L.chip(k ? '🧒 Cho bé 2–8 tuổi' : '🧒 Ages 2–8', { x: 190, y: 1190, at: .6, rot: -2 }),
       L.chip(k ? '🇻🇳 Tiếng Việt ⇄ English 🇦🇺' : '🇦🇺 English ⇄ Tiếng Việt 🇻🇳', { x: 110, y: 1330, at: .8, from: 700, rot: 2 }),
       L.chip(k ? '📴 Chơi được khi không có mạng' : '📴 Works offline', { x: 150, y: 1470, at: 1, rot: -1 }),
-      L.html(`<div style="font-size:54px;font-weight:500;color:#1f4a1a">sparklevalley.netlify.app</div><div style="font-family:'Baloo 2';font-weight:600;font-size:42px;color:#1f4a1a;margin-top:6px">${k ? 'Mở trên trình duyệt → Thêm vào màn hình chính' : 'Open in your browser → Add to Home Screen'}</div>`, { at: 1.3, style: 'left:0;right:0;top:1660px;text-align:center' })] };
+      L.html(`<div style="font-size:54px;font-weight:500;color:#1f4a1a">sparklevalley.au</div><div style="font-family:'Baloo 2';font-weight:600;font-size:42px;color:#1f4a1a;margin-top:6px">${k ? 'Mở trên trình duyệt → Thêm vào màn hình chính' : 'Open in your browser → Add to Home Screen'}</div>`, { at: 1.3, style: 'left:0;right:0;top:1660px;text-align:center' })] };
     const layers = [];
     if (s.still) layers.push(L.img(src(s.still), [1.03, 1.15, 0, 0, 0, -40]));
     else layers.push(L.bg(s.bg));
@@ -102,4 +102,25 @@ window.ADS5_BUILD = (name, lang) => {
     (s.chips || []).forEach((c, i) => layers.push(L.chip(c[k], { x: 70 + (i % 2) * 40, y: 1560 + i * 120 - (s.chips.length > 2 ? 120 : 0), at: .9 + i * .3, rot: i % 2 ? 2 : -2 })));
     return { d, layers };
   });
+};
+// A thumbnail (cover) for each ad and language (owner, 11 Oct: every video needs a thumbnail of what it is about)
+window.ADS5_THUMB = (name, lang) => {
+  const { L } = AD, k = lang === 'vi' ? 1 : 0;
+  const T = {
+    parents: { head: ['Screen time you can feel good about', 'Giờ chơi màn hình bố mẹ yên tâm'], bg: 'radial-gradient(ellipse at 50% 30%,#ffd6a0 0%,#ff9fb2 50%,#8a5cf6 100%)', phones: ['grownups', 'game-count'], chip: ['👨‍👩‍👧 For parents', '👨‍👩‍👧 Dành cho bố mẹ'] },
+    little: { head: ['Made for little hands', 'Dành cho bàn tay bé xíu'], bg: 'linear-gradient(160deg,#ffe7b0 0%,#ffc4d6 100%)', phones: ['simple', 'game-colors'], chip: ['🧒 Under 5s never lose', '🧒 Bé dưới 5 tuổi không bao giờ thua'] },
+    heritage: { head: ['Keep Vietnamese alive at home', 'Giữ tiếng Việt trong nhà mình'], bg: 'radial-gradient(ellipse at 50% 20%,#b49cff 0%,#6a4a9a 70%,#3a2a60 100%)', phones: ['title@en', 'title@vi'], chip: ['🇦🇺 English ⇄ Tiếng Việt 🇻🇳', '🇻🇳 Tiếng Việt ⇄ English 🇦🇺'] },
+    together: { head: ['Better together', 'Chơi cùng nhau vui hơn'], bg: 'linear-gradient(180deg,#5ec8f2 0%,#a8e3f7 55%,#8fdc6a 55%,#5fb447 100%)', phones: ['two-players', 'friends'], chip: ['🔒 Safe, with grown-up codes', '🔒 An toàn, có mã của người lớn'] },
+    explore: { head: ['A whole valley to explore', 'Cả một thung lũng để khám phá'], still: 'cine-village', phones: ['map'], chip: ['🗺️ Vietnam and Australia', '🗺️ Việt Nam và Úc'] }
+  }[name];
+  const src = s => s.includes('@') ? s.replace('@', '-') : `${s}-${lang}`;
+  const layers = [T.still ? L.img(src(T.still), [1.08, 1.08, 0, 0, 0, 0]) : L.bg(T.bg)];
+  if (T.still) layers.push(L.html('', { style: 'inset:0;background:linear-gradient(180deg,rgba(43,34,56,.0) 40%,rgba(43,34,56,.55) 100%)' }));
+  const pos = T.phones.length === 2 ? [[70, 560, -6, 450, 800], [560, 620, 6, 450, 800]] : [[300, 620, 4, 480, 853]];
+  T.phones.forEach((p, i) => { const [x, y, r, w, h] = pos[i]; layers.push(L.phone(src(p), { x, y, w, h, rot: r, at: 0, drift: 0 })); });
+  layers.push(L.html(`<div style="display:flex;align-items:center;justify-content:center;gap:22px"><img src="icon-512.png" style="width:110px;height:110px;border-radius:28px;border:7px solid #2b2238"><div style="font-size:84px;line-height:1;color:#ffd23f;-webkit-text-stroke:8px #2b2238;paint-order:stroke fill;text-shadow:0 8px 0 #2b2238">${k ? 'Thung Lũng Lấp Lánh' : 'Sparkle Valley'}</div></div>`, { at: 0, style: 'left:0;right:0;top:60px' }));
+  layers.push(L.html(`<div style="margin:0 50px;background:#ffd23f;border:10px solid #2b2238;border-radius:48px;padding:22px 34px 26px;font-weight:500;font-size:${T.head[k].length > 26 ? 92 : 112}px;line-height:1.02;text-align:center;box-shadow:0 16px 0 #2b2238">${T.head[k]}</div>`, { at: 0, style: 'left:0;right:0;top:230px' }));
+  layers.push(L.chip(T.chip[k], { x: 60, y: 1540, at: 0, rot: -2, from: 0 }));
+  layers.push(L.html(`<div style="display:inline-block;background:#fff;border:7px solid #2b2238;border-radius:999px;padding:10px 40px 14px;font-size:58px;font-weight:500;box-shadow:0 9px 0 #2b2238">▶ sparklevalley.au</div>`, { at: 0, style: 'left:0;right:0;top:1700px;text-align:center' }));
+  return [{ d: 3, layers }];
 };

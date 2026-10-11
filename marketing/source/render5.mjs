@@ -10,10 +10,11 @@ const errs = []; p.on('pageerror', e => errs.push(e.message));
 await p.addInitScript(d => { window.DUR = d; window.STILLS = 'stills5'; }, DUR);
 await p.goto('http://localhost:8770/stage.html');
 await p.addScriptTag({ url: 'ads5.js' });
-const r = await p.evaluate(([n, l]) => { const sc = ADS5_BUILD(n, l); const total = AD.build(sc); let t = 0; const starts = sc.map(s => { const a = t; t += s.d; return a; }); return { total, starts, ids: ADS5[n].map(s => s.id) }; }, [name, lang]);
+const r = await p.evaluate(([n, l, th]) => { const sc = th ? ADS5_THUMB(n, l) : ADS5_BUILD(n, l); const total = AD.build(sc); let t = 0; const starts = sc.map(s => { const a = t; t += s.d; return a; }); return { total, starts, ids: ADS5[n].map(s => s.id) }; }, [name, lang, preview === 'thumb']);
 await p.evaluate(() => AD.ready());
 const stage = await p.$('#stage');
-if (preview) { for (const t of preview.split(',').map(Number)) { await p.evaluate(t => AD.render(t), t); await stage.screenshot({ path: `${DIR}preview5-${name}-${lang}-${t}.jpg`, type: 'jpeg', quality: 80 }); } }
+if (preview === 'thumb') { await p.evaluate(() => AD.render(2)); fs.mkdirSync(DIR + 'out5', { recursive: true }); await stage.screenshot({ path: `${DIR}out5/sparkle-valley-${name}-${lang}-thumb.jpg`, type: 'jpeg', quality: 92 }); }
+else if (preview) { for (const t of preview.split(',').map(Number)) { await p.evaluate(t => AD.render(t), t); await stage.screenshot({ path: `${DIR}preview5-${name}-${lang}-${t}.jpg`, type: 'jpeg', quality: 80 }); } }
 else {
   const out = `${DIR}frames5/${name}-${lang}/`; fs.rmSync(out, { recursive: true, force: true }); fs.mkdirSync(out, { recursive: true });
   const n = Math.round(r.total * FPS);
