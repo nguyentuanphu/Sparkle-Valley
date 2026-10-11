@@ -26,7 +26,7 @@ const saveContent = async () => { await api('content', CONTENT); markSaved(); if
 // ---------- changes not saved yet (owner, 10 Oct: "edits disappear without warning") ----------
 // On the pages where you change things, a label by Save says "Not saved yet" or "Saved", and leaving the page (another
 // section, Back, the language, reload, closing) asks first. Leaving without saving puts the family's content back as it was.
-const GUARD = new Set(['message', 'missions', 'children', 'album', 'quiz', 'stories', 'villagers', 'releases', 'festivals', 'path', 'music', 'map', 'play', 'ads', 'settings']);
+const GUARD = new Set(['looks', 'plots', 'message', 'missions', 'children', 'album', 'quiz', 'stories', 'villagers', 'releases', 'festivals', 'path', 'music', 'map', 'play', 'ads', 'settings']);
 let KEPT = '', DIRTY = false, SAVED_HERE = '';
 const contentNow = () => JSON.stringify(CONTENT);
 const unsaved = () => GUARD.has(cur) && (DIRTY || (!!KEPT && contentNow() !== KEPT));
@@ -52,8 +52,8 @@ window.addEventListener('beforeunload', e => { if (unsaved()) { e.preventDefault
 // as big cards, one per page; on a phone the sections are a bar at the bottom, on a computer a column on the left.
 const SECTIONS = [
   { k: 'home', i: '🏠', en: 'Home', vi: 'Trang chính', pages: ['home'] },
-  { k: 'family', i: '💛', en: 'Family', vi: 'Gia đình', pages: ['message', 'missions', 'children', 'album', 'quiz', 'stories', 'villagers', 'familycode'] },
-  { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['releases', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads'] },
+  { k: 'family', i: '💛', en: 'Family', vi: 'Gia đình', pages: ['message', 'missions', 'children', 'album', 'quiz', 'stories', 'villagers', 'plots', 'familycode'] },
+  { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['releases', 'festivals', 'looks', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads'] },
   { k: 'players', i: '📊', en: 'Analytics', vi: 'Phân tích', pages: ['players'] },
   { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Thiết lập', pages: ['publish', 'site', 'check', 'settings', 'admins', 'security', 'accesslog'] }
 ];
@@ -75,6 +75,8 @@ const ABOUT = {
   villagers: ['🧑', 'Villagers', 'Nhân vật', 'Names and photo faces of the people in the valley', 'Tên và ảnh khuôn mặt của mọi người trong thung lũng'],
   familycode: ['🔒', 'Family code', 'Mã gia đình', 'Family photos are private: type this code once on each child’s device', 'Ảnh gia đình được giữ riêng: gõ mã này một lần trên máy của mỗi con'],
   releases: ['🆕', 'Releases', 'Ra mắt', 'Switch features on or off, start them on a day, for so many days, with a New badge', 'Bật tắt tính năng, cho ra mắt vào ngày nào, trong bao lâu, có nhãn Mới'],
+  looks: ['🎭', 'Story characters', 'Nhân vật trong truyện', 'How Chi, Jack and Ruby look in the lantern story (chapter 3, Sydney)', 'Chi, Jack và Ruby trông thế nào trong truyện đèn lồng (chương 3, Sydney)'],
+  plots: ['🏘️', 'Memory Villages', 'Làng Kỷ Niệm', 'Put the homes you remember on the garden plots in the valley', 'Đặt những ngôi nhà bạn nhớ lên các mảnh vườn trong thung lũng'],
   festivals: ['📅', 'Festivals', 'Lễ hội', 'This year’s festivals: switch one off, move a date, change how early it decorates', 'Lễ hội năm nay: tắt, đổi ngày, đổi thời gian trang trí trước'],
   path: ['🧸', 'Simple screen', 'Màn hình đơn giản', 'Which games under-5s see, and in which area', 'Bé dưới 5 tuổi thấy trò nào, ở khu nào'],
   music: ['🎵', 'Music', 'Âm nhạc', 'Your own recordings: lullabies, Tết and Trung Thu songs, village songs', 'Bản ghi của nhà mình: hát ru, nhạc Tết, Trung Thu, làng quê'],
@@ -703,8 +705,96 @@ PAGES.publish = async P => {
   if ($('#gdraft')) $('#gdraft').onclick = () => ghRun('draft');
   if ($('#gpub')) $('#gpub').onclick = () => ghRun('publish');
 };
+// ---------- 🎭 Story characters (Play's request, owner 10 Oct: "Chi's look can be changed in Studio") ----------
+// writes CONTENT.looks = { chi | jack | ruby: { style, color, hair, hairStyle, skin } }; the game reads it with lookOf in
+// js/content/chapter3sydney.js (anything missing keeps the usual look), so the usual looks are read from the game itself
+const STORY_CAST = [['chi', 'Chi: she has two homes, Vietnam and Australia', 'Chi: bạn có hai quê, Việt Nam và Úc'], ['jack', 'Jack: Chi’s friend in Sydney', 'Jack: bạn của Chi ở Sydney'], ['ruby', 'Ruby: Chi’s friend in Sydney', 'Ruby: bạn của Chi ở Sydney']];
+const figure = L => `<svg class="fig" viewBox="0 0 60 80" aria-hidden="true"><rect x="16" y="38" width="28" height="34" rx="9" fill="${esc(L.color)}" stroke="#3a2a20" stroke-width="2"/><circle cx="30" cy="24" r="15" fill="${esc(L.skin)}" stroke="#3a2a20" stroke-width="2"/><path d="M15 22a15 15 0 0 1 30 0q-15-8-30 0z" fill="${esc(L.hair)}" stroke="#3a2a20" stroke-width="2"/>${L.hairStyle === 'long' || L.hairStyle === 'ponytail' ? `<path d="M44 20q6 14 0 26" stroke="${esc(L.hair)}" stroke-width="6" fill="none" stroke-linecap="round"/>` : ''}<circle cx="25" cy="26" r="2" fill="#3a2a20"/><circle cx="35" cy="26" r="2" fill="#3a2a20"/><path d="M25 32q5 4 10 0" stroke="#3a2a20" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`;
+PAGES.looks = async P => {
+  let lookOf = null; try { ({ lookOf } = await import(GAME + 'js/content/chapter3sydney.js')); } catch (e) { lookOf = null; }
+  if (!lookOf) { P.innerHTML = `<h2>🎭 ${T('Story characters', 'Nhân vật trong truyện')}</h2><div class="card"><p class="note">${T('Chapter 3 of the lantern story is not in this copy of the game yet, so there is nothing to change here.', 'Chương 3 của truyện đèn lồng chưa có trong bản game này, nên chưa có gì để đổi ở đây.')}</p></div>`; return; }
+  const LK = CONTENT.looks && typeof CONTENT.looks === 'object' ? CONTENT.looks : {};
+  const pal = (list, cur) => (list.includes(cur) ? list : [cur, ...list]);
+  const draw = () => {
+    P.innerHTML = `<h2>🎭 ${T('Story characters', 'Nhân vật trong truyện')}</h2><p class="sub">${T('How Chi, Jack and Ruby look in chapter 3 of the lantern story (Sydney). Change their clothes, hair and skin, then Save and Publish. “Back to the usual” gives the look the story was made with.', 'Chi, Jack và Ruby trông thế nào trong chương 3 truyện đèn lồng (Sydney). Đổi quần áo, tóc và màu da, rồi Lưu và Phát hành. “Về như cũ” trả lại dáng vẻ ban đầu của truyện.')}</p>
+    <div class="cards looks">${STORY_CAST.map(([id, en, vi]) => { const L = lookOf(id, LK), sw = (k, list) => `<div class="swatches">${pal(list, L[k]).map(v => `<button type="button" class="sw ${v === L[k] ? 'on' : ''}" data-id="${id}" data-k="${k}" data-v="${v}" style="background:${v}" aria-label="${v}"></button>`).join('')}</div>`;
+      return `<div class="card look" data-id="${id}"><div class="row" style="align-items:center;flex-wrap:nowrap"><div style="flex:0 0 72px">${figure(L)}</div><div><h3 style="margin:0">${esc(T(en, vi).split(':')[0])}</h3><p class="note" style="margin:2px 0 0">${esc(T(en, vi).split(': ')[1] || '')}</p></div></div>
+        <div class="row"><div><label>${T('Clothes', 'Trang phục')}</label><select data-id="${id}" data-k="style">${LOOKS.style.map(v => `<option value="${v}" ${L.style === v ? 'selected' : ''}>${lookWord(v)}</option>`).join('')}</select></div>
+        <div><label>${T('Hair', 'Tóc')}</label><select data-id="${id}" data-k="hairStyle">${LOOKS.hairStyle.map(v => `<option value="${v}" ${L.hairStyle === v ? 'selected' : ''}>${lookWord(v)}</option>`).join('')}</select></div></div>
+        <label>${T('Clothes colour', 'Màu áo')}</label>${sw('color', LOOKS.color)}<label>${T('Hair colour', 'Màu tóc')}</label>${sw('hair', LOOKS.hair)}<label>${T('Skin', 'Màu da')}</label>${sw('skin', LOOKS.skin)}
+        <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn small ghost" data-usual="${id}" ${LK[id] ? '' : 'disabled'}>↩️ ${T('Back to the usual', 'Về như cũ')}</button></div></div>`; }).join('')}</div>
+    <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
+    const set = (id, k, v) => { const L = lookOf(id, LK); LK[id] = { style: L.style, color: L.color, hair: L.hair, hairStyle: L.hairStyle, skin: L.skin, [k]: v }; CONTENT.looks = LK; draw(); };
+    P.querySelectorAll('.look .sw').forEach(b => b.onclick = () => set(b.dataset.id, b.dataset.k, b.dataset.v));
+    P.querySelectorAll('.look select').forEach(s => s.onchange = () => set(s.dataset.id, s.dataset.k, s.value));
+    P.querySelectorAll('[data-usual]').forEach(b => b.onclick = () => { delete LK[b.dataset.usual]; CONTENT.looks = LK; draw(); });
+    $('#save').onclick = () => { if (!Object.keys(LK).length) delete CONTENT.looks; else CONTENT.looks = LK; saveContent().catch(fail); };
+  };
+  draw();
+};
+// ---------- 🏘️ Memory Villages (round T3): the homes the family remembers, put on garden plots by the plot's id ----------
+// writes CONTENT.plots = { <plot id>: { type, name: [en, vi], owner: { name, line: [en, vi] }, color } }. The plots are
+// PLOTS in js/content/map.js (the two Memory Villages, with an address) and the spare plots by the cities (ids
+// sp_<city>_<n>, made when the valley is built: found by opening the game out of sight). Never by x, z.
+let SPARE = null;
+async function sparePlots() {
+  const f = document.createElement('iframe'); f.style.cssText = 'position:fixed;left:-2000px;top:0;width:400px;height:300px;border:0'; f.src = GAME + 'index.html?studio=1'; document.body.appendChild(f);
+  try {
+    for (let i = 0; i < 120; i++) { await new Promise(r => setTimeout(r, 500)); const G = f.contentWindow && f.contentWindow.__sv; if (G && G.world && G.world.boxes && G.interactables && G.interactables.length > 50) {
+      const W = await f.contentWindow.eval(`import(${JSON.stringify(GAME + 'js/world.js')})`);
+      return W.PLOTS.slice(W.PLOTS.spareFrom).map(p => ({ id: p.id, village: p.village, address: p.address })); } }
+    throw new Error(T('The game did not open in time.', 'Game chưa mở kịp.'));
+  } finally { f.remove(); }
+}
+PAGES.plots = async P => {
+  const M = await import(GAME + 'js/content/map.js'), WE = await import(GAME + 'js/worldedit.js'), HOMES = Object.entries(WE.BUILD_TYPES).filter(([, t]) => t.home);
+  const PL = CONTENT.plots && typeof CONTENT.plots === 'object' ? CONTENT.plots : {};
+  const VILLAGES = M.PLACES.filter(p => p.kind === 'plots'), CITY = id => { const c = M.PLACES.find(p => p.id === id); return c && c.name ? T(c.name[0], c.name[1]) : id; };
+  const known = new Set([...M.PLOTS.map(p => p.id), ...(SPARE || []).map(p => p.id)]);
+  const tile = p => { const h = PL[p.id], n = (p.address[0].match(/^\d+/) || p.address[0].match(/\d+/) || [''])[0];
+    return `<button type="button" class="plot ${h ? 'home' : ''}" data-plot="${esc(p.id)}" title="${esc(T(p.address[0], p.address[1]))}"><b>${esc(n)}</b><span>${h ? '🏡 ' + esc((h.name && (T(h.name[0], h.name[1]) || h.name[0] || h.name[1])) || (h.owner && h.owner.name) || T('A home', 'Một ngôi nhà')) : '🌷 ' + T('garden', 'vườn')}</span></button>`; };
+  const draw = () => {
+    const homes = Object.keys(PL).length;
+    P.innerHTML = `<h2>🏘️ ${T('Memory Villages', 'Làng Kỷ Niệm')}</h2><p class="sub">${T('Each garden plot in the two Memory Villages, and the spare plots by the cities, can hold a home your family remembers: grandparents’ house, the house you grew up in. Tap a plot, choose the house, its name and who lives there, then Save and Publish.', 'Mỗi mảnh vườn ở hai Làng Kỷ Niệm, và các mảnh trống cạnh thành phố, có thể đặt một ngôi nhà gia đình bạn nhớ: nhà ông bà, ngôi nhà bạn lớn lên. Chạm vào một mảnh, chọn kiểu nhà, tên và ai ở đó, rồi Lưu và Phát hành.')}</p>
+      <div class="card"><p class="note">🏡 ${T(`${homes} home(s) placed.`, `Đã đặt ${homes} ngôi nhà.`)} ${T('The valley shows the gardens now; the homes appear there once the game can build them (asked of the World part of the game).', 'Thung lũng đang hiện các khu vườn; ngôi nhà sẽ hiện ở đó khi game dựng được (đã đề nghị phần Thế giới của game).')}</p></div>
+      ${VILLAGES.map(v => { const mine = M.PLOTS.filter(p => p.village === v.id), lanes = [...new Set(mine.map(p => p.id.split('_')[2]))];
+        return `<div class="card"><h3>${esc(T(v.name[0], v.name[1]))}</h3>${lanes.map(li => { const L = mine.filter(p => p.id.split('_')[2] === li), odd = L.filter(p => +p.id.split('_')[3] % 2), even = L.filter(p => !(+p.id.split('_')[3] % 2)), lane = L[0].address;
+          return `<p class="note" style="margin:10px 0 4px">${esc(T(lane[0].replace(/^\d+ /, ''), lane[1].replace(/^Số \d+, /, '')))}</p><div class="lane"><div class="plots">${odd.map(tile).join('')}</div><div class="lanebar"></div><div class="plots">${even.map(tile).join('')}</div></div>`; }).join('')}</div>`; }).join('')}
+      <div class="card"><h3>🏙️ ${T('Spare plots by the cities', 'Mảnh trống cạnh thành phố')}</h3>${SPARE ? (SPARE.length ? [...new Set(SPARE.map(p => p.village))].map(c => `<p class="note" style="margin:10px 0 4px">${esc(CITY(c))}</p><div class="plots">${SPARE.filter(p => p.village === c).map(tile).join('')}</div>`).join('') : `<p class="note">${T('No spare plots in this valley.', 'Thung lũng này không có mảnh trống.')}</p>`)
+        : `<p class="note">${T('They are made when the valley is built, so Studio opens the game out of sight to find them (up to a minute).', 'Các mảnh này được tạo khi dựng thung lũng, nên Studio mở game ẩn để tìm (tối đa một phút).')}</p><button class="btn ghost" id="spare">🔎 ${T('Find the plots by the cities', 'Tìm các mảnh cạnh thành phố')}</button> <span class="note" id="spareres"></span>`}</div>
+      ${Object.keys(PL).filter(id => !known.has(id) && !(/^sp_/.test(id) && !SPARE)).length ? `<div class="card"><p class="warn">⚠️ ${T('Some homes are on plots this map no longer has:', 'Có nhà nằm trên mảnh mà bản đồ này không còn:')} ${Object.keys(PL).filter(id => !known.has(id) && !(/^sp_/.test(id) && !SPARE)).map(esc).join(', ')}</p></div>` : ''}
+      <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
+    P.querySelectorAll('[data-plot]').forEach(b => b.onclick = () => edit(b.dataset.plot));
+    if ($('#spare')) $('#spare').onclick = async () => { $('#spare').disabled = true; $('#spareres').textContent = T('Opening the game to look…', 'Đang mở game để xem…'); try { SPARE = await sparePlots(); draw(); } catch (e) { $('#spare').disabled = false; $('#spareres').textContent = '⚠️ ' + e.message; } };
+    $('#save').onclick = () => { if (!Object.keys(PL).length) delete CONTENT.plots; else CONTENT.plots = PL; saveContent().catch(fail); };
+  };
+  // one plot: the house, the name on its door, who lives there and what they say, the wall colour
+  const edit = id => {
+    const p = [...M.PLOTS, ...(SPARE || [])].find(x => x.id === id), h = PL[id] ? JSON.parse(JSON.stringify(PL[id])) : { type: (HOMES.find(([k]) => k === 'village') || HOMES[0])[0], name: ['', ''], owner: { name: '', line: ['', ''] }, color: '' };
+    h.name = h.name || ['', '']; h.owner = h.owner || { name: '', line: ['', ''] }; h.owner.line = h.owner.line || ['', ''];
+    const m = document.createElement('div'); m.className = 'modal';
+    m.innerHTML = `<div class="card plotform"><h3>🏡 ${esc(p ? T(p.address[0], p.address[1]) : id)}</h3>
+      <label>${T('The house', 'Kiểu nhà')}</label><select data-f="type">${HOMES.map(([k, t]) => `<option value="${k}" ${k === h.type ? 'selected' : ''}>${esc(T(t.name[0], t.name[1]))}</option>`).join('')}</select>
+      <label>${T('Name on the door', 'Tên trên cửa')}</label><div class="row"><input type="text" data-f="n0" maxlength="40" value="${esc(h.name[0])}" placeholder="English"><input type="text" data-f="n1" maxlength="40" value="${esc(h.name[1])}" placeholder="Tiếng Việt"></div>
+      <label>${T('Who lives there', 'Ai ở đó')}</label><input type="text" data-f="o" maxlength="40" value="${esc(h.owner.name)}" placeholder="${T('e.g. Bà Nội', 'vd. Bà Nội')}">
+      <label>${T('What they say', 'Họ nói gì')}</label><div class="row"><input type="text" data-f="l0" maxlength="160" value="${esc(h.owner.line[0])}" placeholder="English"><input type="text" data-f="l1" maxlength="160" value="${esc(h.owner.line[1])}" placeholder="Tiếng Việt"></div>
+      <label>${T('Wall colour', 'Màu tường')}</label><div class="swatches">${['#9fd8c8', '#ffb3a0', '#f2d6a0', '#efe0bf', '#cfe6ee', '#f6e27a', '#d9c3f0', '#ffffff'].map(c => `<button type="button" class="sw ${c === h.color ? 'on' : ''}" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join('')}</div>
+      <div class="bar" style="position:static;background:none">${PL[id] ? `<button class="btn bad" data-x="off">🗑️ ${T('Back to a garden', 'Trả lại vườn')}</button>` : ''}<button class="btn ghost" data-x="cancel">${T('Cancel', 'Hủy')}</button><button class="btn" data-x="ok">✅ ${T('Done', 'Xong')}</button></div></div>`;
+    document.body.appendChild(m);
+    m.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { h.color = b.dataset.c; m.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', x === b)); });
+    const v = k => m.querySelector(`[data-f="${k}"]`).value.trim();
+    m.querySelector('[data-x="cancel"]').onclick = () => m.remove();
+    const off = m.querySelector('[data-x="off"]'); if (off) off.onclick = () => { delete PL[id]; CONTENT.plots = PL; m.remove(); draw(); paintState(); };
+    m.querySelector('[data-x="ok"]').onclick = () => { h.type = v('type'); h.name = [v('n0'), v('n1')]; h.owner = { name: v('o'), line: [v('l0'), v('l1')] }; if (!h.color) delete h.color; PL[id] = h; CONTENT.plots = PL; m.remove(); draw(); paintState(); };
+  };
+  draw();
+};
 // ---------- map: add, place, move and remove the family's own villagers ----------
 const LOOKS = { style: ['dress', 'shirt', 'aodai', 'tunic', 'overalls', 'hoodie'], hairStyle: ['buns', 'short', 'long', 'ponytail', 'spiky'], color: ['#ff5fa2', '#a66bff', '#3cc7e8', '#ffd23f', '#e8434a', '#5fd39a', '#ff9f43', '#3b6fe0', '#ffffff'], hair: ['#1d1412', '#3b2618', '#6b4226', '#c98b4a', '#e8c26a', '#a8432a', '#d9d9d9'], skin: ['#ffe3d1', '#f6c7a5', '#e0aa80', '#b47a55', '#7a4e33'] };
+// the looks' choices in words (a list box cannot show pictures)
+const LOOK_WORDS = { dress: ['Dress', 'Váy'], shirt: ['Shirt and shorts', 'Áo và quần soóc'], aodai: ['Áo dài', 'Áo dài'], tunic: ['Tunic', 'Áo tunic'], overalls: ['Overalls', 'Quần yếm'], hoodie: ['Hoodie', 'Áo hoodie'],
+  buns: ['Buns', 'Búi tóc'], short: ['Short', 'Tóc ngắn'], long: ['Long', 'Tóc dài'], ponytail: ['Ponytail', 'Tóc đuôi ngựa'], spiky: ['Spiky', 'Tóc dựng'] };
+const lookWord = v => LOOK_WORDS[v] ? T(...LOOK_WORDS[v]) : v;
 let mapCanvas = null, mapMode = 'npc', SNAP = null;
 // the buildings that are in the game now: the game itself is opened out of sight and asked (it needs a moment)
 async function worldSnapshot() {
@@ -872,7 +962,7 @@ PAGES.map = async P => {
       <div class="row"><div><label>${T('Voice', 'Giọng')}</label><select id="fg"><option value="f" ${c.gender !== 'm' ? 'selected' : ''}>👩 ${T('woman/girl', 'nữ')}</option><option value="m" ${c.gender === 'm' ? 'selected' : ''}>👨 ${T('man/boy', 'nam')}</option></select></div>
       <div><label>${T('Age', 'Tuổi')}</label><select id="fa">${[['kid', T('child', 'trẻ em')], ['adult', T('grown-up', 'người lớn')], ['old', T('grandparent', 'ông bà')]].map(([v, l]) => `<option value="${v}" ${(L.age || 'adult') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
       <div><label>${T('Icon', 'Biểu tượng')}</label><input type="text" id="fi" value="${esc(c.icon || '💬')}" maxlength="4"></div></div>
-      <div class="row"><div><label>${T('Clothes', 'Trang phục')}</label><select id="fs">${LOOKS.style.map(v => `<option ${L.style === v ? 'selected' : ''}>${v}</option>`).join('')}</select></div><div><label>${T('Hair', 'Tóc')}</label><select id="fh">${LOOKS.hairStyle.map(v => `<option ${L.hairStyle === v ? 'selected' : ''}>${v}</option>`).join('')}</select></div></div>
+      <div class="row"><div><label>${T('Clothes', 'Trang phục')}</label><select id="fs">${LOOKS.style.map(v => `<option value="${v}" ${L.style === v ? 'selected' : ''}>${lookWord(v)}</option>`).join('')}</select></div><div><label>${T('Hair', 'Tóc')}</label><select id="fh">${LOOKS.hairStyle.map(v => `<option value="${v}" ${L.hairStyle === v ? 'selected' : ''}>${lookWord(v)}</option>`).join('')}</select></div></div>
       <label>${T('Clothes colour', 'Màu áo')}</label>${sw('c', LOOKS.color, L.color)}<label>${T('Hair colour', 'Màu tóc')}</label>${sw('h', LOOKS.hair, L.hair)}<label>${T('Skin', 'Màu da')}</label>${sw('s', LOOKS.skin, L.skin)}
       <label>${T('What they say (one line per page)', 'Họ nói gì (mỗi dòng một trang)')}</label><div id="flines">${(c.lines || []).map((l, j) => `<div class="row" data-j="${j}"><input type="text" data-l="0" value="${esc(l[0])}" placeholder="English"><input type="text" data-l="1" value="${esc(l[1])}" placeholder="Tiếng Việt"><button class="btn small bad" data-rm style="flex:0 0 auto;min-width:0">✕</button></div>`).join('')}</div>
       <button class="btn small ghost" id="fadd">➕ ${T('Another line', 'Thêm dòng')}</button>
@@ -997,6 +1087,10 @@ PAGES.players = async P => {
   // how long ago a device was last on the screen (round O)
   const ago = iso => { const m = Math.max(1, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 60 ? T(`${m} min ago`, `${m} phút trước`) : m < 48 * 60 ? T(`${Math.round(m / 60)} h ago`, `${Math.round(m / 60)} giờ trước`) : T(`${Math.round(m / 1440)} days ago`, `${Math.round(m / 1440)} ngày trước`); };
   const gname = g => GN[g] || g, pname = p => PN[p] || p, when = d => d ? new Date(d + 'T12:00:00').toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { day: 'numeric', month: 'short' }) : '–';
+  // (owner, 11 Oct, #36) start-up times: seconds until the valley is built, by kind of device and for each device
+  const STEPS = { world: ['the land', 'mặt đất'], map: ['the map', 'bản đồ'], people: ['the people', 'mọi người'], roads: ['the roads', 'đường sá'], town: ['the towns', 'phố xá'], pretraffic: ['the vehicles', 'xe cộ'], traffic: ['the traffic', 'xe chạy'], things: ['things in the valley', 'đồ vật'], wideland: ['the wide land', 'vùng đất rộng'], levelled: ['levelling the ground', 'san đất'], roadside: ['the roadsides', 'lề đường'], solids: ['solid houses and things', 'nhà và đồ vật'], shaders: ['the first picture', 'hình đầu tiên'], ready: ['getting ready', 'chuẩn bị'] };
+  const stepName = k => STEPS[k] ? T(...STEPS[k]) : k, secs = v => v == null ? '–' : (v >= 10 ? Math.round(v) : v) + ' s';
+  const startLine = st => !st ? '' : `<br>🏁 ${st.ready != null ? T(`usually ready in ${secs(st.ready)}`, `thường sẵn sàng sau ${secs(st.ready)}`) : st.readyFirst != null ? T(`ready in ${secs(st.readyFirst)} (first visits)`, `sẵn sàng sau ${secs(st.readyFirst)} (lần đầu)`) : ''}${st.slowest ? ` (${T('slowest', 'chậm nhất')}: ${esc(stepName(st.slowest))})` : ''}`;
   const kindName = k => ({ phone: T('Phone', 'Điện thoại'), tablet: T('Tablet', 'Máy tính bảng'), computer: T('Computer', 'Máy tính') }[k] || k);
   const locName = l => l ? [l.city, l.region, l.country].filter(Boolean).join(', ') : T('unknown', 'không rõ');
   const hmax = Math.max(1, ...(r.hours || [])), hbars = (r.hours || []).map((m, h) => `<rect x="${h * 25 + 2}" y="${(110 - m / hmax * 90).toFixed(1)}" width="21" height="${(m / hmax * 90).toFixed(1)}" rx="3" fill="#ff7eb8"><title>${h}:00 · ${hrs(m)}</title></rect>${h % 3 === 0 ? `<text x="${h * 25 + 12}" y="126" font-size="11" text-anchor="middle" fill="currentColor">${h}</text>` : ''}`).join('');
@@ -1007,7 +1101,7 @@ PAGES.players = async P => {
   const devCard = d => `<div class="card dev" data-id="${esc(d.id)}"><div class="row" style="align-items:flex-start"><div style="flex:2">
       <h3>${{ phone: '📱', tablet: '📲', computer: '💻' }[d.kind] || '❔'} <span class="dlabel">${esc(devName(d))}</span> ${d.online ? `<span class="pill live on">🟢 ${T('Playing now', 'Đang chơi')}${d.playingNow ? ' · ' + esc(d.playingNow) : ''}</span>` : `<span class="pill live">⚪ ${T('Offline', 'Không chơi')}${d.seenAt ? ' · ' + ago(d.seenAt) : ''}</span>`} <button class="btn small ghost" data-rename>✏️ ${T('Name it', 'Đặt tên')}</button></h3>
       <p class="note">${esc(d.os)} · ${esc(d.br)}${d.screen ? ' · ' + esc(d.screen) : ''}${d.app ? ' · ' + T('installed app', 'đã cài như ứng dụng') : ''} · ${esc(d.build)} · ${d.lang === 'vi' ? 'Tiếng Việt' : 'English'}<br>📍 ${esc(locName(d.loc))} · ${T('first seen', 'lần đầu')} ${when(d.first)} · ${T('last played', 'chơi gần nhất')} ${when(d.last)}</p></div>
-      <div style="flex:1;min-width:150px"><p>⏱️ <b>${hrs(d.mins)}</b> ${T('in 30 days', 'trong 30 ngày')}<br>📅 ${d.days} ${T('days played', 'ngày có chơi')}${d.fps != null ? `<br>🎞️ ${d.fps} ${T('frames/s', 'khung hình/giây')}` : ''}${d.errors ? `<br><span class="badtxt">🐞 ${d.errors} ${T('errors', 'lỗi')}</span>` : ''}${d.stuck ? `<br><span class="warn">🧱 ${T('stuck', 'bị kẹt')} ${d.stuck}×</span>` : ''}</p></div></div>
+      <div style="flex:1;min-width:150px"><p>⏱️ <b>${hrs(d.mins)}</b> ${T('in 30 days', 'trong 30 ngày')}<br>📅 ${d.days} ${T('days played', 'ngày có chơi')}${d.fps != null ? `<br>🎞️ ${d.fps} ${T('frames/s', 'khung hình/giây')}` : ''}${d.errors ? `<br><span class="badtxt">🐞 ${d.errors} ${T('errors', 'lỗi')}</span>` : ''}${d.stuck ? `<br><span class="warn">🧱 ${T('stuck', 'bị kẹt')} ${d.stuck}×</span>` : ''}${startLine(d.startup)}</p></div></div>
       <div class="kids">${d.kids.map(kidCard).join('') || `<p class="note">${T('No per-child details yet (they start with version r43).', 'Chưa có chi tiết từng bé (bắt đầu từ bản r43).')}</p>`}</div></div>`;
   const pb = r.problems || { errors: [], stuck: [], quits: [], slow: [] };
   // the suggestions in words, with the games', places' and devices' own names
@@ -1024,6 +1118,7 @@ PAGES.players = async P => {
   }[t.k] || (() => ''))();
   P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><p class="sub">${T('What the children play, from the game’s own website: per device and per child, for the last 30 days. Towns come from the internet connection (never GPS). A grown-up can switch it all off on the device: Grown-ups → Advanced → Analytics.', 'Các con chơi gì, từ trang web của game: theo từng máy và từng bé, trong 30 ngày qua. Thành phố lấy từ kết nối mạng (không bao giờ GPS). Người lớn có thể tắt hết trên máy: Người lớn → Nâng cao → Phân tích.')}</p>
   ${(r.tips || []).length ? `<div class="card tips"><h3>💡 ${T('Suggestions', 'Gợi ý')}</h3><ul>${r.tips.map(t => `<li>${esc(tipText(t))}</li>`).join('')}</ul></div>` : ''}
+  ${r.startup && Object.keys(r.startup).length ? `<div class="card startup"><h3>🏁 ${T('Start-up', 'Khởi động')}: ${['phone', 'tablet', 'computer'].filter(k => r.startup[k]).map(k => `${kindName(k)} ${secs(r.startup[k].ready)}`).join(' · ')}</h3><p class="note">${T('Seconds from opening the game to a built valley (the middle of the last starts; each device below has its own).', 'Số giây từ lúc mở game tới khi thung lũng dựng xong (mức giữa của các lần mở gần đây; mỗi máy bên dưới có số riêng).')}</p></div>` : ''}
   <div class="grid">${big(r.onlineNow || 0, '🟢 playing right now', '🟢 đang chơi lúc này')}${big(r.today.devices, 'devices playing today', 'máy chơi hôm nay')}${big(r.week.devices, 'this week', 'tuần này')}${big(r.month.devices, 'last 30 days', '30 ngày qua')}${big(r.allTime, 'devices ever', 'máy từ trước tới nay')}${big(r.week.newDevices, 'new this week', 'máy mới tuần này')}${big(hrs(r.minsPerDevice), 'a device plays a day', 'mỗi máy chơi mỗi ngày')}</div>
   <h3 class="sec">👨‍👩‍👧 ${T('Each device and child', 'Từng máy và từng bé')}</h3>${(r.devices || []).map(devCard).join('') || `<div class="card note">${T('No devices yet.', 'Chưa có máy nào.')}</div>`}
   <h3 class="sec">🌏 ${T('Everyone', 'Tất cả')}</h3>

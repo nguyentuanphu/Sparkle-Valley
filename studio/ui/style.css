@@ -139,3 +139,14 @@ table.rel td.opt select[data-in] { margin-top: 6px; width: auto; min-width: 140p
 /* (round T) things kept aside from the old map, on the Map page */
 .parked { border-color: var(--warn); } .parked .prow { padding: 8px 0; border-bottom: 1px solid var(--line); } .parked .prow > span { flex: 3 1 220px; } .parked .prow > .btn { flex: 0 0 auto; min-width: 0; }
 @media (max-width: 500px) { .parked .prow > span { flex-basis: 100%; } }
+/* (r60) Story characters and the Memory Villages' plots */
+.cards.looks { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); } .look .fig { width: 64px; height: 84px; display: block; }
+.lane { border: 1px solid var(--line); border-radius: 12px; padding: 6px; background: var(--bg); }
+.lanebar { height: 14px; margin: 4px 0; border-radius: 7px; background: #e3cf9c; }
+.plots { display: flex; gap: 6px; flex-wrap: wrap; }
+.plot { min-width: 76px; min-height: 64px; flex: 1 1 76px; max-width: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: #e9f6e2; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+.plot b { font-size: 16px; } .plot span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.plot.home { background: #ffe9d6; border-color: var(--accent2); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .plot { background: #2a3a2a; } :root:not([data-theme="light"]) .plot.home { background: #4a3328; } }
+.plotform { max-height: 90vh; overflow-y: auto; }
+@media (max-width: 500px) { .cards.looks { grid-template-columns: 1fr; } .plot { min-width: 64px; flex-basis: 64px; } }
