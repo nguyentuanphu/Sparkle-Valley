@@ -61,7 +61,7 @@ Corner's row.
     shop doors; their tap spots are on the footpath, no longer on the road.
   - Two Homes Street: the two kiosks on the south footpath east of the crossing, clear of the brick houses.
   - The cities: two kiosks on one side just inside the main gate (Bắc Ninh: the south side, clear of the Quan họ boat);
-    the landmarks 1 m further back (u ±9, v −4) so the kiosks and the sellers' footpath keep 3 m from them.
+    the landmarks further back (u ±8.6, v −4) so the kiosks and the sellers' footpath keep 3 m from them.
   - Lotus Village: the kiosks on the north side of the lane in from the old gate. China, India: one side, just inside
     the gate.
   - Walking sellers: on the footpath across the street from each row (the market: the far half of its walking street).

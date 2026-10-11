@@ -199,7 +199,7 @@ export function createCities(G) {
     }
     // landmarks: set back on both sides of the street (Bắc Ninh: around the roundabout)
     D.sites.forEach(([id, icon, u0, v0, model, name, fact], k) => {
-      const u = D.custom ? u0 : (k % 2 ? 9 : -9), v = D.custom ? v0 : -4 - Math.floor(k / 2) * 9;   // (T1b: 1 m further back, clear of the kiosks and the sellers' footpath)
+      const u = D.custom ? u0 : (k % 2 ? 8.6 : -8.6), v = D.custom ? v0 : -4 - Math.floor(k / 2) * 9;   // (T1b: further back, clear of the kiosks and the sellers' footpath; TP. HCM's pier path keeps its corridor)
       const [x, z] = L(u, v), rot = D.custom || model === 'wtram' ? toward : faceStreet(u);
       const m = place(MODELS[model](), x, z, rot, c.h - .05);
       const r = model === 'bnclock' ? 4 : model === 'quanho' || model === 'puppetstage' ? 4.6 : model === 'wtram' ? 4.6 : 4.2;
