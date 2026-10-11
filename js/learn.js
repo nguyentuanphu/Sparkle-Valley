@@ -159,7 +159,7 @@ export function createLearning(G) {
     p.push(P(new THREE.BoxGeometry(2.6, .9, 1.2), '#7a4ab0', [0, .45, 0]), P(new THREE.BoxGeometry(2.8, .1, 1.4), '#f6e7c8', [0, .95, 0]));
     [[-1.25, -.55], [1.25, -.55], [-1.25, .55], [1.25, .55]].forEach(([a, b]) => p.push(P(new THREE.CylinderGeometry(.06, .06, 2.3, 6), '#8a5a3b', [a, 1.15, b])));
     for (let i = 0; i < 6; i++) p.push(P(new THREE.BoxGeometry(.5, .08, 1.7), i % 2 ? '#ffd23f' : '#a66bff', [-1.25 + i * .5, 2.35, 0], [.12, 0, 0]));
-    const m = new THREE.Mesh(merge(p), toonVC()); m.position.set(x, y, z); scene.add(m); world.colliders.push({ x, z, r: 1.4 });
+    const m = new THREE.Mesh(merge(p), toonVC()); m.position.set(x, y, z); scene.add(m); world.colliders.push({ x, z, r: 1.4 }); world.stalls.push({ id: 'musiccorner', place: 'market', kind: 'stall', x, z, w: 2.8, d: 1.4, face: 0, tap: 'musiccorner' });
     ['🎸', '🥁', '🪵', '🎼'].forEach((e, k) => { const s = sprite(e, .7); s.position.set(x - .9 + k * .6, y + 1.35, z); scene.add(s); });
     G.interactables.push({ id: 'musiccorner', x, z: z + 1.4, r: 3, icon: '🎶', label: () => T('Music Corner: instruments from 4 countries', 'Góc Âm Nhạc: nhạc cụ 4 nước'), act: h => G.playGame(h.i, 'music', 'place') });
   }

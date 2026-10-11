@@ -138,7 +138,8 @@ export function createRegions(G) {
       signAt(v.sign, sx, 3.2, sz + (south ? -1.15 : 1.15), south ? Math.PI : 0, v.stall[0], '#fff8e0', 3, .55);
       v.goods.forEach((gd, k) => { const s = sprite(gd, .55); s.position.set(sx - .7 + k * 1.2, M.h + 1.25, sz); scene.add(s); });
       box(sx - 1.6, sx + 1.6, sz - .9, sz + .9);
-    }
+      world.stalls.push({ id: v.id, place: 'market', kind: 'stall', x: sx, z: sz, w: 3, d: 1.6, face: south ? Math.PI : 0, tap: 'v_' + v.id });
+    } else if (v.pole) world.stalls.push({ id: v.id, place: 'market', kind: 'pole', x: v.x, z: v.z, w: .8, d: 2.4, face: v.face, tap: 'v_' + v.id });
     const A = person(v.look, v.x, v.z, v.face);
     if (v.pole) { // gánh hàng rong: a bamboo pole with two baskets on her shoulder
       const pole = new THREE.Mesh(merge([P(Box(2.4, .07, .07), '#c9a35a', [0, 0, 0]), ...[-1.1, 1.1].flatMap(x => [P(Cyl(.32, .25, .35, 10), '#b98a4a', [x, -.75, 0]), P(new THREE.SphereGeometry(.26, 8, 5), '#7fc45a', [x, -.55, 0], [0, 0, 0], [1, .5, 1]), P(Box(.02, .6, .02), '#7a5a3a', [x, -.3, 0])])]), mat);
@@ -181,11 +182,11 @@ export function createRegions(G) {
       P(Box(2, 1, .05), '#3a3030', [-.4, 1.7, 1.12]), P(Box(2.2, .1, .5), '#ffffff', [-.4, 1.15, 1.3]),
       ...[[-1.6, 1], [-1.6, -1], [2.8, 1], [2.8, -1]].map(([x, z]) => P(Cyl(.42, .42, .25, 12), '#2f3336', [x, .42, z * 1.05], [Math.PI / 2, 0, 0])),
       P(new THREE.ConeGeometry(.5, 1.2, 10), '#e8b36a', [-.5, 3.3, 0], [Math.PI, 0, 0]), P(new THREE.SphereGeometry(.55, 10, 8), '#ffe0ec', [-.5, 4.1, 0]), P(new THREE.SphereGeometry(.2, 8, 6), '#e8433a', [-.5, 4.65, 0])];
-    van.add(new THREE.Mesh(merge(p), mat)); van.position.set(A.x + 14, A.h, az + 4.2); van.rotation.y = Math.PI; scene.add(van); box(A.x + 11, A.x + 17, az + 3, az + 5.4); }
+    van.add(new THREE.Mesh(merge(p), mat)); van.position.set(A.x + 14, A.h, az + 4.2); van.rotation.y = Math.PI; scene.add(van); box(A.x + 11, A.x + 17, az + 3, az + 5.4); world.stalls.push({ id: 'gazza', place: 'aussie', kind: 'van', x: A.x + 14, z: az + 4.2, w: 6, d: 2.4, face: Math.PI, tap: 'v_gazza' }); }
   // sausage sizzle tent with a barbie
   { const p = [P(Box(2.4, .9, 1.2), '#4a4a4a', [0, .45, 0]), P(Box(2.2, .06, 1), '#2a2a2a', [0, .93, 0]), ...[-.6, -.2, .2, .6].map(x => P(Cyl(.08, .08, .9, 6), '#b5483c', [x, 1, .1], [0, 0, Math.PI / 2])),
       ...[[-1.6, -1.4], [1.6, -1.4], [-1.6, 1.4], [1.6, 1.4]].map(([x, z]) => P(Box(.08, 2.6, .08), '#dddddd', [x, 1.3, z])), P(Box(3.4, .1, 3), '#2f7ac8', [0, 2.6, 0]), P(new THREE.ConeGeometry(2.4, .7, 4), '#ffffff', [0, 3, 0], [0, Math.PI / 4, 0])];
-    put(merge(p), A.x + 3, az + 9.8); box(A.x + 1.7, A.x + 4.3, az + 9.1, az + 10.5); const smoke = sprite('💨', .8); smoke.position.set(A.x + 3, A.h + 1.6, az + 9.8); scene.add(smoke); world.updaters.push((dt, t) => { smoke.position.y = A.h + 1.5 + (t * .6 % 1); smoke.material.opacity = 1 - (t * .6 % 1); }); }
+    put(merge(p), A.x + 3, az + 9.8); box(A.x + 1.7, A.x + 4.3, az + 9.1, az + 10.5); world.stalls.push({ id: 'robbo', place: 'aussie', kind: 'tent', x: A.x + 3, z: az + 9.8, w: 3.4, d: 3, face: Math.PI, tap: 'v_robbo' }); const smoke = sprite('💨', .8); smoke.position.set(A.x + 3, A.h + 1.6, az + 9.8); scene.add(smoke); world.updaters.push((dt, t) => { smoke.position.y = A.h + 1.5 + (t * .6 % 1); smoke.material.opacity = 1 - (t * .6 % 1); }); }
 
   // the playground: flying fox, merry-go-round, see-saw
   const play = [];
@@ -215,6 +216,7 @@ export function createRegions(G) {
   // shopkeepers
   for (const v of VENDORS.filter(v => v.region === 'au')) {
     person(v.look, v.x, v.z, v.face);
+    if (!['gazza', 'robbo'].includes(v.id)) world.stalls.push({ id: v.id, place: 'aussie', kind: 'shop', x: v.x, z: v.z, w: .8, d: .8, face: v.face, tap: 'v_' + v.id });
     tag(scene, v.name, v.x, A.h + 2.5, v.z);
     I('v_' + v.id, v.x, v.z + (Math.abs(v.face) > 1 ? -2.4 : 2.6), 3, v.food[0], () => nm(v.name), h => vendorTalk(G, h, v));
   }

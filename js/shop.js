@@ -86,7 +86,7 @@ export function createShop(G, { say, save }) {
   parts.push(P(new THREE.CylinderGeometry(.03, .03, 3.2, 6), '#8a5a3b', [0, 2.0, -.78], [0, 0, Math.PI / 2]));
   [['#ecd9a0', -1.1], ['#e8434a', -.3], ['#ff7eb8', .5], ['#3b6fe0', 1.2]].forEach(([c, x], k) => parts.push(k ? P(new THREE.SphereGeometry(.2, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), c, [x, 1.05, .5]) : P(new THREE.ConeGeometry(.32, .22, 16), c, [x, 1.16, .5])));
   const stall = new THREE.Mesh(merge(parts), toonVC()); stall.castShadow = true; stall.position.set(spot.x, heightAt(spot.x, spot.z), spot.z); stall.rotation.y = face; scene.add(stall);
-  world.colliders.push({ x: spot.x, z: spot.z, r: 1.8 });
+  world.colliders.push({ x: spot.x, z: spot.z, r: 1.8 }); world.stalls.push({ id: 'shop_clothes', place: 'market', kind: 'stall', x: spot.x, z: spot.z, w: 3.6, d: 2.1, face, tap: 'shop_clothes' });
   const front = { x: spot.x + Math.sin(face) * 2.9, z: spot.z + Math.cos(face) * 2.9 };
   G.interactables.push({ id: 'shop_clothes', x: front.x, z: front.z, r: 3, icon: '🛍️', label: () => T('Clothes shop', 'Cửa hàng quần áo'), visible: () => on(), act: h => openShop(h.i) });
   stall.visible = on(); world.updaters.push(() => { stall.visible = on(); });

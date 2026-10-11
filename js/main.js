@@ -1587,7 +1587,7 @@ setupTrading(G);
   [[-1.25, -.55], [1.25, -.55], [-1.25, .55], [1.25, .55]].forEach(([x, z]) => parts.push(P(new THREE.CylinderGeometry(.06, .06, 2.3, 6), '#8a5a3b', [x, 1.15, z])));
   for (let i = 0; i < 6; i++) parts.push(P(new THREE.BoxGeometry(.5, .08, 1.7), i % 2 ? '#ffffff' : '#2fb04f', [-1.25 + i * .5, 2.35, 0], [.12, 0, 0]));
   [['#ff4f9a', -.8], ['#ffd23f', -.2], ['#3cc7e8', .4], ['#5fd36a', .9]].forEach(([c, x]) => parts.push(P(new THREE.SphereGeometry(.16, 10, 8), c, [x, 1.12, .15])));
-  const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(sx, y, sz); m.castShadow = true; scene.add(m); world.colliders.push({ x: sx, z: sz, r: 1.4 });
+  const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(sx, y, sz); m.castShadow = true; scene.add(m); world.colliders.push({ x: sx, z: sz, r: 1.4 }); world.stalls.push({ id: 'stall', place: 'market', kind: 'stall', x: sx, z: sz, w: 2.8, d: 1.4, face: 0, tap: 'stall' });
   G.interactables.push({ id: 'stall', x: sx, z: sz + 1.2, r: 3, icon: '🏪', label: () => T('My market stall: trade with friends', 'Sạp hàng của con: đổi đồ với bạn'), act: h => G.openTrade(h.i) });
 }
 // ---- (round S, owner plan 8 Oct: Round R Part 2 items 6 and 10) the clothes shop by the market and the wardrobe (js/shop.js);

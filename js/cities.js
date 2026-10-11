@@ -269,7 +269,7 @@ export function createCities(G) {
     for (const [ex, ez] of [[-1.25, -.6], [1.25, -.6], [-1.25, .6], [1.25, .6]]) parts.push(P(C(.06, .06, 2.4, 6), '#8a5a3b', [ex, 1.2, ez]));
     for (let k = 0; k < 6; k++) parts.push(P(B(.5, .08, 1.9), k % 2 ? '#ffffff' : (where === 'aussie' || where === 'sydney' || where === 'melbourne' || where === 'brisbane' ? '#2f7a4a' : where === 'china' ? '#c0392b' : where === 'india' ? '#ff9f43' : '#e8433a'), [-1.25 + k * .5, 2.45, 0], [.14, 0, 0]));
     const km = new THREE.Mesh(merge(parts), toonVC()); km.position.set(x, heightAt(x, z), z); km.rotation.y = face; km.castShadow = true; scene.add(km);
-    world.colliders.push({ x, z, r: 1.3 });
+    world.colliders.push({ x, z, r: 1.3 }); world.stalls.push({ id, place: where, kind: 'kiosk', x, z, w: 2.6, d: 1.4, face, tap: 'v_' + id });
     const sg = kioskSign([food[1].replace(/^(a|an) /, '').replace(/^\w/, ch => ch.toUpperCase()), food[2].replace(/^\w/, ch => ch.toUpperCase())]); sg.position.set(0, 2.95, .5); km.add(sg);
     const goods = sprite(food[0], .9); goods.position.set(0, 1.55, .35); km.add(goods);
     // the seller stands behind the counter
