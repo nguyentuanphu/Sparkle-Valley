@@ -3,7 +3,7 @@
 import { AREAS, gamesIn } from './content/activities.js';
 import { T, applyLang, nm, NPC_NAMES, defaultName } from './i18n.js';
 import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, backupAge, STYLES, OUTFIT_COLORS, HATS, BACKS, HAIR, SKIN, HAIRSTYLES, GLIDERS, farm, resetFarm, saveFarm, MAX_KIDS, reduceMotion } from './state.js';
-import { say, spoken, voicePack, voiceDiag, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
+import { say, spoken, voicePack, voiceDiag, allowMobilePack, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
 import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt, cur, spoken as money } from './money.js';
@@ -54,6 +54,8 @@ let hideCaption = () => { };
   let cap = null, timers = [];
   const stop = () => { timers.forEach(clearTimeout); timers = []; };
   hideCaption = () => { stop(); cap && cap.classList.remove('show'); };
+  // credits.js asks for this with an event (it cannot import ui.js: ui.js opens the credits)
+  window.addEventListener('sv-hide-caption', () => hideCaption());
   // a long line is shown a sentence or two at a time, so the box never grows to cover the screen
   const chunks = text => {
     const out = []; let cur = '';
@@ -264,6 +266,7 @@ function packStatusHTML() {
     ${voiceDiag.lastMiss ? `<p class="note warn">⚠️ ${T('Last time a recording could not play here', 'Lần trước máy này không phát được bản ghi')} (${esc(voiceDiag.lastMiss)}). ${T('Tap anywhere on the screen once, check the side switch is not on silent, then press ▶ below.', 'Chạm vào màn hình một lần, kiểm tra nút gạt bên hông không ở chế độ im lặng, rồi bấm ▶ bên dưới.')}</p>` : ''}
     <div class="actions"><button class="btn" data-pv="f">▶ 👩 ${T('Woman', 'Giọng nữ')}</button><button class="btn" data-pv="m">▶ 👨 ${T('Man', 'Giọng nam')}</button></div>
     <p class="note">${T('Women, girls and grandmas speak with the woman’s voice; men, boys and grandpas with the man’s.', 'Phụ nữ, bé gái và bà nói bằng giọng nữ; đàn ông, bé trai và ông nói bằng giọng nam.')}</p>
+    ${P ? `<label class="tog"><input type="checkbox" id="gPackCell" ${settings.packCell === true ? 'checked' : ''}> ${T('Download the rest of the voices on mobile data too (on Wi-Fi they download by themselves)', 'Tải phần giọng đọc còn lại cả bằng dữ liệu di động (khi có Wi-Fi giọng đọc tự tải)')}</label>` : ''}
     ${miss.length ? `<details class="g-miss"><summary>📝 ${T(`${miss.length} lines on this device had no recording yet`, `${miss.length} câu trên máy này chưa có bản ghi`)}</summary>
       <p class="note">${settings.countPlayers !== false ? T('They are sent by themselves, without children’s names, and recorded for the next update.', 'Các câu này tự được gửi đi, không kèm tên các con, và sẽ được thu cho bản cập nhật sau.') : T('Analytics is off on this device, so they are not sent. They are kept in the backup file (below).', 'Phân tích đang tắt trên máy này nên các câu không được gửi. Các câu được giữ trong tệp sao lưu (bên dưới).')}</p>
       <ol class="misslist">${miss.slice(0, 40).map(m => `<li>${m[0] === 'vi' ? '🇻🇳' : '🇦🇺'} ${esc(m[1])} <small>×${m[2]}</small></li>`).join('')}</ol>
@@ -272,6 +275,8 @@ function packStatusHTML() {
 function bindPackStatus(card, redraw) {
   card.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { setSpeaker(b.dataset.pv === 'm' ? 'Chú Tư' : 'Cô Mai'); say('Hello! Welcome to Sparkle Valley.', 'Xin chào! Chào mừng con đến Thung Lũng Lấp Lánh.'); setTimeout(() => setSpeaker(null), 300); });
   const c = card.querySelector('#gMissClear'); if (c) c.onclick = () => { clearVoiceMisses(); redraw(); };
+  // (round R item 12, Voice & Audio) the voice pack on mobile data: a grown-up's yes or no (js/voice.js allowMobilePack)
+  const pc = card.querySelector('#gPackCell'); if (pc) pc.onchange = () => allowMobilePack(pc.checked);
 }
 // ---------- Grown-ups ----------
 export function openGrownups(after) {
@@ -776,7 +781,7 @@ export function openPad(game, i, tab) {
     const dishes = Object.entries(p.dishes).filter(([, n]) => n > 0);
     body.innerHTML = `
       ${(p.pets || []).length ? `<button class="btn wide" id="bagPets">🐾 ${T('My pets', 'Thú cưng của con')}: ${(p.pets || []).map(pt => (PET_ICON[pt.kind] || '🐾') + ' ' + esc(pt.name || '')).join('  ')}</button>` : ''}
-      <div class="bag-top"><span class="chip">💰 ${fmt(farm.coins)}</span><span class="chip">🔮 ${p.orbs} ${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}</span><span class="chip">🍃 ${Object.keys(p.leafies).length}/24 Leafies</span></div>
+      <div class="bag-top"><span class="chip">💰 ${fmt(farm.coins)}</span><span class="chip">🔮 ${p.orbs} ${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}</span><span class="chip">🍃 ${Object.keys(p.leafies).length}/24 Leafies</span>${game.shop && game.shop.on() && game.heroes.length < 2 ? `<button class="bagshop${p.age !== 'big' ? ' little' : ''}" id="bagShop" aria-label="${T('Clothes shop', 'Cửa hàng quần áo')}">${pic('🛍️')}</button>` : ''}</div>
       <h3>${T('Food', 'Món ăn')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
       <div class="slots">${dishes.map(([id, n]) => { const r = dishInfo(id) || { icon: '🥘', name: () => T('Mystery stew', 'Món hầm bí ẩn') }; return `<button class="slot" data-eat="${id}" title="${esc(r.name())}"><span>${r.icon}</span><b>${n}</b><small>${esc(r.name())}</small></button>`; }).join('') || `<p class="note">${T('Cook at a cooking pot to make food.', 'Nấu ăn ở nồi nấu để có món ăn.')}</p>`}</div>
       <h3>🛍️ ${T('From shops and stalls', 'Mua ở quán và sạp')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
@@ -793,6 +798,7 @@ export function openPad(game, i, tab) {
       <h3>${T('Glider', 'Cánh lượn')}</h3>
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
     jumpNav(body, body.querySelector('.bag-top'));
+    const toShop = body.querySelector('#bagShop'); if (toShop) toShop.onclick = () => { SFX.tap(); close(); setTimeout(() => game.shop.openShop(i), 220); }; // (Bug #29) one small way into the clothes shop, right here, no travel
     body.querySelectorAll('[data-eat]').forEach(b => b.onclick = () => { game.eat(hero, b.dataset.eat); draw(); });
     body.querySelectorAll('[data-snack]').forEach(b => b.onclick = () => { eatSnack(game, hero, b.dataset.snack, true); draw(); });
     body.querySelectorAll('[data-sellgem]').forEach(b => b.onclick = () => {

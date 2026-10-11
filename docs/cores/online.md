@@ -17,7 +17,7 @@ channel, PRIV-008 friends' status), ARCH rule on checked messages (every network
 the friends' channel too).
 
 ## Checks you run
-`multiplayer meet cloud knock netmsg iphone together netgames coop onlineoff` (and the unit file `tests/unit/netgames.test.mjs`)
+`multiplayer meet cloud knock netmsg iphone together netgames coop onlineoff mapver` (and the unit file `tests/unit/netgames.test.mjs`)
 They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs` (PeerJS on 9000, MQTT on 9001).
 
 ## Talks to
@@ -30,6 +30,22 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
 - The microphone comes on with a button, not on every tap; over the cloud relay say plainly that voices can't travel there (round O).
 - One TURN key for everyone, kept in Netlify (CF_TURN_KEY_ID, CF_TURN_KEY_TOKEN), handed out a few hours at a time (round O).
 - Up to 6 players a room.
+- **Friends tab guide for grown-ups (owner, 11 Oct AEDT, bug #37: "Go, plus a button"):** the Friends tab (and "Friend
+  far away", which opens it) shows a small grown-ups' note naming the real place of the switch, Grown-ups → "Internet and
+  playing online" → "Use the internet", in English and Vietnamese with no "Studio"; on when off, off when on. Beside it
+  a Grown-ups button that opens with **press and hold only** (never a tap) straight at that section. Checked by `onlineoff`.
+- **Map version (owner, 11 Oct AEDT, item 2 "Go"; ROUND-T §4, for r57):** friends play together only on the same map
+  layout (`MAP_VERSION`). **No version** (a game older than r57) **plays as before** (owner, 11 Oct: "let them in", because
+  r56 already has the new map; a game older still updates itself the next time it opens online). The knock carries it, every word the starter
+  locks for a knocker carries the starter's, and friends' notes and invitations carry it. On another layout **only the one
+  joining is told**: a card with a map picture, a voice and one big OK, "Your friend has a different valley. Ask a grown-up
+  to update the game."; the starter sees no knock card. The friends list shows a map button instead of Join (tap: the
+  same card); the friend note has no "Go to their room". Checked by `mapver`.
+- **Microphone on iPhone (owner, 11 Oct AEDT, bug #55, "Go"):** a tap on the microphone (the Friends microphone button or the call button)
+  always asks afresh (`Net.getMic(true)`), even while an earlier try made without a tap hangs; an old try that answers
+  late is stopped, never a second microphone. Every outcome of a tap is said on screen, EN and VI (asking, on, blocked
+  with Settings → Safari → Microphone, no microphone, iPhone or iPad older than iOS 14.3), so the owner can see on a real
+  iPhone what happened. Checked by `iphone`; needs a real iPhone try once live.
 
 ## Privacy round (owner, 9 Oct, round R privacy)
 - **Online play is off until a grown-up turns it on** (`settings.online`, default `false`, also on devices that played
@@ -77,3 +93,37 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
 - On the cloud only (no direct link), someone who knows the code and answers the knock first is believed (the first key
   that answers is kept); a direct link or a saved friend's invitation outranks it.
 - Friends added by typing a code can't be invited or see the room until they have played together once.
+
+## Progress notes
+- **11 Oct, 9:25 am AEDT, branch `core/online`, commit c6ebc651** (bug #37, robot's `bugfix/online-37` merged in and
+  corrected): the Friends tab's grown-ups' note names Grown-ups → "Internet and playing online" → "Use the internet"
+  (EN and VI, no "Studio"), with a press-and-hold Grown-ups button that opens that section; the "could not link" message
+  names the same section. Files: `js/main.js` (Online block), `css/style.css` (new Online block at the end),
+  `tests/run.mjs` (`onlineoff`). Checks: `onlineoff multiplayer meet cloud knock netmsg iphone together netgames coop`
+  all pass (local PeerJS and MQTT servers, none skipped), `tests/unit/netgames.test.mjs` pass; full suite 86/86 pass.
+  Screenshots looked at: phone 390×760, tablet 820×1180, computer 1280×800, EN and VI, friends off and on, and the
+  held button. No new spoken lines.
+- **11 Oct, 2:25 pm AEDT, branch `core/online`, commit b4d449b8** (item 2, r57 map version, and bug #55, robot's
+  `bugfix/online-55` merged in and extended): files `js/net.js`, `js/netmsg.js` (`W` from `WORLD.size`, `map` in hello),
+  `js/main.js` (Online block: Different valley card, friends list and notes, microphone messages), `css/style.css`
+  (Online block), `tests/run.mjs` (new `mapver`, `iphone` extended). Also fixed a slip of 42c33ce0 that had commented out
+  `G.onNet()` and `G.shareStatus()` on every status (now guarded by `iphone`). Checks: `iphone onlineoff mapver
+  multiplayer meet cloud knock netmsg together netgames coop` all pass (local PeerJS and MQTT servers, none skipped);
+  `tests/unit/netgames.test.mjs` 8/8; full suite 87/87 pass, none skipped. (An earlier run on 73104202 had `knock` and
+  `together` fail once on timing; `together` failed the same way on c6ebc651, and both passed on re-runs.) Screenshots
+  looked at: phone 390x760, tablet 820x1180, computer 1280x800, EN and VI: Different valley card and friends row;
+  microphone asking, blocked and iPhone-too-old messages. New spoken line (not recorded here, no key; on the board for
+  Voice & Audio): the Different valley card. The microphone messages are on screen only.
+
+## Left to do (handover, 11 Oct, 2:40 pm AEDT)
+Everything is pushed on `core/online` (last code commit b4d449b8) and marked ready for Release. Hourly check-ins stopped
+by the owner until further notice. Left:
+- **Release:** merge `core/online` (it already holds the robot's PRs #49 and #56; those can be closed after the merge,
+  and issues #37 and #55 closed once live).
+- **Voice & Audio:** record the Different valley card's line (request on the board).
+- **Owner:** try #55 on a real iPhone once live (Friends, tap the microphone; the screen says what happened).
+- **Kid UI (request on the board):** on a phone the friends row's Join button lies over the friend's status text (seen
+  before this round's changes).
+- **Known limit:** a game older than Round T (map C) sends no map version, so it is let in like r56 until it updates.
+- **Waiting:** the voice relay still needs the owner's Cloudflare TURN key (CF_TURN_KEY_ID, CF_TURN_KEY_TOKEN in Netlify).
+- **Next for Online:** any new `online` bugs the Front Desk files.

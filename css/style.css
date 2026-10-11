@@ -38,6 +38,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, label.btn:focus
 .press { font-size: clamp(18px, 3.4vw, 26px); color: #fff; text-shadow: 0 2px 8px rgba(0, 0, 0, .6); animation: breathe 2.4s ease-in-out infinite; }
 @keyframes breathe { 50% { opacity: .35; } }
 @keyframes rise { from { opacity: 0; transform: translateY(20px) scale(.96); } }
+/* the speech box keeps its centring (translateX(-50%)) while it rises, so its buttons never sit off screen (phone check) */
+@keyframes dlg-rise { from { opacity: 0; transform: translateX(-50%) translateY(20px) scale(.96); } }
 .title-foot { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 18px); }
 
 .seg { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 4px; flex-wrap: wrap; }
@@ -114,7 +116,7 @@ select option { color: #000; }
 .fade.white { background: #fff; } .fade.blue { background: radial-gradient(circle, #dff9ff, #5fe0ff); }
 .fade.out { opacity: 0; transition: opacity .7s; }
 .dialog { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 20px); transform: translateX(-50%); width: min(760px, calc(100% - 24px)); z-index: 35;
-  background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 26px 22px 18px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: pointer; animation: rise .3s ease; }
+  background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 26px 22px 18px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: pointer; animation: dlg-rise .3s ease; }
 .dname { position: absolute; top: -18px; left: 22px; background: var(--gold); color: #3a2a00; padding: 6px 16px; border-radius: 999px; font-size: 16px; }
 .dtext { font-size: clamp(18px, 2.6vw, 23px); line-height: 1.4; font-weight: 700; }
 .dchoices { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; margin-top: 12px; }
@@ -2199,6 +2201,18 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .wardrobe.kward .wslot { flex: none; width: 44px; display: flex; align-items: center; justify-content: center; opacity: .8; } .wardrobe.kward .wslot .art { width: 34px; height: 34px; }
 .wardrobe.kward .chip .kpic, .wardrobe.kward .chip .art { width: 42px; height: 42px; } .wardrobe.kward .chip.none { opacity: .7; }
 .wardrobe.kward.little .wrow .chip { min-width: 72px; height: 72px; }
+/* Bug #29: the Done button sits in its own strip (covers no row); rows wrap so no chip is cut off or overlaps; the sheet grows to fit */
+.wardrobe.kward { max-height: 78dvh; gap: 6px; }
+.wardrobe.kward .whead { display: flex; justify-content: flex-end; flex: none; }
+.wardrobe.kward .whead .x { position: static; width: 60px; height: 60px; flex: none; }
+.wardrobe.kward .wrow { flex: none; flex-wrap: wrap; overflow: visible; padding: 5px 4px; align-items: center; }
+.wardrobe.kward .wrow .chip { flex: none; padding: 0; }
+/* Play, 11 Oct (#29 on phones): a row's chips wrap beside its picture, never under it; on short screens an under-5's chips are
+   64 px (their minimum) and the Done strip is slimmer, so all six rows show without scrolling on a phone */
+.wardrobe.kward .wrow { flex-wrap: nowrap; align-items: flex-start; } .wardrobe.kward .wslot { align-self: stretch; }
+.wardrobe.kward .wchips { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; min-width: 0; }
+@media (max-height: 820px) { .wardrobe.kward.little .wrow .chip { min-width: 64px; height: 64px; } .wardrobe.kward .wrow { padding: 3px 4px; } .wardrobe.kward { max-height: 84dvh; } }
+.bag-top .bagshop { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--line); background: #fff; display: inline-flex; align-items: center; justify-content: center; padding: 0; flex: none; } .bag-top .bagshop .art { width: 30px; height: 30px; } .bag-top .bagshop.little { width: 64px; height: 64px; }
 /* mystery boxes, rankings, the collection book */
 .kcard .khub { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; padding: 8px 0 12px; }
 .kcard .khb { position: relative; width: 112px; height: 112px; border-radius: 28px; border: 0; background: #fff; box-shadow: 0 4px 0 rgba(90, 60, 130, .14); display: flex; align-items: center; justify-content: center; }
@@ -2255,3 +2269,14 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .mapnav .mapstep span { font-size: 40px; line-height: 1; }
 .mapnav .mapstep small { font-size: 12px; }
 .mapnav[hidden], .mapcities[hidden] { display: none; }
+/* (Online, bug #37, owner 11 Oct) Friends tab: the grown-ups' note on where the switch is, with a press-and-hold Grown-ups button */
+.gunote { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 6px; }
+.gunote .note { font-size: 13px; opacity: .85; text-align: center; margin: 0; }
+.gunote .grown.gu-hold { position: relative; left: auto; bottom: auto; right: auto; top: auto; display: flex; align-items: center; gap: 8px; min-height: 48px; border-radius: 18px; padding: 8px 16px; font: inherit; color: inherit; }
+.gunote .gu-hold small { margin-left: 6px; opacity: .7; }
+/* (Online, r57) a friend on another map layout: the "Different valley" card (picture, words, voice, one big OK) */
+.modal.mapcard .card { width: min(440px, 92vw); text-align: center; }
+.mapcard .mc-pic svg.art, .mapcard .mc-pic .emo { width: 96px; height: 96px; font-size: 80px; }
+.mapcard .btn.big { min-height: 64px; min-width: 160px; font-size: 20px; }
+.mapcard h2 { justify-content: center; text-align: center; }
+.frow .btn.mapdiff { min-width: 56px; min-height: 44px; }

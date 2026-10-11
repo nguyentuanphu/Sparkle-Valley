@@ -55,7 +55,7 @@ export function openCredits(onClose) {
     pos += dt * 0.025; c.scrollTop = pos;
   };
   raf = requestAnimationFrame(roll);
-  const close = () => { cancelAnimationFrame(raf); hush(); if (onClose) onClose(); c.remove(); Music.play(prevMusic || 'field'); };
+  const close = () => { cancelAnimationFrame(raf); hush(); if (typeof onClose === 'function') onClose(); window.dispatchEvent(new Event('sv-hide-caption')); c.remove(); Music.play(prevMusic || 'field'); };
   c.querySelector('.cr-x').onclick = close;
 }
 

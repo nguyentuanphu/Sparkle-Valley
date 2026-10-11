@@ -1,7 +1,7 @@
 // The clothes shop and the wardrobe (round S, owner plan 8 Oct: Round R Part 2 item 6; Studio switch 'shop').
 //   the place   a striped stall by Chợ Ba Miền (the Three Regions market), on open flat ground off the roads (js/openspot.js)
-//   the bag     the Bag button in the dock takes the child to the shop (owner: "Backpack button teleports to the shop");
-//               the old backpack is one tap away in the shop (and still in the Pad)
+//   the bag     the Bag button opens the backpack (owner, 10 Oct, Bug #29: "bag is bag"); inside it is one small shop button
+//               that opens the shop right there, with no travel (js/ui.js, drawBag). The stall in the valley stays.
 //   the screen  one big card: round ✕, a picture tab for each kind of thing, prices as a coin picture and a number,
 //               nothing that needs reading; under-5s get 64 px buttons
 //   wardrobe    what the child owns, worn with one tap (the character changes at once behind the sheet)
@@ -91,15 +91,6 @@ export function createShop(G, { say, save }) {
   G.interactables.push({ id: 'shop_clothes', x: front.x, z: front.z, r: 3, icon: '🛍️', label: () => T('Clothes shop', 'Cửa hàng quần áo'), visible: () => on(), act: h => openShop(h.i) });
   stall.visible = on(); world.updaters.push(() => { stall.visible = on(); });
 
-  // ---------- the Bag button goes to the shop ----------
-  // (with the switch off, or in a game for two on one screen where one child can't travel alone, it opens the backpack as before)
-  G.openBag = i => {
-    if (!on() || G.paused) return G.openPad(i, 'bag');
-    const h = G.heroes[i]; if (!h) return;
-    if (Math.hypot(h.pos.x - front.x, h.pos.z - front.z) < 6) return openShop(i);
-    say(...SHOP_LINES.go); G.travel(h, front.x - 4.5, front.z - 1).then(() => setTimeout(() => openShop(i), 500));
-  };
-
   // ---------- the shop screen ----------
   let tab = 'hat';
   function openShop(i) {
@@ -114,14 +105,13 @@ export function createShop(G, { say, save }) {
       card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
         <div class="khead"><span class="kbig">${pic('🛍️')}</span><h2>${T('Clothes shop', 'Cửa hàng quần áo')}</h2>${coins(farm.coins)}</div>
         <div class="ktabs">${SLOTS.map(s => `<button class="ktab ${s.id === tab ? 'on' : ''}" data-tab="${s.id}" aria-label="${T(s.en, s.vi)}">${pic(s.icon)}</button>`).join('')}
-          <button class="ktab alt" data-go="wardrobe" aria-label="${T('My wardrobe', 'Tủ đồ của con')}">${pic('🪞')}</button><button class="ktab alt" data-go="bag" aria-label="${T('Backpack', 'Ba lô')}">${pic('🎒')}</button></div>
+          <button class="ktab alt" data-go="wardrobe" aria-label="${T('My wardrobe', 'Tủ đồ của con')}">${pic('🪞')}</button></div>
         <div class="kgrid">${list.map(it => { const have = owns(p, it.id), worn = p.look[it.slot] === it.id;
           return `<button class="kitem ${have ? 'have' : ''} ${worn ? 'on' : ''} ${!have && farm.coins < priceOf(it) ? 'poor' : ''}" data-id="${it.id}" aria-label="${T(it.en, it.vi)}">${itemSVG(it)}${have ? `<span class="ktick">${pic('✅')}</span>` : coins(priceOf(it))}</button>`; }).join('')}</div>
         ${pick ? `<div class="kask"><div class="kaskbox">${itemSVG(pick)}${coins(priceOf(pick))}<div class="kbtns"><button class="kno" aria-label="${T('Not now', 'Để sau')}">✕</button><button class="kyes ${farm.coins < priceOf(pick) ? 'poor' : ''}" aria-label="${T('Buy', 'Mua')}">${pic('🛍️')}</button></div></div></div>` : ''}`;
       card.querySelector('.x').onclick = close;
       card.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; pick = null; SFX.tap(); const s = SLOTS.find(x => x.id === tab); say(s.en, s.vi); draw(); });
       card.querySelector('[data-go="wardrobe"]').onclick = () => { m.close(); G.paused = false; setTimeout(() => G.openWardrobe(i), 220); };
-      card.querySelector('[data-go="bag"]').onclick = () => { m.close(); G.paused = false; setTimeout(() => G.openPad(i, 'bag'), 220); };
       card.querySelectorAll('.kitem').forEach(b => b.onclick = () => {
         const it = ITEM[b.dataset.id];
         // owned: one tap puts it on (or takes it off), right away
@@ -148,11 +138,10 @@ export function createShop(G, { say, save }) {
     // (hats won on the passport pages are kept and worn here too)
     const won = (p.owned.hats || []).filter(x => x !== 'none' && !ITEM[x] && HAT_ICON[x]);
     const draw = () => {
-      m.innerHTML = `<button class="x" aria-label="${T('Done', 'Xong')}">✔️</button>` + SLOTS.map(s => { const mine = CLOTHES.filter(it => it.slot === s.id && owns(p, it.id)), any = mine.length || (s.id === 'hat' && won.length); const none = !p.look[s.id] || p.look[s.id] === 'none';
-        return `<div class="wrow"><span class="wslot">${pic(s.icon)}</span><button class="chip none ${none ? 'on' : ''}" data-k="${s.id}" data-v="none" aria-label="${T('Nothing', 'Không')}">${pic('🙂')}</button>${mine.map(it => `<button class="chip ${p.look[s.id] === it.id ? 'on' : ''}" data-k="${s.id}" data-v="${it.id}" aria-label="${T(it.en, it.vi)}">${itemSVG(it)}</button>`).join('')}${s.id === 'hat' ? won.map(x => `<button class="chip ${p.look.hat === x ? 'on' : ''}" data-k="hat" data-v="${x}" data-won="1">${pic(HAT_ICON[x])}</button>`).join('') : ''}${any ? '' : `<button class="chip toshop" data-shop="${s.id}" aria-label="${T('To the shop', 'Đến cửa hàng')}">${pic('🛍️')}</button>`}</div>`; }).join('');
+      m.innerHTML = `<div class="whead"><button class="x" aria-label="${T('Done', 'Xong')}">✔️</button></div>` + SLOTS.map(s => { const mine = CLOTHES.filter(it => it.slot === s.id && owns(p, it.id)); const none = !p.look[s.id] || p.look[s.id] === 'none';
+        return `<div class="wrow"><span class="wslot">${pic(s.icon)}</span><div class="wchips"><button class="chip none ${none ? 'on' : ''}" data-k="${s.id}" data-v="none" aria-label="${T('Nothing', 'Không')}">${pic('🙂')}</button>${mine.map(it => `<button class="chip ${p.look[s.id] === it.id ? 'on' : ''}" data-k="${s.id}" data-v="${it.id}" aria-label="${T(it.en, it.vi)}">${itemSVG(it)}</button>`).join('')}${s.id === 'hat' ? won.map(x => `<button class="chip ${p.look.hat === x ? 'on' : ''}" data-k="hat" data-v="${x}" data-won="1">${pic(HAT_ICON[x])}</button>`).join('') : ''}</div></div>`; }).join('');
       m.querySelector('.x').onclick = () => { m.remove(); saveProfiles(); SFX.chime(); say(...SHOP_LINES.wear); onClose && onClose(); };
       m.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { if (b.dataset.won ? (p.look.hat = b.dataset.v) : wear(p, b.dataset.k, b.dataset.v)) { SFX.pop(1); G.rebuildHero(i); draw(); } });
-      m.querySelectorAll('[data-shop]').forEach(b => b.onclick = () => { tab = b.dataset.shop; m.remove(); saveProfiles(); onClose && onClose(); setTimeout(() => G.openBag(i), 200); });
     };
     draw(); say(...SHOP_LINES.dress);
   }

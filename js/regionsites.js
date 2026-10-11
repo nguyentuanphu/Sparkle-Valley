@@ -4,7 +4,7 @@
 // (Queensland). Each has an ℹ️ sign, a postcard, real photos and a 360° look round (js/realworld.js REAL).
 import { THREE, P, merge, toonVC, sprite, outline } from './gfx.js';
 import { T } from './i18n.js';
-import { heightAt, oldHeightAt, CITIES, roadDist, riverDist, WATER, BAMBOO, APOSTLES, LAKE, ULURU, HALF } from './world.js';
+import { heightAt, oldHeightAt, CITIES, roadDist, riverDist, WATER, BAMBOO, APOSTLES, LAKE, ULURU, HALF, HOIAN, PONDS, BRIDGES } from './world.js';
 import { LANDMARKS, postcard } from './regions.js';
 import { REAL } from './realworld.js';
 
@@ -31,11 +31,6 @@ const MODELS = {
     return p; },
   apostles: () => { const p = [water(9, 1.2, .8), P(B(20, 2.4, 3), '#d9a86a', [0, 1.2, -6.4]), P(B(20, .2, 3.2), '#5f9a4a', [0, 2.45, -6.4])];
     [[-6, 1, 5.5], [-3, -1, 7], [0, 1.5, 6], [3, 0, 7.5], [6, 2, 5], [8, -1.5, 4]].forEach(([x, z, h]) => p.push(P(C(.7, 1.2, h, 7), '#e0b07a', [x, h / 2, z], [0, x, 0]), P(new THREE.DodecahedronGeometry(.8, 0), '#e8bf8a', [x, h, z])));
-    return p; },
-  storybridge: () => { const p = [water(9, 1.4, .6), P(B(24, .4, 2.4), '#5a6a7a', [0, 2.6, 0])];
-    [-1, 1].forEach(s => { p.push(P(B(1, 6, 1), '#4a5a6a', [s * 3.5, 3, -1.1]), P(B(1, 6, 1), '#4a5a6a', [s * 3.5, 3, 1.1]));
-      for (let i = 0; i < 6; i++) { const x = s * (3.5 - i * 1.4), y = 3 + Math.cos(i / 5 * Math.PI / 2) * 3; [-1.1, 1.1].forEach(z => p.push(P(B(1.5, .18, .18), '#3a4a5a', [x - s * .7, y, z], [0, 0, s * -.5]))); }
-      [-1.1, 1.1].forEach(z => p.push(P(B(.2, 2.6, .2), '#3a4a5a', [s * 11, 1.3, z]))); });
     return p; }
 };
 // [id, city, icon, model, size (for the camera), name, fact, which way out of the city to look first]
@@ -71,13 +66,18 @@ export function createRegionSites(G) {
     const c = CITIES.find(k => k.id === city); if (!c) continue;
     // every site goes round its own city (Hồ Gươm and the Thê Húc bridge are in Hà Nội)
     const near = null;
-    const s = id === 'apostles' ? [APOSTLES.x, APOSTLES.z, heightAt(APOSTLES.x, APOSTLES.z) - .3] : (near && findSpot({ x: near.mx ?? near.x, z: near.mz ?? near.z })) || findSpot(c); if (!s) { console.warn('no room for', id); continue; }
+    // (round T2) some sites have their real place on the map: the Thê Húc bridge on Hồ Gươm, Hội An's houses by its
+    // canal, the Story Bridge is the real bridge over the Brisbane River (only its ℹ️ sign is added here)
+    const pond = PONDS.find(P => P.id === 'hoguom'), bridge = BRIDGES.find(B => B.landmark === id);
+    const s = id === 'apostles' ? [APOSTLES.x, APOSTLES.z, heightAt(APOSTLES.x, APOSTLES.z) - .3] : id === 'thehuc' && pond ? [pond.x - pond.r * .55, pond.z, WATER + .05] : id === 'hoian' ? [HOIAN.x + 13, HOIAN.z + 4, heightAt(HOIAN.x + 13, HOIAN.z + 4)]
+      : bridge ? [...(B => B.axis === 'z' ? [B.c - B.w / 2 - 5, B.a0 - 4] : [B.a0 - 4, B.c - B.w / 2 - 5])(bridge), 0] : (near && findSpot({ x: near.mx ?? near.x, z: near.mz ?? near.z })) || findSpot(c); if (!s) { console.warn('no room for', id); continue; }
     const [x, z, y] = s; used.push([x, z]);
-    const rot = Math.atan2(c.x - x, c.z - z); // facing the city
-    const m = new THREE.Mesh(merge(MODELS[model]()), mat); m.position.set(x, y - .05, z); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; scene.add(m); outline(m, .025, '#4a3a3f');
-    world.colliders.push({ x, z, r: 6 });
+    const rot = id === 'thehuc' ? Math.PI / 2 : Math.atan2(c.x - x, c.z - z); // facing the city (the Thê Húc bridge reaches out across the lake)
+    if (!bridge) { const m = new THREE.Mesh(merge(MODELS[model]()), mat); m.position.set(x, y - .05, z); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; scene.add(m); outline(m, .025, '#4a3a3f');
+      if (id === 'thehuc') world.colliders.push({ x: x + Math.cos(rot) * 8.2, z: z - Math.sin(rot) * 8.2, r: 1.9 }); // (only its temple, on the shore: the bridge reaches out over the water)
+      else world.colliders.push({ x, z, r: 6 }); }
     // the ℹ️ sign stands on the side facing the city, outside the model
-    const ix = x + Math.sin(rot) * 9, iz = z + Math.cos(rot) * 9;
+    const [ix, iz] = bridge ? [x, z] : id === 'thehuc' ? [x - 7, z] : [x + Math.sin(rot) * 9, z + Math.cos(rot) * 9]; // (on the shore for the lake, by the bridge's end for a bridge)
     const sg = sprite('ℹ️', 1.5); sg.position.set(ix, heightAt(ix, iz) + 3.2, iz); scene.add(sg); world.updaters.push((dt, t) => { sg.position.y = heightAt(ix, iz) + 3.2 + Math.sin(t * 2 + x) * .25; });
     const lm = { id, icon, cc: c.cc, x: ix, z: iz, mx: x, mz: z, name: () => T(name[0], name[1]), fact }; LANDMARKS.push(lm);
     G.interactables.push({ id: 'pc_' + id, x: ix, z: iz, r: 3.4, icon: 'ℹ️', label: () => T('About: ', 'Tìm hiểu: ') + lm.name(), act: h => postcard(G, h, lm) });
