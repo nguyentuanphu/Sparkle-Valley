@@ -99,3 +99,14 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
   - Screenshots looked at, on phone 390 × 844, tablet 820 × 1180 and computer 1180 × 760: #30 the Simple screen road, #27 a caption and a pop-up at once (they no longer overlap), #28 the Pad map with city chips and arrows (also scrolled to the chips on tablet and computer), #31 Change player in Grown-ups, #41 the credits. All tidy.
   - Still open: the Pad map's names overlap on the east side (the board request, next on the list).
   - No new spoken lines.
+- **11 Oct 2026, 2:45 pm AEDT, item 3 (owner's go, 11 Oct AEDT: "Go"):** built and committed as `fecb8858` on the branch `claude/affectionate-wozniak-2jek7i`. It is not on `core/kid-ui` yet, which stays at the tested `4a510c81`.
+  - What it does:
+    - Speech box: its own `@keyframes rise-dialog` keeps `translateX(-50%)`, so it slides up from the middle (`css/style.css`).
+    - Pad map names: each name goes under, above, right or left of its picture, whichever covers no other name or picture (`js/ui.js`; the names are kept on `canvas.bigmap.labels` for the check).
+    - Hội An is a place of its own. It joins by its id in `js/content/map.js` through `withSitePlaces` in `js/content/activities.js` (no map file changed): in the Pad map's Vietnam list between Đà Nẵng and Hồ Chí Minh City, and on the Simple screen's Places road. Its landmark is listed under it, no longer under Đà Nẵng. `vungtau`, `harbour`, `memory_e` and `memory_w` get one line each in `SITE_PLACES` once the World core builds them.
+    - New check `mapnames` (phone, tablet and computer): no names overlap or go off the map, Hội An is in place, and the speech box starts in the middle. It passes. With the names all under their pictures it fails (festival stage / Đà Nẵng, market / Hội An), so it catches the problem. `hubmap` passes too.
+    - "Hội An" recorded (4 voice files).
+  - Not done yet:
+    - The full suite on `fecb8858`: stopped by the owner after 5 checks (boot, spill, language, two-players, facetoface passed; `games` was cut off by the stop, not a failure).
+    - Phone, tablet and computer screenshots of the map names and Hội An.
+    - Merging `fecb8858` into `core/kid-ui`, pushing it, and ticking the three Kid UI requests on the board.
