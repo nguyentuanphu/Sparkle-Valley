@@ -2525,6 +2525,23 @@ await check('iphone', async () => {
     await N.getMic(); for (let k = 0; k < 50 && !(N.mic && said.includes('micon')); k++) await wait(100);
     const micAfterTap = !!N.mic, after = said.slice(), tapAsks = askedOnTap;
     md.getUserMedia = async () => { const e = new Error('none'); e.name = 'NotFoundError'; throw e; }; N.mic = null; said.length = 0; await N.getMic(); const reallyNone = said.slice();
+    // bug #55 (owner's iPhone: a tap on the microphone did nothing): a try made without a tap hangs for ever; a tap
+    // still asks afresh (says "Asking…", then "on"); when the old try answers late its microphone is stopped, not used
+    const replacedFirst = replaced; md.getUserMedia = real; N.mic = null; said.length = 0;
+    let late = null; md.getUserMedia = () => new Promise(res => { late = res; });
+    const hung = N.getMic(); await wait(100);
+    let fresh = 0; md.getUserMedia = c => { fresh++; return real({ audio: true }); };
+    const tapMic = await N.getMic(true), tapSaid = said.slice();
+    const extra = await real({ audio: true }); late(extra); const hungGot = await hung; await wait(100);
+    const lateStopped = extra.getAudioTracks().every(t => t.readyState === 'ended'), kept = N.mic === tapMic && hungGot === tapMic, micons = said.filter(k => k === 'micon').length;
+    // blocked after a tap (iPhone has no userActivation): how to allow it, not "tap Microphone on"
+    N.mic.getTracks().forEach(t => t.stop()); N.mic = null; said.length = 0;
+    md.getUserMedia = async () => { const e = new Error('blocked'); e.name = 'NotAllowedError'; throw e; }; await N.getMic(true); const blocked = said.slice();
+    // an iPhone home-screen game older than iOS 14.3 has no getUserMedia: say so, not "no microphone"
+    said.length = 0; md.getUserMedia = undefined; Object.defineProperty(navigator, 'userAgent', { get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)', configurable: true });
+    await N.getMic(true); const old = said.slice(); delete navigator.userAgent;
+    // a status still tells friends (it was once cut off by a comment): 'left' shares the new status
+    const share = G.shareStatus; let shared = 0; G.shareStatus = () => { shared++; }; N.emit('status', { key: 'left' }); G.shareStatus = share;
     md.getUserMedia = real; N.calls.delete('peer-y'); N.cloudOn = false; N.mic = null;
     // 2. Pad → Friends with a player in the room: no button taller than two lines, all inside the card
     Object.defineProperty(N, 'connected', { get: () => true, configurable: true }); N.code = '1234'; N.remotes['peer-z'] = { id: 'peer-z', name: 'Mít', look: {}, friend: 'ABCDE2' };
@@ -2533,6 +2550,10 @@ await check('iphone', async () => {
     const btns = row ? [...row.querySelectorAll('.btn')] : [], lh = btns.length ? parseFloat(getComputedStyle(btns[0]).lineHeight) || 20 : 20;
     const tall = btns.filter(x => x.getBoundingClientRect().height > lh * 2 + 24).map(x => x.textContent.trim());
     const cr = row ? row.getBoundingClientRect() : null, outside = btns.filter(x => { const q = x.getBoundingClientRect(); return cr && (q.right > cr.right + 1 || q.left < cr.left - 1); }).length;
+    // the 🎙️ button in Friends: what happened shows in the panel (blocked here)
+    const mute = document.querySelector('#oMute'); md.getUserMedia = async () => { const e = new Error('blocked'); e.name = 'NotAllowedError'; throw e; };
+    if (mute) mute.click(); await wait(400); md.getUserMedia = real; N.mic = null;
+    const panelSays = (document.querySelector('.pad .online .status') || {}).textContent || '';
     document.querySelector('.modal .x')?.click(); await wait(300);
     delete N.remotes['peer-z']; delete N.connected; N.code = null;
     // 3. the friend bar and the round buttons under the map never overlap
@@ -2542,12 +2563,14 @@ await check('iphone', async () => {
     const c = chip.getBoundingClientRect(), hit = [...document.querySelectorAll('.hud .tools .dk, .hud .zoomer button, .hud .mini-wrap, .hud .zoom')].filter(e => e.offsetParent).filter(e => { const q = e.getBoundingClientRect(); return q.left < c.right && c.left < q.right && q.top < c.bottom && c.top < q.bottom; }).map(e => e.className);
     const onScreen = c.width > 60 && c.height > 20 && c.right <= innerWidth + 1 && c.left >= 0, chipText = chip.textContent;
     delete G.partners['peer-q']; G.huds[0].setCall(false, false, false);
-    return { first, noMicYet, micAfterTap, after, replaced, reallyNone, tapAsks, asksBefore: 1, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
+    return { first, noMicYet, micAfterTap, after, replaced: replacedFirst, reallyNone, tapAsks, fresh, tapSaid, lateStopped, kept, micons, blocked, old, mute: !!mute, panelSays, shared, asksBefore: 1, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
   });
   const errs = P.errors; await P.ctx.close();
   ok((r.first.includes('mictap') || r.first.includes('micdenied')) && !r.first.includes('nomic') && r.noMicYet && r.tapAsks === 1 && r.micAfterTap && r.after.includes('micon') && r.replaced === 1 && r.reallyNone.includes('nomic')
+    && r.fresh === 1 && r.tapSaid[0] === 'micask' && r.tapSaid.includes('micon') && r.lateStopped && r.kept && r.micons === 1 && r.blocked.includes('micdenied') && !r.blocked.includes('mictap')
+    && r.old.includes('micold') && !r.old.includes('nomic') && r.mute && /Safari/.test(r.panelSays) && r.shared === 1
     && r.buttons >= 4 && !r.tall.length && !r.outside && !r.hit.length && r.onScreen && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'microphone: "tap 🎙️ Microphone on" (not "no microphone"), not asked again on every tap, on from the button and put into the open call; real "no microphone" still said; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
+  return 'microphone: "tap 🎙️ Microphone on" (not "no microphone"), not asked again on every tap, on from the button and put into the open call; real "no microphone" still said; #55: a hung try does not block a tap (asks afresh, "Asking…" then on, the late answer stopped), blocked after a tap says how to allow it (also in the Friends panel), an iPhone older than 14.3 is told so; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
 });
 
 await check('tienlen', async () => {
@@ -3030,6 +3053,56 @@ await check('nostudio', async () => {
   return 'Grown-ups (every group open), the parents\' pages and every Pad tab, English and Vietnamese: Studio never named';
 });
 
+await check('mapver', async () => {
+  // (Online, r57, ROUND-T §4) positions travel as raw x, z, so friends play together only on the same map layout. A knock
+  // carries the knocker's layout; the starter's locked answers carry the starter's; a game older than r57 sends none and
+  // plays as before (owner, 11 Oct: r56 already has the new map). Another layout: the one knocking sees "Ask a grown-up to update" (a card with a picture, a voice and a 64 px OK) and is not let in,
+  // and the starter sees no knock card (owner, 11 Oct: only the one joining is told). The same layout knocks as before.
+  // The friends list shows "Different valley" instead of Join for a friend on another layout.
+  const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
+  if (!up) return 'skipped (no local MQTT broker on 127.0.0.1:9001)';
+  const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const A = await open(b, { pre, w: 900, h: 700, settings: { autoMeet: false } });
+  const B = await open(b, { pre, w: 390, h: 760, touch: true, lang: 'vi', settings: { autoMeet: false } });
+  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  const knockFrom = async (P, code) => { await P.page.evaluate(c => { __Net.join(c, __sv.sendHello()); }, code); };
+  const told = P => P.page.waitForFunction(() => !__Net.role && /Nhờ người lớn cập nhật|Ask a grown-up to update/.test((document.querySelector('.mapcard') || {}).textContent || ''), null, { timeout: 40000 }).then(() => true, () => false);
+  const knockCards = () => A.page.evaluate(() => ({ knocks: __Net.knocks.size, pop: !!document.querySelector('.knockpop'), remotes: Object.keys(__Net.remotes).length }));
+  const out = {};
+  // 1. the starter has an older map ('C'): a round T guest is told, not let in
+  let code = await A.page.evaluate(async () => { __Net.mapVersion = 'C'; return __Net.host(__sv.sendHello()); });
+  await knockFrom(B, code); out.oldStarter = await told(B); out.oldStarterA = await knockCards();
+  await B.page.screenshot({ path: 'out/mapver-card.png' });
+  out.cardVi = await B.page.evaluate(() => { const c = document.querySelector('.mapcard'), ok = c.querySelector('[data-ok]').getBoundingClientRect(); return c.textContent + (c.querySelector('svg.art') ? ' [art]' : '') + (ok.height >= 64 ? ' [big]' : ''); });
+  await B.page.evaluate(() => document.querySelectorAll('.modal.mapcard').forEach(d => d.remove()));
+  await A.page.evaluate(() => { __Net.close(); });
+  // 2. the guest has an older map: the starter turns the knock away without a knock card
+  code = await A.page.evaluate(async () => { const M = await import('/js/content/map.js'); __Net.mapVersion = M.MAP_VERSION; return __Net.host(__sv.sendHello()); });
+  await B.page.evaluate(() => { __Net.mapVersion = 'C'; });
+  await knockFrom(B, code); out.oldGuest = await told(B); await A.page.waitForTimeout(1500); out.oldGuestA = await knockCards();
+  await B.page.evaluate(() => document.querySelectorAll('.modal.mapcard').forEach(d => d.remove()));
+  // 3. a knock with no map version (a game older than r57, like r56 with the same map): the knock card comes up as before,
+  // and Let in works
+  await B.page.evaluate(async () => { const M = await import('/js/content/map.js'); __Net.mapVersion = M.MAP_VERSION; const k = __Net._knockHello; __Net._knockHello = function () { const h = k.call(this); delete h.map; return h; }; });
+  await knockFrom(B, code);
+  out.sameKnock = await A.page.waitForSelector('.knockpop [data-in]', { timeout: 45000 }).then(() => true, () => false);
+  if (out.sameKnock) { await A.page.evaluate(() => document.querySelector('.knockpop [data-in]').click()); out.sameIn = await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 30000 }).then(() => true, () => false); }
+  // 4. the friends list: Join only for a friend on the same map
+  out.list = await A.page.evaluate(async () => {
+    const S = await import('/js/state.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    S.settings.friends = [{ code: 'MAPOLD', name: 'Old' }, { code: 'MAPNEW', name: 'New' }]; S.settings.friendsOn = true;
+    const now = Date.now(); __Net.friends.status.MAPOLD = { online: true, seen: now, room: '111111', map: 'C' }; __Net.friends.status.MAPNEW = { online: true, seen: now, room: '222222', map: __Net.mapVersion };
+    const box = document.createElement('div'); document.body.appendChild(box); __sv.drawOnlinePanel(box, () => { });
+    const rows = [...box.querySelectorAll('.frow')], r = { oldJoin: !!rows[0].querySelector('[data-joinf]'), oldDiff: !!rows[0].querySelector('[data-mapdiff]'), newJoin: !!rows[1].querySelector('[data-joinf]'), newDiff: !!rows[1].querySelector('[data-mapdiff]') };
+    rows[0].querySelector('[data-mapdiff]').click(); await wait(300); r.card = /Ask a grown-up to update/.test((document.querySelector('.mapcard') || {}).textContent || '');
+    box.remove(); document.querySelectorAll('.modal.mapcard').forEach(d => d.remove()); S.settings.friends = []; delete __Net.friends.status.MAPOLD; delete __Net.friends.status.MAPNEW;
+    return r;
+  });
+  const errs = A.errors.concat(B.errors).filter(e => !/WebSocket|ERR_CONNECTION|peerjs/i.test(e)); await A.ctx.close(); await B.ctx.close();
+  const l = out.list;
+  ok(out.oldStarter && !out.oldStarterA.knocks && !out.oldStarterA.pop && !out.oldStarterA.remotes && /Nhờ người lớn cập nhật/.test(out.cardVi) && /\[art\] \[big\]/.test(out.cardVi) && out.oldGuest && !out.oldGuestA.knocks && !out.oldGuestA.pop && !out.oldGuestA.remotes && out.sameKnock && out.sameIn && !l.oldJoin && l.oldDiff && l.newJoin && !l.newDiff && l.card && !errs.length, JSON.stringify(Object.assign(out, { errs })));
+  return 'starter on an older map: the knocker sees "Ask a grown-up to update" (VI) and is not let in, no knock card for the starter; guest on an older map: turned away the same way; no map version (r56): knock card and Let in as before; friends list: "Different valley" instead of Join for a friend on another map';
+});
 await check('onlineoff', async () => {
   // PRIV-006 (round R privacy, 9 Oct, owner): a fresh device has online play off. The Friends tab says so with no Start or
   // Join, Net makes no connection (no PeerJS, no cloud relay, no friends' status), and Grown-ups turns it on.
@@ -3041,13 +3114,22 @@ await check('onlineoff', async () => {
     __sv.openPad(0, 'friend'); await wait(500);
     const body = document.querySelector('.pad-body') || document.body, text = body.textContent;
     const off = /Playing with friends is off/.test(text), buttons = !!document.querySelector('#oHost, .padwrap, .numpad, [data-joinf]');
+    // (bug #37) a grown-ups' note names the real section and switch in both languages, with a press-and-hold Grown-ups button
+    const guide = {}, hold = document.querySelector('.gunote .gu-hold');
+    guide.en = /Internet and playing online → tick Use the internet/.test(text) && !/Studio/.test(text);
+    guide.hold = !!hold && hold.getBoundingClientRect().height >= 44 && !!hold.querySelector('.ring');
+    hold.click(); await wait(200); guide.tapNoOpen = !document.querySelector('.modal.grownups'); // a plain tap opens nothing
+    hold.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); await wait(300);
+    const sec = document.querySelector('.modal.grownups details[data-sec="online"]'); guide.opens = !!sec && sec.open;
+    S.settings.lang = 'vi'; const vbox = document.createElement('div'); __sv.drawOnlinePanel(vbox, () => { }); S.settings.lang = 'en';
+    guide.vi = /Internet và chơi trực tuyến → chọn Dùng internet/.test(vbox.textContent) && !/Studio/.test(vbox.textContent);
     document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
     const code = await N.host({ name: 'X' }); await N.join('123456', { name: 'X' }); __sv.listenFriends(); await wait(1500);
-    return { setting, off, buttons, code, role: N.role, peer: !!N.peer, door: !!N.door, cloud: !!N.cloud, beacon: !!N.beacon, pres: !!N.friends.ch, peerLoaded: !!window.Peer, ws: window.__wsOpened };
+    return { setting, off, buttons, guide, code, role: N.role, peer: !!N.peer, door: !!N.door, cloud: !!N.cloud, beacon: !!N.beacon, pres: !!N.friends.ch, peerLoaded: !!window.Peer, ws: window.__wsOpened };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(r.setting === false && r.off && !r.buttons && r.code === null && !r.role && !r.peer && !r.door && !r.cloud && !r.beacon && !r.pres && !r.ws && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'a fresh device: "Playing with friends is off. Ask a grown-up to turn it on.", no Start or Join; host, join and friends make no connection';
+  ok(r.setting === false && r.off && !r.buttons && Object.values(r.guide).every(Boolean) && Object.keys(r.guide).length === 5 && r.code === null && !r.role && !r.peer && !r.door && !r.cloud && !r.beacon && !r.pres && !r.ws && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'a fresh device: "Playing with friends is off. Ask a grown-up to turn it on.", no Start or Join; a grown-ups\' note names Internet and playing online → Use the internet (EN and VI, no Studio) and its press-and-hold button opens that section (a tap does not); host, join and friends make no connection';
 });
 await b.close();
 const failed = results.filter(r => !r[1]);

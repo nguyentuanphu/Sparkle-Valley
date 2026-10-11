@@ -70,14 +70,15 @@ Format for a request:
 
 ## Voice & Audio
 - **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
+- [ ] (Online → Voice & Audio) Record one new spoken line (no name in it), said by the "Different valley" card (r57 map version): "Your friend has a different valley. Ask a grown-up to update the game." / "Thung lũng của bạn khác với của con. Nhờ người lớn cập nhật trò chơi nhé." · `js/main.js` `G.mapCard` on `core/online` · 11 Oct, 2:25 pm AEDT
 - [ ] (Release → Voice & Audio) T1/T3: the new areas (`hoian`, then `vungtau`) in `VN_AREAS` (`js/content/songs.js`), and the place names in the voice pack · ROUND-T.md · 10 Oct AEST
 - Lullabies with real voices: the owner may paste titles or words (soha.vn could not be reached), or record them in Studio → Music.
 
 ## Online
-- **Now:** no chat yet (brief in `docs/cores/tasks/` where there is one) · 10 Oct AEST
+- **Now:** **ready for Release**, branch `core/online`, last code commit b4d449b8 (full suite 87/87, Online checks 11/11, none skipped; notes in `online.md`): #37 grown-ups' note with press-and-hold button; r57 map version in the knock, the starter's answers and friends' notes (a different map gets a "Different valley" card, no version plays as before: owner); #55 iPhone microphone (robot's fix plus: a tap always asks afresh, a late answer is stopped, every outcome said on screen; needs a real iPhone try once live). PRs #49 and #56 are in `core/online`. Waiting for: new `online` bugs · 11 Oct, 2:25 pm AEDT
 - [x] (Release, fix in `js/main.js`, 10 Oct AEST) Moves are tied to their own game: a story read together that is still winding down no longer sends page turns into the next game (seen as extra stars in the race) or ends it. Was in r54 too; the `together` check now also fails on any stray move. For your records.
 - [x] (Release, one-line fix a check needs, 10 Oct AEST) `js/netmsg.js` `W` is now 235 (the 480 m valley); Online may make it read `WORLD.size` from the map.
-- [ ] (Release → Online; owner 10 Oct: T1 went out first, this goes into r57) Before T1 goes live: the hello carries the map version (`MAP_VERSION`); a friend on another layout sees "Ask a grown-up to update" instead of joining (positions are raw x, z) · ROUND-T.md §4 · `js/netmsg.js`, `js/net.js` · 10 Oct AEST
+- [x] (Release → Online; owner 10 Oct: T1 went out first, this goes into r57; done 11 Oct on `core/online`, check `mapver`) Before T1 goes live: the hello carries the map version (`MAP_VERSION`); a friend on another layout sees "Ask a grown-up to update" instead of joining (positions are raw x, z) · ROUND-T.md §4 · `js/netmsg.js`, `js/net.js` · 10 Oct AEST
 - The voice relay waits for the owner's Cloudflare TURN key (CF_TURN_KEY_ID, CF_TURN_KEY_TOKEN in Netlify): until then, voices only work when the two devices can link directly.
 
 ## Studio

@@ -2269,3 +2269,14 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .mapnav .mapstep span { font-size: 40px; line-height: 1; }
 .mapnav .mapstep small { font-size: 12px; }
 .mapnav[hidden], .mapcities[hidden] { display: none; }
+/* (Online, bug #37, owner 11 Oct) Friends tab: the grown-ups' note on where the switch is, with a press-and-hold Grown-ups button */
+.gunote { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 6px; }
+.gunote .note { font-size: 13px; opacity: .85; text-align: center; margin: 0; }
+.gunote .grown.gu-hold { position: relative; left: auto; bottom: auto; right: auto; top: auto; display: flex; align-items: center; gap: 8px; min-height: 48px; border-radius: 18px; padding: 8px 16px; font: inherit; color: inherit; }
+.gunote .gu-hold small { margin-left: 6px; opacity: .7; }
+/* (Online, r57) a friend on another map layout: the "Different valley" card (picture, words, voice, one big OK) */
+.modal.mapcard .card { width: min(440px, 92vw); text-align: center; }
+.mapcard .mc-pic svg.art, .mapcard .mc-pic .emo { width: 96px; height: 96px; font-size: 80px; }
+.mapcard .btn.big { min-height: 64px; min-width: 160px; font-size: 20px; }
+.mapcard h2 { justify-content: center; text-align: center; }
+.frow .btn.mapdiff { min-width: 56px; min-height: 44px; }
