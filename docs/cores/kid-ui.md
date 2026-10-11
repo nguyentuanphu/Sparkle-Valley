@@ -85,6 +85,8 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
   - the Memory Villages and Hội An join the place lists by their ids (`withSitePlaces` in `js/content/activities.js`).
 - r60 (11 Oct AEDT): `main` already gives the speech box its own `dlg-rise` animation, so the item 3 commit's `rise-dialog` was dropped when merging; the `mapnames` check only tests that the box starts in the middle.
 
+- 12 Oct AEDT, owner's go ("all of the above", then "Go"): the friends row on phones (buttons under the name and status), the Kid UI board tidied (live in r63), and a 6-page 3D film of Sự tích Hồ Gươm where the child pulls up the net and hands the sword back to the Golden Turtle; Chapter 2 picks it up by itself (`FILMS.hoguom`).
+
 ## Progress notes
 - **11 Oct 2026, 11:40 am AEDT, `core/kid-ui`:** the robot's Kid UI fixes merged: #27 (`bugfix/kid-ui-27`, PR #40), #28 (#42), #31 (#44), #41 (#46), #30 (#48), #32 (#53), plus the films branch.
   - Clashes settled:
