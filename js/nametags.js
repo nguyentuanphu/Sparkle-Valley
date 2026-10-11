@@ -8,14 +8,17 @@ import { settings } from './state.js';
 import { heightAt } from './world.js';
 import { withSitePlaces } from './content/activities.js';
 
-const NEAR = 40, MAX = 4, LIFT = 4.5, TOP = 96;   // (TOP: the goal bar and the minimap sit in the view's top band)
+const NEAR = 40, MAX = 4, LIFT = 4.5;
+// the view's edges the HUD uses: the goal bar, minimap and clock along the top (deeper on a tall phone screen), the
+// zoom and camera buttons down the right
+const topBand = q => q.h > q.w ? 230 : 120, RIGHT = 90;
 
 export function createNameTags(G) {
   const layer = document.createElement('div'); layer.className = 'nametags'; layer.setAttribute('aria-hidden', 'true'); document.body.appendChild(layer);
   const views = [], v = new THREE.Vector3();
   const things = () => [...(withSitePlaces(G.PLACES) || []), ...(G.LANDMARKS || [])].filter(p => p.name && isFinite(p.x) && isFinite(p.z));
   let list = null, listAt = 0;
-  const hidden = () => settings.calm || G.paused || !!document.querySelector('.theatre.film, .storybook, .gl');
+  const hidden = () => settings.calm || G.paused || !!document.querySelector('.theatre.film, .storybook, .gl, .modal');
   // one tag element per place and view, made when first needed; its size is measured once per text
   const tagOf = (V, p) => {
     let t = V.tags.get(p); if (t) return t;
@@ -36,11 +39,11 @@ export function createNameTags(G) {
         const t = tagOf(V, p), text = p.name();
         if (t.text !== text) { t.text = text; t.el.textContent = text; t.w = t.el.offsetWidth || text.length * 9 + 24; t.h = t.el.offsetHeight || 30; }
         const x = q.x + (v.x + 1) / 2 * q.w, y = q.y + (1 - v.y) / 2 * q.h;
-        let r = { x: x - t.w / 2, y: Math.max(q.y + TOP, y - t.h), w: t.w, h: t.h };
+        const TOP = topBand(q); let r = { x: x - t.w / 2, y: Math.max(q.y + TOP, y - t.h), w: t.w, h: t.h };
         const hits = a => placed.some(o => a.x < o.x + o.w + 4 && o.x < a.x + a.w + 4 && a.y < o.y + o.h + 4 && o.y < a.y + a.h + 4);
         if (hits(r)) { const top = Math.min(...placed.map(o => o.y)) - t.h - 6, down = Math.max(...placed.map(o => o.y + o.h)) + 6, up = { ...r, y: top }, dn = { ...r, y: down };
           if (top >= q.y + TOP && !hits(up)) r = up; else if (down + t.h < q.y + q.h - 120 && !hits(dn)) r = dn; else continue; }
-        if (r.x < q.x || r.x + r.w > q.x + q.w || r.y < q.y) continue;
+        if (r.x < q.x + 8 || r.x + r.w > q.x + q.w - RIGHT || r.y < q.y) continue;
         placed.push(r); want.add(t);
         t.el.style.transform = `translate(${Math.round(r.x)}px, ${Math.round(r.y)}px)`;
       }
@@ -49,7 +52,7 @@ export function createNameTags(G) {
     for (const t of V.tags.values()) t.el.classList.toggle('on', want.has(t));
   }
   // a view no longer drawn (the valley hidden behind a game, one player left) fades its tags out
-  const sweep = () => { const now = performance.now(); views.forEach((V, i) => { if (V && now - V.seen > 1500 && V.placed && V.placed.length) { V.placed = []; for (const t of V.tags.values()) t.el.classList.remove('on'); } }); requestAnimationFrame(sweep); };
+  const sweep = () => { const now = performance.now(), off = hidden(); views.forEach((V, i) => { if (V && (off || now - V.seen > 1500) && V.placed && V.placed.length) { V.placed = []; for (const t of V.tags.values()) t.el.classList.remove('on'); } }); requestAnimationFrame(sweep); };
   requestAnimationFrame(sweep);
   return { update, views, shown: () => views.map(V => V ? V.placed || [] : []) };
 }
