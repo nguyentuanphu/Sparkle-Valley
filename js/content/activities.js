@@ -6,6 +6,7 @@
 // "activities": { id: { area, little, hide } }).
 import { T } from '../i18n.js';
 import { CUSTOM } from '../custom.js';
+import { PLACES as MAP_PLACES } from './map.js';
 
 // the areas, in the order the path visits them; a child who can't read knows each one by its picture
 export const AREAS = [
@@ -62,6 +63,21 @@ export const PLACE_AREAS = [
   { key: 'asia', icon: '🐼', name: () => T('China and India', 'Trung Hoa và Ấn Độ') },
   { key: 'au', icon: '🦘', name: () => T('Australia', 'Nước Úc') }
 ];
+
+// (Release request, round T1) new places of the rebuilt valley that are not cities, by their id in js/content/map.js:
+// each joins the place list (the Pad map and the Simple screen's Places road) once the map holds it. Vũng Tàu, the
+// harbour and the memory places join here by id when the World core builds them.
+const SITE_PLACES = [
+  { id: 'hoian', g: 'vn', icon: '🏮', name: () => T('Hội An', 'Hội An') }
+];
+export function withSitePlaces(list) {
+  if (!list) return list;
+  for (const s of SITE_PLACES) {
+    const m = MAP_PLACES.find(p => p.id === s.id); if (!m || list.some(pl => pl.key === s.id)) continue;
+    list.push({ g: s.g, key: s.id, icon: s.icon, name: s.name, x: m.at[0], z: m.at[1] + (m.r || 10) + 3 });   // the stop just south of the place
+  }
+  return list;
+}
 
 // a page of the path never holds more than this many stops for an under-5 (the brief: 4–7 at once)
 export const LITTLE_PAGE = 6;
