@@ -335,7 +335,10 @@ await check('roads', async () => {
     for (const i of G.interactables) if (Number.isFinite(i.x) && !i.walks && near(i.x, i.z, -.5)) out.push(`thing ${i.id}`);
     const named = new Set(W.ROADS.flatMap(R => (R.gates || []).filter(Boolean)));
     const missing = W.CITIES.map(c => c.id).filter(id => !named.has(id));
-    const gates = W.ROADS.reduce((n, R) => n + (R.gates || []).filter(Boolean).length, 0);
+    // ROAD-007 (Round U, owner: "one gate is enough"): one welcome gate per place, a city's on its main gate
+    const built = G.world.gates || [], gates = built.length;
+    for (const id of named) { const mine = built.filter(g => g.place === id); if (mine.length !== 1) out.push(`${id} has ${mine.length} welcome gates`); }
+    for (const c of W.CITIES) { const g = built.find(q => q.place === c.id); if (g && Math.hypot(g.x - c.gates[0][0], g.z - c.gates[0][1]) > 1.5) out.push(`${c.id}'s gate is not on its main road`); }
     // R5: a side road that ends on another road's middle leaves it at 60–120° (not a shallow fork laid over it);
     // an end that simply carries on from another road's end (asphalt turning into a dirt lane) is not a junction
     const angles = [], straights = [], seg = (pts, x, z) => { let bd = 1e9, bi = 0; for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))), d = Math.hypot(x - ax - dx * t, z - az - dz * t); if (d < bd) { bd = d; bi = i; } } return { d: bd, i: bi }; };
@@ -368,11 +371,11 @@ await check('roads', async () => {
     for (const [x, z] of pts) { const a = W.roadDist(x, z), c = brute(x, z); if (Math.abs(a.d - c.d) > 1e-9 || a.road !== c.road) diff++; }
     let t0 = performance.now(); for (const [x, z] of pts) W.roadDist(x, z); const fast = performance.now() - t0; t0 = performance.now(); for (const [x, z] of pts) brute(x, z); const slow = performance.now() - t0;
     if (diff) out.push(`roadDist differs from the full search at ${diff} of 20000 points`);
-    return { out: out.slice(0, 12), n: out.length, missing, gates, angles, straights, tufts, speed: +(slow / fast).toFixed(1) };
+    return { out: out.slice(0, 12), n: out.length, missing, gates, places: named.size, angles, straights, tufts, speed: +(slow / fast).toFixed(1) };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(!r.out.length && !r.missing.length && r.gates >= 15 && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return `${r.gates} gates on road ends, every city on a road, nothing standing on a road; ${r.angles.length} side-road junctions all 60–120° (smallest ${Math.min(...r.angles)}°) and straight ≥ 6 m before any bend (shortest ${Math.min(...r.straights)} m; short straight stubs into a gate aside); ${r.tufts} grass tufts and flowers, none on a road; roadDist ×${r.speed} faster, same answers at 20,000 points`;
+  ok(!r.out.length && !r.missing.length && r.gates === r.places && r.places >= 12 && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.gates} welcome gates, one per village and city (on its main road), every city on a road, nothing standing on a road; ${r.angles.length} side-road junctions all 60–120° (smallest ${Math.min(...r.angles)}°) and straight ≥ 6 m before any bend (shortest ${Math.min(...r.straights)} m; short straight stubs into a gate aside); ${r.tufts} grass tufts and flowers, none on a road; roadDist ×${r.speed} faster, same answers at 20,000 points`;
 });
 
 await check('flat', async () => {

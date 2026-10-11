@@ -4,7 +4,7 @@
 import { THREE, toonVC, P, merge, outline } from './gfx.js';
 import { T, onLang } from './i18n.js';
 import { SFX } from './audio.js';
-import { heightAt, levelAt, riverDist, roadDist, edgeDist, ROADS, DRAGON, WATER, REGION_NAMES, setRoadBeds, roadBedsOn, bridgeAt, bridgeBox } from './world.js';
+import { heightAt, levelAt, riverDist, roadDist, edgeDist, ROADS, CITIES, DRAGON, WATER, REGION_NAMES, setRoadBeds, roadBedsOn, bridgeAt, bridgeBox } from './world.js';
 import { settings } from './state.js';
 import { ROAD_TONES } from './content/map.js';
 // HARD RULE (owner, round 30): the steepest a road may climb: asphalt 8 %, dirt 12 % (checked by `roadshape`)
@@ -431,11 +431,20 @@ export function createRoads(G) {
     G.dragonBridge = br;
   }
 
-  // ---------- golden welcome gates: one across each road where it enters a village or city ----------
+  // ---------- golden welcome gates: one per village or city (Round U, owner 11 Oct: "one gate is enough") ----------
+  // It stands across the place's main road where it comes in: a city's main gate (the first of its gates in the map),
+  // otherwise the first road that names the place. Other roads come in through a plain opening.
   // (the gate stands on the road's end point and faces along the road, so you always drive through it)
+  const mainEnd = {}; world.gates = [];
   for (const R of ROADS) (R.gates || []).forEach((id, k) => {
-    if (!id) return;
+    if (!id) return; const n = R.pts.length, [x, z] = R.pts[k ? n - 1 : 0], C = CITIES.find(c => c.id === id);
+    const isMain = C ? Math.hypot(C.gates[0][0] - x, C.gates[0][1] - z) < 1.5 : !mainEnd[id];
+    if (isMain && !mainEnd[id]) mainEnd[id] = R.id + ':' + k;
+  });
+  for (const R of ROADS) (R.gates || []).forEach((id, k) => {
+    if (!id || mainEnd[id] !== R.id + ':' + k) return;
     const n = R.pts.length, [x, z] = R.pts[k ? n - 1 : 0], [px, pz] = R.pts[k ? n - 2 : 1];
+    world.gates.push({ place: id, road: R.id, x, z });
     localGate(scene, world, x, z, Math.atan2(x - px, z - pz), () => T('Welcome to ', 'Chào mừng đến ') + REGION_NAMES[id](), GATE_STYLE[id] || 'golden', Math.max(7.5, R.w + 2.3)); // (R7: the opening is the road plus more than 1 m each side)
   });
   G.goldenGate = (x, z, r, t, span) => goldenGate(scene, world, x, z, r, t, span);
