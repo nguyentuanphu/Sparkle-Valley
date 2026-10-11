@@ -110,6 +110,11 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
 - #32 (owner's correction, 11 Oct): nothing in the game sends a child to a festival; Play's part is `festivals.visit`, which now
   only tells (no travel), checked by `festivals`. The rest of #32 (the calendar box in settings, removing `settings.festival`)
   is Kid UI's (the robot's fix).
+- Festival places for Round T (owner's "go", 11 Oct AEST; Release → Play request T1/T3): **wait for r60** on `main` (and
+  `docs/cores/LOG-r60.md`) before starting; on 11 Oct `main` was r59 (934de81), so nothing was built. Then: merge `main` into
+  `core/play`; `js/festivals.js` `PLACES()` also finds `hoian` by its id from `js/content/map.js` (a site, so a ring round its
+  middle, no map files changed); `js/content/festcal.js` `where`: Hội An (`hoian`) gets Tết, Rằm tháng Giêng and Trung Thu,
+  Vũng Tàu (`vungtau`, already a city) gets Tết, Quốc khánh and Trung Thu. Checks `festivals festcal`, then the full suite.
 
 ## Owner's decisions (Chapter 2, 10 Oct AEST; the owner said "go" to the plan and its suggestions)
 - Tèo, Cô Tam and Bà Năm come to Hà Nội for Trung Thu: they stand there only while a child is in Chapter 2 (spots found
