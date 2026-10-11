@@ -103,3 +103,14 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
   all pass (local PeerJS and MQTT servers, none skipped), `tests/unit/netgames.test.mjs` pass; full suite 86/86 pass.
   Screenshots looked at: phone 390×760, tablet 820×1180, computer 1280×800, EN and VI, friends off and on, and the
   held button. No new spoken lines.
+- **11 Oct, 2:25 pm AEDT, branch `core/online`, commit b4d449b8** (item 2, r57 map version, and bug #55, robot's
+  `bugfix/online-55` merged in and extended): files `js/net.js`, `js/netmsg.js` (`W` from `WORLD.size`, `map` in hello),
+  `js/main.js` (Online block: Different valley card, friends list and notes, microphone messages), `css/style.css`
+  (Online block), `tests/run.mjs` (new `mapver`, `iphone` extended). Also fixed a slip of 42c33ce0 that had commented out
+  `G.onNet()` and `G.shareStatus()` on every status (now guarded by `iphone`). Checks: `iphone onlineoff mapver
+  multiplayer meet cloud knock netmsg together netgames coop` all pass (local PeerJS and MQTT servers, none skipped);
+  `tests/unit/netgames.test.mjs` 8/8; full suite 87/87 pass, none skipped. (An earlier run on 73104202 had `knock` and
+  `together` fail once on timing; `together` failed the same way on c6ebc651, and both passed on re-runs.) Screenshots
+  looked at: phone 390x760, tablet 820x1180, computer 1280x800, EN and VI: Different valley card and friends row;
+  microphone asking, blocked and iPhone-too-old messages. New spoken line (not recorded here, no key; on the board for
+  Voice & Audio): the Different valley card. The microphone messages are on screen only.
