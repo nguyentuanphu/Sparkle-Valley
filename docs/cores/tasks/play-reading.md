@@ -4,6 +4,20 @@ Written 11 Oct 2026, 7:55 pm AEDT, by the Analytics & Infra chat from the owner'
 games like the interactive reading games in Khan Academy Kids, first 5, then "increase to 10 games", as a trial to see
 if they are good). The rules for helper chats are in `CLAUDE.md`; this brief says what to build.
 
+## A second Play chat (owner, 11 Oct AEDT)
+The first Play chat is busy on `core/play`, so this brief is done by a **second Play chat** at the same time:
+- Branch **`core/play-reading`**, started from `main` (merge `main` in at the start of every session). Never push to
+  `core/play` or `main`.
+- Progress notes and the owner's decisions for this brief go in **`docs/cores/play-reading.md`** (create it), not in
+  `docs/cores/play.md`, so the two Play chats never edit the same notes. Keep your own line "Play (reading)" in the
+  Play section of `docs/cores/BOARD.md`.
+- Files the first Play chat may also change (`js/content/activities.js`, `js/content/releases.js`, `js/art.js`,
+  `js/ui.js`, `sw.js`, `tests/run.mjs`): change them only by **adding** your own block, marked with a comment
+  `// (Play reading trial)`, never by moving or rewording what is there, so Release can merge both branches.
+- Everything new lives in your own new files (`js/games/reading.js`, `js/content/reading.js`).
+- When done and checked, write "ready for Release" on your board line; Release merges `core/play` and
+  `core/play-reading` in the same round.
+
 ## The owner's rules (11 Oct AEDT)
 1. Ten reading games in the Play hub, **as a trial**: one Studio switch `readingTrial` (Releases page), **off** until an
    admin switches it on, so the owner can try them at home before the children see them.

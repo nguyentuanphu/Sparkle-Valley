@@ -37,7 +37,7 @@ The rules for helper chats are in `CLAUDE.md` (read automatically), so nothing e
 | [infra-speed.md](tasks/infra-speed.md) | Analytics & Infra | Smaller start-up download, checks on every pull request |
 | [studio-review.md](tasks/studio-review.md) | Studio | Studio review and improvements |
 | [play-festivals.md](tasks/play-festivals.md) | Play | Festivals on a schedule, whole places decorated |
-| [play-reading.md](tasks/play-reading.md) | Play | Ten reading games, a trial behind a switch |
+| [play-reading.md](tasks/play-reading.md) | Play (2nd chat, `core/play-reading`) | Ten reading games, a trial behind a switch |
 
 **Without a brief**, paste this as the first message (change the core):
 
