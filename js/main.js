@@ -1612,6 +1612,8 @@ G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 
 // loaded while the valley is built (js/hoilang.js after the games boards it uses; Studio switches in the 'kids' group)
 { const [{ createHoiLang }, { createSurprises }, { createParents }] = await Promise.all([import('./hoilang.js'), import('./surprises.js'), import('./parents.js')]);
   G.hoilang = createHoiLang(G, { say, save, reward }); G.surprises = createSurprises(G, { say, reward }); G.parents = createParents(G, { say, save, reward }); }
+// (Play reading trial, owner 11 Oct AEDT) the ten reading games load only while Studio's readingTrial switch is on (now, or when it is switched on)
+{ const rd = () => { if (featureOn('readingTrial', false)) import('./games/readingmenu.js').catch(() => { }); }; rd(); import('./custom.js').then(C => C.onLive(rd)); }
 // level land under every building, stall and landmark placed above (and anything added in future rounds)
 world.familyEdits = applyWorldEdits(G); // buildings the family moved or removed in Sparkle Studio
 bootMark('things'); widenFlatLand(world, scene); bootMark('wideland'); await breathe(); // more level land round every village and city, for new buildings (nothing moves on the map)
