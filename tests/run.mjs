@@ -1798,6 +1798,9 @@ await check('parents', async () => {
     const G = __sv, h = G.heroes[0], p = h.profile, w = t => new Promise(r => setTimeout(r, t)), C = (await import('/js/custom.js')).CUSTOM, S = await import('/js/state.js');
     const out = {}, tidy = () => { document.querySelectorAll('.dialog, .modal, .reward, .songs').forEach(e => e.remove()); document.body.classList.remove('songs-on'); G.paused = false; };
     const hold = async b => { const r = b.getBoundingClientRect(), o = { bubbles: true, clientX: r.x + 5, clientY: r.y + 5, pointerId: 3 }; b.dispatchEvent(new PointerEvent('pointerdown', o)); await w(2000); b.dispatchEvent(new PointerEvent('pointerup', o)); };
+    // (Round U: this checks the family's own written missions, so the 15 ready-made ones are switched off and the family-play
+    // guide counts as seen; check familymissions covers those)
+    S.settings.readyMissions = Object.fromEntries((await import('/js/content/familymissions.js')).FAMILY_MISSIONS.map(m => [m.id, false])); p.familyGuideSeen = true;
     S.settings.missions = []; S.settings.bedtime = ''; p.stats.days = { [new Date().toISOString().slice(0, 10)]: { min: 30, games: 4 } };
     // Grown-ups: write a mission; the weekly note and the cards are there
     const { openGrownups } = await import('/js/ui.js'); openGrownups(); await w(500);
@@ -2864,6 +2867,31 @@ await check('signs', async () => {
   }
   ok(!out.length, out.join(' | '));
   return 'signposts at the junctions, off the roads, each board a place with its picture, in both languages';
+});
+
+await check('familymissions', async () => {
+  // (Round U, owner 11 Oct: 15 tasks for family missions, week and bedtime, and a short guide) Grown-ups → Family lists 15
+  // ready-made missions (day, week, bedtime) with switches and the family-play guide; the ones turned on (one of each kind
+  // to start) show in the child's Adventures with a "?" guide; a done day mission comes back the next day
+  const P = await open(b, { w: 900, h: 700 }); await clear(P.page); const page = P.page;
+  const r = await page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], { settings } = await import('/js/state.js'), F = await import('/js/content/familymissions.js');
+    const box = document.createElement('div'); box.innerHTML = G.parents.grownupsHTML(true); document.body.appendChild(box);
+    const out = { ready: box.querySelectorAll('[data-fmready]').length, on: box.querySelectorAll('[data-fmready]:checked').length, guide: box.querySelectorAll('.fmguide .fmg').length };
+    box.remove();
+    const log = () => { const d = document.createElement('div'); d.innerHTML = G.parents.logHTML(h.profile); return d; };
+    const L = log(); out.child = L.querySelectorAll('[data-mtick]').length; out.help = !!L.querySelector('.fmhelp');
+    out.kinds = F.FAMILY_MISSIONS.reduce((a, m) => (a[m.kind] = (a[m.kind] || 0) + 1, a), {});
+    // tick the day one: gone; a day later: back
+    const id = 'r_f_table'; G.parents.tick ? 0 : 0; settings.missionsDone = { ...(settings.missionsDone || {}), [id]: { [h.profile.id]: Date.now() } };
+    out.afterTick = log().querySelectorAll(`[data-mtick="${id}"]`).length;
+    settings.missionsDone[id][h.profile.id] = Date.now() - 864e5 * 1.1; out.nextDay = log().querySelectorAll(`[data-mtick="${id}"]`).length;
+    const bad = F.FAMILY_MISSIONS.filter(m => !m.en || !m.vi || /[ăâđêôơư]/i.test(m.en.replace(/"[^"]*"/g, ''))).map(m => m.id); out.bad = bad;
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.ready === 15 && r.on === 3 && r.guide === 4 && r.child >= 3 && r.help && r.kinds.day === 5 && r.kinds.week === 5 && r.kinds.bedtime === 5 && r.afterTick === 0 && r.nextDay === 1 && !r.bad.length && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return '15 ready-made missions (5 day, 5 week, 5 bedtime) with switches, 3 on to start, the family-play guide for grown-ups and the child (?), a day mission back the next day';
 });
 
 await check('bilingual', async () => {

@@ -25,6 +25,7 @@ import { saveToDevice } from './photos.js';
 import { DECOR } from './myhouse.js';
 import { pic, artSVG } from './art.js';
 import { el, esc } from './util.js';
+import { FAMILY_MISSIONS, FAMILY_AGAIN, FAMILY_GUIDE } from './content/familymissions.js';
 import { allMissions, addMission, removeMission, tickMission, openMissions, cleanMissions, weekSummary, weekNote, aestDate, danceDue, DANCE_MOVES, MOVE_SEC,
   bedtimePhase, BED_DIM, BED_SONG, isBirthday, MISSION_COINS, PARENT_LINES } from './content/parents.js';
 
@@ -34,13 +35,22 @@ export function createParents(G, { say, save, reward }) {
   DECOR.bd_cake = { icon: '🎂', price: 0, en: 'Birthday cake (my birthday)', vi: 'Bánh sinh nhật (sinh nhật con)', keepsake: true };
 
   // ---------- (a) family missions ----------
-  const missions = () => allMissions(settings.missions, CUSTOM.missions, settings.missionsDone || {});
+  // (Round U) the 15 ready-made missions a grown-up turned on (one of each kind starts on); a done one comes back after
+  // its day, week or evening (FAMILY_AGAIN)
+  const readyOn = M => settings.readyMissions && settings.readyMissions[M.id] != null ? !!settings.readyMissions[M.id] : !!M.on;
+  const readyList = () => FAMILY_MISSIONS.filter(readyOn).map(M => { const id = 'r_' + M.id, d = (settings.missionsDone || {})[id] || {}, fresh = {};
+    for (const [kid, at] of Object.entries(d)) if (Date.now() - at < FAMILY_AGAIN[M.kind] * 864e5 - 3 * 36e5) fresh[kid] = at;   // (3 hours early, so an evening one is back the next evening)
+    return { id, en: M.en, vi: M.vi, icon: M.icon, kind: M.kind, ready: true, done: fresh }; });
+  const missions = () => [...readyList(), ...allMissions(settings.missions, CUSTOM.missions, settings.missionsDone || {})];
+  // the guide: what family play is (pictures and words, spoken)
+  async function guide() { G.paused = true; await G.dialog('💛 ' + T('Family play', 'Trò chơi cả nhà'), FAMILY_GUIDE.map(([ic, en, vi]) => [`${ic} ${en}`, `${ic} ${vi}`, en, vi])); G.paused = false; }
+  const guideHTML = () => `<div class="fmguide">${FAMILY_GUIDE.map(([ic, en, vi]) => `<div class="fmg">${pic(ic)}<span>${esc(T(en, vi))}</span></div>`).join('')}</div>`;
   const openFor = p => feat('familyMissions') ? openMissions(missions(), p.id) : [];
   function tick(id, p) {
     const all = missions(), m = all.find(x => x.id === id); if (!m) return false;
     const r = tickMission(all, id, p.id); if (!r.rewarded) return false;
-    if (m.studio) { const d = settings.missionsDone = settings.missionsDone || {}; d[id] = { ...(d[id] || {}), [p.id]: Date.now() }; }
-    else settings.missions = cleanMissions(r.list.filter(x => !x.studio));
+    if (m.studio || m.ready) { const d = settings.missionsDone = settings.missionsDone || {}; d[id] = { ...(d[id] || {}), [p.id]: Date.now() }; }
+    else settings.missions = cleanMissions(r.list.filter(x => !x.studio && !x.ready));
     saveSettings();
     G.addCoins && G.addCoins(MISSION_COINS); const st = G.giveSticker ? G.giveSticker(p) : null; saveProfiles();
     const h = G.heroes.find(x => x.profile === p || x.profile.id === p.id);
@@ -50,13 +60,14 @@ export function createParents(G, { say, save, reward }) {
   // Pad → Adventures: the child's missions, each with a grown-up's press-and-hold ✓
   function logHTML(p) {
     const list = openFor(p); if (!list.length) return '';
-    return `<h3>${pic('📝')} ${T('Family missions', 'Nhiệm vụ gia đình')}</h3><div class="sides missions">${list.map(m => `<div class="side"><span>${pic('💌')}</span><div><b>${esc(T(m.en, m.vi))}</b><small>${T('Do it for real, then a grown-up holds ✓', 'Làm thật ngoài đời, rồi người lớn giữ nút ✓')}</small></div><button class="btn grownup mtick" data-mtick="${esc(m.id)}" aria-label="${T('Grown-ups: hold to tick', 'Người lớn: giữ để đánh dấu')}"><span class="ring"></span>✓</button></div>`).join('')}</div>`;
+    return `<h3>${pic('📝')} ${T('Family missions', 'Nhiệm vụ gia đình')} <button class="btn ghost fmhelp" aria-label="${T('What is family play?', 'Trò chơi cả nhà là gì?')}">${pic('❓')}</button></h3><div class="sides missions">${list.map(m => `<div class="side"><span>${pic(m.icon || '💌')}</span><div><b>${esc(T(m.en, m.vi))}</b><small>${T('Do it for real, then a grown-up holds ✓', 'Làm thật ngoài đời, rồi người lớn giữ nút ✓')}</small></div><button class="btn grownup mtick" data-mtick="${esc(m.id)}" aria-label="${T('Grown-ups: hold to tick', 'Người lớn: giữ để đánh dấu')}"><span class="ring"></span>✓</button></div>`).join('')}</div>`;
   }
-  function bindLog(body, h, redraw) { body.querySelectorAll('[data-mtick]').forEach(b => holdButton(b, () => { if (tick(b.dataset.mtick, h.profile)) { SFX.ok && SFX.ok(); redraw && redraw(); } })); }
+  function bindLog(body, h, redraw) { const q = body.querySelector('.fmhelp'); if (q) q.onclick = () => { SFX.tap && SFX.tap(); guide(); }; body.querySelectorAll('[data-mtick]').forEach(b => holdButton(b, () => { if (tick(b.dataset.mtick, h.profile)) { SFX.ok && SFX.ok(); redraw && redraw(); } })); }
   // a new mission is shown once in a speech box (the family's words are shown; a recorded line is spoken)
   async function announce(h) {
     const p = h.profile, seen = p.missionsSeen = Array.isArray(p.missionsSeen) ? p.missionsSeen.slice(-30) : [];
     const m = openFor(p).find(x => !seen.includes(x.id)); if (!m) return false;
+    if (!p.familyGuideSeen) { p.familyGuideSeen = true; saveProfiles(); await guide(); }   // (Round U) the first time: what family play is
     seen.push(m.id); saveProfiles(); G.paused = true;
     await G.dialog('💌 ' + T('Family mission', 'Nhiệm vụ gia đình'), [[m.en, m.vi, ...PARENT_LINES.mission]]);
     G.paused = false; return true;
@@ -194,6 +205,10 @@ export function createParents(G, { say, save, reward }) {
     return `<details class="gsec family" data-sec="family" ${open ? 'open' : ''}><summary><span class="gi">${pic('💛')}</span><b>${T('Family: missions, week, bedtime', 'Gia đình: nhiệm vụ, tuần, giờ ngủ')}</b></summary><div class="gbody">
       ${feat('familyMissions') ? `<h3>${pic('📝')} ${T('Family missions', 'Nhiệm vụ gia đình')}</h3>
       <p class="note">${T('Write a real-life job ("Help set the table"). The child sees it in the game; when it is done, tick ✓ here or hold ✓ in their Adventures page: coins and a sticker. Missions your family sent from the computer show here too.', 'Viết một việc ngoài đời ("Giúp dọn bàn ăn"). Bé thấy nhiệm vụ trong trò chơi; làm xong, đánh dấu ✓ ở đây hoặc giữ ✓ trong trang Nhiệm vụ của bé: được tiền và hình dán. Nhiệm vụ gia đình gửi từ máy tính cũng hiện ở đây.')}</p>
+      ${guideHTML()}
+      <h3>${pic('✨')} ${T('Ready-made missions', 'Nhiệm vụ có sẵn')}</h3><p class="note">${T('Turn on the ones that suit your family. A day mission comes back the next day, a week one after seven days, a bedtime one each evening.', 'Bật những nhiệm vụ hợp với gia đình mình. Nhiệm vụ trong ngày sẽ có lại vào hôm sau, nhiệm vụ tuần sau bảy ngày, nhiệm vụ giờ ngủ mỗi tối.')}</p>
+      ${[['day', '☀️', ['Every day', 'Mỗi ngày']], ['week', '📅', ['This week', 'Trong tuần']], ['bedtime', '🌙', ['Bedtime', 'Giờ đi ngủ']]].map(([k, ic, nm2]) => `<h4>${pic(ic)} ${T(nm2[0], nm2[1])}</h4>${FAMILY_MISSIONS.filter(M => M.kind === k).map(M => `<label class="tog fmready">${pic(M.icon)} <input type="checkbox" data-fmready="${M.id}" ${readyOn(M) ? 'checked' : ''}> ${esc(T(M.en, M.vi))}</label>`).join('')}`).join('')}
+      <h3>${pic('✏️')} ${T('Write your own', 'Tự viết nhiệm vụ')}</h3>
       <div class="field"><label>English</label><input id="fmEn" maxlength="120" placeholder="Help set the table"></div>
       <div class="field"><label>Tiếng Việt</label><input id="fmVi" maxlength="120" placeholder="Giúp dọn bàn ăn"></div>
       <div class="field"><label>${T('For', 'Cho')}</label><select id="fmWho"><option value="">${T('Everyone', 'Mọi bé')}</option>${kids.map(k => `<option value="${esc(k.id)}">${esc(nm(k.name || '?'))}</option>`).join('')}</select></div>
@@ -216,6 +231,7 @@ export function createParents(G, { say, save, reward }) {
     const $ = s => card.querySelector(s);
     if ($('#fmAdd')) $('#fmAdd').onclick = () => { const en = $('#fmEn').value, vi = $('#fmVi').value; if (!en.trim() && !vi.trim()) { toast && toast(T('Write the mission first.', 'Hãy viết nhiệm vụ trước.')); return; }
       settings.missions = addMission(cleanMissions(settings.missions), { en, vi, who: $('#fmWho').value }); saveSettings(); SFX.ok && SFX.ok(); redraw(); };
+    card.querySelectorAll('[data-fmready]').forEach(b => b.onchange = () => { settings.readyMissions = { ...(settings.readyMissions || {}), [b.dataset.fmready]: b.checked }; saveSettings(); SFX.tap && SFX.tap(); });
     card.querySelectorAll('[data-fmtick]').forEach(b => b.onclick = () => { const [id, kid] = b.dataset.fmtick.split('|'), p = profiles.find(x => x.id === kid); if (p && tick(id, p)) redraw(); });
     card.querySelectorAll('[data-fmdel]').forEach(b => b.onclick = () => { settings.missions = removeMission(cleanMissions(settings.missions), b.dataset.fmdel); saveSettings(); redraw(); });
     card.querySelectorAll('[data-cert]').forEach(b => b.onclick = () => { const p = profiles.find(x => x.id === b.dataset.cert); if (p) openCertificate(p); });
