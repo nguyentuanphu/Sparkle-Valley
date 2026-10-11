@@ -55,6 +55,9 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
 - (11 Oct, 7:20 pm AEDT) "You can deploy by using this chat for now until I say no, and then you can proceed on the
   tasks": this chat may merge its own branch into `main` (Netlify publishes) until the owner says no; then it carries on
   with its waiting tasks (bug robot's first instant run, `startup` ratchet, Studio's start-up times, #36 numbers).
+- (11 Oct, 7:40 pm AEDT) The Front Desk is no longer in service; **this chat files bugs for the robot**: the owner tells
+  this chat, it finds the core and files the GitHub issue the Front Desk way (`docs/cores/front-desk.md`: labels `bug`,
+  the core, `small` or `big`; no child's name, photo or address), then watches the robot work on it.
 - Analytics per device and per child, with first names, device and browser, city and country (round L).
 - green dot Playing now / grey dot Offline per device in Studio (round O).
 - GitHub and Netlify are separate steps: “yes, push” then “yes, deploy”.
