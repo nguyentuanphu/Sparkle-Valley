@@ -287,7 +287,7 @@ export async function studioCheck(browser, open) {
     // round L: a device with one child's day: name, games (started, won, left), places, stories, hours, errors, stuck, smoothness; the town from the connection
     { const today = new Date().toISOString().slice(0, 10);
       const st = await fetch(site + '/api/hello', { method: 'POST', headers: { 'x-test-geo': JSON.stringify({ city: 'Brisbane', subdivision: { code: 'QLD' }, country: { code: 'AU' } }) }, body: JSON.stringify({ id: 'dddddddddddd', b: 'r43', l: 'en', k: 1, d: 'tablet', a: true, os: 'iPadOS', br: 'Safari', sc: '820x1180',
-        days: [{ d: today, m: 12, g: { caro: 2 }, t: 1, o: 0, h: { 9: 12 }, c: { p1: { n: 'Na', a: 'little', m: 12, sm: 2, t: 1, g: { caro: [6, 1, 5] }, p: { village: 2 } }, 'bad key!': { n: '<b>x</b>' } }, e: { 'x is not defined @ main.js:10': 2, '<script>': 1 }, s: { 'village (3, 4)': 3 }, q: { caro: 5 }, f: [1200, 60, 50] }] }) }).then(r => r.status);
+        days: [{ d: today, m: 12, g: { caro: 2 }, t: 1, o: 0, h: { 9: 12 }, c: { p1: { n: 'Na', a: 'little', m: 12, sm: 2, t: 1, g: { caro: [6, 1, 5] }, p: { village: 2 } }, 'bad key!': { n: '<b>x</b>' } }, e: { 'x is not defined @ main.js:10': 2, '<script>': 1 }, s: { 'village (3, 4)': 3 }, q: { caro: 5 }, f: [1200, 60, 50], st: [[300, 21300, 22100, 1, 'things'], [300, 20800, 21900, 1, 'things']] }] }) }).then(r => r.status);
       ok(st === 204, 'a rich hello was not taken: ' + st);
       ok((await call('/studio/api/players/label', { cookie: C, headers: X, body: { id: 'dddddddddddd', label: 'Na’s iPad' } })).status === 200, 'naming a device failed');
       const R = (await call('/studio/api/players', { cookie: C })).j, dv = (R.devices || []).find(x => x.id === 'dddddddddddd') || {}, kid = (dv.kids || [])[0] || {};
@@ -342,9 +342,9 @@ export async function studioCheck(browser, open) {
     ok((await job('github/draft', {})).result.changed === 0, 'a second exe draft found changes');
     notes.push('exe: saves to its folder with a backup, players via the website, same version; GitHub in two steps (draft, then Publish)');
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone
-    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode', 'missions', 'villagers', 'path', 'play', 'quiz', 'stories'], bad = [];
+    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode', 'missions', 'villagers', 'path', 'play', 'quiz', 'stories', 'looks', 'plots'], bad = [];
     // (Studio review, owner 10 Oct) every button and box 44 px or more on a phone and a tablet: these pages
-    const TAPS = ['home', 'message', 'missions', 'album', 'quiz', 'stories', 'villagers', 'familycode', 'releases', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads', 'publish', 'site', 'check', 'settings'];
+    const TAPS = ['home', 'message', 'missions', 'album', 'quiz', 'stories', 'villagers', 'plots', 'looks', 'familycode', 'releases', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads', 'publish', 'site', 'check', 'settings'];
     const SMALL = () => [...document.querySelectorAll('header button:not([hidden]), #crumb button, #page button, #page a.btn, #page select, #page textarea, #page input:not([type=checkbox]):not([type=radio]):not([type=hidden]), #page label:has(> input[type=checkbox]), #page label:has(> input[type=radio])')]
       .filter(e => { const r = e.getBoundingClientRect(); return r.width && r.height && (r.height < 43.5 || (e.tagName === 'BUTTON' && r.width < 43.5)); })
       .map(e => `${e.id || e.className || e.tagName} “${(e.innerText || e.value || '').trim().slice(0, 16)}” ${Math.round(e.getBoundingClientRect().width)}×${Math.round(e.getBoundingClientRect().height)}`);
@@ -357,11 +357,15 @@ export async function studioCheck(browser, open) {
       if (!navOk) bad.push(`online ${w}px: the five sections are not where they should be`);
       await pg.evaluate(() => document.querySelector('#tabs [data-k="family"]').click()); await pg.waitForTimeout(400);
       // (round S: Family missions joined the Family section: eight cards)
-      if (await pg.evaluate(() => document.querySelectorAll('#page .pcard').length) !== 8) bad.push(`online ${w}px: the Family section does not show its eight cards`);
+      // (r60: Memory Villages joined the Family section: nine cards)
+      if (await pg.evaluate(() => document.querySelectorAll('#page .pcard').length) !== 9) bad.push(`online ${w}px: the Family section does not show its nine cards`);
       for (const k of pages) { await pg.evaluate(k2 => { location.hash = k2; }, k); await pg.waitForTimeout(k === 'photos' ? 2500 : 900); const t = await pg.evaluate(() => document.querySelector('#page').innerText); if (await pg.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`online ${w}px ${k}: ${t.slice(0, 80)}`);
         if (await pg.evaluate(() => document.scrollingElement.scrollWidth > innerWidth + 1)) bad.push(`online ${w}px ${k}: page scrolls sideways`);
         const emo = await pg.evaluate(SHOWN_EMOJI); if (emo.length) bad.push(`online ${w}px ${k}: phone emoji shown: ${emo.join(' ')}`); }
-      ok(/3/.test(await pg.evaluate(() => (document.querySelector('#tabs [data-k="players"]').click(), new Promise(r => setTimeout(() => r(document.querySelector('#page').innerText), 1500))))), 'online players page');
+      { const t = await pg.evaluate(() => (document.querySelector('#tabs [data-k="players"]').click(), new Promise(r => setTimeout(() => r(document.querySelector('#page').innerText), 1500))));
+        ok(/3/.test(t), 'online players page');
+        // (r60, #36) start-up times: by kind of device and for each device, with the slowest step in words
+        if (!(/(Start-up|Khởi động): .*(Tablet|Máy tính bảng) 21 s/.test(t) && /(usually ready in|thường sẵn sàng sau) 21 s \((slowest|chậm nhất): (things in the valley|đồ vật)\)/.test(t))) bad.push(`online ${w}px: start-up times not shown: ` + t.slice(0, 300)); }
       // (round R) Releases online: switch traffic off and Halloween to start in 3 days; the website hands it to every device
       if (!touch) {
         await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('tr[data-id="traffic"]', { timeout: 15000 });
@@ -424,6 +428,23 @@ export async function studioCheck(browser, open) {
           if (!(listed.n === 2 && /Cô Ba/.test(listed.txt) && gone && near && c.place === 'village' && Array.isArray(c.off) && got.world && got.world.map === M.MAP_VERSION && !got.parked && !(got.world.build || []).length))
             bad.push('parked map items: ' + JSON.stringify({ listed, gone, c, map: got.world && got.world.map, parked: got.parked, build: got.world && got.world.build }));
           await ex('content', keep); }
+        // (r60) Story characters: a colour for Chi is saved in looks.chi (with the rest of her look), "Back to the usual" takes it off
+        { await pe.evaluate(() => { location.hash = 'game/looks'; }); await pe.waitForSelector('.look[data-id="chi"] .sw', { timeout: 20000 });
+          await pe.click('.look[data-id="chi"] [data-k="color"][data-v="#e8434a"]'); await pe.selectOption('.look[data-id="chi"] select[data-k="hairStyle"]', 'buns'); await pe.click('#save'); await pe.waitForTimeout(900);
+          const a = (await ex('content')).j.looks || {};
+          await pe.click('[data-usual="chi"]'); await pe.click('#save'); await pe.waitForTimeout(900); const b = (await ex('content')).j.looks;
+          if (!(a.chi && a.chi.color === '#e8434a' && a.chi.hairStyle === 'buns' && /^#[0-9a-f]{6}$/i.test(a.chi.skin) && a.chi.style && !a.jack && !b)) bad.push('story characters: ' + JSON.stringify({ a, b })); }
+        // (r60) Memory Villages: a home put on a plot is saved by the plot's id; "Back to a garden" takes it off; the spare plots are found
+        { const M = await import(pathToFileURL(path.join(ROOT, 'js/content/map.js')).href), id = M.PLOTS[0].id;
+          await pe.evaluate(() => { location.hash = 'family/plots'; }); await pe.waitForSelector(`[data-plot="${id}"]`, { timeout: 20000 });
+          await pe.click(`[data-plot="${id}"]`); await pe.waitForSelector('.plotform'); await pe.fill('.plotform [data-f="n0"]', 'Grandma’s house'); await pe.fill('.plotform [data-f="o"]', 'Bà Nội'); await pe.click('.plotform [data-x="ok"]');
+          const tileTxt = await pe.evaluate(i => document.querySelector(`[data-plot="${i}"]`).innerText, id); await pe.click('#save'); await pe.waitForTimeout(900);
+          const a = ((await ex('content')).j.plots || {})[id] || {};
+          await pe.click(`[data-plot="${id}"]`); await pe.waitForSelector('.plotform [data-x="off"]'); await pe.click('.plotform [data-x="off"]'); await pe.click('#save'); await pe.waitForTimeout(900); const b = (await ex('content')).j.plots;
+          await pe.click('#spare'); await pe.waitForFunction(() => document.querySelector('[data-plot^="sp_"]') || /No spare plots|không có mảnh trống|⚠️/.test((document.querySelector('#page') || {}).innerText || ''), null, { timeout: 70000 });
+          const spare = await pe.evaluate(() => ({ n: document.querySelectorAll('[data-plot^="sp_"]').length, err: /⚠️/.test(document.querySelector('#spareres') ? document.querySelector('#spareres').textContent : '') }));
+          if (!(a.owner && a.owner.name === 'Bà Nội' && a.name[0] === 'Grandma’s house' && a.type && /Grandma/.test(tileTxt) && !b && !spare.err)) bad.push('memory villages: ' + JSON.stringify({ a, b, tileTxt, spare }));
+          notes.push(`Memory Villages: ${M.PLOTS.length} plots, ${spare.n} spare ones by the cities`); }
         // (Studio review) in Vietnamese the game's own names follow: the Simple screen shows "Cho Thỏ Ăn", in English "Feed the Bunny"
         const names = async l => { await pe.evaluate(l2 => document.querySelector(`.lang [data-l="${l2}"]`).click(), l); await pe.evaluate(() => { location.hash = 'game/path'; }); await pe.waitForSelector('tr[data-id]', { timeout: 15000 }).catch(() => { }); await pe.waitForTimeout(300); return pe.evaluate(() => location.hash + ' ' + document.querySelector('#page').innerText.slice(0, 3000)); };
         const vi = await names('vi'), en = await names('en'); await names('vi');
