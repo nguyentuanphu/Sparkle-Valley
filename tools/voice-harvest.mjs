@@ -2,6 +2,8 @@
 // playing (names, numbers, colours, items…) to tools/voice-extra.json, so the voice pack can record them too.
 // Needs the game served on SV_URL (default http://localhost:8765/) and the test browser (cd tests && npm install).
 //   node tools/voice-harvest.mjs [--passes 3] [--no-world]
+// (round R item 12) it also writes down where each line was heard, to tools/voice-where.json: the games it was said in
+// and the area (place id, e.g. "village", "hanoi") of the thing that said it, so the pack can be downloaded area by area.
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -12,9 +14,14 @@ const PASSES = +arg('--passes', 3), WORLD = !process.argv.includes('--no-world')
 const OUT = path.join(ROOT, 'tools/voice-extra.json');
 const found = new Map(); // lang|text -> {lang, text}
 try { for (const l of JSON.parse(fs.readFileSync(OUT, 'utf8'))) found.set(l.lang + '|' + l.text, l); } catch (e) { }
-const save = () => fs.writeFileSync(OUT, JSON.stringify([...found.values()].sort((a, b) => (a.lang + a.text).localeCompare(b.lang + b.text)), null, 0).replace(/\},\{/g, '},\n{') + '\n');
+const WHERE = path.join(ROOT, 'tools/voice-where.json');
+let where = {}; try { where = JSON.parse(fs.readFileSync(WHERE, 'utf8')); } catch (e) { }
+const tag = (k, kind, id) => { const w = where[k] = where[k] || {}; const m = w[kind] = w[kind] || {}; m[id] = (m[id] || 0) + 1; };
+const saveWhere = () => fs.writeFileSync(WHERE, JSON.stringify(Object.fromEntries(Object.entries(where).sort((a, b) => a[0].localeCompare(b[0]))), null, 0).replace(/\},"/g, '},\n"') + '\n');
+const save = () => saveWhere() || fs.writeFileSync(OUT, JSON.stringify([...found.values()].sort((a, b) => (a.lang + a.text).localeCompare(b.lang + b.text)), null, 0).replace(/\},\{/g, '},\n{') + '\n');
 const pre = () => { window.__svHeard = []; window.__svVoiceLog = (lang, text) => window.__svHeard.push([lang, text]); speechSynthesis.speak = u => setTimeout(() => { try { u.onend && u.onend(); } catch (e) { } }, 20); };
-const collect = async page => { const h = await page.evaluate(() => window.__svHeard.splice(0)); let n = 0; for (const [lang, text] of h) { const k = lang + '|' + text; if (text && !found.has(k)) { found.set(k, { lang, text }); n++; } } return n; };
+// kind 'g' = heard in a game (id), 'a' = heard from something standing in an area (place id)
+const collect = async (page, kind, id) => { const h = await page.evaluate(() => window.__svHeard.splice(0)); let n = 0; for (const [lang, text] of h) { const k = lang + '|' + text; if (!text) continue; if (kind) tag(k, kind, id); if (!found.has(k)) { found.set(k, { lang, text }); n++; } } return n; };
 let b = await launch();
 const start = async lang => {
   try { await b.contexts()[0]?.close(); } catch (e) { }
@@ -37,7 +44,7 @@ for (const lang of ['en', 'vi']) {
         for (let k = 0; k < 25; k++) { await page.evaluate(() => { const bs = [...document.querySelectorAll('.gl button, .gl [data-i], .gl .card, .gl .opt, .gl .tile, .gl .cell')].filter(b => !b.closest('.gl-top') && !/gl-x|gl-next/.test(b.className) && !b.disabled); bs.length && bs[Math.floor(Math.random() * bs.length)].click(); }); await page.waitForTimeout(90); }
         await page.evaluate(() => { document.querySelectorAll('.gl .gl-x').forEach(x => x.click()); }); await page.waitForTimeout(150);
         await page.evaluate(() => { document.querySelectorAll('.gl, .storybook, .dialog, .modal, .reward').forEach(e => e.remove()); __sv.paused = false; });
-        added += await collect(page);
+        added += await collect(page, 'g', id);
       });
     }
     save(); console.log(lang, 'games pass', pass + 1, '+' + added, 'total', found.size);
@@ -47,11 +54,13 @@ for (const lang of ['en', 'vi']) {
     const n = await P.page.evaluate(() => __sv.interactables.length); let added = 0;
     for (let i = 0; i < n; i++) {
       await step(async page => {
-        await page.evaluate(i => { const G = __sv, it = G.interactables[i], h = G.heroes[0]; if (!it || /^g\d|^lf|tower|^pot/.test(it.id || '')) return; try { const r = it.act(h, G); r && r.catch && r.catch(() => { }); } catch (e) { } }, i);
+        added += await collect(page); // (lines still coming from the step before are kept, but not counted as this one's area)
+        const area = await page.evaluate(async i => { const G = __sv, it = G.interactables[i], h = G.heroes[0]; if (!it || /^g\d|^lf|tower|^pot/.test(it.id || '')) return null; const { regionAt } = await import('/js/world.js'); try { const r = it.act(h, G); r && r.catch && r.catch(() => { }); } catch (e) { } return regionAt(it.x, it.z); }, i);
         await page.waitForTimeout(120);
         for (let k = 0; k < 2; k++) { await page.evaluate(() => { const bs = [...document.querySelectorAll('.dialog button, .modal button')].filter(b => !/close|✕|×|photo|360|street/i.test(b.className + b.textContent)); bs.length && bs[Math.floor(Math.random() * bs.length)].click(); }); await page.waitForTimeout(80); }
         await page.evaluate(() => { document.querySelectorAll('.storybook, .dialog, .modal, .vc-pop, .reward, .realview, .gl').forEach(e => e.remove()); __sv.paused = false; });
-        if (i % 25 === 24) { added += await collect(page); save(); console.log(lang, 'world', i + 1, '/', n, 'total', found.size); }
+        added += await collect(page, area ? 'a' : null, area);
+        if (i % 25 === 24) { save(); console.log(lang, 'world', i + 1, '/', n, 'total', found.size); }
       });
     }
     await step(async page => { added += await collect(page); }); save(); console.log(lang, 'world done +' + added, 'total', found.size);

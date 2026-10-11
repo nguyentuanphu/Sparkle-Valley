@@ -19,9 +19,9 @@ album…), menus, settings and Grown-ups, pop-ups, icons and pictures, text size
 - Grown-ups' features (round S, with Play): `js/parents.js` (its Grown-ups group, the dance break, bedtime and certificate screens; its CSS block at the end of `css/style.css`)
 
 ## Hard rules (§9.6)
-A11Y-001 (Reduce motion turns on Calm), A11Y-002 (every spoken line also shown as words, ≥ 16 px), A11Y-003 (Simple
-screen tabs open on their groups), A11Y-005 (age modes change sizes, hints and voice, not the screen), A11Y-006 (an
-under-5 sees one group at a time, scrolling down, every stop a drawn picture), A11Y-007 (every tap answers at once);
+A11Y-001 (Reduce motion turns on Calm), A11Y-002 (every spoken line also shown as words, ≥ 16 px), A11Y-003 (each Simple
+screen tab is one road), A11Y-005 (age modes change sizes, hints and voice, not the screen), A11Y-006 (an
+under-5 sees one road per tab, scrolling down, category after category, every stop a drawn picture), A11Y-007 (every tap answers at once);
 UI-006 (checked on a phone, a tablet and a computer: tidy on all three), UI-001 (everything in English and Vietnamese), UI-002 (no phone emoji: drawn pictures), UI-003 (Close/Save/Next always
 on screen at 320–390 px), UI-004 (touch targets ≥ 44 px, ≥ 64 px for under-5s); SAFE-001 (safe for ages 2–8);
 SAVE-001…003 (saves never lost, versioned, unknown parts dropped safely); PRIV-011 (landmark photos only from our own
@@ -40,7 +40,10 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
 
 ## Owner's decisions to keep
 - Under-5s start on the Simple screen, big kids in the valley; each child switches either way (round I).
-- The Simple screen: groups first, one page per group that scrolls down, no “next page” buttons (round P).
+- The Simple screen (bug #30, owner, 10 Oct; replaces round P's groups): each bottom tab (Trò chơi, Truyện, Nơi chốn) is one
+  long road that scrolls down; a category's stops end and the next category starts on the same road, after a drawn heading
+  stop. No group pages, no way-back arrow, no top destinations button (`.sp-area` is gone). Khám phá stays as the one
+  search and jump button; its cards scroll to that category. In places, China and India always come last.
 - The switch to it is “▦ Hình to / Big pictures” beside the player's card (round O).
 - A new device has no ready-made characters: the child makes their own (round P).
 - Festivals in one place (Settings → Lễ hội); Grown-ups shows only the Analytics switch, no explanation (round N).
@@ -71,3 +74,28 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
     family's own lullaby first, a goodnight card after 6 min that a grown-up holds for 10 more minutes); a birthday
     (month and day, `profile.birthday`, on this device; also in its backup file) with a cake keepsake, coins and a sticker.
 - Backpack (round S): "Village festival prizes" after the kite: tap a prize to carry it or put it away.
+- Films, second batch (owner, 10 Oct: "go as suggested"): the tales Bánh Chưng Bánh Giầy and Cây khế (in Cây khế the greedy brother's bag of gold falls into the sea, never the brother); the guides Bắn bi and Lật hình. A guide's real game plays by itself inside the guide (`demo` in `GUIDES`, run by `demoKit` in `js/howto.js`), with the game's own code and a quiet copy of the game's api, so the Play core's game files are not changed.
+- Films on tall phone screens (owner, 10 Oct: "fix the screen issue"): the film camera opens up on a narrow screen so it shows as much across as a 16:9 screen (at most 75° top to bottom), so nothing at the sides is cut off.
+- Kid UI chat, 11 Oct (owner, AEDT): "Go, also bring the films": the films branch is merged into `core/kid-ui` with the robot's fixes.
+
+## Progress notes
+- **11 Oct 2026, 11:40 am AEDT, `core/kid-ui`:** the robot's Kid UI fixes merged: #27 (`bugfix/kid-ui-27`, PR #40), #28 (#42), #31 (#44), #41 (#46), #30 (#48), #32 (#53), plus the films branch.
+  - Clashes settled:
+    - #31's Change player button in Grown-ups has the id `gChange`, because `gWho` is already the "Who's here" box.
+    - The Pad map keeps #28's city chips; the old Change player quick button is gone.
+    - `voices/manifest.json` was rebuilt with `tools/make-voice-pack.mjs` (0 new lines).
+  - Fixes to the robot's work found by the full suite:
+    - `hubmap` (test): #28 shows one city at a time, so the check now taps every city chip in order. It keeps its north-to-south test and adds one: Hạ Long must be on Hà Nội's page, Huế on Đà Nẵng's. Not weakened.
+    - `arch`: #41 made `js/credits.js` import `js/ui.js`, which imports it back. `ui.js` now passes `hideCaption` to `openCredits(onClose)`. Closing the credits still hides a caption that was showing (checked in the browser: shown before, hidden after).
+    - `rules`: #30 changed A11Y-003 and A11Y-006 in `docs/ARCHITECTURE.md`; `js/content/rules.js` is regenerated with `tools/rules-from-doc.mjs`.
+    - `types`: #32's `dropOldFestival` in `js/state.js` returns a count, like `dropOldVoice`; it behaves the same.
+  - Full suite, run one check at a time:
+    - Most of it ran on commit `f7854eac`. The four fixes above came during the run (`0c010ede`, `3ffdc81e`, `f4d8e92b`, `f2204a90`).
+    - After them, these checks were run again on `f2204a90` and passed: hubmap, arch, rules, types, boot, phone, festcal, currency, grownupsui and saves.
+    - Result: 86 checks, 80 pass, 6 skipped (online, no local server in a helper chat), 0 fail.
+  - Every check:
+    - Passed: boot, spill, language, two-players, facetoface, games, features, camera, contract, roads, flat, roadshape, phone, solid, voice, voicepack, welcomevoice, studio, ground, resume, migrate, village, validate, tales, emoji, hubmap, festcal, films, halves, preload, story, chapter2, yard, kidplay, shop, boxes, hoilang, surprises, parents (it passes here, though the board says it fails on `main`), currency, camcalm, vehicles, dialogtap, viwords, noemoji, arch, mapcoords, regions, walkaway, ages, simple, adventure, gamelevel, quiet, songs, realphotos, firstplayer, grownupsui, playhub, a11y, unit, events, postcards, familyphotos, myhouse, names, rules, coop, report, iphone, tienlen, chests, types, perf, saves, photo, netmsg, offline, nostudio, onlineoff.
+    - Skipped: multiplayer, netgames, together, meet, cloud, knock.
+  - Screenshots looked at, on phone 390 × 844, tablet 820 × 1180 and computer 1180 × 760: #30 the Simple screen road, #27 a caption and a pop-up at once (they no longer overlap), #28 the Pad map with city chips and arrows (also scrolled to the chips on tablet and computer), #31 Change player in Grown-ups, #41 the credits. All tidy.
+  - Still open: the Pad map's names overlap on the east side (the board request, next on the list).
+  - No new spoken lines.

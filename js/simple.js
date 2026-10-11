@@ -2,9 +2,10 @@
 // big kids can switch to it too"). Instead of walking the 3D valley, a child sees a winding path of big pictures in a
 // little storybook landscape: tap one and it starts (a game, a story), or the explorer flies there (a place).
 //   Round J (owner's brief "an adventure world containing places children want to visit"):
-//   · each tab opens on its groups (Animals, Music, Numbers…; stories by country; places by region: round M, owner:
-//     "categorised into groups for easier understanding"); tap a group to walk its path; ⬅ at the top goes back to the
-//     groups. An under-5 sees at most six stops at once, and a signpost at the end of the path leads on
+//   · each tab is one long road that scrolls down (owner, 10 Oct, bug #30: "follow the road and scroll down; one
+//     category's games end and the next category starts on the same road"): a drawn heading stop (the category's picture
+//     and name, spoken) and then its stops, category after category (Animals, Music, Numbers…; stories by country;
+//     places by region, China and India always last). No group pages, no ⬅ at the top, no "next page" signposts
 //   · a game or story opens straight over this screen, which stays behind it (round M: the valley no longer flashes
 //     up first), and the path is there again when it ends
 //   · a tap answers at once: the picture grows and bounces, little stars burst, the voice says its name, then it opens;
@@ -60,9 +61,7 @@ const SCENE = `<svg class="sp-land" viewBox="0 0 400 800" preserveAspectRatio="x
 </svg><span class="sp-fly">${pic('🦋')}</span><i class="sp-twinkle"></i>`;
 
 export function createSimple(G) {
-  let m = null, tab = 'games', back = false, busy = false, sel = null, finding = false;
-  const at = { games: 0, tales: 0, places: 0 }; // which page of the path each tab is on
-  const group = { games: null, tales: null, places: null }; // the group open in each tab (null: the groups themselves)
+  let m = null, tab = 'games', back = false, busy = false, sel = null, finding = false, lay = null; // lay: where draw() put the stops
   let launched = 0, opened = false, starsBefore = 0; // a game or story started from here (when), and whether it is open yet
   const lastStars = {};
   const hero = () => G.heroes[0];
@@ -78,23 +77,22 @@ export function createSimple(G) {
     }
     // (round R) the festival calendar opens the places tab: festivals happen in places, each in its own ones
     const cal = { kind: 'fest', key: 'cal', icon: '📅', name: T('Festival calendar', 'Lịch lễ hội'), voice: ['Festival calendar', 'Lịch lễ hội'], stars: 0, max: 0 };
+    // (bug #30, owner) China and India always come last on the road
     if (t === 'places') return PLACE_AREAS.map((a, n) => ({ area: a, items: (n === 0 && G.festivals ? [cal] : []).concat((G.PLACES || []).map((pl, k) => ({ pl, k })).filter(x => x.pl.g === a.key)
-      .map(({ pl, k }) => ({ kind: 'place', key: String(k), icon: pl.icon, name: pl.name(), voice: both(pl.name), stars: 0, max: 0 }))) }));
+      .map(({ pl, k }) => ({ kind: 'place', key: String(k), icon: pl.icon, name: pl.name(), voice: both(pl.name), stars: 0, max: 0 }))) }))
+      .sort((x, y) => (x.area.key === 'asia') - (y.area.key === 'asia'));
     // (round N) the Music group starts with 🎵 Songs: lullabies, village tunes and festival songs to listen to
     const songs = { kind: 'songs', key: 'songs', icon: '🎵', name: T('Songs', 'Bài hát'), voice: ['Songs', 'Bài hát'], stars: 0, max: 0 };
     return AREAS.map(a => ({ area: a, items: (a.key === 'music' && G.openSongs ? [songs] : []).concat(gamesIn(GAMES, a.key, lt).map(g => ({ kind: 'game', key: g.id, icon: GAMES[g.id].icon, name: GAMES[g.id].name(), voice: both(GAMES[g.id].name), stars: starsOf(p, g.id), max: 3, level: g.level }))) }));
   }
-  // the groups of a tab, as stops: each with its picture and name
   const tabOf = t => TABS.find(y => y.key === t);
   const groupsOf = t => areasOf(t).filter(a => a.items.length);
-  // the path: the groups, or the open group's stops, all on one page that scrolls down (round P, owner: "show it on
-  // one page and let the kid scroll down instead of tapping a button for the next page"; it used to be six at a time)
+  // the road of a tab: every category one after another on one page that scrolls down. Each category starts with its
+  // heading stop (its picture and name); `cat` on every stop says which category it is in
   function viewsOf(t) {
-    const split = items => [items];
-    if (!group[t]) { const tb = tabOf(t), all = { key: 'groups', icon: tb.icon, name: tb.label }; const gs = groupsOf(t).map(({ area, items }) => ({ kind: 'group', key: area.key, icon: area.icon, name: area.name(), voice: both(area.name), stars: 0, max: 0, count: items.length }));
-      return split(gs).map((items, i, ps) => ({ area: all, items, i, of: ps.length, groups: true })); }
-    const a = groupsOf(t).find(x => x.area.key === group[t]); if (!a) { group[t] = null; return viewsOf(t); }
-    return split(a.items).map((items, i, ps) => ({ area: a.area, items, i, of: ps.length }));
+    const items = groupsOf(t).flatMap(({ area, items }) => [{ kind: 'head', key: area.key, cat: area.key, icon: area.icon, name: area.name(), voice: both(area.name), stars: 0, max: 0 }]
+      .concat(items.map(s => ({ ...s, cat: area.key }))));
+    return [{ area: items.length ? groupsOf(t)[0].area : AREAS[0], items, i: 0, of: 1 }];
   }
   const idOf = s => s.kind + ':' + s.key;
   // ✨ new: games, stories and places that came after the child last looked (the first visit only remembers them all)
@@ -129,31 +127,23 @@ export function createSimple(G) {
   let list = [];
   function draw() {
     if (!m) return;
-    const views = viewsOf(tab); at[tab] = Math.min(at[tab], views.length - 1);
-    const v = views[at[tab]] || { area: AREAS[0], items: [], i: 0, of: 1 }, lt = little(), seen = lt ? null : seenSet();
-    list = v.items.map(s => ({ ...s, isNew: !!seen && !seen.has(idOf(s)) }));
-    // the signpost at the end: this group's next stops, or else on to the next group
-    if (at[tab] < views.length - 1) list.push({ kind: 'sign', key: 'more', icon: v.area.icon, name: T('More', 'Còn nữa'), voice: ['Here are some more!', 'Còn nữa đây!'], stars: 0, max: 0 });
-    else if (group[tab]) { const gs = groupsOf(tab), k = gs.findIndex(x => x.area.key === group[tab]), nx = gs[(k + 1) % gs.length].area; if (gs.length > 1) list.push({ kind: 'sign', key: 'group', to: nx.key, icon: nx.icon, name: nx.name(), voice: both(nx.name), stars: 0, max: 0 }); }
-    else if (views.length > 1) list.push({ kind: 'sign', key: 'first', icon: v.area.icon, name: T('Back to the start', 'Về đầu'), voice: ['Back to the start!', 'Về đầu nào!'], stars: 0, max: 0 });
+    const v = viewsOf(tab)[0], lt = little(), seen = lt ? null : seenSet();
+    list = v.items.map(s => ({ ...s, isNew: !!seen && s.kind !== 'head' && !seen.has(idOf(s)) }));
     const path = m.querySelector('.sp-path'), sc = m.querySelector('.sp-scroll'), isWide = wide();
     m.classList.toggle('wide', isWide); m.classList.toggle('big', !lt);
-    // the chip at the top: in a group it says which one and takes you back to all the groups (⬅)
-    const area = m.querySelector('.sp-area'), inGroup = !!group[tab]; area.classList.toggle('back', inGroup);
-    area.innerHTML = `${inGroup ? '<i class="sp-backarrow">⬅</i>' : ''}${pic(v.area.icon)}<b>${esc(v.area.name())}${v.of > 1 ? ` <small>${v.i + 1}/${v.of}</small>` : ''}</b>`;
-    area.setAttribute('aria-label', inGroup ? T('All groups', 'Tất cả các nhóm') : v.area.name());
     const next = list.findIndex(s => s.max && !s.stars), H = sc.clientHeight || innerHeight - 80, W = path.clientWidth || innerWidth;
     const place = tall => isWide ? layoutWide(list.length, H, tall) : layout(list.length, W, tall);
     let L = place(230);
     path.style.setProperty('--lw', L.lw + 'px');
     path.innerHTML = `<svg class="sp-road" aria-hidden="true"><path/><path class="dash"/></svg>` +
-      list.map((s, k) => `<button class="sp-stop${s.kind === 'sign' ? ' sign' : ''}${s.kind === 'group' ? ' grp' : ''}${k === next ? ' next' : ''}${sel === idOf(s) ? ' sel' : ''}" data-k="${k}" aria-label="${esc(s.name)}">
-        <span class="sp-pic">${pic(s.icon)}${s.badge ? `<i class="sp-badge">${s.badge}</i>` : ''}${s.kind === 'sign' ? `<i class="sp-arrow">${pic('👉')}</i>` : ''}${s.isNew ? `<i class="sp-new">${pic('✨')}</i>` : ''}${starsHTML(s)}</span>
-        <b class="sp-name">${esc(s.name)}</b>${!lt && s.kind !== 'sign' && s.kind !== 'group' ? `<span class="sp-play">${T('Play', 'Chơi')} ▶</span>` : ''}</button>`).join('') +
+      list.map((s, k) => `<button class="sp-stop${s.kind === 'head' ? ' grp' : ''}${k === next ? ' next' : ''}${sel === idOf(s) ? ' sel' : ''}" data-k="${k}" aria-label="${esc(s.name)}">
+        <span class="sp-pic">${pic(s.icon)}${s.badge ? `<i class="sp-badge">${s.badge}</i>` : ''}${s.isNew ? `<i class="sp-new">${pic('✨')}</i>` : ''}${starsHTML(s)}</span>
+        <b class="sp-name">${esc(s.name)}</b>${!lt && s.kind !== 'head' ? `<span class="sp-play">${T('Play', 'Chơi')} ▶</span>` : ''}</button>`).join('') +
       `<button class="sp-owl" aria-label="${T('Ông Cú', 'Ông Cú')}">${pic('🦉')}</button>`;
     // measure the tallest stop (its name may take two or three lines), then place them all
     const btns = [...path.querySelectorAll('.sp-stop')], tall = Math.max(150, ...btns.map(b => b.offsetHeight));
     L = place(tall);
+    lay = L;
     const w = isWide ? L.w : W, h = isWide ? H : L.h, d = isWide ? roadWide(L.pts) : road(L.pts);
     btns.forEach((b, k) => { b.style.left = L.pts[k].x + 'px'; b.style.top = L.pts[k].y + 'px'; });
     const svg = path.querySelector('svg'); svg.setAttribute('width', w); svg.setAttribute('height', h); svg.querySelectorAll('path').forEach(p => p.setAttribute('d', d));
@@ -168,11 +158,9 @@ export function createSimple(G) {
   // the tap: grow, bounce and sparkle at once, say the name, then open it (twice-tapping can't start it twice)
   function go(s, btn) {
     if (busy || !s) return;
-    const top = () => { const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0; };
-    if (s.kind === 'sign') { SFX.tap(); say(s.voice[0], s.voice[1]); if (s.key === 'group') { group[tab] = s.to; at[tab] = 0; } else if (s.key === 'first') at[tab] = 0; else at[tab]++; sel = null; draw(); top(); return; }
     if (s.kind === 'songs') { SFX.tap(); say(s.voice[0], s.voice[1]); G.openSongs(); return; }
     if (s.kind === 'fest') { SFX.tap(); say('Festival calendar', 'Lịch lễ hội'); openFestivals(G, 0); return; }
-    if (s.kind === 'group') { SFX.tap(); say(s.voice[0], s.voice[1]); group[tab] = s.key; at[tab] = 0; sel = null; draw(); top(); return; }
+    if (s.kind === 'head') { SFX.tap(); say(s.voice[0], s.voice[1]); return; }
     if (!little() && sel !== idOf(s)) { // a big kid: the first tap shows it, the second one plays it
       SFX.tap(); sel = idOf(s); say(s.voice[0], s.voice[1]);
       m.querySelectorAll('.sp-stop.sel').forEach(b => b.classList.remove('sel')); if (btn) btn.classList.add('sel');
@@ -188,18 +176,25 @@ export function createSimple(G) {
       else { const pl = G.PLACES[+s.key]; back = false; leave(); setTimeout(() => G.travelTo(h, pl.x, pl.z), 50); }
     }, wait);
   }
+  // scroll the road so that stop k is near the start of the screen (Discover jumps to a category this way)
+  function jump(k) {
+    const sc = m.querySelector('.sp-scroll'), q = lay && lay.pts[Math.max(0, k)];
+    if (!q) return;
+    const to = wide() ? { left: Math.max(0, q.x - 90), top: 0 } : { top: Math.max(0, q.y - 76), left: 0 };
+    sc.scrollTop = to.top; sc.scrollLeft = to.left;
+  }
   // 🔎 Discover: every area as a big picture; big kids can also type a name
   function discover(open) {
     finding = open; const f = m.querySelector('.sp-find'); f.hidden = !open; if (!open) return;
-    const lt = little(), groups = TABS.map(t => ({ t, views: viewsOf(t.key) }));
+    const lt = little(), groups = TABS.map(t => ({ t }));
     const cards = groups.map(({ t }) => `<h3>${pic(t.icon)} ${esc(t.label())}</h3><div class="sp-cards">${groupsOf(t.key).map(({ area }) => `<button class="sp-card" data-t="${t.key}" data-a="${esc(area.key)}" aria-label="${esc(area.name())}">${pic(area.icon)}<b>${esc(area.name())}</b></button>`).join('')}</div>`).join('');
     f.innerHTML = `<div class="sp-find-top">${lt ? '' : `<input class="sp-q" type="search" placeholder="${T('Find a game, story or place…', 'Tìm trò chơi, truyện, nơi chốn…')}" aria-label="${T('Search', 'Tìm kiếm')}">`}<button class="sp-find-x" aria-label="${T('Close', 'Đóng')}">✕</button></div><div class="sp-found">${cards}</div>`;
     f.querySelector('.sp-find-x').onclick = () => { SFX.tap(); discover(false); };
     const bind = () => f.querySelectorAll('.sp-card').forEach(b => b.onclick = () => {
       SFX.tap();
-      if (b.dataset.s) { const s = found[+b.dataset.s]; discover(false); tab = s.tab; group[tab] = s.area; at[tab] = 0; sel = null; const vs = viewsOf(tab); at[tab] = Math.max(0, vs.findIndex(v => v.items.some(x => idOf(x) === idOf(s.stop)))); draw(); const btn = [...m.querySelectorAll('.sp-stop')].find(x => list[+x.dataset.k] && idOf(list[+x.dataset.k]) === idOf(s.stop)); if (btn) go(list[+btn.dataset.k], btn); return; }
-      tab = b.dataset.t; group[tab] = b.dataset.a; at[tab] = 0; sel = null; discover(false); draw(); const v = viewsOf(tab)[0]; say(...both(v.area.name));
-      const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0;
+      if (b.dataset.s) { const s = found[+b.dataset.s]; discover(false); tab = s.tab; sel = null; draw(); const k = list.findIndex(x => idOf(x) === idOf(s.stop)); jump(k); const btn = m.querySelector(`.sp-stop[data-k="${k}"]`); if (btn) go(list[k], btn); return; }
+      tab = b.dataset.t; sel = null; discover(false); draw(); jump(list.findIndex(x => x.kind === 'head' && x.key === b.dataset.a));
+      const h = list.find(x => x.kind === 'head' && x.key === b.dataset.a); if (h) say(...h.voice);
     });
     let found = []; bind();
     const q = f.querySelector('.sp-q');
@@ -217,7 +212,6 @@ export function createSimple(G) {
       m = el('div', 'simple-screen');
       const p = hero().profile;
       m.innerHTML = `<div class="sp-scene">${SCENE}</div><div class="sp-top"><span class="sp-me">${p.photo ? `<img src="${p.photo}" alt="">` : pic('🙂')}<b>${esc(p.name)}</b></span>
-        <button class="sp-area"></button>
         <button class="sp-again" aria-label="${T('Say it again', 'Nói lại')}">${pic('🔊')}</button>
         <button class="grown sp-grown"><span class="ring"></span>${pic('⚙️')}<small>${T('Grown-ups: press and hold', 'Người lớn: nhấn giữ')}</small></button></div>
         <div class="sp-scroll"><div class="sp-path"></div></div>
@@ -226,11 +220,9 @@ export function createSimple(G) {
           <button class="sp-valley"><span>${pic('🌳')}</span><small>${T('Valley', 'Thung lũng')}</small></button></nav>
         <div class="sp-find" hidden></div>`;
       document.body.appendChild(m);
-      m.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { if (busy) return; SFX.tap(); discover(false); tab = b.dataset.tab; group[tab] = null; at[tab] = 0; sel = null; draw(); const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0; const x = TABS.find(y => y.key === tab); say(x.say[0], x.say[1]); });
-      m.querySelector('.sp-again').onclick = () => { const x = TABS.find(y => y.key === tab); say(x.say[0], x.say[1]); };
+      m.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { if (busy) return; SFX.tap(); discover(false); tab = b.dataset.tab; sel = null; draw(); const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0; const x = TABS.find(y => y.key === tab); say(x.say[0], x.say[1]); });
+      m.querySelector('.sp-again').onclick = () => { SFX.tap(); const x = TABS.find(y => y.key === tab); say(x.say[0], x.say[1]); };
       m.querySelector('.sp-discover').onclick = () => { if (busy) return; SFX.tap(); discover(!finding); if (finding) say('Where shall we go?', 'Mình đi đâu nào?'); };
-      // the chip: in a group, back to all the groups; otherwise Discover
-      m.querySelector('.sp-area').onclick = () => { if (busy) return; SFX.tap(); if (group[tab]) { group[tab] = null; at[tab] = 0; sel = null; draw(); const x = tabOf(tab); say(x.say[0], x.say[1]); } else { discover(!finding); if (finding) say('Where shall we go?', 'Mình đi đâu nào?'); } };
       m.querySelector('.sp-valley').onclick = () => { if (busy) return; SFX.tap(); choose('valley'); leave(); say('Off you go! Explore the valley.', 'Đi nào! Khám phá thung lũng thôi.'); };
       holdButton(m.querySelector('.sp-grown'), () => openGrownups(() => draw()));
       addEventListener('resize', draw);
@@ -273,10 +265,10 @@ export function createSimple(G) {
   }, 700);
   return {
     show, hide: leave, get open() { return !!m && !m.hidden; }, get tab() { return tab; }, get busy() { return busy; },
-    // what the path shows now (for the checks): the area, which page of it, and the stops
-    get view() { const v = m && viewsOf(tab)[at[tab]]; return v ? { groups: !!v.groups, area: v.area.key, page: v.i, of: v.of, pages: viewsOf(tab).length, stops: list.filter(s => s.kind !== 'sign').map(s => s.key) } : null; },
-    // open a group (tests, and anything that wants to take a child straight to one)
-    openGroup(t, key) { tab = t; group[t] = key; at[t] = 0; sel = null; draw(); },
+    // what the road shows now (for the checks): its categories and every stop on it
+    get view() { const v = m && viewsOf(tab)[0]; return v ? { cats: list.filter(s => s.kind === 'head').map(s => s.key), stops: list.filter(s => s.kind !== 'head').map(s => s.key) } : null; },
+    // scroll to a category of the road (tests, and anything that wants to take a child straight to one)
+    openGroup(t, key) { tab = t; sel = null; draw(); jump(list.findIndex(x => x.kind === 'head' && x.key === key)); },
     // at the start of a session: the Simple screen for a child who wants it
     start() { if (solo() && wantsSimple(hero().profile)) { const wait = setInterval(() => { if (document.querySelector('.storybook')) return; clearInterval(wait); if (solo() && wantsSimple(hero().profile)) show(); }, 400); } else if (m) leave(); }
   };

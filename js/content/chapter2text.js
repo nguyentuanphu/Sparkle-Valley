@@ -42,6 +42,18 @@ export const TALE = { id: 'lantern_ch2', flag: '🏮', title: ['The Lantern of H
     ['🌉🏮', 'Up went the lantern on Cầu Thê Húc. The mist lifted, and the red bridge glowed over Hồ Gươm like a ribbon of light.', 'Chiếc đèn lồng được treo lên Cầu Thê Húc. Sương tan, cây cầu đỏ rực sáng trên Hồ Gươm như một dải lụa ánh sáng.'],
     ['🌕⭐🦁', 'It was Trung Thu! Children carried star lanterns round the lake, the lion danced to the drums, and everyone shared mooncakes under the full moon.', 'Trung Thu đến rồi! Các bạn nhỏ rước đèn ông sao quanh hồ, múa lân theo tiếng trống, và mọi người cùng ăn bánh trung thu dưới trăng rằm.']] };
 
+// the chapter's steps (in order after the chapter before, before the one after if that came first)
+export const CHAPTER = { id: 'ch2', en: 'Hà Nội', vi: 'Hà Nội', landmark: 'thehuc', keepsake: 'lantern_ch2', reward: 40, trick: 'light', steps: [
+    { id: 'c2_fly', icon: '🏮', en: 'Fly to Hà Nội with your friend', vi: 'Cùng bạn đồng hành bay đến Hà Nội', at: 'hanoi', visit: 'hanoi', lights: 3 },
+    { id: 'c2_tam', icon: '👩‍🏫', en: 'Say hello to Cô Tam at Văn Miếu', vi: 'Chào Cô Tam ở Văn Miếu', at: 'tam2', big: true, talk: { who: 'Cô Tam', label: ['Say hello', 'Chào cô'] } },
+    { id: 'c2_teo', icon: '🧒', en: 'Take up Tèo\'s challenge', vi: 'Nhận lời thách đấu của Tèo', at: 'teo2', game: ['oanquan'], gameLittle: ['oantuti'], challenge: {} },
+    { id: 'c2_job', icon: '🍲', en: 'Help Bà Lan at the bún chả stall', vi: 'Giúp Bà Lan ở quán bún chả', at: 'bunca', job: true, big: true },
+    { id: 'c2_vanmieu', icon: '📚', en: 'Cô Tam\'s lesson at Văn Miếu', vi: 'Học cùng Cô Tam ở Văn Miếu', at: 'tam2', lesson: true },
+    { id: 'c2_tale', icon: '📖', en: 'Hear Bà Năm tell the story of Hồ Gươm', vi: 'Nghe Bà Năm kể Sự tích Hồ Gươm', at: 'nam2', tale_id: 'hoguom', talk: { who: 'Bà Năm', label: ['Listen to the story', 'Nghe kể chuyện'] } },
+    { id: 'c2_find', icon: '🐢', en: 'Find the lantern by Hồ Gươm', vi: 'Tìm đèn lồng bên Hồ Gươm', at: 'clues', find: true, clues: 3 },
+    { id: 'c2_hang', icon: '🌉', en: 'Hang the lantern on Cầu Thê Húc', vi: 'Treo đèn lồng trên Cầu Thê Húc', at: 'bridge', hang: true }
+  ] };
+if (!CHAPTERS.some(c => c.id === 'ch2')) { const k = CHAPTERS.findIndex(c => c.id === 'ch3'); CHAPTERS.splice(k < 0 ? CHAPTERS.length : k, 0, CHAPTER); }
 for (const s of (CHAPTERS.find(c => c.id === 'ch2') || { steps: [] }).steps) {
   const w = STEP_WORDS[s.id]; if (!w) continue;
   const { talk, ...rest } = w; Object.assign(s, rest);

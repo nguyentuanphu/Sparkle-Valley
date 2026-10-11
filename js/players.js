@@ -28,6 +28,8 @@ import { id as makeId } from './core/ids.js';
 
 const KEY = 'sv2_playerid', OUT = 'sv2_hello_out', SENT = 'sv2_voicesent', EVERY = 10 * 60e3;
 let lastSent = 0, sending = false; // (lastSent: the last confirmed send)
+// (Analytics & Infra, 11 Oct, #36) was this start served from the device's saved copy (the service worker)?
+const warmStart = typeof navigator !== 'undefined' && !!(navigator.serviceWorker && navigator.serviceWorker.controller);
 const id = () => { let v = ''; try { v = localStorage.getItem(KEY) || ''; if (!/^[a-z0-9]{12}$/.test(v)) { v = rnd(12); localStorage.setItem(KEY, v); } } catch (e) { } return v; };
 const rnd = n => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
 const onSite = () => !!window.__svHelloTest || (/^https:$/.test(location.protocol) && !/^(localhost|127\.|\[::1\])/.test(location.hostname) && !/[?&]studio=1/.test(location.search) && !location.pathname.startsWith('/studio'));
@@ -76,7 +78,7 @@ export async function flush(closing) {
   if (sending || settings.countPlayers === false || !onSite()) return false;
   const o = readOut();
   if (!o.pending) {
-    const days = Object.entries(o.days).filter(([, d]) => d.m || d.t || d.o || Object.keys(d.g).length || Object.keys(d.e || {}).length).map(([d, x]) => ({ d, m: x.m, g: x.g, t: x.t, o: x.o, h: x.h || {}, c: x.c || {}, e: x.e || {}, s: x.s || {}, q: x.q || {}, f: x.f || [0, 0, 0] }));
+    const days = Object.entries(o.days).filter(([, d]) => d.m || d.t || d.o || Object.keys(d.g).length || Object.keys(d.e || {}).length || (d.st || []).length).map(([d, x]) => ({ d, m: x.m, g: x.g, t: x.t, o: x.o, h: x.h || {}, c: x.c || {}, e: x.e || {}, s: x.s || {}, q: x.q || {}, f: x.f || [0, 0, 0], st: x.st || [] }));
     if (!days.length) return false;
     const miss = newMisses();
     o.pending = { h: rnd(16), days, v: miss.out }; o.days = {}; writeOut(o);
@@ -122,8 +124,20 @@ export function sendLive(on, G) {
   try { if (!on && navigator.sendBeacon) { navigator.sendBeacon('/api/hello', new Blob([body], { type: 'application/json' })); return; } } catch (e) { }
   if (navigator.onLine !== false) fetch('/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => { });
 }
+// (Analytics & Infra, 11 Oct, owner: #36 slow start) each start's timings, so the real phones' and tablets' start-up
+// shows in Studio's Analytics: [ms to the game's code, ms to a built valley, ms to its first picture, 1 when served from
+// the device's saved copy, the slowest building step's name]; at most 6 a day, nothing when Analytics is off
+function recordStart(G, tries = 0) {
+  const bt = G && G.bootTimes;
+  if (!bt || bt.shaders == null) { if (tries < 240) setTimeout(() => recordStart(G, tries + 1), 500); return; }
+  const steps = Object.entries(bt).filter(([k]) => k !== 'start').sort((a, b) => a[1] - b[1]);
+  let slow = '', most = -1; steps.forEach(([k, v], i) => { const d = v - (i ? steps[i - 1][1] : 0); if (d > most) { most = d; slow = k; } });
+  const row = [bt.start, bt.start + (bt.ready || 0), bt.start + bt.shaders, warmStart ? 1 : 0, /^[a-z]{1,16}$/.test(slow) ? slow : ''].map(v => typeof v === 'number' ? Math.round(v) : v);
+  bump(d => { d.st = (d.st || []).concat([row]).slice(-6); });
+}
 export function startCounting(G) {
   listen();
+  recordStart(G);
   if (window.__svHelloTest === 'manual') return; // (tests send by hand)
   setTimeout(() => sendLive(true, G), 8000);
   setInterval(() => { if (document.visibilityState === 'visible') sendLive(true, G); }, 120e3);

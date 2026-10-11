@@ -12,10 +12,10 @@ import { heightAt, roadDist, WATER, CITIES } from '../world.js';
 import { buildAvatar, nameAvatar } from '../avatar.js';
 import { openSpot } from '../openspot.js';
 import { pic } from '../art.js';
-import { pad, frames, holdable, until } from '../handpad.js';
+import { pad, frames, holdable, until, QUIT } from '../handpad.js';
 import { buildLantern } from '../dinh.js';
 import { buildStarLantern, buildStoneTurtle, buildBridgeLights, bridgeY } from './chapter2props.js';
-import { STORY_LINES } from './chapters.js';
+import { STORY_LINES, CHAPTERS } from './chapters.js';
 import { COUNT } from './chapter2text.js'; // (also adds the chapter's words to STORY_LINES)
 
 const LOOKS = {
@@ -154,7 +154,8 @@ export function createHanoi(G, ctx) {
     clueObjs.forEach(c => { c.o.visible = looking.length > 0; c.spark.visible = looking.some(h => !looked(h.profile).includes(c.k) && !clueFound(h.profile)); c.spark.position.y = 1.3 + Math.sin(t * 3 + c.k) * .12; });
     found.visible = looking.some(h => clueFound(h.profile)); if (found.visible) found.position.y = heightAt(lanternAt.x, lanternAt.z) + .45 + Math.sin(t * 2) * .06;
     // (an under-5's companion flies over the right spot and glows: its new trick, lighting the way)
-    for (const h of G.heroes) ctx.companions().lead(h, isOn(h.profile, 'c2_find') && !big(h.profile) && !clueFound(h.profile) ? { x: lanternAt.x, y: heightAt(lanternAt.x, lanternAt.z) + 1.8, z: lanternAt.z } : null);
+    // (only its own lead: chapter 3 leads the same companion later)
+    for (const h of G.heroes) if (isOn(h.profile, 'c2_find') || ctx.companions().of(h)?.lead?.c2) ctx.companions().lead(h, isOn(h.profile, 'c2_find') && !big(h.profile) && !clueFound(h.profile) ? { x: lanternAt.x, y: heightAt(lanternAt.x, lanternAt.z) + 1.8, z: lanternAt.z, c2: true } : null);
     if (mist.visible) mist.children.forEach((m, i) => { m.position.y = 1.4 + (i % 3) * .7 + Math.sin(t * .6 + i) * .15; });
     if (lights.visible) lights.children.forEach((l, i) => { if (l.geometry && l.geometry.type === 'SphereGeometry') l.scale.setScalar(1 + Math.sin(t * 3 + i) * .08); });
     // the parade walks round the lake, star lanterns bobbing
@@ -226,9 +227,20 @@ export function createHanoi(G, ctx) {
     clues: p => p && !big(p) ? { x: lanternAt.x, z: lanternAt.z } : { x: front.x, z: front.z },
     bridge: () => ({ x: front.x, z: front.z })
   };
+  // the steps' own buttons: Tèo's challenge (his line, then Play, How to play (the guide film) or Later), Bà Lan's bún chả
+  // by hand, and Cô Tam's lesson (she starts it, then the child counts the stone turtles)
+  const jobbing = new Set();
+  for (const s of (CHAPTERS.find(c => c.id === 'ch2') || { steps: [] }).steps) {
+    const at = spots[s.at] && spots[s.at](), base = { id: 'story_' + s.id, x: at.x + (s.job ? 0 : .8), z: at.z + (s.job ? 0 : .8), r: 3, icon: s.icon, label: () => T(s.en, s.vi) };
+    if (s.challenge) G.interactables.push({ ...base, visible: h => isOn(h.profile, s.id), act: h => G.kidTalk(h, ctx.gamesOf(h.profile, s)[0], 'Tèo', big(h.profile) ? s.challenge.big : s.challenge.little) });
+    if (s.job) G.interactables.push({ ...base, visible: h => isOn(h.profile, s.id) && !jobbing.has(h.profile),
+      act: async h => { if (jobbing.has(h.profile)) return; jobbing.add(h.profile); try { await job(h); ctx.finish(h, s.id); } catch (e) { if (e !== QUIT) throw e; } finally { jobbing.delete(h.profile); G.paused = false; } } });
+    if (s.lesson) G.interactables.push({ ...base, visible: h => isOn(h.profile, s.id) && !A(h.profile).lesson, act: h => lesson(h) });
+  }
   return {
     spots, onStreet, front: [front.x, front.z], lanternAt: [lanternAt.x, lanternAt.z], rope, paint, revealed: clueFound,
     job, lesson, startParade, paradeOn: () => performance.now() / 1000 < paradeUntil, lit: () => lights.visible,
     bridge: { x: mx, z: mz, y: by, rot }, clues: clueObjs.map(c => ({ k: c.k, x: c.x, z: c.z })), people: people.map(q => ({ id: q.id, x: q.x, z: q.z })), turtles: turtles.map(t => ({ k: t.k, x: t.x, z: t.z }))
   };
 }
+export const create = createHanoi; // (js/lanterns.js loads every later chapter the same way)

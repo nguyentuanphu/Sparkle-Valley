@@ -33,7 +33,7 @@ nothing while hidden).
 - What the analytics keep is written exactly at the top of `netlify/lib/players.mjs`.
 
 ## Checks you run
-`studio report saves cloud photo boot unit familyphotos offline nostudio`
+`studio report saves cloud photo boot unit familyphotos offline nostudio startup`
 (`studio` covers the players report, online-now, admins and the voice relay function on a pretend Netlify.)
 
 ## Environment variables (set by the owner in Netlify, never in the code)
@@ -58,3 +58,38 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
 - (10 Oct) Parents and children never see “Sparkle Studio” or “Studio”: it is for the admin only (check `nostudio`).
 - (10 Oct) The website serves a packed copy of the scripts (`tools/bundle.mjs`, Netlify build and `build-netlify.sh`);
   the fast checks run on GitHub for every pull request (`.github/workflows/checks.yml`).
+- (11 Oct, #36 slow start) Go for the whole start-up plan: a `startup` check at tablet speed on the packed copy (time to
+  title, "Who's playing?", valley ready, longest freeze, each a ratchet); PERF-001 measures the packed copy; the
+  breathing between building steps in `js/main.js` may be changed by this core (noted on the board); a request to World
+  for a saved, piece-by-piece valley; a smaller first download.
+- (11 Oct) Analytics also keeps each device's start-up times (about 5 numbers a start, no names; PRIV-005), so real
+  phone and tablet times show in Studio's Analytics; nothing is sent when Analytics is off.
+- (11 Oct) Once the owner has said go, this chat checks the board, its branch and its GitHub issues every 5 minutes,
+  acts on anything new, pushes its own branch when its checks pass and keeps its Now line current; the check-ins pause
+  while waiting for the owner's go (said in one line). Times for the owner in Sydney time (AEDT).
+- (11 Oct) Step 5 of #36 (a smaller first download) done anyway although the gain is small: only in the packing step
+  (minified stylesheet in bundle/, no kept names), 1058 -> 1032 KB on the first start.
+
+## Progress notes
+- **11 Oct, #36 slow start (branch `core/analytics-infra`, code at 5be6481, docs after).** Full suite on 5be6481:
+  **87/87 passed, none skipped** (local PeerJS and MQTT servers up; finished 8:02 am AEDT). New check `startup`
+  (packed copy, service worker on, processor 4x slower): first start 1058 KB, title 1.0-1.1 s, valley ready 19 s;
+  second start 0 KB, ready 18-20 s, longest freeze 4.5-5.0 s; slowest steps things 5.6 s, land 5.0 s, roads 2.0 s.
+  `perf` now measures PERF-001 on the packed copy (2.6 MB, ratchet 2.7). Start-up times added to Analytics (PRIV-005).
+  Tried: pauses between building steps in `js/main.js` gave nothing measurable (each freeze is one World function), so
+  that change was not kept. The fix is World's (board request): keep the built valley on the device, build in pieces.
+- **11 Oct, #36 step 5 (56d9578).** Packing only: minified stylesheet, no kept names. Checked on the packed copy:
+  `startup` (first start 1032 KB, title 0.9-1.0 s, ready 17.9-18.2 s; second start 0 KB, ready 17.2-17.5 s, longest
+  freeze 4.4-4.5 s), `perf`, `boot`, `offline` pass; fast checks unit rules preload emoji arch types names pass;
+  title, Who's playing, the valley's HUD and the first panel identical to the plain copy on phone, tablet and computer.
+- **11 Oct, 2:40 pm AEDT: session paused, hand-off.** Owner: "stop checking until further notice"; the 5-minute
+  check-ins are stopped. Everything is pushed (`core/analytics-infra`, c72d815 plus this note), ready for Release.
+  Left for the next Analytics & Infra chat:
+  1. Item 4: once Release merges PR #47 (instant bug robot, and the `checks.yml` fix that installs Playwright), watch
+     the robot's first instant runs (`bug-fixer.yml`): it starts on a new `bug` issue and on a "go" comment, the
+     5-minute backup timer fires, and no run pushes outside `bugfix/<core>-<issue>`. Check `checks.yml` goes green.
+  2. #36: when World (Round T) lands the keep-the-built-valley or build-in-pieces change, run `startup` and lower the
+     maxima in `tests/startup-baseline.json` (never raise them); post the new numbers on issue #36.
+  3. When Studio shows `startup` on the Analytics page, check it reads the report's `startup` correctly.
+  4. Item 3 (`parents` failing on "bedtime" on `main`) was already fixed on `main` (2fa7043): nothing to do.
+
