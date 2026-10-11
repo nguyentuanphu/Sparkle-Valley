@@ -9,7 +9,7 @@ Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
 ## Release
-- **Now:** Round T on `round-t`: T2 (r58) and T3 (r59) live (pull request #54 merged at the owner's "yes, deploy", 11 Oct, 1:40 pm AEST; Netlify serves r59); next T4 (ground and water looks, signposts, name tags, the drawn Pad map), plan first; r57 is kept for the Play round · branch `round-t` · 11 Oct AEST
+- **Now:** Round T on `round-t`: T2 (r58) and T3 (r59) live (pull request #54 merged at the owner's "yes, deploy", 11 Oct, 1:40 pm AEST; Netlify serves r59); next release r60 (owner, 11 Oct); next T4 (ground and water looks, signposts, name tags, the drawn Pad map), plan first · branch `round-t` · 11 Oct AEST
 - Round T stages T0 to T4: `docs/cores/ROUND-T.md`. Until Round T is merged, other cores do not change world positions or the map files (CLAUDE.md, helper rule 4).
 - Halloween decorations start growing about three weeks before 31 Oct: they only reach players once a round is deployed.
 - Still to build from the Round R plan (`docs/cores/ROUND-R.md`, Part 2): items 2 to 12 (Concept D layout, child's journey, homes, surprises, shop and wardrobe, money games, the rest of the festival groups, Hội làng times, 5–8 challenges, parent features, voice pack by area); the owner's privacy decisions of 9 Oct; splitting the code into per-core folders (infrastructure round).
