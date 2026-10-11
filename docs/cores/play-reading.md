@@ -64,3 +64,9 @@ Sleep", "A Day at the Beach"; Vietnamese "Chú Mèo Con", "Đi Chợ Với Bà",
   drum and the train engine were drawn tiny; a balloon was cut off at a phone's edge; short words in Read With Me were
   under 44 px. Not ours, seen on a phone in every game: the star counter covers the end of a long instruction (board,
   Kid UI).
+- **After merging `main` (1e5e0ece, r62) into `core/play-reading` (merge cae56af3, no conflicts): full suite 12 Oct,
+  5:39 am AEDT, 99 of 101 passed.** Skipped as before (multiplayer, meet, netgames, together, cloud, knock, mapver).
+  `startup` red as on `main` (first download 1102 KB > 1035; title 1.7 s). `hoilang` failed twice ("not told the festival
+  is on": the surprise-gift and passport toasts came at the same moment, as already noted in `docs/cores/play.md`),
+  then passed twice in a row on this branch (6:10 am AEDT), and passed twice on a clean `main` copy: a timing flake, not
+  from the reading games. `reading`, `voicecover`, `perf`, `phone`, `noemoji`, `emoji`, `arch` passed.
