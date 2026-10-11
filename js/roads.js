@@ -85,7 +85,12 @@ function profile(R, world, pts, anchors = null) {
   if (anchors) anchors.forEach((y, i) => { base[i] = y; });
   const n = pts.length, deepIn = lvl.map((L, i) => { if (L == null) return false; for (let k = -6; k <= 6; k++) { const j = i + k; if (j >= 0 && j < n && lvl[j] == null) return false; } return true; }); // (the outer 6 m eases in)
   const gates = R.gates || [], gateEnd = i => (gates[0] && i < 2) || (gates[1] && i > n - 3);
-  if (gates[0] && !deck[0]) base[0] = base[1] = heightAt(pts[0][0], pts[0][1]); if (gates[1] && !deck[n - 1]) base[n - 1] = base[n - 2] = heightAt(pts[n - 1][0], pts[n - 1][1]);
+  // (r63, owner: "the gate of Hà Nội is blocked") a road's end at a gate meets the place at the place's own level, even
+  // where a river or bridge nearby keeps the level rule off: the road used to stop at the hillside's height, half a metre
+  // below Hà Nội's square (a ledge nobody could step up) and over a metre above Brisbane's
+  // (a bridge deck right after the gate, like Cầu Rồng at Đà Nẵng, keeps the end at the ground so the ramp stays gentle)
+  const endY = ([x, z], near) => { const L = levelAt(x, z); return L != null && !near.some(i => deck[i]) ? L : heightAt(x, z); }, span = k => Array.from({ length: Math.min(n, 14) }, (_, j) => k ? n - 1 - j : j);
+  if (gates[0] && !deck[0]) base[0] = base[1] = endY(pts[0], span(0)); if (gates[1] && !deck[n - 1]) base[n - 1] = base[n - 2] = endY(pts[n - 1], span(1));
   const fixed = i => deck[i] || deepIn[i] || gateEnd(i) || (lvl[i] != null && (i < 2 || i > n - 3)) || (anchors && anchors.has(i)); // (a road's end at a gate is always at the ground there)
   // HARD RULE: the road is always smooth: a long, gentle average of the ground…
   let ys = base.slice();

@@ -21,13 +21,15 @@ export function createNetGames({ net, me, onAsk, onStart, onEnd, waitMs = 12000 
   const api = {
     get session() { return session; },
     // invite one friend (to) or everyone in the room (to omitted) to a game
-    invite(game, level, to) {
+    // (r63) opts.size: Caro's board, chosen by the one who invites (3 to 19 squares a side)
+    invite(game, level, to, opts = {}) {
       const def = defOf(game); if (!def || session) return null;
       const gid = newGid(), asked = new Set(to ? [to] : net.ids());
       if (!asked.size) return null;
-      const a = { gid, game, level, yes: new Set(), no: new Set(), asked };
+      const size = Number.isInteger(opts.size) && opts.size >= 3 && opts.size <= 19 ? opts.size : undefined;
+      const a = { gid, game, level, size, yes: new Set(), no: new Set(), asked };
       asks.set(gid, a);
-      for (const id of asked) net.send({ t: 'gask', to: id, gid, game, level });
+      for (const id of asked) net.send({ t: 'gask', to: id, gid, game, level, size });
       a.timer = setTimeout(() => go(gid), waitMs);
       return gid;
     },
@@ -53,7 +55,7 @@ export function createNetGames({ net, me, onAsk, onStart, onEnd, waitMs = 12000 
       if (d.t === 'gyes' || d.t === 'gno') { const a = asks.get(d.gid); if (!a || !a.asked.has(d.from)) return; (d.t === 'gyes' ? a.yes : a.no).add(d.from); if (a.yes.size + a.no.size >= a.asked.size || a.yes.size + 1 >= defOf(a.game).max) go(d.gid); return; }
       // (round R privacy, 9 Oct) before, any player could open a game here by naming this child in the seats; now only the
       // one who asked, and only after this child said yes (the child who invites starts it themselves, in go())
-      if (d.t === 'gstart') { if (session || !Array.isArray(d.seats) || !d.seats.includes(me()) || said.get(d.gid) !== d.from) return; said.delete(d.gid); begin(d.gid, d.game, d.level, d.seats); return; }
+      if (d.t === 'gstart') { if (session || !Array.isArray(d.seats) || !d.seats.includes(me()) || said.get(d.gid) !== d.from) return; said.delete(d.gid); begin(d.gid, d.game, d.level, d.seats, d.size); return; }
       if (!session || d.gid !== session.gid) return;
       const s = session.seats.indexOf(d.from); if (s < 0) return;
       if (d.t === 'gmove') record(s, d.n, d.mv);
@@ -72,11 +74,11 @@ export function createNetGames({ net, me, onAsk, onStart, onEnd, waitMs = 12000 
     const a = asks.get(gid); if (!a) return; asks.delete(gid); clearTimeout(a.timer);
     if (!a.yes.size) { onStart && onStart(null, a); return; }
     const seats = [me(), ...[...a.yes].slice(0, defOf(a.game).max - 1)];
-    for (const id of seats.slice(1)) net.send({ t: 'gstart', to: id, gid, game: a.game, level: a.level, seats });
-    begin(gid, a.game, a.level, seats);
+    for (const id of seats.slice(1)) net.send({ t: 'gstart', to: id, gid, game: a.game, level: a.level, size: a.size, seats });
+    begin(gid, a.game, a.level, seats, a.size);
   }
-  function begin(gid, game, level, seats) {
-    session = { gid, game, level, seats, mine: seats.indexOf(me()), moves: new Map(), waiters: [], gone: new Set(), listeners: [] };
+  function begin(gid, game, level, seats, size) {
+    session = { gid, game, level, size, seats, mine: seats.indexOf(me()), moves: new Map(), waiters: [], gone: new Set(), listeners: [] };
     onStart && onStart(session);
   }
   return api;

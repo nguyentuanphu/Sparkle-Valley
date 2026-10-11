@@ -636,9 +636,12 @@ await check('voicearea', async () => {
   // a computer that can't tell its connection counts as Wi-Fi: past the core with no question
   const C = await open(b, { w: 1180, h: 760, play: false, pre: `Object.defineProperty(navigator, 'connection', { get: () => undefined, configurable: true });`, settings: { autoPack: true, lang: 'vi', bilingual: false } });
   const got3 = watch(C); await start(C.page); await clear(C.page); await C.page.mouse.click(590, 380);
+  // (r63, owner: the bar said 108 %) every progress report stays at or under 100 %, the bar's words too
+  await C.page.evaluate(async () => { const V = await import('/js/voice.js'); window.__packOver = []; V.onPackProgress(e => { if (e.state === 'loading' && e.done > e.total) window.__packOver.push(e.done + '/' + e.total); const t = document.querySelector('.packbar') && document.querySelector('.packbar').textContent; const m = t && /(\d+)\s*%/.exec(t); if (m && +m[1] > 100) window.__packOver.push(t); }); });
   // (the core, about 550 files, comes first: in the full suite that can take a few minutes)
   for (let k = 0; k < 720 && !got3.some(x => x.g !== 'core'); k++) await C.page.waitForTimeout(500);
-  const asked3 = !!(await C.page.$('.packask')), en3 = got3.filter(x => x.lang === 'en').length; await C.ctx.close();
+  const asked3 = !!(await C.page.$('.packask')), en3 = got3.filter(x => x.lang === 'en').length, over3 = await C.page.evaluate(() => window.__packOver); await C.ctx.close();
+  ok(!over3.length, `the voices bar went past 100 %: ${over3.slice(0, 3).join(', ')}`);
   ok(got3.some(x => x.g !== 'core') && !asked3 && !en3, `a computer: past the core ${got3.some(x => x.g !== 'core')}, asked ${asked3}, English files for a Vietnamese family ${en3}`);
   ok(!errs.length, errs.join(' | '));
   return `core ${mb(core.en).toFixed(1)} MB (English) / ${mb(core.vi).toFixed(1)} MB (Vietnamese) of ${(Object.values(areas.size).reduce((a, z) => a + (z.en || 0) + (z.vi || 0) + (z.zh || 0) + (z.hi || 0), 0) / 1048576).toFixed(0)} MB; mobile data: ${n1} core files in English only, then "${text.slice(0, 50)}…" (hold for yes); Wi-Fi: ${place} first; the next start downloads nothing; a computer goes on by itself`;
@@ -2275,6 +2278,93 @@ await check('roadtone', async () => {
   ok(mats <= tones.size + 2, `${mats} road materials for ${tones.size} asphalt colours (one each, plus dirt and footpath)`);
   ok(!errs.length, errs.join(' | '));
   return `${M.ROADS.filter(R => R.kind === 'asphalt').length} asphalt roads in ${tones.size} colours, ${mats} road materials; the ring road is closed; a yellow centre dash in Vietnam, kerbs in Australia`;
+});
+
+await check('friendgames', async () => {
+  // (r63, owner: "all games of multiplayer should only be between the players"; "the Caro board can be bigger") on a
+  // phone: Tiến Lên with one friend seats just the two children (no computer players); a 15 × 15 Caro board from the
+  // inviter's choice has 225 squares, each at least 44 px, in a board that scrolls; the invitation window offers sizes
+  const r = {};
+  for (const [game, size] of [['tienlen', null], ['caro', 15]]) {
+    const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+    r[game] = await P.page.evaluate(async ([game, size]) => {
+      const G = __sv, wait = ms => new Promise(res => setTimeout(res, ms));
+      const online = { mine: 0, names: ['Bé Na', 'Bé Bin'], seed: 'r63test', size: size || undefined, move() { }, next: () => new Promise(() => { }), onMove() { }, all: () => new Promise(() => { }) };
+      G.playGameOnline(game, 2, online); await wait(2500);
+      if (game === 'tienlen') { const opp = [...document.querySelectorAll('.tl-opp .tl-p b')].map(e => e.textContent), mine = document.querySelectorAll('.tl-hand .tl-card').length; return { opp, mine, text: document.body.textContent.includes('Anh Ba') || document.body.textContent.includes('Con Vật') }; }
+      const cells = [...document.querySelectorAll('.caro-c')], w = cells.length ? cells[0].getBoundingClientRect().width : 0, wrap = document.querySelector('.caro-wrap');
+      return { cells: cells.length, w, scrolls: !!wrap && wrap.scrollWidth > wrap.clientWidth, pageWide: document.documentElement.scrollWidth > innerWidth + 1 };
+    }, [game, size]);
+    r[game].errs = P.errors; await P.ctx.close();
+  }
+  // the invitation window: level and, for Caro, the board's size
+  const Q = await open(b, { w: 390, h: 844, touch: true }); await clear(Q.page);
+  const pick = await Q.page.evaluate(async () => { const G = __sv; G.inviteGame('caro', 'nobody'); await new Promise(res => setTimeout(res, 600));
+    const sizes = [...document.querySelectorAll('[data-size]')].map(e => +e.dataset.size), lv = document.querySelectorAll('[data-lvl]').length, small = [...document.querySelectorAll('[data-size],[data-lvl]')].filter(e => { const q = e.getBoundingClientRect(); return q.width < 44 || q.height < 44; }).length;
+    return { sizes, lv, small }; });
+  await Q.page.screenshot({ path: 'out/friendgames-invite.png' }); const qerr = Q.errors; await Q.ctx.close();
+  const t = r.tienlen, c = r.caro;
+  ok(t.opp.length === 1 && t.opp[0] === 'Bé Bin' && !t.text && t.mine === 13, 'Tiến Lên with one friend: ' + JSON.stringify(t));
+  ok(c.cells === 225 && c.w >= 44 && c.scrolls && !c.pageWide, 'Caro 15 × 15 on a phone: ' + JSON.stringify(c));
+  ok(pick.sizes.join(',') === '3,6,9,13,15,19' && pick.lv === 5 && !pick.small, 'the invitation window: ' + JSON.stringify(pick));
+  const errs = [...t.errs, ...c.errs, ...qerr]; ok(!errs.length, errs.join(' | '));
+  return `Tiến Lên with one friend: 2 children, no computer players; Caro 15 × 15: 225 squares of ${c.w.toFixed(0)} px in a scrolling board; the invitation offers 5 levels and 6 board sizes`;
+});
+
+await check('micoff', async () => {
+  // (r63, owner: "the microphone should always be off until the user turns it on"; on an iPhone the tap did nothing)
+  // starting or joining a room never asks for the microphone; the HUD's Mic button starts off; one tap asks (inside the
+  // tap) and turns it on; the next tap turns it off (the track goes quiet), the next on again
+  const P = await open(b, { w: 900, h: 640, pre: `(() => { window.__gum = 0; const md = navigator.mediaDevices; if (!md) return; const real = md.getUserMedia.bind(md);
+    md.getUserMedia = c => { window.__gum++; const a = new AudioContext(), o = a.createOscillator(), d = a.createMediaStreamDestination(); o.connect(d); o.start(); return Promise.resolve(d.stream); }; })()` });
+  await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const { Net } = await import('/js/net.js'), G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), said = [];
+    Net.on('status', s => said.push(s.key));
+    const startMuted = Net.muted;
+    Net.host({ name: 'Bé Na' }).catch(() => { }); await wait(1500);
+    const asked = window.__gum, hint = said.includes('mictap');
+    const btn = () => document.querySelector('.dk.call'), label = () => btn() && btn().querySelector('small').textContent;
+    G.huds.forEach(hd => hd.setCall(true, false, Net.muted || !Net.mic)); const before = label();
+    await G.toggleMute(); const on = { mic: !!Net.mic, muted: Net.muted, live: Net.mic && Net.mic.getAudioTracks()[0].enabled, label: label(), asked: window.__gum };
+    await G.toggleMute(); const off = { muted: Net.muted, live: Net.mic.getAudioTracks()[0].enabled, label: label(), asked: window.__gum };
+    await G.toggleMute(); const again = { muted: Net.muted, live: Net.mic.getAudioTracks()[0].enabled };
+    try { Net.close(); } catch (e) { }
+    return { startMuted, asked, hint, before, on, off, again };
+  });
+  const errs = P.errors.filter(e => !/peer|Peer|socket|lost connection/i.test(e)); await P.ctx.close();
+  ok(r.startMuted && r.asked === 0, `starting a room asked for the microphone ${r.asked} times (muted at start: ${r.startMuted})`);
+  ok(r.hint, 'no "your microphone is off" hint when the room started');
+  ok(r.before === 'Mic off', `the Mic button says "${r.before}" before a tap`);
+  ok(r.on.mic && !r.on.muted && r.on.live && r.on.label === 'Mic on' && r.on.asked === 1, 'the first tap: ' + JSON.stringify(r.on));
+  ok(r.off.muted && !r.off.live && r.off.label === 'Mic off' && r.off.asked === 1, 'the second tap: ' + JSON.stringify(r.off));
+  ok(!r.again.muted && r.again.live, 'the third tap: ' + JSON.stringify(r.again));
+  ok(!errs.length, errs.join(' | '));
+  return 'a room starts with the microphone off and asks for nothing; Mic off → one tap asks and turns it on → off → on';
+});
+
+await check('gates', async () => {
+  // (r63, ROAD-016; owner: "at the gate of Hà Nội it is blocked and I can't go through") a child walks through every
+  // gate on a road's end, from 8 m outside to 3 m inside (through the gate onto the square), along the road: nothing
+  // solid stops them and the ground never steps more than 25 cm from one half metre to the next (a bridge deck on the way
+  // is the `bridges` check's)
+  const P = await open(b, { w: 900, h: 640, play: false });
+  await P.page.waitForFunction(() => __sv.world && __sv.world.solidAt, null, { timeout: 90000 });
+  const r = await P.page.evaluate(async () => {
+    const W = __sv.world, w = await import('/js/world.js'), M = await import('/js/content/map.js'), bad = []; let n = 0, worst = 0;
+    for (const R of M.ROADS) (R.gates || []).forEach((g, k) => { if (!g) return; n++;
+      const pts = R.pts, [x0, z0] = k ? pts[pts.length - 1] : pts[0], [x1, z1] = k ? pts[pts.length - 2] : pts[1], L = Math.hypot(x0 - x1, z0 - z1), ux = (x0 - x1) / L, uz = (z0 - z1) / L;
+      let prev = null; for (let t = -8; t <= 3; t += .5) { const x = x0 + ux * t, z = z0 + uz * t, h = w.heightAt(x, z);
+        if (W.platforms.some(p => x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1)) { prev = null; continue; }
+        const pos = { x, y: h, z }; W.collide(pos, .35); if (Math.hypot(pos.x - x, pos.z - z) > .2) { bad.push(`${g} (${R.id}): blocked ${t.toFixed(1)} m from the gate`); break; }
+        if (prev != null) { const st = Math.abs(h - prev); worst = Math.max(worst, st); if (st > .25) { bad.push(`${g} (${R.id}): a ${st.toFixed(2)} m step ${t.toFixed(1)} m from the gate`); break; } } prev = h; } });
+    return { n, worst, bad };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.n >= 15, `only ${r.n} gates found`);
+  ok(!r.bad.length, r.bad.join('; '));
+  ok(!errs.length, errs.join(' | '));
+  return `${r.n} gates walked through, nothing in the way, the biggest step ${(r.worst * 100).toFixed(0)} cm`;
 });
 
 await check('water', async () => {
