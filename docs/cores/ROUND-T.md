@@ -168,6 +168,25 @@ Every stage ends with the full suite green, `node tests/world-audit.mjs` clean a
   - The map picture gets coarser per metre: go from 256 to 320 px.
   - Online friends on different builds: see §4.
 
+### T1b: Tidy streets (owner, 11 Oct AEDT; robot chat `claude/peaceful-hopper-un7oym`, after r57; T2 waits for it)
+The owner saw r56: stalls, kiosks and sellers stand cramped next to houses and roads, against the Concept D rules ("Kiosks
+and stalls stand in one row on one side of the main street, all facing it. No stall alone in a field"; "Food stalls, toy
+stalls and the shop are grouped in market rows near squares. Gánh vendors walk set loops between them").
+- **Why now:** T1 widened main roads from 5.2 m to 6.4 m, but vendors (`vendors.js`, ±5.6 m from the market road), city
+  kiosks (`cities.js`, ±4.6 m from the main street, both sides) and sellers' walks (`hawkers.js`, +2.6 m) kept their fixed
+  offsets from the road's centre; the village kiosk finder (`cities.js` `streetSpot`) takes the first spot 2.2 m from a house
+  and 1.6 m from the road (and falls back to the street's centre); `validate.js` only stops things standing on a road.
+- **1. Rules first, shown failing on r57** (PROC-006): new hard rules in `docs/ARCHITECTURE.md` §9 and `validate.js`: every
+  stall and kiosk 1.5 m or more from the road's edge and 3 m or more from any building; 1.2 m between neighbours; facing
+  its street; one row on one side of the place's main street; none alone in a field; sellers walk the footpath strip, never
+  on a road or through a house.
+- **2. One market row per place in `js/content/map.js`:** street, side, start, spacing; every vendor, kiosk and stall takes
+  the next slot (`rowSlot(place, i)`), its distance worked out from `ROAD_WIDTH`.
+- **3. Clear shop fronts:** houses stay behind the row; where one blocks it, the house moves back or the row moves to the
+  square.
+- **4. Looked at:** phone, tablet, computer and a sky view of every village, town and city, before and after, next to the
+  Concept D drawings.
+
 ### T2: Real water, bridges, ring road, road colours, boats (large)
 - **Goal:**
   - Rivers: Sông Hồng (red-brown), the Hội An canal, Sông Sài Gòn, the Brisbane River, the Yarra, the Murray, and the Mekong delta channels.

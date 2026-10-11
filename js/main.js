@@ -1,6 +1,7 @@
 // Sparkle Valley: boot, the game loop, split-screen, NPCs, quests and rewards.
 import './emojiswap.js'; // (first: no phone emoji on the page or on any canvas)
 import { THREE, sprite, P, merge, toonVC } from './gfx.js';
+import { createSeeThrough } from './seethrough.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';
 import { T, nm, onLang, registerName } from './i18n.js';
@@ -18,7 +19,8 @@ import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
 import { pads, initInput } from './input.js';
 import { Net, MAX_ROOM, ROOM_LEN, okPub } from './net.js';
-import { showTitle, showWho, dialog, dialogHooks, reward, openPad, openCooking, openShop, toast, modal } from './ui.js';
+import { showTitle, showWho, dialog, dialogHooks, reward, openPad, openCooking, openShop, toast, modal, openGrownups } from './ui.js';
+import { holdButton } from './popups.js';
 import { pic } from './art.js';
 import { openChat, personaByName, PERSONAS } from './chat.js';
 import { voiceCommand, voiceControlOn } from './commands.js';
@@ -796,7 +798,7 @@ G.toggleAudio = kind => {
   else { const on = !(settings.sound || settings.voice); settings.sound = on; settings.voice = on; if (!on) hush(); }
   saveSettings(); SFX.tap(); G.huds.forEach(h => h.refreshAudio());
 };
-G.toggleMute = () => { if (!Net.mic) { Net.getMic(); return; } Net.setMuted(!Net.muted); Net.resumeAudio(); G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted)); };
+G.toggleMute = () => { if (!Net.mic) { Net.getMic(true); return; } Net.setMuted(!Net.muted); Net.resumeAudio(); G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted)); };
 // Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
 addEventListener('keydown', e => {
   if (!playing || e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '')) return;
@@ -956,20 +958,24 @@ Net.on('status', s => {
     nocode: T('No room with that number. Check the code.', 'Không có phòng số này. Kiểm tra lại mã nhé.'),
     mictap: T('Tap 🎙️ Microphone on to talk to your friend.', 'Chạm nút 🎙️ Bật micrô để nói chuyện với bạn nhé.'),
     micdenied: T('The microphone is switched off for this game. A grown-up can allow it: iPhone Settings → Safari (or the game) → Microphone → Allow.', 'Micrô đang bị tắt cho trò chơi này. Người lớn có thể bật: Cài đặt iPhone → Safari (hoặc trò chơi) → Micrô → Cho phép.'),
+    micask: T('Asking for the microphone… On iPhone or iPad, tap Allow.', 'Đang xin dùng micrô… Trên iPhone hoặc iPad, chạm Cho phép nhé.'),
+    micold: T('This iPhone or iPad cannot use the microphone in the game. A grown-up can update it to iOS 14.3 or newer, or open the game in Safari.', 'iPhone hoặc iPad này chưa dùng được micrô trong trò chơi. Người lớn có thể cập nhật lên iOS 14.3 trở lên, hoặc mở trò chơi trong Safari.'),
     micon: T('Microphone on: your friend can hear you!', 'Đã bật micrô: bạn có thể nghe con nói rồi!'),
     nomic: T('No microphone: your friend will not hear you, but you can still play and use the talk buttons.', 'Không có micrô: bạn sẽ không nghe được con, nhưng vẫn chơi và dùng nút nói được.'),
     left: T('The room has closed.', 'Phòng đã đóng.'), full: T('That room is full (6 players). Start your own room!', 'Phòng đã đủ 6 người. Hãy tạo phòng mới nhé!'), tapaudio: T('Tap the 🎙️ button to hear your friend.', 'Chạm nút 🎙️ để nghe bạn nói.'), cloud: T('Connected through the cloud relay! You can play and use the talk buttons. (Voice calls need a direct link: try both on Wi-Fi, or ask a grown-up to add a relay.)', 'Đã kết nối qua mạng đám mây! Chơi và dùng nút nói được. (Gọi bằng giọng nói cần kết nối trực tiếp: thử cả hai dùng Wi-Fi, hoặc nhờ người lớn thêm máy chủ trung chuyển.)'), error: T('Could not connect. Check the internet and try again.', 'Không kết nối được. Kiểm tra mạng rồi thử lại.'),
     removed: T('The room’s starter asked you to leave the room.', 'Chủ phòng đã mời con ra khỏi phòng.'),
     off: T('Playing with friends is off. Ask a grown-up to turn it on.', 'Chơi cùng bạn đang tắt. Nhờ người lớn bật lên nhé.'),
     knocking: T('Knock knock! Waiting for the room’s starter to let you in…', 'Cốc cốc! Đang chờ chủ phòng cho con vào…'),
+    oldmap: T('Your friend has a different valley. Ask a grown-up to update the game.', 'Thung lũng của bạn khác với của con. Nhờ người lớn cập nhật trò chơi nhé.'),
     denied: T('The room’s starter said not this time. You can start your own room!', 'Chủ phòng chưa cho vào lần này. Con có thể tự tạo phòng nhé!'),
     noanswer: T('Nobody opened the door. Ask your friend to tap “Let in”, or start your own room.', 'Chưa ai mở cửa. Nhờ bạn chạm “Cho vào”, hoặc tự tạo phòng nhé.'),
     slow: T('Still connecting… This can take a little longer when you are on different networks.', 'Vẫn đang kết nối… Khi hai máy ở hai mạng khác nhau có thể lâu hơn một chút.'),
-    stuck: T('Could not link the two devices. Try: both on Wi-Fi (or both on mobile data), start the room on the other device, or ask a grown-up to add a relay in Grown-ups → Online play.', 'Không nối được hai máy. Thử: cả hai dùng Wi-Fi (hoặc cả hai dùng 4G), để máy kia tạo phòng, hoặc nhờ người lớn thêm máy chủ trung chuyển trong mục Người lớn → Chơi trực tuyến.')
+    stuck: T('Could not link the two devices. Try: both on Wi-Fi (or both on mobile data), start the room on the other device, or ask a grown-up to add a relay in Grown-ups → Internet and playing online.', 'Không nối được hai máy. Thử: cả hai dùng Wi-Fi (hoặc cả hai dùng 4G), để máy kia tạo phòng, hoặc nhờ người lớn thêm máy chủ trung chuyển trong mục Phụ huynh → Internet và chơi trực tuyến.')
   }[s.key] || '';
+  if (s.key === 'oldmap') G.mapCard();
   if (s.key === 'waiting') { const code = s.code; msg = T(`Room code: ${code} (${animalSay(code)}). Tell your friend!`, `Mã phòng: ${code} (${animalSay(code)}). Đọc cho bạn nhé!`); }
   // with Friends open the message shows in it, not over its tabs (round O)
-  netStatus = msg; if (msg && !document.querySelector('.pad .online')) toast(msg); if (G.onNet) G.onNet(); if (['waiting', 'connected', 'cloud', 'left'].includes(s.key)) G.shareStatus();
+  netStatus = msg; if (msg && s.key !== 'oldmap' && !document.querySelector('.pad .online')) toast(msg); /* (the map card says it) */ if (G.onNet) G.onNet(); if (['waiting', 'connected', 'cloud', 'left'].includes(s.key)) G.shareStatus();
 });
 // Knock knock: someone wants to come into my room. The room's starter sees their name and picture and decides;
 // they hear and see nothing of the room until then. Saved friends come straight in (net.js).
@@ -999,9 +1005,20 @@ if (!Array.isArray(settings.friends)) settings.friends = [];
 if (settings.online && settings.friends.length && !settings.friendsOnR28) { settings.friendsOn = true; settings.friendsOnR28 = true; saveSettings(); }
 // leaving a room with friends in it to go to another one is asked first (round O)
 const leaveOk = async () => !(Net.role && Net.count > 1) || (await dialog(T('Your room', 'Phòng của con'), [[`You are playing with ${Object.values(Net.remotes).map(r => nm(r.name)).join(', ')}. Leave this room?`, `Con đang chơi với ${Object.values(Net.remotes).map(r => nm(r.name)).join(', ')}. Rời phòng này nhé?`, 'You are playing with friends. Leave this room?', 'Con đang chơi với các bạn. Rời phòng này nhé?']], [['✅ Leave and go', '✅ Rời và sang'], ['❌ Stay', '❌ Ở lại']])) === 0;
+// (Online, r57, ROUND-T §4) a friend on another map layout can't play together (positions are raw x, z): a picture card
+// with a voice instead of joining (owner, 11 Oct: only the one who wanted to join is told)
+G.mapCard = () => {
+  document.querySelectorAll('.modal.mapcard').forEach(m => m.remove());
+  const m = modal('mapcard', `<div class="mc-pic">${pic('🗺️')}</div><h2>${T('Different valley', 'Thung lũng khác')}</h2>
+    <p class="center">${T('Your friend has a different valley. Ask a grown-up to update the game.', 'Thung lũng của bạn khác với của con. Nhờ người lớn cập nhật trò chơi nhé.')}</p>
+    <div class="actions center"><button class="btn primary big" data-ok>${T('OK', 'Được rồi')}</button></div>`);
+  say('Your friend has a different valley. Ask a grown-up to update the game.', 'Thung lũng của bạn khác với của con. Nhờ người lớn cập nhật trò chơi nhé.');
+  m.querySelector('[data-ok]').onclick = () => { SFX.tap(); m.close(); };
+};
 const onInvite = async inv => {
-  SFX.chime(); say('A friend invites you to play!', 'Một bạn mời con chơi cùng!');
   if (!settings.online) return;
+  if (!Net.sameMap(inv.map)) { SFX.chime(); G.mapCard(); return; } // (r57) another map layout: the card instead of joining
+  SFX.chime(); say('A friend invites you to play!', 'Một bạn mời con chơi cùng!');
   const k = await dialog(T('Invitation', 'Lời mời'), [[`👫 ${inv.name} invites you to play together! Join their room ${inv.room}?`, `👫 ${inv.name} mời con chơi cùng! Vào phòng ${inv.room} nhé?`, 'A friend invites you to play together! Shall we join?', 'Một bạn mời con chơi cùng! Mình vào nhé?']], [['✅ Join', '✅ Vào'], ['❌ Not now', '❌ Để sau']]);
   // (round R privacy) the invitation came locked from a saved friend; when they started the room, only their key may answer the knock
   if (k === 0 && await leaveOk()) Net.join(inv.room, sendHello() || {}, { hostPub: inv.hostPub });
@@ -1048,7 +1065,7 @@ G.autoMeet = () => {
 function friendNote(f, st) {
   const name = nm(st.name || f.name), where = st.at && REGION_NAMES[st.at] ? REGION_NAMES[st.at]() : '';
   const pop = el('div', 'vc-pop friendnote', `<p class="vc-heard">🟢 ${esc(T(`${name} is playing!`, `${name} đang chơi!`))}</p><div class="ff-row"><div class="ff-txt"><small>${esc(where)}${st.room ? ' · ' + T('in a room', 'đang ở trong phòng') + ` (${(st.players || 1)}/${MAX_ROOM})` : ''}</small></div></div>
-    <div class="ff-btns"><button class="btn primary" data-inv>📨 ${T('Invite', 'Mời bạn')}</button>${st.room && (st.players || 1) < MAX_ROOM ? `<button class="btn" data-go>▶ ${T('Go to their room', 'Sang phòng bạn')}</button>` : ''}<button class="btn" data-no>${T('Later', 'Để sau')}</button></div>`);
+    <div class="ff-btns"><button class="btn primary" data-inv>📨 ${T('Invite', 'Mời bạn')}</button>${st.room && (st.players || 1) < MAX_ROOM && Net.sameMap(st.map) ? `<button class="btn" data-go>▶ ${T('Go to their room', 'Sang phòng bạn')}</button>` : ''}<button class="btn" data-no>${T('Later', 'Để sau')}</button></div>`);
   document.body.appendChild(pop); SFX.chime(); say('Your friend is playing too!', 'Bạn của con cũng đang chơi!');
   const close = () => { pop.remove(); clearTimeout(t); }, t = setTimeout(close, 45000);
   pop.querySelector('[data-no]').onclick = () => { SFX.tap(); close(); };
@@ -1080,18 +1097,34 @@ G.netTick = body => {
   const nl = body.querySelector('.netline'); if (nl) nl.outerHTML = netLineHTML();
   body.querySelectorAll('.prow.roomp[data-pid]').forEach(row => { const old = row.querySelector('.pq'), now = pqHTML(row.dataset.pid); if (old) old.outerHTML = now || ''; else if (now) row.querySelector('.pw').insertAdjacentHTML('beforeend', now); });
 };
+// (bug #37, owner 11 Oct) a small note for grown-ups saying where the switch is (Grown-ups → "Internet and playing online"
+// → "Use the internet"), with the Grown-ups button right here: press and hold only, so a child can't switch it on
+const gUHow = on => `<div class="gunote"><p class="note">${on
+  ? T('For grown-ups: press and hold Grown-ups → Internet and playing online → untick Use the internet to switch playing with friends off.', 'Dành cho người lớn: nhấn giữ nút Phụ huynh → Internet và chơi trực tuyến → bỏ chọn Dùng internet để tắt chơi cùng bạn.')
+  : T('For grown-ups: press and hold Grown-ups → Internet and playing online → tick Use the internet to switch playing with friends on.', 'Dành cho người lớn: nhấn giữ nút Phụ huynh → Internet và chơi trực tuyến → chọn Dùng internet để bật chơi cùng bạn.')}</p>
+  <button class="grown gu-hold"><span class="ring"></span>${T('Grown-ups', 'Phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button></div>`;
+const bindGUHow = (body, redraw) => {
+  const b = body.querySelector('.gu-hold'); if (!b) return;
+  holdButton(b, () => {
+    openGrownups(() => { if (document.body.contains(body)) redraw(); });
+    const d = document.querySelector('.modal.grownups details[data-sec="online"]'); if (d) { d.open = true; d.scrollIntoView({ block: 'start' }); }
+  });
+};
 G.drawOnlinePanel = (body, redraw) => {
   G.onNet = () => { if (document.body.contains(body)) redraw(); };
   const h = G.heroes[0];
   // (round R privacy, 9 Oct, owner) online play is off until a grown-up turns it on (Grown-ups → Playing online): no Start, no Join
-  if (!settings.online) { body.innerHTML = `<div class="online off"><p class="note center onlineoff">🔒 ${T('Playing with friends is off. Ask a grown-up to turn it on.', 'Chơi cùng bạn đang tắt. Nhờ người lớn bật lên nhé.')}</p></div>`; return; }
+  if (!settings.online) { body.innerHTML = `<div class="online off"><p class="note center onlineoff">🔒 ${T('Playing with friends is off. Ask a grown-up to turn it on.', 'Chơi cùng bạn đang tắt. Nhờ người lớn bật lên nhé.')}</p>
+    ${gUHow(false)}</div>`; bindGUHow(body, redraw); return; }
   const friendsBox = () => `<div class="ocard friends"><h3>👫 ${T('My friends', 'Bạn của con')}</h3>
       <p class="note">${T('My friend code', 'Mã bạn bè của con')}: <b class="fcode">${settings.friendCode}</b></p>
       <label class="tog"><input type="checkbox" id="fOn" ${settings.friendsOn ? 'checked' : ''}> ${T('Friends can see when I am playing and where, and invite me (needs the internet)', 'Bạn bè thấy khi con đang chơi, đang ở đâu, và mời con được (cần có mạng)')}</label>
-      <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}" data-fc="${esc(f.code)}">▶ ${T('Join', 'Vào chơi')}</button>` : ''}${(Net.friends.status[f.code] || {}).online && !(Net.code && Net.friends.status[f.code].room === Net.code) ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
+      <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? (Net.sameMap(Net.friends.status[f.code].map) ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}" data-fc="${esc(f.code)}">▶ ${T('Join', 'Vào chơi')}</button>` : `<button class="btn mapdiff" data-mapdiff aria-label="${T('Different valley', 'Thung lũng khác')}" title="${T('Different valley', 'Thung lũng khác')}">🗺️</button>`) : ''}${(Net.friends.status[f.code] || {}).online && !(Net.code && Net.friends.status[f.code].room === Net.code) ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
       <div class="vrow"><input type="text" id="fAdd" maxlength="6" placeholder="${T('Friend code', 'Mã bạn bè')}" autocomplete="off"><button class="btn" id="fAddB">＋ ${T('Add', 'Thêm')}</button></div>
-      ${settings.friends.length ? `<p class="note">${T('Friends are never put in a room by themselves: 📨 Invite asks them, ▶ Join goes to theirs.', 'Bạn bè không bao giờ tự bị đưa vào phòng: 📨 Mời là hỏi bạn, ▶ Vào chơi là sang phòng bạn.')}</p>` : ''}</div>`;
+      ${settings.friends.length ? `<p class="note">${T('Friends are never put in a room by themselves: 📨 Invite asks them, ▶ Join goes to theirs.', 'Bạn bè không bao giờ tự bị đưa vào phòng: 📨 Mời là hỏi bạn, ▶ Vào chơi là sang phòng bạn.')}</p>` : ''}${gUHow(true)}</div>`;
   const bindFriends = () => {
+    bindGUHow(body, redraw);
+    body.querySelectorAll('[data-mapdiff]').forEach(b => b.onclick = () => { SFX.tap(); G.mapCard(); });
     body.querySelector('#fOn').onchange = e => { settings.friendsOn = e.target.checked; saveSettings(); G.listenFriends(); };
     body.querySelector('#fAddB').onclick = () => { if (addFriend(body.querySelector('#fAdd').value)) { SFX.chime(); redraw(); } else toast(T('A friend code has 6 letters and numbers.', 'Mã bạn bè gồm 6 chữ và số.')); };
     body.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { settings.friends = settings.friends.filter(f => f.code !== b.dataset.rm); saveSettings(); redraw(); });
@@ -1111,7 +1144,7 @@ G.drawOnlinePanel = (body, redraw) => {
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
       <div class="actions center"><button class="btn big${Net.mic ? '' : ' primary'}" id="oMute">${!Net.mic ? '🎙️ ' + T('Microphone on', 'Bật micrô') : Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
       ${friendsBox()}</div>`;
-    body.querySelector('#oMute').onclick = async () => { SFX.tap(); if (!Net.mic) await Net.getMic(); else G.toggleMute(); redraw(); };
+    body.querySelector('#oMute').onclick = async () => { SFX.tap(); if (!Net.mic) await Net.getMic(true); else G.toggleMute(); redraw(); };
     bindCode(body);
     body.querySelectorAll('[data-admit]').forEach(b => b.onclick = () => { SFX.tap(); Net.admit(b.dataset.admit); });
     body.querySelectorAll('[data-deny]').forEach(b => b.onclick = () => { SFX.tap(); Net.deny(b.dataset.deny); });
@@ -1428,6 +1461,7 @@ function frame(now) {
     if (G.closeUp != null && G.heroes[G.closeUp]) { const h = G.heroes[G.closeUp]; h.state = 'idle'; h.finish(dt, t, G, 0); }
   }
   walkedAway();
+  if (G.seeThrough) G.seeThrough.step(dt);
   // music follows the first player
   const h0 = G.heroes[0];
   // (round N) during a festival its own songs play; in the Vietnam areas, Vietnamese tunes (a family's recordings from
@@ -1609,6 +1643,7 @@ startCounting(G); // how many children play, and what they play, for Studio's re
   let at = -1e9;
   let mats = [];
   G.camBlockerMats = () => mats;
+  G.seeThrough = createSeeThrough(G); // (bug #33) things between the camera and a child fade instead of pulling the camera in
   G.camBlockers = () => { const now = performance.now(); if (now - at > 8000) { at = now; collect(); } return list; };
 }
 // (round T, PERF-003) far small things: in the 480 m valley a child can see right across it, and the fog hides what is

@@ -1,9 +1,10 @@
 // Talking voice in English and Vietnamese using the device's own natural voices.
 // Premium/enhanced/neural voices are picked first; grown-ups can choose a voice in settings.
-import { settings, saveSettings } from './state.js';
+import { settings, saveSettings, profiles } from './state.js';
 import { ac, unlockers } from './audio.js';
 import { swapNames } from './i18n.js';
-import { packHash, lineHash } from './packhash.js';
+import { packHash, lineHash, partText } from './packhash.js';
+import { events } from './core/events.js';
 import { viRuns, mixed } from './viwords.js';
 import { CUSTOM } from './custom.js';
 
@@ -132,12 +133,14 @@ async function speak(en, vi) {
     if (my !== seq) return;
     if (window.__svVoiceLog) window.__svVoiceLog(lang, text, !!packSlot(lang, text)); // for tools/voice-harvest.mjs
     try { if (await playPack(lang, text, my)) continue; } catch (e) { }
+    // (round R item 12) a line with changing words (a number, an item, a name) is put together from its recorded parts
+    try { if (await playParts(lang, text, my)) continue; } catch (e) { }
     // Not recorded as a whole: recorded sentences inside it still play from the pack; only the rest uses another voice.
     const bits = sentences(text);
-    if (PACK && bits.length > 1 && bits.some(b => packSlot(lang, b))) {
+    if (PACK && bits.length > 1 && bits.some(b => packSlot(lang, b) || tplMatch(lang, b))) {
       for (const b of bits) {
         if (my !== seq) return;
-        let ok = false; try { ok = await playPack(lang, b, my); } catch (e) { }
+        let ok = false; try { ok = await playPack(lang, b, my) || await playParts(lang, b, my); } catch (e) { }
         if (!ok) { noteMiss(lang, b); await otherVoice(b, lang, my); }
       }
       continue;
@@ -146,6 +149,42 @@ async function speak(en, vi) {
     await otherVoice(text, lang, my);
   }
 }
+// ---------- (round R item 12) lines put together from recorded parts ----------
+// The pack lists the templates of lines with changing words (manifest `tpl`, from tools/voice-lines.mjs): the fixed
+// pieces are recorded on their own, and so are the numbers 0–100 and the words that fill a gap. A line that matches a
+// template plays its pieces and gaps in order. A gap with no recording that is a name (a child's, a friend's, a pet's)
+// is left out: names are never recorded and never spoken by another voice (HANDOFF rule 11); any other word with no
+// recording is said by the phone's voice and noted as missing.
+let TPLS = null;
+const esc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function tplMatch(lang, text) {
+  if (!PACK || !PACK.tpl || !PACK.tpl[lang]) return null;
+  TPLS = TPLS && TPLS.pack === PACK ? TPLS : { pack: PACK };
+  const list = TPLS[lang] || (TPLS[lang] = PACK.tpl[lang].map(ps => ({ ps, w: ps.join('').replace(/[^\p{L}]/gu, '').length, re: new RegExp('^\\s*' + ps.map(p => esc(p).replace(/\s+/g, '\\s*')).join('(.+?)') + '\\s*$', 'u') })).filter(t => t.w > 1).sort((a, b) => b.w - a.w));
+  const t = String(text).replace(/\s+/g, ' ').trim();
+  for (const x of list) {
+    const m = x.re.exec(t); if (!m) continue;
+    const parts = [];
+    x.ps.forEach((p, i) => { const q = partText(p); if (q) parts.push([0, q]); if (i < m.length - 1) { const f = m[i + 1].replace(/^[\s.,!?:;…'"“”()]+|[\s,:;'"“”()]+$/g, ''); if (/[\p{L}\d]/u.test(f)) parts.push([1, f]); } });
+    // only worth it when every fixed piece is recorded
+    if (parts.some(([k]) => !k) && parts.every(([k, q]) => k || packSlot(lang, q))) return parts;
+  }
+  return null;
+}
+// a gap word that is someone's name: one of this device's children, or one or two capitalised words with no recording
+const isName = w => (profiles || []).some(p => p && p.name && (p.name === w || p.name.replace(/^(Bé|Em|Little|Út)\s+/iu, '') === w)) || /^\p{Lu}[\p{L}'’-]*(\s\p{Lu}[\p{L}'’-]*)?$/u.test(w);
+async function playParts(lang, text, my) {
+  const parts = tplMatch(lang, text); if (!parts) return false;
+  for (const [, q] of parts) {
+    if (my !== seq) return true;
+    let ok = false; try { ok = await playPack(lang, q, my); } catch (e) { }
+    if (ok || isName(q)) continue;
+    noteMiss(lang, q); await otherVoice(q, lang, my);
+  }
+  return true;
+}
+// (for the checks: what a line would be made of)
+export const lineParts = (lang, text) => tplMatch(lang, swapNames(text, lang));
 const sentences = text => (String(text).match(/[^.!?。…]+[.!?。…]*\s*/g) || [text]).map(t => t.trim()).filter(Boolean);
 // (round R privacy, 9 Oct) no recording: the phone's own voice, never an online speech service
 async function otherVoice(text, lang, my) { await deviceSpeak(text, lang, my); }
@@ -270,58 +309,19 @@ const loadPack = () => packReady || (packReady = fetch('voices/manifest.json').t
 for (const ev of ['pointerdown', 'keydown', 'touchstart']) addEventListener(ev, loadPack, { once: true, capture: true, passive: true });
 setTimeout(loadPack, 8000);
 const waitPack = () => PACK || packTried ? null : Promise.race([loadPack(), new Promise(r => setTimeout(r, 12000))]);
-// Keep the whole pack on the device by itself: a few seconds after the game opens (every time it opens), the voice
-// cache is checked against the list, and any file not there yet (first visit, a new pack, or a phone that cleared
-// space) is downloaded quietly, the child's own language first. A small bar shows it (js/packbar.js); every line
-// then plays with the recorded voice, offline too.
 const packListeners = []; let packLast = null;
 export const onPackProgress = f => { packListeners.push(f); if (packLast) try { f(packLast); } catch (x) { } }; // (a late listener hears where it is now)
 const packEmit = e => { packLast = e; packListeners.forEach(f => { try { f(e); } catch (x) { } }); };
-function autoSavePack() {
-  // (an address that can't keep files, like http://192.168.… on a phone: the voices still play, from the internet)
-  if (!('caches' in window)) { setTimeout(() => packEmit({ state: 'nostore', total: packFiles().length }), 3000); return; }
-  if (settings.autoPack === false) return;
-  setTimeout(() => { checkPack().catch(() => { }); }, 6000);
-  addEventListener('online', () => { checkPack().catch(() => { }); });
-}
-let checking = false;
-async function checkPack() {
-  if (checking || !PACK) return; checking = true;
-  try {
-    const cache = await caches.open('sv-voices');
-    // (round O, owner: "does it load the voice pack every time? it should be once, unless there are new voices") once
-    // the whole pack is on the device, a start only looks at 16 files picked at random, says nothing and downloads
-    // nothing; the full check (listing all ~8,000 files) runs only for a new pack, or when a file has gone missing
-    if (settings.packSaved === packSig()) {
-      const all = packFiles(), pick = all.length <= 64 ? all : Array.from({ length: 16 }, () => all[Math.floor(Math.random() * all.length)]);
-      const found = await Promise.all(pick.map(u => cache.match(u).then(Boolean)));
-      if (found.every(Boolean)) { packEmit({ state: 'ready', quiet: true, known: true, total: all.length }); return; }
-    }
-    const have = new Set((await cache.keys()).map(r => r.url));
-    const missing = packFiles().filter(u => !have.has(new URL(u, location.href).href));
-    if (!missing.length) { settings.packSaved = packSig(); saveSettings(); packEmit({ state: 'ready', quiet: true, total: packFiles().length }); return; }
-    if (navigator.onLine === false) { packEmit({ state: 'waiting', left: missing.length }); return; }
-    let done = 0; packEmit({ state: 'loading', done, total: missing.length });
-    for (let i = 0; i < missing.length; i += 6) {
-      await Promise.all(missing.slice(i, i + 6).map(async u => { try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); done++; } } catch (e) { } }));
-      packEmit({ state: 'loading', done, total: missing.length });
-      if (navigator.onLine === false) { packEmit({ state: 'waiting', left: missing.length - done }); return; } // goes on when the internet is back
-    }
-    if (done >= missing.length) { settings.packSaved = packSig(); saveSettings(); packEmit({ state: 'ready' }); } else packEmit({ state: 'waiting', left: missing.length - done });
-  } finally { checking = false; }
-}
-const packSig = () => Object.keys(PACK.lines).length + ':' + (PACK.version || 1) + ':' + (PACK.made || '');
-// every file of the pack, the child's own language first
-function packFiles() {
-  const urls = [], langs = ['en', 'vi', 'zh', 'hi'];
-  // (round R) which language each line is in: `other` lists the lines that are not English, space-separated per
-  // language (half the size of the old `langOf`, which named every line's language; older packs still have that)
-  const other = new Map(); for (const [L, hs] of Object.entries(PACK.other || {})) for (const h of String(hs).split(' ')) if (h) other.set(h, L);
-  const langOf = h => (PACK.langOf && PACK.langOf[h]) || other.get(h) || (PACK.other ? 'en' : null);
-  for (const [h, slots] of Object.entries(PACK.lines)) { const L1 = langOf(h); for (const s of slots) for (const L of L1 ? [L1] : langs) urls.push(`voices/${L}/${s}/${h}.mp3`); }
-  const mine = settings.lang === 'vi' ? 'voices/vi/' : 'voices/en/'; urls.sort((a, b) => b.startsWith(mine) - a.startsWith(mine));
-  return urls;
-}
+// (round R item 12) the downloading itself is in js/voicepack.js, loaded only when it starts (a few seconds after the
+// first tap), so the files fetched before the title screen stay as small as they were (PERF-001)
+let packMod = null;
+const voicePackMod = () => packMod || (packMod = import('./voicepack.js'));
+// the area the child is in (a place id from the event bus, never a position): its voices download first
+let hereArea = null;
+events.on('PlayerEnteredVillage', e => { const a = String(e && e.villageId || '').split(':')[1]; if (a) hereArea = a; });
+function autoSavePack() { voicePackMod().then(m => m.startPack(PACK, packEmit, () => hereArea)).catch(() => { }); }
+// a grown-up's answer to "download the rest on mobile data?" (js/packbar.js, Grown-ups)
+export const allowMobilePack = yes => voicePackMod().then(m => m.allowMobilePack(yes)).catch(() => { });
 // an English line with Vietnamese words has its own recording with both voices (js/packhash.js lineHash); an older pack
 // without it still plays its all-English recording
 const packKey = (lang, text) => { if (!PACK) return null; const h = lineHash(lang, text); if (PACK.lines[h]) return h; const o = packHash(lang, text); return PACK.lines[o] ? o : null; };
@@ -331,15 +331,7 @@ const packSlot = (lang, text) => { const has = PACK && PACK.lines[packKey(lang, 
 const STYLE_RATE = { natural: 1, cute: 1.13, grandpa: .88 };
 const packRate = slot => { const k = speakerKind(), st = STYLE_RATE[settings.voiceStyle] || 1; if (!k) return st; let r = k.old ? .9 : k.kid ? 1.1 : 1; if (k.gender === 'm' && slot === 'f') r *= .86; return r * st; };
 // Download every file of the pack so it plays with no internet (Grown-ups → "Save voices for offline")
-export async function savePackOffline(progress) {
-  if (!PACK) return 0; const urls = packFiles();
-  let n = 0; const cache = await caches.open('sv-voices');
-  for (let i = 0; i < urls.length; i += 6) {
-    await Promise.all(urls.slice(i, i + 6).map(async u => { if (await cache.match(u)) { n++; return; } try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); n++; } } catch (e) { } }));
-    progress && progress(Math.min(urls.length, i + 6), urls.length);
-  }
-  return n;
-}
+export const savePackOffline = progress => voicePackMod().then(m => m.savePackOffline(progress));
 export const packUrl = (lang, text, slot) => `voices/${lang}/${slot}/${packKey(lang, text) || lineHash(lang, text)}.mp3`;
 async function playPack(lang, text, my) {
   const slot = packSlot(lang, text); if (!slot) return false;

@@ -27,7 +27,7 @@ test('TOTP matches RFC 6238 (SHA-1) and takes one step either side', () => {
   assert.equal(admins.totpStep(sec, 'abcdef', now), -1);
 });
 
-test('Studio sign-in: two steps, short passwords, lockout, log, sign everyone out, exe key, family photos', async () => {
+test('Studio sign-in: the owner by password, admins in two steps, short passwords, lockout, log, sign everyone out, exe key, family photos', async () => {
   process.env.STUDIO_PASSWORD = 'short-pw'; process.env.GITHUB_TOKEN = '';
   let clock = 1_800_000_000_000;
   const A = mem(), G = mem(), L = mem(), F = mem(), P = mem();
@@ -37,22 +37,23 @@ test('Studio sign-in: two steps, short passwords, lockout, log, sign everyone ou
   // a short STUDIO_PASSWORD is refused, with the reason
   let r = await call('/studio/api/login', { body: { password: 'short-pw' } }); assert.equal(r.status, 503); assert.match(r.j.error, /12 characters/);
   const PW = process.env.STUDIO_PASSWORD = 'a-long-owner-password-1';
-  // first sign-in: the secret to set up, finished with its first code
-  r = await call('/studio/api/login', { body: { password: PW } }); assert.equal(r.j.step, 'setup'); assert.match(r.j.otpauth, /^otpauth:\/\/totp\//);
-  const sec = r.j.secret;
-  r = await call('/studio/api/login', { body: { password: PW, code: '000000' === admins.totpNow(sec, clock) ? '111111' : '000000' } }); assert.equal(r.status, 401);
-  r = await call('/studio/api/login', { body: { password: PW, code: admins.totpNow(sec, clock) } }); assert.equal(r.status, 200); const C = r.cookie; assert.match(C, /^sv_studio=/);
+  // (owner, 11 Oct) the owner signs in with the password only; two-step is for admins
+  r = await call('/studio/api/login', { body: { password: PW } }); assert.equal(r.status, 200); const C = r.cookie; assert.match(C, /^sv_studio=/);
   assert.equal((await call('/studio/api/whoami', { cookie: C })).j.role, 'owner');
-  // the same code is never taken twice; without a code the password alone is not enough
-  assert.equal((await call('/studio/api/login', { body: { password: PW, code: admins.totpNow(sec, clock) } })).status, 401);
-  r = await call('/studio/api/login', { body: { password: PW } }); assert.equal(r.status, 401); assert.equal(r.j.step, 'code');
-  clock += 30e3; assert.equal((await call('/studio/api/login', { body: { password: PW, code: admins.totpNow(sec, clock) } })).status, 200);
+  assert.equal((await call('/studio/api/login', { body: { password: 'not-the-owner-password' } })).status, 401);
   // admins: 12+ characters
   const X = { 'X-Studio': '1' };
   assert.equal((await call('/studio/api/admins/save', { body: { name: 'ba.nam', password: 'eleven-char', role: 'viewer' }, cookie: C, headers: X })).status, 400);
   assert.equal((await call('/studio/api/admins/save', { body: { name: 'ba.nam', password: 'twelve-chars', role: 'viewer' }, cookie: C, headers: X })).status, 200);
-  r = await call('/studio/api/login', { body: { name: 'ba.nam', password: 'twelve-chars' } }); assert.equal(r.j.step, 'setup');
-  r = await call('/studio/api/login', { body: { name: 'ba.nam', password: 'twelve-chars', code: admins.totpNow(r.j.secret, clock) } }); assert.equal(r.status, 200); const V = r.cookie;
+  // an admin's first sign-in: the secret to set up, finished with its first code
+  r = await call('/studio/api/login', { body: { name: 'ba.nam', password: 'twelve-chars' } }); assert.equal(r.j.step, 'setup'); assert.match(r.j.otpauth, /^otpauth:\/\/totp\//);
+  const sec = r.j.secret;
+  r = await call('/studio/api/login', { body: { name: 'ba.nam', password: 'twelve-chars', code: '000000' === admins.totpNow(sec, clock) ? '111111' : '000000' } }); assert.equal(r.status, 401);
+  r = await call('/studio/api/login', { body: { name: 'ba.nam', password: 'twelve-chars', code: admins.totpNow(sec, clock) } }); assert.equal(r.status, 200); const V = r.cookie;
+  // the same code is never taken twice; without a code the password alone is not enough
+  assert.equal((await call('/studio/api/login', { body: { name: 'ba.nam', password: 'twelve-chars', code: admins.totpNow(sec, clock) } })).status, 401);
+  r = await call('/studio/api/login', { body: { name: 'ba.nam', password: 'twelve-chars' } }); assert.equal(r.status, 401); assert.equal(r.j.step, 'code');
+  clock += 30e3; assert.equal((await call('/studio/api/login', { body: { name: 'ba.nam', password: 'twelve-chars', code: admins.totpNow(sec, clock) } })).status, 200);
   assert.equal((await call('/studio/api/players', { cookie: V })).status, 200);
   assert.equal((await call('/studio/api/log', { cookie: V })).status, 403);
   // lockout: ten wrong passwords lock the account (and the connection) for 15 minutes, even with the right password

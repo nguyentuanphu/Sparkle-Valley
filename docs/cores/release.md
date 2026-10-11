@@ -18,8 +18,8 @@ when the owner says so.
 3. Record new voices (`tools/make-voice-pack.mjs --engine azure`, see Voice & Audio).
 4. Run the **full suite** (`node run.mjs`, about an hour; one browser run at a time). Fix or send back every failure.
 5. Update `HANDOFF.md` (round history and checks table) and `docs/ARCHITECTURE.md` §9 if rules changed (`node tools/rules-from-doc.mjs`).
-6. Packages: the Netlify zip (`git archive --format=zip -o <dir>/sparkle-valley-netlify-rNN-game.zip HEAD index.html sw.js manifest.webmanifest netlify.toml css js fonts icons vendor videos content`), the local bundle in parts (`tools/make-bundle.sh <dir> --parts`), the Studio exe (`bash studio/build-exe.sh`).
-7. Report to the owner: what changed (plain words), how it was tested, the packages, times in AEST.
+6. Packages: the Netlify zip (`git archive --format=zip -o <dir>/sparkle-valley-netlify-rNN-game.zip HEAD index.html sw.js manifest.webmanifest netlify.toml css js fonts icons vendor videos content`). **No local bundle** (owner, 11 Oct: the offline files are on GitHub and the Google Drive mirror). The Studio exe when `studio/` changed (`bash studio/build-exe.sh`).
+7. Report to the owner: what changed (plain words), how it was tested, the Netlify zip, times in Sydney time (AEDT/AEST).
 8. Ask one pop-up question per round: “yes, deploy”. It covers pushing the release branch and merging it into main
    (which makes Netlify publish), for that round only (owner, 10 Oct: Release is the master release; helper chats push
    their own branches without asking).
@@ -38,8 +38,8 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
   to `bugfix/<core>-<issue>` branches with draft pull requests, without asking; big bugs wait for the owner's "go". Release
   merges those pull requests in a round like any core branch (they close their issue), and deploying still needs
   "yes, deploy". Robot runs use the Claude account in the GitHub secret `CLAUDE_CODE_OAUTH_TOKEN` or
-  `CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY` (backup: `CLAUDE_CODE_OAUTH_TOKEN_BACKUP`). The robot runs every 30 minutes
-  (owner, 10 Oct).
+  `CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY` (backup: `CLAUDE_CODE_OAUTH_TOKEN_BACKUP`). The robot starts the moment a bug
+  is filed (5-minute backup timer; owner, 10 Oct).
 - 10 Oct AEST: Release is the master release of all work. Helper chats push their own branches without asking; Release collects every branch, merges, runs the full suite, reports, and asks one pop-up "yes, deploy" per round, which covers pushing and merging into `main`.
 - 10 Oct AEST: every question to the owner is a pop-up question with clickable choices (`CLAUDE.md`, HANDOFF rule 19).
 - 10 Oct AEST: Release checks every branch once an hour (routine "Release: hourly branch collection", about 26 minutes past each hour): fetch, read each branch's Now line, merge the core branches marked "ready for Release" into the Release branch locally and run `types unit arch rules`; never pushes or merges into main without the round's "yes, deploy". `studio-draft` and old `claude/*` branches are merged only after asking the owner.
@@ -58,6 +58,15 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - 10 Oct AEST (r56 report): "yes, deploy" for r56. T1 goes out before the online map-version check (online play is off until a grown-up turns it on; devices update within days); the map version in the online hello goes into r57.
 - 10 Oct AEST: PERF-001 (start-up download) should measure the packed copy the website serves (2.6 MB), not the plain scripts; Analytics & Infra changes the check.
 - 10 Oct AEST: the Google Drive mirror and the voice relay (TURN) are done; stop asking about them.
+- **Tidy streets (11 Oct AEDT):** stalls, kiosks and sellers follow the Concept D street rules (one market row per place,
+  one side of the main street, facing it, spacing rules checked by `validate.js`); stage T1b in `ROUND-T.md`, built by the
+  robot chat after r57, before T2.
+- **No local bundle (11 Oct AEDT):** the round report gives the Netlify zip but no local bundle; the owner gets the offline
+  files from GitHub and the Google Drive mirror.
+- 11 Oct AEDT: Release collects every 5 minutes (session job, hourly routine as backup): merges every branch marked "ready for Release" and the robot's bugfix branches whose issue says fixed-on-branch (Kid UI ones together), runs the full suite, looks at phone, tablet and computer screenshots, then reports and asks one "yes, deploy". Messages to the owner only for a round report, a yes-deploy question or a blocker. Times in Sydney time.
+- 11 Oct AEDT: two Release chats: the robot chat runs r57 (robot fixes #27 #28 #29 #31 #41 and the robot workflows); this round chat runs r58 on top of it.
+- 11 Oct, 9:30 am AEDT: owner: hold both r57 and r58 for further advice; Release keeps collecting and testing locally, no deploy.
+
 - (10 Oct AEST) Round T1 (r56): "yes, push" (pull request #21, with T0); deploy "not yet". The Google Drive mirror and the voice relay (TURN): neither set up yet.
 - (10 Oct AEST) T2 "go", with: Chùa Cầu is a footbridge for walking beside the Vietnam road (the road crosses the Hội An canal on a plain bridge next to it); the Brisbane River, the Yarra and the Murray join the main river (plain bridges where they pass the ring road); road colours as tinted asphalt (red Vietnam, orange Australia, purple to the mountains, blue along the coast), white lines kept.
 - (10 Oct AEST, evening) The start-up speed ratchet (`worldMs` in `tests/perf-baseline.json`): re-measure on today's slower test machine and set it to r56's median (6600 ms; ten second starts each side by side, T2 (r58) median 6850 ms), still +25 % allowed.
@@ -66,3 +75,5 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - (11 Oct AEST) r59 (T3, full suite 90/90): "yes, deploy" for T2 (r58) and T3 (r59) together.
 - (11 Oct AEST) The next release is r60 (whichever round ships next, Round T4 or the Play round); r57 is no longer kept for the Play round.
 - (11 Oct AEST) r60 is Round T4a (World: road surfaces by region, water colours and foam, reeds, footsteps), built by Release; T4b (signposts, name tags, the drawn Pad map) goes to a separate Kid UI chat (brief `docs/cores/tasks/kid-ui-t4b.md`). Vietnam's roads get yellow centre dashes (Australia stays white, with kerbs); footsteps use the game's own sound maker for now (Voice & Audio may replace them).
+- 11 Oct AEDT: owner: r57 and r58 reach the game inside r60 (r59 already live); "yes, deploy" for r60 as soon as its full suite is green (Release fixes failures first, then deploys without a second question).
+- 11 Oct AEDT: r60 deployed with the `startup` check red (96/97 green): the slower start came with r59 (Round T) and the bigger voice manifest with voice by area; World and Voice & Audio fix them (board). Owner's choice.
