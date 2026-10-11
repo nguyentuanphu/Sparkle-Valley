@@ -188,3 +188,22 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   `chapter2`, `chapter3`, `story`, `phone`, `contract`: 27 of 27 (11 Oct 06:50 AEST).
 - Screenshots looked at (11 Oct AEST): Bag with its small shop button, the shop (7 tabs) and the wardrobe, for a big kid and an
   under-5, on phone 390x760, tablet 820x1180 and computer 1280x800.
+- **Item 2, Chapter 3 finished (owner's go, 11 Oct AEST):** 238 missing recordings made with Azure (Chapter 3's words, Chi's
+  word questions, the festival calendar's "today" lines and others; no line has a child's name); Chi, Jack and Ruby's looks
+  can come from Studio's content pack (`looks`, `lookOf` in `js/content/chapter3sydney.js`; the Studio page is asked of
+  Studio on the board); every Chapter 3 step looked at on phone 390x760, tablet 820x1180 and computer 1280x800 for an
+  under-5 and a big kid (nothing to fix). Not recorded: the festival lines with a number of days (any number), which use
+  the phone's voice as before.
+- **Full suite, 11 Oct 09:53 AEST, commit dc55967:** 88 of 88 passed (multiplayer, meet, netgames, together, cloud, knock
+  skipped: no local PeerJS or MQTT server; they report as passed).
+
+## What is left for Play (handover, 11 Oct 1:30 pm AEST; this chat stopped here at the owner's request)
+- Done and pushed on `core/play` (e1c9552): owner's items 1 and 2 (see the notes above), board says "ready for Release".
+- Item 3 (ongoing): any new GitHub issue labelled `play` from the Front Desk (none open on 11 Oct; #29 is fixed on `core/play`).
+- Release → Play (board, T1/T3): festival `where` ids for the new places in `js/content/festcal.js`. `hoian` is in
+  `js/content/map.js` now (a site, its old town comes later); `vungtau` is not there yet. Add them once Round T's places exist
+  as festival places (`PLACES()` in `js/festivals.js` reads cities and the old places only), then run `festivals festcal`.
+- Waiting on other cores (on the board, nothing for Play to build): Studio's "Story characters" page writing `looks`; World's
+  real spots in Hà Nội and Sydney for chapters 2 and 3 (Round T); Kid UI's rest of #32 and the speech box's slide-in
+  (`phone` flake); Release merging `core/play` (PR #43 or `core/play`, not both) and the robots' `.bugfix/result.md` conflict.
+- Not recorded on purpose: festival calendar lines with a number of days (any number), which use the phone's voice.
