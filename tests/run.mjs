@@ -2852,6 +2852,20 @@ await check('ride', async () => {
   return `${r.drive} parked cars and motorbikes to drive, ${r.bike} bicycles, ${r.rides} buses, trams and taxis to ride (big kid paid ${r.big.paid}, under-5 free), ${r.stops} bus stops; no lifts from strangers`;
 });
 
+await check('signs', async () => {
+  // (Round U, owner 11 Oct: picture signposts) a post at the corner of every junction, off the roads, with a board for each
+  // way showing the place's picture and its name in the chosen language (js/signposts.js)
+  const out = [];
+  for (const lang of ['en', 'vi']) {
+    const P = await open(b, { w: 800, h: 600, lang }); await clear(P.page);
+    const r = await P.page.evaluate(async () => { const W = await import('/js/world.js'), S = __sv.world.signposts || []; return { n: S.length, ways: S.reduce((a, s) => a + s.ways.length, 0), onRoad: S.filter(s => W.edgeDist(s.x, s.z) < .8).length, empty: S.filter(s => !s.ways.length || s.ways.some(k => !k)).length }; });
+    if (r.n < 10 || r.ways < r.n || r.onRoad || r.empty) out.push(lang + ' ' + JSON.stringify(r));
+    const errs = P.errors; await P.ctx.close(); if (errs.length) out.push(errs.join(' '));
+  }
+  ok(!out.length, out.join(' | '));
+  return 'signposts at the junctions, off the roads, each board a place with its picture, in both languages';
+});
+
 await check('bilingual', async () => {
   // (Round U, owner 11 Oct: Grandma Huệ spoke Vietnamese with English set) no English slot of an [English, Vietnamese]
   // pair (an array, T(…, …) or { en, vi }) holds a Vietnamese sentence; names, songs and sayings that stay Vietnamese
