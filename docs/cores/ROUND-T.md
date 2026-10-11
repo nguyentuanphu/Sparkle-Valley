@@ -169,6 +169,8 @@ Every stage ends with the full suite green, `node tests/world-audit.mjs` clean a
   - Online friends on different builds: see §4.
 
 ### T1b: Tidy streets (owner, 11 Oct AEDT; robot chat `claude/peaceful-hopper-un7oym`, after r57; T2 waits for it)
+**Status (11 Oct AEDT):** measured on r60 (T2 and T3 went first); findings, sky views and the measuring scripts in
+`docs/t1b/README.md`. Plan shown to the owner, not yet "go"; continued in a new chat.
 The owner saw r56: stalls, kiosks and sellers stand cramped next to houses and roads, against the Concept D rules ("Kiosks
 and stalls stand in one row on one side of the main street, all facing it. No stall alone in a field"; "Food stalls, toy
 stalls and the shop are grouped in market rows near squares. Gánh vendors walk set loops between them").
