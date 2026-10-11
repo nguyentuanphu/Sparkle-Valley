@@ -53,7 +53,7 @@ export class Hud {
         <button class="dk bag"><span>${ICONS.bag}</span><small>${T('Bag', 'Ba lô')}</small><kbd class="kb">B</kbd></button>
         <button class="dk voicecmd" hidden><span>${ICONS.ask}</span><small>${T('Ask', 'Hỏi')}</small><kbd class="kb">K</kbd></button>
         <button class="dk chat"><span>${ICONS.talk}</span><small>${T('Talk', 'Nói')}</small><kbd class="kb">T</kbd></button>
-        <button class="dk call" hidden><span>${ICONS.call}</span><small>${T('Call', 'Gọi')}</small><kbd class="kb">C</kbd></button>
+        <button class="dk call" hidden><span>${ICONS.callOff}</span><small>${T('Mic off', 'Micrô tắt')}</small><kbd class="kb">C</kbd></button>
         <button class="dk mus"><span>${ICONS.music}</span><small>${T('Music', 'Nhạc')}</small><kbd class="kb">N</kbd></button>
         <button class="dk snd"><span>${ICONS.sound}</span><small>${T('Sound', 'Tiếng')}</small><kbd class="kb">O</kbd></button>
       </div>
@@ -133,7 +133,7 @@ export class Hud {
     b.innerHTML = html; b.classList.toggle('wait', !onTap);
     b.onpointerdown = e => { e.preventDefault(); e.stopPropagation(); if (onTap) { b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit'); onTap(); } };
   }
-  setCall(on, talking, muted) { const b = this.q('.dk.call'); b.hidden = !on; b.querySelector('span').innerHTML = muted ? ICONS.callOff : ICONS.call; b.classList.toggle('talking', !!talking); }
+  setCall(on, talking, muted) { const b = this.q('.dk.call'); b.hidden = !on; b.querySelector('span').innerHTML = muted ? ICONS.callOff : ICONS.call; b.querySelector('small').textContent = muted ? T('Mic off', 'Micrô tắt') : T('Mic on', 'Micrô bật'); b.classList.toggle('talking', !!talking); b.classList.toggle('mute', !!muted); }   // (r63: it says whether the microphone is on)
 
   update(dt, camera, fogMap, markers) {
     const h = this.hero, p = h.profile;
