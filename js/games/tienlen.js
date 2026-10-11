@@ -208,13 +208,14 @@ register({
   }
 });
 
-// Tiến Lên with friends online (round G): 2 to 4 children, each on their own device, and the friendly computer
-// players fill the table to 3 if needed. The same deal everywhere (shuffled from the game's own code), each child sees
-// only their own cards. A child's play travels as one number (which of their cards, or 0 for pass); the computer
-// players think the same way on every device, so they need no messages. One hand: the first to play all cards wins.
+// Tiến Lên with friends online (round G): 2 to 4 children, each on their own device (r63, owner: games with friends are
+// only between the players, so no computer players fill the table any more; with two, each gets 13 cards and the rest
+// stay in the deck). The same deal everywhere (shuffled from the game's own code), each child sees only their own
+// cards. A child's play travels as one number (which of their cards, or 0 for pass). One hand: the first to play all
+// cards wins.
 async function tienlenOnline(api) {
-  const O = api.online, humans = O.names.length, seats = Math.max(3, humans), BOTS = ['Anh Ba', 'Con Vật'];
-  const names = [...O.names, ...BOTS.slice(0, seats - humans)], me = O.mine, r = stream('tienlen/' + O.seed);
+  const O = api.online, humans = O.names.length, seats = humans;
+  const names = [...O.names], me = O.mine, r = stream('tienlen/' + O.seed);
   const RANKS = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'], SUITS = ['♠', '♣', '♦', '♥'];
   const deck = []; for (let k = 0; k < 13; k++) for (let su = 0; su < 4; su++) deck.push({ r: k, s: su, v: k * 4 + su });
   const sh = r.shuffle(deck), hands = names.map((_, i) => sh.slice(i * 13, i * 13 + 13).sort((a, b) => a.v - b.v));
@@ -256,14 +257,10 @@ async function tienlenOnline(api) {
         bHint.onclick = () => { const h = choose(hands[me], table && table.k, { strong: true }); sel = new Set(h ? h.map(c => c.v) : []); draw(); api.sfx.tap(); };
       });
       if (api.closed) return; sel = new Set(); O.move(step, cs ? enc(me, cs) : 0);
-    } else if (turn < humans) {
+    } else {
       const m = await O.next(step, turn); if (api.closed) return;
       if (m == null) { api.say('A friend left the game.', 'Một bạn đã rời trò chơi.'); await new Promise(r2 => setTimeout(r2, 1500)); return api.win({ title: T('Good game!', 'Chơi vui lắm!') }); }
       cs = m ? dec(turn, m) : null; if (cs && !beats(classify(cs), table && table.k)) cs = null;
-    } else {
-      await new Promise(r2 => setTimeout(r2, 900)); if (api.closed) return;
-      cs = choose(hands[turn], table && table.k, { strong: false, others: Math.min(...others().filter(j => j !== turn).map(j => hands[j].length || 99)) });
-      if (!cs && !table) cs = [hands[turn][0]];
     }
     step++;
     if (cs && cs.length) play(turn, cs); else passed.add(turn);
