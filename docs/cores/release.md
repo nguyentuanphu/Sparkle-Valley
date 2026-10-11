@@ -23,7 +23,7 @@ when the owner says so.
 8. Ask one pop-up question per round: “yes, deploy”. It covers pushing the release branch and merging it into main
    (which makes Netlify publish), for that round only (owner, 10 Oct: Release is the master release; helper chats push
    their own branches without asking).
-9. Ask about the Google Drive mirror until the owner says it is set up.
+9. (Done 10 Oct AEST: the Google Drive mirror and the voice relay are set up; no more reminders.)
 10. After deploying, check the live deploy in Netlify and say when it went live (AEST).
 
 ## Hard rules (§9.1)
@@ -58,3 +58,9 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - 10 Oct AEST (r56 report): "yes, deploy" for r56. T1 goes out before the online map-version check (online play is off until a grown-up turns it on; devices update within days); the map version in the online hello goes into r57.
 - 10 Oct AEST: PERF-001 (start-up download) should measure the packed copy the website serves (2.6 MB), not the plain scripts; Analytics & Infra changes the check.
 - 10 Oct AEST: the Google Drive mirror and the voice relay (TURN) are done; stop asking about them.
+- (10 Oct AEST) Round T1 (r56): "yes, push" (pull request #21, with T0); deploy "not yet". The Google Drive mirror and the voice relay (TURN): neither set up yet.
+- (10 Oct AEST) T2 "go", with: Chùa Cầu is a footbridge for walking beside the Vietnam road (the road crosses the Hội An canal on a plain bridge next to it); the Brisbane River, the Yarra and the Murray join the main river (plain bridges where they pass the ring road); road colours as tinted asphalt (red Vietnam, orange Australia, purple to the mountains, blue along the coast), white lines kept.
+- (10 Oct AEST, evening) The start-up speed ratchet (`worldMs` in `tests/perf-baseline.json`): re-measure on today's slower test machine and set it to r56's median (6600 ms; ten second starts each side by side, T2 (r58) median 6850 ms), still +25 % allowed.
+- (11 Oct AEST) Round T2 (built as r57, full suite 86/86): push "not yet"; deploy "not yet". The Google Drive mirror and the voice relay (TURN): both set up (no more reminders).
+- (11 Oct AEST) "Yes, push" for T2. The version clash with the Play round: the other round keeps r57, T2 becomes r58. T3 is one release (built in two steps: Vũng Tàu and the mountains, then the plots), "go with the plan".
+- (11 Oct AEST) r59 (T3, full suite 90/90): "yes, deploy" for T2 (r58) and T3 (r59) together.
