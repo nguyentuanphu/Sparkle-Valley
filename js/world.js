@@ -570,7 +570,8 @@ export function createWorld(scene, quality) {
   waterMat.customProgramCacheKey = () => 'svwater';
   const water = new THREE.Mesh(new THREE.PlaneGeometry(SIZE + 400, SIZE + 400).rotateX(-Math.PI / 2), waterMat); water.position.y = WATER; scene.add(water);
   W.updaters.push((dt, t) => { wtex.offset.set(t * .01, t * .006); WU.uTime.value = t; });
-  W.waterMap = cv => { const tx = new THREE.CanvasTexture(cv); tx.minFilter = tx.magFilter = THREE.LinearFilter; tx.generateMipmaps = false; WU.uWaterMap.value = tx; WU.uReady.value = 1; };
+  // (row 0 of the water picture is the north edge, as vWXZ reads it, so it is not flipped)
+  W.waterMap = cv => { const tx = new THREE.CanvasTexture(cv); tx.minFilter = tx.magFilter = THREE.LinearFilter; tx.generateMipmaps = false; tx.flipY = false; WU.uWaterMap.value = tx; WU.uReady.value = 1; };
 
   // ---------- trees & plants (instanced) ----------
   const geos = {
@@ -994,23 +995,36 @@ export function createWorld(scene, quality) {
   return W;
 }
 
-// Paint a top-down picture of the world for the map and minimap.
 // (round T4a) the water map: rgb the colour of the water at each spot of the valley (each river its own, deeper darker),
 // alpha how near the shore it is (0.2 deep … 1 at the water's edge: the foam line). Painted once, kept on the device.
 const WATER_COLOURS = { hong: '#a8714c', mekong1: '#8f8a58', mekong2: '#8f8a58', saigon_r: '#5f8c8f', brisbane_r: '#5f8f86', yarra: '#7a8462', murray: '#7c8660',
   hoguom: '#5d9a72', billabong: '#6c8c66', lake: '#3fb0c6', sydney_harbour: '#2f7fbf', hoian_canal: '#4f9aa6', sea: '#2a7fc0' };
 export function paintWater(size = 256) {
   const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d');
-  const img = x.createImageData(size, size), d = img.data, step = SIZE / size, base = new THREE.Color('#2f8fc8'), col = new THREE.Color();
+  const img = x.createImageData(size, size), d = img.data, step = SIZE / size;
+  const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)), cols = {}, base = rgb('#2f8fc8');   // sRGB bytes, as the shader reads them
+  for (const k in WATER_COLOURS) cols[k] = rgb(WATER_COLOURS[k]);
+  // which water a spot belongs to: the lake and the ponds first (a river running into them stops at their shore), then the
+  // nearest river, then the sea
+  const which = (wx, wz) => { if (dist2(wx, wz, LAKE.x, LAKE.z) < LAKE.r + 3) return 'lake'; for (const P of PONDS) if (dist2(wx, wz, P.x, P.z) < P.r + 3) return P.id;
+    if (riverDist(wx, wz) < 30 && RV_NEAR.id) return RV_NEAR.id; return wz > COAST.z - 30 ? 'sea' : null; };
+  const col = new Float32Array(size * size * 3);
   for (let j = 0; j < size; j++) for (let i = 0; i < size; i++) {
     const wx = -HALF + (i + .5) * step, wz = -HALF + (j + .5) * step, h = heightAt(wx, wz), deep = Math.max(0, WATER - h);
-    const id = waterAt(wx, wz, 40) || (wz > COAST.z - 30 ? 'sea' : null);
-    col.set(WATER_COLOURS[id] || base); col.multiplyScalar(1 - clamp(deep / 7, 0, 1) * .3);
-    const shore = h >= WATER ? 1 : 1 - smooth(0, 1.5, deep), k = (j * size + i) * 4;
-    d[k] = col.r * 255; d[k + 1] = col.g * 255; d[k + 2] = col.b * 255; d[k + 3] = (.2 + .8 * shore) * 255;
+    const cc = cols[which(wx, wz)] || base, dk = 1 - clamp(deep / 7, 0, 1) * .3, k = j * size + i;
+    col[k * 3] = cc[0] * dk; col[k * 3 + 1] = cc[1] * dk; col[k * 3 + 2] = cc[2] * dk;
+    d[k * 4 + 3] = (.2 + .8 * (h >= WATER ? 1 : 1 - smooth(0, 1.5, deep))) * 255;   // alpha: how near the shore (the foam line)
   }
+  // soften where two waters meet (a river into the sea, two channels joining): a small box blur of the colours, twice
+  const tmp = new Float32Array(col.length), R = 2;
+  for (let pass = 0; pass < 2; pass++) for (const [src, dst, dx, dy] of [[col, tmp, 1, 0], [tmp, col, 0, 1]]) for (let j = 0; j < size; j++) for (let i = 0; i < size; i++) {
+    let r = 0, g = 0, bl = 0, n = 0; for (let o = -R; o <= R; o++) { const ii = i + o * dx, jj = j + o * dy; if (ii < 0 || jj < 0 || ii >= size || jj >= size) continue; const q = (jj * size + ii) * 3; r += src[q]; g += src[q + 1]; bl += src[q + 2]; n++; }
+    const q = (j * size + i) * 3; dst[q] = r / n; dst[q + 1] = g / n; dst[q + 2] = bl / n;
+  }
+  for (let k = 0; k < size * size; k++) { d[k * 4] = col[k * 3]; d[k * 4 + 1] = col[k * 3 + 1]; d[k * 4 + 2] = col[k * 3 + 2]; }
   x.putImageData(img, 0, 0); return c;
 }
+// Paint a top-down picture of the world for the map and minimap.
 export function paintMap(size = 256) {
   const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d');
   const img = x.createImageData(size, size), d = img.data, step = SIZE / size;

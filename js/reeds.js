@@ -13,6 +13,7 @@ export function createReeds(G) {
   const piers = []; for (const F of (G.ferries && G.ferries.ferries) || []) for (const s of F.stops || []) { const l = s.dock && s.dock.pier && s.dock.pier.land; if (l) piers.push(l); }
   const free = (x, z) => { const rd = roadDist(x, z); if (rd.road && rd.d < rd.road.w / 2 + 2.5) return false;
     if (bridgeAt(x, z, 12, 8) || levelAt(x, z) !== null || piers.some(p => dist2(x, z, p.x, p.z) < 8)) return false;
+    if (G.world.platforms.some(b => x > b.x0 - 2 && x < b.x1 + 2 && z > b.z0 - 2 && z < b.z1 + 2)) return false;   // every pier and deck, end to end
     if (LOTS.some(L => dist2(x, z, L.x, L.z) < 9) || G.interactables.some(it => Number.isFinite(it.x) && dist2(x, z, it.x, it.z) < 3)) return false;
     return Math.abs(x) < 236 && Math.abs(z) < 236; };
   // from a point in the water, walk out along (ux, uz) to the shore: the first spot at least 5 cm above the water
@@ -20,7 +21,7 @@ export function createReeds(G) {
   const bank = (x, z, ux, uz, max, quiet) => {
     const s = shore(x, z, ux, uz, max); if (!s) return;
     if (rnd() < .5) { const j = rnd() * 1.2, px = s[0] + ux * j, pz = s[1] + uz * j, h = heightAt(px, pz); if (h < WATER + .9 && free(px, pz)) reeds.push([px, h, pz, rnd() * 6.3, .8 + rnd() * .5]); }
-    if (quiet && rnd() < .3) { const j = 1 + rnd() * 1.5, px = s[0] - ux * j, pz = s[1] - uz * j; if (heightAt(px, pz) < WATER - .3 && free(px, pz)) lilies.push([px, WATER + .02, pz, rnd() * 6.3, .8 + rnd() * .5]); }
+    if (quiet && rnd() < .3) { const j = 1 + rnd() * 1.5, px = s[0] - ux * j, pz = s[1] - uz * j; if (heightAt(px, pz) < WATER - .3 && free(px, pz)) lilies.push([px, WATER + .04, pz, rnd() * 6.3, .8 + rnd() * .5]); }
   };
   for (const R of RIVERS) {
     const quiet = QUIET.has(R.id);
@@ -41,7 +42,7 @@ export function createReeds(G) {
   for (const [geo, list, name] of [[reedGeo, reeds, 'reeds'], [lilyGeo, lilies, 'hyacinth']]) {
     if (!list.length) continue;
     const mesh = new THREE.InstancedMesh(geo, toonVC(), list.length), m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
-    list.forEach(([x, y, z, rot, s], i) => { q.setFromAxisAngle(up, rot); m.compose(new THREE.Vector3(x, y - .05, z), q, new THREE.Vector3(s, s, s)); mesh.setMatrixAt(i, m); });
+    list.forEach(([x, y, z, rot, s], i) => { q.setFromAxisAngle(up, rot); m.compose(new THREE.Vector3(x, name === 'reeds' ? y - .05 : y, z), q, new THREE.Vector3(s, s, s)); mesh.setMatrixAt(i, m); });
     mesh.instanceMatrix.needsUpdate = true; mesh.computeBoundingSphere(); mesh.userData[name] = true; scene.add(mesh); out.push(mesh);
   }
   return { reeds: reeds.length, hyacinth: lilies.length, meshes: out };
