@@ -1176,6 +1176,14 @@ await check('chapter2', async () => {
   };
   const little = await play('little'), big = await play('big');
   const bad = [...little.out.map(x => 'under-5: ' + x), ...big.out.map(x => 'big kid: ' + x)];
+  // (owner, 10 Oct: "Chi's look can be changed in Studio") Studio's looks change Chi, Jack and Ruby; a bad value keeps the
+  // chapter's own look, and Bà Năm keeps hers
+  { const P = await open(b, { w: 800, h: 600 }); const L = await P.page.evaluate(async () => { const { lookOf } = await import('/js/content/chapter3sydney.js');
+      return { chi: lookOf('chi'), set: lookOf('chi', { chi: { color: '#ff0000', style: 'dress', hairStyle: 'nope', hair: 'red' } }), nam: lookOf('nam', { nam: { color: '#ff0000' } }), bad: lookOf('jack', 'x') }; });
+    await P.ctx.close();
+    if (L.chi.hairStyle !== 'ponytail' || L.chi.color !== '#ffd23f') bad.push('Chi\'s own look changed: ' + JSON.stringify(L.chi));
+    if (L.set.color !== '#ff0000' || L.set.style !== 'dress' || L.set.hairStyle !== 'ponytail' || L.set.hair !== L.chi.hair) bad.push('Studio\'s look for Chi was not used safely: ' + JSON.stringify(L.set));
+    if (L.nam.color === '#ff0000' || L.bad.color !== '#3b6fe0') bad.push('Bà Năm or a bad pack changed a look'); }
   if (bad.length) throw new Error(bad.join('; '));
   return `under-5: ${little.steps} steps (${little.counted} turtles, the companion lit the way); big kid: ${big.steps} steps (Ô ăn quan, bún chả by hand, ${big.counted} turtles and a question, clues); rope, film (2 pages), Cầu Thê Húc lit, parade, keepsake, new trick, golden turtle for the big kid; then "${big.after}"`;
 });
@@ -1299,8 +1307,16 @@ await check('chapter3', async () => {
   };
   const little = await play('little'), big = await play('big');
   const bad = [...little.out.map(x => 'under-5: ' + x), ...big.out.map(x => 'big kid: ' + x)];
+  // (owner, 10 Oct: "Chi's look can be changed in Studio") Studio's looks change Chi, Jack and Ruby; a bad value keeps the
+  // chapter's own look, and Bà Năm keeps hers
+  { const P = await open(b, { w: 800, h: 600 }); const L = await P.page.evaluate(async () => { const { lookOf } = await import('/js/content/chapter3sydney.js');
+      return { chi: lookOf('chi'), set: lookOf('chi', { chi: { color: '#ff0000', style: 'dress', hairStyle: 'nope', hair: 'red' } }), nam: lookOf('nam', { nam: { color: '#ff0000' } }), bad: lookOf('jack', 'x') }; });
+    await P.ctx.close();
+    if (L.chi.hairStyle !== 'ponytail' || L.chi.color !== '#ffd23f') bad.push('Chi\'s own look changed: ' + JSON.stringify(L.chi));
+    if (L.set.color !== '#ff0000' || L.set.style !== 'dress' || L.set.hairStyle !== 'ponytail' || L.set.hair !== L.chi.hair) bad.push('Studio\'s look for Chi was not used safely: ' + JSON.stringify(L.set));
+    if (L.nam.color === '#ff0000' || L.bad.color !== '#3b6fe0') bad.push('Bà Năm or a bad pack changed a look'); }
   if (bad.length) throw new Error(bad.join('; '));
-  return `under-5: ${little.steps} steps (${little.rounds} picture words, the companion flew high to lead); big kid: ${big.steps} steps (${big.rounds} Aussie words, ferries, cricket, clues); rope, film (2 pages, the child starts the fireworks), Opera House lit, fireworks, keepsake, new trick, koala for the big kid; then "${big.after}"`;
+  return `under-5: ${little.steps} steps (${little.rounds} picture words, the companion flew high to lead); big kid: ${big.steps} steps (${big.rounds} Aussie words, ferries, cricket, clues); rope, film (2 pages, the child starts the fireworks), Opera House lit, fireworks, keepsake, new trick, koala for the big kid; Studio can change Chi, Jack and Ruby's looks; then "${big.after}"`;
 });
 await check('yard', async () => {
   // (round R, owner: bà Huệ and ông Nghi's quest chain) the yard stands in an open spot near the Huệ Nghi shop; the side

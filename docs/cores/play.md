@@ -180,3 +180,11 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   from today (10 Oct is three weeks before), on `main` and here alike.
 - Screenshots looked at: the `phone` check's phone, tablet and computer views (passed); the chapter 3 word panel (pictures
   for an under-5, words for a big kid) and the festival film pages during the checks.
+- **Full suite, 11 Oct 07:22 AEST, commit 9483edf** (`core/play` with `bugfix/play-29` and `main` 45feb75+ merged in): 86 of 88
+  passed. Failed once and passed on a re-run straight after (11 Oct 08:30 AEST): `phone` (the speech box's slide-in puts
+  "Chơi!" / "Để sau" off screen for 0.3 s; already on the board for Kid UI) and `hoilang` ("the child was not told the festival
+  is on": the surprise-gift and passport toasts came at the same moment). Skipped (no local PeerJS or MQTT server; they report as
+  passed): multiplayer, meet, netgames, together, cloud, knock. `parents` passed. Play's own checks with `festivals`, `festcal`,
+  `chapter2`, `chapter3`, `story`, `phone`, `contract`: 27 of 27 (11 Oct 06:50 AEST).
+- Screenshots looked at (11 Oct AEST): Bag with its small shop button, the shop (7 tabs) and the wardrobe, for a big kid and an
+  under-5, on phone 390x760, tablet 820x1180 and computer 1280x800.
