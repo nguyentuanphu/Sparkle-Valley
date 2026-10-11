@@ -240,10 +240,12 @@ export function heightAt(x, z) {
   // (round T2) ponds: a round hollow with a gentle shore (after the places' flat ground, so a pond by a city stays wet)
   let dpd = 1e9; for (const P of PONDS) { const d = dist2(x, z, P.x, P.z); if (d > P.r + 8) continue; dpd = Math.min(dpd, d - P.r); h = lerp(h, Math.min(h, 1), 1 - smooth(P.r, P.r + 6, d)); h = lerp(h, -2.4, 1 - smooth(P.r * .55, P.r, d)); if (P.islet) h = lerp(h, WATER + .5, 1 - smooth(P.islet, P.islet + 1.6, d)); }
   // Raised banks either side of each bridge.
-  if (dr > 7) for (const B of BRIDGES) { const K = B.bank || (B.bank = bridgeBox(B, B.a0 - 10, B.a1 + 16, -8, 8)); if (x <= K.x0 || x >= K.x1 || z <= K.z0 || z >= K.z1) continue; // (round T2: a quick box test first, 13 bridges now)
+  if (dr > 7) for (const B of BRIDGES) { const K = B.bank || (B.bank = bridgeBox(B, B.a0 - 10, B.a1 + (B.bankOut || 16), -8, 8)); if (x <= K.x0 || x >= K.x1 || z <= K.z0 || z >= K.z1) continue; // (round T2: a quick box test first, 13 bridges now)
+    if (levelAt(x, z) != null) continue;   // (Round U: a bank never reaches inside a village or city: places stay flat to their gates)
     const u = bridgeAlong(B, x, z), v = bridgeAcross(B, x, z); // (never over the river itself: boats pass under)
     // level ground at deck height at both ends, easing back to the natural hills further away; the river in the middle is left alone
-    const west = smooth(B.a0 + 8, B.a0 + 3, u), east = smooth(B.a1 - 8, B.a1 - 3, u) * (1 - smooth(B.a1 + 4, B.a1 + 16, u));
+    // (Round U: bankOut, a longer east bank where a junction is close to the deck's end: the Phố Hai Quê bridge and the ring road)
+    const west = smooth(B.a0 + 8, B.a0 + 3, u), east = smooth(B.a1 - 8, B.a1 - 3, u) * (1 - smooth(B.a1 + (B.bankOut ? B.bankOut - 10 : 4), B.a1 + (B.bankOut || 16), u));
     const w = (1 - smooth(4, 8, Math.abs(v))) * (west + east);
     h = lerp(h, B.h - .2, clamp(w, 0, 1));
   }
@@ -847,7 +849,10 @@ export function createWorld(scene, quality) {
     const br = new THREE.Mesh(merge(parts), toonVC()); br.castShadow = true; br.receiveShadow = true; br.position.set(...(B.axis === 'z' ? [B.c, y, (B.a0 + B.a1) / 2] : [(B.a0 + B.a1) / 2, y, B.c])); if (B.axis === 'z') br.rotation.y = -Math.PI / 2; scene.add(br);
     // railings keep little explorers on the bridge
     W.boxes.push(bridgeBox(B, B.a0, B.a1, hw - .1, hw + .3), bridgeBox(B, B.a0, B.a1, -hw - .3, -hw + .1));
-    W.platforms.push({ ...bridgeBox(B, B.a0 - 2, B.a1 + 2, -B.w / 2, B.w / 2), y: y + .1 });
+    // (Round U, owner: no step where a road meets a bridge) the deck is walked on over the bridge itself; for 1.2 m past each
+    // end (the apron) the road is held at the deck's height and its bed carries you on and off without a step (short enough
+    // to leave room for the gentle climb to a junction close by: the Phố Hai Quê bridge and the ring road)
+    W.platforms.push({ ...bridgeBox(B, B.a0, B.a1, -B.w / 2, B.w / 2), y: y + .1, apron: bridgeBox(B, B.a0 - 1.2, B.a1 + 1.2, -B.w / 2, B.w / 2) });
   }
 
   // ---------- shrines ----------

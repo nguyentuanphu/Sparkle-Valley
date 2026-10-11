@@ -675,6 +675,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | ROAD-006 | R6 | Outside towns only T-junctions; junctions ≥ 20 m apart on a road; parallel roads ≥ 12 m apart; no crossing without a junction | MAJOR | data [IMPR] | — |
 | ROAD-007 | R7 | A named road end = its gate anchor (0 m gap); gate square; opening ≥ road + 1 m each side; bilingual sign | BLOCKER | check `roads` (gate per named end) + data | — |
 | ROAD-008 | R8 | Every village and city reachable by asphalt; dead ends only at a gate, landmark or pier | BLOCKER | check `roads` | — |
+| ROAD-015 | R3 | (Round U, owner 11 Oct) No step where roads join: along every road and 3 m into a road it joins, the ground a child walks on never jumps more than 0.06 m from one 25 cm step to the next (road to road, road to bridge deck, road to a place's level) | MAJOR | check `joins` | the road is held at a bridge deck's height over its 1.2 m apron |
 | ROAD-009 | R9 | River crossings within ± 20° of square, straight ≥ 6 m each side; nothing on decks | MAJOR | data [IMPR] | — |
 | ROAD-010 | R10 | Lines only on asphalt; plain at junctions; zebra only in towns | MINOR | visual | — |
 | ROAD-011 | R11 | Pond footpaths 1.5–2.5 m from water (measured from the path's edge) | MINOR | checks `village`, `validate` | — |

@@ -2794,6 +2794,30 @@ await check('hscroll', async () => {
   return 'the Backpack row moves by finger (phone, tablet, also as strict as Safari), by mouse drag and by wheel; the Map page moves down on every size';
 });
 
+await check('joins', async () => {
+  // ROAD-015 (Round U, owner 11 Oct: "they are not connecting smoothly, there are different elevations when connecting
+  // roads or bridges"): walk the middle of every road in 25 cm steps (and 3 m on into a road it joins, 6 m through a gate): the ground under
+  // a child's feet never jumps more than 6 cm, at a junction, a bridge deck or a place's flat level
+  const P = await open(b, { w: 800, h: 600 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), G = __sv, out = []; let n = 0;
+    for (const R of W.ROADS) {
+      const pts = R.pts, ext = (a, b2, d) => { const L = Math.hypot(b2[0] - a[0], b2[1] - a[1]) || 1; return [a[0] + (a[0] - b2[0]) / L * d, a[1] + (a[1] - b2[1]) / L * d]; };
+      const joins = q => { const d = W.roadDist(q[0], q[1]); return d.road && d.road !== R && d.d < d.road.w / 2 ? q : null; };
+      // (and 6 m on through a gate into the place it leads to)
+      const g = R.gates || [], into = (end, a, b2) => g[end] ? ext(a, b2, 6) : joins(ext(a, b2, 3));
+      const line = R.loop ? pts.concat([pts[0]]) : [into(0, pts[0], pts[1]), ...pts, into(1, pts[pts.length - 1], pts[pts.length - 2])].filter(Boolean);
+      let prev = null;
+      for (let i = 0; i < line.length - 1; i++) { const [ax, az] = line[i], [bx, bz] = line[i + 1], m = Math.ceil(Math.hypot(bx - ax, bz - az) / .25);
+        for (let k = 0; k <= m; k++) { const x = ax + (bx - ax) * k / m, z = az + (bz - az) * k / m, y = G.world.groundAt(x, z); n++; if (prev != null && Math.abs(y - prev) > .06) { out.push(`${R.id}: ${(Math.abs(y - prev) * 100).toFixed(0)} cm step at ${x.toFixed(0)},${z.toFixed(0)}`); prev = null; break; } prev = y; } }
+    }
+    return { out, n };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.out.length && r.n > 5000 && !errs.length, r.out.slice(0, 12).join(' | ') + JSON.stringify(errs));
+  return `${r.n} steps along every road and into every junction and bridge: no step over 6 cm (ROAD-015)`;
+});
+
 await check('bilingual', async () => {
   // (Round U, owner 11 Oct: Grandma Huệ spoke Vietnamese with English set) no English slot of an [English, Vietnamese]
   // pair (an array, T(…, …) or { en, vi }) holds a Vietnamese sentence; names, songs and sayings that stay Vietnamese

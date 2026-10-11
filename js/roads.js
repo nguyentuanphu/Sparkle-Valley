@@ -58,12 +58,17 @@ function denseLine(R) {
   for (let i = 0; i < src.length - 1; i++) { const [ax, az] = src[i], [bx, bz] = src[i + 1], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 1)); for (let k = 0; k < n; k++) pts.push([ax + (bx - ax) * k / n, az + (bz - az) * k / n]); }
   pts.push(src[src.length - 1]); return pts;
 }
-const deckAt = (world, x, z) => { for (const p of world.platforms) if (!p.tower && x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1) return p.y; return null; };
+// the deck height at (x, z), over the deck or its apron; DECK_CORE says whether it was over the deck itself
+let DECK_CORE = false;
+const deckAt = (world, x, z) => { for (const p of world.platforms) { const b = p.apron || p; if (!p.tower && x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1) { DECK_CORE = x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1; return p.y; } } return null; };
 function profile(R, world, pts, anchors = null) {
-  const hw = R.w / 2, deck = [], base = pts.map(([x, z], i) => {
+  const hw = R.w / 2, deck = [], apron = [], base = pts.map(([x, z], i) => {
     const [px, pz] = pts[Math.max(0, i - 1)], [nx, nz] = pts[Math.min(pts.length - 1, i + 1)], L = Math.hypot(nx - px, nz - pz) || 1, ux = -(nz - pz) / L, uz = (nx - px) / L;
     // a real bridge deck: the deck is well above the ground under it (near the ends the bank is the ground)
-    const d = deckAt(world, x, z), g0 = heightAt(x, z), onDeck = d != null && g0 < d - 1; deck.push(onDeck); if (onDeck) return d;
+    const d = deckAt(world, x, z), g0 = heightAt(x, z), onDeck = d != null && DECK_CORE && g0 < d - 1; deck.push(onDeck); if (onDeck) return d;
+    // (Round U, owner: "different elevation when connecting roads or bridges") over the deck's apron at each end the road
+    // is held at the deck's own height, so it meets the deck without a step (it keeps its bed: the ground follows it)
+    if (d != null) { apron[i] = true; return d; }
     let y = -1e9; for (const s of [-1, -.5, 0, .5, 1]) y = Math.max(y, heightAt(x + ux * hw * s, z + uz * hw * s)); return y;
   });
   // HARD RULE: inside a village or city the road runs at the place's own level (places are flat); on a bridge, on its deck
@@ -73,7 +78,7 @@ function profile(R, world, pts, anchors = null) {
   const n = pts.length, deepIn = lvl.map((L, i) => { if (L == null) return false; for (let k = -6; k <= 6; k++) { const j = i + k; if (j >= 0 && j < n && lvl[j] == null) return false; } return true; }); // (the outer 6 m eases in)
   const gates = R.gates || [], gateEnd = i => (gates[0] && i < 2) || (gates[1] && i > n - 3);
   if (gates[0] && !deck[0]) base[0] = base[1] = heightAt(pts[0][0], pts[0][1]); if (gates[1] && !deck[n - 1]) base[n - 1] = base[n - 2] = heightAt(pts[n - 1][0], pts[n - 1][1]);
-  const fixed = i => deck[i] || deepIn[i] || gateEnd(i) || (lvl[i] != null && (i < 2 || i > n - 3)) || (anchors && anchors.has(i)); // (a road's end at a gate is always at the ground there)
+  const fixed = i => deck[i] || apron[i] || deepIn[i] || gateEnd(i) || (lvl[i] != null && (i < 2 || i > n - 3)) || (anchors && anchors.has(i)); // (a road's end at a gate is always at the ground there)
   // HARD RULE: the road is always smooth: a long, gentle average of the ground…
   let ys = base.slice();
   const avg = (W, passes) => { for (let it = 0; it < passes; it++) ys = ys.map((y, i) => { if (fixed(i)) return base[i]; let s = 0, w = 0; for (let k = -W; k <= W; k++) { const j = Math.max(0, Math.min(n - 1, i + k)), wk = W + 1 - Math.abs(k); s += ys[j] * wk; w += wk; } return s / w; }); };
@@ -90,7 +95,7 @@ function profile(R, world, pts, anchors = null) {
   limit();
   // …and every change of slope rounded off
   avg(4, 4); limit(); avg(2, 2); limit();
-  return { ys, deck, fixed: pts.map((_, i) => fixed(i)) };
+  return { ys, deck, apron, fixed: pts.map((_, i) => fixed(i)) };
 }
 function ribbonGeo(R, pts, ys) {
   const pos = [], uv = [], idx = [], hw = R.w / 2; let along = 0;
@@ -116,6 +121,21 @@ function buildRoads(G, mats) {
     const jEnd = g[0] ? 1 : 0, [x, z] = A.pts[jEnd ? n - 1 : 0], gy = A.ys[jEnd ? 0 : n - 1];
     all.forEach((B, bi) => { if (bi === ai || yOn(B, x, z).d > B.R.w / 2 + 1.2) return; B.extraFix = B.extraFix || new Map();
       B.pts.forEach((p, j) => { if (Math.hypot(p[0] - x, p[1] - z) < B.R.w / 2 + A.R.w / 2 + 2) B.extraFix.set(j, gy); }); });
+  });
+  // (Round U, owner: no steps where roads and bridges join) a bridge that ends close to a junction: the through road there
+  // rises or dips just enough that the side road can climb from the deck to it within its grade (the Phố Hai Quê bridge
+  // ends 12 m from the ring road)
+  all.forEach((A, ai) => { const n = A.pts.length, G = ROAD_GRADE[A.R.kind] || ROAD_GRADE.dirt;
+    [0, 1].forEach(end => {
+      const [x, z] = A.pts[end ? n - 1 : 0]; let B = null, bd = 1e9; all.forEach((C, ci) => { if (ci === ai) return; const q = yOn(C, x, z); if (q.d < C.R.w / 2 + 1.2 && q.d < bd) { bd = q.d; B = C; } });
+      if (!B) return;
+      let run = 0, k0 = -1; for (let k = 1; k < n; k++) { const i = end ? n - 1 - k : k, j = end ? i + 1 : i - 1; run += Math.hypot(A.pts[i][0] - A.pts[j][0], A.pts[i][1] - A.pts[j][1]); if (run > 30) break; if (A.apron[i] || A.deck[i]) { k0 = i; break; } }
+      if (k0 < 0) return;
+      const reach = B.R.w / 2 + A.R.w / 2 + 1, room = Math.max(1, run - reach), Y = A.ys[k0], here = yOn(B, x, z).y, lo = Y - G * room * .95, hi = Y + G * room * .95;
+      if (here >= lo - .05 && here <= hi + .05) return;   // (a few centimetres are not worth bending the through road for)
+      const want = here < lo ? lo : hi; B.extraFix = B.extraFix || new Map();
+      B.pts.forEach((p, j) => { if (Math.hypot(p[0] - x, p[1] - z) < B.R.w / 2 + A.R.w / 2 + 2) B.extraFix.set(j, want); });
+    });
   });
   all.forEach(A => { if (A.extraFix) Object.assign(A, profile(A.R, world, A.pts, A.extraFix)); });
   for (let round = 0; round < 2; round++) all.forEach((A, ai) => {
@@ -326,7 +346,7 @@ export function createRoads(G) {
   const mats = { asphalt: new THREE.MeshToonMaterial({ map: roadTexture('asphalt'), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), dirt: new THREE.MeshToonMaterial({ map: roadTexture('dirt'), polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
     footpath: new THREE.MeshToonMaterial({ map: roadTexture('footpath'), polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }) };
   // the Dragon Bridge's deck first, so the road is laid on it rather than down in the river
-  { const B = DRAGON; world.platforms.push({ ...bridgeBox(B, B.a0 - 2, B.a1 + 2, -B.w / 2, B.w / 2), y: B.h + .1 }); }
+  { const B = DRAGON; world.platforms.push({ ...bridgeBox(B, B.a0, B.a1, -B.w / 2, B.w / 2), y: B.h + .1, apron: bridgeBox(B, B.a0 - 1.2, B.a1 + 1.2, -B.w / 2, B.w / 2) }); }   // (Round U: an apron like every bridge, js/world.js)
   buildRoads(G, mats);
   // ---------- Đà Nẵng's Dragon Bridge (Cầu Rồng): a golden dragon arching along the road ----------
   // (round T: its model is drawn along the x axis, head at the far end; a bridge along z turns it, its mouth and its spray)
