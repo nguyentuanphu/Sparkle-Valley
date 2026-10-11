@@ -2154,6 +2154,30 @@ await check('roadtone', async () => {
   return `${M.ROADS.filter(R => R.kind === 'asphalt').length} asphalt roads in ${tones.size} colours, ${mats} road materials; the ring road is closed; a yellow centre dash in Vietnam, kerbs in Australia`;
 });
 
+await check('gates', async () => {
+  // (r63, ROAD-016; owner: "at the gate of Hà Nội it is blocked and I can't go through") a child walks through every
+  // gate on a road's end, from 8 m outside to 3 m inside (through the gate onto the square), along the road: nothing
+  // solid stops them and the ground never steps more than 25 cm from one half metre to the next (a bridge deck on the way
+  // is the `bridges` check's)
+  const P = await open(b, { w: 900, h: 640, play: false });
+  await P.page.waitForFunction(() => __sv.world && __sv.world.solidAt, null, { timeout: 90000 });
+  const r = await P.page.evaluate(async () => {
+    const W = __sv.world, w = await import('/js/world.js'), M = await import('/js/content/map.js'), bad = []; let n = 0, worst = 0;
+    for (const R of M.ROADS) (R.gates || []).forEach((g, k) => { if (!g) return; n++;
+      const pts = R.pts, [x0, z0] = k ? pts[pts.length - 1] : pts[0], [x1, z1] = k ? pts[pts.length - 2] : pts[1], L = Math.hypot(x0 - x1, z0 - z1), ux = (x0 - x1) / L, uz = (z0 - z1) / L;
+      let prev = null; for (let t = -8; t <= 3; t += .5) { const x = x0 + ux * t, z = z0 + uz * t, h = w.heightAt(x, z);
+        if (W.platforms.some(p => x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1)) { prev = null; continue; }
+        const pos = { x, y: h, z }; W.collide(pos, .35); if (Math.hypot(pos.x - x, pos.z - z) > .2) { bad.push(`${g} (${R.id}): blocked ${t.toFixed(1)} m from the gate`); break; }
+        if (prev != null) { const st = Math.abs(h - prev); worst = Math.max(worst, st); if (st > .25) { bad.push(`${g} (${R.id}): a ${st.toFixed(2)} m step ${t.toFixed(1)} m from the gate`); break; } } prev = h; } });
+    return { n, worst, bad };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.n >= 15, `only ${r.n} gates found`);
+  ok(!r.bad.length, r.bad.join('; '));
+  ok(!errs.length, errs.join(' | '));
+  return `${r.n} gates walked through, nothing in the way, the biggest step ${(r.worst * 100).toFixed(0)} cm`;
+});
+
 await check('water', async () => {
   // (round T4a, RIVER-008) the water map: one water plane and one draw, its picture 1024 px or smaller, painted once and
   // read back from the device on the next start; each water its colour (Sông Hồng red-brown, the sea blue, the lake

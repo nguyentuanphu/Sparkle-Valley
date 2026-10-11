@@ -683,6 +683,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | ROAD-013 | — | Inside a village a road takes the village's level; at a junction the side road takes the through road's exact height | BLOCKER | check `flat`, `roadshape` | — |
 | ROAD-014 | — | Every asphalt road carries its region's colour (red Vietnam, orange Australia, purple mountains, blue coast, plain grey home); the ring road is closed (round T2) | MINOR | check `roadtone` | — |
 | ROAD-015 | — | Road markings by region (round T4a, owner): Vietnam's asphalt a yellow centre dash, Australia's white lines with concrete kerbs; town main streets brick (Vietnam) or paving (Australia); dirt roads red earth | MINOR | check `roadtone` | — |
+| ROAD-016 | — | Every gate can be walked through (r63): from 8 m outside to 3 m inside along its road nothing solid is in the way, and the ground never steps more than 25 cm; a road's end at a gate meets the place at its own level | MAJOR | check `gates` | — |
 
 ### 9.5 Buildings, NPCs, animals, vehicles, river
 

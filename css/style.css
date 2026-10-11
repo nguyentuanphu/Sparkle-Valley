@@ -2265,10 +2265,7 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .mapcities button { min-height: 64px; flex: 0 0 auto; }
 .mapnav { display: flex; align-items: stretch; gap: 6px; margin-top: 8px; }
 .mapnav .mapplaces { flex: 1; min-width: 0; align-content: start; }
-.mapnav .mapstep { flex: 0 0 64px; min-width: 64px; min-height: 64px; align-self: center; }
-.mapnav .mapstep span { font-size: 40px; line-height: 1; }
-.mapnav .mapstep small { font-size: 12px; }
-.mapnav[hidden], .mapcities[hidden] { display: none; }
+.mapcities[hidden] { display: none; }
 /* (Online, bug #37, owner 11 Oct) Friends tab: the grown-ups' note on where the switch is, with a press-and-hold Grown-ups button */
 .gunote { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 6px; }
 .gunote .note { font-size: 13px; opacity: .85; text-align: center; margin: 0; }

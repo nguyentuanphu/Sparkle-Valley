@@ -708,20 +708,20 @@ export function openPad(game, i, tab) {
       return out;
     };
     // (bug 28, owner: "too many destinations in one list") each country shows a fixed row of city chips; only the
-    // picked city's places show under it, and a swipe or the two arrows move to the next or previous city
+    // picked city's places show under it, and a swipe moves to the next or previous city
     const citiesOf = g => { const out = []; itemsOf(g).forEach(it => { if (!it.sub || !out.length) out.push({ top: it, places: [] }); else out[out.length - 1].places.push(it); }); return out; };
     const groups = GROUPS.filter(([g]) => itemsOf(g).length);
     let gsel = groups.find(([g]) => g === openPad.mapLast) ? openPad.mapLast : groups[0][0], csel = openPad.mapCity || 0;
     const chips = el('div', 'hubtabs mapchips'), cityRow = el('div', 'hubtabs mapcities'), list = el('div', 'quick mapplaces');
-    const nav = el('div', 'mapnav'), prev = el('button', 'qbtn mapstep', `<span>‹</span><small>${T('Back', 'Quay lại')}</small>`), next = el('button', 'qbtn mapstep', `<span>›</span><small>${T('Next', 'Tiếp')}</small>`);
+    // (r63, owner: the Back and Next buttons are no use: the city chips above and a swipe change the city)
+    const nav = el('div', 'mapnav');
     groups.forEach(([g, gi, gname]) => { const c = el('button', '', `<span>${pic(gi)}</span><small>${esc(gname)}</small>`); c.dataset.g = g; c.onclick = () => { gsel = openPad.mapLast = g; csel = openPad.mapCity = 0; SFX.tap(); fill(); }; chips.appendChild(c); });
     const step = d => { const n = citiesOf(gsel).length; if (n < 2) return; csel = openPad.mapCity = (csel + d + n) % n; SFX.tap(); fill(); };
-    prev.onclick = () => step(-1); next.onclick = () => step(1);
     const fill = () => {
       chips.querySelectorAll('button').forEach(c => c.classList.toggle('on', c.dataset.g === gsel)); list.innerHTML = ''; cityRow.innerHTML = '';
       const cities = citiesOf(gsel); if (csel >= cities.length) csel = openPad.mapCity = 0;
       const many = gsel !== 'homes' && cities.length > 1;
-      cityRow.hidden = nav.hidden = !many;
+      cityRow.hidden = !many;
       if (many) cities.forEach((c, k) => { const b = el('button', k === csel ? 'on' : '', `<span>${pic(c.top.icon)}</span><small>${esc(c.top.name())}</small>`); b.onclick = () => { csel = openPad.mapCity = k; SFX.tap(); fill(); }; cityRow.appendChild(b); });
       const cur = many ? cities[csel] : null, items = many ? [cur.top].concat(cur.places) : itemsOf(gsel);
       items.forEach(it => { const b = el('button', 'qbtn', `<span>${pic(it.icon)}</span><small>${esc(it.name())}</small>`); b.onclick = () => { close(); it.go(); }; list.appendChild(b); });
@@ -730,7 +730,7 @@ export function openPad(game, i, tab) {
     let sx = null;
     list.addEventListener('touchstart', e => { sx = e.touches.length === 1 ? e.touches[0].clientX : null; }, { passive: true });
     list.addEventListener('touchend', e => { if (sx === null) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 60) step(dx < 0 ? 1 : -1); }, { passive: true });
-    nav.appendChild(prev); nav.appendChild(list); nav.appendChild(next);
+    nav.appendChild(list);
     body.appendChild(chips); body.appendChild(cityRow); body.appendChild(nav); fill();
     const x = cv.getContext('2d'); x.drawImage(game.fogMapFor(p), 0, 0, S, S);
     const k = S / SIZE, pt = (wx, wz) => [(wx + HALF) * k, (wz + HALF) * k];

@@ -43,6 +43,7 @@ export const RULES = {
   "ROAD-013": { "text": "Inside a village a road takes the village's level; at a junction the side road takes the through road's exact height", "severity": "BLOCKER", "check": "check flat, roadshape", "alias": "—" },
   "ROAD-014": { "text": "Every asphalt road carries its region's colour (red Vietnam, orange Australia, purple mountains, blue coast, plain grey home); the ring road is closed (round T2)", "severity": "MINOR", "check": "check roadtone", "alias": "—" },
   "ROAD-015": { "text": "Road markings by region (round T4a, owner): Vietnam's asphalt a yellow centre dash, Australia's white lines with concrete kerbs; town main streets brick (Vietnam) or paving (Australia); dirt roads red earth", "severity": "MINOR", "check": "check roadtone", "alias": "—" },
+  "ROAD-016": { "text": "Every gate can be walked through (r63): from 8 m outside to 3 m inside along its road nothing solid is in the way, and the ground never steps more than 25 cm; a road's end at a gate meets the place at its own level", "severity": "MAJOR", "check": "check gates", "alias": "—" },
   "BUILDING-001": { "text": "Fronts face the nearest road or yard; the entrance access point is on the road side (G6)", "severity": "MAJOR", "check": "data [IMPR]" },
   "BUILDING-002": { "text": "Doors align with the entrance, reachable from a road or path", "severity": "MAJOR", "check": "data (nav) [IMPR]" },
   "BUILDING-003": { "text": "No roof intersects a neighbour; no building touches a road corridor", "severity": "MAJOR", "check": "check roads, ground; data" },
