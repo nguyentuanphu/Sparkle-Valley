@@ -140,3 +140,4 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
   - Screenshots looked at, on phone 390 × 844, tablet 820 × 1180 and computer 1180 × 760 (the Pad map also at 1366 × 768): a signpost close up, name tags at the busiest spot (Three Regions Market, Hội An, the east Memory Village), and the drawn Pad map. All tidy.
   - No new spoken lines.
   - Not done: the friends-row Join button on phones (Online's request); T4's drawing of every landmark on the map (only places).
+  - Later, 11 Oct AEDT: main moved to r61 (T1b tidy streets), merged in without clashes (`b4b4ca74`). Run again and passed: signs, plots, solid, nametags, padmap, mapnames, hubmap, validate, ground, stalls (new in r61), phone, preload, arch, mapcoords, types, emoji, noemoji.
