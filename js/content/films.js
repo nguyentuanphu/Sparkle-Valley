@@ -2,7 +2,7 @@
 // reads the page. Each script builds its set, places the actors and says what happens and when (seconds
 // from the start of the page). Pages stand alone, so ◀ ▶ can jump to any page.
 // The child helps on two pages of each film: S.help(time, English, Vietnamese, what happens after the tap).
-import { SETS as L, PROPS as Pp, LOOK, G3 } from '../film.js';
+import { SETS as L, PROPS as Pp, LOOK, G3, io } from '../film.js';
 import { THREE, P, merge } from '../gfx.js';
 import { SFX } from '../audio.js';
 
@@ -1189,3 +1189,152 @@ GUIDES.memory = { pages: [
     }
   }
 };
+
+// ---------- Sự tích Hồ Gươm, the Lake of the Returned Sword (Kid UI, owner's go 12 Oct AEDT) ----------
+// The child helps twice: helping Lê Lợi reach the sword's handle in the tree (page 2) and handing the sword back to the
+// Golden Turtle (page 5). (A first page has no tap of its own in any film: its words are read as the theatre opens.)
+const THAN = LOOK({ style: 'shirt', color: '#5a7a9a', hat: 'nonla', skin: '#c89060' });
+const LOI = LOOK({ style: 'tunic', color: '#3a6a4a', hairStyle: 'short', skin: '#d8a070' });
+const LOI_KING = LOOK({ style: 'tunic', color: '#e8b62a', hat: 'crown', skin: '#d8a070' });
+const SOLDIER = c => LOOK({ style: 'tunic', color: c, hat: 'silkcap', skin: '#d8a070' });
+const flat = (w, d, color, y = 0) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d).rotateX(-H), new THREE.MeshToonMaterial({ color })); m.material.userData.film = true; m.position.y = y; return m; };
+// the lake (Hồ Lục Thủy, later Hồ Hoàn Kiếm): water in the middle, green banks with willows, a red bridge far off
+function hoLake(S, { tower = false, bridge = true } = {}) {
+  S.sky('#86cdf0', '#eaf7ff'); L.sun(S, 60, 40, -150, 8); L.clouds(S, [[-36, 26, -100, 2.2], [34, 30, -120, 2.6]]);
+  L.sea(S, '#4fa8b8', -.3);
+  [[0, -60, 200, 70], [0, 40, 200, 30], [-50, -10, 40, 120], [50, -10, 40, 120]].forEach(([x, z, w, d]) => S.add(flat(w, d, '#8fcf6a', .05), x, 0, z));
+  [[-24, -26], [-14, -29], [16, -28], [26, -24], [-27, 8], [27, 6]].forEach(([x, z], i) => L.banyan(S, x, z, .6 + (i % 2) * .15));
+  if (bridge) { const b = new THREE.Group(); const m = new THREE.MeshToonMaterial({ color: '#d0302a' }); m.userData.film = true;
+    for (let i = 0; i < 9; i++) { const k = i / 8, seg = new THREE.Mesh(G3.Box(1.6, .2, 2.4), m); seg.position.set(-16 + k * 12, .4 + Math.sin(k * PI) * 1.6, -24); seg.rotation.z = Math.cos(k * PI) * .45; b.add(seg); }
+    S.add(b); }
+  if (tower) S.add(Pp.turtleTower(), 0, -.2, -12);
+}
+// a little river with reeds and bamboo, for the fisherman
+function riverBank(S) {
+  S.sky('#f2b27a', '#ffe8c8'); L.sun(S, -50, 14, -150, 9, '#ffcf8a'); L.sea(S, '#5aa8c0', -.3);
+  S.add(flat(200, 60, '#8fcf6a', .05), 0, 0, -38); L.bamboo(S, -10, -10); L.bamboo(S, 9, -11, '#5fae4a', 6, 6); L.mountains(S, -90, '#8fa8b8');
+}
+
+FILMS.hoguom = { pages: [
+  // 1. A fisherman, Lê Thận, casts his net at dusk and pulls up a shining sword blade.
+  S => {
+    riverBank(S);
+    const boat = afloat(S, Pp.boat(4.4, '#c89a5a'), 0, 0, H), than = S.person(THAN, 0, 0, 0);
+    board(than, boat.children[0], [0, boat.children[0].userData.deck, .6], 0, 1);
+    const net = Pp.net(); S.add(net, 0, -.7, 2.6);
+    const sword = Pp.sword(); sword.userData.hilt.visible = false; sword.visible = false; S.add(sword);
+    const sp = Pp.sparkle(); S.add(sp, 0, .2, 2.6);
+    S.shot([6, 3, 9], [0, 1, 1]);
+    S.do(than, .4, 'throw', 1.2); S.tw(.6, 1.2, k => { net.position.set(0, .4 - k * 1.1, 1 + k * 1.6); });
+    S.cam(.4, 2.6, [4.6, 2.2, 7], [0, .6, 1.8]);
+    S.do(than, 2.6, 'idle'); S.mood(than, 3, 'smile');
+    // he waits; the evening light goes golden, and something shines under the water
+    S.do(than, 3.4, 'sitground', 3); S.cam(3.4, 3, [-4, 2.4, 7], [0, .4, 2]);
+    const glint = Pp.sparkle('#cfeeff'); S.add(glint, 0, -.2, 2.6); S.show(glint, 5.2); S.show(glint, 7.6, false);
+    S.do(than, 6.4, 'idle'); S.mood(than, 6.4, 'o');
+    // he pulls up the net: something heavy, shining
+    { const t = 7.2;
+      S.do(than, t, 'pull', 2.2); S.tw(t, 2, k => { net.position.set(0, -.7 + k * 1.5, 2.6 - k * 1.4); });
+      S.show(sword, t + 1.6); S.drop(sword, t + 1.6, [0, .9, 1.3]); S.tw(t + 1.6, 1, k => { sword.rotation.z = H * (1 - k * .3); });
+      S.show(sp, t + 1.8); S.mood(than, t + 2.2, 'o'); S.do(than, t + 2.2, 'surprised', 1.4);
+      S.grab(than, t + 3.8, sword, [0, -.5, .1]); S.do(than, t + 4, 'cheer', 1.6); S.mood(than, t + 4, 'happy');
+      S.cam(t + 1.4, 1.6, [2.6, 1.6, 4.6], [0, 1, 1.2]); S.at(t + 6, () => { }); }
+  },
+  // 2. Later, Lê Lợi finds the sword's handle up in a tree; blade and handle fit together perfectly.
+  S => {
+    village(S, null); const tree = L.banyan(S, 2, -3, .9);
+    const hilt = Pp.sword(); hilt.userData.blade.visible = false; S.add(hilt, 3.4, 3.6, -1.6); hilt.rotation.z = .6;
+    const glowIt = Pp.sparkle(); S.add(glowIt, 3.4, 3.6, -1.6); S.show(glowIt, .2);
+    const loi = S.person(LOI, -4, 3, H), than = S.person(THAN, -7, 4, H);
+    const blade = Pp.sword(); blade.userData.hilt.visible = false; S.grab(than, 0, blade, [0, -.5, .1]);
+    S.shot([0, 3, 11], [1, 2, 0]);
+    let t = S.walk(loi, .4, [2.6, -.6]); S.face(loi, t, [3.4, -1.6]); S.mood(loi, t, 'o'); S.do(loi, t + .2, 'point', 1.2);
+    S.cam(.6, 3, [6, 3.4, 6], [3, 2.6, -1]);
+    S.do(loi, t + 1.6, 'stretch', 1.4); S.mood(loi, t + 3, 'smile');
+    // the child helps him reach it
+    const reach = t + 3.4; const got = reach + 9;
+    S.help(reach + 4.6, 'Tap to help Lê Lợi reach the handle!', 'Chạm để giúp Lê Lợi lấy chuôi gươm nhé!', tt => {
+      S.do(loi, tt, 'stretch', 1); S.move(hilt, tt + .2, 1, [2.7, 1.3, -.3]); S.show(glowIt, tt + .6, false);
+      S.grab(loi, tt + 1.2, hilt, [0, -.5, .1]); S.do(loi, tt + 1.3, 'idle'); S.mood(loi, tt + 1.3, 'happy');
+      S.cam(tt, 1.4, [5, 2.6, 5], [2.6, 1.8, -.8]);
+    }, [3.4, 3.6, -1.6], 2);
+    // Lê Thận comes with the blade: they fit together
+    const t2 = S.walk(than, got - 1.6, [1.4, .6]); S.face(than, t2, [2.6, -.6]); S.face(loi, t2, [1.4, .6]);
+    S.do(than, t2 + .2, 'give', 1.2); S.do(loi, t2 + .2, 'give', 1.2);
+    S.at(t2 + 1.2, () => { hilt.userData.blade.visible = true; blade.visible = false; });
+    const sp = Pp.sparkle(); S.add(sp, 2, 1.4, 0); S.show(sp, t2 + 1.2); S.show(sp, t2 + 3, false);
+    S.do(loi, t2 + 1.6, 'cheer', 1.8); S.do(than, t2 + 1.6, 'cheer', 1.8); S.mood(than, t2 + 1.6, 'happy');
+    S.cam(t2 - .2, 1.6, [3.6, 1.9, 4.6], [2, 1.3, 0]);
+    S.at(t2 + 3.6, () => { });
+  },
+  // 3. With the magic sword, Lê Lợi and his friends bring peace back to the land.
+  S => {
+    village(S); L.lantern(S, -3, 3.2, -1); L.lantern(S, 3, 3.2, -1, '#ffd23f');
+    const loi = S.person(LOI, 0, 1.6, 0), sword = Pp.sword(); S.grab(loi, 0, sword, [0, -.5, .1]);
+    const crew = [['#c62f2f', -2.2, 3.4], ['#3b6fe0', 2.2, 3.4], ['#7a4a9a', -1.2, 4.6], ['#4a9a5a', 1.2, 4.6]].map(([c, x, z]) => S.person(SOLDIER(c), x, z, PI));
+    const flags = [-3.4, 3.4].map(x => { const f = Pp.flag(x < 0 ? '#e8332a' : '#ffd23f'); return S.add(f, x, 0, 2.6); });
+    S.shot([0, 2.4, 9], [0, 1.4, 2]);
+    S.do(loi, .4, 'cheer', 2.4); S.mood(loi, .4, 'happy');
+    crew.forEach((a, i) => { S.face(a, .6 + i * .15, [0, 1.6]); S.do(a, 1 + i * .2, 'cheer', 2); S.mood(a, 1, 'happy'); });
+    S.cam(.4, 3, [0, 1.8, 6.4], [0, 1.5, 1.6]);
+    const vill = [S.person(VILLAGER('aodai', '#e86a8a'), -5, 6, PI * .8), S.person(VILLAGER('shirt', '#f2e2b8', 'nonla', 'short'), 5, 6, -PI * .8)];
+    vill.forEach((v, i) => { S.walk(v, 3.4 + i * .3, [i ? 3.4 : -3.4, 5]); S.do(v, 5.8, 'wave', 2); S.mood(v, 5.8, 'happy'); });
+    S.cam(3.6, 2.4, [0, 4, 13], [0, 1.2, 3]);
+    S.at(8.6, () => { });
+  },
+  // 4. One day the king rows on the lake, and a golden turtle rises from the water.
+  S => {
+    hoLake(S);
+    const boat = afloat(S, Pp.boat(4.4, '#e8b62a'), -3, 2, H * .6), king = S.person(LOI_KING, 0, 0, 0);
+    board(king, boat.children[0], [0, boat.children[0].userData.deck, .6], 0, 1);
+    const sword = Pp.sword(); S.grab(king, 0, sword, [0, -.5, .1]);
+    const turtle = Pp.turtle(); S.add(turtle, 1.6, -2.4, -4, PI * .85);
+    S.every((dt, time) => { turtle.rotation.z = Math.sin(time * .9) * .03; });
+    S.shot([-8, 3.4, 12], [-2, 1, 0]);
+    S.tw(.2, 3.4, k => { boat.position.set(-3 + k * 1.4, -.3, 2 - k * 1.6); }, k => k);
+    S.cam(.2, 3.4, [-6, 2.6, 9], [-1.6, 1.2, 0]);
+    // bubbles, then up comes the turtle
+    const sp = Pp.sparkle('#cfeeff'); S.add(sp, 1.6, 0, -4); S.show(sp, 3.6);
+    S.move(turtle, 4, 2, [1.6, -.15, -4], k => 1 - (1 - k) ** 3); S.show(sp, 6.2, false);
+    S.mood(king, 4.4, 'o'); S.do(king, 4.6, 'surprised', 1.6);
+    S.tw(6.2, 1.2, k => { turtle.userData.head.rotation.x = -Math.sin(k * PI) * .4; });
+    S.cam(4, 2.2, [-2, 1.8, 4.6], [.8, .6, -3.4]);
+    S.at(8.4, () => { });
+  },
+  // 5. "Please give back the sword to the Dragon King," said the turtle. The king gave it back, and the turtle dived down.
+  S => {
+    hoLake(S);
+    const boat = afloat(S, Pp.boat(4.4, '#e8b62a'), -1.6, .4, H * .6), king = S.person(LOI_KING, 0, 0, 0);
+    board(king, boat.children[0], [0, boat.children[0].userData.deck, .6], 0, 1);
+    const sword = Pp.sword(); S.grab(king, 0, sword, [0, -.5, .1]);
+    const turtle = Pp.turtle(); S.add(turtle, 1.6, -.15, -4, PI * .85);
+    S.shot([-3.6, 2, 5.4], [.4, .8, -2.6]);
+    // the turtle speaks
+    S.tw(.4, 2.6, k => { turtle.userData.head.rotation.x = Math.sin(k * PI * 4) * .12; });
+    S.cam(.2, 2.6, [-.6, 1.4, 1.6], [1.6, .6, -3.6]);
+    S.mood(king, 2.4, 'smile'); S.do(king, 2.6, 'bow', 1.4);
+    const ring = Pp.sparkle('#ffe27a'); S.add(ring, 1.6, .3, -4);
+    S.help(4.2, 'Tap to give the sword back to the Golden Turtle!', 'Chạm để trả gươm cho Rùa Vàng nhé!', t => {
+      S.do(king, t, 'give', 1.6); S.drop(sword, t + .8); S.move(sword, t + .8, 1.2, [1.6, .5, -3.1], io, .6);
+      S.tw(t + .8, 1.2, k => { sword.rotation.set(0, 0, H * k); });
+      S.at(t + 2, () => { turtle.userData.head.add(sword); sword.position.set(...turtle.userData.mouth); sword.rotation.set(0, 0, H); });
+      S.tw(t + 2.2, .8, k => { turtle.userData.head.rotation.x = -Math.sin(k * PI) * .3; });
+      S.move(turtle, t + 3.2, 2, [1.6, -3, -4.6], k => k * k); S.show(ring, t + 4.4); S.show(ring, t + 6.2, false);
+      S.mood(king, t + 3.4, 'happy'); S.do(king, t + 4.2, 'wave', 1.8);
+      S.cam(t + .4, 2, [-1.6, 1.8, 3], [1, .6, -3.2]);
+      S.cam(t + 3.4, 2.6, [-5, 3.2, 7], [.6, 0, -3.6]);
+    }, [1.6, .4, -3.6], 7.4);
+  },
+  // 6. That lake in Hà Nội is called Hồ Hoàn Kiếm, the Lake of the Returned Sword. Turtle Tower still stands there!
+  S => {
+    hoLake(S, { tower: true });
+    const kids = [S.person(VILLAGER('dress', '#ff7eb8', 'none', 'buns'), -2, 6, PI), S.person(VILLAGER('shirt', '#3b6fe0', 'none', 'short'), 1.6, 6.2, PI)];
+    const lanterns = [[-6, 2.8, 5], [6, 2.8, 5]].map(([x, y, z], i) => L.lantern(S, x, y, z, i ? '#ffd23f' : '#e8332a'));
+    S.shot([0, 6, 22], [0, 2, -10]);
+    S.cam(.3, 4.6, [0, 3.4, 9], [0, 2.4, -12]);
+    kids.forEach((k, i) => { S.do(k, 2.6 + i * .3, 'point', 1.6); S.mood(k, 2.6, 'happy'); S.do(k, 4.6 + i * .2, 'wave', 2); });
+    S.cam(5, 3, [-6, 4, 2], [0, 2.6, -12]);
+    const sp = Pp.sparkle('#ffe27a'); S.add(sp, 0, 4.6, -12); S.show(sp, 6.6);
+    S.at(9, () => { });
+  }
+] };
