@@ -951,7 +951,7 @@ await check('festivals', async () => {
       if (!(s1.length > 0 && s1.length < s2.length && s2.length < s4.length)) bad.push(`${key}: not more each week (${s1.length}, ${s2.length}, ${s4.length})`);
       // spread over the whole place, not bunched: the pieces reach far apart
       let span = 0; for (const a of s4) for (const q of s4) span = Math.max(span, Math.hypot(a.x - q.x, a.z - q.z));
-      const o = { ...W.CITIES.reduce((m, c) => (m[c.id] = c, m), {}), village: W.VILLAGE, china: W.CHINA, india: W.INDIA, aussie: W.AUSSIE, town: W.TOWN, market: W.MARKET, home: W.HOME }[key];
+      const o = { ...W.CITIES.reduce((m, c) => (m[c.id] = c, m), {}), village: W.VILLAGE, china: W.CHINA, india: W.INDIA, aussie: W.AUSSIE, town: W.TOWN, market: W.MARKET, home: W.HOME, hoian: W.HOIAN }[key];
       const size = o.x0 != null ? Math.hypot(o.x1 - o.x0, o.z1 - o.z0) : (o.r || 24) * 2;
       if (span < size * .4) bad.push(`${key}: pieces bunched in ${span.toFixed(0)} m of a ${size.toFixed(0)} m place`);
       for (const q of all) { const rd = W.roadDist(q.x, q.z); if (rd.road && rd.d < rd.road.w / 2 + 1.5) bad.push(`${key}: a piece on a road at ${q.x},${q.z}`);
