@@ -10,7 +10,8 @@ import { T } from './i18n.js';
 import { say, sayIn } from './voice.js';
 import { SFX } from './audio.js';
 import { settings, saveSettings, saveProfiles, farm, saveFarm } from './state.js';
-import { heightAt, VILLAGE, CHINA, INDIA, AUSSIE, MARKET, WATER } from './world.js';
+import { heightAt, VILLAGE, CHINA, INDIA, AUSSIE, WATER } from './world.js';
+import { rowSlot } from './content/map.js';
 import { LEARN } from './words2.js';
 import { el, esc, dist2, shuffle } from './util.js';
 import { modal } from './ui.js';
@@ -155,13 +156,13 @@ export function createLearning(G) {
 
   // the Music Corner stall at the market
   {
-    const [x, z] = spot((MARKET.x0 + MARKET.x1) / 2 + 8, MARKET.roadZ + 6, 1.6), y = heightAt(x, z), p = [];
+    const S = rowSlot('market', 5, 1.4), { x, z } = S, y = heightAt(x, z), p = [];   // (T1b) in the market row, among the centre's stalls
     p.push(P(new THREE.BoxGeometry(2.6, .9, 1.2), '#7a4ab0', [0, .45, 0]), P(new THREE.BoxGeometry(2.8, .1, 1.4), '#f6e7c8', [0, .95, 0]));
     [[-1.25, -.55], [1.25, -.55], [-1.25, .55], [1.25, .55]].forEach(([a, b]) => p.push(P(new THREE.CylinderGeometry(.06, .06, 2.3, 6), '#8a5a3b', [a, 1.15, b])));
     for (let i = 0; i < 6; i++) p.push(P(new THREE.BoxGeometry(.5, .08, 1.7), i % 2 ? '#ffd23f' : '#a66bff', [-1.25 + i * .5, 2.35, 0], [.12, 0, 0]));
-    const m = new THREE.Mesh(merge(p), toonVC()); m.position.set(x, y, z); scene.add(m); world.colliders.push({ x, z, r: 1.4 }); world.stalls.push({ id: 'musiccorner', place: 'market', kind: 'stall', x, z, w: 2.8, d: 1.4, face: 0, tap: 'musiccorner' });
-    ['🎸', '🥁', '🪵', '🎼'].forEach((e, k) => { const s = sprite(e, .7); s.position.set(x - .9 + k * .6, y + 1.35, z); scene.add(s); });
-    G.interactables.push({ id: 'musiccorner', x, z: z + 1.4, r: 3, icon: '🎶', label: () => T('Music Corner: instruments from 4 countries', 'Góc Âm Nhạc: nhạc cụ 4 nước'), act: h => G.playGame(h.i, 'music', 'place') });
+    const m = new THREE.Mesh(merge(p), toonVC()); m.position.set(x, y, z); m.rotation.y = S.face; scene.add(m); world.colliders.push({ x, z, r: 1.4 }); world.stalls.push({ id: 'musiccorner', place: 'market', kind: 'stall', x, z, w: 2.8, d: 1.4, face: S.face, tap: 'musiccorner' });
+    ['🎸', '🥁', '🪵', '🎼'].forEach((e, k) => { const s = sprite(e, .7); s.position.set(x + S.ax * (-.9 + k * .6), y + 1.35, z + S.az * (-.9 + k * .6)); scene.add(s); });
+    G.interactables.push({ id: 'musiccorner', x: x + S.fx * 1.45, z: z + S.fz * 1.45, r: 3, icon: '🎶', label: () => T('Music Corner: instruments from 4 countries', 'Góc Âm Nhạc: nhạc cụ 4 nước'), act: h => G.playGame(h.i, 'music', 'place') });
   }
 
   // ---------- the gentle rest timer ----------

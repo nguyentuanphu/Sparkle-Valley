@@ -1,5 +1,5 @@
 // The clothes shop and the wardrobe (round S, owner plan 8 Oct: Round R Part 2 item 6; Studio switch 'shop').
-//   the place   a striped stall by Chợ Ba Miền (the Three Regions market), on open flat ground off the roads (js/openspot.js)
+//   the place   a striped stall by Chợ Ba Miền (the Three Regions market), at the end of its market row (T1b: js/content/map.js rowSlot)
 //   the bag     the Bag button opens the backpack (owner, 10 Oct, Bug #29: "bag is bag"); inside it is one small shop button
 //               that opens the shop right there, with no travel (js/ui.js, drawBag). The stall in the valley stays.
 //   the screen  one big card: round ✕, a picture tab for each kind of thing, prices as a coin picture and a number,
@@ -10,8 +10,8 @@ import { THREE, P, merge, toonVC } from './gfx.js';
 import { T } from './i18n.js';
 import { featureOn } from './custom.js';
 import { farm, saveProfiles } from './state.js';
-import { MARKET, heightAt } from './world.js';
-import { openSpot } from './openspot.js';
+import { heightAt } from './world.js';
+import { rowSlot } from './content/map.js';
 import { modal } from './popups.js';
 import { pic } from './art.js';
 import { SFX } from './audio.js';
@@ -74,9 +74,8 @@ export function createShop(G, { say, save }) {
   const on = () => featureOn('shop', true);
 
   // ---------- the stall by the market ----------
-  const mx = (MARKET.x0 + MARKET.x1) / 2, lvl = heightAt(mx, MARKET.roadZ);
-  const spot = openSpot(G, { cx: mx, cz: MARKET.z1 + 3, rmax: 34, need: 3.4, flatR: 3, want: 7, levelTo: lvl }) || openSpot(G, { cx: mx, cz: MARKET.z1 + 3, rmax: 40, need: 3.4, flatR: 3, want: 7 }) || { x: MARKET.x1 - 6, z: MARKET.z0 + 3 };
-  const face = Math.atan2(mx - spot.x, MARKET.roadZ - spot.z); // (the counter looks towards the market street)
+  // (T1b, owner 11 Oct) at the south end of the market row, its counter to the street (js/content/map.js rowSlot)
+  const S = rowSlot('market', 10.1, 2.1), spot = { x: S.x, z: S.z }, face = S.face;
   const parts = [P(new THREE.BoxGeometry(3.4, .95, 1.1), '#c98a4a', [0, .48, .5]), P(new THREE.BoxGeometry(3.6, .1, 1.3), '#f6e7c8', [0, 1, .5]),
     P(new THREE.BoxGeometry(3.4, 2.6, .12), '#f6e7c8', [0, 1.3, -.9])];
   [[-1.65, .95], [1.65, .95], [-1.65, -.9], [1.65, -.9]].forEach(([x, z]) => parts.push(P(new THREE.CylinderGeometry(.06, .06, 2.7, 6), '#8a5a3b', [x, 1.35, z])));
@@ -87,7 +86,7 @@ export function createShop(G, { say, save }) {
   [['#ecd9a0', -1.1], ['#e8434a', -.3], ['#ff7eb8', .5], ['#3b6fe0', 1.2]].forEach(([c, x], k) => parts.push(k ? P(new THREE.SphereGeometry(.2, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), c, [x, 1.05, .5]) : P(new THREE.ConeGeometry(.32, .22, 16), c, [x, 1.16, .5])));
   const stall = new THREE.Mesh(merge(parts), toonVC()); stall.castShadow = true; stall.position.set(spot.x, heightAt(spot.x, spot.z), spot.z); stall.rotation.y = face; scene.add(stall);
   world.colliders.push({ x: spot.x, z: spot.z, r: 1.8 }); world.stalls.push({ id: 'shop_clothes', place: 'market', kind: 'stall', x: spot.x, z: spot.z, w: 3.6, d: 2.1, face, tap: 'shop_clothes' });
-  const front = { x: spot.x + Math.sin(face) * 2.9, z: spot.z + Math.cos(face) * 2.9 };
+  const front = { x: spot.x + Math.sin(face) * 1.8, z: spot.z + Math.cos(face) * 1.8 };
   G.interactables.push({ id: 'shop_clothes', x: front.x, z: front.z, r: 3, icon: '🛍️', label: () => T('Clothes shop', 'Cửa hàng quần áo'), visible: () => on(), act: h => openShop(h.i) });
   stall.visible = on(); world.updaters.push(() => { stall.visible = on(); });
 

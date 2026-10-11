@@ -246,7 +246,7 @@ export const LANDMARK_AT = {
   bondi: { place: 'melbourne', off: [26, 50] },  // the lifesavers' tower on the southern beach
   lighthouse: { place: 'vungtau', off: [12, 30] }, // on the beach below Vũng Tàu (round T3: moved here with Bạch Dinh)
   turtle: { place: 'hanoi', off: [-29, 3] },     // in Hồ Gươm by Hà Nội (round T2; was a small copy in the market)
-  onepillar: { place: 'market', off: [-10, -10] },
+  onepillar: { place: 'market', off: [-10, -13.5] },   // (T1b: 3 m behind the market row)
   chuacau: { place: 'hoian', off: [0, -18] },    // the middle of Chùa Cầu over the Hội An canal (round T2; was a small copy in the market)
   longbien: { place: 'hanoi', off: [0, 35] },     // the middle of Long Biên bridge
   storybridge: { place: 'brisbane', off: [0, 31] }, // the middle of the Story Bridge
@@ -328,12 +328,12 @@ export const STALL = { road: 1.5, building: 3, gap: 1.2, path: .9, alone: 12 };
 // from → to (seen from above, north up), −1 on the right; at: metres from `from` to the first slot's middle; pitch: metres
 // between slots' middles. The cities' rows are made from their main gate below.
 const ROWS = [
-  { place: 'market', street: [[-24, 0], [24, 0]], w: 8, walking: true, side: 1, at: 2.5, pitch: 5.5 },   // north side; the hosts and the hawker on the south
-  { place: 'aussie', street: [[-18, 0], [18, 0]], w: 7, side: -1, at: 1.3, pitch: 4.2 },                    // south side, facing the shops across the road
-  { place: 'town', street: [[-26, -6], [26, -6]], w: ROAD_WIDTH.asphalt, side: -1, at: 18, pitch: 4 },      // south footpath, by the park
+  { place: 'market', street: [[-24, 0], [24, 0]], w: 8, walking: true, side: 1, at: 2, pitch: 4 },   // north side, north to south Vietnam from the gate; the hosts and the hawker on the south
+  { place: 'aussie', street: [[-18, 0], [18, 0]], w: 7, side: -1, at: 0, pitch: 1 },   // south side, facing the shops across the road; slots in metres (the crossing in the middle stays clear)
+  { place: 'town', street: [[-26, -6], [26, -6]], w: ROAD_WIDTH.asphalt, side: -1, at: 26.5, pitch: 4 },   // south footpath, east of the crossing, by the park
   { place: 'village', street: [[-32, 0], [-18, 0]], w: ROAD_WIDTH.dirt, side: 1, at: 3, pitch: 4 },          // the lane in from the old gate, north side
-  { place: 'china', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 3, pitch: 4 },
-  { place: 'india', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 3, pitch: 4 }
+  { place: 'china', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 1.6, pitch: 3.8 },   // just inside the gate, west side
+  { place: 'india', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 1.6, pitch: 3.8 }
 ];
 // the cities: the main street from the main gate straight through the square; the kiosks just inside the gate on the
 // host's side (Bắc Ninh: the south side, clear of the Quan họ boat)

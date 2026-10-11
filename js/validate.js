@@ -58,10 +58,11 @@ function stallRules(G, add) {
   const blds = [...W.boxes.filter(b => !b.room && (b.x1 - b.x0) * (b.z1 - b.z0) > 7 && !own((b.x0 + b.x1) / 2, (b.z0 + b.z1) / 2)).map(b => ({ x: (b.x0 + b.x1) / 2, z: (b.z0 + b.z1) / 2, w: b.x1 - b.x0, d: b.z1 - b.z0, face: 0 })),
     ...W.colliders.filter(c => c.r >= 1.9 && !own(c.x, c.z)).map(c => ({ x: c.x, z: c.z, r: c.r }))];
   const toBld = (B, x, z) => B.r ? Math.hypot(B.x - x, B.z - z) - B.r : toRect(B, x, z);
-  const taps = new Map((G.interactables || []).map(i => [i.id, i]));
+  const tapsOf = new Map(); for (const i of G.interactables || []) if (Number.isFinite(i.x)) (tapsOf.get(i.id) || tapsOf.set(i.id, []).get(i.id)).push(i);
   const where = s => `"${s.id}" (${s.place}) at ${f1(s.x)},${f1(s.z)}`;
   for (const s of stalls) {
-    const tap = s.tap && taps.get(s.tap), S = rowStreet(s.place);
+    // (two kiosks may share an id, like the two bánh khọt kiosks: the one nearest the stall is its own)
+    const tap = s.tap && (tapsOf.get(s.tap) || []).reduce((b, i) => !b || Math.hypot(i.x - s.x, i.z - s.z) < Math.hypot(b.x - s.x, b.z - s.z) ? i : b, null), S = rowStreet(s.place);
     if (s.tap && !tap) add('STALL-002', `${where(s)} has no tap point ${s.tap}`);
     // STALL-002 (tap): the place a child taps is between the stall and its street, and never on a road
     if (tap && S) { if (edge(tap.x, tap.z, true) < -.01) add('STALL-002', `${where(s)}: its tap point is on a road (${f1(edge(tap.x, tap.z, true))} m)`); if (!S.walking && segD(S, tap.x, tap.z) > segD(S, s.x, s.z) + .01 && s.kind !== 'shop') add('STALL-002', `${where(s)}: its tap point is behind it, away from the street`); }
