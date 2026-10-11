@@ -795,7 +795,24 @@ await check('validate', async () => {
   const r = await P.page.evaluate(async () => (await import('/js/validate.js')).validateWorld(__sv));
   const errs = P.errors; await P.ctx.close();
   ok(!r.length && !errs.length, JSON.stringify(r.slice(0, 12)) + JSON.stringify(errs));
-  return 'ROAD-001/002/003/004/011 and VEH-001 hold';
+  return 'ROAD-001/002/003/004/011, VEH-001 and STALL-001…004 hold';
+});
+
+await check('stalls', async () => {
+  // (T1b tidy streets, owner 11 Oct) STALL-001…004 (js/validate.js): every stall, kiosk, van and tent 1.5 m off a road's
+  // or street's edge and 3 m from buildings, 1.2 m between neighbours, facing its street with the tap spot in front, in
+  // its place's one market row; walking sellers on the footpath. Every seller a child can tap is in the list it checks.
+  const P = await open(b, { w: 700, h: 500 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, W = G.world, out = (await import('/js/validate.js')).validateWorld(G).filter(p => /^STALL-/.test(p.rule));
+    const known = new Set([...W.stalls.map(s => s.tap), ...W.walks.map(w => w.id)]);
+    const missing = G.interactables.filter(i => /^(v_|hk_)/.test(i.id) && !known.has(i.id)).map(i => i.id);
+    const by = {}; for (const s of W.stalls) by[s.place] = (by[s.place] || 0) + 1;
+    return { out, missing, by, n: W.stalls.length, walks: W.walks.length };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.out.length && !r.missing.length && r.n >= 40 && r.walks >= 5 && !errs.length, `${r.out.length} problems: ${r.out.map(p => p.rule + ' ' + p.msg).join(' | ')} | not listed: ${r.missing.join(', ')} ${JSON.stringify(errs)}`);
+  return `${r.n} stalls, kiosks and shop fronts in ${Object.keys(r.by).length} places, ${r.walks} walking sellers: STALL-001…004 hold`;
 });
 
 await check('tales', async () => {

@@ -246,7 +246,7 @@ export const LANDMARK_AT = {
   bondi: { place: 'melbourne', off: [26, 50] },  // the lifesavers' tower on the southern beach
   lighthouse: { place: 'vungtau', off: [12, 30] }, // on the beach below Vũng Tàu (round T3: moved here with Bạch Dinh)
   turtle: { place: 'hanoi', off: [-29, 3] },     // in Hồ Gươm by Hà Nội (round T2; was a small copy in the market)
-  onepillar: { place: 'market', off: [-10, -10] },
+  onepillar: { place: 'market', off: [-10, -13.5] },   // (T1b: 3 m behind the market row)
   chuacau: { place: 'hoian', off: [0, -18] },    // the middle of Chùa Cầu over the Hội An canal (round T2; was a small copy in the market)
   longbien: { place: 'hanoi', off: [0, 35] },     // the middle of Long Biên bridge
   storybridge: { place: 'brisbane', off: [0, 31] }, // the middle of the Story Bridge
@@ -315,6 +315,55 @@ export const BOATS = [
   { id: 'vtboat', water: 'saigon_r', via: [[131, 196], [198, 198]], piers: [{ id: 'saigon', at: [136, 156], to: [131, 156], name: ['TP. Hồ Chí Minh', 'TP. Hồ Chí Minh'] }, { id: 'vungtau', at: [198, 181], to: [198, 190], name: ['Bãi Sau, Vũng Tàu', 'Bãi Sau, Vũng Tàu'] }] },
   { id: 'crossing', water: 'main_n', count: 0 }            // (round T2, Concept D: no crossing rafts; bridges join every bank and the raft line stops by each)
 ];
+
+// ---------- (T1b, owner 11 Oct) tidy streets: one market row per place ----------
+// Every stall, kiosk, food van and seller's tent of a place stands in one row on one side of the place's main street,
+// all facing it; walking sellers keep to the footpath on the other side (rules STALL-001…004, docs/ARCHITECTURE.md §9.5,
+// checked by js/validate.js). STALL: the clear ground the rules ask for, in metres: from the street's edge, from any
+// building, between neighbours; `path`: how far off the street's edge the walking sellers' footpath runs; `alone`: the
+// most open ground between two neighbours in a row (more and a stall stands alone in a field).
+export const STALL = { road: 1.5, building: 3, gap: 1.2, path: .9, alone: 12 };
+// street: the main street's centre line [from, to], from the place's anchor; w: its width (ROAD_WIDTH, or a walking
+// street's own paving); walking: no traffic, so customers may stand on it; side: 1 = the row is on the left of
+// from → to (seen from above, north up), −1 on the right; at: metres from `from` to the first slot's middle; pitch: metres
+// between slots' middles. The cities' rows are made from their main gate below.
+const ROWS = [
+  { place: 'market', street: [[-24, 0], [24, 0]], w: 8, walking: true, side: 1, at: 2, pitch: 4 },   // north side, north to south Vietnam from the gate; the hosts and the hawker on the south
+  { place: 'aussie', street: [[-18, 0], [18, 0]], w: 7, side: -1, at: 0, pitch: 1 },   // south side, facing the shops across the road; slots in metres (the crossing in the middle stays clear)
+  { place: 'town', street: [[-26, -6], [26, -6]], w: ROAD_WIDTH.asphalt, side: -1, at: 26.5, pitch: 4 },   // south footpath, east of the crossing, by the park
+  { place: 'village', street: [[-32, 0], [-18, 0]], w: ROAD_WIDTH.dirt, side: 1, at: 3, pitch: 4 },          // the lane in from the old gate, north side
+  { place: 'china', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 1.6, pitch: 3.8 },   // just inside the gate, west side
+  { place: 'india', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 1.6, pitch: 3.8 }
+];
+// the cities: the main street from the main gate straight through the square; the kiosks just inside the gate on the
+// host's side (Bắc Ninh: the south side, clear of the Quan họ boat)
+for (const p of PLACES) if (p.kind === 'city') ROWS.push({ place: p.id, street: [p.gates[0], [-p.gates[0][0], -p.gates[0][1]]], w: ROAD_WIDTH.asphalt, side: p.id === 'bacninh' ? -1 : 1, at: 2.5, pitch: 3.8, city: true });
+export const MARKET_ROWS = ROWS;
+const ROW_OF = new Map(ROWS.map(r => [r.place, r]));
+export const rowOf = place => ROW_OF.get(place) || null;
+// the street of a place's row in world coordinates: { a, b, w, dx, dz, len, nx, nz } (n: the unit step from the street
+// towards the row)
+export function rowStreet(place) {
+  const R = ROW_OF.get(place); if (!R) return null; const [ox, oz] = anchorOf(place);
+  const a = [ox + R.street[0][0], oz + R.street[0][1]], b = [ox + R.street[1][0], oz + R.street[1][1]], len = Math.hypot(b[0] - a[0], b[1] - a[1]), dx = (b[0] - a[0]) / len, dz = (b[1] - a[1]) / len;
+  return { place, a, b, w: R.w, walking: !!R.walking, len, dx, dz, nx: dz * R.side, nz: -dx * R.side };
+}
+// slot i of a place's row for something `d` metres deep (across the street) and `span` slots long: where its middle
+// stands { x, z }, which way it faces (face: the yaw that looks at the street, as avatars and models use it), the step
+// along the row (ax, az) and towards the street (fx, fz). Its front is STALL.road off the street's edge.
+export function rowSlot(place, i, d = 1.6, span = 1) {
+  const S = rowStreet(place), R = ROW_OF.get(place); if (!S) return null;
+  const t = R.at + (i + (span - 1) / 2) * R.pitch, off = S.w / 2 + STALL.road + d / 2;
+  const x = S.a[0] + S.dx * t + S.nx * off, z = S.a[1] + S.dz * t + S.nz * off;
+  return { x, z, face: Math.atan2(-S.nx, -S.nz), ax: S.dx, az: S.dz, fx: -S.nx, fz: -S.nz };
+}
+// the walking sellers' footpath: along the street on the side away from the row (on a walking street, its far half),
+// trimmed `trim` metres at each end: [[x, z], [x, z]]
+export function walkPath(place, trim = 3) {
+  const S = rowStreet(place); if (!S) return null;
+  const off = -(S.walking ? S.w / 2 - 1.4 : S.w / 2 + STALL.path), at = t => [S.a[0] + S.dx * t + S.nx * off, S.a[1] + S.dz * t + S.nz * off];
+  return [at(trim), at(S.len - trim)];
+}
 
 // ---------- looking things up ----------
 const BY_ID = new Map(PLACES.map(p => [p.id, p]));
