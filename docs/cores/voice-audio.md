@@ -75,7 +75,7 @@ device).
 
 ## What's left (handover, 11 Oct, 10:50 am AEST)
 Both branches are pushed and marked "ready for Release" on the board; no check-ins are running (the owner stopped them until further notice).
-- **For Release:** merge `core/voice-audio` (9eefe7c: #39 rain fix and check `rain`; Hội An and Vũng Tàu in `VN_AREAS`) and `claude/determined-brown-k9esi5` (ee4fd03: voice pack by area; bump the version). The two branches do not overlap except `docs/cores/voice-audio.md` (keep both sides) and `tests/run.mjs` (both add checks: keep `rain` and `voicecover`, `voicearea`). Also `bugfix/voice-audio-35` (#35), leaving out `.bugfix/result.md`. Close #35 and #39 once deployed.
+- **For Release:** merge `core/voice-audio` (9eefe7c: #39 rain fix and check `rain`; Hội An and Vũng Tàu in `VN_AREAS`) and `claude/determined-brown-k9esi5` (ee4fd03: voice pack by area; bump the version). The two branches overlap only in `tests/run.mjs` (both add checks: keep `rain`, `voicecover` and `voicearea`). Also `bugfix/voice-audio-35` (#35), leaving out `.bugfix/result.md`. Close #35 and #39 once deployed.
 - **Not run yet:** the full suite on `core/voice-audio` alone (its core checks pass); Release's merged run covers it.
 - **For the owner:** tap the Simple screen's speaker button on the iPhone once #35 is live; listen to the rain before/after recordings (sent in chat); lullabies with real voices still wait for words or recordings (Music page).
 - **Later:** when Round T3 adds Vũng Tàu (and later places), run `node tools/voice-harvest.mjs`, then `node tools/make-voice-pack.mjs --engine azure --parallel 4 --per-minute 19`, then the `voicecover` check; give new place files an area in `tools/voice-lines.mjs` FILE_AREA.
