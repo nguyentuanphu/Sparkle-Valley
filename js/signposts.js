@@ -57,22 +57,28 @@ function walk(road, i, t, dir, max = 400) {
   return out;
 }
 
-// the next place along a way: the first place within 30 m of the road ahead (a place before a landmark when both
-// are about as far along), at least 14 m from the junction so a board never names the corner it stands on
-function nextPlace(J, way, places, landmarks) {
-  const path = walk(way.road, way.i, way.t, way.dir); if (path.length < 3) return null;
-  const first = (list, reach) => {
-    let best = null;
-    for (const p of list) {
-      if (Math.hypot(p.x - J.x, p.z - J.z) < 14) continue;
-      for (const [x, z, s] of path) if (Math.hypot(p.x - x, p.z - z) < reach) { if (!best || s < best.s) best = { p, s }; break; }
-    }
-    return best;
-  };
-  const pl = first(places, 30), lm = first(landmarks, 22);
-  const pick = pl && (!lm || pl.s <= lm.s + 40) ? pl : lm; if (!pick) return null;
-  const [dx, dz] = [path[1][0] - J.x, path[1][1] - J.z];
-  return { place: pick.p, angle: Math.atan2(dz, dx), far: pick.s };
+// where a way leads: the place the road reaches first, whether it passes it, ends at its gate, or turns off at the
+// next junction towards it (one junction on, so the ring road's boards name the towns its side roads go to);
+// a landmark only when no place is on the way. Never a place within 14 m of this junction.
+function nextPlace(J, way, places, landmarks, junctions, depth = 0) {
+  const path = walk(way.road, way.i, way.t, way.dir, 1500); if (path.length < 3) return null;
+  const tops = places.filter(p => !p.under && Math.hypot(p.x - J.x, p.z - J.z) >= 14);
+  let best = null;
+  const offer = (p, s) => { if (p && (!best || s < best.s)) best = { p, s }; };
+  // a place the road passes
+  for (const p of tops) for (const [x, z, s] of path) if (Math.hypot(p.x - x, p.z - z) < 22) { offer(p, s); break; }
+  // the place at the road's end (its gate or the town it stops in)
+  const end = path[path.length - 1], ended = !way.road.loop && end[2] < 1500 - 2;
+  if (ended) { let near = null, nd = 45; for (const p of tops) { const d = Math.hypot(p.x - end[0], p.z - end[1]); if (d < nd) { nd = d; near = p; } } offer(near, end[2]); }
+  // the next junction on the way: where its side road leads
+  if (!depth) for (const K of junctions) {
+    if (K === J) continue;
+    const hit = path.find(([x, z]) => Math.hypot(K.x - x, K.z - z) < 6); if (!hit || (best && best.s <= hit[2])) continue;
+    for (const w of K.ways) if (w.road !== way.road) { const d = nextPlace(K, w, places, landmarks, junctions, 1); if (d) offer(d.place, hit[2]); }
+  }
+  if (!best) for (const l of landmarks) { if (Math.hypot(l.x - J.x, l.z - J.z) < 14) continue; for (const [x, z, s] of path) if (Math.hypot(l.x - x, l.z - z) < 22) { offer(l, s); break; } }
+  if (!best) return null;
+  return { place: best.p, angle: Math.atan2(path[1][1] - J.z, path[1][0] - J.x), far: best.s };
 }
 
 // a spot by the junction that is off every road and dry: tried in a ring of growing sizes round the corner
@@ -87,10 +93,11 @@ function postSpot(J) {
 export function createSignposts(G) {
   const { scene, world } = G, places = (withSitePlaces(G.PLACES) || []).filter(p => p.name), landmarks = (G.LANDMARKS || []).filter(l => l.name);
   const posts = [];
-  for (const J of findJunctions()) {
+  const junctions = findJunctions();
+  for (const J of junctions) {
     const spot = postSpot(J); if (!spot) continue;
     const boards = [];
-    for (const w of J.ways) { const b = nextPlace(J, w, places, landmarks); if (b && !boards.some(o => o.place === b.place)) boards.push(b); }
+    for (const w of J.ways) { const b = nextPlace(J, w, places, landmarks, junctions); if (b && !boards.some(o => o.place === b.place)) boards.push(b); }
     if (!boards.length) continue;
     posts.push({ ...spot, y: heightAt(spot.x, spot.z), boards: boards.slice(0, 4) });
   }

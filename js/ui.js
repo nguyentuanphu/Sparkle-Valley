@@ -17,8 +17,8 @@ import { placeBookHTML, bindPlaceBook } from './placebook.js';
 import { familyCardsHTML, bindFamilyCards } from './familycards.js';
 import { openReport } from './report.js';
 import { ITEMS, RECIPES, findRecipe, SHOP, HAT_ICON, HAT_NAME, REWARD_HATS, dishInfo, QUESTS, STICKERS } from './data.js';
-import { SIZE, HALF, SHRINES, TOWERS } from './world.js';
-import { LANDMARK_HOME } from './content/map.js';
+import { SIZE, HALF, SHRINES, TOWERS, WATER, heightAt, regionAt, RIVERS, PONDS, ROADS } from './world.js';
+import { LANDMARK_HOME, ROAD_TONES } from './content/map.js';
 import { GAMES } from './games/frame.js';
 import { showStory, storyList } from './story.js';
 import { SECRETS } from './secrets.js';
@@ -659,6 +659,29 @@ import { modal, dialog, dialogHooks, reward } from './popups.js';
 // ---------- the Sparkle Pad ----------
 // which place each landmark belongs to in the real world (the Pad map lists it under that place): round T, in the map
 // (js/content/map.js LANDMARK_HOME)
+// (round T4b, finding your way) the Pad map's picture, drawn once from the map data: the land shaded by its height
+// (sea, sand, grass, hills, snow), every river in its own colour, the lakes and ponds, and every road in its
+// region's colour (red Vietnam, orange Australia, purple to the mountains, blue along the coast, grey at home)
+let VALLEY_PIC = null;
+function valleyPicture(S) {
+  if (VALLEY_PIC && VALLEY_PIC.width === S) return VALLEY_PIC;
+  const c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'), k = S / SIZE, N = 160, cell = S / N;
+  const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * Math.max(0, Math.min(1, t))));
+  const SEA = [92, 176, 226], SAND = [238, 220, 170], GRASS = [150, 206, 120], HILL = [118, 168, 98], ROCK = [176, 160, 140], SNOW = [244, 244, 248];
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    const wx = (i + .5) / N * SIZE - HALF, wz = (j + .5) / N * SIZE - HALF, h = heightAt(wx, wz) - WATER;
+    const col = h < .1 ? mix([60, 140, 210], SEA, 1 + h / 4) : h < 1.2 ? SAND : h < 8 ? mix(GRASS, HILL, (h - 1.2) / 6.8) : h < 22 ? mix(HILL, ROCK, (h - 8) / 14) : mix(ROCK, SNOW, (h - 22) / 10);
+    g.fillStyle = `rgb(${col})`; g.fillRect(i * cell, j * cell, cell + .6, cell + .6);
+  }
+  const P = ([wx, wz]) => [(wx + HALF) * k, (wz + HALF) * k];
+  const line = (pts, width, colour) => { g.strokeStyle = colour; g.lineWidth = width; g.lineCap = g.lineJoin = 'round'; g.beginPath(); pts.forEach((q, n) => { const [a, b] = P(q); n ? g.lineTo(a, b) : g.moveTo(a, b); }); g.stroke(); };
+  for (const R of RIVERS) line(R.pts, Math.max(3, 9 * R.w * k), R.tone ? R.tone : '#4aa8e0');
+  for (const D of PONDS) { const [a, b] = P([D.x, D.z]); g.fillStyle = '#4aa8e0'; g.beginPath(); g.arc(a, b, D.r * k, 0, Math.PI * 2); g.fill(); }
+  for (const R of ROADS) { if (R.kind === 'footpath') continue; const pts = R.loop ? [...R.pts, R.pts[0]] : R.pts;
+    line(pts, (R.kind === 'asphalt' ? 5 : 3.5) + 2, 'rgba(255,255,255,.85)'); line(pts, R.kind === 'asphalt' ? 5 : 3.5, ROAD_TONES[R.tone] || (R.kind === 'dirt' ? '#c49a62' : '#8d8f96')); }
+  return (VALLEY_PIC = c);
+}
+
 export function openPad(game, i, tab) {
   tab = tab || 'map';
   const hero = game.heroes[i], p = hero.profile;
@@ -689,7 +712,7 @@ export function openPad(game, i, tab) {
   const close = () => { removeEventListener('keydown', onKey, true); m.close(); game.closePad(i); };
   function drawMap(body) {
     withSitePlaces(game.PLACES);
-    const S = 600, cv = el('canvas', 'bigmap'); cv.width = cv.height = S; body.appendChild(cv);
+    const S = 600, wrap = el('div', 'mapwrap'), cv = el('canvas', 'bigmap'); cv.width = cv.height = S; wrap.appendChild(cv); body.appendChild(wrap);
     body.appendChild(el('p', 'note center', T('Tap any picture on the map, or a place below, to fly there.', 'Chạm vào bất kỳ hình nào trên bản đồ, hoặc một nơi bên dưới, để bay đến đó.')));
     // the places, grouped by country and listed from north to south, like a real map: one group at a time,
     // picked from chips (the full list was too long to scroll)
@@ -735,7 +758,7 @@ export function openPad(game, i, tab) {
     list.addEventListener('touchend', e => { if (sx === null) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 60) step(dx < 0 ? 1 : -1); }, { passive: true });
     nav.appendChild(prev); nav.appendChild(list); nav.appendChild(next);
     body.appendChild(chips); body.appendChild(cityRow); body.appendChild(nav); fill();
-    const x = cv.getContext('2d'); x.drawImage(game.fogMapFor(p), 0, 0, S, S);
+    const x = cv.getContext('2d'); x.drawImage(valleyPicture(S), 0, 0, S, S);   // (round T4b) drawn from the map data, no longer a picture of the world
     const k = S / SIZE, pt = (wx, wz) => [(wx + HALF) * k, (wz + HALF) * k];
     const spots = [];
     const icon = (ch, wx, wz, sz = 26) => { const [a, b] = pt(wx, wz); x.font = sz + 'px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(ch, a, b); };
@@ -759,8 +782,22 @@ export function openPad(game, i, tab) {
       let best = tries[0], bc = Infinity; for (const r of tries) { const c = cost(r); if (c < bc) { best = r; bc = c; } if (!c) break; }
       labels.push(Object.assign(best, { name: pl.name() }));
     });
+    // (round T4b) soft clouds over the places not visited yet, drawn under the names so every name stays readable;
+    // the first time the map opens after a visit, that place's cloud lifts with a little puff (once: remembered)
+    const vis = p.visited || {}, lifted = p.mapClouds = p.mapClouds || {}, puffs = [];
+    cv.clouds = [];
+    const cloud = (a, b, s = 1) => { x.save(); x.shadowColor = 'rgba(80,90,120,.3)'; x.shadowBlur = 6; x.shadowOffsetY = 2; x.fillStyle = 'rgba(255,255,255,.94)'; x.beginPath();
+      for (const [dx, dy, r] of [[-14, 4, 11], [0, -4, 15], [14, 3, 11], [0, 8, 13]]) { x.moveTo(a + dx * s + r * s, b + dy * s); x.arc(a + dx * s, b + dy * s, r * s, 0, Math.PI * 2); }
+      x.fill(); x.restore(); };
+    game.PLACES.forEach(pl => {
+      if (pl.under) return; const rg = regionAt(pl.x, pl.z), seen = !!vis[rg], [a, b] = pt(pl.x, pl.z);
+      if (!seen) { cloud(a, b - 4); cv.clouds.push({ region: rg, name: pl.name() }); }
+      else if (!lifted[rg]) { lifted[rg] = true; puffs.push([a, b - 4]); }
+    });
     labels.forEach(r => { x.fillStyle = 'rgba(255,255,255,.92)'; x.fillRect(r.x, r.y, r.w, r.h); x.fillStyle = '#3b2558'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(r.name, r.x + r.w / 2, r.y + 10); });
     cv.labels = labels; // read by the hubmap check
+    if (puffs.length) { const fog = el('div', 'mapclouds'); wrap.appendChild(fog); SFX.chime && SFX.chime(); saveProfiles();
+      for (const [a, b] of puffs) { const c = el('div', 'mapcloud puff'); c.style.left = (a / S * 100) + '%'; c.style.top = (b / S * 100) + '%'; fog.appendChild(c); c.addEventListener('animationend', () => c.remove()); } }
     // every ferry and raft stop (tap one to go there and wait for the boat)
     if (game.ferries) game.ferries.ferries.forEach(F => F.stops.forEach(st => { const t = st.dock.pier.tip; icon('⛴️', t.x, t.z, 16); spots.push({ x: t.x, z: t.z, name: '⛴️ ' + st.name(), r: 10 }); }));
     const q = game.questTarget(hero); if (q) { const [a, b] = pt(q.x, q.z); x.fillStyle = '#ff3b6b'; x.beginPath(); x.arc(a, b - 14, 9, 0, Math.PI * 2); x.moveTo(a - 7, b - 9); x.lineTo(a, b); x.lineTo(a + 7, b - 9); x.fill(); }
