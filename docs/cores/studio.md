@@ -109,3 +109,4 @@ Build the exe after changes: `bash studio/build-exe.sh`.
 ## Progress notes
 
 - 11 Oct 09:20 AEDT (Sydney), commit d5c24042 (branch `claude/quirky-meitner-dsxo5i`): Map page, things kept aside from the old map. Full suite 86/86 pass (`studio` with the new parked-items part; `multiplayer`, `meet`, `cloud`, `netgames`, `together`, `knock` skipped: no local PeerJS or MQTT server in this chat). Screenshots looked at: Map page kept-aside card on phone 390, tablet 820, computer 1280. No new spoken lines. SparkleStudio.exe needs rebuilding (`bash studio/build-exe.sh`).
+- r60 Studio round (owner, 11 Oct AEDT): wait for r60 on main before starting (done 16:54); build all three (map stamp, Story characters, Plots page) in this round; add start-up times to the Analytics page (asked by Analytics & Infra). Story characters sits in the Game section, Memory Villages (the Plots page) in the Family section, which now has nine cards.
