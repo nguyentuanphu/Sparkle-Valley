@@ -188,3 +188,11 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   `chapter2`, `chapter3`, `story`, `phone`, `contract`: 27 of 27 (11 Oct 06:50 AEST).
 - Screenshots looked at (11 Oct AEST): Bag with its small shop button, the shop (7 tabs) and the wardrobe, for a big kid and an
   under-5, on phone 390x760, tablet 820x1180 and computer 1280x800.
+- **Item 2, Chapter 3 finished (owner's go, 11 Oct AEST):** 238 missing recordings made with Azure (Chapter 3's words, Chi's
+  word questions, the festival calendar's "today" lines and others; no line has a child's name); Chi, Jack and Ruby's looks
+  can come from Studio's content pack (`looks`, `lookOf` in `js/content/chapter3sydney.js`; the Studio page is asked of
+  Studio on the board); every Chapter 3 step looked at on phone 390x760, tablet 820x1180 and computer 1280x800 for an
+  under-5 and a big kid (nothing to fix). Not recorded: the festival lines with a number of days (any number), which use
+  the phone's voice as before.
+- **Full suite, 11 Oct 09:53 AEST, commit dc55967:** 88 of 88 passed (multiplayer, meet, netgames, together, cloud, knock
+  skipped: no local PeerJS or MQTT server; they report as passed).
