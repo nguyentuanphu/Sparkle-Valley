@@ -36,7 +36,7 @@ function style() {
 .rd-row { display: flex; flex-wrap: wrap; gap: clamp(8px, 2vw, 16px); justify-content: center; align-items: center; max-width: 96vw; }
 .rd-ear { border: 0; border-radius: 50%; width: 56px; height: 56px; background: rgba(255, 255, 255, .9); box-shadow: 0 4px 0 rgba(0, 0, 0, .2); display: inline-flex; align-items: center; justify-content: center; font-size: 34px; padding: 6px; cursor: pointer; }
 .gl.little .rd-ear { width: 72px; height: 72px; }
-.rd-ear .art, .rd-pic .art { width: 100%; height: 100%; }
+.rd-ear .art, .rd-pic .art, .rd-drum .art, .rd-engine .art { width: 100%; height: 100%; }
 .rd-pic { display: inline-flex; width: clamp(80px, 22vw, 130px); height: clamp(80px, 22vw, 130px); }
 .rd-pic.sm { width: clamp(48px, 12vw, 72px); height: clamp(48px, 12vw, 72px); }
 .rd-card { display: flex; flex-direction: column; align-items: center; gap: 6px; background: rgba(255, 255, 255, .92); color: #2a2a3a; border-radius: 24px; padding: 10px 18px; box-shadow: 0 6px 0 rgba(0, 0, 0, .18); }
@@ -74,10 +74,10 @@ function style() {
 .rd-car { border: 0; min-height: 64px; min-width: 64px; padding: 6px 14px; border-radius: 12px 12px 6px 6px; background: #5fb6ff; color: #fff; font-size: clamp(24px, 5.6vw, 34px); font-weight: 800; box-shadow: 0 5px 0 #2f6db0; cursor: pointer; }
 .rd-car.in { background: #ff7eb8; box-shadow: 0 5px 0 #c04a83; } .rd-car.used { visibility: hidden; }
 .rd-car.empty { background: rgba(255, 255, 255, .45); box-shadow: none; border: 3px dashed rgba(90, 60, 130, .4); color: transparent; }
-.gl.little .rd-car { min-height: 72px; }
+.gl.little .rd-car { min-height: 72px; } .gl.little .rd-text button { min-width: 64px; min-height: 64px; }
 /* Word Balloons */
 .rd-sky { position: relative; width: min(94vw, 720px); height: min(52vh, 420px); border-radius: 30px; background: linear-gradient(#bfe9ff, #eaf8ff); overflow: hidden; }
-.rd-balloon { position: absolute; bottom: -10px; width: clamp(96px, 22vw, 130px); height: clamp(110px, 26vw, 150px); border: 0; border-radius: 50% 50% 48% 48%; background: var(--bc); color: #fff; font-size: clamp(24px, 6vw, 36px); font-weight: 800; text-shadow: 0 2px 2px rgba(0, 0, 0, .3); box-shadow: inset -10px -12px 0 rgba(0, 0, 0, .12); cursor: pointer; animation: rdRise var(--t) linear infinite; animation-delay: var(--d); }
+.rd-balloon { position: absolute; bottom: -10px; left: calc(var(--f) * (100% - clamp(96px, 22vw, 130px))); width: clamp(96px, 22vw, 130px); height: clamp(110px, 26vw, 150px); border: 0; border-radius: 50% 50% 48% 48%; background: var(--bc); color: #fff; font-size: clamp(24px, 6vw, 36px); font-weight: 800; text-shadow: 0 2px 2px rgba(0, 0, 0, .3); box-shadow: inset -10px -12px 0 rgba(0, 0, 0, .12); cursor: pointer; animation: rdRise var(--t) linear infinite; animation-delay: var(--d); }
 .rd-balloon::after { content: ''; position: absolute; left: 50%; bottom: -26px; width: 2px; height: 26px; background: #6a5a7a; }
 .rd-balloon.pop { animation: rdPop .35s forwards; } .rd-balloon.hint { outline: 5px solid #ffd23f; }
 .rd-calm .rd-balloon { animation: none; bottom: 30%; }
@@ -93,7 +93,7 @@ function style() {
 .rd-page { display: flex; flex-direction: column; align-items: center; gap: 12px; background: #fffaf0; color: #3b2a4f; border-radius: 26px; padding: 14px 18px; box-shadow: 0 8px 0 rgba(0, 0, 0, .15); max-width: min(94vw, 760px); }
 .rd-page .rd-pics { display: flex; gap: 10px; } .rd-page .rd-pics .rd-pic { width: clamp(90px, 24vw, 150px); height: clamp(90px, 24vw, 150px); }
 .rd-text { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center; font-size: clamp(26px, 6vw, 40px); font-weight: 700; line-height: 1.3; }
-.rd-text button { border: 0; background: transparent; color: inherit; font: inherit; padding: 2px 4px; min-height: 48px; border-radius: 10px; cursor: pointer; }
+.rd-text button { border: 0; background: transparent; color: inherit; font: inherit; padding: 2px 4px; min-height: 48px; min-width: 48px; border-radius: 10px; cursor: pointer; }
 .rd-text button.on { background: #ffd23f; }
 .rd-nav { display: flex; gap: 14px; }
 .rd-nav button { border: 0; min-width: 72px; min-height: 72px; border-radius: 24px; background: #5fd36a; color: #fff; font-size: 22px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; box-shadow: 0 5px 0 rgba(0, 0, 0, .2); cursor: pointer; }
@@ -277,7 +277,7 @@ async function sight(api, c) {
     const sky = el('div', 'rd-sky' + (calm() ? ' rd-calm' : '')); api.stage.append(top, sky);
     const btns = opts.map((o, i) => {
       const b = el('button', 'rd-balloon', esc(o)); b._v = o;
-      b.style.left = `${(i + .5) / opts.length * 100}%`; b.style.marginLeft = 'calc(clamp(96px, 22vw, 130px) / -2)';
+      b.style.setProperty('--f', opts.length > 1 ? i / (opts.length - 1) : .5);
       b.style.setProperty('--bc', BCOL[(i + r) % BCOL.length]); b.style.setProperty('--t', (11 + (i % 3) * 2) + 's'); b.style.setProperty('--d', `-${(i * 3.7 + r * 1.3) % 9}s`);
       sky.appendChild(b); return b;
     });

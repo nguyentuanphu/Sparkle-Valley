@@ -4,19 +4,19 @@ export const solveReading = async (page, id, opts) => page.evaluate(async ([id, 
   const wait = ms => new Promise(r => setTimeout(r, ms)), G = window.__sv, F = await import('/js/games/frame.js');
   const done = F.openGame(id, { players: [G.heroes[0].profile], level: opts.level, little: opts.little, style: 'shrine' });
   let res = null; done.then(r => { res = r; });
-  let tried = new WeakSet(), mark = '', steps = 0, beatWord = '', beats = 0, lostRead = 0;
+  let tried = new WeakSet(), mark = '', steps = 0, beats = 0;
   const R = await import('/js/content/reading.js'), lang = (await import('/js/state.js')).settings.lang === 'vi' ? 'vi' : 'en';
   const vis = e => e && e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden';
   const tap = e => { e.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9 })); e.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 9 })); e.click(); };
-  const t0 = Date.now(); let reading = false, noRead = true;
+  const t0 = Date.now();
   for (;;) {
     if (res) break;
     if (Date.now() - t0 > opts.timeout) return { ok: false, why: 'timeout', html: document.querySelector('.gl-stage')?.innerHTML.slice(0, 300) };
     const win = document.querySelector('.gl-win.ask .gl-nx.again');
-    if (win) { const box = document.querySelector('.gl-win'); box.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await wait(300); const w = document.querySelector('.gl-win'); if (w) { w.closest('.gl')?.querySelector('.gl-x')?.click(); } await wait(300); continue; }
+    if (win) { const box = document.querySelector('.gl-win'); box.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await wait(300); continue; }
     if (document.querySelector('.gl-win')) { await wait(150); continue; }
     const st = document.querySelector('.gl-stage'); if (!st) { await wait(100); continue; }
-    // keep what a little one would need to read: any word shown in the stage for an under-5 is counted
+    // a new screen (or a step done): every answer may be tried again
     const key = st.innerHTML.length + ':' + st.querySelectorAll('.used,.full,.on,.pop,.in').length;
     if (key !== mark) { mark = key; tried = new WeakSet(); }
     const lan = st.querySelector('.rd-lantern:not(.lit)');
