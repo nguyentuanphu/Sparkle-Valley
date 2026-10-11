@@ -2335,6 +2335,27 @@ await check('quiet', async () => {
   return 'in the background: audio asleep, no music scheduled, videos paused (a sound effect does not wake it); back on screen: sound again';
 });
 
+await check('rain', async () => {
+  // bug #39 (owner: the rain was a repeating noise): rain is one soft steady hush that fades in and out with the
+  // weather, and it never carries on over a game, a story or the Simple screen (the valley rests behind them)
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  await P.page.mouse.click(200, 400);
+  const r = await P.page.evaluate(async () => {
+    const A = await import('/js/audio.js'), S = await import('/js/state.js'), w = t => new Promise(res => setTimeout(res, t)), G = __sv, out = {};
+    S.settings.sound = true; S.settings.noRain = false; await A.ac().resume().catch(() => { });
+    out.dry = A.Rain.on;
+    G.weather.start(); await w(1500); out.raining = A.Rain.on;
+    G.playGame(0, 'caro', 'replay'); await w(1500); out.game = A.Rain.on; out.gameOpen = !!document.querySelector('.gl');
+    document.querySelector('.gl .gl-x')?.click(); await w(1500); out.back = A.Rain.on;
+    S.settings.sound = false; await w(800); out.soundOff = A.Rain.on; S.settings.sound = true; await w(800);
+    G.weather.stop(); await w(1500); out.stopped = A.Rain.on;
+    return out;
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.dry && r.raining && r.gameOpen && !r.game && r.back && !r.soundOff && !r.stopped && !errs.length, JSON.stringify({ r, errs }));
+  return 'rain hush on while it rains, off under a game and back after it, off with Sound effects off, off when the rain stops';
+});
+
 await check('songs', async () => {
   // round N (owner): Trung Thu music at Trung Thu (and Tết at Tết…), Vietnamese tunes in the Vietnam areas, a 🎵 Songs
   // page (from the Simple screen's Music group and from Settings) with hát ru words, a night look and a sleep timer;

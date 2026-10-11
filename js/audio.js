@@ -70,20 +70,34 @@ export function noise(dur, o = {}) {
   g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(o.vol || .15, t + at); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
   s.connect(f); f.connect(g); g.connect(o.bus === 'music' ? musicBus : sfxBus); s.start(t); s.stop(t + dur + .02);
 }
-// Rain: a gentle steady hush (looped noise, low-passed, slow fade in and out); on only while it rains and Sound effects is on.
+// Rain: a gentle steady hush (soft noise with a few drops in it, low-passed, slow fade in and out); on only while it
+// rains and Sound effects is on. The weather says "still raining" every frame; when it stops saying so (rain over, or a
+// game, story, Simple screen or Songs page covers the valley and it rests), the hush fades out by itself.
 let rainNode = null;
+function rainBuffer(a) {
+  // 4 s of pink-ish noise with soft drops, so the loop is too long to hear repeating (the 0.8 s effects noise could be)
+  const n = Math.floor(a.sampleRate * 4), b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
+  let b0 = 0, b1 = 0, b2 = 0;
+  for (let i = 0; i < n; i++) { const w = Math.random() * 2 - 1; b0 = .99765 * b0 + w * .099046; b1 = .963 * b1 + w * .2965164; b2 = .57 * b2 + w * 1.0526913; d[i] = (b0 + b1 + b2 + w * .1848) * .2; }
+  for (let k = 0; k < 60; k++) { const at = Math.floor(Math.random() * (n - 2000)), v = .15 + Math.random() * .25; for (let j = 0; j < 600; j++) d[at + j] += (Math.random() * 2 - 1) * v * Math.exp(-j / 90); }
+  return b;
+}
 export const Rain = {
   set(on) {
-    const a = ac(); if (!a) return; on = !!on && !!settings.sound;
+    on = !!on && !!settings.sound;
+    if (!rainNode && !on) return;
+    const a = rainNode ? rainNode.a : ac(); if (!a) return;
     if (!rainNode) {
-      if (!on) return;
       const s = a.createBufferSource(), lo = a.createBiquadFilter(), hi = a.createBiquadFilter(), g = a.createGain();
-      s.buffer = noiseBuf; s.loop = true; lo.type = 'lowpass'; lo.frequency.value = 1500; hi.type = 'highpass'; hi.frequency.value = 300; g.gain.value = 0;
-      s.connect(lo); lo.connect(hi); hi.connect(g); g.connect(sfxBus); s.start(); rainNode = { s, g, on: false };
+      s.buffer = rainBuffer(a); s.loop = true; lo.type = 'lowpass'; lo.frequency.value = 1500; hi.type = 'highpass'; hi.frequency.value = 300; g.gain.value = 0;
+      s.connect(lo); lo.connect(hi); hi.connect(g); g.connect(sfxBus); s.start(); rainNode = { a, s, g, on: false, k: 0 };
     }
+    clearTimeout(rainNode.k); if (on) rainNode.k = setTimeout(() => Rain.set(false), 400);
     if (rainNode.on === on) return; rainNode.on = on;
-    rainNode.g.gain.setTargetAtTime(on ? .05 : 0, a.currentTime, on ? 1.5 : 1);
-  }
+    rainNode.g.gain.cancelScheduledValues(a.currentTime);
+    rainNode.g.gain.setTargetAtTime(on ? .05 : 0, a.currentTime, on ? 1.5 : .3);
+  },
+  get on() { return !!(rainNode && rainNode.on); }
 };
 
 const PENTA = [72, 74, 76, 79, 81, 84, 86, 88];
