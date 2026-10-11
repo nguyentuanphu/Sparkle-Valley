@@ -886,6 +886,129 @@ await check('hubmap', async () => {
   return `${r.games} games, each in one tab; the map's Vietnam cities run north to south, each with its landmarks (${r.cities.length} cities)`;
 });
 
+await check('signs', async () => {
+  // (round T4b, finding your way) a picture signpost at every junction of two asphalt or dirt roads (found from the road
+  // data, never written-down positions); every board names a real place; posts stand off the road and are solid; all the
+  // signposts together are two meshes (one shared board picture, at most 1024 px)
+  const P = await open(b, { w: 1180, h: 760 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const S = __sv.signposts, SP = await import('/js/signposts.js'), W = await import('/js/world.js'), J = SP.findJunctions();
+    const names = new Set([...__sv.PLACES, ...__sv.LANDMARKS].map(p => p.name()));
+    const missing = J.filter(j => !S.posts.some(s => Math.hypot(s.x - j.x, s.z - j.z) < 14)).map(j => `${Math.round(j.x)},${Math.round(j.z)}`);
+    const bad = S.posts.flatMap(s => s.boards.filter(b => !names.has(b.place.name())).map(b => b.place.name()));
+    const onRoad = S.posts.filter(s => { const q = W.roadDist(s.x, s.z); return q.road && q.d < q.road.w / 2 + .8; }).map(s => `${Math.round(s.x)},${Math.round(s.z)}`);
+    const solid = S.posts.filter(s => !__sv.world.colliders.some(c => Math.hypot(c.x - s.x, c.z - s.z) < .1)).length;
+    const img = S.texture.image;
+    return { junctions: J.length, posts: S.posts.length, boards: S.posts.reduce((a, s) => a + s.boards.length, 0), empty: S.posts.filter(s => !s.boards.length).length,
+      missing, bad, onRoad, solid, meshes: S.meshes.length, tex: Math.max(img.width, img.height) };
+  });
+  ok(r.junctions >= 10 && !r.missing.length, `junctions without a signpost: ${r.missing.join('; ')} (of ${r.junctions})`);
+  ok(!r.bad.length && !r.empty, `boards naming no real place: ${r.bad.join(', ')}; posts with no board: ${r.empty}`);
+  ok(!r.onRoad.length, 'signposts on the road: ' + r.onRoad.join('; '));
+  ok(!r.solid, `${r.solid} signposts a child can walk through`);
+  ok(r.meshes <= 2 && r.tex <= 1024, `signposts cost ${r.meshes} meshes, board picture ${r.tex} px`);
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return `${r.posts} signposts at ${r.junctions} junctions, ${r.boards} boards, each naming a real place; off the road, solid; ${r.meshes} meshes, one ${r.tex} px picture`;
+});
+
+await check('nametags', async () => {
+  // (round T4b) names float over the places nearby: at most 4 at once, never covering each other, on a phone, a tablet
+  // and a computer; none in calm mode
+  const out = [];
+  for (const [w, h, touch, tag] of [[390, 844, true, 'phone'], [820, 1180, true, 'tablet'], [1180, 760, false, 'computer']]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    // the busiest spot: the place with the most places and landmarks within 40 m
+    await P.page.evaluate(() => { const all = [...__sv.PLACES, ...__sv.LANDMARKS], n = p => all.filter(o => Math.hypot(o.x - p.x, o.z - p.z) < 40).length;
+      const best = all.slice().sort((a, b) => n(b) - n(a))[0]; window.__busy = best.name(); __sv.travelTo(__sv.heroes[0], best.x + 6, best.z + 14); });
+    await P.page.waitForTimeout(5000);
+    const r = await P.page.evaluate(() => { const on = [...document.querySelectorAll('.nametag.on')].map(e => e.getBoundingClientRect());
+      const over = []; on.forEach((a, i) => on.slice(i + 1).forEach(q => { if (a.left < q.right && q.left < a.right && a.top < q.bottom && q.top < a.bottom) over.push(i); }));
+      return { n: on.length, over: over.length, busy: window.__busy, names: [...document.querySelectorAll('.nametag.on')].map(e => e.textContent) }; });
+    ok(r.n >= 1 && r.n <= 4, `${tag}: ${r.n} name tags at ${r.busy} (want 1 to 4)`);
+    ok(!r.over, `${tag}: name tags overlap: ${r.names.join(', ')}`);
+    await P.page.evaluate(async () => { const st = await import('/js/state.js'); st.settings.calm = true; });
+    await P.page.waitForTimeout(1500);
+    const calm = await P.page.evaluate(() => document.querySelectorAll('.nametag.on').length);
+    ok(!calm, `${tag}: ${calm} name tags in calm mode`);
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+    out.push(`${tag} ${r.n} (${r.names.join(', ')})`);
+  }
+  return 'at most 4, apart, none in calm mode: ' + out.join('; ');
+});
+
+await check('padmap', async () => {
+  // (round T4b) the Pad map is drawn from the map data: every place's name on it, names never overlapping at 390, 1180
+  // and 1366 px wide; clouds over the places not visited yet, lifting once with a puff after a visit
+  const out = [];
+  for (const [w, h, touch] of [[390, 844, true], [1180, 760, false], [1366, 768, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 500));
+      const cv = document.querySelector('canvas.bigmap'), L = cv.labels || [], names = new Set(L.map(l => l.name));
+      const missing = __sv.PLACES.map(p => p.name()).filter(n => !names.has(n));
+      const hit = (a, q) => a.x < q.x + q.w && q.x < a.x + a.w && a.y < q.y + q.h && q.y < a.y + a.h, over = [];
+      L.forEach((a, i) => L.slice(i + 1).forEach(q => { if (hit(a, q)) over.push(a.name + ' / ' + q.name); }));
+      const clouds = cv.clouds.slice(), pic = !cv.toDataURL().startsWith('data:,');
+      // visit the first clouded place, then open the map again: its cloud puffs away, once
+      const h = __sv.heroes[0], c = clouds[0], W = await import('/js/world.js');
+      h.profile.visited = h.profile.visited || {}; h.profile.visited[c.region] = true;
+      document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.paused = false; __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 200));
+      const after = document.querySelector('canvas.bigmap').clouds, puff = document.querySelectorAll('.mapcloud.puff').length;
+      document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.paused = false; __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 200));
+      const again = document.querySelectorAll('.mapcloud.puff').length;
+      return { n: L.length, missing, over, clouds: clouds.length, region: c.region, still: after.some(o => o.region === c.region), puff, again, pic };
+    });
+    ok(r.pic && !r.missing.length, `${w}px: places missing from the drawn map: ${r.missing.join(', ')}`);
+    ok(!r.over.length, `${w}px: map names overlap: ${r.over.join('; ')}`);
+    ok(r.clouds > 0 && !r.still && r.puff > 0 && !r.again, `${w}px: clouds ${r.clouds}, after visiting ${r.region}: still clouded ${r.still}, puffs ${r.puff}, puffs again ${r.again}`);
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+    out.push(`${w}px ${r.n} names, ${r.clouds} clouds`);
+  }
+  return 'drawn from the map data: ' + out.join('; ') + '; a cloud lifts with one puff after a visit';
+});
+
+await check('mapnames', async () => {
+  // (Release requests, round T1) the Pad map's names never cover each other (the festival stage lay over Đà Nẵng, the
+  // market over Hồ Chí Minh City), on a phone, a tablet and a computer; Hội An is a place of its own in the Vietnam
+  // list (north to south between Đà Nẵng and Hồ Chí Minh City) and on the Simple screen's Places road; and the speech
+  // box keeps its middle while it slides in (it once sat half its width to the right for 0.3 s, buttons off screen)
+  const out = [];
+  for (const [w, h, touch, tag] of [[390, 844, true, 'phone'], [820, 1180, true, 'tablet'], [1180, 760, false, 'computer']]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 600));
+      const L = document.querySelector('canvas.bigmap').labels || [], hit = (a, q) => a.x < q.x + q.w && q.x < a.x + a.w && a.y < q.y + q.h && q.y < a.y + a.h;
+      const over = []; L.forEach((a, i) => L.slice(i + 1).forEach(q => { if (hit(a, q)) over.push(a.name + ' / ' + q.name); }));
+      const out = L.filter(a => a.x < 0 || a.y < 0 || a.x + a.w > 600 || a.y + a.h > 600).map(a => a.name);
+      document.querySelector('.mapchips [data-g="vn"]').click(); await new Promise(r => setTimeout(r, 150));
+      const cities = [...document.querySelectorAll('.mapcities button')].map(b => b.innerText.trim());
+      document.querySelectorAll('.modal').forEach(e => e.remove());
+      __sv.dialog('Bà Năm', [['Hello! Shall we play?', 'Chào cháu! Chơi nhé?']], [['▶ Play!', '▶ Chơi!'], ['👋 Later', '👋 Để sau']]);
+      await new Promise(r => setTimeout(r, 30));
+      const d = document.querySelector('.dialog'), an = d.getAnimations()[0]; if (an) { an.pause(); an.currentTime = 0; }
+      const rc = d.getBoundingClientRect(), mid = Math.round(rc.left + rc.width / 2 - innerWidth / 2);
+      return { n: L.length, over, out, cities, mid, anim: an ? an.animationName : '' };
+    });
+    ok(r.n >= 10, `${tag}: map names drawn: ${r.n}`);
+    ok(!r.over.length, `${tag}: map names overlap: ${r.over.join('; ')}`);
+    ok(!r.out.length, `${tag}: map names off the map: ${r.out.join('; ')}`);
+    const at = n => r.cities.findIndex(c => c.includes(n)), ha = at('Hội An');
+    ok(ha > at('Đà Nẵng') && at('Đà Nẵng') >= 0 && (at('Hồ Chí Minh') < 0 || ha < at('Hồ Chí Minh')), `${tag}: Hội An between Đà Nẵng and Hồ Chí Minh City: ${r.cities.join(' | ')}`);
+    ok(Math.abs(r.mid) <= 2, `${tag}: the speech box starts ${r.mid}px off the middle (${r.anim})`);
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+    out.push(`${tag} ${r.n}`);
+  }
+  // the Simple screen's Places road (an under-5 starts on it)
+  const Q = await open(b, { w: 390, h: 844, touch: true, screen: null });
+  await Q.page.waitForSelector('.simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
+  await Q.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
+  await Q.page.click('.sp-tabs [data-tab="places"]'); await Q.page.waitForTimeout(400);
+  const road = await Q.page.evaluate(() => [...document.querySelectorAll('.simple-screen .sp-stop')].map(e => e.innerText.trim().replace(/\s+/g, ' ')).join(' | '));
+  ok(road.includes('Hội An'), 'the Places road has no Hội An: ' + road.slice(0, 300));
+  ok(!Q.errors.length, Q.errors.join(' | ')); await Q.ctx.close();
+  return `map names apart on ${out.join(', ')}; Hội An in the Vietnam list and on the Places road; the speech box slides in from the middle`;
+});
+
 await check('festcal', async () => {
   // (round R, owner) the festival calendar: real dates, 3 weeks of build-up that grows each week, two festivals at once
   // in their own places, quiet days only a few days before, the day's timetable, Halloween trick-or-treat and keepsake
@@ -954,7 +1077,7 @@ await check('festivals', async () => {
       if (!(s1.length > 0 && s1.length < s2.length && s2.length < s4.length)) bad.push(`${key}: not more each week (${s1.length}, ${s2.length}, ${s4.length})`);
       // spread over the whole place, not bunched: the pieces reach far apart
       let span = 0; for (const a of s4) for (const q of s4) span = Math.max(span, Math.hypot(a.x - q.x, a.z - q.z));
-      const o = { ...W.CITIES.reduce((m, c) => (m[c.id] = c, m), {}), village: W.VILLAGE, china: W.CHINA, india: W.INDIA, aussie: W.AUSSIE, town: W.TOWN, market: W.MARKET, home: W.HOME }[key];
+      const o = { ...W.CITIES.reduce((m, c) => (m[c.id] = c, m), {}), village: W.VILLAGE, china: W.CHINA, india: W.INDIA, aussie: W.AUSSIE, town: W.TOWN, market: W.MARKET, home: W.HOME, hoian: W.HOIAN }[key];
       const size = o.x0 != null ? Math.hypot(o.x1 - o.x0, o.z1 - o.z0) : (o.r || 24) * 2;
       if (span < size * .4) bad.push(`${key}: pieces bunched in ${span.toFixed(0)} m of a ${size.toFixed(0)} m place`);
       for (const q of all) { const rd = W.roadDist(q.x, q.z); if (rd.road && rd.d < rd.road.w / 2 + 1.5) bad.push(`${key}: a piece on a road at ${q.x},${q.z}`);

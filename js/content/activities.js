@@ -6,6 +6,7 @@
 // "activities": { id: { area, little, hide } }).
 import { T } from '../i18n.js';
 import { CUSTOM } from '../custom.js';
+import { PLACES as MAP_PLACES } from './map.js';
 
 // the areas, in the order the path visits them; a child who can't read knows each one by its picture
 export const AREAS = [
@@ -49,19 +50,38 @@ export function gameInfo(id) {
 export const gamesIn = (games, area, little) => Object.keys(games).map(gameInfo).filter(g => g.area === area && !g.hidden && (!little || g.ageMin < 5));
 
 // stories by where they come from, places by where they are
+// (bug #30, owner) China and India always come last: after "Our own stories" and after Australia
 export const TALE_AREAS = [
   { key: '🇻🇳', icon: '🇻🇳', name: () => T('Stories from Vietnam', 'Truyện Việt Nam') },
   { key: '🇦🇺', icon: '🇦🇺', name: () => T('Stories from Australia', 'Truyện Úc') },
+  { key: '💛', icon: '💛', name: () => T('Our own stories', 'Truyện nhà mình') },
   { key: '🇨🇳', icon: '🇨🇳', name: () => T('Stories from China', 'Truyện Trung Quốc') },
-  { key: '🇮🇳', icon: '🇮🇳', name: () => T('Stories from India', 'Truyện Ấn Độ') },
-  { key: '💛', icon: '💛', name: () => T('Our own stories', 'Truyện nhà mình') }
+  { key: '🇮🇳', icon: '🇮🇳', name: () => T('Stories from India', 'Truyện Ấn Độ') }
 ];
 export const PLACE_AREAS = [
   { key: 'home', icon: '🏡', name: () => T('Around the farm', 'Quanh nông trại') },
   { key: 'vn', icon: '🏮', name: () => T('Vietnam', 'Việt Nam') },
-  { key: 'asia', icon: '🐼', name: () => T('China and India', 'Trung Hoa và Ấn Độ') },
-  { key: 'au', icon: '🦘', name: () => T('Australia', 'Nước Úc') }
+  { key: 'au', icon: '🦘', name: () => T('Australia', 'Nước Úc') },
+  { key: 'asia', icon: '🐼', name: () => T('China and India', 'Trung Hoa và Ấn Độ') }
 ];
+
+// (Release request, round T1) new places of the rebuilt valley that are not cities, by their id in js/content/map.js:
+// each joins the place list (the Pad map and the Simple screen's Places road) once the map holds it. Vũng Tàu is a
+// city and lists itself; the harbour is a landmark (the Harbour Bridge), listed under Sydney.
+const SITE_PLACES = [
+  { id: 'hoian', g: 'vn', icon: '🏮', name: () => T('Hội An', 'Hội An') },
+  // (round T2) the two Memory Villages, where families build a little house of their own; named as on the map
+  { id: 'memory_e', g: 'vn', icon: '🏘️' },
+  { id: 'memory_w', g: 'au', icon: '🏘️' }
+];
+export function withSitePlaces(list) {
+  if (!list) return list;
+  for (const s of SITE_PLACES) {
+    const m = MAP_PLACES.find(p => p.id === s.id); if (!m || list.some(pl => pl.key === s.id)) continue;
+    list.push({ g: s.g, key: s.id, icon: s.icon, name: s.name || (() => T(m.name[0], m.name[1])), x: m.at[0], z: m.at[1] + (m.r || 10) + 3 });   // the stop just south of the place
+  }
+  return list;
+}
 
 // a page of the path never holds more than this many stops for an under-5 (the brief: 4–7 at once)
 export const LITTLE_PAGE = 6;

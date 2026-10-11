@@ -13,6 +13,11 @@
 //   missions [ { id, en, vi, who } ]   family missions written in Studio (round S; js/parents.js: the child sees them, a grown-up ticks ✓)
 //   releases { id: { on, start, days, newDays } }   Sparkle Studio's Ra mắt (Releases) page (round R): see liveRule below
 //   festivals { id: { on, date, buildup } }          Sparkle Studio's Festivals page (round R): see js/festivals.js
+//   looks    { chi | jack | ruby: { style, color, hair, hairStyle, skin } }   Studio's Story characters page: how they look in
+//                                         the lantern story's chapter 3 (js/content/chapter3sydney.js lookOf; missing keeps the usual)
+//   plots    { <plot id>: { type, name: [en, vi], owner: { name, line: [en, vi] }, color } }   Studio's Memory Villages page: a
+//                                         home the family remembers on a garden plot, by the plot's id (PLOTS in js/content/map.js,
+//                                         or a spare plot sp_<city>_<n>); not built by the game yet (asked of World)
 //   features { id: true|false }           things in the valley switched on or off from Studio (owner, round R: kept in the game,
 //                                         shown only when switched on). powerPoles: Phố Hai Quê's power poles and wires (off)
 let data = {};
