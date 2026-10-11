@@ -2130,19 +2130,101 @@ await check('plots', async () => {
 });
 
 await check('roadtone', async () => {
-  // (round T2, ROAD-014, Concept D "B") every asphalt road carries its region's colour, one shared material per colour,
+  // (round T2, ROAD-014, Concept D "B"; round T4a ROAD-015) every asphalt road carries its region's colour, one shared material per colour,
   // and the ring road round the home island is closed
   const M = await import('../js/content/map.js'), bad = [];
   for (const R of M.ROADS) if (R.kind === 'asphalt' && !(R.tone in M.ROAD_TONES)) bad.push(`${R.id} has no colour`);
   const ring = M.ROADS.find(R => R.id === 'ring'); if (!ring || !ring.loop) bad.push('the ring road is not a closed loop');
   const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
   const mats = await P.page.evaluate(() => { const s = new Set(); __sv.scene.traverse(o => { if (o.userData.road && o.material && o.material.map) s.add(o.material.uuid); }); return s.size; });
+  // (round T4a, ROAD-015) the markings: a yellow centre dash on Vietnam's roads, light concrete kerbs on Australia's
+  const mark = await P.page.evaluate(async () => {
+    const M = await import('/js/content/map.js'), { THREE } = await import('/js/gfx.js'), mid = id => { const R = M.ROADS.find(r => r.id === id), [a, c] = R.pts; return [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2]; };
+    const at = ([x, z], px, py) => { let got = null; __sv.scene.traverse(o => { if (got || !o.userData.road || !o.material || !o.material.map) return; o.geometry.computeBoundingBox(); const bb = o.geometry.boundingBox;
+      if (x > bb.min.x && x < bb.max.x && z > bb.min.z && z < bb.max.z) { const im = o.material.map.image, g = im.getContext('2d'); got = [...g.getImageData(px, py, 1, 1).data].slice(0, 3); } }); return got; };
+    return { vnDash: at(mid('vn_north'), 31, 60), auKerb: at(mid('link_au'), 1, 60), auMid: at(mid('link_au'), 20, 60) };
+  });
   const errs = P.errors; await P.ctx.close();
+  { const [r, g, bl] = mark.vnDash || [0, 0, 0]; ok(r > 200 && g > 150 && bl < 120, `Vietnam's road has no yellow centre dash: rgb ${mark.vnDash}`); }
+  { const k = mark.auKerb || [0, 0, 0], m = mark.auMid || [0, 0, 0]; ok(k[0] > 180 && k[0] > m[0] + 40, `Australia's road has no concrete kerb: kerb rgb ${k}, road rgb ${m}`); }
   const tones = new Set(M.ROADS.filter(R => R.kind === 'asphalt').map(R => M.ROAD_TONES[R.tone] || 'grey'));
   ok(!bad.length, bad.join('; '));
   ok(mats <= tones.size + 2, `${mats} road materials for ${tones.size} asphalt colours (one each, plus dirt and footpath)`);
   ok(!errs.length, errs.join(' | '));
-  return `${M.ROADS.filter(R => R.kind === 'asphalt').length} asphalt roads in ${tones.size} colours, ${mats} road materials; the ring road is closed`;
+  return `${M.ROADS.filter(R => R.kind === 'asphalt').length} asphalt roads in ${tones.size} colours, ${mats} road materials; the ring road is closed; a yellow centre dash in Vietnam, kerbs in Australia`;
+});
+
+await check('water', async () => {
+  // (round T4a, RIVER-008) the water map: one water plane and one draw, its picture 1024 px or smaller, painted once and
+  // read back from the device on the next start; each water its colour (Sông Hồng red-brown, the sea blue, the lake
+  // turquoise), a foam line by the shore. (RIVER-009) reeds and water hyacinth: two instanced meshes, none on a road,
+  // deck or pier, hyacinth never on a boat route
+  const P = await open(b, { w: 900, h: 640, play: false });
+  const pic = async () => { await P.page.waitForFunction(() => __sv.waterPic && __sv.waterPic.ready && __sv.reeds && __sv.ferries, null, { timeout: 90000 }); return P.page.evaluate(() => __sv.waterPic.from); };
+  const first = await pic();
+  for (let i = 0; i < 75; i++) { if (await P.page.evaluate(async () => { try { const k = await caches.open('sv-world'); return (await k.keys()).some(r => r.url.includes('/water.png')); } catch (e) { return true; } })) break; await P.page.waitForTimeout(200); }
+  await P.page.reload(); await P.page.waitForSelector('.screen.title', { timeout: 90000 }); const second = await pic();
+  ok(first === 'painted' && second === 'cache', `water map: first start ${first}, second start ${second} (should be painted, then from the cache)`);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, W = await import('/js/world.js'), M = await import('/js/content/map.js'), cv = G.waterPic.canvas, g = cv.getContext('2d');
+    const px = (x, z) => { const i = Math.floor((x / W.SIZE + .5) * cv.width), j = Math.floor((z / W.SIZE + .5) * cv.height); return [...g.getImageData(i, j, 1, 1).data]; };
+    const planes = [], mats = new Set(); G.scene.traverse(o => { if (o.isMesh && o.material && o.material.customProgramCacheKey && o.material.customProgramCacheKey() === 'svwater') { planes.push(o); mats.add(o.material.uuid); } });
+    const tex = planes[0] && planes[0].material.userData, tx = planes.length ? cv : null;
+    // a spot in the middle of Sông Hồng, the lake, the sea; a shore: the lake's edge (deep middle vs. the water's edge)
+    const hong = M.WATERS.find(w => w.id === 'hong').pts[2], deep = px(W.LAKE.x, W.LAKE.z + W.LAKE.r * .3);
+    let shore = 0; for (let a = 0; a < 6.3; a += .05) for (let d = W.LAKE.r * .6; d < W.LAKE.r + 4; d += .5) { const x = W.LAKE.x + Math.cos(a) * d, z = W.LAKE.z + Math.sin(a) * d; if (W.heightAt(x, z) < W.WATER - .2 && W.heightAt(x, z) > W.WATER - 1) { shore = Math.max(shore, px(x, z)[3]); } }
+    // reeds and hyacinth: where every one stands
+    const items = []; for (const m of G.reeds.meshes) { const a = m.instanceMatrix.array; for (let i = 0; i < m.count; i++) items.push({ k: m.userData.reeds ? 'reeds' : 'hyacinth', x: a[i * 16 + 12], z: a[i * 16 + 14] }); }
+    const bad = [];
+    for (const it of items) {
+      const rd = W.roadDist(it.x, it.z); if (rd.road && rd.d < rd.road.w / 2 + 1) bad.push(`${it.k} on road ${rd.road.id || rd.road.kind} at (${it.x.toFixed(0)}, ${it.z.toFixed(0)})`);
+      if (G.world.platforms.some(p => it.x > p.x0 - .5 && it.x < p.x1 + .5 && it.z > p.z0 - .5 && it.z < p.z1 + .5)) bad.push(`${it.k} on a deck or pier at (${it.x.toFixed(0)}, ${it.z.toFixed(0)})`);
+      if (it.k === 'hyacinth') for (const F of G.ferries.ferries) for (let i = 0; i < F.path.length - 1; i++) { const a = F.path[i], c = F.path[i + 1], dx = c.x - a.x, dz = c.z - a.z, L2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((it.x - a.x) * dx + (it.z - a.z) * dz) / L2));
+        if (Math.hypot(it.x - a.x - dx * t, it.z - a.z - dz * t) < 4) { bad.push(`hyacinth on a boat route at (${it.x.toFixed(0)}, ${it.z.toFixed(0)})`); break; } }
+    }
+    return { planes: planes.length, mats: mats.size, size: tx ? Math.max(cv.width, cv.height) : 0, hong: px(hong[0], hong[1]), lake: deep, sea: px(0, W.SIZE / 2 - 8), shore, deepA: deep[3],
+      reeds: items.filter(i => i.k === 'reeds').length, hyacinth: items.filter(i => i.k === 'hyacinth').length, meshes: G.reeds.meshes.length, bad: bad.slice(0, 8), nbad: bad.length };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.planes === 1 && r.mats === 1, `${r.planes} water planes with ${r.mats} materials (should be one, one draw)`);
+  ok(r.size > 0 && r.size <= 1024, `water map ${r.size} px (1024 or smaller)`);
+  const [hr, hg, hb] = r.hong, [lr, lg, lb] = r.lake, [sr, sg, sb] = r.sea;
+  ok(hr > hb + 40 && hr > hg, `Sông Hồng is not red-brown: rgb ${r.hong.slice(0, 3)}`);
+  ok(sb > sr + 60 && sb > sg, `the sea is not blue: rgb ${r.sea.slice(0, 3)}`);
+  ok(lb > lr + 60 && lg > lr + 60, `the lake is not turquoise: rgb ${r.lake.slice(0, 3)}`);
+  ok(r.shore > 200 && r.deepA < 80, `no foam line by the lake's shore (alpha by the shore ${r.shore}, deep water ${r.deepA})`);
+  ok(r.meshes === 2 && r.reeds >= 50 && r.hyacinth >= 20, `${r.meshes} meshes, ${r.reeds} reeds, ${r.hyacinth} hyacinth (two meshes, at least 50 and 20)`);
+  ok(!r.nbad, `${r.nbad} reeds or hyacinth in the wrong place: ${r.bad.join('; ')}`);
+  ok(!errs.length, errs.join(' | '));
+  return `one water plane, map ${r.size} px painted then from the cache; Sông Hồng rgb ${r.hong.slice(0, 3)}, sea ${r.sea.slice(0, 3)}, lake ${r.lake.slice(0, 3)}, foam by the shore; ${r.reeds} reeds and ${r.hyacinth} hyacinth in 2 meshes, none on a road, deck, pier or boat route`;
+});
+
+await check('surface', async () => {
+  // (round T4a, WORLD-014) footsteps by surface: surfaceAt at known spots of the map
+  const P = await open(b, { w: 900, h: 640, play: false });
+  await P.page.waitForFunction(() => __sv.ferries, null, { timeout: 90000 });
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), M = await import('/js/content/map.js'), G = __sv, on = (x, z, y) => W.surfaceAt(x, z, y);
+    const road = id => { const R = M.ROADS.find(r => r.id === id), [a, c] = R.pts; return [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2]; };
+    const vn = road('vn_north'), dirt = road('mv_e1'), city = W.CITIES.find(c => c.id === 'hanoi'), lake = [W.LAKE.x, W.LAKE.z];
+    // the beach: the first dry spot north of the sea, low and sandy, on the meridian of the Sài Gòn mouth's east
+    let beach = null; for (let z = 236; z > 150 && !beach; z -= .5) { const h = W.heightAt(60, z); if (h > W.WATER + .3 && h < 1.4) beach = [60, z]; }
+    const B = M.BRIDGES.find(b => b.id === 'haique'), deck = B.axis === 'x' ? [(B.a0 + B.a1) / 2, B.c] : [B.c, (B.a0 + B.a1) / 2];
+    const pier = G.ferries.ferries.flatMap(F => F.stops.map(s => s.dock && s.dock.pier)).find(p => p && p.tip);
+    const home = M.PLACES.find(p => p.id === 'home').at;
+    let grass = null; for (let k = 0; k < 400 && !grass; k++) { const x = home[0] + Math.cos(k) * (10 + k * .1), z = home[1] + Math.sin(k) * (10 + k * .1), rd = W.roadDist(x, z); if (W.heightAt(x, z) > 2 && (!rd.road || rd.d > rd.road.w / 2 + 2)) grass = [x, z]; }
+    const got = {
+      road: on(vn[0], vn[1]), town: on(city.x, city.z), dirt: on(dirt[0], dirt[1]), sand: beach && on(beach[0], beach[1]), water: on(lake[0] + W.LAKE.r * .5, lake[1]),
+      wood: on(deck[0], deck[1], W.WATER + B.h), pier: pier && on(pier.tip.x, pier.tip.z, pier.tip.y), grass: grass && on(grass[0], grass[1])
+    };
+    return got;
+  });
+  const errs = P.errors; await P.ctx.close();
+  const want = { road: 'road', town: 'road', dirt: 'dirt', sand: 'sand', water: 'water', wood: 'wood', pier: 'wood', grass: 'grass' };
+  const wrong = Object.keys(want).filter(k => r[k] !== want[k]).map(k => `${k}: ${r[k]} (should be ${want[k]})`);
+  ok(!wrong.length, wrong.join('; '));
+  ok(!errs.length, errs.join(' | '));
+  return Object.entries(r).map(([k, v]) => `${k} ${v}`).join(', ');
 });
 
 await check('walkaway', async () => {

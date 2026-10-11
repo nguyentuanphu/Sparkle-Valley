@@ -12,7 +12,7 @@ import { openSongs } from './songs.js';
 import { songsFor, VN_AREAS, familySongs } from './content/songs.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
-import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER, PLATEAU, TOWN, AUSSIE, LAKE, ULURU, HALF, STUDIO_ON_MAP, PARKED } from './world.js';
+import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, paintWater, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER, PLATEAU, TOWN, AUSSIE, LAKE, ULURU, HALF, STUDIO_ON_MAP, PARKED } from './world.js';
 import { landmarkAt, MAP_VERSION, onThisMap, rowSlot } from './content/map.js';
 import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL, OUTLINED } from './avatar.js';
 import { Hero } from './player.js';
@@ -66,6 +66,7 @@ import { createKites } from './kite.js';
 import { createHawkers } from './hawkers.js';
 import { createSuburbs } from './suburbs.js';
 import { createPlots } from './plots.js';
+import { createReeds } from './reeds.js';
 import { createSymbols, regionLabel } from './symbols.js';
 import { createRegionSites } from './regionsites.js';
 import { createVnFun } from './vnfun.js';
@@ -139,6 +140,7 @@ showTitle(() => showWho((mode, chosen) => startWhenBuilt(mode, chosen)));
 await breathe();
 const world = createWorld(scene, quality); bootMark('world'); await breathe();
 // the map picture: read back from the device when this build painted it before (js/worldcache.js)
+const waterPic = cachedCanvas('water', 256, paintWater, bootReady); waterPic.onReady = () => world.waterMap(waterPic.canvas); // (round T4a) each river's colour and the foam along the shores
 const mapPic = cachedCanvas('map', 320, paintMap, bootReady); // (round T: 320 px for the 480 m valley) bootMark('map');
 mapPic.onReady = () => { G.fogMaps = {}; }; // (a map shown before the picture was ready is drawn again)
 const titleCam = new THREE.PerspectiveCamera(50, 1, .3, 1200);
@@ -718,7 +720,7 @@ G.eat = (h, id) => {
 G.onCooked = (h) => { checkQuests(h); G.job('cook', 1, h); };
 G.rebuildHero = i => { const h = G.heroes[i]; if (h) { h.buildModel(); G.huds[i].refreshWho(); sendHello(); } };
 G.fogMapFor = p => G.fogMaps[p.id] || (G.fogMaps[p.id] = fogMapFor(p, mapPic.now()));
-G.mapPic = mapPic;
+G.mapPic = mapPic; G.waterPic = waterPic; // (the checks read where each picture came from)
 G.snapshot = (i, max = 720, q = .8) => {
   const h = G.heroes[i] || G.heroes[0], w = renderer.domElement.width, hh = renderer.domElement.height;
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w / renderer.getPixelRatio(), hh / renderer.getPixelRatio());
@@ -1620,6 +1622,7 @@ bootMark('things'); widenFlatLand(world, scene); bootMark('wideland'); await bre
 createAds(G); // the family's own signboards (only when Sparkle Studio switched ads on)
 world.levelled = levelUnderBuildings(world, scene); bootMark('levelled'); await breathe();
 G.plots = createPlots(G); // (round T3) the Memory Villages' garden plots and the spare ones by each city, on their levelled ground
+G.reeds = createReeds(G); // (round T4a) reeds along the banks, water hyacinth in the quiet waters (two draws)
 world.roadside = plantRoadside(G); // soft road edges and flowers, once everything stands
 bootMark('roadside'); G.solidsReady = buildSolids(G); bootMark('solids'); // (no breath here: the solid map is read once everything below is placed too) // nobody walks through houses and things (js/solids.js)
 startPackBar(); // the recorded voices downloading: a small bar at the bottom (js/packbar.js)
