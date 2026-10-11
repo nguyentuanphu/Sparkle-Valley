@@ -312,7 +312,7 @@ export function createRegions(G) {
   // villagers you can chat with
   for (const v of VENDORS) PERSONAS[v.id] = {
     emoji: v.food[0], name: v.name, age: ['old enough to know the best food in town', 'đủ lớn để biết món nào ngon nhất'],
-    about: [v.greet[0], v.greet[1]], likes: [`Making ${v.food[1]} for hungry kids!`, `Làm ${v.food[2]} cho các bạn nhỏ đói bụng!`], mood: v.region === 'au' ? ["Good as gold, mate!", 'Khỏe re, bạn ơi!'] : v.region === 'trung' ? ['Khỏe lắm, cảm ơn mi!', 'Khỏe lắm, cảm ơn mi!'] : v.region === 'nam' ? ['Khỏe re nè!', 'Khỏe re nè con!'] : ['Bà khỏe, cảm ơn cháu!', 'Bà khỏe, cảm ơn cháu!'],
+    about: [v.greet[0], v.greet[1]], likes: [`Making ${v.food[1]} for hungry kids!`, `Làm ${v.food[2]} cho các bạn nhỏ đói bụng!`], mood: v.region === 'au' ? ["Good as gold, mate!", 'Khỏe re, bạn ơi!'] : v.region === 'trung' ? ['Very well, thank you!', 'Khỏe lắm, cảm ơn mi!'] : v.region === 'nam' ? ['Great, thanks!', 'Khỏe re nè con!'] : ['I am very well, thank you, dear!', 'Bà khỏe, cảm ơn cháu!'],
     role: v.role, region: v.region
   };
 }

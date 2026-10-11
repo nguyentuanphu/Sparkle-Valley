@@ -2703,6 +2703,15 @@ await check('names', async () => {
   return `${fs.readdirSync('../js', { recursive: true }).filter(f => String(f).endsWith('.js')).length} game files: every name is defined or imported`;
 });
 
+await check('bilingual', async () => {
+  // (Round U, owner 11 Oct: Grandma Huệ spoke Vietnamese with English set) no English slot of an [English, Vietnamese]
+  // pair (an array, T(…, …) or { en, vi }) holds a Vietnamese sentence; names, songs and sayings that stay Vietnamese
+  // on purpose are listed with a reason in tools/lang-allow.json (tools/lang-audit.mjs)
+  const { audit } = await import('../tools/lang-audit.mjs'), r = audit();
+  ok(!r.length, r.slice(0, 12).map(x => `${x.file}:${x.line} "${x.en}"`).join(' | '));
+  return 'every English line is English (names, songs and sayings on the allow list)';
+});
+
 await check('rules', async () => {
   // the rule registry (architecture step 0): js/content/rules.js is exactly what docs/ARCHITECTURE.md §9 says, and every
   // rule id the code and the checks name (ROAD-003, VEH-001, PRIV-004…) is in it
