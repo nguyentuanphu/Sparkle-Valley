@@ -47,6 +47,17 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
 - **Release**: deploys and the live site check (Netlify).
 
 ## Owner's decisions to keep
+- 11 Oct, 3 pm AEDT: next task (watch the bug robot and workflows on r60; #36 beyond step 5 only with a go, after
+  measuring on a real phone and tablet) waits until r60 is on `main` with `docs/cores/LOG-r60.md`; `main` was r59.
+- (11 Oct, 5:30 pm AEDT) Go for the 4-part plan after r60: the GitHub Pages workflow only by hand; the bug robot started
+  once by hand on r60 to test it; the `startup` check's time limits follow the machine's measured speed in the same run
+  (never by raising the limits); the owner reads #36's real phone and tablet times in Studio; no #36 game changes.
+- (11 Oct, 7:20 pm AEDT) "You can deploy by using this chat for now until I say no, and then you can proceed on the
+  tasks": this chat may merge its own branch into `main` (Netlify publishes) until the owner says no; then it carries on
+  with its waiting tasks (bug robot's first instant run, `startup` ratchet, Studio's start-up times, #36 numbers).
+- (11 Oct, 7:40 pm AEDT) The Front Desk is no longer in service; **this chat files bugs for the robot**: the owner tells
+  this chat, it finds the core and files the GitHub issue the Front Desk way (`docs/cores/front-desk.md`: labels `bug`,
+  the core, `small` or `big`; no child's name, photo or address), then watches the robot work on it.
 - Analytics per device and per child, with first names, device and browser, city and country (round L).
 - green dot Playing now / grey dot Offline per device in Studio (round O).
 - GitHub and Netlify are separate steps: “yes, push” then “yes, deploy”.
@@ -92,4 +103,34 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
      maxima in `tests/startup-baseline.json` (never raise them); post the new numbers on issue #36.
   3. When Studio shows `startup` on the Analytics page, check it reads the report's `startup` correctly.
   4. Item 3 (`parents` failing on "bedtime" on `main`) was already fixed on `main` (2fa7043): nothing to do.
+- **11 Oct, 5:15 pm AEDT: r60 live, plan waiting for the owner's go (session ended for usage).** Branch now has `main`
+  (r60) merged in. Found: (1) `pages.yml` (Deploy to GitHub Pages) fails on every merge into `main` since 10 Oct because
+  Pages is not switched on (the game is on Netlify); proposed: run it only by hand. Checks is green on r60; branches
+  older than r60 fail Checks until they merge `main`. (2) The bug robot has not run on r60 yet (last run 11 Oct, 12:47
+  pm AEDT, on r56); only #34 and #36 are open, both on hold; check the 5-minute timer fires and a new bug starts it.
+  (3) `startup` is red on r60 (Release: 96/97): first download 1088 KB (voice list, asked of Voice & Audio), slower
+  build since T2/T3 (asked of World); proposed: measure on `main` here and make the time limits fair on slower machines
+  by measuring the machine's speed in the same run, never by raising the limits. (4) #36 on a real phone and tablet:
+  no Studio key here, so the owner opens the game twice on each device and reads the start-up times in Studio; no #36
+  game changes without a new go. The owner has not said go to any of this yet.
+- **11 Oct, 7:10 pm AEDT: the post-r60 plan done (owner's go 5:30 pm; code c9d4e83, docs after).**
+  1. `pages.yml` (Deploy to GitHub Pages) now runs only by hand: it failed on every merge into `main` because Pages is
+     not switched on (the game is on Netlify). `docs/INFRASTRUCTURE.md` updated; HANDOFF and README lines asked of
+     Release on the board.
+  2. Bug robot on r60: started by hand at 5:27 pm AEDT, green in 15 s on `bb99e13` (nothing to pick: #34 and #36 are on
+     hold). GitHub skips the 5-minute backup timer: no timed run from 12:47 pm to 7 pm AEDT. The instant start (a new
+     or relabelled `bug` issue, the owner's "go") is the real trigger; a new bug from the Front Desk is its next test.
+  3. `startup` now measures the machine's speed in the same run (a fixed piece of work at the same slowed speed, the
+     middle of 7 tries, `machineMs.ref` 180 in `tests/startup-baseline.json`) and stretches or shortens the time limits
+     by measured / ref (0.5 to 3); downloads are not stretched; no limit raised. Tested: 56d9578 (before r59) passes
+     at x1.00 (title 0.9 s, ready 17.6 s) and at a 1.5x slower processor passes at x1.45 (ready 24.8 s, which failed
+     the old limits). r60 on this machine (x0.99 to x1.11) still fails, so its slowdown is the game's: first download
+     1088 KB > 1035 (Voice & Audio's manifest) and title 1.5-2.2 s against 0.9 s before r59 (World / bigger start);
+     ready 19.4-25.0 s, near its limit. The board's requests to World and Voice & Audio stand.
+  4. #36 on real devices: no Studio key in this chat; the owner opens the game twice on a phone and a tablet and reads
+     the start-up times in Studio's Analytics (Studio still has to draw `startup`: board request).
+  Full suite on c9d4e83 (finished 7:08 pm AEDT): **96/97 passed**; failed `startup` (r60's own slowdown, above);
+  skipped (no local PeerJS / MQTT servers here): multiplayer, netgames, together, meet, cloud, knock, mapver.
+  Checks run for this core: startup (3 runs plus 2 on 56d9578), boot, offline, studio, report, saves, cloud (skipped),
+  photo, unit, familyphotos, nostudio: all pass except startup.
 

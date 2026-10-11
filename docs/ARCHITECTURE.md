@@ -691,6 +691,10 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | BUILDING-003 | No roof intersects a neighbour; no building touches a road corridor | MAJOR | check `roads`, `ground`; data |
 | BUILDING-004 | House number 8 shows only "8"; the street name never appears in the game or the repo | BLOCKER | process + grep check [IMPR] |
 | BUILDING-005 | Villages have no modern elements; cities keep their own building types (handbook §5) | MINOR | visual |
+| STALL-001 | (T1b, owner 11 Oct) Every stall, kiosk, food van and seller's tent stands 1.5 m or more from the edge of any road or place street and 3 m or more from any building, measured on its own footprint (`STALL` in `js/content/map.js`) | MAJOR | check `stalls`, `validate` |
+| STALL-002 | Neighbours keep 1.2 m of clear ground between them; each faces its street; the spot a child taps is between it and the street, never on a road | MAJOR | check `stalls`, `validate` |
+| STALL-003 | One market row per place (`MARKET_ROWS`, `rowSlot` in `js/content/map.js`): every stall of a place stands in it, on one side of the main street; none stands alone in a field (at most 12 m of open ground to its neighbour) | MAJOR | check `stalls`, `validate` |
+| STALL-004 | Walking sellers keep to the footpath (`walkPath`): never on a road, never through a building or a stall, never more than 3 m off the street | MAJOR | check `stalls`, `validate` |
 | NPC-001 | NPCs never block an entrance, never stand in a road corridor, never inside a solid | MAJOR | data + check `roads` |
 | NPC-002 | Titles follow the language (`NAMES_EN/VI`); renames win everywhere | MAJOR | check `language` |
 | ANIMAL-001 | Animals stay in their zone; never bite, fight or get hurt; tap = sound + bilingual name | MAJOR | review + data (zone) |
