@@ -720,7 +720,7 @@ G.eat = (h, id) => {
 G.onCooked = (h) => { checkQuests(h); G.job('cook', 1, h); };
 G.rebuildHero = i => { const h = G.heroes[i]; if (h) { h.buildModel(); G.huds[i].refreshWho(); sendHello(); } };
 G.fogMapFor = p => G.fogMaps[p.id] || (G.fogMaps[p.id] = fogMapFor(p, mapPic.now()));
-G.mapPic = mapPic;
+G.mapPic = mapPic; G.waterPic = waterPic; // (the checks read where each picture came from)
 G.snapshot = (i, max = 720, q = .8) => {
   const h = G.heroes[i] || G.heroes[0], w = renderer.domElement.width, hh = renderer.domElement.height;
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w / renderer.getPixelRatio(), hh / renderer.getPixelRatio());

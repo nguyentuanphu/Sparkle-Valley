@@ -271,11 +271,11 @@ export function heightAt(x, z) {
   return h;
 }
 
-// (round T4a) what a child is walking on at (x, z) (y: their feet): 'wood' on a bridge deck, 'water' in the shallows,
+// (round T4a) what a child is walking on at (x, z) (y: their feet): 'wood' on a bridge deck or a pier, 'water' in the shallows,
 // 'road' on asphalt or a town's paving, 'dirt' on a dirt road or footpath, 'sand' on the beach, else 'grass' (footsteps)
 export function surfaceAt(x, z, y = null) {
   const h = heightAt(x, z);
-  if (y != null && y > h + .4 && bridgeAt(x, z, 4.5)) return 'wood';
+  if (y != null && y > h + .4 && (bridgeAt(x, z, 4.5) || h < WATER + .15)) return 'wood';   // a bridge deck, or a pier over the water
   if (h < WATER + .15) return 'water';
   const rd = roadDist(x, z); if (rd.road && rd.d < rd.road.w / 2) return rd.road.kind === 'asphalt' ? 'road' : 'dirt';
   if (CITIES.some(c => x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1)) return 'road';

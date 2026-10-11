@@ -662,6 +662,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | WORLD-011 | Scale: child 1.6 m, adult 2.0 m, grandparent 1.8 m; doors ≥ 1.4 × 2.4 m; steps ≤ 0.4 m (G2) | Consistency | MINOR | data (catalogue) | — |
 | WORLD-012 | No clutter: ≤ 1 big focal object per 10 m of street; ≥ 40 % open ground (G11) | Readability | MINOR | data [IMPR] + visual | — |
 | WORLD-013 | Garden plots (round T3): at least 60 (two Memory Villages, up to three spare by each city); each level within 5 cm, off roads and water, its front within 2 m of a road's edge, a unique id and address, nothing standing on it; one garden mesh for all | Families place the homes they remember | MAJOR | check `plots` | plot kept as a garden |
+| WORLD-014 | Footsteps by surface (round T4a): `surfaceAt` tells road (asphalt and town paving), dirt (dirt roads and footpaths), sand (the beach), wood (bridge decks and piers), water (the shallows) and grass apart, and a step plays that surface's sound | A child hears where they walk | MINOR | check `surface` | the step of before |
 
 ### 9.4 Roads (R1–R12)
 
@@ -681,6 +682,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | ROAD-012 | R12 | Soft verge blend 0.3–0.5 m with flowers along it | MINOR | visual | — |
 | ROAD-013 | — | Inside a village a road takes the village's level; at a junction the side road takes the through road's exact height | BLOCKER | check `flat`, `roadshape` | — |
 | ROAD-014 | — | Every asphalt road carries its region's colour (red Vietnam, orange Australia, purple mountains, blue coast, plain grey home); the ring road is closed (round T2) | MINOR | check `roadtone` | — |
+| ROAD-015 | — | Road markings by region (round T4a, owner): Vietnam's asphalt a yellow centre dash, Australia's white lines with concrete kerbs; town main streets brick (Vietnam) or paving (Australia); dirt roads red earth | MINOR | check `roadtone` | — |
 
 ### 9.5 Buildings, NPCs, animals, vehicles, river
 
@@ -702,6 +704,8 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | RIVER-005 | Every boat route stays in water deep enough for its hull and fits under every deck it passes (round T2) | BLOCKER | check `boats` |
 | RIVER-006 | Every pier's land end joins a road or footpath (round T2) | MAJOR | check `boats` |
 | RIVER-007 | Every boat the map gives two piers runs between them (the Sydney Harbour ferry; the Sài Gòn boat to Vũng Tàu, round T3) | MAJOR | check `boats` |
+| RIVER-008 | The water map (round T4a): every river, lake and the sea in its own colour (Sông Hồng red-brown, the sea blue), deeper water darker, a foam line along every shore; still one water plane and one draw, the picture 1024 px or smaller, painted once and read back from the device on the next start | MAJOR | check `water` |
+| RIVER-009 | Reeds along the banks and water hyacinth in the quiet waters (round T4a): two instanced meshes; none on a road, bridge deck or pier, hyacinth never on a boat route | MAJOR | check `water` |
 
 ### 9.6 Activities, UI, content, voice, privacy, Studio
 
