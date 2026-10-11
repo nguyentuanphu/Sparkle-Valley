@@ -30,13 +30,16 @@ const seats = v => Array.isArray(v) && v.length >= 2 && v.length <= 6 && v.every
 /** @type {(max: number) => Record<string, Field>} a message locked for one player: the sender's key and the locked words */
 const sealed = max => ({ pub: text(100), iv: text(24), ct: text(max) });
 const SEALED = ['pub', 'iv', 'ct'];
-const W = 235; // world coordinates stay inside ±235 m (round T: the valley is 480 m across, js/content/map.js WORLD.size)
+import { WORLD } from './content/map.js';
+// world coordinates stay inside the valley, with 5 m to spare (round T: 480 m across, so ±235 m; read from the map)
+const W = WORLD.size / 2 - 5;
 // kind → { fields, size (largest JSON in characters), per (at most this many…), sec (…in this many seconds), need (fields that must be there) }
 /** @type {Record<string, Kind>} */
 export const SCHEMA = {
   // (round R privacy, 9 Oct) a hello never carries the photo (it goes after admission, locked, in 'photo'); w: "I have not
   // heard the room's starter yet" (a newcomer let in through the cloud asks for the welcome again)
-  hello: { fields: { name: text(40), look: any, friend: word(8), pub: text(100), w: bool }, size: 3000, per: 6, sec: 10 },
+  // (Online, r57) map: the knocker's map layout (MAP_VERSION); a knock from another layout is turned away (js/net.js)
+  hello: { fields: { name: text(40), look: any, friend: word(8), pub: text(100), w: bool, map: word(8) }, size: 3000, per: 6, sec: 10 },
   s: { fields: { x: num(-W, W), y: num(-60, 120), z: num(-W, W), yaw: num(-100, 100), st: word(16), sp: num(0, 50) }, need: ['x', 'y', 'z', 'yaw'], size: 600, per: 40, sec: 1 },
   ping: { fields: { ts: num(0, 1e14) }, size: 600, per: 3, sec: 2 },
   pong: { fields: { ts: num(0, 1e14) }, size: 600, per: 6, sec: 2 },

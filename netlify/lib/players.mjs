@@ -4,8 +4,9 @@
 // the last hello. (round R privacy, 9 Oct: said exactly) What is kept: per child the first name the family gave the
 // profile (letters only, up to 20) and the age group (under 5, or 5 and up), minutes, games, places in the valley and
 // stories; per device its kind, system, browser, screen size, build and language, and the town, state and country
-// Netlify works out from the connection; errors in the game's own code, stuck spots and smoothness; lines that had no
-// recording. Never kept: surnames, photos, voices, anything a child typed, GPS, or the connection's address (IP).
+// Netlify works out from the connection; errors in the game's own code, stuck spots and smoothness; (11 Oct, #36) how
+// long each start took (up to 6 a day: ms to the game's code, to a built valley and to its first picture, whether it
+// came from the device's saved copy, the slowest building step's name); lines that had no recording. Never kept: surnames, photos, voices, anything a child typed, GPS, or the connection's address (IP).
 // A grown-up can switch it all off (Grown-ups → Analytics and backup → Analytics).
 // It is kept in Netlify Blobs (store "players"):
 //   d/<day>/<id>   that device on that day          dev/<id>   the day it was first seen
@@ -44,7 +45,8 @@ export function clean(b, now = Date.now()) {
     .filter(x => x && DAY.test(x.d) && x.d >= lo && x.d <= hi && !seen.has(x.d) && seen.add(x.d))
     .map(x => ({ d: x.d, mins: int(x.m, 24 * 60), games: words(x.g, 500), tales: int(x.t, 200), online: int(x.o, 24 * 60), // online: minutes with friends online
       hours: Object.fromEntries(Object.entries(obj(x.h)).filter(([k]) => /^([01]?\d|2[0-3])$/.test(k)).map(([k, v]) => [+k, int(v, 60)])), kids: kids(x.c),
-      errs: counts(x.e, 999), stuck: counts(x.s, 999), quits: words(x.q, 500), fps: Array.isArray(x.f) ? [int(x.f[0], 1e6), int(x.f[1], 24 * 60), int(x.f[2], 24 * 60)] : [0, 0, 0] }));
+      errs: counts(x.e, 999), stuck: counts(x.s, 999), quits: words(x.q, 500), fps: Array.isArray(x.f) ? [int(x.f[0], 1e6), int(x.f[1], 24 * 60), int(x.f[2], 24 * 60)] : [0, 0, 0],
+      starts: (Array.isArray(x.st) ? x.st : []).filter(a => Array.isArray(a)).slice(0, 6).map(a => [int(a[0], 6e5), int(a[1], 6e5), int(a[2], 6e5), a[3] ? 1 : 0, /^[a-z]{1,16}$/.test(a[4] || '') ? a[4] : '']) }));
   return { id: b.id, hid: /^[a-z0-9]{8,24}$/.test(b.h || '') ? b.h : '', build: WORD.test(b.b || '') ? b.b : '?', lang: /^(en|vi)$/.test(b.l) ? b.l : '?', kids: int(b.k, 8), days,
     kind: /^(phone|tablet|computer)$/.test(b.d) ? b.d : '?', app: !!b.a,
     os: /^(iOS|iPadOS|Android|ChromeOS|Windows|macOS|Linux|other)$/.test(b.os) ? b.os : '?', br: /^(Safari|Chrome|Edge|Firefox|Samsung|other)$/.test(b.br) ? b.br : '?', sc: /^\d{2,5}x\d{2,5}$/.test(b.sc || '') ? b.sc : '',
@@ -84,6 +86,7 @@ export async function hello(S, body, now = Date.now(), where = {}, opts = {}) {
     for (const [h, n] of Object.entries(x.hours)) r.hours[h] = Math.min(60, (r.hours[h] || 0) + n);
     for (const f of ['errs', 'stuck', 'quits']) for (const [k, n] of Object.entries(x[f])) r[f][k] = (r[f][k] || 0) + n;
     r.fps = r.fps.map((v, i) => v + x.fps[i]);
+    r.starts = (r.starts || []).concat(x.starts || []).slice(-12); // (#36) the day's starts, the newest kept
     for (const [k, c] of Object.entries(x.kids)) {
       const m = r.children[k] = r.children[k] || { n: '', a: c.a, m: 0, sm: 0, t: 0, g: {}, p: {} };
       m.n = c.n; m.a = c.a; m.m = Math.min(24 * 60, m.m + c.m); m.sm = Math.min(24 * 60, m.sm + c.sm); m.t += c.t;
@@ -124,7 +127,7 @@ async function sumDay(S, date, keep) {
     s.ids.push(b.key.split('/')[2]); if (r.isNew) s.newDevices++; s.mins += r.mins; s.kids += r.kids; s.tales += r.tales; s.online += r.online || 0; if (r.app) s.app++;
     add(s.langs, r.lang); add(s.builds, r.build); add(s.kinds, r.kind); for (const [g, n] of Object.entries(r.games || {})) add(s.games, g, n);
     // round L: what this device did that day, kept with the day's sum (per child, hours, problems, smoothness)
-    s.dev[b.key.split('/')[2]] = { mins: r.mins, tales: r.tales, games: r.games || {}, hours: r.hours || {}, kids: r.children || {}, errs: r.errs || {}, stuck: r.stuck || {}, quits: r.quits || {}, fps: r.fps || [0, 0, 0] };
+    s.dev[b.key.split('/')[2]] = { mins: r.mins, tales: r.tales, games: r.games || {}, hours: r.hours || {}, kids: r.children || {}, errs: r.errs || {}, stuck: r.stuck || {}, quits: r.quits || {}, fps: r.fps || [0, 0, 0], starts: r.starts || [] };
   }
   if (keep) await S.setJSON('sum/' + date, s); // a finished day never changes again
   return s;
@@ -169,6 +172,7 @@ async function details(S, sums, now) {
   for (const s of sums) for (const [id, x] of Object.entries(s.dev || {})) {
     const D = devs[id] = devs[id] || { id, mins: 0, days: 0, tales: 0, kids: {}, errs: 0, stuck: 0, fps: [0, 0, 0], last: s.date };
     D.mins += x.mins; D.days++; D.tales += x.tales; D.last = s.date; D.fps = D.fps.map((v, i) => v + ((x.fps || [])[i] || 0));
+    D.starts = (D.starts || []).concat(x.starts || []).slice(-30); // (#36) the last 30 starts
     for (const [h, n] of Object.entries(x.hours || {})) hours[+h] += n;
     for (const [k, n] of Object.entries(x.errs || {})) { const e = errs[k] = errs[k] || { n: 0, devices: new Set() }; e.n += n; e.devices.add(id); D.errs += n; }
     for (const [k, n] of Object.entries(x.stuck || {})) { add(stuck, k, n); D.stuck += n; }
@@ -183,10 +187,15 @@ async function details(S, sums, now) {
   }
   const top = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
   const fpsOf = f => f[1] ? Math.round(f[0] / f[1]) : null;
+  // (#36) a device's usual start-up: medians in seconds of the time to a built valley and to its first picture, for starts
+  // from the device's saved copy (warm) and the others (first visits and updates), and its most common slowest step
+  const med = a => { if (!a.length) return null; const v = a.slice().sort((x, y) => x - y); return Math.round(v[v.length >> 1] / 100) / 10; };
+  const startupOf = st => { if (!st.length) return null; const w = st.filter(r => r[3]), c = st.filter(r => !r[3]), steps = {}; st.forEach(r => r[4] && add(steps, r[4]));
+    return { n: st.length, ready: med(w.map(r => r[1])), readyFirst: med(c.map(r => r[1])), picture: med(st.map(r => r[2]).filter(Boolean)), slowest: top(steps, 1).map(x => x[0])[0] || '' }; };
   const devices = Object.keys({ ...infos, ...devs, ...lives }).map(id => { const I = infos[id] || {}, D = devs[id] || { mins: 0, days: 0, tales: 0, kids: {}, errs: 0, stuck: 0, fps: [0, 0, 0] };
     return { id, label: labels[id] || '', kind: I.kind || '?', os: I.os || '?', br: I.br || '?', screen: I.sc || '', app: !!I.app, build: I.build || '?', lang: I.lang || '?', loc: I.loc || null, first: I.first || '', last: I.last || D.last || '',
       online: !!(lives[id] && lives[id].on && now - lives[id].at < LIVE_MS), seenAt: lives[id] ? new Date(lives[id].at).toISOString() : '', playingNow: lives[id] && lives[id].on && now - lives[id].at < LIVE_MS ? lives[id].kid || '' : '',
-      mins: D.mins, days: D.days, tales: D.tales, errors: D.errs, stuck: D.stuck, fps: fpsOf(D.fps), slowMins: D.fps[2],
+      mins: D.mins, days: D.days, tales: D.tales, errors: D.errs, stuck: D.stuck, fps: fpsOf(D.fps), slowMins: D.fps[2], startup: startupOf(D.starts || []),
       kids: Object.values(D.kids).sort((a, b) => b.mins - a.mins).map(K => ({ ...K, games: Object.entries(K.games).sort((a, b) => b[1][0] - a[1][0]).slice(0, 10).map(([g, v]) => [g, ...v]), places: top(K.places, 8) })) }; })
     .sort((a, b) => b.online - a.online || (b.last || '').localeCompare(a.last || '') || b.mins - a.mins).slice(0, 100);
   const count = f => { const o = {}; for (const d of devices) if (d.days) add(o, f(d)); return o; };
@@ -207,7 +216,9 @@ async function details(S, sums, now) {
   const quiet = day(now - 7 * 864e5);
   for (const d of devices) if (d.last && d.last < quiet && d.days) tips.push({ k: 'quiet', d: who(d), last: d.last });
   for (const d of devices) for (const K of d.kids) if (K.age === 'little' && K.mins > 30 && K.simpleMins < K.mins * .2) tips.push({ k: 'simple', name: K.name, d: who(d) });
-  return { onlineNow: devices.filter(d => d.online).length, hours, places: top(places, 15), devices, os: count(d => d.os), browsers: count(d => d.br), locations: count(d => d.loc ? [d.loc.city, d.loc.region, d.loc.country].filter(Boolean).join(', ') : '?'), problems, tips: tips.slice(0, 20) };
+  // (#36) start-up by kind of device: the median time to a built valley over each kind's devices (seconds)
+  const startup = {}; for (const k of ['phone', 'tablet', 'computer']) { const v = devices.filter(d => d.kind === k && d.startup).map(d => (d.startup.ready ?? d.startup.readyFirst) * 1000).filter(x => x > 0); if (v.length) startup[k] = { devices: v.length, ready: med(v) }; }
+  return { startup, onlineNow: devices.filter(d => d.online).length, hours, places: top(places, 15), devices, os: count(d => d.os), browsers: count(d => d.br), locations: count(d => d.loc ? [d.loc.city, d.loc.region, d.loc.country].filter(Boolean).join(', ') : '?'), problems, tips: tips.slice(0, 20) };
 }
 // a name the family gives a device in Studio ("Na's iPad")
 export async function setLabel(S, id, label) { if (!ID.test(id || '')) return false; const l = String(label || '').replace(/[<>\u0000-\u001f]/g, '').trim().slice(0, 40); if (l) await S.set('label/' + id, l); else await S.delete('label/' + id); return true; }

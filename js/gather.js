@@ -67,12 +67,15 @@ export function createGathering(G, { give, sfx, say, toast }) {
   const now = () => performance.now();
   const add = (o, x, z) => { o.position.set(x, heightAt(x, z), z); scene.add(o); return o; };
 
+  // one mesh for all of a group's own parts, coloured as they were (the bush's leaves, or its fruit)
+  const bakeParts = grp => { const parts = []; for (const m of [...grp.children]) if (m.isMesh) { m.updateMatrix(); parts.push(P(m.geometry.clone().applyMatrix4(m.matrix), '#' + m.material.color.getHexString())); grp.remove(m); } if (parts.length) { const one = new THREE.Mesh(merge(parts), toonVC()); one.castShadow = true; grp.add(one); } };
   // ---------- fruit bushes ----------
   spots(16, 11, 14, used).forEach(([x, z], k) => {
     const kind = FRUITS[k % FRUITS.length], w = WILD[kind], g = new THREE.Group();
     for (let i = 0; i < 5; i++) { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(.55 + (i % 2) * .2, 1), i % 2 ? leaves : leaves2); m.position.set(Math.cos(i * 1.3) * .5, .55 + (i % 3) * .2, Math.sin(i * 1.3) * .5); m.castShadow = true; g.add(m); }
     const fruit = new THREE.Group(); g.add(fruit);
     for (let i = 0; i < 7; i++) { const f = new THREE.Mesh(new THREE.SphereGeometry(.13, 10, 8), toon(w.color)); f.position.set(Math.cos(i * 2.4) * .75, .5 + (i % 3) * .3, Math.sin(i * 2.4) * .75); fruit.add(f); }
+    bakeParts(g); bakeParts(fruit); // (round T2) a bush drawn as two pieces, not twelve
     add(g, x, z); world.colliders.push({ x, z, r: .8 });
     const st = { ready: 0 };
     world.updaters.push(() => { fruit.visible = now() > st.ready; });

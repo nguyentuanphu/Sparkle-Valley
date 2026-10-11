@@ -3,7 +3,7 @@
 import { AREAS, gamesIn } from './content/activities.js';
 import { T, applyLang, nm, NPC_NAMES, defaultName } from './i18n.js';
 import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, backupAge, STYLES, OUTFIT_COLORS, HATS, BACKS, HAIR, SKIN, HAIRSTYLES, GLIDERS, farm, resetFarm, saveFarm, MAX_KIDS, reduceMotion } from './state.js';
-import { say, spoken, voicePack, voiceDiag, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
+import { say, spoken, voicePack, voiceDiag, allowMobilePack, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
 import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt, cur, spoken as money } from './money.js';
@@ -49,16 +49,36 @@ applyComfort();
 try { matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => applyComfort()); } catch (e) { }
 // Captions: every spoken line also appears as text at the bottom (unless a speech box, game or storybook
 // is already showing those words). On by default; grown-ups can switch it off.
+let hideCaption = () => { };
 {
-  let cap = null, t = 0;
+  let cap = null, timers = [];
+  const stop = () => { timers.forEach(clearTimeout); timers = []; };
+  hideCaption = () => { stop(); cap && cap.classList.remove('show'); };
+  // credits.js asks for this with an event (it cannot import ui.js: ui.js opens the credits)
+  window.addEventListener('sv-hide-caption', () => hideCaption());
+  // a long line is shown a sentence or two at a time, so the box never grows to cover the screen
+  const chunks = text => {
+    const out = []; let cur = '';
+    for (const p of text.split(/(?<=[.!?。…])\s+/)) {
+      if (cur && (cur + ' ' + p).length > 90) { out.push(cur); cur = p; } else cur = cur ? cur + ' ' + p : p;
+    }
+    if (cur) out.push(cur);
+    return out;
+  };
   spoken.push(text => {
     if (settings.captions === false || !text) return;
-    if (document.querySelector('.dialog:not(.out), .storybook, .gl, .howto')) return;
+    if (document.querySelector('.dialog:not(.out), .storybook, .gl, .howto, .credits')) return;
     if (!cap) { cap = el('div', 'caption'); cap.setAttribute('role', 'status'); cap.setAttribute('aria-live', 'polite'); document.body.appendChild(cap); }
-    cap.textContent = text; cap.classList.add('show'); clearTimeout(t);
-    t = setTimeout(() => cap.classList.remove('show'), 2200 + text.length * 70);
+    stop(); let at = 0;
+    chunks(text).forEach(c => {
+      const ms = 2200 + c.length * 70;
+      timers.push(setTimeout(() => { cap.textContent = c; cap.classList.add('show'); }, at));
+      at += ms;
+    });
+    timers.push(setTimeout(() => cap.classList.remove('show'), at));
   });
 }
+export { hideCaption };
 export function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3200); }
 
 const flagBtns = () => `<div class="seg lang"><button data-l="en" class="${settings.lang === 'en' ? 'on' : ''}">${originFlags('au')} English</button><button data-l="vi" class="${settings.lang === 'vi' ? 'on' : ''}">${originFlags('vn')} Tiếng Việt</button></div>`;
@@ -103,7 +123,7 @@ export function showTitle(onStart) {
     const b = installButton(); if (b) top.appendChild(b);
   };
   redraw();
-  s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(); };
+  s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(hideCaption); };
   s.addEventListener('click', e => { if (e.target.closest('.seg') || e.target.closest('.about') || e.target.closest('.installchip') || e.target.closest('.learnrow')) return; ac(); SFX.chime(); s.remove(); onStart(); });
 }
 
@@ -246,6 +266,7 @@ function packStatusHTML() {
     ${voiceDiag.lastMiss ? `<p class="note warn">⚠️ ${T('Last time a recording could not play here', 'Lần trước máy này không phát được bản ghi')} (${esc(voiceDiag.lastMiss)}). ${T('Tap anywhere on the screen once, check the side switch is not on silent, then press ▶ below.', 'Chạm vào màn hình một lần, kiểm tra nút gạt bên hông không ở chế độ im lặng, rồi bấm ▶ bên dưới.')}</p>` : ''}
     <div class="actions"><button class="btn" data-pv="f">▶ 👩 ${T('Woman', 'Giọng nữ')}</button><button class="btn" data-pv="m">▶ 👨 ${T('Man', 'Giọng nam')}</button></div>
     <p class="note">${T('Women, girls and grandmas speak with the woman’s voice; men, boys and grandpas with the man’s.', 'Phụ nữ, bé gái và bà nói bằng giọng nữ; đàn ông, bé trai và ông nói bằng giọng nam.')}</p>
+    ${P ? `<label class="tog"><input type="checkbox" id="gPackCell" ${settings.packCell === true ? 'checked' : ''}> ${T('Download the rest of the voices on mobile data too (on Wi-Fi they download by themselves)', 'Tải phần giọng đọc còn lại cả bằng dữ liệu di động (khi có Wi-Fi giọng đọc tự tải)')}</label>` : ''}
     ${miss.length ? `<details class="g-miss"><summary>📝 ${T(`${miss.length} lines on this device had no recording yet`, `${miss.length} câu trên máy này chưa có bản ghi`)}</summary>
       <p class="note">${settings.countPlayers !== false ? T('They are sent by themselves, without children’s names, and recorded for the next update.', 'Các câu này tự được gửi đi, không kèm tên các con, và sẽ được thu cho bản cập nhật sau.') : T('Analytics is off on this device, so they are not sent. They are kept in the backup file (below).', 'Phân tích đang tắt trên máy này nên các câu không được gửi. Các câu được giữ trong tệp sao lưu (bên dưới).')}</p>
       <ol class="misslist">${miss.slice(0, 40).map(m => `<li>${m[0] === 'vi' ? '🇻🇳' : '🇦🇺'} ${esc(m[1])} <small>×${m[2]}</small></li>`).join('')}</ol>
@@ -254,6 +275,8 @@ function packStatusHTML() {
 function bindPackStatus(card, redraw) {
   card.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { setSpeaker(b.dataset.pv === 'm' ? 'Chú Tư' : 'Cô Mai'); say('Hello! Welcome to Sparkle Valley.', 'Xin chào! Chào mừng con đến Thung Lũng Lấp Lánh.'); setTimeout(() => setSpeaker(null), 300); });
   const c = card.querySelector('#gMissClear'); if (c) c.onclick = () => { clearVoiceMisses(); redraw(); };
+  // (round R item 12, Voice & Audio) the voice pack on mobile data: a grown-up's yes or no (js/voice.js allowMobilePack)
+  const pc = card.querySelector('#gPackCell'); if (pc) pc.onchange = () => allowMobilePack(pc.checked);
 }
 // ---------- Grown-ups ----------
 export function openGrownups(after) {
@@ -268,12 +291,16 @@ export function openGrownups(after) {
       <h2>${T('Grown-ups', 'Phụ huynh')} <small class="buildtag">${T('Build', 'Bản')} ${BUILD}</small></h2>
       <div class="g-install"></div>
       ${privacyHTML()}
+      <div class="toggles gcaprow">
+        <label class="tog"><input type="checkbox" id="gCap" ${settings.captions === false ? '' : 'checked'}> ${T('Captions: show everything that is said as text', 'Phụ đề: hiện chữ cho mọi câu được nói')}</label>
+      </div>
       <h3>${T('Language', 'Ngôn ngữ')}</h3>${flagBtns()}${learnBtns()}
       <label class="tog"><input type="checkbox" id="gBil" ${settings.bilingual ? 'checked' : ''}> ${T('Bilingual voice: also say everything in the other language', 'Giọng song ngữ: nói thêm bằng ngôn ngữ còn lại')}</label>
             <details class="gsec" data-sec="players" ${gOpen.has('players') ? 'open' : ''}><summary><span class="gi">👧</span><b>${T('Children', 'Các con')}</b></summary><div class="gbody">
 
       <div class="plist">${profiles.map(p => `<div class="prow"><img src="${avatarURL(p)}" alt=""><div class="pw"><b>${esc(nm(p.name))}</b><small>🔮 ${p.orbs} · ✨ ${Object.keys(p.shrines).length}/12 · 💰 ${fmt(farm.coins)}</small></div><button class="btn ghost" data-rep="${p.id}" aria-label="${T('Play report', 'Báo cáo chơi')}">${pic('📊')}</button><button class="btn" data-ed="${p.id}">${T('Edit', 'Sửa')}</button></div>`).join('')}</div>
       <button class="btn wide" id="gAdd">+ ${T('Add a player', 'Thêm người chơi')}</button>
+      ${window.__sv && window.__sv.heroes && window.__sv.heroes.length ? `<button class="btn wide" id="gChange">👫 ${T('Change player', 'Đổi người chơi')}</button>` : ''}
       <h3>🔒 ${T('Family photos', 'Ảnh gia đình')}</h3>
       <p class="note">${T('Your family’s own photos (on villagers’ faces and on postcards) are private. Type the family code once on this device to download them; ask the grown-up who set up the game for it.', 'Ảnh của gia đình (trên mặt dân làng và trên bưu thiếp) được giữ riêng. Gõ mã gia đình một lần trên máy này để tải ảnh về; hỏi người lớn đã cài trò chơi để lấy mã.')}</p>
       <div class="vrow"><input type="text" id="gFam" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="ABCD-EFGH-JKMN" value="${familyCode() ? '••••' + esc(familyCode().slice(-4)) : ''}"><button class="btn" id="gFamSave">${T('Save', 'Lưu')}</button></div>
@@ -284,7 +311,6 @@ export function openGrownups(after) {
         <label class="tog"><input type="checkbox" id="gVoice" ${settings.voice ? 'checked' : ''}> ${T('Talking voice', 'Giọng nói')}</label>
         <label class="tog"><input type="checkbox" id="gMusic" ${settings.music ? 'checked' : ''}> ${T('Music', 'Nhạc')}</label>
         <label class="tog"><input type="checkbox" id="gSound" ${settings.sound ? 'checked' : ''}> ${T('Sound effects', 'Hiệu ứng âm thanh')}</label>
-        <label class="tog"><input type="checkbox" id="gCap" ${settings.captions === false ? '' : 'checked'}> ${T('Captions: show everything that is said as text', 'Phụ đề: hiện chữ cho mọi câu được nói')}</label>
       </div>
 <h3>🎙️ ${T('Voices', 'Giọng nói')}</h3>
       ${packStatusHTML()}
@@ -431,6 +457,7 @@ export function openGrownups(after) {
     card.querySelector('#gFamSave').onclick = async () => { const v = card.querySelector('#gFam').value.trim(), out = card.querySelector('#gFamRes'); if (/^•/.test(v)) return; out.textContent = '…';
       const r = await setFamilyCode(v).catch(() => ({ ok: false }));
       out.textContent = r.cleared ? T('Family code removed from this device.', 'Đã xóa mã gia đình khỏi máy này.') : r.bad ? T('That code is not right: check it with the grown-up who set up the game.', 'Mã chưa đúng: hỏi lại người lớn đã cài trò chơi.') : r.ok ? T(`Saved: ${r.n || 0} of ${r.of || 0} family photos on this device.`, `Đã lưu: ${r.n || 0}/${r.of || 0} ảnh gia đình trên máy này.`) : T('Saved. The photos come the next time this device is online.', 'Đã lưu. Ảnh sẽ về khi máy có mạng.'); };
+    const gw = card.querySelector('#gChange'); if (gw) gw.onclick = () => { m.close(); window.__sv.changePlayer(); };
     card.querySelector('#gAdd').onclick = () => profiles.length >= MAX_KIDS ? toast(T(`Up to ${MAX_KIDS} players.`, `Tối đa ${MAX_KIDS} người chơi.`)) : openEditor(null, () => { draw(); after && after(); });
     card.querySelector('#gExp').onclick = async () => { const how = await exportBackup(); if (how === 'cancelled') return; toast(how === 'shared' ? T('Backup saved!', 'Đã lưu bản sao!') : T('Backup downloaded. Put it in Drive or iCloud to keep it safe.', 'Đã tải bản sao. Hãy cất vào Drive hoặc iCloud cho an toàn.')); const y = m.scrollTop; draw(); m.scrollTop = y; };
     card.querySelector('#gRec').onclick = () => openRecorder(draw);
@@ -467,7 +494,7 @@ export function openQuick(game, i) {
         <div class="qs-sub">${T('Text size', 'Cỡ chữ')}</div><div class="seg tsize">${[0, 1, 2].map(k => `<button data-ts="${k}" class="${(s.textSize || 0) === k ? 'on' : ''}" style="font-size:${16 + k * 5}px">A</button>`).join('')}</div></div>
       ${game.festivals ? `<button class="qs-fest" id="qFest"><span>🎉</span><b>${T('Festivals', 'Lễ hội')}</b><small>${T('Tết, Mid-Autumn, Diwali, Christmas, Australia Day: any day you like', 'Tết, Trung Thu, Diwali, Giáng Sinh, Ngày Nước Úc: ngày nào cũng được')}</small></button>` : ''}
       <button class="grown qgrown"><span class="ring"></span>👨‍👩‍👧 ${T('Grown-ups settings', 'Cài đặt phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>
-      <div class="actions floatbar"><button class="btn" id="qWho">👫 ${T('Change player', 'Đổi người chơi')}</button><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
+      <div class="actions floatbar"><button class="btn primary" id="qDone">${T('Done', 'Xong')}</button></div>`;
     bindLang(card, draw);
     card.querySelector('.x').onclick = card.querySelector('#qDone').onclick = close;
     card.querySelectorAll('.qset').forEach(b => b.onclick = () => {
@@ -483,7 +510,6 @@ export function openQuick(game, i) {
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { s.textSize = +b.dataset.ts; saveSettings(); applyComfort(); keep(draw); });
     card.querySelectorAll('.seg.vstyle button').forEach(b => b.onclick = () => { s.voiceStyle = b.dataset.v; saveSettings(); keep(draw); say('Hello! Do you like my voice?', 'Xin chào! Con có thích giọng này không?'); });
     const fb = card.querySelector('#qFest'); if (fb) fb.onclick = () => { SFX.tap(); m.close(); openFestivals(game, i); };
-    card.querySelector('#qWho').onclick = () => { m.close(); game.changePlayer(); };
     // the full Grown-ups settings, from inside the game (press and hold, so little fingers don't open it by accident)
     holdButton(card.querySelector('.qgrown'), () => openGrownups(() => { draw(); game.huds.forEach(h => { h.refreshAudio(); h.refreshWho(); }); }));
   };
@@ -493,8 +519,8 @@ export function openQuick(game, i) {
 
 // ---------- Lịch lễ hội, the festival calendar (round R, owner) ----------
 // Today's festival with its timetable (08:00 present, 15:00 festival game, 18:30 show; 17:30 for under-5s), the ones
-// getting ready (decorations go up 3 weeks before), and the next ones with how many days to go. Any of them can be
-// visited now (the village decorates, the show plays and the festival table gives its present).
+// getting ready (decorations go up 3 weeks before), and the next ones with how many days to go. It is only a calendar: nothing
+// to visit from it.
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const dayLabel = d => T(`${d.getDate()} ${MONTHS[d.getMonth()]}`, `${d.getDate()}/${d.getMonth() + 1}`);
 export function festCalendarHTML(game) {
@@ -503,29 +529,20 @@ export function festCalendarHTML(game) {
   const SHOW = { fireworks: ['Fireworks', 'Pháo hoa'], lanterns: ['Lantern parade', 'Rước đèn'], parade: ['Parade', 'Diễu hành'], lights: ['Light show', 'Trình diễn ánh sáng'] };
   const plan = f => f.kind === 'quiet' ? `<li><b>${T('All day', 'Cả ngày')}</b> ${T('A quiet day of remembering', 'Một ngày yên lặng để tưởng nhớ')}</li>`
     : `<li><b>08:00</b> ${T('A present at the festival table', 'Nhận quà ở bàn lễ hội')}</li><li><b>15:00</b> ${T('The festival game', 'Trò chơi lễ hội')}</li>${f.show && f.show !== 'none' ? `<li><b>${show}</b> ${T(...SHOW[f.show])}</li>` : ''}`;
-  const card = n => `<div class="fcal-today"><span class="fi">${pic(n.F.icon)}</span><div><b>${esc(T(n.F.en, n.F.vi))}</b><ul class="fplan">${plan(n.F)}</ul><button class="btn" data-fest="${n.F.id}">${T('Go there', 'Đến đó')}</button></div></div>`;
+  const card = n => `<div class="fcal-today"><span class="fi">${pic(n.F.icon)}</span><div><b>${esc(T(n.F.en, n.F.vi))}</b><ul class="fplan">${plan(n.F)}</ul></div></div>`;
   const row = n => { const gr = n.F.group === 'vn' ? 'vn' : n.F.group === 'au' ? 'au' : 'west', ready = n.daysTo <= (n.F.kind === 'quiet' ? 3 : 21);
-    return `<button class="fcal-row ${gr}${ready ? ' ready' : ''}" data-fest="${n.F.id}"><span class="fi">${pic(n.F.icon)}</span><b>${esc(T(n.F.en, n.F.vi))}${n.isNew ? ` <i class="newtag">${T('New', 'Mới')}</i>` : ''}</b><small>${dayLabel(n.start)}</small><em>${n.daysTo === 1 ? T('tomorrow', 'ngày mai') : T(`in ${n.daysTo} days`, `còn ${n.daysTo} ngày`)}${ready ? ' · ' + T('getting ready', 'đang trang trí') : ''}</em></button>`; };
+    return `<div class="fcal-row ${gr}${ready ? ' ready' : ''}"><span class="fi">${pic(n.F.icon)}</span><b>${esc(T(n.F.en, n.F.vi))}${n.isNew ? ` <i class="newtag">${T('New', 'Mới')}</i>` : ''}</b><small>${dayLabel(n.start)}</small><em>${n.daysTo === 1 ? T('tomorrow', 'ngày mai') : T(`in ${n.daysTo} days`, `còn ${n.daysTo} ngày`)}${ready ? ' · ' + T('getting ready', 'đang trang trí') : ''}</em></div>`; };
   return `${today.length ? `<h3>${T('Today', 'Hôm nay')}</h3>${today.map(card).join('')}` : ''}
     <h3>${T('Coming up', 'Sắp tới')}</h3><div class="fcal-list">${soon.map(row).join('')}</div>
-    <p class="note">${T('Tap one to hear about it. Each festival comes by itself on its days, and its places decorate from three weeks before.', 'Chạm vào một lễ hội để nghe kể về lễ hội đó. Mỗi lễ hội tự đến vào đúng ngày, và nơi tổ chức trang trí từ ba tuần trước.')}</p>`;
+    <p class="note">${T('This is the festival calendar: it shows which festival is when.', 'Đây là lịch lễ hội: lễ hội nào vào ngày nào.')}</p>`;
 }
 
-// choose a festival to visit (any day of the year)
+// the festival calendar: only a calendar (which festival is when); decorations are set in Sparkle Studio by admins
 export function openFestivals(game, i) {
   const m = modal('festpick', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>📅 ${T('Festival calendar', 'Lịch lễ hội')}</h2>${festCalendarHTML(game)}`);
   const done = () => { m.close(); game.paused = false; };
   m.querySelector('.x').onclick = done;
-  m.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); done(); game.festivals.visit(i, b.dataset.fest); });
-  // the one place for festivals (round M, owner): which festival decorates the whole valley is here too, for grown-ups
-  // (press and hold, as everywhere): by the calendar on this device, one festival all the time, or none
-  const card = m.querySelector('.card'), box = el('div', 'fest-grown');
-  const deco = () => { box.innerHTML = `<h3>🏮 ${T('Festival decorations in the valley', 'Trang trí lễ hội trong thung lũng')}</h3><p class="note">${T('By date follows the calendar: each festival decorates its own places for 3 weeks before (a few days for quiet days).', 'Theo lịch: mỗi lễ hội trang trí nơi của nó 3 tuần trước ngày lễ (ngày yên lặng thì vài ngày).')}</p>
-    <select class="fest-pick">${[['auto', T('By date', 'Theo lịch')], ['none', T('Off', 'Tắt')], ...game.festivals.list().map(f => [f.id, f.name])].map(([v, l]) => `<option value="${v}" ${(settings.festival || 'auto') === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
-    box.querySelector('.fest-pick').onchange = e => { SFX.tap(); settings.festival = e.target.value; saveSettings(); window.__sv && window.__sv.festivals && window.__sv.festivals.rebuild(); }; };
-  box.innerHTML = `<button class="grown fest-hold"><span class="ring"></span>🔒 <b>${T('Grown-ups: festival decorations', 'Người lớn: trang trí lễ hội')}</b> <small>${T('press and hold', 'nhấn giữ')}</small></button>`;
-  card.appendChild(box); holdButton(box.querySelector('.fest-hold'), () => { SFX.chime && SFX.chime(); deco(); });
-  say('Which festival shall we visit?', 'Mình đi lễ hội nào nhé?');
+  say('Festival calendar', 'Lịch lễ hội');
 }
 
 // ---------- Player editor with photo cropping ----------
@@ -690,17 +707,31 @@ export function openPad(game, i, tab) {
       }
       return out;
     };
+    // (bug 28, owner: "too many destinations in one list") each country shows a fixed row of city chips; only the
+    // picked city's places show under it, and a swipe or the two arrows move to the next or previous city
+    const citiesOf = g => { const out = []; itemsOf(g).forEach(it => { if (!it.sub || !out.length) out.push({ top: it, places: [] }); else out[out.length - 1].places.push(it); }); return out; };
     const groups = GROUPS.filter(([g]) => itemsOf(g).length);
-    let gsel = groups.find(([g]) => g === openPad.mapLast) ? openPad.mapLast : groups[0][0];
-    const chips = el('div', 'hubtabs mapchips'), list = el('div', 'quick');
-    groups.forEach(([g, gi, gname]) => { const c = el('button', '', `<span>${pic(gi)}</span><small>${esc(gname)}</small>`); c.dataset.g = g; c.onclick = () => { gsel = openPad.mapLast = g; SFX.tap(); fill(); }; chips.appendChild(c); });
+    let gsel = groups.find(([g]) => g === openPad.mapLast) ? openPad.mapLast : groups[0][0], csel = openPad.mapCity || 0;
+    const chips = el('div', 'hubtabs mapchips'), cityRow = el('div', 'hubtabs mapcities'), list = el('div', 'quick mapplaces');
+    const nav = el('div', 'mapnav'), prev = el('button', 'qbtn mapstep', `<span>‹</span><small>${T('Back', 'Quay lại')}</small>`), next = el('button', 'qbtn mapstep', `<span>›</span><small>${T('Next', 'Tiếp')}</small>`);
+    groups.forEach(([g, gi, gname]) => { const c = el('button', '', `<span>${pic(gi)}</span><small>${esc(gname)}</small>`); c.dataset.g = g; c.onclick = () => { gsel = openPad.mapLast = g; csel = openPad.mapCity = 0; SFX.tap(); fill(); }; chips.appendChild(c); });
+    const step = d => { const n = citiesOf(gsel).length; if (n < 2) return; csel = openPad.mapCity = (csel + d + n) % n; SFX.tap(); fill(); };
+    prev.onclick = () => step(-1); next.onclick = () => step(1);
     const fill = () => {
-      chips.querySelectorAll('button').forEach(c => c.classList.toggle('on', c.dataset.g === gsel)); list.innerHTML = '';
-      itemsOf(gsel).forEach(it => { const b = el('button', 'qbtn' + (it.sub ? ' sub' : ''), `<span>${pic(it.icon)}</span><small>${esc(it.name())}</small>`); b.onclick = () => { close(); it.go(); }; list.appendChild(b); });
+      chips.querySelectorAll('button').forEach(c => c.classList.toggle('on', c.dataset.g === gsel)); list.innerHTML = ''; cityRow.innerHTML = '';
+      const cities = citiesOf(gsel); if (csel >= cities.length) csel = openPad.mapCity = 0;
+      const many = gsel !== 'homes' && cities.length > 1;
+      cityRow.hidden = nav.hidden = !many;
+      if (many) cities.forEach((c, k) => { const b = el('button', k === csel ? 'on' : '', `<span>${pic(c.top.icon)}</span><small>${esc(c.top.name())}</small>`); b.onclick = () => { csel = openPad.mapCity = k; SFX.tap(); fill(); }; cityRow.appendChild(b); });
+      const cur = many ? cities[csel] : null, items = many ? [cur.top].concat(cur.places) : itemsOf(gsel);
+      items.forEach(it => { const b = el('button', 'qbtn', `<span>${pic(it.icon)}</span><small>${esc(it.name())}</small>`); b.onclick = () => { close(); it.go(); }; list.appendChild(b); });
+      const on = cityRow.querySelector('.on'); if (on) cityRow.scrollLeft = on.offsetLeft - (cityRow.clientWidth - on.offsetWidth) / 2;
     };
-    body.appendChild(chips); body.appendChild(list); fill();
-    const quick = el('div', 'quick'); const ch = el('button', 'qbtn change', `<span>🔄</span><small>${T('Change player', 'Đổi người chơi')}</small>`); ch.onclick = () => { close(); game.changePlayer(); }; quick.appendChild(ch);
-    body.appendChild(quick);
+    let sx = null;
+    list.addEventListener('touchstart', e => { sx = e.touches.length === 1 ? e.touches[0].clientX : null; }, { passive: true });
+    list.addEventListener('touchend', e => { if (sx === null) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 60) step(dx < 0 ? 1 : -1); }, { passive: true });
+    nav.appendChild(prev); nav.appendChild(list); nav.appendChild(next);
+    body.appendChild(chips); body.appendChild(cityRow); body.appendChild(nav); fill();
     const x = cv.getContext('2d'); x.drawImage(game.fogMapFor(p), 0, 0, S, S);
     const k = S / SIZE, pt = (wx, wz) => [(wx + HALF) * k, (wz + HALF) * k];
     const spots = [];
@@ -834,10 +865,9 @@ export function openPad(game, i, tab) {
     if (how === 'downloaded') toast(T('Saved to the phone: look in Photos or Gallery (Downloads).', 'Đã lưu vào máy: xem trong Ảnh hoặc Thư viện (Tải về).'));
     if (how === 'failed') toast(T('Could not save the picture on this device.', 'Không lưu được ảnh trên máy này.'));
   }
-  // the festival calendar (round R): tap a festival to go there now
+  // the festival calendar (round R): only a calendar, nothing to visit from it
   function drawCal(body) {
     body.innerHTML = `<div class="fcal">${festCalendarHTML(game)}</div>`;
-    body.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.festivals.visit(i, b.dataset.fest); });
   }
   function drawCam(body) {
     const howTo = savesByShare() ? T('Then tap “Save to my photos” and choose “Save Image”.', 'Rồi chạm “Lưu vào ảnh của máy” và chọn “Lưu hình ảnh”.') : T('Then tap “Save to my photos”.', 'Rồi chạm “Lưu vào ảnh của máy”.');
@@ -1084,7 +1114,6 @@ export function openGamesHub(game, i, onClose) {
   card.querySelector('.x').onclick = close;
   const bind = root => {
     root.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { close(); game.readTale(i, b.dataset.tale); });
-    root.querySelectorAll('[data-fest]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.festivals.visit(i, b.dataset.fest); });
     root.querySelectorAll('[data-songs]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.openSongs(b.dataset.songs); });
     root.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); game.meetAndPlay(i, id); });
     root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { close(); game.goToGame(i, b.dataset.go); });

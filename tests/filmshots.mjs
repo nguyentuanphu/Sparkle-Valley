@@ -11,7 +11,7 @@ const list = await P.page.evaluate(async () => { const F = await import('/js/con
 for (const [kind, id, n] of list) {
   if (only.length && !only.includes(id)) continue;
   await P.page.evaluate(async ([kind, id]) => {
-    if (kind === 'tale') { const { MORE_TALES } = await import('/js/talesdata.js'); const { TALES } = await import('/js/talesdata.js').catch(() => ({})); const { STORY_TALES } = await import('/js/content/chapters.js'); const all = [...(MORE_TALES || []), ...(TALES || []), ...Object.values(STORY_TALES).map(t => ({ ...t, title: () => t.title[0], ctx: { name: 'Na', companion: 'firefly' } }))]; const t = all.find(x => x.id === id); const { openTheatre } = await import('/js/tales.js'); openTheatre(t, { name: 'Na' }); await new Promise(r => setTimeout(r, 1500)); document.querySelector('.th-auto').click(); }
+    if (kind === 'tale') { const { MORE_TALES } = await import('/js/talesdata.js'); const { TALES } = await import('/js/learn.js').catch(() => ({})); const { STORY_TALES } = await import('/js/content/chapters.js'); const all = [...(MORE_TALES || []), ...(TALES || []), ...Object.values(STORY_TALES).map(t => ({ ...t, title: () => t.title[0], ctx: { name: 'Na', companion: 'firefly' } }))]; const t = all.find(x => x.id === id); const { openTheatre } = await import('/js/tales.js'); openTheatre(t, { name: 'Na' }); await new Promise(r => setTimeout(r, 1500)); document.querySelector('.th-auto').click(); }
     else { const { openHowTo } = await import('/js/howto.js'); openHowTo(id, {}); await new Promise(r => setTimeout(r, 1500)); document.querySelector('.ht-pp').click(); }
   }, [kind, id]);
   for (let k = 0; k < n; k++) {
@@ -24,6 +24,17 @@ for (const [kind, id, n] of list) {
       await P.page.waitForTimeout(250);
       const el = await P.page.$(kind === 'tale' ? '.th-stage' : '.ht-screen');
       await el.screenshot({ path: `${out}/${id}-p${k + 1}-t${String(t.toFixed(1)).padStart(4, '0')}.png` });
+    }
+  }
+  // (Kid UI films) a guide whose real game plays by itself: pictures of the glowing hand at work, and the child's turn
+  if (kind === 'guide' && await P.page.evaluate(async id => !!(await import('/js/content/films.js')).GUIDES[id].demo, id)) {
+    await P.page.evaluate(async () => { const m = document.querySelector('.howto'); for (let i = 0; i < 12 && !m.querySelector('.ht-demo'); i++) { m.querySelector('.ht-next').click(); await new Promise(r => setTimeout(r, 300)); } });
+    for (let i = 0; i < 24; i++) {
+      await P.page.waitForTimeout(1500);
+      const st = await P.page.evaluate(() => { const D = document.querySelector('.howto').__demo; return D ? { turn: D.turn, moves: D.moves } : null; });
+      if (!st) break;
+      await (await P.page.$('.ht-film')).screenshot({ path: `${out}/${id}-demo-${String(i).padStart(2, '0')}.png` });
+      if (st.turn) break;
     }
   }
   await P.page.evaluate(() => { document.querySelector('.th-x, .ht-x')?.click(); });

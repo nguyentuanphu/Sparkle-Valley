@@ -7,7 +7,7 @@ import { T, onLang } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
 import { landmarkAt, BOATS } from './content/map.js';
-import { WATER, LAKE, RIVER, BRIDGES, bridgeAt, bridgeDist, CITIES, VILLAGE, TOWN, MARKET, CHINA, INDIA, HOME, AUSSIE, heightAt, regionAt, REGION_NAMES } from './world.js';
+import { WATER, LAKE, RIVER, BRIDGES, bridgeAt, bridgeDist, roadDist, CITIES, VILLAGE, TOWN, MARKET, CHINA, INDIA, HOME, AUSSIE, heightAt, regionAt, REGION_NAMES } from './world.js';
 import { dist2 } from './util.js';
 
 const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), C = (r1, r2, h, s = 10) => new THREE.CylinderGeometry(r1, r2, h, s);
@@ -19,7 +19,7 @@ function signTex(lines, w = 512, h = 128, bg = '#2f86c0') {
   draw(); onLang(draw); return t;
 }
 
-function ferryBoat() {
+function ferryBoat(flag = true) {
   const p = [];
   p.push(P(B(7, 1.1, 3), '#ffffff', [0, .55, 0]), P(B(7.2, .25, 3.2), '#2f86c0', [0, .05, 0]), P(new THREE.CylinderGeometry(1.5, 1.5, 1.1, 16, 1, false, 0, Math.PI), '#ffffff', [3.5, .55, 0], [0, Math.PI / 2, 0]));
   p.push(P(B(7.4, .15, 3.3), '#c98a4a', [0, 1.15, 0])); // deck rail top
@@ -32,7 +32,7 @@ function ferryBoat() {
   const g = new THREE.Group(); g.add(m);
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.6, .65), new THREE.MeshBasicMaterial({ map: signTex(() => T('⛴️ FREE FERRY', '⛴️ PHÀ MIỄN PHÍ')), transparent: true }));
   sign.position.set(-1.8, 2.75, 1.24); g.add(sign); const s2 = sign.clone(); s2.position.z = -1.24; s2.rotation.y = Math.PI; g.add(s2);
-  const flag = sprite('🚩', .9); flag.position.set(-1.8, 5, 0); g.add(flag);
+  if (flag) { const f = sprite('🚩', .9); f.position.set(-1.8, 5, 0); g.add(f); } // (round T2: the harbour ferry has none, so it passes under the Harbour Bridge)
   g.deck = 1.15; g.seats = [[1.4, .6], [1.4, -.6], [2.6, .5], [2.6, -.5]];
   return g;
 }
@@ -40,12 +40,12 @@ function bambooRaft() {
   const p = [];
   for (let i = 0; i < 9; i++) p.push(P(C(.2, .2, 5, 8), i % 2 ? '#c9b45a' : '#b8a24a', [0, .25, -1.6 + i * .4], [0, 0, Math.PI / 2]));
   [-1.8, 1.8].forEach(x => p.push(P(B(.2, .15, 3.6), '#8a6a3a', [x, .5, 0])));
-  [[-1.6, -1.3], [1.6, -1.3], [-1.6, 1.3], [1.6, 1.3]].forEach(([x, z]) => p.push(P(C(.06, .06, 2, 6), '#8a6a3a', [x, 1.5, z])));
+  [[-1.6, -1.3], [1.6, -1.3], [-1.6, 1.3], [1.6, 1.3]].forEach(([x, z]) => p.push(P(C(.06, .06, 1.6, 6), '#8a6a3a', [x, 1.3, z])));
   p.push(P(C(.05, .05, 3, 6), '#8a6a3a', [2.3, 1.6, 0], [0, 0, -.5])); // pole
   const m = new THREE.Mesh(merge(p), toonVC()); m.castShadow = true; outline(m, .03, '#4a3a2a');
   // the thatched roof is its own see-through-able piece: while a child rides, it fades so the camera can see them
   const roofMat = toonVC(); roofMat.transparent = true;
-  const roof = new THREE.Mesh(merge([P(new THREE.ConeGeometry(2.6, 1, 4), '#d9b86a', [0, 2.9, 0], [0, Math.PI / 4, 0], [1.1, 1, .8])]), roofMat); roof.castShadow = true;
+  const roof = new THREE.Mesh(merge([P(new THREE.ConeGeometry(2.6, 1, 4), '#d9b86a', [0, 2.5, 0], [0, Math.PI / 4, 0], [1.1, 1, .8])]), roofMat); // (round T2: 0.4 m lower, so it passes under every deck) roof.castShadow = true;
   const g = new THREE.Group(); g.add(m, roof); g.roof = roof;
   const lan = sprite('🏮', .7); lan.position.set(0, 2.2, 0); g.add(lan);
   g.deck = .5; g.seats = [[-.6, .5], [.6, -.5], [-.6, -.6], [.6, .6]];
@@ -60,7 +60,7 @@ export function createFerries(G) {
     for (let k = 0; k <= L; k += 2.2) [-1.2, 1.2].forEach(x => parts.push(P(C(.13, .13, 3.2, 6), '#7a5236', [x, -1.3, k])));
     const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(sx, y, sz); m.rotation.y = a; m.receiveShadow = true; scene.add(m);
     for (let k = 0; k <= L; k += 1.2) { const px = sx + dx / L * k, pz = sz + dz / L * k; world.platforms.push({ x0: px - 1.1, x1: px + 1.1, z0: pz - 1.1, z1: pz + 1.1, y: y + .07 }); }
-    return { tip: { x: ex, z: ez, y: y + .07 }, a };
+    return { tip: { x: ex, z: ez, y: y + .07 }, land: { x: sx, z: sz }, a }; // (round T2: the land end, for the `boats` check)
   };
 
   // a boat that drives along a path of points, stopping at some of them
@@ -113,7 +113,8 @@ export function createFerries(G) {
     cands.push({ i, x, z, d: nearest(x, z)[1] });
   }
   cands.sort((a, b) => a.d - b.d);
-  const picks = []; for (const c of cands) { if (picks.every(p => Math.hypot(p.x - c.x, p.z - c.z) > 60)) picks.push(c); if (picks.length === 2) break; }
+  const CROSS = (BOATS.find(b => b.id === 'crossing') || { count: 0 }).count; // (round T2: none; every bank has bridges and the raft line)
+  const picks = []; if (CROSS) for (const c of cands) { if (picks.every(p => Math.hypot(p.x - c.x, p.z - c.z) > 60)) picks.push(c); if (picks.length === CROSS) break; }
   picks.forEach(({ i, x, z }) => {
     const [x0, z0] = RIVER[i], [x1, z1] = RIVER[i + 1];
     let dx = x1 - x0, dz = z1 - z0; const l = Math.hypot(dx, dz); dx /= l; dz /= l;
@@ -145,12 +146,33 @@ export function createFerries(G) {
       if ((pl.x - p.x) * px + (pl.z - p.z) * pz < 0) { px = -px; pz = -pz; } // the bank on the town's side
       let k = 0; while (k < 30 && heightAt(p.x + px * k, p.z + pz * k) < WATER + .5) k += .5;
       if (k >= 30) continue;
+      { const lx = p.x + px * (k + 2), lz = p.z + pz * (k + 2), rd = roadDist(lx, lz); if (!rd.road || rd.d > rd.road.w / 2 + 3) continue; } // (round T2, RIVER-006: a stop only where its pier joins a road or path)
       const dock = { pier: pier(p.x + px * (k + 2), p.z + pz * (k + 2), p.x + px * (k - 1.2), p.z + pz * (k - 1.2)) };
       path[bi] = { x: p.x + px * (k - 2.6), z: p.z + pz * (k - 2.6) }; // the raft pulls in beside the pier
       stops.push({ i: bi, name: pl.name, dock });
     }
+    // (round T2, Concept D) a stop by every bridge the raft passes under: the map gives each pier's land end (a footpath
+    // joins it to the road); the raft pulls in beside the pier's far end
+    for (const bs of BOATS.find(b => b.id === 'raft').bridgeStops || []) { const B = BRIDGES.find(B => B.id === bs.bridge); if (!B) continue;
+      const [lx, lz] = bs.at; let bi = -1, bd = 1e9; path.forEach((p, i) => { const d = Math.hypot(p.x - lx, p.z - lz); if (d < bd && i > 1 && i < path.length - 2) { bd = d; bi = i; } });
+      if (bi < 0) continue; for (let k = stops.length; k--;) if (Math.abs(stops[k].i - bi) < 6) stops.splice(k, 1); // (a town's stop right there gives way to the bridge's)
+      const p = path[bi], dx = p.x - lx, dz = p.z - lz, l = Math.hypot(dx, dz) || 1, reach = Math.max(2, l - 2.6);
+      const dock = { pier: pier(lx, lz, lx + dx / l * (reach - 1.4), lz + dz / l * (reach - 1.4)) };
+      path[bi] = { x: lx + dx / l * reach, z: lz + dz / l * reach };
+      stops.push({ i: bi, name: () => T(B.name[0], B.name[1]), dock, bridge: B.id });
+    }
     stops.sort((a, b) => a.i - b.i);
     if (stops.length >= 3) { const f = makeFerry({ model: bambooRaft(), path, loop: false, stops, speed: 4.2 }); f.line = true; f.at = stops[0].i; f.seg = stops[0].i; const p0 = path[stops[0].i]; f.model.position.set(p0.x, WATER, p0.z); }
+  }
+
+  // ---------- boats between two piers (round T2: the Sydney Harbour ferry, under the Harbour Bridge to the island; round
+  // T3: the Sài Gòn boat down Sông Sài Gòn and along the coast to Vũng Tàu): from one pier along `via` to the other ----------
+  for (const HF of BOATS.filter(b => b.piers)) {
+    const [A, Bp] = HF.piers, path = [], pts = [A.to, ...(HF.via || []), Bp.to];
+    for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 4)); for (let k = 0; k < n; k++) path.push({ x: ax + (bx - ax) * k / n, z: az + (bz - az) * k / n }); }
+    path.push({ x: Bp.to[0], z: Bp.to[1] });
+    const stopOf = (P0, i) => ({ i, name: () => T(P0.name[0], P0.name[1]), dock: { pier: pier(P0.at[0], P0.at[1], P0.to[0] + Math.sign(P0.at[0] - P0.to[0]) * 1.4, P0.to[1] + Math.sign(P0.at[1] - P0.to[1]) * 1.4) } });
+    const f = makeFerry({ model: ferryBoat(false), path, loop: false, stops: [stopOf(A, 0), stopOf(Bp, path.length - 1)], speed: 5 }); f.harbour = true; f.boat = HF.id;
   }
 
   // ---------- riding ----------
