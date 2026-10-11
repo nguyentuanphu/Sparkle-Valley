@@ -30,7 +30,7 @@ const start = async lang => {
   await P.page.evaluate(() => { const r = __sv.renderer; r.setPixelRatio(.15); dispatchEvent(new Event('resize')); });
   return P;
 };
-for (const lang of ['en', 'vi']) {
+for (const lang of arg('--lang') ? [arg('--lang')] : ['en', 'vi']) { // --lang vi: one language (a run that stopped picks up from the saved lines)
   let P = await start(lang);
   // run one step; if the test page crashes, open a fresh one and go on
   const step = async f => { try { await f(P.page); } catch (e) { console.log(lang, 'page restarted:', String(e.message).slice(0, 80)); try { await P.ctx.close(); } catch (x) { } try { P = await start(lang); } catch (x) { try { await b.close(); } catch (y) { } b = await launch(); P = await start(lang); } } };
