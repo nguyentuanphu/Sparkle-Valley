@@ -19,6 +19,8 @@ const hide = (after = 0) => { clearTimeout(hideT); hideT = setTimeout(() => { if
 
 export function startPackBar() {
   onPackProgress(e => {
+    // (round R item 12) on mobile data with the core voices in: a grown-up is asked about the rest (js/voicepack.js)
+    if (e.state === 'ask') { import('./voicepack.js').then(m => m.askCard(e.mb)).catch(() => { }); return; }
     if (e.state === 'loading') show(T('Getting the voices ready…', 'Đang tải giọng đọc…') + ' ' + Math.floor(e.done / e.total * 100) + '%', e.done / e.total * 100);
     else if (e.state === 'ready' && e.known) { /* already on the device from an earlier start: nothing to say (round O) */ }
     else if (e.state === 'ready') { show(T('Voices ready', 'Giọng đọc đã sẵn sàng') + ' ✓' + (e.total ? ` (${e.total.toLocaleString()})` : ''), 100); hide(e.quiet ? 2500 : 3000); }
