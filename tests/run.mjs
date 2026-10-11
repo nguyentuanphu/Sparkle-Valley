@@ -3048,6 +3048,14 @@ await check('startup', async () => {
       window.__st = { frames: [] }; const f = () => { const t = Math.round(performance.now()); __st.frames.push(t); if (!__st.title && document.querySelector('.screen.title')) __st.title = t; requestAnimationFrame(f); }; requestAnimationFrame(f); }); // (the clock, not the frame's own time stamp: a busy page hands out frames stamped before it was busy)
     const page = await ctx.newPage(), errs = []; page.on('pageerror', e => errs.push(e.message));
     const cdp = await ctx.newCDPSession(page); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+    // (owner, 11 Oct AEDT) how fast this machine is, measured in the same run at the same slowed speed: a fixed piece of
+    // work like building the valley (numbers, arrays, small objects), the middle of 7 tries. The time limits are set on
+    // the machine that measured `machineMs.ref`; a slower machine gets them stretched by as much as it is slower, a faster
+    // one gets them shortened, so only the game getting slower fails the check (the limits themselves never go up).
+    const machineMs = await page.evaluate(() => { const one = () => { const t = performance.now(); let a = 0; const f = new Float32Array(60000), o = [];
+      for (let k = 0; k < 40; k++) { for (let i = 0; i < f.length; i++) { f[i] = Math.sin(i * .01 + k) * Math.sqrt(i + 1); a += f[i]; } for (let i = 0; i < 4000; i++) o.push({ x: i, y: a % 7, z: [i, k] }); o.sort((p, q) => p.y - q.y || q.x - p.x); o.length = 0; }
+      return performance.now() - t + (a > 1e300 ? 1 : 0); }; const r = []; for (let i = 0; i < 7; i++) r.push(one()); return r.sort((x, y) => x - y)[3]; });
+    const speed = Math.min(3, Math.max(.5, machineMs / base.machineMs.ref));
     const read = async () => { await page.waitForFunction(() => window.__sv && __sv.bootTimes, null, { timeout: 300000 }); await page.waitForTimeout(1000);
       return page.evaluate(() => { const end = __sv.bootTimes.start + __sv.bootTimes.ready, fr = __st.frames.filter(t => t <= end); let gap = 0; for (let i = 1; i < fr.length; i++) gap = Math.max(gap, fr[i] - fr[i - 1]);
         const all = performance.getEntriesByType('resource').concat(performance.getEntriesByType('navigation'));
@@ -3057,11 +3065,11 @@ await check('startup', async () => {
     await page.reload(); const second = await read();
     await ctx.close();
     const got = { firstKB: first.kb, firstTitleMs: first.title, firstReadyMs: first.ready, secondReadyMs: second.ready, secondFreezeMs: second.freeze, secondKB: second.kb }, over = [];
-    for (const [k, B] of Object.entries(base)) { if (k.startsWith('/')) continue; if (!(got[k] <= B.max * (k.endsWith('KB') ? 1.03 : 1.25))) over.push(`${B.rule} ${k} ${got[k]} > ${B.max}`); }
+    for (const [k, B] of Object.entries(base)) { if (k.startsWith('/') || B.max === undefined) continue; const lim = k.endsWith('KB') ? B.max * 1.03 : B.max * speed * 1.25; if (!(got[k] <= lim)) over.push(`${B.rule} ${k} ${got[k]} > ${k.endsWith('KB') ? B.max : `${B.max} x ${speed.toFixed(2)} (machine speed) = ${Math.round(B.max * speed)}`}`); }
     // the slowest building steps on the second start, for the report (G.bootTimes: ms since the game's code began)
     const st = Object.entries(second.steps).filter(([k]) => k !== 'start').sort((x, y) => x[1] - y[1]), slow = st.map(([k, v], i) => [k, v - (i ? st[i - 1][1] : 0)]).sort((x, y) => y[1] - x[1]).slice(0, 4).map(([k, v]) => `${k} ${(v / 1000).toFixed(1)} s`);
-    ok(!over.length && !errs.length, JSON.stringify({ over, got, errs }));
-    return `tablet speed: first start ${first.kb} KB, title ${(first.title / 1000).toFixed(1)} s, valley ready ${(first.ready / 1000).toFixed(1)} s; second start ${second.kb} KB from the network, ready ${(second.ready / 1000).toFixed(1)} s, longest freeze ${(second.freeze / 1000).toFixed(1)} s; slowest steps ${slow.join(', ')}`;
+    ok(!over.length && !errs.length, JSON.stringify({ over, got, machineMs: Math.round(machineMs), speed: +speed.toFixed(2), errs }));
+    return `machine ${Math.round(machineMs)} ms (x${speed.toFixed(2)} of the reference); tablet speed: first start ${first.kb} KB, title ${(first.title / 1000).toFixed(1)} s, valley ready ${(first.ready / 1000).toFixed(1)} s; second start ${second.kb} KB from the network, ready ${(second.ready / 1000).toFixed(1)} s, longest freeze ${(second.freeze / 1000).toFixed(1)} s; slowest steps ${slow.join(', ')}`;
   } finally { S.close(); }
 });
 
