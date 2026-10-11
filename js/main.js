@@ -870,7 +870,7 @@ G.netGames = createNetGames({
     const names = s.seats.map(id => id === Net.me ? G.heroes[0].profile.name : remoteName(id));
     // every move is tied to this game: a story or game that is still winding down can't send into (or end) a newer one
     const live = () => !!G.netGames.session && G.netGames.session.gid === s.gid, end = () => { if (live()) G.netGames.leave(); };
-    const online = { mine: s.mine, names, seed: s.gid, onMove: f => live() && G.netGames.onMove(f), move: (n, mv) => live() && G.netGames.move(n, mv), next: (n, seat) => live() ? G.netGames.next(n, seat) : Promise.resolve(null), all: n => live() ? G.netGames.all(n) : Promise.resolve([]) };
+    const online = { mine: s.mine, names, seed: s.gid, size: s.size, onMove: f => live() && G.netGames.onMove(f), move: (n, mv) => live() && G.netGames.move(n, mv), next: (n, seat) => live() ? G.netGames.next(n, seat) : Promise.resolve(null), all: n => live() ? G.netGames.all(n) : Promise.resolve([]) };
     if (/^tale-/.test(s.game)) { // a tale read together: page turns travel as moves
       const t = (G.TALES || []).find(x => 'tale-' + x.id === s.game); if (!t || !G.readTaleNow) { end(); return; }
       let seq = 0; const sync = { send: p => online.move(seq++, p), listen: fn => online.onMove((seat, n, mv) => { if (seat !== s.mine) fn(mv); }) };
@@ -887,16 +887,20 @@ Net.on('claim', d => G.claims.receive(d));
 // invite: one friend to a two-player game, or everyone in the room to a party game
 // (owner, round G: in games with friends the players choose how hard it is: the one who invites picks 1 to 5)
 G.together = () => Net.connected && Object.keys(Net.remotes).length > 0 && !G.netGames.session;
-G.inviteGame = (game, to, level) => {
+// (r63, owner: the children choose, e.g. a bigger Caro board) Caro also asks the board's size, 3 to 19 squares a side
+const CARO_SIZES = [3, 6, 9, 13, 15, 19];
+G.inviteGame = (game, to, level, size) => {
   const p = G.heroes[0].profile;
   if (level == null) return new Promise(res => {
     const m = modal('gamelevel', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>${pic(GAMES[game] ? GAMES[game].icon : '🎲')} ${esc(GAMES[game] ? GAMES[game].name() : game)}</h2>
+      ${game === 'caro' ? `<p class="note center">${T('First, how big is the board?', 'Trước hết, bàn cờ to cỡ nào?')}</p><div class="lvl-pick caro-size">${CARO_SIZES.map(n => `<button class="btn ${n === (G.caroSize || 6) ? 'primary' : ''}" data-size="${n}"><b>${n} × ${n}</b><small>${n <= 3 ? T('3 in a row', '3 hình liền') : n <= 6 ? T('4 in a row', '4 hình liền') : T('5 in a row', '5 hình liền')}</small></button>`).join('')}</div>` : ''}
       <p class="note center">${T('How hard? Everyone plays at this level.', 'Khó cỡ nào? Mọi người chơi cùng một cấp.')}</p>
       <div class="lvl-pick">${[1, 2, 3, 4, 5].map(l => `<button class="btn ${l === Math.min(5, p.levels[game] || 1) ? 'primary' : ''}" data-lvl="${l}"><b>${'⭐'.repeat(l)}</b><small>${[T('Very easy', 'Rất dễ'), T('Easy', 'Dễ'), T('Medium', 'Vừa'), T('Hard', 'Khó'), T('Very hard', 'Rất khó')][l - 1]}</small></button>`).join('')}</div>`);
     m.querySelector('.x').onclick = () => { m.close(); res(null); };
-    m.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { SFX.tap(); m.close(); res(G.inviteGame(game, to, +b.dataset.lvl)); });
+    m.querySelectorAll('[data-size]').forEach(b => b.onclick = () => { SFX.tap(); G.caroSize = +b.dataset.size; m.querySelectorAll('[data-size]').forEach(x => x.classList.toggle('primary', x === b)); });
+    m.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { SFX.tap(); m.close(); res(G.inviteGame(game, to, +b.dataset.lvl, game === 'caro' ? (G.caroSize || 6) : undefined)); });
   });
-  const gid = G.netGames.invite(game, Math.max(1, Math.min(5, level)), (onlineDef(game) || {}).all ? undefined : to);
+  const gid = G.netGames.invite(game, Math.max(1, Math.min(5, level)), (onlineDef(game) || {}).all ? undefined : to, { size });
   if (gid) toast(T('Invitation sent! Waiting for an answer…', 'Đã gửi lời mời! Đang chờ trả lời…')); return gid;
 };
 G.playGameOnline = async (id, level, online) => {

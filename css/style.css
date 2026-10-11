@@ -366,6 +366,11 @@ select option { color: #000; }
 /* caro */
 .caro { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 6px; width: min(90vw, 56vh, 480px); }
 .caro-c { aspect-ratio: 1; border: 0; border-radius: 12px; background: rgba(255, 255, 255, .85); font-size: clamp(22px, 6vw, 56px); box-shadow: 0 4px 0 rgba(0, 0, 0, .15); }
+/* (r63) a big board (9 × 9 to 19 × 19, with friends) scrolls inside the game so every square stays 44 px */
+.caro-wrap { max-width: min(94vw, 640px); max-height: 62vh; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border-radius: 12px; }
+.caro.big { gap: 3px; width: calc(var(--n) * 47px); }
+.caro.big .caro-c { min-width: 44px; min-height: 44px; border-radius: 8px; font-size: 24px; box-shadow: 0 2px 0 rgba(0, 0, 0, .15); }
+.caro-size b { white-space: nowrap; }
 .caro-c.put { animation: pop .3s; } .caro-c.win { background: #c9f7c0; box-shadow: 0 0 0 4px var(--green); }
 /* hopscotch */
 .hop { display: flex; flex-direction: column; gap: 6px; align-items: center; }

@@ -69,6 +69,7 @@ export const RULES = {
   "ACT-001": { "text": "Under-5 mode never punishes: no losing, no timers, no reading needed", "severity": "BLOCKER", "check": "check games" },
   "ACT-002": { "text": "Every game: id, both languages, how-to film, Next/Stop at the end, tap outside to exit", "severity": "MAJOR", "check": "check games, phone" },
   "ACT-003": { "text": "After an activity ends, nothing it created stays alive (timers, listeners, audio, DOM)", "severity": "MAJOR", "check": "integration [IMPR]" },
+  "ACT-004": { "text": "Games with friends are between the children only (r63, owner): no computer players join (Tiến Lên seats just the children, 2 to 4); the child who invites chooses the level (1 to 5) for everyone, and for Caro the board (3 × 3 to 19 × 19; squares stay 44 px, a big board scrolls)", "severity": "MAJOR", "check": "check friendgames, unit (netgames)" },
   "UI-001": { "text": "Every player-facing text is bilingual (T() / [en,vi])", "severity": "BLOCKER", "check": "check language" },
   "UI-002": { "text": "No phone emoji anywhere (game, Studio, painted signs and labels): every emoji has a drawing (js/art.js) and js/emojiswap.js swaps any emoji on the page or painted on a canvas for it (owner, round R)", "severity": "MAJOR", "check": "check emoji noemoji" },
   "UI-003": { "text": "Close/Save/Next always fully on screen at 320–390 px; no sideways scroll", "severity": "BLOCKER", "check": "check phone, spill" },

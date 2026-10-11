@@ -2157,6 +2157,37 @@ await check('roadtone', async () => {
   return `${M.ROADS.filter(R => R.kind === 'asphalt').length} asphalt roads in ${tones.size} colours, ${mats} road materials; the ring road is closed; a yellow centre dash in Vietnam, kerbs in Australia`;
 });
 
+await check('friendgames', async () => {
+  // (r63, owner: "all games of multiplayer should only be between the players"; "the Caro board can be bigger") on a
+  // phone: Tiến Lên with one friend seats just the two children (no computer players); a 15 × 15 Caro board from the
+  // inviter's choice has 225 squares, each at least 44 px, in a board that scrolls; the invitation window offers sizes
+  const r = {};
+  for (const [game, size] of [['tienlen', null], ['caro', 15]]) {
+    const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+    r[game] = await P.page.evaluate(async ([game, size]) => {
+      const G = __sv, wait = ms => new Promise(res => setTimeout(res, ms));
+      const online = { mine: 0, names: ['Bé Na', 'Bé Bin'], seed: 'r63test', size: size || undefined, move() { }, next: () => new Promise(() => { }), onMove() { }, all: () => new Promise(() => { }) };
+      G.playGameOnline(game, 2, online); await wait(2500);
+      if (game === 'tienlen') { const opp = [...document.querySelectorAll('.tl-opp .tl-p b')].map(e => e.textContent), mine = document.querySelectorAll('.tl-hand .tl-card').length; return { opp, mine, text: document.body.textContent.includes('Anh Ba') || document.body.textContent.includes('Con Vật') }; }
+      const cells = [...document.querySelectorAll('.caro-c')], w = cells.length ? cells[0].getBoundingClientRect().width : 0, wrap = document.querySelector('.caro-wrap');
+      return { cells: cells.length, w, scrolls: !!wrap && wrap.scrollWidth > wrap.clientWidth, pageWide: document.documentElement.scrollWidth > innerWidth + 1 };
+    }, [game, size]);
+    r[game].errs = P.errors; await P.ctx.close();
+  }
+  // the invitation window: level and, for Caro, the board's size
+  const Q = await open(b, { w: 390, h: 844, touch: true }); await clear(Q.page);
+  const pick = await Q.page.evaluate(async () => { const G = __sv; G.inviteGame('caro', 'nobody'); await new Promise(res => setTimeout(res, 600));
+    const sizes = [...document.querySelectorAll('[data-size]')].map(e => +e.dataset.size), lv = document.querySelectorAll('[data-lvl]').length, small = [...document.querySelectorAll('[data-size],[data-lvl]')].filter(e => { const q = e.getBoundingClientRect(); return q.width < 44 || q.height < 44; }).length;
+    return { sizes, lv, small }; });
+  await Q.page.screenshot({ path: 'out/friendgames-invite.png' }); const qerr = Q.errors; await Q.ctx.close();
+  const t = r.tienlen, c = r.caro;
+  ok(t.opp.length === 1 && t.opp[0] === 'Bé Bin' && !t.text && t.mine === 13, 'Tiến Lên with one friend: ' + JSON.stringify(t));
+  ok(c.cells === 225 && c.w >= 44 && c.scrolls && !c.pageWide, 'Caro 15 × 15 on a phone: ' + JSON.stringify(c));
+  ok(pick.sizes.join(',') === '3,6,9,13,15,19' && pick.lv === 5 && !pick.small, 'the invitation window: ' + JSON.stringify(pick));
+  const errs = [...t.errs, ...c.errs, ...qerr]; ok(!errs.length, errs.join(' | '));
+  return `Tiến Lên with one friend: 2 children, no computer players; Caro 15 × 15: 225 squares of ${c.w.toFixed(0)} px in a scrolling board; the invitation offers 5 levels and 6 board sizes`;
+});
+
 await check('micoff', async () => {
   // (r63, owner: "the microphone should always be off until the user turns it on"; on an iPhone the tap did nothing)
   // starting or joining a room never asks for the microphone; the HUD's Mic button starts off; one tap asks (inside the

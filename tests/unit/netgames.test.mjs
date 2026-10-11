@@ -67,3 +67,11 @@ test('(round R privacy) a game opens only after this child said yes to the one w
   d.A.g.invite('caro', 1, 'B'); await tick(); // B says yes; a gstart for that game from someone else is still ignored
   assert.equal(d.B.g.session.seats.join(), 'A,B');
 });
+test('Caro (r63): the board size the inviter chose reaches every device, and a size out of range is dropped', async () => {
+  const d = room(['A', 'B']);
+  d.A.g.invite('caro', 3, 'B', { size: 15 }); await tick();
+  assert.equal(d.B.log.asks[0].size, 15); assert.equal(d.A.g.session.size, 15); assert.equal(d.B.g.session.size, 15);
+  const e = room(['A', 'B']);
+  e.A.g.invite('caro', 3, 'B', { size: 40 }); await tick();
+  assert.equal(e.A.g.session.size, undefined); assert.equal(e.B.g.session.size, undefined);
+});

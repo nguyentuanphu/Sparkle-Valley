@@ -719,6 +719,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | ACT-001 | Under-5 mode never punishes: no losing, no timers, no reading needed | BLOCKER | check `games` |
 | ACT-002 | Every game: id, both languages, how-to film, Next/Stop at the end, tap outside to exit | MAJOR | check `games`, `phone` |
 | ACT-003 | After an activity ends, nothing it created stays alive (timers, listeners, audio, DOM) | MAJOR | integration [IMPR] |
+| ACT-004 | Games with friends are between the children only (r63, owner): no computer players join (Tiến Lên seats just the children, 2 to 4); the child who invites chooses the level (1 to 5) for everyone, and for Caro the board (3 × 3 to 19 × 19; squares stay 44 px, a big board scrolls) | MAJOR | check `friendgames`, `unit` (netgames) |
 | UI-001 | Every player-facing text is bilingual (`T()` / `[en,vi]`) | BLOCKER | check `language` |
 | UI-002 | No phone emoji anywhere (game, Studio, painted signs and labels): every emoji has a drawing (`js/art.js`) and `js/emojiswap.js` swaps any emoji on the page or painted on a canvas for it (owner, round R) | MAJOR | check `emoji noemoji` |
 | UI-003 | Close/Save/Next always fully on screen at 320–390 px; no sideways scroll | BLOCKER | check `phone`, `spill` |
