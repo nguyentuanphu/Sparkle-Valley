@@ -3,7 +3,8 @@
 // backpack like kiosk food (snacks.js), and eating it fills the food passport.
 import { THREE, toonVC, P, merge, sprite } from './gfx.js';
 import { T, nm, registerName } from './i18n.js';
-import { heightAt, CITIES, TOWN, MARKET, VILLAGE } from './world.js';
+import { heightAt } from './world.js';
+import { walkPath } from './content/map.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
 import { VENDORS } from './regions.js';
 import { PERSONAS } from './chat.js';
@@ -26,12 +27,9 @@ const HAWKERS = [
     ['Layer cake! Green and yellow layers!', 'Bánh da lợn đây! Xanh xanh vàng vàng nè!'], ['Bánh da lợn has layers: green pandan and yellow mung bean. Peel them one by one!', 'Bánh da lợn có nhiều lớp: lớp lá dứa xanh, lớp đậu xanh vàng. Bóc từng lớp mà ăn!'], 'village']
 ];
 
-// where each one walks: a street, there and back
-function routeFor(where) {
-  const city = CITIES.find(c => c.id === where);
-  if (city && city.layout) { const L = city.layout.L; return [L(-1.8, city.layout.len - 3), L(-1.8, -city.layout.len + 3)]; }
-  return { town: [[TOWN.x - 20, TOWN.roadZ + 4.8], [TOWN.x + 10, TOWN.roadZ + 4.8]], market: [[MARKET.x - 17, MARKET.roadZ + 2.6], [MARKET.x + 21, MARKET.roadZ + 2.6]], village: [[VILLAGE.x - 28, VILLAGE.z - 2.4], [VILLAGE.x - 14, VILLAGE.z - 2.4]] }[where] || [[0, 0], [0, 0]]; // (round T: from each place's anchor)
-}
+// where each one walks: there and back along the footpath of the place's main street, on the side away from its market
+// row (T1b, owner 11 Oct: js/content/map.js walkPath; never on the road, never through a stall or a house)
+const routeFor = where => walkPath(where) || [[0, 0], [0, 0]];
 
 function poleModel(goods) {
   const g = new THREE.Group();
@@ -51,7 +49,7 @@ export function createHawkers(G) {
     const A = nameAvatar(buildAvatar(lk, null), name); A.root.add(poleModel(goods)); scene.add(A.root); registerName(name);
     const tag = sprite('📣', .8); scene.add(tag);
     const H = { id, name, A, tag, route, k: 0, t: Math.random(), x: route[0][0], z: route[0][1], yaw: 0, callT: 4 + Math.random() * 8, call, food };
-    list.push(H);
+    list.push(H); world.walks.push({ id: 'hk_' + id, place: where, pts: route });
     const v = { id, name, region: where === 'hanoi' ? 'bac' : 'nam', food, greet, saying: null, hawker: true, x: H.x, z: H.z };
     VENDORS.push(v); // in the food passport
     PERSONAS['hk_' + id] = { emoji: food[0], name, age: ['grown-up', 'người lớn'], about: greet, likes: greet, mood: ['Very well, thank you!', 'Khỏe lắm, cảm ơn con!'], role: `a street seller who carries ${food[1]} in two baskets on a bamboo shoulder pole and calls out to people as she walks`, region: v.region };

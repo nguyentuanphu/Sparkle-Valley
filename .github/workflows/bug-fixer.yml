@@ -1,5 +1,6 @@
-# The bug robot (owner, 10 Oct AEST): every 30 minutes (owner, 10 Oct; was 3 hours) it looks at the open bugs on GitHub Issues and lets Claude work on
-# them as the core that owns them. Rules: CLAUDE.md ("Bug robot") and docs/cores/front-desk.md.
+# The bug robot (owner, 10 Oct): it starts the moment a bug is filed, labelled or reopened, or the owner comments "go"
+# on a plan, with a 5-minute timer as a backup (owner, 10 Oct 11:30 pm AEDT; was every 30 minutes). It looks at the open
+# bugs on GitHub Issues and lets Claude work on them as the core that owns them. Rules: CLAUDE.md ("Bug robot") and docs/cores/front-desk.md.
 #
 #   - Only issues labelled `bug` plus one core label are picked up. Labels can only be set by people with access to the
 #     repository (the Front Desk chat), so a stranger's issue is never worked on.
@@ -9,11 +10,15 @@
 #     credentials; only the last job pushes, and only to refs/heads/bugfix/*. Release merges, after "yes, deploy".
 #
 # Needs the secret CLAUDE_CODE_OAUTH_TOKEN or CLAUDE_CODE_OAUTH_TOKEN_GIVEAWAY (`claude setup-token`); CLAUDE_CODE_OAUTH_TOKEN_BACKUP (another account) is
-# tried when the first one fails. The cron runs at :07 and :37 past every hour (UTC and AEST alike).
+# tried when the first one fails. Times in its notes are Sydney time (AEDT or AEST, owner 10 Oct).
 name: Bug robot
 on:
+  issues:
+    types: [opened, labeled, unlabeled, reopened]   # unlabeled: taking off on-hold or robot-stuck restarts it
+  issue_comment:
+    types: [created]
   schedule:
-    - cron: '7,37 * * * *'
+    - cron: '*/5 * * * *'   # backup only; GitHub often starts timed runs late
   workflow_dispatch:
     inputs:
       issue:
@@ -27,10 +32,18 @@ permissions:
 
 env:
   CORES: 'world play kid-ui voice-audio online studio analytics-infra release'
-  MAX_PER_RUN: 3
+  MAX_PER_RUN: 8   # owner, 11 Oct: use the spare capacity; up to 4 bugs are worked on at once
 
 jobs:
   find:
+    # A new or labelled issue starts the robot only when it carries `bug`; a comment only when it is a "go" from the
+    # owner or a collaborator on a plan (`needs-go`). The pick step below decides what to work on.
+    if: >-
+      github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'bug')) ||
+      (github.event_name == 'issue_comment' && !github.event.issue.pull_request &&
+       contains(github.event.issue.labels.*.name, 'needs-go') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
     runs-on: ubuntu-latest
     permissions:
       issues: write   # only to make sure the labels exist
@@ -69,7 +82,7 @@ jobs:
             [ -n "$ONLY" ] && [ "$n" != "$ONLY" ] && continue
             labels=$(jq -r --argjson n "$n" '.[] | select(.number==$n) | [.labels[].name] | join(" ")' issues.json)
             has() { [[ " $labels " == *" $1 "* ]]; }
-            if has fixed-on-branch || has robot-stuck || has on-hold; then continue; fi
+            if has fixed-on-branch || has robot-stuck || has on-hold; then echo "#$n: skipped ($labels)"; continue; fi
             core=''
             for c in $CORES; do has "$c" && { core=$c; break; }; done
             [ -z "$core" ] && { echo "#$n: no core label, left for the Front Desk"; continue; }
@@ -93,7 +106,7 @@ jobs:
 
   work:
     needs: find
-    if: needs.find.outputs.count != '0'
+    if: needs.find.result == 'success' && needs.find.outputs.count != '0'
     runs-on: ubuntu-latest
     timeout-minutes: 100
     permissions:
@@ -102,7 +115,7 @@ jobs:
       pull-requests: read
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 4
       matrix:
         bug: ${{ fromJSON(needs.find.outputs.list) }}
     env:
@@ -178,7 +191,7 @@ jobs:
           At the end, always write .bugfix/result.md for the owner, in plain English with no jargon and no emoji:
           the first line exactly one of "STATUS: fixed", "STATUS: plan" or "STATUS: stuck", then what you found, what
           you changed (files) or plan to change, every check you ran with pass, fail or skipped, and anything left to do.
-          Times in AEST.
+          Times in Sydney time (AEDT in summer, AEST in winter).
           EOF
 
       - name: Claude works on the bug
@@ -221,7 +234,7 @@ jobs:
 
   publish:
     needs: [find, work]
-    if: always() && needs.find.outputs.count != '0'
+    if: always() && needs.find.result == 'success' && needs.find.outputs.count != '0'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -253,7 +266,7 @@ jobs:
       - name: Push the fix to its bugfix branch, open a draft pull request, report on the issue
         run: |
           set -uo pipefail
-          now=$(TZ=Australia/Brisbane date '+%-d %b, %-I:%M %p AEST')
+          now=$(TZ=Australia/Sydney date '+%-d %b, %-I:%M %p %Z')
           b="bugfix/$CORE-$N"
           case "$b" in bugfix/*-[0-9]*) ;; *) echo "refusing to push to $b"; exit 1 ;; esac
           mkdir -p out; [ -s out/result.md ] || printf 'STATUS: stuck\nThe robot did not finish (no result).\n' > out/result.md
@@ -297,7 +310,7 @@ jobs:
             gh issue edit "$N" --add-label fixed-on-branch --remove-label needs-go >/dev/null
           elif [ "$status" = plan ]; then
             note="A plan is ready ($now). Nothing was changed. To let the robot do it, reply on this issue with **go**
-          (or tell the Front Desk \"go for #$N\"). The robot picks it up at its next run (every 30 minutes)."
+          (or tell the Front Desk \"go for #$N\"). The robot starts as soon as you comment."
             gh issue edit "$N" --add-label needs-go --remove-label small >/dev/null
             gh issue edit "$N" --add-label big >/dev/null
           else

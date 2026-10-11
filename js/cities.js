@@ -5,8 +5,8 @@
 // Two Homes Street: Bạch Dinh (the White Villa) and Nhà Tròn (the Round House water tower).
 import { THREE, toonVC, P, merge, outline, sprite } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
-import { heightAt, roadDist, CITIES, VILLAGE, TOWN, MARKET, AUSSIE, CHINA, INDIA } from './world.js';
-import { landmarkAt, ROAD_WIDTH } from './content/map.js';
+import { heightAt, CITIES, TOWN } from './world.js';
+import { landmarkAt, ROAD_WIDTH, rowSlot } from './content/map.js';
 import { roadTexture } from './roads.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
 import { LANDMARKS, VENDORS, postcard } from './regions.js';
@@ -88,6 +88,10 @@ const CITY_DATA = {
   saigon: { host: ['traffic', 'Cô Lan', look('shirt', '#3a78c8', '#1d1412', 'ponytail', 'cap'), ['Hello! Sài Gòn has millions of scooters. I teach children to be safe on the road. Green means go, red means stop!', 'Chào con! Sài Gòn có cả triệu chiếc xe máy. Cô dạy các bạn nhỏ đi đường an toàn nè. Đèn xanh thì đi, đèn đỏ thì dừng nha!'], 'a friendly road-safety helper from Hồ Chí Minh City who speaks with a southern accent (nè, nha, dzậy)'],
     sites: [['cathedral', '⛪', -6, -5, 'cathedral', ['Notre-Dame Cathedral, Sài Gòn', 'Nhà thờ Đức Bà Sài Gòn'], ['Sài Gòn’s Notre-Dame Cathedral was built with red bricks brought all the way from France, more than 140 years ago. The bricks are still bright red!', 'Nhà thờ Đức Bà Sài Gòn được xây bằng gạch đỏ chở từ Pháp sang, hơn 140 năm trước. Đến giờ gạch vẫn còn đỏ tươi!']],
       ['postoffice', '📮', 6, -5, 'postoffice', ['Sài Gòn Central Post Office', 'Bưu điện Thành phố'], ['The Central Post Office is a yellow building with a big clock and a round roof. People still send postcards from there to the whole world!', 'Bưu điện Thành phố là tòa nhà màu vàng có đồng hồ lớn và mái vòm. Người ta vẫn gửi bưu thiếp từ đó đi khắp thế giới!']]] },
+  // (round T3) Bà Rịa–Vũng Tàu: Anh Hai flies kites on Bãi Sau (he used to fly them at the Three Regions Market); the lighthouse
+  // and Bạch Dinh stand round the town (js/regions.js, below)
+  vungtau: { host: ['kite', 'Anh Hai', look('shirt', '#3cc7e8', '#1d1412', 'spiky', 'nonla', '#e0aa80'), ['The sea wind on Bãi Sau is perfect for flying kites! Shall we fly one together?', 'Gió biển Bãi Sau thả diều là nhất luôn! Mình cùng thả một con nha em?'], 'a young man from Vũng Tàu who flies kites on Bãi Sau beach and speaks with a southern accent (nha, nè)'],
+    sites: [] },
   sydney: { host: ['ferries', 'Captain Molly', look('shirt', '#ffffff', '#c98b4a', 'ponytail', 'cap', '#ffe3d1'), ['G’day! I drive the green and yellow ferries round Sydney Harbour. Reckon you can send them to the right wharf?', 'Chào con! Cô lái những chiếc phà xanh vàng quanh Cảng Sydney. Con đưa phà đến đúng bến được không?'], 'a cheerful Sydney ferry captain who uses Aussie slang'],
     sites: [['sydneytower', '🗼', -6, -5, 'sydneytower', ['Sydney Tower Eye', 'Tháp Sydney'], ['Sydney Tower is the tallest building in Sydney. From the golden top you can see the Harbour Bridge, the beaches and even the Blue Mountains!', 'Tháp Sydney là tòa nhà cao nhất Sydney. Từ đỉnh tháp màu vàng, con nhìn thấy Cầu Cảng, các bãi biển và cả dãy Núi Xanh!']],
       ['lunapark', '😃', 6, -5, 'lunapark', ['Luna Park Sydney', 'Công viên Luna Sydney'], ['You enter Luna Park in Sydney through a giant smiling face! It is a fun park by the harbour, almost a hundred years old.', 'Con đi vào Công viên Luna ở Sydney qua một khuôn mặt khổng lồ đang cười! Đây là công viên vui chơi bên cảng, gần một trăm năm tuổi.']]] },
@@ -110,6 +114,8 @@ const KIOSKS = [
   ['k_banhtrang', 'danang', 'Chú Sơn', look('shirt', '#3cc7e8', '#1d1412', 'short'), ['🌯', 'bánh tráng cuốn (rice paper rolls)', 'bánh tráng cuốn', 5], ['Một cây làm chẳng nên non, ba cây chụm lại nên hòn núi cao', 'One tree can’t make a hill, but three trees together make a mountain: teamwork!', 'Một cây không làm nên núi, ba cây chụm lại thành núi cao: đoàn kết nhé!', 'vi'], ['Roll your own bánh tráng with herbs. Fun and yummy!', 'Tự cuốn bánh tráng với rau sống nè, vui mà ngon nữa!']],
   ['k_comtam', 'saigon', 'Cô Bảy', look('dress', '#ff7eb8', '#1d1412', 'ponytail'), ['🍚', 'a plate of cơm tấm (broken rice with grilled pork)', 'dĩa cơm tấm', 6], ['Dzui quá trời!', 'Southern Vietnamese for "So much fun!"', 'Tiếng miền Nam: vui quá trời luôn!', 'vi'], ['Cơm tấm sườn nướng nè con, thơm phức!', 'Cơm tấm sườn nướng nè con, thơm phức!']],
   ['k_banhxeo', 'saigon', 'Chú Ba', look('shirt', '#ffd23f', '#3b2618', 'short', 'cap'), ['🥞', 'a bánh xèo (crispy pancake)', 'cái bánh xèo', 5], ['Lá lành đùm lá rách', 'Whole leaves wrap the torn ones: we help people who need it.', 'Lá lành đùm lá rách: mình giúp đỡ người khó khăn.', 'vi'], ['Xèo xèo! Hear it sizzle? That is how bánh xèo got its name!', 'Xèo xèo! Nghe tiếng không? Vì vậy mới gọi là bánh xèo đó!']],
+  ['k_banhkhot', 'vungtau', 'Cô Tư', look('dress', '#3cc7e8', '#1d1412', 'long', 'nonla'), ['🥞', 'a plate of bánh khọt (little crispy prawn pancakes from Vũng Tàu)', 'đĩa bánh khọt', 5], ['Có công mài sắt, có ngày nên kim', 'Keep rubbing an iron bar and one day it becomes a needle: keep trying!', 'Cứ chăm chỉ cố gắng thì việc khó mấy cũng làm được.', 'vi'], ['Bánh khọt nóng giòn nè con, ăn với rau sống nha!', 'Bánh khọt nóng giòn nè con, ăn với rau sống nha!']],
+  ['k_dua', 'vungtau', 'Chú Sáu', look('shirt', '#ffffff', '#3b2618', 'short', 'cap'), ['🥥', 'a fresh coconut to drink', 'trái dừa tươi', 3], ['Đi một ngày đàng, học một sàng khôn', 'Travel one day and you learn a basket of wisdom.', 'Đi nhiều nơi thì học được nhiều điều hay.', 'vi'], ['Dừa xiêm mát lạnh nè, uống đã khát luôn!', 'Dừa xiêm mát lạnh nè, uống đã khát luôn!']],
   ['k_anzac', 'sydney', 'Mia', look('dress', '#ffd23f', '#e8c26a', 'long', 'none', '#ffe3d1'), ['🍪', 'an Anzac biscuit', 'bánh quy Anzac', 3], ['No worries!', 'Aussie for "It’s okay, don’t worry!"', 'Tiếng Úc: "Không sao đâu, đừng lo!"', 'en'], ['Anzac biscuits, golden and chewy. Want one, mate?', 'Bánh quy Anzac vàng giòn đây. Ăn một cái nha!']],
   ['k_fairybread', 'sydney', 'Jack', look('shirt', '#3cc7e8', '#6b4226', 'spiky', 'cap', '#ffe3d1'), ['🍞', 'fairy bread with sprinkles', 'bánh mì rắc cốm màu', 2], ['She’ll be right', 'Aussie for "It will all be okay!"', 'Tiếng Úc: "Rồi sẽ ổn thôi!"', 'en'], ['Fairy bread: white bread, butter and hundreds and thousands. Every Aussie birthday has it!', 'Bánh mì phết bơ rắc cốm màu: sinh nhật nào ở Úc cũng có!']],
   ['k_babycino', 'melbourne', 'Nonna Rosa', look('dress', '#7a4a8a', '#e8e8e8', 'buns', 'none', '#ffe3d1'), ['☕', 'a babycino (warm milk froth)', 'ly sữa bọt ấm', 3], ['Four seasons in one day', 'Melbourne weather can be sunny, rainy, windy and cold all in one day!', 'Thời tiết Melbourne có thể nắng, mưa, gió, lạnh trong cùng một ngày!', 'en'], ['Melbourne loves coffee, so the kids get a babycino with a marshmallow!', 'Melbourne mê cà phê, nên các bạn nhỏ được ly sữa bọt với kẹo dẻo!']],
@@ -193,7 +199,7 @@ export function createCities(G) {
     }
     // landmarks: set back on both sides of the street (Bắc Ninh: around the roundabout)
     D.sites.forEach(([id, icon, u0, v0, model, name, fact], k) => {
-      const u = D.custom ? u0 : (k % 2 ? 8 : -8), v = D.custom ? v0 : -3 - Math.floor(k / 2) * 9;
+      const u = D.custom ? u0 : (k % 2 ? 8.6 : -8.6), v = D.custom ? v0 : -4 - Math.floor(k / 2) * 9;   // (T1b: further back, clear of the kiosks and the sellers' footpath; TP. HCM's pier path keeps its corridor)
       const [x, z] = L(u, v), rot = D.custom || model === 'wtram' ? toward : faceStreet(u);
       const m = place(MODELS[model](), x, z, rot, c.h - .05);
       const r = model === 'bnclock' ? 4 : model === 'quanho' || model === 'puppetstage' ? 4.6 : model === 'wtram' ? 4.6 : 4.2;
@@ -220,58 +226,50 @@ export function createCities(G) {
       person(lk, x, z, hf, name);
       const id = 'g_' + game; G.GAME_SPOT[game] = id; G.cityHosts[c.id] = { x, z, name, game };
       G.interactables.push({ id, x: x + Math.sin(hf) * 1.6, z: z + Math.cos(hf) * 1.6, r: 3, icon: '🎮', bubble: (GAMES_ICON[game] || '🎮'), label: () => nm(name), act: async h => { const k = await dialog(name, [greet], [['🎮 Let’s play!', '🎮 Chơi thôi!'], ['👋 Later', '👋 Để sau']]); if (k === 0) G.playGame(h.i, game, 'place'); } });
-      persona(id, '🎮', name, greet, role, c.cc === 'au' ? 'au' : c.id === 'danang' ? 'trung' : c.id === 'saigon' ? 'nam' : 'bac');
+      persona(id, '🎮', name, greet, role, c.cc === 'au' ? 'au' : c.id === 'danang' ? 'trung' : c.id === 'saigon' || c.id === 'vungtau' ? 'nam' : 'bac');
     }
     // the city's name on the map, and in Travel
     G.PLACES.push({ g: c.cc, key: c.id, icon: c.icon, name: () => T(c.name[0], c.name[1]), x: gx + fx * 3, z: gz + fz * 3 });
   }
   world.updaters.push((dt, t) => spinners.forEach(w => { w.rotation.z = t * .12; }));
+  // (round T3) Anh Hai's kite over Bãi Sau (it flew over the Three Regions Market before he moved to Vũng Tàu)
+  if (G.cityHosts.vungtau) {
+    const { x: hx, z: hz } = G.cityHosts.vungtau, hy = heightAt(hx, hz), kiteS = sprite('🪁', 1.6); scene.add(kiteS);
+    const kline = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), new THREE.LineBasicMaterial({ color: '#5a4a3a' })); scene.add(kline);
+    const k = new THREE.Vector3(), hand = new THREE.Vector3(hx, hy + 1.2, hz);
+    world.updaters.push((dt, t) => { k.set(hx + 2 + Math.sin(t * .5) * 3, hy + 16 + Math.sin(t * .9) * 1.5, hz + 14 + Math.cos(t * .4) * 2); kiteS.position.copy(k); kline.geometry.setFromPoints([hand, k]); });
+  }
 
   // ---------- kiosks, in the cities and in the older villages ----------
-  // In the older villages the kiosks stand along the edge of the main street, facing it, never on it.
-  // STREETS: the street's centre line [from, to] and how far from it the kiosk stands.
-  // (round T: from each place's anchor in the map, js/content/map.js)
-  const STREETS = { village: [[VILLAGE.x - 26, VILLAGE.z], [VILLAGE.x - 18, VILLAGE.z], 4.4], town: [[TOWN.x - 18, TOWN.roadZ], [TOWN.x + 12, TOWN.roadZ], 7.2], market: [[MARKET.x - 13, MARKET.roadZ], [MARKET.x + 23, MARKET.roadZ], 5], aussie: [[AUSSIE.x - 21, AUSSIE.roadZ], [AUSSIE.x + 21, AUSSIE.roadZ], 8], china: [[CHINA.x, CHINA.z + 23], [CHINA.x, CHINA.z + 8], 5.2], india: [[INDIA.x, INDIA.z + 23], [INDIA.x, INDIA.z + 6], 5.2] };
-  const free = (x, z, r) => world.colliders.every(o => dist2(o.x, o.z, x, z) > o.r + r) && world.boxes.every(b => x < b.x0 - r || x > b.x1 + r || z < b.z0 - r || z > b.z1 + r) && G.interactables.every(i => !Number.isFinite(i.x) || dist2(i.x, i.z, x, z) > 3.2);
-  const flatAt = (x, z) => heightAt(x, z) > 1.2 && Math.abs(heightAt(x + 1.5, z) - heightAt(x - 1.5, z)) + Math.abs(heightAt(x, z + 1.5) - heightAt(x, z - 1.5)) < 1.2;
-  const offRoad = (x, z) => { const r = roadDist(x, z); return r.d > r.road.w / 2 + 1.6; };
-  const streetSpot = ([[ax, az], [bx, bz], off], n) => {
-    const L = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / L, dz = (bz - az) / L;
-    for (let t = 0; t <= L; t += 1.5) for (const side of n % 2 ? [-1, 1] : [1, -1]) {
-      const sx = ax + dx * t, sz = az + dz * t, x = sx - dz * off * side, z = sz + dx * off * side;
-      // the kiosk, its seller behind it and the customer in front must all fit
-      if (flatAt(x, z) && offRoad(x, z) && free(x, z, 2.2) && free(x + dz * side * 1.2, z - dx * side * 1.2, .8)) return [x, z, Math.atan2(sx - x, sz - z)];
-    }
-    return [ax, az, 0];
-  };
-  const cityOf = id => CITIES.find(c => c.id === id);
+  // (T1b, owner 11 Oct) each kiosk takes the next slot of its place's one market row (js/content/map.js MARKET_ROWS,
+  // rowSlot): on one side of the main street, facing it, 1.5 m back from its edge. SLOTS: which slots, where the row
+  // also holds stalls (the market: north, centre and south dishes among the stalls; Aussie Corner: in metres, either side
+  // of the crossing).
+  const SLOTS = { market: [2, 7], aussie: [9.1, 24.9] };
   const counts = {};
   for (const [id, where, name, lk, food, saying, greet] of KIOSKS) {
-    const n = counts[where] = (counts[where] || 0) + 1, c = cityOf(where);
-    let x, z, face;
-    if (c) { const u = n % 2 ? 4.6 : -4.6; [x, z] = c.layout.L(u, c.layout.len - (c.id === 'bacninh' ? 3.5 : 4.5) - Math.floor((n - 1) / 2) * 4); face = Math.atan2(-Math.cos(c.layout.toward) * Math.sign(u), Math.sin(c.layout.toward) * Math.sign(u)); }
-    else [x, z, face] = streetSpot(STREETS[where], n);
+    const n = counts[where] = (counts[where] || 0) + 1, sl = rowSlot(where, SLOTS[where] ? SLOTS[where][n - 1] : n - 1, 1.4), { x, z, face } = sl;
     // the kiosk: a little hut with a striped awning, a sign and its food on the counter
     const parts = [P(B(2.6, 1, 1.4), '#c98a4a', [0, .5, 0]), P(B(2.8, .1, 1.6), '#f6e7c8', [0, 1.05, 0])];
     for (const [ex, ez] of [[-1.25, -.6], [1.25, -.6], [-1.25, .6], [1.25, .6]]) parts.push(P(C(.06, .06, 2.4, 6), '#8a5a3b', [ex, 1.2, ez]));
     for (let k = 0; k < 6; k++) parts.push(P(B(.5, .08, 1.9), k % 2 ? '#ffffff' : (where === 'aussie' || where === 'sydney' || where === 'melbourne' || where === 'brisbane' ? '#2f7a4a' : where === 'china' ? '#c0392b' : where === 'india' ? '#ff9f43' : '#e8433a'), [-1.25 + k * .5, 2.45, 0], [.14, 0, 0]));
     const km = new THREE.Mesh(merge(parts), toonVC()); km.position.set(x, heightAt(x, z), z); km.rotation.y = face; km.castShadow = true; scene.add(km);
-    world.colliders.push({ x, z, r: 1.3 });
+    world.colliders.push({ x, z, r: 1.3 }); world.stalls.push({ id, place: where, kind: 'kiosk', x, z, w: 2.6, d: 1.4, face, tap: 'v_' + id });
     const sg = kioskSign([food[1].replace(/^(a|an) /, '').replace(/^\w/, ch => ch.toUpperCase()), food[2].replace(/^\w/, ch => ch.toUpperCase())]); sg.position.set(0, 2.95, .5); km.add(sg);
     const goods = sprite(food[0], .9); goods.position.set(0, 1.55, .35); km.add(goods);
     // the seller stands behind the counter
     const bx = x - Math.sin(face) * 1.1, bz = z - Math.cos(face) * 1.1;
     person(lk, bx, bz, face, name);
-    const ix = x + Math.sin(face) * 2.4, iz = z + Math.cos(face) * 2.4;
+    const ix = x + Math.sin(face) * 1.45, iz = z + Math.cos(face) * 1.45;   // (T1b) the customer's spot, in front of the counter
     const v = { id, name, region: saying[3] === 'en' ? 'au' : saying[3] === 'vi' ? 'nam' : saying[3], food, greet, saying, kiosk: true, x: ix, z: iz };
     VENDORS.push(v); // shows up in the food passport
     G.interactables.push({ id: 'v_' + id, x: ix, z: iz, r: 3, icon: food[0], bubble: food[0], label: () => nm(name), act: h => kioskTalk(G, h, v) });
     persona('v_' + id, food[0], name, greet, `a friendly kiosk seller who sells ${food[1]} and loves the saying "${saying[0]}" (${saying[1]})`, v.region);
   }
 
-  // ---------- Two Homes Street: Bạch Dinh, Nhà Tròn and house number 8 ----------
+  // ---------- (round T3) Bạch Dinh above Vũng Tàu, facing its square; Two Homes Street: Nhà Tròn and house number 8 ----------
   {
-    const [x, z] = landmarkAt('bachdinh'), rot = Math.atan2(TOWN.x - 2 - x, TOWN.roadZ - z);
+    const VT = CITIES.find(c => c.id === 'vungtau'), [x, z] = landmarkAt('bachdinh'), rot = Math.atan2(VT.x - x, VT.z - z);
     place(MODELS.bachdinh(), x, z, rot); world.colliders.push({ x, z, r: 4.2 });
     addLandmark('bachdinh', '🏛️', 'vn', x + Math.sin(rot) * 6, z + Math.cos(rot) * 6, x, z, ['Bạch Dinh, the White Villa (Vũng Tàu)', 'Bạch Dinh (Vũng Tàu)'], ['Bạch Dinh, the White Villa, sits on a green hill above the sea in Vũng Tàu. It was built in 1898, all white with a red roof, and now it is a museum.', 'Bạch Dinh nằm trên đồi xanh nhìn ra biển Vũng Tàu. Biệt thự được xây năm 1898, sơn trắng mái ngói đỏ, nay là bảo tàng.']);
   }

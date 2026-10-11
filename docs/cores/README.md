@@ -18,7 +18,7 @@ one "yes, deploy" per round before anything reaches `main` (owner, 10 Oct: Relea
 | – | Front Desk (not a core) | [front-desk.md](front-desk.md) | The owner's first stop for bugs and questions: finds the core, files the bug for the bug robot; never changes code |
 
 **Bugs (owner, 10 Oct):** tell the Front Desk. It files a GitHub issue labelled `bug` and the core's label; the bug
-robot (`.github/workflows/bug-fixer.yml`, every 30 minutes) fixes small bugs on `bugfix/<core>-<issue>` branches with a
+robot (`.github/workflows/bug-fixer.yml`, started the moment a bug is filed, 5-minute backup timer) fixes small bugs on `bugfix/<core>-<issue>` branches with a
 draft pull request, and writes a plan for big ones that waits for the owner's "go". Release merges, after "yes, deploy".
 
 ## How to start a chat for a core
@@ -62,7 +62,7 @@ These come from `CLAUDE.md`, `HANDOFF.md` and `docs/ARCHITECTURE.md` §9, which 
    `cd tests && SV_URL=http://localhost:<port>/ CHROMIUM=/opt/pw-browsers/chromium node run.mjs <checks>`.
    Serve the copy you work on with `python3 -m http.server <port>`. Never run two browser test runs at once.
    A changed check, or a new one, is part of the work.
-6. **Times in AEST** (UTC+10, Australia/Brisbane), labelled "AEST", in every message and document.
+6. **Times in Sydney time** (AEDT, UTC+11, in daylight saving; AEST, UTC+10, the rest of the year), labelled, in every message and document (owner, 10 Oct).
 7. **Words for the owner.** Use plain words, Vietnamese when the owner writes Vietnamese, and no jargon.
 8. **No keys or personal data in the repository.** Keys live in Netlify's environment variables or on the family's
    computer (Studio settings).

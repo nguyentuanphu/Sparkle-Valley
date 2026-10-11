@@ -54,7 +54,7 @@ export const familySongs = () => (Array.isArray(CUSTOM.music) ? CUSTOM.music : [
 // the music for a festival, and for the Vietnam areas: the family's recordings first, then the built-in tunes
 export const FEST_SONGS = { tet: ['tet1', 'tet2'], midautumn: ['trungthu1', 'trungthu2'], christmas: ['jingle'], diwali: ['diwali'], ausday: ['ausday'] };
 export const VN_SONGS = ['village', 'village2', 'vn_sang', 'vn_dong', 'folk'];
-export const VN_AREAS = ['village', 'market', 'paddies', 'danang', 'bacninh', 'hanoi', 'saigon'];
+export const VN_AREAS = ['village', 'market', 'paddies', 'danang', 'bacninh', 'hanoi', 'saigon', 'hoian', 'vungtau']; // (Round T: Hội An, then Vũng Tàu)
 export function songsFor(tag) {
   const mine = familySongs().filter(m => m.tags.includes(tag)).map(m => m.key);
   if (mine.length) return mine;

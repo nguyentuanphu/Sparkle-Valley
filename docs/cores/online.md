@@ -48,7 +48,8 @@ They need the local servers: `cd <scratchpad>/srv && node peer.cjs & node mq.cjs
   iPhone what happened. Checked by `iphone`; needs a real iPhone try once live.
 - **Wait for r60 (owner, 11 Oct, 3 pm AEDT):** the r60 brief (check the map-version card and #55 on the live r60, the
   friends row's Join button with Kid UI) waits until Release publishes r60. At that time `main` and the live site were
-  r59 without `core/online`, and `docs/cores/LOG-r60.md` did not exist. Nothing is changed until then.
+  r59 without `core/online`, and `docs/cores/LOG-r60.md` did not exist. Nothing is changed until then. (r60 went live
+  11 Oct, 4:56 pm AEDT with all of `core/online`'s code; r61 followed.)
 
 ## Privacy round (owner, 9 Oct, round R privacy)
 - **Online play is off until a grown-up turns it on** (`settings.online`, default `false`, also on devices that played

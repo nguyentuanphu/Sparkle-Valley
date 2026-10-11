@@ -90,7 +90,9 @@ export const settings = Object.assign({
 // key saved by an older version, and its engine and voice choices, are deleted from this device
 const OLD_VOICE = ['tts', 'ttsKey', 'elevenVoice', 'googleVoiceEn', 'googleVoiceVi', 'azureRegion', 'azureVoiceEn', 'azureVoiceVi'];
 const dropOldVoice = () => { let n = 0; for (const k of OLD_VOICE) if (k in settings) { delete settings[k]; n++; } return n; };
-if (dropOldVoice()) store.set(KEY_SETTINGS, settings);
+// (bug #32, owner 11 Oct) festival decorations are set in Sparkle Studio only: an old saved choice on this device is ignored
+const dropOldFestival = () => { if (!('festival' in settings)) return 0; delete settings.festival; return 1; };
+if (dropOldVoice() | dropOldFestival()) store.set(KEY_SETTINGS, settings);
 // fewer moving effects: Calm mode, or the device's own "Reduce motion" setting (round I accessibility rule A11Y-001)
 export const reduceMotion = () => !!settings.calm || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
 export const saveSettings = () => store.set(KEY_SETTINGS, settings);
@@ -215,7 +217,7 @@ export async function importBackup(file) {
   const data = JSON.parse(await file.text());
   if (!data || data.app !== 'sparkle-valley' || !Array.isArray(data.profiles)) throw new Error('bad file');
   profiles.splice(0, profiles.length, ...data.profiles.map(normalizeProfile));
-  Object.assign(settings, data.settings || {}); dropOldVoice(); // (round R privacy, 9 Oct) an old backup brings no voice key back
+  Object.assign(settings, data.settings || {}); dropOldVoice(); dropOldFestival(); // (round R privacy, 9 Oct) an old backup brings no voice key back
   if (data.farm) Object.assign(farm, newFarm(), data.farm);
   saveSettings(); saveProfiles(true);
 }

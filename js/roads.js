@@ -6,19 +6,20 @@ import { T, onLang } from './i18n.js';
 import { SFX } from './audio.js';
 import { heightAt, levelAt, riverDist, roadDist, ROADS, DRAGON, WATER, REGION_NAMES, setRoadBeds, roadBedsOn, bridgeAt, bridgeBox } from './world.js';
 import { settings } from './state.js';
+import { ROAD_TONES } from './content/map.js';
 // HARD RULE (owner, round 30): the steepest a road may climb: asphalt 8 %, dirt 12 % (checked by `roadshape`)
 export const ROAD_GRADE = { asphalt: .08, dirt: .12, footpath: .15 };
 
 // a long strip texture: asphalt with a dashed centre line, packed dirt with wheel tracks, or a footpath of packed
 // earth with flat stepping stones
-export function roadTexture(kind) {
+export function roadTexture(kind, tint = null) {
   const c = document.createElement('canvas'); c.width = 64; c.height = 256; const g = c.getContext('2d');
   if (kind === 'footpath') {
     g.fillStyle = '#d8b98a'; g.fillRect(0, 0, 64, 256);
     for (let i = 0; i < 500; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,245,220,.14)' : 'rgba(110,80,50,.1)'; g.fillRect(Math.random() * 64, Math.random() * 256, 2, 2); }
     for (let y = 8; y < 256; y += 32) { const x = 14 + (y / 32 % 2) * 10; g.fillStyle = '#bfb4a2'; g.beginPath(); g.ellipse(x + 12, y + 10, 13, 9, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.18)'; g.beginPath(); g.ellipse(x + 10, y + 8, 8, 4, 0, 0, 7); g.fill(); }
   } else if (kind !== 'dirt') { // 'asphalt', or 'plain' asphalt without lines (for junctions)
-    g.fillStyle = '#6f747a'; g.fillRect(0, 0, 64, 256);
+    g.fillStyle = tint ? '#' + new THREE.Color('#6f747a').lerp(new THREE.Color(tint), .32).getHexString() : '#6f747a'; g.fillRect(0, 0, 64, 256); // (round T2: a region's tint, the lines stay white)
     for (let i = 0; i < 500; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.08)'; g.fillRect(Math.random() * 64, Math.random() * 256, 2, 2); }
     if (kind === 'asphalt') { g.fillStyle = '#e9e4d4'; g.fillRect(2, 0, 3, 256); g.fillRect(59, 0, 3, 256);
       g.fillStyle = '#f6f1e4'; g.fillRect(30, 20, 4, 90); g.fillRect(30, 148, 4, 90); }
@@ -134,7 +135,9 @@ function buildRoads(G, mats) {
   setRoadBeds(segs); roadBedsOn(world, scene);
   world.roadLines = all.map(A => ({ kind: A.R.kind, pts: A.pts, ys: A.ys, deck: A.deck, fixed: A.fixed })); // for the tests
   world.roadTop = null; // walking on a road is walking on the ground now (bridge decks are platforms)
-  for (const A of all) { const m = new THREE.Mesh(ribbonGeo(A.R, A.pts, A.ys), mats[A.R.kind]); m.receiveShadow = true; m.userData.road = true; scene.add(m); }
+  // (round T2) one shared material per road colour, so tinting adds no draw calls of its own
+  const toned = {}, matFor = R => { const t = R.kind === 'asphalt' && ROAD_TONES[R.tone]; if (!t) return mats[R.kind]; return toned[t] || (toned[t] = new THREE.MeshToonMaterial({ map: roadTexture('asphalt', t), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })); };
+  for (const A of all) { const m = new THREE.Mesh(ribbonGeo(A.R, A.pts, A.ys), matFor(A.R)); m.receiveShadow = true; m.userData.road = true; scene.add(m); }
 }
 
 // HARD RULE: road edges are soft, with flowers growing alongside. A soft verge fades from the road into the grass on
@@ -255,6 +258,11 @@ const STYLES = {
     ...[-1, 1].flatMap(s => [P(B3(.9, 6.2, .9), '#f4f4f0', [s * hs, 3.1, 0]), P(B3(1, .3, 1), '#3a78c8', [s * hs, 2, 0]), P(B3(1, .3, 1), '#3a78c8', [s * hs, 4, 0])]),
     halfRing(hs, .28, '#3a78c8', 6), halfRing(hs - .7, .12, '#ffd23f', 6)
   ], sign: { y: 5.3, w: 6.4, h: 1.1, bg: '#ffffff', fg: '#1f4f9a' }, posts: hs }),
+  // (round T3) Vũng Tàu: white posts striped sea blue, a wave-blue arch and a little white sail on top
+  seaside: hs => ({ parts: [
+    ...[-1, 1].flatMap(s => [P(B3(.8, 5.8, .8), '#ffffff', [s * hs, 2.9, 0]), P(B3(.9, .35, .9), '#2f9ad8', [s * hs, 1.4, 0]), P(B3(.9, .35, .9), '#2f9ad8', [s * hs, 3.2, 0]), P(B3(1.1, .3, 1.1), '#f2d27a', [s * hs, 5.9, 0])]),
+    halfRing(hs, .26, '#2f9ad8', 5.8), P(new THREE.ConeGeometry(.9, 1.8, 3), '#ffffff', [0, 5.8 + hs + .7, 0], [0, 0, 0], [.4, 1, 1])
+  ], sign: { y: 4.9, w: 6.4, h: 1.1, bg: '#ffffff', fg: '#1f6f9a' }, posts: hs }),
   // Sydney: a little steel coat-hanger arch between two stone pylons
   coathanger: hs => ({ parts: [
     ...[-1, 1].flatMap(s => [P(B3(1.6, 3.6, 1.6), '#cfc6b0', [s * (hs + .4), 1.8, 0]), P(B3(1.9, .35, 1.9), '#b8ae96', [s * (hs + .4), 3.8, 0])]),
@@ -303,7 +311,7 @@ const STYLES = {
     P(B3(hs, .45, .8), '#c0553a', [-hs / 2, 5.3, 0]), P(B3(hs, .45, .8), '#f4f1e8', [hs / 2, 5.3, 0])
   ], sign: { y: 4.5, w: 6.2, h: 1, bg: '#ffffff', fg: '#4a2a78' }, posts: hs })
 };
-export const GATE_STYLE = { hanoi: 'ohquan', bacninh: 'kinhbac', danang: 'golden', saigon: 'saigon', sydney: 'coathanger', melbourne: 'iron', brisbane: 'queenslander', aussie: 'timber', china: 'paifang', india: 'mughal', home: 'farm', town: 'twohomes' };
+export const GATE_STYLE = { hanoi: 'ohquan', bacninh: 'kinhbac', danang: 'golden', saigon: 'saigon', vungtau: 'seaside', sydney: 'coathanger', melbourne: 'iron', brisbane: 'queenslander', aussie: 'timber', china: 'paifang', india: 'mughal', home: 'farm', town: 'twohomes' };
 export function localGate(scene, world, x, z, rot, text, style, span = 7.5) {
   const make = STYLES[style]; if (!make) return goldenGate(scene, world, x, z, rot, text, span);
   const hs = span / 2, g = make(hs);

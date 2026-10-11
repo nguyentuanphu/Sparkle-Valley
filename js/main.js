@@ -1,6 +1,7 @@
 // Sparkle Valley: boot, the game loop, split-screen, NPCs, quests and rewards.
 import './emojiswap.js'; // (first: no phone emoji on the page or on any canvas)
 import { THREE, sprite, P, merge, toonVC } from './gfx.js';
+import { createSeeThrough } from './seethrough.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';
 import { T, nm, onLang, registerName } from './i18n.js';
@@ -12,7 +13,7 @@ import { songsFor, VN_AREAS, familySongs } from './content/songs.js';
 import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
 import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER, PLATEAU, TOWN, AUSSIE, LAKE, ULURU, HALF, STUDIO_ON_MAP, PARKED } from './world.js';
-import { landmarkAt, MAP_VERSION, onThisMap } from './content/map.js';
+import { landmarkAt, MAP_VERSION, onThisMap, rowSlot } from './content/map.js';
 import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL, OUTLINED } from './avatar.js';
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
@@ -64,6 +65,7 @@ import { createChatter, LINES as CHAT_LINES } from './chatter.js';
 import { createKites } from './kite.js';
 import { createHawkers } from './hawkers.js';
 import { createSuburbs } from './suburbs.js';
+import { createPlots } from './plots.js';
 import { createSymbols, regionLabel } from './symbols.js';
 import { createRegionSites } from './regionsites.js';
 import { createVnFun } from './vnfun.js';
@@ -1458,6 +1460,7 @@ function frame(now) {
     if (G.closeUp != null && G.heroes[G.closeUp]) { const h = G.heroes[G.closeUp]; h.state = 'idle'; h.finish(dt, t, G, 0); }
   }
   walkedAway();
+  if (G.seeThrough) G.seeThrough.step(dt);
   // music follows the first player
   const h0 = G.heroes[0];
   // (round N) during a festival its own songs play; in the Vietnam areas, Vietnamese tunes (a family's recordings from
@@ -1579,13 +1582,13 @@ createGathering(G, { give, sfx: SFX, say, toast: (h, m) => hudFor(h).toast(m) })
 setupTrading(G);
 // "My market stall" at the Three Regions Market: trade with friends who are playing online
 {
-  const sx = MARKET.x0 + 4, sz = MARKET.roadZ - 4.5, y = heightAt(sx, sz), parts = [];
+  const S = rowSlot('market', 9, 1.4), sx = S.x, sz = S.z, y = heightAt(sx, sz), parts = [];   // (T1b) in the market row, after the south's stalls
   parts.push(P(new THREE.BoxGeometry(2.6, .9, 1.2), '#c98a4a', [0, .45, 0]), P(new THREE.BoxGeometry(2.8, .1, 1.4), '#f6e7c8', [0, .95, 0]));
   [[-1.25, -.55], [1.25, -.55], [-1.25, .55], [1.25, .55]].forEach(([x, z]) => parts.push(P(new THREE.CylinderGeometry(.06, .06, 2.3, 6), '#8a5a3b', [x, 1.15, z])));
   for (let i = 0; i < 6; i++) parts.push(P(new THREE.BoxGeometry(.5, .08, 1.7), i % 2 ? '#ffffff' : '#2fb04f', [-1.25 + i * .5, 2.35, 0], [.12, 0, 0]));
   [['#ff4f9a', -.8], ['#ffd23f', -.2], ['#3cc7e8', .4], ['#5fd36a', .9]].forEach(([c, x]) => parts.push(P(new THREE.SphereGeometry(.16, 10, 8), c, [x, 1.12, .15])));
-  const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(sx, y, sz); m.castShadow = true; scene.add(m); world.colliders.push({ x: sx, z: sz, r: 1.4 });
-  G.interactables.push({ id: 'stall', x: sx, z: sz + 1.2, r: 3, icon: '🏪', label: () => T('My market stall: trade with friends', 'Sạp hàng của con: đổi đồ với bạn'), act: h => G.openTrade(h.i) });
+  const m = new THREE.Mesh(merge(parts), toonVC()); m.position.set(sx, y, sz); m.rotation.y = S.face; m.castShadow = true; scene.add(m); world.colliders.push({ x: sx, z: sz, r: 1.4 }); world.stalls.push({ id: 'stall', place: 'market', kind: 'stall', x: sx, z: sz, w: 2.8, d: 1.4, face: S.face, tap: 'stall' });
+  G.interactables.push({ id: 'stall', x: sx + S.fx * 1.45, z: sz + S.fz * 1.45, r: 3, icon: '🏪', label: () => T('My market stall: trade with friends', 'Sạp hàng của con: đổi đồ với bạn'), act: h => G.openTrade(h.i) });
 }
 // ---- (round S, owner plan 8 Oct: Round R Part 2 items 6 and 10) the clothes shop by the market and the wardrobe (js/shop.js);
 // mystery boxes, family rankings and the collection book for 5 to 8 year olds at Medium or Hard (js/boxes.js) ----
@@ -1614,6 +1617,7 @@ world.familyEdits = applyWorldEdits(G); // buildings the family moved or removed
 bootMark('things'); widenFlatLand(world, scene); bootMark('wideland'); await breathe(); // more level land round every village and city, for new buildings (nothing moves on the map)
 createAds(G); // the family's own signboards (only when Sparkle Studio switched ads on)
 world.levelled = levelUnderBuildings(world, scene); bootMark('levelled'); await breathe();
+G.plots = createPlots(G); // (round T3) the Memory Villages' garden plots and the spare ones by each city, on their levelled ground
 world.roadside = plantRoadside(G); // soft road edges and flowers, once everything stands
 bootMark('roadside'); G.solidsReady = buildSolids(G); bootMark('solids'); // (no breath here: the solid map is read once everything below is placed too) // nobody walks through houses and things (js/solids.js)
 startPackBar(); // the recorded voices downloading: a small bar at the bottom (js/packbar.js)
@@ -1638,6 +1642,7 @@ startCounting(G); // how many children play, and what they play, for Studio's re
   let at = -1e9;
   let mats = [];
   G.camBlockerMats = () => mats;
+  G.seeThrough = createSeeThrough(G); // (bug #33) things between the camera and a child fade instead of pulling the camera in
   G.camBlockers = () => { const now = performance.now(); if (now - at > 8000) { at = now; collect(); } return list; };
 }
 // (round T, PERF-003) far small things: in the 480 m valley a child can see right across it, and the fog hides what is
