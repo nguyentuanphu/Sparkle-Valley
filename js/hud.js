@@ -30,7 +30,7 @@ export class Hud {
     root.innerHTML = `
       <div class="hud-tl">
         <div class="pcard" role="button" aria-label="${T('Settings', 'Cài đặt')}"><img class="pav" alt=""><i class="pgear">${ICONS.gear}</i><div class="pinfo"><b class="pname"></b><div class="hearts"></div></div></div>
-        <div class="chips"><span class="chip c-money"></span><span class="chip c-orbs"></span><span class="chip c-leafy"></span></div>
+        <div class="chips"><button class="chip c-money" data-chip="money" title="${T('Coins', 'Đồng xu')}"></button><button class="chip c-orbs" data-chip="orbs" title="${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}"></button><button class="chip c-leafy" data-chip="leafy" title="${T('Leafies', 'Bạn Lá')}"></button></div>
         <button class="simplesw" aria-label="${T('Big pictures screen', 'Màn hình hình to')}"><span>${ICONS.bigTiles}</span><b>${T('Big pictures', 'Hình to')}</b></button>
       </div>
       <div class="quest">

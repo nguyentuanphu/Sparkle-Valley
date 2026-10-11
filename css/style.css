@@ -2286,3 +2286,9 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .jumpnav.dragging, .hubtabs.dragging, .pad-tabs.dragging, .wrow.dragging, .hscroll.dragging { cursor: grabbing; scroll-snap-type: none; }
 .pad-body { touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .modal { touch-action: pan-x pan-y; }
+button.chip { font: inherit; color: inherit; cursor: pointer; }
+.hud .chips .chip { pointer-events: auto; }
+.chipcard { position: fixed; z-index: 65; display: flex; gap: 10px; align-items: center; max-width: 300px; padding: 10px 14px; border-radius: 18px; background: #fffaf0; color: #3b2558; box-shadow: 0 6px 20px rgba(40, 20, 10, .25); opacity: 0; transform: translateY(-6px); transition: opacity .2s, transform .2s; pointer-events: none; }
+.chipcard.on { opacity: 1; transform: none; pointer-events: auto; }
+.chipcard .cc-pic { font-size: 34px; flex: none; }
+.chipcard b { display: block; font-size: 17px; } .chipcard small { display: block; font-size: 14px; line-height: 1.3; }

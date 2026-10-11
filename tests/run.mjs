@@ -2703,6 +2703,31 @@ await check('names', async () => {
   return `${fs.readdirSync('../js', { recursive: true }).filter(f => String(f).endsWith('.js')).length} game files: every name is defined or imported`;
 });
 
+await check('chips', async () => {
+  // (Round U, owner 11 Oct: "these buttons should tell what they are when hover or tap") the coin, orb and Leafy chips on
+  // the top bar and in the Backpack: each has a name to hover (title) and a tap shows a card with its name and what it is
+  // for, in English and in Vietnamese
+  const out = [];
+  for (const lang of ['en', 'vi']) {
+    const P = await open(b, { w: 820, h: 1180, touch: true, lang }); await clear(P.page); const page = P.page;
+    for (const where of ['hud', 'bag']) {
+      if (where === 'bag') { await page.evaluate(() => __sv.openPad(0, 'bag')); await page.waitForTimeout(600); }
+      const scope = where === 'hud' ? '.hud' : '.bag-top';
+      for (const k of ['money', 'orbs', 'leafy']) {
+        const sel = `${scope} [data-chip="${k}"]`, title = await page.getAttribute(sel, 'title').catch(() => null);
+        if (!title) { out.push(`${lang} ${where} ${k}: no name to hover`); continue; }
+        await page.evaluate(() => document.querySelectorAll(".chipcard").forEach(c => c.classList.remove("on"))); await page.click(sel); await page.waitForFunction(() => document.querySelector(".chipcard.on"), null, { timeout: 3000 }).catch(() => {});
+        const card = await page.evaluate(() => { const c = document.querySelector('.chipcard.on'); return c ? c.textContent : ''; });
+        if (!card.includes(title)) out.push(`${lang} ${where} ${k}: a tap shows "${card.slice(0, 60)}"`);
+        if (lang === 'en' && /[ăâđêôơư]/i.test(card)) out.push(`${where} ${k}: Vietnamese in English`);
+      }
+    }
+    const errs = P.errors; await P.ctx.close(); if (errs.length) out.push(lang + ': ' + errs.join(' '));
+  }
+  ok(!out.length, out.join(' | '));
+  return 'coins, Sparkle Orbs and Leafies: a name to hover and a card on tap, top bar and Backpack, English and Vietnamese';
+});
+
 await check('hscroll', async () => {
   // (Round U, owner 11 Oct: "I can't drag left and right on phone or desktop"; "on a tablet I can't scroll down the Map")
   // the Backpack's tab row moves sideways and the Pad's Map page moves down, on a phone and a tablet by finger (also with
