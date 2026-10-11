@@ -728,6 +728,48 @@ await check('hubmap', async () => {
   return `${r.games} games, each in one tab; the map lists Vietnam north to south with each landmark under its real place`;
 });
 
+await check('mapnames', async () => {
+  // (Release requests, round T1) the Pad map's names never cover each other (the festival stage lay over Đà Nẵng, the
+  // market over Hồ Chí Minh City), on a phone, a tablet and a computer; Hội An is a place of its own in the Vietnam
+  // list (north to south between Đà Nẵng and Hồ Chí Minh City) and on the Simple screen's Places road; and the speech
+  // box keeps its middle while it slides in (it once sat half its width to the right for 0.3 s, buttons off screen)
+  const out = [];
+  for (const [w, h, touch, tag] of [[390, 844, true, 'phone'], [820, 1180, true, 'tablet'], [1180, 760, false, 'computer']]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 600));
+      const L = document.querySelector('canvas.bigmap').labels || [], hit = (a, q) => a.x < q.x + q.w && q.x < a.x + a.w && a.y < q.y + q.h && q.y < a.y + a.h;
+      const over = []; L.forEach((a, i) => L.slice(i + 1).forEach(q => { if (hit(a, q)) over.push(a.name + ' / ' + q.name); }));
+      const out = L.filter(a => a.x < 0 || a.y < 0 || a.x + a.w > 600 || a.y + a.h > 600).map(a => a.name);
+      document.querySelector('.mapchips [data-g="vn"]').click(); await new Promise(r => setTimeout(r, 150));
+      const cities = [...document.querySelectorAll('.mapcities button')].map(b => b.innerText.trim());
+      document.querySelectorAll('.modal').forEach(e => e.remove());
+      __sv.dialog('Bà Năm', [['Hello! Shall we play?', 'Chào cháu! Chơi nhé?']], [['▶ Play!', '▶ Chơi!'], ['👋 Later', '👋 Để sau']]);
+      await new Promise(r => setTimeout(r, 30));
+      const d = document.querySelector('.dialog'), an = d.getAnimations()[0]; if (an) { an.pause(); an.currentTime = 0; }
+      const rc = d.getBoundingClientRect(), mid = Math.round(rc.left + rc.width / 2 - innerWidth / 2);
+      return { n: L.length, over, out, cities, mid, anim: an ? an.animationName : '' };
+    });
+    ok(r.n >= 10, `${tag}: map names drawn: ${r.n}`);
+    ok(!r.over.length, `${tag}: map names overlap: ${r.over.join('; ')}`);
+    ok(!r.out.length, `${tag}: map names off the map: ${r.out.join('; ')}`);
+    const at = n => r.cities.findIndex(c => c.includes(n)), ha = at('Hội An');
+    ok(ha > at('Đà Nẵng') && at('Đà Nẵng') >= 0 && (at('Hồ Chí Minh') < 0 || ha < at('Hồ Chí Minh')), `${tag}: Hội An between Đà Nẵng and Hồ Chí Minh City: ${r.cities.join(' | ')}`);
+    ok(Math.abs(r.mid) <= 2 && r.anim === 'rise-dialog', `${tag}: the speech box starts ${r.mid}px off the middle (${r.anim})`);
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+    out.push(`${tag} ${r.n}`);
+  }
+  // the Simple screen's Places road (an under-5 starts on it)
+  const Q = await open(b, { w: 390, h: 844, touch: true, screen: null });
+  await Q.page.waitForSelector('.simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
+  await Q.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
+  await Q.page.click('.sp-tabs [data-tab="places"]'); await Q.page.waitForTimeout(400);
+  const road = await Q.page.evaluate(() => [...document.querySelectorAll('.simple-screen .sp-stop')].map(e => e.innerText.trim().replace(/\s+/g, ' ')).join(' | '));
+  ok(road.includes('Hội An'), 'the Places road has no Hội An: ' + road.slice(0, 300));
+  ok(!Q.errors.length, Q.errors.join(' | ')); await Q.ctx.close();
+  return `map names apart on ${out.join(', ')}; Hội An in the Vietnam list and on the Places road; the speech box slides in from the middle`;
+});
+
 await check('festcal', async () => {
   // (round R, owner) the festival calendar: real dates, 3 weeks of build-up that grows each week, two festivals at once
   // in their own places, quiet days only a few days before, the day's timetable, Halloween trick-or-treat and keepsake

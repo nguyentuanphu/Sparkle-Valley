@@ -114,7 +114,9 @@ select option { color: #000; }
 .fade.white { background: #fff; } .fade.blue { background: radial-gradient(circle, #dff9ff, #5fe0ff); }
 .fade.out { opacity: 0; transition: opacity .7s; }
 .dialog { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 20px); transform: translateX(-50%); width: min(760px, calc(100% - 24px)); z-index: 35;
-  background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 26px 22px 18px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: pointer; animation: rise .3s ease; }
+  background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 26px 22px 18px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: pointer; animation: rise-dialog .3s ease; }
+/* the speech box's own rise: it keeps its translateX(-50%) while it slides up, so it never sits half off to the right (Play core, 10 Oct) */
+@keyframes rise-dialog { from { opacity: 0; transform: translateX(-50%) translateY(20px) scale(.96); } }
 .dname { position: absolute; top: -18px; left: 22px; background: var(--gold); color: #3a2a00; padding: 6px 16px; border-radius: 999px; font-size: 16px; }
 .dtext { font-size: clamp(18px, 2.6vw, 23px); line-height: 1.4; font-weight: 700; }
 .dchoices { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; margin-top: 12px; }

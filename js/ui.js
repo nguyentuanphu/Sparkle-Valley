@@ -1,6 +1,6 @@
 // Screens and pop-ups: title, who's playing, grown-ups settings, photo editor, NPC dialogue,
 // the Sparkle Pad (map, backpack, adventure log, album, camera), cooking, shop and online play.
-import { AREAS, gamesIn } from './content/activities.js';
+import { AREAS, gamesIn, withSitePlaces } from './content/activities.js';
 import { T, applyLang, nm, NPC_NAMES, defaultName } from './i18n.js';
 import { settings, saveSettings, profiles, saveProfiles, addProfile, removeProfile, exportBackup, importBackup, backupAge, STYLES, OUTFIT_COLORS, HATS, BACKS, HAIR, SKIN, HAIRSTYLES, GLIDERS, farm, resetFarm, saveFarm, MAX_KIDS, reduceMotion } from './state.js';
 import { say, spoken, voicePack, voiceDiag, voiceMisses, clearVoiceMisses, voicesFor, onVoices, hasVietnamese, FAMILY_PHRASES, hasClip, clipCount, saveClip, deleteClip, playClip, estimatePitch, pitchFromHz } from './voice.js';
@@ -683,6 +683,7 @@ export function openPad(game, i, tab) {
   addEventListener('keydown', onKey, true);
   const close = () => { removeEventListener('keydown', onKey, true); m.close(); game.closePad(i); };
   function drawMap(body) {
+    withSitePlaces(game.PLACES);
     const S = 600, cv = el('canvas', 'bigmap'); cv.width = cv.height = S; body.appendChild(cv);
     body.appendChild(el('p', 'note center', T('Tap any picture on the map, or a place below, to fly there.', 'Chạm vào bất kỳ hình nào trên bản đồ, hoặc một nơi bên dưới, để bay đến đó.')));
     // the places, grouped by country and listed from north to south, like a real map: one group at a time,
@@ -695,10 +696,12 @@ export function openPad(game, i, tab) {
     const itemsOf = g => {
       if (g === 'homes') return named.map(hm => ({ icon: '🏠', name: hm.name, go: () => game.landBy(hero, hm.door.x, hm.door.z) }));
       const all = game.PLACES.filter(pl => (pl.g || 'home') === g), tops = all.filter(pl => !pl.under).sort((a, b) => a.z - b.z), lms = game.LANDMARKS || [], out = [];
+      // a landmark that is now a place of its own (Hội An) is listed as that place, no longer under the city near it
+      const homeOf = l => game.PLACES.some(pl => pl.key === l.id) ? l.id : LANDMARK_HOME[l.id];
       for (const t of tops) {
         out.push({ icon: t.icon, name: t.name, go: () => game.travelTo(hero, t.x, t.z) });
         all.filter(pl => pl.under && pl.under === t.key).forEach(pl => out.push({ sub: true, icon: pl.icon, name: pl.name, go: () => game.travelTo(hero, pl.x, pl.z) }));
-        lms.filter(l => LANDMARK_HOME[l.id] === t.key).forEach(l => out.push({ sub: true, icon: l.icon, name: l.name, go: () => game.travelTo(hero, l.x, l.z) }));
+        lms.filter(l => homeOf(l) === t.key).forEach(l => out.push({ sub: true, icon: l.icon, name: l.name, go: () => game.travelTo(hero, l.x, l.z) }));
       }
       return out;
     };
@@ -737,9 +740,22 @@ export function openPad(game, i, tab) {
     game.PLACES.forEach(pl => {
       const [a, b] = pt(pl.x, pl.z); x.fillStyle = 'rgba(255,255,255,.92)'; x.beginPath(); x.arc(a, b, 22, 0, Math.PI * 2); x.fill(); x.strokeStyle = '#ffb020'; x.lineWidth = 3; x.stroke();
       icon(pl.icon, pl.x, pl.z, 26);
-      x.font = 'bold 14px Fredoka, "Baloo 2", sans-serif'; const w = x.measureText(pl.name()).width + 12; x.fillStyle = 'rgba(255,255,255,.92)'; x.fillRect(a - w / 2, b + 24, w, 20); x.fillStyle = '#3b2558'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(pl.name(), a, b + 34);
       spots.push({ x: pl.x, z: pl.z, name: pl.name(), r: 14 });
     });
+    // (Release request, T1) each name goes under its picture, or above, right or left of it when that spot would cover
+    // another name or picture, so places close together (the festival stage by Đà Nẵng) stay readable
+    x.font = 'bold 14px Fredoka, "Baloo 2", sans-serif';
+    const dots = game.PLACES.map(pl => pt(pl.x, pl.z)), labels = [];
+    const hits = (r, q) => r.x < q.x + q.w && q.x < r.x + r.w && r.y < q.y + q.h && q.y < r.y + r.h;
+    const cost = r => labels.filter(q => hits(r, q)).length * 10 + dots.filter(([a, b]) => hits(r, { x: a - 22, y: b - 22, w: 44, h: 44 })).length + (r.x < 0 || r.y < 0 || r.x + r.w > S || r.y + r.h > S ? 5 : 0);
+    game.PLACES.forEach((pl, i) => {
+      const [a, b] = dots[i], w = x.measureText(pl.name()).width + 12;
+      const tries = [[a - w / 2, b + 24], [a - w / 2, b - 44], [a + 25, b - 10], [a - 25 - w, b - 10], [a - w / 2, b + 46], [a - w / 2, b - 66]].map(([lx, ly]) => ({ x: lx, y: ly, w, h: 20 }));
+      let best = tries[0], bc = Infinity; for (const r of tries) { const c = cost(r); if (c < bc) { best = r; bc = c; } if (!c) break; }
+      labels.push(Object.assign(best, { name: pl.name() }));
+    });
+    labels.forEach(r => { x.fillStyle = 'rgba(255,255,255,.92)'; x.fillRect(r.x, r.y, r.w, r.h); x.fillStyle = '#3b2558'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(r.name, r.x + r.w / 2, r.y + 10); });
+    cv.labels = labels; // read by the hubmap check
     // every ferry and raft stop (tap one to go there and wait for the boat)
     if (game.ferries) game.ferries.ferries.forEach(F => F.stops.forEach(st => { const t = st.dock.pier.tip; icon('⛴️', t.x, t.z, 16); spots.push({ x: t.x, z: t.z, name: '⛴️ ' + st.name(), r: 10 }); }));
     const q = game.questTarget(hero); if (q) { const [a, b] = pt(q.x, q.z); x.fillStyle = '#ff3b6b'; x.beginPath(); x.arc(a, b - 14, 9, 0, Math.PI * 2); x.moveTo(a - 7, b - 9); x.lineTo(a, b); x.lineTo(a + 7, b - 9); x.fill(); }
