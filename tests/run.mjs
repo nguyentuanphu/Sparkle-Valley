@@ -2821,6 +2821,37 @@ await check('joins', async () => {
   return `${r.n} steps along every road and into every junction and bridge: no step over 6 cm (ROAD-015)`;
 });
 
+await check('ride', async () => {
+  // (Round U, owner 11 Oct: "all vehicles can be ridden, public transport can get in with fares") every parked car and
+  // motorbike can be driven (Jump gets off); a bus takes a big kid for its fare and an under-5 for free, to the next stop;
+  // every bus route has a stop with its picture timetable; a moving private car never offers a lift
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page); const page = P.page;
+  const r = await page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], T = G.traffic, I = G.interactables, out = {};
+    out.drive = I.filter(i => /^drive_/.test(i.id)).length; out.bike = I.filter(i => /^bike_/.test(i.id)).length;
+    out.rides = I.filter(i => /^ride_/.test(i.id)).length; out.stops = (G.world.busStops || []).length;
+    out.lift = T.slots.filter(s => s.mover && !/^(bus|tram|taxi|touristCart|xichlo)/.test(s.id)).some(s => I.some(i => i.id === 'ride_' + T.slots.indexOf(s)));
+    // drive a parked car
+    const car = I.find(i => /^drive_/.test(i.id) && /car/i.test(i.label())); if (car) { h.place(car.x + 1, car.z); car.act(h, G); out.driving = !!h.riding && !!h.riding.vehicle; h.dismount(); out.off = !h.riding; }
+    return out;
+  });
+  // a bus: a big kid pays, an under-5 rides free
+  const bus = async age => page.evaluate(async age => {
+    const G = __sv, h = G.heroes[0], I = G.interactables, { farm } = await import('/js/state.js');
+    h.profile.age = age; farm.coins = 50; const c0 = farm.coins;
+    const it = I.find(i => /^ride_/.test(i.id) && G.traffic.slots[+i.id.slice(5)].id.startsWith('bus')); if (!it) return { none: true };
+    h.place(it.x + 2, it.z); const p = it.act(h, G);
+    await new Promise(res => { const t = setInterval(() => { const c = document.querySelectorAll('.dialog .dchoices button'); if (c.length) { clearInterval(t); setTimeout(() => { c[0].click(); res(); }, 500); } }, 100); setTimeout(res, 8000); });
+    await p; const on = !!h.carry, paid = c0 - farm.coins;
+    h.carry = null; G.traffic.slots.forEach(s => { if (s.passenger === h) s.passenger = null; });
+    return { on, paid };
+  }, age);
+  r.big = await bus('big'); r.little = await bus('little');
+  const errs = P.errors; await P.ctx.close();
+  ok(r.drive >= 20 && r.bike >= 4 && r.rides >= 4 && r.stops >= 4 && !r.lift && r.driving && r.off && r.big.on && r.big.paid > 0 && r.little.on && r.little.paid === 0 && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.drive} parked cars and motorbikes to drive, ${r.bike} bicycles, ${r.rides} buses, trams and taxis to ride (big kid paid ${r.big.paid}, under-5 free), ${r.stops} bus stops; no lifts from strangers`;
+});
+
 await check('bilingual', async () => {
   // (Round U, owner 11 Oct: Grandma Huệ spoke Vietnamese with English set) no English slot of an [English, Vietnamese]
   // pair (an array, T(…, …) or { en, vi }) holds a Vietnamese sentence; names, songs and sayings that stay Vietnamese

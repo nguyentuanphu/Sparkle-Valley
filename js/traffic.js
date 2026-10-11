@@ -163,7 +163,7 @@ export function createTraffic(G) {
   const seatOf = (sl, v) => v.passenger || (/^(bus|tram)/.test(sl.id) ? [-.45, v.seat[1], 0] : [-v.seat[0] || .45, v.seat[1], v.seat[2] - (sl.id === 'touristCart' ? .9 : 0)]);
   const nameOf = sl => sl.id === 'taxi' ? T('the taxi', 'xe taxi') : /^tram/.test(sl.id) ? T('the tram', 'tàu điện') : sl.id === 'touristCart' ? T('the electric cart', 'xe điện') : T('the bus', 'xe buýt');
   for (const sl of slots.filter(s => s.mover && FARE[s.id])) {
-    G.interactables.push({ id: 'ride_' + slots.indexOf(sl), get x() { return where(sl)[0]; }, get z() { return where(sl)[1]; }, r: 3.2, icon: /^tram/.test(sl.id) ? '🚋' : sl.id === 'taxi' ? '🚕' : '🚌',
+    G.interactables.push({ id: 'ride_' + slots.indexOf(sl), walks: true, get x() { return where(sl)[0]; }, get z() { return where(sl)[1]; }, r: 3.2, icon: /^tram/.test(sl.id) ? '🚋' : sl.id === 'taxi' ? '🚕' : '🚌',
       label: () => T('Get on ', 'Lên ') + nameOf(sl), visible: h => !sl.passenger && !h.riding && !h.carry,
       act: async h => {
         if (!sl.v) make(sl); const fare = FARE[sl.id], little = h.profile && h.profile.age !== 'big';
