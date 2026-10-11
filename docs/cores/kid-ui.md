@@ -117,3 +117,26 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
     - The full suite on `fecb8858`: stopped by the owner after 5 checks (boot, spill, language, two-players, facetoface passed; `games` was cut off by the stop, not a failure).
     - Phone, tablet and computer screenshots of the map names and Hội An.
     - Merging `fecb8858` into `core/kid-ui`, pushing it, and ticking the three Kid UI requests on the board.
+- **11 Oct 2026, 9:55 pm AEDT, Round T4b on `core/kid-ui` (last code commit `18c0850a`):** finding your way.
+  - What changed:
+    - picture signposts at junctions (new `js/signposts.js`): 16 posts, 40 boards; all posts one mesh, all boards one mesh with one shared 1024 px picture; boards start above a child's head, so only the post is solid;
+    - name tags (new `js/nametags.js`): page elements over the 3D view, no draws; kept clear of the HUD's top band and right-hand buttons;
+    - the drawn Pad map (`valleyPicture` in `js/ui.js`) with clouds over places not yet visited (`profile.mapClouds` remembers which have lifted);
+    - the Memory Villages in the place lists (`js/content/activities.js`);
+    - `js/main.js`: one line each to build the signposts and name tags, and one to update the tags per view;
+    - `sw.js` FILES and `index.html` modulepreload: the two new files;
+    - CSS: name tags and the cloud puff.
+    - Brought in: `main` r60 and the item 3 commit (Pad map names apart, Hội An). Main's own `dlg-rise` kept for the speech box.
+  - Full suite, one check at a time:
+    - First run: 99 of 101 (7 online skipped). Two failed:
+      - `plots`: signposts on three garden plots, then boards over two. Fixed: posts keep off plots and solid things; boards start at 1.7 m.
+      - `startup`: 1093 KB > 1035 and 1559 ms > 1130 to the title. Also fails on `main` (r60) in the same run: 1088 KB and 2100 ms. Not from this round (the two new files add about 5 KB); on the board for Release and Analytics & Infra.
+    - Run again after the fixes and passed: plots, signs, solid, validate, ground, walkaway, nametags, padmap, phone, perf, preload, arch, mapcoords, types.
+  - Every check:
+    - Passed: boot, spill, language, two-players, facetoface, games, features, camera, contract, roads, flat, roadshape, phone, solid, voice, voicepack, voicecover, voicearea, welcomevoice, studio, ground, resume, migrate, village, validate, tales, emoji, hubmap, signs, nametags, padmap, mapnames, festcal, festivals, films, halves, preload, story, chapter2, chapter3, yard, kidplay, shop, boxes, hoilang, surprises, parents, currency, camcalm, vehicles, dialogtap, viwords, noemoji, arch, mapcoords, regions, bridges, boats, plots, roadtone, walkaway, ages, simple, adventure, gamelevel, quiet, rain, songs, realphotos, firstplayer, grownupsui, playhub, a11y, unit, events, postcards, familyphotos, myhouse, names, rules, coop, report, iphone, tienlen, chests, types, perf, saves, photo, netmsg, offline, nostudio, onlineoff.
+    - Skipped (online, no local server): multiplayer, netgames, together, meet, cloud, knock, mapver.
+    - Failed: startup (also on `main`).
+  - Draws against `main`, measured side by side with the `perf` check: home 1091 to 1097 against 1089; Lotus Village 694 to 700 against 693.
+  - Screenshots looked at, on phone 390 × 844, tablet 820 × 1180 and computer 1180 × 760 (the Pad map also at 1366 × 768): a signpost close up, name tags at the busiest spot (Three Regions Market, Hội An, the east Memory Village), and the drawn Pad map. All tidy.
+  - No new spoken lines.
+  - Not done: the friends-row Join button on phones (Online's request); T4's drawing of every landmark on the map (only places).
