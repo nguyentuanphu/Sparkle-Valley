@@ -12,8 +12,17 @@ export const ROAD_GRADE = { asphalt: .08, dirt: .12, footpath: .15 };
 
 // a long strip texture: asphalt with a dashed centre line, packed dirt with wheel tracks, or a footpath of packed
 // earth with flat stepping stones
-export function roadTexture(kind, tint = null) {
+// (round T4a) `style`: 'vn' a yellow centre dash (Vietnam), 'au' white dashes with concrete kerbs (Australia), 'brick' and
+// 'paving' for town streets; anything else the white lines of before. Dirt roads are Bà Rịa's red earth (đất đỏ).
+export function roadTexture(kind, tint = null, style = null) {
   const c = document.createElement('canvas'); c.width = 64; c.height = 256; const g = c.getContext('2d');
+  if (style === 'brick' || style === 'paving') {
+    const brick = style === 'brick'; g.fillStyle = brick ? '#9c5a40' : '#9a958c'; g.fillRect(0, 0, 64, 256);
+    for (let y = 0; y < 256; y += 8) for (let x = -16; x < 64; x += 16) { const ox = (y / 8) % 2 ? 8 : 0, v = Math.random() * 18 - 9;
+      g.fillStyle = brick ? `rgb(${190 + v},${104 + v},${74 + v})` : `rgb(${196 + v},${190 + v},${178 + v})`; g.fillRect(x + ox + 1, y + 1, 14, 6); }
+    g.fillStyle = brick ? '#e2d6c0' : '#d8d2c6'; g.fillRect(0, 0, 3, 256); g.fillRect(61, 0, 3, 256); // the kerb stones along both edges
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
+  }
   if (kind === 'footpath') {
     g.fillStyle = '#d8b98a'; g.fillRect(0, 0, 64, 256);
     for (let i = 0; i < 500; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,245,220,.14)' : 'rgba(110,80,50,.1)'; g.fillRect(Math.random() * 64, Math.random() * 256, 2, 2); }
@@ -21,12 +30,16 @@ export function roadTexture(kind, tint = null) {
   } else if (kind !== 'dirt') { // 'asphalt', or 'plain' asphalt without lines (for junctions)
     g.fillStyle = tint ? '#' + new THREE.Color('#6f747a').lerp(new THREE.Color(tint), .32).getHexString() : '#6f747a'; g.fillRect(0, 0, 64, 256); // (round T2: a region's tint, the lines stay white)
     for (let i = 0; i < 500; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.08)'; g.fillRect(Math.random() * 64, Math.random() * 256, 2, 2); }
-    if (kind === 'asphalt') { g.fillStyle = '#e9e4d4'; g.fillRect(2, 0, 3, 256); g.fillRect(59, 0, 3, 256);
-      g.fillStyle = '#f6f1e4'; g.fillRect(30, 20, 4, 90); g.fillRect(30, 148, 4, 90); }
+    if (kind === 'asphalt' && style === 'au') { // concrete kerbs, a white edge line inside them, white centre dashes
+      g.fillStyle = '#d4cfc4'; g.fillRect(0, 0, 4, 256); g.fillRect(60, 0, 4, 256); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(4, 0, 1, 256); g.fillRect(59, 0, 1, 256);
+      g.fillStyle = '#f2eee2'; g.fillRect(6, 0, 2, 256); g.fillRect(56, 0, 2, 256); g.fillRect(30, 20, 4, 90); g.fillRect(30, 148, 4, 90);
+    } else if (kind === 'asphalt') { g.fillStyle = '#e9e4d4'; g.fillRect(2, 0, 3, 256); g.fillRect(59, 0, 3, 256);
+      g.fillStyle = style === 'vn' ? '#f2c230' : '#f6f1e4'; g.fillRect(30, 20, 4, 90); g.fillRect(30, 148, 4, 90); }
   } else {
-    g.fillStyle = '#c99d66'; g.fillRect(0, 0, 64, 256);
-    for (let i = 0; i < 700; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,240,210,.12)' : 'rgba(90,60,30,.12)'; g.fillRect(Math.random() * 64, Math.random() * 256, 2 + Math.random() * 2, 2); }
-    g.fillStyle = 'rgba(120,85,50,.22)'; g.fillRect(14, 0, 7, 256); g.fillRect(43, 0, 7, 256);
+    g.fillStyle = '#c0764a'; g.fillRect(0, 0, 64, 256); // (round T4a, Concept D) Bà Rịa's warm red earth
+    for (let i = 0; i < 700; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,225,190,.12)' : 'rgba(90,40,20,.12)'; g.fillRect(Math.random() * 64, Math.random() * 256, 2 + Math.random() * 2, 2); }
+    g.fillStyle = 'rgba(110,55,30,.28)'; g.fillRect(14, 0, 7, 256); g.fillRect(43, 0, 7, 256); // the two darker wheel tracks
+    g.fillStyle = '#b9b0a0'; for (let y = 6; y < 256; y += 22) { g.fillRect(0, y, 3, 5); g.fillRect(61, y + 11, 3, 5); } // edging stones
     g.fillStyle = 'rgba(110,160,80,.5)'; g.fillRect(29, 0, 6, 256); // a little grass down the middle
   }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
@@ -135,8 +148,9 @@ function buildRoads(G, mats) {
   setRoadBeds(segs); roadBedsOn(world, scene);
   world.roadLines = all.map(A => ({ kind: A.R.kind, pts: A.pts, ys: A.ys, deck: A.deck, fixed: A.fixed })); // for the tests
   world.roadTop = null; // walking on a road is walking on the ground now (bridge decks are platforms)
-  // (round T2) one shared material per road colour, so tinting adds no draw calls of its own
-  const toned = {}, matFor = R => { const t = R.kind === 'asphalt' && ROAD_TONES[R.tone]; if (!t) return mats[R.kind]; return toned[t] || (toned[t] = new THREE.MeshToonMaterial({ map: roadTexture('asphalt', t), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })); };
+  // (round T2) one shared material per road colour, so tinting adds no draw calls of its own (round T4a: with the region's
+  // markings: a yellow centre dash in Vietnam, kerbs in Australia)
+  const toned = {}, matFor = R => { const t = R.kind === 'asphalt' && ROAD_TONES[R.tone]; if (!t) return mats[R.kind]; return toned[t] || (toned[t] = new THREE.MeshToonMaterial({ map: roadTexture('asphalt', t, R.tone === 'vn' || R.tone === 'au' ? R.tone : null), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })); };
   for (const A of all) { const m = new THREE.Mesh(ribbonGeo(A.R, A.pts, A.ys), matFor(A.R)); m.receiveShadow = true; m.userData.road = true; scene.add(m); }
 }
 
