@@ -147,10 +147,44 @@ function own(theme, i, x, y, z, rot) {
       if (i % 2) { parts.push(P(Cyl(.03, .03, 1.7, 4), '#6a4a3a', [x, y + .85, z])); glows.push(P(new THREE.OctahedronGeometry(.36, 0), i % 4 === 1 ? '#ff4a3a' : '#ffd23f', [x, y + 1.9, z], [0, rot, Math.PI / 4], [1, 1, .25])); }   // a star lantern (đèn ông sao) on a stick
       else { parts.push(P(Cyl(.03, .03, 1.2, 4), '#6a4a3a', [x, y + .6, z])); glows.push(P(Sph(.3, 10, 8), '#ff7a3a', [x, y + 1.4, z], [0, 0, 0], [1, 1.2, 1]), P(Cyl(.12, .12, .06, 8), '#ffd23f', [x, y + 1.78, z])); }
       break;
-    case 'pumpkins':
-      add(pumpkin(x, y, z, i % 3 === 0 ? 1.4 : .9, rot)); if (i % 3 === 0) add(pumpkin(x + .5, y, z + .4, .6, rot));
-      if (i % 4 === 2) { parts.push(P(Cyl(.2, .15, .25, 10), '#7a4aa0', [x - .6, y + .12, z])); ['#ff7a2a', '#ffd23f', '#ffffff', '#ff4f9a'].forEach((c, k) => parts.push(P(Sph(.06, 6, 5), c, [x - .6 + (k - 1.5) * .07, y + .28, z]))); }   // a bowl of sweets
-      break;
+    case 'pumpkins': {
+      // (owner, 13 Oct: "all types of decorations including skeletons, spider webs") eight kinds, all friendly: smiling
+      // pumpkins, a waving skeleton, a spider web with a little purple spider, a smiling ghost, a black cat, a cauldron of
+      // green bubbles, a scarecrow, a witch's hat; never scary (round faces, big eyes, smiles)
+      const k = i % 8, fx = Math.sin(rot), fz = Math.cos(rot), sx = Math.cos(rot), sz = -Math.sin(rot), at = (u, h, f = 0) => [x + sx * u + fx * f, y + h, z + sz * u + fz * f];
+      if (k === 0) { add(pumpkin(x, y, z, 1.4, rot)); add(pumpkin(x + .5, y, z + .4, .6, rot)); }
+      else if (k === 1) { // a friendly skeleton waving, bones white, a round smiling skull
+        parts.push(P(Sph(.24), '#f6f2e6', at(0, 1.55)), P(Cyl(.04, .04, .55, 5), '#f6f2e6', at(0, 1.05)));
+        for (let j = 0; j < 3; j++) parts.push(P(Box(.36 - j * .04, .04, .08), '#f6f2e6', at(0, 1.22 - j * .11), [0, rot, 0]));
+        parts.push(P(Cyl(.03, .03, .5, 5), '#f6f2e6', at(-.22, 1.42), [0, rot, -.9]), P(Cyl(.03, .03, .45, 5), '#f6f2e6', at(.2, .98), [0, rot, .25]));
+        for (const s of [-1, 1]) parts.push(P(Cyl(.035, .035, .7, 5), '#f6f2e6', at(s * .09, .4)), P(Sph(.05, 6, 4), '#2a2a3a', at(s * .08, 1.6, .2)));
+        parts.push(P(new THREE.TorusGeometry(.07, .015, 3, 8, Math.PI), '#2a2a3a', at(0, 1.48, .21), [0, rot, Math.PI])); }
+      else if (k === 2) { // a spider web between two posts, a little purple spider with big eyes
+        for (const s of [-1, 1]) parts.push(P(Cyl(.035, .04, 1.8, 5), '#6a4a3a', at(s * .6, .9)));
+        for (let j = 0; j < 8; j++) { const a = j / 8 * Math.PI * 2; parts.push(P(Cyl(.008, .008, .58, 3), '#e8e8f0', at(Math.cos(a) * .28, 1.25 + Math.sin(a) * .28), [0, rot, a + Math.PI / 2])); }
+        for (const r of [.14, .28, .42]) parts.push(P(new THREE.TorusGeometry(r, .008, 3, 8), '#e8e8f0', at(0, 1.25), [0, rot, 0]));
+        parts.push(P(Sph(.09, 6, 5), '#7a4aa0', at(.12, 1.18, .03))); for (const s of [-1, 1]) glows.push(P(Sph(.03, 5, 4), '#ffffff', at(.12 + s * .04, 1.21, .1)));
+        for (let j = 0; j < 4; j++) for (const s of [-1, 1]) parts.push(P(Cyl(.01, .01, .16, 3), '#4a3a6a', at(.12 + s * .1, 1.18 - (j - 1.5) * .04, .03), [0, rot, s * 1.2])); }
+      else if (k === 3) { // a smiling ghost: a white sheet, big dark eyes and a round "oo" mouth, floating a little
+        parts.push(P(Sph(.32), '#ffffff', at(0, 1.25), [0, 0, 0], [1, 1.1, 1]), P(new THREE.ConeGeometry(.36, .7, 10, 1, true), '#ffffff', at(0, .85), [0, 0, 0]));
+        for (const s of [-1, 1]) parts.push(P(Sph(.06, 6, 5), '#2a2a3a', at(s * .1, 1.32, .27), [0, 0, 0], [1, 1.3, .6]));
+        parts.push(P(Sph(.05, 6, 5), '#2a2a3a', at(0, 1.16, .29), [0, 0, 0], [1, 1, .5])); }
+      else if (k === 4) { // a black cat sitting with its tail up, yellow eyes that glow at night
+        parts.push(P(Sph(.2), '#2a2a34', at(0, .22), [0, 0, 0], [1, 1.2, .9]), P(Sph(.15), '#2a2a34', at(0, .55, .05)));
+        for (const s of [-1, 1]) { parts.push(P(new THREE.ConeGeometry(.05, .1, 4), '#2a2a34', at(s * .08, .7, .05))); glows.push(P(Sph(.03, 5, 4), '#ffd23f', at(s * .055, .57, .18))); }
+        parts.push(P(Cyl(.025, .02, .5, 4), '#2a2a34', at(-.18, .45, -.12), [0, rot, .5])); }
+      else if (k === 5) { // a cauldron of green bubbles on three legs
+        parts.push(P(new THREE.SphereGeometry(.32, 10, 6, 0, Math.PI * 2, Math.PI * .35, Math.PI * .65), '#2a2a34', at(0, .42)), P(new THREE.TorusGeometry(.26, .04, 4, 12), '#3a3a44', at(0, .5), [Math.PI / 2, 0, 0]));
+        for (let j = 0; j < 3; j++) { const a = j / 3 * Math.PI * 2; parts.push(P(Cyl(.03, .03, .25, 4), '#3a3a44', [x + Math.cos(a) * .2, y + .12, z + Math.sin(a) * .2])); }
+        glows.push(P(Cyl(.24, .24, .03, 10), '#5fd36a', at(0, .52))); for (let j = 0; j < 3; j++) glows.push(P(Sph(.06 + j * .02, 6, 4), '#8af07a', at((j - 1) * .1, .6 + j * .06))); }
+      else if (k === 6) { // a scarecrow with a pumpkin head and a straw hat
+        parts.push(P(Cyl(.04, .04, 1.7, 5), '#6a4a3a', at(0, .85)), P(Cyl(.03, .03, 1.1, 5), '#6a4a3a', at(0, 1.25), [0, rot, Math.PI / 2]), P(Box(.42, .5, .2), '#5a7ad0', at(0, 1.15), [0, rot, 0]));
+        add(pumpkin(x, y + 1.42, z, .55, rot)); parts.push(P(Cyl(.3, .32, .04, 10), '#d8b45a', at(0, 1.78)), P(Cyl(.14, .17, .16, 10), '#d8b45a', at(0, 1.86))); }
+      else { // a purple witch's hat on a pole, and a bowl of sweets
+        parts.push(P(Cyl(.03, .03, 1.3, 4), '#6a4a3a', at(0, .65)), P(Cyl(.28, .28, .03, 12), '#5a3a8a', at(0, 1.32)), P(new THREE.ConeGeometry(.16, .45, 10), '#5a3a8a', at(0, 1.56), [0, 0, .15]));
+        parts.push(P(Cyl(.17, .17, .05, 10), '#ff8a1a', at(0, 1.36)), P(Cyl(.2, .15, .25, 10), '#7a4aa0', at(.5, .12)));
+        ['#ff7a2a', '#ffd23f', '#ffffff', '#ff4f9a'].forEach((c, j) => parts.push(P(Sph(.06, 6, 5), c, at(.5 + (j - 1.5) * .07, .28)))); }
+      break; }
     case 'xmas':
       if (i % 3 === 0) { for (let k = 0; k < 3; k++) parts.push(P(new THREE.ConeGeometry(.9 - k * .25, .9, 10), '#2f7a3a', [x, y + .8 + k * .55, z])); parts.push(P(Cyl(.1, .12, .4, 6), '#6a4a3a', [x, y + .2, z])); glows.push(P(new THREE.OctahedronGeometry(.18, 0), '#ffd23f', [x, y + 2.35, z])); for (let k = 0; k < 9; k++) { const a = k * 2.3, r = .65 - (k % 3) * .2; glows.push(P(Sph(.07, 6, 5), ['#ff4a3a', '#ffd23f', '#3cc7e8'][k % 3], [x + Math.cos(a) * r, y + .8 + (k % 3) * .55, z + Math.sin(a) * r])); } }
       else ['#e8433a', '#3a78c8', '#ffd23f'].forEach((c, k) => parts.push(P(Box(.36 - k * .06, .3 - k * .04, .36 - k * .06), c, [x + (k - 1) * .4, y + .15 - k * .02, z]), P(Box(.38 - k * .06, .05, .06), '#ffffff', [x + (k - 1) * .4, y + .32 - k * .04, z])));

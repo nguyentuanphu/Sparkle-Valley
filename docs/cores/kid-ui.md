@@ -102,6 +102,9 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
   one place"; chose "the whole valley"): a festival's own places get the most, every other village and city gets the
   amount of before, and pieces stand beside every road; when two festivals overlap, the one nearest its day spreads;
   quiet days stay gentle in their own places.
+- Halloween decorations (owner, 13 Oct AEDT: "all types of decorations including skeletons, spider webs"): eight kinds,
+  all friendly (round faces, big eyes, smiles): pumpkins, a waving skeleton, a spider web with a little spider, a ghost, a
+  black cat, a cauldron of green bubbles, a scarecrow, a witch's hat; strings of bats across the streets.
 - Festival hunt (owner, 13 Oct AEDT): every festival, in its last week and on its day, hides 5 festival items among its
   decorations; finding all 5 gives a keepsake for the child's house and a festival badge in the Passport.
 
