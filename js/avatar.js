@@ -396,6 +396,8 @@ function compact(A) {
       const ranges = []; let at = 0;
       const parts = list.map(m => { const n = m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count; if (m.material === A.skinMat) ranges.push([at, n]); at += n; return { m, c: m.material.vertexColors && m.geometry.attributes.color ? null : m.material.color }; });
       const one = new THREE.Mesh(bake(parts, inv, true), compactMat(+side)); one.castShadow = true;
+      // (r67) an arm keeps an empty marker where each of its parts was (the hand at y -0.42), so a rider's grip can still be found
+      if (N === A.armL || N === A.armR) list.forEach(m => { const k = new THREE.Object3D(); k.position.copy(m.position); k.quaternion.copy(m.quaternion); k.userData.part = true; N.add(k); });
       list.forEach(m => N.remove(m)); N.add(one);
       if (ranges.length) A.skinParts.push({ g: one.geometry, ranges });
     }

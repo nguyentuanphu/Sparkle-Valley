@@ -1783,8 +1783,12 @@ await check('shop', async () => {
     // the 3D character: every new piece, a few extra parts only (each new piece is one merged shape)
     const meshes = A => { let n = 0; A.root.traverse(o => { if (o.isMesh && !o.userData.outline) n++; }); return n; };
     const base = { style: 'shirt', color: '#3b6fe0', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#f6c7a5' }, n0 = meshes(buildAvatar(base));
-    out.drawn = {}; for (const it of SH.CLOTHES) { const L = Object.assign({}, base, { [it.slot]: it.id }); out.drawn[it.id] = meshes(buildAvatar(L)) - n0; }
-    out.allDrawn = Object.entries(out.drawn).filter(([id, d]) => Math.abs(d) > 12 || (SH.ITEM[id].slot === 'neck' || SH.ITEM[id].slot === 'back') && d < 1).map(([id, d]) => id + ':' + d); // (a top can drop the old sleeves and shorts)
+    // (r67, owner's yes: the battery round merges the parts that move together into one shape, so a neck or back piece
+    // adds triangles to the body's shape, not a separate part: "drawn" is counted in triangles, the "few extra parts" in parts)
+    const tris = A => { let n = 0; A.root.traverse(o => { if (o.isMesh && !o.userData.outline && o.visible) { const g = o.geometry; n += (g.index ? g.index.count : g.attributes.position.count) / 3; } }); return n; };
+    const A0 = buildAvatar(base), t0 = tris(A0);
+    out.drawn = {}; out.tri = {}; for (const it of SH.CLOTHES) { const L = Object.assign({}, base, { [it.slot]: it.id }), A = buildAvatar(L); out.drawn[it.id] = meshes(A) - n0; out.tri[it.id] = tris(A) - t0; }
+    out.allDrawn = Object.entries(out.drawn).filter(([id, d]) => Math.abs(d) > 12 || (SH.ITEM[id].slot === 'neck' || SH.ITEM[id].slot === 'back') && out.tri[id] < 1).map(([id, d]) => id + ':' + d + ' parts, ' + out.tri[id] + ' triangles'); // (a top can drop the old sleeves and shorts)
     // the switch off: the Bag opens the backpack, the stall goes, the old wardrobe is back
     C.features = C.features || {}; C.features.shop = false; await w(300);
     G.huds[0].root.querySelector('.dk.bag').click(); await w(500); out.offBag = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk');
