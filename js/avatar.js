@@ -114,6 +114,15 @@ function neckParts(it) {
   if (it.shape === 'medal') return [...chain, P(new THREE.CylinderGeometry(.05, .05, .015, 16), c, [0, .9, .145], [Math.PI / 2, 0, 0]), P(new THREE.BoxGeometry(.03, .06, .01), t, [0, .96, .14])];
   return [...chain, P(new THREE.SphereGeometry(.025, 8, 6), t, [-.017, .925, .145]), P(new THREE.SphereGeometry(.025, 8, 6), t, [.017, .925, .145]), P(new THREE.ConeGeometry(.035, .045, 8), t, [0, .9, .145], [Math.PI, 0, 0])]; // a heart locket
 }
+// the Bug Hunter badge: a round badge in the level's colour (a rainbow ring for the last) with a ladybird on it
+const BADGE_COL = { lb1: '#c98a4a', lb2: '#c9d1d9', lb3: '#ffcf3a', lb4: '#ffffff' };
+function badgeParts(id) {
+  const x = .075, y = .86, z = .15, out = [P(new THREE.CylinderGeometry(.055, .055, .012, 18), BADGE_COL[id], [x, y, z], [Math.PI / 2, 0, 0])];
+  if (id === 'lb4') ['#e8433a', '#ffb03a', '#ffd23f', '#5fd36a', '#3cc7e8', '#a66bff'].forEach((c, i) => out.push(P(new THREE.TorusGeometry(.05 - i * .002, .006, 4, 18, Math.PI / 3), c, [x, y, z + .007], [0, 0, i * Math.PI / 3])));
+  out.push(P(new THREE.SphereGeometry(.03, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), '#e8332a', [x, y - .004, z + .006], [Math.PI / 2, 0, 0], [1, .55, 1.1]), P(new THREE.SphereGeometry(.014, 8, 6), '#2b2238', [x, y + .028, z + .008]));
+  [[-.012, .006], [.012, .006], [-.01, -.014], [.01, -.014]].forEach(([dx, dy]) => out.push(P(new THREE.SphereGeometry(.006, 6, 4), '#2b2238', [x + dx, y + dy, z + .022])));
+  return out;
+}
 // a little backpack or a turtle shell on the back
 function backParts(it) {
   const c = it.color, t = it.trim || '#ffffff';
@@ -136,6 +145,9 @@ const HAT_PARTS = {
     return [P(new THREE.TorusGeometry(r, .03, 6, 26, Math.PI), it.color, c, [Math.PI / 2 + tip, 0, 0]),
       ...[-2, -1, 0, 1, 2].map(i => { const [x, y, z] = on(i * .42), hgt = i ? .15 : .24; return P(new THREE.ConeGeometry(.05, hgt, 6), it.color, [x, y + hgt / 2, z]); }),
       P(new THREE.OctahedronGeometry(.065), it.trim, (([x, y, z]) => [x, y + .06, z + .03])(on(0)))]; },
+  // (owner, 12 Oct: tester rewards) the bug hunter's hat: a deerstalker-like cap with a magnifying glass on the brim
+  sleuth: it => [P(new THREE.SphereGeometry(.55, 20, 12, 0, Math.PI * 2, 0, Math.PI * .5), it.color, [0, .1, -.02]), P(new THREE.BoxGeometry(.5, .05, .3), it.color, [0, .28, .52], [.25, 0, 0]),
+    P(new THREE.TorusGeometry(.11, .025, 6, 18), '#5a4a3a', [.3, .45, .46]), P(new THREE.CircleGeometry(.1, 16), it.trim, [.3, .45, .47]), P(new THREE.BoxGeometry(.04, .16, .04), '#5a4a3a', [.38, .33, .46], [0, 0, .6])],
   catears: it => [P(new THREE.TorusGeometry(.47, .025, 6, 24, Math.PI), it.color, [0, .25, -.05], [0, 0, 0]), ...[-1, 1].flatMap(s => [P(new THREE.ConeGeometry(.13, .26, 4), it.color, [s * .3, .6, -.05], [0, Math.PI / 4, -s * .3]), P(new THREE.ConeGeometry(.07, .16, 4), it.trim, [s * .3, .58, .0], [0, Math.PI / 4, -s * .3])])]
 };
 const STYLE_LEGS = { dress: 'skin', shirt: 'shorts', aodai: 'pants:#ffffff', tunic: 'pants:#7a5236', overalls: 'pants', hoodie: 'pants:#3a5a8a' };
@@ -180,6 +192,8 @@ export function buildAvatar(look, photo) {
   if (W.top && W.top.trim) torso.add(new THREE.Mesh(merge([.72, .8, .88].map(y => P(B.stripe, W.top.trim, [0, y, 0], [Math.PI / 2, 0, 0], [1.12, .84, 1])).concat(W.top.shape === 'dress' ? [P(B.stripe, W.top.trim, [0, .34, 0], [Math.PI / 2, 0, 0], [2.1, 2.1, 1])] : [])), toonSmooth()));
   const neck = new THREE.Mesh(B.neck, skin); neck.position.y = 1.08; torso.add(neck);
   if (W.neck) torso.add(new THREE.Mesh(merge(neckParts(W.neck)), toonSmooth()));
+  // (owner, 12 Oct: tester rewards) a tester's Bug Hunter badge on the chest (look.badge: lb1 to lb4), seen by friends too
+  if (/^lb[1-4]$/.test(look.badge || '')) torso.add(new THREE.Mesh(merge(badgeParts(look.badge)), toonSmooth()));
   // arms (pivot at the shoulder)
   const longSleeve = style === 'hoodie' || style === 'aodai' || style === 'tunic';
   const mkArm = sx => {
@@ -201,7 +215,7 @@ export function buildAvatar(look, photo) {
       torso.add(g); return g; });
   }
   if (bk && (bk.shape === 'backpack' || bk.shape === 'shell')) torso.add(new THREE.Mesh(merge(backParts(bk)), toonSmooth()));
-  if (look.back === 'cape') {
+  if (look.back === 'cape' || (bk && bk.shape === 'cape')) { // (a tester's detective cape is a cape too)
     const cape = new THREE.Mesh(B.cape, toon(bk ? bk.color : '#e8332a', { side: THREE.DoubleSide, roughness: .7 })); cape.position.set(0, 1.0, -.14); cape.rotation.x = .12; torso.add(cape); A.cape = cape;
     const clasp = new THREE.Mesh(new THREE.SphereGeometry(.025, 8, 6), toon('#ffcf3a', { metalness: .6, roughness: .3 })); clasp.position.set(0, 1.0, .12); torso.add(clasp);
   }

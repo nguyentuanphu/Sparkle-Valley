@@ -1,0 +1,37 @@
+# (owner, 12 Oct AEDT: tester reports, docs/cores/tasks/tester-reports.md) Every hour, and by hand (Actions → Tester
+# issues → Run workflow): tools/tester-issues.mjs reads the problems tester devices found on the website and keeps one
+# GitHub issue per problem (labels bug, tester, the likely core, small or big; an idea gets `idea` and no bug), keeps the
+# counts up to date, closes an issue when its problem is marked fixed (and opens it again if it comes back), and once a
+# day after 9 am AEDT adds the "Tester daily summary". The bug robot picks up the bug issues as it does every other.
+# Secret (GitHub → Settings → Secrets and variables → Actions): STUDIO_KEY (a key made in Studio → Setup → Security →
+# Keys, the same one the daily voices job uses). Without it the job does nothing.
+name: Tester issues
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      summary:
+        description: 'Add the daily summary now'
+        type: boolean
+        default: false
+permissions:
+  issues: write
+  contents: read
+concurrency:
+  group: tester-issues
+  cancel-in-progress: false
+jobs:
+  issues:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Tester reports to issues
+        env:
+          STUDIO_KEY: ${{ secrets.STUDIO_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node tools/tester-issues.mjs ${{ inputs.summary && '--summary' || '' }}

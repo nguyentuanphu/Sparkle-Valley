@@ -186,3 +186,14 @@ details.adguide > summary, .adrow + details > summary { min-height: 44px; }
 @media (max-width: 700px) { .adshots { grid-template-columns: 1fr; } .adprev.computer figure { width: 100%; } }
 .adon { display: flex; align-items: center; gap: 10px; min-height: 44px; } .adon input { width: 22px; height: 22px; margin: 0; }
 .adrow .adpic, .adrow .ad-del { flex: none; } .adrow .ad-del { min-width: 44px; } .adrow .adpic { max-width: 150px; }
+
+/* (owner, 12 Oct) Tester reports page */
+.tfilters { display: flex; flex-wrap: wrap; gap: 12px; }
+.tfilters select { min-height: 44px; }
+.tprob tr.click { cursor: pointer; }
+.trep { border-top: 1px solid rgba(0, 0, 0, .1); padding: 8px 0; }
+.trep pre { white-space: pre-wrap; font-size: 12px; }
+.tshot img { display: block; max-width: 100%; border-radius: 10px; margin-top: 6px; }
+.tlog { font-size: 13px; padding-left: 20px; }
+.tdrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.tdrow select { min-height: 44px; }
