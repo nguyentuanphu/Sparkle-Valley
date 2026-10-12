@@ -1024,10 +1024,12 @@ await check('mapnames', async () => {
   }
   // the Simple screen's Places road (an under-5 starts on it)
   const Q = await open(b, { w: 390, h: 844, touch: true, screen: null });
-  await Q.page.waitForSelector('.simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
+  await Q.page.waitForSelector('.simple-screen:not([hidden]) .sp-catcard, .simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
   await Q.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
   await Q.page.click('.sp-tabs [data-tab="places"]'); await Q.page.waitForTimeout(400);
-  const road = await Q.page.evaluate(() => [...document.querySelectorAll('.simple-screen .sp-stop')].map(e => e.innerText.trim().replace(/\s+/g, ' ')).join(' | '));
+  // (Round U: the Places tab shows its categories as cards first; each card opens its own road, so every road is walked)
+  const road = await Q.page.evaluate(() => { const names = [], read = () => names.push(...[...document.querySelectorAll('.simple-screen .sp-stop')].map(e => e.innerText.trim().replace(/\s+/g, ' ')));
+    const cats = __sv.simple.view.cats; if (!cats.length || document.querySelector('.simple-screen .sp-stop')) read(); for (const c of cats) { __sv.simple.openGroup('places', c); read(); } __sv.simple.openGroup('places', null); return names.join(' | '); });
   ok(road.includes('Hội An'), 'the Places road has no Hội An: ' + road.slice(0, 300));
   ok(!Q.errors.length, Q.errors.join(' | ')); await Q.ctx.close();
   return `map names apart on ${out.join(', ')}; Hội An in the Vietnam list and on the Places road; the speech box slides in from the middle`;
