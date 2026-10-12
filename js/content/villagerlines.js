@@ -40,3 +40,10 @@ export const VILLAGER_LINES = {
     ['Look for the signposts: each picture shows where the road goes.', 'Hãy nhìn các biển chỉ đường: mỗi hình cho biết con đường đi đến đâu.']
   ]
 };
+// (Round U, owner 11 Oct: job pictures) what each villager does, shown as a small picture over their head and as their
+// name in the talk box: [icon (drawn, js/art.js), en, vi], by region, given in turn
+export const VILLAGER_JOBS = {
+  vn: [['🌾', 'Rice farmer', 'Bác nông dân'], ['🎣', 'Fisher', 'Chú đánh cá'], ['🍳', 'Cook', 'Cô đầu bếp'], ['📚', 'Teacher', 'Cô giáo'], ['🧵', 'Tailor', 'Cô thợ may'], ['🔨', 'Builder', 'Chú thợ xây'], ['🛶', 'Boat rower', 'Cô chèo đò'], ['🩺', 'Doctor', 'Bác sĩ']],
+  au: [['🐑', 'Sheep farmer', 'Bác nuôi cừu'], ['📚', 'Teacher', 'Cô giáo'], ['🍳', 'Cook', 'Đầu bếp'], ['🔨', 'Builder', 'Thợ xây'], ['🩺', 'Doctor', 'Bác sĩ'], ['🎣', 'Fisher', 'Người câu cá'], ['🎨', 'Painter', 'Họa sĩ'], ['🌻', 'Gardener', 'Người làm vườn']],
+  home: [['🌻', 'Gardener', 'Bác làm vườn'], ['📚', 'Teacher', 'Cô giáo'], ['🩺', 'Doctor', 'Bác sĩ'], ['🧹', 'Street sweeper', 'Cô quét đường'], ['✂️', 'Hairdresser', 'Thợ cắt tóc'], ['🍳', 'Cook', 'Đầu bếp']]
+};

@@ -43,7 +43,7 @@ export class Hud {
         <button class="friendchip" hidden><span class="fc-arrow">➤</span><span class="fc-txt"></span><span class="fc-sig"></span></button>
         <div class="tools"></div>
       </div>
-      <div class="zoomer"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">${ICONS.zoomIn}<kbd class="kb">+</kbd></button><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">${ICONS.zoomOut}<kbd class="kb">−</kbd></button><button class="z-view" aria-label="${T('Camera view', 'Góc nhìn')}">🎥<kbd class="kb">V</kbd></button></div>
+      <div class="zoomer"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">${ICONS.zoomIn}<kbd class="kb">+</kbd></button><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">${ICONS.zoomOut}<kbd class="kb">−</kbd></button><button class="z-view" aria-label="${T('Camera view', 'Góc nhìn')}">🎥<kbd class="kb">V</kbd></button><button class="z-where" aria-label="${T('Where is…? Show me the way', 'Ở đâu? Chỉ đường cho con')}" title="${T('Where is…?', 'Ở đâu?')}">${pic('🧭')}<kbd class="kb">Y</kbd></button></div>
       <div class="region"></div>
       <div class="htoast"></div>
       <canvas class="wheel" width="96" height="96"></canvas>
@@ -94,6 +94,7 @@ export class Hud {
     this.q('.dk.mus').onclick = () => { if (this._musHeld) { this._musHeld = false; return; } game.toggleAudio('music'); };
     // press and hold Music: the Songs page (round O)
     { const b = this.q('.dk.mus'); let t = 0; b.addEventListener('pointerdown', () => { clearTimeout(t); t = setTimeout(() => { this._musHeld = true; game.openSongs && game.openSongs(); }, 650); }); for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => clearTimeout(t)); }
+    this.q('.z-where').onclick = () => game.openWhere && game.openWhere(i);   // (Round U) "Where is…?" sparkles
     this.q('.dk.snd').onclick = () => game.openSound();   // (Round U) the three Sound switches: music, sounds, voice
     this.q('.friendchip').onclick = () => { const r = game.findFriend(i); if (r) game.say && game.say(r[0], r[1]); };
     this.q('.q-say').onclick = () => game.sayObjective(i);
