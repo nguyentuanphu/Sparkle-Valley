@@ -68,7 +68,7 @@ export function route(g, x0, z0, x1, z1) {
 
 export function createWayfind(G) {
   const { scene, world } = G; let g = null, trail = null;
-  const pool = [...Array(AHEAD)].map(() => { const s = sprite('✨', .8); s.visible = false; scene.add(s); return s; });
+  const pool = [...Array(AHEAD)].map(() => { const s = sprite('✨', 1.1); s.visible = false; scene.add(s); return s; });
   const ground = (x, z) => world.groundAt ? world.groundAt(x, z) : heightAt(x, z);
   // what a child can ask for: home, their own house, Ông Cú, the market, and every village and city
   const targets = () => {
