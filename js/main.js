@@ -14,7 +14,7 @@ import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
 import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, paintWater, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER, PLATEAU, TOWN, AUSSIE, LAKE, ULURU, HALF, STUDIO_ON_MAP, PARKED } from './world.js';
 import { landmarkAt, MAP_VERSION, onThisMap, rowSlot } from './content/map.js';
-import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL, OUTLINED } from './avatar.js';
+import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL, OUTLINED, showStill } from './avatar.js';
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
 import { pads, initInput } from './input.js';
@@ -98,11 +98,16 @@ import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './s
 import { openWardrobe, openGamesHub, openQuick, nextGameAfter } from './ui.js';
 
 // ---------- renderer & world ----------
-const quality = settings.quality === 'auto' ? ((navigator.hardwareConcurrency || 4) <= 4 || Math.min(screen.width, screen.height) < 500 ? 'low' : 'mid') : settings.quality;
+// (battery round, owner 12 Oct AEDT) Graphics: Fast, Auto, Pretty (60 frames a second) and Pretty+ ('max': the same
+// picture as Pretty, drawn as fast as the screen goes)
+const quality = settings.quality === 'auto' ? ((navigator.hardwareConcurrency || 4) <= 4 || Math.min(screen.width, screen.height) < 500 ? 'low' : 'mid') : settings.quality === 'max' ? 'high' : settings.quality;
+// (battery round) the device's everyday graphics chip, not its strongest one: a MacBook's big chip and a phone's top
+// speed drain the battery for a picture the children cannot tell apart
+const PR_AUTO = 1.5; // (battery round) on Auto the picture is never drawn sharper than 1.5x the screen's pixels
 let renderer;
-try { renderer = new THREE.WebGLRenderer({ antialias: quality !== 'low', preserveDrawingBuffer: false, powerPreference: 'high-performance' }); }
+try { renderer = new THREE.WebGLRenderer({ antialias: quality !== 'low', preserveDrawingBuffer: false, powerPreference: 'default' }); }
 catch (e) { $('#boot').innerHTML = `<p>${T('Sorry, this device cannot show the 3D world.', 'Xin lỗi, máy này không hiển thị được thế giới 3D.')}</p>`; throw e; }
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === 'low' ? 1.25 : quality === 'high' ? 2 : 1.6));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === 'low' ? 1.25 : quality === 'high' ? 2 : settings.quality === 'auto' ? PR_AUTO : 1.6));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.NoToneMapping; // flat illustrated colours, exactly as painted
 if (quality !== 'low') { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
@@ -221,10 +226,15 @@ function setupNPCs() {
     talk: h => kidTalk(h, 'skipping', 'Lan', ['Nhảy dây! Skipping! Jump when the rope comes down and count with me!', 'Nhảy dây nào! Nhảy lên khi dây quay xuống và đếm cùng tớ nhé!']) });
   gourd = addNPC({ id: 'gourd', name: 'Ông Bầu', model: buildGourd(), x: V.x - V.r + 8, z: V.z + 6, face: -1.2, icon: '🍃', talk: gourdTalk });
   // outlines only on characters near a player (keeps phones fast)
-  let olT = 0; const _wp = new THREE.Vector3();
+  let olT = 0; const _wp = new THREE.Vector3(), STILL = 20;
   world.updaters.push(dt => {
     if ((olT -= dt) > 0) return; olT = .4;
-    OUTLINED.forEach(A => { if (!A.root.parent) return; A.root.getWorldPosition(_wp); const near = G.heroes.some(h => dist2(h.pos.x, h.pos.z, _wp.x, _wp.z) < 30); if (A._ol !== near) { A._ol = near; A.outlines.forEach(o => o.visible = near); } });
+    const mine = new Set(G.heroes.map(h => h.av));
+    OUTLINED.forEach(A => { if (!A.root.parent) return; A.root.getWorldPosition(_wp); const near = G.heroes.some(h => dist2(h.pos.x, h.pos.z, _wp.x, _wp.z) < 30); if (A._ol !== near) { A._ol = near; A.outlines.forEach(o => o.visible = near); if (A.stillLine) A.stillLine.visible = near; }
+      // (battery round, PERF-003) far (STILL m from every child) and standing still for two looks: the one-piece still
+      // copy (js/avatar.js); anyone walking, riding or near keeps every moving part. A child's own character never.
+      const moved = A._wx !== _wp.x || A._wz !== _wp.z; A._wx = _wp.x; A._wz = _wp.z; A._calm = moved ? 0 : (A._calm || 0) + 1;
+      showStill(A, !mine.has(A) && A._calm >= 2 && !G.heroes.some(h => dist2(h.pos.x, h.pos.z, _wp.x, _wp.z) < STILL)); });
   });
   // gentle idle animation
   // the children who host folk games are busy playing: they cheer, wave and clap now and then
@@ -287,6 +297,9 @@ function setupBubbles() {
 function setupGuides() {
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 70, 16, 1, true), new THREE.MeshBasicMaterial({ color: '#ffd23f', transparent: true, opacity: .28, depthWrite: false, side: THREE.DoubleSide, fog: false }));
   const bang = sprite('❗', 2.4); bang.material.fog = false; scene.add(beam, bang);
+  // (tester's notes, 12 Oct) tapping the "!" over the light goes there and does the step, like the Go button
+  const bangIt = { id: 'quest_bang', x: 0, z: 0, r: 3, act: h => G.goToObjective(Math.max(0, G.heroes.indexOf(h))) };
+  bang.userData.it = bangIt; (G.tapTargets = G.tapTargets || []).push(bang);
   const arrowGeo = new THREE.ConeGeometry(.45, 1.1, 4); arrowGeo.rotateX(Math.PI / 2);
   const feet = sprite('👣', .8).material; // footprints when walking to a place chosen on the map
   const guides = [0, 1].map(() => {
@@ -297,7 +310,7 @@ function setupGuides() {
   world.updaters.push((dt, t) => {
     const h0 = G.heroes[0], tg0 = h0 && playing ? questTarget(h0) : null;
     beam.visible = bang.visible = !!tg0;
-    if (tg0) { const gy = heightAt(tg0.x, tg0.z); beam.position.set(tg0.x, gy + 35, tg0.z); bang.position.set(tg0.x, gy + 5.2 + Math.abs(Math.sin(t * 3)) * .8, tg0.z); beam.material.opacity = .2 + Math.sin(t * 2) * .08; }
+    if (tg0) { bangIt.x = tg0.x; bangIt.z = tg0.z; const gy = heightAt(tg0.x, tg0.z); beam.position.set(tg0.x, gy + 35, tg0.z); bang.position.set(tg0.x, gy + 5.2 + Math.abs(Math.sin(t * 3)) * .8, tg0.z); beam.material.opacity = .2 + Math.sin(t * 2) * .08; }
     guides.forEach((g, i) => {
       const h = G.heroes[i];
       if (h && h.walkTo && h.walkTo.friend) { const P = G.partners[h.walkTo.friend]; if (!P) h.walkTo = null; else { h.walkTo.x = P.pos.x; h.walkTo.z = P.pos.z; if (dist2(h.pos.x, h.pos.z, P.pos.x, P.pos.z) < 4) { SFX.chime(); hudFor(h).toast('👫 ' + T(`You found ${P.name}! Say hello!`, `Con đã gặp ${P.name}! Chào bạn đi!`)); say(`You found ${P.name}! Say hello!`, `Con đã gặp ${P.name} rồi! Chào bạn đi!`); h.walkTo = null; G.huds[h.i] && G.huds[h.i].toggleEmotes(true); } } }
@@ -346,12 +359,16 @@ function setupAreaSigns() {
   sign('Three Regions Market', 'Chợ Ba Miền', '🏮', 121, 83, 12);
   sign('Aussie Corner', 'Góc Nước Úc', '🍦', -117, -12, 12);
 }
+// (tester's notes, 12 Oct) the (i) "about this place" buttons only come up right beside them, and a person to talk to
+// comes first, so the button no longer pops up here and there while a child walks past
 function nearest(h) {
   let best = null, bd = 1e9;
   for (const it of G.interactables) {
     if (it.visible && !it.visible(h)) continue;
-    const d = dist2(h.pos.x, h.pos.z, it.x, it.z);
-    if (d < it.r && d < bd && Math.abs((it.y ?? heightAt(it.x, it.z)) - h.pos.y) < 5) { best = it; bd = d; }
+    const d = dist2(h.pos.x, h.pos.z, it.x, it.z), info = it.icon === 'ℹ️';
+    if (info && d > Math.max(1.3, it.r - 2.6)) continue; // (a dance group's sign: at the edge of its circle)
+    const score = d + (info ? 1.5 : 0) - (it.icon === '💬' ? 1 : 0);
+    if (d < it.r && score < bd && Math.abs((it.y ?? heightAt(it.x, it.z)) - h.pos.y) < 5) { best = it; bd = score; }
   }
   return best;
 }
@@ -567,6 +584,8 @@ G.goToGame = (i, id) => { const h = G.heroes[i], it = G.gameSpot(id); if (!h || 
 // ---------- objective helpers ----------
 G.objectiveIcon = h => { const q = currentQuest(h.profile); return q ? q.icon : '🏆'; };
 G.sayObjective = i => { const h = G.heroes[i]; if (!h) return; const q = currentQuest(h.profile); if (!q) return; const tale = q.tale || QUEST_TALES[q.id]; if (tale) say(tale[2], tale[3]); else say(q.title(), q.title()); };
+// is there water, a wall or something big on the straight way between two spots? (the last 1.5 m, by the goal, is left out)
+const wayBlocked = (x0, z0, x1, z1) => { const n = Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 1.2); for (let k = 1; k < n - 1; k++) { const x = x0 + (x1 - x0) * k / n, z = z0 + (z1 - z0) * k / n; if (!G.goodSpot(x, z)) return true; } return false; };
 // "Go" button: walk to the goal (or fly there if it is far away) and start it on arrival.
 G.goToObjective = async i => {
   const h = G.heroes[i]; if (!h || G.paused) return;
@@ -575,6 +594,10 @@ G.goToObjective = async i => {
   const near = it && dist2(it.x, it.z, tg.x, tg.z) < 6 ? it : null;
   say('Let\u2019s go!', 'Đi thôi!');
   if (dist2(h.pos.x, h.pos.z, tg.x, tg.z) > 45) { await G.travel(h, tg.x - 1.5, tg.z + 2); }
+  // (tester's notes, 12 Oct) a goal across water or past a wall (by Hồ Gươm: the bridge's rail, the lake): walking
+  // straight there only slid along the rail in circles, so the child lands on open ground right beside it instead
+  const dest = near || tg;
+  if (dist2(h.pos.x, h.pos.z, dest.x, dest.z) > 3 && wayBlocked(h.pos.x, h.pos.z, dest.x, dest.z)) await G.landBy(h, dest.x, dest.z);
   if (near) goAndDo(h, near); else h.goal = { x: tg.x, z: tg.z };
 };
 const GOURD_GIFTS = [[3, 'money', 15], [6, 'money', 25], [10, 'glider', 2], [15, 'money', 40], [20, 'money', 60], [24, 'glider', 4]];
@@ -1290,6 +1313,17 @@ function onTap(i, x, y) {
   // tapping a bubble, a water drop or a ripe crop walks there and does it
   const hitB = ray.intersectObjects([...(G.bubbleIcons || []), ...(G.tapTargets || [])], false).find(x => x.object.visible);
   if (hitB) { goAndDo(h, hitB.object.userData.it); return; }
+  // (tester's notes, 12 Oct) inside a house the floor is the room's, not the valley's ground: a tap on (or right by)
+  // someone or something in the room walks up to it and does it, a tap on the floor walks there
+  if (G.homes && G.homes.isInside(h)) {
+    const v = new THREE.Vector3(), px = (q, dy) => { v.set(q.x, (q.y ?? h.pos.y) + dy, q.z).project(h.cam); return Math.hypot((v.x - ndc.x) * r.w / 2, (v.y - ndc.y) * r.h / 2); };
+    let it = null, bd = 70;
+    for (const q of G.interactables) { if (q.y == null || Math.abs(q.y - h.pos.y) > 5 || dist2(h.pos.x, h.pos.z, q.x, q.z) > 16 || (q.visible && !q.visible(h))) continue; const d = Math.min(px(q, .3), px(q, 1.2)); if (d < bd) { bd = d; it = q; } }
+    if (it) { goAndDo(h, it); return; }
+    const pt = ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -h.pos.y), v);
+    if (pt && dist2(h.pos.x, h.pos.z, pt.x, pt.z) < 16) { h.goal = { x: pt.x, z: pt.z }; G.fx(pt.x, h.pos.y + .3, pt.z, '✨'); }
+    return;
+  }
   // tap a person, animal, tree or critter and it reacts (js/fun.js)
   if (G.tapReact && G.tapReact(h, ray)) return;
   const hit = ray.intersectObject(world.terrain, false)[0];
@@ -1405,7 +1439,7 @@ setInterval(() => {
 }, 100);
 // Sharp on phones that can manage it: with Graphics on Auto, the 3D picture is drawn at up to 2× the screen's
 // pixels and steps down a little whenever the game starts to stutter (phones started blurry at 1.25×).
-const adapt = { pr: renderer.getPixelRatio(), max: Math.min(window.devicePixelRatio || 1, 2), min: 1, sum: 0, n: 0, t0: performance.now() };
+const adapt = { pr: renderer.getPixelRatio(), max: Math.min(window.devicePixelRatio || 1, PR_AUTO), min: 1, sum: 0, n: 0, t0: performance.now() };
 function adaptResolution(rawMs) {
   if (settings.quality !== 'auto' || document.hidden || rawMs > 250) return;
   adapt.sum += rawMs; adapt.n++;
@@ -1415,8 +1449,33 @@ function adaptResolution(rawMs) {
   if (next !== adapt.pr) { adapt.pr = next; renderer.setPixelRatio(next); renderer.setSize(innerWidth, innerHeight, false); }
 }
 // Battery (owner, round O: "the game uses too much battery"): on phones and tablets the valley is drawn 30 times a
-// second (smooth enough for walking; half the work), unless Graphics is on "Pretty"; computers keep 60.
-const FRAME_MS = settings.quality !== 'high' && matchMedia('(pointer: coarse)').matches ? 1000 / 30 : 0;
+// second (smooth enough for walking; half the work), unless Graphics is on "Pretty".
+// (battery round, owner 12 Oct AEDT: "my MacBook takes almost 10 % at once") computers too: 60 a second (a 120 Hz
+// screen drew 120), 30 on Fast; Pretty is 60 everywhere and only Pretty+ draws as fast as the screen. The title screen
+// is drawn 20 times a second, and when nothing moves for IDLE_MS (no touch, key or mouse, every child and camera still,
+// no friend online) the valley is drawn IDLE_FPS times a second until anything happens.
+const FRAME_MS = settings.quality === 'max' ? 0 : settings.quality === 'high' || (settings.quality !== 'low' && !matchMedia('(pointer: coarse)').matches) ? 1000 / 60 : 1000 / 30;
+const TITLE_MS = 1000 / 20, IDLE_MS = 15000, IDLE_FPS = 8;
+// what the drawing costs, for the battery statistics (js/players.js takes it once a minute) and the `battery` check
+const BAT = G.battery = { frameMs: FRAME_MS, titleMs: TITLE_MS, idleMs: IDLE_MS, idleFps: IDLE_FPS, idle: false, input: performance.now(), moved: performance.now(), key: '', at: null, due: 0, prStart: renderer.getPixelRatio(), prMax: settings.quality === 'auto' ? adapt.max : renderer.getPixelRatio(),
+  // (counted only while a child plays and something moves: the title, the idle frames and the time the world rests
+  // behind a game or a menu are left out, so frames a second say how smooth playing is)
+  frames: 0, work: 0, draws: 0, ms: 0, idleFrames: 0, lastDrawn: 0,
+  capMs: () => !playing ? Math.max(FRAME_MS, TITLE_MS) : BAT.idle ? 1000 / IDLE_FPS : FRAME_MS,
+  // at most one drawing per cap ms, on any screen (a 120 or 144 Hz screen gets 60 on average, not 72); st keeps `due`
+  gate: (st, now, cap) => { if (!cap) return true; if (now < st.due - 2) return false; st.due = Math.max(st.due + cap, now - cap); return true; },
+  take: () => { const o = { frames: BAT.frames, work: BAT.work, draws: BAT.draws, ms: BAT.ms, idleFrames: BAT.idleFrames, pr: renderer.getPixelRatio() }; BAT.frames = BAT.work = BAT.draws = BAT.ms = BAT.idleFrames = 0; return o; } };
+for (const e of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart']) addEventListener(e, () => { BAT.input = performance.now(); if (BAT.idle) { BAT.idle = false; BAT.due = 0; } }, { capture: true, passive: true });
+// still: every child and their camera moving slower than 10 cm a second (a settled camera keeps creeping by about a
+// centimetre a second, which nobody sees), the same pose, no input, no friend online, nothing on the way
+function stillCheck(now) {
+  const at = G.heroes.flatMap(h => [h.pos.x, h.pos.y, h.pos.z, h.yaw, h.cam.position.x, h.cam.position.y, h.cam.position.z]), key = G.heroes.map(h => h.state).join('|');
+  const sec = Math.max(.001, (now - (BAT.atT || 0)) / 1000);
+  if (key !== BAT.key || !BAT.at || BAT.at.length !== at.length || at.some((v, i) => Math.abs(v - BAT.at[i]) / sec > .1)) { BAT.key = key; BAT.moved = now; }
+  BAT.at = at; BAT.atT = now;
+  const idle = now - BAT.input > IDLE_MS && now - BAT.moved > IDLE_MS && !Object.keys(G.partners).length && !G.travelling && !G.places.dancing;
+  if (idle !== BAT.idle) { BAT.idle = idle; BAT.due = 0; }
+}
 // pages that cover the whole screen: nothing of the valley shows, so it isn't drawn at all (the Simple screen, which
 // under-5s start on, the 🎵 Songs page, often left playing lullabies at bedtime, and the real photos)
 const worldHidden = () => (G.simple && G.simple.open) || !!document.querySelector('.songs, .realview');
@@ -1424,9 +1483,11 @@ G.worldHidden = worldHidden;
 function frame(now) {
   requestAnimationFrame(frame);
   if (framesSeen < 4 && ++framesSeen === 4) framesDone(); // (js/solids.js waits for these)
-  if (FRAME_MS && now - last < FRAME_MS - 4) return;
-  if (playing) adaptResolution(now - last - (FRAME_MS ? FRAME_MS - 1000 / 60 : 0)); // (the wait between frames is not slowness)
-  const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+  if (!BAT.gate(BAT, now, BAT.capMs())) return; // (battery round)
+  if (playing && !BAT.idle) adaptResolution(now - last - (FRAME_MS ? FRAME_MS - 1000 / 60 : 0)); // (the wait between frames is not slowness)
+  // (battery round) while idle the frames are far apart: the world keeps its pace (nothing is moving that could jump)
+  const dt = Math.min(BAT.idle ? .15 : .05, (now - last) / 1000); last = now; t += dt;
+  const work0 = performance.now();
   // the 3D world rests while a full-screen game, the storybook or a page that covers it is open (saves battery)
   // (two players: the world rests only when both halves have a window open)
   if (twoHalves() && playing ? G.halfBusy(0) && G.halfBusy(1) : gameOpen() || document.querySelector('.storybook, .theatre.film') || (G.paused && document.querySelector('.modal')) || (playing && worldHidden())) return;
@@ -1439,6 +1500,8 @@ function frame(now) {
     renderer.setScissorTest(false); renderer.setViewport(0, 0, innerWidth, innerHeight); renderer.render(scene, titleCam);
     return;
   }
+  stillCheck(now); if (BAT.idle) BAT.idleFrames++;
+  let drawn = 0;
   poll(dt);
   const two = twoHalves();
   if (two || (!G.paused && !gameOpen())) {
@@ -1515,7 +1578,7 @@ function frame(now) {
     G.showcaseCam(i, h, dt); // a landmark fly-around takes over the camera
     if (r.length > 1) aimCam(h, q);
     world.updateSky(0, h.cam.position, h.pos);
-    renderer.render(scene, h.cam);
+    renderer.render(scene, h.cam); drawn += renderer.info.render.calls;
     if (G.nameTags) G.nameTags.update(i, h, q);
     const p = h.profile;
     // what the minimap shows, worked out only when it is redrawn
@@ -1531,6 +1594,8 @@ function frame(now) {
     return markers; };
     G.huds[i].update(dt, h.cam, () => G.fogMapFor(p), markersFor);
   });
+  if (!BAT.idle) { BAT.frames++; BAT.work += performance.now() - work0; BAT.draws += drawn; const gap = now - BAT.lastDrawn; if (gap <= 250) BAT.ms += gap; }
+  BAT.lastDrawn = now;
 }
 
 // ---------- boot ----------
@@ -1639,8 +1704,9 @@ G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 
 // loaded while the valley is built (js/hoilang.js after the games boards it uses; Studio switches in the 'kids' group)
 { const [{ createHoiLang }, { createSurprises }, { createParents }] = await Promise.all([import('./hoilang.js'), import('./surprises.js'), import('./parents.js')]);
   G.hoilang = createHoiLang(G, { say, save, reward }); G.surprises = createSurprises(G, { say, reward }); G.parents = createParents(G, { say, save, reward }); }
-// (Play reading trial, owner 11 Oct AEDT) the ten reading games load only while Studio's readingTrial switch is on (now, or when it is switched on)
-{ const rd = () => { if (featureOn('readingTrial', false)) import('./games/readingmenu.js').catch(() => { }); }; rd(); import('./custom.js').then(C => C.onLive(rd)); }
+// (Play reading trial, owner 11 Oct AEDT) the ten reading games load only while Studio's readingTrial switch is on (now, or when it is switched on);
+// on unless Studio switches it off (owner, 12 Oct AEDT)
+{ const rd = () => { if (featureOn('readingTrial', true)) import('./games/readingmenu.js').catch(() => { }); }; rd(); import('./custom.js').then(C => C.onLive(rd)); }
 // level land under every building, stall and landmark placed above (and anything added in future rounds)
 world.familyEdits = applyWorldEdits(G); // buildings the family moved or removed in Sparkle Studio
 bootMark('things'); widenFlatLand(world, scene); bootMark('wideland'); await breathe(); // more level land round every village and city, for new buildings (nothing moves on the map)
@@ -1716,6 +1782,8 @@ startCounting(G); // how many children play, and what they play, for Studio's re
       v.copy(u.c).applyMatrix4(u.o.matrixWorld); let d2 = 1e12;
       for (const c of cams) d2 = Math.min(d2, (c.x - v.x) ** 2 + (c.z - v.z) ** 2);
       for (const m of u.meshes) m.layers.set(d2 > u.far2 || (m.userData.outline && d2 > O2) ? 1 : 0);
+      // (battery round) a person's still copy, made after the list was gathered, goes with the person
+      const st = u.o.userData.still; if (st) for (const m of st.children) m.layers.set(d2 > u.far2 || (m.userData.outline && d2 > O2) ? 1 : 0);
     }
   };
 }

@@ -224,7 +224,12 @@ export function createHanoi(G, ctx) {
     nam2: () => ({ x: namAt.x, z: namAt.z }),
     bunca: () => ({ x: jobAt[0], z: jobAt[1] }),
     // (a big kid is pointed at the lake and reads the clue; an under-5 is pointed at the right spot)
-    clues: p => p && !big(p) ? { x: lanternAt.x, z: lanternAt.z } : { x: front.x, z: front.z },
+    // (tester's notes, 12 Oct) a big kid's light shines on the nearest place still to look at (it shone on the shore,
+    // where nothing could be tapped); after the clue is found, on the shore again
+    clues: p => { if (p && !big(p)) return { x: lanternAt.x, z: lanternAt.z };
+      const h = G.heroes.find(x => x.profile === p), left = p && !clueFound(p) ? clueObjs.filter(c => !looked(p).includes(c.k)) : [];
+      const c = h && left.length ? left.sort((a, b) => Math.hypot(a.x - h.pos.x, a.z - h.pos.z) - Math.hypot(b.x - h.pos.x, b.z - h.pos.z))[0] : left[0];
+      return c ? { x: c.x, z: c.z } : { x: front.x, z: front.z }; },
     bridge: () => ({ x: front.x, z: front.z })
   };
   // the steps' own buttons: Tèo's challenge (his line, then Play, How to play (the guide film) or Later), Bà Lan's bún chả

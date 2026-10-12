@@ -43,7 +43,7 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
       <div class="th-top"><span class="th-flag">${tale.flag}</span><b class="th-title">${esc(tale.title())}</b>${tale.story && featureOn('shortTalk', true) ? `<button class="th-skip">${pic('⏩')} ${T('Skip', 'Bỏ qua')}</button>` : ''}<button class="th-x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
       <div class="th-stage"><div class="th-bg"></div><div class="th-actors"></div><div class="th-fx"></div></div>
       <div class="th-text"></div>
-      <div class="th-bar"><button class="th-prev" aria-label="${T('Back', 'Trang trước')}">◀</button><button class="th-hear" aria-label="${T('Hear it again', 'Nghe lại')}">${pic('🔊')}</button><button class="th-auto on" aria-label="${T('Read by itself', 'Tự đọc')}">⏯</button><div class="th-dots"></div><button class="th-next" aria-label="${T('Next', 'Trang sau')}">▶</button></div>`);
+      <div class="th-bar"><button class="th-prev" aria-label="${T('Back', 'Trang trước')}">◀<small>${T('Back', 'Trước')}</small></button><button class="th-next" aria-label="${T('Next', 'Trang sau')}">▶<small>${T('Next', 'Sau')}</small></button><div class="th-dots"></div><button class="th-pause" aria-label="${T('Pause', 'Dừng')}">${pic('⏸')}<small>${T('Pause', 'Dừng')}</small></button><button class="th-auto on" aria-label="${T('Read by itself', 'Tự đọc')}">${pic('📖')}<small>${T('Read', 'Tự đọc')}</small></button></div>`);
     document.body.appendChild(m);
     const stage = m.querySelector('.th-stage'), bg = m.querySelector('.th-bg'), actors = m.querySelector('.th-actors'), fx = m.querySelector('.th-fx'), text = m.querySelector('.th-text'), dots = m.querySelector('.th-dots');
     // (round R) tales that have a film are acted in 3D instead of the picture stage (js/film.js)
@@ -75,7 +75,7 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
       dots.innerHTML = tale.pages.map((_, i) => `<i class="${i === k ? 'on' : i < k ? 'done' : ''}"></i>`).join('');
       if (sync && !fromFriend) sync.send(k);
       m.querySelector('.th-prev').disabled = k === 0;
-      m.querySelector('.th-next').innerHTML = k === tale.pages.length - 1 ? pic('🏁') : '▶';
+      m.querySelector('.th-next').innerHTML = (k === tale.pages.length - 1 ? pic('🏁') : '▶') + `<small>${k === tale.pages.length - 1 ? T('End', 'Hết') : T('Next', 'Sau')}</small>`;
       SFX.page ? SFX.page() : SFX.tap();
       await wait(450); if (!alive || my !== token) return;
       // characters stop walking once they are in place, and talk while the page is read
@@ -93,7 +93,7 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
       dots.innerHTML = tale.pages.map((_, i) => `<i class="${i === k ? 'on' : i < k ? 'done' : ''}"></i>`).join('');
       if (sync && !fromFriend) sync.send(k);
       m.querySelector('.th-prev').disabled = k === 0;
-      m.querySelector('.th-next').innerHTML = k === tale.pages.length - 1 ? pic('🏁') : '▶';
+      m.querySelector('.th-next').innerHTML = (k === tale.pages.length - 1 ? pic('🏁') : '▶') + `<small>${k === tale.pages.length - 1 ? T('End', 'Hết') : T('Next', 'Sau')}</small>`;
       SFX.page ? SFX.page() : SFX.tap();
       const played = film.page(k);
       await wait(350); if (!alive || my !== token) return;
@@ -109,8 +109,11 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
     if (sync) sync.listen(p => { if (!alive || p === k || p < 0 || p >= tale.pages.length) return; fromFriend = true; k = p; draw(); fromFriend = false; });
     m.querySelector('.th-next').onclick = () => { SFX.tap(); next(); };
     m.querySelector('.th-prev').onclick = () => { if (k > 0) { SFX.tap(); k--; draw(); } };
-    m.querySelector('.th-hear').onclick = () => { const [, en, vi] = tale.pages[k]; token++; sayAsync(en, vi); };
-    m.querySelector('.th-auto').onclick = e => { auto = !auto; e.currentTarget.classList.toggle('on', auto); if (auto) draw(); };
+    // (tester's notes, 12 Oct) four clear buttons: back, next, pause (stops the voice and the page turning) and the green
+    // "read by itself", which reads this page again and goes on by itself
+    const setAuto = on => { auto = on; m.querySelector('.th-auto').classList.toggle('on', on); m.querySelector('.th-pause').classList.toggle('on', !on); };
+    m.querySelector('.th-pause').onclick = () => { SFX.tap(); token++; hush(); stage.classList.remove('speaking'); setAuto(false); };
+    m.querySelector('.th-auto').onclick = () => { SFX.tap(); setAuto(true); draw(); };
     m.querySelector('.th-x').onclick = () => finish(false);
     // (Studio switch shortTalk) the story's own films can be skipped with one big button
     const sk = m.querySelector('.th-skip'); if (sk) sk.onclick = () => finish(false);

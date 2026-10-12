@@ -14,8 +14,8 @@ export const RELEASES = [
   { id: 'powerPoles', en: 'Power poles and wires', vi: 'Cột điện và dây điện', group: 'world', def: false },
   { id: 'story_prologue', en: 'Story: The Lanterns Blow Away (prologue, companion)', vi: 'Truyện: Đèn Lồng Bay Mất (mở đầu, bạn đồng hành)', group: 'story', def: true },
   { id: 'story_ch1', en: 'Story chapter 1: Lotus Village', vi: 'Truyện chương 1: Làng Sen', group: 'story', def: true },
-  { id: 'story_ch2', en: 'Story chapter 2: Hà Nội (Tèo\'s challenge, Văn Miếu, Cầu Thê Húc lights up, Trung Thu parade)', vi: 'Truyện chương 2: Hà Nội (Tèo thách đấu, Văn Miếu, Cầu Thê Húc sáng đèn, rước đèn Trung Thu)', group: 'story', def: false }, // (owner 10 Oct: off until an admin switches it on or schedules it)
-  { id: 'story_ch3', en: 'Story chapter 3: Sydney (Chi\'s Aussie words, the ferries, cricket with Jack and Ruby, the Opera House lights up, fireworks)', vi: 'Truyện chương 3: Sydney (Chi dạy từ tiếng Úc, phà, chơi cricket với Jack và Ruby, Nhà hát Opera sáng đèn, pháo hoa)', group: 'story', def: false },
+  { id: 'story_ch2', en: 'Story chapter 2: Hà Nội (Tèo\'s challenge, Văn Miếu, Cầu Thê Húc lights up, Trung Thu parade)', vi: 'Truyện chương 2: Hà Nội (Tèo thách đấu, Văn Miếu, Cầu Thê Húc sáng đèn, rước đèn Trung Thu)', group: 'story', def: true }, // (owner 10 Oct: off until an admin switches it on or schedules it)
+  { id: 'story_ch3', en: 'Story chapter 3: Sydney (Chi\'s Aussie words, the ferries, cricket with Jack and Ruby, the Opera House lights up, fireworks)', vi: 'Truyện chương 3: Sydney (Chi dạy từ tiếng Úc, phà, chơi cricket với Jack và Ruby, Nhà hát Opera sáng đèn, pháo hoa)', group: 'story', def: true },
   { id: 'story_yard', en: 'Story: Bà Huệ and ông Nghi\'s yard (coach from Hà Tĩnh, dump truck, excavator, a house built together)', vi: 'Truyện: Công trường của bà Huệ và ông Nghi (xe khách từ Hà Tĩnh, xe ben, máy xúc, cùng xây nhà)', group: 'story', def: true },
   // (round R, owner 9 Oct: "add these in and add to the studio so we can switch on/off") what keeps little ones playing
   { id: 'yardHands', en: 'The yard by hand: steer the dump truck, drag the excavator arm, stack the bricks', vi: 'Công trường tự tay làm: lái xe ben, kéo cần máy xúc, xếp gạch', group: 'kids', def: true },
@@ -43,5 +43,7 @@ export const RELEASES = [
 ];
 export const RELEASE_GROUPS = { story: ['The lantern story', 'Truyện đèn lồng'], kids: ['For little ones', 'Cho các bé'], rewards: ['Shop and rewards', 'Cửa hàng và phần thưởng'], world: ['In the valley', 'Trong thung lũng'], festivals: ['Festivals', 'Lễ hội'], tools: ['For testing', 'Để thử'] };
 // (Play reading trial, owner 11 Oct 2026 AEDT) the ten reading games: off until an admin switches them on
-RELEASES.push({ id: 'readingTrial', en: 'Reading games (trial): ten games in the Reading corner, in English or Vietnamese by the language setting', vi: 'Trò chơi tập đọc (thử nghiệm): mười trò ở Góc đọc, tiếng Anh hoặc tiếng Việt theo ngôn ngữ đã chọn', group: 'trial', def: false });
+// (owner, 12 Oct AEDT: "all other features should be on for now until I say or switch it off"; only power poles and
+// the auto play check stay off) the reading games and story chapters 2 and 3 are on unless Studio switches them off
+RELEASES.push({ id: 'readingTrial', en: 'Reading games (trial): ten games in the Reading corner, in English or Vietnamese by the language setting', vi: 'Trò chơi tập đọc (thử nghiệm): mười trò ở Góc đọc, tiếng Anh hoặc tiếng Việt theo ngôn ngữ đã chọn', group: 'trial', def: true });
 RELEASE_GROUPS.trial = ['Trials', 'Thử nghiệm'];

@@ -42,9 +42,12 @@ export function createWeather(G) {
   const petals = season ? Array.from({ length: 14 }, (_, i) => { const s = sprite(season, .55); s.material = s.material.clone(); scene.add(s); return { s, ox: (Math.random() - .5) * 30, oz: (Math.random() - .5) * 30, y: Math.random() * 8, sp: .6 + Math.random() * .6, ph: Math.random() * 6 }; }) : [];
 
   const start = () => { if (settings.noRain || S.state === 'rain') return; S.state = 'rain'; S.t = 60 + Math.random() * 40; S.told.rain = false;
-    G.heroes.forEach(h => G.toast(h, '🌧️ ' + T('It is raining! Look for puddles to jump in.', 'Trời mưa rồi! Tìm vũng nước để nhảy nào.'))); say('Pitter patter, it is raining!', 'Tí tách tí tách, trời mưa rồi!'); };
+    // (tester's notes, 12 Oct) a child inside a house is not told to look at the sky (rain, rainbow) or rained on
+    const out = G.heroes.filter(h => !h.indoors);
+    out.forEach(h => G.toast(h, '🌧️ ' + T('It is raining! Look for puddles to jump in.', 'Trời mưa rồi! Tìm vũng nước để nhảy nào.'))); if (out.length) say('Pitter patter, it is raining!', 'Tí tách tí tách, trời mưa rồi!'); };
   const stop = () => { if (S.state !== 'rain') return; S.state = 'after'; S.t = 50; S.rainbowT = 50;
-    G.heroes.forEach(h => G.toast(h, '🌈 ' + T('The rain stopped. Look, a rainbow!', 'Tạnh mưa rồi. Nhìn kìa, cầu vồng!'))); say('Look up! A rainbow!', 'Nhìn lên kìa! Cầu vồng!'); SFX.chime(); G.lookUpT = 8; };
+    const out = G.heroes.filter(h => !h.indoors);
+    out.forEach(h => G.toast(h, '🌈 ' + T('The rain stopped. Look, a rainbow!', 'Tạnh mưa rồi. Nhìn kìa, cầu vồng!'))); if (out.length) { say('Look up! A rainbow!', 'Nhìn lên kìa! Cầu vồng!'); SFX.chime(); G.lookUpT = 8; } };
 
   let cropT = 0, spawnT = 0;
   const _f = new THREE.Vector3();
@@ -58,7 +61,7 @@ export function createWeather(G) {
     world.overcast += ((raining ? 1 : 0) - world.overcast) * Math.min(1, dt * .6);
     // rain streaks
     rains.forEach((m, i) => {
-      const h = G.heroes[i]; m.visible = !!h && world.overcast > .05;
+      const h = G.heroes[i]; m.visible = !!h && !h.indoors && world.overcast > .05;
       if (!m.visible) return;
       m.material.opacity = world.overcast * (settings.calm ? .35 : .6);
       m.position.set(h.pos.x, h.pos.y - 2 + 26 - ((t * 22 + i * 7) % 26), h.pos.z);
@@ -70,7 +73,7 @@ export function createWeather(G) {
         cropT = 4; let n = 0; farm.plots.forEach(p => { if (p && !p.water && p.stage < 3) { p.water = true; p.t = Date.now(); n++; } });
         if (n) { saveFarm(); if (!S.told.rain) { S.told.rain = true; G.heroes.forEach(h => G.toast(h, '🌱 ' + T('The rain is watering your farm!', 'Mưa đang tưới nông trại của con!'))); } }
       }
-      spawnT -= dt; if (spawnT <= 0) { spawnT = 1.5; G.heroes.forEach(h => { const a = Math.random() * 6.28, r = 4 + Math.random() * 14; addPuddle(h.pos.x + Math.cos(a) * r, h.pos.z + Math.sin(a) * r); }); }
+      spawnT -= dt; if (spawnT <= 0) { spawnT = 1.5; G.heroes.filter(h => !h.indoors).forEach(h => { const a = Math.random() * 6.28, r = 4 + Math.random() * 14; addPuddle(h.pos.x + Math.cos(a) * r, h.pos.z + Math.sin(a) * r); }); }
     }
     // puddles: fill while raining, dry out afterwards; splash when walked or jumped in
     for (let i = puddles.length - 1; i >= 0; i--) {

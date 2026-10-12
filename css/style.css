@@ -220,6 +220,9 @@ select option { color: #000; }
 .recipes { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
 .rec { border-radius: 12px; background: rgba(255, 255, 255, .06); padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
 .rec span { font-size: 30px; } .rec small { font-size: 12px; color: var(--soft); }
+.rec small i { font-style: normal; position: relative; display: inline-block; font-size: 22px; }
+.rec small i.miss { opacity: .3; filter: grayscale(1); }
+.rec small i .tick { position: absolute; right: -6px; bottom: -4px; font-size: 12px; } .rec small i .tick svg.art { width: 14px; height: 14px; }
 .stickers { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
 .stickers div { aspect-ratio: 1; border-radius: 14px; background: rgba(255, 255, 255, .9); display: flex; align-items: center; justify-content: center; font-size: 32px; }
 .stickers div.miss { background: rgba(255, 255, 255, .08); color: rgba(255, 255, 255, .3); font-size: 22px; }
@@ -442,6 +445,9 @@ select option { color: #000; }
 .bunny .b { font-size: 110px; } .bunny .b.nom { animation: bump .3s; }
 .bunny .tum { display: flex; flex-wrap: wrap; max-width: 260px; font-size: 30px; font-style: normal; } .bunny .tum i { font-style: normal; }
 .choice.go { background: #c9f7c0; }
+/* (tester's notes, 12 Oct) the "done" tick fills most of the button, not a thin line */
+.choice.go { font-size: clamp(56px, 12vw, 84px); }
+.choice.go svg.art, .choice.go .art, .choice.go .emo { width: 1em; height: 1em; min-width: 48px; min-height: 48px; }
 .jig { display: grid; grid-template-columns: repeat(var(--n), 1fr); width: min(80vw, 46vh, 380px); aspect-ratio: 1; gap: 4px; }
 .jp { border: 0; border-radius: 8px; background-color: #fff; background-repeat: no-repeat; }
 .jp.held { outline: 5px solid var(--gold); } .jp.ok { box-shadow: inset 0 0 0 3px rgba(126, 227, 90, .8); }
@@ -572,6 +578,7 @@ button { color: var(--text); }
 .dk.games span { font-size: 40px; } .dk.games small { font-size: 13px; }
 .dk.map { background: linear-gradient(160deg, #7fe0ff, #36b8f0); color: #fff; box-shadow: 0 4px 0 #1f86c0, var(--shadow); }
 .dk.bag { background: linear-gradient(160deg, #ffd56a, #ffad1f); color: #5a3400; box-shadow: 0 4px 0 #d08400, var(--shadow); }
+.dk.shop { background: linear-gradient(160deg, #e3d7ff, #b79cff); color: #3b2558; box-shadow: 0 4px 0 #8a6ad8, var(--shadow); }
 .dk.off { opacity: .5; } .dk.talking { box-shadow: 0 0 0 4px var(--green), 0 0 18px var(--green); }
 .act { border: 0; background: linear-gradient(180deg, #ffe066, #ffb020); color: #4a2a00; box-shadow: 0 6px 0 #d08400, 0 12px 28px rgba(255, 160, 0, .45); padding: 8px 22px 8px 8px; font-size: 19px; border-radius: 999px; }
 .act .ai { background: #fff; width: 60px; height: 60px; font-size: 32px; }
@@ -838,6 +845,13 @@ button { color: var(--text); }
 .pk b { font-size: clamp(40px, 8vw, 56px); } .pk small { font-size: 13px; }
 .pp { position: absolute; font-size: 52px; transition: left .2s, top .2s; cursor: pointer; }
 .pp.rip { animation: pop .3s; }
+.parcel .pnote { display: block; font-size: 54px; animation: pnote .5s ease-in-out infinite alternate; }
+@keyframes pnote { from { transform: translateY(0) rotate(-12deg); } to { transform: translateY(-10px) rotate(12deg); } }
+.parcel .pstop { display: block; font-size: 54px; }
+.parcel .pstop svg.art { width: 54px; height: 54px; }
+.pk.hold b { filter: drop-shadow(0 0 10px #ffd23f) drop-shadow(0 0 4px #ffb020); transform: scale(1.2); transition: transform .2s; }
+.pp.mine { border-radius: 50%; transform: scale(1.35); box-shadow: 0 0 0 6px #ffd23f, 0 0 26px 8px rgba(255, 210, 63, .8); animation: pmine 1s ease-in-out infinite; z-index: 2; }
+@keyframes pmine { 50% { transform: scale(1.55); } }
 .pmsg { position: absolute; left: 15%; right: 15%; top: 40%; text-align: center; font-size: 20px; font-weight: 700; color: #6b3a1a; }
 .pmsg .pq { display: block; font-size: 24px; letter-spacing: 2px; }
 .pprize { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 22px; padding: 14px 20px; display: flex; flex-direction: column; align-items: center; box-shadow: var(--shadow); animation: pop .4s; z-index: 2; }
@@ -1274,8 +1288,12 @@ body.bigtext .th-text p { font-size: clamp(20px, 3.2vw, 28px); }
 .th-bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px 12px; }
 .th-bar button { width: 60px; height: 60px; border: 0; border-radius: 20px; background: #fff; color: #3b2a4f; font-size: 26px; box-shadow: 0 4px 0 rgba(0,0,0,.25); flex: none; }
 .th-bar button:disabled { opacity: .35; }
-.th-bar .th-next { background: linear-gradient(#8be07a, #3fbf5a); color: #fff; width: 76px; }
-.th-bar .th-auto.on { background: #ffd23f; }
+.th-bar button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; line-height: 1; }
+.th-bar button small { font-size: 11px; font-weight: 800; margin-top: 3px; opacity: .8; }
+.th-bar .th-pause svg.art, .th-bar .th-auto svg.art { width: 28px; height: 28px; }
+.th-bar .th-pause.on { background: #ffd23f; }
+.th-bar .th-auto { color: #fff; width: 72px; background: #b9d9b4; }
+.th-bar .th-auto.on { background: linear-gradient(#8be07a, #3fbf5a); }
 .th-dots { flex: 1; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; } .th-dots i { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,.3); } .th-dots i.done { background: rgba(255,255,255,.7); } .th-dots i.on { background: #ffd23f; transform: scale(1.3); }
 body.calm .th-a { animation: th-in .7s ease var(--d) both; }
 /* the story library */
@@ -1675,6 +1693,8 @@ body.calm .rv-img.on { animation: none; }
 /* ---------- more games (js/games/more.js) ---------- */
 .choice.ml { min-width: 40%; } .ml-grp { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; max-width: 220px; font-size: 30px; } .ml-grp i { font-style: normal; }
 .daystrip { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; } .daystrip span { padding: 10px 12px; border-radius: 14px; background: #fff; font-weight: 700; font-size: 18px; box-shadow: 0 3px 0 rgba(0, 0, 0, .12); } .daystrip span.on { background: #ffd23f; transform: scale(1.12); }
+.daystrip span { font-size: clamp(13px, 2.8vw, 18px); padding: 8px 10px; white-space: nowrap; }
+.choice.big.day { white-space: nowrap; font-size: clamp(20px, 4.6vw, 30px); min-width: 0; padding: 0 16px; }
 .choice .big { font-size: 52px; line-height: 1.1; }
 .rps-face { display: flex; align-items: center; gap: 22px; font-size: 80px; } .rps-face b { font-size: 26px; color: #8a6ab0; }
 .egghay { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: min(420px, 100%); padding: 14px; border-radius: 22px; background: #f2d68a; }
@@ -2013,9 +2033,11 @@ body.calm .sp-owl.cheer { animation: none; }
 .gl-lvlcard button.on { background: #8a5cf6; color: #fff; }
 @media (max-width: 400px) { .gl-lvl { padding: 0 10px; font-size: 14px; } }
 /* bug #30: a category on the one long road starts with its heading stop (a purple ring round its picture, no stars) */
-.sp-stop.grp { gap: 8px; }
-.sp-stop.grp .sp-pic { box-shadow: 0 0 0 5px #8a5cf6, 0 6px 0 rgba(60, 100, 40, .35); }
-.sp-stop.grp .sp-name { font-size: 20px; color: #5b2fd0; }
+/* (tester's notes, 12 Oct) a category's name is a heading across the road (a sign, not a button to tap) */
+.sp-stop.grp, .simple-screen .sp-stop.grp { flex-direction: row; gap: 10px; width: auto; max-width: calc(100% - 24px); transform: translate(-50%, -50%); padding: 6px 20px 6px 8px; border-radius: 999px; background: #5b2fd0; box-shadow: 0 4px 0 rgba(40, 20, 100, .35); pointer-events: none; z-index: 2; }
+.sp-stop.grp .sp-hpic { width: 48px; height: 48px; border-radius: 50%; background: #fff; display: grid; place-items: center; flex: none; }
+.sp-stop.grp .sp-hpic .art, .sp-stop.grp .sp-hpic .emo { width: 34px; height: 34px; font-size: 30px; }
+.sp-stop.grp .sp-name { background: none; padding: 0; font-size: 22px; color: #fff; max-width: none; white-space: nowrap; }
 /* round M: festival decorations live on the festival page, behind the grown-ups' press and hold */
 .fest-grown { margin-top: 18px; border-top: 2px dashed rgba(138, 92, 246, .25); padding-top: 14px; }
 .fest-grown .grown.fest-hold { position: relative; left: auto; bottom: auto; right: auto; top: auto; display: flex; align-items: center; gap: 8px; width: 100%; min-height: 56px; border-radius: 18px; padding: 10px 16px; font: inherit; color: inherit; }
@@ -2217,7 +2239,6 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .wardrobe.kward .wrow { flex-wrap: nowrap; align-items: flex-start; } .wardrobe.kward .wslot { align-self: stretch; }
 .wardrobe.kward .wchips { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; min-width: 0; }
 @media (max-height: 820px) { .wardrobe.kward.little .wrow .chip { min-width: 64px; height: 64px; } .wardrobe.kward .wrow { padding: 3px 4px; } .wardrobe.kward { max-height: 84dvh; } }
-.bag-top .bagshop { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--line); background: #fff; display: inline-flex; align-items: center; justify-content: center; padding: 0; flex: none; } .bag-top .bagshop .art { width: 30px; height: 30px; } .bag-top .bagshop.little { width: 64px; height: 64px; }
 /* mystery boxes, rankings, the collection book */
 .kcard .khub { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; padding: 8px 0 12px; }
 .kcard .khb { position: relative; width: 112px; height: 112px; border-radius: 28px; border: 0; background: #fff; box-shadow: 0 4px 0 rgba(90, 60, 130, .14); display: flex; align-items: center; justify-content: center; }

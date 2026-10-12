@@ -254,7 +254,7 @@ function jumpNav(root, after) {
   const hs = [...root.querySelectorAll(':scope > h3, :scope h3.jump')].filter(h => h.textContent.trim());
   if (hs.length < 4) return;
   const nav = el('div', 'jumpnav');
-  hs.forEach((h, k) => { const b = el('button', '', esc(h.textContent.trim().replace(/\s+/g, ' ').slice(0, 26))); b.onclick = () => { SFX.tap(); h.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; nav.appendChild(b); h.style.scrollMarginTop = '64px'; });
+  hs.forEach((h, k) => { const t = [...h.childNodes].filter(n => n.nodeName !== 'SMALL').map(n => n.textContent).join('').trim().replace(/\s+/g, ' '), b = el('button', '', esc([...t].length > 26 ? [...t].slice(0, 25).join('') + '…' : t)); b.onclick = () => { SFX.tap(); h.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; nav.appendChild(b); h.style.scrollMarginTop = '64px'; });
   (after && after.parentNode === root ? after : root.firstElementChild).insertAdjacentElement('afterend', nav);
 }
 // ---------- Grown-ups: the recorded voices at a glance ----------
@@ -338,7 +338,7 @@ export function openGrownups(after) {
       <div>
       </div>
             <div class="field"><label>${T('Camera', 'Góc nhìn')}</label><div class="seg cam"><button data-c="easy" class="${settings.camMode !== 'free' ? 'on' : ''}">🧸 ${T('Easy: fixed view from above', 'Dễ: nhìn từ trên, cố định')}</button><button data-c="free" class="${settings.camMode === 'free' ? 'on' : ''}">🧭 ${T('Explorer: drag to look around', 'Tự do: kéo để xoay')}</button></div></div>
-      <div class="field"><label>${T('Graphics', 'Đồ họa')}</label><div class="seg q">${['low', 'auto', 'high'].map(q => `<button data-q="${q}" class="${settings.quality === q ? 'on' : ''}">${{ low: T('Fast', 'Nhanh'), auto: T('Auto', 'Tự động'), high: T('Pretty', 'Đẹp') }[q]}</button>`).join('')}</div></div>
+      <div class="field"><label>${T('Graphics', 'Đồ họa')}</label><div class="seg q">${['low', 'auto', 'high', 'max'].map(q => `<button data-q="${q}" class="${settings.quality === q ? 'on' : ''}">${{ low: T('Fast', 'Nhanh'), auto: T('Auto', 'Tự động'), high: T('Pretty', 'Đẹp'), max: T('Pretty+', 'Đẹp+') }[q]}</button>`).join('')}</div></div>
       
       </div></details>
       <details class="gsec" data-sec="time" ${gOpen.has('time') ? 'open' : ''}><summary><span class="gi">🌙</span><b>${T('Play time', 'Giờ chơi')}</b></summary><div class="gbody">
@@ -836,7 +836,7 @@ export function openPad(game, i, tab) {
     const dishes = Object.entries(p.dishes).filter(([, n]) => n > 0);
     body.innerHTML = `
       ${(p.pets || []).length ? `<button class="btn wide" id="bagPets">🐾 ${T('My pets', 'Thú cưng của con')}: ${(p.pets || []).map(pt => (PET_ICON[pt.kind] || '🐾') + ' ' + esc(pt.name || '')).join('  ')}</button>` : ''}
-      <div class="bag-top"><button class="chip" data-chip="money" title="${T('Coins', 'Đồng xu')}">💰 ${fmt(farm.coins)}</button><button class="chip" data-chip="orbs" title="${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}">🔮 ${p.orbs} ${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}</button><button class="chip" data-chip="leafy" title="${T('Leafies', 'Bạn Lá')}">🍃 ${Object.keys(p.leafies).length}/24 ${T('Leafies', 'Bạn Lá')}</button>${game.shop && game.shop.on() && game.heroes.length < 2 ? `<button class="bagshop${p.age !== 'big' ? ' little' : ''}" id="bagShop" aria-label="${T('Clothes shop', 'Cửa hàng quần áo')}">${pic('🛍️')}</button>` : ''}</div>
+      <div class="bag-top"><button class="chip" data-chip="money" title="${T('Coins', 'Đồng xu')}">💰 ${fmt(farm.coins)}</button><button class="chip" data-chip="orbs" title="${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}">🔮 ${p.orbs} ${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}</button><button class="chip" data-chip="leafy" title="${T('Leafies', 'Bạn Lá')}">🍃 ${Object.keys(p.leafies).length}/24 ${T('Leafies', 'Bạn Lá')}</button></div>
       <h3>${T('Food', 'Món ăn')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
       <div class="slots">${dishes.map(([id, n]) => { const r = dishInfo(id) || { icon: '🥘', name: () => T('Mystery stew', 'Món hầm bí ẩn') }; return `<button class="slot" data-eat="${id}" title="${esc(r.name())}"><span>${r.icon}</span><b>${n}</b><small>${esc(r.name())}</small></button>`; }).join('') || `<p class="note">${T('Cook at a cooking pot to make food.', 'Nấu ăn ở nồi nấu để có món ăn.')}</p>`}</div>
       <h3>🛍️ ${T('From shops and stalls', 'Mua ở quán và sạp')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
@@ -857,8 +857,7 @@ export function openPad(game, i, tab) {
       ${game.hoilang ? game.hoilang.bagHTML(p) : ''}
       <h3>${T('Glider', 'Cánh lượn')}</h3>
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
-    jumpNav(body, body.querySelector('.bag-top'));
-    const toShop = body.querySelector('#bagShop'); if (toShop) toShop.onclick = () => { SFX.tap(); close(); setTimeout(() => game.shop.openShop(i), 220); }; // (Bug #29) one small way into the clothes shop, right here, no travel
+    // (tester's notes, 12 Oct) no row of jump buttons in the bag: its sections are short, and the buttons were not understood
     body.querySelectorAll('[data-eat]').forEach(b => b.onclick = () => { game.eat(hero, b.dataset.eat); draw(); });
     body.querySelectorAll('[data-snack]').forEach(b => b.onclick = () => { eatSnack(game, hero, b.dataset.snack, true); draw(); });
     body.querySelectorAll('[data-sellgem]').forEach(b => b.onclick = () => {
@@ -880,11 +879,15 @@ export function openPad(game, i, tab) {
   const sideHTML = () => { const list = game.sideStories ? game.sideStories() : []; if (!list.length) return '';
     return `<h3>${T('Side stories', 'Truyện phụ')}</h3><div class="sides">${list.map(sd => { const st = sd.status(p), on = p.follow === sd.id;
       return `<div class="side ${st.done ? 'done' : ''}"><span>${pic(sd.icon)}</span><div><b>${esc(sd.title())}</b><small>${st.done ? T('Finished!', 'Xong rồi!') : esc(st.step)}</small></div>${st.done || !st.started ? '' : `<button class="btn ${on ? 'on' : ''}" data-follow="${sd.id}">${on ? T('Following', 'Đang theo') : T('Follow', 'Theo truyện này')}</button>`}</div>`; }).join('')}</div>`; };
+  // (tester's notes, 12 Oct) what a dish not cooked yet needs: every ingredient, the ones in the bag bright with a tick,
+  // the ones still to find faded, so a child can see what is collected for which recipe
+  const recNeed = r => r.need.map((n, k) => { const have = (p.inv[n] || 0) >= r.need.slice(0, k + 1).filter(x => x === n).length;
+    return `<i class="${have ? 'have' : 'miss'}">${ITEMS[n].icon}${have ? '<b class="tick">✅</b>' : ''}</i>`; }).join(' + ');
   function drawLog(body) {
     const next = game.currentQuest(p);
     body.innerHTML = (game.parents ? game.parents.logHTML(p) : '') + sideHTML() + (game.coop ? game.coop.html() : '') + (game.chests ? game.chests.html(p) : '') + `<h3>${T('Main adventure', 'Cuộc phiêu lưu chính')}</h3><ol class="quests">${QUESTS.map(q => { const done = !!p.quests[q.id] || (q.check && q.check(p)); return `<li class="${done ? 'done' : q === next ? 'now' : ''}"><span>${done ? '✅' : q.icon}</span>${esc(q.title())}</li>`; }).join('')}</ol>
       <p class="note">✨ ${T('Shrines solved', 'Đền đã giải')}: ${Object.keys(p.shrines).length}/12 · 🗼 ${T('Towers', 'Tháp')}: ${Object.keys(p.towers).length}/4 · 🍳 ${T('Recipes', 'Công thức')}: ${Object.keys(p.dishes).length}/${RECIPES.length}</p>
-      <h3>${T('Recipe book', 'Sổ công thức')}</h3><div class="recipes">${RECIPES.map(r => { const known = p.dishes[r.id] != null; return `<div class="rec ${known ? '' : 'unk'}"><span>${known ? r.icon : '❔'}</span><small>${known ? esc(r.name()) : r.need.map((n, k) => k === 0 ? ITEMS[n].icon : '❔').join(' + ')}</small></div>`; }).join('')}</div>`;
+      <h3>🍳 ${T('Cooking recipes', 'Sổ công thức nấu ăn')}</h3><div class="recipes">${RECIPES.map(r => { const known = p.dishes[r.id] != null; return `<div class="rec ${known ? '' : 'unk'}"><span>${known ? r.icon : '❔'}</span><small>${known ? esc(r.name()) : recNeed(r)}</small></div>`; }).join('')}</div>`;
     body.querySelectorAll('[data-follow]').forEach(b => b.onclick = () => { p.follow = p.follow === b.dataset.follow ? null : b.dataset.follow; saveProfiles(); SFX.ok(); game.checkQuests && game.checkQuests(hero); draw(); });
     game.parents && game.parents.bindLog(body, hero, draw); // (round S) a grown-up holds ✓ on a family mission
   }

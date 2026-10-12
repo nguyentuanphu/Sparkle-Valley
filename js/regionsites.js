@@ -80,6 +80,7 @@ export function createRegionSites(G) {
     const [ix, iz] = bridge ? [x, z] : id === 'thehuc' ? [x - 7, z] : [x + Math.sin(rot) * 9, z + Math.cos(rot) * 9]; // (on the shore for the lake, by the bridge's end for a bridge)
     const sg = sprite('ℹ️', 1.5); sg.position.set(ix, heightAt(ix, iz) + 3.2, iz); scene.add(sg); world.updaters.push((dt, t) => { sg.position.y = heightAt(ix, iz) + 3.2 + Math.sin(t * 2 + x) * .25; });
     const lm = { id, icon, cc: c.cc, x: ix, z: iz, mx: x, mz: z, name: () => T(name[0], name[1]), fact }; LANDMARKS.push(lm);
-    G.interactables.push({ id: 'pc_' + id, x: ix, z: iz, r: 3.4, icon: 'ℹ️', label: () => T('About: ', 'Tìm hiểu: ') + lm.name(), act: h => postcard(G, h, lm) });
+    const pc = { id: 'pc_' + id, x: ix, z: iz, r: 3.4, icon: 'ℹ️', label: () => T('About: ', 'Tìm hiểu: ') + lm.name(), act: h => postcard(G, h, lm) };
+    G.interactables.push(pc); sg.userData.it = pc; (G.tapTargets = G.tapTargets || []).push(sg); // (tester's notes, 12 Oct) tap the sign: walk up and read it
   }
 }

@@ -27,7 +27,7 @@ export function createSeeThrough(G) {
   const collect = () => {
     cands = [];
     scene.traverse(o => {
-      if (!o.isMesh || o.isInstancedMesh || o.userData.outline || o.userData.noCam || o.userData.road || o === G.world.terrain || !o.visible) return;
+      if (!o.isMesh || o.isInstancedMesh || o.userData.outline || o.userData.noCam || o.userData.road || o.userData.roomShape || o === G.world.terrain || !o.visible) return; // (a room's walls and floor are one shape: never fade the whole room)
       const mt = o.material; if (!mt || Array.isArray(mt) || mt.transparent || mt.side === THREE.BackSide || mt.isMeshBasicMaterial) return;
       if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
       sph.copy(o.geometry.boundingSphere).applyMatrix4(o.matrixWorld);
