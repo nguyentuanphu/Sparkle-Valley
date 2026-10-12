@@ -2876,6 +2876,33 @@ await check('dayplan', async () => {
   return `${r.n} villagers with a job picture; at night ${r.night.inside} go home through their door, ${r.night.lamps} light a lantern, ${r.night.lights} stall lanterns; all back out in the morning; umbrellas in the rain; nobody on a road or in a house`;
 });
 
+await check('animalhomes', async () => {
+  // (Round U) animals with homes: Lotus Village's hens walk into their coop at dusk and come out in the morning; the
+  // ducks gather in the middle of the lake for the night; the village dog follows a child who visits, then goes home
+  const P = await open(b, { w: 900, h: 640 });
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, W = G.world, h = G.heroes[0], wait = ms => new Promise(r => setTimeout(r, ms)), S = await import('/js/state.js');
+    for (let k = 0; k < 80 && !G.animalHomes; k++) await wait(100);
+    const A = G.animalHomes; let t = 0; S.settings.alwaysDay = false;
+    const run = secs => { G.paused = false; for (let i = 0; i < secs * 10; i++) { t += .1; W.update(.1, t); } G.paused = true; };
+    const V = G.PLACES.find(p => p.key === 'village'); h.place(A.coop.x + 6, A.coop.z + 6); G.paused = true;
+    const spread0 = A.ducks.reduce((s, c) => s + Math.hypot(c.cx - A.lake[0], c.cz - A.lake[1]), 0) / A.ducks.length;
+    W.time = .86; run(45);
+    const night = { hensIn: A.hens.filter(a => a.inside).length, hens: A.hens.length, littleIn: A.critHens.filter(c => c.inside).length, little: A.critHens.length, ducks: A.ducks.reduce((s, c) => s + Math.hypot(c.cx - A.lake[0], c.cz - A.lake[1]), 0) / A.ducks.length };
+    W.time = .4; run(30);
+    const day = { hensOut: A.hens.filter(a => !a.inside && a.m.visible).length, littleOut: A.critHens.filter(c => !c.inside && c.s.visible).length, ducks: A.ducks.reduce((s, c) => s + Math.hypot(c.cx - A.lake[0], c.cz - A.lake[1]), 0) / A.ducks.length };
+    // the dog: the child stands beside it, then walks off a few metres; the dog comes along
+    const d = A.dog.m.position; h.place(d.x + 3, d.z); run(1); const h0 = [h.pos.x, h.pos.z]; h.place(h0[0] + 6, h0[1] + 2); run(8);
+    const follows = !!A.dog.following && Math.hypot(d.x - h.pos.x, d.z - h.pos.z) < 4;
+    h.place(V.x + 80, V.z + 80); run(1); const goneHome = !A.dog.following;
+    G.paused = false;
+    return { coop: !!A.coop, night, day, spread0: +spread0.toFixed(1), follows, goneHome };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.coop && r.night.hens >= 3 && r.night.hensIn === r.night.hens && r.night.littleIn === r.night.little && r.night.ducks < r.spread0 * .6 && r.day.hensOut === r.night.hens && r.day.littleOut === r.night.little && r.day.ducks > r.night.ducks && r.follows && r.goneHome && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.night.hens} hens and ${r.night.little} little hens into the coop at night and out in the morning; ducks together on the lake at night; the village dog follows a visiting child and goes home`;
+});
+
 await check('names', async () => {
   // every game file: no name used that is never defined or imported (TypeScript's TS2304 on all of js/, nothing else
   // judged). Moving code between files (the architecture steps) is where this goes wrong; it once stopped the game.

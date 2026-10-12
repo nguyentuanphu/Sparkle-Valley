@@ -1717,7 +1717,8 @@ import('./villagertalk.js').then(m => m.createVillagerTalk(G)).then(() => import
 import('./pricetags.js').then(m => m.createPriceTags(G));
 import('./jobs.js').then(m => m.createJobs(G));
 import('./wayfind.js').then(m => m.createWayfind(G));   // (Round U) "Where is…?" sparkles
-G.openWhere = i => G.wayfind && G.wayfind.open(i);   // (Round U) a job board in every place   // (Round U) a coin-picture price over every food stall
+G.openWhere = i => G.wayfind && G.wayfind.open(i);
+import('./animalhomes.js').then(m => m.createAnimalHomes(G));   // (Round U) animals with homes   // (Round U) a job board in every place   // (Round U) a coin-picture price over every food stall
 // (Round U) a tap on a coin, orb or Leafy chip (top bar, Backpack) says what it is (js/chipinfo.js, loaded on the first tap)
 document.addEventListener('click', e => { const c = e.target.closest && e.target.closest('[data-chip]'); if (c) import('./chipinfo.js').then(m => m.showChip(c.dataset.chip, c)); });
 import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });
