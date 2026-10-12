@@ -239,6 +239,10 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   place, villager, shop and songs; Studio Releases switch `autoplay`, for every device or chosen devices; unlimited
   stamina and hearts; speeds Watch, Fast and Jump; the children's progress is put back afterwards.
 
+- Tester's notes ("Notes on SV", 14 notes, 12 Oct): the owner said **this chat fixes all 14** on `core/play`, across
+  cores (Kid UI, World, Voice & Audio, main.js), and **the shop button goes in the bottom bar** beside the Bag (this
+  reverses the shop button inside the bag from Bug #29; the Bag still only opens the backpack).
+
 ## Progress notes (12 Oct AEDT: Studio fixes and the auto play check)
 - Commits on `core/play`: f4dd7c6 (photos publish in steps), 0e7ddb1 (exe updates itself), c5846e3 (exe keeps its game
   folder new), e3171ac (auto play check), plus the two recorded words of the new Releases group ("For testing", Azure).

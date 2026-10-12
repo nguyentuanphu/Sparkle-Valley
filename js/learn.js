@@ -76,13 +76,14 @@ export function createLearning(G) {
     const mat = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, .06, 24), new THREE.MeshToonMaterial({ color: '#e8433a' })); mat.position.set(x, heightAt(x, z) + .04, z); scene.add(mat);
     const s = sprite('📖', 1.4); s.position.set(x, heightAt(x, z) + 2.2, z); scene.add(s); world.updaters.push((dt, t) => { s.position.y = heightAt(x, z) + 2.2 + Math.sin(t * 2) * .15; });
     G.interactables.push({ id: 'storytime', x, z, r: 3, icon: '📖', label: () => T('Story time under the banyan tree', 'Giờ kể chuyện dưới gốc đa'), act: h => openTales(h) });
-    // Bà Kể Chuyện, the storyteller grandma, sits by the mat
+    // Bà Năm, the storyteller grandma, sits by the mat. (tester's notes, 12 Oct) her name tag says Bà Năm, the name the
+    // story uses ("Ask Bà Năm where the lantern went"); it said Bà Kể Chuyện, so children looked for her in the houses
     const sx = x - 1.9, sz = z - .4, A = buildAvatar({ style: 'aodai', color: '#8a4a8a', hat: 'none', back: 'none', hair: '#e8e8e8', hairStyle: 'buns', skin: '#e8b48c', glider: 0 }, null);
     A.root.position.set(sx, heightAt(sx, sz), sz); A.root.rotation.y = Math.atan2(x - sx, z - sz); scene.add(A.root); world.colliders.push({ x: sx, z: sz, r: .45 });
     registerName('Bà Kể Chuyện', '📖');
     const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
     const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace;
-    const drawTag = () => { g.clearRect(0, 0, 256, 64); g.fillStyle = 'rgba(40,40,40,.55)'; g.beginPath(); g.roundRect(8, 10, 240, 46, 23); g.fill(); g.font = 'bold 26px Fredoka, "Baloo 2", sans-serif'; g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(T('Grandma Storyteller', 'Bà Kể Chuyện'), 128, 34, 228); tx.needsUpdate = true; };
+    const drawTag = () => { g.clearRect(0, 0, 256, 64); g.fillStyle = 'rgba(40,40,40,.55)'; g.beginPath(); g.roundRect(8, 10, 240, 46, 23); g.fill(); g.font = 'bold 26px Fredoka, "Baloo 2", sans-serif'; g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(T('Grandma Năm', 'Bà Năm'), 128, 34, 228); tx.needsUpdate = true; };
     drawTag(); onLang(drawTag);
     const tg = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, transparent: true, depthWrite: false })); tg.scale.set(3, .75, 1); tg.position.set(sx, heightAt(sx, sz) + 2.4, sz); scene.add(tg);
     world.updaters.push((dt, t) => A.anim(Math.floor(t * .4) % 3 === 0 ? 'wave' : 'idle', t, 0));

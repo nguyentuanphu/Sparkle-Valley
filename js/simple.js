@@ -116,11 +116,17 @@ export function createSimple(G) {
     for (let k = 0; k < n; k++) pts.push({ x: 104 + k * gx, y: mid + (k % 2 ? 26 : -26) });
     return { pts, w: 104 + n * gx, lw: gx - 16 };
   }
-  // where each stop sits: a snake of rows across the screen, joined by a winding road
-  function layout(n, w, tall) {
+  // where each stop sits: a snake of rows across the screen, joined by a winding road. (tester's notes, 12 Oct) a
+  // category's name is a heading across the road, on its own line, not a stop: the next row starts below it
+  function layout(n, w, tall, heads = []) {
     const cols = w < 520 ? 2 : w < 820 ? 3 : w < 1100 ? 4 : 5, gx = w / cols, gy = Math.max(200, tall + 40), pts = [];
-    for (let k = 0; k < n; k++) { const r = Math.floor(k / cols), c = k % cols, cc = r % 2 ? cols - 1 - c : c; pts.push({ x: gx * (cc + .5), y: 76 + r * gy + (c % 2) * 18 }); }
-    return { pts, h: 76 + (Math.ceil(n / cols) - 1) * gy + tall + 40, lw: Math.min(230, gx - 14), gx };
+    let top = 0, r = 0, c = 0, low = 0;
+    for (let k = 0; k < n; k++) {
+      if (heads[k]) { if (c) { top += gy; r++; c = 0; } pts.push({ x: w / 2, y: top + 40 }); low = Math.max(low, top + 100); top += 84; continue; }
+      const cc = r % 2 ? cols - 1 - c : c; pts.push({ x: gx * (cc + .5), y: top + 76 + (c % 2) * 18 }); low = Math.max(low, top + 76 + tall + 40);
+      if (++c === cols) { c = 0; r++; top += gy; }
+    }
+    return { pts, h: low, lw: Math.min(230, gx - 14), gx };
   }
   const roadWide = pts => pts.map((q, k) => k ? `C${pts[k - 1].x + 70},${pts[k - 1].y} ${q.x - 70},${q.y} ${q.x},${q.y}` : `M${q.x - 120},${q.y} L${q.x},${q.y}`).join(' ');
   const road = pts => pts.map((q, k) => { if (!k) return `M${q.x},${q.y}`; const a = pts[k - 1], my = (a.y + q.y) / 2; return a.y === q.y || Math.abs(a.y - q.y) < 40 ? `C${(a.x + q.x) / 2},${a.y - 30} ${(a.x + q.x) / 2},${q.y + 30} ${q.x},${q.y}` : `C${a.x + (a.x < q.x ? 90 : -90)},${my} ${q.x + (a.x < q.x ? -90 : 90)},${my} ${q.x},${q.y}`; }).join(' ');
@@ -133,16 +139,16 @@ export function createSimple(G) {
     const path = m.querySelector('.sp-path'), sc = m.querySelector('.sp-scroll'), isWide = wide();
     m.classList.toggle('wide', isWide); m.classList.toggle('big', !lt);
     const next = list.findIndex(s => s.max && !s.stars), H = sc.clientHeight || innerHeight - 80, W = path.clientWidth || innerWidth;
-    const place = tall => isWide ? layoutWide(list.length, H, tall) : layout(list.length, W, tall);
+    const place = tall => isWide ? layoutWide(list.length, H, tall) : layout(list.length, W, tall, list.map(s => s.kind === 'head'));
     let L = place(230);
     path.style.setProperty('--lw', L.lw + 'px');
     path.innerHTML = `<svg class="sp-road" aria-hidden="true"><path/><path class="dash"/></svg>` +
-      list.map((s, k) => `<button class="sp-stop${s.kind === 'head' ? ' grp' : ''}${k === next ? ' next' : ''}${sel === idOf(s) ? ' sel' : ''}" data-k="${k}" aria-label="${esc(s.name)}">
+      list.map((s, k) => s.kind === 'head' ? `<div class="sp-stop grp" role="heading" aria-level="2" data-k="${k}" aria-label="${esc(s.name)}"><span class="sp-pic">${pic(s.icon)}</span><b class="sp-name">${esc(s.name)}</b></div>` : `<button class="sp-stop${k === next ? ' next' : ''}${sel === idOf(s) ? ' sel' : ''}" data-k="${k}" aria-label="${esc(s.name)}">
         <span class="sp-pic">${pic(s.icon)}${s.badge ? `<i class="sp-badge">${s.badge}</i>` : ''}${s.isNew ? `<i class="sp-new">${pic('✨')}</i>` : ''}${starsHTML(s)}</span>
         <b class="sp-name">${esc(s.name)}</b>${!lt && s.kind !== 'head' ? `<span class="sp-play">${T('Play', 'Chơi')} ▶</span>` : ''}</button>`).join('') +
       `<button class="sp-owl" aria-label="${T('Ông Cú', 'Ông Cú')}">${pic('🦉')}</button>`;
     // measure the tallest stop (its name may take two or three lines), then place them all
-    const btns = [...path.querySelectorAll('.sp-stop')], tall = Math.max(150, ...btns.map(b => b.offsetHeight));
+    const btns = [...path.querySelectorAll('.sp-stop')], tall = Math.max(150, ...btns.filter(b => !b.classList.contains('grp')).map(b => b.offsetHeight));
     L = place(tall);
     lay = L;
     const w = isWide ? L.w : W, h = isWide ? H : L.h, d = isWide ? roadWide(L.pts) : road(L.pts);
@@ -154,7 +160,7 @@ export function createSimple(G) {
     if (q) { const left = isWide ? false : q.x > W / 2, dx = isWide ? 0 : left ? -84 : 84; owl.style.left = q.x + dx + 'px'; owl.style.top = (isWide ? q.y - 96 : q.y) + 'px'; owl.classList.toggle('left', left); owl.classList.toggle('up', isWide); }
     owl.onclick = () => { SFX.tap(); owl.classList.remove('cheer'); void owl.offsetWidth; owl.classList.add('cheer'); const s = list[next >= 0 ? next : 0]; if (s) say(s.voice[0], s.voice[1]); };
     m.querySelectorAll('.sp-tabs [data-tab]').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
-    path.querySelectorAll('.sp-stop').forEach(b => b.onclick = () => go(list[+b.dataset.k], b));
+    path.querySelectorAll('button.sp-stop').forEach(b => b.onclick = () => go(list[+b.dataset.k], b));
   }
   // the tap: grow, bounce and sparkle at once, say the name, then open it (twice-tapping can't start it twice)
   function go(s, btn) {

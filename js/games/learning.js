@@ -4,6 +4,7 @@ import { register, untilRight, choiceButtons } from './frame.js';
 import { T, numWord } from '../i18n.js';
 import { settings } from '../state.js';
 import { shuffle, pick, el, wait } from '../util.js';
+import { animalCall } from '../audio.js';
 
 const FRUIT = ['🍎', '🍌', '🍓', '🍊', '🥭', '🍐', '🍇', '🥝'];
 const vi = () => settings.lang === 'vi';
@@ -97,12 +98,12 @@ register({
       api.dots(rounds, r); api.stage.innerHTML = '';
       const [snd, ic, en, vn] = list[r];
       const play = el('button', 'choice bigplay', '🔊'); api.stage.appendChild(play);
-      const hear = () => api.sfx[snd] && api.sfx[snd](); play.onclick = hear;
-      api.say('Listen! Which animal makes this sound?', 'Nghe nè! Con vật nào kêu như vậy?'); await wait(1600); hear();
+      const hear = () => animalCall(snd); play.onclick = hear;
+      api.say('Listen! Which animal makes this sound?', 'Nghe nè! Con vật nào kêu như vậy?'); await wait(2600); if (api.closed) return; hear();
       const opts = shuffle([list[r], ...shuffle(VOICES.filter(v => v !== list[r])).slice(0, api.level <= 1 ? 1 : 2)]);
       const btns = choiceButtons(api, opts, ([, i, e, v]) => `<span class="big">${i}</span><small>${T(e, v)}</small>`);
       const ok = await untilRight(api, btns, e => e._v[0] === snd); if (!ok) return;
-      hear(); api.say(`Yes! The ${en}!`, `Đúng rồi! Là ${vn}!`); await wait(1600);
+      api.say(`Yes! The ${en}!`, `Đúng rồi! Là ${vn}!`); await wait(1500); hear(); await wait(2200);
     }
     api.dots(rounds, rounds); return api.win();
   }

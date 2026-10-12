@@ -1166,7 +1166,7 @@ await check('films', async () => {
       // (the story's own films come from js/content/chapters.js, the fairy tales from js/talesdata.js)
       const { STORY_TALES } = await import('/js/content/chapters.js'), st = STORY_TALES[id];
       openTheatre(MORE_TALES.find(t => t.id === id) || (st && { ...st, title: () => st.title[0], ctx: { name: 'Na', companion: 'firefly' } }), { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); // (loaded when the story opens)
-      document.querySelector('.th-auto').click();
+      document.querySelector('.th-pause').click();
       if (!document.querySelector('.theatre.film canvas.th-film')) out.bad.push(id + ': no 3D stage');
       await run(id, C.FILMS[id].pages.length);
       document.querySelector('.th-x').click(); await new Promise(r => setTimeout(r, 400));
@@ -1403,7 +1403,7 @@ await check('chapter2', async () => {
       const F = await import('/js/film.js'), C = await import('/js/content/films.js'); await import('/js/content/chapter2films.js');
       const { STORY_TALES } = await import('/js/content/chapters.js'), { openTheatre } = await import('/js/tales.js'), st = STORY_TALES.lantern_ch2, bad = [];
       openTheatre({ ...st, story: true, title: () => st.title[0], ctx: { name: 'Na', companion: 'dragon' } }, { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100));
-      document.querySelector('.th-auto')?.click(); const f = F.filmNow(); if (!f) return ['no film'];
+      document.querySelector('.th-pause')?.click(); const f = F.filmNow(); if (!f) return ['no film'];
       const frame = () => new Promise(r => requestAnimationFrame(r));
       for (let k = 0; k < C.FILMS.lantern_ch2.pages.length; k++) { const done = f.page(k); let ended = false; done.then(() => { ended = true; }); const p = f.now; f.narrated();
         for (let i = 0; i < 600 && !ended; i++) { if (p.hold) p.release(true); p.t += .2; await frame(); }
@@ -1533,7 +1533,7 @@ await check('chapter3', async () => {
       const F = await import('/js/film.js'), C = await import('/js/content/films.js'); await import('/js/content/chapter3films.js');
       const { STORY_TALES } = await import('/js/content/chapters.js'), { openTheatre } = await import('/js/tales.js'), st = STORY_TALES.lantern_ch3, bad = [];
       openTheatre({ ...st, story: true, title: () => st.title[0], ctx: { name: 'Na', companion: 'dragon' } }, { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100));
-      document.querySelector('.th-auto')?.click(); const f = F.filmNow(); if (!f) return ['no film'];
+      document.querySelector('.th-pause')?.click(); const f = F.filmNow(); if (!f) return ['no film'];
       const frame = () => new Promise(r => requestAnimationFrame(r)); let helps = 0;
       for (let k = 0; k < C.FILMS.lantern_ch3.pages.length; k++) { const done = f.page(k); let ended = false; done.then(() => { ended = true; }); const p = f.now; f.narrated();
         for (let i = 0; i < 600 && !ended; i++) { if (p.hold) { helps++; p.release(true); } p.t += .2; await frame(); }
@@ -1715,9 +1715,10 @@ await check('shop', async () => {
     // the Bag button (Bug #29, owner 10 Oct: "bag is bag"): it opens the backpack, with one small shop button that opens the
     // shop right there, no travel; the stall in the valley stays
     p.age = 'big'; G.addCoins(500 - S.farm.coins); const pos0 = { x: h.pos.x, z: h.pos.z }; G.huds[0].root.querySelector('.dk.bag').click(); await w(500);
-    const sb = document.querySelector('.modal.pad .bagshop'); out.bagOpens = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk') && !!sb;
+    // (tester's notes, 12 Oct; owner: "bottom bar") the shop button sits beside the Bag in the dock, not inside the bag
+    const sb = G.huds[0].root.querySelector('.dk.shop'); out.bagOpens = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk') && !document.querySelector('.modal.pad .bagshop') && !!sb && !sb.hidden;
     out.bagShopBtn = sb ? (() => { const q = sb.getBoundingClientRect(); return q.width >= 44 && q.height >= 44; })() : false;
-    sb && sb.click(); await w(700);
+    document.querySelector('.modal.pad .x, .modal.pad .pad-x')?.click(); G.closePad && G.closePad(0); await w(300); sb && sb.click(); await w(700);
     out.there = Math.hypot(h.pos.x - pos0.x, h.pos.z - pos0.z) < 1 && !document.querySelector('.modal.pad'); const card = document.querySelector('.modal.shopk .card');
     out.opened = !!card; out.tabs = card ? card.querySelectorAll('.ktab').length : 0; out.noBagTab = card ? !card.querySelector('[data-go="bag"]') : false;
     // (nothing to read: each thing is a drawing and a number; the words inside a drawing, like the coin's "$", are part
@@ -1764,7 +1765,7 @@ await check('shop', async () => {
   });
   const errs = P.errors; await P.ctx.close(); const bad = [];
   if (!r.offRoad || !r.nearMarket || !r.dry || !r.tap) bad.push('the shop is not by the market on dry ground off the road ' + JSON.stringify(r.spot));
-  if (!r.bagOpens || !r.bagShopBtn) bad.push('the Bag button does not open the backpack with one small shop button ' + JSON.stringify({ o: r.bagOpens, b: r.bagShopBtn }));
+  if (!r.bagOpens || !r.bagShopBtn) bad.push('the Bag button does not open the backpack, or no shop button beside it in the dock ' + JSON.stringify({ o: r.bagOpens, b: r.bagShopBtn }));
   if (!r.there || !r.opened) bad.push('the shop button in the bag did not open the shop right there (no travel)');
   if (r.tabs !== 7 || !r.noBagTab || !r.pics || r.small) bad.push(`the shop card: ${r.tabs} tabs, pictures ${r.pics}, ${r.small} buttons under 44 px`);
   if (!r.bought || !r.poorKept || !r.closed) bad.push('buying ' + JSON.stringify({ bought: r.bought, poor: r.poorKept, closed: r.closed }));

@@ -3,7 +3,7 @@
 // "Go inside" takes the child into the house: a room furnished the way that kind of home really is (a family
 // altar and wooden sofa in a Vietnamese tube house, a verandah lounge in an Aussie cottage, a charpai and
 // rangoli in India…), with the family there to talk to, and the door back out.
-import { THREE, P, merge, toonVC, sprite } from './gfx.js';
+import { THREE, P, merge, toonVC } from './gfx.js';
 import { T, nm, onLang, registerName } from './i18n.js';
 import { heightAt, regionAt, REGION_NAMES, TOWN } from './world.js';
 import { WORLD as MAP_WORLD } from './content/map.js';
@@ -205,8 +205,9 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
       G.interactables.push(it); roomItems.push(it);
     });
     if (!fam.length && home.room !== 'huenghi' && !home.mine) { // nobody named lives here: the family's grandma says hello
-      const gm = person(['Bà Năm', look('aodai', '#c0503a', GREY, 'buns'), 0], RX - 1.5, RY, RZ - 1.2, 0); g.attach(gm.A.root); g.attach(gm.tg); live.push(gm); roomPeople.push(gm);
-      const it = { id: 'inroom_g', x: RX - 1.5, z: RZ - .4, y: RY, r: 1.7, icon: '💬', bubble: '💬', label: () => nm('Bà Năm'), act: () => G.dialog('Bà Năm', [(KNOCK[home.kind] || KNOCK.tube)[0]]) };
+      // (tester's notes, 12 Oct) she is the family's Bà Nội, not Bà Năm: Bà Năm is the storyteller the story sends you to
+      const gm = person(['Bà Nội', look('aodai', '#c0503a', GREY, 'buns'), 0], RX - 1.5, RY, RZ - 1.2, 0); g.attach(gm.A.root); g.attach(gm.tg); live.push(gm); roomPeople.push(gm);
+      const it = { id: 'inroom_g', x: RX - 1.5, z: RZ - .4, y: RY, r: 1.7, icon: '💬', bubble: '💬', label: () => nm('Bà Nội'), act: () => G.dialog('Bà Nội', [(KNOCK[home.kind] || KNOCK.tube)[0]]) };
       G.interactables.push(it); roomItems.push(it);
     }
     if (home.room === 'huenghi') ['Bà Huệ', 'Ông Nghi'].forEach((n, j) => {
@@ -217,7 +218,7 @@ export function createHomes(G, { KNOCK, GIFTS, give, sfx, say }) {
     if (!home.mine) {
       const info = { id: 'home_info', x: RX + 5, z: RZ + 3.6, y: RY, r: 1.6, icon: 'ℹ️', bubble: 'ℹ️', label: () => T('About this house', 'Về ngôi nhà này'), act: () => about(home) };
       G.interactables.push(info); roomItems.push(info);
-      const sign = sprite('ℹ️', .9); sign.position.set(5, 1.6, 3.6); g.add(sign);
+      // (tester's notes, 12 Oct) no floating (i) sign in the room: it could not be tapped and looked like a button
     }
     // a home can add its own things to the room (the child's own house: js/myhouse.js)
     if (home.extra) home.extra(g, { RX, RY, RZ, add: it => { G.interactables.push(it); roomItems.push(it); } });

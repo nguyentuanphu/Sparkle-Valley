@@ -201,18 +201,23 @@ register({
     show();
     const tune = [523, 587, 659, 523, 659, 698, 784, 698, 659, 587];
     for (let L = 0; L < layers; L++) {
-      api.dots(layers, L); msg.textContent = '🎵';
+      // (tester's notes, 12 Oct) the game's own tune is the only music (no background music under it), so a child hears
+      // it stop; a big dancing note while it plays, a big stop sign and the child holding the gift lit up when it stops
+      api.dots(layers, L); msg.innerHTML = '<b class="pnote">🎵</b>'; w.classList.add('playing'); w.querySelectorAll('.pk').forEach(k => k.classList.remove('hold'));
       // the last layer always lands with the player (it's their game!)
       const stopAt = L === layers - 1 || (api.little && L % 2 === 0) ? 0 : Math.floor(rand(1, kids.length));
       const steps = kids.length * 2 + ((stopAt - at + kids.length * 3) % kids.length);
-      for (let s = 0; s < steps; s++) { if (api.closed) return; tone(tune[s % tune.length], .2, { type: 'triangle', vol: .12 }); at = (at + 1) % kids.length; show(); await wait(api.little ? 300 : 240); }
-      msg.textContent = T('Music stops!', 'Nhạc dừng!'); api.sfx.whoosh(); await wait(600);
+      for (let s = 0; s < steps; s++) { if (api.closed) return; tone(tune[s % tune.length], .22, { type: 'triangle', vol: .24 }); if (s % 2 === 0) tone(tune[s % tune.length] / 2, .3, { type: 'sine', vol: .14 }); at = (at + 1) % kids.length; show(); await wait(api.little ? 300 : 240); }
+      w.classList.remove('playing'); w.querySelectorAll('.pk')[at].classList.add('hold');
+      msg.innerHTML = `<b class="pstop">⏸</b>${T('Music stops!', 'Nhạc dừng!')}`; api.sfx.whoosh(); await wait(900);
       if (at !== 0) {
         const pz = pick(PRIZES);
         msg.textContent = T(`${kids[at].n} rips a layer... ${pz}!`, `${kids[at].n} bóc một lớp... ${pz}!`); api.say(`${kids[at].n} found a little surprise!`, `${kids[at].n} được một món quà nhỏ!`); await wait(1800); continue;
       }
-      msg.textContent = T('Your turn! Tap to rip the paper!', 'Đến lượt con! Chạm để xé giấy!'); api.say('Your turn! Rip the paper!', 'Đến lượt con! Xé giấy nào!');
+      msg.textContent = T('Your turn! Tap the present to rip the paper!', 'Đến lượt con! Chạm vào món quà để xé giấy!'); api.say('Your turn! Tap the present to rip the paper!', 'Đến lượt con! Chạm vào món quà để xé giấy!');
+      pp.classList.add('mine');
       for (let tear = 0; tear < 4; tear++) { await tapOne([pp]); if (api.closed) return; api.sfx.pop(tear); pp.classList.remove('rip'); void pp.offsetWidth; pp.classList.add('rip'); }
+      pp.classList.remove('mine');
       const last = L === layers - 1, pz = last ? '🏆' : pick(PRIZES);
       const card = el('div', 'pprize', `<b>${pz}</b>${last ? T('The big prize!', 'Giải thưởng lớn!') : T('A surprise!', 'Quà bất ngờ!')}`); w.appendChild(card); api.right(pp);
       // a little question hides in some layers

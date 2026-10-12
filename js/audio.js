@@ -286,6 +286,12 @@ export const Music = {
   // the music fades out over a few seconds (the lullaby sleep timer), then stops
   fadeOut(sec = 6) { if (musicBus && AC) { const g = musicBus.gain, now = AC.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(0, now + sec); } if (filePlayer) { const v0 = filePlayer.volume, t0 = Date.now(), iv = setInterval(() => { const k = (Date.now() - t0) / (sec * 1000); filePlayer.volume = Math.max(0, v0 * (1 - k)); if (k >= 1) clearInterval(iv); }, 200); }
     setTimeout(() => { this.stop(); this.pinned = false; if (musicBus) musicBus.gain.value = settings.calm ? .17 : .35; }, sec * 1000 + 100); },
+  // the music dips for a few seconds (an animal's call in a listening game), then comes back
+  duck(sec = 2, to = .03) {
+    const full = settings.calm ? .17 : .35;
+    if (musicBus && AC) { const g = musicBus.gain, now = AC.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(to, now + .15); g.setValueAtTime(to, now + sec); g.linearRampToValueAtTime(full, now + sec + .5); }
+    if (filePlayer) { const v = settings.calm ? .45 : .8; filePlayer.volume = v * .1; clearTimeout(this.duckT); this.duckT = setTimeout(() => { if (filePlayer) filePlayer.volume = v; }, sec * 1000 + 300); }
+  },
   refresh() { if (musicBus) musicBus.gain.value = settings.calm ? .17 : .35; const k = this.key; this.stop(); if (k) this.play(k); },
   songName() { return SONGS[this.key] ? SONGS[this.key].name : ''; },
   tick() {
@@ -295,3 +301,14 @@ export const Music = {
     else if (sg) { const d = 60 / sg.bpm / 2; while (this.next < AC.currentTime + .2) { songStep(sg, this.step, this.next); this.next += d; this.step++; } }
   }
 };
+
+// (tester's notes, 12 Oct) an animal's call for the listening games: about two seconds long (the call again until it
+// fills them), louder than the other sounds, with the music dipped under it, so a child can tell which animal it is
+const CALL_LEN = { moo: 1.1, quack: .35, woof: .35, meow: .75, baa: .75, oink: .45, cluck: .75, neigh: .8, ribbit: .32, hoot: .65 };
+export function animalCall(name, sec = 2) {
+  const f = SFX[name], a = ac(); if (!f) return;
+  Music.duck(sec + .3);
+  if (a && sfxBus) { const g = sfxBus.gain, now = a.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(1.6, now); g.setValueAtTime(1.6, now + sec + .2); g.linearRampToValueAtTime(.7, now + sec + .5); }
+  const gap = (CALL_LEN[name] || .8) + .3;
+  for (let t = 0; t < sec - .1; t += gap) setTimeout(() => f(), t * 1000);
+}
