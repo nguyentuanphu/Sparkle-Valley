@@ -133,4 +133,7 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
   skipped (no local PeerJS / MQTT servers here): multiplayer, netgames, together, meet, cloud, knock, mapver.
   Checks run for this core: startup (3 runs plus 2 on 56d9578), boot, offline, studio, report, saves, cloud (skipped),
   photo, unit, familyphotos, nostudio: all pass except startup.
+- **12 Oct, 6:30 am AEDT: `startup` ratchet after r63.** The Voice & Audio fix (voice list after the title) went live in
+  r63; `startup` on r63, two runs: first download 979 KB both times, so `firstKB` lowered 1035 -> 1000. Still red on the
+  title (1.6-2.2 s against 1.1 s x machine speed): World's; ready 20.3-25.3 s, freeze 4.2-4.9 s.
 
