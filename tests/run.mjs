@@ -3730,6 +3730,58 @@ await check('onlineoff', async () => {
   ok(r.setting === false && r.off && !r.buttons && Object.values(r.guide).every(Boolean) && Object.keys(r.guide).length === 5 && r.code === null && !r.role && !r.peer && !r.door && !r.cloud && !r.beacon && !r.pres && !r.ws && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return 'a fresh device: "Playing with friends is off. Ask a grown-up to turn it on.", no Start or Join; a grown-ups\' note names Internet and playing online → Use the internet (EN and VI, no Studio) and its press-and-hold button opens that section (a tap does not); host, join and friends make no connection';
 });
+// (Play reading trial, owner 11 Oct 2026 AEDT; docs/cores/play-reading.md) the ten reading games behind Studio's readingTrial
+await check('reading', async () => {
+  const { solveReading } = await import('./readsolve.mjs'), RD = await import('../js/content/reading.js');
+  const IDS = ['rd_trace', 'rd_sounds', 'rd_build', 'rd_rhyme', 'rd_sight', 'rd_tones', 'rd_syllable', 'rd_match', 'rd_sentence', 'rd_readalong'], BIG_ONLY = ['rd_sight', 'rd_match', 'rd_sentence'];
+  // the word lists: both languages, every picture drawn, every line to record listed in both languages
+  const lines = RD.readingLines(), en = lines.filter(l => l.lang === 'en').length, vi = lines.filter(l => l.lang === 'vi').length;
+  ok(en > 150 && vi > 150, `lines to record: en ${en}, vi ${vi}`);
+  for (const k of ['letters', 'build', 'rhyme', 'sight', 'syl', 'sent', 'books']) ok(RD.READ.en[k] && RD.READ.vi[k] && RD.READ.en[k].length && RD.READ.vi[k].length, 'a list missing in one language: ' + k);
+  ok(['ă', 'â', 'đ', 'ê', 'ô', 'ơ', 'ư'].every(c => RD.READ.vi.letters.some(x => x[0] === c)), 'Vietnamese letters without ă â đ ê ô ơ ư');
+  ok(RD.nameOf('en', 'z') === 'zed', 'Z is not said "zed"');
+  ok(RD.READ.en.letters.slice(0, 6).map(x => x[0]).join('') === 'satpin', 'English sounds do not start s a t p i n');
+  const allEn = JSON.stringify(RD.READ.en), us = ['color', ' mom', 'candy', 'Mom'].filter(w => allEn.includes(w)); ok(!us.length, 'American words in the English lists: ' + us.join(', '));
+  // switch off (no Studio setting): nothing of the trial loads or shows
+  const P = await open(b, { w: 1024, h: 768 }); const asked = []; P.page.on('request', q => { if (/reading(menu)?\.js/.test(q.url())) asked.push(q.url().split('/').pop()); });
+  await clear(P.page);
+  const off = await P.page.evaluate(async () => { const F = await import('/js/games/frame.js'), A = await import('/js/content/activities.js'); __sv.openGamesHub(0); await new Promise(r => setTimeout(r, 300)); const hub = [...document.querySelectorAll('[data-play]')].map(b => b.dataset.play); document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
+    return { games: Object.keys(F.GAMES).filter(k => /^rd_/.test(k)), inArea: A.gamesIn(F.GAMES, 'reading', false).length, hub: hub.filter(k => /^rd_/.test(k)) }; });
+  await P.ctx.close();
+  ok(!off.games.length && !off.inArea && !off.hub.length && !asked.length, 'with the switch off: ' + JSON.stringify({ off, asked }));
+  // switch on (Studio's content pack): the ten games are in the Reading corner, in the Learning tab; their code loads only when one opens
+  const Q = await open(b, { w: 1024, h: 768, play: false }); const asked2 = []; Q.page.on('request', q => { if (/reading(menu)?\.js/.test(q.url())) asked2.push(q.url().split('/').pop()); });
+  await Q.page.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), readingTrial: true }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
+  await Q.page.reload(); await start(Q.page); await clear(Q.page);
+  await Q.page.waitForFunction(async () => Object.keys((await import('/js/games/frame.js')).GAMES).filter(k => /^rd_/.test(k)).length === 10, null, { timeout: 30000 }).catch(() => { });
+  const on = await Q.page.evaluate(async () => { const F = await import('/js/games/frame.js'), A = await import('/js/content/activities.js'); __sv.openGamesHub(0); await new Promise(r => setTimeout(r, 300)); document.querySelector('.hubtabs [data-tab="learn"]')?.click(); await new Promise(r => setTimeout(r, 200));
+    const hub = [...document.querySelectorAll('.hubbody [data-play]')].map(b => b.dataset.play), head = [...document.querySelectorAll('.hubbody .hubarea')].map(h => h.textContent); document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
+    return { games: Object.keys(F.GAMES).filter(k => /^rd_/.test(k)), big: A.gamesIn(F.GAMES, 'reading', false).map(g => g.id), little: A.gamesIn(F.GAMES, 'reading', true).map(g => g.id), hub: hub.filter(k => /^rd_/.test(k)), head }; });
+  ok(IDS.every(id => on.games.includes(id) && on.big.includes(id) && on.hub.includes(id)) && on.head.some(h => /Reading corner/.test(h)), 'with the switch on: ' + JSON.stringify(on));
+  ok(BIG_ONLY.every(id => !on.little.includes(id)) && on.little.length === 7, 'under-5s see: ' + on.little.join(','));
+  ok(!asked2.includes('reading.js'), 'the games\' code loaded before a game opened: ' + asked2.join(','));
+  // every game finishes for an under-5 (no losing: three stars) and for a big kid at Easy, Medium and Hard, in both languages;
+  // nothing is left behind when a game ends
+  const bad = [], left = [];
+  for (const lang of ['en', 'vi']) {
+    await Q.page.evaluate(async lang => { const S = await import('/js/state.js'); S.settings.lang = lang; }, lang);
+    for (const id of IDS) for (const [level, little] of [[1, true], [1, false], [2, false], [3, false]]) {
+      if (little && BIG_ONLY.includes(id)) continue;
+      const r = await solveReading(Q.page, id, { level, little, timeout: 90000 });
+      if (!r.ok || !r.won || (little && r.stars !== 3)) bad.push(`${lang} ${id} ${little ? 'under-5' : 'level ' + level}: ${JSON.stringify(r).slice(0, 160)}`);
+      await Q.page.waitForTimeout(400);
+      const rest = await Q.page.evaluate(() => document.querySelectorAll('.gl, .rd-lantern, .rd-pond, .rd-sky, .rd-train, .rd-page').length); if (rest) left.push(`${lang} ${id}`);
+      await Q.page.evaluate(() => document.querySelectorAll('.gl').forEach(e => e.remove()));
+    }
+  }
+  ok(!bad.length, bad.slice(0, 6).join(' | '));
+  ok(!left.length, 'still on screen after the game ended: ' + left.join(', '));
+  ok(asked2.includes('reading.js'), 'the games\' code never loaded');
+  const errs = Q.errors.slice(); await Q.ctx.close();
+  ok(!errs.length, errs.slice(0, 5).join(' | '));
+  return `switch off: nothing loads or shows; on: 10 games in the Reading corner (7 for under-5s), all finish at Easy, Medium, Hard and for under-5s in English and Vietnamese; ${en} English and ${vi} Vietnamese lines`;
+});
+
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);

@@ -41,3 +41,6 @@ export const RELEASES = [
   ...FESTCAL.map(F => ({ id: 'fest_' + F.id, en: F.en, vi: F.vi, group: 'festivals', def: true, icon: F.icon }))
 ];
 export const RELEASE_GROUPS = { story: ['The lantern story', 'Truyện đèn lồng'], kids: ['For little ones', 'Cho các bé'], rewards: ['Shop and rewards', 'Cửa hàng và phần thưởng'], world: ['In the valley', 'Trong thung lũng'], festivals: ['Festivals', 'Lễ hội'], tools: ['For testing', 'Để thử'] };
+// (Play reading trial, owner 11 Oct 2026 AEDT) the ten reading games: off until an admin switches them on
+RELEASES.push({ id: 'readingTrial', en: 'Reading games (trial): ten games in the Reading corner, in English or Vietnamese by the language setting', vi: 'Trò chơi tập đọc (thử nghiệm): mười trò ở Góc đọc, tiếng Anh hoặc tiếng Việt theo ngôn ngữ đã chọn', group: 'trial', def: false });
+RELEASE_GROUPS.trial = ['Trials', 'Thử nghiệm'];
