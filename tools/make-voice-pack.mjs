@@ -105,6 +105,11 @@ try {
     for (const t of tplParts) { if (t.lang !== l.lang) continue; const m = t.re.exec(text); if (!m) continue; for (const w of m.slice(1)) { const x = partText(w); if (x && !CHILD.test(x) && x.length < 60) jobs.push({ lang: l.lang, text: x, area: t.area, part: true, pri: 39, alt: 'world' }); } break; }
   }
 } catch (e) { }
+// (Play reading trial, owner 11 Oct 2026 AEDT) the reading games' words, letter names and sounds, đánh vần lines and sentences
+// (js/content/reading.js), in the language being read; English sounds ("/s/") are made from their phonetic spelling below
+const READING = await import('../js/content/reading.js');
+for (const l of READING.readingLines()) jobs.push({ lang: l.lang, text: l.text, area: 'games', pri: 40, alt: 'games' });
+const readingSsml = (j, v) => { const L = /^\/(\w+)\/$/.exec(j.lang === 'en' ? j.text : ''), ipa = L && READING.SOUND_IPA[L[1]]; return ipa ? `<speak version='1.0' xml:lang='en-AU'><voice name='${v}'><phoneme alphabet='ipa' ph='${ipa}'>${L[1]}</phoneme></voice></speak>` : null; };
 // one job per recording; a line used in several areas downloads with the first it is needed in (the core first)
 const RANK = a => a === 'core' ? 0 : a === 'world' ? 3 : GROUPS.includes(a) ? 2 : 1;
 const uniq = new Map(); jobs.forEach(j => { const h = lineHash(j.lang, j.text), o = uniq.get(h); if (!o || RANK(j.area) < RANK(o.area)) uniq.set(h, j); });
@@ -276,7 +281,7 @@ async function azure() {
     const wait = next - Date.now(); next = Math.max(next, Date.now()) + gap; if (wait > 0) await new Promise(r => setTimeout(r, wait));
     const v = voices[j.lang][slot].id;
     // (round R) Vietnamese names and dishes inside an English line are said by the Vietnamese voice of the same man or woman
-    const ssml = j.lang === 'en' && mixed(j.text) ? mixedSsml(viRuns(j.text), v, voices.vi[slot].id) : `<speak version='1.0' xml:lang='${LOCALE[j.lang]}'><voice name='${v}'>${xml(j.text)}</voice></speak>`;
+    const ssml = readingSsml(j, v) || (j.lang === 'en' && mixed(j.text) ? mixedSsml(viRuns(j.text), v, voices.vi[slot].id) : `<speak version='1.0' xml:lang='${LOCALE[j.lang]}'><voice name='${v}'>${xml(j.text)}</voice></speak>`); // (Play reading trial: readingSsml)
     for (let attempt = 0; ; attempt++) {
       let r;
       // a dropped connection (socket closed, timeout) is tried again, like a busy server, instead of stopping the run

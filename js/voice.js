@@ -302,12 +302,15 @@ export const voicePack = () => PACK;
 // Lines asked for before the list has arrived (slow phone networks at start-up) wait for it, so they are spoken
 // with the recorded voice too instead of the phone's own voice.
 let packTried = false;
-// (round R, PERF-001) fetched on the first tap or key press, or after 8 s, whichever is first: nothing is spoken before a
+// (round R, PERF-001) fetched on the first tap or key press, or soon after the valley is ready: nothing is spoken before a
 // child taps, so the title screen comes up without it
 let packReady = null;
 const loadPack = () => packReady || (packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; voiceDiag.pack = 'ok'; autoSavePack(); } else { voiceDiag.pack = 'missing'; packEmit({ state: 'nopack' }); } }).catch(() => { voiceDiag.pack = 'offline'; packEmit({ state: 'nopack' }); }).finally(() => { packTried = true; }));
 for (const ev of ['pointerdown', 'keydown', 'touchstart']) addEventListener(ev, loadPack, { once: true, capture: true, passive: true });
-setTimeout(loadPack, 8000);
+// (owner, 11 Oct AEDT; Release, PERF-001) without a tap it comes a few seconds after the valley is ready (main.js sets
+// G.bootTimes then), not at a fixed 8 s: on a slow tablet the valley took longer than that, so the list (about 120 KB)
+// was part of the start-up download. 30 s at the latest, in case the valley never says it is ready.
+{ const t0 = Date.now(), wait = setInterval(() => { const g = window.__sv; if (packReady) return clearInterval(wait); if ((g && g.bootTimes) || Date.now() - t0 > 30000) { clearInterval(wait); setTimeout(loadPack, 3000); } }, 500); }
 const waitPack = () => PACK || packTried ? null : Promise.race([loadPack(), new Promise(r => setTimeout(r, 12000))]);
 const packListeners = []; let packLast = null;
 export const onPackProgress = f => { packListeners.push(f); if (packLast) try { f(packLast); } catch (x) { } }; // (a late listener hears where it is now)

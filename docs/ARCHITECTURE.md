@@ -662,6 +662,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | WORLD-011 | Scale: child 1.6 m, adult 2.0 m, grandparent 1.8 m; doors ≥ 1.4 × 2.4 m; steps ≤ 0.4 m (G2) | Consistency | MINOR | data (catalogue) | — |
 | WORLD-012 | No clutter: ≤ 1 big focal object per 10 m of street; ≥ 40 % open ground (G11) | Readability | MINOR | data [IMPR] + visual | — |
 | WORLD-013 | Garden plots (round T3): at least 60 (two Memory Villages, up to three spare by each city); each level within 5 cm, off roads and water, its front within 2 m of a road's edge, a unique id and address, nothing standing on it; one garden mesh for all | Families place the homes they remember | MAJOR | check `plots` | plot kept as a garden |
+| WORLD-014 | Footsteps by surface (round T4a): `surfaceAt` tells road (asphalt and town paving), dirt (dirt roads and footpaths), sand (the beach), wood (bridge decks and piers), water (the shallows) and grass apart, and a step plays that surface's sound | A child hears where they walk | MINOR | check `surface` | the step of before |
 
 ### 9.4 Roads (R1–R12)
 
@@ -675,13 +676,15 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | ROAD-006 | R6 | Outside towns only T-junctions; junctions ≥ 20 m apart on a road; parallel roads ≥ 12 m apart; no crossing without a junction | MAJOR | data [IMPR] | — |
 | ROAD-007 | R7 | A named road end = its gate anchor (0 m gap); **one welcome gate per village or city** (owner, Round U, 11 Oct), across its main road (a city's first gate); other named road ends come in through a plain opening; gate square; opening ≥ road + 1 m each side; bilingual sign | BLOCKER | check `roads` (one gate per place, on its main road) + data | — |
 | ROAD-008 | R8 | Every village and city reachable by asphalt; dead ends only at a gate, landmark or pier | BLOCKER | check `roads` | — |
-| ROAD-015 | R3 | (Round U, owner 11 Oct) No step where roads join: along every road and 3 m into a road it joins, the ground a child walks on never jumps more than 0.06 m from one 25 cm step to the next (road to road, road to bridge deck, road to a place's level) | MAJOR | check `joins` | the road is held at a bridge deck's height over its 1.2 m apron |
+| ROAD-017 | R3 | (Round U, owner 11 Oct) No step where roads join: along every road and 3 m into a road it joins, the ground a child walks on never jumps more than 0.06 m from one 25 cm step to the next (road to road, road to bridge deck, road to a place's level) | MAJOR | check `joins` | the road is held at a bridge deck's height over its 1.2 m apron |
 | ROAD-009 | R9 | River crossings within ± 20° of square, straight ≥ 6 m each side; nothing on decks | MAJOR | data [IMPR] | — |
 | ROAD-010 | R10 | Lines only on asphalt; plain at junctions; zebra only in towns | MINOR | visual | — |
 | ROAD-011 | R11 | Pond footpaths 1.5–2.5 m from water (measured from the path's edge) | MINOR | checks `village`, `validate` | — |
 | ROAD-012 | R12 | Soft verge blend 0.3–0.5 m with flowers along it | MINOR | visual | — |
 | ROAD-013 | — | Inside a village a road takes the village's level; at a junction the side road takes the through road's exact height | BLOCKER | check `flat`, `roadshape` | — |
 | ROAD-014 | — | Every asphalt road carries its region's colour (red Vietnam, orange Australia, purple mountains, blue coast, plain grey home); the ring road is closed (round T2) | MINOR | check `roadtone` | — |
+| ROAD-015 | — | Road markings by region (round T4a, owner): Vietnam's asphalt a yellow centre dash, Australia's white lines with concrete kerbs; town main streets brick (Vietnam) or paving (Australia); dirt roads red earth | MINOR | check `roadtone` | — |
+| ROAD-016 | — | Every gate can be walked through (r63): from 8 m outside to 3 m inside along its road nothing solid is in the way, and the ground never steps more than 25 cm; a road's end at a gate meets the place at its own level | MAJOR | check `gates` | — |
 
 ### 9.5 Buildings, NPCs, animals, vehicles, river
 
@@ -707,6 +710,8 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | RIVER-005 | Every boat route stays in water deep enough for its hull and fits under every deck it passes (round T2) | BLOCKER | check `boats` |
 | RIVER-006 | Every pier's land end joins a road or footpath (round T2) | MAJOR | check `boats` |
 | RIVER-007 | Every boat the map gives two piers runs between them (the Sydney Harbour ferry; the Sài Gòn boat to Vũng Tàu, round T3) | MAJOR | check `boats` |
+| RIVER-008 | The water map (round T4a): every river, lake and the sea in its own colour (Sông Hồng red-brown, the sea blue), deeper water darker, a foam line along every shore; still one water plane and one draw, the picture 1024 px or smaller, painted once and read back from the device on the next start | MAJOR | check `water` |
+| RIVER-009 | Reeds along the banks and water hyacinth in the quiet waters (round T4a): two instanced meshes; none on a road, bridge deck or pier, hyacinth never on a boat route | MAJOR | check `water` |
 
 ### 9.6 Activities, UI, content, voice, privacy, Studio
 
@@ -715,6 +720,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | ACT-001 | Under-5 mode never punishes: no losing, no timers, no reading needed | BLOCKER | check `games` |
 | ACT-002 | Every game: id, both languages, how-to film, Next/Stop at the end, tap outside to exit | MAJOR | check `games`, `phone` |
 | ACT-003 | After an activity ends, nothing it created stays alive (timers, listeners, audio, DOM) | MAJOR | integration [IMPR] |
+| ACT-004 | Games with friends are between the children only (r63, owner): no computer players join (Tiến Lên seats just the children, 2 to 4); the child who invites chooses the level (1 to 5) for everyone, and for Caro the board (3 × 3 to 19 × 19; squares stay 44 px, a big board scrolls) | MAJOR | check `friendgames`, `unit` (netgames) |
 | UI-001 | Every player-facing text is bilingual (`T()` / `[en,vi]`) | BLOCKER | check `language` |
 | UI-002 | No phone emoji anywhere (game, Studio, painted signs and labels): every emoji has a drawing (`js/art.js`) and `js/emojiswap.js` swaps any emoji on the page or painted on a canvas for it (owner, round R) | MAJOR | check `emoji noemoji` |
 | UI-003 | Close/Save/Next always fully on screen at 320–390 px; no sideways scroll | BLOCKER | check `phone`, `spill` |
@@ -745,6 +751,7 @@ The design-handbook aliases (G1–G11, R1–R12) map onto these ids and stay val
 | PRIV-012 | Family photos are family-only (owner, 9 Oct): photo faces and Family album pictures are never public files of the website or files in GitHub; Sparkle Studio keeps them in the private family store (Netlify Blobs `family-photos`, or the exe's own folder outside the game) under random names of 24+ characters, `content/custom.json` names them `family:<name>`, and `/api/family/<name>` gives one only with the family code (header `x-family-code`, compared in constant time, 10 wrong codes lock a connection for 15 minutes, `Cache-Control: private`); the game keeps them in the `sv-family` cache, the service worker never caches `api/` | BLOCKER | `unit` (privacy) + check `familyphotos` + check `studio` |
 | PRIV-013 | Sparkle Studio online: every admin signs in with two steps (password, then a TOTP code: HMAC-SHA1, 30 s, one step either side, a code taken once) unless the owner chose the password only for that account in Setup → Admins (owner, 9 Oct; two-step is the default, changing it signs that person out); the owner signs in with STUDIO_PASSWORD only (owner, 11 Oct), passwords of 12 characters or more (STUDIO_PASSWORD too, or signing in is refused with the reason), 10 wrong tries on an account or from a connection lock it for 15 minutes, every sign-in and every opening of the Analytics is in the access log (town and country only, never the address), and Sign everyone out ends every cookie and exe key | BLOCKER | `unit` (privacy) + check `studio` |
 | PRIV-014 | The website's public doors are limited: `/api/hello` 60 requests a connection in 10 minutes; missing lines 10 a hello, 30 a device a day, 60 a connection a day, 200 new lines a day; `/api/live` never names who changed it; counters keep a keyed hash of the connection, never the address | MAJOR | `unit` (privacy) |
+| PRIV-015 | The microphone is off until the child turns it on (r63, owner): starting or joining a room never asks for it; the Mic button says Mic off or Mic on; its first tap asks (inside the tap, so an iPhone shows its question) and turns it on, the next turns it off | MAJOR | check `micoff` |
 | PERF-001 | First playable ≤ 8 s on a mid phone over 4G: ≤ 8 MB downloaded before the title screen; slow start-up work is kept on the device by build (`js/worldcache.js`: the map picture) | MAJOR | check `perf` (download, start-up times `G.bootTimes`, map picture read back) |
 | PERF-002 | ≥ 30 fps at quality Auto | MAJOR | real devices (the test browser draws in software) |
 | PERF-003 | < 250 draw calls and < 300k triangles a frame in a village (today about 1,000–1,400 and 0.6–0.75 M in Lotus Village: a ratchet that may only go down) | MAJOR | check `perf` |

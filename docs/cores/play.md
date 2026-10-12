@@ -110,6 +110,11 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
 - #32 (owner's correction, 11 Oct): nothing in the game sends a child to a festival; Play's part is `festivals.visit`, which now
   only tells (no travel), checked by `festivals`. The rest of #32 (the calendar box in settings, removing `settings.festival`)
   is Kid UI's (the robot's fix).
+- Festival places for Round T (owner's "go", 11 Oct AEST; Release → Play request T1/T3): **wait for r60** on `main` (and
+  `docs/cores/LOG-r60.md`) before starting; on 11 Oct `main` was r59 (934de81), so nothing was built. Then: merge `main` into
+  `core/play`; `js/festivals.js` `PLACES()` also finds `hoian` by its id from `js/content/map.js` (a site, so a ring round its
+  middle, no map files changed); `js/content/festcal.js` `where`: Hội An (`hoian`) gets Tết, Rằm tháng Giêng and Trung Thu,
+  Vũng Tàu (`vungtau`, already a city) gets Tết, Quốc khánh and Trung Thu. Checks `festivals festcal`, then the full suite.
 
 ## Owner's decisions (Chapter 2, 10 Oct AEST; the owner said "go" to the plan and its suggestions)
 - Tèo, Cô Tam and Bà Năm come to Hà Nội for Trung Thu: they stand there only while a child is in Chapter 2 (spots found
@@ -196,6 +201,53 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   the phone's voice as before.
 - **Full suite, 11 Oct 09:53 AEST, commit dc55967:** 88 of 88 passed (multiplayer, meet, netgames, together, cloud, knock
   skipped: no local PeerJS or MQTT server; they report as passed).
+
+## Festival places and #30 (r60 round, 11 Oct AEDT)
+- Built from `main` r60 (owner's "go" for the festival places, and "yes" to add #30), commit f43eb26 on `core/play`:
+  - `js/festivals.js`: `PLACES()` also finds `hoian` (`HOIAN` from `js/world.js`, a site: a ring of pieces round its middle);
+    Vũng Tàu was already a city. No map or world file changed.
+  - `js/content/festcal.js` `where`: Hội An gets Tết, Rằm tháng Giêng and Trung Thu; Vũng Tàu gets Tết, Quốc khánh and
+    Trung Thu.
+  - `js/content/activities.js` (#30, Kid UI's request): `asia` last in `PLACE_AREAS`; the Chinese and Indian stories after
+    "Our own stories" in `TALE_AREAS`.
+  - `js/simple.js` (Kid UI's file, one-line fix the reorder needs): the known story flags are every area except "Our own
+    stories", not the first four (otherwise Indian stories would also show under "Our own stories").
+  - `tests/run.mjs` `festivals`: the check's own copy of the festival places lists `hoian` too (it stopped with
+    "reading 'x0'" on a place it did not know); the same road, street and water tests apply to it.
+- Checks on f43eb26 (11 Oct, 8:57 pm AEDT): full suite 96 of 97 pass, of which 7 online checks say skipped (multiplayer,
+  netgames, together, meet, cloud, knock, mapver: no local PeerJS or MQTT server). `festivals` pass (Hội An 3 to 12 pieces,
+  Vũng Tàu 4 to 14, none on a road, street or water), `festcal` pass, `tales` pass. The first run reached the 90-minute
+  limit while `photo netmsg offline nostudio onlineoff` were running; run again on their own: all pass.
+  `startup` fails: PERF-001 first download 1077 KB > 1035 and title 1.8 s > 1.13 s; the same on `main` r60 (1077 KB,
+  1.75 s), so not from this change (Release's board requests to World and Voice & Audio).
+- Screenshots looked at: Hội An and Vũng Tàu with Trung Thu scheduled, on a phone (390x844), a tablet (820x1180) and a
+  computer (1366x820): lantern strings along the paths and the square, nothing over the buttons.
+- No new spoken lines.
+
+## Owner's decisions (12 Oct AEDT)
+- r63 deployed by this chat acting as Release for one round (owner: "push, check other branches and deploy altogether",
+  then "this chat does it now" and "yes, deploy"); live 12 Oct, 5:44 am AEDT (pull request #64).
+- Studio work asked of this chat by the owner (Studio's files, done on `core/play`):
+  - Real photos publish failed with 504 (online and in the exe): online Publish now goes in steps of 12 changes, GitHub
+    502/503/504 are retried, trees go 100 files at a time. Online needs the next deploy to get it.
+  - The exe updates itself from the GitHub branch `studio-exe` (`version.json` with the checksum); "Update now" banner and
+    Settings, Check for updates; a rebuild of the same version is offered too. `tools/publish-exe.sh` builds and publishes it.
+  - The exe keeps its game folder up to date from GitHub main (on start, every 30 minutes, Settings, Get the newest game),
+    keeps content, voice and photo changes not published yet, and downloads the game next to itself when there is none.
+    Save draft is refused from a game folder older than the website.
+- Auto play checker (owner's "go"): in-game window that walks to and opens every game, festival, folk show, story,
+  place, villager, shop and songs; Studio Releases switch `autoplay`, for every device or chosen devices; unlimited
+  stamina and hearts; speeds Watch, Fast and Jump; the children's progress is put back afterwards.
+
+## Progress notes (12 Oct AEDT: Studio fixes and the auto play check)
+- Commits on `core/play`: f4dd7c6 (photos publish in steps), 0e7ddb1 (exe updates itself), c5846e3 (exe keeps its game
+  folder new), e3171ac (auto play check), plus the two recorded words of the new Releases group ("For testing", Azure).
+- Checks (12 Oct, about 12:45 pm AEDT): `studio` pass (85 server messages in Vietnamese; photos in steps through a 504;
+  exe self-update, game folder update, fresh computer), `autoplay` pass (hidden on other devices and when off; 7 steps
+  at Fast; stamina full; progress put back), `festivals` `types` `unit` `arch` `rules` `preload` `emoji` `noemoji`
+  `boot` `voicecover` pass. **Full suite not run here: the owner said Release runs it** (a run was stopped early).
+- Screenshots looked at: the auto play window on a phone, a tablet and a computer, folded, open and running.
+- New check for the HANDOFF table (Release): `autoplay`.
 
 ## What is left for Play (handover, 11 Oct 1:30 pm AEST; this chat stopped here at the owner's request)
 - Done and pushed on `core/play` (e1c9552): owner's items 1 and 2 (see the notes above), board says "ready for Release".

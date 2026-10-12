@@ -4,6 +4,18 @@
 // reads every message the servers can send and fails if one has no line here.
 const ENV = 'Netlify (Site configuration → Environment variables)';
 export const VI_MESSAGES = [
+  // (owner, 12 Oct) the exe updating itself
+  [/^Looking at GitHub…$/, () => 'Đang xem GitHub…'],
+  [/^Your game folder is r(\d*) and the website is r(\d*): get the newest game first \(Settings, Get the newest game\)\.$/, (m) => `Thư mục game của bạn là r${m[1]}, trang web là r${m[2]}: hãy lấy game mới nhất trước (Cài đặt, Lấy game mới nhất).`],
+  [/^GitHub (\d+) while getting the newest game$/, (m) => `GitHub báo lỗi ${m[1]} khi lấy game mới nhất`],
+  [/^GitHub sent only part of the game: get it as a ZIP from GitHub instead\.$/, () => 'GitHub chỉ gửi một phần game: hãy tải tệp ZIP từ GitHub.'],
+  [/^Only SparkleStudio\.exe updates itself\.$/, () => 'Chỉ SparkleStudio.exe mới tự cập nhật.'],
+  [/^Already updating\.$/, () => 'Đang cập nhật rồi.'],
+  [/^No new Sparkle Studio on GitHub\.$/, () => 'Chưa có Sparkle Studio mới trên GitHub.'],
+  [/^The new SparkleStudio\.exe is not on GitHub\.$/, () => 'Chưa có SparkleStudio.exe mới trên GitHub.'],
+  [/^The download did not match its checksum: nothing was changed\.$/, () => 'Tệp tải về không khớp mã kiểm tra: chưa thay đổi gì.'],
+  [/^GitHub (\d+) while looking for a new Sparkle Studio$/, (m) => `GitHub báo lỗi ${m[1]} khi tìm Sparkle Studio mới`],
+  [/^Already the newest\.$/, () => 'Đã là bản mới nhất.'],
   [/^Please sign in\.$/, () => 'Vui lòng đăng nhập.'],
   [/^Too many wrong tries: wait 15 minutes\.$/, () => 'Sai quá nhiều lần: hãy chờ 15 phút.'],
   [/^Too many wrong tries: signing in is locked for (\d+) more minutes?\.?$/, (m) => `Sai quá nhiều lần: đăng nhập bị khóa thêm ${m[1]} phút.`],
