@@ -2466,3 +2466,13 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 .bag-top .chip.bagc i { font-style: normal; font-size: 22px; line-height: 1; } .bag-top .chip.bagc i .art { width: 24px; height: 24px; }
 .bag-top .chip.bagc b { font-size: 18px; line-height: 1.2; }
 .bag-top .chip.bagc small { font-size: 12px; line-height: 1.1; text-align: center; color: #6a5a8a; }
+/* (Round V, owner 13 Oct) the Simple screen as one page: each section's title, then its own little road of pictures */
+.sp-sec { position: relative; margin: 6px 0 18px; }
+.sp-sectitle { position: relative; z-index: 2; display: flex; align-items: center; gap: 10px; margin: 0 12px 4px; padding: 8px 14px; border-radius: 20px; background: rgba(255, 255, 255, .92); box-shadow: 0 3px 0 rgba(90, 60, 130, .12); font-size: clamp(18px, 4.6vw, 24px); color: #4a2f7a; min-height: 56px; }
+.sp-sectitle .sp-hpic { width: 44px; height: 44px; flex: none; } .sp-sectitle .sp-hpic .art { width: 100%; height: 100%; }
+.sp-sectitle b { flex: 1; } .sp-sectitle .sp-count { font-size: 15px; display: inline-flex; align-items: center; gap: 4px; } .sp-sectitle .sp-count .art { width: 20px; height: 20px; }
+.sp-secroad { position: relative; }
+.sp-secroad .sp-road { position: absolute; left: 0; top: 0; pointer-events: none; }
+.sp-path.secwide { display: flex; align-items: flex-start; gap: 16px; }
+.sp-path.secwide .sp-sec { flex: none; margin: 0; }
+.sp-path.secwide .sp-sectitle { margin: 6px 8px 2px; min-height: 48px; padding: 4px 12px; white-space: nowrap; }

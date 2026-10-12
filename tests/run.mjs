@@ -2696,20 +2696,19 @@ await check('simple', async () => {
   await P.page.waitForSelector('.simple-screen:not([hidden]) .sp-catcard, .simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
   await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
   const r = { start: true };
-  // (Round U, owner 11 Oct: separate sections; replaces bug #30's one long road) each tab first shows its categories as
-  // big picture cards; a card opens that category's own short road, with a big Back button to the cards
-  r.groupsFirst = await P.page.evaluate(() => { const v = __sv.simple.view, back = document.querySelector('.sp-back'); return v.cat === null && v.cats.length > 3 && !v.stops.length && document.querySelectorAll('.sp-catcard').length === v.cats.length && back.hidden && document.querySelectorAll('.sp-discover').length === 1; });
-  await P.page.locator('.sp-catcard').first().click(); await P.page.waitForTimeout(300);
-  r.section = await P.page.evaluate(() => { const v = __sv.simple.view, back = document.querySelector('.sp-back'), bb = back.getBoundingClientRect(); return { cat: v.cat, stops: v.stops.length, heads: document.querySelectorAll('.sp-stop.grp').length, back: !back.hidden && Math.min(bb.width, bb.height) >= 64 }; });
-  await P.page.click('.sp-back'); await P.page.waitForTimeout(300); r.backToCards = await P.page.evaluate(() => __sv.simple.view.cat === null && document.querySelectorAll('.sp-catcard').length > 3);
-  await P.page.locator('.sp-catcard').first().click(); await P.page.waitForTimeout(300);
+  // (Round V, owner 13 Oct: "one screen and scroll down, each has a title then games in roads with them, similar to the
+  // Khám phá tab"; replaces Round U's cards) every section of the tab on one page: its title, then its own road; the page scrolls
+  r.groupsFirst = await P.page.evaluate(() => { const v = __sv.simple.view, back = document.querySelector('.sp-back'), sc = document.querySelector('.sp-scroll'); return v.cat === null && v.cats.length > 3 && v.secs === v.cats.length && v.stops.length > 10 && back.hidden && document.querySelectorAll('.sp-discover').length === 1 && sc.scrollHeight > sc.clientHeight * 2; });
+  r.section = await P.page.evaluate(() => { const secs = [...document.querySelectorAll('.sp-sec')], t = secs[0] && secs[0].querySelector('.sp-sectitle'), tr = t && t.getBoundingClientRect(), first = secs[0] && secs[0].querySelector('.sp-stop'), fr = first && first.getBoundingClientRect();
+    return { cat: secs[0] && secs[0].dataset.cat, stops: secs[0] ? secs[0].querySelectorAll('.sp-stop').length : 0, heads: secs.every(x => x.querySelectorAll('.sp-sectitle').length === 1 && x.querySelector('.sp-road')) ? 1 : 0, back: !!(tr && fr && fr.top >= tr.bottom - 30) }; });   // (the road begins under its title)
+  r.backToCards = true;
   // round M: the game opens straight over the Simple screen (it never hides first, so the valley does not flash up)
   await P.page.evaluate(() => { window.__flash = false; const t = setInterval(() => { if (!__sv.simple.open) window.__flash = true; if (document.querySelector('.gl')) clearInterval(t); }, 20); });
   await P.page.locator('.sp-stop:not(.grp)').first().click(); await P.page.waitForSelector('.gl', { timeout: 10000 }); r.game = true; r.flash = await P.page.evaluate(() => window.__flash);
   await P.page.evaluate(() => document.querySelector('.gl-x').click());
   r.back = await P.page.waitForFunction(() => __sv.simple.open && !__sv.simple.busy && !document.querySelector('.gl'), null, { timeout: 8000 }).then(() => true, () => false); // free again at once
-  await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.waitForTimeout(300); r.talesCards = await P.page.evaluate(() => __sv.simple.view.cat === null);
-  await P.page.locator('.sp-catcard').first().click(); await P.page.waitForTimeout(300); await P.page.locator('.sp-stop:not(.grp)').first().click();
+  await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.waitForTimeout(300); r.talesCards = await P.page.evaluate(() => __sv.simple.view.cat === null && __sv.simple.view.secs > 1);
+  await P.page.locator('.sp-stop:not(.grp)').first().click();
   r.tale = await P.page.waitForSelector('.theatre', { timeout: 10000 }).then(() => true, () => false);
   await P.page.evaluate(() => document.querySelector('.theatre .th-x').click());
   for (let k=0;k<6;k++){ console.log('DBG', JSON.stringify(await P.page.evaluate(() => ({ open: __sv.simple.open, busy: __sv.simple.busy, th: document.querySelectorAll('.theatre').length, gl: !!document.querySelector('.gl'), paused: __sv.paused })))); await P.page.waitForTimeout(800);}
@@ -2732,7 +2731,7 @@ await check('simple', async () => {
   const S = await open(b, { w: 1280, h: 800, mode: 'split', screen: null }); await S.page.waitForTimeout(1500);
   r.split = await S.page.evaluate(() => ({ open: __sv.simple.open, dock: [...document.querySelectorAll('.simplesw')].some(d => !d.hidden) })); await S.ctx.close();
   ok(r.groupsFirst && r.section.cat && r.section.stops >= 1 && r.section.heads === 1 && r.section.back && r.backToCards && r.talesCards && !r.flash && r.game && r.back && r.tale && !r.valley.open && r.valley.screen === 'valley' && r.valley.dock && !r.valley.paused && r.reopen && r.wide.wide && r.wide.rail && r.wide.sideways && r.wide.inView && r.wide.big && !r.big && !r.split.open && !r.split.dock && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'under 5 starts on the category cards; a card opens its own short road, Back returns to the cards; a game and a story each two taps away, the road comes back after; Valley remembered; the “Big pictures” switch reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
+  return 'under 5 starts on one page of sections, each a title and its own road, scrolling down (like Khám phá); a game and a story each two taps away, the road comes back after; Valley remembered; the “Big pictures” switch reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
 });
 
 await check('adventure', async () => {
@@ -2744,20 +2743,17 @@ await check('adventure', async () => {
   const P = await open(b, { w: 390, h: 844, touch: true, screen: 'simple' });
   await P.page.waitForSelector('.simple-screen:not([hidden]) .sp-catcard, .simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
   await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
-  const r = {};
+  const r = {};   // (Round V, owner 13 Oct: one page that scrolls down, each section's title then its own road, like Khám phá)
   // the list: every game is placed exactly once, and nothing is listed that isn't a game
   r.list = await P.page.evaluate(async () => { const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), ids = Object.keys(GAMES), keys = Object.keys(A.GAME_INFO);
     return { missing: ids.filter(i => !A.GAME_INFO[i]), extra: keys.filter(k => !GAMES[k] && k !== 'familyquiz') /* Family Quiz is there only once the family has written questions in Studio */, badArea: keys.filter(k => !A.AREAS.some(a => a.key === A.GAME_INFO[k][0])), games: ids.length }; });
-  // walk every under-5 section (Round U: the category cards, then each category's own road)
+  // every under-5 section on the one page: its title (drawn picture and name) and its road of drawn pictures
   r.walk = await P.page.evaluate(async () => {
     const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), out = { notDrawn: [], tooBig: [] };
-    const cats = __sv.simple.view.cats, stops = []; let heads = 0;
-    document.querySelectorAll('.sp-catcard .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push(p.parentElement.getAttribute('aria-label')); });
-    for (const c of cats) {
-      __sv.simple.openGroup('games', c); const v = __sv.simple.view; stops.push(...v.stops); heads += document.querySelectorAll('.sp-stop.grp').length;
-      document.querySelectorAll('.sp-stop .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push(p.parentElement.getAttribute('aria-label')); });
-    }
-    __sv.simple.openGroup('games', null);
+    __sv.simple.openGroup('games', null); const v = __sv.simple.view, cats = v.cats, stops = v.stops.slice(), heads = document.querySelectorAll('.sp-sec .sp-sectitle').length;
+    const secCats = [...document.querySelectorAll('.sp-sec')].map(x => x.dataset.cat);
+    document.querySelectorAll('.sp-sectitle .sp-hpic, .sp-stop .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push((p.closest('[aria-label]') || p.parentElement).getAttribute('aria-label') || p.parentElement.textContent); });
+    if (JSON.stringify(secCats) !== JSON.stringify(cats)) out.notDrawn.push('sections ' + secCats.join(','));
     out.tooBig.push(...stops.filter(id => id !== 'songs' && A.gameInfo(id).ageMin >= 5));
     const want = Object.keys(GAMES).filter(id => A.gameInfo(id).ageMin < 5);
     const order = A.AREAS.map(a => a.key).filter(k => cats.includes(k));
@@ -2769,7 +2765,7 @@ await check('adventure', async () => {
   // Discover: a big picture for every area; tapping Music goes there
   await P.page.click('.sp-discover'); await P.page.waitForSelector('.sp-find:not([hidden]) .sp-card');
   r.find = await P.page.evaluate(() => ({ cards: document.querySelectorAll('.sp-card').length, search: !!document.querySelector('.sp-q') }));
-  await P.page.click('.sp-card[data-t="games"][data-a="music"]'); await P.page.waitForTimeout(200); r.music = await P.page.evaluate(() => { const h = [...document.querySelectorAll('.sp-stop.grp')].find(b => /Music|Âm nhạc/.test(b.getAttribute('aria-label'))), r = h && h.getBoundingClientRect(); return __sv.simple.view.cat === 'music' && r && r.top >= 0 && r.top < innerHeight / 2 ? 'music' : 'lost'; });
+  await P.page.click('.sp-card[data-t="games"][data-a="music"]'); await P.page.waitForTimeout(200); r.music = await P.page.evaluate(() => { const h = document.querySelector('.sp-sec[data-cat="music"] .sp-sectitle'), r = h && h.getBoundingClientRect(); return r && r.top >= 0 && r.top < innerHeight / 2 ? 'music' : 'lost'; });
   // a double tap starts the game once
   await P.page.evaluate(() => { window.__starts = 0; const pg = __sv.playGame; __sv.playGame = (...a) => { window.__starts++; return pg(...a); }; const s = [...document.querySelectorAll('.sp-stop:not(.grp)')].find(x => !/^(Songs|Bài hát)$/.test(x.getAttribute('aria-label'))); s.click(); s.click(); setTimeout(() => s.click(), 120); }); // (a game, not the Music group's 🎵 Songs)
   await P.page.waitForSelector('.gl', { timeout: 10000 }); await P.page.waitForTimeout(400);
@@ -2811,7 +2807,7 @@ await check('adventure', async () => {
   ok(r.leak.listeners <= 0 && r.leak.nodes <= 5 && r.leak.screens === 1, 'after 25 opens: ' + JSON.stringify(r.leak));
   ok(r.big.stops > 6 && r.big.dots && r.big.newOn.includes('Feed the Bunny') && r.big.newOn.length === 1 && !r.big.firstTap.game && r.big.firstTap.sel && r.big.secondTap && r.big.search.some(t => /Smash the Pot/.test(t)), 'big kid: ' + JSON.stringify(r.big));
   ok(!errs.length, errs.join(' | '));
-  return `${r.list.games} games in 11 areas; under-5: ${r.walk.cats} category cards, each its own road (${r.walk.stops} stops), every one drawn, China and India last in places; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
+  return `${r.list.games} games in 11 areas; under-5: one page of ${r.walk.cats} sections, each a title and its own road (${r.walk.stops} stops), every one drawn, China and India last in places; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
 });
 
 await check('gamelevel', async () => {
