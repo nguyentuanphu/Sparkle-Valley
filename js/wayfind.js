@@ -100,11 +100,13 @@ export function createWayfind(G) {
     return m;
   }
   // show the next stretch of sparkles ahead of the child; a new way if they wander off; done when they arrive
-  let acc = 0;
+  // (r67) the half-second look is timed by the clock, not by frames: with the battery round's frame caps a slow device
+  // draws few frames (each step's time is capped), and the sparkles fell behind the child
+  let last = 0;
   world.updaters.push((dt, time) => {
-    if (!trail) return; acc += dt; const { h, pts } = trail;
+    if (!trail) return; const { h, pts } = trail, now = performance.now();
     if (Math.hypot(h.pos.x - trail.t.x, h.pos.z - trail.t.z) < ARRIVE) { const t = trail.t; stop(true); SFX.ok && SFX.ok(); say(`You found ${t.name()}!`, `Con đến ${t.name()} rồi!`); return; }
-    if (acc > .5) { acc = 0;
+    if (now - last > 500) { last = now;
       let bi = trail.i, bd = 1e9; for (let k = Math.max(0, trail.i - 4); k < Math.min(pts.length, trail.i + 40); k++) { const d = Math.hypot(pts[k][0] - h.pos.x, pts[k][1] - h.pos.z); if (d < bd) { bd = d; bi = k; } }
       if (bd > 25) { if (!start(h, trail.t)) stop(true); return; }
       trail.i = bi;
