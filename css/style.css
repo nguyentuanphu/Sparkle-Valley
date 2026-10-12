@@ -205,7 +205,7 @@ select option { color: #000; }
 .travel { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); background: var(--panel2); border: 1px solid var(--cyan); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 8px; align-items: center; text-align: center; min-width: 240px; }
 .travel p { margin: 0; font-size: 18px; }
 .bag-top { display: flex; flex-wrap: wrap; gap: 8px; }
-.bag-top .chip { font-size: 15px; height: 38px; }
+.bag-top .chip { font-size: 15px; height: 44px; }
 .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; }
 .slot { position: relative; border: 1px solid var(--line); background: rgba(255, 255, 255, .06); border-radius: 14px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 92px; }
 .slot span { font-size: 34px; line-height: 1.1; }
@@ -2307,3 +2307,28 @@ button.chip { font: inherit; color: inherit; cursor: pointer; }
 .fmg .art, .fmg .emo { font-size: 28px; flex: none; }
 .fmready { display: flex; align-items: center; gap: 8px; min-height: 44px; }
 .fmhelp { min-width: 44px; min-height: 44px; vertical-align: middle; }
+
+/* (Round U, owner 11 Oct: separate sections) each tab's categories as big picture cards; a card opens its own short
+   road, and the big Back button (in the top bar) goes back to the cards */
+.sp-back { min-width: 64px; min-height: 64px; border-radius: 999px; border: 0; background: #fff; box-shadow: 0 4px 0 rgba(60, 100, 40, .3); display: flex; align-items: center; gap: 6px; padding: 0 16px 0 10px; font-size: 18px; font-weight: 700; color: #3d5a2a; }
+.sp-back[hidden] { display: none; }
+.sp-back .art, .sp-back .emo { width: 40px; height: 40px; font-size: 34px; }
+.simple-screen.cards .sp-me b { max-width: 40vw; }
+.sp-catgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 16px; padding: 12px 16px 96px; }
+.sp-catcard { min-height: 168px; border: 0; border-radius: 30px; background: rgba(255, 255, 255, .92); box-shadow: 0 6px 0 rgba(60, 100, 40, .3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px 8px; color: inherit; font-size: 19px; }
+.sp-catcard .sp-pic { box-shadow: none; background: #f4fbe9; }
+.sp-catcard .sp-name { text-align: center; line-height: 1.2; }
+.sp-catcard:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(60, 100, 40, .3); }
+.sp-count { display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 700; color: #7a5a10; }
+.sp-count .art, .sp-count .emo { width: 20px; height: 20px; font-size: 17px; }
+.sp-owl.oncards { position: relative; left: auto; top: auto; display: grid; margin: -80px auto 24px; transform: rotate(-8deg); }
+.simple-screen.wide .sp-catgrid { grid-auto-flow: column; grid-template-rows: repeat(2, minmax(0, 1fr)); grid-template-columns: none; grid-auto-columns: 150px; height: 100%; box-sizing: border-box; padding: 8px 16px; gap: 10px; }
+.simple-screen.wide .sp-catcard { min-height: 0; padding: 6px; gap: 4px; font-size: 16px; }
+.simple-screen.wide .sp-owl.oncards { display: none; }
+@media (max-width: 520px) { .simple-screen:not(.cards) .sp-me b { display: none; } .simple-screen:not(.cards) .sp-me { padding-right: 4px; } .sp-top { gap: 8px; } }
+@media (max-width: 380px) { .sp-catgrid { grid-template-columns: repeat(2, 1fr); padding: 10px 10px 96px; gap: 12px; } }
+.simple-screen.wide .sp-catcard .sp-pic { width: 72px; height: 72px; }
+.simple-screen.wide .sp-catcard .sp-pic .art, .simple-screen.wide .sp-catcard .sp-pic .emo { width: 52px; height: 52px; font-size: 44px; }
+/* (Round U) the HUD's coin, orb and Leafy chips are buttons now (tap: what it is): a 44 px tap area around the small chip */
+.hud .chips button.chip { position: relative; }
+.hud .chips button.chip::after { content: ''; position: absolute; left: -2px; right: -2px; top: 50%; height: 44px; transform: translateY(-50%); }

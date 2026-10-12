@@ -40,10 +40,11 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
 
 ## Owner's decisions to keep
 - Under-5s start on the Simple screen, big kids in the valley; each child switches either way (round I).
-- The Simple screen (bug #30, owner, 10 Oct; replaces round P's groups): each bottom tab (Trò chơi, Truyện, Nơi chốn) is one
-  long road that scrolls down; a category's stops end and the next category starts on the same road, after a drawn heading
-  stop. No group pages, no way-back arrow, no top destinations button (`.sp-area` is gone). Khám phá stays as the one
-  search and jump button; its cards scroll to that category. In places, China and India always come last.
+- The Simple screen (Round U, owner, 11 Oct: "separate sections for games, stories and places"; replaces bug #30's one long
+  road per tab, 10 Oct): each bottom tab (Trò chơi, Truyện, Nơi chốn) first shows its categories as big picture cards (games
+  show their stars won); a card opens that category's own short road (its drawn heading stop, then its stops), and the big
+  ⬅ Back in the top bar goes back to the cards. Khám phá stays as the one search and jump button; its cards open that
+  category. In places, China and India always come last.
 - The switch to it is “▦ Hình to / Big pictures” beside the player's card (round O).
 - A new device has no ready-made characters: the child makes their own (round P).
 - Festivals in one place (Settings → Lễ hội); Grown-ups shows only the Analytics switch, no explanation (round N).
