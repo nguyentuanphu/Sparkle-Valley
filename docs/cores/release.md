@@ -94,3 +94,4 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - (12 Oct AEDT, 9:00 am) "Yes, deploy" for r64 (the iPhone bug round): round-t merged into main by pull request.
 - (12 Oct AEDT, 9:03 am) r64 live on Netlify (pull request #65; AI review: looks fine).
 - (12 Oct AEDT) Releases rollout: keep everything switched on (no weekly schedule).
+- (12 Oct AEDT) r65 is released by the Kid UI chat as temporary Release (one combined full suite). The battery round, the three Studio fixes and the daily voice job go to new helper chats (briefs in docs/cores/tasks/battery.md, studio-r65.md, voice-daily.md); each pushes its branch ready for Release and joins that combined suite or the round after.
