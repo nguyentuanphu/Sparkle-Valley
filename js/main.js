@@ -1000,6 +1000,7 @@ Net.on('status', s => {
     nocode: T('No room with that number. Check the code.', 'Không có phòng số này. Kiểm tra lại mã nhé.'),
     mictap: T('Your microphone is off. Tap 🎙️ Mic to talk to your friend.', 'Micrô đang tắt. Chạm nút 🎙️ Micrô để nói chuyện với bạn nhé.'),
     micdenied: T('The microphone is switched off for this game. A grown-up can allow it: iPhone Settings → Safari (or the game) → Microphone → Allow.', 'Micrô đang bị tắt cho trò chơi này. Người lớn có thể bật: Cài đặt iPhone → Safari (hoặc trò chơi) → Micrô → Cho phép.'),
+    micbusy: T('Another app or a call (like FaceTime) is using the microphone. End the call, then tap 🎙️ Mic again.', 'Một ứng dụng khác hoặc cuộc gọi (như FaceTime) đang dùng micrô. Hãy tắt cuộc gọi rồi chạm 🎙️ Micrô lần nữa nhé.'),
     micask: T('Asking for the microphone… On iPhone or iPad, tap Allow.', 'Đang xin dùng micrô… Trên iPhone hoặc iPad, chạm Cho phép nhé.'),
     micold: T('This iPhone or iPad cannot use the microphone in the game. A grown-up can update it to iOS 14.3 or newer, or open the game in Safari.', 'iPhone hoặc iPad này chưa dùng được micrô trong trò chơi. Người lớn có thể cập nhật lên iOS 14.3 trở lên, hoặc mở trò chơi trong Safari.'),
     micon: T('Microphone on: your friend can hear you!', 'Đã bật micrô: bạn có thể nghe con nói rồi!'),

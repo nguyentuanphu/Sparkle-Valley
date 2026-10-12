@@ -170,12 +170,15 @@ export const Net = {
           const s = await (audio ? md.getUserMedia({ audio, video: false }) : first);
           if (this.mic && this.mic !== s) { s.getTracks().forEach(t => t.stop()); return this.mic; }
           this.mic = s; this.micError = null; if (fromTap) this.muted = false; this._micOn(); return s;   // (r63: a tap asks for it to be on)
-        } catch (e) { err = e; if (this.mic || (e && (e.name === 'NotFoundError' || e.name === 'NotAllowedError'))) break; }
+        } catch (e) { err = e; if (this.mic || (e && /^(NotFoundError|NotAllowedError|NotReadableError|AbortError)$/.test(e.name))) break; }   // (Round V: a busy microphone is not asked again without a tap)
       }
       if (this.mic || stale()) return this.mic;   // (another try got it, or is still asking: it speaks for itself)
       const name = (err && err.name) || 'Error', tapped = !!fromTap || !!(navigator.userActivation && navigator.userActivation.isActive);
       this.micError = name;
       if (name === 'NotFoundError' || name === 'OverconstrainedError') this.emit('status', { key: 'nomic' });
+      // (Round V, owner's iPhone notes 13 Oct: on a FaceTime call the microphone never came on) another app or a call is
+      // using the microphone: say so, instead of asking the child to tap again and again
+      else if (name === 'NotReadableError' || name === 'AbortError') this.emit('status', { key: 'micbusy' });
       else this.emit('status', { key: name === 'NotAllowedError' && tapped ? 'micdenied' : 'mictap' });
       return null;
     })();
@@ -200,7 +203,7 @@ export const Net = {
     // (r63, owner: "the microphone should always be off until the child turns it on"; on iPhone a try without a tap
     // could hang and every later tap did nothing) the microphone is asked for only by a tap on Mic (HUD) or in Friends
     await prepare().catch(() => { }); if (!this.mic) this.emit('status', { key: 'mictap' });
-    this.close(true);
+    this.close(true); this.setMuted(true);   // (Round V, owner 13 Oct) the microphone is always off when a room is made or joined: a tap turns it on
     this.role = 'host'; this.hello = await this._withPub(hello); this._since = Date.now();
     this.secret = b64(rnd(32));
     for (let tries = 0; tries < 4 && window.Peer; tries++) {
@@ -233,7 +236,7 @@ export const Net = {
     // (r63, owner: "the microphone should always be off until the child turns it on"; on iPhone a try without a tap
     // could hang and every later tap did nothing) the microphone is asked for only by a tap on Mic (HUD) or in Friends
     await prepare().catch(() => { }); if (!this.mic) this.emit('status', { key: 'mictap' });
-    this.close(true);
+    this.close(true); this.setMuted(true);   // (Round V, owner 13 Oct) the microphone is always off when a room is made or joined: a tap turns it on
     hello = await this._withPub(hello);
     this.role = 'guest'; this.code = code; this.hello = hello; this.hostId = PREFIX + code;
     this.hostPub = okPub(opts.hostPub) ? opts.hostPub : null; this._pinWeak = false;
