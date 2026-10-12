@@ -26,6 +26,8 @@ import { openChat, personaByName, PERSONAS } from './chat.js';
 import { voiceCommand, voiceControlOn } from './commands.js';
 import { ITEMS, RECIPES, GATHER, STICKERS, QUESTS, dishInfo } from './data.js';
 import { openGame, gameOpen, GAMES } from './games/frame.js';
+import { gameInfo } from './content/activities.js';
+const gameInfoAge = id => { try { return gameInfo(id).ageMin; } catch (e) { return 0; } };
 import './games/all.js'; // every mini-game (js/games/all.js)
 import { openHowTo } from './howto.js';
 import { createFarm, jobProgress, ensureJobs } from './farm.js';
@@ -59,7 +61,7 @@ import { createReport, addMinute } from './report.js';
 import { createCoop } from './coop.js';
 import { createTwinChests } from './twinchests.js';
 import { createClaims } from './claims.js';
-import { createNetGames, onlineDef } from './netgames.js';
+import { createNetGames, onlineDef, ONLINE_GAMES } from './netgames.js';
 import { createSimple, wantsSimple } from './simple.js';
 import { id as makeId } from './core/ids.js';
 import { createCities } from './cities.js';
@@ -534,9 +536,10 @@ G.townTalk = async (h, who) => {
   }
   if (who === 'tienlen') {
     const k = await dialog('Anh Ba', [['Hey! Con Vật and I are playing Tiến Lên, southern style. Sit down, I’ll deal you thirteen cards!', 'Ê em! Anh với Con Vật đang đánh Tiến Lên miền Nam nè. Ngồi xuống, anh chia cho em mười ba lá!']],
-      [['▶ Play Tiến Lên!', '▶ Chơi Tiến Lên!'], ['📺 How to play', '📺 Xem cách chơi'], ['👋 Later', '👋 Để sau']]);
+      [['▶ Play Tiến Lên miền Nam', '▶ Chơi Tiến Lên miền Nam'], ['▶ Play Tiến Lên miền Bắc', '▶ Chơi Tiến Lên miền Bắc'], ['📺 How to play', '📺 Xem cách chơi'], ['👋 Later', '👋 Để sau']]);   // (Round V, owner 13 Oct: miền Bắc too)
     if (k === 0) playGame(h.i, 'tienlen', 'folk');
-    if (k === 1) { G.paused = true; openHowTo('tienlen', { onPlay: () => { G.paused = false; playGame(h.i, 'tienlen', 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
+    if (k === 1) playGame(h.i, 'tienlenbac', 'folk');
+    if (k === 2) { G.paused = true; openHowTo('tienlen', { onPlay: () => { G.paused = false; playGame(h.i, 'tienlen', 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
   }
   if (who === 'tuan') {
     const k = await dialog('Anh Tuấn', [['Đá cầu! We kick the shuttlecock and never let it touch the ground. Want to try?', 'Đá cầu nè! Tụi anh đá quả cầu, không để nó rơi xuống đất. Em thử không?']],
@@ -555,7 +558,7 @@ dialogHooks.chat = name => {
   if (h) G.chatWith(h.i, pid);
 };
 // ---------- the Games hub: every game, by place, playable straight away ----------
-const GAME_SPOT = { music: 'musiccorner', firstwords: 'g_firstwords', tangram: 'g_tangram', snakes: 'g_snakes', rangoli: 'g_rangoli', datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', tienlen: 'tienlen', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
+const GAME_SPOT = { music: 'musiccorner', firstwords: 'g_firstwords', tangram: 'g_tangram', snakes: 'g_snakes', rangoli: 'g_rangoli', datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', tienlen: 'tienlen', tienlenbac: 'tienlen', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
   tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
 G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (G.GAME_SPOT || {})[id] || (SHRINES.find(s => s.game === id) || {}).id));
 G.openQuick = i => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; openQuick(G, i); };
@@ -929,6 +932,21 @@ Net.on('claim', d => G.claims.receive(d));
 G.together = () => Net.connected && Object.keys(Net.remotes).length > 0 && !G.netGames.session;
 // (r63, owner: the children choose, e.g. a bigger Caro board) Caro also asks the board's size, 3 to 19 squares a side
 const CARO_SIZES = [3, 6, 9, 13, 15, 19];
+// (Round V, owner 13 Oct: "add a coop game button, then it shows a list of games") every game to play with the friends in the
+// room on one page: the games made for friends (turns on each device), any game raced side by side, and stories read together
+G.openPlayTogether = () => {
+  const ids = Object.keys(Net.remotes); if (!ids.length) { toast(T('Nobody is in your room yet.', 'Chưa có bạn nào trong phòng.')); return; }
+  const little = G.heroes[0].profile.age !== 'big', made = Object.keys(ONLINE_GAMES).filter(id => GAMES[id]);
+  const race = Object.keys(GAMES).filter(id => !ONLINE_GAMES[id] && (!little || !gameInfoAge(id) || gameInfoAge(id) < 5)), tales = (G.TALES || []).slice(0, 12);
+  const btn = (id, sub) => `<button class="pt-g" data-g="${esc(id)}" aria-label="${esc(GAMES[id].name())}">${pic(GAMES[id].icon)}<b>${esc(GAMES[id].name())}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
+  const m = modal('playtogether', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>${pic('🎲')} ${T('Play together', 'Chơi cùng nhau')}</h2>
+    <h3>${pic('👫')} ${T('Games made for friends', 'Trò chơi dành cho bạn bè')}</h3><div class="pt-grid">${made.map(id => btn(id, T(`up to ${ONLINE_GAMES[id].max}`, `tối đa ${ONLINE_GAMES[id].max}`))).join('')}</div>
+    <h3>${pic('🏁')} ${T('Race side by side', 'Thi đua cùng nhau')} <small>${T('everyone plays the same game, stars for all', 'mọi người chơi cùng một trò, ai cũng có sao')}</small></h3><div class="pt-grid">${race.map(id => btn(id)).join('')}</div>
+    ${tales.length ? `<h3>${pic('📖')} ${T('Read a story together', 'Đọc truyện cùng nhau')}</h3><div class="pt-grid">${tales.map(t => `<button class="pt-g" data-g="tale-${esc(t.id)}" aria-label="${esc(t.title())}">${pic('📖')}<b>${esc(t.title())}</b></button>`).join('')}</div>` : ''}`);
+  m.querySelector('.x').onclick = () => m.close();
+  m.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { SFX.tap(); m.close(); G.inviteGame(b.dataset.g, ids[0]); });
+  return m;
+};
 G.inviteGame = (game, to, level, size) => {
   const p = G.heroes[0].profile;
   if (level == null) return new Promise(res => {
@@ -1191,6 +1209,7 @@ G.drawOnlinePanel = (body, redraw) => {
       ${netLineHTML()}
       <div class="plist">${list.map(r => `<div class="prow roomp" data-pid="${esc(r.id)}"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(nm(r.name))}</b>${pqHTML(r.id)}</div>
         <div class="rp-btns"><button class="btn" data-walkf="${esc(r.id)}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${esc(r.id)}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${esc(r.id)}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${esc(r.id)}">🔄 ${T('Trade', 'Đổi đồ')}</button><button class="btn" data-caro="${esc(r.id)}">⭕ ${T('Caro', 'Caro')}</button><button class="btn ${G.heroes[0] && G.heroes[0].followId === r.id ? 'primary' : ''}" data-follow="${esc(r.id)}">🚶 ${G.heroes[0] && G.heroes[0].followId === r.id ? T('Stop following', 'Thôi đi theo') : T('Follow', 'Đi theo')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${esc(r.id)}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend && f.pub && f.pub === r.pub) ? `<button class="btn" data-addf="${esc(r.friend)}" data-n="${esc(r.name)}" data-pid="${esc(r.id)}" aria-label="${T('Add as a friend', 'Thêm làm bạn')}">＋👫</button>` : ''}</div></div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
+      ${list.length ? `<div class="actions center"><button class="btn primary big" data-together>🎲 ${T('Play together', 'Chơi cùng nhau')}</button></div>` : ''}
       ${list.length ? `<div class="actions center"><button class="btn" data-rpsall>✌️ ${T('Oẳn tù tì with everyone', 'Oẳn tù tì cả phòng')}</button><button class="btn" data-allg="memory">🃏 ${T('Memory Match together', 'Lật hình cùng nhau')}</button><button class="btn" data-allg="tienlen">🎴 ${T('Tiến Lên together', 'Tiến Lên cùng nhau')}</button></div>` : ''}
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
       <div class="actions center"><button class="btn big${Net.mic ? '' : ' primary'}" id="oMute">${!Net.mic ? '🎙️ ' + T('Microphone on', 'Bật micrô') : Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
@@ -1210,6 +1229,7 @@ G.drawOnlinePanel = (body, redraw) => {
     body.querySelectorAll('[data-caro]').forEach(b => b.onclick = () => { SFX.tap(); G.inviteGame('caro', b.dataset.caro); });
     { const r = body.querySelector('[data-rpsall]'); if (r) r.onclick = () => { SFX.tap(); G.inviteGame('oantuti'); }; }
     body.querySelectorAll('[data-allg]').forEach(b => b.onclick = () => { SFX.tap(); G.inviteGame(b.dataset.allg); });
+    { const t = body.querySelector('[data-together]'); if (t) t.onclick = () => { SFX.tap(); G.openPlayTogether(); }; }
     body.querySelectorAll('[data-addf]').forEach(b => b.onclick = () => { addFriend(b.dataset.addf, b.dataset.n, (Net.remotes[b.dataset.pid] || {}).pub); SFX.chime(); toast(T('Friend added!', 'Đã thêm bạn!')); redraw(); });
     bindFriends();
     return;

@@ -3669,14 +3669,19 @@ await check('friendstab', async () => {
     const stillFolded = !document.querySelector('.modal.pad details.friends').open;
     // a friend comes into the room
     N.remotes['peer-z'] = { name: 'Mít' }; G.onNet && G.onNet(); await wait(300); const closedOnJoin = !document.querySelector('.modal.pad'); delete N.remotes['peer-z'];
+    // (Round V) Play together: the page of games with a friend in the room; a tap invites
+    N.remotes['peer-z'] = { name: 'Mít' }; const pt = G.openPlayTogether(); await wait(300);
+    const ptMade = [...pt.querySelectorAll('.pt-grid')][0], madeIds = ptMade ? [...ptMade.querySelectorAll('[data-g]')].map(x => x.dataset.g) : [], raceN = ([...pt.querySelectorAll('.pt-grid')][1] || { querySelectorAll: () => [] }).querySelectorAll('[data-g]').length;
+    let invited = null; const inv0 = G.inviteGame; G.inviteGame = (g, to) => { invited = [g, to]; }; pt.querySelector('[data-g="tienlenbac"]')?.click(); G.inviteGame = inv0; delete N.remotes['peer-z'];
+    const together = { made: madeIds.includes('caro') && madeIds.includes('tienlen') && madeIds.includes('tienlenbac'), raceN, invited: !!invited && invited[0] === 'tienlenbac' && invited[1] === 'peer-z' };
     // a game starting
     G.openPad(0, 'friend'); await wait(500); G.closePadNow(); const closedOnStart = !document.querySelector('.modal.pad') && !G.paused;
     S.settings.friendsFold = false;
-    return { foldedSaved, stillFolded, closedOnJoin, closedOnStart };
+    return { foldedSaved, stillFolded, closedOnJoin, closedOnStart, together };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(!r.noBox && r.foldedSaved && r.stillFolded && r.closedOnJoin && r.closedOnStart && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return '"My friends" folds and stays folded; a friend coming into the room closes the Friends page; a game starting closes it';
+  ok(!r.noBox && r.foldedSaved && r.stillFolded && r.closedOnJoin && r.closedOnStart && r.together.made && r.together.raceN > 20 && r.together.invited && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return '"My friends" folds and stays folded; a friend coming into the room closes the Friends page; a game starting closes it; Play together lists the games for friends (Tiến Lên miền Bắc too) and every game to race side by side';
 });
 
 await check('bagitems', async () => {

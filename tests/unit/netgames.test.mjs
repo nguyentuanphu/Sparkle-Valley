@@ -75,3 +75,22 @@ test('Caro (r63): the board size the inviter chose reaches every device, and a s
   e.A.g.invite('caro', 3, 'B', { size: 40 }); await tick();
   assert.equal(e.A.g.session.size, undefined); assert.equal(e.B.g.session.size, undefined);
 });
+
+// (Round V, owner 13 Oct) Tiến Lên miền Bắc: follow the suit
+test('Tiến Lên miền Bắc: same suit for singles and runs, same colours for pairs, only four of a kind cuts a 2', async () => {
+  const TL = await import('../../js/games/tienlenrules.js');
+  const c = (r, s) => ({ r, s, v: r * 4 + s }), { classify, beats, setNorth } = TL;
+  setNorth(true);
+  try {
+    assert.ok(beats(classify([c(5, 3)]), classify([c(4, 3)])), 'a higher heart beats a heart');
+    assert.ok(!beats(classify([c(5, 0)]), classify([c(4, 3)])), 'a spade does not beat a heart');
+    assert.ok(beats(classify([c(12, 0)]), classify([c(11, 3)])), 'a 2 beats any other single');
+    assert.equal(classify([c(2, 0), c(3, 1), c(4, 0)]), null, 'a mixed-suit run is not a play');
+    assert.ok(classify([c(2, 1), c(3, 1), c(4, 1)]), 'a one-suit run is a play');
+    assert.ok(beats(classify([c(6, 2), c(6, 3)]), classify([c(5, 2), c(5, 3)])), 'red pair beats red pair');
+    assert.ok(!beats(classify([c(6, 0), c(6, 3)]), classify([c(5, 2), c(5, 3)])), 'mixed pair does not beat a red pair');
+    assert.ok(beats(classify([c(3, 0), c(3, 1), c(3, 2), c(3, 3)]), classify([c(12, 3)])), 'four of a kind cuts a 2');
+    assert.equal(classify([c(2, 0), c(2, 1), c(3, 0), c(3, 1), c(4, 0), c(4, 1)]), null, 'no pairs in a row in the north');
+  } finally { setNorth(false); }
+  assert.ok(beats(classify([c(5, 0)]), classify([c(4, 3)])), 'miền Nam: any higher card');
+});
