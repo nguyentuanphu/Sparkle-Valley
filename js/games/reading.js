@@ -7,7 +7,7 @@
 // Loaded only when a reading game opens (js/games/readingmenu.js registers them while Studio's readingTrial is on).
 import { untilRight, choiceButtons, HINT_AFTER } from './frame.js';
 import { settings } from '../state.js';
-import { sayAsync, hush } from '../voice.js';
+import { sayAsync, hush, spoken } from '../voice.js';
 import { pic } from '../art.js';
 import { shuffle, pick, el, wait, esc } from '../util.js';
 import { READ, nameOf, soundOf, wordsOf, bare, picWords, VI_MARKS } from '../content/reading.js';
@@ -20,7 +20,8 @@ const calm = () => document.body.classList.contains('calm') || (typeof matchMedi
 function ctx(api) {
   api.onCleanup(hush);
   return {
-    async say(en, vi) { if (api.closed) return; api.show(en, vi); await sayAsync(en, vi); },
+    // (every spoken instruction is announced like the other games' api.say, so the caption and under-5 checks hear it)
+    async say(en, vi) { if (api.closed) return; api.show(en, vi); const t = settings.lang === 'vi' ? (vi ?? en) : en; spoken.forEach(f => { try { f(t); } catch (e) { } }); await sayAsync(en, vi); },
     read: text => api.closed ? Promise.resolve() : sayAsync(text, text),
     later(f, ms) { const t = setTimeout(f, ms); api.onCleanup(() => clearTimeout(t)); return t; }
   };
