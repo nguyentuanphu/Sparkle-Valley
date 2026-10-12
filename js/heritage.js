@@ -89,6 +89,8 @@ export function createHeritage(G, { give, sfx, say, toast }) {
     return [x, z];
   }
   const place = (parts, x, z, rot, ol = true) => { const m = new THREE.Mesh(merge(parts), toonVC()); const y = Math.min(heightAt(x, z), heightAt(x + 2, z), heightAt(x - 2, z), heightAt(x, z + 2), heightAt(x, z - 2)); m.position.set(x, y - .05, z); m.rotation.y = rot; m.castShadow = m.receiveShadow = true; scene.add(m); if (ol) outline(m, .03, '#4a3a3f'); return m; };
+  // (tester's notes, 12 Oct) a floating (i) sign can be tapped: the child walks up to it and reads it
+  const tappable = (sg, it) => { sg.userData.it = it; (G.tapTargets = G.tapTargets || []).push(sg); };
   const info = (x, y, z) => { const s = sprite('ℹ️', 1.5); s.position.set(x, y, z); scene.add(s); world.updaters.push((dt, t) => { s.position.y = y + Math.sin(t * 2 + x) * .25; }); return s; };
   const face = (x, z, tx, tz) => Math.atan2(tx - x, tz - z);
 
@@ -122,10 +124,11 @@ export function createHeritage(G, { give, sfx, say, toast }) {
       // the sign stands in front
       x += Math.sin(rot) * out; z += Math.cos(rot) * out;
     }
-    info(x, heightAt(x, z) + 3.2, z); signs.push({ x, z });
+    const sg = info(x, heightAt(x, z) + 3.2, z); signs.push({ x, z });
     const lm = { id, icon, cc, x, z, mx, mz, name: () => T(name[0], name[1]), fact };
     LANDMARKS.push(lm);
-    G.interactables.push({ id: 'pc_' + id, x, z, r: 3.4, icon: 'ℹ️', label: () => T('About: ', 'Tìm hiểu: ') + lm.name(), act: h => postcard(G, h, lm) });
+    const pc = { id: 'pc_' + id, x, z, r: 3.4, icon: 'ℹ️', label: () => T('About: ', 'Tìm hiểu: ') + lm.name(), act: h => postcard(G, h, lm) };
+    G.interactables.push(pc); tappable(sg, pc);
   }
 
   // ---------- friends playing traditional games (watch them, tap ℹ️ to learn) ----------
@@ -159,8 +162,9 @@ export function createHeritage(G, { give, sfx, say, toast }) {
         else { const k = (t * .6) % 1, from = Math.floor(t * .6) % n, to = (from + 1) % n, a0 = A[from].root.position, a1 = A[to].root.position; prop.position.set(a0.x + (a1.x - a0.x) * k, a0.y + 1.2 + Math.sin(k * Math.PI) * 2.5, a0.z + (a1.z - a0.z) * k); }
       }
     });
-    info(x, y + 3.3, z);
+    const sg = info(x, y + 3.3, z);
     G.interactables.push({ id: 'cult' + gi, x, z, r: rad + 2.6, icon: 'ℹ️', label: () => T('Learn about ', 'Tìm hiểu ') + T(gr.name[0], gr.name[1]), cc: gr.cc, act: h => { const p = h.profile; p.learned = p.learned || {}; if (!p.learned[gi]) { p.learned[gi] = gr.cc; G.save && G.save(); } G.dialog && G.dialog(T(gr.name[0], gr.name[1]), [gr.fact]); } });
+    tappable(sg, G.interactables[G.interactables.length - 1]);
   });
 
   // ---------- crops and fruit trees from each culture ----------

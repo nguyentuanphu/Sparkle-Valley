@@ -51,6 +51,7 @@ export class Hud {
         <button class="dk games" aria-label="${T('Play: games, festivals, stories and songs', 'Vui chơi: trò chơi, lễ hội, truyện và bài hát')}"><span>${ICONS.games}</span><small>${T('Play', 'Vui chơi')}</small><kbd class="kb">G</kbd></button>
         <button class="dk map"><span>${ICONS.map}</span><small>${T('Map', 'Bản đồ')}</small><kbd class="kb">M</kbd></button>
         <button class="dk bag"><span>${ICONS.bag}</span><small>${T('Bag', 'Ba lô')}</small><kbd class="kb">B</kbd></button>
+        <button class="dk shop" hidden aria-label="${T('Clothes shop', 'Cửa hàng quần áo')}"><span>${ICONS.shop}</span><small>${T('Shop', 'Cửa hàng')}</small></button>
         <button class="dk voicecmd" hidden><span>${ICONS.ask}</span><small>${T('Ask', 'Hỏi')}</small><kbd class="kb">K</kbd></button>
         <button class="dk chat"><span>${ICONS.talk}</span><small>${T('Talk', 'Nói')}</small><kbd class="kb">T</kbd></button>
         <button class="dk call" hidden><span>${ICONS.callOff}</span><small>${T('Mic off', 'Micrô tắt')}</small><kbd class="kb">C</kbd></button>
@@ -82,7 +83,10 @@ export class Hud {
     this.q('.simplesw').onclick = () => { SFX.tap(); game.simple && game.simple.show(); };
     this.q('.pcard').onclick = () => game.openQuick(i);
     this.q('.dk.map').onclick = () => game.openPad(i, 'map');
-    this.q('.dk.bag').onclick = () => game.openBag ? game.openBag(i) : game.openPad(i, 'bag'); // (round S, owner plan 8 Oct) the Bag goes to the clothes shop (js/shop.js)
+    this.q('.dk.bag').onclick = () => game.openPad(i, 'bag');
+    // (tester's notes, 12 Oct; owner: "bottom bar") the clothes shop has its own button beside the Bag (it was inside
+    // the Bag, Bug #29); only while the shop is switched on and one child plays on this device. It opens right here.
+    this.q('.dk.shop').onclick = () => { SFX.tap(); game.shop && game.shop.openShop(i); };
     this.q('.dk.chat').onclick = () => this.toggleEmotes();
     this.q('.dk.voicecmd').hidden = !game.voiceControlOn();
     this.q('.dk.voicecmd').onclick = () => game.voiceCommand(i);
@@ -137,6 +141,8 @@ export class Hud {
 
   update(dt, camera, fogMap, markers) {
     const h = this.hero, p = h.profile;
+    const shopOn = !!(this.game.shop && this.game.shop.on() && this.game.heroes.length < 2);
+    if (this.last.shop !== shopOn) { this.last.shop = shopOn; this.q('.dk.shop').hidden = !shopOn; }
     // hearts
     const hk = h.hearts + '/' + p.hearts;
     if (this.last.h !== hk) {

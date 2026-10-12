@@ -297,6 +297,9 @@ function setupBubbles() {
 function setupGuides() {
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 70, 16, 1, true), new THREE.MeshBasicMaterial({ color: '#ffd23f', transparent: true, opacity: .28, depthWrite: false, side: THREE.DoubleSide, fog: false }));
   const bang = sprite('❗', 2.4); bang.material.fog = false; scene.add(beam, bang);
+  // (tester's notes, 12 Oct) tapping the "!" over the light goes there and does the step, like the Go button
+  const bangIt = { id: 'quest_bang', x: 0, z: 0, r: 3, act: h => G.goToObjective(Math.max(0, G.heroes.indexOf(h))) };
+  bang.userData.it = bangIt; (G.tapTargets = G.tapTargets || []).push(bang);
   const arrowGeo = new THREE.ConeGeometry(.45, 1.1, 4); arrowGeo.rotateX(Math.PI / 2);
   const feet = sprite('👣', .8).material; // footprints when walking to a place chosen on the map
   const guides = [0, 1].map(() => {
@@ -307,7 +310,7 @@ function setupGuides() {
   world.updaters.push((dt, t) => {
     const h0 = G.heroes[0], tg0 = h0 && playing ? questTarget(h0) : null;
     beam.visible = bang.visible = !!tg0;
-    if (tg0) { const gy = heightAt(tg0.x, tg0.z); beam.position.set(tg0.x, gy + 35, tg0.z); bang.position.set(tg0.x, gy + 5.2 + Math.abs(Math.sin(t * 3)) * .8, tg0.z); beam.material.opacity = .2 + Math.sin(t * 2) * .08; }
+    if (tg0) { bangIt.x = tg0.x; bangIt.z = tg0.z; const gy = heightAt(tg0.x, tg0.z); beam.position.set(tg0.x, gy + 35, tg0.z); bang.position.set(tg0.x, gy + 5.2 + Math.abs(Math.sin(t * 3)) * .8, tg0.z); beam.material.opacity = .2 + Math.sin(t * 2) * .08; }
     guides.forEach((g, i) => {
       const h = G.heroes[i];
       if (h && h.walkTo && h.walkTo.friend) { const P = G.partners[h.walkTo.friend]; if (!P) h.walkTo = null; else { h.walkTo.x = P.pos.x; h.walkTo.z = P.pos.z; if (dist2(h.pos.x, h.pos.z, P.pos.x, P.pos.z) < 4) { SFX.chime(); hudFor(h).toast('👫 ' + T(`You found ${P.name}! Say hello!`, `Con đã gặp ${P.name}! Chào bạn đi!`)); say(`You found ${P.name}! Say hello!`, `Con đã gặp ${P.name} rồi! Chào bạn đi!`); h.walkTo = null; G.huds[h.i] && G.huds[h.i].toggleEmotes(true); } } }
@@ -356,12 +359,16 @@ function setupAreaSigns() {
   sign('Three Regions Market', 'Chợ Ba Miền', '🏮', 121, 83, 12);
   sign('Aussie Corner', 'Góc Nước Úc', '🍦', -117, -12, 12);
 }
+// (tester's notes, 12 Oct) the (i) "about this place" buttons only come up right beside them, and a person to talk to
+// comes first, so the button no longer pops up here and there while a child walks past
 function nearest(h) {
   let best = null, bd = 1e9;
   for (const it of G.interactables) {
     if (it.visible && !it.visible(h)) continue;
-    const d = dist2(h.pos.x, h.pos.z, it.x, it.z);
-    if (d < it.r && d < bd && Math.abs((it.y ?? heightAt(it.x, it.z)) - h.pos.y) < 5) { best = it; bd = d; }
+    const d = dist2(h.pos.x, h.pos.z, it.x, it.z), info = it.icon === 'ℹ️';
+    if (info && d > Math.max(1.3, it.r - 2.6)) continue; // (a dance group's sign: at the edge of its circle)
+    const score = d + (info ? 1.5 : 0) - (it.icon === '💬' ? 1 : 0);
+    if (d < it.r && score < bd && Math.abs((it.y ?? heightAt(it.x, it.z)) - h.pos.y) < 5) { best = it; bd = score; }
   }
   return best;
 }
@@ -577,6 +584,8 @@ G.goToGame = (i, id) => { const h = G.heroes[i], it = G.gameSpot(id); if (!h || 
 // ---------- objective helpers ----------
 G.objectiveIcon = h => { const q = currentQuest(h.profile); return q ? q.icon : '🏆'; };
 G.sayObjective = i => { const h = G.heroes[i]; if (!h) return; const q = currentQuest(h.profile); if (!q) return; const tale = q.tale || QUEST_TALES[q.id]; if (tale) say(tale[2], tale[3]); else say(q.title(), q.title()); };
+// is there water, a wall or something big on the straight way between two spots? (the last 1.5 m, by the goal, is left out)
+const wayBlocked = (x0, z0, x1, z1) => { const n = Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 1.2); for (let k = 1; k < n - 1; k++) { const x = x0 + (x1 - x0) * k / n, z = z0 + (z1 - z0) * k / n; if (!G.goodSpot(x, z)) return true; } return false; };
 // "Go" button: walk to the goal (or fly there if it is far away) and start it on arrival.
 G.goToObjective = async i => {
   const h = G.heroes[i]; if (!h || G.paused) return;
@@ -585,6 +594,10 @@ G.goToObjective = async i => {
   const near = it && dist2(it.x, it.z, tg.x, tg.z) < 6 ? it : null;
   say('Let\u2019s go!', 'Đi thôi!');
   if (dist2(h.pos.x, h.pos.z, tg.x, tg.z) > 45) { await G.travel(h, tg.x - 1.5, tg.z + 2); }
+  // (tester's notes, 12 Oct) a goal across water or past a wall (by Hồ Gươm: the bridge's rail, the lake): walking
+  // straight there only slid along the rail in circles, so the child lands on open ground right beside it instead
+  const dest = near || tg;
+  if (dist2(h.pos.x, h.pos.z, dest.x, dest.z) > 3 && wayBlocked(h.pos.x, h.pos.z, dest.x, dest.z)) await G.landBy(h, dest.x, dest.z);
   if (near) goAndDo(h, near); else h.goal = { x: tg.x, z: tg.z };
 };
 const GOURD_GIFTS = [[3, 'money', 15], [6, 'money', 25], [10, 'glider', 2], [15, 'money', 40], [20, 'money', 60], [24, 'glider', 4]];
@@ -1300,6 +1313,17 @@ function onTap(i, x, y) {
   // tapping a bubble, a water drop or a ripe crop walks there and does it
   const hitB = ray.intersectObjects([...(G.bubbleIcons || []), ...(G.tapTargets || [])], false).find(x => x.object.visible);
   if (hitB) { goAndDo(h, hitB.object.userData.it); return; }
+  // (tester's notes, 12 Oct) inside a house the floor is the room's, not the valley's ground: a tap on (or right by)
+  // someone or something in the room walks up to it and does it, a tap on the floor walks there
+  if (G.homes && G.homes.isInside(h)) {
+    const v = new THREE.Vector3(), px = (q, dy) => { v.set(q.x, (q.y ?? h.pos.y) + dy, q.z).project(h.cam); return Math.hypot((v.x - ndc.x) * r.w / 2, (v.y - ndc.y) * r.h / 2); };
+    let it = null, bd = 70;
+    for (const q of G.interactables) { if (q.y == null || Math.abs(q.y - h.pos.y) > 5 || dist2(h.pos.x, h.pos.z, q.x, q.z) > 16 || (q.visible && !q.visible(h))) continue; const d = Math.min(px(q, .3), px(q, 1.2)); if (d < bd) { bd = d; it = q; } }
+    if (it) { goAndDo(h, it); return; }
+    const pt = ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -h.pos.y), v);
+    if (pt && dist2(h.pos.x, h.pos.z, pt.x, pt.z) < 16) { h.goal = { x: pt.x, z: pt.z }; G.fx(pt.x, h.pos.y + .3, pt.z, '✨'); }
+    return;
+  }
   // tap a person, animal, tree or critter and it reacts (js/fun.js)
   if (G.tapReact && G.tapReact(h, ray)) return;
   const hit = ray.intersectObject(world.terrain, false)[0];
@@ -1678,8 +1702,9 @@ G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 
 // loaded while the valley is built (js/hoilang.js after the games boards it uses; Studio switches in the 'kids' group)
 { const [{ createHoiLang }, { createSurprises }, { createParents }] = await Promise.all([import('./hoilang.js'), import('./surprises.js'), import('./parents.js')]);
   G.hoilang = createHoiLang(G, { say, save, reward }); G.surprises = createSurprises(G, { say, reward }); G.parents = createParents(G, { say, save, reward }); }
-// (Play reading trial, owner 11 Oct AEDT) the ten reading games load only while Studio's readingTrial switch is on (now, or when it is switched on)
-{ const rd = () => { if (featureOn('readingTrial', false)) import('./games/readingmenu.js').catch(() => { }); }; rd(); import('./custom.js').then(C => C.onLive(rd)); }
+// (Play reading trial, owner 11 Oct AEDT) the ten reading games load only while Studio's readingTrial switch is on (now, or when it is switched on);
+// on unless Studio switches it off (owner, 12 Oct AEDT)
+{ const rd = () => { if (featureOn('readingTrial', true)) import('./games/readingmenu.js').catch(() => { }); }; rd(); import('./custom.js').then(C => C.onLive(rd)); }
 // level land under every building, stall and landmark placed above (and anything added in future rounds)
 world.familyEdits = applyWorldEdits(G); // buildings the family moved or removed in Sparkle Studio
 bootMark('things'); widenFlatLand(world, scene); bootMark('wideland'); await breathe(); // more level land round every village and city, for new buildings (nothing moves on the map)

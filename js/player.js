@@ -199,7 +199,10 @@ export class Hero {
     // Easy camera: high and a little further back, and it slowly swings round behind the way the child
     // is walking, so what's ahead is always on screen (it used to stay fixed facing north, which hid
     // everything when walking towards the camera). It waits a moment so small turns don't spin it.
-    if (easy) {
+    // (tester's notes, 12 Oct) inside a house: the camera stays inside the room, close and looking down, and does not
+    // swing round, so the child does not keep walking into the walls or out of the door
+    if (easy && this.indoors) { this.easyT = 0; this.camPitch += (.95 - this.camPitch) * Math.min(1, dt * 2); }
+    else if (easy) {
       if (this.speed > .8 && !this.towerClimb && this.manualCamT <= 0) { this.easyT = (this.easyT || 0) + dt; this.stillT = 0; // calmer: only after walking the same way for a moment, slowly, and it stops once roughly behind
         const off = Math.abs(Math.atan2(Math.sin(this.yaw + Math.PI - this.camYaw), Math.cos(this.yaw + Math.PI - this.camYaw)));
         if (this.easyT > 1.5 && off > .35) this.camYaw = easeYaw(this.camYaw, this.yaw + Math.PI, dt, .5, .45); }
@@ -224,7 +227,7 @@ export class Hero {
     const close = game.closeUp === this.i || (this.view === 'face' && this.speed < .6 && !this.towerClimb && !this.gliding);
     if (close) { this.camYaw = angleLerp(this.camYaw, this.yaw, Math.min(1, dt * 4)); this.camPitch += (.08 - this.camPitch) * Math.min(1, dt * 4); }
     const vk = this.view === 'high' ? 1.6 : this.view === 'street' ? .62 : 1;
-    const dist = close ? 2.8 : (easy ? 11.5 * (1 + (this._lmF || 0) * .55) : this.camDist) * vk * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (this.zoom || 1) * (game.zoom || 1);
+    const dist = close ? 2.8 : this.indoors ? 5.5 * (this.zoom || 1) : (easy ? 11.5 * (1 + (this._lmF || 0) * .55) : this.camDist) * vk * (this.gliding ? 1.25 : this.riding ? 1.15 : 1) * (this.zoom || 1) * (game.zoom || 1);
     const target = new THREE.Vector3(p.x, p.y + (close ? (this.view === 'face' && game.closeUp !== this.i ? 1.05 : .2) : this.view === 'street' ? 1.6 : 1.15) + rideY, p.z);
     const want = new THREE.Vector3(p.x + Math.sin(this.camYaw) * Math.cos(this.camPitch) * dist, target.y + Math.sin(this.camPitch) * dist, p.z + Math.cos(this.camYaw) * Math.cos(this.camPitch) * dist);
     // keep the camera out of houses: if a wall is between the child and the camera, move the camera in

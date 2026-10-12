@@ -42,12 +42,13 @@ register({
       api.dots(rounds, r); api.stage.innerHTML = '';
       const k = Math.floor(Math.random() * 7), nxt = (k + 1) % 7, before = api.level >= 3 && r % 2;
       const want = before ? (k + 6) % 7 : nxt;
-      const strip = el('div', 'daystrip', DAYS.map((d, i) => `<span class="${i === k ? 'on' : ''}">${T(d[0].slice(0, 3), d[1].replace('Thứ ', 'T').replace('Chủ Nhật', 'CN'))}</span>`).join(''));
+      const strip = el('div', 'daystrip', DAYS.map((d, i) => `<span class="${i === k ? 'on' : ''}">${T(d[0], d[1])}</span>`).join(''));
       api.stage.appendChild(strip);
       if (before) api.say(`Today is ${DAYS[k][0]}. What was yesterday?`, `Hôm nay là ${DAYS[k][1]}. Hôm qua là thứ mấy?`);
       else api.say(`Today is ${DAYS[k][0]}. What is tomorrow?`, `Hôm nay là ${DAYS[k][1]}. Ngày mai là thứ mấy?`);
       const opts = shuffle([want, ...shuffle([0, 1, 2, 3, 4, 5, 6].filter(i => i !== want && i !== k)).slice(0, 2)]);
-      const btns = choiceButtons(api, opts, i => `<b>${T(DAYS[i][0], DAYS[i][1])}</b>`);
+      // (tester's notes, 12 Oct) whole day names, never "THai" or "Mon", in cards that fit them
+      const btns = choiceButtons(api, opts, i => `<b>${T(DAYS[i][0], DAYS[i][1])}</b>`, 'choice big day');
       const ok = await untilRight(api, btns, e => e._v === want); if (!ok) return;
       api.say(`${DAYS[want][0]}!`, `${DAYS[want][1]}!`); await wait(1200);
     }

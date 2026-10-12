@@ -1192,7 +1192,7 @@ await check('films', async () => {
       // (the story's own films come from js/content/chapters.js, the fairy tales from js/talesdata.js)
       const { STORY_TALES } = await import('/js/content/chapters.js'), st = STORY_TALES[id];
       openTheatre(MORE_TALES.find(t => t.id === id) || (st && { ...st, title: () => st.title[0], ctx: { name: 'Na', companion: 'firefly' } }), { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); // (loaded when the story opens)
-      document.querySelector('.th-auto').click();
+      document.querySelector('.th-pause').click();
       if (!document.querySelector('.theatre.film canvas.th-film')) out.bad.push(id + ': no 3D stage');
       await run(id, C.FILMS[id].pages.length);
       document.querySelector('.th-x').click(); await new Promise(r => setTimeout(r, 400));
@@ -1307,9 +1307,10 @@ await check('story', async () => {
   await pg.evaluate(() => document.querySelector('.th-x')?.click()); await w(1200);
   await pg.evaluate(() => document.querySelectorAll('.reward,.modal').forEach(e => e.click())); await w(800); await calm(); await w(1500);
   seen.push(await q());
-  // (Play core, chapter 2; owner 10 Oct: it is off until an admin switches it on or schedules it) switched on in Studio,
-  // chapter 2 follows chapter 1; off, the old adventures follow as before
-  const noCh2 = seen[8];
+  // (Play core, chapter 2; owner 12 Oct AEDT: on unless Studio switches it off) by default chapter 2 follows chapter 1;
+  // switched off in Studio, the old adventures follow as before
+  const dflt = seen[8];
+  const noCh2 = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), story_ch2: false }; const c = __sv.currentQuest(__sv.heroes[0].profile); delete C.features.story_ch2; return c && c.id; });
   seen[8] = await pg.evaluate(async () => { const C = (await import('/js/custom.js')).CUSTOM; C.features = { ...(C.features || {}), story_ch2: true }; await __sv.lanterns.loadCh('ch2'); const c = __sv.currentQuest(__sv.heroes[0].profile); delete C.features.story_ch2; return c && c.id; });
   const end = await pg.evaluate(() => { const G = __sv, p = G.heroes[0].profile, D = G.lanterns.dinh;
     const house = Math.min(...G.world.colliders.filter(c => c.r > 2 && c.top == null).map(c => Math.hypot(c.x - D.x, c.z - D.z) - c.r));
@@ -1317,7 +1318,8 @@ await check('story', async () => {
   const want = ['L_p_owl', 'L_c1_village', 'L_c1_nam', 'L_c1_well', 'L_c1_teo', 'L_c1_tale', 'L_c1_find', 'L_c1_hang'], out = [];
   want.forEach((id, i) => { if (seen[i] !== id) out.push(`step ${i + 1} was ${seen[i]}, expected ${id}`); });
   if (seen[8] !== 'L_c2_fly') out.push('after chapter 1 the goal was ' + seen[8] + ', not chapter 2');
-  if (!noCh2 || /^L_/.test(noCh2)) out.push('with chapter 2 not switched on (its default), the goal after chapter 1 was ' + noCh2 + ', not an old adventure');
+  if (dflt !== 'L_c2_fly') out.push('with no Studio setting (chapter 2 on by default), the goal after chapter 1 was ' + dflt + ', not chapter 2');
+  if (!noCh2 || /^L_/.test(noCh2)) out.push('with chapter 2 switched off in Studio, the goal after chapter 1 was ' + noCh2 + ', not an old adventure');
   if (!film) out.push('Ông Cú\'s film did not play');
   if (end.companion !== 'dragon') out.push('the companion was not chosen');
   if (carrying !== 'ch1' || end.carrying) out.push('the lantern was not carried and then hung');
@@ -1429,7 +1431,7 @@ await check('chapter2', async () => {
       const F = await import('/js/film.js'), C = await import('/js/content/films.js'); await import('/js/content/chapter2films.js');
       const { STORY_TALES } = await import('/js/content/chapters.js'), { openTheatre } = await import('/js/tales.js'), st = STORY_TALES.lantern_ch2, bad = [];
       openTheatre({ ...st, story: true, title: () => st.title[0], ctx: { name: 'Na', companion: 'dragon' } }, { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100));
-      document.querySelector('.th-auto')?.click(); const f = F.filmNow(); if (!f) return ['no film'];
+      document.querySelector('.th-pause')?.click(); const f = F.filmNow(); if (!f) return ['no film'];
       const frame = () => new Promise(r => requestAnimationFrame(r));
       for (let k = 0; k < C.FILMS.lantern_ch2.pages.length; k++) { const done = f.page(k); let ended = false; done.then(() => { ended = true; }); const p = f.now; f.narrated();
         for (let i = 0; i < 600 && !ended; i++) { if (p.hold) p.release(true); p.t += .2; await frame(); }
@@ -1559,7 +1561,7 @@ await check('chapter3', async () => {
       const F = await import('/js/film.js'), C = await import('/js/content/films.js'); await import('/js/content/chapter3films.js');
       const { STORY_TALES } = await import('/js/content/chapters.js'), { openTheatre } = await import('/js/tales.js'), st = STORY_TALES.lantern_ch3, bad = [];
       openTheatre({ ...st, story: true, title: () => st.title[0], ctx: { name: 'Na', companion: 'dragon' } }, { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100));
-      document.querySelector('.th-auto')?.click(); const f = F.filmNow(); if (!f) return ['no film'];
+      document.querySelector('.th-pause')?.click(); const f = F.filmNow(); if (!f) return ['no film'];
       const frame = () => new Promise(r => requestAnimationFrame(r)); let helps = 0;
       for (let k = 0; k < C.FILMS.lantern_ch3.pages.length; k++) { const done = f.page(k); let ended = false; done.then(() => { ended = true; }); const p = f.now; f.narrated();
         for (let i = 0; i < 600 && !ended; i++) { if (p.hold) { helps++; p.release(true); } p.t += .2; await frame(); }
@@ -1741,9 +1743,10 @@ await check('shop', async () => {
     // the Bag button (Bug #29, owner 10 Oct: "bag is bag"): it opens the backpack, with one small shop button that opens the
     // shop right there, no travel; the stall in the valley stays
     p.age = 'big'; G.addCoins(500 - S.farm.coins); const pos0 = { x: h.pos.x, z: h.pos.z }; G.huds[0].root.querySelector('.dk.bag').click(); await w(500);
-    const sb = document.querySelector('.modal.pad .bagshop'); out.bagOpens = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk') && !!sb;
+    // (tester's notes, 12 Oct; owner: "bottom bar") the shop button sits beside the Bag in the dock, not inside the bag
+    const sb = G.huds[0].root.querySelector('.dk.shop'); out.bagOpens = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk') && !document.querySelector('.modal.pad .bagshop') && !!sb && !sb.hidden;
     out.bagShopBtn = sb ? (() => { const q = sb.getBoundingClientRect(); return q.width >= 44 && q.height >= 44; })() : false;
-    sb && sb.click(); await w(700);
+    document.querySelector('.modal.pad .x, .modal.pad .pad-x')?.click(); G.closePad && G.closePad(0); await w(300); sb && sb.click(); await w(700);
     out.there = Math.hypot(h.pos.x - pos0.x, h.pos.z - pos0.z) < 1 && !document.querySelector('.modal.pad'); const card = document.querySelector('.modal.shopk .card');
     out.opened = !!card; out.tabs = card ? card.querySelectorAll('.ktab').length : 0; out.noBagTab = card ? !card.querySelector('[data-go="bag"]') : false;
     // (nothing to read: each thing is a drawing and a number; the words inside a drawing, like the coin's "$", are part
@@ -1792,7 +1795,7 @@ await check('shop', async () => {
   });
   const errs = P.errors; await P.ctx.close(); const bad = [];
   if (!r.offRoad || !r.nearMarket || !r.dry || !r.tap) bad.push('the shop is not by the market on dry ground off the road ' + JSON.stringify(r.spot));
-  if (!r.bagOpens || !r.bagShopBtn) bad.push('the Bag button does not open the backpack with one small shop button ' + JSON.stringify({ o: r.bagOpens, b: r.bagShopBtn }));
+  if (!r.bagOpens || !r.bagShopBtn) bad.push('the Bag button does not open the backpack, or no shop button beside it in the dock ' + JSON.stringify({ o: r.bagOpens, b: r.bagShopBtn }));
   if (!r.there || !r.opened) bad.push('the shop button in the bag did not open the shop right there (no travel)');
   if (r.tabs !== 7 || !r.noBagTab || !r.pics || r.small) bad.push(`the shop card: ${r.tabs} tabs, pictures ${r.pics}, ${r.small} buttons under 44 px`);
   if (!r.bought || !r.poorKept || !r.closed) bad.push('buying ' + JSON.stringify({ bought: r.bought, poor: r.poorKept, closed: r.closed }));
@@ -1804,7 +1807,7 @@ await check('shop', async () => {
   if (!r.offBag || !r.offStall || !r.offWard) bad.push('the Studio switch did not put the old Bag and wardrobe back ' + JSON.stringify(r));
   if (errs.length) bad.push(...errs.slice(0, 2));
   if (bad.length) throw new Error(bad.join('; '));
-  return `the shop at ${r.spot} by the market, off the road; the Bag opens the backpack and its small shop button opens the shop without travel; 7 picture tabs, coin prices, 64 px for under-5s; bought the tiara, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
+  return `the shop at ${r.spot} by the market, off the road; the Bag opens the backpack and the Shop button beside it in the dock opens the shop without travel; 7 picture tabs, coin prices, 64 px for under-5s; bought the tiara, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
 });
 await check('boxes', async () => {
   // (round S, owner plan 8 Oct: Round R Part 2 item 10) a big kid at Medium or Hard: one free mystery box a day, one more
@@ -4180,9 +4183,10 @@ await check('reading', async () => {
   ok(RD.nameOf('en', 'z') === 'zed', 'Z is not said "zed"');
   ok(RD.READ.en.letters.slice(0, 6).map(x => x[0]).join('') === 'satpin', 'English sounds do not start s a t p i n');
   const allEn = JSON.stringify(RD.READ.en), us = ['color', ' mom', 'candy', 'Mom'].filter(w => allEn.includes(w)); ok(!us.length, 'American words in the English lists: ' + us.join(', '));
-  // switch off (no Studio setting): nothing of the trial loads or shows
-  const P = await open(b, { w: 1024, h: 768 }); const asked = []; P.page.on('request', q => { if (/reading(menu)?\.js/.test(q.url())) asked.push(q.url().split('/').pop()); });
-  await clear(P.page);
+  // switch off (Studio's content pack sets it off; with no setting it is on, owner 12 Oct AEDT): nothing of the trial loads or shows
+  const P = await open(b, { w: 1024, h: 768, play: false }); const asked = []; P.page.on('request', q => { if (/reading(menu)?\.js/.test(q.url())) asked.push(q.url().split('/').pop()); });
+  await P.page.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), readingTrial: false }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
+  await P.page.reload(); asked.length = 0; await start(P.page); await clear(P.page);
   const off = await P.page.evaluate(async () => { const F = await import('/js/games/frame.js'), A = await import('/js/content/activities.js'); __sv.openGamesHub(0); await new Promise(r => setTimeout(r, 300)); const hub = [...document.querySelectorAll('[data-play]')].map(b => b.dataset.play); document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
     return { games: Object.keys(F.GAMES).filter(k => /^rd_/.test(k)), inArea: A.gamesIn(F.GAMES, 'reading', false).length, hub: hub.filter(k => /^rd_/.test(k)) }; });
   await P.ctx.close();

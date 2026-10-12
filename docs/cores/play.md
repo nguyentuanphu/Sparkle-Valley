@@ -239,6 +239,15 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   place, villager, shop and songs; Studio Releases switch `autoplay`, for every device or chosen devices; unlimited
   stamina and hearts; speeds Watch, Fast and Jump; the children's progress is put back afterwards.
 
+- Tester's notes ("Notes on SV", 14 notes, 12 Oct): the owner said **this chat fixes all 14** on `core/play`, across
+  cores (Kid UI, World, Voice & Audio, main.js), and **the shop button goes in the bottom bar** beside the Bag (this
+  reverses the shop button inside the bag from Bug #29; the Bag still only opens the backpack).
+
+- Switches (owner, 12 Oct about 6:30 pm AEDT: "the simple screen and also the reading trials should be on, all other
+  features should be on for now until I say or switch it off"; then "only power poles and auto play are off"): the
+  reading games (`readingTrial`) and story chapters 2 and 3 are on by default (`def: true`); `powerPoles` and `autoplay`
+  stay off; Studio can still switch any of them off.
+
 ## Progress notes (12 Oct AEDT: Studio fixes and the auto play check)
 - Commits on `core/play`: f4dd7c6 (photos publish in steps), 0e7ddb1 (exe updates itself), c5846e3 (exe keeps its game
   folder new), e3171ac (auto play check), plus the two recorded words of the new Releases group ("For testing", Azure).
@@ -248,6 +257,8 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   `boot` `voicecover` pass. **Full suite not run here: the owner said Release runs it** (a run was stopped early).
 - Screenshots looked at: the auto play window on a phone, a tablet and a computer, folded, open and running.
 - New check for the HANDOFF table (Release): `autoplay`.
+- After merging main r65 (987e35e, 12 Oct, finished about 4:15 pm AEDT): `types` `unit` `arch` `rules` `preload`
+  `voicecover` `emoji` `autoplay` `reading` `festivals` all pass (10/10). Merges cleanly into main.
 
 ## What is left for Play (handover, 11 Oct 1:30 pm AEST; this chat stopped here at the owner's request)
 - Done and pushed on `core/play` (e1c9552): owner's items 1 and 2 (see the notes above), board says "ready for Release".
@@ -259,3 +270,33 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   real spots in Hà Nội and Sydney for chapters 2 and 3 (Round T); Kid UI's rest of #32 and the speech box's slide-in
   (`phone` flake); Release merging `core/play` (PR #43 or `core/play`, not both) and the robots' `.bugfix/result.md` conflict.
 - Not recorded on purpose: festival calendar lines with a number of days (any number), which use the phone's voice.
+
+## Progress notes (12 Oct AEDT: the tester's 14 notes, "Notes on SV")
+- Fixed on `core/play` (owner: this chat fixes all; shop in the dock): category names on the Simple screen are headings,
+  not stops; story bar back, next, pause, green "read by itself"; days game whole names that fit; animal calls about 2 s,
+  louder, music dipped (`Music.duck`, `animalCall`); Chuyền quà has no background music under its tune, a stop sign, the
+  holder lit and the gift pulsing on your turn; bunny tick fills its button; recipe book "Sổ công thức nấu ăn" shows the
+  ingredients in the bag; no jump chips in the bag; Shop button beside the Bag in the dock (out of the bag); storyteller's
+  tag says Bà Năm, the house grandma is Bà Nội, room people and the floor can be tapped, no floating (i) in the room,
+  (i) buttons only up close (people first), outdoor (i) signs tappable; indoor camera close and inside the room, no rain
+  or rainbow lines indoors; Hồ Gươm light on the nearest clue still to look at, the "!" tappable, Go flies round water.
+- Checks (12 Oct, about 6:15 pm AEDT): `boot` `games` `phone` `tales` `signs` `nametags` `films` `story` `chapter2`
+  `kidplay` `shop` `dialogtap` `rain` `playhub` `postcards` `myhouse` `iphone` `types` `unit` `arch` `rules` `preload`
+  `emoji` pass; `simple` `a11y` `voicecover` failed once (heading picture counted as a small tap target; the new line not
+  recorded), fixed and pass; `knock` skipped (no local MQTT broker). Full suite left for Release.
+- New spoken line recorded with Azure (en and vi, both voices): "Your turn! Tap the present to rip the paper!" /
+  "Đến lượt con! Chạm vào món quà để xé giấy!".
+- Screenshots looked at (phone, tablet, computer): Simple screen (games and stories), story bar, days, Chuyền quà,
+  bunny (the phone's tick was still small: fixed), recipe book, bag, dock with the Shop button.
+- After merging main r66 (85517cd, 12 Oct, about 6:15 pm AEDT): Round U's category cards kept, with the heading at the top
+  of each card's road; the bag's new chips kept, its shop button removed (it is in the dock). `types` `unit` `arch` `rules`
+  `preload` `emoji` `voicecover` `boot` `simple` `shop` `a11y` `phone` `tales` `games` pass. Owner: the full suite is
+  Release's ("No, Release runs it").
+- Switches on by default (12 Oct, about 7:20 pm AEDT): `reading` pass (switched off in Studio nothing loads; by default
+  10 games, all finish), `story` pass (check changed to the new default: chapter 2 follows chapter 1 unless Studio
+  switches it off, then the old adventures), `chapter2` `chapter3` `features` `types` `unit` `preload` pass.
+  `startup` fails on main r66 too (first title 1.5 to 1.7 s on this machine): not this change. `perf` near its limits
+  either way: home draw calls 1095 to 1145 against 1100 (main 1095, reading off 1096) and triangles 780k to 830k
+  against 800k in repeated runs; the 3D scene with the reading games on and off differs by one small mesh (1120 vs 1123
+  draw calls), so the switch adds nothing to draw. Release: PERF-003 sits at its edge on main.
+

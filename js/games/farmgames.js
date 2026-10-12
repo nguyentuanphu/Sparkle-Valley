@@ -102,7 +102,7 @@ register({
       api.say(`The bunny is hungry! Give it ${n} carrots, then press the tick.`, `Thỏ con đói rồi! Cho thỏ ăn ${numWord(n)} củ cà rốt, rồi bấm dấu tích.`);
       const tum = bunny.querySelector('.tum');
       const row = el('div', 'choices'); api.stage.appendChild(row);
-      const give = el('button', 'choice', '🥕'), done = el('button', 'choice go', '✔️'), back = el('button', 'choice', '↩️'); row.append(back, give, done);
+      const give = el('button', 'choice', '🥕'), done = el('button', 'choice go', '✅'), back = el('button', 'choice', '↩️'); row.append(back, give, done);
       let fed = 0;
       const ok = await new Promise(res => {
         give.onclick = () => { fed++; tum.insertAdjacentHTML('beforeend', '<i>🥕</i>'); sayIn(settings.lang, numWord(fed)); SFX.pop(fed); bunny.querySelector('.b').classList.remove('nom'); void bunny.offsetWidth; bunny.querySelector('.b').classList.add('nom'); };
