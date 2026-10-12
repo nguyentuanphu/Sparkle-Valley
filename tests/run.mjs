@@ -3227,7 +3227,7 @@ await check('hscroll', async () => {
 });
 
 await check('joins', async () => {
-  // ROAD-015 (Round U, owner 11 Oct: "they are not connecting smoothly, there are different elevations when connecting
+  // ROAD-017 (Round U, owner 11 Oct: "they are not connecting smoothly, there are different elevations when connecting
   // roads or bridges"): walk the middle of every road in 25 cm steps (and 3 m on into a road it joins, 6 m through a gate): the ground under
   // a child's feet never jumps more than 6 cm, at a junction, a bridge deck or a place's flat level
   const P = await open(b, { w: 800, h: 600 }); await clear(P.page);
@@ -3247,7 +3247,7 @@ await check('joins', async () => {
   });
   const errs = P.errors; await P.ctx.close();
   ok(!r.out.length && r.n > 5000 && !errs.length, r.out.slice(0, 12).join(' | ') + JSON.stringify(errs));
-  return `${r.n} steps along every road and into every junction and bridge: no step over 6 cm (ROAD-015)`;
+  return `${r.n} steps along every road and into every junction and bridge: no step over 6 cm (ROAD-017)`;
 });
 
 await check('ride', async () => {
