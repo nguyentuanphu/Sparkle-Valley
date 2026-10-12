@@ -1121,6 +1121,7 @@ const HUB_TABS = [
   { key: 'places', icon: '🚋', short: () => T('Going places', 'Đi đây đi đó'), title: () => T('Games in the cities and on the road', 'Trò chơi ở thành phố và trên đường'), areas: ['travel'] },
   { key: 'thinking', icon: '🧠', short: () => T('Big thinkers', 'Suy nghĩ giỏi'), title: () => T('Big thinkers: puzzles and strategy', 'Suy nghĩ giỏi: đố và chiến thuật'), areas: ['thinking'] }
 ];
+HUB_TABS[0].areas.splice(HUB_TABS[0].areas.indexOf('words') + 1, 0, 'reading'); // (Play reading trial) the Reading corner in the Learning tab
 const AREA_OF = Object.fromEntries(AREAS.map(a => [a.key, a]));
 // each tab with its games (built when asked, so the family's Studio changes are in it)
 const hubSections = () => HUB_TABS.map(t => ({ ...t, groups: t.areas.map(a => ({ area: AREA_OF[a], games: gamesIn(GAMES, a, false).map(g => g.id) })).filter(g => g.games.length) })).map(t => ({ ...t, games: t.groups.flatMap(g => g.games) }));
