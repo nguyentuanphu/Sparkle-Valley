@@ -651,6 +651,7 @@ function shopOutfits(m, look, isNew) {
     const b = el('button', 'chip' + (outfitOf(look) === k ? ' on' : '')); b.dataset.outfit = k; b.innerHTML = `<span>${pic(k === 'girl' ? '👧' : '👦')}</span><small>${k === 'girl' ? T('Girl', 'Bé gái') : T('Boy', 'Bé trai')}</small>`;
     b.onclick = () => { const o = DEFAULT_OUTFITS[k]; Object.assign(look, { style: o.style, color: o.color, top: 'none', bottom: 'none', set: k }); draw(); }; box.appendChild(b); } };   // (Round U: set, the clothes the shop shows first)
   draw(); m.querySelector('#cCol').hidden = true; ['#cHat', '#cBack'].forEach(id => { m.querySelector(id).closest('.field').hidden = true; });
+  { const lab = box.closest('.field').querySelector('span'); if (lab) lab.textContent = T('I am a…', 'Con là…'); }   // (Round V, owner 13 Oct) girl or boy, chosen when the character is made: the shop sells that set
 }
 // ---- (round S) end ----
 

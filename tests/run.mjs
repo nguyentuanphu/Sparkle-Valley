@@ -1888,14 +1888,14 @@ await check('shop', async () => {
     out.pics = card ? [...card.querySelectorAll('.kitem')].every(b => b.querySelector('svg') && /^\d*$/.test(words(b))) : false;
     out.small = card ? [...card.querySelectorAll('.ktab, .kitem, .x')].filter(b => { const q = b.getBoundingClientRect(); return q.width < 44 || q.height < 44; }).length : -1;
     // buy the tiara (hats tab), and it is worn
-    // (Round U: a child's own set shows first; another set's thing is behind More)
-    const item = async id => { let e = card.querySelector(`[data-id="${id}"]`); if (!e && card.querySelector('.kmore')) { card.querySelector('.kmore').click(); await w(150); e = card.querySelector(`[data-id="${id}"]`); } return e; };
-    card.querySelector('[data-tab="hat"]').click(); await w(150); (await item('tiara')).click(); await w(150);
-    const price = SH.priceOf(SH.ITEM.tiara), c0 = S.farm.coins; card.querySelector('.kyes').click(); await w(300);
-    out.bought = SH.owns(p, 'tiara') && p.look.hat === 'tiara' && S.farm.coins === c0 - price;
+    // (Round V, owner 13 Oct: the shop sells the child's own set only) the tiara, or the first thing of the child's set
+    const item = async id => card.querySelector(`[data-id="${id}"]`) || card.querySelector('.kitem:not(.have)');
+    card.querySelector('[data-tab="hat"]').click(); await w(150); const hatB = await item('tiara'), hatId = hatB.dataset.id; hatB.click(); await w(150);
+    const price = SH.priceOf(SH.ITEM[hatId]), c0 = S.farm.coins; card.querySelector('.kyes').click(); await w(300);
+    out.bought = SH.owns(p, hatId) && p.look.hat === hatId && S.farm.coins === c0 - price; out.boughtId = hatId;
     // not enough coins: nothing is bought
-    G.addCoins(-S.farm.coins); card.querySelector('[data-tab="back"]').click(); await w(150); (await item('dragon')).click(); await w(150); card.querySelector('.kyes').click(); await w(300);
-    out.poorKept = !SH.owns(p, 'dragon') && S.farm.coins === 0;
+    G.addCoins(-S.farm.coins); card.querySelector('[data-tab="back"]').click(); await w(150); const bkB = await item('dragon'), bkId = bkB.dataset.id; bkB.click(); await w(150); card.querySelector('.kyes').click(); await w(300);
+    out.poorKept = !SH.owns(p, bkId) && S.farm.coins === 0;
     card.querySelector('.x').click(); await w(400); out.closed = !document.querySelector('.modal.shopk') && !G.paused;
     // under-5s: every button at least 64 px
     p.age = 'little'; G.shop.openShop(0); await w(400);
@@ -1944,7 +1944,7 @@ await check('shop', async () => {
   if (!r.offBag || !r.offStall || !r.offWard) bad.push('the Studio switch did not put the old Bag and wardrobe back ' + JSON.stringify(r));
   if (errs.length) bad.push(...errs.slice(0, 2));
   if (bad.length) throw new Error(bad.join('; '));
-  return `the shop at ${r.spot} by the market, off the road; the Bag opens the backpack and the Shop tab right after Backpack opens the shop without travel; 7 picture tabs, coin prices, 64 px for under-5s; bought the tiara, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
+  return `the shop at ${r.spot} by the market, off the road; the Bag opens the backpack and the Shop tab right after Backpack opens the shop without travel; 7 picture tabs, coin prices, 64 px for under-5s; bought ${r.boughtId}, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
 });
 await check('boxes', async () => {
   // (round S, owner plan 8 Oct: Round R Part 2 item 10) a big kid at Medium or Hard: one free mystery box a day, one more
@@ -3587,7 +3587,7 @@ await check('wearbag', async () => {
     out.after = ids(); out.worn = worn(); out.look = p.look.top === top.id;
     document.querySelector('.pad [data-unwear="top"]')?.click(); await w(300); out.back = ids().includes(top.id);
     document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false;
-    // the shop: a girl sees no boys-only thing until More
+    // (Round V, owner 13 Oct) the shop: a girl sees no boys-only thing, and there is no More (the other set comes as a friend's gift)
     if (G.shop && G.shop.on()) { G.shop.openShop(0); await w(400); const boys = new Set(S.CLOTHES.filter(it => it.for === 'b').map(it => it.id));
       const seen = () => [...document.querySelectorAll('.shopk .kitem')].map(b => b.dataset.id);
       let any = false; for (const tab of document.querySelectorAll('.shopk [data-tab]')) { tab.click(); await w(150); if (seen().some(id => boys.has(id) && !S.owns(p, id))) any = true; }
@@ -3596,8 +3596,8 @@ await check('wearbag', async () => {
     return { ...out, top: top.id, feet: feet.id };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(r.before.includes(r.top) && r.before.includes(r.feet) && !r.after.includes(r.top) && r.worn.includes('top') && r.look && r.back && (r.noShop || (!r.boysFirst && r.more)) && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return `bought clothes wait in the Backpack (tap to wear, tap to take off); the shop shows a girl's set first${r.noShop ? ' (shop off here)' : ', the rest behind More'}`;
+  ok(r.before.includes(r.top) && r.before.includes(r.feet) && !r.after.includes(r.top) && r.worn.includes('top') && r.look && r.back && (r.noShop || (!r.boysFirst && !r.more)) && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `bought clothes wait in the Backpack (tap to wear, tap to take off); the shop sells a girl only her set${r.noShop ? ' (shop off here)' : ' (no More: the other set comes as a gift from a friend)'}`;
 });
 
 await check('talk', async () => {
@@ -3702,6 +3702,35 @@ await check('bagitems', async () => {
   }
   ok(!out.length, out.join(' | '));
   return 'the three counters in one row of cards; every item has its words on hover; an ingredient tap says which dishes it makes; food asks "Eat it?" (Not now keeps it, Yes eats it), on a phone and a computer';
+});
+
+await check('tradeclothes', async () => {
+  // (Round V, owner 13 Oct: "clothes can be gifted to the other sex or traded with the same sex") the market stall with a
+  // friend in the room: to a boy, a girl can only give boys' clothes, as a gift (nothing asked back); with a girl friend
+  // clothes trade both ways; what goes out leaves the wardrobe and what comes in is owned
+  const P = await open(b, { w: 900, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), { Net } = await import('/js/net.js'), SH = await import('/js/content/shop.js'), { openTrade } = await import('/js/trade.js'), h = G.heroes[0], p = h.profile;
+    const g = SH.CLOTHES.find(it => it.for === 'g' && !it.tester && !Object.values(p.look).includes(it.id)), bo = SH.CLOTHES.find(it => it.for === 'b' && !it.tester && !Object.values(p.look).includes(it.id));
+    p.look.set = 'girl'; p.owned.clothes = [...new Set([...(p.owned.clothes || []), g.id, bo.id])];
+    const sent = []; const send0 = Net.send; Net.send = d => { sent.push(d); };
+    Object.defineProperty(Net, 'connected', { get: () => true, configurable: true });
+    Net.remotes['peer-b'] = { name: 'Tí', look: { set: 'boy', style: 'shirt' } }; Net.remotes['peer-g'] = { name: 'Na', look: { set: 'girl', style: 'dress' } };
+    openTrade(G, h, 'peer-b'); await wait(300);
+    const toBoy = [...document.querySelectorAll('.trade [data-givec]')].map(x => x.dataset.givec), askBoy = document.querySelectorAll('.trade [data-wantc]').length, noteBoy = !!document.querySelector('.trade .note');
+    document.querySelector(`.trade [data-givec="${bo.id}"]`)?.click(); await wait(100); document.querySelector('.trade [data-want="apple"]')?.click(); await wait(100);
+    document.querySelector('#trSend').click(); await wait(200); const refusedAsk = !sent.some(d => d.t === 'offer');
+    document.querySelector('#trClear')?.click(); await wait(100); document.querySelector(`.trade [data-givec="${bo.id}"]`)?.click(); await wait(100); document.querySelector('#trSend').click(); await wait(200);
+    const gift = sent.find(d => d.t === 'offer'); document.querySelectorAll('.modal').forEach(m => m.remove());
+    openTrade(G, h, 'peer-g'); await wait(300);
+    const toGirl = [...document.querySelectorAll('.trade [data-givec]')].map(x => x.dataset.givec), askGirl = document.querySelectorAll('.trade [data-wantc]').length;
+    document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false;
+    delete Net.remotes['peer-b']; delete Net.remotes['peer-g']; delete Net.connected; Net.send = send0;
+    return { toBoyOnlyBoys: toBoy.length > 0 && toBoy.every(id => SH.forSet(SH.ITEM[id], 'boy')) && !toBoy.includes(g.id), askBoy, noteBoy, refusedAsk, gift: !!gift && (gift.give.clothes || []).includes(bo.id) && !Object.keys(gift.want.items || {}).length && !gift.want.coins, toGirl: toGirl.includes(g.id), askGirl };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.toBoyOnlyBoys && !r.askBoy && r.noteBoy && r.refusedAsk && r.gift && r.toGirl && r.askGirl > 0 && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'to a boy a girl can give boys\' clothes as a gift only (asking for something back is refused); with a girl friend clothes trade both ways';
 });
 
 await check('bilingual', async () => {

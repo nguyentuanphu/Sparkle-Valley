@@ -4,6 +4,7 @@
 import { T } from './i18n.js';
 import { Net } from './net.js';
 import { ITEMS } from './data.js';
+import { ITEM, CLOTHES, owns, setOf, forSet, clothesOk } from './content/shop.js';
 import { farm, saveFarm } from './state.js';
 import { fmt } from './money.js';
 import { SFX } from './audio.js';
@@ -12,20 +13,30 @@ import { el, esc } from './util.js';
 import { modal } from './ui.js';
 
 const COIN_STEPS = [0, 10, 20, 50, 100];   // in game coins (10 = $1)
-const has = (p, want) => Object.entries(want.items || {}).every(([k, n]) => (p.inv[k] || 0) >= n) && farm.coins >= (want.coins || 0);
+// (Round V, owner 13 Oct: "clothes can be gifted to the other sex or traded with the same sex") clothes the child owns and
+// is not wearing can go in a trade: with a friend of the same set (girl or boy) both ways; to a friend of the other set
+// only as a gift (nothing asked back) and only clothes made for that friend's set
+const wearing = (p, id) => !!p.look && Object.values(p.look).includes(id);
+export const spareClothes = p => CLOTHES.filter(it => owns(p, it.id) && !wearing(p, it.id) && !it.tester).map(it => it.id);
+const has = (p, want) => Object.entries(want.items || {}).every(([k, n]) => (p.inv[k] || 0) >= n) && farm.coins >= (want.coins || 0) && (want.clothes || []).every(id => owns(p, id) && !wearing(p, id));
 function move(p, take, give) {
   for (const [k, n] of Object.entries(take.items || {})) p.inv[k] = (p.inv[k] || 0) - n;
   for (const [k, n] of Object.entries(give.items || {})) p.inv[k] = (p.inv[k] || 0) + n;
   farm.coins += (give.coins || 0) - (take.coins || 0); saveFarm();
+  p.owned = p.owned || {}; p.owned.clothes = (p.owned.clothes || []).filter(id => !(take.clothes || []).includes(id));
+  for (const id of give.clothes || []) if (!p.owned.clothes.includes(id)) p.owned.clothes.push(id);
 }
-const label = side => [...Object.entries(side.items || {}).map(([k, n]) => `${n} ${ITEMS[k] ? ITEMS[k].icon : '❔'}`), side.coins ? fmt(side.coins) : ''].filter(Boolean).join(' + ') || T('nothing', 'không gì');
+const label = side => [...Object.entries(side.items || {}).map(([k, n]) => `${n} ${ITEMS[k] ? ITEMS[k].icon : '❔'}`), ...(side.clothes || []).map(id => ITEM[id] ? T(ITEM[id].en, ITEM[id].vi) : ''), side.coins ? fmt(side.coins) : ''].filter(Boolean).join(' + ') || T('nothing', 'không gì');
 const ALL_WANT = () => Object.keys(ITEMS);
+// a friend's clothes set (girl or boy): from their character in the valley, else from the room's list
+const setOfFriend = (G, id) => setOf(((G.partners || {})[id] || {}).look || (Net.remotes[id] || {}).look);
 
 let pending = {}; // my sent offers: id -> {to, give, want}
 export function setupTrading(G) {
   const hero = () => G.heroes[0];
   Net.on('offer', d => {
     const h = hero(); if (!h || !d.give || !d.want) return;
+    if (!clothesOk(d.give, d.want, setOfFriend(G, d.from), setOf(h.profile.look))) { Net.send({ t: 'tradeNo', to: d.from, id: d.id }); return; }
     const who = (Net.remotes[d.from] || {}).name || T('A friend', 'Một bạn');
     SFX.chime(); say(`${who} wants to trade!`, `${who} muốn đổi đồ!`);
     const m = modal('tradein', `<h2>🔄 ${T('Trade from', 'Đổi đồ với')} ${esc(who)}</h2>
@@ -63,15 +74,19 @@ export function openTrade(G, h, toId) {
       return;
     }
     const inv = Object.entries(h.profile.inv || {}).filter(([k, n]) => n > 0 && ITEMS[k]);
+    const mine = setOf(h.profile.look), theirs = setOfFriend(G, st.to), same = mine === theirs, spare = spareClothes(h.profile).filter(id => same || forSet(ITEM[id], theirs));
+    const clothesPic = it => G.shop && G.shop.itemSVG ? G.shop.itemSVG(it) : '👕';
     const chip = (side, k) => { const n = st[side].items[k] || 0; return n ? `<b class="tr-n">${n}</b>` : ''; };
     card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🏪 ${T('My market stall', 'Sạp hàng của con')}</h2>
       <h3>${T('Trade with', 'Đổi với')}</h3><div class="tr-who">${ids.map(id => `<button data-to="${id}" class="${st.to === id ? 'on' : ''}">🧒 ${esc(Net.remotes[id].name)}</button>`).join('')}</div>
       <h3>${T('I give', 'Con đưa')} <small>(${T('tap to add, tap again for more', 'chạm để thêm')})</small></h3>
       <div class="bigpick tr-pick">${inv.map(([k, n]) => `<button data-give="${k}"><span>${ITEMS[k].icon}</span><small>${n}</small>${chip('give', k)}</button>`).join('') || `<p class="note">${T('Your backpack is empty.', 'Ba lô trống.')}</p>`}</div>
       <div class="tr-coins">💰 <button data-gc="-1">−</button><b>${fmt(st.give.coins)}</b><button data-gc="1">+</button></div>
+      ${spare.length ? `<h3>${T('Clothes I can give', 'Quần áo con có thể tặng')} <small>${same ? T('trade with your friend', 'đổi với bạn') : T('a gift for your friend', 'quà tặng cho bạn')}</small></h3><div class="bigpick tr-pick">${spare.map(id => `<button data-givec="${id}" class="${(st.give.clothes || []).includes(id) ? 'on' : ''}" aria-label="${esc(T(ITEM[id].en, ITEM[id].vi))}">${clothesPic(ITEM[id])}<small>${esc(T(ITEM[id].en, ITEM[id].vi))}</small></button>`).join('')}</div>` : ''}
       <h3>${T('I would like', 'Con muốn')}</h3>
       <div class="bigpick tr-pick">${ALL_WANT().map(k => `<button data-want="${k}"><span>${ITEMS[k].icon}</span>${chip('want', k)}</button>`).join('')}</div>
       <div class="tr-coins">💰 <button data-wc="-1">−</button><b>${fmt(st.want.coins)}</b><button data-wc="1">+</button></div>
+      ${same ? `<h3>${T('Clothes I would like', 'Quần áo con muốn')}</h3><div class="bigpick tr-pick">${CLOTHES.filter(it => !it.tester && forSet(it, mine) && !owns(h.profile, it.id)).slice(0, 18).map(it => `<button data-wantc="${it.id}" class="${(st.want.clothes || []).includes(it.id) ? 'on' : ''}" aria-label="${esc(T(it.en, it.vi))}">${clothesPic(it)}</button>`).join('')}</div>` : `<p class="note">${T('Your friend wears the other set of clothes: clothes go to them as a gift, with nothing asked back.', 'Bạn mặc bộ quần áo khác: quần áo chỉ là quà tặng, không đổi lấy gì.')}</p>`}
       <div class="tr-deal"><div><small>${T('You give', 'Con đưa')}</small><b>${label(st.give)}</b></div><span>⇄</span><div><small>${T('You get', 'Con nhận')}</small><b>${label(st.want)}</b></div></div>
       <div class="actions center"><button class="btn" id="trClear">↩️ ${T('Start over', 'Làm lại')}</button><button class="btn big primary" id="trSend">📨 ${T('Send offer', 'Gửi đề nghị')}</button></div>`;
     card.querySelector('.x').onclick = () => { m.close(); G.paused = false; };
@@ -81,11 +96,15 @@ export function openTrade(G, h, toId) {
     const step = (side, dir) => { const i = Math.max(0, Math.min(COIN_STEPS.length - 1, COIN_STEPS.indexOf(st[side].coins) + dir)); st[side].coins = COIN_STEPS[i]; if (side === 'give' && st.give.coins > farm.coins) st.give.coins = 0; draw(); };
     card.querySelectorAll('[data-gc]').forEach(b => b.onclick = () => step('give', +b.dataset.gc));
     card.querySelectorAll('[data-wc]').forEach(b => b.onclick = () => step('want', +b.dataset.wc));
+    const flip = (side, id) => { const a = st[side].clothes = st[side].clothes || []; const k = a.indexOf(id); if (k >= 0) a.splice(k, 1); else if (a.length < 6) a.push(id); SFX.tap(); draw(); };
+    card.querySelectorAll('[data-givec]').forEach(b => b.onclick = () => flip('give', b.dataset.givec));
+    card.querySelectorAll('[data-wantc]').forEach(b => b.onclick = () => flip('want', b.dataset.wantc));
     card.querySelector('#trClear').onclick = () => { st.give = { items: {}, coins: 0 }; st.want = { items: {}, coins: 0 }; draw(); };
     card.querySelector('#trSend').onclick = () => {
-      const clean = s => ({ items: Object.fromEntries(Object.entries(s.items).filter(([, n]) => n > 0)), coins: s.coins });
+      const clean = s => ({ items: Object.fromEntries(Object.entries(s.items).filter(([, n]) => n > 0)), coins: s.coins, ...((s.clothes || []).length ? { clothes: s.clothes.slice() } : {}) });
       const give = clean(st.give), want = clean(st.want);
-      if (!Object.keys(give.items).length && !give.coins) return G.toast(h, T('Choose something to give first.', 'Hãy chọn đồ để đưa trước nhé.'));
+      if (!Object.keys(give.items).length && !give.coins && !(give.clothes || []).length) return G.toast(h, T('Choose something to give first.', 'Hãy chọn đồ để đưa trước nhé.'));
+      if (!clothesOk(give, want, setOf(h.profile.look), setOfFriend(G, st.to))) return G.toast(h, T('Clothes for a friend who wears the other set are a gift: ask for nothing back.', 'Quần áo cho bạn mặc bộ khác là quà tặng: đừng xin lại gì nhé.'));
       const id = Math.random().toString(36).slice(2, 9);
       pending[id] = { to: st.to, give, want };
       Net.send({ t: 'offer', to: st.to, id, give, want });
