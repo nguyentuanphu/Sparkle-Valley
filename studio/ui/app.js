@@ -26,10 +26,8 @@ let INFO = null, CONTENT = {};
 // Every list of devices says the same things in the same order: the name the family gave it (or an easy name made from
 // its id, the same every time), the children who play on it (first names, from the Analytics), what it is, the town,
 // and when it last played; the id stays in small print. Robots (test browsers in data centres) are greyed and can be hidden.
-const EASY = [['Red', 'Đỏ'], ['Blue', 'Xanh'], ['Green', 'Lục'], ['Gold', 'Vàng'], ['Pink', 'Hồng'], ['Purple', 'Tím'], ['Orange', 'Cam'], ['Silver', 'Bạc']];
-const EASY_ANIMAL = [['Koala', 'Gấu túi'], ['Panda', 'Gấu trúc'], ['Turtle', 'Rùa'], ['Fox', 'Cáo'], ['Owl', 'Cú'], ['Dolphin', 'Cá heo'], ['Rabbit', 'Thỏ'], ['Tiger', 'Hổ'], ['Duck', 'Vịt'], ['Kangaroo', 'Chuột túi'], ['Buffalo', 'Trâu'], ['Lotus', 'Sen']];
-const easyName = id => { let h = 0; for (const c of String(id || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0; const a = EASY_ANIMAL[h % EASY_ANIMAL.length], c = EASY[(h >>> 4) % EASY.length], n = (h >>> 8) % 90 + 10;
-  return LANG === 'vi' ? `${a[1]} ${c[1]} ${n}` : `${c[0]} ${a[0]} ${n}`; };
+// the easy name comes from the game's own file (js/content/devname.js), so the game and Studio always agree
+let DEVNAME = null; const easyName = id => DEVNAME ? DEVNAME.easyName(id, LANG) : String(id || '').slice(0, 6);
 const devKindName = k => ({ phone: T('Phone', 'Điện thoại'), tablet: T('Tablet', 'Máy tính bảng'), computer: T('Computer', 'Máy tính') }[k] || '');
 const devKids = d => [...new Set(((d && d.kids) || []).map(K => K.name).filter(Boolean))];
 const devTown = d => d && d.loc ? [d.loc.city, d.loc.country].filter(Boolean).join(', ') : '';
@@ -151,6 +149,7 @@ let LOADED = false;
 async function load(force) {
   if (force) SRC = null; // ↻ reads the game's files again (the Voices page keeps them while Studio is open)
   if (LOADED && !force) return;
+  if (!DEVNAME) DEVNAME = await import(GAME + 'js/content/devname.js').catch(() => null);
   INFO = await api('info'); document.body.classList.toggle('online', !!INFO.online);
   CONTENT = INFO.ok ? await api('content') : {};
   LOADED = true;

@@ -2439,3 +2439,11 @@ button.chip { font: inherit; color: inherit; cursor: pointer; }
 .tc-badge.lb3.on { box-shadow: inset 0 0 0 3px #ffcf3a; } .tc-badge.lb4.on { box-shadow: inset 0 0 0 3px #a66bff; }
 .pname.starname::after { content: " ★"; color: #ffcf3a; }
 @media (prefers-reduced-motion: reduce) { .testertoast { transition: none; } }
+
+/* (owner, 13 Oct) a category inside a part opens and closes by its heading (Grown-ups settings, the Bag, Quests, Album) */
+details.hfold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; min-height: 44px; }
+details.hfold > summary::-webkit-details-marker { display: none; }
+details.hfold > summary > h3 { margin: 0; flex: 1; }
+details.hfold > summary::after { content: '▾'; color: #8a5cf6; font-size: 18px; transition: transform .2s; }
+details.hfold:not([open]) > summary::after { transform: rotate(-90deg); }
+.note.devid b { color: #5b2fd0; }
