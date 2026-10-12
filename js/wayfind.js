@@ -100,11 +100,11 @@ export function createWayfind(G) {
     return m;
   }
   // show the next stretch of sparkles ahead of the child; a new way if they wander off; done when they arrive
-  let acc = 0;
+  let acc = 0, lx = 0, lz = 0;   // (the trail moves on every half second, or at once when the child has moved 3 m since)
   world.updaters.push((dt, time) => {
     if (!trail) return; acc += dt; const { h, pts } = trail;
     if (Math.hypot(h.pos.x - trail.t.x, h.pos.z - trail.t.z) < ARRIVE) { const t = trail.t; stop(true); SFX.ok && SFX.ok(); say(`You found ${t.name()}!`, `Con đến ${t.name()} rồi!`); return; }
-    if (acc > .5) { acc = 0;
+    if (acc > .5 || Math.hypot(h.pos.x - lx, h.pos.z - lz) > 3) { acc = 0; lx = h.pos.x; lz = h.pos.z;
       let bi = trail.i, bd = 1e9; for (let k = Math.max(0, trail.i - 4); k < Math.min(pts.length, trail.i + 40); k++) { const d = Math.hypot(pts[k][0] - h.pos.x, pts[k][1] - h.pos.z); if (d < bd) { bd = d; bi = k; } }
       if (bd > 25) { if (!start(h, trail.t)) stop(true); return; }
       trail.i = bi;
