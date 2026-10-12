@@ -1238,12 +1238,17 @@ G.drawOnlinePanel = (body, redraw) => {
 };
 
 // ---------- layout ----------
+// (Round V, owner's iPhone notes 13 Oct: a black strip at the bottom) on an iPhone in Safari the window's height stops
+// above the browser's bottom bar, so the page's dark background showed under the game: the game fills the large
+// screen height (100lvh) instead, measured by a hidden probe; the same as the window's height everywhere else
+const lvhProbe = (() => { try { if (!CSS.supports('height', '100lvh')) return null; const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100lvh;visibility:hidden;pointer-events:none'; document.body.appendChild(d); return d; } catch (e) { return null; } })();
+const vh = () => Math.max(innerHeight, lvhProbe ? lvhProbe.offsetHeight : 0);
 // Two players face to face (owner, round R: a tablet lying on the table with a child at each end): the screen is cut
 // across the middle; player 1 has the near half, player 2 the far half turned half a turn (rot 180) so it faces them.
 // On a computer or TV both halves face the same way, side by side ('side'). Grown-ups can pick either (settings.twoView).
 const faceToFace = () => settings.twoView === 'face' || (settings.twoView !== 'side' && document.body.classList.contains('touch'));
 function rects() {
-  const W = innerWidth, H = innerHeight;
+  const W = innerWidth, H = vh();
   if (G.heroes.length < 2) return [{ x: 0, y: 0, w: W, h: H, rot: 0 }];
   if (faceToFace()) return [{ x: 0, y: H / 2, w: W, h: H / 2, rot: 0 }, { x: 0, y: 0, w: W, h: H / 2, rot: 180 }];
   return W >= H ? [{ x: 0, y: 0, w: W / 2, h: H, rot: 0 }, { x: W / 2, y: 0, w: W / 2, h: H, rot: 0 }] : [{ x: 0, y: 0, w: W, h: H / 2, rot: 0 }, { x: 0, y: H / 2, w: W, h: H / 2, rot: 0 }];
@@ -1287,16 +1292,16 @@ function aimCam(h, q) {
   if (q.rot === 180) { h.cam.projectionMatrix.premultiply(_rotZ); h.cam.projectionMatrixInverse.copy(h.cam.projectionMatrix).invert(); }
 }
 function resize() {
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setSize(innerWidth, vh());
   const r = rects();
   G.heroes.forEach((h, i) => { h.cam.aspect = r[i].w / r[i].h; h.cam.updateProjectionMatrix(); G.huds[i] && G.huds[i].layout(r[i], G.heroes.length > 1); });
-  titleCam.aspect = innerWidth / innerHeight; titleCam.updateProjectionMatrix(); placeHolders();
+  titleCam.aspect = innerWidth / vh(); titleCam.updateProjectionMatrix(); placeHolders();
   const sp = $('#split'); sp.hidden = G.heroes.length < 2;
   // a small round switch in the middle of the line: face to face ⇄ side by side, any time (round R, owner)
   let sw = sp.querySelector('.viewsw');
   if (!sw) { sw = document.createElement('button'); sw.className = 'viewsw'; sw.onpointerdown = e => { e.stopPropagation(); }; sw.onclick = e => { e.stopPropagation(); settings.twoView = faceToFace() ? 'side' : 'face'; saveSettings(); SFX.tap(); resize(); }; sp.appendChild(sw); }
   sw.innerHTML = faceToFace() ? ICONS.sideView : ICONS.faceView; sw.setAttribute('aria-label', faceToFace() ? T('Sit side by side', 'Ngồi cạnh nhau') : T('Sit face to face', 'Ngồi đối diện nhau'));
-  if (G.heroes.length > 1) { const v = innerWidth >= innerHeight && !faceToFace(); Object.assign(sp.style, v ? { left: innerWidth / 2 - 2 + 'px', top: 0, width: '4px', height: '100%' } : { top: innerHeight / 2 - 2 + 'px', left: 0, height: '4px', width: '100%' }); }
+  if (G.heroes.length > 1) { const v = innerWidth >= vh() && !faceToFace(); Object.assign(sp.style, v ? { left: innerWidth / 2 - 2 + 'px', top: 0, width: '4px', height: '100%' } : { top: vh() / 2 - 2 + 'px', left: 0, height: '4px', width: '100%' }); }
 }
 addEventListener('resize', resize);
 // Phones (especially iPhone home-screen apps) sometimes report the wrong size after rotating or after the
@@ -1304,7 +1309,7 @@ addEventListener('resize', resize);
 addEventListener('orientationchange', () => setTimeout(resize, 300));
 if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(resize, 100));
 addEventListener('focusout', () => setTimeout(() => { window.scrollTo(0, 0); resize(); }, 150));
-setInterval(() => { const c = renderer.domElement; if (Math.abs(c.clientWidth - innerWidth) > 2 || Math.abs(c.clientHeight - innerHeight) > 2) resize(); }, 700);
+setInterval(() => { const c = renderer.domElement; if (Math.abs(c.clientWidth - innerWidth) > 2 || Math.abs(c.clientHeight - vh()) > 2) resize(); }, 700);
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 function onTap(i, x, y) {
   const h = G.heroes[i]; if (!h || G.paused) return;
@@ -1447,7 +1452,7 @@ function adaptResolution(rawMs) {
   if (performance.now() - adapt.t0 < 2500) return;
   const ms = adapt.sum / adapt.n; adapt.sum = adapt.n = 0; adapt.t0 = performance.now();
   const next = ms < 19 ? Math.min(adapt.max, adapt.pr + .25) : ms > 30 ? Math.max(adapt.min, adapt.pr - .25) : adapt.pr;
-  if (next !== adapt.pr) { adapt.pr = next; renderer.setPixelRatio(next); renderer.setSize(innerWidth, innerHeight, false); }
+  if (next !== adapt.pr) { adapt.pr = next; renderer.setPixelRatio(next); renderer.setSize(innerWidth, vh(), false); }
 }
 // Battery (owner, round O: "the game uses too much battery"): on phones and tablets the valley is drawn 30 times a
 // second (smooth enough for walking; half the work), unless Graphics is on "Pretty".
@@ -1498,7 +1503,7 @@ function frame(now) {
     const a = t * .05;
     titleCam.position.set(PLATEAU.x + Math.cos(a) * 70, 42, PLATEAU.z + Math.sin(a) * 70); titleCam.lookAt(PLATEAU.x, 16, PLATEAU.z); // (round T: round Ông Cú's home)
     world.updateSky(0, titleCam.position);
-    renderer.setScissorTest(false); renderer.setViewport(0, 0, innerWidth, innerHeight); renderer.render(scene, titleCam);
+    renderer.setScissorTest(false); renderer.setViewport(0, 0, innerWidth, vh()); renderer.render(scene, titleCam);
     return;
   }
   stillCheck(now); if (BAT.idle) BAT.idleFrames++;
@@ -1571,7 +1576,7 @@ function frame(now) {
   // one minute of play for the grown-ups' report (real minutes, only while the game is in front and not on a menu)
   if (now - minT >= 60000) { minT = now; if (!document.hidden && !G.paused) G.heroes.forEach(h => addMinute(h.profile)); }
   // render each player's view
-  const r = rects(), H = innerHeight;
+  const r = rects(), H = vh();
   renderer.setScissorTest(G.heroes.length > 1);
   G.heroes.forEach((h, i) => {
     const q = r[i];

@@ -2448,3 +2448,9 @@ button.chip { font: inherit; color: inherit; cursor: pointer; }
 .q-fam { flex-basis: 100%; display: flex; align-items: center; gap: 6px; min-height: 44px; border: 0; border-radius: 14px; padding: 4px 10px; background: #fff3d6; color: #5a3a1a; font: inherit; font-size: 13px; text-align: left; cursor: pointer; box-shadow: 0 2px 0 rgba(0,0,0,.12); }
 .q-fam .art { width: 26px; height: 26px; flex: none; }
 .q-fam[hidden], .quest.fold .q-fam { display: none !important; }
+/* (Round V, owner's iPhone notes 13 Oct) the game, its buttons and its screens fill the large screen height, so Safari's
+   bottom bar floats over the valley instead of a dark strip */
+@supports (height: 100lvh) { #stage, #huds, .screen { bottom: auto; height: 100lvh; } }
+/* (Round V, owner 13 Oct: the camera button's picture sat off centre) drawn like the compass, centred in its button */
+.zoomer .z-view .art, .zoomer .z-view .emo { width: 34px; height: 34px; font-size: 28px; margin: auto; display: block; transform: translateY(3px); }
+.hud.small .zoomer .z-view .art { width: 28px; height: 28px; }
