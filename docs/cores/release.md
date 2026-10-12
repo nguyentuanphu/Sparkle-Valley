@@ -93,3 +93,4 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - (12 Oct AEDT) Battery (owner: phone hot, MacBook loses about 10 % at once): after r64, one round with all three: quick savers (computers capped, no "high-performance" chip, sharpness capped at 1.5x, a slower title screen, no drawing when nothing moves, voice downloads spread out), fewer draws (merge the small objects toward the 250 budget), and battery and frame statistics (frames drawn, frame time, draws, battery where the browser tells it) shown in Analytics.
 - (12 Oct AEDT, 9:00 am) "Yes, deploy" for r64 (the iPhone bug round): round-t merged into main by pull request.
 - (12 Oct AEDT, 9:03 am) r64 live on Netlify (pull request #65; AI review: looks fine).
+- (12 Oct AEDT) Releases rollout: keep everything switched on (no weekly schedule).
