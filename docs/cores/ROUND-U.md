@@ -61,6 +61,6 @@ Rules first where a hard rule changes (PROC-006): the rule and its check go in, 
 
 ## Progress (12 Oct AEDT)
 - Parts A to E built on `claude/peaceful-hopper-un7oym`, each part pushed as a backup (main stays on r61 until "yes, deploy").
-- New checks: `bilingual`, `hscroll`, `chips`, `soundsw`, `joins`, `ride`, `signs`, `familymissions`, `wearbag`, `talk`, `houseguide`, `guide`, `prices`, `jobs`, `wayfind`, `dayplan`, `animalhomes`; `simple` and `adventure` updated for the category cards; `contract` re-recorded twice (the Sound button, the 🧭 button), both asked for by the owner.
+- New checks: `bilingual`, `hscroll`, `chips`, `soundsw`, `joins`, `ride`, `signs`, `familymissions`, `wearbag`, `talk`, `houseguide`, `guide`, `prices`, `jobs`, `wayfind`, `dayplan`, `animalhomes`; `simple` and `adventure` updated for the category cards; `contract` re-recorded twice (the Sound button, the compass button), both asked for by the owner.
 - Smaller than planned: stalls stay open at night (lanterns light over them instead of closing); only villagers with a house door within 35 m and a clear walk go inside at night (the rest light a lantern); the Lotus Village hens are the ones with a coop.
 - Part F: voices (Azure), version r62, full suite, screenshots, report, "yes, deploy".
