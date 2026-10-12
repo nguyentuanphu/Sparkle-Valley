@@ -171,23 +171,55 @@ PAGES.home = async P => {
   if ($('#out')) $('#out').onclick = async () => { await fetch(BASE + '/api/logout'); signIn(); };
 };
 // ---------- ads: small, inside the valley, OFF until switched on here; with a guide ----------
+// (r65) what an ad still needs before it can go live: a picture, both languages, who it is from, where it shows, and
+// an allowed link (https, no tracking, no link shorteners). `l` is the link as typed (the saved one keeps only https).
+const AD_TRACK = /[?&#](utm_[a-z]+|fbclid|gclid|dclid|msclkid|mc_eid|igshid|_ga)=/i, AD_SHORT = /^https?:\/\/(www\.)?(bit\.ly|tinyurl\.com|t\.co|goo\.gl|ow\.ly|is\.gd|buff\.ly|rebrand\.ly|cutt\.ly|shorturl\.at|lnkd\.in|tiny\.cc|rb\.gy)\//i;
+const adNeeds = (x, l = x.link || '') => [
+  [!!x.image, T('a picture', 'một hình')],
+  [!!(x.en || '').trim(), T('the words in English', 'lời tiếng Anh')],
+  [!!(x.vi || '').trim(), T('the words in Vietnamese', 'lời tiếng Việt')],
+  [!!(x.by || '').trim(), T('who the ad is from', 'quảng cáo của ai')],
+  [!!(x.where && x.where.length), T('where it shows (a signboard or the card)', 'hiện ở đâu (biển hoặc thẻ)')],
+  [!l || (/^https:\/\/[^\s"'<>]+$/.test(l) && !AD_TRACK.test(l) && !AD_SHORT.test(l)), !l ? '' : !/^https:\/\//.test(l) ? T('a link that starts with https://', 'liên kết bắt đầu bằng https://') : AD_TRACK.test(l) ? T('a link without tracking (take off utm_…, fbclid, gclid)', 'liên kết không theo dõi (bỏ utm_…, fbclid, gclid)') : AD_SHORT.test(l) ? T('the shop’s own link, not a link shortener', 'liên kết thật của cửa hàng, không dùng rút gọn') : T('an allowed link', 'liên kết hợp lệ')]];
+let AD_VIEW = { size: 'phone', lang: 'en' };
+// the roadside signboard, drawn like the game's (js/ads.js createAds: two wooden posts, a cream board, the picture, the "Ad" tag)
+const adBoard = (x, lang) => `<svg class="adboard" viewBox="0 0 360 230" role="img" aria-label="${T('Signboard preview', 'Xem trước biển')}"><rect width="360" height="230" fill="#bfe6ff"/><rect y="170" width="360" height="60" fill="#8fd18a"/><path d="M0 182 Q90 172 180 186 T360 180 V230 H0Z" fill="#7cc276"/>
+  <rect x="62" y="40" width="12" height="160" rx="3" fill="#7a5236"/><rect x="286" y="40" width="12" height="160" rx="3" fill="#7a5236"/><rect x="50" y="28" width="260" height="150" rx="6" fill="#fff8e8" stroke="#d9c7a3" stroke-width="2"/>
+  ${x.image ? `<image href="${FILE(esc(x.image))}" x="61" y="40" width="238" height="128" preserveAspectRatio="xMidYMid slice"/>` : `<text x="180" y="110" text-anchor="middle" font-size="15" fill="#9a8a70">${T('(the picture)', '(hình)')}</text>`}
+  <rect x="222" y="14" width="76" height="22" rx="5" fill="#3b2a4f"/><text x="260" y="30" text-anchor="middle" font-size="${lang === 'vi' ? 11 : 13}" font-weight="700" fill="#fff">${lang === 'vi' ? 'Quảng cáo' : 'Ad'}</text></svg>`;
+// the small card under "You did it!" after a mini-game (css/style.css .gl-ad, the same sizes)
+const adCard = (x, lang) => { const w = lang === 'vi' ? (x.vi || x.en) : (x.en || x.vi);
+  return `<div class="adwin"><b class="adwin-t">${lang === 'vi' ? 'Con làm được rồi!' : 'You did it!'}</b><div class="adcard"><small>${lang === 'vi' ? 'Quảng cáo' : 'Ad'}${x.by ? ' · ' + esc(x.by) : ''}</small>${x.image ? `<img src="${FILE(esc(x.image))}" alt="">` : '<i class="adnoimg"></i>'}<span>${esc(w || T('(the words)', '(lời)'))}</span></div></div>`; };
+const adPreview = x => `<div class="adprev ${AD_VIEW.size}"><figure><figcaption>${T('Signboard by the road', 'Biển bên đường')}</figcaption>${adBoard(x, AD_VIEW.lang)}</figure><figure><figcaption>${T('Card after a mini-game', 'Thẻ sau trò chơi')}</figcaption>${adCard(x, AD_VIEW.lang)}</figure></div>`;
+const adCheck = (x, l) => { const need = adNeeds(x, l).filter(([ok, w]) => !ok && w);
+  return need.length ? `<p class="adready no">⚠️ <b>${T('Not ready yet', 'Chưa sẵn sàng')}</b>: ${T('it still needs', 'còn cần')} ${need.map(n => n[1]).join(', ')}.</p>` : `<p class="adready yes">✅ <b>${T('Ready to go live', 'Sẵn sàng đưa lên')}</b>${x.active === false ? ' · ' + T('(switched off: “Active” is not ticked)', '(đang tắt: chưa đánh dấu “Đang dùng”)') : ''}</p>`; };
+const AD_SHOTS = [['board-computer', 'A signboard beside the road, on a computer', 'Biển bên đường, trên máy tính'], ['card-computer', 'The small card under “You did it!”, on a computer', 'Thẻ nhỏ dưới “Con làm được rồi!”, trên máy tính'], ['board-phone', 'The signboard on a phone', 'Biển trên điện thoại'], ['card-phone', 'The card on a phone', 'Thẻ trên điện thoại']];
+const AD_VIDEOS = 'https://github.com/nguyentuanphu/Sparkle-Valley/tree/claude/exciting-feynman-5nxzz8/marketing/ads-r60';
 PAGES.ads = async P => {
   const A = CONTENT.ads = CONTENT.ads || { enabled: false, perDay: 3, items: [] }; A.items = A.items || [];
   const row = (x, i) => `<div class="card adrow" data-i="${i}"><div class="row" style="align-items:flex-start;gap:14px">
       <button class="btn ghost adpic" title="${T('Picture', 'Hình')}">${x.image ? `<img src="${FILE(esc(x.image))}" style="width:120px;height:68px;object-fit:cover;border-radius:8px">` : '🖼️ ' + T('Choose picture', 'Chọn hình')}</button>
-      <div style="flex:1"><label>${T('Advertiser', 'Nhà quảng cáo')}</label><input class="ad-by" maxlength="60" value="${esc(x.by || '')}">
-      <label>🇦🇺 ${T('Words (English)', 'Lời (tiếng Anh)')}</label><input class="ad-en" maxlength="120" value="${esc(x.en || '')}"><label>🇻🇳 ${T('Words (Vietnamese)', 'Lời (tiếng Việt)')}</label><input class="ad-vi" maxlength="120" value="${esc(x.vi || '')}">
-      <label>🔗 ${T('Link (optional, https://…; opens only after a grown-up check)', 'Liên kết (không bắt buộc, https://…; chỉ mở sau khi người lớn trả lời câu đố)')}</label><input class="ad-link" maxlength="300" value="${esc(x.link || '')}">
+      <div style="flex:1"><label>${T('Advertiser', 'Nhà quảng cáo')}</label><input type="text" class="ad-by" maxlength="60" value="${esc(x.by || '')}">
+      <label>🇦🇺 ${T('Words (English)', 'Lời (tiếng Anh)')}</label><input type="text" class="ad-en" maxlength="120" value="${esc(x.en || '')}"><label>🇻🇳 ${T('Words (Vietnamese)', 'Lời (tiếng Việt)')}</label><input type="text" class="ad-vi" maxlength="120" value="${esc(x.vi || '')}">
+      <label>🔗 ${T('Link (optional, https://…; opens only after a grown-up check)', 'Liên kết (không bắt buộc, https://…; chỉ mở sau khi người lớn trả lời câu đố)')}</label><input type="text" inputmode="url" class="ad-link" maxlength="300" value="${esc(x.link || '')}">
       <div class="row"><label><input type="checkbox" class="ad-boards" ${!x.where || x.where.includes('boards') ? 'checked' : ''}> ${T('Signboards by the roads', 'Biển bên đường')}</label>
       <label><input type="checkbox" class="ad-end" ${!x.where || x.where.includes('gameend') ? 'checked' : ''}> ${T('Small card after a mini-game', 'Thẻ nhỏ sau trò chơi')}</label>
       <label><input type="checkbox" class="ad-on" ${x.active !== false ? 'checked' : ''}> ${T('Active', 'Đang dùng')}</label></div></div>
-      <button class="btn ghost ad-del" title="${T('Remove', 'Xóa')}">🗑️</button></div></div>`;
+      <button class="btn ghost ad-del" title="${T('Remove', 'Xóa')}" aria-label="${T('Remove', 'Xóa')}">🗑️</button></div>
+      <div class="adcheck">${adCheck(x)}</div><div class="adlive">${adPreview(x)}</div></div>`;
   P.innerHTML = `<h2>📣 ${T('In-game ads', 'Quảng cáo trong game')}</h2><p class="sub">${T('Ready for later, and switched OFF. Nothing shows in the game until you switch it on here and Publish.', 'Đã chuẩn bị sẵn và đang TẮT. Không có gì hiện trong game cho tới khi bạn bật ở đây và Phát hành.')}</p>
-  <div class="card"><label class="row"><input type="checkbox" id="adOn" ${A.enabled === true ? 'checked' : ''}> <b>${T('Show ads in the game', 'Hiện quảng cáo trong game')}</b></label>
+  <div class="card"><label class="adon"><input type="checkbox" id="adOn" ${A.enabled === true ? 'checked' : ''}> <b>${T('Show ads in the game', 'Hiện quảng cáo trong game')}</b></label>
     <label>${T('Most cards after mini-games per day (each device)', 'Số thẻ tối đa sau trò chơi mỗi ngày (mỗi máy)')}</label><input type="number" id="adPer" min="0" max="10" value="${A.perDay ?? 3}" style="max-width:100px"></div>
+  ${A.items.length ? `<div class="card adview"><b>👀 ${T('Preview', 'Xem trước')}</b><div class="row"><span class="seg"><button class="btn small ${AD_VIEW.size === 'phone' ? '' : 'ghost'}" data-size="phone">📱 ${T('Phone', 'Điện thoại')}</button><button class="btn small ${AD_VIEW.size === 'computer' ? '' : 'ghost'}" data-size="computer">💻 ${T('Computer', 'Máy tính')}</button></span>
+    <span class="seg"><button class="btn small ${AD_VIEW.lang === 'en' ? '' : 'ghost'}" data-alang="en">English</button><button class="btn small ${AD_VIEW.lang === 'vi' ? '' : 'ghost'}" data-alang="vi">Tiếng Việt</button></span></div>
+    <p class="note">${T('Each ad below shows how it looks as you type, drawn with its own picture and words.', 'Mỗi quảng cáo bên dưới hiện ra đúng như khi bạn gõ, với hình và lời của nó.')}</p></div>` : ''}
   <div id="adList">${A.items.map(row).join('')}</div>
   <div class="bar"><button class="btn ghost" id="adAdd">+ ${T('Add an ad', 'Thêm quảng cáo')}</button><button class="btn" id="adSave">💾 ${T('Save', 'Lưu')}</button></div>
-  <details class="card" open><summary><b>📘 ${T('Guide: ads in a children’s game', 'Hướng dẫn: quảng cáo trong game trẻ em')}</b></summary>
+  <details class="card adguide"><summary><b>🖼️ ${T('Pictures: how ads look in the game', 'Hình: quảng cáo trông thế nào trong game')}</b></summary>
+    <p class="note">${T('Real screenshots of the game with a pretend ad (“Little Lotus Books”). Your picture fills the signboard; on the card it is shown small, so big simple shapes and few words work best.', 'Ảnh chụp thật của game với một quảng cáo mẫu (“Little Lotus Books”). Hình của bạn phủ kín tấm biển; trên thẻ hình rất nhỏ, nên hình đơn giản, ít chữ là đẹp nhất.')}</p>
+    <div class="adshots">${AD_SHOTS.map(([f, en, vi]) => `<figure><img src="${BASE}/ui/ads-guide/${f}.jpg" alt="${esc(T(en, vi))}" loading="lazy"><figcaption>${T(en, vi)}</figcaption></figure>`).join('')}</div>
+    <p>🎥 ${T('Examples of good ads: the five ready-made videos about Sparkle Valley (English and Vietnamese, for social media): short, friendly, no pressure.', 'Ví dụ quảng cáo tốt: năm video làm sẵn về Thung Lũng Lấp Lánh (tiếng Anh và tiếng Việt, cho mạng xã hội): ngắn, thân thiện, không thúc ép.')} <a class="btn ghost small" href="${AD_VIDEOS}" target="_blank" rel="noopener">${T('Open the videos', 'Mở các video')}</a></p></details>
+  <details class="card"><summary><b>📘 ${T('Guide: ads in a children’s game', 'Hướng dẫn: quảng cáo trong game trẻ em')}</b></summary>
   <ol class="guide">
     <li>${T('How it works: add a picture (JPG/PNG, landscape, about 1200×680, under 600 KB), the words in both languages and, if you like, a link. Choose where it appears, tick “Show ads”, Save, then Publish. Devices get it the next time they are online.', 'Cách hoạt động: thêm hình (JPG/PNG, nằm ngang, khoảng 1200×680, dưới 600 KB), lời bằng hai thứ tiếng và liên kết nếu muốn. Chọn chỗ hiện, đánh dấu “Hiện quảng cáo”, Lưu, rồi Phát hành. Máy các con nhận được lần tới khi có mạng.')}</li>
     <li>${T('Where ads appear: a few signboards beside the roads near the towns, and a small card under the “You did it!” screen of a mini-game (a few times a day at most). Never in the middle of play, never in stories, how-to films or learning questions.', 'Quảng cáo hiện ở đâu: vài tấm biển bên đường gần các thành phố, và một thẻ nhỏ dưới màn hình “Con làm được rồi!” sau trò chơi (tối đa vài lần mỗi ngày). Không bao giờ giữa lúc chơi, trong truyện, phim hướng dẫn hay câu hỏi học tập.')}</li>
@@ -199,13 +231,21 @@ PAGES.ads = async P => {
   </ol></details>`;
   const collect = () => { A.enabled = $('#adOn').checked; A.perDay = Math.max(0, Math.min(10, +$('#adPer').value || 0));
     P.querySelectorAll('.adrow').forEach(r => { const x = A.items[+r.dataset.i]; x.by = r.querySelector('.ad-by').value.trim(); x.en = r.querySelector('.ad-en').value.trim(); x.vi = r.querySelector('.ad-vi').value.trim();
-      const l = r.querySelector('.ad-link').value.trim(); x.link = /^https:\/\//.test(l) ? l : ''; x.active = r.querySelector('.ad-on').checked;
+      const l = r.querySelector('.ad-link').value.trim(); x.link = adNeeds({}, l)[5][0] ? l : ''; x.active = r.querySelector('.ad-on').checked;
       x.where = [r.querySelector('.ad-boards').checked && 'boards', r.querySelector('.ad-end').checked && 'gameend'].filter(Boolean); }); };
+  // as you type: this ad's preview and checklist again (the link as typed, so a wrong one is named)
+  const live = r => { collect(); const x = A.items[+r.dataset.i], l = r.querySelector('.ad-link').value.trim(); r.querySelector('.adcheck').innerHTML = adCheck(x, l); r.querySelector('.adlive').innerHTML = adPreview(x); };
+  P.querySelectorAll('.adrow').forEach(r => { r.addEventListener('input', () => live(r)); r.addEventListener('change', () => live(r)); });
+  P.querySelectorAll('[data-size]').forEach(b => b.onclick = () => { collect(); AD_VIEW.size = b.dataset.size; PAGES.ads(P); });
+  P.querySelectorAll('[data-alang]').forEach(b => b.onclick = () => { collect(); AD_VIEW.lang = b.dataset.alang; PAGES.ads(P); });
   $('#adAdd').onclick = () => { collect(); A.items.push({ by: '', en: '', vi: '', link: '', where: ['boards', 'gameend'], active: true }); PAGES.ads(P); };
   P.querySelectorAll('.ad-del').forEach(b => b.onclick = () => { collect(); A.items.splice(+b.closest('.adrow').dataset.i, 1); PAGES.ads(P); });
   P.querySelectorAll('.adpic').forEach(b => b.onclick = () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/jpeg,image/png';
     inp.onchange = () => { const f = inp.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = async () => { try { collect(); const i = +b.closest('.adrow').dataset.i, r = await api('adimage', { id: A.items[i].by || 'ad', dataUrl: rd.result }); A.items[i].image = r.image; PAGES.ads(P); } catch (e) { fail(e); } }; rd.readAsDataURL(f); }; inp.click(); });
-  $('#adSave').onclick = () => { collect(); if (A.enabled && A.items.some(x => x.active !== false && !x.image)) return toast(T('Each active ad needs a picture.', 'Mỗi quảng cáo đang dùng cần có hình.')); saveContent().catch(fail); };
+  // (r65) an ad can go live only when nothing is missing: "Show ads" on with an active ad not ready is not saved
+  $('#adSave').onclick = () => { collect(); const rows = [...P.querySelectorAll('.adrow')], notReady = A.items.map((x, i) => [x, i]).filter(([x, i]) => x.active !== false && adNeeds(x, rows[i].querySelector('.ad-link').value.trim()).some(([ok, w]) => !ok && w));
+    if (A.enabled && notReady.length) { const [x, i] = notReady[0]; rows[i].scrollIntoView({ block: 'center' }); return toast(T(`Ad ${i + 1}${x.by ? ' (' + x.by + ')' : ''} is not ready yet: see its checklist. Untick “Active” or “Show ads” to save it as it is.`, `Quảng cáo ${i + 1}${x.by ? ' (' + x.by + ')' : ''} chưa sẵn sàng: xem danh sách cần có. Bỏ dấu “Đang dùng” hoặc “Hiện quảng cáo” để lưu như hiện tại.`), 'bad'); }
+    saveContent().catch(fail); };
 };
 // ---------- family album: photos the grown-ups add become postcards the children find in the valley (js/familycards.js) ----------
 // (the places are the game's sticker-book places, js/placebook.js PLACES; the studio check keeps the two lists the same)
@@ -515,11 +555,19 @@ PAGES.releases = async P => {
     ${Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th class="more"></th><th>${T('Starts', 'Bắt đầu')}</th><th>${T('Days on', 'Số ngày')}</th><th>${T('“New” days', 'Ngày “Mới”')}</th></tr></thead><tbody>${RELEASES.filter(x => x.group === g).map(row).join('')}</tbody></table></div>`).join('')}
     <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   P.querySelector('.sub').after(document.createRange().createContextualFragment(liveNote())); bindMore(P);
+  // (owner, 12 Oct) the auto play check: on every device, or only on the ones ticked here (from the players report)
+  { const tr = P.querySelector('tr[data-id="autoplay"]'), mine = new Set((R.autoplay && R.autoplay.devices) || []);
+    if (tr) { const box = document.createElement('div'); box.className = 'card'; box.id = 'apdev'; tr.closest('.card').after(box);
+      box.innerHTML = `<h4>${T('Auto play check: which devices', 'Tự chơi để kiểm tra: máy nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on).', 'Không chọn máy nào: mọi máy (khi công tắc bật).')}</p><div id="apdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
+      let devs = []; try { const r = await api('players'); devs = (r && r.devices) || []; } catch (e) { devs = []; }
+      for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
+      $('#apdl').innerHTML = devs.length ? devs.map(d => `<label class="chk"><input type="checkbox" data-dev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${esc(d.label || [d.kind, d.os, d.br].filter(x => x && x !== '?').join(' · ') || d.id)} <small class="mini">${esc(d.id)}</small></label>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`; } }
   P.querySelectorAll('[data-in]').forEach(b => b.onchange = () => { if (b.value === '') return; b.closest('td').querySelector('[data-r="start"]').value = plusDays(+b.value); b.value = ''; });
   $('#save').onclick = async () => {
     const out = {};
     P.querySelectorAll('tr[data-id]').forEach(tr => { const id = tr.dataset.id, x = RELEASES.find(y => y.id === id), v = k => tr.querySelector(`[data-r="${k}"]`).value;
       const r = {}, on = v('on') === 'true'; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
+      if (id === 'autoplay') { const dv = [...P.querySelectorAll('[data-dev]:checked')].map(c => c.dataset.dev); if (dv.length) r.devices = dv; }
       if (Object.keys(r).length) out[id] = r; });
     await saveLive({ releases: out, festivals: live.festivals || {} }).catch(fail);
   };
@@ -603,12 +651,15 @@ async function allJobs() {
 let voiceStop = false, INBOX = [];
 PAGES.voices = async P => {
   P.innerHTML = `<h2>🎙️ ${T('Voices', 'Giọng đọc')}</h2><p class="sub">${T('New games and stories need new recordings. Lines without one use the device’s own voice until they are made.', 'Trò chơi và truyện mới cần bản ghi mới. Câu nào chưa có thì máy tự đọc bằng giọng của máy cho tới khi có bản ghi.')}</p><div class="card" id="vsum">${T('Counting the lines…', 'Đang đếm các câu…')}</div>`;
-  const jobs = await allJobs(), have = await api('voices/have');
+  const jobs = await allJobs(), have = await api('voices/have'), daily = await api('voices/daily').catch(() => null);
+  // (Voice & Audio, 12 Oct) the daily voice recording (GitHub, once a day): when it last ran and what is still waiting
+  const sydney = iso => new Date(iso).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+  const dailyLine = daily && daily.at ? `<div class="card"><h3>🌙 ${T('Daily recording', 'Thu âm hằng ngày')}</h3><p>${T('Last run', 'Lần chạy cuối')}: <b>${esc(sydney(daily.at))}</b> · <b class="${daily.waiting ? 'warn' : 'ok'}">${+daily.waiting || 0}</b> ${T('waiting', 'đang chờ')}${daily.pending ? ` · ${+daily.pending} ${T('recorded, waiting for the next release', 'đã thu, chờ bản phát hành tới')}` : ''}${daily.held ? ` · ${+daily.held} ${T('held (may have a name: make them by hand below if they are fine)', 'để lại (có thể có tên: nếu ổn thì tự tạo bên dưới)')}` : ''}</p><p class="note">${T('Every missing line the game has is recorded with Azure by itself once a day; lines with a child’s, friend’s or pet’s name never are.', 'Mỗi ngày một lần, mọi câu còn thiếu trong game được tự thu bằng Azure; câu có tên của bé, bạn hay thú cưng thì không bao giờ.')}</p></div>` : '';
   const missing = []; for (const [h, j] of jobs) for (const s of CAST[j.lang]) if (!have[j.lang][s].includes(h)) missing.push({ hash: h, slot: s, ...j });
   missing.sort((a, b) => (b.asked || 0) - (a.asked || 0)); // the inbox first: what the children are hearing now
   const by = L => missing.filter(x => x.lang === L).length, chars = missing.reduce((a, x) => a + x.text.length, 0);
   const asked = missing.filter(x => x.asked), askedSlots = new Set(asked.map(x => x.hash)).size;
-  $('#vsum').innerHTML = `${INBOX.length ? `<div class="inbox"><h3>📥 ${T('Inbox: lines the children heard in the machine voice', 'Hộp thư: câu các con nghe bằng giọng máy')}</h3><p>${askedSlots ? `<b class="warn">${askedSlots}</b> ${T('of them still need a recording. Make them first with one click:', 'câu vẫn cần bản ghi. Tạo chúng trước bằng một chạm:')}</p><div class="row"><button class="btn" id="azin" ${!INFO.conf.azure ? 'disabled' : ''}>☁️ ${T('Make the inbox lines with Azure', 'Tạo các câu trong hộp thư bằng Azure')}</button></div>` : `<p class="ok">✅ ${T('Every line the devices asked for has a recording now.', 'Mọi câu các máy hỏi đã có bản ghi.')}</p>`}<p class="note">${T('Devices send these by themselves when they say a line without a recording (never a line with a child’s name). They are also in the list below, marked 📥.', 'Các máy tự gửi khi phải đọc một câu chưa có bản ghi (không bao giờ có câu chứa tên của bé). Chúng cũng nằm trong danh sách bên dưới, có dấu 📥.')}</p></div>` : ''}<p><b>${jobs.size}</b> ${T('lines in the game', 'câu trong game')} · <b class="${missing.length ? 'warn' : 'ok'}">${missing.length}</b> ${T('recordings missing', 'bản ghi còn thiếu')} (🇦🇺 ${by('en')} · 🇻🇳 ${by('vi')} · 🇨🇳 ${by('zh')} · 🇮🇳 ${by('hi')}), ${chars} ${T('characters', 'ký tự')}.</p>
+  $('#vsum').innerHTML = `${dailyLine}${INBOX.length ? `<div class="inbox"><h3>📥 ${T('Inbox: lines the children heard in the machine voice', 'Hộp thư: câu các con nghe bằng giọng máy')}</h3><p>${askedSlots ? `<b class="warn">${askedSlots}</b> ${T('of them still need a recording. Make them first with one click:', 'câu vẫn cần bản ghi. Tạo chúng trước bằng một chạm:')}</p><div class="row"><button class="btn" id="azin" ${!INFO.conf.azure ? 'disabled' : ''}>☁️ ${T('Make the inbox lines with Azure', 'Tạo các câu trong hộp thư bằng Azure')}</button></div>` : `<p class="ok">✅ ${T('Every line the devices asked for has a recording now.', 'Mọi câu các máy hỏi đã có bản ghi.')}</p>`}<p class="note">${T('Devices send these by themselves when they say a line without a recording (never a line with a child’s name). They are also in the list below, marked 📥.', 'Các máy tự gửi khi phải đọc một câu chưa có bản ghi (không bao giờ có câu chứa tên của bé). Chúng cũng nằm trong danh sách bên dưới, có dấu 📥.')}</p></div>` : ''}<p><b>${jobs.size}</b> ${T('lines in the game', 'câu trong game')} · <b class="${missing.length ? 'warn' : 'ok'}">${missing.length}</b> ${T('recordings missing', 'bản ghi còn thiếu')} (🇦🇺 ${by('en')} · 🇻🇳 ${by('vi')} · 🇨🇳 ${by('zh')} · 🇮🇳 ${by('hi')}), ${chars} ${T('characters', 'ký tự')}.</p>
     <div class="row"><button class="btn" id="az" ${!INFO.conf.azure || !missing.length ? 'disabled' : ''}>☁️ ${T('Make them with Azure', 'Tạo bằng Azure')}</button><button class="btn pink" id="pi" ${!INFO.conf.piper || !missing.length ? 'disabled' : ''}>💻 ${T('Make them with Piper (free, offline)', 'Tạo bằng Piper (miễn phí, không cần mạng)')}</button><button class="btn ghost" id="stop" disabled>⏹ ${T('Stop', 'Dừng')}</button></div>
     <p class="note">${!INFO.conf.azure ? T('Azure: add your key in Settings. ', 'Azure: thêm khóa trong Cài đặt. ') : T('Azure free tier: about 20 a minute, so this goes slowly; you can stop and carry on later. ', 'Azure miễn phí: khoảng 20 câu một phút nên hơi chậm; dừng lúc nào cũng được, lần sau làm tiếp. ')}${!INFO.conf.piper ? T('Piper: download it and its voices, then set them in Settings.', 'Piper: tải về cùng giọng đọc, rồi chọn trong Cài đặt.') : ''}</p>
     <div class="prog"><i id="pb"></i></div><p class="note" id="pt"></p></div>
@@ -688,7 +739,19 @@ PAGES.publish = async P => {
   const ghRun = async (what, btn) => {
     ['#gpub', '#gdraft'].forEach(k => { if ($(k)) $(k).disabled = true; }); $('#gres').textContent = T('Starting…', 'Bắt đầu…'); let j0;
     const again = () => ['#gpub', '#gdraft'].forEach(k => { if ($(k)) $(k).disabled = false; });
-    try { j0 = await api('github/' + what, { message: $('#gmsg').value }); } catch (e) { $('#gres').textContent = '⚠️ ' + e.message; again(); return; }
+    try {
+      // (owner, 12 Oct: real photos would not publish, 504) online, Publish goes in steps of a dozen changes, each its own short request
+      if (INFO.online && what === 'publish') {
+        let total = INFO.waiting || 0, sent = 0;
+        for (let k = 0; k < 400; k++) {
+          j0 = await api('github/publish', { message: $('#gmsg').value, step: true });
+          if (!j0.more) break;
+          sent += j0.sent; total = Math.max(total, sent + j0.left);
+          $('#gpb').style.width = (total ? sent / total * 100 : 5) + '%';
+          $('#gres').textContent = T(`Sending saved changes: ${sent} of ${total}…`, `Đang gửi thay đổi đã lưu: ${sent} / ${total}…`);
+        }
+      } else j0 = await api('github/' + what, { message: $('#gmsg').value });
+    } catch (e) { $('#gres').textContent = '⚠️ ' + e.message + ' · ' + T('Press Publish again: it carries on from where it stopped.', 'Bấm Phát hành lần nữa: sẽ tiếp tục từ chỗ đã dừng.'); again(); return; }
     const show = j => { $('#gpb').style.width = (j.total ? j.done / j.total * 100 : 5) + '%'; $('#gres').textContent = `${j.done}/${j.total || '?'} · ${say(j.msg || '')}`; };
     const fin = j => {
       again();
@@ -993,19 +1056,23 @@ PAGES.photos = async P => {
   for (const [kind, src] of Object.entries(RW.REAL_KINDS || {})) if (src && src.length && !items.has(RW.photoKey(src))) items.set(RW.photoKey(src), { key: RW.photoKey(src), sources: src, name: src[0].split(/:(.+)/)[1] });
   const all = [...items.values()];
   const draw = async () => {
-    const pix = await api('photos/index'), have = all.filter(x => pix[x.key] && pix[x.key].length).length;
+    const pix = await api('photos/index', {}), have = all.filter(x => pix[x.key] && pix[x.key].length).length;
     P.innerHTML = `<h2>📷 ${T('Real photos', 'Ảnh thật')}</h2><p class="sub">${T('The best photos of each real place, from Wikipedia, Wikimedia Commons and Openverse (Creative Commons photos from Flickr and museums), the article’s main picture first, a few from each source. They are saved into the game with who took them and the licence, so children see them even with no internet. Runs on this computer; Publish to send them to the children. ✕ takes off a photo that is not of the place, and it is never fetched again.', 'Những ảnh đẹp nhất của từng nơi thật, lấy từ Wikipedia, Wikimedia Commons và Openverse (ảnh Creative Commons từ Flickr và các bảo tàng), ảnh chính của bài viết trước, mỗi nguồn vài ảnh. Ảnh được lưu vào game kèm tên người chụp và giấy phép, nên các con xem được cả khi không có mạng. Chạy trên máy này; bấm Phát hành để gửi tới các con. ✕ bỏ ảnh không đúng nơi, và ảnh đó sẽ không bị tải lại.')}</p>
     <div class="card"><p><b>${have}</b> / ${all.length} ${T('places have photos saved', 'nơi đã có ảnh')}.</p>
       <div class="row"><div style="flex:0 0 160px"><label>${T('Photos per place', 'Số ảnh mỗi nơi')}</label><select id="pmax">${[3, 4, 6].map(n => `<option ${n === 4 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
       <button class="btn" id="pmiss">⬇️ ${T('Get photos for places without any', 'Tải ảnh cho nơi chưa có')}</button><button class="btn ghost" id="pall">🔄 ${T('Get them all again', 'Tải lại tất cả')}</button></div>
-      <div class="prog"><i id="ppb"></i></div><p class="note" id="pres"></p></div>
-    <div class="grid">${all.map(x => `<div class="card"><b>${esc(x.name)}</b> <button class="btn small ghost" data-get="${esc(x.key)}">🔄</button><div class="thumbs">${(pix[x.key] || []).map(p => `<span class="thumb"><img src="${FILE(esc(p.src))}" title="${esc(p.credit || '')}"><button data-rm="${esc(x.key)}|${esc(p.src)}" title="${T('Not this place: take it off (it won’t be fetched again)', 'Không phải nơi này: bỏ ảnh (sẽ không tải lại)')}" aria-label="${T('Remove this photo', 'Bỏ ảnh này')}">✕</button></span>`).join('') || `<span class="note">${T('none yet', 'chưa có')}</span>`}</div></div>`).join('')}</div>`;
+      <div class="prog"><i id="ppb"></i></div><p class="note" id="pres"></p><p class="warn" id="pbad" hidden></p><button class="btn" id="pfix" hidden>🔄 ${T('Get those places again', 'Tải lại những nơi đó')}</button></div>
+    <div class="grid">${all.map(x => `<div class="card"><b>${esc(x.name)}</b> <button class="btn small ghost" data-get="${esc(x.key)}">🔄</button><div class="thumbs">${(pix[x.key] || []).map(p => `<span class="thumb"><img src="${FILE(esc(p.src))}" title="${esc(p.credit || '')}" alt="${esc(x.name)}" data-key="${esc(x.key)}"><i class="thumbbad">${T('Can’t open: 🔄 get it again', 'Không mở được: 🔄 tải lại')}</i><button data-rm="${esc(x.key)}|${esc(p.src)}" title="${T('Not this place: take it off (it won’t be fetched again)', 'Không phải nơi này: bỏ ảnh (sẽ không tải lại)')}" aria-label="${T('Remove this photo', 'Bỏ ảnh này')}">✕</button></span>`).join('') || `<span class="note">${T('none yet', 'chưa có')}</span>`}</div></div>`).join('')}</div>`;
+    // (r65) a photo that cannot be shown (too big for the website to send, or its file gone) says so, with 🔄 beside it
+    const broken = () => { const n = P.querySelectorAll('.thumb.bad').length; $('#pbad').hidden = $('#pfix').hidden = !n; $('#pbad').textContent = n ? T(`⚠️ ${n} photo(s) can’t be opened (too big, or the file is gone). 🔄 gets that place again (photos over 1.5 MB are skipped now).`, `⚠️ ${n} ảnh không mở được (quá lớn, hoặc mất tệp). 🔄 tải lại nơi đó (ảnh trên 1,5 MB giờ được bỏ qua).`) : ''; };
+    P.querySelectorAll('.thumb img').forEach(im => { const bad = () => { im.closest('.thumb').classList.add('bad'); broken(); }; if (im.complete && !im.naturalWidth) bad(); else im.onerror = bad; });
     const go = async list => { // one place at a time (online each request must be short), the progress shown here
       P.querySelectorAll('button').forEach(b => b.disabled = true); let done = 0, errs = 0;
       for (const item of list) { $('#pres').textContent = `${done}/${list.length} · ${item.name}${errs ? ' · ⚠️ ' + errs : ''}`; try { await api('photos/get1', { item, max: +$('#pmax').value }); } catch (e) { errs++; } done++; $('#ppb').style.width = (done / list.length * 100) + '%'; }
       toast(errs ? `⚠️ ${errs}` : T('Photos saved.', 'Đã lưu ảnh.')); draw(); };
     $('#pmiss').onclick = () => go(all.filter(x => !(pix[x.key] && pix[x.key].length)));
     $('#pall').onclick = () => go(all);
+    $('#pfix').onclick = () => { const keys = new Set([...P.querySelectorAll('.thumb.bad img')].map(i => i.dataset.key)); go(all.filter(x => keys.has(x.key))); };
     P.querySelectorAll('[data-get]').forEach(b => b.onclick = () => go(all.filter(x => x.key === b.dataset.get)));
     // ✕ takes a photo off at once (it fades straight away; saving waits for Publish online) and it is never fetched again
     P.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { const [key, src] = b.dataset.rm.split('|'), th = b.closest('.thumb'); th.style.opacity = .3; try { await api('photos/remove', { key, src }); th.remove(); if (INFO) { INFO.unpublished = true; head(); } } catch (e) { th.style.opacity = 1; fail(e); } });
@@ -1066,10 +1133,14 @@ PAGES.settings = async P => {
     <p class="note">${T('github.com → Settings → Developer settings → Fine-grained tokens → Generate: only this repository, permissions Contents: Read and write, Pull requests: Read and write.', 'github.com → Settings → Developer settings → Fine-grained tokens → Generate: chỉ kho này, quyền Contents: Read and write và Pull requests: Read and write.')}</p></div>
   <div class="card"><h3>📊 ${T('Players and the online Studio', 'Người chơi và Studio trên mạng')}</h3><div class="row"><div><label>${T('The game’s website', 'Trang web của game')}</label><input type="text" id="su" value="${esc(c.siteUrl)}" placeholder="https://sparklevalley.netlify.app"></div><div><label>${T('Studio key (made online: Setup → Security)', 'Khóa Studio (tạo trên mạng: Thiết lập → Bảo mật)')} ${c.players ? '✅' : ''}</label><input type="password" id="sp" placeholder="${c.players ? T('(saved, type to replace)', '(đã lưu, gõ để thay)') : 'svk.…'}"></div></div>
     <p class="note">${T('The same Studio is online at the website’s /studio/ page (sign in there with your password and the code from your authenticator app). This computer uses a Studio key instead: the Analytics page and the family photos (they go to the website’s private store, never into the game folder) reach the website with it.', 'Studio này cũng có trên mạng ở trang /studio/ của trang web (đăng nhập ở đó bằng mật khẩu và mã từ ứng dụng xác thực). Máy này dùng khóa Studio: trang Phân tích và ảnh gia đình (gửi vào kho riêng của trang web, không bao giờ vào thư mục game) đến trang web bằng khóa này.')}</p></div>
-  <div class="bar"><button class="btn ghost" id="forget">🗑️ ${T('Forget the keys', 'Xóa các khóa')}</button><button class="btn" id="save">💾 ${T('Save settings', 'Lưu cài đặt')}</button></div>`;
+  <div class="bar"><button class="btn ghost" id="syncnow">⬇️ ${T(`Get the newest game (this folder: ${esc(INFO.version || '?')})`, `Lấy game mới nhất (thư mục này: ${esc(INFO.version || '?')})`)}</button><button class="btn ghost" id="updcheck">🔄 ${T(`Check for updates (this is ${esc(INFO.studio || '')})`, `Kiểm tra cập nhật (bản này là ${esc(INFO.studio || '')})`)}</button><button class="btn ghost" id="forget">🗑️ ${T('Forget the keys', 'Xóa các khóa')}</button><button class="btn" id="save">💾 ${T('Save settings', 'Lưu cài đặt')}</button></div>`;
   $('#save').onclick = async () => { try { await api('settings', { gameDir: $('#gd').value, azureKey: $('#ak').value, azureRegion: $('#ar').value, piperExe: $('#pe').value, piperModels: { en: $('#pen').value.trim(), vi: $('#pvi').value.trim() }, netlifyToken: $('#nt').value, netlifySite: $('#ns').value, githubToken: $('#gt').value, githubRepo: $('#gr').value, githubBranch: $('#gb').value, siteUrl: $('#su').value, studioKey: $('#sp').value }); markSaved(); toast('✅ ' + T('Settings saved.', 'Đã lưu cài đặt.'), 'good'); render(true); } catch (e) { fail(e); } };
+  $('#updcheck').onclick = () => checkUpdate(true);
+  $('#syncnow').onclick = () => watchSync(true);
   $('#forget').onclick = async () => { if (!confirm(T('Forget the Azure, Netlify and GitHub keys on this computer?', 'Xóa khóa Azure, Netlify và GitHub trên máy này?'))) return; await api('settings', { forget: ['azureKey', 'netlifyToken', 'githubToken', 'studioKey'] }); toast(T('Keys forgotten.', 'Đã xóa khóa.')); render(); };
 };
+// Sydney time is AEDT (UTC+11) in daylight saving and AEST (UTC+10) the rest of the year
+const sydneyZone = d => /GMT\+11|AEDT/.test(new Date(d).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', timeZoneName: 'short' })) ? 'AEDT' : 'AEST';
 // ---------- players: how many children play (anonymous counts from the website, netlify/lib/players.mjs) ----------
 PAGES.players = async P => {
   P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><div class="card">${T('Asking the website…', 'Đang hỏi trang web…')}</div>`;
@@ -1116,27 +1187,65 @@ PAGES.players = async P => {
     quiet: () => T(`${devName(t.d)} has not played since ${when(t.last)}.`, `${devName(t.d)} chưa chơi từ ${when(t.last)}.`),
     simple: () => T(`${t.name || 'A little one'} (under 5) mostly plays in the 3D valley on ${devName(t.d)}: the 🧸 Simple screen may be easier.`, `${t.name || 'Một bé'} (dưới 5 tuổi) hầu như chơi trong thung lũng 3D trên ${devName(t.d)}: 🧸 Màn hình đơn giản có thể dễ hơn.`)
   }[t.k] || (() => ''))();
-  P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><p class="sub">${T('What the children play, from the game’s own website: per device and per child, for the last 30 days. Towns come from the internet connection (never GPS). A grown-up can switch it all off on the device: Grown-ups → Advanced → Analytics.', 'Các con chơi gì, từ trang web của game: theo từng máy và từng bé, trong 30 ngày qua. Thành phố lấy từ kết nối mạng (không bao giờ GPS). Người lớn có thể tắt hết trên máy: Người lớn → Nâng cao → Phân tích.')}</p>
-  ${(r.tips || []).length ? `<div class="card tips"><h3>💡 ${T('Suggestions', 'Gợi ý')}</h3><ul>${r.tips.map(t => `<li>${esc(tipText(t))}</li>`).join('')}</ul></div>` : ''}
-  ${r.startup && Object.keys(r.startup).length ? `<div class="card startup"><h3>🏁 ${T('Start-up', 'Khởi động')}: ${['phone', 'tablet', 'computer'].filter(k => r.startup[k]).map(k => `${kindName(k)} ${secs(r.startup[k].ready)}`).join(' · ')}</h3><p class="note">${T('Seconds from opening the game to a built valley (the middle of the last starts; each device below has its own).', 'Số giây từ lúc mở game tới khi thung lũng dựng xong (mức giữa của các lần mở gần đây; mỗi máy bên dưới có số riêng).')}</p></div>` : ''}
-  <div class="grid">${big(r.onlineNow || 0, '🟢 playing right now', '🟢 đang chơi lúc này')}${big(r.today.devices, 'devices playing today', 'máy chơi hôm nay')}${big(r.week.devices, 'this week', 'tuần này')}${big(r.month.devices, 'last 30 days', '30 ngày qua')}${big(r.allTime, 'devices ever', 'máy từ trước tới nay')}${big(r.week.newDevices, 'new this week', 'máy mới tuần này')}${big(hrs(r.minsPerDevice), 'a device plays a day', 'mỗi máy chơi mỗi ngày')}</div>
-  <h3 class="sec">👨‍👩‍👧 ${T('Each device and child', 'Từng máy và từng bé')}</h3>${(r.devices || []).map(devCard).join('') || `<div class="card note">${T('No devices yet.', 'Chưa có máy nào.')}</div>`}
-  <h3 class="sec">🌏 ${T('Everyone', 'Tất cả')}</h3>
+  // (r65, owner: "a bit too much for the eyes; cleaner but still the details") five tiles, one row per child and per kind
+  // of device, and everything else folded under "More detail" (closed at first). One colour per meaning: green good,
+  // amber watch, red act. The battery and frame numbers come from the battery round (field names on the board):
+  // r.power[kind] = { devices, fps, frameMs, batteryPerHour } and each device's power = { fps, frameMs, draws, ratio,
+  // mins, batteryPerHour, charging }; until they come, "not reported yet".
+  const KINDS = ['phone', 'tablet', 'computer'], KICON = { phone: '📱', tablet: '📲', computer: '💻' };
+  const median = a => { const v = a.filter(x => x != null && !isNaN(x)).sort((x, y) => x - y); return v.length ? v[v.length >> 1] : null; };
+  const tone = (v, good, watch, low) => v == null ? '' : (low ? (v >= good ? 'good' : v >= watch ? 'watch' : 'act') : (v <= good ? 'good' : v <= watch ? 'watch' : 'act'));
+  const TONE = { good: T('good', 'tốt'), watch: T('worth watching', 'nên để ý'), act: T('needs a look', 'cần xem lại') };
+  const spark = (vals, col) => { const v = vals.length > 1 ? vals : [0, ...vals, 0], mx = Math.max(1, ...v), w = 120, h = 30; return `<svg class="spark" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${v.map((x, i) => `${(i / (v.length - 1) * (w - 4) + 2).toFixed(1)},${(h - 3 - x / mx * (h - 6)).toFixed(1)}`).join(' ')}"/></svg>`; };
+  const NOT_YET = T('not reported yet', 'chưa có số liệu'), PW = r.power || {}, devs = r.devices || [];
+  const per = r.perDay || [], wk = per.slice(-7), weekMins = wk.reduce((a, d) => a + (d.mins || 0), 0);
+  const fpsAll = median(devs.map(d => (d.power && d.power.fps) ?? d.fps)), startWorst = Math.max(...KINDS.map(k => r.startup && r.startup[k] ? r.startup[k].ready : -1));
+  const batt = Math.max(...KINDS.map(k => PW[k] && PW[k].batteryPerHour != null ? PW[k].batteryPerHour : -1));
+  const pctH = v => v == null || v < 0 ? NOT_YET : (Math.round(v * 10) / 10) + T(' % an hour', ' % mỗi giờ');
+  const tile = (icon, value, label, extra, t) => `<div class="card tile ${t ? 'tone-' + t : ''}"><span class="tl">${icon} ${label}</span><b>${value}</b>${extra || ''}${t ? `<span class="tt">${TONE[t]}</span>` : ''}</div>`;
+  const tiles = [
+    tile('👨‍👩‍👧', r.week.devices, T('playing this week', 'chơi tuần này'), spark(per.map(d => d.devices), '#8a5cf6') + `<span class="tx">${T('30 days', '30 ngày')}${r.onlineNow ? ' · 🟢 ' + T(`${r.onlineNow} playing now`, `${r.onlineNow} đang chơi`) : ''}</span>`),
+    tile('⏱️', hrs(weekMins), T('played this week', 'đã chơi tuần này'), spark(per.map(d => d.mins || 0), '#ff7eb8') + `<span class="tx">${T('about', 'khoảng')} ${hrs(r.minsPerDevice)} ${T('a device a day', 'mỗi máy mỗi ngày')}</span>`),
+    tile('📱', r.month.devices, T('devices (30 days)', 'máy (30 ngày)'), `<span class="tx">${T(`${r.week.newDevices} new this week · ${r.allTime} ever`, `${r.week.newDevices} máy mới tuần này · ${r.allTime} từ trước tới nay`)}</span>`),
+    tile('🏁', startWorst > 0 ? secs(startWorst) : '–', T('start-up', 'khởi động'), `<span class="tx">${KINDS.filter(k => r.startup && r.startup[k]).map(k => `${kindName(k)} ${secs(r.startup[k].ready)}`).join(' · ') || NOT_YET}</span>`, startWorst > 0 ? tone(startWorst, 10, 20) : ''),
+    tile('🔋', fpsAll != null ? `${fpsAll}<small> ${T('frames/s', 'khung/giây')}</small>` : '–', T('battery and smoothness', 'pin và độ mượt'), `<span class="tx">🔋 ${T('battery', 'pin')}: ${pctH(batt)}</span>`, batt >= 0 ? (tone(batt, 12, 25) === 'act' || tone(fpsAll, 27, 20, true) === 'act' ? 'act' : tone(batt, 12, 25) === 'watch' || tone(fpsAll, 27, 20, true) === 'watch' ? 'watch' : 'good') : fpsAll != null ? tone(fpsAll, 27, 20, true) : '')];
+  // one row per child: name, minutes, favourite game (the one started most), and where they play
+  const kids = devs.flatMap(d => d.kids.map(K => ({ ...K, dev: devName(d) }))).sort((a, b) => b.mins - a.mins);
+  const kidRows = kids.map(K => `<tr><td><b>${K.age === 'big' ? '🧒' : '👶'} ${esc(K.name || T('A child', 'Một bé'))}</b><br><span class="note">${esc(K.dev)}</span></td><td>${hrs(K.mins)}</td><td>${K.games.length ? esc(gname(K.games[0][0])) : '–'}</td></tr>`).join('');
+  // one row per kind of device: frames a second, start time, battery use
+  const kindRows = KINDS.filter(k => devs.some(d => d.kind === k) || (r.startup && r.startup[k]) || PW[k]).map(k => { const ds = devs.filter(d => d.kind === k), P2 = PW[k] || {}, f = P2.fps ?? median(ds.map(d => (d.power && d.power.fps) ?? d.fps)), st = r.startup && r.startup[k] ? r.startup[k].ready : null;
+    return `<tr><td><b>${KICON[k]} ${kindName(k)}</b><br><span class="note">${T(`${P2.devices || ds.length} device(s)`, `${P2.devices || ds.length} máy`)}</span></td><td class="tone-${tone(f, 27, 20, true)}">${f != null ? f : NOT_YET}</td><td class="tone-${tone(st, 10, 20)}">${st != null ? secs(st) : NOT_YET}</td><td class="tone-${tone(P2.batteryPerHour, 12, 25)}">${pctH(P2.batteryPerHour)}</td></tr>`; }).join('');
+  const powerLine = d => { const w = d.power; if (!w) return `🔋 ${T('battery and frames', 'pin và khung hình')}: ${NOT_YET}`;
+    return [w.fps != null && `🎞️ ${w.fps} ${T('frames/s', 'khung/giây')}`, w.frameMs != null && `${w.frameMs} ms ${T('a frame', 'mỗi khung')}`, w.draws != null && `${w.draws} ${T('draws', 'lần vẽ')}`, w.ratio != null && `${T('sharpness', 'độ nét')} ${w.ratio}×`, `🔋 ${w.batteryPerHour != null ? pctH(w.batteryPerHour) : T('battery not given by this browser', 'trình duyệt này không cho biết pin')}`, w.charging && T('mostly charging', 'thường đang sạc')].filter(Boolean).join(' · '); };
+  const more = (id, title, body) => `<details class="card more" data-more="${id}"><summary><b>${title}</b></summary>${body}</details>`;
+  P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><p class="sub">${T('What the children play, for the last 30 days, from the game’s own website. A grown-up can switch it off on the device: Grown-ups → Advanced → Analytics.', 'Các con chơi gì trong 30 ngày qua, từ trang web của game. Người lớn có thể tắt trên máy: Người lớn → Nâng cao → Phân tích.')}</p>
+  <div class="tiles">${tiles.join('')}</div>
+  ${(r.tips || []).length ? `<div class="card tips"><h3>💡 ${T('Worth doing', 'Nên làm')}</h3><ul>${r.tips.slice(0, 4).map(t => `<li>${esc(tipText(t))}</li>`).join('')}</ul>${r.tips.length > 4 ? `<p class="note">${T(`${r.tips.length - 4} more under More detail → Suggestions.`, `Còn ${r.tips.length - 4} gợi ý trong Thêm chi tiết → Gợi ý.`)}</p>` : ''}</div>` : ''}
+  <div class="grid two"><div class="card"><h3>👨‍👩‍👧 ${T('Each child', 'Từng bé')}</h3>${kidRows ? `<table class="rows"><thead><tr><th>${T('Child', 'Bé')}</th><th>⏱️ ${T('30 days', '30 ngày')}</th><th>⭐ ${T('Favourite game', 'Trò thích nhất')}</th></tr></thead><tbody>${kidRows}</tbody></table>` : `<p class="note">${T('No children yet.', 'Chưa có bé nào.')}</p>`}</div>
+    <div class="card"><h3>📱 ${T('Each kind of device', 'Từng loại máy')}</h3>${kindRows ? `<table class="rows kinds"><thead><tr><th>${T('Device', 'Máy')}</th><th>🎞️ ${T('frames/s', 'khung/giây')}</th><th>🏁 ${T('start', 'khởi động')}</th><th>🔋 ${T('battery', 'pin')}</th></tr></thead><tbody>${kindRows}</tbody></table>` : `<p class="note">${T('No devices yet.', 'Chưa có máy nào.')}</p>`}
+      <p class="note">${T('Battery: only Chrome-based browsers tell it (not Safari on iPhone or Mac).', 'Pin: chỉ trình duyệt dựa trên Chrome cho biết (Safari trên iPhone và Mac thì không).')}</p></div></div>
+  <h3 class="sec">🔎 ${T('More detail', 'Thêm chi tiết')}</h3>
+  ${(r.tips || []).length > 4 ? more('tips', `💡 ${T('Suggestions', 'Gợi ý')} (${r.tips.length})`, `<ul>${r.tips.map(t => `<li>${esc(tipText(t))}</li>`).join('')}</ul>`) : ''}
+  ${more('devices', `👨‍👩‍👧 ${T('Each device and child', 'Từng máy và từng bé')} (${devs.length})`, devs.map(devCard).join('') || `<p class="note">${T('No devices yet.', 'Chưa có máy nào.')}</p>`)}
+  ${more('startup', `🏁 ${T('Start-up, step by step', 'Khởi động, từng bước')}`, `<p class="note">${T('Seconds from opening the game to a built valley (the middle of the last starts), and the slowest step on each device.', 'Số giây từ lúc mở game tới khi thung lũng dựng xong (mức giữa của các lần mở gần đây), và bước chậm nhất trên từng máy.')}</p><table class="mini"><tbody>${devs.filter(d => d.startup).map(d => `<tr><td>${KICON[d.kind] || '❔'} ${esc(devName(d))}</td><td>${startLine(d.startup).replace(/^<br>/, '')}</td></tr>`).join('') || `<tr><td class="note">${NOT_YET}</td></tr>`}</tbody></table>`)}
+  ${more('power', `🔋 ${T('Battery and frames, each device', 'Pin và khung hình, từng máy')}`, `<table class="mini"><tbody>${devs.map(d => `<tr><td>${KICON[d.kind] || '❔'} ${esc(devName(d))}</td><td>${powerLine(d)}</td></tr>`).join('') || `<tr><td class="note">${NOT_YET}</td></tr>`}</tbody></table>`)}
+  ${more('time', `📅 ${T('Day by day and hour by hour', 'Theo ngày và theo giờ')}`, `
   <div class="card"><h3>📅 ${T('Devices each day (pink: new)', 'Số máy mỗi ngày (hồng: máy mới)')}</h3><svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px">${bars}</svg></div>
-  <div class="card"><h3>🕒 ${T('When they play (each device’s own clock)', 'Giờ chơi (theo đồng hồ của từng máy)')}</h3><svg viewBox="0 0 600 130" style="width:100%;max-width:600px">${hbars}</svg></div>
+  <div class="card"><h3>🕒 ${T('When they play (each device’s own clock)', 'Giờ chơi (theo đồng hồ của từng máy)')}</h3><svg viewBox="0 0 600 130" style="width:100%;max-width:600px">${hbars}</svg></div>`)}
+  ${more('games', `🎲 ${T('Games, places, devices and languages', 'Trò chơi, nơi chốn, máy và ngôn ngữ')}`, `
   <div class="grid"><div class="card"><h3>🎲 ${T('Most played (30 days)', 'Chơi nhiều nhất (30 ngày)')}</h3><table><tbody>${r.games.map(([g, n]) => `<tr><td>${esc(gname(g))}</td><td>${n}</td></tr>`).join('') || `<tr><td class="note">${T('none yet', 'chưa có')}</td></tr>`}</tbody></table><p class="note">${T('Stories read', 'Truyện đã đọc')}: ${r.tales} · ${T('played with friends online', 'chơi cùng bạn trên mạng')}: ${hrs(r.onlineMins)}</p></div>
     <div class="card"><h3>📍 ${T('Places visited most', 'Nơi đến nhiều nhất')}</h3><table><tbody>${(r.places || []).map(([p, n]) => `<tr><td>${esc(pname(p))}</td><td>${n}</td></tr>`).join('') || `<tr><td class="note">${T('none yet', 'chưa có')}</td></tr>`}</tbody></table></div>
     <div class="card"><h3>🌏 ${T('Where from', 'Ở đâu')}</h3><table><tbody>${table(r.locations || {})}</tbody></table></div>
     <div class="card"><h3>📱 ${T('Devices this week', 'Thiết bị tuần này')}</h3><table><tbody>${table(r.kinds, k => kindName(k))}</tbody></table><p class="note">${T('Installed as an app', 'Cài như ứng dụng')}: ${pct(r.app, r.weekDeviceDays)}</p>
       <h3>💻 ${T('Systems', 'Hệ điều hành')}</h3><table><tbody>${table(r.os || {})}</tbody></table><h3>🌐 ${T('Browsers', 'Trình duyệt')}</h3><table><tbody>${table(r.browsers || {})}</tbody></table></div>
     <div class="card"><h3>🗣️ ${T('Language', 'Ngôn ngữ')}</h3><table><tbody>${table(r.langs, k => ({ en: 'English', vi: 'Tiếng Việt' }[k] || k))}</tbody></table>
-      <h3>🏷️ ${T('Game version on the devices', 'Phiên bản game trên các máy')}</h3><table><tbody>${table(r.builds)}</tbody></table><p class="note">${T('Newest', 'Mới nhất')}: ${esc(INFO.version.split('-').pop())}</p></div></div>
-  <h3 class="sec">🐞 ${T('Problems', 'Sự cố')}</h3>
+      <h3>🏷️ ${T('Game version on the devices', 'Phiên bản game trên các máy')}</h3><table><tbody>${table(r.builds)}</tbody></table><p class="note">${T('Newest', 'Mới nhất')}: ${esc(INFO.version.split('-').pop())}</p></div></div>`)}
+  ${more('problems', `🐞 ${T('Problems', 'Sự cố')}${pb.errors.length || pb.stuck.length || pb.slow.length ? ' ⚠️' : ''}`, `
   <div class="grid"><div class="card"><h3>🐞 ${T('Errors in the game', 'Lỗi trong game')}</h3>${pb.errors.length ? `<table class="mini"><tbody>${pb.errors.map(([k, n, dv]) => `<tr><td><code>${esc(k)}</code></td><td>${n}×</td><td>${dv} ${T('dev.', 'máy')}</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('No errors.', 'Không có lỗi.')}</p>`}</div>
     <div class="card"><h3>🧱 ${T('Where children got stuck', 'Chỗ các bé bị kẹt')}</h3>${pb.stuck.length ? `<table class="mini"><tbody>${pb.stuck.map(([k, n]) => `<tr><td>${esc(where(k))}</td><td>${n}×</td></tr>`).join('')}</tbody></table><p class="note">${T('Pushing to walk for 4 seconds without moving (area and map position).', 'Đẩy để đi 4 giây mà không nhúc nhích (khu và vị trí trên bản đồ).')}</p>` : `<p class="ok">✅ ${T('Nobody got stuck.', 'Không ai bị kẹt.')}</p>`}</div>
     <div class="card"><h3>🚪 ${T('Games left before the end', 'Trò bị bỏ dở')}</h3>${pb.quits.length ? `<table class="mini"><tbody>${pb.quits.map(([g, n, st, pc]) => `<tr><td>${esc(gname(g))}</td><td>${n}/${st}</td><td class="${pc >= 50 ? 'warn' : ''}">${pc}%</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('None.', 'Không có.')}</p>`}</div>
-    <div class="card"><h3>🐢 ${T('Slow devices', 'Máy chạy chậm')}</h3>${pb.slow.length ? `<table class="mini"><tbody>${pb.slow.map(([id, l, f, sm]) => `<tr><td>${esc(l || id)}</td><td>${f} ${T('frames/s', 'khung/giây')}</td><td>${sm} ${T('slow min', 'phút chậm')}</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('All smooth.', 'Đều mượt.')}</p>`}</div></div>
-  <p class="note">${T('Made', 'Lúc')} ${esc(new Date(r.made).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Brisbane' }))} AEST</p>`;
+    <div class="card"><h3>🐢 ${T('Slow devices', 'Máy chạy chậm')}</h3>${pb.slow.length ? `<table class="mini"><tbody>${pb.slow.map(([id, l, f, sm]) => `<tr><td>${esc(l || id)}</td><td>${f} ${T('frames/s', 'khung/giây')}</td><td>${sm} ${T('slow min', 'phút chậm')}</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('All smooth.', 'Đều mượt.')}</p>`}</div></div>`)}
+  <p class="note">${T('Made', 'Lúc')} ${esc(new Date(r.made).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney' }))} ${sydneyZone(r.made)}</p>`;
   P.querySelectorAll('.dev [data-rename]').forEach(b => b.onclick = async () => { const card = b.closest('.dev'), id = card.dataset.id, cur = card.querySelector('.dlabel').textContent;
     const l = prompt(T('A name for this device (e.g. “Na’s iPad”):', 'Tên cho máy này (ví dụ “iPad của Na”):'), cur); if (l === null) return;
     try { await api('players/label', { id, label: l }); card.querySelector('.dlabel').textContent = l || cur; toast(T('Saved.', 'Đã lưu.')); } catch (e) { fail(e); } });
@@ -1212,7 +1321,45 @@ function signIn() {
 // (the browser's Back button, or a typed address: a page with changes not saved asks first, and stays if you say no)
 let HASH = location.hash;
 window.addEventListener('hashchange', () => { const k = route(); if (k === cur) { HASH = location.hash; return; } if (!leaveOk()) { history.replaceState(null, '', HASH || '#'); return; } HASH = location.hash; cur = k; render(); });
+// (owner, 12 Oct) the exe updates itself: a banner when GitHub has a newer Sparkle Studio; "Update now" swaps it in
+async function checkUpdate(manual) {
+  if (!INFO || INFO.online) return null;
+  let u; try { u = await api('update/check'); } catch (e) { if (manual) toast('⚠️ ' + say(e.message), 'bad'); return null; }
+  if (u.error) { if (manual) toast('⚠️ ' + say(u.error), 'bad'); return u; }
+  if (!u.newer) { if (manual) toast('✅ ' + T(`Sparkle Studio ${u.here} is the newest.`, `Sparkle Studio ${u.here} là bản mới nhất.`), 'good'); return u; }
+  let bar = $('#updbar'); if (!bar) { bar = document.createElement('div'); bar.id = 'updbar'; bar.className = 'card warn'; bar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:50;display:flex;gap:12px;align-items:center;flex-wrap:wrap;max-width:calc(100vw - 32px)'; document.body.appendChild(bar); }
+  bar.innerHTML = `<span>🆕 ${T(`New Sparkle Studio ${esc(u.latest)} (you have ${esc(u.here)}).`, `Có Sparkle Studio ${esc(u.latest)} mới (bạn đang dùng ${esc(u.here)}).`)}</span>${u.can ? `<button class="btn" id="updgo">⬇️ ${T('Update now', 'Cập nhật ngay')}</button>` : ''}<button class="btn ghost" id="updno">${T('Later', 'Để sau')}</button>`;
+  $('#updno').onclick = () => bar.remove();
+  if ($('#updgo')) $('#updgo').onclick = async () => {
+    if (!leaveOk()) return;
+    $('#updgo').disabled = true; bar.querySelector('span').textContent = T('Downloading the new Sparkle Studio…', 'Đang tải Sparkle Studio mới…');
+    let r; try { r = await api('update/apply', {}); } catch (e) { r = { error: e.message }; }
+    if (r.error) { bar.querySelector('span').textContent = '⚠️ ' + say(r.error); $('#updgo').disabled = false; return; }
+    bar.querySelector('span').textContent = T(`Starting Sparkle Studio ${r.latest}…`, `Đang mở Sparkle Studio ${r.latest}…`);
+    let gone = false; for (let k = 0; k < 60; k++) { await new Promise(ok => setTimeout(ok, 1500)); try { const i = await api('info'); if (gone || i.studio !== INFO.studio) { location.reload(); return; } } catch (e) { gone = true; } } // (the old one stops, then the new one answers)
+    bar.querySelector('span').textContent = T('Please open Sparkle Studio again.', 'Hãy mở lại Sparkle Studio.');
+  };
+  return u;
+}
+// (owner, 12 Oct) the exe keeps its game folder up to date from GitHub: a bar while it gets the newest game
+async function watchSync(force) {
+  if (!INFO || INFO.online) return;
+  let s; try { s = force ? await api('sync/start', { force: true }) : await api('sync/status'); } catch (e) { return; }
+  let bar = null, n = 0;
+  while (s && (s.state === 'running' || (force && n === 0))) {
+    if (!bar) { bar = document.createElement('div'); bar.className = 'card'; bar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:12px;z-index:50;max-width:calc(100vw - 32px)'; document.body.appendChild(bar); }
+    bar.textContent = T(`Getting the newest game from GitHub: ${s.done} of ${s.total || '?'}…`, `Đang lấy game mới nhất từ GitHub: ${s.done} / ${s.total || '?'}…`);
+    await new Promise(ok => setTimeout(ok, 1200)); n++; try { s = await api('sync/status'); } catch (e) { break; }
+  }
+  if (bar) bar.remove();
+  if (!s) return;
+  if (s.state === 'error') { if (force || n) toast('⚠️ ' + say(s.error), 'bad'); return; }
+  if (s.total) { toast('✅ ' + T(`The game folder now has the newest game (${s.build}): ${s.total} files.`, `Thư mục game đã có game mới nhất (${s.build}): ${s.total} tệp.`) + (s.kept.length ? ' ' + T(`${s.kept.length} of your changes not published yet were kept.`, `Giữ lại ${s.kept.length} thay đổi chưa phát hành của bạn.`) : ''), 'good'); await load(true); render(); }
+  else if (force) toast('✅ ' + T(`The game folder already has the newest game (${s.build}).`, `Thư mục game đã là game mới nhất (${s.build}).`), 'good');
+}
 render();
+setTimeout(() => checkUpdate(false), 3000);
+setTimeout(() => watchSync(false), 2000);
 // keep the Studio running while this window is open; ⏻ stops it
 setInterval(() => { if (INFO && !INFO.online) fetch(BASE + '/api/ping').catch(() => { }); }, 20000);
 $('#quit').onclick = async () => {

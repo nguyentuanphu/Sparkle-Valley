@@ -40,10 +40,11 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
 
 ## Owner's decisions to keep
 - Under-5s start on the Simple screen, big kids in the valley; each child switches either way (round I).
-- The Simple screen (bug #30, owner, 10 Oct; replaces round P's groups): each bottom tab (Trò chơi, Truyện, Nơi chốn) is one
-  long road that scrolls down; a category's stops end and the next category starts on the same road, after a drawn heading
-  stop. No group pages, no way-back arrow, no top destinations button (`.sp-area` is gone). Khám phá stays as the one
-  search and jump button; its cards scroll to that category. In places, China and India always come last.
+- The Simple screen (Round U, owner, 11 Oct: "separate sections for games, stories and places"; replaces bug #30's one long
+  road per tab, 10 Oct): each bottom tab (Trò chơi, Truyện, Nơi chốn) first shows its categories as big picture cards (games
+  show their stars won); a card opens that category's own short road (its drawn heading stop, then its stops), and the big
+  ⬅ Back in the top bar goes back to the cards. Khám phá stays as the one search and jump button; its cards open that
+  category. In places, China and India always come last.
 - The switch to it is “▦ Hình to / Big pictures” beside the player's card (round O).
 - A new device has no ready-made characters: the child makes their own (round P).
 - Festivals in one place (Settings → Lễ hội); Grown-ups shows only the Analytics switch, no explanation (round N).
@@ -84,6 +85,10 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
   - the Pad map drawn from the map data (land by height, rivers, ponds, roads in their region colours), with clouds over places not yet visited that lift with one puff;
   - the Memory Villages and Hội An join the place lists by their ids (`withSitePlaces` in `js/content/activities.js`).
 - r60 (11 Oct AEDT): `main` already gives the speech box its own `dlg-rise` animation, so the item 3 commit's `rise-dialog` was dropped when merging; the `mapnames` check only tests that the box starts in the middle.
+
+- 12 Oct AEDT, owner's go ("all of the above", then "Go"): the friends row on phones (buttons under the name and status), the Kid UI board tidied (live in r63), and a 6-page 3D film of Sự tích Hồ Gươm where the child pulls up the net and hands the sword back to the Golden Turtle; Chapter 2 picks it up by itself (`FILMS.hoguom`).
+
+- 12 Oct AEDT, noon: owner: this chat deploys the next round (r65) as Release while the Release chat is out of usage; wait until one more branch is ready for Release (the owner says when), then merge every ready branch and run the full suite before deploying.
 
 ## Progress notes
 - **11 Oct 2026, 11:40 am AEDT, `core/kid-ui`:** the robot's Kid UI fixes merged: #27 (`bugfix/kid-ui-27`, PR #40), #28 (#42), #31 (#44), #41 (#46), #30 (#48), #32 (#53), plus the films branch.
@@ -141,3 +146,18 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
   - No new spoken lines.
   - Not done: the friends-row Join button on phones (Online's request); T4's drawing of every landmark on the map (only places).
   - Later, 11 Oct AEDT: main moved to r61 (T1b tidy streets), merged in without clashes (`b4b4ca74`). Run again and passed: signs, plots, solid, nametags, padmap, mapnames, hubmap, validate, ground, stalls (new in r61), phone, preload, arch, mapcoords, types, emoji, noemoji.
+- **12 Oct 2026, 12:00 pm AEDT, `core/kid-ui` (last commit: the merge of `main` r64, `f1c4baf6`):** the friends row, the board tidy-up and the Hồ Gươm film (owner's go, 12 Oct AEDT).
+  - What changed:
+    - friends row on phones (`css/style.css`): under 560 px, Join, Invite and remove wrap under the name and status, each 44 px tall; the face sits beside the name on every screen. The `phone` check now draws the row in Vietnamese with a long status on computer, phone and tablet: no button covers the status, every button is 44 px or more;
+    - the board's Kid UI section tidied (live in r63, duplicates gone, finished items ticked);
+    - a 6-page 3D film of Sự tích Hồ Gươm (`FILMS.hoguom` in `js/content/films.js`; new props `net`, `sword`, `turtle`, `turtleTower` in `js/film.js`). Chapter 2 picks it up by itself. Change from the plan: the net is pulled up by itself on page 1 (the `films` check allows no tap on page 1); the child taps on page 2 (help Lê Lợi reach the handle) and page 5 (give the sword back to the Golden Turtle);
+    - two new spoken lines (the two taps, English and Vietnamese), recorded with Azure.
+    - Brought in: `main` r64. Only the generated `voices/manifest.json` and `voices/areas.json` clashed: taken from r64 and made again with the voice tool (0 new files).
+  - Full suite before the merge, one check at a time: 102 of 104 (7 online skipped).
+    - Passed: every check but the two below; the run included phone, films, chapter2, kidplay, voicepack, voicecover, voicearea and unit.
+    - Skipped (online, no local server): multiplayer, netgames, together, meet, cloud, knock, mapver.
+    - Failed:
+      - `perf`: 832k triangles in Lotus Village (limit 800k), once. Run again twice side by side with `main` r64: passed both times on the branch (787k, 785k), `main` 785k and 789k. Nothing in this work adds to the valley.
+      - `startup`: also fails on `main` r64, measured side by side twice: first title 1807 and 1799 ms on the branch, 1719 and 1695 ms on `main` (limit about 1130 ms); first download 980 KB against 979 KB. Not from this work; still on the board for Release and Analytics & Infra.
+  - After merging r64, run again and passed: boot, phone, iphone, games, features, roads, signs, nametags, padmap, mapnames, hubmap, films, chapter2, voicepack, voicecover, voicearea, unit, rules, arch, types, tienlen, netmsg, offline, onlineoff, a11y, playhub, grownupsui, kidplay, preload, validate, solid, plots, walkaway; netgames and together skipped (online).
+  - Screenshots looked at, on phone 390 × 844, tablet 820 × 1180 and computer 1180 × 760: the friends row (Vietnamese, long status) on all three, and every page of the Hồ Gươm film. All tidy.

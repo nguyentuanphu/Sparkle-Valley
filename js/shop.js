@@ -15,7 +15,7 @@ import { rowSlot } from './content/map.js';
 import { modal } from './popups.js';
 import { pic } from './art.js';
 import { SFX } from './audio.js';
-import { SLOTS, CLOTHES, ITEM, forSlot, priceOf, owns, adoptWorn, buy, wear } from './content/shop.js';
+import { SLOTS, CLOTHES, ITEM, forSlot, priceOf, owns, adoptWorn, buy, wear, setOf, forSet } from './content/shop.js';
 import { HAT_ICON } from './data.js';
 
 // what is said ([en, vi]; to be recorded: docs/cores/play.md)
@@ -96,19 +96,21 @@ export function createShop(G, { say, save }) {
     if (twoOpen(i)) return;
     const h = G.heroes[i], p = h.profile; adoptWorn(p);
     const little = p.age !== 'big', m = modal('kcard shopk' + (little ? ' little' : ''), ''), card = m.querySelector('.card');
-    let pick = null;
+    let pick = null, more = false;   // more: the other set too (Round U)
     const close = () => { m.close(); G.paused = false; };
     m.addEventListener('click', e => { if (e.target === m) close(); }); // (tap outside to leave)
     const draw = () => {
-      const list = forSlot(tab);
+      const mineSet = setOf(p.look), all = forSlot(tab), list = all.filter(it => more || owns(p, it.id) || forSet(it, mineSet)), hidden = all.length - list.length;
       card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
         <div class="khead"><span class="kbig">${pic('🛍️')}</span><h2>${T('Clothes shop', 'Cửa hàng quần áo')}</h2>${coins(farm.coins)}</div>
         <div class="ktabs">${SLOTS.map(s => `<button class="ktab ${s.id === tab ? 'on' : ''}" data-tab="${s.id}" aria-label="${T(s.en, s.vi)}">${pic(s.icon)}</button>`).join('')}
           <button class="ktab alt" data-go="wardrobe" aria-label="${T('My wardrobe', 'Tủ đồ của con')}">${pic('🪞')}</button></div>
         <div class="kgrid">${list.map(it => { const have = owns(p, it.id), worn = p.look[it.slot] === it.id;
           return `<button class="kitem ${have ? 'have' : ''} ${worn ? 'on' : ''} ${!have && farm.coins < priceOf(it) ? 'poor' : ''}" data-id="${it.id}" aria-label="${T(it.en, it.vi)}">${itemSVG(it)}${have ? `<span class="ktick">${pic('✅')}</span>` : coins(priceOf(it))}</button>`; }).join('')}</div>
+        ${hidden || more ? `<button class="btn kmore">${more ? T('Fewer', 'Bớt lại') : T('More', 'Xem thêm')}</button>` : ''}
         ${pick ? `<div class="kask"><div class="kaskbox">${itemSVG(pick)}${coins(priceOf(pick))}<div class="kbtns"><button class="kno" aria-label="${T('Not now', 'Để sau')}">✕</button><button class="kyes ${farm.coins < priceOf(pick) ? 'poor' : ''}" aria-label="${T('Buy', 'Mua')}">${pic('🛍️')}</button></div></div></div>` : ''}`;
       card.querySelector('.x').onclick = close;
+      const mb = card.querySelector('.kmore'); if (mb) mb.onclick = () => { more = !more; SFX.tap(); draw(); };
       card.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; pick = null; SFX.tap(); const s = SLOTS.find(x => x.id === tab); say(s.en, s.vi); draw(); });
       card.querySelector('[data-go="wardrobe"]').onclick = () => { m.close(); G.paused = false; setTimeout(() => G.openWardrobe(i), 220); };
       card.querySelectorAll('.kitem').forEach(b => b.onclick = () => {
@@ -144,5 +146,5 @@ export function createShop(G, { say, save }) {
     };
     draw(); say(...SHOP_LINES.dress);
   }
-  return { on, spot, front, stall, openShop, openWardrobe, LINES: SHOP_LINES };
+  return { on, spot, front, stall, openShop, openWardrobe, itemSVG, LINES: SHOP_LINES };
 }
