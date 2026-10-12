@@ -278,7 +278,7 @@ export function createTown(G) {
   const person = (look, x, z, face, sit = false) => {
     const A = buildAvatar(Object.assign({ back: 'none', glider: 0 }, look), null);
     A.root.position.set(x, heightAt(x, z), z); A.root.rotation.y = face; scene.add(A.root);
-    if (sit) { A.legL.rotation.x = A.legR.rotation.x = -1.45; A.rig.position.y = -.22; }
+    if (sit) { A.legL.rotation.x = A.legR.rotation.x = -1.45; A.rig.position.y = -.22; A.root.userData.seated = true; }   // (Round V) seated at the card table: the day plan leaves them there
     people.push(A); return A;
   };
   const L2 = (style, color, hair, hairStyle, hat = 'none', skin = '#e8b48c') => ({ style, color, hair, hairStyle, hat, skin });

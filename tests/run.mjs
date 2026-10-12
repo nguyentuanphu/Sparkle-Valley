@@ -3353,10 +3353,12 @@ await check('dayplan', async () => {
     const day = { out: V.filter(v => !v.inside).length, home: V.filter(v => Math.hypot(v.o.position.x - v.home.x, v.o.position.z - v.home.z) < 3).length, lights: D.lights.filter(l => l.visible).length };
     G.weather.start(); run(1); const umb = V.filter(v => v.umb.visible).length; G.weather.stop(); run(1);
     G.paused = false;
-    return { n: V.length, all: all.length, jobs, titled, night, day, umb, bad: [...bad].slice(0, 5) };
+    // (Round V, owner 13 Oct) people seated at the card tables never leave their stool (they sat in the air by the road)
+    const seated = V.filter(v => v.o.userData.seated), sitMoved = seated.filter(v => Math.hypot(v.o.position.x - v.home.x, v.o.position.z - v.home.z) > .05 || v.inside).length;
+    return { n: V.length, all: all.length, jobs, titled, night, day, umb, bad: [...bad].slice(0, 5), seated: seated.length, sitMoved };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(r.n > 10 && r.jobs && r.titled && r.night.withDoor > 0 && r.night.inside === r.night.withDoor && r.night.lamps === r.night.noDoor && r.night.lights === r.night.stalls && r.day.out === r.n && r.day.home === r.n && r.day.lights === 0 && r.umb === r.n && !r.bad.length && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  ok(r.n > 10 && r.jobs && r.titled && r.night.withDoor > 0 && r.night.inside === r.night.withDoor && r.night.lamps === r.night.noDoor && r.night.lights === r.night.stalls && r.day.out === r.n && r.day.home === r.n && r.day.lights === 0 && r.umb === r.n && !r.bad.length && r.seated > 0 && !r.sitMoved && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return `${r.n} villagers with a job picture; at night ${r.night.inside} go home through their door, ${r.night.lamps} light a lantern, ${r.night.lights} stall lanterns; all back out in the morning; umbrellas in the rain; nobody on a road or in a house`;
 });
 
