@@ -41,3 +41,26 @@ List them: every tale id in the tales content without a `FILMS[id]`. Order: Viet
    Film stills: `node tests/filmshots.mjs` for phone, tablet and computer; look at them.
 4. Commit and push the working branch; board line; English and Vietnamese for every line; no emoji in docs.
 5. When the owner wants a batch live: full suite once, Netlify zip, report, one "yes, deploy" pop-up; bump the version.
+
+## Progress (Release chat, branch `claude/quirky-maxwell-4lm9tv`, started 13 Oct, 10:15 am AEDT)
+Owner's decision, 13 Oct about 10:20 am AEDT: **"build everything now"**: the three fixes and every missing film go in
+**one batch**, built on top of r70 (this branch started from `claude/great-faraday-weuhjv` at cc54c03f), released
+later with its own "yes, deploy". Record progress here as it goes.
+
+Measured before any change (new check `filmtails`, 13 Oct): film pages ran 2 to 13 s past their narration (58 problems
+in 9 films; e.g. Thánh Gióng p4: film 18.7 s, voice 5.6 s).
+
+Plan and state (update each step):
+1. [ ] Player: `S.say(t, en, vi)` narration lines inside a film (the film waits for the narrator; shown under the
+   page's words); the page ends only when the narrator is done; help taps carry on by themselves sooner.
+2. [ ] Films that do not start (causes found): the recorded-voice player (`playUrl` in `js/voice.js`) and the pack
+   fetch had no time limit, so a stalled clip on iPhone left the narration "speaking" for ever and the page never
+   turned; the film scripts loaded with no time limit before the first page. Fix: time limits on both, a cap on the
+   narration wait in `js/tales.js`, and each new film in its own small file (`js/content/films/<id>.js`, listed in
+   `js/content/talefilms.js`) so opening a story loads only its own film.
+3. [ ] Music bed: theme `story` in `js/audio.js` (quiet, slow), lowered while anyone speaks (`Music.under`), the
+   previous music back on close; follows the music switch and calm mode.
+4. [ ] Checks: `filmtails` (silent tail), `filmstart` (every film starts and plays to the end with no tap), `filmmusic`.
+5. [ ] Retime the 9 existing films (narration lines added where the action is long).
+6. [ ] 33 new films, Vietnamese first.
+7. [ ] Azure recording of the new lines; quick checks; film stills on phone, tablet, computer.
