@@ -688,7 +688,19 @@ PAGES.publish = async P => {
   const ghRun = async (what, btn) => {
     ['#gpub', '#gdraft'].forEach(k => { if ($(k)) $(k).disabled = true; }); $('#gres').textContent = T('Starting…', 'Bắt đầu…'); let j0;
     const again = () => ['#gpub', '#gdraft'].forEach(k => { if ($(k)) $(k).disabled = false; });
-    try { j0 = await api('github/' + what, { message: $('#gmsg').value }); } catch (e) { $('#gres').textContent = '⚠️ ' + e.message; again(); return; }
+    try {
+      // (owner, 12 Oct: real photos would not publish, 504) online, Publish goes in steps of a dozen changes, each its own short request
+      if (INFO.online && what === 'publish') {
+        let total = INFO.waiting || 0, sent = 0;
+        for (let k = 0; k < 400; k++) {
+          j0 = await api('github/publish', { message: $('#gmsg').value, step: true });
+          if (!j0.more) break;
+          sent += j0.sent; total = Math.max(total, sent + j0.left);
+          $('#gpb').style.width = (total ? sent / total * 100 : 5) + '%';
+          $('#gres').textContent = T(`Sending saved changes: ${sent} of ${total}…`, `Đang gửi thay đổi đã lưu: ${sent} / ${total}…`);
+        }
+      } else j0 = await api('github/' + what, { message: $('#gmsg').value });
+    } catch (e) { $('#gres').textContent = '⚠️ ' + e.message + ' · ' + T('Press Publish again: it carries on from where it stopped.', 'Bấm Phát hành lần nữa: sẽ tiếp tục từ chỗ đã dừng.'); again(); return; }
     const show = j => { $('#gpb').style.width = (j.total ? j.done / j.total * 100 : 5) + '%'; $('#gres').textContent = `${j.done}/${j.total || '?'} · ${say(j.msg || '')}`; };
     const fin = j => {
       again();

@@ -22,7 +22,7 @@ const SHOWN_EMOJI = () => { const EMO = /\p{Extended_Pictographic}(?:\uFE0F|[\u{
   return [...out]; };
 
 export function fakeGitHub(repo, files) {
-  const blobs = new Map(), trees = new Map(), commits = new Map(), refs = new Map(), log = [];
+  const blobs = new Map(), trees = new Map(), commits = new Map(), refs = new Map(), log = []; let failBlobs = 0;
   const gitSha = b => crypto.createHash('sha1').update('blob ' + b.length + '\0').update(b).digest('hex');
   const id = () => crypto.randomBytes(20).toString('hex');
   const putTree = map => { const t = id(); trees.set(t, map); return t; };
@@ -53,6 +53,7 @@ export function fakeGitHub(repo, files) {
       return out.size ? ok([...out.values()]) : no(404, 'Not Found');
     }
     if ((m = /^\/git\/blobs\/(\w+)$/.exec(q))) return blobs.has(m[1]) ? ok({ content: blobs.get(m[1]).toString('base64') }) : no(404, 'No blob');
+    if (q === '/git/blobs' && method === 'POST' && failBlobs > 0) { failBlobs--; return no(504, 'Gateway Timeout'); } // (a busy GitHub)
     if (q === '/git/blobs' && method === 'POST') { const buf = Buffer.from(body.content, 'base64'), s = gitSha(buf); blobs.set(s, buf); return ok({ sha: s }); }
     if (q === '/git/trees' && method === 'POST') {
       const base = body.base_tree ? trees.get(body.base_tree.split(':')[0]) : new Map(); if (!base) return no(422, 'bad base');
@@ -72,7 +73,7 @@ export function fakeGitHub(repo, files) {
   }
   const fileAt = (branch, rel) => { const c = refs.get(branch); if (!c) return null; const s = trees.get(commits.get(c).tree).get(rel); return s ? blobs.get(s) : null; };
   const commitOnMain = (rel, buf, message) => { const c = refs.get('main'), map = new Map(trees.get(commits.get(c).tree)), b = Buffer.from(buf), s = gitSha(b); blobs.set(s, b); map.set(rel, s); refs.set('main', putCommit(putTree(map), [c], message)); };
-  return { handle, refs, fileAt, commitOnMain, log, messageOf: c => commits.get(c).message };
+  return { handle, refs, fileAt, commitOnMain, log, messageOf: c => commits.get(c).message, failBlobsNext: n => { failBlobs = n; } };
 }
 
 // every fetch to api.github.com goes to the pretend GitHub (in this process)
@@ -129,9 +130,9 @@ export async function studioCheck(browser, open) {
   const repo = 'family/sparkle', PW = 'a-long-test-password-123', NPORT = 8791, SPORT = 8792, site = `http://localhost:${NPORT}`;
   const seed = {}; for (const f of ['index.html', 'sw.js', 'js/main.js', 'js/i18n.js', 'js/build.js', 'js/packhash.js']) seed[f] = fs.readFileSync(path.join(ROOT, f));
   seed['content/custom.json'] = JSON.stringify({ message: { en: 'Hello', vi: 'Xin chào' } }); seed['voices/en/f/0000aaaa.mp3'] = 'x'; seed['voices/manifest.json'] = JSON.stringify({ version: 2, cast: { en: ['f'] }, voices: {}, lines: { '0000aaaa': 'f' }, langOf: { '0000aaaa': 'en' } }); // (like the real pack: it lists what is recorded)
-  const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs(), adminStore = memoryBlobs(), familyStore = memoryBlobs(), logStore = memoryBlobs();
+  const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs(), adminStore = memoryBlobs(), familyStore = memoryBlobs(), logStore = memoryBlobs(), heldStore = memoryBlobs();
   const admins = await import(path.join(ROOT, 'netlify/lib/admins.mjs')), secrets = {};
-  const net = await fakeNetlify({ port: NPORT, players, adminStore, familyStore, logStore, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
+  const net = await fakeNetlify({ port: NPORT, players, adminStore, familyStore, logStore, heldStore, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
   // the exe's own server, on a copy of a small game folder, with its settings in a folder of its own
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-studio-')), game = path.join(tmp, 'game'), appdata = path.join(tmp, 'appdata');
   fs.cpSync(path.join(ROOT, 'js'), path.join(game, 'js'), { recursive: true }); // the game's code (the pages read it)
@@ -255,6 +256,14 @@ export async function studioCheck(browser, open) {
     ok(gh.refs.get('studio-draft') === gh.refs.get('main') && !(await call('/studio/api/info', { cookie: C })).j.unpublished, 'the draft did not start again after publishing');
     ok((await call('/studio/api/github/publish', { cookie: C, headers: X, body: {} })).j.result.changed === 0, 'a second publish found changes');
     ok(!(await call('/studio/api/pending', { cookie: C })).j.files.length, 'changes still waiting after Publish');
+    // (owner, 12 Oct: real photos would not publish, "error 504") many waiting photos go in steps of a dozen, each its
+    // own short request, and a busy GitHub (504) is tried again instead of failing the Publish
+    { const { heldOn } = await import(path.join(ROOT, 'netlify/functions/studio.mjs')), ch = new Map();
+      for (let i = 1; i <= 30; i++) ch.set(`photos/test${i % 5}/${i}.jpg`, Buffer.from('JPG' + i));
+      await heldOn(heldStore).put(ch); gh.failBlobsNext(1);
+      let steps = 0, r; do { r = (await call('/studio/api/github/publish', { cookie: C, headers: X, body: { message: 'Photos', step: true } })).j; steps++; } while (r && r.more && steps < 20);
+      ok(r && r.end && r.result && r.result.changed === 30 && steps === 4 && gh.fileAt('main', 'photos/test1/26.jpg'), 'photos in steps: ' + JSON.stringify({ steps, r }));
+      ok(!(await call('/studio/api/pending', { cookie: C })).j.files.length, 'photos still waiting after the Publish steps'); }
     // dropping waiting changes: they are gone and nothing reaches GitHub
     await call('/studio/api/content', { cookie: C, headers: X, body: { message: { en: 'Never mind', vi: 'Thôi' } } });
     ok((await call('/studio/api/pending/discard', { cookie: C, headers: X, body: {} })).status === 200 && /online/.test((await call('/studio/api/content', { cookie: C })).j.message.en) && !(await call('/studio/api/pending', { cookie: C })).j.files.length, 'dropping the waiting changes failed');
