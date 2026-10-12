@@ -22,6 +22,36 @@ const api = async (p, body) => { const r = await fetch(BASE + '/api/' + p, body 
 const toast = (m, kind = '') => { const t = $('#toast'); t.textContent = m; t.className = 'on ' + kind; clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), kind === 'bad' ? 7000 : 5000); };
 const fail = e => toast('⚠️ ' + say(e.message || e), 'bad');
 let INFO = null, CONTENT = {};
+// ---------- devices you can recognise (owner, 13 Oct AEDT: "which device belongs to whom, and to which child") ----------
+// Every list of devices says the same things in the same order: the name the family gave it (or an easy name made from
+// its id, the same every time), the children who play on it (first names, from the Analytics), what it is, the town,
+// and when it last played; the id stays in small print. Robots (test browsers in data centres) are greyed and can be hidden.
+const EASY = [['Red', 'Đỏ'], ['Blue', 'Xanh'], ['Green', 'Lục'], ['Gold', 'Vàng'], ['Pink', 'Hồng'], ['Purple', 'Tím'], ['Orange', 'Cam'], ['Silver', 'Bạc']];
+const EASY_ANIMAL = [['Koala', 'Gấu túi'], ['Panda', 'Gấu trúc'], ['Turtle', 'Rùa'], ['Fox', 'Cáo'], ['Owl', 'Cú'], ['Dolphin', 'Cá heo'], ['Rabbit', 'Thỏ'], ['Tiger', 'Hổ'], ['Duck', 'Vịt'], ['Kangaroo', 'Chuột túi'], ['Buffalo', 'Trâu'], ['Lotus', 'Sen']];
+const easyName = id => { let h = 0; for (const c of String(id || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0; const a = EASY_ANIMAL[h % EASY_ANIMAL.length], c = EASY[(h >>> 4) % EASY.length], n = (h >>> 8) % 90 + 10;
+  return LANG === 'vi' ? `${a[1]} ${c[1]} ${n}` : `${c[0]} ${a[0]} ${n}`; };
+const devKindName = k => ({ phone: T('Phone', 'Điện thoại'), tablet: T('Tablet', 'Máy tính bảng'), computer: T('Computer', 'Máy tính') }[k] || '');
+const devKids = d => [...new Set(((d && d.kids) || []).map(K => K.name).filter(Boolean))];
+const devTown = d => d && d.loc ? [d.loc.city, d.loc.country].filter(Boolean).join(', ') : '';
+const devAgo = iso => { if (!iso) return ''; const m = Math.max(1, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 60 ? T(`${m} min ago`, `${m} phút trước`) : m < 48 * 60 ? T(`${Math.round(m / 60)} h ago`, `${Math.round(m / 60)} giờ trước`) : T(`${Math.round(m / 1440)} days ago`, `${Math.round(m / 1440)} ngày trước`); };
+const devLast = d => d.online ? T('playing now', 'đang chơi') : d.seenAt ? devAgo(d.seenAt) : d.last ? devAgo(d.last + 'T12:00:00') : '';
+// a test browser in a data centre: no graphics card (0 to 3 frames a second) or a robot's browser name, or a town that is a big data centre
+const DATA_TOWNS = /^(Council Bluffs|Boardman|Ashburn|The Dalles|Mountain View|San Jose|Santa Clara|Columbus|Des Moines|Quincy|Prineville|Moncks Corner|Dublin|Frankfurt am Main|North Charleston)$/i;
+const isRobot = d => !!d && (/headless|playwright|puppeteer|lighthouse|bot/i.test(d.br || '') || (d.fps != null && d.fps <= 3 && !devKids(d).length) || (d.loc && DATA_TOWNS.test(d.loc.city || '') && !devKids(d).length));
+const HIDDEN = () => { try { return new Set(JSON.parse(localStorage.getItem('studioHiddenDevices') || '[]')); } catch (e) { return new Set(); } };
+const setHidden = (id, on) => { const h = HIDDEN(); on ? h.add(id) : h.delete(id); try { localStorage.setItem('studioHiddenDevices', JSON.stringify([...h])); } catch (e) { } };
+const devTitle = d => d.label || easyName(d.id);
+// one line about a device, e.g. "Tiên, Bin · Tablet · iOS · Safari · Sydney, AU · 2 h ago"
+const devAbout = d => { const kids = devKids(d), what = [devKindName(d.kind), d.os, d.br].filter(x => x && x !== '?').join(' · ');
+  return [kids.length ? '🧒 ' + kids.join(', ') : '', what, devTown(d) ? '📍 ' + devTown(d) : '', devLast(d) ? '🕒 ' + devLast(d) : ''].filter(Boolean).join(' · '); };
+const devHTML = d => `<b class="dname">${esc(devTitle(d))}</b>${isRobot(d) ? ` <span class="pill robot">🤖 ${T('probably a robot', 'có lẽ là máy tự động')}</span>` : ''} <span class="dabout">${esc(devAbout(d))}</span> <small class="mini">${esc(d.id)}</small>`;
+// a search box and "show robots" over a list of device rows (.devrow): a ticked device always stays in view
+const devFilter = list => { if (!list || list.querySelector('.devfind')) return; const bar = document.createElement('div'); bar.className = 'devfind row';
+  bar.innerHTML = `<input type="search" placeholder="${T('Find: a child, a name, a town, a phone…', 'Tìm: tên bé, tên máy, thành phố, điện thoại…')}" aria-label="${T('Find a device', 'Tìm máy')}"><label class="chk small"><input type="checkbox" data-robots> ${T('Show robots', 'Hiện máy tự động')}</label>`;
+  list.prepend(bar); const q = bar.querySelector('input[type=search]'), rb = bar.querySelector('[data-robots]');
+  const apply = () => { const t = q.value.trim().toLowerCase(); list.querySelectorAll('.devrow').forEach(r => { const on = !!r.querySelector('input[type=checkbox]:checked'); r.hidden = !on && ((r.classList.contains('robot') && !rb.checked) || (t && !r.textContent.toLowerCase().includes(t))); }); };
+  q.oninput = apply; rb.onchange = apply; apply(); };
+const devMatch = (d, q) => !q || [devTitle(d), easyName(d.id), d.id, devAbout(d)].join(' ').toLowerCase().includes(q.toLowerCase());
 const saveContent = async () => { await api('content', CONTENT); markSaved(); if (INFO) { INFO.unpublished = true; head(); if (INFO.online) api('pending').then(j => { INFO.waiting = j.files.length; head(); }).catch(() => { }); } toast('✅ ' + T('Saved. Press Publish (at the top) to send it to the children’s devices.', 'Đã lưu. Bấm Phát hành (ở trên cùng) để gửi tới máy của các con.'), 'good'); };
 // ---------- changes not saved yet (owner, 10 Oct: "edits disappear without warning") ----------
 // On the pages where you change things, a label by Save says "Not saved yet" or "Saved", and leaving the page (another
@@ -563,7 +593,8 @@ PAGES.releases = async P => {
       box.innerHTML = `<h4>${T('Auto play check: which devices', 'Tự chơi để kiểm tra: máy nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on).', 'Không chọn máy nào: mọi máy (khi công tắc bật).')}</p><div id="apdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
       let devs = []; try { const r = await api('players'); devs = (r && r.devices) || []; } catch (e) { devs = []; }
       for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
-      $('#apdl').innerHTML = devs.length ? devs.map(d => `<label class="chk"><input type="checkbox" data-dev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${esc(d.label || [d.kind, d.os, d.br].filter(x => x && x !== '?').join(' · ') || d.id)} <small class="mini">${esc(d.id)}</small></label>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`; } }
+      $('#apdl').innerHTML = devs.length ? devs.map(d => `<label class="chk devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><input type="checkbox" data-dev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`; } }
+      devFilter($('#apdl'));
   // (owner, 12 Oct) testers: which devices, each one's level (auto reports only, or with the ladybird), and the releases
   // testers see early (sneak peeks)
   { const tr = P.querySelector('tr[data-id="tester"]'), TR = R.tester || {}, mine = new Set(TR.devices || []), lv = TR.levels || {}, pk = new Set(TR.peeks || []);
@@ -572,9 +603,10 @@ PAGES.releases = async P => {
         <h4>${T('Sneak peeks: testers see these early', 'Xem trước: người thử thấy sớm')}</h4><div id="tpk">${RELEASES.filter(x => !['autoplay', 'tester'].includes(x.id)).map(x => `<label class="chk"><input type="checkbox" data-peek="${esc(x.id)}" ${pk.has(x.id) ? 'checked' : ''}> ${esc(T(x.en, x.vi))}</label>`).join('')}</div>`;
       let devs = []; try { const r = await api('players'); devs = (r && r.devices) || []; } catch (e) { devs = []; }
       for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
-      $('#tdl').innerHTML = devs.length ? devs.map(d => `<div class="tdrow"><label class="chk"><input type="checkbox" data-tdev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${esc(d.label || [d.kind, d.os, d.br].filter(x => x && x !== '?').join(' · ') || d.id)} <small class="mini">${esc(d.id)}</small></label>
+      $('#tdl').innerHTML = devs.length ? devs.map(d => `<div class="tdrow devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><label class="chk"><input type="checkbox" data-tdev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>
         <select data-tlv="${esc(d.id)}" aria-label="${T('Level', 'Mức')}"><option value="ladybird" ${lv[d.id] !== 'auto' ? 'selected' : ''}>${T('Auto reports and the ladybird', 'Tự báo lỗi và con bọ rùa')}</option><option value="auto" ${lv[d.id] === 'auto' ? 'selected' : ''}>${T('Auto reports only', 'Chỉ tự báo lỗi')}</option></select></div>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`; } }
   P.querySelectorAll('[data-in]').forEach(b => b.onchange = () => { if (b.value === '') return; b.closest('td').querySelector('[data-r="start"]').value = plusDays(+b.value); b.value = ''; });
+      devFilter($('#tdl'));
   $('#save').onclick = async () => {
     const out = {};
     P.querySelectorAll('tr[data-id]').forEach(tr => { const id = tr.dataset.id, x = RELEASES.find(y => y.id === id), v = k => tr.querySelector(`[data-r="${k}"]`).value;
@@ -1184,14 +1216,14 @@ PAGES.players = async P => {
       <p class="note">⏱️ ${hrs(K.mins)} · 🧸 ${T('Simple screen', 'Màn hình đơn giản')} ${pct(K.simpleMins, K.mins)} · 📖 ${K.tales} ${T('stories', 'truyện')}</p>
       ${K.games.length ? `<table class="mini"><thead><tr><th>${T('Game', 'Trò chơi')}</th><th>▶</th><th>🏆</th><th>🚪</th></tr></thead><tbody>${K.games.map(([g, st, w, q]) => `<tr><td>${esc(gname(g))}</td><td>${st}</td><td>${w}</td><td class="${q > w && q >= 2 ? 'warn' : ''}">${q}</td></tr>`).join('')}</tbody></table>` : ''}
       ${K.places.length ? `<p class="note">📍 ${K.places.map(([p, n]) => `${esc(pname(p))} (${n})`).join(' · ')}</p>` : ''}</div>`;
-  const devCard = d => `<div class="card dev" data-id="${esc(d.id)}"><div class="row" style="align-items:flex-start"><div style="flex:2">
+  const devCard = d => `<div class="card dev devrow${isRobot(d) ? ' robot' : ''}" data-id="${esc(d.id)}" data-devrow="${esc(d.id)}"><div class="row" style="align-items:flex-start"><div style="flex:2">
       <h3>${{ phone: '📱', tablet: '📲', computer: '💻' }[d.kind] || '❔'} <span class="dlabel">${esc(devName(d))}</span> ${d.online ? `<span class="pill live on">🟢 ${T('Playing now', 'Đang chơi')}${d.playingNow ? ' · ' + esc(d.playingNow) : ''}</span>` : `<span class="pill live">⚪ ${T('Offline', 'Không chơi')}${d.seenAt ? ' · ' + ago(d.seenAt) : ''}</span>`} <button class="btn small ghost" data-rename>✏️ ${T('Name it', 'Đặt tên')}</button></h3>
       <p class="note">${esc(d.os)} · ${esc(d.br)}${d.screen ? ' · ' + esc(d.screen) : ''}${d.app ? ' · ' + T('installed app', 'đã cài như ứng dụng') : ''} · ${esc(d.build)} · ${d.lang === 'vi' ? 'Tiếng Việt' : 'English'}<br>📍 ${esc(locName(d.loc))} · ${T('first seen', 'lần đầu')} ${when(d.first)} · ${T('last played', 'chơi gần nhất')} ${when(d.last)}</p></div>
       <div style="flex:1;min-width:150px"><p>⏱️ <b>${hrs(d.mins)}</b> ${T('in 30 days', 'trong 30 ngày')}<br>📅 ${d.days} ${T('days played', 'ngày có chơi')}${d.fps != null ? `<br>🎞️ ${d.fps} ${T('frames/s', 'khung hình/giây')}` : ''}${d.errors ? `<br><span class="badtxt">🐞 ${d.errors} ${T('errors', 'lỗi')}</span>` : ''}${d.stuck ? `<br><span class="warn">🧱 ${T('stuck', 'bị kẹt')} ${d.stuck}×</span>` : ''}${startLine(d.startup)}</p></div></div>
       <div class="kids">${d.kids.map(kidCard).join('') || `<p class="note">${T('No per-child details yet (they start with version r43).', 'Chưa có chi tiết từng bé (bắt đầu từ bản r43).')}</p>`}</div></div>`;
   const pb = r.problems || { errors: [], stuck: [], quits: [], slow: [] };
   // the suggestions in words, with the games', places' and devices' own names
-  const devName = d => d.label || (d.os && d.os !== '?' ? `${kindName(d.kind)} · ${d.os}${d.br && d.br !== '?' ? ' · ' + d.br : ''}` : T('A device', 'Một máy') + ' ' + d.id.slice(0, 4));
+  const devName = d => devTitle(d); // (owner, 13 Oct) the family's name for it, or its easy name (the same in every list)
   const where = w => { const m = /^([\w-]+)(.*)$/.exec(w || ''); return m ? pname(m[1]) + m[2] : w; };
   const tipText = t => ({
     quit: () => T(`“${gname(t.g)}” is often left before the end (${t.n} of ${t.st} times): it may be too hard. Try an easier level, or take it off the under-5 path (🎮 Game → 🧸 Simple screen).`, `“${gname(t.g)}” hay bị bỏ dở (${t.n}/${t.st} lần): có thể hơi khó. Thử mức dễ hơn, hoặc bỏ khỏi đường của bé dưới 5 tuổi (🎮 Trò chơi → 🧸 Màn hình đơn giản).`),
@@ -1241,7 +1273,7 @@ PAGES.players = async P => {
       <p class="note">${T('Battery: only Chrome-based browsers tell it (not Safari on iPhone or Mac).', 'Pin: chỉ trình duyệt dựa trên Chrome cho biết (Safari trên iPhone và Mac thì không).')}</p></div></div>
   <h3 class="sec">🔎 ${T('More detail', 'Thêm chi tiết')}</h3>
   ${(r.tips || []).length > 4 ? more('tips', `💡 ${T('Suggestions', 'Gợi ý')} (${r.tips.length})`, `<ul>${r.tips.map(t => `<li>${esc(tipText(t))}</li>`).join('')}</ul>`) : ''}
-  ${more('devices', `👨‍👩‍👧 ${T('Each device and child', 'Từng máy và từng bé')} (${devs.length})`, devs.map(devCard).join('') || `<p class="note">${T('No devices yet.', 'Chưa có máy nào.')}</p>`)}
+  ${more('devices', `👨‍👩‍👧 ${T('Each device and child', 'Từng máy và từng bé')} (${devs.length})`, `<div id="devlist">${devs.map(devCard).join('')}</div>` || `<p class="note">${T('No devices yet.', 'Chưa có máy nào.')}</p>`)}
   ${more('startup', `🏁 ${T('Start-up, step by step', 'Khởi động, từng bước')}`, `<p class="note">${T('Seconds from opening the game to a built valley (the middle of the last starts), and the slowest step on each device.', 'Số giây từ lúc mở game tới khi thung lũng dựng xong (mức giữa của các lần mở gần đây), và bước chậm nhất trên từng máy.')}</p><table class="mini"><tbody>${devs.filter(d => d.startup).map(d => `<tr><td>${KICON[d.kind] || '❔'} ${esc(devName(d))}</td><td>${startLine(d.startup).replace(/^<br>/, '')}</td></tr>`).join('') || `<tr><td class="note">${NOT_YET}</td></tr>`}</tbody></table>`)}
   ${more('power', `🔋 ${T('Battery and frames, each device', 'Pin và khung hình, từng máy')}`, `<table class="mini"><tbody>${devs.map(d => `<tr><td>${KICON[d.kind] || '❔'} ${esc(devName(d))}</td><td>${powerLine(d)}</td></tr>`).join('') || `<tr><td class="note">${NOT_YET}</td></tr>`}</tbody></table>`)}
   ${more('time', `📅 ${T('Day by day and hour by hour', 'Theo ngày và theo giờ')}`, `
@@ -1259,9 +1291,10 @@ PAGES.players = async P => {
   <div class="grid"><div class="card"><h3>🐞 ${T('Errors in the game', 'Lỗi trong game')}</h3>${pb.errors.length ? `<table class="mini"><tbody>${pb.errors.map(([k, n, dv]) => `<tr><td><code>${esc(k)}</code></td><td>${n}×</td><td>${dv} ${T('dev.', 'máy')}</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('No errors.', 'Không có lỗi.')}</p>`}</div>
     <div class="card"><h3>🧱 ${T('Where children got stuck', 'Chỗ các bé bị kẹt')}</h3>${pb.stuck.length ? `<table class="mini"><tbody>${pb.stuck.map(([k, n]) => `<tr><td>${esc(where(k))}</td><td>${n}×</td></tr>`).join('')}</tbody></table><p class="note">${T('Pushing to walk for 4 seconds without moving (area and map position).', 'Đẩy để đi 4 giây mà không nhúc nhích (khu và vị trí trên bản đồ).')}</p>` : `<p class="ok">✅ ${T('Nobody got stuck.', 'Không ai bị kẹt.')}</p>`}</div>
     <div class="card"><h3>🚪 ${T('Games left before the end', 'Trò bị bỏ dở')}</h3>${pb.quits.length ? `<table class="mini"><tbody>${pb.quits.map(([g, n, st, pc]) => `<tr><td>${esc(gname(g))}</td><td>${n}/${st}</td><td class="${pc >= 50 ? 'warn' : ''}">${pc}%</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('None.', 'Không có.')}</p>`}</div>
-    <div class="card"><h3>🐢 ${T('Slow devices', 'Máy chạy chậm')}</h3>${pb.slow.length ? `<table class="mini"><tbody>${pb.slow.map(([id, l, f, sm]) => `<tr><td>${esc(l || id)}</td><td>${f} ${T('frames/s', 'khung/giây')}</td><td>${sm} ${T('slow min', 'phút chậm')}</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('All smooth.', 'Đều mượt.')}</p>`}</div></div>`)}
+    <div class="card"><h3>🐢 ${T('Slow devices', 'Máy chạy chậm')}</h3>${pb.slow.length ? `<table class="mini"><tbody>${pb.slow.map(([id, l, f, sm]) => { const d = r.devices.find(x => x.id === id) || { id, label: l, fps: f }; return `<tr class="devrow${isRobot(d) ? ' robot' : ''}"><td>${devHTML(d)}</td><td>${f} ${T('frames/s', 'khung/giây')}</td><td>${sm} ${T('slow min', 'phút chậm')}</td></tr>`; }).join('')}</tbody></table>` : `<p class="ok">✅ ${T('All smooth.', 'Đều mượt.')}</p>`}</div></div>`)}
   <p class="note">${T('Made', 'Lúc')} ${esc(new Date(r.made).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney' }))} ${sydneyZone(r.made)}</p>`;
   { const tt = P.querySelector('#totesters'); if (tt) tt.onclick = () => go('testers'); }
+  devFilter($('#devlist')); // (owner, 13 Oct) find a device by a child's name, its name, the town or the kind of device
   P.querySelectorAll('.dev [data-rename]').forEach(b => b.onclick = async () => { const card = b.closest('.dev'), id = card.dataset.id, cur = card.querySelector('.dlabel').textContent;
     const l = prompt(T('A name for this device (e.g. “Na’s iPad”):', 'Tên cho máy này (ví dụ “iPad của Na”):'), cur); if (l === null) return;
     try { await api('players/label', { id, label: l }); card.querySelector('.dlabel').textContent = l || cur; toast(T('Saved.', 'Đã lưu.')); } catch (e) { fail(e); } });
@@ -1276,14 +1309,14 @@ PAGES.testers = async P => {
   const head = `<h2>🐞 ${T('Tester reports', 'Báo cáo người thử')}</h2>`;
   P.innerHTML = head + `<div class="card">${T('Asking the website…', 'Đang hỏi trang web…')}</div>`;
   let r; try { r = await api('testers'); } catch (e) { P.innerHTML = head + `<div class="card"><p class="badtxt">⚠️ ${esc(e.message)}</p><p class="note">${T('Tester reports come from the website: switch Testers on in 🎮 Game → 🆕 Releases (For testing), for every device or the ticked ones.', 'Báo cáo người thử đến từ trang web: bật Người thử trong 🎮 Trò chơi → 🆕 Ra mắt (Để thử), cho mọi máy hoặc các máy được chọn.')}</p></div>`; return; }
-  let labels = {}; try { const pr = await api('players'); for (const d of (pr && pr.devices) || []) labels[d.id] = d.label || [d.os, d.br].filter(x => x && x !== '?').join(' · '); } catch (e) { }
+  let labels = {}; try { const pr = await api('players'); for (const d of (pr && pr.devices) || []) labels[d.id] = devTitle(d) + ' (' + devAbout(d) + ')'; } catch (e) { }
   const { problems = [], testers = [], summary = {} } = r || {}, gameBuild = await (async () => { try { return (await import(GAME + 'js/build.js')).BUILD; } catch (e) { return ''; } })();
   const sydney = t => t ? new Date(t).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
   const ST = { new: ['🆕', 'New', 'Mới'], fixing: ['🔨', 'Being fixed', 'Đang sửa'], fixed: ['✅', 'Fixed', 'Đã sửa'], confirmed: ['🏁', 'Fixed and checked', 'Đã sửa và kiểm tra'], back: ['🔁', 'Came back', 'Bị lại'], notbug: ['🚫', 'Not a bug', 'Không phải lỗi'], dup: ['🔗', 'Same as another', 'Trùng lỗi khác'] };
   const KIND = { broken: ['💥', 'Broken', 'Bị hỏng'], looks: ['👀', 'Looks wrong', 'Trông sai'], words: ['💬', 'Words or voice', 'Chữ hoặc giọng'], sound: ['🔔', 'Sound', 'Âm thanh'], idea: ['💡', 'Idea', 'Ý tưởng'], auto: ['🤖', 'Automatic', 'Tự động'] };
   const stName = s => ST[s] ? `${ST[s][0]} ${T(ST[s][1], ST[s][2])}` : s, kindName = k => KIND[k] ? `${KIND[k][0]} ${T(KIND[k][1], KIND[k][2])}` : k;
   const whereText = w => w ? [w.game, w.window, w.area].filter(Boolean).join(' · ') : '';
-  const devName = id => labels[id] || id;
+  const devName = id => labels[id] || easyName(id);
   const builds = [...new Set(problems.flatMap(p => p.builds || []))].sort();
   const big = (n, en, vi) => `<div class="card stat"><b>${n}</b><span>${T(en, vi)}</span></div>`;
   P.innerHTML = head + `<p class="sub">${T('Each problem once, however many times it was met. Set its status here: a tester device gets a tick when its problem is fixed, replays it on the new version, and earns its rewards.', 'Mỗi lỗi một lần, dù gặp bao nhiêu lần. Đặt trạng thái ở đây: máy thử thấy dấu tích khi lỗi của nó đã sửa, thử lại trên bản mới, và nhận phần thưởng.')}</p>

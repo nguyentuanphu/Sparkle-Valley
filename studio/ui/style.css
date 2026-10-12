@@ -197,3 +197,11 @@ details.adguide > summary, .adrow + details > summary { min-height: 44px; }
 .tlog { font-size: 13px; padding-left: 20px; }
 .tdrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
 .tdrow select { min-height: 44px; }
+
+/* (owner, 13 Oct) devices you can recognise: a search over each list, robots greyed */
+.devfind { gap: 10px; align-items: center; margin: 6px 0 10px; flex-wrap: wrap; }
+.devfind input[type=search] { flex: 1 1 220px; min-height: 44px; padding: 8px 12px; border-radius: 12px; border: 2px solid #e6dcf7; font: inherit; }
+.devrow .dname { margin-right: 4px; }
+.devrow .dabout { color: #6b5a86; }
+.devrow.robot { opacity: .55; }
+.pill.robot { background: #eee; color: #555; }
