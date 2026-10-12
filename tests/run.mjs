@@ -3340,6 +3340,8 @@ await check('battery', async () => {
     let on = true; const tick = () => { ticks++; if (on) requestAnimationFrame(tick); }; requestAnimationFrame(tick);
     await new Promise(r => setTimeout(r, ms)); on = false; R.render = o; return { draws: n * 1000 / ms, ticks: ticks * 1000 / ms }; }, ms);
   const capOf = async (opts) => { const P = await open(b, { w: 360, h: 260, play: false, ...opts }); const c = await P.page.evaluate(() => __sv.battery.frameMs); await P.ctx.close(); return Math.round(c * 10) / 10; };
+  // the picture's sharpness on a 3x screen with Graphics on Auto, as the game set it (then the test browser draws small)
+  const pr = await (async () => { const P = await open(b, { w: 360, h: 260, dpr: 3, play: false, settings: { quality: 'auto' } }); const v = await P.page.evaluate(() => Math.max(__sv.battery.prStart, __sv.battery.prMax)); await P.ctx.close(); return v; })();
   // the caps for each kind of screen and Graphics setting (the cap is set when the game opens)
   const caps = { computerAuto: await capOf({ settings: { quality: 'auto' } }), computerFast: await capOf({ settings: { quality: 'low' } }), computerPretty: await capOf({ settings: { quality: 'high' } }),
     computerPrettyPlus: await capOf({ settings: { quality: 'max' } }), phoneAuto: await capOf({ touch: true, settings: { quality: 'auto' } }), phonePretty: await capOf({ touch: true, settings: { quality: 'high' } }) };
@@ -3349,8 +3351,7 @@ await check('battery', async () => {
   const want = { computerAuto: 16.7, computerFast: 33.3, computerPretty: 16.7, computerPrettyPlus: 0, phoneAuto: 33.3, phonePretty: 16.7 };
   const capsOk = Object.keys(want).every(k => caps[k] === want[k]);
   // a computer with a sharp 120 Hz screen, Graphics on Auto, Analytics on
-  // (the picture's sharpness is read as the game set it; then the test browser, which draws in software, draws small)
-  const P = await open(b, { w: 360, h: 260, dpr: 3, play: false, pre: hz120, settings: { quality: 'auto', countPlayers: true } });
+  const P = await open(b, { w: 360, h: 260, play: false, pre: hz120, settings: { quality: 'auto', countPlayers: true } });
   await P.page.evaluate(() => { window.__svHelloTest = 'manual'; });
   const gates = await gate(P.page);
   const near = (v, w) => Math.abs(v - w) <= 1.5, gatesOk = gates.at60.every(v => near(v, 60)) && gates.at30.every(v => near(v, 30)) && gates.title.every(v => near(v, 20)) && gates.idle.every(v => near(v, 8)) && near(gates.none, 120);
@@ -3359,14 +3360,14 @@ await check('battery', async () => {
   await P.page.evaluate(async () => { const W = await import('/js/world.js'); __sv.heroes[0].place(W.PLATEAU.x - 3, W.PLATEAU.z - 4); });
   await P.page.mouse.move(200, 150); await P.page.mouse.move(210, 160);
   const play = await rate(P.page);
-  const pr = await P.page.evaluate(() => Math.max(__sv.battery.prStart, __sv.battery.prMax));
   // far people standing still: one shape (the still copy); near people and the child keep every moving part
   const people = await P.page.evaluate(async () => { const { OUTLINED } = await import('/js/avatar.js'), h = __sv.heroes[0], v = { far: 0, farStill: 0, near: 0, nearStill: 0, mine: !!h.av._still };
     for (const A of OUTLINED) { if (!A.root.parent || A === h.av) continue; const p = A.root.getWorldPosition(A.root.position.clone()), d = Math.hypot(p.x - h.pos.x, p.z - h.pos.z);
       if (d > 24 && A._calm >= 2) { v.far++; if (A._still && A.still && A.still.visible && !A.rig.visible) v.farStill++; } else if (d < 16) { v.near++; if (A._still) v.nearStill++; } }
     return v; });
-  // nothing moves for 15 s: the valley is drawn a few times a second; a touch brings it back at once
-  const idleWait = await P.page.evaluate(async () => { const t0 = performance.now(); while (!__sv.battery.idle && performance.now() - t0 < 30000) await new Promise(r => setTimeout(r, 250)); return { idle: __sv.battery.idle, s: Math.round((performance.now() - t0) / 100) / 10 }; });
+  // nothing moves for 15 s: the valley is drawn a few times a second; a touch brings it back at once (up to 90 s: the test
+  // browser draws a few frames a second, so the game's clock and the camera settling after the move run slow)
+  const idleWait = await P.page.evaluate(async () => { const t0 = performance.now(); while (!__sv.battery.idle && performance.now() - t0 < 90000) await new Promise(r => setTimeout(r, 250)); return { idle: __sv.battery.idle, s: Math.round((performance.now() - t0) / 100) / 10 }; });
   const idle = await rate(P.page, 3000);
   await P.page.mouse.move(100, 100);
   const woke = await P.page.evaluate(() => ({ idle: __sv.battery.idle, cap: __sv.battery.capMs() }));
@@ -3378,14 +3379,14 @@ await check('battery', async () => {
     const sentOn = await M.flush(false);
     localStorage.removeItem('sv2_hello_out'); S.settings.countPlayers = false; await new Promise(r => setTimeout(r, 1500)); M.sampleDrawing(__sv);
     const off = Object.values(out().days).some(d => d.b); const sentOff = await M.flush(false); S.settings.countPlayers = true;
-    return { on, sentOn, off, sentOff }; });
+    return { on, sentOn, off, sentOff, pr100: Math.round(__sv.renderer.getPixelRatio() * 100) }; });
   const errs = P.errors; await P.ctx.close();
   const body = sent[0] && sent[0].days && sent[0].days[0] && sent[0].days[0].b;
   const got = { caps, gates, title, play, pr, people, idleWait, idle, woke, stats, sentB: body || null, sends: sent.length, errs };
   // (the test browser draws in software, a few frames a second: the measured rates can only show the caps are not passed)
   ok(capsOk && gatesOk && title.draws <= 21.5 && play.draws <= 62 && pr <= 1.5 && people.far > 0 && people.farStill === people.far && people.nearStill === 0 && !people.mine
-    && idleWait.idle && idle.draws <= 9 && !woke.idle && Math.round(woke.cap * 10) / 10 === 16.7
-    && stats.on && stats.on.length === 8 && stats.on[0] === 1 && stats.on[1] > 0 && stats.on[3] > 0 && stats.on[4] === 150 && stats.sentOn && body && body[1] > 0 && sent.length === 1 && !stats.off && !stats.sentOff && !errs.length, JSON.stringify(got));
+    && idleWait.idle && idleWait.s >= 15 && idle.draws <= 9 && !woke.idle && Math.round(woke.cap * 10) / 10 === 16.7
+    && stats.on && stats.on.length === 8 && stats.on[0] === 1 && stats.on[1] > 0 && stats.on[3] > 0 && stats.on[4] === stats.pr100 && stats.sentOn && body && body[1] > 0 && sent.length === 1 && !stats.off && !stats.sentOff && !errs.length, JSON.stringify(got));
   return `caps (ms a frame) ${JSON.stringify(caps)}; frame gate a second at 60/120/144 Hz: ${gates.at60.join('/')} (cap 60), ${gates.at30.join('/')} (cap 30), title ${gates.title.join('/')}, idle ${gates.idle.join('/')}; measured in the test browser: title ${title.draws.toFixed(0)} a second, valley ${play.draws.toFixed(0)}, idle after ${idleWait.s} s ${idle.draws.toFixed(1)}; pixel ratio ${pr} on a 3x screen; ${people.farStill}/${people.far} far people still, ${people.near} near moving; statistics ${JSON.stringify(stats.on)} sent once, nothing with Analytics off`;
 });
 

@@ -68,3 +68,14 @@ the statistics recorded and sent only with Analytics on), then `perf`, `playhub`
   - Draws: home 1,123 -> 507, Lotus Village 704-887 -> 359; `perf-baseline.json` drawCalls 900 -> 420, drawCallsHome
     1100 -> 540. Rule PERF-006 (ARCHITECTURE §9, `rules-from-doc`). New check `battery`.
   - No new words or voices for children (only the Grown-ups button "Pretty+ / Đẹp+").
+  - Later fixes the same day: a far person's still copy is far-culled with them (`js/main.js` `G.farCull`); "still" is
+    judged by speed (under 10 cm a second), because a settled camera keeps creeping by about a centimetre a second.
+- **12 Oct, 7:15 pm AEDT: checks on this branch (the full suite is the Release's combined run, owner).** Pass: `battery`
+  (caps 60 / 30 / Pretty 60 / Pretty+ none, phones 30; frame gate 60 a second on 60, 120 and 144 Hz; title 20; idle 8
+  after 15 s, woken by input; pixel ratio 1.5 on a 3x screen; 177/177 far still people one shape; statistics recorded
+  and sent once, nothing with Analytics off), `perf` (home 509 draws, village 357, 784k triangles), `playhub`, `phone`,
+  `noemoji`, `contract`, `studio`, `report`, `unit`, `rules`. Not run here: `startup` and the full suite (Release).
+  One `perf` run failed on triangles (843k > 800k x 1.03) when the folk show (wall clock, 75 s of every 150) was in view;
+  measured: each person's triangles are exactly as on `main` (merging joins pieces, adds none), so `main` reaches the same
+  at that moment; the limit was not raised. Screenshots looked at: Grown-ups Graphics (Fast, Auto, Pretty, Pretty+, 44 px)
+  on phone (vi), tablet and computer; people near and at 30 m before and after (the same).

@@ -1430,11 +1430,13 @@ const BAT = G.battery = { frameMs: FRAME_MS, titleMs: TITLE_MS, idleMs: IDLE_MS,
   gate: (st, now, cap) => { if (!cap) return true; if (now < st.due - 2) return false; st.due = Math.max(st.due + cap, now - cap); return true; },
   take: () => { const o = { frames: BAT.frames, work: BAT.work, draws: BAT.draws, idleFrames: BAT.idleFrames, pr: renderer.getPixelRatio() }; BAT.frames = BAT.work = BAT.draws = BAT.idleFrames = 0; return o; } };
 for (const e of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart']) addEventListener(e, () => { BAT.input = performance.now(); if (BAT.idle) { BAT.idle = false; BAT.due = 0; } }, { capture: true, passive: true });
-// still: every child and their camera within 5 cm of where they were (a settling camera creeps by millimetres), the
-// same pose, no input, no friend online, nothing on the way
+// still: every child and their camera moving slower than 10 cm a second (a settled camera keeps creeping by about a
+// centimetre a second, which nobody sees), the same pose, no input, no friend online, nothing on the way
 function stillCheck(now) {
   const at = G.heroes.flatMap(h => [h.pos.x, h.pos.y, h.pos.z, h.yaw, h.cam.position.x, h.cam.position.y, h.cam.position.z]), key = G.heroes.map(h => h.state).join('|');
-  if (key !== BAT.key || !BAT.at || BAT.at.length !== at.length || at.some((v, i) => Math.abs(v - BAT.at[i]) > .05)) { BAT.key = key; BAT.at = at; BAT.moved = now; }
+  const sec = Math.max(.001, (now - (BAT.atT || 0)) / 1000);
+  if (key !== BAT.key || !BAT.at || BAT.at.length !== at.length || at.some((v, i) => Math.abs(v - BAT.at[i]) / sec > .1)) { BAT.key = key; BAT.moved = now; }
+  BAT.at = at; BAT.atT = now;
   const idle = now - BAT.input > IDLE_MS && now - BAT.moved > IDLE_MS && !Object.keys(G.partners).length && !G.travelling && !G.places.dancing;
   if (idle !== BAT.idle) { BAT.idle = idle; BAT.due = 0; }
 }
