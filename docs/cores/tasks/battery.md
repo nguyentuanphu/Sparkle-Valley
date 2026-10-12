@@ -46,5 +46,25 @@ A new `battery` check (computer capped at 60, idle drawing slows, the pixel rati
 the statistics recorded and sent only with Analytics on), then `perf`, `playhub` (phones 30 a second), `startup`, `phone`,
 `noemoji`, then the full suite. Rules in `docs/ARCHITECTURE.md` §9 (PERF), then `node tools/rules-from-doc.mjs`.
 
+## Owner's decisions
+- (12 Oct, 1:50 pm AEDT) Go with the plan as recommended; the full suite is run by the Release core, not this chat.
+- (12 Oct AEDT) This chat may change `js/avatar.js` (people) and `netlify/lib/players.mjs` (the report keeps the numbers).
+- (12 Oct AEDT) Nothing moving for 15 s: draw 8 times a second until any input.
+- (12 Oct AEDT) Graphics gets two Pretty buttons: Pretty (60 a second) and Pretty+ (as fast as the screen).
+
 ## Progress
-(this chat writes here)
+- **12 Oct AEDT, built (branch `core/battery`).** Measured first: people were two thirds of the draws (each 20 to 30
+  parts). Changes:
+  - `js/main.js`: computers 60 a second (Fast 30), phones and tablets 30, Pretty 60, Pretty+ uncapped, title 20, after
+    15 s still 8 a second (any touch, key or mouse wakes it); one frame gate (`G.battery.gate`) so 120 and 144 Hz screens
+    get 60 on average; `powerPreference: 'default'`; on Auto the pixel ratio never above 1.5; `G.battery` counts frames,
+    work time, draws, idle frames; far people standing still (20 m from every child, unmoved for two looks) show their
+    still copy.
+  - `js/avatar.js`: each moving part's plain-coloured pieces merged into one shape (`compact`, the skin recoloured for a
+    photo face); a far still copy (`stillOf`); screenshots before and after, near and at 30 m, look the same.
+  - `js/voicepack.js`: waits for a built valley, rests 150 ms (core) / 400 ms (the rest) between batches of 6.
+  - `js/players.js` + `netlify/lib/players.mjs`: day field `b` and report `battery` (field names on the board).
+  - `js/ui.js`, `js/state.js`: Pretty+ (`max`).
+  - Draws: home 1,123 -> 507, Lotus Village 704-887 -> 359; `perf-baseline.json` drawCalls 900 -> 420, drawCallsHome
+    1100 -> 540. Rule PERF-006 (ARCHITECTURE §9, `rules-from-doc`). New check `battery`.
+  - No new words or voices for children (only the Grown-ups button "Pretty+ / Đẹp+").
