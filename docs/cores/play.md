@@ -239,6 +239,16 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   place, villager, shop and songs; Studio Releases switch `autoplay`, for every device or chosen devices; unlimited
   stamina and hearts; speeds Watch, Fast and Jump; the children's progress is put back afterwards.
 
+## Progress notes (12 Oct AEDT: Studio fixes and the auto play check)
+- Commits on `core/play`: f4dd7c6 (photos publish in steps), 0e7ddb1 (exe updates itself), c5846e3 (exe keeps its game
+  folder new), e3171ac (auto play check), plus the two recorded words of the new Releases group ("For testing", Azure).
+- Checks (12 Oct, about 12:45 pm AEDT): `studio` pass (85 server messages in Vietnamese; photos in steps through a 504;
+  exe self-update, game folder update, fresh computer), `autoplay` pass (hidden on other devices and when off; 7 steps
+  at Fast; stamina full; progress put back), `festivals` `types` `unit` `arch` `rules` `preload` `emoji` `noemoji`
+  `boot` `voicecover` pass. **Full suite not run here: the owner said Release runs it** (a run was stopped early).
+- Screenshots looked at: the auto play window on a phone, a tablet and a computer, folded, open and running.
+- New check for the HANDOFF table (Release): `autoplay`.
+
 ## What is left for Play (handover, 11 Oct 1:30 pm AEST; this chat stopped here at the owner's request)
 - Done and pushed on `core/play` (e1c9552): owner's items 1 and 2 (see the notes above), board says "ready for Release".
 - Item 3 (ongoing): any new GitHub issue labelled `play` from the Front Desk (none open on 11 Oct; #29 is fixed on `core/play`).
