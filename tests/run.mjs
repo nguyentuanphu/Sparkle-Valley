@@ -2689,7 +2689,7 @@ await check('myhouse', async () => {
   const r = await P.page.evaluate(async () => {
     const G = __sv, h = G.heroes[0], S = await import('/js/state.js'), wait = ms => new Promise(r => setTimeout(r, ms));
     const ev = []; G.events.on('HomeDecorated', p => ev.push(p.item));
-    h.profile.homeDeco = {}; h.profile.familyCards = { f1: 1 };
+    h.profile.homeDeco = {}; h.profile.familyCards = { f1: 1 }; h.profile.houseGuideSeen = true;   // (the first-visit guide has its own check: houseguide)
     const doorIt = G.interactables.find(i => i.id === 'myhouse_door'); doorIt.act(h, G); await wait(1600);
     const inside = !!h.indoors && h.indoors.mine, spots = G.interactables.filter(i => /^deco_/.test(i.id)).length;
     const pickIn = async (spot, key) => { G.interactables.find(i => i.id === 'deco_' + spot).act(h, G); await wait(300); const b = document.querySelector(`.decor [data-k="${key}"]`); const had = !!b; b && b.click(); await wait(300); document.querySelector('.decor .x')?.click(); await wait(200); return had; };
@@ -2704,6 +2704,28 @@ await check('myhouse', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(r.inside && r.spots === 8 && r.refused && r.bought && r.cardOnWall && !r.cardOnFloor && r.out && r.kept === '{"0":"teddy","1":"clock","4":"card:f1"}' && r.ev.join() === 'decor:teddy,decor:clock,postcard:family/f1' && !r.paused && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return '8 spots; a free teddy, a 12-coin clock (refused with 5, bought with 50), grandma\'s postcard on a wall (not on the floor); all still there after going out and back in';
+});
+
+await check('houseguide', async () => {
+  // (Round U item 11) the first time a child walks into their own house, a guide says how to decorate (sparkles, coins,
+  // family photos, change or take away), in the chosen language; it is not shown again, and the ❓ sign in the room repeats it
+  const P = await open(b, { w: 900, h: 640 });
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], wait = ms => new Promise(r => setTimeout(r, ms)), lines = [];
+    const tapThrough = async () => { for (let i = 0; i < 8; i++) { const d = document.querySelector('.dialog:not(.out)'); if (!d) break; lines.push(d.querySelector('.dtext').textContent); d.click(); await wait(250); } };
+    delete h.profile.houseGuideSeen;
+    const doorIt = G.interactables.find(i => i.id === 'myhouse_door'); doorIt.act(h, G); await wait(1700);
+    const first = !!document.querySelector('.dialog:not(.out)'); await tapThrough();
+    const n1 = lines.length, seen = h.profile.houseGuideSeen === true, unpaused = !G.paused;
+    const help = G.interactables.find(i => i.id === 'house_help'); help && help.act(h, G); await wait(400);
+    const again = !!document.querySelector('.dialog:not(.out)'); await tapThrough();
+    G.homes.leave(h); await wait(1400);
+    doorIt.act(h, G); await wait(1700); const quiet = !document.querySelector('.dialog:not(.out)'); G.homes.leave(h); await wait(1400);
+    return { first, n1, seen, unpaused, help: !!help, again, n2: lines.length - n1, quiet, lines: lines.slice(0, 4), paused: G.paused };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.first && r.n1 === 4 && r.seen && r.unpaused && r.help && r.again && r.n2 === 4 && r.quiet && !r.paused && r.lines.every(l => l.length > 20 && !/[✨]/.test(l)) && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return '4 steps the first time in the house, not again on the next visit; the ❓ sign repeats them';
 });
 
 await check('names', async () => {
