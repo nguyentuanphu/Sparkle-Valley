@@ -2481,3 +2481,11 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 .pt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; margin-bottom: 10px; }
 .pt-g { border: 0; border-radius: 16px; background: #fff; box-shadow: 0 3px 0 rgba(90, 60, 130, .15); min-height: 96px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; color: #3a2a5a; cursor: pointer; }
 .pt-g .art { width: 40px; height: 40px; } .pt-g b { font-size: 13px; line-height: 1.15; text-align: center; } .pt-g small { font-size: 11px; color: #7a6a9a; }
+
+/* (Round V, owner 13 Oct) microphone test for grown-ups (js/mictest.js) */
+.mictest .mt-lines { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 6px; }
+.mictest .mt-lines li { background: rgba(0,0,0,.05); border-radius: 10px; padding: 8px 10px; overflow-wrap: anywhere; }
+.mictest .mt-lines small { opacity: .7; }
+.mictest .mt-bar { height: 14px; border-radius: 7px; background: rgba(0,0,0,.1); overflow: hidden; margin: 6px 0 10px; }
+.mictest .mt-bar i { display: block; height: 100%; width: 0; background: #3fae5a; transition: width .08s; }
+.mictest .btn { min-height: 44px; }

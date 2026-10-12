@@ -3822,6 +3822,30 @@ await check('report', async () => {
   return '3 games and 2 minutes counted today for the child who played; the report shows the week (7 days), the favourite games and what was collected';
 });
 
+await check('mictest', async () => {
+  // (Round V, owner 13 Oct: the microphone does nothing in Friends or in voice control) the grown-ups' microphone test in
+  // Friends works without a room and says exactly what the device answered: on with a sound bar, or the error's name and
+  // where to allow it
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), md = navigator.mediaDevices, real = md.getUserMedia.bind(md);
+    G.openPad(0, 'friend'); await wait(500);
+    const btn = document.querySelector('.pad [data-mictest]'); if (!btn) return { btn: false };
+    btn.click(); await wait(300);
+    const m = document.querySelector('.modal.mictest'), lines = () => [...m.querySelectorAll('.mt-lines li')].map(li => li.textContent);
+    const before = lines();
+    m.querySelector('[data-mic]').click(); for (let k = 0; k < 30 && !/ON/.test(lines()[2]); k++) await wait(100);
+    const on = lines()[2];
+    md.getUserMedia = async () => { const e = new Error('blocked'); e.name = 'NotAllowedError'; throw e; };
+    m.querySelector('[data-mic]').click(); await wait(300); const blocked = lines()[2]; md.getUserMedia = real;
+    const small = [...m.querySelectorAll('.btn')].filter(x => x.offsetParent && x.getBoundingClientRect().height < 44).length;
+    m.querySelector('.x').click(); await wait(300);
+    return { btn: true, before, on, blocked, small, gone: !document.querySelector('.modal.mictest') };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.btn && r.before.length === 4 && /iOS|Safari|Chrome|browser/.test(r.before[0]) && /ON/.test(r.on) && /NotAllowedError/.test(r.blocked) && /Settings/.test(r.blocked) && !r.small && r.gone && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+});
+
 await check('iphone', async () => {
   // the owner's iPhone screenshots (round F): (1) "no microphone" although the phone has one: friends meet with no tap
   // and iPhone opens the microphone only after a tap; now it says "tap to talk", opens it on the next tap and puts it
