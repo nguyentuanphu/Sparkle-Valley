@@ -57,6 +57,7 @@ device).
 - **Studio**: the Voices and Music pages upload into your formats.
 
 ## Owner's decisions to keep
+- 12 Oct, about 9:25 PM AEDT (owner, to the Round U voice chat): "You can run full suite, push and deploy just for this time, next time you still need to ask and follow rules". One-time: this chat acts as Release for r67 (live r66 + the rest of Round U + the Round U voices on `claude/peaceful-hopper-un7oym`). It does not carry over to later rounds.
 - Every missing voice line is recorded without anyone clicking (12 Oct): `.github/workflows/voices-daily.yml` once a day (3:07 am AEDT) and by hand, Azure key and Studio key as GitHub secrets, a draft pull request on `voices/daily` for Release. From the website's inbox only lines the game itself has are recorded (its code, lines heard while playing, the family's content, Releases and Festivals); any other line may carry a friend's or pet's name and is held, never recorded (owner's choice).
 - Azure voices by default (made in Studio); NPC voices match their gender.
 - Voices are made in Studio only: no voice keys on children's devices, never clone children's voices (9 Oct).
