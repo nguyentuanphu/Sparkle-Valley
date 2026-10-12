@@ -283,4 +283,8 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   "Đến lượt con! Chạm vào món quà để xé giấy!".
 - Screenshots looked at (phone, tablet, computer): Simple screen (games and stories), story bar, days, Chuyền quà,
   bunny (the phone's tick was still small: fixed), recipe book, bag, dock with the Shop button.
+- After merging main r66 (85517cd, 12 Oct, about 6:15 pm AEDT): Round U's category cards kept, with the heading at the top
+  of each card's road; the bag's new chips kept, its shop button removed (it is in the dock). `types` `unit` `arch` `rules`
+  `preload` `emoji` `voicecover` `boot` `simple` `shop` `a11y` `phone` `tales` `games` pass. Owner: the full suite is
+  Release's ("No, Release runs it").
 
