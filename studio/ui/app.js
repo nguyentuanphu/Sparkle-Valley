@@ -515,11 +515,19 @@ PAGES.releases = async P => {
     ${Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th class="more"></th><th>${T('Starts', 'Bắt đầu')}</th><th>${T('Days on', 'Số ngày')}</th><th>${T('“New” days', 'Ngày “Mới”')}</th></tr></thead><tbody>${RELEASES.filter(x => x.group === g).map(row).join('')}</tbody></table></div>`).join('')}
     <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   P.querySelector('.sub').after(document.createRange().createContextualFragment(liveNote())); bindMore(P);
+  // (owner, 12 Oct) the auto play check: on every device, or only on the ones ticked here (from the players report)
+  { const tr = P.querySelector('tr[data-id="autoplay"]'), mine = new Set((R.autoplay && R.autoplay.devices) || []);
+    if (tr) { const box = document.createElement('div'); box.className = 'card'; box.id = 'apdev'; tr.closest('.card').after(box);
+      box.innerHTML = `<h4>${T('Auto play check: which devices', 'Tự chơi để kiểm tra: máy nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on).', 'Không chọn máy nào: mọi máy (khi công tắc bật).')}</p><div id="apdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
+      let devs = []; try { const r = await api('players'); devs = (r && r.devices) || []; } catch (e) { devs = []; }
+      for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
+      $('#apdl').innerHTML = devs.length ? devs.map(d => `<label class="chk"><input type="checkbox" data-dev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${esc(d.label || [d.kind, d.os, d.br].filter(x => x && x !== '?').join(' · ') || d.id)} <small class="mini">${esc(d.id)}</small></label>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`; } }
   P.querySelectorAll('[data-in]').forEach(b => b.onchange = () => { if (b.value === '') return; b.closest('td').querySelector('[data-r="start"]').value = plusDays(+b.value); b.value = ''; });
   $('#save').onclick = async () => {
     const out = {};
     P.querySelectorAll('tr[data-id]').forEach(tr => { const id = tr.dataset.id, x = RELEASES.find(y => y.id === id), v = k => tr.querySelector(`[data-r="${k}"]`).value;
       const r = {}, on = v('on') === 'true'; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
+      if (id === 'autoplay') { const dv = [...P.querySelectorAll('[data-dev]:checked')].map(c => c.dataset.dev); if (dv.length) r.devices = dv; }
       if (Object.keys(r).length) out[id] = r; });
     await saveLive({ releases: out, festivals: live.festivals || {} }).catch(fail);
   };
@@ -688,7 +696,19 @@ PAGES.publish = async P => {
   const ghRun = async (what, btn) => {
     ['#gpub', '#gdraft'].forEach(k => { if ($(k)) $(k).disabled = true; }); $('#gres').textContent = T('Starting…', 'Bắt đầu…'); let j0;
     const again = () => ['#gpub', '#gdraft'].forEach(k => { if ($(k)) $(k).disabled = false; });
-    try { j0 = await api('github/' + what, { message: $('#gmsg').value }); } catch (e) { $('#gres').textContent = '⚠️ ' + e.message; again(); return; }
+    try {
+      // (owner, 12 Oct: real photos would not publish, 504) online, Publish goes in steps of a dozen changes, each its own short request
+      if (INFO.online && what === 'publish') {
+        let total = INFO.waiting || 0, sent = 0;
+        for (let k = 0; k < 400; k++) {
+          j0 = await api('github/publish', { message: $('#gmsg').value, step: true });
+          if (!j0.more) break;
+          sent += j0.sent; total = Math.max(total, sent + j0.left);
+          $('#gpb').style.width = (total ? sent / total * 100 : 5) + '%';
+          $('#gres').textContent = T(`Sending saved changes: ${sent} of ${total}…`, `Đang gửi thay đổi đã lưu: ${sent} / ${total}…`);
+        }
+      } else j0 = await api('github/' + what, { message: $('#gmsg').value });
+    } catch (e) { $('#gres').textContent = '⚠️ ' + e.message + ' · ' + T('Press Publish again: it carries on from where it stopped.', 'Bấm Phát hành lần nữa: sẽ tiếp tục từ chỗ đã dừng.'); again(); return; }
     const show = j => { $('#gpb').style.width = (j.total ? j.done / j.total * 100 : 5) + '%'; $('#gres').textContent = `${j.done}/${j.total || '?'} · ${say(j.msg || '')}`; };
     const fin = j => {
       again();
@@ -1066,8 +1086,10 @@ PAGES.settings = async P => {
     <p class="note">${T('github.com → Settings → Developer settings → Fine-grained tokens → Generate: only this repository, permissions Contents: Read and write, Pull requests: Read and write.', 'github.com → Settings → Developer settings → Fine-grained tokens → Generate: chỉ kho này, quyền Contents: Read and write và Pull requests: Read and write.')}</p></div>
   <div class="card"><h3>📊 ${T('Players and the online Studio', 'Người chơi và Studio trên mạng')}</h3><div class="row"><div><label>${T('The game’s website', 'Trang web của game')}</label><input type="text" id="su" value="${esc(c.siteUrl)}" placeholder="https://sparklevalley.netlify.app"></div><div><label>${T('Studio key (made online: Setup → Security)', 'Khóa Studio (tạo trên mạng: Thiết lập → Bảo mật)')} ${c.players ? '✅' : ''}</label><input type="password" id="sp" placeholder="${c.players ? T('(saved, type to replace)', '(đã lưu, gõ để thay)') : 'svk.…'}"></div></div>
     <p class="note">${T('The same Studio is online at the website’s /studio/ page (sign in there with your password and the code from your authenticator app). This computer uses a Studio key instead: the Analytics page and the family photos (they go to the website’s private store, never into the game folder) reach the website with it.', 'Studio này cũng có trên mạng ở trang /studio/ của trang web (đăng nhập ở đó bằng mật khẩu và mã từ ứng dụng xác thực). Máy này dùng khóa Studio: trang Phân tích và ảnh gia đình (gửi vào kho riêng của trang web, không bao giờ vào thư mục game) đến trang web bằng khóa này.')}</p></div>
-  <div class="bar"><button class="btn ghost" id="forget">🗑️ ${T('Forget the keys', 'Xóa các khóa')}</button><button class="btn" id="save">💾 ${T('Save settings', 'Lưu cài đặt')}</button></div>`;
+  <div class="bar"><button class="btn ghost" id="syncnow">⬇️ ${T(`Get the newest game (this folder: ${esc(INFO.version || '?')})`, `Lấy game mới nhất (thư mục này: ${esc(INFO.version || '?')})`)}</button><button class="btn ghost" id="updcheck">🔄 ${T(`Check for updates (this is ${esc(INFO.studio || '')})`, `Kiểm tra cập nhật (bản này là ${esc(INFO.studio || '')})`)}</button><button class="btn ghost" id="forget">🗑️ ${T('Forget the keys', 'Xóa các khóa')}</button><button class="btn" id="save">💾 ${T('Save settings', 'Lưu cài đặt')}</button></div>`;
   $('#save').onclick = async () => { try { await api('settings', { gameDir: $('#gd').value, azureKey: $('#ak').value, azureRegion: $('#ar').value, piperExe: $('#pe').value, piperModels: { en: $('#pen').value.trim(), vi: $('#pvi').value.trim() }, netlifyToken: $('#nt').value, netlifySite: $('#ns').value, githubToken: $('#gt').value, githubRepo: $('#gr').value, githubBranch: $('#gb').value, siteUrl: $('#su').value, studioKey: $('#sp').value }); markSaved(); toast('✅ ' + T('Settings saved.', 'Đã lưu cài đặt.'), 'good'); render(true); } catch (e) { fail(e); } };
+  $('#updcheck').onclick = () => checkUpdate(true);
+  $('#syncnow').onclick = () => watchSync(true);
   $('#forget').onclick = async () => { if (!confirm(T('Forget the Azure, Netlify and GitHub keys on this computer?', 'Xóa khóa Azure, Netlify và GitHub trên máy này?'))) return; await api('settings', { forget: ['azureKey', 'netlifyToken', 'githubToken', 'studioKey'] }); toast(T('Keys forgotten.', 'Đã xóa khóa.')); render(); };
 };
 // ---------- players: how many children play (anonymous counts from the website, netlify/lib/players.mjs) ----------
@@ -1212,7 +1234,45 @@ function signIn() {
 // (the browser's Back button, or a typed address: a page with changes not saved asks first, and stays if you say no)
 let HASH = location.hash;
 window.addEventListener('hashchange', () => { const k = route(); if (k === cur) { HASH = location.hash; return; } if (!leaveOk()) { history.replaceState(null, '', HASH || '#'); return; } HASH = location.hash; cur = k; render(); });
+// (owner, 12 Oct) the exe updates itself: a banner when GitHub has a newer Sparkle Studio; "Update now" swaps it in
+async function checkUpdate(manual) {
+  if (!INFO || INFO.online) return null;
+  let u; try { u = await api('update/check'); } catch (e) { if (manual) toast('⚠️ ' + say(e.message), 'bad'); return null; }
+  if (u.error) { if (manual) toast('⚠️ ' + say(u.error), 'bad'); return u; }
+  if (!u.newer) { if (manual) toast('✅ ' + T(`Sparkle Studio ${u.here} is the newest.`, `Sparkle Studio ${u.here} là bản mới nhất.`), 'good'); return u; }
+  let bar = $('#updbar'); if (!bar) { bar = document.createElement('div'); bar.id = 'updbar'; bar.className = 'card warn'; bar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:50;display:flex;gap:12px;align-items:center;flex-wrap:wrap;max-width:calc(100vw - 32px)'; document.body.appendChild(bar); }
+  bar.innerHTML = `<span>🆕 ${T(`New Sparkle Studio ${esc(u.latest)} (you have ${esc(u.here)}).`, `Có Sparkle Studio ${esc(u.latest)} mới (bạn đang dùng ${esc(u.here)}).`)}</span>${u.can ? `<button class="btn" id="updgo">⬇️ ${T('Update now', 'Cập nhật ngay')}</button>` : ''}<button class="btn ghost" id="updno">${T('Later', 'Để sau')}</button>`;
+  $('#updno').onclick = () => bar.remove();
+  if ($('#updgo')) $('#updgo').onclick = async () => {
+    if (!leaveOk()) return;
+    $('#updgo').disabled = true; bar.querySelector('span').textContent = T('Downloading the new Sparkle Studio…', 'Đang tải Sparkle Studio mới…');
+    let r; try { r = await api('update/apply', {}); } catch (e) { r = { error: e.message }; }
+    if (r.error) { bar.querySelector('span').textContent = '⚠️ ' + say(r.error); $('#updgo').disabled = false; return; }
+    bar.querySelector('span').textContent = T(`Starting Sparkle Studio ${r.latest}…`, `Đang mở Sparkle Studio ${r.latest}…`);
+    let gone = false; for (let k = 0; k < 60; k++) { await new Promise(ok => setTimeout(ok, 1500)); try { const i = await api('info'); if (gone || i.studio !== INFO.studio) { location.reload(); return; } } catch (e) { gone = true; } } // (the old one stops, then the new one answers)
+    bar.querySelector('span').textContent = T('Please open Sparkle Studio again.', 'Hãy mở lại Sparkle Studio.');
+  };
+  return u;
+}
+// (owner, 12 Oct) the exe keeps its game folder up to date from GitHub: a bar while it gets the newest game
+async function watchSync(force) {
+  if (!INFO || INFO.online) return;
+  let s; try { s = force ? await api('sync/start', { force: true }) : await api('sync/status'); } catch (e) { return; }
+  let bar = null, n = 0;
+  while (s && (s.state === 'running' || (force && n === 0))) {
+    if (!bar) { bar = document.createElement('div'); bar.className = 'card'; bar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:12px;z-index:50;max-width:calc(100vw - 32px)'; document.body.appendChild(bar); }
+    bar.textContent = T(`Getting the newest game from GitHub: ${s.done} of ${s.total || '?'}…`, `Đang lấy game mới nhất từ GitHub: ${s.done} / ${s.total || '?'}…`);
+    await new Promise(ok => setTimeout(ok, 1200)); n++; try { s = await api('sync/status'); } catch (e) { break; }
+  }
+  if (bar) bar.remove();
+  if (!s) return;
+  if (s.state === 'error') { if (force || n) toast('⚠️ ' + say(s.error), 'bad'); return; }
+  if (s.total) { toast('✅ ' + T(`The game folder now has the newest game (${s.build}): ${s.total} files.`, `Thư mục game đã có game mới nhất (${s.build}): ${s.total} tệp.`) + (s.kept.length ? ' ' + T(`${s.kept.length} of your changes not published yet were kept.`, `Giữ lại ${s.kept.length} thay đổi chưa phát hành của bạn.`) : ''), 'good'); await load(true); render(); }
+  else if (force) toast('✅ ' + T(`The game folder already has the newest game (${s.build}).`, `Thư mục game đã là game mới nhất (${s.build}).`), 'good');
+}
 render();
+setTimeout(() => checkUpdate(false), 3000);
+setTimeout(() => watchSync(false), 2000);
 // keep the Studio running while this window is open; ⏻ stops it
 setInterval(() => { if (INFO && !INFO.online) fetch(BASE + '/api/ping').catch(() => { }); }, 20000);
 $('#quit').onclick = async () => {

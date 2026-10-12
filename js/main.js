@@ -49,7 +49,7 @@ import { createSignposts } from './signposts.js';
 import { createNameTags } from './nametags.js';
 import { createTraffic } from './traffic.js';
 import { RELEASES } from './content/releases.js';
-import { releaseNew, featureOn } from './custom.js';
+import { releaseNew, featureOn, releaseOn, liveRule, onLive } from './custom.js';
 import { cachedCanvas } from './worldcache.js';
 import { events } from './core/events.js';
 import { createPlaceBook } from './placebook.js';
@@ -1574,6 +1574,11 @@ G.ferries = createFerries(G);
 G.kites = createKites(G);
 createPassport(G);
 G.festivals = createFestivals(G);
+// (owner, 12 Oct) the auto play check for grown-ups testing the game: only on the devices Studio's Releases page allows
+// (switch `autoplay`: every device, or the ticked ones); everywhere else nothing of it is even downloaded
+{ const apGate = async () => { const A = await import('./content/autoplay.js'); let me = ''; try { me = localStorage.getItem('sv2_playerid') || ''; } catch (e) { }
+    if (A.apAllowed(releaseOn('autoplay', false), liveRule('autoplay'), me)) (await import('./autoplay.js')).mountAutoplay(G); else if (G.autoplay) G.autoplay.unmount(); };
+  apGate(); onLive(apGate); }
 G.weather = createWeather(G);
 createFun(G);
 createLearning(G);

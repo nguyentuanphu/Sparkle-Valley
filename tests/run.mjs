@@ -1024,6 +1024,40 @@ await check('mapnames', async () => {
   return `map names apart on ${out.join(', ')}; Hội An in the Vietnam list and on the Places road; the speech box slides in from the middle`;
 });
 
+await check('autoplay', async () => {
+  // (owner, 12 Oct AEDT) the auto play check: its window shows only where Studio's switch allows (every device or the
+  // ticked ones); it walks to things and opens them (games, a story, a place, a festival, a villager, songs), keeps the
+  // child's stamina full, writes a report, and afterwards puts the children's progress back as it was
+  const pre = rule => `try { localStorage.setItem('sv2_playerid', 'apcheck00001'); localStorage.setItem('sv2_live', JSON.stringify({ releases: { autoplay: ${JSON.stringify(rule)} }, festivals: {} })); } catch (e) { }`;
+  for (const rule of [{ on: true, devices: ['zzzzzzzzzzzz'] }, { on: false }]) {
+    const Q = await open(b, { w: 1024, h: 768, pre: pre(rule) }); await Q.page.waitForTimeout(2000);
+    const shown = !!(await Q.page.$('.apbox')); await Q.ctx.close(); ok(!shown, 'the auto play window showed where it is not allowed: ' + JSON.stringify(rule));
+  }
+  const P = await open(b, { w: 1024, h: 768, pre: pre({ on: true, devices: ['apcheck00001'] }) });
+  await P.page.waitForSelector('.apbox', { timeout: 10000 });
+  const mine = () => P.page.evaluate(() => { const p = JSON.parse(localStorage.getItem('sv2_profiles') || '[]'), f = JSON.parse(localStorage.getItem('sv2_farm') || '{}');
+    return JSON.stringify({ coins: f.coins, kids: p.map(x => ({ n: x.name, t: x.tales, w: x.wins, l: x.levels, s: x.stickers })) }); });
+  const before = await mine();
+  const keys = await P.page.evaluate(async () => { const { GAMES } = await import('/js/games/frame.js'), G = __sv, npc = G.interactables.find(i => /^npc_/.test(i.id));
+    return [...Object.keys(GAMES).slice(0, 2).map(x => 'game:' + x), 'tale:' + G.TALES[0].id, 'place:farm', 'fest:midautumn', npc && 'tap:' + npc.id, 'songs'].filter(Boolean); });
+  await P.page.evaluate(k => { __sv.autoplay.start(k, 'fast'); }, keys);
+  await P.page.waitForTimeout(1500);
+  const mid = await P.page.evaluate(() => { const h = __sv.heroes[0]; h.stamina = 0; return __sv.autoplay.running(); });
+  await P.page.waitForTimeout(600);
+  const full = await P.page.evaluate(() => { const h = __sv.heroes[0]; return h.stamina >= h.staminaMax - .001; }).catch(() => true);
+  let rep = null; for (let i = 0; i < 240 && !rep; i++) { await P.page.waitForTimeout(500); rep = await P.page.evaluate(() => !localStorage.getItem('sv2_autoplay_backup') && document.readyState === 'complete' && window.__sv && document.querySelector('.screen.title, canvas') ? JSON.parse(localStorage.getItem('sv2_autoplay_report') || 'null') : null).catch(() => null); if (rep && rep.done.length < keys.length) rep = null; }
+  ok(mid && full, 'the check did not run, or the child got tired while it ran');
+  ok(rep && rep.done.length === keys.length, 'no full report: ' + JSON.stringify(rep && rep.done.map(r => r.key)));
+  const bad = rep.done.filter(r => r.problems.some(p => /did not open|did not close|^error/.test(p)));
+  ok(!bad.length, 'the check found: ' + JSON.stringify(bad.map(r => [r.key, r.problems])));
+  await P.page.waitForSelector('.screen.title', { timeout: 60000 }).catch(() => { });
+  ok(await mine() === before, "the children's progress was not put back: " + (await mine()) + ' vs ' + before);
+  ok(!!(await P.page.$('.apbox')), 'the window did not come back after the check');
+  const errs = P.errors.filter(e => !/pageerror: .*(Load failed|aborted)/.test(e)); await P.ctx.close();
+  ok(!errs.length, errs.slice(0, 3).join(' | '));
+  return `hidden where not allowed (other device, switched off); ${keys.length} steps (${rep.done.map(r => r.key.split(':')[0]).join(', ')}) at Fast, stamina kept full, ${rep.done.filter(r => r.ok).length} fine${rep.done.filter(r => !r.ok).map(r => `; noted for ${r.key}: ${r.problems.join(', ')}`).join('')}; progress put back after the restart`;
+});
+
 await check('festcal', async () => {
   // (round R, owner) the festival calendar: real dates, 3 weeks of build-up that grows each week, two festivals at once
   // in their own places, quiet days only a few days before, the day's timetable, Halloween trick-or-treat and keepsake

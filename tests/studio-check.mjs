@@ -22,7 +22,7 @@ const SHOWN_EMOJI = () => { const EMO = /\p{Extended_Pictographic}(?:\uFE0F|[\u{
   return [...out]; };
 
 export function fakeGitHub(repo, files) {
-  const blobs = new Map(), trees = new Map(), commits = new Map(), refs = new Map(), log = [];
+  const blobs = new Map(), trees = new Map(), commits = new Map(), refs = new Map(), log = []; let failBlobs = 0;
   const gitSha = b => crypto.createHash('sha1').update('blob ' + b.length + '\0').update(b).digest('hex');
   const id = () => crypto.randomBytes(20).toString('hex');
   const putTree = map => { const t = id(); trees.set(t, map); return t; };
@@ -53,6 +53,7 @@ export function fakeGitHub(repo, files) {
       return out.size ? ok([...out.values()]) : no(404, 'Not Found');
     }
     if ((m = /^\/git\/blobs\/(\w+)$/.exec(q))) return blobs.has(m[1]) ? ok({ content: blobs.get(m[1]).toString('base64') }) : no(404, 'No blob');
+    if (q === '/git/blobs' && method === 'POST' && failBlobs > 0) { failBlobs--; return no(504, 'Gateway Timeout'); } // (a busy GitHub)
     if (q === '/git/blobs' && method === 'POST') { const buf = Buffer.from(body.content, 'base64'), s = gitSha(buf); blobs.set(s, buf); return ok({ sha: s }); }
     if (q === '/git/trees' && method === 'POST') {
       const base = body.base_tree ? trees.get(body.base_tree.split(':')[0]) : new Map(); if (!base) return no(422, 'bad base');
@@ -72,7 +73,7 @@ export function fakeGitHub(repo, files) {
   }
   const fileAt = (branch, rel) => { const c = refs.get(branch); if (!c) return null; const s = trees.get(commits.get(c).tree).get(rel); return s ? blobs.get(s) : null; };
   const commitOnMain = (rel, buf, message) => { const c = refs.get('main'), map = new Map(trees.get(commits.get(c).tree)), b = Buffer.from(buf), s = gitSha(b); blobs.set(s, b); map.set(rel, s); refs.set('main', putCommit(putTree(map), [c], message)); };
-  return { handle, refs, fileAt, commitOnMain, log, messageOf: c => commits.get(c).message };
+  return { handle, refs, fileAt, commitOnMain, log, messageOf: c => commits.get(c).message, failBlobsNext: n => { failBlobs = n; } };
 }
 
 // every fetch to api.github.com goes to the pretend GitHub (in this process)
@@ -129,9 +130,9 @@ export async function studioCheck(browser, open) {
   const repo = 'family/sparkle', PW = 'a-long-test-password-123', NPORT = 8791, SPORT = 8792, site = `http://localhost:${NPORT}`;
   const seed = {}; for (const f of ['index.html', 'sw.js', 'js/main.js', 'js/i18n.js', 'js/build.js', 'js/packhash.js']) seed[f] = fs.readFileSync(path.join(ROOT, f));
   seed['content/custom.json'] = JSON.stringify({ message: { en: 'Hello', vi: 'Xin chào' } }); seed['voices/en/f/0000aaaa.mp3'] = 'x'; seed['voices/manifest.json'] = JSON.stringify({ version: 2, cast: { en: ['f'] }, voices: {}, lines: { '0000aaaa': 'f' }, langOf: { '0000aaaa': 'en' } }); // (like the real pack: it lists what is recorded)
-  const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs(), adminStore = memoryBlobs(), familyStore = memoryBlobs(), logStore = memoryBlobs();
+  const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs(), adminStore = memoryBlobs(), familyStore = memoryBlobs(), logStore = memoryBlobs(), heldStore = memoryBlobs();
   const admins = await import(path.join(ROOT, 'netlify/lib/admins.mjs')), secrets = {};
-  const net = await fakeNetlify({ port: NPORT, players, adminStore, familyStore, logStore, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
+  const net = await fakeNetlify({ port: NPORT, players, adminStore, familyStore, logStore, heldStore, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
   // the exe's own server, on a copy of a small game folder, with its settings in a folder of its own
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-studio-')), game = path.join(tmp, 'game'), appdata = path.join(tmp, 'appdata');
   fs.cpSync(path.join(ROOT, 'js'), path.join(game, 'js'), { recursive: true }); // the game's code (the pages read it)
@@ -139,9 +140,12 @@ export async function studioCheck(browser, open) {
   for (const f of Object.keys(seed)) { fs.mkdirSync(path.dirname(path.join(game, f)), { recursive: true }); fs.writeFileSync(path.join(game, f), seed[f]); }
   fs.mkdirSync(path.join(appdata, 'SparkleStudio'), { recursive: true }); fs.writeFileSync(path.join(appdata, 'SparkleStudio', 'settings.json'), JSON.stringify({ gameDir: game, siteUrl: site, githubToken: 'test-token', githubRepo: repo }));
   // the exe is its own process: it reaches the same pretend GitHub over http (STUDIO_GITHUB_API, tests only)
-  const GPORT = 8793, ghNet = http.createServer((req, res) => { let d = ''; req.on('data', c => d += c); req.on('end', async () => { const r = await gh.handle(req.method, 'https://api.github.com' + req.url, d ? JSON.parse(d) : null); res.writeHead(r.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(r.j)); }); });
+  // (owner, 12 Oct) the branch "studio-exe" the exe updates itself from: its files, given raw
+  const exeBranch = new Map(), fakeExe = path.join(tmp, 'exe', 'SparkleStudio.exe'); fs.mkdirSync(path.dirname(fakeExe), { recursive: true }); fs.writeFileSync(fakeExe, 'OLD EXE');
+  const GPORT = 8793, ghNet = http.createServer((req, res) => { let d = ''; req.on('data', c => d += c); req.on('end', async () => {
+    { const m = /^\/repos\/[^/]+\/[^/]+\/contents\/([^?]+)\?ref=studio-exe$/.exec(req.url); if (m) { const f = exeBranch.get(decodeURIComponent(m[1])); res.writeHead(f ? 200 : 404, { 'Content-Type': 'application/octet-stream' }); return res.end(f || '{"message":"Not Found"}'); } } const r = await gh.handle(req.method, 'https://api.github.com' + req.url, d ? JSON.parse(d) : null); res.writeHead(r.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(r.j)); }); });
   await new Promise(r => ghNet.listen(GPORT, '127.0.0.1', r));
-  const exe = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cjs')], { env: { ...process.env, APPDATA: appdata, STUDIO_PORT: String(SPORT), STUDIO_NO_OPEN: '1', STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}` }, stdio: 'ignore' });
+  const exe = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cjs')], { env: { ...process.env, APPDATA: appdata, STUDIO_PORT: String(SPORT), STUDIO_NO_OPEN: '1', STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}`, STUDIO_UPDATE_EXE: fakeExe, STUDIO_UPDATE_NO_RESTART: '1' }, stdio: 'ignore' });
   const notes = [];
   try {
     for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://localhost:${SPORT}/studio/api/ping`)).ok) break; } catch (e) { } await new Promise(r => setTimeout(r, 200)); }
@@ -255,6 +259,14 @@ export async function studioCheck(browser, open) {
     ok(gh.refs.get('studio-draft') === gh.refs.get('main') && !(await call('/studio/api/info', { cookie: C })).j.unpublished, 'the draft did not start again after publishing');
     ok((await call('/studio/api/github/publish', { cookie: C, headers: X, body: {} })).j.result.changed === 0, 'a second publish found changes');
     ok(!(await call('/studio/api/pending', { cookie: C })).j.files.length, 'changes still waiting after Publish');
+    // (owner, 12 Oct: real photos would not publish, "error 504") many waiting photos go in steps of a dozen, each its
+    // own short request, and a busy GitHub (504) is tried again instead of failing the Publish
+    { const { heldOn } = await import(path.join(ROOT, 'netlify/functions/studio.mjs')), ch = new Map();
+      for (let i = 1; i <= 30; i++) ch.set(`photos/test${i % 5}/${i}.jpg`, Buffer.from('JPG' + i));
+      await heldOn(heldStore).put(ch); gh.failBlobsNext(1);
+      let steps = 0, r; do { r = (await call('/studio/api/github/publish', { cookie: C, headers: X, body: { message: 'Photos', step: true } })).j; steps++; } while (r && r.more && steps < 20);
+      ok(r && r.end && r.result && r.result.changed === 30 && steps === 4 && gh.fileAt('main', 'photos/test1/26.jpg'), 'photos in steps: ' + JSON.stringify({ steps, r }));
+      ok(!(await call('/studio/api/pending', { cookie: C })).j.files.length, 'photos still waiting after the Publish steps'); }
     // dropping waiting changes: they are gone and nothing reaches GitHub
     await call('/studio/api/content', { cookie: C, headers: X, body: { message: { en: 'Never mind', vi: 'Thôi' } } });
     ok((await call('/studio/api/pending/discard', { cookie: C, headers: X, body: {} })).status === 200 && /online/.test((await call('/studio/api/content', { cookie: C })).j.message.en) && !(await call('/studio/api/pending', { cookie: C })).j.files.length, 'dropping the waiting changes failed');
@@ -332,6 +344,21 @@ export async function studioCheck(browser, open) {
     { const web = (await call('/studio/api/players', { cookie: C })).j, exeR = (await ex('players')).j; ok(exeR && exeR.today && exeR.today.devices === web.today.devices && web.today.devices >= 3, 'the exe could not show the players: ' + JSON.stringify({ exe: exeR && exeR.today, web: web.today })); }
     ok((await ex('voices/inbox')).j.length === 2, 'the exe could not see the inbox');
     const chk = (await ex('check')).j; ok(chk.some(x => x.ok && /the same here and online/.test(x.en)), 'the exe and online versions were not compared: ' + JSON.stringify(chk.map(x => x.en)));
+    // (owner, 12 Oct) the exe updates itself from the "studio-exe" branch: it offers a newer version, refuses a download
+    // that does not match its checksum, and swaps a good one in, keeping the old one beside it until the next start
+    { const neu = Buffer.from('NEW EXE ' + Date.now()), sha = crypto.createHash('sha256').update(neu).digest('hex'), oldExe = path.join(path.dirname(fakeExe), 'SparkleStudio.old.exe');
+      ok(!(await ex('update/check')).j.newer, 'an update was offered with no studio-exe branch');
+      exeBranch.set('version.json', JSON.stringify({ studio: 'r9999', sha256: 'not-the-sum', notes: 'test' })); exeBranch.set('SparkleStudio.exe', neu);
+      const c1 = (await ex('update/check')).j; ok(c1.newer && c1.latest === 'r9999' && c1.can, 'update check: ' + JSON.stringify(c1));
+      const bad = (await ex('update/apply', {})).j; ok(bad.error && /checksum/.test(bad.error) && fs.readFileSync(fakeExe, 'utf8') === 'OLD EXE', 'a download that does not match was put in place: ' + JSON.stringify(bad));
+      exeBranch.set('version.json', JSON.stringify({ studio: 'r9999', sha256: sha }));
+      const good = (await ex('update/apply', {})).j; ok(good.ok && good.latest === 'r9999' && fs.readFileSync(fakeExe).equals(neu) && fs.readFileSync(oldExe, 'utf8') === 'OLD EXE', 'the update was not swapped in: ' + JSON.stringify(good));
+      // a rebuild of the same version (fixes between rounds): offered while its checksum differs from this exe's
+      const here = (await ex('info')).j.studio, mine = crypto.createHash('sha256').update(fs.readFileSync(fakeExe)).digest('hex');
+      exeBranch.set('version.json', JSON.stringify({ studio: here, sha256: mine })); ok(!(await ex('update/check')).j.newer, 'the same exe was offered as an update');
+      exeBranch.set('version.json', JSON.stringify({ studio: here, sha256: 'f'.repeat(64) })); ok((await ex('update/check')).j.newer, 'a rebuild of the same version was not offered');
+      exeBranch.clear();
+      notes.push('the exe updates itself from GitHub (checksum checked, rebuilds of the same version too)'); }
     // the exe sends to GitHub in two steps (owner, round 30): 1. a draft (the website does not change), 2. Publish
     const job = async (p, body) => { const s0 = await ex(p, body); ok(s0.status === 200, p + ': ' + JSON.stringify(s0.j)); for (let i = 0; i < 100; i++) { const j = (await ex('job')).j; if (j && j.end) return j; await new Promise(r => setTimeout(r, 100)); } throw new Error(p + ' never finished'); };
     const d1 = await job('github/draft', { message: 'Draft from the exe' });
@@ -341,6 +368,29 @@ export async function studioCheck(browser, open) {
     ok(!p1.error && p1.result.changed >= 1 && /exe/.test(gh.fileAt('main', 'content/custom.json')) && gh.refs.get('studio-draft') === gh.refs.get('main') && !gh.fileAt('main', 'content/faces/ba-nam.jpg'), 'the exe publish: ' + JSON.stringify(p1));
     ok((await job('github/draft', {})).result.changed === 0, 'a second exe draft found changes');
     notes.push('exe: saves to its folder with a backup, players via the website, same version; GitHub in two steps (draft, then Publish)');
+    // (owner, 12 Oct: the exe's game folder was r38 while the website was r63) a folder older than the website cannot
+    // save a draft (its old files would undo newer ones); the exe gets the newest game from GitHub by itself, and keeps a
+    // content, voice or photo file changed here and not published yet
+    { const sw = fs.readFileSync(path.join(game, 'sw.js'), 'utf8'), newer = sw.replace(/-r\d+'/, "-r9998'");
+      gh.commitOnMain('sw.js', newer, 'newer game'); gh.commitOnMain('voices/en/f/newline1.mp3', 'NEWV', 'a new line'); gh.commitOnMain('voices/en/f/0000aaaa.mp3', 'REMOTE', 'a changed line');
+      fs.writeFileSync(path.join(game, 'voices/en/f/0000aaaa.mp3'), 'LOCAL');
+      const old = await job('github/draft', {}); ok(old.error && /get the newest game first/.test(old.error), 'a draft from an older game folder was not refused: ' + JSON.stringify(old));
+      let st = (await ex('sync/start', { force: true })).j; for (let i = 0; i < 100 && st.state === 'running'; i++) { await new Promise(r => setTimeout(r, 200)); st = (await ex('sync/status')).j; }
+      ok(st.state === 'done' && st.build === 'r9998' && fs.readFileSync(path.join(game, 'voices/en/f/newline1.mp3'), 'utf8') === 'NEWV', 'the exe did not get the newest game: ' + JSON.stringify(st));
+      ok(fs.readFileSync(path.join(game, 'voices/en/f/0000aaaa.mp3'), 'utf8') === 'LOCAL' && st.kept.includes('voices/en/f/0000aaaa.mp3'), 'a change not published yet was overwritten: ' + JSON.stringify(st.kept));
+      notes.push('exe: gets the newest game by itself, keeps changes not published, refuses a draft from an older folder'); }
+    // (owner, 12 Oct) on a computer with no game folder, the exe downloads the newest game next to itself
+    { const t2 = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-fresh-')), ad2 = path.join(t2, 'appdata'), exe2 = path.join(t2, 'exe', 'SparkleStudio.exe'), P2 = SPORT + 7;
+      fs.mkdirSync(path.join(ad2, 'SparkleStudio'), { recursive: true }); fs.mkdirSync(path.dirname(exe2), { recursive: true });
+      fs.writeFileSync(path.join(ad2, 'SparkleStudio', 'settings.json'), JSON.stringify({ githubToken: 'test-token', githubRepo: repo }));
+      const fresh = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cjs')], { cwd: path.dirname(exe2), env: { ...process.env, APPDATA: ad2, STUDIO_PORT: String(P2), STUDIO_NO_OPEN: '1', STUDIO_AS_EXE: '1', STUDIO_UPDATE_EXE: exe2, STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}` }, stdio: 'ignore' });
+      try {
+        let st = null; for (let i = 0; i < 150; i++) { await new Promise(r => setTimeout(r, 200)); try { st = await (await fetch(`http://localhost:${P2}/studio/api/sync/status`)).json(); } catch (e) { st = null; } if (st && st.state === 'done') break; }
+        const dir = path.join(path.dirname(exe2), 'SparkleValley'), inf = await (await fetch(`http://localhost:${P2}/studio/api/info`)).json();
+        ok(st && st.state === 'done' && fs.existsSync(path.join(dir, 'index.html')) && fs.existsSync(path.join(dir, 'js', 'main.js')) && inf.ok, 'a computer with no game folder did not get the game: ' + JSON.stringify({ st, ok: inf.ok }));
+        ok(JSON.parse(fs.readFileSync(path.join(ad2, 'SparkleStudio', 'settings.json'), 'utf8')).gameDir === dir, 'the new game folder was not remembered');
+      } finally { fresh.kill(); }
+      notes.push('exe: with no game folder, downloads the newest game next to itself'); }
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone
     const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode', 'missions', 'villagers', 'path', 'play', 'quiz', 'stories', 'looks', 'plots'], bad = [];
     // (Studio review, owner 10 Oct) every button and box 44 px or more on a phone and a tablet: these pages

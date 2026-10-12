@@ -37,11 +37,17 @@ const FAMILY = rel => /^(content|voices|photos)\//.test(rel) || rel === 'tools/v
 // (tests point the exe at a pretend GitHub with STUDIO_GITHUB_API; it is never set for families)
 const GH_API = (typeof process !== 'undefined' && process.env && process.env.STUDIO_GITHUB_API) || 'https://api.github.com';
 function ghApi(token) {
+  // (owner, 12 Oct: real photos would not publish, "error 504") GitHub sometimes answers 502, 503 or 504 when it is busy:
+  // such a request is tried twice more after a short wait before it counts as an error
   return async (p, opt = {}) => {
-    const r = await fetch(GH_API + p, { ...opt, headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'User-Agent': 'sparkle-studio', 'X-GitHub-Api-Version': '2022-11-28', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } });
-    const t = await r.text(); /** @type {any} */ let j = {}; try { j = JSON.parse(t); } catch (e) { }
-    if (!r.ok) { const e = /** @type {Error & { status?: number }} */ (new Error(`GitHub ${r.status}: ${(j.message || t).slice(0, 160)}`)); e.status = r.status; throw e; }
-    return j;
+    for (let a = 0; ; a++) {
+      let r; try { r = await fetch(GH_API + p, { ...opt, headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'User-Agent': 'sparkle-studio', 'X-GitHub-Api-Version': '2022-11-28', ...(opt.body ? { 'Content-Type': 'application/json' } : {}) } }); }
+      catch (e) { if (a < 2) { await new Promise(res => setTimeout(res, 700 * (a + 1))); continue; } throw e; }
+      if ([502, 503, 504].includes(r.status) && a < 2) { await r.text().catch(() => ''); await new Promise(res => setTimeout(res, 700 * (a + 1))); continue; }
+      const t = await r.text(); /** @type {any} */ let j = {}; try { j = JSON.parse(t); } catch (e) { }
+      if (!r.ok) { const e = /** @type {Error & { status?: number }} */ (new Error(`GitHub ${r.status}: ${(j.message || t).slice(0, 160)}`)); e.status = r.status; throw e; }
+      return j;
+    }
   };
 }
 const TREES = new Map(), BLOBS = new Map(); // kept between requests while the function stays warm (by sha: never stale)
@@ -97,8 +103,8 @@ function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api
     return [...out];
   };
   const commitOn = async (parent, items, message) => {
-    let tree = await treeShaOf(parent); // (in parts: a voice pack top-up can be thousands of files)
-    for (let i = 0; i < items.length; i += 400) tree = (await gh(`${R}/git/trees`, { method: 'POST', body: JSON.stringify({ base_tree: tree, tree: items.slice(i, i + 400) }) })).sha;
+    let tree = await treeShaOf(parent); // (in parts: a voice pack top-up can be thousands of files; 100 at a time, as 400 made GitHub time out)
+    for (let i = 0; i < items.length; i += 100) tree = (await gh(`${R}/git/trees`, { method: 'POST', body: JSON.stringify({ base_tree: tree, tree: items.slice(i, i + 100) }) })).sha;
     return (await gh(`${R}/git/commits`, { method: 'POST', body: JSON.stringify({ message, tree, parents: [parent] }) })).sha;
   };
   const setRef = async (b, sha, force) => { try { await gh(`${R}/git/refs/heads/${encodeURIComponent(b)}`, { method: 'PATCH', body: JSON.stringify({ sha, force: !!force }) }); } catch (e) { if (e.status !== 422 && e.status !== 404) throw e; if (await refSha(b)) throw e; await gh(`${R}/git/refs`, { method: 'POST', body: JSON.stringify({ ref: 'refs/heads/' + b, sha }) }); } };
@@ -154,6 +160,16 @@ function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api
       const hi = await heldIndex(), keys = Object.keys(hi);
       if (keys.length) { for (const k of keys) pending.set(k, hi[k] == null ? null : await held.get(k)); await toDraft(`Sparkle Studio online: ${keys.length} saved change${keys.length === 1 ? '' : 's'}`); await held.clear(); idx = null; }
       return publishDraft(message);
+    },
+    // (owner, 12 Oct) online, Publish in steps: each call sends at most `n` waiting changes to the draft (one website
+    // request has only seconds, and a photo upload takes a moment each), then the last call puts the draft live
+    publishStep: async (message, n = 12) => {
+      const hi = await heldIndex(), keys = Object.keys(hi).sort();
+      if (!keys.length) return { more: false, left: 0, result: await publishDraft(message) };
+      const part = keys.slice(0, n);
+      for (const k of part) pending.set(k, hi[k] == null ? null : await held.get(k));
+      await toDraft(`Sparkle Studio online: ${part.length} saved change${part.length === 1 ? '' : 's'}`); await held.drop(part); idx = null;
+      return { more: true, left: keys.length - part.length, sent: part.length };
     },
     unpublished: async () => Object.keys(await heldIndex()).length > 0 || !!(await state()).d,
     // (the exe) the family's files as GitHub has them now: the draft while it has unpublished changes, else main
@@ -337,6 +353,9 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
   };
   async function draftFromFolder(J, message) {
     const G = ghStore(), R = `/repos/${conf.githubRepo}`;
+    // (owner, 12 Oct) never from a game folder older than the website: its old voices or content would undo newer ones
+    { const bn = b => +((/VERSION = '[^']*?r(\d+)'/.exec(b ? b.toString('utf8') : '') || [0, 0])[1]), here = bn(await S.read('sw.js').catch(() => null)), there = bn(await gh(`${R}/contents/sw.js?ref=${encodeURIComponent(conf.githubBranch || 'main')}`).then(j => Buffer.from(j.content || '', 'base64')).catch(() => null)); // (fresh: not the branch kept for a few seconds)
+      if (here && there && here < there) throw new Error(`Your game folder is r${here} and the website is r${there}: get the newest game first (Settings, Get the newest game).`); }
     J.msg = 'Reading the website’s files…';
     const remote = await G.familyShas();
     const mine = [...await S.walk('content'), ...await S.walk('voices'), ...await S.walk('photos'), ...((await S.read('tools/voice-extra.json')) ? ['tools/voice-extra.json'] : [])].filter(rel => FAMILY(rel) && !rel.startsWith('content/old/'));
@@ -489,6 +508,8 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
     if (api === 'github/merge' && post) { if (!(+b.n > 0) || !gh) return bad('bad pull request'); const r = await gh(`/repos/${conf.githubRepo}/pulls/${+b.n}/merge`, { method: 'PUT', body: JSON.stringify({ merge_method: 'merge' }) }); return ok({ ok: true, sha: r.sha }); }
     if (api === 'github/publish' && post) {
       const msg = String(b.message || '').slice(0, 200);
+      // online, in steps (owner, 12 Oct: one request for every photo ran out of time, 504): the page calls again while `more`
+      if (S.publishStep && b.step) { const r = await S.publishStep(msg); return ok(r.more ? { kind: 'github', end: false, step: true, more: true, left: r.left, sent: r.sent } : { kind: 'github', end: true, step: true, result: r.result, done: r.result.changed, total: r.result.changed }); }
       if (S.publish) { const result = await S.publish(msg); return ok({ kind: 'github', end: true, result, done: result.changed, total: result.changed }); } // online: straight away
       return ok(job('github', J => publishDraft(J, msg))); // the exe: the draft goes live
     }
