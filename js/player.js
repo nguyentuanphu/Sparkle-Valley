@@ -27,7 +27,7 @@ export class Hero {
   }
   buildModel() {
     if (this.av) this.scene.remove(this.av.root);
-    this.av = buildAvatar(this.profile.look, this.profile.photo);
+    this.av = buildAvatar(this.profile.look, this.profile.photo); this.av.root.userData.own = true; // (Round V) a child's own character, never a villager (js/villagertalk.js)
     this.scene.add(this.av.root);
   }
   place(x, z, y) {

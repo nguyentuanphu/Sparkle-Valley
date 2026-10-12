@@ -3605,13 +3605,19 @@ await check('talk', async () => {
       const silent = people.filter(o => !G.interactables.some(i => Number.isFinite(i.x) && Math.hypot(i.x - o.position.x, i.z - o.position.z) < 3)).map(o => [Math.round(o.position.x), Math.round(o.position.z)]);
       const v = G.interactables.find(i => /^villager_/.test(i.id)); let said = '';
       if (v) { v.act(G.heroes[0], G); await new Promise(r => setTimeout(r, 600)); said = (document.querySelector('.dialog .dtext') || {}).textContent || ''; document.querySelectorAll('.dialog').forEach(d => d.remove()); G.paused = false; }
-      return { people: people.length, silent, villagers: G.interactables.filter(i => /^villager_/.test(i.id)).length, said };
+      // (Round V, owner 13 Oct) a child's character rebuilt (new clothes) is never taken for a villager: no "Say hello" that
+      // follows the child, no job picture over their head, and the old character's tap is gone
+      const h = G.heroes[0]; h.buildModel(); G.villagerTalk.scan(); await new Promise(r => setTimeout(r, 200)); G.villagerTalk.scan();
+      const onMe = G.interactables.filter(i => /^villager_/.test(i.id) && Math.hypot(i.x - h.pos.x, i.z - h.pos.z) < 1.5).length;
+      let tagOnMe = 0; h.av.root.traverse(o => { if (o.isSprite) tagOnMe++; });
+      const ghosts = G.villagerTalk.list.filter(e => e.o.parent !== G.scene).length;
+      return { people: people.length, silent, villagers: G.interactables.filter(i => /^villager_/.test(i.id)).length, said, onMe, tagOnMe, ghosts };
     }, lang);
-    if (r.silent.length || !r.villagers || r.said.length < 15 || (lang === 'en' && /[ăâđêơư]/i.test(r.said))) out.push(lang + ' ' + JSON.stringify(r));
+    if (r.silent.length || !r.villagers || r.said.length < 15 || (lang === 'en' && /[ăâđêơư]/i.test(r.said)) || r.onMe || r.tagOnMe || r.ghosts) out.push(lang + ' ' + JSON.stringify(r));
     const errs = P.errors; await P.ctx.close(); if (errs.length) out.push(errs.join(' '));
   }
   ok(!out.length, out.join(' | '));
-  return 'every person in the valley answers a tap; the villagers without their own words tell a fact or a saying of their region, in English or Vietnamese';
+  return 'every person in the valley answers a tap; the villagers without their own words tell a fact or a saying of their region, in English or Vietnamese; a child whose character is rebuilt gets no "Say hello" and no job picture';
 });
 
 await check('bilingual', async () => {

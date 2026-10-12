@@ -784,7 +784,7 @@ function setupWanderers(active) {
   G.wanderers.forEach(w => { scene.remove(w.av.root); scene.remove(w.tag); }); G.wanderers = [];
   for (let i = G.interactables.length - 1; i >= 0; i--) if (/^wander\d/.test(G.interactables[i].id)) G.interactables.splice(i, 1);
   profiles.filter(p => !active.includes(p)).slice(0, 4).forEach((p, k) => {
-    const av = buildAvatar(p.look, p.photo), tag = nameTag(p.name);
+    const av = buildAvatar(p.look, p.photo), tag = nameTag(p.name); av.root.userData.own = true; // (Round V) another child of this device
     const x = HOME.x - 8 + k * 4, z = HOME.z + 4;
     av.root.position.set(x, heightAt(x, z), z); scene.add(av.root); scene.add(tag);
     const w = { av, tag, tx: x, tz: z, pos: av.root.position, yaw: 0, wave: 0 }; G.wanderers.push(w);
@@ -881,6 +881,7 @@ Net.on('hello', r => {
   const old = G.partners[r.id]; if (old) { scene.remove(old.av.root); scene.remove(old.tag); }
   const av = buildAvatar(Object.assign({ style: 'shirt', color: '#3d7fd6', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#f6c7a5', glider: 0 }, r.look || {}), r.photo);
   scene.add(av.root); const tag = nameTag((r.name || T('Friend', 'Bạn')) + (r.look && r.look.star ? ' ★' : ''), '#9ff0ff'); // (a week's star tester: ★) scene.add(tag);
+  av.root.userData.own = true; // (Round V) a friend online, never a villager
   G.partners[r.id] = { id: r.id, av, tag, pos: old ? old.pos : new THREE.Vector3(0, -50, 0), yaw: 0, st: 'idle', name: r.name, photoURL: avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) }) };
   if (!old) { SFX.chime(); say('Your friend is here! Say hello!', 'Bạn của con đã đến! Chào bạn đi!'); toast(T(`${r.name} is here!`, `${r.name} đã đến!`)); }
   G.huds.forEach(hd => hd.setCall(true, false, Net.muted || !Net.mic));
