@@ -135,6 +135,16 @@ ROADS.forEach(R => { R.w = MAP.ROAD_WIDTH[R.kind]; }); // (rule R1: asphalt 6.4 
 // (each road's bounding box is kept, so roads farther away than the best so far are skipped: same answers, faster)
 const BOX = new Map();
 const boxOf = R => { let b = BOX.get(R); if (!b || b.n !== R.pts.length) { b = { n: R.pts.length, x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9 }; for (const [px, pz] of R.pts) { b.x0 = Math.min(b.x0, px); b.x1 = Math.max(b.x1, px); b.z0 = Math.min(b.z0, pz); b.z1 = Math.max(b.z1, pz); } BOX.set(R, b); } return b; };
+// (Round U, owner 11 Oct: "weeds still grow inside the asphalt road") how far (x, z) is from the edge of the nearest
+// road or paved place street (the market's walking street, Aussie Corner's road, Two Homes Street, every city's main
+// street: js/content/map.js MARKET_ROWS); negative on it. Everything that grows keeps off both.
+let PLACE_STREETS = null;
+export function edgeDist(x, z) {
+  const rd = roadDist(x, z); let e = rd.road ? rd.d - rd.road.w / 2 : 99;
+  if (!PLACE_STREETS) PLACE_STREETS = MAP.MARKET_ROWS.map(R => MAP.rowStreet(R.place)).filter(S => S && !S.plain);
+  for (const S of PLACE_STREETS) { const t = Math.max(0, Math.min(S.len, (x - S.a[0]) * S.dx + (z - S.a[1]) * S.dz)); e = Math.min(e, Math.hypot(x - S.a[0] - S.dx * t, z - S.a[1] - S.dz * t) - S.w / 2); }
+  return e;
+}
 export function roadDist(x, z) {
   let best = 1e9, road = null;
   for (const R of ROADS) { const b = boxOf(R); if (Math.max(b.x0 - x, x - b.x1, 0) ** 2 + Math.max(b.z0 - z, z - b.z1, 0) ** 2 >= best * best) continue;
@@ -230,10 +240,12 @@ export function heightAt(x, z) {
   // (round T2) ponds: a round hollow with a gentle shore (after the places' flat ground, so a pond by a city stays wet)
   let dpd = 1e9; for (const P of PONDS) { const d = dist2(x, z, P.x, P.z); if (d > P.r + 8) continue; dpd = Math.min(dpd, d - P.r); h = lerp(h, Math.min(h, 1), 1 - smooth(P.r, P.r + 6, d)); h = lerp(h, -2.4, 1 - smooth(P.r * .55, P.r, d)); if (P.islet) h = lerp(h, WATER + .5, 1 - smooth(P.islet, P.islet + 1.6, d)); }
   // Raised banks either side of each bridge.
-  if (dr > 7) for (const B of BRIDGES) { const K = B.bank || (B.bank = bridgeBox(B, B.a0 - 10, B.a1 + 16, -8, 8)); if (x <= K.x0 || x >= K.x1 || z <= K.z0 || z >= K.z1) continue; // (round T2: a quick box test first, 13 bridges now)
+  if (dr > 7) for (const B of BRIDGES) { const K = B.bank || (B.bank = bridgeBox(B, B.a0 - 10, B.a1 + (B.bankOut || 16), -8, 8)); if (x <= K.x0 || x >= K.x1 || z <= K.z0 || z >= K.z1) continue; // (round T2: a quick box test first, 13 bridges now)
+    if (levelAt(x, z) != null) continue;   // (Round U: a bank never reaches inside a village or city: places stay flat to their gates)
     const u = bridgeAlong(B, x, z), v = bridgeAcross(B, x, z); // (never over the river itself: boats pass under)
     // level ground at deck height at both ends, easing back to the natural hills further away; the river in the middle is left alone
-    const west = smooth(B.a0 + 8, B.a0 + 3, u), east = smooth(B.a1 - 8, B.a1 - 3, u) * (1 - smooth(B.a1 + 4, B.a1 + 16, u));
+    // (Round U: bankOut, a longer east bank where a junction is close to the deck's end: the Phố Hai Quê bridge and the ring road)
+    const west = smooth(B.a0 + 8, B.a0 + 3, u), east = smooth(B.a1 - 8, B.a1 - 3, u) * (1 - smooth(B.a1 + (B.bankOut ? B.bankOut - 10 : 4), B.a1 + (B.bankOut || 16), u));
     const w = (1 - smooth(4, 8, Math.abs(v))) * (west + east);
     h = lerp(h, B.h - .2, clamp(w, 0, 1));
   }
@@ -653,7 +665,7 @@ export function createWorld(scene, quality) {
     const near = rnd() < .5; const x = near ? PLATEAU.x + (rnd() - .5) * 180 : (rnd() - .5) * (SIZE - 40), z = near ? PLATEAU.z + (rnd() - .5) * 180 : (rnd() - .5) * (SIZE - 40), h = heightAt(x, z);
     if (h < 1.8 || h > 30) continue;
     if (dist2(x, z, VILLAGE.x, VILLAGE.z) < VILLAGE.r - 6 || dist2(x, z, HOME.x, HOME.z) < HOME.r - 8 || dist2(x, z, CHINA.x, CHINA.z) < CHINA.r - 2 || dist2(x, z, INDIA.x, INDIA.z) < INDIA.r - 2) continue;
-    { const rd = roadDist(x, z); if (rd.d < rd.road.w / 2 + 1.5) continue; } // nothing grows on a road or its verge (G5/R4)
+    if (edgeDist(x, z) < 1.5) continue; // nothing grows on a road, a place's street or their verge (G5/R4; Round U)
     o3.position.set(x, h - .05, z); o3.rotation.set(0, rnd() * 6, 0); o3.scale.setScalar(.45 + rnd() * .45); o3.updateMatrix();
     if (rnd() < .16 && fi < fIm.count) { fIm.setMatrixAt(fi, o3.matrix); fIm.setColorAt(fi++, tint.set(FC[Math.floor(rnd() * FC.length)])); }
     else if (gi < nGrass) { gIm.setMatrixAt(gi, o3.matrix); gIm.setColorAt(gi++, tint.setHSL(.26 + rnd() * .06, .55, .3 + rnd() * .1)); }
@@ -851,7 +863,10 @@ export function createWorld(scene, quality) {
     const br = new THREE.Mesh(merge(parts), toonVC()); br.castShadow = true; br.receiveShadow = true; br.position.set(...(B.axis === 'z' ? [B.c, y, (B.a0 + B.a1) / 2] : [(B.a0 + B.a1) / 2, y, B.c])); if (B.axis === 'z') br.rotation.y = -Math.PI / 2; scene.add(br);
     // railings keep little explorers on the bridge
     W.boxes.push(bridgeBox(B, B.a0, B.a1, hw - .1, hw + .3), bridgeBox(B, B.a0, B.a1, -hw - .3, -hw + .1));
-    W.platforms.push({ ...bridgeBox(B, B.a0 - 2, B.a1 + 2, -B.w / 2, B.w / 2), y: y + .1 });
+    // (Round U, owner: no step where a road meets a bridge) the deck is walked on over the bridge itself; for 1.2 m past each
+    // end (the apron) the road is held at the deck's height and its bed carries you on and off without a step (short enough
+    // to leave room for the gentle climb to a junction close by: the Phố Hai Quê bridge and the ring road)
+    W.platforms.push({ ...bridgeBox(B, B.a0, B.a1, -B.w / 2, B.w / 2), y: y + .1, apron: bridgeBox(B, B.a0 - 1.2, B.a1 + 1.2, -B.w / 2, B.w / 2) });
   }
 
   // ---------- shrines ----------

@@ -35,6 +35,8 @@ export const WORLD = {
 // the box runs from at − w to at + w. h is the one flat level of a village, town or city (HANDOFF rule 10).
 // street.roadZ: where a street place's main street runs, from the anchor. gates: road ends, from the anchor.
 // A place with `place` instead of `at` sits at an offset (`off`) from that place's anchor.
+// (Round U: Đà Nẵng 4.3 m and Brisbane 4.2 m, the height of the Dragon and Story bridges 6 m past their gates, so the road
+// from the gate onto the bridge has no step; was 3 m)
 export const PLACES = [
   // the home island in the middle of the river (owner's decisions 1 and 2): Ông Cú's plateau, Phố Hai Quê across it in
   // line with the two island bridges, Sunny Farm in the south
@@ -48,7 +50,7 @@ export const PLACES = [
   { id: 'paddies', kind: 'site', cc: 'vn', at: [210, -98], r: 16, h: 3 },   // the rice fields (round T2: a little south-east, clear of Sông Hồng)
   { id: 'village', kind: 'village', cc: 'vn', at: [204, -42], r: 34, h: 2.4 },   // Lotus Village (Làng Sen)
   { id: 'lake', kind: 'lake', at: [120, -74], r: 22 },   // Mirror Lake (Hồ Gương) by Làng Sen, with Hạ Long Bay and the reef inside
-  { id: 'danang', kind: 'city', cc: 'vn', at: [153, 7], w: 13, d: 11, h: 3, icon: '🐉', name: ['Đà Nẵng', 'Đà Nẵng'], gates: [[0, -11], [0, 11], [-13, 0]] },
+  { id: 'danang', kind: 'city', cc: 'vn', at: [153, 7], w: 13, d: 11, h: 4.3, icon: '🐉', name: ['Đà Nẵng', 'Đà Nẵng'], gates: [[0, -11], [0, 11], [-13, 0]] },
   { id: 'hoian', kind: 'site', cc: 'vn', at: [170, 90], r: 14 },   // Hội An (the old town comes in a later stage; for now its landmark)
   { id: 'market', kind: 'street', cc: 'vn', at: [197, 114], w: 25, d: 13, h: 6, street: { roadZ: 0 } },   // Chợ Ba Miền, the Three Regions market
   { id: 'saigon', kind: 'city', cc: 'vn', at: [153, 151], w: 13, d: 11, h: 4, icon: '🛵', name: ['Hồ Chí Minh City', 'TP. Hồ Chí Minh'], gates: [[0, -11], [13, -6]] },
@@ -56,7 +58,7 @@ export const PLACES = [
   // flyers of Bãi Sau, bánh khọt; reached by the red road from TP. HCM and by the boat down Sông Sài Gòn
   { id: 'vungtau', kind: 'city', cc: 'vn', at: [205, 151], w: 13, d: 11, h: 3.5, icon: '🏖️', name: ['Bà Rịa–Vũng Tàu', 'Bà Rịa–Vũng Tàu'], gates: [[-13, 0]] },
   // the west bank: Australia, north to south (Brisbane, Aussie Corner, Sydney, Melbourne; Uluru in the outback beyond the Great Dividing Range)
-  { id: 'brisbane', kind: 'city', cc: 'au', at: [-132, -137], w: 13, d: 11, h: 3, icon: '🐨', name: ['Brisbane', 'Brisbane'], gates: [[0, 11], [0, -11]] },
+  { id: 'brisbane', kind: 'city', cc: 'au', at: [-132, -137], w: 13, d: 11, h: 4.2, icon: '🐨', name: ['Brisbane', 'Brisbane'], gates: [[0, 11], [0, -11]] },
   { id: 'aussie', kind: 'street', cc: 'au', at: [-100, -65], w: 18, d: 28, h: 4, street: { roadZ: 0 } },   // Aussie Corner (round T2: 6 m south, clear of the Brisbane River)
   { id: 'sydney', kind: 'city', cc: 'au', at: [-132, -4], w: 13, d: 13, h: 4, icon: '⛴️', name: ['Sydney', 'Sydney'], gates: [[0, -13], [0, 13]] },
   { id: 'melbourne', kind: 'city', cc: 'au', at: [-132, 126], w: 13, d: 13, h: 4, icon: '🚋', name: ['Melbourne', 'Melbourne'], gates: [[0, -13]] },
@@ -111,8 +113,8 @@ export const WATERS = [
 
 // Bridges run along the x or the z axis, never diagonally: from a0 to a1 along it, centred on c across it; h is the deck.
 export const BRIDGES = [
-  { id: 'haique', axis: 'x', a0: 54, a1: 84, c: -28, w: 7.6, h: 3.7, over: 'main_e', style: 'plain', name: ['Phố Hai Quê Bridge', 'Cầu Phố Hai Quê'] },   // the home island's east bridge, from Phố Hai Quê to the ring road (round T2: the Harbour Bridge moved to Sydney)
-  { id: 'island_w', axis: 'x', a0: -68, a1: -38, c: -28, w: 7.6, h: 4.2, over: 'main_w', style: 'plain' },   // the home island's west bridge
+  { id: 'haique', axis: 'x', a0: 54, a1: 84, c: -28, w: 7.6, h: 3.7, bankOut: 26, over: 'main_e', style: 'plain', name: ['Phố Hai Quê Bridge', 'Cầu Phố Hai Quê'] },   // the home island's east bridge, from Phố Hai Quê to the ring road (round T2: the Harbour Bridge moved to Sydney)
+  { id: 'island_w', axis: 'x', a0: -68, a1: -38, c: -28, w: 7.6, h: 4.9, over: 'main_w', style: 'plain' },   // the home island's west bridge (Round U: at the ring road's height, which it meets 7 m past its end)
   { id: 'ring_n', axis: 'x', a0: -10, a1: 18, c: -130, w: 7.6, h: 5.4, over: 'main_n', style: 'plain', name: ['North Ring Bridge', 'Cầu Vành Đai Bắc'] },   // the ring road over the river, north of the island
   { id: 'ring_s', axis: 'x', a0: -2, a1: 26, c: 104, w: 7.6, h: 5.4, over: 'main_s', style: 'plain', name: ['South Ring Bridge', 'Cầu Vành Đai Nam'] },   // and south of it
   { id: 'north', axis: 'x', a0: -12, a1: 16, c: -172, w: 7.6, h: 6, over: 'main_n', style: 'plain', name: ['Mountain Road Bridge', 'Cầu Đường Núi'] },   // the mountain road over the river
@@ -120,7 +122,7 @@ export const BRIDGES = [
   // (round T2) every bridge landmark over its real water, and plain bridges where roads cross the new rivers
   { id: 'longbien', axis: 'z', a0: -113, a1: -87, c: 153, w: 7.6, h: 4.8, over: 'hong', style: 'longbien', landmark: 'longbien' },   // Long Biên: the Vietnam road over Sông Hồng, south of Hà Nội
   { id: 'ring_e', axis: 'z', a0: -75, a1: -49, c: 96, w: 7.6, h: 4.4, over: 'hong', style: 'plain' },   // the ring road over Sông Hồng
-  { id: 'hoian_rd', axis: 'z', a0: 61, a1: 83, c: 153, w: 7.6, h: 3.6, over: 'hoian_canal', style: 'plain' },   // the Vietnam road over the Hội An canal
+  { id: 'hoian_rd', axis: 'z', a0: 61, a1: 83, c: 153, w: 7.6, h: 4.3, over: 'hoian_canal', style: 'plain' },   // the Vietnam road over the Hội An canal (Round U: near the Dragon Bridge's height, 9 m away, so the road between them stays gentle)
   { id: 'chuacau', axis: 'z', a0: 65, a1: 79, c: 170, w: 3.2, h: 2.6, over: 'hoian_canal', style: 'chuacau', landmark: 'chuacau', foot: true },   // Chùa Cầu, the covered footbridge in Hội An, beside the road (owner, T2)
   { id: 'harbour', axis: 'z', a0: -22, a1: 18, c: -78, w: 7.6, h: 5.2, over: 'sydney_harbour', style: 'harbour', landmark: 'harbour' },   // the Sydney Harbour Bridge: the ring road over the harbour
   { id: 'story', axis: 'z', a0: -119, a1: -93, c: -132, w: 7.6, h: 4.4, over: 'brisbane_r', style: 'story', landmark: 'storybridge' },   // the Story Bridge: the Australia road over the Brisbane River
@@ -167,7 +169,7 @@ export const ROADS = [
   // dirt roads
   { id: 'plateau_ramp', kind: 'dirt', pts: [[-6, -60], [-24, -44], [-24, -28]] },                  // down from the Dawn Plateau to the island road
   { id: 'village_lane', kind: 'dirt', pts: [[172, -42], [185, -42]] },                          // Lotus Village's lane, in through its old gate
-  { id: 'paddies_lane', kind: 'dirt', pts: [[206, -76], [205, -86]] },                          // Lotus Village to the rice fields
+  { id: 'paddies_lane', kind: 'dirt', pts: [[206, -72], [205, -86]] },                          // Lotus Village to the rice fields
   { id: 'hoian_walk', kind: 'footpath', pts: [[153, 96], [170, 96], [170, 56]] },                   // (round T2) into Hội An and north over Chùa Cầu to the canal's far bank
   // (round T2) footpaths down to the piers: the raft's stops by the bridges and the harbour ferry on the island
   { id: 'quay_north', kind: 'footpath', pts: [[22, -172], [22, -152], [12, -152]] },
@@ -325,15 +327,16 @@ export const BOATS = [
 export const STALL = { road: 1.5, building: 3, gap: 1.2, path: .9, alone: 12 };
 // street: the main street's centre line [from, to], from the place's anchor; w: its width (ROAD_WIDTH, or a walking
 // street's own paving); walking: no traffic, so customers may stand on it; side: 1 = the row is on the left of
-// from → to (seen from above, north up), −1 on the right; at: metres from `from` to the first slot's middle; pitch: metres
+// from → to (seen from above, north up), −1 on the right; plain: the way in from the gate, not a paved street (China
+// and India; Round U: plants may grow there); at: metres from `from` to the first slot's middle; pitch: metres
 // between slots' middles. The cities' rows are made from their main gate below.
 const ROWS = [
   { place: 'market', street: [[-24, 0], [24, 0]], w: 8, walking: true, side: 1, at: 2, pitch: 4 },   // north side, north to south Vietnam from the gate; the hosts and the hawker on the south
   { place: 'aussie', street: [[-18, 0], [18, 0]], w: 7, side: -1, at: 0, pitch: 1 },   // south side, facing the shops across the road; slots in metres (the crossing in the middle stays clear)
   { place: 'town', street: [[-26, -6], [26, -6]], w: ROAD_WIDTH.asphalt, side: -1, at: 26.5, pitch: 4 },   // south footpath, east of the crossing, by the park
   { place: 'village', street: [[-32, 0], [-18, 0]], w: ROAD_WIDTH.dirt, side: 1, at: 3, pitch: 4 },          // the lane in from the old gate, north side
-  { place: 'china', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 1.6, pitch: 3.8 },   // just inside the gate, west side
-  { place: 'india', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 1.6, pitch: 3.8 }
+  { place: 'china', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 1.6, pitch: 3.8, plain: true },   // just inside the gate, west side
+  { place: 'india', street: [[0, 22], [0, 2]], w: ROAD_WIDTH.asphalt, side: 1, at: 1.6, pitch: 3.8, plain: true }
 ];
 // the cities: the main street from the main gate straight through the square; the kiosks just inside the gate on the
 // host's side (Bắc Ninh: the south side, clear of the Quan họ boat)
@@ -346,7 +349,7 @@ export const rowOf = place => ROW_OF.get(place) || null;
 export function rowStreet(place) {
   const R = ROW_OF.get(place); if (!R) return null; const [ox, oz] = anchorOf(place);
   const a = [ox + R.street[0][0], oz + R.street[0][1]], b = [ox + R.street[1][0], oz + R.street[1][1]], len = Math.hypot(b[0] - a[0], b[1] - a[1]), dx = (b[0] - a[0]) / len, dz = (b[1] - a[1]) / len;
-  return { place, a, b, w: R.w, walking: !!R.walking, len, dx, dz, nx: dz * R.side, nz: -dx * R.side };
+  return { place, a, b, w: R.w, walking: !!R.walking, plain: !!R.plain, len, dx, dz, nx: dz * R.side, nz: -dx * R.side };
 }
 // slot i of a place's row for something `d` metres deep (across the street) and `span` slots long: where its middle
 // stands { x, z }, which way it faces (face: the yaw that looks at the street, as avatars and models use it), the step

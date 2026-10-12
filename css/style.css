@@ -2309,3 +2309,29 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
   .flist .frow .fst { white-space: normal; }
   .flist .frow .btn { min-height: 44px; }
 }
+/* (Round U, owner 11 Oct: rows and pop-up pages move under a finger and a mouse; js/scrollhelp.js) */
+.jumpnav, .hubtabs, .pad-tabs, .wrow, .cb-acts, .cb-quick, .festrow, .sg-groups, .hscroll { touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; cursor: grab; }
+.jumpnav.dragging, .hubtabs.dragging, .pad-tabs.dragging, .wrow.dragging, .hscroll.dragging { cursor: grabbing; scroll-snap-type: none; }
+.pad-body { touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.modal { touch-action: pan-x pan-y; }
+button.chip { font: inherit; color: inherit; cursor: pointer; }
+.hud .chips .chip { pointer-events: auto; }
+.chipcard { position: fixed; z-index: 65; display: flex; gap: 10px; align-items: center; max-width: 300px; padding: 10px 14px; border-radius: 18px; background: #fffaf0; color: #3b2558; box-shadow: 0 6px 20px rgba(40, 20, 10, .25); opacity: 0; transform: translateY(-6px); transition: opacity .2s, transform .2s; pointer-events: none; }
+.chipcard.on { opacity: 1; transform: none; pointer-events: auto; }
+.chipcard .cc-pic { font-size: 34px; flex: none; }
+.chipcard b { display: block; font-size: 17px; } .chipcard small { display: block; font-size: 14px; line-height: 1.3; }
+/* (Round U) the Sound switches (js/soundsheet.js) and the Simple screen's Sound button */
+.soundsheet .card { max-width: 520px; text-align: center; }
+.soundsheet .ss-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 10px 0 14px; }
+.ss-sw { flex: 1 1 130px; min-height: 120px; border: 0; border-radius: 22px; background: #eee6f7; color: #5a4a6a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 18px; box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+.ss-sw span { font-size: 44px; } .ss-sw i { font-style: normal; font-size: 15px; font-weight: 800; color: #2f9a5a; }
+.ss-sw i.off, .ss-sw:not(.on) i:not(.off) { display: none; } .ss-sw:not(.on) i.off { display: inline; color: #a05a5a; }
+.ss-sw.on { background: #d7f5df; color: #2f6a45; } .ss-sw:not(.on) span { opacity: .45; }
+.sp-sound { min-width: 64px; min-height: 64px; border: 0; border-radius: 20px; background: rgba(255,255,255,.9); display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 3px 0 rgba(0,0,0,.12); }
+.sp-sound small { font-size: 12px; font-weight: 800; }
+/* (Round U) family play: the guide and the ready-made missions (js/parents.js) */
+.fmguide { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 6px 0 10px; }
+.fmg { display: flex; gap: 8px; align-items: center; background: #fff6e4; border-radius: 14px; padding: 8px 10px; font-size: 14px; line-height: 1.3; }
+.fmg .art, .fmg .emo { font-size: 28px; flex: none; }
+.fmready { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.fmhelp { min-width: 44px; min-height: 44px; vertical-align: middle; }
