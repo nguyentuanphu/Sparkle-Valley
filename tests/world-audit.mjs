@@ -46,7 +46,7 @@ export async function groundAudit(page) {
     }
     // the boats stay on the water, and nothing you can tap stands in it (the sparkle in the middle of the lake is meant to be there)
     if (G.ferries) G.ferries.ferries.forEach((F, fi) => { const n = F.path.length; for (let i = 0; i < (F.loop ? n : n - 1); i++) { const a = F.path[i], c = F.path[(i + 1) % n]; for (let t = 0; t < 1; t += .1) { const x = a.x + (c.x - a.x) * t, z = a.z + (c.z - a.z) * t; if (W.heightAt(x, z) > W.WATER - .3 && Math.hypot(x - a.x, z - a.z) > 3 && Math.hypot(x - c.x, z - c.z) > 3) { bad.push({ what: 'boat route over land', ferry: fi, at: [+x.toFixed(1), +z.toFixed(1)] }); return; } } } });
-    for (const it of G.interactables) if (!/^ferry|^fish|^g\d|^wr/.test(it.id) && !wetOK.has(it.id) && W.heightAt(it.x, it.z) < W.WATER + .3) bad.push({ what: 'tap spot in water', id: it.id, at: [+it.x.toFixed(1), +it.z.toFixed(1)] });
+    for (const it of G.interactables) if (!/^ferry|^fish|^g\d|^wr/.test(it.id) && !wetOK.has(it.id) && W.heightAt(it.x, it.z) < W.WATER + .3 && !(G.world.platforms || []).some(p => !p.tower && it.x > p.x0 && it.x < p.x1 && it.z > p.z0 && it.z < p.z1)) bad.push({ what: 'tap spot in water', id: it.id, at: [+it.x.toFixed(1), +it.z.toFixed(1)] });
     return { buildings: things.length, bad, roads: roads.length, roadBad: [...rbad.values()] };
   });
 }

@@ -1,0 +1,50 @@
+{
+ "_why": "English slots that stay Vietnamese on purpose (names, song and chant words, sayings in their own language). tools/lang-audit.mjs skips these; anything else in Vietnamese in an English slot fails the bilingual check.",
+ "names": [
+  "Bút Tháp Pagoda",
+  "Nhà Tròn, the Round House (Bà Rịa)",
+  "Bà Rịa–Vũng Tàu",
+  "TP. Hồ Chí Minh",
+  "Bãi Sau, Vũng Tàu",
+  "Đông Hồ Paintings",
+  "Oẳn Tù Tì",
+  "Oẳn tù tì champion!",
+  "Tiến Lên (cards)",
+  "Mỹ Sơn Sanctuary",
+  "▶ Play Tiến Lên!",
+  "Oẳn tù tì with everyone",
+  "Tiến Lên together",
+  "vi:Hải đăng Vũng Tàu",
+  "vi:Chùa Bút Tháp",
+  "vi:Đền Đô",
+  "vi:Nhà Tròn (Bà Rịa)",
+  "Vũng Tàu Lighthouse",
+  "THE SOUTH · SÀI GÒN · BÀ RỊA",
+  "BẾN THÀNH MARKET",
+  "Marble Mountains (Ngũ Hành Sơn)",
+  "Thê Húc Bridge, Hoàn Kiếm Lake",
+  "Auntie Liên’s Mì Quảng shop",
+  "Auntie Bảy’s cơm tấm shop",
+  "Xích lô (cyclo)",
+  "SÀI GÒN BÁNH MÌ",
+  "Blindfold Goat (bịt mắt bắt dê)",
+  "Bull race (đua bò Bảy Núi)",
+  "Xích lô rides",
+  "Little nón lá"
+ ],
+ "songs and chants (sung in Vietnamese in both languages)": [
+  "Rồng rắn lên mây!",
+  "Người ơi người ở đừng về…",
+  "Chi chi chành chành…",
+  "Ầu ơ… Ví dầu cầu ván đóng đinh",
+  "Chi chi chành chành",
+  "Cái đanh thổi lửa",
+  "Con ngựa chết trương",
+  "Ba vương ngũ đế",
+  "Chấp chế đi tìm",
+  "Chi Chi Chành Chành"
+ ],
+ "sayings (the words in their own language, then their meaning in English)": [
+  "Người ơi người ở đừng về"
+ ]
+}

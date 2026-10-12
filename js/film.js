@@ -641,3 +641,45 @@ PROPS.card = (front = 'apple') => {
   g.userData.open = k => { card.rotation.z = k * Math.PI; card.position.y = Math.sin(k * Math.PI) * .2 + k * .012; };
   return g;
 };
+
+// ---------- props for Sự tích Hồ Gươm (Kid UI, 12 Oct) ----------
+// a fishing net: a mesh of cord with cork floats along its top, hanging in a soft curve; userData.pull lifts it
+PROPS.net = (w = 2.2, h = 1.2) => {
+  const parts = [], n = 9, m = 6;
+  for (let i = 0; i <= n; i++) { const x = -w / 2 + i * w / n; parts.push(P(Box(.018, h, .018), '#e8dcc0', [x, -h / 2 - Math.sin(i / n * Math.PI) * .18, 0])); }
+  for (let j = 0; j <= m; j++) { const y = -j * h / m; parts.push(P(Box(w, .018, .018), '#e8dcc0', [0, y - Math.sin(.5 * Math.PI) * .1 * (j / m), 0])); }
+  for (let i = 0; i < 6; i++) parts.push(P(Cyl(.06, .06, .12, 8), '#e8a832', [-w / 2 + .2 + i * (w - .4) / 5, .02, 0], [0, 0, H]));
+  return mesh(parts);
+};
+// the magic sword (gươm thần): a shining blade and a golden handle with a red jewel; each can be shown on its own
+PROPS.sword = () => {
+  const g = new THREE.Group();
+  const blade = mesh([P(Box(.07, .9, .015), '#e8f2ff', [0, .55, 0]), P(Cone(.05, .14, 4), '#e8f2ff', [0, 1.07, 0], [0, H / 2, 0], [1, 1, .3]), P(Box(.012, .82, .02), '#b8c8dc', [0, .55, 0])]);
+  const hilt = mesh([P(Box(.32, .05, .06), '#e8b62a', [0, .08, 0]), P(Cyl(.03, .03, .26, 8), '#8a2a20', [0, -.07, 0]), P(S_(.05, 10, 8), '#e8b62a', [0, -.22, 0]), P(S_(.035, 8, 6), '#e8332a', [0, .08, .04])]);
+  g.add(blade, hilt); g.userData.blade = blade; g.userData.hilt = hilt; return g;
+};
+// the Golden Turtle (Rùa Vàng): a big gentle turtle with a patterned shell; userData.head nods and holds the sword
+PROPS.turtle = () => {
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const parts = [P(S_(1, 18, 12, 0), '#d8a02a', [0, .25, 0], [0, 0, 0], [1.25, .55, 1.5]), P(Cyl(1.22, 1.22, .12, 20), '#c88a1e', [0, .2, 0], [0, 0, 0], [1, 1, 1.2])];
+  for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2, d = i ? .62 : 0; parts.push(P(Cyl(.3, .32, .06, 6), '#f2c834', [Math.cos(a) * d, .78 - (i ? .1 : 0), Math.sin(a) * d * 1.2])); }
+  [[.9, 1.1], [-.9, 1.1], [.95, -1], [-.95, -1]].forEach(([x, z]) => parts.push(P(S_(.32, 10, 8), '#b8a04a', [x, .1, z], [0, 0, 0], [1.6, .4, .9])));
+  parts.push(P(Cone(.18, .45, 6), '#b8a04a', [0, .1, -1.75], [-H, 0, 0]));
+  body.add(mesh(parts));
+  const head = new THREE.Group(); head.position.set(0, .45, 1.75); body.add(head);
+  head.add(mesh([P(S_(.36, 12, 10), '#b8a04a', [0, 0, .2], [0, 0, 0], [1, .85, 1.25]), P(S_(.08, 8, 6), '#ffffff', [.17, .12, .5]), P(S_(.08, 8, 6), '#ffffff', [-.17, .12, .5]), P(S_(.045, 6, 5), '#1a1410', [.18, .13, .56]), P(S_(.045, 6, 5), '#1a1410', [-.18, .13, .56])]));
+  g.userData.head = head; g.userData.mouth = [0, -.1, .62];
+  return g;
+};
+// Tháp Rùa, the Turtle Tower, on its little island in the lake: three storeys, arched windows, a small top
+PROPS.turtleTower = () => {
+  const parts = [P(Cyl(2.4, 2.8, .5, 20), '#7ab86a', [0, .05, 0]), P(Box(2.2, .3, 2.2), '#d8cfc0', [0, .35, 0])];
+  [[2, 1.6, .5], [1.5, 1.1, 2.1], [1, .8, 3.25]].forEach(([w, h, y]) => {
+    parts.push(P(Box(w, h, w), '#efe6d2', [0, y + h / 2, 0]));
+    [0, 1, 2, 3].forEach(i => { const a = i * H, s = w / 2 + .01; parts.push(P(Box(w * .3, h * .55, .03), '#4a4a52', [Math.sin(a) * s, y + h * .45, Math.cos(a) * s], [0, a, 0])); });
+    parts.push(P(Box(w + .3, .1, w + .3), '#c8bca8', [0, y + h + .05, 0]));
+  });
+  parts.push(P(Cone(.55, .6, 4), '#8a3a2a', [0, 4.45, 0], [0, Math.PI / 4, 0]), P(S_(.1, 8, 6), '#e8b62a', [0, 4.85, 0]));
+  parts.push(...[0, 1, 2].map(i => P(S_(.6, 8, 6), '#4f9e42', [Math.cos(i * 2.1) * 1.9, .5, Math.sin(i * 2.1) * 1.9])));
+  return mesh(parts);
+};

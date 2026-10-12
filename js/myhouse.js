@@ -48,7 +48,16 @@ const deco = p => (p.homeDeco = p.homeDeco && typeof p.homeDeco === 'object' ? p
 const cardOf = key => key && key.startsWith('card:') ? customAlbum().find(c => c.id === key.slice(5)) : null;
 const known = key => !!(DECOR[key] || cardOf(key));
 
+// (Round U, owner 11 Oct: "how does a child know how to upgrade their house and decorations? There should be a guide")
+// shown the first time a child walks into their own house, and again from the ❓ sign by the door
+export const HOUSE_GUIDE = [
+  ['🏠', 'This is your very own house! Every ✨ sparkle is a spot you can decorate.', 'Đây là nhà riêng của con! Mỗi chỗ ✨ lấp lánh là một chỗ con có thể trang trí.'],
+  ['🪙', 'Decorations cost coins. Earn coins by playing games, helping people and doing family missions.', 'Đồ trang trí cần có đồng xu. Con kiếm xu bằng cách chơi trò chơi, giúp đỡ mọi người và làm nhiệm vụ gia đình.'],
+  ['🖼️', 'Family photos you collect can hang on the walls, for free.', 'Những tấm ảnh gia đình con sưu tầm được có thể treo lên tường, miễn phí.'],
+  ['🎨', 'Tap a decoration again to change it or take it away. Make your house more beautiful step by step!', 'Chạm lại vào món đồ để đổi hoặc cất đi. Làm cho nhà mình đẹp hơn từng chút một nhé!']
+];
 export function createMyHouse(G) {
+  const guide = async h => { G.paused = true; await G.dialog(T('My house', 'Nhà của con'), HOUSE_GUIDE.map(([, en, vi]) => [en.replace(/✨ /g, ''), vi.replace(/✨ /g, '')])); G.paused = false; if (h && h.profile) { h.profile.houseGuideSeen = true; saveProfiles(); } };
   const door = { x: HOME.x, z: HOME.z + 14 - 3.55 - 1.3 };
   const home = { id: 'myhouse', mine: true, kind: 'mine', room: 'mine', H: null, people: [], door, hs: { x: HOME.x, z: HOME.z + 14, rot: Math.PI, d: 7 },
     name: () => T('My house', 'Nhà của con'), where: () => T('Sunny Farm', 'Nông Trại Nắng Mai'), owner: null };
@@ -64,6 +73,8 @@ export function createMyHouse(G) {
         const grp = new THREE.Group(); grp.add(frame); ph.position.z = .035; grp.add(ph); grp.position.set(s.x, s.y + .1, s.z); grp.rotation.y = Math.abs(s.x) > 6.5 ? -Math.sign(s.x) * Math.PI / 2 : 0; g.add(grp);
       } else if (it) { const sp = sprite(it.icon, s.wall ? 1 : 1.2); sp.position.set(s.x, s.y + (s.wall ? .1 : .2), s.z); g.add(sp); }
       else { const sp = sprite('✨', .55); sp.position.set(s.x, s.y, s.z); g.add(sp); }
+      if (k === 0) { const q = sprite('❓', .7); q.position.set(-5, 1.3, 5); g.add(q); }
+      if (k === 0) add({ id: 'house_help', x: RX - 5, z: RZ + 5, y: RY, r: 1.3, icon: '❓', bubble: '❓', label: () => T('How do I decorate?', 'Trang trí thế nào?'), act: h => guide(h) });   // (Round U) the guide again
       add({ id: 'deco_' + k, x: RX + s.x * (s.wall ? .86 : 1), z: RZ + s.z * (s.wall ? .86 : 1) + (s.wall ? 0 : .9), y: RY, r: 1.3, icon: key ? '🎨' : '✨', bubble: '🎨',
         label: () => key ? T('Change this', 'Đổi món này') : T('Decorate here', 'Trang trí chỗ này'), act: h => choose(h, k) });
     });
@@ -71,7 +82,8 @@ export function createMyHouse(G) {
   G.interactables.push({ id: 'myhouse_door', x: door.x, z: door.z, r: 1.6, icon: '🏠', label: () => T('My house', 'Nhà của con'), act: h => {
     if (G.homes.inside() && G.homes.inside() !== home) return G.homes.enter(h, home);
     if (!G.homes.inside()) home.owner = h; G.homes.enter(h, home);
-    setTimeout(() => say('Your own house! Tap a sparkle to decorate it.', 'Nhà của con đây! Chạm vào chỗ lấp lánh để trang trí nhé.'), 900);
+    // (Round U) the first time: the house guide; afterwards the short welcome
+    setTimeout(() => { if (!h.profile.houseGuideSeen) guide(h); else say('Your own house! Tap a sparkle to decorate it.', 'Nhà của con đây! Chạm vào chỗ lấp lánh để trang trí nhé.'); }, 900);
   } });
 
   // the chooser for one spot
@@ -96,5 +108,5 @@ export function createMyHouse(G) {
     });
     const clr = card.querySelector('[data-clear]'); if (clr) clr.onclick = () => { delete d[k]; saveProfiles(); SFX.tap(); done(); G.homes.rebuild(); events.emit('HomeDecorated', { playerId: makeId('player', p.id || 'guest'), spot: k, item: null, price: 0 }); };
   }
-  return { home, choose, deco, known };
+  return { home, choose, deco, known, guide };
 }

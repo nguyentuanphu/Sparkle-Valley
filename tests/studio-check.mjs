@@ -113,7 +113,10 @@ export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs
     if (fn) {
       const ch = []; for await (const c of req) ch.push(c);
       const r = await fn(new Request(url, { method: req.method, headers: req.headers, body: req.method === 'POST' ? Buffer.concat(ch) : undefined }), { geo: JSON.parse(req.headers['x-test-geo'] || '{}') }); // (Netlify gives the town from the connection; tests say it in a header)
-      const h = {}; r.headers.forEach((v, k) => { h[k] = v; }); res.writeHead(r.status, h); res.end(Buffer.from(await r.arrayBuffer())); return;
+      const h = {}; r.headers.forEach((v, k) => { h[k] = v; }); const out = Buffer.from(await r.arrayBuffer());
+      // (r65) like Netlify: a function's answer is at most 6 MB, and a picture is sent as base64 (a third bigger), so about 4.5 MB
+      if ((/^(image|audio|video)\/|octet/.test(h['content-type'] || '') ? out.length * 4 / 3 : out.length) > 6e6) { res.writeHead(502, { 'Content-Type': 'text/plain' }); res.end('Function response is too large'); return; }
+      res.writeHead(r.status, h); res.end(out); return;
     }
     if (p === '/studio' || p === '/studio/') p = '/studio/ui/index.html'; else if (p.startsWith('/studio/game/')) p = p.slice('/studio/game'.length); else if (p.startsWith('/studio/voices/')) p = p.slice('/studio'.length);
     const f = path.join(ROOT, p.endsWith('/') ? p + 'index.html' : p);
@@ -272,6 +275,7 @@ export async function studioCheck(browser, open) {
     ok((await call('/studio/api/pending/discard', { cookie: C, headers: X, body: {} })).status === 200 && /online/.test((await call('/studio/api/content', { cookie: C })).j.message.en) && !(await call('/studio/api/pending', { cookie: C })).j.files.length, 'dropping the waiting changes failed');
     // a real photo taken off (✕) goes at once (read back straight away) and is never fetched again
     { await new Promise(r => setTimeout(r, 15500)); // (where the branches point is kept 15 s between requests)
+      gh.commitOnMain('photos/saigon-post/1.jpg', JPG, 'photos'); gh.commitOnMain('photos/saigon-post/2.jpg', JPG, 'photos'); // (r65: a photo is listed only while its file is there)
       gh.commitOnMain('photos/index.json', JSON.stringify({ 'saigon-post': [{ src: 'photos/saigon-post/1.jpg', file: 'File:Wrong.jpg' }, { src: 'photos/saigon-post/2.jpg', file: 'File:Right.jpg' }] }), 'photos'); await new Promise(r => setTimeout(r, 15500));
       ok((await call('/studio/api/photos/remove', { cookie: C, headers: X, body: { key: 'saigon-post', src: 'photos/saigon-post/1.jpg' } })).status === 200, 'photos/remove failed');
       const left = (await call('/studio/api/photos/index', { cookie: C })).j['saigon-post'] || [], bl = (await call('/studio/api/file/photos/blocked.json', { cookie: C })).j || {};
@@ -391,6 +395,65 @@ export async function studioCheck(browser, open) {
         ok(JSON.parse(fs.readFileSync(path.join(ad2, 'SparkleStudio', 'settings.json'), 'utf8')).gameDir === dir, 'the new game folder was not remembered');
       } finally { fresh.kill(); }
       notes.push('exe: with no game folder, downloads the newest game next to itself'); }
+    // 5b. (r65) the real photos: every saved thumbnail opens as a picture, online and in the exe. The owner saw broken ones:
+    // folders named with Vietnamese letters were refused, photos over 4.5 MB cannot come back from a Netlify function, and
+    // a photo whose file had gone was still listed. Here: real places' keys, a plain JPEG, one in a Vietnamese-named folder,
+    // a PNG, one saved but not published (online it waits in studio-pending), a 5 MB one and one whose file is gone.
+    { const bp = await (await browser.newContext()).newPage(); await bp.goto(site + '/studio/ui/index.html');
+      const made = await bp.evaluate(async () => { const R = await import('/studio/game/js/realworld.js'), keys = new Set();
+        for (const r of Object.values(R.REAL)) keys.add(R.photoKey(r[0])); for (const src of Object.values(R.REAL_KINDS || {})) if (src && src.length) keys.add(R.photoKey(src));
+        const c = document.createElement('canvas'); c.width = 240; c.height = 160; const g = c.getContext('2d'); g.fillStyle = '#4a9'; g.fillRect(0, 0, 240, 160); g.fillStyle = '#fd4'; g.fillRect(40, 40, 80, 60);
+        return { keys: [...keys], jpg: c.toDataURL('image/jpeg', .8).split(',')[1], png: c.toDataURL('image/png').split(',')[1] }; });
+      await bp.context().close();
+      const vi = made.keys.find(k => /[^\x00-\x7f]/.test(k)), plain = made.keys.filter(k => /^[\x00-\x7f]+$/.test(k)), [kA, kC, kD, kE] = plain;
+      ok(vi && kE, 'no real places with these kinds of names: ' + made.keys.slice(0, 8).join(', '));
+      const JPEG = Buffer.from(made.jpg, 'base64'), PNG = Buffer.from(made.png, 'base64'), BIG = Buffer.concat([JPEG, Buffer.alloc(5e6)]); // (after the picture's end, so it still opens)
+      const e = (src, n) => ({ src, file: 'File:' + n + '.jpg', caption: n, credit: 'test · CC BY-SA' });
+      const pub = { [kA]: [e(`photos/${kA}/1.jpg`, 'A1'), e(`photos/${kA}/2.jpg`, 'A2 gone')], [vi]: [e(`photos/${vi}/1.jpg`, 'Vietnamese')], [kC]: [e(`photos/${kC}/1.jpg`, 'PNG')], [kE]: [e(`photos/${kE}/1.jpg`, 'big')] };
+      const all = { ...pub, [kD]: [e(`photos/${kD}/1.jpg`, 'saved, not published')] };
+      const files = { [`photos/${kA}/1.jpg`]: JPEG, [`photos/${vi}/1.jpg`]: JPEG, [`photos/${kC}/1.jpg`]: PNG, [`photos/${kE}/1.jpg`]: BIG };
+      await new Promise(r => setTimeout(r, 15500)); // (where the branches point is kept 15 s between requests)
+      for (const [rel, b] of Object.entries(files)) gh.commitOnMain(rel, b, 'photos'); gh.commitOnMain('photos/index.json', JSON.stringify(pub), 'photos');
+      await heldStore.set('f/photos/index.json', Buffer.from(JSON.stringify(all)).toString('base64')); await heldStore.set(`f/photos/${kD}/1.jpg`, JPEG.toString('base64'));
+      await heldStore.setJSON('index', { ...JSON.parse(await heldStore.get('index') || '{}'), 'photos/index.json': 1, [`photos/${kD}/1.jpg`]: JPEG.length });
+      for (const [rel, b] of Object.entries({ ...files, [`photos/${kD}/1.jpg`]: JPEG, 'photos/index.json': JSON.stringify(all) })) { fs.mkdirSync(path.dirname(path.join(game, rel)), { recursive: true }); fs.writeFileSync(path.join(game, rel), b); }
+      await new Promise(r => setTimeout(r, 15500));
+      const proof = async (pg, where) => { await pg.evaluate(() => { location.hash = 'family'; }); await pg.waitForTimeout(300); await pg.evaluate(() => { location.hash = 'photos'; }); await pg.waitForSelector('.thumb img', { timeout: 20000 });
+        await pg.waitForFunction(() => [...document.querySelectorAll('.thumb img')].every(i => i.complete), null, { timeout: 20000 }); await pg.waitForTimeout(300);
+        return pg.evaluate(() => ({ thumbs: [...document.querySelectorAll('.thumb')].map(t => { const i = t.querySelector('img'); return { src: decodeURIComponent(i.getAttribute('src')), open: i.naturalWidth > 0, flagged: t.classList.contains('bad') && getComputedStyle(t.querySelector('.thumbbad')).display !== 'none' }; }),
+          warn: !document.querySelector('#pbad').hidden ? document.querySelector('#pbad').textContent : '' })); };
+      const ctx = await browser.newContext({ viewport: { width: 1180, height: 800 } }), po = await ctx.newPage();
+      await po.goto(site + '/studio'); await po.waitForSelector('#pw', { timeout: 15000 }); await po.fill('#pw', PW); await po.click('#si button'); await po.waitForSelector('#tabs button', { timeout: 15000 });
+      const on = await proof(po, 'online'), pe0 = await ctx.newPage(); await pe0.goto(`http://localhost:${SPORT}/`); await pe0.waitForSelector('#tabs button', { timeout: 15000 }); const exe0 = await proof(pe0, 'exe');
+      await ctx.close();
+      const need = [`photos/${kA}/1.jpg`, `photos/${vi}/1.jpg`, `photos/${kC}/1.jpg`, `photos/${kD}/1.jpg`], big = `photos/${kE}/1.jpg`, gone = `photos/${kA}/2.jpg`;
+      const has = (r, src) => r.thumbs.find(t => t.src.endsWith('/api/file/' + src));
+      for (const [r, where] of [[on, 'online'], [exe0, 'exe']]) {
+        for (const src of need) ok(has(r, src) && has(r, src).open && !has(r, src).flagged, `${where}: the photo ${src} does not open: ` + JSON.stringify(r));
+        ok(!has(r, gone), `${where}: a photo whose file is gone is still listed`);
+        ok(r.thumbs.every(t => t.open || t.flagged), `${where}: a photo that cannot be shown is not marked: ` + JSON.stringify(r.thumbs.filter(t => !t.open)));
+      }
+      ok(has(exe0, big) && has(exe0, big).open, 'exe: the 5 MB photo does not open');
+      ok(has(on, big) && !has(on, big).open && has(on, big).flagged && /1[.,]5 MB/.test(on.warn), 'online: the 5 MB photo is not marked as too big to show: ' + JSON.stringify(on));
+      // the list is tidied: the photo whose file is gone is no longer in photos/index.json (online it waits to be published)
+      const ixo = JSON.parse(Buffer.from(String(await heldStore.get('f/photos/index.json')), 'base64').toString('utf8')), ixe = JSON.parse(fs.readFileSync(path.join(game, 'photos/index.json'), 'utf8'));
+      ok(ixo[kA].length === 1 && ixe[kA].length === 1 && ixo[kD] && ixe[kD], 'the list of photos was not tidied: ' + JSON.stringify({ ixo: ixo[kA], ixe: ixe[kA] }));
+      await call('/studio/api/pending/discard', { cookie: C, headers: X, body: {} });
+      // (the pages below are opened again online: the 5 MB photo is taken off there so it is not counted as an error)
+      const { [kE]: _big, ...rest } = pub; gh.commitOnMain('photos/index.json', JSON.stringify(rest), 'photos'); await new Promise(r => setTimeout(r, 15500));
+      notes.push(`real photos: ${need.length} kinds of saved photo open online and in the exe (a Vietnamese-named folder, a PNG, one not yet published); a 5 MB one is marked online; one whose file is gone is taken off the list`); }
+    // a fetched photo over 1.5 MB is left out for the next one (the photo sites are pretended)
+    { const { createStudio, folderStore } = (await import(path.join(ROOT, 'studio/core.cjs'))).default, d = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-ph-'));
+      fs.writeFileSync(path.join(d, 'index.html'), ''); fs.mkdirSync(path.join(d, 'js')); fs.writeFileSync(path.join(d, 'js/main.js'), '');
+      const real = globalThis.fetch, small = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(9e4)]), huge = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(2e6)]);
+      const J = o => new Response(JSON.stringify(o), { status: 200, headers: { 'content-type': 'application/json' } });
+      globalThis.fetch = async u => { u = String(u); if (u.includes('openverse')) return J({ results: [1, 2, 3].map(i => ({ url: `https://pics.test/${i === 1 ? 'huge' : 'small' + i}.jpg`, width: 1600, height: 900, title: 'Test place ' + i, creator: 'me', license: 'by', license_version: '4.0', source: 'flickr' })) });
+        if (u.startsWith('https://pics.test/')) return new Response(u.includes('huge') ? huge : small, { status: 200, headers: { 'content-type': 'image/jpeg' } }); if (u.startsWith('http://localhost') || u.startsWith('http://127.0.0.1')) return real(u); return new Response('{}', { status: 404 }); };
+      try { const st = createStudio({ store: folderStore(d), conf: {} }), r = await st.handle('photos/get1', 'POST', Buffer.from(JSON.stringify({ item: { key: 'test-place', sources: ['en:Test place'], name: 'Test place' }, max: 2 })));
+        const ix = JSON.parse(fs.readFileSync(path.join(d, 'photos/index.json'), 'utf8'))['test-place'] || [], sizes = ix.map(x => fs.statSync(path.join(d, x.src)).size);
+        ok(r.code === 200 && ix.length === 2 && sizes.every(n => n < 1.5e6), 'a photo over 1.5 MB was saved: ' + JSON.stringify({ r: r.body, sizes })); }
+      finally { globalThis.fetch = real; fs.rmSync(d, { recursive: true, force: true }); }
+      notes.push('a fetched photo over 1.5 MB is skipped for the next one'); }
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone
     const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode', 'missions', 'villagers', 'path', 'play', 'quiz', 'stories', 'looks', 'plots'], bad = [];
     // (Studio review, owner 10 Oct) every button and box 44 px or more on a phone and a tablet: these pages
@@ -412,10 +475,22 @@ export async function studioCheck(browser, open) {
       for (const k of pages) { await pg.evaluate(k2 => { location.hash = k2; }, k); await pg.waitForTimeout(k === 'photos' ? 2500 : 900); const t = await pg.evaluate(() => document.querySelector('#page').innerText); if (await pg.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`online ${w}px ${k}: ${t.slice(0, 80)}`);
         if (await pg.evaluate(() => document.scrollingElement.scrollWidth > innerWidth + 1)) bad.push(`online ${w}px ${k}: page scrolls sideways`);
         const emo = await pg.evaluate(SHOWN_EMOJI); if (emo.length) bad.push(`online ${w}px ${k}: phone emoji shown: ${emo.join(' ')}`); }
-      { const t = await pg.evaluate(() => (document.querySelector('#tabs [data-k="players"]').click(), new Promise(r => setTimeout(() => r(document.querySelector('#page').innerText), 1500))));
+      { await pg.evaluate(() => document.querySelector('#tabs [data-k="players"]').click()); await pg.waitForSelector('.tiles .tile', { timeout: 15000 });
+        // (r65, owner: "cleaner but still the details") five tiles, a row per child and per kind of device, the rest folded and closed at first
+        const look = await pg.evaluate(() => ({ tiles: document.querySelectorAll('.tiles .tile').length, top: document.querySelector('#page').innerText, more: document.querySelectorAll('details.more').length, open: document.querySelectorAll('details.more[open]').length, kinds: document.querySelectorAll('table.kinds tbody tr').length }));
+        const t = await pg.evaluate(() => (document.querySelectorAll('details.more').forEach(d => { d.open = true; }), document.querySelector('#page').innerText));
         ok(/3/.test(t), 'online players page');
+        if (!(look.tiles === 5 && look.more >= 5 && !look.open && look.kinds >= 2 && /(not reported yet|chưa có số liệu)/.test(look.top) && !/(usually ready in|thường sẵn sàng sau)/.test(look.top))) bad.push(`online ${w}px: the Analytics page is not five tiles, rows and folded detail: ` + JSON.stringify({ ...look, top: look.top.slice(0, 200) }));
         // (r60, #36) start-up times: by kind of device and for each device, with the slowest step in words
-        if (!(/(Start-up|Khởi động): .*(Tablet|Máy tính bảng) 21 s/.test(t) && /(usually ready in|thường sẵn sàng sau) 21 s \((slowest|chậm nhất): (things in the valley|đồ vật)\)/.test(t))) bad.push(`online ${w}px: start-up times not shown: ` + t.slice(0, 300)); }
+        if (!(/(Tablet|Máy tính bảng) 21 s/.test(look.top) && /(usually ready in|thường sẵn sàng sau) 21 s \((slowest|chậm nhất): (things in the valley|đồ vật)\)/.test(t))) bad.push(`online ${w}px: start-up times not shown: ` + t.slice(0, 300));
+        // (r65) the battery round's numbers, once the report has them (pretended here: field names agreed on the board)
+        if (!touch) { await pg.route('**/studio/api/players', async rt => { const res = await rt.fetch(), j = await res.json(); j.power = { phone: { devices: 1, fps: 30, frameMs: 14, batteryPerHour: 31 }, computer: { devices: 1, fps: 60, frameMs: 9, batteryPerHour: 8.5 } };
+            (j.devices || []).forEach((d, i) => { d.power = i ? { fps: 60, frameMs: 9, draws: 240, ratio: 1.5, mins: 40, batteryPerHour: null } : { fps: 30, frameMs: 14, draws: 310, ratio: 1, mins: 25, batteryPerHour: 31, charging: false }; }); await rt.fulfill({ response: res, json: j }); });
+          await pg.evaluate(() => { location.hash = 'home'; }); await pg.waitForTimeout(300); await pg.evaluate(() => document.querySelector('#tabs [data-k="players"]').click()); await pg.waitForSelector('.tiles .tile', { timeout: 15000 });
+          const pw = await pg.evaluate(() => (document.querySelectorAll('details.more').forEach(d => { d.open = true; }), { t: document.querySelector('#page').innerText, act: !!document.querySelector('.tile.tone-act'), red: [...document.querySelectorAll('table.kinds td.tone-act')].map(x => x.textContent) }));
+          await pg.unroute('**/studio/api/players');
+          if (!(/31 % (an hour|mỗi giờ)/.test(pw.t) && /8[.,]5 % (an hour|mỗi giờ)/.test(pw.t) && /310 (draws|lần vẽ)/.test(pw.t) && /(battery not given by this browser|trình duyệt này không cho biết pin)/.test(pw.t) && pw.act && pw.red.some(x => /31/.test(x)))) bad.push('the battery and frame numbers are not shown: ' + JSON.stringify({ act: pw.act, red: pw.red, t: pw.t.slice(0, 300) })); }
+        await pg.screenshot({ path: `out/studio-analytics-${w}.png`, fullPage: true }); }
       // (round R) Releases online: switch traffic off and Halloween to start in 3 days; the website hands it to every device
       if (!touch) {
         await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('tr[data-id="traffic"]', { timeout: 15000 });
@@ -478,6 +553,39 @@ export async function studioCheck(browser, open) {
           if (!(listed.n === 2 && /Cô Ba/.test(listed.txt) && gone && near && c.place === 'village' && Array.isArray(c.off) && got.world && got.world.map === M.MAP_VERSION && !got.parked && !(got.world.build || []).length))
             bad.push('parked map items: ' + JSON.stringify({ listed, gone, c, map: got.world && got.world.map, parked: got.parked, build: got.world && got.world.build }));
           await ex('content', keep); }
+        // (r65) ads: the checklist says what is missing, the preview follows the typing (signboard and card, phone and computer, both
+        // languages), "Show ads" with an ad not ready is not saved, a ready one is; the picture guide's screenshots open
+        { const yes = d => d.accept(); pe.on('dialog', yes); // (leaving the page after the refused save asks: yes, leave)
+          const keep = (await ex('content')).j, img = await pe.evaluate(() => { const c = document.createElement('canvas'); c.width = 120; c.height = 68; const g = c.getContext('2d'); g.fillStyle = '#e8434a'; g.fillRect(0, 0, 120, 68); return c.toDataURL('image/jpeg', .8); });
+          const pic = (await ex('adimage', { id: 'Little Lotus', dataUrl: img })).j.image;
+          await ex('content', { ...keep, ads: { enabled: true, perDay: 3, items: [{ by: '', en: 'Story time', vi: '', link: 'https://shop.example/?utm_source=game', where: ['boards'], active: true }] } });
+          await pe.evaluate(() => { location.hash = 'players'; }); await pe.waitForTimeout(300); await pe.click('#reload'); await pe.waitForTimeout(800);
+          await pe.evaluate(() => { location.hash = 'ads'; }); await pe.waitForSelector('.adrow .adcheck', { timeout: 15000 });
+          const c1 = await pe.evaluate(() => document.querySelector('.adrow .adcheck').innerText);
+          await pe.click('[data-alang="vi"]'); await pe.fill('.adrow .ad-vi', 'Giờ kể chuyện'); await pe.fill('.adrow .ad-by', 'Little Lotus Books'); await pe.fill('.adrow .ad-link', 'https://bit.ly/abc');
+          const v1 = await pe.evaluate(() => ({ card: document.querySelector('.adrow .adcard').innerText, board: !!document.querySelector('.adrow svg.adboard'), size: document.querySelector('.adrow .adprev').className, check: document.querySelector('.adrow .adcheck').innerText }));
+          await pe.click('#adSave'); await pe.waitForTimeout(700); const notSaved = !((await ex('content')).j.ads.items[0].vi);
+          await pe.click('[data-size="computer"]'); await pe.waitForSelector('.adprev.computer');
+          await pe.evaluate(() => { const r = document.querySelector('.adrow'); r.querySelector('.ad-link').value = 'https://littlelotus.example/story-time'; r.querySelector('.ad-link').dispatchEvent(new Event('input', { bubbles: true })); });
+          const c2 = await pe.evaluate(() => document.querySelector('.adrow .adcheck').innerText);
+          // (the picture is chosen with the browser's own file chooser: here it is put in the content as an upload would)
+          await ex('content', { ...keep, ads: { enabled: true, perDay: 3, items: [{ by: 'Little Lotus Books', en: 'Story time', vi: 'Giờ kể chuyện', link: 'https://littlelotus.example/story-time', where: ['boards'], active: true, image: pic }] } });
+          await pe.evaluate(() => { location.hash = 'players'; }); await pe.waitForTimeout(300); await pe.click('#reload'); await pe.waitForTimeout(800);
+          await pe.evaluate(() => { location.hash = 'ads'; }); await pe.waitForSelector('.adrow .adcheck', { timeout: 15000 });
+          await pe.fill('.adrow .ad-en', 'Story time on Saturday'); await pe.click('#adSave'); await pe.waitForTimeout(900);
+          const saved = (await ex('content')).j.ads, c3 = await pe.evaluate(() => document.querySelector('.adrow .adcheck').innerText);
+          await pe.evaluate(() => { document.querySelector('details.adguide').open = true; }); await pe.waitForFunction(() => [...document.querySelectorAll('.adshots img')].every(i => i.complete), null, { timeout: 15000 });
+          const shots = await pe.evaluate(() => [...document.querySelectorAll('.adshots img')].map(i => i.naturalWidth));
+          const onShots = await Promise.all(['board-computer', 'card-computer', 'board-phone', 'card-phone'].map(f => fetch(`${site}/studio/ui/ads-guide/${f}.jpg`).then(r => r.ok && /image/.test(r.headers.get('content-type') || ''))));
+          await pe.evaluate(() => { document.querySelector('details.adguide').open = false; });
+          for (const [vw, vh] of [[1180, 800], [820, 1180], [390, 800]]) { await pe.setViewportSize({ width: vw, height: vh }); await pe.waitForTimeout(300); await pe.screenshot({ path: `out/studio-ads-${vw}.png`, fullPage: true }); }
+          await pe.setViewportSize({ width: w, height: h });
+          await ex('content', keep); pe.off('dialog', yes);
+          if (!(/(picture|hình)/.test(c1) && /(Vietnamese|tiếng Việt)/.test(c1) && /(tracking|theo dõi)/.test(c1) && /(who the ad is from|của ai)/.test(c1)
+            && /Giờ kể chuyện/.test(v1.card) && /Quảng cáo · Little Lotus Books/.test(v1.card) && v1.board && /phone/.test(v1.size) && /(shortener|rút gọn)/.test(v1.check) && notSaved
+            && /(picture|hình)/.test(c2) && !/(shortener|rút gọn|tracking|theo dõi)/.test(c2)
+            && saved.enabled && saved.items[0].en === 'Story time on Saturday' && /(Ready to go live|Sẵn sàng đưa lên)/.test(c3) && shots.length === 4 && shots.every(w => w > 0) && onShots.every(Boolean)))
+            bad.push('ads preview and checklist: ' + JSON.stringify({ c1, v1, notSaved, c2, saved, c3, shots, onShots })); }
         // (r60) Story characters: a colour for Chi is saved in looks.chi (with the rest of her look), "Back to the usual" takes it off
         { await pe.evaluate(() => { location.hash = 'game/looks'; }); await pe.waitForSelector('.look[data-id="chi"] .sw', { timeout: 20000 });
           await pe.click('.look[data-id="chi"] [data-k="color"][data-v="#e8434a"]'); await pe.selectOption('.look[data-id="chi"] select[data-k="hairStyle"]', 'buns'); await pe.click('#save'); await pe.waitForTimeout(900);

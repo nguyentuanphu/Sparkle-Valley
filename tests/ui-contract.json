@@ -1,5 +1,8 @@
 {
  "hud": [
+  "chip.c-money",
+  "chip.c-orbs",
+  "chip.c-leafy",
   "simplesw",
   "chip.c-pet",
   "chip.c-goal",

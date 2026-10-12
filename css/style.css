@@ -205,7 +205,7 @@ select option { color: #000; }
 .travel { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); background: var(--panel2); border: 1px solid var(--cyan); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 8px; align-items: center; text-align: center; min-width: 240px; }
 .travel p { margin: 0; font-size: 18px; }
 .bag-top { display: flex; flex-wrap: wrap; gap: 8px; }
-.bag-top .chip { font-size: 15px; height: 38px; }
+.bag-top .chip { font-size: 15px; height: 44px; }
 .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; }
 .slot { position: relative; border: 1px solid var(--line); background: rgba(255, 255, 255, .06); border-radius: 14px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 92px; }
 .slot span { font-size: 34px; line-height: 1.1; }
@@ -2275,8 +2275,9 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 @media (prefers-reduced-motion: reduce) { .db-pic .art, .db-pic .emo { animation: none; } }
 .bedtime-dim { position: fixed; inset: 0; z-index: 45; pointer-events: none; background: #0b0b2a; opacity: 0; transition: opacity 4s linear; }
 .resttime.bedtime .rt-moon .art { width: 96px; height: 96px; } .resttime.bedtime .rt-zz .art { width: 44px; height: 44px; }
-.missions .mtick { position: relative; min-width: 64px; min-height: 64px; font-size: 26px; border-radius: 50%; display: grid; place-items: center; }
-.missions .mtick .ring { position: absolute; inset: -4px; width: auto; height: auto; z-index: -1; }
+/* (the hold ring is the button's outer 4 px, inside its edge, so nothing pokes out of the Adventures tab) */
+.missions .mtick { position: relative; min-width: 72px; min-height: 72px; font-size: 26px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle closest-side, #fff calc(100% - 5px), transparent calc(100% - 4px)); }
+.missions .mtick .ring { position: absolute; inset: 0; width: auto; height: auto; z-index: -1; }
 .gsec.family .fmrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 0; border-bottom: 1px solid rgba(0, 0, 0, .08); }
 .gsec.family .fmrow .pw { flex: 1 1 160px; min-width: 0; } .gsec.family .fmrow small { display: block; opacity: .75; }
 .gsec.family .fmrow .btn, .gsec.family .fmcards .btn, .gsec.family .vrow .btn { min-height: 44px; min-width: 44px; }
@@ -2320,3 +2321,64 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 .mapcloud.puff { animation: mapcloud-puff .9s ease-out forwards; }
 @keyframes mapcloud-puff { 0% { opacity: .92; transform: translate(-50%, -62%) scale(1); } 40% { opacity: .9; transform: translate(-50%, -70%) scale(1.25); } 100% { opacity: 0; transform: translate(-50%, -90%) scale(1.7); } }
 @media (prefers-reduced-motion: reduce) { .mapcloud.puff { animation-duration: .01s; } }
+/* (Online's request, 11 Oct) on a phone a friend's row puts the name and status on their own line and the Join, Invite
+   and remove buttons on a line under it, so the Join button never lies over the status */
+.flist .frow .fwho { justify-content: flex-start; }
+.flist .frow .fwho > span { flex: 0 0 auto; }   /* (the drawn face sits beside the name, on every screen) */
+@media (max-width: 560px) {
+  .flist .frow { flex-wrap: wrap; justify-content: flex-end; }
+  .flist .frow .fwho { flex: 1 1 100%; }
+  .flist .frow .fst { white-space: normal; }
+  .flist .frow .btn { min-height: 44px; }
+}
+/* (Round U, owner 11 Oct: rows and pop-up pages move under a finger and a mouse; js/scrollhelp.js) */
+.jumpnav, .hubtabs, .pad-tabs, .wrow, .cb-acts, .cb-quick, .festrow, .sg-groups, .hscroll { touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; cursor: grab; }
+.jumpnav.dragging, .hubtabs.dragging, .pad-tabs.dragging, .wrow.dragging, .hscroll.dragging { cursor: grabbing; scroll-snap-type: none; }
+.pad-body { touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.modal { touch-action: pan-x pan-y; }
+button.chip { font: inherit; color: inherit; cursor: pointer; }
+.hud .chips .chip { pointer-events: auto; }
+.chipcard { position: fixed; z-index: 65; display: flex; gap: 10px; align-items: center; max-width: 300px; padding: 10px 14px; border-radius: 18px; background: #fffaf0; color: #3b2558; box-shadow: 0 6px 20px rgba(40, 20, 10, .25); opacity: 0; transform: translateY(-6px); transition: opacity .2s, transform .2s; pointer-events: none; }
+.chipcard.on { opacity: 1; transform: none; pointer-events: auto; }
+.chipcard .cc-pic { font-size: 34px; flex: none; }
+.chipcard b { display: block; font-size: 17px; } .chipcard small { display: block; font-size: 14px; line-height: 1.3; }
+/* (Round U) the Sound switches (js/soundsheet.js) and the Simple screen's Sound button */
+.soundsheet .card { max-width: 520px; text-align: center; }
+.soundsheet .ss-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 10px 0 14px; }
+.ss-sw { flex: 1 1 130px; min-height: 120px; border: 0; border-radius: 22px; background: #eee6f7; color: #5a4a6a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 18px; box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+.ss-sw span { font-size: 44px; } .ss-sw i { font-style: normal; font-size: 15px; font-weight: 800; color: #2f9a5a; }
+.ss-sw i.off, .ss-sw:not(.on) i:not(.off) { display: none; } .ss-sw:not(.on) i.off { display: inline; color: #a05a5a; }
+.ss-sw.on { background: #d7f5df; color: #2f6a45; } .ss-sw:not(.on) span { opacity: .45; }
+.sp-sound { min-width: 64px; min-height: 64px; border: 0; border-radius: 20px; background: rgba(255,255,255,.9); display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 3px 0 rgba(0,0,0,.12); }
+.sp-sound small { font-size: 12px; font-weight: 800; }
+/* (Round U) family play: the guide and the ready-made missions (js/parents.js) */
+.fmguide { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 6px 0 10px; }
+.fmg { display: flex; gap: 8px; align-items: center; background: #fff6e4; border-radius: 14px; padding: 8px 10px; font-size: 14px; line-height: 1.3; }
+.fmg .art, .fmg .emo { font-size: 28px; flex: none; }
+.fmready { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.fmhelp { min-width: 44px; min-height: 44px; vertical-align: middle; }
+
+/* (Round U, owner 11 Oct: separate sections) each tab's categories as big picture cards; a card opens its own short
+   road, and the big Back button (in the top bar) goes back to the cards */
+.sp-back { min-width: 64px; min-height: 64px; border-radius: 999px; border: 0; background: #fff; box-shadow: 0 4px 0 rgba(60, 100, 40, .3); display: flex; align-items: center; gap: 6px; padding: 0 16px 0 10px; font-size: 18px; font-weight: 700; color: #3d5a2a; }
+.sp-back[hidden] { display: none; }
+.sp-back .art, .sp-back .emo { width: 40px; height: 40px; font-size: 34px; }
+.simple-screen.cards .sp-me b { max-width: 40vw; }
+.sp-catgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 16px; padding: 12px 16px 96px; }
+.sp-catcard { min-height: 168px; border: 0; border-radius: 30px; background: rgba(255, 255, 255, .92); box-shadow: 0 6px 0 rgba(60, 100, 40, .3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px 8px; color: inherit; font-size: 19px; }
+.sp-catcard .sp-pic { box-shadow: none; background: #f4fbe9; }
+.sp-catcard .sp-name { text-align: center; line-height: 1.2; }
+.sp-catcard:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(60, 100, 40, .3); }
+.sp-count { display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 700; color: #7a5a10; }
+.sp-count .art, .sp-count .emo { width: 20px; height: 20px; font-size: 17px; }
+.sp-owl.oncards { position: relative; left: auto; top: auto; display: grid; margin: -80px auto 24px; transform: rotate(-8deg); }
+.simple-screen.wide .sp-catgrid { grid-auto-flow: column; grid-template-rows: repeat(2, minmax(0, 1fr)); grid-template-columns: none; grid-auto-columns: 150px; height: 100%; box-sizing: border-box; padding: 8px 16px; gap: 10px; }
+.simple-screen.wide .sp-catcard { min-height: 0; padding: 6px; gap: 4px; font-size: 16px; }
+.simple-screen.wide .sp-owl.oncards { display: none; }
+@media (max-width: 520px) { .simple-screen:not(.cards) .sp-me b { display: none; } .simple-screen:not(.cards) .sp-me { padding-right: 4px; } .sp-top { gap: 8px; } }
+@media (max-width: 380px) { .sp-catgrid { grid-template-columns: repeat(2, 1fr); padding: 10px 10px 96px; gap: 12px; } }
+.simple-screen.wide .sp-catcard .sp-pic { width: 72px; height: 72px; }
+.simple-screen.wide .sp-catcard .sp-pic .art, .simple-screen.wide .sp-catcard .sp-pic .emo { width: 52px; height: 52px; font-size: 44px; }
+/* (Round U) the HUD's coin, orb and Leafy chips are buttons now (tap: what it is): a 44 px tap area around the small chip */
+.hud .chips button.chip { position: relative; }
+.hud .chips button.chip::after { content: ''; position: absolute; left: -2px; right: -2px; top: 50%; height: 44px; transform: translateY(-50%); }

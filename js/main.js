@@ -485,6 +485,8 @@ async function owlTalk(h) {
   };
   const tip = q && tips[q.id] || ['Explore everywhere! Climb high, look under rocks, and talk to everyone.', 'Khám phá khắp nơi nhé! Leo lên cao, nhìn dưới các hòn đá, và nói chuyện với mọi người.'];
   await dialog('Ông Cú', [['Hoo hoo! ' + tip[0], 'Hú hú! ' + tip[1]]]);
+  // (Round U) then one new thing about the valley, on a picture page (loaded only now)
+  const was = G.paused; G.paused = true; try { await (await import('./owlguide.js')).owlLesson(p); } finally { G.paused = was; }
 }
 async function maiTalk(h) {
   const k = await dialog('Cô Mai', [['Xin chào! Fresh fruit and pretty hats! Would you like to buy something, or help me sell?', 'Xin chào con! Trái cây tươi và mũ xinh đây! Con muốn mua gì, hay giúp cô bán hàng?']],
@@ -814,6 +816,14 @@ G.toggleAudio = kind => {
   else { const on = !(settings.sound || settings.voice); settings.sound = on; settings.voice = on; if (!on) hush(); }
   saveSettings(); SFX.tap(); G.huds.forEach(h => h.refreshAudio());
 };
+// (Round U) one switch at a time: music, sound effects or the talking voice (the Sound switches: js/soundsheet.js)
+G.setAudio = (kind, on) => {
+  settings[kind] = !!on;
+  if (kind === 'music') { if (on) Music.refresh(); else Music.stop(); }
+  if (kind === 'voice' && !on) hush();
+  saveSettings(); G.huds.forEach(h => h.refreshAudio());
+};
+G.openSound = () => import('./soundsheet.js').then(m => m.openSoundSheet(G));
 // (r63) the first tap asks for the microphone and turns it on; then each tap turns it off or on again
 G.toggleMute = async () => { if (!Net.mic) { Net.resumeAudio(); await Net.getMic(true); } else { Net.setMuted(!Net.muted); Net.resumeAudio(); } G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted || !Net.mic)); };
 // Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
@@ -1742,6 +1752,14 @@ resize();
 // title is already painted by then, and the valley is drawn behind it a frame later
 { let go = false; const start = () => { if (go) return; go = true; bootMark('shaders'); requestAnimationFrame(frame); };
   requestAnimationFrame(() => setTimeout(start, 30)); }
+// (Round U, owner: rows and pages scroll by finger and mouse everywhere: js/scrollhelp.js; loaded after the title)
+import('./scrollhelp.js').then(m => m.installScrollHelp());
+// (Round U) every villager answers a tap with a fact or a saying of their region (js/villagertalk.js)
+import('./villagertalk.js').then(m => m.createVillagerTalk(G));
+import('./pricetags.js').then(m => m.createPriceTags(G));
+import('./jobs.js').then(m => m.createJobs(G));   // (Round U) a job board in every place   // (Round U) a coin-picture price over every food stall
+// (Round U) a tap on a coin, orb or Leafy chip (top bar, Backpack) says what it is (js/chipinfo.js, loaded on the first tap)
+document.addEventListener('click', e => { const c = e.target.closest && e.target.closest('[data-chip]'); if (c) import('./chipinfo.js').then(m => m.showChip(c.dataset.chip, c)); });
 import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { if (playing) keepSpot(); save(); hush(); } });
 addEventListener('pagehide', () => { if (playing) keepSpot(); saveProfiles(true); });

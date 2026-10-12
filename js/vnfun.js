@@ -59,8 +59,8 @@ export function createVnFun(G, { sfx, say, dialog, toast }) {
     const tag = sprite(pl.icon, 1); tag.position.set(x + 1.6, y + 2.3, z + 1.2); scene.add(tag);
     G.interactables.push({ id: 'pg_' + pl.game + '_' + pl.where, x: x + 1.6, z: z + 2.4, r: 3, icon: pl.icon, bubble: pl.icon, label: () => T(pl.title[0], pl.title[1]), act: h => G.kidTalk(h, pl.game, pl.name, pl.line) });
     if (G.chatGroup) G.chatGroup([host.root, f1.root, f2.root], pl.where === 'hanoi'
-      ? [['Đến lượt tớ!', 'Đến lượt tớ!'], ['Trúng rồi!', 'Trúng rồi!'], ['Ăn gian nhé!', 'Ăn gian nhé!'], ['Chơi lại đi!', 'Chơi lại đi!']]
-      : [['Tới lượt tui!', 'Tới lượt tui!'], ['Trúng rồi nè!', 'Trúng rồi nè!'], ['Hổng chịu đâu!', 'Hổng chịu đâu!'], ['Chơi nữa hông?', 'Chơi nữa hông?']], { height: 2.2 });
+      ? [['My turn!', 'Đến lượt tớ!'], ['Got it!', 'Trúng rồi!'], ['No cheating!', 'Ăn gian nhé!'], ['Again, again!', 'Chơi lại đi!']]
+      : [['My turn now!', 'Tới lượt tui!'], ['I hit it!', 'Trúng rồi nè!'], ['No fair!', 'Hổng chịu đâu!'], ['Play again?', 'Chơi nữa hông?']], { height: 2.2 });
     G.GAME_SPOT = G.GAME_SPOT || {}; if (!G.GAME_SPOT[pl.game]) G.GAME_SPOT[pl.game] = 'pg_' + pl.game + '_' + pl.where;
   }
 

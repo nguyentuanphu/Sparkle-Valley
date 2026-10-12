@@ -1,0 +1,120 @@
+# (Voice & Audio, owner 12 Oct AEDT: "make sure every missing voice line gets recorded without me clicking anything")
+# Once a day, and by hand (Actions → Daily voices → Run workflow):
+#   1. starts from main, keeping the recordings already waiting on the voices/daily branch;
+#   2. reads the missing lines inbox from the website (lines devices said with the machine voice) and keeps only the
+#      ones the game itself has (tools/voice-daily.mjs): a line that may carry a friend's or pet's name is never
+#      recorded (HANDOFF rule 11);
+#   3. plays the game to find the lines it builds while playing (tools/voice-harvest.mjs), only when the game's code
+#      changed since the last harvest (it takes two to three hours);
+#   4. records every missing line with Azure (tools/make-voice-pack.mjs) and checks that none is left (--cover);
+#   5. pushes to voices/daily and opens (or updates) one draft pull request; the Release chat of the day merges it.
+# Secrets (GitHub → Settings → Secrets and variables → Actions): AZURE_SPEECH_KEY (the Azure Speech key) and
+# STUDIO_KEY (a key made in Studio → Setup → Security → Keys; it can read the inbox and nothing private).
+# Looked after by Analytics & Infra (workflows); the voice tools are Voice & Audio's.
+name: Daily voices
+on:
+  schedule:
+    - cron: '7 16 * * *' # 3:07 am AEDT (2:07 am AEST)
+  # a run by hand before this file is on main (GitHub starts workflow_dispatch only from main): push any commit to
+  # the branch voices/run; the run then uses that commit's tools and starts voices/daily from it
+  push:
+    branches: [voices/run]
+  workflow_dispatch:
+    inputs:
+      harvest:
+        description: 'Play the game to find new lines even if the code did not change'
+        type: boolean
+        default: false
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: voices-daily
+  cancel-in-progress: false
+jobs:
+  voices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+      AZURE_SPEECH_REGION: australiaeast
+      STUDIO_KEY: ${{ secrets.STUDIO_KEY }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Start from main, keeping the recordings waiting on voices/daily
+        env:
+          BASE: ${{ github.event_name == 'push' && github.sha || 'origin/main' }}
+        run: |
+          git config user.name "sparkle-voices"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin voices/daily >/dev/null; then
+            git checkout -B voices/daily origin/voices/daily
+            git show HEAD:tools/voice-extra.json > /tmp/extra-daily.json
+            # main wins the lists made from the code; the waiting recordings (mp3 files) come along
+            git merge --no-edit -X theirs "$BASE"
+            # the lines kept from earlier inboxes stay in the list (one list from both)
+            node -e 'const fs=require("fs"),a=JSON.parse(fs.readFileSync("tools/voice-extra.json")),b=JSON.parse(fs.readFileSync("/tmp/extra-daily.json")),m=new Map();for(const l of [...a,...b])m.set(l.lang+"|"+l.text,l);fs.writeFileSync("tools/voice-extra.json",JSON.stringify([...m.values()].sort((x,y)=>(x.lang+x.text).localeCompare(y.lang+y.text)),null,0).replace(/\},\{/g,"},\n{")+"\n")'
+          else
+            git checkout -B voices/daily "$BASE"
+          fi
+      - name: Check the secrets
+        run: |
+          if [ -z "$AZURE_SPEECH_KEY" ]; then echo "::error::Add the secret AZURE_SPEECH_KEY (GitHub → Settings → Secrets and variables → Actions)."; exit 1; fi
+          if [ -z "$STUDIO_KEY" ]; then echo "::warning::No STUDIO_KEY secret: the website's inbox is skipped; the code's lines are still recorded."; fi
+      - name: The website's inbox (only lines the game has)
+        run: node tools/voice-daily.mjs
+      - name: Did the game's code change since the last harvest?
+        id: code
+        run: |
+          now=$(git rev-parse HEAD:js)
+          last=$(node -e 'try{console.log(require("./tools/voice-daily.json").harvestedJs||"")}catch(e){console.log("")}')
+          echo "js=$now" >> "$GITHUB_OUTPUT"
+          if [ "$now" != "$last" ] || [ "${{ inputs.harvest }}" = "true" ]; then echo "harvest=yes" >> "$GITHUB_OUTPUT"; else echo "harvest=no" >> "$GITHUB_OUTPUT"; fi
+      - name: Install the test browser
+        if: steps.code.outputs.harvest == 'yes'
+        working-directory: tests
+        run: |
+          npm install --no-package-lock --no-save --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Play the game to find new lines (English, then Vietnamese)
+        if: steps.code.outputs.harvest == 'yes'
+        run: |
+          python3 -m http.server 8765 >/dev/null 2>&1 &
+          until curl -s -o /dev/null http://localhost:8765/; do sleep 1; done
+          SV_URL=http://localhost:8765/ node tools/voice-harvest.mjs --lang en | tail -3
+          SV_URL=http://localhost:8765/ node tools/voice-harvest.mjs --lang vi | tail -3
+          node -e 'const fs=require("fs"),f="tools/voice-daily.json",s=JSON.parse(fs.readFileSync(f));s.harvestedJs=process.argv[1];fs.writeFileSync(f,JSON.stringify(s,null,1)+"\n")' "${{ steps.code.outputs.js }}"
+      - name: Record every missing line with Azure
+        run: |
+          node tools/make-voice-pack.mjs --engine azure --parallel 4 --per-minute 19 2>&1 | grep -E "Still to make|Finished|core |rror" | tee /tmp/record.txt
+      - name: Check that no line is left
+        run: |
+          node tools/make-voice-pack.mjs --cover > /tmp/cover.json || true
+          node -e '
+            const fs=require("fs"),t=fs.readFileSync("/tmp/cover.json","utf8"),c=JSON.parse(t.slice(t.indexOf("{")));
+            const rec=+((fs.readFileSync("/tmp/record.txt","utf8").match(/Finished: (\d+)/)||[])[1]||0);
+            const s=JSON.parse(fs.readFileSync("tools/voice-daily.json"));
+            s.at=new Date().toISOString(); s.recorded=rec; s.waiting=(c.bad||[]).length; s.lines=c.lines;
+            fs.writeFileSync("tools/voice-daily.json",JSON.stringify(s,null,1)+"\n");
+            console.log(`${rec} recorded now; ${s.waiting} still waiting; ${c.lines} lines in the game`);
+            if (s.waiting) { console.log("::error::Lines still without a recording: " + JSON.stringify(c.bad).slice(0, 500)); process.exitCode = 1; }'
+      - name: Push to voices/daily and open the draft pull request
+        if: always() && steps.code.outcome == 'success'
+        run: |
+          git add voices tools/voice-extra.json tools/voice-where.json
+          # every recording on voices/daily that main does not have yet (this run's and earlier runs' not merged yet)
+          pending=$(git diff --cached --name-only origin/main -- voices | grep -c '\.mp3$' || true)
+          if git diff --cached --quiet && [ "$pending" = "0" ]; then echo "Nothing new to record today."; exit 0; fi
+          node -e 'const fs=require("fs"),f="tools/voice-daily.json",s=JSON.parse(fs.readFileSync(f));s.pending=+process.argv[1];fs.writeFileSync(f,JSON.stringify(s,null,1)+"\n")' "$pending"
+          git add tools/voice-daily.json
+          git commit -q -m "Daily voices $(TZ=Australia/Sydney date '+%-d %b %Y, %-I:%M %p %Z')" || true
+          git push origin voices/daily
+          summary="$(node -e 'const s=require("./tools/voice-daily.json");console.log(`Recorded by the daily voice workflow (Voice & Audio). New recordings in this run: ${s.recorded||0}; recordings waiting in this pull request: ${s.pending||0}; still waiting: ${s.waiting||0}; inbox lines held (may have a name, never recorded): ${s.held||0}. Only voices and voice lists change. Release: merge it in a round.`)')"
+          num=$(gh pr list --head voices/daily --base main --state open --json number --jq '.[0].number')
+          if [ -z "$num" ]; then gh pr create --draft --base main --head voices/daily --title "Daily voices (recorded by the workflow)" --body "$summary"; else gh pr edit "$num" --body "$summary"; fi
