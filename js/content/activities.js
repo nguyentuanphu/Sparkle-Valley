@@ -87,3 +87,8 @@ export function withSitePlaces(list) {
 export const LITTLE_PAGE = 6;
 // split a list into even pages of at most n (8 → 4 + 4, not 6 + 2)
 export const pages = (list, n) => { const k = Math.max(1, Math.ceil(list.length / n)), size = Math.ceil(list.length / k), out = []; for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size)); return out.length ? out : [[]]; };
+
+// (Play reading trial, owner 11 Oct 2026 AEDT; docs/cores/play-reading.md) "Reading corner", right after "Letters and words".
+// Its ten games, with their ages, are added only while Studio's readingTrial switch is on (js/games/readingmenu.js), so
+// with the switch off the area has no games and is never shown.
+AREAS.splice(AREAS.findIndex(a => a.key === 'words') + 1, 0, { key: 'reading', icon: '📖', name: () => T('Reading corner', 'Góc đọc') });
