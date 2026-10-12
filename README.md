@@ -1,6 +1,9 @@
 # Sparkle Studio for Windows
 
-`SparkleStudio.exe`: built 12 Oct 2026, 11:08 AM AEDT from `main` 6fa1b6fe (game and Studio version r63) with `bash studio/build-exe.sh`.
+`SparkleStudio.exe` r63, built from `0e7ddb15` with `bash tools/publish-exe.sh`.
 
-Download: open `SparkleStudio.exe` on GitHub and press "Download raw file". Put it in the game folder and double-click.
-This branch only holds the newest exe; it is never merged into `main` and never published on the website.
+- An exe that has the updater (from r63 on) finds this one by itself: a banner "Update now", or Settings, "Check for updates".
+- To download it by hand: open `SparkleStudio.exe` above and press "Download raw file". Put it in the game folder and double-click.
+- `version.json` holds the version and the checksum the exe checks before it swaps itself.
+
+This branch only holds the exe for downloading; it is never merged into `main` and never published on the website.
