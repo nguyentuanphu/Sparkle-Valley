@@ -1639,6 +1639,7 @@ createChatter(G);
 setupNPCs(); setupInteractables();
 bootMark('people'); G.farm = createFarm(G); world.updaters.push(G.farm.update); await breathe();
 G.places = createPlaces(G); world.updaters.push(G.places.update);
+world.heroesNear = (x, z, r) => G.heroes.some(h => dist2(h.pos.x, h.pos.z, x, z) < r);   // (Round V) a ridden animal goes home out of every child's sight
 G.town = createTown(G);
 G.GAMES_ICON = id => (GAMES[id] || {}).icon || "🎮";
 createRegions(G);

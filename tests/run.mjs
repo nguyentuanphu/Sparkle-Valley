@@ -3526,7 +3526,14 @@ await check('ride', async () => {
     out.rides = I.filter(i => /^ride_/.test(i.id)).length; out.stops = (G.world.busStops || []).length;
     out.lift = T.slots.filter(s => s.mover && !/^(bus|tram|taxi|touristCart|xichlo)/.test(s.id)).some(s => I.some(i => i.id === 'ride_' + T.slots.indexOf(s)));
     // drive a parked car
-    const car = I.find(i => /^drive_/.test(i.id) && /car/i.test(i.label())); if (car) { h.place(car.x + 1, car.z); car.act(h, G); out.driving = !!h.riding && !!h.riding.vehicle; h.dismount(); out.off = !h.riding; }
+    const car = I.find(i => /^drive_/.test(i.id) && /car/i.test(i.label())); if (car) { h.place(car.x + 1, car.z); car.act(h, G); out.driving = !!h.riding && !!h.riding.vehicle;
+      // (Round V, owner 13 Oct) the camera rides at the child's eyes, looking ahead
+      for (let k = 0; k < 60; k++) h.finish(1 / 60, k / 60, G, 0); const eyeUp = h.cam.position.y - h.pos.y, eyeNear = Math.hypot(h.cam.position.x - h.pos.x, h.cam.position.z - h.pos.z); out.pov = eyeUp > .8 && eyeUp < 2.6 && eyeNear < 1.2;
+      // drive it away, get off, walk away: it goes back to its parking spot
+      const sl = G.traffic.slots.find(x => x.v && x.v.o === h.riding.mesh), home = sl ? [sl.x, sl.z] : null; h.pos.x += 30; h.riding.mesh.position.x += 30; h.dismount(); out.off = !h.riding;
+      h.place(h.pos.x + 40, h.pos.z); await new Promise(r => setTimeout(r, 1200)); out.carBack = !!home && Math.hypot(sl.v.o.position.x - home[0], sl.v.o.position.z - home[1]) < 1; }
+    // a buffalo: ride it away, get off: it runs back home
+    const bf = (G.world.buffalo || [])[0]; if (bf) { h.place(bf.mesh.position.x + 1, bf.mesh.position.z); G.mount(h, bf); h.pos.x += 12; bf.mesh.position.x += 12; h.dismount(); out.buffHome = bf.tx === bf.home[0] && bf.tz === bf.home[1] && bf.back === true; }
     return out;
   });
   // a bus: a big kid pays, an under-5 rides free
@@ -3536,14 +3543,19 @@ await check('ride', async () => {
     const it = I.find(i => /^ride_/.test(i.id) && G.traffic.slots[+i.id.slice(5)].id.startsWith('bus')); if (!it) return { none: true };
     h.place(it.x + 2, it.z); const p = it.act(h, G);
     await new Promise(res => { const t = setInterval(() => { const c = document.querySelectorAll('.dialog .dchoices button'); if (c.length) { clearInterval(t); setTimeout(() => { c[0].click(); res(); }, 500); } }, 100); setTimeout(res, 8000); });
+    // (Round V, owner 13 Oct) where to: every stop in the valley; the child arrives at the one chosen
+    await new Promise(res => { const t = setInterval(() => { const k = document.querySelector('.stoppick .wp-pick'); if (k) { clearInterval(t); res(); } }, 100); setTimeout(res, 6000); });
+    const picks = document.querySelectorAll('.stoppick .wp-pick').length, first = document.querySelector('.stoppick .wp-pick'); const name = first ? first.getAttribute('aria-label') : '';
+    const dest = (G.world.busStops || []).find(b => b.name() === name); first && first.click();
     await p; const on = !!h.carry, paid = c0 - farm.coins;
+    let arrived = false; for (let k = 0; k < 60 && !arrived; k++) { await new Promise(r => setTimeout(r, 250)); arrived = !h.carry && !!dest && Math.hypot(h.pos.x - dest.x, h.pos.z - dest.z) < 4; }
     h.carry = null; G.traffic.slots.forEach(s => { if (s.passenger === h) s.passenger = null; });
-    return { on, paid };
+    return { on, paid, picks, arrived };
   }, age);
   r.big = await bus('big'); r.little = await bus('little');
   const errs = P.errors; await P.ctx.close();
-  ok(r.drive >= 20 && r.bike >= 4 && r.rides >= 4 && r.stops >= 4 && !r.lift && r.driving && r.off && r.big.on && r.big.paid > 0 && r.little.on && r.little.paid === 0 && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return `${r.drive} parked cars and motorbikes to drive, ${r.bike} bicycles, ${r.rides} buses, trams and taxis to ride (big kid paid ${r.big.paid}, under-5 free), ${r.stops} bus stops; no lifts from strangers`;
+  ok(r.drive >= 20 && r.bike >= 4 && r.rides >= 4 && r.stops >= 4 && !r.lift && r.driving && r.off && r.big.on && r.big.paid > 0 && r.little.on && r.little.paid === 0 && r.big.picks >= 3 && r.big.arrived && r.pov && r.carBack && r.buffHome && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.drive} parked cars and motorbikes to drive, ${r.bike} bicycles, ${r.rides} buses, trams and taxis to ride (big kid paid ${r.big.paid}, under-5 free), ${r.stops} bus stops, each stop a choice of ${r.big.picks} places and the child arrives there; the camera rides at the child's eyes; a car left elsewhere goes back to its spot and a buffalo runs home; no lifts from strangers`;
 });
 
 await check('familymissions', async () => {

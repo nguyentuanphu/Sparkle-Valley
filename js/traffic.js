@@ -19,7 +19,9 @@ import { buildAvatar } from './avatar.js';
 import { featureOn } from './custom.js';
 import { TOWN_PARKED } from './town.js';
 import { T } from './i18n.js';
-import { dialog } from './popups.js';
+import { dialog, modal } from './popups.js';
+import { pic } from './art.js';
+import { esc } from './util.js';
 import { farm, saveFarm } from './state.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
@@ -137,6 +139,10 @@ export function createTraffic(G) {
     const H = G.heroes || []; if (!H.length) return;
     let n = 0;
     for (const sl of slots) { if (sl.v) continue; const [x, z] = where(sl); if (H.some(h => Math.hypot(h.pos.x - x, h.pos.z - z) < NEAR)) { make(sl); if (++n >= 4) { scan = 0; break; } } }
+    // (Round V, owner 13 Oct: "all vehicles I can ride can go anywhere and go back to their place") a bicycle, motorbike or
+    // car left somewhere goes back to its parking spot once every child has walked away from it
+    for (const sl of slots) { if (!sl.rideable || sl.mover || !sl.v || sl.taken || sl.x == null) continue; const o = sl.v.o.position;
+      if (Math.hypot(o.x - sl.x, o.z - sl.z) > 2 && !H.some(h => Math.hypot(h.pos.x - o.x, h.pos.z - o.z) < 20)) { o.set(sl.x, ground(sl.x, sl.z), sl.z); sl.v.o.rotation.y = sl.yaw || 0; } }
   });
 
   // children ride the bicycles: Jump gets off (js/player.js riding, with the vehicle's own seat and grips)
@@ -173,14 +179,29 @@ export function createTraffic(G) {
           [[free ? '🚌 Get on' : `🪙 Pay ${fare} and get on`, free ? '🚌 Lên xe' : `🪙 Trả ${fare} đồng, lên xe`], ['👋 Not now', '👋 Để sau']]);
         sl.mover.wait = 0; if (k !== 0) return;
         if (!free) { farm.coins -= fare; saveFarm(); SFX.chime(); }
-        sl.passenger = h; let started = false, gone = 0;
+        // (Round V, owner 13 Oct: "at all stations they can select a destination") where to: every stop in the valley
+        const dest = await pickStop(h, sl);
+        sl.passenger = h; let started = false, gone = 0; const rideT0 = performance.now();   // (Round V: a ride to a chosen stop lasts about 7 s by the clock, whatever the frame rate)
         h.carry = (dt, t, pad) => {
           const m = sl.mover; if (m.wait <= 0) started = true; gone += dt;
           // off at the next stop (the end of its route, where it rests), or when Jump is pressed
+          if (dest && performance.now() - rideT0 > 7000) { h.carry = null; sl.passenger = null; say(`Here we are: ${dest.name()}! Bye bye!`, `Tới ${dest.name()} rồi! Tạm biệt!`); h.place(dest.x + 1.2, dest.z + 1.2); return null; }   // (a short ride, then the stop chosen)
           if (pad.jump() || (started && m.wait > 0 && gone > 2)) { h.carry = null; sl.passenger = null; const o = sl.v.o; h.place(o.position.x + Math.cos(o.rotation.y) * 2.6, o.position.z - Math.sin(o.rotation.y) * 2.6); say('Here we are! Bye bye!', 'Tới nơi rồi! Tạm biệt con!'); return null; }
           const p = sl.v.o.localToWorld(new THREE.Vector3(...seatOf(sl, sl.v))); return { x: p.x, y: p.y - .55, z: p.z, yaw: sl.v.o.rotation.y, state: 'sit', speed: 0, rest: true };
         };
       } });
+  }
+  // (Round V) the stop picker: every bus stop by its place's picture and name; "Next stop" rides to the end of this route
+  function pickStop(h, sl) {
+    const stops = (W.busStops || []).filter(b => Math.hypot(b.x - h.pos.x, b.z - h.pos.z) > 12);
+    if (!stops.length) return Promise.resolve(null);
+    return new Promise(res => {
+      const m = modal('stoppick', `<h2>${pic('🚏')} ${T('Where shall we go?', 'Mình đi đâu nào?')}</h2><div class="wp-grid">${stops.map((b, k) => `<button class="wp-pick" data-k="${k}" aria-label="${esc(b.name())}">${pic(b.icon)}<b>${esc(b.name())}</b></button>`).join('')}</div>
+        <div class="actions center"><button class="btn" data-next>${pic('🚌')} ${T('Just the next stop', 'Chỉ đến trạm sau')}</button></div>`);
+      say('Where shall we go?', 'Mình đi đâu nào?');
+      m.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { SFX.tap(); m.close(); res(stops[+b.dataset.k]); });
+      m.querySelector('[data-next]').onclick = () => { SFX.tap(); m.close(); res(null); };
+    });
   }
   // ---------- (Round U) bus stops with a picture timetable, at both ends of every bus route ----------
   const stopGeo = merge([P(new THREE.BoxGeometry(2.6, .1, 1.3), '#3a78c8', [0, 2.3, 0]), P(new THREE.BoxGeometry(.1, 2.3, .1), '#d8dde0', [-1.2, 1.15, -.5]), P(new THREE.BoxGeometry(.1, 2.3, .1), '#d8dde0', [1.2, 1.15, -.5]),
@@ -195,7 +216,8 @@ export function createTraffic(G) {
       const m = new THREE.Mesh(stopGeo, toonVC()); m.position.set(sx, ground(sx, sz), sz); m.rotation.y = Math.atan2(-rx, -rz); m.castShadow = true; scene.add(m);
       W.colliders.push({ x: sx, z: sz, r: .45 });
       const pic = sprite('🚌', .55), clock = sprite('⏰', .45); pic.position.set(sx, ground(sx, sz) + 3.1, sz); clock.position.set(sx, ground(sx, sz) + 2.55, sz); scene.add(pic, clock);
-      const stop = { x: sx, z: sz, cc: sl.cc, fare: FARE[sl.id] }; W.busStops.push(stop);
+      const near = (G.PLACES || []).reduce((a, p) => !a || Math.hypot(p.x - sx, p.z - sz) < Math.hypot(a.x - sx, a.z - sz) ? p : a, null);
+      const stop = { x: sx, z: sz, cc: sl.cc, fare: FARE[sl.id], place: near, name: () => near ? near.name() : T('Bus stop', 'Trạm xe buýt'), icon: near ? near.icon : '🚏' }; W.busStops.push(stop);   // (Round V) named after the nearest place
       G.interactables.push({ id: 'busstop_' + W.busStops.length, x: sx, z: sz, r: 2.6, icon: '🚏', bubble: '🚌', label: () => T('Bus stop', 'Trạm xe buýt'),
         act: () => { SFX.tap(); dialog(T('Bus stop', 'Trạm xe buýt'), [['🚌 ⏰ The bus comes along this road every few minutes and waits here at the stop. When it stops, tap the bus to get on.', '🚌 ⏰ Xe buýt chạy trên đường này vài phút một chuyến và dừng chờ ở trạm. Khi xe dừng, chạm vào xe để lên.'],
           [`🪙 The fare is ${stop.fare} coins. Little ones ride free!`, `🪙 Giá vé ${stop.fare} đồng. Các bé nhỏ đi miễn phí!`]]); } });

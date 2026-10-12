@@ -171,7 +171,8 @@ export class Hero {
     if (fell > 14 && !this.gliding) game.hurt(this, fell > 30 ? 2 : 1);
   }
   mount(b) { this.riding = b; b.rider = this; this.gliding = false; this.pos.copy(b.mesh.position); this.yaw = b.yaw; if (!b.quiet) SFX.moo(); }
-  dismount() { const b = this.riding; if (!b) return; b.rider = null; b.tx = b.mesh.position.x; b.tz = b.mesh.position.z; if (b.slot) b.slot.taken = null; if (b.vehicle) this.av.torso.rotation.set(0, 0, 0), this.av.torso.position.set(0, 0, 0), this.av.head.position.set(0, 1.33, 0), this.av.armL.scale.y = this.av.armR.scale.y = 1; this.riding = null; this.pos.x += Math.cos(this.yaw) * 1.8; this.pos.z -= Math.sin(this.yaw) * 1.8; this.pos.y = this.world.groundAt(this.pos.x, this.pos.z); }
+  dismount() { const b = this.riding; if (!b) return; b.rider = null; b.tx = b.mesh.position.x; b.tz = b.mesh.position.z; if (b.home) { b.tx = b.home[0]; b.tz = b.home[1]; b.back = true; }   // (Round V, owner 13 Oct) an animal runs back home when the child gets off
+    if (b.slot) b.slot.taken = null; if (b.vehicle) this.av.torso.rotation.set(0, 0, 0), this.av.torso.position.set(0, 0, 0), this.av.head.position.set(0, 1.33, 0), this.av.armL.scale.y = this.av.armR.scale.y = 1; this.riding = null; this.pos.x += Math.cos(this.yaw) * 1.8; this.pos.z -= Math.sin(this.yaw) * 1.8; this.pos.y = this.world.groundAt(this.pos.x, this.pos.z); }
 
   startTowerClimb(tw) {
     const m = this.world.towerMeshes[tw.id];
@@ -260,6 +261,17 @@ export class Hero {
     if (this.ferry) { gy = Math.max(WATER, heightAt(want.x, want.z)) + .7; for (const pl of this.world.platforms) if (pl.y > target.y + 1.5 && want.x > pl.x0 - 1 && want.x < pl.x1 + 1 && want.z > pl.z0 - 1 && want.z < pl.z1 + 1) want.y = Math.min(want.y, pl.y - .8); }
     else gy = this.world.groundAt(want.x, want.z) + .7;
     if (want.y < gy) want.y = gy;
+    // (Round V, owner 13 Oct: "the camera angle should be point of view") riding an animal or a vehicle, or sitting in a bus,
+    // tram, taxi or xích lô: the camera rides at the child's eyes, looking ahead (the grown-ups' switch ridePov turns it off)
+    const pov = !close && (this.riding || (this.carry && this.state === 'sit')) && game.settings.ridePov !== false;
+    if (pov) {
+      const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw), sc = this.av.root.scale.x || 1, ey = p.y + (rideY || 0) + 1.45 * sc;
+      const eye = new THREE.Vector3(p.x + fx * .4, ey, p.z + fz * .4), look = new THREE.Vector3(p.x + fx * 12, ey - .9, p.z + fz * 12);
+      this.camPos.lerp(eye, 1 - Math.exp(-dt * 8)); if (!this.camLook) this.camLook = look.clone(); this.camLook.lerp(look, 1 - Math.exp(-dt * 6));
+      this.camYaw = this.yaw + Math.PI; this._pov = true;
+      this.cam.position.copy(this.camPos); this.cam.lookAt(this.camLook); return;
+    }
+    if (this._pov) { this._pov = false; this.camLook = null; }   // (back behind the child after getting off)
     // the camera glides (the same smoothness at any frame rate), and the point it looks at glides too, more slowly up and
     // down, so jumps, steps, slopes and bumps never jerk the picture
     this.camPos.lerp(want, 1 - Math.exp(-dt * 3.5));

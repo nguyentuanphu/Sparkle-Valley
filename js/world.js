@@ -941,8 +941,10 @@ export function createWorld(scene, quality) {
   W.updaters.push((dt, t) => W.buffalo.forEach(b => {
     if (b.rider) return;
     const m = b.mesh, dx = b.tx - m.position.x, dz = b.tz - m.position.z, d = Math.hypot(dx, dz);
-    if (d < .5) { if (Math.random() < dt * .2) { b.tx = b.home[0] + (Math.random() - .5) * 16; b.tz = b.home[1] + (Math.random() - .5) * 16; } }
-    else { b.yaw = Math.atan2(dx, dz); m.rotation.y = b.yaw; m.position.x += dx / d * dt * 1.2; m.position.z += dz / d * dt * 1.2; }
+    // (Round V, owner 13 Oct) after a ride it runs back home; from far away, out of every child's sight, it is simply home again
+    if (b.back && d > 40 && !(W.heroesNear && W.heroesNear(m.position.x, m.position.z, 30))) { m.position.x = b.tx = b.home[0]; m.position.z = b.tz = b.home[1]; b.back = false; }
+    else if (d < .5) { b.back = false; if (Math.random() < dt * .2) { b.tx = b.home[0] + (Math.random() - .5) * 16; b.tz = b.home[1] + (Math.random() - .5) * 16; } }
+    else { const sp = b.back ? 3.2 : 1.2; b.yaw = Math.atan2(dx, dz); m.rotation.y = b.yaw; m.position.x += dx / d * dt * sp; m.position.z += dz / d * dt * sp; }
     m.position.y = heightAt(m.position.x, m.position.z); b.shadow.position.set(m.position.x, m.position.y + .05, m.position.z);
   }));
   // ducks on the lake and chickens in the village (just for company)
