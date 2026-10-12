@@ -117,6 +117,48 @@ const family = {
   newCode: async () => { if (!linked()) return { error: 'Set the website and a Studio key in Settings first.' }; return (await siteApi('family/code/new', {})).json(); }
 };
 
+// ---------- updating itself (owner, 12 Oct: "the exe i have will get updated once there is new function") ----------
+// A new exe is put on the GitHub branch "studio-exe" with version.json { studio, sha256, size, notes } (tools/publish-exe.sh).
+// The exe asks for it with the GitHub key in Settings (the repository may be private). "Update now" downloads the new exe
+// next to this one, checks its checksum, swaps it in (Windows lets a running exe be renamed) and starts it; the old one
+// is removed on the next start. Settings and keys stay in %APPDATA%. If anything fails, the exe stays as it was.
+const HERE = require('./version.json').studio, EXE_BRANCH = 'studio-exe';
+const GH_UPD = () => process.env.STUDIO_GITHUB_API || 'https://api.github.com';
+const num = v => +((/r(\d+)/.exec(String(v || '')) || [0, 0])[1]);
+const selfExe = () => process.env.STUDIO_UPDATE_EXE || (sea ? process.execPath : null);
+async function exeFile(rel) {
+  if (!conf.githubToken || !/^[\w.-]+\/[\w.-]+$/.test(conf.githubRepo || '')) throw new Error('Add the GitHub token and repository (owner/name) in Settings first.');
+  const r = await fetch(`${GH_UPD()}/repos/${conf.githubRepo}/contents/${rel}?ref=${EXE_BRANCH}`, { headers: { Authorization: 'Bearer ' + conf.githubToken, Accept: 'application/vnd.github.raw', 'User-Agent': 'sparkle-studio', 'X-GitHub-Api-Version': '2022-11-28' } });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error(`GitHub ${r.status} while looking for a new Sparkle Studio`);
+  return Buffer.from(await r.arrayBuffer());
+}
+async function updateCheck() {
+  const b = await exeFile('version.json'); if (!b) return { here: HERE, latest: null, newer: false, can: !!selfExe() };
+  const v = JSON.parse(b.toString('utf8'));
+  return { here: HERE, latest: v.studio, newer: num(v.studio) > num(HERE), notes: String(v.notes || '').slice(0, 400), can: !!selfExe() };
+}
+let updating = false;
+async function updateApply() {
+  const exe = selfExe(); if (!exe) return { error: 'Only SparkleStudio.exe updates itself.' };
+  if (updating) return { error: 'Already updating.' }; updating = true;
+  try {
+    const vb = await exeFile('version.json'); if (!vb) return { error: 'No new Sparkle Studio on GitHub.' };
+    const v = JSON.parse(vb.toString('utf8')); if (!(num(v.studio) > num(HERE))) return { ok: true, latest: v.studio, note: 'Already the newest.' };
+    log(`Updating Sparkle Studio ${HERE} to ${v.studio}…`);
+    const buf = await exeFile('SparkleStudio.exe'); if (!buf) return { error: 'The new SparkleStudio.exe is not on GitHub.' };
+    if (!v.sha256 || require('crypto').createHash('sha256').update(buf).digest('hex') !== v.sha256) return { error: 'The download did not match its checksum: nothing was changed.' };
+    const dir = path.dirname(exe), base = path.basename(exe, '.exe'), neu = path.join(dir, base + '.new.exe'), old = path.join(dir, base + '.old.exe');
+    fs.writeFileSync(neu, buf); try { fs.rmSync(old, { force: true }); } catch (e) { }
+    fs.renameSync(exe, old);
+    try { fs.renameSync(neu, exe); } catch (e) { fs.renameSync(old, exe); throw e; }
+    log(`Sparkle Studio ${v.studio} is in place: starting it.`);
+    const restart = process.env.STUDIO_UPDATE_NO_RESTART ? null : () => { server.close(); spawn(exe, process.argv.slice(2), { detached: true, stdio: 'ignore', env: { ...process.env, STUDIO_NO_OPEN: '1' } }).unref(); setTimeout(() => process.exit(0), 300); };
+    return { ok: true, latest: v.studio, restart };
+  } finally { updating = false; }
+}
+{ const exe = selfExe(); if (exe) setTimeout(() => { try { fs.rmSync(path.join(path.dirname(exe), path.basename(exe, '.exe') + '.old.exe'), { force: true }); } catch (e) { } }, 4000); } // left by an update
+
 // ---------- the server ----------
 // Everything a page asks for is done by the Studio engine (core.cjs, the same as online); this file adds what only
 // a computer can do: the game folder, keys saved here, Piper, the publish zip, opening folders and closing.
@@ -179,6 +221,8 @@ const server = http.createServer(async (req, res) => {
     }
     if (!p.startsWith('/studio/api/')) return send(res, 404, 'not found', 'text/plain');
     const api = decodeURIComponent(p.slice(12)); lastSeen = Date.now();
+    if (api === 'update/check') { try { return send(res, 200, await updateCheck()); } catch (e) { return send(res, 200, { here: HERE, error: e.message }); } }
+    if (api === 'update/apply' && req.method === 'POST') { let r; try { r = await updateApply(); } catch (e) { r = { error: e.message }; } const go = r.restart; delete r.restart; send(res, 200, r); if (go) setTimeout(go, 400); return; }
     if (api === 'quit' && req.method === 'POST') { send(res, 200, { ok: true }); log('Closed from the dashboard.'); setTimeout(() => process.exit(0), 300); return; }
     if (api === 'zip') { const f = G('sparkle-valley-netlify.zip'); if (!fs.existsSync(f)) return send(res, 404, { error: 'Build the zip first.' }); res.writeHead(200, { 'Content-Type': 'application/zip', 'Content-Disposition': 'attachment; filename="sparkle-valley-netlify.zip"' }); return fs.createReadStream(f).pipe(res); }
     const r = await engine().handle(api, req.method, req.method === 'POST' ? await readBody(req) : null);

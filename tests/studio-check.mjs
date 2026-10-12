@@ -140,9 +140,12 @@ export async function studioCheck(browser, open) {
   for (const f of Object.keys(seed)) { fs.mkdirSync(path.dirname(path.join(game, f)), { recursive: true }); fs.writeFileSync(path.join(game, f), seed[f]); }
   fs.mkdirSync(path.join(appdata, 'SparkleStudio'), { recursive: true }); fs.writeFileSync(path.join(appdata, 'SparkleStudio', 'settings.json'), JSON.stringify({ gameDir: game, siteUrl: site, githubToken: 'test-token', githubRepo: repo }));
   // the exe is its own process: it reaches the same pretend GitHub over http (STUDIO_GITHUB_API, tests only)
-  const GPORT = 8793, ghNet = http.createServer((req, res) => { let d = ''; req.on('data', c => d += c); req.on('end', async () => { const r = await gh.handle(req.method, 'https://api.github.com' + req.url, d ? JSON.parse(d) : null); res.writeHead(r.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(r.j)); }); });
+  // (owner, 12 Oct) the branch "studio-exe" the exe updates itself from: its files, given raw
+  const exeBranch = new Map(), fakeExe = path.join(tmp, 'exe', 'SparkleStudio.exe'); fs.mkdirSync(path.dirname(fakeExe), { recursive: true }); fs.writeFileSync(fakeExe, 'OLD EXE');
+  const GPORT = 8793, ghNet = http.createServer((req, res) => { let d = ''; req.on('data', c => d += c); req.on('end', async () => {
+    { const m = /^\/repos\/[^/]+\/[^/]+\/contents\/([^?]+)\?ref=studio-exe$/.exec(req.url); if (m) { const f = exeBranch.get(decodeURIComponent(m[1])); res.writeHead(f ? 200 : 404, { 'Content-Type': 'application/octet-stream' }); return res.end(f || '{"message":"Not Found"}'); } } const r = await gh.handle(req.method, 'https://api.github.com' + req.url, d ? JSON.parse(d) : null); res.writeHead(r.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(r.j)); }); });
   await new Promise(r => ghNet.listen(GPORT, '127.0.0.1', r));
-  const exe = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cjs')], { env: { ...process.env, APPDATA: appdata, STUDIO_PORT: String(SPORT), STUDIO_NO_OPEN: '1', STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}` }, stdio: 'ignore' });
+  const exe = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cjs')], { env: { ...process.env, APPDATA: appdata, STUDIO_PORT: String(SPORT), STUDIO_NO_OPEN: '1', STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}`, STUDIO_UPDATE_EXE: fakeExe, STUDIO_UPDATE_NO_RESTART: '1' }, stdio: 'ignore' });
   const notes = [];
   try {
     for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://localhost:${SPORT}/studio/api/ping`)).ok) break; } catch (e) { } await new Promise(r => setTimeout(r, 200)); }
@@ -341,6 +344,16 @@ export async function studioCheck(browser, open) {
     { const web = (await call('/studio/api/players', { cookie: C })).j, exeR = (await ex('players')).j; ok(exeR && exeR.today && exeR.today.devices === web.today.devices && web.today.devices >= 3, 'the exe could not show the players: ' + JSON.stringify({ exe: exeR && exeR.today, web: web.today })); }
     ok((await ex('voices/inbox')).j.length === 2, 'the exe could not see the inbox');
     const chk = (await ex('check')).j; ok(chk.some(x => x.ok && /the same here and online/.test(x.en)), 'the exe and online versions were not compared: ' + JSON.stringify(chk.map(x => x.en)));
+    // (owner, 12 Oct) the exe updates itself from the "studio-exe" branch: it offers a newer version, refuses a download
+    // that does not match its checksum, and swaps a good one in, keeping the old one beside it until the next start
+    { const neu = Buffer.from('NEW EXE ' + Date.now()), sha = crypto.createHash('sha256').update(neu).digest('hex'), oldExe = path.join(path.dirname(fakeExe), 'SparkleStudio.old.exe');
+      ok(!(await ex('update/check')).j.newer, 'an update was offered with no studio-exe branch');
+      exeBranch.set('version.json', JSON.stringify({ studio: 'r9999', sha256: 'not-the-sum', notes: 'test' })); exeBranch.set('SparkleStudio.exe', neu);
+      const c1 = (await ex('update/check')).j; ok(c1.newer && c1.latest === 'r9999' && c1.can, 'update check: ' + JSON.stringify(c1));
+      const bad = (await ex('update/apply', {})).j; ok(bad.error && /checksum/.test(bad.error) && fs.readFileSync(fakeExe, 'utf8') === 'OLD EXE', 'a download that does not match was put in place: ' + JSON.stringify(bad));
+      exeBranch.set('version.json', JSON.stringify({ studio: 'r9999', sha256: sha }));
+      const good = (await ex('update/apply', {})).j; ok(good.ok && good.latest === 'r9999' && fs.readFileSync(fakeExe).equals(neu) && fs.readFileSync(oldExe, 'utf8') === 'OLD EXE', 'the update was not swapped in: ' + JSON.stringify(good));
+      notes.push('the exe updates itself from GitHub (checksum checked)'); }
     // the exe sends to GitHub in two steps (owner, round 30): 1. a draft (the website does not change), 2. Publish
     const job = async (p, body) => { const s0 = await ex(p, body); ok(s0.status === 200, p + ': ' + JSON.stringify(s0.j)); for (let i = 0; i < 100; i++) { const j = (await ex('job')).j; if (j && j.end) return j; await new Promise(r => setTimeout(r, 100)); } throw new Error(p + ' never finished'); };
     const d1 = await job('github/draft', { message: 'Draft from the exe' });

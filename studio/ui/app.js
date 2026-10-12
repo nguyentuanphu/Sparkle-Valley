@@ -1078,8 +1078,9 @@ PAGES.settings = async P => {
     <p class="note">${T('github.com → Settings → Developer settings → Fine-grained tokens → Generate: only this repository, permissions Contents: Read and write, Pull requests: Read and write.', 'github.com → Settings → Developer settings → Fine-grained tokens → Generate: chỉ kho này, quyền Contents: Read and write và Pull requests: Read and write.')}</p></div>
   <div class="card"><h3>📊 ${T('Players and the online Studio', 'Người chơi và Studio trên mạng')}</h3><div class="row"><div><label>${T('The game’s website', 'Trang web của game')}</label><input type="text" id="su" value="${esc(c.siteUrl)}" placeholder="https://sparklevalley.netlify.app"></div><div><label>${T('Studio key (made online: Setup → Security)', 'Khóa Studio (tạo trên mạng: Thiết lập → Bảo mật)')} ${c.players ? '✅' : ''}</label><input type="password" id="sp" placeholder="${c.players ? T('(saved, type to replace)', '(đã lưu, gõ để thay)') : 'svk.…'}"></div></div>
     <p class="note">${T('The same Studio is online at the website’s /studio/ page (sign in there with your password and the code from your authenticator app). This computer uses a Studio key instead: the Analytics page and the family photos (they go to the website’s private store, never into the game folder) reach the website with it.', 'Studio này cũng có trên mạng ở trang /studio/ của trang web (đăng nhập ở đó bằng mật khẩu và mã từ ứng dụng xác thực). Máy này dùng khóa Studio: trang Phân tích và ảnh gia đình (gửi vào kho riêng của trang web, không bao giờ vào thư mục game) đến trang web bằng khóa này.')}</p></div>
-  <div class="bar"><button class="btn ghost" id="forget">🗑️ ${T('Forget the keys', 'Xóa các khóa')}</button><button class="btn" id="save">💾 ${T('Save settings', 'Lưu cài đặt')}</button></div>`;
+  <div class="bar"><button class="btn ghost" id="updcheck">🔄 ${T(`Check for updates (this is ${esc(INFO.studio || '')})`, `Kiểm tra cập nhật (bản này là ${esc(INFO.studio || '')})`)}</button><button class="btn ghost" id="forget">🗑️ ${T('Forget the keys', 'Xóa các khóa')}</button><button class="btn" id="save">💾 ${T('Save settings', 'Lưu cài đặt')}</button></div>`;
   $('#save').onclick = async () => { try { await api('settings', { gameDir: $('#gd').value, azureKey: $('#ak').value, azureRegion: $('#ar').value, piperExe: $('#pe').value, piperModels: { en: $('#pen').value.trim(), vi: $('#pvi').value.trim() }, netlifyToken: $('#nt').value, netlifySite: $('#ns').value, githubToken: $('#gt').value, githubRepo: $('#gr').value, githubBranch: $('#gb').value, siteUrl: $('#su').value, studioKey: $('#sp').value }); markSaved(); toast('✅ ' + T('Settings saved.', 'Đã lưu cài đặt.'), 'good'); render(true); } catch (e) { fail(e); } };
+  $('#updcheck').onclick = () => checkUpdate(true);
   $('#forget').onclick = async () => { if (!confirm(T('Forget the Azure, Netlify and GitHub keys on this computer?', 'Xóa khóa Azure, Netlify và GitHub trên máy này?'))) return; await api('settings', { forget: ['azureKey', 'netlifyToken', 'githubToken', 'studioKey'] }); toast(T('Keys forgotten.', 'Đã xóa khóa.')); render(); };
 };
 // ---------- players: how many children play (anonymous counts from the website, netlify/lib/players.mjs) ----------
@@ -1224,7 +1225,28 @@ function signIn() {
 // (the browser's Back button, or a typed address: a page with changes not saved asks first, and stays if you say no)
 let HASH = location.hash;
 window.addEventListener('hashchange', () => { const k = route(); if (k === cur) { HASH = location.hash; return; } if (!leaveOk()) { history.replaceState(null, '', HASH || '#'); return; } HASH = location.hash; cur = k; render(); });
+// (owner, 12 Oct) the exe updates itself: a banner when GitHub has a newer Sparkle Studio; "Update now" swaps it in
+async function checkUpdate(manual) {
+  if (!INFO || INFO.online) return null;
+  let u; try { u = await api('update/check'); } catch (e) { if (manual) toast('⚠️ ' + say(e.message), 'bad'); return null; }
+  if (u.error) { if (manual) toast('⚠️ ' + say(u.error), 'bad'); return u; }
+  if (!u.newer) { if (manual) toast('✅ ' + T(`Sparkle Studio ${u.here} is the newest.`, `Sparkle Studio ${u.here} là bản mới nhất.`), 'good'); return u; }
+  let bar = $('#updbar'); if (!bar) { bar = document.createElement('div'); bar.id = 'updbar'; bar.className = 'card warn'; bar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:50;display:flex;gap:12px;align-items:center;flex-wrap:wrap;max-width:calc(100vw - 32px)'; document.body.appendChild(bar); }
+  bar.innerHTML = `<span>🆕 ${T(`New Sparkle Studio ${esc(u.latest)} (you have ${esc(u.here)}).`, `Có Sparkle Studio ${esc(u.latest)} mới (bạn đang dùng ${esc(u.here)}).`)}</span>${u.can ? `<button class="btn" id="updgo">⬇️ ${T('Update now', 'Cập nhật ngay')}</button>` : ''}<button class="btn ghost" id="updno">${T('Later', 'Để sau')}</button>`;
+  $('#updno').onclick = () => bar.remove();
+  if ($('#updgo')) $('#updgo').onclick = async () => {
+    if (!leaveOk()) return;
+    $('#updgo').disabled = true; bar.querySelector('span').textContent = T('Downloading the new Sparkle Studio…', 'Đang tải Sparkle Studio mới…');
+    let r; try { r = await api('update/apply', {}); } catch (e) { r = { error: e.message }; }
+    if (r.error) { bar.querySelector('span').textContent = '⚠️ ' + say(r.error); $('#updgo').disabled = false; return; }
+    bar.querySelector('span').textContent = T(`Starting Sparkle Studio ${r.latest}…`, `Đang mở Sparkle Studio ${r.latest}…`);
+    for (let k = 0; k < 60; k++) { await new Promise(ok => setTimeout(ok, 1500)); try { const i = await api('info'); if (i.studio === r.latest) { location.reload(); return; } } catch (e) { } }
+    bar.querySelector('span').textContent = T('Please open Sparkle Studio again.', 'Hãy mở lại Sparkle Studio.');
+  };
+  return u;
+}
 render();
+setTimeout(() => checkUpdate(false), 3000);
 // keep the Studio running while this window is open; ⏻ stops it
 setInterval(() => { if (INFO && !INFO.online) fetch(BASE + '/api/ping').catch(() => { }); }, 20000);
 $('#quit').onclick = async () => {
