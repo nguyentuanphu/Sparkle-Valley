@@ -73,7 +73,7 @@ export const settings = Object.assign({
   bilingual: false,      // speak the other language too, after a short pause
   twoView: 'auto',       // two players: 'face' (each half turned to its own end), 'side' (both one way), 'auto' = face on touch screens
   alwaysDay: false,
-  quality: 'auto',       // 'auto' | 'low' | 'high'
+  quality: 'auto',       // 'auto' | 'low' | 'high' | 'max' (battery round: 'high' is Pretty at 60 frames a second, 'max' Pretty+ as fast as the screen)
   camSpeed: 1,
   camMode: 'easy',       // 'easy' = fixed high view (best for little ones) | 'free' = drag to look around
   reportNames: true,     // the children's first names in Studio's play report (round L; off: "child 1, child 2")
