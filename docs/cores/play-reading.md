@@ -90,3 +90,4 @@ Sleep", "A Day at the Beach"; Vietnamese "Chú Mèo Con", "Đi Chợ Với Bà",
   the run's 2-hour limit (it passed in the three full runs before); its rerun was still going when the owner said to
   push, and Release runs the full suite next.
 - `reading` rerun on the r64 merge (commit f21fa3f8), 12 Oct, 1:48 pm AEDT: passed (all 74 versions, both languages, switch off and on).
+- r65 merged into main 12 Oct, 2:11 pm AEDT (pull request #67, quick checks and AI review green); live, and still in r66 (checked 6:23 pm AEDT: the site serves r66 and `js/games/readingmenu.js`).
