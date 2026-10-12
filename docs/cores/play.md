@@ -243,6 +243,11 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   cores (Kid UI, World, Voice & Audio, main.js), and **the shop button goes in the bottom bar** beside the Bag (this
   reverses the shop button inside the bag from Bug #29; the Bag still only opens the backpack).
 
+- Switches (owner, 12 Oct about 6:30 pm AEDT: "the simple screen and also the reading trials should be on, all other
+  features should be on for now until I say or switch it off"; then "only power poles and auto play are off"): the
+  reading games (`readingTrial`) and story chapters 2 and 3 are on by default (`def: true`); `powerPoles` and `autoplay`
+  stay off; Studio can still switch any of them off.
+
 ## Progress notes (12 Oct AEDT: Studio fixes and the auto play check)
 - Commits on `core/play`: f4dd7c6 (photos publish in steps), 0e7ddb1 (exe updates itself), c5846e3 (exe keeps its game
   folder new), e3171ac (auto play check), plus the two recorded words of the new Releases group ("For testing", Azure).

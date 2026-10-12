@@ -4117,9 +4117,10 @@ await check('reading', async () => {
   ok(RD.nameOf('en', 'z') === 'zed', 'Z is not said "zed"');
   ok(RD.READ.en.letters.slice(0, 6).map(x => x[0]).join('') === 'satpin', 'English sounds do not start s a t p i n');
   const allEn = JSON.stringify(RD.READ.en), us = ['color', ' mom', 'candy', 'Mom'].filter(w => allEn.includes(w)); ok(!us.length, 'American words in the English lists: ' + us.join(', '));
-  // switch off (no Studio setting): nothing of the trial loads or shows
-  const P = await open(b, { w: 1024, h: 768 }); const asked = []; P.page.on('request', q => { if (/reading(menu)?\.js/.test(q.url())) asked.push(q.url().split('/').pop()); });
-  await clear(P.page);
+  // switch off (Studio's content pack sets it off; with no setting it is on, owner 12 Oct AEDT): nothing of the trial loads or shows
+  const P = await open(b, { w: 1024, h: 768, play: false }); const asked = []; P.page.on('request', q => { if (/reading(menu)?\.js/.test(q.url())) asked.push(q.url().split('/').pop()); });
+  await P.page.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), readingTrial: false }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
+  await P.page.reload(); asked.length = 0; await start(P.page); await clear(P.page);
   const off = await P.page.evaluate(async () => { const F = await import('/js/games/frame.js'), A = await import('/js/content/activities.js'); __sv.openGamesHub(0); await new Promise(r => setTimeout(r, 300)); const hub = [...document.querySelectorAll('[data-play]')].map(b => b.dataset.play); document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
     return { games: Object.keys(F.GAMES).filter(k => /^rd_/.test(k)), inArea: A.gamesIn(F.GAMES, 'reading', false).length, hub: hub.filter(k => /^rd_/.test(k)) }; });
   await P.ctx.close();
