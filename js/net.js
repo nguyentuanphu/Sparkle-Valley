@@ -126,7 +126,7 @@ export const Net = {
   // 11 Oct: "let them in"; a game older still updates itself the next time it opens online). (Tests may change it.)
   mapVersion: MAP_VERSION,
   sameMap(m) { return m == null || m === this.mapVersion; },
-  peer: null, conns: new Map(), calls: new Map(), cloud: null, door: null, cloudOn: false, _seen: new Set(), hostId: null, audios: new Map(), mic: null, code: null, role: null, muted: false, me: null, hello: null,
+  peer: null, conns: new Map(), calls: new Map(), cloud: null, door: null, cloudOn: false, _seen: new Set(), hostId: null, audios: new Map(), mic: null, code: null, role: null, muted: true, me: null, hello: null,
   knocking: false,           // (a newcomer) waiting at the door for the room's starter
   knocks: new Map(),         // (the room's starter) who is at the door: id -> {id, name, look, friend, pub, via, d}
   _chal: new Map(),          // (the room's starter) saved friends proving who they are: id -> {n, h, msg, t}
@@ -169,7 +169,7 @@ export const Net = {
         try {
           const s = await (audio ? md.getUserMedia({ audio, video: false }) : first);
           if (this.mic && this.mic !== s) { s.getTracks().forEach(t => t.stop()); return this.mic; }
-          this.mic = s; this.micError = null; this._micOn(); return s;
+          this.mic = s; this.micError = null; if (fromTap) this.muted = false; this._micOn(); return s;   // (r63: a tap asks for it to be on)
         } catch (e) { err = e; if (this.mic || (e && (e.name === 'NotFoundError' || e.name === 'NotAllowedError'))) break; }
       }
       if (this.mic || stale()) return this.mic;   // (another try got it, or is still asking: it speaks for itself)
@@ -197,7 +197,9 @@ export const Net = {
 
   async host(hello) {
     if (this._off()) return null;
-    await prepare().catch(() => { }); await this.getMic();
+    // (r63, owner: "the microphone should always be off until the child turns it on"; on iPhone a try without a tap
+    // could hang and every later tap did nothing) the microphone is asked for only by a tap on Mic (HUD) or in Friends
+    await prepare().catch(() => { }); if (!this.mic) this.emit('status', { key: 'mictap' });
     this.close(true);
     this.role = 'host'; this.hello = await this._withPub(hello); this._since = Date.now();
     this.secret = b64(rnd(32));
@@ -215,7 +217,7 @@ export const Net = {
     if (!this.me) this.me = PREFIX + this.code;   // cloud relay only
     if (this.peer) {
       this.peer.on('connection', c => this._hostConn(c));
-      this.peer.on('call', call => { if (!this._admitted.has(call.peer)) { try { call.close(); } catch (e) { } return; } call.answer(this.mic || undefined); this._call(call); });
+      this.peer.on('call', call => { if (!this._admitted.has(call.peer)) { try { call.close(); } catch (e) { } return; } call.answer(this.mic || this._silence()); this._call(call); });
       this.peer.on('disconnected', () => { try { this.peer.reconnect(); } catch (e) { } });
     }
     await Promise.all([this._startDoor(), this._startMembers()]);
@@ -228,7 +230,9 @@ export const Net = {
   // room): only answers locked with that key are believed
   async join(code, hello, opts = {}) {
     if (this._off() || !okRoom(code)) return;
-    await prepare().catch(() => { }); await this.getMic();
+    // (r63, owner: "the microphone should always be off until the child turns it on"; on iPhone a try without a tap
+    // could hang and every later tap did nothing) the microphone is asked for only by a tap on Mic (HUD) or in Friends
+    await prepare().catch(() => { }); if (!this.mic) this.emit('status', { key: 'mictap' });
     this.close(true);
     hello = await this._withPub(hello);
     this.role = 'guest'; this.code = code; this.hello = hello; this.hostId = PREFIX + code;
@@ -242,7 +246,7 @@ export const Net = {
       p = new window.Peer(peerOpts()); this.peer = p;
       p.on('error', err => { if (err.type === 'peer-unavailable') this._noDirect = true; });
       // calls only from players the starter introduced (the introduction can arrive a moment after the call rings)
-      p.on('call', call => { let n = 0; const tryIt = () => { if (this.peer !== p) return; if (this.remotes[call.peer] && !this.knocking) { call.answer(this.mic || undefined); this._call(call); } else if (++n > 20) { try { call.close(); } catch (e) { } } else setTimeout(tryIt, 200); }; tryIt(); });
+      p.on('call', call => { let n = 0; const tryIt = () => { if (this.peer !== p) return; if (this.remotes[call.peer] && !this.knocking) { call.answer(this.mic || this._silence()); this._call(call); } else if (++n > 20) { try { call.close(); } catch (e) { } } else setTimeout(tryIt, 200); }; tryIt(); });
       p.on('disconnected', () => { try { p.reconnect(); } catch (e) { } });
       this.me = await new Promise(res => { const t = setTimeout(() => res(null), 7000); p.on('open', id => { clearTimeout(t); res(id); }); });
     }
@@ -516,7 +520,9 @@ export const Net = {
     call.on('close', () => { this.calls.delete(call.peer); this.emit('voice', this.calls.size > 0); });
   },
   // A silent stream so a child without a microphone can still hear their friends.
-  _silence() { try { const a = new (window.AudioContext || window.webkitAudioContext)(); const d = a.createMediaStreamDestination(); return d.stream; } catch (e) { return undefined; } },
+  // (r63) one for every call (an iPhone allows only a few sound contexts); an answer carries it too, so the microphone
+  // a child turns on later replaces it in every call
+  _silence() { if (this._quiet && this._quiet.active) return this._quiet; try { const a = new (window.AudioContext || window.webkitAudioContext)(); const d = a.createMediaStreamDestination(); return (this._quiet = d.stream); } catch (e) { return undefined; } },
   // Report when anyone is talking (to light up the speech icon).
   _meters: new Map(),
   _meter(stream, id) {
