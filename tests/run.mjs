@@ -2420,7 +2420,7 @@ await check('gates', async () => {
     for (const R of M.ROADS) (R.gates || []).forEach((g, k) => { if (!g) return; n++;
       const pts = R.pts, [x0, z0] = k ? pts[pts.length - 1] : pts[0], [x1, z1] = k ? pts[pts.length - 2] : pts[1], L = Math.hypot(x0 - x1, z0 - z1), ux = (x0 - x1) / L, uz = (z0 - z1) / L;
       let prev = null; for (let t = -8; t <= 3; t += .5) { const x = x0 + ux * t, z = z0 + uz * t, h = w.heightAt(x, z);
-        if (W.platforms.some(p => x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1)) { prev = null; continue; }
+        if (W.platforms.some(P => { const p = P.apron || P; return !P.tower && x > p.x0 - .4 && x < p.x1 + .4 && z > p.z0 - .4 && z < p.z1 + .4; })) { prev = null; continue; } // (r66: with Round U a bridge's 1.2 m apron is part of it, with the 0.4 m edge js/solids.js gives every deck)
         const pos = { x, y: h, z }; W.collide(pos, .35); if (Math.hypot(pos.x - x, pos.z - z) > .2) { bad.push(`${g} (${R.id}): blocked ${t.toFixed(1)} m from the gate`); break; }
         if (prev != null) { const st = Math.abs(h - prev); worst = Math.max(worst, st); if (st > .25) { bad.push(`${g} (${R.id}): a ${st.toFixed(2)} m step ${t.toFixed(1)} m from the gate`); break; } } prev = h; } });
     return { n, worst, bad };
