@@ -21,6 +21,7 @@ import * as family from '../lib/family.mjs';
 import * as accessLog from '../lib/accesslog.mjs';
 import { ipOf, ipKey, locked, failed, cleared, tidy } from '../lib/guard.mjs';
 import { readLive, saveLive } from '../lib/live.mjs';
+import * as tester from '../lib/tester.mjs';
 const { createStudio, githubStore, makeToken, checkToken, samePassword } = core;
 
 const env = k => ((globalThis.Netlify && globalThis.Netlify.env.get(k)) || process.env[k] || '').trim();
@@ -32,7 +33,7 @@ const setCookie = v => ({ 'Set-Cookie': `${COOKIE}=${v}; Path=/studio; Max-Age=$
 // Netlify Blobs on the website (tests hand in their own)
 const store = name => () => import('@netlify/blobs').then(m => m.getStore({ name, consistency: 'strong' }));
 const blobs = store('players'), adminBlobs = store('studio-admins'), liveBlobs = store('live'), heldBlobs = store('studio-pending');
-const familyBlobs = store('family-photos'), guardBlobs = store('guard'), logBlobs = store('studio-log');
+const familyBlobs = store('family-photos'), guardBlobs = store('guard'), logBlobs = store('studio-log'), testerBlobs = store('testers');
 // (round R privacy) what signs a cookie: the owner's with the password, the sign-out generation and part of the two-step
 // secret; an admin's with the password and the generation (plus their own hash and secret, admins.mjs)
 const ownerKey = (pw, gen, t, off) => `${pw}\u0000${gen}\u0000${t && t.secret ? String(t.secret).slice(0, 8) : ''}${off ? '\u0000p' : ''}`;
@@ -56,7 +57,7 @@ export const heldOn = S => ({
 export const familyOn = F => ({ where: 'site', put: (n, b) => family.put(F, n, b), get: n => family.get(F, n), remove: n => family.remove(F, n), code: () => family.code(F), newCode: () => family.newCode(F) });
 const isJpeg = b => b && b.length > 3 && b[0] === 0xff && b[1] === 0xd8;
 
-export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs, liveStore = liveBlobs, familyStore = familyBlobs, guardStore = guardBlobs, logStore = logBlobs, now = () => Date.now() } = {}) => async (req, ctx) => {
+export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs, liveStore = liveBlobs, familyStore = familyBlobs, guardStore = guardBlobs, logStore = logBlobs, testerStore = testerBlobs, now = () => Date.now() } = {}) => async (req, ctx) => {
   const url = new URL(req.url), p = url.pathname, pw = env('STUDIO_PASSWORD'), post = req.method === 'POST';
   if (!pw) return json({ error: 'The online Studio is not set up yet: add STUDIO_PASSWORD in Netlify (Site configuration → Environment variables), then deploy again.', setup: true }, 503);
   const A = await adminStore(), gen = +(await A.get('gen').catch(() => 0)) || 0, t = now();
@@ -163,6 +164,12 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
   const players = async () => report(await playersStore());
   if (p === '/studio/api/players') { await log(me.name, me.role, 'analytics'); return json(await players()); }
   if (p === '/studio/api/inbox') return json(await inbox(await playersStore()));
+  // (owner, 12 Oct) tester reports (netlify/lib/tester.mjs): the problems, the testers and the day's summary; one problem
+  // with its reports; a report's screenshot; setting a problem's status (fixed in rNN, not a bug, the same as another)
+  if (p === '/studio/api/testers') return json(await tester.overview(await testerStore(), now()));
+  if (p.startsWith('/studio/api/testers/problem/')) { const r = await tester.problem(await testerStore(), p.split('/').pop()); return r ? json(r) : json({ error: 'No such problem.' }, 404); }
+  if (p.startsWith('/studio/api/testers/shot/')) return json({ shot: (await tester.shotOf(await testerStore(), p.split('/').pop())) || '' });
+  if (p === '/studio/api/testers/set' && post) { const b = await body(); const r = await tester.setProblem(await testerStore(), b.k, b, now()); return r ? json(r) : json({ error: 'No such problem.' }, 404); }
   // a name for a device in the play report ("Na's iPad"), round L
   if (p === '/studio/api/players/label' && post) { const b = await body(); return json({ ok: await setLabel(await playersStore(), b.id, b.label) }); }
   const conf = { azureKey: env('AZURE_KEY'), azureRegion: env('AZURE_REGION'), githubToken: env('GITHUB_TOKEN'), githubRepo: env('GITHUB_REPO') || 'nguyentuanphu/Sparkle-Valley', githubBranch: env('GITHUB_BRANCH') || 'main',

@@ -50,7 +50,9 @@ const profileOf = pid => (profiles || []).find(p => { try { return makeId('playe
 const osOf = (ua = navigator.userAgent) => /iPhone|iPod/.test(ua) ? 'iOS' : /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'iPadOS' : /Android/.test(ua) ? 'Android' : /CrOS/.test(ua) ? 'ChromeOS' : /Windows/.test(ua) ? 'Windows' : /Mac OS X|Macintosh/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : 'other';
 const browserOf = (ua = navigator.userAgent) => /SamsungBrowser/.test(ua) ? 'Samsung' : /Edg\//.test(ua) ? 'Edge' : /Firefox|FxiOS/.test(ua) ? 'Firefox' : /CriOS|Chrome/.test(ua) ? 'Chrome' : /Safari/.test(ua) ? 'Safari' : 'other';
 // something that went wrong: an error in the game's own code, or a child stuck (pushing to walk, not moving)
-export function noteProblem(kind, key) { if (!/^[\w .:/()'#,@-]{1,140}$/.test(key || '')) return; bump(d => { const b = kind === 'stuck' ? d.s : d.e; b[key] = Math.min(999, (b[key] || 0) + 1); }); }
+// (owner, 12 Oct: tester reports) a tester device also hears about each problem, to report it with a screenshot
+let problemHook = null; export const setProblemHook = f => { problemHook = f; };
+export function noteProblem(kind, key) { if (!/^[\w .:/()'#,@-]{1,140}$/.test(key || '')) return; if (problemHook) try { problemHook(kind, key); } catch (e) { } bump(d => { const b = kind === 'stuck' ? d.s : d.e; b[key] = Math.min(999, (b[key] || 0) + 1); }); }
 // a child walking: pushing the stick or keys for 4 s without moving half a metre counts once a minute, by area
 const stuck = { t: 0, x: 0, z: 0, last: 0 };
 export function watchHero(h, pad, dt, area) {

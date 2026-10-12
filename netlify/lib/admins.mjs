@@ -64,13 +64,13 @@ export async function fromCookie(S, pw, c) {
 export function allowed(role, api, post) {
   if (role === 'owner') return true;
   // (round R privacy) SparkleStudio.exe's key: the players report, the inbox and the family photos, nothing else
-  if (role === 'exe') return post ? ['players/label', 'family/upload', 'family/remove', 'family/code/new'].includes(api) : ['whoami', 'players', 'inbox', 'family/code'].includes(api) || /^familyphoto\/[\w-]+$/.test(api);
+  if (role === 'exe') return post ? ['players/label', 'family/upload', 'family/remove', 'family/code/new', 'testers/set'].includes(api) : ['whoami', 'players', 'inbox', 'family/code', 'testers'].includes(api) || /^familyphoto\/[\w-]+$/.test(api) || /^testers\/(problem|shot)\/[a-f0-9]{16}$/.test(api);
   if (/^(admins|keys|security)\//.test(api) && api !== 'admins/me') return false;
   if (api === 'log') return false; // the access log is the owner's
   // (audit, 9 Oct) putting code live (merging a pull request, bringing back an old deploy) stays with the owner
   if (role === 'editor') return !(post && ['github/merge', 'site/restore', 'family/code/new'].includes(api));
   if (post) return api === 'admins/me';
-  return ['info', 'whoami', 'content', 'players', 'inbox'].includes(api);
+  return ['info', 'whoami', 'content', 'players', 'inbox', 'testers'].includes(api) || /^testers\/(problem|shot)\/[a-f0-9]{16}$/.test(api); // (a viewer reads the tester reports too)
 }
 
 // ---------- two-step sign-in (round R privacy, 9 Oct): TOTP, RFC 6238 ----------

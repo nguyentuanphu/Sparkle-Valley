@@ -77,11 +77,15 @@ export const CLOTHES = [
   I('butterfly', 'back', 'wings', '#ffb347', 'special', 'g', 'Butterfly wings', 'Cánh bướm'),
   I('dragon', 'back', 'dragonwings', '#5fbf4a', 'special', 'b', 'Dragon wings', 'Cánh rồng'),
   I('backpack', 'back', 'backpack', '#ff9f43', 'small', 'both', 'Little backpack', 'Ba lô nhỏ', '#ffd23f'),
-  I('shell', 'back', 'shell', '#5fa860', 'nice', 'both', 'Turtle shell', 'Mai rùa', '#a0724a')
+  I('shell', 'back', 'shell', '#5fa860', 'nice', 'both', 'Turtle shell', 'Mai rùa', '#a0724a'),
+  // (owner, 12 Oct: tester rewards) earned only by testers (js/testerrewards.js), never sold in the shop
+  { ...I('sleuthhat', 'hat', 'sleuth', '#8a6a3a', 'special', 'both', 'Bug hunter hat (with a magnifying glass)', 'Mũ săn bọ (có kính lúp)', '#7fd3ff'), tester: true },
+  { ...I('ladypack', 'back', 'backpack', '#e8332a', 'special', 'both', 'Ladybird backpack', 'Ba lô bọ rùa', '#2b2238'), tester: true },
+  { ...I('sleuthcape', 'back', 'cape', '#6a4a8a', 'special', 'both', 'Detective cape', 'Áo choàng thám tử'), tester: true }
 ];
 export const ITEM = Object.fromEntries(CLOTHES.map(x => [x.id, x]));
 export const itemIn = (slot, id) => { const x = ITEM[id]; return x && x.slot === slot ? x : null; };
-export const forSlot = slot => CLOTHES.filter(x => x.slot === slot);
+export const forSlot = slot => CLOTHES.filter(x => x.slot === slot && !x.tester); // (tester rewards are not sold)
 
 // the two default outfits (owner: "only 2 default outfits, boy and girl"); hair is chosen when the character is made
 export const DEFAULT_OUTFITS = {
