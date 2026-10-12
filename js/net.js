@@ -156,8 +156,20 @@ export const Net = {
   // second microphone (its stream is stopped) and says nothing while a newer try is still asking. Every outcome of a tap
   // is said on screen (asking, on, blocked with how to allow it, none, iPhone too old), as nobody can test it on a real
   // iPhone but the owner. Home-screen games on iPhone get a microphone only from iOS 14.3.
+  // (Round V, owner 13 Oct: "when I tap on mic, nothing appears", with no call anywhere) the iPhone ends the microphone
+  // when the game goes to the background (switching apps to send the room code, a call, Siri, the screen locking), but
+  // the game kept that dead microphone, so every tap only flipped mute on it and nothing showed. A microphone counts only
+  // while its track is live; a dead one is dropped and the tap asks again.
+  get micLive() { const t = this.mic && this.mic.active && this.mic.getAudioTracks()[0]; return !!(t && t.readyState === 'live' && !t.muted); },
+  _dropMic() { if (!this.mic) return; try { this.mic.getTracks().forEach(t => t.stop()); } catch (e) { } this.mic = null; },
+  _watchMic(s) {
+    const t = s.getAudioTracks()[0]; if (!t) return;
+    const dead = () => { if (this.mic !== s) return; this._dropMic(); this.emit('status', { key: 'micstop' }); this.emit('micchange'); };
+    t.addEventListener('ended', dead);
+  },
   async getMic(fromTap) {
-    if (this.mic) return this.mic;
+    if (this.mic && (this.micLive || !fromTap)) return this.mic;
+    this._dropMic();
     if (this._micAsking && !fromTap) return this._micAsking;
     const md = navigator.mediaDevices, ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
     const asking = this._micAsking = (async () => {
@@ -165,12 +177,14 @@ export const Net = {
       const stale = () => this._micAsking && this._micAsking !== asking;   // a newer tap is asking now
       let err = null, first = md.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
       if (fromTap) this.emit('status', { key: 'micask' });
+      // the iPhone sometimes never answers at all (no Allow box): after 10 seconds say what to do instead of nothing
+      const slow = fromTap ? setTimeout(() => { if (!this.mic && this._micAsking === asking) this.emit('status', { key: 'micstuck' }); }, 10000) : null;
       for (const audio of [null, true]) {
         try {
           const s = await (audio ? md.getUserMedia({ audio, video: false }) : first);
           if (this.mic && this.mic !== s) { s.getTracks().forEach(t => t.stop()); return this.mic; }
-          this.mic = s; this.micError = null; if (fromTap) this.muted = false; this._micOn(); return s;   // (r63: a tap asks for it to be on)
-        } catch (e) { err = e; if (this.mic || (e && /^(NotFoundError|NotAllowedError|NotReadableError|AbortError)$/.test(e.name))) break; }   // (Round V: a busy microphone is not asked again without a tap)
+          clearTimeout(slow); this.mic = s; this._watchMic(s); this.micError = null; if (fromTap) this.muted = false; this._micOn(); return s;   // (r63: a tap asks for it to be on)
+        } catch (e) { clearTimeout(slow); err = e; if (this.mic || (e && /^(NotFoundError|NotAllowedError|NotReadableError|AbortError)$/.test(e.name))) break; }   // (Round V: a busy microphone is not asked again without a tap)
       }
       if (this.mic || stale()) return this.mic;   // (another try got it, or is still asking: it speaks for itself)
       const name = (err && err.name) || 'Error', tapped = !!fromTap || !!(navigator.userActivation && navigator.userActivation.isActive);

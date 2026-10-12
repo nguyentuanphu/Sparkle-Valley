@@ -839,7 +839,7 @@ G.setAudio = (kind, on) => {
 };
 G.openSound = () => import('./soundsheet.js').then(m => m.openSoundSheet(G));
 // (r63) the first tap asks for the microphone and turns it on; then each tap turns it off or on again
-G.toggleMute = async () => { if (!Net.mic) { Net.resumeAudio(); await Net.getMic(true); } else { Net.setMuted(!Net.muted); Net.resumeAudio(); } G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted || !Net.mic)); };
+G.toggleMute = async () => { if (!Net.micLive) { Net.resumeAudio(); await Net.getMic(true); } else { Net.setMuted(!Net.muted); Net.resumeAudio(); } G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted || !Net.micLive)); };
 // Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
 addEventListener('keydown', e => {
   if (!playing || e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '')) return;
@@ -888,7 +888,7 @@ Net.on('hello', r => {
   av.root.userData.own = true; // (Round V) a friend online, never a villager
   G.partners[r.id] = { id: r.id, av, tag, pos: old ? old.pos : new THREE.Vector3(0, -50, 0), yaw: 0, st: 'idle', name: r.name, look: r.look || {}, photoURL: avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) }) };
   if (!old) { SFX.chime(); say('Your friend is here! Say hello!', 'Bạn của con đã đến! Chào bạn đi!'); toast(T(`${r.name} is here!`, `${r.name} đã đến!`)); }
-  G.huds.forEach(hd => hd.setCall(true, false, Net.muted || !Net.mic));
+  G.huds.forEach(hd => hd.setCall(true, false, Net.muted || !Net.micLive));
   if (G.onNet) G.onNet();
 });
 Net.on('emote', d => { const e = EMOTES.find(e => e.id === d.id), P = G.partners[d.from]; if (!e || !P) return; bubble(P, e.icon + ' ' + T(e.en, e.vi)); say(e.en, e.vi); });
@@ -1013,7 +1013,8 @@ G.findFriend = i => {
 Net.on('quality', () => { const b = document.querySelector('.pad .online.on'); if (b && G.netTick) G.netTick(b); });
 addEventListener('online', () => { toast(T('Back online!', 'Có mạng lại rồi!')); G.listenFriends && G.listenFriends(); });
 addEventListener('offline', () => toast(T('No internet right now. Friends will come back when it returns.', 'Đang mất mạng. Khi có mạng lại, các bạn sẽ quay lại.')));
-Net.on('talking', on => G.huds.forEach(hd => hd.setCall(Net.connected, on, Net.muted || !Net.mic)));
+Net.on('micchange', () => G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted || !Net.micLive)));
+Net.on('talking', on => G.huds.forEach(hd => hd.setCall(Net.connected, on, Net.muted || !Net.micLive)));
 const _np = new THREE.Vector3();
 let netStatus = '';
 Net.on('status', s => {
@@ -1026,6 +1027,8 @@ Net.on('status', s => {
     micask: T('Asking for the microphone… On iPhone or iPad, tap Allow.', 'Đang xin dùng micrô… Trên iPhone hoặc iPad, chạm Cho phép nhé.'),
     micold: T('This iPhone or iPad cannot use the microphone in the game. A grown-up can update it to iOS 14.3 or newer, or open the game in Safari.', 'iPhone hoặc iPad này chưa dùng được micrô trong trò chơi. Người lớn có thể cập nhật lên iOS 14.3 trở lên, hoặc mở trò chơi trong Safari.'),
     micon: T('Microphone on: your friend can hear you!', 'Đã bật micrô: bạn có thể nghe con nói rồi!'),
+    micstop: T('The iPhone switched the microphone off (the game went to the background). Tap 🎙️ Mic to turn it on again.', 'iPhone đã tắt micrô (khi trò chơi chạy nền). Chạm 🎙️ Micrô để bật lại nhé.'),
+    micstuck: T('The iPhone has not answered. Close the game fully (swipe it away), open it again, then tap 🎙️ Mic.', 'iPhone chưa trả lời. Hãy tắt hẳn trò chơi (vuốt lên để đóng), mở lại rồi chạm 🎙️ Micrô nhé.'),
     nomic: T('No microphone: your friend will not hear you, but you can still play and use the talk buttons.', 'Không có micrô: bạn sẽ không nghe được con, nhưng vẫn chơi và dùng nút nói được.'),
     left: T('The room has closed.', 'Phòng đã đóng.'), full: T('That room is full (6 players). Start your own room!', 'Phòng đã đủ 6 người. Hãy tạo phòng mới nhé!'), tapaudio: T('Tap the 🎙️ button to hear your friend.', 'Chạm nút 🎙️ để nghe bạn nói.'), cloud: T('Connected through the cloud relay! You can play and use the talk buttons. (Voice calls need a direct link: try both on Wi-Fi, or ask a grown-up to add a relay.)', 'Đã kết nối qua mạng đám mây! Chơi và dùng nút nói được. (Gọi bằng giọng nói cần kết nối trực tiếp: thử cả hai dùng Wi-Fi, hoặc nhờ người lớn thêm máy chủ trung chuyển.)'), error: T('Could not connect. Check the internet and try again.', 'Không kết nối được. Kiểm tra mạng rồi thử lại.'),
     removed: T('The room’s starter asked you to leave the room.', 'Chủ phòng đã mời con ra khỏi phòng.'),
@@ -1212,7 +1215,7 @@ G.drawOnlinePanel = (body, redraw) => {
       ${list.length ? `<div class="actions center"><button class="btn primary big" data-together>🎲 ${T('Play together', 'Chơi cùng nhau')}</button></div>` : ''}
       ${list.length ? `<div class="actions center"><button class="btn" data-rpsall>✌️ ${T('Oẳn tù tì with everyone', 'Oẳn tù tì cả phòng')}</button><button class="btn" data-allg="memory">🃏 ${T('Memory Match together', 'Lật hình cùng nhau')}</button><button class="btn" data-allg="tienlen">🎴 ${T('Tiến Lên together', 'Tiến Lên cùng nhau')}</button></div>` : ''}
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
-      <div class="actions center"><button class="btn big${Net.mic ? '' : ' primary'}" id="oMute">${!Net.mic ? '🎙️ ' + T('Microphone on', 'Bật micrô') : Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
+      <div class="actions center"><button class="btn big${Net.micLive ? '' : ' primary'}" id="oMute">${!Net.micLive ? '🎙️ ' + T('Microphone on', 'Bật micrô') : Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
       ${friendsBox()}</div>`;
     body.querySelector('#oMute').onclick = async () => { SFX.tap(); await G.toggleMute(); redraw(); };
     bindCode(body);
