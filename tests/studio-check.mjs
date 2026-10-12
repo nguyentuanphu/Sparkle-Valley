@@ -353,7 +353,12 @@ export async function studioCheck(browser, open) {
       const bad = (await ex('update/apply', {})).j; ok(bad.error && /checksum/.test(bad.error) && fs.readFileSync(fakeExe, 'utf8') === 'OLD EXE', 'a download that does not match was put in place: ' + JSON.stringify(bad));
       exeBranch.set('version.json', JSON.stringify({ studio: 'r9999', sha256: sha }));
       const good = (await ex('update/apply', {})).j; ok(good.ok && good.latest === 'r9999' && fs.readFileSync(fakeExe).equals(neu) && fs.readFileSync(oldExe, 'utf8') === 'OLD EXE', 'the update was not swapped in: ' + JSON.stringify(good));
-      notes.push('the exe updates itself from GitHub (checksum checked)'); }
+      // a rebuild of the same version (fixes between rounds): offered while its checksum differs from this exe's
+      const here = (await ex('info')).j.studio, mine = crypto.createHash('sha256').update(fs.readFileSync(fakeExe)).digest('hex');
+      exeBranch.set('version.json', JSON.stringify({ studio: here, sha256: mine })); ok(!(await ex('update/check')).j.newer, 'the same exe was offered as an update');
+      exeBranch.set('version.json', JSON.stringify({ studio: here, sha256: 'f'.repeat(64) })); ok((await ex('update/check')).j.newer, 'a rebuild of the same version was not offered');
+      exeBranch.clear();
+      notes.push('the exe updates itself from GitHub (checksum checked, rebuilds of the same version too)'); }
     // the exe sends to GitHub in two steps (owner, round 30): 1. a draft (the website does not change), 2. Publish
     const job = async (p, body) => { const s0 = await ex(p, body); ok(s0.status === 200, p + ': ' + JSON.stringify(s0.j)); for (let i = 0; i < 100; i++) { const j = (await ex('job')).j; if (j && j.end) return j; await new Promise(r => setTimeout(r, 100)); } throw new Error(p + ' never finished'); };
     const d1 = await job('github/draft', { message: 'Draft from the exe' });
@@ -363,6 +368,29 @@ export async function studioCheck(browser, open) {
     ok(!p1.error && p1.result.changed >= 1 && /exe/.test(gh.fileAt('main', 'content/custom.json')) && gh.refs.get('studio-draft') === gh.refs.get('main') && !gh.fileAt('main', 'content/faces/ba-nam.jpg'), 'the exe publish: ' + JSON.stringify(p1));
     ok((await job('github/draft', {})).result.changed === 0, 'a second exe draft found changes');
     notes.push('exe: saves to its folder with a backup, players via the website, same version; GitHub in two steps (draft, then Publish)');
+    // (owner, 12 Oct: the exe's game folder was r38 while the website was r63) a folder older than the website cannot
+    // save a draft (its old files would undo newer ones); the exe gets the newest game from GitHub by itself, and keeps a
+    // content, voice or photo file changed here and not published yet
+    { const sw = fs.readFileSync(path.join(game, 'sw.js'), 'utf8'), newer = sw.replace(/-r\d+'/, "-r9998'");
+      gh.commitOnMain('sw.js', newer, 'newer game'); gh.commitOnMain('voices/en/f/newline1.mp3', 'NEWV', 'a new line'); gh.commitOnMain('voices/en/f/0000aaaa.mp3', 'REMOTE', 'a changed line');
+      fs.writeFileSync(path.join(game, 'voices/en/f/0000aaaa.mp3'), 'LOCAL');
+      const old = await job('github/draft', {}); ok(old.error && /get the newest game first/.test(old.error), 'a draft from an older game folder was not refused: ' + JSON.stringify(old));
+      let st = (await ex('sync/start', { force: true })).j; for (let i = 0; i < 100 && st.state === 'running'; i++) { await new Promise(r => setTimeout(r, 200)); st = (await ex('sync/status')).j; }
+      ok(st.state === 'done' && st.build === 'r9998' && fs.readFileSync(path.join(game, 'voices/en/f/newline1.mp3'), 'utf8') === 'NEWV', 'the exe did not get the newest game: ' + JSON.stringify(st));
+      ok(fs.readFileSync(path.join(game, 'voices/en/f/0000aaaa.mp3'), 'utf8') === 'LOCAL' && st.kept.includes('voices/en/f/0000aaaa.mp3'), 'a change not published yet was overwritten: ' + JSON.stringify(st.kept));
+      notes.push('exe: gets the newest game by itself, keeps changes not published, refuses a draft from an older folder'); }
+    // (owner, 12 Oct) on a computer with no game folder, the exe downloads the newest game next to itself
+    { const t2 = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-fresh-')), ad2 = path.join(t2, 'appdata'), exe2 = path.join(t2, 'exe', 'SparkleStudio.exe'), P2 = SPORT + 7;
+      fs.mkdirSync(path.join(ad2, 'SparkleStudio'), { recursive: true }); fs.mkdirSync(path.dirname(exe2), { recursive: true });
+      fs.writeFileSync(path.join(ad2, 'SparkleStudio', 'settings.json'), JSON.stringify({ githubToken: 'test-token', githubRepo: repo }));
+      const fresh = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cjs')], { cwd: path.dirname(exe2), env: { ...process.env, APPDATA: ad2, STUDIO_PORT: String(P2), STUDIO_NO_OPEN: '1', STUDIO_AS_EXE: '1', STUDIO_UPDATE_EXE: exe2, STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}` }, stdio: 'ignore' });
+      try {
+        let st = null; for (let i = 0; i < 150; i++) { await new Promise(r => setTimeout(r, 200)); try { st = await (await fetch(`http://localhost:${P2}/studio/api/sync/status`)).json(); } catch (e) { st = null; } if (st && st.state === 'done') break; }
+        const dir = path.join(path.dirname(exe2), 'SparkleValley'), inf = await (await fetch(`http://localhost:${P2}/studio/api/info`)).json();
+        ok(st && st.state === 'done' && fs.existsSync(path.join(dir, 'index.html')) && fs.existsSync(path.join(dir, 'js', 'main.js')) && inf.ok, 'a computer with no game folder did not get the game: ' + JSON.stringify({ st, ok: inf.ok }));
+        ok(JSON.parse(fs.readFileSync(path.join(ad2, 'SparkleStudio', 'settings.json'), 'utf8')).gameDir === dir, 'the new game folder was not remembered');
+      } finally { fresh.kill(); }
+      notes.push('exe: with no game folder, downloads the newest game next to itself'); }
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone
     const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode', 'missions', 'villagers', 'path', 'play', 'quiz', 'stories', 'looks', 'plots'], bad = [];
     // (Studio review, owner 10 Oct) every button and box 44 px or more on a phone and a tablet: these pages
