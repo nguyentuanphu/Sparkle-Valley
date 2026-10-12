@@ -248,6 +248,8 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   `boot` `voicecover` pass. **Full suite not run here: the owner said Release runs it** (a run was stopped early).
 - Screenshots looked at: the auto play window on a phone, a tablet and a computer, folded, open and running.
 - New check for the HANDOFF table (Release): `autoplay`.
+- After merging main r65 (987e35e, 12 Oct, finished about 4:15 pm AEDT): `types` `unit` `arch` `rules` `preload`
+  `voicecover` `emoji` `autoplay` `reading` `festivals` all pass (10/10). Merges cleanly into main.
 
 ## What is left for Play (handover, 11 Oct 1:30 pm AEST; this chat stopped here at the owner's request)
 - Done and pushed on `core/play` (e1c9552): owner's items 1 and 2 (see the notes above), board says "ready for Release".
