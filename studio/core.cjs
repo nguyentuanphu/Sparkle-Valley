@@ -495,6 +495,15 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
     if (api === 'github/draft' && post) { if (S.publish) return bad('Online, every save already goes to the draft.'); return ok(job('github', J => draftFromFolder(J, String(b.message || '').slice(0, 200)))); }
     if (api === 'srcfiles') { const list = []; for (const d of ['js', 'js/games']) for (const f of (await S.list(d)).sort()) if (f.endsWith('.js')) list.push(d + '/' + f); return ok(list); }
     if (api === 'voices/have') return ok(await voicesHave());
+    // (Voice & Audio, 12 Oct) the daily voice recording (.github/workflows/voices-daily.yml): its last run's summary,
+    // from the voices/daily branch while its recordings wait for Release to merge them, else from main
+    if (api === 'voices/daily') {
+      if (!gh || !/^[\w.-]+\/[\w.-]+$/.test(conf.githubRepo || '')) return ok(null);
+      for (const ref of ['voices/daily', conf.githubBranch || 'main']) {
+        try { const c = await gh(`/repos/${conf.githubRepo}/contents/tools/voice-daily.json?ref=${encodeURIComponent(ref)}`); if (c && c.content) return ok({ ...JSON.parse(Buffer.from(c.content, 'base64').toString('utf8')), ref }); } catch (e) { }
+      }
+      return ok(null);
+    }
     if (api === 'voice' && post) {
       if (!CAST[b.lang] || !CAST[b.lang].includes(b.slot) || !/^[0-9a-f]{8}-?[0-9a-f]{1,8}$/.test(b.hash || '')) return bad('bad line');
       let mp3;
