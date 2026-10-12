@@ -90,6 +90,8 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
 
 - 12 Oct AEDT, noon: owner: this chat deploys the next round (r65) as Release while the Release chat is out of usage; wait until one more branch is ready for Release (the owner says when), then merge every ready branch and run the full suite before deploying.
 
+- 12 Oct AEDT, evening: owner picked everything for tester reports (brief `docs/cores/tasks/tester-reports.md`): agreement screen, automatic reports with screenshot and 30-second replay, the ladybird bug icon (tap, long press, offline count, fixed tick, already-reported hint) instead of shake to report, nightly auto play, automatic retest, tester mark with the version, daily summary, and all eight rewards, with the Bug Hunter badge also worn on the explorer's shirt. Tester screens never name Studio, GitHub or Netlify. On tester devices that accepted, reports keep children's names, ages and progress with no grown-up gate (an exception to the PRIV rules and HANDOFF rule 11 for tester reports only). Not built yet: plan and go first.
+
 ## Progress notes
 - **11 Oct 2026, 11:40 am AEDT, `core/kid-ui`:** the robot's Kid UI fixes merged: #27 (`bugfix/kid-ui-27`, PR #40), #28 (#42), #31 (#44), #41 (#46), #30 (#48), #32 (#53), plus the films branch.
   - Clashes settled:
