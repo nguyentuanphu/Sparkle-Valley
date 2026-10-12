@@ -248,6 +248,8 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   reading games (`readingTrial`) and story chapters 2 and 3 are on by default (`def: true`); `powerPoles` and `autoplay`
   stay off; Studio can still switch any of them off.
 
+- Deploying (13 Oct AEDT): `core/play` was not in r66 to r68. Owner: "This chat does it now" (3:20 am), then "stop the full suite, give me the prompt, Release core will do it" (about 3:40 am): handover in `docs/cores/tasks/release-r69.md`; this chat's version bump undone.
+
 ## Progress notes (12 Oct AEDT: Studio fixes and the auto play check)
 - Commits on `core/play`: f4dd7c6 (photos publish in steps), 0e7ddb1 (exe updates itself), c5846e3 (exe keeps its game
   folder new), e3171ac (auto play check), plus the two recorded words of the new Releases group ("For testing", Azure).
