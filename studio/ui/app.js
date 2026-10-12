@@ -591,46 +591,105 @@ const isoDay = d => d.toISOString().slice(0, 10), plusDays = n => isoDay(new Dat
 const liveNote = () => `<div class="card livenote"><p class="${INFO && INFO.online ? 'ok' : 'note'}">${INFO && INFO.online ? '⚡ ' + T('Save here puts it live at once: no Publish needed. Each device gets it the next time it opens the game.', 'Bấm Lưu ở đây là có hiệu lực ngay: không cần Phát hành. Mỗi máy nhận được khi mở game lần tới.') : '✏️ ' + T('On this computer, Save keeps it with the family’s files: press Publish afterwards to send it to the children.', 'Trên máy này, Lưu giữ cùng tệp của gia đình: sau đó bấm Phát hành để gửi tới các con.')}</p></div>`;
 const moreBtn = () => `<td class="more"><button class="btn small ghost" data-more>${T('More', 'Thêm')} ▾</button></td>`;
 const bindMore = P => P.querySelectorAll('[data-more]').forEach(b => b.onclick = () => b.closest('tr').classList.toggle('open'));
+// (owner, 13 Oct AEDT: "the Releases page looks very cramped: make it more interactive, easy for the eyes and smartly
+// designed") each group is a section that opens and closes, with how many are on and All on / All off; each feature is
+// a card with a big switch, a status in words (On, Off, Starts 20 Oct, Ends in 5 days, "New" for 3 days) and a Schedule
+// button that opens its dates; a search and filters at the top; Save sits at the bottom of the screen and counts the
+// changes. The auto play and tester settings open under their own cards (each added once, even if the page is drawn
+// twice), and the testers' sneak peeks are picked by group (All / None, a search, a count).
+const REL_ICON = { story: '🏮', kids: '🧸', rewards: '🎁', world: '🏞️', festivals: '🎉', tools: '🧪', trial: '🔬' };
 PAGES.releases = async P => {
   const { RELEASES, RELEASE_GROUPS } = await import(GAME + 'js/content/releases.js'), live = await loadLive(), R = live.releases || {};
-  const row = x => { const r = R[x.id] || {}, on = typeof r.on === 'boolean' ? r.on : x.def;
-    return `<tr data-id="${x.id}" class="${r.start || r.days || r.newDays ? 'open' : ''}"><td>${x.icon ? x.icon + ' ' : ''}${esc(T(x.en, x.vi))}</td>
-      <td data-label="${T('Now', 'Hiện')}"><select data-r="on"><option value="true" ${on ? 'selected' : ''}>${T('On', 'Bật')}</option><option value="false" ${on ? '' : 'selected'}>${T('Off', 'Tắt')}</option></select></td>${moreBtn()}
-      <td class="opt" data-label="${T('Starts', 'Bắt đầu')}"><input type="date" data-r="start" value="${esc(r.start || '')}"><select data-in><option value="">${T('Quick choice…', 'Chọn nhanh…')}</option>${[0, 1, 3, 7].map(n => `<option value="${n}">${n ? T(`in ${n} days`, `${n} ngày nữa`) : T('today', 'hôm nay')}</option>`).join('')}</select></td>
-      <td class="opt" data-label="${T('Days on (empty: always)', 'Số ngày (trống: luôn luôn)')}"><input type="number" min="0" max="3650" data-r="days" value="${r.days || ''}" placeholder="${T('always', 'luôn')}"></td>
-      <td class="opt" data-label="${T('“New” days', 'Ngày “Mới”')}"><input type="number" min="0" max="365" data-r="newDays" value="${r.newDays || ''}" placeholder="0"></td></tr>`; };
-  P.innerHTML = `<h2>🆕 ${T('Releases', 'Ra mắt')}</h2><p class="sub">${T('Switch anything on or off, choose the day it starts, how many days it stays (empty: always), and how many days it shows a “New” badge (the children also get a “New!” moment). Switching off never takes away what a child already has.', 'Bật hoặc tắt bất cứ thứ gì, chọn ngày bắt đầu, ở lại bao nhiêu ngày (để trống: luôn luôn), và bao nhiêu ngày có nhãn “Mới” (các con cũng thấy khoảnh khắc “Mới!”). Tắt đi không lấy mất những gì con đã có.')}</p>
-    ${Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th class="more"></th><th>${T('Starts', 'Bắt đầu')}</th><th>${T('Days on', 'Số ngày')}</th><th>${T('“New” days', 'Ngày “Mới”')}</th></tr></thead><tbody>${RELEASES.filter(x => x.group === g).map(row).join('')}</tbody></table></div>`).join('')}
-    <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
-  P.querySelector('.sub').after(document.createRange().createContextualFragment(liveNote())); bindMore(P);
+  const myDraw = P.dataset.draw = String((+P.dataset.draw || 0) + 1), stale = () => P.dataset.draw !== myDraw; // a newer drawing of the page wins
+  const isOn = x => { const r = R[x.id] || {}; return typeof r.on === 'boolean' ? r.on : x.def; };
+  const fmtDay = d => d ? new Date(d + 'T12:00:00').toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { day: 'numeric', month: 'short' }) : '';
+  const status = (on, r) => { const today = isoDay(new Date()), out = [];
+    if (!on) out.push(['off', '⏸️ ' + T('Off', 'Tắt')]);
+    else if (r.start && r.start > today) out.push(['soon', '📅 ' + T(`Starts ${fmtDay(r.start)}`, `Bắt đầu ${fmtDay(r.start)}`)]);
+    else out.push(['on', '✅ ' + T('On', 'Bật')]);
+    if (on && r.days) { const end = new Date(new Date((r.start || today) + 'T12:00:00').getTime() + r.days * 864e5), left = Math.ceil((end - Date.now()) / 864e5);
+      out.push([left > 0 ? 'end' : 'off', left > 0 ? '⏳ ' + T(`Ends in ${left} day${left === 1 ? '' : 's'}`, `Kết thúc sau ${left} ngày`) : '⌛ ' + T('Finished', 'Đã hết')]); }
+    if (on && r.newDays) out.push(['new', '✨ ' + T(`“New” for ${r.newDays} day${r.newDays === 1 ? '' : 's'}`, `“Mới” trong ${r.newDays} ngày`)]);
+    return out.map(([k, t]) => `<span class="rs ${k}">${t}</span>`).join(''); };
+  const card = x => { const r = R[x.id] || {}, on = isOn(x), sched = !!(r.start || r.days || r.newDays);
+    return `<div class="relc${on ? ' on' : ''}${sched ? ' sched' : ''}" data-id="${x.id}">
+      <div class="relc-top"><label class="sw" title="${T('On or off', 'Bật hoặc tắt')}"><input type="checkbox" data-r="on" ${on ? 'checked' : ''}><span></span></label>
+        <div class="relc-name">${x.icon ? x.icon + ' ' : ''}${esc(T(x.en, x.vi))}<div class="relc-st">${status(on, r)}</div></div>
+        <button class="btn small ghost relc-more" data-more aria-expanded="false">📅 ${T('Schedule', 'Lịch')}</button></div>
+      <div class="relc-opt" hidden>
+        <label>${T('Starts', 'Bắt đầu')}<input type="date" data-r="start" value="${esc(r.start || '')}"></label>
+        <div class="chips">${[0, 1, 3, 7].map(n => `<button type="button" class="chip" data-in="${n}">${n ? T(`in ${n} days`, `${n} ngày nữa`) : T('today', 'hôm nay')}</button>`).join('')}<button type="button" class="chip" data-in="">${T('no date', 'không ngày')}</button></div>
+        <label>${T('Days on (empty: always)', 'Số ngày (trống: luôn luôn)')}<input type="number" min="0" max="3650" data-r="days" value="${r.days || ''}" placeholder="${T('always', 'luôn')}"></label>
+        <label>${T('“New” badge for (days)', 'Nhãn “Mới” trong (ngày)')}<input type="number" min="0" max="365" data-r="newDays" value="${r.newDays || ''}" placeholder="0"></label>
+      </div></div>`; };
+  const groups = Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => ({ g, en, vi, items: RELEASES.filter(x => x.group === g) })).filter(x => x.items.length);
+  const closed = folds(), gkey = g => 'releases:group:' + g;
+  P.innerHTML = `<h2>🆕 ${T('Releases', 'Ra mắt')}</h2><p class="sub">${T('Switch anything on or off. 📅 Schedule picks the day it starts, how long it stays and how long it shows a “New” badge. Switching off never takes away what a child already has.', 'Bật hoặc tắt bất cứ thứ gì. 📅 Lịch chọn ngày bắt đầu, ở lại bao lâu và nhãn “Mới” bao lâu. Tắt đi không lấy mất những gì con đã có.')}</p>
+    <div class="relbar card"><input type="search" id="relq" placeholder="${T('Find a feature…', 'Tìm một tính năng…')}" aria-label="${T('Find a feature', 'Tìm tính năng')}">
+      <div class="chips" id="relf">${[['all', T('All', 'Tất cả')], ['on', '✅ ' + T('On', 'Bật')], ['off', '⏸️ ' + T('Off', 'Tắt')], ['sched', '📅 ' + T('Scheduled', 'Có lịch')]].map(([k, t], i) => `<button type="button" class="chip${i ? '' : ' on'}" data-f="${k}">${t}</button>`).join('')}</div>
+      <p class="note" id="relsum"></p></div>
+    ${groups.map(G => `<details class="relg" data-g="${G.g}" ${closed[gkey(G.g)] ? '' : 'open'}><summary><span class="gi">${REL_ICON[G.g] || '📦'}</span><b>${T(G.en, G.vi)}</b><span class="relg-n"></span>
+      <span class="relg-all"><button type="button" class="btn small ghost" data-all="1">${T('All on', 'Bật hết')}</button><button type="button" class="btn small ghost" data-all="0">${T('All off', 'Tắt hết')}</button></span></summary>
+      <div class="relgrid">${G.items.map(card).join('')}</div></details>`).join('')}
+    <div class="bar relsave"><span class="note" id="relch"></span><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
+  P.querySelector('.sub').after(document.createRange().createContextualFragment(liveNote()));
+  // counts, the group numbers and what has changed since the page opened
+  const start = JSON.stringify([...P.querySelectorAll('.relc')].map(c => [c.querySelector('[data-r="on"]').checked, ...['start', 'days', 'newDays'].map(k => c.querySelector(`[data-r="${k}"]`).value)]));
+  const sum = () => { const cs = [...P.querySelectorAll('.relc')], on = cs.filter(c => c.querySelector('[data-r="on"]').checked).length;
+    $('#relsum').textContent = T(`${on} of ${cs.length} on · ${cs.filter(c => c.classList.contains('sched')).length} with a schedule`, `${on}/${cs.length} đang bật · ${cs.filter(c => c.classList.contains('sched')).length} có lịch`);
+    P.querySelectorAll('details.relg').forEach(d => { const c = [...d.querySelectorAll('.relc')]; d.querySelector('.relg-n').textContent = T(`${c.filter(x => x.querySelector('[data-r="on"]').checked).length} of ${c.length} on`, `${c.filter(x => x.querySelector('[data-r="on"]').checked).length}/${c.length} bật`); });
+    const now = [...P.querySelectorAll('.relc')].map(c => [c.querySelector('[data-r="on"]').checked, ...['start', 'days', 'newDays'].map(k => c.querySelector(`[data-r="${k}"]`).value)]);
+    const n = JSON.parse(start).filter((x, i) => JSON.stringify(x) !== JSON.stringify(now[i])).length;
+    $('#relch').textContent = n ? T(`${n} change${n === 1 ? '' : 's'} not saved yet`, `${n} thay đổi chưa lưu`) : ''; P.querySelector('.relsave').classList.toggle('dirty', !!n); };
+  const restatus = c => { const r = { start: c.querySelector('[data-r="start"]').value, days: +c.querySelector('[data-r="days"]').value || 0, newDays: +c.querySelector('[data-r="newDays"]').value || 0 }, on = c.querySelector('[data-r="on"]').checked;
+    c.classList.toggle('on', on); c.classList.toggle('sched', !!(r.start || r.days || r.newDays)); c.querySelector('.relc-st').innerHTML = status(on, r); sum(); };
+  P.querySelectorAll('.relc').forEach(c => { c.querySelectorAll('input').forEach(i => i.addEventListener(i.type === 'checkbox' ? 'change' : 'input', () => restatus(c)));
+    c.querySelector('[data-more]').onclick = e => { e.preventDefault(); const o = c.querySelector('.relc-opt'); o.hidden = !o.hidden; e.currentTarget.setAttribute('aria-expanded', String(!o.hidden)); };
+    c.querySelectorAll('[data-in]').forEach(b => b.onclick = () => { c.querySelector('[data-r="start"]').value = b.dataset.in === '' ? '' : plusDays(+b.dataset.in); restatus(c); }); });
+  P.querySelectorAll('details.relg').forEach(d => { d.addEventListener('toggle', () => keepFold(gkey(d.dataset.g), d.open));
+    d.querySelectorAll('[data-all]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); d.querySelectorAll('.relc').forEach(c => { c.querySelector('[data-r="on"]').checked = b.dataset.all === '1'; restatus(c); }); }); });
+  // search and filters
+  let fil = 'all'; const filt = () => { const q = $('#relq').value.trim().toLowerCase();
+    P.querySelectorAll('.relc').forEach(c => { const on = c.querySelector('[data-r="on"]').checked; c.hidden = (q && !c.textContent.toLowerCase().includes(q)) || (fil === 'on' && !on) || (fil === 'off' && on) || (fil === 'sched' && !c.classList.contains('sched')); });
+    P.querySelectorAll('details.relg').forEach(d => { const any = [...d.querySelectorAll('.relc')].some(c => !c.hidden); d.hidden = !any; if ((q || fil !== 'all') && any) d.open = true; }); };
+  $('#relq').oninput = filt; P.querySelectorAll('#relf [data-f]').forEach(b => b.onclick = () => { fil = b.dataset.f; P.querySelectorAll('#relf [data-f]').forEach(x => x.classList.toggle('on', x === b)); filt(); });
+  sum();
   // (owner, 12 Oct) the auto play check: on every device, or only on the ones ticked here (from the players report)
-  { const tr = P.querySelector('tr[data-id="autoplay"]'), mine = new Set((R.autoplay && R.autoplay.devices) || []);
-    if (tr) { const box = document.createElement('div'); box.className = 'card'; box.id = 'apdev'; tr.closest('.card').after(box);
-      box.innerHTML = `<h4>${T('Auto play check: which devices', 'Tự chơi để kiểm tra: máy nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on).', 'Không chọn máy nào: mọi máy (khi công tắc bật).')}</p><div id="apdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
-      let devs = []; try { const r = await api('players'); devs = (r && r.devices) || []; } catch (e) { devs = []; }
-      for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
-      $('#apdl').innerHTML = devs.length ? devs.map(d => `<label class="chk devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><input type="checkbox" data-dev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`; } }
-      devFilter($('#apdl'));
-  // (owner, 12 Oct) testers: which devices, each one's level (auto reports only, or with the ladybird), and the releases
-  // testers see early (sneak peeks)
-  { const tr = P.querySelector('tr[data-id="tester"]'), TR = R.tester || {}, mine = new Set(TR.devices || []), lv = TR.levels || {}, pk = new Set(TR.peeks || []);
-    if (tr) { const box = document.createElement('div'); box.className = 'card'; box.id = 'tdev'; (P.querySelector('#apdev') || tr.closest('.card')).after(box);
-      box.innerHTML = `<h4>🐞 ${T('Testers: which devices, and how', 'Người thử: máy nào, và thế nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on). A tester accepts what is collected the first time, on the device.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Người thử đồng ý với những gì được thu thập lần đầu, trên máy.')}</p><div id="tdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>
-        <h4>${T('Sneak peeks: testers see these early', 'Xem trước: người thử thấy sớm')}</h4><div id="tpk">${RELEASES.filter(x => !['autoplay', 'tester'].includes(x.id)).map(x => `<label class="chk"><input type="checkbox" data-peek="${esc(x.id)}" ${pk.has(x.id) ? 'checked' : ''}> ${esc(T(x.en, x.vi))}</label>`).join('')}</div>`;
-      let devs = []; try { const r = await api('players'); devs = (r && r.devices) || []; } catch (e) { devs = []; }
-      for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
+  const devsP = api('players').then(r => (r && r.devices) || []).catch(() => []);
+  { const c = P.querySelector('.relc[data-id="autoplay"]'), mine = new Set((R.autoplay && R.autoplay.devices) || []);
+    if (c && !P.querySelector('#apdev')) { const box = document.createElement('div'); box.className = 'relpanel'; box.id = 'apdev'; c.classList.add('wide'); c.appendChild(box);
+      box.innerHTML = `<h4>📱 ${T('Which devices show the auto play window', 'Máy nào hiện cửa sổ tự chơi')}</h4><p class="note">${T('None ticked: every device (while the switch is on).', 'Không chọn máy nào: mọi máy (khi công tắc bật).')}</p><div id="apdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
+      const devs = (await devsP).slice(); if (stale()) return; for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
+      $('#apdl').innerHTML = devs.length ? devs.map(d => `<label class="chk devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><input type="checkbox" data-dev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`;
+      devFilter($('#apdl')); } }
+  // (owner, 12 Oct) testers: which devices, each one's level, and the sneak peeks (releases testers see early)
+  { const c = P.querySelector('.relc[data-id="tester"]'), TR = R.tester || {}, mine = new Set(TR.devices || []), lv = TR.levels || {}, pk = new Set(TR.peeks || []);
+    if (c && !P.querySelector('#tdev')) { const box = document.createElement('div'); box.className = 'relpanel'; box.id = 'tdev'; c.classList.add('wide'); c.appendChild(box);
+      const peekable = RELEASES.filter(x => !['autoplay', 'tester'].includes(x.id));
+      const peekGroup = G => { const items = peekable.filter(x => x.group === G.g); if (!items.length) return '';
+        const off = items.filter(x => !isOn(x)), on = items.filter(x => isOn(x)), lab = x => `<label class="chk peek${isOn(x) ? ' already' : ''}"><input type="checkbox" data-peek="${esc(x.id)}" ${pk.has(x.id) ? 'checked' : ''}> ${x.icon ? x.icon + ' ' : ''}${esc(T(x.en, x.vi))}</label>`;
+        return `<details class="pkg" data-g="${G.g}"><summary><span class="gi">${REL_ICON[G.g] || '📦'}</span><b>${T(G.en, G.vi)}</b> <span class="pkn"></span><span class="relg-all"><button type="button" class="btn small ghost" data-pall="1">${T('All', 'Hết')}</button><button type="button" class="btn small ghost" data-pall="0">${T('None', 'Bỏ hết')}</button></span></summary>
+          ${off.map(lab).join('')}${on.length ? `<p class="note">${T('Already on for everyone:', 'Đã bật cho mọi người:')}</p>${on.map(lab).join('')}` : ''}</details>`; };
+      box.innerHTML = `<h4>🐞 ${T('Which devices are testers, and how', 'Máy nào là người thử, và thế nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on). A tester accepts what is collected the first time, on the device.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Người thử đồng ý với những gì được thu thập lần đầu, trên máy.')}</p><div id="tdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>
+        <h4>👀 ${T('Sneak peeks: testers see these early', 'Xem trước: người thử thấy sớm')} <span class="pill" id="pkcount"></span></h4><input type="search" id="pkq" placeholder="${T('Find a feature…', 'Tìm một tính năng…')}"><div id="tpk">${groups.map(peekGroup).join('')}</div>`;
+      const pcount = () => { box.querySelector('#pkcount').textContent = T(`${box.querySelectorAll('[data-peek]:checked').length} picked`, `đã chọn ${box.querySelectorAll('[data-peek]:checked').length}`);
+        box.querySelectorAll('details.pkg').forEach(d => { d.querySelector('.pkn').textContent = `${d.querySelectorAll('[data-peek]:checked').length}/${d.querySelectorAll('[data-peek]').length}`; }); };
+      box.querySelectorAll('[data-peek]').forEach(i => i.onchange = pcount);
+      box.querySelectorAll('details.pkg').forEach(d => d.querySelectorAll('[data-pall]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); d.querySelectorAll('[data-peek]').forEach(i => { i.checked = b.dataset.pall === '1'; }); pcount(); }));
+      box.querySelector('#pkq').oninput = e => { const q = e.target.value.trim().toLowerCase(); box.querySelectorAll('label.peek').forEach(l => { l.hidden = q && !l.textContent.toLowerCase().includes(q); }); if (q) box.querySelectorAll('details.pkg').forEach(d => { d.open = true; }); };
+      pcount();
+      const devs = (await devsP).slice(); if (stale()) return; for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
       $('#tdl').innerHTML = devs.length ? devs.map(d => `<div class="tdrow devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><label class="chk"><input type="checkbox" data-tdev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>
-        <select data-tlv="${esc(d.id)}" aria-label="${T('Level', 'Mức')}"><option value="ladybird" ${lv[d.id] !== 'auto' ? 'selected' : ''}>${T('Auto reports and the ladybird', 'Tự báo lỗi và con bọ rùa')}</option><option value="auto" ${lv[d.id] === 'auto' ? 'selected' : ''}>${T('Auto reports only', 'Chỉ tự báo lỗi')}</option></select></div>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`; } }
-  P.querySelectorAll('[data-in]').forEach(b => b.onchange = () => { if (b.value === '') return; b.closest('td').querySelector('[data-r="start"]').value = plusDays(+b.value); b.value = ''; });
-      devFilter($('#tdl'));
+        <select data-tlv="${esc(d.id)}" aria-label="${T('Level', 'Mức')}"><option value="ladybird" ${lv[d.id] !== 'auto' ? 'selected' : ''}>${T('Auto reports and the ladybird', 'Tự báo lỗi và con bọ rùa')}</option><option value="auto" ${lv[d.id] === 'auto' ? 'selected' : ''}>${T('Auto reports only', 'Chỉ tự báo lỗi')}</option></select></div>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`;
+      devFilter($('#tdl')); } }
   $('#save').onclick = async () => {
     const out = {};
-    P.querySelectorAll('tr[data-id]').forEach(tr => { const id = tr.dataset.id, x = RELEASES.find(y => y.id === id), v = k => tr.querySelector(`[data-r="${k}"]`).value;
-      const r = {}, on = v('on') === 'true'; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
-      if (id === 'autoplay') { const dv = [...P.querySelectorAll('[data-dev]:checked')].map(c => c.dataset.dev); if (dv.length) r.devices = dv; }
-      if (id === 'tester') { const dv = [...P.querySelectorAll('[data-tdev]:checked')].map(c => c.dataset.tdev); if (dv.length) r.devices = dv;
+    P.querySelectorAll('.relc[data-id]').forEach(c => { const id = c.dataset.id, x = RELEASES.find(y => y.id === id), v = k => c.querySelector(`[data-r="${k}"]`).value;
+      const r = {}, on = c.querySelector('[data-r="on"]').checked; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
+      if (id === 'autoplay') { const dv = [...P.querySelectorAll('[data-dev]:checked')].map(i => i.dataset.dev); if (dv.length) r.devices = dv; }
+      if (id === 'tester') { const dv = [...P.querySelectorAll('[data-tdev]:checked')].map(i => i.dataset.tdev); if (dv.length) r.devices = dv;
         const lv = {}; P.querySelectorAll('[data-tlv]').forEach(s => { if (s.value === 'auto') lv[s.dataset.tlv] = 'auto'; }); if (Object.keys(lv).length) r.levels = lv;
-        const pk = [...P.querySelectorAll('[data-peek]:checked')].map(c => c.dataset.peek); if (pk.length) r.peeks = pk; }
+        const pk = [...P.querySelectorAll('[data-peek]:checked')].map(i => i.dataset.peek); if (pk.length) r.peeks = pk; }
       if (Object.keys(r).length) out[id] = r; });
     await saveLive({ releases: out, festivals: live.festivals || {} }).catch(fail);
   };

@@ -505,15 +505,15 @@ export async function studioCheck(browser, open) {
         await pg.screenshot({ path: `out/studio-analytics-${w}.png`, fullPage: true }); }
       // (round R) Releases online: switch traffic off and Halloween to start in 3 days; the website hands it to every device
       if (!touch) {
-        await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('tr[data-id="traffic"]', { timeout: 15000 });
-        await pg.evaluate(() => { document.querySelector('tr[data-id="traffic"] [data-r="on"]').value = 'false'; const t = document.querySelector('tr[data-id="fest_halloween"]'); const q = t.querySelector('[data-in]'); q.value = '3'; q.dispatchEvent(new Event('change', { bubbles: true })); t.querySelector('[data-r="newDays"]').value = '5'; document.querySelector('#save').click(); });
+        await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('[data-id="traffic"]', { timeout: 15000 });
+        await pg.evaluate(() => { document.querySelector('[data-id="traffic"] [data-r="on"]').checked = false; const t = document.querySelector('[data-id="fest_halloween"]'); t.querySelector('[data-in="3"]').click(); t.querySelector('[data-r="newDays"]').value = '5'; document.querySelector('#save').click(); });
         await pg.waitForTimeout(1200);
         const lv = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
         if (!(lv.releases && lv.releases.traffic && lv.releases.traffic.on === false && lv.releases.fest_halloween && lv.releases.fest_halloween.newDays === 5 && /^\d{4}-/.test(lv.releases.fest_halloween.start))) bad.push('releases did not reach /api/live: ' + JSON.stringify(lv));
         // (owner, 12 Oct) testers: tick a device at "auto reports only" with a sneak peek; it reports; the Tester reports page
         // shows the problem, marks it fixed in r67, and the device hears it
         await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('#tdev [data-tdev]', { timeout: 15000 }).catch(() => { });
-        const tid = await pg.evaluate(() => { const c = document.querySelector('#tdev [data-tdev]'); if (!c) return ''; c.checked = true; document.querySelector(`[data-tlv="${c.dataset.tdev}"]`).value = 'auto'; document.querySelector('#tdev [data-peek]').checked = true; document.querySelector('tr[data-id="tester"] [data-r="on"]').value = 'true'; document.querySelector('#save').click(); return c.dataset.tdev; });
+        const tid = await pg.evaluate(() => { const c = document.querySelector('#tdev [data-tdev]'); if (!c) return ''; c.checked = true; document.querySelector(`[data-tlv="${c.dataset.tdev}"]`).value = 'auto'; document.querySelector('#tdev [data-peek]').checked = true; document.querySelector('[data-id="tester"] [data-r="on"]').checked = true; document.querySelector('#save').click(); return c.dataset.tdev; });
         await pg.waitForTimeout(1200);
         const lt = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
         const tr = lt.releases && lt.releases.tester;

@@ -213,3 +213,55 @@ details.fold > summary > h3, details.fold > summary > h4 { margin: 0; flex: 1; }
 details.fold > summary::after { content: '▾'; font-size: 1.1rem; color: #8a5cf6; transition: transform .2s; }
 details.fold:not([open]) > summary::after { transform: rotate(-90deg); }
 details.part-fold { margin: 6px 0 12px; }
+
+/* (owner, 13 Oct) the Releases page: groups that open and close, a card per feature with a big switch and its status
+   in words, the dates behind 📅 Schedule, a search and filters, and Save at the bottom of the screen */
+.relbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; position: sticky; top: 0; z-index: 5; }
+.relbar input[type=search], #pkq { flex: 1 1 240px; min-height: 44px; padding: 8px 12px; border-radius: 12px; border: 2px solid #e6dcf7; font: inherit; }
+.relbar .note { flex-basis: 100%; margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips .chip { min-height: 40px; padding: 6px 14px; border-radius: 999px; border: 2px solid #e6dcf7; background: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.chips .chip.on { background: #8a5cf6; border-color: #8a5cf6; color: #fff; }
+details.relg, details.pkg { background: #fff; border-radius: 18px; margin: 12px 0; box-shadow: 0 2px 10px rgba(80, 40, 140, .08); }
+details.relg > summary, details.pkg > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 12px 16px; min-height: 52px; flex-wrap: wrap; }
+details.relg > summary::-webkit-details-marker, details.pkg > summary::-webkit-details-marker { display: none; }
+details.relg > summary::after, details.pkg > summary::after { content: '▾'; color: #8a5cf6; margin-left: auto; transition: transform .2s; }
+details.relg:not([open]) > summary::after, details.pkg:not([open]) > summary::after { transform: rotate(-90deg); }
+details.relg .gi, details.pkg .gi { font-size: 1.4rem; }
+.relg-n, .pkn { color: #6b5a86; font-size: .9rem; }
+.relg-all { display: flex; gap: 6px; }
+.relgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; padding: 0 12px 14px; }
+.relc { border: 2px solid #eee6fa; border-radius: 14px; padding: 10px 12px; background: #fcfaff; transition: border-color .2s, background .2s; }
+.relc.on { border-color: #b9e6c3; background: #f6fff8; }
+.relc-top { display: flex; align-items: flex-start; gap: 12px; }
+.relc-name { flex: 1; line-height: 1.35; }
+.relc-st { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.rs { font-size: .8rem; padding: 2px 8px; border-radius: 999px; background: #eee; }
+.rs.on { background: #dff7e5; color: #1d7a3a; } .rs.off { background: #f1eef5; color: #6b5a86; } .rs.soon { background: #fff3cf; color: #8a6200; }
+.rs.end { background: #e7f0ff; color: #2a5bb8; } .rs.new { background: #fde7f3; color: #b0256e; }
+.relc-more { flex: none; }
+.relc-opt[hidden] { display: none; }
+.relc.wide { grid-column: 1 / -1; }
+.relc-opt { display: grid; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e6dcf7; }
+.relc-opt label { display: grid; gap: 4px; font-size: .9rem; }
+.relc-opt input { min-height: 40px; }
+.relpanel { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e6dcf7; }
+.sw { position: relative; flex: none; width: 56px; height: 32px; margin-top: 2px; }
+.sw input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
+.sw span { position: absolute; inset: 0; border-radius: 999px; background: #d9d2e6; transition: background .2s; }
+.sw span::after { content: ''; position: absolute; left: 4px; top: 4px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
+.sw input:checked + span { background: #3fbf5a; } .sw input:checked + span::after { transform: translateX(24px); }
+.sw input:focus-visible + span { outline: 3px solid #8a5cf6; outline-offset: 2px; }
+label.peek { display: flex; padding: 6px 16px; } label.peek.already { opacity: .7; }
+details.pkg > .note { padding: 0 16px; margin: 6px 0 0; }
+.relsave { position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; justify-content: flex-end; background: rgba(255,255,255,.95); padding: 10px 12px; border-radius: 14px; box-shadow: 0 -2px 12px rgba(80,40,140,.1); }
+.relsave.dirty #save { box-shadow: 0 0 0 4px #ffd23f; }
+@media (max-width: 520px) { .relgrid { grid-template-columns: 1fr; padding: 0 8px 10px; } .relg-all { width: 100%; } }
+
+.relpanel .devrow { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f1ecfa; }
+.relpanel .tdrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.relpanel .devrow .dabout { display: block; font-size: .9rem; }
+.devrow[hidden], .relc[hidden], details.relg[hidden], label.peek[hidden] { display: none !important; }
+.relpanel .devrow > label { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.relpanel .devrow .dname { white-space: nowrap; }
+@media (max-width: 520px) { .relbar { position: static; } .relpanel .devrow .dabout { flex-basis: 100%; } .relpanel .devrow small.mini { flex-basis: 100%; } }
