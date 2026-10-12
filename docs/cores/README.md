@@ -37,6 +37,9 @@ The rules for helper chats are in `CLAUDE.md` (read automatically), so nothing e
 | [infra-speed.md](tasks/infra-speed.md) | Analytics & Infra | Smaller start-up download, checks on every pull request |
 | [studio-review.md](tasks/studio-review.md) | Studio | Studio review and improvements |
 | [play-festivals.md](tasks/play-festivals.md) | Play | Festivals on a schedule, whole places decorated |
+| [battery.md](tasks/battery.md) | Battery (helper, `core/battery`) | The battery round: fewer frames and draws, battery statistics |
+| [studio-r65.md](tasks/studio-r65.md) | Studio | A cleaner Analytics page, broken real photos, ads preview and guide |
+| [voice-daily.md](tasks/voice-daily.md) | Voice & Audio | A daily job that records every missing voice line |
 | [play-reading.md](tasks/play-reading.md) | Play (2nd chat, `core/play-reading`) | Ten reading games, a trial behind a switch |
 
 **Without a brief**, paste this as the first message (change the core):
