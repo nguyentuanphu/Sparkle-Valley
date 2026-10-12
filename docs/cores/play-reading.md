@@ -12,6 +12,9 @@ keeps `docs/cores/play.md` and `core/play`; this file holds this chat's notes an
   with Azure, through a small added block in `tools/make-voice-pack.mjs` (Voice & Audio's, noted on the board).
   Vietnamese sounds are real Vietnamese syllables ("bờ", "mờ", "á").
 
+- 12 Oct, about 1:35 pm AEDT: "you push, and I will get Release core to run full suite": this chat pushes
+  `core/play-reading` as it is; Release runs the full suite when it merges.
+
 ## How it is built
 - `js/games/readingmenu.js` (small): the ten games' names, pictures, ages and how-to cards. It is loaded after the
   title only while `readingTrial` is on (`js/main.js`, one block), so with the switch off nothing of the trial loads.
@@ -77,4 +80,10 @@ Sleep", "A Day at the Beach"; Vietnamese "Chú Mèo Con", "Đi Chợ Với Bà",
   way (title 1711 and 1755 ms against about 1170), this branch 1786 ms (one slow first run, 2444 ms); first download
   982 KB here against 979 KB on `main` (under the 1035 KB limit on both). So the trial adds 3 KB at start (the voice
   list), nothing else.
+- **After merging `main` r64 (5f0f5f8a; merge 8186422c, voice list rebuilt, coverage clean): full suite 12 Oct, about
+  1:15 pm AEDT, 105 of 108 passed.** `startup` red on title time only (1.9 s; first download 982 KB, under the new
+  1000 KB limit), the same as `main`. `perf` over once (841,707 triangles > 800,000), then passed on this branch
+  (789,921) and twice on a clean `main` r64 copy (786k to 791k): not from the reading games. `reading` was cut off by
+  the run's 2-hour limit (it passed in the three full runs before); its rerun was still going when the owner said to
+  push, and Release runs the full suite next.
 
