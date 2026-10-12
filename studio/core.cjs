@@ -186,6 +186,10 @@ function githubStore({ token, repo, branch = 'main', draft = 'studio-draft', api
 }
 
 // ---------- small helpers ----------
+// (r65) the family's own files Studio may show: the same letters as the game's own check (js/realworld.js `ours`), so a
+// folder named after a Vietnamese place (photos/en-bến-thành-market/1.jpg) opens too
+const PHOTO_MAX = 1.5e6;
+const OURFILE = /^(content|photos)\/[\w\p{L}\p{N}./-]+$/u, OURPHOTO = /^photos\/[\w\p{L}\p{N}./-]+$/u;
 const slug = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 40) || 'face';
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.woff2': 'font/woff2', '.webmanifest': 'application/manifest+json', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8', '.zip': 'application/zip', '.toml': 'text/plain' };
 const mimeOf = f => MIME[path.extname(f).toLowerCase()] || 'application/octet-stream';
@@ -331,13 +335,15 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
   async function getPhotos1({ key, sources, name }, max) {
     // (round P, owner: "let me remove photos that aren't of the place") a photo taken off is never fetched again
     const pix = await readJSON('photos/index.json', {}), blocked = new Set(((await readJSON('photos/blocked.json', {}))[key]) || []), out = [];
-    const picks = (await gatherPhotos(sources, name, max + blocked.size)).filter(p => !blocked.has(p.title) && !blocked.has(p.url)).slice(0, max);
-    for (const p of picks) {
+    const picks = (await gatherPhotos(sources, name, max + blocked.size + 4)).filter(p => !blocked.has(p.title) && !blocked.has(p.url));
+    for (const p of picks) { if (out.length >= max) break;
       const img = await fetch(p.url, { headers: { 'User-Agent': UA['User-Agent'] } }); if (!img.ok || !/image\//.test(img.headers.get('content-type') || 'image/')) continue;
-      const rel = `photos/${key}/${out.length + 1}.jpg`; await S.write(rel, Buffer.from(await img.arrayBuffer()));
+      // (r65) a photo over 1.5 MB is left for the next one: online Studio cannot send it back to show it, and it is heavy on a phone
+      const buf = Buffer.from(await img.arrayBuffer()); if (buf.length > PHOTO_MAX) continue;
+      const rel = `photos/${key}/${out.length + 1}.jpg`; await S.write(rel, buf);
       out.push({ src: rel, file: p.title, caption: (p.caption || '').slice(0, 160), credit: [p.credit, p.from].filter(Boolean).join(' · ').slice(0, 200) });
     }
-    if (out.length) pix[key] = out;
+    if (out.length) { for (const o of pix[key] || []) if (o && OURPHOTO.test(o.src || '') && !o.src.includes('..') && !out.some(n => n.src === o.src)) await S.remove(o.src); pix[key] = out; } // (r65) no old photo left behind
     await writeJSON('photos/index.json', pix);
     return { key, saved: out.length };
   }
@@ -490,13 +496,16 @@ function createStudio({ store, conf, online = false, local = {}, family = null }
       const rel = 'content/ads/' + slug(b.id || 'ad') + '-' + Date.now().toString(36) + (m[1] === 'png' ? '.png' : '.jpg'); await S.write(rel, buf); return ok({ image: rel });
     }
     // the family's own files, to show them on the pages (faces, ad pictures, photos)
-    if (api.startsWith('file/')) { const rel = api.slice(5); if (!/^(content|photos)\/[\w./-]+$/.test(rel) || rel.includes('..')) return bad('no', 403); const f = await S.read(rel); return f ? raw(f, mimeOf(rel)) : bad('not found', 404); }
+    if (api.startsWith('file/')) { const rel = api.slice(5); if (!OURFILE.test(rel) || rel.includes('..')) return bad('no', 403); const f = await S.read(rel); return f ? raw(f, mimeOf(rel)) : bad('not found', 404); }
     if (api === 'job') return ok(JOB || {});
-    if (api === 'photos/index') return ok(await readJSON('photos/index.json', {}));
+    // (r65) the list without the photos whose file is gone (an old ✕ undone by a stale list); a POST also saves it so
+    if (api === 'photos/index') { const pix = await readJSON('photos/index.json', {}), have = new Set(await S.walk('photos')), out = {}; let gone = 0;
+      for (const [k, L] of Object.entries(pix)) { const kept = (Array.isArray(L) ? L : []).filter(p => p && have.has(p.src)); gone += (Array.isArray(L) ? L.length : 0) - kept.length; if (kept.length) out[k] = kept; }
+      if (gone && post) await writeJSON('photos/index.json', out); return ok(out); }
     if (api === 'photos/get1' && post) { const x = b.item || {}; if (!/^[\p{L}\p{N}-]{1,60}$/u.test(x.key || '') || !Array.isArray(x.sources)) return bad('bad place'); return ok(await getPhotos1(x, Math.min(8, Math.max(1, +b.max || 4)))); }
     if (api === 'photos/remove' && post) { const pix = await readJSON('photos/index.json', {}), L = pix[b.key] || []; const i = L.findIndex(p => p.src === b.src); if (i >= 0) {
       if (L[i].file && b.block !== false) { const bl = await readJSON('photos/blocked.json', {}); bl[b.key] = [...new Set([...(bl[b.key] || []), L[i].file])].slice(-60); await writeJSON('photos/blocked.json', bl); } // not fetched again
-      if (/^photos\/[\w./-]+$/.test(L[i].src)) await S.remove(L[i].src); L.splice(i, 1); if (L.length) pix[b.key] = L; else delete pix[b.key]; await writeJSON('photos/index.json', pix); } return ok({ ok: true }); }
+      if (OURPHOTO.test(L[i].src) && !L[i].src.includes('..')) await S.remove(L[i].src); L.splice(i, 1); if (L.length) pix[b.key] = L; else delete pix[b.key]; await writeJSON('photos/index.json', pix); } return ok({ ok: true }); }
     if (api === 'voices/extra') {
       const L = await readJSON('tools/voice-extra.json', []);
       if (post) { const have = new Set(L.map(l => l.lang + '|' + l.text)); let n = 0; for (const l of b.lines || []) if (l && CAST[l.lang] && typeof l.text === 'string' && l.text.trim() && l.text.length < 400 && !have.has(l.lang + '|' + l.text)) { L.push({ lang: l.lang, text: l.text }); have.add(l.lang + '|' + l.text); n++; } if (n) await S.write('tools/voice-extra.json', Buffer.from(JSON.stringify(L, null, 0).replace(/\},\{/g, '},\n{') + '\n')); return ok({ added: n, total: L.length }); }
