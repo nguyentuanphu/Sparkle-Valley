@@ -86,4 +86,4 @@ Sleep", "A Day at the Beach"; Vietnamese "Chú Mèo Con", "Đi Chợ Với Bà",
   (789,921) and twice on a clean `main` r64 copy (786k to 791k): not from the reading games. `reading` was cut off by
   the run's 2-hour limit (it passed in the three full runs before); its rerun was still going when the owner said to
   push, and Release runs the full suite next.
-
+- `reading` rerun on the r64 merge (commit f21fa3f8), 12 Oct, 1:48 pm AEDT: passed (all 74 versions, both languages, switch off and on).
