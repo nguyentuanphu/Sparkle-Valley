@@ -446,7 +446,8 @@ select option { color: #000; }
 .bunny .tum { display: flex; flex-wrap: wrap; max-width: 260px; font-size: 30px; font-style: normal; } .bunny .tum i { font-style: normal; }
 .choice.go { background: #c9f7c0; }
 /* (tester's notes, 12 Oct) the "done" tick fills most of the button, not a thin line */
-.choice.go svg.art { width: 70%; height: 70%; }
+.choice.go { font-size: clamp(56px, 12vw, 84px); }
+.choice.go svg.art, .choice.go .art, .choice.go .emo { width: 1em; height: 1em; min-width: 48px; min-height: 48px; }
 .jig { display: grid; grid-template-columns: repeat(var(--n), 1fr); width: min(80vw, 46vh, 380px); aspect-ratio: 1; gap: 4px; }
 .jp { border: 0; border-radius: 8px; background-color: #fff; background-repeat: no-repeat; }
 .jp.held { outline: 5px solid var(--gold); } .jp.ok { box-shadow: inset 0 0 0 3px rgba(126, 227, 90, .8); }
