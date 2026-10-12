@@ -2728,6 +2728,36 @@ await check('houseguide', async () => {
   return '4 steps the first time in the house, not again on the next visit; the ❓ sign repeats them';
 });
 
+await check('guide', async () => {
+  // (Round U) Ông Cú as a guide: after his welcome, each visit he explains one new thing (money, the house, the bus, the
+  // signposts, family missions, the job boards, talking to people, the sound button) on a page with a drawn picture,
+  // read aloud; the next visit it is the next one, and after the last he starts again
+  const P = await open(b, { w: 900, h: 640 });
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, wait = ms => new Promise(r => setTimeout(r, ms));
+    const { OWL_LESSONS } = await import('/js/content/owllessons.js'), { pic } = await import('/js/art.js');
+    const drawn = OWL_LESSONS.every(l => pic(l.icon).includes('class="art')), bothLangs = OWL_LESSONS.every(l => l.lines.every(([en, vi]) => en && vi && en !== vi));
+    const story = G.lanterns; G.lanterns = { ...story, owl: async () => false };   // (past the story's prologue)
+    p.quests.owl = true; p.owlLessons = [];
+    const owl = G.interactables.find(i => i.id === 'npc_owl'), got = [];
+    const visit = async () => {
+      owl.act(h, G); let card = null;
+      for (let k = 0; k < 40 && !card; k++) { await wait(150); const d = document.querySelector('.dialog:not(.out)'); if (d) { d.click(); await wait(200); } card = document.querySelector('.owl-lesson:not(.out)'); }
+      if (!card) return null;
+      const art = !!card.querySelector('.sb-art .art'), text = card.querySelector('.sb-text').textContent, paused = G.paused;
+      for (let k = 0; k < 4 && document.querySelector('.owl-lesson:not(.out)'); k++) { document.querySelector('.owl-lesson:not(.out) .qt-go').click(); await wait(400); }
+      await wait(300);
+      return { art, text: text.slice(0, 30), paused, gone: !document.querySelector('.owl-lesson:not(.out)') };
+    };
+    for (let n = 0; n < OWL_LESSONS.length + 1; n++) { const v = await visit(); got.push(v && v.art && v.paused && v.gone ? p.owlLessons[p.owlLessons.length - 1] : JSON.stringify(v)); }
+    G.lanterns = story;
+    return { drawn, bothLangs, got, n: OWL_LESSONS.length, ids: OWL_LESSONS.map(l => l.id), paused: G.paused };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.drawn && r.bothLangs && r.got.slice(0, r.n).join() === r.ids.join() && r.got[r.n] === r.ids[0] && !r.paused && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.n} things Ông Cú explains, one per visit in order (${r.ids.join(', ')}), each with a drawn picture; then he starts again`;
+});
+
 await check('names', async () => {
   // every game file: no name used that is never defined or imported (TypeScript's TS2304 on all of js/, nothing else
   // judged). Moving code between files (the architecture steps) is where this goes wrong; it once stopped the game.

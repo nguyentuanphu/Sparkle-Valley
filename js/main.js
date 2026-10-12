@@ -474,6 +474,8 @@ async function owlTalk(h) {
   };
   const tip = q && tips[q.id] || ['Explore everywhere! Climb high, look under rocks, and talk to everyone.', 'Khám phá khắp nơi nhé! Leo lên cao, nhìn dưới các hòn đá, và nói chuyện với mọi người.'];
   await dialog('Ông Cú', [['Hoo hoo! ' + tip[0], 'Hú hú! ' + tip[1]]]);
+  // (Round U) then one new thing about the valley, on a picture page (loaded only now)
+  const was = G.paused; G.paused = true; try { await (await import('./owlguide.js')).owlLesson(p); } finally { G.paused = was; }
 }
 async function maiTalk(h) {
   const k = await dialog('Cô Mai', [['Xin chào! Fresh fruit and pretty hats! Would you like to buy something, or help me sell?', 'Xin chào con! Trái cây tươi và mũ xinh đây! Con muốn mua gì, hay giúp cô bán hàng?']],
