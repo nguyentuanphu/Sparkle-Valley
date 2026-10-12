@@ -1294,6 +1294,70 @@ await check('festivals', async () => {
   return `${r.far} out of season: told the days, not started by a child; on when an admin schedules it, and a tap on its day only tells (nobody travels), off again after; ${z.length} places decorated along their streets (week 1 → day: ${z.map(([k, v]) => `${k} ${v[0]}→${v[2]}`).join(', ')}), none on a road or street`;
 });
 
+await check('festhunt', async () => {
+  // (owner, 13 Oct 2026 AEDT) festival decorations: 5 times r69's by default, as chosen in Studio per festival (as before,
+  // 2x, 3x, 5x, 7x); pieces beside the streets, strings across them and every house front, never on a road; the festival
+  // nearest its day also decorates the rest of the valley (other places, beside every road, every house outside); the phone
+  // draws only the nearest patches, within a budget (PERF-003); and the festival hunt: five things hidden in every
+  // festival's first place in its last week and on its day, the fifth giving a keepsake and the Passport badge.
+  const P = await open(b, { w: 1180, h: 820 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, W = await import('/js/world.js'), C = (await import('/js/custom.js')).CUSTOM, { FESTCAL } = await import('/js/content/festcal.js'), { HUNT } = await import('/js/content/festhunt.js');
+    const wait = ms => new Promise(r => setTimeout(r, ms)), out = { bad: [] }, bad = out.bad;
+    const d = new Date(), ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    for (let k = 0; k < 40 && !G.festivals.count('village', 'tet', 4); k++) { G.festivals.rebuild(); await wait(300); }
+    // the amount: 5x by default, as before at 1, and 7x at least as much as 5x; never on a road or street
+    const total = c => c.pieces + c.strings + 2 * c.fronts, base = c => c.base.pieces + c.base.strings; let places = 0;
+    for (const F of FESTCAL) for (const key of F.where) {
+      C.festivals = {}; const c5 = G.festivals.count(key, F.id, 4); if (!c5) continue; places++;
+      const want = F.kind === 'quiet' ? 2.5 : 4.5; if (total(c5) < want * base(c5)) bad.push(`${F.id} in ${key}: ${total(c5)} pieces, ${(total(c5) / base(c5)).toFixed(1)} times before (want ${want})`);
+      if (c5.onRoad) bad.push(`${F.id} in ${key}: ${c5.onRoad} pieces on a road or street`);
+      C.festivals = { [F.id]: { deco: 1 } }; const c1 = G.festivals.count(key, F.id, 4); if (total(c1) !== base(c1)) bad.push(`${F.id} in ${key}: "as before" is ${total(c1)}, not ${base(c1)}`);
+      C.festivals = { [F.id]: { deco: 7 } }; const c7 = G.festivals.count(key, F.id, 4); if (total(c7) < total(c5)) bad.push(`${F.id} in ${key}: 7x (${total(c7)}) less than 5x (${total(c5)})`);
+      if (c7.onRoad) bad.push(`${F.id} in ${key}: ${c7.onRoad} pieces on a road at 7x`);
+    }
+    C.festivals = {}; out.places = places;
+    // build-up: half in week 1, three quarters in week 2, all in the last week
+    { const s = [1, 2, 3, 4].map(st => G.festivals.count('village', 'tet', st)).map(total); out.build = s; if (!(s[0] < s[1] && s[1] < s[2] && s[2] === s[3])) bad.push('build-up not half, three quarters, all: ' + s.join(', ')); }
+    // Tết on (an admin's schedule): the whole valley, within the budget
+    C.releases = { ...(C.releases || {}), fest_tet: { on: true, start: ymd, days: 1 } }; G.festivals.rebuild(); await wait(800);
+    const PL = { village: W.VILLAGE, china: W.CHINA, market: W.MARKET, hoian: W.HOIAN, ...Object.fromEntries(W.CITIES.map(c => [c.id, c])) }, tetAt = FESTCAL.find(f => f.id === 'tet').where.map(k => PL[k]).filter(Boolean);
+    const away = q => Math.min(...tetAt.map(o => o.x0 != null ? Math.max(0, Math.max(o.x0 - q.x, q.x - o.x1, o.z0 - q.z, q.z - o.z1)) : Math.max(0, Math.hypot(q.x - o.x, q.z - o.z) - (o.r || 24))));
+    const patches = G.festivals.places3(); out.patches = patches.length; out.outside = patches.filter(q => away(q) > 40).length; out.road = G.festivals.roadSpots(5);
+    if (out.outside < 20) bad.push(`only ${out.outside} decoration patches outside Tết's places: not over the whole valley`);
+    if (out.road < 100) bad.push(`only ${out.road} spots beside the valley's roads`);
+    for (const [x, z] of [[W.VILLAGE.x, W.VILLAGE.z + 6], [W.TOWN.x0 + 20, W.TOWN.roadZ], [(W.CITIES[0].x0 + W.CITIES[0].x1) / 2, W.CITIES[0].z]]) {
+      G.heroes[0].place(x, z); await wait(1300); const dn = G.festivals.drawn(), bu = G.festivals.budget;
+      if (dn.tris > bu.tris || dn.calls > bu.calls) bad.push(`drawn ${dn.tris} triangles, ${dn.calls} draw calls near ${x.toFixed(0)},${z.toFixed(0)} (budget ${bu.tris}, ${bu.calls})`);
+      if (!dn.tris) bad.push(`no decorations drawn near ${x.toFixed(0)},${z.toFixed(0)}`); }
+    // the hunt: every festival hides five things when it is on
+    const H0 = () => G.festivals.hunt(); for (let k = 0; k < 20 && !(H0() && H0().items().length); k++) await wait(300);
+    const hunted = [];
+    for (const F of FESTCAL) { C.releases = { ['fest_' + F.id]: { on: true, start: ymd, days: 1 } }; G.festivals.rebuild(); await wait(250);
+      const n = H0() ? H0().items().filter(i => i.F === F.id).length : 0; if (n !== 5) bad.push(`${F.id}: ${n} hunt things, not 5`); else hunted.push(F.id);
+      if (!HUNT[F.id]) bad.push(`${F.id}: nothing to hunt`); }
+    out.hunted = hunted.length;
+    // Tết's hunt: four say "keep looking", the fifth gives the keepsake and the badge; the Passport shows it
+    C.releases = { fest_tet: { on: true, start: ymd, days: 1 } }; G.festivals.rebuild(); await wait(400);
+    const p = G.heroes[0].profile; p.hunt = {}; p.festBadges = {}; p.keepsakes = (p.keepsakes || []).filter(k => k !== 'fh_tet');
+    const its = H0().items().filter(i => i.F === 'tet');
+    for (const it of its) { G.heroes[0].place(it.x + 1, it.z); await wait(200); const pr = H0().find(0, it.id); await wait(400); document.querySelectorAll('.reward').forEach(e => e.click()); await pr; }
+    out.badge = p.festBadges && p.festBadges.tet; out.keep = (p.keepsakes || []).includes('fh_tet'); out.left = H0().items().filter(i => i.F === 'tet' && i.left).length;
+    const { DECOR } = await import('/js/myhouse.js'); out.decor = !!(DECOR.fh_tet && DECOR.fh_tet.keepsake);
+    const box = document.createElement('div'); G.drawPassport(box, G.heroes[0]); out.passport = box.querySelectorAll('.pfest .pst.on').length; out.passportAll = box.querySelectorAll('.pfest .pst').length;
+    delete C.releases.fest_tet; G.festivals.rebuild();
+    return out;
+  });
+  const out = [...r.bad.slice(0, 8)];
+  if (!r.badge || !r.keep || !r.decor) out.push(`five Tết things found but badge ${r.badge}, keepsake ${r.keep}, in the house list ${r.decor}`);
+  if (r.left) out.push(`${r.left} Tết things still shown after the only child found them`);
+  if (r.passport !== 1 || r.passportAll < 24) out.push(`the Passport shows ${r.passport} festival badges of ${r.passportAll}`);
+  if (P.errors.length) out.push(...P.errors.slice(0, 2));
+  await P.ctx.close();
+  if (out.length) throw new Error(out.join('; '));
+  return `${r.places} festival places at 5x by default (as before at 1x, more at 7x), none on a road; build-up ${r.build.join(' → ')} in Lotus Village for Tết; Tết on: ${r.patches} patches, ${r.outside} outside its places, ${r.road} spots by the valley's roads, the nearest drawn within the budget; ${r.hunted} festivals hide 5 things each; Tết's five found: keepsake for the house and the Passport badge`;
+});
+
 await check('films', async () => {
   // (round R, owner: "the animations should be detailed and comprehensive, not drawings standing for the scenes")
   // every page of the pilot story and guide films plays to its end, the child's turn waits for a tap, and closing frees it

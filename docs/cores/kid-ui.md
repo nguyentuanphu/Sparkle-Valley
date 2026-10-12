@@ -92,6 +92,18 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
 
 - 12 Oct AEDT, evening: owner picked everything for tester reports (brief `docs/cores/tasks/tester-reports.md`): agreement screen, automatic reports with screenshot and 30-second replay, the ladybird bug icon (tap, long press, offline count, fixed tick, already-reported hint) instead of shake to report, nightly auto play, automatic retest, tester mark with the version, daily summary, and all eight rewards, with the Bug Hunter badge also worn on the explorer's shirt. Tester screens never name Studio, GitHub or Netlify. On tester devices that accepted, reports keep children's names, ages and progress with no grown-up gate (an exception to the PRIV rules for tester reports only, PRIV-016; voice lines still never say a name). Not built yet: plan and go first.
 - 12 Oct AEDT, evening: owner's "Go all 4 steps" for tester reports on `core/kid-ui` (this chat builds every part, across cores): the Studio "Testers" switch (every device or ticked ones, level: auto reports only, or with the ladybird; sneak peeks) and a Studio "Tester reports" page (problems with status, details, filters, testers list, daily summary). Badges are also seen by children on ordinary devices in online play (a tester's shirt badge travels with the explorer). In this chat: write all the code first, then one full suite, then push; deploying still needs the owner's "yes, deploy".
+- Festival decorations (owner, 13 Oct 2026 AEDT, built by the Kid UI chat in Play's festival files at the owner's choice):
+  - 5 times the decorations of r69 by default; each festival's amount is chosen in Studio's Festivals page (as now, 2x, 3x,
+    5x, 7x), live with no deploy.
+  - Three layers: pieces beside every street, strings of flags or lanterns across the streets, and a piece and a garland
+    at every house front in the festival's places; more kinds of piece per festival.
+  - The build-up: half in week 1, three quarters in week 2, everything in the last week and on the day.
+- Festival decorations spread over the whole valley (owner, 13 Oct AEDT: "scattered all over the place, not just more in
+  one place"; chose "the whole valley"): a festival's own places get the most, every other village and city gets the
+  amount of before, and pieces stand beside every road; when two festivals overlap, the one nearest its day spreads;
+  quiet days stay gentle in their own places.
+- Festival hunt (owner, 13 Oct AEDT): every festival, in its last week and on its day, hides 5 festival items among its
+  decorations; finding all 5 gives a keepsake for the child's house and a festival badge in the Passport.
 
 ## Progress notes
 - **11 Oct 2026, 11:40 am AEDT, `core/kid-ui`:** the robot's Kid UI fixes merged: #27 (`bugfix/kid-ui-27`, PR #40), #28 (#42), #31 (#44), #41 (#46), #30 (#48), #32 (#53), plus the films branch.

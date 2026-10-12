@@ -21,6 +21,8 @@ export function cleanLive(b) {
     if (!ID.test(id) || !f || typeof f !== 'object') continue;
     const x = {}; if (typeof f.on === 'boolean') x.on = f.on; if (DATE.test(f.date || '') || MD.test(f.date || '')) x.date = f.date;
     const bu = int(f.buildup, 60); if (bu != null && f.buildup !== '' && f.buildup != null) x.buildup = bu;
+    // (owner, 13 Oct) how much it decorates: 1 (as before), 2, 3, 5 (the default, so not kept) or 7 times
+    if ([1, 2, 3, 7].includes(+f.deco)) x.deco = +f.deco;
     if (Object.keys(x).length) out.festivals[id] = x;
   }
   return out;
