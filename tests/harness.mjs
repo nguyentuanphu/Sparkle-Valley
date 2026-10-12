@@ -8,7 +8,7 @@ export async function launch() {
 export const seedPlayers = () => { try { if (!localStorage.getItem('sv2_profiles')) localStorage.setItem('sv2_profiles', JSON.stringify([
     { id: 'kna', name: 'Bé Na', photo: null, age: 'little', difficulty: 'easy', look: { style: 'dress', color: '#ff5fa2', hat: 'bow', back: 'wings', hairStyle: 'buns' }, created: 1 },
     { id: 'kbin', name: 'Bé Bin', photo: null, age: 'little', difficulty: 'easy', look: { style: 'shirt', color: '#3b6fe0', hat: 'cap', back: 'cape', hairStyle: 'short' }, created: 2 }])); } catch (e) { } };
-export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'solo', touch = false, settings = {}, play = true, pre = null, dpr = 1, fast = true, url = URL, screen = 'valley' } = {}) {
+export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'solo', touch = false, settings = {}, play = true, pre = null, dpr = 1, fast = true, url = URL, screen = 'valley', route = null } = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch, deviceScaleFactor: dpr });
   const page = await ctx.newPage();
   const errors = [];
@@ -20,6 +20,7 @@ export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'so
   // (round P: a new device starts with nobody; the checks play as two children made beforehand)
   await page.addInitScript(seedPlayers);
   if (pre) await page.addInitScript(pre);
+  if (route) await route(ctx); // (marketing films) change what the page loads
   await page.goto(url);
   await page.waitForSelector('.screen.title', { timeout: 90000 });
   // the test browser draws in software: draw fewer pixels so checks run quicker
