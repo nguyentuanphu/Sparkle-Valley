@@ -3658,6 +3658,29 @@ await check('questbar', async () => {
   return 'a tap folds the quest to a small chip and hides the arrow; a tap opens it again; a started family mission shows under the quest (44 px), on a phone and a computer';
 });
 
+await check('friendstab', async () => {
+  // (Round V, owner 13 Oct) Pad → Friends: "My friends" folds away and stays folded; a friend who accepts and comes into the
+  // room closes the page (it stayed open in front of the valley); a game starting closes it too
+  const P = await open(b, { w: 390, h: 760, touch: true, settings: { online: true } }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), N = (await import('/js/net.js')).Net, S = await import('/js/state.js');
+    G.openPad(0, 'friend'); await wait(700);
+    const d = document.querySelector('.modal.pad details.friends'); if (!d) return { noBox: true };
+    d.querySelector('summary').click(); await wait(200); const foldedSaved = S.settings.friendsFold === true && !d.open;
+    document.querySelector('.modal.pad .x').click(); await wait(300); G.openPad(0, 'friend'); await wait(700);
+    const stillFolded = !document.querySelector('.modal.pad details.friends').open;
+    // a friend comes into the room
+    N.remotes['peer-z'] = { name: 'Mít' }; G.onNet && G.onNet(); await wait(300); const closedOnJoin = !document.querySelector('.modal.pad'); delete N.remotes['peer-z'];
+    // a game starting
+    G.openPad(0, 'friend'); await wait(500); G.closePadNow(); const closedOnStart = !document.querySelector('.modal.pad') && !G.paused;
+    S.settings.friendsFold = false;
+    return { foldedSaved, stillFolded, closedOnJoin, closedOnStart };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.noBox && r.foldedSaved && r.stillFolded && r.closedOnJoin && r.closedOnStart && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return '"My friends" folds and stays folded; a friend coming into the room closes the Friends page; a game starting closes it';
+});
+
 await check('bilingual', async () => {
   // (Round U, owner 11 Oct: Grandma Huệ spoke Vietnamese with English set) no English slot of an [English, Vietnamese]
   // pair (an array, T(…, …) or { en, vi }) holds a Vietnamese sentence; names, songs and sayings that stay Vietnamese

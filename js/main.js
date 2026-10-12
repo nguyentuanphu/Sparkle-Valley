@@ -802,6 +802,7 @@ world.updaters.push((dt, t) => G.wanderers.forEach((w, k) => {
 }));
 G.openPad = (i, tab) => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; openPad(G, i, tab); };
 G.closePad = () => { G.paused = false; };
+G.closePadNow = () => { const m = document.querySelector('.modal.pad'); if (m) { m.remove(); G.paused = false; } };   // (Round V) close the Pad from outside it
 
 // ---------- talking: quick phrases, speech bubbles, voice calls ----------
 function bubble(target, text) {
@@ -899,7 +900,7 @@ G.netGames = createNetGames({
     say('A friend wants to play a game with you!', 'Một bạn muốn chơi trò chơi với con!');
     const stars = '⭐'.repeat(d.level || 1);
     dialog(remoteName(d.from), [[`🎲 ${remoteName(d.from)} wants to play ${gname} with you! (${stars})`, `🎲 ${remoteName(d.from)} muốn chơi ${gname} với con! (${stars})`, 'Your friend wants to play a game with you!', 'Bạn của con muốn chơi một trò với con!']], [['▶ Play', '▶ Chơi'], ['Not now', 'Để sau']])
-      .then(k => G.netGames.answer(d, k === 0 && !gameOpen() && !!h));
+      .then(k => { G.netGames.answer(d, k === 0 && !gameOpen() && !!h); if (k === 0) G.closePadNow(); });   // (Round V) yes closes the Friends page
   },
   onStart: (s, ask) => {
     if (!s) { toast(T('Nobody could play just now. Try again later!', 'Lúc này chưa bạn nào chơi được. Lát nữa thử lại nhé!')); return; }
@@ -912,7 +913,10 @@ G.netGames = createNetGames({
       let seq = 0; const sync = { send: p => online.move(seq++, p), listen: fn => online.onMove((seat, n, mv) => { if (seat !== s.mine) fn(mv); }) };
       G.readTaleNow(G.heroes[0], t, sync).finally(end); return;
     }
-    G.playGameOnline(s.game, s.level || 1, online).finally(end);
+    // (Round V, owner 13 Oct) the Friends page closes when the game starts (it stayed in front of the game); "Play again"
+    // after a game with friends asks the same friends again (it did nothing)
+    G.closePadNow();
+    G.playGameOnline(s.game, s.level || 1, online).then(res => { end(); if (res && res.next === 'again') setTimeout(() => G.inviteGame(s.game, s.seats.find(id => id !== Net.me), s.level || 1, s.size), 400); }, end);
   },
   onEnd: id => toast(T(`${remoteName(id)} left the game.`, `${remoteName(id)} đã rời trò chơi.`))
 });
@@ -1154,19 +1158,23 @@ const bindGUHow = (body, redraw) => {
   });
 };
 G.drawOnlinePanel = (body, redraw) => {
-  G.onNet = () => { if (document.body.contains(body)) redraw(); };
+  // (Round V, owner 13 Oct) a friend who accepts and comes into the room closes the Friends page, so the child sees them
+  G._padRemotes = Object.keys(Net.remotes).length;
+  G.onNet = () => { if (!document.body.contains(body)) return; const n = Object.keys(Net.remotes).length; if (n > G._padRemotes) { G._padRemotes = n; G.closePadNow(); return; } G._padRemotes = n; redraw(); };
   const h = G.heroes[0];
   // (round R privacy, 9 Oct, owner) online play is off until a grown-up turns it on (Grown-ups → Playing online): no Start, no Join
   if (!settings.online) { body.innerHTML = `<div class="online off"><p class="note center onlineoff">🔒 ${T('Playing with friends is off. Ask a grown-up to turn it on.', 'Chơi cùng bạn đang tắt. Nhờ người lớn bật lên nhé.')}</p>
     ${gUHow(false)}</div>`; bindGUHow(body, redraw); return; }
-  const friendsBox = () => `<div class="ocard friends"><h3>👫 ${T('My friends', 'Bạn của con')}</h3>
+  // (Round V, owner 13 Oct) "My friends" folds away (remembered on this device)
+  const friendsBox = () => `<details class="ocard friends" ${settings.friendsFold ? '' : 'open'}><summary><h3>👫 ${T('My friends', 'Bạn của con')}</h3></summary>
       <p class="note">${T('My friend code', 'Mã bạn bè của con')}: <b class="fcode">${settings.friendCode}</b></p>
       <label class="tog"><input type="checkbox" id="fOn" ${settings.friendsOn ? 'checked' : ''}> ${T('Friends can see when I am playing and where, and invite me (needs the internet)', 'Bạn bè thấy khi con đang chơi, đang ở đâu, và mời con được (cần có mạng)')}</label>
       <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? (Net.sameMap(Net.friends.status[f.code].map) ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}" data-fc="${esc(f.code)}">▶ ${T('Join', 'Vào chơi')}</button>` : `<button class="btn mapdiff" data-mapdiff aria-label="${T('Different valley', 'Thung lũng khác')}" title="${T('Different valley', 'Thung lũng khác')}">🗺️</button>`) : ''}${(Net.friends.status[f.code] || {}).online && !(Net.code && Net.friends.status[f.code].room === Net.code) ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
       <div class="vrow"><input type="text" id="fAdd" maxlength="6" placeholder="${T('Friend code', 'Mã bạn bè')}" autocomplete="off"><button class="btn" id="fAddB">＋ ${T('Add', 'Thêm')}</button></div>
-      ${settings.friends.length ? `<p class="note">${T('Friends are never put in a room by themselves: 📨 Invite asks them, ▶ Join goes to theirs.', 'Bạn bè không bao giờ tự bị đưa vào phòng: 📨 Mời là hỏi bạn, ▶ Vào chơi là sang phòng bạn.')}</p>` : ''}${gUHow(true)}</div>`;
+      ${settings.friends.length ? `<p class="note">${T('Friends are never put in a room by themselves: 📨 Invite asks them, ▶ Join goes to theirs.', 'Bạn bè không bao giờ tự bị đưa vào phòng: 📨 Mời là hỏi bạn, ▶ Vào chơi là sang phòng bạn.')}</p>` : ''}${gUHow(true)}</details>`;
   const bindFriends = () => {
     bindGUHow(body, redraw);
+    { const d = body.querySelector('details.friends'); if (d) d.ontoggle = () => { settings.friendsFold = !d.open; saveSettings(); }; }
     body.querySelectorAll('[data-mapdiff]').forEach(b => b.onclick = () => { SFX.tap(); G.mapCard(); });
     body.querySelector('#fOn').onchange = e => { settings.friendsOn = e.target.checked; saveSettings(); G.listenFriends(); };
     body.querySelector('#fAddB').onclick = () => { if (addFriend(body.querySelector('#fAdd').value)) { SFX.chime(); redraw(); } else toast(T('A friend code has 6 letters and numbers.', 'Mã bạn bè gồm 6 chữ và số.')); };

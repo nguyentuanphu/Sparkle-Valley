@@ -2454,3 +2454,9 @@ button.chip { font: inherit; color: inherit; cursor: pointer; }
 /* (Round V, owner 13 Oct: the camera button's picture sat off centre) drawn like the compass, centred in its button */
 .zoomer .z-view .art, .zoomer .z-view .emo { width: 34px; height: 34px; font-size: 28px; margin: auto; display: block; transform: translateY(3px); }
 .hud.small .zoomer .z-view .art { width: 28px; height: 28px; }
+/* (Round V) My friends folds: the heading is the summary */
+details.ocard.friends > summary { list-style: none; cursor: pointer; display: flex; align-items: center; min-height: 44px; }
+details.ocard.friends > summary::-webkit-details-marker { display: none; }
+details.ocard.friends > summary h3 { margin: 0; flex: 1; }
+details.ocard.friends > summary::after { content: '▾'; font-size: 20px; color: #8a5cf6; transition: transform .2s; }
+details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); }
