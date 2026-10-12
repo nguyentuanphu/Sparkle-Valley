@@ -3,7 +3,7 @@
 // Nothing is stored. Children press the 🎤 button, say something, and the game understands simple commands.
 import { settings } from './state.js';
 
-import { ac } from './audio.js';
+import { ac, micMode } from './audio.js';
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 // iPhone/iPad apps added to the Home Screen do not support speech recognition reliably, so the 🎤 button
@@ -22,7 +22,7 @@ export function listen({ onPartial, lang } = {}) {
     r.interimResults = true; r.maxAlternatives = 1; r.continuous = false;
     let best = '', done = false, hard = null;
     const finish = () => {
-      if (done) return; done = true; active = null; clearTimeout(hard);
+      if (done) return; done = true; active = null; clearTimeout(hard); micMode('listen', false);
       try { r.abort(); } catch (e) { }
       // wake the game's sound back up (listening can pause it on phones)
       setTimeout(() => { try { const a = ac(); a && a.resume && a.resume(); } catch (e) { } }, 300);
@@ -32,6 +32,7 @@ export function listen({ onPartial, lang } = {}) {
     r.onresult = e => { let t = ''; for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript; best = t; onPartial && onPartial(t); };
     r.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') best = '\u0000denied'; finish(); };
     r.onend = finish;
+    micMode('listen', true);   // (Round V) iPhone cannot listen in its play-only sound mode (audio.js)
     try { r.start(); } catch (e) { finish(); }
     setTimeout(() => { try { r.stop(); } catch (e) { } }, 7000);
     hard = setTimeout(finish, 9000); // never wait forever, even if the device never answers

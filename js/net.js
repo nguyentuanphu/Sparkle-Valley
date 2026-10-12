@@ -18,6 +18,7 @@
 // Photos go only after being let in, locked for each player. Saved friends come straight in only if they bring the
 // key saved with the friend AND open a number locked with it; anyone else knocks.
 import { settings } from './state.js';
+import { micMode } from './audio.js';
 import { Channel } from './relay.js';
 import { checkMsg } from './netmsg.js';
 import { MAP_VERSION } from './content/map.js';
@@ -161,7 +162,7 @@ export const Net = {
   // the game kept that dead microphone, so every tap only flipped mute on it and nothing showed. A microphone counts only
   // while its track is live; a dead one is dropped and the tap asks again.
   get micLive() { const t = this.mic && this.mic.active && this.mic.getAudioTracks()[0]; return !!(t && t.readyState === 'live' && !t.muted); },
-  _dropMic() { if (!this.mic) return; try { this.mic.getTracks().forEach(t => t.stop()); } catch (e) { } this.mic = null; },
+  _dropMic() { if (!this.mic) return; try { this.mic.getTracks().forEach(t => t.stop()); } catch (e) { } this.mic = null; micMode('call', false); },
   _watchMic(s) {
     const t = s.getAudioTracks()[0]; if (!t) return;
     const dead = () => { if (this.mic !== s) return; this._dropMic(); this.emit('status', { key: 'micstop' }); this.emit('micchange'); };
@@ -175,6 +176,7 @@ export const Net = {
     const asking = this._micAsking = (async () => {
       if (!md || !md.getUserMedia) { this.micError = 'nomedia'; this.emit('status', { key: ios ? 'micold' : 'nomic' }); return null; }
       const stale = () => this._micAsking && this._micAsking !== asking;   // a newer tap is asking now
+      micMode('call', true);   // (Round V) before asking: iPhone never asks in its play-only mode
       let err = null, first = md.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
       if (fromTap) this.emit('status', { key: 'micask' });
       // the iPhone sometimes never answers at all (no Allow box): after 10 seconds say what to do instead of nothing
@@ -187,6 +189,7 @@ export const Net = {
         } catch (e) { clearTimeout(slow); err = e; if (this.mic || (e && /^(NotFoundError|NotAllowedError|NotReadableError|AbortError)$/.test(e.name))) break; }   // (Round V: a busy microphone is not asked again without a tap)
       }
       if (this.mic || stale()) return this.mic;   // (another try got it, or is still asking: it speaks for itself)
+      micMode('call', false);
       const name = (err && err.name) || 'Error', tapped = !!fromTap || !!(navigator.userActivation && navigator.userActivation.isActive);
       this.micError = name;
       if (name === 'NotFoundError' || name === 'OverconstrainedError') this.emit('status', { key: 'nomic' });

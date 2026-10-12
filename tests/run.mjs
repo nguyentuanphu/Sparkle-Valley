@@ -3884,6 +3884,15 @@ await check('iphone', async () => {
     // (Round V, owner 13 Oct: "when I tap on mic, nothing appears", no call anywhere) the iPhone ends the microphone when the
     // game goes to the background; the game kept the dead one, so a tap only flipped mute. Now it says so when it ends,
     // and the Mic button (G.toggleMute) asks afresh for a dead one, even if no "ended" ever came
+    // (Round V, owner 13 Oct, every iPhone setting on "Ask" and still nothing) the game's sound mode was iPhone's play-only
+    // "playback", where it never asks for the microphone: while asking and while the microphone is on it is
+    // "play-and-record", and back to "playback" when the microphone is let go (the silent switch is still ignored)
+    const fakeSess = { type: 'auto' }; Object.defineProperty(navigator, 'audioSession', { value: fakeSess, configurable: true });
+    const A = await import('/js/audio.js'); A.micMode('probe', false); const atStart = fakeSess.type;
+    let typeAtAsk = null; md.getUserMedia = c => { typeAtAsk = fakeSess.type; return real({ audio: true }); }; N.mic = null;
+    await N.getMic(true); const whileOn = fakeSess.type; N._dropMic(); const afterOff = fakeSess.type;
+    md.getUserMedia = async () => { typeAtAsk += '|' + fakeSess.type; const e = new Error('blocked'); e.name = 'NotAllowedError'; throw e; }; await N.getMic(true); const afterFail = fakeSess.type;
+    const sess = { atStart, typeAtAsk, whileOn, afterOff, afterFail }; delete navigator.audioSession;
     md.getUserMedia = real; said.length = 0; const m1 = await N.getMic(true), t1 = m1.getAudioTracks()[0]; t1.stop(); t1.dispatchEvent(new Event('ended'));
     const endedSaid = said.includes('micstop'), endedDropped = !N.mic;
     const m2 = await N.getMic(true); m2.getAudioTracks()[0].stop(); said.length = 0; let deadAsks = 0; md.getUserMedia = c => { deadAsks++; return real({ audio: true }); };
@@ -3915,11 +3924,12 @@ await check('iphone', async () => {
     const c = chip.getBoundingClientRect(), hit = [...document.querySelectorAll('.hud .tools .dk, .hud .zoomer button, .hud .mini-wrap, .hud .zoom')].filter(e => e.offsetParent).filter(e => { const q = e.getBoundingClientRect(); return q.left < c.right && c.left < q.right && q.top < c.bottom && c.top < q.bottom; }).map(e => e.className);
     const onScreen = c.width > 60 && c.height > 20 && c.right <= innerWidth + 1 && c.left >= 0, chipText = chip.textContent;
     delete G.partners['peer-q']; G.huds[0].setCall(false, false, false);
-    return { first, noMicYet, micAfterTap, after, replaced: replacedFirst, reallyNone, tapAsks, fresh, tapSaid, lateStopped, kept, micons, blocked, busy, busyAsks, endedSaid, endedDropped, deadTap, old, mute: !!mute, panelSays, shared, asksBefore: 1, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
+    return { first, noMicYet, micAfterTap, after, replaced: replacedFirst, reallyNone, tapAsks, fresh, tapSaid, lateStopped, kept, micons, blocked, busy, busyAsks, sess, endedSaid, endedDropped, deadTap, old, mute: !!mute, panelSays, shared, asksBefore: 1, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
   });
   const errs = P.errors; await P.ctx.close();
   ok((r.first.includes('mictap') || r.first.includes('micdenied')) && !r.first.includes('nomic') && r.noMicYet && r.tapAsks === 1 && r.micAfterTap && r.after.includes('micon') && r.replaced === 1 && r.reallyNone.includes('nomic')
     && r.fresh === 1 && r.tapSaid[0] === 'micask' && r.tapSaid.includes('micon') && r.lateStopped && r.kept && r.micons === 1 && r.blocked.includes('micdenied') && !r.blocked.includes('mictap') && r.busy.includes('micbusy') && !r.busy.includes('mictap') && r.busyAsks === 1
+    && r.sess.atStart === 'playback' && r.sess.typeAtAsk === 'play-and-record|play-and-record' && r.sess.whileOn === 'play-and-record' && r.sess.afterOff === 'playback' && r.sess.afterFail === 'playback'
     && r.endedSaid && r.endedDropped && r.deadTap.asks === 1 && r.deadTap.said[0] === 'micask' && r.deadTap.said.includes('micon') && r.deadTap.fresh
     && r.old.includes('micold') && !r.old.includes('nomic') && r.mute && /Safari/.test(r.panelSays) && r.shared === 1
     && r.buttons >= 4 && !r.tall.length && !r.outside && !r.hit.length && r.onScreen && !errs.length, JSON.stringify(Object.assign(r, { errs })));

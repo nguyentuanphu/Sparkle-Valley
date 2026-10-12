@@ -21,7 +21,6 @@ import { pads, initInput } from './input.js';
 import { Net, MAX_ROOM, ROOM_LEN, okPub } from './net.js';
 import { showTitle, showWho, dialog, dialogHooks, reward, openPad, openCooking, openShop, toast, modal, openGrownups } from './ui.js';
 import { holdButton } from './popups.js';
-import { openMicTest } from './mictest.js';
 import { pic } from './art.js';
 import { openChat, personaByName, PERSONAS } from './chat.js';
 import { voiceCommand, voiceControlOn } from './commands.js';
@@ -1205,7 +1204,7 @@ G.drawOnlinePanel = (body, redraw) => {
     body.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { settings.friends = settings.friends.filter(f => f.code !== b.dataset.rm); saveSettings(); redraw(); });
     body.querySelectorAll('[data-joinf]').forEach(b => b.onclick = async () => { SFX.tap(); const f = settings.friends.find(x => x.code === b.dataset.fc), st = Net.friends.status[b.dataset.fc] || {}; await G.joinFriend(b.dataset.joinf, f && st.host ? f.pub : null); redraw(); });
     body.querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { b.disabled = true; inviteToast(await G.inviteFriend(b.dataset.inv)); b.disabled = false; });
-    body.querySelectorAll('[data-mictest]').forEach(b => b.onclick = () => { SFX.tap(); openMicTest(); });
+    body.querySelectorAll('[data-mictest]').forEach(b => b.onclick = () => { SFX.tap(); import('./mictest.js').then(M => M.openMicTest()); });
   };
   if (Net.connected || Net.role === 'host') {
     const list = Object.values(Net.remotes);

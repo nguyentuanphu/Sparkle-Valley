@@ -6,6 +6,7 @@ import { T } from './i18n.js';
 import { settings } from './state.js';
 import { modal, toast } from './ui.js';
 import { Net } from './net.js';
+import { micMode } from './audio.js';
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -28,7 +29,7 @@ export function openMicTest() {
   const line = (k, txt) => { const li = m.querySelector(`[data-k="${k}"]`); li.innerHTML = txt; };
   const bar = m.querySelector('.mt-bar i');
   let stream = null, own = false, ctx = null, raf = 0, rec = null;
-  const stop = () => { cancelAnimationFrame(raf); try { ctx && ctx.close(); } catch (e) { } ctx = null; if (own && stream) stream.getTracks().forEach(t => t.stop()); stream = null; try { rec && rec.abort(); } catch (e) { } rec = null; };
+  const stop = () => { micMode('test', false); cancelAnimationFrame(raf); try { ctx && ctx.close(); } catch (e) { } ctx = null; if (own && stream) stream.getTracks().forEach(t => t.stop()); stream = null; try { rec && rec.abort(); } catch (e) { } rec = null; };
   m.querySelector('.x').onclick = () => { stop(); m.close(); };
   line('where', '📱 ' + esc(where()));
   line('perm', '🔒 ' + T('Permission: …', 'Quyền: …'));
@@ -47,6 +48,7 @@ export function openMicTest() {
     line('mic', '🎙️ ' + T('Microphone: asking… (tap Allow)', 'Micrô: đang xin… (chạm Cho phép)'));
     const t0 = Date.now(), slow = setTimeout(() => { if (!stream) line('mic', '🎙️ ' + T('Microphone: no answer from the device after 10 seconds', 'Micrô: máy chưa trả lời sau 10 giây') + ' <small>(pending)</small>'); }, 10000);
     // a microphone the game already has and that still works is used as it is (a second one can switch it off on iPhone)
+    micMode('test', true);   // iPhone never asks in its play-only sound mode (audio.js)
     const got = Net.micLive ? Promise.resolve(Net.mic) : md.getUserMedia({ audio: true, video: false });
     own = !Net.micLive;
     got.then(s => {
@@ -74,6 +76,7 @@ export function openMicTest() {
   m.querySelector('[data-voice]').onclick = () => {
     if (!SR) return;
     try { rec && rec.abort(); } catch (e) { }
+    micMode('test', true);
     const r = rec = new SR(); r.lang = settings.lang === 'vi' ? 'vi-VN' : 'en-AU'; r.interimResults = true; r.continuous = false;
     let heard = '', err = '';
     line('voice', '🗣️ ' + T('Voice control: listening… say “hello”', 'Điều khiển bằng giọng nói: đang nghe… nói “xin chào”'));
