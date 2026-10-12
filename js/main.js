@@ -1733,6 +1733,8 @@ startCounting(G); // how many children play, and what they play, for Studio's re
       v.copy(u.c).applyMatrix4(u.o.matrixWorld); let d2 = 1e12;
       for (const c of cams) d2 = Math.min(d2, (c.x - v.x) ** 2 + (c.z - v.z) ** 2);
       for (const m of u.meshes) m.layers.set(d2 > u.far2 || (m.userData.outline && d2 > O2) ? 1 : 0);
+      // (battery round) a person's still copy, made after the list was gathered, goes with the person
+      const st = u.o.userData.still; if (st) for (const m of st.children) m.layers.set(d2 > u.far2 || (m.userData.outline && d2 > O2) ? 1 : 0);
     }
   };
 }

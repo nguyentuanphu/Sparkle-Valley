@@ -367,7 +367,8 @@ export function stillOf(A) {
   for (const m of keep) { const c = new THREE.Mesh(m.geometry, m.material); _mm.multiplyMatrices(_inv, m.matrixWorld); _mm.decompose(c.position, c.quaternion, c.scale); c.renderOrder = m.renderOrder; still.add(c); }
   if (lines.length) { const ol = new THREE.Mesh(bake(lines, _inv, false), lines[0].m.material); ol.userData.outline = true; ol.visible = A._ol !== false; still.add(ol); A.stillLine = ol; }
   still.traverse(o => { o.raycast = () => { }; });
-  still.visible = false; A.root.add(still); A.still = still; return still;
+  still.visible = false; A.root.add(still); A.still = still; A.root.userData.still = still; // (js/main.js far-culling hides it with the person)
+  return still;
 }
 // (battery round, PERF-003) Up close too: the plain-coloured parts that move together (the head with its hair and hat,
 // each arm with its sleeve and hand, each leg with its shoe, the body with its clothes) become one shape each, their
@@ -413,7 +414,7 @@ export function showStill(A, yes) {
 export function dropStill(A) {
   if (!A.still) return; const was = A._still; showStill(A, false);
   A.still.children.forEach(c => { if (c.material === stillMat || c === A.stillLine) c.geometry.dispose(); });
-  A.root.remove(A.still); A.still = null; A.stillLine = null; if (was) showStill(A, true);
+  A.root.remove(A.still); A.still = null; A.stillLine = null; delete A.root.userData.still; if (was) showStill(A, true);
 }
 export function applyNpcFaces() { for (const [id, list] of Object.entries(NAMED)) list.forEach(A => setFace(A, (settings.npcFaces || {})[id] || customFace(id) || null)); }
 onFamilyPhotos(() => applyNpcFaces()); // (round R privacy) the family's photo faces arrive after the start, with the family code
