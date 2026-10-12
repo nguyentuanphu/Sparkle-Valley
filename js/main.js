@@ -1434,11 +1434,13 @@ const FRAME_MS = settings.quality === 'max' ? 0 : settings.quality === 'high' ||
 const TITLE_MS = 1000 / 20, IDLE_MS = 15000, IDLE_FPS = 8;
 // what the drawing costs, for the battery statistics (js/players.js takes it once a minute) and the `battery` check
 const BAT = G.battery = { frameMs: FRAME_MS, titleMs: TITLE_MS, idleMs: IDLE_MS, idleFps: IDLE_FPS, idle: false, input: performance.now(), moved: performance.now(), key: '', at: null, due: 0, prStart: renderer.getPixelRatio(), prMax: settings.quality === 'auto' ? adapt.max : renderer.getPixelRatio(),
-  frames: 0, work: 0, draws: 0, idleFrames: 0,
+  // (counted only while a child plays and something moves: the title, the idle frames and the time the world rests
+  // behind a game or a menu are left out, so frames a second say how smooth playing is)
+  frames: 0, work: 0, draws: 0, ms: 0, idleFrames: 0, lastDrawn: 0,
   capMs: () => !playing ? Math.max(FRAME_MS, TITLE_MS) : BAT.idle ? 1000 / IDLE_FPS : FRAME_MS,
   // at most one drawing per cap ms, on any screen (a 120 or 144 Hz screen gets 60 on average, not 72); st keeps `due`
   gate: (st, now, cap) => { if (!cap) return true; if (now < st.due - 2) return false; st.due = Math.max(st.due + cap, now - cap); return true; },
-  take: () => { const o = { frames: BAT.frames, work: BAT.work, draws: BAT.draws, idleFrames: BAT.idleFrames, pr: renderer.getPixelRatio() }; BAT.frames = BAT.work = BAT.draws = BAT.idleFrames = 0; return o; } };
+  take: () => { const o = { frames: BAT.frames, work: BAT.work, draws: BAT.draws, ms: BAT.ms, idleFrames: BAT.idleFrames, pr: renderer.getPixelRatio() }; BAT.frames = BAT.work = BAT.draws = BAT.ms = BAT.idleFrames = 0; return o; } };
 for (const e of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart']) addEventListener(e, () => { BAT.input = performance.now(); if (BAT.idle) { BAT.idle = false; BAT.due = 0; } }, { capture: true, passive: true });
 // still: every child and their camera moving slower than 10 cm a second (a settled camera keeps creeping by about a
 // centimetre a second, which nobody sees), the same pose, no input, no friend online, nothing on the way
@@ -1472,10 +1474,10 @@ function frame(now) {
     titleCam.position.set(PLATEAU.x + Math.cos(a) * 70, 42, PLATEAU.z + Math.sin(a) * 70); titleCam.lookAt(PLATEAU.x, 16, PLATEAU.z); // (round T: round Ông Cú's home)
     world.updateSky(0, titleCam.position);
     renderer.setScissorTest(false); renderer.setViewport(0, 0, innerWidth, innerHeight); renderer.render(scene, titleCam);
-    BAT.frames++; BAT.draws += renderer.info.render.calls; BAT.work += performance.now() - work0;
     return;
   }
   stillCheck(now); if (BAT.idle) BAT.idleFrames++;
+  let drawn = 0;
   poll(dt);
   const two = twoHalves();
   if (two || (!G.paused && !gameOpen())) {
@@ -1552,7 +1554,7 @@ function frame(now) {
     G.showcaseCam(i, h, dt); // a landmark fly-around takes over the camera
     if (r.length > 1) aimCam(h, q);
     world.updateSky(0, h.cam.position, h.pos);
-    renderer.render(scene, h.cam); BAT.draws += renderer.info.render.calls;
+    renderer.render(scene, h.cam); drawn += renderer.info.render.calls;
     if (G.nameTags) G.nameTags.update(i, h, q);
     const p = h.profile;
     // what the minimap shows, worked out only when it is redrawn
@@ -1568,7 +1570,8 @@ function frame(now) {
     return markers; };
     G.huds[i].update(dt, h.cam, () => G.fogMapFor(p), markersFor);
   });
-  BAT.frames++; BAT.work += performance.now() - work0;
+  if (!BAT.idle) { BAT.frames++; BAT.work += performance.now() - work0; BAT.draws += drawn; const gap = now - BAT.lastDrawn; if (gap <= 250) BAT.ms += gap; }
+  BAT.lastDrawn = now;
 }
 
 // ---------- boot ----------

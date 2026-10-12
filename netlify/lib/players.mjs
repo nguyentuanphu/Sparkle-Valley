@@ -7,7 +7,8 @@
 // Netlify works out from the connection; errors in the game's own code, stuck spots and smoothness; (11 Oct, #36) how
 // long each start took (up to 6 a day: ms to the game's code, to a built valley and to its first picture, whether it
 // came from the device's saved copy, the slowest building step's name); (battery round, 12 Oct) what drawing cost: minutes
-// measured, frames drawn, ms spent, draws per frame, sharpness, slow (idle) minutes, minutes on battery and battery used,
+// measured, frames drawn while playing and their seconds, ms spent, draws, sharpness, slow (idle) minutes, minutes on
+// battery and battery used, minutes charging,
 // where the browser tells it; lines that had no recording. Never kept: surnames, photos, voices, anything a child typed, GPS, or the connection's address (IP).
 // A grown-up can switch it all off (Grown-ups → Analytics and backup → Analytics).
 // It is kept in Netlify Blobs (store "players"):
@@ -36,10 +37,11 @@ const kid = c => ({ n: NAME.test(String(c.n || '')) ? String(c.n || '').trim() :
 const kids = o => Object.fromEntries(Object.entries(obj(o)).filter(([k]) => WORD.test(k)).slice(0, 8).map(([k, c]) => [k, kid(obj(c))]));
 const words = (o, max) => { const out = {}; let n = 0; for (const [k, v] of Object.entries(o && typeof o === 'object' ? o : {})) if (WORD.test(k) && n++ < 40) out[k] = int(v, max); return out; };
 
-// (battery round, 12 Oct) a day's drawing and battery: [minutes measured, frames, ms, draws per frame summed per minute,
-// pixel ratio x100 summed per minute, idle minutes, minutes on battery, battery used in tenths of a percent]
-const BAT_MAX = [24 * 60, 24 * 60 * 60 * 240, 864e5, 24 * 60 * 1e4, 24 * 60 * 400, 24 * 60, 24 * 60, 1000];
-const bat = b => Array.isArray(b) && b.length === 8 ? BAT_MAX.map((m, i) => int(b[i], m)) : [0, 0, 0, 0, 0, 0, 0, 0];
+// (battery round, 12 Oct) a day's drawing and battery (js/players.js): [minutes measured, frames drawn while a child
+// played and something moved, ms spent on them, draw calls on them, pixel ratio x100 summed per minute, idle minutes,
+// minutes on battery, battery used in tenths of a percent, minutes charging, seconds of that playing]
+const BAT_MAX = [24 * 60, 24 * 3600 * 240, 864e5, 24 * 3600 * 240 * 5000, 24 * 60 * 400, 24 * 60, 24 * 60, 1000, 24 * 60, 24 * 3600];
+const bat = b => Array.isArray(b) && b.length === 10 ? BAT_MAX.map((m, i) => int(b[i], m)) : BAT_MAX.map(() => 0);
 const batAdd = (a, b) => BAT_MAX.map((m, i) => Math.min(m * 30, (a[i] || 0) + (b[i] || 0)));
 // what a device sent, checked: anything odd is dropped
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -202,16 +204,18 @@ async function details(S, sums, now) {
   const med = a => { if (!a.length) return null; const v = a.slice().sort((x, y) => x - y); return Math.round(v[v.length >> 1] / 100) / 10; };
   const startupOf = st => { if (!st.length) return null; const w = st.filter(r => r[3]), c = st.filter(r => !r[3]), steps = {}; st.forEach(r => r[4] && add(steps, r[4]));
     return { n: st.length, ready: med(w.map(r => r[1])), readyFirst: med(c.map(r => r[1])), picture: med(st.map(r => r[2]).filter(Boolean)), slowest: top(steps, 1).map(x => x[0])[0] || '' }; };
-  // (battery round, 12 Oct) a device's drawing and battery over the 30 days: frames drawn a minute, ms to make a frame,
-  // draws a frame, sharpness (pixel ratio), share of minutes drawn slowly because nothing moved, and battery used per hour
-  // on battery (only from 10 such minutes, and only where the browser tells it: Chrome-based browsers); null = not reported
+  // (battery round, 12 Oct; names agreed with Studio on the board) a device's drawing and battery over the 30 days, `power`:
+  // fps = frames a second while a child plays (idle, title and menu time left out), frameMs = ms of work a frame, draws =
+  // draw calls a frame, ratio = sharpness (pixel ratio), mins = minutes measured, batteryPerHour = battery % used an hour
+  // on battery (from 10 such minutes, only where the browser tells it: Chrome-based browsers; else null), charging = true
+  // when it was mostly charging, idlePct = share of minutes drawn slowly because nothing moved; null = not reported yet
   const r1 = v => Math.round(v * 10) / 10;
-  const batteryOf = b => !b || !b[0] ? null : { mins: b[0], fpm: Math.round(b[1] / b[0]), frameMs: b[1] ? r1(b[2] / b[1]) : null, draws: Math.round(b[3] / b[0]),
-    pr: Math.round(b[4] / b[0]) / 100, idlePct: Math.round(100 * b[5] / b[0]), onBatteryMins: b[6], perHour: b[6] >= 10 ? r1(b[7] / 10 / b[6] * 60) : null };
+  const powerOf = b => !b || !b[0] ? null : { fps: b[9] ? Math.round(b[1] / b[9]) : null, frameMs: b[1] ? r1(b[2] / b[1]) : null, draws: b[1] ? Math.round(b[3] / b[1]) : null,
+    ratio: Math.round(b[4] / b[0]) / 100, mins: b[0], batteryPerHour: b[6] >= 10 ? r1(b[7] / 10 / b[6] * 60) : null, charging: b[8] > b[6], idlePct: Math.round(100 * b[5] / b[0]) };
   const devices = Object.keys({ ...infos, ...devs, ...lives }).map(id => { const I = infos[id] || {}, D = devs[id] || { mins: 0, days: 0, tales: 0, kids: {}, errs: 0, stuck: 0, fps: [0, 0, 0] };
     return { id, label: labels[id] || '', kind: I.kind || '?', os: I.os || '?', br: I.br || '?', screen: I.sc || '', app: !!I.app, build: I.build || '?', lang: I.lang || '?', loc: I.loc || null, first: I.first || '', last: I.last || D.last || '',
       online: !!(lives[id] && lives[id].on && now - lives[id].at < LIVE_MS), seenAt: lives[id] ? new Date(lives[id].at).toISOString() : '', playingNow: lives[id] && lives[id].on && now - lives[id].at < LIVE_MS ? lives[id].kid || '' : '',
-      mins: D.mins, days: D.days, tales: D.tales, errors: D.errs, stuck: D.stuck, fps: fpsOf(D.fps), slowMins: D.fps[2], startup: startupOf(D.starts || []), battery: batteryOf(D.bat),
+      mins: D.mins, days: D.days, tales: D.tales, errors: D.errs, stuck: D.stuck, fps: fpsOf(D.fps), slowMins: D.fps[2], startup: startupOf(D.starts || []), power: powerOf(D.bat),
       kids: Object.values(D.kids).sort((a, b) => b.mins - a.mins).map(K => ({ ...K, games: Object.entries(K.games).sort((a, b) => b[1][0] - a[1][0]).slice(0, 10).map(([g, v]) => [g, ...v]), places: top(K.places, 8) })) }; })
     .sort((a, b) => b.online - a.online || (b.last || '').localeCompare(a.last || '') || b.mins - a.mins).slice(0, 100);
   const count = f => { const o = {}; for (const d of devices) if (d.days) add(o, f(d)); return o; };
@@ -234,10 +238,10 @@ async function details(S, sums, now) {
   for (const d of devices) for (const K of d.kids) if (K.age === 'little' && K.mins > 30 && K.simpleMins < K.mins * .2) tips.push({ k: 'simple', name: K.name, d: who(d) });
   // (#36) start-up by kind of device: the median time to a built valley over each kind's devices (seconds)
   const startup = {}; for (const k of ['phone', 'tablet', 'computer']) { const v = devices.filter(d => d.kind === k && d.startup).map(d => (d.startup.ready ?? d.startup.readyFirst) * 1000).filter(x => x > 0); if (v.length) startup[k] = { devices: v.length, ready: med(v) }; }
-  // (battery round) by kind of device: the middle of each kind's devices
+  // (battery round) by kind of device, `power`: the middle of each kind's devices
   const mid = a => { const v = a.filter(x => x != null).sort((x, y) => x - y); return v.length ? v[v.length >> 1] : null; };
-  const battery = {}; for (const k of ['phone', 'tablet', 'computer']) { const ds = devices.filter(d => d.kind === k && d.battery); if (ds.length) battery[k] = { devices: ds.length, fpm: mid(ds.map(d => d.battery.fpm)), frameMs: mid(ds.map(d => d.battery.frameMs)), draws: mid(ds.map(d => d.battery.draws)), pr: mid(ds.map(d => d.battery.pr)), idlePct: mid(ds.map(d => d.battery.idlePct)), perHour: mid(ds.map(d => d.battery.perHour)) }; }
-  return { startup, battery, onlineNow: devices.filter(d => d.online).length, hours, places: top(places, 15), devices, os: count(d => d.os), browsers: count(d => d.br), locations: count(d => d.loc ? [d.loc.city, d.loc.region, d.loc.country].filter(Boolean).join(', ') : '?'), problems, tips: tips.slice(0, 20) };
+  const power = {}; for (const k of ['phone', 'tablet', 'computer']) { const ds = devices.filter(d => d.kind === k && d.power); if (ds.length) power[k] = { devices: ds.length, fps: mid(ds.map(d => d.power.fps)), frameMs: mid(ds.map(d => d.power.frameMs)), draws: mid(ds.map(d => d.power.draws)), batteryPerHour: mid(ds.map(d => d.power.batteryPerHour)) }; }
+  return { startup, power, onlineNow: devices.filter(d => d.online).length, hours, places: top(places, 15), devices, os: count(d => d.os), browsers: count(d => d.br), locations: count(d => d.loc ? [d.loc.city, d.loc.region, d.loc.country].filter(Boolean).join(', ') : '?'), problems, tips: tips.slice(0, 20) };
 }
 // a name the family gives a device in Studio ("Na's iPad")
 export async function setLabel(S, id, label) { if (!ID.test(id || '')) return false; const l = String(label || '').replace(/[<>\u0000-\u001f]/g, '').trim().slice(0, 40); if (l) await S.set('label/' + id, l); else await S.delete('label/' + id); return true; }

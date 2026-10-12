@@ -63,7 +63,10 @@ the statistics recorded and sent only with Analytics on), then `perf`, `playhub`
   - `js/avatar.js`: each moving part's plain-coloured pieces merged into one shape (`compact`, the skin recoloured for a
     photo face); a far still copy (`stillOf`); screenshots before and after, near and at 30 m, look the same.
   - `js/voicepack.js`: waits for a built valley, rests 150 ms (core) / 400 ms (the rest) between batches of 6.
-  - `js/players.js` + `netlify/lib/players.mjs`: day field `b` and report `battery` (field names on the board).
+  - `js/players.js` + `netlify/lib/players.mjs`: day field `b` (10 numbers, written in both files) and the report's
+    `power`, with the names Studio's Analytics page (r66) already reads: each device `power: { fps, frameMs, draws, ratio,
+    mins, batteryPerHour, charging, idlePct }`, by kind `power: { phone|tablet|computer: { devices, fps, frameMs, draws,
+    batteryPerHour } }`. `fps` counts only frames while a child plays (idle, title and menu time left out).
   - `js/ui.js`, `js/state.js`: Pretty+ (`max`).
   - Draws: home 1,123 -> 507, Lotus Village 704-887 -> 359; `perf-baseline.json` drawCalls 900 -> 420, drawCallsHome
     1100 -> 540. Rule PERF-006 (ARCHITECTURE §9, `rules-from-doc`). New check `battery`.

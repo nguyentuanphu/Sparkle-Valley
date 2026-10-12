@@ -3785,16 +3785,19 @@ await check('battery', async () => {
   const stats = await P.page.evaluate(async () => { const M = await import('/js/players.js'), S = await import('/js/state.js'), out = () => JSON.parse(localStorage.getItem('sv2_hello_out') || '{"days":{}}');
     S.settings.countPlayers = true; M.sampleDrawing(__sv); const on = Object.values(out().days).map(d => d.b).filter(Boolean)[0] || null;
     const sentOn = await M.flush(false);
+    // a minute with nothing moving: no playing frames (frames a second stay about playing), the minute counts as idle
+    localStorage.removeItem('sv2_hello_out'); __sv.battery.take(); __sv.battery.input = __sv.battery.moved = -1e9; __sv.battery.idle = true;
+    await new Promise(r => setTimeout(r, 2500)); M.sampleDrawing(__sv); const idleOnly = Object.values(out().days).map(d => d.b).filter(Boolean)[0] || null; __sv.battery.input = performance.now(); __sv.battery.idle = false;
     localStorage.removeItem('sv2_hello_out'); S.settings.countPlayers = false; await new Promise(r => setTimeout(r, 1500)); M.sampleDrawing(__sv);
     const off = Object.values(out().days).some(d => d.b); const sentOff = await M.flush(false); S.settings.countPlayers = true;
-    return { on, sentOn, off, sentOff, pr100: Math.round(__sv.renderer.getPixelRatio() * 100) }; });
+    return { on, idleOnly, sentOn, off, sentOff, pr100: Math.round(__sv.renderer.getPixelRatio() * 100) }; });
   const errs = P.errors; await P.ctx.close();
   const body = sent[0] && sent[0].days && sent[0].days[0] && sent[0].days[0].b;
   const got = { caps, gates, title, play, pr, people, idleWait, idle, woke, stats, sentB: body || null, sends: sent.length, errs };
   // (the test browser draws in software, a few frames a second: the measured rates can only show the caps are not passed)
   ok(capsOk && gatesOk && title.draws <= 21.5 && play.draws <= 62 && pr <= 1.5 && people.far > 0 && people.farStill === people.far && people.nearStill === 0 && !people.mine
     && idleWait.idle && idleWait.s >= 15 && idle.draws <= 9 && !woke.idle && Math.round(woke.cap * 10) / 10 === 16.7
-    && stats.on && stats.on.length === 8 && stats.on[0] === 1 && stats.on[1] > 0 && stats.on[3] > 0 && stats.on[4] === stats.pr100 && stats.sentOn && body && body[1] > 0 && sent.length === 1 && !stats.off && !stats.sentOff && !errs.length, JSON.stringify(got));
+    && stats.on && stats.on.length === 10 && stats.on[0] === 1 && stats.on[1] > 0 && stats.on[3] > 0 && stats.on[4] === stats.pr100 && stats.on[9] > 0 && stats.idleOnly && stats.idleOnly[1] === 0 && stats.idleOnly[5] === 1 && stats.sentOn && body && body[1] > 0 && sent.length === 1 && !stats.off && !stats.sentOff && !errs.length, JSON.stringify(got));
   return `caps (ms a frame) ${JSON.stringify(caps)}; frame gate a second at 60/120/144 Hz: ${gates.at60.join('/')} (cap 60), ${gates.at30.join('/')} (cap 30), title ${gates.title.join('/')}, idle ${gates.idle.join('/')}; measured in the test browser: title ${title.draws.toFixed(0)} a second, valley ${play.draws.toFixed(0)}, idle after ${idleWait.s} s ${idle.draws.toFixed(1)}; pixel ratio ${pr} on a 3x screen; ${people.farStill}/${people.far} far people still, ${people.near} near moving; statistics ${JSON.stringify(stats.on)} sent once, nothing with Analytics off`;
 });
 

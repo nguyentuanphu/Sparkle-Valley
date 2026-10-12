@@ -80,7 +80,7 @@ export async function flush(closing) {
   if (sending || settings.countPlayers === false || !onSite()) return false;
   const o = readOut();
   if (!o.pending) {
-    const days = Object.entries(o.days).filter(([, d]) => d.m || d.t || d.o || Object.keys(d.g).length || Object.keys(d.e || {}).length || (d.st || []).length).map(([d, x]) => ({ d, m: x.m, g: x.g, t: x.t, o: x.o, h: x.h || {}, c: x.c || {}, e: x.e || {}, s: x.s || {}, q: x.q || {}, f: x.f || [0, 0, 0], st: x.st || [], b: x.b || [0, 0, 0, 0, 0, 0, 0, 0] }));
+    const days = Object.entries(o.days).filter(([, d]) => d.m || d.t || d.o || Object.keys(d.g).length || Object.keys(d.e || {}).length || (d.st || []).length).map(([d, x]) => ({ d, m: x.m, g: x.g, t: x.t, o: x.o, h: x.h || {}, c: x.c || {}, e: x.e || {}, s: x.s || {}, q: x.q || {}, f: x.f || [0, 0, 0], st: x.st || [], b: x.b || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }));
     if (!days.length) return false;
     const miss = newMisses();
     o.pending = { h: rnd(16), days, v: miss.out }; o.days = {}; writeOut(o);
@@ -119,21 +119,22 @@ function sampleFps() { let n = 0; const t0 = performance.now(); const tick = () 
 
 // (battery round, owner 12 Oct AEDT: "my phone gets very hot; on my MacBook it takes almost 10 % at once") what drawing
 // the valley costs, once a minute while the game is on the screen, added up per day as
-//   b: [minutes measured, frames drawn, ms spent making them, draws per frame (summed per minute), pixel ratio x100
-//       (summed per minute), minutes mostly drawn slowly (nothing moving), minutes on battery, battery used on those
-//       minutes in tenths of a percent]
+//   b: [minutes measured, frames drawn while a child played and something moved, ms spent making them, draw calls on
+//       those frames, pixel ratio x100 (summed per minute), minutes mostly drawn slowly (nothing moving), minutes on
+//       battery, battery used on those minutes in tenths of a percent, minutes charging, seconds of that playing time]
+// (frames a second = frames / seconds: the title, idle and menu time are left out, so a calm device is not "slow")
 // The battery's level and charging come only where the browser tells them (Chrome-based browsers; Safari on iPhone,
-// iPad and Mac does not, and then the last two stay 0). Numbers only: nothing about a child. Analytics off: nothing.
+// iPad and Mac does not, and then the battery numbers stay 0). Numbers only: nothing about a child. Analytics off: nothing.
 let batt = null, lastLevel = null;
 try { if (navigator.getBattery) navigator.getBattery().then(x => { batt = x; }).catch(() => { }); } catch (e) { }
 export function sampleDrawing(G) {
   const B = G && G.battery; if (!B || !B.take) return;
-  const s = B.take(); if (!s.frames) return;
-  let onBat = 0, used = 0;
+  const s = B.take(); if (!s.frames && !s.idleFrames) return; // (the title screen, or the world resting all minute)
+  let onBat = 0, used = 0, charging = 0;
   if (batt && !batt.charging && typeof batt.level === 'number') { if (lastLevel != null) { onBat = 1; used = Math.max(0, Math.round((lastLevel - batt.level) * 1000)); } lastLevel = batt.level; }
-  else lastLevel = null;
-  bump(d => { const b = d.b = Array.isArray(d.b) && d.b.length === 8 ? d.b : [0, 0, 0, 0, 0, 0, 0, 0];
-    b[0]++; b[1] += s.frames; b[2] += Math.round(s.work); b[3] += Math.round(s.draws / s.frames); b[4] += Math.round(s.pr * 100); if (s.idleFrames * 2 > s.frames) b[5]++; b[6] += onBat; b[7] += used; });
+  else { lastLevel = null; if (batt && batt.charging) charging = 1; }
+  bump(d => { const b = d.b = Array.isArray(d.b) && d.b.length === 10 ? d.b : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    b[0]++; b[1] += s.frames; b[2] += Math.round(s.work); b[3] += s.draws; b[4] += Math.round(s.pr * 100); if (s.idleFrames > s.frames) b[5]++; b[6] += onBat; b[7] += used; b[8] += charging; b[9] += Math.round(s.ms / 1000); });
 }
 // online now, for Studio (round O): "still here" every two minutes while the game is on the screen, "gone" when put away
 export function sendLive(on, G) {
