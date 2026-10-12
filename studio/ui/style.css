@@ -205,3 +205,11 @@ details.adguide > summary, .adrow + details > summary { min-height: 44px; }
 .devrow .dabout { color: #6b5a86; }
 .devrow.robot { opacity: .55; }
 .pill.robot { background: #eee; color: #555; }
+
+/* (owner, 13 Oct) parts and cards open and close by their heading */
+details.fold > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; min-height: 44px; }
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary > h3, details.fold > summary > h4 { margin: 0; flex: 1; }
+details.fold > summary::after { content: '▾'; font-size: 1.1rem; color: #8a5cf6; transition: transform .2s; }
+details.fold:not([open]) > summary::after { transform: rotate(-90deg); }
+details.part-fold { margin: 6px 0 12px; }

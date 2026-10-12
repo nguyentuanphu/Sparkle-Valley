@@ -176,6 +176,17 @@ export async function studioCheck(browser, open) {
     // (owner, 11 Oct) the owner signs in with the password only; admins keep two-step (below)
     { const o2 = await call('/studio/api/login', { body: { password: PW } }); ok(o2.status === 200 && !o2.j.step, 'the owner was asked for a two-step code'); }
     const C = li.cookie, X = { 'X-Studio': '1' };
+    // (owner, 13 Oct AEDT) "Trust this browser": a year-long sign-in that works only while its trusted-browser record is
+    // there; the owner sees it in Security and Forget ends it at once
+    { testClock.t += 31e3; const r = await fetch(site + '/studio/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: PW, trust: true }) });
+      const sc = r.headers.getSetCookie ? r.headers.getSetCookie() : String(r.headers.get('set-cookie') || '').split(/,(?=\s*sv_)/);
+      const main = sc.find(c => /^\s*sv_studio=/.test(c)) || '', tr = sc.find(c => /^\s*sv_trust=/.test(c)) || '', long = /Max-Age=31536000/.test(main);
+      const both = main.split(';')[0].trim() + '; ' + tr.split(';')[0].trim(), alone = main.split(';')[0].trim();
+      const withBoth = (await call('/studio/api/trusted', { cookie: both })).status, onlyMain = (await call('/studio/api/trusted', { cookie: alone })).status;
+      const list = await call('/studio/api/trusted', { cookie: C }), id = list.j && list.j.trusted && list.j.trusted[0] && list.j.trusted[0].id;
+      const fg = await call('/studio/api/trusted/forget', { body: { id }, cookie: C, headers: X }), after = (await call('/studio/api/trusted', { cookie: both })).status;
+      ok(r.status === 200 && long && !!tr && withBoth === 200 && onlyMain === 401 && !!id && fg.status === 200 && after === 401, 'trusted browser: ' + JSON.stringify({ s: r.status, long, tr: !!tr, withBoth, onlyMain, id: !!id, fg: fg.status, after }));
+      notes.push('a trusted browser stays signed in for a year while it is on the list; Forget ends it'); }
     // 1b. other admins with their own accounts (round O): the owner adds them; a viewer only reads the analytics,
     // an editor can change things but not the admins; a new password or removing them signs them out
     { const add = (name, password, role) => call('/studio/api/admins/save', { body: { name, password, role }, cookie: C, headers: X });
