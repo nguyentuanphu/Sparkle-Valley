@@ -2460,3 +2460,9 @@ details.ocard.friends > summary::-webkit-details-marker { display: none; }
 details.ocard.friends > summary h3 { margin: 0; flex: 1; }
 details.ocard.friends > summary::after { content: '▾'; font-size: 20px; color: #8a5cf6; transition: transform .2s; }
 details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); }
+/* (Round V, owner 13 Oct) the Backpack's coins, Sparkle Orbs and Leafies: one tidy row of three cards */
+.bag-top { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.bag-top .chip.bagc { height: auto; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 6px 4px; border-radius: 16px; }
+.bag-top .chip.bagc i { font-style: normal; font-size: 22px; line-height: 1; } .bag-top .chip.bagc i .art { width: 24px; height: 24px; }
+.bag-top .chip.bagc b { font-size: 18px; line-height: 1.2; }
+.bag-top .chip.bagc small { font-size: 12px; line-height: 1.1; text-align: center; color: #6a5a8a; }

@@ -1874,10 +1874,12 @@ await check('shop', async () => {
     // the Bag button (Bug #29, owner 10 Oct: "bag is bag"): it opens the backpack, with one small shop button that opens the
     // shop right there, no travel; the stall in the valley stays
     p.age = 'big'; G.addCoins(500 - S.farm.coins); const pos0 = { x: h.pos.x, z: h.pos.z }; G.huds[0].root.querySelector('.dk.bag').click(); await w(500);
-    // (tester's notes, 12 Oct; owner: "bottom bar") the shop button sits beside the Bag in the dock, not inside the bag
-    const sb = G.huds[0].root.querySelector('.dk.shop'); out.bagOpens = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk') && !document.querySelector('.modal.pad .bagshop') && !!sb && !sb.hidden;
+    // (Round V, owner 13 Oct: "the shop button should be within the bag right next to the bag icon") a Shop tab straight
+    // after Backpack in the Pad; no Shop button in the dock
+    const tabsK = [...document.querySelectorAll('.modal.pad .pad-tabs button')].map(b => b.dataset.t), sb = document.querySelector('.modal.pad .pad-tabs [data-t="shop"]');
+    out.bagOpens = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk') && tabsK.indexOf('shop') === tabsK.indexOf('bag') + 1 && !G.huds[0].root.querySelector('.dk.shop');
     out.bagShopBtn = sb ? (() => { const q = sb.getBoundingClientRect(); return q.width >= 44 && q.height >= 44; })() : false;
-    document.querySelector('.modal.pad .x, .modal.pad .pad-x')?.click(); G.closePad && G.closePad(0); await w(300); sb && sb.click(); await w(700);
+    sb && sb.click(); await w(700);
     out.there = Math.hypot(h.pos.x - pos0.x, h.pos.z - pos0.z) < 1 && !document.querySelector('.modal.pad'); const card = document.querySelector('.modal.shopk .card');
     out.opened = !!card; out.tabs = card ? card.querySelectorAll('.ktab').length : 0; out.noBagTab = card ? !card.querySelector('[data-go="bag"]') : false;
     // (nothing to read: each thing is a drawing and a number; the words inside a drawing, like the coin's "$", are part
@@ -1930,7 +1932,7 @@ await check('shop', async () => {
   });
   const errs = P.errors; await P.ctx.close(); const bad = [];
   if (!r.offRoad || !r.nearMarket || !r.dry || !r.tap) bad.push('the shop is not by the market on dry ground off the road ' + JSON.stringify(r.spot));
-  if (!r.bagOpens || !r.bagShopBtn) bad.push('the Bag button does not open the backpack, or no shop button beside it in the dock ' + JSON.stringify({ o: r.bagOpens, b: r.bagShopBtn }));
+  if (!r.bagOpens || !r.bagShopBtn) bad.push('the Bag button does not open the backpack, or no Shop tab right after Backpack (or a Shop button still in the dock) ' + JSON.stringify({ o: r.bagOpens, b: r.bagShopBtn }));
   if (!r.there || !r.opened) bad.push('the shop button in the bag did not open the shop right there (no travel)');
   if (r.tabs !== 7 || !r.noBagTab || !r.pics || r.small) bad.push(`the shop card: ${r.tabs} tabs, pictures ${r.pics}, ${r.small} buttons under 44 px`);
   if (!r.bought || !r.poorKept || !r.closed) bad.push('buying ' + JSON.stringify({ bought: r.bought, poor: r.poorKept, closed: r.closed }));
@@ -1942,7 +1944,7 @@ await check('shop', async () => {
   if (!r.offBag || !r.offStall || !r.offWard) bad.push('the Studio switch did not put the old Bag and wardrobe back ' + JSON.stringify(r));
   if (errs.length) bad.push(...errs.slice(0, 2));
   if (bad.length) throw new Error(bad.join('; '));
-  return `the shop at ${r.spot} by the market, off the road; the Bag opens the backpack and the Shop button beside it in the dock opens the shop without travel; 7 picture tabs, coin prices, 64 px for under-5s; bought the tiara, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
+  return `the shop at ${r.spot} by the market, off the road; the Bag opens the backpack and the Shop tab right after Backpack opens the shop without travel; 7 picture tabs, coin prices, 64 px for under-5s; bought the tiara, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
 });
 await check('boxes', async () => {
   // (round S, owner plan 8 Oct: Round R Part 2 item 10) a big kid at Medium or Hard: one free mystery box a day, one more
@@ -3679,6 +3681,31 @@ await check('friendstab', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(!r.noBox && r.foldedSaved && r.stillFolded && r.closedOnJoin && r.closedOnStart && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return '"My friends" folds and stays folded; a friend coming into the room closes the Friends page; a game starting closes it';
+});
+
+await check('bagitems', async () => {
+  // (Round V, owner 13 Oct) the Backpack: every item says what it is and what it is for (hover and tap); food asks "Eat it?"
+  // first; the coins, Sparkle Orbs and Leafies sit in one tidy row of three cards
+  const out = [];
+  for (const [name, w, h, touch] of [['phone', 390, 760, true], ['computer', 1280, 800, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), p = G.heroes[0].profile;
+      p.inv.rice = 2; p.inv.mango = 1; p.dishes.pho = 2; G.openPad(0, 'bag'); await wait(600);
+      const cards = [...document.querySelectorAll('.modal.pad .bag-top .chip')].map(c => c.getBoundingClientRect()), row = cards.length === 3 && cards.every(c => Math.abs(c.top - cards[0].top) < 2 && c.height >= 44), even = cards.length === 3 && Math.max(...cards.map(c => c.width)) - Math.min(...cards.map(c => c.width)) < 3;
+      const titled = [...document.querySelectorAll('.modal.pad .slots .slot')].every(s => (s.getAttribute('title') || '').length > 3 || s.querySelector('.sw'));
+      const ing = document.querySelector('.modal.pad [data-ing="rice"]'); ing.click(); await wait(300); const tip = (document.querySelector('#toast') || {}).textContent || '';
+      const eat = () => document.querySelector('.modal.pad [data-eat="pho"]');
+      eat().click(); await wait(500); let ch = [...document.querySelectorAll('.dialog .dch')], asked = ch.length === 2; ch[1] && ch[1].click(); await wait(400); const kept = p.dishes.pho === 2;
+      eat().click(); await wait(500); ch = [...document.querySelectorAll('.dialog .dch')]; ch[0] && ch[0].click(); await wait(400); const ate = p.dishes.pho === 1;
+      document.querySelectorAll('.dialog').forEach(d => d.remove()); G.paused = false;
+      return { row, even, titled, tip: tip.slice(0, 80), asked, kept, ate };
+    });
+    const errs = P.errors; await P.ctx.close();
+    if (!r.row || !r.even || !r.titled || !/rice|gạo/i.test(r.tip) || !/xôi|bánh|cook|nấu/i.test(r.tip) || !r.asked || !r.kept || !r.ate || errs.length) out.push(name + ' ' + JSON.stringify(Object.assign(r, { errs })));
+  }
+  ok(!out.length, out.join(' | '));
+  return 'the three counters in one row of cards; every item has its words on hover; an ingredient tap says which dishes it makes; food asks "Eat it?" (Not now keeps it, Yes eats it), on a phone and a computer';
 });
 
 await check('bilingual', async () => {
