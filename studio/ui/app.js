@@ -515,11 +515,19 @@ PAGES.releases = async P => {
     ${Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th class="more"></th><th>${T('Starts', 'Bắt đầu')}</th><th>${T('Days on', 'Số ngày')}</th><th>${T('“New” days', 'Ngày “Mới”')}</th></tr></thead><tbody>${RELEASES.filter(x => x.group === g).map(row).join('')}</tbody></table></div>`).join('')}
     <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   P.querySelector('.sub').after(document.createRange().createContextualFragment(liveNote())); bindMore(P);
+  // (owner, 12 Oct) the auto play check: on every device, or only on the ones ticked here (from the players report)
+  { const tr = P.querySelector('tr[data-id="autoplay"]'), mine = new Set((R.autoplay && R.autoplay.devices) || []);
+    if (tr) { const box = document.createElement('div'); box.className = 'card'; box.id = 'apdev'; tr.closest('.card').after(box);
+      box.innerHTML = `<h4>${T('Auto play check: which devices', 'Tự chơi để kiểm tra: máy nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on).', 'Không chọn máy nào: mọi máy (khi công tắc bật).')}</p><div id="apdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
+      let devs = []; try { const r = await api('players'); devs = (r && r.devices) || []; } catch (e) { devs = []; }
+      for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
+      $('#apdl').innerHTML = devs.length ? devs.map(d => `<label class="chk"><input type="checkbox" data-dev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${esc(d.label || [d.kind, d.os, d.br].filter(x => x && x !== '?').join(' · ') || d.id)} <small class="mini">${esc(d.id)}</small></label>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`; } }
   P.querySelectorAll('[data-in]').forEach(b => b.onchange = () => { if (b.value === '') return; b.closest('td').querySelector('[data-r="start"]').value = plusDays(+b.value); b.value = ''; });
   $('#save').onclick = async () => {
     const out = {};
     P.querySelectorAll('tr[data-id]').forEach(tr => { const id = tr.dataset.id, x = RELEASES.find(y => y.id === id), v = k => tr.querySelector(`[data-r="${k}"]`).value;
       const r = {}, on = v('on') === 'true'; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
+      if (id === 'autoplay') { const dv = [...P.querySelectorAll('[data-dev]:checked')].map(c => c.dataset.dev); if (dv.length) r.devices = dv; }
       if (Object.keys(r).length) out[id] = r; });
     await saveLive({ releases: out, festivals: live.festivals || {} }).catch(fail);
   };
