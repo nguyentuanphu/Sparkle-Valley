@@ -22,7 +22,7 @@ const SHOWN_EMOJI = () => { const EMO = /\p{Extended_Pictographic}(?:\uFE0F|[\u{
   return [...out]; };
 
 export function fakeGitHub(repo, files) {
-  const blobs = new Map(), trees = new Map(), commits = new Map(), refs = new Map(), log = [];
+  const blobs = new Map(), trees = new Map(), commits = new Map(), refs = new Map(), log = []; let failBlobs = 0;
   const gitSha = b => crypto.createHash('sha1').update('blob ' + b.length + '\0').update(b).digest('hex');
   const id = () => crypto.randomBytes(20).toString('hex');
   const putTree = map => { const t = id(); trees.set(t, map); return t; };
@@ -53,6 +53,7 @@ export function fakeGitHub(repo, files) {
       return out.size ? ok([...out.values()]) : no(404, 'Not Found');
     }
     if ((m = /^\/git\/blobs\/(\w+)$/.exec(q))) return blobs.has(m[1]) ? ok({ content: blobs.get(m[1]).toString('base64') }) : no(404, 'No blob');
+    if (q === '/git/blobs' && method === 'POST' && failBlobs > 0) { failBlobs--; return no(504, 'Gateway Timeout'); } // (a busy GitHub)
     if (q === '/git/blobs' && method === 'POST') { const buf = Buffer.from(body.content, 'base64'), s = gitSha(buf); blobs.set(s, buf); return ok({ sha: s }); }
     if (q === '/git/trees' && method === 'POST') {
       const base = body.base_tree ? trees.get(body.base_tree.split(':')[0]) : new Map(); if (!base) return no(422, 'bad base');
@@ -72,7 +73,7 @@ export function fakeGitHub(repo, files) {
   }
   const fileAt = (branch, rel) => { const c = refs.get(branch); if (!c) return null; const s = trees.get(commits.get(c).tree).get(rel); return s ? blobs.get(s) : null; };
   const commitOnMain = (rel, buf, message) => { const c = refs.get('main'), map = new Map(trees.get(commits.get(c).tree)), b = Buffer.from(buf), s = gitSha(b); blobs.set(s, b); map.set(rel, s); refs.set('main', putCommit(putTree(map), [c], message)); };
-  return { handle, refs, fileAt, commitOnMain, log, messageOf: c => commits.get(c).message };
+  return { handle, refs, fileAt, commitOnMain, log, messageOf: c => commits.get(c).message, failBlobsNext: n => { failBlobs = n; } };
 }
 
 // every fetch to api.github.com goes to the pretend GitHub (in this process)
@@ -112,7 +113,10 @@ export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs
     if (fn) {
       const ch = []; for await (const c of req) ch.push(c);
       const r = await fn(new Request(url, { method: req.method, headers: req.headers, body: req.method === 'POST' ? Buffer.concat(ch) : undefined }), { geo: JSON.parse(req.headers['x-test-geo'] || '{}') }); // (Netlify gives the town from the connection; tests say it in a header)
-      const h = {}; r.headers.forEach((v, k) => { h[k] = v; }); res.writeHead(r.status, h); res.end(Buffer.from(await r.arrayBuffer())); return;
+      const h = {}; r.headers.forEach((v, k) => { h[k] = v; }); const out = Buffer.from(await r.arrayBuffer());
+      // (r65) like Netlify: a function's answer is at most 6 MB, and a picture is sent as base64 (a third bigger), so about 4.5 MB
+      if ((/^(image|audio|video)\/|octet/.test(h['content-type'] || '') ? out.length * 4 / 3 : out.length) > 6e6) { res.writeHead(502, { 'Content-Type': 'text/plain' }); res.end('Function response is too large'); return; }
+      res.writeHead(r.status, h); res.end(out); return;
     }
     if (p === '/studio' || p === '/studio/') p = '/studio/ui/index.html'; else if (p.startsWith('/studio/game/')) p = p.slice('/studio/game'.length); else if (p.startsWith('/studio/voices/')) p = p.slice('/studio'.length);
     const f = path.join(ROOT, p.endsWith('/') ? p + 'index.html' : p);
@@ -129,9 +133,9 @@ export async function studioCheck(browser, open) {
   const repo = 'family/sparkle', PW = 'a-long-test-password-123', NPORT = 8791, SPORT = 8792, site = `http://localhost:${NPORT}`;
   const seed = {}; for (const f of ['index.html', 'sw.js', 'js/main.js', 'js/i18n.js', 'js/build.js', 'js/packhash.js']) seed[f] = fs.readFileSync(path.join(ROOT, f));
   seed['content/custom.json'] = JSON.stringify({ message: { en: 'Hello', vi: 'Xin chào' } }); seed['voices/en/f/0000aaaa.mp3'] = 'x'; seed['voices/manifest.json'] = JSON.stringify({ version: 2, cast: { en: ['f'] }, voices: {}, lines: { '0000aaaa': 'f' }, langOf: { '0000aaaa': 'en' } }); // (like the real pack: it lists what is recorded)
-  const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs(), adminStore = memoryBlobs(), familyStore = memoryBlobs(), logStore = memoryBlobs();
+  const gh = fakeGitHub(repo, seed), unroute = routeGitHub(gh), players = memoryBlobs(), adminStore = memoryBlobs(), familyStore = memoryBlobs(), logStore = memoryBlobs(), heldStore = memoryBlobs();
   const admins = await import(path.join(ROOT, 'netlify/lib/admins.mjs')), secrets = {};
-  const net = await fakeNetlify({ port: NPORT, players, adminStore, familyStore, logStore, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
+  const net = await fakeNetlify({ port: NPORT, players, adminStore, familyStore, logStore, heldStore, env: { STUDIO_PASSWORD: PW, GITHUB_TOKEN: 'test-token', GITHUB_REPO: repo, URL: site, AZURE_KEY: '', NETLIFY_TOKEN: '' } });
   // the exe's own server, on a copy of a small game folder, with its settings in a folder of its own
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-studio-')), game = path.join(tmp, 'game'), appdata = path.join(tmp, 'appdata');
   fs.cpSync(path.join(ROOT, 'js'), path.join(game, 'js'), { recursive: true }); // the game's code (the pages read it)
@@ -139,9 +143,12 @@ export async function studioCheck(browser, open) {
   for (const f of Object.keys(seed)) { fs.mkdirSync(path.dirname(path.join(game, f)), { recursive: true }); fs.writeFileSync(path.join(game, f), seed[f]); }
   fs.mkdirSync(path.join(appdata, 'SparkleStudio'), { recursive: true }); fs.writeFileSync(path.join(appdata, 'SparkleStudio', 'settings.json'), JSON.stringify({ gameDir: game, siteUrl: site, githubToken: 'test-token', githubRepo: repo }));
   // the exe is its own process: it reaches the same pretend GitHub over http (STUDIO_GITHUB_API, tests only)
-  const GPORT = 8793, ghNet = http.createServer((req, res) => { let d = ''; req.on('data', c => d += c); req.on('end', async () => { const r = await gh.handle(req.method, 'https://api.github.com' + req.url, d ? JSON.parse(d) : null); res.writeHead(r.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(r.j)); }); });
+  // (owner, 12 Oct) the branch "studio-exe" the exe updates itself from: its files, given raw
+  const exeBranch = new Map(), fakeExe = path.join(tmp, 'exe', 'SparkleStudio.exe'); fs.mkdirSync(path.dirname(fakeExe), { recursive: true }); fs.writeFileSync(fakeExe, 'OLD EXE');
+  const GPORT = 8793, ghNet = http.createServer((req, res) => { let d = ''; req.on('data', c => d += c); req.on('end', async () => {
+    { const m = /^\/repos\/[^/]+\/[^/]+\/contents\/([^?]+)\?ref=studio-exe$/.exec(req.url); if (m) { const f = exeBranch.get(decodeURIComponent(m[1])); res.writeHead(f ? 200 : 404, { 'Content-Type': 'application/octet-stream' }); return res.end(f || '{"message":"Not Found"}'); } } const r = await gh.handle(req.method, 'https://api.github.com' + req.url, d ? JSON.parse(d) : null); res.writeHead(r.status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(r.j)); }); });
   await new Promise(r => ghNet.listen(GPORT, '127.0.0.1', r));
-  const exe = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cjs')], { env: { ...process.env, APPDATA: appdata, STUDIO_PORT: String(SPORT), STUDIO_NO_OPEN: '1', STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}` }, stdio: 'ignore' });
+  const exe = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cjs')], { env: { ...process.env, APPDATA: appdata, STUDIO_PORT: String(SPORT), STUDIO_NO_OPEN: '1', STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}`, STUDIO_UPDATE_EXE: fakeExe, STUDIO_UPDATE_NO_RESTART: '1' }, stdio: 'ignore' });
   const notes = [];
   try {
     for (let i = 0; i < 50; i++) { try { if ((await fetch(`http://localhost:${SPORT}/studio/api/ping`)).ok) break; } catch (e) { } await new Promise(r => setTimeout(r, 200)); }
@@ -255,11 +262,20 @@ export async function studioCheck(browser, open) {
     ok(gh.refs.get('studio-draft') === gh.refs.get('main') && !(await call('/studio/api/info', { cookie: C })).j.unpublished, 'the draft did not start again after publishing');
     ok((await call('/studio/api/github/publish', { cookie: C, headers: X, body: {} })).j.result.changed === 0, 'a second publish found changes');
     ok(!(await call('/studio/api/pending', { cookie: C })).j.files.length, 'changes still waiting after Publish');
+    // (owner, 12 Oct: real photos would not publish, "error 504") many waiting photos go in steps of a dozen, each its
+    // own short request, and a busy GitHub (504) is tried again instead of failing the Publish
+    { const { heldOn } = await import(path.join(ROOT, 'netlify/functions/studio.mjs')), ch = new Map();
+      for (let i = 1; i <= 30; i++) ch.set(`photos/test${i % 5}/${i}.jpg`, Buffer.from('JPG' + i));
+      await heldOn(heldStore).put(ch); gh.failBlobsNext(1);
+      let steps = 0, r; do { r = (await call('/studio/api/github/publish', { cookie: C, headers: X, body: { message: 'Photos', step: true } })).j; steps++; } while (r && r.more && steps < 20);
+      ok(r && r.end && r.result && r.result.changed === 30 && steps === 4 && gh.fileAt('main', 'photos/test1/26.jpg'), 'photos in steps: ' + JSON.stringify({ steps, r }));
+      ok(!(await call('/studio/api/pending', { cookie: C })).j.files.length, 'photos still waiting after the Publish steps'); }
     // dropping waiting changes: they are gone and nothing reaches GitHub
     await call('/studio/api/content', { cookie: C, headers: X, body: { message: { en: 'Never mind', vi: 'Thôi' } } });
     ok((await call('/studio/api/pending/discard', { cookie: C, headers: X, body: {} })).status === 200 && /online/.test((await call('/studio/api/content', { cookie: C })).j.message.en) && !(await call('/studio/api/pending', { cookie: C })).j.files.length, 'dropping the waiting changes failed');
     // a real photo taken off (✕) goes at once (read back straight away) and is never fetched again
     { await new Promise(r => setTimeout(r, 15500)); // (where the branches point is kept 15 s between requests)
+      gh.commitOnMain('photos/saigon-post/1.jpg', JPG, 'photos'); gh.commitOnMain('photos/saigon-post/2.jpg', JPG, 'photos'); // (r65: a photo is listed only while its file is there)
       gh.commitOnMain('photos/index.json', JSON.stringify({ 'saigon-post': [{ src: 'photos/saigon-post/1.jpg', file: 'File:Wrong.jpg' }, { src: 'photos/saigon-post/2.jpg', file: 'File:Right.jpg' }] }), 'photos'); await new Promise(r => setTimeout(r, 15500));
       ok((await call('/studio/api/photos/remove', { cookie: C, headers: X, body: { key: 'saigon-post', src: 'photos/saigon-post/1.jpg' } })).status === 200, 'photos/remove failed');
       const left = (await call('/studio/api/photos/index', { cookie: C })).j['saigon-post'] || [], bl = (await call('/studio/api/file/photos/blocked.json', { cookie: C })).j || {};
@@ -287,7 +303,7 @@ export async function studioCheck(browser, open) {
     // round L: a device with one child's day: name, games (started, won, left), places, stories, hours, errors, stuck, smoothness; the town from the connection
     { const today = new Date().toISOString().slice(0, 10);
       const st = await fetch(site + '/api/hello', { method: 'POST', headers: { 'x-test-geo': JSON.stringify({ city: 'Brisbane', subdivision: { code: 'QLD' }, country: { code: 'AU' } }) }, body: JSON.stringify({ id: 'dddddddddddd', b: 'r43', l: 'en', k: 1, d: 'tablet', a: true, os: 'iPadOS', br: 'Safari', sc: '820x1180',
-        days: [{ d: today, m: 12, g: { caro: 2 }, t: 1, o: 0, h: { 9: 12 }, c: { p1: { n: 'Na', a: 'little', m: 12, sm: 2, t: 1, g: { caro: [6, 1, 5] }, p: { village: 2 } }, 'bad key!': { n: '<b>x</b>' } }, e: { 'x is not defined @ main.js:10': 2, '<script>': 1 }, s: { 'village (3, 4)': 3 }, q: { caro: 5 }, f: [1200, 60, 50] }] }) }).then(r => r.status);
+        days: [{ d: today, m: 12, g: { caro: 2 }, t: 1, o: 0, h: { 9: 12 }, c: { p1: { n: 'Na', a: 'little', m: 12, sm: 2, t: 1, g: { caro: [6, 1, 5] }, p: { village: 2 } }, 'bad key!': { n: '<b>x</b>' } }, e: { 'x is not defined @ main.js:10': 2, '<script>': 1 }, s: { 'village (3, 4)': 3 }, q: { caro: 5 }, f: [1200, 60, 50], st: [[300, 21300, 22100, 1, 'things'], [300, 20800, 21900, 1, 'things']] }] }) }).then(r => r.status);
       ok(st === 204, 'a rich hello was not taken: ' + st);
       ok((await call('/studio/api/players/label', { cookie: C, headers: X, body: { id: 'dddddddddddd', label: 'Na’s iPad' } })).status === 200, 'naming a device failed');
       const R = (await call('/studio/api/players', { cookie: C })).j, dv = (R.devices || []).find(x => x.id === 'dddddddddddd') || {}, kid = (dv.kids || [])[0] || {};
@@ -332,6 +348,21 @@ export async function studioCheck(browser, open) {
     { const web = (await call('/studio/api/players', { cookie: C })).j, exeR = (await ex('players')).j; ok(exeR && exeR.today && exeR.today.devices === web.today.devices && web.today.devices >= 3, 'the exe could not show the players: ' + JSON.stringify({ exe: exeR && exeR.today, web: web.today })); }
     ok((await ex('voices/inbox')).j.length === 2, 'the exe could not see the inbox');
     const chk = (await ex('check')).j; ok(chk.some(x => x.ok && /the same here and online/.test(x.en)), 'the exe and online versions were not compared: ' + JSON.stringify(chk.map(x => x.en)));
+    // (owner, 12 Oct) the exe updates itself from the "studio-exe" branch: it offers a newer version, refuses a download
+    // that does not match its checksum, and swaps a good one in, keeping the old one beside it until the next start
+    { const neu = Buffer.from('NEW EXE ' + Date.now()), sha = crypto.createHash('sha256').update(neu).digest('hex'), oldExe = path.join(path.dirname(fakeExe), 'SparkleStudio.old.exe');
+      ok(!(await ex('update/check')).j.newer, 'an update was offered with no studio-exe branch');
+      exeBranch.set('version.json', JSON.stringify({ studio: 'r9999', sha256: 'not-the-sum', notes: 'test' })); exeBranch.set('SparkleStudio.exe', neu);
+      const c1 = (await ex('update/check')).j; ok(c1.newer && c1.latest === 'r9999' && c1.can, 'update check: ' + JSON.stringify(c1));
+      const bad = (await ex('update/apply', {})).j; ok(bad.error && /checksum/.test(bad.error) && fs.readFileSync(fakeExe, 'utf8') === 'OLD EXE', 'a download that does not match was put in place: ' + JSON.stringify(bad));
+      exeBranch.set('version.json', JSON.stringify({ studio: 'r9999', sha256: sha }));
+      const good = (await ex('update/apply', {})).j; ok(good.ok && good.latest === 'r9999' && fs.readFileSync(fakeExe).equals(neu) && fs.readFileSync(oldExe, 'utf8') === 'OLD EXE', 'the update was not swapped in: ' + JSON.stringify(good));
+      // a rebuild of the same version (fixes between rounds): offered while its checksum differs from this exe's
+      const here = (await ex('info')).j.studio, mine = crypto.createHash('sha256').update(fs.readFileSync(fakeExe)).digest('hex');
+      exeBranch.set('version.json', JSON.stringify({ studio: here, sha256: mine })); ok(!(await ex('update/check')).j.newer, 'the same exe was offered as an update');
+      exeBranch.set('version.json', JSON.stringify({ studio: here, sha256: 'f'.repeat(64) })); ok((await ex('update/check')).j.newer, 'a rebuild of the same version was not offered');
+      exeBranch.clear();
+      notes.push('the exe updates itself from GitHub (checksum checked, rebuilds of the same version too)'); }
     // the exe sends to GitHub in two steps (owner, round 30): 1. a draft (the website does not change), 2. Publish
     const job = async (p, body) => { const s0 = await ex(p, body); ok(s0.status === 200, p + ': ' + JSON.stringify(s0.j)); for (let i = 0; i < 100; i++) { const j = (await ex('job')).j; if (j && j.end) return j; await new Promise(r => setTimeout(r, 100)); } throw new Error(p + ' never finished'); };
     const d1 = await job('github/draft', { message: 'Draft from the exe' });
@@ -341,10 +372,92 @@ export async function studioCheck(browser, open) {
     ok(!p1.error && p1.result.changed >= 1 && /exe/.test(gh.fileAt('main', 'content/custom.json')) && gh.refs.get('studio-draft') === gh.refs.get('main') && !gh.fileAt('main', 'content/faces/ba-nam.jpg'), 'the exe publish: ' + JSON.stringify(p1));
     ok((await job('github/draft', {})).result.changed === 0, 'a second exe draft found changes');
     notes.push('exe: saves to its folder with a backup, players via the website, same version; GitHub in two steps (draft, then Publish)');
+    // (owner, 12 Oct: the exe's game folder was r38 while the website was r63) a folder older than the website cannot
+    // save a draft (its old files would undo newer ones); the exe gets the newest game from GitHub by itself, and keeps a
+    // content, voice or photo file changed here and not published yet
+    { const sw = fs.readFileSync(path.join(game, 'sw.js'), 'utf8'), newer = sw.replace(/-r\d+'/, "-r9998'");
+      gh.commitOnMain('sw.js', newer, 'newer game'); gh.commitOnMain('voices/en/f/newline1.mp3', 'NEWV', 'a new line'); gh.commitOnMain('voices/en/f/0000aaaa.mp3', 'REMOTE', 'a changed line');
+      fs.writeFileSync(path.join(game, 'voices/en/f/0000aaaa.mp3'), 'LOCAL');
+      const old = await job('github/draft', {}); ok(old.error && /get the newest game first/.test(old.error), 'a draft from an older game folder was not refused: ' + JSON.stringify(old));
+      let st = (await ex('sync/start', { force: true })).j; for (let i = 0; i < 100 && st.state === 'running'; i++) { await new Promise(r => setTimeout(r, 200)); st = (await ex('sync/status')).j; }
+      ok(st.state === 'done' && st.build === 'r9998' && fs.readFileSync(path.join(game, 'voices/en/f/newline1.mp3'), 'utf8') === 'NEWV', 'the exe did not get the newest game: ' + JSON.stringify(st));
+      ok(fs.readFileSync(path.join(game, 'voices/en/f/0000aaaa.mp3'), 'utf8') === 'LOCAL' && st.kept.includes('voices/en/f/0000aaaa.mp3'), 'a change not published yet was overwritten: ' + JSON.stringify(st.kept));
+      notes.push('exe: gets the newest game by itself, keeps changes not published, refuses a draft from an older folder'); }
+    // (owner, 12 Oct) on a computer with no game folder, the exe downloads the newest game next to itself
+    { const t2 = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-fresh-')), ad2 = path.join(t2, 'appdata'), exe2 = path.join(t2, 'exe', 'SparkleStudio.exe'), P2 = SPORT + 7;
+      fs.mkdirSync(path.join(ad2, 'SparkleStudio'), { recursive: true }); fs.mkdirSync(path.dirname(exe2), { recursive: true });
+      fs.writeFileSync(path.join(ad2, 'SparkleStudio', 'settings.json'), JSON.stringify({ githubToken: 'test-token', githubRepo: repo }));
+      const fresh = spawn(process.execPath, [path.join(ROOT, 'studio/studio.cjs')], { cwd: path.dirname(exe2), env: { ...process.env, APPDATA: ad2, STUDIO_PORT: String(P2), STUDIO_NO_OPEN: '1', STUDIO_AS_EXE: '1', STUDIO_UPDATE_EXE: exe2, STUDIO_GITHUB_API: `http://127.0.0.1:${GPORT}` }, stdio: 'ignore' });
+      try {
+        let st = null; for (let i = 0; i < 150; i++) { await new Promise(r => setTimeout(r, 200)); try { st = await (await fetch(`http://localhost:${P2}/studio/api/sync/status`)).json(); } catch (e) { st = null; } if (st && st.state === 'done') break; }
+        const dir = path.join(path.dirname(exe2), 'SparkleValley'), inf = await (await fetch(`http://localhost:${P2}/studio/api/info`)).json();
+        ok(st && st.state === 'done' && fs.existsSync(path.join(dir, 'index.html')) && fs.existsSync(path.join(dir, 'js', 'main.js')) && inf.ok, 'a computer with no game folder did not get the game: ' + JSON.stringify({ st, ok: inf.ok }));
+        ok(JSON.parse(fs.readFileSync(path.join(ad2, 'SparkleStudio', 'settings.json'), 'utf8')).gameDir === dir, 'the new game folder was not remembered');
+      } finally { fresh.kill(); }
+      notes.push('exe: with no game folder, downloads the newest game next to itself'); }
+    // 5b. (r65) the real photos: every saved thumbnail opens as a picture, online and in the exe. The owner saw broken ones:
+    // folders named with Vietnamese letters were refused, photos over 4.5 MB cannot come back from a Netlify function, and
+    // a photo whose file had gone was still listed. Here: real places' keys, a plain JPEG, one in a Vietnamese-named folder,
+    // a PNG, one saved but not published (online it waits in studio-pending), a 5 MB one and one whose file is gone.
+    { const bp = await (await browser.newContext()).newPage(); await bp.goto(site + '/studio/ui/index.html');
+      const made = await bp.evaluate(async () => { const R = await import('/studio/game/js/realworld.js'), keys = new Set();
+        for (const r of Object.values(R.REAL)) keys.add(R.photoKey(r[0])); for (const src of Object.values(R.REAL_KINDS || {})) if (src && src.length) keys.add(R.photoKey(src));
+        const c = document.createElement('canvas'); c.width = 240; c.height = 160; const g = c.getContext('2d'); g.fillStyle = '#4a9'; g.fillRect(0, 0, 240, 160); g.fillStyle = '#fd4'; g.fillRect(40, 40, 80, 60);
+        return { keys: [...keys], jpg: c.toDataURL('image/jpeg', .8).split(',')[1], png: c.toDataURL('image/png').split(',')[1] }; });
+      await bp.context().close();
+      const vi = made.keys.find(k => /[^\x00-\x7f]/.test(k)), plain = made.keys.filter(k => /^[\x00-\x7f]+$/.test(k)), [kA, kC, kD, kE] = plain;
+      ok(vi && kE, 'no real places with these kinds of names: ' + made.keys.slice(0, 8).join(', '));
+      const JPEG = Buffer.from(made.jpg, 'base64'), PNG = Buffer.from(made.png, 'base64'), BIG = Buffer.concat([JPEG, Buffer.alloc(5e6)]); // (after the picture's end, so it still opens)
+      const e = (src, n) => ({ src, file: 'File:' + n + '.jpg', caption: n, credit: 'test · CC BY-SA' });
+      const pub = { [kA]: [e(`photos/${kA}/1.jpg`, 'A1'), e(`photos/${kA}/2.jpg`, 'A2 gone')], [vi]: [e(`photos/${vi}/1.jpg`, 'Vietnamese')], [kC]: [e(`photos/${kC}/1.jpg`, 'PNG')], [kE]: [e(`photos/${kE}/1.jpg`, 'big')] };
+      const all = { ...pub, [kD]: [e(`photos/${kD}/1.jpg`, 'saved, not published')] };
+      const files = { [`photos/${kA}/1.jpg`]: JPEG, [`photos/${vi}/1.jpg`]: JPEG, [`photos/${kC}/1.jpg`]: PNG, [`photos/${kE}/1.jpg`]: BIG };
+      await new Promise(r => setTimeout(r, 15500)); // (where the branches point is kept 15 s between requests)
+      for (const [rel, b] of Object.entries(files)) gh.commitOnMain(rel, b, 'photos'); gh.commitOnMain('photos/index.json', JSON.stringify(pub), 'photos');
+      await heldStore.set('f/photos/index.json', Buffer.from(JSON.stringify(all)).toString('base64')); await heldStore.set(`f/photos/${kD}/1.jpg`, JPEG.toString('base64'));
+      await heldStore.setJSON('index', { ...JSON.parse(await heldStore.get('index') || '{}'), 'photos/index.json': 1, [`photos/${kD}/1.jpg`]: JPEG.length });
+      for (const [rel, b] of Object.entries({ ...files, [`photos/${kD}/1.jpg`]: JPEG, 'photos/index.json': JSON.stringify(all) })) { fs.mkdirSync(path.dirname(path.join(game, rel)), { recursive: true }); fs.writeFileSync(path.join(game, rel), b); }
+      await new Promise(r => setTimeout(r, 15500));
+      const proof = async (pg, where) => { await pg.evaluate(() => { location.hash = 'family'; }); await pg.waitForTimeout(300); await pg.evaluate(() => { location.hash = 'photos'; }); await pg.waitForSelector('.thumb img', { timeout: 20000 });
+        await pg.waitForFunction(() => [...document.querySelectorAll('.thumb img')].every(i => i.complete), null, { timeout: 20000 }); await pg.waitForTimeout(300);
+        return pg.evaluate(() => ({ thumbs: [...document.querySelectorAll('.thumb')].map(t => { const i = t.querySelector('img'); return { src: decodeURIComponent(i.getAttribute('src')), open: i.naturalWidth > 0, flagged: t.classList.contains('bad') && getComputedStyle(t.querySelector('.thumbbad')).display !== 'none' }; }),
+          warn: !document.querySelector('#pbad').hidden ? document.querySelector('#pbad').textContent : '' })); };
+      const ctx = await browser.newContext({ viewport: { width: 1180, height: 800 } }), po = await ctx.newPage();
+      await po.goto(site + '/studio'); await po.waitForSelector('#pw', { timeout: 15000 }); await po.fill('#pw', PW); await po.click('#si button'); await po.waitForSelector('#tabs button', { timeout: 15000 });
+      const on = await proof(po, 'online'), pe0 = await ctx.newPage(); await pe0.goto(`http://localhost:${SPORT}/`); await pe0.waitForSelector('#tabs button', { timeout: 15000 }); const exe0 = await proof(pe0, 'exe');
+      await ctx.close();
+      const need = [`photos/${kA}/1.jpg`, `photos/${vi}/1.jpg`, `photos/${kC}/1.jpg`, `photos/${kD}/1.jpg`], big = `photos/${kE}/1.jpg`, gone = `photos/${kA}/2.jpg`;
+      const has = (r, src) => r.thumbs.find(t => t.src.endsWith('/api/file/' + src));
+      for (const [r, where] of [[on, 'online'], [exe0, 'exe']]) {
+        for (const src of need) ok(has(r, src) && has(r, src).open && !has(r, src).flagged, `${where}: the photo ${src} does not open: ` + JSON.stringify(r));
+        ok(!has(r, gone), `${where}: a photo whose file is gone is still listed`);
+        ok(r.thumbs.every(t => t.open || t.flagged), `${where}: a photo that cannot be shown is not marked: ` + JSON.stringify(r.thumbs.filter(t => !t.open)));
+      }
+      ok(has(exe0, big) && has(exe0, big).open, 'exe: the 5 MB photo does not open');
+      ok(has(on, big) && !has(on, big).open && has(on, big).flagged && /1[.,]5 MB/.test(on.warn), 'online: the 5 MB photo is not marked as too big to show: ' + JSON.stringify(on));
+      // the list is tidied: the photo whose file is gone is no longer in photos/index.json (online it waits to be published)
+      const ixo = JSON.parse(Buffer.from(String(await heldStore.get('f/photos/index.json')), 'base64').toString('utf8')), ixe = JSON.parse(fs.readFileSync(path.join(game, 'photos/index.json'), 'utf8'));
+      ok(ixo[kA].length === 1 && ixe[kA].length === 1 && ixo[kD] && ixe[kD], 'the list of photos was not tidied: ' + JSON.stringify({ ixo: ixo[kA], ixe: ixe[kA] }));
+      await call('/studio/api/pending/discard', { cookie: C, headers: X, body: {} });
+      // (the pages below are opened again online: the 5 MB photo is taken off there so it is not counted as an error)
+      const { [kE]: _big, ...rest } = pub; gh.commitOnMain('photos/index.json', JSON.stringify(rest), 'photos'); await new Promise(r => setTimeout(r, 15500));
+      notes.push(`real photos: ${need.length} kinds of saved photo open online and in the exe (a Vietnamese-named folder, a PNG, one not yet published); a 5 MB one is marked online; one whose file is gone is taken off the list`); }
+    // a fetched photo over 1.5 MB is left out for the next one (the photo sites are pretended)
+    { const { createStudio, folderStore } = (await import(path.join(ROOT, 'studio/core.cjs'))).default, d = fs.mkdtempSync(path.join(os.tmpdir(), 'sv-ph-'));
+      fs.writeFileSync(path.join(d, 'index.html'), ''); fs.mkdirSync(path.join(d, 'js')); fs.writeFileSync(path.join(d, 'js/main.js'), '');
+      const real = globalThis.fetch, small = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(9e4)]), huge = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(2e6)]);
+      const J = o => new Response(JSON.stringify(o), { status: 200, headers: { 'content-type': 'application/json' } });
+      globalThis.fetch = async u => { u = String(u); if (u.includes('openverse')) return J({ results: [1, 2, 3].map(i => ({ url: `https://pics.test/${i === 1 ? 'huge' : 'small' + i}.jpg`, width: 1600, height: 900, title: 'Test place ' + i, creator: 'me', license: 'by', license_version: '4.0', source: 'flickr' })) });
+        if (u.startsWith('https://pics.test/')) return new Response(u.includes('huge') ? huge : small, { status: 200, headers: { 'content-type': 'image/jpeg' } }); if (u.startsWith('http://localhost') || u.startsWith('http://127.0.0.1')) return real(u); return new Response('{}', { status: 404 }); };
+      try { const st = createStudio({ store: folderStore(d), conf: {} }), r = await st.handle('photos/get1', 'POST', Buffer.from(JSON.stringify({ item: { key: 'test-place', sources: ['en:Test place'], name: 'Test place' }, max: 2 })));
+        const ix = JSON.parse(fs.readFileSync(path.join(d, 'photos/index.json'), 'utf8'))['test-place'] || [], sizes = ix.map(x => fs.statSync(path.join(d, x.src)).size);
+        ok(r.code === 200 && ix.length === 2 && sizes.every(n => n < 1.5e6), 'a photo over 1.5 MB was saved: ' + JSON.stringify({ r: r.body, sizes })); }
+      finally { globalThis.fetch = real; fs.rmSync(d, { recursive: true, force: true }); }
+      notes.push('a fetched photo over 1.5 MB is skipped for the next one'); }
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone
-    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode', 'missions', 'villagers', 'path', 'play', 'quiz', 'stories'], bad = [];
+    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode', 'missions', 'villagers', 'path', 'play', 'quiz', 'stories', 'looks', 'plots'], bad = [];
     // (Studio review, owner 10 Oct) every button and box 44 px or more on a phone and a tablet: these pages
-    const TAPS = ['home', 'message', 'missions', 'album', 'quiz', 'stories', 'villagers', 'familycode', 'releases', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads', 'publish', 'site', 'check', 'settings'];
+    const TAPS = ['home', 'message', 'missions', 'album', 'quiz', 'stories', 'villagers', 'plots', 'looks', 'familycode', 'releases', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads', 'publish', 'site', 'check', 'settings'];
     const SMALL = () => [...document.querySelectorAll('header button:not([hidden]), #crumb button, #page button, #page a.btn, #page select, #page textarea, #page input:not([type=checkbox]):not([type=radio]):not([type=hidden]), #page label:has(> input[type=checkbox]), #page label:has(> input[type=radio])')]
       .filter(e => { const r = e.getBoundingClientRect(); return r.width && r.height && (r.height < 43.5 || (e.tagName === 'BUTTON' && r.width < 43.5)); })
       .map(e => `${e.id || e.className || e.tagName} “${(e.innerText || e.value || '').trim().slice(0, 16)}” ${Math.round(e.getBoundingClientRect().width)}×${Math.round(e.getBoundingClientRect().height)}`);
@@ -357,11 +470,27 @@ export async function studioCheck(browser, open) {
       if (!navOk) bad.push(`online ${w}px: the five sections are not where they should be`);
       await pg.evaluate(() => document.querySelector('#tabs [data-k="family"]').click()); await pg.waitForTimeout(400);
       // (round S: Family missions joined the Family section: eight cards)
-      if (await pg.evaluate(() => document.querySelectorAll('#page .pcard').length) !== 8) bad.push(`online ${w}px: the Family section does not show its eight cards`);
+      // (r60: Memory Villages joined the Family section: nine cards)
+      if (await pg.evaluate(() => document.querySelectorAll('#page .pcard').length) !== 9) bad.push(`online ${w}px: the Family section does not show its nine cards`);
       for (const k of pages) { await pg.evaluate(k2 => { location.hash = k2; }, k); await pg.waitForTimeout(k === 'photos' ? 2500 : 900); const t = await pg.evaluate(() => document.querySelector('#page').innerText); if (await pg.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`online ${w}px ${k}: ${t.slice(0, 80)}`);
         if (await pg.evaluate(() => document.scrollingElement.scrollWidth > innerWidth + 1)) bad.push(`online ${w}px ${k}: page scrolls sideways`);
         const emo = await pg.evaluate(SHOWN_EMOJI); if (emo.length) bad.push(`online ${w}px ${k}: phone emoji shown: ${emo.join(' ')}`); }
-      ok(/3/.test(await pg.evaluate(() => (document.querySelector('#tabs [data-k="players"]').click(), new Promise(r => setTimeout(() => r(document.querySelector('#page').innerText), 1500))))), 'online players page');
+      { await pg.evaluate(() => document.querySelector('#tabs [data-k="players"]').click()); await pg.waitForSelector('.tiles .tile', { timeout: 15000 });
+        // (r65, owner: "cleaner but still the details") five tiles, a row per child and per kind of device, the rest folded and closed at first
+        const look = await pg.evaluate(() => ({ tiles: document.querySelectorAll('.tiles .tile').length, top: document.querySelector('#page').innerText, more: document.querySelectorAll('details.more').length, open: document.querySelectorAll('details.more[open]').length, kinds: document.querySelectorAll('table.kinds tbody tr').length }));
+        const t = await pg.evaluate(() => (document.querySelectorAll('details.more').forEach(d => { d.open = true; }), document.querySelector('#page').innerText));
+        ok(/3/.test(t), 'online players page');
+        if (!(look.tiles === 5 && look.more >= 5 && !look.open && look.kinds >= 2 && /(not reported yet|chưa có số liệu)/.test(look.top) && !/(usually ready in|thường sẵn sàng sau)/.test(look.top))) bad.push(`online ${w}px: the Analytics page is not five tiles, rows and folded detail: ` + JSON.stringify({ ...look, top: look.top.slice(0, 200) }));
+        // (r60, #36) start-up times: by kind of device and for each device, with the slowest step in words
+        if (!(/(Tablet|Máy tính bảng) 21 s/.test(look.top) && /(usually ready in|thường sẵn sàng sau) 21 s \((slowest|chậm nhất): (things in the valley|đồ vật)\)/.test(t))) bad.push(`online ${w}px: start-up times not shown: ` + t.slice(0, 300));
+        // (r65) the battery round's numbers, once the report has them (pretended here: field names agreed on the board)
+        if (!touch) { await pg.route('**/studio/api/players', async rt => { const res = await rt.fetch(), j = await res.json(); j.power = { phone: { devices: 1, fps: 30, frameMs: 14, batteryPerHour: 31 }, computer: { devices: 1, fps: 60, frameMs: 9, batteryPerHour: 8.5 } };
+            (j.devices || []).forEach((d, i) => { d.power = i ? { fps: 60, frameMs: 9, draws: 240, ratio: 1.5, mins: 40, batteryPerHour: null } : { fps: 30, frameMs: 14, draws: 310, ratio: 1, mins: 25, batteryPerHour: 31, charging: false }; }); await rt.fulfill({ response: res, json: j }); });
+          await pg.evaluate(() => { location.hash = 'home'; }); await pg.waitForTimeout(300); await pg.evaluate(() => document.querySelector('#tabs [data-k="players"]').click()); await pg.waitForSelector('.tiles .tile', { timeout: 15000 });
+          const pw = await pg.evaluate(() => (document.querySelectorAll('details.more').forEach(d => { d.open = true; }), { t: document.querySelector('#page').innerText, act: !!document.querySelector('.tile.tone-act'), red: [...document.querySelectorAll('table.kinds td.tone-act')].map(x => x.textContent) }));
+          await pg.unroute('**/studio/api/players');
+          if (!(/31 % (an hour|mỗi giờ)/.test(pw.t) && /8[.,]5 % (an hour|mỗi giờ)/.test(pw.t) && /310 (draws|lần vẽ)/.test(pw.t) && /(battery not given by this browser|trình duyệt này không cho biết pin)/.test(pw.t) && pw.act && pw.red.some(x => /31/.test(x)))) bad.push('the battery and frame numbers are not shown: ' + JSON.stringify({ act: pw.act, red: pw.red, t: pw.t.slice(0, 300) })); }
+        await pg.screenshot({ path: `out/studio-analytics-${w}.png`, fullPage: true }); }
       // (round R) Releases online: switch traffic off and Halloween to start in 3 days; the website hands it to every device
       if (!touch) {
         await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('tr[data-id="traffic"]', { timeout: 15000 });
@@ -424,6 +553,56 @@ export async function studioCheck(browser, open) {
           if (!(listed.n === 2 && /Cô Ba/.test(listed.txt) && gone && near && c.place === 'village' && Array.isArray(c.off) && got.world && got.world.map === M.MAP_VERSION && !got.parked && !(got.world.build || []).length))
             bad.push('parked map items: ' + JSON.stringify({ listed, gone, c, map: got.world && got.world.map, parked: got.parked, build: got.world && got.world.build }));
           await ex('content', keep); }
+        // (r65) ads: the checklist says what is missing, the preview follows the typing (signboard and card, phone and computer, both
+        // languages), "Show ads" with an ad not ready is not saved, a ready one is; the picture guide's screenshots open
+        { const yes = d => d.accept(); pe.on('dialog', yes); // (leaving the page after the refused save asks: yes, leave)
+          const keep = (await ex('content')).j, img = await pe.evaluate(() => { const c = document.createElement('canvas'); c.width = 120; c.height = 68; const g = c.getContext('2d'); g.fillStyle = '#e8434a'; g.fillRect(0, 0, 120, 68); return c.toDataURL('image/jpeg', .8); });
+          const pic = (await ex('adimage', { id: 'Little Lotus', dataUrl: img })).j.image;
+          await ex('content', { ...keep, ads: { enabled: true, perDay: 3, items: [{ by: '', en: 'Story time', vi: '', link: 'https://shop.example/?utm_source=game', where: ['boards'], active: true }] } });
+          await pe.evaluate(() => { location.hash = 'players'; }); await pe.waitForTimeout(300); await pe.click('#reload'); await pe.waitForTimeout(800);
+          await pe.evaluate(() => { location.hash = 'ads'; }); await pe.waitForSelector('.adrow .adcheck', { timeout: 15000 });
+          const c1 = await pe.evaluate(() => document.querySelector('.adrow .adcheck').innerText);
+          await pe.click('[data-alang="vi"]'); await pe.fill('.adrow .ad-vi', 'Giờ kể chuyện'); await pe.fill('.adrow .ad-by', 'Little Lotus Books'); await pe.fill('.adrow .ad-link', 'https://bit.ly/abc');
+          const v1 = await pe.evaluate(() => ({ card: document.querySelector('.adrow .adcard').innerText, board: !!document.querySelector('.adrow svg.adboard'), size: document.querySelector('.adrow .adprev').className, check: document.querySelector('.adrow .adcheck').innerText }));
+          await pe.click('#adSave'); await pe.waitForTimeout(700); const notSaved = !((await ex('content')).j.ads.items[0].vi);
+          await pe.click('[data-size="computer"]'); await pe.waitForSelector('.adprev.computer');
+          await pe.evaluate(() => { const r = document.querySelector('.adrow'); r.querySelector('.ad-link').value = 'https://littlelotus.example/story-time'; r.querySelector('.ad-link').dispatchEvent(new Event('input', { bubbles: true })); });
+          const c2 = await pe.evaluate(() => document.querySelector('.adrow .adcheck').innerText);
+          // (the picture is chosen with the browser's own file chooser: here it is put in the content as an upload would)
+          await ex('content', { ...keep, ads: { enabled: true, perDay: 3, items: [{ by: 'Little Lotus Books', en: 'Story time', vi: 'Giờ kể chuyện', link: 'https://littlelotus.example/story-time', where: ['boards'], active: true, image: pic }] } });
+          await pe.evaluate(() => { location.hash = 'players'; }); await pe.waitForTimeout(300); await pe.click('#reload'); await pe.waitForTimeout(800);
+          await pe.evaluate(() => { location.hash = 'ads'; }); await pe.waitForSelector('.adrow .adcheck', { timeout: 15000 });
+          await pe.fill('.adrow .ad-en', 'Story time on Saturday'); await pe.click('#adSave'); await pe.waitForTimeout(900);
+          const saved = (await ex('content')).j.ads, c3 = await pe.evaluate(() => document.querySelector('.adrow .adcheck').innerText);
+          await pe.evaluate(() => { document.querySelector('details.adguide').open = true; }); await pe.waitForFunction(() => [...document.querySelectorAll('.adshots img')].every(i => i.complete), null, { timeout: 15000 });
+          const shots = await pe.evaluate(() => [...document.querySelectorAll('.adshots img')].map(i => i.naturalWidth));
+          const onShots = await Promise.all(['board-computer', 'card-computer', 'board-phone', 'card-phone'].map(f => fetch(`${site}/studio/ui/ads-guide/${f}.jpg`).then(r => r.ok && /image/.test(r.headers.get('content-type') || ''))));
+          await pe.evaluate(() => { document.querySelector('details.adguide').open = false; });
+          for (const [vw, vh] of [[1180, 800], [820, 1180], [390, 800]]) { await pe.setViewportSize({ width: vw, height: vh }); await pe.waitForTimeout(300); await pe.screenshot({ path: `out/studio-ads-${vw}.png`, fullPage: true }); }
+          await pe.setViewportSize({ width: w, height: h });
+          await ex('content', keep); pe.off('dialog', yes);
+          if (!(/(picture|hình)/.test(c1) && /(Vietnamese|tiếng Việt)/.test(c1) && /(tracking|theo dõi)/.test(c1) && /(who the ad is from|của ai)/.test(c1)
+            && /Giờ kể chuyện/.test(v1.card) && /Quảng cáo · Little Lotus Books/.test(v1.card) && v1.board && /phone/.test(v1.size) && /(shortener|rút gọn)/.test(v1.check) && notSaved
+            && /(picture|hình)/.test(c2) && !/(shortener|rút gọn|tracking|theo dõi)/.test(c2)
+            && saved.enabled && saved.items[0].en === 'Story time on Saturday' && /(Ready to go live|Sẵn sàng đưa lên)/.test(c3) && shots.length === 4 && shots.every(w => w > 0) && onShots.every(Boolean)))
+            bad.push('ads preview and checklist: ' + JSON.stringify({ c1, v1, notSaved, c2, saved, c3, shots, onShots })); }
+        // (r60) Story characters: a colour for Chi is saved in looks.chi (with the rest of her look), "Back to the usual" takes it off
+        { await pe.evaluate(() => { location.hash = 'game/looks'; }); await pe.waitForSelector('.look[data-id="chi"] .sw', { timeout: 20000 });
+          await pe.click('.look[data-id="chi"] [data-k="color"][data-v="#e8434a"]'); await pe.selectOption('.look[data-id="chi"] select[data-k="hairStyle"]', 'buns'); await pe.click('#save'); await pe.waitForTimeout(900);
+          const a = (await ex('content')).j.looks || {};
+          await pe.click('[data-usual="chi"]'); await pe.click('#save'); await pe.waitForTimeout(900); const b = (await ex('content')).j.looks;
+          if (!(a.chi && a.chi.color === '#e8434a' && a.chi.hairStyle === 'buns' && /^#[0-9a-f]{6}$/i.test(a.chi.skin) && a.chi.style && !a.jack && !b)) bad.push('story characters: ' + JSON.stringify({ a, b })); }
+        // (r60) Memory Villages: a home put on a plot is saved by the plot's id; "Back to a garden" takes it off; the spare plots are found
+        { const M = await import(pathToFileURL(path.join(ROOT, 'js/content/map.js')).href), id = M.PLOTS[0].id;
+          await pe.evaluate(() => { location.hash = 'family/plots'; }); await pe.waitForSelector(`[data-plot="${id}"]`, { timeout: 20000 });
+          await pe.click(`[data-plot="${id}"]`); await pe.waitForSelector('.plotform'); await pe.fill('.plotform [data-f="n0"]', 'Grandma’s house'); await pe.fill('.plotform [data-f="o"]', 'Bà Nội'); await pe.click('.plotform [data-x="ok"]');
+          const tileTxt = await pe.evaluate(i => document.querySelector(`[data-plot="${i}"]`).innerText, id); await pe.click('#save'); await pe.waitForTimeout(900);
+          const a = ((await ex('content')).j.plots || {})[id] || {};
+          await pe.click(`[data-plot="${id}"]`); await pe.waitForSelector('.plotform [data-x="off"]'); await pe.click('.plotform [data-x="off"]'); await pe.click('#save'); await pe.waitForTimeout(900); const b = (await ex('content')).j.plots;
+          await pe.click('#spare'); await pe.waitForFunction(() => document.querySelector('[data-plot^="sp_"]') || /No spare plots|không có mảnh trống|⚠️/.test((document.querySelector('#page') || {}).innerText || ''), null, { timeout: 70000 });
+          const spare = await pe.evaluate(() => ({ n: document.querySelectorAll('[data-plot^="sp_"]').length, err: /⚠️/.test(document.querySelector('#spareres') ? document.querySelector('#spareres').textContent : '') }));
+          if (!(a.owner && a.owner.name === 'Bà Nội' && a.name[0] === 'Grandma’s house' && a.type && /Grandma/.test(tileTxt) && !b && !spare.err)) bad.push('memory villages: ' + JSON.stringify({ a, b, tileTxt, spare }));
+          notes.push(`Memory Villages: ${M.PLOTS.length} plots, ${spare.n} spare ones by the cities`); }
         // (Studio review) in Vietnamese the game's own names follow: the Simple screen shows "Cho Thỏ Ăn", in English "Feed the Bunny"
         const names = async l => { await pe.evaluate(l2 => document.querySelector(`.lang [data-l="${l2}"]`).click(), l); await pe.evaluate(() => { location.hash = 'game/path'; }); await pe.waitForSelector('tr[data-id]', { timeout: 15000 }).catch(() => { }); await pe.waitForTimeout(300); return pe.evaluate(() => location.hash + ' ' + document.querySelector('#page').innerText.slice(0, 3000)); };
         const vi = await names('vi'), en = await names('en'); await names('vi');

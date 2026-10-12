@@ -48,7 +48,9 @@ export const heldOn = S => ({
   put: async changes => { const ix = (await S.get('index', { type: 'json' })) || {};
     for (const [rel, buf] of changes) { if (buf) { await S.set('f/' + rel, Buffer.from(buf).toString('base64')); ix[rel] = buf.length; } else { await S.delete('f/' + rel); ix[rel] = null; } }
     await S.setJSON('index', ix); },
-  clear: async () => { const ix = (await S.get('index', { type: 'json' })) || {}; for (const rel of Object.keys(ix)) await S.delete('f/' + rel); await S.setJSON('index', {}); }
+  clear: async () => { const ix = (await S.get('index', { type: 'json' })) || {}; for (const rel of Object.keys(ix)) await S.delete('f/' + rel); await S.setJSON('index', {}); },
+  // (owner, 12 Oct) the ones a Publish step has sent to GitHub
+  drop: async rels => { const ix = (await S.get('index', { type: 'json' })) || {}; for (const rel of rels) { await S.delete('f/' + rel); delete ix[rel]; } await S.setJSON('index', ix); }
 });
 // the family photos for the engine (core.cjs): the private store on the website
 export const familyOn = F => ({ where: 'site', put: (n, b) => family.put(F, n, b), get: n => family.get(F, n), remove: n => family.remove(F, n), code: () => family.code(F), newCode: () => family.newCode(F) });

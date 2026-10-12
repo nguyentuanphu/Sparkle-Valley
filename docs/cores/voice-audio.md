@@ -57,11 +57,13 @@ device).
 - **Studio**: the Voices and Music pages upload into your formats.
 
 ## Owner's decisions to keep
+- Every missing voice line is recorded without anyone clicking (12 Oct): `.github/workflows/voices-daily.yml` once a day (3:07 am AEDT) and by hand, Azure key and Studio key as GitHub secrets, a draft pull request on `voices/daily` for Release. From the website's inbox only lines the game itself has are recorded (its code, lines heard while playing, the family's content, Releases and Festivals); any other line may carry a friend's or pet's name and is held, never recorded (owner's choice).
 - Azure voices by default (made in Studio); NPC voices match their gender.
 - Voices are made in Studio only: no voice keys on children's devices, never clone children's voices (9 Oct).
 - Silence in the background (switching app, locked phone) (round M).
 - Load the voice pack once; only new voices are downloaded (round O, battery).
 - Hát ru: traditional words over original soft tunes until the family adds real recordings (round N).
+- The voice list loads after the valley is ready, not during start-up (11 Oct, answering Release's PERF-001 request).
 - Voice pack by area (10 Oct): on Wi-Fi the rest of the voices download by themselves; on mobile data a grown-up is
   asked first ("ask user to allow download over mobile, wifi should automatically"). A device that can't tell (iPhone,
   iPad) is asked too; a computer counts as Wi-Fi. The core pack downloads by itself first, not inside the game's
@@ -79,3 +81,7 @@ Both branches are pushed and marked "ready for Release" on the board; no check-i
 - **Not run yet:** the full suite on `core/voice-audio` alone (its core checks pass); Release's merged run covers it.
 - **For the owner:** tap the Simple screen's speaker button on the iPhone once #35 is live; listen to the rain before/after recordings (sent in chat); lullabies with real voices still wait for words or recordings (Music page).
 - **Later:** when Round T3 adds Vũng Tàu (and later places), run `node tools/voice-harvest.mjs`, then `node tools/make-voice-pack.mjs --engine azure --parallel 4 --per-minute 19`, then the `voicecover` check; give new place files an area in `tools/voice-lines.mjs` FILE_AREA.
+- **11 Oct, 9:45 pm AEDT, `core/voice-audio`** (from r60 main, r61 merged in): harvest on r60 (3,477 lines heard; English and Vietnamese run separately with the new `--lang`, as one run passes the 2-hour limit), 712 new voice files recorded with Azure, `voicecover` 0 missing (5,952 lines, 1,632 parts, 26 areas), core 7.0 MB en / 7.0 MB vi. Checks: boot, voice, voicepack, voicecover, voicearea, welcomevoice, viwords, quiet, rain, songs pass (voice, voicecover, welcomevoice again after merging r61). Full suite not run on this branch (voices and voice tools only).
+- **11 Oct, 10:40 pm AEDT, `core/voice-audio`**: the voice list (`voices/manifest.json`, about 120 KB compressed) loads on the first tap or 3 s after the valley is ready, no longer at a fixed 8 s (owner's go; Release's PERF-001 request). `startup` firstKB 972 KB (main without it: 1093 KB, limit 1035); `startup` still fails on firstTitleMs (1953 ms; main without the change 2070 ms; limit about 1120 ms), not from this change. boot, voice, voicepack, voicearea, welcomevoice pass.
+- **12 Oct, 10:17 AM AEDT, `core/voice-audio`** (from r63 main): harvest on r63 (3,685 lines heard, English and Vietnamese run separately), 458 new voice files recorded with Azure, `voicecover` 0 missing (6,138 lines, 1,677 parts, 27 areas), core 7.0 MB en / 7.0 MB vi. Checks: boot, voice, voicepack, voicecover, voicearea, welcomevoice, viwords, quiet, rain, songs pass. Full suite not run (voices and voice data only, no game code changed).
+- **12 Oct, 1:53 PM AEDT, `core/voice-audio`** (brief voice-daily): `tools/voice-daily.mjs`, `.github/workflows/voices-daily.yml`, Studio's Voices page card, unit test `tests/unit/voicedaily.test.mjs`. Checks: voicecover, welcomevoice, unit (64), studio pass. The workflow run by hand waits for the secrets.

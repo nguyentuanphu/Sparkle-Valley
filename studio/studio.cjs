@@ -24,8 +24,9 @@ let conf = {}; try { conf = JSON.parse(fs.readFileSync(CONF, 'utf8')); } catch (
 delete conf.studioPassword; // (round R privacy) the website now takes a Studio key, never the password: the old one is not kept
 const saveConf = () => { fs.mkdirSync(CONF_DIR, { recursive: true }); fs.writeFileSync(CONF, JSON.stringify(conf, null, 1)); };
 const isGame = d => d && fs.existsSync(path.join(d, 'index.html')) && fs.existsSync(path.join(d, 'js', 'main.js'));
+const AS_EXE = !!sea || !!process.env.STUDIO_AS_EXE; // (tests: behave like the packed exe, which has no repository around it)
 function findGame() {
-  const tries = [process.argv[2], conf.gameDir, path.dirname(process.execPath), process.cwd(), path.resolve(__dirname, '..')].filter(Boolean);
+  const tries = [process.argv[2], conf.gameDir, path.dirname(process.execPath), process.cwd(), AS_EXE ? null : path.resolve(__dirname, '..')].filter(Boolean);
   for (const t of tries) for (const d of [t, path.dirname(t), path.dirname(path.dirname(t))]) if (isGame(d)) return path.resolve(d); // the folder, or one or two up (studio/dist/)
   return null;
 }
@@ -117,6 +118,104 @@ const family = {
   newCode: async () => { if (!linked()) return { error: 'Set the website and a Studio key in Settings first.' }; return (await siteApi('family/code/new', {})).json(); }
 };
 
+// ---------- updating itself (owner, 12 Oct: "the exe i have will get updated once there is new function") ----------
+// A new exe is put on the GitHub branch "studio-exe" with version.json { studio, sha256, size, notes } (tools/publish-exe.sh).
+// The exe asks for it with the GitHub key in Settings (the repository may be private). "Update now" downloads the new exe
+// next to this one, checks its checksum, swaps it in (Windows lets a running exe be renamed) and starts it; the old one
+// is removed on the next start. Settings and keys stay in %APPDATA%. If anything fails, the exe stays as it was.
+const HERE = require('./version.json').studio, EXE_BRANCH = 'studio-exe';
+const GH_UPD = () => process.env.STUDIO_GITHUB_API || 'https://api.github.com';
+const num = v => +((/r(\d+)/.exec(String(v || '')) || [0, 0])[1]);
+const selfExe = () => process.env.STUDIO_UPDATE_EXE || (sea ? process.execPath : null);
+async function exeFile(rel) {
+  if (!conf.githubToken || !/^[\w.-]+\/[\w.-]+$/.test(conf.githubRepo || '')) throw new Error('Add the GitHub token and repository (owner/name) in Settings first.');
+  const r = await fetch(`${GH_UPD()}/repos/${conf.githubRepo}/contents/${rel}?ref=${EXE_BRANCH}`, { headers: { Authorization: 'Bearer ' + conf.githubToken, Accept: 'application/vnd.github.raw', 'User-Agent': 'sparkle-studio', 'X-GitHub-Api-Version': '2022-11-28' } });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error(`GitHub ${r.status} while looking for a new Sparkle Studio`);
+  return Buffer.from(await r.arrayBuffer());
+}
+// newer: a higher version, or (owner, 12 Oct) a rebuild of the same version with fixes (its checksum differs from this exe's)
+const mySum = () => { const e = selfExe(); try { return e ? require('crypto').createHash('sha256').update(fs.readFileSync(e)).digest('hex') : null; } catch (x) { return null; } };
+const isNewer = v => num(v.studio) > num(HERE) || (num(v.studio) === num(HERE) && !!v.sha256 && !!selfExe() && v.sha256 !== mySum());
+async function updateCheck() {
+  const b = await exeFile('version.json'); if (!b) return { here: HERE, latest: null, newer: false, can: !!selfExe() };
+  const v = JSON.parse(b.toString('utf8'));
+  return { here: HERE, latest: v.studio, newer: isNewer(v), notes: String(v.notes || '').slice(0, 400), can: !!selfExe() };
+}
+let updating = false;
+async function updateApply() {
+  const exe = selfExe(); if (!exe) return { error: 'Only SparkleStudio.exe updates itself.' };
+  if (updating) return { error: 'Already updating.' }; updating = true;
+  try {
+    const vb = await exeFile('version.json'); if (!vb) return { error: 'No new Sparkle Studio on GitHub.' };
+    const v = JSON.parse(vb.toString('utf8')); if (!isNewer(v)) return { ok: true, latest: v.studio, note: 'Already the newest.' };
+    log(`Updating Sparkle Studio ${HERE} to ${v.studio}…`);
+    const buf = await exeFile('SparkleStudio.exe'); if (!buf) return { error: 'The new SparkleStudio.exe is not on GitHub.' };
+    if (!v.sha256 || require('crypto').createHash('sha256').update(buf).digest('hex') !== v.sha256) return { error: 'The download did not match its checksum: nothing was changed.' };
+    const dir = path.dirname(exe), base = path.basename(exe, '.exe'), neu = path.join(dir, base + '.new.exe'), old = path.join(dir, base + '.old.exe');
+    fs.writeFileSync(neu, buf); try { fs.rmSync(old, { force: true }); } catch (e) { }
+    fs.renameSync(exe, old);
+    try { fs.renameSync(neu, exe); } catch (e) { fs.renameSync(old, exe); throw e; }
+    log(`Sparkle Studio ${v.studio} is in place: starting it.`);
+    const restart = process.env.STUDIO_UPDATE_NO_RESTART ? null : () => { server.close(); spawn(exe, process.argv.slice(2), { detached: true, stdio: 'ignore', env: { ...process.env, STUDIO_NO_OPEN: '1' } }).unref(); setTimeout(() => process.exit(0), 300); };
+    return { ok: true, latest: v.studio, restart };
+  } finally { updating = false; }
+}
+{ const exe = selfExe(); if (exe) setTimeout(() => { try { fs.rmSync(path.join(path.dirname(exe), path.basename(exe, '.exe') + '.old.exe'), { force: true }); } catch (e) { } }, 4000); } // left by an update
+
+// ---------- keeping the game folder up to date (owner, 12 Oct: the exe showed the game as r38 while the website was r63) ----------
+// The exe works on the game folder on this computer. When it starts (and every 30 minutes, and from Settings) it gets
+// every game file that changed on GitHub's main branch. A content, voice or photo file changed here since the last time
+// and not published yet is kept (and listed); content/*.json files it replaces are copied to content/old/ first.
+// sync.json (next to the settings) remembers what GitHub had last time.
+const SYNC = path.join(CONF_DIR, 'sync.json'), SYNC_SKIP = /^(\.git|node_modules|studio\/dist|studio\/\.build|content\/old)\//;
+const FAM_FILE = rel => /^(content|voices|photos)\//.test(rel) || rel === 'tools/voice-extra.json';
+const gitShaOf = b => require('crypto').createHash('sha1').update('blob ' + b.length + '\0').update(b).digest('hex');
+let sync = { state: 'idle', done: 0, total: 0, msg: '', kept: [], error: '' };
+async function ghJ(p) {
+  const r = await fetch(`${GH_UPD()}/repos/${conf.githubRepo}${p}`, { headers: { Authorization: 'Bearer ' + conf.githubToken, Accept: 'application/vnd.github+json', 'User-Agent': 'sparkle-studio', 'X-GitHub-Api-Version': '2022-11-28' } });
+  const t = await r.text(); let j = {}; try { j = JSON.parse(t); } catch (e) { }
+  if (!r.ok) throw new Error(`GitHub ${r.status} while getting the newest game`); return j;
+}
+const folderBuild = () => { try { return (/VERSION = '[^']*?(r\d+)'/.exec(fs.readFileSync(G('sw.js'), 'utf8')) || [])[1] || '?'; } catch (e) { return '?'; } };
+// (owner, 12 Oct: "if the game folder is not latest or not available then it will download the latest from github")
+// with no game folder at all, the newest game goes into a "SparkleValley" folder next to the exe
+const newGameDir = () => path.join(path.dirname(selfExe() || process.execPath), 'SparkleValley');
+async function syncFolder(force) {
+  if (sync.state === 'running' || !conf.githubToken || !/^[\w.-]+\/[\w.-]+$/.test(conf.githubRepo || '')) return sync;
+  const fresh = !GAME; if (fresh) { GAME = conf.gameDir && !isGame(conf.gameDir) ? path.resolve(conf.gameDir) : newGameDir(); fs.mkdirSync(GAME, { recursive: true }); force = true; }
+  sync = { state: 'running', done: 0, total: 0, msg: '', kept: [], error: '', from: folderBuild(), fresh };
+  try {
+    const head = (await ghJ(`/git/ref/heads/${encodeURIComponent(conf.githubBranch || 'main')}`)).object.sha;
+    let rec = {}; try { rec = JSON.parse(fs.readFileSync(SYNC, 'utf8')) || {}; } catch (e) { rec = {}; }
+    if (!force && rec.commit === head && rec.dir === GAME) { sync.state = 'done'; sync.msg = ''; return sync; }
+    const t = await ghJ(`/git/trees/${(await ghJ(`/git/commits/${head}`)).tree.sha}?recursive=1`);
+    if (t.truncated) throw new Error('GitHub sent only part of the game: get it as a ZIP from GitHub instead.');
+    const tree = t.tree.filter(x => x.type === 'blob' && !SYNC_SKIP.test(x.path)), before = (rec.dir === GAME && rec.shas) || {}, todo = [], shas = {};
+    for (const x of tree) {
+      const f = safeJoin(GAME, x.path); if (!f) continue;
+      let local = null; try { local = fs.readFileSync(f); } catch (e) { }
+      const ls = local ? gitShaOf(local) : null; shas[x.path] = x.sha;
+      if (ls === x.sha) continue;
+      if (FAM_FILE(x.path) && local && before[x.path] && ls !== before[x.path]) { sync.kept.push(x.path); shas[x.path] = before[x.path]; continue; } // changed here, not published yet
+      todo.push(x);
+    }
+    sync.total = todo.length;
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    let k = 0;
+    const worker = async () => { while (k < todo.length) { const x = todo[k++]; sync.msg = x.path;
+      const b = Buffer.from((await ghJ(`/git/blobs/${x.sha}`)).content || '', 'base64'), f = safeJoin(GAME, x.path);
+      if (/^content\/[^/]+\.json$/.test(x.path) && fs.existsSync(f)) { fs.mkdirSync(G('content', 'old'), { recursive: true }); fs.copyFileSync(f, G('content', 'old', stamp + '-' + path.basename(f))); }
+      fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, b); sync.done++; } };
+    await Promise.all(Array.from({ length: 6 }, worker));
+    fs.mkdirSync(CONF_DIR, { recursive: true }); fs.writeFileSync(SYNC, JSON.stringify({ commit: head, dir: GAME, shas }));
+    sync.state = 'done'; sync.to = folderBuild(); sync.msg = '';
+    if (fresh) { if (!isGame(GAME)) throw new Error('GitHub sent only part of the game: get it as a ZIP from GitHub instead.'); conf.gameDir = GAME; saveConf(); }
+    if (todo.length) { studio = null; log(`Game folder updated from GitHub: ${todo.length} files (${sync.from} to ${sync.to}); kept ${sync.kept.length} not published.`); }
+  } catch (e) { sync.state = 'error'; sync.error = String(e && e.message || e); log('Getting the newest game: ' + sync.error); if (fresh && !isGame(GAME)) GAME = null; }
+  return sync;
+}
+
 // ---------- the server ----------
 // Everything a page asks for is done by the Studio engine (core.cjs, the same as online); this file adds what only
 // a computer can do: the game folder, keys saved here, Piper, the publish zip, opening folders and closing.
@@ -130,7 +229,7 @@ const local = {
     if (b.forget) for (const k of [].concat(b.forget)) delete conf[k];
     if (b.piperModels && typeof b.piperModels === 'object') conf.piperModels = Object.assign(conf.piperModels || {}, b.piperModels);
     if (typeof b.gameDir === 'string' && b.gameDir.trim()) { if (!isGame(b.gameDir.trim())) return { code: 400, body: { error: 'That folder has no game in it (index.html and js/main.js).' } }; conf.gameDir = path.resolve(b.gameDir.trim()); GAME = conf.gameDir; }
-    saveConf(); studio = null; return { code: 200, body: { ok: true } }; // keys changed: the engine starts again with them
+    saveConf(); studio = null; if (!GAME) setTimeout(() => syncFolder(false), 200); return { code: 200, body: { ok: true } }; // keys changed: the engine starts again with them (and the newest game is fetched)
   },
   // the players report lives on the website (Netlify): asked for with the Studio key saved here (round R privacy: the
   // website signs people in with two steps, so this computer has its own key, made online in Setup → Security)
@@ -179,6 +278,10 @@ const server = http.createServer(async (req, res) => {
     }
     if (!p.startsWith('/studio/api/')) return send(res, 404, 'not found', 'text/plain');
     const api = decodeURIComponent(p.slice(12)); lastSeen = Date.now();
+    if (api === 'sync/status') return send(res, 200, { ...sync, build: folderBuild() });
+    if (api === 'sync/start' && req.method === 'POST') { const b = JSON.parse((await readBody(req)).toString() || '{}'); syncFolder(!!b.force); return send(res, 200, { ...sync, build: folderBuild() }); }
+    if (api === 'update/check') { try { return send(res, 200, await updateCheck()); } catch (e) { return send(res, 200, { here: HERE, error: e.message }); } }
+    if (api === 'update/apply' && req.method === 'POST') { let r; try { r = await updateApply(); } catch (e) { r = { error: e.message }; } const go = r.restart; delete r.restart; send(res, 200, r); if (go) setTimeout(go, 400); return; }
     if (api === 'quit' && req.method === 'POST') { send(res, 200, { ok: true }); log('Closed from the dashboard.'); setTimeout(() => process.exit(0), 300); return; }
     if (api === 'zip') { const f = G('sparkle-valley-netlify.zip'); if (!fs.existsSync(f)) return send(res, 404, { error: 'Build the zip first.' }); res.writeHead(200, { 'Content-Type': 'application/zip', 'Content-Disposition': 'attachment; filename="sparkle-valley-netlify.zip"' }); return fs.createReadStream(f).pipe(res); }
     const r = await engine().handle(api, req.method, req.method === 'POST' ? await readBody(req) : null);
@@ -211,4 +314,5 @@ server.on('error', e => { if (e.code === 'EADDRINUSE') { log(`Sparkle Studio is 
 server.listen(PORT, '127.0.0.1', () => {
   log(`Sparkle Studio is running: http://localhost:${PORT} · game folder: ${GAME || '(choose it in Settings)'}`);
   if (!process.env.STUDIO_NO_OPEN) openApp(`http://localhost:${PORT}/studio/`);
+  setTimeout(() => syncFolder(false), 1500); setInterval(() => syncFolder(false), 30 * 60e3); // the newest game, by itself
 });

@@ -26,7 +26,7 @@ import { pic } from './art.js';
 import { saveProfiles, reduceMotion } from './state.js';
 import { GAMES, gameOpen } from './games/frame.js';
 import { holdButton, openGrownups, openFestivals } from './ui.js';
-import { AREAS, TALE_AREAS, PLACE_AREAS, gamesIn } from './content/activities.js';
+import { AREAS, TALE_AREAS, PLACE_AREAS, gamesIn, withSitePlaces } from './content/activities.js';
 import { featureOn } from './custom.js';
 
 // a star drawn on the picture card (round I, owner: "stars without a strip, placed on the icon"): gold when earned
@@ -71,13 +71,14 @@ export function createSimple(G) {
   function areasOf(t) {
     const p = hero().profile, lt = little();
     if (t === 'tales') {
-      const tales = G.TALES || [], known = TALE_AREAS.slice(0, 4).map(a => a.key);
+      const tales = G.TALES || [], known = TALE_AREAS.filter(a => a.key !== '💛').map(a => a.key);
       return TALE_AREAS.map(a => ({ area: a, items: tales.filter(x => a.key === '💛' ? !known.includes(x.flag) : x.flag === a.key)
         .map(x => ({ kind: 'tale', key: x.id, icon: firstPic(x.pages[0][0]), badge: x.flag, name: x.title(), voice: both(x.title), stars: (p.tales || {})[x.id] ? 1 : 0, max: 1 })) }));
     }
     // (round R) the festival calendar opens the places tab: festivals happen in places, each in its own ones
     const cal = { kind: 'fest', key: 'cal', icon: '📅', name: T('Festival calendar', 'Lịch lễ hội'), voice: ['Festival calendar', 'Lịch lễ hội'], stars: 0, max: 0 };
     // (bug #30, owner) China and India always come last on the road
+    if (t === 'places') withSitePlaces(G.PLACES);
     if (t === 'places') return PLACE_AREAS.map((a, n) => ({ area: a, items: (n === 0 && G.festivals ? [cal] : []).concat((G.PLACES || []).map((pl, k) => ({ pl, k })).filter(x => x.pl.g === a.key)
       .map(({ pl, k }) => ({ kind: 'place', key: String(k), icon: pl.icon, name: pl.name(), voice: both(pl.name), stars: 0, max: 0 }))) }))
       .sort((x, y) => (x.area.key === 'asia') - (y.area.key === 'asia'));

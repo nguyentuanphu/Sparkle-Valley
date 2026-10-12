@@ -456,9 +456,24 @@ await check('phone', async () => {
       await P.page.evaluate(() => { document.querySelectorAll('.modal, .hub, .pad, .howto, .theatre, .gl, .dialog, .storybook, .vc-pop, .wardrobe').forEach(e => e.remove()); __sv.paused = false; __sv.closeUp = null; });
     }
   }
+  // (Online's request, 11 Oct) a friend's row: the Join button never lies over the friend's status, and every button is
+  // 44 px or more, on the computer, the phone and the tablet
+  for (const [tag, Q] of [['desktop', D], ['phone', M], ['tablet', Tb]]) {
+    const fr = await Q.page.evaluate(async () => {
+      const { settings } = await import('/js/state.js'), { Net } = await import('/js/net.js');
+      settings.online = true; settings.friendsOn = true; settings.lang = 'vi'; settings.friends = [{ code: 'KIWI-2468', name: 'Bé Bin Nguyễn' }];   // (as reported: Vietnamese, a long status)
+      Net.friends.status['KIWI-2468'] = { online: true, seen: Date.now(), name: 'Bé Bin Nguyễn', room: 'ROOM42', where: 'Thành phố Hồ Chí Minh' };
+      const box = document.createElement('div'); box.className = 'modal pad'; box.innerHTML = '<div class="card"><div class="tbody"></div></div>'; document.body.appendChild(box);
+      const body = box.querySelector('.tbody'); __sv.drawOnlinePanel(body, () => { }); await new Promise(r => setTimeout(r, 200));
+      const row = body.querySelector('.flist .frow'), st = row.querySelector('.fst').getBoundingClientRect(), btns = [...row.querySelectorAll('.btn')].map(e => e.getBoundingClientRect());
+      const out = { join: !!row.querySelector('[data-joinf]'), over: btns.filter(q => st.left < q.right && q.left < st.right && st.top < q.bottom && q.top < st.bottom).length, small: btns.filter(q => q.height < 44).length };
+      box.remove(); return out;
+    });
+    if (!fr.join || fr.over || fr.small) bad.push(`${tag}: friends row: Join shown ${fr.join}, buttons over the status ${fr.over}, under 44 px ${fr.small}`);
+  }
   const errs = D.errors.concat(M.errors, Tb.errors); await D.ctx.close(); await M.ctx.close(); await Tb.ctx.close();
   ok(!bad.length && !errs.length, JSON.stringify({ bad, errs }));
-  return `${SCREENS.length} screens checked on desktop, phone and tablet`;
+  return `${SCREENS.length} screens checked on desktop, phone and tablet; a friend's Join button clear of the status`;
 });
 
 await check('solid', async () => {
@@ -645,9 +660,12 @@ await check('voicearea', async () => {
   // a computer that can't tell its connection counts as Wi-Fi: past the core with no question
   const C = await open(b, { w: 1180, h: 760, play: false, pre: `Object.defineProperty(navigator, 'connection', { get: () => undefined, configurable: true });`, settings: { autoPack: true, lang: 'vi', bilingual: false } });
   const got3 = watch(C); await start(C.page); await clear(C.page); await C.page.mouse.click(590, 380);
+  // (r63, owner: the bar said 108 %) every progress report stays at or under 100 %, the bar's words too
+  await C.page.evaluate(async () => { const V = await import('/js/voice.js'); window.__packOver = []; V.onPackProgress(e => { if (e.state === 'loading' && e.done > e.total) window.__packOver.push(e.done + '/' + e.total); const t = document.querySelector('.packbar') && document.querySelector('.packbar').textContent; const m = t && /(\d+)\s*%/.exec(t); if (m && +m[1] > 100) window.__packOver.push(t); }); });
   // (the core, about 550 files, comes first: in the full suite that can take a few minutes)
   for (let k = 0; k < 720 && !got3.some(x => x.g !== 'core'); k++) await C.page.waitForTimeout(500);
-  const asked3 = !!(await C.page.$('.packask')), en3 = got3.filter(x => x.lang === 'en').length; await C.ctx.close();
+  const asked3 = !!(await C.page.$('.packask')), en3 = got3.filter(x => x.lang === 'en').length, over3 = await C.page.evaluate(() => window.__packOver); await C.ctx.close();
+  ok(!over3.length, `the voices bar went past 100 %: ${over3.slice(0, 3).join(', ')}`);
   ok(got3.some(x => x.g !== 'core') && !asked3 && !en3, `a computer: past the core ${got3.some(x => x.g !== 'core')}, asked ${asked3}, English files for a Vietnamese family ${en3}`);
   ok(!errs.length, errs.join(' | '));
   return `core ${mb(core.en).toFixed(1)} MB (English) / ${mb(core.vi).toFixed(1)} MB (Vietnamese) of ${(Object.values(areas.size).reduce((a, z) => a + (z.en || 0) + (z.vi || 0) + (z.zh || 0) + (z.hi || 0), 0) / 1048576).toFixed(0)} MB; mobile data: ${n1} core files in English only, then "${text.slice(0, 50)}…" (hold for yes); Wi-Fi: ${place} first; the next start downloads nothing; a computer goes on by itself`;
@@ -892,6 +910,165 @@ await check('hubmap', async () => {
   return `${r.games} games, each in one tab; the map's Vietnam cities run north to south, each with its landmarks (${r.cities.length} cities)`;
 });
 
+await check('signs', async () => {
+  // (round T4b, finding your way) a picture signpost at every junction of two asphalt or dirt roads (found from the road
+  // data, never written-down positions); every board names a real place; posts stand off the road and are solid; all the
+  // signposts together are two meshes (one shared board picture, at most 1024 px)
+  const P = await open(b, { w: 1180, h: 760 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const S = __sv.signposts, SP = await import('/js/signposts.js'), W = await import('/js/world.js'), J = SP.findJunctions();
+    const names = new Set([...__sv.PLACES, ...__sv.LANDMARKS].map(p => p.name()));
+    const missing = J.filter(j => !S.posts.some(s => Math.hypot(s.x - j.x, s.z - j.z) < 14)).map(j => `${Math.round(j.x)},${Math.round(j.z)}`);
+    const bad = S.posts.flatMap(s => s.boards.filter(b => !names.has(b.place.name())).map(b => b.place.name()));
+    const onRoad = S.posts.filter(s => { const q = W.roadDist(s.x, s.z); return q.road && q.d < q.road.w / 2 + .8; }).map(s => `${Math.round(s.x)},${Math.round(s.z)}`);
+    const solid = S.posts.filter(s => !__sv.world.colliders.some(c => Math.hypot(c.x - s.x, c.z - s.z) < .1)).length;
+    const img = S.texture.image;
+    return { junctions: J.length, posts: S.posts.length, boards: S.posts.reduce((a, s) => a + s.boards.length, 0), empty: S.posts.filter(s => !s.boards.length).length,
+      missing, bad, onRoad, solid, meshes: S.meshes.length, tex: Math.max(img.width, img.height) };
+  });
+  ok(r.junctions >= 10 && !r.missing.length, `junctions without a signpost: ${r.missing.join('; ')} (of ${r.junctions})`);
+  ok(!r.bad.length && !r.empty, `boards naming no real place: ${r.bad.join(', ')}; posts with no board: ${r.empty}`);
+  ok(!r.onRoad.length, 'signposts on the road: ' + r.onRoad.join('; '));
+  ok(!r.solid, `${r.solid} signposts a child can walk through`);
+  ok(r.meshes <= 2 && r.tex <= 1024, `signposts cost ${r.meshes} meshes, board picture ${r.tex} px`);
+  ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  return `${r.posts} signposts at ${r.junctions} junctions, ${r.boards} boards, each naming a real place; off the road, solid; ${r.meshes} meshes, one ${r.tex} px picture`;
+});
+
+await check('nametags', async () => {
+  // (round T4b) names float over the places nearby: at most 4 at once, never covering each other, on a phone, a tablet
+  // and a computer; none in calm mode
+  const out = [];
+  for (const [w, h, touch, tag] of [[390, 844, true, 'phone'], [820, 1180, true, 'tablet'], [1180, 760, false, 'computer']]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    // the busiest spot: the place with the most places and landmarks within 40 m
+    await P.page.evaluate(() => { const all = [...__sv.PLACES, ...__sv.LANDMARKS], n = p => all.filter(o => Math.hypot(o.x - p.x, o.z - p.z) < 40).length;
+      const best = all.slice().sort((a, b) => n(b) - n(a))[0]; window.__busy = best.name(); __sv.travelTo(__sv.heroes[0], best.x + 6, best.z + 14); });
+    await P.page.waitForTimeout(5000);
+    const r = await P.page.evaluate(() => { const on = [...document.querySelectorAll('.nametag.on')].map(e => e.getBoundingClientRect());
+      const over = []; on.forEach((a, i) => on.slice(i + 1).forEach(q => { if (a.left < q.right && q.left < a.right && a.top < q.bottom && q.top < a.bottom) over.push(i); }));
+      return { n: on.length, over: over.length, busy: window.__busy, names: [...document.querySelectorAll('.nametag.on')].map(e => e.textContent) }; });
+    ok(r.n >= 1 && r.n <= 4, `${tag}: ${r.n} name tags at ${r.busy} (want 1 to 4)`);
+    ok(!r.over, `${tag}: name tags overlap: ${r.names.join(', ')}`);
+    await P.page.evaluate(async () => { const st = await import('/js/state.js'); st.settings.calm = true; });
+    await P.page.waitForTimeout(1500);
+    const calm = await P.page.evaluate(() => document.querySelectorAll('.nametag.on').length);
+    ok(!calm, `${tag}: ${calm} name tags in calm mode`);
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+    out.push(`${tag} ${r.n} (${r.names.join(', ')})`);
+  }
+  return 'at most 4, apart, none in calm mode: ' + out.join('; ');
+});
+
+await check('padmap', async () => {
+  // (round T4b) the Pad map is drawn from the map data: every place's name on it, names never overlapping at 390, 1180
+  // and 1366 px wide; clouds over the places not visited yet, lifting once with a puff after a visit
+  const out = [];
+  for (const [w, h, touch] of [[390, 844, true], [1180, 760, false], [1366, 768, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 500));
+      const cv = document.querySelector('canvas.bigmap'), L = cv.labels || [], names = new Set(L.map(l => l.name));
+      const missing = __sv.PLACES.map(p => p.name()).filter(n => !names.has(n));
+      const hit = (a, q) => a.x < q.x + q.w && q.x < a.x + a.w && a.y < q.y + q.h && q.y < a.y + a.h, over = [];
+      L.forEach((a, i) => L.slice(i + 1).forEach(q => { if (hit(a, q)) over.push(a.name + ' / ' + q.name); }));
+      const clouds = cv.clouds.slice(), pic = !cv.toDataURL().startsWith('data:,');
+      // visit the first clouded place, then open the map again: its cloud puffs away, once
+      const h = __sv.heroes[0], c = clouds[0], W = await import('/js/world.js');
+      h.profile.visited = h.profile.visited || {}; h.profile.visited[c.region] = true;
+      document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.paused = false; __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 200));
+      const after = document.querySelector('canvas.bigmap').clouds, puff = document.querySelectorAll('.mapcloud.puff').length;
+      document.querySelectorAll('.modal').forEach(e => e.remove()); __sv.paused = false; __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 200));
+      const again = document.querySelectorAll('.mapcloud.puff').length;
+      return { n: L.length, missing, over, clouds: clouds.length, region: c.region, still: after.some(o => o.region === c.region), puff, again, pic };
+    });
+    ok(r.pic && !r.missing.length, `${w}px: places missing from the drawn map: ${r.missing.join(', ')}`);
+    ok(!r.over.length, `${w}px: map names overlap: ${r.over.join('; ')}`);
+    ok(r.clouds > 0 && !r.still && r.puff > 0 && !r.again, `${w}px: clouds ${r.clouds}, after visiting ${r.region}: still clouded ${r.still}, puffs ${r.puff}, puffs again ${r.again}`);
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+    out.push(`${w}px ${r.n} names, ${r.clouds} clouds`);
+  }
+  return 'drawn from the map data: ' + out.join('; ') + '; a cloud lifts with one puff after a visit';
+});
+
+await check('mapnames', async () => {
+  // (Release requests, round T1) the Pad map's names never cover each other (the festival stage lay over Đà Nẵng, the
+  // market over Hồ Chí Minh City), on a phone, a tablet and a computer; Hội An is a place of its own in the Vietnam
+  // list (north to south between Đà Nẵng and Hồ Chí Minh City) and on the Simple screen's Places road; and the speech
+  // box keeps its middle while it slides in (it once sat half its width to the right for 0.3 s, buttons off screen)
+  const out = [];
+  for (const [w, h, touch, tag] of [[390, 844, true, 'phone'], [820, 1180, true, 'tablet'], [1180, 760, false, 'computer']]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      __sv.openPad(0, 'map'); await new Promise(r => setTimeout(r, 600));
+      const L = document.querySelector('canvas.bigmap').labels || [], hit = (a, q) => a.x < q.x + q.w && q.x < a.x + a.w && a.y < q.y + q.h && q.y < a.y + a.h;
+      const over = []; L.forEach((a, i) => L.slice(i + 1).forEach(q => { if (hit(a, q)) over.push(a.name + ' / ' + q.name); }));
+      const out = L.filter(a => a.x < 0 || a.y < 0 || a.x + a.w > 600 || a.y + a.h > 600).map(a => a.name);
+      document.querySelector('.mapchips [data-g="vn"]').click(); await new Promise(r => setTimeout(r, 150));
+      const cities = [...document.querySelectorAll('.mapcities button')].map(b => b.innerText.trim());
+      document.querySelectorAll('.modal').forEach(e => e.remove());
+      __sv.dialog('Bà Năm', [['Hello! Shall we play?', 'Chào cháu! Chơi nhé?']], [['▶ Play!', '▶ Chơi!'], ['👋 Later', '👋 Để sau']]);
+      await new Promise(r => setTimeout(r, 30));
+      const d = document.querySelector('.dialog'), an = d.getAnimations()[0]; if (an) { an.pause(); an.currentTime = 0; }
+      const rc = d.getBoundingClientRect(), mid = Math.round(rc.left + rc.width / 2 - innerWidth / 2);
+      return { n: L.length, over, out, cities, mid, anim: an ? an.animationName : '' };
+    });
+    ok(r.n >= 10, `${tag}: map names drawn: ${r.n}`);
+    ok(!r.over.length, `${tag}: map names overlap: ${r.over.join('; ')}`);
+    ok(!r.out.length, `${tag}: map names off the map: ${r.out.join('; ')}`);
+    const at = n => r.cities.findIndex(c => c.includes(n)), ha = at('Hội An');
+    ok(ha > at('Đà Nẵng') && at('Đà Nẵng') >= 0 && (at('Hồ Chí Minh') < 0 || ha < at('Hồ Chí Minh')), `${tag}: Hội An between Đà Nẵng and Hồ Chí Minh City: ${r.cities.join(' | ')}`);
+    ok(Math.abs(r.mid) <= 2, `${tag}: the speech box starts ${r.mid}px off the middle (${r.anim})`);
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+    out.push(`${tag} ${r.n}`);
+  }
+  // the Simple screen's Places road (an under-5 starts on it)
+  const Q = await open(b, { w: 390, h: 844, touch: true, screen: null });
+  await Q.page.waitForSelector('.simple-screen:not([hidden]) .sp-catcard, .simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
+  await Q.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
+  await Q.page.click('.sp-tabs [data-tab="places"]'); await Q.page.waitForTimeout(400);
+  // (Round U: the Places tab shows its categories as cards first; each card opens its own road, so every road is walked)
+  const road = await Q.page.evaluate(() => { const names = [], read = () => names.push(...[...document.querySelectorAll('.simple-screen .sp-stop')].map(e => e.innerText.trim().replace(/\s+/g, ' ')));
+    const cats = __sv.simple.view.cats; if (!cats.length || document.querySelector('.simple-screen .sp-stop')) read(); for (const c of cats) { __sv.simple.openGroup('places', c); read(); } __sv.simple.openGroup('places', null); return names.join(' | '); });
+  ok(road.includes('Hội An'), 'the Places road has no Hội An: ' + road.slice(0, 300));
+  ok(!Q.errors.length, Q.errors.join(' | ')); await Q.ctx.close();
+  return `map names apart on ${out.join(', ')}; Hội An in the Vietnam list and on the Places road; the speech box slides in from the middle`;
+});
+
+await check('autoplay', async () => {
+  // (owner, 12 Oct AEDT) the auto play check: its window shows only where Studio's switch allows (every device or the
+  // ticked ones); it walks to things and opens them (games, a story, a place, a festival, a villager, songs), keeps the
+  // child's stamina full, writes a report, and afterwards puts the children's progress back as it was
+  const pre = rule => `try { localStorage.setItem('sv2_playerid', 'apcheck00001'); localStorage.setItem('sv2_live', JSON.stringify({ releases: { autoplay: ${JSON.stringify(rule)} }, festivals: {} })); } catch (e) { }`;
+  for (const rule of [{ on: true, devices: ['zzzzzzzzzzzz'] }, { on: false }]) {
+    const Q = await open(b, { w: 1024, h: 768, pre: pre(rule) }); await Q.page.waitForTimeout(2000);
+    const shown = !!(await Q.page.$('.apbox')); await Q.ctx.close(); ok(!shown, 'the auto play window showed where it is not allowed: ' + JSON.stringify(rule));
+  }
+  const P = await open(b, { w: 1024, h: 768, pre: pre({ on: true, devices: ['apcheck00001'] }) });
+  await P.page.waitForSelector('.apbox', { timeout: 10000 });
+  const mine = () => P.page.evaluate(() => { const p = JSON.parse(localStorage.getItem('sv2_profiles') || '[]'), f = JSON.parse(localStorage.getItem('sv2_farm') || '{}');
+    return JSON.stringify({ coins: f.coins, kids: p.map(x => ({ n: x.name, t: x.tales, w: x.wins, l: x.levels, s: x.stickers })) }); });
+  const before = await mine();
+  const keys = await P.page.evaluate(async () => { const { GAMES } = await import('/js/games/frame.js'), G = __sv, npc = G.interactables.find(i => /^npc_/.test(i.id));
+    return [...Object.keys(GAMES).slice(0, 2).map(x => 'game:' + x), 'tale:' + G.TALES[0].id, 'place:farm', 'fest:midautumn', npc && 'tap:' + npc.id, 'songs'].filter(Boolean); });
+  await P.page.evaluate(k => { __sv.autoplay.start(k, 'fast'); }, keys);
+  await P.page.waitForTimeout(1500);
+  const mid = await P.page.evaluate(() => { const h = __sv.heroes[0]; h.stamina = 0; return __sv.autoplay.running(); });
+  await P.page.waitForTimeout(600);
+  const full = await P.page.evaluate(() => { const h = __sv.heroes[0]; return h.stamina >= h.staminaMax - .001; }).catch(() => true);
+  let rep = null; for (let i = 0; i < 240 && !rep; i++) { await P.page.waitForTimeout(500); rep = await P.page.evaluate(() => !localStorage.getItem('sv2_autoplay_backup') && document.readyState === 'complete' && window.__sv && document.querySelector('.screen.title, canvas') ? JSON.parse(localStorage.getItem('sv2_autoplay_report') || 'null') : null).catch(() => null); if (rep && rep.done.length < keys.length) rep = null; }
+  ok(mid && full, 'the check did not run, or the child got tired while it ran');
+  ok(rep && rep.done.length === keys.length, 'no full report: ' + JSON.stringify(rep && rep.done.map(r => r.key)));
+  const bad = rep.done.filter(r => r.problems.some(p => /did not open|did not close|^error/.test(p)));
+  ok(!bad.length, 'the check found: ' + JSON.stringify(bad.map(r => [r.key, r.problems])));
+  await P.page.waitForSelector('.screen.title', { timeout: 60000 }).catch(() => { });
+  ok(await mine() === before, "the children's progress was not put back: " + (await mine()) + ' vs ' + before);
+  ok(!!(await P.page.$('.apbox')), 'the window did not come back after the check');
+  const errs = P.errors.filter(e => !/pageerror: .*(Load failed|aborted)/.test(e)); await P.ctx.close();
+  ok(!errs.length, errs.slice(0, 3).join(' | '));
+  return `hidden where not allowed (other device, switched off); ${keys.length} steps (${rep.done.map(r => r.key.split(':')[0]).join(', ')}) at Fast, stamina kept full, ${rep.done.filter(r => r.ok).length} fine${rep.done.filter(r => !r.ok).map(r => `; noted for ${r.key}: ${r.problems.join(', ')}`).join('')}; progress put back after the restart`;
+});
+
 await check('festcal', async () => {
   // (round R, owner) the festival calendar: real dates, 3 weeks of build-up that grows each week, two festivals at once
   // in their own places, quiet days only a few days before, the day's timetable, Halloween trick-or-treat and keepsake
@@ -960,7 +1137,7 @@ await check('festivals', async () => {
       if (!(s1.length > 0 && s1.length < s2.length && s2.length < s4.length)) bad.push(`${key}: not more each week (${s1.length}, ${s2.length}, ${s4.length})`);
       // spread over the whole place, not bunched: the pieces reach far apart
       let span = 0; for (const a of s4) for (const q of s4) span = Math.max(span, Math.hypot(a.x - q.x, a.z - q.z));
-      const o = { ...W.CITIES.reduce((m, c) => (m[c.id] = c, m), {}), village: W.VILLAGE, china: W.CHINA, india: W.INDIA, aussie: W.AUSSIE, town: W.TOWN, market: W.MARKET, home: W.HOME }[key];
+      const o = { ...W.CITIES.reduce((m, c) => (m[c.id] = c, m), {}), village: W.VILLAGE, china: W.CHINA, india: W.INDIA, aussie: W.AUSSIE, town: W.TOWN, market: W.MARKET, home: W.HOME, hoian: W.HOIAN }[key];
       const size = o.x0 != null ? Math.hypot(o.x1 - o.x0, o.z1 - o.z0) : (o.r || 24) * 2;
       if (span < size * .4) bad.push(`${key}: pieces bunched in ${span.toFixed(0)} m of a ${size.toFixed(0)} m place`);
       for (const q of all) { const rd = W.roadDist(q.x, q.z); if (rd.road && rd.d < rd.road.w / 2 + 1.5) bad.push(`${key}: a piece on a road at ${q.x},${q.z}`);
@@ -2144,19 +2321,188 @@ await check('plots', async () => {
 });
 
 await check('roadtone', async () => {
-  // (round T2, ROAD-014, Concept D "B") every asphalt road carries its region's colour, one shared material per colour,
+  // (round T2, ROAD-014, Concept D "B"; round T4a ROAD-015) every asphalt road carries its region's colour, one shared material per colour,
   // and the ring road round the home island is closed
   const M = await import('../js/content/map.js'), bad = [];
   for (const R of M.ROADS) if (R.kind === 'asphalt' && !(R.tone in M.ROAD_TONES)) bad.push(`${R.id} has no colour`);
   const ring = M.ROADS.find(R => R.id === 'ring'); if (!ring || !ring.loop) bad.push('the ring road is not a closed loop');
   const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
   const mats = await P.page.evaluate(() => { const s = new Set(); __sv.scene.traverse(o => { if (o.userData.road && o.material && o.material.map) s.add(o.material.uuid); }); return s.size; });
+  // (round T4a, ROAD-015) the markings: a yellow centre dash on Vietnam's roads, light concrete kerbs on Australia's
+  const mark = await P.page.evaluate(async () => {
+    const M = await import('/js/content/map.js'), { THREE } = await import('/js/gfx.js'), mid = id => { const R = M.ROADS.find(r => r.id === id), [a, c] = R.pts; return [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2]; };
+    const at = ([x, z], px, py) => { let got = null; __sv.scene.traverse(o => { if (got || !o.userData.road || !o.material || !o.material.map) return; o.geometry.computeBoundingBox(); const bb = o.geometry.boundingBox;
+      if (x > bb.min.x && x < bb.max.x && z > bb.min.z && z < bb.max.z) { const im = o.material.map.image, g = im.getContext('2d'); got = [...g.getImageData(px, py, 1, 1).data].slice(0, 3); } }); return got; };
+    return { vnDash: at(mid('vn_north'), 31, 60), auKerb: at(mid('link_au'), 1, 60), auMid: at(mid('link_au'), 20, 60) };
+  });
   const errs = P.errors; await P.ctx.close();
+  { const [r, g, bl] = mark.vnDash || [0, 0, 0]; ok(r > 200 && g > 150 && bl < 120, `Vietnam's road has no yellow centre dash: rgb ${mark.vnDash}`); }
+  { const k = mark.auKerb || [0, 0, 0], m = mark.auMid || [0, 0, 0]; ok(k[0] > 180 && k[0] > m[0] + 40, `Australia's road has no concrete kerb: kerb rgb ${k}, road rgb ${m}`); }
   const tones = new Set(M.ROADS.filter(R => R.kind === 'asphalt').map(R => M.ROAD_TONES[R.tone] || 'grey'));
   ok(!bad.length, bad.join('; '));
   ok(mats <= tones.size + 2, `${mats} road materials for ${tones.size} asphalt colours (one each, plus dirt and footpath)`);
   ok(!errs.length, errs.join(' | '));
-  return `${M.ROADS.filter(R => R.kind === 'asphalt').length} asphalt roads in ${tones.size} colours, ${mats} road materials; the ring road is closed`;
+  return `${M.ROADS.filter(R => R.kind === 'asphalt').length} asphalt roads in ${tones.size} colours, ${mats} road materials; the ring road is closed; a yellow centre dash in Vietnam, kerbs in Australia`;
+});
+
+await check('friendgames', async () => {
+  // (r63, owner: "all games of multiplayer should only be between the players"; "the Caro board can be bigger") on a
+  // phone: Tiến Lên with one friend seats just the two children (no computer players); a 15 × 15 Caro board from the
+  // inviter's choice has 225 squares, each at least 44 px, in a board that scrolls; the invitation window offers sizes
+  const r = {};
+  for (const [game, size] of [['tienlen', null], ['caro', 15]]) {
+    const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+    r[game] = await P.page.evaluate(async ([game, size]) => {
+      const G = __sv, wait = ms => new Promise(res => setTimeout(res, ms));
+      const online = { mine: 0, names: ['Bé Na', 'Bé Bin'], seed: 'r63test', size: size || undefined, move() { }, next: () => new Promise(() => { }), onMove() { }, all: () => new Promise(() => { }) };
+      G.playGameOnline(game, 2, online); await wait(2500);
+      if (game === 'tienlen') { const opp = [...document.querySelectorAll('.tl-opp .tl-p b')].map(e => e.textContent), mine = document.querySelectorAll('.tl-hand .tl-card').length; return { opp, mine, text: document.body.textContent.includes('Anh Ba') || document.body.textContent.includes('Con Vật') }; }
+      const cells = [...document.querySelectorAll('.caro-c')], w = cells.length ? cells[0].getBoundingClientRect().width : 0, wrap = document.querySelector('.caro-wrap');
+      return { cells: cells.length, w, scrolls: !!wrap && wrap.scrollWidth > wrap.clientWidth, pageWide: document.documentElement.scrollWidth > innerWidth + 1 };
+    }, [game, size]);
+    r[game].errs = P.errors; await P.ctx.close();
+  }
+  // the invitation window: level and, for Caro, the board's size
+  const Q = await open(b, { w: 390, h: 844, touch: true }); await clear(Q.page);
+  const pick = await Q.page.evaluate(async () => { const G = __sv; G.inviteGame('caro', 'nobody'); await new Promise(res => setTimeout(res, 600));
+    const sizes = [...document.querySelectorAll('[data-size]')].map(e => +e.dataset.size), lv = document.querySelectorAll('[data-lvl]').length, small = [...document.querySelectorAll('[data-size],[data-lvl]')].filter(e => { const q = e.getBoundingClientRect(); return q.width < 44 || q.height < 44; }).length;
+    return { sizes, lv, small }; });
+  await Q.page.screenshot({ path: 'out/friendgames-invite.png' }); const qerr = Q.errors; await Q.ctx.close();
+  const t = r.tienlen, c = r.caro;
+  ok(t.opp.length === 1 && t.opp[0] === 'Bé Bin' && !t.text && t.mine === 13, 'Tiến Lên with one friend: ' + JSON.stringify(t));
+  ok(c.cells === 225 && c.w >= 44 && c.scrolls && !c.pageWide, 'Caro 15 × 15 on a phone: ' + JSON.stringify(c));
+  ok(pick.sizes.join(',') === '3,6,9,13,15,19' && pick.lv === 5 && !pick.small, 'the invitation window: ' + JSON.stringify(pick));
+  const errs = [...t.errs, ...c.errs, ...qerr]; ok(!errs.length, errs.join(' | '));
+  return `Tiến Lên with one friend: 2 children, no computer players; Caro 15 × 15: 225 squares of ${c.w.toFixed(0)} px in a scrolling board; the invitation offers 5 levels and 6 board sizes`;
+});
+
+await check('micoff', async () => {
+  // (r63, owner: "the microphone should always be off until the user turns it on"; on an iPhone the tap did nothing)
+  // starting or joining a room never asks for the microphone; the HUD's Mic button starts off; one tap asks (inside the
+  // tap) and turns it on; the next tap turns it off (the track goes quiet), the next on again
+  const P = await open(b, { w: 900, h: 640, pre: `(() => { window.__gum = 0; const md = navigator.mediaDevices; if (!md) return; const real = md.getUserMedia.bind(md);
+    md.getUserMedia = c => { window.__gum++; const a = new AudioContext(), o = a.createOscillator(), d = a.createMediaStreamDestination(); o.connect(d); o.start(); return Promise.resolve(d.stream); }; })()` });
+  await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const { Net } = await import('/js/net.js'), G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), said = [];
+    Net.on('status', s => said.push(s.key));
+    const startMuted = Net.muted;
+    Net.host({ name: 'Bé Na' }).catch(() => { }); await wait(1500);
+    const asked = window.__gum, hint = said.includes('mictap');
+    const btn = () => document.querySelector('.dk.call'), label = () => btn() && btn().querySelector('small').textContent;
+    G.huds.forEach(hd => hd.setCall(true, false, Net.muted || !Net.mic)); const before = label();
+    await G.toggleMute(); const on = { mic: !!Net.mic, muted: Net.muted, live: Net.mic && Net.mic.getAudioTracks()[0].enabled, label: label(), asked: window.__gum };
+    await G.toggleMute(); const off = { muted: Net.muted, live: Net.mic.getAudioTracks()[0].enabled, label: label(), asked: window.__gum };
+    await G.toggleMute(); const again = { muted: Net.muted, live: Net.mic.getAudioTracks()[0].enabled };
+    try { Net.close(); } catch (e) { }
+    return { startMuted, asked, hint, before, on, off, again };
+  });
+  const errs = P.errors.filter(e => !/peer|Peer|socket|lost connection/i.test(e)); await P.ctx.close();
+  ok(r.startMuted && r.asked === 0, `starting a room asked for the microphone ${r.asked} times (muted at start: ${r.startMuted})`);
+  ok(r.hint, 'no "your microphone is off" hint when the room started');
+  ok(r.before === 'Mic off', `the Mic button says "${r.before}" before a tap`);
+  ok(r.on.mic && !r.on.muted && r.on.live && r.on.label === 'Mic on' && r.on.asked === 1, 'the first tap: ' + JSON.stringify(r.on));
+  ok(r.off.muted && !r.off.live && r.off.label === 'Mic off' && r.off.asked === 1, 'the second tap: ' + JSON.stringify(r.off));
+  ok(!r.again.muted && r.again.live, 'the third tap: ' + JSON.stringify(r.again));
+  ok(!errs.length, errs.join(' | '));
+  return 'a room starts with the microphone off and asks for nothing; Mic off → one tap asks and turns it on → off → on';
+});
+
+await check('gates', async () => {
+  // (r63, ROAD-016; owner: "at the gate of Hà Nội it is blocked and I can't go through") a child walks through every
+  // gate on a road's end, from 8 m outside to 3 m inside (through the gate onto the square), along the road: nothing
+  // solid stops them and the ground never steps more than 25 cm from one half metre to the next (a bridge deck on the way
+  // is the `bridges` check's)
+  const P = await open(b, { w: 900, h: 640, play: false });
+  await P.page.waitForFunction(() => __sv.world && __sv.world.solidAt, null, { timeout: 90000 });
+  const r = await P.page.evaluate(async () => {
+    const W = __sv.world, w = await import('/js/world.js'), M = await import('/js/content/map.js'), bad = []; let n = 0, worst = 0;
+    for (const R of M.ROADS) (R.gates || []).forEach((g, k) => { if (!g) return; n++;
+      const pts = R.pts, [x0, z0] = k ? pts[pts.length - 1] : pts[0], [x1, z1] = k ? pts[pts.length - 2] : pts[1], L = Math.hypot(x0 - x1, z0 - z1), ux = (x0 - x1) / L, uz = (z0 - z1) / L;
+      let prev = null; for (let t = -8; t <= 3; t += .5) { const x = x0 + ux * t, z = z0 + uz * t, h = w.heightAt(x, z);
+        if (W.platforms.some(P => { const p = P.apron || P; return !P.tower && x > p.x0 - .4 && x < p.x1 + .4 && z > p.z0 - .4 && z < p.z1 + .4; })) { prev = null; continue; } // (r66: with Round U a bridge's 1.2 m apron is part of it, with the 0.4 m edge js/solids.js gives every deck)
+        const pos = { x, y: h, z }; W.collide(pos, .35); if (Math.hypot(pos.x - x, pos.z - z) > .2) { bad.push(`${g} (${R.id}): blocked ${t.toFixed(1)} m from the gate`); break; }
+        if (prev != null) { const st = Math.abs(h - prev); worst = Math.max(worst, st); if (st > .25) { bad.push(`${g} (${R.id}): a ${st.toFixed(2)} m step ${t.toFixed(1)} m from the gate`); break; } } prev = h; } });
+    return { n, worst, bad };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.n >= 15, `only ${r.n} gates found`);
+  ok(!r.bad.length, r.bad.join('; '));
+  ok(!errs.length, errs.join(' | '));
+  return `${r.n} gates walked through, nothing in the way, the biggest step ${(r.worst * 100).toFixed(0)} cm`;
+});
+
+await check('water', async () => {
+  // (round T4a, RIVER-008) the water map: one water plane and one draw, its picture 1024 px or smaller, painted once and
+  // read back from the device on the next start; each water its colour (Sông Hồng red-brown, the sea blue, the lake
+  // turquoise), a foam line by the shore. (RIVER-009) reeds and water hyacinth: two instanced meshes, none on a road,
+  // deck or pier, hyacinth never on a boat route
+  const P = await open(b, { w: 900, h: 640, play: false });
+  const pic = async () => { await P.page.waitForFunction(() => __sv.waterPic && __sv.waterPic.ready && __sv.reeds && __sv.ferries, null, { timeout: 90000 }); return P.page.evaluate(() => __sv.waterPic.from); };
+  const first = await pic();
+  for (let i = 0; i < 75; i++) { if (await P.page.evaluate(async () => { try { const k = await caches.open('sv-world'); return (await k.keys()).some(r => r.url.includes('/water.png')); } catch (e) { return true; } })) break; await P.page.waitForTimeout(200); }
+  await P.page.reload(); await P.page.waitForSelector('.screen.title', { timeout: 90000 }); const second = await pic();
+  ok(first === 'painted' && second === 'cache', `water map: first start ${first}, second start ${second} (should be painted, then from the cache)`);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, W = await import('/js/world.js'), M = await import('/js/content/map.js'), cv = G.waterPic.canvas, g = cv.getContext('2d');
+    const px = (x, z) => { const i = Math.floor((x / W.SIZE + .5) * cv.width), j = Math.floor((z / W.SIZE + .5) * cv.height); return [...g.getImageData(i, j, 1, 1).data]; };
+    const planes = [], mats = new Set(); G.scene.traverse(o => { if (o.isMesh && o.material && o.material.customProgramCacheKey && o.material.customProgramCacheKey() === 'svwater') { planes.push(o); mats.add(o.material.uuid); } });
+    const tex = planes[0] && planes[0].material.userData, tx = planes.length ? cv : null;
+    // a spot in the middle of Sông Hồng, the lake, the sea; a shore: the lake's edge (deep middle vs. the water's edge)
+    const hong = M.WATERS.find(w => w.id === 'hong').pts[2], deep = px(W.LAKE.x, W.LAKE.z + W.LAKE.r * .3);
+    let shore = 0; for (let a = 0; a < 6.3; a += .05) for (let d = W.LAKE.r * .6; d < W.LAKE.r + 4; d += .5) { const x = W.LAKE.x + Math.cos(a) * d, z = W.LAKE.z + Math.sin(a) * d; if (W.heightAt(x, z) < W.WATER - .2 && W.heightAt(x, z) > W.WATER - 1) { shore = Math.max(shore, px(x, z)[3]); } }
+    // reeds and hyacinth: where every one stands
+    const items = []; for (const m of G.reeds.meshes) { const a = m.instanceMatrix.array; for (let i = 0; i < m.count; i++) items.push({ k: m.userData.reeds ? 'reeds' : 'hyacinth', x: a[i * 16 + 12], z: a[i * 16 + 14] }); }
+    const bad = [];
+    for (const it of items) {
+      const rd = W.roadDist(it.x, it.z); if (rd.road && rd.d < rd.road.w / 2 + 1) bad.push(`${it.k} on road ${rd.road.id || rd.road.kind} at (${it.x.toFixed(0)}, ${it.z.toFixed(0)})`);
+      if (G.world.platforms.some(p => it.x > p.x0 - .5 && it.x < p.x1 + .5 && it.z > p.z0 - .5 && it.z < p.z1 + .5)) bad.push(`${it.k} on a deck or pier at (${it.x.toFixed(0)}, ${it.z.toFixed(0)})`);
+      if (it.k === 'hyacinth') for (const F of G.ferries.ferries) for (let i = 0; i < F.path.length - 1; i++) { const a = F.path[i], c = F.path[i + 1], dx = c.x - a.x, dz = c.z - a.z, L2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((it.x - a.x) * dx + (it.z - a.z) * dz) / L2));
+        if (Math.hypot(it.x - a.x - dx * t, it.z - a.z - dz * t) < 4) { bad.push(`hyacinth on a boat route at (${it.x.toFixed(0)}, ${it.z.toFixed(0)})`); break; } }
+    }
+    return { planes: planes.length, mats: mats.size, size: tx ? Math.max(cv.width, cv.height) : 0, hong: px(hong[0], hong[1]), lake: deep, sea: px(0, W.SIZE / 2 - 8), shore, deepA: deep[3],
+      reeds: items.filter(i => i.k === 'reeds').length, hyacinth: items.filter(i => i.k === 'hyacinth').length, meshes: G.reeds.meshes.length, bad: bad.slice(0, 8), nbad: bad.length };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.planes === 1 && r.mats === 1, `${r.planes} water planes with ${r.mats} materials (should be one, one draw)`);
+  ok(r.size > 0 && r.size <= 1024, `water map ${r.size} px (1024 or smaller)`);
+  const [hr, hg, hb] = r.hong, [lr, lg, lb] = r.lake, [sr, sg, sb] = r.sea;
+  ok(hr > hb + 40 && hr > hg, `Sông Hồng is not red-brown: rgb ${r.hong.slice(0, 3)}`);
+  ok(sb > sr + 60 && sb > sg, `the sea is not blue: rgb ${r.sea.slice(0, 3)}`);
+  ok(lb > lr + 60 && lg > lr + 60, `the lake is not turquoise: rgb ${r.lake.slice(0, 3)}`);
+  ok(r.shore > 200 && r.deepA < 80, `no foam line by the lake's shore (alpha by the shore ${r.shore}, deep water ${r.deepA})`);
+  ok(r.meshes === 2 && r.reeds >= 50 && r.hyacinth >= 20, `${r.meshes} meshes, ${r.reeds} reeds, ${r.hyacinth} hyacinth (two meshes, at least 50 and 20)`);
+  ok(!r.nbad, `${r.nbad} reeds or hyacinth in the wrong place: ${r.bad.join('; ')}`);
+  ok(!errs.length, errs.join(' | '));
+  return `one water plane, map ${r.size} px painted then from the cache; Sông Hồng rgb ${r.hong.slice(0, 3)}, sea ${r.sea.slice(0, 3)}, lake ${r.lake.slice(0, 3)}, foam by the shore; ${r.reeds} reeds and ${r.hyacinth} hyacinth in 2 meshes, none on a road, deck, pier or boat route`;
+});
+
+await check('surface', async () => {
+  // (round T4a, WORLD-014) footsteps by surface: surfaceAt at known spots of the map
+  const P = await open(b, { w: 900, h: 640, play: false });
+  await P.page.waitForFunction(() => __sv.ferries, null, { timeout: 90000 });
+  const r = await P.page.evaluate(async () => {
+    const W = await import('/js/world.js'), M = await import('/js/content/map.js'), G = __sv, on = (x, z, y) => W.surfaceAt(x, z, y);
+    const road = id => { const R = M.ROADS.find(r => r.id === id), [a, c] = R.pts; return [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2]; };
+    const vn = road('vn_north'), dirt = road('mv_e1'), city = W.CITIES.find(c => c.id === 'hanoi'), lake = [W.LAKE.x, W.LAKE.z];
+    // the beach: the first dry spot north of the sea, low and sandy, on the meridian of the Sài Gòn mouth's east
+    let beach = null; for (let z = 236; z > 150 && !beach; z -= .5) { const h = W.heightAt(60, z); if (h > W.WATER + .3 && h < 1.4) beach = [60, z]; }
+    const B = M.BRIDGES.find(b => b.id === 'haique'), deck = B.axis === 'x' ? [(B.a0 + B.a1) / 2, B.c] : [B.c, (B.a0 + B.a1) / 2];
+    const pier = G.ferries.ferries.flatMap(F => F.stops.map(s => s.dock && s.dock.pier)).find(p => p && p.tip);
+    const home = M.PLACES.find(p => p.id === 'home').at;
+    let grass = null; for (let k = 0; k < 400 && !grass; k++) { const x = home[0] + Math.cos(k) * (10 + k * .1), z = home[1] + Math.sin(k) * (10 + k * .1), rd = W.roadDist(x, z); if (W.heightAt(x, z) > 2 && (!rd.road || rd.d > rd.road.w / 2 + 2)) grass = [x, z]; }
+    const got = {
+      road: on(vn[0], vn[1]), town: on(city.x, city.z), dirt: on(dirt[0], dirt[1]), sand: beach && on(beach[0], beach[1]), water: on(lake[0] + W.LAKE.r * .5, lake[1]),
+      wood: on(deck[0], deck[1], W.WATER + B.h), pier: pier && on(pier.tip.x, pier.tip.z, pier.tip.y), grass: grass && on(grass[0], grass[1])
+    };
+    return got;
+  });
+  const errs = P.errors; await P.ctx.close();
+  const want = { road: 'road', town: 'road', dirt: 'dirt', sand: 'sand', water: 'water', wood: 'wood', pier: 'wood', grass: 'grass' };
+  const wrong = Object.keys(want).filter(k => r[k] !== want[k]).map(k => `${k}: ${r[k]} (should be ${want[k]})`);
+  ok(!wrong.length, wrong.join('; '));
+  ok(!errs.length, errs.join(' | '));
+  return Object.entries(r).map(([k, v]) => `${k} ${v}`).join(', ');
 });
 
 await check('walkaway', async () => {
@@ -3000,7 +3346,7 @@ await check('hscroll', async () => {
 });
 
 await check('joins', async () => {
-  // ROAD-015 (Round U, owner 11 Oct: "they are not connecting smoothly, there are different elevations when connecting
+  // ROAD-017 (Round U, owner 11 Oct: "they are not connecting smoothly, there are different elevations when connecting
   // roads or bridges"): walk the middle of every road in 25 cm steps (and 3 m on into a road it joins, 6 m through a gate): the ground under
   // a child's feet never jumps more than 6 cm, at a junction, a bridge deck or a place's flat level
   const P = await open(b, { w: 800, h: 600 }); await clear(P.page);
@@ -3020,7 +3366,7 @@ await check('joins', async () => {
   });
   const errs = P.errors; await P.ctx.close();
   ok(!r.out.length && r.n > 5000 && !errs.length, r.out.slice(0, 12).join(' | ') + JSON.stringify(errs));
-  return `${r.n} steps along every road and into every junction and bridge: no step over 6 cm (ROAD-015)`;
+  return `${r.n} steps along every road and into every junction and bridge: no step over 6 cm (ROAD-017)`;
 });
 
 await check('ride', async () => {
@@ -3052,20 +3398,6 @@ await check('ride', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(r.drive >= 20 && r.bike >= 4 && r.rides >= 4 && r.stops >= 4 && !r.lift && r.driving && r.off && r.big.on && r.big.paid > 0 && r.little.on && r.little.paid === 0 && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return `${r.drive} parked cars and motorbikes to drive, ${r.bike} bicycles, ${r.rides} buses, trams and taxis to ride (big kid paid ${r.big.paid}, under-5 free), ${r.stops} bus stops; no lifts from strangers`;
-});
-
-await check('signs', async () => {
-  // (Round U, owner 11 Oct: picture signposts) a post at the corner of every junction, off the roads, with a board for each
-  // way showing the place's picture and its name in the chosen language (js/signposts.js)
-  const out = [];
-  for (const lang of ['en', 'vi']) {
-    const P = await open(b, { w: 800, h: 600, lang }); await clear(P.page);
-    const r = await P.page.evaluate(async () => { const W = await import('/js/world.js'), S = __sv.world.signposts || []; return { n: S.length, ways: S.reduce((a, s) => a + s.ways.length, 0), onRoad: S.filter(s => W.edgeDist(s.x, s.z) < .8).length, empty: S.filter(s => !s.ways.length || s.ways.some(k => !k)).length }; });
-    if (r.n < 10 || r.ways < r.n || r.onRoad || r.empty) out.push(lang + ' ' + JSON.stringify(r));
-    const errs = P.errors; await P.ctx.close(); if (errs.length) out.push(errs.join(' '));
-  }
-  ok(!out.length, out.join(' | '));
-  return 'signposts at the junctions, off the roads, each board a place with its picture, in both languages';
 });
 
 await check('familymissions', async () => {
@@ -3851,6 +4183,58 @@ await check('onlineoff', async () => {
   ok(r.setting === false && r.off && !r.buttons && Object.values(r.guide).every(Boolean) && Object.keys(r.guide).length === 5 && r.code === null && !r.role && !r.peer && !r.door && !r.cloud && !r.beacon && !r.pres && !r.ws && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return 'a fresh device: "Playing with friends is off. Ask a grown-up to turn it on.", no Start or Join; a grown-ups\' note names Internet and playing online → Use the internet (EN and VI, no Studio) and its press-and-hold button opens that section (a tap does not); host, join and friends make no connection';
 });
+// (Play reading trial, owner 11 Oct 2026 AEDT; docs/cores/play-reading.md) the ten reading games behind Studio's readingTrial
+await check('reading', async () => {
+  const { solveReading } = await import('./readsolve.mjs'), RD = await import('../js/content/reading.js');
+  const IDS = ['rd_trace', 'rd_sounds', 'rd_build', 'rd_rhyme', 'rd_sight', 'rd_tones', 'rd_syllable', 'rd_match', 'rd_sentence', 'rd_readalong'], BIG_ONLY = ['rd_sight', 'rd_match', 'rd_sentence'];
+  // the word lists: both languages, every picture drawn, every line to record listed in both languages
+  const lines = RD.readingLines(), en = lines.filter(l => l.lang === 'en').length, vi = lines.filter(l => l.lang === 'vi').length;
+  ok(en > 150 && vi > 150, `lines to record: en ${en}, vi ${vi}`);
+  for (const k of ['letters', 'build', 'rhyme', 'sight', 'syl', 'sent', 'books']) ok(RD.READ.en[k] && RD.READ.vi[k] && RD.READ.en[k].length && RD.READ.vi[k].length, 'a list missing in one language: ' + k);
+  ok(['ă', 'â', 'đ', 'ê', 'ô', 'ơ', 'ư'].every(c => RD.READ.vi.letters.some(x => x[0] === c)), 'Vietnamese letters without ă â đ ê ô ơ ư');
+  ok(RD.nameOf('en', 'z') === 'zed', 'Z is not said "zed"');
+  ok(RD.READ.en.letters.slice(0, 6).map(x => x[0]).join('') === 'satpin', 'English sounds do not start s a t p i n');
+  const allEn = JSON.stringify(RD.READ.en), us = ['color', ' mom', 'candy', 'Mom'].filter(w => allEn.includes(w)); ok(!us.length, 'American words in the English lists: ' + us.join(', '));
+  // switch off (no Studio setting): nothing of the trial loads or shows
+  const P = await open(b, { w: 1024, h: 768 }); const asked = []; P.page.on('request', q => { if (/reading(menu)?\.js/.test(q.url())) asked.push(q.url().split('/').pop()); });
+  await clear(P.page);
+  const off = await P.page.evaluate(async () => { const F = await import('/js/games/frame.js'), A = await import('/js/content/activities.js'); __sv.openGamesHub(0); await new Promise(r => setTimeout(r, 300)); const hub = [...document.querySelectorAll('[data-play]')].map(b => b.dataset.play); document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
+    return { games: Object.keys(F.GAMES).filter(k => /^rd_/.test(k)), inArea: A.gamesIn(F.GAMES, 'reading', false).length, hub: hub.filter(k => /^rd_/.test(k)) }; });
+  await P.ctx.close();
+  ok(!off.games.length && !off.inArea && !off.hub.length && !asked.length, 'with the switch off: ' + JSON.stringify({ off, asked }));
+  // switch on (Studio's content pack): the ten games are in the Reading corner, in the Learning tab; their code loads only when one opens
+  const Q = await open(b, { w: 1024, h: 768, play: false }); const asked2 = []; Q.page.on('request', q => { if (/reading(menu)?\.js/.test(q.url())) asked2.push(q.url().split('/').pop()); });
+  await Q.page.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), readingTrial: true }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
+  await Q.page.reload(); await start(Q.page); await clear(Q.page);
+  await Q.page.waitForFunction(async () => Object.keys((await import('/js/games/frame.js')).GAMES).filter(k => /^rd_/.test(k)).length === 10, null, { timeout: 30000 }).catch(() => { });
+  const on = await Q.page.evaluate(async () => { const F = await import('/js/games/frame.js'), A = await import('/js/content/activities.js'); __sv.openGamesHub(0); await new Promise(r => setTimeout(r, 300)); document.querySelector('.hubtabs [data-tab="learn"]')?.click(); await new Promise(r => setTimeout(r, 200));
+    const hub = [...document.querySelectorAll('.hubbody [data-play]')].map(b => b.dataset.play), head = [...document.querySelectorAll('.hubbody .hubarea')].map(h => h.textContent); document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
+    return { games: Object.keys(F.GAMES).filter(k => /^rd_/.test(k)), big: A.gamesIn(F.GAMES, 'reading', false).map(g => g.id), little: A.gamesIn(F.GAMES, 'reading', true).map(g => g.id), hub: hub.filter(k => /^rd_/.test(k)), head }; });
+  ok(IDS.every(id => on.games.includes(id) && on.big.includes(id) && on.hub.includes(id)) && on.head.some(h => /Reading corner/.test(h)), 'with the switch on: ' + JSON.stringify(on));
+  ok(BIG_ONLY.every(id => !on.little.includes(id)) && on.little.length === 7, 'under-5s see: ' + on.little.join(','));
+  ok(!asked2.includes('reading.js'), 'the games\' code loaded before a game opened: ' + asked2.join(','));
+  // every game finishes for an under-5 (no losing: three stars) and for a big kid at Easy, Medium and Hard, in both languages;
+  // nothing is left behind when a game ends
+  const bad = [], left = [];
+  for (const lang of ['en', 'vi']) {
+    await Q.page.evaluate(async lang => { const S = await import('/js/state.js'); S.settings.lang = lang; }, lang);
+    for (const id of IDS) for (const [level, little] of [[1, true], [1, false], [2, false], [3, false]]) {
+      if (little && BIG_ONLY.includes(id)) continue;
+      const r = await solveReading(Q.page, id, { level, little, timeout: 90000 });
+      if (!r.ok || !r.won || (little && r.stars !== 3)) bad.push(`${lang} ${id} ${little ? 'under-5' : 'level ' + level}: ${JSON.stringify(r).slice(0, 160)}`);
+      await Q.page.waitForTimeout(400);
+      const rest = await Q.page.evaluate(() => document.querySelectorAll('.gl, .rd-lantern, .rd-pond, .rd-sky, .rd-train, .rd-page').length); if (rest) left.push(`${lang} ${id}`);
+      await Q.page.evaluate(() => document.querySelectorAll('.gl').forEach(e => e.remove()));
+    }
+  }
+  ok(!bad.length, bad.slice(0, 6).join(' | '));
+  ok(!left.length, 'still on screen after the game ended: ' + left.join(', '));
+  ok(asked2.includes('reading.js'), 'the games\' code never loaded');
+  const errs = Q.errors.slice(); await Q.ctx.close();
+  ok(!errs.length, errs.slice(0, 5).join(' | '));
+  return `switch off: nothing loads or shows; on: 10 games in the Reading corner (7 for under-5s), all finish at Easy, Medium, Hard and for under-5s in English and Vietnamese; ${en} English and ${vi} Vietnamese lines`;
+});
+
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);

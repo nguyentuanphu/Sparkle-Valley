@@ -55,6 +55,9 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
 - (11 Oct, 7:20 pm AEDT) "You can deploy by using this chat for now until I say no, and then you can proceed on the
   tasks": this chat may merge its own branch into `main` (Netlify publishes) until the owner says no; then it carries on
   with its waiting tasks (bug robot's first instant run, `startup` ratchet, Studio's start-up times, #36 numbers).
+- (11 Oct, 7:40 pm AEDT) The Front Desk is no longer in service; **this chat files bugs for the robot**: the owner tells
+  this chat, it finds the core and files the GitHub issue the Front Desk way (`docs/cores/front-desk.md`: labels `bug`,
+  the core, `small` or `big`; no child's name, photo or address), then watches the robot work on it.
 - Analytics per device and per child, with first names, device and browser, city and country (round L).
 - green dot Playing now / grey dot Offline per device in Studio (round O).
 - GitHub and Netlify are separate steps: “yes, push” then “yes, deploy”.
@@ -130,4 +133,7 @@ Blobs stores: `players`, `live`, `studio-admins`, `studio-pending`, `family-phot
   skipped (no local PeerJS / MQTT servers here): multiplayer, netgames, together, meet, cloud, knock, mapver.
   Checks run for this core: startup (3 runs plus 2 on 56d9578), boot, offline, studio, report, saves, cloud (skipped),
   photo, unit, familyphotos, nostudio: all pass except startup.
+- **12 Oct, 6:30 am AEDT: `startup` ratchet after r63.** The Voice & Audio fix (voice list after the title) went live in
+  r63; `startup` on r63, two runs: first download 979 KB both times, so `firstKB` lowered 1035 -> 1000. Still red on the
+  title (1.6-2.2 s against 1.1 s x machine speed): World's; ready 20.3-25.3 s, freeze 4.2-4.9 s.
 

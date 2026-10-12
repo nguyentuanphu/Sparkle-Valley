@@ -124,10 +124,13 @@ register({
 register({
   id: 'caro', online: true, icon: '⭕', name: () => T('Caro (Noughts & Crosses)', 'Cờ Caro'),
   async run(api) {
-    const N = api.level <= 1 ? 3 : 6, K = api.level <= 1 ? 3 : 4, P = ['🌸', '🍀'];
-    const O = api.online, names = O ? O.names : api.two ? [api.players[0].name, api.players[1].name] : [api.players[0].name, 'Bống'];
+    // (r63, owner: with friends the board can be bigger) online the inviter's size (3 to 19): 3 in a row on 3 × 3, 4 up to
+    // 6 × 6, 5 (like real cờ caro) on bigger boards, which scroll so every square stays big enough to tap
+    const O = api.online, N = O && O.size >= 3 && O.size <= 19 ? O.size : api.level <= 1 ? 3 : 6, K = N <= 3 ? 3 : N <= 6 ? 4 : 5, P = ['🌸', '🍀'];
+    const names = O ? O.names : api.two ? [api.players[0].name, api.players[1].name] : [api.players[0].name, 'Bống'];
     const b = Array(N * N).fill(-1);
-    const grid = el('div', 'caro'); grid.style.setProperty('--n', N); api.stage.appendChild(grid);
+    const grid = el('div', 'caro' + (N > 6 ? ' big' : '')); grid.style.setProperty('--n', N);
+    if (N > 6) { const wrap = el('div', 'caro-wrap'); wrap.appendChild(grid); api.stage.appendChild(wrap); } else api.stage.appendChild(grid);
     const cells = b.map((_, i) => { const c = el('button', 'caro-c'); c._i = i; grid.appendChild(c); return c; });
     const lineAt = (i, who) => {
       const x = i % N, y = Math.floor(i / N);
@@ -149,7 +152,7 @@ register({
       const near = free.filter(i => { const x = i % N, y = Math.floor(i / N); return [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1]].some(([dx, dy]) => b[(y + dy) * N + x + dx] === 1 && x + dx >= 0 && x + dx < N); });
       return pick(near.length && Math.random() < .6 ? near : free);
     };
-    api.say(K === 3 ? 'Get three in a row to win! Across, down or slanted.' : 'Get four in a row to win!', K === 3 ? 'Xếp được ba hình thẳng hàng là thắng! Ngang, dọc hay chéo đều được.' : 'Xếp được bốn hình thẳng hàng là thắng!');
+    api.say(K === 3 ? 'Get three in a row to win! Across, down or slanted.' : K === 4 ? 'Get four in a row to win!' : 'Get five in a row to win!', K === 3 ? 'Xếp được ba hình thẳng hàng là thắng! Ngang, dọc hay chéo đều được.' : K === 4 ? 'Xếp được bốn hình thẳng hàng là thắng!' : 'Xếp được năm hình thẳng hàng là thắng!');
     let turn = 0, winner = -1;
     for (let moves = 0; moves < N * N; moves++) {
       let i;

@@ -35,11 +35,11 @@ function el(html) { const d = document.createElement('div'); d.innerHTML = html.
 const L = {
   bg: css => ({ node: el(`<div class="L" style="inset:0;background:${css}"></div>`), f() {} }),
   img: (src, kb = [1.02, 1.14, 0, 0, 0, -40]) => {   // Ken Burns: [s0, s1, x0, x1, y0, y1]
-    const n = el(`<img class="L full" src="stills/${src}.jpg">`);
+    const n = el(`<img class="L full" src="${window.STILLS || "stills"}/${src}.jpg">`);
     return { node: n, f(lt, d) { const k = lt / d; n.style.transform = `translate(${lerp(kb[2], kb[3], k)}px, ${lerp(kb[4], kb[5], k)}px) scale(${lerp(kb[0], kb[1], k)})`; } };
   },
   phone: (src, o) => {  // o: x, y, w, h, rot, at, pos (object-position), drift
-    const n = el(`<div class="L phone" style="left:${o.x}px;top:${o.y}px;width:${o.w}px;height:${o.h}px"><img src="stills/${src}.jpg" style="object-position:${o.pos || '50% 50%'}"></div>`);
+    const n = el(`<div class="L phone" style="left:${o.x}px;top:${o.y}px;width:${o.w}px;height:${o.h}px"><img src="${window.STILLS || "stills"}/${src}.jpg" style="object-position:${o.pos || '50% 50%'}"></div>`);
     return { node: n, f(lt) { const k = back((lt - (o.at || 0)) / .55); n.style.opacity = clamp((lt - (o.at || 0)) / .2); n.style.transform = `translateY(${(1 - k) * 260 + Math.sin(lt * 1.4 + o.x) * (o.drift ?? 8)}px) rotate(${(o.rot || 0) + (1 - k) * 8}deg) scale(${.7 + .3 * k})`; } };
   },
   cap: (en, vi, o = {}) => {

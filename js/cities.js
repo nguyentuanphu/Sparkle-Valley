@@ -191,9 +191,9 @@ export function createCities(G) {
       const m = new THREE.Mesh(new THREE.PlaneGeometry(c.w * 2 - 1, c.d * 2 - 1), new THREE.MeshToonMaterial({ map: t, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
       m.rotation.x = -Math.PI / 2; m.position.set(c.x, c.h + .06, c.z); m.receiveShadow = true; scene.add(m);
     }
-    // the main street, from the gate straight through the square
+    // the main street, from the gate straight through the square (round T4a: a paved town street)
     {
-      const t = roadTexture('asphalt'); t.repeat.set(1, len * 2 / 9);
+      const t = roadTexture('asphalt', null, c.cc === 'vn' ? 'brick' : 'paving'); t.repeat.set(1, len * 2 / 9);   // (round T4a: brick in Vietnam's towns, paving in Australia's)
       const m = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_WIDTH.asphalt, len * 2 - .4), new THREE.MeshToonMaterial({ map: t, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
       m.rotation.order = 'YXZ'; m.rotation.set(-Math.PI / 2, toward, 0); m.position.set(c.x, c.h + .08, c.z); m.receiveShadow = true; scene.add(m);
     }

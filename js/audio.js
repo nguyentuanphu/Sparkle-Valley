@@ -112,7 +112,17 @@ export const SFX = {
   secret() { [67, 71, 74, 79, 83, 86].forEach((m, i) => tone(midi(m), .5, { type: 'triangle', at: i * .09, vol: .1 })); noise(.6, { at: .5, freq: 7000, vol: .05 }); },
   fanfare() { [[72, 0], [76, .15], [79, .3], [84, .45], [79, .7], [84, .85]].forEach(([m, t], i) => { tone(midi(m), i === 5 ? .9 : .22, { type: 'square', at: t, vol: .05 }); tone(midi(m - 12), i === 5 ? .9 : .22, { type: 'triangle', at: t, vol: .1 }); }); },
   coin() { tone(midi(83), .08, { type: 'square', vol: .05 }); tone(midi(88), .3, { type: 'square', at: .08, vol: .05 }); },
-  step() { noise(.09, { type: 'lowpass', freq: rand(400, 600), vol: .05 }); },
+  // (round T4a) a footstep that sounds like what is underfoot: soft grass, hard road, crunchy dirt, hushing sand, a hollow
+  // wooden deck, a little splash (js/world.js surfaceAt); anything else the step of before
+  step(on) {
+    if (on === 'grass') noise(.06, { freq: rand(350, 550), vol: .04, q: .6 });
+    else if (on === 'road') noise(.035, { freq: rand(1400, 2000), vol: .045, q: 1.6 });
+    else if (on === 'dirt') noise(.05, { freq: rand(700, 1000), vol: .05, q: .9 });
+    else if (on === 'sand') noise(.09, { freq: rand(2600, 3600), vol: .03, q: .5 });
+    else if (on === 'wood') { tone(rand(170, 210), .06, { type: 'triangle', vol: .05 }); noise(.03, { freq: 900, vol: .03, q: 2 }); }
+    else if (on === 'water') noise(.12, { freq: rand(1800, 2400), vol: .05, q: 1.5 });
+    else noise(.05, { freq: rand(500, 900), vol: .05, q: .8 });
+  },
   jump() { tone(300, .2, { to: 600, type: 'triangle', vol: .08 }); },
   glide() { noise(.5, { freq: 600, vol: .08, q: .5 }); },
   splash() { noise(.5, { type: 'lowpass', freq: 1000, vol: .09 }); },
