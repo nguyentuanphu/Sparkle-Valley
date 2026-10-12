@@ -15,6 +15,9 @@ keeps `docs/cores/play.md` and `core/play`; this file holds this chat's notes an
 - 12 Oct, about 1:35 pm AEDT: "you push, and I will get Release core to run full suite": this chat pushes
   `core/play-reading` as it is; Release runs the full suite when it merges.
 
+- 12 Oct, about 2:10 pm AEDT: "if you have full suited, you can deploy", then "Yes, deploy" for r65 (pop-up): this
+  chat acts as Release for this round only (version r65, merged into main by pull request).
+
 ## How it is built
 - `js/games/readingmenu.js` (small): the ten games' names, pictures, ages and how-to cards. It is loaded after the
   title only while `readingTrial` is on (`js/main.js`, one block), so with the switch off nothing of the trial loads.
