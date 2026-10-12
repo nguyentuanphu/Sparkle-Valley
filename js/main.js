@@ -818,7 +818,7 @@ addEventListener('keydown', e => {
   const two = G.heroes.length > 1, i = 0;
   const map = { KeyG: () => G.openGamesHub(i), KeyM: () => G.openPad(i, 'map'), KeyB: () => G.openPad(i, 'bag'), KeyK: () => G.voiceCommand(i),
     KeyT: () => G.huds[i].toggleEmotes(), KeyC: () => Net.connected && G.toggleMute(), KeyN: () => G.toggleAudio('music'), KeyO: () => G.toggleAudio('sound'),
-    KeyF: () => G.goToObjective(i), KeyP: () => G.openPad(i, 'friend'), KeyV: () => G.cycleView(i),
+    KeyF: () => G.goToObjective(i), KeyP: () => G.openPad(i, 'friend'), KeyV: () => G.cycleView(i), KeyY: () => G.openWhere(i),
     Equal: () => G.zoomBy(i, .8), NumpadAdd: () => G.zoomBy(i, .8), Minus: () => G.zoomBy(i, 1.25), NumpadSubtract: () => G.zoomBy(i, 1.25) };
   if (two && ['KeyK', 'KeyT'].includes(k)) return;
   const f = map[k]; if (f) { e.preventDefault(); e.stopImmediatePropagation(); f(); }
@@ -1715,7 +1715,9 @@ import('./signposts.js').then(m => m.createSignposts(G));
 // (Round U) every villager answers a tap with a fact or a saying of their region (js/villagertalk.js)
 import('./villagertalk.js').then(m => m.createVillagerTalk(G));
 import('./pricetags.js').then(m => m.createPriceTags(G));
-import('./jobs.js').then(m => m.createJobs(G));   // (Round U) a job board in every place   // (Round U) a coin-picture price over every food stall
+import('./jobs.js').then(m => m.createJobs(G));
+import('./wayfind.js').then(m => m.createWayfind(G));   // (Round U) "Where is…?" sparkles
+G.openWhere = i => G.wayfind && G.wayfind.open(i);   // (Round U) a job board in every place   // (Round U) a coin-picture price over every food stall
 // (Round U) a tap on a coin, orb or Leafy chip (top bar, Backpack) says what it is (js/chipinfo.js, loaded on the first tap)
 document.addEventListener('click', e => { const c = e.target.closest && e.target.closest('[data-chip]'); if (c) import('./chipinfo.js').then(m => m.showChip(c.dataset.chip, c)); });
 import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });

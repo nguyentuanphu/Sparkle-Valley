@@ -2824,6 +2824,32 @@ await check('jobs', async () => {
   return `${r.boards} job boards off the roads; find the hen near the farm, then take eggs to a market stall: +3 coins each, and what the place is for`;
 });
 
+await check('wayfind', async () => {
+  // (Round U) "Where is…?": the 🧭 button shows pictures (home, my house, Ông Cú, the market, every village and city);
+  // tapping Hà Nội lays sparkles along the roads ahead of the child, a new stretch as they walk; arriving says so and
+  // the sparkles go; every place in the valley can be reached along the roads from home
+  const P = await open(b, { w: 1280, h: 800 });
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], W = await import('/js/world.js'), F = await import('/js/wayfind.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    for (let k = 0; k < 50 && !G.wayfind; k++) await wait(100);
+    const btn = document.querySelector('.hud .z-where'), bb = btn.getBoundingClientRect(); btn.click(); await wait(300);
+    const picks = [...document.querySelectorAll('.wherepick .wp-pick')], drawn = picks.every(p => p.querySelector('.art')), names = picks.map(p => p.getAttribute('aria-label'));
+    const hanoi = picks.find(p => /Hà Nội|Hanoi/.test(p.getAttribute('aria-label'))); hanoi.click(); await wait(800);
+    const t = G.wayfind.trail, shown = G.wayfind.shown;
+    const off = shown.filter(([x, z]) => { const d = W.roadDist(x, z); return !(d.road && d.d <= d.road.w / 2 + .3) && W.edgeDist(x, z) > .3; }).map(p => p.map(Math.round)), onRoad = !off.length;   // (on a road, or a place's paved street)
+    const gaps = t.pts.slice(1, -1).every((p, k) => Math.hypot(p[0] - t.pts[k][0], p[1] - t.pts[k][1]) < 6.5);
+    // walk a stretch: the sparkles move on ahead
+    const mid = t.pts[16]; h.place(mid[0], mid[1]); await wait(1300); const moved = G.wayfind.trail && G.wayfind.trail.i > 10 && G.wayfind.shown.length > 5;
+    const end = G.PLACES.find(p => p.key === 'hanoi'); h.place(end.x + 3, end.z + 3); await wait(1300); const arrived = !G.wayfind.trail && G.wayfind.shown.length === 0;
+    // every target can be reached from home
+    const g = F.roadGraph(G.PLACES), home = G.PLACES.find(p => p.key === 'farm'), unreachable = G.wayfind.targets().filter(x => { const r = F.route(g, home.x, home.z, x.x, x.z); return !r || Math.hypot(r.pts[r.pts.length - 2][0] - x.x, r.pts[r.pts.length - 2][1] - x.z) > 40; }).map(x => x.id);
+    return { off, size: Math.min(bb.width, bb.height), picks: picks.length, drawn, names: names.slice(0, 5), shown: shown.length, onRoad, gaps, len: Math.round(t.pts.length * 4), moved, arrived, unreachable, paused: G.paused };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.size >= 44 && r.picks >= 16 && r.drawn && r.shown >= 20 && r.onRoad && r.gaps && r.moved && r.arrived && !r.unreachable.length && !r.paused && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.picks} pictures to choose from; to Hà Nội: ${r.shown} sparkles at a time on the roads (about ${r.len} m), moving on ahead, gone on arrival; every place reachable from home`;
+});
+
 await check('names', async () => {
   // every game file: no name used that is never defined or imported (TypeScript's TS2304 on all of js/, nothing else
   // judged). Moving code between files (the architecture steps) is where this goes wrong; it once stopped the game.
