@@ -4,6 +4,9 @@
 // reads every message the servers can send and fails if one has no line here.
 const ENV = 'Netlify (Site configuration → Environment variables)';
 export const VI_MESSAGES = [
+  // (owner, 12 Oct) tester reports
+  [/^No such problem\.$/, () => 'Không có lỗi này.'],
+  [/^Set the website address and the Studio password in Settings to see the tester reports\.$/, () => 'Hãy điền địa chỉ trang web và mật khẩu Studio trong Cài đặt để xem báo cáo của người thử.'],
   // (owner, 12 Oct) the exe updating itself
   [/^Looking at GitHub…$/, () => 'Đang xem GitHub…'],
   [/^Your game folder is r(\d*) and the website is r(\d*): get the newest game first \(Settings, Get the newest game\)\.$/, (m) => `Thư mục game của bạn là r${m[1]}, trang web là r${m[2]}: hãy lấy game mới nhất trước (Cài đặt, Lấy game mới nhất).`],

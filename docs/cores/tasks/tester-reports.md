@@ -22,8 +22,8 @@ agrees to. They never name the tools behind it (no Studio, GitHub or Netlify on 
   > - You can stop being a tester at any time in Settings, and reports stop straight away.
 - Settings shows "Stop being a tester" while it is on. The acceptance (date, version) is kept with the device's reports.
 - **Privacy exception (owner, 12 Oct AEDT):** on a tester device that has accepted, reports keep children's names, ages
-  and progress, and need no grown-up gate. This is an exception to the PRIV rules (`docs/ARCHITECTURE.md` §9) and to
-  HANDOFF rule 11 for tester reports only; children's devices that are not testers stay exactly as they are. The round
+  and progress, and need no grown-up gate. This is an exception to the PRIV rules (`docs/ARCHITECTURE.md` §9, PRIV-016) for
+  tester reports only (voice lines still never say a name); children's devices that are not testers stay exactly as they are. The round
   adds the exception to the rules in the document and in `js/content/rules.js`, with a check.
 
 ## 2. Reporting

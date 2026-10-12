@@ -1069,6 +1069,137 @@ await check('autoplay', async () => {
   return `hidden where not allowed (other device, switched off); ${keys.length} steps (${rep.done.map(r => r.key.split(':')[0]).join(', ')}) at Fast, stamina kept full, ${rep.done.filter(r => r.ok).length} fine${rep.done.filter(r => !r.ok).map(r => `; noted for ${r.key}: ${r.problems.join(', ')}`).join('')}; progress put back after the restart`;
 });
 
+// (owner, 12 Oct 2026 AEDT: tester reports, PRIV-016) shared by the three tester checks: a device made a tester (or not)
+// by the Releases rule, the website's /api/tester pretended (what it was sent, and what it answers)
+const testerPre = (rule, extra = '') => `try { localStorage.setItem('sv2_playerid', 'tester000001'); localStorage.setItem('sv2_live', JSON.stringify({ releases: { tester: ${JSON.stringify(rule)} }, festivals: {} })); ${extra} } catch (e) { }`;
+const testerSite = async (ctx, status) => { const got = []; await ctx.route('**/api/tester**', async rt => { const q = rt.request();
+  if (q.method() === 'POST') { let b = null; try { b = JSON.parse(q.postData() || 'null'); } catch (e) { } got.push(b); return rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, k: '0123456789abcdef', status: 'new' }) }); }
+  return rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status()) }); }); return got; };
+const ACCEPTED = `localStorage.setItem('sv2_tester', JSON.stringify({ at: 1, b: 'r1' }));`;
+
+await check('tester', async () => {
+  // a tester device (Releases switch `tester`): nothing of it anywhere else; the agreement once, in both languages; nothing
+  // sent before "I accept"; then the tester mark with the version and the ladybird (not at the level "auto reports
+  // only"); "Stop being a tester" in Settings stops it at once
+  const out = [];
+  for (const rule of [{ on: true, devices: ['zzzzzzzzzzzz'] }, { on: false }]) {
+    const Q = await open(b, { w: 1024, h: 768, pre: testerPre(rule) }); await Q.page.waitForTimeout(3500);
+    const r = await Q.page.evaluate(() => ({ any: !!document.querySelector('.tagree, .testermark, .z-lb'), api: !!window.__sv.tester, loaded: performance.getEntriesByType('resource').some(e => /\/js\/tester(rewards)?\.js/.test(e.name)) }));
+    await Q.ctx.close(); if (r.any || r.api || r.loaded) out.push('not a tester but ' + JSON.stringify({ rule, r }));
+  }
+  for (const lang of ['en', 'vi']) {
+    const P = await open(b, { w: 1024, h: 768, lang, pre: testerPre({ on: true, devices: ['tester000001'] }), play: false }), got = await testerSite(P.ctx, () => ({ mine: [], open: [], retest: [], helped: 0, reports: 0 }));
+    await start(P.page); await P.page.waitForSelector('.modal.tagree', { timeout: 20000 });
+    const text = await P.page.evaluate(() => document.querySelector('.tagree').innerText);
+    if (lang === 'vi' ? !/Trở thành người thử/.test(text) || !/tên, tuổi/.test(text) : !/Become a Sparkle Valley tester/.test(text) || !/names, ages and progress/.test(text)) out.push(lang + ': the agreement does not say what is collected: ' + text.slice(0, 200));
+    await P.page.evaluate(() => { setTimeout(() => { throw new Error('tester check: before accepting'); }, 0); }); await P.page.waitForTimeout(800);
+    const before = await P.page.evaluate(() => (JSON.parse(localStorage.getItem('sv2_tester_out') || '[]')).length + document.querySelectorAll('.testermark, .z-lb').length);
+    if (before || got.length) out.push(lang + ': something was kept or sent before "I accept": ' + JSON.stringify({ before, got: got.length }));
+    await P.page.click('.tagree .tg-yes'); await P.page.waitForSelector('.testermark', { timeout: 8000 }).catch(() => { }); await P.page.waitForTimeout(1500);
+    const on = await P.page.evaluate(async () => ({ mark: (document.querySelector('.testermark') || {}).textContent || '', lb: document.querySelectorAll('.hud .z-lb').length, build: (await import('/js/build.js')).BUILD, lbSize: (r => r && Math.min(r.width, r.height))(document.querySelector('.hud .z-lb') && document.querySelector('.hud .z-lb').getBoundingClientRect()) }));
+    if (!on.mark.includes(on.build) || on.lb !== 1 || !(on.lbSize >= 44)) out.push(lang + ': after accepting, no tester mark with the version or no ladybird (44 px): ' + JSON.stringify(on));
+    if (!got.some(x => x && x.accepted === true)) out.push(lang + ': the acceptance was not told');
+    // Settings → Stop being a tester
+    await clear(P.page); await P.page.click('.hud .pcard'); await P.page.waitForSelector('.qs-tester [data-t="stop"]', { timeout: 8000 });
+    await P.page.click('.qs-tester [data-t="stop"]'); await P.page.waitForTimeout(800);
+    const off = await P.page.evaluate(() => ({ left: document.querySelectorAll('.testermark, .z-lb').length, again: !!document.querySelector('.qs-tester [data-t="join"]') }));
+    if (off.left || !off.again) out.push(lang + ': Stop being a tester did not stop it: ' + JSON.stringify(off));
+    const errs = P.errors.filter(e => !/tester check: before accepting/.test(e)); await P.ctx.close(); if (errs.length) out.push(errs.slice(0, 2).join(' | '));
+  }
+  // the level "auto reports only": the mark, no ladybird
+  const A = await open(b, { w: 1024, h: 768, pre: testerPre({ on: true, devices: ['tester000001'], levels: { tester000001: 'auto' } }, ACCEPTED) }); await testerSite(A.ctx, () => ({ mine: [], open: [] }));
+  await A.page.waitForSelector('.testermark', { timeout: 15000 }).catch(() => { }); await A.page.waitForTimeout(1500);
+  const a = await A.page.evaluate(() => ({ mark: !!document.querySelector('.testermark'), lb: document.querySelectorAll('.z-lb').length })); await A.ctx.close();
+  if (!a.mark || a.lb) out.push('level "auto reports only": ' + JSON.stringify(a));
+  ok(!out.length, out.join(' | '));
+  return 'only on tester devices (none of it downloaded elsewhere); the agreement once in English and Vietnamese, nothing kept or sent before "I accept"; then the tester mark with the version and a 44 px ladybird (none at "auto reports only"); Stop being a tester stops it at once';
+});
+
+await check('testerreport', async () => {
+  // reports by themselves with a picture and the last 30 seconds (an error, a game that did not open, a frozen screen);
+  // the ladybird: tap = the picture first, then a kind and a note; long press = a quick report; offline they wait, with a
+  // number on the ladybird, and send when back online; "Already reported → add to it" joins the open problem
+  const P = await open(b, { w: 1024, h: 768, pre: testerPre({ on: true, devices: ['tester000001'] }, ACCEPTED) });
+  let near = []; const got = await testerSite(P.ctx, () => ({ mine: [], open: near, retest: [], helped: 0, reports: 1 }));
+  await P.page.waitForFunction(() => window.__sv.tester && document.querySelector('.hud .z-lb'), null, { timeout: 15000 }); await clear(P.page);
+  const wait = async (f, ms = 12000) => { for (let t = 0; t < ms; t += 250) { const x = got.find(f); if (x) return x; await P.page.waitForTimeout(250); } return null; };
+  const out = [];
+  await P.page.evaluate(() => { setTimeout(() => { throw new Error('tester check boom'); }, 0); });
+  const e = await wait(x => x && x.kind === 'auto' && x.auto === 'error' && /tester check boom/.test(x.detail));
+  if (!e || !/^data:image\/jpeg;base64,/.test(e.shot || '') || !(e.log && e.log.length) || !e.players.length || !e.players[0].name || !e.dev || !e.b) out.push('the error report has no picture, steps, players or device: ' + JSON.stringify(e && { shot: (e.shot || '').slice(0, 30), log: e.log && e.log.length, players: e.players, dev: e.dev, b: e.b }));
+  await P.page.evaluate(() => __sv.playGame(0, 'no-such-game-for-the-tester-check'));
+  if (!await wait(x => x && x.auto === 'noopen' && /no-such-game/.test(x.detail), 9000)) out.push('a game that did not open was not reported');
+  await P.page.waitForFunction(() => performance.now() > 0, null); await P.page.waitForTimeout(Math.max(0, 16000 - await P.page.evaluate(() => performance.now())));
+  await P.page.evaluate(() => new Promise(r => requestAnimationFrame(() => { const t = performance.now(); while (performance.now() - t < 2600) { } r(); })));
+  if (!await wait(x => x && x.auto === 'freeze', 6000)) out.push('a frozen screen was not reported');
+  // the ladybird: tap
+  await clear(P.page); const n0 = got.length;
+  await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerdown'); await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerup');
+  await P.page.waitForSelector('.modal.tpanel .tp-shot', { timeout: 8000 });
+  const shotFirst = await P.page.evaluate(() => /^data:image\/jpeg/.test(document.querySelector('.tp-shot').src));
+  await P.page.click('.tp-k[data-k="looks"]'); await P.page.fill('.tpanel textarea', 'The bridge floats above the river'); await P.page.click('.tp-send');
+  const t = await wait(x => x && x.kind === 'looks' && /bridge floats/.test(x.note || ''));
+  if (!shotFirst || !t || !/^data:image/.test(t.shot || '')) out.push('the ladybird\'s report has no picture or note: ' + JSON.stringify({ shotFirst, got: !!t }));
+  // long press: a quick report
+  await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerdown'); await P.page.waitForTimeout(1000); await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerup');
+  if (!await wait(x => x && x.detail === 'quick')) out.push('a long press made no quick report');
+  // offline: waits with a number, then sends
+  await P.ctx.setOffline(true); await P.page.evaluate(() => __sv.tester.openPanel(0)); await P.page.waitForSelector('.tpanel .tp-send'); await P.page.fill('.tpanel textarea', 'offline report'); await P.page.click('.tp-send'); await P.page.waitForTimeout(600);
+  const wq = await P.page.evaluate(() => ({ q: JSON.parse(localStorage.getItem('sv2_tester_out') || '[]').length, n: (document.querySelector('.z-lb .lb-n') || {}).textContent }));
+  await P.ctx.setOffline(false); await P.page.evaluate(() => dispatchEvent(new Event('online')));
+  const sentLater = await wait(x => x && x.note === 'offline report');
+  const left = await P.page.evaluate(() => JSON.parse(localStorage.getItem('sv2_tester_out') || '[]').length);
+  if (wq.q !== 1 || wq.n !== '1' || !sentLater || left) out.push('offline reports did not wait and send: ' + JSON.stringify({ wq, sentLater: !!sentLater, left }));
+  // already reported here
+  near = [{ k: 'aaaaaaaaaaaaaaaa', title: 'The bridge floats', n: 3, where: await P.page.evaluate(() => { const h = __sv.heroes[0]; return { area: String(__sv.regionOf[0] || 'valley'), x: Math.round(h.pos.x), z: Math.round(h.pos.z), game: '', window: '' }; }) }];
+  await P.page.evaluate(() => __sv.tester.refresh()); await P.page.waitForTimeout(500);
+  await P.page.evaluate(() => __sv.tester.openPanel(0)); await P.page.waitForSelector('.tpanel [data-join]', { timeout: 5000 }).catch(() => { });
+  if (await P.page.$('.tpanel [data-join]')) { await P.page.click('.tpanel [data-join]'); if (!await wait(x => x && x.join === 'aaaaaaaaaaaaaaaa')) out.push('"add to it" did not join the open problem'); } else out.push('no "Already reported here" where a problem is open');
+  // the retest: a problem fixed in this version is replayed (its game opened) and the result told
+  const g1 = await P.page.evaluate(async () => Object.keys((await import('/js/games/frame.js')).GAMES)[0]);
+  near = []; await P.page.evaluate(() => document.querySelectorAll('.modal, .dialog').forEach(e => e.remove()));
+  const stNow = { mine: [], open: [], retest: [{ k: 'cccccccccccccccc', title: 'noopen: ' + g1, status: 'fixed', fixedIn: 'r1', kind: 'auto', auto: 'noopen', where: { game: g1 } }] };
+  await P.ctx.unroute('**/api/tester**'); const got2 = await testerSite(P.ctx, () => stNow);
+  const pre = await P.page.evaluate(async () => { const s = await __sv.tester.refresh(); __sv.paused = false; const b = { st: s && s.retest && s.retest.length, open: [...document.querySelectorAll('.gl, .modal, .theatre, .storybook')].map(e => e.className) }; await __sv.tester.retest(); return b; });
+  await P.page.waitForTimeout(500); const rt = got2.find(x => x && x.k === 'cccccccccccccccc');
+  if (!rt || rt.fixed !== true) out.push('the retest did not replay the fixed problem and say it stayed fixed: ' + JSON.stringify({ rt, pre }));
+  // the auto play check's findings (it restarts the game when it ends) are sent once as reports
+  await P.page.evaluate(() => { localStorage.setItem('sv2_autoplay_report', JSON.stringify({ at: '2026-10-12T10:00:00Z', build: 'r1', speed: 'fast', total: 1, done: [{ g: 'games', key: 'memory', name: 'Memory', ok: false, problems: ['did not close'] }] })); });
+  await P.page.evaluate(() => __sv.tester.nightly()); await P.page.waitForTimeout(1500);
+  if (!got2.some(x => x && x.auto === 'autoplay' && /did not close/.test(x.detail))) out.push('the auto play check\'s findings were not sent');
+  const errs = P.errors.filter(x => !/tester check boom|no-such-game|net::ERR_INTERNET_DISCONNECTED|Failed to fetch/.test(x)); await P.ctx.close();
+  if (errs.length) out.push(errs.slice(0, 2).join(' | '));
+  ok(!out.length, out.join(' | '));
+  return `${got.length} reports: an error, a game that did not open and a frozen screen by themselves, each with a picture, the last 30 seconds, the players and the device; the ladybird (picture first, then a kind and a note), a long-press quick report, offline reports waiting with a number and sending when back online, and "already reported → add to it"; the retest of a fixed problem, and the auto play check\'s findings sent once`;
+});
+
+await check('testerrewards', async () => {
+  // a problem the tester found is fixed: the tick on the ladybird, Ông Cú's thank-you with coins; reports that helped
+  // give the Bug Hunter badge on the shirt (seen by friends: it is in the look), tester gear, stickers and the week's star
+  const out = [];
+  for (const [w, h, touch, name] of [[390, 844, true, 'phone'], [820, 1180, true, 'tablet'], [1180, 760, false, 'computer']]) {
+    // (the website is pretended before the page loads: the device asks for its status as soon as it starts)
+    const P = await open(b, { w, h, touch, pre: testerPre({ on: true, devices: ['tester000001'] }, ACCEPTED), route: ctx => testerSite(ctx, () => ({ mine: [{ k: 'bbbbbbbbbbbbbbbb', title: 'The bridge floats', status: 'fixed', fixedIn: 'r67', kind: 'looks', spoken: true }], open: [], retest: [], helped: 10, helpedKinds: ['broken', 'looks', 'words', 'sound', 'idea'], reports: 12, star: true })) });
+    const coins0 = await P.page.evaluate(() => JSON.parse(localStorage.getItem('sv2_farm') || '{}').coins || 0);
+    await P.page.waitForFunction(() => window.__sv.testerRewards, null, { timeout: 15000 });
+    for (let i = 0; i < 40; i++) { await P.page.waitForTimeout(500); const d = await P.page.$('.dialog'); if (d && /Ông Cú|Ong Cu/.test(await d.innerText())) break; await P.page.evaluate(() => document.querySelectorAll('.reward').forEach(r => r.click())); }
+    const thank = await P.page.evaluate(() => (document.querySelector('.dialog') || {}).innerText || '');
+    await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.click())); await P.page.waitForTimeout(800);
+    const r = await P.page.evaluate(async () => { const S = await import('/js/state.js'), p = S.profiles[0]; return { badge: p.look.badge, star: p.look.star, gear: ['sleuthhat', 'ladypack', 'sleuthcape'].filter(id => (p.owned.clothes || []).includes(id)), stickers: p.testerStickers, coins: S.farm.coins, tick: !(document.querySelector('.z-lb .lb-ok') || { hidden: true }).hidden, starName: !!document.querySelector('.hud .pname.starname') }; });
+    if (!/fixed|đã được sửa/i.test(thank) || r.coins - coins0 < 25) out.push(name + ': no thank-you with coins: ' + JSON.stringify({ thank: thank.slice(0, 80), coins: r.coins - coins0 }));
+    if (r.badge !== 'lb2' || !r.star || r.gear.length !== 3 || (r.stickers || []).length !== 5 || !r.tick || !r.starName) out.push(name + ': rewards ' + JSON.stringify(r));
+    // the Tester's Corner and the badge drawn on the shirt
+    await clear(P.page); await P.page.evaluate(() => __sv.testerRewards.corner()); await P.page.waitForSelector('.tcorner .tc-badge.on', { timeout: 5000 }).catch(() => { });
+    const c = await P.page.evaluate(() => { const card = document.querySelector('.tcorner .card'), r = card && card.getBoundingClientRect(); return { on: document.querySelectorAll('.tcorner .tc-badge.on').length, st: document.querySelectorAll('.tcorner .tc-st.on').length, fixed: document.querySelectorAll('.tcorner .tm-row').length, wide: card ? card.scrollWidth <= card.clientWidth + 2 && r.right <= innerWidth + 1 : false }; });
+    if (c.on !== 2 || c.st !== 5 || c.fixed !== 1 || !c.wide) out.push(name + ': the Tester\'s Corner ' + JSON.stringify(c));
+    if (name === 'computer') { const shirt = await P.page.evaluate(async () => { const { buildAvatar } = await import('/js/avatar.js'), S = await import('/js/state.js'); const n = o => { let k = 0; o.traverse(x => { if (x.isMesh) k++; }); return k; }; return n(buildAvatar({ ...S.profiles[0].look }).torso) - n(buildAvatar({ ...S.profiles[0].look, badge: undefined }).torso); });
+      if (shirt < 1) out.push('the badge is not drawn on the shirt: ' + shirt); } // (the badge, and its outline)
+    const errs = P.errors; await P.ctx.close(); if (errs.length) out.push(name + ': ' + errs.slice(0, 2).join(' | '));
+  }
+  ok(!out.length, out.join(' | '));
+  return 'on phone, tablet and computer: the fixed tick, Ông Cú\'s thank-you with coins (more for a spoken note), the Silver Ladybird on the shirt (and in the look friends see), the tester hat, backpack and cape, five stickers, the week\'s star by the name, and the Tester\'s Corner';
+});
+
 await check('festcal', async () => {
   // (round R, owner) the festival calendar: real dates, 3 weeks of build-up that grows each week, two festivals at once
   // in their own places, quiet days only a few days before, the day's timetable, Halloween trick-or-treat and keepsake

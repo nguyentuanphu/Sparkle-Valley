@@ -98,18 +98,19 @@ export function memoryBlobs() {
 // ---------- a pretend Netlify: the site's files, netlify.toml's redirects and the two functions ----------
 // (round R privacy) a clock the tests move on, so every sign-in has a fresh two-step code
 export const testClock = { t: Date.now() };
-export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs(), heldStore = memoryBlobs(), liveStore = memoryBlobs(), familyStore = memoryBlobs(), guardStore = memoryBlobs(), logStore = memoryBlobs() }) {
+export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs(), heldStore = memoryBlobs(), liveStore = memoryBlobs(), familyStore = memoryBlobs(), guardStore = memoryBlobs(), logStore = memoryBlobs(), testerStore = memoryBlobs() }) {
   Object.assign(process.env, env);
   const { makeStudio } = await import(path.join(ROOT, 'netlify/functions/studio.mjs'));
   const { makeHello } = await import(path.join(ROOT, 'netlify/functions/hello.mjs'));
   const { makeLive } = await import(path.join(ROOT, 'netlify/functions/live.mjs'));
   const { makeFamily } = await import(path.join(ROOT, 'netlify/functions/family.mjs'));
-  const now = () => testClock.t, family = makeFamily({ familyStore: async () => familyStore, guardStore: async () => guardStore, now });
-  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore, heldStore: async () => heldStore, liveStore: async () => liveStore, familyStore: async () => familyStore, guardStore: async () => guardStore, logStore: async () => logStore, now }), hello = makeHello({ playersStore: async () => players, guardStore: async () => guardStore }), live = makeLive({ liveStore: async () => liveStore });
+  const { makeTester } = await import(path.join(ROOT, 'netlify/functions/tester.mjs')); // (owner, 12 Oct) tester reports
+  const now = () => testClock.t, tester = makeTester({ testerStore: async () => testerStore, liveStore: async () => liveStore, guardStore: async () => guardStore, now }), family = makeFamily({ familyStore: async () => familyStore, guardStore: async () => guardStore, now });
+  const studio = makeStudio({ playersStore: async () => players, adminStore: async () => adminStore, heldStore: async () => heldStore, liveStore: async () => liveStore, familyStore: async () => familyStore, guardStore: async () => guardStore, logStore: async () => logStore, testerStore: async () => testerStore, now }), hello = makeHello({ playersStore: async () => players, guardStore: async () => guardStore }), live = makeLive({ liveStore: async () => liveStore });
   const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.woff2': 'font/woff2' };
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`); let p = decodeURIComponent(url.pathname);
-    const fn = p === '/api/hello' ? hello : p === '/api/live' ? live : p.startsWith('/api/family/') ? family : (p.startsWith('/studio/api/') || p.startsWith('/studio/content/')) ? studio : null;
+    const fn = p === '/api/hello' ? hello : p === '/api/live' ? live : p === '/api/tester' ? tester : p.startsWith('/api/family/') ? family : (p.startsWith('/studio/api/') || p.startsWith('/studio/content/')) ? studio : null;
     if (fn) {
       const ch = []; for await (const c of req) ch.push(c);
       const r = await fn(new Request(url, { method: req.method, headers: req.headers, body: req.method === 'POST' ? Buffer.concat(ch) : undefined }), { geo: JSON.parse(req.headers['x-test-geo'] || '{}') }); // (Netlify gives the town from the connection; tests say it in a header)
@@ -455,9 +456,9 @@ export async function studioCheck(browser, open) {
       finally { globalThis.fetch = real; fs.rmSync(d, { recursive: true, force: true }); }
       notes.push('a fetched photo over 1.5 MB is skipped for the next one'); }
     // 6. the dashboard in a browser: online (signed in) and in the exe, on a desktop and a phone
-    const pages = ['home', 'message', 'players', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode', 'missions', 'villagers', 'path', 'play', 'quiz', 'stories', 'looks', 'plots'], bad = [];
+    const pages = ['home', 'message', 'players', 'testers', 'publish', 'check', 'settings', 'photos', 'releases', 'festivals', 'familycode', 'missions', 'villagers', 'path', 'play', 'quiz', 'stories', 'looks', 'plots'], bad = [];
     // (Studio review, owner 10 Oct) every button and box 44 px or more on a phone and a tablet: these pages
-    const TAPS = ['home', 'message', 'missions', 'album', 'quiz', 'stories', 'villagers', 'plots', 'looks', 'familycode', 'releases', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads', 'publish', 'site', 'check', 'settings'];
+    const TAPS = ['home', 'message', 'missions', 'album', 'quiz', 'stories', 'villagers', 'plots', 'looks', 'familycode', 'releases', 'festivals', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads', 'publish', 'site', 'check', 'settings', 'testers'];
     const SMALL = () => [...document.querySelectorAll('header button:not([hidden]), #crumb button, #page button, #page a.btn, #page select, #page textarea, #page input:not([type=checkbox]):not([type=radio]):not([type=hidden]), #page label:has(> input[type=checkbox]), #page label:has(> input[type=radio])')]
       .filter(e => { const r = e.getBoundingClientRect(); return r.width && r.height && (r.height < 43.5 || (e.tagName === 'BUTTON' && r.width < 43.5)); })
       .map(e => `${e.id || e.className || e.tagName} “${(e.innerText || e.value || '').trim().slice(0, 16)}” ${Math.round(e.getBoundingClientRect().width)}×${Math.round(e.getBoundingClientRect().height)}`);
@@ -498,6 +499,26 @@ export async function studioCheck(browser, open) {
         await pg.waitForTimeout(1200);
         const lv = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
         if (!(lv.releases && lv.releases.traffic && lv.releases.traffic.on === false && lv.releases.fest_halloween && lv.releases.fest_halloween.newDays === 5 && /^\d{4}-/.test(lv.releases.fest_halloween.start))) bad.push('releases did not reach /api/live: ' + JSON.stringify(lv));
+        // (owner, 12 Oct) testers: tick a device at "auto reports only" with a sneak peek; it reports; the Tester reports page
+        // shows the problem, marks it fixed in r67, and the device hears it
+        await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('#tdev [data-tdev]', { timeout: 15000 }).catch(() => { });
+        const tid = await pg.evaluate(() => { const c = document.querySelector('#tdev [data-tdev]'); if (!c) return ''; c.checked = true; document.querySelector(`[data-tlv="${c.dataset.tdev}"]`).value = 'auto'; document.querySelector('#tdev [data-peek]').checked = true; document.querySelector('tr[data-id="tester"] [data-r="on"]').value = 'true'; document.querySelector('#save').click(); return c.dataset.tdev; });
+        await pg.waitForTimeout(1200);
+        const lt = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
+        const tr = lt.releases && lt.releases.tester;
+        if (!tid || !tr || tr.on !== true || !(tr.devices || []).includes(tid) || (tr.levels || {})[tid] !== 'auto' || !(tr.peeks || []).length) bad.push('the Releases page did not save the testers: ' + JSON.stringify({ tid, tr }));
+        else {
+          const rep = { id: tid, b: 'r66', kind: 'looks', note: 'The bridge floats', where: { area: 'village', x: 1, z: 2 }, dev: { os: 'iOS' }, players: [{ name: 'Na', age: 'little' }], shot: 'data:image/jpeg;base64,AAAA', log: [[-2, 'tap', 'Play']] };
+          const sent = await pg.evaluate(b => fetch('/api/tester', { method: 'POST', body: JSON.stringify(b) }).then(r => r.status), rep);
+          const other = await pg.evaluate(b => fetch('/api/tester', { method: 'POST', body: JSON.stringify({ ...b, id: 'zzzzzzzzzzzz' }) }).then(r => r.status), rep);
+          if (sent !== 200 || other !== 403) bad.push('/api/tester: ' + JSON.stringify({ sent, other }));
+          await pg.evaluate(() => { location.hash = 'players/testers'; }); await pg.waitForSelector('#tpb tr[data-open]', { timeout: 15000 }).catch(() => { });
+          await pg.evaluate(() => document.querySelector('#tpb tr[data-open]') && document.querySelector('#tpb tr[data-open]').click()); await pg.waitForSelector('#tfix', { timeout: 10000 }).catch(() => { });
+          const det = await pg.evaluate(() => ({ note: /The bridge floats/.test((document.querySelector('.tdet') || {}).innerText || ''), shot: !!document.querySelector('.tdet [data-shot]'), steps: !!document.querySelector('.tdet .tlog') }));
+          await pg.evaluate(() => { const i = document.querySelector('#tfin'); if (i) { i.value = 'r67'; document.querySelector('#tfix').click(); } }); await pg.waitForTimeout(1200);
+          const st = await pg.evaluate(id => fetch('/api/tester?id=' + id + '&b=r67').then(r => r.json()), tid);
+          if (!det.note || !det.shot || !det.steps || !(st.mine && st.mine[0] && st.mine[0].status === 'fixed' && st.mine[0].fixedIn === 'r67' && st.helped === 1)) bad.push('the Tester reports page: ' + JSON.stringify({ det, st }));
+        }
         await pg.evaluate(() => { location.hash = 'game/festivals'; }); await pg.waitForSelector('tr[data-id="tet"]', { timeout: 15000 });
         await pg.evaluate(() => { document.querySelector('tr[data-id="anzac"] [data-f="on"]').value = 'false'; document.querySelector('tr[data-id="halloween"] [data-f="buildup"]').value = '14'; document.querySelector('#save').click(); });
         await pg.waitForTimeout(1200);

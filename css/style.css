@@ -2361,3 +2361,44 @@ button.chip { font: inherit; color: inherit; cursor: pointer; }
 /* (Round U) the HUD's coin, orb and Leafy chips are buttons now (tap: what it is): a 44 px tap area around the small chip */
 .hud .chips button.chip { position: relative; }
 .hud .chips button.chip::after { content: ''; position: absolute; left: -2px; right: -2px; top: 50%; height: 44px; transform: translateY(-50%); }
+
+/* ---------- (owner, 12 Oct) tester reports: js/tester.js, js/testerrewards.js ---------- */
+.testermark { position: fixed; left: 50%; bottom: 4px; transform: translateX(-50%); z-index: 60; pointer-events: none; display: flex; align-items: center; gap: 4px;
+  padding: 2px 10px 2px 4px; border-radius: 999px; background: rgba(40, 24, 70, .62); color: #fff; font: 700 12px Fredoka, "Baloo 2", sans-serif; opacity: .85; }
+.testermark .art { width: 18px; height: 18px; }
+.zoomer .z-lb { position: relative; }
+.zoomer .z-lb .art { width: 34px; height: 34px; }
+.z-lb .lb-n, .z-lb .lb-ok { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; font: 800 12px/20px sans-serif; font-style: normal; color: #fff; background: #e8433a; }
+.z-lb .lb-ok { right: auto; left: -6px; background: #2f9a5a; }
+.testertoast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 90; max-width: min(90vw, 420px); padding: 10px 16px; border-radius: 16px;
+  background: #fffaf0; color: #3b2558; font: 600 16px Fredoka, "Baloo 2", sans-serif; box-shadow: 0 6px 20px rgba(40, 20, 10, .25); transition: opacity .3s; }
+.testertoast.out { opacity: 0; }
+.modal.tpanel .card, .modal.tagree .card { max-width: 560px; }
+.tp-head { display: flex; align-items: center; gap: 10px; }
+.tp-head h2 { flex: 1; margin: 0; }
+.tp-lb .art { width: 40px; height: 40px; }
+.tp-shot { display: block; width: 100%; max-height: 32vh; object-fit: contain; border-radius: 12px; margin: 8px 0; background: #ccd; }
+.tp-kinds { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin: 8px 0; }
+.tp-k { min-height: 64px; border: 0; border-radius: 16px; background: #eee6f7; color: #3b2558; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font: 700 14px Fredoka, "Baloo 2", sans-serif; }
+.tp-k .art { width: 30px; height: 30px; }
+.tp-k.on { background: #ffd8e8; outline: 3px solid #e8433a; }
+.tp-note { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
+.tp-note textarea { flex: 1 1 220px; min-height: 64px; border-radius: 12px; border: 2px solid #d8cdea; padding: 8px; font: 16px sans-serif; }
+.tp-mic { min-height: 44px; }
+.tp-near { background: #fff6e4; border-radius: 14px; padding: 8px 10px; margin: 6px 0; }
+.tp-old { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 4px 0; }
+.tp-old .btn, .tpanel .actions .btn, .tagree .actions .btn, .qs-tester .btn { min-height: 44px; }
+.tg-list { padding-left: 20px; line-height: 1.45; }
+.qs-tester .qs-trow { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+.tm-list { display: flex; flex-direction: column; gap: 6px; }
+.tm-row { background: #f3eefb; border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; }
+.tm-row.s-fixed, .tm-row.s-confirmed { background: #dff5e5; }
+.tm-row.s-back { background: #ffe1dc; }
+.tc-badges, .tc-stickers, .tc-gear { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+.tc-badge, .tc-st, .tc-g { border-radius: 14px; padding: 8px; text-align: center; background: #eee; opacity: .45; display: flex; flex-direction: column; align-items: center; }
+.tc-badge.on, .tc-st.on, .tc-g.on { opacity: 1; background: #fff6e4; }
+.tc-badge .art, .tc-st .art { width: 40px; height: 40px; }
+.tc-badge.lb1.on { box-shadow: inset 0 0 0 3px #c98a4a; } .tc-badge.lb2.on { box-shadow: inset 0 0 0 3px #c9d1d9; }
+.tc-badge.lb3.on { box-shadow: inset 0 0 0 3px #ffcf3a; } .tc-badge.lb4.on { box-shadow: inset 0 0 0 3px #a66bff; }
+.pname.starname::after { content: " ★"; color: #ffcf3a; }
+@media (prefers-reduced-motion: reduce) { .testertoast { transition: none; } }
