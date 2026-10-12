@@ -309,13 +309,13 @@ function setupGuides() {
   });
   world.updaters.push((dt, t) => {
     const h0 = G.heroes[0], tg0 = h0 && playing ? questTarget(h0) : null;
-    beam.visible = bang.visible = !!tg0;
+    beam.visible = bang.visible = !!tg0 && !h0.profile.questFold; // (Round V) nor its light
     if (tg0) { bangIt.x = tg0.x; bangIt.z = tg0.z; const gy = heightAt(tg0.x, tg0.z); beam.position.set(tg0.x, gy + 35, tg0.z); bang.position.set(tg0.x, gy + 5.2 + Math.abs(Math.sin(t * 3)) * .8, tg0.z); beam.material.opacity = .2 + Math.sin(t * 2) * .08; }
     guides.forEach((g, i) => {
       const h = G.heroes[i];
       if (h && h.walkTo && h.walkTo.friend) { const P = G.partners[h.walkTo.friend]; if (!P) h.walkTo = null; else { h.walkTo.x = P.pos.x; h.walkTo.z = P.pos.z; if (dist2(h.pos.x, h.pos.z, P.pos.x, P.pos.z) < 4) { SFX.chime(); hudFor(h).toast('👫 ' + T(`You found ${P.name}! Say hello!`, `Con đã gặp ${P.name}! Chào bạn đi!`)); say(`You found ${P.name}! Say hello!`, `Con đã gặp ${P.name} rồi! Chào bạn đi!`); h.walkTo = null; G.huds[h.i] && G.huds[h.i].toggleEmotes(true); } } }
       if (h && h.walkTo && dist2(h.pos.x, h.pos.z, h.walkTo.x, h.walkTo.z) < 7) { SFX.chime(); hudFor(h).toast('👣 ' + T(`You walked to ${h.walkTo.name}!`, `Con đã đi bộ đến ${h.walkTo.name}!`)); h.walkTo = null; }
-      const tg = h && playing ? h.walkTo || questTarget(h) : null;
+      const tg = h && playing ? h.walkTo || (h.profile.questFold ? null : questTarget(h)) : null; // (Round V) a folded quest shows no arrow
       const d = tg ? dist2(h.pos.x, h.pos.z, tg.x, tg.z) : 0, show = !!tg && d > 5 && !G.paused;
       g.arrow.visible = show; g.dots.forEach(x => x.visible = show);
       if (!show) return;

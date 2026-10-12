@@ -2439,3 +2439,12 @@ button.chip { font: inherit; color: inherit; cursor: pointer; }
 .tc-badge.lb3.on { box-shadow: inset 0 0 0 3px #ffcf3a; } .tc-badge.lb4.on { box-shadow: inset 0 0 0 3px #a66bff; }
 .pname.starname::after { content: " ★"; color: #ffcf3a; }
 @media (prefers-reduced-motion: reduce) { .testertoast { transition: none; } }
+/* (Round V, owner 13 Oct) the quest folded to a small chip: its picture only; a tap opens it again */
+.quest.fold { max-width: none !important; gap: 0; }
+.quest.fold .q-text, .quest.fold .q-go { display: none !important; }
+.quest.fold .q-say { padding: 4px; min-width: 48px; min-height: 48px; }
+/* (Round V) a started family mission under the quest */
+.quest { flex-wrap: wrap; }
+.q-fam { flex-basis: 100%; display: flex; align-items: center; gap: 6px; min-height: 44px; border: 0; border-radius: 14px; padding: 4px 10px; background: #fff3d6; color: #5a3a1a; font: inherit; font-size: 13px; text-align: left; cursor: pointer; box-shadow: 0 2px 0 rgba(0,0,0,.12); }
+.q-fam .art { width: 26px; height: 26px; flex: none; }
+.q-fam[hidden], .quest.fold .q-fam { display: none !important; }

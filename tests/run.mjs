@@ -3620,6 +3620,34 @@ await check('talk', async () => {
   return 'every person in the valley answers a tap; the villagers without their own words tell a fact or a saying of their region, in English or Vietnamese; a child whose character is rebuilt gets no "Say hello" and no job picture';
 });
 
+await check('questbar', async () => {
+  // (Round V, owner 13 Oct, iPhone notes) a tap on the quest folds it to a small chip and hides the yellow arrow and the
+  // light; a second tap opens it again; a family mission the child has been told about shows under the quest too
+  const out = [];
+  for (const [name, w, h, touch] of [['phone', 390, 760, true], ['computer', 1280, 800, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page); await P.page.waitForTimeout(800);
+    const r = await P.page.evaluate(async () => {
+      const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), hud = G.huds[0].root, h = G.heroes[0];
+      h.profile.questFold = false; h.place(h.pos.x + 30, h.pos.z + 30); await wait(400);
+      const arrows = () => { let n = 0; G.scene.traverse(o => { if (o.isMesh && o.geometry && o.geometry.type === 'ConeGeometry' && o.material && o.material.color && o.material.color.getHexString() === 'ffd23f' && o.visible) n++; }); return n; };
+      const before = { arrows: arrows(), text: !!hud.querySelector('.quest .q-text').offsetWidth };
+      hud.querySelector('.q-say').click(); await wait(400);
+      const folded = { fold: hud.querySelector('.quest').classList.contains('fold'), text: !!hud.querySelector('.quest .q-text').offsetWidth, arrows: arrows(), saved: h.profile.questFold === true, w: Math.round(hud.querySelector('.quest').getBoundingClientRect().width) };
+      hud.querySelector('.q-say').click(); await wait(400);
+      const open = { fold: hud.querySelector('.quest').classList.contains('fold'), arrows: arrows() };
+      // a started family mission
+      const m = G.parents.openFor(h.profile)[0]; if (m) { h.profile.missionsSeen = [...(h.profile.missionsSeen || []), m.id]; } await wait(600);
+      const fam = hud.querySelector('.q-fam'), famShown = !!(fam && !fam.hidden && fam.offsetWidth), famText = fam ? fam.textContent : '', famH = fam ? Math.round(fam.getBoundingClientRect().height) : 0;
+      return { before, folded, open, mission: !!m, famShown, famText: famText.slice(0, 60), famH };
+    });
+    const errs = P.errors; await P.ctx.close();
+    const bad = !r.before.arrows || !r.before.text || !r.folded.fold || r.folded.text || r.folded.arrows || !r.folded.saved || r.folded.w > 80 || r.open.fold || !r.open.arrows || !r.mission || !r.famShown || r.famText.length < 15 || r.famH < 44;
+    if (bad || errs.length) out.push(name + ' ' + JSON.stringify(r) + (errs.length ? ' ' + errs.join(' ') : ''));
+  }
+  ok(!out.length, out.join(' | '));
+  return 'a tap folds the quest to a small chip and hides the arrow; a tap opens it again; a started family mission shows under the quest (44 px), on a phone and a computer';
+});
+
 await check('bilingual', async () => {
   // (Round U, owner 11 Oct: Grandma Huệ spoke Vietnamese with English set) no English slot of an [English, Vietnamese]
   // pair (an array, T(…, …) or { en, vi }) holds a Vietnamese sentence; names, songs and sayings that stay Vietnamese
