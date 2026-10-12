@@ -2850,6 +2850,32 @@ await check('wayfind', async () => {
   return `${r.picks} pictures to choose from; to Hà Nội: ${r.shown} sparkles at a time on the roads (about ${r.len} m), moving on ahead, gone on arrival; every place reachable from home`;
 });
 
+await check('dayplan', async () => {
+  // (Round U) the villagers' day: a job picture over each head; at dusk the ones with a house nearby walk to its door and go
+  // in, the rest light a lantern, lanterns glow over the stalls; in the morning everyone comes back out to their spot; an
+  // umbrella in the rain; and nobody ever walks on a road or through a house
+  const P = await open(b, { w: 900, h: 640 });
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, W = G.world, wait = ms => new Promise(r => setTimeout(r, ms)), S = await import('/js/state.js'), { pic } = await import('/js/art.js');
+    for (let k = 0; k < 80 && !G.dayPlan; k++) await wait(100);
+    const D = G.dayPlan, all = D.list; G.paused = true; const V = { filter: f => all.filter(v => !v.external).filter(f), every: f => all.every(f), get length() { return all.filter(v => !v.external).length; }, [Symbol.iterator]: () => all.filter(v => !v.external)[Symbol.iterator]() };   // (people who move on their own, a parade, keep to it)   // (the checks drive the clock by hand)
+    const jobs = V.every(v => v.tag && v.tag.parent === v.o && pic(v.job[0]).includes('class="art')), titled = V.every(v => v.job[1] && v.job[2]);
+    const bad = new Set(); let t = 0;
+    const run = (secs) => { G.paused = false; for (let i = 0; i < secs * 10; i++) { t += .1; W.update(.1, t); for (const v of V) { if (v.inside) continue; const p = v.o.position, moved = Math.hypot(p.x - v.home.x, p.z - v.home.z); if (moved > 1.1 && !D.offRoad(p.x, p.z)) bad.add(v.it.id); } } G.paused = true; };
+    S.settings.alwaysDay = false;
+    W.time = .86; run(40);
+    const night = { inside: V.filter(v => v.inside).length, withDoor: V.filter(v => v.door).length, lamps: V.filter(v => !v.door && v.lamp.visible).length, noDoor: V.filter(v => !v.door).length, lights: D.lights.filter(l => l.visible).length, stalls: D.lights.length };
+    W.time = .4; run(40);
+    const day = { out: V.filter(v => !v.inside).length, home: V.filter(v => Math.hypot(v.o.position.x - v.home.x, v.o.position.z - v.home.z) < 3).length, lights: D.lights.filter(l => l.visible).length };
+    G.weather.start(); run(1); const umb = V.filter(v => v.umb.visible).length; G.weather.stop(); run(1);
+    G.paused = false;
+    return { n: V.length, all: all.length, jobs, titled, night, day, umb, bad: [...bad].slice(0, 5) };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.n > 10 && r.jobs && r.titled && r.night.withDoor > 0 && r.night.inside === r.night.withDoor && r.night.lamps === r.night.noDoor && r.night.lights === r.night.stalls && r.day.out === r.n && r.day.home === r.n && r.day.lights === 0 && r.umb === r.n && !r.bad.length && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.n} villagers with a job picture; at night ${r.night.inside} go home through their door, ${r.night.lamps} light a lantern, ${r.night.lights} stall lanterns; all back out in the morning; umbrellas in the rain; nobody on a road or in a house`;
+});
+
 await check('names', async () => {
   // every game file: no name used that is never defined or imported (TypeScript's TS2304 on all of js/, nothing else
   // judged). Moving code between files (the architecture steps) is where this goes wrong; it once stopped the game.

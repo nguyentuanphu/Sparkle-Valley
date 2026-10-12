@@ -1713,7 +1713,7 @@ import('./scrollhelp.js').then(m => m.installScrollHelp());
 // (Round U) picture signposts at every junction (js/signposts.js), once the places are all known
 import('./signposts.js').then(m => m.createSignposts(G));
 // (Round U) every villager answers a tap with a fact or a saying of their region (js/villagertalk.js)
-import('./villagertalk.js').then(m => m.createVillagerTalk(G));
+import('./villagertalk.js').then(m => m.createVillagerTalk(G)).then(() => import('./dayplan.js')).then(m => m.createDayPlan(G));   // (Round U) villagers' day plan
 import('./pricetags.js').then(m => m.createPriceTags(G));
 import('./jobs.js').then(m => m.createJobs(G));
 import('./wayfind.js').then(m => m.createWayfind(G));   // (Round U) "Where is…?" sparkles
