@@ -265,3 +265,22 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   real spots in Hà Nội and Sydney for chapters 2 and 3 (Round T); Kid UI's rest of #32 and the speech box's slide-in
   (`phone` flake); Release merging `core/play` (PR #43 or `core/play`, not both) and the robots' `.bugfix/result.md` conflict.
 - Not recorded on purpose: festival calendar lines with a number of days (any number), which use the phone's voice.
+
+## Progress notes (12 Oct AEDT: the tester's 14 notes, "Notes on SV")
+- Fixed on `core/play` (owner: this chat fixes all; shop in the dock): category names on the Simple screen are headings,
+  not stops; story bar back, next, pause, green "read by itself"; days game whole names that fit; animal calls about 2 s,
+  louder, music dipped (`Music.duck`, `animalCall`); Chuyền quà has no background music under its tune, a stop sign, the
+  holder lit and the gift pulsing on your turn; bunny tick fills its button; recipe book "Sổ công thức nấu ăn" shows the
+  ingredients in the bag; no jump chips in the bag; Shop button beside the Bag in the dock (out of the bag); storyteller's
+  tag says Bà Năm, the house grandma is Bà Nội, room people and the floor can be tapped, no floating (i) in the room,
+  (i) buttons only up close (people first), outdoor (i) signs tappable; indoor camera close and inside the room, no rain
+  or rainbow lines indoors; Hồ Gươm light on the nearest clue still to look at, the "!" tappable, Go flies round water.
+- Checks (12 Oct, about 6:15 pm AEDT): `boot` `games` `phone` `tales` `signs` `nametags` `films` `story` `chapter2`
+  `kidplay` `shop` `dialogtap` `rain` `playhub` `postcards` `myhouse` `iphone` `types` `unit` `arch` `rules` `preload`
+  `emoji` pass; `simple` `a11y` `voicecover` failed once (heading picture counted as a small tap target; the new line not
+  recorded), fixed and pass; `knock` skipped (no local MQTT broker). Full suite left for Release.
+- New spoken line recorded with Azure (en and vi, both voices): "Your turn! Tap the present to rip the paper!" /
+  "Đến lượt con! Chạm vào món quà để xé giấy!".
+- Screenshots looked at (phone, tablet, computer): Simple screen (games and stories), story bar, days, Chuyền quà,
+  bunny (the phone's tick was still small: fixed), recipe book, bag, dock with the Shop button.
+

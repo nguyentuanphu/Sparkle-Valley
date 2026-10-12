@@ -2035,8 +2035,8 @@ body.calm .sp-owl.cheer { animation: none; }
 /* bug #30: a category on the one long road starts with its heading stop (a purple ring round its picture, no stars) */
 /* (tester's notes, 12 Oct) a category's name is a heading across the road (a sign, not a button to tap) */
 .sp-stop.grp, .simple-screen .sp-stop.grp { flex-direction: row; gap: 10px; width: auto; max-width: calc(100% - 24px); transform: translate(-50%, -50%); padding: 6px 20px 6px 8px; border-radius: 999px; background: #5b2fd0; box-shadow: 0 4px 0 rgba(40, 20, 100, .35); pointer-events: none; z-index: 2; }
-.sp-stop.grp .sp-pic { width: 48px; height: 48px; border-radius: 50%; box-shadow: none; flex: none; }
-.sp-stop.grp .sp-pic .art, .sp-stop.grp .sp-pic .emo { width: 34px; height: 34px; font-size: 30px; }
+.sp-stop.grp .sp-hpic { width: 48px; height: 48px; border-radius: 50%; background: #fff; display: grid; place-items: center; flex: none; }
+.sp-stop.grp .sp-hpic .art, .sp-stop.grp .sp-hpic .emo { width: 34px; height: 34px; font-size: 30px; }
 .sp-stop.grp .sp-name { background: none; padding: 0; font-size: 22px; color: #fff; max-width: none; white-space: nowrap; }
 /* round M: festival decorations live on the festival page, behind the grown-ups' press and hold */
 .fest-grown { margin-top: 18px; border-top: 2px dashed rgba(138, 92, 246, .25); padding-top: 14px; }
