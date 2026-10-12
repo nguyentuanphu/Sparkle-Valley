@@ -292,4 +292,11 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   of each card's road; the bag's new chips kept, its shop button removed (it is in the dock). `types` `unit` `arch` `rules`
   `preload` `emoji` `voicecover` `boot` `simple` `shop` `a11y` `phone` `tales` `games` pass. Owner: the full suite is
   Release's ("No, Release runs it").
+- Switches on by default (12 Oct, about 7:20 pm AEDT): `reading` pass (switched off in Studio nothing loads; by default
+  10 games, all finish), `story` pass (check changed to the new default: chapter 2 follows chapter 1 unless Studio
+  switches it off, then the old adventures), `chapter2` `chapter3` `features` `types` `unit` `preload` pass.
+  `startup` fails on main r66 too (first title 1.5 to 1.7 s on this machine): not this change. `perf` near its limits
+  either way: home draw calls 1095 to 1145 against 1100 (main 1095, reading off 1096) and triangles 780k to 830k
+  against 800k in repeated runs; the 3D scene with the reading games on and off differs by one small mesh (1120 vs 1123
+  draw calls), so the switch adds nothing to draw. Release: PERF-003 sits at its edge on main.
 
