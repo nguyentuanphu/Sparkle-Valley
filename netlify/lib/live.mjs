@@ -11,6 +11,10 @@ export function cleanLive(b) {
     const d = int(r.days, 3650), n = int(r.newDays, 365); if (d) x.days = d; if (n) x.newDays = n;
     // (owner, 12 Oct) only on these devices (the game's player ids, as in the players report), e.g. the auto play check
     if (Array.isArray(r.devices)) { const dv = [...new Set(r.devices.filter(v => typeof v === 'string' && /^[a-z0-9]{12}$/.test(v)))].slice(0, 50); if (dv.length) x.devices = dv; }
+    // (owner, 12 Oct: tester reports) each ticked device's level (auto reports only, or with the ladybird), and the
+    // releases testers see early (sneak peeks)
+    if (r.levels && typeof r.levels === 'object') { const lv = {}; for (const [d, v] of Object.entries(r.levels).slice(0, 50)) if (/^[a-z0-9]{12}$/.test(d) && (v === 'auto' || v === 'ladybird')) lv[d] = v; if (Object.keys(lv).length) x.levels = lv; }
+    if (Array.isArray(r.peeks)) { const pk = [...new Set(r.peeks.filter(v => typeof v === 'string' && ID.test(v)))].slice(0, 20); if (pk.length) x.peeks = pk; }
     if (Object.keys(x).length) out.releases[id] = x;
   }
   for (const [id, f] of Object.entries((b && b.festivals) || {})) {

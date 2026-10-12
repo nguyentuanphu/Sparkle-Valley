@@ -236,6 +236,8 @@ const local = {
   players: async () => { if (!conf.studioKey) throw new Error('Make a Studio key online (Setup → Security) and put it in Settings.'); return (await siteApi('players')).json(); },
   label: async b => (await siteApi('players/label', { id: b.id, label: b.label })).json(),
   inbox: async () => { if (!conf.studioKey) return []; try { return await (await siteApi('inbox')).json(); } catch (e) { return []; } },
+  // (owner, 12 Oct) tester reports live on the website too: the same pages, asked for with this computer's Studio key
+  testers: async (api, b) => { if (!conf.studioKey) throw new Error('Make a Studio key online (Setup → Security) and put it in Settings.'); return (await siteApi(api, b === null ? undefined : b)).json(); },
   onlineVersion: async () => { const r = await fetch(site() + '/studio/version.json', { cache: 'no-store' }); return r.ok ? (await r.json()).studio : null; },
   api: async (api, method, b) => {
     if (api === 'build' && method === 'POST') { const out = G('sparkle-valley-netlify.zip'); return { code: 200, body: Object.assign({ path: out }, zipFolder(GAME, PUBLISH, out)) }; }

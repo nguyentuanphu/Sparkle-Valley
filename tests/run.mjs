@@ -1069,6 +1069,137 @@ await check('autoplay', async () => {
   return `hidden where not allowed (other device, switched off); ${keys.length} steps (${rep.done.map(r => r.key.split(':')[0]).join(', ')}) at Fast, stamina kept full, ${rep.done.filter(r => r.ok).length} fine${rep.done.filter(r => !r.ok).map(r => `; noted for ${r.key}: ${r.problems.join(', ')}`).join('')}; progress put back after the restart`;
 });
 
+// (owner, 12 Oct 2026 AEDT: tester reports, PRIV-016) shared by the three tester checks: a device made a tester (or not)
+// by the Releases rule, the website's /api/tester pretended (what it was sent, and what it answers)
+const testerPre = (rule, extra = '') => `try { localStorage.setItem('sv2_playerid', 'tester000001'); localStorage.setItem('sv2_live', JSON.stringify({ releases: { tester: ${JSON.stringify(rule)} }, festivals: {} })); ${extra} } catch (e) { }`;
+const testerSite = async (ctx, status) => { const got = []; await ctx.route('**/api/tester**', async rt => { const q = rt.request();
+  if (q.method() === 'POST') { let b = null; try { b = JSON.parse(q.postData() || 'null'); } catch (e) { } got.push(b); return rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, k: '0123456789abcdef', status: 'new' }) }); }
+  return rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status()) }); }); return got; };
+const ACCEPTED = `localStorage.setItem('sv2_tester', JSON.stringify({ at: 1, b: 'r1' }));`;
+
+await check('tester', async () => {
+  // a tester device (Releases switch `tester`): nothing of it anywhere else; the agreement once, in both languages; nothing
+  // sent before "I accept"; then the tester mark with the version and the ladybird (not at the level "auto reports
+  // only"); "Stop being a tester" in Settings stops it at once
+  const out = [];
+  for (const rule of [{ on: true, devices: ['zzzzzzzzzzzz'] }, { on: false }]) {
+    const Q = await open(b, { w: 1024, h: 768, pre: testerPre(rule) }); await Q.page.waitForTimeout(3500);
+    const r = await Q.page.evaluate(() => ({ any: !!document.querySelector('.tagree, .testermark, .z-lb'), api: !!window.__sv.tester, loaded: performance.getEntriesByType('resource').some(e => /\/js\/tester(rewards)?\.js/.test(e.name)) }));
+    await Q.ctx.close(); if (r.any || r.api || r.loaded) out.push('not a tester but ' + JSON.stringify({ rule, r }));
+  }
+  for (const lang of ['en', 'vi']) {
+    const P = await open(b, { w: 1024, h: 768, lang, pre: testerPre({ on: true, devices: ['tester000001'] }), play: false }), got = await testerSite(P.ctx, () => ({ mine: [], open: [], retest: [], helped: 0, reports: 0 }));
+    await start(P.page); await P.page.waitForSelector('.modal.tagree', { timeout: 20000 });
+    const text = await P.page.evaluate(() => document.querySelector('.tagree').innerText);
+    if (lang === 'vi' ? !/Trở thành người thử/.test(text) || !/tên, tuổi/.test(text) : !/Become a Sparkle Valley tester/.test(text) || !/names, ages and progress/.test(text)) out.push(lang + ': the agreement does not say what is collected: ' + text.slice(0, 200));
+    await P.page.evaluate(() => { setTimeout(() => { throw new Error('tester check: before accepting'); }, 0); }); await P.page.waitForTimeout(800);
+    const before = await P.page.evaluate(() => (JSON.parse(localStorage.getItem('sv2_tester_out') || '[]')).length + document.querySelectorAll('.testermark, .z-lb').length);
+    if (before || got.length) out.push(lang + ': something was kept or sent before "I accept": ' + JSON.stringify({ before, got: got.length }));
+    await P.page.click('.tagree .tg-yes'); await P.page.waitForSelector('.testermark', { timeout: 8000 }).catch(() => { }); await P.page.waitForTimeout(1500);
+    const on = await P.page.evaluate(async () => ({ mark: (document.querySelector('.testermark') || {}).textContent || '', lb: document.querySelectorAll('.hud .z-lb').length, build: (await import('/js/build.js')).BUILD, lbSize: (r => r && Math.min(r.width, r.height))(document.querySelector('.hud .z-lb') && document.querySelector('.hud .z-lb').getBoundingClientRect()) }));
+    if (!on.mark.includes(on.build) || on.lb !== 1 || !(on.lbSize >= 44)) out.push(lang + ': after accepting, no tester mark with the version or no ladybird (44 px): ' + JSON.stringify(on));
+    if (!got.some(x => x && x.accepted === true)) out.push(lang + ': the acceptance was not told');
+    // Settings → Stop being a tester
+    await clear(P.page); await P.page.click('.hud .pcard'); await P.page.waitForSelector('.qs-tester [data-t="stop"]', { timeout: 8000 });
+    await P.page.click('.qs-tester [data-t="stop"]'); await P.page.waitForTimeout(800);
+    const off = await P.page.evaluate(() => ({ left: document.querySelectorAll('.testermark, .z-lb').length, again: !!document.querySelector('.qs-tester [data-t="join"]') }));
+    if (off.left || !off.again) out.push(lang + ': Stop being a tester did not stop it: ' + JSON.stringify(off));
+    const errs = P.errors.filter(e => !/tester check: before accepting/.test(e)); await P.ctx.close(); if (errs.length) out.push(errs.slice(0, 2).join(' | '));
+  }
+  // the level "auto reports only": the mark, no ladybird
+  const A = await open(b, { w: 1024, h: 768, pre: testerPre({ on: true, devices: ['tester000001'], levels: { tester000001: 'auto' } }, ACCEPTED) }); await testerSite(A.ctx, () => ({ mine: [], open: [] }));
+  await A.page.waitForSelector('.testermark', { timeout: 15000 }).catch(() => { }); await A.page.waitForTimeout(1500);
+  const a = await A.page.evaluate(() => ({ mark: !!document.querySelector('.testermark'), lb: document.querySelectorAll('.z-lb').length })); await A.ctx.close();
+  if (!a.mark || a.lb) out.push('level "auto reports only": ' + JSON.stringify(a));
+  ok(!out.length, out.join(' | '));
+  return 'only on tester devices (none of it downloaded elsewhere); the agreement once in English and Vietnamese, nothing kept or sent before "I accept"; then the tester mark with the version and a 44 px ladybird (none at "auto reports only"); Stop being a tester stops it at once';
+});
+
+await check('testerreport', async () => {
+  // reports by themselves with a picture and the last 30 seconds (an error, a game that did not open, a frozen screen);
+  // the ladybird: tap = the picture first, then a kind and a note; long press = a quick report; offline they wait, with a
+  // number on the ladybird, and send when back online; "Already reported → add to it" joins the open problem
+  const P = await open(b, { w: 1024, h: 768, pre: testerPre({ on: true, devices: ['tester000001'] }, ACCEPTED) });
+  let near = []; const got = await testerSite(P.ctx, () => ({ mine: [], open: near, retest: [], helped: 0, reports: 1 }));
+  await P.page.waitForFunction(() => window.__sv.tester && document.querySelector('.hud .z-lb'), null, { timeout: 15000 }); await clear(P.page);
+  const wait = async (f, ms = 12000) => { for (let t = 0; t < ms; t += 250) { const x = got.find(f); if (x) return x; await P.page.waitForTimeout(250); } return null; };
+  const out = [];
+  await P.page.evaluate(() => { setTimeout(() => { throw new Error('tester check boom'); }, 0); });
+  const e = await wait(x => x && x.kind === 'auto' && x.auto === 'error' && /tester check boom/.test(x.detail));
+  if (!e || !/^data:image\/jpeg;base64,/.test(e.shot || '') || !(e.log && e.log.length) || !e.players.length || !e.players[0].name || !e.dev || !e.b) out.push('the error report has no picture, steps, players or device: ' + JSON.stringify(e && { shot: (e.shot || '').slice(0, 30), log: e.log && e.log.length, players: e.players, dev: e.dev, b: e.b }));
+  await P.page.evaluate(() => __sv.playGame(0, 'no-such-game-for-the-tester-check'));
+  if (!await wait(x => x && x.auto === 'noopen' && /no-such-game/.test(x.detail), 9000)) out.push('a game that did not open was not reported');
+  await P.page.waitForFunction(() => performance.now() > 0, null); await P.page.waitForTimeout(Math.max(0, 16000 - await P.page.evaluate(() => performance.now())));
+  await P.page.evaluate(() => new Promise(r => requestAnimationFrame(() => { const t = performance.now(); while (performance.now() - t < 2600) { } r(); })));
+  if (!await wait(x => x && x.auto === 'freeze', 6000)) out.push('a frozen screen was not reported');
+  // the ladybird: tap
+  await clear(P.page); const n0 = got.length;
+  await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerdown'); await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerup');
+  await P.page.waitForSelector('.modal.tpanel .tp-shot', { timeout: 8000 });
+  const shotFirst = await P.page.evaluate(() => /^data:image\/jpeg/.test(document.querySelector('.tp-shot').src));
+  await P.page.click('.tp-k[data-k="looks"]'); await P.page.fill('.tpanel textarea', 'The bridge floats above the river'); await P.page.click('.tp-send');
+  const t = await wait(x => x && x.kind === 'looks' && /bridge floats/.test(x.note || ''));
+  if (!shotFirst || !t || !/^data:image/.test(t.shot || '')) out.push('the ladybird\'s report has no picture or note: ' + JSON.stringify({ shotFirst, got: !!t }));
+  // long press: a quick report
+  await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerdown'); await P.page.waitForTimeout(1000); await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerup');
+  if (!await wait(x => x && x.detail === 'quick')) out.push('a long press made no quick report');
+  // offline: waits with a number, then sends
+  await P.ctx.setOffline(true); await P.page.evaluate(() => __sv.tester.openPanel(0)); await P.page.waitForSelector('.tpanel .tp-send'); await P.page.fill('.tpanel textarea', 'offline report'); await P.page.click('.tp-send'); await P.page.waitForTimeout(600);
+  const wq = await P.page.evaluate(() => ({ q: JSON.parse(localStorage.getItem('sv2_tester_out') || '[]').length, n: (document.querySelector('.z-lb .lb-n') || {}).textContent }));
+  await P.ctx.setOffline(false); await P.page.evaluate(() => dispatchEvent(new Event('online')));
+  const sentLater = await wait(x => x && x.note === 'offline report');
+  const left = await P.page.evaluate(() => JSON.parse(localStorage.getItem('sv2_tester_out') || '[]').length);
+  if (wq.q !== 1 || wq.n !== '1' || !sentLater || left) out.push('offline reports did not wait and send: ' + JSON.stringify({ wq, sentLater: !!sentLater, left }));
+  // already reported here
+  near = [{ k: 'aaaaaaaaaaaaaaaa', title: 'The bridge floats', n: 3, where: await P.page.evaluate(() => { const h = __sv.heroes[0]; return { area: String(__sv.regionOf[0] || 'valley'), x: Math.round(h.pos.x), z: Math.round(h.pos.z), game: '', window: '' }; }) }];
+  await P.page.evaluate(() => __sv.tester.refresh()); await P.page.waitForTimeout(500);
+  await P.page.evaluate(() => __sv.tester.openPanel(0)); await P.page.waitForSelector('.tpanel [data-join]', { timeout: 5000 }).catch(() => { });
+  if (await P.page.$('.tpanel [data-join]')) { await P.page.click('.tpanel [data-join]'); if (!await wait(x => x && x.join === 'aaaaaaaaaaaaaaaa')) out.push('"add to it" did not join the open problem'); } else out.push('no "Already reported here" where a problem is open');
+  // the retest: a problem fixed in this version is replayed (its game opened) and the result told
+  const g1 = await P.page.evaluate(async () => Object.keys((await import('/js/games/frame.js')).GAMES)[0]);
+  near = []; await P.page.evaluate(() => document.querySelectorAll('.modal, .dialog').forEach(e => e.remove()));
+  const stNow = { mine: [], open: [], retest: [{ k: 'cccccccccccccccc', title: 'noopen: ' + g1, status: 'fixed', fixedIn: 'r1', kind: 'auto', auto: 'noopen', where: { game: g1 } }] };
+  await P.ctx.unroute('**/api/tester**'); const got2 = await testerSite(P.ctx, () => stNow);
+  const pre = await P.page.evaluate(async () => { const s = await __sv.tester.refresh(); __sv.paused = false; const b = { st: s && s.retest && s.retest.length, open: [...document.querySelectorAll('.gl, .modal, .theatre, .storybook')].map(e => e.className) }; await __sv.tester.retest(); return b; });
+  await P.page.waitForTimeout(500); const rt = got2.find(x => x && x.k === 'cccccccccccccccc');
+  if (!rt || rt.fixed !== true) out.push('the retest did not replay the fixed problem and say it stayed fixed: ' + JSON.stringify({ rt, pre }));
+  // the auto play check's findings (it restarts the game when it ends) are sent once as reports
+  await P.page.evaluate(() => { localStorage.setItem('sv2_autoplay_report', JSON.stringify({ at: '2026-10-12T10:00:00Z', build: 'r1', speed: 'fast', total: 1, done: [{ g: 'games', key: 'memory', name: 'Memory', ok: false, problems: ['did not close'] }] })); });
+  await P.page.evaluate(() => __sv.tester.nightly()); await P.page.waitForTimeout(1500);
+  if (!got2.some(x => x && x.auto === 'autoplay' && /did not close/.test(x.detail))) out.push('the auto play check\'s findings were not sent');
+  const errs = P.errors.filter(x => !/tester check boom|no-such-game|net::ERR_INTERNET_DISCONNECTED|Failed to fetch/.test(x)); await P.ctx.close();
+  if (errs.length) out.push(errs.slice(0, 2).join(' | '));
+  ok(!out.length, out.join(' | '));
+  return `${got.length} reports: an error, a game that did not open and a frozen screen by themselves, each with a picture, the last 30 seconds, the players and the device; the ladybird (picture first, then a kind and a note), a long-press quick report, offline reports waiting with a number and sending when back online, and "already reported → add to it"; the retest of a fixed problem, and the auto play check\'s findings sent once`;
+});
+
+await check('testerrewards', async () => {
+  // a problem the tester found is fixed: the tick on the ladybird, Ông Cú's thank-you with coins; reports that helped
+  // give the Bug Hunter badge on the shirt (seen by friends: it is in the look), tester gear, stickers and the week's star
+  const out = [];
+  for (const [w, h, touch, name] of [[390, 844, true, 'phone'], [820, 1180, true, 'tablet'], [1180, 760, false, 'computer']]) {
+    // (the website is pretended before the page loads: the device asks for its status as soon as it starts)
+    const P = await open(b, { w, h, touch, pre: testerPre({ on: true, devices: ['tester000001'] }, ACCEPTED), route: ctx => testerSite(ctx, () => ({ mine: [{ k: 'bbbbbbbbbbbbbbbb', title: 'The bridge floats', status: 'fixed', fixedIn: 'r67', kind: 'looks', spoken: true }], open: [], retest: [], helped: 10, helpedKinds: ['broken', 'looks', 'words', 'sound', 'idea'], reports: 12, star: true })) });
+    const coins0 = await P.page.evaluate(() => JSON.parse(localStorage.getItem('sv2_farm') || '{}').coins || 0);
+    await P.page.waitForFunction(() => window.__sv.testerRewards, null, { timeout: 15000 });
+    for (let i = 0; i < 40; i++) { await P.page.waitForTimeout(500); const d = await P.page.$('.dialog'); if (d && /Ông Cú|Ong Cu/.test(await d.innerText())) break; await P.page.evaluate(() => document.querySelectorAll('.reward').forEach(r => r.click())); }
+    const thank = await P.page.evaluate(() => (document.querySelector('.dialog') || {}).innerText || '');
+    await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.click())); await P.page.waitForTimeout(800);
+    const r = await P.page.evaluate(async () => { const S = await import('/js/state.js'), p = S.profiles[0]; return { badge: p.look.badge, star: p.look.star, gear: ['sleuthhat', 'ladypack', 'sleuthcape'].filter(id => (p.owned.clothes || []).includes(id)), stickers: p.testerStickers, coins: S.farm.coins, tick: !(document.querySelector('.z-lb .lb-ok') || { hidden: true }).hidden, starName: !!document.querySelector('.hud .pname.starname') }; });
+    if (!/fixed|đã được sửa/i.test(thank) || r.coins - coins0 < 25) out.push(name + ': no thank-you with coins: ' + JSON.stringify({ thank: thank.slice(0, 80), coins: r.coins - coins0 }));
+    if (r.badge !== 'lb2' || !r.star || r.gear.length !== 3 || (r.stickers || []).length !== 5 || !r.tick || !r.starName) out.push(name + ': rewards ' + JSON.stringify(r));
+    // the Tester's Corner and the badge drawn on the shirt
+    await clear(P.page); await P.page.evaluate(() => __sv.testerRewards.corner()); await P.page.waitForSelector('.tcorner .tc-badge.on', { timeout: 5000 }).catch(() => { });
+    const c = await P.page.evaluate(() => { const card = document.querySelector('.tcorner .card'), r = card && card.getBoundingClientRect(); return { on: document.querySelectorAll('.tcorner .tc-badge.on').length, st: document.querySelectorAll('.tcorner .tc-st.on').length, fixed: document.querySelectorAll('.tcorner .tm-row').length, wide: card ? card.scrollWidth <= card.clientWidth + 2 && r.right <= innerWidth + 1 : false }; });
+    if (c.on !== 2 || c.st !== 5 || c.fixed !== 1 || !c.wide) out.push(name + ': the Tester\'s Corner ' + JSON.stringify(c));
+    if (name === 'computer') { const shirt = await P.page.evaluate(async () => { const { buildAvatar } = await import('/js/avatar.js'), S = await import('/js/state.js'); const n = o => { let k = 0; o.traverse(x => { if (x.isMesh) k++; }); return k; }; return n(buildAvatar({ ...S.profiles[0].look }).torso) - n(buildAvatar({ ...S.profiles[0].look, badge: undefined }).torso); });
+      if (shirt < 1) out.push('the badge is not drawn on the shirt: ' + shirt); } // (the badge, and its outline)
+    const errs = P.errors; await P.ctx.close(); if (errs.length) out.push(name + ': ' + errs.slice(0, 2).join(' | '));
+  }
+  ok(!out.length, out.join(' | '));
+  return 'on phone, tablet and computer: the fixed tick, Ông Cú\'s thank-you with coins (more for a spoken note), the Silver Ladybird on the shirt (and in the look friends see), the tester hat, backpack and cape, five stickers, the week\'s star by the name, and the Tester\'s Corner';
+});
+
 await check('festcal', async () => {
   // (round R, owner) the festival calendar: real dates, 3 weeks of build-up that grows each week, two festivals at once
   // in their own places, quiet days only a few days before, the day's timetable, Halloween trick-or-treat and keepsake
@@ -3171,6 +3302,85 @@ await check('jobs', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(r.boards === r.want && r.want >= 14 && r.offRoad && r.drawn && r.stallsFor && r.run.map(x => x.kind).join() === 'find,deliver' && r.run.every(x => x.near && x.pay === 3 && x.gone) && r.done === 2 && !r.paused && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return `${r.boards} job boards off the roads; find the hen near the farm, then take eggs to a market stall: +3 coins each, and what the place is for`;
+});
+
+await check('wayfind', async () => {
+  // (Round U) "Where is…?": the 🧭 button shows pictures (home, my house, Ông Cú, the market, every village and city);
+  // tapping Hà Nội lays sparkles along the roads ahead of the child, a new stretch as they walk; arriving says so and
+  // the sparkles go; every place in the valley can be reached along the roads from home
+  const P = await open(b, { w: 1280, h: 800 });
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], W = await import('/js/world.js'), F = await import('/js/wayfind.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    for (let k = 0; k < 50 && !G.wayfind; k++) await wait(100);
+    const btn = document.querySelector('.hud .z-where'), bb = btn.getBoundingClientRect(); btn.click(); await wait(300);
+    const picks = [...document.querySelectorAll('.wherepick .wp-pick')], drawn = picks.every(p => p.querySelector('.art')), names = picks.map(p => p.getAttribute('aria-label'));
+    const hanoi = picks.find(p => /Hà Nội|Hanoi/.test(p.getAttribute('aria-label'))); hanoi.click(); await wait(800);
+    const t = G.wayfind.trail, shown = G.wayfind.shown;
+    const off = shown.filter(([x, z]) => { const d = W.roadDist(x, z); return !(d.road && d.d <= d.road.w / 2 + .3) && W.edgeDist(x, z) > .3; }).map(p => p.map(Math.round)), onRoad = !off.length;   // (on a road, or a place's paved street)
+    const gaps = t.pts.slice(1, -1).every((p, k) => Math.hypot(p[0] - t.pts[k][0], p[1] - t.pts[k][1]) < 6.5);
+    // walk a stretch: the sparkles move on ahead
+    const mid = t.pts[16]; h.place(mid[0], mid[1]); await wait(1300); const moved = G.wayfind.trail && G.wayfind.trail.i > 10 && G.wayfind.shown.length > 5;
+    const end = G.PLACES.find(p => p.key === 'hanoi'); h.place(end.x + 3, end.z + 3); await wait(1300); const arrived = !G.wayfind.trail && G.wayfind.shown.length === 0;
+    // every target can be reached from home
+    const g = F.roadGraph(G.PLACES), home = G.PLACES.find(p => p.key === 'farm'), unreachable = G.wayfind.targets().filter(x => { const r = F.route(g, home.x, home.z, x.x, x.z); return !r || Math.hypot(r.pts[r.pts.length - 2][0] - x.x, r.pts[r.pts.length - 2][1] - x.z) > 40; }).map(x => x.id);
+    return { off, size: Math.min(bb.width, bb.height), picks: picks.length, drawn, names: names.slice(0, 5), shown: shown.length, onRoad, gaps, len: Math.round(t.pts.length * 4), moved, arrived, unreachable, paused: G.paused };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.size >= 44 && r.picks >= 16 && r.drawn && r.shown >= 20 && r.onRoad && r.gaps && r.moved && r.arrived && !r.unreachable.length && !r.paused && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.picks} pictures to choose from; to Hà Nội: ${r.shown} sparkles at a time on the roads (about ${r.len} m), moving on ahead, gone on arrival; every place reachable from home`;
+});
+
+await check('dayplan', async () => {
+  // (Round U) the villagers' day: a job picture over each head; at dusk the ones with a house nearby walk to its door and go
+  // in, the rest light a lantern, lanterns glow over the stalls; in the morning everyone comes back out to their spot; an
+  // umbrella in the rain; and nobody ever walks on a road or through a house
+  const P = await open(b, { w: 900, h: 640 });
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, W = G.world, wait = ms => new Promise(r => setTimeout(r, ms)), S = await import('/js/state.js'), { pic } = await import('/js/art.js');
+    for (let k = 0; k < 80 && !G.dayPlan; k++) await wait(100);
+    const D = G.dayPlan, all = D.list; G.paused = true; const V = { filter: f => all.filter(v => !v.external).filter(f), every: f => all.every(f), get length() { return all.filter(v => !v.external).length; }, [Symbol.iterator]: () => all.filter(v => !v.external)[Symbol.iterator]() };   // (people who move on their own, a parade, keep to it)   // (the checks drive the clock by hand)
+    const jobs = V.every(v => v.tag && v.tag.parent === v.o && pic(v.job[0]).includes('class="art')), titled = V.every(v => v.job[1] && v.job[2]);
+    const bad = new Set(); let t = 0;
+    const run = (secs) => { G.paused = false; for (let i = 0; i < secs * 10; i++) { t += .1; W.update(.1, t); for (const v of V) { if (v.inside) continue; const p = v.o.position, moved = Math.hypot(p.x - v.home.x, p.z - v.home.z); if (moved > 1.1 && !D.offRoad(p.x, p.z)) bad.add(v.it.id); } } G.paused = true; };
+    S.settings.alwaysDay = false;
+    W.time = .86; run(40);
+    const night = { inside: V.filter(v => v.inside).length, withDoor: V.filter(v => v.door).length, lamps: V.filter(v => !v.door && v.lamp.visible).length, noDoor: V.filter(v => !v.door).length, lights: D.lights.filter(l => l.visible).length, stalls: D.lights.length };
+    W.time = .4; run(40);
+    const day = { out: V.filter(v => !v.inside).length, home: V.filter(v => Math.hypot(v.o.position.x - v.home.x, v.o.position.z - v.home.z) < 3).length, lights: D.lights.filter(l => l.visible).length };
+    G.weather.start(); run(1); const umb = V.filter(v => v.umb.visible).length; G.weather.stop(); run(1);
+    G.paused = false;
+    return { n: V.length, all: all.length, jobs, titled, night, day, umb, bad: [...bad].slice(0, 5) };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.n > 10 && r.jobs && r.titled && r.night.withDoor > 0 && r.night.inside === r.night.withDoor && r.night.lamps === r.night.noDoor && r.night.lights === r.night.stalls && r.day.out === r.n && r.day.home === r.n && r.day.lights === 0 && r.umb === r.n && !r.bad.length && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.n} villagers with a job picture; at night ${r.night.inside} go home through their door, ${r.night.lamps} light a lantern, ${r.night.lights} stall lanterns; all back out in the morning; umbrellas in the rain; nobody on a road or in a house`;
+});
+
+await check('animalhomes', async () => {
+  // (Round U) animals with homes: Lotus Village's hens walk into their coop at dusk and come out in the morning; the
+  // ducks gather in the middle of the lake for the night; the village dog follows a child who visits, then goes home
+  const P = await open(b, { w: 900, h: 640 });
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, W = G.world, h = G.heroes[0], wait = ms => new Promise(r => setTimeout(r, ms)), S = await import('/js/state.js');
+    for (let k = 0; k < 80 && !G.animalHomes; k++) await wait(100);
+    const A = G.animalHomes; let t = 0; S.settings.alwaysDay = false;
+    const run = secs => { G.paused = false; for (let i = 0; i < secs * 10; i++) { t += .1; W.update(.1, t); } G.paused = true; };
+    const V = G.PLACES.find(p => p.key === 'village'); h.place(A.coop.x + 6, A.coop.z + 6); G.paused = true;
+    const spread0 = A.ducks.reduce((s, c) => s + Math.hypot(c.cx - A.lake[0], c.cz - A.lake[1]), 0) / A.ducks.length;
+    W.time = .86; run(45);
+    const night = { hensIn: A.hens.filter(a => a.inside).length, hens: A.hens.length, littleIn: A.critHens.filter(c => c.inside).length, little: A.critHens.length, ducks: A.ducks.reduce((s, c) => s + Math.hypot(c.cx - A.lake[0], c.cz - A.lake[1]), 0) / A.ducks.length };
+    W.time = .4; run(30);
+    const day = { hensOut: A.hens.filter(a => !a.inside && a.m.visible).length, littleOut: A.critHens.filter(c => !c.inside && c.s.visible).length, ducks: A.ducks.reduce((s, c) => s + Math.hypot(c.cx - A.lake[0], c.cz - A.lake[1]), 0) / A.ducks.length };
+    // the dog: the child stands beside it, then walks off a few metres; the dog comes along
+    const d = A.dog.m.position; h.place(d.x + 3, d.z); run(1); const h0 = [h.pos.x, h.pos.z]; h.place(h0[0] + 6, h0[1] + 2); run(8);
+    const follows = !!A.dog.following && Math.hypot(d.x - h.pos.x, d.z - h.pos.z) < 4;
+    h.place(V.x + 80, V.z + 80); run(1); const goneHome = !A.dog.following;
+    G.paused = false;
+    return { coop: !!A.coop, night, day, spread0: +spread0.toFixed(1), follows, goneHome };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.coop && r.night.hens >= 3 && r.night.hensIn === r.night.hens && r.night.littleIn === r.night.little && r.night.ducks < r.spread0 * .6 && r.day.hensOut === r.night.hens && r.day.littleOut === r.night.little && r.day.ducks > r.night.ducks && r.follows && r.goneHome && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.night.hens} hens and ${r.night.little} little hens into the coop at night and out in the morning; ducks together on the lake at night; the village dog follows a visiting child and goes home`;
 });
 
 await check('names', async () => {

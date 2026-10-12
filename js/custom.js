@@ -117,7 +117,11 @@ export const liveRule = id => pick('releases', id);
 export const festivalRule = id => pick('festivals', id);
 const DAY = 864e5, dayOf = s => { const d = new Date(String(s) + 'T00:00:00'); return isNaN(d) ? null : d; };
 // is a release on today? (def: what it is when Studio never set it)
+// (owner, 12 Oct: tester reports) the releases a tester device sees early ("Tester preview"), set by js/tester.js
+let PEEKS = []; export const setPeeks = list => { PEEKS = Array.isArray(list) ? list.slice() : []; };
+export const isPeek = id => PEEKS.includes(id);
 export function releaseOn(id, def = true, now = new Date()) {
+  if (PEEKS.includes(id)) return true;
   const r = liveRule(id); if (!r) return def;
   if (r.on === false) return false;
   const st = r.start && dayOf(r.start);
