@@ -2254,8 +2254,9 @@ body:has(.handpad) .hud .bigprompt { display: none !important; }
 @media (prefers-reduced-motion: reduce) { .db-pic .art, .db-pic .emo { animation: none; } }
 .bedtime-dim { position: fixed; inset: 0; z-index: 45; pointer-events: none; background: #0b0b2a; opacity: 0; transition: opacity 4s linear; }
 .resttime.bedtime .rt-moon .art { width: 96px; height: 96px; } .resttime.bedtime .rt-zz .art { width: 44px; height: 44px; }
-.missions .mtick { position: relative; min-width: 64px; min-height: 64px; font-size: 26px; border-radius: 50%; display: grid; place-items: center; }
-.missions .mtick .ring { position: absolute; inset: -4px; width: auto; height: auto; z-index: -1; }
+/* (the hold ring is the button's outer 4 px, inside its edge, so nothing pokes out of the Adventures tab) */
+.missions .mtick { position: relative; min-width: 72px; min-height: 72px; font-size: 26px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle closest-side, #fff calc(100% - 5px), transparent calc(100% - 4px)); }
+.missions .mtick .ring { position: absolute; inset: 0; width: auto; height: auto; z-index: -1; }
 .gsec.family .fmrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 0; border-bottom: 1px solid rgba(0, 0, 0, .08); }
 .gsec.family .fmrow .pw { flex: 1 1 160px; min-width: 0; } .gsec.family .fmrow small { display: block; opacity: .75; }
 .gsec.family .fmrow .btn, .gsec.family .fmcards .btn, .gsec.family .vrow .btn { min-height: 44px; min-width: 44px; }
