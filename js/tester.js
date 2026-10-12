@@ -31,7 +31,7 @@ const URL_ = () => window.__svTesterURL || 'api/tester';
 const me = () => { try { return localStorage.getItem('sv2_playerid') || ''; } catch (e) { return ''; } };
 const L = pair => T(pair[0], pair[1]);
 
-let G = null, level = '', live = false, offs = [], log = [], errors = [], want = null, lastGame = '', status = get(KEY.st, null), mark = null;
+let G = null, level = '', live = false, offs = [], log = [], errors = [], want = null, lastGame = '', status = get(KEY.st, null);
 const sent = new Map(), counts = new Map();
 
 // ---------- what happened in the last 30 seconds ----------
@@ -54,7 +54,7 @@ function grab() {
     const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
     g.fillStyle = '#88b'; g.fillRect(0, 0, w, h); if (src) g.drawImage(src, 0, 0, w, h);
     const win = topWindow(), dlg = document.querySelector('.dialog .dtext');
-    const lines = [win, dlg ? dlg.textContent : ''].filter(Boolean).map(s => s.slice(0, 70));
+    const lines = [`Tester · ${BUILD} · ${new Date().toISOString().slice(0, 16)}`, win, dlg ? dlg.textContent : ''].filter(Boolean).map(s => s.slice(0, 70)); // (every picture says its version)
     if (lines.length) { g.fillStyle = 'rgba(30,20,50,.78)'; g.fillRect(0, h - 22 * lines.length - 8, w, 22 * lines.length + 8); g.fillStyle = '#fff'; g.font = '15px sans-serif'; lines.forEach((s, i) => g.fillText(s, 8, h - 22 * (lines.length - i) + 10)); }
     return c.toDataURL('image/jpeg', .6);
   } catch (e) { return ''; }
@@ -142,10 +142,11 @@ function hookRender() {
 const paintCount = () => { const n = queue().length, fixed = fixedToSee().length; document.querySelectorAll('.z-lb').forEach(b => { b.querySelector('.lb-n').textContent = n ? String(n) : ''; b.querySelector('.lb-n').hidden = !n; b.querySelector('.lb-ok').hidden = !fixed; }); };
 const fixedToSee = () => { const seen = get(KEY.seen, {}); return ((status && status.mine) || []).filter(p => ['fixed', 'confirmed'].includes(p.status) && !seen[p.k]); };
 function addUI() {
-  mark = el('div', 'testermark', `${pic('🐞')}<span>${T('Tester', 'Người thử')} · ${BUILD}</span>`); mark.setAttribute('aria-hidden', 'true'); document.body.appendChild(mark); offs.push(() => mark.remove());
-  if (level !== 'ladybird') return;
-  // (each player's HUD gets one, also the ones made after this: the game starts after the title screen)
+  // (each player's HUD gets the mark under its clock and, at the ladybird level, the ladybird with the zoom buttons; also
+  // the HUDs made after this: the game starts after the title screen)
   const ensure = () => (G.huds || []).forEach((hud, i) => {
+    const ck = hud.q && hud.q('.zoom'); if (ck && !ck.querySelector('.testermark')) { const mk = el('span', 'testermark', `${pic('🐞')}<span>${T('Tester', 'Người thử')} · ${BUILD}</span>`); mk.setAttribute('aria-hidden', 'true'); ck.appendChild(mk); offs.push(() => mk.remove()); }
+    if (level !== 'ladybird') return;
     const z = hud.q && hud.q('.zoomer'); if (!z || z.querySelector('.z-lb')) return;
     const b = el('button', 'z-lb', `${pic('🐞')}<i class="lb-n" hidden></i><i class="lb-ok" hidden>✓</i><kbd class="kb">L</kbd>`); b.setAttribute('aria-label', T('Report a problem (hold: quick report)', 'Báo lỗi (giữ: báo nhanh)'));
     let t0 = 0, quick = null;

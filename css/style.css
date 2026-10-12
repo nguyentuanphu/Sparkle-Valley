@@ -2363,7 +2363,7 @@ button.chip { font: inherit; color: inherit; cursor: pointer; }
 .hud .chips button.chip::after { content: ''; position: absolute; left: -2px; right: -2px; top: 50%; height: 44px; transform: translateY(-50%); }
 
 /* ---------- (owner, 12 Oct) tester reports: js/tester.js, js/testerrewards.js ---------- */
-.testermark { position: fixed; left: 50%; bottom: 4px; transform: translateX(-50%); z-index: 60; pointer-events: none; display: flex; align-items: center; gap: 4px;
+.testermark { display: flex; align-items: center; gap: 4px; width: max-content; margin: 4px auto 0; pointer-events: none;
   padding: 2px 10px 2px 4px; border-radius: 999px; background: rgba(40, 24, 70, .62); color: #fff; font: 700 12px Fredoka, "Baloo 2", sans-serif; opacity: .85; }
 .testermark .art { width: 18px; height: 18px; }
 .zoomer .z-lb { position: relative; }
@@ -2388,7 +2388,8 @@ button.chip { font: inherit; color: inherit; cursor: pointer; }
 .tp-near { background: #fff6e4; border-radius: 14px; padding: 8px 10px; margin: 6px 0; }
 .tp-old { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 4px 0; }
 .tp-old .btn, .tpanel .actions .btn, .tagree .actions .btn, .qs-tester .btn { min-height: 44px; }
-.tg-list { padding-left: 20px; line-height: 1.45; }
+.tg-list { padding-left: 20px; line-height: 1.45; margin: 4px 0 8px; }
+.tagree .card > p { margin: 6px 0 0; }
 .qs-tester .qs-trow { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
 .tm-list { display: flex; flex-direction: column; gap: 6px; }
 .tm-row { background: #f3eefb; border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; }
