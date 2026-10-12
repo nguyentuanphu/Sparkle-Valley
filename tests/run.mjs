@@ -3130,6 +3130,33 @@ await check('prices', async () => {
   return `${r.tagged} food stalls and kiosks have a coin-picture price; change counted on ("${r.changeLine.slice(0, 70)}…"); the seller greets Kiwi by name on screen, not out loud`;
 });
 
+await check('jobs', async () => {
+  // (Round U) a job board in every place: off the roads; a child takes a job (find a lost hen near the farm, then take
+  // eggs to a market stall), a bobbing picture shows where; tapping it gives coins and says what the place is for
+  const P = await open(b, { w: 900, h: 640 });
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, S = await import('/js/state.js'), W = await import('/js/world.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    for (let k = 0; k < 50 && !G.jobs; k++) await wait(100);
+    const { JOBS } = await import('/js/content/jobs.js'), { pic } = await import('/js/art.js');
+    const want = G.PLACES.filter(pl => pl.key && JOBS[pl.key]).length, boards = G.jobs.boards.length;
+    const offRoad = G.jobs.boards.every(B => W.edgeDist(B.x, B.z) > 2), drawn = Object.values(JOBS).every(J => J.jobs.every(j => pic(j.icon).includes('class="art')));
+    const delivers = Object.values(JOBS).flatMap(J => J.jobs.filter(j => j.kind === 'deliver')), stallsFor = delivers.every(j => G.world.stalls.some(s => s.place === j.to));
+    const close = async () => { for (let k = 0; k < 20; k++) { await wait(200); const rw = document.querySelector('.reward'); if (rw) { rw.click(); continue; } const d = document.querySelector('.dialog:not(.out)'); if (d) { const c = d.querySelectorAll('.dch'); c.length ? c[0].click() : d.click(); continue; } if (!G.paused) break; } };
+    p.jobsDone = {}; const B = G.jobs.boards.find(x => x.key === 'farm'); const run = [];
+    for (const step of [0, 1]) {
+      const job = G.interactables.find(i => i.id === 'job_farm'); job.act(h, G); await close();
+      const a = G.jobs.active.get(h), t = a && G.interactables.find(i => i.id === 'jobt_farm');
+      const near = a && a.job.kind === 'deliver' ? G.world.stalls.some(s => s.place === 'market' && Math.hypot(s.x - t.x, s.z - t.z) < 4) : t && Math.hypot(t.x - B.x, t.z - B.z) >= 9.5;
+      const coins = S.farm.coins; t && t.act(h, G); await close();
+      run.push({ kind: a && a.job.kind, near, pay: S.farm.coins - coins, gone: !G.jobs.active.has(h) && !G.interactables.some(i => i.id === 'jobt_farm') });
+    }
+    return { want, boards, offRoad, drawn, stallsFor, run, done: p.jobsDone.farm, paused: G.paused };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.boards === r.want && r.want >= 14 && r.offRoad && r.drawn && r.stallsFor && r.run.map(x => x.kind).join() === 'find,deliver' && r.run.every(x => x.near && x.pay === 3 && x.gone) && r.done === 2 && !r.paused && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.boards} job boards off the roads; find the hen near the farm, then take eggs to a market stall: +3 coins each, and what the place is for`;
+});
+
 await check('names', async () => {
   // every game file: no name used that is never defined or imported (TypeScript's TS2304 on all of js/, nothing else
   // judged). Moving code between files (the architecture steps) is where this goes wrong; it once stopped the game.
