@@ -250,6 +250,13 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
 
 - Deploying (13 Oct AEDT): `core/play` was not in r66 to r68. Owner: "This chat does it now" (3:20 am), then "stop the full suite, give me the prompt, Release core will do it" (about 3:40 am): handover in `docs/cores/tasks/release-r69.md`; this chat's version bump undone.
 
+- (13 Oct, about 4:30 am AEDT) Owner's go, on branch `core/play-studio` (after r69): (1) devices you can recognise in
+  Studio: every device row shows the children's first names, type, system, browser, town, last played and minutes, an
+  easy name, a search, robots greyed with "hide"; (2) every Studio page and the game's Grown-ups settings readable and
+  collapsible (each part and each category opens and closes); (3) "Trust this browser" for admins and the owner (stays
+  signed in a year, renewed on use; a list with Forget; Sign everyone out still works). Robots in the counts: a prompt
+  for Analytics & Infra was given to the owner, not built here.
+
 ## Progress notes (12 Oct AEDT: Studio fixes and the auto play check)
 - Commits on `core/play`: f4dd7c6 (photos publish in steps), 0e7ddb1 (exe updates itself), c5846e3 (exe keeps its game
   folder new), e3171ac (auto play check), plus the two recorded words of the new Releases group ("For testing", Azure).
