@@ -10,7 +10,7 @@ import { VENDORS } from './regions.js';
 import { PERSONAS } from './chat.js';
 import { dialog } from './ui.js';
 import { say } from './voice.js';
-import { buyFood } from './snacks.js';
+import { buyFood, greetLine } from './snacks.js';
 
 const look = (color, hair, hairStyle, hat = 'nonla') => ({ style: 'aodai', color, hat, back: 'none', hair, hairStyle, skin: '#e8b48c', glider: 0 });
 // [id, name, look, goods (two baskets), food [icon, en, vi, price], call [en, vi], greet [en, vi], where]
@@ -58,7 +58,7 @@ export function createHawkers(G) {
   }
   async function buy(h, H, v) {
     H.busy = true;
-    const k = await dialog(H.name, [v.greet], [[`${v.food[0]} ${T('Buy', 'Mua')} ${T(v.food[1], v.food[2])} (${G.fmt(v.food[3])})`, `${v.food[0]} Mua ${v.food[2]} (${G.fmt(v.food[3])})`], ['👋 Bye', '👋 Tạm biệt']]);
+    const k = await dialog(H.name, [greetLine(h, v)], [[`${v.food[0]} ${T('Buy', 'Mua')} ${T(v.food[1], v.food[2])} (${G.fmt(v.food[3])})`, `${v.food[0]} Mua ${v.food[2]} (${G.fmt(v.food[3])})`], ['👋 Bye', '👋 Tạm biệt']]);
     if (k === 0) await buyFood(G, h, v, ['Here, this one is a gift!', 'Thôi, cái này cô cho con đó!']);
     H.busy = false;
   }

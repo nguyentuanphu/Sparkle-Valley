@@ -3072,6 +3072,64 @@ await check('houseguide', async () => {
   return '4 steps the first time in the house, not again on the next visit; the ❓ sign repeats them';
 });
 
+await check('guide', async () => {
+  // (Round U) Ông Cú as a guide: after his welcome, each visit he explains one new thing (money, the house, the bus, the
+  // signposts, family missions, the job boards, talking to people, the sound button) on a page with a drawn picture,
+  // read aloud; the next visit it is the next one, and after the last he starts again
+  const P = await open(b, { w: 900, h: 640 });
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, wait = ms => new Promise(r => setTimeout(r, ms));
+    const { OWL_LESSONS } = await import('/js/content/owllessons.js'), { pic } = await import('/js/art.js');
+    const drawn = OWL_LESSONS.every(l => pic(l.icon).includes('class="art')), bothLangs = OWL_LESSONS.every(l => l.lines.every(([en, vi]) => en && vi && en !== vi));
+    const story = G.lanterns; G.lanterns = { ...story, owl: async () => false };   // (past the story's prologue)
+    p.quests.owl = true; p.owlLessons = [];
+    const owl = G.interactables.find(i => i.id === 'npc_owl'), got = [];
+    const visit = async () => {
+      owl.act(h, G); let card = null;
+      for (let k = 0; k < 40 && !card; k++) { await wait(150); const d = document.querySelector('.dialog:not(.out)'); if (d) { d.click(); await wait(200); } card = document.querySelector('.owl-lesson:not(.out)'); }
+      if (!card) return null;
+      const art = !!card.querySelector('.sb-art .art'), text = card.querySelector('.sb-text').textContent, paused = G.paused;
+      for (let k = 0; k < 4 && document.querySelector('.owl-lesson:not(.out)'); k++) { document.querySelector('.owl-lesson:not(.out) .qt-go').click(); await wait(400); }
+      await wait(300);
+      return { art, text: text.slice(0, 30), paused, gone: !document.querySelector('.owl-lesson:not(.out)') };
+    };
+    for (let n = 0; n < OWL_LESSONS.length + 1; n++) { const v = await visit(); got.push(v && v.art && v.paused && v.gone ? p.owlLessons[p.owlLessons.length - 1] : JSON.stringify(v)); }
+    G.lanterns = story;
+    return { drawn, bothLangs, got, n: OWL_LESSONS.length, ids: OWL_LESSONS.map(l => l.id), paused: G.paused };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.drawn && r.bothLangs && r.got.slice(0, r.n).join() === r.ids.join() && r.got[r.n] === r.ids[0] && !r.paused && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.n} things Ông Cú explains, one per visit in order (${r.ids.join(', ')}), each with a drawn picture; then he starts again`;
+});
+
+await check('prices', async () => {
+  // (Round U) price pictures and change, sellers remember you: every food stall and kiosk has a price sign (one coin
+  // picture per coin, up to 10); paying with more counts the change on, one coin at a time; the next visit the seller
+  // greets the child by name on screen, but the spoken words have no name (HANDOFF rule 11)
+  const P = await open(b, { w: 900, h: 640 });
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, S = await import('/js/state.js'), V = await import('/js/voice.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    for (let k = 0; k < 40 && !G.world.priceTags; k++) await wait(100);
+    const { VENDORS } = await import('/js/vendors.js');
+    const food = G.world.stalls.filter(s => s.tap && VENDORS.some(v => 'v_' + v.id === s.tap && v.food));
+    const tagged = food.filter(s => G.world.priceTags.some(t => 'v_' + t.id === s.tap)).length, maxPrice = Math.max(...VENDORS.map(v => v.food[3]));
+    const said = []; const hear = t => said.push(t); V.spoken.push(hear);
+    const v = VENDORS.find(x => x.id === 'bahai'); delete (p.regulars || {}).bahai; p.name = 'Kiwi';
+    const it = G.interactables.find(i => i.id === 'v_bahai');
+    const talk = async (buy) => { const lines = []; it.act(h, G); for (let k = 0; k < 20; k++) { await wait(250); const d = document.querySelector('.dialog:not(.out)'); if (!d) { if (lines.length) break; continue; } const t = d.querySelector('.dtext').textContent; if (lines[lines.length - 1] !== t) lines.push(t); const chs = d.querySelectorAll('.dch'); if (chs.length) { (buy && lines.length === 1 ? chs[0] : chs[chs.length - 1]).click(); } else d.click(); } return lines; };
+    S.farm.coins = 50; const before = S.farm.coins; said.length = 0;
+    const first = await talk(true); const paid = before - S.farm.coins;
+    const changeLine = first.find(l => /change/i.test(l)) || '';
+    said.length = 0; const second = await talk(false), spokeName = said.some(t => /Kiwi/.test(t));
+    V.spoken.splice(V.spoken.indexOf(hear), 1);
+    return { stalls: food.length, tagged, maxPrice, price: v.food[3], paid, changeLine, first: first.slice(0, 2), greet: second[0], spokeName, said: said.slice(0, 2), paused: G.paused };
+  });
+  const errs = P.errors; await P.ctx.close();
+  const counted = (r.changeLine.match(/,/g) || []).length >= 3;   // price 6 paid with 10: 4 coins counted on
+  ok(r.stalls >= 20 && r.tagged === r.stalls && r.maxPrice <= 10 && r.paid === r.price && counted && /Kiwi/.test(r.greet || '') && !r.spokeName && !r.paused && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.tagged} food stalls and kiosks have a coin-picture price; change counted on ("${r.changeLine.slice(0, 70)}…"); the seller greets Kiwi by name on screen, not out loud`;
+});
+
 await check('names', async () => {
   // every game file: no name used that is never defined or imported (TypeScript's TS2304 on all of js/, nothing else
   // judged). Moving code between files (the architecture steps) is where this goes wrong; it once stopped the game.

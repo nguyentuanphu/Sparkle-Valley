@@ -16,7 +16,7 @@ import { farm, saveFarm } from './state.js';
 import { say, sayIn } from './voice.js';
 import { SFX, tone } from './audio.js';
 import { dist2 } from './util.js';
-import { buyFood } from './snacks.js';
+import { buyFood, greetLine } from './snacks.js';
 
 const B = (w, h, d) => new THREE.BoxGeometry(w, h, d), C = (r1, r2, h, s = 14) => new THREE.CylinderGeometry(r1, r2, h, s), S = (r, w = 14, h = 10) => new THREE.SphereGeometry(r, w, h);
 const look = (style, color, hair, hairStyle, hat = 'none', skin = '#e8b48c') => ({ style, color, hat, back: 'none', hair, hairStyle, skin, glider: 0 });
@@ -396,7 +396,7 @@ const GAMES_ICON = { puppets: '🎎', dongho: '🖼️', dragonfire: '🐉', tra
 // talking to a kiosk seller: buy the food, or learn the saying
 async function kioskTalk(G, h, v) {
   const p = h.profile;
-  const k = await dialog(v.name, [v.greet], [[`${v.food[0]} Buy ${v.food[1]} (${G.fmt(v.food[3])})`, `${v.food[0]} Mua ${v.food[2]} (${G.fmt(v.food[3])})`], ['🗣️ Teach me a saying!', '🗣️ Dạy con một câu nói!'], ['👋 Bye', '👋 Tạm biệt']]);
+  const k = await dialog(v.name, [greetLine(h, v)], [[`${v.food[0]} Buy ${v.food[1]} (${G.fmt(v.food[3])})`, `${v.food[0]} Mua ${v.food[2]} (${G.fmt(v.food[3])})`], ['🗣️ Teach me a saying!', '🗣️ Dạy con một câu nói!'], ['👋 Bye', '👋 Tạm biệt']]);
   if (k === 0) {
     await buyFood(G, h, v);
   }
