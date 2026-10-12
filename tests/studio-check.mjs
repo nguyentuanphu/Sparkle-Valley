@@ -114,7 +114,7 @@ export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs
     if (fn) {
       const ch = []; for await (const c of req) ch.push(c);
       const r = await fn(new Request(url, { method: req.method, headers: req.headers, body: req.method === 'POST' ? Buffer.concat(ch) : undefined }), { geo: JSON.parse(req.headers['x-test-geo'] || '{}') }); // (Netlify gives the town from the connection; tests say it in a header)
-      const h = {}; r.headers.forEach((v, k) => { h[k] = v; }); const out = Buffer.from(await r.arrayBuffer());
+      const h = {}; r.headers.forEach((v, k) => { h[k] = v; }); const sc = r.headers.getSetCookie ? r.headers.getSetCookie() : []; if (sc.length) h['set-cookie'] = sc; /* (like Netlify: two cookies stay two) */ const out = Buffer.from(await r.arrayBuffer());
       // (r65) like Netlify: a function's answer is at most 6 MB, and a picture is sent as base64 (a third bigger), so about 4.5 MB
       if ((/^(image|audio|video)\/|octet/.test(h['content-type'] || '') ? out.length * 4 / 3 : out.length) > 6e6) { res.writeHead(502, { 'Content-Type': 'text/plain' }); res.end('Function response is too large'); return; }
       res.writeHead(r.status, h); res.end(out); return;

@@ -10,7 +10,8 @@ const BASE = '/studio', GAME = BASE + '/game/', FILE = p => BASE + '/api/file/' 
 // (round R privacy) a family photo is "family:<name>" in the private store, shown through Studio itself; an old one is a file
 const PIC = p => /^family:[\w-]+$/.test(p || '') ? BASE + '/api/familyphoto/' + p.slice(7) : FILE(p);
 const OLDPICS = () => [...Object.values(CONTENT.faces || {}).map(f => f && f.photo), ...(CONTENT.album || []).map(x => x && x.photo)].filter(p => /^content\/(faces|album)\//.test(p || '')).length;
-const whenAEST = iso => new Date(iso).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Brisbane', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' AEST';
+// Sydney time, AEDT or AEST as it applies (CLAUDE.md, owner 10 Oct; it used to show Brisbane time)
+const whenAEST = iso => new Date(iso).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' ' + (/GMT\+11|AEDT/.test(new Date(iso).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', timeZoneName: 'short' })) ? 'AEDT' : 'AEST');
 // the game's own drawings in place of phone emoji on every Studio page (owner, round R; js/emojiswap.js)
 import(GAME + 'js/emojiswap.js').catch(() => { });
 // (owner, 10 Oct) the servers answer in English: in Vietnamese, every answer is shown in Vietnamese (studio/ui/vi.js)
