@@ -2361,3 +2361,14 @@ button.chip { font: inherit; color: inherit; cursor: pointer; }
 /* (Round U) the HUD's coin, orb and Leafy chips are buttons now (tap: what it is): a 44 px tap area around the small chip */
 .hud .chips button.chip { position: relative; }
 .hud .chips button.chip::after { content: ''; position: absolute; left: -2px; right: -2px; top: 50%; height: 44px; transform: translateY(-50%); }
+
+/* (Round U) "Where is…?": the compass button by the zoom buttons, and the picture chooser */
+.zoomer .z-where .art, .zoomer .z-where .emo { width: 34px; height: 34px; font-size: 28px; }
+.hud.small .zoomer .z-where .art { width: 28px; height: 28px; }
+.wherepick .card { max-width: 720px; }
+.wherepick h2 { display: flex; align-items: center; gap: 8px; } .wherepick h2 .art { width: 36px; height: 36px; }
+.wp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-top: 12px; }
+.wp-pick { min-height: 120px; border: 0; border-radius: 24px; background: #fff; box-shadow: 0 4px 0 rgba(60, 40, 90, .15); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px 6px; font-size: 16px; color: inherit; }
+.wp-pick .art, .wp-pick .emo { width: 56px; height: 56px; font-size: 48px; } .wp-pick b { text-align: center; line-height: 1.2; }
+.wp-stop { min-height: 64px; width: 100%; border: 0; border-radius: 999px; background: #fff3c4; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
+.wp-stop .art { width: 36px; height: 36px; }
