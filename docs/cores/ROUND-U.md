@@ -58,3 +58,9 @@ Rules first where a hard rule changes (PROC-006): the rule and its check go in, 
 - Size: this is the largest round so far (about 25 pieces); expect several long sessions. Each part is committed and listed on the board as it lands, so nothing is lost between chats.
 - `startup` is already over its limit; the living-valley parts must load after the title and stay within the draw-call budget (`perf`).
 - Other chats: Play, Kid UI and Online own some of these files; while Round U runs, Release asks them on the board not to change `js/ui.js`, `js/simple.js`, `js/parents.js`, `js/shop.js`, `js/traffic.js`.
+
+## Progress (12 Oct AEDT)
+- Parts A to E built on `claude/peaceful-hopper-un7oym`, each part pushed as a backup (main stays on r61 until "yes, deploy").
+- New checks: `bilingual`, `hscroll`, `chips`, `soundsw`, `joins`, `ride`, `signs`, `familymissions`, `wearbag`, `talk`, `houseguide`, `guide`, `prices`, `jobs`, `wayfind`, `dayplan`, `animalhomes`; `simple` and `adventure` updated for the category cards; `contract` re-recorded twice (the Sound button, the compass button), both asked for by the owner.
+- Smaller than planned: stalls stay open at night (lanterns light over them instead of closing); only villagers with a house door within 35 m and a clear walk go inside at night (the rest light a lantern); the Lotus Village hens are the ones with a coop.
+- Part F: voices (Azure), version r62, full suite, screenshots, report, "yes, deploy".
