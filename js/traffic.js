@@ -10,7 +10,7 @@
 // hides it for everyone; nothing a child owns depends on it.
 // Under-5s see the toy look; when every child playing is 5 or older (and realVehicles is on) the real look is used.
 // apply() rebuilds the meshes when the look changes (G.traffic.apply(real) at the start of each session).
-import { THREE, blobShadow } from './gfx.js';
+import { THREE, blobShadow, P, merge, toonVC, sprite } from './gfx.js';
 import { build, seatRider } from './vehicles.js';
 import { CITIES, ROADS, VILLAGE, HOME, TOWN, AUSSIE, WATER, heightAt, roadDist } from './world.js';
 import { WORLD as MAP_WORLD } from './content/map.js';
@@ -19,6 +19,19 @@ import { buildAvatar } from './avatar.js';
 import { featureOn } from './custom.js';
 import { TOWN_PARKED } from './town.js';
 import { T } from './i18n.js';
+import { dialog } from './popups.js';
+import { farm, saveFarm } from './state.js';
+import { say } from './voice.js';
+import { SFX } from './audio.js';
+// (Round U, owner 11 Oct: "all vehicles can be ridden, public transport can get in with fares")
+//   · every parked car, ute, SUV, taxi, scooter and motorbike can be driven like the bicycles (Jump gets off)
+//   · buses, trams, taxis and the electric cart take a child as a passenger for a fare in coins (under-5s and a child
+//     with too few coins ride free: never punished), to the next stop; Jump gets off sooner
+//   · a moving private car or motorbike never gives a lift: children don't get into a stranger's vehicle
+//   · every bus route has a stop with a shelter and a picture timetable at each end, where the bus waits
+const DRIVE = new Set(['honda67', 'cub', 'dream', 'scooter', 'postie', 'sedan', 'suv', 'ute', 'taxi', 'miniBike', 'bmx', 'roadster', 'roadBike', 'kidsBike']);
+const FARE = { bus: 2, busAU: 2, tramModern: 2, taxi: 4, touristCart: 2 };
+const CARS = new Set(['sedan', 'suv', 'ute', 'taxi']);
 
 const look = (style, color, hair, hairStyle, hat = 'none', skin = '#e0aa80') => ({ style, color, hair, hairStyle, hat, skin, back: 'none', glider: 0 });
 const VN_RIDERS = [look('shirt', '#3a78c8', '#1d1412', 'short', 'cap'), look('aodai', '#ffffff', '#1d1412', 'long', 'nonla'), look('shirt', '#e8c25a', '#1d1412', 'short'), look('shirt', '#ff7eb8', '#1d1412', 'ponytail'), look('shirt', '#5a8a3a', '#1d1412', 'short', 'nonla')];
@@ -47,7 +60,7 @@ export function createTraffic(G) {
     ROADS.filter(r => r.kind === 'asphalt').forEach((road, k) => {
       const rt = route(road.pts), mid = pointAt(rt, rt.len / 2), cc = ccAt(mid[0], mid[1]), list = cc === 'vn' ? VN_ROAD : AU_ROAD;
       const n = rt.len > 70 ? 2 : 1;
-      for (let j = 0; j < n; j++) slots.push({ id: list[(k * 3 + j * 5) % list.length], cc, mover: { r: rt, s: rt.len * (j + .3) / (n + .2), dir: j % 2 ? -1 : 1, lane: cc === 'vn' ? 1.4 : -1.4, wait: 0, rest: 2 + R() * 3 } });
+      for (let j = 0; j < n; j++) slots.push({ id: list[(k * 3 + j * 5) % list.length], cc, road, mover: { r: rt, s: rt.len * (j + .3) / (n + .2), dir: j % 2 ? -1 : 1, lane: cc === 'vn' ? 1.4 : -1.4, wait: 0, rest: /^bus/.test(list[(k * 3 + j * 5) % list.length]) ? 12 : 2 + R() * 3 } });
     });
   }
   // ---------- the cities ----------
@@ -72,6 +85,8 @@ export function createTraffic(G) {
     if (c.id === 'sydney' || c.id === 'brisbane') { const x = a[0] + fx * (len * .3) + fz * 4.6, z = a[1] + fz * (len * .3) - fx * 4.6; if (free(x, z, 2.5)) slots.push({ id: 'busAU', cc: 'au', x, z, yaw }); }
   }
   if (featureOn('cityVehicles', true)) TOWN_PARKED.forEach(([x, z, r, id]) => slots.push({ id, cc: 'vn', x, z, yaw: r }));
+  // (Round U) every parked car and motorbike can be driven
+  slots.forEach(sl => { if (!sl.mover && sl.rideable == null && DRIVE.has(sl.id)) sl.rideable = true; });
   // ---------- bicycles to ride ----------
   const rideSpots = [];
   if (featureOn('rideBikes', true)) {
@@ -126,9 +141,10 @@ export function createTraffic(G) {
 
   // children ride the bicycles: Jump gets off (js/player.js riding, with the vehicle's own seat and grips)
   for (const sl of slots.filter(s => s.rideable)) {
-    G.interactables.push({ id: 'bike_' + slots.indexOf(sl), get x() { return where(sl)[0]; }, get z() { return where(sl)[1]; }, r: 2.2, icon: '🚲',
-      label: () => T('Ride the bicycle', 'Đạp xe'), visible: h => !sl.taken && !h.riding && !h.carry,
-      act: (h, game) => { if (!sl.v) make(sl); sl.taken = h; const v = sl.v; h.mount({ vehicle: v, mesh: v.o, shadow: { position: new THREE.Vector3() }, yaw: v.o.rotation.y, speed: sl.id === 'roadBike' ? 8 : 6, slot: sl, quiet: true });
+    const bike = ['miniBike', 'bmx', 'roadster', 'roadBike', 'kidsBike'].includes(sl.id), car = CARS.has(sl.id);
+    G.interactables.push({ id: (bike ? 'bike_' : 'drive_') + slots.indexOf(sl), get x() { return where(sl)[0]; }, get z() { return where(sl)[1]; }, r: car ? 2.8 : 2.2, icon: bike ? '🚲' : car ? '🚗' : '🛵',
+      label: () => bike ? T('Ride the bicycle', 'Đạp xe') : car ? T('Drive the car', 'Lái xe hơi') : T('Ride the motorbike', 'Chạy xe máy'), visible: h => !sl.taken && !h.riding && !h.carry,
+      act: (h, game) => { if (!sl.v) make(sl); sl.taken = h; const v = sl.v; h.mount({ vehicle: v, mesh: v.o, shadow: { position: new THREE.Vector3() }, yaw: v.o.rotation.y, speed: sl.id === 'roadBike' ? 8 : car ? 9 : bike ? 6 : 8, slot: sl, quiet: true });
         const hud = G.huds && G.huds[G.heroes.indexOf(h)]; if (hud && hud.toast) hud.toast(T('Press Jump to get off', 'Bấm Nhảy để xuống xe')); } });
   }
   // a xích lô ride: sit in front while it rides the main street and back; Jump gets off
@@ -142,6 +158,49 @@ export function createTraffic(G) {
         };
       } });
   }
+
+  // ---------- (Round U) public transport: a seat for a fare ----------
+  const seatOf = (sl, v) => v.passenger || (/^(bus|tram)/.test(sl.id) ? [-.45, v.seat[1], 0] : [-v.seat[0] || .45, v.seat[1], v.seat[2] - (sl.id === 'touristCart' ? .9 : 0)]);
+  const nameOf = sl => sl.id === 'taxi' ? T('the taxi', 'xe taxi') : /^tram/.test(sl.id) ? T('the tram', 'tàu điện') : sl.id === 'touristCart' ? T('the electric cart', 'xe điện') : T('the bus', 'xe buýt');
+  for (const sl of slots.filter(s => s.mover && FARE[s.id])) {
+    G.interactables.push({ id: 'ride_' + slots.indexOf(sl), walks: true, get x() { return where(sl)[0]; }, get z() { return where(sl)[1]; }, r: 3.2, icon: /^tram/.test(sl.id) ? '🚋' : sl.id === 'taxi' ? '🚕' : '🚌',
+      label: () => T('Get on ', 'Lên ') + nameOf(sl), visible: h => !sl.passenger && !h.riding && !h.carry,
+      act: async h => {
+        if (!sl.v) make(sl); const fare = FARE[sl.id], little = h.profile && h.profile.age !== 'big';
+        sl.mover.wait = Math.max(sl.mover.wait, 30);   // it waits while the child decides
+        const free = little || farm.coins < fare;
+        const k = await dialog(T('Driver', 'Bác tài'), [free ? [`Hop on! It's a free ride for you today.`, 'Lên xe đi con! Hôm nay con đi miễn phí.'] : [`Hop on! The fare is ${fare} coins. We go to the next stop.`, `Lên xe đi con! Giá vé ${fare} đồng. Mình đi tới trạm sau nhé.`]],
+          [[free ? '🚌 Get on' : `🪙 Pay ${fare} and get on`, free ? '🚌 Lên xe' : `🪙 Trả ${fare} đồng, lên xe`], ['👋 Not now', '👋 Để sau']]);
+        sl.mover.wait = 0; if (k !== 0) return;
+        if (!free) { farm.coins -= fare; saveFarm(); SFX.chime(); }
+        sl.passenger = h; let started = false, gone = 0;
+        h.carry = (dt, t, pad) => {
+          const m = sl.mover; if (m.wait <= 0) started = true; gone += dt;
+          // off at the next stop (the end of its route, where it rests), or when Jump is pressed
+          if (pad.jump() || (started && m.wait > 0 && gone > 2)) { h.carry = null; sl.passenger = null; const o = sl.v.o; h.place(o.position.x + Math.cos(o.rotation.y) * 2.6, o.position.z - Math.sin(o.rotation.y) * 2.6); say('Here we are! Bye bye!', 'Tới nơi rồi! Tạm biệt con!'); return null; }
+          const p = sl.v.o.localToWorld(new THREE.Vector3(...seatOf(sl, sl.v))); return { x: p.x, y: p.y - .55, z: p.z, yaw: sl.v.o.rotation.y, state: 'sit', speed: 0, rest: true };
+        };
+      } });
+  }
+  // ---------- (Round U) bus stops with a picture timetable, at both ends of every bus route ----------
+  const stopGeo = merge([P(new THREE.BoxGeometry(2.6, .1, 1.3), '#3a78c8', [0, 2.3, 0]), P(new THREE.BoxGeometry(.1, 2.3, .1), '#d8dde0', [-1.2, 1.15, -.5]), P(new THREE.BoxGeometry(.1, 2.3, .1), '#d8dde0', [1.2, 1.15, -.5]),
+    P(new THREE.BoxGeometry(2.4, 1.6, .06), '#bfe4f2', [0, 1.4, -.6]), P(new THREE.BoxGeometry(2, .12, .45), '#8a5a3b', [0, .5, -.3]), P(new THREE.BoxGeometry(.08, .5, .08), '#6a4a32', [-.8, .25, -.3]), P(new THREE.BoxGeometry(.08, .5, .08), '#6a4a32', [.8, .25, -.3]),
+    P(new THREE.BoxGeometry(.08, 2.8, .08), '#d8dde0', [1.6, 1.4, .2]), P(new THREE.BoxGeometry(.7, .7, .06), '#ffd23f', [1.6, 2.6, .2])]);
+  W.busStops = [];
+  slots.filter(s => s.mover && /^bus/.test(s.id) && s.road).forEach((sl, n) => {
+    const rt = sl.mover.r, hw = sl.road.w / 2 || 3.2;
+    for (const s of [6, rt.len - 6]) {
+      const [x, z, yaw] = pointAt(rt, s), side = sl.cc === 'vn' ? 1 : -1, rx = -Math.cos(yaw) * side, rz = Math.sin(yaw) * side, off = hw + 2.6, sx = x + rx * off, sz = z + rz * off;
+      if (W.busStops.some(b => Math.hypot(b.x - sx, b.z - sz) < 8) || !free(sx, sz, 1.4)) continue;
+      const m = new THREE.Mesh(stopGeo, toonVC()); m.position.set(sx, ground(sx, sz), sz); m.rotation.y = Math.atan2(-rx, -rz); m.castShadow = true; scene.add(m);
+      W.colliders.push({ x: sx, z: sz, r: .45 });
+      const pic = sprite('🚌', .55), clock = sprite('⏰', .45); pic.position.set(sx, ground(sx, sz) + 3.1, sz); clock.position.set(sx, ground(sx, sz) + 2.55, sz); scene.add(pic, clock);
+      const stop = { x: sx, z: sz, cc: sl.cc, fare: FARE[sl.id] }; W.busStops.push(stop);
+      G.interactables.push({ id: 'busstop_' + W.busStops.length, x: sx, z: sz, r: 2.6, icon: '🚏', bubble: '🚌', label: () => T('Bus stop', 'Trạm xe buýt'),
+        act: () => { SFX.tap(); dialog(T('Bus stop', 'Trạm xe buýt'), [['🚌 ⏰ The bus comes along this road every few minutes and waits here at the stop. When it stops, tap the bus to get on.', '🚌 ⏰ Xe buýt chạy trên đường này vài phút một chuyến và dừng chờ ở trạm. Khi xe dừng, chạm vào xe để lên.'],
+          [`🪙 The fare is ${stop.fare} coins. Little ones ride free!`, `🪙 Giá vé ${stop.fare} đồng. Các bé nhỏ đi miễn phí!`]]); } });
+    }
+  });
 
   // ---------- moving ----------
   const AHEAD = 5;

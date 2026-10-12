@@ -20,7 +20,7 @@ import { farm, saveFarm } from './state.js';
 import { PERSONAS } from './chat.js';
 import { AUSSIE_SLANG, VN_WORDS, VN_SLANG, REGION_NAME } from './words.js';
 import { dist2, pick } from './util.js';
-import { buyFood } from './snacks.js';
+import { buyFood, greetLine } from './snacks.js';
 
 // ---------- small builders ----------
 function signMesh(text, bg = '#c0392b', fg = '#fff8e0', w = 4, h = .9, font = 'Fredoka') {
@@ -312,7 +312,7 @@ export function createRegions(G) {
   // villagers you can chat with
   for (const v of VENDORS) PERSONAS[v.id] = {
     emoji: v.food[0], name: v.name, age: ['old enough to know the best food in town', 'đủ lớn để biết món nào ngon nhất'],
-    about: [v.greet[0], v.greet[1]], likes: [`Making ${v.food[1]} for hungry kids!`, `Làm ${v.food[2]} cho các bạn nhỏ đói bụng!`], mood: v.region === 'au' ? ["Good as gold, mate!", 'Khỏe re, bạn ơi!'] : v.region === 'trung' ? ['Khỏe lắm, cảm ơn mi!', 'Khỏe lắm, cảm ơn mi!'] : v.region === 'nam' ? ['Khỏe re nè!', 'Khỏe re nè con!'] : ['Bà khỏe, cảm ơn cháu!', 'Bà khỏe, cảm ơn cháu!'],
+    about: [v.greet[0], v.greet[1]], likes: [`Making ${v.food[1]} for hungry kids!`, `Làm ${v.food[2]} cho các bạn nhỏ đói bụng!`], mood: v.region === 'au' ? ["Good as gold, mate!", 'Khỏe re, bạn ơi!'] : v.region === 'trung' ? ['Very well, thank you!', 'Khỏe lắm, cảm ơn mi!'] : v.region === 'nam' ? ['Great, thanks!', 'Khỏe re nè con!'] : ['I am very well, thank you, dear!', 'Bà khỏe, cảm ơn cháu!'],
     role: v.role, region: v.region
   };
 }
@@ -320,7 +320,7 @@ export function createRegions(G) {
 // ---------- talking to a vendor: buy something, or learn a word from their home ----------
 async function vendorTalk(G, h, v) {
   const p = h.profile;
-  const k = await dialog(v.name, [v.greet], [[`${v.food[0]} Buy ${v.food[1]} (${G.fmt(v.food[3])})`, `${v.food[0]} Mua ${v.food[2]} (${G.fmt(v.food[3])})`], ['🗣️ Teach me a word!', '🗣️ Dạy con một từ!'], ['👋 Bye', '👋 Tạm biệt']]);
+  const k = await dialog(v.name, [greetLine(h, v)], [[`${v.food[0]} Buy ${v.food[1]} (${G.fmt(v.food[3])})`, `${v.food[0]} Mua ${v.food[2]} (${G.fmt(v.food[3])})`], ['🗣️ Teach me a word!', '🗣️ Dạy con một từ!'], ['👋 Bye', '👋 Tạm biệt']]);
   if (k === 0) {
     await buyFood(G, h, v, ["Here, this one's on me!", 'Thôi, lần này cho con đó!']);
   }

@@ -7,16 +7,37 @@ import { dialog, reward } from './popups.js';
 import { farm, saveFarm } from './state.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
+import { fmt } from './money.js';
 
 export const snackOf = id => VENDORS.find(v => v.id === id);
+
+// (Round U, owner 11 Oct: "sellers remember you") a seller the child has bought from before says hello by name on the
+// screen and remembers what they had; the spoken words have no name (HANDOFF rule 11: names are never recorded)
+export function greetLine(h, v) {
+  const p = h.profile, n = (p.regulars || {})[v.id] || 0;
+  if (!n || !p.name) return v.greet;
+  return [`Hello again, ${p.name}! Would you like ${v.food[1]} again, like last time?`, `Con lại đến rồi, ${p.name}! Lại ${v.food[2]} như lần trước không con?`,
+    `Hello again! Would you like ${v.food[1]} again, like last time?`, `Con lại đến rồi! Lại ${v.food[2]} như lần trước không con?`];
+}
+// (Round U, owner 11 Oct: price pictures and change) what the child hands over for a price (in xu): the next 5 or 10
+// up, if the purse has it; the seller counts the change on from the price, one coin at a time, out loud
+export const paidFor = (price, purse) => { const up = price <= 5 ? 5 : Math.ceil(price / 10) * 10; return purse >= up ? up : price; };
+export function changeLine(price, paid) {
+  const ch = paid - price; if (ch <= 0) return null;
+  const steps = []; for (let i = 1; i <= ch; i++) steps.push(fmt(price + i));
+  return [`That is ${fmt(price)}. You gave me ${fmt(paid)}. Let's count your change: ${steps.join(', ')}. Your change is ${fmt(ch)}!`,
+    `Giá là ${fmt(price)}. Con đưa ${fmt(paid)}. Mình đếm tiền thối nhé: ${steps.join(', ')}. Tiền thối của con là ${fmt(ch)}!`];
+}
 
 // pay (or get it as a gift when the purse is empty), put it in the bag, then ask: eat now or keep it?
 export async function buyFood(G, h, v, gift = ['Here, this one is a gift!', 'Thôi, cái này tặng con đó!']) {
   const p = h.profile, price = v.food[3];
-  if (farm.coins >= price) { farm.coins -= price; saveFarm(); } else say(gift[0], gift[1]);
+  let change = null;
+  if (farm.coins >= price) { change = changeLine(price, paidFor(price, farm.coins)); farm.coins -= price; saveFarm(); } else say(gift[0], gift[1]);
   SFX.chime();
-  p.bought = p.bought || {}; p.bought[v.id] = (p.bought[v.id] || 0) + 1; G.save();
-  const k = await dialog(v.name, [[`Here you are: ${v.food[1]}! I put it in your bag.`, `Của con đây: ${v.food[2]}! Bỏ vào túi cho con rồi nhé.`]],
+  p.bought = p.bought || {}; p.bought[v.id] = (p.bought[v.id] || 0) + 1;
+  p.regulars = p.regulars || {}; p.regulars[v.id] = (p.regulars[v.id] || 0) + 1; G.save();
+  const k = await dialog(v.name, [...(change ? [change] : []), [`Here you are: ${v.food[1]}! I put it in your bag.`, `Của con đây: ${v.food[2]}! Bỏ vào túi cho con rồi nhé.`]],
     [['😋 Eat it now', '😋 Ăn liền'], ['🎒 Keep it in my bag', '🎒 Để dành trong túi']]);
   if (k === 0) return eatSnack(G, h, v.id);
   G.toast && G.toast(h, `🎒 +1 ${v.food[0]} ${T(v.food[1], v.food[2])}`);

@@ -2,7 +2,7 @@ import { launch, open } from '../../tests/harness.mjs';
 import fs from 'fs';
 const out = process.argv[2]; fs.mkdirSync(out, { recursive: true });
 const b = await launch(); const { page } = await open(b, { w: 1000, h: 700, fast: false });
-const places = ['aussie', 'bacninh', 'village', 'town', 'china', 'india', 'market', 'hanoi'];
+const places = process.argv[3] ? process.argv[3].split(',') : ['aussie', 'bacninh', 'village', 'town', 'china', 'india', 'market', 'hanoi'];
 for (const id of places) {
   const url = await page.evaluate(async id => {
     const THREE = (await import('/js/gfx.js')).THREE; const { PLACES, anchorOf } = await import('/js/content/map.js');

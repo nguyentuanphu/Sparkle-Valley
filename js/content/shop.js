@@ -116,4 +116,8 @@ export function wear(p, slot, id) {
   p.look[slot] = id; return true;
 }
 // what js/avatar.js draws for a look: the item for each slot, or null
+// (Round U, owner 11 Oct: "clothes should be as per gender, not unisex") a child's set: the one chosen when the character
+// was made (look.set), or read from the starting outfit; the shop shows that set and the things for both first
+export const setOf = look => (look && (look.set || outfitOf(look))) || (look && look.style === 'dress' ? 'girl' : 'boy');
+export const forSet = (it, set) => !it || it.for === 'both' || it.for === (set === 'girl' ? 'g' : 'b');
 export const wearing = look => Object.fromEntries(SLOTS.map(s => [s.id, itemIn(s.id, look && look[s.id])]));

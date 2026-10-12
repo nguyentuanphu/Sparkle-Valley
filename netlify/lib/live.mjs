@@ -9,6 +9,8 @@ export function cleanLive(b) {
     if (!ID.test(id) || !r || typeof r !== 'object') continue;
     const x = {}; if (typeof r.on === 'boolean') x.on = r.on; if (DATE.test(r.start || '')) x.start = r.start; if (DATE.test(r.since || '')) x.since = r.since;
     const d = int(r.days, 3650), n = int(r.newDays, 365); if (d) x.days = d; if (n) x.newDays = n;
+    // (owner, 12 Oct) only on these devices (the game's player ids, as in the players report), e.g. the auto play check
+    if (Array.isArray(r.devices)) { const dv = [...new Set(r.devices.filter(v => typeof v === 'string' && /^[a-z0-9]{12}$/.test(v)))].slice(0, 50); if (dv.length) x.devices = dv; }
     if (Object.keys(x).length) out.releases[id] = x;
   }
   for (const [id, f] of Object.entries((b && b.festivals) || {})) {
