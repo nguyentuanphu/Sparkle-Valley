@@ -19,6 +19,7 @@ Plan first; nothing is built before the owner's "go". Rules first where a hard r
 | 9 | Friends tab | closes by itself when a friend accepts or a game invite is accepted; "Retry game" works; "Bạn bè của con" folds | `js/main.js` (drawOnlinePanel), `js/netgames.js` | `netgames`, `meet` |
 | 10 | Shop | a Shop tab right after Backpack in the Pad; no Shop button in the dock | `js/ui.js`, `js/hud.js` | `shop`, `contract` (re-recorded: owner asked) |
 | 11 | Backpack | every item says what it is and what it is for (hover and tap); food asks "Eat it?"; coins, Sparkle Orbs and Leafies in one tidy row of cards; the section-button row back (built) | `js/ui.js`, `css/style.css` | `chips`, `hscroll`, `bagitems` (new) |
+| 11b | Family missions in the quest bar (owner, 13 Oct) | a family mission the family has started shows in the quest bar like a quest (its picture and words, both languages), with the next step; done in Grown-ups as now | `js/parents.js`, `js/hud.js`, `js/main.js` | `familymissions` (a started mission shows in the quest bar) |
 
 ## Release 2 (r71): the Simple screen, clothes, games with friends
 | # | What | How | Files | Check |
