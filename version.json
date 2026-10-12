@@ -1,7 +1,7 @@
 {
  "studio": "r63",
- "sha256": "4eceb9725ad4402d394b88c63f749330edf07b222726164004aa1b881118a72e",
- "size": 86406144,
- "notes": "Updates itself; real photos publish without 504",
- "built": "2026-10-12T00:26:30.749Z"
+ "sha256": "536aa8ef9952d74b22e65f9174830cd5327ece30fcc52ec3241e57c32f44f81d",
+ "size": 86414336,
+ "notes": "Gets the newest game by itself; same-version fixes update too; photos publish without 504",
+ "built": "2026-10-12T00:45:49.430Z"
 }
