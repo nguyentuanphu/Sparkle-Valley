@@ -2925,6 +2925,28 @@ await check('wearbag', async () => {
   return `bought clothes wait in the Backpack (tap to wear, tap to take off); the shop shows a girl's set first${r.noShop ? ' (shop off here)' : ', the rest behind More'}`;
 });
 
+await check('talk', async () => {
+  // (Round U, owner 11 Oct: "all NPCs should be able to talk and should throw facts or slangs") every person standing in
+  // the valley has a tap within reach; the villagers without words of their own tell a fact or a saying of their
+  // region, in the chosen language
+  const out = [];
+  for (const lang of ['en', 'vi']) {
+    const P = await open(b, { w: 800, h: 600, lang }); await clear(P.page); await P.page.waitForTimeout(1200);
+    const r = await P.page.evaluate(async lang => {
+      const G = __sv, me = new Set(G.heroes.map(h => h.av && h.av.root)), people = [];
+      G.scene.traverse(o => { if (o.userData.avatar && !me.has(o) && o.parent === G.scene) people.push(o); });
+      const silent = people.filter(o => !G.interactables.some(i => Number.isFinite(i.x) && Math.hypot(i.x - o.position.x, i.z - o.position.z) < 3)).map(o => [Math.round(o.position.x), Math.round(o.position.z)]);
+      const v = G.interactables.find(i => /^villager_/.test(i.id)); let said = '';
+      if (v) { v.act(G.heroes[0], G); await new Promise(r => setTimeout(r, 600)); said = (document.querySelector('.dialog .dtext') || {}).textContent || ''; document.querySelectorAll('.dialog').forEach(d => d.remove()); G.paused = false; }
+      return { people: people.length, silent, villagers: G.interactables.filter(i => /^villager_/.test(i.id)).length, said };
+    }, lang);
+    if (r.silent.length || !r.villagers || r.said.length < 15 || (lang === 'en' && /[ăâđêơư]/i.test(r.said))) out.push(lang + ' ' + JSON.stringify(r));
+    const errs = P.errors; await P.ctx.close(); if (errs.length) out.push(errs.join(' '));
+  }
+  ok(!out.length, out.join(' | '));
+  return 'every person in the valley answers a tap; the villagers without their own words tell a fact or a saying of their region, in English or Vietnamese';
+});
+
 await check('bilingual', async () => {
   // (Round U, owner 11 Oct: Grandma Huệ spoke Vietnamese with English set) no English slot of an [English, Vietnamese]
   // pair (an array, T(…, …) or { en, vi }) holds a Vietnamese sentence; names, songs and sayings that stay Vietnamese

@@ -1710,6 +1710,8 @@ resize();
 import('./scrollhelp.js').then(m => m.installScrollHelp());
 // (Round U) picture signposts at every junction (js/signposts.js), once the places are all known
 import('./signposts.js').then(m => m.createSignposts(G));
+// (Round U) every villager answers a tap with a fact or a saying of their region (js/villagertalk.js)
+import('./villagertalk.js').then(m => m.createVillagerTalk(G));
 // (Round U) a tap on a coin, orb or Leafy chip (top bar, Backpack) says what it is (js/chipinfo.js, loaded on the first tap)
 document.addEventListener('click', e => { const c = e.target.closest && e.target.closest('[data-chip]'); if (c) import('./chipinfo.js').then(m => m.showChip(c.dataset.chip, c)); });
 import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });
