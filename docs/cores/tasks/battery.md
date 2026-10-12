@@ -82,3 +82,7 @@ the statistics recorded and sent only with Analytics on), then `perf`, `playhub`
   measured: each person's triangles are exactly as on `main` (merging joins pieces, adds none), so `main` reaches the same
   at that moment; the limit was not raised. Screenshots looked at: Grown-ups Graphics (Fast, Auto, Pretty, Pretty+, 44 px)
   on phone (vi), tablet and computer; people near and at 30 m before and after (the same).
+- **12 Oct, 7:35 pm AEDT: after merging `main` (r66) and switching to Studio's `power` names (code at 6cf48f3).** Branch
+  checks, all pass: `battery`, `report`, `unit`, `perf` (home 523 draws, village 356, 784k triangles), `studio`,
+  `contract`, `rules` (111), `playhub`, `phone`, `noemoji`. Not run here: `startup` and the full suite (the Release's one
+  combined run, owner). No new spoken lines. Ready for Release.
