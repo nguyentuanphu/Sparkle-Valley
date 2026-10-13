@@ -62,7 +62,7 @@ Then the plan (files, checks, later), the owner's "go", build, checks and the fu
 ## Progress notes
 - **14 Oct, 2:56 am AEDT, branch `core/rollout`, commit 4e99279e (code), checks:**
   - `node suite.mjs --changed` picked all 137 checks (js/main.js and js/custom.js load everywhere). It stopped at its
-    2-hour limit during the last reruns: 128 passed, 3 skipped as online (multiplayer, netgames, meet, knock, together,
+    2-hour limit during the last reruns: 128 passed (7 of them skipped as online: multiplayer, netgames, meet, knock, together,
     cloud, mapver: no local PeerJS or MQTT server).
   - Failed in the suite, then fixed: `kidplay`, `boxes`, `surprises` (they expected Off to take a feature from a child who
     had just used it, against the owner's 8 Oct rule; they now check Off for a child who never used it, `rollout` checks

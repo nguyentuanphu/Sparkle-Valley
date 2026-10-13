@@ -42,3 +42,56 @@ List them: every tale id in the tales content without a `FILMS[id]`. Order: Viet
    Film stills: `node tests/filmshots.mjs` for phone, tablet and computer; look at them.
 4. Commit and push the working branch; board line; English and Vietnamese for every line; no emoji in docs.
 5. When the owner wants a batch live: the full suite once (`node suite.mjs`), Netlify zip, report, one "yes, deploy" pop-up; bump the version.
+
+## Progress (Release chat, branch `claude/quirky-maxwell-4lm9tv`, started 13 Oct, 10:15 am AEDT)
+Owner's decision, 13 Oct about 10:20 am AEDT: **"build everything now"**: the three fixes and every missing film go in
+**one batch**, built on top of r70 (this branch started from `claude/great-faraday-weuhjv` at cc54c03f), released
+later with its own "yes, deploy". Record progress here as it goes.
+
+Measured before any change (new check `filmtails`, 13 Oct): film pages ran 2 to 13 s past their narration (58 problems
+in 9 films; e.g. Thánh Gióng p4: film 18.7 s, voice 5.6 s).
+
+Plan and state (update each step):
+1. [ ] Player: `S.say(t, en, vi)` narration lines inside a film (the film waits for the narrator; shown under the
+   page's words); the page ends only when the narrator is done; help taps carry on by themselves sooner.
+2. [ ] Films that do not start (causes found): the recorded-voice player (`playUrl` in `js/voice.js`) and the pack
+   fetch had no time limit, so a stalled clip on iPhone left the narration "speaking" for ever and the page never
+   turned; the film scripts loaded with no time limit before the first page. Fix: time limits on both, a cap on the
+   narration wait in `js/tales.js`, and each new film in its own small file (`js/content/films/<id>.js`, listed in
+   `js/content/talefilms.js`) so opening a story loads only its own film.
+3. [ ] Music bed: theme `story` in `js/audio.js` (quiet, slow), lowered while anyone speaks (`Music.under`), the
+   previous music back on close; follows the music switch and calm mode.
+4. [ ] Checks: `filmtails` (silent tail), `filmstart` (every film starts and plays to the end with no tap), `filmmusic`.
+5. [ ] Retime the 9 existing films (narration lines added where the action is long).
+6. [ ] 33 new films, Vietnamese first.
+7. [ ] Azure recording of the new lines; quick checks; film stills on phone, tablet, computer.
+
+**Progress note, 13 Oct, about 11:40 am AEDT** (commit after this note): steps 1 to 4 built (player, self-start fixes,
+music bed, checks; `films`, `tales`, `filmmusic` pass). New films drafted in `js/content/films/` (21 of 33):
+rongtien, caytre, tamcam, sodua, thachsanh, chucuoi, cockien, vusua, baluoiriu, quabau, thayboi, nhacmeo, ongtao, cachep, sontinh, rainbowserpent, emu, dotkangaroo, birdcolours, magicpudding, tiddalik. Still to write: the Chinese and Indian tales. Not yet done: recording the new lines (Azure), tuning
+each page with `FILMTAILS_EST=1 node run.mjs filmtails`, stills on phone, tablet, computer, retiming the 9 old films.
+Dev helpers (not checks): `tests/dbg-film.mjs <ids>` plays every page and prints script errors; `tests/dbg-durs.mjs <ids>`
+prints each page's recorded voice length.
+
+**Progress note, 13 Oct, about 12:50 pm AEDT:**
+- All 33 films are drafted (`js/content/films/<id>.js`, shared pieces in `js/content/films/kit.js`, listed in
+  `js/content/talefilms.js` and in `sw.js`). Each has narration lines (`S.say`) and one or two taps for the child.
+- Found and fixed while measuring: after a child's tap, `js/film.js` added the answer's length twice, so every tap page
+  stood still about 2 s after its answer (release now keeps the longer of the two).
+- The 9 older films got narrator lines where the film ran on in silence; the lantern chapters 2 and 3 no longer hold the
+  whole parade still at second 2 until the words end (the tap moved to the end of the scene).
+- Voice tools: `tools/voice-lines.mjs` reads `js/content/films/` and `S.say(...)` lines (download area: games, like the
+  other films). Azure recording of the new lines started (1124 files).
+- Next: when recording ends, `node run.mjs filmtails` with the real lengths, move line times where it reports a gap;
+  stills on phone, tablet, computer (`SHOT_ONE=1 SHOT_W=… SHOT_H=… node filmshots.mjs <folder> <ids>`); quick checks.
+
+**Checks, 13 Oct, about 3:40 pm AEDT** (commit after this note; quick checks only, owner: no full suite per batch):
+- `filmtails` pass: 230 film pages in 42 films (9 older + 33 new), no silence over 1.5 s before a line or after the
+  narrator, 3 s right after a tap, English and Vietnamese recordings.
+- `filmstart` pass: 42 films started and played all 232 pages to the end with no tap (computer, 6x speed); the first
+  page started by itself on a phone (42 of 42) and a tablet (42 of 42).
+- `filmmusic` pass; `films` pass; `tales` pass (38 tales, 259 pages); `voice` pass; `phone` pass.
+- `bilingual` FAIL, not from this batch: `js/games/tienlen.js:151` "Tiến Lên miền Bắc (cards)" and `js/main.js:539`
+  "▶ Play Tiến Lên miền Nam / miền Bắc" (r70, Round V #14, commit 006fce8b): written on the board for the r70 chat.
+- Voices: 1132 new recordings (Azure), 0 missing for the films.
+- Stills: computer (all pages of 4 films, 1280x800), and a sample on phone, tablet and computer (`tests/shots3.sh`).

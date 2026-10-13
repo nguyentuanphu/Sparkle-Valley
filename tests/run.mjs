@@ -1487,6 +1487,148 @@ await check('films', async () => {
   if (fails.length) throw new Error(JSON.stringify({ fails, films: r.films }));
   return (sampled('films') ? 'SAMPLE (a third of the films and guides, different each run; all when film files change): ' : '') + Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps at least twice in each story; the real game plays by itself (' + Object.entries(r.demo).map(([id, d]) => `${id}: ${d.moves} moves with the hand, the child's go`).join(', ') + ')';
 });
+await check('filmtails', async () => {
+  // (owner, 13 Oct: "the narration does not cover the whole scene") no film page goes on in silence after its narrator.
+  // Every page of every story film is built and its timeline worked out with the recorded voices (the pack's files are
+  // 32 kbit/s, so a file's size gives its length), in English and in Vietnamese, as the theatre plays it (js/tales.js,
+  // js/film.js): the page's words start .35 s in; a narration line (S.say) and the child's question (S.help) start at
+  // their time, or when the narrator is free; the film stands still while the child is asked (the check taps as soon
+  // as the question is said); the page is over .4 s after the film's last move. Silence before a line or at the end may
+  // be at most 1.5 s; right after the child's tap (the film's answer to it, with its chime) 3 s.
+  const P = await open(b, { w: 1000, h: 700, play: false });
+  const r = await P.page.evaluate(async ([est, only]) => {
+    const F = await import('/js/film.js'), C = await import('/js/content/films.js'), L = await import('/js/content/talefilms.js');
+    await import('/js/content/chapter2films.js'); await import('/js/content/chapter3films.js');
+    const { MORE_TALES } = await import('/js/talesdata.js'), { TALES } = await import('/js/learn.js'), { STORY_TALES } = await import('/js/content/chapters.js');
+    const { lineHash, packHash } = await import('/js/packhash.js'), { swapNames } = await import('/js/i18n.js');
+    const man = await (await fetch('/voices/manifest.json')).json();
+    const dur = async (lang, text) => {
+      // (the same file the game plays: js/voice.js packKey, the newer name first, then the older one)
+      text = swapNames(text, lang); let h = lineHash(lang, text); if (!man.lines[h]) h = packHash(lang, text); const slots = man.lines[h]; if (!slots) return null;
+      let best = null; for (const s of slots) { const res = await fetch(`/voices/${lang}/${s}/${h}.mp3`, { method: 'HEAD' }); const n = +res.headers.get('content-length'); if (n) best = best == null ? n / 4000 : Math.min(best, n / 4000); }
+      return best;
+    };
+    const stage = document.createElement('div'); stage.style.cssText = 'position:fixed;left:0;top:0;width:640px;height:360px'; document.body.appendChild(stage);
+    const out = { pages: [], missing: [] };
+    const ids = [...Object.keys(C.FILMS), ...Object.keys(L.TALE_FILMS)].filter(id => !only.length || only.includes(id));
+    for (const id of ids) {
+      const script = C.FILMS[id] || await L.taleFilm(id);
+      const tale = [...TALES, ...MORE_TALES].find(t => t.id === id) || STORY_TALES[id]; if (!tale) { out.missing.push(id + ': no words'); continue; }
+      if (tale.pages.length !== script.pages.length) out.missing.push(`${id}: ${script.pages.length} film pages for ${tale.pages.length} pages of words`);
+      const f = F.createFilm(stage, script, { name: 'Na', companion: 'firefly', look: {} });
+      for (let k = 0; k < script.pages.length; k++) {
+        f.page(k); const p = f.now, [, en, vi] = tale.pages[k] || [];
+        // the child's answers are part of the film too: each tap's answer is put into the timeline as the film does it
+        // (js/film.js release: what the tap starts begins at the help's time, and everything later waits dur seconds)
+        for (let n = 0; n < 9; n++) {
+          const h = p.ev.filter(e => e.help && !e.played).sort((x, y) => x.t - y.t)[0]; if (!h) break; h.played = true;
+          const n0 = p.ev.length, len0 = p.len; try { if (h.help.act) h.help.act(h.t); } catch (e) { out.missing.push(`${id} p${k + 1}: the tap's answer failed (${e.message})`); }
+          if (h.help.dur) { for (let i = 0; i < n0; i++) if (p.ev[i] !== h && p.ev[i].t > h.t) p.ev[i].t += h.help.dur; p.len = Math.max(p.len, len0 + h.help.dur); }
+        }
+        const lines = p.ev.filter(e => e.help || e.say).sort((x, y) => x.t - y.t).map(e => ({ t: e.t, help: !!e.help, en: (e.help || e.say).en, vi: (e.help || e.say).vi }));
+        const v = {};
+        for (const lang of ['en', 'vi']) {
+          v[lang] = await dur(lang, lang === 'en' ? en : vi); if (v[lang] == null) out.missing.push(`${id} p${k + 1} ${lang}: page words`);
+          // (FILMTAILS_EST=1, while writing a film: a line not recorded yet is guessed from its length)
+          for (const l of lines) { l[lang + 'd'] = await dur(lang, l[lang]); if (l[lang + 'd'] == null) { if (est) l[lang + 'd'] = .4 + l[lang].length * (lang === 'en' ? .055 : .068); else out.missing.push(`${id} p${k + 1} ${lang}: "${l[lang]}"`); } }
+        }
+        out.pages.push({ id, k: k + 1, len: p.len, lines, v });
+      }
+      f.close();
+    }
+    stage.remove();
+    return out;
+  }, [!!process.env.FILMTAILS_EST, (process.env.FILMTAILS_ONLY || '').split(',').filter(Boolean)]);
+  await P.ctx.close();
+  const bad = [], rows = [];
+  for (const p of r.pages) for (const lang of ['en', 'vi']) {
+    const V = p.v[lang]; if (V == null) continue;
+    let shift = 0, speechEnd = .35 + V, afterTap = false; const log = [`words ${V.toFixed(1)}`];
+    for (const l of p.lines) {
+      const reach = l.t + shift, gap = reach - speechEnd, allow = afterTap ? 3 : 1.5;
+      if (gap > allow) bad.push(`${p.id} p${p.k} ${lang}: ${gap.toFixed(1)} s of silence before "${l[lang].slice(0, 40)}"`);
+      const start = Math.max(reach, speechEnd), d = l[lang + 'd'] || 0; shift += start - reach; speechEnd = start + d;
+      if (l.help) { shift += d; afterTap = true; } else afterTap = false; // (the film waits while the question is asked; the tap comes as it ends)
+      log.push(`${l.help ? 'asks' : 'says'} at ${start.toFixed(1)} (${d.toFixed(1)})`);
+    }
+    const end = p.len + shift + .4, tail = end - speechEnd, allow = afterTap ? 3 : 1.5;
+    rows.push(`${p.id} p${p.k} ${lang}: ${log.join(', ')}; film ends ${end.toFixed(1)}, tail ${tail.toFixed(1)}`);
+    if (tail > allow) bad.push(`${p.id} p${p.k} ${lang}: ${tail.toFixed(1)} s of film after the narrator stops`);
+  }
+  if (process.env.FILMTAILS_LOG) console.log(rows.join('\n'));
+  const fails = [...new Set(bad)];
+  if (r.missing.length) fails.push('not recorded or not matching: ' + r.missing.join(', '));
+  if (fails.length) throw new Error(fails.length + ' problems: ' + fails.join('; '));
+  return `${r.pages.length} film pages in ${new Set(r.pages.map(p => p.id)).size} films: no silence over 1.5 s before a line or after the narrator (3 s right after the child's tap), English and Vietnamese recordings`;
+});
+await check('filmstart', async () => {
+  // (owner, 13 Oct: "some films do not start by themselves") every story film is opened as a child opens it and left
+  // alone: no tap at all. It must start (its first page plays), go through every page by itself (the child's questions
+  // carry on by themselves) and close at the end. Played 6 times faster on a computer screen (window.__svFilmRate); the
+  // first page is also started on a phone and a tablet screen.
+  const out = [];
+  const run = async (w, h, touch, full) => {
+    const P = await open(b, { w, h, touch, play: false, pre: () => { window.__svFilmRate = 6; } });
+    const r = await P.page.evaluate(async full => {
+      const F = await import('/js/film.js'), C = await import('/js/content/films.js'), L = await import('/js/content/talefilms.js');
+      await import('/js/content/chapter2films.js'); await import('/js/content/chapter3films.js');
+      const { MORE_TALES } = await import('/js/talesdata.js'), { TALES } = await import('/js/learn.js'), { STORY_TALES } = await import('/js/content/chapters.js');
+      const { openTheatre } = await import('/js/tales.js');
+      const sleep = ms => new Promise(r => setTimeout(r, ms)), res = { bad: [], films: 0, pages: 0 };
+      for (const id of [...Object.keys(C.FILMS), ...Object.keys(L.TALE_FILMS)]) {
+        const st = STORY_TALES[id], tale = [...TALES, ...MORE_TALES].find(t => t.id === id) || (st && { ...st, title: () => st.title[0], ctx: { name: 'Na', companion: 'firefly' } });
+        let closed = false; openTheatre(tale, { name: 'Na' }).then(() => { closed = true; });
+        let started = false; for (let i = 0; i < 80 && !started; i++) { await sleep(100); const f = F.filmNow(); started = !!(f && f.now && f.now.t > .3); }
+        if (!started) { res.bad.push(id + ': did not start by itself'); document.querySelector('.th-x') && document.querySelector('.th-x').click(); await sleep(300); continue; }
+        res.films++;
+        if (full) {
+          const seen = new Set(), n = tale.pages.length, t0 = Date.now();
+          while (!closed && Date.now() - t0 < 120000) { const on = [...document.querySelectorAll('.th-dots i')].findIndex(i => i.classList.contains('on')); if (on >= 0) seen.add(on); await sleep(100); }
+          if (!closed) res.bad.push(`${id}: stuck on page ${Math.max(...seen) + 1} of ${n}`);
+          else if (seen.size < n) res.bad.push(`${id}: pages seen ${[...seen].map(x => x + 1).join(',')} of ${n}`);
+          res.pages += seen.size;
+        } else { document.querySelector('.th-x').click(); await sleep(300); }
+        if (F.filmNow()) res.bad.push(id + ': not freed');
+      }
+      return res;
+    }, full);
+    if (P.errors.length) r.bad.push(...P.errors.slice(0, 3));
+    await P.ctx.close();
+    return r;
+  };
+  const comp = await run(1280, 800, false, true), phone = await run(390, 844, true, false), tab = await run(820, 1180, true, false);
+  const fails = [...comp.bad, ...phone.bad.map(x => 'phone: ' + x), ...tab.bad.map(x => 'tablet: ' + x)];
+  if (fails.length) throw new Error(fails.join('; '));
+  return `${comp.films} films started and played all ${comp.pages} pages to the end with no tap (computer, 6x speed); the first page started by itself on a phone (${phone.films}) and a tablet (${tab.films})`;
+});
+await check('filmmusic', async () => {
+  // (owner, 13 Oct: "soft background music during films") the story plays its quiet music bed, lowered while the
+  // narrator speaks; the music before comes back when the story closes; with the music switched off, none plays
+  const P = await open(b, { w: 1000, h: 700, play: false, settings: { music: true, voice: true } });
+  const r = await P.page.evaluate(async () => {
+    const { Music } = await import('/js/audio.js'), { MORE_TALES } = await import('/js/talesdata.js'), { openTheatre } = await import('/js/tales.js'), { settings } = await import('/js/state.js');
+    const sleep = ms => new Promise(r => setTimeout(r, ms)), o = {};
+    Music.play('village'); o.before = Music.key;
+    openTheatre(MORE_TALES.find(t => t.id === 'duahau'), { name: 'Na' });
+    await sleep(300); o.inFilm = Music.key; o.playing = !!Music.timer;
+    let low = false; for (let i = 0; i < 60 && !low; i++) { await sleep(100); low = Music.low; } o.lowWhileSpeaking = low;
+    document.querySelector('.th-pause').click(); await sleep(400); o.lowAfterPause = Music.low;
+    document.querySelector('.th-x').click(); await sleep(400); o.after = Music.key; o.lowAfter = Music.low;
+    settings.music = false; Music.stop();
+    openTheatre(MORE_TALES.find(t => t.id === 'duahau'), { name: 'Na' }); await sleep(300); o.offPlaying = !!Music.timer;
+    document.querySelector('.th-x').click(); await sleep(300);
+    return o;
+  });
+  await P.ctx.close();
+  const f = [];
+  if (r.inFilm !== 'story' || !r.playing) f.push('no music bed in the film: ' + JSON.stringify(r));
+  if (!r.lowWhileSpeaking) f.push('the music was not lowered while the narrator spoke');
+  if (r.lowAfterPause) f.push('the music stayed low after the narrator stopped');
+  if (r.after !== r.before || r.lowAfter) f.push(`the music before did not come back (${r.before} → ${r.after})`);
+  if (r.offPlaying) f.push('music played with the music switched off');
+  if (f.length) throw new Error(f.join('; '));
+  return 'the story bed plays under the film, lowered while the narrator speaks, the valley\'s music back after; none with the music off';
+});
 await check('halves', async () => {
   // (round R, owner) two players: a window opens in its own child's half and pauses only that child; the other keeps playing
   const out = [];
