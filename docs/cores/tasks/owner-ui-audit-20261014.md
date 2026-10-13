@@ -68,3 +68,25 @@ Adopt through the repo's existing CLAUDE.md / HANDOFF / rules / checks workflow 
 - Code and data use stable IDs rather than display names; old saves/ownership survive updates. Family private data remains separate from GitHub code; host changes require a backup/migration.
 - New features include cold/warm/offline/update behaviour, failure recovery, resource/performance budget, self-explanatory Studio controls and entry/exit paths.
 - Release requires meaningful checks of shared rules plus visual/device review. Keep a per-screen failure list, test current and previous-version clients, and do not relax thresholds just to pass.
+
+
+## Implementation sequence and ownership · 14 Oct, 9:03 am AEDT
+Owner approved writing the rules; this records the implementation plan, not a new deployment or an assertion that cores have started.
+Canonical rules now in docs/SO-TAY-THIET-KE.md (UX-001–UX-010), linked from CLAUDE.md and HANDOFF.md. The earlier proposed-rules list is superseded by that approved section.
+
+| Stage | Accountable core | Dependency and deliverable | Completion evidence |
+| --- | --- | --- | --- |
+| 0. Reproduce and organize | Release + relevant core | Establish current baseline; cluster all reports; inventory screen/route failures; assign one owner to each root cause. Preserve #139 review/check blockers. | Each issue has version, reproduction, owner, priority and current state; no duplicate implementations. |
+| 1. Reporting and owner controls | Play + Analytics & Infra; Studio owns controls | Automatic acknowledged report queue, optional export, full interface capture, single ladybird entry, per-device test/retention choices, compass hidden with explicit Studio switch, help and permissions. Use shared shells from stage 2 when available. | Online/offline/retry receipts; duplicate suppression; stopped/failed runs reported; selected-device keep/restore and permission/disable semantics demonstrated. |
+| 2. Startup and shared interface | Kid UI + Analytics & Infra; World supports loading | Lightweight Welcome/resource stages; safe updates; fixed panel shell and reserved footer; origin navigation; compact trays and confirmations. One designated editor per shared file. | Screen inventory and cold/warm/offline/update measurements; no overlap/panel movement across required viewports/keyboard modes. |
+| 3. Bag, clothing and Studio adoption | Kid UI + Play; Studio owns admin pages; Voice & Audio owns narration | Apply shared components to all Bag items, compact food/help, in-Pad shop and meaningful mirror, clothing collections, Studio collapses and combined Performance. | Every item class and screen inspected; purchases/looks/saves retained; collapse/save/permissions work with explained states in both languages. |
+| 4. Learning and films | Play + World + Voice & Audio | Separate content batch after reliability foundations; guided reading/Big Thinkers additions and distinct brighter film scenes. | Demonstrated age/skill progression, touch/voice interactions, original assets/content and measured phone performance. |
+| 5. Release candidate | Release | Collect only ready and verified branches; resolve shared-file conflicts; run full GitHub suite and prescribed local performance/screenshots; inspect real-device results. | Reviewable change/test/remaining-risk report and release bundle, then the owner's round-specific deploy approval. |
+
+Priority ordering: reliability/module failures and data/report integrity first; Stage 1 and 2 are the first repair batch, with stage 3 adopted against the shared shell. Content enhancements stay a later batch so a new game cannot delay or mask a startup/reporting fix.
+
+Coordination: GitHub board and task briefs hold shared status; this table assigns responsibility but does not send messages or start other chats. Each task uses Backlog -> Reproduced -> In progress -> Verified -> Ready for Release -> Released -> Retested. Release records branch/commit, tests and remaining defects; only one core owns a shared-file edit at a time.
+
+Family device linking remains its separate accepted work order (docs/cores/tasks/family-device-linking.md), outside the immediate UI repair batch: settle pairing approval/recovery/backup and data scope before implementation. Backpack help is incorporated in Stage 3 with its original brief preserved. Existing 3D world, reading trials and saved ownership remain the baseline.
+
+Estimate policy: report a reliable duration after Stage 0 establishes scope and blockers. Do not promise all fixes in one short session; full-suite duration is only validation time, not total development time.
