@@ -40,6 +40,12 @@ Also: any `bugfix/…` pull requests from the bug robot, and the Studio online f
   below, run `cd tests && node suite.mjs` once yourself as r71's full suite: it proves the layout and refreshes the map.
   Then write the real time into CLAUDE.md "Checks and the full suite" (it still says "about an hour") and
   `docs/cores/release.md` step 4, and replace item 2 below ("run --jobs 2") with what the run showed.
+- **Heavy-lane run, 44 min in (4:48 pm AEDT):** 57/135 done, load still about 14 on 4 processors: drawing the 3D valley
+  in software keeps every processor busy, so running side by side gains only about 1.5x (expect 100 to 110 min, not 60).
+  Red so far, all timeouts of the overload kind: `phone`, `autoplay`, `solid`, `voicearea` (they re-run alone at the end).
+  So: CLAUDE.md and `docs/cores/release.md` should say "about 1 hour 45 minutes" for the full suite, and the real speed-up
+  is `--changed` (a change runs 10 to 20 minutes of checks) and the full suite only once per release. A bigger machine or
+  the GitHub full suite (Round W idea 4, split over about 6 machines) would be the next step.
 - **Not yet tried:** `--changed` on a real edit. Try it: change one line inside a function in, say, `js/hud.js`, run
   `node suite.mjs --changed --list`, check the list is short and sensible, undo the edit.
 
