@@ -49,6 +49,17 @@ Also: any `bugfix/…` pull requests from the bug robot, and the Studio online f
 - **Not yet tried:** `--changed` on a real edit. Try it: change one line inside a function in, say, `js/hud.js`, run
   `node suite.mjs --changed --list`, check the list is short and sensible, undo the edit.
 
+## The GitHub full suite (built 13 Oct, 5:35 pm AEDT; first run on draft pull request #84)
+- `.github/workflows/full-suite.yml`: on every pull request into main: 8 GitHub machines (`node suite.mjs --shard k/8
+  --no-solo --jobs 1`), then `--collect`: one summary comment on the pull request, the "Full suite" mark, and the refreshed
+  code map as the artifact "check-map". The speed checks are not run there: run `node run.mjs perf startup battery` locally.
+- `.github/workflows/clash-watch.yml`: when main changes (and by hand from main): test-merges every branch with work not
+  on main, keeps one issue "Clash watch" up to date. It can only start once it is on main (with r71).
+- **Not trusted yet:** compare #84's summary check by check with the local suite of 13 Oct (results in
+  `docs/cores/release.md` notes, or run `node suite.mjs` locally); fix any check that differs; GitHub's machines were
+  about 2.4x slower to start the game on 10 Oct, so watch for timeouts. Then change the rules (brief
+  `docs/cores/tasks/github-suite.md`, "Then change the rules") and close #84 (r71's own pull request replaces it).
+
 ## Clashes found (13 Oct, 5:40 pm AEDT, a test of the clash watch onto main)
 - `core/play` clashes with main in `js/games/reading.js` (r70 changed the reading games' captions, `ctx.say`; core/play
   made them announce their instructions): keep both (captions first, then the spoken instructions).
