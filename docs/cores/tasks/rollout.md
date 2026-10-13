@@ -54,3 +54,24 @@ Then the plan (files, checks, later), the owner's "go", build, checks and the fu
   feature keeps it (FEATURES.md rule).
 - Dates: a Studio checklist for the owner (no built-in plan in `content/custom.json`); the owner types each start date and
   New days on the Releases page.
+- Plan approved ("go", 13 Oct AEDT) with the calendar additions (singers, hunt, big decorations, guides, villagers, the
+  money games one a week from 2 Jan) and testers seeing each batch 7 days early by themselves.
+- (14 Oct AEDT) Studio problems the owner saw on the iPhone (Releases page unreadable in dark mode, Analytics "504"): the
+  owner chose "you fix both", on a separate branch `fix/studio-dark-analytics`, not mixed with the rollout.
+
+## Progress notes
+- **14 Oct, 2:56 am AEDT, branch `core/rollout`, commit 4e99279e (code), checks:**
+  - `node suite.mjs --changed` picked all 137 checks (js/main.js and js/custom.js load everywhere). It stopped at its
+    2-hour limit during the last reruns: 128 passed, 3 skipped as online (multiplayer, netgames, meet, knock, together,
+    cloud, mapver: no local PeerJS or MQTT server).
+  - Failed in the suite, then fixed: `kidplay`, `boxes`, `surprises` (they expected Off to take a feature from a child who
+    had just used it, against the owner's 8 Oct rule; they now check Off for a child who never used it, `rollout` checks
+    the keeping); `rollout` (the New! card came after 10 s under load: now waits up to 40 s); `voicecover` (6 new label
+    lines recorded with Azure).
+  - Failed in the suite only under load, pass alone: `phone`, `nametags`, `micoff`, `testerreport`, `saves`, `offline`,
+    `voicearea`. `voicecover`: its coverage part passes; its "You rolled 47" playback part failed twice in a row and then
+    passed; by hand it plays from 3 parts on this branch and on main (timing in the check, worth watching).
+  - `startup`: over its limit, as on main (Release's board line).
+  - Passed alone after the fixes: kidplay, boxes, surprises, rollout, phone, nametags, micoff, testerreport, saves,
+    offline, voicearea, voicecover. Screenshots looked at: boot at 390 (phone), 1024 (tablet), 1280 (computer).
+  - New spoken lines: "The living valley", "Money games", "Coin or Note?" (en and vi), recorded with Azure.
