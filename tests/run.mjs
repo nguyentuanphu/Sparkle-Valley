@@ -1956,6 +1956,7 @@ await check('kidplay', async () => {
     out.skip = !!document.querySelector('.theatre .th-skip'); document.querySelector('.th-skip')?.click(); await w(600); out.skipClosed = !document.querySelector('.theatre');
     // the switches
     C.features = C.features || {};
+    G.heroes.forEach(x => { delete x.profile.tried; });   // (batch rollout, owner 8 Oct rule: off keeps a feature for a child who used it; here the child never did, the check 'rollout' covers the keeping)
     for (const id of ['companionGrow', 'saveGoal', 'dailySurprise', 'shortTalk', 'simpleStart', 'yardHands', 'storyActions']) C.features[id] = false;
     h.profile.gift = null; await w(1200);
     out.offChips = chip('c-pet').hidden && chip('c-goal').hidden; out.offGift = !gift.visible(h); out.offLevel = G.kidplay.level(h);
@@ -2100,6 +2101,7 @@ await check('boxes', async () => {
     p.difficulty = 'easy'; await w(900); out.easyHidden = chip().parentNode.hidden && !G.boxes.can(h); p.difficulty = 'hard';
     p.age = 'little'; await w(900); out.littleHidden = chip().parentNode.hidden; p.age = 'big'; await w(900);
     // the switches
+    G.heroes.forEach(x => { delete x.profile.tried; });   // (batch rollout, owner 8 Oct rule: off keeps a feature for a child who used it; here the child never did, the check 'rollout' covers the keeping)
     C.features = C.features || {}; for (const id of ['mysteryBox', 'rankings', 'collectibles']) C.features[id] = false; await w(900);
     out.offHidden = chip().parentNode.hidden; G.boxes.openHub(0); await w(300); out.offHub = !document.querySelector('.modal.bxhub');
     for (const id of ['mysteryBox', 'rankings', 'collectibles']) delete C.features[id];
@@ -2214,6 +2216,7 @@ await check('surprises', async () => {
     // calm: one slow shooting star
     S.settings.calm = true; Sp.reset(); const cs = Sp.place('stars', h); out.calmStreaks = cs ? cs.streaks.length : -1; S.settings.calm = false;
     // the Studio switch
+    G.heroes.forEach(x => { delete x.profile.tried; });   // (batch rollout, owner 8 Oct rule: off keeps a feature for a child who used it; here the child never did, the check 'rollout' covers the keeping)
     C.features.surprises = false; await w(1500); out.off = !Sp.current();
     return out;
   });
@@ -3842,7 +3845,8 @@ await check('rollout', async () => {
   const Q = await open(b, { w: 1024, h: 700, pre });
   const n = await Q.page.evaluate(async () => {
     const G = __sv, C = await import('/js/custom.js'), wait = ms => new Promise(r => setTimeout(r, ms)); let card = '';
-    for (let k = 0; k < 40 && !card; k++) { await wait(250); const c = document.querySelector('.reward'); if (c && /New in the valley/.test(c.textContent)) card = c.textContent; }
+    for (let k = 0; k < 160 && !card; k++) { await wait(250); const c = document.querySelector('.reward');   // (up to 40 s: under a busy suite the card waits for other pop-ups)
+      if (c && /New in the valley/.test(c.textContent)) card = c.textContent; }
     const before = { wayfind: C.releaseOn('wayfind'), singers: C.releaseOn('singers'), jobs: C.releaseOn('jobs'), isNew: C.releaseNew('jobs'), keepWay: G.keep('wayfind') };
     C.setPeeks([], 7); const tester = { wayfind: C.releaseOn('wayfind'), singers: C.releaseOn('singers') }; C.setPeeks([]);
     return { card: card.slice(0, 160), before, tester, seen: !!(G.heroes[0].profile.seenNew || {}).jobs };
