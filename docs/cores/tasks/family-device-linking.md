@@ -1,6 +1,6 @@
 # Work order: family photos and connecting devices
 
-Status: requirements accepted by owner; proposed flow under discussion. No implementation or deployment approved.
+Status: included in the owner's combined round (14 Oct, 9:07 am AEDT). Detailed flow/recovery design remains to be settled before dependent implementation; no deployment approved. See docs/cores/tasks/owner-ui-audit-20261014.md for the combined scope and sequence.
 Owner request: 14 October 2026 AEDT, "Correct add this in as work order, lets discuss further on other bugs."
 Follow-up: how connecting/transferring to another device works and what appears in parents' settings.
 
@@ -58,3 +58,7 @@ Before implementation, inspect js/family.js (resolve actual client module), js/u
 - Exact labels, pairing-code lifetime and whether photos download automatically or after a parent taps Download.
 
 This is a work order only. The live r74 feature is unchanged.
+
+
+## Round integration · 14 Oct 2026 AEDT
+Included in this same round, not a later release. Bind photos to stable NPC IDs so renaming does not break them; a deleted/recreated NPC requires explicit rebinding. Private photo data does not belong in the public GitHub code repository. Include backup/export and host-migration handling; moving away from Netlify does not automatically transfer private Blobs to GitHub. Resolve all-old-devices-lost recovery before implementing that flow. Profile/progress sync is not implied by photo pairing.
