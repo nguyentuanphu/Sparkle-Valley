@@ -133,7 +133,10 @@ export function serpent(S, { n = 16, r = .22, colors = ['#4a9a3a', '#6ab84a'], h
   g.userData.head = hd;
   g.userData.tick = (dt, time) => {
     wob += dt;
-    const p = hd.position.clone(); if (!trail.length || p.distanceTo(trail[0]) > r * .5) trail.unshift(p);
+    // the path is filled in every r/2, so a big step (a slow phone, a jump in time) leaves no gaps in the body
+    const p = hd.position.clone(), step = r * .5;
+    if (!trail.length) trail.unshift(p);
+    else { const d = p.distanceTo(trail[0]); if (d > step) { const from = trail[0].clone(); for (let j = 1, n = Math.min(60, Math.floor(d / step)); j <= n; j++) trail.unshift(from.clone().lerp(p, j * step / d)); } }
     if (trail.length > n * 3) trail.length = n * 3;
     for (let i = 1; i < segs.length; i++) { const q = trail[Math.min(trail.length - 1, i * 2)] || p; segs[i].position.set(q.x + Math.sin(wob * 4 + i * .7) * waveAmp * r * .5, q.y, q.z); }
   };

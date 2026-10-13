@@ -6,7 +6,7 @@ import { L, Pp, LOOK, THREE, P, mesh, PI, H, serpent, slither, flat, hop, speak,
 const LAC = LOOK({ style: 'tunic', color: '#2f8ac8', hat: 'crown', hairStyle: 'short', skin: '#d8a070' });
 const AUCO = FAIRY('#ffd0e4');
 const KIDS = [['shirt', '#3b6fe0', 'short'], ['dress', '#ff7eb8', 'buns'], ['shirt', '#43c463', 'spiky'], ['dress', '#ffd23f', 'ponytail'], ['shirt', '#e8572a', 'short'], ['dress', '#9a6ad8', 'long']].map(([s, c, h]) => KID(s, c, h));
-const egg = () => mesh([P(new THREE.SphereGeometry(.22, 12, 10), '#fbf3e0', [0, .26, 0], [0, 0, 0], [1, 1.25, 1])]);
+const egg = () => mesh([P(new THREE.SphereGeometry(.14, 12, 10), '#fbf3e0', [0, .17, 0], [0, 0, 0], [1, 1.25, 1])]);
 const dragon = S => serpent(S, { n: 22, r: .4, colors: ['#2fb8a0', '#3cc8b0', '#ffd23f'], head: '#2fb8a0', horns: true, y: 1.2, waveAmp: .8 });
 
 export default { pages: [
