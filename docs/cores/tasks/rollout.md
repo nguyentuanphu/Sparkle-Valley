@@ -47,3 +47,10 @@ flies over, "What's new" card).
 
 Then the plan (files, checks, later), the owner's "go", build, checks and the full suite, progress notes, board
 "ready for Release", push `core/rollout`, report (files, checks, phone, tablet and computer screenshots, spoken lines).
+
+## Owner's decisions (13 Oct AEDT, rollout chat, branch `core/rollout`)
+- Cadence: one batch every Saturday (AEDT), each with a 7-day New badge.
+- Hold back what children can already see and bring it back as "New!" on its batch day; a child who has already used a
+  feature keeps it (FEATURES.md rule).
+- Dates: a Studio checklist for the owner (no built-in plan in `content/custom.json`); the owner types each start date and
+  New days on the Releases page.
