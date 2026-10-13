@@ -143,7 +143,8 @@ async function runAll(list, env) {
   const groups = shards(par, JOBS);
   console.log(`${list.length} checks: ${groups.map((g, i) => `group ${i + 1} ${g.list.length} (~${Math.round(g.t / 60)} min)`).join(', ')}${solo.length ? `, then alone: ${solo.join(', ')}` : ''}`);
   (await Promise.all(groups.map((g, i) => runOne(g.list, env, String(i + 1))))).forEach(m => m.forEach((v, k) => results.set(k, v)));
-  if (solo.length) (await runOne(solo, env, 'solo')).forEach((v, k) => results.set(k, v));
+  // (the speed checks measure the game: never with the code recording on, which slows it)
+  if (solo.length) { const { SV_COVER, ...plain } = env; (await runOne(solo, plain, 'solo')).forEach((v, k) => results.set(k, v)); }
   const crashed = [...results].filter(([, r]) => !r.ok && CRASH.test(r.note)).map(([k]) => k);
   if (crashed.length) { console.log(`once more, alone (their browser crashed): ${crashed.join(', ')}`); (await runOne(crashed, env, 'again')).forEach((v, k) => results.set(k, { ...v, again: true })); }
   return results;
@@ -189,7 +190,7 @@ for (const [n, r] of results) if (r.ok && r.secs) times[n] = r.secs;
 fs.writeFileSync(TIMES_F, JSON.stringify(Object.fromEntries(Object.entries(times).sort()), null, 0).replace(/,"/g, ',\n"') + '\n');
 const failed = [...results].filter(([, r]) => !r.ok), skipped = [...results].filter(([, r]) => r.ok && /^skipped/.test(r.note));
 if (mapping) {
-  const dirty = (tryGit('status', '--porcelain', '--', '../js') || '').trim();
+  const dirty = (tryGit('status', '--porcelain', '--', 'js') || '').trim();
   if (dirty) console.log('code map NOT saved: js/ has uncommitted changes (commit first, so the map matches a commit)');
   else { const m = buildMap(ALL); fs.writeFileSync(MAP_F, JSON.stringify(m)); console.log(`code map saved: tests/check-map.json (${Object.keys(m.files).length} files, ${m.nocover.length} checks without a game page, ${(fs.statSync(MAP_F).size / 1048576).toFixed(1)} MB)`); }
 }
