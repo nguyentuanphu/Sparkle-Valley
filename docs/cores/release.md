@@ -16,7 +16,10 @@ when the owner says so.
    and **AI review**; fix (or send back) every problem the AI review lists before merging; fix conflicts with the core's owner on the board.
 2. Bump r-number in `js/build.js`, `sw.js` VERSION and `studio/version.json`.
 3. Record new voices (`tools/make-voice-pack.mjs --engine azure`, see Voice & Audio).
-4. Run the **full suite** (`node run.mjs`, about an hour; one browser run at a time). Fix or send back every failure.
+4. Run the **full suite** once per release: `cd tests && node suite.mjs` (owner, 13 Oct: 3 checks at a time, the speed checks alone at the
+   end, crashed ones once more alone; about an hour; `--all` for no samples). Commit first; afterwards commit the refreshed
+   `tests/check-map.json` and `tests/check-times.json`. Fix or send back every failure. A branch that only adds films or fixes a
+   button gets `node suite.mjs --changed` in its own chat; the release still gets one full suite.
 5. Update `HANDOFF.md` (round history and checks table) and `docs/ARCHITECTURE.md` §9 if rules changed (`node tools/rules-from-doc.mjs`).
 6. Packages: the Netlify zip (`git archive --format=zip -o <dir>/sparkle-valley-netlify-rNN-game.zip HEAD index.html sw.js manifest.webmanifest netlify.toml css js fonts icons vendor videos content`). **No local bundle** (owner, 11 Oct: the offline files are on GitHub and the Google Drive mirror). The Studio exe when `studio/` changed (`bash studio/build-exe.sh`).
 7. Report to the owner: what changed (plain words), how it was tested, the Netlify zip, times in Sydney time (AEDT/AEST).
@@ -31,9 +34,10 @@ PROC-001…006 (read their wording in §9.1): plan first; nothing reaches main w
 round); the full suite green before a report; times in AEST; no keys or personal data in the repository.
 
 ## Checks you run
-All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
+All of them once per release (`node suite.mjs`), plus `node suite.mjs --changed` after every merge (it always includes `types unit arch rules`).
 
 ## Owner's decisions
+- 13 Oct AEDT: **faster checks** (pop-up answer: "Changed files checks, run 3 at once and smarter slow checks"; GitHub full suite later). A change (a film, a button) runs only its own checks (`node suite.mjs --changed`); the full suite runs once per release before "yes, deploy", 3 checks at a time (`node suite.mjs`); `reading`, `films` and `voicearea` test a sample unless their own files changed. The rule "never run two browser test runs at once" now means: never beside `suite.mjs`, which runs its own 3. Recorded in CLAUDE.md, README, tests/README.md, HANDOFF §2.
 - 12 Oct AEDT: Round U's voice harvest and Azure recording run in a separate chat (the owner's), not in the building chat; a new Release chat collects every branch marked "ready for Release", runs the full suite, reports and asks "yes, deploy".
 - **Bug robot (10 Oct AEST):** small bugs filed by the Front Desk are fixed and pushed by `.github/workflows/bug-fixer.yml`
   to `bugfix/<core>-<issue>` branches with draft pull requests, without asking; big bugs wait for the owner's "go". Release

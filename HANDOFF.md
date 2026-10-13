@@ -100,7 +100,7 @@ In each phase: run the suite before and after, take before/after screenshots fro
 
 ## 2. Testing
 
-`cd tests && npm install && node run.mjs [check …]`. Uses Chromium (`/opt/pw-browsers/chromium` in the cloud sandbox via `CHROMIUM=`). Screenshots go to `tests/out/` (not committed).
+**A change:** `cd tests && node suite.mjs --changed` (only the checks for what changed). **A release, before "yes, deploy":** `node suite.mjs` (the full suite, 3 at a time, about an hour; refreshes `tests/check-map.json` and `tests/check-times.json`). One check by hand: `node run.mjs <check …>` (owner, 13 Oct AEDT; rules in CLAUDE.md). Uses Chromium (`/opt/pw-browsers/chromium` in the cloud sandbox via `CHROMIUM=`). Screenshots go to `tests/out/` (not committed).
 
 | Check | What it proves |
 |---|---|
