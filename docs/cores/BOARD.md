@@ -9,7 +9,7 @@ Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
 ## Release
-- **Now:** **r69** ready, waiting for the owner's "yes, deploy" (Release): main r68 + `core/play` + `core/battery` + Release fixes; full suite 125/129 then `contract` and `testerrewards` green; red `startup` (as on main) and `hscroll` (Backpack row, owner: back next round); 7 online skipped · branch `claude/great-faraday-weuhjv` · 13 Oct, 6:30 am AEDT
+- **Now:** **r70** (Round V, the owner's iPhone notes, 14 items; `docs/cores/ROUND-V.md`) built and checked item by item, full suite running; then the report and "yes, deploy". Next: story films in batches of about six (no full suite per batch, owner), then the batch rollout (`docs/cores/tasks/rollout.md`) · branch `claude/great-faraday-weuhjv` · 13 Oct, 10:00 am AEDT
 - **Now:** **r68** (tester reports from `core/kid-ui`, on top of live r67) deployed by the Kid UI chat as temporary Release after the owner's "yes, deploy" (13 Oct, about 3:30 am AEDT); notes in `release.md`. Next for Release: `core/play`'s tester fixes, the battery round · 13 Oct AEDT
 - **Now:** **r67** (the rest of Round U + its voices) checked by the Round U voice chat as Release, this time only (owner, 12 Oct, about 9:25 pm AEDT): full suite as in `release.md` progress notes; merging into main by pull request · branch `claude/peaceful-hopper-un7oym` · 13 Oct AEDT
 - **Now:** **r67** (the rest of Round U + its voices) live on Netlify since 13 Oct, 12:29 am AEDT (pull request #70; Round U voice chat as Release, this time only; owner, 12 Oct, about 9:25 pm AEDT); full suite in `release.md` progress notes · branch `claude/peaceful-hopper-un7oym` · 13 Oct AEDT

@@ -41,6 +41,8 @@ The rules for helper chats are in `CLAUDE.md` (read automatically), so nothing e
 | [studio-r65.md](tasks/studio-r65.md) | Studio | A cleaner Analytics page, broken real photos, ads preview and guide |
 | [voice-daily.md](tasks/voice-daily.md) | Voice & Audio | A daily job that records every missing voice line |
 | [play-reading.md](tasks/play-reading.md) | Play (2nd chat, `core/play-reading`) | Ten reading games, a trial behind a switch |
+| [release-r70-finish.md](tasks/release-r70-finish.md) | Release | Finish r70: full suite, screenshots, zip, "yes, deploy" |
+| [films-batches.md](tasks/films-batches.md) | Release | Story films in batches of about 6, Vietnamese first; the owner's three film notes |
 
 **Without a brief**, paste this as the first message (change the core):
 

@@ -53,3 +53,22 @@ test('wearing: only what is owned, in its own slot, and the avatar reads it', ()
   const w = wearing(p.look); assert.equal(w.bottom.shape, 'pants'); assert.equal(w.top, null);
   assert.ok(wear(p, 'bottom', 'none')); assert.equal(wearing(p.look).bottom, null);
 });
+
+// (Round V, owner 13 Oct: "clothes can be gifted to the other sex or traded with the same sex")
+test('clothes in a trade: the same set both ways; the other set only as a gift of its own clothes', async () => {
+  const { clothesOk } = await import('../../js/content/shop.js');
+  const g = CLOTHES.find(it => it.for === 'g'), bo = CLOTHES.find(it => it.for === 'b'), both = CLOTHES.find(it => it.for === 'both');
+  assert.ok(g && bo, 'a girls\' and a boys\' piece exist');
+  // same set: trade either way, coins and things too
+  assert.ok(clothesOk({ clothes: [g.id] }, { items: { apple: 2 } }, 'girl', 'girl'));
+  assert.ok(clothesOk({ clothes: [g.id] }, { clothes: [g.id] }, 'girl', 'girl'));
+  assert.ok(!clothesOk({ items: { apple: 1 } }, { clothes: [bo.id] }, 'girl', 'girl'), 'asks only for clothes of the same set');
+  // the other set: a gift, of the friend's own clothes, nothing asked back
+  assert.ok(clothesOk({ clothes: [bo.id] }, {}, 'girl', 'boy'));
+  if (both) assert.ok(clothesOk({ clothes: [both.id] }, {}, 'girl', 'boy'));
+  assert.ok(!clothesOk({ clothes: [bo.id] }, { coins: 10 }, 'girl', 'boy'), 'no coins back for a gift');
+  assert.ok(!clothesOk({ clothes: [bo.id] }, { items: { apple: 1 } }, 'girl', 'boy'), 'nothing back for a gift');
+  assert.ok(!clothesOk({ clothes: [g.id] }, {}, 'girl', 'boy'), 'not a girls\' piece to a boy');
+  assert.ok(!clothesOk({ clothes: ['nope'] }, {}, 'girl', 'girl'), 'unknown clothes refused');
+  assert.ok(clothesOk({ items: { apple: 1 } }, { coins: 10 }, 'girl', 'boy'), 'no clothes: any trade as before');
+});

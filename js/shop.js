@@ -100,7 +100,7 @@ export function createShop(G, { say, save }) {
     const close = () => { m.close(); G.paused = false; };
     m.addEventListener('click', e => { if (e.target === m) close(); }); // (tap outside to leave)
     const draw = () => {
-      const mineSet = setOf(p.look), all = [...forSlot(tab), ...CLOTHES.filter(it => it.tester && it.slot === tab && owns(p, it.id))], list = all.filter(it => more || owns(p, it.id) || forSet(it, mineSet)), hidden = all.length - list.length;
+      const mineSet = setOf(p.look), all = [...forSlot(tab), ...CLOTHES.filter(it => it.tester && it.slot === tab && owns(p, it.id))], list = all.filter(it => owns(p, it.id) || forSet(it, mineSet)), hidden = 0;   // (Round V, owner 13 Oct) the shop sells the child's own set only; clothes of the other set come as a friend's gift
       card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
         <div class="khead"><span class="kbig">${pic('🛍️')}</span><h2>${T('Clothes shop', 'Cửa hàng quần áo')}</h2>${coins(farm.coins)}</div>
         <div class="ktabs">${SLOTS.map(s => `<button class="ktab ${s.id === tab ? 'on' : ''}" data-tab="${s.id}" aria-label="${T(s.en, s.vi)}">${pic(s.icon)}</button>`).join('')}

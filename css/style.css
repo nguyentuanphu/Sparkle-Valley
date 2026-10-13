@@ -2439,3 +2439,53 @@ button.chip { font: inherit; color: inherit; cursor: pointer; }
 .tc-badge.lb3.on { box-shadow: inset 0 0 0 3px #ffcf3a; } .tc-badge.lb4.on { box-shadow: inset 0 0 0 3px #a66bff; }
 .pname.starname::after { content: " ★"; color: #ffcf3a; }
 @media (prefers-reduced-motion: reduce) { .testertoast { transition: none; } }
+/* (Round V, owner 13 Oct) the quest folded to a small chip: its picture only; a tap opens it again */
+.quest.fold { max-width: none !important; gap: 0; }
+.quest.fold .q-text, .quest.fold .q-go { display: none !important; }
+.quest.fold .q-say { padding: 4px; min-width: 48px; min-height: 48px; }
+/* (Round V) a started family mission under the quest */
+.quest { flex-wrap: wrap; }
+.q-fam { flex-basis: 100%; display: flex; align-items: center; gap: 6px; min-height: 44px; border: 0; border-radius: 14px; padding: 4px 10px; background: #fff3d6; color: #5a3a1a; font: inherit; font-size: 13px; text-align: left; cursor: pointer; box-shadow: 0 2px 0 rgba(0,0,0,.12); }
+.q-fam .art { width: 26px; height: 26px; flex: none; }
+.q-fam[hidden], .quest.fold .q-fam { display: none !important; }
+/* (Round V, owner's iPhone notes 13 Oct) the game, its buttons and its screens fill the large screen height, so Safari's
+   bottom bar floats over the valley instead of a dark strip */
+@supports (height: 100lvh) { #stage, #huds, .screen { bottom: auto; height: 100lvh; } }
+/* (Round V, owner 13 Oct: the camera button's picture sat off centre) drawn like the compass, centred in its button */
+.zoomer .z-view .art, .zoomer .z-view .emo { width: 34px; height: 34px; font-size: 28px; margin: auto; display: block; transform: translateY(3px); }
+.hud.small .zoomer .z-view .art { width: 28px; height: 28px; }
+/* (Round V) My friends folds: the heading is the summary */
+details.ocard.friends > summary { list-style: none; cursor: pointer; display: flex; align-items: center; min-height: 44px; }
+details.ocard.friends > summary::-webkit-details-marker { display: none; }
+details.ocard.friends > summary h3 { margin: 0; flex: 1; }
+details.ocard.friends > summary::after { content: '▾'; font-size: 20px; color: #8a5cf6; transition: transform .2s; }
+details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); }
+/* (Round V, owner 13 Oct) the Backpack's coins, Sparkle Orbs and Leafies: one tidy row of three cards */
+.bag-top { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.bag-top .chip.bagc { height: auto; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 6px 4px; border-radius: 16px; }
+.bag-top .chip.bagc i { font-style: normal; font-size: 22px; line-height: 1; } .bag-top .chip.bagc i .art { width: 24px; height: 24px; }
+.bag-top .chip.bagc b { font-size: 18px; line-height: 1.2; }
+.bag-top .chip.bagc small { font-size: 12px; line-height: 1.1; text-align: center; color: #6a5a8a; }
+/* (Round V, owner 13 Oct) the Simple screen as one page: each section's title, then its own little road of pictures */
+.sp-sec { position: relative; margin: 6px 0 18px; }
+.sp-sectitle { position: relative; z-index: 2; display: flex; align-items: center; gap: 10px; margin: 0 12px 4px; padding: 8px 14px; border-radius: 20px; background: rgba(255, 255, 255, .92); box-shadow: 0 3px 0 rgba(90, 60, 130, .12); font-size: clamp(18px, 4.6vw, 24px); color: #4a2f7a; min-height: 56px; }
+.sp-sectitle .sp-hpic { width: 44px; height: 44px; flex: none; } .sp-sectitle .sp-hpic .art { width: 100%; height: 100%; }
+.sp-sectitle b { flex: 1; } .sp-sectitle .sp-count { font-size: 15px; display: inline-flex; align-items: center; gap: 4px; } .sp-sectitle .sp-count .art { width: 20px; height: 20px; }
+.sp-secroad { position: relative; }
+.sp-secroad .sp-road { position: absolute; left: 0; top: 0; pointer-events: none; }
+.sp-path.secwide { display: flex; align-items: flex-start; gap: 16px; }
+.sp-path.secwide .sp-sec { flex: none; margin: 0; }
+.sp-path.secwide .sp-sectitle { margin: 6px 8px 2px; min-height: 48px; padding: 4px 12px; white-space: nowrap; }
+/* (Round V) the Play together page */
+.playtogether .card { max-width: 720px; }
+.pt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.pt-g { border: 0; border-radius: 16px; background: #fff; box-shadow: 0 3px 0 rgba(90, 60, 130, .15); min-height: 96px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; color: #3a2a5a; cursor: pointer; }
+.pt-g .art { width: 40px; height: 40px; } .pt-g b { font-size: 13px; line-height: 1.15; text-align: center; } .pt-g small { font-size: 11px; color: #7a6a9a; }
+
+/* (Round V, owner 13 Oct) microphone test for grown-ups (js/mictest.js) */
+.mictest .mt-lines { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 6px; }
+.mictest .mt-lines li { background: rgba(0,0,0,.05); border-radius: 10px; padding: 8px 10px; overflow-wrap: anywhere; }
+.mictest .mt-lines small { opacity: .7; }
+.mictest .mt-bar { height: 14px; border-radius: 7px; background: rgba(0,0,0,.1); overflow: hidden; margin: 6px 0 10px; }
+.mictest .mt-bar i { display: block; height: 100%; width: 0; background: #3fae5a; transition: width .08s; }
+.mictest .btn { min-height: 44px; }

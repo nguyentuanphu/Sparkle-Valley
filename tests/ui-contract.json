@@ -9,6 +9,7 @@
   "chip.c-box",
   "q-say",
   "q-go",
+  "q-fam",
   "friendchip",
   "z-in",
   "z-out",
@@ -17,7 +18,6 @@
   "dk.games",
   "dk.map",
   "dk.bag",
-  "dk.shop",
   "dk.voicecmd",
   "dk.chat",
   "dk.call",
@@ -39,6 +39,7 @@
  "tabs": [
   "map",
   "bag",
+  "shop",
   "log",
   "album",
   "passport",
