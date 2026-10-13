@@ -536,7 +536,7 @@ G.townTalk = async (h, who) => {
   }
   if (who === 'tienlen') {
     const k = await dialog('Anh Ba', [['Hey! Con Vật and I are playing Tiến Lên, southern style. Sit down, I’ll deal you thirteen cards!', 'Ê em! Anh với Con Vật đang đánh Tiến Lên miền Nam nè. Ngồi xuống, anh chia cho em mười ba lá!']],
-      [['▶ Play Tiến Lên miền Nam', '▶ Chơi Tiến Lên miền Nam'], ['▶ Play Tiến Lên miền Bắc', '▶ Chơi Tiến Lên miền Bắc'], ['📺 How to play', '📺 Xem cách chơi'], ['👋 Later', '👋 Để sau']]);   // (Round V, owner 13 Oct: miền Bắc too)
+      [['▶ Play Tiến Lên (southern rules)', '▶ Chơi Tiến Lên miền Nam'], ['▶ Play Tiến Lên (northern rules)', '▶ Chơi Tiến Lên miền Bắc'], ['📺 How to play', '📺 Xem cách chơi'], ['👋 Later', '👋 Để sau']]);   // (Round V, owner 13 Oct: miền Bắc too)
     if (k === 0) playGame(h.i, 'tienlen', 'folk');
     if (k === 1) playGame(h.i, 'tienlenbac', 'folk');
     if (k === 2) { G.paused = true; openHowTo('tienlen', { onPlay: () => { G.paused = false; playGame(h.i, 'tienlen', 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }

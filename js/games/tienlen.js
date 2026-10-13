@@ -148,7 +148,7 @@ const TL = {
 };
 // (Round V) miền Nam keeps its rules; miền Bắc plays the same game with the northern rules switched on for its length
 register({ ...TL, run: async api => { setNorth(false); return TL.run(api); } });
-register({ ...TL, id: 'tienlenbac', name: () => T('Tiến Lên miền Bắc (cards)', 'Tiến Lên miền Bắc'), run: async api => { setNorth(true); try { return await TL.run(api); } finally { setNorth(false); } } });
+register({ ...TL, id: 'tienlenbac', name: () => T('Tiến Lên, northern rules (cards)', 'Tiến Lên miền Bắc'), run: async api => { setNorth(true); try { return await TL.run(api); } finally { setNorth(false); } } });
 
 // Tiến Lên with friends online (round G): 2 to 4 children, each on their own device (r63, owner: games with friends are
 // only between the players, so no computer players fill the table any more; with two, each gets 13 cards and the rest
