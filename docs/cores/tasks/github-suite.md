@@ -9,7 +9,7 @@ Plan first (CLAUDE.md helper rules): show the plan, wait for the owner's "go".
 ## Why
 The full suite on a chat's machine takes about 1 hour 45 minutes (4 processors, the 3D valley drawn without a graphics
 card; running checks side by side only gains about 1.5x and causes timeouts), the chat waits and uses Claude usage, and
-background jobs stop at 2 hours. On GitHub, split over about 6 machines, it should take about 25 to 30 minutes, free of
+background jobs stop at 2 hours. On GitHub, split over about 6 machines, it should take about 30 to 35 minutes, free of
 Claude usage, with the result on the pull request.
 
 ## What stays (today's method, `tests/suite.mjs`, rules in CLAUDE.md "Checks and the full suite")
@@ -37,10 +37,13 @@ that differs (fonts, browser version, timing); write down any that must stay loc
 
 ## Then change the rules
 CLAUDE.md "Checks and the full suite", `docs/cores/release.md` step 4, `tests/README.md`, HANDOFF §2: "the full suite runs
-on GitHub on the release pull request (about 25 to 30 minutes); the speed checks locally (`node run.mjs perf startup
+on GitHub on the release pull request (about 30 to 35 minutes); the speed checks locally (`node run.mjs perf startup
 battery`); `node suite.mjs` is the backup".
 
 ## Watch
-- Free minutes: about 2,000 a month if the repository is private; one full run over 6 machines is about 150 to 180
-  minutes, so about 10 releases a month. Run it only on pull requests into `main` and by hand, never on every push.
+- The machines: GitHub's own (GitHub Actions, as the bug robot and the quick checks already use), each about as fast as a
+  chat's machine (4 processors, no graphics card), fresh for every job. The saving comes from splitting the checks over 6 of
+  them (no overload), not from faster machines: realistically about 30 to 35 minutes with setup.
+- Cost: the repository is **public** (checked 13 Oct), so GitHub does not count the minutes: no monthly limit. Still run it
+  only on pull requests into `main` and by hand, not on every push.
 - Online checks stay skipped (no relay on GitHub either) unless a local PeerJS and MQTT server is started in the job.
