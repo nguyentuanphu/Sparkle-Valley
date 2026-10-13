@@ -282,6 +282,10 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
     devices to Studio. Studio's device rows now say "Home Screen app" or "in Safari", and Grown-ups shows this device's
     easy name and id to match.
 
+- (13 Oct AEDT, evening) The owner asked for better characters ("a full 3D character with expression"). A sketch was
+  made (`docs/characters/`); owner: **"Not now", save it for later**, with its two questions (who gets it; what goes on
+  a face with a photo) left open.
+
 ## Progress notes (12 Oct AEDT: Studio fixes and the auto play check)
 - Commits on `core/play`: f4dd7c6 (photos publish in steps), 0e7ddb1 (exe updates itself), c5846e3 (exe keeps its game
   folder new), e3171ac (auto play check), plus the two recorded words of the new Releases group ("For testing", Azure).

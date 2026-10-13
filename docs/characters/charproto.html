@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;background:#cfe9f7;font:700 22px Fredoka,system-ui,sans-serif;color:#3a2a55}
+.lab{position:absolute;top:14px;padding:6px 16px;border-radius:999px;background:#fff}
+.sub{position:absolute;bottom:14px;font-size:16px;font-weight:600;background:#ffffffcc;padding:4px 12px;border-radius:12px}
+canvas{display:block}
+</style></head><body>
+<script type="module">
+import { THREE, buildNew, buildAvatar } from './charproto-all.js' /* in docs/characters: copy this folder to tests/out to run it */;
+const q = new URLSearchParams(location.search), view = q.get('view') || 'line', W = 1600, H = 900;
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(W, H); r.setPixelRatio(1); r.outputColorSpace = THREE.SRGBColorSpace; document.body.appendChild(r.domElement);
+const s = new THREE.Scene(); s.background = new THREE.Color('#cfe9f7');
+s.add(new THREE.HemisphereLight('#ffffff', '#c9b9a0', 1.6)); const d = new THREE.DirectionalLight('#fff4e0', 2.2); d.position.set(2, 4, 5); s.add(d);
+const ground = new THREE.Mesh(new THREE.CircleGeometry(30, 48), new THREE.MeshLambertMaterial({ color: '#9fd38a' })); ground.rotation.x = -Math.PI / 2; s.add(ground);
+const girl = { skin: '#f6c7a5', hair: '#3b2618', color: '#ff7eb8', dress: true, hairStyle: 'pigtails', tie: '#ffd23f', lashes: true, shoe: '#ff5fa2', collar: '#ffffff' };
+const boy = { skin: '#e0aa80', hair: '#1d1412', color: '#3cc7e8', pants: '#3a4a7a', hairStyle: 'short', shoe: '#e8434a', pocket: '#ffd23f', cap: null };
+const add = (o, x, rot = 0, sc = 1) => { o.position.x = x; o.rotation.y = rot; o.scale.setScalar(sc); s.add(o); return o; };
+const label = (t, x, y = 14) => { const e = document.createElement('div'); e.className = 'lab'; e.textContent = t; e.style.left = x + 'px'; e.style.top = y + 'px'; document.body.appendChild(e); };
+const sub = (t, x) => { const e = document.createElement('div'); e.className = 'sub'; e.textContent = t; e.style.left = x + 'px'; document.body.appendChild(e); };
+const cam = new THREE.PerspectiveCamera(view === 'faces' ? 22 : 30, W / H, .1, 100);
+if (view === 'line') {
+  add(buildAvatar({ style: 'dress', color: '#ff7eb8', hat: 'bow', back: 'none', hair: '#3b2618', hairStyle: 'buns', skin: '#f6c7a5', glider: 0 }).root, -4.1, .25);
+  add(buildAvatar({ style: 'shirt', color: '#3cc7e8', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#e0aa80', glider: 0 }).root, -2.9, -.2);
+  add(buildNew(girl, 'smile', 'wave'), -1.1, .3); add(buildNew(boy, 'grin', 'cheer'), .2, -.15); add(buildNew(girl, 'wow', 'shy'), 1.5, .2); add(buildNew(boy, 'wink', 'walk'), 2.8, -.5);
+  cam.position.set(0, 1.15, 7.2); cam.lookAt(0, .85, 0);
+  label('Now', 190); label('New: rounder body, bending arms and legs, 3D eyes and expressions', 640);
+  sub('today: tube body, flat picture face', 90); [['waving, smiling', 600], ['cheering, laughing', 830], ['shy, surprised', 1070], ['walking, winking', 1290]].forEach(([t, x]) => sub(t, x));
+} else {
+  const moods = ['smile', 'grin', 'wow', 'wink', 'sleepy'];
+  add(buildAvatar({ style: 'shirt', color: '#3cc7e8', hat: 'none', back: 'none', hair: '#3b2618', hairStyle: 'buns', skin: '#f6c7a5', glider: 0 }).root, -2.6, 0, 1).position.y = 0;
+  moods.forEach((m, i) => add(buildNew(i % 2 ? boy : girl, m), -1.45 + i * .9, 0));
+  cam.position.set(0, 1.25, 8.6); cam.lookAt(0, 1.0, 0);
+  label('Now', 105); ['Smile', 'Laugh', 'Wow!', 'Wink', 'Sleepy'].forEach((t, i) => label(t, 375 + i * 232));
+}
+r.render(s, cam); window.done = true;
+</script></body></html>
