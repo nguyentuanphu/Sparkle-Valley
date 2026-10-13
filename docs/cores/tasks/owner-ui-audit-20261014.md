@@ -83,10 +83,29 @@ Canonical rules now in docs/SO-TAY-THIET-KE.md (UX-001–UX-010), linked from CL
 | 4. Learning and films | Play + World + Voice & Audio | Separate content batch after reliability foundations; guided reading/Big Thinkers additions and distinct brighter film scenes. | Demonstrated age/skill progression, touch/voice interactions, original assets/content and measured phone performance. |
 | 5. Release candidate | Release | Collect only ready and verified branches; resolve shared-file conflicts; run full GitHub suite and prescribed local performance/screenshots; inspect real-device results. | Reviewable change/test/remaining-risk report and release bundle, then the owner's round-specific deploy approval. |
 
-Priority ordering: reliability/module failures and data/report integrity first; Stage 1 and 2 are the first repair batch, with stage 3 adopted against the shared shell. Content enhancements stay a later batch so a new game cannot delay or mask a startup/reporting fix.
+Priority ordering: reliability/module failures and data/report integrity first; Stage 1 and 2 are the first repair batch, with stage 3 adopted against the shared shell. Content enhancements are later implementation checkpoints within the same round; they must not mask startup/reporting failures.
 
 Coordination: GitHub board and task briefs hold shared status; this table assigns responsibility but does not send messages or start other chats. Each task uses Backlog -> Reproduced -> In progress -> Verified -> Ready for Release -> Released -> Retested. Release records branch/commit, tests and remaining defects; only one core owns a shared-file edit at a time.
 
-Family device linking remains its separate accepted work order (docs/cores/tasks/family-device-linking.md), outside the immediate UI repair batch: settle pairing approval/recovery/backup and data scope before implementation. Backpack help is incorporated in Stage 3 with its original brief preserved. Existing 3D world, reading trials and saved ownership remain the baseline.
+Family device linking is included in this same round, using its dedicated brief (docs/cores/tasks/family-device-linking.md): settle pairing approval/recovery/backup and data scope before implementing dependent behaviour. Backpack help is incorporated in Stage 3 with its original brief preserved. Existing 3D world, reading trials and saved ownership remain the baseline.
 
 Estimate policy: report a reliable duration after Stage 0 establishes scope and blockers. Do not promise all fixes in one short session; full-suite duration is only validation time, not total development time.
+
+
+## Owner scope correction · 14 Oct, 9:07 am AEDT
+Owner: "Should include everything on this round." This supersedes earlier wording that separated family linking or deferred content to another round. One combined round covers every request in this discussion. Stages/batches are implementation and verification checkpoints, not separate release rounds. This scope decision is not the final deploy approval.
+
+Round scope:
+- Current collected bug/error queue, including startup/import errors, repeated reports and pending #139 subject to its review/check blockers.
+- Immediate Welcome and real resource progress; safe update notice and cache/version recovery.
+- Fixed panels across game and Studio; overlaps, keyboard/rotation/safe areas; Grown-ups centered Save.
+- All Bag items: consistent artwork size, picture/name/purpose/spoken help and compact food confirmation.
+- Clothing art consistency, requested collections/gifting, meaningful mirror and Shop/wardrobe within Pad.
+- Correct hub/NPC exit destinations; compact vertical camera tray; unified audio; compass hidden and explicitly controlled in Studio; hearts explanation.
+- All Studio category folds, immediately visible granular permissions, explanations for controls and combined startup/frame/battery view.
+- Unified ladybird/autoplay, automatic acknowledged reporting with complete interface capture, fast checks up to 5x, device selection and explicit per-device progress retention.
+- Family-specific private photo collections, self-service pairing, connected-device removal, stable NPC-ID binding through renames, backup/export and hosting migration. Photo connection does not silently add profile/progress sync. All-old-devices-lost recovery remains an open design decision to resolve before implementing that path.
+- Additional guided reading/touch/voice and Big Thinkers activities; brighter varied films; consistent icon labels, back/close states and queued hints.
+- Approved UX-001–UX-010 rules and verification coverage.
+
+Completion: maintain one scope checklist with evidence for each item; mark open design choices, blocked checks and unresolved defects explicitly. Do not call the round complete or silently omit items if any remain. Produce one consolidated release candidate, test report and review bundle before round-specific deploy approval. Scope is broad; estimate development time after reproduction and detailed content/transfer design, not from suite duration alone.
