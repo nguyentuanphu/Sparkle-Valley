@@ -49,6 +49,13 @@ Also: any `bugfix/…` pull requests from the bug robot, and the Studio online f
 - **Not yet tried:** `--changed` on a real edit. Try it: change one line inside a function in, say, `js/hud.js`, run
   `node suite.mjs --changed --list`, check the list is short and sensible, undo the edit.
 
+## Clashes found (13 Oct, 5:40 pm AEDT, a test of the clash watch onto main)
+- `core/play` clashes with main in `js/games/reading.js` (r70 changed the reading games' captions, `ctx.say`; core/play
+  made them announce their instructions): keep both (captions first, then the spoken instructions).
+- `claude/quirky-maxwell-4lm9tv` (films) clashes in `docs/cores/tasks/films-batches.md` (r70 changed the check commands
+  in it): keep the films chat's notes and the `node suite.mjs --changed` lines.
+- `core/play-studio` and `claude/great-faraday-weuhjv` merge cleanly.
+
 ## Must do in r71
 1. **Record 3 voice lines** (the `voicecover` check found them): "▶ Play Tiến Lên (southern rules)", "▶ Play Tiến Lên (northern
    rules)", "Tiến Lên, northern rules (cards)" (English; r70 gave the Tiến Lên variants English words). With `AZURE_SPEECH_KEY`:

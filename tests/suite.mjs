@@ -5,7 +5,8 @@
 //   node suite.mjs --changed           only the checks for what changed since main (a film, a button fix…)
 //   node suite.mjs --changed --list    show which checks it would run and why, without running them
 // Options: --base <git ref> (default origin/main), --jobs <n> (default 3), --all (no samples: every slow check in full),
-// --no-map (the full suite without recording code), --only a,b,c (just these checks, for timing the runner).
+// --no-map (the full suite without recording code), --only a,b,c (just these checks, for timing the runner);
+// on GitHub (.github/workflows/full-suite.yml): --shard k/n --no-solo on each machine, then --collect <dir>.
 // The slowest checks (reading, films, voicearea) try a sample that changes every run, and everything when their own
 // files changed since the base (run.mjs: SV_SAMPLE, SV_FULL, SV_SEED). The heavy checks share one lane; a check that
 // failed beside others runs once more alone, and the summary lists it as "passed only alone".
@@ -122,7 +123,7 @@ function slowFull(files) { return Object.keys(SLOW_OWN).filter(n => files.some(f
 function runOne(list, env, tag) {
   return new Promise(res => {
     const out = new Map(), log = fs.createWriteStream(path.join(HERE, `out/suite-${tag}.log`));
-    const p = spawn(process.execPath, ['run.mjs', ...list], { cwd: HERE, env: { CHROMIUM: '/opt/pw-browsers/chromium', SV_URL: GAME_URL, ...process.env, ...env } });
+    const p = spawn(process.execPath, ['run.mjs', ...list], { cwd: HERE, env: { ...(fs.existsSync('/opt/pw-browsers/chromium') ? { CHROMIUM: '/opt/pw-browsers/chromium' } : {}), SV_URL: GAME_URL, ...process.env, ...env } });
     let buf = '';
     const line = l => {
       log.write(l + '\n');
@@ -152,7 +153,7 @@ async function runAll(list, env) {
   // a check that failed beside others runs once more alone (nothing else running); the summary says which passed only alone,
   // so a real failure is never hidden: one that also fails alone stays FAILED
   const red = [...results].filter(([k, r]) => !r.ok && !SOLO.includes(k)).map(([k]) => k);
-  if (red.length && JOBS > 1) { console.log(`once more, alone: ${red.join(', ')}`); (await runOne(red, env, 'alone')).forEach((v, k) => results.set(k, { ...v, alone: true, first: results.get(k).note })); }
+  if (red.length && (JOBS > 1 || /^\d+\/\d+$/.test(opt('--shard', '')))) { console.log(`once more, alone: ${red.join(', ')}`); (await runOne(red, env, 'alone')).forEach((v, k) => results.set(k, { ...v, alone: true, first: results.get(k).note })); }
   return results;
 }
 function buildMap(names) {
@@ -171,6 +172,30 @@ function buildMap(names) {
 
 // ---------- main ----------
 fs.mkdirSync(path.join(HERE, 'out'), { recursive: true });
+// (GitHub full suite, docs/cores/tasks/github-suite.md) --collect <dir>: join the results of the GitHub machines (each one's
+// out/suite-result.json and out/cover/), write the summary (out/suite-summary.md), refresh the code map and the times
+if (flag('--collect')) {
+  const dir = path.resolve(opt('--collect', 'shards')), results = new Map();
+  fs.rmSync(path.join(HERE, 'out/cover'), { recursive: true, force: true }); fs.mkdirSync(path.join(HERE, 'out/cover'), { recursive: true });
+  for (const d of fs.existsSync(dir) ? fs.readdirSync(dir) : []) {
+    for (const [n, r] of Object.entries(readJSON(path.join(dir, d, 'suite-result.json'), {}))) results.set(n, r);
+    const cov = path.join(dir, d, 'cover'); if (fs.existsSync(cov)) for (const f of fs.readdirSync(cov)) fs.copyFileSync(path.join(cov, f), path.join(HERE, 'out/cover', f));
+  }
+  for (const n of ALL.filter(n => !SOLO.includes(n))) if (!results.has(n)) results.set(n, { ok: false, note: 'did not run (its machine stopped)' });
+  for (const [n, r] of results) if (r.ok && r.secs) times[n] = r.secs;
+  fs.writeFileSync(TIMES_F, JSON.stringify(Object.fromEntries(Object.entries(times).sort()), null, 0).replace(/,"/g, ',\n"') + '\n');
+  const m = buildMap(ALL); fs.writeFileSync(MAP_F, JSON.stringify(m));
+  const failed = [...results].filter(([, r]) => !r.ok), skipped = [...results].filter(([, r]) => r.ok && /^skipped/.test(r.note)), again = [...results].filter(([, r]) => r.ok && r.alone);
+  const md = [`## Full suite on GitHub: ${results.size - failed.length}/${results.size} passed`, '',
+    'The speed checks (`perf`, `startup`, `battery`) are not run here: the Release chat runs them on its own machine.', '',
+    ...(failed.length ? ['### Failed', ...failed.map(([n, r]) => `- **${n}**: ${String(r.note).slice(0, 400).replace(/\n/g, ' ')}`), ''] : []),
+    ...(again.length ? ['### Passed only on a second try', ...again.map(([n, r]) => `- ${n} (first: ${String(r.first).slice(0, 120)})`), ''] : []),
+    ...(skipped.length ? [`Skipped here: ${skipped.map(([n]) => n).join(', ')}`, ''] : []),
+    `Code map refreshed: ${Object.keys(m.files).length} files (the artifact "check-map" holds tests/check-map.json and tests/check-times.json for Release to commit).`];
+  fs.writeFileSync(path.join(HERE, 'out/suite-summary.md'), md.join('\n') + '\n');
+  console.log(md.join('\n'));
+  process.exit(failed.length ? 1 : 0);
+}
 const up = await fetch(GAME_URL).then(r => r.ok).catch(() => false);
 if (!up && !LIST) { console.log(`The game server is not answering at ${GAME_URL}: start it with "python3 -m http.server 8765" in the repo.`); process.exit(2); }
 let list = ALL, mapping = false;
@@ -186,7 +211,12 @@ if (CHANGED) {
   }
 } else if (opt('--only', '')) { list = opt('--only', '').split(',').filter(n => ALL.includes(n)); console.log(`only: ${list.join(', ')}`); }
 else mapping = !flag('--no-map');
-const full = flag('--all') ? Object.keys(SLOW_OWN) : slowFull(files), seed = Math.floor(Date.now() / 36e5);
+// --no-solo: leave out the speed checks (GitHub machines are shared: they measure speed badly)
+if (flag('--no-solo')) list = list.filter(n => !SOLO.includes(n));
+// --shard k/n: this machine's share of the checks (the n shares about the same length, longest first)
+const SHARD = /^(\d+)\/(\d+)$/.exec(opt('--shard', ''));
+if (SHARD) { const k = +SHARD[1], n = +SHARD[2], g = Array.from({ length: n }, () => ({ t: 0, list: [] })); for (const c of [...list].sort((a, b) => (times[b] || 60) - (times[a] || 60) || a.localeCompare(b))) { const s = g.reduce((m, x) => x.t < m.t ? x : m); s.list.push(c); s.t += times[c] || 60; } list = g[k - 1] ? g[k - 1].list : []; console.log(`share ${k} of ${n}: ${list.length} checks (~${Math.round((g[k - 1] || { t: 0 }).t / 60)} min): ${list.join(', ')}`); }
+const full = flag('--all') ? Object.keys(SLOW_OWN) : slowFull(files), seed = Number(process.env.SV_SEED) || Math.floor(Date.now() / 36e5);
 const sampledNow = list.filter(n => SLOW_OWN[n] && !full.includes(n));
 if (sampledNow.length) console.log(`samples this run (seed ${seed}): ${sampledNow.join(', ')}${full.length ? `; in full (their files changed): ${full.join(', ')}` : ''}`);
 if (LIST) process.exit(0);
@@ -195,16 +225,18 @@ const t0 = Date.now();
 const results = await runAll(list, { SV_SAMPLE: '1', SV_FULL: full.join(','), SV_SEED: String(seed), ...(mapping ? { SV_COVER: '1' } : {}) });
 for (const [n, r] of results) if (r.ok && r.secs) times[n] = r.secs;
 fs.writeFileSync(TIMES_F, JSON.stringify(Object.fromEntries(Object.entries(times).sort()), null, 0).replace(/,"/g, ',\n"') + '\n');
+fs.writeFileSync(path.join(HERE, 'out/suite-result.json'), JSON.stringify(Object.fromEntries(results)));
 const failed = [...results].filter(([, r]) => !r.ok), skipped = [...results].filter(([, r]) => r.ok && /^skipped/.test(r.note));
-if (mapping) {
+if (mapping && !SHARD) {
   const dirty = (tryGit('status', '--porcelain', '--', 'js') || '').trim();
   if (dirty) console.log('code map NOT saved: js/ has uncommitted changes (commit first, so the map matches a commit)');
   else { const m = buildMap(ALL); fs.writeFileSync(MAP_F, JSON.stringify(m)); console.log(`code map saved: tests/check-map.json (${Object.keys(m.files).length} files, ${m.nocover.length} checks without a game page, ${(fs.statSync(MAP_F).size / 1048576).toFixed(1)} MB)`); }
 }
-const summary = [`${results.size - failed.length}/${results.size} checks passed in ${Math.round((Date.now() - t0) / 60000)} min (${JOBS} at a time${CHANGED ? ', changed files only' : ''})`,
+const summary = [`${results.size - failed.length}/${results.size} checks passed in ${Math.round((Date.now() - t0) / 60000)} min (${JOBS} at a time${CHANGED ? ', changed files only' : ''}${SHARD ? `, share ${SHARD[1]}/${SHARD[2]}` : ''})`,
   ...(skipped.length ? [`skipped here: ${skipped.map(([n]) => n).join(', ')}`] : []),
   ...(() => { const a = [...results].filter(([, r]) => r.ok && r.alone); return a.length ? [`passed only alone (failed beside other checks, first: ${a.map(([n, r]) => `${n}: ${String(r.first).slice(0, 80)}`).join(' | ')})`] : []; })(),
   ...failed.map(([n, r]) => `FAILED ${n}: ${r.note.slice(0, 400)}`)];
 fs.writeFileSync(path.join(HERE, 'out/suite-result.txt'), summary.join('\n') + '\n');
 console.log('\n' + summary.join('\n'));
-process.exit(failed.length ? 1 : 0);
+// a shard always ends 0 so its results reach --collect, which decides pass or fail
+process.exit(failed.length && !SHARD ? 1 : 0);

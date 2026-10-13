@@ -1,0 +1,124 @@
+# The full suite on GitHub (owner, 13 Oct AEDT: "plan it on top of today's method"; brief docs/cores/tasks/github-suite.md).
+# On a pull request into main (and by hand): the checks are split over 8 of GitHub's machines (tests/suite.mjs --shard),
+# one at a time on each (no overload); a last job joins the results, writes one summary on the pull request, marks it
+# "Full suite", and keeps the refreshed code map (tests/check-map.json, tests/check-times.json) as an artifact for Release
+# to commit. The speed checks (perf, startup, battery) are not run here: GitHub's machines are shared, so the Release chat
+# runs them on its own machine. Free for a public repository. Uses no Claude usage.
+name: Full suite
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'Pull request number (empty: the branch you run it on)'
+        required: false
+concurrency:
+  group: full-suite-${{ github.event.pull_request.number || inputs.pr || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: write
+
+jobs:
+  which:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.pr.outputs.sha }}
+      pr: ${{ steps.pr.outputs.pr }}
+    steps:
+      - name: Find the code to check
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          N: ${{ github.event.pull_request.number || inputs.pr }}
+        run: |
+          if [ -n "$N" ]; then sha=$(gh pr view "$N" --json headRefOid -q .headRefOid); else sha=$GITHUB_SHA; fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"; echo "pr=$N" >> "$GITHUB_OUTPUT"
+          gh api "repos/$GH_REPO/statuses/$sha" -f state=pending -f context='Full suite' \
+            -f description='Running on 8 machines' -f target_url="$GITHUB_SERVER_URL/$GH_REPO/actions/runs/$GITHUB_RUN_ID" >/dev/null
+
+  share:
+    needs: which
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        k: [1, 2, 3, 4, 5, 6, 7, 8]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.which.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Get the checks ready (browser and test server)
+        run: |
+          # tests/package-lock.json points playwright at a folder on the Claude machines: install from package.json
+          cd tests && npm install --no-package-lock --no-save --no-audit --no-fund && npx playwright install --with-deps chromium
+          cd .. && (python3 -m http.server 8765 >/dev/null 2>&1 &)
+      - name: Run this machine's share
+        env:
+          SV_SEED: ${{ github.run_id }}
+        run: cd tests && SV_URL=http://localhost:8765/ node suite.mjs --shard ${{ matrix.k }}/8 --no-solo --jobs 1
+      - name: Keep the results
+        if: always()
+        run: mkdir -p share && cp tests/out/suite-result.json share/ 2>/dev/null; cp -r tests/out/cover share/ 2>/dev/null; cp tests/out/fail-*.png share/ 2>/dev/null; true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: share-${{ matrix.k }}
+          path: share
+          retention-days: 7
+
+  collect:
+    needs: [which, share]
+    if: always() && needs.which.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.which.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: share-*
+          path: tests/shards
+      - name: Join the results
+        id: join
+        run: cd tests && node suite.mjs --collect shards; s=$?; cat out/suite-summary.md >> "$GITHUB_STEP_SUMMARY"; exit $s
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: check-map
+          path: |
+            tests/check-map.json
+            tests/check-times.json
+          retention-days: 30
+      - name: Tell the pull request
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ needs.which.outputs.sha }}
+          PR: ${{ needs.which.outputs.pr }}
+          OUTCOME: ${{ steps.join.outcome }}
+        run: |
+          if [ "$OUTCOME" = success ]; then state=success; else state=failure; fi
+          head=$(head -1 tests/out/suite-summary.md 2>/dev/null | sed 's/^## //' | cut -c1-120)
+          gh api "repos/$GH_REPO/statuses/$SHA" -f state=$state -f context='Full suite' \
+            -f description="${head:-no result}" -f target_url="$GITHUB_SERVER_URL/$GH_REPO/actions/runs/$GITHUB_RUN_ID" >/dev/null
+          if [ -n "$PR" ] && [ -f tests/out/suite-summary.md ]; then
+            { cat tests/out/suite-summary.md; echo; echo "[The run]($GITHUB_SERVER_URL/$GH_REPO/actions/runs/$GITHUB_RUN_ID)"; } > body.md
+            gh pr comment "$PR" --body-file body.md
+          fi
