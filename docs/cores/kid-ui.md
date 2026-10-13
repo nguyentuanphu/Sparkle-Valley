@@ -93,6 +93,21 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
 
 - 12 Oct AEDT, evening: owner picked everything for tester reports (brief `docs/cores/tasks/tester-reports.md`): agreement screen, automatic reports with screenshot and 30-second replay, the ladybird bug icon (tap, long press, offline count, fixed tick, already-reported hint) instead of shake to report, nightly auto play, automatic retest, tester mark with the version, daily summary, and all eight rewards, with the Bug Hunter badge also worn on the explorer's shirt. Tester screens never name Studio, GitHub or Netlify. On tester devices that accepted, reports keep children's names, ages and progress with no grown-up gate (an exception to the PRIV rules for tester reports only, PRIV-016; voice lines still never say a name). Not built yet: plan and go first.
 - 12 Oct AEDT, evening: owner's "Go all 4 steps" for tester reports on `core/kid-ui` (this chat builds every part, across cores): the Studio "Testers" switch (every device or ticked ones, level: auto reports only, or with the ladybird; sneak peeks) and a Studio "Tester reports" page (problems with status, details, filters, testers list, daily summary). Badges are also seen by children on ordinary devices in online play (a tester's shirt badge travels with the explorer). In this chat: write all the code first, then one full suite, then push; deploying still needs the owner's "yes, deploy".
+- Festival decorations (owner, 13 Oct 2026 AEDT, built by the Kid UI chat in Play's festival files at the owner's choice):
+  - 5 times the decorations of r69 by default; each festival's amount is chosen in Studio's Festivals page (as now, 2x, 3x,
+    5x, 7x), live with no deploy.
+  - Three layers: pieces beside every street, strings of flags or lanterns across the streets, and a piece and a garland
+    at every house front in the festival's places; more kinds of piece per festival.
+  - The build-up: half in week 1, three quarters in week 2, everything in the last week and on the day.
+- Festival decorations spread over the whole valley (owner, 13 Oct AEDT: "scattered all over the place, not just more in
+  one place"; chose "the whole valley"): a festival's own places get the most, every other village and city gets the
+  amount of before, and pieces stand beside every road; when two festivals overlap, the one nearest its day spreads;
+  quiet days stay gentle in their own places.
+- Halloween decorations (owner, 13 Oct AEDT: "all types of decorations including skeletons, spider webs"): eight kinds,
+  all friendly (round faces, big eyes, smiles): pumpkins, a waving skeleton, a spider web with a little spider, a ghost, a
+  black cat, a cauldron of green bubbles, a scarecrow, a witch's hat; strings of bats across the streets.
+- Festival hunt (owner, 13 Oct AEDT): every festival, in its last week and on its day, hides 5 festival items among its
+  decorations; finding all 5 gives a keepsake for the child's house and a festival badge in the Passport.
 
 ## Progress notes
 - **11 Oct 2026, 11:40 am AEDT, `core/kid-ui`:** the robot's Kid UI fixes merged: #27 (`bugfix/kid-ui-27`, PR #40), #28 (#42), #31 (#44), #41 (#46), #30 (#48), #32 (#53), plus the films branch.
@@ -182,3 +197,17 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
   - Found in the screenshots: on a computer 760 px tall, r67's compass plus the ladybird made the zoom column reach the tester mark; on a phone held sideways the column already ran over the sound buttons and the map in r67 itself. Fixed in `css/style.css`: on a tester device the column sits a little lower, and on a screen under 480 px tall the zoom buttons are a block of three across between the sound row and Run (44 px each).
   - After the merge, run again and passed: unit, types, arch, rules, emoji, noemoji, preload, voicecover, boot, contract, wayfind, tester, testerreport, testerrewards, phone, iphone, and after the layout fix phone, iphone, wayfind, contract, tester, testerreport, a11y.
   - Screenshots looked at: the valley on phone, tablet, computer and a phone held sideways (with and without the ladybird), the agreement, the report panel, the Tester's Corner and the Settings rows. All tidy.
+- **13 Oct 2026, 5:45 pm AEDT, festival round on `core/kid-ui` (code commits `4003a198`, `03104a42`; today's `main` merged in as `d91cca45`; owner's go 13 Oct AEDT):**
+  - What changed:
+    - Decorations 5x by default, each festival's amount chosen in Studio's Festivals page (as before, 2x, 3x, 5x, 7x; `netlify/lib/live.mjs` keeps `deco`); pieces every 2 m beside the streets, strings across them (high, over the traffic), every house front, open ground; a city's streets round its square; more kinds of piece (four shared ones in each theme's colours); build-up half, three quarters, all (`js/festdecor.js`, `js/festivals.js`).
+    - The whole valley (owner: "scattered all over the place"): the festival nearest its day also dresses every other village and city (amount of before), beside every road (12 m apart at 5x) and every house outside the places.
+    - Drawn in 12 m patches, nearest first, within 60k triangles and 16 draw calls (PERF-003): Tết at 5x in Lotus Village measures about 750k triangles (Tết at the old amount was 923k, over the 800k budget, before this round); a normal day is lighter than before (village 360 draw calls, was 393).
+    - Halloween: eight friendly kinds (pumpkins, a waving skeleton, a spider web with a little spider, a ghost, a black cat, a cauldron, a scarecrow, a witch's hat).
+    - Festival hunt (`js/festhunt.js`, `js/content/festhunt.js`): 5 things in every festival's first place in its last week and on its day; the fifth gives a keepsake (`fh_<id>`, `js/myhouse.js`) and the Passport's festival badge (`js/passport.js`).
+    - New spoken lines: 27 pairs (the hunt lines and Passport hint), recorded with Azure (116 files, plus 6 after merging `main`).
+  - Full suite at `03104a42`, one check at a time: 126 of 129 passed (7 online skipped: multiplayer, netgames, together, meet, cloud, knock, mapver).
+    - `hscroll`: failed, and fails the same on r69 `a48217c9` itself (the Backpack's tab row on a computer); passes after merging today's `main`.
+    - `perf`: failed once on world build time (11.6 s) while two test browsers ran at once; passed alone after the merge (home 533 draws, village 360 draws / 737k triangles).
+    - `startup`: fails on r69 too, measured side by side today (valley ready 25.9 s on the branch, 25.3 s on r69).
+  - After merging today's `main`, run again and passed: hscroll, perf, festhunt (new), festivals, festcal, unit, types, arch, rules, emoji, noemoji, preload, voicecover, boot, contract, phone, shop, a11y, studio.
+  - Screenshots looked at, on phone, tablet and computer: Tết in Lotus Village (before and at 5x), Hà Nội, a remote road, Đà Nẵng, Halloween at Aussie Corner and Two Homes Street, a hidden red envelope, the Passport's festival badges.
