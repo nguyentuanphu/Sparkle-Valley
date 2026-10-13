@@ -143,7 +143,7 @@ Format for a request:
 
 ## Rollout (helper)
 - **Now:** **ready for Release**: batch rollout (brief `docs/cores/tasks/rollout.md`, calendar in `docs/cores/FEATURES.md`, owner's Studio checklist `docs/cores/tasks/rollout-checklist.md`): a Studio switch for each Round U feature, the festival hunt, big decorations and each money game (all start on), kept for a child who used it, testers 7 days early, new check `rollout`. Must be live before Sat 17 Oct AEDT; the owner sets the dates only after it is live. Checks in the brief's progress notes · branch `core/rollout` · 14 Oct, 3:00 am AEDT
-- **Now:** **ready for Release** (once its checks pass, see below): Studio fixes, no game change: `studio/ui/style.css` Releases page readable in dark mode on phones; `netlify/lib/players.mjs` the Analytics report no longer times out (504) · branch `fix/studio-dark-analytics` · 14 Oct AEDT
+- **Now:** **ready for Release**: Studio fixes (checks: `studio` passes, with a new dark-mode step that fails on main at contrast 1.1; screenshots at 390, 820, 1180 in dark mode looked at; commit 'studio check: the Releases page in dark mode'), no game change: `studio/ui/style.css` Releases page readable in dark mode on phones; `netlify/lib/players.mjs` the Analytics report no longer times out (504) · branch `fix/studio-dark-analytics` · 14 Oct AEDT
 - [ ] (Rollout → Studio, Analytics & Infra, owner 14 Oct AEDT "you fix both") the two fixes above were made in your files by the rollout chat on `fix/studio-dark-analytics`; please keep them · 14 Oct AEDT
 
 ## Analytics & Infra
