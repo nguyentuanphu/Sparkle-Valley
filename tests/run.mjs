@@ -4478,7 +4478,12 @@ await check('nostudio', async () => {
       document.querySelectorAll('.modal').forEach(e => e.remove());
       const G = window.__sv; if (G.parents && G.parents.grownupsHTML) { const d = document.createElement('div'); d.innerHTML = G.parents.grownupsHTML(true); look(lang + ' parents', d); }
       G.openPad(0, 'map'); await w(400);
-      for (const t of [...document.querySelectorAll('.pad-tabs [data-t]')].map(x => x.dataset.t)) { document.querySelector(`.pad-tabs [data-t="${t}"]`).click(); await w(250); const pad = document.querySelector('.pad, .sparkpad, .pad-body'); if (pad) look(lang + ' pad-' + t, pad.closest('.modal') || pad); }
+      // (Round V, owner 13 Oct) the Shop tab closes the Pad and opens the Shop: the Shop is looked at too, then the Pad reopens
+      for (const t of [...document.querySelectorAll('.pad-tabs [data-t]')].map(x => x.dataset.t)) {
+        if (!document.querySelector(`.pad-tabs [data-t="${t}"]`)) { document.querySelectorAll('.modal').forEach(e => e.remove()); G.openPad(0, 'map'); await w(400); }
+        document.querySelector(`.pad-tabs [data-t="${t}"]`).click(); await w(t === 'shop' ? 700 : 250);
+        const pad = document.querySelector('.pad, .sparkpad, .pad-body') || document.querySelector('.modal'); if (pad) look(lang + ' pad-' + t, pad.closest('.modal') || pad);
+      }
       document.querySelectorAll('.modal, .pad').forEach(e => e.remove()); window.__sv.paused = false;
     }
     return out;
