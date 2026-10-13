@@ -63,12 +63,13 @@ export async function clear(page) {
 }
 
 // ---- which game code a check ran (SV_COVER=1; tests/suite.mjs builds tests/check-map.json from it) ----
-// Every function of the game's own files (js/…) that ran at least once, as [start, end] character offsets. A window is
+// Every function of the game's own files (js/…) that ran at least once, as [start, end] character offsets ("did it run"
+// only: counting every call made checks 3 to 4 times slower). A window is
 // read just before it closes, whoever closes it (the check itself or run.mjs after the check).
-let covered = {};
+let covered = {}, seen = {};
 async function watchCoverage(ctx, page) {
   // function level only (detailed: false): the per-block kind made checks about 70 % slower
-  let cdp; try { cdp = await ctx.newCDPSession(page); await cdp.send('Profiler.enable'); await cdp.send('Profiler.startPreciseCoverage', { callCount: true, detailed: false }); } catch (e) { return; }
+  let cdp; try { cdp = await ctx.newCDPSession(page); await cdp.send('Profiler.enable'); await cdp.send('Profiler.startPreciseCoverage', { callCount: false, detailed: false }); } catch (e) { return; }
   const close = ctx.close.bind(ctx);
   ctx.close = async (...a) => { await readCoverage(cdp); return close(...a); };
 }
@@ -77,7 +78,12 @@ async function readCoverage(cdp) {
   for (const e of list) {
     const m = /^https?:\/\/[^/]+\/(js\/[^?#]+\.js)/.exec(e.url); if (!m) continue;
     const f = covered[m[1]] = covered[m[1]] || new Set();
-    for (const fn of e.functions) { const r = fn.ranges[0]; if (r && r.count > 0) f.add(r.startOffset + ':' + r.endOffset); }
+    const all = seen[m[1]] = seen[m[1]] || new Set();
+    for (const fn of e.functions) { const r = fn.ranges[0]; if (!r) continue; all.add(r.startOffset + ':' + r.endOffset); if (r.count > 0) f.add(r.startOffset + ':' + r.endOffset); }
   }
 }
-export function takeCoverage() { const out = {}; for (const [f, set] of Object.entries(covered)) out[f] = [...set].map(x => x.split(':').map(Number)); covered = {}; return out; }
+// { ran: { file: [[start, end], …] }, seen: { … every function the browser knew, run or not } }
+export function takeCoverage() {
+  const pack = o => Object.fromEntries(Object.entries(o).map(([f, set]) => [f, [...set].map(x => x.split(':').map(Number))]));
+  const out = { ran: pack(covered), seen: pack(seen) }; covered = {}; seen = {}; return out;
+}
