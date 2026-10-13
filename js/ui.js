@@ -33,6 +33,7 @@ import { extrasHTML, bindExtras, privacyHTML, netListHTML } from './extras.js';
 import { canListen } from './listen.js';
 import { installButton } from './install.js';
 import { BUILD } from './build.js';
+import { easyName } from './content/devname.js';
 import { VOICE_STYLES, clipCountFor, hush, setSpeaker, sayIn, sayDevice } from './voice.js';
 import { LEARN } from './words2.js';
 import { SONG_GROUPS, SONG_LIST, familySongs } from './content/songs.js';
@@ -249,6 +250,19 @@ function openCropper(title, done) {
   };
   ok.onclick = () => finish(true); m.querySelector('#cCancel').onclick = () => finish(false);
 }
+// (owner, 13 Oct AEDT) this device's id for the Analytics (js/players.js makes it), shown with its easy name so a grown-up
+// can find this device in Studio's lists (testers, auto play)
+const myDeviceId = () => { try { return localStorage.getItem('sv2_playerid') || ''; } catch (e) { return ''; } };
+// (owner, 13 Oct AEDT: "within each, all the categories should be collapsible") each heading inside a part opens and
+// closes what follows it, up to the next heading; the game remembers what was closed while it is open
+const closedFolds = new Set();
+export function foldHeadings(root, scope) {
+  [...root.querySelectorAll(':scope > h3, :scope > div > h3')].forEach(h => { if (h.closest('details.hfold')) return; const nodes = []; let n = h.nextSibling;
+    while (n && !(n.nodeType === 1 && (/^H[23]$/.test(n.tagName) || n.matches('details.gsec, details.hfold')))) { nodes.push(n); n = n.nextSibling; }
+    if (!nodes.length) return; const k = scope + ':' + h.textContent.trim().slice(0, 40), d = document.createElement('details'), sm = document.createElement('summary');
+    d.className = 'hfold'; d.open = !closedFolds.has(k); h.parentNode.insertBefore(d, h); sm.appendChild(h); d.appendChild(sm); nodes.forEach(x => d.appendChild(x));
+    d.addEventListener('toggle', () => { if (d.open) closedFolds.delete(k); else closedFolds.add(k); }); });
+}
 // a sticky row of shortcuts at the top of a long page: one chip per section heading, tap to jump there
 function jumpNav(root, after) {
   const hs = [...root.querySelectorAll(':scope > h3, :scope h3.jump')].filter(h => h.textContent.trim());
@@ -333,6 +347,10 @@ export function openGrownups(after) {
 <h3>👫 ${T('Two players on one device', 'Hai người chơi trên một máy')}</h3>
       <div class="seg tview">${[['auto', T('Automatic', 'Tự động')], ['face', T('Face to face', 'Đối diện nhau')], ['side', T('Side by side', 'Cạnh nhau')]].map(([k, l]) => `<button data-tv="${k}" class="${(settings.twoView || 'auto') === k ? 'on' : ''}">${l}</button>`).join('')}</div>
       <p class="note">${T('Face to face: lay the tablet flat with a child at each end; each half of the screen faces its child. Automatic uses face to face on touch screens and side by side on a computer.', 'Đối diện nhau: đặt máy tính bảng nằm trên bàn, mỗi bé ngồi một đầu; mỗi nửa màn hình quay về phía bé đó. Tự động: đối diện trên màn hình cảm ứng, cạnh nhau trên máy tính.')}</p>
+<h3>📱 ${T('Fit the screen', 'Vừa màn hình')}</h3>
+      <div class="seg sfit">${[['auto', T('Automatic', 'Tự động')], ['fill', T('Whole screen', 'Cả màn hình')], ['fit', T('Fit inside', 'Vừa bên trong')]].map(([k, l]) => `<button data-sf="${k}" class="${(settings.screenFit || 'auto') === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+      <p class="note">${T('If the buttons at the bottom are cut off or the top looks hazy, try the other choices. Automatic fits a Home Screen app inside the space it is given.', 'Nếu các nút ở dưới bị cắt hoặc phía trên bị mờ, hãy thử lựa chọn khác. Tự động cho ứng dụng ở Màn hình chính vừa với chỗ được cho.')}</p>
+      <p class="note sfacts">${(() => { const f = window.__sv && window.__sv.screenFacts ? window.__sv.screenFacts() : null; return f ? esc(`${f.app ? T('Home Screen app', 'Ứng dụng Màn hình chính') : T('Browser', 'Trình duyệt')} · ${T('height used', 'chiều cao dùng')} ${f.used} · ${T('window', 'cửa sổ')} ${f.inner} · ${T('visible', 'nhìn thấy')} ${f.visual} · ${T('large', 'lớn')} ${f.large} · ${T('screen', 'màn hình')} ${f.screen}`) : ''; })()}</p>
 <h3>🔠 ${T('Text size', 'Cỡ chữ')}</h3>
       <div class="seg tsize">${[[0, 'A'], [1, 'A'], [2, 'A']].map(([k, l]) => `<button data-ts="${k}" class="${(settings.textSize || 0) === k ? 'on' : ''}" style="font-size:${16 + k * 5}px" aria-label="${[T('Normal', 'Bình thường'), T('Big', 'To'), T('Bigger', 'To hơn')][k]}">${l}</button>`).join('')}</div>
       <div>
@@ -381,6 +399,7 @@ export function openGrownups(after) {
       </div></details>
       <details class="gsec" data-sec="data" ${gOpen.has('data') ? 'open' : ''}><summary><span class="gi">📊</span><b>${T('Analytics and backup', 'Phân tích và sao lưu')}</b></summary><div class="gbody">
       <div class="field"><label>📊 ${T('Analytics', 'Phân tích')}</label><div class="seg cnt"><button data-c="1" class="${settings.countPlayers !== false ? 'on' : ''}">${T('On', 'Bật')}</button><button data-c="0" class="${settings.countPlayers === false ? 'on' : ''}">${T('Off', 'Tắt')}</button></div></div>
+      <p class="note devid">📱 ${T('This device in Studio', 'Máy này trong Studio')}: <b>${esc(easyName(myDeviceId(), settings.lang))}</b> · ${esc(profiles.map(p => p.name).filter(Boolean).join(', ') || T('no players yet', 'chưa có người chơi'))} · <small>${esc(myDeviceId() || '–')}</small></p>
       <h3>☁️ ${T('Backup to Google Drive or iCloud', 'Sao lưu lên Google Drive hoặc iCloud')}</h3>
       <p class="note">${T('Progress saves automatically on this device. To keep a copy online, tap Save backup and choose Google Drive, or “Save to Files” → iCloud Drive on iPhone and iPad. To bring it back (or onto a new device), tap Open backup and pick the file from Drive or iCloud.', 'Tiến trình tự động lưu trên máy này. Để giữ một bản trên mạng, bấm Lưu bản sao rồi chọn Google Drive, hoặc “Lưu vào Tệp” → iCloud Drive trên iPhone và iPad. Để lấy lại (hoặc chuyển sang máy mới), bấm Mở bản sao và chọn tệp trong Drive hoặc iCloud.')}</p>
       <p class="note backup-when${backupAge() > 7 ? ' old' : ''}">${settings.lastBackup ? T('Last backup: ', 'Lần sao lưu gần nhất: ') + new Date(settings.lastBackup).toLocaleDateString(settings.lang === 'vi' ? 'vi-VN' : 'en-AU') + (backupAge() > 7 ? T(' (over a week ago)', ' (hơn một tuần trước)') : '') : T('No backup saved yet.', 'Chưa có bản sao lưu nào.')}</p>
@@ -399,6 +418,7 @@ export function openGrownups(after) {
     bindPackStatus(card, () => { const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelector('.x').onclick = card.querySelector('#gDone').onclick = () => { m.close(); after && after(); };
     jumpNav(card, card.querySelector('h2'));
+    card.querySelectorAll('.gbody').forEach(b => foldHeadings(b, 'grownups')); // (owner, 13 Oct) each category inside a part opens and closes
     card.querySelectorAll('.seg.cur button').forEach(b => b.onclick = () => { if (b.dataset.c === 'auto') settings.curPinned = false; else { settings.currency = b.dataset.c; settings.curPinned = true; } saveSettings(); draw(); });
     card.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const n = +b.dataset.add; if (window.__sv && window.__sv.addCoins) window.__sv.addCoins(n); else { farm.coins += n; saveFarm(); } SFX.coin ? SFX.coin() : SFX.chime(); card.querySelector('#gCoins').textContent = fmt(farm.coins); toast(T('Coins added: ', 'Đã thêm: ') + fmt(n)); });
     card.querySelectorAll('.seg.cam button').forEach(b => b.onclick = () => { settings.camMode = b.dataset.c; saveSettings(); draw(); });
@@ -442,6 +462,7 @@ export function openGrownups(after) {
     card.querySelector('#gRain').onchange = e => { settings.noRain = !e.target.checked; saveSettings(); };
     chk('#gCalm', 'calm', applyComfort);
     card.querySelector('#gCap').onchange = e => { settings.captions = e.target.checked; saveSettings(); };
+    card.querySelectorAll('.seg.sfit button').forEach(b => b.onclick = () => { settings.screenFit = b.dataset.sf; saveSettings(); SFX.tap(); dispatchEvent(new Event('resize')); const y = m.scrollTop; setTimeout(() => { draw(); m.scrollTop = y; }, 150); });
     card.querySelectorAll('.seg.tview button').forEach(b => b.onclick = () => { settings.twoView = b.dataset.tv; saveSettings(); dispatchEvent(new Event('resize')); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { settings.textSize = +b.dataset.ts; saveSettings(); applyComfort(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.rest button').forEach(b => b.onclick = () => { settings.restMins = b.dataset.r; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
@@ -703,6 +724,7 @@ export function openPad(game, i, tab) {
     card.querySelector('.x').onclick = close;
     const body = card.querySelector('.pad-body');
     ({ map: drawMap, bag: drawBag, log: drawLog, album: drawAlbum, games: drawGames, cam: drawCam, friend: drawFriend, passport: b => game.drawPassport(b, hero), cal: drawCal })[tab](body);
+    if (tab === 'bag' || tab === 'log' || tab === 'album') foldHeadings(body, tab); // (owner, 13 Oct) each part opens and closes
   };
   // computer keyboards: 1–8 pick a tab, ← → step through them, Esc closes
   const onKey = e => {

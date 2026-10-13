@@ -1051,37 +1051,69 @@ await check('mapnames', async () => {
 });
 
 await check('autoplay', async () => {
-  // (owner, 12 Oct AEDT) the auto play check: its window shows only where Studio's switch allows (every device or the
-  // ticked ones); it walks to things and opens them (games, a story, a place, a festival, a villager, songs), keeps the
-  // child's stamina full, writes a report, and afterwards puts the children's progress back as it was
+  // (owner, 12 Oct AEDT; rebuilt 13 Oct after the owner tried it) the auto play check: its button shows under the
+  // ladybird only where Studio's switch allows (every device or the ticked ones); it walks round water and walls, plays
+  // games with a finger to their end, reads a story, talks to a villager, opens songs; the child never tires; stopping
+  // never restarts the game, and on a device that is not a tester each run's progress goes back (rewards stay)
   const pre = rule => `try { localStorage.setItem('sv2_playerid', 'apcheck00001'); localStorage.setItem('sv2_live', JSON.stringify({ releases: { autoplay: ${JSON.stringify(rule)} }, festivals: {} })); } catch (e) { }`;
   for (const rule of [{ on: true, devices: ['zzzzzzzzzzzz'] }, { on: false }]) {
-    const Q = await open(b, { w: 1024, h: 768, pre: pre(rule) }); await Q.page.waitForTimeout(2000);
-    const shown = !!(await Q.page.$('.apbox')); await Q.ctx.close(); ok(!shown, 'the auto play window showed where it is not allowed: ' + JSON.stringify(rule));
+    const Q = await open(b, { w: 1024, h: 768, pre: pre(rule) }); await Q.page.waitForTimeout(2500);
+    const shown = !!(await Q.page.$('.apbox:not([hidden]), .z-ap')); await Q.ctx.close(); ok(!shown, 'auto play showed where it is not allowed: ' + JSON.stringify(rule));
   }
   const P = await open(b, { w: 1024, h: 768, pre: pre({ on: true, devices: ['apcheck00001'] }) });
-  await P.page.waitForSelector('.apbox', { timeout: 10000 });
+  await P.page.waitForSelector('.zoomer .z-ap', { timeout: 15000 });
+  const btn = await P.page.evaluate(() => { const b = document.querySelector('.zoomer .z-ap'), r = b.getBoundingClientRect(); return { w: r.width, h: r.height, pill: !!document.querySelector('.apbox .pill'), hidden: document.querySelector('.apbox').hidden }; });
+  ok(btn.w >= 44 && btn.h >= 44 && !btn.pill && btn.hidden, 'the button under the ladybird: ' + JSON.stringify(btn));
+  await P.page.click('.zoomer .z-ap'); ok(await P.page.evaluate(() => !document.querySelector('.apbox').hidden && !!document.querySelector('.apbox [data-a=start]')), 'the button did not open the window');
+  await P.page.evaluate(() => { window.__noRestart = 1; });
+  // walking: a spot 22 to 40 m away with water or a wall on the straight way is reached on foot
+  const walk = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], x0 = h.pos.x, z0 = h.pos.z; let tg = null;
+    for (let a = 0; a < 64 && !tg; a++) for (const d of [24, 30, 36]) { const x = x0 + Math.cos(a / 64 * 6.283) * d, z = z0 + Math.sin(a / 64 * 6.283) * d; if (!G.goodSpot(x, z)) continue; let blocked = false; for (let k = 1; k < 30; k++) if (!G.goodSpot(x0 + (x - x0) * k / 30, z0 + (z - z0) * k / 30)) { blocked = true; break; } if (blocked) { tg = { x, z }; break; } }
+    if (!tg) return { none: true };
+    const r = await G.autoplay.walkTo(tg.x, tg.z, 'watch');
+    return { left: Math.hypot(h.pos.x - tg.x, h.pos.z - tg.z), flew: r.trail.some(t => /^fly/.test(t)), problems: r.problems, trail: r.trail };
+  });
+  ok(walk.none || (walk.left < 4 && !walk.flew && !walk.problems.length), 'the walk round water or a wall: ' + JSON.stringify(walk));
   const mine = () => P.page.evaluate(() => { const p = JSON.parse(localStorage.getItem('sv2_profiles') || '[]'), f = JSON.parse(localStorage.getItem('sv2_farm') || '{}');
-    return JSON.stringify({ coins: f.coins, kids: p.map(x => ({ n: x.name, t: x.tales, w: x.wins, l: x.levels, s: x.stickers })) }); });
+    return JSON.stringify({ coins: f.coins, kids: p.map(x => ({ n: x.name, t: x.tales, w: x.wins, l: x.levels, q: x.quests })) }); });
+  await P.page.evaluate(() => __sv.save && __sv.save()); await P.page.waitForTimeout(300);
   const before = await mine();
-  const keys = await P.page.evaluate(async () => { const { GAMES } = await import('/js/games/frame.js'), G = __sv, npc = G.interactables.find(i => /^npc_/.test(i.id));
-    return [...Object.keys(GAMES).slice(0, 2).map(x => 'game:' + x), 'tale:' + G.TALES[0].id, 'place:farm', 'fest:midautumn', npc && 'tap:' + npc.id, 'songs'].filter(Boolean); });
+  const keys = await P.page.evaluate(async () => { const G = __sv, npc = G.interactables.find(i => /^npc_/.test(i.id));
+    return ['game:counting', 'game:oddone', 'tale:' + G.TALES[0].id, 'place:farm', 'fest:midautumn', npc && 'tap:' + npc.id, 'songs'].filter(Boolean); });
   await P.page.evaluate(k => { __sv.autoplay.start(k, 'fast'); }, keys);
   await P.page.waitForTimeout(1500);
-  const mid = await P.page.evaluate(() => { const h = __sv.heroes[0]; h.stamina = 0; return __sv.autoplay.running(); });
+  const mid = await P.page.evaluate(() => { const h = __sv.heroes[0]; h.stamina = 0; return { on: __sv.autoplay.running(), folded: document.querySelector('.apbox').hidden, busy: document.querySelector('.zoomer .z-ap').classList.contains('on') }; });
   await P.page.waitForTimeout(600);
-  const full = await P.page.evaluate(() => { const h = __sv.heroes[0]; return h.stamina >= h.staminaMax - .001; }).catch(() => true);
-  let rep = null; for (let i = 0; i < 240 && !rep; i++) { await P.page.waitForTimeout(500); rep = await P.page.evaluate(() => !localStorage.getItem('sv2_autoplay_backup') && document.readyState === 'complete' && window.__sv && document.querySelector('.screen.title, canvas') ? JSON.parse(localStorage.getItem('sv2_autoplay_report') || 'null') : null).catch(() => null); if (rep && rep.done.length < keys.length) rep = null; }
-  ok(mid && full, 'the check did not run, or the child got tired while it ran');
-  ok(rep && rep.done.length === keys.length, 'no full report: ' + JSON.stringify(rep && rep.done.map(r => r.key)));
-  const bad = rep.done.filter(r => r.problems.some(p => /did not open|did not close|^error/.test(p)));
+  const full = await P.page.evaluate(() => { const h = __sv.heroes[0]; return h.stamina >= h.staminaMax - .001; });
+  let fingerSeen = false; for (let i = 0; i < 480 && await P.page.evaluate(() => __sv.autoplay.running()); i++) { await P.page.waitForTimeout(500); if (!fingerSeen) fingerSeen = await P.page.evaluate(() => { const f = document.querySelector('.apfinger'); return !!f && !f.hidden; }); }
+  const end = await P.page.evaluate(() => ({ mark: window.__noRestart, rep: JSON.parse(localStorage.getItem('sv2_autoplay_report') || 'null'), win: !document.querySelector('.apbox').hidden, open: !!document.querySelector('.gl, .theatre') }));
+  ok(mid.on && mid.folded && mid.busy && full, 'the run did not start, fold its window, light its button, or keep the child going: ' + JSON.stringify(mid) + ' ' + full);
+  ok(end.mark === 1, 'the game restarted after the run');
+  ok(fingerSeen, 'no finger on the screen while it played');
+  const rep = end.rep; ok(rep && rep.done.length === keys.length && rep.sent, 'no full report: ' + JSON.stringify(rep && rep.done.map(r => r.key)));
+  const bad = rep.done.filter(r => r.problems.some(p => !/^slow:/.test(p)));
   ok(!bad.length, 'the check found: ' + JSON.stringify(bad.map(r => [r.key, r.problems])));
-  await P.page.waitForSelector('.screen.title', { timeout: 60000 }).catch(() => { });
-  ok(await mine() === before, "the children's progress was not put back: " + (await mine()) + ' vs ' + before);
-  ok(!!(await P.page.$('.apbox')), 'the window did not come back after the check');
+  const played = rep.done.filter(r => /^game:/.test(r.key)); ok(played.every(r => /(won|played): \d+ ✓, \d+ ✗, [1-9]/.test(r.said)), 'the games were not played: ' + JSON.stringify(played.map(r => [r.key, r.said])));
+  ok(end.win && !end.open, 'after the run the window shows the report and nothing is left open');
+  ok(await mine() === before, "this device is not a tester: the run's progress was not put back: " + (await mine()) + ' vs ' + before);
+  // stopping: at once, the game goes on (no restart)
+  await P.page.evaluate(() => { __sv.autoplay.start(['game:memory', 'game:sums', 'game:shapes'], 'watch'); });
+  await P.page.waitForTimeout(4000);
+  await P.page.evaluate(() => __sv.autoplay.stop());
+  let stopped = false; for (let i = 0; i < 40 && !stopped; i++) { await P.page.waitForTimeout(250); stopped = await P.page.evaluate(() => !__sv.autoplay.running()); }
+  const after = await P.page.evaluate(() => ({ mark: window.__noRestart, open: !!document.querySelector('.gl:not(.out)'), finger: !document.querySelector('.apfinger').hidden, paused: __sv.paused }));
+  ok(stopped && after.mark === 1 && !after.open && !after.finger && !after.paused, 'Stop: ' + JSON.stringify({ stopped, ...after }));
+  // putting progress back keeps the rewards (js/keepcopy.js): quests and wins go back, stickers and the badge stay
+  const kc = await P.page.evaluate(async () => { const K = await import('/js/keepcopy.js'), S = await import('/js/state.js'), p = S.profiles[0], same = p;
+    K.takeCopy('sv2_check_copy'); const q0 = JSON.stringify(p.quests), st0 = p.stickers.length;
+    p.quests.checkdone = true; p.wins.checkgame = 3; p.stickers.push('checksticker'); p.look.badge = 'b1'; S.farm.coins += 50; const c1 = S.farm.coins;
+    K.putCopyBack('sv2_check_copy', __sv);
+    return { quests: JSON.stringify(S.profiles[0].quests) === q0, wins: !S.profiles[0].wins.checkgame, sticker: S.profiles[0].stickers.length === st0 + 1, badge: S.profiles[0].look.badge === 'b1', coins: S.farm.coins === c1 - 50, same: S.profiles[0] === same, gone: !localStorage.getItem('sv2_check_copy') }; });
+  ok(Object.values(kc).every(Boolean), 'progress back, rewards kept: ' + JSON.stringify(kc));
   const errs = P.errors.filter(e => !/pageerror: .*(Load failed|aborted)/.test(e)); await P.ctx.close();
   ok(!errs.length, errs.slice(0, 3).join(' | '));
-  return `hidden where not allowed (other device, switched off); ${keys.length} steps (${rep.done.map(r => r.key.split(':')[0]).join(', ')}) at Fast, stamina kept full, ${rep.done.filter(r => r.ok).length} fine${rep.done.filter(r => !r.ok).map(r => `; noted for ${r.key}: ${r.problems.join(', ')}`).join('')}; progress put back after the restart`;
+  return `hidden where not allowed; button under the ladybird (${btn.w}px); walked ${walk.none ? '(no blocked spot near)' : 'round water or a wall on foot'}; ${keys.length} steps at Quick with a finger (${played.map(r => r.key.slice(5) + ' ' + r.said).join('; ')}), stamina kept full, no restart; this device's run put back; Stop at once, no restart; rewards kept when progress goes back`;
 });
 
 // (owner, 12 Oct 2026 AEDT: tester reports, PRIV-016) shared by the three tester checks: a device made a tester (or not)
@@ -1115,8 +1147,11 @@ await check('tester', async () => {
     if (!on.mark.includes(on.build) || on.lb !== 1 || !(on.lbSize >= 44)) out.push(lang + ': after accepting, no tester mark with the version or no ladybird (44 px): ' + JSON.stringify(on));
     if (!got.some(x => x && x.accepted === true)) out.push(lang + ': the acceptance was not told');
     // Settings → Stop being a tester
-    await clear(P.page); await P.page.click('.hud .pcard'); await P.page.waitForSelector('.qs-tester [data-t="stop"]', { timeout: 8000 });
-    await P.page.click('.qs-tester [data-t="stop"]'); await P.page.waitForTimeout(800);
+    // (owner, 13 Oct AEDT) "Stop being a tester" is held down: a quick tap does nothing
+    await clear(P.page); await P.page.click('.hud .pcard'); await P.page.waitForSelector('.qs-tester [data-hold="stop"]', { timeout: 8000 });
+    await P.page.click('.qs-tester [data-hold="stop"]'); await P.page.waitForTimeout(500);
+    ok(await P.page.evaluate(() => document.querySelectorAll('.z-lb').length > 0), 'a quick tap stopped being a tester');
+    await P.page.hover('.qs-tester [data-hold="stop"]'); await P.page.mouse.down(); await P.page.waitForTimeout(1900); await P.page.mouse.up(); await P.page.waitForTimeout(800);
     const off = await P.page.evaluate(() => ({ left: document.querySelectorAll('.testermark, .z-lb').length, again: !!document.querySelector('.qs-tester [data-t="join"]') }));
     if (off.left || !off.again) out.push(lang + ': Stop being a tester did not stop it: ' + JSON.stringify(off));
     const errs = P.errors.filter(e => !/tester check: before accepting/.test(e)); await P.ctx.close(); if (errs.length) out.push(errs.slice(0, 2).join(' | '));
