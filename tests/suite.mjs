@@ -5,7 +5,7 @@
 //   node suite.mjs --changed           only the checks for what changed since main (a film, a button fix…)
 //   node suite.mjs --changed --list    show which checks it would run and why, without running them
 // Options: --base <git ref> (default origin/main), --jobs <n> (default 3), --all (no samples: every slow check in full),
-// --no-map (the full suite without recording code).
+// --no-map (the full suite without recording code), --only a,b,c (just these checks, for timing the runner).
 // The slowest checks (reading, films, voicearea) try a sample that changes every run, and everything when their own
 // files changed since the base (run.mjs: SV_SAMPLE, SV_FULL, SV_SEED). A check whose browser crashed runs once more alone.
 import fs from 'fs';
@@ -178,7 +178,8 @@ if (CHANGED) {
     for (const n of list) console.log(`  ${n.padEnd(16)} ${[...s.pick.get(n)].slice(0, 3).join('; ')}`);
     for (const t of s.notes) console.log(`  note: ${t}`);
   }
-} else mapping = !flag('--no-map');
+} else if (opt('--only', '')) { list = opt('--only', '').split(',').filter(n => ALL.includes(n)); console.log(`only: ${list.join(', ')}`); }
+else mapping = !flag('--no-map');
 const full = flag('--all') ? Object.keys(SLOW_OWN) : slowFull(files), seed = Math.floor(Date.now() / 36e5);
 const sampledNow = list.filter(n => SLOW_OWN[n] && !full.includes(n));
 if (sampledNow.length) console.log(`samples this run (seed ${seed}): ${sampledNow.join(', ')}${full.length ? `; in full (their files changed): ${full.join(', ')}` : ''}`);

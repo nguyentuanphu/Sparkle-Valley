@@ -2,7 +2,8 @@
 import { chromium } from 'playwright';
 export const URL = process.env.SV_URL || 'http://localhost:8765/';
 export async function launch() {
-  return chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--js-flags=--expose-gc'] });
+  // SV_CHROME_ARGS: extra browser switches, e.g. to try fewer drawing threads when tests/suite.mjs runs several at once
+  return chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: [...(process.env.SV_CHROME_ARGS || '').split(' ').filter(Boolean), '--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--js-flags=--expose-gc'] });
 }
 // (round P: a new device starts with nobody; the checks play as two children made beforehand)
 export const seedPlayers = () => { try { if (!localStorage.getItem('sv2_profiles')) localStorage.setItem('sv2_profiles', JSON.stringify([
