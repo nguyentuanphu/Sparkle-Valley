@@ -33,7 +33,7 @@ const LOOKS = [
 ].map((l, k) => ({ back: 'none', hair: ['#1d1412', '#3b2618', '#2a1d14'][k % 3], skin: ['#f2c19e', '#e0aa80', '#f6c7a5'][k % 3], glider: 0, ...l }));
 
 export function createHoiLang(G, { say, save, reward }) {
-  const { scene, world } = G, on = () => featureOn('hoilang', true);
+  const { scene, world } = G, on = () => G.keep ? G.keep('hoilang') : featureOn('hoilang', true);   // (batch rollout: kept for a child who joined in)
   const little = () => G.heroes.some(h => h.profile && h.profile.age !== 'big');
   const hl = p => { const s = p.hoilang = p.hoilang && typeof p.hoilang === 'object' ? p.hoilang : {}; s.prizes = Array.isArray(s.prizes) ? s.prizes.filter(x => HL_PRIZES.some(y => y.id === x)) : []; s.keys = Array.isArray(s.keys) ? s.keys.slice(-20) : []; return s; };
   // each prize is also a keepsake for the child's house
@@ -57,7 +57,7 @@ export function createHoiLang(G, { say, save, reward }) {
     const F = { k, S, x, z, stage, path: null };
     fests.push(F);
     G.interactables.push({ id: 'hoilang' + k, x, z, r: 2.6, icon: '🎪', bubble: '🎪', visible: () => on(),
-      label: () => clock().on ? T('Village festival: join in!', 'Hội làng: vào chơi!') : T('Village festival: when is it?', 'Hội làng: khi nào có?'), act: h => openFest(h, F) });
+      label: () => clock().on ? T('Village festival: join in!', 'Hội làng: vào chơi!') : T('Village festival: when is it?', 'Hội làng: khi nào có?'), act: h => { G.tried && G.tried(h, 'hoilang'); openFest(h, F); } });
   });
 
   // ---------- joining, and the prize ----------

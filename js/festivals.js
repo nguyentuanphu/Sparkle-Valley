@@ -284,7 +284,8 @@ export function createFestivals(G) {
         }
         addItems(items);
         // (owner, 13 Oct) the festival hunt, in the last week and on the day: five things among the first place's pieces
-        if (w === 0 && (A.on || A.stage >= 3)) hunts.push({ F, year: (A.start || new Date()).getFullYear(), at: c,
+        // (batch rollout) Studio switch 'festHunt': off or not started yet, no hunt unless a child playing already hunted
+        if (w === 0 && (A.on || A.stage >= 3) && (!G.keep || G.keep('festHunt'))) hunts.push({ F, year: (A.start || new Date()).getFullYear(), at: c,
           spots: items.filter(q => q.kind === 'piece').map(q => { const a = Math.atan2(q.x - c.x, q.z - c.z) + 1.2, x = q.x + Math.sin(a) * .9, z = q.z + Math.cos(a) * .9; return { x, z }; }).filter(q => free(q.x, q.z, .4)) });
       });
       if (F.id === 'halloween' && A.on) halloweenDoors(F);

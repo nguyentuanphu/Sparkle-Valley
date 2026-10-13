@@ -81,17 +81,20 @@ export function createTraffic(G) {
     }
     // the city's own: a xích lô in Sài Gòn and Hà Nội, the electric cart round Hà Nội, a modern tram in Melbourne
     const street = route([[a[0] + fx * 3 - fz * 2, a[1] + fz * 3 + fx * 2], [b[0] - fx * 3 - fz * 2, b[1] - fz * 3 + fx * 2]]);
-    if (c.id === 'saigon' || c.id === 'hanoi') slots.push({ id: 'xichlo', cc: 'vn', city: c, mover: { r: street, s: 2, dir: 1, lane: 0, wait: 0, rest: 6 }, rides: featureOn('xichloRides', true) });
+    if (c.id === 'saigon' || c.id === 'hanoi') slots.push({ id: 'xichlo', cc: 'vn', city: c, mover: { r: street, s: 2, dir: 1, lane: 0, wait: 0, rest: 6 }, rides: true });
     if (c.id === 'hanoi') slots.push({ id: 'touristCart', cc: 'vn', mover: { r: route([[a[0] - fz * -2.2 + fx * 3, a[1] + fx * -2.2 + fz * 3], [b[0] - fz * -2.2 - fx * 3, b[1] + fx * -2.2 - fz * 3]]), s: 5, dir: -1, lane: 0, wait: 0, rest: 8 } });
     if (c.id === 'melbourne') slots.push({ id: 'tramModern', cc: 'au', mover: { r: street, s: 1, dir: 1, lane: 0, wait: 0, rest: 10 } });
     if (c.id === 'sydney' || c.id === 'brisbane') { const x = a[0] + fx * (len * .3) + fz * 4.6, z = a[1] + fz * (len * .3) - fx * 4.6; if (free(x, z, 2.5)) slots.push({ id: 'busAU', cc: 'au', x, z, yaw }); }
   }
   if (featureOn('cityVehicles', true)) TOWN_PARKED.forEach(([x, z, r, id]) => slots.push({ id, cc: 'vn', x, z, yaw: r }));
-  // (Round U) every parked car and motorbike can be driven
-  slots.forEach(sl => { if (!sl.mover && sl.rideable == null && DRIVE.has(sl.id)) sl.rideable = true; });
+  // (Round U) every parked car and motorbike can be driven (rollout: Studio switch 'rideAny')
+  slots.forEach(sl => { if (!sl.mover && sl.rideable == null && DRIVE.has(sl.id)) { sl.rideable = true; sl.feat = 'rideAny'; } });
+  // (batch rollout, owner 13 Oct AEDT) the bicycles, the xích lô, any vehicle and the fares can wait for their batch day in
+  // Studio: off or not started yet, they stay hidden from children who never used them (G.keep, js/main.js)
+  const keep = id => !G.keep || G.keep(id), tried = (h, id) => G.tried && G.tried(h, id);
   // ---------- bicycles to ride ----------
   const rideSpots = [];
-  if (featureOn('rideBikes', true)) {
+  { const from = slots.length;   // (rollout: always placed; shown while 'rideBikes' is kept, see the updater below)
     // bicycles wait beside the road, never on it (tests: roads)
     const offRoad = (x, z, r) => { const d = roadDist(x, z); return !d.road || d.d > d.road.w / 2 + r; };
     const spot = (x0, z0, ids, cc, rideable = true) => { for (let k = 0; k < 24; k++) { const a = k * 2.4, d = 3 + k * .5, x = x0 + Math.cos(a) * d, z = z0 + Math.sin(a) * d; if (free(x, z, 1.2) && offRoad(x, z, 1.2)) { ids.forEach((id, j) => { const px = x + j * .9, pz = z; if (free(px, pz, .8) && offRoad(px, pz, .8)) slots.push({ id, cc, x: px, z: pz, yaw: Math.PI / 2, rideable }); }); return; } } };
@@ -101,6 +104,7 @@ export function createTraffic(G) {
     spot((AUSSIE.x0 + AUSSIE.x1) / 2, AUSSIE.roadZ + 5, ['roadBike', 'kidsBike'], 'au');
     // the farm's trail bike and quad bike (to look at; grown-ups' machines)
     spot(HOME.x - 10, HOME.z + 6, ['quadBike'], 'au', false);
+    slots.slice(from).forEach(sl => { sl.feat = sl.hide = 'rideBikes'; });
   }
 
   // ---------- making the meshes (again when the look changes) ----------
@@ -141,6 +145,7 @@ export function createTraffic(G) {
     for (const sl of slots) { if (sl.v) continue; const [x, z] = where(sl); if (H.some(h => Math.hypot(h.pos.x - x, h.pos.z - z) < NEAR)) { make(sl); if (++n >= 4) { scan = 0; break; } } }
     // (Round V, owner 13 Oct: "all vehicles I can ride can go anywhere and go back to their place") a bicycle, motorbike or
     // car left somewhere goes back to its parking spot once every child has walked away from it
+    for (const sl of slots) if (sl.hide && sl.v) sl.v.o.visible = !!sl.taken || keep(sl.hide);
     for (const sl of slots) { if (!sl.rideable || sl.mover || !sl.v || sl.taken || sl.x == null) continue; const o = sl.v.o.position;
       if (Math.hypot(o.x - sl.x, o.z - sl.z) > 2 && !H.some(h => Math.hypot(h.pos.x - o.x, h.pos.z - o.z) < 20)) { o.set(sl.x, ground(sl.x, sl.z), sl.z); sl.v.o.rotation.y = sl.yaw || 0; } }
   });
@@ -149,15 +154,15 @@ export function createTraffic(G) {
   for (const sl of slots.filter(s => s.rideable)) {
     const bike = ['miniBike', 'bmx', 'roadster', 'roadBike', 'kidsBike'].includes(sl.id), car = CARS.has(sl.id);
     G.interactables.push({ id: (bike ? 'bike_' : 'drive_') + slots.indexOf(sl), get x() { return where(sl)[0]; }, get z() { return where(sl)[1]; }, r: car ? 2.8 : 2.2, icon: bike ? '🚲' : car ? '🚗' : '🛵',
-      label: () => bike ? T('Ride the bicycle', 'Đạp xe') : car ? T('Drive the car', 'Lái xe hơi') : T('Ride the motorbike', 'Chạy xe máy'), visible: h => !sl.taken && !h.riding && !h.carry,
-      act: (h, game) => { if (!sl.v) make(sl); sl.taken = h; const v = sl.v; h.mount({ vehicle: v, mesh: v.o, shadow: { position: new THREE.Vector3() }, yaw: v.o.rotation.y, speed: sl.id === 'roadBike' ? 8 : car ? 9 : bike ? 6 : 8, slot: sl, quiet: true });
+      label: () => bike ? T('Ride the bicycle', 'Đạp xe') : car ? T('Drive the car', 'Lái xe hơi') : T('Ride the motorbike', 'Chạy xe máy'), visible: h => !sl.taken && !h.riding && !h.carry && (!sl.feat || keep(sl.feat)),
+      act: (h, game) => { if (!sl.v) make(sl); sl.taken = h; if (sl.feat) tried(h, sl.feat); const v = sl.v; h.mount({ vehicle: v, mesh: v.o, shadow: { position: new THREE.Vector3() }, yaw: v.o.rotation.y, speed: sl.id === 'roadBike' ? 8 : car ? 9 : bike ? 6 : 8, slot: sl, quiet: true });
         const hud = G.huds && G.huds[G.heroes.indexOf(h)]; if (hud && hud.toast) hud.toast(T('Press Jump to get off', 'Bấm Nhảy để xuống xe')); } });
   }
   // a xích lô ride: sit in front while it rides the main street and back; Jump gets off
   for (const sl of slots.filter(s => s.rides)) {
     G.interactables.push({ id: 'xichlo_' + sl.city.id, get x() { return where(sl)[0]; }, get z() { return where(sl)[1]; }, r: 2.6, icon: '🚲',
-      label: () => T('Ride the xích lô', 'Đi xích lô'), visible: h => !sl.passenger && !h.riding && !h.carry,
-      act: h => { if (!sl.v) make(sl); sl.passenger = h; sl.mover.wait = 0; let left = sl.mover.r.len * 2 + 4;
+      label: () => T('Ride the xích lô', 'Đi xích lô'), visible: h => !sl.passenger && !h.riding && !h.carry && keep('xichloRides'),
+      act: h => { if (!sl.v) make(sl); sl.passenger = h; tried(h, 'xichloRides'); sl.mover.wait = 0; let left = sl.mover.r.len * 2 + 4;
         h.carry = (dt, t, pad) => {
           left -= dt * SPEED.xichlo; if (pad.jump() || left <= 0) { h.carry = null; sl.passenger = null; const o = sl.v.o; h.place(o.position.x + Math.cos(o.rotation.y) * 1.6, o.position.z - Math.sin(o.rotation.y) * 1.6); return null; }
           const p = sl.v.o.localToWorld(new THREE.Vector3(...sl.v.passenger)); return { x: p.x, y: p.y - .55, z: p.z, yaw: sl.v.o.rotation.y, state: 'sit', speed: 0, rest: true };
@@ -170,14 +175,14 @@ export function createTraffic(G) {
   const nameOf = sl => sl.id === 'taxi' ? T('the taxi', 'xe taxi') : /^tram/.test(sl.id) ? T('the tram', 'tàu điện') : sl.id === 'touristCart' ? T('the electric cart', 'xe điện') : T('the bus', 'xe buýt');
   for (const sl of slots.filter(s => s.mover && FARE[s.id])) {
     G.interactables.push({ id: 'ride_' + slots.indexOf(sl), walks: true, get x() { return where(sl)[0]; }, get z() { return where(sl)[1]; }, r: 3.2, icon: /^tram/.test(sl.id) ? '🚋' : sl.id === 'taxi' ? '🚕' : '🚌',
-      label: () => T('Get on ', 'Lên ') + nameOf(sl), visible: h => !sl.passenger && !h.riding && !h.carry,
+      label: () => T('Get on ', 'Lên ') + nameOf(sl), visible: h => !sl.passenger && !h.riding && !h.carry && keep('busFares'),
       act: async h => {
         if (!sl.v) make(sl); const fare = FARE[sl.id], little = h.profile && h.profile.age !== 'big';
         sl.mover.wait = Math.max(sl.mover.wait, 30);   // it waits while the child decides
         const free = little || farm.coins < fare;
         const k = await dialog(T('Driver', 'Bác tài'), [free ? [`Hop on! It's a free ride for you today.`, 'Lên xe đi con! Hôm nay con đi miễn phí.'] : [`Hop on! The fare is ${fare} coins. We go to the next stop.`, `Lên xe đi con! Giá vé ${fare} đồng. Mình đi tới trạm sau nhé.`]],
           [[free ? '🚌 Get on' : `🪙 Pay ${fare} and get on`, free ? '🚌 Lên xe' : `🪙 Trả ${fare} đồng, lên xe`], ['👋 Not now', '👋 Để sau']]);
-        sl.mover.wait = 0; if (k !== 0) return;
+        sl.mover.wait = 0; if (k !== 0) return; tried(h, 'busFares');
         if (!free) { farm.coins -= fare; saveFarm(); SFX.chime(); }
         // (Round V, owner 13 Oct: "at all stations they can select a destination") where to: every stop in the valley
         const dest = await pickStop(h, sl);
@@ -207,18 +212,20 @@ export function createTraffic(G) {
   const stopGeo = merge([P(new THREE.BoxGeometry(2.6, .1, 1.3), '#3a78c8', [0, 2.3, 0]), P(new THREE.BoxGeometry(.1, 2.3, .1), '#d8dde0', [-1.2, 1.15, -.5]), P(new THREE.BoxGeometry(.1, 2.3, .1), '#d8dde0', [1.2, 1.15, -.5]),
     P(new THREE.BoxGeometry(2.4, 1.6, .06), '#bfe4f2', [0, 1.4, -.6]), P(new THREE.BoxGeometry(2, .12, .45), '#8a5a3b', [0, .5, -.3]), P(new THREE.BoxGeometry(.08, .5, .08), '#6a4a32', [-.8, .25, -.3]), P(new THREE.BoxGeometry(.08, .5, .08), '#6a4a32', [.8, .25, -.3]),
     P(new THREE.BoxGeometry(.08, 2.8, .08), '#d8dde0', [1.6, 1.4, .2]), P(new THREE.BoxGeometry(.7, .7, .06), '#ffd23f', [1.6, 2.6, .2])]);
-  W.busStops = [];
+  W.busStops = []; const stopParts = [], stopCols = [];
+  W.updaters.push(() => { const on = keep('busFares'); if (stopParts.length && stopParts[0].visible !== on) { stopParts.forEach(o => { o.visible = on; }); stopCols.forEach(c => { c.r = on ? .45 : 0; }); } });
   slots.filter(s => s.mover && /^bus/.test(s.id) && s.road).forEach((sl, n) => {
     const rt = sl.mover.r, hw = sl.road.w / 2 || 3.2;
     for (const s of [6, rt.len - 6]) {
       const [x, z, yaw] = pointAt(rt, s), side = sl.cc === 'vn' ? 1 : -1, rx = -Math.cos(yaw) * side, rz = Math.sin(yaw) * side, off = hw + 2.6, sx = x + rx * off, sz = z + rz * off;
       if (W.busStops.some(b => Math.hypot(b.x - sx, b.z - sz) < 8) || !free(sx, sz, 1.4)) continue;
       const m = new THREE.Mesh(stopGeo, toonVC()); m.position.set(sx, ground(sx, sz), sz); m.rotation.y = Math.atan2(-rx, -rz); m.castShadow = true; scene.add(m);
-      W.colliders.push({ x: sx, z: sz, r: .45 });
+      const col = { x: sx, z: sz, r: .45 }; W.colliders.push(col); stopCols.push(col);
       const pic = sprite('🚌', .55), clock = sprite('⏰', .45); pic.position.set(sx, ground(sx, sz) + 3.1, sz); clock.position.set(sx, ground(sx, sz) + 2.55, sz); scene.add(pic, clock);
+      stopParts.push(m, pic, clock);   // (rollout: shown while 'busFares' is kept)
       const near = (G.PLACES || []).reduce((a, p) => !a || Math.hypot(p.x - sx, p.z - sz) < Math.hypot(a.x - sx, a.z - sz) ? p : a, null);
       const stop = { x: sx, z: sz, cc: sl.cc, fare: FARE[sl.id], place: near, name: () => near ? near.name() : T('Bus stop', 'Trạm xe buýt'), icon: near ? near.icon : '🚏' }; W.busStops.push(stop);   // (Round V) named after the nearest place
-      G.interactables.push({ id: 'busstop_' + W.busStops.length, x: sx, z: sz, r: 2.6, icon: '🚏', bubble: '🚌', label: () => T('Bus stop', 'Trạm xe buýt'),
+      G.interactables.push({ id: 'busstop_' + W.busStops.length, x: sx, z: sz, r: 2.6, icon: '🚏', bubble: '🚌', label: () => T('Bus stop', 'Trạm xe buýt'), visible: () => keep('busFares'),
         act: () => { SFX.tap(); dialog(T('Bus stop', 'Trạm xe buýt'), [['🚌 ⏰ The bus comes along this road every few minutes and waits here at the stop. When it stops, tap the bus to get on.', '🚌 ⏰ Xe buýt chạy trên đường này vài phút một chuyến và dừng chờ ở trạm. Khi xe dừng, chạm vào xe để lên.'],
           [`🪙 The fare is ${stop.fare} coins. Little ones ride free!`, `🪙 Giá vé ${stop.fare} đồng. Các bé nhỏ đi miễn phí!`]]); } });
     }

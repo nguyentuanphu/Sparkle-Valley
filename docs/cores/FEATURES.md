@@ -138,25 +138,35 @@ Columns below: **Suggested start** = my suggestion only (Live, or Off then drip 
 | Birthday party | Live |
 | Small core voice pack | Live (no switch) |
 
-## Suggested drip calendar (one "new" thing each week, AEST)
-| Week from | New for players |
-|---|---|
-| 12 Oct | Festival calendar + Halloween decorations |
-| 19 Oct | Village singers + Đà Nẵng Dragon Bridge fire and water (already built, held back) |
-| 26 Oct | Halloween night events (31 Oct) |
-| 2 Nov | Companion, first-day journey and cottage (when Round R part 2 is ready) |
-| 9 Nov | Diwali + the China & India areas |
-| 16 Nov | Teachers' Day cards + Bé Bán Hàng stall |
-| 23 Nov | Rare lotus, golden butterfly + Heo Đất, Need or Want? |
-| 30 Nov | Christmas build-up + Hội làng events |
-| 7 Dec | Treehouse |
-| 14 Dec | Treasure map |
-| 21 Dec | Shooting stars + Christmas Day |
-| 28 Dec | New Year's Eve fireworks |
-| 4 Jan | Stilt house |
-| 11 Jan | Rankings |
-| 18 Jan | Mystery boxes |
-| 25 Jan | Australia Day + Ông Táo carp release |
-| 1 Feb | Tết build-up |
+## Batch calendar (owner, 13 Oct AEDT; replaces the old "Suggested drip calendar")
+Owner's decisions (13 Oct AEDT): one batch every Saturday (AEDT), each with a 7-day New badge; features children can
+already see are held back and come back as "New!" on their batch day; the owner sets the dates in Studio from a checklist
+(`docs/cores/tasks/rollout-checklist.md`, one row per switch: start date and New days).
 
-Until Round R part 2 is ready, the weekly news comes from things already built and held back. The dates follow from the Round R plan and the owner can move any of them in Studio.
+How it works (js/custom.js, check `rollout`):
+- A start date still to come, or Off, hides a feature only from children who never used it. What a child really used
+  (rode, tapped, opened, finished a step) is kept on their profile (`profile.tried`) and stays theirs; a save from before
+  the rollout counts where it already shows the use. Scenery switches (day plan, animal homes, big decorations) have
+  nothing to keep: they simply wait for the date.
+- On the start date the feature is on for everyone, with the MỚI badge and the "New in the valley!" card for 7 days.
+- Tester devices see each batch 7 days before its start by themselves; the ticked sneak peeks still work too.
+- Base game, always on (no batch): the world and its games, the story prologue and chapters 1 and 2, the Simple screen,
+  the shop, family missions, bedtime and the other grown-up features, traffic, signposts, the bug fixes. Festivals come by
+  their own dates (Festivals page) and are never given a start date on the Releases page.
+
+| Saturday (AEDT) | New for players | Studio switches |
+|---|---|---|
+| 17 Oct 2026 | Ride around: bicycles, xích lô, ride any vehicle, buses with fares | `rideBikes`, `xichloRides`, `rideAny`, `busFares` |
+| 24 Oct 2026 | Surprises and mystery boxes; the festival hunt and big decorations (in time for Halloween week) | `surprises`, `mysteryBox`, `festHunt`, `festDecoBig` |
+| 31 Oct 2026 | Halloween (its own date) and the Village festival; village singers | `hoilang`, `singers` |
+| 7 Nov 2026 | Story chapter 3: Sydney | `story_ch3` |
+| 14 Nov 2026 | Bà Huệ and ông Nghi's yard | `story_yard`, `yardHands` |
+| 21 Nov 2026 | Collection book and family rankings | `collectibles`, `rankings` |
+| 28 Nov 2026 | The companion grows and the coin goal for its hats; price pictures and sellers who remember you | `companionGrow`, `saveGoal`, `priceTags`, `sellersRemember` |
+| 5 Dec 2026 | "Where is...?" sparkles and village job boards; Ông Cú as guide | `wayfind`, `jobs`, `owlGuide` |
+| 12 Dec 2026 | Reading corner (if the trial is done); house guide; animals with homes | `readingTrial`, `houseGuide`, `animalHomes` |
+| 19 Dec 2026 | Christmas week (its own date); every villager talks and their day plan | `villagerTalk`, `dayPlan` |
+| 26 Dec 2026 | New Year's Eve (its own date) | none |
+| 2 Jan to 6 Mar 2027 | One money game a week: Piggy Bank, Coin or Note?, Need or Want?, Which Is Cheaper?, Lucky Money Count (30 Jan, before Tết on 6 Feb), Three Jars, Shopping List, Wait and Grow, Little Shopkeeper, Swap and Trade | `money_heodat`, `money_coinnote`, `money_needwant`, `money_cheaper`, `money_lixi`, `money_bahu`, `money_shoplist`, `money_waitgrow`, `money_shopkeep`, `money_barter` |
+
+The owner can move any date in Studio; the checklist is only where they start.

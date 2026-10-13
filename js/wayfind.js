@@ -88,7 +88,8 @@ export function createWayfind(G) {
     return true;
   }
   function open(i = 0) {
-    const h = G.heroes[i] || G.heroes[0], list = targets();
+    if (G.keep && !G.keep('wayfind')) return;   // (rollout) Studio switch 'wayfind'
+    const h = G.heroes[i] || G.heroes[0], list = targets(); if (G.tried) G.tried(h, 'wayfind');
     const m = modal('wherepick', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>${pic('🧭')} ${T('Where shall we go?', 'Mình đi đâu nào?')}</h2>
       ${trail ? `<button class="wp-stop">${pic('✨')} ${T('Stop the sparkles', 'Tắt lấp lánh')}</button>` : ''}
       <div class="wp-grid">${list.map((t, k) => `<button class="wp-pick" data-k="${k}" aria-label="${esc(t.name())}">${pic(t.icon)}<b>${esc(t.name())}</b></button>`).join('')}</div>`);

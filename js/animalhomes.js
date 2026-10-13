@@ -19,13 +19,16 @@ export function createAnimalHomes(G) {
     if (coop) {
       const y = heightAt(coop.x, coop.z), m = new THREE.Mesh(merge([P(new THREE.BoxGeometry(1.6, 1, 1.2), '#b5793f', [0, .5, 0]), P(new THREE.ConeGeometry(1.2, .7, 4), '#8a3a2a', [0, 1.35, 0], [0, Math.PI / 4, 0]), P(new THREE.BoxGeometry(.45, .5, .05), '#3a2414', [0, .3, .61]), P(new THREE.BoxGeometry(.7, .06, .5), '#d9b26a', [0, .05, .9], [-.4, 0, 0])]), toonVC());
       const fx = cx - coop.x, fz = cz - coop.z, fl = Math.hypot(fx, fz) || 1;   // (its door faces the hens' yard)
-      m.position.set(coop.x, y, coop.z); m.rotation.y = Math.atan2(fx, fz); scene.add(m); world.colliders.push({ x: coop.x, z: coop.z, r: .9 }); coop.door = [coop.x + fx / fl * 1.7, coop.z + fz / fl * 1.7];
+      m.position.set(coop.x, y, coop.z); m.rotation.y = Math.atan2(fx, fz); scene.add(m); coop.mesh = m; coop.col = { x: coop.x, z: coop.z, r: .9 }; world.colliders.push(coop.col); coop.door = [coop.x + fx / fl * 1.7, coop.z + fz / fl * 1.7];
     }
   }
   const lake = ducks.length ? [ducks.reduce((s, c) => s + c.day[0], 0) / ducks.length, ducks.reduce((s, c) => s + c.day[1], 0) / ducks.length] : null;
   let night = null; const dogHome = dog ? dog.home.slice() : null;
+  // (batch rollout) Studio switch 'animalHomes': off or not started yet, no coop and the animals keep their day places
+  // (nothing for a child to keep: it is the valley's own life)
   world.updaters.push((dt) => {
-    const n = world.isNight();
+    const live = !G.keep || G.keep('animalHomes'); if (coop && coop.mesh) { coop.mesh.visible = live; coop.col.r = live ? .9 : 0; }
+    const n = live && world.isNight();
     if (n !== night) { night = n;
       hens.forEach(a => { if (n && coop) { a.home = coop.door.slice(); a.wander = .01; a.tx = coop.door[0]; a.tz = coop.door[1]; a.wait = 0; } else { a.home = a.day.slice(); a.wander = a.dayWander; a.m.visible = true; a.inside = false; } });
       critHens.forEach(c => { if (!n) { c.s.visible = true; c.inside = false; } });
@@ -36,7 +39,7 @@ export function createAnimalHomes(G) {
     // ducks: together in the middle of the lake at night
     if (lake) for (const c of ducks) { const [hx, hz, hr] = n ? [lake[0], lake[1], 1.2] : c.day, k = Math.min(1, dt * .3); c.cx += (hx - c.cx) * k; c.cz += (hz - c.cz) * k; c.r += (hr - c.r) * k; }
     // the village dog follows a child who comes near (not far from its home), and goes back when they leave
-    if (dog) { const h = G.heroes.find(h => Math.hypot(h.pos.x - dog.m.position.x, h.pos.z - dog.m.position.z) < (dog.following === h ? 16 : 9) && Math.hypot(h.pos.x - dogHome[0], h.pos.z - dogHome[1]) < 30);
+    if (dog) { const h = live && G.heroes.find(h => Math.hypot(h.pos.x - dog.m.position.x, h.pos.z - dog.m.position.z) < (dog.following === h ? 16 : 9) && Math.hypot(h.pos.x - dogHome[0], h.pos.z - dogHome[1]) < 30);
       if (h) { dog.home = [h.pos.x, h.pos.z]; dog.wander = 1.5; dog.speed = 2.2; dog.following = h; if (Math.hypot(dog.tx - h.pos.x, dog.tz - h.pos.z) > 2.5) { dog.tx = h.pos.x - 1; dog.tz = h.pos.z - 1; dog.wait = 0; } } else if (dog.following) { dog.home = dogHome.slice(); dog.wander = 3; dog.speed = .9; dog.following = null; dog.tx = dogHome[0]; dog.tz = dogHome[1]; dog.wait = 0; } }
   });
   G.animalHomes = { coop, hens, critHens, ducks, dog, lake };
