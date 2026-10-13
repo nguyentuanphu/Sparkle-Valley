@@ -667,6 +667,7 @@ function shopOutfits(m, look, isNew) {
     const b = el('button', 'chip' + (outfitOf(look) === k ? ' on' : '')); b.dataset.outfit = k; b.innerHTML = `<span>${pic(k === 'girl' ? '👧' : '👦')}</span><small>${k === 'girl' ? T('Girl', 'Bé gái') : T('Boy', 'Bé trai')}</small>`;
     b.onclick = () => { const o = DEFAULT_OUTFITS[k]; Object.assign(look, { style: o.style, color: o.color, top: 'none', bottom: 'none', set: k }); draw(); }; box.appendChild(b); } };   // (Round U: set, the clothes the shop shows first)
   draw(); m.querySelector('#cCol').hidden = true; ['#cHat', '#cBack'].forEach(id => { m.querySelector(id).closest('.field').hidden = true; });
+  { const lab = box.closest('.field').querySelector('span'); if (lab) lab.textContent = T('I am a…', 'Con là…'); }   // (Round V, owner 13 Oct) girl or boy, chosen when the character is made: the shop sells that set
 }
 // ---- (round S) end ----
 
@@ -707,11 +708,14 @@ export function openPad(game, i, tab) {
   const card = m.querySelector('.card');
   const TABS = [['map', '🗺️', T('Map', 'Bản đồ')], ['bag', '🎒', T('Backpack', 'Ba lô')], ['log', '📜', T('Adventures', 'Nhiệm vụ')], ['album', '⭐', T('Album', 'Bộ sưu tập')], ['passport', '🛂', T('Passport', 'Hộ chiếu')], ['games', '🎲', T('Games', 'Trò chơi')], ['cam', '📷', T('Camera', 'Máy ảnh')], ['cal', '📅', T('Festivals', 'Lễ hội')]];
   if (game.mode === 'online' || game.mode === 'solo') TABS.push(['friend', '📞', T('Friend', 'Bạn bè')]);
+  // (Round V, owner 13 Oct: "the shop button should be right next to the bag") a Shop tab straight after Backpack opens the
+  // clothes shop right there (no travel); it replaces the dock's Shop button
+  if (game.shop && game.shop.on() && game.heroes.length < 2) TABS.splice(TABS.findIndex(t => t[0] === 'bag') + 1, 0, ['shop', '🛍️', T('Shop', 'Cửa hàng')]);
   const draw = () => {
     const sl = card.querySelector('.pad-tabs') ? card.querySelector('.pad-tabs').scrollLeft : 0;
     card.innerHTML = `<div class="pad-head"><div class="pad-tabs">${TABS.map((t, k) => `<button data-t="${t[0]}" class="${t[0] === tab ? 'on' : ''}"><span>${pic(t[1])}</span><small>${t[2]}<kbd class="padkey">${k + 1}</kbd></small></button>`).join('')}</div><button class="x" aria-label="${T('Close', 'Đóng')}">✕<kbd class="padkey">Esc</kbd></button></div><div class="pad-body"></div>`;
     card.querySelector('.pad-tabs').scrollLeft = sl;
-    card.querySelectorAll('.pad-tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; SFX.tap(); draw(); });
+    card.querySelectorAll('.pad-tabs button').forEach(b => b.onclick = () => { SFX.tap(); if (b.dataset.t === 'shop') { toShop(); return; } tab = b.dataset.t; draw(); });
     card.querySelector('.x').onclick = close;
     const body = card.querySelector('.pad-body');
     ({ map: drawMap, bag: drawBag, log: drawLog, album: drawAlbum, games: drawGames, cam: drawCam, friend: drawFriend, passport: b => game.drawPassport(b, hero), cal: drawCal })[tab](body);
@@ -725,10 +729,11 @@ export function openPad(game, i, tab) {
     if (/^Digit[1-9]$/.test(e.code)) k = +e.code.slice(5) - 1;
     else if (e.code === 'ArrowRight' || e.code === 'BracketRight') k = (cur + 1) % TABS.length;
     else if (e.code === 'ArrowLeft' || e.code === 'BracketLeft') k = (cur + TABS.length - 1) % TABS.length;
-    if (k >= 0 && TABS[k]) { e.preventDefault(); e.stopImmediatePropagation(); tab = TABS[k][0]; SFX.tap(); draw(); }
+    if (k >= 0 && TABS[k]) { e.preventDefault(); e.stopImmediatePropagation(); SFX.tap(); if (TABS[k][0] === 'shop') { toShop(); return; } tab = TABS[k][0]; draw(); }
   };
   addEventListener('keydown', onKey, true);
   const close = () => { removeEventListener('keydown', onKey, true); m.close(); game.closePad(i); };
+  const toShop = () => { close(); setTimeout(() => game.shop.openShop(i), 220); };
   function drawMap(body) {
     withSitePlaces(game.PLACES);
     const S = 600, wrap = el('div', 'mapwrap'), cv = el('canvas', 'bigmap'); cv.width = cv.height = S; wrap.appendChild(cv); body.appendChild(wrap);
@@ -847,21 +852,25 @@ export function openPad(game, i, tab) {
   }
   let sellPick = null; // a treasure tapped once in the bag: tap again to sell it
   function drawBag(body) {
+    // (Round V) what an ingredient is for: the dishes it goes into at a cooking pot
+    const ingInfo = id => { const it = ITEMS[id], uses = RECIPES.filter(r => r.need.includes(id)), names = uses.map(r => r.name());
+      const en = `${it.name()}: an ingredient. ${uses.length ? 'Cook it at a cooking pot to make ' + names.join(', ') + '.' : 'Cook it at a cooking pot.'}`, vi = `${it.name()}: nguyên liệu. ${uses.length ? 'Nấu ở nồi để làm ' + names.join(', ') + '.' : 'Nấu ở nồi nhé.'}`;
+      return [T(en, vi), en, vi]; };
     const isGem = id => WILD[id] && WILD[id].kind === 'gem';
     const items = Object.entries(p.inv).filter(([id, n]) => n > 0 && ITEMS[id] && !isGem(id)), gems = Object.entries(p.inv).filter(([id, n]) => n > 0 && isGem(id)).sort((a, b) => WILD[b[0]].sell - WILD[a[0]].sell);
     const bought = Object.entries(p.bought || {}).filter(([id, n]) => n > 0 && snackOf(id));
     const dishes = Object.entries(p.dishes).filter(([, n]) => n > 0);
     body.innerHTML = `
       ${(p.pets || []).length ? `<button class="btn wide" id="bagPets">🐾 ${T('My pets', 'Thú cưng của con')}: ${(p.pets || []).map(pt => (PET_ICON[pt.kind] || '🐾') + ' ' + esc(pt.name || '')).join('  ')}</button>` : ''}
-      <div class="bag-top"><button class="chip" data-chip="money" title="${T('Coins', 'Đồng xu')}">💰 ${fmt(farm.coins)}</button><button class="chip" data-chip="orbs" title="${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}">🔮 ${p.orbs} ${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}</button><button class="chip" data-chip="leafy" title="${T('Leafies', 'Bạn Lá')}">🍃 ${Object.keys(p.leafies).length}/24 ${T('Leafies', 'Bạn Lá')}</button></div>
+      <div class="bag-top"><button class="chip bagc" data-chip="money" title="${T('Coins', 'Đồng xu')}"><i>💰</i><b>${fmt(farm.coins)}</b><small>${T('Coins', 'Đồng xu')}</small></button><button class="chip bagc" data-chip="orbs" title="${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}"><i>🔮</i><b>${p.orbs}</b><small>${T('Sparkle Orbs', 'Ngọc Lấp Lánh')}</small></button><button class="chip bagc" data-chip="leafy" title="${T('Leafies', 'Bạn Lá')}"><i>🍃</i><b>${Object.keys(p.leafies).length}/24</b><small>${T('Leafies', 'Bạn Lá')}</small></button></div>
       <h3>${T('Food', 'Món ăn')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
-      <div class="slots">${dishes.map(([id, n]) => { const r = dishInfo(id) || { icon: '🥘', name: () => T('Mystery stew', 'Món hầm bí ẩn') }; return `<button class="slot" data-eat="${id}" title="${esc(r.name())}"><span>${r.icon}</span><b>${n}</b><small>${esc(r.name())}</small></button>`; }).join('') || `<p class="note">${T('Cook at a cooking pot to make food.', 'Nấu ăn ở nồi nấu để có món ăn.')}</p>`}</div>
+      <div class="slots">${dishes.map(([id, n]) => { const r = dishInfo(id) || { icon: '🥘', name: () => T('Mystery stew', 'Món hầm bí ẩn') }; return `<button class="slot" data-eat="${id}" title="${esc(r.name() + ' · ' + T('tap to eat: hearts and energy back', 'chạm để ăn: thêm tim và sức'))}"><span>${r.icon}</span><b>${n}</b><small>${esc(r.name())}</small></button>`; }).join('') || `<p class="note">${T('Cook at a cooking pot to make food.', 'Nấu ăn ở nồi nấu để có món ăn.')}</p>`}</div>
       <h3>🛍️ ${T('From shops and stalls', 'Mua ở quán và sạp')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
-      <div class="slots">${bought.map(([id, n]) => { const v = snackOf(id); return `<button class="slot" data-snack="${id}" title="${esc(T(v.food[1], v.food[2]))}"><span>${v.food[0]}</span><b>${n}</b><small>${esc(T(v.food[1], v.food[2]))}</small></button>`; }).join('') || `<p class="note">${T('Buy food at kiosks, market stalls and from street sellers. It goes in here!', 'Mua đồ ăn ở quán, sạp chợ và các cô gánh hàng rong. Đồ mua sẽ nằm ở đây!')}</p>`}</div>
+      <div class="slots">${bought.map(([id, n]) => { const v = snackOf(id); return `<button class="slot" data-snack="${id}" title="${esc(T(v.food[1], v.food[2]) + ' · ' + T('tap to eat', 'chạm để ăn'))}"><span>${v.food[0]}</span><b>${n}</b><small>${esc(T(v.food[1], v.food[2]))}</small></button>`; }).join('') || `<p class="note">${T('Buy food at kiosks, market stalls and from street sellers. It goes in here!', 'Mua đồ ăn ở quán, sạp chợ và các cô gánh hàng rong. Đồ mua sẽ nằm ở đây!')}</p>`}</div>
       <h3>💎 ${T('Treasures', 'Báu vật')} <small>${T('tap twice to sell', 'chạm 2 lần để bán')}</small></h3>
-      <div class="slots">${gems.map(([id, n]) => `<button class="slot gemslot ${sellPick === id ? 'on' : ''}" data-sellgem="${id}"><span>${WILD[id].icon}</span><b>${n}</b><small>${sellPick === id ? '💰 ' + T('Sell', 'Bán') + ' ' + fmt(WILD[id].sell) + '?' : esc(WILD[id].name()) + ' · ' + fmt(WILD[id].sell)}</small></button>`).join('') || `<p class="note">${T('Dig at the sparkly mounds of earth and crack rocks open to find treasures!', 'Đào ở những ụ đất lấp lánh và gõ vỡ hòn đá để tìm báu vật!')}</p>`}</div>
+      <div class="slots">${gems.map(([id, n]) => `<button class="slot gemslot ${sellPick === id ? 'on' : ''}" data-sellgem="${id}" title="${esc(WILD[id].name() + ' · ' + T('a treasure: tap twice to sell it for coins', 'báu vật: chạm 2 lần để bán lấy tiền'))}"><span>${WILD[id].icon}</span><b>${n}</b><small>${sellPick === id ? '💰 ' + T('Sell', 'Bán') + ' ' + fmt(WILD[id].sell) + '?' : esc(WILD[id].name()) + ' · ' + fmt(WILD[id].sell)}</small></button>`).join('') || `<p class="note">${T('Dig at the sparkly mounds of earth and crack rocks open to find treasures!', 'Đào ở những ụ đất lấp lánh và gõ vỡ hòn đá để tìm báu vật!')}</p>`}</div>
       <h3>${T('Ingredients', 'Nguyên liệu')}</h3>
-      <div class="slots">${items.map(([id, n]) => `<div class="slot"><span>${ITEMS[id].icon}</span><b>${n}</b><small>${esc(ITEMS[id].name())}</small></div>`).join('') || `<p class="note">${T('Empty! Shake apple trees and look for herbs and mushrooms.', 'Trống trơn! Rung cây táo và tìm rau thơm, nấm nhé.')}</p>`}</div>
+      <div class="slots">${items.map(([id, n]) => `<button class="slot" data-ing="${id}" title="${esc(ingInfo(id)[0])}"><span>${ITEMS[id].icon}</span><b>${n}</b><small>${esc(ITEMS[id].name())}</small></button>`).join('') || `<p class="note">${T('Empty! Shake apple trees and look for herbs and mushrooms.', 'Trống trơn! Rung cây táo và tìm rau thơm, nấm nhé.')}</p>`}</div>
       ${(() => { const SLOT_ICON = { hat: '👒', neck: '📿', top: '👕', bottom: '👖', feet: '👟', back: '🪽' }; // (Round U, owner 11 Oct: everything bought shows here until it is worn) the clothes and accessories the child owns
         const itemSVG = it => game.shop && game.shop.itemSVG ? game.shop.itemSVG(it) : pic(SLOT_ICON[it.slot] || '👕'), mine = CLOTHES.filter(it => owns(p, it.id)), off = mine.filter(it => p.look[it.slot] !== it.id), on = mine.filter(it => p.look[it.slot] === it.id);
         const hats = HATS.concat(REWARD_HATS.filter(h => p.owned.hats.includes(h))).filter(h => h !== 'none' && !ITEM[h]);
@@ -874,9 +883,14 @@ export function openPad(game, i, tab) {
       ${game.hoilang ? game.hoilang.bagHTML(p) : ''}
       <h3>${T('Glider', 'Cánh lượn')}</h3>
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
-    // (tester's notes, 12 Oct) no row of jump buttons in the bag: its sections are short, and the buttons were not understood
-    body.querySelectorAll('[data-eat]').forEach(b => b.onclick = () => { game.eat(hero, b.dataset.eat); draw(); });
-    body.querySelectorAll('[data-snack]').forEach(b => b.onclick = () => { eatSnack(game, hero, b.dataset.snack, true); draw(); });
+    jumpNav(body, body.querySelector('.bag-top')); // (owner, 13 Oct AEDT: the Backpack's section-button row back, after the tester's notes took it out)
+    // (Round V, owner 13 Oct) food asks first ("Eat it?"); an ingredient says what it is and which dishes it makes
+    const askEat = async (name, icon, en, vi) => { SFX.tap(); return (await dialog(name, [[`${icon} ${name}: ${en} Eat it now?`, `${icon} ${name}: ${vi} Ăn bây giờ nhé?`]], [['😋 Yes, eat it', '😋 Ăn thôi'], ['👋 Not now', '👋 Để sau']])) === 0; };
+    body.querySelectorAll('[data-eat]').forEach(b => b.onclick = async () => { const r = dishInfo(b.dataset.eat) || { icon: '🥘', heal: 1, name: () => T('Mystery stew', 'Món hầm bí ẩn') };
+      if (await askEat(r.name(), r.icon, `it gives you ${r.heal} heart${r.heal > 1 ? 's' : ''} and extra energy.`, `món này cho con ${r.heal} tim và thêm sức.`)) game.eat(hero, b.dataset.eat); draw(); });
+    body.querySelectorAll('[data-snack]').forEach(b => b.onclick = async () => { const v = snackOf(b.dataset.snack);
+      if (await askEat(T(v.food[1], v.food[2]), v.food[0], 'a treat from the market.', 'một món ngon mua ở chợ.')) eatSnack(game, hero, b.dataset.snack, true); draw(); });
+    body.querySelectorAll('[data-ing]').forEach(b => b.onclick = () => { SFX.tap(); const [line, en, vi] = ingInfo(b.dataset.ing); toast(line); say(en, vi); });
     body.querySelectorAll('[data-sellgem]').forEach(b => b.onclick = () => {
       const id = b.dataset.sellgem, w = WILD[id];
       if (sellPick !== id) { sellPick = id; SFX.tap(); say(`${w.name()}: ${money(w.sell)}. Tap again to sell it.`, `${w.name()}: ${money(w.sell)}. Chạm lần nữa để bán nhé.`); draw(); return; }

@@ -18,6 +18,7 @@
 // Photos go only after being let in, locked for each player. Saved friends come straight in only if they bring the
 // key saved with the friend AND open a number locked with it; anyone else knocks.
 import { settings } from './state.js';
+import { micMode } from './audio.js';
 import { Channel } from './relay.js';
 import { checkMsg } from './netmsg.js';
 import { MAP_VERSION } from './content/map.js';
@@ -156,26 +157,45 @@ export const Net = {
   // second microphone (its stream is stopped) and says nothing while a newer try is still asking. Every outcome of a tap
   // is said on screen (asking, on, blocked with how to allow it, none, iPhone too old), as nobody can test it on a real
   // iPhone but the owner. Home-screen games on iPhone get a microphone only from iOS 14.3.
+  // (Round V, owner 13 Oct: "when I tap on mic, nothing appears", with no call anywhere) the iPhone ends the microphone
+  // when the game goes to the background (switching apps to send the room code, a call, Siri, the screen locking), but
+  // the game kept that dead microphone, so every tap only flipped mute on it and nothing showed. A microphone counts only
+  // while its track is live; a dead one is dropped and the tap asks again.
+  get micLive() { const t = this.mic && this.mic.active && this.mic.getAudioTracks()[0]; return !!(t && t.readyState === 'live' && !t.muted); },
+  _dropMic() { if (!this.mic) return; try { this.mic.getTracks().forEach(t => t.stop()); } catch (e) { } this.mic = null; micMode('call', false); },
+  _watchMic(s) {
+    const t = s.getAudioTracks()[0]; if (!t) return;
+    const dead = () => { if (this.mic !== s) return; this._dropMic(); this.emit('status', { key: 'micstop' }); this.emit('micchange'); };
+    t.addEventListener('ended', dead);
+  },
   async getMic(fromTap) {
-    if (this.mic) return this.mic;
+    if (this.mic && (this.micLive || !fromTap)) return this.mic;
+    this._dropMic();
     if (this._micAsking && !fromTap) return this._micAsking;
     const md = navigator.mediaDevices, ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
     const asking = this._micAsking = (async () => {
       if (!md || !md.getUserMedia) { this.micError = 'nomedia'; this.emit('status', { key: ios ? 'micold' : 'nomic' }); return null; }
       const stale = () => this._micAsking && this._micAsking !== asking;   // a newer tap is asking now
+      micMode('call', true);   // (Round V) before asking: iPhone never asks in its play-only mode
       let err = null, first = md.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
       if (fromTap) this.emit('status', { key: 'micask' });
+      // the iPhone sometimes never answers at all (no Allow box): after 10 seconds say what to do instead of nothing
+      const slow = fromTap ? setTimeout(() => { if (!this.mic && this._micAsking === asking) this.emit('status', { key: 'micstuck' }); }, 10000) : null;
       for (const audio of [null, true]) {
         try {
           const s = await (audio ? md.getUserMedia({ audio, video: false }) : first);
           if (this.mic && this.mic !== s) { s.getTracks().forEach(t => t.stop()); return this.mic; }
-          this.mic = s; this.micError = null; if (fromTap) this.muted = false; this._micOn(); return s;   // (r63: a tap asks for it to be on)
-        } catch (e) { err = e; if (this.mic || (e && (e.name === 'NotFoundError' || e.name === 'NotAllowedError'))) break; }
+          clearTimeout(slow); this.mic = s; this._watchMic(s); this.micError = null; if (fromTap) this.muted = false; this._micOn(); return s;   // (r63: a tap asks for it to be on)
+        } catch (e) { clearTimeout(slow); err = e; if (this.mic || (e && /^(NotFoundError|NotAllowedError|NotReadableError|AbortError)$/.test(e.name))) break; }   // (Round V: a busy microphone is not asked again without a tap)
       }
       if (this.mic || stale()) return this.mic;   // (another try got it, or is still asking: it speaks for itself)
+      micMode('call', false);
       const name = (err && err.name) || 'Error', tapped = !!fromTap || !!(navigator.userActivation && navigator.userActivation.isActive);
       this.micError = name;
       if (name === 'NotFoundError' || name === 'OverconstrainedError') this.emit('status', { key: 'nomic' });
+      // (Round V, owner's iPhone notes 13 Oct: on a FaceTime call the microphone never came on) another app or a call is
+      // using the microphone: say so, instead of asking the child to tap again and again
+      else if (name === 'NotReadableError' || name === 'AbortError') this.emit('status', { key: 'micbusy' });
       else this.emit('status', { key: name === 'NotAllowedError' && tapped ? 'micdenied' : 'mictap' });
       return null;
     })();
@@ -200,7 +220,7 @@ export const Net = {
     // (r63, owner: "the microphone should always be off until the child turns it on"; on iPhone a try without a tap
     // could hang and every later tap did nothing) the microphone is asked for only by a tap on Mic (HUD) or in Friends
     await prepare().catch(() => { }); if (!this.mic) this.emit('status', { key: 'mictap' });
-    this.close(true);
+    this.close(true); this.setMuted(true);   // (Round V, owner 13 Oct) the microphone is always off when a room is made or joined: a tap turns it on
     this.role = 'host'; this.hello = await this._withPub(hello); this._since = Date.now();
     this.secret = b64(rnd(32));
     for (let tries = 0; tries < 4 && window.Peer; tries++) {
@@ -233,7 +253,7 @@ export const Net = {
     // (r63, owner: "the microphone should always be off until the child turns it on"; on iPhone a try without a tap
     // could hang and every later tap did nothing) the microphone is asked for only by a tap on Mic (HUD) or in Friends
     await prepare().catch(() => { }); if (!this.mic) this.emit('status', { key: 'mictap' });
-    this.close(true);
+    this.close(true); this.setMuted(true);   // (Round V, owner 13 Oct) the microphone is always off when a room is made or joined: a tap turns it on
     hello = await this._withPub(hello);
     this.role = 'guest'; this.code = code; this.hello = hello; this.hostId = PREFIX + code;
     this.hostPub = okPub(opts.hostPub) ? opts.hostPub : null; this._pinWeak = false;

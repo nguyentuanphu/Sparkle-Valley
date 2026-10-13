@@ -2,6 +2,8 @@
 // It records raw sound and saves it as a small WAV file, so it does not depend on
 // MediaRecorder or on which audio formats a browser can play back.
 
+import { micMode } from './audio.js';
+
 export class MicError extends Error { constructor(code, msg) { super(msg || code); this.code = code; } }
 
 // Explain why the microphone cannot be used, before even asking.
@@ -19,9 +21,10 @@ export async function startRecording({ onLevel, maxMs = 6000, onAuto } = {}) {
   const ctx = new AC(); // created inside the tap
   try { await ctx.resume(); } catch (e) { }
   try {
+    micMode('rec', true);   // (Round V) iPhone never asks for the microphone in its play-only sound mode (audio.js)
     if (!stream || !stream.active) stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
   } catch (e) {
-    ctx.close && ctx.close();
+    ctx.close && ctx.close(); micMode('rec', false);
     throw new MicError(e && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'denied' : e && e.name === 'NotFoundError' ? 'nomic' : 'other', e && e.message);
   }
   const src = ctx.createMediaStreamSource(stream);
@@ -52,7 +55,7 @@ export async function startRecording({ onLevel, maxMs = 6000, onAuto } = {}) {
   };
   return { stop, finished };
 }
-export function releaseMic() { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; } }
+export function releaseMic() { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; } micMode('rec', false); }
 
 // cut silence from the start and end
 function trim(parts) {

@@ -4,7 +4,7 @@ import { THREE } from './gfx.js';
 import { T } from './i18n.js';
 import { nm } from './i18n.js';
 import { ICONS } from './icons.js';
-import { farm } from './state.js';
+import { farm, saveProfiles } from './state.js';
 import { fmt } from './money.js';
 import { el, esc, clamp } from './util.js';
 import { SIZE, HALF } from './world.js';
@@ -36,6 +36,7 @@ export class Hud {
       <div class="quest">
         <button class="q-say" aria-label="${T('Hear the goal again', 'Nghe lại nhiệm vụ')}"><span class="q-icon">📍</span><span class="q-text"></span></button>
         <button class="q-go">▶ ${T('Go', 'Đi')}<kbd class="kb">F</kbd></button>
+        <button class="q-fam" hidden></button>
       </div>
       <div class="hud-tr">
         <div class="mini-wrap"><canvas class="mini" width="200" height="200"></canvas><i class="mini-n">N</i><i class="mini-me"></i></div>
@@ -43,7 +44,7 @@ export class Hud {
         <button class="friendchip" hidden><span class="fc-arrow">➤</span><span class="fc-txt"></span><span class="fc-sig"></span></button>
         <div class="tools"></div>
       </div>
-      <div class="zoomer"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">${ICONS.zoomIn}<kbd class="kb">+</kbd></button><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">${ICONS.zoomOut}<kbd class="kb">−</kbd></button><button class="z-view" aria-label="${T('Camera view', 'Góc nhìn')}">🎥<kbd class="kb">V</kbd></button><button class="z-where" aria-label="${T('Where is…? Show me the way', 'Ở đâu? Chỉ đường cho con')}" title="${T('Where is…?', 'Ở đâu?')}">${pic('🧭')}<kbd class="kb">Y</kbd></button></div>
+      <div class="zoomer"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">${ICONS.zoomIn}<kbd class="kb">+</kbd></button><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">${ICONS.zoomOut}<kbd class="kb">−</kbd></button><button class="z-view" aria-label="${T('Camera view', 'Góc nhìn')}">${pic('🎥')}<kbd class="kb">V</kbd></button><button class="z-where" aria-label="${T('Where is…? Show me the way', 'Ở đâu? Chỉ đường cho con')}" title="${T('Where is…?', 'Ở đâu?')}">${pic('🧭')}<kbd class="kb">Y</kbd></button></div>
       <div class="region"></div>
       <div class="htoast"></div>
       <canvas class="wheel" width="96" height="96"></canvas>
@@ -51,7 +52,6 @@ export class Hud {
         <button class="dk games" aria-label="${T('Play: games, festivals, stories and songs', 'Vui chơi: trò chơi, lễ hội, truyện và bài hát')}"><span>${ICONS.games}</span><small>${T('Play', 'Vui chơi')}</small><kbd class="kb">G</kbd></button>
         <button class="dk map"><span>${ICONS.map}</span><small>${T('Map', 'Bản đồ')}</small><kbd class="kb">M</kbd></button>
         <button class="dk bag"><span>${ICONS.bag}</span><small>${T('Bag', 'Ba lô')}</small><kbd class="kb">B</kbd></button>
-        <button class="dk shop" hidden aria-label="${T('Clothes shop', 'Cửa hàng quần áo')}"><span>${ICONS.shop}</span><small>${T('Shop', 'Cửa hàng')}</small></button>
         <button class="dk voicecmd" hidden><span>${ICONS.ask}</span><small>${T('Ask', 'Hỏi')}</small><kbd class="kb">K</kbd></button>
         <button class="dk chat"><span>${ICONS.talk}</span><small>${T('Talk', 'Nói')}</small><kbd class="kb">T</kbd></button>
         <button class="dk call" hidden><span>${ICONS.callOff}</span><small>${T('Mic off', 'Micrô tắt')}</small><kbd class="kb">C</kbd></button>
@@ -86,7 +86,6 @@ export class Hud {
     this.q('.dk.bag').onclick = () => game.openPad(i, 'bag');
     // (tester's notes, 12 Oct; owner: "bottom bar") the clothes shop has its own button beside the Bag (it was inside
     // the Bag, Bug #29); only while the shop is switched on and one child plays on this device. It opens right here.
-    this.q('.dk.shop').onclick = () => { SFX.tap(); game.shop && game.shop.openShop(i); };
     this.q('.dk.chat').onclick = () => this.toggleEmotes();
     this.q('.dk.voicecmd').hidden = !game.voiceControlOn();
     this.q('.dk.voicecmd').onclick = () => game.voiceCommand(i);
@@ -97,8 +96,11 @@ export class Hud {
     this.q('.z-where').onclick = () => game.openWhere && game.openWhere(i);   // (Round U) "Where is…?" sparkles
     this.q('.dk.snd').onclick = () => game.openSound();   // (Round U) the three Sound switches: music, sounds, voice
     this.q('.friendchip').onclick = () => { const r = game.findFriend(i); if (r) game.say && game.say(r[0], r[1]); };
-    this.q('.q-say').onclick = () => game.sayObjective(i);
+    // (Round V, owner 13 Oct) a tap on the quest folds it to a small chip and hides its arrow and sparkles; a tap on the chip
+    // opens it again and says the goal (remembered per child)
+    this.q('.q-say').onclick = () => { const p = this.hero.profile; p.questFold = !p.questFold; saveProfiles(); this.foldQuest(); if (!p.questFold) game.sayObjective(i); };
     this.q('.q-go').onclick = () => game.goToObjective(i);
+    this.q('.q-fam').onclick = () => game.openPad(i, 'log');   // (Round V) the family mission: its page in Adventures
     // pointerdown (not click) so zoom still works while another finger is on the joystick
     const zb = (b, f) => b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); game.zoomBy(i, f); });
     zb(this.q('.z-in'), .8); zb(this.q('.z-out'), 1.25);
@@ -113,6 +115,7 @@ export class Hud {
     const s = this.game.settings, m = this.q('.dk.mus'), d = this.q('.dk.snd');
     m.classList.toggle('off', !s.music); d.classList.toggle('off', !(s.sound || s.voice)); d.querySelector('span').innerHTML = s.sound || s.voice ? ICONS.sound : ICONS.soundOff;
   }
+  foldQuest() { const f = !!this.hero.profile.questFold, q = this.q('.quest'); q.classList.toggle('fold', f); this.q('.q-say').setAttribute('aria-label', f ? T('Show the goal', 'Hiện nhiệm vụ') : T('Hide the goal', 'Ẩn nhiệm vụ')); }
   refreshWho() { const p = this.hero.profile; this.q('.pav').src = avatarURL(p); this.q('.pname').textContent = nm(p.name); this.q('.pname').classList.toggle('starname', !!(p.look && p.look.star)); } // (owner, 12 Oct: this week's star tester gets a gold star by the name)
   toggleEmotes(v) { const e = this.q('.emotes'); e.hidden = v == null ? !e.hidden : !v; }
   layout(r, two) {
@@ -142,8 +145,6 @@ export class Hud {
 
   update(dt, camera, fogMap, markers) {
     const h = this.hero, p = h.profile;
-    const shopOn = !!(this.game.shop && this.game.shop.on() && this.game.heroes.length < 2);
-    if (this.last.shop !== shopOn) { this.last.shop = shopOn; this.q('.dk.shop').hidden = !shopOn; }
     // hearts
     const hk = h.hearts + '/' + p.hearts;
     if (this.last.h !== hk) {
@@ -158,8 +159,11 @@ export class Hud {
     }
     // objective + clock
     const obj = this.game.objective(h), qi = this.game.objectiveIcon(h);
-    if (this.last.o !== obj) { this.q('.q-text').textContent = obj || ''; this.q('.q-icon').textContent = qi || '📍'; this.q('.quest').hidden = !obj; this.last.o = obj; this.q('.quest').classList.remove('new'); void this.q('.quest').offsetWidth; this.q('.quest').classList.add('new'); }
+    if (this.last.o !== obj) { this.q('.q-text').textContent = obj || ''; this.q('.q-icon').textContent = qi || '📍'; this.q('.quest').hidden = !obj; this.last.o = obj; this.q('.quest').classList.remove('new'); void this.q('.quest').offsetWidth; this.q('.quest').classList.add('new'); this.foldQuest(); }
     this.q('.q-go').hidden = !this.game.questTarget(h);
+    // (Round V, owner 13 Oct) a family mission that has started (told to the child, not done yet) shows under the quest too
+    const P = this.game.parents, fm = P && P.openFor ? P.openFor(p).find(m => (p.missionsSeen || []).includes(m.id)) : null, fk = fm ? fm.id + ':' + T('e', 'v') : '';
+    if (this.last.fm !== fk) { this.last.fm = fk; const b = this.q('.q-fam'); b.hidden = !fm; if (fm) { b.innerHTML = `${pic(fm.icon || '📝')}<span><b>${esc(T('Family mission', 'Nhiệm vụ gia đình'))}</b> ${esc(T(fm.en, fm.vi))}</span>`; b.setAttribute('aria-label', T('Family mission: ', 'Nhiệm vụ gia đình: ') + T(fm.en, fm.vi)); } }
     const night = this.game.world.isNight(), tt = this.game.world.time, hr = Math.floor(tt * 24), mn = Math.floor((tt * 24 - hr) * 60 / 10) * 10;
     const ck = (night ? '🌙 ' : '☀️ ') + String(hr).padStart(2, '0') + ':' + String(mn).padStart(2, '0');
     if (this.last.c !== ck) { this.q('.clock').textContent = ck; this.last.c = ck; }

@@ -4,86 +4,25 @@
 // in a row (đôi thông). Beat what is on the table with the same kind of play, higher; or pass, and you sit out
 // until someone starts again. "Chặt": four of a kind or three pairs in a row can beat a 2.
 // The first to play all their cards wins the hand. Hints light up a good play, and little ones always get one.
+// (Round V, owner 13 Oct) Tiến Lên miền Bắc too (game 'tienlenbac'): a single card is beaten only by a higher card of the
+// same suit (a 2 beats any other single), a pair only by a higher pair of the same colours, a run (sảnh) is all one suit
+// and is beaten by a higher run of that suit; no pairs in a row; only four of a kind cuts a 2.
 import { register } from './frame.js';
 import { el, esc } from '../util.js';
 import { stream } from '../core/rng.js';
 import { T } from '../i18n.js';
 
-const RANKS = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'], SUITS = ['♠', '♣', '♦', '♥'];
-const card = (r, s) => ({ r, s, v: r * 4 + s });
-const byV = (a, b) => a.v - b.v;
+import { RANKS, SUITS, card, byV, BOMB, classify, beats, choose, setNorth, isNorth } from './tienlenrules.js';
+export { classify, beats, choose, setNorth };
 
-// what kind of play these cards are (or null if they are not a play)
-export function classify(cs) {
-  const c = [...cs].sort(byV), n = c.length; if (!n) return null;
-  const top = c[n - 1].v, same = c.every(x => x.r === c[0].r);
-  if (n === 1) return { type: 'single', n, top, r: c[0].r };
-  if (same) return n === 2 ? { type: 'pair', n, top, r: c[0].r } : n === 3 ? { type: 'triple', n, top, r: c[0].r } : n === 4 ? { type: 'quad', n, top, r: c[0].r } : null;
-  if (n >= 3 && c.every((x, i) => x.r < 12 && (i === 0 || x.r === c[i - 1].r + 1))) return { type: 'run', n, top, r: c[n - 1].r };
-  if (n >= 6 && n % 2 === 0) {
-    let ok = true; for (let i = 0; i < n; i += 2) { if (c[i].r !== c[i + 1].r || c[i].r >= 12 || (i && c[i].r !== c[i - 2].r + 1)) { ok = false; break; } }
-    if (ok) return { type: 'pairs', n, len: n / 2, top, r: c[n - 1].r };
-  }
-  return null;
-}
-// can play a beat play b (b null: a new round, anything goes)
-export function beats(a, b) {
-  if (!a) return false; if (!b) return true;
-  if (a.type === b.type && a.n === b.n) return a.top > b.top;
-  if (b.type === 'single' && b.r === 12) return a.type === 'quad' || (a.type === 'pairs' && a.len >= 3);
-  if (b.type === 'pair' && b.r === 12) return a.type === 'quad' || (a.type === 'pairs' && a.len >= 4);
-  if (b.type === 'quad') return a.type === 'pairs' && a.len >= 4;
-  if (b.type === 'pairs' && b.len === 3) return a.type === 'quad' || (a.type === 'pairs' && a.len >= 4);
-  return false;
-}
-// every play that can be made from a hand
-function allPlays(hand) {
-  const out = [], byR = {}; hand.forEach(c => (byR[c.r] = byR[c.r] || []).push(c));
-  const sub = (arr, k, start = 0, cur = [], res = []) => { if (cur.length === k) { res.push([...cur]); return res; } for (let i = start; i < arr.length; i++) { cur.push(arr[i]); sub(arr, k, i + 1, cur, res); cur.pop(); } return res; };
-  for (const c of hand) out.push([c]);
-  for (const r in byR) for (let k = 2; k <= byR[r].length; k++) sub(byR[r].sort(byV), k).forEach(x => out.push(x));
-  // runs: lowest card of each rank, and every suit for the top card
-  for (let s = 0; s < 11; s++) for (let e = s + 2; e < 12; e++) {
-    let ok = true; for (let r = s; r <= e; r++) if (!byR[r]) { ok = false; break; } if (!ok) break;
-    const base = []; for (let r = s; r < e; r++) base.push([...byR[r]].sort(byV)[0]);
-    byR[e].forEach(t => out.push([...base, t]));
-  }
-  // pairs in a row
-  for (let s = 0; s < 11; s++) for (let e = s + 2; e < 12; e++) {
-    let ok = true; for (let r = s; r <= e; r++) if (!byR[r] || byR[r].length < 2) { ok = false; break; } if (!ok) break;
-    const p = []; for (let r = s; r <= e; r++) { const q = [...byR[r]].sort(byV); p.push(...(r === e ? q.slice(-2) : q.slice(0, 2))); }
-    out.push(p);
-  }
-  return out.map(cs => ({ cs, k: classify(cs) })).filter(x => x.k);
-}
-const BOMB = k => k.type === 'quad' || (k.type === 'pairs' && k.len >= 3);
-// a sensible play for a computer player (or a hint for the child): null = pass
-export function choose(hand, table, { strong = false, others = 13 } = {}) {
-  const plays = allPlays(hand).filter(p => beats(p.k, table));
-  if (!plays.length) return null;
-  if (!table) {
-    // lead with the lowest card, in the biggest group it belongs to (keep 2s and bombs for later)
-    const low = [...hand].sort(byV)[0];
-    const withLow = plays.filter(p => p.cs.includes(low) && !BOMB(p.k) && p.cs.every(c => c.r < 12));
-    const pool = withLow.length ? withLow : plays;
-    pool.sort((a, b) => b.k.n - a.k.n || a.k.top - b.k.top); return pool[0].cs;
-  }
-  const normal = plays.filter(p => p.k.type === table.type && p.k.n === table.n).sort((a, b) => a.k.top - b.k.top);
-  // don't throw a 2 or break up a bomb early unless someone is about to win
-  const cheap = normal.filter(p => p.cs.every(c => c.r < 12) || others <= 3 || hand.length <= 4);
-  if (cheap.length) return cheap[0].cs;
-  if (normal.length && (strong || others <= 4)) return normal[0].cs;
-  const bombs = plays.filter(p => BOMB(p.k)).sort((a, b) => a.k.top - b.k.top);
-  if (bombs.length && (strong || others <= 4)) return bombs[0].cs;
-  return null;
-}
-
-register({
+const TL = {
   id: 'tienlen', online: true, icon: '🎴', origin: 'vn', name: () => T('Tiến Lên (cards)', 'Tiến Lên miền Nam'),
   async run(api) {
     if (api.online) return tienlenOnline(api);
     const little = api.little, strong = api.strong;
-    api.say('Tiến Lên! Beat the cards on the table with the same kind of play, but higher. 3 is the lowest, 2 is the highest. Play all your cards first to win!',
+    if (isNorth()) api.say('Tiến Lên miền Bắc! Beat the cards on the table with the same kind of play, higher and of the same suit. A run must be all one suit. Play all your cards first to win!',
+      'Tiến Lên miền Bắc! Đánh bài cao hơn bài trên bàn, cùng kiểu và cùng chất. Sảnh phải đồng chất. Ai đánh hết bài trước là thắng!');
+    else api.say('Tiến Lên! Beat the cards on the table with the same kind of play, but higher. 3 is the lowest, 2 is the highest. Play all your cards first to win!',
       'Tiến Lên! Đánh bài cao hơn bài trên bàn, cùng một kiểu. 3 nhỏ nhất, 2 lớn nhất. Ai đánh hết bài trước là thắng!');
     const t = el('div', 'tl', `<div class="tl-opp"></div><div class="tl-table"><div class="tl-who"></div><div class="tl-pile"></div></div><div class="tl-msg"></div><div class="tl-hand"></div>
       <div class="tl-btns"><button class="tl-b hint">💡 ${T('Hint', 'Gợi ý')}</button><button class="tl-b pass">✋ ${T('Pass', 'Bỏ lượt')}</button><button class="tl-b play">▶ ${T('Play', 'Đánh')}</button></div>`);
@@ -206,7 +145,10 @@ register({
     api.dots(HANDS, HANDS);
     return api.win({ title: wins ? T(`You won ${wins} hand${wins > 1 ? 's' : ''} of Tiến Lên!`, `Con thắng ${wins} ván Tiến Lên!`) : T('Great games of Tiến Lên with anh Ba and Phong!', 'Chơi Tiến Lên với anh Ba và Phong vui quá!') });
   }
-});
+};
+// (Round V) miền Nam keeps its rules; miền Bắc plays the same game with the northern rules switched on for its length
+register({ ...TL, run: async api => { setNorth(false); return TL.run(api); } });
+register({ ...TL, id: 'tienlenbac', name: () => T('Tiến Lên, northern rules (cards)', 'Tiến Lên miền Bắc'), run: async api => { setNorth(true); try { return await TL.run(api); } finally { setNorth(false); } } });
 
 // Tiến Lên with friends online (round G): 2 to 4 children, each on their own device (r63, owner: games with friends are
 // only between the players, so no computer players fill the table any more; with two, each gets 13 cards and the rest

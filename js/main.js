@@ -26,6 +26,8 @@ import { openChat, personaByName, PERSONAS } from './chat.js';
 import { voiceCommand, voiceControlOn } from './commands.js';
 import { ITEMS, RECIPES, GATHER, STICKERS, QUESTS, dishInfo } from './data.js';
 import { openGame, gameOpen, GAMES } from './games/frame.js';
+import { gameInfo } from './content/activities.js';
+const gameInfoAge = id => { try { return gameInfo(id).ageMin; } catch (e) { return 0; } };
 import './games/all.js'; // every mini-game (js/games/all.js)
 import { openHowTo } from './howto.js';
 import { createFarm, jobProgress, ensureJobs } from './farm.js';
@@ -59,7 +61,7 @@ import { createReport, addMinute } from './report.js';
 import { createCoop } from './coop.js';
 import { createTwinChests } from './twinchests.js';
 import { createClaims } from './claims.js';
-import { createNetGames, onlineDef } from './netgames.js';
+import { createNetGames, onlineDef, ONLINE_GAMES } from './netgames.js';
 import { createSimple, wantsSimple } from './simple.js';
 import { id as makeId } from './core/ids.js';
 import { createCities } from './cities.js';
@@ -309,13 +311,13 @@ function setupGuides() {
   });
   world.updaters.push((dt, t) => {
     const h0 = G.heroes[0], tg0 = h0 && playing ? questTarget(h0) : null;
-    beam.visible = bang.visible = !!tg0;
+    beam.visible = bang.visible = !!tg0 && !h0.profile.questFold; // (Round V) nor its light
     if (tg0) { bangIt.x = tg0.x; bangIt.z = tg0.z; const gy = heightAt(tg0.x, tg0.z); beam.position.set(tg0.x, gy + 35, tg0.z); bang.position.set(tg0.x, gy + 5.2 + Math.abs(Math.sin(t * 3)) * .8, tg0.z); beam.material.opacity = .2 + Math.sin(t * 2) * .08; }
     guides.forEach((g, i) => {
       const h = G.heroes[i];
       if (h && h.walkTo && h.walkTo.friend) { const P = G.partners[h.walkTo.friend]; if (!P) h.walkTo = null; else { h.walkTo.x = P.pos.x; h.walkTo.z = P.pos.z; if (dist2(h.pos.x, h.pos.z, P.pos.x, P.pos.z) < 4) { SFX.chime(); hudFor(h).toast('👫 ' + T(`You found ${P.name}! Say hello!`, `Con đã gặp ${P.name}! Chào bạn đi!`)); say(`You found ${P.name}! Say hello!`, `Con đã gặp ${P.name} rồi! Chào bạn đi!`); h.walkTo = null; G.huds[h.i] && G.huds[h.i].toggleEmotes(true); } } }
       if (h && h.walkTo && dist2(h.pos.x, h.pos.z, h.walkTo.x, h.walkTo.z) < 7) { SFX.chime(); hudFor(h).toast('👣 ' + T(`You walked to ${h.walkTo.name}!`, `Con đã đi bộ đến ${h.walkTo.name}!`)); h.walkTo = null; }
-      const tg = h && playing ? h.walkTo || questTarget(h) : null;
+      const tg = h && playing ? h.walkTo || (h.profile.questFold ? null : questTarget(h)) : null; // (Round V) a folded quest shows no arrow
       const d = tg ? dist2(h.pos.x, h.pos.z, tg.x, tg.z) : 0, show = !!tg && d > 5 && !G.paused;
       g.arrow.visible = show; g.dots.forEach(x => x.visible = show);
       if (!show) return;
@@ -534,9 +536,10 @@ G.townTalk = async (h, who) => {
   }
   if (who === 'tienlen') {
     const k = await dialog('Anh Ba', [['Hey! Con Vật and I are playing Tiến Lên, southern style. Sit down, I’ll deal you thirteen cards!', 'Ê em! Anh với Con Vật đang đánh Tiến Lên miền Nam nè. Ngồi xuống, anh chia cho em mười ba lá!']],
-      [['▶ Play Tiến Lên!', '▶ Chơi Tiến Lên!'], ['📺 How to play', '📺 Xem cách chơi'], ['👋 Later', '👋 Để sau']]);
+      [['▶ Play Tiến Lên (southern rules)', '▶ Chơi Tiến Lên miền Nam'], ['▶ Play Tiến Lên (northern rules)', '▶ Chơi Tiến Lên miền Bắc'], ['📺 How to play', '📺 Xem cách chơi'], ['👋 Later', '👋 Để sau']]);   // (Round V, owner 13 Oct: miền Bắc too)
     if (k === 0) playGame(h.i, 'tienlen', 'folk');
-    if (k === 1) { G.paused = true; openHowTo('tienlen', { onPlay: () => { G.paused = false; playGame(h.i, 'tienlen', 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
+    if (k === 1) playGame(h.i, 'tienlenbac', 'folk');
+    if (k === 2) { G.paused = true; openHowTo('tienlen', { onPlay: () => { G.paused = false; playGame(h.i, 'tienlen', 'folk'); }, onClose: () => { if (!gameOpen()) G.paused = false; } }); }
   }
   if (who === 'tuan') {
     const k = await dialog('Anh Tuấn', [['Đá cầu! We kick the shuttlecock and never let it touch the ground. Want to try?', 'Đá cầu nè! Tụi anh đá quả cầu, không để nó rơi xuống đất. Em thử không?']],
@@ -555,7 +558,7 @@ dialogHooks.chat = name => {
   if (h) G.chatWith(h.i, pid);
 };
 // ---------- the Games hub: every game, by place, playable straight away ----------
-const GAME_SPOT = { music: 'musiccorner', firstwords: 'g_firstwords', tangram: 'g_tangram', snakes: 'g_snakes', rangoli: 'g_rangoli', datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', tienlen: 'tienlen', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
+const GAME_SPOT = { music: 'musiccorner', firstwords: 'g_firstwords', tangram: 'g_tangram', snakes: 'g_snakes', rangoli: 'g_rangoli', datnieu: 'g_datnieu', kite: 'g_kite', chichi: 'g_chichi', sackrace: 'g_sackrace', cricket: 'g_cricket', parcel: 'g_parcel', words: 'g_words', snap: 'cards', tienlen: 'tienlen', tienlenbac: 'tienlen', dacau: 'dacau', mrwolf: 'npc_jack', chuyen: 'npc_mit', dragon: 'npc_bom', marbles: 'npc_ruby', skipping: 'npc_lan', oanquan: 'npc_teo', hopscotch: 'npc_ti', caro: 'npc_bong', tug: 'npc_su', market: 'npc_mai', jigsaw: 'easel', bunny: 'hutch', balloon: 'balloon', bubbles: 'bubbles',
   tower: 'blocks', order: 'order', sortout: 'bear', duckmaze: 'duckmaze', memory: 'chest', tune: 'xylo', shapes: 'theatre', oddone: 'frog' };
 G.gameSpot = id => G.interactables.find(it => it.id === (GAME_SPOT[id] || (G.GAME_SPOT || {})[id] || (SHRINES.find(s => s.game === id) || {}).id));
 G.openQuick = i => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; openQuick(G, i); };
@@ -784,7 +787,7 @@ function setupWanderers(active) {
   G.wanderers.forEach(w => { scene.remove(w.av.root); scene.remove(w.tag); }); G.wanderers = [];
   for (let i = G.interactables.length - 1; i >= 0; i--) if (/^wander\d/.test(G.interactables[i].id)) G.interactables.splice(i, 1);
   profiles.filter(p => !active.includes(p)).slice(0, 4).forEach((p, k) => {
-    const av = buildAvatar(p.look, p.photo), tag = nameTag(p.name);
+    const av = buildAvatar(p.look, p.photo), tag = nameTag(p.name); av.root.userData.own = true; // (Round V) another child of this device
     const x = HOME.x - 8 + k * 4, z = HOME.z + 4;
     av.root.position.set(x, heightAt(x, z), z); scene.add(av.root); scene.add(tag);
     const w = { av, tag, tx: x, tz: z, pos: av.root.position, yaw: 0, wave: 0 }; G.wanderers.push(w);
@@ -802,6 +805,7 @@ world.updaters.push((dt, t) => G.wanderers.forEach((w, k) => {
 }));
 G.openPad = (i, tab) => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; openPad(G, i, tab); };
 G.closePad = () => { G.paused = false; };
+G.closePadNow = () => { const m = document.querySelector('.modal.pad'); if (m) { m.remove(); G.paused = false; } };   // (Round V) close the Pad from outside it
 
 // ---------- talking: quick phrases, speech bubbles, voice calls ----------
 function bubble(target, text) {
@@ -835,7 +839,7 @@ G.setAudio = (kind, on) => {
 };
 G.openSound = () => import('./soundsheet.js').then(m => m.openSoundSheet(G));
 // (r63) the first tap asks for the microphone and turns it on; then each tap turns it off or on again
-G.toggleMute = async () => { if (!Net.mic) { Net.resumeAudio(); await Net.getMic(true); } else { Net.setMuted(!Net.muted); Net.resumeAudio(); } G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted || !Net.mic)); };
+G.toggleMute = async () => { if (!Net.micLive) { Net.resumeAudio(); await Net.getMic(true); } else { Net.setMuted(!Net.muted); Net.resumeAudio(); } G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted || !Net.micLive)); };
 // Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.
 addEventListener('keydown', e => {
   if (!playing || e.repeat || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '')) return;
@@ -881,9 +885,10 @@ Net.on('hello', r => {
   const old = G.partners[r.id]; if (old) { scene.remove(old.av.root); scene.remove(old.tag); }
   const av = buildAvatar(Object.assign({ style: 'shirt', color: '#3d7fd6', hat: 'none', back: 'none', hair: '#1d1412', hairStyle: 'short', skin: '#f6c7a5', glider: 0 }, r.look || {}), r.photo);
   scene.add(av.root); const tag = nameTag((r.name || T('Friend', 'Bạn')) + (r.look && r.look.star ? ' ★' : ''), '#9ff0ff'); // (a week's star tester: ★) scene.add(tag);
-  G.partners[r.id] = { id: r.id, av, tag, pos: old ? old.pos : new THREE.Vector3(0, -50, 0), yaw: 0, st: 'idle', name: r.name, photoURL: avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) }) };
+  av.root.userData.own = true; // (Round V) a friend online, never a villager
+  G.partners[r.id] = { id: r.id, av, tag, pos: old ? old.pos : new THREE.Vector3(0, -50, 0), yaw: 0, st: 'idle', name: r.name, look: r.look || {}, photoURL: avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) }) };
   if (!old) { SFX.chime(); say('Your friend is here! Say hello!', 'Bạn của con đã đến! Chào bạn đi!'); toast(T(`${r.name} is here!`, `${r.name} đã đến!`)); }
-  G.huds.forEach(hd => hd.setCall(true, false, Net.muted || !Net.mic));
+  G.huds.forEach(hd => hd.setCall(true, false, Net.muted || !Net.micLive));
   if (G.onNet) G.onNet();
 });
 Net.on('emote', d => { const e = EMOTES.find(e => e.id === d.id), P = G.partners[d.from]; if (!e || !P) return; bubble(P, e.icon + ' ' + T(e.en, e.vi)); say(e.en, e.vi); });
@@ -898,7 +903,7 @@ G.netGames = createNetGames({
     say('A friend wants to play a game with you!', 'Một bạn muốn chơi trò chơi với con!');
     const stars = '⭐'.repeat(d.level || 1);
     dialog(remoteName(d.from), [[`🎲 ${remoteName(d.from)} wants to play ${gname} with you! (${stars})`, `🎲 ${remoteName(d.from)} muốn chơi ${gname} với con! (${stars})`, 'Your friend wants to play a game with you!', 'Bạn của con muốn chơi một trò với con!']], [['▶ Play', '▶ Chơi'], ['Not now', 'Để sau']])
-      .then(k => G.netGames.answer(d, k === 0 && !gameOpen() && !!h));
+      .then(k => { G.netGames.answer(d, k === 0 && !gameOpen() && !!h); if (k === 0) G.closePadNow(); });   // (Round V) yes closes the Friends page
   },
   onStart: (s, ask) => {
     if (!s) { toast(T('Nobody could play just now. Try again later!', 'Lúc này chưa bạn nào chơi được. Lát nữa thử lại nhé!')); return; }
@@ -911,7 +916,10 @@ G.netGames = createNetGames({
       let seq = 0; const sync = { send: p => online.move(seq++, p), listen: fn => online.onMove((seat, n, mv) => { if (seat !== s.mine) fn(mv); }) };
       G.readTaleNow(G.heroes[0], t, sync).finally(end); return;
     }
-    G.playGameOnline(s.game, s.level || 1, online).finally(end);
+    // (Round V, owner 13 Oct) the Friends page closes when the game starts (it stayed in front of the game); "Play again"
+    // after a game with friends asks the same friends again (it did nothing)
+    G.closePadNow();
+    G.playGameOnline(s.game, s.level || 1, online).then(res => { end(); if (res && res.next === 'again') setTimeout(() => G.inviteGame(s.game, s.seats.find(id => id !== Net.me), s.level || 1, s.size), 400); }, end);
   },
   onEnd: id => toast(T(`${remoteName(id)} left the game.`, `${remoteName(id)} đã rời trò chơi.`))
 });
@@ -924,6 +932,21 @@ Net.on('claim', d => G.claims.receive(d));
 G.together = () => Net.connected && Object.keys(Net.remotes).length > 0 && !G.netGames.session;
 // (r63, owner: the children choose, e.g. a bigger Caro board) Caro also asks the board's size, 3 to 19 squares a side
 const CARO_SIZES = [3, 6, 9, 13, 15, 19];
+// (Round V, owner 13 Oct: "add a coop game button, then it shows a list of games") every game to play with the friends in the
+// room on one page: the games made for friends (turns on each device), any game raced side by side, and stories read together
+G.openPlayTogether = () => {
+  const ids = Object.keys(Net.remotes); if (!ids.length) { toast(T('Nobody is in your room yet.', 'Chưa có bạn nào trong phòng.')); return; }
+  const little = G.heroes[0].profile.age !== 'big', made = Object.keys(ONLINE_GAMES).filter(id => GAMES[id]);
+  const race = Object.keys(GAMES).filter(id => !ONLINE_GAMES[id] && (!little || !gameInfoAge(id) || gameInfoAge(id) < 5)), tales = (G.TALES || []).slice(0, 12);
+  const btn = (id, sub) => `<button class="pt-g" data-g="${esc(id)}" aria-label="${esc(GAMES[id].name())}">${pic(GAMES[id].icon)}<b>${esc(GAMES[id].name())}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
+  const m = modal('playtogether', `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>${pic('🎲')} ${T('Play together', 'Chơi cùng nhau')}</h2>
+    <h3>${pic('👫')} ${T('Games made for friends', 'Trò chơi dành cho bạn bè')}</h3><div class="pt-grid">${made.map(id => btn(id, T(`up to ${ONLINE_GAMES[id].max}`, `tối đa ${ONLINE_GAMES[id].max}`))).join('')}</div>
+    <h3>${pic('🏁')} ${T('Race side by side', 'Thi đua cùng nhau')} <small>${T('everyone plays the same game, stars for all', 'mọi người chơi cùng một trò, ai cũng có sao')}</small></h3><div class="pt-grid">${race.map(id => btn(id)).join('')}</div>
+    ${tales.length ? `<h3>${pic('📖')} ${T('Read a story together', 'Đọc truyện cùng nhau')}</h3><div class="pt-grid">${tales.map(t => `<button class="pt-g" data-g="tale-${esc(t.id)}" aria-label="${esc(t.title())}">${pic('📖')}<b>${esc(t.title())}</b></button>`).join('')}</div>` : ''}`);
+  m.querySelector('.x').onclick = () => m.close();
+  m.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { SFX.tap(); m.close(); G.inviteGame(b.dataset.g, ids[0]); });
+  return m;
+};
 G.inviteGame = (game, to, level, size) => {
   const p = G.heroes[0].profile;
   if (level == null) return new Promise(res => {
@@ -990,7 +1013,8 @@ G.findFriend = i => {
 Net.on('quality', () => { const b = document.querySelector('.pad .online.on'); if (b && G.netTick) G.netTick(b); });
 addEventListener('online', () => { toast(T('Back online!', 'Có mạng lại rồi!')); G.listenFriends && G.listenFriends(); });
 addEventListener('offline', () => toast(T('No internet right now. Friends will come back when it returns.', 'Đang mất mạng. Khi có mạng lại, các bạn sẽ quay lại.')));
-Net.on('talking', on => G.huds.forEach(hd => hd.setCall(Net.connected, on, Net.muted || !Net.mic)));
+Net.on('micchange', () => G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted || !Net.micLive)));
+Net.on('talking', on => G.huds.forEach(hd => hd.setCall(Net.connected, on, Net.muted || !Net.micLive)));
 const _np = new THREE.Vector3();
 let netStatus = '';
 Net.on('status', s => {
@@ -999,9 +1023,12 @@ Net.on('status', s => {
     nocode: T('No room with that number. Check the code.', 'Không có phòng số này. Kiểm tra lại mã nhé.'),
     mictap: T('Your microphone is off. Tap 🎙️ Mic to talk to your friend.', 'Micrô đang tắt. Chạm nút 🎙️ Micrô để nói chuyện với bạn nhé.'),
     micdenied: T('The microphone is switched off for this game. A grown-up can allow it: iPhone Settings → Safari (or the game) → Microphone → Allow.', 'Micrô đang bị tắt cho trò chơi này. Người lớn có thể bật: Cài đặt iPhone → Safari (hoặc trò chơi) → Micrô → Cho phép.'),
+    micbusy: T('Another app or a call (like FaceTime) is using the microphone. End the call, then tap 🎙️ Mic again.', 'Một ứng dụng khác hoặc cuộc gọi (như FaceTime) đang dùng micrô. Hãy tắt cuộc gọi rồi chạm 🎙️ Micrô lần nữa nhé.'),
     micask: T('Asking for the microphone… On iPhone or iPad, tap Allow.', 'Đang xin dùng micrô… Trên iPhone hoặc iPad, chạm Cho phép nhé.'),
     micold: T('This iPhone or iPad cannot use the microphone in the game. A grown-up can update it to iOS 14.3 or newer, or open the game in Safari.', 'iPhone hoặc iPad này chưa dùng được micrô trong trò chơi. Người lớn có thể cập nhật lên iOS 14.3 trở lên, hoặc mở trò chơi trong Safari.'),
     micon: T('Microphone on: your friend can hear you!', 'Đã bật micrô: bạn có thể nghe con nói rồi!'),
+    micstop: T('The iPhone switched the microphone off (the game went to the background). Tap 🎙️ Mic to turn it on again.', 'iPhone đã tắt micrô (khi trò chơi chạy nền). Chạm 🎙️ Micrô để bật lại nhé.'),
+    micstuck: T('The iPhone has not answered. Close the game fully (swipe it away), open it again, then tap 🎙️ Mic.', 'iPhone chưa trả lời. Hãy tắt hẳn trò chơi (vuốt lên để đóng), mở lại rồi chạm 🎙️ Micrô nhé.'),
     nomic: T('No microphone: your friend will not hear you, but you can still play and use the talk buttons.', 'Không có micrô: bạn sẽ không nghe được con, nhưng vẫn chơi và dùng nút nói được.'),
     left: T('The room has closed.', 'Phòng đã đóng.'), full: T('That room is full (6 players). Start your own room!', 'Phòng đã đủ 6 người. Hãy tạo phòng mới nhé!'), tapaudio: T('Tap the 🎙️ button to hear your friend.', 'Chạm nút 🎙️ để nghe bạn nói.'), cloud: T('Connected through the cloud relay! You can play and use the talk buttons. (Voice calls need a direct link: try both on Wi-Fi, or ask a grown-up to add a relay.)', 'Đã kết nối qua mạng đám mây! Chơi và dùng nút nói được. (Gọi bằng giọng nói cần kết nối trực tiếp: thử cả hai dùng Wi-Fi, hoặc nhờ người lớn thêm máy chủ trung chuyển.)'), error: T('Could not connect. Check the internet and try again.', 'Không kết nối được. Kiểm tra mạng rồi thử lại.'),
     removed: T('The room’s starter asked you to leave the room.', 'Chủ phòng đã mời con ra khỏi phòng.'),
@@ -1132,6 +1159,8 @@ const friendStatus = f => {
 // (round R privacy, 9 Oct) a friend made in a room (＋👫) is saved with their key: it lets them straight into my room later
 // (if they can prove it), and locks invitations and "where I am" notes for them alone
 const addFriend = (code, name, pub) => { code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); if (code.length !== 6 || code === settings.friendCode) return false; let f = settings.friends.find(x => x.code === code); if (f) { if (name) f.name = name; } else settings.friends.push(f = { code, name: name || code }); if (okPub(pub)) f.pub = pub; settings.friendsOn = true; saveSettings(); G.listenFriends(); return true; };
+// (Round V, owner 13 Oct) the microphone test for grown-ups (js/mictest.js), with or without a room
+const micTestHTML = () => `<p class="center"><button class="btn" data-mictest>🎙️ ${T('Microphone test (grown-ups)', 'Thử micrô (người lớn)')}</button></p>`;
 const netLineHTML = () => (n => `<p class="note center netline">📶 ${T('This device', 'Máy này')}: ${n.online ? (n.type ? esc(n.type) + ' · ' : '') + (n.eff ? esc(n.eff.toUpperCase()) + ' · ' : '') + (n.down ? n.down + ' Mbps · ' : '') : T('no internet!', 'mất mạng!') + ' · '}${n.cloud ? T(`cloud relay on (${n.brokers} server${n.brokers === 1 ? '' : 's'})`, `đang dùng mạng đám mây (${n.brokers} máy chủ)`) : T('direct link', 'kết nối trực tiếp')}${n.voice ? ' · 🎙️ ' + T('voice on', 'đang gọi') : n.cloud ? ' · ' + T('voices can’t travel over the cloud relay yet: use 💬', 'giọng nói chưa đi qua mạng đám mây được: dùng nút 💬') : ''}</p>`)(Net.netInfo());
 const pqHTML = id => (q => q ? `<small class="pq">${G.barsHTML(q.bars)} ${q.rtt != null ? q.rtt + ' ms' : '…'} · ${routeName(q.route)}${q.weak ? ' · ' + T('weak', 'yếu') : ''}</small>` : '')(Net.quality(id));
 G.netTick = body => {
@@ -1152,25 +1181,30 @@ const bindGUHow = (body, redraw) => {
   });
 };
 G.drawOnlinePanel = (body, redraw) => {
-  G.onNet = () => { if (document.body.contains(body)) redraw(); };
+  // (Round V, owner 13 Oct) a friend who accepts and comes into the room closes the Friends page, so the child sees them
+  G._padRemotes = Object.keys(Net.remotes).length;
+  G.onNet = () => { if (!document.body.contains(body)) return; const n = Object.keys(Net.remotes).length; if (n > G._padRemotes) { G._padRemotes = n; G.closePadNow(); return; } G._padRemotes = n; redraw(); };
   const h = G.heroes[0];
   // (round R privacy, 9 Oct, owner) online play is off until a grown-up turns it on (Grown-ups → Playing online): no Start, no Join
   if (!settings.online) { body.innerHTML = `<div class="online off"><p class="note center onlineoff">🔒 ${T('Playing with friends is off. Ask a grown-up to turn it on.', 'Chơi cùng bạn đang tắt. Nhờ người lớn bật lên nhé.')}</p>
     ${gUHow(false)}</div>`; bindGUHow(body, redraw); return; }
-  const friendsBox = () => `<div class="ocard friends"><h3>👫 ${T('My friends', 'Bạn của con')}</h3>
+  // (Round V, owner 13 Oct) "My friends" folds away (remembered on this device)
+  const friendsBox = () => `<details class="ocard friends" ${settings.friendsFold ? '' : 'open'}><summary><h3>👫 ${T('My friends', 'Bạn của con')}</h3></summary>
       <p class="note">${T('My friend code', 'Mã bạn bè của con')}: <b class="fcode">${settings.friendCode}</b></p>
       <label class="tog"><input type="checkbox" id="fOn" ${settings.friendsOn ? 'checked' : ''}> ${T('Friends can see when I am playing and where, and invite me (needs the internet)', 'Bạn bè thấy khi con đang chơi, đang ở đâu, và mời con được (cần có mạng)')}</label>
       <div class="flist">${settings.friends.map(f => `<div class="frow"><span class="fwho">🧒 <b>${esc(nm((Net.friends.status[f.code] || {}).name || f.name))}</b> <small>${esc(f.code)}</small>${friendStatus(f)}</span>${(Net.friends.status[f.code] || {}).online && (Net.friends.status[f.code] || {}).room && Net.code !== Net.friends.status[f.code].room ? (Net.sameMap(Net.friends.status[f.code].map) ? `<button class="btn primary" data-joinf="${esc(Net.friends.status[f.code].room)}" data-fc="${esc(f.code)}">▶ ${T('Join', 'Vào chơi')}</button>` : `<button class="btn mapdiff" data-mapdiff aria-label="${T('Different valley', 'Thung lũng khác')}" title="${T('Different valley', 'Thung lũng khác')}">🗺️</button>`) : ''}${(Net.friends.status[f.code] || {}).online && !(Net.code && Net.friends.status[f.code].room === Net.code) ? `<button class="btn" data-inv="${f.code}">📨 ${T('Invite', 'Mời')}</button>` : ''}<button class="btn" data-rm="${f.code}" aria-label="${T('Remove', 'Xóa')}">✕</button></div>`).join('') || `<p class="note">${T('No friends yet. Add a friend code, or add someone after playing together.', 'Chưa có bạn nào. Nhập mã bạn bè, hoặc thêm bạn sau khi chơi cùng.')}</p>`}</div>
       <div class="vrow"><input type="text" id="fAdd" maxlength="6" placeholder="${T('Friend code', 'Mã bạn bè')}" autocomplete="off"><button class="btn" id="fAddB">＋ ${T('Add', 'Thêm')}</button></div>
-      ${settings.friends.length ? `<p class="note">${T('Friends are never put in a room by themselves: 📨 Invite asks them, ▶ Join goes to theirs.', 'Bạn bè không bao giờ tự bị đưa vào phòng: 📨 Mời là hỏi bạn, ▶ Vào chơi là sang phòng bạn.')}</p>` : ''}${gUHow(true)}</div>`;
+      ${settings.friends.length ? `<p class="note">${T('Friends are never put in a room by themselves: 📨 Invite asks them, ▶ Join goes to theirs.', 'Bạn bè không bao giờ tự bị đưa vào phòng: 📨 Mời là hỏi bạn, ▶ Vào chơi là sang phòng bạn.')}</p>` : ''}${gUHow(true)}</details>`;
   const bindFriends = () => {
     bindGUHow(body, redraw);
+    { const d = body.querySelector('details.friends'); if (d) d.ontoggle = () => { settings.friendsFold = !d.open; saveSettings(); }; }
     body.querySelectorAll('[data-mapdiff]').forEach(b => b.onclick = () => { SFX.tap(); G.mapCard(); });
     body.querySelector('#fOn').onchange = e => { settings.friendsOn = e.target.checked; saveSettings(); G.listenFriends(); };
     body.querySelector('#fAddB').onclick = () => { if (addFriend(body.querySelector('#fAdd').value)) { SFX.chime(); redraw(); } else toast(T('A friend code has 6 letters and numbers.', 'Mã bạn bè gồm 6 chữ và số.')); };
     body.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { settings.friends = settings.friends.filter(f => f.code !== b.dataset.rm); saveSettings(); redraw(); });
     body.querySelectorAll('[data-joinf]').forEach(b => b.onclick = async () => { SFX.tap(); const f = settings.friends.find(x => x.code === b.dataset.fc), st = Net.friends.status[b.dataset.fc] || {}; await G.joinFriend(b.dataset.joinf, f && st.host ? f.pub : null); redraw(); });
     body.querySelectorAll('[data-inv]').forEach(b => b.onclick = async () => { b.disabled = true; inviteToast(await G.inviteFriend(b.dataset.inv)); b.disabled = false; });
+    body.querySelectorAll('[data-mictest]').forEach(b => b.onclick = () => { SFX.tap(); import('./mictest.js').then(M => M.openMicTest()); });
   };
   if (Net.connected || Net.role === 'host') {
     const list = Object.values(Net.remotes);
@@ -1181,10 +1215,11 @@ G.drawOnlinePanel = (body, redraw) => {
       ${netLineHTML()}
       <div class="plist">${list.map(r => `<div class="prow roomp" data-pid="${esc(r.id)}"><img src="${avatarURL({ photo: r.photo, look: Object.assign({ hair: '#1d1412', skin: '#f6c7a5' }, r.look) })}" alt=""><div class="pw"><b>${esc(nm(r.name))}</b>${pqHTML(r.id)}</div>
         <div class="rp-btns"><button class="btn" data-walkf="${esc(r.id)}">👣 ${T('Walk', 'Đi bộ')}</button><button class="btn" data-fly="${esc(r.id)}">✨ ${T('Fly', 'Bay')}</button><button class="btn" data-callf="${esc(r.id)}">📣 ${T('Ask to come', 'Gọi đến')}</button><button class="btn" data-tr="${esc(r.id)}">🔄 ${T('Trade', 'Đổi đồ')}</button><button class="btn" data-caro="${esc(r.id)}">⭕ ${T('Caro', 'Caro')}</button><button class="btn ${G.heroes[0] && G.heroes[0].followId === r.id ? 'primary' : ''}" data-follow="${esc(r.id)}">🚶 ${G.heroes[0] && G.heroes[0].followId === r.id ? T('Stop following', 'Thôi đi theo') : T('Follow', 'Đi theo')}</button>${Net.role === 'host' ? `<button class="btn" data-kick="${esc(r.id)}" aria-label="${T('Remove from the room', 'Mời ra khỏi phòng')}">🚪</button>` : ''}${r.friend && !settings.friends.some(f => f.code === r.friend && f.pub && f.pub === r.pub) ? `<button class="btn" data-addf="${esc(r.friend)}" data-n="${esc(r.name)}" data-pid="${esc(r.id)}" aria-label="${T('Add as a friend', 'Thêm làm bạn')}">＋👫</button>` : ''}</div></div>`).join('') || `<p class="note center">${T('Waiting for friends to join… Tell them the room code!', 'Đang chờ bạn vào… Đọc mã phòng cho bạn nhé!')}</p>`}</div>
+      ${list.length ? `<div class="actions center"><button class="btn primary big" data-together>🎲 ${T('Play together', 'Chơi cùng nhau')}</button></div>` : ''}
       ${list.length ? `<div class="actions center"><button class="btn" data-rpsall>✌️ ${T('Oẳn tù tì with everyone', 'Oẳn tù tì cả phòng')}</button><button class="btn" data-allg="memory">🃏 ${T('Memory Match together', 'Lật hình cùng nhau')}</button><button class="btn" data-allg="tienlen">🎴 ${T('Tiến Lên together', 'Tiến Lên cùng nhau')}</button></div>` : ''}
       <p class="note center">${T('Talk to each other with your voices, or use the 💬 buttons. Up to 6 players in a room.', 'Nói chuyện bằng giọng nói, hoặc dùng nút 💬. Mỗi phòng tối đa 6 người.')}</p>
-      <div class="actions center"><button class="btn big${Net.mic ? '' : ' primary'}" id="oMute">${!Net.mic ? '🎙️ ' + T('Microphone on', 'Bật micrô') : Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
-      ${friendsBox()}</div>`;
+      <div class="actions center"><button class="btn big${Net.micLive ? '' : ' primary'}" id="oMute">${!Net.micLive ? '🎙️ ' + T('Microphone on', 'Bật micrô') : Net.muted ? '🔇 ' + T('Unmute', 'Bật mic') : '🎙️ ' + T('Mute', 'Tắt mic')}</button><button class="btn big danger" id="oEnd">📵 ${T('Leave the room', 'Rời phòng')}</button></div>
+      ${micTestHTML()}${friendsBox()}</div>`;
     body.querySelector('#oMute').onclick = async () => { SFX.tap(); await G.toggleMute(); redraw(); };
     bindCode(body);
     body.querySelectorAll('[data-admit]').forEach(b => b.onclick = () => { SFX.tap(); Net.admit(b.dataset.admit); });
@@ -1200,6 +1235,7 @@ G.drawOnlinePanel = (body, redraw) => {
     body.querySelectorAll('[data-caro]').forEach(b => b.onclick = () => { SFX.tap(); G.inviteGame('caro', b.dataset.caro); });
     { const r = body.querySelector('[data-rpsall]'); if (r) r.onclick = () => { SFX.tap(); G.inviteGame('oantuti'); }; }
     body.querySelectorAll('[data-allg]').forEach(b => b.onclick = () => { SFX.tap(); G.inviteGame(b.dataset.allg); });
+    { const t = body.querySelector('[data-together]'); if (t) t.onclick = () => { SFX.tap(); G.openPlayTogether(); }; }
     body.querySelectorAll('[data-addf]').forEach(b => b.onclick = () => { addFriend(b.dataset.addf, b.dataset.n, (Net.remotes[b.dataset.pid] || {}).pub); SFX.chime(); toast(T('Friend added!', 'Đã thêm bạn!')); redraw(); });
     bindFriends();
     return;
@@ -1217,7 +1253,7 @@ G.drawOnlinePanel = (body, redraw) => {
     <div class="two-col">
       <div class="ocard"><h3>1. ${T('Start a room', 'Tạo phòng')}</h3><button class="btn big primary" id="oHost">📞 ${T('Start', 'Bắt đầu')}</button>${Net.role === 'host' && Net.code ? codeHTML(Net.code) : ''}<p class="note">${T('Friends knock, and you choose who comes in. Saved friends come straight in.', 'Bạn bè gõ cửa, con chọn ai được vào. Bạn đã lưu thì vào thẳng.')}</p></div>
       <div class="ocard joinpad"><h3>2. ${T('Join a room', 'Vào phòng')}</h3><div class="padwrap"></div></div>
-    </div><p class="note center status">${esc(netStatus)}</p>${friendsBox()}</div>`;
+    </div><p class="note center status">${esc(netStatus)}</p>${micTestHTML()}${friendsBox()}</div>`;
   body.querySelector('#oHost').onclick = async () => { ac(); await Net.host(sendHello() || {}); redraw(); };
   bindCode(body);
   const go = () => { Net.join(code, sendHello() || {}); setTimeout(redraw, 50); };
@@ -1237,12 +1273,17 @@ G.drawOnlinePanel = (body, redraw) => {
 };
 
 // ---------- layout ----------
+// (Round V, owner's iPhone notes 13 Oct: a black strip at the bottom) on an iPhone in Safari the window's height stops
+// above the browser's bottom bar, so the page's dark background showed under the game: the game fills the large
+// screen height (100lvh) instead, measured by a hidden probe; the same as the window's height everywhere else
+const lvhProbe = (() => { try { if (!CSS.supports('height', '100lvh')) return null; const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100lvh;visibility:hidden;pointer-events:none'; document.body.appendChild(d); return d; } catch (e) { return null; } })();
+const vh = () => Math.max(innerHeight, lvhProbe ? lvhProbe.offsetHeight : 0);
 // Two players face to face (owner, round R: a tablet lying on the table with a child at each end): the screen is cut
 // across the middle; player 1 has the near half, player 2 the far half turned half a turn (rot 180) so it faces them.
 // On a computer or TV both halves face the same way, side by side ('side'). Grown-ups can pick either (settings.twoView).
 const faceToFace = () => settings.twoView === 'face' || (settings.twoView !== 'side' && document.body.classList.contains('touch'));
 function rects() {
-  const W = innerWidth, H = innerHeight;
+  const W = innerWidth, H = vh();
   if (G.heroes.length < 2) return [{ x: 0, y: 0, w: W, h: H, rot: 0 }];
   if (faceToFace()) return [{ x: 0, y: H / 2, w: W, h: H / 2, rot: 0 }, { x: 0, y: 0, w: W, h: H / 2, rot: 180 }];
   return W >= H ? [{ x: 0, y: 0, w: W / 2, h: H, rot: 0 }, { x: W / 2, y: 0, w: W / 2, h: H, rot: 0 }] : [{ x: 0, y: 0, w: W, h: H / 2, rot: 0 }, { x: 0, y: H / 2, w: W, h: H / 2, rot: 0 }];
@@ -1286,16 +1327,16 @@ function aimCam(h, q) {
   if (q.rot === 180) { h.cam.projectionMatrix.premultiply(_rotZ); h.cam.projectionMatrixInverse.copy(h.cam.projectionMatrix).invert(); }
 }
 function resize() {
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setSize(innerWidth, vh());
   const r = rects();
   G.heroes.forEach((h, i) => { h.cam.aspect = r[i].w / r[i].h; h.cam.updateProjectionMatrix(); G.huds[i] && G.huds[i].layout(r[i], G.heroes.length > 1); });
-  titleCam.aspect = innerWidth / innerHeight; titleCam.updateProjectionMatrix(); placeHolders();
+  titleCam.aspect = innerWidth / vh(); titleCam.updateProjectionMatrix(); placeHolders();
   const sp = $('#split'); sp.hidden = G.heroes.length < 2;
   // a small round switch in the middle of the line: face to face ⇄ side by side, any time (round R, owner)
   let sw = sp.querySelector('.viewsw');
   if (!sw) { sw = document.createElement('button'); sw.className = 'viewsw'; sw.onpointerdown = e => { e.stopPropagation(); }; sw.onclick = e => { e.stopPropagation(); settings.twoView = faceToFace() ? 'side' : 'face'; saveSettings(); SFX.tap(); resize(); }; sp.appendChild(sw); }
   sw.innerHTML = faceToFace() ? ICONS.sideView : ICONS.faceView; sw.setAttribute('aria-label', faceToFace() ? T('Sit side by side', 'Ngồi cạnh nhau') : T('Sit face to face', 'Ngồi đối diện nhau'));
-  if (G.heroes.length > 1) { const v = innerWidth >= innerHeight && !faceToFace(); Object.assign(sp.style, v ? { left: innerWidth / 2 - 2 + 'px', top: 0, width: '4px', height: '100%' } : { top: innerHeight / 2 - 2 + 'px', left: 0, height: '4px', width: '100%' }); }
+  if (G.heroes.length > 1) { const v = innerWidth >= vh() && !faceToFace(); Object.assign(sp.style, v ? { left: innerWidth / 2 - 2 + 'px', top: 0, width: '4px', height: '100%' } : { top: vh() / 2 - 2 + 'px', left: 0, height: '4px', width: '100%' }); }
 }
 addEventListener('resize', resize);
 // Phones (especially iPhone home-screen apps) sometimes report the wrong size after rotating or after the
@@ -1303,7 +1344,7 @@ addEventListener('resize', resize);
 addEventListener('orientationchange', () => setTimeout(resize, 300));
 if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(resize, 100));
 addEventListener('focusout', () => setTimeout(() => { window.scrollTo(0, 0); resize(); }, 150));
-setInterval(() => { const c = renderer.domElement; if (Math.abs(c.clientWidth - innerWidth) > 2 || Math.abs(c.clientHeight - innerHeight) > 2) resize(); }, 700);
+setInterval(() => { const c = renderer.domElement; if (Math.abs(c.clientWidth - innerWidth) > 2 || Math.abs(c.clientHeight - vh()) > 2) resize(); }, 700);
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 function onTap(i, x, y) {
   const h = G.heroes[i]; if (!h || G.paused) return;
@@ -1446,7 +1487,7 @@ function adaptResolution(rawMs) {
   if (performance.now() - adapt.t0 < 2500) return;
   const ms = adapt.sum / adapt.n; adapt.sum = adapt.n = 0; adapt.t0 = performance.now();
   const next = ms < 19 ? Math.min(adapt.max, adapt.pr + .25) : ms > 30 ? Math.max(adapt.min, adapt.pr - .25) : adapt.pr;
-  if (next !== adapt.pr) { adapt.pr = next; renderer.setPixelRatio(next); renderer.setSize(innerWidth, innerHeight, false); }
+  if (next !== adapt.pr) { adapt.pr = next; renderer.setPixelRatio(next); renderer.setSize(innerWidth, vh(), false); }
 }
 // Battery (owner, round O: "the game uses too much battery"): on phones and tablets the valley is drawn 30 times a
 // second (smooth enough for walking; half the work), unless Graphics is on "Pretty".
@@ -1497,7 +1538,7 @@ function frame(now) {
     const a = t * .05;
     titleCam.position.set(PLATEAU.x + Math.cos(a) * 70, 42, PLATEAU.z + Math.sin(a) * 70); titleCam.lookAt(PLATEAU.x, 16, PLATEAU.z); // (round T: round Ông Cú's home)
     world.updateSky(0, titleCam.position);
-    renderer.setScissorTest(false); renderer.setViewport(0, 0, innerWidth, innerHeight); renderer.render(scene, titleCam);
+    renderer.setScissorTest(false); renderer.setViewport(0, 0, innerWidth, vh()); renderer.render(scene, titleCam);
     return;
   }
   stillCheck(now); if (BAT.idle) BAT.idleFrames++;
@@ -1570,7 +1611,7 @@ function frame(now) {
   // one minute of play for the grown-ups' report (real minutes, only while the game is in front and not on a menu)
   if (now - minT >= 60000) { minT = now; if (!document.hidden && !G.paused) G.heroes.forEach(h => addMinute(h.profile)); }
   // render each player's view
-  const r = rects(), H = innerHeight;
+  const r = rects(), H = vh();
   renderer.setScissorTest(G.heroes.length > 1);
   G.heroes.forEach((h, i) => {
     const q = r[i];
@@ -1604,6 +1645,7 @@ createChatter(G);
 setupNPCs(); setupInteractables();
 bootMark('people'); G.farm = createFarm(G); world.updaters.push(G.farm.update); await breathe();
 G.places = createPlaces(G); world.updaters.push(G.places.update);
+world.heroesNear = (x, z, r) => G.heroes.some(h => dist2(h.pos.x, h.pos.z, x, z) < r);   // (Round V) a ridden animal goes home out of every child's sight
 G.town = createTown(G);
 G.GAMES_ICON = id => (GAMES[id] || {}).icon || "🎮";
 createRegions(G);

@@ -143,11 +143,36 @@ export function createSimple(G) {
     m.classList.toggle('wide', isWide); m.classList.toggle('big', !lt);
     const bk = m.querySelector('.sp-back'); bk.hidden = !cat; m.classList.toggle('cards', !cat);
     m.querySelectorAll('.sp-tabs [data-tab]').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
-    if (!cat) { // (Round U) the tab's categories as big picture cards; Ông Cú sits with them
+    if (!cat) { // (Round V, owner 13 Oct: "one screen and scroll down, each has a title then games in roads with them, like the
+      // Khám phá tab") every section of the tab on one page: its title, then its own little road of pictures; Ông Cú by the next one
       lay = null; path.style.height = ''; path.style.width = '';
-      path.innerHTML = `<div class="sp-catgrid">${cardsHTML(tab)}</div><button class="sp-owl oncards" aria-label="${T('Ông Cú', 'Ông Cú')}">${pic('🦉')}</button>`;
-      path.querySelectorAll('.sp-catcard').forEach(b => b.onclick = () => { if (busy) return; SFX.tap(); openCat(b.dataset.cat); });
-      const owl = path.querySelector('.sp-owl'); owl.onclick = () => { SFX.tap(); owl.classList.remove('cheer'); void owl.offsetWidth; owl.classList.add('cheer'); const x = tabOf(tab); say(x.say[0], x.say[1]); };
+      list = []; const groups = groupsOf(tab);
+      const stopHTML = (s, k) => `<button class="sp-stop${sel === idOf(s) ? ' sel' : ''}" data-k="${k}" aria-label="${esc(s.name)}">
+        <span class="sp-pic">${pic(s.icon)}${s.badge ? `<i class="sp-badge">${s.badge}</i>` : ''}${s.isNew ? `<i class="sp-new">${pic('✨')}</i>` : ''}${starsHTML(s)}</span>
+        <b class="sp-name">${esc(s.name)}</b>${!lt ? `<span class="sp-play">${T('Play', 'Chơi')} ▶</span>` : ''}</button>`;
+      path.innerHTML = groups.map(({ area, items }) => { const start = list.length; items.forEach(x => list.push({ ...x, cat: area.key, isNew: !!seen && !seen.has(idOf(x)) }));
+        const got = items.reduce((a, x) => a + (x.stars || 0), 0), all = items.reduce((a, x) => a + (x.max || 0), 0);
+        return `<section class="sp-sec" data-cat="${esc(area.key)}"><h3 class="sp-sectitle" role="heading" aria-level="2"><span class="sp-hpic">${pic(area.icon)}</span><b>${esc(area.name())}</b>${all ? `<span class="sp-count">${pic('⭐')} ${got}/${all}</span>` : ''}</h3>
+          <div class="sp-secroad"><svg class="sp-road" aria-hidden="true"><path/><path class="dash"/></svg>${items.map((x, n) => stopHTML(list[start + n], start + n)).join('')}</div></section>`; }).join('') +
+        `<button class="sp-owl" aria-label="${T('Ông Cú', 'Ông Cú')}">${pic('🦉')}</button>`;
+      const W = path.clientWidth || innerWidth, all = [...path.querySelectorAll('.sp-stop')], tall = Math.max(150, ...all.map(b => b.offsetHeight));
+      path.classList.toggle('secwide', isWide); if (!isWide) path.style.setProperty('--lw', layout(1, W, tall).lw + 'px');
+      if (isWide) { // a phone on its side: the sections side by side, each a title over its own road running sideways
+        const H = sc.clientHeight || innerHeight - 20; let total = 0; path.style.setProperty('--lw', layoutWide(1, H, tall).lw + 'px');
+        path.querySelectorAll('.sp-sec').forEach(sec => { const r = sec.querySelector('.sp-secroad'), bs = [...r.querySelectorAll('.sp-stop')], th = sec.querySelector('.sp-sectitle').offsetHeight + 8, L = layoutWide(bs.length, H - th, tall);
+          bs.forEach((b, k) => { b.style.left = L.pts[k].x + 'px'; b.style.top = L.pts[k].y + 'px'; });
+          const svg = r.querySelector('svg'), d = roadWide(L.pts); svg.setAttribute('width', L.w); svg.setAttribute('height', H - th); svg.querySelectorAll('path').forEach(x => x.setAttribute('d', d));
+          r.style.height = (H - th) + 'px'; sec.style.width = L.w + 'px'; total += L.w + 16; });
+        path.style.width = total + 'px'; path.style.height = H + 'px';
+      } else path.querySelectorAll('.sp-secroad').forEach(r => { const bs = [...r.querySelectorAll('.sp-stop')], L = layout(bs.length, W, tall);
+        bs.forEach((b, k) => { b.style.left = L.pts[k].x + 'px'; b.style.top = (L.pts[k].y - 20) + 'px'; });
+        const svg = r.querySelector('svg'), d = road(L.pts.map(q => ({ x: q.x, y: q.y - 20 }))); svg.setAttribute('width', W); svg.setAttribute('height', L.h); svg.querySelectorAll('path').forEach(x => x.setAttribute('d', d));
+        r.style.height = Math.max(0, L.h - 70) + 'px'; });
+      // Ông Cú beside the one to try next
+      const next = list.findIndex(x => x.max && !x.stars), nb = path.querySelector(`.sp-stop[data-k="${next >= 0 ? next : 0}"]`), owl = path.querySelector('.sp-owl');
+      if (nb) { nb.classList.add('next'); const pr = path.getBoundingClientRect(), br = nb.getBoundingClientRect(), x = br.left - pr.left + br.width / 2, y = br.top - pr.top + path.scrollTop; const left = x > W / 2; owl.style.left = x + (left ? -84 : 84) + 'px'; owl.style.top = y + 60 + 'px'; owl.classList.toggle('left', left); }
+      owl.onclick = () => { SFX.tap(); owl.classList.remove('cheer'); void owl.offsetWidth; owl.classList.add('cheer'); const x = list[next >= 0 ? next : 0]; if (x) say(x.voice[0], x.voice[1]); else { const t = tabOf(tab); say(t.say[0], t.say[1]); } };
+      path.querySelectorAll('button.sp-stop').forEach(b => b.onclick = () => go(list[+b.dataset.k], b));
       return;
     }
     const next = list.findIndex(s => s.max && !s.stars), H = sc.clientHeight || innerHeight - 80, W = path.clientWidth || innerWidth;
@@ -195,15 +220,17 @@ export function createSimple(G) {
     }, wait);
   }
   // open one category's road (from its card, from Discover, or from the checks), from its start, and say its name
+  // (Round V) a section is part of the one page: scroll to its title and say its name
   function openCat(key, quiet) {
-    cat = key; sel = null; draw(); const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0;
-    const h = list.find(x => x.kind === 'head'); if (h && !quiet) say(...h.voice);
+    cat = null; sel = null; draw(); const sc = m.querySelector('.sp-scroll'), sec = m.querySelector(`.sp-sec[data-cat="${CSS.escape(key)}"]`);
+    if (sec) { const t = sec.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - 8; sc.scrollTop = Math.max(0, t); }
+    const g = groupsOf(tab).find(x => x.area.key === key); if (g && !quiet) say(...both(g.area.name));
   }
   function backToCards() { cat = null; sel = null; draw(); const sc = m.querySelector('.sp-scroll'); sc.scrollTop = 0; sc.scrollLeft = 0; }
   // scroll the road so that stop k is near the start of the screen
   function jump(k) {
     const sc = m.querySelector('.sp-scroll'), q = lay && lay.pts[Math.max(0, k)];
-    if (!q) return;
+    if (!q) { const b = m.querySelector(`.sp-stop[data-k="${Math.max(0, k)}"]`); if (b) sc.scrollTop = Math.max(0, b.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - 76); return; }
     const to = wide() ? { left: Math.max(0, q.x - 90), top: 0 } : { top: Math.max(0, q.y - 76), left: 0 };
     sc.scrollTop = to.top; sc.scrollLeft = to.left;
   }
@@ -294,7 +321,8 @@ export function createSimple(G) {
     show, hide: leave, get open() { return !!m && !m.hidden; }, get tab() { return tab; }, get busy() { return busy; },
     // what the road shows now (for the checks): its categories and every stop on it
     // (Round U) the cards: every category of the tab; with one open, its stops
-    get view() { if (!m) return null; return { cat, cats: cat ? [cat] : groupsOf(tab).map(g => g.area.key), stops: cat ? list.filter(s => s.kind !== 'head').map(s => s.key) : [] }; },
+    // (Round V) one page: every section of the tab (its title and road) and every stop on it
+    get view() { if (!m) return null; return { cat, cats: groupsOf(tab).map(g => g.area.key), stops: list.filter(s => s.kind !== 'head').map(s => s.key), secs: m.querySelectorAll('.sp-sec').length }; },
     get cats() { return groupsOf(tab).map(g => g.area.key); },
     // open a category of a tab (tests, and anything that wants to take a child straight to one); null: the cards
     openGroup(t, key) { tab = t; if (key == null) backToCards(); else openCat(key, true); },

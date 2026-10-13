@@ -11,12 +11,16 @@ export const seedPlayers = () => { try { if (!localStorage.getItem('sv2_profiles
 export async function open(browser, { w = 1180, h = 820, lang = 'en', mode = 'solo', touch = false, settings = {}, play = true, pre = null, dpr = 1, fast = true, url = URL, screen = 'valley', route = null } = {}) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch, deviceScaleFactor: dpr });
   const page = await ctx.newPage();
+  // (owner, 13 Oct: "changed-files checks") with SV_COVER=1 the game code each check runs is recorded (see takeCoverage)
+  if (process.env.SV_COVER === '1') await watchCoverage(ctx, page);
   const errors = [];
   page.on('dialog', d => { errors.push('dialog: ' + d.message()); d.accept().catch(() => { }); });
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/peerjs|0\.peerjs|ERR_|Failed to load resource|net::|WebSocket connection to/.test(m.text())) errors.push('console: ' + m.text()); });
   // (round R privacy, 9 Oct) online play is off on a new device; the checks play with it on unless they pass online: false
-  await page.addInitScript(([lang, s]) => { try { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang, voice: false, sound: false, music: false, quality: 'low', autoPack: false, online: true }, s); localStorage.setItem('sv2_settings', JSON.stringify(o)); } catch (e) { } }, [lang, settings]);
+  // (13 Oct) the family's note from Studio (content/custom.json "message") counts as seen today, so a published note never
+  // lands in a check (it pauses the game); a check about the note passes settings: { familyMsgDay: null }
+  await page.addInitScript(([lang, s]) => { try { const o = JSON.parse(localStorage.getItem('sv2_settings') || '{}'); Object.assign(o, { lang, voice: false, sound: false, music: false, quality: 'low', autoPack: false, online: true, familyMsgDay: new Date().toDateString() }, s); localStorage.setItem('sv2_settings', JSON.stringify(o)); } catch (e) { } }, [lang, settings]);
   // (round P: a new device starts with nobody; the checks play as two children made beforehand)
   await page.addInitScript(seedPlayers);
   if (pre) await page.addInitScript(pre);
@@ -56,4 +60,30 @@ export async function start(page, mode = 'solo', screen = 'valley') {
 export async function clear(page) {
   await page.evaluate(() => { document.querySelectorAll('.storybook, .dialog, .modal, .vc-pop, .reward').forEach(e => e.remove()); window.__sv.paused = false; });
   await page.waitForTimeout(150);
+}
+
+// ---- which game code a check ran (SV_COVER=1; tests/suite.mjs builds tests/check-map.json from it) ----
+// Every function of the game's own files (js/…) that ran at least once, as [start, end] character offsets ("did it run"
+// only: counting every call made checks 3 to 4 times slower). A window is
+// read just before it closes, whoever closes it (the check itself or run.mjs after the check).
+let covered = {}, seen = {};
+async function watchCoverage(ctx, page) {
+  // function level only (detailed: false): the per-block kind made checks about 70 % slower
+  let cdp; try { cdp = await ctx.newCDPSession(page); await cdp.send('Profiler.enable'); await cdp.send('Profiler.startPreciseCoverage', { callCount: false, detailed: false }); } catch (e) { return; }
+  const close = ctx.close.bind(ctx);
+  ctx.close = async (...a) => { await readCoverage(cdp); return close(...a); };
+}
+async function readCoverage(cdp) {
+  let list = []; try { list = (await cdp.send('Profiler.takePreciseCoverage')).result; } catch (e) { return; }
+  for (const e of list) {
+    const m = /^https?:\/\/[^/]+\/(js\/[^?#]+\.js)/.exec(e.url); if (!m) continue;
+    const f = covered[m[1]] = covered[m[1]] || new Set();
+    const all = seen[m[1]] = seen[m[1]] || new Set();
+    for (const fn of e.functions) { const r = fn.ranges[0]; if (!r) continue; all.add(r.startOffset + ':' + r.endOffset); if (r.count > 0) f.add(r.startOffset + ':' + r.endOffset); }
+  }
+}
+// { ran: { file: [[start, end], …] }, seen: { … every function the browser knew, run or not } }
+export function takeCoverage() {
+  const pack = o => Object.fromEntries(Object.entries(o).map(([f, set]) => [f, [...set].map(x => x.split(':').map(Number))]));
+  const out = { ran: pack(covered), seen: pack(seen) }; covered = {}; seen = {}; return out;
 }

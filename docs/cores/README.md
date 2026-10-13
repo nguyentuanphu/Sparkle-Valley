@@ -41,6 +41,8 @@ The rules for helper chats are in `CLAUDE.md` (read automatically), so nothing e
 | [studio-r65.md](tasks/studio-r65.md) | Studio | A cleaner Analytics page, broken real photos, ads preview and guide |
 | [voice-daily.md](tasks/voice-daily.md) | Voice & Audio | A daily job that records every missing voice line |
 | [play-reading.md](tasks/play-reading.md) | Play (2nd chat, `core/play-reading`) | Ten reading games, a trial behind a switch |
+| [release-r70-finish.md](tasks/release-r70-finish.md) | Release | Finish r70: full suite, screenshots, zip, "yes, deploy" |
+| [films-batches.md](tasks/films-batches.md) | Release | Story films in batches of about 6, Vietnamese first; the owner's three film notes |
 
 **Without a brief**, paste this as the first message (change the core):
 
@@ -65,6 +67,8 @@ These come from `CLAUDE.md`, `HANDOFF.md` and `docs/ARCHITECTURE.md` §9, which 
 5. **Tests.** Before handing over, run the core's own checks (listed in its file):
    `cd tests && SV_URL=http://localhost:<port>/ CHROMIUM=/opt/pw-browsers/chromium node run.mjs <checks>`.
    Serve the copy you work on with `python3 -m http.server <port>`. Never run two browser test runs at once.
+   (owner, 13 Oct AEDT) A core's own change: `cd tests && SV_URL=http://localhost:<port>/ node suite.mjs --changed` (only the checks for
+   what changed; it can run 3 at a time itself). The full suite (`node suite.mjs`) is Release's, once per release before "yes, deploy".
    A changed check, or a new one, is part of the work.
 6. **Times in Sydney time** (AEDT, UTC+11, in daylight saving; AEST, UTC+10, the rest of the year), labelled, in every message and document (owner, 10 Oct).
 7. **Words for the owner.** Use plain words, Vietnamese when the owner writes Vietnamese, and no jargon.
@@ -83,7 +87,7 @@ These come from `CLAUDE.md`, `HANDOFF.md` and `docs/ARCHITECTURE.md` §9, which 
 | `js/ui.js` | Kid UI | Play (Games hub lists), Online (Friends tab: `drawOnlinePanel` lives in main.js) |
 | `css/style.css` | Kid UI | Each core keeps its styles in its own block with a comment header |
 | `js/state.js` | Kid UI (profiles, settings) | others add a setting through the board |
-| `tests/run.mjs` | each core owns its own checks | Release owns the runner and `harness.mjs` |
+| `tests/run.mjs` | each core owns its own checks | Release owns the runners (`run.mjs`, `suite.mjs`), `harness.mjs`, `check-map.json`, `check-times.json` |
 | `HANDOFF.md`, `CLAUDE.md` | Release | cores propose text on the board |
 | `docs/ARCHITECTURE.md` | the core named in each rule | Release keeps §9.1 and §9.7 |
 | `sw.js`, `js/build.js`, `studio/version.json` | Release | a core adds a new file to `sw.js` FILES and says so on the board |
