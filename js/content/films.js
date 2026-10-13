@@ -211,7 +211,7 @@ export const FILMS = {
         S.say(t + 5.6, 'A sailor saw it and lifted it out.', 'Một người thủy thủ thấy và vớt lên.');
         S.say(t + 8.8, 'He tasted it: so sweet!', 'Anh nếm thử: ngọt quá!');
         S.say(t + 11.6, 'The sailors sailed to the island to trade.', 'Các thủy thủ chèo thuyền đến đảo đổi hàng.');
-        S.say(t + 16.4, 'They gave An Tiêm rice for his melons.', 'Họ đổi gạo lấy dưa của Mai An Tiêm.');
+        S.say(t + 15.8, 'They gave An Tiêm rice for his melons.', 'Họ đổi gạo lấy dưa của Mai An Tiêm.');
         S.cam(t + .8, 1.6, () => [m.position.x + 2.5, 1.8, m.position.z + 6], () => [m.position.x, 0, m.position.z]);
         // the sailor sees it and lifts it out of the water
         S.at(t + 6, () => { s1.mood = 'o'; }); S.do(s1, t + 6.4, 'pick', 1.4);
@@ -330,7 +330,7 @@ export const FILMS = {
         S.show(sp, t + .3); S.scale(boy.o, t + .4, 2, .85, 1.7, k => 1 - (1 - k) ** 3);
         S.cam(t + .2, 3, [0, 3.4, 11.5], [0, 1.6, 1]);
         S.say(t + .6, 'He grew bigger and bigger!', 'Cậu lớn nhanh như thổi!');
-        S.say(t + 4.4, 'The whole village cheered.', 'Cả làng reo hò vui mừng.');
+        S.say(t + 3.6, 'The whole village cheered for the little hero.', 'Cả làng reo hò cổ vũ người anh hùng nhỏ.');
         S.scale(boy.o, t + 2.8, 2.4, 1.7, 2.6, k => 1 - (1 - k) ** 3);
         vs.forEach((v, i) => { S.mood(v, t + 1, 'o'); S.do(v, t + 1, 'surprised', 1.6); S.mood(v, t + 4, 'happy'); S.do(v, t + 4.2 + i * .15, 'cheer', 2.6); });
         S.mood(mom, t + 1, 'o'); S.mood(mom, t + 3.5, 'happy'); S.mood(boy, t + 3, 'happy');
@@ -398,7 +398,7 @@ export const FILMS = {
         S.say(t + 1.6, 'He swung the bamboo this way and that.', 'Chàng vung tre quật ngang quật dọc.');
         S.say(t + 5, 'Then he rode up, up the mountain.', 'Rồi chàng phi ngựa lên núi cao.');
         S.say(t + 8.4, 'And flew into the sky.', 'Và bay thẳng lên trời.');
-        S.say(t + 12, 'Goodbye, brave Gióng!', 'Tạm biệt Thánh Gióng dũng cảm!');
+        S.say(t + 11.6, 'Goodbye, brave Gióng!', 'Tạm biệt Thánh Gióng dũng cảm!');
         S.tw(t + 1.6, 3, k => clumps.forEach(c => tint(c, k)), k => k);
         foes.forEach((f, i) => { S.mood(f, t + 1.6, 'o'); S.face(f, t + 2 + i * .1, PI, .3); S.walk(f, t + 2.3 + i * .1, [f.px * 1.5, -70], 6); });
         S.cam(t + 1.6, 1.6, [10, 6, 10], [-1, 4, -3]);
@@ -638,7 +638,7 @@ FILMS.lantern_prologue = { pages: [
     [nam, teo].forEach((a, i) => { S.mood(a, 4, 'o'); S.do(a, 4.2 + i * .3, 'surprised', 3); S.mood(a, 8, 'sad'); });
     S.shot([0, 2.4, 13], [-2, 4.5, -4]);
     S.cam(3.6, 2, [2, 2.4, 12], [0, 6, -6]); S.cam(6, 3.5, [2, 2, 12], [10, 16, -24]);
-    S.say(9, 'Away they flew!', 'Đèn lồng bay đi mất!');
+    S.say(8.8, 'Away they flew!', 'Đèn lồng bay đi mất!');
     S.at(10.5, () => { });
   },
   // 3. Ông Cú asks the child, and two friends are ready to fly with them
@@ -830,7 +830,7 @@ FILMS.banhchung = { pages: [
       S.say(t + 1.4, 'He folded the leaves into a square.', 'Chàng gấp lá thành hình vuông.');
     }, [0, .2, 3.4], 3.2);
     // the round cake: pound the sticky rice in the mortar
-    S.say(7, 'Now for the round cake!', 'Giờ đến bánh tròn!');
+    S.say(6.4, 'Now for the round cake!', 'Giờ đến bánh tròn!');
     const mortar = Pp.mortar(); S.add(mortar, 1.8, 0, 2.4);
     const pestle = Pp.pestle(); S.add(pestle, 2.3, .55, 2.3);
     S.do(lieu, 5.4, 'idle'); S.walk(lieu, 5.6, [1.8, 1.6]); S.face(lieu, 7.1, [1.8, 2.4]);
@@ -961,7 +961,7 @@ FILMS.caykhe = { pages: [
     S.help(8.4, 'Tap to give the bird a starfruit!', 'Chạm để cho chim ăn một quả khế nhé!', t => {
       S.mood(younger, t, 'happy'); S.show(fr[6], t, false); S.grab(younger, t, gift, [0, -.52, .1]); S.show(gift, t);
       S.say(t + .2, 'He picked a starfruit for the bird.', 'Người em hái một quả khế cho chim.');
-      S.say(t + 4.6, 'The bird bowed: it would pay in gold!', 'Chim cúi đầu: ăn một quả, trả cục vàng!');
+      S.say(t + 3.9, 'The bird bowed: it would pay in gold!', 'Chim cúi đầu: ăn một quả, trả cục vàng!');
       S.walk(younger, t + .2, [6, 2.4], 1.6); S.do(younger, t + 2.6, 'give', 1.2);
       S.show(gift, t + 3.6, false); S.tw(t + 3.4, .6, k => { bird.children[0].rotation.x = Math.sin(k * PI) * .4; });
       S.show(sp, t + 3.6); S.at(t + 4, () => { bird.userData.flap = .4; }); S.at(t + 5.4, () => { bird.userData.flap = 0; }); S.show(sp, t + 5.6, false);
@@ -1084,7 +1084,7 @@ FILMS.caykhe = { pages: [
       S.show(tree.userData.fruits[0], t, false); S.grab(younger, t, fruit, [0, -.52, .1]); S.show(fruit, t);
       S.do(younger, t + .3, 'give', 1.4); S.grab(older, t + 1.7, fruit, [0, -.52, .1]); S.do(younger, t + 1.7, 'idle');
       S.say(t + .4, 'The younger brother shared a starfruit.', 'Người em chia cho anh một quả khế.');
-      S.say(t + 5, 'And the two brothers hugged.', 'Rồi hai anh em ôm nhau.');
+      S.say(t + 4.3, 'And the two brothers hugged, friends again.', 'Rồi hai anh em ôm nhau, lại thương nhau như xưa.');
       S.do(older, t + 1.9, 'eat', 1.8); S.mood(older, t + 1.9, 'happy'); S.show(fruit, t + 3.7, false);
       S.walk(older, t + 3.8, [6, 2.6], .8); S.do(older, t + 5.1, 'hug', 2.4); S.do(younger, t + 5.1, 'hug', 2.4); S.mood(younger, t + 4.4, 'happy');
       S.show(sp, t + 4.4);
@@ -1345,7 +1345,7 @@ FILMS.hoguom = { pages: [
     S.do(than, t2 + .2, 'give', 1.2); S.do(loi, t2 + .2, 'give', 1.2);
     S.say(reach + 4.7, 'Lê Lợi got the handle!', 'Lê Lợi lấy được chuôi gươm!');
     S.say(got - 1.6, 'Lê Thận came with the blade.', 'Lê Thận mang lưỡi gươm đến.');
-    S.say(t2 + 1.2, 'Click! They fit together perfectly.', 'Cạch! Lưỡi và chuôi khớp vào nhau như in.');
+    S.say(t2 + .3, 'Click! They fit together perfectly.', 'Cạch! Lưỡi và chuôi khớp vào nhau như in.');
     S.at(t2 + 1.2, () => { hilt.userData.blade.visible = true; blade.visible = false; });
     const sp = Pp.sparkle(); S.add(sp, 2, 1.4, 0); S.show(sp, t2 + 1.2); S.show(sp, t2 + 3, false);
     S.do(loi, t2 + 1.6, 'cheer', 1.8); S.do(than, t2 + 1.6, 'cheer', 1.8); S.mood(than, t2 + 1.6, 'happy');

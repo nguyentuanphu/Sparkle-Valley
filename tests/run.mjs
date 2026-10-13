@@ -1380,10 +1380,11 @@ await check('filmtails', async () => {
     const F = await import('/js/film.js'), C = await import('/js/content/films.js'), L = await import('/js/content/talefilms.js');
     await import('/js/content/chapter2films.js'); await import('/js/content/chapter3films.js');
     const { MORE_TALES } = await import('/js/talesdata.js'), { TALES } = await import('/js/learn.js'), { STORY_TALES } = await import('/js/content/chapters.js');
-    const { lineHash } = await import('/js/packhash.js');
+    const { lineHash, packHash } = await import('/js/packhash.js'), { swapNames } = await import('/js/i18n.js');
     const man = await (await fetch('/voices/manifest.json')).json();
     const dur = async (lang, text) => {
-      const h = lineHash(lang, text), slots = man.lines[h]; if (!slots) return null;
+      // (the same file the game plays: js/voice.js packKey, the newer name first, then the older one)
+      text = swapNames(text, lang); let h = lineHash(lang, text); if (!man.lines[h]) h = packHash(lang, text); const slots = man.lines[h]; if (!slots) return null;
       let best = null; for (const s of slots) { const res = await fetch(`/voices/${lang}/${s}/${h}.mp3`, { method: 'HEAD' }); const n = +res.headers.get('content-length'); if (n) best = best == null ? n / 4000 : Math.min(best, n / 4000); }
       return best;
     };
