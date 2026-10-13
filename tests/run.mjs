@@ -771,6 +771,9 @@ await check('migrate', async () => {
   await P.page.evaluate(([x, z]) => __sv.heroes[0].place(x, z + 4), [sx, sz]); // (just outside Hà Nội's east gate, on its road)
   await P.page.waitForFunction(([x, z]) => { const p = __sv.heroes[0].profile; return p.pos && p.posMap && Math.hypot(p.pos.x - x, p.pos.z - z - 4) < 2; }, [sx, sz], { timeout: 15000 }).catch(() => { });
   const saved = await P.page.evaluate(() => ({ pos: __sv.heroes[0].profile.pos, posMap: __sv.heroes[0].profile.posMap }));
+  // "The valley has grown!" shows 2.5 s after the game starts and closes itself 2.6 s later; on a slow machine that can
+  // all happen while start() is still clicking through, so every page notes the moment it appears (r71: missed on GitHub)
+  await P.page.addInitScript(() => { window.__grownSeen = false; new MutationObserver(() => { if (/valley has grown/i.test(document.querySelector('.reward')?.textContent || '')) window.__grownSeen = true; }).observe(document, { childList: true, subtree: true }); });
   // a save from another page of the site (the game saves its own spot when it is put away)
   const restart = async (stamp, custom) => {
     await P.page.goto(URL + 'manifest.webmanifest');
@@ -778,7 +781,7 @@ await check('migrate', async () => {
     await P.page.unroute('**/content/custom.json*').catch(() => { });
     if (custom) await P.page.route('**/content/custom.json*', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify(custom) }));
     await P.page.goto(URL); await start(P.page);
-    const grown = await P.page.waitForFunction(() => /valley has grown/i.test(document.querySelector('.reward')?.textContent || ''), null, { timeout: 7000 }).then(() => true).catch(() => false);
+    const grown = await P.page.waitForFunction(() => window.__grownSeen, null, { timeout: 7000, polling: 100 }).then(() => true).catch(() => false);
     return P.page.evaluate(g => ({ x: +__sv.heroes[0].pos.x.toFixed(1), z: +__sv.heroes[0].pos.z.toFixed(1), posMap: __sv.heroes[0].profile.posMap, kept: !!(__sv.heroes[0].profile.postcards || {}).opera, grown: g,
       parked: __sv.parked, famNpc: __sv.interactables.some(i => /^npc_fam_Testy/.test(i.id)) }), grown);
   };
