@@ -5,7 +5,7 @@
 // Multiplayer runs when a local PeerJS server is up on 127.0.0.1:9000 (see the README in this folder).
 import fs from 'fs';
 import os from 'os';
-import { launch, open, clear, start, URL, seedPlayers } from './harness.mjs';
+import { launch, open, clear, start, URL, seedPlayers, takeCoverage } from './harness.mjs';
 import { groundAudit } from './world-audit.mjs';
 import { studioCheck } from './studio-check.mjs';
 // (round R privacy) friends save each other's device key when they first play together (＋👫); two test devices that are
@@ -19,6 +19,10 @@ async function pairKeys(A, B) {
   await put(A, pb); await put(B, pa);
 }
 
+// (owner, 13 Oct: "smarter slow checks") with SV_SAMPLE=1 (tests/suite.mjs sets it) the slowest checks try a part that
+// changes every run (SV_SEED), and everything when their own files changed (SV_FULL=reading,films,… from suite.mjs)
+const sampled = name => process.env.SV_SAMPLE === '1' && !(process.env.SV_FULL || '').split(',').includes(name);
+const SEED = Number(process.env.SV_SEED) || Math.floor(Date.now() / 36e5);
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
 const results = [];
@@ -33,7 +37,12 @@ const check = async (name, fn) => {
   }
   // (round R) close every window the check left open, passed or failed: a failed check's window kept drawing the valley
   // and slowed every later check until they timed out
-  finally { for (const c of b.contexts()) await c.close().catch(() => { }); }
+  finally {
+    for (const c of b.contexts()) await c.close().catch(() => { });
+    // (owner, 13 Oct: "changed-files checks") with SV_COVER=1 each check writes which game code it ran (tests/suite.mjs
+    // turns that into tests/check-map.json); a check that opened no game page writes nothing and always runs
+    if (process.env.SV_COVER === '1') { const cov = takeCoverage(); fs.mkdirSync('out/cover', { recursive: true }); fs.writeFileSync(`out/cover/${name}.json`, JSON.stringify(cov)); }
+  }
 };
 const ok = (c, msg) => { if (!c) throw new Error(msg); };
 fs.mkdirSync('out', { recursive: true });
@@ -648,6 +657,9 @@ await check('voicearea', async () => {
   const next = got.slice(n1, n1 + 12);
   ok(next.length >= 12 && next.every(x => x.g === place) && next.every(x => x.lang === 'en'), `on Wi-Fi the first files after the core: ${JSON.stringify(next.slice(0, 4))} (wanted ${place})`);
   await P.ctx.close();
+  // (sample: the mobile-data part always; the next start and the computer take turns; all when voice files change)
+  const vsam = sampled('voicearea'), doQ = !vsam || SEED % 2 === 0, doC = !vsam || SEED % 2 === 1, errs = [...P.errors];
+  if (doQ) {
   // the next start on mobile data, core there, Not now said: nothing downloads and nothing is asked
   const Q = await open(b, { w: 390, h: 760, touch: true, play: false, pre: net('cellular'), settings: { autoPack: true, lang: 'en', bilingual: false } });
   // (a fresh profile: give it the core first, with the grown-up's answer already given)
@@ -655,8 +667,10 @@ await check('voicearea', async () => {
   await Q.page.waitForSelector('.packask', { timeout: 180000 }); await Q.page.click('.packask button:last-child');
   const n2 = got2.length; await Q.page.reload(); await start(Q.page); await clear(Q.page); await Q.page.mouse.click(195, 380); await Q.page.waitForTimeout(10000);
   const again = got2.length - n2, asked = !!(await Q.page.$('.packask'));
-  const errs = Q.errors.concat(P.errors); await Q.ctx.close();
+  errs.push(...Q.errors); await Q.ctx.close();
   ok(!again && !asked, `next start with the core there: ${again} files downloaded, asked again: ${asked}`);
+  }
+  if (doC) {
   // a computer that can't tell its connection counts as Wi-Fi: past the core with no question
   const C = await open(b, { w: 1180, h: 760, play: false, pre: `Object.defineProperty(navigator, 'connection', { get: () => undefined, configurable: true });`, settings: { autoPack: true, lang: 'vi', bilingual: false } });
   const got3 = watch(C); await start(C.page); await clear(C.page); await C.page.mouse.click(590, 380);
@@ -667,8 +681,9 @@ await check('voicearea', async () => {
   const asked3 = !!(await C.page.$('.packask')), en3 = got3.filter(x => x.lang === 'en').length, over3 = await C.page.evaluate(() => window.__packOver); await C.ctx.close();
   ok(!over3.length, `the voices bar went past 100 %: ${over3.slice(0, 3).join(', ')}`);
   ok(got3.some(x => x.g !== 'core') && !asked3 && !en3, `a computer: past the core ${got3.some(x => x.g !== 'core')}, asked ${asked3}, English files for a Vietnamese family ${en3}`);
+  }
   ok(!errs.length, errs.join(' | '));
-  return `core ${mb(core.en).toFixed(1)} MB (English) / ${mb(core.vi).toFixed(1)} MB (Vietnamese) of ${(Object.values(areas.size).reduce((a, z) => a + (z.en || 0) + (z.vi || 0) + (z.zh || 0) + (z.hi || 0), 0) / 1048576).toFixed(0)} MB; mobile data: ${n1} core files in English only, then "${text.slice(0, 50)}…" (hold for yes); Wi-Fi: ${place} first; the next start downloads nothing; a computer goes on by itself`;
+  return `${vsam ? `SAMPLE (${doQ ? 'next start' : 'computer'} part this run; all when voice files change): ` : ''}core ${mb(core.en).toFixed(1)} MB (English) / ${mb(core.vi).toFixed(1)} MB (Vietnamese) of ${(Object.values(areas.size).reduce((a, z) => a + (z.en || 0) + (z.vi || 0) + (z.zh || 0) + (z.hi || 0), 0) / 1048576).toFixed(0)} MB; mobile data: ${n1} core files in English only, then "${text.slice(0, 50)}…" (hold for yes); Wi-Fi: ${place} first; the next start downloads nothing; a computer goes on by itself`;
 });
 
 await check('welcomevoice', async () => {
@@ -1319,7 +1334,9 @@ await check('films', async () => {
       }
       out.films[id] = { pages: n, helps };
     };
-    for (const id of Object.keys(C.FILMS)) {
+    // (sample: about a third of the films and guides, different ones each run; all when film files change)
+    const pickF = (list) => !window.__filmSample ? list : list.filter((id, i) => i % 3 === window.__filmSample % 3);
+    for (const id of pickF(Object.keys(C.FILMS))) {
       // (the story's own films come from js/content/chapters.js, the fairy tales from js/talesdata.js)
       const { STORY_TALES } = await import('/js/content/chapters.js'), st = STORY_TALES[id];
       openTheatre(MORE_TALES.find(t => t.id === id) || (st && { ...st, title: () => st.title[0], ctx: { name: 'Na', companion: 'firefly' } }), { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); // (loaded when the story opens)
@@ -1329,7 +1346,8 @@ await check('films', async () => {
       document.querySelector('.th-x').click(); await new Promise(r => setTimeout(r, 400));
       if (F.filmNow() || document.querySelector('canvas.th-film')) out.bad.push(id + ': not freed');
     }
-    for (const id of Object.keys(C.GUIDES)) {
+    const gAll = Object.keys(C.GUIDES), gSome = pickF(gAll);   // (guides with a real game playing by itself always run)
+    for (const id of gAll.filter(id => C.GUIDES[id].demo || gSome.includes(id))) {
       openHowTo(id, {}); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); document.querySelector('.ht-pp').click();
       await run(id, C.GUIDES[id].pages.length);
       // (Kid UI films, 10 Oct) the real game plays its first moves by itself with the glowing hand, then waits for the child
@@ -1360,12 +1378,12 @@ await check('films', async () => {
     return out;
   });
   const fails = [...r.bad];
-  for (const id of ['duahau', 'thanhgiong', 'banhchung', 'caykhe']) if (!r.films[id] || r.films[id].helps < 2) fails.push(`${id}: the child should help at least twice`);
+  for (const id of ['duahau', 'thanhgiong', 'banhchung', 'caykhe']) if (r.films[id] ? r.films[id].helps < 2 : !sampled('films')) fails.push(`${id}: the child should help at least twice`);   // (in a sample: the ones that played)
   for (const id of ['marbles', 'memory']) if (!r.demo || !r.demo[id]) fails.push(`${id}: no real game playing by itself`);
   if (P.errors.length) fails.push(...P.errors.slice(0, 3));
   await P.ctx.close();
   if (fails.length) throw new Error(JSON.stringify({ fails, films: r.films }));
-  return Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps at least twice in each story; the real game plays by itself (' + Object.entries(r.demo).map(([id, d]) => `${id}: ${d.moves} moves with the hand, the child's go`).join(', ') + ')';
+  return (sampled('films') ? 'SAMPLE (a third of the films and guides, different each run; all when film files change): ' : '') + Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps at least twice in each story; the real game plays by itself (' + Object.entries(r.demo).map(([id, d]) => `${id}: ${d.moves} moves with the hand, the child's go`).join(', ') + ')';
 });
 await check('halves', async () => {
   // (round R, owner) two players: a window opens in its own child's half and pauses only that child; the other keeps playing
@@ -3827,6 +3845,21 @@ await check('report', async () => {
   return '3 games and 2 minutes counted today for the child who played; the report shows the week (7 days), the favourite games and what was collected';
 });
 
+await check('familynote', async () => {
+  // (13 Oct: the first family note published from Studio online) the grown-ups' note in content/custom.json shows once a
+  // day as "From your family", in the child's language (the other language when one is empty), and not again that day
+  const note = r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ message: { en: '', vi: 'Các con giỏi lắm' } }) });
+  const P = await open(b, { w: 390, h: 844, touch: true, settings: { familyMsgDay: null }, route: ctx => ctx.route('**/content/custom.json*', note) });
+  const shown = await P.page.waitForFunction(() => [...document.querySelectorAll('.dialog')].map(d => d.textContent).find(t => /From your family/.test(t)), null, { timeout: 30000 }).then(h => h.jsonValue()).catch(() => '');
+  await P.page.evaluate(() => { document.querySelectorAll('.dialog').forEach(d => d.remove()); __sv.paused = false; });
+  // seen today is saved (the next start checks it); a reload here would bring back the harness's own starting settings
+  await P.page.waitForTimeout(4000);
+  const again = await P.page.evaluate(() => [...document.querySelectorAll('.dialog')].some(d => /From your family/.test(d.textContent)) || JSON.parse(localStorage.getItem('sv2_settings') || '{}').familyMsgDay !== new Date().toDateString());
+  const errs = P.errors; await P.ctx.close();
+  ok(/From your family/.test(shown) && /Các con giỏi lắm/.test(shown) && !again && !errs.length, JSON.stringify({ shown, again, errs }));
+  return 'the note shows once a day ("From your family"), the Vietnamese words when the English is empty; seen today is saved and it does not come back';
+});
+
 await check('mictest', async () => {
   // (Round V, owner 13 Oct: the microphone does nothing in Friends or in voice control) the grown-ups' microphone test in
   // Friends works without a room and says exactly what the device answered: on with a sound bar, or the error's name and
@@ -4612,8 +4645,10 @@ await check('reading', async () => {
   const bad = [], left = [];
   for (const lang of ['en', 'vi']) {
     await Q.page.evaluate(async lang => { const S = await import('/js/state.js'); S.settings.lang = lang; }, lang);
-    for (const id of IDS) for (const [level, little] of [[1, true], [1, false], [2, false], [3, false]]) {
+    for (const [gi, id] of IDS.entries()) for (const [vi, [level, little]] of [[1, true], [1, false], [2, false], [3, false]].entries()) {
       if (little && BIG_ONLY.includes(id)) continue;
+      // (sample: each game once per language, a different level each run; all of them when the reading games changed)
+      if (sampled('reading') && vi !== (SEED + gi + (lang === 'vi' ? 2 : 0)) % (BIG_ONLY.includes(id) ? 3 : 4) + (BIG_ONLY.includes(id) ? 1 : 0)) continue;
       const r = await solveReading(Q.page, id, { level, little, timeout: 90000 });
       if (!r.ok || !r.won || (little && r.stars !== 3)) bad.push(`${lang} ${id} ${little ? 'under-5' : 'level ' + level}: ${JSON.stringify(r).slice(0, 160)}`);
       await Q.page.waitForTimeout(400);
@@ -4626,7 +4661,7 @@ await check('reading', async () => {
   ok(asked2.includes('reading.js'), 'the games\' code never loaded');
   const errs = Q.errors.slice(); await Q.ctx.close();
   ok(!errs.length, errs.slice(0, 5).join(' | '));
-  return `switch off: nothing loads or shows; on: 10 games in the Reading corner (7 for under-5s), all finish at Easy, Medium, Hard and for under-5s in English and Vietnamese; ${en} English and ${vi} Vietnamese lines`;
+  return `${sampled('reading') ? 'SAMPLE (each game once per language, level by turn; all when reading files change): ' : ''}switch off: nothing loads or shows; on: 10 games in the Reading corner (7 for under-5s), all finish at Easy, Medium, Hard and for under-5s in English and Vietnamese; ${en} English and ${vi} Vietnamese lines`;
 });
 
 await b.close();
