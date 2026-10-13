@@ -23,5 +23,17 @@ export const TALE_FILMS = {
   birdcolours: () => import('./films/birdcolours.js'),
   magicpudding: () => import('./films/magicpudding.js'),
   tiddalik: () => import('./films/tiddalik.js'),
+  greatrace: () => import('./films/greatrace.js'),
+  maliang: () => import('./films/maliang.js'),
+  weaver: () => import('./films/weaver.js'),
+  nian: () => import('./films/nian.js'),
+  kongrong: () => import('./films/kongrong.js'),
+  change: () => import('./films/change.js'),
+  crow: () => import('./films/crow.js'),
+  lionrabbit: () => import('./films/lionrabbit.js'),
+  ganesha: () => import('./films/ganesha.js'),
+  bluejackal: () => import('./films/bluejackal.js'),
+  elephantmice: () => import('./films/elephantmice.js'),
+  monkey: () => import('./films/monkey.js'),
 };
 export const taleFilm = async id => TALE_FILMS[id] ? (await TALE_FILMS[id]()).default : null;
