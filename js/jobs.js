@@ -15,6 +15,8 @@ export const JOB_PAY = 3;
 
 export function createJobs(G) {
   const { scene, world } = G, boards = [], active = new Map();   // active: hero -> { key, job, it, mark }
+  // (batch rollout) Studio switch 'jobs': off or not started yet, the boards stay hidden from children who never took a job
+  const on = () => !G.keep || G.keep('jobs');
   // a spot a child can stand on: off roads and streets, on land, clear of walls, solids and other taps
   const free = (x, z, room = 1.6, gap = 2.8) => {
     if (!(edgeDist(x, z) > 2) || !(heightAt(x, z) > .5)) return false;
@@ -41,9 +43,9 @@ export function createJobs(G) {
     const [x, z] = at, y = ground(x, z), grp = new THREE.Group(); grp.position.set(x, y, z); grp.rotation.y = S ? Math.atan2(S.nx, S.nz) : Math.atan2(pl.x - x, pl.z - z);   // (facing the street, or the place's middle)
     grp.add(new THREE.Mesh(legs, toonVC())); const s = sign(); s.position.set(0, 1.6, 0); grp.add(s);
     const ic = sprite('📋', .7); ic.position.set(0, 2.85, 0); grp.add(ic); scene.add(grp);
-    world.colliders.push({ x, z, r: .5 });
-    const B = { key: pl.key, x, z, place: pl, grp };
-    G.interactables.push({ id: 'job_' + pl.key, x, z, r: 2.2, icon: '📋', bubble: '📋', label: () => T('Job board', 'Bảng việc làm'), act: h => tapBoard(h, B) });
+    const col = { x, z, r: .5 }; world.colliders.push(col);
+    const B = { key: pl.key, x, z, place: pl, grp, col };
+    G.interactables.push({ id: 'job_' + pl.key, x, z, r: 2.2, icon: '📋', bubble: '📋', label: () => T('Job board', 'Bảng việc làm'), visible: () => on(), act: h => tapBoard(h, B) });
     boards.push(B);
   }
 
@@ -61,7 +63,7 @@ export function createJobs(G) {
     if (a && a.key === B.key) { await dialog(T('Job board', 'Bảng việc làm'), [[a.job.en, a.job.vi]]); return; }
     const done = (p.jobsDone = p.jobsDone || {}), job = J.jobs[(done[B.key] || 0) % J.jobs.length];
     const k = await dialog(T('Job board', 'Bảng việc làm'), [[job.en, job.vi]], [['✅ Yes, I will help!', '✅ Dạ, con giúp!'], ['👋 Later', '👋 Để sau']]);
-    if (k !== 0) return;
+    if (k !== 0) return; if (G.tried) G.tried(h, 'jobs');
     const to = targetOf(B, job); if (!to) return;
     clear(h);
     const mark = sprite(job.icon, 1.1), y = ground(to[0], to[1]); mark.position.set(to[0], y + 1.2, to[1]); scene.add(mark);
@@ -76,7 +78,8 @@ export function createJobs(G) {
     await G.reward(job.icon, T('Thank you for helping!', 'Cảm ơn con đã giúp!'), T(`+${G.fmt(JOB_PAY)}${st ? ' and a sticker ' + st : ''}`, `+${G.fmt(JOB_PAY)}${st ? ' và hình dán ' + st : ''}`));
     await dialog(T('Job board', 'Bảng việc làm'), [JOBS[B.key].learn]);
   }
-  world.updaters.push((dt, t) => { for (const a of active.values()) a.mark.position.y = a.y + 1.2 + Math.sin(t * 3) * .25; });
+  world.updaters.push((dt, t) => { for (const a of active.values()) a.mark.position.y = a.y + 1.2 + Math.sin(t * 3) * .25;
+    const v = on(); if (boards.length && boards[0].grp.visible !== v) boards.forEach(B => { B.grp.visible = v; B.col.r = v ? .5 : 0; }); });
   G.jobs = { boards, active, tapBoard, finish };
   return G.jobs;
 }

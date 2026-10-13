@@ -23,7 +23,7 @@ export function createDayPlan(G) {
     v.goal = null; v.inside = false; v.wait = Math.random() * 6;
     v.umb = sprite('☂️', .9); v.umb.position.set(0, 3, 0); v.umb.visible = false; v.o.add(v.umb);
     v.lamp = sprite('🏮', .5); v.lamp.position.set(.45, 1.3, .2); v.lamp.visible = false; v.o.add(v.lamp);
-    v.it.visible = () => !v.inside;   // (no talking to someone who has gone home)
+    const talk = v.it.visible; v.it.visible = h => !v.inside && (!talk || talk(h));   // (no talking to someone who has gone home)
     v.ready = true; v.last = [v.o.position.x, v.o.position.z];
   };
   V.forEach(prep);
@@ -39,8 +39,15 @@ export function createDayPlan(G) {
     if (world.groundAt) p.y = world.groundAt(p.x, p.z);
     return false;
   };
+  // (batch rollout) Studio switch 'dayPlan': off or not started yet, everyone stays at their spot as before the day plan
+  // (nothing for a child to keep: it is the valley's own life)
+  let was = true;
+  const rest = () => { night = null; lights.forEach(l => { l.visible = false; });
+    for (const v of V) { if (!v.ready) continue; v.goal = null; v.umb.visible = v.lamp.visible = false; if (v.inside) { v.inside = false; v.o.visible = true; }
+      if (!v.external) { v.o.position.x = v.home.x; v.o.position.z = v.home.z; if (world.groundAt) v.o.position.y = world.groundAt(v.home.x, v.home.z); v.last = [v.home.x, v.home.z]; } } };
   world.updaters.push((dt, t) => {
     if (G.paused) return;
+    const on = !G.keep || G.keep('dayPlan'); if (!on) { if (was) rest(); was = false; return; } was = true;
     for (const v of V) if (!v.ready) prep(v);   // (villagers who arrived later)
     const n = world.isNight(), rain = G.weather && G.weather.state && G.weather.state() === 'rain';
     if (n !== night) { night = n; lights.forEach(l => { l.visible = n; });

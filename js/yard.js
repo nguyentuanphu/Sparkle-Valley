@@ -7,7 +7,7 @@
 import { THREE, P, merge, toonVC } from './gfx.js';
 import { T, nm } from './i18n.js';
 import { heightAt, YARD, TOWN } from './world.js';
-import { featureOn } from './custom.js';
+import { featureOn, markTried } from './custom.js';
 import { buildAvatar, nameAvatar } from './avatar.js';
 import { build } from './vehicles.js';
 import { openRoom } from './openspot.js';
@@ -22,11 +22,11 @@ const tween = (sec, fn) => new Promise(res => { const t0 = performance.now(); co
 
 export function createYard(G, { dialog, say, reward, save }) {
   const { scene, world } = G;
-  const on = () => featureOn('story_yard', true);
+  const on = () => G.keep ? G.keep('story_yard') : featureOn('story_yard', true);   // (batch rollout: kept for a child who started it)
   const done = (p, id) => !!st(p).done[id];
   const current = p => { if (!on() || !done(p, 'y_start')) return null; return YARD_STEPS.find(s => !done(p, s.id)) || null; };
   const isOn = (p, id) => { const c = current(p); return !!c && c.id === id; };
-  const finish = (h, id) => { const Y = st(h.profile); if (Y.done[id]) return; Y.done[id] = true; save(); paint(); G.checkQuests && G.checkQuests(h); };
+  const finish = (h, id) => { const Y = st(h.profile); if (Y.done[id]) return; Y.done[id] = true; markTried(h.profile, 'story_yard'); if (hands()) markTried(h.profile, 'yardHands'); save(); paint(); G.checkQuests && G.checkQuests(h); };
   const anyDone = id => G.heroes.some(h => done(h.profile, id));
 
   // ---------- where: its own levelled plot behind the north row of Phố Hai Quê (world.js YARD), facing the street;
@@ -160,7 +160,7 @@ export function createYard(G, { dialog, say, reward, save }) {
   // ---------- by hand (Studio switch yardHands, owner 9 Oct: "more doing, less watching") ----------
   // A small panel at the bottom of the child's own half: big buttons and handles a 4-year-old can hold and drag. Every
   // part speaks what to do. data-hp names each control (the checks press them like a child would).
-  const hands = () => featureOn('yardHands', true);
+  const hands = () => G.keep ? G.keep('yardHands') : featureOn('yardHands', true);
   let driver = null;
   async function truckByHand() {
     G.paused = false; // (the valley keeps running so the camera follows; the yard's buttons hide while this is open)

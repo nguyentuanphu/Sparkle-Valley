@@ -31,7 +31,7 @@ const POND = { x: VILLAGE.x - 10, z: VILLAGE.z + 4 };   // Lotus Village's lotus
 const byId = id => SURPRISES.find(s => s.id === id);
 
 export function createSurprises(G, { say, reward }) {
-  const { scene, world } = G, on = () => featureOn('surprises', true);
+  const { scene, world } = G, on = () => G.keep ? G.keep('surprises') : featureOn('surprises', true);   // (batch rollout: kept for a child who found one)
   for (const [k, v] of Object.entries(SP_KEEPSAKES)) DECOR[k] = { icon: v.icon, price: 0, en: v.en, vi: v.vi, keepsake: true };
   const rec = p => { const s = p.surprises = p.surprises && typeof p.surprises === 'object' ? p.surprises : {}; s.found = s.found && typeof s.found === 'object' ? s.found : {}; s.map = Math.min(3, +s.map || 0); return s; };
   let st = { shown: 0, lastAt: -1e9, pending: null }, play = 0, cur = null;
@@ -104,7 +104,7 @@ export function createSurprises(G, { say, reward }) {
   const giveKeepsake = (p, k) => { p.keepsakes = Array.isArray(p.keepsakes) ? p.keepsakes : []; if (p.keepsakes.includes(k)) return false; p.keepsakes.push(k); return true; };
   async function found(h, C) {
     if (cur !== C) return;
-    const p = h.profile, s = rec(p), S = C.S; cur = null; st = surpriseFound(st);
+    const p = h.profile, s = rec(p), S = C.S; cur = null; st = surpriseFound(st); G.tried && G.tried(h, 'surprises');
     s.found[C.id] = (s.found[C.id] || 0) + 1;
     SFX.chime && SFX.chime(); G.fx && G.fx(C.x, heightAt(C.x, C.z) + 1.2, C.z, S.icon);
     let title = T(S.en, S.vi) + '!', sub = '', line = SP_LINES.found;

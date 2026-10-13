@@ -289,7 +289,7 @@ function start() {
   if (!hasCopy(KEY.copy)) takeCopy(KEY.copy); // (a tester from before 13 Oct: progress from now on goes back when they stop)
   hookRender(); watch(); addUI();
   const inp = () => { lastInput = Date.now(); }; addEventListener('pointerdown', inp, true); addEventListener('keydown', inp, true); offs.push(() => { removeEventListener('pointerdown', inp, true); removeEventListener('keydown', inp, true); });
-  setPeeks(C.peeksOf(liveRule('tester')));
+  setPeeks(C.peeksOf(liveRule('tester')), 7);   // (rollout, owner 13 Oct AEDT) and each batch 7 days before its start
   import('./testerrewards.js').then(m => m.mountRewards(G, () => status)).then(() => refresh()).catch(() => refresh());
   const rf = setInterval(refresh, 10 * 60e3); offs.push(() => clearInterval(rf));
   setTimeout(() => { flush(); retest(); }, 20000);

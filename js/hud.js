@@ -152,6 +152,8 @@ export class Hud {
 
   update(dt, camera, fogMap, markers) {
     const h = this.hero, p = h.profile;
+    // (batch rollout) the "Where is…?" button waits for its batch day (Studio switch 'wayfind'), unless a child playing used it
+    { const w = !this.game.keep || this.game.keep('wayfind'); if (this.last.where !== w) { const b = this.q('.z-where'); if (b) b.style.display = w ? '' : 'none'; this.last.where = w; } }
     // hearts
     const hk = h.hearts + '/' + p.hearts;
     if (this.last.h !== hk) {

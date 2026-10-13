@@ -118,14 +118,16 @@ export const festivalRule = id => pick('festivals', id);
 const DAY = 864e5, dayOf = s => { const d = new Date(String(s) + 'T00:00:00'); return isNaN(d) ? null : d; };
 // is a release on today? (def: what it is when Studio never set it)
 // (owner, 12 Oct: tester reports) the releases a tester device sees early ("Tester preview"), set by js/tester.js
-let PEEKS = []; export const setPeeks = list => { PEEKS = Array.isArray(list) ? list.slice() : []; };
+// (rollout, owner 13 Oct AEDT: "testers see each batch a week early") a tester device also sees a release whose start
+// date is at most `early` days away, without anyone ticking it (js/tester.js passes 7; 0 on every other device)
+let PEEKS = [], EARLY = 0; export const setPeeks = (list, early = 0) => { PEEKS = Array.isArray(list) ? list.slice() : []; EARLY = Math.max(0, +early || 0); };
 export const isPeek = id => PEEKS.includes(id);
 export function releaseOn(id, def = true, now = new Date()) {
   if (PEEKS.includes(id)) return true;
   const r = liveRule(id); if (!r) return def;
   if (r.on === false) return false;
   const st = r.start && dayOf(r.start);
-  if (st && now < st) return false;
+  if (st && now < st) return EARLY > 0 && now >= new Date(+st - EARLY * DAY);
   if (st && r.days > 0 && now >= new Date(+st + r.days * DAY)) return false;
   return r.on === true ? true : def;
 }
@@ -136,3 +138,44 @@ export function releaseNew(id, now = new Date()) {
 }
 // a valley thing switched on or off in Studio (a release rule, or CUSTOM.features), or its default when Studio never set it
 export const featureOn = (id, def = true) => { if (liveRule(id)) return releaseOn(id, def); const f = CUSTOM.features; return f && typeof f[id] === 'boolean' ? f[id] : def; };
+
+// ---------- Batch rollout (owner, 13 Oct AEDT; docs/cores/FEATURES.md "Batch calendar") ----------
+// Switching a feature off, or giving it a start date still to come, hides it only from children who never used it
+// (FEATURES.md, owner 8 Oct): what a child really used (rode, tapped, opened, finished a step) is kept on their profile
+// (profile.tried = { id: 'YYYY-MM-DD' }) and stays theirs. keptOn: on for these children (anyone playing who used it).
+const today = () => new Date().toISOString().slice(0, 10);
+const tried = p => p && p.tried && typeof p.tried === 'object' ? p.tried : null;
+export const hasTried = (p, id) => { const t = tried(p); return !!(t && t[id]); };
+// remember that a child used a feature; true when this is the first time (the caller saves the profiles)
+export function markTried(p, id) { if (!p || hasTried(p, id)) return false; p.tried = tried(p) || {}; p.tried[id] = today(); return true; }
+// (the children playing now, set by js/main.js when a session starts: for lists that have no child at hand, the games)
+let PLAYERS = []; export const setPlayers = list => { PLAYERS = Array.isArray(list) ? list.filter(Boolean) : []; };
+export const keptOn = (id, profiles = PLAYERS, def = true) => featureOn(id, def) || (profiles || []).some(p => hasTried(p, id));
+// what a save from before the rollout already shows a child used (nothing recorded profile.tried then)
+export const MONEY_GAMES = ['heodat', 'coinnote', 'needwant', 'cheaper', 'lixi', 'bahu', 'shoplist', 'waitgrow', 'shopkeep', 'barter'];
+const some = o => !!(o && typeof o === 'object' && Object.keys(o).length);
+const TRACES = {
+  surprises: p => some(p.surprises && p.surprises.found),
+  mysteryBox: p => !!(p.boxes && p.boxes.opened > 0),
+  collectibles: p => some(p.collect),
+  hoilang: p => !!(p.hoilang && Array.isArray(p.hoilang.prizes) && p.hoilang.prizes.length),
+  story_ch3: p => !!(p.lanterns && p.lanterns.chapters && p.lanterns.chapters.ch3),
+  story_yard: p => some(p.yard && p.yard.done),
+  yardHands: p => some(p.yard && p.yard.done),
+  companionGrow: p => !!(p.lanterns && p.lanterns.pet && p.lanterns.pet.feeds > 0),
+  saveGoal: p => !!(p.lanterns && p.lanterns.pet && Array.isArray(p.lanterns.pet.hats) && p.lanterns.pet.hats.length),
+  jobs: p => some(p.jobsDone),
+  houseGuide: p => !!p.houseGuideSeen,
+  owlGuide: p => Array.isArray(p.owlLessons) && p.owlLessons.length > 0,
+  sellersRemember: p => some(p.regulars),
+  priceTags: p => some(p.regulars),
+  festHunt: p => some(p.hunt) || some(p.festBadges),
+  readingTrial: p => Object.keys(p.levels || {}).concat(Object.keys(p.wins || {})).some(k => /^rd_/.test(k))
+};
+// once per profile (profile.triedFrom marks it done); true when something was added
+export function triedFromSave(p) {
+  if (!p || p.triedFrom) return false; p.triedFrom = today();
+  for (const [id, f] of Object.entries(TRACES)) { try { if (f(p)) markTried(p, id); } catch (e) { } }
+  for (const g of MONEY_GAMES) if ((p.levels && p.levels[g]) || (p.wins && p.wins[g])) markTried(p, 'money_' + g);   // (a money game played)
+  return true;
+}

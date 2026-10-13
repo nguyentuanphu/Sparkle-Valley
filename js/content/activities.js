@@ -5,7 +5,7 @@
 // The family's Studio can move a game to another area, hide it, or open it to under-5s (content/custom.json
 // "activities": { id: { area, little, hide } }).
 import { T } from '../i18n.js';
-import { CUSTOM } from '../custom.js';
+import { CUSTOM, keptOn, MONEY_GAMES } from '../custom.js';
 import { PLACES as MAP_PLACES } from './map.js';
 
 // the areas, in the order the path visits them; a child who can't read knows each one by its picture
@@ -44,7 +44,10 @@ export const GAME_INFO = {
 const custom = id => { const c = CUSTOM.activities && CUSTOM.activities[id]; return c && typeof c === 'object' ? c : {}; };
 export function gameInfo(id) {
   const [area, age, level] = GAME_INFO[id] || ['thinking', 5, 2], c = custom(id);
-  return { id, area: AREAS.some(a => a.key === c.area) ? c.area : area, ageMin: c.little === true ? 2 : c.little === false ? 5 : age, level, hidden: c.hide === true };
+  // (batch rollout) each money game has its own Studio switch (money_<id>): off or not started yet, it is hidden unless a
+  // child playing has already played it
+  const held = MONEY_GAMES.includes(id) && !keptOn('money_' + id);
+  return { id, area: AREAS.some(a => a.key === c.area) ? c.area : area, ageMin: c.little === true ? 2 : c.little === false ? 5 : age, level, hidden: c.hide === true || held };
 }
 // the games of one area for a child: under-5s only see the ones made for them
 export const gamesIn = (games, area, little) => Object.keys(games).map(gameInfo).filter(g => g.area === area && !g.hidden && (!little || g.ageMin < 5));

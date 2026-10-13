@@ -3767,6 +3767,94 @@ await check('talk', async () => {
   return 'every person in the valley answers a tap; the villagers without their own words tell a fact or a saying of their region, in English or Vietnamese; a child whose character is rebuilt gets no "Say hello" and no job picture';
 });
 
+await check('rollout', async () => {
+  // (batch rollout, owner 13 Oct AEDT; docs/cores/FEATURES.md "Batch calendar") every new Studio switch: off (or not started
+  // yet) hides its feature from a child who never used it, keeps it for a child who did (profile.tried), and brings it back
+  // when switched on; a release starting today shows the New! card; a tester device sees a batch 7 days early
+  const out = [];
+  const P = await open(b, { w: 1024, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, h = G.heroes[0], p = h.profile, C = await import('/js/custom.js'), wait = ms => new Promise(r => setTimeout(r, ms));
+    const { gamesIn } = await import('/js/content/activities.js'), { GAMES } = await import('/js/games/registry.js');
+    const S = await import('/js/snacks.js'), { VENDORS } = await import('/js/vendors.js'), D = await import('/js/festdecor.js');
+    const F = C.CUSTOM.features = C.CUSTOM.features || {};
+    const seen = re => G.interactables.some(i => re.test(i.id) && (!i.visible || i.visible(h)));
+    const seller = VENDORS.find(v => v.food && v.greet);
+    const owl = async () => {   // Ông Cú's lesson page after his tip (as the 'guide' check)
+      const story = G.lanterns; G.lanterns = { ...story, owl: async () => false }; p.quests.owl = true;
+      const it = G.interactables.find(i => i.id === 'npc_owl'); it.act(h, G); let card = null;
+      for (let k = 0; k < 24 && !card; k++) { await wait(150); const d = document.querySelector('.dialog:not(.out)'); if (d) { d.click(); await wait(200); } card = document.querySelector('.owl-lesson:not(.out)'); }
+      for (let k = 0; k < 6 && document.querySelector('.owl-lesson:not(.out)'); k++) { document.querySelector('.owl-lesson:not(.out) .qt-go').click(); await wait(300); }
+      G.lanterns = story; await wait(300); G.paused = false; return !!card;
+    };
+    const house = async () => {   // the house guide the first time in the house, and the ❓ sign
+      delete p.houseGuideSeen; const door = G.interactables.find(i => i.id === 'myhouse_door'); door.act(h, G); await wait(1700);
+      const shown = !!document.querySelector('.dialog:not(.out)') || !!G.interactables.find(i => i.id === 'house_help');
+      for (let i = 0; i < 8; i++) { const d = document.querySelector('.dialog:not(.out)'); if (!d) break; d.click(); await wait(250); }
+      G.homes.leave(h); await wait(1400); G.paused = false; return shown;
+    };
+    const probes = {
+      rideAny: () => seen(/^drive_/), busFares: () => seen(/^ride_/) && seen(/^busstop_/), rideBikes: () => G.interactables.some(i => /^bike_/.test(i.id) && G.traffic.slots[+i.id.slice(5)].feat === 'rideBikes' && i.visible(h)),   // (the cities' parked bicycles are 'rideAny')
+       xichloRides: () => seen(/^xichlo_/),
+      wayfind: async () => { await wait(400); const b = document.querySelector('.z-where'); return !!b && getComputedStyle(b).display !== 'none'; },
+      jobs: () => seen(/^job_/), villagerTalk: () => seen(/^villager_/), singers: () => seen(/^sing\d/),
+      priceTags: async () => { await wait(300); return G.world.priceTags.some(t => t.sp.visible); },
+      sellersRemember: () => { p.regulars = { [seller.id]: 1 }; return S.greetLine(h, seller) !== seller.greet; },
+      owlGuide: owl, houseGuide: house,
+      festHunt: () => G.keep('festHunt'),
+      ...Object.fromEntries(C.MONEY_GAMES.map(g => ['money_' + g, () => gamesIn(GAMES, 'money', false).some(x => x.id === g)]))
+    };
+    // the valley's own life: nothing for a child to keep, only hidden when off and back when on
+    const scenery = {
+      animalHomes: async () => { await wait(300); return !G.animalHomes.coop || G.animalHomes.coop.mesh.visible; },
+      festDecoBig: () => D.decoOf({ id: 'zz_none' }) === 5,
+      dayPlan: async () => { await wait(400); const v = G.dayPlan.list.find(v => v.ready && !v.external && v.free && G.dayPlan.offRoad(v.home.x + .8, v.home.z)); if (!v) return true;   // (is the day plan running: a villager sent a step away walks there)
+        v.inside = false; v.o.visible = true; v.o.position.x = v.home.x; v.o.position.z = v.home.z; v.last = [v.home.x, v.home.z]; v.goal = [v.home.x + .8, v.home.z]; v.going = 'out'; v.wait = 99;
+        await wait(500); const moved = Math.abs(v.o.position.x - v.home.x) > .05; v.goal = null; return moved; }
+    };
+    const res = {};
+    for (const [id, probe] of Object.entries(probes)) {
+      delete p.tried; F[id] = false; const hidden = !(await probe());
+      C.markTried(p, id); const kept = !!(await probe());
+      delete p.tried; F[id] = true; const back = !!(await probe());
+      res[id] = { hidden, kept, back };
+    }
+    for (const [id, probe] of Object.entries(scenery)) { F[id] = false; const hidden = !(await probe()); F[id] = true; const back = !!(await probe()); res[id] = { hidden, kept: true, back }; }
+    // every new switch is in Studio's list, starts on, and says what it is in both languages
+    const { RELEASES } = await import('/js/content/releases.js');
+    const missing = Object.keys(probes).concat(Object.keys(scenery)).filter(id => { const x = RELEASES.find(r => r.id === id); return !x || x.def !== true || !x.en || !x.vi || x.en === x.vi; });
+    // an old save already shows what a child used: kept without a new tap
+    const q = { jobsDone: { lotus: 1 }, owlLessons: ['money'], levels: { heodat: 2 } }; C.triedFromSave(q);
+    const fromSave = ['jobs', 'owlGuide', 'money_heodat'].every(id => C.hasTried(q, id)) && !C.hasTried(q, 'wayfind');
+    // a tester sees a release 7 days before its start, and not 8
+    const day = n => { const d = new Date(Date.now() + n * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+    const live = JSON.parse(localStorage.getItem('sv2_live') || '{}');
+    return { res, missing, fromSave, day3: day(3), day9: day(9), live: !!live };
+  });
+  for (const [id, x] of Object.entries(r.res)) if (!x.hidden || !x.kept || !x.back) out.push(id + ' ' + JSON.stringify(x));
+  if (r.missing.length) out.push('not in Studio\'s list as a switch that starts on: ' + r.missing.join(', '));
+  if (!r.fromSave) out.push('an old save did not count as used');
+  if (P.errors.length) out.push(P.errors.join(' '));
+  await P.ctx.close();
+  // the New! moment on its start day, and a tester's week-early peek (Studio's rules as the website gives them)
+  const pre = `try { const d = n => { const t = new Date(Date.now() + n * 864e5); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); };
+    localStorage.setItem('sv2_live', JSON.stringify({ releases: { jobs: { on: true, start: d(0), newDays: 7 }, wayfind: { on: true, start: d(3), newDays: 7 }, singers: { on: true, start: d(9), newDays: 7 } }, festivals: {} })); } catch (e) { }`;
+  const Q = await open(b, { w: 1024, h: 700, pre });
+  const n = await Q.page.evaluate(async () => {
+    const G = __sv, C = await import('/js/custom.js'), wait = ms => new Promise(r => setTimeout(r, ms)); let card = '';
+    for (let k = 0; k < 40 && !card; k++) { await wait(250); const c = document.querySelector('.reward'); if (c && /New in the valley/.test(c.textContent)) card = c.textContent; }
+    const before = { wayfind: C.releaseOn('wayfind'), singers: C.releaseOn('singers'), jobs: C.releaseOn('jobs'), isNew: C.releaseNew('jobs'), keepWay: G.keep('wayfind') };
+    C.setPeeks([], 7); const tester = { wayfind: C.releaseOn('wayfind'), singers: C.releaseOn('singers') }; C.setPeeks([]);
+    return { card: card.slice(0, 160), before, tester, seen: !!(G.heroes[0].profile.seenNew || {}).jobs };
+  });
+  if (!/job board/i.test(n.card) || !n.seen) out.push('no New! card for the job boards on their start day: ' + JSON.stringify(n));
+  if (n.before.wayfind || n.before.singers || !n.before.jobs || !n.before.isNew || n.before.keepWay) out.push('start dates: ' + JSON.stringify(n.before));
+  if (!n.tester.wayfind || n.tester.singers) out.push('tester peek (3 days on, 9 days off): ' + JSON.stringify(n.tester));
+  if (Q.errors.length) out.push(Q.errors.join(' '));
+  await Q.ctx.close();
+  ok(!out.length, out.join(' | '));
+  return `${Object.keys(r.res).length} switches: off hides each from a child who never used it, a child who used it keeps it, on brings it back; an old save counts; the New! card on the start day; testers 7 days early`;
+});
 await check('questbar', async () => {
   // (Round V, owner 13 Oct, iPhone notes) a tap on the quest folds it to a small chip and hides the yellow arrow and the
   // light; a second tap opens it again; a family mission the child has been told about shows under the quest too

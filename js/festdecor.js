@@ -4,7 +4,7 @@
 // (owner, 10 Oct: children never start a festival). Loaded by js/festivals.js once a child plays (PERF-001).
 import { roadDist, heightAt, TOWN, AUSSIE, MARKET, ROADS } from './world.js';
 import { T } from './i18n.js';
-import { liveRule, festivalRule } from './custom.js';
+import { liveRule, festivalRule, featureOn } from './custom.js';
 
 const day = s => { const d = new Date(s + 'T00:00:00'); return isNaN(d) ? null : d; };
 // an admin's schedule in Studio's Releases page (fest_<id> with a start date): the festival is on from that day, for its
@@ -25,7 +25,9 @@ export const MAX_PIECES = 48, MAX_BUNTING = 10;
 // (owner, 13 Oct) how much each festival decorates: 5 times r69's by default, chosen per festival in Studio's Festivals
 // page (deco: 1 = as before, 2, 3, 5, 7); and how far apart the pieces stand at each amount
 export const DECO = [1, 2, 3, 5, 7];
-export const decoOf = F => { const r = festivalRule(F.id), m = r && +r.deco; return DECO.includes(m) ? m : 5; };
+// (batch rollout) Studio switch 'festDecoBig' (Releases page): off or not started yet, a festival Studio gave no amount of its
+// own decorates as before (1x); an amount set on the Festivals page always wins (decorations are the valley's, not a child's)
+export const decoOf = F => { const r = festivalRule(F.id), m = r && +r.deco; return DECO.includes(m) ? m : featureOn('festDecoBig', true) ? 5 : 1; };
 const GAP = { 1: 5, 2: 4, 3: 3, 5: 2, 7: 1.6 };
 // (owner, 13 Oct) the build-up: half in week 1, three quarters in week 2, everything in the last week and on the day
 export const FRAC = [0, .5, .75, 1, 1];

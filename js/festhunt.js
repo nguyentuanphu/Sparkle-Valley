@@ -51,6 +51,7 @@ export function createHunt(G, spark) {
   // (and only while a child is within 70 m: far ones are not drawn)
   const refresh = () => items.forEach(it => { it.left = !G.heroes.length || G.heroes.some(h => h.profile && !stateOf(h.profile, it.F, it.year).found.includes(it.k)); it.obj.visible = it.left && (!G.heroes.length || G.heroes.some(h => Math.hypot(h.pos.x - it.x, h.pos.z - it.z) < 70)); });
   const find = async (h, it) => {
+    if (G.tried) G.tried(h, 'festHunt');   // (batch rollout: a child who hunted keeps the hunt)
     const p = h.profile; if (!p) return; const s = stateOf(p, it.F, it.year), H = HUNT[it.F.id];
     if (s.found.includes(it.k)) { say(...HUNT_LINES.again); G.toast(h, T(HUNT_LINES.again[0], HUNT_LINES.again[1])); return; }
     s.found.push(it.k); SFX.ding && SFX.ding(); saveProfiles(); refresh();
