@@ -309,3 +309,17 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   against 800k in repeated runs; the 3D scene with the reading games on and off differs by one small mesh (1120 vs 1123
   draw calls), so the switch adds nothing to draw. Release: PERF-003 sits at its edge on main.
 
+## Progress notes (13 Oct AEDT: `core/play-studio`, after r69)
+- Built: devices you can recognise in Studio (children's first names, type, town, last played, easy names from
+  `js/content/devname.js` shared with the game, search, robots greyed and hidden); "Trust this browser" (a year,
+  renewed once a day while used, Security list with Forget; Sign everyone out still ends them); every Studio part and
+  card opens and closes (remembered); the game's Grown-ups settings, Bag, Quests and Album categories open and close;
+  "This device" line in Grown-ups → Analytics; Studio times in Sydney time; the Releases page redesigned (groups with
+  counts and All on/off, a card per feature with a switch and its status in words, Schedule on demand, search and
+  filters, Save at the bottom with the changes counted); the tester box no longer appears twice; sneak peeks picked by
+  group with All/None, a search and a count. Owner's question answered: missing voice lines are reported by devices
+  and recorded by the "Daily voices" workflow at 3:07 am AEDT (a draft pull request Release merges).
+- Checks (13 Oct, about 8 am AEDT): `studio` pass (trusted browser, Releases page saves, testers, 44 px, drawn
+  emoji), `grownupsui` `a11y` `phone` `shop` `boot` `tester` `preload` `types` `unit` `arch` `rules` `emoji` pass.
+  Screenshots: the Releases page on phone, tablet and computer (Studio on a copy of the game). Full suite: Release.
+
