@@ -19,7 +19,7 @@ export default { pages: [
     S.shot([0, 2, 7], [0, .6, 2.2]);
     S.do(h, .3, 'kneel', 2); S.do(w, .3, 'kneel', 2); S.move(net, 1.4, .8, [0, 2, 2.8]); S.show(net, 2.3, false);
     S.cam(.3, 2.4, [0, 1.4, 5], [0, .4, 2.6]);
-    S.tw(2.6, 2.4, k => { d.userData.rig.head.rotation.x = Math.sin(k * PI * 6) * .2; }, k => k); S.mood(h, 3, 'o'); S.mood(w, 3, 'o');
+    S.tw(2.6, 2.4, k => { d.userData.nod = Math.sin(k * PI * 6) * .2; }, k => k); S.mood(h, 3, 'o'); S.mood(w, 3, 'o');
     go(S, d, 5.4, 1.4, [2.4, 0, 1.2]); S.do(h, 6, 'point', 2); S.cam(5.2, 2.4, [1, 2.4, 6.4], [3, .8, 0]);
     S.say(8.9, 'The couple listened, and found the biggest gourd of all.', 'Hai vợ chồng nghe lời, tìm quả bầu to nhất.');
     S.walk(h, 8.9, [3.4, .2]); S.walk(w, 8.9, [5.6, .4]); S.scale(g, 9.4, 2, 1.4, 2.6);

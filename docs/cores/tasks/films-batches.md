@@ -64,3 +64,10 @@ Plan and state (update each step):
 5. [ ] Retime the 9 existing films (narration lines added where the action is long).
 6. [ ] 33 new films, Vietnamese first.
 7. [ ] Azure recording of the new lines; quick checks; film stills on phone, tablet, computer.
+
+**Progress note, 13 Oct, about 11:40 am AEDT** (commit after this note): steps 1 to 4 built (player, self-start fixes,
+music bed, checks; `films`, `tales`, `filmmusic` pass). New films drafted in `js/content/films/` (21 of 33):
+rongtien, caytre, tamcam, sodua, thachsanh, chucuoi, cockien, vusua, baluoiriu, quabau, thayboi, nhacmeo, ongtao, cachep, sontinh, rainbowserpent, emu, dotkangaroo, birdcolours, magicpudding, tiddalik. Still to write: the Chinese and Indian tales. Not yet done: recording the new lines (Azure), tuning
+each page with `FILMTAILS_EST=1 node run.mjs filmtails`, stills on phone, tablet, computer, retiming the 9 old films.
+Dev helpers (not checks): `tests/dbg-film.mjs <ids>` plays every page and prints script errors; `tests/dbg-durs.mjs <ids>`
+prints each page's recorded voice length.

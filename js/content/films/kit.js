@@ -53,16 +53,18 @@ export const shine = (S, geo, color, x, y, z, op = .95) => { const m = new THREE
 export function animal(S, kind, x, z, yaw = 0, scale = 1) {
   const g = filmAnimal(kind); g.scale.setScalar(scale);
   g.traverse(o => { if (o.material && !o.material.userData.film) o.material.userData.shared = true; });
-  S.add(g, x, 0, z, yaw); S.every((dt, time) => tickAnimal(g, dt, time));
+  g.userData.tick = animate(g); S.add(g, x, 0, z, yaw);
   return g;
 }
+// legs, tail and breathing as in the valley; userData.nod tips the head (+ down) on top of that
+const animate = g => (dt, time) => { tickAnimal(g, dt, time); const r = g.userData.rig; if (r.head && g.userData.nod) r.head.rotation.x += g.userData.nod; };
 
 // ---------- animals the valley does not have (rigged like js/animals.js, so tickAnimal moves them) ----------
 function rigged(build, o = {}) {
   const g = new THREE.Group(), root = new THREE.Group(); g.add(root);
   const r = Object.assign({ root, legs: [], ears: [], gait: 'walk', wag: 0, sway: 0, seed: Math.random() * 10, ph: 0, sp: 0, px: null, pz: null }, o);
   const piv = (parent, pos, parts) => { const p = new THREE.Group(); p.position.set(...pos); if (parts && parts.length) p.add(mesh(parts)); parent.add(p); return p; };
-  build(root, r, piv); g.userData.rig = r; return g;
+  build(root, r, piv); g.userData.rig = r; g.userData.tick = animate(g); return g;
 }
 const eyes = (x, y, z, rr = .04) => [-1, 1].flatMap(s => [P(Sp(rr, 10, 8), '#1a1a1a', [s * x, y, z]), P(Sp(rr * .35, 6, 5), '#ffffff', [s * x + rr * .3, y + rr * .35, z + rr * .75])]);
 const legs4 = (R, r, piv, c, hip, dx, dz, len, paw = c) => { for (const [x, z, ph] of [[dx, dz, 0], [-dx, dz, PI], [dx, -dz, PI], [-dx, -dz, 0]]) r.legs.push([piv(R, [x, hip, z], [P(Cap(len * .2, len * .7), c, [0, -len / 2, 0]), P(Sp(len * .22, 8, 6), paw, [0, -len + .03, .04], [0, 0, 0], [1, .6, 1.3])]), ph]); };
@@ -137,7 +139,7 @@ export function serpent(S, { n = 16, r = .22, colors = ['#4a9a3a', '#6ab84a'], h
   };
   // lay it straight behind its head (pointing +z) before it moves
   g.userData.lay = (x, z, dir = 0) => { hd.position.set(x, y, z); trail.length = 0; for (let i = n * 3; i >= 0; i--) trail.push(new THREE.Vector3(x - Math.sin(dir) * i * r * .5, y, z - Math.cos(dir) * i * r * .5)); trail.reverse(); for (let i = 1; i < segs.length; i++) segs[i].position.copy(trail[Math.min(trail.length - 1, i * 2)]); hd.rotation.y = dir; };
-  S.add(g); g.traverse(c => { if (c.userData.tick) S.every(c.userData.tick); });
+  S.add(g); // (S.add starts its tick)
   return g;
 }
 // the serpent's head goes somewhere (turns to face it)
