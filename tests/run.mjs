@@ -3431,6 +3431,8 @@ await check('wayfind', async () => {
   const r = await P.page.evaluate(async () => {
     const G = __sv, h = G.heroes[0], W = await import('/js/world.js'), F = await import('/js/wayfind.js'), wait = ms => new Promise(r => setTimeout(r, ms));
     for (let k = 0; k < 50 && !G.wayfind; k++) await wait(100);
+    // (owner, 13 Oct AEDT) Where is sits in the View tray: open the tray first, as a child does
+    { const tray = document.querySelector('.hud .z-tray'); if (tray && !tray.closest('.zoomer').classList.contains('open')) { tray.click(); await wait(250); } }
     const btn = document.querySelector('.hud .z-where'), bb = btn.getBoundingClientRect(); btn.click(); await wait(300);
     const picks = [...document.querySelectorAll('.wherepick .wp-pick')], drawn = picks.every(p => p.querySelector('.art')), names = picks.map(p => p.getAttribute('aria-label'));
     const hanoi = picks.find(p => /Hà Nội|Hanoi/.test(p.getAttribute('aria-label'))); hanoi.click(); await wait(500);
