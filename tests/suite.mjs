@@ -7,7 +7,8 @@
 // Options: --base <git ref> (default origin/main), --jobs <n> (default 3), --all (no samples: every slow check in full),
 // --no-map (the full suite without recording code), --only a,b,c (just these checks, for timing the runner).
 // The slowest checks (reading, films, voicearea) try a sample that changes every run, and everything when their own
-// files changed since the base (run.mjs: SV_SAMPLE, SV_FULL, SV_SEED). A check whose browser crashed runs once more alone.
+// files changed since the base (run.mjs: SV_SAMPLE, SV_FULL, SV_SEED). The heavy checks share one lane; a check that
+// failed beside others runs once more alone, and the summary lists it as "passed only alone".
 import fs from 'fs';
 import path from 'path';
 import { spawn, execFileSync } from 'child_process';
@@ -17,6 +18,9 @@ const args = process.argv.slice(2), flag = n => args.includes(n), opt = (n, d) =
 const JOBS = Math.max(1, Number(opt('--jobs', 3)) || 3), CHANGED = flag('--changed'), LIST = flag('--list');
 // these measure how fast the game is: never beside another check
 const SOLO = ['perf', 'startup', 'battery'];
+// (13 Oct trial: 3 at once overloaded the machine when these ran side by side) the heavy checks share one lane, one after
+// another; the everyday checks share the other lanes
+const HEAVY = ['films', 'testerrewards', 'reading', 'facetoface', 'phone', 'chapter2', 'chapter3', 'studio', 'voicearea', 'solid', 'nametags', 'migrate', 'testerreport', 'camera', 'spill', 'games'];
 // the slowest checks and the files that are theirs: in full when one of these changed, a sample otherwise
 const SLOW_OWN = {
   reading: [/^js\/games\/reading/, /^js\/content\/reading/],
@@ -27,7 +31,6 @@ const SLOW_OWN = {
 const LAYOUT = ['phone', 'contract', 'hscroll', 'chips', 'a11y', 'iphone', 'simple', 'adventure', 'facetoface', 'two-players', 'questbar', 'bagitems', 'friendstab', 'shop', 'mictest'];
 // checks without a browser, a few seconds each: always run
 const QUICK = ['unit', 'rules', 'types', 'arch', 'emoji', 'noemoji', 'preload', 'names', 'bilingual'];
-const CRASH = /Target page, context or browser has been closed|browser has disconnected|Target closed|Browser closed|did not finish/;
 
 const git = (...a) => execFileSync('git', a, { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 28 });
 const tryGit = (...a) => { try { return git(...a); } catch (e) { return null; } };
@@ -140,13 +143,16 @@ function shards(list, n) {
 }
 async function runAll(list, env) {
   const results = new Map(), par = list.filter(c => !SOLO.includes(c)), solo = list.filter(c => SOLO.includes(c));
-  const groups = shards(par, JOBS);
+  const heavy = par.filter(c => HEAVY.includes(c)), light = par.filter(c => !HEAVY.includes(c));
+  const groups = JOBS > 1 && heavy.length ? [{ t: heavy.reduce((a, c) => a + (times[c] || 60), 0), list: heavy }, ...shards(light, JOBS - 1)] : shards(par, JOBS);
   console.log(`${list.length} checks: ${groups.map((g, i) => `group ${i + 1} ${g.list.length} (~${Math.round(g.t / 60)} min)`).join(', ')}${solo.length ? `, then alone: ${solo.join(', ')}` : ''}`);
   (await Promise.all(groups.map((g, i) => runOne(g.list, env, String(i + 1))))).forEach(m => m.forEach((v, k) => results.set(k, v)));
   // (the speed checks measure the game: never with the code recording on, which slows it)
   if (solo.length) { const { SV_COVER, ...plain } = env; (await runOne(solo, plain, 'solo')).forEach((v, k) => results.set(k, v)); }
-  const crashed = [...results].filter(([, r]) => !r.ok && CRASH.test(r.note)).map(([k]) => k);
-  if (crashed.length) { console.log(`once more, alone (their browser crashed): ${crashed.join(', ')}`); (await runOne(crashed, env, 'again')).forEach((v, k) => results.set(k, { ...v, again: true })); }
+  // a check that failed beside others runs once more alone (nothing else running); the summary says which passed only alone,
+  // so a real failure is never hidden: one that also fails alone stays FAILED
+  const red = [...results].filter(([k, r]) => !r.ok && !SOLO.includes(k)).map(([k]) => k);
+  if (red.length && JOBS > 1) { console.log(`once more, alone: ${red.join(', ')}`); (await runOne(red, env, 'alone')).forEach((v, k) => results.set(k, { ...v, alone: true, first: results.get(k).note })); }
   return results;
 }
 function buildMap(names) {
@@ -197,6 +203,7 @@ if (mapping) {
 }
 const summary = [`${results.size - failed.length}/${results.size} checks passed in ${Math.round((Date.now() - t0) / 60000)} min (${JOBS} at a time${CHANGED ? ', changed files only' : ''})`,
   ...(skipped.length ? [`skipped here: ${skipped.map(([n]) => n).join(', ')}`] : []),
+  ...(() => { const a = [...results].filter(([, r]) => r.ok && r.alone); return a.length ? [`passed only alone (failed beside other checks, first: ${a.map(([n, r]) => `${n}: ${String(r.first).slice(0, 80)}`).join(' | ')})`] : []; })(),
   ...failed.map(([n, r]) => `FAILED ${n}: ${r.note.slice(0, 400)}`)];
 fs.writeFileSync(path.join(HERE, 'out/suite-result.txt'), summary.join('\n') + '\n');
 console.log('\n' + summary.join('\n'));
