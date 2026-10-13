@@ -252,6 +252,7 @@ export function buildAvatar(look, photo) {
   [-.45, .45].forEach(x => { const r = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .9, 4), toon('#7a5236')); r.position.set(x, -.42, 0); r.rotation.z = x * .7; glider.add(r); });
   rig.add(glider); A.glider = glider;
   root.traverse(o => { if (o.isMesh && o !== shadow) { o.castShadow = true; } });
+  compact(A); // (battery round) each moving part one shape, before the outlines are made (one outline each, too)
   A.outlines = outline(rig, .011, '#6a4a3a'); OUTLINED.push(A);
   A.anim = (state, t, speed) => animate(A, state, t, speed);
   return A;
@@ -330,7 +331,106 @@ export function nameAvatar(A, name, remember = true) { // remember: false for pe
 }
 function setFace(A, f) {
   A.faceMat.map = f && f.photo ? faceTexture(A.look, f.photo) : faceTexture(A.look); A.faceMat.needsUpdate = true;
-  if (A.skinMat) A.skinMat.color.set(f && f.skin ? f.skin : A.look.skin);
+  if (A.skinMat) { A.skinMat.color.set(f && f.skin ? f.skin : A.look.skin); recolorSkin(A); }
+  dropStill(A); // (battery round) the skin colour may have changed: a far copy is baked again when next needed
+}
+
+// (battery round, owner 12 Oct AEDT, PERF-003) A person is 20 to 30 small parts, each one drawing; people were two
+// thirds of the valley's draws. Far from every camera, a person standing still shows a "still" copy instead: every
+// plain-coloured part baked, in its present pose, into one shape (its colours kept per corner), plus the face (a picture)
+// and anything see-through as they are, and one baked outline. About 3 draws instead of 25; up close nothing changes.
+// Baked in the person's own space, so it stands exactly where they stand. js/main.js chooses which copy shows.
+let stillMat = null;
+const _inv = new THREE.Matrix4(), _mm = new THREE.Matrix4(), _nm = new THREE.Matrix3(), _v = new THREE.Vector3();
+const shown = (o, top) => { for (; o && o !== top; o = o.parent) if (!o.visible) return false; return true; };
+function bake(list, inv, withColor) {
+  let n = 0; for (const { m } of list) n += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count);
+  const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), col = withColor ? new Float32Array(n * 3) : null;
+  let o = 0;
+  for (const { m, c } of list) {
+    const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, C = g.attributes.color, idx = g.index;
+    _mm.multiplyMatrices(inv, m.matrixWorld); _nm.getNormalMatrix(_mm);
+    const cnt = idx ? idx.count : P.count;
+    for (let k = 0; k < cnt; k++, o++) {
+      const i = idx ? idx.getX(k) : k;
+      _v.fromBufferAttribute(P, i).applyMatrix4(_mm); pos[o * 3] = _v.x; pos[o * 3 + 1] = _v.y; pos[o * 3 + 2] = _v.z;
+      _v.fromBufferAttribute(N, i).applyMatrix3(_nm).normalize(); nor[o * 3] = _v.x; nor[o * 3 + 1] = _v.y; nor[o * 3 + 2] = _v.z;
+      if (col) { if (c) { col[o * 3] = c.r; col[o * 3 + 1] = c.g; col[o * 3 + 2] = c.b; } else { col[o * 3] = C.getX(i); col[o * 3 + 1] = C.getY(i); col[o * 3 + 2] = C.getZ(i); } }
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  if (col) g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.computeBoundingSphere(); return g;
+}
+export function stillOf(A) {
+  if (A.still) return A.still;
+  if (!stillMat) { stillMat = toonSmooth({ side: THREE.DoubleSide }); stillMat.userData.shared = true; }
+  A.root.updateMatrixWorld(true); _inv.copy(A.root.matrixWorld).invert();
+  const solid = [], lines = [], keep = [], still = new THREE.Group(); still.userData.still = true;
+  A.rig.traverse(m => {
+    if (!m.isMesh || !shown(m, A.root) || !m.geometry.attributes.normal) return;
+    if (m.userData.outline) { lines.push({ m }); return; }
+    const mt = m.material;
+    if (Array.isArray(mt) || mt.transparent || mt.map) { keep.push(m); return; }
+    if (mt.vertexColors && m.geometry.attributes.color) solid.push({ m, c: null });
+    else if (mt.color) solid.push({ m, c: mt.color });
+    else keep.push(m);
+  });
+  if (solid.length) { const one = new THREE.Mesh(bake(solid, _inv, true), stillMat); one.castShadow = true; still.add(one); }
+  for (const m of keep) { const c = new THREE.Mesh(m.geometry, m.material); _mm.multiplyMatrices(_inv, m.matrixWorld); _mm.decompose(c.position, c.quaternion, c.scale); c.renderOrder = m.renderOrder; still.add(c); }
+  if (lines.length) { const ol = new THREE.Mesh(bake(lines, _inv, false), lines[0].m.material); ol.userData.outline = true; ol.visible = A._ol !== false; still.add(ol); A.stillLine = ol; }
+  still.traverse(o => { o.raycast = () => { }; });
+  still.visible = false; A.root.add(still); A.still = still; A.root.userData.still = still; // (js/main.js far-culling hides it with the person)
+  return still;
+}
+// (battery round, PERF-003) Up close too: the plain-coloured parts that move together (the head with its hair and hat,
+// each arm with its sleeve and hand, each leg with its shoe, the body with its clothes) become one shape each, their
+// colours kept per corner, so a person is about 8 shapes (and 8 outlines) instead of 25. Nothing moves differently:
+// each part stays in the same group the animation turns. The skin's parts remember where they are, so a photo face's
+// skin colour (setFace) still colours them.
+const compactMats = {};
+const compactMat = side => compactMats[side] || (compactMats[side] = Object.assign(toonSmooth({ side }), { userData: { shared: true } }));
+function compact(A) {
+  const nodes = [A.rig, A.torso, A.head, A.legL, A.legR, A.armL, A.armR, A.glider, ...(A.wings || [])];
+  A.rig.traverse(o => { if (o.isGroup && !nodes.includes(o)) nodes.push(o); });
+  A.skinParts = [];
+  for (const N of nodes) {
+    const bySide = {};
+    for (const m of N.children) {
+      if (!m.isMesh || m.children.length || m === A.cape || !m.visible) continue;
+      const mt = m.material;
+      if (Array.isArray(mt) || !mt.isMeshToonMaterial || mt.transparent || mt.map || !m.geometry.attributes.normal) continue;
+      if (!mt.vertexColors && !mt.color) continue;
+      (bySide[mt.side] = bySide[mt.side] || []).push(m);
+    }
+    for (const [side, list] of Object.entries(bySide)) {
+      if (list.length < 2) continue;
+      N.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(N.matrixWorld).invert();
+      const ranges = []; let at = 0;
+      const parts = list.map(m => { const n = m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count; if (m.material === A.skinMat) ranges.push([at, n]); at += n; return { m, c: m.material.vertexColors && m.geometry.attributes.color ? null : m.material.color }; });
+      const one = new THREE.Mesh(bake(parts, inv, true), compactMat(+side)); one.castShadow = true;
+      // (r67) an arm keeps an empty marker where each of its parts was (the hand at y -0.42), so a rider's grip can still be found
+      if (N === A.armL || N === A.armR) list.forEach(m => { const k = new THREE.Object3D(); k.position.copy(m.position); k.quaternion.copy(m.quaternion); k.userData.part = true; N.add(k); });
+      list.forEach(m => N.remove(m)); N.add(one);
+      if (ranges.length) A.skinParts.push({ g: one.geometry, ranges });
+    }
+  }
+}
+function recolorSkin(A) {
+  const c = A.skinMat.color;
+  for (const { g, ranges } of A.skinParts || []) { const C = g.attributes.color; for (const [a, n] of ranges) for (let i = a; i < a + n; i++) C.setXYZ(i, c.r, c.g, c.b); C.needsUpdate = true; }
+}
+// the moving person or the still copy (made the first time it is needed)
+export function showStill(A, yes) {
+  if (!!A._still === yes) return; A._still = yes;
+  if (yes) stillOf(A).visible = true; else if (A.still) A.still.visible = false;
+  A.rig.visible = !yes;
+}
+export function dropStill(A) {
+  if (!A.still) return; const was = A._still; showStill(A, false);
+  A.still.children.forEach(c => { if (c.material === stillMat || c === A.stillLine) c.geometry.dispose(); });
+  A.root.remove(A.still); A.still = null; A.stillLine = null; delete A.root.userData.still; if (was) showStill(A, true);
 }
 export function applyNpcFaces() { for (const [id, list] of Object.entries(NAMED)) list.forEach(A => setFace(A, (settings.npcFaces || {})[id] || customFace(id) || null)); }
 onFamilyPhotos(() => applyNpcFaces()); // (round R privacy) the family's photo faces arrive after the start, with the family code

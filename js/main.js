@@ -14,7 +14,7 @@ import { fmt } from './money.js';
 import { el, esc, $, dist2, pick, wait, clamp } from './util.js';
 import { createWorld, levelUnderBuildings, widenFlatLand, paintMap, paintWater, heightAt, regionAt, REGION_NAMES, MARKET, CHINA, INDIA, SHRINES, TOWERS, LEAFIES, VILLAGE, HOME, PLAYGROUND, REVEAL_R, WATER, PLATEAU, TOWN, AUSSIE, LAKE, ULURU, HALF, STUDIO_ON_MAP, PARKED } from './world.js';
 import { landmarkAt, MAP_VERSION, onThisMap, rowSlot } from './content/map.js';
-import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL, OUTLINED } from './avatar.js';
+import { buildAvatar, nameAvatar, applyNpcFaces, buildOwl, buildGourd, avatarURL, OUTLINED, showStill } from './avatar.js';
 import { Hero } from './player.js';
 import { Hud, fogMapFor, EMOTES } from './hud.js';
 import { pads, initInput } from './input.js';
@@ -98,11 +98,16 @@ import { PROLOGUE, showStory, storyCheck, showQuestTale, QUEST_TALES } from './s
 import { openWardrobe, openGamesHub, openQuick, nextGameAfter } from './ui.js';
 
 // ---------- renderer & world ----------
-const quality = settings.quality === 'auto' ? ((navigator.hardwareConcurrency || 4) <= 4 || Math.min(screen.width, screen.height) < 500 ? 'low' : 'mid') : settings.quality;
+// (battery round, owner 12 Oct AEDT) Graphics: Fast, Auto, Pretty (60 frames a second) and Pretty+ ('max': the same
+// picture as Pretty, drawn as fast as the screen goes)
+const quality = settings.quality === 'auto' ? ((navigator.hardwareConcurrency || 4) <= 4 || Math.min(screen.width, screen.height) < 500 ? 'low' : 'mid') : settings.quality === 'max' ? 'high' : settings.quality;
+// (battery round) the device's everyday graphics chip, not its strongest one: a MacBook's big chip and a phone's top
+// speed drain the battery for a picture the children cannot tell apart
+const PR_AUTO = 1.5; // (battery round) on Auto the picture is never drawn sharper than 1.5x the screen's pixels
 let renderer;
-try { renderer = new THREE.WebGLRenderer({ antialias: quality !== 'low', preserveDrawingBuffer: false, powerPreference: 'high-performance' }); }
+try { renderer = new THREE.WebGLRenderer({ antialias: quality !== 'low', preserveDrawingBuffer: false, powerPreference: 'default' }); }
 catch (e) { $('#boot').innerHTML = `<p>${T('Sorry, this device cannot show the 3D world.', 'Xin lỗi, máy này không hiển thị được thế giới 3D.')}</p>`; throw e; }
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === 'low' ? 1.25 : quality === 'high' ? 2 : 1.6));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === 'low' ? 1.25 : quality === 'high' ? 2 : settings.quality === 'auto' ? PR_AUTO : 1.6));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.NoToneMapping; // flat illustrated colours, exactly as painted
 if (quality !== 'low') { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
@@ -221,10 +226,15 @@ function setupNPCs() {
     talk: h => kidTalk(h, 'skipping', 'Lan', ['Nhảy dây! Skipping! Jump when the rope comes down and count with me!', 'Nhảy dây nào! Nhảy lên khi dây quay xuống và đếm cùng tớ nhé!']) });
   gourd = addNPC({ id: 'gourd', name: 'Ông Bầu', model: buildGourd(), x: V.x - V.r + 8, z: V.z + 6, face: -1.2, icon: '🍃', talk: gourdTalk });
   // outlines only on characters near a player (keeps phones fast)
-  let olT = 0; const _wp = new THREE.Vector3();
+  let olT = 0; const _wp = new THREE.Vector3(), STILL = 20;
   world.updaters.push(dt => {
     if ((olT -= dt) > 0) return; olT = .4;
-    OUTLINED.forEach(A => { if (!A.root.parent) return; A.root.getWorldPosition(_wp); const near = G.heroes.some(h => dist2(h.pos.x, h.pos.z, _wp.x, _wp.z) < 30); if (A._ol !== near) { A._ol = near; A.outlines.forEach(o => o.visible = near); } });
+    const mine = new Set(G.heroes.map(h => h.av));
+    OUTLINED.forEach(A => { if (!A.root.parent) return; A.root.getWorldPosition(_wp); const near = G.heroes.some(h => dist2(h.pos.x, h.pos.z, _wp.x, _wp.z) < 30); if (A._ol !== near) { A._ol = near; A.outlines.forEach(o => o.visible = near); if (A.stillLine) A.stillLine.visible = near; }
+      // (battery round, PERF-003) far (STILL m from every child) and standing still for two looks: the one-piece still
+      // copy (js/avatar.js); anyone walking, riding or near keeps every moving part. A child's own character never.
+      const moved = A._wx !== _wp.x || A._wz !== _wp.z; A._wx = _wp.x; A._wz = _wp.z; A._calm = moved ? 0 : (A._calm || 0) + 1;
+      showStill(A, !mine.has(A) && A._calm >= 2 && !G.heroes.some(h => dist2(h.pos.x, h.pos.z, _wp.x, _wp.z) < STILL)); });
   });
   // gentle idle animation
   // the children who host folk games are busy playing: they cheer, wave and clap now and then
@@ -1429,7 +1439,7 @@ setInterval(() => {
 }, 100);
 // Sharp on phones that can manage it: with Graphics on Auto, the 3D picture is drawn at up to 2× the screen's
 // pixels and steps down a little whenever the game starts to stutter (phones started blurry at 1.25×).
-const adapt = { pr: renderer.getPixelRatio(), max: Math.min(window.devicePixelRatio || 1, 2), min: 1, sum: 0, n: 0, t0: performance.now() };
+const adapt = { pr: renderer.getPixelRatio(), max: Math.min(window.devicePixelRatio || 1, PR_AUTO), min: 1, sum: 0, n: 0, t0: performance.now() };
 function adaptResolution(rawMs) {
   if (settings.quality !== 'auto' || document.hidden || rawMs > 250) return;
   adapt.sum += rawMs; adapt.n++;
@@ -1439,8 +1449,33 @@ function adaptResolution(rawMs) {
   if (next !== adapt.pr) { adapt.pr = next; renderer.setPixelRatio(next); renderer.setSize(innerWidth, innerHeight, false); }
 }
 // Battery (owner, round O: "the game uses too much battery"): on phones and tablets the valley is drawn 30 times a
-// second (smooth enough for walking; half the work), unless Graphics is on "Pretty"; computers keep 60.
-const FRAME_MS = settings.quality !== 'high' && matchMedia('(pointer: coarse)').matches ? 1000 / 30 : 0;
+// second (smooth enough for walking; half the work), unless Graphics is on "Pretty".
+// (battery round, owner 12 Oct AEDT: "my MacBook takes almost 10 % at once") computers too: 60 a second (a 120 Hz
+// screen drew 120), 30 on Fast; Pretty is 60 everywhere and only Pretty+ draws as fast as the screen. The title screen
+// is drawn 20 times a second, and when nothing moves for IDLE_MS (no touch, key or mouse, every child and camera still,
+// no friend online) the valley is drawn IDLE_FPS times a second until anything happens.
+const FRAME_MS = settings.quality === 'max' ? 0 : settings.quality === 'high' || (settings.quality !== 'low' && !matchMedia('(pointer: coarse)').matches) ? 1000 / 60 : 1000 / 30;
+const TITLE_MS = 1000 / 20, IDLE_MS = 15000, IDLE_FPS = 8;
+// what the drawing costs, for the battery statistics (js/players.js takes it once a minute) and the `battery` check
+const BAT = G.battery = { frameMs: FRAME_MS, titleMs: TITLE_MS, idleMs: IDLE_MS, idleFps: IDLE_FPS, idle: false, input: performance.now(), moved: performance.now(), key: '', at: null, due: 0, prStart: renderer.getPixelRatio(), prMax: settings.quality === 'auto' ? adapt.max : renderer.getPixelRatio(),
+  // (counted only while a child plays and something moves: the title, the idle frames and the time the world rests
+  // behind a game or a menu are left out, so frames a second say how smooth playing is)
+  frames: 0, work: 0, draws: 0, ms: 0, idleFrames: 0, lastDrawn: 0,
+  capMs: () => !playing ? Math.max(FRAME_MS, TITLE_MS) : BAT.idle ? 1000 / IDLE_FPS : FRAME_MS,
+  // at most one drawing per cap ms, on any screen (a 120 or 144 Hz screen gets 60 on average, not 72); st keeps `due`
+  gate: (st, now, cap) => { if (!cap) return true; if (now < st.due - 2) return false; st.due = Math.max(st.due + cap, now - cap); return true; },
+  take: () => { const o = { frames: BAT.frames, work: BAT.work, draws: BAT.draws, ms: BAT.ms, idleFrames: BAT.idleFrames, pr: renderer.getPixelRatio() }; BAT.frames = BAT.work = BAT.draws = BAT.ms = BAT.idleFrames = 0; return o; } };
+for (const e of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart']) addEventListener(e, () => { BAT.input = performance.now(); if (BAT.idle) { BAT.idle = false; BAT.due = 0; } }, { capture: true, passive: true });
+// still: every child and their camera moving slower than 10 cm a second (a settled camera keeps creeping by about a
+// centimetre a second, which nobody sees), the same pose, no input, no friend online, nothing on the way
+function stillCheck(now) {
+  const at = G.heroes.flatMap(h => [h.pos.x, h.pos.y, h.pos.z, h.yaw, h.cam.position.x, h.cam.position.y, h.cam.position.z]), key = G.heroes.map(h => h.state).join('|');
+  const sec = Math.max(.001, (now - (BAT.atT || 0)) / 1000);
+  if (key !== BAT.key || !BAT.at || BAT.at.length !== at.length || at.some((v, i) => Math.abs(v - BAT.at[i]) / sec > .1)) { BAT.key = key; BAT.moved = now; }
+  BAT.at = at; BAT.atT = now;
+  const idle = now - BAT.input > IDLE_MS && now - BAT.moved > IDLE_MS && !Object.keys(G.partners).length && !G.travelling && !G.places.dancing;
+  if (idle !== BAT.idle) { BAT.idle = idle; BAT.due = 0; }
+}
 // pages that cover the whole screen: nothing of the valley shows, so it isn't drawn at all (the Simple screen, which
 // under-5s start on, the 🎵 Songs page, often left playing lullabies at bedtime, and the real photos)
 const worldHidden = () => (G.simple && G.simple.open) || !!document.querySelector('.songs, .realview');
@@ -1448,9 +1483,11 @@ G.worldHidden = worldHidden;
 function frame(now) {
   requestAnimationFrame(frame);
   if (framesSeen < 4 && ++framesSeen === 4) framesDone(); // (js/solids.js waits for these)
-  if (FRAME_MS && now - last < FRAME_MS - 4) return;
-  if (playing) adaptResolution(now - last - (FRAME_MS ? FRAME_MS - 1000 / 60 : 0)); // (the wait between frames is not slowness)
-  const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+  if (!BAT.gate(BAT, now, BAT.capMs())) return; // (battery round)
+  if (playing && !BAT.idle) adaptResolution(now - last - (FRAME_MS ? FRAME_MS - 1000 / 60 : 0)); // (the wait between frames is not slowness)
+  // (battery round) while idle the frames are far apart: the world keeps its pace (nothing is moving that could jump)
+  const dt = Math.min(BAT.idle ? .15 : .05, (now - last) / 1000); last = now; t += dt;
+  const work0 = performance.now();
   // the 3D world rests while a full-screen game, the storybook or a page that covers it is open (saves battery)
   // (two players: the world rests only when both halves have a window open)
   if (twoHalves() && playing ? G.halfBusy(0) && G.halfBusy(1) : gameOpen() || document.querySelector('.storybook, .theatre.film') || (G.paused && document.querySelector('.modal')) || (playing && worldHidden())) return;
@@ -1463,6 +1500,8 @@ function frame(now) {
     renderer.setScissorTest(false); renderer.setViewport(0, 0, innerWidth, innerHeight); renderer.render(scene, titleCam);
     return;
   }
+  stillCheck(now); if (BAT.idle) BAT.idleFrames++;
+  let drawn = 0;
   poll(dt);
   const two = twoHalves();
   if (two || (!G.paused && !gameOpen())) {
@@ -1539,7 +1578,7 @@ function frame(now) {
     G.showcaseCam(i, h, dt); // a landmark fly-around takes over the camera
     if (r.length > 1) aimCam(h, q);
     world.updateSky(0, h.cam.position, h.pos);
-    renderer.render(scene, h.cam);
+    renderer.render(scene, h.cam); drawn += renderer.info.render.calls;
     if (G.nameTags) G.nameTags.update(i, h, q);
     const p = h.profile;
     // what the minimap shows, worked out only when it is redrawn
@@ -1555,6 +1594,8 @@ function frame(now) {
     return markers; };
     G.huds[i].update(dt, h.cam, () => G.fogMapFor(p), markersFor);
   });
+  if (!BAT.idle) { BAT.frames++; BAT.work += performance.now() - work0; BAT.draws += drawn; const gap = now - BAT.lastDrawn; if (gap <= 250) BAT.ms += gap; }
+  BAT.lastDrawn = now;
 }
 
 // ---------- boot ----------
@@ -1741,6 +1782,8 @@ startCounting(G); // how many children play, and what they play, for Studio's re
       v.copy(u.c).applyMatrix4(u.o.matrixWorld); let d2 = 1e12;
       for (const c of cams) d2 = Math.min(d2, (c.x - v.x) ** 2 + (c.z - v.z) ** 2);
       for (const m of u.meshes) m.layers.set(d2 > u.far2 || (m.userData.outline && d2 > O2) ? 1 : 0);
+      // (battery round) a person's still copy, made after the list was gathered, goes with the person
+      const st = u.o.userData.still; if (st) for (const m of st.children) m.layers.set(d2 > u.far2 || (m.userData.outline && d2 > O2) ? 1 : 0);
     }
   };
 }

@@ -70,9 +70,16 @@ export function packOrder() {
   return out;
 }
 let checking = false;
+// (battery round, owner 12 Oct AEDT: "my phone gets very hot") the download is spread out: nothing while the valley is
+// being built (the busiest seconds of a start), then 6 files at a time with a short rest between (longer once the small
+// core is in), so the phone's radio and processor are never kept flat out
+const PACK_REST = { core: 150, rest: 400 };
+const valleyBuilt = async () => { for (let i = 0; i < 240 && !(window.__sv && window.__sv.bootTimes); i++) await new Promise(r => setTimeout(r, 500)); };
+const rest = ms => new Promise(r => setTimeout(r, ms));
 async function checkPack() {
   if (checking || !PACK) return; checking = true;
   try {
+    await valleyBuilt();
     const cache = await caches.open('sv-voices');
     // (round O, owner: "does it load the voice pack every time? it should be once, unless there are new voices") once
     // the whole pack is on the device, a start only looks at 16 files picked at random, says nothing and downloads
@@ -106,6 +113,7 @@ async function checkPack() {
         await Promise.all(miss.slice(i, i + 6).map(async u => { try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); have.add(abs(u)); pending.delete(u); done = Math.min(total, done + 1); } } catch (e) { } }));
         packEmit({ state: 'loading', done, total, area: g });
         if (navigator.onLine === false) { packEmit({ state: 'waiting', left: total - done }); return; } // goes on when the internet is back
+        await rest(g === 'core' ? PACK_REST.core : PACK_REST.rest);
       }
       if (g === 'core' && !missingOf(['core']).length) settings.packCore = packSig() + '|' + packLangs().join('');
     }

@@ -20,7 +20,7 @@ const calm = () => document.body.classList.contains('calm') || (typeof matchMedi
 function ctx(api) {
   api.onCleanup(hush);
   return {
-    // (every spoken instruction is announced like the other games' api.say, so the caption and under-5 checks hear it)
+    // (r67) told to the caption listeners like every other game's say(), so an instruction has its caption (A11Y)
     async say(en, vi) { if (api.closed) return; api.show(en, vi); const t = settings.lang === 'vi' ? (vi ?? en) : en; spoken.forEach(f => { try { f(t); } catch (e) { } }); await sayAsync(en, vi); },
     read: text => api.closed ? Promise.resolve() : sayAsync(text, text),
     later(f, ms) { const t = setTimeout(f, ms); api.onCleanup(() => clearTimeout(t)); return t; }
