@@ -597,7 +597,7 @@ const bindMore = P => P.querySelectorAll('[data-more]').forEach(b => b.onclick =
 // button that opens its dates; a search and filters at the top; Save sits at the bottom of the screen and counts the
 // changes. The auto play and tester settings open under their own cards (each added once, even if the page is drawn
 // twice), and the testers' sneak peeks are picked by group (All / None, a search, a count).
-const REL_ICON = { story: '🏮', kids: '🧸', rewards: '🎁', world: '🏞️', festivals: '🎉', tools: '🧪', trial: '🔬' };
+const REL_ICON = { story: '🏮', kids: '🧸', rewards: '🎁', world: '🏞️', festivals: '🎉', tools: '🧰', trial: '📚' };
 PAGES.releases = async P => {
   const { RELEASES, RELEASE_GROUPS } = await import(GAME + 'js/content/releases.js'), live = await loadLive(), R = live.releases || {};
   const myDraw = P.dataset.draw = String((+P.dataset.draw || 0) + 1), stale = () => P.dataset.draw !== myDraw; // a newer drawing of the page wins
@@ -613,7 +613,7 @@ PAGES.releases = async P => {
     return out.map(([k, t]) => `<span class="rs ${k}">${t}</span>`).join(''); };
   const card = x => { const r = R[x.id] || {}, on = isOn(x), sched = !!(r.start || r.days || r.newDays);
     return `<div class="relc${on ? ' on' : ''}${sched ? ' sched' : ''}" data-id="${x.id}">
-      <div class="relc-top"><label class="sw" title="${T('On or off', 'Bật hoặc tắt')}"><input type="checkbox" data-r="on" ${on ? 'checked' : ''}><span></span></label>
+      <div class="relc-top"><label class="tog" title="${T('On or off', 'Bật hoặc tắt')}"><input type="checkbox" data-r="on" ${on ? 'checked' : ''}><span></span></label>
         <div class="relc-name">${x.icon ? x.icon + ' ' : ''}${esc(T(x.en, x.vi))}<div class="relc-st">${status(on, r)}</div></div>
         <button class="btn small ghost relc-more" data-more aria-expanded="false">📅 ${T('Schedule', 'Lịch')}</button></div>
       <div class="relc-opt" hidden>
