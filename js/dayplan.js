@@ -15,8 +15,11 @@ export function createDayPlan(G) {
   const doors = ((G.homes && G.homes.list) || []).map(h => h.door).filter(Boolean);
   const prep = v => {
     const { x, z } = v.home;
-    v.door = doors.filter(d => Math.hypot(d.x - x, d.z - z) < 35).sort((a, b) => Math.hypot(a.x - x, a.z - z) - Math.hypot(b.x - x, b.z - z)).find(d => clear(x, z, d.x, d.z)) || null;
-    v.free = offRoad(x, z);   // can potter about (only off the streets)
+    // (Round V, owner 13 Oct: a villager sitting in the air by the road) people seated on a stool stay seated: they do not
+    // potter about or walk home (they would carry their sitting pose away from the table); at night they light a lantern
+    const seated = !!v.o.userData.seated;
+    v.door = seated ? null : doors.filter(d => Math.hypot(d.x - x, d.z - z) < 35).sort((a, b) => Math.hypot(a.x - x, a.z - z) - Math.hypot(b.x - x, b.z - z)).find(d => clear(x, z, d.x, d.z)) || null;
+    v.free = !seated && offRoad(x, z);   // can potter about (only off the streets)
     v.goal = null; v.inside = false; v.wait = Math.random() * 6;
     v.umb = sprite('☂️', .9); v.umb.position.set(0, 3, 0); v.umb.visible = false; v.o.add(v.umb);
     v.lamp = sprite('🏮', .5); v.lamp.position.set(.45, 1.3, .2); v.lamp.visible = false; v.o.add(v.lamp);
@@ -29,7 +32,10 @@ export function createDayPlan(G) {
   const step = (v, dt) => {
     const p = v.o.position, [gx, gz] = v.goal, d = Math.hypot(gx - p.x, gz - p.z);
     if (d < .15) { v.goal = null; return true; }
-    const s = Math.min(d, SPEED * dt); p.x += (gx - p.x) / d * s; p.z += (gz - p.z) / d * s; v.o.rotation.y = Math.atan2(gx - p.x, gz - p.z);
+    const s = Math.min(d, SPEED * dt), nx = p.x + (gx - p.x) / d * s, nz = p.z + (gz - p.z) / d * s;
+    // (Round V) something put down since the walk was chosen (a stall, a box, a parked vehicle): stop rather than walk into it
+    if (offRoad(p.x, p.z) && !offRoad(nx, nz) && !(v.going === 'in' && v.door && Math.hypot(v.door.x - nx, v.door.z - nz) < .6)) { v.goal = null; return false; }
+    p.x = nx; p.z = nz; v.o.rotation.y = Math.atan2(gx - p.x, gz - p.z);
     if (world.groundAt) p.y = world.groundAt(p.x, p.z);
     return false;
   };

@@ -167,6 +167,15 @@ export const HOWTO = {
       S('🏆', 'Play all your cards first to win! Stuck? Tap 💡 Hint.', 'Ai đánh hết bài trước là thắng! Bí quá thì bấm 💡 Gợi ý.')],
     real: S('🧒🎴🧑', 'For real: deal 13 cards each to 4 players. Whoever has the 3 of spades starts!', 'Chơi thật: chia mỗi người 13 lá, 4 người chơi. Ai có 3 bích thì đánh trước!')
   },
+  // (Round V, owner 13 Oct) Tiến Lên miền Bắc: the northern rules
+  tienlenbac: {
+    origin: S('🇻🇳 🎴', 'Tiến Lên miền Bắc is how families in the north of Vietnam play it: you must follow the same suit!', 'Tiến Lên miền Bắc là cách các gia đình miền Bắc chơi: phải đánh cùng chất!'),
+    steps: [S('3️⃣ ➡️ 2️⃣', '3 is the smallest card and 2 is the biggest.', '3 nhỏ nhất, 2 lớn nhất.'),
+      S('♥ ♥', 'Beat one card with a higher card of the same suit: a heart with a heart.', 'Chặn một lá bằng lá lớn hơn cùng chất: cơ chặn cơ.'),
+      S('🎴 🎴', 'A pair is beaten by a higher pair of the same colours. A run must be all one suit.', 'Đôi phải chặn bằng đôi lớn hơn cùng màu. Sảnh phải đồng chất.'),
+      S('🏆', 'Play all your cards first to win! Stuck? Tap 💡 Hint.', 'Ai đánh hết bài trước là thắng! Bí quá thì bấm 💡 Gợi ý.')],
+    real: S('🧒🎴🧑', 'For real: deal 13 cards each to 4 players and follow the suit!', 'Chơi thật: chia mỗi người 13 lá, 4 người chơi, và nhớ đánh cùng chất!')
+  },
   dacau: {
     origin: S('🇻🇳 🏸', 'Đá cầu is played in parks and schoolyards all over Vietnam. The shuttlecock has colourful feathers.', 'Đá cầu được chơi ở công viên và sân trường khắp Việt Nam. Quả cầu có lông vũ nhiều màu.'),
     steps: [S('👆 🏸 ⬆️', 'Tap the shuttlecock to kick it up.', 'Chạm quả cầu để đá lên.'), S('🏸 🚫 ⬇️', 'Do not let it touch the ground!', 'Đừng để cầu chạm đất!'), S('1️⃣ 2️⃣ 3️⃣', 'Count your kicks!', 'Đếm số lần đá nhé!')],

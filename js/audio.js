@@ -3,12 +3,19 @@ import { settings } from './state.js';
 import { pick, rand } from './util.js';
 
 let AC = null, sfxBus = null, musicBus = null, noiseBuf = null;
+// (Round V, owner 13 Oct: on iPhone the microphone did nothing in Friends and in voice control, with every setting on
+// "Ask") "playback" is a play-only mode: while it is set, iPhone never asks for the microphone and voice control cannot
+// listen. While anything needs the microphone (a call, voice control, the recorder, the microphone test) the mode is
+// "play-and-record", which also ignores the silent switch; back to "playback" when the last one lets go.
+const micUsers = new Set();
+function setSession() { try { if (navigator.audioSession) navigator.audioSession.type = micUsers.size ? 'play-and-record' : 'playback'; } catch (e) { } }
+export function micMode(who, on) { if (on) micUsers.add(who); else micUsers.delete(who); setSession(); }
 export function ac() {
   try {
     if (!AC) {
       // iPhone: game sound (and the recorded voices) would follow the silent switch while the device voice ignores it,
       // so with the switch on children heard only the machine voice. "playback" makes the game sound like a video's.
-      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { }
+      setSession();
       AC = new (window.AudioContext || window.webkitAudioContext)();
       const comp = AC.createDynamicsCompressor(); comp.connect(AC.destination);
       sfxBus = AC.createGain(); sfxBus.gain.value = .7; sfxBus.connect(comp);

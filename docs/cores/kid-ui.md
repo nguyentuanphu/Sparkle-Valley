@@ -39,6 +39,7 @@ A changed screen layout is re-recorded with `node run.mjs contract --update-cont
 - **Analytics & Infra**: the Grown-ups → Advanced → Analytics switch.
 
 ## Owner's decisions to keep
+- (13 Oct AEDT, Round V, built by Release) The Simple screen is one page per tab that scrolls down: each category's title, then its own road of pictures, then the next (like the Khám phá page); replaces Round U's category cards. Phone on its side: categories side by side, scrolling sideways. Also: the Shop is a tab right after Backpack (no dock button); the quest bar folds on tap; the Backpack's counters are one row of cards and food asks "Eat it?".
 - Under-5s start on the Simple screen, big kids in the valley; each child switches either way (round I).
 - The Simple screen (Round U, owner, 11 Oct: "separate sections for games, stories and places"; replaces bug #30's one long
   road per tab, 10 Oct): each bottom tab (Trò chơi, Truyện, Nơi chốn) first shows its categories as big picture cards (games

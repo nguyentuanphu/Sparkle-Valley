@@ -18,11 +18,13 @@ const num = (lo, hi) => v => typeof v === 'number' && Number.isFinite(v) && v >=
 const int = (lo, hi) => v => Number.isInteger(v) && v >= lo && v <= hi ? v : undefined;
 const bool = v => typeof v === 'boolean' ? v : undefined;
 const any = v => v; // checked again by the code that uses it (looks, photos: net.js cleanHello / okPhoto)
-// a side of a trade: up to 12 kinds of things (1–99 each) and up to 9,999 coins
+// a side of a trade: up to 12 kinds of things (1–99 each), up to 9,999 coins and up to 6 clothes (Round V)
 const side = v => {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
   const out = {}; if (v.coins != null) { if (!Number.isInteger(v.coins) || v.coins < 0 || v.coins > 9999) return undefined; out.coins = v.coins; }
   if (v.items != null) { if (typeof v.items !== 'object' || Array.isArray(v.items)) return undefined; const e = Object.entries(v.items); if (e.length > 12) return undefined; out.items = {}; for (const [k, n] of e) { if (!/^\w{1,24}$/.test(k) || !Number.isInteger(n) || n < 1 || n > 99) return undefined; out.items[k] = n; } }
+  // (Round V) clothes: up to 6, each a clothes id
+  if (v.clothes != null) { if (!Array.isArray(v.clothes) || v.clothes.length > 6 || !v.clothes.every(x => typeof x === 'string' && /^\w{1,24}$/.test(x))) return undefined; out.clothes = [...new Set(v.clothes)]; }
   return out;
 };
 /** @type {Field} up to 6 player ids, each a word */

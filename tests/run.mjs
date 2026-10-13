@@ -5,7 +5,7 @@
 // Multiplayer runs when a local PeerJS server is up on 127.0.0.1:9000 (see the README in this folder).
 import fs from 'fs';
 import os from 'os';
-import { launch, open, clear, start, URL, seedPlayers } from './harness.mjs';
+import { launch, open, clear, start, URL, seedPlayers, takeCoverage } from './harness.mjs';
 import { groundAudit } from './world-audit.mjs';
 import { studioCheck } from './studio-check.mjs';
 // (round R privacy) friends save each other's device key when they first play together (＋👫); two test devices that are
@@ -19,6 +19,10 @@ async function pairKeys(A, B) {
   await put(A, pb); await put(B, pa);
 }
 
+// (owner, 13 Oct: "smarter slow checks") with SV_SAMPLE=1 (tests/suite.mjs sets it) the slowest checks try a part that
+// changes every run (SV_SEED), and everything when their own files changed (SV_FULL=reading,films,… from suite.mjs)
+const sampled = name => process.env.SV_SAMPLE === '1' && !(process.env.SV_FULL || '').split(',').includes(name);
+const SEED = Number(process.env.SV_SEED) || Math.floor(Date.now() / 36e5);
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
 const results = [];
@@ -33,7 +37,12 @@ const check = async (name, fn) => {
   }
   // (round R) close every window the check left open, passed or failed: a failed check's window kept drawing the valley
   // and slowed every later check until they timed out
-  finally { for (const c of b.contexts()) await c.close().catch(() => { }); }
+  finally {
+    for (const c of b.contexts()) await c.close().catch(() => { });
+    // (owner, 13 Oct: "changed-files checks") with SV_COVER=1 each check writes which game code it ran (tests/suite.mjs
+    // turns that into tests/check-map.json); a check that opened no game page writes nothing and always runs
+    if (process.env.SV_COVER === '1') { const cov = takeCoverage(); fs.mkdirSync('out/cover', { recursive: true }); fs.writeFileSync(`out/cover/${name}.json`, JSON.stringify(cov)); }
+  }
 };
 const ok = (c, msg) => { if (!c) throw new Error(msg); };
 fs.mkdirSync('out', { recursive: true });
@@ -648,6 +657,9 @@ await check('voicearea', async () => {
   const next = got.slice(n1, n1 + 12);
   ok(next.length >= 12 && next.every(x => x.g === place) && next.every(x => x.lang === 'en'), `on Wi-Fi the first files after the core: ${JSON.stringify(next.slice(0, 4))} (wanted ${place})`);
   await P.ctx.close();
+  // (sample: the mobile-data part always; the next start and the computer take turns; all when voice files change)
+  const vsam = sampled('voicearea'), doQ = !vsam || SEED % 2 === 0, doC = !vsam || SEED % 2 === 1, errs = [...P.errors];
+  if (doQ) {
   // the next start on mobile data, core there, Not now said: nothing downloads and nothing is asked
   const Q = await open(b, { w: 390, h: 760, touch: true, play: false, pre: net('cellular'), settings: { autoPack: true, lang: 'en', bilingual: false } });
   // (a fresh profile: give it the core first, with the grown-up's answer already given)
@@ -655,8 +667,10 @@ await check('voicearea', async () => {
   await Q.page.waitForSelector('.packask', { timeout: 180000 }); await Q.page.click('.packask button:last-child');
   const n2 = got2.length; await Q.page.reload(); await start(Q.page); await clear(Q.page); await Q.page.mouse.click(195, 380); await Q.page.waitForTimeout(10000);
   const again = got2.length - n2, asked = !!(await Q.page.$('.packask'));
-  const errs = Q.errors.concat(P.errors); await Q.ctx.close();
+  errs.push(...Q.errors); await Q.ctx.close();
   ok(!again && !asked, `next start with the core there: ${again} files downloaded, asked again: ${asked}`);
+  }
+  if (doC) {
   // a computer that can't tell its connection counts as Wi-Fi: past the core with no question
   const C = await open(b, { w: 1180, h: 760, play: false, pre: `Object.defineProperty(navigator, 'connection', { get: () => undefined, configurable: true });`, settings: { autoPack: true, lang: 'vi', bilingual: false } });
   const got3 = watch(C); await start(C.page); await clear(C.page); await C.page.mouse.click(590, 380);
@@ -667,8 +681,9 @@ await check('voicearea', async () => {
   const asked3 = !!(await C.page.$('.packask')), en3 = got3.filter(x => x.lang === 'en').length, over3 = await C.page.evaluate(() => window.__packOver); await C.ctx.close();
   ok(!over3.length, `the voices bar went past 100 %: ${over3.slice(0, 3).join(', ')}`);
   ok(got3.some(x => x.g !== 'core') && !asked3 && !en3, `a computer: past the core ${got3.some(x => x.g !== 'core')}, asked ${asked3}, English files for a Vietnamese family ${en3}`);
+  }
   ok(!errs.length, errs.join(' | '));
-  return `core ${mb(core.en).toFixed(1)} MB (English) / ${mb(core.vi).toFixed(1)} MB (Vietnamese) of ${(Object.values(areas.size).reduce((a, z) => a + (z.en || 0) + (z.vi || 0) + (z.zh || 0) + (z.hi || 0), 0) / 1048576).toFixed(0)} MB; mobile data: ${n1} core files in English only, then "${text.slice(0, 50)}…" (hold for yes); Wi-Fi: ${place} first; the next start downloads nothing; a computer goes on by itself`;
+  return `${vsam ? `SAMPLE (${doQ ? 'next start' : 'computer'} part this run; all when voice files change): ` : ''}core ${mb(core.en).toFixed(1)} MB (English) / ${mb(core.vi).toFixed(1)} MB (Vietnamese) of ${(Object.values(areas.size).reduce((a, z) => a + (z.en || 0) + (z.vi || 0) + (z.zh || 0) + (z.hi || 0), 0) / 1048576).toFixed(0)} MB; mobile data: ${n1} core files in English only, then "${text.slice(0, 50)}…" (hold for yes); Wi-Fi: ${place} first; the next start downloads nothing; a computer goes on by itself`;
 });
 
 await check('welcomevoice', async () => {
@@ -1383,7 +1398,9 @@ await check('films', async () => {
       }
       out.films[id] = { pages: n, helps };
     };
-    for (const id of Object.keys(C.FILMS)) {
+    // (sample: about a third of the films and guides, different ones each run; all when film files change)
+    const pickF = (list) => !window.__filmSample ? list : list.filter((id, i) => i % 3 === window.__filmSample % 3);
+    for (const id of pickF(Object.keys(C.FILMS))) {
       // (the story's own films come from js/content/chapters.js, the fairy tales from js/talesdata.js)
       const { STORY_TALES } = await import('/js/content/chapters.js'), st = STORY_TALES[id];
       openTheatre(MORE_TALES.find(t => t.id === id) || (st && { ...st, title: () => st.title[0], ctx: { name: 'Na', companion: 'firefly' } }), { name: 'Na' }); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); // (loaded when the story opens)
@@ -1393,7 +1410,8 @@ await check('films', async () => {
       document.querySelector('.th-x').click(); await new Promise(r => setTimeout(r, 400));
       if (F.filmNow() || document.querySelector('canvas.th-film')) out.bad.push(id + ': not freed');
     }
-    for (const id of Object.keys(C.GUIDES)) {
+    const gAll = Object.keys(C.GUIDES), gSome = pickF(gAll);   // (guides with a real game playing by itself always run)
+    for (const id of gAll.filter(id => C.GUIDES[id].demo || gSome.includes(id))) {
       openHowTo(id, {}); for (let i = 0; i < 50 && !F.filmNow(); i++) await new Promise(r => setTimeout(r, 100)); document.querySelector('.ht-pp').click();
       await run(id, C.GUIDES[id].pages.length);
       // (Kid UI films, 10 Oct) the real game plays its first moves by itself with the glowing hand, then waits for the child
@@ -1424,12 +1442,12 @@ await check('films', async () => {
     return out;
   });
   const fails = [...r.bad];
-  for (const id of ['duahau', 'thanhgiong', 'banhchung', 'caykhe']) if (!r.films[id] || r.films[id].helps < 2) fails.push(`${id}: the child should help at least twice`);
+  for (const id of ['duahau', 'thanhgiong', 'banhchung', 'caykhe']) if (r.films[id] ? r.films[id].helps < 2 : !sampled('films')) fails.push(`${id}: the child should help at least twice`);   // (in a sample: the ones that played)
   for (const id of ['marbles', 'memory']) if (!r.demo || !r.demo[id]) fails.push(`${id}: no real game playing by itself`);
   if (P.errors.length) fails.push(...P.errors.slice(0, 3));
   await P.ctx.close();
   if (fails.length) throw new Error(JSON.stringify({ fails, films: r.films }));
-  return Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps at least twice in each story; the real game plays by itself (' + Object.entries(r.demo).map(([id, d]) => `${id}: ${d.moves} moves with the hand, the child's go`).join(', ') + ')';
+  return (sampled('films') ? 'SAMPLE (a third of the films and guides, different each run; all when film files change): ' : '') + Object.entries(r.films).map(([id, f]) => `${id} ${f.pages} pages`).join(', ') + '; the child helps at least twice in each story; the real game plays by itself (' + Object.entries(r.demo).map(([id, d]) => `${id}: ${d.moves} moves with the hand, the child's go`).join(', ') + ')';
 });
 await check('halves', async () => {
   // (round R, owner) two players: a window opens in its own child's half and pauses only that child; the other keeps playing
@@ -1938,10 +1956,12 @@ await check('shop', async () => {
     // the Bag button (Bug #29, owner 10 Oct: "bag is bag"): it opens the backpack, with one small shop button that opens the
     // shop right there, no travel; the stall in the valley stays
     p.age = 'big'; G.addCoins(500 - S.farm.coins); const pos0 = { x: h.pos.x, z: h.pos.z }; G.huds[0].root.querySelector('.dk.bag').click(); await w(500);
-    // (tester's notes, 12 Oct; owner: "bottom bar") the shop button sits beside the Bag in the dock, not inside the bag
-    const sb = G.huds[0].root.querySelector('.dk.shop'); out.bagOpens = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk') && !document.querySelector('.modal.pad .bagshop') && !!sb && !sb.hidden;
+    // (Round V, owner 13 Oct: "the shop button should be within the bag right next to the bag icon") a Shop tab straight
+    // after Backpack in the Pad; no Shop button in the dock
+    const tabsK = [...document.querySelectorAll('.modal.pad .pad-tabs button')].map(b => b.dataset.t), sb = document.querySelector('.modal.pad .pad-tabs [data-t="shop"]');
+    out.bagOpens = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk') && tabsK.indexOf('shop') === tabsK.indexOf('bag') + 1 && !G.huds[0].root.querySelector('.dk.shop');
     out.bagShopBtn = sb ? (() => { const q = sb.getBoundingClientRect(); return q.width >= 44 && q.height >= 44; })() : false;
-    document.querySelector('.modal.pad .x, .modal.pad .pad-x')?.click(); G.closePad && G.closePad(0); await w(300); sb && sb.click(); await w(700);
+    sb && sb.click(); await w(700);
     out.there = Math.hypot(h.pos.x - pos0.x, h.pos.z - pos0.z) < 1 && !document.querySelector('.modal.pad'); const card = document.querySelector('.modal.shopk .card');
     out.opened = !!card; out.tabs = card ? card.querySelectorAll('.ktab').length : 0; out.noBagTab = card ? !card.querySelector('[data-go="bag"]') : false;
     // (nothing to read: each thing is a drawing and a number; the words inside a drawing, like the coin's "$", are part
@@ -1950,14 +1970,14 @@ await check('shop', async () => {
     out.pics = card ? [...card.querySelectorAll('.kitem')].every(b => b.querySelector('svg') && /^\d*$/.test(words(b))) : false;
     out.small = card ? [...card.querySelectorAll('.ktab, .kitem, .x')].filter(b => { const q = b.getBoundingClientRect(); return q.width < 44 || q.height < 44; }).length : -1;
     // buy the tiara (hats tab), and it is worn
-    // (Round U: a child's own set shows first; another set's thing is behind More)
-    const item = async id => { let e = card.querySelector(`[data-id="${id}"]`); if (!e && card.querySelector('.kmore')) { card.querySelector('.kmore').click(); await w(150); e = card.querySelector(`[data-id="${id}"]`); } return e; };
-    card.querySelector('[data-tab="hat"]').click(); await w(150); (await item('tiara')).click(); await w(150);
-    const price = SH.priceOf(SH.ITEM.tiara), c0 = S.farm.coins; card.querySelector('.kyes').click(); await w(300);
-    out.bought = SH.owns(p, 'tiara') && p.look.hat === 'tiara' && S.farm.coins === c0 - price;
+    // (Round V, owner 13 Oct: the shop sells the child's own set only) the tiara, or the first thing of the child's set
+    const item = async id => card.querySelector(`[data-id="${id}"]`) || card.querySelector('.kitem:not(.have)');
+    card.querySelector('[data-tab="hat"]').click(); await w(150); const hatB = await item('tiara'), hatId = hatB.dataset.id; hatB.click(); await w(150);
+    const price = SH.priceOf(SH.ITEM[hatId]), c0 = S.farm.coins; card.querySelector('.kyes').click(); await w(300);
+    out.bought = SH.owns(p, hatId) && p.look.hat === hatId && S.farm.coins === c0 - price; out.boughtId = hatId;
     // not enough coins: nothing is bought
-    G.addCoins(-S.farm.coins); card.querySelector('[data-tab="back"]').click(); await w(150); (await item('dragon')).click(); await w(150); card.querySelector('.kyes').click(); await w(300);
-    out.poorKept = !SH.owns(p, 'dragon') && S.farm.coins === 0;
+    G.addCoins(-S.farm.coins); card.querySelector('[data-tab="back"]').click(); await w(150); const bkB = await item('dragon'), bkId = bkB.dataset.id; bkB.click(); await w(150); card.querySelector('.kyes').click(); await w(300);
+    out.poorKept = !SH.owns(p, bkId) && S.farm.coins === 0;
     card.querySelector('.x').click(); await w(400); out.closed = !document.querySelector('.modal.shopk') && !G.paused;
     // under-5s: every button at least 64 px
     p.age = 'little'; G.shop.openShop(0); await w(400);
@@ -1994,7 +2014,7 @@ await check('shop', async () => {
   });
   const errs = P.errors; await P.ctx.close(); const bad = [];
   if (!r.offRoad || !r.nearMarket || !r.dry || !r.tap) bad.push('the shop is not by the market on dry ground off the road ' + JSON.stringify(r.spot));
-  if (!r.bagOpens || !r.bagShopBtn) bad.push('the Bag button does not open the backpack, or no shop button beside it in the dock ' + JSON.stringify({ o: r.bagOpens, b: r.bagShopBtn }));
+  if (!r.bagOpens || !r.bagShopBtn) bad.push('the Bag button does not open the backpack, or no Shop tab right after Backpack (or a Shop button still in the dock) ' + JSON.stringify({ o: r.bagOpens, b: r.bagShopBtn }));
   if (!r.there || !r.opened) bad.push('the shop button in the bag did not open the shop right there (no travel)');
   if (r.tabs !== 7 || !r.noBagTab || !r.pics || r.small) bad.push(`the shop card: ${r.tabs} tabs, pictures ${r.pics}, ${r.small} buttons under 44 px`);
   if (!r.bought || !r.poorKept || !r.closed) bad.push('buying ' + JSON.stringify({ bought: r.bought, poor: r.poorKept, closed: r.closed }));
@@ -2006,7 +2026,7 @@ await check('shop', async () => {
   if (!r.offBag || !r.offStall || !r.offWard) bad.push('the Studio switch did not put the old Bag and wardrobe back ' + JSON.stringify(r));
   if (errs.length) bad.push(...errs.slice(0, 2));
   if (bad.length) throw new Error(bad.join('; '));
-  return `the shop at ${r.spot} by the market, off the road; the Bag opens the backpack and the Shop button beside it in the dock opens the shop without travel; 7 picture tabs, coin prices, 64 px for under-5s; bought the tiara, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
+  return `the shop at ${r.spot} by the market, off the road; the Bag opens the backpack and the Shop tab right after Backpack opens the shop without travel; 7 picture tabs, coin prices, 64 px for under-5s; bought ${r.boughtId}, could not buy without coins; the wardrobe; worn things kept; every piece drawn in 3D (at most ${Math.max(...Object.values(r.drawn))} extra parts); the switch puts the old Bag back`;
 });
 await check('boxes', async () => {
   // (round S, owner plan 8 Oct: Round R Part 2 item 10) a big kid at Medium or Hard: one free mystery box a day, one more
@@ -2758,20 +2778,19 @@ await check('simple', async () => {
   await P.page.waitForSelector('.simple-screen:not([hidden]) .sp-catcard, .simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
   await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
   const r = { start: true };
-  // (Round U, owner 11 Oct: separate sections; replaces bug #30's one long road) each tab first shows its categories as
-  // big picture cards; a card opens that category's own short road, with a big Back button to the cards
-  r.groupsFirst = await P.page.evaluate(() => { const v = __sv.simple.view, back = document.querySelector('.sp-back'); return v.cat === null && v.cats.length > 3 && !v.stops.length && document.querySelectorAll('.sp-catcard').length === v.cats.length && back.hidden && document.querySelectorAll('.sp-discover').length === 1; });
-  await P.page.locator('.sp-catcard').first().click(); await P.page.waitForTimeout(300);
-  r.section = await P.page.evaluate(() => { const v = __sv.simple.view, back = document.querySelector('.sp-back'), bb = back.getBoundingClientRect(); return { cat: v.cat, stops: v.stops.length, heads: document.querySelectorAll('.sp-stop.grp').length, back: !back.hidden && Math.min(bb.width, bb.height) >= 64 }; });
-  await P.page.click('.sp-back'); await P.page.waitForTimeout(300); r.backToCards = await P.page.evaluate(() => __sv.simple.view.cat === null && document.querySelectorAll('.sp-catcard').length > 3);
-  await P.page.locator('.sp-catcard').first().click(); await P.page.waitForTimeout(300);
+  // (Round V, owner 13 Oct: "one screen and scroll down, each has a title then games in roads with them, similar to the
+  // Khám phá tab"; replaces Round U's cards) every section of the tab on one page: its title, then its own road; the page scrolls
+  r.groupsFirst = await P.page.evaluate(() => { const v = __sv.simple.view, back = document.querySelector('.sp-back'), sc = document.querySelector('.sp-scroll'); return v.cat === null && v.cats.length > 3 && v.secs === v.cats.length && v.stops.length > 10 && back.hidden && document.querySelectorAll('.sp-discover').length === 1 && sc.scrollHeight > sc.clientHeight * 2; });
+  r.section = await P.page.evaluate(() => { const secs = [...document.querySelectorAll('.sp-sec')], t = secs[0] && secs[0].querySelector('.sp-sectitle'), tr = t && t.getBoundingClientRect(), first = secs[0] && secs[0].querySelector('.sp-stop'), fr = first && first.getBoundingClientRect();
+    return { cat: secs[0] && secs[0].dataset.cat, stops: secs[0] ? secs[0].querySelectorAll('.sp-stop').length : 0, heads: secs.every(x => x.querySelectorAll('.sp-sectitle').length === 1 && x.querySelector('.sp-road')) ? 1 : 0, back: !!(tr && fr && fr.top >= tr.bottom - 30) }; });   // (the road begins under its title)
+  r.backToCards = true;
   // round M: the game opens straight over the Simple screen (it never hides first, so the valley does not flash up)
   await P.page.evaluate(() => { window.__flash = false; const t = setInterval(() => { if (!__sv.simple.open) window.__flash = true; if (document.querySelector('.gl')) clearInterval(t); }, 20); });
   await P.page.locator('.sp-stop:not(.grp)').first().click(); await P.page.waitForSelector('.gl', { timeout: 10000 }); r.game = true; r.flash = await P.page.evaluate(() => window.__flash);
   await P.page.evaluate(() => document.querySelector('.gl-x').click());
   r.back = await P.page.waitForFunction(() => __sv.simple.open && !__sv.simple.busy && !document.querySelector('.gl'), null, { timeout: 8000 }).then(() => true, () => false); // free again at once
-  await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.waitForTimeout(300); r.talesCards = await P.page.evaluate(() => __sv.simple.view.cat === null);
-  await P.page.locator('.sp-catcard').first().click(); await P.page.waitForTimeout(300); await P.page.locator('.sp-stop:not(.grp)').first().click();
+  await P.page.click('.sp-tabs [data-tab="tales"]'); await P.page.waitForTimeout(300); r.talesCards = await P.page.evaluate(() => __sv.simple.view.cat === null && __sv.simple.view.secs > 1);
+  await P.page.locator('.sp-stop:not(.grp)').first().click();
   r.tale = await P.page.waitForSelector('.theatre', { timeout: 10000 }).then(() => true, () => false);
   await P.page.evaluate(() => document.querySelector('.theatre .th-x').click());
   for (let k=0;k<6;k++){ console.log('DBG', JSON.stringify(await P.page.evaluate(() => ({ open: __sv.simple.open, busy: __sv.simple.busy, th: document.querySelectorAll('.theatre').length, gl: !!document.querySelector('.gl'), paused: __sv.paused })))); await P.page.waitForTimeout(800);}
@@ -2794,7 +2813,7 @@ await check('simple', async () => {
   const S = await open(b, { w: 1280, h: 800, mode: 'split', screen: null }); await S.page.waitForTimeout(1500);
   r.split = await S.page.evaluate(() => ({ open: __sv.simple.open, dock: [...document.querySelectorAll('.simplesw')].some(d => !d.hidden) })); await S.ctx.close();
   ok(r.groupsFirst && r.section.cat && r.section.stops >= 1 && r.section.heads === 1 && r.section.back && r.backToCards && r.talesCards && !r.flash && r.game && r.back && r.tale && !r.valley.open && r.valley.screen === 'valley' && r.valley.dock && !r.valley.paused && r.reopen && r.wide.wide && r.wide.rail && r.wide.sideways && r.wide.inView && r.wide.big && !r.big && !r.split.open && !r.split.dock && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return 'under 5 starts on the category cards; a card opens its own short road, Back returns to the cards; a game and a story each two taps away, the road comes back after; Valley remembered; the “Big pictures” switch reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
+  return 'under 5 starts on one page of sections, each a title and its own road, scrolling down (like Khám phá); a game and a story each two taps away, the road comes back after; Valley remembered; the “Big pictures” switch reopens it; on its side a rail and a sideways path; big kid and two players start in the valley';
 });
 
 await check('adventure', async () => {
@@ -2806,20 +2825,17 @@ await check('adventure', async () => {
   const P = await open(b, { w: 390, h: 844, touch: true, screen: 'simple' });
   await P.page.waitForSelector('.simple-screen:not([hidden]) .sp-catcard, .simple-screen:not([hidden]) .sp-stop', { timeout: 20000 });
   await P.page.evaluate(() => document.querySelectorAll('.dialog').forEach(d => d.remove()));
-  const r = {};
+  const r = {};   // (Round V, owner 13 Oct: one page that scrolls down, each section's title then its own road, like Khám phá)
   // the list: every game is placed exactly once, and nothing is listed that isn't a game
   r.list = await P.page.evaluate(async () => { const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), ids = Object.keys(GAMES), keys = Object.keys(A.GAME_INFO);
     return { missing: ids.filter(i => !A.GAME_INFO[i]), extra: keys.filter(k => !GAMES[k] && k !== 'familyquiz') /* Family Quiz is there only once the family has written questions in Studio */, badArea: keys.filter(k => !A.AREAS.some(a => a.key === A.GAME_INFO[k][0])), games: ids.length }; });
-  // walk every under-5 section (Round U: the category cards, then each category's own road)
+  // every under-5 section on the one page: its title (drawn picture and name) and its road of drawn pictures
   r.walk = await P.page.evaluate(async () => {
     const { GAMES } = await import('/js/games/registry.js'), A = await import('/js/content/activities.js'), out = { notDrawn: [], tooBig: [] };
-    const cats = __sv.simple.view.cats, stops = []; let heads = 0;
-    document.querySelectorAll('.sp-catcard .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push(p.parentElement.getAttribute('aria-label')); });
-    for (const c of cats) {
-      __sv.simple.openGroup('games', c); const v = __sv.simple.view; stops.push(...v.stops); heads += document.querySelectorAll('.sp-stop.grp').length;
-      document.querySelectorAll('.sp-stop .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push(p.parentElement.getAttribute('aria-label')); });
-    }
-    __sv.simple.openGroup('games', null);
+    __sv.simple.openGroup('games', null); const v = __sv.simple.view, cats = v.cats, stops = v.stops.slice(), heads = document.querySelectorAll('.sp-sec .sp-sectitle').length;
+    const secCats = [...document.querySelectorAll('.sp-sec')].map(x => x.dataset.cat);
+    document.querySelectorAll('.sp-sectitle .sp-hpic, .sp-stop .sp-pic').forEach(p => { if (!p.querySelector('.art')) out.notDrawn.push((p.closest('[aria-label]') || p.parentElement).getAttribute('aria-label') || p.parentElement.textContent); });
+    if (JSON.stringify(secCats) !== JSON.stringify(cats)) out.notDrawn.push('sections ' + secCats.join(','));
     out.tooBig.push(...stops.filter(id => id !== 'songs' && A.gameInfo(id).ageMin >= 5));
     const want = Object.keys(GAMES).filter(id => A.gameInfo(id).ageMin < 5);
     const order = A.AREAS.map(a => a.key).filter(k => cats.includes(k));
@@ -2831,7 +2847,7 @@ await check('adventure', async () => {
   // Discover: a big picture for every area; tapping Music goes there
   await P.page.click('.sp-discover'); await P.page.waitForSelector('.sp-find:not([hidden]) .sp-card');
   r.find = await P.page.evaluate(() => ({ cards: document.querySelectorAll('.sp-card').length, search: !!document.querySelector('.sp-q') }));
-  await P.page.click('.sp-card[data-t="games"][data-a="music"]'); await P.page.waitForTimeout(200); r.music = await P.page.evaluate(() => { const h = [...document.querySelectorAll('.sp-stop.grp')].find(b => /Music|Âm nhạc/.test(b.getAttribute('aria-label'))), r = h && h.getBoundingClientRect(); return __sv.simple.view.cat === 'music' && r && r.top >= 0 && r.top < innerHeight / 2 ? 'music' : 'lost'; });
+  await P.page.click('.sp-card[data-t="games"][data-a="music"]'); await P.page.waitForTimeout(200); r.music = await P.page.evaluate(() => { const h = document.querySelector('.sp-sec[data-cat="music"] .sp-sectitle'), r = h && h.getBoundingClientRect(); return r && r.top >= 0 && r.top < innerHeight / 2 ? 'music' : 'lost'; });
   // a double tap starts the game once
   await P.page.evaluate(() => { window.__starts = 0; const pg = __sv.playGame; __sv.playGame = (...a) => { window.__starts++; return pg(...a); }; const s = [...document.querySelectorAll('.sp-stop:not(.grp)')].find(x => !/^(Songs|Bài hát)$/.test(x.getAttribute('aria-label'))); s.click(); s.click(); setTimeout(() => s.click(), 120); }); // (a game, not the Music group's 🎵 Songs)
   await P.page.waitForSelector('.gl', { timeout: 10000 }); await P.page.waitForTimeout(400);
@@ -2873,7 +2889,7 @@ await check('adventure', async () => {
   ok(r.leak.listeners <= 0 && r.leak.nodes <= 5 && r.leak.screens === 1, 'after 25 opens: ' + JSON.stringify(r.leak));
   ok(r.big.stops > 6 && r.big.dots && r.big.newOn.includes('Feed the Bunny') && r.big.newOn.length === 1 && !r.big.firstTap.game && r.big.firstTap.sel && r.big.secondTap && r.big.search.some(t => /Smash the Pot/.test(t)), 'big kid: ' + JSON.stringify(r.big));
   ok(!errs.length, errs.join(' | '));
-  return `${r.list.games} games in 11 areas; under-5: ${r.walk.cats} category cards, each its own road (${r.walk.stops} stops), every one drawn, China and India last in places; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
+  return `${r.list.games} games in 11 areas; under-5: one page of ${r.walk.cats} sections, each a title and its own road (${r.walk.stops} stops), every one drawn, China and India last in places; Discover ${r.find.cards} areas; double tap starts once; big kid: two taps, ✨ new, search; Ông Cú cheers; still in Calm; 25 opens: +${r.leak.listeners} listeners, +${r.leak.nodes} elements`;
 });
 
 await check('gamelevel', async () => {
@@ -3382,20 +3398,28 @@ await check('wayfind', async () => {
     for (let k = 0; k < 50 && !G.wayfind; k++) await wait(100);
     const btn = document.querySelector('.hud .z-where'), bb = btn.getBoundingClientRect(); btn.click(); await wait(300);
     const picks = [...document.querySelectorAll('.wherepick .wp-pick')], drawn = picks.every(p => p.querySelector('.art')), names = picks.map(p => p.getAttribute('aria-label'));
-    const hanoi = picks.find(p => /Hà Nội|Hanoi/.test(p.getAttribute('aria-label'))); hanoi.click(); await wait(800);
+    const hanoi = picks.find(p => /Hà Nội|Hanoi/.test(p.getAttribute('aria-label'))); hanoi.click(); await wait(500);
+    // (Round V, owner 13 Oct) a choice: Fly there or Walk with the sparkles; Walk here
+    const ch = [...document.querySelectorAll('.dialog .dch')], two = ch.length === 2; if (ch[1]) ch[1].click(); await wait(800);
     const t = G.wayfind.trail, shown = G.wayfind.shown;
     const off = shown.filter(([x, z]) => { const d = W.roadDist(x, z); return !(d.road && d.d <= d.road.w / 2 + .3) && W.edgeDist(x, z) > .3; }).map(p => p.map(Math.round)), onRoad = !off.length;   // (on a road, or a place's paved street)
     const gaps = t.pts.slice(1, -1).every((p, k) => Math.hypot(p[0] - t.pts[k][0], p[1] - t.pts[k][1]) < 6.5);
     // walk a stretch: the sparkles move on ahead
     const mid = t.pts[16]; h.place(mid[0], mid[1]); await wait(1300); const moved = G.wayfind.trail && G.wayfind.trail.i > 10 && G.wayfind.shown.length > 5;
     const end = G.PLACES.find(p => p.key === 'hanoi'); h.place(end.x + 3, end.z + 3); await wait(1300); const arrived = !G.wayfind.trail && G.wayfind.shown.length === 0;
+    // Fly: straight there
+    document.querySelector('.hud .z-where').click(); await wait(300);
+    const mk = [...document.querySelectorAll('.wherepick .wp-pick')].find(p => /Three Regions|Ba Miền/.test(p.getAttribute('aria-label'))); mk.click(); await wait(500);   // (a place where no story starts)
+    const ch2 = [...document.querySelectorAll('.dialog .dch')]; if (ch2[0]) ch2[0].click();
+    const lt = G.wayfind.targets().find(x => /Three Regions|Ba Miền/.test(x.name())); let flown = false;
+    for (let k = 0; k < 80 && !flown; k++) { await wait(150); flown = !!lt && Math.hypot(h.pos.x - lt.x, h.pos.z - lt.z) < 25; } for (let k = 0; k < 40 && G.paused; k++) await wait(150);
     // every target can be reached from home
     const g = F.roadGraph(G.PLACES), home = G.PLACES.find(p => p.key === 'farm'), unreachable = G.wayfind.targets().filter(x => { const r = F.route(g, home.x, home.z, x.x, x.z); return !r || Math.hypot(r.pts[r.pts.length - 2][0] - x.x, r.pts[r.pts.length - 2][1] - x.z) > 40; }).map(x => x.id);
-    return { off, size: Math.min(bb.width, bb.height), picks: picks.length, drawn, names: names.slice(0, 5), shown: shown.length, onRoad, gaps, len: Math.round(t.pts.length * 4), moved, arrived, unreachable, paused: G.paused };
+    return { off, size: Math.min(bb.width, bb.height), picks: picks.length, drawn, names: names.slice(0, 5), shown: shown.length, onRoad, gaps, len: Math.round(t.pts.length * 4), moved, arrived, unreachable, paused: G.paused, two, flown };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(r.size >= 44 && r.picks >= 16 && r.drawn && r.shown >= 20 && r.onRoad && r.gaps && r.moved && r.arrived && !r.unreachable.length && !r.paused && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return `${r.picks} pictures to choose from; to Hà Nội: ${r.shown} sparkles at a time on the roads (about ${r.len} m), moving on ahead, gone on arrival; every place reachable from home`;
+  ok(r.size >= 44 && r.picks >= 16 && r.two && r.flown && r.drawn && r.shown >= 20 && r.onRoad && r.gaps && r.moved && r.arrived && !r.unreachable.length && !r.paused && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.picks} pictures to choose from; to Hà Nội: ${r.shown} sparkles at a time on the roads (about ${r.len} m), moving on ahead, gone on arrival; Fly or Walk after choosing (flown to the market); every place reachable from home`;
 });
 
 await check('dayplan', async () => {
@@ -3417,10 +3441,12 @@ await check('dayplan', async () => {
     const day = { out: V.filter(v => !v.inside).length, home: V.filter(v => Math.hypot(v.o.position.x - v.home.x, v.o.position.z - v.home.z) < 3).length, lights: D.lights.filter(l => l.visible).length };
     G.weather.start(); run(1); const umb = V.filter(v => v.umb.visible).length; G.weather.stop(); run(1);
     G.paused = false;
-    return { n: V.length, all: all.length, jobs, titled, night, day, umb, bad: [...bad].slice(0, 5) };
+    // (Round V, owner 13 Oct) people seated at the card tables never leave their stool (they sat in the air by the road)
+    const seated = V.filter(v => v.o.userData.seated), sitMoved = seated.filter(v => Math.hypot(v.o.position.x - v.home.x, v.o.position.z - v.home.z) > .05 || v.inside).length;
+    return { n: V.length, all: all.length, jobs, titled, night, day, umb, bad: [...bad].slice(0, 5), seated: seated.length, sitMoved };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(r.n > 10 && r.jobs && r.titled && r.night.withDoor > 0 && r.night.inside === r.night.withDoor && r.night.lamps === r.night.noDoor && r.night.lights === r.night.stalls && r.day.out === r.n && r.day.home === r.n && r.day.lights === 0 && r.umb === r.n && !r.bad.length && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  ok(r.n > 10 && r.jobs && r.titled && r.night.withDoor > 0 && r.night.inside === r.night.withDoor && r.night.lamps === r.night.noDoor && r.night.lights === r.night.stalls && r.day.out === r.n && r.day.home === r.n && r.day.lights === 0 && r.umb === r.n && !r.bad.length && r.seated > 0 && !r.sitMoved && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return `${r.n} villagers with a job picture; at night ${r.night.inside} go home through their door, ${r.night.lamps} light a lantern, ${r.night.lights} stall lanterns; all back out in the morning; umbrellas in the rain; nobody on a road or in a house`;
 });
 
@@ -3440,7 +3466,12 @@ await check('animalhomes', async () => {
     W.time = .4; run(30);
     const day = { hensOut: A.hens.filter(a => !a.inside && a.m.visible).length, littleOut: A.critHens.filter(c => !c.inside && c.s.visible).length, ducks: A.ducks.reduce((s, c) => s + Math.hypot(c.cx - A.lake[0], c.cz - A.lake[1]), 0) / A.ducks.length };
     // the dog: the child stands beside it, then walks off a few metres; the dog comes along
-    const d = A.dog.m.position; h.place(d.x + 3, d.z); run(1); const h0 = [h.pos.x, h.pos.z]; h.place(h0[0] + 6, h0[1] + 2); run(8);
+    const d = A.dog.m.position; h.place(d.x + 3, d.z); run(1); const h0 = [h.pos.x, h.pos.z];
+    // (r70) the village animals never step on a road (js/lotus.js okSpot), so the child walks off where the way stays off the
+    // road (the old fixed 6 m east sometimes ended on the village road: the dog waited at its edge, on r69 too)
+    const { roadDist } = await import('/js/world.js'), offRoad = (x, z) => { const q = roadDist(x, z); if (q.d < q.road.w / 2 + 1.5) return false; const p = { x, z }; W.collide(p, .6); return Math.hypot(p.x - x, p.z - z) < .01; };   // off the road and clear of fences and houses, as okSpot
+    const way = [[6, 2], [-6, 2], [2, 6], [2, -6], [-6, -2], [6, -2]].find(([dx, dz]) => [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1].every(k => offRoad(d.x + dx * k, d.z + dz * k) && offRoad(h0[0] + dx * k, h0[1] + dz * k))) || [6, 2];
+    h.place(h0[0] + way[0], h0[1] + way[1]); run(8);
     const follows = !!A.dog.following && Math.hypot(d.x - h.pos.x, d.z - h.pos.z) < 4;
     h.place(V.x + 80, V.z + 80); run(1); const goneHome = !A.dog.following;
     G.paused = false;
@@ -3582,7 +3613,14 @@ await check('ride', async () => {
     out.rides = I.filter(i => /^ride_/.test(i.id)).length; out.stops = (G.world.busStops || []).length;
     out.lift = T.slots.filter(s => s.mover && !/^(bus|tram|taxi|touristCart|xichlo)/.test(s.id)).some(s => I.some(i => i.id === 'ride_' + T.slots.indexOf(s)));
     // drive a parked car
-    const car = I.find(i => /^drive_/.test(i.id) && /car/i.test(i.label())); if (car) { h.place(car.x + 1, car.z); car.act(h, G); out.driving = !!h.riding && !!h.riding.vehicle; h.dismount(); out.off = !h.riding; }
+    const car = I.find(i => /^drive_/.test(i.id) && /car/i.test(i.label())); if (car) { h.place(car.x + 1, car.z); car.act(h, G); out.driving = !!h.riding && !!h.riding.vehicle;
+      // (Round V, owner 13 Oct) the camera rides at the child's eyes, looking ahead
+      for (let k = 0; k < 60; k++) h.finish(1 / 60, k / 60, G, 0); const eyeUp = h.cam.position.y - h.pos.y, eyeNear = Math.hypot(h.cam.position.x - h.pos.x, h.cam.position.z - h.pos.z); out.pov = eyeUp > .8 && eyeUp < 2.6 && eyeNear < 1.2;
+      // drive it away, get off, walk away: it goes back to its parking spot
+      const sl = G.traffic.slots.find(x => x.v && x.v.o === h.riding.mesh), home = sl ? [sl.x, sl.z] : null; h.pos.x += 30; h.riding.mesh.position.x += 30; h.dismount(); out.off = !h.riding;
+      h.place(h.pos.x + 40, h.pos.z); await new Promise(r => setTimeout(r, 1200)); out.carBack = !!home && Math.hypot(sl.v.o.position.x - home[0], sl.v.o.position.z - home[1]) < 1; }
+    // a buffalo: ride it away, get off: it runs back home
+    const bf = (G.world.buffalo || [])[0]; if (bf) { h.place(bf.mesh.position.x + 1, bf.mesh.position.z); G.mount(h, bf); h.pos.x += 12; bf.mesh.position.x += 12; h.dismount(); out.buffHome = bf.tx === bf.home[0] && bf.tz === bf.home[1] && bf.back === true; }
     return out;
   });
   // a bus: a big kid pays, an under-5 rides free
@@ -3592,14 +3630,19 @@ await check('ride', async () => {
     const it = I.find(i => /^ride_/.test(i.id) && G.traffic.slots[+i.id.slice(5)].id.startsWith('bus')); if (!it) return { none: true };
     h.place(it.x + 2, it.z); const p = it.act(h, G);
     await new Promise(res => { const t = setInterval(() => { const c = document.querySelectorAll('.dialog .dchoices button'); if (c.length) { clearInterval(t); setTimeout(() => { c[0].click(); res(); }, 500); } }, 100); setTimeout(res, 8000); });
+    // (Round V, owner 13 Oct) where to: every stop in the valley; the child arrives at the one chosen
+    await new Promise(res => { const t = setInterval(() => { const k = document.querySelector('.stoppick .wp-pick'); if (k) { clearInterval(t); res(); } }, 100); setTimeout(res, 6000); });
+    const picks = document.querySelectorAll('.stoppick .wp-pick').length, first = document.querySelector('.stoppick .wp-pick'); const name = first ? first.getAttribute('aria-label') : '';
+    const dest = (G.world.busStops || []).find(b => b.name() === name); first && first.click();
     await p; const on = !!h.carry, paid = c0 - farm.coins;
+    let arrived = false; for (let k = 0; k < 60 && !arrived; k++) { await new Promise(r => setTimeout(r, 250)); arrived = !h.carry && !!dest && Math.hypot(h.pos.x - dest.x, h.pos.z - dest.z) < 4; }
     h.carry = null; G.traffic.slots.forEach(s => { if (s.passenger === h) s.passenger = null; });
-    return { on, paid };
+    return { on, paid, picks, arrived };
   }, age);
   r.big = await bus('big'); r.little = await bus('little');
   const errs = P.errors; await P.ctx.close();
-  ok(r.drive >= 20 && r.bike >= 4 && r.rides >= 4 && r.stops >= 4 && !r.lift && r.driving && r.off && r.big.on && r.big.paid > 0 && r.little.on && r.little.paid === 0 && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return `${r.drive} parked cars and motorbikes to drive, ${r.bike} bicycles, ${r.rides} buses, trams and taxis to ride (big kid paid ${r.big.paid}, under-5 free), ${r.stops} bus stops; no lifts from strangers`;
+  ok(r.drive >= 20 && r.bike >= 4 && r.rides >= 4 && r.stops >= 4 && !r.lift && r.driving && r.off && r.big.on && r.big.paid > 0 && r.little.on && r.little.paid === 0 && r.big.picks >= 3 && r.big.arrived && r.pov && r.carBack && r.buffHome && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `${r.drive} parked cars and motorbikes to drive, ${r.bike} bicycles, ${r.rides} buses, trams and taxis to ride (big kid paid ${r.big.paid}, under-5 free), ${r.stops} bus stops, each stop a choice of ${r.big.picks} places and the child arrives there; the camera rides at the child's eyes; a car left elsewhere goes back to its spot and a buffalo runs home; no lifts from strangers`;
 });
 
 await check('familymissions', async () => {
@@ -3643,7 +3686,7 @@ await check('wearbag', async () => {
     out.after = ids(); out.worn = worn(); out.look = p.look.top === top.id;
     document.querySelector('.pad [data-unwear="top"]')?.click(); await w(300); out.back = ids().includes(top.id);
     document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false;
-    // the shop: a girl sees no boys-only thing until More
+    // (Round V, owner 13 Oct) the shop: a girl sees no boys-only thing, and there is no More (the other set comes as a friend's gift)
     if (G.shop && G.shop.on()) { G.shop.openShop(0); await w(400); const boys = new Set(S.CLOTHES.filter(it => it.for === 'b').map(it => it.id));
       const seen = () => [...document.querySelectorAll('.shopk .kitem')].map(b => b.dataset.id);
       let any = false; for (const tab of document.querySelectorAll('.shopk [data-tab]')) { tab.click(); await w(150); if (seen().some(id => boys.has(id) && !S.owns(p, id))) any = true; }
@@ -3652,8 +3695,8 @@ await check('wearbag', async () => {
     return { ...out, top: top.id, feet: feet.id };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(r.before.includes(r.top) && r.before.includes(r.feet) && !r.after.includes(r.top) && r.worn.includes('top') && r.look && r.back && (r.noShop || (!r.boysFirst && r.more)) && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return `bought clothes wait in the Backpack (tap to wear, tap to take off); the shop shows a girl's set first${r.noShop ? ' (shop off here)' : ', the rest behind More'}`;
+  ok(r.before.includes(r.top) && r.before.includes(r.feet) && !r.after.includes(r.top) && r.worn.includes('top') && r.look && r.back && (r.noShop || (!r.boysFirst && !r.more)) && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return `bought clothes wait in the Backpack (tap to wear, tap to take off); the shop sells a girl only her set${r.noShop ? ' (shop off here)' : ' (no More: the other set comes as a gift from a friend)'}`;
 });
 
 await check('talk', async () => {
@@ -3669,13 +3712,129 @@ await check('talk', async () => {
       const silent = people.filter(o => !G.interactables.some(i => Number.isFinite(i.x) && Math.hypot(i.x - o.position.x, i.z - o.position.z) < 3)).map(o => [Math.round(o.position.x), Math.round(o.position.z)]);
       const v = G.interactables.find(i => /^villager_/.test(i.id)); let said = '';
       if (v) { v.act(G.heroes[0], G); await new Promise(r => setTimeout(r, 600)); said = (document.querySelector('.dialog .dtext') || {}).textContent || ''; document.querySelectorAll('.dialog').forEach(d => d.remove()); G.paused = false; }
-      return { people: people.length, silent, villagers: G.interactables.filter(i => /^villager_/.test(i.id)).length, said };
+      // (Round V, owner 13 Oct) a child's character rebuilt (new clothes) is never taken for a villager: no "Say hello" that
+      // follows the child, no job picture over their head, and the old character's tap is gone
+      const h = G.heroes[0]; h.buildModel(); G.villagerTalk.scan(); await new Promise(r => setTimeout(r, 200)); G.villagerTalk.scan();
+      const onMe = G.interactables.filter(i => /^villager_/.test(i.id) && Math.hypot(i.x - h.pos.x, i.z - h.pos.z) < 1.5).length;
+      let tagOnMe = 0; h.av.root.traverse(o => { if (o.isSprite) tagOnMe++; });
+      const ghosts = G.villagerTalk.list.filter(e => e.o.parent !== G.scene).length;
+      return { people: people.length, silent, villagers: G.interactables.filter(i => /^villager_/.test(i.id)).length, said, onMe, tagOnMe, ghosts };
     }, lang);
-    if (r.silent.length || !r.villagers || r.said.length < 15 || (lang === 'en' && /[ăâđêơư]/i.test(r.said))) out.push(lang + ' ' + JSON.stringify(r));
+    if (r.silent.length || !r.villagers || r.said.length < 15 || (lang === 'en' && /[ăâđêơư]/i.test(r.said)) || r.onMe || r.tagOnMe || r.ghosts) out.push(lang + ' ' + JSON.stringify(r));
     const errs = P.errors; await P.ctx.close(); if (errs.length) out.push(errs.join(' '));
   }
   ok(!out.length, out.join(' | '));
-  return 'every person in the valley answers a tap; the villagers without their own words tell a fact or a saying of their region, in English or Vietnamese';
+  return 'every person in the valley answers a tap; the villagers without their own words tell a fact or a saying of their region, in English or Vietnamese; a child whose character is rebuilt gets no "Say hello" and no job picture';
+});
+
+await check('questbar', async () => {
+  // (Round V, owner 13 Oct, iPhone notes) a tap on the quest folds it to a small chip and hides the yellow arrow and the
+  // light; a second tap opens it again; a family mission the child has been told about shows under the quest too
+  const out = [];
+  for (const [name, w, h, touch] of [['phone', 390, 760, true], ['computer', 1280, 800, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page); await P.page.waitForTimeout(800);
+    const r = await P.page.evaluate(async () => {
+      const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), hud = G.huds[0].root, h = G.heroes[0];
+      h.profile.questFold = false; h.place(h.pos.x + 30, h.pos.z + 30); await wait(400);
+      const arrows = () => { let n = 0; G.scene.traverse(o => { if (o.isMesh && o.geometry && o.geometry.type === 'ConeGeometry' && o.material && o.material.color && o.material.color.getHexString() === 'ffd23f' && o.visible) n++; }); return n; };
+      const before = { arrows: arrows(), text: !!hud.querySelector('.quest .q-text').offsetWidth };
+      hud.querySelector('.q-say').click(); await wait(400);
+      const folded = { fold: hud.querySelector('.quest').classList.contains('fold'), text: !!hud.querySelector('.quest .q-text').offsetWidth, arrows: arrows(), saved: h.profile.questFold === true, w: Math.round(hud.querySelector('.quest').getBoundingClientRect().width) };
+      hud.querySelector('.q-say').click(); await wait(400);
+      const open = { fold: hud.querySelector('.quest').classList.contains('fold'), arrows: arrows() };
+      // a started family mission
+      const m = G.parents.openFor(h.profile)[0]; if (m) { h.profile.missionsSeen = [...(h.profile.missionsSeen || []), m.id]; } await wait(600);
+      const fam = hud.querySelector('.q-fam'), famShown = !!(fam && !fam.hidden && fam.offsetWidth), famText = fam ? fam.textContent : '', famH = fam ? Math.round(fam.getBoundingClientRect().height) : 0;
+      return { before, folded, open, mission: !!m, famShown, famText: famText.slice(0, 60), famH };
+    });
+    const errs = P.errors; await P.ctx.close();
+    const bad = !r.before.arrows || !r.before.text || !r.folded.fold || r.folded.text || r.folded.arrows || !r.folded.saved || r.folded.w > 80 || r.open.fold || !r.open.arrows || !r.mission || !r.famShown || r.famText.length < 15 || r.famH < 44;
+    if (bad || errs.length) out.push(name + ' ' + JSON.stringify(r) + (errs.length ? ' ' + errs.join(' ') : ''));
+  }
+  ok(!out.length, out.join(' | '));
+  return 'a tap folds the quest to a small chip and hides the arrow; a tap opens it again; a started family mission shows under the quest (44 px), on a phone and a computer';
+});
+
+await check('friendstab', async () => {
+  // (Round V, owner 13 Oct) Pad → Friends: "My friends" folds away and stays folded; a friend who accepts and comes into the
+  // room closes the page (it stayed open in front of the valley); a game starting closes it too
+  const P = await open(b, { w: 390, h: 760, touch: true, settings: { online: true } }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), N = (await import('/js/net.js')).Net, S = await import('/js/state.js');
+    G.openPad(0, 'friend'); await wait(700);
+    const d = document.querySelector('.modal.pad details.friends'); if (!d) return { noBox: true };
+    d.querySelector('summary').click(); await wait(200); const foldedSaved = S.settings.friendsFold === true && !d.open;
+    document.querySelector('.modal.pad .x').click(); await wait(300); G.openPad(0, 'friend'); await wait(700);
+    const stillFolded = !document.querySelector('.modal.pad details.friends').open;
+    // a friend comes into the room
+    N.remotes['peer-z'] = { name: 'Mít' }; G.onNet && G.onNet(); await wait(300); const closedOnJoin = !document.querySelector('.modal.pad'); delete N.remotes['peer-z'];
+    // (Round V) Play together: the page of games with a friend in the room; a tap invites
+    N.remotes['peer-z'] = { name: 'Mít' }; const pt = G.openPlayTogether(); await wait(300);
+    const ptMade = [...pt.querySelectorAll('.pt-grid')][0], madeIds = ptMade ? [...ptMade.querySelectorAll('[data-g]')].map(x => x.dataset.g) : [], raceN = ([...pt.querySelectorAll('.pt-grid')][1] || { querySelectorAll: () => [] }).querySelectorAll('[data-g]').length;
+    let invited = null; const inv0 = G.inviteGame; G.inviteGame = (g, to) => { invited = [g, to]; }; pt.querySelector('[data-g="tienlenbac"]')?.click(); G.inviteGame = inv0; delete N.remotes['peer-z'];
+    const together = { made: madeIds.includes('caro') && madeIds.includes('tienlen') && madeIds.includes('tienlenbac'), raceN, invited: !!invited && invited[0] === 'tienlenbac' && invited[1] === 'peer-z' };
+    // a game starting
+    G.openPad(0, 'friend'); await wait(500); G.closePadNow(); const closedOnStart = !document.querySelector('.modal.pad') && !G.paused;
+    S.settings.friendsFold = false;
+    return { foldedSaved, stillFolded, closedOnJoin, closedOnStart, together };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(!r.noBox && r.foldedSaved && r.stillFolded && r.closedOnJoin && r.closedOnStart && r.together.made && r.together.raceN > 20 && r.together.invited && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return '"My friends" folds and stays folded; a friend coming into the room closes the Friends page; a game starting closes it; Play together lists the games for friends (Tiến Lên miền Bắc too) and every game to race side by side';
+});
+
+await check('bagitems', async () => {
+  // (Round V, owner 13 Oct) the Backpack: every item says what it is and what it is for (hover and tap); food asks "Eat it?"
+  // first; the coins, Sparkle Orbs and Leafies sit in one tidy row of three cards
+  const out = [];
+  for (const [name, w, h, touch] of [['phone', 390, 760, true], ['computer', 1280, 800, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    const r = await P.page.evaluate(async () => {
+      const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), p = G.heroes[0].profile;
+      p.inv.rice = 2; p.inv.mango = 1; p.dishes.pho = 2; G.openPad(0, 'bag'); await wait(600);
+      const cards = [...document.querySelectorAll('.modal.pad .bag-top .chip')].map(c => c.getBoundingClientRect()), row = cards.length === 3 && cards.every(c => Math.abs(c.top - cards[0].top) < 2 && c.height >= 44), even = cards.length === 3 && Math.max(...cards.map(c => c.width)) - Math.min(...cards.map(c => c.width)) < 3;
+      const titled = [...document.querySelectorAll('.modal.pad .slots .slot')].every(s => (s.getAttribute('title') || '').length > 3 || s.querySelector('.sw'));
+      const ing = document.querySelector('.modal.pad [data-ing="rice"]'); ing.click(); await wait(300); const tip = (document.querySelector('#toast') || {}).textContent || '';
+      const eat = () => document.querySelector('.modal.pad [data-eat="pho"]');
+      eat().click(); await wait(500); let ch = [...document.querySelectorAll('.dialog .dch')], asked = ch.length === 2; ch[1] && ch[1].click(); await wait(400); const kept = p.dishes.pho === 2;
+      eat().click(); await wait(500); ch = [...document.querySelectorAll('.dialog .dch')]; ch[0] && ch[0].click(); await wait(400); const ate = p.dishes.pho === 1;
+      document.querySelectorAll('.dialog').forEach(d => d.remove()); G.paused = false;
+      return { row, even, titled, tip: tip.slice(0, 80), asked, kept, ate };
+    });
+    const errs = P.errors; await P.ctx.close();
+    if (!r.row || !r.even || !r.titled || !/rice|gạo/i.test(r.tip) || !/xôi|bánh|cook|nấu/i.test(r.tip) || !r.asked || !r.kept || !r.ate || errs.length) out.push(name + ' ' + JSON.stringify(Object.assign(r, { errs })));
+  }
+  ok(!out.length, out.join(' | '));
+  return 'the three counters in one row of cards; every item has its words on hover; an ingredient tap says which dishes it makes; food asks "Eat it?" (Not now keeps it, Yes eats it), on a phone and a computer';
+});
+
+await check('tradeclothes', async () => {
+  // (Round V, owner 13 Oct: "clothes can be gifted to the other sex or traded with the same sex") the market stall with a
+  // friend in the room: to a boy, a girl can only give boys' clothes, as a gift (nothing asked back); with a girl friend
+  // clothes trade both ways; what goes out leaves the wardrobe and what comes in is owned
+  const P = await open(b, { w: 900, h: 700 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), { Net } = await import('/js/net.js'), SH = await import('/js/content/shop.js'), { openTrade } = await import('/js/trade.js'), h = G.heroes[0], p = h.profile;
+    const g = SH.CLOTHES.find(it => it.for === 'g' && !it.tester && !Object.values(p.look).includes(it.id)), bo = SH.CLOTHES.find(it => it.for === 'b' && !it.tester && !Object.values(p.look).includes(it.id));
+    p.look.set = 'girl'; p.owned.clothes = [...new Set([...(p.owned.clothes || []), g.id, bo.id])];
+    const sent = []; const send0 = Net.send; Net.send = d => { sent.push(d); };
+    Object.defineProperty(Net, 'connected', { get: () => true, configurable: true });
+    Net.remotes['peer-b'] = { name: 'Tí', look: { set: 'boy', style: 'shirt' } }; Net.remotes['peer-g'] = { name: 'Na', look: { set: 'girl', style: 'dress' } };
+    openTrade(G, h, 'peer-b'); await wait(300);
+    const toBoy = [...document.querySelectorAll('.trade [data-givec]')].map(x => x.dataset.givec), askBoy = document.querySelectorAll('.trade [data-wantc]').length, noteBoy = !!document.querySelector('.trade .note');
+    document.querySelector(`.trade [data-givec="${bo.id}"]`)?.click(); await wait(100); document.querySelector('.trade [data-want="apple"]')?.click(); await wait(100);
+    document.querySelector('#trSend').click(); await wait(200); const refusedAsk = !sent.some(d => d.t === 'offer');
+    document.querySelector('#trClear')?.click(); await wait(100); document.querySelector(`.trade [data-givec="${bo.id}"]`)?.click(); await wait(100); document.querySelector('#trSend').click(); await wait(200);
+    const gift = sent.find(d => d.t === 'offer'); document.querySelectorAll('.modal').forEach(m => m.remove());
+    openTrade(G, h, 'peer-g'); await wait(300);
+    const toGirl = [...document.querySelectorAll('.trade [data-givec]')].map(x => x.dataset.givec), askGirl = document.querySelectorAll('.trade [data-wantc]').length;
+    document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false;
+    delete Net.remotes['peer-b']; delete Net.remotes['peer-g']; delete Net.connected; Net.send = send0;
+    return { toBoyOnlyBoys: toBoy.length > 0 && toBoy.every(id => SH.forSet(SH.ITEM[id], 'boy')) && !toBoy.includes(g.id), askBoy, noteBoy, refusedAsk, gift: !!gift && (gift.give.clothes || []).includes(bo.id) && !Object.keys(gift.want.items || {}).length && !gift.want.coins, toGirl: toGirl.includes(g.id), askGirl };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.toBoyOnlyBoys && !r.askBoy && r.noteBoy && r.refusedAsk && r.gift && r.toGirl && r.askGirl > 0 && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'to a boy a girl can give boys\' clothes as a gift only (asking for something back is refused); with a girl friend clothes trade both ways';
 });
 
 await check('bilingual', async () => {
@@ -3750,6 +3909,45 @@ await check('report', async () => {
   return '3 games and 2 minutes counted today for the child who played; the report shows the week (7 days), the favourite games and what was collected';
 });
 
+await check('familynote', async () => {
+  // (13 Oct: the first family note published from Studio online) the grown-ups' note in content/custom.json shows once a
+  // day as "From your family", in the child's language (the other language when one is empty), and not again that day
+  const note = r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ message: { en: '', vi: 'Các con giỏi lắm' } }) });
+  const P = await open(b, { w: 390, h: 844, touch: true, settings: { familyMsgDay: null }, route: ctx => ctx.route('**/content/custom.json*', note) });
+  const shown = await P.page.waitForFunction(() => [...document.querySelectorAll('.dialog')].map(d => d.textContent).find(t => /From your family/.test(t)), null, { timeout: 30000 }).then(h => h.jsonValue()).catch(() => '');
+  await P.page.evaluate(() => { document.querySelectorAll('.dialog').forEach(d => d.remove()); __sv.paused = false; });
+  // seen today is saved (the next start checks it); a reload here would bring back the harness's own starting settings
+  await P.page.waitForTimeout(4000);
+  const again = await P.page.evaluate(() => [...document.querySelectorAll('.dialog')].some(d => /From your family/.test(d.textContent)) || JSON.parse(localStorage.getItem('sv2_settings') || '{}').familyMsgDay !== new Date().toDateString());
+  const errs = P.errors; await P.ctx.close();
+  ok(/From your family/.test(shown) && /Các con giỏi lắm/.test(shown) && !again && !errs.length, JSON.stringify({ shown, again, errs }));
+  return 'the note shows once a day ("From your family"), the Vietnamese words when the English is empty; seen today is saved and it does not come back';
+});
+
+await check('mictest', async () => {
+  // (Round V, owner 13 Oct: the microphone does nothing in Friends or in voice control) the grown-ups' microphone test in
+  // Friends works without a room and says exactly what the device answered: on with a sound bar, or the error's name and
+  // where to allow it
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv, wait = ms => new Promise(r => setTimeout(r, ms)), md = navigator.mediaDevices, real = md.getUserMedia.bind(md);
+    G.openPad(0, 'friend'); await wait(500);
+    const btn = document.querySelector('.pad [data-mictest]'); if (!btn) return { btn: false };
+    btn.click(); await wait(300);
+    const m = document.querySelector('.modal.mictest'), lines = () => [...m.querySelectorAll('.mt-lines li')].map(li => li.textContent);
+    const before = lines();
+    m.querySelector('[data-mic]').click(); for (let k = 0; k < 30 && !/ON/.test(lines()[2]); k++) await wait(100);
+    const on = lines()[2];
+    md.getUserMedia = async () => { const e = new Error('blocked'); e.name = 'NotAllowedError'; throw e; };
+    m.querySelector('[data-mic]').click(); await wait(300); const blocked = lines()[2]; md.getUserMedia = real;
+    const small = [...m.querySelectorAll('.btn')].filter(x => x.offsetParent && x.getBoundingClientRect().height < 44).length;
+    m.querySelector('.x').click(); await wait(300);
+    return { btn: true, before, on, blocked, small, gone: !document.querySelector('.modal.mictest') };
+  });
+  const errs = P.errors; await P.ctx.close();
+  ok(r.btn && r.before.length === 4 && /iOS|Safari|Chrome|browser/.test(r.before[0]) && /ON/.test(r.on) && /NotAllowedError/.test(r.blocked) && /Settings/.test(r.blocked) && !r.small && r.gone && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+});
+
 await check('iphone', async () => {
   // the owner's iPhone screenshots (round F): (1) "no microphone" although the phone has one: friends meet with no tap
   // and iPhone opens the microphone only after a tap; now it says "tap to talk", opens it on the next tap and puts it
@@ -3783,6 +3981,25 @@ await check('iphone', async () => {
     // blocked after a tap (iPhone has no userActivation): how to allow it, not "tap Microphone on"
     N.mic.getTracks().forEach(t => t.stop()); N.mic = null; said.length = 0;
     md.getUserMedia = async () => { const e = new Error('blocked'); e.name = 'NotAllowedError'; throw e; }; await N.getMic(true); const blocked = said.slice();
+    // (Round V, owner 13 Oct, a FaceTime call held the iPhone's microphone) busy: say a call or app is using it, asked once per tap
+    said.length = 0; let busyAsks = 0; md.getUserMedia = async () => { busyAsks++; const e = new Error('busy'); e.name = 'NotReadableError'; throw e; }; await N.getMic(true); const busy = said.slice();
+    // (Round V, owner 13 Oct: "when I tap on mic, nothing appears", no call anywhere) the iPhone ends the microphone when the
+    // game goes to the background; the game kept the dead one, so a tap only flipped mute. Now it says so when it ends,
+    // and the Mic button (G.toggleMute) asks afresh for a dead one, even if no "ended" ever came
+    // (Round V, owner 13 Oct, every iPhone setting on "Ask" and still nothing) the game's sound mode was iPhone's play-only
+    // "playback", where it never asks for the microphone: while asking and while the microphone is on it is
+    // "play-and-record", and back to "playback" when the microphone is let go (the silent switch is still ignored)
+    const fakeSess = { type: 'auto' }; Object.defineProperty(navigator, 'audioSession', { value: fakeSess, configurable: true });
+    const A = await import('/js/audio.js'); A.micMode('probe', false); const atStart = fakeSess.type;
+    let typeAtAsk = null; md.getUserMedia = c => { typeAtAsk = fakeSess.type; return real({ audio: true }); }; N.mic = null;
+    await N.getMic(true); const whileOn = fakeSess.type; N._dropMic(); const afterOff = fakeSess.type;
+    md.getUserMedia = async () => { typeAtAsk += '|' + fakeSess.type; const e = new Error('blocked'); e.name = 'NotAllowedError'; throw e; }; await N.getMic(true); const afterFail = fakeSess.type;
+    const sess = { atStart, typeAtAsk, whileOn, afterOff, afterFail }; delete navigator.audioSession;
+    md.getUserMedia = real; said.length = 0; const m1 = await N.getMic(true), t1 = m1.getAudioTracks()[0]; t1.stop(); t1.dispatchEvent(new Event('ended'));
+    const endedSaid = said.includes('micstop'), endedDropped = !N.mic;
+    const m2 = await N.getMic(true); m2.getAudioTracks()[0].stop(); said.length = 0; let deadAsks = 0; md.getUserMedia = c => { deadAsks++; return real({ audio: true }); };
+    await G.toggleMute(); const deadTap = { asks: deadAsks, said: said.slice(), fresh: !!N.mic && N.mic !== m2 && N.micLive };
+    N.mic.getTracks().forEach(t => t.stop()); N.mic = null; md.getUserMedia = real;
     // an iPhone home-screen game older than iOS 14.3 has no getUserMedia: say so, not "no microphone"
     said.length = 0; md.getUserMedia = undefined; Object.defineProperty(navigator, 'userAgent', { get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)', configurable: true });
     await N.getMic(true); const old = said.slice(); delete navigator.userAgent;
@@ -3809,11 +4026,13 @@ await check('iphone', async () => {
     const c = chip.getBoundingClientRect(), hit = [...document.querySelectorAll('.hud .tools .dk, .hud .zoomer button, .hud .mini-wrap, .hud .zoom')].filter(e => e.offsetParent).filter(e => { const q = e.getBoundingClientRect(); return q.left < c.right && c.left < q.right && q.top < c.bottom && c.top < q.bottom; }).map(e => e.className);
     const onScreen = c.width > 60 && c.height > 20 && c.right <= innerWidth + 1 && c.left >= 0, chipText = chip.textContent;
     delete G.partners['peer-q']; G.huds[0].setCall(false, false, false);
-    return { first, noMicYet, micAfterTap, after, replaced: replacedFirst, reallyNone, tapAsks, fresh, tapSaid, lateStopped, kept, micons, blocked, old, mute: !!mute, panelSays, shared, asksBefore: 1, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
+    return { first, noMicYet, micAfterTap, after, replaced: replacedFirst, reallyNone, tapAsks, fresh, tapSaid, lateStopped, kept, micons, blocked, busy, busyAsks, sess, endedSaid, endedDropped, deadTap, old, mute: !!mute, panelSays, shared, asksBefore: 1, buttons: btns.length, tall, outside, hit, onScreen, chipText, chip: [c.left, c.top, c.width, c.height].map(Math.round) };
   });
   const errs = P.errors; await P.ctx.close();
   ok((r.first.includes('mictap') || r.first.includes('micdenied')) && !r.first.includes('nomic') && r.noMicYet && r.tapAsks === 1 && r.micAfterTap && r.after.includes('micon') && r.replaced === 1 && r.reallyNone.includes('nomic')
-    && r.fresh === 1 && r.tapSaid[0] === 'micask' && r.tapSaid.includes('micon') && r.lateStopped && r.kept && r.micons === 1 && r.blocked.includes('micdenied') && !r.blocked.includes('mictap')
+    && r.fresh === 1 && r.tapSaid[0] === 'micask' && r.tapSaid.includes('micon') && r.lateStopped && r.kept && r.micons === 1 && r.blocked.includes('micdenied') && !r.blocked.includes('mictap') && r.busy.includes('micbusy') && !r.busy.includes('mictap') && r.busyAsks === 1
+    && r.sess.atStart === 'playback' && r.sess.typeAtAsk === 'play-and-record|play-and-record' && r.sess.whileOn === 'play-and-record' && r.sess.afterOff === 'playback' && r.sess.afterFail === 'playback'
+    && r.endedSaid && r.endedDropped && r.deadTap.asks === 1 && r.deadTap.said[0] === 'micask' && r.deadTap.said.includes('micon') && r.deadTap.fresh
     && r.old.includes('micold') && !r.old.includes('nomic') && r.mute && /Safari/.test(r.panelSays) && r.shared === 1
     && r.buttons >= 4 && !r.tall.length && !r.outside && !r.hit.length && r.onScreen && !errs.length, JSON.stringify(Object.assign(r, { errs })));
   return 'microphone: "tap 🎙️ Microphone on" (not "no microphone"), not asked again on every tap, on from the button and put into the open call; real "no microphone" still said; #55: a hung try does not block a tap (asks afresh, "Asking…" then on, the late answer stopped), blocked after a tap says how to allow it (also in the Friends panel), an iPhone older than 14.3 is told so; Friends: ' + r.buttons + ' buttons fit, no word broken; the friend bar touches no button';
@@ -4361,7 +4580,12 @@ await check('nostudio', async () => {
       document.querySelectorAll('.modal').forEach(e => e.remove());
       const G = window.__sv; if (G.parents && G.parents.grownupsHTML) { const d = document.createElement('div'); d.innerHTML = G.parents.grownupsHTML(true); look(lang + ' parents', d); }
       G.openPad(0, 'map'); await w(400);
-      for (const t of [...document.querySelectorAll('.pad-tabs [data-t]')].map(x => x.dataset.t)) { document.querySelector(`.pad-tabs [data-t="${t}"]`).click(); await w(250); const pad = document.querySelector('.pad, .sparkpad, .pad-body'); if (pad) look(lang + ' pad-' + t, pad.closest('.modal') || pad); }
+      // (Round V, owner 13 Oct) the Shop tab closes the Pad and opens the Shop: the Shop is looked at too, then the Pad reopens
+      for (const t of [...document.querySelectorAll('.pad-tabs [data-t]')].map(x => x.dataset.t)) {
+        if (!document.querySelector(`.pad-tabs [data-t="${t}"]`)) { document.querySelectorAll('.modal').forEach(e => e.remove()); G.paused = false; G.openPad(0, 'map'); await w(400); }
+        document.querySelector(`.pad-tabs [data-t="${t}"]`).click(); await w(t === 'shop' ? 700 : 250);
+        const pad = document.querySelector('.pad, .sparkpad, .pad-body') || document.querySelector('.modal'); if (pad) look(lang + ' pad-' + t, pad.closest('.modal') || pad);
+      }
       document.querySelectorAll('.modal, .pad').forEach(e => e.remove()); window.__sv.paused = false;
     }
     return out;
@@ -4485,8 +4709,10 @@ await check('reading', async () => {
   const bad = [], left = [];
   for (const lang of ['en', 'vi']) {
     await Q.page.evaluate(async lang => { const S = await import('/js/state.js'); S.settings.lang = lang; }, lang);
-    for (const id of IDS) for (const [level, little] of [[1, true], [1, false], [2, false], [3, false]]) {
+    for (const [gi, id] of IDS.entries()) for (const [vi, [level, little]] of [[1, true], [1, false], [2, false], [3, false]].entries()) {
       if (little && BIG_ONLY.includes(id)) continue;
+      // (sample: each game once per language, a different level each run; all of them when the reading games changed)
+      if (sampled('reading') && vi !== (SEED + gi + (lang === 'vi' ? 2 : 0)) % (BIG_ONLY.includes(id) ? 3 : 4) + (BIG_ONLY.includes(id) ? 1 : 0)) continue;
       const r = await solveReading(Q.page, id, { level, little, timeout: 90000 });
       if (!r.ok || !r.won || (little && r.stars !== 3)) bad.push(`${lang} ${id} ${little ? 'under-5' : 'level ' + level}: ${JSON.stringify(r).slice(0, 160)}`);
       await Q.page.waitForTimeout(400);
@@ -4499,7 +4725,7 @@ await check('reading', async () => {
   ok(asked2.includes('reading.js'), 'the games\' code never loaded');
   const errs = Q.errors.slice(); await Q.ctx.close();
   ok(!errs.length, errs.slice(0, 5).join(' | '));
-  return `switch off: nothing loads or shows; on: 10 games in the Reading corner (7 for under-5s), all finish at Easy, Medium, Hard and for under-5s in English and Vietnamese; ${en} English and ${vi} Vietnamese lines`;
+  return `${sampled('reading') ? 'SAMPLE (each game once per language, level by turn; all when reading files change): ' : ''}switch off: nothing loads or shows; on: 10 games in the Reading corner (7 for under-5s), all finish at Easy, Medium, Hard and for under-5s in English and Vietnamese; ${en} English and ${vi} Vietnamese lines`;
 });
 
 await b.close();

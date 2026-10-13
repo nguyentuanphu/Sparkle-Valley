@@ -67,7 +67,7 @@ export async function voiceCommand(G, i) {
   // tap anywhere on the bubble to stop listening
   const x = el('button', 'vc-x', '✕'); pop.appendChild(x); pop.onclick = () => stopListening();
   const heard = await listen({ onPartial: t => { pop.querySelector('.vc-heard').textContent = '“' + t + '”'; } });
-  if (heard === '\u0000denied') { pop.querySelector('.vc-heard').textContent = T('The microphone is not allowed. A grown-up can turn it on in the browser settings.', 'Micro chưa được cho phép. Người lớn có thể bật trong cài đặt trình duyệt.'); setTimeout(() => pop.remove(), 3500); return; }
+  if (heard === '\u0000denied') { pop.querySelector('.vc-heard').textContent = T('The microphone is not allowed. A grown-up can turn it on in the browser settings.', 'Micro chưa được cho phép. Người lớn có thể bật trong cài đặt trình duyệt.'); setTimeout(() => pop.remove(), 3500); import('./mictest.js').then(M => M.openMicTest()); return; }
   if (!heard) { pop.querySelector('.vc-heard').textContent = T('I did not hear anything. Try again!', 'Tớ chưa nghe thấy gì. Thử lại nhé!'); say('I did not hear anything. Try again!', 'Tớ chưa nghe thấy gì. Thử lại nhé!'); setTimeout(() => pop.remove(), 2000); return; }
   pop.querySelector('.vc-heard').textContent = '“' + heard + '”';
   const reply = runCommand(G, h, heard);

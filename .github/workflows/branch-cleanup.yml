@@ -1,0 +1,40 @@
+# Branch cleanup (owner, 13 Oct AEDT: "how do I make GitHub lighter, especially the chats I no longer use?")
+# Started by hand (Actions → Branch cleanup → Run workflow) or by a chat. Deletes the branches named in "branches",
+# or with "merged" every branch whose work is already on main. It never deletes main, core/…, studio-exe, studio-draft,
+# voices/…, or a branch with any commit that is not on main (that work would be lost), unless the owner named it in
+# "unmerged_ok".
+name: Branch cleanup
+on:
+  workflow_dispatch:
+    inputs:
+      branches:
+        description: 'Branch names separated by spaces, or "merged" for every branch already on main'
+        required: true
+      unmerged_ok:
+        description: 'Branches the owner said to delete even though some work is not on main (names, separated by spaces)'
+        required: false
+        default: ''
+permissions:
+  contents: write
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Delete
+        env:
+          LIST: ${{ inputs.branches }}
+          OK_UNMERGED: ${{ inputs.unmerged_ok }}
+        run: |
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          if [ "$LIST" = "merged" ]; then LIST=$(git branch -r --format='%(refname:short)' | sed 's#^origin/##' | grep -v '^HEAD$'); fi
+          for b in $LIST; do
+            case "$b" in main|core/*|studio-exe|studio-draft|voices/*) echo "kept (protected): $b"; continue;; esac
+            if ! git rev-parse -q --verify "origin/$b" >/dev/null; then echo "not found: $b"; continue; fi
+            n=$(git rev-list --count "origin/main..origin/$b")
+            if [ "$n" != "0" ] && ! printf ' %s ' $OK_UNMERGED | grep -q " $b "; then echo "kept ($n commits not on main): $b"; continue; fi
+            git push origin --delete "$b" && echo "deleted: $b"
+          done

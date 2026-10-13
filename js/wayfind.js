@@ -7,7 +7,7 @@ import { say } from './voice.js';
 import { SFX } from './audio.js';
 import { pic } from './art.js';
 import { esc } from './util.js';
-import { modal } from './popups.js';
+import { modal, dialog } from './popups.js';
 import { ROADS, heightAt } from './world.js';
 
 const STEP = 4, AHEAD = 28, ARRIVE = 9;
@@ -96,7 +96,12 @@ export function createWayfind(G) {
     say('Where shall we go?', 'Mình đi đâu nào?');
     m.querySelector('.x').onclick = () => { SFX.tap(); close(); };
     const st = m.querySelector('.wp-stop'); if (st) st.onclick = () => { SFX.tap(); stop(); close(); };
-    m.querySelectorAll('.wp-pick').forEach(b => b.onclick = () => { SFX.tap(); const t = list[+b.dataset.k]; close(); start(h, t); });
+    // (Round V, owner 13 Oct) after choosing a place: Fly straight there, or Walk with the sparkle trail (Fly if no road goes there)
+    m.querySelectorAll('.wp-pick').forEach(b => b.onclick = async () => { SFX.tap(); const t = list[+b.dataset.k]; close();
+      const k = await dialog(t.name(), [[`How shall we go to ${t.name()}?`, `Mình đến ${t.name()} bằng cách nào?`]], [['✈️ Fly there', '✈️ Bay đến'], ['👣 Walk with the sparkles', '👣 Đi bộ theo lấp lánh']]);
+      if (k === 1 && start(h, t)) return;
+      if (k === 1) say(`There is no road there. Let's fly!`, 'Không có đường đến đó. Mình bay nhé!');
+      if (k === 0 || k === 1) { stop(); G.travelTo ? G.travelTo(h, t.x, t.z) : G.travel(h, t.x, t.z); } });
     return m;
   }
   // show the next stretch of sparkles ahead of the child; a new way if they wander off; done when they arrive

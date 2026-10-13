@@ -125,3 +125,14 @@ export function wear(p, slot, id) {
 export const setOf = look => (look && (look.set || outfitOf(look))) || (look && look.style === 'dress' ? 'girl' : 'boy');
 export const forSet = (it, set) => !it || it.for === 'both' || it.for === (set === 'girl' ? 'g' : 'b');
 export const wearing = look => Object.fromEntries(SLOTS.map(s => [s.id, itemIn(s.id, look && look[s.id])]));
+// (Round V, owner 13 Oct: "clothes can be gifted to the other sex or traded with the same sex") a trade's clothes: with a
+// friend of the same set both ways (asking only for clothes of that set); to a friend of the other set only as a gift
+// (nothing asked back) of clothes made for that friend's set (js/trade.js)
+export function clothesOk(give, want, mySet, theirSet) {
+  const g = give.clothes || [], w = want.clothes || [];
+  if (!g.length && !w.length) return true;
+  if (g.some(id => !ITEM[id]) || w.some(id => !ITEM[id])) return false;
+  if (mySet === theirSet) return w.every(id => forSet(ITEM[id], mySet));
+  // the other set: a gift only, of clothes made for the friend
+  return !w.length && !Object.keys(want.items || {}).length && !want.coins && g.every(id => forSet(ITEM[id], theirSet));
+}
