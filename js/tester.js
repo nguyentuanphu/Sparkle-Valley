@@ -23,8 +23,10 @@ import { setPeeks, liveRule } from './custom.js';
 import { setProblemHook } from './players.js';
 import { SFX } from './audio.js';
 import * as C from './content/tester.js';
+import { takeCopy, putCopyBack, hasCopy, dropCopy } from './keepcopy.js';
+import { revertOf } from './content/autoplay.js';
 
-const KEY = { acc: 'sv2_tester', out: 'sv2_tester_out', st: 'sv2_tester_status', seen: 'sv2_tester_seen', ap: 'sv2_tester_ap' };
+const KEY = { acc: 'sv2_tester', out: 'sv2_tester_out', st: 'sv2_tester_status', seen: 'sv2_tester_seen', ap: 'sv2_tester_ap', copy: 'sv2_tester_copy' };
 const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
 const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
 const URL_ = () => window.__svTesterURL || 'api/tester';
@@ -80,12 +82,15 @@ async function flush() {
 const body = (kind, extra) => ({ id: me(), b: BUILD, kind, where: whereNow(), errors: errors.slice(-C.LIMITS.errors), log: log.map(([t, k, s]) => [Math.round((t - Date.now()) / 100) / 10, k, s]), dev: devNow(), players: playersNow(), at: Date.now(), ...extra });
 
 // the game reports by itself (the same thing at the same place once in 10 minutes, counted meanwhile)
-export async function autoReport(kind, detail, where) {
+// (more: extra fields; more.log, the auto play check's last steps, goes before the tester's own log)
+export async function autoReport(kind, detail, where, more = {}) {
   if (!live) return; const w = where || whereNow(), k = C.keyOf(kind, detail, w.game || w.window || w.area);
   counts.set(k, (counts.get(k) || 0) + 1); const last = sent.get(k);
   if (last && Date.now() - last < C.LIMITS.sameAgain) return; sent.set(k, Date.now());
   const n = counts.get(k); counts.set(k, 0); note('report', kind + ' ' + detail);
-  enqueue(body('auto', { auto: kind, detail: String(detail || '').slice(0, 200), where: w, shot: await shot(), count: n }));
+  const b = body('auto', { auto: kind, detail: String(detail || '').slice(0, 200), where: w, shot: await shot(), count: n });
+  if (Array.isArray(more.log)) b.log = more.log.concat(b.log).slice(-300); // (the website keeps the last 300)
+  enqueue(b);
 }
 
 // ---------- watching for problems ----------
@@ -224,7 +229,7 @@ async function retest() {
 async function nightly() {
   const ap = get(KEY.ap, {}); const rep = get('sv2_autoplay_report', null);
   // what the last run found (the check restarts the game when it ends): sent once
-  if (rep && rep.build && rep.at && ap.sent !== rep.at) { ap.sent = rep.at; put(KEY.ap, ap);
+  if (rep && rep.build && rep.at && !rep.sent && ap.sent !== rep.at) { // (since 13 Oct auto play sends each problem as it finds it: rep.sent) ap.sent = rep.at; put(KEY.ap, ap);
     for (const d of rep.done || []) if (d.problems && d.problems.length) autoReport('autoplay', `${d.name || d.key}: ${d.problems.join('; ')}`.slice(0, 200), { area: 'autoplay', place: '', game: d.g === 'games' ? d.key : '', window: d.g || '', x: 0, z: 0 }); }
   if (ap.ran === BUILD) return;
   const charging = await (navigator.getBattery ? navigator.getBattery().then(b => b.charging).catch(() => false) : Promise.resolve(false)), h = new Date().getHours();
@@ -244,7 +249,7 @@ function agreement() {
     <p>${L(A.intro)}</p><ul class="tg-list">${A.points.map(p => `<li>${esc(L(p))}</li>`).join('')}</ul>
     <div class="actions"><button class="btn primary tg-yes">${L(A.accept)}</button><button class="btn tg-no">${L(A.later)}</button></div>`);
   const card = m.querySelector('.card');
-  card.querySelector('.tg-yes').onclick = () => { put(KEY.acc, { at: Date.now(), b: BUILD }); m.close(); tell({ accepted: true, dev: { label: '' } }); start(); say(...C.TESTER_LINES.welcome); };
+  card.querySelector('.tg-yes').onclick = () => { put(KEY.acc, { at: Date.now(), b: BUILD }); takeCopy(KEY.copy); m.close(); tell({ accepted: true, dev: { label: '' } }); start(); say(...C.TESTER_LINES.welcome); };
   card.querySelector('.tg-no').onclick = () => { m.close(); };
 }
 // the Settings card (js/ui.js openQuick) shows a Tester section on a tester device
@@ -255,7 +260,7 @@ export function settingsRows(box, redraw) {
     <div class="qs-trow"><button class="btn" data-t="mine">${T('My reports', 'Báo cáo của tôi')}</button><button class="btn" data-t="ap">${T('Run the auto play check now', 'Chạy tự chơi kiểm tra ngay')}</button>${G.testerRewards ? `<button class="btn" data-t="corner">${T('Tester\'s Corner', 'Góc người thử')}</button>` : ''}</div>
     <button class="btn" data-t="stop">${T('Stop being a tester', 'Thôi làm người thử')}</button>` : `<button class="btn primary" data-t="join">${T('Become a tester', 'Làm người thử')}</button>`}</div>`;
   const act = { join: () => { const a = get(KEY.acc, {}); delete a.stopped; put(KEY.acc, a); agreement(); },
-    stop: () => { put(KEY.acc, { ...get(KEY.acc, {}), stopped: Date.now() }); stop(); redraw && redraw(); },
+    stop: () => { put(KEY.acc, { ...get(KEY.acc, {}), stopped: Date.now() }); if (G.autoplay && G.autoplay.stop) G.autoplay.stop(); stop(); putBack(); redraw && redraw(); },
     mine: () => showMine(), corner: () => G.testerRewards && G.testerRewards.corner(),
     ap: async () => { if (!G.autoplay) { const m = await import('./autoplay.js'); m.mountAutoplay(G); } G.autoplay && G.autoplay.start && G.autoplay.start(null, 'fast'); } };
   box.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { SFX.tap && SFX.tap(); act[b.dataset.t](); });
@@ -272,6 +277,7 @@ function showMine() {
 // ---------- starting and stopping ----------
 function start() {
   if (live || !accepted()) return; live = true; mounted = performance.now();
+  if (!hasCopy(KEY.copy)) takeCopy(KEY.copy); // (a tester from before 13 Oct: progress from now on goes back when they stop)
   hookRender(); watch(); addUI();
   const inp = () => { lastInput = Date.now(); }; addEventListener('pointerdown', inp, true); addEventListener('keydown', inp, true); offs.push(() => { removeEventListener('pointerdown', inp, true); removeEventListener('keydown', inp, true); });
   setPeeks(C.peeksOf(liveRule('tester')));
@@ -279,6 +285,13 @@ function start() {
   const rf = setInterval(refresh, 10 * 60e3); offs.push(() => clearInterval(rf));
   setTimeout(() => { flush(); retest(); }, 20000);
   const nt = setInterval(nightly, 5 * 60e3); offs.push(() => clearInterval(nt)); setTimeout(nightly, 30000);
+}
+// (owner, 13 Oct AEDT) the progress from when this device became a tester goes back when they stop being one, in place
+// (no restart); badges, stickers and clothes stay. Studio's tester rule `revert: 'autoplay'` instead puts back only what
+// each auto play run did (js/autoplay.js), so nothing goes back here.
+function putBack() {
+  if (revertOf(liveRule('tester')) !== 'progress' || !hasCopy(KEY.copy)) { dropCopy(KEY.copy); return; }
+  if (putCopyBack(KEY.copy, G)) { const m = T('Progress is back as it was before testing. Badges and stickers stay.', 'Tiến bộ đã trở lại như trước khi thử. Huy hiệu và nhãn dán vẫn giữ.'); (G.huds || []).forEach(h => h.toast && h.toast(m)); }
 }
 function stop() { live = false; offs.splice(0).forEach(f => { try { f(); } catch (e) { } }); setPeeks([]); if (G.testerRewards) G.testerRewards.unmount(); }
 

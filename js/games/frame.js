@@ -23,6 +23,10 @@ const PRIZES = ['🦄', '🦖', '🚀', '🧸', '🎈', '🍭', '🪁', '🐬', 
 
 let current = null;
 export const gameOpen = () => !!current;
+// (owner, 13 Oct AEDT) the auto play check plays games like a child (js/autoplay.js): it hears each right and wrong
+// answer and the win, and while a game waits for the right one (untilRight) it can see which buttons it is choosing from
+export const playWatch = { on: null, ask: null };
+const tell = (k, e) => { if (playWatch.on) try { playWatch.on(k, e); } catch (x) { } };
 
 // players: array of profiles (1 or 2); level: 1..5; style: 'shrine' | 'village'
 // online: playing with friends on their own devices (js/netgames.js): { mine, names, move(n, mv), next(n, seat), all(n) }
@@ -61,14 +65,14 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       show: (en, vi) => { help.textContent = T(en, vi); },
       sfx: SFX, wait,
       onCleanup: f => cleanups.push(f),
-      dots(n, done) { dots.innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < done ? 'on' : ''}"></i>`).join(''); },
-      right(e) { SFX.ok(); if (e) { e.classList.remove('wrong'); e.classList.add('right'); } reward(e); streak++; rights++; if (streak >= 3) combo(streak); else if (Math.random() < .08) lucky(); },
-      wrong(e, en = 'Try again!', vi = 'Thử lại nhé!') { SFX.no(); streak = 0; misses++; if (e) { e.classList.remove('wrong'); void e.offsetWidth; e.classList.add('wrong'); } mascot('hmm', T('Hmm… try again!', 'Ừm… thử lại nhé!')); say(en, vi); },
+      dots(n, done) { tell('dots'); dots.innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < done ? 'on' : ''}"></i>`).join(''); },
+      right(e) { tell('right', e); SFX.ok(); if (e) { e.classList.remove('wrong'); e.classList.add('right'); } reward(e); streak++; rights++; if (streak >= 3) combo(streak); else if (Math.random() < .08) lucky(); },
+      wrong(e, en = 'Try again!', vi = 'Thử lại nhé!') { tell('wrong', e); SFX.no(); streak = 0; misses++; if (e) { e.classList.remove('wrong'); void e.offsetWidth; e.classList.add('wrong'); } mascot('hmm', T('Hmm… try again!', 'Ừm… thử lại nhé!')); say(en, vi); },
       praise() { const p = [['Great job!', 'Giỏi quá!'], ['Well done!', 'Làm tốt lắm!'], ['Yes! Clever!', 'Đúng rồi! Thông minh quá!'], ['Super!', 'Tuyệt vời!'], ['You got it!', 'Con làm được rồi!']]; const [e, v] = p[Math.floor(Math.random() * p.length)]; say(e, v); mascot('cheer', T(e, v)); },
       get closed() { return closed; },
       async win(extra = {}) {
         if (closed) return;
-        SFX.fanfare();
+        tell('win'); SFX.fanfare();
         // 1 to 3 stars (little ones always get 3), then a treasure chest pops open with a surprise
         const n = little ? 3 : misses <= 1 ? 3 : misses <= 4 ? 2 : 1, prize = PRIZES[Math.floor(Math.random() * PRIZES.length)];
         const c = el('div', 'gl-win', `<div class="gl-stars">${[0, 1, 2].map(k => `<i class="${k < n ? 'on' : ''}" style="--d:${k * .25}s">⭐</i>`).join('')}</div>
@@ -174,13 +178,13 @@ export async function untilRight(api, els, check) {
   const arm = () => { clearTimeout(t); if (api.little) t = setTimeout(hint, misses >= 2 ? 0 : HINT_AFTER); };
   try {
     for (;;) {
-      arm();
-      const e = await tapOne(els);
+      arm(); playWatch.ask = { els, check };
+      const e = await tapOne(els); playWatch.ask = null;
       if (api.closed) return null;
       if (check(e)) { e.classList.remove('hint'); api.right(e); return e; }
       misses++; api.wrong(e);
     }
-  } finally { clearTimeout(t); }
+  } finally { clearTimeout(t); if (playWatch.ask && playWatch.ask.els === els) playWatch.ask = null; }
 }
 export function choiceButtons(api, items, render, cls = 'choice') {
   const row = el('div', 'choices');

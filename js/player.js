@@ -119,7 +119,7 @@ export class Hero {
         else if (this.profile.glider && !this.exhausted && this.stamina > 0) { this.gliding = true; SFX.glide(); game.onGlide(this); }
       }
       if (this.gliding && (this.exhausted || this.stamina <= 0)) this.gliding = false;
-      const running = pad.run && !this.exhausted && this.onGround && mag > .3;
+      const running = (pad.run || this.autoRun) && !this.exhausted && this.onGround && mag > .3; // (autoRun: the auto play check's Quick speed, like a child holding Run)
       speed = (running ? RUN : WALK) * mag;
       if (running) this.useStamina(dt * .22);
       if (this.gliding) { speed = GLIDE; this.vy = Math.max(this.vy - GRAV * dt, -2.2); this.useStamina(dt * .1); want = 'glide'; if (mag < .05) { mx = Math.sin(this.yaw); mz = Math.cos(this.yaw); } }

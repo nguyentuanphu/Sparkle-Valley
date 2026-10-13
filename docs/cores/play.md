@@ -257,6 +257,18 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   signed in a year, renewed on use; a list with Forget; Sign everyone out still works). Robots in the counts: a prompt
   for Analytics & Infra was given to the owner, not built here.
 
+- (13 Oct AEDT, after testing auto play: "such a mess") Owner's go for a new auto play, on `core/play-studio`:
+  - Stopping auto play never restarts the game; the tester keeps playing on. Progress goes back only when they tap
+    "Stop being a tester", and rewards (badges, stickers, album, clothes) are kept.
+  - Studio chooses what goes back (owner: "can be selected on Studio, but enable progress back and keep reward"):
+    everything since they became a tester (the default), or only what auto play did.
+  - It moves like a child: walks round water and walls, flies long trips like the Go button, never slides through
+    things; Quick runs and flies. When it gets stuck it tries another way, and being stuck is reported as a bug with a
+    picture and the spot.
+  - It plays like a child, with a finger on the screen: games played to the end, mostly right and some wrong (owner's
+    choice), stories read with "read by itself", and a "Follow the quests" mode doing the quest chain.
+  - Its button sits under the ladybird; each problem is sent to Studio at once with a picture and its last steps.
+
 ## Progress notes (12 Oct AEDT: Studio fixes and the auto play check)
 - Commits on `core/play`: f4dd7c6 (photos publish in steps), 0e7ddb1 (exe updates itself), c5846e3 (exe keeps its game
   folder new), e3171ac (auto play check), plus the two recorded words of the new Releases group ("For testing", Azure).

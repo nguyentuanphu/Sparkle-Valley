@@ -513,11 +513,11 @@ export async function studioCheck(browser, open) {
         // (owner, 12 Oct) testers: tick a device at "auto reports only" with a sneak peek; it reports; the Tester reports page
         // shows the problem, marks it fixed in r67, and the device hears it
         await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('#tdev [data-tdev]', { timeout: 15000 }).catch(() => { });
-        const tid = await pg.evaluate(() => { const c = document.querySelector('#tdev [data-tdev]'); if (!c) return ''; c.checked = true; document.querySelector(`[data-tlv="${c.dataset.tdev}"]`).value = 'auto'; document.querySelector('#tdev [data-peek]').checked = true; document.querySelector('[data-id="tester"] [data-r="on"]').checked = true; document.querySelector('#save').click(); return c.dataset.tdev; });
+        const tid = await pg.evaluate(() => { const c = document.querySelector('#tdev [data-tdev]'); if (!c) return ''; c.checked = true; document.querySelector(`[data-tlv="${c.dataset.tdev}"]`).value = 'auto'; document.querySelector('#tdev [data-peek]').checked = true; document.querySelector('[data-id="tester"] [data-r="on"]').checked = true; document.querySelector('#tdev [data-trevert="autoplay"]').checked = true; document.querySelector('#save').click(); return c.dataset.tdev; });
         await pg.waitForTimeout(1200);
         const lt = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
         const tr = lt.releases && lt.releases.tester;
-        if (!tid || !tr || tr.on !== true || !(tr.devices || []).includes(tid) || (tr.levels || {})[tid] !== 'auto' || !(tr.peeks || []).length) bad.push('the Releases page did not save the testers: ' + JSON.stringify({ tid, tr }));
+        if (!tid || !tr || tr.on !== true || !(tr.devices || []).includes(tid) || (tr.levels || {})[tid] !== 'auto' || !(tr.peeks || []).length || tr.revert !== 'autoplay') bad.push('the Releases page did not save the testers (and what goes back): ' + JSON.stringify({ tid, tr }));
         else {
           const rep = { id: tid, b: 'r66', kind: 'looks', note: 'The bridge floats', where: { area: 'village', x: 1, z: 2 }, dev: { os: 'iOS' }, players: [{ name: 'Na', age: 'little' }], shot: 'data:image/jpeg;base64,AAAA', log: [[-2, 'tap', 'Play']] };
           const sent = await pg.evaluate(b => fetch('/api/tester', { method: 'POST', body: JSON.stringify(b) }).then(r => r.status), rep);

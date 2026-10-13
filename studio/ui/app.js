@@ -671,6 +671,7 @@ PAGES.releases = async P => {
         return `<details class="pkg" data-g="${G.g}"><summary><span class="gi">${REL_ICON[G.g] || '📦'}</span><b>${T(G.en, G.vi)}</b> <span class="pkn"></span><span class="relg-all"><button type="button" class="btn small ghost" data-pall="1">${T('All', 'Hết')}</button><button type="button" class="btn small ghost" data-pall="0">${T('None', 'Bỏ hết')}</button></span></summary>
           ${off.map(lab).join('')}${on.length ? `<p class="note">${T('Already on for everyone:', 'Đã bật cho mọi người:')}</p>${on.map(lab).join('')}` : ''}</details>`; };
       box.innerHTML = `<h4>🐞 ${T('Which devices are testers, and how', 'Máy nào là người thử, và thế nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on). A tester accepts what is collected the first time, on the device.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Người thử đồng ý với những gì được thu thập lần đầu, trên máy.')}</p><div id="tdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>
+        <h4>↩️ ${T('When someone stops being a tester', 'Khi ai đó thôi làm người thử')}</h4><div class="revert">${[['progress', 'Everything since they became a tester goes back (badges, stickers and clothes stay)', 'Mọi tiến bộ từ khi làm người thử được trả lại (huy hiệu, nhãn dán và quần áo vẫn giữ)'], ['autoplay', 'Only what auto play did goes back, after each run (what they played themselves stays)', 'Chỉ trả lại phần tự chơi đã làm, sau mỗi lần chạy (phần con tự chơi vẫn giữ)']].map(([k, en, vi]) => `<label class="chk"><input type="radio" name="trevert" data-trevert="${k}" ${(TR.revert === 'autoplay' ? 'autoplay' : 'progress') === k ? 'checked' : ''}> ${T(en, vi)}</label>`).join('')}</div>
         <h4>👀 ${T('Sneak peeks: testers see these early', 'Xem trước: người thử thấy sớm')} <span class="pill" id="pkcount"></span></h4><input type="search" id="pkq" placeholder="${T('Find a feature…', 'Tìm một tính năng…')}"><div id="tpk">${groups.map(peekGroup).join('')}</div>`;
       const pcount = () => { box.querySelector('#pkcount').textContent = T(`${box.querySelectorAll('[data-peek]:checked').length} picked`, `đã chọn ${box.querySelectorAll('[data-peek]:checked').length}`);
         box.querySelectorAll('details.pkg').forEach(d => { d.querySelector('.pkn').textContent = `${d.querySelectorAll('[data-peek]:checked').length}/${d.querySelectorAll('[data-peek]').length}`; }); };
@@ -689,7 +690,8 @@ PAGES.releases = async P => {
       if (id === 'autoplay') { const dv = [...P.querySelectorAll('[data-dev]:checked')].map(i => i.dataset.dev); if (dv.length) r.devices = dv; }
       if (id === 'tester') { const dv = [...P.querySelectorAll('[data-tdev]:checked')].map(i => i.dataset.tdev); if (dv.length) r.devices = dv;
         const lv = {}; P.querySelectorAll('[data-tlv]').forEach(s => { if (s.value === 'auto') lv[s.dataset.tlv] = 'auto'; }); if (Object.keys(lv).length) r.levels = lv;
-        const pk = [...P.querySelectorAll('[data-peek]:checked')].map(i => i.dataset.peek); if (pk.length) r.peeks = pk; }
+        const pk = [...P.querySelectorAll('[data-peek]:checked')].map(i => i.dataset.peek); if (pk.length) r.peeks = pk; 
+        if ((P.querySelector('[data-trevert]:checked') || {}).dataset?.trevert === 'autoplay') r.revert = 'autoplay'; }
       if (Object.keys(r).length) out[id] = r; });
     await saveLive({ releases: out, festivals: live.festivals || {} }).catch(fail);
   };
