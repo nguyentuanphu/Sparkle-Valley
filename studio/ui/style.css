@@ -283,6 +283,7 @@ details.pkg > .note { padding: 0 16px; margin: 6px 0 0; }
   :root:not([data-theme="light"]) .relc-opt, :root:not([data-theme="light"]) .relpanel { border-top-color: var(--line); }
   :root:not([data-theme="light"]) .relpanel .devrow { border-bottom-color: var(--line); }
   :root:not([data-theme="light"]) .tog span { background: #4a4060; }
+  :root:not([data-theme="light"]) .tog input:checked + span { background: #3fbf5a; }
   :root:not([data-theme="light"]) .relsave { background: rgba(37, 30, 51, .96); box-shadow: 0 -2px 12px rgba(0, 0, 0, .4); }
   :root:not([data-theme="light"]) .pill.robot { background: #3a3150; color: #cfc6e0; }
 }

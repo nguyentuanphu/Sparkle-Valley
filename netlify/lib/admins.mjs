@@ -34,7 +34,7 @@ export const PERMS = {
   familycode: ['🔢', 'Make a new family code', 'Tạo mã gia đình mới'],
   publish:    ['🚀', 'Publish to the children', 'Phát hành cho các con'],
   site:       ['🌐', 'Rebuild the website', 'Dựng lại trang web'],
-  deploy:     ['🧯', 'Put code live: merge pull requests, bring back an older version', 'Đưa mã lên: gộp yêu cầu, quay lại phiên bản cũ']
+  deploy:     ['⚠️', 'Put code live: merge pull requests, bring back an older version', 'Đưa mã lên: gộp yêu cầu, quay lại phiên bản cũ']
 };
 const ALL = Object.keys(PERMS);
 export const PRESETS = { viewer: ['analytics', 'testers'], editor: ALL.filter(k => !['deploy', 'familycode'].includes(k)), owner: ALL };
