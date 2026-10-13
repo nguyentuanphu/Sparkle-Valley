@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-const files = [...fs.readdirSync(path.join(ROOT, 'js')).map(f => 'js/' + f), ...fs.readdirSync(path.join(ROOT, 'js/games')).map(f => 'js/games/' + f), ...fs.readdirSync(path.join(ROOT, 'js/content')).map(f => 'js/content/' + f)].filter(f => f.endsWith('.js'));
+const files = [...fs.readdirSync(path.join(ROOT, 'js')).map(f => 'js/' + f), ...fs.readdirSync(path.join(ROOT, 'js/games')).map(f => 'js/games/' + f), ...fs.readdirSync(path.join(ROOT, 'js/content')).map(f => 'js/content/' + f), ...fs.readdirSync(path.join(ROOT, 'js/content/films')).map(f => 'js/content/films/' + f)].filter(f => f.endsWith('.js'));
 const VI = /[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/i;
 // a quoted string without ${…}
 const Q = String.raw`(?:'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|\x60(?:[^\x60\\$]|\\.|\$(?!\{))*\x60)`;
@@ -23,6 +23,8 @@ const PATTERNS = [
   new RegExp(String.raw`\b(?:fact|story|hint|about)\s*:\s*\[\s*(${Q})\s*,\s*(${Q})`, 'g'),
   // the child's turn in a film (js/content/films.js): S.help(time, en, vi, …)
   new RegExp(String.raw`\bS\.help\(\s*[^,]+,\s*(${Q})\s*,\s*(${Q})`, 'g'),
+  // (films batch, 13 Oct) a narration line inside a film: S.say(time, en, vi)
+  new RegExp(String.raw`\bS\.say\(\s*[^,]+,\s*(${Q})\s*,\s*(${Q})`, 'g'),
   // what someone says as a story step starts (js/content/chapters.js): tale: [pictures, who, en, vi]
   new RegExp(String.raw`\btale\s*:\s*\[\s*${Q}\s*,\s*${Q}\s*,\s*(${Q})\s*,\s*(${Q})\s*\]`, 'g')
 ];
@@ -156,7 +158,7 @@ const AREA_OF = new Map(Object.entries(FILE_AREA).flatMap(([a, fs]) => fs.map(f 
 export const corePri = fromFiles => Math.min(40, ...fromFiles.map(f => { const i = FILE_AREA.core.indexOf(f); return i < 0 ? 40 : i; }));
 // where a core line goes if the core is full: the area of its other files, else the games or the world
 export const nonCoreArea = fromFiles => { const a = [...new Set(fromFiles.map(areaOfFile))].filter(x => x !== 'core').sort((x, y) => (x === 'world') - (y === 'world'))[0]; return a || (fromFiles.some(f => f.startsWith('js/games/')) ? 'games' : 'world'); };
-export const areaOfFile = f => AREA_OF.get(f) || (f.startsWith('js/games/') ? 'games' : 'world');
+export const areaOfFile = f => AREA_OF.get(f) || (f.startsWith('js/games/') || f.startsWith('js/content/films/') ? 'games' : 'world'); // (the tale films go with the other films)
 // the area of a line: the core wins (wherever else it is used), then where it was heard (the area most often, or a
 // game), then its file
 const RANK = a => a === 'core' ? 0 : a === 'world' ? 3 : GROUPS.includes(a) ? 2 : 1;
