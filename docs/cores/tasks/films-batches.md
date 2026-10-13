@@ -71,3 +71,15 @@ rongtien, caytre, tamcam, sodua, thachsanh, chucuoi, cockien, vusua, baluoiriu, 
 each page with `FILMTAILS_EST=1 node run.mjs filmtails`, stills on phone, tablet, computer, retiming the 9 old films.
 Dev helpers (not checks): `tests/dbg-film.mjs <ids>` plays every page and prints script errors; `tests/dbg-durs.mjs <ids>`
 prints each page's recorded voice length.
+
+**Progress note, 13 Oct, about 12:50 pm AEDT:**
+- All 33 films are drafted (`js/content/films/<id>.js`, shared pieces in `js/content/films/kit.js`, listed in
+  `js/content/talefilms.js` and in `sw.js`). Each has narration lines (`S.say`) and one or two taps for the child.
+- Found and fixed while measuring: after a child's tap, `js/film.js` added the answer's length twice, so every tap page
+  stood still about 2 s after its answer (release now keeps the longer of the two).
+- The 9 older films got narrator lines where the film ran on in silence; the lantern chapters 2 and 3 no longer hold the
+  whole parade still at second 2 until the words end (the tap moved to the end of the scene).
+- Voice tools: `tools/voice-lines.mjs` reads `js/content/films/` and `S.say(...)` lines (download area: games, like the
+  other films). Azure recording of the new lines started (1124 files).
+- Next: when recording ends, `node run.mjs filmtails` with the real lengths, move line times where it reports a gap;
+  stills on phone, tablet, computer (`SHOT_ONE=1 SHOT_W=… SHOT_H=… node filmshots.mjs <folder> <ids>`); quick checks.
