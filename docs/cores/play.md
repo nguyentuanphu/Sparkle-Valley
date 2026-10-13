@@ -269,6 +269,19 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
     choice), stories read with "read by itself", and a "Follow the quests" mode doing the quest chain.
   - Its button sits under the ladybird; each problem is sent to Studio at once with a picture and its last steps.
 
+- (13 Oct AEDT, afternoon, owner's iPhone on r70, iOS 27, the Home Screen app) Owner's go for four fixes on
+  `core/play-studio`, with "One View button" for the right side:
+  - The top still blurred and the dock cut at the bottom in the Home Screen app: there the game takes the height iOS
+    gives it and the page cannot scroll (`js/main.js` vh, `css/style.css` `html.fitview`); Grown-ups → Screen and world
+    → "Fit the screen" (Automatic, Whole screen, Fit inside) with the screen's own numbers shown, to try on the iPhone.
+  - Zoom in, zoom out, camera view and Where is behind one View button with a tray (their keys still work); the
+    ladybird and auto play stay under it.
+  - The tester section in Settings: one card (who this device is, reports as chips, three tiles, "Stop being a
+    tester" held down).
+  - HN ticked but nothing showed: the live rules were right; on an iPhone the Home Screen app and Safari are two
+    devices to Studio. Studio's device rows now say "Home Screen app" or "in Safari", and Grown-ups shows this device's
+    easy name and id to match.
+
 ## Progress notes (12 Oct AEDT: Studio fixes and the auto play check)
 - Commits on `core/play`: f4dd7c6 (photos publish in steps), 0e7ddb1 (exe updates itself), c5846e3 (exe keeps its game
   folder new), e3171ac (auto play check), plus the two recorded words of the new Releases group ("For testing", Azure).

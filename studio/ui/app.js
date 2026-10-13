@@ -41,7 +41,9 @@ const HIDDEN = () => { try { return new Set(JSON.parse(localStorage.getItem('stu
 const setHidden = (id, on) => { const h = HIDDEN(); on ? h.add(id) : h.delete(id); try { localStorage.setItem('studioHiddenDevices', JSON.stringify([...h])); } catch (e) { } };
 const devTitle = d => d.label || easyName(d.id);
 // one line about a device, e.g. "Tiên, Bin · Tablet · iOS · Safari · Sydney, AU · 2 h ago"
-const devAbout = d => { const kids = devKids(d), what = [devKindName(d.kind), d.os, d.br].filter(x => x && x !== '?').join(' · ');
+// (owner, 13 Oct AEDT: a ticked iPhone got nothing) on an iPhone the Home Screen app and Safari keep their own storage,
+// so each is its own device here: the row says which one it is
+const devAbout = d => { const kids = devKids(d), what = [devKindName(d.kind), d.os, d.app ? T('Home Screen app', 'Ứng dụng Màn hình chính') : d.br ? T(`in ${d.br}`, `trong ${d.br}`) : ''].filter(x => x && x !== '?').join(' · ');
   return [kids.length ? '🧒 ' + kids.join(', ') : '', what, devTown(d) ? '📍 ' + devTown(d) : '', devLast(d) ? '🕒 ' + devLast(d) : ''].filter(Boolean).join(' · '); };
 const devHTML = d => `<b class="dname">${esc(devTitle(d))}</b>${isRobot(d) ? ` <span class="pill robot">🤖 ${T('probably a robot', 'có lẽ là máy tự động')}</span>` : ''} <span class="dabout">${esc(devAbout(d))}</span> <small class="mini">${esc(d.id)}</small>`;
 // a search box and "show robots" over a list of device rows (.devrow): a ticked device always stays in view

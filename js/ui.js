@@ -347,6 +347,10 @@ export function openGrownups(after) {
 <h3>👫 ${T('Two players on one device', 'Hai người chơi trên một máy')}</h3>
       <div class="seg tview">${[['auto', T('Automatic', 'Tự động')], ['face', T('Face to face', 'Đối diện nhau')], ['side', T('Side by side', 'Cạnh nhau')]].map(([k, l]) => `<button data-tv="${k}" class="${(settings.twoView || 'auto') === k ? 'on' : ''}">${l}</button>`).join('')}</div>
       <p class="note">${T('Face to face: lay the tablet flat with a child at each end; each half of the screen faces its child. Automatic uses face to face on touch screens and side by side on a computer.', 'Đối diện nhau: đặt máy tính bảng nằm trên bàn, mỗi bé ngồi một đầu; mỗi nửa màn hình quay về phía bé đó. Tự động: đối diện trên màn hình cảm ứng, cạnh nhau trên máy tính.')}</p>
+<h3>📱 ${T('Fit the screen', 'Vừa màn hình')}</h3>
+      <div class="seg sfit">${[['auto', T('Automatic', 'Tự động')], ['fill', T('Whole screen', 'Cả màn hình')], ['fit', T('Fit inside', 'Vừa bên trong')]].map(([k, l]) => `<button data-sf="${k}" class="${(settings.screenFit || 'auto') === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+      <p class="note">${T('If the buttons at the bottom are cut off or the top looks hazy, try the other choices. Automatic fits a Home Screen app inside the space it is given.', 'Nếu các nút ở dưới bị cắt hoặc phía trên bị mờ, hãy thử lựa chọn khác. Tự động cho ứng dụng ở Màn hình chính vừa với chỗ được cho.')}</p>
+      <p class="note sfacts">${(() => { const f = window.__sv && window.__sv.screenFacts ? window.__sv.screenFacts() : null; return f ? esc(`${f.app ? T('Home Screen app', 'Ứng dụng Màn hình chính') : T('Browser', 'Trình duyệt')} · ${T('height used', 'chiều cao dùng')} ${f.used} · ${T('window', 'cửa sổ')} ${f.inner} · ${T('visible', 'nhìn thấy')} ${f.visual} · ${T('large', 'lớn')} ${f.large} · ${T('screen', 'màn hình')} ${f.screen}`) : ''; })()}</p>
 <h3>🔠 ${T('Text size', 'Cỡ chữ')}</h3>
       <div class="seg tsize">${[[0, 'A'], [1, 'A'], [2, 'A']].map(([k, l]) => `<button data-ts="${k}" class="${(settings.textSize || 0) === k ? 'on' : ''}" style="font-size:${16 + k * 5}px" aria-label="${[T('Normal', 'Bình thường'), T('Big', 'To'), T('Bigger', 'To hơn')][k]}">${l}</button>`).join('')}</div>
       <div>
@@ -458,6 +462,7 @@ export function openGrownups(after) {
     card.querySelector('#gRain').onchange = e => { settings.noRain = !e.target.checked; saveSettings(); };
     chk('#gCalm', 'calm', applyComfort);
     card.querySelector('#gCap').onchange = e => { settings.captions = e.target.checked; saveSettings(); };
+    card.querySelectorAll('.seg.sfit button').forEach(b => b.onclick = () => { settings.screenFit = b.dataset.sf; saveSettings(); SFX.tap(); dispatchEvent(new Event('resize')); const y = m.scrollTop; setTimeout(() => { draw(); m.scrollTop = y; }, 150); });
     card.querySelectorAll('.seg.tview button').forEach(b => b.onclick = () => { settings.twoView = b.dataset.tv; saveSettings(); dispatchEvent(new Event('resize')); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { settings.textSize = +b.dataset.ts; saveSettings(); applyComfort(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.rest button').forEach(b => b.onclick = () => { settings.restMins = b.dataset.r; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });

@@ -25,6 +25,7 @@ import { SFX } from './audio.js';
 import * as C from './content/tester.js';
 import { takeCopy, putCopyBack, hasCopy, dropCopy } from './keepcopy.js';
 import { revertOf } from './content/autoplay.js';
+import { easyName } from './content/devname.js';
 
 const KEY = { acc: 'sv2_tester', out: 'sv2_tester_out', st: 'sv2_tester_status', seen: 'sv2_tester_seen', ap: 'sv2_tester_ap', copy: 'sv2_tester_copy' };
 const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -255,15 +256,23 @@ function agreement() {
 // the Settings card (js/ui.js openQuick) shows a Tester section on a tester device
 export function settingsRows(box, redraw) {
   if (!box) return; const on = accepted(), q = queue().length, st = status || {};
-  box.innerHTML = `<div class="qs-sec qs-tester"><h4>${pic('🐞')} ${T('Tester', 'Người thử')}</h4>${on ? `
-    <p class="note">${T(`Reports sent: ${st.reports || 0} · helped fix: ${st.helped || 0}${q ? ` · waiting to send: ${q}` : ''}`, `Đã gửi: ${st.reports || 0} báo cáo · giúp sửa: ${st.helped || 0}${q ? ` · đang chờ gửi: ${q}` : ''}`)}</p>
-    <div class="qs-trow"><button class="btn" data-t="mine">${T('My reports', 'Báo cáo của tôi')}</button><button class="btn" data-t="ap">${T('Run the auto play check now', 'Chạy tự chơi kiểm tra ngay')}</button>${G.testerRewards ? `<button class="btn" data-t="corner">${T('Tester\'s Corner', 'Góc người thử')}</button>` : ''}</div>
-    <button class="btn" data-t="stop">${T('Stop being a tester', 'Thôi làm người thử')}</button>` : `<button class="btn primary" data-t="join">${T('Become a tester', 'Làm người thử')}</button>`}</div>`;
+  // (owner, 13 Oct AEDT: "tidy up the tester section ... tidier and smarter design") one card: who this device is, the
+  // reports as three chips, three big tiles, and "Stop being a tester" held down on its own at the bottom
+  const tile = (k, ic, en, vi, sub) => `<button class="tst-tile" data-t="${k}"><span class="tst-ic">${pic(ic)}</span><b>${T(en, vi)}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
+  box.innerHTML = `<div class="qs-sec qs-tester">${on ? `
+    <div class="tst-head"><span class="tst-lb">${pic('🐞')}</span><div><b>${T('You are a tester', 'Con là người thử')}</b><small>${esc(BUILD)}${me() ? ' · ' + esc(easyName(me(), settings.lang)) : ''}</small></div></div>
+    <div class="tst-stats"><span class="tst-chip"><b>${st.reports || 0}</b>${T('sent', 'đã gửi')}</span><span class="tst-chip ok"><b>${st.helped || 0}</b>${T('helped fix', 'giúp sửa')}</span>${q ? `<span class="tst-chip wait"><b>${q}</b>${T('waiting to send', 'chờ gửi')}</span>` : ''}</div>
+    <div class="tst-tiles">${tile('mine', '📋', 'My reports', 'Báo cáo của tôi')}${tile('ap', '🤖', 'Auto play', 'Tự chơi', T('Plays the game by itself to find problems', 'Tự chơi game để tìm lỗi'))}${G.testerRewards ? tile('corner', '🏆', "Tester's Corner", 'Góc người thử', T('Badges and stickers', 'Huy hiệu và nhãn dán')) : ''}</div>
+    <button class="btn tst-stop hold" data-hold="stop"><span class="ring"></span>${T('Hold to stop being a tester', 'Giữ để thôi làm người thử')}</button>
+    <p class="note">${T('Progress made while testing goes back when you stop; badges and stickers stay.', 'Khi thôi, tiến bộ lúc thử được trả lại; huy hiệu và nhãn dán vẫn giữ.')}</p>` : `
+    <div class="tst-head"><span class="tst-lb">${pic('🐞')}</span><div><b>${T('Tester', 'Người thử')}</b><small>${T('Help find problems: report what looks wrong, and earn badges.', 'Giúp tìm lỗi: báo những gì không ổn, và nhận huy hiệu.')}</small></div></div>
+    <button class="btn primary" data-t="join">${T('Become a tester', 'Làm người thử')}</button>`}</div>`;
   const act = { join: () => { const a = get(KEY.acc, {}); delete a.stopped; put(KEY.acc, a); agreement(); },
     stop: () => { put(KEY.acc, { ...get(KEY.acc, {}), stopped: Date.now() }); if (G.autoplay && G.autoplay.stop) G.autoplay.stop(); stop(); putBack(); redraw && redraw(); },
     mine: () => showMine(), corner: () => G.testerRewards && G.testerRewards.corner(),
-    ap: async () => { if (!G.autoplay) { const m = await import('./autoplay.js'); m.mountAutoplay(G); } G.autoplay && G.autoplay.start && G.autoplay.start(null, 'fast'); } };
+    ap: async () => { if (!G.autoplay) { const m = await import('./autoplay.js'); m.mountAutoplay(G); } if (G.autoplay && G.autoplay.open) G.autoplay.open(); } };
   box.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { SFX.tap && SFX.tap(); act[b.dataset.t](); });
+  const h = box.querySelector('[data-hold="stop"]'); if (h) holdButton(h, () => { SFX.tap && SFX.tap(); act.stop(); });
 }
 const STATUS_WORDS = { new: ['New', 'Mới'], fixing: ['Being fixed', 'Đang sửa'], fixed: ['Fixed', 'Đã sửa'], confirmed: ['Fixed and checked', 'Đã sửa và kiểm tra'], back: ['Came back', 'Bị lại'], notbug: ['Not a problem', 'Không phải lỗi'], dup: ['Same as another', 'Trùng lỗi khác'] };
 function showMine() {

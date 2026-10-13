@@ -2459,6 +2459,10 @@ details.hfold:not([open]) > summary::after { transform: rotate(-90deg); }
 /* (Round V, owner's iPhone notes 13 Oct) the game, its buttons and its screens fill the large screen height, so Safari's
    bottom bar floats over the valley instead of a dark strip */
 @supports (height: 100lvh) { #stage, #huds, .screen { bottom: auto; height: 100lvh; } }
+/* (owner, 13 Oct AEDT, iOS 27 Home Screen app) there the game takes the height iOS gives it (js/main.js vh) and the
+   page cannot scroll, so the dock is not cut and iOS draws no blur band under the status bar */
+html.fitview, html.fitview body { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; }
+html.fitview #stage, html.fitview #huds, html.fitview .screen { bottom: auto; height: var(--appH, 100%); }
 /* (Round V, owner 13 Oct: the camera button's picture sat off centre) drawn like the compass, centred in its button */
 .zoomer .z-view .art, .zoomer .z-view .emo { width: 34px; height: 34px; font-size: 28px; margin: auto; display: block; transform: translateY(3px); }
 .hud.small .zoomer .z-view .art { width: 28px; height: 28px; }
@@ -2497,3 +2501,26 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 .mictest .mt-bar { height: 14px; border-radius: 7px; background: rgba(0,0,0,.1); overflow: hidden; margin: 6px 0 10px; }
 .mictest .mt-bar i { display: block; height: 100%; width: 0; background: #3fae5a; transition: width .08s; }
 .mictest .btn { min-height: 44px; }
+/* (owner, 13 Oct AEDT: too many buttons down one side) one View button; its tray of zoom in, zoom out, camera view and
+   Where is opens to its left (js/hud.js); the ladybird and auto play stay in the column under it */
+.zoomer .z-tray { flex-direction: column; gap: 0; color: var(--text); font: 700 11px/1 var(--font); }
+.zoomer .z-tray .ico { width: 32px; height: 32px; }
+.zoomer.open .z-tray { background: #ece6ff; box-shadow: 0 0 0 3px #8a5cf6, var(--shadow); }
+.zoomer .ztray { position: absolute; right: calc(100% + 10px); top: 0; display: none; flex-direction: row-reverse; gap: 10px; }
+.zoomer.open .ztray { display: flex; animation: fadein .15s; }
+.hud.small .zoomer .z-tray .ico { width: 26px; height: 26px; } .hud.small .zoomer .z-tray small { display: none; }
+/* (owner, 13 Oct AEDT) the tester section in Settings: one tidy card (js/tester.js settingsRows) */
+.qs-tester { display: grid; gap: 10px; background: #fff8ee; border: 2px solid #ffe2b8; border-radius: 18px; padding: 12px; }
+.qs-tester .tst-head { display: flex; align-items: center; gap: 10px; }
+.qs-tester .tst-head small { display: block; color: #7a6a8a; font-size: 13px; font-weight: 600; }
+.qs-tester .tst-lb .art, .qs-tester .tst-lb .emo { width: 40px; height: 40px; font-size: 32px; }
+.qs-tester .tst-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+.qs-tester .tst-chip { display: inline-flex; align-items: baseline; gap: 5px; padding: 6px 12px; border-radius: 999px; background: #fff; border: 1px solid #f0dcc0; font-size: 14px; }
+.qs-tester .tst-chip b { font-size: 18px; color: #6b4fd8; } .qs-tester .tst-chip.ok b { color: #1d7a3a; } .qs-tester .tst-chip.wait b { color: #b06a00; }
+.qs-tester .tst-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.qs-tester .tst-tile { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 10px; text-align: left; min-height: 64px; padding: 10px 12px; border-radius: 16px; border: 0; background: #fff; box-shadow: 0 3px 0 #ecd9bd; font: inherit; color: inherit; cursor: pointer; }
+.qs-tester .tst-tile .tst-ic { grid-row: span 2; } .qs-tester .tst-tile .tst-ic .art, .qs-tester .tst-tile .tst-ic .emo { width: 36px; height: 36px; font-size: 28px; }
+.qs-tester .tst-tile small { color: #7a6a8a; font-size: 12px; font-weight: 600; line-height: 1.25; }
+.qs-tester .tst-stop { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; background: #fff; color: #a33; border: 2px solid #f3c6c6; }
+.qs-tester .note { margin: 0; }
+

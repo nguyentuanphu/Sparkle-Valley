@@ -43,7 +43,7 @@ export function mountAutoplay(game) {
   const ce = console.error; console.error = (...a) => { if (errSink) errSink.push(a.map(String).join(' ').slice(0, 200)); ce.apply(console, a); };
   btnTimer = setInterval(buttons, 1000); buttons();
   G.autoplay = { unmount, running: () => !!run, trail: () => trail.slice(),
-    walkTo: (x, z, speed) => walkTo(x, z, speed), // (the checks: one trip, as a run would make it)
+    walkTo: (x, z, speed) => walkTo(x, z, speed), open: () => { ui.open = true; put(UI, ui); draw(); }, // (the checks: one trip, as a run would make it)
     stop: () => { if (run) run.stop = true; }, start: (keys, speed) => { if (speed) ui.speed = AP_SPEEDS[speed] ? speed : 'fast'; return start(keys); } };
 }
 export function unmount() {
@@ -70,7 +70,7 @@ function buttons() {
       b = el('button', 'z-ap', `${pic('🤖')}<i class="ap-n" hidden></i>`); b.setAttribute('aria-label', T('Auto play', 'Tự chơi'));
       b.addEventListener('pointerdown', e => e.stopPropagation());
       b.onclick = e => { e.stopPropagation(); ui.open = !ui.open; put(UI, ui); draw(); };
-      const lb = z.querySelector('.z-lb'); if (lb) lb.after(b); else z.prepend(b);
+      const lb = z.querySelector('.z-lb'); if (lb) lb.after(b); else z.appendChild(b);
     }
     b.classList.toggle('on', !!run); b.classList.toggle('paused', !!(run && run.paused));
     const n = b.querySelector('.ap-n'); n.hidden = !run; if (run) n.textContent = `${Math.min(run.i + 1, run.list.length)}/${run.list.length}`;
