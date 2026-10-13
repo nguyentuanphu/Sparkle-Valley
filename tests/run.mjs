@@ -1194,15 +1194,21 @@ await check('testerreport', async () => {
   const t = await wait(x => x && x.kind === 'looks' && /bridge floats/.test(x.note || ''));
   if (!shotFirst || !t || !/^data:image/.test(t.shot || '')) out.push('the ladybird\'s report has no picture or note: ' + JSON.stringify({ shotFirst, got: !!t }));
   // long press: a quick report
-  await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerdown'); await P.page.waitForTimeout(1000); await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerup');
-  if (!await wait(x => x && x.detail === 'quick')) out.push('a long press made no quick report');
+  // (held until the quick report is made, like a child holding until something happens: on a slow machine one frame
+  // can take half a second, and a fixed 1 s hold could let go before the 700 ms hold counted)
+  await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerdown'); const quick = await wait(x => x && x.detail === 'quick'); await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerup');
+  if (!quick) out.push('a long press made no quick report');
   // offline: waits with a number, then sends
   await P.ctx.setOffline(true); await P.page.evaluate(() => __sv.tester.openPanel(0)); await P.page.waitForSelector('.tpanel .tp-send'); await P.page.fill('.tpanel textarea', 'offline report'); await P.page.click('.tp-send'); await P.page.waitForTimeout(600);
-  const wq = await P.page.evaluate(() => ({ q: JSON.parse(localStorage.getItem('sv2_tester_out') || '[]').length, n: (document.querySelector('.z-lb .lb-n') || {}).textContent }));
+  // (the report it made waits; the number on the ladybird is everything waiting, also a report the game made by itself
+  // meanwhile, such as "slow" on a slow machine)
+  const wq = await P.page.evaluate(() => { const l = JSON.parse(localStorage.getItem('sv2_tester_out') || '[]'); return { q: l.filter(r => r.note === 'offline report').length, n: (document.querySelector('.z-lb .lb-n') || {}).textContent, all: String(l.length) }; });
   await P.ctx.setOffline(false); await P.page.evaluate(() => dispatchEvent(new Event('online')));
   const sentLater = await wait(x => x && x.note === 'offline report');
-  const left = await P.page.evaluate(() => JSON.parse(localStorage.getItem('sv2_tester_out') || '[]').length);
-  if (wq.q !== 1 || wq.n !== '1' || !sentLater || left) out.push('offline reports did not wait and send: ' + JSON.stringify({ wq, sentLater: !!sentLater, left }));
+  // (the device takes the report off its list when the website's answer arrives, a moment after the website has it)
+  const left = await P.page.waitForFunction(() => JSON.parse(localStorage.getItem('sv2_tester_out') || '[]').length === 0, null, { timeout: 5000, polling: 100 }).then(() => 0)
+    .catch(() => P.page.evaluate(() => JSON.parse(localStorage.getItem('sv2_tester_out') || '[]').length));
+  if (wq.q !== 1 || wq.n !== wq.all || !sentLater || left) out.push('offline reports did not wait and send: ' + JSON.stringify({ wq, sentLater: !!sentLater, left }));
   // already reported here
   near = [{ k: 'aaaaaaaaaaaaaaaa', title: 'The bridge floats', n: 3, where: await P.page.evaluate(() => { const h = __sv.heroes[0]; return { area: String(__sv.regionOf[0] || 'valley'), x: Math.round(h.pos.x), z: Math.round(h.pos.z), game: '', window: '' }; }) }];
   await P.page.evaluate(() => __sv.tester.refresh()); await P.page.waitForTimeout(500);
