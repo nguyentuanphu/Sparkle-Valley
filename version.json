@@ -1,7 +1,7 @@
 {
- "studio": "r71",
- "sha256": "e58a008bb7f7a2d481fb5882c45b41b6960a1ac4c4e50390eecad51bef9779c2",
- "size": 86729728,
- "notes": "Festival decorations amount per festival, devices you can recognise, Trust this browser, the Releases page redesigned, sneak peeks by group",
- "built": "2026-10-13T12:55:05.691Z"
+ "studio": "r73",
+ "sha256": "b06da58a71c0997330fe6d0e17d6cc287a20803348169eceef788e5b209d641a",
+ "size": 86736384,
+ "notes": "Admins get permissions one by one, the Releases page in dark mode, Analytics no longer times out",
+ "built": "2026-10-13T17:37:19.551Z"
 }
