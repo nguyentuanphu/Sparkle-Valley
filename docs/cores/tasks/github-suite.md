@@ -31,6 +31,15 @@ Claude usage, with the result on the pull request.
 4. A check that fails on GitHub runs once more in the same job before it counts (as `suite.mjs` does locally).
 5. Voices: the checks that need `voices/` files get them from the checkout (they are in the repo).
 
+## Also: the clash watch (owner, 13 Oct AEDT: "yes, add it")
+6. `.github/workflows/clash-watch.yml`: each time `main` changes (and by hand). For every branch whose board line says
+   "ready for Release" (or every `core/…`, `bugfix/…` and `claude/…` branch with work not on main), try `git merge --no-commit`
+   onto main in the job's own checkout (nothing is pushed). Keep ONE GitHub issue titled "Clash watch" up to date: each
+   branch that clashes, the files, and the core it belongs to; "no clashes" when clean. It never writes to `main` or to
+   any branch (the board is on main, and nothing reaches main without the owner's "yes, deploy").
+7. Rules to add (CLAUDE.md, the helper rules and `docs/cores/release.md`): a core reads the "Clash watch" issue before
+   writing "ready for Release" and merges main into its branch to fix its own clash; Release reads it before collecting.
+
 ## Prove it before trusting it
 Run it on a test pull request and run `node suite.mjs` locally on the same commit. Compare check by check. Fix every check
 that differs (fonts, browser version, timing); write down any that must stay local and why. Only then change the rules.
