@@ -1285,6 +1285,10 @@ body.calm .ht-hand.hint { animation: none; }
 .th-text { margin: 10px 12px 0; background: #fffdf6; color: #3b2a4f; border-radius: 22px; padding: 12px 18px; min-height: 76px; display: flex; align-items: center; }
 .th-text p { margin: 0; font-size: clamp(17px, 2.6vw, 24px); line-height: 1.35; }
 body.bigtext .th-text p { font-size: clamp(20px, 3.2vw, 28px); }
+/* (films batch, 13 Oct) the narrator's line about what happens in the film, under the page's words */
+.theatre .th-text { flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; }
+.th-text .th-more { font-size: clamp(15px, 2.2vw, 20px); color: #6a4f86; }
+body.bigtext .th-text .th-more { font-size: clamp(17px, 2.7vw, 23px); }
 .th-bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px 12px; }
 .th-bar button { width: 60px; height: 60px; border: 0; border-radius: 20px; background: #fff; color: #3b2a4f; font-size: 26px; box-shadow: 0 4px 0 rgba(0,0,0,.25); flex: none; }
 .th-bar button:disabled { opacity: .35; }

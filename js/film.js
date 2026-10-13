@@ -8,6 +8,8 @@
 //   S.tw(t, dur, k => …)            anything else that changes over time (grow, fall, change colour, fly…)
 //   S.cam(t, dur, pos, look)        the camera glides to a new shot (in calm mode it cuts instead)
 //   S.help(t, en, vi, act)          the child helps: the film waits for a tap anywhere on the picture
+//   S.say(t, en, vi)                (owner, 13 Oct) the narrator tells what happens next: the film waits at t until
+//                                   the narrator is free, so a long action is told, never played on in silence
 // Everything is drawn by one small renderer that is made once and reused by every film, with no shadows
 // and few lights, so it runs on older phones. Tapping a character makes it wiggle (little ones love that).
 import { THREE, P, merge, toonVC, toon, glow } from './gfx.js';
@@ -149,6 +151,8 @@ function skyTex() {
   t.paint = (top, bottom) => { const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, top); g.addColorStop(1, bottom); x.fillStyle = g; x.fillRect(0, 0, 2, 128); t.needsUpdate = true; };
   return t;
 }
+// (checks only) a film played faster, so every page of every film can be played through with no tap in a few minutes
+export const filmRate = () => (typeof window !== 'undefined' && window.__svFilmRate) || 1;
 const mixHex = (a, b, k) => '#' + new THREE.Color(a).lerp(new THREE.Color(b), k).getHexString();
 
 // A film: made when the theatre opens a tale that has one, gone when the theatre closes.
@@ -172,7 +176,7 @@ export function createFilm(stage, script, ctx = {}) {
   let paused = false; // (a guide's real game is on screen instead: nothing to draw)
   const loop = now => {
     if (!alive) return; requestAnimationFrame(loop);
-    const dt = Math.min(.05, (now - last) / 1000); last = now; if (paused) return; clock += dt; fit();
+    const dt = Math.min(.05, (now - last) / 1000) * filmRate(); last = now; if (paused) return; clock += dt; fit();
     if (page) page.tick(dt, clock);
     r.render(scene, cam);
     if (page && page.hold && page.hold.at) { const p = page.hold.at(); _p.copy(p).project(cam); ring.style.left = ((_p.x + 1) / 2 * w) + 'px'; ring.style.top = ((1 - _p.y) / 2 * h) + 'px'; }
@@ -234,6 +238,10 @@ export function createFilm(stage, script, ctx = {}) {
     S.where = a => () => { const p = a.o.getWorldPosition(new THREE.Vector3()); return [p.x, p.y, p.z]; };
     // the child's turn: once the narrator has finished, ask, then wait for a tap (or carry on by itself)
     // (dur: how long what happens after the tap takes, so everything later in the page waits for it)
+    S.say = (t, en, vi) => { S.ev.push({ t, dur: 0, say: { en, vi }, e: lin }); S.len = Math.max(S.len, t + .1); };
+    S.speaking = false;
+    // a line spoken inside the film (a narration line or the child's turn): the page goes on only once it is said
+    const speak = (en, vi, after, kind = 'say') => { S.speaking = true; Promise.resolve(api.onSay ? api.onSay(en, vi, kind) : sayAsync(en, vi)).catch(() => { }).finally(() => { S.speaking = false; after && after(); }); };
     S.help = (t, en, vi, act, at, dur = 0) => { S.ev.push({ t, dur: 0, help: { en, vi, act, dur, at: at ? () => v3(val(at)) : null }, e: lin }); S.len = Math.max(S.len, t + .1); };
     S.release = byChild => {
       const hd = S.hold; if (!hd) return; S.hold = null; help.hidden = true; ring.hidden = true; clearTimeout(hd.timer);
@@ -247,12 +255,17 @@ export function createFilm(stage, script, ctx = {}) {
         let blocked = false;
         for (const ev of S.ev) {
           if (ev.fin || S.t < ev.t) continue;
+          if (ev.say) {
+            if (!S.narrated || S.speaking) { blocked = true; break; } // after the page's words, one line at a time
+            ev.fin = true; speak(ev.say.en, ev.say.vi); blocked = true; break;
+          }
           if (ev.help) {
-            if (!S.narrated) { blocked = true; break; } // the help comes after the words
+            if (!S.narrated || S.speaking) { blocked = true; break; } // the help comes after the words
             ev.fin = true; S.hold = ev.help; S.hold.shown = true;
             help.innerHTML = `<span class="fh-hand">${pic('👆')}</span><b>${esc(T(ev.help.en, ev.help.vi))}</b>`; help.hidden = false; ring.hidden = !ev.help.at;
-            sayAsync(ev.help.en, ev.help.vi);
-            S.hold.timer = setTimeout(() => { if (S.hold === ev.help) S.release(false); }, 14000);
+            // (owner, 13 Oct: films must play through with no tap) once the question is said, the film waits 7 s for the
+            // child's tap and then carries on by itself
+            const hd = ev.help; speak(hd.en, hd.vi, () => { if (S.hold === hd) hd.timer = setTimeout(() => { if (S.hold === hd) S.release(false); }, 7000 / filmRate()); }, 'help');
             break;
           }
           const first = !ev.st; ev.st = true;
@@ -261,7 +274,7 @@ export function createFilm(stage, script, ctx = {}) {
         }
         S.waiting = blocked;
         if (!S.hold && !blocked) S.t += dt;
-        if (S.t > S.len + .4 && !S.ended && !S.ev.some(e => e.help && !e.fin)) { S.ended = true; resolve(); }
+        if (S.t > S.len + .4 && !S.ended && !S.speaking && !S.ev.some(e => (e.help || e.say) && !e.fin)) { S.ended = true; resolve(); }
       }
       for (const f of S.tickers) f(dt, time, S.t);
       for (const a of S.actors) pose(a, time);
