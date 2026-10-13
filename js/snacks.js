@@ -8,6 +8,7 @@ import { farm, saveFarm } from './state.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
 import { fmt } from './money.js';
+import { keptOn, markTried } from './custom.js';
 
 export const snackOf = id => VENDORS.find(v => v.id === id);
 
@@ -15,7 +16,7 @@ export const snackOf = id => VENDORS.find(v => v.id === id);
 // screen and remembers what they had; the spoken words have no name (HANDOFF rule 11: names are never recorded)
 export function greetLine(h, v) {
   const p = h.profile, n = (p.regulars || {})[v.id] || 0;
-  if (!n || !p.name) return v.greet;
+  if (!n || !p.name || !keptOn('sellersRemember', [p])) return v.greet;   // (batch rollout) Studio switch 'sellersRemember'
   return [`Hello again, ${p.name}! Would you like ${v.food[1]} again, like last time?`, `Con lại đến rồi, ${p.name}! Lại ${v.food[2]} như lần trước không con?`,
     `Hello again! Would you like ${v.food[1]} again, like last time?`, `Con lại đến rồi! Lại ${v.food[2]} như lần trước không con?`];
 }
@@ -33,8 +34,11 @@ export function changeLine(price, paid) {
 export async function buyFood(G, h, v, gift = ['Here, this one is a gift!', 'Thôi, cái này tặng con đó!']) {
   const p = h.profile, price = v.food[3];
   let change = null;
-  if (farm.coins >= price) { change = changeLine(price, paidFor(price, farm.coins)); farm.coins -= price; saveFarm(); } else say(gift[0], gift[1]);
-  SFX.chime();
+  // (batch rollout) counting the change comes with the price pictures (Studio switch 'priceTags'); both are kept by a child
+  // who bought while they were on
+  const tags = keptOn('priceTags', [p]), regular = keptOn('sellersRemember', [p]);
+  if (farm.coins >= price) { change = tags ? changeLine(price, paidFor(price, farm.coins)) : null; farm.coins -= price; saveFarm(); } else say(gift[0], gift[1]);
+  SFX.chime(); if (tags) markTried(p, 'priceTags'); if (regular) markTried(p, 'sellersRemember');
   p.bought = p.bought || {}; p.bought[v.id] = (p.bought[v.id] || 0) + 1;
   p.regulars = p.regulars || {}; p.regulars[v.id] = (p.regulars[v.id] || 0) + 1; G.save();
   const k = await dialog(v.name, [...(change ? [change] : []), [`Here you are: ${v.food[1]}! I put it in your bag.`, `Của con đây: ${v.food[2]}! Bỏ vào túi cho con rồi nhé.`]],

@@ -29,5 +29,7 @@ export function createPriceTags(G) {
     const y = world.groundAt ? world.groundAt(px, pz) : 0; sp.position.set(px, y + 1.55, pz); scene.add(sp);
     world.priceTags.push({ id: v.id, price, x: s.x, z: s.z, sp, draw: () => c.toDataURL().length });
   }
+  // (batch rollout) Studio switch 'priceTags': off or not started yet, hidden unless a child playing bought with them on
+  world.updaters && world.updaters.push(() => { const on = !G.keep || G.keep('priceTags'); if (world.priceTags.length && world.priceTags[0].sp.visible !== on) world.priceTags.forEach(t => { t.sp.visible = on; }); });
   return world.priceTags;
 }

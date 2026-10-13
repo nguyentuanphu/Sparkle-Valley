@@ -27,7 +27,9 @@ export const BOX_LINES = {
 const tint = c => c.hue ? ` style="filter:hue-rotate(${c.hue}deg)"` : '';
 
 export function createBoxes(G, { say, save }) {
-  const boxOn = () => featureOn('mysteryBox', true), rankOn = () => featureOn('rankings', true), bookOn = () => featureOn('collectibles', true);
+  // (batch rollout) each kept for a child who already opened it (G.keep, js/main.js)
+  const keep = id => G.keep ? G.keep(id) : featureOn(id, true);
+  const boxOn = () => keep('mysteryBox'), rankOn = () => keep('rankings'), bookOn = () => keep('collectibles');
   const anyOn = () => boxOn() || rankOn() || bookOn();
   const can = h => !!h && eligible(h.profile) && anyOn();
 
@@ -80,7 +82,7 @@ export function createBoxes(G, { say, save }) {
       ${rankOn() ? `<button class="khb" data-go="rank" aria-label="${T('Family rankings', 'Bảng thành tích gia đình')}">${pic('🏆')}</button>` : ''}
       ${bookOn() ? `<button class="khb" data-go="book" aria-label="${T('Collection book', 'Sổ sưu tập')}">${pic('📚')}</button>` : ''}</div>`;
     card.querySelector('.x').onclick = () => close(m);
-    card.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { SFX.tap(); m.close(); G.paused = false; setTimeout(() => ({ box: openBoxCard, rank: openRanks, book: openBook })[b.dataset.go](i), 220); });
+    card.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { SFX.tap(); G.tried && G.tried(G.heroes[i], { box: 'mysteryBox', rank: 'rankings', book: 'collectibles' }[b.dataset.go]); m.close(); G.paused = false; setTimeout(() => ({ box: openBoxCard, rank: openRanks, book: openBook })[b.dataset.go](i), 220); });
   }
 
   // ---------- a mystery box: it wobbles, a tap opens it ----------

@@ -51,7 +51,7 @@ import { createSignposts } from './signposts.js';
 import { createNameTags } from './nametags.js';
 import { createTraffic } from './traffic.js';
 import { RELEASES } from './content/releases.js';
-import { releaseNew, featureOn, releaseOn, liveRule, onLive } from './custom.js';
+import { releaseNew, featureOn, releaseOn, liveRule, onLive, keptOn, markTried, triedFromSave, setPlayers, MONEY_GAMES } from './custom.js';
 import { cachedCanvas } from './worldcache.js';
 import { events } from './core/events.js';
 import { createPlaceBook } from './placebook.js';
@@ -397,6 +397,7 @@ async function playGame(i, id, source, shrine) {
   // friends in the room: play it together? (round H: every game can be played together)
   if (G.together() && source !== 'online' && !shrine) { G.paused = false; const k = await dialog(T('Play together?', 'Chơi cùng nhau?'), [['Your friends are here. Play this game together?', 'Các bạn đang ở đây. Chơi trò này cùng nhau nhé?']], [['👫 Together', '👫 Cùng nhau'], ['🙂 Just me', '🙂 Mình con']]); if (k === 0) { G.inviteGame(id); return; } G.paused = true; }
   countPlay('game', id); // anonymous: how often each game is played (js/players.js)
+  if (MONEY_GAMES.includes(id)) G.tried(h, 'money_' + id); else if (/^rd_/.test(id)) G.tried(h, 'readingTrial');   // (batch rollout) a money game played stays this child's
   const players = G.heroes.map(x => x.profile); if (G.heroes.length > 1 && i === 1) players.reverse();
   // Level = how far this child has got in this game, shifted by the chosen difficulty.
   // the level the child chose inside this game (round M), else the grown-ups' difficulty for this child
@@ -498,6 +499,8 @@ async function owlTalk(h) {
   const tip = q && tips[q.id] || ['Explore everywhere! Climb high, look under rocks, and talk to everyone.', 'Khám phá khắp nơi nhé! Leo lên cao, nhìn dưới các hòn đá, và nói chuyện với mọi người.'];
   await dialog('Ông Cú', [['Hoo hoo! ' + tip[0], 'Hú hú! ' + tip[1]]]);
   // (Round U) then one new thing about the valley, on a picture page (loaded only now)
+  if (!G.keep('owlGuide')) return;   // (rollout) Studio switch 'owlGuide'
+  G.tried(h, 'owlGuide');
   const was = G.paused; G.paused = true; try { await (await import('./owlguide.js')).owlLesson(p); } finally { G.paused = was; }
 }
 async function maiTalk(h) {
@@ -647,7 +650,7 @@ function currentQuest(p) {
   if (p.follow === 'yard' && sideQuest(p)) return sideQuest(p);
   return (G.lanterns && G.lanterns.quest(p)) || sideQuest(p) || QUESTS.find(q => !questDone(p, q));
 }
-G.sideStories = () => G.yard && featureOn('story_yard', true) ? [G.yard.side] : [];
+G.sideStories = () => G.yard && G.keep('story_yard') ? [G.yard.side] : [];
 G.currentQuest = currentQuest;
 function questTarget(h) {
   const p = h.profile, q = currentQuest(p); if (!q) return null;
@@ -1435,7 +1438,12 @@ async function newMoment(h) {
   fresh.forEach(r => { p.seenNew[r.id] = new Date().toISOString().slice(0, 10); }); save();
   await reward('🆕', T('New in the valley!', 'Mới trong thung lũng!'), fresh.map(r => T(r.en, r.vi)).join(' · '));
 }
+// (batch rollout, owner 13 Oct AEDT) a feature held back or switched off in Studio stays for a child who already used it:
+// G.keep(id) is on when its switch is on or anyone playing used it; G.tried(h, id) remembers a use (js/custom.js)
+G.keep = (id, def = true) => keptOn(id, G.heroes.map(h => h.profile), def);
+G.tried = (h, id) => { const p = h && (h.profile || h); if (markTried(p, id)) save(); };
 function startSession(mode, chosen) {
+  if (chosen.map(triedFromSave).some(Boolean)) save(); setPlayers(chosen); if (G.readingCheck) G.readingCheck();
   G.mode = mode; G.heroes.forEach(h => scene.remove(h.av.root)); G.huds.forEach(h => h.destroy()); G.heroes = []; G.huds = [];
   chosen.forEach((p, i) => {
     const h = new Hero(i, p, scene, world);
@@ -1763,7 +1771,8 @@ G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 
   G.hoilang = createHoiLang(G, { say, save, reward }); G.surprises = createSurprises(G, { say, reward }); G.parents = createParents(G, { say, save, reward }); }
 // (Play reading trial, owner 11 Oct AEDT) the ten reading games load only while Studio's readingTrial switch is on (now, or when it is switched on);
 // on unless Studio switches it off (owner, 12 Oct AEDT)
-{ const rd = () => { if (featureOn('readingTrial', true)) import('./games/readingmenu.js').catch(() => { }); }; rd(); import('./custom.js').then(C => C.onLive(rd)); }
+// (batch rollout: also for a child who already played a reading game, checked again when a session starts)
+{ const rd = () => { if (keptOn('readingTrial')) import('./games/readingmenu.js').catch(() => { }); }; rd(); G.readingCheck = rd; import('./custom.js').then(C => C.onLive(rd)); }
 // level land under every building, stall and landmark placed above (and anything added in future rounds)
 world.familyEdits = applyWorldEdits(G); // buildings the family moved or removed in Sparkle Studio
 bootMark('things'); widenFlatLand(world, scene); bootMark('wideland'); await breathe(); // more level land round every village and city, for new buildings (nothing moves on the map)

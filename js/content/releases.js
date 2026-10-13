@@ -47,3 +47,28 @@ export const RELEASE_GROUPS = { story: ['The lantern story', 'Truyện đèn l�
 // the auto play check stay off) the reading games and story chapters 2 and 3 are on unless Studio switches them off
 RELEASES.push({ id: 'readingTrial', en: 'Reading games (trial): ten games in the Reading corner, in English or Vietnamese by the language setting', vi: 'Trò chơi tập đọc (thử nghiệm): mười trò ở Góc đọc, tiếng Anh hoặc tiếng Việt theo ngôn ngữ đã chọn', group: 'trial', def: true });
 RELEASE_GROUPS.trial = ['Trials', 'Thử nghiệm'];
+// (batch rollout, owner 13 Oct AEDT; docs/cores/FEATURES.md "Batch calendar") the Round U features and the festival hunt,
+// one switch each, and each money game on its own. All start on; a start date still to come or Off hides one only from
+// children who never used it (js/custom.js keptOn)
+RELEASES.push(
+  { id: 'rideAny', en: 'Ride any vehicle: drive the parked cars and motorbikes', vi: 'Đi mọi loại xe: lái xe hơi và xe máy đang đậu', group: 'world', def: true },
+  { id: 'busFares', en: 'Buses, trams and taxis take a passenger for a fare; bus stops with a picture timetable', vi: 'Xe buýt, tàu điện và taxi chở khách có trả tiền vé; trạm xe buýt có bảng giờ bằng hình', group: 'world', def: true },
+  { id: 'wayfind', en: '"Where is...?" sparkles that show the way', vi: '"Ở đâu?": đường lấp lánh chỉ lối', group: 'valley', def: true },
+  { id: 'jobs', en: 'Village job boards: helping jobs for coins and a sticker', vi: 'Bảng việc làng: việc giúp đỡ được tiền và hình dán', group: 'valley', def: true },
+  { id: 'villagerTalk', en: 'Every villager talks: a fact or a saying of their place', vi: 'Mọi người trong làng đều nói chuyện: kể điều hay hoặc câu nói của quê mình', group: 'valley', def: true },
+  { id: 'dayPlan', en: 'Villagers\' day plan: they walk home at night, umbrellas in the rain', vi: 'Một ngày của dân làng: tối đi về nhà, trời mưa che ô', group: 'valley', def: true },
+  { id: 'animalHomes', en: 'Animals with homes: hens to the coop, ducks together at night, the dog follows you', vi: 'Nhà của các con vật: gà vào chuồng, vịt tụ lại ban đêm, chó đi theo con', group: 'valley', def: true },
+  { id: 'singers', en: 'Village singers on their little stages', vi: 'Ca sĩ làng trên sân khấu nhỏ', group: 'valley', def: true },
+  { id: 'priceTags', en: 'Price pictures over the food stalls, and counting the change', vi: 'Bảng giá bằng hình trên các quầy ăn, và đếm tiền thối', group: 'valley', def: true },
+  { id: 'sellersRemember', en: 'Sellers remember you and your favourite food', vi: 'Người bán hàng nhớ con và món con thích', group: 'valley', def: true },
+  { id: 'houseGuide', en: 'House guide: how to earn, buy, place and upgrade', vi: 'Hướng dẫn ngôi nhà: kiếm tiền, mua, đặt đồ và nâng cấp', group: 'valley', def: true },
+  { id: 'owlGuide', en: 'Ông Cú as guide: one new thing explained each visit', vi: 'Ông Cú chỉ đường: mỗi lần ghé ông giải thích một điều mới', group: 'valley', def: true },
+  { id: 'festHunt', en: 'Festival hunt: five festival things hidden in the last week and on the day', vi: 'Truy tìm lễ hội: năm món đồ lễ hội giấu trong tuần cuối và ngày lễ', group: 'festivals', def: true },
+  { id: 'festDecoBig', en: 'Big festival decorations (5x) over the whole valley (off: as before, unless a festival sets its own)', vi: 'Trang trí lễ hội lớn (gấp 5) khắp thung lũng (tắt: như trước, trừ khi lễ hội tự chọn)', group: 'festivals', def: true },
+  ...[['heodat', 'Piggy Bank', 'Heo Đất'], ['coinnote', 'Coin or Note?', 'Xu hay Tiền Giấy?'], ['needwant', 'Need or Want?', 'Cần hay Muốn?'],
+    ['cheaper', 'Which Is Cheaper?', 'Món Nào Rẻ Hơn?'], ['lixi', 'Lucky Money Count', 'Đếm Lì Xì'], ['bahu', 'Three Jars', 'Ba Hũ'],
+    ['shoplist', 'Shopping List', 'Danh Sách Đi Chợ'], ['waitgrow', 'Wait and Grow', 'Chờ Cây Lớn'], ['shopkeep', 'Little Shopkeeper', 'Bé Bán Hàng'],
+    ['barter', 'Swap and Trade', 'Đổi Hàng']].map(([g, en, vi]) => ({ id: 'money_' + g, en: 'Money game: ' + en, vi: 'Trò chơi tiền: ' + vi, group: 'money', def: true, game: g }))
+);
+RELEASE_GROUPS.valley = ['The living valley', 'Thung lũng sống động'];
+RELEASE_GROUPS.money = ['Money games', 'Trò chơi tiền'];

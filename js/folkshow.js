@@ -190,17 +190,22 @@ export function createFolkShow(G, { looks = [] } = {}) {
     const [x, z] = at, y = heightAt(x, z), face = Math.atan2(S.x - x, S.z - z) + Math.PI;
     const stage = new THREE.Mesh(merge([P(new THREE.CylinderGeometry(1.5, 1.6, .3, 20), '#7a3a8a', [0, .15, 0]), P(new THREE.CylinderGeometry(1.42, 1.42, .04, 20), '#ffd23f', [0, .31, 0]),
       P(new THREE.CylinderGeometry(.03, .03, 1.3, 6), '#444', [.5, .95, .5]), P(new THREE.SphereGeometry(.08, 8, 6), '#222', [.5, 1.64, .5]), P(new THREE.CylinderGeometry(.22, .25, .05, 10), '#444', [.5, .34, .5])]), toonVC());
-    stage.position.set(x, y, z); scene.add(stage); world.colliders.push({ x, z, r: 1.6 });
+    stage.position.set(x, y, z); scene.add(stage); const col = { x, z, r: 1.6 }; world.colliders.push(col);
     const look = { style: gender === 'f' ? 'aodai' : 'shirt', color, hat: 'none', back: 'none', hair, hairStyle: hs, skin: '#f2c19e', glider: 0 };
     const A = nameAvatar(buildAvatar(look, null), name); A.root.position.set(x, y + .33, z); A.root.rotation.y = face; scene.add(A.root);
     registerName(name, '🎤');
     const tag = textTag(scene); tag.position.set(x, y + 2.75, z); const draw = () => tag.set('🎤 ' + T('Singer ', 'Ca sĩ ') + nm(name)); draw(); onLang(draw);
     const bub = lyricBubble(scene); bub.position.set(x, y + 3.5, z);
-    const Sg = { name, song, A, x, z, y, bub, singing: false, face };
+    const Sg = { name, song, A, x, z, y, bub, singing: false, face, parts: [stage, A.root, tag], col };
     singers.push(Sg);
-    G.interactables.push({ id: 'sing' + k, x: x + Math.sin(face) * 2.2, z: z + Math.cos(face) * 2.2, r: 2.8, icon: '🎤', bubble: '🎤', label: () => T('Ask ', 'Nhờ ') + T('singer ', 'ca sĩ ') + nm(name) + T(' to sing', ' hát'), act: () => sing(Sg) });
+    G.interactables.push({ id: 'sing' + k, x: x + Math.sin(face) * 2.2, z: z + Math.cos(face) * 2.2, r: 2.8, icon: '🎤', bubble: '🎤', label: () => T('Ask ', 'Nhờ ') + T('singer ', 'ca sĩ ') + nm(name) + T(' to sing', ' hát'), visible: () => singOn(),
+      act: h => { if (G.tried) G.tried(h, 'singers'); sing(Sg); } });
   });
   G.singers = singers;
+  // (batch rollout) Studio switch 'singers': off or not started yet, the stages wait (hidden) for children who never asked
+  // a singer to sing
+  function singOn() { return !G.keep || G.keep('singers'); }
+  world.updaters.push(() => { const on = singOn(); if (singers.length && singers[0].parts[0].visible !== on) singers.forEach(Sg => { Sg.parts.forEach(o => { o.visible = on; }); Sg.col.r = on ? 1.6 : 0; }); });   // (no wall where nothing shows)
   async function sing(Sg) {
     if (Sg.singing) return; Sg.singing = true;
     const s = Sg.song, beat = 60 / s.bpm;

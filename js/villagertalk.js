@@ -16,6 +16,9 @@ const regionOf = (x, z) => { if (MAP_WORLD.keepLeft.some(([x0, x1, z0, z1]) => x
 export function createVillagerTalk(G) {
   const me = new Set(G.heroes.map(h => h.av && h.av.root)), added = [], seen = new Set();
   let k = 0; const jobN = {}, list = [];
+  // (batch rollout) Studio switch 'villagerTalk': off or not started yet, the taps and job pictures stay hidden from
+  // children who never said hello (the villagers are still there; the sellers and hosts keep their own words)
+  const on = () => !G.keep || G.keep('villagerTalk');
   // (people who arrive later, a festival crowd, are found by the next look round: every few seconds)
   // (Round V, owner 13 Oct: "Chào hỏi" followed the child and blocked every other tap) the children's own characters, their
   // other children and friends online are never villagers, also after a character is rebuilt with new clothes; and a
@@ -33,10 +36,11 @@ export function createVillagerTalk(G) {
     const jobs = VILLAGER_JOBS[reg] || VILLAGER_JOBS.vn, job = jobs[(jobN[reg] = (jobN[reg] || 0) + 1) % jobs.length], tag = sprite(job[0], .55);
     tag.position.set(0, 2.45, 0); o.add(tag);
     const it = { id: 'villager_' + added.length, get x() { return o.position.x; }, get z() { return o.position.z; }, r: 2.4, icon: '💬', bubble: '💬', walks: true,
-      label: () => T('Say hello', 'Chào hỏi'),
-      act: async () => { SFX.tap(); const line = lines[n]; n = (n + 1) % lines.length; await dialog(T(job[1], job[2]), [line]); } };
+      label: () => T('Say hello', 'Chào hỏi'), visible: () => on(),
+      act: async h => { SFX.tap(); if (G.tried) G.tried(h, 'villagerTalk'); const line = lines[n]; n = (n + 1) % lines.length; await dialog(T(job[1], job[2]), [line]); } };
     G.interactables.push(it); added.push(it); list.push({ o, it, reg, job, tag, home: { x: p.x, z: p.z } });
   }
+  const v = on(); for (const e of list) e.tag.visible = v;
   G.villagerTalk.added = added.length; G.villagerTalk.people = seen.size; };
   G.villagerTalk = { added: 0, people: 0, list, scan };
   scan(); setInterval(scan, 4000);

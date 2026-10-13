@@ -45,7 +45,9 @@ export function buildHat(id) {
 
 export function createKidPlay(G, { say, save }) {
   const { scene, world } = G;
-  const grow = () => featureOn('companionGrow', true), goal = () => featureOn('saveGoal', true), gifts = () => featureOn('dailySurprise', true);
+  // (batch rollout) the companion growing and the coin goal are kept for a child who already fed it or bought a hat
+  const keep = id => G.keep ? G.keep(id) : featureOn(id, true);
+  const grow = () => keep('companionGrow'), goal = () => keep('saveGoal'), gifts = () => featureOn('dailySurprise', true);
   const pet = p => { const L = p.lanterns = p.lanterns || {}; const s = L.pet = L.pet || {}; s.feeds = s.feeds || 0; s.hats = s.hats || []; return s; };
   const hasPet = h => !!(h.profile.lanterns && h.profile.lanterns.companion);
   const level = h => grow() && hasPet(h) ? 1 + Math.min(4, Math.floor(pet(h.profile).feeds / 2)) : 1;
@@ -56,7 +58,7 @@ export function createKidPlay(G, { say, save }) {
   function feed(h) {
     const s = pet(h.profile), C = comps();
     if (s.fed === day()) { if (level(h) >= 3) { C && C.trick(h, 'loop'); say(...KID_LINES.trick); } else say(...KID_LINES.full); return; }
-    const before = level(h); s.fed = day(); s.feeds++; save();
+    const before = level(h); s.fed = day(); s.feeds++; G.tried && G.tried(h, 'companionGrow'); save();
     C && C.trick(h, 'spin');
     if (level(h) > before) say(...KID_LINES.grew); else say(...KID_LINES.fed);
   }
@@ -65,7 +67,7 @@ export function createKidPlay(G, { say, save }) {
   function buy(h) {
     const x = nextHat(h); if (!x) return;
     if (farm.coins < x.price) { say(...KID_LINES.saving); return; }
-    G.addCoins && G.addCoins(-x.price); const s = pet(h.profile); s.hats.push(x.id); s.hat = x.id; save();
+    G.addCoins && G.addCoins(-x.price); const s = pet(h.profile); s.hats.push(x.id); s.hat = x.id; G.tried && G.tried(h, 'saveGoal'); save();
     comps() && comps().trick(h, 'spin'); say(...KID_LINES.bought);
   }
   // the two buttons beside the coins, in each child's own bar

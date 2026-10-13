@@ -12,7 +12,7 @@
 import { THREE, glow } from './gfx.js';
 import { T } from './i18n.js';
 import { VILLAGE, heightAt, roadDist, WATER } from './world.js';
-import { featureOn } from './custom.js';
+import { featureOn, keptOn, markTried } from './custom.js';
 import { RELEASES } from './content/releases.js';
 import { events } from './core/events.js';
 import { CHAPTERS, STORY_TALES, COMPANIONS, STORY_LINES } from './content/chapters.js';
@@ -24,7 +24,8 @@ import { pad, frames, slot, QUIT } from './handpad.js';
 const V = VILLAGE;
 // (each chapter's switch starts as its default in js/content/releases.js: chapter 2 is off until an admin switches it on or
 // schedules it in Studio, owner 10 Oct)
-const released = ch => featureOn('story_' + ch.id, (RELEASES.find(r => r.id === 'story_' + ch.id) || { def: true }).def);
+// (batch rollout) a chapter held back or switched off stays open for a child who already played some of it
+const released = ch => keptOn('story_' + ch.id, undefined, (RELEASES.find(r => r.id === 'story_' + ch.id) || { def: true }).def);
 const st = p => { const s = p.lanterns = p.lanterns && typeof p.lanterns === 'object' ? p.lanterns : {}; s.done = s.done || {}; s.chapters = s.chapters || {}; return s; };
 const unnamed = s => String(s).replace(/,?\s*\{name\}/g, '');
 const big = p => p.age === 'big';
@@ -254,7 +255,7 @@ export function createLanterns(G, { dialog, say, reward, save, openTheatre }) {
     const tl = STORY_TALES['lantern_' + ch.id];
     if (pl.film) try { await pl.film(); } catch (e) { console.warn('film', e); } // (its festival film is loaded only now)
     if (tl) await openTheatre(storyTale(tl, p), { name: p.name });
-    L.carrying = null; L.chapters[ch.id] = true; L.done[s.id] = true;
+    L.carrying = null; L.chapters[ch.id] = true; L.done[s.id] = true; markTried(p, 'story_' + ch.id);
     if (ch.keepsake) { p.keepsakes = Array.isArray(p.keepsakes) ? p.keepsakes : []; if (!p.keepsakes.includes(ch.keepsake)) p.keepsakes.push(ch.keepsake); }
     save(); paint();
     if (pl.after) pl.after(h);
