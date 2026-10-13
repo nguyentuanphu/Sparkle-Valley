@@ -60,7 +60,7 @@ Then the plan (files, checks, later), the owner's "go", build, checks and the fu
   owner chose "you fix both", on a separate branch `fix/studio-dark-analytics`, not mixed with the rollout.
 
 ## Progress notes
-- **14 Oct, 2:56 am AEDT, branch `core/rollout`, commit 4e99279e (code), checks:**
+- **14 Oct, 2:56 am AEDT, branch `core/rollout`, commit 4e99279e (code), checks:** (after merging main r72, commit a1deb204: unit rules types arch emoji noemoji preload names bilingual boot rollout voicecover kidplay boxes surprises phone, 16 of 16 pass)
   - `node suite.mjs --changed` picked all 137 checks (js/main.js and js/custom.js load everywhere). It stopped at its
     2-hour limit during the last reruns: 128 passed (7 of them skipped as online: multiplayer, netgames, meet, knock, together,
     cloud, mapver: no local PeerJS or MQTT server).
