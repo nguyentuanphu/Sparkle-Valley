@@ -127,7 +127,9 @@ function watch() {
   // every 5 s: a button off the screen, a line with no recording, where the child walked
   let misses = new Set(voiceMisses().map(m => m[0] + '|' + m[1])), lastPos = '';
   const every = setInterval(() => {
-    for (const b of document.querySelectorAll('.modal button, .hud button, .gl button, .dialog button')) {
+    // a phone's on-screen keyboard shrinks the window, so buttons under it are not lost: skip while a child is typing
+    const typing = document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+    for (const b of typing ? [] : document.querySelectorAll('.modal button, .hud button, .gl button, .dialog button')) {
       if (!b.offsetParent) continue; const r = b.getBoundingClientRect(); if (!r.width) continue;
       if (r.right < 2 || r.bottom < 2 || r.left > innerWidth - 2 || r.top > innerHeight - 2) autoReport('offscreen', labelOf(b));
     }
