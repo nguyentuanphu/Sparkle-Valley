@@ -1,5 +1,8 @@
 # Sparkle Valley · Thung Lũng Lấp Lánh — Handoff
 
+**Owner-approved UI and future-feature rules (14 Oct 2026 AEDT):** read the section “Owner-approved interface and feature rules” in [the design handbook](docs/SO-TAY-THIET-KE.md) (UX-001–UX-010) before planning or changing a feature. Work order and implementation sequence: [owner UI audit](docs/cores/tasks/owner-ui-audit-20261014.md). Approval to write these rules does not deploy runtime changes.
+
+
 A bilingual (English / Tiếng Việt) 3D open-world browser game for the owner's children, aged 2–8.
 **Sổ tay artifact (round R, owner):** the picture handbook of the whole game, from A to Z (story, principles, hard rules, every place, house, person, animal, vehicle, food, game, story and festival, drawn with the valley's own pictures): https://claude.ai/artifact/CZX3LQ8mB8X6PbmkQ8VZxB. Update it at the end of every round with what was added (the generator reads the game's own data: keep its sections in step).
 
