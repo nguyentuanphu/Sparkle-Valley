@@ -26,3 +26,4 @@ marketing/source/make5-*.log
 tests/ads-*.mjs
 marketing/source/filmtest*.mjs
 marketing/source/runvalley.log
+.claude/settings.local.json

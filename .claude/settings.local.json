@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(echo \"tests/ap-shots2.mjs\")",
-      "Bash(git add *)",
-      "Bash(git commit -qm 'iPhone notes \\(owner, 13 Oct pm\\): a Home Screen app fits the height it is given \\(no cut dock, no blur band\\) with Grown-ups Fit the screen; one View button with a tray for zoom, camera and Where is; tidy tester card with Stop held down; Studio says Home Screen app or Safari *)"
-    ]
-  }
-}
