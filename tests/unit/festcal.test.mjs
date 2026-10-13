@@ -29,6 +29,8 @@ test('live releases keep only well-formed values', async () => {
   const v = cleanLive({ releases: { traffic: { on: false, start: '2026-10-10', days: '5', newDays: 3 }, 'bad id!': { on: true }, x: { on: 'yes', start: 'soon' } }, festivals: { halloween: { on: true, date: '10-30', buildup: 14 }, tet: { date: 'tomorrow' } } });
   assert.deepEqual(v.releases, { traffic: { on: false, start: '2026-10-10', days: 5, newDays: 3 } });
   assert.deepEqual(v.festivals, { halloween: { on: true, date: '10-30', buildup: 14 } });
+  // (owner, 13 Oct) each festival's decorations: as before, 2x, 3x or 7x kept; 5x is the default, anything else dropped
+  assert.deepEqual(cleanLive({ festivals: { tet: { deco: 7 }, easter: { deco: '2' }, diwali: { deco: 5 }, holi: { deco: 9 }, anzac: { deco: 'lots' } } }).festivals, { tet: { deco: 7 }, easter: { deco: 2 } });
   const store = { get: async () => ({ releases: { a: { on: true } }, festivals: {} }) };
   const r = await makeLive({ liveStore: async () => store })(new Request('https://x/api/live'));
   assert.equal(r.status, 200); assert.deepEqual((await r.json()).releases, { a: { on: true } });

@@ -9,6 +9,7 @@ import { LANDMARKS } from './regions.js';
 import { CULTURE_CROPS } from './heritage.js';
 import { HAT_NAME, HAT_ICON } from './data.js';
 import { el, esc } from './util.js';
+import { FESTCAL } from './content/festcal.js';
 
 const OLD_CC = { opera: 'au', harbour: 'au', uluru: 'au', banana: 'au', bondi: 'au', lighthouse: 'vn', turtle: 'vn', onepillar: 'vn', chuacau: 'vn', benthanh: 'vn' };
 export const COUNTRIES = [
@@ -71,5 +72,10 @@ export function createPassport(G) {
       page.querySelectorAll('.pst').forEach(b => b.onclick = () => { const s = st[+b.dataset.k]; SFX.tap(); const line = s.done ? T('Stamped! Well done.', 'Đã đóng dấu! Giỏi lắm.') : s.hint(); say(line, line); G.toast(hero, line); });
       box.appendChild(page);
     });
+    // (owner, 13 Oct) a badge for each festival hunt finished (js/festhunt.js): all five things found
+    const fb = p.festBadges || {}, won = FESTCAL.filter(F => fb[F.id]).length, fp = el('div', 'ppage pfest' + (won === FESTCAL.length ? ' full' : ''), `<div class="phead" style="--c:#e8433a"><span class="pflag">🏮</span><b>${T('Festival badges', 'Huy hiệu lễ hội')}</b><small>${won}/${FESTCAL.length}</small></div>
+      <div class="pstamps">${FESTCAL.map(F => `<button class="pst ${fb[F.id] ? 'on' : ''}" data-f="${F.id}" style="--r:0deg;--c:#e8433a"><span>${fb[F.id] ? F.icon : '❔'}</span><small>${esc(T(F.en, F.vi))}</small></button>`).join('')}</div>`);
+    fp.querySelectorAll('.pst').forEach(b => b.onclick = () => { SFX.tap(); const ok = !!fb[b.dataset.f], line = ok ? ['Stamped! Well done.', 'Đã đóng dấu! Giỏi lắm.'] : ['Find the five hidden things at a festival to win its badge.', 'Tìm đủ năm món đồ giấu ở một lễ hội để nhận huy hiệu của lễ hội đó.']; say(line[0], line[1]); G.toast(hero, T(line[0], line[1])); });
+    box.appendChild(fp);
   };
 }

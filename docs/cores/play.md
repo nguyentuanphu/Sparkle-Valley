@@ -250,6 +250,38 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
 
 - Deploying (13 Oct AEDT): `core/play` was not in r66 to r68. Owner: "This chat does it now" (3:20 am), then "stop the full suite, give me the prompt, Release core will do it" (about 3:40 am): handover in `docs/cores/tasks/release-r69.md`; this chat's version bump undone.
 
+- (13 Oct, about 4:30 am AEDT) Owner's go, on branch `core/play-studio` (after r69): (1) devices you can recognise in
+  Studio: every device row shows the children's first names, type, system, browser, town, last played and minutes, an
+  easy name, a search, robots greyed with "hide"; (2) every Studio page and the game's Grown-ups settings readable and
+  collapsible (each part and each category opens and closes); (3) "Trust this browser" for admins and the owner (stays
+  signed in a year, renewed on use; a list with Forget; Sign everyone out still works). Robots in the counts: a prompt
+  for Analytics & Infra was given to the owner, not built here.
+
+- (13 Oct AEDT, after testing auto play: "such a mess") Owner's go for a new auto play, on `core/play-studio`:
+  - Stopping auto play never restarts the game; the tester keeps playing on. Progress goes back only when they tap
+    "Stop being a tester", and rewards (badges, stickers, album, clothes) are kept.
+  - Studio chooses what goes back (owner: "can be selected on Studio, but enable progress back and keep reward"):
+    everything since they became a tester (the default), or only what auto play did.
+  - It moves like a child: walks round water and walls, flies long trips like the Go button, never slides through
+    things; Quick runs and flies. When it gets stuck it tries another way, and being stuck is reported as a bug with a
+    picture and the spot.
+  - It plays like a child, with a finger on the screen: games played to the end, mostly right and some wrong (owner's
+    choice), stories read with "read by itself", and a "Follow the quests" mode doing the quest chain.
+  - Its button sits under the ladybird; each problem is sent to Studio at once with a picture and its last steps.
+
+- (13 Oct AEDT, afternoon, owner's iPhone on r70, iOS 27, the Home Screen app) Owner's go for four fixes on
+  `core/play-studio`, with "One View button" for the right side:
+  - The top still blurred and the dock cut at the bottom in the Home Screen app: there the game takes the height iOS
+    gives it and the page cannot scroll (`js/main.js` vh, `css/style.css` `html.fitview`); Grown-ups → Screen and world
+    → "Fit the screen" (Automatic, Whole screen, Fit inside) with the screen's own numbers shown, to try on the iPhone.
+  - Zoom in, zoom out, camera view and Where is behind one View button with a tray (their keys still work); the
+    ladybird and auto play stay under it.
+  - The tester section in Settings: one card (who this device is, reports as chips, three tiles, "Stop being a
+    tester" held down).
+  - HN ticked but nothing showed: the live rules were right; on an iPhone the Home Screen app and Safari are two
+    devices to Studio. Studio's device rows now say "Home Screen app" or "in Safari", and Grown-ups shows this device's
+    easy name and id to match.
+
 ## Progress notes (12 Oct AEDT: Studio fixes and the auto play check)
 - Commits on `core/play`: f4dd7c6 (photos publish in steps), 0e7ddb1 (exe updates itself), c5846e3 (exe keeps its game
   folder new), e3171ac (auto play check), plus the two recorded words of the new Releases group ("For testing", Azure).
@@ -301,4 +333,39 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   either way: home draw calls 1095 to 1145 against 1100 (main 1095, reading off 1096) and triangles 780k to 830k
   against 800k in repeated runs; the 3D scene with the reading games on and off differs by one small mesh (1120 vs 1123
   draw calls), so the switch adds nothing to draw. Release: PERF-003 sits at its edge on main.
+
+## Progress notes (13 Oct AEDT: `core/play-studio`, after r69)
+- Built: devices you can recognise in Studio (children's first names, type, town, last played, easy names from
+  `js/content/devname.js` shared with the game, search, robots greyed and hidden); "Trust this browser" (a year,
+  renewed once a day while used, Security list with Forget; Sign everyone out still ends them); every Studio part and
+  card opens and closes (remembered); the game's Grown-ups settings, Bag, Quests and Album categories open and close;
+  "This device" line in Grown-ups → Analytics; Studio times in Sydney time; the Releases page redesigned (groups with
+  counts and All on/off, a card per feature with a switch and its status in words, Schedule on demand, search and
+  filters, Save at the bottom with the changes counted); the tester box no longer appears twice; sneak peeks picked by
+  group with All/None, a search and a count. Owner's question answered: missing voice lines are reported by devices
+  and recorded by the "Daily voices" workflow at 3:07 am AEDT (a draft pull request Release merges).
+- Checks (13 Oct, about 8 am AEDT): `studio` pass (trusted browser, Releases page saves, testers, 44 px, drawn
+  emoji), `grownupsui` `a11y` `phone` `shop` `boot` `tester` `preload` `types` `unit` `arch` `rules` `emoji` pass.
+  Screenshots: the Releases page on phone, tablet and computer (Studio on a copy of the game). Full suite: Release.
+
+## Progress notes (13 Oct AEDT: auto play rebuilt, on `core/play-studio`)
+- Built (owner's go, decisions above): `js/autoplay.js` rewritten (path finding round water and walls on `G.goodSpot`,
+  Quick runs via `hero.autoRun` in `js/player.js`, long trips flown; stuck: a jump, another way, then flown beside, and
+  reported with the spot and a picture; a finger on the screen taps real buttons; games played to the end through
+  `playWatch` in `js/games/frame.js`, right 3 times in 4; stories with "read by itself"; pop-ups tapped away; "Follow
+  the quests"; the button under the ladybird; problems sent at once through `autoReport` with the last 15 steps; no
+  restart). `js/keepcopy.js`: progress copied when a device becomes a tester and put back in place when it stops,
+  rewards kept (`KEEP_FIELDS`); Studio's tester card chooses `revert` ('progress' or 'autoplay'), kept by
+  `netlify/lib/live.mjs`.
+- Checks (13 Oct, about 2 pm AEDT): `autoplay` (rewritten: button, walk round water, 7 steps played with a finger, no
+  restart, Stop, progress back with rewards kept) `unit` (75) `studio` `tester` `boot` `phone` `a11y` `types` `arch`
+  `rules` `emoji` `preload` pass. `testerrewards` fails, and fails the same on live main r69: the family's "From your
+  family" message (Studio family update on main) sits over the tester's thank-you. Not this branch; for Release.
+  Screenshots: the button, the window, a game being played and the report on phone, tablet and computer.
+- Known: auto play cannot yet win long strategy games (Ô Ăn Quan with Tèo), so "Follow the quests" stops there and
+  says it needs help. Full suite: Release.
+- iPhone notes (13 Oct, about 6 pm AEDT): `camera` `phone` `autoplay` `tester` (Stop held down) `grownupsui` `a11y`
+  `questbar` `iphone` `studio` `types` `unit` `arch` `rules` `emoji` `preload` pass; `contract` re-recorded (one change:
+  the View button `z-tray`, asked for by the owner). Screenshots: the View tray and the tester card on phone, tablet and
+  computer. Not possible here: a real iPhone 27 Home Screen app; Grown-ups → Fit the screen lets the owner try it.
 

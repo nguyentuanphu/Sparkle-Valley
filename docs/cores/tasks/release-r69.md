@@ -45,6 +45,11 @@ r69 = live main (r68) + `core/play`. Every other branch carries only board or no
 - Screenshots looked at on phone, tablet and computer for the Simple screen, story bar, days, Chuyền quà, bunny, recipe
   book, bag and dock.
 
+## Fixed after the handover (13 Oct, about 6 am AEDT)
+- `a11y` was red with the reading games on by default: six reading games spoke their first line without announcing it
+  (`sayAsync` does not tell the caption listeners), so the under-5 check heard nothing. `js/games/reading.js` now
+  announces every instruction like the other games; `a11y` passes (87 games), `reading` re-run.
+
 ## Known before you start
 - `startup` is red on main r66 too (first title 1.5 to 1.7 s on the test machine against about 1.0 s): not this branch.
 - `perf` (PERF-003) sits at its edge on main as well: home draw calls 1095 to 1145 against 1100, triangles 780k to 830k

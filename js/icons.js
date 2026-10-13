@@ -24,6 +24,8 @@ export const ICONS = {
   jump: svg(`<path d="M24 6l12 13h-7v10h-10V19h-7z" fill="#c8b6ff" ${W}/><path d="M14 36c3-3 6 3 10 0s7 3 10 0M14 42c3-3 6 3 10 0s7 3 10 0" fill="none" stroke="#ff7eb8" stroke-width="3" stroke-linecap="round"/>`),
   zoomIn: svg(`<circle cx="21" cy="21" r="13" fill="#fff6d8" ${W}/><path d="M31 31l10 10" stroke="${O}" stroke-width="5" stroke-linecap="round"/><path d="M21 15v12M15 21h12" ${W}/>`),
   zoomOut: svg(`<circle cx="21" cy="21" r="13" fill="#fff6d8" ${W}/><path d="M31 31l10 10" stroke="${O}" stroke-width="5" stroke-linecap="round"/><path d="M15 21h12" ${W}/>`),
+  // (owner, 13 Oct AEDT) the View button: zoom, camera view and Where is folded behind one eye
+  view: svg(`<path d="M5 24c5-9 12-13 19-13s14 4 19 13c-5 9-12 13-19 13S10 33 5 24z" fill="#fff6d8" ${W}/><circle cx="24" cy="24" r="7" fill="#5fd3ff" ${W}/><circle cx="24" cy="24" r="2.6" fill="${O}"/>`),
   gear: svg(`<path d="M24 8l3 4 5-1 1 5 5 1-1 5 4 3-4 3 1 5-5 1-1 5-5-1-3 4-3-4-5 1-1-5-5-1 1-5-4-3 4-3-1-5 5-1 1-5 5 1z" fill="#ffd23f" ${W}/><circle cx="24" cy="24" r="5" fill="#fff" ${W}/>`),
   info: svg(`<circle cx="24" cy="24" r="19" fill="#5fd3ff" ${W}/><circle cx="24" cy="15" r="3" fill="${O}"/><path d="M24 22v13" stroke="${O}" stroke-width="5" stroke-linecap="round"/>`)
 };

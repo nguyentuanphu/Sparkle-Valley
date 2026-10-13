@@ -23,8 +23,11 @@ import { setPeeks, liveRule } from './custom.js';
 import { setProblemHook } from './players.js';
 import { SFX } from './audio.js';
 import * as C from './content/tester.js';
+import { takeCopy, putCopyBack, hasCopy, dropCopy } from './keepcopy.js';
+import { revertOf } from './content/autoplay.js';
+import { easyName } from './content/devname.js';
 
-const KEY = { acc: 'sv2_tester', out: 'sv2_tester_out', st: 'sv2_tester_status', seen: 'sv2_tester_seen', ap: 'sv2_tester_ap' };
+const KEY = { acc: 'sv2_tester', out: 'sv2_tester_out', st: 'sv2_tester_status', seen: 'sv2_tester_seen', ap: 'sv2_tester_ap', copy: 'sv2_tester_copy' };
 const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
 const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
 const URL_ = () => window.__svTesterURL || 'api/tester';
@@ -80,12 +83,15 @@ async function flush() {
 const body = (kind, extra) => ({ id: me(), b: BUILD, kind, where: whereNow(), errors: errors.slice(-C.LIMITS.errors), log: log.map(([t, k, s]) => [Math.round((t - Date.now()) / 100) / 10, k, s]), dev: devNow(), players: playersNow(), at: Date.now(), ...extra });
 
 // the game reports by itself (the same thing at the same place once in 10 minutes, counted meanwhile)
-export async function autoReport(kind, detail, where) {
+// (more: extra fields; more.log, the auto play check's last steps, goes before the tester's own log)
+export async function autoReport(kind, detail, where, more = {}) {
   if (!live) return; const w = where || whereNow(), k = C.keyOf(kind, detail, w.game || w.window || w.area);
   counts.set(k, (counts.get(k) || 0) + 1); const last = sent.get(k);
   if (last && Date.now() - last < C.LIMITS.sameAgain) return; sent.set(k, Date.now());
   const n = counts.get(k); counts.set(k, 0); note('report', kind + ' ' + detail);
-  enqueue(body('auto', { auto: kind, detail: String(detail || '').slice(0, 200), where: w, shot: await shot(), count: n }));
+  const b = body('auto', { auto: kind, detail: String(detail || '').slice(0, 200), where: w, shot: await shot(), count: n });
+  if (Array.isArray(more.log)) b.log = more.log.concat(b.log).slice(-300); // (the website keeps the last 300)
+  enqueue(b);
 }
 
 // ---------- watching for problems ----------
@@ -224,7 +230,7 @@ async function retest() {
 async function nightly() {
   const ap = get(KEY.ap, {}); const rep = get('sv2_autoplay_report', null);
   // what the last run found (the check restarts the game when it ends): sent once
-  if (rep && rep.build && rep.at && ap.sent !== rep.at) { ap.sent = rep.at; put(KEY.ap, ap);
+  if (rep && rep.build && rep.at && !rep.sent && ap.sent !== rep.at) { // (since 13 Oct auto play sends each problem as it finds it: rep.sent) ap.sent = rep.at; put(KEY.ap, ap);
     for (const d of rep.done || []) if (d.problems && d.problems.length) autoReport('autoplay', `${d.name || d.key}: ${d.problems.join('; ')}`.slice(0, 200), { area: 'autoplay', place: '', game: d.g === 'games' ? d.key : '', window: d.g || '', x: 0, z: 0 }); }
   if (ap.ran === BUILD) return;
   const charging = await (navigator.getBattery ? navigator.getBattery().then(b => b.charging).catch(() => false) : Promise.resolve(false)), h = new Date().getHours();
@@ -244,21 +250,29 @@ function agreement() {
     <p>${L(A.intro)}</p><ul class="tg-list">${A.points.map(p => `<li>${esc(L(p))}</li>`).join('')}</ul>
     <div class="actions"><button class="btn primary tg-yes">${L(A.accept)}</button><button class="btn tg-no">${L(A.later)}</button></div>`);
   const card = m.querySelector('.card');
-  card.querySelector('.tg-yes').onclick = () => { put(KEY.acc, { at: Date.now(), b: BUILD }); m.close(); tell({ accepted: true, dev: { label: '' } }); start(); say(...C.TESTER_LINES.welcome); };
+  card.querySelector('.tg-yes').onclick = () => { put(KEY.acc, { at: Date.now(), b: BUILD }); takeCopy(KEY.copy); m.close(); tell({ accepted: true, dev: { label: '' } }); start(); say(...C.TESTER_LINES.welcome); };
   card.querySelector('.tg-no').onclick = () => { m.close(); };
 }
 // the Settings card (js/ui.js openQuick) shows a Tester section on a tester device
 export function settingsRows(box, redraw) {
   if (!box) return; const on = accepted(), q = queue().length, st = status || {};
-  box.innerHTML = `<div class="qs-sec qs-tester"><h4>${pic('🐞')} ${T('Tester', 'Người thử')}</h4>${on ? `
-    <p class="note">${T(`Reports sent: ${st.reports || 0} · helped fix: ${st.helped || 0}${q ? ` · waiting to send: ${q}` : ''}`, `Đã gửi: ${st.reports || 0} báo cáo · giúp sửa: ${st.helped || 0}${q ? ` · đang chờ gửi: ${q}` : ''}`)}</p>
-    <div class="qs-trow"><button class="btn" data-t="mine">${T('My reports', 'Báo cáo của tôi')}</button><button class="btn" data-t="ap">${T('Run the auto play check now', 'Chạy tự chơi kiểm tra ngay')}</button>${G.testerRewards ? `<button class="btn" data-t="corner">${T('Tester\'s Corner', 'Góc người thử')}</button>` : ''}</div>
-    <button class="btn" data-t="stop">${T('Stop being a tester', 'Thôi làm người thử')}</button>` : `<button class="btn primary" data-t="join">${T('Become a tester', 'Làm người thử')}</button>`}</div>`;
+  // (owner, 13 Oct AEDT: "tidy up the tester section ... tidier and smarter design") one card: who this device is, the
+  // reports as three chips, three big tiles, and "Stop being a tester" held down on its own at the bottom
+  const tile = (k, ic, en, vi, sub) => `<button class="tst-tile" data-t="${k}"><span class="tst-ic">${pic(ic)}</span><b>${T(en, vi)}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
+  box.innerHTML = `<div class="qs-sec qs-tester">${on ? `
+    <div class="tst-head"><span class="tst-lb">${pic('🐞')}</span><div><b>${T('You are a tester', 'Con là người thử')}</b><small>${esc(BUILD)}${me() ? ' · ' + esc(easyName(me(), settings.lang)) : ''}</small></div></div>
+    <div class="tst-stats"><span class="tst-chip"><b>${st.reports || 0}</b>${T('sent', 'đã gửi')}</span><span class="tst-chip ok"><b>${st.helped || 0}</b>${T('helped fix', 'giúp sửa')}</span>${q ? `<span class="tst-chip wait"><b>${q}</b>${T('waiting to send', 'chờ gửi')}</span>` : ''}</div>
+    <div class="tst-tiles">${tile('mine', '📋', 'My reports', 'Báo cáo của tôi')}${tile('ap', '🤖', 'Auto play', 'Tự chơi', T('Plays the game by itself to find problems', 'Tự chơi game để tìm lỗi'))}${G.testerRewards ? tile('corner', '🏆', "Tester's Corner", 'Góc người thử', T('Badges and stickers', 'Huy hiệu và nhãn dán')) : ''}</div>
+    <button class="btn tst-stop hold" data-hold="stop"><span class="ring"></span>${T('Hold to stop being a tester', 'Giữ để thôi làm người thử')}</button>
+    <p class="note">${T('Progress made while testing goes back when you stop; badges and stickers stay.', 'Khi thôi, tiến bộ lúc thử được trả lại; huy hiệu và nhãn dán vẫn giữ.')}</p>` : `
+    <div class="tst-head"><span class="tst-lb">${pic('🐞')}</span><div><b>${T('Tester', 'Người thử')}</b><small>${T('Help find problems: report what looks wrong, and earn badges.', 'Giúp tìm lỗi: báo những gì không ổn, và nhận huy hiệu.')}</small></div></div>
+    <button class="btn primary" data-t="join">${T('Become a tester', 'Làm người thử')}</button>`}</div>`;
   const act = { join: () => { const a = get(KEY.acc, {}); delete a.stopped; put(KEY.acc, a); agreement(); },
-    stop: () => { put(KEY.acc, { ...get(KEY.acc, {}), stopped: Date.now() }); stop(); redraw && redraw(); },
+    stop: () => { put(KEY.acc, { ...get(KEY.acc, {}), stopped: Date.now() }); if (G.autoplay && G.autoplay.stop) G.autoplay.stop(); stop(); putBack(); redraw && redraw(); },
     mine: () => showMine(), corner: () => G.testerRewards && G.testerRewards.corner(),
-    ap: async () => { if (!G.autoplay) { const m = await import('./autoplay.js'); m.mountAutoplay(G); } G.autoplay && G.autoplay.start && G.autoplay.start(null, 'fast'); } };
+    ap: async () => { if (!G.autoplay) { const m = await import('./autoplay.js'); m.mountAutoplay(G); } if (G.autoplay && G.autoplay.open) G.autoplay.open(); } };
   box.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { SFX.tap && SFX.tap(); act[b.dataset.t](); });
+  const h = box.querySelector('[data-hold="stop"]'); if (h) holdButton(h, () => { SFX.tap && SFX.tap(); act.stop(); });
 }
 const STATUS_WORDS = { new: ['New', 'Mới'], fixing: ['Being fixed', 'Đang sửa'], fixed: ['Fixed', 'Đã sửa'], confirmed: ['Fixed and checked', 'Đã sửa và kiểm tra'], back: ['Came back', 'Bị lại'], notbug: ['Not a problem', 'Không phải lỗi'], dup: ['Same as another', 'Trùng lỗi khác'] };
 function showMine() {
@@ -272,6 +286,7 @@ function showMine() {
 // ---------- starting and stopping ----------
 function start() {
   if (live || !accepted()) return; live = true; mounted = performance.now();
+  if (!hasCopy(KEY.copy)) takeCopy(KEY.copy); // (a tester from before 13 Oct: progress from now on goes back when they stop)
   hookRender(); watch(); addUI();
   const inp = () => { lastInput = Date.now(); }; addEventListener('pointerdown', inp, true); addEventListener('keydown', inp, true); offs.push(() => { removeEventListener('pointerdown', inp, true); removeEventListener('keydown', inp, true); });
   setPeeks(C.peeksOf(liveRule('tester')));
@@ -279,6 +294,13 @@ function start() {
   const rf = setInterval(refresh, 10 * 60e3); offs.push(() => clearInterval(rf));
   setTimeout(() => { flush(); retest(); }, 20000);
   const nt = setInterval(nightly, 5 * 60e3); offs.push(() => clearInterval(nt)); setTimeout(nightly, 30000);
+}
+// (owner, 13 Oct AEDT) the progress from when this device became a tester goes back when they stop being one, in place
+// (no restart); badges, stickers and clothes stay. Studio's tester rule `revert: 'autoplay'` instead puts back only what
+// each auto play run did (js/autoplay.js), so nothing goes back here.
+function putBack() {
+  if (revertOf(liveRule('tester')) !== 'progress' || !hasCopy(KEY.copy)) { dropCopy(KEY.copy); return; }
+  if (putCopyBack(KEY.copy, G)) { const m = T('Progress is back as it was before testing. Badges and stickers stay.', 'Tiến bộ đã trở lại như trước khi thử. Huy hiệu và nhãn dán vẫn giữ.'); (G.huds || []).forEach(h => h.toast && h.toast(m)); }
 }
 function stop() { live = false; offs.splice(0).forEach(f => { try { f(); } catch (e) { } }); setPeeks([]); if (G.testerRewards) G.testerRewards.unmount(); }
 

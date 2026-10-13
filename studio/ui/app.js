@@ -10,7 +10,8 @@ const BASE = '/studio', GAME = BASE + '/game/', FILE = p => BASE + '/api/file/' 
 // (round R privacy) a family photo is "family:<name>" in the private store, shown through Studio itself; an old one is a file
 const PIC = p => /^family:[\w-]+$/.test(p || '') ? BASE + '/api/familyphoto/' + p.slice(7) : FILE(p);
 const OLDPICS = () => [...Object.values(CONTENT.faces || {}).map(f => f && f.photo), ...(CONTENT.album || []).map(x => x && x.photo)].filter(p => /^content\/(faces|album)\//.test(p || '')).length;
-const whenAEST = iso => new Date(iso).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Brisbane', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' AEST';
+// Sydney time, AEDT or AEST as it applies (CLAUDE.md, owner 10 Oct; it used to show Brisbane time)
+const whenAEST = iso => new Date(iso).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' ' + (/GMT\+11|AEDT/.test(new Date(iso).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', timeZoneName: 'short' })) ? 'AEDT' : 'AEST');
 // the game's own drawings in place of phone emoji on every Studio page (owner, round R; js/emojiswap.js)
 import(GAME + 'js/emojiswap.js').catch(() => { });
 // (owner, 10 Oct) the servers answer in English: in Vietnamese, every answer is shown in Vietnamese (studio/ui/vi.js)
@@ -22,6 +23,36 @@ const api = async (p, body) => { const r = await fetch(BASE + '/api/' + p, body 
 const toast = (m, kind = '') => { const t = $('#toast'); t.textContent = m; t.className = 'on ' + kind; clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), kind === 'bad' ? 7000 : 5000); };
 const fail = e => toast('⚠️ ' + say(e.message || e), 'bad');
 let INFO = null, CONTENT = {};
+// ---------- devices you can recognise (owner, 13 Oct AEDT: "which device belongs to whom, and to which child") ----------
+// Every list of devices says the same things in the same order: the name the family gave it (or an easy name made from
+// its id, the same every time), the children who play on it (first names, from the Analytics), what it is, the town,
+// and when it last played; the id stays in small print. Robots (test browsers in data centres) are greyed and can be hidden.
+// the easy name comes from the game's own file (js/content/devname.js), so the game and Studio always agree
+let DEVNAME = null; const easyName = id => DEVNAME ? DEVNAME.easyName(id, LANG) : String(id || '').slice(0, 6);
+const devKindName = k => ({ phone: T('Phone', 'Điện thoại'), tablet: T('Tablet', 'Máy tính bảng'), computer: T('Computer', 'Máy tính') }[k] || '');
+const devKids = d => [...new Set(((d && d.kids) || []).map(K => K.name).filter(Boolean))];
+const devTown = d => d && d.loc ? [d.loc.city, d.loc.country].filter(Boolean).join(', ') : '';
+const devAgo = iso => { if (!iso) return ''; const m = Math.max(1, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 60 ? T(`${m} min ago`, `${m} phút trước`) : m < 48 * 60 ? T(`${Math.round(m / 60)} h ago`, `${Math.round(m / 60)} giờ trước`) : T(`${Math.round(m / 1440)} days ago`, `${Math.round(m / 1440)} ngày trước`); };
+const devLast = d => d.online ? T('playing now', 'đang chơi') : d.seenAt ? devAgo(d.seenAt) : d.last ? devAgo(d.last + 'T12:00:00') : '';
+// a test browser in a data centre: no graphics card (0 to 3 frames a second) or a robot's browser name, or a town that is a big data centre
+const DATA_TOWNS = /^(Council Bluffs|Boardman|Ashburn|The Dalles|Mountain View|San Jose|Santa Clara|Columbus|Des Moines|Quincy|Prineville|Moncks Corner|Dublin|Frankfurt am Main|North Charleston)$/i;
+const isRobot = d => !!d && (/headless|playwright|puppeteer|lighthouse|bot/i.test(d.br || '') || (d.fps != null && d.fps <= 3 && !devKids(d).length) || (d.loc && DATA_TOWNS.test(d.loc.city || '') && !devKids(d).length));
+const HIDDEN = () => { try { return new Set(JSON.parse(localStorage.getItem('studioHiddenDevices') || '[]')); } catch (e) { return new Set(); } };
+const setHidden = (id, on) => { const h = HIDDEN(); on ? h.add(id) : h.delete(id); try { localStorage.setItem('studioHiddenDevices', JSON.stringify([...h])); } catch (e) { } };
+const devTitle = d => d.label || easyName(d.id);
+// one line about a device, e.g. "Tiên, Bin · Tablet · iOS · Safari · Sydney, AU · 2 h ago"
+// (owner, 13 Oct AEDT: a ticked iPhone got nothing) on an iPhone the Home Screen app and Safari keep their own storage,
+// so each is its own device here: the row says which one it is
+const devAbout = d => { const kids = devKids(d), what = [devKindName(d.kind), d.os, d.app ? T('Home Screen app', 'Ứng dụng Màn hình chính') : d.br ? T(`in ${d.br}`, `trong ${d.br}`) : ''].filter(x => x && x !== '?').join(' · ');
+  return [kids.length ? '🧒 ' + kids.join(', ') : '', what, devTown(d) ? '📍 ' + devTown(d) : '', devLast(d) ? '🕒 ' + devLast(d) : ''].filter(Boolean).join(' · '); };
+const devHTML = d => `<b class="dname">${esc(devTitle(d))}</b>${isRobot(d) ? ` <span class="pill robot">🤖 ${T('probably a robot', 'có lẽ là máy tự động')}</span>` : ''} <span class="dabout">${esc(devAbout(d))}</span> <small class="mini">${esc(d.id)}</small>`;
+// a search box and "show robots" over a list of device rows (.devrow): a ticked device always stays in view
+const devFilter = list => { if (!list || list.querySelector('.devfind')) return; const bar = document.createElement('div'); bar.className = 'devfind row';
+  bar.innerHTML = `<input type="search" placeholder="${T('Find: a child, a name, a town, a phone…', 'Tìm: tên bé, tên máy, thành phố, điện thoại…')}" aria-label="${T('Find a device', 'Tìm máy')}"><label class="chk small"><input type="checkbox" data-robots> ${T('Show robots', 'Hiện máy tự động')}</label>`;
+  list.prepend(bar); const q = bar.querySelector('input[type=search]'), rb = bar.querySelector('[data-robots]');
+  const apply = () => { const t = q.value.trim().toLowerCase(); list.querySelectorAll('.devrow').forEach(r => { const on = !!r.querySelector('input[type=checkbox]:checked'); r.hidden = !on && ((r.classList.contains('robot') && !rb.checked) || (t && !r.textContent.toLowerCase().includes(t))); }); };
+  q.oninput = apply; rb.onchange = apply; apply(); };
+const devMatch = (d, q) => !q || [devTitle(d), easyName(d.id), d.id, devAbout(d)].join(' ').toLowerCase().includes(q.toLowerCase());
 const saveContent = async () => { await api('content', CONTENT); markSaved(); if (INFO) { INFO.unpublished = true; head(); if (INFO.online) api('pending').then(j => { INFO.waiting = j.files.length; head(); }).catch(() => { }); } toast('✅ ' + T('Saved. Press Publish (at the top) to send it to the children’s devices.', 'Đã lưu. Bấm Phát hành (ở trên cùng) để gửi tới máy của các con.'), 'good'); };
 // ---------- changes not saved yet (owner, 10 Oct: "edits disappear without warning") ----------
 // On the pages where you change things, a label by Save says "Not saved yet" or "Saved", and leaving the page (another
@@ -121,6 +152,7 @@ let LOADED = false;
 async function load(force) {
   if (force) SRC = null; // ↻ reads the game's files again (the Voices page keeps them while Studio is open)
   if (LOADED && !force) return;
+  if (!DEVNAME) DEVNAME = await import(GAME + 'js/content/devname.js').catch(() => null);
   INFO = await api('info'); document.body.classList.toggle('online', !!INFO.online);
   CONTENT = INFO.ok ? await api('content') : {};
   LOADED = true;
@@ -143,10 +175,26 @@ async function render(force) {
     if (sec.k === cur && sec.pages.length > 1 && !ABOUT[sec.k]) { crumb.innerHTML = ''; drawSection(P, sec); KEPT = contentNow(); HASH = location.hash; window.scrollTo(0, 0); return; }
     crumb.innerHTML = sec.pages.length > 1 && cur !== sec.k ? `<button class="back">← ${sec.i} ${T(sec.en, sec.vi)}</button>` : '';
     if (crumb.firstChild) crumb.firstChild.onclick = () => go(sec.k);
-    await PAGES[cur](P); KEPT = contentNow(); HASH = location.hash; paintState(); window.scrollTo(0, 0);
+    await PAGES[cur](P); foldPage(P, cur); KEPT = contentNow(); HASH = location.hash; paintState(); window.scrollTo(0, 0);
   } catch (e) { if (!e.signin) P.innerHTML = `<div class="card badtxt">${esc(e.message)}</div>`; }
 }
 
+// (owner, 13 Oct AEDT: "each of the functions and within each all the categories should be collapsible") every part of
+// a page opens and closes by its heading: a heading on the page with what follows it, and each card with a heading; a
+// small arrow shows which way, and Studio remembers what you closed (on this browser). Everything starts open.
+const FOLD_KEY = 'studioFolds';
+const folds = () => { try { return JSON.parse(localStorage.getItem(FOLD_KEY) || '{}'); } catch (e) { return {}; } };
+const keepFold = (k, open) => { const f = folds(); if (open) delete f[k]; else f[k] = 1; try { localStorage.setItem(FOLD_KEY, JSON.stringify(f)); } catch (e) { } };
+function foldPage(P, page) {
+  const closed = folds(), key = h => page + ':' + h.textContent.trim().slice(0, 60);
+  const make = (head, nodes, cls) => { if (!nodes.length) return; const d = document.createElement('details'), sm = document.createElement('summary'); d.className = 'fold ' + cls; d.open = !closed[key(head)];
+    head.parentNode.insertBefore(d, head); sm.appendChild(head); d.appendChild(sm); nodes.forEach(n => d.appendChild(n)); const k = key(head); d.addEventListener('toggle', () => keepFold(k, d.open)); };
+  // each card with a heading (not the ones that open and close already)
+  P.querySelectorAll('.card').forEach(c => { if (c.closest('details') || c.matches('details, .stat, .signin, .pcard')) return; const h = c.firstElementChild; if (!h || !/^H[34]$/.test(h.tagName)) return;
+    make(h, [...c.childNodes].filter(n => n !== h), 'card-fold'); });
+  // a heading on the page itself, with everything up to the next heading of the same size
+  [...P.children].filter(e => /^H3$/.test(e.tagName)).forEach(h => { const nodes = []; let n = h.nextSibling; while (n && !(n.nodeType === 1 && /^H[23]$/.test(n.tagName))) { nodes.push(n); n = n.nextSibling; } make(h, nodes, 'part-fold'); });
+}
 const PAGES = {};
 // ---------- home ----------
 PAGES.home = async P => {
@@ -545,44 +593,107 @@ const isoDay = d => d.toISOString().slice(0, 10), plusDays = n => isoDay(new Dat
 const liveNote = () => `<div class="card livenote"><p class="${INFO && INFO.online ? 'ok' : 'note'}">${INFO && INFO.online ? '⚡ ' + T('Save here puts it live at once: no Publish needed. Each device gets it the next time it opens the game.', 'Bấm Lưu ở đây là có hiệu lực ngay: không cần Phát hành. Mỗi máy nhận được khi mở game lần tới.') : '✏️ ' + T('On this computer, Save keeps it with the family’s files: press Publish afterwards to send it to the children.', 'Trên máy này, Lưu giữ cùng tệp của gia đình: sau đó bấm Phát hành để gửi tới các con.')}</p></div>`;
 const moreBtn = () => `<td class="more"><button class="btn small ghost" data-more>${T('More', 'Thêm')} ▾</button></td>`;
 const bindMore = P => P.querySelectorAll('[data-more]').forEach(b => b.onclick = () => b.closest('tr').classList.toggle('open'));
+// (owner, 13 Oct AEDT: "the Releases page looks very cramped: make it more interactive, easy for the eyes and smartly
+// designed") each group is a section that opens and closes, with how many are on and All on / All off; each feature is
+// a card with a big switch, a status in words (On, Off, Starts 20 Oct, Ends in 5 days, "New" for 3 days) and a Schedule
+// button that opens its dates; a search and filters at the top; Save sits at the bottom of the screen and counts the
+// changes. The auto play and tester settings open under their own cards (each added once, even if the page is drawn
+// twice), and the testers' sneak peeks are picked by group (All / None, a search, a count).
+const REL_ICON = { story: '🏮', kids: '🧸', rewards: '🎁', world: '🏞️', festivals: '🎉', tools: '🧰', trial: '📚' };
 PAGES.releases = async P => {
   const { RELEASES, RELEASE_GROUPS } = await import(GAME + 'js/content/releases.js'), live = await loadLive(), R = live.releases || {};
-  const row = x => { const r = R[x.id] || {}, on = typeof r.on === 'boolean' ? r.on : x.def;
-    return `<tr data-id="${x.id}" class="${r.start || r.days || r.newDays ? 'open' : ''}"><td>${x.icon ? x.icon + ' ' : ''}${esc(T(x.en, x.vi))}</td>
-      <td data-label="${T('Now', 'Hiện')}"><select data-r="on"><option value="true" ${on ? 'selected' : ''}>${T('On', 'Bật')}</option><option value="false" ${on ? '' : 'selected'}>${T('Off', 'Tắt')}</option></select></td>${moreBtn()}
-      <td class="opt" data-label="${T('Starts', 'Bắt đầu')}"><input type="date" data-r="start" value="${esc(r.start || '')}"><select data-in><option value="">${T('Quick choice…', 'Chọn nhanh…')}</option>${[0, 1, 3, 7].map(n => `<option value="${n}">${n ? T(`in ${n} days`, `${n} ngày nữa`) : T('today', 'hôm nay')}</option>`).join('')}</select></td>
-      <td class="opt" data-label="${T('Days on (empty: always)', 'Số ngày (trống: luôn luôn)')}"><input type="number" min="0" max="3650" data-r="days" value="${r.days || ''}" placeholder="${T('always', 'luôn')}"></td>
-      <td class="opt" data-label="${T('“New” days', 'Ngày “Mới”')}"><input type="number" min="0" max="365" data-r="newDays" value="${r.newDays || ''}" placeholder="0"></td></tr>`; };
-  P.innerHTML = `<h2>🆕 ${T('Releases', 'Ra mắt')}</h2><p class="sub">${T('Switch anything on or off, choose the day it starts, how many days it stays (empty: always), and how many days it shows a “New” badge (the children also get a “New!” moment). Switching off never takes away what a child already has.', 'Bật hoặc tắt bất cứ thứ gì, chọn ngày bắt đầu, ở lại bao nhiêu ngày (để trống: luôn luôn), và bao nhiêu ngày có nhãn “Mới” (các con cũng thấy khoảnh khắc “Mới!”). Tắt đi không lấy mất những gì con đã có.')}</p>
-    ${Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th class="more"></th><th>${T('Starts', 'Bắt đầu')}</th><th>${T('Days on', 'Số ngày')}</th><th>${T('“New” days', 'Ngày “Mới”')}</th></tr></thead><tbody>${RELEASES.filter(x => x.group === g).map(row).join('')}</tbody></table></div>`).join('')}
-    <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
-  P.querySelector('.sub').after(document.createRange().createContextualFragment(liveNote())); bindMore(P);
+  const myDraw = P.dataset.draw = String((+P.dataset.draw || 0) + 1), stale = () => P.dataset.draw !== myDraw; // a newer drawing of the page wins
+  const isOn = x => { const r = R[x.id] || {}; return typeof r.on === 'boolean' ? r.on : x.def; };
+  const fmtDay = d => d ? new Date(d + 'T12:00:00').toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { day: 'numeric', month: 'short' }) : '';
+  const status = (on, r) => { const today = isoDay(new Date()), out = [];
+    if (!on) out.push(['off', '⏸️ ' + T('Off', 'Tắt')]);
+    else if (r.start && r.start > today) out.push(['soon', '📅 ' + T(`Starts ${fmtDay(r.start)}`, `Bắt đầu ${fmtDay(r.start)}`)]);
+    else out.push(['on', '✅ ' + T('On', 'Bật')]);
+    if (on && r.days) { const end = new Date(new Date((r.start || today) + 'T12:00:00').getTime() + r.days * 864e5), left = Math.ceil((end - Date.now()) / 864e5);
+      out.push([left > 0 ? 'end' : 'off', left > 0 ? '⏳ ' + T(`Ends in ${left} day${left === 1 ? '' : 's'}`, `Kết thúc sau ${left} ngày`) : '⌛ ' + T('Finished', 'Đã hết')]); }
+    if (on && r.newDays) out.push(['new', '✨ ' + T(`“New” for ${r.newDays} day${r.newDays === 1 ? '' : 's'}`, `“Mới” trong ${r.newDays} ngày`)]);
+    return out.map(([k, t]) => `<span class="rs ${k}">${t}</span>`).join(''); };
+  const card = x => { const r = R[x.id] || {}, on = isOn(x), sched = !!(r.start || r.days || r.newDays);
+    return `<div class="relc${on ? ' on' : ''}${sched ? ' sched' : ''}" data-id="${x.id}">
+      <div class="relc-top"><label class="tog" title="${T('On or off', 'Bật hoặc tắt')}"><input type="checkbox" data-r="on" ${on ? 'checked' : ''}><span></span></label>
+        <div class="relc-name">${x.icon ? x.icon + ' ' : ''}${esc(T(x.en, x.vi))}<div class="relc-st">${status(on, r)}</div></div>
+        <button class="btn small ghost relc-more" data-more aria-expanded="false">📅 ${T('Schedule', 'Lịch')}</button></div>
+      <div class="relc-opt" hidden>
+        <label>${T('Starts', 'Bắt đầu')}<input type="date" data-r="start" value="${esc(r.start || '')}"></label>
+        <div class="chips">${[0, 1, 3, 7].map(n => `<button type="button" class="chip" data-in="${n}">${n ? T(`in ${n} days`, `${n} ngày nữa`) : T('today', 'hôm nay')}</button>`).join('')}<button type="button" class="chip" data-in="">${T('no date', 'không ngày')}</button></div>
+        <label>${T('Days on (empty: always)', 'Số ngày (trống: luôn luôn)')}<input type="number" min="0" max="3650" data-r="days" value="${r.days || ''}" placeholder="${T('always', 'luôn')}"></label>
+        <label>${T('“New” badge for (days)', 'Nhãn “Mới” trong (ngày)')}<input type="number" min="0" max="365" data-r="newDays" value="${r.newDays || ''}" placeholder="0"></label>
+      </div></div>`; };
+  const groups = Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => ({ g, en, vi, items: RELEASES.filter(x => x.group === g) })).filter(x => x.items.length);
+  const closed = folds(), gkey = g => 'releases:group:' + g;
+  P.innerHTML = `<h2>🆕 ${T('Releases', 'Ra mắt')}</h2><p class="sub">${T('Switch anything on or off. 📅 Schedule picks the day it starts, how long it stays and how long it shows a “New” badge. Switching off never takes away what a child already has.', 'Bật hoặc tắt bất cứ thứ gì. 📅 Lịch chọn ngày bắt đầu, ở lại bao lâu và nhãn “Mới” bao lâu. Tắt đi không lấy mất những gì con đã có.')}</p>
+    <div class="relbar card"><input type="search" id="relq" placeholder="${T('Find a feature…', 'Tìm một tính năng…')}" aria-label="${T('Find a feature', 'Tìm tính năng')}">
+      <div class="chips" id="relf">${[['all', T('All', 'Tất cả')], ['on', '✅ ' + T('On', 'Bật')], ['off', '⏸️ ' + T('Off', 'Tắt')], ['sched', '📅 ' + T('Scheduled', 'Có lịch')]].map(([k, t], i) => `<button type="button" class="chip${i ? '' : ' on'}" data-f="${k}">${t}</button>`).join('')}</div>
+      <p class="note" id="relsum"></p></div>
+    ${groups.map(G => `<details class="relg" data-g="${G.g}" ${closed[gkey(G.g)] ? '' : 'open'}><summary><span class="gi">${REL_ICON[G.g] || '📦'}</span><b>${T(G.en, G.vi)}</b><span class="relg-n"></span>
+      <span class="relg-all"><button type="button" class="btn small ghost" data-all="1">${T('All on', 'Bật hết')}</button><button type="button" class="btn small ghost" data-all="0">${T('All off', 'Tắt hết')}</button></span></summary>
+      <div class="relgrid">${G.items.map(card).join('')}</div></details>`).join('')}
+    <div class="bar relsave"><span class="note" id="relch"></span><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
+  P.querySelector('.sub').after(document.createRange().createContextualFragment(liveNote()));
+  // counts, the group numbers and what has changed since the page opened
+  const start = JSON.stringify([...P.querySelectorAll('.relc')].map(c => [c.querySelector('[data-r="on"]').checked, ...['start', 'days', 'newDays'].map(k => c.querySelector(`[data-r="${k}"]`).value)]));
+  const sum = () => { const cs = [...P.querySelectorAll('.relc')], on = cs.filter(c => c.querySelector('[data-r="on"]').checked).length;
+    $('#relsum').textContent = T(`${on} of ${cs.length} on · ${cs.filter(c => c.classList.contains('sched')).length} with a schedule`, `${on}/${cs.length} đang bật · ${cs.filter(c => c.classList.contains('sched')).length} có lịch`);
+    P.querySelectorAll('details.relg').forEach(d => { const c = [...d.querySelectorAll('.relc')]; d.querySelector('.relg-n').textContent = T(`${c.filter(x => x.querySelector('[data-r="on"]').checked).length} of ${c.length} on`, `${c.filter(x => x.querySelector('[data-r="on"]').checked).length}/${c.length} bật`); });
+    const now = [...P.querySelectorAll('.relc')].map(c => [c.querySelector('[data-r="on"]').checked, ...['start', 'days', 'newDays'].map(k => c.querySelector(`[data-r="${k}"]`).value)]);
+    const n = JSON.parse(start).filter((x, i) => JSON.stringify(x) !== JSON.stringify(now[i])).length;
+    $('#relch').textContent = n ? T(`${n} change${n === 1 ? '' : 's'} not saved yet`, `${n} thay đổi chưa lưu`) : ''; P.querySelector('.relsave').classList.toggle('dirty', !!n); };
+  const restatus = c => { const r = { start: c.querySelector('[data-r="start"]').value, days: +c.querySelector('[data-r="days"]').value || 0, newDays: +c.querySelector('[data-r="newDays"]').value || 0 }, on = c.querySelector('[data-r="on"]').checked;
+    c.classList.toggle('on', on); c.classList.toggle('sched', !!(r.start || r.days || r.newDays)); c.querySelector('.relc-st').innerHTML = status(on, r); sum(); };
+  P.querySelectorAll('.relc').forEach(c => { c.querySelectorAll('input').forEach(i => i.addEventListener(i.type === 'checkbox' ? 'change' : 'input', () => restatus(c)));
+    c.querySelector('[data-more]').onclick = e => { e.preventDefault(); const o = c.querySelector('.relc-opt'); o.hidden = !o.hidden; e.currentTarget.setAttribute('aria-expanded', String(!o.hidden)); };
+    c.querySelectorAll('[data-in]').forEach(b => b.onclick = () => { c.querySelector('[data-r="start"]').value = b.dataset.in === '' ? '' : plusDays(+b.dataset.in); restatus(c); }); });
+  P.querySelectorAll('details.relg').forEach(d => { d.addEventListener('toggle', () => keepFold(gkey(d.dataset.g), d.open));
+    d.querySelectorAll('[data-all]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); d.querySelectorAll('.relc').forEach(c => { c.querySelector('[data-r="on"]').checked = b.dataset.all === '1'; restatus(c); }); }); });
+  // search and filters
+  let fil = 'all'; const filt = () => { const q = $('#relq').value.trim().toLowerCase();
+    P.querySelectorAll('.relc').forEach(c => { const on = c.querySelector('[data-r="on"]').checked; c.hidden = (q && !c.textContent.toLowerCase().includes(q)) || (fil === 'on' && !on) || (fil === 'off' && on) || (fil === 'sched' && !c.classList.contains('sched')); });
+    P.querySelectorAll('details.relg').forEach(d => { const any = [...d.querySelectorAll('.relc')].some(c => !c.hidden); d.hidden = !any; if ((q || fil !== 'all') && any) d.open = true; }); };
+  $('#relq').oninput = filt; P.querySelectorAll('#relf [data-f]').forEach(b => b.onclick = () => { fil = b.dataset.f; P.querySelectorAll('#relf [data-f]').forEach(x => x.classList.toggle('on', x === b)); filt(); });
+  sum();
   // (owner, 12 Oct) the auto play check: on every device, or only on the ones ticked here (from the players report)
-  { const tr = P.querySelector('tr[data-id="autoplay"]'), mine = new Set((R.autoplay && R.autoplay.devices) || []);
-    if (tr) { const box = document.createElement('div'); box.className = 'card'; box.id = 'apdev'; tr.closest('.card').after(box);
-      box.innerHTML = `<h4>${T('Auto play check: which devices', 'Tự chơi để kiểm tra: máy nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on).', 'Không chọn máy nào: mọi máy (khi công tắc bật).')}</p><div id="apdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
-      let devs = []; try { const r = await api('players'); devs = (r && r.devices) || []; } catch (e) { devs = []; }
-      for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
-      $('#apdl').innerHTML = devs.length ? devs.map(d => `<label class="chk"><input type="checkbox" data-dev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${esc(d.label || [d.kind, d.os, d.br].filter(x => x && x !== '?').join(' · ') || d.id)} <small class="mini">${esc(d.id)}</small></label>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`; } }
-  // (owner, 12 Oct) testers: which devices, each one's level (auto reports only, or with the ladybird), and the releases
-  // testers see early (sneak peeks)
-  { const tr = P.querySelector('tr[data-id="tester"]'), TR = R.tester || {}, mine = new Set(TR.devices || []), lv = TR.levels || {}, pk = new Set(TR.peeks || []);
-    if (tr) { const box = document.createElement('div'); box.className = 'card'; box.id = 'tdev'; (P.querySelector('#apdev') || tr.closest('.card')).after(box);
-      box.innerHTML = `<h4>🐞 ${T('Testers: which devices, and how', 'Người thử: máy nào, và thế nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on). A tester accepts what is collected the first time, on the device.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Người thử đồng ý với những gì được thu thập lần đầu, trên máy.')}</p><div id="tdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>
-        <h4>${T('Sneak peeks: testers see these early', 'Xem trước: người thử thấy sớm')}</h4><div id="tpk">${RELEASES.filter(x => !['autoplay', 'tester'].includes(x.id)).map(x => `<label class="chk"><input type="checkbox" data-peek="${esc(x.id)}" ${pk.has(x.id) ? 'checked' : ''}> ${esc(T(x.en, x.vi))}</label>`).join('')}</div>`;
-      let devs = []; try { const r = await api('players'); devs = (r && r.devices) || []; } catch (e) { devs = []; }
-      for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
-      $('#tdl').innerHTML = devs.length ? devs.map(d => `<div class="tdrow"><label class="chk"><input type="checkbox" data-tdev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${esc(d.label || [d.kind, d.os, d.br].filter(x => x && x !== '?').join(' · ') || d.id)} <small class="mini">${esc(d.id)}</small></label>
-        <select data-tlv="${esc(d.id)}" aria-label="${T('Level', 'Mức')}"><option value="ladybird" ${lv[d.id] !== 'auto' ? 'selected' : ''}>${T('Auto reports and the ladybird', 'Tự báo lỗi và con bọ rùa')}</option><option value="auto" ${lv[d.id] === 'auto' ? 'selected' : ''}>${T('Auto reports only', 'Chỉ tự báo lỗi')}</option></select></div>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`; } }
-  P.querySelectorAll('[data-in]').forEach(b => b.onchange = () => { if (b.value === '') return; b.closest('td').querySelector('[data-r="start"]').value = plusDays(+b.value); b.value = ''; });
+  const devsP = api('players').then(r => (r && r.devices) || []).catch(() => []);
+  { const c = P.querySelector('.relc[data-id="autoplay"]'), mine = new Set((R.autoplay && R.autoplay.devices) || []);
+    if (c && !P.querySelector('#apdev')) { const box = document.createElement('div'); box.className = 'relpanel'; box.id = 'apdev'; c.classList.add('wide'); c.appendChild(box);
+      box.innerHTML = `<h4>📱 ${T('Which devices show the auto play window', 'Máy nào hiện cửa sổ tự chơi')}</h4><p class="note">${T('None ticked: every device (while the switch is on).', 'Không chọn máy nào: mọi máy (khi công tắc bật).')}</p><div id="apdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
+      const devs = (await devsP).slice(); if (stale()) return; for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
+      $('#apdl').innerHTML = devs.length ? devs.map(d => `<label class="chk devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><input type="checkbox" data-dev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`;
+      devFilter($('#apdl')); } }
+  // (owner, 12 Oct) testers: which devices, each one's level, and the sneak peeks (releases testers see early)
+  { const c = P.querySelector('.relc[data-id="tester"]'), TR = R.tester || {}, mine = new Set(TR.devices || []), lv = TR.levels || {}, pk = new Set(TR.peeks || []);
+    if (c && !P.querySelector('#tdev')) { const box = document.createElement('div'); box.className = 'relpanel'; box.id = 'tdev'; c.classList.add('wide'); c.appendChild(box);
+      const peekable = RELEASES.filter(x => !['autoplay', 'tester'].includes(x.id));
+      const peekGroup = G => { const items = peekable.filter(x => x.group === G.g); if (!items.length) return '';
+        const off = items.filter(x => !isOn(x)), on = items.filter(x => isOn(x)), lab = x => `<label class="chk peek${isOn(x) ? ' already' : ''}"><input type="checkbox" data-peek="${esc(x.id)}" ${pk.has(x.id) ? 'checked' : ''}> ${x.icon ? x.icon + ' ' : ''}${esc(T(x.en, x.vi))}</label>`;
+        return `<details class="pkg" data-g="${G.g}"><summary><span class="gi">${REL_ICON[G.g] || '📦'}</span><b>${T(G.en, G.vi)}</b> <span class="pkn"></span><span class="relg-all"><button type="button" class="btn small ghost" data-pall="1">${T('All', 'Hết')}</button><button type="button" class="btn small ghost" data-pall="0">${T('None', 'Bỏ hết')}</button></span></summary>
+          ${off.map(lab).join('')}${on.length ? `<p class="note">${T('Already on for everyone:', 'Đã bật cho mọi người:')}</p>${on.map(lab).join('')}` : ''}</details>`; };
+      box.innerHTML = `<h4>🐞 ${T('Which devices are testers, and how', 'Máy nào là người thử, và thế nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on). A tester accepts what is collected the first time, on the device.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Người thử đồng ý với những gì được thu thập lần đầu, trên máy.')}</p><div id="tdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>
+        <h4>↩️ ${T('When someone stops being a tester', 'Khi ai đó thôi làm người thử')}</h4><div class="revert">${[['progress', 'Everything since they became a tester goes back (badges, stickers and clothes stay)', 'Mọi tiến bộ từ khi làm người thử được trả lại (huy hiệu, nhãn dán và quần áo vẫn giữ)'], ['autoplay', 'Only what auto play did goes back, after each run (what they played themselves stays)', 'Chỉ trả lại phần tự chơi đã làm, sau mỗi lần chạy (phần con tự chơi vẫn giữ)']].map(([k, en, vi]) => `<label class="chk"><input type="radio" name="trevert" data-trevert="${k}" ${(TR.revert === 'autoplay' ? 'autoplay' : 'progress') === k ? 'checked' : ''}> ${T(en, vi)}</label>`).join('')}</div>
+        <h4>👀 ${T('Sneak peeks: testers see these early', 'Xem trước: người thử thấy sớm')} <span class="pill" id="pkcount"></span></h4><input type="search" id="pkq" placeholder="${T('Find a feature…', 'Tìm một tính năng…')}"><div id="tpk">${groups.map(peekGroup).join('')}</div>`;
+      const pcount = () => { box.querySelector('#pkcount').textContent = T(`${box.querySelectorAll('[data-peek]:checked').length} picked`, `đã chọn ${box.querySelectorAll('[data-peek]:checked').length}`);
+        box.querySelectorAll('details.pkg').forEach(d => { d.querySelector('.pkn').textContent = `${d.querySelectorAll('[data-peek]:checked').length}/${d.querySelectorAll('[data-peek]').length}`; }); };
+      box.querySelectorAll('[data-peek]').forEach(i => i.onchange = pcount);
+      box.querySelectorAll('details.pkg').forEach(d => d.querySelectorAll('[data-pall]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); d.querySelectorAll('[data-peek]').forEach(i => { i.checked = b.dataset.pall === '1'; }); pcount(); }));
+      box.querySelector('#pkq').oninput = e => { const q = e.target.value.trim().toLowerCase(); box.querySelectorAll('label.peek').forEach(l => { l.hidden = q && !l.textContent.toLowerCase().includes(q); }); if (q) box.querySelectorAll('details.pkg').forEach(d => { d.open = true; }); };
+      pcount();
+      const devs = (await devsP).slice(); if (stale()) return; for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
+      $('#tdl').innerHTML = devs.length ? devs.map(d => `<div class="tdrow devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><label class="chk"><input type="checkbox" data-tdev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>
+        <select data-tlv="${esc(d.id)}" aria-label="${T('Level', 'Mức')}"><option value="ladybird" ${lv[d.id] !== 'auto' ? 'selected' : ''}>${T('Auto reports and the ladybird', 'Tự báo lỗi và con bọ rùa')}</option><option value="auto" ${lv[d.id] === 'auto' ? 'selected' : ''}>${T('Auto reports only', 'Chỉ tự báo lỗi')}</option></select></div>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`;
+      devFilter($('#tdl')); } }
   $('#save').onclick = async () => {
     const out = {};
-    P.querySelectorAll('tr[data-id]').forEach(tr => { const id = tr.dataset.id, x = RELEASES.find(y => y.id === id), v = k => tr.querySelector(`[data-r="${k}"]`).value;
-      const r = {}, on = v('on') === 'true'; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
-      if (id === 'autoplay') { const dv = [...P.querySelectorAll('[data-dev]:checked')].map(c => c.dataset.dev); if (dv.length) r.devices = dv; }
-      if (id === 'tester') { const dv = [...P.querySelectorAll('[data-tdev]:checked')].map(c => c.dataset.tdev); if (dv.length) r.devices = dv;
+    P.querySelectorAll('.relc[data-id]').forEach(c => { const id = c.dataset.id, x = RELEASES.find(y => y.id === id), v = k => c.querySelector(`[data-r="${k}"]`).value;
+      const r = {}, on = c.querySelector('[data-r="on"]').checked; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
+      if (id === 'autoplay') { const dv = [...P.querySelectorAll('[data-dev]:checked')].map(i => i.dataset.dev); if (dv.length) r.devices = dv; }
+      if (id === 'tester') { const dv = [...P.querySelectorAll('[data-tdev]:checked')].map(i => i.dataset.tdev); if (dv.length) r.devices = dv;
         const lv = {}; P.querySelectorAll('[data-tlv]').forEach(s => { if (s.value === 'auto') lv[s.dataset.tlv] = 'auto'; }); if (Object.keys(lv).length) r.levels = lv;
-        const pk = [...P.querySelectorAll('[data-peek]:checked')].map(c => c.dataset.peek); if (pk.length) r.peeks = pk; }
+        const pk = [...P.querySelectorAll('[data-peek]:checked')].map(i => i.dataset.peek); if (pk.length) r.peeks = pk; 
+        if ((P.querySelector('[data-trevert]:checked') || {}).dataset?.trevert === 'autoplay') r.revert = 'autoplay'; }
       if (Object.keys(r).length) out[id] = r; });
     await saveLive({ releases: out, festivals: live.festivals || {} }).catch(fail);
   };
@@ -598,14 +709,15 @@ PAGES.festivals = async P => {
       <td data-label="${T('Now', 'Hiện')}"><select data-f="on"><option value="true" ${on ? 'selected' : ''}>${T('On', 'Bật')}</option><option value="false" ${on ? '' : 'selected'}>${T('Off', 'Tắt')}</option></select></td>
       <td data-label="${T('Next date', 'Ngày tới')}">${next(f) || '?'}</td><td data-label="${T('Move to', 'Đổi sang ngày')}"><input type="date" data-f="date" value="${/^\d{4}/.test(r.date || '') ? r.date : ''}"></td>
       <td data-label="${T('Decorate days before', 'Trang trí trước (ngày)')}"><input type="number" min="0" max="60" data-f="buildup" value="${r.buildup ?? ''}" placeholder="${f.kind === 'quiet' ? 3 : 21}"></td>
+      <td data-label="${T('Decorations', 'Trang trí')}"><select data-f="deco">${[[1, 'As before', 'Như trước'], [2, '2x', '2x'], [3, '3x', '3x'], [5, '5x', '5x'], [7, '7x', '7x']].map(([n, en, vi]) => `<option value="${n}" ${(+r.deco || 5) === n ? 'selected' : ''}>${T(en, vi)}</option>`).join('')}</select></td>
       <td><a class="btn small ghost" target="_blank" href="${GAME}?festival=${f.id}">${T('Preview', 'Xem thử')}</a></td></tr>`; };
-  P.innerHTML = `<h2>📅 ${T('Festivals', 'Lễ hội')}</h2><p class="sub">${T('Every festival on its real date (lunar dates are worked out each year). Party festivals decorate their places for 3 weeks before, quiet days a few days. On the day: 08:00 present, 15:00 festival game, 18:30 show (17:30 for under-5s).', 'Mỗi lễ hội đúng ngày thật (ngày âm lịch tự tính mỗi năm). Lễ hội vui trang trí 3 tuần trước, ngày yên lặng vài ngày. Đúng ngày: 08:00 nhận quà, 15:00 trò chơi lễ hội, 18:30 trình diễn (17:30 cho bé dưới 5 tuổi).')}</p>
-    ${liveNote()}${Object.entries(GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th>${T('Next date', 'Ngày tới')}</th><th>${T('Move to', 'Đổi sang ngày')}</th><th>${T('Decorate days before', 'Trang trí trước (ngày)')}</th><th></th></tr></thead><tbody>${FESTCAL.filter(f => f.group === g).map(row).join('')}</tbody></table></div>`).join('')}
+  P.innerHTML = `<h2>📅 ${T('Festivals', 'Lễ hội')}</h2><p class="sub">${T('Every festival on its real date (lunar dates are worked out each year). Party festivals decorate their places for 3 weeks before, quiet days a few days. On the day: 08:00 present, 15:00 festival game, 18:30 show (17:30 for under-5s). Decorations: half in week 1, three quarters in week 2, all of it in the last week; 5x by default (Decorations column). In the last week and on the day, 5 festival items are hidden among them to find.', 'Mỗi lễ hội đúng ngày thật (ngày âm lịch tự tính mỗi năm). Lễ hội vui trang trí 3 tuần trước, ngày yên lặng vài ngày. Đúng ngày: 08:00 nhận quà, 15:00 trò chơi lễ hội, 18:30 trình diễn (17:30 cho bé dưới 5 tuổi). Trang trí: tuần đầu một nửa, tuần hai ba phần tư, tuần cuối đầy đủ; mặc định gấp 5 lần (cột Trang trí). Tuần cuối và đúng ngày có 5 món đồ lễ hội giấu giữa đồ trang trí để các con tìm.')}</p>
+    ${liveNote()}${Object.entries(GROUPS).map(([g, [en, vi]]) => `<h3>${T(en, vi)}</h3><div class="card"><table class="rel"><thead><tr><th></th><th>${T('Now', 'Hiện')}</th><th>${T('Next date', 'Ngày tới')}</th><th>${T('Move to', 'Đổi sang ngày')}</th><th>${T('Decorate days before', 'Trang trí trước (ngày)')}</th><th>${T('Decorations', 'Trang trí')}</th><th></th></tr></thead><tbody>${FESTCAL.filter(f => f.group === g).map(row).join('')}</tbody></table></div>`).join('')}
     <div class="bar"><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   $('#save').onclick = async () => {
     const out = {};
     P.querySelectorAll('tr[data-id]').forEach(tr => { const id = tr.dataset.id, v = k => tr.querySelector(`[data-f="${k}"]`).value, r = {};
-      if (v('on') === 'false') r.on = false; if (v('date')) r.date = v('date'); if (v('buildup') !== '') r.buildup = +v('buildup'); if (Object.keys(r).length) out[id] = r; });
+      if (v('on') === 'false') r.on = false; if (v('date')) r.date = v('date'); if (v('buildup') !== '') r.buildup = +v('buildup'); if (+v('deco') !== 5) r.deco = +v('deco'); if (Object.keys(r).length) out[id] = r; });
     await saveLive({ releases: live.releases || {}, festivals: out }).catch(fail);
   };
 };
@@ -1184,14 +1296,14 @@ PAGES.players = async P => {
       <p class="note">⏱️ ${hrs(K.mins)} · 🧸 ${T('Simple screen', 'Màn hình đơn giản')} ${pct(K.simpleMins, K.mins)} · 📖 ${K.tales} ${T('stories', 'truyện')}</p>
       ${K.games.length ? `<table class="mini"><thead><tr><th>${T('Game', 'Trò chơi')}</th><th>▶</th><th>🏆</th><th>🚪</th></tr></thead><tbody>${K.games.map(([g, st, w, q]) => `<tr><td>${esc(gname(g))}</td><td>${st}</td><td>${w}</td><td class="${q > w && q >= 2 ? 'warn' : ''}">${q}</td></tr>`).join('')}</tbody></table>` : ''}
       ${K.places.length ? `<p class="note">📍 ${K.places.map(([p, n]) => `${esc(pname(p))} (${n})`).join(' · ')}</p>` : ''}</div>`;
-  const devCard = d => `<div class="card dev" data-id="${esc(d.id)}"><div class="row" style="align-items:flex-start"><div style="flex:2">
+  const devCard = d => `<div class="card dev devrow${isRobot(d) ? ' robot' : ''}" data-id="${esc(d.id)}" data-devrow="${esc(d.id)}"><div class="row" style="align-items:flex-start"><div style="flex:2">
       <h3>${{ phone: '📱', tablet: '📲', computer: '💻' }[d.kind] || '❔'} <span class="dlabel">${esc(devName(d))}</span> ${d.online ? `<span class="pill live on">🟢 ${T('Playing now', 'Đang chơi')}${d.playingNow ? ' · ' + esc(d.playingNow) : ''}</span>` : `<span class="pill live">⚪ ${T('Offline', 'Không chơi')}${d.seenAt ? ' · ' + ago(d.seenAt) : ''}</span>`} <button class="btn small ghost" data-rename>✏️ ${T('Name it', 'Đặt tên')}</button></h3>
       <p class="note">${esc(d.os)} · ${esc(d.br)}${d.screen ? ' · ' + esc(d.screen) : ''}${d.app ? ' · ' + T('installed app', 'đã cài như ứng dụng') : ''} · ${esc(d.build)} · ${d.lang === 'vi' ? 'Tiếng Việt' : 'English'}<br>📍 ${esc(locName(d.loc))} · ${T('first seen', 'lần đầu')} ${when(d.first)} · ${T('last played', 'chơi gần nhất')} ${when(d.last)}</p></div>
       <div style="flex:1;min-width:150px"><p>⏱️ <b>${hrs(d.mins)}</b> ${T('in 30 days', 'trong 30 ngày')}<br>📅 ${d.days} ${T('days played', 'ngày có chơi')}${d.fps != null ? `<br>🎞️ ${d.fps} ${T('frames/s', 'khung hình/giây')}` : ''}${d.errors ? `<br><span class="badtxt">🐞 ${d.errors} ${T('errors', 'lỗi')}</span>` : ''}${d.stuck ? `<br><span class="warn">🧱 ${T('stuck', 'bị kẹt')} ${d.stuck}×</span>` : ''}${startLine(d.startup)}</p></div></div>
       <div class="kids">${d.kids.map(kidCard).join('') || `<p class="note">${T('No per-child details yet (they start with version r43).', 'Chưa có chi tiết từng bé (bắt đầu từ bản r43).')}</p>`}</div></div>`;
   const pb = r.problems || { errors: [], stuck: [], quits: [], slow: [] };
   // the suggestions in words, with the games', places' and devices' own names
-  const devName = d => d.label || (d.os && d.os !== '?' ? `${kindName(d.kind)} · ${d.os}${d.br && d.br !== '?' ? ' · ' + d.br : ''}` : T('A device', 'Một máy') + ' ' + d.id.slice(0, 4));
+  const devName = d => devTitle(d); // (owner, 13 Oct) the family's name for it, or its easy name (the same in every list)
   const where = w => { const m = /^([\w-]+)(.*)$/.exec(w || ''); return m ? pname(m[1]) + m[2] : w; };
   const tipText = t => ({
     quit: () => T(`“${gname(t.g)}” is often left before the end (${t.n} of ${t.st} times): it may be too hard. Try an easier level, or take it off the under-5 path (🎮 Game → 🧸 Simple screen).`, `“${gname(t.g)}” hay bị bỏ dở (${t.n}/${t.st} lần): có thể hơi khó. Thử mức dễ hơn, hoặc bỏ khỏi đường của bé dưới 5 tuổi (🎮 Trò chơi → 🧸 Màn hình đơn giản).`),
@@ -1241,7 +1353,7 @@ PAGES.players = async P => {
       <p class="note">${T('Battery: only Chrome-based browsers tell it (not Safari on iPhone or Mac).', 'Pin: chỉ trình duyệt dựa trên Chrome cho biết (Safari trên iPhone và Mac thì không).')}</p></div></div>
   <h3 class="sec">🔎 ${T('More detail', 'Thêm chi tiết')}</h3>
   ${(r.tips || []).length > 4 ? more('tips', `💡 ${T('Suggestions', 'Gợi ý')} (${r.tips.length})`, `<ul>${r.tips.map(t => `<li>${esc(tipText(t))}</li>`).join('')}</ul>`) : ''}
-  ${more('devices', `👨‍👩‍👧 ${T('Each device and child', 'Từng máy và từng bé')} (${devs.length})`, devs.map(devCard).join('') || `<p class="note">${T('No devices yet.', 'Chưa có máy nào.')}</p>`)}
+  ${more('devices', `👨‍👩‍👧 ${T('Each device and child', 'Từng máy và từng bé')} (${devs.length})`, `<div id="devlist">${devs.map(devCard).join('')}</div>` || `<p class="note">${T('No devices yet.', 'Chưa có máy nào.')}</p>`)}
   ${more('startup', `🏁 ${T('Start-up, step by step', 'Khởi động, từng bước')}`, `<p class="note">${T('Seconds from opening the game to a built valley (the middle of the last starts), and the slowest step on each device.', 'Số giây từ lúc mở game tới khi thung lũng dựng xong (mức giữa của các lần mở gần đây), và bước chậm nhất trên từng máy.')}</p><table class="mini"><tbody>${devs.filter(d => d.startup).map(d => `<tr><td>${KICON[d.kind] || '❔'} ${esc(devName(d))}</td><td>${startLine(d.startup).replace(/^<br>/, '')}</td></tr>`).join('') || `<tr><td class="note">${NOT_YET}</td></tr>`}</tbody></table>`)}
   ${more('power', `🔋 ${T('Battery and frames, each device', 'Pin và khung hình, từng máy')}`, `<table class="mini"><tbody>${devs.map(d => `<tr><td>${KICON[d.kind] || '❔'} ${esc(devName(d))}</td><td>${powerLine(d)}</td></tr>`).join('') || `<tr><td class="note">${NOT_YET}</td></tr>`}</tbody></table>`)}
   ${more('time', `📅 ${T('Day by day and hour by hour', 'Theo ngày và theo giờ')}`, `
@@ -1259,9 +1371,10 @@ PAGES.players = async P => {
   <div class="grid"><div class="card"><h3>🐞 ${T('Errors in the game', 'Lỗi trong game')}</h3>${pb.errors.length ? `<table class="mini"><tbody>${pb.errors.map(([k, n, dv]) => `<tr><td><code>${esc(k)}</code></td><td>${n}×</td><td>${dv} ${T('dev.', 'máy')}</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('No errors.', 'Không có lỗi.')}</p>`}</div>
     <div class="card"><h3>🧱 ${T('Where children got stuck', 'Chỗ các bé bị kẹt')}</h3>${pb.stuck.length ? `<table class="mini"><tbody>${pb.stuck.map(([k, n]) => `<tr><td>${esc(where(k))}</td><td>${n}×</td></tr>`).join('')}</tbody></table><p class="note">${T('Pushing to walk for 4 seconds without moving (area and map position).', 'Đẩy để đi 4 giây mà không nhúc nhích (khu và vị trí trên bản đồ).')}</p>` : `<p class="ok">✅ ${T('Nobody got stuck.', 'Không ai bị kẹt.')}</p>`}</div>
     <div class="card"><h3>🚪 ${T('Games left before the end', 'Trò bị bỏ dở')}</h3>${pb.quits.length ? `<table class="mini"><tbody>${pb.quits.map(([g, n, st, pc]) => `<tr><td>${esc(gname(g))}</td><td>${n}/${st}</td><td class="${pc >= 50 ? 'warn' : ''}">${pc}%</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('None.', 'Không có.')}</p>`}</div>
-    <div class="card"><h3>🐢 ${T('Slow devices', 'Máy chạy chậm')}</h3>${pb.slow.length ? `<table class="mini"><tbody>${pb.slow.map(([id, l, f, sm]) => `<tr><td>${esc(l || id)}</td><td>${f} ${T('frames/s', 'khung/giây')}</td><td>${sm} ${T('slow min', 'phút chậm')}</td></tr>`).join('')}</tbody></table>` : `<p class="ok">✅ ${T('All smooth.', 'Đều mượt.')}</p>`}</div></div>`)}
+    <div class="card"><h3>🐢 ${T('Slow devices', 'Máy chạy chậm')}</h3>${pb.slow.length ? `<table class="mini"><tbody>${pb.slow.map(([id, l, f, sm]) => { const d = r.devices.find(x => x.id === id) || { id, label: l, fps: f }; return `<tr class="devrow${isRobot(d) ? ' robot' : ''}"><td>${devHTML(d)}</td><td>${f} ${T('frames/s', 'khung/giây')}</td><td>${sm} ${T('slow min', 'phút chậm')}</td></tr>`; }).join('')}</tbody></table>` : `<p class="ok">✅ ${T('All smooth.', 'Đều mượt.')}</p>`}</div></div>`)}
   <p class="note">${T('Made', 'Lúc')} ${esc(new Date(r.made).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney' }))} ${sydneyZone(r.made)}</p>`;
   { const tt = P.querySelector('#totesters'); if (tt) tt.onclick = () => go('testers'); }
+  devFilter($('#devlist')); // (owner, 13 Oct) find a device by a child's name, its name, the town or the kind of device
   P.querySelectorAll('.dev [data-rename]').forEach(b => b.onclick = async () => { const card = b.closest('.dev'), id = card.dataset.id, cur = card.querySelector('.dlabel').textContent;
     const l = prompt(T('A name for this device (e.g. “Na’s iPad”):', 'Tên cho máy này (ví dụ “iPad của Na”):'), cur); if (l === null) return;
     try { await api('players/label', { id, label: l }); card.querySelector('.dlabel').textContent = l || cur; toast(T('Saved.', 'Đã lưu.')); } catch (e) { fail(e); } });
@@ -1276,14 +1389,14 @@ PAGES.testers = async P => {
   const head = `<h2>🐞 ${T('Tester reports', 'Báo cáo người thử')}</h2>`;
   P.innerHTML = head + `<div class="card">${T('Asking the website…', 'Đang hỏi trang web…')}</div>`;
   let r; try { r = await api('testers'); } catch (e) { P.innerHTML = head + `<div class="card"><p class="badtxt">⚠️ ${esc(e.message)}</p><p class="note">${T('Tester reports come from the website: switch Testers on in 🎮 Game → 🆕 Releases (For testing), for every device or the ticked ones.', 'Báo cáo người thử đến từ trang web: bật Người thử trong 🎮 Trò chơi → 🆕 Ra mắt (Để thử), cho mọi máy hoặc các máy được chọn.')}</p></div>`; return; }
-  let labels = {}; try { const pr = await api('players'); for (const d of (pr && pr.devices) || []) labels[d.id] = d.label || [d.os, d.br].filter(x => x && x !== '?').join(' · '); } catch (e) { }
+  let labels = {}; try { const pr = await api('players'); for (const d of (pr && pr.devices) || []) labels[d.id] = devTitle(d) + ' (' + devAbout(d) + ')'; } catch (e) { }
   const { problems = [], testers = [], summary = {} } = r || {}, gameBuild = await (async () => { try { return (await import(GAME + 'js/build.js')).BUILD; } catch (e) { return ''; } })();
   const sydney = t => t ? new Date(t).toLocaleString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
   const ST = { new: ['🆕', 'New', 'Mới'], fixing: ['🔨', 'Being fixed', 'Đang sửa'], fixed: ['✅', 'Fixed', 'Đã sửa'], confirmed: ['🏁', 'Fixed and checked', 'Đã sửa và kiểm tra'], back: ['🔁', 'Came back', 'Bị lại'], notbug: ['🚫', 'Not a bug', 'Không phải lỗi'], dup: ['🔗', 'Same as another', 'Trùng lỗi khác'] };
   const KIND = { broken: ['💥', 'Broken', 'Bị hỏng'], looks: ['👀', 'Looks wrong', 'Trông sai'], words: ['💬', 'Words or voice', 'Chữ hoặc giọng'], sound: ['🔔', 'Sound', 'Âm thanh'], idea: ['💡', 'Idea', 'Ý tưởng'], auto: ['🤖', 'Automatic', 'Tự động'] };
   const stName = s => ST[s] ? `${ST[s][0]} ${T(ST[s][1], ST[s][2])}` : s, kindName = k => KIND[k] ? `${KIND[k][0]} ${T(KIND[k][1], KIND[k][2])}` : k;
   const whereText = w => w ? [w.game, w.window, w.area].filter(Boolean).join(' · ') : '';
-  const devName = id => labels[id] || id;
+  const devName = id => labels[id] || easyName(id);
   const builds = [...new Set(problems.flatMap(p => p.builds || []))].sort();
   const big = (n, en, vi) => `<div class="card stat"><b>${n}</b><span>${T(en, vi)}</span></div>`;
   P.innerHTML = head + `<p class="sub">${T('Each problem once, however many times it was met. Set its status here: a tester device gets a tick when its problem is fixed, replays it on the new version, and earns its rewards.', 'Mỗi lỗi một lần, dù gặp bao nhiêu lần. Đặt trạng thái ở đây: máy thử thấy dấu tích khi lỗi của nó đã sửa, thử lại trên bản mới, và nhận phần thưởng.')}</p>
@@ -1362,16 +1475,22 @@ PAGES.security = async P => {
   const { keys } = await api('keys/list');
   P.innerHTML = `<h2>🛡️ ${T('Security', 'Bảo mật')}</h2><p class="sub">${T('Everyone signs in with their password (12 characters or more). Admins also type the 6-digit code of an authenticator app on their phone, unless the owner chose password only for them in Admins; the owner uses the password only. Ten wrong tries lock signing in for 15 minutes.', 'Mọi người đăng nhập bằng mật khẩu (từ 12 ký tự). Quản trị viên gõ thêm mã 6 số của ứng dụng xác thực trên điện thoại, trừ khi chủ chọn “chỉ mật khẩu” cho họ ở Quản trị viên; chủ chỉ dùng mật khẩu. Sai mười lần thì khóa đăng nhập 15 phút.')}</p>
   <div class="card"><h3>📱 ${T('Two-step sign-in', 'Đăng nhập hai bước')}</h3><p class="note">${T('Each person sets it up at their first sign-in. For someone with a new phone: Setup → Admins → New phone. The owner signs in with the password only.', 'Mỗi người cài đặt ở lần đăng nhập đầu tiên. Ai đổi điện thoại: Thiết lập → Quản trị viên → Điện thoại mới. Chủ đăng nhập chỉ bằng mật khẩu.')}</p></div>
+  <div class="card"><h3>🤝 ${T('Trusted browsers', 'Trình duyệt tin cậy')}</h3><p class="note">${T('Browsers where someone ticked “Trust this browser” when signing in: they stay signed in. Forget one and it must sign in again.', 'Các trình duyệt đã chọn “Tin cậy trình duyệt này” khi đăng nhập: luôn đăng nhập sẵn. Quên một trình duyệt thì nó phải đăng nhập lại.')}</p><div id="trusted">${T('Loading…', 'Đang tải…')}</div></div>
   <div class="card"><h3>🚪 ${T('Sign everyone out', 'Đăng xuất mọi người')}</h3><p class="note">${T('Every sign-in on every device ends, yours too, and every Studio key below stops working. Use it if a phone or computer was lost.', 'Mọi phiên đăng nhập trên mọi máy kết thúc, cả của bạn, và mọi khóa Studio bên dưới ngừng hoạt động. Dùng khi mất điện thoại hay máy tính.')}</p><button class="btn" id="allout">🚪 ${T('Sign everyone out', 'Đăng xuất mọi người')}</button></div>
   <div class="card"><h3>🔑 ${T('Keys for SparkleStudio.exe', 'Khóa cho SparkleStudio.exe')}</h3><p class="note">${T('The family computer’s Studio reaches the website with a key instead of signing in: the Analytics, the missing lines and the family photos, nothing else. Make one, paste it into SparkleStudio.exe → Settings; it is shown only once.', 'Studio trên máy tính gia đình đến trang web bằng khóa thay vì đăng nhập: Phân tích, câu còn thiếu và ảnh gia đình, không gì khác. Tạo khóa, dán vào SparkleStudio.exe → Cài đặt; khóa chỉ hiện một lần.')}</p>
     <table class="mini"><tbody>${keys.map(k => `<tr data-id="${esc(k.id)}"><td><b>${esc(k.label)}</b></td><td class="note">${esc(whenAEST(k.at))} · ${esc(k.by)}</td><td><button class="btn small ghost" data-krm>🗑️</button></td></tr>`).join('') || `<tr><td class="note">${T('No keys yet.', 'Chưa có khóa nào.')}</td></tr>`}</tbody></table>
     <div class="row" style="margin-top:8px"><input type="text" id="klabel" maxlength="40" placeholder="${T('Which computer? e.g. Family PC', 'Máy nào? ví dụ Máy tính gia đình')}"><button class="btn" id="kmake">➕ ${T('Make a key', 'Tạo khóa')}</button></div><p class="note" id="kout"></p></div>`;
+  const drawTrusted = async () => { let L = []; try { L = (await api('trusted')).trusted || []; } catch (e) { $('#trusted').textContent = say(e.message); return; }
+    $('#trusted').innerHTML = L.length ? `<table class="mini"><tbody>${L.map(x => `<tr data-tid="${esc(x.id)}"><td><b>${esc(x.who === 'owner' ? T('Owner', 'Chủ') : x.who)}</b>${x.here ? ` <span class="pill">${T('this browser', 'trình duyệt này')}</span>` : ''}</td><td>${esc(x.browser)}${x.where ? ' · ' + esc(x.where) : ''}</td><td class="note">${T('since', 'từ')} ${esc(whenAEST(x.at))} · ${T('last used', 'dùng gần nhất')} ${esc(whenAEST(x.last))}</td><td><button class="btn small ghost" data-tforget>${T('Forget', 'Quên')}</button></td></tr>`).join('')}</tbody></table>` : `<p class="note">${T('None yet.', 'Chưa có.')}</p>`;
+    P.querySelectorAll('[data-tforget]').forEach(b => b.onclick = async () => { const tr = b.closest('tr'); if (!confirm(T('Forget this browser? It must sign in again.', 'Quên trình duyệt này? Nó sẽ phải đăng nhập lại.'))) return;
+      try { await api('trusted/forget', { id: tr.dataset.tid }); toast(T('Forgotten.', 'Đã quên.'), 'ok'); drawTrusted(); } catch (e) { fail(e); } }); };
+  drawTrusted();
   $('#allout').onclick = async () => { if (!confirm(T('Sign everyone out, on every device? You sign in again yourself.', 'Đăng xuất mọi người trên mọi máy? Bạn sẽ đăng nhập lại.'))) return; try { await api('security/signout-all', {}); signIn(); } catch (e) { fail(e); } };
   $('#kmake').onclick = async () => { try { const r = await api('keys/make', { label: $('#klabel').value }); $('#kout').innerHTML = `${T('Copy it now (it is not shown again):', 'Sao chép ngay (sẽ không hiện lại):')}<br><code style="user-select:all;word-break:break-all">${esc(r.key)}</code>`; } catch (e) { fail(e); } };
   P.querySelectorAll('[data-krm]').forEach(b => b.onclick = async () => { if (!confirm(T('Remove this key? That computer can no longer reach the website.', 'Xóa khóa này? Máy đó sẽ không đến được trang web nữa.'))) return; try { await api('keys/remove', { id: b.closest('tr').dataset.id }); PAGES.security(P); } catch (e) { fail(e); } });
 };
 // ---------- 📜 Access log (online, the owner; round R privacy): the last 200 ----------
-const WHAT = { signin: ['signed in', 'đăng nhập'], 'signin-failed': ['wrong password', 'sai mật khẩu'], 'code-failed': ['wrong code', 'sai mã'], locked: ['locked out', 'bị khóa'], 'two-step-set': ['set up two-step', 'cài hai bước'], 'two-step-reset': ['cleared two-step', 'xóa hai bước'], analytics: ['opened the Analytics', 'mở Phân tích'], 'signout-all': ['signed everyone out', 'đăng xuất mọi người'], 'family-code': ['made a new family code', 'tạo mã gia đình mới'], 'key-made': ['made a Studio key', 'tạo khóa Studio'], 'key-removed': ['removed a Studio key', 'xóa khóa Studio'] };
+const WHAT = { signin: ['signed in', 'đăng nhập'], 'signin-trusted': ['signed in, trusted this browser', 'đăng nhập, tin cậy trình duyệt'], 'trust-forget': ['forgot a trusted browser', 'quên một trình duyệt tin cậy'], 'signin-failed': ['wrong password', 'sai mật khẩu'], 'code-failed': ['wrong code', 'sai mã'], locked: ['locked out', 'bị khóa'], 'two-step-set': ['set up two-step', 'cài hai bước'], 'two-step-reset': ['cleared two-step', 'xóa hai bước'], analytics: ['opened the Analytics', 'mở Phân tích'], 'signout-all': ['signed everyone out', 'đăng xuất mọi người'], 'family-code': ['made a new family code', 'tạo mã gia đình mới'], 'key-made': ['made a Studio key', 'tạo khóa Studio'], 'key-removed': ['removed a Studio key', 'xóa khóa Studio'] };
 PAGES.accesslog = async P => {
   const { entries } = await api('log');
   P.innerHTML = `<h2>📜 ${T('Access log', 'Nhật ký truy cập')}</h2><p class="sub">${T('The last 200: who signed in (or tried), from which town and country (worked out from the connection; the address itself is never kept), and who opened the Analytics.', '200 lần gần nhất: ai đăng nhập (hoặc thử), từ thành phố và nước nào (lấy từ kết nối; không bao giờ giữ địa chỉ), và ai đã mở Phân tích.')}</p>
@@ -1383,9 +1502,10 @@ function signIn() {
   $('#page').innerHTML = `<div class="card signin"><h2>✨ Sparkle Studio</h2><p class="sub">${T('The grown-ups’ dashboard, online. Sign in with your name and password (the owner leaves the name empty and uses the Studio password), then the 6-digit code from your authenticator app.', 'Bảng điều khiển của người lớn, trên mạng. Đăng nhập bằng tên và mật khẩu của bạn (chủ để trống tên và dùng mật khẩu Studio), rồi mã 6 số từ ứng dụng xác thực.')}</p>
     <form id="si"><input type="text" id="nm" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="${T('Sign-in name (empty for the owner)', 'Tên đăng nhập (chủ để trống)')}" style="margin-bottom:8px"><input type="password" id="pw" autocomplete="current-password" placeholder="${T('Password', 'Mật khẩu')}">
     <div id="setup2" hidden></div><input type="text" id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="${T('6-digit code (from the second time)', 'Mã 6 số (từ lần thứ hai)')}" style="margin-top:8px">
+    <label class="chk" style="margin-top:10px"><input type="checkbox" id="trust"> ${T('Trust this browser: stay signed in (a year, renewed as you use it). Only on your own phone or computer.', 'Tin cậy trình duyệt này: luôn đăng nhập (một năm, tự gia hạn khi dùng). Chỉ trên điện thoại hay máy tính của riêng bạn.')}</label>
     <button class="btn" style="margin-top:10px">🔓 ${T('Sign in', 'Đăng nhập')}</button><p class="note" id="sires"></p></form></div>`;
   $('#si').onsubmit = async e => { e.preventDefault(); $('#sires').textContent = '…';
-    const r = await fetch(BASE + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('#nm').value, password: $('#pw').value, code: $('#code').value.replace(/\s/g, '') }) }); const j = await r.json().catch(() => ({}));
+    const r = await fetch(BASE + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('#nm').value, password: $('#pw').value, code: $('#code').value.replace(/\s/g, ''), trust: $('#trust').checked }) }); const j = await r.json().catch(() => ({}));
     if (r.ok && j.step === 'setup') { // the first time: add the secret to an authenticator app, then type its code
       const box = $('#setup2'); box.hidden = false;
       box.innerHTML = `<div class="card" style="margin-top:8px"><b>📱 ${T('Set up two-step sign-in (once)', 'Cài đặt đăng nhập hai bước (một lần)')}</b><p class="note">${T('On your phone, open an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…), add an account and type this key, or tap the link on the phone. Then type the 6 numbers the app shows below.', 'Trên điện thoại, mở ứng dụng xác thực (Google Authenticator, Microsoft Authenticator, 1Password…), thêm tài khoản và gõ khóa này, hoặc bấm đường link trên điện thoại. Rồi gõ 6 số ứng dụng hiện bên dưới.')}</p>

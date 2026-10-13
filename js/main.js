@@ -1277,7 +1277,22 @@ G.drawOnlinePanel = (body, redraw) => {
 // above the browser's bottom bar, so the page's dark background showed under the game: the game fills the large
 // screen height (100lvh) instead, measured by a hidden probe; the same as the window's height everywhere else
 const lvhProbe = (() => { try { if (!CSS.supports('height', '100lvh')) return null; const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100lvh;visibility:hidden;pointer-events:none'; document.body.appendChild(d); return d; } catch (e) { return null; } })();
-const vh = () => Math.max(innerHeight, lvhProbe ? lvhProbe.offsetHeight : 0);
+// (owner, 13 Oct AEDT, iOS 27 Home Screen app on r70: still a blur band at the top and the dock cut at the bottom) a
+// Home Screen app has no browser bar to float over, and there the large screen height is taller than the space iOS
+// gives the page: the dock went under the bottom edge and the page could scroll a little (iOS then draws its blur under
+// the status bar). In a Home Screen app the game takes the space it is given and the page cannot scroll. Grown-ups →
+// Screen and world → "Fit the screen" can choose by hand (settings.screenFit: 'auto', 'fill' or 'fit').
+const homeApp = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } };
+const fitView = () => settings.screenFit === 'fill' ? false : settings.screenFit === 'fit' ? true : homeApp();
+const givenH = () => Math.round(Math.min(innerHeight, document.documentElement.clientHeight || innerHeight, window.visualViewport ? visualViewport.height + visualViewport.offsetTop : innerHeight));
+let fitWas = null;
+const vh = () => {
+  const fit = fitView(), h = fit ? givenH() : Math.max(innerHeight, lvhProbe ? lvhProbe.offsetHeight : 0), key = fit + ':' + h;
+  if (key !== fitWas) { fitWas = key; const r = document.documentElement; r.classList.toggle('fitview', fit); r.style.setProperty('--appH', h + 'px'); }
+  return h;
+};
+// what the screen says about itself (Grown-ups → Screen and world, for finding out what an iPhone does)
+G.screenFacts = () => ({ app: homeApp(), fit: fitView(), inner: innerHeight, client: document.documentElement.clientHeight, visual: window.visualViewport ? Math.round(visualViewport.height) : 0, large: lvhProbe ? lvhProbe.offsetHeight : 0, screen: screen.height, used: vh() });
 // Two players face to face (owner, round R: a tablet lying on the table with a child at each end): the screen is cut
 // across the middle; player 1 has the near half, player 2 the far half turned half a turn (rot 180) so it faces them.
 // On a computer or TV both halves face the same way, side by side ('side'). Grown-ups can pick either (settings.twoView).

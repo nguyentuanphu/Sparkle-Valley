@@ -44,7 +44,7 @@ export class Hud {
         <button class="friendchip" hidden><span class="fc-arrow">➤</span><span class="fc-txt"></span><span class="fc-sig"></span></button>
         <div class="tools"></div>
       </div>
-      <div class="zoomer"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">${ICONS.zoomIn}<kbd class="kb">+</kbd></button><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">${ICONS.zoomOut}<kbd class="kb">−</kbd></button><button class="z-view" aria-label="${T('Camera view', 'Góc nhìn')}">${pic('🎥')}<kbd class="kb">V</kbd></button><button class="z-where" aria-label="${T('Where is…? Show me the way', 'Ở đâu? Chỉ đường cho con')}" title="${T('Where is…?', 'Ở đâu?')}">${pic('🧭')}<kbd class="kb">Y</kbd></button></div>
+      <div class="zoomer"><button class="z-tray" aria-expanded="false" aria-label="${T('View: zoom, camera and where', 'Xem: phóng to, góc nhìn và chỉ đường')}">${ICONS.view}<small>${T('View', 'Xem')}</small></button><div class="ztray"><button class="z-in" aria-label="${T('Zoom in', 'Phóng to')}">${ICONS.zoomIn}<kbd class="kb">+</kbd></button><button class="z-out" aria-label="${T('Zoom out', 'Thu nhỏ')}">${ICONS.zoomOut}<kbd class="kb">−</kbd></button><button class="z-view" aria-label="${T('Camera view', 'Góc nhìn')}">${pic('🎥')}<kbd class="kb">V</kbd></button><button class="z-where" aria-label="${T('Where is…? Show me the way', 'Ở đâu? Chỉ đường cho con')}" title="${T('Where is…?', 'Ở đâu?')}">${pic('🧭')}<kbd class="kb">Y</kbd></button></div></div>
       <div class="region"></div>
       <div class="htoast"></div>
       <canvas class="wheel" width="96" height="96"></canvas>
@@ -105,6 +105,13 @@ export class Hud {
     const zb = (b, f) => b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); game.zoomBy(i, f); });
     zb(this.q('.z-in'), .8); zb(this.q('.z-out'), 1.25);
     this.q('.z-view').addEventListener('pointerdown', e => { e.preventDefault(); game.cycleView(i); });
+    // (owner, 13 Oct AEDT: too many buttons down one side) zoom, camera view and Where is sit in a tray behind one View
+    // button; it closes by itself after a while, or with a tap on View again (their keys work all the time)
+    { const zr = this.q('.zoomer'), tb = this.q('.z-tray'); let t = 0;
+      const open = on => { zr.classList.toggle('open', on); tb.setAttribute('aria-expanded', String(on)); clearTimeout(t); if (on) t = setTimeout(() => open(false), 8000); };
+      tb.addEventListener('pointerdown', e => e.stopPropagation());
+      tb.onclick = e => { e.stopPropagation(); open(!zr.classList.contains('open')); };
+      this.q('.ztray').addEventListener('pointerdown', () => open(true), true); }
     this.refreshAudio();
     const em = this.q('.emotes');
     EMOTES.forEach(e => { const b = el('button', 'em', `<span>${e.icon}</span><small>${esc(T(e.en, e.vi))}</small>`); b.onclick = () => { this.toggleEmotes(false); game.emote(i, e.id); }; em.appendChild(b); });
