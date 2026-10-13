@@ -83,3 +83,14 @@ prints each page's recorded voice length.
   other films). Azure recording of the new lines started (1124 files).
 - Next: when recording ends, `node run.mjs filmtails` with the real lengths, move line times where it reports a gap;
   stills on phone, tablet, computer (`SHOT_ONE=1 SHOT_W=… SHOT_H=… node filmshots.mjs <folder> <ids>`); quick checks.
+
+**Checks, 13 Oct, about 3:40 pm AEDT** (commit after this note; quick checks only, owner: no full suite per batch):
+- `filmtails` pass: 230 film pages in 42 films (9 older + 33 new), no silence over 1.5 s before a line or after the
+  narrator, 3 s right after a tap, English and Vietnamese recordings.
+- `filmstart` pass: 42 films started and played all 232 pages to the end with no tap (computer, 6x speed); the first
+  page started by itself on a phone (42 of 42) and a tablet (42 of 42).
+- `filmmusic` pass; `films` pass; `tales` pass (38 tales, 259 pages); `voice` pass; `phone` pass.
+- `bilingual` FAIL, not from this batch: `js/games/tienlen.js:151` "Tiến Lên miền Bắc (cards)" and `js/main.js:539`
+  "▶ Play Tiến Lên miền Nam / miền Bắc" (r70, Round V #14, commit 006fce8b): written on the board for the r70 chat.
+- Voices: 1132 new recordings (Azure), 0 missing for the films.
+- Stills: computer (all pages of 4 films, 1280x800), and a sample on phone, tablet and computer (`tests/shots3.sh`).
