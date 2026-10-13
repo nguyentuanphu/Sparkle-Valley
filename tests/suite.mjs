@@ -5,7 +5,9 @@
 //   node suite.mjs --changed           only the checks for what changed since main (a film, a button fix…)
 //   node suite.mjs --changed --list    show which checks it would run and why, without running them
 // Options: --base <git ref> (default origin/main), --jobs <n> (default 3), --all (no samples: every slow check in full),
-// --no-map (the full suite without recording code).
+// --no-map (the full suite without recording code), --shard i/n (this machine runs part i of n of the list: GitHub's
+// full-suite workflow, .github/workflows/full-suite.yml, runs the parts side by side; the speed checks stay together in
+// the last part; no code map).
 // The slowest checks (reading, films, voicearea) try a sample that changes every run, and everything when their own
 // files changed since the base (run.mjs: SV_SAMPLE, SV_FULL, SV_SEED). A check whose browser crashed runs once more alone.
 import fs from 'fs';
@@ -178,6 +180,16 @@ if (CHANGED) {
     for (const t of s.notes) console.log(`  note: ${t}`);
   }
 } else mapping = !flag('--no-map');
+// (--shard i/n) the checks shared out by their last run time, the longest first, each to the part with the least so far;
+// the speed checks (SOLO) all go to the last part, alone at its end as usual
+const SHARD = /^(\d+)\/(\d+)$/.exec(opt('--shard', ''));
+if (SHARD) {
+  const [, i, n] = SHARD.map(Number), bins = Array.from({ length: n }, () => ({ t: 0, list: [] }));
+  for (const c of list.filter(c => !SOLO.includes(c)).sort((a, b) => (times[b] || 60) - (times[a] || 60))) { const bin = bins.slice(0, n).reduce((m, x) => x.t < m.t ? x : m); bin.list.push(c); bin.t += times[c] || 60; }
+  bins[n - 1].list.push(...list.filter(c => SOLO.includes(c)));
+  const mine = new Set(bins[i - 1].list); list = list.filter(c => mine.has(c)); mapping = false;
+  console.log(`part ${i} of ${n}: ${list.length} checks (${list.join(', ')})`);
+}
 const full = flag('--all') ? Object.keys(SLOW_OWN) : slowFull(files), seed = Math.floor(Date.now() / 36e5);
 const sampledNow = list.filter(n => SLOW_OWN[n] && !full.includes(n));
 if (sampledNow.length) console.log(`samples this run (seed ${seed}): ${sampledNow.join(', ')}${full.length ? `; in full (their files changed): ${full.join(', ')}` : ''}`);

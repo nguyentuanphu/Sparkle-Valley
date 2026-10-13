@@ -1,0 +1,90 @@
+# The full suite on GitHub's machines (owner, 13 Oct AEDT: "use github to run full suite"), so a Release chat does not
+# spend an hour of its own machine on it. tests/suite.mjs runs in 6 parts side by side (--shard i/n: the checks shared
+# out by their last run time, the speed checks perf, startup and battery together in the last part), 2 checks at a time
+# in each part (GitHub's machines are slower than the Claude machines). A summary job puts the parts together.
+# Starts by:
+#   - a push to any branch but main whose commit message has "[full suite]" in it (a Release chat's release commit);
+#   - by hand: Actions → Full suite → Run workflow, with the branch (or commit) to test.
+# The speed checks (perf, startup) measure GitHub's machine: read them against their limits with that in mind. The code
+# map (tests/check-map.json) is not made here: it needs the whole suite on one machine (node suite.mjs, locally).
+# Nothing is deployed.
+name: Full suite
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch or commit to test'
+        required: true
+  push:
+    branches-ignore: [main]
+
+concurrency:
+  group: full-suite-${{ github.event.inputs.ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  part:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[full suite]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.sha }}
+          persist-credentials: false
+
+      - name: Main, to compare with (the slow checks run in full when their own files changed)
+        run: git fetch --depth=1 origin main:refs/remotes/origin/main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Get the checks ready (browser and test server)
+        run: |
+          # tests/package-lock.json points playwright at a folder on the Claude machines: install from package.json
+          cd tests && npm install --no-package-lock --no-save --no-audit --no-fund && npx playwright install --with-deps chromium
+          cd .. && (python3 -m http.server 8765 >/dev/null 2>&1 &)
+          sleep 2
+
+      - name: Run part ${{ matrix.part }} of 6
+        run: |
+          cd tests
+          export CHROMIUM="$(node -e "import('playwright').then(p => console.log(p.chromium.executablePath()))")"
+          export SV_URL=http://localhost:8765/
+          node suite.mjs --no-map --shard ${{ matrix.part }}/6 --jobs 2 2>&1 | tee ../part.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Keep the result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: part-${{ matrix.part }}
+          path: |
+            part.log
+            tests/out/suite-result.txt
+            tests/out/fail-*.png
+          if-no-files-found: ignore
+          retention-days: 14
+
+  summary:
+    needs: part
+    if: always() && needs.part.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: parts
+      - name: The whole suite
+        run: |
+          {
+            echo "## Full suite"
+            for d in parts/part-*; do echo "### ${d#parts/}"; echo '```'; cat "$d/tests/out/suite-result.txt" 2>/dev/null || echo "no result (the part stopped early: see its log)"; echo '```'; done
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          grep -h "checks passed" parts/part-*/tests/out/suite-result.txt | awk '{ split($1, a, "/"); p += a[1]; t += a[2] } END { print p "/" t " checks passed in all" }' | tee -a "$GITHUB_STEP_SUMMARY"
+          ! grep -qh "^FAILED" parts/part-*/tests/out/suite-result.txt && [ "$(ls -d parts/part-* | wc -l)" = 6 ]
