@@ -78,7 +78,8 @@ jobs:
 
   collect:
     needs: [which, share]
-    if: always() && needs.which.result == 'success'
+    # (not when the run was cancelled, e.g. by a newer push: it would report every check as "did not run")
+    if: ${{ !cancelled() && needs.which.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
