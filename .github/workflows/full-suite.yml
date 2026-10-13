@@ -19,8 +19,10 @@ on:
   push:
     branches-ignore: [main]
 
+# a new full-suite run of the same branch replaces the old one; an ordinary push (docs, no "[full suite]") gets a group
+# of its own, so it never stops a suite that is running
 concurrency:
-  group: full-suite-${{ github.event.inputs.ref || github.ref }}
+  group: full-suite-${{ github.event.inputs.ref || github.ref }}-${{ (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[full suite]')) && 'suite' || github.sha }}
   cancel-in-progress: true
 
 jobs:
