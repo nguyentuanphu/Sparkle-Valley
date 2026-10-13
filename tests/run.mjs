@@ -3384,7 +3384,12 @@ await check('animalhomes', async () => {
     W.time = .4; run(30);
     const day = { hensOut: A.hens.filter(a => !a.inside && a.m.visible).length, littleOut: A.critHens.filter(c => !c.inside && c.s.visible).length, ducks: A.ducks.reduce((s, c) => s + Math.hypot(c.cx - A.lake[0], c.cz - A.lake[1]), 0) / A.ducks.length };
     // the dog: the child stands beside it, then walks off a few metres; the dog comes along
-    const d = A.dog.m.position; h.place(d.x + 3, d.z); run(1); const h0 = [h.pos.x, h.pos.z]; h.place(h0[0] + 6, h0[1] + 2); run(8);
+    const d = A.dog.m.position; h.place(d.x + 3, d.z); run(1); const h0 = [h.pos.x, h.pos.z];
+    // (r70) the village animals never step on a road (js/lotus.js okSpot), so the child walks off where the way stays off the
+    // road (the old fixed 6 m east sometimes ended on the village road: the dog waited at its edge, on r69 too)
+    const { roadDist } = await import('/js/world.js'), offRoad = (x, z) => { const q = roadDist(x, z); if (q.d < q.road.w / 2 + 1.5) return false; const p = { x, z }; W.collide(p, .6); return Math.hypot(p.x - x, p.z - z) < .01; };   // off the road and clear of fences and houses, as okSpot
+    const way = [[6, 2], [-6, 2], [2, 6], [2, -6], [-6, -2], [6, -2]].find(([dx, dz]) => [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1].every(k => offRoad(d.x + dx * k, d.z + dz * k) && offRoad(h0[0] + dx * k, h0[1] + dz * k))) || [6, 2];
+    h.place(h0[0] + way[0], h0[1] + way[1]); run(8);
     const follows = !!A.dog.following && Math.hypot(d.x - h.pos.x, d.z - h.pos.z) < 4;
     h.place(V.x + 80, V.z + 80); run(1); const goneHome = !A.dog.following;
     G.paused = false;
@@ -4480,7 +4485,7 @@ await check('nostudio', async () => {
       G.openPad(0, 'map'); await w(400);
       // (Round V, owner 13 Oct) the Shop tab closes the Pad and opens the Shop: the Shop is looked at too, then the Pad reopens
       for (const t of [...document.querySelectorAll('.pad-tabs [data-t]')].map(x => x.dataset.t)) {
-        if (!document.querySelector(`.pad-tabs [data-t="${t}"]`)) { document.querySelectorAll('.modal').forEach(e => e.remove()); G.openPad(0, 'map'); await w(400); }
+        if (!document.querySelector(`.pad-tabs [data-t="${t}"]`)) { document.querySelectorAll('.modal').forEach(e => e.remove()); G.paused = false; G.openPad(0, 'map'); await w(400); }
         document.querySelector(`.pad-tabs [data-t="${t}"]`).click(); await w(t === 'shop' ? 700 : 250);
         const pad = document.querySelector('.pad, .sparkpad, .pad-body') || document.querySelector('.modal'); if (pad) look(lang + ' pad-' + t, pad.closest('.modal') || pad);
       }
