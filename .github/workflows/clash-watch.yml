@@ -1,0 +1,57 @@
+# Clash watch (owner, 13 Oct AEDT: "yes, add it"; brief docs/cores/tasks/github-suite.md).
+# Each time main changes (and by hand), every branch with work that is not on main is test-merged onto main in this job's
+# own copy (nothing is pushed, nothing is written to any branch). One GitHub issue, "Clash watch", is kept up to date with
+# the branches that clash and their files. A core reads it before writing "ready for Release" and fixes its own clash by
+# merging main into its branch; Release reads it before collecting.
+name: Clash watch
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: clash-watch
+  cancel-in-progress: true
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test-merge every branch onto main
+        run: |
+          git config user.name clash-watch; git config user.email clash-watch@users.noreply.github.com
+          git fetch -q origin '+refs/heads/*:refs/remotes/origin/*'
+          now=$(TZ=Australia/Sydney date '+%d %b %Y, %-I:%M %p %Z')
+          main=$(git rev-parse --short origin/main)
+          clash=""; clean=""
+          for b in $(git for-each-ref --format='%(refname:lstrip=3)' refs/remotes/origin | grep -vx HEAD); do
+            case "$b" in main|studio-exe|studio-draft|voices/*) continue;; esac
+            ahead=$(git rev-list --count "origin/main..origin/$b"); [ "$ahead" = 0 ] && continue
+            git checkout -q --detach origin/main
+            if git merge -q --no-commit --no-ff "origin/$b" >/dev/null 2>&1; then clean="$clean\n- \`$b\` ($ahead commits)"
+            else files=$(git diff --name-only --diff-filter=U | sed 's/^/`/; s/$/`/' | paste -sd, - | sed 's/,/, /g')
+                 clash="$clash\n- **\`$b\`** ($ahead commits): ${files:-could not merge}"; fi
+            git merge --abort >/dev/null 2>&1 || git reset -q --hard
+          done
+          {
+            echo "Checked $now against main \`$main\`. Updated by the Clash watch job each time main changes; never edit by hand."
+            echo
+            if [ -n "$clash" ]; then echo "## Clashes: merge main into these branches and fix the files"; printf "$clash\n"; else echo "## No clashes"; fi
+            echo
+            if [ -n "$clean" ]; then echo "## Merge cleanly onto main"; printf "$clean\n"; fi
+          } > body.md
+          cat body.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the "Clash watch" issue up to date
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          n=$(gh issue list --state open --search 'in:title "Clash watch"' --json number,title -q '.[] | select(.title=="Clash watch") | .number' | head -1)
+          if [ -n "$n" ]; then gh issue edit "$n" --body-file body.md; else gh issue create --title "Clash watch" --body-file body.md; fi

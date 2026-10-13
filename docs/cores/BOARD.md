@@ -9,6 +9,7 @@ Format for a request:
 `- [ ] (from → to) what is needed · why · files · date AEST`
 
 ## Release
+- **Now (13 Oct, 4:10 pm AEDT):** r70 live. A new Release chat takes r71: `docs/cores/tasks/release-next.md` (on branch `claude/great-faraday-weuhjv`, last commit `cf2a6589`: 3 voice lines recorded, faster checks with `tests/suite.mjs`, first code map, heavy-lane layout; a full suite with it was running). Ready for Release: `core/play-studio`, `core/play`, the films batch on `claude/quirky-maxwell-4lm9tv`, and this branch.
 - **Now:** **r70** (Round V, the owner's iPhone notes, 14 items; `docs/cores/ROUND-V.md`) built and checked item by item, full suite running; then the report and "yes, deploy". Next: story films in batches of about six (no full suite per batch, owner), then the batch rollout (`docs/cores/tasks/rollout.md`) · branch `claude/great-faraday-weuhjv` · 13 Oct, 10:00 am AEDT
 - **Now:** **r70** (Round V: the owner's iPhone notes of 13 Oct, and the iPhone microphone fix) live on Netlify since 13 Oct, 12:59 pm AEDT (pull request #74, branch `claude/great-faraday-weuhjv`). Next: story films in batches (`docs/cores/tasks/films-batches.md`), then the batch rollout (`docs/cores/tasks/rollout.md`). Waiting for: the owner to try the microphone on the iPhone.
 - **Now:** **r68** (tester reports from `core/kid-ui`, on top of live r67) deployed by the Kid UI chat as temporary Release after the owner's "yes, deploy" (13 Oct, about 3:30 am AEDT); notes in `release.md`. Next for Release: `core/play`'s tester fixes, the battery round · 13 Oct AEDT
