@@ -335,3 +335,20 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   emoji), `grownupsui` `a11y` `phone` `shop` `boot` `tester` `preload` `types` `unit` `arch` `rules` `emoji` pass.
   Screenshots: the Releases page on phone, tablet and computer (Studio on a copy of the game). Full suite: Release.
 
+## Progress notes (13 Oct AEDT: auto play rebuilt, on `core/play-studio`)
+- Built (owner's go, decisions above): `js/autoplay.js` rewritten (path finding round water and walls on `G.goodSpot`,
+  Quick runs via `hero.autoRun` in `js/player.js`, long trips flown; stuck: a jump, another way, then flown beside, and
+  reported with the spot and a picture; a finger on the screen taps real buttons; games played to the end through
+  `playWatch` in `js/games/frame.js`, right 3 times in 4; stories with "read by itself"; pop-ups tapped away; "Follow
+  the quests"; the button under the ladybird; problems sent at once through `autoReport` with the last 15 steps; no
+  restart). `js/keepcopy.js`: progress copied when a device becomes a tester and put back in place when it stops,
+  rewards kept (`KEEP_FIELDS`); Studio's tester card chooses `revert` ('progress' or 'autoplay'), kept by
+  `netlify/lib/live.mjs`.
+- Checks (13 Oct, about 2 pm AEDT): `autoplay` (rewritten: button, walk round water, 7 steps played with a finger, no
+  restart, Stop, progress back with rewards kept) `unit` (75) `studio` `tester` `boot` `phone` `a11y` `types` `arch`
+  `rules` `emoji` `preload` pass. `testerrewards` fails, and fails the same on live main r69: the family's "From your
+  family" message (Studio family update on main) sits over the tester's thank-you. Not this branch; for Release.
+  Screenshots: the button, the window, a game being played and the report on phone, tablet and computer.
+- Known: auto play cannot yet win long strategy games (Ô Ăn Quan with Tèo), so "Follow the quests" stops there and
+  says it needs help. Full suite: Release.
+
