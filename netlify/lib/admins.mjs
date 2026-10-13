@@ -16,7 +16,29 @@
 // players report and the family photos without the two steps; only its hash is kept, and the owner can remove it.
 import crypto from 'crypto';
 
-export const ROLES = ['viewer', 'editor', 'owner'];
+export const ROLES = ['viewer', 'editor', 'owner', 'custom'];
+// (owner, 14 Oct AEDT: "give them more granular access") what an account may do, one permission at a time. The roles
+// are ready-made sets of them; "custom" is the owner's own choice, ticked one by one in Setup → Admins. Managing the
+// admins, Security (exe keys, sign everyone out) and the Access log are never granted one by one: they come only with
+// the owner role, so nobody can give themselves more than they were given.
+export const PERMS = {
+  analytics:  ['📊', 'See Analytics (what the children play, the missing lines)', 'Xem Phân tích (các con chơi gì, câu còn thiếu)'],
+  devices:    ['🏷️', 'Give devices a name in Analytics', 'Đặt tên máy trong Phân tích'],
+  testers:    ['🐞', 'See tester reports', 'Xem báo cáo người thử'],
+  testerset:  ['✅', 'Mark tester problems fixed, being fixed or not a bug', 'Đánh dấu lỗi đã sửa, đang sửa hoặc không phải lỗi'],
+  pages:      ['👀', 'Open the family and game pages (look only)', 'Mở các trang gia đình và trò chơi (chỉ xem)'],
+  edit:       ['✏️', 'Change the family and game pages (waits for Publish)', 'Sửa các trang gia đình và trò chơi (chờ Phát hành)'],
+  voices:     ['🎤', 'Make and record voices', 'Tạo và thu giọng'],
+  releases:   ['🆕', 'Switch features and festivals on or off (live at once)', 'Bật tắt tính năng và lễ hội (có hiệu lực ngay)'],
+  family:     ['🖼️', 'Family photos and the family code', 'Ảnh gia đình và mã gia đình'],
+  familycode: ['🔢', 'Make a new family code', 'Tạo mã gia đình mới'],
+  publish:    ['🚀', 'Publish to the children', 'Phát hành cho các con'],
+  site:       ['🌐', 'Rebuild the website', 'Dựng lại trang web'],
+  deploy:     ['🧯', 'Put code live: merge pull requests, bring back an older version', 'Đưa mã lên: gộp yêu cầu, quay lại phiên bản cũ']
+};
+const ALL = Object.keys(PERMS);
+export const PRESETS = { viewer: ['analytics', 'testers'], editor: ALL.filter(k => !['deploy', 'familycode'].includes(k)), owner: ALL };
+export const permsOf = a => !a ? [] : a.role === 'custom' ? (Array.isArray(a.perms) ? a.perms.filter(k => PERMS[k]) : []) : (PRESETS[a.role] || PRESETS.viewer).slice();
 export const NAME = /^[a-z0-9][a-z0-9._@+-]{1,59}$/;
 const key = name => 'a/' + name;
 const hashOf = (pw, salt) => crypto.scryptSync(String(pw), salt, 32, { N: 16384, r: 8, p: 1 }).toString('base64url');
@@ -29,20 +51,22 @@ export const cleanName = n => String(n || '').trim().toLowerCase();
 
 export async function list(S) {
   const { blobs } = await S.list({ prefix: 'a/' }), out = [];
-  for (const b of blobs.slice(0, 200)) { const a = await S.get(b.key, { type: 'json' }); if (a) out.push({ name: a.name, role: a.role, at: a.at, by: a.by || '', twoStep: !!a.totp, twoStepOn: !a.noTwoStep }); }
+  for (const b of blobs.slice(0, 200)) { const a = await S.get(b.key, { type: 'json' }); if (a) out.push({ name: a.name, role: a.role, perms: permsOf(a), at: a.at, by: a.by || '', twoStep: !!a.totp, twoStepOn: !a.noTwoStep }); }
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 export async function get(S, name) { name = cleanName(name); return NAME.test(name) ? S.get(key(name), { type: 'json' }) : null; }
 // add someone, or give them a new password and/or role
-export async function put(S, { name, password, role }, by) {
+export async function put(S, { name, password, role, perms }, by) {
   name = cleanName(name);
   if (!NAME.test(name)) return { error: 'A sign-in name has 2–60 letters, numbers or . _ @ + - (no spaces).' };
   if (!ROLES.includes(role)) role = 'viewer';
   const old = await get(S, name);
+  if (perms === undefined && old) perms = old.perms;
   if (!old && !password) return { error: 'Choose a password for them.' };
   if (password && String(password).length < MIN_PW) return { error: `A password needs at least ${MIN_PW} characters.` };
   const a = old || { name, at: new Date().toISOString(), by };
   a.role = role;
+  if (role === 'custom') a.perms = [...new Set((Array.isArray(perms) ? perms : []).filter(k => PERMS[k]))]; else delete a.perms;
   if (password) { a.salt = crypto.randomBytes(16).toString('base64url'); a.hash = hashOf(password, a.salt); }
   await S.setJSON(key(name), a);
   return { ok: true };
@@ -60,17 +84,34 @@ export async function fromCookie(S, pw, c) {
   const a = await get(S, m[1]); if (!a) return null;
   return same(sigOf(pw, a, m[2]), m[3]) ? a : null;
 }
-// what each role may reach: a viewer only reads the analytics (and what the dashboard needs to open)
-export function allowed(role, api, post) {
+// what an account may reach: me = { role, perms } (perms from permsOf); a bare role string still works (the presets)
+// the permission an action needs: null = anyone signed in; 'owner' = only an owner. Anything not named here is a
+// page of the dashboard: looking needs "pages", saving needs "edit"
+export function needs(api, post) {
+  if (['whoami', 'info', 'ping', 'admins/me'].includes(api)) return null;
+  if (!post && api === 'content') return null; // (the dashboard opens with it)
+  if (/^(admins|keys|security)\//.test(api) || api === 'log') return 'owner';
+  if (['players', 'inbox'].includes(api)) return post ? 'owner' : 'analytics';
+  if (api === 'players/label') return 'devices';
+  if (api === 'testers' || /^testers\/(problem|shot)\/[a-f0-9]{16}$/.test(api)) return post ? 'owner' : 'testers';
+  if (api === 'testers/set') return 'testerset';
+  if (api === 'live') return post ? 'releases' : 'pages';
+  if (api === 'family/code/new') return 'familycode';
+  if (/^(family\/|familyphoto\/|albumphoto$)/.test(api)) return 'family';
+  if (['github/merge', 'site/restore'].includes(api)) return post ? 'deploy' : 'pages';
+  if (['github/publish', 'pending/discard'].includes(api)) return post ? 'publish' : 'pages';
+  if (api === 'site/rebuild') return post ? 'site' : 'pages';
+  if (/^voices?(\/|$)/.test(api)) return post ? 'voices' : 'pages';
+  return post ? 'edit' : 'pages';
+}
+export function allowed(me, api, post) {
+  const role = typeof me === 'string' ? me : me && me.role;
   if (role === 'owner') return true;
   // (round R privacy) SparkleStudio.exe's key: the players report, the inbox and the family photos, nothing else
   if (role === 'exe') return post ? ['players/label', 'family/upload', 'family/remove', 'family/code/new', 'testers/set'].includes(api) : ['whoami', 'players', 'inbox', 'family/code', 'testers'].includes(api) || /^familyphoto\/[\w-]+$/.test(api) || /^testers\/(problem|shot)\/[a-f0-9]{16}$/.test(api);
-  if (/^(admins|keys|security)\//.test(api) && api !== 'admins/me') return false;
-  if (api === 'log') return false; // the access log is the owner's
-  // (audit, 9 Oct) putting code live (merging a pull request, bringing back an old deploy) stays with the owner
-  if (role === 'editor') return !(post && ['github/merge', 'site/restore', 'family/code/new'].includes(api));
-  if (post) return api === 'admins/me';
-  return ['info', 'whoami', 'content', 'players', 'inbox', 'testers'].includes(api) || /^testers\/(problem|shot)\/[a-f0-9]{16}$/.test(api); // (a viewer reads the tester reports too)
+  const need = needs(api, post); if (need === null) return true; if (need === 'owner') return false;
+  const perms = typeof me === 'string' ? PRESETS[me] || [] : Array.isArray(me && me.perms) ? me.perms : permsOf(me);
+  return perms.includes(need);
 }
 
 // ---------- two-step sign-in (round R privacy, 9 Oct): TOTP, RFC 6238 ----------

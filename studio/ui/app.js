@@ -1,5 +1,5 @@
 // Sparkle Studio dashboard (runs in the browser, talks to studio.cjs on this computer).
-import { viMessage } from './vi.js';
+import { viMessage, PERM_VI } from './vi.js';
 const $ = s => document.querySelector(s);
 let LANG = localStorage.getItem('studioLang') || 'vi';
 const T = (en, vi) => LANG === 'vi' ? vi : en;
@@ -93,7 +93,12 @@ const SECTIONS = [
 const ROLE = () => (INFO && INFO.me && INFO.me.role) || 'owner';
 // (round R privacy) Security and the Access log are the owner's, online only
 const ONLINE_ONLY = ['admins', 'security', 'accesslog'], OWNER_ONLY = ['security', 'accesslog'];
-const SEC = () => ROLE() === 'viewer' ? SECTIONS.filter(x => x.k === 'players') : SECTIONS.map(x => x.k === 'setup' ? { ...x, pages: x.pages.filter(k => (INFO && INFO.online || !ONLINE_ONLY.includes(k)) && (ROLE() === 'owner' || !OWNER_ONLY.includes(k))) } : x);
+// (owner, 14 Oct AEDT) each account has its own permissions (netlify/lib/admins.mjs PERMS): a page shows only to those
+// who may open it, the rest of the dashboard follows. The exe on the family computer is the owner's: everything.
+const CAN = k => ROLE() === 'owner' || ((INFO && INFO.me && INFO.me.perms) || []).includes(k);
+const PAGE_NEEDS = { players: 'analytics', testers: 'testers', familycode: 'family', album: 'family', publish: 'publish' };
+const canSee = k => k === 'home' || k === 'admins' ? true : OWNER_ONLY.includes(k) ? ROLE() === 'owner' : CAN(PAGE_NEEDS[k] || 'pages');
+const SEC = () => SECTIONS.map(x => ({ ...x, pages: x.pages.filter(k => (INFO && INFO.online || !ONLINE_ONLY.includes(k)) && canSee(k)) })).filter(x => x.pages.length && (x.k !== 'home' || CAN('pages')));
 // each page: its picture, its name and one line saying what it is for
 const ABOUT = {
   home: ['🏠', 'Home', 'Trang chính', '', ''],
@@ -134,7 +139,7 @@ const go = k => { if (k === cur || !leaveOk()) return; cur = k; const sec = sect
 // the bar at the top: Publish when something is waiting, reload, language
 function head() {
   const pub = $('#pub'); if (!pub) return;
-  pub.hidden = !(INFO && INFO.unpublished) || ROLE() === 'viewer'; pub.textContent = '🚀 ' + T('Publish', 'Phát hành') + (INFO && INFO.waiting ? ` (${INFO.waiting})` : '');
+  pub.hidden = !(INFO && INFO.unpublished) || !CAN('publish'); pub.textContent = '🚀 ' + T('Publish', 'Phát hành') + (INFO && INFO.waiting ? ` (${INFO.waiting})` : '');
 }
 function nav() {
   const sec = sectionOf(cur);
@@ -167,7 +172,8 @@ async function render(force) {
   if (!LOADED || force) P.innerHTML = `<div class="loading">✨ ${T('Loading…', 'Đang tải…')}</div>`;
   try {
     await load(force);
-    if (ROLE() === 'viewer' && cur !== 'players') { cur = 'players'; nav(); }
+    if (INFO.perms) Object.values(INFO.perms).forEach(([, en, vi]) => { PERM_VI[en] = vi; });
+    if (!SEC().some(x => x.k === cur || x.pages.includes(cur))) { cur = (SEC()[0] || { pages: ['admins'] }).pages[0]; nav(); }
     else if (!INFO.ok && cur !== 'settings') { cur = 'settings'; nav(); toast(T('First, choose the game folder.', 'Trước tiên, chọn thư mục game.')); }
     head();
     const sec = sectionOf(cur);
@@ -200,7 +206,7 @@ const PAGES = {};
 PAGES.home = async P => {
   const c = CONTENT;
   // (owner, 10 Oct) on a phone the buttons come first and the numbers sit in a small row under them
-  const waiting = INFO.unpublished && ROLE() !== 'viewer' ? `<div class="card hwait"><p class="warn">✏️ ${T('You have saved changes that are not live yet: press Publish to send them to the children.', 'Bạn có thay đổi đã lưu nhưng chưa phát hành: bấm Phát hành để gửi tới các con.')}</p><button class="btn" id="hpub">🚀 ${T('Publish', 'Phát hành')}${INFO.waiting ? ` (${INFO.waiting})` : ''}</button></div>` : '';
+  const waiting = INFO.unpublished && CAN('edit') ? `<div class="card hwait"><p class="warn">✏️ ${T('You have saved changes that are not live yet: press Publish to send them to the children.', 'Bạn có thay đổi đã lưu nhưng chưa phát hành: bấm Phát hành để gửi tới các con.')}</p><button class="btn" id="hpub">🚀 ${T('Publish', 'Phát hành')}${INFO.waiting ? ` (${INFO.waiting})` : ''}</button></div>` : '';
   P.innerHTML = `<div class="home"><h2>🏠 ${T('Welcome!', 'Xin chào!')}</h2><p class="sub">${T('Change the game for your family here, then press Publish.', 'Chỉnh trò chơi cho gia đình ở đây, rồi bấm Phát hành.')}</p>${waiting}
   <div class="grid stats">
     <div class="card stat"><b>${esc(INFO.version)}</b><span>${T('Game version', 'Phiên bản game')}</span></div>
@@ -849,7 +855,7 @@ PAGES.publish = async P => {
     <p class="note">${c.netlify ? T('Your Netlify site is set: ', 'Đã có trang Netlify: ') + esc(c.netlifySite) : T('Add a Netlify token and the site name in Settings for one-click upload, or drag the zip onto the site’s Deploys page.', 'Thêm khóa Netlify và tên trang trong Cài đặt để tải lên một chạm, hoặc kéo tệp zip vào trang Deploys.')}</p>
     <button class="btn ghost" id="deploy" ${c.netlify ? '' : 'disabled'}>☁️ ${T('Upload to Netlify', 'Tải lên Netlify')}</button> <span id="dres" class="note"></span></div>`}`;
   // online (round P): every save waits here on the website; one Publish sends them all, or drop them
-  if (INFO.online && ROLE() !== 'viewer') {
+  if (INFO.online && CAN('publish')) {
     const box = document.createElement('div'); box.className = 'card'; P.querySelector('.sub').after(box);
     const drawWait = redrawWait = async () => {
       let files = []; try { files = (await api('pending')).files; } catch (e) { }
@@ -1380,7 +1386,9 @@ PAGES.players = async P => {
     try { await api('players/label', { id, label: l }); card.querySelector('.dlabel').textContent = l || cur; toast(T('Saved.', 'Đã lưu.')); } catch (e) { fail(e); } });
 };
 // ---------- 👥 Admins (online, round O) ----------
-const ROLE_NAMES = { viewer: ['👀 Viewer: Analytics only', '👀 Xem: chỉ Phân tích'], editor: ['✏️ Editor: every page and Publish', '✏️ Sửa: mọi trang và Phát hành'], owner: ['👑 Owner: everything, also admins', '👑 Chủ: tất cả, cả quản trị viên'] };
+const ROLE_NAMES = { viewer: ['👀 Viewer: Analytics only', '👀 Xem: chỉ Phân tích'], editor: ['✏️ Editor: every page and Publish', '✏️ Sửa: mọi trang và Phát hành'], owner: ['👑 Owner: everything, also admins', '👑 Chủ: tất cả, cả quản trị viên'], custom: ['🧩 Chosen: only what is ticked', '🧩 Tự chọn: chỉ những gì được đánh dấu'] };
+// (owner, 14 Oct AEDT) the permissions one by one (the server's list, netlify/lib/admins.mjs PERMS): ticked = allowed
+const permList = (perms, on, name) => `<div class="perms">${Object.entries(perms || {}).map(([k, [i, en, vi]]) => `<label class="perm"><input type="checkbox" data-perm="${k}" ${on.includes(k) ? 'checked' : ''} ${name ? '' : 'disabled'}> ${i} ${T(en, vi)}</label>`).join('')}</div>`;
 // (owner, 12 Oct) Tester reports: what tester devices found (netlify/lib/tester.mjs). The day's summary; each problem with
 // how often, on how many devices and versions, where, and its status; filters; a problem's details (the notes, the
 // players, the errors, the last 30 seconds as steps, the screenshots) with Fixed in…, Being fixed, Not a bug, Same as…;
@@ -1447,8 +1455,9 @@ PAGES.admins = async P => {
   const me = (INFO && INFO.me) || { name: 'owner', role: 'owner' };
   const mine = me.name === 'owner' ? '' : `<div class="card"><h3>🔑 ${T('My password', 'Mật khẩu của tôi')} (${esc(me.name)})</h3>
     <input type="password" id="op" autocomplete="current-password" placeholder="${T('Old password', 'Mật khẩu cũ')}"> <input type="password" id="np" autocomplete="new-password" placeholder="${T('New password (12+ characters)', 'Mật khẩu mới (từ 12 ký tự)')}"> <button class="btn" id="chg">${T('Change', 'Đổi')}</button></div>`;
-  if (me.role !== 'owner') { P.innerHTML = `<h2>👥 ${T('Admins', 'Quản trị viên')}</h2><p class="sub">${T('You are signed in as', 'Bạn đang đăng nhập là')} <b>${esc(me.name)}</b> · ${T(...ROLE_NAMES[me.role])}</p>${mine}`; bindMine(P); return; }
-  const { admins } = await api('admins/list'), opt = r => Object.keys(ROLE_NAMES).map(k => `<option value="${k}" ${k === r ? 'selected' : ''}>${T(...ROLE_NAMES[k])}</option>`).join('');
+  if (me.role !== 'owner') { P.innerHTML = `<h2>👥 ${T('Admins', 'Quản trị viên')}</h2><p class="sub">${T('You are signed in as', 'Bạn đang đăng nhập là')} <b>${esc(me.name)}</b> · ${T(...ROLE_NAMES[me.role] || ROLE_NAMES.custom)}</p>
+    <div class="card"><h3>🧩 ${T('What you may do', 'Bạn được làm gì')}</h3>${permList(INFO && INFO.perms, me.perms || [], '')}<p class="note">${T('Ask the owner if you need more.', 'Cần thêm quyền thì hỏi chủ.')}</p></div>${mine}`; bindMine(P); return; }
+  const { admins, perms } = await api('admins/list'), opt = r => Object.keys(ROLE_NAMES).map(k => `<option value="${k}" ${k === r ? 'selected' : ''}>${T(...ROLE_NAMES[k])}</option>`).join('');
   P.innerHTML = `<h2>👥 ${T('Admins', 'Quản trị viên')}</h2><p class="sub">${T('Other grown-ups sign in at this address with their own name and password; they never need a GitHub token (the website’s own is used). You see here who can do what.', 'Người lớn khác đăng nhập ở địa chỉ này bằng tên và mật khẩu riêng; họ không cần token GitHub (dùng token của trang web). Ở đây bạn thấy ai được làm gì.')}</p>
     <div class="card"><h3>➕ ${T('Add someone', 'Thêm người')}</h3><div class="row" style="flex-wrap:wrap;gap:8px">
       <input type="text" id="an" autocapitalize="none" spellcheck="false" placeholder="${T('Sign-in name, e.g. ba.nam', 'Tên đăng nhập, ví dụ ba.nam')}"><input type="password" id="ap" autocomplete="new-password" placeholder="${T('Their password (12+ characters)', 'Mật khẩu của họ (từ 12 ký tự)')}"><select id="ar">${opt('viewer')}</select><button class="btn" id="aadd">${T('Add', 'Thêm')}</button></div>
@@ -1456,7 +1465,8 @@ PAGES.admins = async P => {
     <div class="card"><h3>👥 ${T('Who can sign in', 'Ai có thể đăng nhập')}</h3>
       <p class="note">${T('Sign-in for each person: <b>password and code</b> (two-step: the password, then the 6-digit code of an authenticator app; safest) or <b>password only</b>. Changing it signs that person out.', 'Cách đăng nhập cho từng người: <b>mật khẩu và mã</b> (hai bước: mật khẩu, rồi mã 6 số của ứng dụng xác thực; an toàn nhất) hoặc <b>chỉ mật khẩu</b>. Đổi cách đăng nhập sẽ đăng xuất người đó.')}</p><table class="mini"><tbody>
       <tr data-o="owner"><td><b>owner</b></td><td>${T(...ROLE_NAMES.owner)}</td><td class="note">${T('the Studio password (STUDIO_PASSWORD in Netlify)', 'mật khẩu Studio (STUDIO_PASSWORD trong Netlify)')}</td><td class="note">${T('Password only (two-step is for admins)', 'Chỉ mật khẩu (hai bước dành cho quản trị viên)')}</td></tr>
-      ${admins.map(a => `<tr data-n="${esc(a.name)}"><td><b>${esc(a.name)}</b></td><td><select data-role>${opt(a.role)}</select></td><td class="note">${T('added', 'thêm')} ${esc(new Date(a.at).toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Brisbane' }))} · ${esc(a.by)} · ${a.twoStepOn === false ? T('password only', 'chỉ mật khẩu') : a.twoStep ? T('two-step on', 'đã bật hai bước') : T('two-step at next sign-in', 'hai bước khi đăng nhập lần tới')}</td><td><select data-2s><option value="on" ${a.twoStepOn !== false ? 'selected' : ''}>${T('Password and code', 'Mật khẩu và mã')}</option><option value="off" ${a.twoStepOn !== false ? '' : 'selected'}>${T('Password only', 'Chỉ mật khẩu')}</option></select> <button class="btn small ghost" data-pw>🔑 ${T('New password', 'Mật khẩu mới')}</button> ${a.twoStep && a.twoStepOn !== false ? `<button class="btn small ghost" data-2fa>📱 ${T('New phone', 'Điện thoại mới')}</button> ` : ''}<button class="btn small ghost" data-rm>🗑️</button></td></tr>`).join('')}
+      ${admins.map(a => `<tr data-n="${esc(a.name)}"><td><b>${esc(a.name)}</b></td><td><select data-role>${opt(a.role)}</select></td><td class="note">${T('added', 'thêm')} ${esc(new Date(a.at).toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { timeZone: 'Australia/Brisbane' }))} · ${esc(a.by)} · ${a.twoStepOn === false ? T('password only', 'chỉ mật khẩu') : a.twoStep ? T('two-step on', 'đã bật hai bước') : T('two-step at next sign-in', 'hai bước khi đăng nhập lần tới')}</td><td><select data-2s><option value="on" ${a.twoStepOn !== false ? 'selected' : ''}>${T('Password and code', 'Mật khẩu và mã')}</option><option value="off" ${a.twoStepOn !== false ? '' : 'selected'}>${T('Password only', 'Chỉ mật khẩu')}</option></select> <button class="btn small ghost" data-pw>🔑 ${T('New password', 'Mật khẩu mới')}</button> ${a.twoStep && a.twoStepOn !== false ? `<button class="btn small ghost" data-2fa>📱 ${T('New phone', 'Điện thoại mới')}</button> ` : ''}<button class="btn small ghost" data-rm>🗑️</button></td></tr>
+      <tr class="permrow" data-pn="${esc(a.name)}"><td colspan="4"><details><summary>🧩 ${T('What they may do', 'Họ được làm gì')} <span class="pc">(${(a.perms || []).length} / ${Object.keys(perms || {}).length})</span></summary>${permList(perms, a.perms || [], a.name)}<p class="note">${T('Ticking or unticking one makes their role “Chosen”. Managing admins, Security and the Access log come only with Owner.', 'Đánh dấu hoặc bỏ một ô sẽ đổi vai trò của họ thành “Tự chọn”. Quản lý quản trị viên, Bảo mật và Nhật ký truy cập chỉ đi kèm vai trò Chủ.')}</p></details></td></tr>`).join('')}
     </tbody></table>${admins.length ? '' : `<p class="note">${T('Nobody else yet.', 'Chưa có ai khác.')}</p>`}</div>`;
   $('#aadd').onclick = async () => { try { await api('admins/save', { name: $('#an').value, password: $('#ap').value, role: $('#ar').value }); toast(T('Added.', 'Đã thêm.')); PAGES.admins(P); } catch (e) { fail(e); } };
   // (owner, 9 Oct) two-step or the password only, for each admin (the owner: the password only, 11 Oct)
@@ -1464,7 +1474,11 @@ PAGES.admins = async P => {
     if (!on && !confirm(T(`Let ${name} sign in with the password only (no code)? It is less safe: anyone with the password gets in.`, `Cho ${name} đăng nhập chỉ bằng mật khẩu (không mã)? Kém an toàn hơn: ai có mật khẩu cũng vào được.`))) { s.value = 'on'; return; }
     try { await api('admins/twostep', { name, on }); toast(on ? T('Two-step on: they set it up at their next sign-in if needed.', 'Đã bật hai bước: họ cài khi đăng nhập lần tới nếu cần.') : T('Password only.', 'Chỉ mật khẩu.')); PAGES.admins(P); } catch (e) { fail(e); } });
   P.querySelectorAll('tr[data-n]').forEach(tr => { const name = tr.dataset.n;
-    tr.querySelector('[data-role]').onchange = async e => { try { await api('admins/save', { name, role: e.target.value }); toast(T('Saved.', 'Đã lưu.')); } catch (x) { fail(x); } };
+    tr.querySelector('[data-role]').onchange = async e => { const open = P.querySelector(`tr[data-pn="${CSS.escape(name)}"] details`).open; try { await api('admins/save', { name, role: e.target.value, ...(e.target.value === 'custom' ? { perms: [...P.querySelectorAll(`tr[data-pn="${CSS.escape(name)}"] [data-perm]:checked`)].map(x => x.dataset.perm) } : {}) }); toast(T('Saved.', 'Đã lưu.')); await PAGES.admins(P); if (open) P.querySelector(`tr[data-pn="${CSS.escape(name)}"] details`).open = true; } catch (x) { fail(x); } };
+    // (owner, 14 Oct AEDT) one permission at a time
+    P.querySelectorAll(`tr[data-pn="${CSS.escape(name)}"] [data-perm]`).forEach(cb => cb.onchange = async () => {
+      const row = P.querySelector(`tr[data-pn="${CSS.escape(name)}"]`), list = [...row.querySelectorAll('[data-perm]:checked')].map(x => x.dataset.perm);
+      try { await api('admins/save', { name, role: 'custom', perms: list }); tr.querySelector('[data-role]').value = 'custom'; row.querySelector('.pc').textContent = `(${list.length} / ${row.querySelectorAll('[data-perm]').length})`; toast(T('Saved: it applies at their next step in Studio.', 'Đã lưu: có hiệu lực ở thao tác tiếp theo của họ trong Studio.')); } catch (x) { cb.checked = !cb.checked; fail(x); } });
     tr.querySelector('[data-pw]').onclick = async () => { const pw = prompt(T(`A new password for ${name} (12+ characters):`, `Mật khẩu mới cho ${name} (từ 12 ký tự):`)); if (!pw) return; try { await api('admins/save', { name, password: pw, role: tr.querySelector('[data-role]').value }); toast(T('Changed: they are signed out everywhere.', 'Đã đổi: họ bị đăng xuất khỏi mọi nơi.')); } catch (e) { fail(e); } };
     const tf = tr.querySelector('[data-2fa]'); if (tf) tf.onclick = async () => { if (!confirm(T(`Clear ${name}’s two-step? They set it up again (with their new phone) the next time they sign in.`, `Xóa xác thực hai bước của ${name}? Họ sẽ cài lại (bằng điện thoại mới) khi đăng nhập lần tới.`))) return; try { await api('admins/reset2fa', { name }); toast(T('Cleared: they are signed out everywhere.', 'Đã xóa: họ bị đăng xuất khỏi mọi nơi.')); PAGES.admins(P); } catch (e) { fail(e); } };
     tr.querySelector('[data-rm]').onclick = async () => { if (!confirm(T(`Remove ${name}? They can no longer sign in.`, `Xóa ${name}? Họ sẽ không đăng nhập được nữa.`))) return; try { await api('admins/remove', { name }); PAGES.admins(P); } catch (e) { fail(e); } }; });

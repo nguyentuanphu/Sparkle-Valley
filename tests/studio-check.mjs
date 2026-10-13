@@ -199,6 +199,17 @@ export async function studioCheck(browser, open) {
       ok((await call('/studio/api/players', { cookie: v.cookie })).status === 200, 'a viewer could not read the analytics');
       ok((await call('/studio/api/content', { body: { message: { en: 'x' } }, cookie: v.cookie, headers: X })).status === 403, 'a viewer could change the content');
       ok((await call('/studio/api/admins/list', { cookie: v.cookie })).status === 403, 'a viewer could see the admins');
+      // (owner, 14 Oct AEDT) permissions one by one: someone who may only switch features and look at the pages
+      { ok((await call('/studio/api/admins/save', { body: { name: 'da.mi', password: 'chosen-password-1', role: 'custom', perms: ['releases', 'pages', 'not-a-permission'] }, cookie: C, headers: X })).status === 200, 'the owner could not give chosen permissions');
+        const lst = await call('/studio/api/admins/list', { cookie: C }), dm = ((lst.j && lst.j.admins) || []).find(x => x.name === 'da.mi');
+        ok(dm && dm.role === 'custom' && JSON.stringify(dm.perms) === '["releases","pages"]' && lst.j.perms && lst.j.perms.deploy, 'the admins list does not show the chosen permissions: ' + JSON.stringify(dm));
+        const d = await signIn('da.mi', 'chosen-password-1'), di = await call('/studio/api/info', { cookie: d.cookie });
+        ok(di.status === 200 && di.j.me && JSON.stringify(di.j.me.perms) === '["releases","pages"]' && di.j.perms && di.j.perms.analytics, 'info does not carry the permissions: ' + JSON.stringify(di.j && di.j.me));
+        const no = await call('/studio/api/players', { cookie: d.cookie });
+        ok(no.status === 403 && no.j.need === 'analytics' && /Ask the owner for “See Analytics/.test(no.j.error), 'Analytics was open without its permission: ' + JSON.stringify(no.j));
+        ok((await call('/studio/api/content', { body: { message: { en: 'x' } }, cookie: d.cookie, headers: X })).status === 403, 'pages could be changed with "look only"');
+        ok((await call('/studio/api/admins/list', { cookie: d.cookie })).status === 403, 'chosen permissions reached the admins list');
+        ok((await call('/studio/api/live', { cookie: d.cookie })).status === 200, 'the Releases page could not be read with "pages"'); }
       const e = await signIn('co.lan', 'editor-password-1');
       ok((await call('/studio/api/admins/save', { body: { name: 'x.y', password: 'editor-password-2', role: 'owner' }, cookie: e.cookie, headers: X })).status === 403, 'an editor could add admins');
       ok((await call('/studio/api/admins/me', { body: { old: 'editor-password-1', password: 'editor-password-2' }, cookie: e.cookie, headers: X })).status === 200, 'an editor could not change their own password');
