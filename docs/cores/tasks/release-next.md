@@ -24,6 +24,25 @@ Check every branch on GitHub (`git fetch --prune`), read each branch's board lin
 | `claude/quirky-maxwell-4lm9tv` | Films batch: all 33 tale films drafted (Chinese and Indian too), narrator lines fill the old films | another chat's work; check its handoff note and board line, and the owner's three film notes in `docs/cores/tasks/films-batches.md` |
 Also: any `bugfix/…` pull requests from the bug robot, and the Studio online family updates on main (photos, notes).
 
+## Update from the previous Release chat (13 Oct, about 4:10 pm AEDT)
+- **Done:** the 3 Tiến Lên voice lines are recorded (commit `12a24526`, on `claude/great-faraday-weuhjv`): `voicecover` passes.
+- **First code map saved:** `tests/check-map.json` (135 checks, 186 files) and `tests/check-times.json` (commit `a857dff9`);
+  `node suite.mjs --changed` now works. Times in it are from an overloaded run (too high); the next full run refreshes them.
+- **3-at-once trial (full suite, 13 Oct):** 101 min, 127/135 passed; the 8 red ones were re-run alone: all pass except
+  `startup` (over its limit as on main), so the others were overload (`solid`, `nametags`, `migrate`, `voicearea`,
+  `testerreport`, `perf`; `perf` had also run with the code recording on: fixed, speed checks now run without it).
+- **Timing of 9 everyday checks:** 1 at a time 7 min, 2 at once 5 min, 3 at once 4 min, 3 with one drawing thread 5 min
+  (that switch does not help: not used).
+- **The layout now (commit `e04802e8`):** the 16 heavy checks (`HEAVY` in `tests/suite.mjs`) share one lane, one after
+  another; the everyday checks share the other lanes; any check that failed beside others runs once more alone and the
+  summary lists it as "passed only alone" (a check that also fails alone stays FAILED). Default `--jobs 3`.
+- **Running when this was written:** a full suite with that layout (started 4:04 pm AEDT). If its result is not recorded
+  below, run `cd tests && node suite.mjs` once yourself as r71's full suite: it proves the layout and refreshes the map.
+  Then write the real time into CLAUDE.md "Checks and the full suite" (it still says "about an hour") and
+  `docs/cores/release.md` step 4, and replace item 2 below ("run --jobs 2") with what the run showed.
+- **Not yet tried:** `--changed` on a real edit. Try it: change one line inside a function in, say, `js/hud.js`, run
+  `node suite.mjs --changed --list`, check the list is short and sensible, undo the edit.
+
 ## Must do in r71
 1. **Record 3 voice lines** (the `voicecover` check found them): "▶ Play Tiến Lên (southern rules)", "▶ Play Tiến Lên (northern
    rules)", "Tiến Lên, northern rules (cards)" (English; r70 gave the Tiến Lên variants English words). With `AZURE_SPEECH_KEY`:
