@@ -82,8 +82,8 @@ export default { pages: [
     const lac = S.person(LAC, 0, 4, 0), au = S.person(AUCO, -1, 4, 0);
     const kids = KIDS.map((k, i) => S.person(k, -2 + i * .8, 5.4, 0, .6));
     S.shot([0, 3, 13], [0, 1.2, 3]);
-    S.walk(lac, .4, [5, 1]); S.walk(au, .4, [-6, 1]);
-    kids.forEach((k, i) => S.walk(k, .6 + i * .1, i % 2 ? [4 + i * .3, 2] : [-5 - i * .3, 2]));
+    S.walk(lac, .4, [5, 1], 2.4); S.walk(au, .4, [-6, 1], 2.4);
+    kids.forEach((k, i) => S.walk(k, .6 + i * .1, i % 2 ? [4 + i * .3, 2] : [-5 - i * .3, 2], 2.4));
     S.cam(.4, 4, [0, 5, 16], [0, 1, 0]);
     S.help(5.8, 'Tap to wave goodbye!', 'Chạm để vẫy tay chào nhé!', tt => {
       [lac, au, ...kids].forEach((a, i) => { S.face(a, tt + i * .05, [0, 8]); S.do(a, tt + .4, 'wave', 1.6); S.mood(a, tt, 'happy'); });

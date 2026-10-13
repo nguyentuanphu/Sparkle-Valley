@@ -66,10 +66,10 @@ export default { pages: [
     const army = ['#3a3a48', '#5a3a3a', '#3a4a5a', '#4a3a48'].map((c, i) => S.person(SOLDIER(c), -3 + i * 2, 4.4, PI));
     const notes = Pp.sparkle('#ffe27a'); S.add(notes, 0, 1, .4);
     S.shot([0, 2.4, 9], [0, 1.2, 2]);
-    S.do(sanh, .2, 'sitground', 9); S.mood(sanh, .2, 'happy'); S.show(notes, .6);
+    S.do(sanh, .2, 'sitground'); S.mood(sanh, .2, 'happy'); S.show(notes, .6);
     army.forEach(a => { S.mood(a, 0, 'sad'); S.do(a, 0, 'point', 2.6); });
     S.cam(.2, 3, [0, 1.6, 4], [0, .8, .6]);
-    army.forEach((a, i) => { S.mood(a, 3 + i * .3, 'smile'); S.do(a, 3 + i * .3, 'sitground', 7); });
+    army.forEach((a, i) => { S.mood(a, 3 + i * .3, 'smile'); S.do(a, 3 + i * .3, 'sitground'); });
     S.cam(3, 3, [0, 3, 10], [0, 1, 3]);
     S.say(6.8, 'Angry soldiers sat down and smiled.', 'Những người lính đang giận cũng ngồi xuống mỉm cười.');
     army.forEach((a, i) => S.mood(a, 7 + i * .2, 'happy'));
@@ -88,7 +88,7 @@ export default { pages: [
     S.cam(3.2, 2.2, [0, 2.4, 9], [0, 1, 3]);
     S.help(5.7, "Tap to fill everyone's bowl!", 'Chạm để xới cơm cho mọi người nào!', tt => {
       bowls.forEach((b, i) => { S.show(b, tt + i * .2); });
-      army.forEach((a, i) => { S.do(a, tt + .4 + i * .2, 'eat', 1.6); S.mood(a, tt + .4, 'happy'); });
+      army.forEach((a, i) => { S.do(a, tt + .4 + i * .1, 'eat', 1.2); S.mood(a, tt + .4, 'happy'); });
       const sp = Pp.sparkle('#ffffff'); S.add(sp, 0, .6, 1.9); S.show(sp, tt);
       S.cam(tt, 1.6, [2, 2, 7.6], [0, 1, 3.4]);
     }, [0, .6, 1.9], 2.3);

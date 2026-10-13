@@ -72,7 +72,7 @@ export default { pages: [
     const sh = S.person(SHIVA, -.8, 0, .2), pa = S.person(PARVATI, .8, 0, -.2), g = ganesha(S, 0, 1.8, PI);
     S.shot([0, 1.8, 6], [0, 1.2, .8]);
     speak(S, g, .3, 2.4); S.do(g, .3, 'hug', 2.4); S.cam(.3, 2.6, [1.4, 1.4, 4], [0, 1.2, 1]);
-    S.say(5, 'Mother and Father hugged him close.', 'Cha mẹ ôm Ganesha thật chặt.');
+    S.say(4.4, 'Mother and Father hugged him close.', 'Cha mẹ ôm Ganesha thật chặt.');
     S.do(sh, 5.1, 'hug', 2.2); S.do(pa, 5.1, 'hug', 2.2); S.mood(sh, 5, 'happy'); S.mood(pa, 5, 'happy');
     S.cam(5, 2.4, [-1.4, 1.6, 4.6], [0, 1.2, .8]);
     S.at(7.8, () => { });

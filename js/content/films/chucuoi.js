@@ -33,7 +33,7 @@ export default { pages: [
   S => {
     village(S, { house: [-3, -6] });
     const cuoi = S.person(CUOI, 1, 1.6, -.6), tree = magicTree(.8); S.add(tree, 4, -1.6);
-    const sick = S.person(VILLAGER('shirt', '#9a9aa8', 'none', 'short'), -1, 2, H); S.do(sick, 0, 'lie', 20); S.mood(sick, 0, 'sleep');
+    const sick = S.person(VILLAGER('shirt', '#9a9aa8', 'none', 'short'), -1, 2, H); S.do(sick, 0, 'lie'); S.mood(sick, 0, 'sleep');
     const fam = S.person(VILLAGER('aodai', '#e86a8a'), -2.4, .8, .8); S.mood(fam, 0, 'sad');
     const lf = leaf(); S.grab(cuoi, 0, lf, [0, -.5, .1]);
     S.shot([0, 2.6, 8], [0, .8, 1.6]);
@@ -76,7 +76,7 @@ export default { pages: [
   // 5. Up, up, up they flew, all the way to the moon!
   S => {
     night(S, { moon: false, ground: null }); moonDisc(S, 0, 30, -60, 12);
-    const tree = magicTree(1), cuoi = S.person(CUOI, 0, 0, 0); S.add(tree, 0, 0, 0); tree.add(cuoi.o); cuoi.o.position.set(.2, -1, 0); S.do(cuoi, 0, 'stretch', 20);
+    const tree = magicTree(1), cuoi = S.person(CUOI, 0, 0, 0); S.add(tree, 0, 0, 0); tree.add(cuoi.o); cuoi.o.position.set(.2, -1, 0); S.do(cuoi, 0, 'stretch');
     L.clouds(S, [[-8, -4, -6, 1.6], [6, -6, -10, 2]]);
     S.shot([6, -2, 12], [0, 2, 0]);
     S.move(tree, .2, 6.6, [0, 26, -48], k => k); S.tw(.2, 6.6, k => { tree.rotation.y = k * PI * 2; }, k => k);
@@ -88,7 +88,7 @@ export default { pages: [
   // 6. At Mid-Autumn, look at the full moon: can you see Chú Cuội sitting under his banyan tree?
   S => {
     night(S, { moon: false }); const moon = moonDisc(S, 0, 22, -60, 10);
-    const tree = magicTree(1.6); S.add(tree, -2, 21, -49); const cuoi = S.person(CUOI, -.4, -48.4, 0, 1.2); cuoi.o.position.y = 21; S.do(cuoi, 0, 'sitground', 20); S.mood(cuoi, 0, 'happy');
+    const tree = magicTree(1.6); S.add(tree, -2, 21, -49); const cuoi = S.person(CUOI, -.4, -48.4, 0, 1.2); cuoi.o.position.y = 21; S.do(cuoi, 0, 'sitground'); S.mood(cuoi, 0, 'happy');
     const kids = [KID('dress', '#ff7eb8', 'buns'), KID('shirt', '#3b6fe0'), KID('dress', '#ffd23f', 'ponytail')].map((l, i) => S.person(l, -1.6 + i * 1.6, 4, PI));
     kids.forEach((k, i) => L.lantern(S, -1.2 + i * 1.6, 1.4, 3.6, ['#e8332a', '#ffd23f', '#ff7eb8'][i]));
     S.shot([0, 1.6, 9], [0, 1.4, 3]);

@@ -46,7 +46,7 @@ export default { pages: [
   S => {
     moonGround(S); L.banyan(S, 2, -3, .7);
     const c = S.person(CHANGE, -1.6, 1, .4), cu = S.person(CUOI, 1.8, -1, -.4), r = animal(S, 'bunny', -.4, 2, 0, 2);
-    S.do(cu, 0, 'sitground', 20);
+    S.do(cu, 0, 'sitground');
     S.shot([0, 2, 8], [0, 1, 0]);
     S.mood(c, 0, 'happy'); S.mood(cu, 0, 'happy'); S.do(c, .4, 'wave', 2); S.do(cu, 1.4, 'wave', 2); hop(S, r, 2, 3, .3);
     S.cam(.3, 4, [0, 1.6, 6], [0, 1, 0]);

@@ -16,7 +16,7 @@ export default { pages: [
   S => {
     village(S, { house: [0, -6] });
     const tam = S.person(TAM, 2, 2, -.4), step = S.person(STEP, -2.4, -2.4, .4), cam = S.person(CAM, -1.2, -2.6, .2);
-    S.do(step, 0, 'sitground', 20); S.do(cam, 0, 'sitground', 20); S.mood(step, 0, 'sad'); S.mood(cam, 0, 'happy');
+    S.do(step, 0, 'sitground'); S.do(cam, 0, 'sitground'); S.mood(step, 0, 'sad'); S.mood(cam, 0, 'happy');
     S.shot([3, 2.4, 9], [0, 1.2, 0]);
     S.do(tam, .3, 'swing', 2.6); S.mood(tam, .3, 'smile');
     S.do(step, 2.2, 'point', 1.6); speak(S, step, 2.2, 1.6);
@@ -89,7 +89,7 @@ export default { pages: [
     S.help(7, 'Tap to try the slipper on Tấm!', 'Chạm để Tấm thử hài nào!', tt => {
       S.walk(cam, tt, [-2.4, 1.6]); S.walk(tam, tt, [.4, 1.1]); S.do(tam, tt + 1.2, 'kneel', .8);
       const sp = Pp.sparkle('#ffe27a'); S.add(sp, .4, 0, 1); S.show(sp, tt + 1.6);
-      S.mood(tam, tt + 1.8, 'happy'); S.mood(prince, tt + 1.8, 'happy'); S.do(prince, tt + 1.8, 'cheer', .8);
+      S.mood(tam, tt + 1.8, 'happy'); S.mood(prince, tt + 1.8, 'happy'); S.do(prince, tt + 1.8, 'cheer', .4);
       S.cam(tt, 1.6, [2, 1.6, 4.6], [.3, .6, .8]);
     }, [0, .2, .6], 2.3);
   },

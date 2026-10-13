@@ -1397,7 +1397,14 @@ await check('filmtails', async () => {
       const f = F.createFilm(stage, script, { name: 'Na', companion: 'firefly', look: {} });
       for (let k = 0; k < script.pages.length; k++) {
         f.page(k); const p = f.now, [, en, vi] = tale.pages[k] || [];
-        const lines = p.ev.filter(e => e.help || e.say).map(e => ({ t: e.t, help: !!e.help, dur: e.help ? e.help.dur : 0, en: (e.help || e.say).en, vi: (e.help || e.say).vi }));
+        // the child's answers are part of the film too: each tap's answer is put into the timeline as the film does it
+        // (js/film.js release: what the tap starts begins at the help's time, and everything later waits dur seconds)
+        for (let n = 0; n < 9; n++) {
+          const h = p.ev.filter(e => e.help && !e.played).sort((x, y) => x.t - y.t)[0]; if (!h) break; h.played = true;
+          const n0 = p.ev.length, len0 = p.len; try { if (h.help.act) h.help.act(h.t); } catch (e) { out.missing.push(`${id} p${k + 1}: the tap's answer failed (${e.message})`); }
+          if (h.help.dur) { for (let i = 0; i < n0; i++) if (p.ev[i] !== h && p.ev[i].t > h.t) p.ev[i].t += h.help.dur; p.len = Math.max(p.len, len0 + h.help.dur); }
+        }
+        const lines = p.ev.filter(e => e.help || e.say).sort((x, y) => x.t - y.t).map(e => ({ t: e.t, help: !!e.help, en: (e.help || e.say).en, vi: (e.help || e.say).vi }));
         const v = {};
         for (const lang of ['en', 'vi']) {
           v[lang] = await dur(lang, lang === 'en' ? en : vi); if (v[lang] == null) out.missing.push(`${id} p${k + 1} ${lang}: page words`);
@@ -1420,7 +1427,7 @@ await check('filmtails', async () => {
       const reach = l.t + shift, gap = reach - speechEnd, allow = afterTap ? 3 : 1.5;
       if (gap > allow) bad.push(`${p.id} p${p.k} ${lang}: ${gap.toFixed(1)} s of silence before "${l[lang].slice(0, 40)}"`);
       const start = Math.max(reach, speechEnd), d = l[lang + 'd'] || 0; shift += start - reach; speechEnd = start + d;
-      if (l.help) { shift += d + l.dur; afterTap = true; } else afterTap = false;
+      if (l.help) { shift += d; afterTap = true; } else afterTap = false; // (the film waits while the question is asked; the tap comes as it ends)
       log.push(`${l.help ? 'asks' : 'says'} at ${start.toFixed(1)} (${d.toFixed(1)})`);
     }
     const end = p.len + shift + .4, tail = end - speechEnd, allow = afterTap ? 3 : 1.5;

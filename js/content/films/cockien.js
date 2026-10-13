@@ -67,7 +67,7 @@ export default { pages: [
     S.help(7.7, 'Tap to beat the drum!', 'Chạm để đánh trống nào!', tt => {
       S.tw(tt, 1.2, k => { dr.scale.set(1.6, 1.6 * (1 - Math.abs(Math.sin(k * PI * 5)) * .08), 1.6); }, k => k);
       hop(S, t, tt, 2, .5); go(S, b, tt + .2, .6, [-2, 1.6, -5]); hop(S, r, tt + .2, 2, .5); hop(S, tg, tt + .3, 1, .6);
-      guards.forEach((g, i) => { S.mood(g, tt + .5, 'o'); S.do(g, tt + .5, 'surprised', .6); S.walk(g, tt + 1, [i ? 8 : -8, -10], 3.6); });
+      guards.forEach((g, i) => { S.mood(g, tt + .5, 'o'); S.do(g, tt + .5, 'surprised', .6); S.walk(g, tt + 1, [i ? 6 : -4, -9], 5); });
       S.cam(tt, 1.6, [0, 3.4, 8], [1, 1, -5]);
     }, [2.4, 1.4, -6], 2.3);
   },

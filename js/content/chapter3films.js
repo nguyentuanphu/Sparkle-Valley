@@ -43,6 +43,7 @@ FILMS.lantern_ch3 = { pages: [
     S.skyTo(5.6, 3, '#2a2a6a', '#d86a7a'); S.lightTo(5.6, 3, .45, .6);
     S.mood(kid, 6.2, 'happy'); S.do(kid, 6.8, 'cheer', 2.4);
     S.cam(3.6, 2, [-5, 2.4, 3], [1, 3.4, -10]); S.cam(6.4, 3, [4, 5, 14], [2, 4, -11]);
+    S.say(8.6, 'The harbour twinkled all around.', 'Cả bến cảng lấp lánh ánh đèn.');
     S.at(10.5, () => { });
   },
   // 2. night: fireworks over the Harbour Bridge; Chi, Jack, Ruby and the child cheer together (the child starts them)
@@ -56,8 +57,9 @@ FILMS.lantern_ch3 = { pages: [
     const comp = buildCompanion(S.ctx.companion || 'firefly'); S.add(comp, .1, 1.9, -.4); flap(S, comp, 2);
     const fw = [[-14, 16, -34], [-4, 19, -38], [6, 17, -34], [16, 15, -30]].map(p => Pp.fireworks(S, ...p));
     S.shot([0, 3, 9], [0, 4, -20]);
-    S.help(2, 'Tap to start the fireworks!', 'Chạm để bắn pháo hoa nào!', t => { fw.forEach((f, i) => S.show(f, t + i * .4)); }, [0, 12, -30]);
-    [kid, chi, jack, ruby].forEach((a, i) => { S.mood(a, 2.4, 'happy'); S.do(a, 2.6 + i * .2, 'cheer', 5); });
+    // (films batch, 13 Oct) the tap comes at the end of the scene, so the film is not held still under the words
+    [kid, chi, jack, ruby].forEach((a, i) => { S.mood(a, 2.4, 'happy'); S.do(a, 2.6 + i * .2, 'wave', 2); });
+    S.help(8.2, 'Tap to start the fireworks!', 'Chạm để bắn pháo hoa nào!', t => { fw.forEach((f, i) => S.show(f, t + i * .4)); [kid, chi, jack, ruby].forEach((a, i) => S.do(a, t + .2 + i * .1, 'cheer', 2)); }, [0, 12, -30]);
     S.cam(3, 6, [3, 3.4, 9], [0, 6, -24]);
     S.at(9.5, () => { });
   }

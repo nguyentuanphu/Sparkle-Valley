@@ -87,8 +87,8 @@ export default { pages: [
     S.cam(.2, 3.4, [0, 1.6, 6.4], [.4, 1.4, 1]);
     S.walk(boy, 1.4, [-.2, 2]); S.walk(mom, 1.4, [1, 2]); S.mood(boy, 2.6, 'happy'); S.mood(mom, 2.6, 'happy');
     S.say(7.6, 'He said: "Sorry, Mum! I love you."', 'Cậu nói: "Con xin lỗi mẹ! Con thương mẹ lắm."');
-    speak(S, boy, 7.6, 2); S.do(boy, 9.6, 'hug', 2); S.do(mom, 9.6, 'hug', 2);
+    speak(S, boy, 7.6, 1.6); S.do(boy, 9.2, 'hug', 1.4); S.do(mom, 9.2, 'hug', 1.4);
     S.cam(7.4, 3, [-1.6, 1.6, 4.6], [.4, 1.2, 2]);
-    S.at(10.8, () => { });
+    S.at(10.6, () => { });
   }
 ] };

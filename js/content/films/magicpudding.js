@@ -34,9 +34,9 @@ export default { pages: [
     S.shot([0, 2, 8], [0, .8, 1.6]);
     go(S, ko, .2, 2.4, [-1.4, 0, 1.6]); S.do(sa, 2.4, 'wave', 1.4); S.mood(sa, 2.4, 'happy'); hop(S, pe, 2.6, 2, .2);
     S.cam(.3, 3, [0, 1.4, 5.4], [0, .6, 2]);
-    S.say(6.4, 'Albert opened one eye and said: "Hmph!"', 'Albert hé một mắt, nói: "Hừm!"');
-    S.cam(6.4, 2, [.2, .9, 4], [.2, .4, 2.4]);
-    S.at(9.2, () => { });
+    S.say(5.4, 'Albert opened one eye and said: "Hmph!"', 'Albert hé một mắt, nói: "Hừm!"');
+    S.cam(5.4, 2, [.2, .9, 4], [.2, .4, 2.4]);
+    S.at(8.4, () => { });
   },
   // 3. Albert was very grumpy, but you could eat him again and again, and he never ran out!
   S => {
@@ -55,12 +55,12 @@ export default { pages: [
   // 4. Two sneaky pudding thieves, a possum and a wombat, kept trying to steal him.
   S => {
     bush(S);
-    const { ko, sa, pe, al } = friends(S); S.do(sa, 0, 'sitground', 9);
+    const { ko, sa, pe, al } = friends(S); S.do(sa, 0, 'sitground');
     const po = possum(), wo = wombat(); S.add(po, -6, 0, 4, H); S.add(wo, -6.6, 0, 5, H);
     S.shot([0, 2, 9], [-2, .6, 3]);
     go(S, po, .4, 3, [-.6, 0, 3]); go(S, wo, .6, 3, [-1, 0, 3.6]); S.cam(.3, 3.4, [-3, 1.4, 7], [-2, .5, 3]);
     S.at(3.6, () => { po.add(al); al.position.set(0, .6, 0); al.scale.setScalar(.8); });
-    S.say(7, 'They grabbed Albert and tiptoed away!', 'Chúng chộp lấy Albert rồi rón rén chuồn đi!');
+    S.say(6.6, 'They grabbed Albert and tiptoed away!', 'Chúng chộp lấy Albert rồi rón rén chuồn đi!');
     go(S, po, 7, 2.4, [-8, 0, 6]); go(S, wo, 7, 2.4, [-8.6, 0, 7]); S.cam(7, 2.4, [-4, 1.6, 9], [-6, .5, 5]);
     S.at(9.8, () => { });
   },

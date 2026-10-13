@@ -51,6 +51,7 @@ FILMS.lantern_ch2 = { pages: [
     S.skyTo(5.6, 3, '#3a2a6a', '#e86a4a'); S.lightTo(5.6, 3, .45, .6);
     S.mood(kid, 6.2, 'happy'); S.do(kid, 6.8, 'cheer', 2.4);
     S.cam(3.8, 2, [-7, 2.4, 2.5], [0, 2.2, -6.6]); S.cam(6.4, 3, [3, 4, 13], [1, 2, -6]);
+    S.say(8.6, 'Red lights danced on the water.', 'Ánh đèn đỏ nhảy múa trên mặt hồ.');
     S.at(10.5, () => { });
   },
   // 2. Trung Thu night: the parade with star lanterns round the lake, the lion dance, mooncakes under the full moon
@@ -65,7 +66,8 @@ FILMS.lantern_ch2 = { pages: [
     const lit = [kid, teo, ...others].map((a, i) => { const st = buildStarLantern(['#ff4a3a', '#ffd23f', '#ff7eb8', '#5fd3ff', '#ffb020', '#ff4a3a'][i % 6], true); st.visible = false; S.add(st); S.grab(a, 0, st, [0, -.75, .15], 'armL', .9); return st; });
     const comp = buildCompanion(S.ctx.companion || 'firefly'); S.add(comp, -.2, 1.8, 5.4); flap(S, comp, 1.9);
     S.shot([0, 2.6, 13], [0, 1.6, 0]);
-    S.help(2, 'Tap to light the star lanterns!', 'Chạm để thắp đèn ông sao nào!', t => { stars.forEach((s, i) => { S.show(s, t + i * .15, false); S.show(lit[i], t + i * .15); }); }, [0, 1.4, 4]);
+    // (films batch, 13 Oct) the tap comes once the parade has walked, so the film is not held still under the words
+    S.help(8.4, 'Tap to light the star lanterns!', 'Chạm để thắp đèn ông sao nào!', t => { stars.forEach((s, i) => { S.show(s, t + i * .15, false); S.show(lit[i], t + i * .15); }); }, [0, 1.4, 4]);
     // the parade walks along the shore
     [kid, teo, ...others].forEach((a, i) => { S.mood(a, 2.2, 'happy'); S.walk(a, 3 + i * .2, [a.px + 5, a.pz - 1.2], 1.1); });
     // the lion dance: a friendly lion head bobbing to the drum, two dancers under its cloth

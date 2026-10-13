@@ -80,7 +80,7 @@ export default { pages: [
     S.cam(.2, 3.6, [0, 2, 7], [0, 1.4, -.6]); S.do(h, 1, 'point', 2); S.mood(h, 1, 'happy'); S.mood(w, 1, 'happy');
     S.help(7.3, 'Tap to open the gourd!', 'Chạm để mở quả bầu nào!', tt => {
       const sp = Pp.sparkle('#ffe27a'); S.add(sp, 0, .8, 0); S.show(sp, tt);
-      folk.forEach((a, i) => { S.show(a.o, tt + i * .25); S.walk(a, tt + i * .25, [-2.4 + i * .95, 2.4 + (i % 2) * .5], 2.4); S.mood(a, tt, 'happy'); });
+      folk.forEach((a, i) => { S.show(a.o, tt + i * .15); S.walk(a, tt + i * .15, [-2.4 + i * .95, 2.4 + (i % 2) * .5], 3); S.mood(a, tt, 'happy'); });
       S.cam(tt, 1.8, [0, 2.4, 8], [0, 1.2, 1.6]);
     }, [0, 1.2, -.6], 2.3);
   },

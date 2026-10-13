@@ -28,7 +28,7 @@ export default { pages: [
     S.walk(n, .3, [.2, 2.2]); S.do(n, 1.6, 'hug', 1.8); S.mood(n, 1.6, 'happy'); S.tw(1.6, 1.6, k => { ox.userData.nod = Math.sin(k * PI) * .3; });
     S.cam(.3, 3, [-1, 1.4, 5], [.6, 1, 1.6]);
     S.say(4.6, 'Every day they walked together in the green fields.', 'Ngày ngày chàng và trâu cùng đi trên cánh đồng xanh.');
-    S.walk(n, 4.6, [6, 3]); go(S, ox, 4.8, 3, [7, 0, 1.8], k => k); S.cam(4.6, 3, [3, 2.4, 9], [5, 1, 2]);
+    S.walk(n, 4.6, [6, 3], 2); go(S, ox, 4.8, 2.6, [7, 0, 1.8], k => k); S.cam(4.6, 3, [3, 2.4, 9], [5, 1, 2]);
     S.at(7.8, () => { });
   },
   // 3. They met, became best friends and got married, and were very happy.

@@ -86,7 +86,7 @@ export default { pages: [
     S.show(fw, 2.4); fam.forEach((a, i) => { S.mood(a, 2.6, 'happy'); S.do(a, 2.6 + i * .1, 'cheer', 2); });
     S.cam(.3, 3, [0, 3, 10], [0, 3, -2]);
     S.say(4.8, 'Chúc mừng năm mới! Happy New Year!', 'Chúc mừng năm mới!');
-    fam.forEach(a => S.do(a, 5, 'wave', 2)); S.do(tao, 5, 'wave', 2);
-    S.at(7.8, () => { });
+    fam.forEach(a => S.do(a, 5, 'wave', 1.8)); S.do(tao, 5, 'wave', 1.8);
+    S.at(7.2, () => { });
   }
 ] };

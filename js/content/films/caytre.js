@@ -20,7 +20,7 @@ export default { pages: [
     S.do(f, .2, 'dig', 3); S.cam(.2, 3.4, [16, 2.4, 9], [14, 1, 2]);
     S.do(rich, .4, 'point', 1.6);
     S.say(4.4, 'Every day he dug, planted and carried the rice.', 'Ngày nào anh cũng cuốc đất, cấy lúa, gánh thóc.');
-    { const sack = Pp.sack(); const t = S.walk(f, 4.4, [10, 4]); S.grab(f, t, sack, [0, -.5, .2], 'armR'); S.do(f, t, 'carry', 2.4); S.walk(f, t + .2, [4, 4]); }
+    { const sack = Pp.sack(); const t = S.walk(f, 4.4, [10, 4], 2.4); S.grab(f, t, sack, [0, -.5, .2], 'armR'); S.do(f, t, 'carry', 1.4); S.walk(f, t + .2, [7, 4], 2.4); }
     S.cam(4.4, 3, [6, 2.6, 11], [7, 1, 3]);
     S.at(7.6, () => { });
   },
@@ -34,7 +34,7 @@ export default { pages: [
     S.mood(f, 4.2, 'o'); S.do(f, 4.4, 'surprised', 1.6); S.cam(4.2, 2.4, [2.6, 2, 5], [1.4, 1.5, 1.8]);
     S.mood(f, 6.6, 'smile'); S.do(f, 6.8, 'bow', 1);
     S.say(8.7, 'The farmer took his axe and went into the forest.', 'Anh nông dân vác rìu vào rừng.');
-    { const a = axe(); S.grab(f, 8.7, a, [0, -.5, .1]); S.walk(f, 9, [8, -2]); S.cam(8.7, 2.6, [4, 3, 9], [5, 1.2, 0]); }
+    { const a = axe(); S.grab(f, 8.7, a, [0, -.5, .1]); S.walk(f, 9, [8, -2], 2.4); S.cam(8.7, 2.6, [4, 3, 9], [5, 1.2, 0]); }
     S.at(11.8, () => { });
   },
   // 3. The farmer sat in the forest and cried. Then Bụt, a kind old fairy man, appeared.
@@ -75,8 +75,8 @@ export default { pages: [
     S.shot([0, 3, 10], [0, 1, 2]);
     let t = S.walk(rich, .3, [0, 1.4]); S.do(rich, t, 'kneel', 1); S.mood(rich, t, 'o');
     S.cam(.3, 2.6, [1.6, 2.2, 6], [0, .8, 1.8]);
-    S.do(rich, t + 1, 'pull', 4.6); S.mood(rich, t + 1, 'sad');
-    S.tw(t + 1, 4.6, k => { rich.o.position.x = Math.sin(k * 30) * .15; bam.rotation.y = Math.sin(k * 30) * .02; }, k => k);
+    S.do(rich, t + 1, 'pull', 3.4); S.mood(rich, t + 1, 'sad');
+    S.tw(t + 1, 3.4, k => { rich.o.position.x = Math.sin(k * 30) * .15; bam.rotation.y = Math.sin(k * 30) * .02; }, k => k);
     S.do(f, 2, 'point', 2); S.mood(f, 2, 'happy');
     S.help(7.2, 'Tap and say: Khắc xuất!', 'Chạm và đọc: Khắc xuất!', tt => {
       S.do(rich, tt, 'surprised', 1); S.move(rich.o, tt, .6, [0, 0, 2.6], undefined, .5); S.mood(rich, tt + .6, 'smile');

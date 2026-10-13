@@ -246,8 +246,10 @@ export function createFilm(stage, script, ctx = {}) {
     S.release = byChild => {
       const hd = S.hold; if (!hd) return; S.hold = null; help.hidden = true; ring.hidden = true; clearTimeout(hd.timer);
       if (byChild) { SFX.ok ? SFX.ok() : SFX.tap(); }
-      const n0 = S.ev.length; if (hd.act) hd.act(S.t);
-      if (hd.dur) { for (let i = 0; i < n0; i++) if (!S.ev[i].st && !S.ev[i].fin) S.ev[i].t += hd.dur; S.len += hd.dur; }
+      // (films batch, 13 Oct) what the tap starts makes the page longer by itself; dur moves the rest of the page later.
+      // The page used to grow by both, so it stood still for dur seconds after the answer.
+      const n0 = S.ev.length, len0 = S.len; if (hd.act) hd.act(S.t);
+      if (hd.dur) { for (let i = 0; i < n0; i++) if (!S.ev[i].st && !S.ev[i].fin) S.ev[i].t += hd.dur; S.len = Math.max(S.len, len0 + hd.dur); }
     };
     S.tick = (dt, time) => {
       if (S.follow) { const p = val(S.follow[0]), l = val(S.follow[1]); S.camPos.lerp(new THREE.Vector3(...p), Math.min(1, dt * 3)); S.camLook.lerp(new THREE.Vector3(...l), Math.min(1, dt * 3)); }

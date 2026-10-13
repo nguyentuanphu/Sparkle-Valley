@@ -76,8 +76,8 @@ export default { pages: [
     S.tw(.3, .6, k => { n.userData.body.position.y = Math.sin(k * PI) * 1; }); turn(S, n, 1, PI, .5);
     S.move(n, 1.6, 2.4, [0, 0, -40], k => k * k); S.tw(1.6, 2.4, k => { n.userData.body.position.y = Math.abs(Math.sin(k * PI * 8)) * .4; }, k => k);
     S.cam(.3, 3, [3, 2, 6], [0, 2, -10]);
-    S.say(4.6, 'Bye-bye, Nian! Happy New Year!', 'Tạm biệt Niên! Chúc mừng năm mới!');
-    S.at(7.4, () => { });
+    S.say(4.2, 'Bye-bye, Nian! Happy New Year!', 'Tạm biệt Niên! Chúc mừng năm mới!');
+    S.at(6.8, () => { });
   },
   // 6. That is why we see red, lanterns and dragon dances at Lunar New Year!
   S => {
