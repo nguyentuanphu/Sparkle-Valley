@@ -71,12 +71,14 @@ function enqueue(r) { const q = queue(); q.push(r); keep(q.slice(-C.LIMITS.queue
 let flushing = false;
 async function flush() {
   if (flushing || !live || navigator.onLine === false) return; flushing = true;
+  // (14 Oct AEDT) the list is read again after each send and only the report just sent is taken off: a report made
+  // while another was being sent (an error just as a "slow" report went) used to be lost when the old list was kept
+  const same = (x, r) => x && x.at === r.at && x.kind === r.kind && (x.auto || '') === (r.auto || '') && (x.detail || '') === (r.detail || '') && (x.note || '') === (r.note || '');
   try {
-    let q = queue();
-    while (q.length) {
-      const r = q[0]; let res = null; try { res = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) }); } catch (e) { break; }
+    for (let r = queue()[0]; r; r = queue()[0]) {
+      let res = null; try { res = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) }); } catch (e) { break; }
       if (res.status === 429 || res.status >= 500) break;
-      q.shift(); keep(q); // (sent, or refused for good: a report the website will not take is not kept)
+      const q = queue(), k = q.findIndex(x => same(x, r)); if (k >= 0) { q.splice(k, 1); keep(q); } // (sent, or refused for good: a report the website will not take is not kept)
     }
   } finally { flushing = false; paintCount(); }
 }

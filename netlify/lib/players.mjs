@@ -130,11 +130,17 @@ async function addLines(S, id, ip, lines, today) {
 }
 
 const add = (o, k, n = 1) => { o[k] = (o[k] || 0) + n; };
+// (14 Oct AEDT: Studio's Analytics page timed out with 504) the store is read many at a time, never one by one: each
+// read takes tens of ms, and the page has 10 s in all
+const POOL = 16;
+async function each(list, fn, n = POOL) { const out = new Array(list.length); let i = 0; await Promise.all(Array.from({ length: Math.min(n, list.length) }, async () => { while (i < list.length) { const k = i++; out[k] = await fn(list[k], k); } })); return out; }
+async function listAll(S, prefix) { const all = []; let cursor; do { const r = await S.list({ prefix, ...(cursor ? { cursor } : {}) }); all.push(...r.blobs); cursor = r.cursor; } while (cursor); return all; }
 async function sumDay(S, date, keep) {
   const saved = await S.get('sum/' + date, { type: 'json' }); if (saved) return saved;
-  const { blobs } = await S.list({ prefix: `d/${date}/` }), s = { date, ids: [], newDevices: 0, mins: 0, games: {}, langs: {}, builds: {}, kinds: {}, app: 0, kids: 0, tales: 0, online: 0, dev: {} };
-  for (const b of blobs) {
-    const r = await S.get(b.key, { type: 'json' }); if (!r) continue;
+  const blobs = await listAll(S, `d/${date}/`), s = { date, ids: [], newDevices: 0, mins: 0, games: {}, langs: {}, builds: {}, kinds: {}, app: 0, kids: 0, tales: 0, online: 0, dev: {} };
+  const recs = await each(blobs, b => S.get(b.key, { type: 'json' }));
+  for (const [i, b] of blobs.entries()) {
+    const r = recs[i]; if (!r) continue;
     s.ids.push(b.key.split('/')[2]); if (r.isNew) s.newDevices++; s.mins += r.mins; s.kids += r.kids; s.tales += r.tales; s.online += r.online || 0; if (r.app) s.app++;
     add(s.langs, r.lang); add(s.builds, r.build); add(s.kinds, r.kind); for (const [g, n] of Object.entries(r.games || {})) add(s.games, g, n);
     // round L: what this device did that day, kept with the day's sum (per child, hours, problems, smoothness)
@@ -147,18 +153,28 @@ async function sumDay(S, date, keep) {
 // the report for Sparkle Studio's Players page
 export async function report(S, now = Date.now()) {
   const days = []; for (let i = 29; i >= 0; i--) days.push(day(now - i * 864e5));
-  const sums = []; for (const [i, d] of days.entries()) sums.push(await sumDay(S, d, i < days.length - 1));
+  const sums = await each(days, (d, i) => sumDay(S, d, i < days.length - 1), 6);
   const uniq = list => new Set(list.flatMap(s => s.ids)).size, last = n => sums.slice(-n);
   const total = (list, f) => { const o = {}; for (const s of list) for (const [k, v] of Object.entries(s[f])) add(o, k, v); return o; };
   const top = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
   let allTime = 0, cursor; do { const r = await S.list({ prefix: 'dev/', ...(cursor ? { cursor } : {}) }); allTime += r.blobs.length; cursor = r.cursor; } while (cursor);
-  // tidy up: the day-by-day device records are only needed for 60 days (the sums stay)
-  const old = day(now - 60 * 864e5);
-  try { const { blobs } = await S.list({ prefix: 'd/' }); for (const b of blobs) if (b.key.slice(2, 12) < old) await S.delete(b.key); } catch (e) { }
-  try { const { blobs } = await S.list({ prefix: 'seen/' }); for (const b of blobs) { const v = await S.get(b.key); if (!v || v < old) await S.delete(b.key); } } catch (e) { }
-  try { const { blobs } = await S.list({ prefix: 'vq/' }), yday = day(now - 2 * 864e5); for (const b of blobs) if (b.key.slice(3, 13) < yday) await S.delete(b.key); } catch (e) { } // (the daily line counts)
+  await tidy(S, now);
   const t = sums[sums.length - 1], w = last(7), deviceDays = sums.reduce((a, s) => a + s.ids.length, 0);
   const detail = await details(S, sums, now);
+  return report0(now, sums, t, w, deviceDays, allTime, uniq, total, top, detail);
+}
+// tidy up: the day-by-day device records are only needed for 60 days (the sums stay), a hello's "already counted"
+// mark as long, the daily line counts two days. (14 Oct AEDT) Once a day, and at most 2.5 s of it (what is left waits
+// for the next day): it used to read every mark on every opening of the page
+async function tidy(S, now) {
+  const today = day(now), old = day(now - 60 * 864e5), yday = day(now - 2 * 864e5), stop = Date.now() + 2500;
+  try { if (await S.get('tidy/last') === today) return; await S.set('tidy/last', today); } catch (e) { return; }
+  const gone = async (prefix, isOld) => { try { const blobs = (await listAll(S, prefix)).filter(isOld); await each(blobs, async b => { if (Date.now() < stop) await S.delete(b.key); }); } catch (e) { } };
+  await gone('d/', b => b.key.slice(2, 12) < old);
+  await gone('vq/', b => b.key.slice(3, 13) < yday); // (the daily line counts)
+  try { const blobs = await listAll(S, 'seen/'); await each(blobs, async b => { if (Date.now() >= stop) return; const v = await S.get(b.key); if (!v || v < old) await S.delete(b.key); }); } catch (e) { }
+}
+function report0(now, sums, t, w, deviceDays, allTime, uniq, total, top, detail) {
   return {
     made: new Date(now).toISOString(),
     today: { devices: t.ids.length, newDevices: t.newDevices, mins: t.mins },
@@ -178,7 +194,8 @@ export async function report(S, now = Date.now()) {
 async function details(S, sums, now) {
   const infos = {}, labels = {};
   const lives = {};
-  for (const pre of ['info/', 'label/', 'live/']) { let cursor; do { const r = await S.list({ prefix: pre, ...(cursor ? { cursor } : {}) }); for (const b of r.blobs.slice(0, 500)) { const id = b.key.slice(pre.length); if (pre === 'info/') infos[id] = await S.get(b.key, { type: 'json' }); else if (pre === 'live/') lives[id] = await S.get(b.key, { type: 'json' }); else labels[id] = await S.get(b.key); } cursor = r.cursor; } while (cursor); }
+  await Promise.all(['info/', 'label/', 'live/'].map(async pre => { const blobs = (await listAll(S, pre)).slice(0, 2000);
+    await each(blobs, async b => { const id = b.key.slice(pre.length); if (pre === 'info/') infos[id] = await S.get(b.key, { type: 'json' }); else if (pre === 'live/') lives[id] = await S.get(b.key, { type: 'json' }); else labels[id] = await S.get(b.key); }); }));
   const hours = Array(24).fill(0), places = {}, errs = {}, stuck = {}, quits = {}, starts = {}, devs = {};
   for (const s of sums) for (const [id, x] of Object.entries(s.dev || {})) {
     const D = devs[id] = devs[id] || { id, mins: 0, days: 0, tales: 0, kids: {}, errs: 0, stuck: 0, fps: [0, 0, 0], last: s.date };
@@ -248,7 +265,6 @@ export async function setLabel(S, id, label) { if (!ID.test(id || '')) return fa
 
 // the missing lines inbox, most asked-for first
 export async function inbox(S) {
-  const { blobs } = await S.list({ prefix: 'line/' }), out = [];
-  for (const b of blobs.slice(0, 2000)) { const o = await S.get(b.key, { type: 'json' }); if (o) out.push(o); }
+  const blobs = (await listAll(S, 'line/')).slice(0, 2000), out = (await each(blobs, b => S.get(b.key, { type: 'json' }))).filter(Boolean);
   return out.sort((a, b) => b.n - a.n).slice(0, 600);
 }

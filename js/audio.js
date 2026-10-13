@@ -182,6 +182,13 @@ const THEMES = {
   shrine: { tempo: .8, play(t, i) { tone(midi(pick([69, 72, 76, 81, 84])), 2.4, { when: t, vol: .06, bus: 'music', vib: 3 }); if (i % 4 === 0) tone(midi(45), 3.2, { when: t, vol: .07, type: 'triangle', bus: 'music' }); } },
   night: { tempo: .9, play(t, i) { if (Math.random() < .5) tone(midi(pick([64, 67, 71, 74, 76])), 2.2, { when: t, vol: .06, bus: 'music' }); if (i % 6 === 0) tone(midi(40), 4, { when: t, vol: .05, bus: 'music' }); } },
   glide: { tempo: .3, play(t, i) { const s = [72, 76, 79, 84, 79, 76]; tone(midi(s[i % 6]), .5, { when: t, vol: .08, type: 'triangle', bus: 'music' }); } },
+  // (owner, 13 Oct: "soft background music during films") a quiet bed under the story films: slow warm chords and a
+  // few soft notes, well below the narrator (and lowered further while anyone speaks: Music.under)
+  story: { tempo: .7, play(t, i) {
+    const ch = [[57, 60, 64], [53, 57, 60], [55, 59, 62], [52, 55, 59]][(i >> 3) % 4];
+    if (i % 8 === 0) ch.forEach(n => tone(midi(n), 5.4, { when: t, vol: .028, bus: 'music' }));
+    if (i % 2 === 0 && Math.random() < .55) tone(midi(pick(ch) + 12), 1.9, { when: t, vol: .03, type: 'triangle', bus: 'music' });
+  } },
   game: { tempo: .28, play(t, i) { const s = [72, 74, 76, 79, 76, 74, 72, 67]; if (i % 2 === 0) tone(midi(s[(i / 2) % 8 | 0]), .4, { when: t, vol: .07, type: 'triangle', bus: 'music' }); if (i % 4 === 0) tone(midi(48 + [0, 5, 7, 5][(i / 4) % 4 | 0]), .5, { when: t, vol: .08, bus: 'music' }); noise(.03, { when: t, freq: 6000, vol: .015, bus: 'music' }); } }
 };
 // Sequenced songs: one letter-note per eighth beat ('.' = rest). Children's songs here are traditional
@@ -270,8 +277,10 @@ function songStep(s, i, t) {
 }
 // a family recording from Studio (content/music/…mp3) plays through this one hidden player, looped
 let filePlayer = null;
+// the music's own loudness: quieter in calm mode, and lowered under a speaking narrator (Music.under)
+const fullGain = () => (settings.calm ? .17 : .35) * (Music.low ? .3 : 1);
 export const Music = {
-  key: null, timer: null, next: 0, step: 0,
+  key: null, timer: null, next: 0, step: 0, low: false,
   pinned: false, // the 🎵 Songs page chose the music: the valley leaves it alone until the page closes
   files: {},     // 'file:<id>' → its address (js/songs.js fills it from Studio's content pack)
   play(key, force) {
@@ -292,14 +301,20 @@ export const Music = {
   has: key => !!(THEMES[key] || SONGS[key]),
   // the music fades out over a few seconds (the lullaby sleep timer), then stops
   fadeOut(sec = 6) { if (musicBus && AC) { const g = musicBus.gain, now = AC.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(0, now + sec); } if (filePlayer) { const v0 = filePlayer.volume, t0 = Date.now(), iv = setInterval(() => { const k = (Date.now() - t0) / (sec * 1000); filePlayer.volume = Math.max(0, v0 * (1 - k)); if (k >= 1) clearInterval(iv); }, 200); }
-    setTimeout(() => { this.stop(); this.pinned = false; if (musicBus) musicBus.gain.value = settings.calm ? .17 : .35; }, sec * 1000 + 100); },
+    setTimeout(() => { this.stop(); this.pinned = false; if (musicBus) musicBus.gain.value = fullGain(); }, sec * 1000 + 100); },
   // the music dips for a few seconds (an animal's call in a listening game), then comes back
   duck(sec = 2, to = .03) {
-    const full = settings.calm ? .17 : .35;
+    const full = fullGain();
     if (musicBus && AC) { const g = musicBus.gain, now = AC.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(to, now + .15); g.setValueAtTime(to, now + sec); g.linearRampToValueAtTime(full, now + sec + .5); }
     if (filePlayer) { const v = settings.calm ? .45 : .8; filePlayer.volume = v * .1; clearTimeout(this.duckT); this.duckT = setTimeout(() => { if (filePlayer) filePlayer.volume = v; }, sec * 1000 + 300); }
   },
-  refresh() { if (musicBus) musicBus.gain.value = settings.calm ? .17 : .35; const k = this.key; this.stop(); if (k) this.play(k); },
+  refresh() { if (musicBus) musicBus.gain.value = fullGain(); const k = this.key; this.stop(); if (k) this.play(k); },
+  // (story films) lower the music to a third while the narrator speaks, and bring it back after (gently)
+  under(on) {
+    on = !!on; if (on === this.low) return; this.low = on;
+    if (musicBus && AC) { const g = musicBus.gain, now = AC.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(fullGain(), now + (on ? .25 : .8)); }
+    if (filePlayer) filePlayer.volume = (settings.calm ? .45 : .8) * (on ? .3 : 1);
+  },
   songName() { return SONGS[this.key] ? SONGS[this.key].name : ''; },
   tick() {
     if (!AC || document.hidden || AC.state !== 'running') return; // nothing is scheduled while the game is in the background

@@ -3,7 +3,7 @@
 // fish swim, rain falls, trees sway, the moon glows. The stage (sky, sea, forest, palace, night…) is
 // picked from the words on the page. Tap ◀ ▶ to turn pages, 🔊 to hear it again, ⏯ to read by itself.
 import { T } from './i18n.js';
-import { sayAsync, hush } from './voice.js';
+import { sayAsync, hush, onSpeaking } from './voice.js';
 import { SFX, Music } from './audio.js';
 import { el, esc, wait, flip } from './util.js';
 import { CAST, SCENES } from './cartoon.js';
@@ -38,7 +38,9 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
   let fromFriend = false;
   return new Promise(resolve => {
     let k = startPage, auto = true, alive = true, token = 0;
-    const prev = Music.key; Music.play('none');
+    // (owner, 13 Oct) a soft music bed under the story, lowered while the narrator speaks; the music before comes back on
+    // close. Music.play follows the music switch, and the music's loudness calm mode.
+    const prev = Music.key; Music.play('story'); const offTalk = onSpeaking(n => Music.under(n > 0));
     const m = el('div', 'theatre', `
       <div class="th-top"><span class="th-flag">${tale.flag}</span><b class="th-title">${esc(tale.title())}</b>${tale.story && featureOn('shortTalk', true) ? `<button class="th-skip">${pic('⏩')} ${T('Skip', 'Bỏ qua')}</button>` : ''}<button class="th-x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
       <div class="th-stage"><div class="th-bg"></div><div class="th-actors"></div><div class="th-fx"></div></div>
@@ -48,10 +50,21 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
     const stage = m.querySelector('.th-stage'), bg = m.querySelector('.th-bg'), actors = m.querySelector('.th-actors'), fx = m.querySelector('.th-fx'), text = m.querySelector('.th-text'), dots = m.querySelector('.th-dots');
     // (round R) tales that have a film are acted in 3D instead of the picture stage (js/film.js)
     // (loaded only when a story opens, so starting the game stays small)
-    let film = null;
-    const ready = featureOn('storyFilms', true) ? import('./content/films.js').then(async C => { if (!C.FILMS[tale.id] || !alive) return; const F = await import('./film.js'); film = F.createFilm(stage, C.FILMS[tale.id], tale.ctx); if (film) m.classList.add('film'); }).catch(e => console.warn('film', e)) : Promise.resolve();
+    // (films batch, 13 Oct) the first films live in js/content/films.js; every other tale's film is its own small file
+    // (js/content/talefilms.js), so a story loads only its own. A film that has not come after 10 s (a slow phone
+    // network) is not waited for: the story is read over the picture stage instead (owner: films that did not start).
+    let film = null, gaveUp = false;
+    const loadFilm = async () => { const C = await import('./content/films.js'); return C.FILMS[tale.id] || (await import('./content/talefilms.js')).taleFilm(tale.id); };
+    const ready = featureOn('storyFilms', true) ? loadFilm().then(async script => {
+      if (!script || !alive || gaveUp) return; const F = await import('./film.js'); if (!alive || gaveUp) return;
+      film = F.createFilm(stage, script, tale.ctx); if (!film) return; m.classList.add('film');
+      // a narration line inside the film shows under the page's words, and is spoken only while the story reads itself
+      film.onSay = (en, vi, kind) => { if (kind !== 'help') { text.querySelectorAll('.th-more').forEach(e => e.remove()); text.appendChild(el('p', 'th-more', esc(T(en, vi).replace(/\{name\}/g, name)))); } return auto ? sayAsync(en, vi) : Promise.resolve(); };
+    }).catch(e => console.warn('film', e)) : Promise.resolve();
+    const readyOr = Promise.race([ready, wait(10000).then(() => { gaveUp = true; })]);
+    const rate = () => window.__svFilmRate || 1; // (checks only: films played faster)
     const draw = async () => {
-      const my = ++token; await ready; if (!alive || my !== token) return;
+      const my = ++token; await readyOr; if (!alive || my !== token) return;
       const [pics, en, vi] = tale.pages[k], st = stageOf(en);
       if (film) return drawFilm(my, en, vi);
       stage.className = 'th-stage st-' + st; bg.innerHTML = SCENES[st] ? `<svg class="sc" viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${SCENES[st]()}</svg>` : STAGE_ART[st] || '';
@@ -96,14 +109,16 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
       m.querySelector('.th-next').innerHTML = (k === tale.pages.length - 1 ? pic('🏁') : '▶') + `<small>${k === tale.pages.length - 1 ? T('End', 'Hết') : T('Next', 'Sau')}</small>`;
       SFX.page ? SFX.page() : SFX.tap();
       const played = film.page(k);
-      await wait(350); if (!alive || my !== token) return;
-      await sayAsync(en, vi); if (!alive || my !== token) return;
+      await wait(350 / rate()); if (!alive || my !== token) return;
+      // (owner, 13 Oct: films that did not start by themselves) the words are never waited for longer than they could
+      // take (both languages, slowly), so a voice the phone never finishes cannot stop the story
+      await Promise.race([sayAsync(en, vi), wait(4000 + (en.length + vi.length) * 100)]); if (!alive || my !== token) return;
       film.narrated();
       await played; if (!alive || my !== token || !auto) return;
-      await wait(900); if (!alive || my !== token || !auto) return;
+      await wait(900 / rate()); if (!alive || my !== token || !auto) return;
       next();
     };
-    const finish = done => { if (!alive) return; alive = false; hush(); if (film) film.close(); m.classList.add('out'); setTimeout(() => m.remove(), 300); Music.play(prev || 'field'); resolve(done); onDone && onDone(done); };
+    const finish = done => { if (!alive) return; alive = false; hush(); offTalk(); Music.under(false); if (film) film.close(); m.classList.add('out'); setTimeout(() => m.remove(), 300); Music.play(prev || 'field'); resolve(done); onDone && onDone(done); };
     const next = () => { if (k < tale.pages.length - 1) { k++; draw(); } else { SFX.chime && SFX.chime(); finish(true); } };
     // a friend turned the page
     if (sync) sync.listen(p => { if (!alive || p === k || p < 0 || p >= tale.pages.length) return; fromFriend = true; k = p; draw(); fromFriend = false; });

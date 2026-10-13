@@ -223,12 +223,20 @@ const LIVE = new Set();
 export function animalModel(kind) { const k = BUILD[kind] ? kind : 'puppy'; return make(k, BUILD[k], SHADOW[k] || .8); }
 
 // walking legs, hopping, wagging tails, ears that bounce, heads that look around and a little breathing
+// (films batch) an animal in a story film moves only with its film (js/content/films/kit.js calls tickAnimal itself)
+export function filmAnimal(kind) { const g = animalModel(kind); LIVE.delete(g); return g; }
 export function tickAnimals(dt, t, heroes = []) {
   for (const g of LIVE) {
     if (!g.parent) { g.userData.gone = (g.userData.gone || 0) + 1; if (g.userData.gone > 300) LIVE.delete(g); continue; }
     g.userData.gone = 0;
-    const r = g.userData.rig, p = g.position;
+    const p = g.position;
     if (heroes.length && !heroes.some(h => Math.abs(h.pos.x - p.x) < 60 && Math.abs(h.pos.z - p.z) < 60)) continue; // nobody can see it
+    tickAnimal(g, dt, t);
+  }
+}
+export function tickAnimal(g, dt, t) {
+  {
+    const r = g.userData.rig, p = g.position;
     if (r.px == null) { r.px = p.x; r.pz = p.z; }
     const moved = Math.hypot(p.x - r.px, p.z - r.pz) / Math.max(dt, 1e-3); r.px = p.x; r.pz = p.z;
     r.sp += (Math.min(moved, 10) - r.sp) * Math.min(1, dt * 6);

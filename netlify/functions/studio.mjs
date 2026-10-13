@@ -121,8 +121,8 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
   if (p === '/studio/api/logout') { const tid = cookieOf(req, TRUST); if (/^[\w-]{8,40}$/.test(tid)) await A.delete('trust/' + tid).catch(() => { }); return json({ ok: true }, 200, { 'Set-Cookie': [setCookie('')['Set-Cookie'], trustCookie('')] }); }
   // ---------- who is asking: the cookie (the dashboard), or SparkleStudio.exe's key ----------
   const ck = cookieOf(req, COOKIE); let me = null;
-  if (ck && !ck.startsWith('a.') && checkToken(await ownerSig(), ck)) me = { name: 'owner', role: 'owner' };
-  if (!me && ck.startsWith('a.')) { const a = await admins.fromCookie(A, adminKey(pw, gen), ck).catch(() => null); if (a && (a.totp || a.noTwoStep)) me = { name: a.name, role: a.role }; }
+  if (ck && !ck.startsWith('a.') && checkToken(await ownerSig(), ck)) me = { name: 'owner', role: 'owner', perms: admins.PRESETS.owner };
+  if (!me && ck.startsWith('a.')) { const a = await admins.fromCookie(A, adminKey(pw, gen), ck).catch(() => null); if (a && (a.totp || a.noTwoStep)) me = { name: a.name, role: a.role, perms: admins.permsOf(a) }; }
   // a year-long sign-in needs its trusted-browser record; while it is used it gets a fresh year (at most once a day)
   const tid = cookieOf(req, TRUST), trustOk = /^[\w-]{8,40}$/.test(tid) ? await A.get('trust/' + tid, { type: 'json' }).catch(() => null) : null;
   if (me && tokenExp(ck) - t > 31 * 864e5) {
@@ -152,14 +152,15 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
     await A.delete('trust/' + x.id); await log(me.name, me.role, 'trust-forget', x.who + ' · ' + x.browser);
     return json({ ok: true }, 200, x.here ? { 'Set-Cookie': [setCookie('')['Set-Cookie'], trustCookie('')] } : {});
   }
-  // what this admin may do (round O): a viewer reads the analytics only; only an owner manages the admins
-  const route = p.startsWith('/studio/content/') ? 'file' : decodeURIComponent(p.slice('/studio/api/'.length));
-  if (!admins.allowed(me.role, route.startsWith('file/') && !post ? 'info' : route, post)) return json({ error: me.role === 'viewer' ? 'Your account can look at the Analytics only.' : 'Only an owner can do that.' }, 403);
+  // what this admin may do (round O; owner, 14 Oct AEDT: one permission at a time, admins/PERMS): only an owner manages the admins
+  const route = p.startsWith('/studio/content/') ? 'file' : decodeURIComponent(p.slice('/studio/api/'.length)), asked = route.startsWith('file/') && !post ? 'info' : route;
+  if (!admins.allowed(me, asked, post)) { const need = admins.needs(asked, post), P = admins.PERMS[need];
+    return json({ error: P ? `Your account may not do that. Ask the owner for “${P[1]}” (Setup → Admins).` : 'Only an owner can do that.', need }, 403); }
   const body = async () => post ? await req.json().catch(() => ({})) : {};
   if (p === '/studio/api/whoami') return json(me);
   if (p.startsWith('/studio/api/admins/')) {
     const b = await body();
-    if (p === '/studio/api/admins/list') return json({ admins: await admins.list(A), me });
+    if (p === '/studio/api/admins/list') return json({ admins: await admins.list(A), me, perms: admins.PERMS });
     // (owner, 9 Oct) two-step or the password only, for one admin (the owner always signs in with the password only, 11 Oct)
     if (p === '/studio/api/admins/twostep' && post) {
       const n = admins.cleanName(b.name), on = b.on !== false;
@@ -221,7 +222,7 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
     const raw = post ? Buffer.from(await req.arrayBuffer()) : null;
     if (raw && raw.length > 5.5e6) return json({ error: 'That is too big to send online (over 5 MB).' }, 413);
     const r = await studio.handle(api, req.method, raw);
-    if (api === 'info' && r.body && typeof r.body === 'object') { r.body.me = me; r.body.waiting = (await gstore.waiting()).length; } // who is signed in, and what they may do
+    if (api === 'info' && r.body && typeof r.body === 'object') { r.body.me = me; r.body.perms = admins.PERMS; r.body.waiting = (await gstore.waiting()).length; } // who is signed in, and what they may do
     if (post && r.code < 400) await gstore.flush('Sparkle Studio online: ' + api);
     if (r.raw) return new Response(r.raw, { status: r.code, headers: { 'Content-Type': r.type, 'Cache-Control': 'no-store' } });
     if (api === 'file/content/custom.json' && r.code === 404) return json({});

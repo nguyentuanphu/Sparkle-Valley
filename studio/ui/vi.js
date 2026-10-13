@@ -3,6 +3,8 @@
 // for everything"). Each line: the English (a pattern, numbers and names caught) and the Vietnamese. The `studio` check
 // reads every message the servers can send and fails if one has no line here.
 const ENV = 'Netlify (Site configuration → Environment variables)';
+// the permissions' Vietnamese names by their English ones (filled from the server's list, studio/ui/app.js)
+export const PERM_VI = {};
 export const VI_MESSAGES = [
   // (owner, 12 Oct) tester reports
   [/^No such problem\.$/, () => 'Không có lỗi này.'],
@@ -36,6 +38,8 @@ export const VI_MESSAGES = [
   [/^The owner signs in with the password only: two-step is for admins\.$/, () => 'Chủ đăng nhập chỉ bằng mật khẩu: hai bước dành cho quản trị viên.'],
   [/^Your account can look at the Analytics only\.$/, () => 'Tài khoản của bạn chỉ xem được Phân tích.'],
   [/^Only an owner can do that\.$/, () => 'Chỉ chủ mới làm được việc này.'],
+  // (owner, 14 Oct AEDT) a permission the account was not given; its Vietnamese name comes with the server's list (PERM_VI)
+  [/^Your account may not do that\. Ask the owner for “(.+)” \(Setup → Admins\)\.$/, m => `Tài khoản của bạn không được làm việc này. Hãy xin chủ quyền “${PERM_VI[m[1]] || m[1]}” (Thiết lập → Quản trị viên).`],
   [/^Add GITHUB_TOKEN in Netlify/, () => `Thêm GITHUB_TOKEN trong ${ENV} để Studio trên mạng đọc và lưu được tệp của gia đình.`],
   [/^Add AZURE_KEY and AZURE_REGION in Netlify/, () => `Thêm AZURE_KEY và AZURE_REGION trong ${ENV} trước.`],
   [/^Add your Azure Speech key and region in Settings first\.$/, () => 'Thêm khóa và vùng Azure Speech trong Cài đặt trước.'],
