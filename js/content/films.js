@@ -1084,7 +1084,7 @@ FILMS.caykhe = { pages: [
       S.show(tree.userData.fruits[0], t, false); S.grab(younger, t, fruit, [0, -.52, .1]); S.show(fruit, t);
       S.do(younger, t + .3, 'give', 1.4); S.grab(older, t + 1.7, fruit, [0, -.52, .1]); S.do(younger, t + 1.7, 'idle');
       S.say(t + .4, 'The younger brother shared a starfruit.', 'Người em chia cho anh một quả khế.');
-      S.say(t + 4.3, 'And the two brothers hugged, friends again.', 'Rồi hai anh em ôm nhau, lại thương nhau như xưa.');
+      S.say(t + 4.1, 'And the two brothers hugged, friends again.', 'Rồi hai anh em ôm nhau, lại thương nhau như xưa.');
       S.do(older, t + 1.9, 'eat', 1.8); S.mood(older, t + 1.9, 'happy'); S.show(fruit, t + 3.7, false);
       S.walk(older, t + 3.8, [6, 2.6], .8); S.do(older, t + 5.1, 'hug', 2.4); S.do(younger, t + 5.1, 'hug', 2.4); S.mood(younger, t + 4.4, 'happy');
       S.show(sp, t + 4.4);

@@ -70,7 +70,7 @@ export default { pages: [
     S.shot([0, 2.6, 16], [0, 1, 9]);
     S.walk(tam, .2, [4, 9], 1.6); S.show(sl, 2); S.cam(.2, 3, [2, 2, 14], [1, .6, 9]);
     S.move(ele, 3, 3, [1.4, 0, 7.6]);
-    S.cam(3, 2.8, [-2, 2.6, 13], [1, 1.2, 8]);
+    S.cam(3, 2.8, [-3, 4.2, 17], [1, 2.2, 8]);
     S.mood(prince, 6, 'o'); S.at(6.6, () => { ele.userData.nod = .4; });
     S.say(8.3, 'He held up the little slipper for everyone to see.', 'Hoàng tử giơ chiếc hài nhỏ cho mọi người cùng xem.');
     S.at(8.3, () => { prince.A.armR.add(sl); sl.position.set(0, -.5, .1); });
