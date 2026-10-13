@@ -364,4 +364,8 @@ film, Next/Stop at the end, tap outside to leave), ACT-003 (nothing a game made 
   Screenshots: the button, the window, a game being played and the report on phone, tablet and computer.
 - Known: auto play cannot yet win long strategy games (Ô Ăn Quan with Tèo), so "Follow the quests" stops there and
   says it needs help. Full suite: Release.
+- iPhone notes (13 Oct, about 6 pm AEDT): `camera` `phone` `autoplay` `tester` (Stop held down) `grownupsui` `a11y`
+  `questbar` `iphone` `studio` `types` `unit` `arch` `rules` `emoji` `preload` pass; `contract` re-recorded (one change:
+  the View button `z-tray`, asked for by the owner). Screenshots: the View tray and the tester card on phone, tablet and
+  computer. Not possible here: a real iPhone 27 Home Screen app; Grown-ups → Fit the screen lets the owner try it.
 
