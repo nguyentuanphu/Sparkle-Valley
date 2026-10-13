@@ -47,3 +47,24 @@ Additional proposed improvements: brief picture+voice labels for unfamiliar icon
 
 ## Release acceptance
 No assertion of zero bugs. Before release require: relevant unit/contract checks, complete existing suite, measured startup/performance, screenshot inspection and physical iPhone/iPad/Android/desktop smoke checks; no changing thresholds merely to pass. Verify warm/cold/offline/update starts, moving between all entry/exit routes, keyboard/rotation, collapsed Studio sections, permissions persistence/enforcement, per-device retention and complete report capture. Keep a screen-level pass/fail list and unresolved risks in the release report.
+
+
+## Owner collaboration decisions: 14 Oct, 9:00 am AEDT
+These refine the plan; implementation is still pending.
+1. Autoplay's current Save report action downloads a text file (autoplay.js saveReport). This must become optional Export a copy in advanced results, not the primary reporting action. Detected failures submit through the ladybird reporting queue automatically, without the parent moving/uploading files. A manual Send report uses the same route and can add a note.
+2. Show separate Queued on this device, Sending, Sent (with receipt/report ID), and Failed - retry states. The existing local report sent flag cannot prove server delivery; only successful backend acknowledgement marks Sent. Offline reports remain queued and retries do not create duplicate issues. Explain tester eligibility/disabled reporting rather than silently drop reports when autoReport is inactive. Verify error and partial-run/stop paths as well as completion.
+3. Hide the compass/Where is function by default for now. Reuse the existing Studio wayfind switch, which currently defaults on. Label it Find a place (compass), with a short explanation of guidance sparkles and the child-facing location. Owner disable must actually remove both button and actionable entry on selected scope/devices, including previously used/kept features; do not let feature grandfathering override explicit owner disable. Turning it on restores it without a rebuild.
+4. Studio must be self explanatory: every control has a plain EN/VI label, visible current value, brief description of effect, affected scope/devices, default and save/apply timing. Destructive/reset actions describe what remains and what is removed. Inline essential explanations; expandable detail for advanced options. No tooltip-only help on touch devices. Explain empty, loading, disabled and error states; no silent actions.
+
+## Proposed durable rules for future work
+Adopt through the repo's existing CLAUDE.md / HANDOFF / rules / checks workflow when implementing this round; do not maintain conflicting parallel standards.
+- Stable outer screen shell: anchored header/actions, scrollable body, reserved footer space; no panel translation/recentering. Intended world animation is separate.
+- Shared components and tokens for Pad, shop, wardrobe, report cards, collapsible groups, trays, item artwork and confirmations. Fix components once; new features reuse them.
+- EN/VI text and spoken child guidance; readable contrast/text; at least 64 px under-5 targets and 44 px others. Normalize optical icon scale independently of tap area.
+- Explicit navigation origin and return state; one active overlay/tray; preserve previous category and scroll. No ambiguous Close destinations.
+- One reporting service: automatic/manual capture -> durable queue -> receipt -> private Studio report -> deduplicated issue -> fix -> version-linked retest. Report submission is not proof of a fix.
+- Clear per-device test settings and named retention policy; production progress never silently altered by a test. Fast checking and normal-speed performance results distinguished.
+- Each optional feature has an understandable Studio switch, explicit disable semantics, existing-data migration and documented rollout/keep behaviour.
+- Code and data use stable IDs rather than display names; old saves/ownership survive updates. Family private data remains separate from GitHub code; host changes require a backup/migration.
+- New features include cold/warm/offline/update behaviour, failure recovery, resource/performance budget, self-explanatory Studio controls and entry/exit paths.
+- Release requires meaningful checks of shared rules plus visual/device review. Keep a per-screen failure list, test current and previous-version clients, and do not relax thresholds just to pass.
