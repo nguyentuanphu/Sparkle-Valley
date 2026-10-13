@@ -199,6 +199,17 @@ export async function studioCheck(browser, open) {
       ok((await call('/studio/api/players', { cookie: v.cookie })).status === 200, 'a viewer could not read the analytics');
       ok((await call('/studio/api/content', { body: { message: { en: 'x' } }, cookie: v.cookie, headers: X })).status === 403, 'a viewer could change the content');
       ok((await call('/studio/api/admins/list', { cookie: v.cookie })).status === 403, 'a viewer could see the admins');
+      // (owner, 14 Oct AEDT) permissions one by one: someone who may only switch features and look at the pages
+      { ok((await call('/studio/api/admins/save', { body: { name: 'da.mi', password: 'chosen-password-1', role: 'custom', perms: ['releases', 'pages', 'not-a-permission'] }, cookie: C, headers: X })).status === 200, 'the owner could not give chosen permissions');
+        const lst = await call('/studio/api/admins/list', { cookie: C }), dm = ((lst.j && lst.j.admins) || []).find(x => x.name === 'da.mi');
+        ok(dm && dm.role === 'custom' && JSON.stringify(dm.perms) === '["releases","pages"]' && lst.j.perms && lst.j.perms.deploy, 'the admins list does not show the chosen permissions: ' + JSON.stringify(dm));
+        const d = await signIn('da.mi', 'chosen-password-1'), di = await call('/studio/api/info', { cookie: d.cookie });
+        ok(di.status === 200 && di.j.me && JSON.stringify(di.j.me.perms) === '["releases","pages"]' && di.j.perms && di.j.perms.analytics, 'info does not carry the permissions: ' + JSON.stringify(di.j && di.j.me));
+        const no = await call('/studio/api/players', { cookie: d.cookie });
+        ok(no.status === 403 && no.j.need === 'analytics' && /Ask the owner for “See Analytics/.test(no.j.error), 'Analytics was open without its permission: ' + JSON.stringify(no.j));
+        ok((await call('/studio/api/content', { body: { message: { en: 'x' } }, cookie: d.cookie, headers: X })).status === 403, 'pages could be changed with "look only"');
+        ok((await call('/studio/api/admins/list', { cookie: d.cookie })).status === 403, 'chosen permissions reached the admins list');
+        ok((await call('/studio/api/live', { cookie: d.cookie })).status === 200, 'the Releases page could not be read with "pages"'); }
       const e = await signIn('co.lan', 'editor-password-1');
       ok((await call('/studio/api/admins/save', { body: { name: 'x.y', password: 'editor-password-2', role: 'owner' }, cookie: e.cookie, headers: X })).status === 403, 'an editor could add admins');
       ok((await call('/studio/api/admins/me', { body: { old: 'editor-password-1', password: 'editor-password-2' }, cookie: e.cookie, headers: X })).status === 200, 'an editor could not change their own password');
@@ -487,6 +498,14 @@ export async function studioCheck(browser, open) {
       for (const k of pages) { await pg.evaluate(k2 => { location.hash = k2; }, k); await pg.waitForTimeout(k === 'photos' ? 2500 : 900); const t = await pg.evaluate(() => document.querySelector('#page').innerText); if (await pg.evaluate(() => !!document.querySelector('#page .card.badtxt')) || !t.trim()) bad.push(`online ${w}px ${k}: ${t.slice(0, 80)}`);
         if (await pg.evaluate(() => document.scrollingElement.scrollWidth > innerWidth + 1)) bad.push(`online ${w}px ${k}: page scrolls sideways`);
         const emo = await pg.evaluate(SHOWN_EMOJI); if (emo.length) bad.push(`online ${w}px ${k}: phone emoji shown: ${emo.join(' ')}`); }
+      // (owner, 14 Oct AEDT) Setup → Admins: each person's permissions, ticked one by one (da.mi has chosen ones)
+      { await pg.evaluate(() => { location.hash = 'admins'; }); await pg.waitForSelector('tr.permrow details', { timeout: 15000 }).catch(() => { });
+        await pg.evaluate(() => { const r = [...document.querySelectorAll('tr.permrow')].find(x => x.dataset.pn === 'da.mi'); if (r) { r.querySelector('details').open = true; r.scrollIntoView(); } }); await pg.waitForTimeout(500);
+        const pm = await pg.evaluate(() => { const r = [...document.querySelectorAll('tr.permrow')].find(x => x.dataset.pn === 'da.mi'); return r ? { n: r.querySelectorAll('[data-perm]').length, on: [...r.querySelectorAll('[data-perm]:checked')].map(x => x.dataset.perm), small: [...r.querySelectorAll('.perm')].filter(x => x.getBoundingClientRect().height < 44).length } : null; });
+        if (!pm || pm.n !== 13 || pm.on.join() !== 'pages,releases' || pm.small) bad.push(`online ${w}px admins: the permission ticks are not right: ${JSON.stringify(pm)}`);
+        if (await pg.evaluate(() => document.scrollingElement.scrollWidth > innerWidth + 1)) bad.push(`online ${w}px admins: page scrolls sideways`);
+        const emo = await pg.evaluate(SHOWN_EMOJI); if (emo.length) bad.push(`online ${w}px admins: phone emoji shown: ${emo.join(' ')}`);
+        await pg.screenshot({ path: path.join(ROOT, 'tests/out', `studio-admins-${w}.png`) }); }
       { await pg.evaluate(() => document.querySelector('#tabs [data-k="players"]').click()); await pg.waitForSelector('.tiles .tile', { timeout: 15000 });
         // (r65, owner: "cleaner but still the details") five tiles, a row per child and per kind of device, the rest folded and closed at first
         const look = await pg.evaluate(() => ({ tiles: document.querySelectorAll('.tiles .tile').length, top: document.querySelector('#page').innerText, more: document.querySelectorAll('details.more').length, open: document.querySelectorAll('details.more[open]').length, kinds: document.querySelectorAll('table.kinds tbody tr').length }));

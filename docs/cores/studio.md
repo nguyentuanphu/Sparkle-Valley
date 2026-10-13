@@ -95,6 +95,8 @@ Build the exe after changes: `bash studio/build-exe.sh`.
 - **Release**: the exe goes into each round's packages.
 
 ## Owner's decisions
+- (14 Oct AEDT) **Admins get permissions one by one** ("for admin and owner give them more granular access level in details which can be granted"). Setup → Admins shows each person's permissions as ticks: See Analytics, Name devices, See tester reports, Mark tester problems, Open pages (look only), Change pages (waits for Publish), Make and record voices, Switch features and festivals (live at once), Family photos and code, Make a new family code, Publish, Rebuild the website, Put code live. The roles Viewer, Editor and Owner are ready-made sets that do what they did before; ticking one box makes the role "Chosen". Managing admins, Security and the Access log come only with Owner, so nobody can give themselves more. Code: `netlify/lib/admins.mjs` (PERMS, PRESETS, needs, allowed), `netlify/functions/studio.mjs`, `studio/ui/app.js`; checks `tests/unit/perms.test.mjs` and the `studio` check. The owner said Release may push and deploy it when it fits.
+- (14 Oct AEDT) Studio's Releases page is readable in dark mode on phones, and Analytics no longer times out (504): the report reads the store many at a time and tidies once a day (`fix/studio-dark-analytics`).
 - **11 Oct AEDT: no two-step for the owner.** The owner signs in with `STUDIO_PASSWORD` only; two-step is for admins (`netlify/functions/studio.mjs`, Setup → Admins shows the owner as "password only"). to keep
 - Five sections, big cards, fast page changes (round K).
 - Everything sent back to Studio is labelled “Analytics” (round L).
