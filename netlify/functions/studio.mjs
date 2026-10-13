@@ -25,10 +25,20 @@ import * as tester from '../lib/tester.mjs';
 const { createStudio, githubStore, makeToken, checkToken, samePassword } = core;
 
 const env = k => ((globalThis.Netlify && globalThis.Netlify.env.get(k)) || process.env[k] || '').trim();
-const json = (o, status = 200, headers = {}) => new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers } });
+// (a header given as a list is sent once per value: two cookies at once)
+const json = (o, status = 200, headers = {}) => { const h = new Headers({ 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); for (const [k, v] of Object.entries(headers)) for (const x of [].concat(v)) h.append(k, x); return new Response(JSON.stringify(o), { status, headers: h }); };
 const cookieOf = (req, name) => { const m = new RegExp('(?:^|;\\s*)' + name + '=([^;]+)').exec(req.headers.get('cookie') || ''); return m ? decodeURIComponent(m[1]) : ''; };
 const COOKIE = 'sv_studio';
-const setCookie = v => ({ 'Set-Cookie': `${COOKIE}=${v}; Path=/studio; Max-Age=${v ? 30 * 86400 : 0}; HttpOnly; Secure; SameSite=Strict` });
+const setCookie = (v, days = 30) => ({ 'Set-Cookie': `${COOKIE}=${v}; Path=/studio; Max-Age=${v ? days * 86400 : 0}; HttpOnly; Secure; SameSite=Strict` });
+// (owner, 13 Oct AEDT: "for admin and owner give them an option to auto login for trusted browsers") "Trust this browser"
+// at sign-in: the sign-in lasts a year and is renewed as it is used (a fresh year at most once a day). Each trusted
+// browser has a record (trust/<id>: who, what browser, where, when) and a second cookie with its id: a year-long sign-in
+// works only while its record is there, so Forget (Security) ends it at once; Sign everyone out ends them all as before.
+const TRUST = 'sv_trust', TRUST_DAYS = 365;
+const trustCookie = id => `${TRUST}=${id || ''}; Path=/studio; Max-Age=${id ? 400 * 86400 : 0}; HttpOnly; Secure; SameSite=Strict`;
+const uaShort = ua => { ua = String(ua || ''); const os = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac OS X/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : '';
+  const br = /Edg\//.test(ua) ? 'Edge' : /CriOS|Chrome\//.test(ua) ? 'Chrome' : /FxiOS|Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : ''; return [os, br].filter(Boolean).join(' · ') || 'a browser'; };
+const tokenExp = ck => { const parts = String(ck || '').split('.'); return +(ck.startsWith('a.') ? parts[parts.length - 2] : parts[0]) || 0; };
 
 // Netlify Blobs on the website (tests hand in their own)
 const store = name => () => import('@netlify/blobs').then(m => m.getStore({ name, consistency: 'strong' }));
@@ -57,7 +67,7 @@ export const heldOn = S => ({
 export const familyOn = F => ({ where: 'site', put: (n, b) => family.put(F, n, b), get: n => family.get(F, n), remove: n => family.remove(F, n), code: () => family.code(F), newCode: () => family.newCode(F) });
 const isJpeg = b => b && b.length > 3 && b[0] === 0xff && b[1] === 0xd8;
 
-export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs, liveStore = liveBlobs, familyStore = familyBlobs, guardStore = guardBlobs, logStore = logBlobs, testerStore = testerBlobs, now = () => Date.now() } = {}) => async (req, ctx) => {
+export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, heldStore = heldBlobs, liveStore = liveBlobs, familyStore = familyBlobs, guardStore = guardBlobs, logStore = logBlobs, testerStore = testerBlobs, now = () => Date.now() } = {}) => { const handle = async (req, ctx, out) => {
   const url = new URL(req.url), p = url.pathname, pw = env('STUDIO_PASSWORD'), post = req.method === 'POST';
   if (!pw) return json({ error: 'The online Studio is not set up yet: add STUDIO_PASSWORD in Netlify (Site configuration → Environment variables), then deploy again.', setup: true }, 503);
   const A = await adminStore(), gen = +(await A.get('gen').catch(() => 0)) || 0, t = now();
@@ -99,15 +109,30 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
       if (owner) await A.setJSON('totp/owner', { ...ot, last: st }); else await admins.usedTotp(A, acc, st);
     }
     await cleared(G, [acct]);
-    if (owner) { await log('owner', 'owner', 'signin'); return json({ ok: true, role: 'owner' }, 200, setCookie(makeToken(await ownerSig()))); }
-    const fresh = await admins.get(A, name); await log(name, fresh.role, 'signin');
-    return json({ ok: true, role: fresh.role }, 200, setCookie(admins.makeCookie(adminKey(pw, gen), fresh)));
+    const days = b.trust ? TRUST_DAYS : 30, role0 = owner ? 'owner' : (await admins.get(A, name)).role;
+    let trusted = [];
+    if (b.trust) { const id = crypto.randomBytes(12).toString('base64url'), iso = new Date(t).toISOString();
+      await A.setJSON('trust/' + id, { who, role: role0, browser: uaShort(req.headers.get('user-agent')), where: [ctx && ctx.geo && ctx.geo.city, ctx && ctx.geo && ctx.geo.country && ctx.geo.country.code].filter(Boolean).join(', '), at: iso, last: iso });
+      trusted = [trustCookie(id)]; }
+    if (owner) { await log('owner', 'owner', b.trust ? 'signin-trusted' : 'signin'); return json({ ok: true, role: 'owner' }, 200, { 'Set-Cookie': [setCookie(makeToken(await ownerSig(), days), days)['Set-Cookie'], ...trusted] }); }
+    const fresh = await admins.get(A, name); await log(name, fresh.role, b.trust ? 'signin-trusted' : 'signin');
+    return json({ ok: true, role: fresh.role }, 200, { 'Set-Cookie': [setCookie(admins.makeCookie(adminKey(pw, gen), fresh, days), days)['Set-Cookie'], ...trusted] });
   }
-  if (p === '/studio/api/logout') return json({ ok: true }, 200, setCookie(''));
+  if (p === '/studio/api/logout') { const tid = cookieOf(req, TRUST); if (/^[\w-]{8,40}$/.test(tid)) await A.delete('trust/' + tid).catch(() => { }); return json({ ok: true }, 200, { 'Set-Cookie': [setCookie('')['Set-Cookie'], trustCookie('')] }); }
   // ---------- who is asking: the cookie (the dashboard), or SparkleStudio.exe's key ----------
   const ck = cookieOf(req, COOKIE); let me = null;
   if (ck && !ck.startsWith('a.') && checkToken(await ownerSig(), ck)) me = { name: 'owner', role: 'owner' };
   if (!me && ck.startsWith('a.')) { const a = await admins.fromCookie(A, adminKey(pw, gen), ck).catch(() => null); if (a && (a.totp || a.noTwoStep)) me = { name: a.name, role: a.role }; }
+  // a year-long sign-in needs its trusted-browser record; while it is used it gets a fresh year (at most once a day)
+  const tid = cookieOf(req, TRUST), trustOk = /^[\w-]{8,40}$/.test(tid) ? await A.get('trust/' + tid, { type: 'json' }).catch(() => null) : null;
+  if (me && tokenExp(ck) - t > 31 * 864e5) {
+    if (!trustOk || trustOk.who !== me.name) me = null;
+    else if (Date.parse(trustOk.last || 0) < t - 864e5) {
+      await A.setJSON('trust/' + tid, { ...trustOk, last: new Date(t).toISOString() });
+      const fresh = me.role === 'owner' ? makeToken(await ownerSig(), TRUST_DAYS) : admins.makeCookie(adminKey(pw, gen), await admins.get(A, me.name), TRUST_DAYS);
+      out.renew = setCookie(fresh, TRUST_DAYS)['Set-Cookie'];
+    }
+  }
   const xk = req.headers.get('x-studio-key');
   if (!me && xk) {
     const G = await guardStore(), ipk = 'ip/' + await ipKey(G, ipOf(req, ctx));
@@ -117,6 +142,16 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
   }
   if (!me) return json({ error: 'Please sign in.', signin: true }, 401);
   if (post && req.headers.get('x-studio') !== '1') return json({ error: 'no' }, 403); // only the dashboard itself sends changes
+  // trusted browsers: everyone sees and forgets their own; the owner sees and forgets everyone's
+  if (p === '/studio/api/trusted' || p === '/studio/api/trusted/forget') {
+    const list = []; let cursor; do { const r = await A.list({ prefix: 'trust/', ...(cursor ? { cursor } : {}) }); for (const b of r.blobs) { const v = await A.get(b.key, { type: 'json' }).catch(() => null); if (v) list.push({ id: b.key.slice(6), ...v, here: b.key.slice(6) === tid }); } cursor = r.cursor; } while (cursor);
+    const mine = list.filter(x => me.role === 'owner' || x.who === me.name);
+    if (p === '/studio/api/trusted') return json({ trusted: mine.sort((a, b) => String(b.last).localeCompare(String(a.last))) });
+    if (!post) return json({ error: 'no' }, 405);
+    const b = await req.json().catch(() => ({})), x = mine.find(y => y.id === b.id); if (!x) return json({ error: 'That browser is not trusted (any more).' }, 404);
+    await A.delete('trust/' + x.id); await log(me.name, me.role, 'trust-forget', x.who + ' · ' + x.browser);
+    return json({ ok: true }, 200, x.here ? { 'Set-Cookie': [setCookie('')['Set-Cookie'], trustCookie('')] } : {});
+  }
   // what this admin may do (round O): a viewer reads the analytics only; only an owner manages the admins
   const route = p.startsWith('/studio/content/') ? 'file' : decodeURIComponent(p.slice('/studio/api/'.length));
   if (!admins.allowed(me.role, route.startsWith('file/') && !post ? 'info' : route, post)) return json({ error: me.role === 'viewer' ? 'Your account can look at the Analytics only.' : 'Only an owner can do that.' }, 403);
@@ -193,5 +228,7 @@ export const makeStudio = ({ playersStore = blobs, adminStore = adminBlobs, held
     return json(r.body, r.code);
   } catch (e) { return json({ error: String(e && e.message || e) }, 500); }
 };
+  // (a trusted browser's fresh year rides on whatever answer it gets)
+  return async (req, ctx) => { const out = {}, res = await handle(req, ctx, out); if (out.renew) try { res.headers.append('Set-Cookie', out.renew); } catch (e) { } return res; }; };
 export default makeStudio();
 export const config = { path: ['/studio/api/*', '/studio/content/*'] };

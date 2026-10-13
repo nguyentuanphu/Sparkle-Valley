@@ -114,7 +114,7 @@ export async function fakeNetlify({ port, env, players, adminStore = memoryBlobs
     if (fn) {
       const ch = []; for await (const c of req) ch.push(c);
       const r = await fn(new Request(url, { method: req.method, headers: req.headers, body: req.method === 'POST' ? Buffer.concat(ch) : undefined }), { geo: JSON.parse(req.headers['x-test-geo'] || '{}') }); // (Netlify gives the town from the connection; tests say it in a header)
-      const h = {}; r.headers.forEach((v, k) => { h[k] = v; }); const out = Buffer.from(await r.arrayBuffer());
+      const h = {}; r.headers.forEach((v, k) => { h[k] = v; }); const sc = r.headers.getSetCookie ? r.headers.getSetCookie() : []; if (sc.length) h['set-cookie'] = sc; /* (like Netlify: two cookies stay two) */ const out = Buffer.from(await r.arrayBuffer());
       // (r65) like Netlify: a function's answer is at most 6 MB, and a picture is sent as base64 (a third bigger), so about 4.5 MB
       if ((/^(image|audio|video)\/|octet/.test(h['content-type'] || '') ? out.length * 4 / 3 : out.length) > 6e6) { res.writeHead(502, { 'Content-Type': 'text/plain' }); res.end('Function response is too large'); return; }
       res.writeHead(r.status, h); res.end(out); return;
@@ -176,6 +176,17 @@ export async function studioCheck(browser, open) {
     // (owner, 11 Oct) the owner signs in with the password only; admins keep two-step (below)
     { const o2 = await call('/studio/api/login', { body: { password: PW } }); ok(o2.status === 200 && !o2.j.step, 'the owner was asked for a two-step code'); }
     const C = li.cookie, X = { 'X-Studio': '1' };
+    // (owner, 13 Oct AEDT) "Trust this browser": a year-long sign-in that works only while its trusted-browser record is
+    // there; the owner sees it in Security and Forget ends it at once
+    { testClock.t += 31e3; const r = await fetch(site + '/studio/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: PW, trust: true }) });
+      const sc = r.headers.getSetCookie ? r.headers.getSetCookie() : String(r.headers.get('set-cookie') || '').split(/,(?=\s*sv_)/);
+      const main = sc.find(c => /^\s*sv_studio=/.test(c)) || '', tr = sc.find(c => /^\s*sv_trust=/.test(c)) || '', long = /Max-Age=31536000/.test(main);
+      const both = main.split(';')[0].trim() + '; ' + tr.split(';')[0].trim(), alone = main.split(';')[0].trim();
+      const withBoth = (await call('/studio/api/trusted', { cookie: both })).status, onlyMain = (await call('/studio/api/trusted', { cookie: alone })).status;
+      const list = await call('/studio/api/trusted', { cookie: C }), id = list.j && list.j.trusted && list.j.trusted[0] && list.j.trusted[0].id;
+      const fg = await call('/studio/api/trusted/forget', { body: { id }, cookie: C, headers: X }), after = (await call('/studio/api/trusted', { cookie: both })).status;
+      ok(r.status === 200 && long && !!tr && withBoth === 200 && onlyMain === 401 && !!id && fg.status === 200 && after === 401, 'trusted browser: ' + JSON.stringify({ s: r.status, long, tr: !!tr, withBoth, onlyMain, id: !!id, fg: fg.status, after }));
+      notes.push('a trusted browser stays signed in for a year while it is on the list; Forget ends it'); }
     // 1b. other admins with their own accounts (round O): the owner adds them; a viewer only reads the analytics,
     // an editor can change things but not the admins; a new password or removing them signs them out
     { const add = (name, password, role) => call('/studio/api/admins/save', { body: { name, password, role }, cookie: C, headers: X });
@@ -494,19 +505,19 @@ export async function studioCheck(browser, open) {
         await pg.screenshot({ path: `out/studio-analytics-${w}.png`, fullPage: true }); }
       // (round R) Releases online: switch traffic off and Halloween to start in 3 days; the website hands it to every device
       if (!touch) {
-        await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('tr[data-id="traffic"]', { timeout: 15000 });
-        await pg.evaluate(() => { document.querySelector('tr[data-id="traffic"] [data-r="on"]').value = 'false'; const t = document.querySelector('tr[data-id="fest_halloween"]'); const q = t.querySelector('[data-in]'); q.value = '3'; q.dispatchEvent(new Event('change', { bubbles: true })); t.querySelector('[data-r="newDays"]').value = '5'; document.querySelector('#save').click(); });
+        await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('[data-id="traffic"]', { timeout: 15000 });
+        await pg.evaluate(() => { document.querySelector('[data-id="traffic"] [data-r="on"]').checked = false; const t = document.querySelector('[data-id="fest_halloween"]'); t.querySelector('[data-in="3"]').click(); t.querySelector('[data-r="newDays"]').value = '5'; document.querySelector('#save').click(); });
         await pg.waitForTimeout(1200);
         const lv = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
         if (!(lv.releases && lv.releases.traffic && lv.releases.traffic.on === false && lv.releases.fest_halloween && lv.releases.fest_halloween.newDays === 5 && /^\d{4}-/.test(lv.releases.fest_halloween.start))) bad.push('releases did not reach /api/live: ' + JSON.stringify(lv));
         // (owner, 12 Oct) testers: tick a device at "auto reports only" with a sneak peek; it reports; the Tester reports page
         // shows the problem, marks it fixed in r67, and the device hears it
         await pg.evaluate(() => { location.hash = 'game/releases'; }); await pg.waitForSelector('#tdev [data-tdev]', { timeout: 15000 }).catch(() => { });
-        const tid = await pg.evaluate(() => { const c = document.querySelector('#tdev [data-tdev]'); if (!c) return ''; c.checked = true; document.querySelector(`[data-tlv="${c.dataset.tdev}"]`).value = 'auto'; document.querySelector('#tdev [data-peek]').checked = true; document.querySelector('tr[data-id="tester"] [data-r="on"]').value = 'true'; document.querySelector('#save').click(); return c.dataset.tdev; });
+        const tid = await pg.evaluate(() => { const c = document.querySelector('#tdev [data-tdev]'); if (!c) return ''; c.checked = true; document.querySelector(`[data-tlv="${c.dataset.tdev}"]`).value = 'auto'; document.querySelector('#tdev [data-peek]').checked = true; document.querySelector('[data-id="tester"] [data-r="on"]').checked = true; document.querySelector('#tdev [data-trevert="autoplay"]').checked = true; document.querySelector('#save').click(); return c.dataset.tdev; });
         await pg.waitForTimeout(1200);
         const lt = await pg.evaluate(() => fetch('/api/live', { cache: 'no-store' }).then(r => r.json()));
         const tr = lt.releases && lt.releases.tester;
-        if (!tid || !tr || tr.on !== true || !(tr.devices || []).includes(tid) || (tr.levels || {})[tid] !== 'auto' || !(tr.peeks || []).length) bad.push('the Releases page did not save the testers: ' + JSON.stringify({ tid, tr }));
+        if (!tid || !tr || tr.on !== true || !(tr.devices || []).includes(tid) || (tr.levels || {})[tid] !== 'auto' || !(tr.peeks || []).length || tr.revert !== 'autoplay') bad.push('the Releases page did not save the testers (and what goes back): ' + JSON.stringify({ tid, tr }));
         else {
           const rep = { id: tid, b: 'r66', kind: 'looks', note: 'The bridge floats', where: { area: 'village', x: 1, z: 2 }, dev: { os: 'iOS' }, players: [{ name: 'Na', age: 'little' }], shot: 'data:image/jpeg;base64,AAAA', log: [[-2, 'tap', 'Play']] };
           const sent = await pg.evaluate(b => fetch('/api/tester', { method: 'POST', body: JSON.stringify(b) }).then(r => r.status), rep);

@@ -87,15 +87,15 @@ const centre = o => o.x != null ? { x: o.x, z: o.z } : { x: (o.x0 + o.x1) / 2, z
 
 // ---------- decorations: the valley's own 3D things ----------
 const mat = toonVC(), nightMat = new THREE.MeshBasicMaterial({ vertexColors: true });
-const Sph = (r, w = 10, h = 8) => new THREE.SphereGeometry(r, w, h), Cyl = (a, b, h, s = 8) => new THREE.CylinderGeometry(a, b, h, s), Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+const Sph = (r, w = 8, h = 6) => new THREE.SphereGeometry(r, w, h), Cyl = (a, b, h, s = 8) => new THREE.CylinderGeometry(a, b, h, s), Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 // a string of little flags (or lanterns, or friendly bats) hanging between two posts, with a gentle sag
-function bunting(a, b, cols, kind = 'flag') {
+function bunting(a, b, cols, kind = 'flag', wall = false) {
   const parts = [], glows = [];
-  const [ax, ay, az] = a, [bx, by, bz] = b, n = Math.max(4, Math.round(Math.hypot(bx - ax, bz - az) / .7)), yaw = Math.atan2(bx - ax, bz - az);
-  for (const [x, y, z] of [a, b]) parts.push(P(Cyl(.06, .08, y - heightAt(x, z), 6), '#8a6a4a', [x, (y + heightAt(x, z)) / 2, z]));
+  const [ax, ay, az] = a, [bx, by, bz] = b, n = Math.max(4, Math.round(Math.hypot(bx - ax, bz - az) / (kind === 'lantern' ? 1 : .7))), yaw = Math.atan2(bx - ax, bz - az);
+  if (!wall) for (const [x, y, z] of [a, b]) parts.push(P(Cyl(.06, .08, y - heightAt(x, z), 6), '#8a6a4a', [x, (y + heightAt(x, z)) / 2, z]));
   for (let i = 1; i < n; i++) {
     const t = i / n, x = ax + (bx - ax) * t, z = az + (bz - az) * t, y = ay + (by - ay) * t - Math.sin(t * Math.PI) * .7, c = cols[i % cols.length];
-    if (kind === 'lantern') { parts.push(P(Cyl(.012, .012, .25, 3), '#3a2a20', [x, y - .1, z])); glows.push(P(Sph(.18, 10, 8), c, [x, y - .32, z], [0, 0, 0], [1, 1.25, 1]), P(Cyl(.08, .08, .05, 8), '#ffd23f', [x, y - .1, z])); }
+    if (kind === 'lantern') { parts.push(P(Cyl(.012, .012, .25, 3), '#3a2a20', [x, y - .1, z])); glows.push(P(Sph(.15, 8, 6), c, [x, y - .3, z], [0, 0, 0], [1, 1.25, 1]), P(Cyl(.08, .08, .05, 8), '#ffd23f', [x, y - .1, z])); }
     else if (kind === 'bat') parts.push(P(Box(.36, .12, .03), '#4a3a6a', [x, y - .12, z], [0, yaw + Math.PI / 2, 0]), P(Sph(.07), '#4a3a6a', [x, y - .1, z]));
     else parts.push(P(new THREE.ConeGeometry(.16, .32, 3), c, [x, y - .16, z], [Math.PI, yaw, 0]));
   }
@@ -113,8 +113,27 @@ const pumpkin = (x, y, z, s = 1, rot = 0) => {
   glows.push(P(new THREE.TorusGeometry(.1 * s, .025 * s, 4, 10, Math.PI), '#ffd23f', [x + fx * fr, y + .2 * s, z + fz * fr], [0, rot, Math.PI]));
   return { parts, glows };
 };
-// one decoration piece of a theme at (x, y, z); i picks among the theme's pieces; rot faces it
+// (owner, 13 Oct: many more decorations) four pieces every theme shares, in the theme's own colours, so a street of
+// 5x the pieces never looks like one piece over and over: a lantern post, a pennant pole, a flower tub, a garland arch
+function shared(theme, k, x, y, z, rot) {
+  const parts = [], glows = [], cols = (THEME_BUNTING[theme] || [['#ff4f9a', '#ffd23f']])[0], c = j => cols[j % cols.length];
+  if (k === 0) { parts.push(P(Cyl(.04, .05, 2.1, 5), '#5a4a3a', [x, y + 1.05, z]), P(Box(.7, .05, .05), '#5a4a3a', [x, y + 2.05, z], [0, rot, 0]));
+    for (const s of [-1, 1]) { const lx = x + Math.cos(rot) * .3 * s, lz = z - Math.sin(rot) * .3 * s; glows.push(P(Sph(.16, 8, 6), c(s > 0 ? 0 : 1), [lx, y + 1.78, lz], [0, 0, 0], [1, 1.25, 1])); } }
+  else if (k === 1) { parts.push(P(Cyl(.03, .03, 2.4, 4), '#c9d0d4', [x, y + 1.2, z]));
+    for (let j = 0; j < 3; j++) parts.push(P(new THREE.ConeGeometry(.16, .5, 3), c(j), [x + Math.sin(rot + Math.PI / 2) * .26, y + 2.15 - j * .42, z + Math.cos(rot + Math.PI / 2) * .26], [0, rot, Math.PI / 2])); }
+  else if (k === 2) { parts.push(P(Box(.7, .35, .4), '#8a5a3a', [x, y + .17, z], [0, rot, 0]));
+    for (let j = 0; j < 5; j++) parts.push(P(Sph(.12, 6, 5), c(j), [x + Math.cos(rot) * (j - 2) * .14, y + .45 + (j % 2) * .08, z - Math.sin(rot) * (j - 2) * .14])); }
+  else { for (const s of [-1, 1]) parts.push(P(Cyl(.035, .035, 1.9, 4), '#6a4a3a', [x + Math.cos(rot) * .6 * s, y + .95, z - Math.sin(rot) * .6 * s]));
+    for (let j = 0; j <= 6; j++) { const t = j / 6, a = t * Math.PI, px = Math.cos(a) * .6, py = 1.9 + Math.sin(a) * .35; glows.push(P(Sph(.09, 6, 5), c(j), [x + Math.cos(rot) * px, y + py, z - Math.sin(rot) * px])); } }
+  return { parts, glows };
+}
+// one decoration piece of a theme: of every 6 spots, 3 carry the theme's own pieces and 3 the shared ones
 function piece(theme, i, x, y, z, rot) {
+  const slot = i % 6, round = Math.floor(i / 6);
+  return slot >= 3 ? shared(theme, (round + slot) % 4, x, y, z, rot) : own(theme, round * 3 + slot, x, y, z, rot);
+}
+// one of the theme's own pieces at (x, y, z); i picks among them; rot faces it
+function own(theme, i, x, y, z, rot) {
   const parts = [], glows = [], add = r => { parts.push(...r.parts); glows.push(...r.glows); };
   const pot = (col, flowers) => { parts.push(P(Cyl(.32, .24, .45, 10), '#b8643a', [x, y + .22, z])); flowers.forEach((c, k) => { const a = k * 2.4; parts.push(P(Sph(.13, 6, 5), c, [x + Math.cos(a) * .2, y + .62 + (k % 2) * .12, z + Math.sin(a) * .2])); }); parts.push(P(Sph(.26, 8, 6), col, [x, y + .55, z])); };
   const balloons = cols => cols.forEach((c, k) => { const a = k * 2.1, bx = x + Math.cos(a) * .25, bz = z + Math.sin(a) * .25, h = 1.9 + (k % 3) * .25; parts.push(P(Cyl(.008, .008, h, 3), '#ffffff', [bx, y + h / 2, bz]), P(Sph(.22, 10, 8), c, [bx, y + h + .2, bz], [0, 0, 0], [1, 1.2, 1])); });
@@ -128,10 +147,44 @@ function piece(theme, i, x, y, z, rot) {
       if (i % 2) { parts.push(P(Cyl(.03, .03, 1.7, 4), '#6a4a3a', [x, y + .85, z])); glows.push(P(new THREE.OctahedronGeometry(.36, 0), i % 4 === 1 ? '#ff4a3a' : '#ffd23f', [x, y + 1.9, z], [0, rot, Math.PI / 4], [1, 1, .25])); }   // a star lantern (đèn ông sao) on a stick
       else { parts.push(P(Cyl(.03, .03, 1.2, 4), '#6a4a3a', [x, y + .6, z])); glows.push(P(Sph(.3, 10, 8), '#ff7a3a', [x, y + 1.4, z], [0, 0, 0], [1, 1.2, 1]), P(Cyl(.12, .12, .06, 8), '#ffd23f', [x, y + 1.78, z])); }
       break;
-    case 'pumpkins':
-      add(pumpkin(x, y, z, i % 3 === 0 ? 1.4 : .9, rot)); if (i % 3 === 0) add(pumpkin(x + .5, y, z + .4, .6, rot));
-      if (i % 4 === 2) { parts.push(P(Cyl(.2, .15, .25, 10), '#7a4aa0', [x - .6, y + .12, z])); ['#ff7a2a', '#ffd23f', '#ffffff', '#ff4f9a'].forEach((c, k) => parts.push(P(Sph(.06, 6, 5), c, [x - .6 + (k - 1.5) * .07, y + .28, z]))); }   // a bowl of sweets
-      break;
+    case 'pumpkins': {
+      // (owner, 13 Oct: "all types of decorations including skeletons, spider webs") eight kinds, all friendly: smiling
+      // pumpkins, a waving skeleton, a spider web with a little purple spider, a smiling ghost, a black cat, a cauldron of
+      // green bubbles, a scarecrow, a witch's hat; never scary (round faces, big eyes, smiles)
+      const k = i % 8, fx = Math.sin(rot), fz = Math.cos(rot), sx = Math.cos(rot), sz = -Math.sin(rot), at = (u, h, f = 0) => [x + sx * u + fx * f, y + h, z + sz * u + fz * f];
+      if (k === 0) { add(pumpkin(x, y, z, 1.4, rot)); add(pumpkin(x + .5, y, z + .4, .6, rot)); }
+      else if (k === 1) { // a friendly skeleton waving, bones white, a round smiling skull
+        parts.push(P(Sph(.24), '#f6f2e6', at(0, 1.55)), P(Cyl(.04, .04, .55, 5), '#f6f2e6', at(0, 1.05)));
+        for (let j = 0; j < 3; j++) parts.push(P(Box(.36 - j * .04, .04, .08), '#f6f2e6', at(0, 1.22 - j * .11), [0, rot, 0]));
+        parts.push(P(Cyl(.03, .03, .5, 5), '#f6f2e6', at(-.22, 1.42), [0, rot, -.9]), P(Cyl(.03, .03, .45, 5), '#f6f2e6', at(.2, .98), [0, rot, .25]));
+        for (const s of [-1, 1]) parts.push(P(Cyl(.035, .035, .7, 5), '#f6f2e6', at(s * .09, .4)), P(Sph(.05, 6, 4), '#2a2a3a', at(s * .08, 1.6, .2)));
+        parts.push(P(new THREE.TorusGeometry(.07, .015, 3, 8, Math.PI), '#2a2a3a', at(0, 1.48, .21), [0, rot, Math.PI])); }
+      else if (k === 2) { // a spider web between two posts, a little purple spider with big eyes
+        for (const s of [-1, 1]) parts.push(P(Cyl(.035, .04, 1.8, 5), '#6a4a3a', at(s * .6, .9)));
+        for (let j = 0; j < 8; j++) { const a = j / 8 * Math.PI * 2; parts.push(P(Cyl(.008, .008, .58, 3), '#e8e8f0', at(Math.cos(a) * .28, 1.25 + Math.sin(a) * .28), [0, rot, a + Math.PI / 2])); }
+        for (const r of [.14, .28, .42]) parts.push(P(new THREE.TorusGeometry(r, .008, 3, 8), '#e8e8f0', at(0, 1.25), [0, rot, 0]));
+        parts.push(P(Sph(.09, 6, 5), '#7a4aa0', at(.12, 1.18, .03))); for (const s of [-1, 1]) glows.push(P(Sph(.03, 5, 4), '#ffffff', at(.12 + s * .04, 1.21, .1)));
+        for (let j = 0; j < 4; j++) for (const s of [-1, 1]) parts.push(P(Cyl(.01, .01, .16, 3), '#4a3a6a', at(.12 + s * .1, 1.18 - (j - 1.5) * .04, .03), [0, rot, s * 1.2])); }
+      else if (k === 3) { // a smiling ghost: a white sheet, big dark eyes and a round "oo" mouth, floating a little
+        parts.push(P(Sph(.32), '#ffffff', at(0, 1.25), [0, 0, 0], [1, 1.1, 1]), P(new THREE.ConeGeometry(.36, .7, 10, 1, true), '#ffffff', at(0, .85), [0, 0, 0]));
+        for (const s of [-1, 1]) parts.push(P(Sph(.06, 6, 5), '#2a2a3a', at(s * .1, 1.32, .27), [0, 0, 0], [1, 1.3, .6]));
+        parts.push(P(Sph(.05, 6, 5), '#2a2a3a', at(0, 1.16, .29), [0, 0, 0], [1, 1, .5])); }
+      else if (k === 4) { // a black cat sitting with its tail up, yellow eyes that glow at night
+        parts.push(P(Sph(.2), '#2a2a34', at(0, .22), [0, 0, 0], [1, 1.2, .9]), P(Sph(.15), '#2a2a34', at(0, .55, .05)));
+        for (const s of [-1, 1]) { parts.push(P(new THREE.ConeGeometry(.05, .1, 4), '#2a2a34', at(s * .08, .7, .05))); glows.push(P(Sph(.03, 5, 4), '#ffd23f', at(s * .055, .57, .18))); }
+        parts.push(P(Cyl(.025, .02, .5, 4), '#2a2a34', at(-.18, .45, -.12), [0, rot, .5])); }
+      else if (k === 5) { // a cauldron of green bubbles on three legs
+        parts.push(P(new THREE.SphereGeometry(.32, 10, 6, 0, Math.PI * 2, Math.PI * .35, Math.PI * .65), '#2a2a34', at(0, .42)), P(new THREE.TorusGeometry(.26, .04, 4, 12), '#3a3a44', at(0, .5), [Math.PI / 2, 0, 0]));
+        for (let j = 0; j < 3; j++) { const a = j / 3 * Math.PI * 2; parts.push(P(Cyl(.03, .03, .25, 4), '#3a3a44', [x + Math.cos(a) * .2, y + .12, z + Math.sin(a) * .2])); }
+        glows.push(P(Cyl(.24, .24, .03, 10), '#5fd36a', at(0, .52))); for (let j = 0; j < 3; j++) glows.push(P(Sph(.06 + j * .02, 6, 4), '#8af07a', at((j - 1) * .1, .6 + j * .06))); }
+      else if (k === 6) { // a scarecrow with a pumpkin head and a straw hat
+        parts.push(P(Cyl(.04, .04, 1.7, 5), '#6a4a3a', at(0, .85)), P(Cyl(.03, .03, 1.1, 5), '#6a4a3a', at(0, 1.25), [0, rot, Math.PI / 2]), P(Box(.42, .5, .2), '#5a7ad0', at(0, 1.15), [0, rot, 0]));
+        add(pumpkin(x, y + 1.42, z, .55, rot)); parts.push(P(Cyl(.3, .32, .04, 10), '#d8b45a', at(0, 1.78)), P(Cyl(.14, .17, .16, 10), '#d8b45a', at(0, 1.86))); }
+      else { // a purple witch's hat on a pole, and a bowl of sweets
+        parts.push(P(Cyl(.03, .03, 1.3, 4), '#6a4a3a', at(0, .65)), P(Cyl(.28, .28, .03, 12), '#5a3a8a', at(0, 1.32)), P(new THREE.ConeGeometry(.16, .45, 10), '#5a3a8a', at(0, 1.56), [0, 0, .15]));
+        parts.push(P(Cyl(.17, .17, .05, 10), '#ff8a1a', at(0, 1.36)), P(Cyl(.2, .15, .25, 10), '#7a4aa0', at(.5, .12)));
+        ['#ff7a2a', '#ffd23f', '#ffffff', '#ff4f9a'].forEach((c, j) => parts.push(P(Sph(.06, 6, 5), c, at(.5 + (j - 1.5) * .07, .28)))); }
+      break; }
     case 'xmas':
       if (i % 3 === 0) { for (let k = 0; k < 3; k++) parts.push(P(new THREE.ConeGeometry(.9 - k * .25, .9, 10), '#2f7a3a', [x, y + .8 + k * .55, z])); parts.push(P(Cyl(.1, .12, .4, 6), '#6a4a3a', [x, y + .2, z])); glows.push(P(new THREE.OctahedronGeometry(.18, 0), '#ffd23f', [x, y + 2.35, z])); for (let k = 0; k < 9; k++) { const a = k * 2.3, r = .65 - (k % 3) * .2; glows.push(P(Sph(.07, 6, 5), ['#ff4a3a', '#ffd23f', '#3cc7e8'][k % 3], [x + Math.cos(a) * r, y + .8 + (k % 3) * .55, z + Math.sin(a) * r])); } }
       else ['#e8433a', '#3a78c8', '#ffd23f'].forEach((c, k) => parts.push(P(Box(.36 - k * .06, .3 - k * .04, .36 - k * .06), c, [x + (k - 1) * .4, y + .15 - k * .02, z]), P(Box(.38 - k * .06, .05, .06), '#ffffff', [x + (k - 1) * .4, y + .32 - k * .04, z])));
@@ -171,48 +224,95 @@ export function createFestivals(G) {
   const free = (x, z, r = 1) => heightAt(x, z) > WATER + .3 && !W.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + r) && !W.boxes.some(b => x > b.x0 - r && x < b.x1 + r && z > b.z0 - r && z < b.z1 + r);
   // (owner, 10 Oct) the street spots: js/festdecor.js, loaded once a child plays (PERF-001), then the decorations are built
   let D = null, loadingD = null, waitD = false;
-  const loadD = () => loadingD || (loadingD = import('./festdecor.js').then(m => { D = { ...m.createDecor(free), tell: m.tell }; scheduled = m.scheduled; build(); }).catch(e => { loadingD = null; console.warn('festdecor', e); }));
+  const loadD = () => loadingD || (loadingD = import('./festdecor.js').then(m => { D = { ...m.createDecor(free), tell: m.tell, decoOf: m.decoOf, FRAC: m.FRAC }; scheduled = m.scheduled; build(); }).catch(e => { loadingD = null; console.warn('festdecor', e); }));
   const streetSpots = (key, o) => D ? D.streetSpots(key, o) : [];
   const unhook = list => { list.forEach(it => { const k = G.interactables.indexOf(it); if (k >= 0) G.interactables.splice(k, 1); }); list.length = 0; };
-  const addMeshes = (parts, glows) => {
-    if (parts.length) { const m = new THREE.Mesh(merge(parts), mat); m.castShadow = true; outline(m, .012, '#3a2a20'); group.add(m); }
-    if (glows.length) { const g = new THREE.Mesh(merge(glows), mat); group.add(g); glowMeshes.push(g); }
+  // (owner, 13 Oct: 5x the decorations) the decorations are drawn in 12 m patches: the ones nearest the children first,
+  // each within NEAR (farther ones are lost in the haze), with outlines only within CLOSE, and never more than BUDGET
+  // triangles and CALLS draw calls in all (PERF-003: Lotus Village stays within its budget on a festival day, whatever the amount in Studio)
+  const CELL = 12, NEAR = 85, CLOSE = 30, BUDGET = 60000, CALLS = 16, places3 = [];
+  const tris = m => m && m.geometry ? (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3 : 0;
+  const addMeshes = (parts, glows, at) => {
+    const box = at ? new THREE.Group() : group; if (at) { box.userData.at = at; group.add(box); places3.push(box); }
+    if (parts.length) { const m = new THREE.Mesh(merge(parts), mat); m.castShadow = true; outline(m, .012, '#3a2a20'); box.add(m); if (at) { box.userData.lines = m.children.filter(c => c.isMesh); box.userData.tri = tris(m); box.userData.lineTri = box.userData.lines.reduce((a, l) => a + tris(l), 0); } }
+    if (glows.length) { const g = new THREE.Mesh(merge(glows), mat); box.add(g); glowMeshes.push(g); if (at) box.userData.tri = (box.userData.tri || 0) + tris(g); }
   };
+  // a place's pieces, grouped into patches
+  const addItems = items => { const cells = new Map();
+    for (const it of items) { const k = Math.floor(it.x / CELL) + ',' + Math.floor(it.z / CELL); if (!cells.has(k)) cells.set(k, []); cells.get(k).push(it); }
+    for (const list of cells.values()) { const x = list.reduce((a, q) => a + q.x, 0) / list.length, z = list.reduce((a, q) => a + q.z, 0) / list.length, r = Math.max(...list.map(q => Math.hypot(q.x - x, q.z - z)));
+      addMeshes(list.flatMap(q => q.parts), list.flatMap(q => q.glows), { x, z, r }); } };
+  const near = () => { let used = 0, calls = 0;
+    places3.map(b => { const { x, z, r } = b.userData.at; return [Math.min(...G.heroes.map(h => Math.hypot(h.pos.x - x, h.pos.z - z))) - r, b]; }).sort((a, b) => a[0] - b[0]).forEach(([d, b]) => {
+      const lines = d < CLOSE, cost = (b.userData.tri || 0) + (lines ? b.userData.lineTri || 0 : 0), n = b.children.length + (lines ? (b.userData.lines || []).length : 0);
+      b.visible = d < NEAR && used + cost <= BUDGET && calls + n <= CALLS; if (b.visible) { used += cost; calls += n; } (b.userData.lines || []).forEach(l => { l.visible = lines; }); });
+    drawn = used; drawnCalls = calls; };
+  let drawn = 0, drawnCalls = 0;
+  let nearT = 0; W.updaters.push(dt => { if ((nearT -= dt) > 0 || !places3.length) return; nearT = .5; near(); });
+  // the houses of a place (each gets a piece by its door and a garland along its front)
+  const housesOf = o => { const e = o.w && o.d ? 20 : 0; return (W.houses || []).filter(hs => o.x0 != null ? hs.x > o.x0 - e && hs.x < o.x1 + e && hs.z > o.z0 - e && hs.z < o.z1 + e : Math.hypot(hs.x - o.x, hs.z - o.z) < (o.r || 24)); };
   const build = () => {
     // (festdecor loads once a child is in the valley, not behind the title screen)
     if (!D) { active = activeFestivals(); if (G.heroes.length) loadD(); else if (!waitD) { waitD = true; W.updaters.push(() => { if (G.heroes.length && !loadingD) loadD(); }); } return; }
     group.traverse(o => { if (o.isMesh && o.geometry && !o.userData.outline) o.geometry.dispose(); });
-    group.clear(); bursts.length = 0; glowMeshes = []; unhook(tables); unhook(doors);
+    group.clear(); places3.length = 0; bursts.length = 0; glowMeshes = []; unhook(tables); unhook(doors);
     active = activeFestivals();
-    const places = PLACES(), taken = new Set();
+    const places = PLACES(), taken = new Set(), hunts = [];
     for (const A of active) {
-      const F = A.F, full = A.stage / 4, parts = [], glows = [];
+      const F = A.F, full = D.FRAC[A.stage] || 0, m = D.decoOf(F);
       F.where.forEach((key, w) => {
         const o = places[key]; if (!o) return; const c = centre(o);
         if (taken.has(key + F.theme)) return; taken.add(key + F.theme);
         // (owner, 10 Oct) the whole place, along its streets (js/festdecor.js); without streets, a ring round the middle
-        const [bc, bk] = THEME_BUNTING[F.theme] || [['#ff4f9a', '#ffd23f'], 'flag'], q = D.decorate(key, o, F, A, piece, bunting, bc, bk);
-        if (q) { parts.push(...q.parts); glows.push(...q.glows); } else {
-          const n = Math.round((F.kind === 'quiet' ? 6 : 16) * full);
-          for (let i = 0, k = 0; i < n && k < 80; k++) { const a = k * 2.399 + w, r = 7 + (k % 5) * 2.2, x = c.x + Math.cos(a) * r, z = c.z + Math.sin(a) * r;
-            if (!free(x, z, 1.1)) continue; const q = piece(F.theme, i, x, heightAt(x, z), z, a + Math.PI); parts.push(...q.parts); glows.push(...q.glows); i++; }
-          const nb = F.kind === 'quiet' ? 0 : Math.max(0, A.stage - 1) * 2;
-          for (let j = 0, k = 0; j < nb && k < 30; k++) { const a = k * 1.7 + w, r = 10, x1 = c.x + Math.cos(a) * r, z1 = c.z + Math.sin(a) * r, x2 = c.x + Math.cos(a + .9) * r, z2 = c.z + Math.sin(a + .9) * r;
-            if (!free(x1, z1, .6) || !free(x2, z2, .6)) continue; const q = bunting([x1, heightAt(x1, z1) + 3.2, z1], [x2, heightAt(x2, z2) + 3.2, z2], bc, bk); parts.push(...q.parts); glows.push(...q.glows); j++; }
+        // (owner, 13 Oct) 5x by default: pieces, strings across the streets and every house front (Studio sets the amount)
+        const [bc, bk] = THEME_BUNTING[F.theme] || [['#ff4f9a', '#ffd23f'], 'flag'], q = D.decorate(key, o, F, A, piece, bunting, bc, bk, housesOf(o)), items = q || [];
+        const put = (x, z, r, kind = 'piece') => items.push({ x, z, kind, parts: r.parts, glows: r.glows });
+        if (!q) {
+          const n = Math.round((F.kind === 'quiet' ? 6 : 16) * full * m);
+          for (let i = 0, k = 0; i < n && k < 80 * m; k++) { const a = k * 2.399 + w, r = 7 + (k % (5 + m)) * 2.2, x = c.x + Math.cos(a) * r, z = c.z + Math.sin(a) * r;
+            if (!free(x, z, 1.1)) continue; put(x, z, piece(F.theme, i, x, heightAt(x, z), z, a + Math.PI)); i++; }
+          const nb = F.kind === 'quiet' ? 0 : Math.max(0, A.stage - 1) * 2 * m;
+          for (let j = 0, k = 0; j < nb && k < 30 * m; k++) { const a = k * 1.7 + w, r = 10, x1 = c.x + Math.cos(a) * r, z1 = c.z + Math.sin(a) * r, x2 = c.x + Math.cos(a + .9) * r, z2 = c.z + Math.sin(a + .9) * r;
+            if (!free(x1, z1, .6) || !free(x2, z2, .6)) continue; put((x1 + x2) / 2, (z1 + z2) / 2, bunting([x1, heightAt(x1, z1) + 3.2, z1], [x2, heightAt(x2, z2) + 3.2, z2], bc, bk), 'string'); j++; }
         }
         // the festival table, on the day, in its first place
         if (A.on && w === 0) {
           let x = c.x - 3, z = c.z + 3; for (let k = 0; k < 12 && !free(x, z, 1.4); k++) { x = c.x + Math.cos(k) * (4 + k * .5); z = c.z + Math.sin(k) * (4 + k * .5); }
-          const y = heightAt(x, z); parts.push(P(Box(1.8, .08, .9), '#c9a05a', [x, y + .8, z]), ...[[-.8, -.35], [.8, -.35], [-.8, .35], [.8, .35]].map(([dx, dz]) => P(Cyl(.04, .04, .8, 5), '#8a6a4a', [x + dx, y + .4, z + dz])), P(Box(1.9, .5, .02), '#ffffff', [x, y + .55, z + .45]));
-          const tq = piece(F.theme, 1, x + .5, y + .84, z, 0); parts.push(...tq.parts); glows.push(...tq.glows);
+          const y = heightAt(x, z), parts = []; parts.push(P(Box(1.8, .08, .9), '#c9a05a', [x, y + .8, z]), ...[[-.8, -.35], [.8, -.35], [-.8, .35], [.8, .35]].map(([dx, dz]) => P(Cyl(.04, .04, .8, 5), '#8a6a4a', [x + dx, y + .4, z + dz])), P(Box(1.9, .5, .02), '#ffffff', [x, y + .55, z + .45]));
+          const tq = piece(F.theme, 1, x + .5, y + .84, z, 0); items.push({ x, z, kind: 'table', parts: parts.concat(tq.parts), glows: tq.glows });
           const it = { id: 'festival_' + F.id, x, z, r: 3.2, icon: F.icon, label: () => T(F.en, F.vi), act: h => visit(h, F) }; tables.push(it); G.interactables.push(it);
         }
+        addItems(items);
+        // (owner, 13 Oct) the festival hunt, in the last week and on the day: five things among the first place's pieces
+        if (w === 0 && (A.on || A.stage >= 3)) hunts.push({ F, year: (A.start || new Date()).getFullYear(), at: c,
+          spots: items.filter(q => q.kind === 'piece').map(q => { const a = Math.atan2(q.x - c.x, q.z - c.z) + 1.2, x = q.x + Math.sin(a) * .9, z = q.z + Math.cos(a) * .9; return { x, z }; }).filter(q => free(q.x, q.z, .4)) });
       });
-      addMeshes(parts, glows);
       if (F.id === 'halloween' && A.on) halloweenDoors(F);
     }
-    wasNight = null; nightLights();
+    // (owner, 13 Oct: "scattered all over the place") the festival nearest its day also decorates the rest of the valley:
+    // every other village and city at the amount of before, pieces beside every road (one every 60 / amount metres: 12 m at 5x)
+    // and every house outside the places;
+    // quiet days and "as before" stay in their own places
+    const spread = active.filter(a => a.F.kind !== 'quiet' && D.decoOf(a.F) > 1).sort((a, b) => (b.on - a.on) || a.daysTo - b.daysTo)[0];
+    if (spread) {
+      const F = spread.F, m = D.decoOf(F), [bc, bk] = THEME_BUNTING[F.theme] || [['#ff4f9a', '#ffd23f'], 'flag'], frac = D.FRAC[spread.stage] || 0;
+      const used = new Set(active.flatMap(a => a.F.where));
+      for (const [key, o] of Object.entries(places)) { if (used.has(key)) continue; const q = D.decorate(key, o, F, spread, piece, bunting, bc, bk, [], 1); if (q) addItems(q); }
+      const inside = (x, z) => Object.values(places).some(o => o.x0 != null ? x > o.x0 - 6 && x < o.x1 + 6 && z > o.z0 - 6 && z < o.z1 + 6 : Math.hypot(x - o.x, z - o.z) < (o.r || 24) + 6);
+      const road = D.roadSpots(Math.round(60 / m), inside).filter((q, k) => (k % 4) < Math.round(frac * 4));
+      addItems(road.map((q, i) => { const r = piece(F.theme, i, q.x, heightAt(q.x, q.z), q.z, q.a); return { x: q.x, z: q.z, kind: 'road', parts: r.parts, glows: r.glows }; }));
+      // and every house outside the places (the suburbs, the homes along the roads): a piece by its door and a garland
+      const out = (W.houses || []).filter(hs => !inside(hs.x, hs.z)).filter((hs, k) => (k % 4) < Math.round(frac * 4));
+      addItems(D.fronts(out).flatMap((q, i) => { const r = piece(F.theme, i + 2, q.x, heightAt(q.x, q.z), q.z, q.a), [[x1, z1], [x2, z2]] = q.g, y = Math.min(heightAt(x1, z1), heightAt(x2, z2)) + 2.6, g = bunting([x1, y, z1], [x2, y, z2], bc, bk, true);
+        return [{ x: q.x, z: q.z, kind: 'road', parts: r.parts, glows: r.glows }, { x: (x1 + x2) / 2, z: (z1 + z2) / 2, kind: 'string', parts: g.parts, glows: g.glows }]; }));
+    }
+    wasNight = null; nightLights(); if (G.heroes.length) near();
+    if (hunts.length || H) loadH().then(h => h && h.set(hunts));
   };
+  // the festival hunt (js/festhunt.js), loaded only while one is on
+  let H = null, loadingH = null;
+  const spark = () => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#fff3a0', transparent: true, depthWrite: false })); s.scale.setScalar(.8); return s; };
+  const loadH = () => H ? Promise.resolve(H) : loadingH || (loadingH = import('./festhunt.js').then(m => (H = m.createHunt(G, spark))).catch(e => { loadingH = null; console.warn('festhunt', e); return null; }));
   // lamps, lanterns and pumpkin faces shine at night (full colour, unshaded), and look painted by day
   let wasNight = null;
   const nightLights = () => { const n = W.isNight(); if (n === wasNight) return; wasNight = n; glowMeshes.forEach(g => { g.material = n ? nightMat : mat; }); };
@@ -300,6 +400,11 @@ export function createFestivals(G) {
     // (checks) the spots along a place's streets, and each active festival's places
     streetSpots: key => { const o = PLACES()[key]; return o ? streetSpots(key, o).map(q => ({ x: q.x, z: q.z })) : []; },
     plan: (key, id, stage) => { const o = PLACES()[key], F = byId(id); return o && F && D ? D.plan(key, o, F, stage) : []; },
+    count: (key, id, stage) => { const o = PLACES()[key], F = byId(id); return o && F && D ? D.count(key, o, F, stage, housesOf(o)) : null; },
+    places3: () => places3.map(b => ({ ...b.userData.at, visible: b.visible, tri: b.userData.tri })),
+    drawn: () => ({ tris: drawn, calls: drawnCalls }), budget: { tris: BUDGET, calls: CALLS },
+    hunt: () => H,
+    roadSpots: m => D ? D.roadSpots(Math.round(60 / m), () => false).length : 0,
     active: () => active,
     current: () => { const a = active.find(x => x.on); return a ? a.F.id : null; },
     // (owner, 10 Oct; 11 Oct, #32: nothing sends a child to a festival) a child taps a festival on the calendar: it is told

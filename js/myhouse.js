@@ -17,6 +17,7 @@ import { id as makeId } from './core/ids.js';
 import { pic } from './art.js';
 import { el, esc } from './util.js';
 import { modal } from './ui.js';
+import { FESTCAL } from './content/festcal.js';
 
 // what can go in a spot: key → { icon, price (in coins, shown in the game's money: 5 coins = 50c), en, vi, wall (hangs on a wall) }
 export const DECOR = {
@@ -38,6 +39,8 @@ export const DECOR = {
   lantern_ch2: { icon: '⭐', price: 0, en: 'The star lantern of Hà Nội (story)', vi: 'Đèn ông sao Hà Nội (truyện)', keepsake: true },
   lantern_ch3: { icon: '🎭', price: 0, en: 'The Opera House night-light of Sydney (story)', vi: 'Đèn ngủ Nhà hát Opera Sydney (truyện)', keepsake: true }
 };
+// (owner, 13 Oct) each festival's keepsake, won by finding all five things of its festival hunt (js/festhunt.js)
+for (const F of FESTCAL) DECOR['fh_' + F.id] = { icon: F.icon, price: 0, en: F.en + ' (festival hunt)', vi: F.vi + ' (truy tìm lễ hội)', keepsake: true };
 // the 8 spots in the room (room coordinates; the door is at +z): 4 on the floor, 4 on the walls
 export const SPOTS = [
   { x: -2.6, z: -3.6, y: .7 }, { x: 1.4, z: -3.8, y: .7 }, { x: -5.6, z: 1.6, y: .7 }, { x: 5.4, z: 1.4, y: .7 },

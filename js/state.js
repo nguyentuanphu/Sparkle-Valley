@@ -73,6 +73,7 @@ export const settings = Object.assign({
   bilingual: false,      // speak the other language too, after a short pause
   twoView: 'auto',       // two players: 'face' (each half turned to its own end), 'side' (both one way), 'auto' = face on touch screens
   alwaysDay: false,
+  screenFit: 'auto', // (owner, 13 Oct AEDT) 'auto': a Home Screen app fits the space it is given; 'fill': the whole screen; 'fit': always fit (js/main.js vh)
   quality: 'auto',       // 'auto' | 'low' | 'high' | 'max' (battery round: 'high' is Pretty at 60 frames a second, 'max' Pretty+ as fast as the screen)
   camSpeed: 1,
   camMode: 'easy',       // 'easy' = fixed high view (best for little ones) | 'free' = drag to look around

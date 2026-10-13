@@ -15,12 +15,16 @@ export function cleanLive(b) {
     // releases testers see early (sneak peeks)
     if (r.levels && typeof r.levels === 'object') { const lv = {}; for (const [d, v] of Object.entries(r.levels).slice(0, 50)) if (/^[a-z0-9]{12}$/.test(d) && (v === 'auto' || v === 'ladybird')) lv[d] = v; if (Object.keys(lv).length) x.levels = lv; }
     if (Array.isArray(r.peeks)) { const pk = [...new Set(r.peeks.filter(v => typeof v === 'string' && ID.test(v)))].slice(0, 20); if (pk.length) x.peeks = pk; }
+    // (owner, 13 Oct AEDT) the tester rule: what goes back when someone stops being a tester (js/content/autoplay.js REVERT)
+    if (r.revert === 'autoplay' || r.revert === 'progress') x.revert = r.revert;
     if (Object.keys(x).length) out.releases[id] = x;
   }
   for (const [id, f] of Object.entries((b && b.festivals) || {})) {
     if (!ID.test(id) || !f || typeof f !== 'object') continue;
     const x = {}; if (typeof f.on === 'boolean') x.on = f.on; if (DATE.test(f.date || '') || MD.test(f.date || '')) x.date = f.date;
     const bu = int(f.buildup, 60); if (bu != null && f.buildup !== '' && f.buildup != null) x.buildup = bu;
+    // (owner, 13 Oct) how much it decorates: 1 (as before), 2, 3, 5 (the default, so not kept) or 7 times
+    if ([1, 2, 3, 7].includes(+f.deco)) x.deco = +f.deco;
     if (Object.keys(x).length) out.festivals[id] = x;
   }
   return out;
