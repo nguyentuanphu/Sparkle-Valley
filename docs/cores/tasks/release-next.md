@@ -74,5 +74,6 @@ Also: any `bugfix/…` pull requests from the bug robot, and the Studio online f
 - `core/battery`, `core/play-reading`, `core/front-desk` are finished; the owner can delete them on GitHub's Branches page.
 
 ## After r71
+- The full suite on GitHub (owner said plan it, 13 Oct): `docs/cores/tasks/github-suite.md`, an Analytics & Infra chat.
 Round W (`docs/cores/ROUND-W.md`: split main.js and ui.js, type-check key files, UI tidy-up; plan first, the owner's "go"),
 then the batch rollout (`docs/cores/tasks/rollout.md`).
