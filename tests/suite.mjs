@@ -1,0 +1,201 @@
+// The checks, quicker (owner, 13 Oct: "changed files checks, run 3 at once and smarter slow checks").
+// Start the game server first (python3 -m http.server 8765 in the repo), then from tests/:
+//   node suite.mjs                     the full suite: 3 checks at a time, the speed checks alone at the end; it also
+//                                      records which game code each check runs (tests/check-map.json)
+//   node suite.mjs --changed           only the checks for what changed since main (a film, a button fix…)
+//   node suite.mjs --changed --list    show which checks it would run and why, without running them
+// Options: --base <git ref> (default origin/main), --jobs <n> (default 3), --all (no samples: every slow check in full),
+// --no-map (the full suite without recording code).
+// The slowest checks (reading, films, voicearea) try a sample that changes every run, and everything when their own
+// files changed since the base (run.mjs: SV_SAMPLE, SV_FULL, SV_SEED). A check whose browser crashed runs once more alone.
+import fs from 'fs';
+import path from 'path';
+import { spawn, execFileSync } from 'child_process';
+
+const HERE = path.dirname(new URL(import.meta.url).pathname), REPO = path.resolve(HERE, '..');
+const args = process.argv.slice(2), flag = n => args.includes(n), opt = (n, d) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d; };
+const JOBS = Math.max(1, Number(opt('--jobs', 3)) || 3), CHANGED = flag('--changed'), LIST = flag('--list');
+// these measure how fast the game is: never beside another check
+const SOLO = ['perf', 'startup', 'battery'];
+// the slowest checks and the files that are theirs: in full when one of these changed, a sample otherwise
+const SLOW_OWN = {
+  reading: [/^js\/games\/reading/, /^js\/content\/reading/],
+  films: [/^js\/film\.js$/, /^js\/content\/[a-z0-9]*films?\.js$/, /^js\/tales\.js$/, /^js\/howto\.js$/, /^js\/talesdata\.js$/],
+  voicearea: [/^js\/voice[a-z]*\.js$/, /^voices\//, /^tools\/make-voice-pack/],
+};
+// a change to the look (css) is checked by the checks that measure what is on screen
+const LAYOUT = ['phone', 'contract', 'hscroll', 'chips', 'a11y', 'iphone', 'simple', 'adventure', 'facetoface', 'two-players', 'questbar', 'bagitems', 'friendstab', 'shop', 'mictest'];
+// checks without a browser, a few seconds each: always run
+const QUICK = ['unit', 'rules', 'types', 'arch', 'emoji', 'noemoji', 'preload', 'names', 'bilingual'];
+const CRASH = /Target page, context or browser has been closed|browser has disconnected|Target closed|Browser closed|did not finish/;
+
+const git = (...a) => execFileSync('git', a, { cwd: REPO, encoding: 'utf8', maxBuffer: 1 << 28 });
+const tryGit = (...a) => { try { return git(...a); } catch (e) { return null; } };
+const RUN = fs.readFileSync(path.join(HERE, 'run.mjs'), 'utf8'), RUNLINES = RUN.split('\n');
+const ALL = [...RUN.matchAll(/^await check\('([a-z0-9-]+)'/gm)].map(m => m[1]);
+const TIMES_F = path.join(HERE, 'check-times.json'), MAP_F = path.join(HERE, 'check-map.json');
+const readJSON = (f, d) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return d; } };
+const times = readJSON(TIMES_F, {});
+const GAME_URL = process.env.SV_URL || 'http://localhost:8765/';
+
+// where each check's code sits in run.mjs (line numbers, from 1)
+// (from its "await check(" line to its closing "});"; lines between checks are shared helpers)
+const blocks = (() => { const out = []; RUNLINES.forEach((l, i) => { const m = /^await check\('([a-z0-9-]+)'/.exec(l); if (m) { let j = i; while (j < RUNLINES.length - 1 && !/^\}\);/.test(RUNLINES[j])) j++; out.push({ name: m[1], from: i + 1, to: j + 1 }); } }); return out; })();
+const bodyOf = n => { const b = blocks.find(x => x.name === n); return b ? RUNLINES.slice(b.from - 1, b.to).join('\n') : ''; };
+
+const base = (() => { const b = opt('--base', tryGit('rev-parse', '--verify', '-q', 'origin/main') ? 'origin/main' : 'main'); return (tryGit('merge-base', 'HEAD', b) || b).trim(); })();
+const changedFiles = () => {
+  const d = (tryGit('diff', '--name-only', base) || '').split('\n'), u = (tryGit('ls-files', '--others', '--exclude-standard') || '').split('\n');
+  return [...new Set([...d, ...u].map(s => s.trim()).filter(Boolean))];
+};
+// "@@ -a,b +c,d @@" → { old: [a, b], new: [c, d] }
+const hunks = (from, file) => (tryGit('diff', '-U0', from, '--', file) || '').split('\n').map(l => /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/.exec(l)).filter(Boolean)
+  .map(m => ({ old: [+m[1], m[2] === undefined ? 1 : +m[2]], new: [+m[3], m[4] === undefined ? 1 : +m[4]] }));
+
+// ---------- which checks for what changed ----------
+function select() {
+  const files = changedFiles(), pick = new Map(), notes = [];
+  const add = (names, why) => { for (const n of names) if (ALL.includes(n)) { if (!pick.has(n)) pick.set(n, new Set()); pick.get(n).add(why); } };
+  const full = why => ({ full: true, why, files });
+  const map = readJSON(MAP_F, null);
+  const bitsOf = hex => { const out = []; let v = BigInt('0x' + (hex || '0')); for (let i = 0; v; i++, v >>= 1n) if (v & 1n) out.push(map.checks[i]); return out; };
+  let game = false;
+  for (const f of files) {
+    if (/^(docs\/|\.github\/|README|HANDOFF|CLAUDE|LICENSE)|\.md$/.test(f)) continue;
+    if (f === 'tests/run.mjs') {
+      for (const h of hunks(base, f)) {
+        const [c, d] = h.new, lo = c, hi = d ? c + d - 1 : c;
+        const inside = blocks.filter(b => b.to >= lo && b.from <= hi), held = l => blocks.some(b => b.from <= l && l <= b.to);
+        if (!inside.length || !held(lo) || !held(hi)) return full(`tests/run.mjs changed outside a check, near line ${lo} (shared helpers)`);
+        add(inside.map(b => b.name), 'its check changed');
+      }
+      continue;
+    }
+    if (f === 'tests/studio-check.mjs') { add(['studio'], f); continue; }
+    if (/^tests\/(check-map|check-times)\.json$|^tests\/suite\.mjs$/.test(f)) continue;
+    if (f === 'tests/ui-contract.json') { add(['contract'], f); continue; }
+    if (f.startsWith('tests/')) return full(f + ' changed (shared test code)');
+    if (/^js\/.*\.js$/.test(f)) {
+      game = true;
+      if (!map) return full('no code map yet (tests/check-map.json): run the full suite once');
+      const entry = map.files[f];
+      if (!entry) { notes.push(tryGit('cat-file', '-e', `${map.commit}:${f}`) !== null ? `${f}: no check runs this file` : `${f}: a new file (checked through the file that loads it)`); continue; }
+      const old = tryGit('show', `${map.commit}:${f}`);
+      if (old === null) { add(bitsOf(entry.load), f + ' (whole file: the code map is from an older history)'); continue; }
+      const starts = [0]; for (let i = 0; i < old.length; i++) if (old[i] === '\n') starts.push(i + 1);
+      const lineAt = n => starts[Math.min(Math.max(n, 1), starts.length) - 1], lineEnd = n => (n < starts.length ? starts[n] - 1 : old.length);
+      for (const h of hunks(map.commit, f)) {
+        const [a, b] = h.old, s = lineAt(b ? a : Math.max(a, 1)), e = lineEnd(b ? a + b - 1 : Math.max(a, 1));
+        // the innermost function that holds the whole change; the file's top level when none does
+        let best = null; for (const fn of entry.fns) if (fn[0] <= s && fn[1] >= e && !(fn[0] === 0 && fn[1] >= old.length - 2) && (!best || fn[1] - fn[0] < best[1] - best[0])) best = fn;
+        if (!best) { add(bitsOf(entry.load), `${f}:${a} (top level)`); continue; }
+        const who = bitsOf(best[2]);
+        if (!who.length) notes.push(`${f}:${a}: no check runs the changed function (line ${a})`); else add(who, `${f}:${a}`);
+      }
+      continue;
+    }
+    if (/^css\//.test(f)) { game = true; add(LAYOUT, f); add(ALL.filter(n => bodyOf(n).includes(path.basename(f))), f); continue; }
+    if (/^(index\.html|sw\.js|manifest\.webmanifest|netlify\.toml)$/.test(f)) { game = true; add(['boot', 'offline', 'startup', 'preload', 'contract', 'phone', 'perf'], f); continue; }
+    if (/^voices\//.test(f)) { add(ALL.filter(n => /voice/.test(n)), f); continue; }
+    if (/^photos\//.test(f)) { add(['realphotos', 'familyphotos', 'boot'], f); continue; }
+    if (/^(vendor|fonts|icons)\//.test(f)) return full(f + ' changed (shared by everything)');
+    // anything else (content, studio, tools…): the checks that name the file; nothing names it → the full suite
+    const named = ALL.filter(n => bodyOf(n).includes(path.basename(f)) || bodyOf(n).includes(f));
+    if (/^tools\//.test(f)) { add(named, f); continue; }
+    if (/^studio\//.test(f)) { add(['studio', 'nostudio', ...named], f); continue; }
+    if (!named.length) return full(f + ' changed and no check names it');
+    add(named, f);
+  }
+  add(QUICK, 'always (no browser, seconds)');
+  if (game) {
+    add(['boot', 'phone', 'contract'], 'a game file changed');
+    if (map) add([...map.nocover, ...ALL.filter(n => !map.checks.includes(n))], 'a game file changed (checks the code map cannot see)');
+  }
+  return { full: false, files, pick, notes, map };
+}
+function slowFull(files) { return Object.keys(SLOW_OWN).filter(n => files.some(f => SLOW_OWN[n].some(r => r.test(f)))); }
+
+// ---------- running ----------
+function runOne(list, env, tag) {
+  return new Promise(res => {
+    const out = new Map(), log = fs.createWriteStream(path.join(HERE, `out/suite-${tag}.log`));
+    const p = spawn(process.execPath, ['run.mjs', ...list], { cwd: HERE, env: { CHROMIUM: '/opt/pw-browsers/chromium', SV_URL: GAME_URL, ...process.env, ...env } });
+    let buf = '';
+    const line = l => {
+      log.write(l + '\n');
+      const ok = /^✅ ([a-z0-9-]+) \((\d+)s\) ?(.*)/.exec(l), bad = /^❌ ([a-z0-9-]+): (.*)/.exec(l);
+      if (ok) { out.set(ok[1], { ok: true, secs: +ok[2], note: ok[3] }); console.log(`[${tag}] ${l.slice(0, 160)}`); }
+      if (bad) { out.set(bad[1], { ok: false, note: bad[2] }); console.log(`[${tag}] ${l.slice(0, 300)}`); }
+    };
+    const eat = d => { buf += d; const parts = buf.split('\n'); buf = parts.pop(); parts.forEach(line); };
+    p.stdout.on('data', eat); p.stderr.on('data', d => log.write(d));
+    p.on('close', () => { if (buf) line(buf); log.end(); for (const n of list) if (!out.has(n)) out.set(n, { ok: false, note: 'did not finish (the run stopped)' }); res(out); });
+  });
+}
+// split into n groups of about the same length (longest first)
+function shards(list, n) {
+  const g = Array.from({ length: n }, () => ({ t: 0, list: [] }));
+  for (const c of [...list].sort((a, b) => (times[b] || 60) - (times[a] || 60))) { const s = g.reduce((m, x) => x.t < m.t ? x : m); s.list.push(c); s.t += times[c] || 60; }
+  return g.filter(x => x.list.length);
+}
+async function runAll(list, env) {
+  const results = new Map(), par = list.filter(c => !SOLO.includes(c)), solo = list.filter(c => SOLO.includes(c));
+  const groups = shards(par, JOBS);
+  console.log(`${list.length} checks: ${groups.map((g, i) => `group ${i + 1} ${g.list.length} (~${Math.round(g.t / 60)} min)`).join(', ')}${solo.length ? `, then alone: ${solo.join(', ')}` : ''}`);
+  (await Promise.all(groups.map((g, i) => runOne(g.list, env, String(i + 1))))).forEach(m => m.forEach((v, k) => results.set(k, v)));
+  if (solo.length) (await runOne(solo, env, 'solo')).forEach((v, k) => results.set(k, v));
+  const crashed = [...results].filter(([, r]) => !r.ok && CRASH.test(r.note)).map(([k]) => k);
+  if (crashed.length) { console.log(`once more, alone (their browser crashed): ${crashed.join(', ')}`); (await runOne(crashed, env, 'again')).forEach((v, k) => results.set(k, { ...v, again: true })); }
+  return results;
+}
+function buildMap(names) {
+  const dir = path.join(HERE, 'out/cover'), files = {}, nocover = [];
+  names.forEach((n, i) => {
+    const c = readJSON(path.join(dir, n + '.json'), null);
+    if (!c || !Object.keys(c.ran || {}).length) { nocover.push(n); return; }
+    const bit = 1n << BigInt(i);
+    for (const [f, ranges] of Object.entries(c.seen || {})) { const e = files[f] = files[f] || { load: 0n, fns: new Map() }; for (const [s, t] of ranges) if (!e.fns.has(s + ':' + t)) e.fns.set(s + ':' + t, 0n); }
+    for (const [f, ranges] of Object.entries(c.ran)) { const e = files[f] = files[f] || { load: 0n, fns: new Map() }; e.load |= bit; for (const [s, t] of ranges) e.fns.set(s + ':' + t, (e.fns.get(s + ':' + t) || 0n) | bit); }
+  });
+  const out = { commit: git('rev-parse', 'HEAD').trim(), made: new Date().toISOString(), checks: names, nocover, files: {} };
+  for (const [f, e] of Object.entries(files).sort()) out.files[f] = { load: e.load.toString(16), fns: [...e.fns].map(([k, v]) => [...k.split(':').map(Number), v.toString(16)]).sort((a, b) => a[0] - b[0] || b[1] - a[1]) };
+  return out;
+}
+
+// ---------- main ----------
+fs.mkdirSync(path.join(HERE, 'out'), { recursive: true });
+const up = await fetch(GAME_URL).then(r => r.ok).catch(() => false);
+if (!up && !LIST) { console.log(`The game server is not answering at ${GAME_URL}: start it with "python3 -m http.server 8765" in the repo.`); process.exit(2); }
+let list = ALL, mapping = false;
+const files = changedFiles();
+if (CHANGED) {
+  const s = select();
+  if (s.full) { console.log(`Full suite: ${s.why}.`); }
+  else {
+    list = ALL.filter(n => s.pick.has(n));
+    console.log(`${s.files.length} changed file(s) since ${base.slice(0, 8)}; ${list.length} of ${ALL.length} checks:`);
+    for (const n of list) console.log(`  ${n.padEnd(16)} ${[...s.pick.get(n)].slice(0, 3).join('; ')}`);
+    for (const t of s.notes) console.log(`  note: ${t}`);
+  }
+} else mapping = !flag('--no-map');
+const full = flag('--all') ? Object.keys(SLOW_OWN) : slowFull(files), seed = Math.floor(Date.now() / 36e5);
+const sampledNow = list.filter(n => SLOW_OWN[n] && !full.includes(n));
+if (sampledNow.length) console.log(`samples this run (seed ${seed}): ${sampledNow.join(', ')}${full.length ? `; in full (their files changed): ${full.join(', ')}` : ''}`);
+if (LIST) process.exit(0);
+if (mapping) fs.rmSync(path.join(HERE, 'out/cover'), { recursive: true, force: true });
+const t0 = Date.now();
+const results = await runAll(list, { SV_SAMPLE: '1', SV_FULL: full.join(','), SV_SEED: String(seed), ...(mapping ? { SV_COVER: '1' } : {}) });
+for (const [n, r] of results) if (r.ok && r.secs) times[n] = r.secs;
+fs.writeFileSync(TIMES_F, JSON.stringify(Object.fromEntries(Object.entries(times).sort()), null, 0).replace(/,"/g, ',\n"') + '\n');
+const failed = [...results].filter(([, r]) => !r.ok), skipped = [...results].filter(([, r]) => r.ok && /^skipped/.test(r.note));
+if (mapping) {
+  const dirty = (tryGit('status', '--porcelain', '--', '../js') || '').trim();
+  if (dirty) console.log('code map NOT saved: js/ has uncommitted changes (commit first, so the map matches a commit)');
+  else { const m = buildMap(ALL); fs.writeFileSync(MAP_F, JSON.stringify(m)); console.log(`code map saved: tests/check-map.json (${Object.keys(m.files).length} files, ${m.nocover.length} checks without a game page, ${(fs.statSync(MAP_F).size / 1048576).toFixed(1)} MB)`); }
+}
+const summary = [`${results.size - failed.length}/${results.size} checks passed in ${Math.round((Date.now() - t0) / 60000)} min (${JOBS} at a time${CHANGED ? ', changed files only' : ''})`,
+  ...(skipped.length ? [`skipped here: ${skipped.map(([n]) => n).join(', ')}`] : []),
+  ...failed.map(([n, r]) => `FAILED ${n}: ${r.note.slice(0, 400)}`)];
+fs.writeFileSync(path.join(HERE, 'out/suite-result.txt'), summary.join('\n') + '\n');
+console.log('\n' + summary.join('\n'));
+process.exit(failed.length ? 1 : 0);

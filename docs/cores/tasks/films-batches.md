@@ -36,8 +36,9 @@ List them: every tale id in the tales content without a `FILMS[id]`. Order: Viet
 1. About 6 film scripts, timed to each page's narration (note 1 above), with the music bed (note 2).
 2. New spoken lines recorded with Azure: `node tools/make-voice-pack.mjs --engine azure --key "$AZURE_SPEECH_KEY" --region "$AZURE_SPEECH_REGION"`
    (never print or commit the key; `--count` shows what is missing; no line with a child's name is recorded).
-3. Quick checks only: `films`, `tales`, `voice`, `bilingual`, `phone`, the new silent-tail and self-start checks
-   (`cd tests && CHROMIUM=/opt/pw-browsers/chromium SV_URL=http://localhost:8765/ node run.mjs films tales …`).
+3. Only the checks for the change (owner, 13 Oct AEDT): `cd tests && node suite.mjs --changed` (it picks `films`, `tales`,
+   the voice and language checks, `phone`, and runs `films` in full because film files changed), plus the new silent-tail
+   and self-start checks by name if it does not pick them: `node run.mjs <check>`.
    Film stills: `node tests/filmshots.mjs` for phone, tablet and computer; look at them.
 4. Commit and push the working branch; board line; English and Vietnamese for every line; no emoji in docs.
-5. When the owner wants a batch live: full suite once, Netlify zip, report, one "yes, deploy" pop-up; bump the version.
+5. When the owner wants a batch live: the full suite once (`node suite.mjs`), Netlify zip, report, one "yes, deploy" pop-up; bump the version.

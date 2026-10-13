@@ -16,7 +16,10 @@ when the owner says so.
    and **AI review**; fix (or send back) every problem the AI review lists before merging; fix conflicts with the core's owner on the board.
 2. Bump r-number in `js/build.js`, `sw.js` VERSION and `studio/version.json`.
 3. Record new voices (`tools/make-voice-pack.mjs --engine azure`, see Voice & Audio).
-4. Run the **full suite** (`node run.mjs`, about an hour; one browser run at a time). Fix or send back every failure.
+4. Run the **full suite** once per release: `cd tests && node suite.mjs` (owner, 13 Oct: 3 checks at a time, the speed checks alone at the
+   end, crashed ones once more alone; about an hour; `--all` for no samples). Commit first; afterwards commit the refreshed
+   `tests/check-map.json` and `tests/check-times.json`. Fix or send back every failure. A branch that only adds films or fixes a
+   button gets `node suite.mjs --changed` in its own chat; the release still gets one full suite.
 5. Update `HANDOFF.md` (round history and checks table) and `docs/ARCHITECTURE.md` §9 if rules changed (`node tools/rules-from-doc.mjs`).
 6. Packages: the Netlify zip (`git archive --format=zip -o <dir>/sparkle-valley-netlify-rNN-game.zip HEAD index.html sw.js manifest.webmanifest netlify.toml css js fonts icons vendor videos content`). **No local bundle** (owner, 11 Oct: the offline files are on GitHub and the Google Drive mirror). The Studio exe when `studio/` changed (`bash studio/build-exe.sh`).
 7. Report to the owner: what changed (plain words), how it was tested, the Netlify zip, times in Sydney time (AEDT/AEST).
@@ -31,9 +34,11 @@ PROC-001…006 (read their wording in §9.1): plan first; nothing reaches main w
 round); the full suite green before a report; times in AEST; no keys or personal data in the repository.
 
 ## Checks you run
-All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
+All of them once per release (`node suite.mjs`), plus `node suite.mjs --changed` after every merge (it always includes `types unit arch rules`).
 
 ## Owner's decisions
+- 13 Oct AEDT: **stay with plain JavaScript** (no TypeScript). Next after the films and the faster checks: **Round W** (`docs/cores/ROUND-W.md`): a UI tidy-up (message queue, fewer phone buttons for under-5s, one set of sizes and colours, picture buttons for friends, every icon drawn, gentle motion), type-checking the files that hold saved data and messages, and splitting `js/main.js` and `js/ui.js`. Plan first, the owner's "go" before building.
+- 13 Oct AEDT: **faster checks** (pop-up answer: "Changed files checks, run 3 at once and smarter slow checks"; GitHub full suite later). A change (a film, a button) runs only its own checks (`node suite.mjs --changed`); the full suite runs once per release before "yes, deploy", 3 checks at a time (`node suite.mjs`); `reading`, `films` and `voicearea` test a sample unless their own files changed. The rule "never run two browser test runs at once" now means: never beside `suite.mjs`, which runs its own 3. Recorded in CLAUDE.md, README, tests/README.md, HANDOFF §2.
 - 12 Oct AEDT: Round U's voice harvest and Azure recording run in a separate chat (the owner's), not in the building chat; a new Release chat collects every branch marked "ready for Release", runs the full suite, reports and asks "yes, deploy".
 - **Bug robot (10 Oct AEST):** small bugs filed by the Front Desk are fixed and pushed by `.github/workflows/bug-fixer.yml`
   to `bugfix/<core>-<issue>` branches with draft pull requests, without asking; big bugs wait for the owner's "go". Release
@@ -130,3 +135,4 @@ All of them (`node run.mjs`), plus `types unit arch rules` on every merge.
 - (13 Oct AEDT, about 9:30 am) Round V: **deploy the 14 built items now as r70; the story films afterwards in batches of about 6 per release, Vietnamese stories first** (owner, pop-up question; about 33 films to make).
 - (13 Oct AEDT) Owner: the story films are built in batches and **a film batch does not get a full suite** (its own checks: films, tales, the quick checks); the r70 release of the 14 Round V items gets one full suite.
 - (13 Oct AEDT, about 1:00 pm) r70 full suite (on `claude/great-faraday-weuhjv`): 133 checks plus the new `mictest`. Run in two halves; the second half's browser crashed and the 2-hour job limit stopped it, so the crashed and unfinished checks were run again. All pass except `startup` (over its limit, as on main: firstKB 1031 > 1000, title 1684 ms). Online checks `meet`, `cloud`, `knock` skipped (no local relay). Fixed on the way: `bilingual` (Tiến Lên variants in English), `nostudio` (the Shop tab opens the Shop: the check looks at it and reopens the Pad), `animalhomes` (already failing 2 of 3 on r69: the child walked onto the village road where the dog may not go; now walks where the way is clear, 8 of 8). Microphone (owner, 13 Oct: nothing happens in Friends or voice control with every iPhone setting on Ask): the cause was the play-only iPhone sound mode set since 3 Oct; fixed with `micMode()`, plus the grown-ups' microphone test. Screenshots: `docs/r70/shots` (phone, tablet, computer).
+- (13 Oct AEDT) Owner: **"yes, deploy"** for r70. Main's family update from Sparkle Studio online (11:03 am AEDT, 200 files, photos and family content) merged first (`boot`, `realphotos`, `familyphotos`, `familymissions`, `photo` pass). Pull request #74 merged; **r70 live at 12:59 pm AEDT** on sparklevalley.netlify.app and sparklevalley.au. Studio: only `studio/version.json` changed (no new Studio features), so SparkleStudio.exe stays at r69 on `studio-exe` (no needless "Update now").
