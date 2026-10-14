@@ -17,3 +17,12 @@ Do not treat these captures as complete round evidence or proof of production se
 
 Each image group has results.json containing actual bounds/errors and (fresh runs) build. Capture script tests/owner-repair-evidence.mjs specifies reproducible routing/state.
 Final table must expand all original59 points using requirements.json and link exact candidate commit/tests. Missing evidence stays marked missing.
+
+## Latest capture attribution limits
+
+Fresh baseline/results.json contains four complete cases at approved R74 6a6ae885f86ad58a52688782eeba1d5417985fe9, with all served source files checked by SHA256. Candidate/results.json contains only completed phone-English source583915e9; the phone-Vietnamese attempt then exposed Audio edge bounds and stopped. Remaining candidate tablet/computer pictures may be older and must not be represented as newest AFTER evidence. See candidate/ATTRIBUTION.md. New Audio/HUD/festival changes need a fresh committed candidate capture.
+
+- network-final-focused-5-checks.json: controlled local multiplayer/netgames/together/knock/micoff5/5 at583915e9.
+- audio-festival-reproduction-before.json: strengthened2checks failed before corresponding source changes.
+- audio-festival-final-8-checks.json: local8/8 after Audio placement/bounds and town festival road-mask repair; not a whole-suite or physical-device claim.
+- GitHub full suite38601628166 tested older dd91f33b and completed140/143, with ownerfamily unresolved and together/knock superseded only by bounded newer local proofs.

@@ -109,3 +109,25 @@ Before focused3/3 failed: two Sydney targets in house/collision bounds; received
 Current local five-check rerun multiplayer/netgames/together/knock/micoff is active. It includes distinct Caro host/guest names and rendered flower/clover comparison on both boards after every move, actual Mic On/Off and no implicit permission request, and actual network story behavior. Results pending. Caro accessibility labels identify the same global player/seat; all-autoplay-game strategies, pictures and curriculum/films remain open. Cache tag now repair2-r76, BUILD and installation IDs retained.
 
 Saving this partial source to isolated checkpoint branch work/owner-repair-checkpoint-20261015 preserves the active diagnostic PR300 run38601628166 at dd91f33b. That run has not passed and does not contain these newest fixes. Once the focused integration is assessed, advance the repair branch and run the exact new candidate. No main merge/deploy/release or report closure.
+
+
+## Network verification / fresh pictures · 15 October 2026, 04:27 AEDT
+
+Focused multiplayer/netgames/together/knock/micoff finished5/5,12 minutes, no skips. Actual two-device story synchronized after the origin fix; distinct Caro host/guest retain pink flower/green clover on both boards and agree on winner; controlled Mic taps and no implicit request passed. Saved network-final-focused-5-checks.json. Source583915e9 remains isolated checkpoint while older dd91f33b full suite runs; its remaining shards/collect must be observed, not assumed successful.
+
+Henry confirms festival lanterns/flags/poles are the crowded/misplaced decorations. EXT-04 child road-crossing guidance and EXT-05 natural festival distribution are authorized, still unimplemented. EXT-01 all-quest reachability remains broader than the9-target check.
+
+Fresh R74 baseline capture active. Attribution guard initially rejected an empty source enumeration caused by running from tests cwd; corrected Git commands to the script's repository root and reject empty enumerations. No pictures from that failed attempt count as evidence. Capture also now waits for fonts and completed panel transitions. Current captures must include exact served-source hashes and timestamp; screenshots are not production delivery proof.
+
+
+## Audio / festival road proof and workflow reconciliation · 15 October 2026
+
+Latest focused run8/8 passed: owneraudiobounds, ownerfestplacement, soundsw, testerreport, types, rules, bilingual, arch. Saved evidence/audio-festival-final-8-checks.json. Before2/2 failed: Vietnamese phone tray touched the viewport edge;10 town festival points lay within the actual shifted road. Audio now remeasures on font/viewport/content changes, keeps bounded margins, and desktop Audio/Mic sit below navigation. Festival mask now uses the real town anchor;130 planned points have zero town-road violations. Natural distribution across the whole map remains open. These latest source edits are not yet a remote checkpoint; fresh matching pictures remain pending.
+
+Older dd91f33b full suite38601628166 completed140/143, not green. Together and knock fail on older source/fixtures and passed in the newer controlled network5/5; ownerfamily fails both shard and isolated retry with its child error hidden by the wrapper. CI family cause remains unresolved despite earlier local proof. All shard wrappers being green does not mean the aggregate passed. Exact new candidate full suite and substantive review remain required.
+
+Latest Wi-Fi voice preference overrides earlier manual-full selection: full selected-language download automatically on Wi-Fi after core/nearby; bilingual opt-in includes both. EXT-06 Audio placement, EXT-07 voice policy and EXT-08 target-button explanation are now recorded. No merge, deployment, release or issue closure.
+
+## Environment restart interruption · 15 October 2026 AEDT
+
+A managed environment restart killed all HTTP/PeerJS/MQTT servers and the active Node22 six-check run. Workspace, source edits, pinned Chromium1194 and Node22.23.3 survived. Saved evidence/voice-family-interrupted-node22.txt records completed ownervoicewifi44s, arch, bilingual, rules and types; ownerfamily did not finish, so the combined run has no aggregate pass. tests/out/suite-result.json still belongs to the previous failed pre-fix Wi-Fi regression and must not be relabelled as the interrupted run. Recheck with restored services; no failure/skip waived. User was notified immediately.

@@ -19,7 +19,7 @@ export function scheduled(F, now) {
 
 // the streets some places draw themselves (not in the valley's road list; widths as in js/town.js and js/regions.js):
 // along x at z, half width hw
-const INNER = { town: { x0: 6, x1: 44, z: TOWN.roadZ, hw: 3.5 }, aussie: { x0: AUSSIE.x0, x1: AUSSIE.x1, z: AUSSIE.roadZ, hw: 3.5 }, market: { x0: MARKET.x0, x1: MARKET.x1, z: MARKET.roadZ, hw: 4 } };
+const INNER = { town: { x0: TOWN.x - 26, x1: TOWN.x + 12, z: TOWN.roadZ, hw: 3.5 }, aussie: { x0: AUSSIE.x0, x1: AUSSIE.x1, z: AUSSIE.roadZ, hw: 3.5 }, market: { x0: MARKET.x0, x1: MARKET.x1, z: MARKET.roadZ, hw: 4 } };
 // how much one place can carry at "as now" (1x, PERF budgets): pieces along its streets on the day, strings of bunting
 export const MAX_PIECES = 48, MAX_BUNTING = 10;
 // (owner, 13 Oct) how much each festival decorates: 5 times r69's by default, chosen per festival in Studio's Festivals

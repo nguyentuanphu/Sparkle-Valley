@@ -129,10 +129,10 @@ export class Hud {
     Object.assign(this.root.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px', transform: r.rot ? `rotate(${r.rot}deg)` : '' });
     this.root.classList.toggle('far', r.rot === 180);   // (two players face to face: this half is turned to the far end)
     const small = two || r.w < 560 || r.h < 420; this.root.classList.toggle('small', small); this.rect = r;
-    // on phones the dock has room for four buttons only, so Talk, Music and Sound move to a small row under the clock
-    const tools = this.q('.tools'), dock = this.q('.dock');
-    for (const k of ['chat', 'mus', 'snd']) { const b = this.q('.dk.' + k); if (small && b.parentNode !== tools) tools.appendChild(b); if (!small && b.parentNode !== dock) dock.appendChild(b); }
-    if (!small) dock.insertBefore(this.q('.dk.call'), this.q('.dk.mus'));
+    // Audio and the microphone always stay below navigation, on desktop as on phones.
+    const tools = this.q('.tools'), dock = this.q('.dock'), chat = this.q('.dk.chat');
+    const chatHome = small ? tools : dock; if (chat.parentNode !== chatHome) chatHome.appendChild(chat);
+    for (const k of ['snd', 'call', 'mus']) { const b = this.q('.dk.' + k); if (b.parentNode !== tools) tools.appendChild(b); }
   }
   showRegion(name) { const e = this.q('.region'); e.textContent = name; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
   toast(msg) { const e = this.q('.htoast'); e.textContent = msg; e.classList.add('show'); clearTimeout(this._tt); this._tt = setTimeout(() => e.classList.remove('show'), 3200); }

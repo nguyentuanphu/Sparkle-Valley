@@ -599,6 +599,55 @@ await check('voicepack', async () => {
   return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open shows and downloads nothing, and files the phone lost are fetched again`;
 });
 
+await check('ownervoicewifi', async () => {
+  // A tiny real downloader run exercises full Wi-Fi completion and a language change
+  // while an area request is in flight, without downloading a 139 MiB fixture.
+  const langs = ['en', 'vi'], groups = ['core', 'nearby', 'games'], lines = {}, langOf = {}, hashes = {};
+  for (const g of groups) for (const L of langs) {
+    const h = L + '_' + g; lines[h] = ['f']; langOf[h] = L; (hashes[g] ||= []).push(h);
+  }
+  let releaseNear, nearStarted;
+  const started = new Promise(resolve => { nearStarted = resolve; });
+  const held = new Promise(resolve => { releaseNear = resolve; });
+  const got = [];
+  const P = await open(b, {w:390,h:844,touch:true,pre:`Object.defineProperty(navigator,'connection',{get:()=>({type:'wifi',saveData:false}),configurable:true});`,settings:{lang:'en',bilingual:false,autoPack:false},route:async ctx => {
+    await ctx.route('**/voices/areas.json', r => r.fulfill({json:{groups:Object.fromEntries(Object.entries(hashes).map(([g,hs])=>[g,hs.join(' ')])),size:{}}}));
+    await ctx.route('**/voices/*/f/*_*.mp3', async r => {
+      const file = new globalThis.URL(r.request().url()).pathname;
+      got.push(file);
+      if (file.endsWith('/en_nearby.mp3')) { nearStarted(); await held; }
+      await r.fulfill({status:200,contentType:'audio/mpeg',body:Buffer.from([0xff,0xfb,0x90,0])});
+    });
+  }});
+  try {
+    await clear(P.page);
+    await P.page.evaluate(async pack => {
+      const S=await import('/js/state.js'), V=await import('/js/voicepack.js');
+      S.settings.autoPack=true; S.settings.packCell=false;
+      window.__ownerPackProgress=[];
+      V.startPack(pack,e=>window.__ownerPackProgress.push(e),()=> 'nearby');
+    },{lines,langOf,areas:true,version:999,made:'owner-wifi-language-switch'});
+    let timer;
+    try { await Promise.race([started,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Wi-Fi did not automatically start the nearby area after core')),20000);})]); }
+    finally {clearTimeout(timer);}
+    ok(got[0].endsWith('/en_core.mp3') && !got.some(u=>u.includes('/vi/')),'selected English core comes first: '+JSON.stringify(got));
+    await P.page.evaluate(async()=>{const S=await import('/js/state.js'),{events}=await import('/js/core/events.js');S.settings.lang='vi';events.emit('LanguageChanged');});
+    await P.page.waitForTimeout(1900); // the debounced recheck happens during the held request
+    releaseNear();
+    await P.page.waitForFunction(()=>{
+      const s=JSON.parse(localStorage.getItem('sv2_settings')||'{}');
+      return s.packLangs==='vi' && window.__ownerPackProgress.some(e=>e.state==='ready' && !e.core);
+    },null,{timeout:20000});
+    const urls=await P.page.evaluate(async()=> (await (await caches.open('sv-voices')).keys()).map(r=>r.url));
+    ok(groups.every(g=>urls.some(u=>u.endsWith('/vi_'+g+'.mp3'))),'full selected Vietnamese pack automatically completed on Wi-Fi: '+JSON.stringify(got));
+    ok(!got.some(u=>u.endsWith('/en_games.mp3')),'old-language remaining areas should stop after the in-flight batch');
+    const progress=await P.page.evaluate(()=>window.__ownerPackProgress);
+    ok(progress.every(e=>e.state!=='loading'||e.done<=e.total),'bounded progress after language change');
+    ok(!P.errors.length,P.errors.join(' | '));
+    return 'Bounded six-file fixture: Wi-Fi automatically starts core then nearby; changing language during a held area request completes every selected-language file, stops remaining old-language areas, preserves cache and bounded progress (not full asset/audio/device proof)';
+  } finally {releaseNear();await P.ctx.close();}
+});
+
 await check('voicecover', async () => {
   // (round R item 12) the coverage check: every line the game can speak has its recordings (both voices), is in the
   // pack's list and in an area; lines with changing words are templates whose fixed pieces, gap words and numbers are
@@ -4471,6 +4520,44 @@ await check('together', async () => {
   return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game straight away (Use the internet is on: owner, 10 Oct; the gate itself is checked by realphotos)`;
 });
 
+await check('owneraudiobounds', async () => {
+  for (const [w,h,lang] of [[390,844,'en'],[390,844,'vi'],[844,390,'vi'],[1280,800,'en'],[1280,800,'vi']]) {
+    const P=await open(b,{w,h,lang,touch:true}); await clear(P.page);
+    await P.page.evaluate(()=>{ __sv.huds[0].setCall(true,false,true); });
+    const layout=await P.page.evaluate(()=>{const nav=document.querySelector('.hud-tr .mini-wrap').getBoundingClientRect(), tools=document.querySelector('.hud-tr .tools');return {navBottom:nav.bottom,audio:tools.querySelector('.dk.snd')?.getBoundingClientRect().y,mic:tools.querySelector('.dk.call')?.getBoundingClientRect().y};});
+    ok(layout.audio>=layout.navBottom && layout.mic>=layout.navBottom,'Audio/Mic must remain under navigation: '+JSON.stringify(layout));
+    await P.page.evaluate(()=>__sv.openSound(document.querySelector('.dk.snd'))); await P.page.evaluate(()=>document.fonts.ready); await P.page.waitForTimeout(550);
+    const inspect=async()=>{ const box=await P.page.locator('.audio-tray').boundingBox(), sizes=await P.page.locator('.audio-tray .ss-sw').evaluateAll(els=>els.map(e=>e.getBoundingClientRect().height));
+      const vp=P.page.viewportSize(); ok(box.x>=11 && box.y>=11 && box.x+box.width<=vp.width-11 && box.y+box.height<=vp.height-11 && sizes.every(n=>n>=64),JSON.stringify({w:vp.width,h:vp.height,lang,box,sizes})); };
+    await inspect();
+    const before=await P.page.evaluate(async()=>({...((await import('/js/state.js')).settings)}));
+    await P.page.locator('.audio-tray [data-k=music]').click();
+    const after=await P.page.evaluate(async()=>({...((await import('/js/state.js')).settings)}));
+    ok(before.sound===after.sound && before.voice===after.voice && before.music!==after.music,'Audio switches must remain independent');
+    await P.page.setViewportSize({width:320,height:568}); await P.page.waitForTimeout(300); await inspect();
+    await P.page.locator('.audio-tray .ss-done').click(); await P.page.setViewportSize({width:w,height:h}); await P.page.waitForTimeout(100);
+    ok(await P.page.locator('.audio-tray').count()===0,'Closed Audio must stay closed after viewport changes');
+    const errors=P.errors; await P.ctx.close(); ok(!errors.length,errors.join(' | '));
+  }
+  return 'EN/VI phone and VI landscape keep12px margins through font/layout/viewport changes,64px switches and independent audio states';
+});
+
+await check('ownerfestplacement', async () => {
+  const P=await open(b,{w:1280,h:800}); await clear(P.page);
+  const r=await P.page.evaluate(async()=>{
+    const {createDecor}=await import('/js/festdecor.js'), W=await import('/js/world.js'), C=(await import('/js/custom.js')).CUSTOM;
+    C.festivals={...(C.festivals||{}),tet:{deco:5}};
+    const D=createDecor(()=>true), F={id:'tet',kind:'festival'}, points=D.plan('town',W.TOWN,F,4);
+    // Geometry from the rendered road in town.js, independent of festdecor's own onStreet/count predicate.
+    const inTownRoad=p=>p.x>W.TOWN.x-26 && p.x<W.TOWN.x+12 && Math.abs(p.z-W.TOWN.roadZ)<3.5+1;
+    const blocked=points.filter(inTownRoad);
+    return {total:points.length,blocked:blocked.slice(0,12),blockedCount:blocked.length};
+  });
+  const errors=P.errors; await P.ctx.close();
+  ok(r.total>0 && !r.blockedCount && !errors.length,JSON.stringify({...r,errors}));
+  return `${r.total} planned town decorations respect the actual shifted town-road bounds, independent of their own mask`;
+});
+
 await check('ownerautoplaystrategy', async () => {
   const P = await open(b, { w: 390, h: 844, touch: true, pre: () => {
     localStorage.setItem('sv2_playerid','autoplan0001'); localStorage.setItem('sv2_live',JSON.stringify({releases:{autoplay:{on:true,devices:['autoplan0001']}},festivals:{}}));
@@ -4550,7 +4637,7 @@ await check('types', async () => {
   if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
   try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); execFileSync(tsc, ['-p','tsconfig-contracts.json'], {encoding:'utf8'}); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
   const n = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8')).files.length;
-  return `${n} explicit files type-checked; detector/outbox modules additionally strict-checked; no errors`;
+  return `${n} explicit files type-checked; detector/outbox/family-backup modules additionally strict-checked; no errors`;
 });
 
 await check('perf', async () => {
@@ -5097,7 +5184,13 @@ await check('reading', async () => {
 // Owner-approved interface contracts: end-to-end screen, privacy and composed-capture regressions.
 async function ownerSmoke(file) {
   const { execFileSync } = await import('node:child_process');
-  return execFileSync(process.execPath, [file], { encoding:'utf8', timeout:600000, maxBuffer:1048576 }).trim();
+  try { return execFileSync(process.execPath, [file], { encoding:'utf8', timeout:600000, maxBuffer:1048576 }).trim(); }
+  catch (error) {
+    // Preserve assertion/timeout diagnostics from the synthetic owner fixtures; the wrapper's
+    // generic 'Command failed' otherwise hides the reason in shard and isolated retries.
+    const detail = [error.stderr,error.stdout,error.message].filter(Boolean).join(' ').slice(-12000).replace(/\s+/g,' ').trim();
+    throw new Error(`${file} (status ${error.status}, signal ${error.signal || 'none'}): ${detail}`);
+  }
 }
 await check('ownerround', async () => {
   return await ownerSmoke('owner-round-smoke.mjs');

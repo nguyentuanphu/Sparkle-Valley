@@ -26,3 +26,19 @@ All216 open bug-labelled reports through#299 remain individually listed in issue
 | DR-11 | WO-13/16 | Henry: Caro colors appear self-relative on each device; pink must identify the same player on both | Reproduce with distinct named players; compare rendered piece/color and assigned seat on both boards and across turns/replay; preserve art |
 
 All are included under Henry's existing authorization. None is yet marked repaired. Owner destination clarification is optional and does not block the other investigations. Local online suite remains active; fresh diagnostic GitHub run38601628166 at dd91f33b runs independently.
+
+
+New owner scope EXT-04/05: child road crossings/warnings and natural map-wide decoration distribution/road clearance. Existing Aussie raised crossing and festival density controls found; implementation/rendered inventory pending; Henry confirms festival lanterns/flags/poles. EXT-01 expands the Sydney-specific repair to all required quest/story targets and night-state accessibility. Requirements and consolidated work order updated without removing original59 points.
+
+Network focused5/5 now proves actual shared story behavior, stable distinct-player Caro pieces and normal microphone/knock policy at583915e9. Local checked fixes do not make older dd91f33b Full suite38601628166 a pass.
+
+## Latest bounded findings
+
+| ID | WO | Finding | Actual proof / status |
+|---|---|---|---|
+| DR-12 | WO-08 | Vietnamese Audio tray can touch the phone edge after font/content sizing | New bounds check failed before; source placement/observation fix plus desktop navigation-row placement pass five view cases and resize in focused8/8 |
+| DR-13 | WO-01/14 | Town festival decoration road mask used obsolete absolute x bounds | Independent geometry test reproduced10 road violations; real TOWN anchor fix passes130 placements. Natural map-wide distribution still open |
+| DR-14 | WO-08/16 | Language change during voice download loses the scheduled recheck; new selected pack can stay unfinished | Bounded synthetic real-downloader regression timed out before source edit; after queued recheck/snapshot repair passed44s within current Node22 focused run. Full run still pending |
+| DR-15 | WO-12/18 | Family CI regression failed both shared and isolated runs at dd91f33b; same Node22 local run also failed | First-line wrapper/parser truncation concealed details behind a harmless module warning. Wrapper now keeps stdout/stderr/status as one line; rerun underway. Underlying cause unresolved |
+
+Source-based leads and bounded synthetic proofs do not dispose of all216 reports, replace complete screen evidence or authorize release.

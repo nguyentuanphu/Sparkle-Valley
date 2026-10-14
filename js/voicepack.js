@@ -69,7 +69,7 @@ export function packOrder() {
   all.filter(g => !NOT_PLACES.includes(g)).forEach(add); add('world'); all.forEach(add);
   return out;
 }
-let checking = false;
+let checking = false, recheck = false;
 // (battery round, owner 12 Oct AEDT: "my phone gets very hot") the download is spread out: nothing while the valley is
 // being built (the busiest seconds of a start), then 6 files at a time with a short rest between (longer once the small
 // core is in), so the phone's radio and processor are never kept flat out
@@ -77,7 +77,10 @@ const PACK_REST = { core: 150, rest: 400 };
 const valleyBuilt = async () => { for (let i = 0; i < 240 && !(window.__sv && window.__sv.bootTimes); i++) await new Promise(r => setTimeout(r, 500)); };
 const rest = ms => new Promise(r => setTimeout(r, ms));
 async function checkPack() {
-  if (checking || !PACK) return; checking = true;
+  if (!PACK) return;
+  if (checking) { recheck = true; return; }
+  checking = true; recheck = false;
+  const langs = packLangs(), languageChanged = () => langs.join() !== packLangs().join();
   try {
     await valleyBuilt();
     const cache = await caches.open('sv-voices');
@@ -85,22 +88,22 @@ async function checkPack() {
     // the whole pack is on the device, a start only looks at 16 files picked at random, says nothing and downloads
     // nothing; the full check (listing every file) runs only for a new pack, or when a file has gone missing
     const quick = async list => { const pick = list.length <= 64 ? list : Array.from({ length: 16 }, () => list[Math.floor(Math.random() * list.length)]); return (await Promise.all(pick.map(u => cache.match(u).then(Boolean)))).every(Boolean); };
-    if (packIsSaved() && await quick(packFiles())) { packEmit({ state: 'ready', quiet: true, known: true, total: packFiles().length }); return; }
+    if (packIsSaved(langs) && await quick(packFiles(null, langs))) { packEmit({ state: 'ready', quiet: true, known: true, total: packFiles(null, langs).length }); return; }
     await loadAreas();
     // a pack made by area whose list could not be fetched (a bad connection): nothing is downloaded until it can be,
     // so a phone on mobile data never takes the whole pack by mistake
     if (PACK.areas && !AREAS) return;
-    const order = packOrder(), core = packFiles(['core']);
+    const order = packOrder(), core = packFiles(['core'], langs);
     // only the core is wanted for now (mobile data, no yes yet) and it is all here: nothing to show, maybe a question
-    if (!mayFetchRest() && settings.packCore === packSig() + '|' + packLangs().join('') && await quick(core)) { packEmit({ state: 'ready', quiet: true, known: true, core: true, total: core.length }); askRest().catch(() => { }); return; }
+    if (!mayFetchRest() && settings.packCore === packSig() + '|' + langs.join('') && await quick(core)) { packEmit({ state: 'ready', quiet: true, known: true, core: true, total: core.length }); askRest().catch(() => { }); return; }
     const have = new Set((await cache.keys()).map(r => r.url)), abs = u => new URL(u, location.href).href;
-    const missingOf = gs => packFiles(gs).filter(u => !have.has(abs(u)));
+    const missingOf = gs => packFiles(gs, langs).filter(u => !have.has(abs(u)));
     const want = mayFetchRest() ? order : ['core'];
     // (r63, owner: the bar showed 108 %) the files to fetch are fixed now: a language or setting changed while it runs
     // (both languages switched on, say) used to add files to an area's list that the total never counted
     const pending = new Set(missingOf(want));
     let total = pending.size, done = 0;
-    if (!total) { donePack(want); packEmit({ state: 'ready', quiet: true, total: packFiles(want).length, core: want.length === 1 }); if (want.length === 1) askRest().catch(() => { }); return; }
+    if (!total) { if (languageChanged()) return; donePack(want, langs); packEmit({ state: 'ready', quiet: true, total: packFiles(want, langs).length, core: want.length === 1 }); if (want.length === 1) askRest().catch(() => { }); return; }
     if (navigator.onLine === false) { packEmit({ state: 'waiting', left: total }); return; }
     packEmit({ state: 'loading', done, total });
     // one area at a time, the next chosen again after each (the child may have walked somewhere new meanwhile)
@@ -110,25 +113,32 @@ async function checkPack() {
       if (g !== 'core' && !mayFetchRest()) break; // (left the Wi-Fi: the rest waits)
       const miss = missingOf([g]).filter(u => pending.has(u));
       for (let i = 0; i < miss.length; i += 6) {
+        if (languageChanged()) return; // finish only the current batch, then start the new selected language
+        if (g !== 'core' && !mayFetchRest()) break;
         await Promise.all(miss.slice(i, i + 6).map(async u => { try { const r = await fetch(u); if (r.ok) { await cache.put(u, r); have.add(abs(u)); pending.delete(u); done = Math.min(total, done + 1); } } catch (e) { } }));
         packEmit({ state: 'loading', done, total, area: g });
         if (navigator.onLine === false) { packEmit({ state: 'waiting', left: total - done }); return; } // goes on when the internet is back
         await rest(g === 'core' ? PACK_REST.core : PACK_REST.rest);
       }
-      if (g === 'core' && !missingOf(['core']).length) settings.packCore = packSig() + '|' + packLangs().join('');
+      if (languageChanged()) return;
+      if (g === 'core' && !missingOf(['core']).length) settings.packCore = packSig() + '|' + langs.join('');
     }
-    if (!missingOf(want).length) { donePack(want); packEmit({ state: 'ready', core: want.length === 1 }); if (want.length === 1) askRest().catch(() => { }); }
+    if (!missingOf(want).length) { donePack(want, langs); packEmit({ state: 'ready', core: want.length === 1 }); if (want.length === 1) askRest().catch(() => { }); }
     else if (!mayFetchRest() && !missingOf(['core']).length) { saveSettings(); packEmit({ state: 'ready', core: true }); askRest().catch(() => { }); }
     else packEmit({ state: 'waiting', left: missingOf(want).length });
-  } finally { checking = false; }
+  } finally {
+    checking = false;
+    // A language/connection/settings event during an in-flight request must not be lost.
+    if (recheck || languageChanged()) { recheck = false; setTimeout(() => checkPack().catch(() => { }), 0); }
+  }
 }
-function donePack(want) {
-  if (want.length === 1) settings.packCore = packSig() + '|' + packLangs().join('');
-  else { settings.packSaved = packSig(); settings.packLangs = packLangs().join(''); settings.packCore = packSig() + '|' + packLangs().join(''); }
+function donePack(want, langs) {
+  if (want.length === 1) settings.packCore = packSig() + '|' + langs.join('');
+  else { settings.packSaved = packSig(); settings.packLangs = langs.join(''); settings.packCore = packSig() + '|' + langs.join(''); }
   saveSettings();
 }
 // the whole pack is here for these languages (a device that saved it before round R item 12 kept every language)
-const packIsSaved = () => settings.packSaved === packSig() && (!settings.packLangs || packLangs().every(L => settings.packLangs.includes(L)));
+const packIsSaved = langs => settings.packSaved === packSig() && (!settings.packLangs || langs.every(L => settings.packLangs.includes(L)));
 // on mobile data with the core done: ask a grown-up about the rest (js/packbar.js shows the question)
 async function askRest() {
   if (mayFetchRest() || !askDue() || packNet() === 'off') return;
@@ -143,8 +153,8 @@ async function askRest() {
 const packSig = () => Object.keys(PACK.lines).length + ':' + (PACK.version || 1) + ':' + (PACK.made || '');
 // the files of the pack in these areas (all areas when none are named), in the children's own languages (Chinese and
 // Hindi only come with the places and games that speak them)
-function packFiles(groups) {
-  const urls = [], langs = ['en', 'vi', 'zh', 'hi'], mine = packLangs(), want = groups && new Set(groups);
+function packFiles(groups, mine = packLangs()) {
+  const urls = [], langs = ['en', 'vi', 'zh', 'hi'], want = groups && new Set(groups);
   // (round R) which language each line is in: `other` lists the lines that are not English, space-separated per
   // language (half the size of the old `langOf`, which named every line's language; older packs still have that)
   const other = new Map(); for (const [L, hs] of Object.entries(PACK.other || {})) for (const h of String(hs).split(' ')) if (h) other.set(h, L);

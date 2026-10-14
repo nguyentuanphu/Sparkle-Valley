@@ -174,3 +174,9 @@ Expanded owner screen/game smoke: 13 cases pass (phone EN/VI, tablet, desktop, l
 Visual review caught text passing beneath the floating settings button despite previous bounds checks. Grown-ups now has a separate scrolling body and reserved Save footer; body/footer non-overlap is an explicit ownerround assertion. Wardrobe Done is text-labelled. These latest changes and r75 are being checked again with ownerround, ownerfamily, ownercapture, phone, contract and Studio. Owner regressions are registered in tests/suite.mjs/run.mjs for future full-suite runs.
 
 GitHub Quick checks pass on the earlier checkpoint; Full suite remains in progress. AI review is **not passed**: commit status is error, logs report is_error:true and VERDICT:none despite the workflow wrapper being green. Physical iPhone and deployment-host verification remain open; no deployment approved.
+
+## Owner decisions and repair progress · 15 October 2026 AEDT
+
+Latest Henry preference supersedes earlier radio answer: core/nearby voices first, automatic full selected-language pack on Wi-Fi; bilingual opt-in includes both, mobile-data permission preserved. Desktop Audio/Mic beneath navigation; target-shaped companion hat goal explains on tap and needs explicit Buy. These extend all existing authorized work; no main merge/deploy/release.
+
+Local network5/5 and Audio/festival8/8 passed. New bounded Wi-Fi language-switch regression passed44s before environment restart; six-check run incomplete because ownerfamily stopped. Source583915e9 plus checked new edits await durable isolated checkpoint. Older dd91f33b full suite38601628166 is140/143, family failure unresolved; Checks/Quick/voices/mirror independently succeeded. See canonical STATUS and evidence restrictions; no whole-round completion or substantive AI-review verdict.

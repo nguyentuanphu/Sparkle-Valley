@@ -5,20 +5,24 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { launch, open, start, clear } from './harness.mjs';
 import { URL as gameURL } from './harness.mjs';
+import { fileURLToPath } from 'node:url';
+const repoRoot = fileURLToPath(new URL('../', import.meta.url));
 const phase = process.argv[2] || 'baseline';
-const sourceCommit = process.env.SV_EVIDENCE_COMMIT || execFileSync('git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim();
+const settingsOnly = process.argv.includes('--settings-only');
+const sourceCommit = execFileSync('git', ['-C', repoRoot, 'rev-parse', '--verify', process.env.SV_EVIDENCE_COMMIT || 'HEAD'], {encoding:'utf8'}).trim();
 const sourceFingerprints = {};
 // Verify the served code, rather than attributing old pictures from a build label alone.
-const servedFiles=execFileSync('git',['ls-tree','-r','--name-only',sourceCommit,'--','js','css','vendor','fonts','icons','index.html','sw.js','voices/manifest.json','voices/areas.json'],{encoding:'utf8'}).trim().split('\n');
+const servedFiles=execFileSync('git',['-C',repoRoot,'ls-tree','-r','--name-only',sourceCommit,'--','js','css','vendor','fonts','icons','index.html','sw.js','voices/manifest.json','voices/areas.json'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
+if (!servedFiles.length) throw new Error('No source files found for evidence attribution');
 for (const file of servedFiles) {
-  const expected = execFileSync('git', ['show', `${sourceCommit}:${file}`], {maxBuffer:8*1024*1024});
+  const expected = execFileSync('git', ['-C', repoRoot, 'show', `${sourceCommit}:${file}`], {maxBuffer:8*1024*1024});
   const response = await fetch(new URL(file, gameURL));
   if (!response.ok) throw new Error(`Evidence source unavailable: ${file} (${response.status})`);
   const actual = Buffer.from(await response.arrayBuffer());
   if (!actual.equals(expected)) throw new Error(`Served evidence source differs from ${sourceCommit}: ${file}`);
   sourceFingerprints[file] = createHash('sha256').update(actual).digest('hex');
 }
-const dir = path.resolve('../docs/owner-repair-20261014/evidence', phase);
+const dir = path.join(repoRoot, 'docs/owner-repair-20261014/evidence', phase);
 fs.mkdirSync(dir, { recursive: true });
 const browser = await launch(), results = [];
 try {
@@ -34,6 +38,13 @@ try {
       localStorage.setItem('sv2_playerid','tester000001');localStorage.setItem('sv2_tester',JSON.stringify({at:1,b:'r1'}));localStorage.setItem('sv2_live',JSON.stringify({releases:{tester:{on:true,devices:['tester000001']},autoplay:{on:true,devices:['tester000001']}},festivals:{}}));
     }});
     const shot = async name => { await P.page.evaluate(() => document.fonts.ready); await P.page.waitForTimeout(550); await P.page.screenshot({path:path.join(dir,`${label}-${name}.png`)}); };
+    if (settingsOnly) {
+      await P.page.evaluate(async () => (await import('/js/ui.js')).openGrownups()); await P.page.waitForSelector('.grownups #gDone');
+      await shot('settings');
+      await P.page.evaluate(() => { const root = document.querySelector('.grownups-body') || document.querySelector('.grownups'); root.scrollTop = root.scrollHeight; }); await shot('settings-note');
+      results.push({device,w,h,lang,sourceCommit,sourceFingerprints,capturedAt:new Date().toISOString(),state:'grownups-settings-and-bottom-note',errors:P.errors});
+      console.log(`${phase} ${label}: captured settings and bottom note`); await P.ctx.close(); continue;
+    }
     await shot('welcome');
     await P.page.click('.screen.title .press', {force:true}); await P.page.waitForSelector('.screen.who');
     await P.page.waitForTimeout(650); await shot('selection');
@@ -66,4 +77,4 @@ try {
     console.log(`${phase} ${label}: captured welcome, selection, bag, shop, audio`);
     await P.ctx.close();
   }
-} finally { await browser.close();fs.writeFileSync(path.join(dir,'results.json'),JSON.stringify(results,null,2)); }
+} finally { await browser.close();fs.writeFileSync(path.join(dir,settingsOnly ? 'settings-results.json' : 'results.json'),JSON.stringify(results,null,2)); }

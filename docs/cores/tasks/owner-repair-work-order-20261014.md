@@ -183,3 +183,24 @@ Not completed: complete runtime screen inventory, issue triage, repair implement
 NEXT ACTION after the owner accepts this plan: Stage 0 — refresh repository/PR/board state, capture approved compact UI references and reproduce the highest-risk startup/import, overlapping-panel, reporting and version-identity cases. Present the specific keep/revise/revert findings and disputed visual proposals before implementation.
 
 Before any main merge/deployment: an exact reviewed candidate, complete evidence table, substantive independent review, prescribed verification and the owner's separate explicit release approval.
+
+
+## Owner extensions · 15 October 2026 AEDT
+
+Henry explicitly adds these to the same authorized repair; no repeat start approval. Original59 points and WO-01–19 remain in force. Durable extension IDs/acceptance status are in requirements.json (owner_extensions_20261015).
+
+- EXT-01: All chapter/side-story/classic quest markers and required interactions have reachable outdoor approaches; no unchecked fallback into a house. Audit night-state availability as well as coordinate geometry. Owner screenshot identifies c3_fly Sydney lantern lights; two blocked targets reproduced and repaired locally,9 ribbon/light geometry checks pass; whole target inventory remains open.
+- EXT-02: Autoplay makes legal meaningful progress, finishes supported activities, and reports inability/unfinished play accurately. Hanoi failure/false-green reproduced and corrected; coverage of all activities remains required.
+- EXT-03: Caro player identity keeps the same pink flower/green clover assignment on both devices, across turns/replay. Distinct synthetic names and actual rendered-piece comparison required.
+- EXT-04: Child-friendly crossing paths/warnings/signs on roads, using approved art/fonts and EN/VI guidance. Start from existing raised Aussie crossing; inventory crossings and fit additions to road/traffic geometry without creating obstacles or competing overlays. Preserve ROAD-010 town zebra convention unless this specific new request requires a documented exception; rural warning signs do not require indiscriminate road markings.
+- EXT-05: Redistribute decorations naturally with varied groupings across appropriate locations, keeping transformed footprints clear of roads, doors, required routes and water. Check both permanent and festival decorations, density/spacing and real rendered views across the map; preserve existing artwork, instancing, total budget and device performance. Old count-only checks do not establish natural placement.
+
+Extend the final evidence table with these rows and source-attributed real before/after pictures. Missing pictures remain explicitly missing. No extension authorizes main merge, release or deployment.
+
+### Further owner guidance in the same authorized round
+
+- EXT-06: Audio and microphone/speaker controls on desktop sit consistently below navigation. Latest local five-view EN/VI/landscape/desktop bounds check passes; newest attributed comparisons still needed.
+- EXT-07: Henry's latest explicit instruction, “Full pack download when there is wifi”, supersedes the earlier manual-full radio choice. Core/nearby first; automatic full selected-language pack on Wi-Fi; enabled bilingual speech includes both. Preserve separate mobile-data consent and existing cache. Verify changes of language/connection during download.
+- EXT-08: The target-shaped button next to companion feeding explains the companion hat savings goal on tap. Buying must be an explicit action after that explanation. Meaning found in kidplay .c-goal; implementation, bilingual speech and proof remain open.
+
+These extend every earlier work order; no full-round completion, deployment, release or main merge is authorized by this addition.

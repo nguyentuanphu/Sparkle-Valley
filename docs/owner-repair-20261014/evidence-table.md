@@ -67,3 +67,20 @@ Approved BEFORE source: R74 `6a6ae885f86ad58a52688782eeba1d5417985fe9`. Current 
 Backend points require redacted persistence/receipt/retry proof, rather than a UI picture alone. The fresh focused result is [resumed-focused-9-checks.json](evidence/resumed-focused-9-checks.json), at the exact saved code checkpoint above. It is not a full-suite result. Additional engineering and device-identity requirements remain in requirements.json and WO-19.
 
 Diagnostic full suite: https://github.com/nguyentuanphu/Sparkle-Valley/actions/runs/38556313225 (candidate ee145bd1); draft https://github.com/nguyentuanphu/Sparkle-Valley/pull/300. AI review did not finish despite its green workflow wrapper. No release approval.
+
+
+## Additional owner points · 15 October 2026 AEDT
+
+| Point | Actual BEFORE picture | Actual AFTER picture | Implementation status | Test proof | Remaining gaps |
+|---|---|---|---|---|---|
+| EXT-01 Sydney blocked lights; all quests/story targets reachable | Owner supplied actual c3_fly house-blockage picture in chat; archived matching R74 picture missing | Missing source-attributed matching picture | Sydney placement repaired; broader all-target invariant audit in progress | Red:2 of3 Sydney lights blocked; after:all9 ribbon/light targets clear, ownerquesttargets40s | Classic/side stories/all chapter steps, night states, approach/path proof and comparisons |
+| EXT-02 Autoplay understands play and completes games | Missing actual matching picture; saved failure output179 taps/89 wrongs/false ok | Missing actual matching picture | Hanoi legal plan and truthful non-completion report repaired; Caro plan added | Real Hanoi completes45s; red/green files new-owner-bugs-*.json | Full activity catalogue, stop/retry/level coverage and pictures |
+| EXT-03 Stable Caro player colors on both devices | Missing actual matching two-device picture | Missing actual matching two-device picture | Global seat mapping retained, placed-piece/turn identity explicit; distinct-player validation passed locally | netgames150s:host pink flower and guest green clover on both boards every move, same winner EN/VI | Replay/board sizes, source-attributed photos and physical-device reproduction |
+| EXT-04 Road crossing paths/signs/warnings for children | Missing source-attributed crossing views; existing town/Aussie zebra artwork located | Missing | Queued; reuse existing road/art conventions | No new crossing implementation proof yet | Crossing inventory, bilingual guidance, clearance, behavior, pictures and performance |
+| EXT-05 Natural varied decoration distribution; no road clutter | Missing source-attributed map-wide views | Missing | Town-road mask repaired; natural festival lantern/flag/pole distribution unfinished | Red10 town-road violations; corrected130 placements clear, ownerfestplacement39s | Density/spacing across all places, actual views and performance |
+
+| EXT-06 Desktop Audio/Mic below navigation | Missing matching picture | Missing latest candidate picture | Local implementation;5 view cases + resize pass | audio-festival-final-8-checks.json, owneraudiobounds | Recapture and attribute screenshots |
+| EXT-07 Full selected-language voices automatically on Wi-Fi after core/nearby | Missing policy picture | Missing verified policy picture | Existing policy; verification pending | Source inspection only for latest preference | Language-switch/download race and complete policy check |
+| EXT-08 Target-shaped hat savings button explains on tap | Missing picture | Missing picture | Queued | Identified .c-goal; no fix proof | Help then explicit purchase, EN/VI voices and evidence |
+
+These rows extend the59-point table; no older requirement is removed or considered satisfied by a new request. Local results above are bounded emulated checks, not production/physical-device or release approval. Current source checkpoint583915e9 is isolated at work/owner-repair-checkpoint-20261015; draftPR300 full suite38601628166 still tests older dd91f33b.
