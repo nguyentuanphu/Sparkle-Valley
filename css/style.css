@@ -2591,3 +2591,16 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 .sv2 .who-card:not(.first) { height:min(780px,calc(100dvh - 120px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); overflow:hidden; }
 .who-body { flex:1; min-height:0; width:100%; overflow-y:auto; display:flex; flex-direction:column; align-items:center; gap:12px; }
 .who-body > * { flex-shrink:0; } .who-footer { flex:none; margin:8px auto 0; }
+
+/* Keep a hint above the phone's action and movement controls, including long Vietnamese text. */
+@media (max-width:700px) and (min-height:521px) {
+  body.touch .htoast { bottom:calc(env(safe-area-inset-bottom) + 330px); white-space:normal; overflow:visible; text-overflow:clip; width:max-content; max-width:calc(100% - 32px); line-height:1.3; }
+}
+
+/* Settings keep their header/footer outside the scrolling body, so Save never covers a note. */
+.grownups .card { height:min(900px,calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px)); overflow:hidden; padding-bottom:18px; }
+.grownups .card > h2, .grownups .card > .x { flex:none; }
+.grownups-body { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:16px; padding-bottom:16px; }
+.grownups-body > * { flex-shrink:0; }
+.grownups #gDone { position:static; flex:none; margin:4px auto 0; box-shadow:none; }
+.wardrobe-content .whead .x { font-size:16px; min-width:64px; }

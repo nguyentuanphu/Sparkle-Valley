@@ -78,7 +78,11 @@ async function flush() {
   // while another was being sent (an error just as a "slow" report went) used to be lost when the old list was kept
   const same = (x, r) => x && x.at === r.at && x.kind === r.kind && (x.auto || '') === (r.auto || '') && (x.detail || '') === (r.detail || '') && (x.note || '') === (r.note || '');
   try {
-    for (const r of queue()) {
+    const attempted = new Set();
+    while (true) {
+      const r = queue().find(row => !attempted.has(row.clientId));
+      if (!r) break;
+      attempted.add(r.clientId);
       delivery(r.clientId, { state: 'sending' }); let res = null; try { res = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) }); } catch (e) { delivery(r.clientId, { state: 'retry' }); break; }
       if (!res.ok) { delivery(r.clientId, { state: 'retry', status: res.status }); if ([400,413].includes(res.status)) continue; break; }
       let receipt; try { receipt = await res.json(); } catch { delivery(r.clientId, { state: 'retry' }); break; }
@@ -245,9 +249,11 @@ async function retest() {
 // ---------- the auto play check by itself, on a new version (at night or while charging) ----------
 async function nightly() {
   const ap = get(KEY.ap, {}); const rep = get('sv2_autoplay_report', null);
-  // what the last run found (the check restarts the game when it ends): sent once
-  if (rep && rep.build && rep.at && !rep.reportIds?.length && ap.sent !== rep.at) { ap.sent = rep.at; put(KEY.ap, ap);
-    for (const d of rep.done || []) if (d.problems && d.problems.length) autoReport('autoplay', `${d.name || d.key}: ${d.problems.join('; ')}`.slice(0, 200), { area: 'autoplay', place: '', game: d.g === 'games' ? d.key : '', window: d.g || '', x: 0, z: 0 }); }
+  // Recover legacy reports into the same receipt-backed outbox as a current run.
+  if (rep && rep.build && rep.at && !rep.reportIds?.length && ap.sent !== rep.at) {
+    const result = await sendAutoplayReport(rep);
+    if (result.state !== 'disabled') { rep.reportIds = result.ids; rep.reportState = result.state; put('sv2_autoplay_report', rep); ap.sent = rep.at; put(KEY.ap, ap); await flush(); }
+  }
   if (ap.ran === BUILD) return;
   const charging = await (navigator.getBattery ? navigator.getBattery().then(b => b.charging).catch(() => false) : Promise.resolve(false)), h = new Date().getHours();
   if (!charging && !(h >= 0 && h < 6)) return;

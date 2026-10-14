@@ -27,6 +27,13 @@ window.svOfferUpdate = () => {
   const close = document.createElement('button'); close.textContent = '×'; close.setAttribute('aria-label', lang === 'vi' ? 'Để sau' : 'Later'); close.onclick = () => n.remove();
   n.append(label, button, close); document.body.appendChild(n);
 };
+// Begin saving the shell and assets while the world builds, rather than waiting for it to finish.
+if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    if (reg.waiting) window.svOfferUpdate();
+    reg.addEventListener('updatefound', () => { const next = reg.installing; next?.addEventListener('statechange', () => { if (next.state === 'installed' && navigator.serviceWorker.controller) window.svOfferUpdate(); }); });
+  }).catch(() => {});
+}
 addEventListener('unhandledrejection', e => { if (/import.*module|module.*fetch|module script/i.test(String(e.reason?.message || e.reason))) window.svOfferUpdate(); });
 await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 try { await import('./main.js'); }

@@ -491,7 +491,7 @@ function place() {
 function drag(handle) {
   handle.onpointerdown = e => {
     if (e.target.closest('button')) return;
-    const r = root.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top; handle.setPointerCapture(e.pointerId);
+    const r = root.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top; if (e.isTrusted) handle.setPointerCapture(e.pointerId);
     handle.onpointermove = m => { ui.x = m.clientX - dx; ui.y = m.clientY - dy; place(); };
     handle.onpointerup = () => { handle.onpointermove = null; put(UI, ui); };
   };

@@ -1,6 +1,6 @@
 # Work order: family photos and connecting devices
 
-Status: included in the owner's combined round (14 Oct, 9:07 am AEDT). Detailed flow/recovery design remains to be settled before dependent implementation; no deployment approved. See docs/cores/tasks/owner-ui-audit-20261014.md for the combined scope and sequence.
+Status: implemented on `work/owner-round-20261014` for the approved combined round; verification in progress, not deployed. The original proposal below is retained as design history. Current implementation and acceptance evidence follow at the end.
 Owner request: 14 October 2026 AEDT, "Correct add this in as work order, lets discuss further on other bugs."
 Follow-up: how connecting/transferring to another device works and what appears in parents' settings.
 
@@ -62,3 +62,12 @@ This is a work order only. The live r74 feature is unchanged.
 
 ## Round integration · 14 Oct 2026 AEDT
 Included in this same round, not a later release. Bind photos to stable NPC IDs so renaming does not break them; a deleted/recreated NPC requires explicit rebinding. Private photo data does not belong in the public GitHub code repository. Include backup/export and host-migration handling; moving away from Netlify does not automatically transfer private Blobs to GitHub. Resolve all-old-devices-lost recovery before implementing that flow. Profile/progress sync is not implied by photo pairing.
+
+
+## Implemented flow and recovery — 14 Oct 2026 AEDT
+- Parent-owned private collections use a temporary, one-use pairing code valid for ten minutes. The already connected device approves the new device before it can read photos.
+- Setup saves a private recovery file. It reconnects the family if every device is lost. Photo backups work offline for cached photos and can be restored on a new host; nothing automatically copies private images to GitHub. Keep recovery files private. This implementation choice was disclosed in the combined batch; it adds no parent account or child-progress sync.
+- Photo bindings use registered avatar IDs; display-name changes keep the ID. Deleted/recreated characters require explicit reassignment to an empty slot. The picker excludes objects that cannot display a photo.
+- Browser photo bytes live in Cache API, with small timestamps in localStorage. Offline copies remain viewable. Revocation clears cached copies on the device's next successful online authorization check; an offline device cannot learn it has been revoked.
+- Earlier shared-photo access is preserved under the folded Earlier photo code option. New families use the prominent Family photos and devices section without contacting the game owner.
+- Passed: isolated-family/approval/expiry/recovery/migration/concurrent-upload unit checks; two isolated browser devices for approval, transfer/postcards, metadata-only localStorage, offline cache/backup and revoked-device clearing. The real deployed Netlify function, full suite and hardware review remain release gates.

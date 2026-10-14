@@ -5,7 +5,7 @@ import { launch, open, clear } from './harness.mjs';
 const browser = await launch(); fs.mkdirSync('out/owner-round', { recursive: true });
 const results = [];
 try {
-  for (const [w, h, touch, lang] of [[390,844,true,'en'],[390,844,true,'vi'],[820,1180,true,'en'],[1280,800,false,'en']]) {
+  for (const [w, h, touch, lang] of [[390,844,true,'en'],[390,844,true,'vi'],[820,1180,true,'en'],[1280,800,false,'en'],[844,390,true,'en'],[844,390,true,'vi']]) {
     const P = await open(browser, { w, h, touch, lang }); const { page } = P; await clear(page);
     await page.evaluate(() => window.__sv.openPad(0, 'shop')); await page.waitForSelector('.pad .shop-content');
     assert.equal(await page.locator('.modal.pad').count(), 1); assert.equal(await page.locator('.modal.shopk').count(), 0);
@@ -21,6 +21,10 @@ try {
     await page.click('.pad-head .x'); await page.waitForTimeout(250);
     await page.click('.hud .dk.snd'); await page.waitForSelector('.audio-tray'); await page.screenshot({ path: `out/owner-round/audio-${w}-${lang}.png` }); await page.click('.audio-tray .ss-done');
     const compass = await page.locator('.hud .z-where').isVisible(); assert.equal(compass, false);
+    if (touch && w <= 700 && h > 520) {
+      const hint = await page.evaluate(() => { const G=window.__sv; G.huds[0].toast('A special surprise is nearby. Touch it gently when you find it.'); const a=document.querySelector('.hud .htoast').getBoundingClientRect(), b=document.querySelector('.hud .moves').getBoundingClientRect(); return { hint:{top:a.top,bottom:a.bottom,left:a.left,right:a.right}, moves:{top:b.top,bottom:b.bottom,left:b.left,right:b.right} }; });
+      assert.ok(hint.hint.bottom < hint.moves.top, JSON.stringify(hint)); await page.screenshot({path:`out/owner-round/hint-${w}-${lang}.png`});
+    }
     await page.evaluate(() => window.__sv.openGamesHub(0)); await page.waitForSelector('.hubbody');
     await page.locator('.hplay').first().click(); await page.waitForSelector('.gl', { timeout: 60000 }); await page.click('.gl-x');
     await page.waitForSelector('.hubbody'); assert.ok(await page.locator('.hubbody').isVisible());
@@ -29,8 +33,14 @@ try {
     await page.screenshot({ path: `out/owner-round/settings-${w}-${lang}.png` });
     assert.ok(await page.locator('.family-device-panel').count());
     const controls = await page.locator('.grownups #gDone').boundingBox(); assert.ok(controls.x >= 0 && controls.x + controls.width <= w && controls.y + controls.height <= h);
+    const body=await page.locator('.grownups-body').boundingBox(); assert.ok(body.y+body.height<=controls.y,JSON.stringify({body,controls}));
     assert.equal(P.errors.length, 0, P.errors.join('\n'));
     results.push({ w,h,lang, passed:true }); await P.ctx.close();
+  }
+  for (const [w,h] of [[390,844],[844,390]]) {
+    const Q = await open(browser,{w,h,touch:true,play:false}); await Q.page.click('.screen.title .press',{force:true}); await Q.page.waitForSelector('.screen.who');
+    const a=await Q.page.locator('.who-card').boundingBox(); await Q.page.click('.modes [data-m="split"]'); const b=await Q.page.locator('.who-card').boundingBox(); assert.ok(Math.abs(a.y-b.y)<1 && Math.abs(a.height-b.height)<1,JSON.stringify({a,b}));
+    const go=await Q.page.locator('.who .go').boundingBox(); assert.ok(go.y>=0 && go.y+go.height<=h,JSON.stringify(go)); await Q.page.screenshot({path:`out/owner-round/who-${w}.png`}); assert.deepEqual(Q.errors,[]); await Q.ctx.close(); results.push({who:w,passed:true});
   }
   const P = await open(browser, { w:390,h:844,touch:true }); await clear(P.page);
   const games = ['rulefinder','gardenorder','steppingpath','rd_listentouch','rd_storychoice'];

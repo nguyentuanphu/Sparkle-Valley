@@ -9,6 +9,7 @@ const route = async ctx => ctx.route('**/api/family-devices/*', async r => {
   try { const req=r.request(), token=(req.headers().authorization || '').replace(/^Bearer /,''); const value=await familyAction(store,new URL(req.url()).pathname.split('/').pop(),req.postDataJSON(),token); await r.fulfill({status:200,json:value}); }
   catch(e) { await r.fulfill({status:e.status || 500,json:{error:e.message}}); }
 });
+fs.mkdirSync('out/owner-round',{recursive:true});
 const browser=await launch();
 async function panel(page) { await clear(page); await page.evaluate(async()=>{const U=await import('/js/ui.js'); U.openGrownups();}); await page.locator('[data-sec="familydevices"] > summary').click(); }
 try {

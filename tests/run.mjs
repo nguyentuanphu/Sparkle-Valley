@@ -5009,6 +5009,21 @@ await check('reading', async () => {
   return `${sampled('reading') ? 'SAMPLE (each game once per language, level by turn; all when reading files change): ' : ''}switch off: nothing loads or shows; on: 10 games in the Reading corner (7 for under-5s), all finish at Easy, Medium, Hard and for under-5s in English and Vietnamese; ${en} English and ${vi} Vietnamese lines`;
 });
 
+// Owner-approved interface contracts: end-to-end screen, privacy and composed-capture regressions.
+async function ownerSmoke(file) {
+  const { execFileSync } = await import('node:child_process');
+  return execFileSync(process.execPath, [file], { encoding:'utf8', timeout:600000, maxBuffer:1048576 }).trim();
+}
+await check('ownerround', async () => {
+  return await ownerSmoke('owner-round-smoke.mjs');
+});
+await check('ownerfamily', async () => {
+  return await ownerSmoke('owner-family-smoke.mjs');
+});
+await check('ownercapture', async () => {
+  return await ownerSmoke('owner-capture-smoke.mjs');
+});
+
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);

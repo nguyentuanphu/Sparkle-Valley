@@ -1,6 +1,6 @@
 # Work order: Backpack item help and compact food confirmation
 
-Status: queued for the current bug/work-order discussion; implementation and release have not started.
+Status: implemented on `work/owner-round-20261014` in the combined owner round; verification in progress, not deployed. Compact item help, explicit actions and food confirmation are in js/ui.js. Screen checks cover phone EN/VI, tablet, computer and landscape; the full suite remains a release gate.
 Owner request: 14 October 2026 AEDT: "Expand this to all items in bag; when tapping food to eat the dialogue box is too big; make it more discrete and save space but enough for kids to see."
 
 ## Required outcome

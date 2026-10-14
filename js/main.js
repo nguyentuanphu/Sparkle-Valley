@@ -1891,6 +1891,5 @@ document.addEventListener('click', e => { const c = e.target.closest && e.target
 import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { if (playing) keepSpot(); save(); hush(); } });
 addEventListener('pagehide', () => { if (playing) keepSpot(); saveProfiles(true); });
-if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) navigator.serviceWorker.register('sw.js').then(reg => { if (reg.waiting) window.svOfferUpdate?.(); reg.addEventListener('updatefound', () => { const next = reg.installing; next?.addEventListener('statechange', () => { if (next.state === 'installed' && navigator.serviceWorker.controller) window.svOfferUpdate?.(); }); }); }).catch(() => { });
 bootMark('ready'); G.bootTimes = bootTimes; bootDone();
 { const refresh = () => import('./familydevices.js').then(m => m.refreshDevicePhotos()).catch(() => {}); refresh(); addEventListener('online', refresh); setInterval(refresh, 60000); }

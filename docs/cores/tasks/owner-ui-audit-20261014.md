@@ -1,7 +1,7 @@
 # Owner review: stable screens, startup, testing and play
 Date: 14 October 2026 AEDT. Baseline: main r74, commit 6a6ae885f86ad58a52688782eeba1d5417985fe9.
 Branch: docs/family-device-work-order-20261014.
-Status: reviewed source, supplied screenshots and all 60 open GitHub issues; proposed implementation batches. No runtime change, release, or claim of complete device verification.
+Status: original audit reviewed source, supplied screenshots and all 60 open GitHub issues. The owner subsequently authorized all items in one batch; candidate r75 is implemented on work/owner-round-20261014 and under verification in draft PR #195. Current results and remaining gates are recorded in docs/cores/release.md. No deployment or claim of complete physical-device verification.
 
 ## Evidence and limits
 The supplied HUD and bug screenshot identify r73. Current released code is r74. Source findings below are still present on r74. Static screenshots demonstrate icon scale and mirror/report problems but cannot establish continuous window movement. Physical iPhone reproduction, authenticated Studio interaction and a complete runtime screen sweep remain required. Previously passing startup/performance checks do not prove a pleasant first paint or a stable keyboard layout.
