@@ -68,3 +68,9 @@ First after run: ownerquesttargets/ownertalesync/ownerautoplaystrategy/unit/type
 - Festival town road mask now follows the actual TOWN anchor instead of stale absolute coordinates. Natural map-wide lantern/flag/pole distribution remains open.
 - Focused8/8 pass, including five viewport/language cases, resizing, independent audio, actual town-road placement, tester reporting and static checks. See evidence/audio-festival-final-8-checks.json.
 - Latest owner voice preference: automatically download the full selected-language pack on Wi-Fi after core/nearby voices. Earlier manual-full radio preference is superseded. Family CI failure investigation remains unresolved; no full-suite or release pass claimed.
+
+## Companion hat target-button help
+
+- Before actual tap spent30 coins immediately. After tap opens the existing game dialogue explaining companion hat saving, price and saved coins; Buy and Cancel are explicit, purchase rechecks current hat and balance.
+- Focused6/6 passes including real EN/VI phone taps and existing companion/gift/Studio-switch contracts. Speech recordings/pictures remain pending.
+- Preserve exact active87f9d334 diagnostic suite; do not attribute later local goal repair to its results. Normalize status glyphs in saved logs to comply with unchanged no-emoji docs check; separate static3/3 passes.

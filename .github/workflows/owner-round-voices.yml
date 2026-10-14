@@ -2,7 +2,7 @@
 name: Owner round voices
 on:
   push:
-    branches: [work/owner-round-20261014, work/owner-repair-20261014]
+    branches: [work/owner-round-20261014, work/owner-repair-20261014, work/owner-repair-checkpoint-20261015]
     paths: ['js/**', 'tools/voice-extra.json', '.github/workflows/owner-round-voices.yml']
   workflow_dispatch:
 permissions:

@@ -853,16 +853,16 @@
       "id": "EXT-07",
       "workOrder": "WO-08/16",
       "requirement": "Core and nearby voices first, then automatically download the full selected-language pack on Wi-Fi; explicit bilingual speech includes both languages. Mobile-data consent stays separate.",
-      "status": "verification-pending",
-      "proof": "Latest explicit owner Wi-Fi instruction supersedes earlier manual-only radio preference; source already supports automatic Wi-Fi rest download. Full policy and language-switch race verification pending.",
+      "status": "partial",
+      "proof": "Bounded six-file Node22 real-downloader regression failed before, passed44s after queued recheck/language snapshot repair. Full selected-language Wi-Fi policy retained; full asset/connection/device verification pending.",
       "releaseApproved": false
     },
     {
       "id": "EXT-08",
       "workOrder": "WO-01/07",
       "requirement": "The target-shaped companion hat savings button explains its purpose on tap; purchase requires an explicit action.",
-      "status": "queued",
-      "proof": "Identified kidplay .c-goal as companion hat savings/purchase; current immediate-spend behavior still needs repair and regression.",
+      "status": "partial",
+      "proof": "Red actual tap spent30 coins; EN/VI phone now explains without spending, Cancel retains coins and explicit Buy/rechecked balance passes. Focused6/6. New EN/VI fixed explanation recordings and matching pictures still pending.",
       "releaseApproved": false
     }
   ]

@@ -2132,6 +2132,43 @@ await check('yard', async () => {
   if (out.length) throw new Error(out.join('; '));
   return `the yard ${info.far.toFixed(0)} m from the shop, ${info.room.toFixed(0)} m of room; a side story (goal bar stays on the lantern story until Follow); coach, jobs (a wrong one turned down), dump truck (load, hold the pedal, pull the lever), excavator (drag the arm), bricks and roof by hand, and the meal played through; free play after`;
 });
+await check('ownerkidgoal', async () => {
+  for (const lang of ['en','vi']) {
+    const P=await open(b,{w:390,h:844,touch:true,lang});
+    const tapGoal=async()=>{
+      const box=await P.page.locator('.c-goal:visible').boundingBox();ok(box,'goal button visible');
+      const x=box.x+box.width/2,y=box.y+box.height/2;
+      ok(await P.page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('.c-goal'),{x,y}),'goal button receives the tap');
+      await P.page.mouse.click(x,y); // the existing ready chip pulses continuously; its centre remains tappable
+    };
+    try {
+      await clear(P.page);
+      await P.page.evaluate(async()=>{
+        const G=__sv,h=G.heroes[0],S=await import('/js/state.js');
+        h.profile.lanterns={companion:'firefly',done:{p_owl:true},chapters:{}};
+        G.lanterns.companions.sync();G.addCoins(100-S.farm.coins);G.kidplay.refresh();
+      });
+      await tapGoal();await P.page.waitForTimeout(250);
+      const read=()=>P.page.evaluate(async()=>({coins:(await import('/js/state.js')).farm.coins,hat:__sv.heroes[0].profile.lanterns.pet?.hat||null}));
+      const first=await read();ok(first.coins===100&&!first.hat,'explaining the goal must not spend coins: '+JSON.stringify({lang,first}));
+      await P.page.waitForSelector('.dialog .dchoices button');
+      const text=await P.page.locator('.dialog .dtext').innerText();
+      ok((lang==='en'?/hat.*companion|companion.*hat/i:/mũ.*bạn đồng hành|bạn đồng hành.*mũ/i).test(text),'goal purpose missing: '+text);
+      await P.page.locator('.dialog .dchoices button').last().click();await P.page.waitForTimeout(300);
+      ok((await read()).coins===100,'cancel keeps all coins');
+      await tapGoal();await P.page.locator('.dialog .dchoices button').first().click();await P.page.waitForTimeout(600);
+      const bought=await read();ok(bought.coins===70&&bought.hat==='party','explicit first-hat purchase only: '+JSON.stringify(bought));
+      await tapGoal();
+      // Another action can change the shared coins while help is open: never overdraw.
+      await P.page.evaluate(async()=>{const S=await import('/js/state.js');__sv.addCoins(0-S.farm.coins);});
+      await P.page.locator('.dialog .dchoices button').first().click();await P.page.waitForTimeout(400);
+      const raced=await read();ok(raced.coins===0&&raced.hat==='party','purchase rechecks the balance');
+      ok(!P.errors.length,P.errors.join(' | '));
+    } finally {await P.ctx.close();}
+  }
+  return 'EN/VI phone: target tap explains companion hat saving without spending; Cancel keeps coins; explicit Buy spends exactly30; stale balance cannot overdraw';
+});
+
 await check('kidplay', async () => {
   // (round R, owner 9 Oct: "add these in and add to the studio so we can switch on/off") the companion is fed once a day
   // and grows (a trick from size 3), a coin goal buys it a hat, a gift waits by a landmark each day, the story's films
@@ -2151,7 +2188,7 @@ await check('kidplay', async () => {
     G.kidplay.feed(h); await w(100); out.trick = !!G.lanterns.companions.of(h).trick;
     // the coin goal: a hat
     const c0 = S.farm.coins; G.addCoins(100 - c0); await w(700); out.goalReady = chip('c-goal').classList.contains('ready');
-    chip('c-goal').click(); await w(400); out.hat = pet.hat; out.coinsAfter = S.farm.coins; out.hatOn = !!G.lanterns.companions.of(h).hat;
+    chip('c-goal').click(); await w(250); out.helpKeepsCoins = S.farm.coins === 100 && !pet.hat; document.querySelector('.dialog .dchoices button')?.click(); await w(400); out.hat = pet.hat; out.coinsAfter = S.farm.coins; out.hatOn = !!G.lanterns.companions.of(h).hat;
     // the daily gift
     const gift = G.interactables.find(i => i.id === 'gift_today'); out.giftSeen = gift.visible(h); const cg = S.farm.coins; gift.act(h); out.giftCoins = S.farm.coins - cg; out.giftAfter = gift.visible(h);
     // the Skip button on a story film
@@ -2175,7 +2212,7 @@ await check('kidplay', async () => {
   if (r.fed1 !== 1 || r.fedAgain !== 1) bad.push(`feeding is not once a day (${r.fed1}, ${r.fedAgain})`);
   if (!(r.level >= 3) || !(r.scale > 1.2)) bad.push(`the companion did not grow (level ${r.level}, size ${r.scale})`);
   if (!r.trick) bad.push('no trick at size 3');
-  if (!r.goalReady || r.hat !== 'party' || r.coinsAfter !== 70 || !r.hatOn) bad.push('the coin goal did not buy the hat ' + JSON.stringify(r));
+  if (!r.helpKeepsCoins || !r.goalReady || r.hat !== 'party' || r.coinsAfter !== 70 || !r.hatOn) bad.push('the coin goal did not buy the hat ' + JSON.stringify(r));
   if (!r.giftSeen || r.giftCoins !== 15 || r.giftAfter) bad.push('the daily gift ' + JSON.stringify({ seen: r.giftSeen, coins: r.giftCoins, after: r.giftAfter }));
   if (!r.skip || !r.skipClosed) bad.push('no Skip button on the story film');
   if (!r.offChips || !r.offGift || r.offLevel !== 1 || r.offSimple || !r.offSkip) bad.push('a Studio switch did not turn its part off ' + JSON.stringify(r));
@@ -5184,7 +5221,7 @@ await check('reading', async () => {
 // Owner-approved interface contracts: end-to-end screen, privacy and composed-capture regressions.
 async function ownerSmoke(file) {
   const { execFileSync } = await import('node:child_process');
-  try { return execFileSync(process.execPath, [file], { encoding:'utf8', timeout:600000, maxBuffer:1048576 }).trim(); }
+  try { return execFileSync(process.execPath, [file], { encoding:'utf8', timeout:600000, maxBuffer:1048576 }).trim().replace(/\s+/g,' '); }
   catch (error) {
     // Preserve assertion/timeout diagnostics from the synthetic owner fixtures; the wrapper's
     // generic 'Command failed' otherwise hides the reason in shard and isolated retries.

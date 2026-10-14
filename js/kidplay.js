@@ -1,7 +1,7 @@
 // What keeps little ones coming back (round R, owner 9 Oct: "add these in and add to the studio so we can switch on/off"):
 //   companionGrow  feed the companion once a day (a button by the coins); every two days of food it grows a little, its
 //                  glow changes, and from size 3 it does a loop-the-loop when asked
-//   saveGoal       a coin goal next to the coins: a hat for the companion; when there are enough coins, tap to buy it
+//   saveGoal       a coin goal next to the coins: explain a hat for the companion, then explicitly choose Buy
 //   dailySurprise  each day a gift box waits by one of the landmarks (a different one each day); open it for coins
 // Everything is kept in profile.lanterns.pet and profile.gift. Studio switches in js/content/releases.js (group 'kids').
 import { THREE, P, merge, toonVC } from './gfx.js';
@@ -27,6 +27,7 @@ export const KID_LINES = {
   full: ['I am full today. See you tomorrow!', 'Hôm nay mình no rồi. Mai gặp lại nhé!'],
   bought: ['A new hat! Thank you, it is perfect.', 'Mũ mới! Cảm ơn bạn, đẹp quá.'],
   saving: ['Keep collecting coins for my new hat!', 'Cứ gom thêm tiền để mua mũ mới cho mình nhé!'],
+  goal: ['Save coins for a hat for your companion. Choose Buy when you are ready.', 'Để dành tiền mua mũ cho bạn đồng hành. Chọn Mua khi con đã sẵn sàng.'],
   gift: ['A surprise gift! Come back tomorrow for another one.', 'Một món quà bất ngờ! Mai quay lại có quà khác nữa nhé.'],
   giftHint: ['There is a surprise gift in the valley today. Can you find it?', 'Hôm nay có một món quà bất ngờ trong thung lũng. Con tìm được không?']
 };
@@ -64,11 +65,26 @@ export function createKidPlay(G, { say, save }) {
   }
   // ---------- the coin goal ----------
   const nextHat = h => HATS.find(x => !pet(h.profile).hats.includes(x.id));
-  function buy(h) {
-    const x = nextHat(h); if (!x) return;
+  function buy(h, expectedHat) {
+    const x = nextHat(h); if (!x || (expectedHat && x.id !== expectedHat)) return;
     if (farm.coins < x.price) { say(...KID_LINES.saving); return; }
     G.addCoins && G.addCoins(-x.price); const s = pet(h.profile); s.hats.push(x.id); s.hat = x.id; G.tried && G.tried(h, 'saveGoal'); save();
     comps() && comps().trick(h, 'spin'); say(...KID_LINES.bought);
+  }
+  let goalOpening = false;
+  async function explainGoal(h) {
+    if (goalOpening) return;
+    const x = nextHat(h); if (!x || !G.dialog) return;
+    goalOpening = true;
+    try {
+      const can = farm.coins >= x.price;
+      const k = await G.dialog(T('Coin goal', 'Mục tiêu để dành'), [[
+        `${KID_LINES.goal[0]} ${x.en}: ${x.price} coins. Saved: ${farm.coins}.`,
+        `${KID_LINES.goal[1]} ${x.vi}: ${x.price} đồng. Đã để dành: ${farm.coins}.`,
+        ...KID_LINES.goal
+      ]], can ? [[`Buy · ${x.price} coins`, `Mua · ${x.price} đồng`], ['Cancel', 'Hủy']] : [['Cancel', 'Hủy']]);
+      if (can && k === 0) buy(h, x.id); // recheck both the current hat and balance after the explanation
+    } finally { goalOpening = false; }
   }
   // the two buttons beside the coins, in each child's own bar
   const chips = new Map();
@@ -79,7 +95,7 @@ export function createKidPlay(G, { say, save }) {
     const tl = hud.root.querySelector('.hud-tl'); if (!tl) return null;
     const row = document.createElement('div'); row.className = 'kidrow'; tl.appendChild(row);
     const feedB = document.createElement('button'); feedB.className = 'chip c-pet'; feedB.onclick = e => { e.stopPropagation(); feed(h); };
-    const goalB = document.createElement('button'); goalB.className = 'chip c-goal'; goalB.onclick = e => { e.stopPropagation(); buy(h); };
+    const goalB = document.createElement('button'); goalB.className = 'chip c-goal'; goalB.onclick = e => { e.stopPropagation(); void explainGoal(h); };
     row.append(feedB, goalB); c = { feed: feedB, goal: goalB, key: '' }; chips.set(hud, c); return c;
   }
   function refresh() {
@@ -93,7 +109,7 @@ export function createKidPlay(G, { say, save }) {
       c.feed.hidden = !showFeed; c.goal.hidden = !showGoal || (narrow && !can);
       if (showFeed) { c.feed.innerHTML = fedToday ? (level(h) >= 3 ? pic('✨') + `<small>${T('Trick', 'Biểu diễn')}</small>` : pic('😊') + `<small>${T('Full', 'No rồi')}</small>`) : pic('🍓') + `<small>${T('Feed', 'Cho ăn')}</small>`;
         c.feed.setAttribute('aria-label', fedToday ? T('Do a trick', 'Biểu diễn') : T('Feed your friend', 'Cho bạn ăn')); c.feed.classList.toggle('ready', !fedToday); }
-      if (showGoal) { c.goal.innerHTML = pic('🎯') + `<small>${narrow ? '' : T(x.en, x.vi) + ' '}${Math.min(farm.coins, x.price)}/${x.price}</small>`; c.goal.classList.toggle('ready', !!can); c.goal.setAttribute('aria-label', T('Coin goal', 'Mục tiêu để dành')); }
+      if (showGoal) { c.goal.innerHTML = pic('🎯') + `<small>${narrow ? '' : T(x.en, x.vi) + ' '}${Math.min(farm.coins, x.price)}/${x.price}</small>`; c.goal.classList.toggle('ready', !!can); c.goal.setAttribute('aria-label', T('About your companion hat goal', 'Về mục tiêu mũ cho bạn đồng hành')); }
     }
   }
 

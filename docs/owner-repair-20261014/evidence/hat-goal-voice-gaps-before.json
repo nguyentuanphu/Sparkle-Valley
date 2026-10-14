@@ -1,0 +1,16 @@
+{
+  "lines": 8102,
+  "parts": 1805,
+  "templates": 243,
+  "areas": 27,
+  "reasons": {
+    "built while playing (say with a variable): collected by tools/voice-harvest.mjs into tools/voice-extra.json": 388,
+    "a child's, friend's or pet's name: shown, never recorded or spoken (HANDOFF rule 11)": "every gap that is a name"
+  },
+  "bad": [
+    "not recorded (en fm): Save coins for a hat for your companion. Choose Buy when you are ready.",
+    "not recorded (vi fm): Để dành tiền mua mũ cho bạn đồng hành. Chọn Mua khi con đã sẵn sàng."
+  ],
+  "scope": "Coverage before recording the new companion hat explanation; source still local, four MP3 recordings expected.",
+  "kidplaySha256": "159ca194a87061b1d3fc1e6f575a737a0d3aac3b92b6445e50d752425b7cb485"
+}

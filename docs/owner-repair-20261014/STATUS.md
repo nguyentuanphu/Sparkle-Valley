@@ -131,3 +131,18 @@ Latest Wi-Fi voice preference overrides earlier manual-full selection: full sele
 ## Environment restart interruption · 15 October 2026 AEDT
 
 A managed environment restart killed all HTTP/PeerJS/MQTT servers and the active Node22 six-check run. Workspace, source edits, pinned Chromium1194 and Node22.23.3 survived. Saved evidence/voice-family-interrupted-node22.txt records completed ownervoicewifi44s, arch, bilingual, rules and types; ownerfamily did not finish, so the combined run has no aggregate pass. tests/out/suite-result.json still belongs to the previous failed pre-fix Wi-Fi regression and must not be relabelled as the interrupted run. Recheck with restored services; no failure/skip waived. User was notified immediately.
+
+
+## Restored runtime / bounded family rerun
+
+After service restoration, ownerfamily passed alone under Node22.23.3 in229s with the same family game source. Saved family-node22-after-restart.json and complete child-stage log family-node22-after-restart.txt. This is a bounded successful rerun, not proof the earlier GitHub/local failure cause was fixed; intermittent behavior/CI remains unresolved until exact-candidate full-suite diagnosis. Successful child output is now flattened too, so the suite parser keeps the full proof rather than only its first stage. Latest checked code checkpoint87f9d334 is remote on work/owner-repair-checkpoint-20261015; repair branch/PR300 still older dd91f33b pending advancement.
+
+## Exact candidate diagnostic started / documentation check failure
+
+PR300 now tests87f9d334 via Full suite38613891343; still active, no pass inferred. Owner round voices38613883142 succeeded at this source. Checks38613891301 and38613883067 failed solely because the saved interrupted text log contains a status glyph forbidden in repository docs. Normalize status symbols to plain PASS/FAIL, keep original raw-log hashes and original local logs, rerun the unchanged emoji check; do not weaken its rule. Subsequent family log requires the same normalization. Exact87f9d334 suite will retain its actual result, with this known documentation defect; no cancellation/relabeling.
+
+## Companion hat goal focused repair
+
+Actual target-button tap reproduced immediate spending100 to70 plus party hat. Explanation now uses existing bilingual game dialogue, shows hat/price/savings, spends only on explicit Buy and rechecks balance/current hat. Cancel keeps coins; accessibility label names purpose. EN/VI phone ownerkidgoal94s plus existing kidplay51s and types/rules/bilingual/arch pass6/6. Independent emoji/preload/names3/3 passes after status-log normalization. Saved hat-goal-reproduction-before.json, hat-goal-focused-6-checks.json and plain-docs-static-3-checks.json.
+
+Two new fixed explanation translations need four f/m MP3 recordings; coverage currently identifies exactly those two missing lines, no other gaps. Record on isolated checkpoint branch without replacing active PR300 candidate87f9d334; latest code/photos/full suite remain separate scopes. Fresh source-verified87f9d334 comparison capture is active. No whole-round completion/deployment approval.
