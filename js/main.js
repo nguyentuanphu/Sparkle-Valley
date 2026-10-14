@@ -192,8 +192,8 @@ function nameTag(name, color = '#ffffff') {
   s.onBeforeRender = (r, sc, cam) => { s.material.opacity = Math.min(1, Math.max(0, (cam.position.distanceTo(s.position) - 5) / 5)); };
   return s;
 }
-function addNPC({ id, name, look, model, x, z, face = 0, icon = '💬', talk }) {
-  const A = model ? null : nameAvatar(buildAvatar(look, null), name, true, id), obj = model || A.root;
+function addNPC({ id, name, faceName, look, model, x, z, face = 0, icon = '💬', talk }) {
+  const A = model ? null : nameAvatar(buildAvatar(look, null), faceName || name, true, id), obj = model || A.root;
   const av = model ? null : obj;
   obj.position.set(x, world.groundAt(x, z), z); obj.rotation.y = face; scene.add(obj);
   const tag = nameTag(name); tag.position.set(x, obj.position.y + (model ? 3.4 : 2.0), z); scene.add(tag);
@@ -1773,7 +1773,7 @@ for (const c of (STUDIO_ON_MAP && Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : [])
   const look = { style: ['dress', 'shirt', 'aodai', 'tunic', 'overalls', 'hoodie'].includes(L.style) ? L.style : 'shirt', color: hex(L.color) || '#5fb0ff', hat: 'none', back: 'none', hair: hex(L.hair) || '#2a1d14', hairStyle: ['buns', 'short', 'long', 'ponytail', 'spiky'].includes(L.hairStyle) ? L.hairStyle : 'short', skin: hex(L.skin) || '#f1c6a4', glider: 0, age: L.age === 'old' || L.age === 'kid' ? L.age : 'adult' };
   const lines = (Array.isArray(c.lines) ? c.lines : []).filter(l => Array.isArray(l) && (l[0] || l[1])).slice(0, 12).map(l => [String(l[0] || l[1]).slice(0, 300), String(l[1] || l[0]).slice(0, 300)]);
   if (c.gender === 'f' || c.gender === 'm') { CUSTOM.genders = { ...(CUSTOM.genders || {}), [name]: c.gender }; setVoiceGenders(CUSTOM.genders); }
-  addNPC({ id: 'fam_' + (c.id || name.replace(/[^\p{L}\p{N}]+/gu, '_')), name, look, x: +c.x, z: +c.z, face: +c.face || 0, icon: typeof c.icon === 'string' ? c.icon.slice(0, 4) : '💬', talk: () => dialog(name, lines.length ? lines : [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']]) });
+  addNPC({ id: 'fam_' + (c.id || name.replace(/[^\p{L}\p{N}]+/gu, '_')), name, faceName: c.faceName, look, x: +c.x, z: +c.z, face: +c.face || 0, icon: typeof c.icon === 'string' ? c.icon.slice(0, 4) : '💬', talk: () => dialog(name, lines.length ? lines : [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']]) });
 }
 // each village's games time table (with a countdown board) and its singer; after every host is in place
 G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 'buns', 'none'), kidLook('overalls', '#3cc7e8', '#3b2618', 'short', 'cap'), kidLook('dress', '#ffb52e', '#1d1412', 'ponytail', 'flower')] });
@@ -1884,6 +1884,7 @@ import('./pricetags.js').then(m => m.createPriceTags(G));
 import('./jobs.js').then(m => m.createJobs(G));
 import('./wayfind.js').then(m => m.createWayfind(G));   // (Round U) "Where is…?" sparkles
 G.openWhere = i => featureOn('wayfind', false) && G.wayfind && G.wayfind.open(i);
+onLive(() => { if (!featureOn('wayfind',false)) { G.wayfind?.stop(true); document.querySelectorAll('.wherepick').forEach(m => m.querySelector('.x')?.click()); } });
 import('./animalhomes.js').then(m => m.createAnimalHomes(G));   // (Round U) animals with homes   // (Round U) a job board in every place   // (Round U) a coin-picture price over every food stall
 // (Round U) a tap on a coin, orb or Leafy chip (top bar, Backpack) says what it is (js/chipinfo.js, loaded on the first tap)
 document.addEventListener('click', e => { const c = e.target.closest && e.target.closest('[data-chip]'); if (c) import('./chipinfo.js').then(m => m.showChip(c.dataset.chip, c)); });

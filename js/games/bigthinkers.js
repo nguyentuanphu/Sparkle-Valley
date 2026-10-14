@@ -7,16 +7,18 @@ import { GAME_INFO } from '../content/activities.js';
 import { HOWTO } from '../howto.js';
 GAME_INFO.rulefinder = ['thinking', 3, 1]; GAME_INFO.gardenorder = ['thinking', 3, 1]; GAME_INFO.steppingpath = ['thinking', 4, 2];
 const instructions = {
-  rulefinder: [['Look for the picture that belongs to a different group.', 'Tìm tranh thuộc nhóm khác.']],
+  rulefinder: [['Look at the examples. Choose another picture that follows their rule.', 'Nhìn các ví dụ. Chọn thêm hình theo cùng quy luật.']],
   gardenorder: [['Help the garden: choose each step in order.', 'Giúp khu vườn: chọn từng bước theo thứ tự.']],
   steppingpath: [['Follow neighbouring flowers to reach the flag. Avoid the puddles.', 'Theo những bông hoa cạnh nhau đến lá cờ. Tránh vũng nước.']]
 };
 for (const [id, lines] of Object.entries(instructions)) HOWTO[id] = { steps: lines.map(([en, vi]) => ({ pic: '🧩', en, vi })) };
 register({ id: 'rulefinder', icon: '🧩', name: () => T('Find the Rule', 'Tìm Quy Luật'), async run(api) {
-  const sets = [['🍎','🍌','🍇','🐢'], ['🐶','🐱','🐰','🍎'], ['👟','👒','👕','🍉'], ['🚗','🚌','🚲','🌸']];
-  for (let round = 0; round < 4; round++) { if (api.closed) return; api.dots(4, round); api.stage.innerHTML = ''; const values = sets[round], right = values[3];
-    api.say(...instructions.rulefinder[0]); const list = shuffle(api.little ? [values[0], values[1], right] : values); const buttons = choiceButtons(api, list, value => pic(value));
-    await untilRight(api, buttons, b => b._v === right); if (api.closed) return; api.praise(); await wait(300);
+  const sets = [ [['🍎','🍌'],'🍉',['🍉','👟','🪁']], [['🐶','🐱'],'🐰',['🐰','🍎','👕']], [['👟','👒'],'👕',['👕','🍇','🌳']], [['🚗','🚌'],'🚲',['🚲','📖','🌸']] ];
+  for (let round = 0; round < 4; round++) { if (api.closed) return; api.dots(4, round); api.stage.innerHTML = ''; const [examples,right,options] = sets[round];
+    const sample = el('div','seq', examples.map(value => `<span class="seq-item">${pic(value)}</span>`).join('')); api.stage.appendChild(sample);
+    api.say('These belong together. Find another picture that follows the same rule.', 'Các hình này cùng một nhóm. Tìm thêm hình theo cùng quy luật.');
+    const buttons = choiceButtons(api, shuffle(options.slice(0,api.little ? 2 : 3)), value => pic(value));
+    await untilRight(api, buttons, b => b._v === right); if (api.closed) return; api.say('Yes! That follows the same rule.', 'Đúng rồi! Hình đó theo cùng quy luật.'); api.praise(); await wait(300);
   } return api.win();
 } });
 register({ id: 'gardenorder', icon: '🌱', name: () => T('Garden Steps', 'Các Bước Làm Vườn'), async run(api) {
@@ -37,6 +39,7 @@ register({ id: 'steppingpath', icon: '🗺️', name: () => T('Flower Path', 'Đ
   cells[0].classList.add('right'); api.say(...instructions.steppingpath[0]);
   for (let step = 1; step < route.length; step++) { if (api.closed) return; api.dots(route.length - 1, step - 1); const current = route[step - 1];
     const neighbours = cells.filter((b,i) => Math.abs(i % size - current % size) + Math.abs(Math.floor(i / size) - Math.floor(current / size)) === 1);
+    cells.forEach(b => { b.disabled = !neighbours.includes(b); });
     await untilRight(api, neighbours, b => +b.dataset.cell === route[step]); if (api.closed) return; cells[route[step]].classList.add('right'); api.praise();
   } return api.win();
 } });

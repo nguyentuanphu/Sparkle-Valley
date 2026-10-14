@@ -108,7 +108,7 @@ export class Hud {
     // (owner, 13 Oct AEDT: too many buttons down one side) zoom, camera view and Where is sit in a tray behind one View
     // button; it closes by itself after a while, or with a tap on View again (their keys work all the time)
     { const zr = this.q('.zoomer'), tb = this.q('.z-tray'); let t = 0;
-      const open = on => { zr.classList.toggle('open', on); tb.setAttribute('aria-expanded', String(on)); clearTimeout(t); if (on) t = setTimeout(() => open(false), 8000); };
+      const open = on => { zr.classList.toggle('open', on); tb.setAttribute('aria-expanded', String(on)); clearTimeout(t); if (on) { document.querySelector('.audio-tray')?.close?.(); document.querySelectorAll('.zoomer.open').forEach(z => { if (z !== zr) { z.classList.remove('open'); z.querySelector('.z-tray')?.setAttribute('aria-expanded', 'false'); } }); t = setTimeout(() => open(false), 8000); } };
       tb.addEventListener('pointerdown', e => e.stopPropagation());
       tb.onclick = e => { e.stopPropagation(); open(!zr.classList.contains('open')); };
       this.q('.ztray').addEventListener('pointerdown', () => open(true), true); }
@@ -120,7 +120,7 @@ export class Hud {
   }
   refreshAudio() {
     const s = this.game.settings, m = this.q('.dk.mus'), d = this.q('.dk.snd');
-    m.classList.toggle('off', !s.music); d.classList.toggle('off', !(s.sound || s.voice)); d.querySelector('span').innerHTML = s.sound || s.voice ? ICONS.sound : ICONS.soundOff;
+    m.classList.toggle('off', !s.music); const active = s.music || s.sound || s.voice; d.classList.toggle('off', !active); d.querySelector('span').innerHTML = active ? ICONS.sound : ICONS.soundOff; d.querySelector('small').textContent = T('Audio', 'Âm thanh'); d.setAttribute('aria-label', T('Audio: music, sounds and voice', 'Âm thanh: nhạc, tiếng động và giọng nói'));
   }
   foldQuest() { const f = !!this.hero.profile.questFold, q = this.q('.quest'); q.classList.toggle('fold', f); this.q('.q-say').setAttribute('aria-label', f ? T('Show the goal', 'Hiện nhiệm vụ') : T('Hide the goal', 'Ẩn nhiệm vụ')); }
   refreshWho() { const p = this.hero.profile; this.q('.pav').src = avatarURL(p); this.q('.pname').textContent = nm(p.name); this.q('.pname').classList.toggle('starname', !!(p.look && p.look.star)); } // (owner, 12 Oct: this week's star tester gets a gold star by the name)

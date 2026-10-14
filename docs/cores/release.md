@@ -152,3 +152,12 @@ All of them once per release (`node suite.mjs`), plus `node suite.mjs --changed`
 - **14 Oct AEDT, owner: "Release" for the verified r74 round.** PR #138 marked ready and merged at the exact verified head `96b3ad9b`, merge commit `1ce11b29d71a94225cf870c68173f62b624fdfed`. PR #139 remains separate; no approval to bypass its failed review was inferred. The five metadata files (HANDOFF, board, release notes, check map and timings) are being committed without game-code changes. Netlify deployment verification follows.
 
 - **14 Oct, 7:03 am AEDT: r74 live, verified on both sparklevalley.au and sparklevalley.netlify.app.** BUILD r74, service worker `sv-2026-10-14-r74`, index, packed entry `bundle/main-OQD3YYUY.js` and release definitions all return HTTP 200. Verification metadata retained at `7a567899`; this completion note changes docs only. PR #139 remains open and excluded.
+
+
+### Combined owner round resumed — 14 Oct 2026, 11:56 am AEDT
+
+Owner authorized every discussed item as one batch; this is implementation/verification, not deployment approval. Branch: `work/owner-round-20261014`; remote checkpoint `08ada87abc53c9ef06d935476272c5ff9b443aa6`.
+
+Latest browser evidence: `tests/owner-family-smoke.mjs` passes two isolated browser devices against the real family action handler: approve before photos, upload and transfer with postcard, metadata-only localStorage, cached viewing and backup offline, and revocation clearing private cache. Family/report unit subset: 13 passed. Prior interaction smoke: four viewports/languages and five new games passed; later UI changes require another visual pass. Studio page help now uses page-specific descriptions and survives access-role redraw; compass requires explicit current Studio enable, including for devices with old on values.
+
+Regression run underway. `emoji` initially failed because sparse checkout lacked videos/README.txt; restored unchanged from HEAD for rerun. Release gates still open: GitHub full suite, current screenshots, packed cold/warm/offline/update and local speed checks, voices, collected errors and manual iPhone review. Azure credential is not present locally; the branch-only owner-round-voices workflow uses the existing GitHub secret and returns recordings as an artifact for integration. Do not claim zero bugs or release readiness from smoke passes.

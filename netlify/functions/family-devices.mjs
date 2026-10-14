@@ -6,7 +6,8 @@ export const makeFamilyDevices = ({ familyStore = blobs('families'), guardStore 
   if (req.method !== 'POST') return json({ error: 'POST required' }, 405);
   const action = new URL(req.url).pathname.split('/').pop();
   const guard = await guardStore(), ip = await ipKey(guard, ipOf(req, ctx));
-  if (!await count(guard, 'family-devices/' + ip, ['create', 'join', 'recover'].includes(action) ? 10 : 150, 10 * 60e3, now())) return json({ error: 'wait before trying again' }, 429);
+  const entry = ['create', 'join', 'recover'].includes(action);
+  if (!await count(guard, 'family-devices/' + (entry ? 'entry/' : 'connected/') + ip, entry ? 10 : 600, 10 * 60e3, now())) return json({ error: 'wait before trying again' }, 429);
   const data = await req.text(); if (data.length > 28000000) return json({ error: 'backup too large' }, 413);
   try { const body = JSON.parse(data || '{}'); const token = (req.headers.get('authorization') || '').replace(/^Bearer /, ''); return json(await familyAction(await familyStore(), action, body, token, now())); }
   catch (e) { return json({ error: e.status ? e.message : 'request could not be completed' }, e.status || 400); }

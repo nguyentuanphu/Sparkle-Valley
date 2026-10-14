@@ -208,7 +208,8 @@ function explainPage(P, page) {
     admins: ['Choose a role or Custom to select each permission. Changes here save immediately. Permissions control what an admin can read or change; hiding a button does not grant or remove access.', 'Chọn vai trò hoặc Tùy chỉnh để chọn từng quyền. Thay đổi ở đây lưu ngay. Quyền quyết định quản trị viên có thể xem hay sửa gì; ẩn nút không cấp hoặc bỏ quyền.'],
     players: ['Measurements come from reporting devices. Missing data means unavailable or not measured yet. Use Performance to compare loading, frame smoothness and battery for each device.', 'Số liệu do các máy gửi về. Thiếu số liệu nghĩa là không có hoặc chưa đo. Dùng Hiệu năng để so tải, độ mượt và pin từng máy.']
   };
-  const text = explanations[page] || ['Edit the labelled fields for this section. Save keeps your changes; Publish sends saved game content to the website. Live settings and admin changes explain when they apply beside their controls. Expand headings to see more.', 'Sửa các trường có nhãn trong mục này. Lưu giữ thay đổi; Xuất bản gửi nội dung game đã lưu lên trang web. Cài đặt trực tiếp và quyền quản trị giải thích thời điểm áp dụng bên cạnh. Mở tiêu đề để xem thêm.'];
+  const purpose = ABOUT[page]?.slice(3, 5);
+  const text = explanations[page] || (purpose?.[0] ? purpose : ['Use the labelled controls to open a section. Expand headings for details. Changes apply only through the action shown on each control.', 'Dùng các nút có nhãn để mở mục. Mở tiêu đề để xem chi tiết. Thay đổi chỉ áp dụng qua thao tác ghi trên từng nút.']);
   const box = document.createElement('details'); box.className = 'studio-help'; box.innerHTML = `<summary>${T('How this section works', 'Cách dùng mục này')}</summary><p>${T(...text)}</p>`; P.prepend(box);
 }
 const PAGES = {};
@@ -619,7 +620,7 @@ const REL_ICON = { story: '🏮', kids: '🧸', rewards: '🎁', world: '🏞️
 PAGES.releases = async P => {
   const { RELEASES, RELEASE_GROUPS } = await import(GAME + 'js/content/releases.js'), live = await loadLive(), R = live.releases || {};
   const myDraw = P.dataset.draw = String((+P.dataset.draw || 0) + 1), stale = () => P.dataset.draw !== myDraw; // a newer drawing of the page wins
-  const isOn = x => { const r = R[x.id] || {}; return typeof r.on === 'boolean' ? r.on : x.def; };
+  const isOn = x => { const r = R[x.id] || {}; if (x.id === 'wayfind' && r.controlVersion !== 1) return false; return typeof r.on === 'boolean' ? r.on : x.def; };
   const fmtDay = d => d ? new Date(d + 'T12:00:00').toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { day: 'numeric', month: 'short' }) : '';
   const status = (on, r) => { const today = isoDay(new Date()), out = [];
     if (!on) out.push(['off', '⏸️ ' + T('Off', 'Tắt')]);
@@ -704,7 +705,7 @@ PAGES.releases = async P => {
   $('#save').onclick = async () => {
     const out = {};
     P.querySelectorAll('.relc[data-id]').forEach(c => { const id = c.dataset.id, x = RELEASES.find(y => y.id === id), v = k => c.querySelector(`[data-r="${k}"]`).value;
-      const r = {}, on = c.querySelector('[data-r="on"]').checked; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
+      const r = {}, on = c.querySelector('[data-r="on"]').checked; if (id === 'wayfind') r.controlVersion = 1; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
       if (id === 'autoplay') { const dv = [...P.querySelectorAll('[data-dev]:checked')].map(i => i.dataset.dev); if (dv.length) r.devices = dv; }
       if (id === 'tester') { const dv = [...P.querySelectorAll('[data-tdev]:checked')].map(i => i.dataset.tdev); if (dv.length) r.devices = dv;
         const policies = {}; P.querySelectorAll('[data-policy]').forEach(select => { const device = select.dataset.policy, speed = P.querySelector(`[data-speed="${CSS.escape(device)}"]`), auto = P.querySelector(`[data-deviceauto="${CSS.escape(device)}"]`); policies[device] = { revert: select.value, speed: speed.value, autoplay: auto.checked }; }); if (Object.keys(policies).length) r.policies = policies;
@@ -1020,7 +1021,7 @@ async function worldSnapshot() {
   } finally { f.remove(); }
 }
 PAGES.map = async P => {
-  CONTENT.npcs = CONTENT.npcs || []; CONTENT.world = CONTENT.world || {}; const WD = CONTENT.world; WD.build = WD.build || []; WD.edits = WD.edits || []; WD.land = WD.land || [];
+  CONTENT.npcs = CONTENT.npcs || []; CONTENT.npcs.forEach(c => { c.id ||= String(c.name || '').replace(/[^\p{L}\p{N}]+/gu, '_') || crypto.randomUUID(); c.faceName ||= c.name; }); CONTENT.world = CONTENT.world || {}; const WD = CONTENT.world; WD.build = WD.build || []; WD.edits = WD.edits || []; WD.land = WD.land || [];
   P.innerHTML = `<h2>🗺️ ${T('Map: build and change the world', 'Bản đồ: xây dựng và sửa thế giới')}</h2><p class="sub">${T('Add villagers and buildings, move or remove what is there, and make more flat land for new towns. Changes appear in the game after you publish.', 'Thêm nhân vật và nhà cửa, dời hoặc xóa những gì đang có, và làm thêm đất bằng cho phố mới. Thay đổi xuất hiện trong game sau khi phát hành.')}</p><div class="card" id="mapwrap">${T('Drawing the map…', 'Đang vẽ bản đồ…')}</div>`;
   const W = await import(GAME + 'js/world.js'), WE = await import(GAME + 'js/worldedit.js'), TYPES = WE.BUILD_TYPES;
   // (round T) the map's edits belong to one layout of the valley (world.map). Edits made on an older layout are put aside
@@ -1371,7 +1372,7 @@ PAGES.players = async P => {
   <h3 class="sec">🔎 ${T('More detail', 'Thêm chi tiết')}</h3>
   ${(r.tips || []).length > 4 ? more('tips', `💡 ${T('Suggestions', 'Gợi ý')} (${r.tips.length})`, `<ul>${r.tips.map(t => `<li>${esc(tipText(t))}</li>`).join('')}</ul>`) : ''}
   ${more('devices', `👨‍👩‍👧 ${T('Each device and child', 'Từng máy và từng bé')} (${devs.length})`, `<div id="devlist">${devs.map(devCard).join('')}</div>` || `<p class="note">${T('No devices yet.', 'Chưa có máy nào.')}</p>`)}
-  ${more('performance', `🏁 ${T('Performance: loading, frames and battery', 'Hiệu năng: tải, khung hình và pin')}`, `<p class="note">${T('Loading is time to a built valley. Frames measure smoothness during play; frame time is milliseconds to draw a picture. Battery is measured only where the browser reports it, while not charging. Expand a device for startup stages.', 'Tải là thời gian dựng xong thung lũng. Khung hình đo độ mượt khi chơi; thời gian khung hình là mili giây để vẽ một ảnh. Pin chỉ đo khi trình duyệt cung cấp và máy không sạc. Mở một máy để xem bước khởi động.')}</p><table class="mini"><thead><tr><th>${T('Device', 'Thiết bị')}</th><th>${T('Loading', 'Tải')}</th><th>${T('Frames and battery', 'Khung hình và pin')}</th></tr></thead><tbody>${devs.map(d => `<tr><td>${KICON[d.kind] || '❔'} ${esc(devName(d))}</td><td>${startLine(d.startup).replace(/^<br>/, '') || NOT_YET}</td><td>${powerLine(d)}</td></tr>`).join('') || `<tr><td class="note">${NOT_YET}</td></tr>`}</tbody></table>`)}
+  ${more('performance', `🏁 ${T('Performance: loading, frames and battery', 'Hiệu năng: tải, khung hình và pin')}`, `<p class="note">${T('Loading is time to a built valley. Frames measure smoothness during play; frame time is milliseconds to draw a picture. Battery is measured only where the browser reports it, while not charging. The loading column shows measured readiness and the slowest startup stage.', 'Tải là thời gian dựng xong thung lũng. Khung hình đo độ mượt khi chơi; thời gian khung hình là mili giây để vẽ một ảnh. Pin chỉ đo khi trình duyệt cung cấp và máy không sạc. Cột tải cho biết thời gian sẵn sàng đã đo và bước khởi động chậm nhất.')}</p><table class="mini"><thead><tr><th>${T('Device', 'Thiết bị')}</th><th>${T('Loading', 'Tải')}</th><th>${T('Frames and battery', 'Khung hình và pin')}</th></tr></thead><tbody>${devs.map(d => `<tr><td>${KICON[d.kind] || '❔'} ${esc(devName(d))}</td><td>${startLine(d.startup).replace(/^<br>/, '') || NOT_YET}</td><td>${powerLine(d)}</td></tr>`).join('') || `<tr><td class="note">${NOT_YET}</td></tr>`}</tbody></table>`)}
   ${more('time', `📅 ${T('Day by day and hour by hour', 'Theo ngày và theo giờ')}`, `
   <div class="card"><h3>📅 ${T('Devices each day (pink: new)', 'Số máy mỗi ngày (hồng: máy mới)')}</h3><svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px">${bars}</svg></div>
   <div class="card"><h3>🕒 ${T('When they play (each device’s own clock)', 'Giờ chơi (theo đồng hồ của từng máy)')}</h3><svg viewBox="0 0 600 130" style="width:100%;max-width:600px">${hbars}</svg></div>`)}
@@ -1466,7 +1467,7 @@ PAGES.admins = async P => {
   const mine = me.name === 'owner' ? '' : `<div class="card"><h3>🔑 ${T('My password', 'Mật khẩu của tôi')} (${esc(me.name)})</h3>
     <input type="password" id="op" autocomplete="current-password" placeholder="${T('Old password', 'Mật khẩu cũ')}"> <input type="password" id="np" autocomplete="new-password" placeholder="${T('New password (12+ characters)', 'Mật khẩu mới (từ 12 ký tự)')}"> <button class="btn" id="chg">${T('Change', 'Đổi')}</button></div>`;
   if (me.role !== 'owner') { P.innerHTML = `<h2>👥 ${T('Admins', 'Quản trị viên')}</h2><p class="sub">${T('You are signed in as', 'Bạn đang đăng nhập là')} <b>${esc(me.name)}</b> · ${T(...ROLE_NAMES[me.role] || ROLE_NAMES.custom)}</p>
-    <div class="card"><h3>🧩 ${T('What you may do', 'Bạn được làm gì')}</h3>${permList(INFO && INFO.perms, me.perms || [], '')}<p class="note">${T('Ask the owner if you need more.', 'Cần thêm quyền thì hỏi chủ.')}</p></div>${mine}`; bindMine(P); return; }
+    <div class="card"><h3>🧩 ${T('What you may do', 'Bạn được làm gì')}</h3>${permList(INFO && INFO.perms, me.perms || [], '')}<p class="note">${T('Ask the owner if you need more.', 'Cần thêm quyền thì hỏi chủ.')}</p></div>${mine}`; bindMine(P); explainPage(P, 'admins'); foldPage(P, 'admins'); return; }
   const { admins, perms } = await api('admins/list'), opt = r => Object.keys(ROLE_NAMES).map(k => `<option value="${k}" ${k === r ? 'selected' : ''}>${T(...ROLE_NAMES[k])}</option>`).join('');
   P.innerHTML = `<h2>👥 ${T('Admins', 'Quản trị viên')}</h2><p class="sub">${T('Other grown-ups sign in at this address with their own name and password; they never need a GitHub token (the website’s own is used). You see here who can do what.', 'Người lớn khác đăng nhập ở địa chỉ này bằng tên và mật khẩu riêng; họ không cần token GitHub (dùng token của trang web). Ở đây bạn thấy ai được làm gì.')}</p>
     <div class="card"><h3>➕ ${T('Add someone', 'Thêm người')}</h3><div class="row" style="flex-wrap:wrap;gap:8px">
@@ -1493,6 +1494,7 @@ PAGES.admins = async P => {
     tr.querySelector('[data-pw]').onclick = async () => { const pw = prompt(T(`A new password for ${name} (12+ characters):`, `Mật khẩu mới cho ${name} (từ 12 ký tự):`)); if (!pw) return; try { await api('admins/save', { name, password: pw, role: tr.querySelector('[data-role]').value }); toast(T('Changed: they are signed out everywhere.', 'Đã đổi: họ bị đăng xuất khỏi mọi nơi.')); } catch (e) { fail(e); } };
     const tf = tr.querySelector('[data-2fa]'); if (tf) tf.onclick = async () => { if (!confirm(T(`Clear ${name}’s two-step? They set it up again (with their new phone) the next time they sign in.`, `Xóa xác thực hai bước của ${name}? Họ sẽ cài lại (bằng điện thoại mới) khi đăng nhập lần tới.`))) return; try { await api('admins/reset2fa', { name }); toast(T('Cleared: they are signed out everywhere.', 'Đã xóa: họ bị đăng xuất khỏi mọi nơi.')); PAGES.admins(P); } catch (e) { fail(e); } };
     tr.querySelector('[data-rm]').onclick = async () => { if (!confirm(T(`Remove ${name}? They can no longer sign in.`, `Xóa ${name}? Họ sẽ không đăng nhập được nữa.`))) return; try { await api('admins/remove', { name }); PAGES.admins(P); } catch (e) { fail(e); } }; });
+  explainPage(P, 'admins'); foldPage(P, 'admins');
 };
 function bindMine(P) { const b = P.querySelector('#chg'); if (b) b.onclick = async () => { try { await api('admins/me', { old: $('#op').value, password: $('#np').value }); toast(T('Password changed. Please sign in again.', 'Đã đổi mật khẩu. Vui lòng đăng nhập lại.')); setTimeout(signIn, 1200); } catch (e) { fail(e); } }; }
 // ---------- 🛡️ Security (online, the owner; round R privacy) ----------

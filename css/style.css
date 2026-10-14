@@ -2584,3 +2584,10 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 .audio-tray .ss-sw span { font-size:24px; }
 .audio-tray .ss-sw i, .audio-tray .ss-sw:not(.on) i:not(.off) { display:inline; font-size:16px; }
 .audio-tray .ss-sw:not(.on) i { color:#855071; }
+
+.zoomer, .zoomer:has(.z-lb) { top:48%; transform:none; }
+.wardrobe-content .wslot small { font-size:16px; }
+
+.sv2 .who-card:not(.first) { height:min(780px,calc(100dvh - 120px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); overflow:hidden; }
+.who-body { flex:1; min-height:0; width:100%; overflow-y:auto; display:flex; flex-direction:column; align-items:center; gap:12px; }
+.who-body > * { flex-shrink:0; } .who-footer { flex:none; margin:8px auto 0; }

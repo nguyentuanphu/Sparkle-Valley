@@ -60,10 +60,10 @@ async function main() {
     }
   }
   // the daily summary, once a day after 9 am AEDT (22:00 UTC the day before)
-  const h = new Date().getUTCHours(); if (h === 22 || process.argv.includes('--summary')) {
-    const text = `**Tester daily summary, ${summary.day}**\n\n- New today: ${summary.new}\n- Fixed today: ${summary.fixed}\n- Still open: ${summary.open}\n\nMet by the most testers:\n${(summary.top || []).map(t => `- ${t.title} (${t.devices} devices, ${t.n} times)`).join('\n') || '- none'}`;
+  { // Refresh the issue body every run; old comments must not leave a stale zero-count summary on top.
+    const text = `**Tester daily summary, ${summary.day}**\nUpdated: ${new Date().toLocaleString('en-AU', { timeZone:'Australia/Sydney', timeZoneName:'short' })}\n\n- New today: ${summary.new}\n- Fixed today: ${summary.fixed}\n- Still open: ${summary.open}\n\nMet by the most testers:\n${(summary.top || []).map(t => `- ${t.title} (${t.devices} devices, ${t.n} times)`).join('\n') || '- none'}`;
     const found = (await gh('issues?state=open&labels=tester-summary&per_page=1'))[0];
-    if (found) await gh(`issues/${found.number}/comments`, 'POST', { body: text }); else await gh('issues', 'POST', { title: 'Tester daily summary', body: text, labels: ['tester-summary'] });
+    if (found) await gh(`issues/${found.number}`, 'PATCH', { body: text }); else await gh('issues', 'POST', { title: 'Tester daily summary', body: text, labels: ['tester-summary'] });
   }
   console.log(`Issues: ${made} new, ${updated} counts updated, ${closed} closed.`);
 }

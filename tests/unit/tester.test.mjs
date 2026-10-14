@@ -102,3 +102,10 @@ test('Studio retains per-device progress, speed and autoplay choices and rejects
   const c = cleanLive({ releases: { tester: { on: true, policies: { [A]: { revert: 'keep', speed: 'x5', autoplay: false }, bad: { revert: 'keep' }, [B]: { revert: 'invalid', speed: 'x99', autoplay: 'yes' } } } } });
   assert.deepEqual(c.releases.tester.policies, { [A]: { revert: 'keep', speed: 'x5', autoplay: false } });
 });
+
+
+test('tester summary uses the Sydney day across the UTC date boundary', () => {
+ const now = Date.parse('2026-10-13T22:30:00Z');
+ const result = T.summary([{ firstAt:Date.parse('2026-10-13T22:00:00Z'), lastAt:now, devices:1, n:1, status:'new', title:'x' }], now);
+ assert.equal(result.day,'2026-10-14'); assert.equal(result.new,1); assert.equal(result.open,1);
+});

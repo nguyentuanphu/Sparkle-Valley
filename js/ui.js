@@ -167,6 +167,8 @@ export function showWho(onGo) {
       </div>
       <button class="grown"><span class="ring"></span>${T('Grown-ups', 'Phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>`;
     s.querySelectorAll('.views button').forEach(b => b.onclick = () => { settings.twoView = b.dataset.v; saveSettings(); SFX.tap(); draw(); });
+    const whoCard = s.querySelector('.who-card'), whoAction = whoCard.querySelector('.go'), whoBody = el('div', 'who-body');
+    [...whoCard.children].filter(n => n !== whoAction).forEach(n => whoBody.appendChild(n)); whoCard.prepend(whoBody); whoAction.classList.add('who-footer');
     s.querySelectorAll('.modes button').forEach(b => b.onclick = () => { mode = b.dataset.m; chosen = chosen.slice(0, mode === 'split' ? 2 : 1); SFX.tap(); draw(); });
     s.querySelectorAll('.pick[data-id]').forEach(b => b.onclick = () => {
       const id = b.dataset.id; SFX.pop(chosen.length);

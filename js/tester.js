@@ -52,14 +52,15 @@ const devNow = () => ({ os: osOf(), br: brOf(), sc: `${innerWidth}x${innerHeight
 // (the 3D view keeps no picture between frames, so it is copied right after the next frame is drawn; the window on top
 // is written underneath as words)
 async function grab(sceneOnly = false) {
-  try { const m = await import('./screencapture.js'); return await m.captureScreen(G.renderer?.domElement, { sceneOnly }); } catch { return ''; }
+  try { const src = G.renderer?.domElement, copy = document.createElement('canvas'); if (src) { copy.width = src.width; copy.height = src.height; copy.getContext('2d').drawImage(src,0,0); } const m = await import('./screencapture.js'); return await m.captureScreen(copy, { sceneOnly }); } catch { return ''; }
 }
 const shot = (sceneOnly = false) => new Promise(res => { let done = false; const fin = async () => { if (done) return; done = true; want = null; res(await grab(sceneOnly)); }; want = fin; setTimeout(fin, 400); });
 
 // ---------- sending ----------
-const queue = () => get(KEY.out, []);
+const clientId = () => [...crypto.getRandomValues(new Uint8Array(16))].map(n => n.toString(16).padStart(2, '0')).join('');
+const queue = () => { const rows = get(KEY.out, []); let changed = false; for (const row of rows) if (!row.clientId) { row.clientId = clientId(); changed = true; } if (changed) keep(rows); return rows; };
 function keep(list) { if (put(KEY.out, list)) return; const thin = list.map((r, i) => i < list.length - 5 ? { ...r, shot: '' } : r); if (!put(KEY.out, thin)) put(KEY.out, thin.slice(-10).map(r => ({ ...r, shot: '' }))); }
-function enqueue(r) { const q = queue(); r.clientId ||= crypto.randomUUID().replace(/-/g, ''); q.push(r); keep(q.slice(-C.LIMITS.queue)); delivery(r.clientId, { state: 'queued' }); paintCount(); flush(); return r.clientId; }
+function enqueue(r) { const q = queue(); r.clientId ||= clientId(); q.push(r); keep(q.slice(-C.LIMITS.queue)); delivery(r.clientId, { state: 'queued' }); paintCount(); flush(); return r.clientId; }
 function delivery(id, result) { const all = get(KEY.delivery, {}); all[id] = { ...result, at: Date.now() }; const entries = Object.entries(all).slice(-120); put(KEY.delivery, Object.fromEntries(entries)); dispatchEvent(new CustomEvent('sv-report-delivery')); }
 export const reportDelivery = id => get(KEY.delivery, {})[id] || { state: 'queued' };
 export const reportingState = () => ({ enabled: live, queued: queue().length, sending: flushing });
@@ -77,13 +78,13 @@ async function flush() {
   // while another was being sent (an error just as a "slow" report went) used to be lost when the old list was kept
   const same = (x, r) => x && x.at === r.at && x.kind === r.kind && (x.auto || '') === (r.auto || '') && (x.detail || '') === (r.detail || '') && (x.note || '') === (r.note || '');
   try {
-    for (let r = queue()[0]; r; r = queue()[0]) {
+    for (const r of queue()) {
       delivery(r.clientId, { state: 'sending' }); let res = null; try { res = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) }); } catch (e) { delivery(r.clientId, { state: 'retry' }); break; }
-      if (!res.ok) { delivery(r.clientId, { state: 'retry', status: res.status }); break; }
+      if (!res.ok) { delivery(r.clientId, { state: 'retry', status: res.status }); if ([400,413].includes(res.status)) continue; break; }
       let receipt; try { receipt = await res.json(); } catch { delivery(r.clientId, { state: 'retry' }); break; }
       if (!receipt.ok || !receipt.rid) { delivery(r.clientId, { state: 'retry' }); break; }
       delivery(r.clientId, { state: 'sent', rid: receipt.rid, problem: receipt.k });
-      const q = queue(), k = q.findIndex(x => same(x, r)); if (k >= 0) { q.splice(k, 1); keep(q); } // (sent, or refused for good: a report the website will not take is not kept)
+      const q = queue(), k = q.findIndex(x => same(x, r)); if (k >= 0) { q.splice(k, 1); keep(q); } // only acknowledged reports leave the durable queue
     }
   } finally { flushing = false; paintCount(); }
 }

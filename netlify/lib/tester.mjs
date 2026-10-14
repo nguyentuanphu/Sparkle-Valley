@@ -11,7 +11,7 @@ export const TLIMITS = { size: 320000, device: 60, ip: 150, problems: 3000, keep
 const ID = /^[a-z0-9]{12}$/, KINDS = ['broken', 'looks', 'words', 'sound', 'idea', 'auto'], AUTOS = ['error', 'noopen', 'noclose', 'freeze', 'slow', 'offscreen', 'novoice', 'stuck', 'autoplay'];
 export const STATUSES = ['new', 'fixing', 'fixed', 'confirmed', 'back', 'notbug', 'dup'];
 const BUILD = /^r\d{1,4}$/, PK = /^[a-f0-9]{16}$/;
-const day = t => new Date(t).toISOString().slice(0, 10);
+const day = t => new Intl.DateTimeFormat('en-CA', { timeZone:'Australia/Sydney', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date(t));
 const txt = (v, n) => typeof v === 'string' ? v.replace(/[\u0000-\u001f<>]/g, ' ').trim().slice(0, n) : '';
 const num = (v, lo, hi) => Number.isFinite(+v) ? Math.max(lo, Math.min(hi, +v)) : undefined;
 const sha = s => createHash('sha1').update(s).digest('hex').slice(0, 16);
@@ -80,7 +80,7 @@ export async function addReport(S, live, body, now = Date.now(), ipk = '') {
   if (!t.mine.includes(k)) t.mine = [...t.mine, k].slice(-300);
   t.kinds = t.kinds || {}; t.kinds[k] = r.kind;
   await S.setJSON(`t/${r.id}`, t);
-  const receipt = { ok: true, k, rid, status: p.status }; if (receiptKey) await S.setJSON(receiptKey, receipt); return receipt;
+  const receipt = { ok: true, k, rid, status: p.status, at:now }; if (receiptKey) await S.setJSON(receiptKey, receipt); return receipt;
 }
 
 const all = async (S, prefix, cap = 5000) => { const out = []; let cursor; do { const l = await S.list({ prefix, cursor }); for (const b of l.blobs) out.push(b.key); cursor = l.cursor; } while (cursor && out.length < cap); return out; };
@@ -160,5 +160,6 @@ export async function tidy(S, now = Date.now()) {
   const old = day(now - TLIMITS.keepDays * 864e5), q = day(now - 2 * 864e5); let n = 0;
   for (const k of await all(S, 'q/')) if (k.slice(2, 12) < q) { await S.delete(k); n++; }
   for (const k of await all(S, 'r/')) { const r = await S.get(k, { type: 'json' }); if (r && day(r.at) < old) { await S.delete(k); await S.delete('shot/' + r.rid); n++; } }
+  for (const key of await all(S, 'receipt/')) { const receipt = await S.get(key, { type:'json' }); if (!receipt?.at || day(receipt.at) < old) { await S.delete(key); n++; } }
   return n;
 }

@@ -53,7 +53,7 @@ export const familyRefs = () => { const out = new Set(), add = p => { const m = 
 export const customAlbum = () => ([...(Array.isArray(CUSTOM.album) ? CUSTOM.album : []), ...Object.entries(ownFamilyPhotos()).filter(([id]) => id.startsWith('album_')).map(([id, p]) => ({ id, photo: p.image, en: 'Family photo', vi: 'Ảnh gia đình', place: 'home' }))]).filter(x => x && typeof x.photo === 'string' && (x.photo.startsWith('data:image/jpeg;base64,') || OLDALBUM.test(x.photo) || (FAMREF.test(x.photo) && photoOf(x.photo))))
   .slice(0, 60).map(x => ({ id: String(x.id || x.photo).replace(/[^\w-]/g, '').slice(0, 30) || 'photo', photo: photoOf(x.photo), en: str(x.en).slice(0, 120), vi: str(x.vi).slice(0, 120) || str(x.en).slice(0, 120), place: /^[a-z]{2,16}$/.test(x.place || '') ? x.place : 'home' }));
 export const customName = id => { const n = CUSTOM.names && CUSTOM.names[id]; return n && typeof n === 'object' ? n : null; };
-const ownFamilyPhotos = () => { try { return JSON.parse(localStorage.getItem('sv2_familyphotos') || '{}'); } catch { return {}; } };
+const ownFamilyPhotos = () => { try { return { ...JSON.parse(localStorage.getItem('sv2_familyphotos') || '{}'), ...(globalThis.__svFamilyPhotos || {}) }; } catch { return {}; } };
 if (typeof addEventListener === 'function') addEventListener('sv-family-photos', () => famFns.forEach(f => { try { f(); } catch {} }));
 export const familyOwnFace = id => { const photo = ownFamilyPhotos()[id]?.image; return photo ? { photo } : null; };
 export const customFace = id => { const own = ownFamilyPhotos()[id]; if (own?.image) return { photo: own.image }; const f = CUSTOM.faces && CUSTOM.faces[id]; if (!f || typeof f.photo !== 'string') return null; if (OLDFACE.test(f.photo)) return f; const u = FAMREF.test(f.photo) && photoOf(f.photo); return u ? { ...f, photo: u } : null; };
@@ -140,7 +140,7 @@ export function releaseNew(id, now = new Date()) {
   const st = dayOf(r.start || r.since); return !!st && now >= st && now < new Date(+st + r.newDays * DAY);
 }
 // a valley thing switched on or off in Studio (a release rule, or CUSTOM.features), or its default when Studio never set it
-export const featureOn = (id, def = true) => { if (liveRule(id)) return releaseOn(id, def); const f = CUSTOM.features; return f && typeof f[id] === 'boolean' ? f[id] : def; };
+export const featureOn = (id, def = true) => { if (id === 'wayfind') { const r = liveRule(id); return !!(r && r.controlVersion === 1 && r.on === true && releaseOn(id, false)); } if (liveRule(id)) return releaseOn(id, def); const f = CUSTOM.features; return f && typeof f[id] === 'boolean' ? f[id] : def; };
 
 // ---------- Batch rollout (owner, 13 Oct AEDT; docs/cores/FEATURES.md "Batch calendar") ----------
 // Switching a feature off, or giving it a start date still to come, hides it only from children who never used it

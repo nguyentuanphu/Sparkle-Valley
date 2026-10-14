@@ -3583,6 +3583,7 @@ await check('wayfind', async () => {
   // the sparkles go; every place in the valley can be reached along the roads from home
   const P = await open(b, { w: 1280, h: 800 });
   const r = await P.page.evaluate(async () => {
+    const C = await import('/js/custom.js'); C.CUSTOM.releases = { ...(C.CUSTOM.releases || {}), wayfind: { on:true, controlVersion:1 } };
     const G = __sv, h = G.heroes[0], W = await import('/js/world.js'), F = await import('/js/wayfind.js'), wait = ms => new Promise(r => setTimeout(r, ms));
     for (let k = 0; k < 50 && !G.wayfind; k++) await wait(100);
     // (owner, 13 Oct AEDT) Where is sits in the View tray: open the tray first, as a child does

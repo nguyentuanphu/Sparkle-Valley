@@ -496,7 +496,7 @@ function drag(handle) {
     handle.onpointerup = () => { handle.onpointermove = null; put(UI, ui); };
   };
 }
-const speedRow = () => `<div class="row">${Object.entries(AP_SPEEDS).map(([k, s]) => `<button data-sp="${k}" class="${(run ? run.speed : ui.speed) === k ? 'on' : ''}">${esc(T(s.en, s.vi))}</button>`).join('')}</div>`;
+const speedRow = () => `<div class="row">${Object.entries(AP_SPEEDS).filter(([key]) => /^x[1235]$/.test(key)).map(([k, s]) => `<button data-sp="${k}" class="${(run ? run.speed : ui.speed) === k ? 'on' : ''}">${esc(T(s.en, s.vi))}</button>`).join('')}</div>`;
 const backNote = () => (run ? run.perRun : !tester() || revertOf(liveRule('tester'), localStorage.getItem('sv2_playerid') || '') === 'autoplay')
   ? T('When it stops, the game goes on from there; what auto play earned goes back, badges and stickers stay.', 'Khi dừng, game tiếp tục từ đó; phần tự chơi kiếm được được trả lại, huy hiệu và nhãn dán vẫn giữ.')
   : T('When it stops, the game goes on from there. Progress goes back when you stop being a tester; badges and stickers stay.', 'Khi dừng, game tiếp tục từ đó. Tiến bộ được trả lại khi thôi làm người thử; huy hiệu và nhãn dán vẫn giữ.');

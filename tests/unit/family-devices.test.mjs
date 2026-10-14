@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { familyAction } from '../../netlify/lib/family-devices.mjs';
-const memory = () => { const map = new Map(); return { get: async key => map.has(key) ? structuredClone(map.get(key)) : null, setJSON: async (key, value) => map.set(key, structuredClone(value)) }; };
+const memory = () => { const map = new Map(); return { get: async key => map.has(key) ? structuredClone(map.get(key)) : null, setJSON: async (key, value) => map.set(key, structuredClone(value)), delete: async key => map.delete(key), list: async ({ prefix }) => ({ blobs: [...map.keys()].filter(key => key.startsWith(prefix)).map(key => ({ key })) }) }; };
 test('private families are isolated; a pairing code does not approve a device', async () => {
   const S = memory(), first = await familyAction(S, 'create', { label: 'Phone' }, '', 1), other = await familyAction(S, 'create', {}, '', 1);
   await familyAction(S, 'photo', { npc: 'owl', image: 'data:image/jpeg;base64,AAAA' }, first.token, 2);
@@ -29,4 +29,14 @@ test('expired codes fail; recovery and photo migration require the right private
   await familyAction(newHost, 'import', backup, migrated.token, 8);
   assert.equal((await familyAction(newHost, 'get-photo', { npc: 'owl' }, migrated.token, 9)).image, backup.photos.owl.image);
   assert.equal((await familyAction(newHost, 'manifest', {}, migrated.token, 10)).photos.owl.at, 8);
+});
+
+
+test('concurrent uploads to different characters are retained and rebind is explicit', async () => {
+ const S = memory(), family = await familyAction(S, 'create', {}, '', 1);
+ await Promise.all(['owl','Bà Năm'].map(npc => familyAction(S, 'photo', { npc, image:'data:image/jpeg;base64,AAAA' }, family.token, 2)));
+ assert.deepEqual(Object.keys((await familyAction(S,'manifest',{},family.token,3)).photos).sort(), ['Bà Năm','owl']);
+ await familyAction(S,'rebind',{from:'owl',to:'owl_new'},family.token,4);
+ const photos = (await familyAction(S,'manifest',{},family.token,5)).photos; assert.ok(photos.owl_new); assert.equal(photos.owl,undefined);
+ await assert.rejects(familyAction(S,'photo',{npc:'__proto__',image:'data:image/jpeg;base64,AAAA'},family.token,6), {status:400});
 });

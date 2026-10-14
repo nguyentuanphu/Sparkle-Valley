@@ -3,17 +3,17 @@
 const image = src => new Promise((resolve, reject) => { const i = new Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = src; });
 const dataURL = blob => new Promise(resolve => { const f = new FileReader(); f.onload = () => resolve(f.result); f.readAsDataURL(blob); });
 const visible = n => { const s = getComputedStyle(n), r = n.getBoundingClientRect(); return s.display !== 'none' && s.visibility !== 'hidden' && +s.opacity > 0 && r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight; };
-async function clone(n) {
+async function clone(n, world) {
   if (n.nodeType === Node.TEXT_NODE) return document.createTextNode(n.textContent);
   if (n.nodeType !== Node.ELEMENT_NODE || /SCRIPT|STYLE|LINK|NOSCRIPT/.test(n.tagName) || (!n.closest('svg') && !visible(n))) return document.createTextNode('');
   let c;
-  if (n instanceof HTMLCanvasElement) { c = document.createElement('img'); try { c.src = n.toDataURL(); } catch { c.src = ''; } }
+  if (n instanceof HTMLCanvasElement) { c = document.createElement('img'); try { c.src = (n.closest('#stage') && world ? world : n).toDataURL(); } catch { c.src = ''; } }
   else c = n.cloneNode(false);
   const s = getComputedStyle(n); for (const key of s) c.style.setProperty(key, s.getPropertyValue(key));
   c.style.animation = 'none'; c.style.transition = 'none';
   if (n instanceof HTMLImageElement) { try { c.src = await dataURL(await (await fetch(n.currentSrc || n.src)).blob()); } catch { c.removeAttribute('src'); } c.removeAttribute('srcset'); }
   if (n instanceof HTMLInputElement || n instanceof HTMLTextAreaElement) { c = document.createElement('div'); c.style.cssText = n.style.cssText; c.textContent = n.value || n.placeholder; }
-  else if (!(n instanceof HTMLCanvasElement)) for (const child of n.childNodes) c.appendChild(await clone(child));
+  else if (!(n instanceof HTMLCanvasElement)) for (const child of n.childNodes) c.appendChild(await clone(child, world));
   if (n.scrollTop) { c.style.overflow = 'hidden'; const inner = document.createElement('div'); while (c.firstChild) inner.appendChild(c.firstChild); inner.style.transform = `translateY(-${n.scrollTop}px)`; c.appendChild(inner); }
   return c;
 }
@@ -52,7 +52,7 @@ export async function captureScreen(source, { sceneOnly = false } = {}) {
   if (sceneOnly) { if (source) g.drawImage(source, 0, 0, c.width, c.height); }
   else {
     try {
-      const body = await clone(document.body); body.style.margin = '0'; body.style.width = innerWidth + 'px'; body.style.height = innerHeight + 'px';
+      const body = await clone(document.body, source); body.style.margin = '0'; body.style.width = innerWidth + 'px'; body.style.height = innerHeight + 'px';
       const html = new XMLSerializer().serializeToString(body);
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${innerWidth}" height="${innerHeight}"><foreignObject width="100%" height="100%">${html}</foreignObject></svg>`;
       const i = await image('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)); g.drawImage(i, 0, 0, c.width, c.height); c.toDataURL();
