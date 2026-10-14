@@ -8,3 +8,5 @@
 - Isolated durable code/document/evidence checkpoints are part of the accepted work order. No main merge, release or deployment approval.
 - New screenshots and controlled-service tests are evidence only for their stated scope. No zero-bug, physical-device or production-delivery claim.
 - Earlier work-order text saying proposed/documentation-only describes its creation; implementation authorization above supersedes that status. Scope/evidence/release gates remain.
+
+- 14 October 2026, resumed session: Henry explicitly includes every additional game bug found during this repair in the same consolidated round; continue investigation and fixes without another start approval. Standing tool permission for this chat does not authorize main merge, deployment or release.

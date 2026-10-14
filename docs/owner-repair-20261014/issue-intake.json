@@ -1,23 +1,1172 @@
 {
   "schema_version": 1,
-  "captured_at": "2026-10-14T06:38:22.328Z",
+  "captured_at": "2026-10-14T11:19:46.950727+00:00",
   "timezone": "Australia/Sydney",
   "baseline": "6a6ae885f86ad58a52688782eeba1d5417985fe9",
   "draft": "74b918c6c4c52db2e42d24dc69fe2945f1907e3d",
-  "open_issue_count": 168,
-  "bug_issue_count": 166,
-  "new_since_audit_count": 54,
-  "scope": "All listed bugs included for investigation in the combined repair round; on-hold/world design decisions remain explicit.",
+  "bug_issue_count": 216,
+  "new_since_audit_count": 104,
+  "scope": "All open bug-labelled issues included; refreshed through #299. No issue closed by this repair. Individual reproduction and disposition pending unless specifically evidenced.",
   "group_counts": {
-    "offscreen": 133,
-    "freeze": 1,
-    "autoplay": 4,
+    "offscreen": 171,
+    "freeze": 2,
+    "autoplay": 15,
     "error": 6,
     "noopen": 6,
     "manual/other": 4,
     "slow": 12
   },
   "bugs": [
+    {
+      "issue": 299,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/299",
+      "title": "[tester] offscreen: English",
+      "created_at": "2026-10-14T10:13:42Z",
+      "updated_at": "2026-10-14T10:13:42Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 298,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/298",
+      "title": "[tester] offscreen: Tiếng Việt",
+      "created_at": "2026-10-14T10:13:41Z",
+      "updated_at": "2026-10-14T10:13:41Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 297,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/297",
+      "title": "[tester] offscreen: Music",
+      "created_at": "2026-10-14T10:13:39Z",
+      "updated_at": "2026-10-14T10:13:39Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 296,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/296",
+      "title": "[tester] offscreen: Sounds",
+      "created_at": "2026-10-14T10:13:37Z",
+      "updated_at": "2026-10-14T10:13:37Z",
+      "labels": [
+        "bug",
+        "small",
+        "voice-audio",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 295,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/295",
+      "title": "[tester] offscreen: Keep all voices on this device",
+      "created_at": "2026-10-14T10:13:36Z",
+      "updated_at": "2026-10-14T10:13:36Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 294,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/294",
+      "title": "[tester] offscreen: Slow",
+      "created_at": "2026-10-14T10:13:35Z",
+      "updated_at": "2026-10-14T10:13:35Z",
+      "labels": [
+        "bug",
+        "analytics-infra",
+        "small",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 293,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/293",
+      "title": "[tester] offscreen: Normal",
+      "created_at": "2026-10-14T10:13:34Z",
+      "updated_at": "2026-10-14T10:13:34Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 292,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/292",
+      "title": "[tester] offscreen: Quick",
+      "created_at": "2026-10-14T10:13:32Z",
+      "updated_at": "2026-10-14T10:13:32Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 291,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/291",
+      "title": "[tester] offscreen: Fast",
+      "created_at": "2026-10-14T10:13:31Z",
+      "updated_at": "2026-10-14T10:13:31Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 290,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/290",
+      "title": "[tester] offscreen: Auto",
+      "created_at": "2026-10-14T10:13:30Z",
+      "updated_at": "2026-10-14T10:13:30Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 289,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/289",
+      "title": "[tester] offscreen: Pretty",
+      "created_at": "2026-10-14T10:13:28Z",
+      "updated_at": "2026-10-14T10:13:28Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 288,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/288",
+      "title": "[tester] offscreen: Test the connection",
+      "created_at": "2026-10-14T10:13:26Z",
+      "updated_at": "2026-10-14T10:13:26Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 287,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/287",
+      "title": "[tester] offscreen: Save backup",
+      "created_at": "2026-10-14T10:13:25Z",
+      "updated_at": "2026-10-14T10:13:25Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 286,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/286",
+      "title": "[tester] offscreen: + Add mission",
+      "created_at": "2026-10-14T10:13:23Z",
+      "updated_at": "2026-10-14T10:13:23Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 285,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/285",
+      "title": "[tester] offscreen: ✓ TPN",
+      "created_at": "2026-10-14T10:13:22Z",
+      "updated_at": "2026-10-14T10:13:22Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 284,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/284",
+      "title": "[tester] offscreen: Remove",
+      "created_at": "2026-10-14T10:13:20Z",
+      "updated_at": "2026-10-14T10:13:20Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 283,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/283",
+      "title": "[tester] offscreen: TPN",
+      "created_at": "2026-10-14T10:13:19Z",
+      "updated_at": "2026-10-14T10:13:19Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 282,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/282",
+      "title": "[tester] offscreen: Off",
+      "created_at": "2026-10-14T10:13:17Z",
+      "updated_at": "2026-10-14T10:13:17Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 281,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/281",
+      "title": "[tester] offscreen: 中文",
+      "created_at": "2026-10-14T10:13:16Z",
+      "updated_at": "2026-10-14T10:13:16Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 280,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/280",
+      "title": "[tester] offscreen: Play report",
+      "created_at": "2026-10-14T10:13:14Z",
+      "updated_at": "2026-10-14T10:13:14Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 279,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/279",
+      "title": "[tester] offscreen: Edit",
+      "created_at": "2026-10-14T10:13:13Z",
+      "updated_at": "2026-10-14T10:13:13Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 278,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/278",
+      "title": "[tester] offscreen: + Add a player",
+      "created_at": "2026-10-14T10:13:10Z",
+      "updated_at": "2026-10-14T10:13:10Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 277,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/277",
+      "title": "[tester] offscreen: Change player",
+      "created_at": "2026-10-14T10:13:09Z",
+      "updated_at": "2026-10-14T10:13:09Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 276,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/276",
+      "title": "[tester] offscreen: Save",
+      "created_at": "2026-10-14T10:13:07Z",
+      "updated_at": "2026-10-14T10:13:07Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 275,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/275",
+      "title": "[tester] offscreen: 123Count With Me☆☆☆☆",
+      "created_at": "2026-10-14T10:13:06Z",
+      "updated_at": "2026-10-14T10:13:06Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 274,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/274",
+      "title": "[tester] offscreen: Go there",
+      "created_at": "2026-10-14T10:13:05Z",
+      "updated_at": "2026-10-14T10:13:05Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 273,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/273",
+      "title": "[tester] offscreen: How to play",
+      "created_at": "2026-10-14T10:13:03Z",
+      "updated_at": "2026-10-14T10:13:03Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 272,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/272",
+      "title": "[tester] offscreen: Number Train☆☆☆☆",
+      "created_at": "2026-10-14T10:13:02Z",
+      "updated_at": "2026-10-14T10:13:02Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 271,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/271",
+      "title": "[tester] offscreen: More or Less?☆☆☆☆",
+      "created_at": "2026-10-14T10:13:01Z",
+      "updated_at": "2026-10-14T10:13:01Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 270,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/270",
+      "title": "[tester] offscreen: 7Days of the Week☆☆☆☆",
+      "created_at": "2026-10-14T10:12:59Z",
+      "updated_at": "2026-10-14T10:12:59Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 269,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/269",
+      "title": "[tester] offscreen: Dragon Bridge Count☆☆☆☆",
+      "created_at": "2026-10-14T10:12:58Z",
+      "updated_at": "2026-10-14T10:12:58Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 268,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/268",
+      "title": "[tester] offscreen: What's the Time?☆☆☆☆",
+      "created_at": "2026-10-14T10:12:57Z",
+      "updated_at": "2026-10-14T10:12:57Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 267,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/267",
+      "title": "[tester] offscreen: Add It Up☆☆☆☆",
+      "created_at": "2026-10-14T10:12:55Z",
+      "updated_at": "2026-10-14T10:12:55Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 266,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/266",
+      "title": "[tester] offscreen: ABCLetter Hunt☆☆☆☆",
+      "created_at": "2026-10-14T10:12:49Z",
+      "updated_at": "2026-10-14T10:12:49Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 265,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/265",
+      "title": "[tester] offscreen: Two Homes Words☆☆☆☆",
+      "created_at": "2026-10-14T10:12:46Z",
+      "updated_at": "2026-10-14T10:12:46Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 264,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/264",
+      "title": "[tester] offscreen: First Words: Chinese and Hindi☆☆☆☆",
+      "created_at": "2026-10-14T10:12:45Z",
+      "updated_at": "2026-10-14T10:12:45Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 263,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/263",
+      "title": "[tester] offscreen: Opposites☆☆☆☆",
+      "created_at": "2026-10-14T10:12:43Z",
+      "updated_at": "2026-10-14T10:12:43Z",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 262,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/262",
+      "title": "[tester] offscreen: ABCFirst Sounds☆☆☆☆",
+      "created_at": "2026-10-14T10:12:41Z",
+      "updated_at": "2026-10-14T10:12:41Z",
+      "labels": [
+        "bug",
+        "small",
+        "voice-audio",
+        "tester"
+      ],
+      "state": "open",
+      "category": "offscreen",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 261,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/261",
+      "title": "[tester] freeze: 3.4 s",
+      "created_at": "2026-10-14T10:12:40Z",
+      "updated_at": "2026-10-14T10:12:40Z",
+      "labels": [
+        "bug",
+        "analytics-infra",
+        "big",
+        "tester"
+      ],
+      "state": "open",
+      "category": "freeze",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-05",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 260,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/260",
+      "title": "[tester] autoplay: stuck at 20, -83 (plateau)",
+      "created_at": "2026-10-14T10:12:38Z",
+      "updated_at": "2026-10-14T10:12:38Z",
+      "labels": [
+        "bug",
+        "big",
+        "play",
+        "tester"
+      ],
+      "state": "open",
+      "category": "autoplay",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-05",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 259,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/259",
+      "title": "[tester] autoplay: Letter Hunt: slow: 0 frames a second",
+      "created_at": "2026-10-14T10:12:36Z",
+      "updated_at": "2026-10-14T10:12:36Z",
+      "labels": [
+        "bug",
+        "big",
+        "play",
+        "tester"
+      ],
+      "state": "open",
+      "category": "autoplay",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-05",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 258,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/258",
+      "title": "[tester] autoplay: Number Train: did not close",
+      "created_at": "2026-10-14T10:12:35Z",
+      "updated_at": "2026-10-14T10:12:35Z",
+      "labels": [
+        "bug",
+        "big",
+        "play",
+        "tester"
+      ],
+      "state": "open",
+      "category": "autoplay",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-05",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 257,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/257",
+      "title": "[tester] autoplay: Number Train: slow: 0 frames a second",
+      "created_at": "2026-10-14T10:12:34Z",
+      "updated_at": "2026-10-14T10:12:34Z",
+      "labels": [
+        "bug",
+        "big",
+        "play",
+        "tester"
+      ],
+      "state": "open",
+      "category": "autoplay",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-05",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 256,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/256",
+      "title": "[tester] autoplay: stuck at 233, -56 (plateau)",
+      "created_at": "2026-10-14T10:12:32Z",
+      "updated_at": "2026-10-14T10:12:32Z",
+      "labels": [
+        "bug",
+        "big",
+        "play",
+        "tester"
+      ],
+      "state": "open",
+      "category": "autoplay",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-05",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 255,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/255",
+      "title": "[tester] autoplay: Shadow Shapes: did not close",
+      "created_at": "2026-10-14T10:12:31Z",
+      "updated_at": "2026-10-14T10:12:31Z",
+      "labels": [
+        "bug",
+        "big",
+        "play",
+        "tester"
+      ],
+      "state": "open",
+      "category": "autoplay",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-05",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 254,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/254",
+      "title": "[tester] autoplay: Shadow Shapes: slow: 0 frames a second",
+      "created_at": "2026-10-14T10:12:29Z",
+      "updated_at": "2026-10-14T10:12:29Z",
+      "labels": [
+        "bug",
+        "big",
+        "play",
+        "tester"
+      ],
+      "state": "open",
+      "category": "autoplay",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-05",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 253,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/253",
+      "title": "[tester] autoplay: Letter Hunt: stuck at 20, -83 (plateau); slow: 0 frames a second",
+      "created_at": "2026-10-14T10:12:28Z",
+      "updated_at": "2026-10-14T10:12:28Z",
+      "labels": [
+        "bug",
+        "big",
+        "play",
+        "tester"
+      ],
+      "state": "open",
+      "category": "autoplay",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-05",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 252,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/252",
+      "title": "[tester] autoplay: Number Train: did not close; slow: 0 frames a second",
+      "created_at": "2026-10-14T10:12:27Z",
+      "updated_at": "2026-10-14T10:12:27Z",
+      "labels": [
+        "bug",
+        "big",
+        "play",
+        "tester"
+      ],
+      "state": "open",
+      "category": "autoplay",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-05",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 251,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/251",
+      "title": "[tester] autoplay: Shadow Shapes: stuck at 233, -56 (plateau); did not close; slow: 0 frames a second",
+      "created_at": "2026-10-14T10:12:25Z",
+      "updated_at": "2026-10-14T10:12:25Z",
+      "labels": [
+        "bug",
+        "big",
+        "play",
+        "tester"
+      ],
+      "state": "open",
+      "category": "autoplay",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-05",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
+    {
+      "issue": 250,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/250",
+      "title": "[tester] autoplay: Rainbow Paints: did not close",
+      "created_at": "2026-10-14T10:12:24Z",
+      "updated_at": "2026-10-14T10:12:24Z",
+      "labels": [
+        "bug",
+        "big",
+        "play",
+        "tester"
+      ],
+      "state": "open",
+      "category": "autoplay",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-05",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+    },
     {
       "issue": 249,
       "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/249",
@@ -38,7 +1187,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 248,
@@ -60,7 +1210,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 247,
@@ -82,7 +1233,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 246,
@@ -104,7 +1256,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 245,
@@ -126,7 +1279,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 244,
@@ -148,7 +1302,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 243,
@@ -170,29 +1325,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
-    },
-    {
-      "issue": 242,
-      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/242",
-      "category": "offscreen",
-      "title": "[tester] offscreen: Read With Me☆☆☆☆",
-      "created_at": "2026-10-14T04:53:34Z",
-      "updated_at": "2026-10-14T04:53:34Z",
-      "new_since_audit": true,
-      "work_order_ids": [
-        "WO-01",
-        "WO-09",
-        "WO-16"
       ],
-      "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause; no fix claimed",
-      "labels": [
-        "bug",
-        "small",
-        "kid-ui",
-        "tester"
-      ]
+      "state": "open"
     },
     {
       "issue": 241,
@@ -214,7 +1348,31 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
+    },
+    {
+      "issue": 242,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/242",
+      "category": "offscreen",
+      "title": "[tester] offscreen: Read With Me☆☆☆☆",
+      "created_at": "2026-10-14T04:53:34Z",
+      "updated_at": "2026-10-14T04:53:34Z",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause; no fix claimed",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open"
     },
     {
       "issue": 240,
@@ -236,7 +1394,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 239,
@@ -258,7 +1417,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 238,
@@ -280,7 +1440,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 237,
@@ -302,7 +1463,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 236,
@@ -324,7 +1486,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 235,
@@ -346,7 +1509,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 234,
@@ -368,29 +1532,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
-    },
-    {
-      "issue": 233,
-      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/233",
-      "category": "offscreen",
-      "title": "[tester] offscreen: How Do They Feel?☆☆☆☆",
-      "created_at": "2026-10-14T04:53:26Z",
-      "updated_at": "2026-10-14T04:53:26Z",
-      "new_since_audit": true,
-      "work_order_ids": [
-        "WO-01",
-        "WO-09",
-        "WO-16"
       ],
-      "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause; no fix claimed",
-      "labels": [
-        "bug",
-        "small",
-        "kid-ui",
-        "tester"
-      ]
+      "state": "open"
     },
     {
       "issue": 232,
@@ -412,7 +1555,31 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
+    },
+    {
+      "issue": 233,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/233",
+      "category": "offscreen",
+      "title": "[tester] offscreen: How Do They Feel?☆☆☆☆",
+      "created_at": "2026-10-14T04:53:26Z",
+      "updated_at": "2026-10-14T04:53:26Z",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause; no fix claimed",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open"
     },
     {
       "issue": 231,
@@ -434,7 +1601,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 230,
@@ -456,7 +1624,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 229,
@@ -478,7 +1647,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 228,
@@ -500,7 +1670,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 227,
@@ -522,7 +1693,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 226,
@@ -544,7 +1716,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 225,
@@ -566,7 +1739,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 224,
@@ -588,7 +1762,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 223,
@@ -610,7 +1785,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 222,
@@ -632,7 +1808,8 @@
         "small",
         "online",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 221,
@@ -654,7 +1831,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 220,
@@ -677,7 +1855,8 @@
         "analytics-infra",
         "big",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 219,
@@ -699,7 +1878,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 218,
@@ -721,7 +1901,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 217,
@@ -729,7 +1910,7 @@
       "category": "offscreen",
       "title": "[tester] offscreen: Tiếng Việt",
       "created_at": "2026-10-14T04:53:10Z",
-      "updated_at": "2026-10-14T04:53:10Z",
+      "updated_at": "2026-10-14T10:13:46Z",
       "new_since_audit": true,
       "work_order_ids": [
         "WO-01",
@@ -743,7 +1924,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 216,
@@ -751,7 +1933,7 @@
       "category": "offscreen",
       "title": "[tester] offscreen: Music",
       "created_at": "2026-10-14T04:53:09Z",
-      "updated_at": "2026-10-14T04:53:09Z",
+      "updated_at": "2026-10-14T10:13:45Z",
       "new_since_audit": true,
       "work_order_ids": [
         "WO-01",
@@ -765,7 +1947,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 215,
@@ -773,7 +1956,7 @@
       "category": "offscreen",
       "title": "[tester] offscreen: Sounds",
       "created_at": "2026-10-14T04:53:08Z",
-      "updated_at": "2026-10-14T04:53:08Z",
+      "updated_at": "2026-10-14T10:13:44Z",
       "new_since_audit": true,
       "work_order_ids": [
         "WO-01",
@@ -787,7 +1970,8 @@
         "small",
         "voice-audio",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 214,
@@ -809,7 +1993,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 213,
@@ -831,29 +2016,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
-    },
-    {
-      "issue": 212,
-      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/212",
-      "category": "offscreen",
-      "title": "[tester] offscreen: Cute",
-      "created_at": "2026-10-14T04:53:05Z",
-      "updated_at": "2026-10-14T04:53:05Z",
-      "new_since_audit": true,
-      "work_order_ids": [
-        "WO-01",
-        "WO-09",
-        "WO-16"
       ],
-      "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause; no fix claimed",
-      "labels": [
-        "bug",
-        "small",
-        "kid-ui",
-        "tester"
-      ]
+      "state": "open"
     },
     {
       "issue": 211,
@@ -875,7 +2039,31 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
+    },
+    {
+      "issue": 212,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/212",
+      "category": "offscreen",
+      "title": "[tester] offscreen: Cute",
+      "created_at": "2026-10-14T04:53:05Z",
+      "updated_at": "2026-10-14T04:53:05Z",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause; no fix claimed",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open"
     },
     {
       "issue": 210,
@@ -897,7 +2085,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 209,
@@ -919,7 +2108,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 208,
@@ -941,7 +2131,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 207,
@@ -963,7 +2154,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 206,
@@ -985,7 +2177,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 205,
@@ -1007,7 +2200,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 204,
@@ -1029,7 +2223,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 203,
@@ -1051,7 +2246,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 202,
@@ -1059,7 +2255,7 @@
       "category": "offscreen",
       "title": "[tester] offscreen: Sounds",
       "created_at": "2026-10-14T04:52:55Z",
-      "updated_at": "2026-10-14T04:52:55Z",
+      "updated_at": "2026-10-14T11:18:20Z",
       "new_since_audit": true,
       "work_order_ids": [
         "WO-01",
@@ -1071,9 +2267,11 @@
       "labels": [
         "bug",
         "small",
+        "robot-stuck",
         "voice-audio",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 201,
@@ -1081,7 +2279,7 @@
       "category": "offscreen",
       "title": "[tester] offscreen: Talking",
       "created_at": "2026-10-14T04:52:54Z",
-      "updated_at": "2026-10-14T04:52:54Z",
+      "updated_at": "2026-10-14T11:17:51Z",
       "new_since_audit": true,
       "work_order_ids": [
         "WO-01",
@@ -1093,9 +2291,11 @@
       "labels": [
         "bug",
         "small",
+        "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 200,
@@ -1103,7 +2303,7 @@
       "category": "offscreen",
       "title": "[tester] offscreen: Natural",
       "created_at": "2026-10-14T04:52:53Z",
-      "updated_at": "2026-10-14T04:52:53Z",
+      "updated_at": "2026-10-14T11:17:20Z",
       "new_since_audit": true,
       "work_order_ids": [
         "WO-01",
@@ -1115,9 +2315,11 @@
       "labels": [
         "bug",
         "small",
+        "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 199,
@@ -1139,29 +2341,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
-    },
-    {
-      "issue": 198,
-      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/198",
-      "category": "offscreen",
-      "title": "[tester] offscreen: Grandparent",
-      "created_at": "2026-10-14T04:52:51Z",
-      "updated_at": "2026-10-14T04:52:51Z",
-      "new_since_audit": true,
-      "work_order_ids": [
-        "WO-01",
-        "WO-09",
-        "WO-16"
       ],
-      "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause; no fix claimed",
-      "labels": [
-        "bug",
-        "small",
-        "kid-ui",
-        "tester"
-      ]
+      "state": "open"
     },
     {
       "issue": 197,
@@ -1183,7 +2364,31 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
+    },
+    {
+      "issue": 198,
+      "url": "https://github.com/nguyentuanphu/Sparkle-Valley/issues/198",
+      "category": "offscreen",
+      "title": "[tester] offscreen: Grandparent",
+      "created_at": "2026-10-14T04:52:51Z",
+      "updated_at": "2026-10-14T04:52:51Z",
+      "new_since_audit": true,
+      "work_order_ids": [
+        "WO-01",
+        "WO-09",
+        "WO-16"
+      ],
+      "status": "intake-complete-reproduction-pending",
+      "disposition": "Keep open; investigate root cause; no fix claimed",
+      "labels": [
+        "bug",
+        "small",
+        "kid-ui",
+        "tester"
+      ],
+      "state": "open"
     },
     {
       "issue": 196,
@@ -1205,7 +2410,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 193,
@@ -1227,7 +2433,8 @@
         "big",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 192,
@@ -1249,7 +2456,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 191,
@@ -1271,7 +2479,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 190,
@@ -1293,7 +2502,8 @@
         "big",
         "play",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 189,
@@ -1315,7 +2525,8 @@
         "big",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 188,
@@ -1337,7 +2548,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 187,
@@ -1359,7 +2571,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 186,
@@ -1379,7 +2592,8 @@
         "big",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 185,
@@ -1401,7 +2615,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 184,
@@ -1423,7 +2638,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 183,
@@ -1445,7 +2661,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 182,
@@ -1467,7 +2684,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 181,
@@ -1489,7 +2707,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 180,
@@ -1511,7 +2730,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 179,
@@ -1533,7 +2753,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 178,
@@ -1555,7 +2776,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 177,
@@ -1577,7 +2799,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 176,
@@ -1599,7 +2822,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 175,
@@ -1621,7 +2845,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 174,
@@ -1643,7 +2868,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 173,
@@ -1665,7 +2891,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 172,
@@ -1687,7 +2914,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 171,
@@ -1709,7 +2937,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 170,
@@ -1731,7 +2960,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 169,
@@ -1753,7 +2983,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 168,
@@ -1775,7 +3006,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 167,
@@ -1797,7 +3029,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 166,
@@ -1819,7 +3052,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 165,
@@ -1841,7 +3075,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 164,
@@ -1863,7 +3098,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 163,
@@ -1885,7 +3121,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 162,
@@ -1907,7 +3144,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 161,
@@ -1929,7 +3167,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 160,
@@ -1951,7 +3190,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 159,
@@ -1973,7 +3213,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 158,
@@ -1995,7 +3236,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 157,
@@ -2017,7 +3259,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 156,
@@ -2039,7 +3282,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 155,
@@ -2062,7 +3306,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 154,
@@ -2085,7 +3330,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 153,
@@ -2108,7 +3354,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 152,
@@ -2131,7 +3378,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 151,
@@ -2154,7 +3402,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 150,
@@ -2177,7 +3426,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 149,
@@ -2200,7 +3450,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 148,
@@ -2223,7 +3474,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 147,
@@ -2245,7 +3497,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 146,
@@ -2267,7 +3520,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 145,
@@ -2289,7 +3543,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 144,
@@ -2311,7 +3566,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 143,
@@ -2333,7 +3589,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 142,
@@ -2355,7 +3612,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 141,
@@ -2377,7 +3635,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 140,
@@ -2399,7 +3658,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 134,
@@ -2421,7 +3681,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 133,
@@ -2443,7 +3704,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 132,
@@ -2465,7 +3727,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 131,
@@ -2487,7 +3750,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 130,
@@ -2509,7 +3773,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 129,
@@ -2531,7 +3796,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 128,
@@ -2553,7 +3819,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 127,
@@ -2575,7 +3842,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 126,
@@ -2597,7 +3865,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 125,
@@ -2619,7 +3888,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 124,
@@ -2641,7 +3911,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 123,
@@ -2664,7 +3935,8 @@
         "big",
         "play",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 122,
@@ -2686,7 +3958,8 @@
         "small",
         "online",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 121,
@@ -2708,7 +3981,8 @@
         "small",
         "online",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 120,
@@ -2730,7 +4004,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 119,
@@ -2752,7 +4027,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 118,
@@ -2774,7 +4050,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 117,
@@ -2797,7 +4074,8 @@
         "analytics-infra",
         "big",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 116,
@@ -2820,7 +4098,8 @@
         "analytics-infra",
         "big",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 115,
@@ -2842,7 +4121,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 114,
@@ -2864,7 +4144,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 113,
@@ -2886,7 +4167,8 @@
         "small",
         "online",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 112,
@@ -2908,7 +4190,8 @@
         "small",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 111,
@@ -2931,7 +4214,8 @@
         "analytics-infra",
         "big",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 110,
@@ -2954,7 +4238,8 @@
         "big",
         "online",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 109,
@@ -2977,7 +4262,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 108,
@@ -3001,7 +4287,8 @@
         "big",
         "robot-stuck",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 107,
@@ -3025,7 +4312,8 @@
         "big",
         "robot-stuck",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 106,
@@ -3049,7 +4337,8 @@
         "big",
         "robot-stuck",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 105,
@@ -3073,7 +4362,8 @@
         "robot-stuck",
         "voice-audio",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 104,
@@ -3097,7 +4387,8 @@
         "big",
         "robot-stuck",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 103,
@@ -3121,7 +4412,8 @@
         "big",
         "robot-stuck",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 102,
@@ -3144,7 +4436,8 @@
         "robot-stuck",
         "play",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 101,
@@ -3167,7 +4460,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 100,
@@ -3190,7 +4484,8 @@
         "robot-stuck",
         "play",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 99,
@@ -3213,7 +4508,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 98,
@@ -3236,7 +4532,8 @@
         "robot-stuck",
         "play",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 97,
@@ -3259,7 +4556,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 96,
@@ -3267,7 +4565,7 @@
       "category": "offscreen",
       "title": "[tester] offscreen: English",
       "created_at": "2026-10-13T11:47:59Z",
-      "updated_at": "2026-10-14T04:53:11Z",
+      "updated_at": "2026-10-14T10:13:48Z",
       "new_since_audit": false,
       "work_order_ids": [
         "WO-01",
@@ -3282,7 +4580,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 95,
@@ -3305,7 +4604,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 94,
@@ -3328,7 +4628,8 @@
         "robot-stuck",
         "play",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 93,
@@ -3351,7 +4652,8 @@
         "robot-stuck",
         "play",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 92,
@@ -3374,7 +4676,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 91,
@@ -3397,7 +4700,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 90,
@@ -3421,7 +4725,8 @@
         "big",
         "needs-go",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 89,
@@ -3444,7 +4749,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 88,
@@ -3468,7 +4774,8 @@
         "big",
         "needs-go",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 87,
@@ -3491,7 +4798,8 @@
         "fixed-on-branch",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 86,
@@ -3512,7 +4820,8 @@
         "needs-go",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 83,
@@ -3535,7 +4844,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 82,
@@ -3558,7 +4868,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 81,
@@ -3581,7 +4892,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 80,
@@ -3604,7 +4916,8 @@
         "needs-go",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 79,
@@ -3627,7 +4940,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 78,
@@ -3650,7 +4964,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 77,
@@ -3673,7 +4988,8 @@
         "robot-stuck",
         "kid-ui",
         "tester"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 36,
@@ -3696,7 +5012,8 @@
         "analytics-infra",
         "big",
         "on-hold"
-      ]
+      ],
+      "state": "open"
     },
     {
       "issue": 34,
@@ -3716,7 +5033,9 @@
         "big",
         "on-hold",
         "world"
-      ]
+      ],
+      "state": "open"
     }
-  ]
+  ],
+  "new_after_previous_checkpoint_count": 50
 }

@@ -8,7 +8,7 @@ Owner approved the consolidated repair plan and inclusion of new reports, with a
 - Approved R74 baseline: 6a6ae885f86ad58a52688782eeba1d5417985fe9.
 - Rejected R75 subject: 74b918c6c4c52db2e42d24dc69fe2945f1907e3d; PR195 remains separate.
 - Isolated repair branch: work/owner-repair-20261014, based on R75 with selective repairs preserving R74 identity.
-- Last remote checkpoint: e90b8b92f977064d7eada1bbe969e16e9d4e98c5, tree52d12f508b5d0a8ec6707950ad3d8d3731532821. Newer Bag/report-storage/type/version-total changes are local and awaiting focused checks/checkpoint.
+- Verified remote code checkpoint: 25176e742b5525f62c801d7b467ae451baaabe26. Parent e90b8b9; its formerly local Bag/report-storage/type/version-total changes are saved in this checkpoint. Current reconciliation/intake/result updates are documentation only.
 - Last update: 14 October 2026 AEDT. Role: Release repair editor. WO-01/05/06/07/08/09/10/16/19 active.
 
 ## Implemented and focused checked
@@ -52,3 +52,15 @@ Inspect refreshed candidate screenshots and compare R74 at matching states; reco
 
 ## Interruption at21:52 AEDT
 A later7-check follow-up could not start: pinned Playwright browser cache under /root was removed during environment reset/inactivity. This is an environment failure, not7 behavioral failures. No test/browser process remains. Earlier9/9 results are preserved. Browser is being reinstalled into workspace/test-browsers to avoid relying on the root cache. Final Audio placement change is source-checked, with browser rerun pending. Newer code/evidence is being saved as an explicitly partial second remote checkpoint; no release.
+
+## Resumed validation · 14 October 2026, 22:22 AEDT
+
+Fresh workspace restored from GitHub; no prior local-only pictures available. Fetched current refs; main remains approved R74. Clean repair checkout before documentation updates. Restored Playwright 1.56.1 and Chromium 141.0.7390.37 build1194 (headless shell) under /workspace/test-browsers; no check weakened. Shell network requires runtime network grant.
+
+Fresh suite.mjs --only unit,types,rules,arch,bilingual,reportstorage,testerreport,wearbag,bagitems --jobs1: 9/9 in4 minutes, 99 unit tests, no skips. Exact saved code25176e7; result: evidence/resumed-focused-9-checks.json. Focused results are not full-suite proof.
+
+Refreshed intake:216 open bug-labelled issues, including50 additional #250–299; all included in this same round. Previous166 rows preserved; individual reproduction/disposition still pending.229 total bug-labelled issues across all states must not be confused with216 open. Newly discovered game defects also remain in this same round (Henry, this resumed session). No issue closed.
+
+Workflow observations: Quick checks38553786640 and Checks38553786605 passed on25176e7; Owner round voices38553786584 passed recording/coverage and uploaded delta, not yet integrated/verified locally. Mirror38553786588 was in progress at inspection. Latest full-suite list shows failed rejected-R75 run38496833012 and cancelled older run38493876790; neither validates repair. PR139 awaiting action in historical full-suite run38444848782. PR195 remains separate.
+
+Active local expanded suite: reading,rollout,hoilang,voicecover,ownerround,soundsw,reportdetectors --all --jobs1, session17922; server session4200 at8765. Logs tests/out/suite-1.log. Reading is pending until this run completes. Next: save outcomes, fix confirmed failures, recapture attributed matching screenshots; diagnostic repair draft PR after this checkpoint. Whole round remains incomplete; no main merge/deployment/release approved.
