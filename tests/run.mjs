@@ -1094,7 +1094,7 @@ await check('autoplay', async () => {
   ok(mid.on && mid.folded && mid.busy && full, 'the run did not start, fold its window, light its button, or keep the child going: ' + JSON.stringify(mid) + ' ' + full);
   ok(end.mark === 1, 'the game restarted after the run');
   ok(fingerSeen, 'no finger on the screen while it played');
-  const rep = end.rep; ok(rep && rep.done.length === keys.length && rep.sent, 'no full report: ' + JSON.stringify(rep && rep.done.map(r => r.key)));
+  const rep = end.rep; ok(rep && rep.done.length === keys.length && rep.reportState === 'disabled' && !rep.sent, 'no full report: ' + JSON.stringify(rep && rep.done.map(r => r.key)));
   const bad = rep.done.filter(r => r.problems.some(p => !/^slow:/.test(p)));
   ok(!bad.length, 'the check found: ' + JSON.stringify(bad.map(r => [r.key, r.problems])));
   const played = rep.done.filter(r => /^game:/.test(r.key)); ok(played.every(r => /(won|played): \d+ ✓, \d+ ✗, [1-9]/.test(r.said)), 'the games were not played: ' + JSON.stringify(played.map(r => [r.key, r.said])));
@@ -1123,7 +1123,7 @@ await check('autoplay', async () => {
 // by the Releases rule, the website's /api/tester pretended (what it was sent, and what it answers)
 const testerPre = (rule, extra = '') => `try { localStorage.setItem('sv2_playerid', 'tester000001'); localStorage.setItem('sv2_live', JSON.stringify({ releases: { tester: ${JSON.stringify(rule)} }, festivals: {} })); ${extra} } catch (e) { }`;
 const testerSite = async (ctx, status) => { const got = []; await ctx.route('**/api/tester**', async rt => { const q = rt.request();
-  if (q.method() === 'POST') { let b = null; try { b = JSON.parse(q.postData() || 'null'); } catch (e) { } got.push(b); return rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, k: '0123456789abcdef', status: 'new' }) }); }
+  if (q.method() === 'POST') { let b = null; try { b = JSON.parse(q.postData() || 'null'); } catch (e) { } got.push(b); return rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, k: '0123456789abcdef', rid: 'fedcba9876543210', status: 'new' }) }); }
   return rt.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(status()) }); }); return got; };
 const ACCEPTED = `localStorage.setItem('sv2_tester', JSON.stringify({ at: 1, b: 'r1' }));`;
 
@@ -2149,7 +2149,7 @@ await check('shop', async () => {
     out.bagOpens = !!document.querySelector('.modal.pad') && !document.querySelector('.modal.shopk') && tabsK.indexOf('shop') === tabsK.indexOf('bag') + 1 && !G.huds[0].root.querySelector('.dk.shop');
     out.bagShopBtn = sb ? (() => { const q = sb.getBoundingClientRect(); return q.width >= 44 && q.height >= 44; })() : false;
     sb && sb.click(); await w(700);
-    out.there = Math.hypot(h.pos.x - pos0.x, h.pos.z - pos0.z) < 1 && !document.querySelector('.modal.pad'); const card = document.querySelector('.modal.shopk .card');
+    out.there = Math.hypot(h.pos.x - pos0.x, h.pos.z - pos0.z) < 1 && !!document.querySelector('.modal.pad'); const card = document.querySelector('.pad .shop-content');
     out.opened = !!card; out.tabs = card ? card.querySelectorAll('.ktab').length : 0; out.noBagTab = card ? !card.querySelector('[data-go="bag"]') : false;
     // (nothing to read: each thing is a drawing and a number; the words inside a drawing, like the coin's "$", are part
     // of the picture, so the text is read with the drawings taken out)
@@ -2165,7 +2165,7 @@ await check('shop', async () => {
     // not enough coins: nothing is bought
     G.addCoins(-S.farm.coins); card.querySelector('[data-tab="back"]').click(); await w(150); const bkB = await item('dragon'), bkId = bkB.dataset.id; bkB.click(); await w(150); card.querySelector('.kyes').click(); await w(300);
     out.poorKept = !SH.owns(p, bkId) && S.farm.coins === 0;
-    card.querySelector('.x').click(); await w(400); out.closed = !document.querySelector('.modal.shopk') && !G.paused;
+    document.querySelector('.pad-head .x').click(); await w(400); out.closed = !document.querySelector('.modal.pad') && !G.paused;
     // under-5s: every button at least 64 px
     p.age = 'little'; G.shop.openShop(0); await w(400);
     out.little = [...document.querySelectorAll('.modal.shopk.little .ktab, .modal.shopk.little .kitem')].filter(b => { const q = b.getBoundingClientRect(); return q.width < 64 || q.height < 64; }).length;
@@ -3363,7 +3363,7 @@ await check('a11y', async () => {
 await check('unit', async () => {
   // Node unit tests (architecture §10): the L0 core (ids, events, seeded random, geometry), node --test tests/unit
   const { execFileSync } = await import('child_process');
-  let out = ''; try { out = execFileSync(process.execPath, ['--test', ...fs.readdirSync('unit').filter(f => f.endsWith('.test.mjs')).map(f => 'unit/' + f)], { encoding: 'utf8' }); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').filter(l => /^not ok|Error/.test(l)).slice(0, 6).join(' | ')); }
+  let out = ''; try { out = execFileSync(process.execPath, ['--test', '--test-reporter=tap', ...fs.readdirSync('unit').filter(f => f.endsWith('.test.mjs')).map(f => 'unit/' + f)], { encoding: 'utf8' }); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').filter(l => /^not ok|Error/.test(l)).slice(0, 6).join(' | ')); }
   const pass = (out.match(/^# pass (\d+)/m) || [])[1], fail = (out.match(/^# fail (\d+)/m) || [])[1];
   ok(+fail === 0 && +pass > 0, out.slice(-400));
   return `${pass} unit tests passed`;

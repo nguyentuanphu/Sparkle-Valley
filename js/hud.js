@@ -94,7 +94,7 @@ export class Hud {
     // press and hold Music: the Songs page (round O)
     { const b = this.q('.dk.mus'); let t = 0; b.addEventListener('pointerdown', () => { clearTimeout(t); t = setTimeout(() => { this._musHeld = true; game.openSongs && game.openSongs(); }, 650); }); for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, () => clearTimeout(t)); }
     this.q('.z-where').onclick = () => game.openWhere && game.openWhere(i);   // (Round U) "Where is…?" sparkles
-    this.q('.dk.snd').onclick = () => game.openSound();   // (Round U) the three Sound switches: music, sounds, voice
+    this.q('.dk.snd').onclick = () => game.openSound(this.q('.dk.snd'));   // (Round U) the three Sound switches: music, sounds, voice
     this.q('.friendchip').onclick = () => { const r = game.findFriend(i); if (r) game.say && game.say(r[0], r[1]); };
     // (Round V, owner 13 Oct) a tap on the quest folds it to a small chip and hides its arrow and sparkles; a tap on the chip
     // opens it again and says the goal (remembered per child)

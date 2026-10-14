@@ -29,6 +29,7 @@ export const AP_SPEEDS = {
   watch: { en: 'Watch', vi: 'Xem', run: false, fly: 110, think: [1.1, 2.2], finger: 650, game: 90, page: 0, stay: 3, talk: 3, idle: 25 },
   fast: { en: 'Quick', vi: 'Nhanh', run: true, fly: 45, think: [.35, .8], finger: 260, game: 45, page: 1.6, stay: .8, talk: 1.2, idle: 14 }
 };
+for (const rate of [1, 2, 3, 5]) AP_SPEEDS['x' + rate] = { ...AP_SPEEDS.watch, en: rate + '×', vi: rate + '×', run: rate > 1, think: AP_SPEEDS.watch.think.map(n => n / rate), finger: AP_SPEEDS.watch.finger / rate, stay: AP_SPEEDS.watch.stay / rate, talk: AP_SPEEDS.watch.talk / rate, game: AP_SPEEDS.watch.game, idle: AP_SPEEDS.watch.idle, rate };
 export const apSpeed = k => AP_SPEEDS[k] || AP_SPEEDS.fast;
 // a game or a story that has not opened after this many seconds did not open
 export const AP_OPEN_WAIT = 3;
@@ -48,7 +49,7 @@ export const apGroupOf = id => /^npc_/.test(id) ? 'people' : /^festival_/.test(i
   : /hoilang|folk|show|stage|singer|pole|parade/.test(id) ? 'folk' : 'things';
 // may this device show the window? (rule: the release rule from Studio; me: this device's player id)
 export function apAllowed(on, rule, me) {
-  if (!on) return false;
+  if (!on || rule?.policies?.[me]?.autoplay === false) return false;
   const list = rule && Array.isArray(rule.devices) ? rule.devices.filter(d => typeof d === 'string') : [];
   return !list.length || list.includes(me);
 }
@@ -62,7 +63,7 @@ export const REVERT = [
   { key: 'progress', en: 'Everything since they became a tester goes back', vi: 'Mọi tiến bộ từ khi làm người thử được trả lại' },
   { key: 'autoplay', en: 'Only what auto play did goes back', vi: 'Chỉ trả lại phần tự chơi đã làm' }
 ];
-export const revertOf = rule => rule && rule.revert === 'autoplay' ? 'autoplay' : 'progress';
+export const revertOf = (rule, device = '') => { const value = rule?.policies?.[device]?.revert || rule?.revert; return ['keep', 'autoplay', 'progress'].includes(value) ? value : 'progress'; };
 // the fields of a child's profile that stay as they are now: rewards (badges and the star are in `look`, stickers, the
 // album, clothes and gear in `owned`, the tester's stickers) and what a grown-up set (name, photo, age, how hard, which
 // screen, which story they follow), and where they stand

@@ -8,6 +8,7 @@ import { startRecording, releaseMic, micProblem } from './recorder.js';
 import { SFX, Music, ac } from './audio.js';
 import { fmt, cur, spoken as money } from './money.js';
 import { el, esc, $, clamp, wait, local } from './util.js';
+import { familyDevicesHTML, bindFamilyDevices } from './familydevices.js';
 import { familyCode, setFamilyCode, familyPhotoCount, featureOn } from './custom.js';
 import { DEFAULT_OUTFITS, outfitOf, CLOTHES, ITEM, owns, wear as wearItem } from './content/shop.js'; // (round S, owner plan 8 Oct) two starting outfits when the clothes shop is on
 import { avatarURL, applyNpcFaces } from './avatar.js';
@@ -68,7 +69,7 @@ let hideCaption = () => { };
   };
   spoken.push(text => {
     if (settings.captions === false || !text) return;
-    if (document.querySelector('.dialog:not(.out), .storybook, .gl, .howto, .credits')) return;
+    if (document.querySelector('.modal:not(.out), .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .gl, .howto, .credits')) return;
     if (!cap) { cap = el('div', 'caption'); cap.setAttribute('role', 'status'); cap.setAttribute('aria-live', 'polite'); document.body.appendChild(cap); }
     stop(); let at = 0;
     chunks(text).forEach(c => {
@@ -305,6 +306,7 @@ export function openGrownups(after) {
       <h2>${T('Grown-ups', 'Phụ huynh')} <small class="buildtag">${T('Build', 'Bản')} ${BUILD}</small></h2>
       <div class="g-install"></div>
       ${privacyHTML()}
+      ${familyDevicesHTML()}
       <div class="toggles gcaprow">
         <label class="tog"><input type="checkbox" id="gCap" ${settings.captions === false ? '' : 'checked'}> ${T('Captions: show everything that is said as text', 'Phụ đề: hiện chữ cho mọi câu được nói')}</label>
       </div>
@@ -475,6 +477,7 @@ export function openGrownups(after) {
     card.querySelectorAll('[data-rep]').forEach(b => b.onclick = () => { SFX.tap(); openReport(profiles.find(p => p.id === b.dataset.rep)); });
     card.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => openEditor(profiles.find(p => p.id === b.dataset.ed), () => { draw(); after && after(); }));
     // (round R privacy) the family code: kept on this device only (never in a backup); empty removes it and the photos
+    bindFamilyDevices(card, NPC_NAMES.map(({ id }) => ({ id: window.__sv?.npcs.find(n => n.name === id)?.id || id, name: nm(id) })));
     card.querySelector('#gFamSave').onclick = async () => { const v = card.querySelector('#gFam').value.trim(), out = card.querySelector('#gFamRes'); if (/^•/.test(v)) return; out.textContent = '…';
       const r = await setFamilyCode(v).catch(() => ({ ok: false }));
       out.textContent = r.cleared ? T('Family code removed from this device.', 'Đã xóa mã gia đình khỏi máy này.') : r.bad ? T('That code is not right: check it with the grown-up who set up the game.', 'Mã chưa đúng: hỏi lại người lớn đã cài trò chơi.') : r.ok ? T(`Saved: ${r.n || 0} of ${r.of || 0} family photos on this device.`, `Đã lưu: ${r.n || 0}/${r.of || 0} ảnh gia đình trên máy này.`) : T('Saved. The photos come the next time this device is online.', 'Đã lưu. Ảnh sẽ về khi máy có mạng.'); };
@@ -720,10 +723,10 @@ export function openPad(game, i, tab) {
     const sl = card.querySelector('.pad-tabs') ? card.querySelector('.pad-tabs').scrollLeft : 0;
     card.innerHTML = `<div class="pad-head"><div class="pad-tabs">${TABS.map((t, k) => `<button data-t="${t[0]}" class="${t[0] === tab ? 'on' : ''}"><span>${pic(t[1])}</span><small>${t[2]}<kbd class="padkey">${k + 1}</kbd></small></button>`).join('')}</div><button class="x" aria-label="${T('Close', 'Đóng')}">✕<kbd class="padkey">Esc</kbd></button></div><div class="pad-body"></div>`;
     card.querySelector('.pad-tabs').scrollLeft = sl;
-    card.querySelectorAll('.pad-tabs button').forEach(b => b.onclick = () => { SFX.tap(); if (b.dataset.t === 'shop') { toShop(); return; } tab = b.dataset.t; draw(); });
+    card.querySelectorAll('.pad-tabs button').forEach(b => b.onclick = () => { SFX.tap(); tab = b.dataset.t; draw(); });
     card.querySelector('.x').onclick = close;
     const body = card.querySelector('.pad-body');
-    ({ map: drawMap, bag: drawBag, log: drawLog, album: drawAlbum, games: drawGames, cam: drawCam, friend: drawFriend, passport: b => game.drawPassport(b, hero), cal: drawCal })[tab](body);
+    ({ shop: b => game.shop.openShop(i, b), map: drawMap, bag: drawBag, log: drawLog, album: drawAlbum, games: drawGames, cam: drawCam, friend: drawFriend, passport: b => game.drawPassport(b, hero), cal: drawCal })[tab](body);
     if (tab === 'bag' || tab === 'log' || tab === 'album') foldHeadings(body, tab); // (owner, 13 Oct) each part opens and closes
   };
   // computer keyboards: 1–8 pick a tab, ← → step through them, Esc closes
@@ -734,11 +737,11 @@ export function openPad(game, i, tab) {
     if (/^Digit[1-9]$/.test(e.code)) k = +e.code.slice(5) - 1;
     else if (e.code === 'ArrowRight' || e.code === 'BracketRight') k = (cur + 1) % TABS.length;
     else if (e.code === 'ArrowLeft' || e.code === 'BracketLeft') k = (cur + TABS.length - 1) % TABS.length;
-    if (k >= 0 && TABS[k]) { e.preventDefault(); e.stopImmediatePropagation(); SFX.tap(); if (TABS[k][0] === 'shop') { toShop(); return; } tab = TABS[k][0]; draw(); }
+    if (k >= 0 && TABS[k]) { e.preventDefault(); e.stopImmediatePropagation(); SFX.tap(); tab = TABS[k][0]; draw(); }
   };
   addEventListener('keydown', onKey, true);
   const close = () => { removeEventListener('keydown', onKey, true); m.close(); game.closePad(i); };
-  const toShop = () => { close(); setTimeout(() => game.shop.openShop(i), 220); };
+
   function drawMap(body) {
     withSitePlaces(game.PLACES);
     const S = 600, wrap = el('div', 'mapwrap'), cv = el('canvas', 'bigmap'); cv.width = cv.height = S; wrap.appendChild(cv); body.appendChild(wrap);
@@ -890,9 +893,16 @@ export function openPad(game, i, tab) {
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
     jumpNav(body, body.querySelector('.bag-top')); // (owner, 13 Oct AEDT: the Backpack's section-button row back, after the tester's notes took it out)
     // (Round V, owner 13 Oct) food asks first ("Eat it?"); an ingredient says what it is and which dishes it makes
-    const askEat = async (name, icon, en, vi) => { SFX.tap(); return (await dialog(name, [[`${icon} ${name}: ${en} Eat it now?`, `${icon} ${name}: ${vi} Ăn bây giờ nhé?`]], [['😋 Yes, eat it', '😋 Ăn thôi'], ['👋 Not now', '👋 Để sau']])) === 0; };
+    const helpCard = (name, art, en, vi, action, run) => {
+      body.querySelector('.bag-help')?.remove();
+      const c = el('div', 'bag-help', `<div>${art}<b>${esc(name)}</b></div><p>${esc(T(en, vi))}</p><div class="actions">${action ? `<button class="btn primary bh-act">${action}</button>` : ''}<button class="btn bh-close">${T('Not now', 'Để sau')}</button></div>`);
+      c.setAttribute('role', 'region'); c.setAttribute('aria-label', name); body.appendChild(c); say(`${name}. ${en}`, `${name}. ${vi}`);
+      c.querySelector('.bh-close').onclick = () => { c.remove(); run?.(false); };
+      if (action) c.querySelector('.bh-act').onclick = () => { c.remove(); run?.(true); }; return c;
+    };
+    const askEat = (name, icon, en, vi) => new Promise(resolve => { SFX.tap(); helpCard(name, pic(icon), en, vi, T('Eat', 'Ăn'), resolve); });
     body.querySelectorAll('[data-eat]').forEach(b => b.onclick = async () => { const r = dishInfo(b.dataset.eat) || { icon: '🥘', heal: 1, name: () => T('Mystery stew', 'Món hầm bí ẩn') };
-      if (await askEat(r.name(), r.icon, `it gives you ${r.heal} heart${r.heal > 1 ? 's' : ''} and extra energy.`, `món này cho con ${r.heal} tim và thêm sức.`)) game.eat(hero, b.dataset.eat); draw(); });
+      if (await askEat(r.name(), r.icon, `Restores up to ${r.heal} hearts and refills energy. Hearts only fall for older children on Hard.`, `Hồi tối đa ${r.heal} tim và nạp năng lượng. Chỉ trẻ lớn ở mức Khó mới mất tim.`)) game.eat(hero, b.dataset.eat); draw(); });
     body.querySelectorAll('[data-snack]').forEach(b => b.onclick = async () => { const v = snackOf(b.dataset.snack);
       if (await askEat(T(v.food[1], v.food[2]), v.food[0], 'a treat from the market.', 'một món ngon mua ở chợ.')) eatSnack(game, hero, b.dataset.snack, true); draw(); });
     body.querySelectorAll('[data-ing]').forEach(b => b.onclick = () => { SFX.tap(); const [line, en, vi] = ingInfo(b.dataset.ing); toast(line); say(en, vi); });
@@ -910,6 +920,20 @@ export function openPad(game, i, tab) {
     body.querySelectorAll('[data-whistle]').forEach(b => b.onclick = () => { game.kites.whistle(hero); });
     game.hoilang && game.hoilang.bindBag(body, hero, draw); // (round S) carry a village festival prize, like the kite
     body.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { p.look.glider = +b.dataset.gl; saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); });
+    // Help is the first tap; every change requires an explicit action inside the same Bag.
+    for (const b of body.querySelectorAll('.slot')) {
+      if (b.dataset.eat || b.dataset.snack) continue;
+      const oldAction = b.onclick, name = b.querySelector('small')?.textContent || b.title || T('Item', 'Đồ dùng');
+      const it = ITEM[b.dataset.wear], ingredient = b.dataset.ing, treasure = WILD[b.dataset.sellgem];
+      let en = 'Keep this item in your Backpack and use its action when you need it.', vi = 'Giữ món này trong Ba lô và chọn hành động khi cần.';
+      if (it || b.dataset.hat || b.dataset.unwear) { en = 'Clothes and accessories change how your character looks.'; vi = 'Quần áo và phụ kiện thay đổi vẻ ngoài của nhân vật.'; }
+      if (b.dataset.gl) { en = 'Choose the colour of your glider for flying safely from high places.'; vi = 'Chọn màu cánh lượn để bay an toàn từ nơi cao.'; }
+      if (b.dataset.kite || b.dataset.whistle) { en = 'Your whistling kite follows you; its bamboo flute sings in the wind.'; vi = 'Diều sáo bay theo con; sáo tre hát trong gió.'; }
+      if (ingredient) { const info = ingInfo(ingredient); en = info[1]; vi = info[2]; }
+      if (treasure) { en = `A treasure you found. Sell one for ${money(treasure.sell)} or keep it.`; vi = `Báu vật con tìm được. Bán một món lấy ${money(treasure.sell)} hoặc giữ lại.`; }
+      b.onclick = () => { const art = b.querySelector('svg, .art, .sw')?.outerHTML || ''; helpCard(name, art, en, vi, oldAction && !ingredient ? treasure ? T('Sell one', 'Bán một') : T('Use', 'Dùng') : '', ok => { if (ok) { if (treasure) sellPick = b.dataset.sellgem; oldAction?.call(b); } }); };
+    }
+
   }
   // (round R, owner 9 Oct) side stories in their own list: the child picks one to follow on the goal bar
   const sideHTML = () => { const list = game.sideStories ? game.sideStories() : []; if (!list.length) return '';
@@ -1209,17 +1233,17 @@ export function openGamesHub(game, i, onClose) {
     <div class="hubbody"></div>`;
   const draw = () => {
     card.querySelectorAll('.hubtabs [data-tab]').forEach(b => { const on = b.dataset.tab === cur; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
-    const hb = card.querySelector('.hubbody'); hb.innerHTML = body(cur); hb.scrollTop = 0;
+    const hb = card.querySelector('.hubbody'); hb.innerHTML = body(cur); hb.scrollTop = openGamesHub.scroll || 0;
     bind(hb);
   };
-  card.querySelectorAll('.hubtabs [data-tab]').forEach(b => b.onclick = () => { cur = openGamesHub.last = b.dataset.tab; SFX.tap(); draw(); const row = b.parentElement; row.scrollTo({ left: b.offsetLeft - row.clientWidth / 2 + b.offsetWidth / 2, behavior: 'smooth' }); }); // sideways only: the page must not jump
+  card.querySelectorAll('.hubtabs [data-tab]').forEach(b => b.onclick = () => { cur = openGamesHub.last = b.dataset.tab; openGamesHub.scroll = 0; SFX.tap(); draw(); const row = b.parentElement; row.scrollTo({ left: b.offsetLeft - row.clientWidth / 2 + b.offsetWidth / 2, behavior: 'smooth' }); }); // sideways only: the page must not jump
   card.querySelector('.x').onclick = close;
   const bind = root => {
     root.querySelectorAll('[data-tale]').forEach(b => b.onclick = () => { close(); game.readTale(i, b.dataset.tale); });
     root.querySelectorAll('[data-songs]').forEach(b => b.onclick = () => { SFX.tap(); close(); game.openSongs(b.dataset.songs); });
-    root.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); game.meetAndPlay(i, id); });
+    root.querySelectorAll('[data-play]').forEach(b => b.onclick = () => { const id = b.dataset.play; close(); openGamesHub.scroll = root.scrollTop; game.meetAndPlay(i, id, 'hub'); });
     root.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { close(); game.goToGame(i, b.dataset.go); });
-    root.querySelectorAll('[data-how]').forEach(b => b.onclick = () => { const id = b.dataset.how; openHowTo(id, { onPlay: () => { close(); game.playGame(i, id, 'place'); } }); });
+    root.querySelectorAll('[data-how]').forEach(b => b.onclick = () => { const id = b.dataset.how; openHowTo(id, { onPlay: () => { close(); game.playGame(i, id, 'hub'); } }); });
   };
   draw();
   say('Which game shall we play?', 'Mình chơi trò gì nào?');

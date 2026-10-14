@@ -9,11 +9,12 @@
 import { THREE, P, merge, toonVC } from './gfx.js';
 import { T } from './i18n.js';
 import { featureOn } from './custom.js';
-import { farm, saveProfiles } from './state.js';
+import { farm, profiles, saveProfiles } from './state.js';
 import { heightAt } from './world.js';
 import { rowSlot } from './content/map.js';
 import { modal } from './popups.js';
 import { pic } from './art.js';
+import { esc as escName } from './util.js';
 import { SFX } from './audio.js';
 import { SLOTS, CLOTHES, ITEM, forSlot, priceOf, owns, adoptWorn, buy, wear, setOf, forSet } from './content/shop.js';
 import { HAT_ICON } from './data.js';
@@ -92,38 +93,41 @@ export function createShop(G, { say, save }) {
 
   // ---------- the shop screen ----------
   let tab = 'hat';
-  function openShop(i) {
-    if (twoOpen(i)) return;
+  function openShop(i, host) {
+    if (!host && twoOpen(i)) return;
     const h = G.heroes[i], p = h.profile; adoptWorn(p);
-    const little = p.age !== 'big', m = modal('kcard shopk' + (little ? ' little' : ''), ''), card = m.querySelector('.card');
+    const little = p.age !== 'big', m = host ? { close: () => {}, addEventListener: () => {} } : modal('kcard shopk' + (little ? ' little' : ''), ''), card = host || m.querySelector('.card');
+    card.classList.add('shop-content', 'kcard'); if (little) card.classList.add('little'); let collection = 'all'; let recipient = p;
     let pick = null, more = false;   // more: the other set too (Round U)
-    const close = () => { m.close(); G.paused = false; };
+    const close = () => { if (host) return; m.close(); G.paused = false; };
     m.addEventListener('click', e => { if (e.target === m) close(); }); // (tap outside to leave)
     const draw = () => {
-      const mineSet = setOf(p.look), all = [...forSlot(tab), ...CLOTHES.filter(it => it.tester && it.slot === tab && owns(p, it.id))], list = all.filter(it => owns(p, it.id) || forSet(it, mineSet)), hidden = 0;   // (Round V, owner 13 Oct) the shop sells the child's own set only; clothes of the other set come as a friend's gift
-      card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>
+      const mineSet = setOf(p.look), all = [...forSlot(tab), ...CLOTHES.filter(it => it.tester && it.slot === tab && owns(p, it.id))], list = all.filter(it => collection === 'all' || forSet(it, collection)), hidden = 0;   // (Round V, owner 13 Oct) the shop sells the child's own set only; clothes of the other set come as a friend's gift
+      card.innerHTML = `${host ? '' : `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>`}
         <div class="khead"><span class="kbig">${pic('🛍️')}</span><h2>${T('Clothes shop', 'Cửa hàng quần áo')}</h2>${coins(farm.coins)}</div>
-        <div class="ktabs">${SLOTS.map(s => `<button class="ktab ${s.id === tab ? 'on' : ''}" data-tab="${s.id}" aria-label="${T(s.en, s.vi)}">${pic(s.icon)}</button>`).join('')}
+        <div class="shop-collections">${[['all', 'All', 'Tất cả'], ['b', 'Men / boys', 'Nam / bé trai'], ['g', 'Ladies / girls', 'Nữ / bé gái']].map(([key, en, vi]) => `<button class="btn ${collection === key ? 'primary' : ''}" data-set="${key}">${T(en, vi)}</button>`).join('')}</div><label>${T('Buying for', 'Mua cho')} <select class="shop-recipient">${profiles.map(q => `<option value="${q.id}" ${recipient.id === q.id ? 'selected' : ''}>${escName(q.name)}</option>`).join('')}</select></label><p class="note">${T('Choose a collection or buy a gift for another player on this device. Preview shows what you are wearing.', 'Chọn bộ đồ hoặc mua quà cho người chơi khác trên máy này. Hình xem trước là đồ con đang mặc.')}</p><img class="shop-preview" alt="${T('Your outfit preview', 'Xem trước trang phục')}" src="${G.avatarPreview(i)}"><div class="ktabs">${SLOTS.map(s => `<button class="ktab ${s.id === tab ? 'on' : ''}" data-tab="${s.id}" aria-label="${T(s.en, s.vi)}">${pic(s.icon)}</button>`).join('')}
           <button class="ktab alt" data-go="wardrobe" aria-label="${T('My wardrobe', 'Tủ đồ của con')}">${pic('🪞')}</button></div>
-        <div class="kgrid">${list.map(it => { const have = owns(p, it.id), worn = p.look[it.slot] === it.id;
+        <div class="kgrid">${list.map(it => { const have = owns(recipient, it.id), worn = recipient === p && p.look[it.slot] === it.id;
           return `<button class="kitem ${have ? 'have' : ''} ${worn ? 'on' : ''} ${!have && farm.coins < priceOf(it) ? 'poor' : ''}" data-id="${it.id}" aria-label="${T(it.en, it.vi)}">${itemSVG(it)}${have ? `<span class="ktick">${pic('✅')}</span>` : coins(priceOf(it))}</button>`; }).join('')}</div>
         ${hidden || more ? `<button class="btn kmore">${more ? T('Fewer', 'Bớt lại') : T('More', 'Xem thêm')}</button>` : ''}
         ${pick ? `<div class="kask"><div class="kaskbox">${itemSVG(pick)}${coins(priceOf(pick))}<div class="kbtns"><button class="kno" aria-label="${T('Not now', 'Để sau')}">✕</button><button class="kyes ${farm.coins < priceOf(pick) ? 'poor' : ''}" aria-label="${T('Buy', 'Mua')}">${pic('🛍️')}</button></div></div></div>` : ''}`;
-      card.querySelector('.x').onclick = close;
+      if (card.querySelector('.x')) card.querySelector('.x').onclick = close;
+      card.querySelectorAll('[data-set]').forEach(b => b.onclick = () => { collection = b.dataset.set; pick = null; draw(); });
+      card.querySelector('.shop-recipient').onchange = e => { recipient = profiles.find(q => q.id === e.target.value) || p; pick = null; draw(); };
       const mb = card.querySelector('.kmore'); if (mb) mb.onclick = () => { more = !more; SFX.tap(); draw(); };
       card.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; pick = null; SFX.tap(); const s = SLOTS.find(x => x.id === tab); say(s.en, s.vi); draw(); });
-      card.querySelector('[data-go="wardrobe"]').onclick = () => { m.close(); G.paused = false; setTimeout(() => G.openWardrobe(i), 220); };
+      card.querySelector('[data-go="wardrobe"]').onclick = () => { openWardrobe(i, draw, card); };
       card.querySelectorAll('.kitem').forEach(b => b.onclick = () => {
         const it = ITEM[b.dataset.id];
         // owned: one tap puts it on (or takes it off), right away
-        if (owns(p, it.id)) { wear(p, it.slot, p.look[it.slot] === it.id ? 'none' : it.id); saveProfiles(); G.rebuildHero(i); SFX.pop(1); say(...SHOP_LINES.wear); draw(); return; }
+        if (owns(recipient, it.id)) { if (recipient !== p) { say('This player already owns it.', 'Người chơi này đã có món này.'); return; } wear(p, it.slot, p.look[it.slot] === it.id ? 'none' : it.id); saveProfiles(); G.rebuildHero(i); SFX.pop(1); say(...SHOP_LINES.wear); draw(); return; }
         pick = it; SFX.tap(); say(it.en, it.vi); draw();
       });
       const no = card.querySelector('.kno'); if (no) no.onclick = () => { pick = null; SFX.tap(); draw(); };
       const yes = card.querySelector('.kyes'); if (yes) yes.onclick = () => {
-        const r = buy(p, farm.coins, pick.id);
+        const r = buy(recipient, farm.coins, pick.id);
         if (!r.ok) { if (r.why === 'coins') { SFX.no && SFX.no(); say(...SHOP_LINES.saving); yes.classList.add('shake'); setTimeout(() => yes.classList.remove('shake'), 500); } return; }
-        G.addCoins(-r.price); wear(p, pick.slot, pick.id); saveProfiles(true); save(); G.rebuildHero(i); SFX.coin && SFX.coin(); say(...SHOP_LINES.bought);
+        G.addCoins(-r.price); if (recipient === p) wear(p, pick.slot, pick.id); saveProfiles(true); save(); G.rebuildHero(i); SFX.coin && SFX.coin(); say(...SHOP_LINES.bought);
         G.job && G.job('buy', 1, h); pick = null; draw();
       };
     };
@@ -133,15 +137,15 @@ export function createShop(G, { say, save }) {
   const twoOpen = i => { if (G.heroes.length > 1) G.lastPlayer = i; if (G.paused) return true; G.paused = true; return false; };
 
   // ---------- the wardrobe: what the child owns, a row for each kind (pictures only) ----------
-  function openWardrobe(i, onClose) {
-    const p = G.heroes[i].profile; adoptWorn(p);
-    const m = document.createElement('div'); m.className = 'wardrobe kward' + (p.age !== 'big' ? ' little' : ''); document.body.appendChild(m);
+  function openWardrobe(i, onClose, host) {
+    dispatchEvent(new Event('sv-hide-caption')); const p = G.heroes[i].profile; adoptWorn(p);
+    const m = host || document.createElement('div'); if (!host) { m.className = 'wardrobe kward' + (p.age !== 'big' ? ' little' : ''); document.body.appendChild(m); } m.classList.add('wardrobe-content');
     // (hats won on the passport pages are kept and worn here too)
     const won = (p.owned.hats || []).filter(x => x !== 'none' && !ITEM[x] && HAT_ICON[x]);
     const draw = () => {
-      m.innerHTML = `<div class="whead"><button class="x" aria-label="${T('Done', 'Xong')}">✔️</button></div>` + SLOTS.map(s => { const mine = CLOTHES.filter(it => it.slot === s.id && owns(p, it.id)); const none = !p.look[s.id] || p.look[s.id] === 'none';
-        return `<div class="wrow"><span class="wslot">${pic(s.icon)}</span><div class="wchips"><button class="chip none ${none ? 'on' : ''}" data-k="${s.id}" data-v="none" aria-label="${T('Nothing', 'Không')}">${pic('🙂')}</button>${mine.map(it => `<button class="chip ${p.look[s.id] === it.id ? 'on' : ''}" data-k="${s.id}" data-v="${it.id}" aria-label="${T(it.en, it.vi)}">${itemSVG(it)}</button>`).join('')}${s.id === 'hat' ? won.map(x => `<button class="chip ${p.look.hat === x ? 'on' : ''}" data-k="hat" data-v="${x}" data-won="1">${pic(HAT_ICON[x])}</button>`).join('') : ''}</div></div>`; }).join('');
-      m.querySelector('.x').onclick = () => { m.remove(); saveProfiles(); SFX.chime(); say(...SHOP_LINES.wear); onClose && onClose(); };
+      m.innerHTML = `<h2>${T('My wardrobe', 'Tủ đồ của con')}</h2><img class="shop-preview" alt="${T('Full outfit preview', 'Xem trước cả trang phục')}" src="${G.avatarPreview(i)}"><p class="note">${T('Choose an item to wear it. Remove takes off that accessory; clothing returns to your starting outfit.', 'Chọn đồ để mặc. Bỏ ra sẽ tháo phụ kiện; quần áo trở về trang phục ban đầu.')}</p><div class="whead"><button class="x" aria-label="${T('Done', 'Xong')}">✔️</button></div>` + SLOTS.map(s => { const mine = CLOTHES.filter(it => it.slot === s.id && owns(p, it.id)); const none = !p.look[s.id] || p.look[s.id] === 'none';
+        return `<div class="wrow"><span class="wslot">${pic(s.icon)}<small>${T(s.en, s.vi)}</small></span><div class="wchips"><button class="chip none ${none ? 'on' : ''}" data-k="${s.id}" data-v="none" aria-label="${T('Nothing', 'Không')}"><span>${T('Remove', 'Bỏ ra')}</span></button>${mine.map(it => `<button class="chip ${p.look[s.id] === it.id ? 'on' : ''}" data-k="${s.id}" data-v="${it.id}" aria-label="${T(it.en, it.vi)}">${itemSVG(it)}</button>`).join('')}${s.id === 'hat' ? won.map(x => `<button class="chip ${p.look.hat === x ? 'on' : ''}" data-k="hat" data-v="${x}" data-won="1">${pic(HAT_ICON[x])}</button>`).join('') : ''}</div></div>`; }).join('');
+      m.querySelector('.x').onclick = () => { if (!host) m.remove(); else m.classList.remove('wardrobe-content'); saveProfiles(); SFX.chime(); say(...SHOP_LINES.wear); onClose && onClose(); };
       m.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { if (b.dataset.won ? (p.look.hat = b.dataset.v) : wear(p, b.dataset.k, b.dataset.v)) { SFX.pop(1); G.rebuildHero(i); draw(); } });
     };
     draw(); say(...SHOP_LINES.dress);

@@ -27,7 +27,7 @@ import { takeCopy, putCopyBack, hasCopy, dropCopy } from './keepcopy.js';
 import { revertOf } from './content/autoplay.js';
 import { easyName } from './content/devname.js';
 
-const KEY = { acc: 'sv2_tester', out: 'sv2_tester_out', st: 'sv2_tester_status', seen: 'sv2_tester_seen', ap: 'sv2_tester_ap', copy: 'sv2_tester_copy' };
+const KEY = { acc: 'sv2_tester', out: 'sv2_tester_out', st: 'sv2_tester_status', seen: 'sv2_tester_seen', ap: 'sv2_tester_ap', delivery: 'sv2_report_delivery', copy: 'sv2_tester_copy' };
 const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
 const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
 const URL_ = () => window.__svTesterURL || 'api/tester';
@@ -51,23 +51,25 @@ const devNow = () => ({ os: osOf(), br: brOf(), sc: `${innerWidth}x${innerHeight
 // ---------- the picture of the screen ----------
 // (the 3D view keeps no picture between frames, so it is copied right after the next frame is drawn; the window on top
 // is written underneath as words)
-function grab() {
-  try {
-    const R = G.renderer, src = R && R.domElement, w = C.LIMITS.shotWidth, h = Math.round(w * innerHeight / Math.max(1, innerWidth));
-    const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
-    g.fillStyle = '#88b'; g.fillRect(0, 0, w, h); if (src) g.drawImage(src, 0, 0, w, h);
-    const win = topWindow(), dlg = document.querySelector('.dialog .dtext');
-    const lines = [`Tester · ${BUILD} · ${new Date().toISOString().slice(0, 16)}`, win, dlg ? dlg.textContent : ''].filter(Boolean).map(s => s.slice(0, 70)); // (every picture says its version)
-    if (lines.length) { g.fillStyle = 'rgba(30,20,50,.78)'; g.fillRect(0, h - 22 * lines.length - 8, w, 22 * lines.length + 8); g.fillStyle = '#fff'; g.font = '15px sans-serif'; lines.forEach((s, i) => g.fillText(s, 8, h - 22 * (lines.length - i) + 10)); }
-    return c.toDataURL('image/jpeg', .6);
-  } catch (e) { return ''; }
+async function grab(sceneOnly = false) {
+  try { const m = await import('./screencapture.js'); return await m.captureScreen(G.renderer?.domElement, { sceneOnly }); } catch { return ''; }
 }
-const shot = () => new Promise(res => { let done = false; const fin = v => { if (!done) { done = true; res(v); } }; want = () => fin(grab()); setTimeout(() => { want = null; fin(grab()); }, 400); });
+const shot = (sceneOnly = false) => new Promise(res => { let done = false; const fin = async () => { if (done) return; done = true; want = null; res(await grab(sceneOnly)); }; want = fin; setTimeout(fin, 400); });
 
 // ---------- sending ----------
 const queue = () => get(KEY.out, []);
 function keep(list) { if (put(KEY.out, list)) return; const thin = list.map((r, i) => i < list.length - 5 ? { ...r, shot: '' } : r); if (!put(KEY.out, thin)) put(KEY.out, thin.slice(-10).map(r => ({ ...r, shot: '' }))); }
-function enqueue(r) { const q = queue(); q.push(r); keep(q.slice(-C.LIMITS.queue)); paintCount(); flush(); }
+function enqueue(r) { const q = queue(); r.clientId ||= crypto.randomUUID().replace(/-/g, ''); q.push(r); keep(q.slice(-C.LIMITS.queue)); delivery(r.clientId, { state: 'queued' }); paintCount(); flush(); return r.clientId; }
+function delivery(id, result) { const all = get(KEY.delivery, {}); all[id] = { ...result, at: Date.now() }; const entries = Object.entries(all).slice(-120); put(KEY.delivery, Object.fromEntries(entries)); dispatchEvent(new CustomEvent('sv-report-delivery')); }
+export const reportDelivery = id => get(KEY.delivery, {})[id] || { state: 'queued' };
+export const reportingState = () => ({ enabled: live, queued: queue().length, sending: flushing });
+export const retryReports = () => flush();
+export async function sendAutoplayReport(rep) {
+  if (!live) return { state: 'disabled', ids: [] };
+  const ids = [];
+  for (const d of rep.done || []) if (d.problems?.length) { const id = await autoReport('autoplay', `${d.name || d.key}: ${d.problems.join('; ')}`.slice(0, 200), { area: 'autoplay', place: '', game: d.g === 'games' ? d.key : '', window: d.g || '', x: 0, z: 0 }); if (id) ids.push(id); }
+  return { state: ids.length ? 'queued' : 'no-problems', ids };
+}
 let flushing = false;
 async function flush() {
   if (flushing || !live || navigator.onLine === false) return; flushing = true;
@@ -76,8 +78,11 @@ async function flush() {
   const same = (x, r) => x && x.at === r.at && x.kind === r.kind && (x.auto || '') === (r.auto || '') && (x.detail || '') === (r.detail || '') && (x.note || '') === (r.note || '');
   try {
     for (let r = queue()[0]; r; r = queue()[0]) {
-      let res = null; try { res = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) }); } catch (e) { break; }
-      if (res.status === 429 || res.status >= 500) break;
+      delivery(r.clientId, { state: 'sending' }); let res = null; try { res = await fetch(URL_(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) }); } catch (e) { delivery(r.clientId, { state: 'retry' }); break; }
+      if (!res.ok) { delivery(r.clientId, { state: 'retry', status: res.status }); break; }
+      let receipt; try { receipt = await res.json(); } catch { delivery(r.clientId, { state: 'retry' }); break; }
+      if (!receipt.ok || !receipt.rid) { delivery(r.clientId, { state: 'retry' }); break; }
+      delivery(r.clientId, { state: 'sent', rid: receipt.rid, problem: receipt.k });
       const q = queue(), k = q.findIndex(x => same(x, r)); if (k >= 0) { q.splice(k, 1); keep(q); } // (sent, or refused for good: a report the website will not take is not kept)
     }
   } finally { flushing = false; paintCount(); }
@@ -89,11 +94,11 @@ const body = (kind, extra) => ({ id: me(), b: BUILD, kind, where: whereNow(), er
 export async function autoReport(kind, detail, where, more = {}) {
   if (!live) return; const w = where || whereNow(), k = C.keyOf(kind, detail, w.game || w.window || w.area);
   counts.set(k, (counts.get(k) || 0) + 1); const last = sent.get(k);
-  if (last && Date.now() - last < C.LIMITS.sameAgain) return; sent.set(k, Date.now());
+  if (last && Date.now() - last.at < C.LIMITS.sameAgain) return last.id;
   const n = counts.get(k); counts.set(k, 0); note('report', kind + ' ' + detail);
   const b = body('auto', { auto: kind, detail: String(detail || '').slice(0, 200), where: w, shot: await shot(), count: n });
   if (Array.isArray(more.log)) b.log = more.log.concat(b.log).slice(-300); // (the website keeps the last 300)
-  enqueue(b);
+  const id = enqueue(b); sent.set(k, { at: Date.now(), id }); return id;
 }
 
 // ---------- watching for problems ----------
@@ -127,7 +132,11 @@ function watch() {
   // every 5 s: a button off the screen, a line with no recording, where the child walked
   let misses = new Set(voiceMisses().map(m => m[0] + '|' + m[1])), lastPos = '';
   const every = setInterval(() => {
+    const focused = document.activeElement, keyboard = focused && /INPUT|TEXTAREA|SELECT/.test(focused.tagName);
+    const top = [...document.querySelectorAll('.modal:not(.out), .gl, .dialog')].filter(x => x.getBoundingClientRect().width).pop();
     for (const b of document.querySelectorAll('.modal button, .hud button, .gl button, .dialog button')) {
+      if (keyboard || (top && !top.contains(b))) continue;
+      let scrolled = false; for (let parent = b.parentElement; parent && parent !== top; parent = parent.parentElement) { const st = getComputedStyle(parent); if (/(auto|scroll)/.test(st.overflowY) && parent.scrollHeight > parent.clientHeight) { scrolled = true; break; } } if (scrolled) continue;
       if (!b.offsetParent) continue; const r = b.getBoundingClientRect(); if (!r.width) continue;
       if (r.right < 2 || r.bottom < 2 || r.left > innerWidth - 2 || r.top > innerHeight - 2) autoReport('offscreen', labelOf(b));
     }
@@ -169,27 +178,31 @@ function addUI() {
   addEventListener('keydown', key); offs.push(() => removeEventListener('keydown', key));
   paintCount();
 }
-async function quickReport() { SFX.tap && SFX.tap(); const s = await shot(); enqueue(body('broken', { note: T('Quick report: something was wrong just now', 'Báo nhanh: vừa có gì đó không ổn'), detail: 'quick', shot: s })); toast(navigator.onLine === false ? L(C.TESTER_LINES.waiting) : L(C.TESTER_LINES.sent)); }
+async function quickReport() { SFX.tap && SFX.tap(); const s = await shot(); enqueue(body('broken', { note: T('Quick report: something was wrong just now', 'Báo nhanh: vừa có gì đó không ổn'), detail: 'quick', shot: s })); toast(L(C.TESTER_LINES.waiting)); }
 function toast(s) { const t = el('div', 'testertoast', esc(s)); document.body.appendChild(t); setTimeout(() => t.classList.add('out'), 2200); setTimeout(() => t.remove(), 2600); }
 
 // the panel: the picture is taken first, then a kind, a spoken or typed note, Send; or "Already reported → add to it"
 export async function openPanel(i = 0) {
-  if (!live || document.querySelector('.modal.tpanel')) return; const pic0 = await shot(), where = whereNow();
+  if (!live || document.querySelector('.modal.tpanel')) return; const pic0 = await shot(), scenePic = await shot(true), where = whereNow();
   const was = G.paused; G.paused = true; SFX.tap && SFX.tap();
   const near = ((status && status.open) || []).filter(p => p.where && ((where.game && p.where.game === where.game) || (where.window && p.where.window === where.window) || (!where.game && !where.window && p.where.area === where.area && Math.hypot((p.where.x || 0) - where.x, (p.where.z || 0) - where.z) < 25))).slice(0, 3);
-  let kind = 'broken', spoken = false;
+  let kind = 'broken', spoken = false, selectedShot = pic0;
   const m = modal('tpanel', `<div class="tp-head"><span class="tp-lb">${pic('🐞')}</span><h2>${T('Report a problem', 'Báo lỗi')}</h2><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
-    <img class="tp-shot" alt="" src="${pic0}">
+    <div class="actions"><button class="btn tp-auto">${T('Automatic check and results', 'Tự kiểm tra và kết quả')}</button><button class="btn tp-retry">${T('Retry queued reports', 'Gửi lại báo cáo đang chờ')}</button></div><p class="note" role="status">${T(`${queue().length} reports queued. Sent reports are in My reports.`, `${queue().length} báo cáo đang chờ. Báo cáo đã gửi nằm trong Báo cáo của tôi.`)}</p>
+    <label class="tog"><input type="checkbox" class="tp-full" checked> ${T('Include the complete interface', 'Kèm toàn bộ giao diện')}</label><img class="tp-shot" alt="" src="${pic0}">
     ${near.length ? `<div class="tp-near"><b>${T('Already reported here', 'Đã có người báo ở đây')}</b>${near.map(p => `<div class="tp-old"><span>${esc(p.title)} <small>· ${p.n}×</small></span><button class="btn" data-join="${esc(p.k)}">${T('Same problem: add to it', 'Cùng lỗi: báo thêm')}</button></div>`).join('')}</div>` : ''}
     <div class="tp-kinds">${C.KINDS.map(k => `<button class="tp-k ${k.id === kind ? 'on' : ''}" data-k="${k.id}" aria-pressed="${k.id === kind}">${pic(k.icon)}<span>${T(k.en, k.vi)}</span></button>`).join('')}</div>
     <div class="tp-note"><textarea maxlength="600" rows="3" placeholder="${T('What happened? What did you expect?', 'Chuyện gì xảy ra? Bạn mong điều gì?')}"></textarea>${canListen() ? `<button class="btn tp-mic" aria-label="${T('Say it', 'Nói')}">${pic('🎤')} ${T('Say it', 'Nói')}</button>` : ''}</div>
     <div class="actions"><button class="btn primary tp-send">${T('Send', 'Gửi')}</button></div>`);
   const card = m.querySelector('.card'), ta = card.querySelector('textarea');
+  card.querySelector('.tp-full').onchange = e => { selectedShot = e.target.checked ? pic0 : scenePic; card.querySelector('.tp-shot').src = selectedShot; };
   const close = () => { m.close(); G.paused = was; };
   card.querySelector('.x').onclick = close;
+  card.querySelector('.tp-auto').onclick = () => { close(); G.autoplay?.open(); };
+  card.querySelector('.tp-retry').onclick = () => flush();
   card.querySelectorAll('.tp-k').forEach(b => b.onclick = () => { kind = b.dataset.k; card.querySelectorAll('.tp-k').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }); SFX.tap && SFX.tap(); });
   const mic = card.querySelector('.tp-mic'); if (mic) mic.onclick = async () => { mic.disabled = true; const heard = await listen({ onPartial: t => { ta.value = t; } }); mic.disabled = false; if (heard && heard[0] !== '\u0000') { ta.value = (ta.value && ta.value !== heard ? ta.value + ' ' : '') + heard; spoken = true; } };
-  const send = join => { enqueue(body(kind, { note: ta.value.trim(), spoken, shot: pic0, where, join: join || '' })); close(); toast(join ? L(C.TESTER_LINES.already) : navigator.onLine === false ? L(C.TESTER_LINES.waiting) : L(C.TESTER_LINES.sent)); say(...(join ? C.TESTER_LINES.already : C.TESTER_LINES.sent)); };
+  const send = join => { enqueue(body(kind, { note: ta.value.trim(), spoken, shot: selectedShot, where, join: join || '' })); close(); toast(join ? L(C.TESTER_LINES.already) : L(C.TESTER_LINES.waiting)); say(...(join ? C.TESTER_LINES.already : C.TESTER_LINES.waiting)); };
   card.querySelector('.tp-send').onclick = () => send('');
   card.querySelectorAll('[data-join]').forEach(b => b.onclick = () => send(b.dataset.join));
   return m;
@@ -232,7 +245,7 @@ async function retest() {
 async function nightly() {
   const ap = get(KEY.ap, {}); const rep = get('sv2_autoplay_report', null);
   // what the last run found (the check restarts the game when it ends): sent once
-  if (rep && rep.build && rep.at && !rep.sent && ap.sent !== rep.at) { // (since 13 Oct auto play sends each problem as it finds it: rep.sent) ap.sent = rep.at; put(KEY.ap, ap);
+  if (rep && rep.build && rep.at && !rep.reportIds?.length && ap.sent !== rep.at) { ap.sent = rep.at; put(KEY.ap, ap);
     for (const d of rep.done || []) if (d.problems && d.problems.length) autoReport('autoplay', `${d.name || d.key}: ${d.problems.join('; ')}`.slice(0, 200), { area: 'autoplay', place: '', game: d.g === 'games' ? d.key : '', window: d.g || '', x: 0, z: 0 }); }
   if (ap.ran === BUILD) return;
   const charging = await (navigator.getBattery ? navigator.getBattery().then(b => b.charging).catch(() => false) : Promise.resolve(false)), h = new Date().getHours();
@@ -301,7 +314,7 @@ function start() {
 // (no restart); badges, stickers and clothes stay. Studio's tester rule `revert: 'autoplay'` instead puts back only what
 // each auto play run did (js/autoplay.js), so nothing goes back here.
 function putBack() {
-  if (revertOf(liveRule('tester')) !== 'progress' || !hasCopy(KEY.copy)) { dropCopy(KEY.copy); return; }
+  if (revertOf(liveRule('tester'), me()) !== 'progress' || !hasCopy(KEY.copy)) { dropCopy(KEY.copy); return; }
   if (putCopyBack(KEY.copy, G)) { const m = T('Progress is back as it was before testing. Badges and stickers stay.', 'Tiến bộ đã trở lại như trước khi thử. Huy hiệu và nhãn dán vẫn giữ.'); (G.huds || []).forEach(h => h.toast && h.toast(m)); }
 }
 function stop() { live = false; offs.splice(0).forEach(f => { try { f(); } catch (e) { } }); setPeeks([]); if (G.testerRewards) G.testerRewards.unmount(); }

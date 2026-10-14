@@ -50,10 +50,13 @@ export const onFamilyPhotos = f => famFns.push(f);
 const photoOf = p => { const m = FAMREF.exec(p || ''); return m ? famURL.get(m[1]) || '' : p; };
 export const familyRefs = () => { const out = new Set(), add = p => { const m = FAMREF.exec(p || ''); if (m) out.add(m[1]); };
   for (const f of Object.values(CUSTOM.faces || {})) add(f && f.photo); for (const x of Array.isArray(CUSTOM.album) ? CUSTOM.album : []) add(x && x.photo); return [...out]; };
-export const customAlbum = () => (Array.isArray(CUSTOM.album) ? CUSTOM.album : []).filter(x => x && typeof x.photo === 'string' && (OLDALBUM.test(x.photo) || (FAMREF.test(x.photo) && photoOf(x.photo))))
+export const customAlbum = () => ([...(Array.isArray(CUSTOM.album) ? CUSTOM.album : []), ...Object.entries(ownFamilyPhotos()).filter(([id]) => id.startsWith('album_')).map(([id, p]) => ({ id, photo: p.image, en: 'Family photo', vi: 'Ảnh gia đình', place: 'home' }))]).filter(x => x && typeof x.photo === 'string' && (x.photo.startsWith('data:image/jpeg;base64,') || OLDALBUM.test(x.photo) || (FAMREF.test(x.photo) && photoOf(x.photo))))
   .slice(0, 60).map(x => ({ id: String(x.id || x.photo).replace(/[^\w-]/g, '').slice(0, 30) || 'photo', photo: photoOf(x.photo), en: str(x.en).slice(0, 120), vi: str(x.vi).slice(0, 120) || str(x.en).slice(0, 120), place: /^[a-z]{2,16}$/.test(x.place || '') ? x.place : 'home' }));
 export const customName = id => { const n = CUSTOM.names && CUSTOM.names[id]; return n && typeof n === 'object' ? n : null; };
-export const customFace = id => { const f = CUSTOM.faces && CUSTOM.faces[id]; if (!f || typeof f.photo !== 'string') return null; if (OLDFACE.test(f.photo)) return f; const u = FAMREF.test(f.photo) && photoOf(f.photo); return u ? { ...f, photo: u } : null; };
+const ownFamilyPhotos = () => { try { return JSON.parse(localStorage.getItem('sv2_familyphotos') || '{}'); } catch { return {}; } };
+if (typeof addEventListener === 'function') addEventListener('sv-family-photos', () => famFns.forEach(f => { try { f(); } catch {} }));
+export const familyOwnFace = id => { const photo = ownFamilyPhotos()[id]?.image; return photo ? { photo } : null; };
+export const customFace = id => { const own = ownFamilyPhotos()[id]; if (own?.image) return { photo: own.image }; const f = CUSTOM.faces && CUSTOM.faces[id]; if (!f || typeof f.photo !== 'string') return null; if (OLDFACE.test(f.photo)) return f; const u = FAMREF.test(f.photo) && photoOf(f.photo); return u ? { ...f, photo: u } : null; };
 // the game itself (not Studio's pages that borrow its modules); the game run from SparkleStudio.exe (/studio/game/) asks
 // the exe on the same computer, which needs no code
 const inGame = typeof location !== 'undefined' && /^https?:/.test(location.protocol) && typeof document !== 'undefined' && document.title !== 'Sparkle Studio' && !/\/studio\/(?!game\/)/.test(location.pathname);
@@ -150,7 +153,7 @@ export const hasTried = (p, id) => { const t = tried(p); return !!(t && t[id]); 
 export function markTried(p, id) { if (!p || hasTried(p, id)) return false; p.tried = tried(p) || {}; p.tried[id] = today(); return true; }
 // (the children playing now, set by js/main.js when a session starts: for lists that have no child at hand, the games)
 let PLAYERS = []; export const setPlayers = list => { PLAYERS = Array.isArray(list) ? list.filter(Boolean) : []; };
-export const keptOn = (id, profiles = PLAYERS, def = true) => featureOn(id, def) || (profiles || []).some(p => hasTried(p, id));
+export const keptOn = (id, profiles = PLAYERS, def = true) => id === 'wayfind' ? featureOn(id, false) : featureOn(id, def) || (profiles || []).some(p => hasTried(p, id));
 // what a save from before the rollout already shows a child used (nothing recorded profile.tried then)
 export const MONEY_GAMES = ['heodat', 'coinnote', 'needwant', 'cheaper', 'lixi', 'bahu', 'shoplist', 'waitgrow', 'shopkeep', 'barter'];
 const some = o => !!(o && typeof o === 'object' && Object.keys(o).length);

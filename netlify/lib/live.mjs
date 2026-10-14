@@ -16,7 +16,8 @@ export function cleanLive(b) {
     if (r.levels && typeof r.levels === 'object') { const lv = {}; for (const [d, v] of Object.entries(r.levels).slice(0, 50)) if (/^[a-z0-9]{12}$/.test(d) && (v === 'auto' || v === 'ladybird')) lv[d] = v; if (Object.keys(lv).length) x.levels = lv; }
     if (Array.isArray(r.peeks)) { const pk = [...new Set(r.peeks.filter(v => typeof v === 'string' && ID.test(v)))].slice(0, 20); if (pk.length) x.peeks = pk; }
     // (owner, 13 Oct AEDT) the tester rule: what goes back when someone stops being a tester (js/content/autoplay.js REVERT)
-    if (r.revert === 'autoplay' || r.revert === 'progress') x.revert = r.revert;
+    if (['keep', 'autoplay', 'progress'].includes(r.revert)) x.revert = r.revert;
+    if (r.policies && typeof r.policies === 'object') { const policies = {}; for (const [device, value] of Object.entries(r.policies).slice(0, 50)) { if (!/^[a-z0-9]{12}$/.test(device) || !value || typeof value !== 'object') continue; const p = {}; if (['keep', 'autoplay', 'progress'].includes(value.revert)) p.revert = value.revert; if (['x1', 'x2', 'x3', 'x5', 'watch', 'fast'].includes(value.speed)) p.speed = value.speed; if (typeof value.autoplay === 'boolean') p.autoplay = value.autoplay; if (Object.keys(p).length) policies[device] = p; } if (Object.keys(policies).length) x.policies = policies; }
     if (Object.keys(x).length) out.releases[id] = x;
   }
   for (const [id, f] of Object.entries((b && b.festivals) || {})) {

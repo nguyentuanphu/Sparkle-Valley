@@ -53,7 +53,7 @@ RELEASE_GROUPS.trial = ['Trials', 'Thử nghiệm'];
 RELEASES.push(
   { id: 'rideAny', en: 'Ride any vehicle: drive the parked cars and motorbikes', vi: 'Đi mọi loại xe: lái xe hơi và xe máy đang đậu', group: 'world', def: true },
   { id: 'busFares', en: 'Buses, trams and taxis take a passenger for a fare; bus stops with a picture timetable', vi: 'Xe buýt, tàu điện và taxi chở khách có trả tiền vé; trạm xe buýt có bảng giờ bằng hình', group: 'world', def: true },
-  { id: 'wayfind', en: '"Where is...?" sparkles that show the way', vi: '"Ở đâu?": đường lấp lánh chỉ lối', group: 'valley', def: true },
+  { id: 'wayfind', en: 'Find a place: compass guidance (hidden until enabled)', vi: 'Tìm một nơi: la bàn chỉ đường (ẩn đến khi bật)', group: 'valley', def: false },
   { id: 'jobs', en: 'Village job boards: helping jobs for coins and a sticker', vi: 'Bảng việc làng: việc giúp đỡ được tiền và hình dán', group: 'valley', def: true },
   { id: 'villagerTalk', en: 'Every villager talks: a fact or a saying of their place', vi: 'Mọi người trong làng đều nói chuyện: kể điều hay hoặc câu nói của quê mình', group: 'valley', def: true },
   { id: 'dayPlan', en: 'Villagers\' day plan: they walk home at night, umbrellas in the rain', vi: 'Một ngày của dân làng: tối đi về nhà, trời mưa che ô', group: 'valley', def: true },

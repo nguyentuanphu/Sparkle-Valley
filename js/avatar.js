@@ -1,7 +1,7 @@
 // Chibi characters whose face is the child's own photo.
 import { THREE, toon, glow, blobShadow, outline, P, merge, toonSmooth } from './gfx.js';
 import { GLIDERS, settings } from './state.js';
-import { customFace, onFamilyPhotos } from './custom.js';
+import { customFace, familyOwnFace, onFamilyPhotos } from './custom.js';
 import { wearing } from './content/shop.js';
 
 const G = {
@@ -324,9 +324,9 @@ export const spriteGlow = c => glow(c);
 // the head, ears, hands and legs take the skin colour sampled from the photo, so the edge of the photo blends in.
 const NAMED = {}; // villager name -> their avatars
 const baseOf = n => String(n).replace(/\s+[^\p{L}\p{N}]+$/u, '').trim();
-export function nameAvatar(A, name, remember = true) { // remember: false for people in a room that is torn down later
-  if (!A || !name) return A; const id = baseOf(name); if (remember) (NAMED[id] = NAMED[id] || []).push(A);
-  const f = (settings.npcFaces || {})[id] || customFace(id); if (f) setFace(A, f);
+export function nameAvatar(A, name, remember = true, stableId) { // remember: false for people in a room that is torn down later
+  if (!A || !name) return A; const legacy = baseOf(name), id = stableId || legacy; A.faceLegacy = legacy; if (remember) (NAMED[id] = NAMED[id] || []).push(A);
+  const f = familyOwnFace(id) || familyOwnFace(legacy) || (settings.npcFaces || {})[legacy] || customFace(legacy); if (f) setFace(A, f);
   return A;
 }
 function setFace(A, f) {
@@ -432,6 +432,6 @@ export function dropStill(A) {
   A.still.children.forEach(c => { if (c.material === stillMat || c === A.stillLine) c.geometry.dispose(); });
   A.root.remove(A.still); A.still = null; A.stillLine = null; delete A.root.userData.still; if (was) showStill(A, true);
 }
-export function applyNpcFaces() { for (const [id, list] of Object.entries(NAMED)) list.forEach(A => setFace(A, (settings.npcFaces || {})[id] || customFace(id) || null)); }
+export function applyNpcFaces() { for (const [id, list] of Object.entries(NAMED)) list.forEach(A => setFace(A, familyOwnFace(id) || familyOwnFace(A.faceLegacy || id) || (settings.npcFaces || {})[A.faceLegacy || id] || customFace(A.faceLegacy || id) || null)); }
 onFamilyPhotos(() => applyNpcFaces()); // (round R privacy) the family's photo faces arrive after the start, with the family code
 export const namedVillagers = () => Object.keys(NAMED);

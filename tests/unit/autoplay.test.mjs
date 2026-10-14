@@ -28,3 +28,10 @@ test('both speeds move like a child; answers are mostly right; quests come first
   assert.ok(AP_RIGHT > .5 && AP_RIGHT < 1, 'mostly right, some wrong');
   assert.equal(AP_GROUPS[0].key, 'quests');
 });
+
+
+test('each device can keep progress or choose a different restore policy', () => {
+  const rule = { revert: 'progress', policies: { one: { revert: 'keep' }, two: { revert: 'autoplay' } } };
+  assert.equal(revertOf(rule, 'one'), 'keep'); assert.equal(revertOf(rule, 'two'), 'autoplay'); assert.equal(revertOf(rule, 'other'), 'progress');
+  for (const rate of [1,2,3,5]) { const s = AP_SPEEDS['x'+rate]; assert.equal(s.rate,rate); assert.equal(s.game,AP_SPEEDS.watch.game, 'fast checking keeps the game timeout'); assert.equal(s.idle,AP_SPEEDS.watch.idle,'fast checking must not invent stuck failures'); }
+});

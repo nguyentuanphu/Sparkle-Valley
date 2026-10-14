@@ -2528,3 +2528,59 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 .qs-tester .tst-stop { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; background: #fff; color: #a33; border: 2px solid #f3c6c6; }
 .qs-tester .note { margin: 0; }
 
+
+/* Owner round, 14 Oct: fixed shells, optical item sizes and compact trays (UX-001–004). */
+.screen.title .tt-cover, .screen.title .logo, .sv2 .who-card, .dialog, .wardrobe { animation: none !important; }
+.sv2.screen.who { justify-content: flex-start; padding-top: max(24px, env(safe-area-inset-top)); }
+.modal .card { max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px); }
+.pad .card { height: min(900px, calc(100dvh - 32px)); display:flex; flex-direction:column; }
+.pad-head { flex:none; } .pad-body { flex:1; min-height:0; max-height:none; }
+.grownups .card { padding-bottom:100px; } .grownups #gDone { position:sticky; bottom:0; margin:20px auto 0; width:min(360px,100%); display:block; z-index:2; box-shadow:0 0 0 12px #fffaf0; }
+.zoomer .ztray { flex-direction:column; top:auto; bottom:0; gap:8px; }
+.zoomer .ztray button { flex:none; }
+.pad .slot > .kpic, .pad .slot > .art, .pad .slot > svg { display:block; width:64px; height:64px; max-width:100%; margin:8px auto; }
+.pad .slot > span:not(.sw) { display:flex; justify-content:center; align-items:center; min-height:64px; }
+.pad .slot > span .art { width:64px; height:64px; }
+.launch-progress { padding:10px; display:flex; flex-direction:column; align-items:center; gap:6px; color:#4a2a78; font-size:16px; }
+.launch-progress progress { width:min(340px,70vw); accent-color:#8a5cf6; }
+.update-notice { position:fixed; left:12px; right:12px; top:calc(env(safe-area-inset-top) + 12px); z-index:100001; max-width:600px; margin:auto; padding:12px; background:#fffaf0; color:#4a2a78; border-radius:18px; box-shadow:0 4px 20px #0003; display:flex; gap:10px; align-items:center; font-size:16px; }
+.update-notice button { min-height:44px; flex:none; }
+.bag-help { position:sticky; bottom:0; z-index:3; border:2px solid #d9c9f5; border-radius:20px; background:#fffaf0; padding:12px; display:grid; gap:8px; box-shadow:0 4px 20px #4a2a7822; font-size:16px; }
+.bag-help .art, .bag-help .kpic { width:64px; height:64px; } .bag-help .actions { justify-content:center; }
+.bag-help button { min-height:64px; } .bag-help p { margin:0; }
+.audio-tray { position:fixed; right:12px; top:calc(env(safe-area-inset-top) + 100px); z-index:70; display:grid; gap:8px; padding:12px; border-radius:20px; background:#fffaf0; box-shadow:0 4px 20px #0003; color:#4a2a78; }
+.audio-tray button { display:flex; align-items:center; gap:8px; min-height:64px; padding:8px 12px; border:2px solid #e9def5; border-radius:16px; background:white; color:inherit; font:700 16px var(--font); }
+.audio-tray button.on { border-color:#8a5cf6; } .audio-tray .art { width:32px; height:32px; }
+.hud .dk.mus { display:none; }
+
+.shop-preview { display:block; margin:8px auto; max-width:200px; height:220px; object-fit:contain; border-radius:20px; background:#f1eaff; }
+.shop-collections { display:flex; gap:8px; flex-wrap:wrap; }
+.shop-content .kgrid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.shop-content .ktabs { display:flex; flex-wrap:wrap; gap:8px; }
+.shop-content .ktab .art { width:44px; height:44px; }
+.shop-content .kitem .kpic { width:72px; height:72px; max-width:90%; margin:auto; }
+.shop-content .kitem { min-height:120px; }
+.wardrobe-content .wrow { display:flex; gap:12px; align-items:center; margin:12px 0; }
+.wardrobe-content .wslot { width:90px; display:flex; flex-direction:column; align-items:center; gap:4px; font-size:16px; }
+.wardrobe-content .wslot .art { width:40px; height:40px; }
+.wardrobe-content .wchips { display:flex; flex-wrap:wrap; gap:8px; }
+.wardrobe-content .chip { min-width:64px; min-height:64px; }
+.wardrobe-content .chip .kpic { width:48px; height:48px; }
+.wardrobe-content .chip.none { font-size:16px; }
+
+.sv2 .who-card { max-height:calc(100dvh - 120px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y:auto; flex:none; }
+.shop-content .ktab, .shop-collections .btn { min-height:64px; min-width:64px; }
+.shop-content .kask { position:sticky; bottom:0; z-index:4; background:#fffaf0; border:2px solid #d9c9f5; border-radius:20px; padding:12px; }
+.shop-content .kaskbox { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:12px; }
+.shop-content .kaskbox .kpic { width:72px; height:72px; }
+.shop-content .kbtns button { min-width:64px; min-height:64px; }
+.apbox { font-size:16px !important; }
+
+.pad-body > * { flex-shrink:0; }
+.wardrobe-content .wrow { flex:none; overflow:visible; padding:4px 0; align-items:flex-start; }
+.wardrobe-content .wslot { flex:none; }
+.wardrobe-content .wchips { flex:1; min-width:0; }
+.audio-tray .ss-sw { flex:none; flex-direction:row; min-height:64px; height:64px; justify-content:space-between; font-size:16px; }
+.audio-tray .ss-sw span { font-size:24px; }
+.audio-tray .ss-sw i, .audio-tray .ss-sw:not(.on) i:not(.off) { display:inline; font-size:16px; }
+.audio-tray .ss-sw:not(.on) i { color:#855071; }

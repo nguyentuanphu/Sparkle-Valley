@@ -1,0 +1,58 @@
+// Parent-owned photo connections. This module deliberately does not transfer child progress or profiles.
+import { T } from './i18n.js';
+import { el, esc } from './util.js';
+const KEY = 'sv2_familydevice', PHOTOS = 'sv2_familyphotos';
+const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || 'null') || fallback; } catch { return fallback; } };
+const save = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+export const familyDevice = () => read(KEY, null);
+export const familyFace = npc => read(PHOTOS, {})[npc]?.image || '';
+const notify = () => dispatchEvent(new Event('sv-family-photos'));
+async function request(action, body = {}) {
+  const device = familyDevice(); const r = await fetch('api/family-devices/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(device?.token ? { Authorization: 'Bearer ' + device.token } : {}) }, body: JSON.stringify(body), cache: 'no-store' });
+  let value; try { value = await r.json(); } catch { throw new Error(T('This connection is unavailable. Try again when online.', 'Kết nối chưa hoạt động. Thử lại khi có mạng.')); }
+  if (!r.ok) { if (r.status === 403 && !['join', 'recover'].includes(action)) { localStorage.removeItem(PHOTOS); notify(); } throw new Error(T(`Could not complete this step (${r.status}). Check the code or connection and try again.`, `Chưa hoàn thành bước này (${r.status}). Kiểm tra mã hoặc kết nối rồi thử lại.`)); } return value;
+}
+export async function refreshDevicePhotos() {
+  if (!familyDevice() || navigator.onLine === false) return;
+  const state = await request('status'); if (state.pending) return state;
+  const manifest = await request('manifest'), photos = read(PHOTOS, {});
+  for (const id of Object.keys(photos)) if (!manifest.photos[id]) delete photos[id];
+  for (const [id, p] of Object.entries(manifest.photos)) if (photos[id]?.at !== p.at) photos[id] = await request('get-photo', { npc: id });
+  save(PHOTOS, photos); notify(); return state;
+}
+const download = (name, value) => { const a = el('a'); a.download = name; a.href = URL.createObjectURL(new Blob([JSON.stringify(value)], { type: 'application/json' })); a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+async function jpeg(file) {
+  const url = URL.createObjectURL(file); try { const image = new Image(); image.src = url; await image.decode(); const scale = Math.min(1, 640 / Math.max(image.width, image.height)); const c = document.createElement('canvas'); c.width = image.width * scale; c.height = image.height * scale; c.getContext('2d').drawImage(image, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', .7); } finally { URL.revokeObjectURL(url); }
+}
+export function familyDevicesHTML() {
+  return `<details class="gsec" data-sec="familydevices"><summary><b>${T('Family photos and devices', 'Ảnh gia đình và thiết bị')}</b></summary><div class="gbody family-device-panel"><p class="note">${T('Connect family photos privately without contacting the game owner. Photos follow the character ID, even if its name changes. This does not copy game progress.', 'Kết nối ảnh gia đình riêng tư mà không cần liên hệ chủ trò chơi. Ảnh theo mã nhân vật, kể cả khi đổi tên. Không sao chép tiến trình game.')}</p><div class="fd-content"></div><p class="fd-status" role="status"></p></div></details>`;
+}
+export function bindFamilyDevices(card, npcList = []) {
+  const panel = card.querySelector('.family-device-panel'); if (!panel) return;
+  const content = panel.querySelector('.fd-content'), status = panel.querySelector('.fd-status'); let timer = null, signature = '';
+  const state = message => { status.textContent = message; };
+  const run = fn => async () => { try { state(T('Working…', 'Đang thực hiện…')); await fn(); } catch (e) { state(e.message); } };
+  const draw = async () => {
+    if (!panel.isConnected) { clearInterval(timer); return; }
+    const connection = familyDevice();
+    if (!connection) {
+      content.innerHTML = `<label>${T('Name this device', 'Đặt tên máy này')}<input class="fd-label" maxlength="60" value="${T('My device', 'Máy của tôi')}"></label><div class="actions"><button class="btn fd-create">${T('Set up our family', 'Tạo gia đình của mình')}</button></div><label>${T('Code from your connected device', 'Mã từ máy đã kết nối')}<input class="fd-code" autocomplete="off" autocapitalize="characters"></label><button class="btn fd-join">${T('Connect this device', 'Kết nối máy này')}</button><details><summary>${T('Recover from a backup key', 'Khôi phục bằng khóa dự phòng')}</summary><p>${T('If all devices are lost, use the recovery file saved when the family was created. Without a key or photo backup, private photos cannot be recovered.', 'Nếu mất mọi máy, dùng tệp khôi phục đã lưu khi tạo gia đình. Không có khóa hoặc bản sao ảnh thì không thể lấy lại ảnh riêng tư.')}</p><input type="file" class="fd-recover" accept="application/json,.json"></details>`;
+      content.querySelector('.fd-create').onclick = run(async () => { const value = await request('create', { label: content.querySelector('.fd-label').value }); save(KEY, value); localStorage.removeItem(PHOTOS); download('sparkle-family-recovery.json', { recovery: value.recovery, format: 'sparkle-family-recovery-v1' }); await draw(); state(T('Family created. Keep the recovery file privately; it can reconnect your family if every device is lost.', 'Đã tạo gia đình. Giữ riêng tệp khôi phục; dùng nó để kết nối lại nếu mất mọi máy.')); });
+      content.querySelector('.fd-join').onclick = run(async () => { const value = await request('join', { label: content.querySelector('.fd-label').value, code: content.querySelector('.fd-code').value }); save(KEY, value); localStorage.removeItem(PHOTOS); await draw(); });
+      content.querySelector('.fd-recover').onchange = run(async () => { const file = content.querySelector('.fd-recover').files[0]; if (!file) return; const key = JSON.parse(await file.text()); const value = await request('recover', { recovery: key.recovery, label: content.querySelector('.fd-label').value }); save(KEY, { ...value, recovery: key.recovery }); await draw(); });
+      return;
+    }
+    const current = await request('status'); signature = JSON.stringify([current.pending, current.devices]);
+    if (current.pending) { content.innerHTML = `<p>${T('Waiting for approval. On your other device, open Family photos and devices and approve this connection.', 'Đang chờ đồng ý. Trên máy kia, mở Ảnh gia đình và thiết bị rồi chấp nhận kết nối này.')}</p><button class="btn fd-refresh">${T('Check approval', 'Kiểm tra đồng ý')}</button>`; content.querySelector('.fd-refresh').onclick = run(draw); return; }
+    content.innerHTML = `<p>${T('Connected to your private family collection.', 'Đã kết nối bộ ảnh riêng của gia đình.')}</p><button class="btn fd-pair">${T('Connect another device', 'Kết nối máy khác')}</button><p class="fd-paircode"></p><div>${current.devices.filter(d => d.state !== 'removed').map(d => `<div class="vrow"><span>${esc(d.label)} · ${d.state === 'pending' ? T('Waiting for approval', 'Chờ đồng ý') : T('Connected', 'Đã kết nối')}</span><button class="btn" data-device="${d.id}" data-action="${d.state === 'pending' ? 'approve' : 'remove'}">${d.state === 'pending' ? T('Approve', 'Đồng ý') : T('Disconnect', 'Ngắt kết nối')}</button></div>`).join('')}</div><label>${T('Character for this photo', 'Nhân vật dùng ảnh này')}<select class="fd-npc">${npcList.map(n => `<option value="${esc(n.id)}">${esc(n.name)}</option>`).join('')}</select></label><input class="fd-photo" type="file" accept="image/*"><label class="tog"><input type="checkbox" class="fd-postcard" checked> ${T('Also show this photo on family postcards', 'Hiện ảnh này cả trên bưu thiếp gia đình')}</label><div class="actions"><button class="btn fd-removephoto">${T('Remove this character photo', 'Bỏ ảnh nhân vật này')}</button><button class="btn fd-backup">${T('Save photo backup', 'Lưu bản sao ảnh')}</button>${connection.recovery ? `<button class="btn fd-key">${T('Save recovery key', 'Lưu khóa khôi phục')}</button>` : ''}</div><label>${T('Restore photo backup on this website', 'Khôi phục bản sao ảnh trên trang web này')}<input class="fd-import" type="file" accept="application/json,.json"></label><p class="note">${T('A photo backup contains private pictures. When changing hosting, create/connect your family on the new website and restore this file. Restoring replaces the photos of matching character IDs.', 'Bản sao chứa ảnh riêng tư. Khi đổi nơi lưu trữ, tạo hoặc kết nối gia đình trên trang web mới rồi khôi phục tệp này. Khôi phục thay ảnh có cùng mã nhân vật.')}</p>`;
+    content.querySelector('.fd-pair').onclick = run(async () => { const pair = await request('pair'); content.querySelector('.fd-paircode').textContent = T(`Code: ${pair.code}. Expires in 10 minutes. Approve the joining device here.`, `Mã: ${pair.code}. Hết hạn sau 10 phút. Đồng ý máy mới tại đây.`); state(''); });
+    content.querySelectorAll('[data-device]').forEach(b => b.onclick = run(async () => { await request(b.dataset.action, { device: b.dataset.device }); await draw(); state(T('Saved.', 'Đã lưu.')); }));
+    content.querySelector('.fd-photo').onchange = run(async () => { const file = content.querySelector('.fd-photo').files[0]; if (!file) return; await request('photo', { npc: content.querySelector('.fd-npc').value, image: await jpeg(file) }); if (content.querySelector('.fd-postcard').checked) await request('photo', { npc: 'album_' + content.querySelector('.fd-npc').value, image: await jpeg(file) }); await refreshDevicePhotos(); state(T('Photo saved to your family and connected devices.', 'Đã lưu ảnh cho gia đình và các máy kết nối.')); });
+    content.querySelector('.fd-removephoto').onclick = run(async () => { await request('photo', { npc: content.querySelector('.fd-npc').value, remove: true }); await request('photo', { npc: 'album_' + content.querySelector('.fd-npc').value, remove: true }); await refreshDevicePhotos(); state(T('Photo removed.', 'Đã bỏ ảnh.')); });
+    content.querySelector('.fd-backup').onclick = run(async () => { await refreshDevicePhotos(); download('sparkle-family-photos.json', { format: 'sparkle-family-photos-v1', photos: read(PHOTOS, {}), exportedAt: Date.now() }); state(T('Backup saved.', 'Đã lưu bản sao.')); });
+    content.querySelector('.fd-key')?.addEventListener('click', () => download('sparkle-family-recovery.json', { format: 'sparkle-family-recovery-v1', recovery: connection.recovery }));
+    content.querySelector('.fd-import').onchange = run(async () => { const file = content.querySelector('.fd-import').files[0]; if (!file || file.size > 28000000) throw new Error(T('Choose a family photo backup smaller than 28 MB.', 'Chọn bản sao ảnh gia đình nhỏ hơn 28 MB.')); const backup = JSON.parse(await file.text()); if (backup.format !== 'sparkle-family-photos-v1' || !backup.photos) throw new Error(T('Choose a family photo backup.', 'Chọn bản sao ảnh gia đình.')); for (const [npc, p] of Object.entries(backup.photos).slice(0, 60)) await request('photo', { npc, image: p.image }); await refreshDevicePhotos(); state(T('Photo backup restored.', 'Đã khôi phục bản sao ảnh.')); });
+  };
+  const section = panel.closest('details'); section.addEventListener('toggle', () => { if (section.open) run(draw)(); });
+  timer = setInterval(() => { if (!panel.isConnected) clearInterval(timer); else if (section.open && familyDevice()) run(async () => { const current = await request('status'), next = JSON.stringify([current.pending, current.devices]); if (next !== signature) await draw(); await refreshDevicePhotos(); state(''); })(); }, 15000);
+}

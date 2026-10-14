@@ -163,9 +163,10 @@ export function burstConfetti(parent) {
 }
 
 // Helper: wait for one of the given elements to be tapped. Returns the element.
-export function tapOne(els) {
+export function tapOne(els, api) {
   return new Promise(res => {
     const h = e => { els.forEach(x => x.removeEventListener('click', h)); res(e.currentTarget); };
+    api?.onCleanup(() => { els.forEach(x => x.removeEventListener('click', h)); res(null); });
     els.forEach(x => x.addEventListener('click', h));
   });
 }
@@ -179,8 +180,8 @@ export async function untilRight(api, els, check) {
   try {
     for (;;) {
       arm(); playWatch.ask = { els, check };
-      const e = await tapOne(els); playWatch.ask = null;
-      if (api.closed) return null;
+      const e = await tapOne(els, api); playWatch.ask = null;
+      if (!e || api.closed) return null;
       if (check(e)) { e.classList.remove('hint'); api.right(e); return e; }
       misses++; api.wrong(e);
     }

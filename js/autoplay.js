@@ -18,6 +18,7 @@ import { settings } from './state.js';
 import { BUILD } from './build.js';
 import { pic } from './art.js';
 import { takeCopy, putCopyBack, hasCopy } from './keepcopy.js';
+import { sendAutoplayReport, reportDelivery, reportingState, retryReports } from './tester.js';
 import { AP_GROUPS, apSpeed, AP_SPEEDS, AP_OPEN_WAIT, AP_RIGHT, AP_STUCK, AP_PATH, AP_TRAIL, AP_QUESTS, apGroupOf, revertOf } from './content/autoplay.js';
 
 const REPORT = 'sv2_autoplay_report', UI = 'sv2_autoplay_ui', RUNCOPY = 'sv2_autoplay_copy', OLD_BACKUP = 'sv2_autoplay_backup';
@@ -34,9 +35,10 @@ export function mountAutoplay(game) {
   if (localStorage.getItem(OLD_BACKUP)) { oldPutBack(); return; } // (a check from before 13 Oct that never finished)
   if (hasCopy(RUNCOPY)) putCopyBack(RUNCOPY, G); // a run that never ended (the page was closed): its progress goes back
   ui = Object.assign({ open: false, groups: AP_GROUPS.filter(g => g.key !== 'quests').map(g => g.key), speed: 'fast', x: null, y: null, q: '' }, get(UI, {}));
-  if (!AP_SPEEDS[ui.speed]) ui.speed = 'fast';
+  const devicePolicy = liveRule('tester')?.policies?.[localStorage.getItem('sv2_playerid') || '']; if (devicePolicy?.speed && AP_SPEEDS[devicePolicy.speed]) ui.speed = devicePolicy.speed;
+  if (!AP_SPEEDS[ui.speed]) ui.speed = 'x1';
   root = el('div', 'apbox'); root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', T('Auto play check', 'Tự chơi để kiểm tra'));
-  style(); document.body.appendChild(root); draw();
+  style(); document.body.appendChild(root); addEventListener('sv-report-delivery', () => { if (root && !run && ui.open) draw(); }); draw();
   finger = el('div', 'apfinger'); finger.setAttribute('aria-hidden', 'true'); finger.hidden = true; document.body.appendChild(finger);
   addEventListener('error', e => errSink && errSink.push(String(e.message || e.error || 'error')));
   addEventListener('unhandledrejection', e => errSink && errSink.push(String((e.reason && e.reason.message) || e.reason || 'error')));
@@ -65,9 +67,10 @@ function oldPutBack() {
 function buttons() {
   for (const hud of G.huds || []) {
     const z = hud.q && hud.q('.zoomer'); if (!z) continue;
+    if (z.querySelector('.z-lb')) { z.querySelector('.z-ap')?.remove(); continue; }
     let b = z.querySelector('.z-ap');
     if (!b) {
-      b = el('button', 'z-ap', `${pic('🤖')}<i class="ap-n" hidden></i>`); b.setAttribute('aria-label', T('Auto play', 'Tự chơi'));
+      b = el('button', 'z-ap', `${pic('🐞')}<i class="ap-n" hidden></i>`); b.setAttribute('aria-label', T('Auto play', 'Tự chơi'));
       b.addEventListener('pointerdown', e => e.stopPropagation());
       b.onclick = e => { e.stopPropagation(); ui.open = !ui.open; put(UI, ui); draw(); };
       const lb = z.querySelector('.z-lb'); if (lb) lb.after(b); else z.appendChild(b);
@@ -410,7 +413,7 @@ async function one(s) {
   const secs = (performance.now() - t0) / 1000, fps = secs > .5 ? Math.round(frames / secs) : null;
   for (const e of [...new Set(errs)].slice(0, 3)) note(T('error: ', 'lỗi: ') + e);
   for (const m of voiceMisses()) if (!miss0.has(m[0] + '|' + m[1])) note(T('no recording: ', 'chưa thu âm: ') + String(m[0]).slice(0, 80));
-  if (fps != null && fps < 20) note(T(`slow: ${fps} frames a second`, `chậm: ${fps} khung hình mỗi giây`));
+  if ((!sp().rate || sp().rate === 1) && fps != null && fps < 20) note(T(`slow: ${fps} frames a second`, `chậm: ${fps} khung hình mỗi giây`));
   for (const p of problems) if (!/^(stuck|bị kẹt)/.test(p)) send(s.g, `${nm}: ${p}`); // (being stuck was sent when it happened)
   return { g: s.g, key: s.key, name: nm, ok: !problems.length && !skipped, skipped, problems, notes, said, secs: Math.round(secs * 10) / 10, fps };
 }
@@ -428,7 +431,7 @@ const tester = () => { const a = get('sv2_tester', null); return !!(a && a.at &&
 async function start(only) {
   const h = hero(); if (!h || run) return;
   const list = only ? steps(true).filter(s => only.includes(s.key)) : steps(); if (!list.length) return;
-  const perRun = !tester() || revertOf(liveRule('tester')) === 'autoplay';
+  const perRun = !tester() || revertOf(liveRule('tester'), localStorage.getItem('sv2_playerid') || '') === 'autoplay';
   if (perRun) takeCopy(RUNCOPY);
   const counted = settings.countPlayers; settings.countPlayers = false; // (not counted in the players report)
   run = { speed: ui.speed, list, i: 0, done: [], paused: false, skip: false, stop: false, started: Date.now(), perRun };
@@ -447,7 +450,8 @@ async function start(only) {
   if (finger) finger.hidden = true;
   settings.countPlayers = counted;
   if (perRun) putCopyBack(RUNCOPY, G);
-  put(REPORT, Object.assign(report(), { sent: true })); // (each problem was already sent; tester.js does not send it again)
+  const finalReport = report(); const result = await sendAutoplayReport(finalReport);
+  put(REPORT, { ...finalReport, reportIds: result.ids, reportState: result.state });
   run = null; ui.open = true; put(UI, ui); draw(); buttons(); // the child plays on from here; the window shows the report
 }
 const report = () => ({ at: new Date().toISOString(), build: BUILD, speed: run.speed, total: run.list.length, done: run.done, perRun: run.perRun });
@@ -493,7 +497,7 @@ function drag(handle) {
   };
 }
 const speedRow = () => `<div class="row">${Object.entries(AP_SPEEDS).map(([k, s]) => `<button data-sp="${k}" class="${(run ? run.speed : ui.speed) === k ? 'on' : ''}">${esc(T(s.en, s.vi))}</button>`).join('')}</div>`;
-const backNote = () => (run ? run.perRun : !tester() || revertOf(liveRule('tester')) === 'autoplay')
+const backNote = () => (run ? run.perRun : !tester() || revertOf(liveRule('tester'), localStorage.getItem('sv2_playerid') || '') === 'autoplay')
   ? T('When it stops, the game goes on from there; what auto play earned goes back, badges and stickers stay.', 'Khi dừng, game tiếp tục từ đó; phần tự chơi kiếm được được trả lại, huy hiệu và nhãn dán vẫn giữ.')
   : T('When it stops, the game goes on from there. Progress goes back when you stop being a tester; badges and stickers stay.', 'Khi dừng, game tiếp tục từ đó. Tiến bộ được trả lại khi thôi làm người thử; huy hiệu và nhãn dán vẫn giữ.');
 function draw() {
@@ -528,6 +532,7 @@ function draw() {
     const qi = root.querySelector('[data-a="q"]'); qi.onchange = () => { ui.q = qi.value; put(UI, ui); draw(); };
     root.querySelector('[data-a="start"]').onclick = () => start();
     root.querySelectorAll('[data-again]').forEach(b => b.onclick = () => start([b.dataset.again]));
+    const send = root.querySelector('[data-a="send"]'); if (send) send.onclick = async () => { send.disabled = true; const result = await sendAutoplayReport(rep); put(REPORT, { ...rep, reportIds: result.ids, reportState: result.state }); retryReports(); draw(); };
     const sv = root.querySelector('[data-a="save"]'); if (sv) sv.onclick = () => saveReport(rep);
     const cp = root.querySelector('[data-a="copy"]'); if (cp) cp.onclick = () => { try { navigator.clipboard.writeText(text(rep)); cp.textContent = T('Copied', 'Đã chép'); } catch (e) { } };
     const cl = root.querySelector('[data-a="clear"]'); if (cl) cl.onclick = () => { try { localStorage.removeItem(REPORT); } catch (e) { } draw(); };
@@ -539,13 +544,22 @@ function draw() {
   drag(root.querySelector('.aph'));
 }
 const row = r => `<div><span class="dot ${r.skipped ? 'skip' : r.ok ? (r.notes && r.notes.length ? 'help' : '') : 'bad'}"></span>${esc(r.name)}${r.said ? `<small class="said">${esc(r.said)}</small>` : ''}${r.problems.map(p => `<small>${esc(p)}</small>`).join('')}${(r.notes || []).map(p => `<small class="help">${esc(p)}</small>`).join('')}</div>`;
+function deliveryText(rep) {
+  if (!reportingState().enabled) return T('Reporting is off on this device. Enable testing and accept the tester agreement in Settings.', 'Báo cáo đang tắt trên máy này. Bật thử nghiệm và đồng ý tham gia trong Cài đặt.');
+  if (!(rep.done || []).some(x => x.problems?.length)) return T('No problems found in this check.', 'Chưa tìm thấy lỗi trong lần kiểm tra này.');
+  const states = (rep.reportIds || []).map(reportDelivery);
+  if (states.length && states.every(x => x.state === 'sent')) return T('Sent: received by the website.', 'Đã gửi: trang web đã nhận.');
+  if (states.some(x => x.state === 'retry')) return T('Not sent yet. Kept here; retry when connected.', 'Chưa gửi được. Đã giữ trên máy; gửi lại khi có mạng.');
+  return states.some(x => x.state === 'sending') ? T('Sending…', 'Đang gửi…') : T('Queued on this device.', 'Đang chờ gửi trên máy này.');
+}
 function lastReport(rep) {
   const bad = rep.done.filter(r => !r.ok && !r.skipped), help = rep.done.filter(r => r.ok && r.notes && r.notes.length);
   return `<h4>${T('Last check', 'Lần kiểm tra trước')}: ${new Date(rep.at).toLocaleString()}</h4>
     <div>${T(`${rep.done.length} checked: ${rep.done.length - bad.length} fine, ${bad.length} with problems`, `Đã kiểm ${rep.done.length}: ${rep.done.length - bad.length} ổn, ${bad.length} có lỗi`)}</div>
     <div class="res">${bad.slice(0, 40).map(r => `<div><span class="dot bad"></span>${esc(r.name)} <button data-again="${esc(r.key)}">${T('Again', 'Lại')}</button>${r.problems.map(p => `<small>${esc(p)}</small>`).join('')}</div>`).join('')}
     ${help.slice(0, 20).map(row).join('')}</div>
-    <div class="row"><button data-a="save">${T('Save report', 'Lưu báo cáo')}</button><button data-a="copy">${T('Copy', 'Chép')}</button><button data-a="clear">${T('Clear', 'Xóa')}</button></div>`;
+    <p class="note" role="status">${deliveryText(rep)}</p>
+    <div class="row"><button data-a="send">${T('Send / retry report', 'Gửi / gửi lại báo cáo')}</button></div><details><summary>${T('Export options', 'Tùy chọn xuất bản sao')}</summary><div class="row"><button data-a="save">${T('Export a copy', 'Xuất bản sao')}</button><button data-a="copy">${T('Copy', 'Chép')}</button><button data-a="clear">${T('Clear', 'Xóa')}</button></div></details>`;
 }
 const text = rep => [`Sparkle Valley ${rep.build || ''} auto play check, ${rep.at}, speed ${rep.speed}`, `${rep.done.length} checked`, '']
   .concat(rep.done.map(r => `${r.skipped ? 'SKIPPED' : r.ok ? 'OK     ' : 'PROBLEM'}  [${r.g}] ${r.name}${r.said ? ` (${r.said})` : ''}${r.fps ? ` (${r.fps} fps, ${r.secs} s)` : ''}${r.problems.map(p => '\n           ' + p).join('')}${(r.notes || []).map(p => '\n           ' + p).join('')}`)).join('\n');

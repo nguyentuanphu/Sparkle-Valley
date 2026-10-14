@@ -1,0 +1,32 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { familyAction } from '../../netlify/lib/family-devices.mjs';
+const memory = () => { const map = new Map(); return { get: async key => map.has(key) ? structuredClone(map.get(key)) : null, setJSON: async (key, value) => map.set(key, structuredClone(value)) }; };
+test('private families are isolated; a pairing code does not approve a device', async () => {
+  const S = memory(), first = await familyAction(S, 'create', { label: 'Phone' }, '', 1), other = await familyAction(S, 'create', {}, '', 1);
+  await familyAction(S, 'photo', { npc: 'owl', image: 'data:image/jpeg;base64,AAAA' }, first.token, 2);
+  assert.deepEqual((await familyAction(S, 'manifest', {}, other.token, 3)).photos, {});
+  const pair = await familyAction(S, 'pair', {}, first.token, 4), joined = await familyAction(S, 'join', { code: pair.code, label: 'Tablet' }, '', 5);
+  await assert.rejects(familyAction(S, 'manifest', {}, joined.token, 6), { status: 403 });
+  await assert.rejects(familyAction(S, 'join', { code: pair.code }, '', 6), { status: 403 });
+  const pending = (await familyAction(S, 'status', {}, first.token, 6)).devices.find(d => d.state === 'pending');
+  await familyAction(S, 'approve', { device: pending.id }, first.token, 7);
+  assert.equal((await familyAction(S, 'get-photo', { npc: 'owl' }, joined.token, 8)).image, 'data:image/jpeg;base64,AAAA');
+  await familyAction(S, 'remove', { device: pending.id }, first.token, 9);
+  await assert.rejects(familyAction(S, 'get-photo', { npc: 'owl' }, joined.token, 10), { status: 403 });
+});
+test('expired codes fail; recovery and photo migration require the right private files', async () => {
+  const S = memory(), first = await familyAction(S, 'create', {}, '', 1), pair = await familyAction(S, 'pair', {}, first.token, 2);
+  await assert.rejects(familyAction(S, 'join', { code: pair.code }, '', 600003), { status: 403 });
+  await assert.rejects(familyAction(S, 'recover', { recovery: 'wrong' }, '', 3), { status: 403 });
+  const recovered = await familyAction(S, 'recover', { recovery: first.recovery }, '', 3);
+  assert.equal((await familyAction(S, 'status', {}, recovered.token, 4)).pending, false);
+  await assert.rejects(familyAction(S, 'photo', { npc: '<script>', image: 'data:image/jpeg;base64,AAAA' }, first.token, 5), { status: 400 });
+  await assert.rejects(familyAction(S, 'photo', { npc: 'owl', image: 'javascript:evil' }, first.token, 5), { status: 400 });
+  await familyAction(S, 'photo', { npc: 'owl', image: 'data:image/jpeg;base64,AAAA' }, first.token, 5);
+  const backup = { format: 'sparkle-family-photos-v1', photos: { owl: await familyAction(S, 'get-photo', { npc: 'owl' }, first.token, 6) } };
+  const newHost = memory(), migrated = await familyAction(newHost, 'create', {}, '', 7);
+  await familyAction(newHost, 'import', backup, migrated.token, 8);
+  assert.equal((await familyAction(newHost, 'get-photo', { npc: 'owl' }, migrated.token, 9)).image, backup.photos.owl.image);
+  assert.equal((await familyAction(newHost, 'manifest', {}, migrated.token, 10)).photos.owl.at, 8);
+});

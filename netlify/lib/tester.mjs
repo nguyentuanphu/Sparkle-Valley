@@ -31,7 +31,7 @@ export function cleanReport(b, now = Date.now()) {
   const auto = kind === 'auto' ? (AUTOS.includes(b.auto) ? b.auto : null) : null; if (kind === 'auto' && !auto) return null;
   const w = b.where && typeof b.where === 'object' ? b.where : {};
   const r = {
-    id: b.id, at: now, b: BUILD.test(b.b || '') ? b.b : '', kind, auto, detail: txt(b.detail, 200), note: txt(b.note, TLIMITS.note), spoken: b.spoken === true,
+    clientId: /^[a-f0-9]{32}$/.test(b.clientId || '') ? b.clientId : '', id: b.id, at: now, b: BUILD.test(b.b || '') ? b.b : '', kind, auto, detail: txt(b.detail, 200), note: txt(b.note, TLIMITS.note), spoken: b.spoken === true,
     where: { area: txt(w.area, 60), place: txt(w.place, 60), game: txt(w.game, 60), window: txt(w.window, 80), x: num(w.x, -5000, 5000), z: num(w.z, -5000, 5000) },
     join: PK.test(b.join || '') ? b.join : '',
     errors: (Array.isArray(b.errors) ? b.errors : []).slice(-TLIMITS.errors).map(e => txt(e, 200)).filter(Boolean),
@@ -56,6 +56,8 @@ const titleOf = r => r.kind === 'auto' ? `${r.auto}: ${r.detail || r.where.game 
 export async function addReport(S, live, body, now = Date.now(), ipk = '') {
   const c = cleanReport(body, now); if (!c) return { error: 'bad report', status: 400 };
   const { r, shot } = c; if (!isTester(live, r.id)) return { error: 'not a tester', status: 403 };
+  const receiptKey = r.clientId ? `receipt/${r.id}/${r.clientId}` : '';
+  if (receiptKey) { const receipt = await S.get(receiptKey, { type: 'json' }); if (receipt) return receipt; }
   const d = day(now), qd = `q/${d}/d/${r.id}`, qi = `q/${d}/i/${ipk || 'x'}`;
   const nd = (+(await S.get(qd)) || 0) + 1, ni = (+(await S.get(qi)) || 0) + 1;
   if (nd > TLIMITS.device || ni > TLIMITS.ip) return { error: 'too many reports today', status: 429 };
@@ -78,7 +80,7 @@ export async function addReport(S, live, body, now = Date.now(), ipk = '') {
   if (!t.mine.includes(k)) t.mine = [...t.mine, k].slice(-300);
   t.kinds = t.kinds || {}; t.kinds[k] = r.kind;
   await S.setJSON(`t/${r.id}`, t);
-  return { ok: true, k, rid, status: p.status };
+  const receipt = { ok: true, k, rid, status: p.status }; if (receiptKey) await S.setJSON(receiptKey, receipt); return receipt;
 }
 
 const all = async (S, prefix, cap = 5000) => { const out = []; let cursor; do { const l = await S.list({ prefix, cursor }); for (const b of l.blobs) out.push(b.key); cursor = l.cursor; } while (cursor && out.length < cap); return out; };

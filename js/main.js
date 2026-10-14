@@ -131,7 +131,7 @@ const scene = new THREE.Scene();
   const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), .04).texture; pm.dispose();
 }
 // how long each start-up step takes (ms since this file began; tests/run.mjs "perf" and Grown-ups › Advanced read it)
-const BOOT0 = performance.now(), bootTimes = { start: Math.round(BOOT0) }, bootMark = k => { bootTimes[k] = Math.round(performance.now() - BOOT0); };
+const BOOT0 = performance.now(), bootTimes = { start: Math.round(BOOT0) }, bootMark = k => { bootTimes[k] = Math.round(performance.now() - BOOT0); const steps = ['world', 'people', 'town', 'roads', 'pretraffic', 'traffic', 'things', 'wideland', 'levelled', 'roadside', 'solids', 'shaders', 'ready']; const n = steps.indexOf(k); if (n >= 0) window.svLaunchProgress?.(n + 1, steps.length, T(`Preparing the valley: ${n + 1}/${steps.length}`, `Chuẩn bị thung lũng: ${n + 1}/${steps.length}`)); };
 // (round R, faster launch) the title and "Who's playing?" show at once; the valley is built behind them in steps, with a
 // breath between steps so the screen keeps answering taps. Pressing Go before it is ready waits a moment (startWhenBuilt).
 let framesSeen = 0, framesDone = null; const firstFrames = new Promise(r => { framesDone = r; });
@@ -193,7 +193,7 @@ function nameTag(name, color = '#ffffff') {
   return s;
 }
 function addNPC({ id, name, look, model, x, z, face = 0, icon = '💬', talk }) {
-  const A = model ? null : nameAvatar(buildAvatar(look, null), name), obj = model || A.root;
+  const A = model ? null : nameAvatar(buildAvatar(look, null), name, true, id), obj = model || A.root;
   const av = model ? null : obj;
   obj.position.set(x, world.groundAt(x, z), z); obj.rotation.y = face; scene.add(obj);
   const tag = nameTag(name); tag.position.set(x, obj.position.y + (model ? 3.4 : 2.0), z); scene.add(tag);
@@ -414,9 +414,9 @@ async function playGame(i, id, source, shrine) {
   if (res.restart) { events.emit('ActivityAbandoned', { activityId: actId, reason: 'level' }); p.gameDiff = { ...(p.gameDiff || {}), [id]: res.restart }; save(); return playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); }
   if (res.won) events.emit('ActivityCompleted', { activityId: actId, defId: makeId('game', id), players: playerIds, result: { won: true, stars: res.stars || 0, level } });
   else events.emit('ActivityAbandoned', { activityId: actId, reason: 'left' });
-  if (!res.won) return;
+  if (!res.won) { if (source === 'hub') G.openGamesHub(i); return; }
   // after the rewards: straight on to the next game, or this one again, if the child chose that
-  const then = () => { if (res.next === 'next' && nextId) playGame(i, nextId, 'replay'); else if (res.next === 'again') playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); };
+  const then = () => { if (res.next === 'next' && nextId) playGame(i, nextId, source === 'hub' ? 'hub' : 'replay'); else if (res.next === 'again') playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); else if (source === 'hub') G.openGamesHub(i); };
   // winning Kite Flying earns the whistling kite (diều sáo), which then flies above you everywhere
   if (id === 'kite' && !p.kite) {
     p.kite = true; p.kiteOn = true; save(); G.kites.sync();
@@ -452,7 +452,7 @@ async function playGame(i, id, source, shrine) {
 G.playGame = playGame;
 G.job = (kind, n = 1, h) => jobProgress(G, kind, n, h);
 G.STICKERS = STICKERS;
-G.openWardrobe = i => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; G.closeUp = i; openWardrobe(G, i, () => { G.paused = false; G.closeUp = null; }); };
+G.openWardrobe = i => { if (twoHalves()) G.lastPlayer = i; if (G.paused) return; G.paused = true; G.closeUp = null; openWardrobe(G, i, () => { G.paused = false; G.closeUp = null; }); };
 
 async function foundLeafy(h, lf) {
   const p = h.profile; if (p.leafies[lf.id]) return;
@@ -576,12 +576,12 @@ G.clearSpot = (x, z, pad = .9) => {
   return [x, z];
 };
 G.landBy = async (h, x, z) => { const [sx, sz] = G.clearSpot(x + 1.8, z + 1.4); await G.travel(h, sx - 4.5, sz - 1); h.yaw = Math.atan2(x - h.pos.x, z - h.pos.z); h.camYaw = h.yaw + Math.PI; };
-G.meetAndPlay = async (i, id) => {
+G.meetAndPlay = async (i, id, source = 'place') => {
   const h = G.heroes[i], it = G.gameSpot(id); if (!h) return;
-  if (!it) { G.playGame(i, id, 'place'); return; }
+  if (!it) { return G.playGame(i, id, source); return; }
   if (dist2(h.pos.x, h.pos.z, it.x, it.z) > 4) await G.landBy(h, it.x, it.z);
   G.fx && G.fx(it.x, heightAt(it.x, it.z) + 2.4, it.z, '🎮'); await wait(500);
-  G.playGame(i, id, 'place');
+  return G.playGame(i, id, source);
 };
 // the villager nearest to a place on the map (within 20 m), so travelling lands you right next to them
 G.npcNear = (x, z, r = 20) => G.interactables.filter(it => npcLike(it) && Number.isFinite(it.x) && dist2(it.x, it.z, x, z) < r).sort((a, b) => dist2(a.x, a.z, x, z) - dist2(b.x, b.z, x, z))[0] || null;
@@ -754,6 +754,18 @@ G.onCooked = (h) => { checkQuests(h); G.job('cook', 1, h); };
 G.rebuildHero = i => { const h = G.heroes[i]; if (h) { h.buildModel(); G.huds[i].refreshWho(); sendHello(); } };
 G.fogMapFor = p => G.fogMaps[p.id] || (G.fogMaps[p.id] = fogMapFor(p, mapPic.now()));
 G.mapPic = mapPic; G.waterPic = waterPic; // (the checks read where each picture came from)
+G.avatarPreview = i => {
+  const h = G.heroes[i]; if (!h) return '';
+  const preview = new THREE.Scene(); preview.background = new THREE.Color('#f1eaff'); preview.environment = scene.environment;
+  const avatar = h.av.root.clone(true); avatar.position.set(0, 0, 0); avatar.rotation.set(0, .12, 0); preview.add(avatar);
+  preview.add(new THREE.HemisphereLight(0xffffff, 0xd9c79a, 1.8)); const sun = new THREE.DirectionalLight(0xffffff, 2); sun.position.set(3, 5, 4); preview.add(sun);
+  const bounds = new THREE.Box3().setFromObject(avatar), size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
+  const cam = new THREE.PerspectiveCamera(32, 1, .1, 100); cam.position.set(center.x, center.y, center.z + Math.max(size.y, size.x) * 2.15); cam.lookAt(center);
+  const w = renderer.domElement.width / renderer.getPixelRatio(), hh = renderer.domElement.height / renderer.getPixelRatio(); renderer.setScissorTest(false); renderer.setViewport(0, 0, w, hh);
+  cam.aspect = w / hh; cam.updateProjectionMatrix(); renderer.render(preview, cam);
+  const c = document.createElement('canvas'); c.width = 260; c.height = Math.round(260 * hh / w); c.getContext('2d').drawImage(renderer.domElement, 0, 0, c.width, c.height); const image = c.toDataURL('image/jpeg', .85);
+  renderer.render(scene, h.cam); return image;
+};
 G.snapshot = (i, max = 720, q = .8) => {
   const h = G.heroes[i] || G.heroes[0], w = renderer.domElement.width, hh = renderer.domElement.height;
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w / renderer.getPixelRatio(), hh / renderer.getPixelRatio());
@@ -1717,7 +1729,7 @@ G.festivals = createFestivals(G);
 // (owner, 12 Oct) the auto play check for grown-ups testing the game: only on the devices Studio's Releases page allows
 // (switch `autoplay`: every device, or the ticked ones); everywhere else nothing of it is even downloaded
 { const apGate = async () => { const A = await import('./content/autoplay.js'); let me = ''; try { me = localStorage.getItem('sv2_playerid') || ''; } catch (e) { }
-    if (A.apAllowed(releaseOn('autoplay', false), liveRule('autoplay'), me)) (await import('./autoplay.js')).mountAutoplay(G); else if (G.autoplay) G.autoplay.unmount(); };
+    if (A.apAllowed(releaseOn('autoplay', false) && liveRule('tester')?.policies?.[me]?.autoplay !== false, liveRule('autoplay'), me)) (await import('./autoplay.js')).mountAutoplay(G); else if (G.autoplay) G.autoplay.unmount(); };
   apGate(); onLive(apGate); }
 // (owner, 12 Oct) tester devices report problems by themselves and with the ladybird (js/testergate.js, js/tester.js)
 import('./testergate.js').then(m => m.testerGate(G));
@@ -1761,7 +1773,7 @@ for (const c of (STUDIO_ON_MAP && Array.isArray(CUSTOM.npcs) ? CUSTOM.npcs : [])
   const look = { style: ['dress', 'shirt', 'aodai', 'tunic', 'overalls', 'hoodie'].includes(L.style) ? L.style : 'shirt', color: hex(L.color) || '#5fb0ff', hat: 'none', back: 'none', hair: hex(L.hair) || '#2a1d14', hairStyle: ['buns', 'short', 'long', 'ponytail', 'spiky'].includes(L.hairStyle) ? L.hairStyle : 'short', skin: hex(L.skin) || '#f1c6a4', glider: 0, age: L.age === 'old' || L.age === 'kid' ? L.age : 'adult' };
   const lines = (Array.isArray(c.lines) ? c.lines : []).filter(l => Array.isArray(l) && (l[0] || l[1])).slice(0, 12).map(l => [String(l[0] || l[1]).slice(0, 300), String(l[1] || l[0]).slice(0, 300)]);
   if (c.gender === 'f' || c.gender === 'm') { CUSTOM.genders = { ...(CUSTOM.genders || {}), [name]: c.gender }; setVoiceGenders(CUSTOM.genders); }
-  addNPC({ id: 'fam_' + name.replace(/[^\p{L}\p{N}]+/gu, '_'), name, look, x: +c.x, z: +c.z, face: +c.face || 0, icon: typeof c.icon === 'string' ? c.icon.slice(0, 4) : '💬', talk: () => dialog(name, lines.length ? lines : [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']]) });
+  addNPC({ id: 'fam_' + (c.id || name.replace(/[^\p{L}\p{N}]+/gu, '_')), name, look, x: +c.x, z: +c.z, face: +c.face || 0, icon: typeof c.icon === 'string' ? c.icon.slice(0, 4) : '💬', talk: () => dialog(name, lines.length ? lines : [['Hello! Nice to see you!', 'Xin chào! Gặp con vui quá!']]) });
 }
 // each village's games time table (with a countdown board) and its singer; after every host is in place
 G.folkShow = createFolkShow(G, { looks: [kidLook('shirt', '#ff7eb8', '#1d1412', 'buns', 'none'), kidLook('overalls', '#3cc7e8', '#3b2618', 'short', 'cap'), kidLook('dress', '#ffb52e', '#1d1412', 'ponytail', 'flower')] });
@@ -1871,12 +1883,13 @@ import('./villagertalk.js').then(m => m.createVillagerTalk(G)).then(() => import
 import('./pricetags.js').then(m => m.createPriceTags(G));
 import('./jobs.js').then(m => m.createJobs(G));
 import('./wayfind.js').then(m => m.createWayfind(G));   // (Round U) "Where is…?" sparkles
-G.openWhere = i => G.wayfind && G.wayfind.open(i);
+G.openWhere = i => featureOn('wayfind', false) && G.wayfind && G.wayfind.open(i);
 import('./animalhomes.js').then(m => m.createAnimalHomes(G));   // (Round U) animals with homes   // (Round U) a job board in every place   // (Round U) a coin-picture price over every food stall
 // (Round U) a tap on a coin, orb or Leafy chip (top bar, Backpack) says what it is (js/chipinfo.js, loaded on the first tap)
 document.addEventListener('click', e => { const c = e.target.closest && e.target.closest('[data-chip]'); if (c) import('./chipinfo.js').then(m => m.showChip(c.dataset.chip, c)); });
 import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(T('Your progress was brought back from the safe copy on this device.', 'Tiến trình chơi đã được khôi phục từ bản lưu dự phòng trên máy.')), 1200); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { if (playing) keepSpot(); save(); hush(); } });
 addEventListener('pagehide', () => { if (playing) keepSpot(); saveProfiles(true); });
-if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) navigator.serviceWorker.register('sw.js').catch(() => { });
+if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) navigator.serviceWorker.register('sw.js').then(reg => { if (reg.waiting) window.svOfferUpdate?.(); reg.addEventListener('updatefound', () => { const next = reg.installing; next?.addEventListener('statechange', () => { if (next.state === 'installed' && navigator.serviceWorker.controller) window.svOfferUpdate?.(); }); }); }).catch(() => { });
 bootMark('ready'); G.bootTimes = bootTimes; bootDone();
+{ const refresh = () => import('./familydevices.js').then(m => m.refreshDevicePhotos()).catch(() => {}); refresh(); addEventListener('online', refresh); setInterval(refresh, 60000); }
