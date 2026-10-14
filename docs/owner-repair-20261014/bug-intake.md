@@ -1,6 +1,6 @@
 # Bug intake — owner-approved combined repair round
 
-Latest refresh: 14 October 2026, resumed session AEDT.216 open bug-labelled issues through#299;50 more than the prior166-row intake. See issue-intake.json for the refreshed individual rows. The older counts and environment blocker below describe the earlier intake only; shell/browser access is now restored, focused9/9 passed on25176e7, and diagnostic draft PR300/full-suite38556313225 is active. No issue closed. Additional discovered game bugs are in this same round.
+Latest refresh:15 October2026 AEDT.216 open bug-labelled issues through#299, no newer reports at this refresh. All remain included and open; individual dispositions remain unfinished. Diagnostic draftPR300 full38649407236 passed153/153 at3599d24d; later camera/HUD changes have separate focused proof and need final-source validation. Historical counts and environment blocker below are superseded; execution is available.
 
 Current groups: offscreen171; freeze2; autoplay15; error6; noopen6; manual/other4; slow12. Full bodies/private diagnostics are not copied into the repository.
 
