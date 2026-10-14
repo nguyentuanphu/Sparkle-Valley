@@ -10,3 +10,5 @@
 - Earlier work-order text saying proposed/documentation-only describes its creation; implementation authorization above supersedes that status. Scope/evidence/release gates remain.
 
 - 14 October 2026, resumed session: Henry explicitly includes every additional game bug found during this repair in the same consolidated round; continue investigation and fixes without another start approval. Standing tool permission for this chat does not authorize main merge, deployment or release.
+
+- 14 October 2026, overnight continuation: Henry grants permission for routine repair work, newly found bugs, tests and durable isolated checkpoints while asleep, aiming for a review ready for deployment questions. No promise of readiness before verification; deployment remains a separate explicit decision.

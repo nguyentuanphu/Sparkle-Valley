@@ -38,7 +38,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 298,
@@ -61,7 +65,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 297,
@@ -84,7 +92,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 296,
@@ -107,7 +119,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 295,
@@ -130,7 +146,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 294,
@@ -153,7 +173,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 293,
@@ -176,7 +200,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 292,
@@ -199,7 +227,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 291,
@@ -222,7 +254,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 290,
@@ -245,7 +281,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 289,
@@ -268,7 +308,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 288,
@@ -291,7 +335,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 287,
@@ -314,7 +362,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 286,
@@ -337,7 +389,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 285,
@@ -360,7 +416,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 284,
@@ -383,7 +443,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 283,
@@ -406,7 +470,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 282,
@@ -429,7 +497,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 281,
@@ -452,7 +524,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 280,
@@ -475,7 +551,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 279,
@@ -498,7 +578,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 278,
@@ -521,7 +605,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 277,
@@ -544,7 +632,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 276,
@@ -567,7 +659,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 275,
@@ -590,7 +686,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 274,
@@ -613,7 +713,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 273,
@@ -636,7 +740,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 272,
@@ -659,7 +767,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 271,
@@ -682,7 +794,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 270,
@@ -705,7 +821,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 269,
@@ -728,7 +848,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 268,
@@ -751,7 +875,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 267,
@@ -774,7 +902,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 266,
@@ -797,7 +929,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 265,
@@ -820,7 +956,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 264,
@@ -843,7 +983,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 263,
@@ -866,7 +1010,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 262,
@@ -889,7 +1037,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 261,
@@ -912,7 +1064,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 260,
@@ -935,7 +1091,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 259,
@@ -958,7 +1118,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 258,
@@ -981,7 +1145,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 257,
@@ -1004,7 +1172,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 256,
@@ -1027,7 +1199,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 255,
@@ -1050,7 +1226,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 254,
@@ -1073,7 +1253,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 253,
@@ -1096,7 +1280,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 252,
@@ -1119,7 +1307,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 251,
@@ -1142,7 +1334,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 250,
@@ -1165,7 +1361,11 @@
         "WO-16"
       ],
       "status": "intake-complete-reproduction-pending",
-      "disposition": "Keep open; investigate root cause and originating build; no fix claimed"
+      "disposition": "Keep open; investigate root cause and originating build; no fix claimed",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 249,
@@ -1188,7 +1388,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 248,
@@ -1211,7 +1415,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 247,
@@ -1234,7 +1442,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 246,
@@ -1257,7 +1469,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 245,
@@ -1280,7 +1496,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 244,
@@ -1303,7 +1523,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 243,
@@ -1326,7 +1550,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 241,
@@ -1349,7 +1577,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 242,
@@ -1372,7 +1604,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 240,
@@ -1395,7 +1631,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 239,
@@ -1418,7 +1658,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 238,
@@ -1441,7 +1685,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 237,
@@ -1464,7 +1712,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 236,
@@ -1487,7 +1739,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 235,
@@ -1510,7 +1766,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 234,
@@ -1533,7 +1793,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 232,
@@ -1556,7 +1820,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 233,
@@ -1579,7 +1847,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 231,
@@ -1602,7 +1874,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 230,
@@ -1625,7 +1901,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 229,
@@ -1648,7 +1928,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 228,
@@ -1671,7 +1955,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 227,
@@ -1694,7 +1982,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 226,
@@ -1717,7 +2009,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 225,
@@ -1740,7 +2036,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 224,
@@ -1763,7 +2063,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 223,
@@ -1786,7 +2090,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 222,
@@ -1809,7 +2117,11 @@
         "online",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 221,
@@ -1832,7 +2144,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 220,
@@ -1856,7 +2172,11 @@
         "big",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 219,
@@ -1879,7 +2199,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 218,
@@ -1902,7 +2226,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 217,
@@ -1925,7 +2253,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 216,
@@ -1948,7 +2280,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 215,
@@ -1971,7 +2307,11 @@
         "voice-audio",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 214,
@@ -1994,7 +2334,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 213,
@@ -2017,7 +2361,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 211,
@@ -2040,7 +2388,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 212,
@@ -2063,7 +2415,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 210,
@@ -2086,7 +2442,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 209,
@@ -2109,7 +2469,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 208,
@@ -2132,7 +2496,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 207,
@@ -2155,7 +2523,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 206,
@@ -2178,7 +2550,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 205,
@@ -2201,7 +2577,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 204,
@@ -2224,7 +2604,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 203,
@@ -2247,7 +2631,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 202,
@@ -2271,7 +2659,11 @@
         "voice-audio",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 201,
@@ -2295,7 +2687,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 200,
@@ -2319,7 +2715,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 199,
@@ -2342,7 +2742,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 197,
@@ -2365,7 +2769,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 198,
@@ -2388,7 +2796,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 196,
@@ -2411,7 +2823,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 193,
@@ -2434,7 +2850,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 192,
@@ -2457,7 +2877,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 191,
@@ -2480,7 +2904,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 190,
@@ -2503,7 +2931,11 @@
         "play",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 189,
@@ -2526,7 +2958,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 188,
@@ -2549,7 +2985,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 187,
@@ -2572,7 +3012,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 186,
@@ -2593,7 +3037,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 185,
@@ -2616,7 +3064,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 184,
@@ -2639,7 +3091,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 183,
@@ -2662,7 +3118,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 182,
@@ -2685,7 +3145,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 181,
@@ -2708,7 +3172,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 180,
@@ -2731,7 +3199,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 179,
@@ -2754,7 +3226,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 178,
@@ -2777,7 +3253,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 177,
@@ -2800,7 +3280,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 176,
@@ -2823,7 +3307,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 175,
@@ -2846,7 +3334,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 174,
@@ -2869,7 +3361,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 173,
@@ -2892,7 +3388,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 172,
@@ -2915,7 +3415,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 171,
@@ -2938,7 +3442,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 170,
@@ -2961,7 +3469,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 169,
@@ -2984,7 +3496,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 168,
@@ -3007,7 +3523,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 167,
@@ -3030,7 +3550,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 166,
@@ -3053,7 +3577,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 165,
@@ -3076,7 +3604,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 164,
@@ -3099,7 +3631,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 163,
@@ -3122,7 +3658,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 162,
@@ -3145,7 +3685,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 161,
@@ -3168,7 +3712,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 160,
@@ -3191,7 +3739,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 159,
@@ -3214,7 +3766,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 158,
@@ -3237,7 +3793,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 157,
@@ -3260,7 +3820,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 156,
@@ -3283,7 +3847,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 155,
@@ -3307,7 +3875,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 154,
@@ -3331,7 +3903,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 153,
@@ -3355,7 +3931,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 152,
@@ -3379,7 +3959,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 151,
@@ -3403,7 +3987,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 150,
@@ -3427,7 +4015,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 149,
@@ -3451,7 +4043,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 148,
@@ -3475,7 +4071,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 147,
@@ -3498,7 +4098,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 146,
@@ -3521,7 +4125,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 145,
@@ -3544,7 +4152,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 144,
@@ -3567,7 +4179,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 143,
@@ -3590,7 +4206,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 142,
@@ -3613,7 +4233,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 141,
@@ -3636,7 +4260,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 140,
@@ -3659,7 +4287,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 134,
@@ -3682,7 +4314,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r69"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 133,
@@ -3705,7 +4341,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 132,
@@ -3728,7 +4368,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 131,
@@ -3751,7 +4395,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 130,
@@ -3774,7 +4422,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 129,
@@ -3797,7 +4449,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 128,
@@ -3820,7 +4476,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 127,
@@ -3843,7 +4503,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 126,
@@ -3866,7 +4530,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 125,
@@ -3889,7 +4557,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 124,
@@ -3912,7 +4584,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 123,
@@ -3936,7 +4612,11 @@
         "play",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 122,
@@ -3959,7 +4639,11 @@
         "online",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 121,
@@ -3982,7 +4666,11 @@
         "online",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 120,
@@ -4005,7 +4693,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 119,
@@ -4028,7 +4720,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 118,
@@ -4051,7 +4747,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 117,
@@ -4075,7 +4775,11 @@
         "big",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 116,
@@ -4099,7 +4803,11 @@
         "big",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 115,
@@ -4122,7 +4830,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 114,
@@ -4145,7 +4857,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 113,
@@ -4168,7 +4884,11 @@
         "online",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 112,
@@ -4191,7 +4911,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 111,
@@ -4215,7 +4939,11 @@
         "big",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 110,
@@ -4239,7 +4967,11 @@
         "online",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 109,
@@ -4263,7 +4995,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 108,
@@ -4288,7 +5024,11 @@
         "robot-stuck",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 107,
@@ -4313,7 +5053,11 @@
         "robot-stuck",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 106,
@@ -4338,7 +5082,11 @@
         "robot-stuck",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 105,
@@ -4363,7 +5111,11 @@
         "voice-audio",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 104,
@@ -4388,7 +5140,11 @@
         "robot-stuck",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 103,
@@ -4413,7 +5169,11 @@
         "robot-stuck",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 102,
@@ -4437,7 +5197,11 @@
         "play",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 101,
@@ -4461,7 +5225,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 100,
@@ -4485,7 +5253,11 @@
         "play",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 99,
@@ -4509,7 +5281,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 98,
@@ -4533,7 +5309,11 @@
         "play",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 97,
@@ -4557,7 +5337,12 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70",
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 96,
@@ -4581,7 +5366,12 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70",
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 95,
@@ -4605,7 +5395,12 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70",
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 94,
@@ -4629,7 +5424,12 @@
         "play",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70",
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 93,
@@ -4653,7 +5453,11 @@
         "play",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 92,
@@ -4677,7 +5481,12 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70",
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 91,
@@ -4701,7 +5510,12 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70",
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 90,
@@ -4726,7 +5540,11 @@
         "needs-go",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 89,
@@ -4750,7 +5568,12 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70",
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 88,
@@ -4775,7 +5598,12 @@
         "needs-go",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70",
+        "r74"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 87,
@@ -4799,7 +5627,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 86,
@@ -4821,7 +5653,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 83,
@@ -4845,7 +5681,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r69"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 82,
@@ -4869,7 +5709,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r69"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 81,
@@ -4893,7 +5737,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 80,
@@ -4917,7 +5765,12 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70",
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 79,
@@ -4941,7 +5794,13 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r69",
+        "r70",
+        "r73"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 78,
@@ -4965,7 +5824,12 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r69",
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 77,
@@ -4989,7 +5853,11 @@
         "kid-ui",
         "tester"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [
+        "r70"
+      ],
+      "reported_modules": []
     },
     {
       "issue": 36,
@@ -5013,7 +5881,11 @@
         "big",
         "on-hold"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [],
+      "reported_modules": [
+        "js/main.js"
+      ]
     },
     {
       "issue": 34,
@@ -5034,8 +5906,13 @@
         "on-hold",
         "world"
       ],
-      "state": "open"
+      "state": "open",
+      "reported_builds": [],
+      "reported_modules": [
+        "js/roads.js"
+      ]
     }
   ],
-  "new_after_previous_checkpoint_count": 50
+  "new_after_previous_checkpoint_count": 50,
+  "origin_metadata_scope": "Reported build markers and repository module paths extracted from public issue bodies; not a runtime reproduction or a diagnosis. No private report bodies preserved."
 }
