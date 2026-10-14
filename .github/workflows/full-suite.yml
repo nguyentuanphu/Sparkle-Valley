@@ -59,9 +59,13 @@ jobs:
           node-version: 22
       - name: Get the checks ready (browser and test server)
         run: |
-          # tests/package-lock.json points playwright at a folder on the Claude machines: install from package.json
-          cd tests && npm install --no-package-lock --no-save --no-audit --no-fund && npx playwright install --with-deps chromium
+          cd tests && npm ci --no-audit --no-fund && npx playwright install --with-deps chromium
           cd .. && (python3 -m http.server 8765 >/dev/null 2>&1 &)
+      - name: Start local synthetic test services
+        run: |
+          npm ci --prefix tests/services --no-audit --no-fund
+          node tests/services/start.cjs > /tmp/sv-test-services.log 2>&1 &
+          node tests/services/wait.cjs
       - name: Run this machine's share
         env:
           SV_SEED: ${{ github.run_id }}

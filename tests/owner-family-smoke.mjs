@@ -27,12 +27,26 @@ try {
  await b.page.evaluate(async()=>{await (await import('/js/familydevices.js')).refreshDevicePhotos({force:true});});
  assert.ok(await b.page.evaluate(id=>globalThis.__svFamilyPhotos?.[id]?.image.startsWith('blob:'),npc));
  assert.equal(await b.page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('sv2_familyphotos'))).includes('base64')),false);
- await b.ctx.setOffline(true); await b.page.evaluate(()=>{globalThis.__svFamilyPhotos={};}); await b.page.evaluate(async()=>{await (await import('/js/familydevices.js')).refreshDevicePhotos();});
+ // A late rejection for an earlier connection cannot revoke the newly connected family.
+ const currentConnection=await b.page.evaluate(()=>JSON.parse(localStorage.getItem('sv2_familydevice')));
+ const recoveryKey=await a.page.evaluate(()=>JSON.parse(localStorage.getItem('sv2_familydevice')).recovery);
+ const replacement=await familyAction(store,'recover',{recovery:recoveryKey,label:'Replacement tablet'});
+ let releaseStale,startedStale;const staleStarted=new Promise(resolve=>{startedStale=resolve;}),staleRelease=new Promise(resolve=>{releaseStale=resolve;});
+ await b.ctx.route('**/api/family-devices/status',async r=>{if(r.request().headers().authorization!=='Bearer '+currentConnection.token)return r.fallback();startedStale();await staleRelease;await r.fulfill({status:403,json:{error:'device removed'}});});
+ await b.page.evaluate(()=>{void import('/js/familydevices.js').then(m=>{window.__staleFamilyRefresh=m.refreshDevicePhotos({force:true}).catch(()=>{});});});
+ let staleTimer;await Promise.race([staleStarted,new Promise((_,reject)=>{staleTimer=setTimeout(()=>reject(new Error('Stale authorization fixture did not start')),30000);})]);clearTimeout(staleTimer);
+ await b.page.evaluate(connection=>localStorage.setItem('sv2_familydevice',JSON.stringify(connection)),replacement);releaseStale();await b.page.evaluate(()=>window.__staleFamilyRefresh);
+ assert.ok(await b.page.evaluate(connection=>JSON.parse(localStorage.getItem('sv2_familydevice'))?.token===connection.token,replacement),'stale rejection must not clear the new connection');
+ assert.ok(await b.page.evaluate(id=>!!globalThis.__svFamilyPhotos?.[id]?.image,npc),'stale rejection must not clear newly authorized photos');
+ await b.ctx.setOffline(true); await b.page.evaluate(()=>{globalThis.__svFamilyPhotos={};}); await b.page.evaluate(async()=>{await (await import('/js/familydevices.js')).refreshDevicePhotos({force:true});});
  assert.ok(await b.page.evaluate(id=>globalThis.__svFamilyPhotos?.[id]?.image.startsWith('blob:'),npc));
  await panel(b.page); const backup=b.page.waitForEvent('download'); await b.page.click('.fd-offlinebackup'); const file=await (await backup).path(); const photos=JSON.parse(fs.readFileSync(file)); assert.ok(photos.photos[npc].image.startsWith('data:image/jpeg;'));
- await b.ctx.setOffline(false); const connection=await b.page.evaluate(()=>JSON.parse(localStorage.getItem('sv2_familydevice'))); const status=await familyAction(store,'status',{},connection.token); const own=status.devices.find(d=>d.label==='Test tablet');
+ await b.ctx.setOffline(false); const connection=await b.page.evaluate(()=>JSON.parse(localStorage.getItem('sv2_familydevice'))); const status=await familyAction(store,'status',{},connection.token); const own=status.devices.find(d=>d.label==='Replacement tablet');
  await a.page.locator(`[data-device="${own.id}"]`).click();
  await b.page.evaluate(async()=>{try {await (await import('/js/familydevices.js')).refreshDevicePhotos({force:true});} catch(e){if(!e.message.includes('403')) throw e;}});
  assert.deepEqual(await b.page.evaluate(()=>Object.keys(globalThis.__svFamilyPhotos)),[]); assert.equal(await b.page.evaluate(()=>localStorage.getItem('sv2_familyphotos')),null);
- assert.deepEqual(a.errors,[]); assert.deepEqual(b.errors,[]); console.log('PASS: pairing approval, photo transfer, postcard, offline cache and backup, revocation clears cached photos');
+ assert.ok(await b.page.evaluate(()=>localStorage.getItem('sv2_familydevice')===null),'revoked connection must allow setup, joining or recovery again');
+ await panel(b.page);await b.page.waitForSelector('.fd-create');
+ assert.equal(await b.page.locator('.fd-code').count(),1,'revoked device can pair again without clearing unrelated game data');
+ assert.deepEqual(a.errors,[]); assert.deepEqual(b.errors,[]); console.log('PASS: pairing approval, photo transfer, postcard, offline cache and backup, revocation clears cached photos and restores connection/recovery controls');
 } finally { await browser.close(); }

@@ -1,5 +1,6 @@
 // Separate private collections. Device credentials are hashed; pairing needs approval on an existing device.
 import { randomBytes, createHash } from 'node:crypto';
+import { readFamilyBackup } from '../../js/family-backup.js';
 const secret = () => randomBytes(24).toString('base64url');
 const hash = text => createHash('sha256').update(String(text)).digest('hex');
 const ID = { test: value => typeof value === 'string' && /^[\p{L}\p{N} _.'-]{1,100}$/u.test(value) && !['__proto__','constructor','prototype'].includes(value) };
@@ -29,13 +30,13 @@ export async function familyAction(S, action, body = {}, credential = '', now = 
     const found = typeof body.recovery === 'string' && body.recovery.length >= 24 ? await read('recovery/' + hash(body.recovery)) : null;
     family = found ? await loadFamily(found.family) : null;
     if (!family || family.recovery !== hash(body.recovery)) throw error(403, 'recovery key not accepted');
-    if (family.devices.length >= 30) throw error(409, 'device limit');
+    if (family.devices.filter(d=>d.state!=='removed').length >= 30) throw error(409, 'device limit');
     const d = await newDevice(family.id, body.label, 'approved'); family.devices.push(d.device); await save(); return { family: family.id, token: d.token };
   }
   if (action === 'join') {
     const pair = await read(codeKey(body.code));
     if (!pair || pair.expires <= now || pair.claimed) throw error(403, 'pairing code expired or used');
-    family = await loadFamily(pair.family); if (!family || family.devices.length >= 30) throw error(409, 'device limit');
+    family = await loadFamily(pair.family); if (!family || family.devices.filter(d=>d.state!=='removed').length >= 30) throw error(409, 'device limit');
     const d = await newDevice(family.id, body.label, 'pending'); family.devices.push(d.device); d.device.pairKey = codeKey(body.code); await S.setJSON('device/' + family.id + '/' + d.device.id, d.device); pair.claimed = d.device.id;
     await save(); await S.setJSON(codeKey(body.code), pair); return { family: family.id, token: d.token, pending: true };
   }
@@ -66,10 +67,9 @@ export async function familyAction(S, action, body = {}, credential = '', now = 
   }
 
   if (action === 'import') {
-    if (body.format !== 'sparkle-family-photos-v1' || !body.photos || typeof body.photos !== 'object') throw error(400, 'family photo backup needed');
-    const photos = {};
-    for (const [id, p] of Object.entries(body.photos).slice(0, 60)) { if (!ID.test(id) || !p || typeof p.image !== 'string' || p.image.length > 450000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p.image)) throw error(400, 'invalid photo backup'); photos[id] = { image: p.image, at: now }; }
-    for (const [npc, photo] of Object.entries(photos)) { await S.setJSON(pictureKey(family.id, npc), photo); await S.setJSON(photoKey(family.id, npc), { npc, at: now }); } return { ok: true, count: Object.keys(photos).length };
+    const checked=readFamilyBackup(body,Object.keys(family.photos));
+    if (!checked.ok) throw error(checked.reason==='limit'?409:400, checked.reason==='limit'?'photo limit':'invalid photo backup');
+    for (const [npc, photo] of checked.entries) { await S.setJSON(pictureKey(family.id, npc), {...photo,at:now}); await S.setJSON(photoKey(family.id, npc), { npc, at: now }); } return { ok: true, count: checked.entries.length };
   }
   throw error(404, 'unknown action');
 }

@@ -2,7 +2,7 @@
 
 WO-13, original points46–48. Henry includes learning improvements in the approved consolidated round. This is the bounded content/verification list; it does not claim a complete curriculum or a completed runtime check.
 
-Preserve all12 reading activities and their English/Vietnamese content: Listen & Touch, Story Choices, tracing, sounds, word building, rhyme, sight words, tones, syllables, word-picture matching, sentence building and read-along. Nine are available to under-5s; sight words, matching and sentences remain age-gated. The existing trial/Studio switch and saved progress remain intact. The current expanded check exercises90 game/language/age-or-level cases and remains pending.
+Preserve all12 reading activities and their English/Vietnamese content: Listen & Touch, Story Choices, tracing, sounds, word building, rhyme, sight words, tones, syllables, word-picture matching, sentence building and read-along. Nine are available to under-5s; sight words, matching and sentences remain age-gated. The existing trial/Studio switch and saved progress remain intact. The completed expanded check passed90 game/language/age-or-level cases at source25176e7; evidence/resumed-expanded-7-checks.json. New progression/content changes still require fresh proof.
 
 | Skill step | Existing or planned activity | Progression | Required proof |
 |---|---|---|---|

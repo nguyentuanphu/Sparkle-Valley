@@ -1,6 +1,7 @@
 // Parent-owned photo connections. This module deliberately does not transfer child progress or profiles.
 import { T } from './i18n.js';
 import { el, esc } from './util.js';
+import { readFamilyBackup } from './family-backup.js';
 const KEY = 'sv2_familydevice', PHOTOS = 'sv2_familyphotos';
 const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || 'null') || fallback; } catch { return fallback; } };
 const save = (key, value) => localStorage.setItem(key, JSON.stringify(value));
@@ -16,7 +17,8 @@ const notify = () => dispatchEvent(new Event('sv-family-photos'));
 async function request(action, body = {}) {
   const device = familyDevice(); const r = await fetch('api/family-devices/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(device?.token ? { Authorization: 'Bearer ' + device.token } : {}) }, body: JSON.stringify(body), cache: 'no-store' });
   let value; try { value = await r.json(); } catch { throw new Error(T('This connection is unavailable. Try again when online.', 'Kết nối chưa hoạt động. Thử lại khi có mạng.')); }
-  if (!r.ok) { if (r.status === 403 && !['join', 'recover'].includes(action)) { await clearPrivatePhotos(); } throw new Error(T(`Could not complete this step (${r.status}). Check the code or connection and try again.`, `Chưa hoàn thành bước này (${r.status}). Kiểm tra mã hoặc kết nối rồi thử lại.`)); } return value;
+  if(device?.token && familyDevice()?.token!==device.token && !['create','join','recover'].includes(action))throw new Error(T('This connection is unavailable. Try again when online.', 'Kết nối chưa hoạt động. Thử lại khi có mạng.'));
+  if (!r.ok) { if (r.status === 403 && device?.token && familyDevice()?.token===device.token && !['join', 'recover'].includes(action)) { if(action==='status')localStorage.removeItem(KEY);await clearPrivatePhotos(); } throw new Error(T(`Could not complete this step (${r.status}). Check the code or connection and try again.`, `Chưa hoàn thành bước này (${r.status}). Kiểm tra mã hoặc kết nối rồi thử lại.`)); } return value;
 }
 let refreshing = null;
 export function refreshDevicePhotos({ force = false } = {}) { if (refreshing) return force ? refreshing.then(() => refreshDevicePhotos()) : refreshing; refreshing = refreshPhotos().finally(() => { refreshing = null; }); return refreshing; }
@@ -62,7 +64,7 @@ export function bindFamilyDevices(card, npcList = []) {
     content.querySelector('.fd-removephoto').onclick = run(async () => { await request('photo', { npc: content.querySelector('.fd-npc').value, remove: true }); await request('photo', { npc: 'album_' + content.querySelector('.fd-npc').value, remove: true }); await refreshDevicePhotos({ force:true }); state(T('Photo removed.', 'Đã bỏ ảnh.')); });
     content.querySelector('.fd-backup').onclick = run(async () => { await refreshDevicePhotos({ force:true }); download('sparkle-family-photos.json', await photoBackup()); state(T('Backup saved.', 'Đã lưu bản sao.')); });
     content.querySelector('.fd-key')?.addEventListener('click', () => download('sparkle-family-recovery.json', { format: 'sparkle-family-recovery-v1', recovery: connection.recovery }));
-    content.querySelector('.fd-import').onchange = run(async () => { const file = content.querySelector('.fd-import').files[0]; if (!file || file.size > 28000000) throw new Error(T('Choose a family photo backup smaller than 28 MB.', 'Chọn bản sao ảnh gia đình nhỏ hơn 28 MB.')); const backup = JSON.parse(await file.text()); if (backup.format !== 'sparkle-family-photos-v1' || !backup.photos) throw new Error(T('Choose a family photo backup.', 'Chọn bản sao ảnh gia đình.')); for (const [npc, p] of Object.entries(backup.photos).slice(0, 60)) await request('photo', { npc, image: p.image }); await refreshDevicePhotos({ force:true }); state(T('Photo backup restored.', 'Đã khôi phục bản sao ảnh.')); });
+    content.querySelector('.fd-import').onchange = run(async () => { const file = content.querySelector('.fd-import').files[0]; if (!file || file.size > 28000000) throw new Error(T('Choose a family photo backup smaller than 28 MB.', 'Chọn bản sao ảnh gia đình nhỏ hơn 28 MB.')); const backup = JSON.parse(await file.text()),manifest=await request('manifest'),checked=readFamilyBackup(backup,Object.keys(manifest.photos)); if (!checked.ok) throw new Error(checked.reason==='limit'?T('A family collection can hold up to 60 photos. Remove unused photos before restoring this backup.', 'Bộ ảnh gia đình giữ tối đa 60 ảnh. Bỏ ảnh không dùng trước khi khôi phục bản sao này.'):T('Choose a family photo backup.', 'Chọn bản sao ảnh gia đình.')); for (const [npc, p] of checked.entries) await request('photo', { npc, image: p.image }); await refreshDevicePhotos({ force:true }); state(T('Photo backup restored.', 'Đã khôi phục bản sao ảnh.')); });
   };
   const section = panel.closest('details'); section.addEventListener('toggle', () => { if (section.open) run(draw)(); });
   timer = setInterval(() => { if (!panel.isConnected) clearInterval(timer); else if (section.open && familyDevice()) run(async () => { const current = await request('status'), next = JSON.stringify([current.pending, current.devices]); if (next !== signature) await draw(); await refreshDevicePhotos({ force:true }); state(''); })(); }, 15000);

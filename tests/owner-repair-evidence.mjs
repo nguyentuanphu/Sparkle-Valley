@@ -1,8 +1,23 @@
 // Matching synthetic-data evidence; run on the pinned baseline and repair candidate.
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { launch, open, start, clear } from './harness.mjs';
+import { URL as gameURL } from './harness.mjs';
 const phase = process.argv[2] || 'baseline';
+const sourceCommit = process.env.SV_EVIDENCE_COMMIT || execFileSync('git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim();
+const sourceFingerprints = {};
+// Verify the served code, rather than attributing old pictures from a build label alone.
+const servedFiles=execFileSync('git',['ls-tree','-r','--name-only',sourceCommit,'--','js','css','vendor','fonts','icons','index.html','sw.js','voices/manifest.json','voices/areas.json'],{encoding:'utf8'}).trim().split('\n');
+for (const file of servedFiles) {
+  const expected = execFileSync('git', ['show', `${sourceCommit}:${file}`], {maxBuffer:8*1024*1024});
+  const response = await fetch(new URL(file, gameURL));
+  if (!response.ok) throw new Error(`Evidence source unavailable: ${file} (${response.status})`);
+  const actual = Buffer.from(await response.arrayBuffer());
+  if (!actual.equals(expected)) throw new Error(`Served evidence source differs from ${sourceCommit}: ${file}`);
+  sourceFingerprints[file] = createHash('sha256').update(actual).digest('hex');
+}
 const dir = path.resolve('../docs/owner-repair-20261014/evidence', phase);
 fs.mkdirSync(dir, { recursive: true });
 const browser = await launch(), results = [];
@@ -47,7 +62,7 @@ try {
       if(await P.page.inputValue('.tpanel textarea')!=='Synthetic report draft')throw new Error('Report draft lost across tabs');
     }
     const build=await P.page.evaluate(async()=>(await import('/js/build.js')).BUILD);
-    results.push({device,w,h,lang,build,before,after,selection,errors:P.errors});
+    results.push({device,w,h,lang,build,sourceCommit,sourceFingerprints,capturedAt:new Date().toISOString(),before,after,selection,errors:P.errors});
     console.log(`${phase} ${label}: captured welcome, selection, bag, shop, audio`);
     await P.ctx.close();
   }

@@ -306,7 +306,7 @@ await check('multiplayer', async () => {
   const up = await fetch('http://127.0.0.1:9000/myapp/').then(r => r.ok).catch(() => false);
   if (!up) return 'skipped (no local PeerJS server on 127.0.0.1:9000)';
   // direct link through a local PeerJS server; the cloud relay runs alongside (local broker, or none)
-  const peer = () => { window.SV_PEER = { host: '127.0.0.1', port: 9000, path: '/myapp', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const peer = () => { window.SV_PEER = { host: '127.0.0.1', port: 9000, path: '/myapp', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; window.__micRequests = 0; const md = navigator.mediaDevices, request = md.getUserMedia.bind(md); md.getUserMedia = options => { window.__micRequests++; return request(options); }; };
   const A = await open(b, { pre: peer, w: 900, h: 640, lang: 'en' }), B = await open(b, { pre: peer, w: 390, h: 760, lang: 'vi', touch: true });
   for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
   const code = await A.page.evaluate(async () => __Net.host(__sv.sendHello()));
@@ -318,7 +318,14 @@ await check('multiplayer', async () => {
   await A.page.evaluate(() => document.querySelector('.knockpop [data-in]').click());
   await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 60000 });
   const inside = await B.page.evaluate(() => ({ knocking: __Net.knocking, mic: __Net.mic ? __Net.mic.getAudioTracks().some(t => t.enabled) : 'none' }));
-  ok(door.knocking && !door.partners && door.mic === false && !inside.knocking && inside.mic === true, 'knock ' + JSON.stringify({ door, inside }));
+  // r63 / Round V: admission does not turn on the microphone; only the child's explicit tap may do that.
+  const requests = await B.page.evaluate(() => window.__micRequests);
+  ok(door.knocking && !door.partners && door.mic === 'none' && !inside.knocking && inside.mic === 'none' && requests === 0, 'knock privacy ' + JSON.stringify({ door, inside, requests }));
+  await B.page.locator('.dk.call').click();
+  await B.page.waitForFunction(() => __Net.micLive && !__Net.muted && __Net.mic.getAudioTracks()[0].enabled, null, { timeout: 15000 });
+  ok(await B.page.evaluate(() => window.__micRequests === 1), 'Mic tap must make exactly one permission request');
+  await B.page.locator('.dk.call').click();
+  ok(await B.page.evaluate(() => __Net.muted && !__Net.mic.getAudioTracks()[0].enabled && window.__micRequests === 1), 'Mic off must silence the live track without another permission request');
   await A.page.evaluate(async () => { const PG = (await import('/js/world.js')).PLAYGROUND; __sv.heroes[0].place(PG.x, PG.z - 2); }); await B.page.evaluate(async () => { const [x, z] = (await import('/js/world.js')).CITIES.find(c => c.id === 'brisbane').gates[0]; __sv.heroes[0].place(x, z); }); await A.page.waitForTimeout(2500);
   const chip = await B.page.evaluate(() => document.querySelector('.fc-txt').textContent);
   await A.page.evaluate(() => __sv.askFriendToCome(__sv.heroes[0], Object.keys(__sv.partners)[0]));
@@ -4375,9 +4382,9 @@ await check('netgames', async () => {
   await A.page.waitForFunction(() => Object.keys(__Net.remotes).length > 0, null, { timeout: 30000 });
   for (const P of [A, B]) await P.page.evaluate(() => { document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false; });
   // Caro: A asks from the Friends tab, B says yes
-  await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-caro]').click(); await new Promise(r => setTimeout(r, 400)); document.querySelector('.gamelevel [data-lvl="1"]')?.click(); });
+  await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-caro]').click(); await new Promise(r => setTimeout(r, 400)); document.querySelector('.gamelevel [data-size="3"]').click(); document.querySelector('.gamelevel [data-lvl="1"]').click(); });
   await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); const ask = await B.page.evaluate(() => document.querySelector('.dialog .dtext').textContent); await B.page.evaluate(() => document.querySelector('.dialog .dch').click());
-  for (const P of [A, B]) await P.page.waitForSelector('.gl .caro', { timeout: 20000 });
+  for (const P of [A, B]) { await P.page.waitForSelector('.gl .caro', { timeout: 20000 }); ok(await P.page.locator('.caro-c').count() === 9, 'Selected 3 × 3 board must reach both players'); }
   // (a placed piece is marked .put: its emoji is swapped for a drawing, so the text is empty)
   const tap = async (P, i) => { await P.page.waitForFunction(i => { const c = document.querySelectorAll('.caro-c')[i]; return c && !c.classList.contains('put'); }, i); await P.page.evaluate(i => document.querySelectorAll('.caro-c')[i].click(), i); };
   const seen = async (P, i) => P.page.waitForFunction(i => document.querySelectorAll('.caro-c')[i].classList.contains('put'), i, { timeout: 20000 });
@@ -5010,6 +5017,7 @@ await check('reading', async () => {
       // (sample: each game once per language, a different level each run; all of them when the reading games changed)
       if (sampled('reading') && vi !== (SEED + gi + (lang === 'vi' ? 2 : 0)) % (BIG_ONLY.includes(id) ? 3 : 4) + (BIG_ONLY.includes(id) ? 1 : 0)) continue;
       const r = await solveReading(Q.page, id, { level, little, timeout: 90000 });
+      console.log(`reading case: ${lang} ${id} ${little ? 'under-5' : 'level '+level}: ${r.ok && r.won && (!little || r.stars===3) ? 'PASS' : 'FAIL'} (${r.steps || 0} interactions)`);
       if (!r.ok || !r.won || (little && r.stars !== 3)) bad.push(`${lang} ${id} ${little ? 'under-5' : 'level ' + level}: ${JSON.stringify(r).slice(0, 160)}`);
       await Q.page.waitForTimeout(400);
       const rest = await Q.page.evaluate(() => document.querySelectorAll('.gl, .rd-lantern, .rd-pond, .rd-sky, .rd-train, .rd-page').length); if (rest) left.push(`${lang} ${id}`);
@@ -5032,6 +5040,29 @@ async function ownerSmoke(file) {
 await check('ownerround', async () => {
   return await ownerSmoke('owner-round-smoke.mjs');
 });
+await check('ownerhearts', async () => {
+  const P = await open(b, { w:390,h:844,touch:true }); await clear(P.page);
+  const result = await P.page.evaluate(async () => {
+    const G=__sv, h=G.heroes[0], wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+    G.paused=true; h.profile.hearts=3; h.hearts=3;
+    const protectedModes=[];
+    for(const [age,difficulty] of [['little','hard'],['big','easy'],['big','medium']]) {
+      h.profile.age=age;h.profile.difficulty=difficulty;G.hurt(h,2);
+      protectedModes.push(h.hearts===3 && !h._rescuing);
+    }
+    h.profile.age='big';h.profile.difficulty='hard';G.hurt(h,2);
+    const lost=h.hearts===1;
+    const safe={x:h.lastSafe.x,z:h.lastSafe.z};h.pos.x+=12;h.stamina=0;h.exhausted=true;
+    G.hurt(h,1);const started=h._rescuing && h.hearts===0;
+    await wait(1000);
+    const rescued=h.hearts===3 && h.stamina===h.staminaMax && !h.exhausted && !h._rescuing && Math.hypot(h.pos.x-safe.x,h.pos.z-safe.z)<.01;
+    G.paused=false;return {protectedModes,lost,started,rescued};
+  });
+  ok(result.protectedModes.every(Boolean) && result.lost && result.started && result.rescued, JSON.stringify(result));
+  ok(!P.errors.length,P.errors.join(' | '));await P.ctx.close();
+  return 'fall-damage handler protects under-5/easy/medium; older Hard loses hearts; zero-heart rescue returns to lastSafe and restores hearts/stamina (emulated runtime, not a physical fall/device test)';
+});
+
 await check('ownerfamily', async () => {
   return await ownerSmoke('owner-family-smoke.mjs');
 });

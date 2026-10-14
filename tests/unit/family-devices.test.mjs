@@ -2,6 +2,45 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { familyAction } from '../../netlify/lib/family-devices.mjs';
 const memory = () => { const map = new Map(); return { get: async key => map.has(key) ? structuredClone(map.get(key)) : null, setJSON: async (key, value) => map.set(key, structuredClone(value)), delete: async key => map.delete(key), list: async ({ prefix }) => ({ blobs: [...map.keys()].filter(key => key.startsWith(prefix)).map(key => ({ key })) }) }; };
+test('removed devices do not exhaust pairing and recovery capacity', async () => {
+  const S = memory(), first = await familyAction(S, 'create', {}, '', 1);
+  // Keep revocation records, but make room when a family replaces old devices.
+  for (let i = 0; i < 29; i++) {
+    const replacement = await familyAction(S, 'recover', { recovery: first.recovery }, '', i + 2);
+    const status = await familyAction(S, 'status', {}, replacement.token, i + 2);
+    const originalStatus = await familyAction(S, 'status', {}, first.token, i + 2);
+    const target = originalStatus.devices.find(d => d.state === 'approved' && d.id !== status.devices.find(d => d.at === 1).id);
+    await familyAction(S, 'remove', { device: target.id }, first.token, i + 2);
+    await assert.rejects(familyAction(S, 'status', {}, replacement.token), { status: 403 });
+  }
+  const pair = await familyAction(S, 'pair', {}, first.token, 40);
+  const joined = await familyAction(S, 'join', { code: pair.code }, '', 41);
+  assert.equal((await familyAction(S, 'status', {}, joined.token, 42)).pending, true);
+  const recovered = await familyAction(S, 'recover', { recovery: first.recovery }, '', 43);
+  assert.equal((await familyAction(S, 'status', {}, recovered.token, 44)).pending, false);
+  assert.equal((await familyAction(S, 'status', {}, first.token, 44)).devices.filter(d => d.state === 'removed').length, 29);
+});
+test('photo restore rejects oversized or invalid backups before changing existing photos', async () => {
+  const S = memory(), first = await familyAction(S, 'create', {}, '', 1);
+  const image = 'data:image/jpeg;base64,AAAA';
+  await familyAction(S, 'photo', { npc: 'owl', image }, first.token, 2);
+  const backup = photos => ({ format: 'sparkle-family-photos-v1', photos });
+  const tooMany = Object.fromEntries(Array.from({length:61}, (_,i) => [`character_${i}`, {image}]));
+  await assert.rejects(familyAction(S, 'import', backup(tooMany), first.token, 3), {status:409});
+  await assert.rejects(familyAction(S, 'import', backup(Object.fromEntries(Object.entries(tooMany).slice(0,60))), first.token, 3), {status:409});
+  await assert.rejects(familyAction(S, 'import', backup([]), first.token, 3), {status:400});
+  assert.deepEqual(Object.keys((await familyAction(S, 'manifest', {}, first.token, 4)).photos), ['owl']);
+  // An invalid later row cannot leave an earlier valid replacement applied.
+  await assert.rejects(familyAction(S, 'import', backup({owl:{image:'data:image/jpeg;base64,BBBB'},bad:{image:'invalid'}}), first.token, 5), {status:400});
+  assert.equal((await familyAction(S, 'get-photo', {npc:'owl'}, first.token, 6)).image, image);
+});
+test('thirty active devices still enforce the family capacity limit', async () => {
+  const S = memory(), first = await familyAction(S, 'create', {}, '', 1);
+  for (let i = 0; i < 29; i++) await familyAction(S, 'recover', {recovery:first.recovery}, '', i + 2);
+  const pair = await familyAction(S, 'pair', {}, first.token, 40);
+  await assert.rejects(familyAction(S, 'join', {code:pair.code}, '', 41), {status:409});
+  await assert.rejects(familyAction(S, 'recover', {recovery:first.recovery}, '', 42), {status:409});
+});
 test('private families are isolated; a pairing code does not approve a device', async () => {
   const S = memory(), first = await familyAction(S, 'create', { label: 'Phone' }, '', 1), other = await familyAction(S, 'create', {}, '', 1);
   await familyAction(S, 'photo', { npc: 'owl', image: 'data:image/jpeg;base64,AAAA' }, first.token, 2);

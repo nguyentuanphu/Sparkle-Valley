@@ -337,27 +337,31 @@ export async function studioCheck(browser, open) {
     // 4b. offline play is not lost, and a send whose answer was lost is counted once
     {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 760 }, hasTouch: true, isMobile: true });
-      await ctx.addInitScript(() => { window.__svHelloTest = 'manual'; localStorage.setItem('sv2_settings', JSON.stringify({ lang: 'vi', voice: false, sound: false, music: false, quality: 'low' })); });
+      await ctx.addInitScript(() => { window.__svHelloTest = 'manual'; localStorage.setItem('sv2_playerid','offline00001');localStorage.setItem('sv2_settings', JSON.stringify({ lang: 'vi', voice: false, sound: false, music: false, quality: 'low' })); });
       const pg = await ctx.newPage(); await pg.addInitScript(seedPlayers); await pg.goto(site + '/'); await start(pg);
       const ymd = t => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
       const today = ymd(Date.now()), yday = ymd(Date.now() - 864e5);
       await ctx.setOffline(true);
       const off = await pg.evaluate(async ([today, yday]) => { const P = await import('/js/players.js'); P.countPlay('game', 'caro'); P.countPlay('tale');
-        const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today].m = 12; o.days[yday] = { m: 20, g: { oanquan: 1 }, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o));
-        const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem('sv2_hello_out')), me: localStorage.getItem('sv2_playerid') }; }, [today, yday]);
+        const { BUILD } = await import('/js/build.js');
+        const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today+'|'+BUILD].m = 12;
+        // Deliberately retain an old date-only bucket to prove migration does not invent its originating build.
+        o.days[yday] = { m: 20, g: { oanquan: 1 }, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o));
+        const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem('sv2_hello_out')), me: localStorage.getItem('sv2_playerid'),build:BUILD }; }, [today, yday]);
       ok(!off.sent && off.out.pending && off.out.pending.days.length === 2, 'offline: the outbox did not keep the play: ' + JSON.stringify(off));
+      ok(off.out.pending.days.find(d=>d.d===today)?.build===off.build && off.out.pending.days.find(d=>d.d===yday)?.build==='?', 'offline: current build must be retained and a legacy build must stay unknown');
       const before = players._m.size;
       await ctx.setOffline(false);
       const on = await pg.evaluate(async () => { const P = await import('/js/players.js'); const sent = await P.flush(false); return { sent, out: JSON.parse(localStorage.getItem('sv2_hello_out')), me: localStorage.getItem('sv2_playerid') }; });
       const rec = d => JSON.parse(players._m.get(`d/${d}/${on.me}`) || 'null');
-      ok(players._m.size > before && on.sent && !on.out.pending && rec(yday) && rec(yday).mins === 20 && rec(yday).games.oanquan === 1 && rec(today).mins === 12 && rec(today).games.caro === 1 && rec(today).tales === 1, 'back online: the waiting play was not counted on its own days: ' + JSON.stringify({ on, y: rec(yday), t: rec(today) }));
+      ok(players._m.size > before && on.sent && !on.out.pending && on.me===off.me && rec(yday) && rec(yday).mins === 20 && rec(yday).games.oanquan === 1 && rec(today).mins === 12 && rec(today).games.caro === 1 && rec(today).tales === 1, 'back online: the waiting play was not counted on its own days/installation: ' + JSON.stringify({ on, y: rec(yday), t: rec(today) }));
       // the website gets it but the answer is lost: the device keeps the batch and sends the same one again
       await pg.route('**/api/hello', async route => { await route.fetch(); await route.fulfill({ status: 500, body: '' }); });
-      const lost = await pg.evaluate(async today => { const P = await import('/js/players.js'); const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today] = { m: 5, g: {}, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o)); return { sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; }, today);
+      const lost = await pg.evaluate(async today => { const P = await import('/js/players.js'), {BUILD}=await import('/js/build.js'); const o = JSON.parse(localStorage.getItem('sv2_hello_out')); o.days[today+'|'+BUILD] = { build:BUILD,m: 5, g: {}, t: 0, o: 0 }; localStorage.setItem('sv2_hello_out', JSON.stringify(o)); return { sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; }, today);
       ok(!lost.sent && lost.out.pending && rec(today).mins === 17, 'lost answer: ' + JSON.stringify({ lost, t: rec(today) }));
       await pg.unroute('**/api/hello');
-      const again = await pg.evaluate(async () => { const P = await import('/js/players.js'); return { sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; });
-      ok(again.sent && !again.out.pending && rec(today).mins === 17, 'the same batch was counted twice: ' + JSON.stringify({ again, t: rec(today) }));
+      const again = await pg.evaluate(async () => { const P = await import('/js/players.js'); const pending=JSON.parse(localStorage.getItem('sv2_hello_out')).pending;return { batch:pending.h,sent: await P.flush(false), out: JSON.parse(localStorage.getItem('sv2_hello_out')) }; });
+      ok(again.sent && again.batch===lost.out.pending.h && !again.out.pending && rec(today).mins === 17, 'the same batch was changed or counted twice: ' + JSON.stringify({ again, t: rec(today) }));
       await ctx.close();
       notes.push('offline play waits in an outbox and is counted on its own days; a re-sent batch counts once');
     }
@@ -398,7 +402,8 @@ export async function studioCheck(browser, open) {
     // (owner, 12 Oct: the exe's game folder was r38 while the website was r63) a folder older than the website cannot
     // save a draft (its old files would undo newer ones); the exe gets the newest game from GitHub by itself, and keeps a
     // content, voice or photo file changed here and not published yet
-    { const sw = fs.readFileSync(path.join(game, 'sw.js'), 'utf8'), newer = sw.replace(/-r\d+'/, "-r9998'");
+    { const sw = fs.readFileSync(path.join(game, 'sw.js'), 'utf8'), newer = sw.replace(/-r\d+(?:-[^']*)?'/, "-r9998'");
+      ok(newer!==sw && /-r9998'/.test(newer),'fixture must actually advance the remote build, including cache revisions');
       gh.commitOnMain('sw.js', newer, 'newer game'); gh.commitOnMain('voices/en/f/newline1.mp3', 'NEWV', 'a new line'); gh.commitOnMain('voices/en/f/0000aaaa.mp3', 'REMOTE', 'a changed line');
       fs.writeFileSync(path.join(game, 'voices/en/f/0000aaaa.mp3'), 'LOCAL');
       const old = await job('github/draft', {}); ok(old.error && /get the newest game first/.test(old.error), 'a draft from an older game folder was not refused: ' + JSON.stringify(old));
