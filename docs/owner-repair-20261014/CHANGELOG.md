@@ -77,3 +77,7 @@ First after run: ownerquesttargets/ownertalesync/ownerautoplaystrategy/unit/type
 
 - Companion hat help recordings now restored from isolated workflow38615218026: four decoded MP3s, additive indexes preserving all old hashes/areas/templates. Full voice coverage8102 lines passed; voice policy suite still awaiting voicearea.
 - Four completed source-verified87f9d334 before/after surface capture cases replace prior mixed/partial candidate files. Later hat code remains unevidenced by those pictures.
+
+- Additional Wi-Fi bug: obsolete mobile-data card could stay visible after automatic Wi-Fi download began. Close/suppress that card and cancel any pending grown-up hold without granting mobile consent. New regression red before; focused7/7 after. No new spoken lines.
+
+15 Oct AEDT, owner follow-ups in progress: horizontal three-icon Audio replaces rejected Audio/Songs tray; compact Audio/chat positions swapped. Studio Sparkle Lab moves Tester/Autoplay out of Releases, preserves out-of-scope live settings on save, restores complete sneak-peek groups and avoids stale device responses after navigation. Releases no longer fetches the player report; Analytics overlaps name modules and paginated lifetime counts with other reads. Transport POV rendered regression reproduced obstruction despite passing eye coordinates; scoped cabin/own-avatar rendering and seated driving eyes are under validation. Voice policy/card and shrine/contract focused evidence saved; exact candidate screenshots and GitHub rerun remain pending.

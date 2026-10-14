@@ -1,0 +1,8 @@
+{
+  "scope": "Working-tree render regression before transport repair, not full-tree committed screenshot evidence",
+  "files": {
+    "js/vehicles.js": "ca367c40082aaf838c43518ca234d2fa86e89fc178595b3fdafeed7162cd5c8f",
+    "js/traffic.js": "804ab54363709da1efcc34197ecc93a0bbc11d65181e6612e71713916ac79443",
+    "js/player.js": "557c8a19001adc4aa0e7c1cccd5bf1c3575f868f6226bdbe80b4466ed592a4c0"
+  }
+}

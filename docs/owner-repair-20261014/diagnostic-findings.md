@@ -42,3 +42,19 @@ Network focused5/5 now proves actual shared story behavior, stable distinct-play
 | DR-15 | WO-12/18 | Family CI regression failed both shared and isolated runs at dd91f33b; same Node22 local run also failed | First-line wrapper/parser truncation concealed details behind a harmless module warning. Wrapper now keeps stdout/stderr/status as one line; rerun underway. Underlying cause unresolved |
 
 Source-based leads and bounded synthetic proofs do not dispose of all216 reports, replace complete screen evidence or authorize release.
+
+## Wi-Fi consent card
+
+| ID | WO | Finding | Reproduction / scope |
+|---|---|---|---|
+| DR-16 | WO-08/16 | Mobile-data permission card remains after Wi-Fi becomes available while voices continue downloading | Bounded two-file real-downloader regression timed out before fix. Close on Wi-Fi, suppress delayed prompts and cancel pending grown-up hold so Wi-Fi cannot accidentally grant mobile-data permission. Before failed; after ownerwificard41s plus language-switch45s and static checks pass7/7. Mobile consent remains false even when Wi-Fi arrives during a pending hold. |
+
+## Further exact-candidate findings
+
+| ID | WO | Finding | Disposition / scope |
+|---|---|---|---|
+| DR-17 | WO-08/18 | HUD structure snapshot expects Audio/Mic/Music after bottom-dock controls | Exact87f9d334 contract failed after owner-authorized below-navigation placement. Reorder only those three snapshot entries; retain all controls/tabs/counts and geometry checks. Local contract passed. |
+| DR-18 | WO-09/16 | World autoplay stuck on farm and owl routes in first exact-candidate run; passed only on retry | GitHub38613891343 reports first failures at8,45 and10,-81. Root cause/reliable world routing remain open; do not count retry as unconditional reliability proof. |
+| DR-19 | WO-04/16 | Final classic shrine quest has no destination when all discovered shrines are done and others remain unknown | Corrected280-case inventory has zero blocked approaches but missing final marker in light/dark predicates. Keep known-shrine priority, fall back to nearest unfinished shrine; focused rerun active. |
+
+DR20 — newly reported public-transport POV obstruction. Source inspection: bus and coach bodies and dark glass are closed solid meshes; toy models also carry an outline. Current camera sits at child-eye position inside these solids, so the earlier transport check of eye height/distance does not establish an unobstructed windscreen view. Reproduce actual rendered rider view before correcting; check both ages, bus variants, tram, exit, exterior view and split-screen isolation. Pending.

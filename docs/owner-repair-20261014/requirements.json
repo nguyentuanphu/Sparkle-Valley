@@ -844,9 +844,9 @@
     {
       "id": "EXT-06",
       "workOrder": "WO-08",
-      "requirement": "Desktop Audio and microphone/speaker controls consistently beneath upper-right navigation.",
-      "status": "partial",
-      "proof": "Five phone/landscape/desktop EN/VI view cases and resize pass; actual newest comparison pictures pending.",
+      "requirement": "Desktop Audio/Mic beneath upper-right navigation; Audio tap opens only three small discreet icons horizontally like camera controls: Music, Sounds and Voice. No Songs or additional action in this pop-out.",
+      "status": "revision-in-progress",
+      "proof": "Prior labelled Audio/Songs tray rejected by latest owner guidance. Existing87f9d334 pictures are before-reference for this revision; new implementation/proof/pictures pending.",
       "releaseApproved": false
     },
     {
@@ -863,6 +863,22 @@
       "requirement": "The target-shaped companion hat savings button explains its purpose on tap; purchase requires an explicit action.",
       "status": "partial",
       "proof": "Red actual tap spent30 coins; EN/VI help/Cancel/explicit Buy/rechecked balance passed within6/6. Four explanation MP3s recorded/decoded, full8102-line coverage passed. Matching goal pictures and exact final candidate full suite pending.",
+      "releaseApproved": false
+    },
+    {
+      "id": "EXT-09",
+      "workOrder": "WO-01/14/16",
+      "requirement": "Public-transport POV shows rider view through the windscreen without green or half-black obstruction; preserve exterior artwork and transport behavior.",
+      "status": "investigating",
+      "proof": "Reported in this chat; opaque enclosed model and internal camera found. Actual render reproduction, repair, multi-device proof and pictures pending.",
+      "releaseApproved": false
+    },
+    {
+      "id": "EXT-10",
+      "workOrder": "WO-11/16",
+      "requirement": "Combine testing under Sparkle Lab; Studio menu beside Releases; reduce Releases and Analytics loading without losing policies, permissions or report accuracy.",
+      "status": "revision-in-progress",
+      "proof": "Local split and parallel loading implemented; first Studio validation found missing sneak-peek groups after scoping, corrected. Rerun and matching pictures pending.",
       "releaseApproved": false
     }
   ]
