@@ -862,7 +862,7 @@
       "workOrder": "WO-01/07",
       "requirement": "The target-shaped companion hat savings button explains its purpose on tap; purchase requires an explicit action.",
       "status": "partial",
-      "proof": "Red actual tap spent30 coins; EN/VI phone now explains without spending, Cancel retains coins and explicit Buy/rechecked balance passes. Focused6/6. New EN/VI fixed explanation recordings and matching pictures still pending.",
+      "proof": "Red actual tap spent30 coins; EN/VI help/Cancel/explicit Buy/rechecked balance passed within6/6. Four explanation MP3s recorded/decoded, full8102-line coverage passed. Matching goal pictures and exact final candidate full suite pending.",
       "releaseApproved": false
     }
   ]

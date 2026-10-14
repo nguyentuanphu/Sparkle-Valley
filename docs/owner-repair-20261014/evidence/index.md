@@ -26,3 +26,7 @@ Fresh baseline/results.json contains four complete cases at approved R74 6a6ae88
 - audio-festival-reproduction-before.json: strengthened2checks failed before corresponding source changes.
 - audio-festival-final-8-checks.json: local8/8 after Audio placement/bounds and town festival road-mask repair; not a whole-suite or physical-device claim.
 - GitHub full suite38601628166 tested older dd91f33b and completed140/143, with ownerfamily unresolved and together/knock superseded only by bounded newer local proofs.
+
+## Completed87f9d334 four-case capture supersedes partial attempt
+
+Candidate/results.json now has four complete source-verified cases at87f9d334, phone EN/VI, tablet EN and desktop EN, zero page errors. Earlier partial583915e9 candidate attempt is superseded for these files; do not attribute them to later220f5184 hat code. Baseline remains source-verified R74. Actual viewed comparisons: VI phone Audio and EN desktop Audio. Audio has bounded12px margins and desktop entrance below navigation, with Music/Sounds/Voice/Songs and no separate Music entrance. Connected Mic appearance is not present in these pictures; its geometry is only covered by the separate focused test. See ATTRIBUTION.md and point-level table for gaps.

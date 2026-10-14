@@ -21,11 +21,11 @@ This is an explicit inventory, not a universal pass. Source review is separate f
 | Dialogue/how-to | popups.js, howto.js | source retained | long bilingual content/choice overflow and save/update boundaries |
 | Story shelf/book/film | tales.js, film.js | source retained | all films rendered; narration/music cleanup; scene individuality |
 | Camera eye/place tray | hud.js, wayfind.js | vertical source; explicit compass enable/disable contract passed | collision, orientation, safe areas, touch/focus |
-| Audio tray/Songs | soundsheet.js, hud.js | independent switches; Songs restored; duplicate hidden entrance assertion | final placement screenshot after text sizing fix; repeated close/listeners |
+| Audio tray/Songs | soundsheet.js, hud.js | independent switches; Songs restored; duplicate hidden entrance assertion | Source-attributed87f9d334 phone/tablet/desktop Audio captures complete; connected Mic pictures and full keyboard/listener coverage missing |
 | Ladybird Tester | tester.js, screencapture.js | report/capture/storage behavior; real images | receipt/status detail, keyboard, composed fallback real Safari |
 | Ladybird Autoplay | autoplay.js | tabs/draft preservation; run/stop/restore checked | all speeds/partial/error reporting and live state switching |
 | My reports/fixed/rewards | tester.js, testerrewards.js | testerreport pass | honest retest reproduction; long lists/privacy/backend receipt |
-| Family photos/pairing/postcards/recovery | familydevices.js | R75 controlled tests are historical | current two-device review, reassignment/recovery decisions, production proof |
+| Family photos/pairing/postcards/recovery | familydevices.js | Current bounded pairing/transfer/stale-response/offline/revocation rerun passed229s under Node22; earlier CI failure unresolved | reassignment/recovery decisions, production proof and exact-candidate CI diagnosis |
 | Pet adoption/trade/cooking/house/local shops | feature modules and popups.js | source retained | window/action inventory and runtime repeated-cycle cases |
 | Studio navigation/dashboard | studio/ui/app.js | current code review | phone/computer keyboard/EN/VI screenshots |
 | Studio Releases/categories/devices | studio/ui/app.js | source folds/per-device contracts present | actual visibility/persistence/touch and old policy precedence |

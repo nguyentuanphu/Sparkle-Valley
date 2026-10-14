@@ -74,3 +74,6 @@ First after run: ownerquesttargets/ownertalesync/ownerautoplaystrategy/unit/type
 - Before actual tap spent30 coins immediately. After tap opens the existing game dialogue explaining companion hat saving, price and saved coins; Buy and Cancel are explicit, purchase rechecks current hat and balance.
 - Focused6/6 passes including real EN/VI phone taps and existing companion/gift/Studio-switch contracts. Speech recordings/pictures remain pending.
 - Preserve exact active87f9d334 diagnostic suite; do not attribute later local goal repair to its results. Normalize status glyphs in saved logs to comply with unchanged no-emoji docs check; separate static3/3 passes.
+
+- Companion hat help recordings now restored from isolated workflow38615218026: four decoded MP3s, additive indexes preserving all old hashes/areas/templates. Full voice coverage8102 lines passed; voice policy suite still awaiting voicearea.
+- Four completed source-verified87f9d334 before/after surface capture cases replace prior mixed/partial candidate files. Later hat code remains unevidenced by those pictures.

@@ -5914,5 +5914,9 @@
     }
   ],
   "new_after_previous_checkpoint_count": 50,
-  "origin_metadata_scope": "Reported build markers and repository module paths extracted from public issue bodies; not a runtime reproduction or a diagnosis. No private report bodies preserved."
+  "origin_metadata_scope": "Reported build markers and repository module paths extracted from public issue bodies; not a runtime reproduction or a diagnosis. No private report bodies preserved.",
+  "last_refreshed_at": "2026-10-14T18:37:17.712501+00:00",
+  "latest_refresh_count": 216,
+  "latest_refresh_highest_issue": 299,
+  "latest_refresh_note": "Refreshed all open bug-labelled issues again; count unchanged. Prior individual metadata/dispositions preserved; no issue closed."
 }
