@@ -1,7 +1,7 @@
 // Offline support: cache the whole game on first visit, then serve from the cache.
 // Bump VERSION whenever files change so devices pick up the update. Updates only replace the game's files:
 // saved progress (localStorage, IndexedDB, and the 'sv-save' copy) and the voice pack are never deleted.
-const VERSION = 'sv-2026-10-14-repair8-r76';
+const VERSION = 'sv-2026-10-14-repair9-r76';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'vendor/three.module.js', 'vendor/peerjs.min.js', 'vendor/RoomEnvironment.js', 'css/fonts.css',

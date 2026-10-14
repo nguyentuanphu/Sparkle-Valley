@@ -270,6 +270,8 @@ export class Hero {
       const vehicle = this.riding && this.riding.vehicle;
       let eye = new THREE.Vector3(p.x + fx * .4, ey, p.z + fz * .4);
       if (vehicle && vehicle.seat) { vehicle.o.updateMatrixWorld(true); eye = vehicle.o.localToWorld(new THREE.Vector3(vehicle.seat[0], vehicle.seat[1] + .9 * sc, vehicle.seat[2] + .25)); }
+      const passenger = this.carry && this.carryVehicle;
+      if (passenger && passenger.cabin && passenger.seat) { passenger.o.updateMatrixWorld(true); eye = passenger.o.localToWorld(new THREE.Vector3(-.45, passenger.seat[1] + .9 * sc, passenger.cabin.length / 2 - 1.5)); }
       const look = new THREE.Vector3(eye.x + fx * 12, eye.y - .9, eye.z + fz * 12);
       this.camPos.lerp(eye, 1 - Math.exp(-dt * 8)); if (!this.camLook) this.camLook = look.clone(); this.camLook.lerp(look, 1 - Math.exp(-dt * 6));
       this.camYaw = this.yaw + Math.PI; this._pov = true;
