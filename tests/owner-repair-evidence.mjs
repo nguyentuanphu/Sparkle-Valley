@@ -28,13 +28,15 @@ try {
     const selection=await P.page.evaluate(()=>({scrollHeight:document.querySelector('.who-body')?.scrollHeight,height:document.querySelector('.who-body')?.clientHeight,labels:[...document.querySelectorAll('.pick span:last-of-type')].map(x=>({text:x.textContent,y:x.getBoundingClientRect().y,height:x.getBoundingClientRect().height}))}));
     await P.page.evaluate(async () => { const S=await import('/js/state.js'); S.profiles.forEach(p=>p.screen='valley'); __sv._owlAuto=true; }); await P.page.click('.who .go'); await P.page.waitForFunction(()=>__sv.heroes.length>0);
     await clear(P.page);
-    for (const [name,action] of [['bag',()=>__sv.openPad(0,'bag')],['shop',()=>__sv.shop.openShop(0)],['audio',()=>__sv.openSound(document.querySelector('.dk.snd'))]]) {
+    for (const [name,action] of [['bag',()=>__sv.openPad(0,'bag')],['shop',()=>{__sv.openPad(0,'bag');document.querySelector('.pad [data-t="shop"]').click();}],['audio',()=>__sv.openSound(document.querySelector('.dk.snd'))]]) {
       await clear(P.page); await P.page.evaluate(action); await P.page.waitForTimeout(550); await shot(name);
       if(name==='shop' && phase!=='baseline') {
         const optical=await P.page.evaluate(async()=>{const img=document.querySelector('.shop-preview');await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const x=c.getContext('2d');x.drawImage(img,0,0);const d=x.getImageData(0,0,c.width,c.height).data,bg=[d[0],d[1],d[2]];let minY=c.height,maxY=0;for(let y=0;y<c.height;y++)for(let px=0;px<c.width;px++){const i=(y*c.width+px)*4;if(Math.max(...bg.map((v,k)=>Math.abs(d[i+k]-v)))>45){minY=Math.min(minY,y);maxY=Math.max(maxY,y);}}return {height:c.height,visibleHeight:maxY-minY};});
         if(optical.visibleHeight<optical.height*.55)throw new Error('Outfit preview remains optically too small: '+JSON.stringify(optical));
       }
+      if (name==='audio' && phase!=='baseline') {if(await P.page.locator('.dk.mus:visible').count())throw new Error('Duplicate Music entrance');const r=await P.page.locator('.audio-tray').boundingBox();if(r.x<11 || r.x+r.width>w-11 || r.y<11 || r.y+r.height>h-11)throw new Error('Audio outside safe viewport: '+JSON.stringify(r));}
       if (name==='bag') await P.page.waitForSelector('.pad', {state:'visible'});
+      if(name==='shop'){await P.page.click('[data-go="wardrobe"]');await P.page.waitForTimeout(400);await shot('mirror');await P.page.evaluate(()=>document.querySelectorAll('.wardrobe').forEach(x=>x.remove()));}
     }
     await clear(P.page); await P.page.waitForFunction(()=>__sv.tester&&__sv.autoplay,{timeout:15000});
     await P.page.evaluate(()=>__sv.tester.openPanel(0));await P.page.waitForSelector('.tpanel');await shot('tester');

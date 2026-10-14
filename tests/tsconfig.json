@@ -5,5 +5,5 @@
     "target": "es2022", "module": "es2022", "moduleResolution": "bundler", "lib": ["es2022", "dom", "dom.iterable"],
     "types": ["node"], "skipLibCheck": true, "resolveJsonModule": true
   },
-  "files": ["../js/state.js", "../js/netmsg.js", "../js/worldcache.js", "../js/core/ids.js", "../js/core/events.js", "../js/core/rng.js", "../js/core/geo.js", "../studio/core.cjs", "../js/tester-detection.js"]
+  "files": ["../js/state.js", "../js/netmsg.js", "../js/worldcache.js", "../js/core/ids.js", "../js/core/events.js", "../js/core/rng.js", "../js/core/geo.js", "../studio/core.cjs", "../js/tester-detection.js", "../js/report-outbox.js"]
 }

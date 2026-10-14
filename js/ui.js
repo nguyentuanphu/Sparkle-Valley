@@ -865,7 +865,6 @@ export function openPad(game, i, tab) {
       ok.querySelector('.no').onclick = () => ok.remove();
     };
   }
-  let sellPick = null; // a treasure tapped once in the bag: tap again to sell it
   function drawBag(body) {
     // (Round V) what an ingredient is for: the dishes it goes into at a cooking pot
     const ingInfo = id => { const it = ITEMS[id], uses = RECIPES.filter(r => r.need.includes(id)), names = uses.map(r => r.name());
@@ -882,8 +881,8 @@ export function openPad(game, i, tab) {
       <div class="slots">${dishes.map(([id, n]) => { const r = dishInfo(id) || { icon: '🥘', name: () => T('Mystery stew', 'Món hầm bí ẩn') }; return `<button class="slot" data-eat="${id}" title="${esc(r.name() + ' · ' + T('tap to eat: hearts and energy back', 'chạm để ăn: thêm tim và sức'))}"><span>${r.icon}</span><b>${n}</b><small>${esc(r.name())}</small></button>`; }).join('') || `<p class="note">${T('Cook at a cooking pot to make food.', 'Nấu ăn ở nồi nấu để có món ăn.')}</p>`}</div>
       <h3>🛍️ ${T('From shops and stalls', 'Mua ở quán và sạp')} <small>${T('tap to eat', 'chạm để ăn')}</small></h3>
       <div class="slots">${bought.map(([id, n]) => { const v = snackOf(id); return `<button class="slot" data-snack="${id}" title="${esc(T(v.food[1], v.food[2]) + ' · ' + T('tap to eat', 'chạm để ăn'))}"><span>${v.food[0]}</span><b>${n}</b><small>${esc(T(v.food[1], v.food[2]))}</small></button>`; }).join('') || `<p class="note">${T('Buy food at kiosks, market stalls and from street sellers. It goes in here!', 'Mua đồ ăn ở quán, sạp chợ và các cô gánh hàng rong. Đồ mua sẽ nằm ở đây!')}</p>`}</div>
-      <h3>💎 ${T('Treasures', 'Báu vật')} <small>${T('tap twice to sell', 'chạm 2 lần để bán')}</small></h3>
-      <div class="slots">${gems.map(([id, n]) => `<button class="slot gemslot ${sellPick === id ? 'on' : ''}" data-sellgem="${id}" title="${esc(WILD[id].name() + ' · ' + T('a treasure: tap twice to sell it for coins', 'báu vật: chạm 2 lần để bán lấy tiền'))}"><span>${WILD[id].icon}</span><b>${n}</b><small>${sellPick === id ? '💰 ' + T('Sell', 'Bán') + ' ' + fmt(WILD[id].sell) + '?' : esc(WILD[id].name()) + ' · ' + fmt(WILD[id].sell)}</small></button>`).join('') || `<p class="note">${T('Dig at the sparkly mounds of earth and crack rocks open to find treasures!', 'Đào ở những ụ đất lấp lánh và gõ vỡ hòn đá để tìm báu vật!')}</p>`}</div>
+      <h3>💎 ${T('Treasures', 'Báu vật')} <small>${T('tap for help', 'chạm để xem hướng dẫn')}</small></h3>
+      <div class="slots">${gems.map(([id, n]) => `<button class="slot gemslot" data-sellgem="${id}" title="${esc(WILD[id].name() + ' · ' + T('a treasure: choose Sell one in its help card', 'báu vật: chọn Bán một trong hướng dẫn'))}"><span>${WILD[id].icon}</span><b>${n}</b><small>${esc(WILD[id].name()) + ' · ' + fmt(WILD[id].sell)}</small></button>`).join('') || `<p class="note">${T('Dig at the sparkly mounds of earth and crack rocks open to find treasures!', 'Đào ở những ụ đất lấp lánh và gõ vỡ hòn đá để tìm báu vật!')}</p>`}</div>
       <h3>${T('Ingredients', 'Nguyên liệu')}</h3>
       <div class="slots">${items.map(([id, n]) => `<button class="slot" data-ing="${id}" title="${esc(ingInfo(id)[0])}"><span>${ITEMS[id].icon}</span><b>${n}</b><small>${esc(ITEMS[id].name())}</small></button>`).join('') || `<p class="note">${T('Empty! Shake apple trees and look for herbs and mushrooms.', 'Trống trơn! Rung cây táo và tìm rau thơm, nấm nhé.')}</p>`}</div>
       ${(() => { const SLOT_ICON = { hat: '👒', neck: '📿', top: '👕', bottom: '👖', feet: '👟', back: '🪽' }; // (Round U, owner 11 Oct: everything bought shows here until it is worn) the clothes and accessories the child owns
@@ -915,8 +914,8 @@ export function openPad(game, i, tab) {
     body.querySelectorAll('[data-ing]').forEach(b => b.onclick = () => { SFX.tap(); const [line, en, vi] = ingInfo(b.dataset.ing); toast(line); say(en, vi); });
     body.querySelectorAll('[data-sellgem]').forEach(b => b.onclick = () => {
       const id = b.dataset.sellgem, w = WILD[id];
-      if (sellPick !== id) { sellPick = id; SFX.tap(); say(`${w.name()}: ${money(w.sell)}. Tap again to sell it.`, `${w.name()}: ${money(w.sell)}. Chạm lần nữa để bán nhé.`); draw(); return; }
-      sellPick = null; p.inv[id]--; if (p.inv[id] <= 0) delete p.inv[id]; farm.coins += w.sell; saveFarm(); game.save(); SFX.coin();
+      if (!(p.inv[id] > 0)) return;
+      p.inv[id]--; if (p.inv[id] <= 0) delete p.inv[id]; farm.coins += w.sell; saveFarm(); game.save(); SFX.coin();
       say(`Sold! Now you have ${money(farm.coins)}.`, `Bán rồi! Giờ con có ${money(farm.coins)}.`); game.job && game.job('sell', 1, hero); draw();
     });
     if (body.querySelector('#bagPets')) body.querySelector('#bagPets').onclick = () => { m.close(); game.closePad(i); setTimeout(() => game.pets.openAdopt(hero), 220); };
@@ -938,7 +937,8 @@ export function openPad(game, i, tab) {
       if (b.dataset.kite || b.dataset.whistle) { en = 'Your whistling kite follows you; its bamboo flute sings in the wind.'; vi = 'Diều sáo bay theo con; sáo tre hát trong gió.'; }
       if (ingredient) { const info = ingInfo(ingredient); en = info[1]; vi = info[2]; }
       if (treasure) { en = `A treasure you found. Sell one for ${money(treasure.sell)} or keep it.`; vi = `Báu vật con tìm được. Bán một món lấy ${money(treasure.sell)} hoặc giữ lại.`; }
-      b.onclick = () => { const art = b.querySelector('svg, .art, .sw')?.outerHTML || ''; helpCard(name, art, en, vi, oldAction && !ingredient ? treasure ? T('Sell one', 'Bán một') : T('Use', 'Dùng') : '', ok => { if (ok) { if (treasure) sellPick = b.dataset.sellgem; oldAction?.call(b); } }); };
+      const action = treasure ? T('Sell one', 'Bán một') : b.dataset.unwear || b.dataset.hat === 'none' ? T('Remove', 'Bỏ ra') : b.dataset.wear || b.dataset.hat ? T('Wear', 'Mặc') : b.dataset.kite ? (p.kiteOn !== false ? T('Put away', 'Cất đi') : T('Fly', 'Thả diều')) : b.dataset.hlcarry ? (p.hoilang?.carryOn !== false && p.hoilang?.carry === b.dataset.hlcarry ? T('Put away', 'Cất đi') : T('Carry', 'Mang theo')) : b.dataset.whistle ? T('Whistle', 'Thổi sáo') : b.dataset.gl !== undefined ? T('Choose', 'Chọn') : T('Use', 'Dùng');
+      b.onclick = () => { const art = b.querySelector('svg, .art, .sw')?.outerHTML || ''; helpCard(name, art, en, vi, oldAction && !ingredient ? action : '', ok => { if (ok) { oldAction?.call(b); } }); };
     }
 
   }

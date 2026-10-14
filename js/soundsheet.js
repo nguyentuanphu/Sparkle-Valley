@@ -15,7 +15,7 @@ export function openSoundSheet(G, anchor) {
   dispatchEvent(new Event('sv-hide-caption')); document.body.appendChild(m);
   const place = () => { const v=visualViewport, y=v?.offsetTop||0, x=v?.offsetLeft||0, h=v?.height||innerHeight, w=v?.width||innerWidth; const r=anchor?.getBoundingClientRect(); m.style.maxHeight=Math.max(44,h-24)+'px'; m.style.maxWidth=Math.max(44,w-24)+'px'; m.style.top=Math.max(y+12,Math.min(y+h-m.offsetHeight-12,r?r.bottom+8:y+100))+'px'; m.style.left=Math.max(x+12,Math.min(x+w-m.offsetWidth-12,r?r.left:x+w-m.offsetWidth-12))+'px'; m.style.right='auto'; };
   place();
-  const paint = () => m.querySelectorAll('.ss-sw').forEach(b => { const on = !!settings[b.dataset.k]; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.querySelector('i').textContent = on ? T('On', 'Bật') : T('Off', 'Tắt'); });
+  const paint = () => { m.querySelectorAll('.ss-sw').forEach(b => { const on = !!settings[b.dataset.k]; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.querySelector('i').textContent = on ? T('On', 'Bật') : T('Off', 'Tắt'); }); place(); };
   m.querySelectorAll('.ss-sw').forEach(b => b.onclick = () => { G.setAudio(b.dataset.k, !settings[b.dataset.k]); if (settings.sound) SFX.tap(); paint(); });
   const outside = e => { if (!m.contains(e.target) && e.target !== anchor && !anchor?.contains(e.target)) close(); };
   const key = e => { if (e.key === 'Escape') close(); };

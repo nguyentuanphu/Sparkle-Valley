@@ -31,3 +31,7 @@ test('legacy old-build upload cannot overwrite a known newer-session version',as
  const S=memory();await hello(S,message(),NOW);await hello(S,message({h:'batch00000000003',sid:undefined,started:undefined,b:'r74'}),NOW+1000);
  assert.equal((await report(S,NOW+1001)).devices[0].build,'r75');
 });
+test('version totals cover every installation even when detail cards are capped',async()=>{
+ const S=memory();for(let i=0;i<105;i++)await hello(S,message({id:'device'+String(i).padStart(6,'0'),h:'batch'+String(i).padStart(11,'0')}),NOW);
+ const R=await report(S,NOW);assert.equal(R.week.devices,105);assert.equal(R.latestBuilds.r75,105);assert.equal(R.devices.length,100);assert.equal(R.deviceListTotal,105);
+});

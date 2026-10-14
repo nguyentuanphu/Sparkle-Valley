@@ -27,6 +27,7 @@ import { takeCopy, putCopyBack, hasCopy, dropCopy } from './keepcopy.js';
 import { revertOf } from './content/autoplay.js';
 import { easyName } from './content/devname.js';
 import { unreachableControl, activeReportPanel, observeGameOpen } from './tester-detection.js';
+import { readReportQueue, persistReportQueue } from './report-outbox.js';
 
 const KEY = { acc: 'sv2_tester', out: 'sv2_tester_out', st: 'sv2_tester_status', seen: 'sv2_tester_seen', ap: 'sv2_tester_ap', delivery: 'sv2_report_delivery', copy: 'sv2_tester_copy' };
 const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -59,25 +60,26 @@ const shot = (sceneOnly = false) => new Promise(res => { let done = false; const
 
 // ---------- sending ----------
 const clientId = () => [...crypto.getRandomValues(new Uint8Array(16))].map(n => n.toString(16).padStart(2, '0')).join('');
-const queue = () => { const rows = get(KEY.out, []); let changed = false; for (const row of rows) if (!row.clientId) { row.clientId = clientId(); changed = true; } if (changed) keep(rows); return rows; };
-function keep(list) { if (put(KEY.out, list)) return; const thin = list.map((r, i) => i < list.length - 5 ? { ...r, shot: '' } : r); if (!put(KEY.out, thin)) put(KEY.out, thin.slice(-10).map(r => ({ ...r, shot: '' }))); }
-function enqueue(r) { const q = queue(); r.clientId ||= clientId(); q.push(r); keep(q.slice(-C.LIMITS.queue)); delivery(r.clientId, { state: 'queued' }); paintCount(); flush(); return r.clientId; }
+let queueStorageError = false;
+const queue = () => { let state;try {state=readReportQueue(localStorage.getItem(KEY.out));}catch {state={ok:false,rows:[]};}queueStorageError=!state.ok;const rows=state.rows;let changed=false;for(const row of rows)if(!row.clientId){row.clientId=clientId();changed=true;}if(changed&&!keep(rows))queueStorageError=true;return rows; };
+function keep(list) { try {return persistReportQueue(localStorage,KEY.out,list).ok;}catch {return false;} }
+function enqueue(r) { const q=queue();r.clientId ||= clientId();if(queueStorageError||q.length>=C.LIMITS.queue||!keep([...q,r])){toast(T('Could not save this report. Keep this window open and try again.', 'Chưa lưu được báo cáo này. Giữ cửa sổ này và thử lại nhé.'));return null;}delivery(r.clientId,{state:'queued'});paintCount();flush();return r.clientId; }
 function delivery(id, result) { const all = get(KEY.delivery, {}); all[id] = { ...result, at: Date.now() }; const entries = Object.entries(all).slice(-120); put(KEY.delivery, Object.fromEntries(entries)); dispatchEvent(new CustomEvent('sv-report-delivery')); }
 export const reportDelivery = id => get(KEY.delivery, {})[id] || { state: 'queued' };
 export const reportingState = () => ({ enabled: live, queued: queue().length, sending: flushing });
 export const retryReports = () => flush();
 export async function sendAutoplayReport(rep) {
   if (!live) return { state: 'disabled', ids: [] };
-  const ids = [];
-  for (const d of rep.done || []) if (d.problems?.length) { const id = await autoReport('autoplay', `${d.name || d.key}: ${d.problems.join('; ')}`.slice(0, 200), { area: 'autoplay', place: '', game: d.g === 'games' ? d.key : '', window: d.g || '', x: 0, z: 0 }); if (id) ids.push(id); }
-  return { state: ids.length ? 'queued' : 'no-problems', ids };
+  const ids = [];let failed=false;
+  for (const d of rep.done || []) if (d.problems?.length) { const id = await autoReport('autoplay', `${d.name || d.key}: ${d.problems.join('; ')}`.slice(0, 200), { area: 'autoplay', place: '', game: d.g === 'games' ? d.key : '', window: d.g || '', x: 0, z: 0 }); if (id) ids.push(id);else failed=true; }
+  return { state: failed?'storage-failed':ids.length ? 'queued' : 'no-problems', ids };
 }
 let flushing = false;
 async function flush() {
-  if (flushing || !live || navigator.onLine === false) return; flushing = true;
+  if (flushing || !live || navigator.onLine === false) return;
+  queue();if(queueStorageError)return;flushing = true;
   // (14 Oct AEDT) the list is read again after each send and only the report just sent is taken off: a report made
   // while another was being sent (an error just as a "slow" report went) used to be lost when the old list was kept
-  const same = (x, r) => x && x.at === r.at && x.kind === r.kind && (x.auto || '') === (r.auto || '') && (x.detail || '') === (r.detail || '') && (x.note || '') === (r.note || '');
   try {
     const attempted = new Set();
     while (true) {
@@ -89,7 +91,7 @@ async function flush() {
       let receipt; try { receipt = await res.json(); } catch { delivery(r.clientId, { state: 'retry' }); break; }
       if (!receipt.ok || !receipt.rid) { delivery(r.clientId, { state: 'retry' }); break; }
       delivery(r.clientId, { state: 'sent', rid: receipt.rid, problem: receipt.k });
-      const q = queue(), k = q.findIndex(x => same(x, r)); if (k >= 0) { q.splice(k, 1); keep(q); } // only acknowledged reports leave the durable queue
+      const q = queue(), k = q.findIndex(x => x.clientId === r.clientId); if (k >= 0) { q.splice(k, 1); keep(q); } // only acknowledged reports leave the durable queue
     }
   } finally { flushing = false; paintCount(); }
 }
@@ -104,7 +106,7 @@ export async function autoReport(kind, detail, where, more = {}) {
   const n = counts.get(k); counts.set(k, 0); note('report', kind + ' ' + detail);
   const b = body('auto', { auto: kind, detail: String(detail || '').slice(0, 200), where: w, shot: await shot(), count: n });
   if (Array.isArray(more.log)) b.log = more.log.concat(b.log).slice(-300); // (the website keeps the last 300)
-  const id = enqueue(b); sent.set(k, { at: Date.now(), id }); return id;
+  const id = enqueue(b); if(id)sent.set(k, { at: Date.now(), id });else counts.set(k,n); return id;
 }
 
 // ---------- watching for problems ----------
@@ -247,7 +249,7 @@ export async function openPanel(i = 0, initialTab = 'tester') {
   card.querySelector('.tp-retry').onclick = () => flush();
   card.querySelectorAll('.tp-k').forEach(b => b.onclick = () => { kind = b.dataset.k; card.querySelectorAll('.tp-k').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }); SFX.tap && SFX.tap(); });
   const mic = card.querySelector('.tp-mic'); if (mic) mic.onclick = async () => { mic.disabled = true; const heard = await listen({ onPartial: t => { ta.value = t; } }); mic.disabled = false; if (heard && heard[0] !== '\u0000') { ta.value = (ta.value && ta.value !== heard ? ta.value + ' ' : '') + heard; spoken = true; } };
-  const send = join => { enqueue(body(kind, { note: ta.value.trim(), spoken, shot: selectedShot, where, join: join || '' })); close(); toast(join ? L(C.TESTER_LINES.already) : L(C.TESTER_LINES.waiting)); say(...(join ? C.TESTER_LINES.already : C.TESTER_LINES.waiting)); };
+  const send = join => { if(!enqueue(body(kind, { note: ta.value.trim(), spoken, shot: selectedShot, where, join: join || '' })))return; close(); toast(join ? L(C.TESTER_LINES.already) : L(C.TESTER_LINES.waiting)); say(...(join ? C.TESTER_LINES.already : C.TESTER_LINES.waiting)); };
   card.querySelector('.tp-send').onclick = () => send('');
   card.querySelectorAll('[data-join]').forEach(b => b.onclick = () => send(b.dataset.join));
   return m;

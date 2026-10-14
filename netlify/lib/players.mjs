@@ -243,7 +243,7 @@ async function details(S, sums, now) {
       online: !!(lives[id] && lives[id].on && now - lives[id].at < LIVE_MS), activeVersions:[...new Set(Object.values(lives[id]?.sessions||{}).filter(s=>s.on&&now-s.at<LIVE_MS).map(s=>s.build))],seenAt: lives[id] ? new Date(lives[id].at).toISOString() : '', playingNow: lives[id] && lives[id].on && now - lives[id].at < LIVE_MS ? lives[id].kid || '' : '',
       mins: D.mins, days: D.days, tales: D.tales, errors: D.errs, stuck: D.stuck, fps: fpsOf(D.fps), slowMins: D.fps[2], startup: startupOf(D.starts || []), power: powerOf(D.bat),
       kids: Object.values(D.kids).sort((a, b) => b.mins - a.mins).map(K => ({ ...K, games: Object.entries(K.games).sort((a, b) => b[1][0] - a[1][0]).slice(0, 10).map(([g, v]) => [g, ...v]), places: top(K.places, 8) })) }; })
-    .sort((a, b) => b.online - a.online || (b.last || '').localeCompare(a.last || '') || b.mins - a.mins).slice(0, 100);
+    .sort((a, b) => b.online - a.online || (b.last || '').localeCompare(a.last || '') || b.mins - a.mins);
   const count = f => { const o = {}; for (const d of devices) if (d.days) add(o, f(d)); return o; };
   const problems = {
     errors: Object.entries(errs).sort((a, b) => b[1].n - a[1].n).slice(0, 15).map(([k, e]) => [k, e.n, e.devices.size]),
@@ -267,7 +267,7 @@ async function details(S, sums, now) {
   // (battery round) by kind of device, `power`: the middle of each kind's devices
   const mid = a => { const v = a.filter(x => x != null).sort((x, y) => x - y); return v.length ? v[v.length >> 1] : null; };
   const power = {}; for (const k of ['phone', 'tablet', 'computer']) { const ds = devices.filter(d => d.kind === k && d.power); if (ds.length) power[k] = { devices: ds.length, fps: mid(ds.map(d => d.power.fps)), frameMs: mid(ds.map(d => d.power.frameMs)), draws: mid(ds.map(d => d.power.draws)), batteryPerHour: mid(ds.map(d => d.power.batteryPerHour)) }; }
-  return { latestBuilds:count(d=>d.build),startup, power, onlineNow: devices.filter(d => d.online).length, hours, places: top(places, 15), devices, os: count(d => d.os), browsers: count(d => d.br), locations: count(d => d.loc ? [d.loc.city, d.loc.region, d.loc.country].filter(Boolean).join(', ') : '?'), problems, tips: tips.slice(0, 20) };
+  return { latestBuilds:count(d=>d.build),startup, power, onlineNow: devices.filter(d => d.online).length, hours, places: top(places, 15), devices:devices.slice(0,100), deviceListTotal:devices.length, deviceListLimit:100, os: count(d => d.os), browsers: count(d => d.br), locations: count(d => d.loc ? [d.loc.city, d.loc.region, d.loc.country].filter(Boolean).join(', ') : '?'), problems, tips: tips.slice(0, 20) };
 }
 // a name the family gives a device in Studio ("Na's iPad")
 export async function setLabel(S, id, label) { if (!ID.test(id || '')) return false; const l = String(label || '').replace(/[<>\u0000-\u001f]/g, '').trim().slice(0, 40); if (l) await S.set('label/' + id, l); else await S.delete('label/' + id); return true; }

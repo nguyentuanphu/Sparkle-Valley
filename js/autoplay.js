@@ -551,6 +551,7 @@ const row = r => `<div><span class="dot ${r.skipped ? 'skip' : r.ok ? (r.notes &
 function deliveryText(rep) {
   if (!reportingState().enabled) return T('Reporting is off on this device. Enable testing and accept the tester agreement in Settings.', 'Báo cáo đang tắt trên máy này. Bật thử nghiệm và đồng ý tham gia trong Cài đặt.');
   if (!(rep.done || []).some(x => x.problems?.length)) return T('No problems found in this check.', 'Chưa tìm thấy lỗi trong lần kiểm tra này.');
+  if(rep.reportState==='storage-failed')return T('Could not save every report. Make space on this device and retry.', 'Chưa lưu được mọi báo cáo. Giải phóng chỗ trên máy rồi thử lại.');
   const states = (rep.reportIds || []).map(reportDelivery);
   if (states.length && states.every(x => x.state === 'sent')) return T('Sent: received by the website.', 'Đã gửi: trang web đã nhận.');
   if (states.some(x => x.state === 'retry')) return T('Not sent yet. Kept here; retry when connected.', 'Chưa gửi được. Đã giữ trên máy; gửi lại khi có mạng.');

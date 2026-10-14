@@ -2310,7 +2310,7 @@ await check('hoilang', async () => {
     // too late: told when the next one is
     at('2026-10-10T09:20'); G.hoilang.openFest(h, F); await w(500); out.next = /16:00/.test(txt()); document.querySelectorAll('.dialog').forEach(e => e.remove()); G.paused = false;
     // the Backpack: carry the prize or put it away, like the kite
-    G.openPad(0, 'bag'); await w(600); const slot = document.querySelector('.pad [data-hlcarry]'); out.bag = !!slot; slot?.click(); await w(300); out.putAway = p.hoilang.carryOn === false;
+    G.openPad(0, 'bag'); await w(600); const slot = document.querySelector('.pad [data-hlcarry]'); out.bag = !!slot; const carried = p.hoilang.carryOn; slot?.click(); await w(300); out.helpOnly = !!document.querySelector('.pad .bag-help') && p.hoilang.carryOn === carried; document.querySelector('.pad .bag-help .bh-close')?.click(); out.cancelKeeps = p.hoilang.carryOn === carried; slot?.click(); await w(100); document.querySelector('.pad .bag-help .bh-act')?.click(); await w(300); out.putAway = p.hoilang.carryOn === false;
     document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false;
     // the Studio switch
     at('2026-10-10T09:02'); C.features.hoilang = false; await w(1500);
@@ -2326,7 +2326,7 @@ await check('hoilang', async () => {
   if (r.bigPrizes !== 1) bad.push('a big kid got a prize without winning');
   if (r.bigAt1740 || !r.littleAt1740) bad.push('the evening festival is not 17:30 for under-5s and 19:00 for big kids');
   if (!r.next) bad.push('a late child was not told the next time');
-  if (!r.bag || !r.putAway) bad.push('the prize is not in the Backpack to carry or put away');
+  if (!r.bag || !r.helpOnly || !r.cancelKeeps || !r.putAway) bad.push('the prize is not in the Backpack to carry or put away');
   if (!r.offPole || !r.offParade) bad.push('the Studio switch does not turn it off');
   if (errs.length) bad.push(...errs.slice(0, 2));
   if (bad.length) throw new Error(bad.join('; '));
@@ -3971,6 +3971,16 @@ await check('rollout', async () => {
     };
     const res = {};
     for (const [id, probe] of Object.entries(probes)) {
+      if (id === 'wayfind') {
+        const previous = C.CUSTOM.releases?.wayfind; C.CUSTOM.releases = C.CUSTOM.releases || {};
+        delete C.CUSTOM.releases.wayfind; delete p.tried; F.wayfind = true; const defaultHidden = !(await probe());
+        C.markTried(p,id); const legacyHidden = !(await probe());
+        C.CUSTOM.releases.wayfind = {on:true}; const oldRuleHidden = !(await probe());
+        C.CUSTOM.releases.wayfind = {on:true,controlVersion:1}; const explicitOn = !!(await probe());
+        C.CUSTOM.releases.wayfind = {on:false,controlVersion:1}; const explicitOff = !(await probe());
+        if(previous) C.CUSTOM.releases.wayfind=previous; else delete C.CUSTOM.releases.wayfind;
+        res[id]={hidden:defaultHidden && legacyHidden && oldRuleHidden && explicitOff,kept:explicitOff,back:explicitOn};continue;
+      }
       delete p.tried; F[id] = false; const hidden = !(await probe());
       C.markTried(p, id); const kept = !!(await probe());
       delete p.tried; F[id] = true; const back = !!(await probe());
@@ -3979,7 +3989,7 @@ await check('rollout', async () => {
     for (const [id, probe] of Object.entries(scenery)) { F[id] = false; const hidden = !(await probe()); F[id] = true; const back = !!(await probe()); res[id] = { hidden, kept: true, back }; }
     // every new switch is in Studio's list, starts on, and says what it is in both languages
     const { RELEASES } = await import('/js/content/releases.js');
-    const missing = Object.keys(probes).concat(Object.keys(scenery)).filter(id => { const x = RELEASES.find(r => r.id === id); return !x || x.def !== true || !x.en || !x.vi || x.en === x.vi; });
+    const missing = Object.keys(probes).concat(Object.keys(scenery)).filter(id => { const x = RELEASES.find(r => r.id === id); return !x || x.def !== (id !== 'wayfind') || !x.en || !x.vi || x.en === x.vi; });
     // an old save already shows what a child used: kept without a new tap
     const q = { jobsDone: { lotus: 1 }, owlLessons: ['money'], levels: { heodat: 2 } }; C.triedFromSave(q);
     const fromSave = ['jobs', 'owlGuide', 'money_heodat'].every(id => C.hasTried(q, id)) && !C.hasTried(q, 'wayfind');
@@ -4469,9 +4479,9 @@ await check('types', async () => {
   // (js/state.js, js/netmsg.js, studio/core.cjs; tests/tsconfig.json lists them). Needs: cd tests && npm install
   const { execFileSync } = await import('child_process'), tsc = 'node_modules/.bin/tsc';
   if (!fs.existsSync(tsc)) return 'skipped (run npm install in tests)';
-  try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
+  try { execFileSync(tsc, ['-p', '.'], { encoding: 'utf8' }); execFileSync(tsc, ['-p','tsconfig-contracts.json'], {encoding:'utf8'}); } catch (e) { ok(false, ((e.stdout || '') + '').split('\n').slice(0, 8).join(' | ')); }
   const n = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8')).files.length;
-  return `${n} files type-checked, no errors`;
+  return `${n} explicit files type-checked; detector/outbox modules additionally strict-checked; no errors`;
 });
 
 await check('perf', async () => {
@@ -4962,7 +4972,7 @@ await check('onlineoff', async () => {
 // (Play reading trial, owner 11 Oct 2026 AEDT; docs/cores/play-reading.md) the ten reading games behind Studio's readingTrial
 await check('reading', async () => {
   const { solveReading } = await import('./readsolve.mjs'), RD = await import('../js/content/reading.js');
-  const IDS = ['rd_trace', 'rd_sounds', 'rd_build', 'rd_rhyme', 'rd_sight', 'rd_tones', 'rd_syllable', 'rd_match', 'rd_sentence', 'rd_readalong'], BIG_ONLY = ['rd_sight', 'rd_match', 'rd_sentence'];
+  const IDS = ['rd_listentouch', 'rd_storychoice', 'rd_trace', 'rd_sounds', 'rd_build', 'rd_rhyme', 'rd_sight', 'rd_tones', 'rd_syllable', 'rd_match', 'rd_sentence', 'rd_readalong'], BIG_ONLY = ['rd_sight', 'rd_match', 'rd_sentence'];
   // the word lists: both languages, every picture drawn, every line to record listed in both languages
   const lines = RD.readingLines(), en = lines.filter(l => l.lang === 'en').length, vi = lines.filter(l => l.lang === 'vi').length;
   ok(en > 150 && vi > 150, `lines to record: en ${en}, vi ${vi}`);
@@ -4983,12 +4993,12 @@ await check('reading', async () => {
   const Q = await open(b, { w: 1024, h: 768, play: false }); const asked2 = []; Q.page.on('request', q => { if (/reading(menu)?\.js/.test(q.url())) asked2.push(q.url().split('/').pop()); });
   await Q.page.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), readingTrial: true }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
   await Q.page.reload(); await start(Q.page); await clear(Q.page);
-  await Q.page.waitForFunction(async () => Object.keys((await import('/js/games/frame.js')).GAMES).filter(k => /^rd_/.test(k)).length === 10, null, { timeout: 30000 }).catch(() => { });
+  await Q.page.waitForFunction(async () => Object.keys((await import('/js/games/frame.js')).GAMES).filter(k => /^rd_/.test(k)).length === 12, null, { timeout: 30000 }).catch(() => { });
   const on = await Q.page.evaluate(async () => { const F = await import('/js/games/frame.js'), A = await import('/js/content/activities.js'); __sv.openGamesHub(0); await new Promise(r => setTimeout(r, 300)); document.querySelector('.hubtabs [data-tab="learn"]')?.click(); await new Promise(r => setTimeout(r, 200));
     const hub = [...document.querySelectorAll('.hubbody [data-play]')].map(b => b.dataset.play), head = [...document.querySelectorAll('.hubbody .hubarea')].map(h => h.textContent); document.querySelectorAll('.modal').forEach(m => m.remove()); __sv.paused = false;
     return { games: Object.keys(F.GAMES).filter(k => /^rd_/.test(k)), big: A.gamesIn(F.GAMES, 'reading', false).map(g => g.id), little: A.gamesIn(F.GAMES, 'reading', true).map(g => g.id), hub: hub.filter(k => /^rd_/.test(k)), head }; });
   ok(IDS.every(id => on.games.includes(id) && on.big.includes(id) && on.hub.includes(id)) && on.head.some(h => /Reading corner/.test(h)), 'with the switch on: ' + JSON.stringify(on));
-  ok(BIG_ONLY.every(id => !on.little.includes(id)) && on.little.length === 7, 'under-5s see: ' + on.little.join(','));
+  ok(BIG_ONLY.every(id => !on.little.includes(id)) && on.little.length === IDS.length - BIG_ONLY.length && IDS.filter(id => !BIG_ONLY.includes(id)).every(id => on.little.includes(id)), 'under-5s see: ' + on.little.join(','));
   ok(!asked2.includes('reading.js'), 'the games\' code loaded before a game opened: ' + asked2.join(','));
   // every game finishes for an under-5 (no losing: three stars) and for a big kid at Easy, Medium and Hard, in both languages;
   // nothing is left behind when a game ends
@@ -5011,7 +5021,7 @@ await check('reading', async () => {
   ok(asked2.includes('reading.js'), 'the games\' code never loaded');
   const errs = Q.errors.slice(); await Q.ctx.close();
   ok(!errs.length, errs.slice(0, 5).join(' | '));
-  return `${sampled('reading') ? 'SAMPLE (each game once per language, level by turn; all when reading files change): ' : ''}switch off: nothing loads or shows; on: 10 games in the Reading corner (7 for under-5s), all finish at Easy, Medium, Hard and for under-5s in English and Vietnamese; ${en} English and ${vi} Vietnamese lines`;
+  return `${sampled('reading') ? 'SAMPLE (each game once per language, level by turn; all when reading files change): ' : ''}switch off: nothing loads or shows; on: 12 games in the Reading corner (9 for under-5s), all finish at Easy, Medium, Hard and for under-5s in English and Vietnamese; ${en} English and ${vi} Vietnamese lines`;
 });
 
 // Owner-approved interface contracts: end-to-end screen, privacy and composed-capture regressions.
@@ -5036,6 +5046,10 @@ await check('reportdetectors', async () => {
   return 'scroll/background/hidden controls excluded; real offscreen and failed opens retained; successful quick close and cancellation do not report';
 });
 
+await check('reportstorage', async () => {
+  const {execFileSync}=await import('node:child_process');
+  return execFileSync(process.execPath,['owner-report-storage.mjs'],{encoding:'utf8',timeout:60000}).trim();
+});
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
