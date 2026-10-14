@@ -1,0 +1,166 @@
+[
+  {
+    "device": "phone",
+    "w": 390,
+    "h": 844,
+    "lang": "en",
+    "build": "r76",
+    "before": {
+      "x": 16,
+      "y": 199.09375,
+      "width": 358,
+      "height": 381.796875
+    },
+    "after": {
+      "x": 16,
+      "y": 199.09375,
+      "width": 358,
+      "height": 381.796875
+    },
+    "selection": {
+      "scrollHeight": 263,
+      "height": 263,
+      "labels": [
+        {
+          "text": "Demo 1",
+          "y": 457.28125,
+          "height": 22
+        },
+        {
+          "text": "Demo 2",
+          "y": 457.28125,
+          "height": 22
+        },
+        {
+          "text": "New",
+          "y": 457.28125,
+          "height": 22
+        }
+      ]
+    },
+    "errors": []
+  },
+  {
+    "device": "phone",
+    "w": 390,
+    "h": 844,
+    "lang": "vi",
+    "build": "r76",
+    "before": {
+      "x": 16,
+      "y": 170.203125,
+      "width": 358,
+      "height": 439.59375
+    },
+    "after": {
+      "x": 16,
+      "y": 170.203125,
+      "width": 358,
+      "height": 439.59375
+    },
+    "selection": {
+      "scrollHeight": 317,
+      "height": 317,
+      "labels": [
+        {
+          "text": "Demo 1",
+          "y": 457.78125,
+          "height": 28
+        },
+        {
+          "text": "Demo 2",
+          "y": 457.78125,
+          "height": 28
+        },
+        {
+          "text": "Thêm",
+          "y": 467.78125,
+          "height": 28
+        }
+      ]
+    },
+    "errors": []
+  },
+  {
+    "device": "tablet",
+    "w": 820,
+    "h": 1180,
+    "lang": "en",
+    "build": "r76",
+    "before": {
+      "x": 50,
+      "y": 316.375,
+      "width": 720,
+      "height": 483.25
+    },
+    "after": {
+      "x": 50,
+      "y": 316.375,
+      "width": 720,
+      "height": 483.25
+    },
+    "selection": {
+      "scrollHeight": 359,
+      "height": 359,
+      "labels": [
+        {
+          "text": "Demo 1",
+          "y": 671.765625,
+          "height": 22
+        },
+        {
+          "text": "Demo 2",
+          "y": 671.765625,
+          "height": 22
+        },
+        {
+          "text": "New",
+          "y": 671.765625,
+          "height": 22
+        }
+      ]
+    },
+    "errors": []
+  },
+  {
+    "device": "computer",
+    "w": 1280,
+    "h": 800,
+    "lang": "en",
+    "build": "r76",
+    "before": {
+      "x": 280,
+      "y": 126.375,
+      "width": 720,
+      "height": 483.25
+    },
+    "after": {
+      "x": 280,
+      "y": 126.375,
+      "width": 720,
+      "height": 483.25
+    },
+    "selection": {
+      "scrollHeight": 359,
+      "height": 359,
+      "labels": [
+        {
+          "text": "Demo 1",
+          "y": 481.765625,
+          "height": 22
+        },
+        {
+          "text": "Demo 2",
+          "y": 481.765625,
+          "height": 22
+        },
+        {
+          "text": "New",
+          "y": 481.765625,
+          "height": 22
+        }
+      ]
+    },
+    "errors": []
+  }
+]

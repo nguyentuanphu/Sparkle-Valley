@@ -34,6 +34,8 @@ let lastSent = 0, sending = false; // (lastSent: the last confirmed send)
 const warmStart = typeof navigator !== 'undefined' && !!(navigator.serviceWorker && navigator.serviceWorker.controller);
 const id = () => { let v = ''; try { v = localStorage.getItem(KEY) || ''; if (!/^[a-z0-9]{12}$/.test(v)) { v = rnd(12); localStorage.setItem(KEY, v); } } catch (e) { } return v; };
 const rnd = n => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
+// A session is a running tab, not a new device; updates retain KEY above.
+const SESSION = rnd(16), SESSION_STARTED = Date.now();
 const onSite = () => !!window.__svHelloTest || (/^https:$/.test(location.protocol) && !/^(localhost|127\.|\[::1\])/.test(location.hostname) && !/[?&]studio=1/.test(location.search) && !location.pathname.startsWith('/studio'));
 const kind = () => { const w = Math.min(screen.width, screen.height), touch = matchMedia('(pointer: coarse)').matches; return !touch ? 'computer' : w < 600 ? 'phone' : 'tablet'; };
 const installed = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
@@ -41,8 +43,8 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
 
 // the outbox: { days: { 'YYYY-MM-DD': { m, g: {game: n}, t, o } }, pending?: { h, days[], v[] } }, kept on the device until the website has it
 const readOut = () => { try { const o = JSON.parse(localStorage.getItem(OUT) || '{}'); return o && o.days ? o : { days: {} }; } catch (e) { return { days: {} }; } };
-const writeOut = o => { const ks = Object.keys(o.days).sort(); while (ks.length > 14) delete o.days[ks.shift()]; if (o.pending && o.pending.days.length > 14) o.pending.days = o.pending.days.slice(-14); try { localStorage.setItem(OUT, JSON.stringify(o)); } catch (e) { } };
-const bump = f => { if (settings.countPlayers === false) return; const o = readOut(), d = o.days[today()] = o.days[today()] || { m: 0, g: {}, t: 0, o: 0 }; for (const k of ['h', 'c', 'e', 's', 'q']) d[k] = d[k] || {}; d.f = d.f || [0, 0, 0]; f(d); writeOut(o); };
+const writeOut = o => { const dates=[...new Set(Object.keys(o.days).map(k=>k.slice(0,10)))].sort(); const keep=new Set(dates.slice(-14));for(const k of Object.keys(o.days))if(!keep.has(k.slice(0,10)))delete o.days[k];try { localStorage.setItem(OUT, JSON.stringify(o)); } catch (e) { } };
+const bump = f => { if (settings.countPlayers === false) return; const o = readOut(), key=today()+'|'+BUILD, d = o.days[key] = o.days[key] || { build:BUILD, m: 0, g: {}, t: 0, o: 0 }; for (const k of ['h', 'c', 'e', 's', 'q']) d[k] = d[k] || {}; d.f = d.f || [0, 0, 0]; f(d); writeOut(o); };
 // one child's bucket for the day (by profile; the first name only when the family allows it)
 const kidOf = (d, p) => { const k = String(p.id || p.name || 'guest').replace(/[^\w-]/g, '').slice(0, 24) || 'guest'; const c = d.c[k] = d.c[k] || { n: '', a: '', m: 0, g: {}, p: {}, t: 0, sm: 0 }; c.n = settings.reportNames === false ? '' : String(p.name || '').trim().split(/\s+/)[0].slice(0, 20); c.a = p.age === 'big' ? 'big' : 'little'; return c; };
 const profileOf = pid => (profiles || []).find(p => { try { return makeId('player', p.id || 'guest') === pid; } catch (e) { return false; } });
@@ -82,14 +84,14 @@ export async function flush(closing) {
   if (sending || settings.countPlayers === false || !onSite()) return false;
   const o = readOut();
   if (!o.pending) {
-    const days = Object.entries(o.days).filter(([, d]) => d.m || d.t || d.o || Object.keys(d.g).length || Object.keys(d.e || {}).length || (d.st || []).length).map(([d, x]) => ({ d, m: x.m, g: x.g, t: x.t, o: x.o, h: x.h || {}, c: x.c || {}, e: x.e || {}, s: x.s || {}, q: x.q || {}, f: x.f || [0, 0, 0], st: x.st || [], b: x.b || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }));
+    const days = Object.entries(o.days).filter(([, d]) => d.m || d.t || d.o || Object.keys(d.g||{}).length || Object.keys(d.e || {}).length || (d.st || []).length).map(([d, x]) => ({ d:d.slice(0,10), build:x.build||'?', m: x.m, g: x.g, t: x.t, o: x.o, h: x.h || {}, c: x.c || {}, e: x.e || {}, s: x.s || {}, q: x.q || {}, f: x.f || [0, 0, 0], st: x.st || [], b: x.b || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] })).slice(0,42);
     if (!days.length) return false;
     const miss = newMisses();
-    o.pending = { h: rnd(16), days, v: miss.out }; o.days = {}; writeOut(o);
+    o.pending = { h: rnd(16), days, v: miss.out }; for(const d of days){delete o.days[d.d+'|'+d.build];if(d.build==='?')delete o.days[d.d];}writeOut(o);
   }
   if (navigator.onLine === false) return false; // waits for the 'online' event
   const me = id(); if (!me) return false;
-  const P = o.pending, body = JSON.stringify({ id: me, h: P.h, b: BUILD, l: settings.lang, k: (profiles || []).length, d: kind(), a: installed(), os: osOf(), br: browserOf(), sc: `${Math.round(screen.width)}x${Math.round(screen.height)}`, days: P.days, v: P.v });
+  const P = o.pending, body = JSON.stringify({ id: me, h: P.h, b: BUILD, sid:SESSION, started:SESSION_STARTED, l: settings.lang, k: (profiles || []).length, d: kind(), a: installed(), os: osOf(), br: browserOf(), sc: `${Math.round(screen.width)}x${Math.round(screen.height)}`, days: P.days.map(d=>({...d,build:d.build||'?'})), v: P.v });
   if (closing) { try { navigator.sendBeacon && navigator.sendBeacon('/api/hello', new Blob([body], { type: 'application/json' })); } catch (e) { } return false; } // confirmed by the next send
   sending = true;
   try {
@@ -143,7 +145,7 @@ export function sendLive(on, G) {
   if (settings.countPlayers === false || !onSite()) return;
   const me = id(); if (!me) return;
   const p = G && G.heroes && G.heroes[0] && G.heroes[0].profile, kid = p && settings.reportNames !== false ? String(p.name || '').trim().split(/\s+/)[0].slice(0, 20) : ''; // (audit: no name when names are off)
-  const body = JSON.stringify({ id: me, live: on ? 1 : 0, kid });
+  const body = JSON.stringify({ id: me, live: on ? 1 : 0, kid, sid:SESSION, b:BUILD, started:SESSION_STARTED });
   try { if (!on && navigator.sendBeacon) { navigator.sendBeacon('/api/hello', new Blob([body], { type: 'application/json' })); return; } } catch (e) { }
   if (navigator.onLine !== false) fetch('/api/hello', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => { });
 }

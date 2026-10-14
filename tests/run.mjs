@@ -3875,20 +3875,25 @@ await check('wearbag', async () => {
     for (let k = 0; k < 20 && !document.querySelector('.pad [data-wear]'); k++) { if (!document.querySelector('.pad')) { G.paused = false; G.openPad(0, 'bag'); } await w(300); }
     const ids = () => [...document.querySelectorAll('.pad [data-wear]')].map(b => b.dataset.wear), worn = () => [...document.querySelectorAll('.pad [data-unwear]')].map(b => b.dataset.unwear);
     out.before = ids(); document.querySelector(`.pad [data-wear="${top.id}"]`)?.click(); await w(300);
+    out.helpFirst=!!document.querySelector('.bag-help')&&p.look.top!==top.id;
+    document.querySelector('.bag-help .bh-close')?.click();await w(100);out.cancelKept=p.look.top!==top.id&&ids().includes(top.id);
+    document.querySelector(`.pad [data-wear="${top.id}"]`)?.click();await w(100);document.querySelector('.bag-help .bh-act')?.click();await w(300);
     out.after = ids(); out.worn = worn(); out.look = p.look.top === top.id;
-    document.querySelector('.pad [data-unwear="top"]')?.click(); await w(300); out.back = ids().includes(top.id);
+    document.querySelector('.pad [data-unwear="top"]')?.click(); await w(100);out.removeHelp=p.look.top===top.id;document.querySelector('.bag-help .bh-act')?.click();await w(300);out.back=ids().includes(top.id);
     document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false;
     // (Round V, owner 13 Oct) the shop: a girl sees no boys-only thing, and there is no More (the other set comes as a friend's gift)
     if (G.shop && G.shop.on()) { G.shop.openShop(0); await w(400); const boys = new Set(S.CLOTHES.filter(it => it.for === 'b').map(it => it.id));
       const seen = () => [...document.querySelectorAll('.shopk .kitem')].map(b => b.dataset.id);
       let any = false; for (const tab of document.querySelectorAll('.shopk [data-tab]')) { tab.click(); await w(150); if (seen().some(id => boys.has(id) && !S.owns(p, id))) any = true; }
       out.boysFirst = any; const more = document.querySelector('.shopk .kmore'); if (more) { more.click(); await w(200); } out.more = !!more;
+      document.querySelector('.shopk [data-set="g"]')?.click();await w(100);document.querySelector('.shopk [data-tab="top"]')?.click();await w(100);out.ladiesCorrect=seen().length>0&&seen().every(id=>S.ITEM[id].for!=='b');
+      document.querySelector('.shopk [data-set="b"]')?.click();await w(100);out.menCorrect=seen().length>0&&seen().every(id=>S.ITEM[id].for!=='g');
       document.querySelectorAll('.modal').forEach(m => m.remove()); G.paused = false; } else out.noShop = true;
     return { ...out, top: top.id, feet: feet.id };
   });
   const errs = P.errors; await P.ctx.close();
-  ok(r.before.includes(r.top) && r.before.includes(r.feet) && !r.after.includes(r.top) && r.worn.includes('top') && r.look && r.back && (r.noShop || (!r.boysFirst && !r.more)) && !errs.length, JSON.stringify(Object.assign(r, { errs })));
-  return `bought clothes wait in the Backpack (tap to wear, tap to take off); the shop sells a girl only her set${r.noShop ? ' (shop off here)' : ' (no More: the other set comes as a gift from a friend)'}`;
+  ok(r.before.includes(r.top) && r.before.includes(r.feet) && r.helpFirst && r.cancelKept && r.removeHelp && !r.after.includes(r.top) && r.worn.includes('top') && r.look && r.back && (r.noShop || (!r.boysFirst && !r.more && r.ladiesCorrect && r.menCorrect)) && !errs.length, JSON.stringify(Object.assign(r, { errs })));
+  return 'Bag help never wears an item; explicit confirmation wears/removes it; cancellation preserves it; both collection filters match their items';
 });
 
 await check('talk', async () => {
@@ -4075,10 +4080,10 @@ await check('bagitems', async () => {
       p.inv.rice = 2; p.inv.mango = 1; p.dishes.pho = 2; G.openPad(0, 'bag'); await wait(600);
       const cards = [...document.querySelectorAll('.modal.pad .bag-top .chip')].map(c => c.getBoundingClientRect()), row = cards.length === 3 && cards.every(c => Math.abs(c.top - cards[0].top) < 2 && c.height >= 44), even = cards.length === 3 && Math.max(...cards.map(c => c.width)) - Math.min(...cards.map(c => c.width)) < 3;
       const titled = [...document.querySelectorAll('.modal.pad .slots .slot')].every(s => (s.getAttribute('title') || '').length > 3 || s.querySelector('.sw'));
-      const ing = document.querySelector('.modal.pad [data-ing="rice"]'); ing.click(); await wait(300); const tip = (document.querySelector('#toast') || {}).textContent || '';
+      const ing = document.querySelector('.modal.pad [data-ing="rice"]'); ing.click(); await wait(300); const tip = (document.querySelector('.bag-help') || {}).textContent || '';
       const eat = () => document.querySelector('.modal.pad [data-eat="pho"]');
-      eat().click(); await wait(500); let ch = [...document.querySelectorAll('.dialog .dch')], asked = ch.length === 2; ch[1] && ch[1].click(); await wait(400); const kept = p.dishes.pho === 2;
-      eat().click(); await wait(500); ch = [...document.querySelectorAll('.dialog .dch')]; ch[0] && ch[0].click(); await wait(400); const ate = p.dishes.pho === 1;
+      eat().click(); await wait(500); const asked=!!document.querySelector('.bag-help .bh-act')&&!!document.querySelector('.bag-help .bh-close')&&!document.querySelector('.dialog');document.querySelector('.bag-help .bh-close')?.click();await wait(400);const kept=p.dishes.pho===2;
+      eat().click();await wait(500);document.querySelector('.bag-help .bh-act')?.click();await wait(400);const ate=p.dishes.pho===1;
       document.querySelectorAll('.dialog').forEach(d => d.remove()); G.paused = false;
       return { row, even, titled, tip: tip.slice(0, 80), asked, kept, ate };
     });
@@ -5022,6 +5027,13 @@ await check('ownerfamily', async () => {
 });
 await check('ownercapture', async () => {
   return await ownerSmoke('owner-capture-smoke.mjs');
+});
+
+await check('reportdetectors', async () => {
+  const {execFileSync}=await import('node:child_process');
+  const result=execFileSync(process.execPath,['owner-report-detection.mjs'],{encoding:'utf8',timeout:30000});
+  fs.writeFileSync('out/reportdetectors.json',result);
+  return 'scroll/background/hidden controls excluded; real offscreen and failed opens retained; successful quick close and cancellation do not report';
 });
 
 await b.close();

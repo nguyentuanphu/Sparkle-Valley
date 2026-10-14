@@ -145,7 +145,7 @@ async function startWhenBuilt(mode, chosen) {
   startSession(mode, chosen);
 }
 document.getElementById('boot')?.remove();
-showTitle(() => showWho((mode, chosen) => startWhenBuilt(mode, chosen)));
+showTitle(async () => { await bootReady; showWho((mode, chosen) => startWhenBuilt(mode, chosen)); });
 await breathe();
 const world = createWorld(scene, quality); bootMark('world'); await breathe();
 // the map picture: read back from the device when this build painted it before (js/worldcache.js)
@@ -759,12 +759,24 @@ G.avatarPreview = i => {
   const preview = new THREE.Scene(); preview.background = new THREE.Color('#f1eaff'); preview.environment = scene.environment;
   const avatar = h.av.root.clone(true); avatar.position.set(0, 0, 0); avatar.rotation.set(0, .12, 0); preview.add(avatar);
   preview.add(new THREE.HemisphereLight(0xffffff, 0xd9c79a, 1.8)); const sun = new THREE.DirectionalLight(0xffffff, 2); sun.position.set(3, 5, 4); preview.add(sun);
-  const bounds = new THREE.Box3().setFromObject(avatar), size = bounds.getSize(new THREE.Vector3()), center = bounds.getCenter(new THREE.Vector3());
-  const cam = new THREE.PerspectiveCamera(32, 1, .1, 100); cam.position.set(center.x, center.y, center.z + Math.max(size.y, size.x) * 2.15); cam.lookAt(center);
-  const w = renderer.domElement.width / renderer.getPixelRatio(), hh = renderer.domElement.height / renderer.getPixelRatio(); renderer.setScissorTest(false); renderer.setViewport(0, 0, w, hh);
-  cam.aspect = w / hh; cam.updateProjectionMatrix(); renderer.render(preview, cam);
-  const c = document.createElement('canvas'); c.width = 260; c.height = Math.round(260 * hh / w); c.getContext('2d').drawImage(renderer.domElement, 0, 0, c.width, c.height); const image = c.toDataURL('image/jpeg', .85);
-  renderer.render(scene, h.cam); return image;
+  // Hidden gliders/idle copies must not enlarge the bounds and shrink the outfit.
+  avatar.updateMatrixWorld(true); const bounds=new THREE.Box3();
+  avatar.traverseVisible(o=>{if(o.isMesh&&o.geometry){if(!o.geometry.boundingBox)o.geometry.computeBoundingBox();bounds.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));}});
+  const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3()),width=260,height=320,aspect=width/height;
+  const cam=new THREE.PerspectiveCamera(32,aspect,.1,100),distance=Math.max(size.y,size.x/aspect)/(2*Math.tan(THREE.MathUtils.degToRad(16)))*1.12;
+  cam.position.set(center.x,center.y,center.z+distance+size.z/2);cam.lookAt(center);
+  const target=new THREE.WebGLRenderTarget(width,height);target.texture.colorSpace=THREE.SRGBColorSpace;
+  const previousTarget=renderer.getRenderTarget(),viewport=renderer.getViewport(new THREE.Vector4()),scissor=renderer.getScissor(new THREE.Vector4()),scissorTest=renderer.getScissorTest();
+  try {
+    // setViewport takes logical screen units even for a render target. The game's
+    // adaptive pixel ratio can be below 1; compensate so the target is filled.
+    const ratio=renderer.getPixelRatio();
+    renderer.setRenderTarget(target);renderer.setScissorTest(false);renderer.setViewport(0,0,width/ratio,height/ratio);renderer.render(preview,cam);
+    const bytes=new Uint8Array(width*height*4);renderer.readRenderTargetPixels(target,0,0,width,height,bytes);
+    const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d'),data=ctx.createImageData(width,height);
+    for(let y=0;y<height;y++)data.data.set(bytes.subarray((height-y-1)*width*4,(height-y)*width*4),y*width*4);
+    ctx.putImageData(data,0,0);return c.toDataURL('image/jpeg',.85);
+  } finally {renderer.setRenderTarget(previousTarget);renderer.setViewport(viewport);renderer.setScissor(scissor);renderer.setScissorTest(scissorTest);target.dispose();}
 };
 G.snapshot = (i, max = 720, q = .8) => {
   const h = G.heroes[i] || G.heroes[0], w = renderer.domElement.width, hh = renderer.domElement.height;
@@ -852,7 +864,7 @@ G.setAudio = (kind, on) => {
   if (kind === 'voice' && !on) hush();
   saveSettings(); G.huds.forEach(h => h.refreshAudio());
 };
-G.openSound = () => import('./soundsheet.js').then(m => m.openSoundSheet(G));
+G.openSound = anchor => import('./soundsheet.js').then(m => m.openSoundSheet(G, anchor));
 // (r63) the first tap asks for the microphone and turns it on; then each tap turns it off or on again
 G.toggleMute = async () => { if (!Net.micLive) { Net.resumeAudio(); await Net.getMic(true); } else { Net.setMuted(!Net.muted); Net.resumeAudio(); } G.huds.forEach(hd => hd.setCall(Net.connected, false, Net.muted || !Net.micLive)); };
 // Keyboard shortcuts on computers (shown as little key badges on the buttons). Player 1's screen.

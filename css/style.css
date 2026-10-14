@@ -2531,9 +2531,9 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 
 /* Owner round, 14 Oct: fixed shells, optical item sizes and compact trays (UX-001–004). */
 .screen.title .tt-cover, .screen.title .logo, .sv2 .who-card, .dialog, .wardrobe { animation: none !important; }
-.sv2.screen.who { justify-content: flex-start; padding-top: max(24px, env(safe-area-inset-top)); }
+.sv2.screen.who { justify-content: center; }
 .modal .card { max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px); }
-.pad .card { height: min(900px, calc(100dvh - 32px)); display:flex; flex-direction:column; }
+.pad .card { height: min(760px, calc(100dvh - 24px)); display:flex; flex-direction:column; }
 .pad-head { flex:none; } .pad-body { flex:1; min-height:0; max-height:none; }
 .grownups .card { padding-bottom:100px; } .grownups #gDone { position:sticky; bottom:0; margin:20px auto 0; width:min(360px,100%); display:block; z-index:2; box-shadow:0 0 0 12px #fffaf0; }
 .zoomer .ztray { flex-direction:column; top:auto; bottom:0; gap:8px; }
@@ -2588,9 +2588,9 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 .zoomer, .zoomer:has(.z-lb) { top:48%; transform:none; }
 .wardrobe-content .wslot small { font-size:16px; }
 
-.sv2 .who-card:not(.first) { height:min(780px,calc(100dvh - 120px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); overflow:hidden; }
-.who-body { flex:1; min-height:0; width:100%; overflow-y:auto; display:flex; flex-direction:column; align-items:center; gap:12px; }
-.who-body > * { flex-shrink:0; } .who-footer { flex:none; margin:8px auto 0; }
+.sv2 .who-card:not(.first) { max-height:calc(100dvh - 120px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow:hidden; }
+.who-body { flex:1; min-height:0; width:100%; overflow-y:auto; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.who-body > * { flex-shrink:0; } .who-footer { flex:none; margin:0 auto; }
 
 /* Keep a hint above the phone's action and movement controls, including long Vietnamese text. */
 @media (max-width:700px) and (min-height:521px) {
@@ -2604,3 +2604,21 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 .grownups-body > * { flex-shrink:0; }
 .grownups #gDone { position:static; flex:none; margin:4px auto 0; box-shadow:none; }
 .wardrobe-content .whead .x { font-size:16px; min-width:64px; }
+
+/* Shared ladybird shell: tab state is separate from a running check or report draft. */
+.tpanel .card { height:min(640px,calc(100dvh - 28px)); overflow:hidden; }
+.tpanel .tp-head, .testing-tabs { flex:none; }
+.testing-tabs { display:flex; gap:8px; }
+.testing-tabs button { flex:1; min-height:44px; }
+.testing-actions { flex:none; margin:0; }
+.testing-report, .testing-auto { flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; gap:12px; }
+.testing-report > * { flex-shrink:0; }
+.testing-report .tp-shot { height:150px; max-height:22vh; }
+.testing-report textarea, .testing-report .tp-k { font-family:var(--font); }
+.apbox.embedded { position:static; inset:auto; width:100%; max-height:none; overflow:visible; background:transparent; border-radius:0; box-shadow:none; }
+.apbox.embedded .aph { display:none; }
+.apbox.embedded .apb { padding:0; }
+.apbox .aph { cursor:default; }
+.audio-tray { overflow:auto; }
+.screen.title > .launch-progress { position:absolute; top:calc(env(safe-area-inset-top) + 12px); left:50%; transform:translateX(-50%); max-width:calc(100% - 96px); background:var(--panel2); border-radius:var(--r); font-size:14px; z-index:2; }
+.screen.title > .launch-progress progress { width:min(240px,50vw); }

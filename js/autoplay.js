@@ -27,7 +27,7 @@ const get = (k, d) => { try { const v = localStorage.getItem(k); return v == nul
 const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
 const STOP = new Error('stop'), SKIP = new Error('skip');
 const rnd = (a, b) => a + Math.random() * (b - a), any = list => list[Math.floor(Math.random() * list.length)];
-let G = null, root = null, run = null, ui = null, errSink = null, finger = null, trail = [], btnTimer = 0;
+let G = null, root = null, run = null, ui = null, errSink = null, finger = null, trail = [], btnTimer = 0, hostClose = null;
 
 export function mountAutoplay(game) {
   if (root) return;
@@ -45,12 +45,15 @@ export function mountAutoplay(game) {
   const ce = console.error; console.error = (...a) => { if (errSink) errSink.push(a.map(String).join(' ').slice(0, 200)); ce.apply(console, a); };
   btnTimer = setInterval(buttons, 1000); buttons();
   G.autoplay = { unmount, running: () => !!run, trail: () => trail.slice(),
-    walkTo: (x, z, speed) => walkTo(x, z, speed), open: () => { ui.open = true; put(UI, ui); draw(); }, // (the checks: one trip, as a run would make it)
+    walkTo: (x, z, speed) => walkTo(x, z, speed),
+    open: () => { if (G.tester?.openPanel) return G.tester.openPanel(0, 'autoplay'); ui.open = true; put(UI, ui); draw(); },
+    attach: (host, close) => { hostClose = close; host.appendChild(root); ui.open = true; put(UI, ui); draw(); },
+    detach: () => { hostClose = null; document.body.appendChild(root); ui.open = false; put(UI, ui); draw(); },
     stop: () => { if (run) run.stop = true; }, start: (keys, speed) => { if (speed) ui.speed = AP_SPEEDS[speed] ? speed : 'fast'; return start(keys); } };
 }
 export function unmount() {
   if (run) run.stop = true; clearInterval(btnTimer);
-  if (root) root.remove(); if (finger) finger.remove(); root = finger = null;
+  if (root) root.remove(); if (finger) finger.remove(); root = finger = null; hostClose = null;
   document.querySelectorAll('.zoomer .z-ap').forEach(b => b.remove());
   if (G) delete G.autoplay;
 }
@@ -435,7 +438,7 @@ async function start(only) {
   if (perRun) takeCopy(RUNCOPY);
   const counted = settings.countPlayers; settings.countPlayers = false; // (not counted in the players report)
   run = { speed: ui.speed, list, i: 0, done: [], paused: false, skip: false, stop: false, started: Date.now(), perRun };
-  trail = []; ui.open = false; put(UI, ui); // (the window folds away so the game can be watched; the button shows how far it is)
+  trail = []; if (hostClose) hostClose(); ui.open = false; put(UI, ui); // close the shared shell; the run continues
   const keep = setInterval(neverTired, 200); draw(); buttons();
   try {
     for (; run.i < list.length; run.i++) {
@@ -452,7 +455,8 @@ async function start(only) {
   if (perRun) putCopyBack(RUNCOPY, G);
   const finalReport = report(); const result = await sendAutoplayReport(finalReport);
   put(REPORT, { ...finalReport, reportIds: result.ids, reportState: result.state });
-  run = null; ui.open = true; put(UI, ui); draw(); buttons(); // the child plays on from here; the window shows the report
+  run = null; ui.open = false; put(UI, ui); draw(); buttons();
+  G.autoplay?.open(); // results return to the same ladybird tab on tester devices
 }
 const report = () => ({ at: new Date().toISOString(), build: BUILD, speed: run.speed, total: run.list.length, done: run.done, perRun: run.perRun });
 
@@ -460,7 +464,7 @@ const report = () => ({ at: new Date().toISOString(), build: BUILD, speed: run.s
 function style() {
   if (document.getElementById('apstyle')) return;
   const s = el('style'); s.id = 'apstyle';
-  s.textContent = `.apbox{position:fixed;z-index:99999;right:84px;top:84px;width:min(380px,calc(100vw - 24px));max-height:min(calc(100vh - 120px),640px);overflow:auto;background:#fffdf7;color:#2b2233;border-radius:16px;box-shadow:0 6px 24px #0004;font:14px/1.35 system-ui,sans-serif;touch-action:manipulation}
+  s.textContent = `.apbox{position:fixed;z-index:99999;right:84px;top:84px;width:min(380px,calc(100vw - 24px));max-height:min(calc(100vh - 120px),640px);overflow:auto;background:var(--panel2);color:var(--text);border-radius:var(--r);box-shadow:var(--shadow);font:600 16px/1.35 var(--font);touch-action:manipulation}
 .apbox[hidden]{display:none}
 @media (max-width:520px){.apbox{right:12px;left:12px;width:auto;top:70px}}
 .apbox .aph{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#6b4fd8;color:#fff;border-radius:16px 16px 0 0;cursor:move;user-select:none;position:sticky;top:0;z-index:1}
@@ -485,9 +489,7 @@ function style() {
 @media (prefers-reduced-motion:reduce){.zoomer .z-ap.on{animation:none}.apfinger{transition-duration:0s!important}}`;
   document.head.appendChild(s);
 }
-function place() {
-  if (ui.x != null && ui.y != null) { root.style.left = Math.max(0, Math.min(innerWidth - 60, ui.x)) + 'px'; root.style.top = Math.max(0, Math.min(innerHeight - 60, ui.y)) + 'px'; root.style.right = 'auto'; }
-}
+function place() { /* fixed shell: legacy drag coordinates are deliberately ignored */ }
 function drag(handle) {
   handle.onpointerdown = e => {
     if (e.target.closest('button')) return;
@@ -497,14 +499,16 @@ function drag(handle) {
   };
 }
 const speedRow = () => `<div class="row">${Object.entries(AP_SPEEDS).filter(([key]) => /^x[1235]$/.test(key)).map(([k, s]) => `<button data-sp="${k}" class="${(run ? run.speed : ui.speed) === k ? 'on' : ''}">${esc(T(s.en, s.vi))}</button>`).join('')}</div>`;
-const backNote = () => (run ? run.perRun : !tester() || revertOf(liveRule('tester'), localStorage.getItem('sv2_playerid') || '') === 'autoplay')
+const backNote = () => tester() && revertOf(liveRule('tester'), localStorage.getItem('sv2_playerid') || '') === 'keep'
+  ? T('This device keeps progress after testing.', 'Máy này giữ tiến bộ sau khi thử nghiệm.')
+  : (run ? run.perRun : !tester() || revertOf(liveRule('tester'), localStorage.getItem('sv2_playerid') || '') === 'autoplay')
   ? T('When it stops, the game goes on from there; what auto play earned goes back, badges and stickers stay.', 'Khi dừng, game tiếp tục từ đó; phần tự chơi kiếm được được trả lại, huy hiệu và nhãn dán vẫn giữ.')
   : T('When it stops, the game goes on from there. Progress goes back when you stop being a tester; badges and stickers stay.', 'Khi dừng, game tiếp tục từ đó. Tiến bộ được trả lại khi thôi làm người thử; huy hiệu và nhãn dán vẫn giữ.');
 function draw() {
   if (!root) return;
   place(); root.hidden = !ui.open;
   if (!ui.open) { root.innerHTML = ''; return; }
-  root.className = 'apbox';
+  root.className = 'apbox' + (hostClose ? ' embedded' : '');
   const head = `<div class="aph"><b>${pic('🤖')} ${T('Auto play', 'Tự chơi')}</b><button data-a="min" aria-label="${T('Close', 'Đóng')}">✕</button></div>`;
   if (run) {
     const s = run.list[run.i], g = s && AP_GROUPS.find(x => x.key === s.g), bad = run.done.filter(r => !r.ok && !r.skipped).length;
@@ -539,9 +543,9 @@ function draw() {
   }
   root.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => { ui.speed = b.dataset.sp; if (run) run.speed = ui.speed; put(UI, ui); draw(); });
   const a = k => root.querySelector(`[data-a="${k}"]`);
-  a('min').onclick = () => { ui.open = false; put(UI, ui); draw(); };
+  a('min').onclick = () => { if (hostClose) return hostClose(); ui.open = false; put(UI, ui); draw(); };
   if (run) { a('pause').onclick = () => { run.paused = !run.paused; draw(); buttons(); }; a('skip').onclick = () => { run.skip = true; }; a('stop').onclick = () => { run.stop = true; }; }
-  drag(root.querySelector('.aph'));
+  // Panels stay fixed; draggable windows are not part of the game's UI contract.
 }
 const row = r => `<div><span class="dot ${r.skipped ? 'skip' : r.ok ? (r.notes && r.notes.length ? 'help' : '') : 'bad'}"></span>${esc(r.name)}${r.said ? `<small class="said">${esc(r.said)}</small>` : ''}${r.problems.map(p => `<small>${esc(p)}</small>`).join('')}${(r.notes || []).map(p => `<small class="help">${esc(p)}</small>`).join('')}</div>`;
 function deliveryText(rep) {

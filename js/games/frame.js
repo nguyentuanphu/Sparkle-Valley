@@ -39,6 +39,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
   if (current) current.close(false);
   return new Promise(resolve => {
     const layer = el('div', 'gl gl-' + style + (little ? ' little' : ''));
+    layer.dataset.gameId = id;
     layer.innerHTML = `
       <div class="gl-head">
         <button class="gl-x" aria-label="${T('Leave', 'Rời đi')}">✕</button>
@@ -166,7 +167,8 @@ export function burstConfetti(parent) {
 export function tapOne(els, api) {
   return new Promise(res => {
     const h = e => { els.forEach(x => x.removeEventListener('click', h)); res(e.currentTarget); };
-    api?.onCleanup(() => { els.forEach(x => x.removeEventListener('click', h)); res(null); });
+    // Lightweight callers/test fixtures can omit cleanup; real game frames provide it.
+    if (typeof api?.onCleanup === 'function') api.onCleanup(() => { els.forEach(x => x.removeEventListener('click', h)); res(null); });
     els.forEach(x => x.addEventListener('click', h));
   });
 }

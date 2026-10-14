@@ -97,12 +97,12 @@ export function createShop(G, { say, save }) {
     if (!host && twoOpen(i)) return;
     const h = G.heroes[i], p = h.profile; adoptWorn(p);
     const little = p.age !== 'big', m = host ? { close: () => {}, addEventListener: () => {} } : modal('kcard shopk' + (little ? ' little' : ''), ''), card = host || m.querySelector('.card');
-    card.classList.add('shop-content', 'kcard'); if (little) card.classList.add('little'); let collection = 'all'; let recipient = p;
+    card.classList.add('shop-content', 'kcard'); if (little) card.classList.add('little'); let collection = setOf(p.look)==='girl'?'g':'b'; let recipient = p;
     let pick = null, more = false;   // more: the other set too (Round U)
     const close = () => { if (host) return; m.close(); G.paused = false; };
     m.addEventListener('click', e => { if (e.target === m) close(); }); // (tap outside to leave)
     const draw = () => {
-      const mineSet = setOf(p.look), all = [...forSlot(tab), ...CLOTHES.filter(it => it.tester && it.slot === tab && owns(p, it.id))], list = all.filter(it => collection === 'all' || forSet(it, collection)), hidden = 0;   // (Round V, owner 13 Oct) the shop sells the child's own set only; clothes of the other set come as a friend's gift
+      const all = [...forSlot(tab), ...CLOTHES.filter(it => it.tester && it.slot === tab && owns(p, it.id))], list = all.filter(it => collection === 'all' || forSet(it, collection==='g'?'girl':'boy')), hidden = 0;
       card.innerHTML = `${host ? '' : `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button>`}
         <div class="khead"><span class="kbig">${pic('🛍️')}</span><h2>${T('Clothes shop', 'Cửa hàng quần áo')}</h2>${coins(farm.coins)}</div>
         <div class="shop-collections">${[['all', 'All', 'Tất cả'], ['b', 'Men / boys', 'Nam / bé trai'], ['g', 'Ladies / girls', 'Nữ / bé gái']].map(([key, en, vi]) => `<button class="btn ${collection === key ? 'primary' : ''}" data-set="${key}">${T(en, vi)}</button>`).join('')}</div><label>${T('Buying for', 'Mua cho')} <select class="shop-recipient">${profiles.map(q => `<option value="${q.id}" ${recipient.id === q.id ? 'selected' : ''}>${escName(q.name)}</option>`).join('')}</select></label><p class="note">${T('Choose a collection or buy a gift for another player on this device. Preview shows what you are wearing.', 'Chọn bộ đồ hoặc mua quà cho người chơi khác trên máy này. Hình xem trước là đồ con đang mặc.')}</p><img class="shop-preview" alt="${T('Your outfit preview', 'Xem trước trang phục')}" src="${G.avatarPreview(i)}"><div class="ktabs">${SLOTS.map(s => `<button class="ktab ${s.id === tab ? 'on' : ''}" data-tab="${s.id}" aria-label="${T(s.en, s.vi)}">${pic(s.icon)}</button>`).join('')}
@@ -113,7 +113,7 @@ export function createShop(G, { say, save }) {
         ${pick ? `<div class="kask"><div class="kaskbox">${itemSVG(pick)}${coins(priceOf(pick))}<div class="kbtns"><button class="kno" aria-label="${T('Not now', 'Để sau')}">✕</button><button class="kyes ${farm.coins < priceOf(pick) ? 'poor' : ''}" aria-label="${T('Buy', 'Mua')}">${pic('🛍️')}</button></div></div></div>` : ''}`;
       if (card.querySelector('.x')) card.querySelector('.x').onclick = close;
       card.querySelectorAll('[data-set]').forEach(b => b.onclick = () => { collection = b.dataset.set; pick = null; draw(); });
-      card.querySelector('.shop-recipient').onchange = e => { recipient = profiles.find(q => q.id === e.target.value) || p; pick = null; draw(); };
+      card.querySelector('.shop-recipient').onchange = e => { recipient = profiles.find(q => q.id === e.target.value) || p; collection=setOf(recipient.look)==='girl'?'g':'b'; pick = null; draw(); };
       const mb = card.querySelector('.kmore'); if (mb) mb.onclick = () => { more = !more; SFX.tap(); draw(); };
       card.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; pick = null; SFX.tap(); const s = SLOTS.find(x => x.id === tab); say(s.en, s.vi); draw(); });
       card.querySelector('[data-go="wardrobe"]').onclick = () => { openWardrobe(i, draw, card); };

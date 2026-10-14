@@ -55,7 +55,7 @@ export class Hud {
         <button class="dk voicecmd" hidden><span>${ICONS.ask}</span><small>${T('Ask', 'Hỏi')}</small><kbd class="kb">K</kbd></button>
         <button class="dk chat"><span>${ICONS.talk}</span><small>${T('Talk', 'Nói')}</small><kbd class="kb">T</kbd></button>
         <button class="dk call" hidden><span>${ICONS.callOff}</span><small>${T('Mic off', 'Micrô tắt')}</small><kbd class="kb">C</kbd></button>
-        <button class="dk mus"><span>${ICONS.music}</span><small>${T('Music', 'Nhạc')}</small><kbd class="kb">N</kbd></button>
+        <button class="dk mus" hidden><span>${ICONS.music}</span><small>${T('Music', 'Nhạc')}</small><kbd class="kb">N</kbd></button>
         <button class="dk snd"><span>${ICONS.sound}</span><small>${T('Sound', 'Tiếng')}</small><kbd class="kb">O</kbd></button>
       </div>
       <button class="act" hidden><span class="ai"></span><span class="al"></span><kbd class="kb">E</kbd></button>

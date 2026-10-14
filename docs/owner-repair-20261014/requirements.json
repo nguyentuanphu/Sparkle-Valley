@@ -1,0 +1,567 @@
+{
+  "version": "WO-1.0",
+  "auditSource": {
+    "id": "libfile_0472a38cb8b88191b38e9382ec18cdad",
+    "modified": "2026-10-14T03:28:36.872905Z"
+  },
+  "points": [
+    {
+      "auditPoint": 1,
+      "requirement": "Keep the existing Sparkle Valley cartoon style, palette, outlines, icon language and child-friendly appearance. New clothing, controls and panels must look like the current game. A functional change is not acceptable if its design is inconsistent or confusing.",
+      "workOrder": "WO-01",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 2,
+      "requirement": "Audit ALL windows/panels/Pad across the game and Studio. I previously asked that windows remain fixed rather than move up/down, bounce, recenter, or shift as content changes. I specifically observed the character-selection screen popping up/down.",
+      "workOrder": "WO-01",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 3,
+      "requirement": "Hold the outer shell, header and actions steady; let only necessary inner content scroll. Check content changes, mode switching, long text, keyboard opening, orientation changes and safe areas. Keep intended character/world animation separate from UI movement.",
+      "workOrder": "WO-01",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 4,
+      "requirement": "Do not promise no bugs from a few screenshots. List every audited screen, device/orientation/language, pass/fail and remaining issue. Test overlap, blocked buttons, clipped text, stacked overlays and navigation state.",
+      "workOrder": "WO-01",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 5,
+      "requirement": "The Grown-ups Save & close button overlaps the note for grown-ups. It should be central and floating/anchored, with reserved space so it never covers the note or focused controls.",
+      "workOrder": "WO-02",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 6,
+      "requirement": "When Shop is opened from Pad, keep it in the SAME screen/Pad rather than closing Pad and opening a different window. Preserve the tab/back/scroll state; apply coherent behavior to wardrobe/mirror and direct shop entry too.",
+      "workOrder": "WO-03",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 7,
+      "requirement": "When an activity is launched from the Play/games section, closing it should return to that games section/category, not directly to the valley. If launched through an NPC, finishing/closing should exit that activity screen to the valley. Check both entry origins and repeated open/close cycles.",
+      "workOrder": "WO-04",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 8,
+      "requirement": "Startup currently shows a white loading screen for roughly ten seconds on my device, which gives a poor first impression. Show a recognizable Welcome immediately, then resource-loading progress. Progress must correspond to real work; do not fake a percentage or hide a long wait behind a new label.",
+      "workOrder": "WO-05",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 9,
+      "requirement": "Separate required resources from optional downloads. Include understandable loading, retry and offline states. Measure actual first paint, Welcome readiness and playable readiness; cold, warm and offline starts are different.",
+      "workOrder": "WO-05",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 10,
+      "requirement": "Show a small, discrete notification when an update is available. Protect progress; do not reload during a child's activity. Explain the safe update behavior and check existing tabs through a version change.",
+      "workOrder": "WO-05",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 11,
+      "requirement": "My tester screenshot showed Bà Năm's watermelon-origin story failing three times with “Importing a module script failed.” Reproduce/investigate the failed URL and cache/deploy version. A stale-cache or missing-chunk explanation is a hypothesis until supported by evidence.",
+      "workOrder": "WO-05",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 12,
+      "requirement": "Extend the explanatory tap behavior of Ngọc and Lá to ALL bag items: currency/status items where applicable, treasures, foods, clothing, worn accessories, festival prizes, kites, gliders and other owned items. Help should explain what an item is, how it is obtained/used and relevant actions in language a child understands.",
+      "workOrder": "WO-06",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 13,
+      "requirement": "Help must not accidentally eat, sell, equip or remove an item. Clearly distinguish explanation from action; retain item counts and inventory correctness.",
+      "workOrder": "WO-06",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 14,
+      "requirement": "Eating dialogue is too big. Make confirmation compact and discrete, saving space while keeping the item image/name and choice easy for children to see. Confirm Eat/Not now and do not obscure important controls.",
+      "workOrder": "WO-06",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 15,
+      "requirement": "Check EVERY item's artwork size. In my screenshot cap, nón, wings and bow were far smaller than scarf and other bag icons. Normalize the visible/optical artwork, not just the SVG box. Keep labels readable and tap targets suitable for children.",
+      "workOrder": "WO-06",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 16,
+      "requirement": "Audit worn-item removal, treasure sale, food quantities, purchase/equip state and festival prizes. The rejected draft still has small labels and an inconsistent “tap twice to sell” instruction despite its explicit action flow.",
+      "workOrder": "WO-06",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 17,
+      "requirement": "Clothes/accessories should share the game's existing art direction and match their actual appearance when equipped. Flat product symbols and character clothing must not misleadingly represent different items.",
+      "workOrder": "WO-07",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 18,
+      "requirement": "I could not understand the mirror; I described it as a total bug. It showed oversized rows of smiley/none options rather than a useful outfit view. Give it a clear purpose/label, a meaningful character preview and understandable wear/remove controls.",
+      "workOrder": "WO-07",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 19,
+      "requirement": "Add the Men/Lady clothing collections we discussed. Keep a separate gift-recipient choice if buying for another character. Clearly explain filtering versus gifting/ownership; do not silently switch whose clothes are being edited.",
+      "workOrder": "WO-07",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 20,
+      "requirement": "Preserve existing purchases, saved outfits and equipment. Test outfit combinations, hats/back items, shirts/pants/shoes and collection changes.",
+      "workOrder": "WO-07",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 21,
+      "requirement": "The rejected draft's wardrobe preview is too small, wastes space and still needs design revision. Do not treat replacing a smiley with a small avatar as fulfillment of my request.",
+      "workOrder": "WO-07",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 22,
+      "requirement": "Camera/eye controls currently expand horizontally across the scene. Expand vertically to save space and avoid covering the character or navigation controls.",
+      "workOrder": "WO-08",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 23,
+      "requirement": "I asked what the compass was and whether it duplicated a function. My final instruction: HIDE the compass for now, and let me explicitly activate/deactivate it in Studio. An old saved/default-on value must not bypass my disable choice. Explain what enabling it does.",
+      "workOrder": "WO-08",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 24,
+      "requirement": "Music/speaker controls under navigation open a large space-consuming box. Combine music, effects/sound and voice into one compact expandable control, similar to the eye tray.",
+      "workOrder": "WO-08",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 25,
+      "requirement": "Keep buttons small and discrete visually, but still readable and easy for children to tap and switch on/off. Small appearance must not mean tiny or inaccessible tap targets. Avoid multiple competing trays or overlapping overlays.",
+      "workOrder": "WO-08",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 26,
+      "requirement": "The existing autoplay report action saves a FILE, and I do not know what to do with it. Primary reporting must submit automatically through the ladybird system; I should not have to download and manually forward a report. File export may be an optional extra.",
+      "workOrder": "WO-09",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 27,
+      "requirement": "Combine autoplay and bug tester under the ladybird icon in a coherent interface. Do not retain confusing duplicate entrances without a clear reason.",
+      "workOrder": "WO-09",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 28,
+      "requirement": "Automatically report detected autoplay failures, including partial/stopped/error runs where relevant. Support manual reports too. A successful-looking button is not proof that the report reached the server.",
+      "workOrder": "WO-09",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 29,
+      "requirement": "Explain where reports go, where they are stored, who triages them and how a fix/retest is linked back to the report. Audit the real path: game -> durable queue -> acknowledged server receipt -> private Studio report -> issue creation/triage if configured -> fix -> version-linked retest. Verify which parts actually exist; do not invent an autonomous fixer.",
+      "workOrder": "WO-09",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 30,
+      "requirement": "Show honest Queued locally, Sending, Sent with receipt, and Failed/retry statuses. Offline/retry behavior must preserve reports and suppress duplicates. Explain tester eligibility and disabled/reporting unavailable states.",
+      "workOrder": "WO-09",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 31,
+      "requirement": "I need the option to capture EVERYTHING visible: interface, dialogue, controls, overlays and the game scene. My screenshot had only plain game scenery. Full interface capture should be clearly selectable; optional scene-only capture must be labelled.",
+      "workOrder": "WO-09",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 32,
+      "requirement": "Checking speed should support up to 5×. Faster interaction checks and real-time performance measurements must be distinguished. Ensure accelerated timing does not hide failures or corrupt progress.",
+      "workOrder": "WO-09",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 33,
+      "requirement": "Give each device explicit autoplay/testing selection and retention options. I need to choose WHICH devices keep progress after testing and which restore it, including what happens after an autoplay run versus leaving tester mode. Explain badges, clothing, stickers and manually earned progress. Test reload/interrupted-run recovery and disabled device settings.",
+      "workOrder": "WO-10",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 34,
+      "requirement": "Releases and ALL other Studio categories should be collapsible. I still found release categories that did not collapse. Check actual DOM/CSS/content visibility, persistence and touch operation throughout the website, not only one page.",
+      "workOrder": "WO-11",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 35,
+      "requirement": "Everything in Studio should be self explanatory, or have a clear visible explanation: purpose, current state, affected scope/devices, default, save/apply timing and consequences. Essential help should not require desktop hover.",
+      "workOrder": "WO-11",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 36,
+      "requirement": "Granular admin access appears selectable, but clicking it did not show the permission list. Make custom permissions visible/selectable for both existing and new admins; verify persistence and backend enforcement, not just checkbox rendering.",
+      "workOrder": "WO-11",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 37,
+      "requirement": "Consider combining startup step-by-step diagnostics, battery and frame information into a coherent section. Explain units, what the values mean and when data is unavailable. Do not show fabricated battery/device numbers as live measurements.",
+      "workOrder": "WO-11",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 38,
+      "requirement": "Testers, autoplay controls, reporting and per-device progress choices should be easy to understand together. The rejected draft still shows old global restore controls beside newer per-device settings; audit precedence and clarity.",
+      "workOrder": "WO-10",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 39,
+      "requirement": "The old “family code” design tells parents to ask the grown-up/game owner for a code. I said this would be too much effort if parents had to contact me. Make connection self service in parents' settings, with understandable instructions.",
+      "workOrder": "WO-12",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 40,
+      "requirement": "Explain exactly how another device connects and obtains photos. This is PRIVATE family-photo sharing, not automatically a full game-progress transfer. Clearly state what is and is not copied.",
+      "workOrder": "WO-12",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 41,
+      "requirement": "I asked whether photos were stored on GitHub and downloaded from there. Audit actual current storage instead of assuming. Explain the intended distinction between GitHub game source/configuration and private family data.",
+      "workOrder": "WO-12",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 42,
+      "requirement": "I asked about NPC-name conflicts and renamed NPCs. Bind photo assignments to stable character IDs, not display names. Existing assignments must survive rename. If a character is removed or replaced, provide a clear reassignment flow rather than silently putting a face on the wrong NPC.",
+      "workOrder": "WO-12",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 43,
+      "requirement": "I asked what happens if I stop using Netlify, and whether data transfers back to GitHub as the source of truth. Do not silently commit private photos to GitHub. Explain backup/export, migration and restoration, and the fact that source-code history is not an automatic backup of private runtime data.",
+      "workOrder": "WO-12",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 44,
+      "requirement": "Review parental settings for creating a family, pairing another device, approving the connection, photo assignment, postcards, revocation, offline caching and recovery. Make it understandable without contacting me. Protect photos and keep secrets out of URLs, reports and screenshots.",
+      "workOrder": "WO-12",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 45,
+      "requirement": "The rejected draft added one-use pairing codes, approval, backup/recovery and stable IDs, but these were demonstrated on controlled/in-memory servers. Do not describe that as verified production Netlify transfer. Review whether this implementation is suitable or unnecessarily complex.",
+      "workOrder": "WO-12",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 46,
+      "requirement": "Keep the existing reading trials that work, but add more reading/learning games. I want interactive spoken guidance and touch-based participation inspired by the experience of Khan Academy Kids, not passive text screens. Create original activities, not copied assets/content.",
+      "workOrder": "WO-13",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 47,
+      "requirement": "Add more Big Thinkers games with age-appropriate reasoning, clear instructions and useful feedback. Review instruction clarity, spoken EN/VI lines, wrong-answer behavior, difficulty and completion/exit routes.",
+      "workOrder": "WO-13",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 48,
+      "requirement": "The rejected draft adds three activities (Find the Rule, Garden Steps, Flower Path) and two reading activities (Listen & Touch, Story Choices). Five activities are not a complete curriculum. Independently check whether they fulfill the brief and whether they introduce regressions.",
+      "workOrder": "WO-13",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 49,
+      "requirement": "Story 3D films look dark/plain, mostly houses, with buildings looking identical. Make stories brighter, visually varied, fun and recognizable for children. Audit lighting, locations, scene composition, houses, props, characters and per-story identity; do not equate a few color changes with finished story redesign.",
+      "workOrder": "WO-14",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 50,
+      "requirement": "I asked why the character's three hearts seem never to decrease, and what happens when all three are lost. Explain the existing mechanics from code and actual play, then propose a child-appropriate behavior for my approval. The rejected round did not build an approved health redesign.",
+      "workOrder": "WO-15",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 51,
+      "requirement": "Check ALL collected errors/reports so far and fix or assign them. Inventory old reports, open issues, duplicates and regressions; document each disposition. Do not say all errors are fixed while unresolved reports or failed checks remain.",
+      "workOrder": "WO-16",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 52,
+      "requirement": "Suggest further improvements that make the game more interesting and easier on the eyes, but separate suggestions from my required fixes. Do not redesign unrelated systems without showing me the proposal first.",
+      "workOrder": "WO-17",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 53,
+      "requirement": "I asked for the WHOLE round in one work order and for durable rules so future features follow the same standards.",
+      "workOrder": "WO-18",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 54,
+      "requirement": "I need visible progress and accurate status updates. Repeated timeouts and “resume” requests left me unsure what was actually done. Preserve checkpoints and state what ran, what completed, what failed and what is next. Do not imply an AI is monitoring after its turn ends unless real automation exists.",
+      "workOrder": "WO-18",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 55,
+      "requirement": "Explain how I can see the full suite running/completed on GitHub. Provide the exact commit/run link and report real results, including failures, skips and retries. Local smoke checks are not the full suite.",
+      "workOrder": "WO-18",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 56,
+      "requirement": "I asked how to compare the AI's work quality with Claude. Use requirement fidelity, regressions, meaningful tests, visual evidence, device behavior and independent review; speed alone is not evidence of quality.",
+      "workOrder": "WO-18",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 57,
+      "requirement": "Before deployment, give me a TABLE with each original issue/work item beside before/after evidence pictures, implementation status, remaining problems and test proof. I did not ask for a replacement game link as a substitute for evidence. Pictures must be actual UI, not generated mockups of features claimed to exist.",
+      "workOrder": "WO-18",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 58,
+      "requirement": "A picture missing from a row must be marked missing. Distinguish newly built features, actual bug fixes, partial work and unverified claims. Do not mark the whole batch complete just because some selected checks passed.",
+      "workOrder": "WO-18",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    },
+    {
+      "auditPoint": 59,
+      "requirement": "I have NOT approved any of the draft work. First show an audit/repair proposal consistent with the current visual type. Later show revised before/after evidence. Deployment requires my separate explicit approval of the exact revised candidate.",
+      "workOrder": "WO-18",
+      "status": "unverified",
+      "acceptance": "See consolidated work order; point-level verification pending",
+      "evidence": [],
+      "releaseApproved": false
+    }
+  ],
+  "newRequirements": [
+    {
+      "id": "NEW-01",
+      "workOrder": "WO-01",
+      "requirement": "Selection windows remain compact"
+    },
+    {
+      "id": "NEW-02",
+      "workOrder": "WO-07",
+      "requirement": "In-Pad Shop/clothes follow game artwork"
+    },
+    {
+      "id": "NEW-03",
+      "workOrder": "WO-08",
+      "requirement": "Combine adjacent Music/Sound/Voice into one tray"
+    },
+    {
+      "id": "NEW-04",
+      "workOrder": "WO-09",
+      "requirement": "Tester and Autoplay tabs in ladybird"
+    },
+    {
+      "id": "NEW-05",
+      "workOrder": "WO-19",
+      "requirement": "Stable installation identity and honest version attribution"
+    }
+  ]
+}

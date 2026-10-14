@@ -126,14 +126,15 @@ export function showTitle(onStart) {
   };
   redraw();
   s.querySelector('.about').onclick = e => { e.stopPropagation(); ac(); openCredits(hideCaption); };
-  s.addEventListener('click', e => { if (e.target.closest('.seg') || e.target.closest('.about') || e.target.closest('.installchip') || e.target.closest('.learnrow')) return; ac(); SFX.chime(); s.remove(); onStart(); });
+  let starting = false;
+  s.addEventListener('click', async e => { if (starting || e.target.closest('.seg') || e.target.closest('.about') || e.target.closest('.installchip') || e.target.closest('.learnrow')) return; starting=true; ac(); SFX.chime(); try { await onStart(); s.remove(); } catch (error) { starting=false; throw error; } });
 }
 
 // ---------- Who's playing ----------
 // two players on one device: the way they sit now (Grown-ups 'auto' = face to face on touch screens; js/main.js rects)
 export const twoViewNow = () => settings.twoView === 'face' || settings.twoView === 'side' ? settings.twoView : document.body.classList.contains('touch') ? 'face' : 'side';
 export function showWho(onGo) {
-  let mode = 'solo', chosen = [];
+  let mode = 'solo', chosen = [], shellHeight = null;
   const s = el('div', 'screen who sv2');
   document.body.appendChild(s);
   let asked = false;
@@ -168,7 +169,11 @@ export function showWho(onGo) {
       <button class="grown"><span class="ring"></span>${T('Grown-ups', 'Phụ huynh')}<small>${T('press and hold', 'nhấn giữ')}</small></button>`;
     s.querySelectorAll('.views button').forEach(b => b.onclick = () => { settings.twoView = b.dataset.v; saveSettings(); SFX.tap(); draw(); });
     const whoCard = s.querySelector('.who-card'), whoAction = whoCard.querySelector('.go'), whoBody = el('div', 'who-body');
+    const naturalHeight = whoCard.getBoundingClientRect().height;
     [...whoCard.children].filter(n => n !== whoAction).forEach(n => whoBody.appendChild(n)); whoCard.prepend(whoBody); whoAction.classList.add('who-footer');
+    // Keep the original compact opening size across redraws; additional choices scroll inside.
+    if (shellHeight === null) shellHeight = naturalHeight;
+    whoCard.style.height = `${shellHeight}px`;
     s.querySelectorAll('.modes button').forEach(b => b.onclick = () => { mode = b.dataset.m; chosen = chosen.slice(0, mode === 'split' ? 2 : 1); SFX.tap(); draw(); });
     s.querySelectorAll('.pick[data-id]').forEach(b => b.onclick = () => {
       const id = b.dataset.id; SFX.pop(chosen.length);

@@ -3,6 +3,8 @@
 const image = src => new Promise((resolve, reject) => { const i = new Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = src; });
 const dataURL = blob => new Promise(resolve => { const f = new FileReader(); f.onload = () => resolve(f.result); f.readAsDataURL(blob); });
 const visible = n => { const s = getComputedStyle(n), r = n.getBoundingClientRect(); return s.display !== 'none' && s.visibility !== 'hidden' && +s.opacity > 0 && r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight; };
+const privateField = n => n.matches?.('input[type="password"], input[type="file"], .fd-code, .fd-paircode, [data-private], [data-capture-private]') || n.closest?.('[data-capture-private]');
+export const captureFieldValue = n => privateField(n) ? '••••' : (n.value || n.placeholder || '');
 async function clone(n, world) {
   if (n.nodeType === Node.TEXT_NODE) return document.createTextNode(n.textContent);
   if (n.nodeType !== Node.ELEMENT_NODE || /SCRIPT|STYLE|LINK|NOSCRIPT/.test(n.tagName) || (!n.closest('svg') && !visible(n))) return document.createTextNode('');
@@ -11,8 +13,9 @@ async function clone(n, world) {
   else c = n.cloneNode(false);
   const s = getComputedStyle(n); for (const key of s) c.style.setProperty(key, s.getPropertyValue(key));
   c.style.animation = 'none'; c.style.transition = 'none';
+  if(privateField(n) && !(n instanceof HTMLInputElement) && !(n instanceof HTMLTextAreaElement)){c.textContent='••••';return c;}
   if (n instanceof HTMLImageElement) { try { c.src = await dataURL(await (await fetch(n.currentSrc || n.src)).blob()); } catch { c.removeAttribute('src'); } c.removeAttribute('srcset'); }
-  if (n instanceof HTMLInputElement || n instanceof HTMLTextAreaElement) { c = document.createElement('div'); c.style.cssText = n.style.cssText; c.textContent = n.value || n.placeholder; }
+  if (n instanceof HTMLInputElement || n instanceof HTMLTextAreaElement) { const style=c.style.cssText;c = document.createElement('div'); c.style.cssText = style; c.textContent = captureFieldValue(n); }
   else if (!(n instanceof HTMLCanvasElement)) for (const child of n.childNodes) c.appendChild(await clone(child, world));
   if (n.scrollTop) { c.style.overflow = 'hidden'; const inner = document.createElement('div'); while (c.firstChild) inner.appendChild(c.firstChild); inner.style.transform = `translateY(-${n.scrollTop}px)`; c.appendChild(inner); }
   return c;
@@ -26,6 +29,7 @@ async function fallback(c, source) {
     if (!visible(n)) return; const r = n.getBoundingClientRect(), s = getComputedStyle(n); g.save();
     if (s.overflowX !== 'visible' || s.overflowY !== 'visible') { g.beginPath(); g.rect(r.x, r.y, r.width, r.height); g.clip(); }
     if (s.backgroundColor !== 'rgba(0, 0, 0, 0)') { g.fillStyle = s.backgroundColor; g.beginPath(); g.roundRect(r.x, r.y, r.width, r.height, Math.min(parseFloat(s.borderRadius) || 0, r.width / 2, r.height / 2)); g.fill(); }
+    if(privateField(n)){g.font=`${s.fontSize} ${s.fontFamily}`;g.fillStyle=s.color;g.fillText('••••',r.x+8,r.y+16);g.restore();return;}
     if (n instanceof HTMLImageElement && n.complete && n.naturalWidth) { try { g.drawImage(n, r.x, r.y, r.width, r.height); } catch {} }
     else if (n instanceof HTMLCanvasElement) { try { g.drawImage(n, r.x, r.y, r.width, r.height); } catch {} }
     else if (n.tagName.toLowerCase() === 'svg') { try { const svg = n.cloneNode(true); svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg'); const i = await image('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg))); g.drawImage(i, r.x, r.y, r.width, r.height); } catch {} }
@@ -40,7 +44,7 @@ async function fallback(c, source) {
         }
       }
     }
-    if (n instanceof HTMLInputElement || n instanceof HTMLTextAreaElement) { g.font = `${s.fontSize} ${s.fontFamily}`; g.fillStyle = s.color; g.fillText(n.value || n.placeholder, r.x + 8, r.y + 8); }
+    if (n instanceof HTMLInputElement || n instanceof HTMLTextAreaElement) { g.font = `${s.fontSize} ${s.fontFamily}`; g.fillStyle = s.color; g.fillText(captureFieldValue(n), r.x + 8, r.y + 8); }
     g.restore();
   };
   for (const root of roots) await paint(root); g.restore();

@@ -50,14 +50,15 @@ export function clean(b, now = Date.now()) {
   // the days played since the last hello that arrived (at most 14, none in the future, none older than 30 days);
   // an older device sends one bucket for today
   const lo = day(now - 30 * 864e5), hi = day(now + 864e5), seen = new Set();
-  const days = (Array.isArray(b.days) ? b.days : [{ d: day(now), m: b.m, g: b.g, t: b.t, o: b.o }]).slice(0, 14)
-    .filter(x => x && DAY.test(x.d) && x.d >= lo && x.d <= hi && !seen.has(x.d) && seen.add(x.d))
-    .map(x => ({ d: x.d, mins: int(x.m, 24 * 60), games: words(x.g, 500), tales: int(x.t, 200), online: int(x.o, 24 * 60), // online: minutes with friends online
+  const origin=x=>typeof x.build==='string'&&(/^r\d{1,4}$/.test(x.build)||x.build==='?')?x.build:(b.sid?'?':WORD.test(b.b||'')?b.b:'?');
+  const days = (Array.isArray(b.days) ? b.days : [{ d: day(now), m: b.m, g: b.g, t: b.t, o: b.o }]).slice(0, 42)
+    .filter(x => {if(!x||!DAY.test(x.d)||x.d<lo||x.d>hi)return false;const key=x.d+'|'+origin(x);if(seen.has(key))return false;seen.add(key);return true;})
+    .map(x => ({ d: x.d, build:origin(x), mins: int(x.m, 24 * 60), games: words(x.g, 500), tales: int(x.t, 200), online: int(x.o, 24 * 60), // online: minutes with friends online
       hours: Object.fromEntries(Object.entries(obj(x.h)).filter(([k]) => /^([01]?\d|2[0-3])$/.test(k)).map(([k, v]) => [+k, int(v, 60)])), kids: kids(x.c),
       errs: counts(x.e, 999), stuck: counts(x.s, 999), quits: words(x.q, 500), fps: Array.isArray(x.f) ? [int(x.f[0], 1e6), int(x.f[1], 24 * 60), int(x.f[2], 24 * 60)] : [0, 0, 0],
       starts: (Array.isArray(x.st) ? x.st : []).filter(a => Array.isArray(a)).slice(0, 6).map(a => [int(a[0], 6e5), int(a[1], 6e5), int(a[2], 6e5), a[3] ? 1 : 0, /^[a-z]{1,16}$/.test(a[4] || '') ? a[4] : '']),
       bat: bat(x.b) }));
-  return { id: b.id, hid: /^[a-z0-9]{8,24}$/.test(b.h || '') ? b.h : '', build: WORD.test(b.b || '') ? b.b : '?', lang: /^(en|vi)$/.test(b.l) ? b.l : '?', kids: int(b.k, 8), days,
+  return { id: b.id, hid: /^[a-z0-9]{8,24}$/.test(b.h || '') ? b.h : '', build: WORD.test(b.b || '') ? b.b : '?', sid:/^[a-z0-9]{16}$/.test(b.sid||'')?b.sid:'', started:Number.isSafeInteger(b.started)&&b.started>0&&b.started<=now+300000?b.started:0, lang: /^(en|vi)$/.test(b.l) ? b.l : '?', kids: int(b.k, 8), days,
     kind: /^(phone|tablet|computer)$/.test(b.d) ? b.d : '?', app: !!b.a,
     os: /^(iOS|iPadOS|Android|ChromeOS|Windows|macOS|Linux|other)$/.test(b.os) ? b.os : '?', br: /^(Safari|Chrome|Edge|Firefox|Samsung|other)$/.test(b.br) ? b.br : '?', sc: /^\d{2,5}x\d{2,5}$/.test(b.sc || '') ? b.sc : '',
     lines: (Array.isArray(b.v) ? b.v : []).slice(0, LINES.hello).filter(v => Array.isArray(v) && /^(en|vi|zh|hi)$/.test(v[0]) && typeof v[1] === 'string' && v[1].trim() && v[1].length <= 300 && !/[\u0000-\u001f<>]/.test(v[1])).map(v => [v[0], v[1].trim()]) }; // minutes with friends online
@@ -71,7 +72,11 @@ const place = s => String(s || '').normalize('NFC').replace(/[^\p{L}\p{N} .'-]/g
 export async function live(S, b, now = Date.now()) {
   if (!b || !ID.test(b.id || '')) return false;
   const kid = NAME.test(String(b.kid || '')) ? String(b.kid || '').trim() : '';
-  await S.setJSON('live/' + b.id, { on: !!b.live, at: now, kid });
+  const key='live/'+b.id,old=await S.get(key,{type:'json'})||{},sessions=old.sessions||{};
+  const sid=/^[a-z0-9]{16}$/.test(b.sid||'')?b.sid:'legacy';
+  sessions[sid]={on:!!b.live,at:now,build:/^r\d{1,4}$/.test(b.b||'')?b.b:'?'};
+  const kept=Object.fromEntries(Object.entries(sessions).filter(([,s])=>now-s.at<LIVE_MS).sort((a,b)=>b[1].at-a[1].at).slice(0,16));
+  await S.setJSON(key,{on:Object.values(kept).some(s=>s.on),at:now,kid,sessions:kept});
   return true;
 }
 export const LIVE_MS = 5 * 60e3; // no "still here" for five minutes: offline (the phone died, or lost the internet)
@@ -87,7 +92,10 @@ export async function hello(S, body, now = Date.now(), where = {}, opts = {}) {
   // the device itself: what it is, roughly where, first and last seen (round L)
   { const k = 'info/' + d.id, o = (await S.get(k, { type: 'json' })) || { first: first };
     const loc = { city: place(where.city), region: place(where.region), country: place(where.country).toUpperCase().slice(0, 3) };
-    Object.assign(o, { kind: d.kind, app: d.app, os: d.os, br: d.br, sc: d.sc || o.sc || '', build: d.build, lang: d.lang, kids: d.kids, last: today, first: first < (o.first || first) ? first : (o.first || first) });
+    const rank=s=>/^r\d+$/.test(s||'')?+s.slice(1):-1;
+    const current=d.started?d.started>=(o.sessionStarted||0):!o.sessionStarted||rank(d.build)>=rank(o.build);
+    Object.assign(o, {last:today,first:first<(o.first||first)?first:(o.first||first)});
+    if(current)Object.assign(o,{kind:d.kind,app:d.app,os:d.os,br:d.br,sc:d.sc||o.sc||'',build:d.build,lang:d.lang,kids:d.kids,sessionStarted:d.started||o.sessionStarted||0});
     if (loc.country || loc.city) o.loc = loc;
     await S.setJSON(k, o); }
   for (const x of d.days) {
@@ -106,7 +114,8 @@ export async function hello(S, body, now = Date.now(), where = {}, opts = {}) {
     }
     r.isNew = x.d === first; r.hellos++; r.mins = Math.min(24 * 60, r.mins + x.mins); r.tales += x.tales; r.online = Math.min(24 * 60, r.online + x.online);
     for (const [g, n] of Object.entries(x.games)) r.games[g] = (r.games[g] || 0) + n;
-    Object.assign(r, { build: d.build, lang: d.lang, kids: d.kids, kind: d.kind, app: d.app });
+    r.builds=r.builds||{...(r.build?{[r.build]:true}:{})};r.builds[x.build]=true;
+    Object.assign(r, { build: x.build, lang: d.lang, kids: d.kids, kind: d.kind, app: d.app });
     await S.setJSON(key, r);
     if (x.d < today) await S.delete('sum/' + x.d); // a finished day that just got more play (from an outbox) is added up again
   }
@@ -142,7 +151,7 @@ async function sumDay(S, date, keep) {
   for (const [i, b] of blobs.entries()) {
     const r = recs[i]; if (!r) continue;
     s.ids.push(b.key.split('/')[2]); if (r.isNew) s.newDevices++; s.mins += r.mins; s.kids += r.kids; s.tales += r.tales; s.online += r.online || 0; if (r.app) s.app++;
-    add(s.langs, r.lang); add(s.builds, r.build); add(s.kinds, r.kind); for (const [g, n] of Object.entries(r.games || {})) add(s.games, g, n);
+    add(s.langs, r.lang); for(const version of Object.keys(r.builds||{[r.build]:true}))add(s.builds,version); add(s.kinds, r.kind); for (const [g, n] of Object.entries(r.games || {})) add(s.games, g, n);
     // round L: what this device did that day, kept with the day's sum (per child, hours, problems, smoothness)
     s.dev[b.key.split('/')[2]] = { mins: r.mins, tales: r.tales, games: r.games || {}, hours: r.hours || {}, kids: r.children || {}, errs: r.errs || {}, stuck: r.stuck || {}, quits: r.quits || {}, fps: r.fps || [0, 0, 0], starts: r.starts || [], bat: r.bat || [0, 0, 0, 0, 0, 0, 0, 0] };
   }
@@ -231,7 +240,7 @@ async function details(S, sums, now) {
     ratio: Math.round(b[4] / b[0]) / 100, mins: b[0], batteryPerHour: b[6] >= 10 ? r1(b[7] / 10 / b[6] * 60) : null, charging: b[8] > b[6], idlePct: Math.round(100 * b[5] / b[0]) };
   const devices = Object.keys({ ...infos, ...devs, ...lives }).map(id => { const I = infos[id] || {}, D = devs[id] || { mins: 0, days: 0, tales: 0, kids: {}, errs: 0, stuck: 0, fps: [0, 0, 0] };
     return { id, label: labels[id] || '', kind: I.kind || '?', os: I.os || '?', br: I.br || '?', screen: I.sc || '', app: !!I.app, build: I.build || '?', lang: I.lang || '?', loc: I.loc || null, first: I.first || '', last: I.last || D.last || '',
-      online: !!(lives[id] && lives[id].on && now - lives[id].at < LIVE_MS), seenAt: lives[id] ? new Date(lives[id].at).toISOString() : '', playingNow: lives[id] && lives[id].on && now - lives[id].at < LIVE_MS ? lives[id].kid || '' : '',
+      online: !!(lives[id] && lives[id].on && now - lives[id].at < LIVE_MS), activeVersions:[...new Set(Object.values(lives[id]?.sessions||{}).filter(s=>s.on&&now-s.at<LIVE_MS).map(s=>s.build))],seenAt: lives[id] ? new Date(lives[id].at).toISOString() : '', playingNow: lives[id] && lives[id].on && now - lives[id].at < LIVE_MS ? lives[id].kid || '' : '',
       mins: D.mins, days: D.days, tales: D.tales, errors: D.errs, stuck: D.stuck, fps: fpsOf(D.fps), slowMins: D.fps[2], startup: startupOf(D.starts || []), power: powerOf(D.bat),
       kids: Object.values(D.kids).sort((a, b) => b.mins - a.mins).map(K => ({ ...K, games: Object.entries(K.games).sort((a, b) => b[1][0] - a[1][0]).slice(0, 10).map(([g, v]) => [g, ...v]), places: top(K.places, 8) })) }; })
     .sort((a, b) => b.online - a.online || (b.last || '').localeCompare(a.last || '') || b.mins - a.mins).slice(0, 100);
@@ -258,7 +267,7 @@ async function details(S, sums, now) {
   // (battery round) by kind of device, `power`: the middle of each kind's devices
   const mid = a => { const v = a.filter(x => x != null).sort((x, y) => x - y); return v.length ? v[v.length >> 1] : null; };
   const power = {}; for (const k of ['phone', 'tablet', 'computer']) { const ds = devices.filter(d => d.kind === k && d.power); if (ds.length) power[k] = { devices: ds.length, fps: mid(ds.map(d => d.power.fps)), frameMs: mid(ds.map(d => d.power.frameMs)), draws: mid(ds.map(d => d.power.draws)), batteryPerHour: mid(ds.map(d => d.power.batteryPerHour)) }; }
-  return { startup, power, onlineNow: devices.filter(d => d.online).length, hours, places: top(places, 15), devices, os: count(d => d.os), browsers: count(d => d.br), locations: count(d => d.loc ? [d.loc.city, d.loc.region, d.loc.country].filter(Boolean).join(', ') : '?'), problems, tips: tips.slice(0, 20) };
+  return { latestBuilds:count(d=>d.build),startup, power, onlineNow: devices.filter(d => d.online).length, hours, places: top(places, 15), devices, os: count(d => d.os), browsers: count(d => d.br), locations: count(d => d.loc ? [d.loc.city, d.loc.region, d.loc.country].filter(Boolean).join(', ') : '?'), problems, tips: tips.slice(0, 20) };
 }
 // a name the family gives a device in Studio ("Na's iPad")
 export async function setLabel(S, id, label) { if (!ID.test(id || '')) return false; const l = String(label || '').replace(/[<>\u0000-\u001f]/g, '').trim().slice(0, 40); if (l) await S.set('label/' + id, l); else await S.delete('label/' + id); return true; }

@@ -13,7 +13,7 @@ const text = words.map(pair => pair[lang === 'vi' ? 1 : 0]);
 shell.querySelector('h1').textContent = text[0]; shell.querySelector('p').textContent = text[1];
 window.svLaunchProgress = (value, total, label) => {
   let meter = document.querySelector('.launch-progress');
-  if (!meter) { meter = document.createElement('div'); meter.className = 'launch-progress'; meter.innerHTML = '<progress></progress><span role="status"></span>'; (document.querySelector('.who-body, .screen.title, .who-card, .bootwait') || shell).appendChild(meter); }
+  if (!meter) { meter = document.createElement('div'); meter.className = 'launch-progress'; meter.innerHTML = '<progress></progress><span role="status"></span>'; (document.querySelector('.screen.title, .bootwait') || shell).appendChild(meter); }
   meter.querySelector('progress').max = total; meter.querySelector('progress').value = value;
   meter.querySelector('span').textContent = label;
   if (value >= total) meter.remove();

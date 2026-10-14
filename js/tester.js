@@ -26,6 +26,7 @@ import * as C from './content/tester.js';
 import { takeCopy, putCopyBack, hasCopy, dropCopy } from './keepcopy.js';
 import { revertOf } from './content/autoplay.js';
 import { easyName } from './content/devname.js';
+import { unreachableControl, activeReportPanel, observeGameOpen } from './tester-detection.js';
 
 const KEY = { acc: 'sv2_tester', out: 'sv2_tester_out', st: 'sv2_tester_status', seen: 'sv2_tester_seen', ap: 'sv2_tester_ap', delivery: 'sv2_report_delivery', copy: 'sv2_tester_copy' };
 const get = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -34,7 +35,7 @@ const URL_ = () => window.__svTesterURL || 'api/tester';
 const me = () => { try { return localStorage.getItem('sv2_playerid') || ''; } catch (e) { return ''; } };
 const L = pair => T(pair[0], pair[1]);
 
-let G = null, level = '', live = false, offs = [], log = [], errors = [], want = null, lastGame = '', status = get(KEY.st, null);
+let G = null, level = '', live = false, offs = [], log = [], errors = [], want = null, lastGame = '', status = get(KEY.st, null), panelOpening = false;
 const sent = new Map(), counts = new Map();
 
 // ---------- what happened in the last 30 seconds ----------
@@ -124,7 +125,18 @@ function watch() {
   const mo = new MutationObserver(list => { for (const r of list) { r.addedNodes.forEach(n => n.classList && /\b(modal|gl|theatre|storybook|dialog)\b/.test(n.className) && note('open', (n.className + ' ' + ((n.querySelector && n.querySelector('h2, .dname, .gl-title')) || {}).textContent).slice(0, 80))); r.removedNodes.forEach(n => n.classList && /\b(modal|gl|theatre|storybook)\b/.test(n.className) && note('close', n.className.slice(0, 40))); } });
   mo.observe(document.body, { childList: true }); offs.push(() => mo.disconnect());
   // games that do not open
-  if (G.playGame && !G.playGame.__tester) { const pg = G.playGame; G.playGame = Object.assign(function (i, id, ...a) { lastGame = String(id || ''); note('game', lastGame); const out = pg.call(this, i, id, ...a); setTimeout(() => { if (live && !document.querySelector('.gl')) autoReport('noopen', lastGame); }, C.LIMITS.openWait * 1000); return out; }, { __tester: true }); offs.push(() => { G.playGame = pg; }); }
+  if (G.playGame && !G.playGame.__tester) {
+    const pg = G.playGame, pending = new Set();
+    G.playGame = Object.assign(function (i, id, ...a) {
+      const requested = String(id || ''); lastGame = requested; note('game', requested);
+      // The game rejects a second launch while another activity is open: not a failed open.
+      const cancel = document.querySelector('.gl:not(.out)') ? null : observeGameOpen(requested, () => { if (live) autoReport('noopen', requested); }, {wait:C.LIMITS.openWait * 1000});
+      if (cancel) pending.add(cancel);
+      const timer = setTimeout(() => { if (cancel) pending.delete(cancel); }, C.LIMITS.openWait * 1000 + 10);
+      try { return pg.call(this, i, id, ...a); } catch (error) { cancel?.(); pending.delete(cancel); clearTimeout(timer); throw error; }
+    }, { __tester:true });
+    offs.push(() => { pending.forEach(cancel => cancel()); pending.clear(); G.playGame = pg; });
+  }
   // a child stuck (js/players.js watchHero)
   setProblemHook((kind, key) => { if (kind === 'stuck') autoReport('stuck', key); }); offs.push(() => setProblemHook(null));
   // frames: frozen (no frame for 2 s while on screen) and slow (under 20 a second for 10 s)
@@ -133,17 +145,16 @@ function watch() {
     lastF = t; frames++; if (t - since > C.LIMITS.slowFor * 1000) { fpsNow = frames * 1000 / (t - since); if (fpsNow < C.LIMITS.slowFps && document.visibilityState === 'visible' && performance.now() - mounted > 15000) autoReport('slow', `${Math.round(fpsNow)} frames a second`); frames = 0; since = t; }
     raf = requestAnimationFrame(tick); };
   raf = requestAnimationFrame(tick); offs.push(() => cancelAnimationFrame(raf));
-  on(document, 'visibilitychange', () => { lastF = performance.now(); since = performance.now(); frames = 0; });
+  const resetFrames = () => { lastF=performance.now();since=performance.now();frames=0; };
+  on(document, 'visibilitychange', resetFrames);
+  on(window,'pagehide',resetFrames); on(window,'pageshow',resetFrames);
+  on(document,'freeze',resetFrames); on(document,'resume',resetFrames);
   // every 5 s: a button off the screen, a line with no recording, where the child walked
   let misses = new Set(voiceMisses().map(m => m[0] + '|' + m[1])), lastPos = '';
   const every = setInterval(() => {
-    const focused = document.activeElement, keyboard = focused && /INPUT|TEXTAREA|SELECT/.test(focused.tagName);
-    const top = [...document.querySelectorAll('.modal:not(.out), .gl, .dialog')].filter(x => x.getBoundingClientRect().width).pop();
+    const top = activeReportPanel(document);
     for (const b of document.querySelectorAll('.modal button, .hud button, .gl button, .dialog button')) {
-      if (keyboard || (top && !top.contains(b))) continue;
-      let scrolled = false; for (let parent = b.parentElement; parent && parent !== top; parent = parent.parentElement) { const st = getComputedStyle(parent); if (/(auto|scroll)/.test(st.overflowY) && parent.scrollHeight > parent.clientHeight) { scrolled = true; break; } } if (scrolled) continue;
-      if (!b.offsetParent) continue; const r = b.getBoundingClientRect(); if (!r.width) continue;
-      if (r.right < 2 || r.bottom < 2 || r.left > innerWidth - 2 || r.top > innerHeight - 2) autoReport('offscreen', labelOf(b));
+      if (unreachableControl(b, top)) autoReport('offscreen', labelOf(b));
     }
     const now = voiceMisses(); for (const [lang, text] of now) { const k = lang + '|' + text; if (!misses.has(k)) { misses.add(k); autoReport('novoice', `${lang}: ${String(text).slice(0, 100)}`); } }
     const h = G.heroes && G.heroes[0]; if (h) { const p = `${(G.regionOf && G.regionOf[0]) || 'valley'} ${Math.round(h.pos.x)},${Math.round(h.pos.z)}`; if (p !== lastPos) { lastPos = p; note('walk', p); } }
@@ -187,13 +198,22 @@ async function quickReport() { SFX.tap && SFX.tap(); const s = await shot(); enq
 function toast(s) { const t = el('div', 'testertoast', esc(s)); document.body.appendChild(t); setTimeout(() => t.classList.add('out'), 2200); setTimeout(() => t.remove(), 2600); }
 
 // the panel: the picture is taken first, then a kind, a spoken or typed note, Send; or "Already reported → add to it"
-export async function openPanel(i = 0) {
-  if (!live || document.querySelector('.modal.tpanel')) return; const pic0 = await shot(), scenePic = await shot(true), where = whereNow();
+export async function openPanel(i = 0, initialTab = 'tester') {
+  const existing=document.querySelector('.modal.tpanel');
+  if(existing){existing.selectTab?.(initialTab);return existing;}
+  if (!live || panelOpening) return;
+  panelOpening=true; let pic0,scenePic;
+  try {pic0=await shot();scenePic=await shot(true);} finally {panelOpening=false;}
+  if(!live)return;
+  // Capture what the reporter saw, then clear competing control trays for the form.
+  document.querySelector('.audio-tray')?.close?.();
+  document.querySelectorAll('.zoomer.open').forEach(x=>x.classList.remove('open'));
+  const where=whereNow();
   const was = G.paused; G.paused = true; SFX.tap && SFX.tap();
   const near = ((status && status.open) || []).filter(p => p.where && ((where.game && p.where.game === where.game) || (where.window && p.where.window === where.window) || (!where.game && !where.window && p.where.area === where.area && Math.hypot((p.where.x || 0) - where.x, (p.where.z || 0) - where.z) < 25))).slice(0, 3);
   let kind = 'broken', spoken = false, selectedShot = pic0;
   const m = modal('tpanel', `<div class="tp-head"><span class="tp-lb">${pic('🐞')}</span><h2>${T('Report a problem', 'Báo lỗi')}</h2><button class="x" aria-label="${T('Close', 'Đóng')}">✕</button></div>
-    <div class="actions"><button class="btn tp-auto">${T('Automatic check and results', 'Tự kiểm tra và kết quả')}</button><button class="btn tp-retry">${T('Retry queued reports', 'Gửi lại báo cáo đang chờ')}</button></div><p class="note" role="status">${T(`${queue().length} reports queued. Sent reports are in My reports.`, `${queue().length} báo cáo đang chờ. Báo cáo đã gửi nằm trong Báo cáo của tôi.`)}</p>
+    <div class="actions"><button class="btn tp-retry">${T('Retry queued reports', 'Gửi lại báo cáo đang chờ')}</button></div><p class="note" role="status">${T(`${queue().length} reports queued. Sent reports are in My reports.`, `${queue().length} báo cáo đang chờ. Báo cáo đã gửi nằm trong Báo cáo của tôi.`)}</p>
     <label class="tog"><input type="checkbox" class="tp-full" checked> ${T('Include the complete interface', 'Kèm toàn bộ giao diện')}</label><img class="tp-shot" alt="" src="${pic0}">
     ${near.length ? `<div class="tp-near"><b>${T('Already reported here', 'Đã có người báo ở đây')}</b>${near.map(p => `<div class="tp-old"><span>${esc(p.title)} <small>· ${p.n}×</small></span><button class="btn" data-join="${esc(p.k)}">${T('Same problem: add to it', 'Cùng lỗi: báo thêm')}</button></div>`).join('')}</div>` : ''}
     <div class="tp-kinds">${C.KINDS.map(k => `<button class="tp-k ${k.id === kind ? 'on' : ''}" data-k="${k.id}" aria-pressed="${k.id === kind}">${pic(k.icon)}<span>${T(k.en, k.vi)}</span></button>`).join('')}</div>
@@ -201,9 +221,29 @@ export async function openPanel(i = 0) {
     <div class="actions"><button class="btn primary tp-send">${T('Send', 'Gửi')}</button></div>`);
   const card = m.querySelector('.card'), ta = card.querySelector('textarea');
   card.querySelector('.tp-full').onchange = e => { selectedShot = e.target.checked ? pic0 : scenePic; card.querySelector('.tp-shot').src = selectedShot; };
-  const close = () => { m.close(); G.paused = was; };
+  const reportBody = el('div','testing-report'), autoBody = el('div','testing-auto');
+  const head = card.querySelector('.tp-head');
+  [...card.children].filter(child => child !== head).forEach(child => reportBody.appendChild(child));
+  const tabs = el('div','testing-tabs', `<button class="btn" data-test-tab="tester" role="tab">${T('Tester','Người thử')}</button><button class="btn" data-test-tab="autoplay" role="tab">${T('Auto play','Tự chơi')}</button>`);
+  tabs.setAttribute('role','tablist'); reportBody.id='testing-report'; autoBody.id='testing-autoplay';
+  reportBody.setAttribute('role','tabpanel'); autoBody.setAttribute('role','tabpanel'); autoBody.hidden=true;
+  const reportActions=reportBody.querySelector('.tp-send').closest('.actions');reportActions.classList.add('testing-actions');
+  card.append(tabs,reportBody,autoBody,reportActions);
+  const close = () => { G.autoplay?.detach?.(); m.close(); G.paused = was; };
   card.querySelector('.x').onclick = close;
-  card.querySelector('.tp-auto').onclick = () => { close(); G.autoplay?.open(); };
+  const selectTab = tab => {
+    reportBody.hidden=tab!=='tester'; autoBody.hidden=tab!=='autoplay';reportActions.hidden=tab!=='tester';
+    head.querySelector('h2').textContent=tab==='tester'?T('Report a problem','Báo lỗi'):T('Auto play','Tự chơi');
+    tabs.querySelectorAll('button').forEach(b=>{const on=b.dataset.testTab===tab;b.classList.toggle('primary',on);b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;b.id='testing-tab-'+b.dataset.testTab;const target=b.dataset.testTab==='tester'?reportBody:autoBody;b.setAttribute('aria-controls',target.id);target.setAttribute('aria-labelledby',b.id);});
+    if (tab==='autoplay') {
+      if (G.autoplay?.attach) G.autoplay.attach(autoBody,close);
+      else autoBody.textContent=T('Auto play is not enabled on this device.','Tự chơi chưa được bật trên máy này.');
+    }
+  };
+  tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>selectTab(b.dataset.testTab));
+  tabs.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?'tester':e.key==='End'?'autoplay':reportBody.hidden?'tester':'autoplay';selectTab(next);tabs.querySelector(`[data-test-tab="${next}"]`).focus();}};
+  m.selectTab=selectTab;
+  selectTab(initialTab);
   card.querySelector('.tp-retry').onclick = () => flush();
   card.querySelectorAll('.tp-k').forEach(b => b.onclick = () => { kind = b.dataset.k; card.querySelectorAll('.tp-k').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }); SFX.tap && SFX.tap(); });
   const mic = card.querySelector('.tp-mic'); if (mic) mic.onclick = async () => { mic.disabled = true; const heard = await listen({ onPartial: t => { ta.value = t; } }); mic.disabled = false; if (heard && heard[0] !== '\u0000') { ta.value = (ta.value && ta.value !== heard ? ta.value + ' ' : '') + heard; spoken = true; } };
@@ -236,13 +276,13 @@ export async function refresh() {
 async function retest() {
   if (!live || !status || !Array.isArray(status.retest)) return; const done = get(KEY.seen, {});
   for (const p of status.retest) {
-    const tag = 'rt:' + p.k + ':' + BUILD; if (done[tag]) continue; done[tag] = 1; put(KEY.seen, done);
+    const tag = 'rt:' + p.k + ':' + BUILD; if (done[tag]) continue;
     if (G.paused || document.querySelector('.gl, .modal, .theatre, .storybook')) return; // (only when the child is free)
     const game = p.where && p.where.game, before = errors.length; let again = false;
     if (game && G.playGame) { G.playGame(0, game, 'replay'); await new Promise(r => setTimeout(r, 8000)); again = !document.querySelector('.gl') || errors.length > before; document.querySelector('.gl .gl-x')?.click(); }
     else if (p.auto === 'error') { await new Promise(r => setTimeout(r, 8000)); again = errors.slice(before).some(e => p.title.includes(e.split(' @ ')[0].slice(0, 40))); }
     else continue; // (a problem that cannot be replayed by itself waits for the tester's Yes or Still wrong)
-    tell({ k: p.k, fixed: !again }); note('retest', p.k + (again ? ' came back' : ' fixed'));
+    done[tag]=1;put(KEY.seen,done);tell({ k: p.k, fixed: !again }); note('retest', p.k + (again ? ' came back' : ' fixed'));
   }
 }
 
@@ -278,6 +318,12 @@ function agreement() {
 // the Settings card (js/ui.js openQuick) shows a Tester section on a tester device
 export function settingsRows(box, redraw) {
   if (!box) return; const on = accepted(), q = queue().length, st = status || {};
+  const policy = revertOf(liveRule('tester'), me());
+  const retention = policy === 'keep'
+    ? T('This device keeps progress after testing.', 'Máy này giữ tiến bộ sau khi thử nghiệm.')
+    : policy === 'autoplay'
+      ? T('Autoplay restores coins and game progress after each run. Clothes, badges, stickers and grown-up settings stay; manual play stays.', 'Tự chơi trả lại xu và tiến bộ sau mỗi lượt. Quần áo, huy hiệu, nhãn dán và cài đặt người lớn vẫn giữ; chơi bằng tay vẫn giữ.')
+      : T('Coins and game progress return to the saved starting point when tester mode ends, including manual play. Clothes, badges, stickers and grown-up settings stay.', 'Xu và tiến bộ trở về điểm đã lưu khi thôi làm người thử, kể cả chơi bằng tay. Quần áo, huy hiệu, nhãn dán và cài đặt người lớn vẫn giữ.');
   // (owner, 13 Oct AEDT: "tidy up the tester section ... tidier and smarter design") one card: who this device is, the
   // reports as three chips, three big tiles, and "Stop being a tester" held down on its own at the bottom
   const tile = (k, ic, en, vi, sub) => `<button class="tst-tile" data-t="${k}"><span class="tst-ic">${pic(ic)}</span><b>${T(en, vi)}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
@@ -286,7 +332,7 @@ export function settingsRows(box, redraw) {
     <div class="tst-stats"><span class="tst-chip"><b>${st.reports || 0}</b>${T('sent', 'đã gửi')}</span><span class="tst-chip ok"><b>${st.helped || 0}</b>${T('helped fix', 'giúp sửa')}</span>${q ? `<span class="tst-chip wait"><b>${q}</b>${T('waiting to send', 'chờ gửi')}</span>` : ''}</div>
     <div class="tst-tiles">${tile('mine', '📋', 'My reports', 'Báo cáo của tôi')}${tile('ap', '🤖', 'Auto play', 'Tự chơi', T('Plays the game by itself to find problems', 'Tự chơi game để tìm lỗi'))}${G.testerRewards ? tile('corner', '🏆', "Tester's Corner", 'Góc người thử', T('Badges and stickers', 'Huy hiệu và nhãn dán')) : ''}</div>
     <button class="btn tst-stop hold" data-hold="stop"><span class="ring"></span>${T('Hold to stop being a tester', 'Giữ để thôi làm người thử')}</button>
-    <p class="note">${T('Progress made while testing goes back when you stop; badges and stickers stay.', 'Khi thôi, tiến bộ lúc thử được trả lại; huy hiệu và nhãn dán vẫn giữ.')}</p>` : `
+    <p class="note">${retention}</p>` : `
     <div class="tst-head"><span class="tst-lb">${pic('🐞')}</span><div><b>${T('Tester', 'Người thử')}</b><small>${T('Help find problems: report what looks wrong, and earn badges.', 'Giúp tìm lỗi: báo những gì không ổn, và nhận huy hiệu.')}</small></div></div>
     <button class="btn primary" data-t="join">${T('Become a tester', 'Làm người thử')}</button>`}</div>`;
   const act = { join: () => { const a = get(KEY.acc, {}); delete a.stopped; put(KEY.acc, a); agreement(); },
