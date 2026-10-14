@@ -133,6 +133,7 @@ export class Hud {
     const tools = this.q('.tools'), dock = this.q('.dock'), chat = this.q('.dk.chat');
     const chatHome = small ? tools : dock; if (chat.parentNode !== chatHome) chatHome.appendChild(chat);
     for (const k of ['snd', 'call', 'mus']) { const b = this.q('.dk.' + k); if (b.parentNode !== tools) tools.appendChild(b); }
+    if (small) { const audio = this.q('.dk.snd'); if (tools.firstElementChild !== audio) tools.prepend(audio); if (chat.previousElementSibling !== audio) tools.insertBefore(chat, audio.nextSibling); }
   }
   showRegion(name) { const e = this.q('.region'); e.textContent = name; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
   toast(msg) { const e = this.q('.htoast'); e.textContent = msg; e.classList.add('show'); clearTimeout(this._tt); this._tt = setTimeout(() => e.classList.remove('show'), 3200); }

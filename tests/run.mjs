@@ -599,6 +599,37 @@ await check('voicepack', async () => {
   return `first open downloads with a small bar (${first.map(x => '"' + x + '"').slice(0, 2).join(' → ')} … "${first[first.length - 1]}"), the next open shows and downloads nothing, and files the phone lost are fetched again`;
 });
 
+await check('ownerwificard', async () => {
+  const P=await open(b,{w:390,h:844,touch:true,settings:{autoPack:false,lang:'en',bilingual:false},pre:()=>{
+    const c=new EventTarget();c.type='cellular';c.saveData=false;
+    Object.defineProperty(navigator,'connection',{get:()=>c,configurable:true});
+    window.__ownerWifi=()=>{c.type='wifi';c.dispatchEvent(new Event('change'));};
+  },route:async ctx=>{
+    await ctx.route('**/voices/areas.json',r=>r.fulfill({json:{groups:{core:'en_core_wifi',world:'en_world_wifi'},size:{core:{en:1024},world:{en:2048}}}}));
+    await ctx.route('**/voices/en/f/*_wifi.mp3',r=>r.fulfill({contentType:'audio/mpeg',body:Buffer.from([0xff,0xfb,0x90,0])}));
+  }});
+  try {
+    await clear(P.page);
+    await P.page.evaluate(async()=>{
+      const S=await import('/js/state.js'),V=await import('/js/voicepack.js');S.settings.autoPack=true;S.settings.packCell=false;delete S.settings.packAskAt;
+      V.startPack({lines:{en_core_wifi:'f',en_world_wifi:'f'},langOf:{en_core_wifi:'en',en_world_wifi:'en'},areas:true,version:999,made:'owner-wifi-card'},e=>{if(e.state==='ask')V.askCard(e.mb);},()=>null);
+    });
+    await P.page.waitForSelector('.packask',{timeout:20000});
+    // Switching network during a grown-up hold must cancel that pending mobile consent.
+    await P.page.locator('.packask button').first().dispatchEvent('pointerdown');
+    await P.page.waitForTimeout(200);
+    await P.page.evaluate(()=>window.__ownerWifi());
+    await P.page.waitForTimeout(1400);
+    await P.page.waitForFunction(()=>!document.querySelector('.packask') && JSON.parse(localStorage.getItem('sv2_settings')||'{}').packLangs==='en',null,{timeout:12000});
+    const s=await P.page.evaluate(()=>JSON.parse(localStorage.getItem('sv2_settings')));
+    ok(s.packCell===false,'Wi-Fi continuation must not grant mobile-data permission');
+    await P.page.evaluate(async()=>{(await import('/js/voicepack.js')).askCard(139);});
+    ok(!(await P.page.locator('.packask').count()),'a delayed mobile prompt must not reopen on Wi-Fi');
+    ok(!P.errors.length,P.errors.join(' | '));
+    return 'Bounded two-file fixture: Wi-Fi automatically completes remaining voices, dismisses the old mobile permission card and rejects delayed prompts without granting mobile consent';
+  } finally {await P.ctx.close();}
+});
+
 await check('ownervoicewifi', async () => {
   // A tiny real downloader run exercises full Wi-Fi completion and a language change
   // while an area request is in flight, without downloading a 139 MiB fixture.
@@ -3793,7 +3824,7 @@ await check('soundsw', async () => {
     const s2 = await flip('music'); if (s2.music === s1.music || s2.voice !== s1.voice) out.push('music switch: ' + JSON.stringify([s1, s2]));
     const s3 = await flip('sound'); if (s3.sound === s2.sound || s3.voice !== s2.voice) out.push('sound switch: ' + JSON.stringify([s2, s3]));
     const n = await page.evaluate(() => document.querySelectorAll('.soundsheet .ss-sw').length); if (n !== 3) out.push(n + ' switches');
-    await page.click('.soundsheet .ss-done'); await page.waitForTimeout(300);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }
   // the valley: the dock's Sound button (computer size, where the dock shows it)
   const Q = await open(b, { w: 1280, h: 800 }); await clear(Q.page);
@@ -3885,6 +3916,42 @@ await check('joins', async () => {
   const errs = P.errors; await P.ctx.close();
   ok(!r.out.length && r.n > 5000 && !errs.length, r.out.slice(0, 12).join(' | ') + JSON.stringify(errs));
   return `${r.n} steps along every road and into every junction and bridge: no step over 6 cm (ROAD-017)`;
+});
+
+await check('ownertransportpov', async () => {
+  const P = await open(b, { w: 900, h: 640 }); await clear(P.page);
+  const rows = [];
+  for (const age of ['little', 'big']) for (const kind of ['bus', 'busAU', 'tramModern']) {
+    await P.page.evaluate(({age,kind}) => {
+      const G=__sv,h=G.heroes[0]; h.profile.age=age;
+      const i=G.interactables.find(i=>/^ride_/.test(i.id)&&G.traffic.slots[+i.id.slice(5)].id===kind);
+      if(!i) throw Error('No actual public transport '+kind);
+      h.place(i.x+2,i.z); window.__povBoard=i.act(h,G);
+    }, {age,kind});
+    await P.page.locator('.dialog .dchoices button').first().click();
+    await P.page.locator('.stoppick [data-next]').click();
+    await P.page.evaluate(async()=>{await window.__povBoard; const G=__sv,h=G.heroes[0]; const sl=G.traffic.slots.find(s=>s.passenger===h); if(!sl)throw Error('Boarding failed'); sl.mover.wait=100; for(let k=0;k<90;k++)h.update(1/60,{cdx:0,cdy:0,mx:0,mz:0,jump:()=>false},k/60,G);});
+    // Synthetic targets prove the actual rendered sightline, not just camera coordinates.
+    const r=await P.page.evaluate(async({age,kind})=>{
+      const G=__sv,h=G.heroes[0],sl=G.traffic.slots.find(s=>s.passenger===h),{THREE}=await import('/js/gfx.js');
+      const bounds=new THREE.Box3().setFromObject(sl.v.o),forward=new THREE.Vector3(Math.sin(h.yaw),0,Math.cos(h.yaw));
+      const target=new THREE.Mesh(new THREE.PlaneGeometry(3,2),new THREE.MeshBasicMaterial({color:'#ff00ff',side:THREE.DoubleSide}));
+      const span=bounds.getSize(new THREE.Vector3()).length()/2+1;
+      target.position.copy(sl.v.o.position).addScaledVector(forward,span); target.position.y=h.cam.position.y; target.rotation.y=h.yaw; h.scene.add(target);
+      try {
+        const image=new Image();image.src=G.snapshot(0,900,1);await image.decode();const c=document.createElement('canvas');c.width=image.width;c.height=image.height;const ctx=c.getContext('2d');ctx.drawImage(image,0,0);const data=ctx.getImageData(0,0,c.width,c.height).data;let seen=0;
+        for(let i=0;i<data.length;i+=4)if(data[i]>180&&data[i+1]<90&&data[i+2]>180)seen++;
+        const before=sl.v.o.children.map(child=>[child,child.visible]),own=h.av.root.visible;
+        const {withRideView}=await import('/js/rideview.js');let raised=false;
+        try{withRideView(h,()=>{throw Error('render failure fixture');});}catch(e){raised=e.message==='render failure fixture';}
+        const restored=raised&&h.av.root.visible===own&&before.every(([child,visible])=>child.visible===visible);
+        return {age,kind,seen,pov:h._pov,restored};
+      }finally{h.scene.remove(target);target.geometry.dispose();target.material.dispose();}
+    },{age,kind}); rows.push(r);
+    await P.page.evaluate(()=>{const G=__sv,h=G.heroes[0];h.update(1/60,{cdx:0,cdy:0,mx:0,mz:0,jump:()=>true},0,G);});
+  }
+  await P.ctx.close(); ok(rows.every(r=>r.pov&&r.seen>200&&r.restored),JSON.stringify(rows));
+  return JSON.stringify(rows);
 });
 
 await check('ride', async () => {
@@ -4565,14 +4632,15 @@ await check('owneraudiobounds', async () => {
     ok(layout.audio>=layout.navBottom && layout.mic>=layout.navBottom,'Audio/Mic must remain under navigation: '+JSON.stringify(layout));
     await P.page.evaluate(()=>__sv.openSound(document.querySelector('.dk.snd'))); await P.page.evaluate(()=>document.fonts.ready); await P.page.waitForTimeout(550);
     const inspect=async()=>{ const box=await P.page.locator('.audio-tray').boundingBox(), sizes=await P.page.locator('.audio-tray .ss-sw').evaluateAll(els=>els.map(e=>e.getBoundingClientRect().height));
-      const vp=P.page.viewportSize(); ok(box.x>=11 && box.y>=11 && box.x+box.width<=vp.width-11 && box.y+box.height<=vp.height-11 && sizes.every(n=>n>=64),JSON.stringify({w:vp.width,h:vp.height,lang,box,sizes})); };
+      const order=await P.page.evaluate(()=>{const a=document.querySelector('.hud .dk.snd'),c=document.querySelector('.hud .dk.chat');return c.parentNode===a.parentNode ? a.getBoundingClientRect().right<=c.getBoundingClientRect().left : true;}); ok(order,'compact Audio must be left of chat after owner-requested swap');
+      const vp=P.page.viewportSize(); ok(await P.page.locator('.audio-tray button').count()===3 && box.width<=216 && box.height<=76,'Audio must contain only three discreet icon controls: '+JSON.stringify(box)); ok(box.x>=11 && box.y>=11 && box.x+box.width<=vp.width-11 && box.y+box.height<=vp.height-11 && sizes.every(n=>n>=64),JSON.stringify({w:vp.width,h:vp.height,lang,box,sizes})); };
     await inspect();
     const before=await P.page.evaluate(async()=>({...((await import('/js/state.js')).settings)}));
     await P.page.locator('.audio-tray [data-k=music]').click();
     const after=await P.page.evaluate(async()=>({...((await import('/js/state.js')).settings)}));
     ok(before.sound===after.sound && before.voice===after.voice && before.music!==after.music,'Audio switches must remain independent');
     await P.page.setViewportSize({width:320,height:568}); await P.page.waitForTimeout(300); await inspect();
-    await P.page.locator('.audio-tray .ss-done').click(); await P.page.setViewportSize({width:w,height:h}); await P.page.waitForTimeout(100);
+    await P.page.keyboard.press('Escape'); const focus=await P.page.evaluate(()=>{const a=document.activeElement,b=document.querySelector('.hud .dk.snd');return {correct:a===b,active:{tag:a.tagName,cls:a.className},visible:b.getClientRects().length,open:document.querySelectorAll('.audio-tray').length};}); ok(focus.correct,'Escape must return focus to Audio: '+JSON.stringify(focus)); await P.page.setViewportSize({width:w,height:h}); await P.page.waitForTimeout(100);
     ok(await P.page.locator('.audio-tray').count()===0,'Closed Audio must stay closed after viewport changes');
     const errors=P.errors; await P.ctx.close(); ok(!errors.length,errors.join(' | '));
   }
@@ -4614,6 +4682,82 @@ await check('ownerautoplaystrategy', async () => {
   const row=report.done[0];
   ok(row.key==='game:hanoi' && row.ok && /^won:/.test(row.said) && !errors.length, JSON.stringify({row,errors}));
   return 'Real autoplay solves the4-disc Hanoi activity through legal UI taps and records won, independent of the random fallback';
+});
+
+await check('ownerallquestapproaches', async () => {
+  const P=await open(b,{w:1280,h:800});await clear(P.page);
+  const result=await P.page.evaluate(async()=>{
+    const G=__sv,{CHAPTERS}=await import('/js/content/chapters.js'),{YARD_STEPS}=await import('/js/content/yard.js'),{QUESTS}=await import('/js/data.js'),W=await import('/js/world.js'),C=(await import('/js/custom.js')).CUSTOM;
+    C.features={...(C.features||{}),story_prologue:true,story_ch1:true,story_ch2:true,story_ch3:true,story_yard:true,storyActions:true};
+    await G.lanterns.loadCh('ch2');await G.lanterns.loadCh('ch3');G.paused=true;
+    const h=G.heroes[0],p=h.profile,originalNight=G.world.isNight,rows=[],blocked=[],missing=[],duplicates=[];
+    const stand=(x,z)=>W.heightAt(x,z)>W.WATER+.25 && !G.world.boxes.some(b=>x>b.x0-.35&&x<b.x1+.35&&z>b.z0-.35&&z<b.z1+.35)
+      && !G.world.colliders.some(c=>c.r>0&&c.top==null&&Math.hypot(c.x-x,c.z-z)<c.r+.35)
+      && ![[0,0],[.3,0],[-.3,0],[0,.3],[0,-.3]].some(([dx,dz])=>G.world.solidAt?.(x+dx,z+dz));
+    const approach=(q,r)=>{
+      if(!q||!Number.isFinite(q.x)||!Number.isFinite(q.z))return null;
+      for(let d=0;d<=Math.max(.4,r-.35);d+=.35)for(let k=0;k<24;k++){
+        const a=k/24*Math.PI*2,x=q.x+Math.cos(a)*d,z=q.z+Math.sin(a)*d;
+        if(stand(x,z))return {x,z,d};
+      }
+      return null;
+    };
+    const record=(kind,id,q,r,night)=>{
+      if(!q||!Number.isFinite(q.x)||!Number.isFinite(q.z)){missing.push({kind,id,night});return;}
+      const at=approach(q,r);rows.push({kind,id,night,x:q.x,z:q.z,reach:r,approach:at});if(!at)blocked.push({kind,id,night,x:q.x,z:q.z,reach:r});
+    };
+    const steps=CHAPTERS.flatMap(ch=>ch.steps);
+    try {
+      for(const night of [false,true]){
+        G.world.isNight=()=>night;
+        for(const age of ['little','big']){
+          p.age=age;const done={};
+          for(const step of steps){
+            if(step.big&&age==='little'){done[step.id]=true;continue;}
+            p.lanterns={done:{...done},chapters:{},...(step.owl?{}:{companion:'firefly'})};
+            const q=G.lanterns.quest(p);
+            if(q?.id!=='L_'+step.id){missing.push({kind:'chapter-selection',id:step.id,age,night,actual:q?.id});done[step.id]=true;continue;}
+            record('chapter-'+age,step.id,q.target(),3,night);
+            const visible=G.interactables.filter(i=>/^story_/.test(i.id)&&i.r>0&&i.visible?.(h));
+            const ids=new Map();for(const i of visible){ids.set(i.id,(ids.get(i.id)||0)+1);record('story-interaction-'+age,i.id,i,i.r,night);}
+            for(const [id,count]of ids)if(count>1)duplicates.push({id,count,step:step.id,age,night});
+            done[step.id]=true;
+          }
+        }
+        p.age='big';const done={};
+        for(const step of YARD_STEPS){
+          p.yard={done:{...done},jobs:{}};
+          for(const i of G.interactables.filter(i=>/^yard_/.test(i.id)&&i.r>0&&i.visible?.(h)))record('yard-interaction',i.id,i,i.r,night);
+          const q=G.yard.quest(p);if(q)record('yard-goal',q.id,q.target(),3,night);
+          done[step.id]=true;
+        }
+        // Classic markers can point to a physical tower/statue: require a free approach,
+        // rather than declaring every intentionally solid landmark centre invalid.
+        const lanternQuest=G.lanterns.quest,yardQuest=G.yard.quest;G.lanterns.quest=()=>null;G.yard.quest=()=>null;
+        try{
+          const done={};
+          for(const step of QUESTS){
+            p.quests={...done};p.visited={};p.towers={};p.shrines={};p.discovered={};p.read={};p.orbs=0;
+            const q=G.currentQuest(p);
+            if(q?.id===step.id){const target=G.questTarget(h);if(target){const interaction=G.interactables.find(i=>i.id===target.id)||G.interactables.find(i=>Math.hypot(i.x-target.x,i.z-target.z)<.1);record('classic',step.id,target,interaction?.r||3.4,night);}else missing.push({kind:'classic-target',id:step.id,night});}
+            if(step.id==='shrines'){
+              const completed=W.SHRINES.slice(0,3),known=W.SHRINES[7];
+              p.shrines=Object.fromEntries(completed.map(q=>[q.id,true]));p.discovered={...p.shrines,[known.id]:true};
+              const first=G.questTarget(h);if(first?.id!==known.id)missing.push({kind:'known-shrine-priority',night,actual:first?.id});
+              delete p.discovered[known.id];const fallback=G.questTarget(h);
+              if(!fallback||p.shrines[fallback.id])missing.push({kind:'remaining-undiscovered-shrine',night,actual:fallback?.id});
+            }
+            done[step.id]=true;
+          }
+        }finally{G.lanterns.quest=lanternQuest;G.yard.quest=yardQuest;}
+      }
+    }finally{G.world.isNight=originalNight;G.paused=false;}
+    return {rows,blocked,missing,duplicates};
+  });
+  fs.writeFileSync('out/owner-all-quest-approaches.json',JSON.stringify(result,null,2));
+  const errors=P.errors;await P.ctx.close();
+  ok(result.rows.length>60&&!result.blocked.length&&!result.missing.length&&!errors.length,JSON.stringify({total:result.rows.length,blocked:result.blocked,missing:result.missing,errors}));
+  return `${result.rows.length} chapter/yard/classic targets have dry collision-free approaches within interaction range for child ages and light/dark predicates; static approach proof only, full route traversal and timed NPC availability remain pending`;
 });
 
 await check('ownerquesttargets', async () => {

@@ -57,7 +57,7 @@ const saveContent = async () => { await api('content', CONTENT); markSaved(); if
 // ---------- changes not saved yet (owner, 10 Oct: "edits disappear without warning") ----------
 // On the pages where you change things, a label by Save says "Not saved yet" or "Saved", and leaving the page (another
 // section, Back, the language, reload, closing) asks first. Leaving without saving puts the family's content back as it was.
-const GUARD = new Set(['looks', 'plots', 'message', 'missions', 'children', 'album', 'quiz', 'stories', 'villagers', 'releases', 'festivals', 'path', 'music', 'map', 'play', 'ads', 'settings']);
+const GUARD = new Set(['looks', 'plots', 'message', 'missions', 'children', 'album', 'quiz', 'stories', 'villagers', 'releases', 'lab', 'festivals', 'path', 'music', 'map', 'play', 'ads', 'settings']);
 let KEPT = '', DIRTY = false, SAVED_HERE = '';
 const contentNow = () => JSON.stringify(CONTENT);
 const unsaved = () => GUARD.has(cur) && (DIRTY || (!!KEPT && contentNow() !== KEPT));
@@ -84,7 +84,7 @@ window.addEventListener('beforeunload', e => { if (unsaved()) { e.preventDefault
 const SECTIONS = [
   { k: 'home', i: '🏠', en: 'Home', vi: 'Trang chính', pages: ['home'] },
   { k: 'family', i: '💛', en: 'Family', vi: 'Gia đình', pages: ['message', 'missions', 'children', 'album', 'quiz', 'stories', 'villagers', 'plots', 'familycode'] },
-  { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['releases', 'festivals', 'looks', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads'] },
+  { k: 'game', i: '🎮', en: 'Game', vi: 'Trò chơi', pages: ['releases', 'lab', 'festivals', 'looks', 'path', 'music', 'map', 'photos', 'play', 'voices', 'ads'] },
   { k: 'players', i: '📊', en: 'Analytics', vi: 'Phân tích', pages: ['players', 'testers'] },
   { k: 'setup', i: '⚙️', en: 'Setup', vi: 'Thiết lập', pages: ['publish', 'site', 'check', 'settings', 'admins', 'security', 'accesslog'] }
 ];
@@ -111,6 +111,7 @@ const ABOUT = {
   villagers: ['🧑', 'Villagers', 'Nhân vật', 'Names and photo faces of the people in the valley', 'Tên và ảnh khuôn mặt của mọi người trong thung lũng'],
   familycode: ['🔒', 'Family code', 'Mã gia đình', 'Family photos are private: type this code once on each child’s device', 'Ảnh gia đình được giữ riêng: gõ mã này một lần trên máy của mỗi con'],
   releases: ['🆕', 'Releases', 'Ra mắt', 'Switch features on or off, start them on a day, for so many days, with a New badge', 'Bật tắt tính năng, cho ra mắt vào ngày nào, trong bao lâu, có nhãn Mới'],
+  lab: ['🐞', 'Sparkle Lab', 'Phòng thử Sparkle', 'Tester reports and automatic checks, with controls for each device', 'Báo lỗi và tự kiểm tra, với điều khiển cho từng máy'],
   looks: ['🎭', 'Story characters', 'Nhân vật trong truyện', 'How Chi, Jack and Ruby look in the lantern story (chapter 3, Sydney)', 'Chi, Jack và Ruby trông thế nào trong truyện đèn lồng (chương 3, Sydney)'],
   plots: ['🏘️', 'Memory Villages', 'Làng Kỷ Niệm', 'Put the homes you remember on the garden plots in the valley', 'Đặt những ngôi nhà bạn nhớ lên các mảnh vườn trong thung lũng'],
   festivals: ['📅', 'Festivals', 'Lễ hội', 'This year’s festivals: switch one off, move a date, change how early it decorates', 'Lễ hội năm nay: tắt, đổi ngày, đổi thời gian trang trí trước'],
@@ -204,7 +205,8 @@ function foldPage(P, page) {
 function explainPage(P, page) {
   if (P.querySelector('.studio-help')) return;
   const explanations = {
-    releases: ['These switches control game features. Dates and durations schedule availability. Tester choices apply only to the selected devices. Save applies the rules online; connected games receive them when they refresh their settings.', 'Công tắc điều khiển tính năng game. Ngày và thời hạn đặt lịch mở. Lựa chọn thử nghiệm chỉ áp dụng cho máy đã chọn. Lưu áp dụng quy tắc trên mạng; game nhận khi làm mới cài đặt.'],
+    releases: ['These switches control game features. Dates and durations schedule availability. Testing controls are in Sparkle Lab. Save applies the rules online; connected games receive them when they refresh their settings.', 'Công tắc điều khiển tính năng game. Ngày và thời hạn đặt lịch mở. Điều khiển thử nghiệm nằm trong Phòng thử Sparkle. Lưu áp dụng quy tắc trên mạng; game nhận khi làm mới cài đặt.'],
+    lab: ['Tester and automatic checks apply to the selected devices; none selected means every device while enabled. Each device keeps its own progress policy. Save applies these rules online when connected games refresh their settings.', 'Báo lỗi và tự kiểm tra áp dụng cho các máy đã chọn; không chọn máy nào nghĩa là mọi máy khi bật. Mỗi máy giữ chính sách tiến trình riêng. Lưu áp dụng quy tắc trên mạng khi game làm mới cài đặt.'],
     admins: ['Choose a role or Custom to select each permission. Changes here save immediately. Permissions control what an admin can read or change; hiding a button does not grant or remove access.', 'Chọn vai trò hoặc Tùy chỉnh để chọn từng quyền. Thay đổi ở đây lưu ngay. Quyền quyết định quản trị viên có thể xem hay sửa gì; ẩn nút không cấp hoặc bỏ quyền.'],
     players: ['Measurements come from reporting devices. Missing data means unavailable or not measured yet. Use Performance to compare loading, frame smoothness and battery for each device.', 'Số liệu do các máy gửi về. Thiếu số liệu nghĩa là không có hoặc chưa đo. Dùng Hiệu năng để so tải, độ mượt và pin từng máy.']
   };
@@ -617,9 +619,13 @@ const bindMore = P => P.querySelectorAll('[data-more]').forEach(b => b.onclick =
 // changes. The auto play and tester settings open under their own cards (each added once, even if the page is drawn
 // twice), and the testers' sneak peeks are picked by group (All / None, a search, a count).
 const REL_ICON = { story: '🏮', kids: '🧸', rewards: '🎁', world: '🏞️', festivals: '🎉', tools: '🧰', trial: '📚' };
-PAGES.releases = async P => {
-  const { RELEASES, RELEASE_GROUPS } = await import(GAME + 'js/content/releases.js'), live = await loadLive(), R = live.releases || {};
-  const myDraw = P.dataset.draw = String((+P.dataset.draw || 0) + 1), stale = () => P.dataset.draw !== myDraw; // a newer drawing of the page wins
+PAGES.releases = P => drawReleases(P, false);
+PAGES.lab = P => drawReleases(P, true);
+async function drawReleases(P, lab) {
+  const myDraw = P.dataset.draw = String((+P.dataset.draw || 0) + 1), stale = () => P.dataset.draw !== myDraw || cur !== (lab ? 'lab' : 'releases');
+  const [{ RELEASES, RELEASE_GROUPS }, live] = await Promise.all([import(GAME + 'js/content/releases.js'), loadLive()]);
+  if (stale()) return;
+  const R = live.releases || {}, inScope = x => lab === ['tester', 'autoplay'].includes(x.id);
   const isOn = x => { const r = R[x.id] || {}; if (x.id === 'wayfind' && r.controlVersion !== 1) return false; return typeof r.on === 'boolean' ? r.on : x.def; };
   const fmtDay = d => d ? new Date(d + 'T12:00:00').toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { day: 'numeric', month: 'short' }) : '';
   const status = (on, r) => { const today = isoDay(new Date()), out = [];
@@ -641,9 +647,10 @@ PAGES.releases = async P => {
         <label>${T('Days on (empty: always)', 'Số ngày (trống: luôn luôn)')}<input type="number" min="0" max="3650" data-r="days" value="${r.days || ''}" placeholder="${T('always', 'luôn')}"></label>
         <label>${T('“New” badge for (days)', 'Nhãn “Mới” trong (ngày)')}<input type="number" min="0" max="365" data-r="newDays" value="${r.newDays || ''}" placeholder="0"></label>
       </div></div>`; };
-  const groups = Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => ({ g, en, vi, items: RELEASES.filter(x => x.group === g) })).filter(x => x.items.length);
+  const allGroups = Object.entries(RELEASE_GROUPS).map(([g, [en, vi]]) => ({ g, en, vi, items: RELEASES.filter(x => x.group === g) }));
+  const groups = allGroups.map(g => ({ ...g, items: g.items.filter(inScope) })).filter(g => g.items.length);
   const closed = folds(), gkey = g => 'releases:group:' + g;
-  P.innerHTML = `<h2>🆕 ${T('Releases', 'Ra mắt')}</h2><p class="sub">${T('Switch anything on or off. 📅 Schedule picks the day it starts, how long it stays and how long it shows a “New” badge. Switching off never takes away what a child already has.', 'Bật hoặc tắt bất cứ thứ gì. 📅 Lịch chọn ngày bắt đầu, ở lại bao lâu và nhãn “Mới” bao lâu. Tắt đi không lấy mất những gì con đã có.')}</p>
+  P.innerHTML = `<h2>🆕 ${lab ? T('Sparkle Lab', 'Phòng thử Sparkle') : T('Releases', 'Ra mắt')}</h2><p class="sub">${T('Switch anything on or off. 📅 Schedule picks the day it starts, how long it stays and how long it shows a “New” badge. Switching off never takes away what a child already has.', 'Bật hoặc tắt bất cứ thứ gì. 📅 Lịch chọn ngày bắt đầu, ở lại bao lâu và nhãn “Mới” bao lâu. Tắt đi không lấy mất những gì con đã có.')}</p>
     <div class="relbar card"><input type="search" id="relq" placeholder="${T('Find a feature…', 'Tìm một tính năng…')}" aria-label="${T('Find a feature', 'Tìm tính năng')}">
       <div class="chips" id="relf">${[['all', T('All', 'Tất cả')], ['on', '✅ ' + T('On', 'Bật')], ['off', '⏸️ ' + T('Off', 'Tắt')], ['sched', '📅 ' + T('Scheduled', 'Có lịch')]].map(([k, t], i) => `<button type="button" class="chip${i ? '' : ' on'}" data-f="${k}">${t}</button>`).join('')}</div>
       <p class="note" id="relsum"></p></div>
@@ -652,6 +659,7 @@ PAGES.releases = async P => {
       <div class="relgrid">${G.items.map(card).join('')}</div></details>`).join('')}
     <div class="bar relsave"><span class="note" id="relch"></span><button class="btn" id="save">💾 ${T('Save', 'Lưu')}</button></div>`;
   P.querySelector('.sub').after(document.createRange().createContextualFragment(liveNote()));
+  if (lab) { P.querySelector('.sub').textContent = T('Report problems and run automatic checks. Choose tester devices, checking speed and how their progress is restored.', 'Báo lỗi và chạy tự kiểm tra. Chọn máy thử, tốc độ kiểm tra và cách khôi phục tiến trình.'); if (canSee('testers')) { const link = document.createElement('button'); link.className = 'btn ghost'; link.textContent = T('Open tester reports', 'Mở báo cáo người thử'); link.onclick = () => go('testers'); P.querySelector('.sub').after(link); } }
   // counts, the group numbers and what has changed since the page opened
   const start = JSON.stringify([...P.querySelectorAll('.relc')].map(c => [c.querySelector('[data-r="on"]').checked, ...['start', 'days', 'newDays'].map(k => c.querySelector(`[data-r="${k}"]`).value)]));
   const sum = () => { const cs = [...P.querySelectorAll('.relc')], on = cs.filter(c => c.querySelector('[data-r="on"]').checked).length;
@@ -674,7 +682,7 @@ PAGES.releases = async P => {
   $('#relq').oninput = filt; P.querySelectorAll('#relf [data-f]').forEach(b => b.onclick = () => { fil = b.dataset.f; P.querySelectorAll('#relf [data-f]').forEach(x => x.classList.toggle('on', x === b)); filt(); });
   sum();
   // (owner, 12 Oct) the auto play check: on every device, or only on the ones ticked here (from the players report)
-  const devsP = api('players').then(r => (r && r.devices) || []).catch(() => []);
+  const devsP = lab ? api('players').then(r => (r && r.devices) || []).catch(() => []) : Promise.resolve([]);
   { const c = P.querySelector('.relc[data-id="autoplay"]'), mine = new Set((R.autoplay && R.autoplay.devices) || []);
     if (c && !P.querySelector('#apdev')) { const box = document.createElement('div'); box.className = 'relpanel'; box.id = 'apdev'; c.classList.add('wide'); c.appendChild(box);
       box.innerHTML = `<h4>📱 ${T('Which devices show the auto play window', 'Máy nào hiện cửa sổ tự chơi')}</h4><p class="note">${T('None ticked: every device (while the switch is on).', 'Không chọn máy nào: mọi máy (khi công tắc bật).')}</p><div id="apdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
@@ -691,7 +699,7 @@ PAGES.releases = async P => {
           ${off.map(lab).join('')}${on.length ? `<p class="note">${T('Already on for everyone:', 'Đã bật cho mọi người:')}</p>${on.map(lab).join('')}` : ''}</details>`; };
       box.innerHTML = `<h4>🐞 ${T('Which devices are testers, and how', 'Máy nào là người thử, và thế nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on). A tester accepts what is collected the first time, on the device.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Người thử đồng ý với những gì được thu thập lần đầu, trên máy.')}</p><div id="tdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>
         <h4>↩️ ${T('When someone stops being a tester', 'Khi ai đó thôi làm người thử')}</h4><div class="revert">${[['progress', 'Everything since they became a tester goes back (badges, stickers and clothes stay)', 'Mọi tiến bộ từ khi làm người thử được trả lại (huy hiệu, nhãn dán và quần áo vẫn giữ)'], ['autoplay', 'Only what auto play did goes back, after each run (what they played themselves stays)', 'Chỉ trả lại phần tự chơi đã làm, sau mỗi lần chạy (phần con tự chơi vẫn giữ)']].map(([k, en, vi]) => `<label class="chk"><input type="radio" name="trevert" data-trevert="${k}" ${(TR.revert === 'autoplay' ? 'autoplay' : 'progress') === k ? 'checked' : ''}> ${T(en, vi)}</label>`).join('')}</div>
-        <h4>👀 ${T('Sneak peeks: testers see these early', 'Xem trước: người thử thấy sớm')} <span class="pill" id="pkcount"></span></h4><input type="search" id="pkq" placeholder="${T('Find a feature…', 'Tìm một tính năng…')}"><div id="tpk">${groups.map(peekGroup).join('')}</div>`;
+        <h4>👀 ${T('Sneak peeks: testers see these early', 'Xem trước: người thử thấy sớm')} <span class="pill" id="pkcount"></span></h4><input type="search" id="pkq" placeholder="${T('Find a feature…', 'Tìm một tính năng…')}"><div id="tpk">${allGroups.map(peekGroup).join('')}</div>`;
       const pcount = () => { box.querySelector('#pkcount').textContent = T(`${box.querySelectorAll('[data-peek]:checked').length} picked`, `đã chọn ${box.querySelectorAll('[data-peek]:checked').length}`);
         box.querySelectorAll('details.pkg').forEach(d => { d.querySelector('.pkn').textContent = `${d.querySelectorAll('[data-peek]:checked').length}/${d.querySelectorAll('[data-peek]').length}`; }); };
       box.querySelectorAll('[data-peek]').forEach(i => i.onchange = pcount);
@@ -703,19 +711,22 @@ PAGES.releases = async P => {
         <label>${T('Progress after testing', 'Tiến trình sau khi thử')}<select data-policy="${esc(d.id)}">${[['keep','Keep all progress','Giữ mọi tiến trình'],['autoplay','Restore after each auto check','Trả lại sau mỗi lần tự kiểm tra'],['progress','Restore when testing ends','Trả lại khi kết thúc thử nghiệm']].map(([k,en,vi]) => `<option value="${k}" ${(TR.policies?.[d.id]?.revert || TR.revert || 'progress') === k ? 'selected' : ''}>${T(en,vi)}</option>`).join('')}</select></label><label>${T('Checking speed','Tốc độ kiểm tra')}<select data-speed="${esc(d.id)}">${[1,2,3,5].map(n => `<option value="x${n}" ${(TR.policies?.[d.id]?.speed || 'x1') === 'x'+n ? 'selected' : ''}>${n}×</option>`).join('')}</select></label><label class="chk"><input type="checkbox" data-deviceauto="${esc(d.id)}" ${TR.policies?.[d.id]?.autoplay === false ? '' : 'checked'}>${T('Allow automatic check', 'Cho phép tự kiểm tra')}</label><select data-tlv="${esc(d.id)}" aria-label="${T('Level', 'Mức')}"><option value="ladybird" ${lv[d.id] !== 'auto' ? 'selected' : ''}>${T('Auto reports and the ladybird', 'Tự báo lỗi và con bọ rùa')}</option><option value="auto" ${lv[d.id] === 'auto' ? 'selected' : ''}>${T('Auto reports only', 'Chỉ tự báo lỗi')}</option></select></div>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`;
       devFilter($('#tdl')); } }
   $('#save').onclick = async () => {
-    const out = {};
-    P.querySelectorAll('.relc[data-id]').forEach(c => { const id = c.dataset.id, x = RELEASES.find(y => y.id === id), v = k => c.querySelector(`[data-r="${k}"]`).value;
-      const r = {}, on = c.querySelector('[data-r="on"]').checked; if (id === 'wayfind') r.controlVersion = 1; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
-      if (id === 'autoplay') { const dv = [...P.querySelectorAll('[data-dev]:checked')].map(i => i.dataset.dev); if (dv.length) r.devices = dv; }
-      if (id === 'tester') { const dv = [...P.querySelectorAll('[data-tdev]:checked')].map(i => i.dataset.tdev); if (dv.length) r.devices = dv;
-        const policies = {}; P.querySelectorAll('[data-policy]').forEach(select => { const device = select.dataset.policy, speed = P.querySelector(`[data-speed="${CSS.escape(device)}"]`), auto = P.querySelector(`[data-deviceauto="${CSS.escape(device)}"]`); policies[device] = { revert: select.value, speed: speed.value, autoplay: auto.checked }; }); if (Object.keys(policies).length) r.policies = policies;
-        const lv = {}; P.querySelectorAll('[data-tlv]').forEach(s => { if (s.value === 'auto') lv[s.dataset.tlv] = 'auto'; }); if (Object.keys(lv).length) r.levels = lv;
-        const pk = [...P.querySelectorAll('[data-peek]:checked')].map(i => i.dataset.peek); if (pk.length) r.peeks = pk; 
-        if ((P.querySelector('[data-trevert]:checked') || {}).dataset?.trevert === 'autoplay') r.revert = 'autoplay'; }
-      if (Object.keys(r).length) out[id] = r; });
-    await saveLive({ releases: out, festivals: live.festivals || {} }).catch(fail);
+    try {
+      const latest = await loadLive(), out = { ...(latest.releases || {}) };
+      for (const x of RELEASES.filter(inScope)) delete out[x.id];
+      P.querySelectorAll('.relc[data-id]').forEach(c => { const id = c.dataset.id, x = RELEASES.find(y => y.id === id), v = k => c.querySelector(`[data-r="${k}"]`).value;
+        const r = {}, on = c.querySelector('[data-r="on"]').checked; if (id === 'wayfind') r.controlVersion = 1; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
+        if (id === 'autoplay') { const dv = [...P.querySelectorAll('[data-dev]:checked')].map(i => i.dataset.dev); if (dv.length) r.devices = dv; }
+        if (id === 'tester') { const dv = [...P.querySelectorAll('[data-tdev]:checked')].map(i => i.dataset.tdev); if (dv.length) r.devices = dv;
+          const policies = {}; P.querySelectorAll('[data-policy]').forEach(select => { const device = select.dataset.policy, speed = P.querySelector(`[data-speed="${CSS.escape(device)}"]`), auto = P.querySelector(`[data-deviceauto="${CSS.escape(device)}"]`); policies[device] = { revert: select.value, speed: speed.value, autoplay: auto.checked }; }); if (Object.keys(policies).length) r.policies = policies;
+          const lv = {}; P.querySelectorAll('[data-tlv]').forEach(s => { if (s.value === 'auto') lv[s.dataset.tlv] = 'auto'; }); if (Object.keys(lv).length) r.levels = lv;
+          const pk = [...P.querySelectorAll('[data-peek]:checked')].map(i => i.dataset.peek); if (pk.length) r.peeks = pk;
+          if ((P.querySelector('[data-trevert]:checked') || {}).dataset?.trevert === 'autoplay') r.revert = 'autoplay'; }
+        if (Object.keys(r).length) out[id] = r; });
+      await saveLive({ releases: out, festivals: latest.festivals || {} });
+    } catch (e) { fail(e); }
   };
-};
+}
 PAGES.festivals = async P => {
   const [{ FESTCAL, GROUPS }, L] = await Promise.all([import(GAME + 'js/content/festcal.js'), import(GAME + 'js/lunar.js')]), live = await loadLive(), F = live.festivals || {};
   const pad = n => String(n).padStart(2, '0'), y = new Date().getFullYear();
@@ -1289,6 +1300,7 @@ const sydneyZone = d => /GMT\+11|AEDT/.test(new Date(d).toLocaleString('en-AU', 
 // ---------- players: how many children play (anonymous counts from the website, netlify/lib/players.mjs) ----------
 PAGES.players = async P => {
   P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><div class="card">${T('Asking the website…', 'Đang hỏi trang web…')}</div>`;
+  const namesReady = (async () => { await gameLang(); return Promise.allSettled([import(GAME + 'js/games/all.js'), import(GAME + 'js/world.js')]); })();
   let r; try { r = await api('players'); } catch (e) { P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><div class="card"><p class="badtxt">⚠️ ${esc(e.message)}</p><p class="note">${T('The count comes from the website (it needs a Git deploy on Netlify). In SparkleStudio.exe, put the website and a Studio key in Settings.', 'Số liệu đến từ trang web (cần deploy từ Git trên Netlify). Trong SparkleStudio.exe, điền trang web và khóa Studio trong Cài đặt.')}</p></div>`; return; }
   const big = (n, en, vi) => `<div class="card stat"><b>${n}</b><span>${T(en, vi)}</span></div>`, hrs = m => m >= 120 ? (m / 60).toFixed(m >= 600 ? 0 : 1) + ' h' : m + ' min';
   const max = Math.max(1, ...r.perDay.map(d => d.devices)), W = 600, H = 150, bw = W / r.perDay.length;
@@ -1297,7 +1309,7 @@ PAGES.players = async P => {
   const table = (o, name) => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<tr><td>${esc(name ? name(k) : k)}</td><td>${n}</td><td>${pct(n, tw)}</td></tr>`).join('');
   // round L: names for games and places from the game itself; each device with its children, problems, suggestions
   let GN = {}, PN = {};
-  await gameLang();
+  await namesReady;
   try { await import(GAME + 'js/games/all.js'); const { GAMES } = await import(GAME + 'js/games/registry.js'); for (const [id, g] of Object.entries(GAMES)) GN[id] = `${g.icon} ${g.name()}`; } catch (e) { }
   try { const W = await import(GAME + 'js/world.js'); for (const [id, f] of Object.entries(W.REGION_NAMES || {})) PN[id] = typeof f === 'function' ? f() : String(f); } catch (e) { }
   // how long ago a device was last on the screen (round O)

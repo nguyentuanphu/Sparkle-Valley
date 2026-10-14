@@ -23,3 +23,5 @@ Owner steering (this chat, 15 Oct AEDT): the combined Tester/Autoplay tool becom
 Owner EXT09 (15 Oct AEDT): public-transport point of view must show the rider looking through the windscreen, not a green/half-black obstruction. Audit bus, tram and other enclosed transport; preserve exterior art, fares, destinations, child-free-ride policy and leaving the vehicle. Implementation and actual matching pictures pending.
 
 Latest Audio follow-up (15 Oct AEDT): swap the compact chat and Audio positions, so Audio is left of chat and opens its horizontal Music/Sounds/Voice icons. Keep the desktop Audio/Mic beneath navigation. This follows the compact controls seen in the current phone layout; fresh order/bounds checks and pictures pending.
+
+Audio compact layout refinement: with Audio left of chat, its three small icons extend horizontally to the left on the same row when they fit. Very narrow viewports use a clamped horizontal row below. Escape returns focus to Audio; no Songs or Done control. Bounds/order/focus proof and attributed pictures must verify the final source.

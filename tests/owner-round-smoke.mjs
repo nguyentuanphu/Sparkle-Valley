@@ -19,7 +19,7 @@ try {
     const bagAction = page.locator('.pad [data-wear], .pad [data-unwear], .pad [data-hat]').first();
     if (await bagAction.count()) { await bagAction.click(); await page.waitForSelector('.bag-help'); await page.screenshot({ path: `out/owner-round/bag-${w}-${lang}.png` }); await page.click('.bh-close'); }
     await page.click('.pad-head .x'); await page.waitForTimeout(250);
-    await page.click('.hud .dk.snd'); await page.waitForSelector('.audio-tray'); await page.screenshot({ path: `out/owner-round/audio-${w}-${lang}.png` }); await page.click('.audio-tray .ss-done');
+    await page.click('.hud .dk.snd'); await page.waitForSelector('.audio-tray'); await page.screenshot({ path: `out/owner-round/audio-${w}-${lang}.png` }); await page.keyboard.press('Escape');
     const compass = await page.locator('.hud .z-where').isVisible(); assert.equal(compass, false);
     if (touch && w <= 700 && h > 520) {
       const hint = await page.evaluate(() => { const G=window.__sv; G.huds[0].toast('A special surprise is nearby. Touch it gently when you find it.'); const a=document.querySelector('.hud .htoast').getBoundingClientRect(), b=document.querySelector('.hud .moves').getBoundingClientRect(); return { hint:{top:a.top,bottom:a.bottom,left:a.left,right:a.right}, moves:{top:b.top,bottom:b.bottom,left:b.left,right:b.right} }; });

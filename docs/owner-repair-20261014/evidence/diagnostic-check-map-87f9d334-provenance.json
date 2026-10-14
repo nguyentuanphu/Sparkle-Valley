@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "87f9d334acada63341403234f9d6f45d4f4c367b",
+  "runId": 38613891343,
+  "artifactId": 11921830212,
+  "importedAtSydney": "2026-10-15T09:34:18.548865+11:00",
+  "sha256": {
+    "check-map.json": "1673f58b5c0589c35da5c3ef2d3fa3c5b5bda0411183eb05b991cd1ac5bc3dda",
+    "check-times.json": "4614f457640b2f0edd464d14ac0cd48c93f98270bda9618d6ae769798c31007e"
+  },
+  "note": "Actual GitHub artifact; runner timing history saved separately. Does not validate later source."
+}

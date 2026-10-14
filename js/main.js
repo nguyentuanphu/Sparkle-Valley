@@ -2,6 +2,7 @@
 import './emojiswap.js'; // (first: no phone emoji on the page or on any canvas)
 import { THREE, sprite, P, merge, toonVC } from './gfx.js';
 import { createSeeThrough } from './seethrough.js';
+import { withRideView } from './rideview.js';
 import { RoomEnvironment } from '../vendor/RoomEnvironment.js';
 import { settings, saveSettings, saveProfiles, farm, profiles } from './state.js';
 import { T, nm, onLang, registerName } from './i18n.js';
@@ -672,7 +673,7 @@ function questTarget(h) {
     case 'leafy': return near(LEAFIES.filter(l => !p.leafies[l.id]));
     case 'statue': return p.orbs >= 4 ? world.statue : near(SHRINES.filter(s => !p.shrines[s.id] && p.discovered[s.id])) || world.statue;
     case 'tower': return near(TOWERS.filter(t => !p.towers[t.id]));
-    case 'shrine': return near(SHRINES.filter(s => !p.shrines[s.id] && p.discovered[s.id]));
+    case 'shrine': return near(SHRINES.filter(s => !p.shrines[s.id] && p.discovered[s.id])) || near(SHRINES.filter(s => !p.shrines[s.id]));
   }
   return null;
 }
@@ -782,7 +783,7 @@ G.snapshot = (i, max = 720, q = .8) => {
   const h = G.heroes[i] || G.heroes[0], w = renderer.domElement.width, hh = renderer.domElement.height;
   renderer.setScissorTest(false); renderer.setViewport(0, 0, w / renderer.getPixelRatio(), hh / renderer.getPixelRatio());
   h.cam.aspect = w / hh; h.cam.updateProjectionMatrix(); G.huds.forEach(x => x.root.style.visibility = 'hidden');
-  renderer.render(scene, h.cam);
+  withRideView(h, () => renderer.render(scene, h.cam));
   const c = document.createElement('canvas'), k = Math.min(1, max / Math.max(w, hh)); c.width = w * k; c.height = hh * k; c.getContext('2d').drawImage(renderer.domElement, 0, 0, c.width, c.height);
   G.huds.forEach(x => x.root.style.visibility = '');
   return c.toDataURL('image/jpeg', q);
@@ -1666,7 +1667,7 @@ function frame(now) {
     G.showcaseCam(i, h, dt); // a landmark fly-around takes over the camera
     if (r.length > 1) aimCam(h, q);
     world.updateSky(0, h.cam.position, h.pos);
-    renderer.render(scene, h.cam); drawn += renderer.info.render.calls;
+    withRideView(h, () => renderer.render(scene, h.cam)); drawn += renderer.info.render.calls;
     if (G.nameTags) G.nameTags.update(i, h, q);
     const p = h.profile;
     // what the minimap shows, worked out only when it is redrawn

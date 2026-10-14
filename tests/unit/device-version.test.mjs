@@ -35,3 +35,15 @@ test('version totals cover every installation even when detail cards are capped'
  const S=memory();for(let i=0;i<105;i++)await hello(S,message({id:'device'+String(i).padStart(6,'0'),h:'batch'+String(i).padStart(11,'0')}),NOW);
  const R=await report(S,NOW);assert.equal(R.week.devices,105);assert.equal(R.latestBuilds.r75,105);assert.equal(R.devices.length,100);assert.equal(R.deviceListTotal,105);
 });
+
+test('analytics reads paginated lifetime count while daily totals are still loading', async () => {
+ const S=memory(), get=S.get, list=S.list; let release;
+ const held=new Promise(resolve=>{release=resolve;}); let countStarted=false;
+ S.get=async(k,o)=>{if(k.startsWith('sum/')) await held; return get(k,o);};
+ S.list=async opts=>{if(opts.prefix==='dev/'){countStarted=true; return opts.cursor ? {blobs:[{key:'dev/device000003'}]} : {blobs:[{key:'dev/device000001'},{key:'dev/device000002'}],cursor:'next'};} return list(opts);};
+ const pending=report(S,NOW);
+ await new Promise(resolve=>setImmediate(resolve));
+ const overlapped=countStarted; release(); const R=await pending;
+ assert.equal(overlapped,true,'lifetime count must not wait for all daily reads');
+ assert.equal(R.allTime,3,'all pages still count'); assert.equal(R.perDay.length,30);
+});

@@ -162,11 +162,13 @@ async function sumDay(S, date, keep) {
 // the report for Sparkle Studio's Players page
 export async function report(S, now = Date.now()) {
   const days = []; for (let i = 29; i >= 0; i--) days.push(day(now - i * 864e5));
-  const sums = await each(days, (d, i) => sumDay(S, d, i < days.length - 1), 6);
+  // The lifetime count does not depend on daily totals. Read it alongside the
+  // bounded daily pool; no cached private report or stale active-version data.
+  const countAll = async () => { let n = 0, cursor; do { const r = await S.list({ prefix: 'dev/', ...(cursor ? { cursor } : {}) }); n += r.blobs.length; cursor = r.cursor; } while (cursor); return n; };
+  const [sums, allTime] = await Promise.all([each(days, (d, i) => sumDay(S, d, i < days.length - 1), 6), countAll()]);
   const uniq = list => new Set(list.flatMap(s => s.ids)).size, last = n => sums.slice(-n);
   const total = (list, f) => { const o = {}; for (const s of list) for (const [k, v] of Object.entries(s[f])) add(o, k, v); return o; };
   const top = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
-  let allTime = 0, cursor; do { const r = await S.list({ prefix: 'dev/', ...(cursor ? { cursor } : {}) }); allTime += r.blobs.length; cursor = r.cursor; } while (cursor);
   await tidy(S, now);
   const t = sums[sums.length - 1], w = last(7), deviceDays = sums.reduce((a, s) => a + s.ids.length, 0);
   const detail = await details(S, sums, now);

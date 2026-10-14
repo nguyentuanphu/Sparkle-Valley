@@ -844,9 +844,9 @@
     {
       "id": "EXT-06",
       "workOrder": "WO-08",
-      "requirement": "Desktop Audio/Mic beneath upper-right navigation; Audio tap opens only three small discreet icons horizontally like camera controls: Music, Sounds and Voice. No Songs or additional action in this pop-out.",
-      "status": "revision-in-progress",
-      "proof": "Prior labelled Audio/Songs tray rejected by latest owner guidance. Existing87f9d334 pictures are before-reference for this revision; new implementation/proof/pictures pending.",
+      "requirement": "Desktop Audio/Mic beneath navigation; compact Audio left of chat. Audio opens only small Music, Sounds and Voice icons in a horizontal row, extending left beside the entrance when space permits; no Songs or extra action.",
+      "status": "partial",
+      "proof": "Latest compact Audio/chat swap, inline horizontal three icons, independent toggles, viewport/font bounds and Escape focus passed219s; preload passed, focused2/2. Exact-source pictures and final full-suite proof pending.",
       "releaseApproved": false
     },
     {
@@ -869,16 +869,16 @@
       "id": "EXT-09",
       "workOrder": "WO-01/14/16",
       "requirement": "Public-transport POV shows rider view through the windscreen without green or half-black obstruction; preserve exterior artwork and transport behavior.",
-      "status": "investigating",
-      "proof": "Reported in this chat; opaque enclosed model and internal camera found. Actual render reproduction, repair, multi-device proof and pictures pending.",
+      "status": "partial",
+      "proof": "Actual rendered-view baseline failed; first repair failed missing bus callback reference, corrected. Six bus/busAU/tramModern age combinations passed83s; restores visibility after render exceptions. Fares/routes/driving check, actual source-attributed pictures, coach/taxi/driving rendering and split-screen comparisons pending.",
       "releaseApproved": false
     },
     {
       "id": "EXT-10",
       "workOrder": "WO-11/16",
       "requirement": "Combine testing under Sparkle Lab; Studio menu beside Releases; reduce Releases and Analytics loading without losing policies, permissions or report accuracy.",
-      "status": "revision-in-progress",
-      "proof": "Local split and parallel loading implemented; first Studio validation found missing sneak-peek groups after scoping, corrected. Rerun and matching pictures pending.",
+      "status": "partial",
+      "proof": "Studio361s passed online/exe desktop/tablet/phone, full peek groups, device policies, no Analytics request from Releases and unrelated live releases preserved.103 unit tests passed including concurrent paginated Analytics count. Real production load timings and exact source pictures pending.",
       "releaseApproved": false
     }
   ]

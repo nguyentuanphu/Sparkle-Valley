@@ -20,7 +20,7 @@ export function startPack(pack, emit, here) {
   if (!('caches' in window)) { setTimeout(() => packEmit({ state: 'nostore', total: packFiles().length }), 3000); return; }
   if (settings.autoPack === false) return;
   setTimeout(() => { checkPack().catch(() => { }); }, 6000);
-  let againT = 0; const again = () => { clearTimeout(againT); againT = setTimeout(() => checkPack().catch(() => { }), 1500); };
+  let againT = 0; const again = () => { if (mayFetchRest()) close(); clearTimeout(againT); againT = setTimeout(() => checkPack().catch(() => { }), 1500); };
   addEventListener('online', again);
   try { const c = navigator.connection; if (c && c.addEventListener) c.addEventListener('change', again); } catch (e) { } // (onto Wi-Fi: the rest goes on)
   events.on('LanguageChanged', again); // (a new language, or both spoken: its core, then its areas)
@@ -80,6 +80,7 @@ async function checkPack() {
   if (!PACK) return;
   if (checking) { recheck = true; return; }
   checking = true; recheck = false;
+  if (mayFetchRest()) close();
   const langs = packLangs(), languageChanged = () => langs.join() !== packLangs().join();
   try {
     await valleyBuilt();
@@ -181,9 +182,9 @@ export async function savePackOffline(progress) {
 // (round R item 12, owner 10 Oct: "wifi should automatically, ask user to allow download over mobile") the core voices
 // are on the device; on mobile data the rest waits for a grown-up: a small card asks, and Yes needs a press and hold so
 // a little one can't say yes by accident. Not now asks again in a week; Grown-ups → voices can change it any time.
-let card = null;
+let card = null, cancelCardHold = () => { };
 export function askCard(mb) {
-  if (card) return;
+  if (card || mayFetchRest() || packNet() === 'off') return;
   card = document.createElement('div'); card.className = 'packask'; card.setAttribute('role', 'dialog');
   card.style.cssText = 'position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 76px);transform:translateX(-50%);z-index:70;width:min(360px,calc(100% - 32px));box-sizing:border-box;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.96);box-shadow:0 6px 24px rgba(60,30,90,.25);color:#3a2a20;font:600 14px/1.35 var(--font);text-align:center';
   const p = document.createElement('p'); p.style.margin = '0 0 10px';
@@ -193,10 +194,11 @@ export function askCard(mb) {
   const yes = btn(T('Grown-ups: hold for Yes', 'Người lớn: giữ để đồng ý'), 'var(--purple, #8a5cf6)'), no = btn(T('Not now', 'Để sau'), '#9a8aa8');
   const fill = yes.firstChild; let t = 0;
   const stop = () => { clearTimeout(t); fill.style.transition = 'none'; fill.style.width = '0'; };
+  cancelCardHold = stop;
   yes.addEventListener('pointerdown', ev => { ev.preventDefault(); fill.style.transition = 'width 1.2s linear'; fill.style.width = '100%'; t = setTimeout(() => { close(); allowMobilePack(true); }, 1200); });
   for (const k of ['pointerup', 'pointerleave', 'pointercancel']) yes.addEventListener(k, stop);
   yes.addEventListener('contextmenu', ev => ev.preventDefault());
   no.onclick = () => { close(); allowMobilePack(false); };
   row.append(yes, no); card.append(p, row); document.body.appendChild(card);
 }
-const close = () => { if (card) { card.remove(); card = null; } };
+const close = () => { if (card) { cancelCardHold(); cancelCardHold = () => { }; card.remove(); card = null; } };

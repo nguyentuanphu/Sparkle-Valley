@@ -2622,3 +2622,13 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 .audio-tray { overflow:auto; }
 .screen.title > .launch-progress { position:absolute; top:calc(env(safe-area-inset-top) + 12px); left:50%; transform:translateX(-50%); max-width:calc(100% - 96px); background:var(--panel2); border-radius:var(--r); font-size:14px; z-index:2; }
 .screen.title > .launch-progress progress { width:min(240px,50vw); }
+
+/* Latest owner Audio preference: only three small visual icons, with generous child hit areas. */
+.audio-tray { display:flex; flex-direction:row; gap:0; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; overflow:auto; }
+.audio-tray .ss-sw { position:relative; flex:none; display:flex; align-items:center; justify-content:center; width:64px; min-width:64px; height:64px; min-height:64px; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+.audio-tray .ss-sw > span { position:relative; display:flex; align-items:center; justify-content:center; width:44px; height:44px; border:2px solid #fff; border-radius:50%; background:rgba(255,255,255,.92); box-shadow:var(--shadow); opacity:1; }
+.audio-tray .ss-sw.on > span { border-color:#8a5cf6; background:#eee6f7; }
+.audio-tray .ss-sw:not(.on) > span::after { content:""; position:absolute; width:28px; height:2px; border-radius:2px; background:#855071; transform:rotate(-45deg); }
+.audio-tray .ss-sw .art { width:28px; height:28px; }
+.audio-tray .ss-sw b, .audio-tray .ss-sw i { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.audio-tray .ss-sw:focus-visible > span { outline:3px solid #ffd23f; outline-offset:3px; }

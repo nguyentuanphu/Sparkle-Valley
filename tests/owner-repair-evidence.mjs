@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = fileURLToPath(new URL('../', import.meta.url));
 const phase = process.argv[2] || 'baseline';
 const settingsOnly = process.argv.includes('--settings-only');
+const audioOnly = process.argv.includes('--audio-only');
+const transportOnly = process.argv.includes('--transport-only');
 const sourceCommit = execFileSync('git', ['-C', repoRoot, 'rev-parse', '--verify', process.env.SV_EVIDENCE_COMMIT || 'HEAD'], {encoding:'utf8'}).trim();
 const sourceFingerprints = {};
 // Verify the served code, rather than attributing old pictures from a build label alone.
@@ -45,6 +47,33 @@ try {
       results.push({device,w,h,lang,sourceCommit,sourceFingerprints,capturedAt:new Date().toISOString(),state:'grownups-settings-and-bottom-note',errors:P.errors});
       console.log(`${phase} ${label}: captured settings and bottom note`); await P.ctx.close(); continue;
     }
+    if (transportOnly) {
+      await start(P.page); await clear(P.page);
+      const rides=[];
+      for(const kind of ['bus','busAU','tramModern']) {
+        await P.page.evaluate(kind=>{const G=__sv,h=G.heroes[0],it=G.interactables.find(i=>/^ride_/.test(i.id)&&G.traffic.slots[+i.id.slice(5)].id===kind);if(!it)throw Error('Missing transport '+kind);h.place(it.x+2,it.z);window.__evidenceRide=it.act(h,G);},kind);
+        await P.page.locator('.dialog .dchoices button').first().click();
+        await P.page.locator('.stoppick [data-next]').click();
+        await P.page.evaluate(async()=>{await window.__evidenceRide;const G=__sv,h=G.heroes[0],sl=G.traffic.slots.find(s=>s.passenger===h);if(!sl)throw Error('Not boarded');sl.mover.wait=100;});
+        await P.page.waitForTimeout(1600);await shot(`transport-${kind}-rider`);
+        const state=await P.page.evaluate(()=>{const G=__sv,h=G.heroes[0],sl=G.traffic.slots.find(s=>s.passenger===h);return {pov:h._pov,carried:!!h.carry,vehicle:sl?.id,age:h.profile.age};});
+        if(!state.pov||state.vehicle!==kind)throw Error('Missing actual rider view '+kind);
+        await P.page.evaluate(()=>{const G=__sv,h=G.heroes[0];h.update(1/60,{cdx:0,cdy:0,mx:0,mz:0,jump:()=>true},0,G);});
+        await P.page.waitForTimeout(1600);await shot(`transport-${kind}-exit`);rides.push({kind,state});
+      }
+      results.push({device,w,h,lang,sourceCommit,sourceFingerprints,capturedAt:new Date().toISOString(),rides,errors:P.errors});
+      console.log(`${phase} ${label}: actual bus/busAU/tram rider and exit captures`);await P.ctx.close();continue;
+    }
+    if (audioOnly) {
+      await start(P.page);await clear(P.page);
+      await P.page.evaluate(()=>__sv.openSound(document.querySelector('.dk.snd')));
+      await shot('audio-off');
+      for(const k of ['music','sound','voice'])await P.page.locator(`.audio-tray [data-k="${k}"]`).click();
+      await shot('audio-on');
+      const bounds=await P.page.locator('.audio-tray').boundingBox();
+      results.push({device,w,h,lang,sourceCommit,sourceFingerprints,capturedAt:new Date().toISOString(),state:'three-audio-icons-off-and-on',bounds,errors:P.errors});
+      console.log(`${phase} ${label}: captured Audio off/on`);await P.ctx.close();continue;
+    }
     await shot('welcome');
     await P.page.click('.screen.title .press', {force:true}); await P.page.waitForSelector('.screen.who');
     await P.page.waitForTimeout(650); await shot('selection');
@@ -77,4 +106,4 @@ try {
     console.log(`${phase} ${label}: captured welcome, selection, bag, shop, audio`);
     await P.ctx.close();
   }
-} finally { await browser.close();fs.writeFileSync(path.join(dir,settingsOnly ? 'settings-results.json' : 'results.json'),JSON.stringify(results,null,2)); }
+} finally { await browser.close();fs.writeFileSync(path.join(dir,transportOnly ? 'transport-results.json' : settingsOnly ? 'settings-results.json' : audioOnly ? 'audio-results.json' : 'results.json'),JSON.stringify(results,null,2)); }
