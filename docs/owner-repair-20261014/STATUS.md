@@ -33,12 +33,12 @@ Pinned Playwright 1.56.1 / Chromium headless shell, emulated local browser with 
 - device-version unit tests: 6/6, included in 94.
 Evidence captures use synthetic names and null photos, controlled live/report services. Screenshots do not prove production delivery.
 
-## Jobs and runtime
+## Historical jobs and runtime (superseded by resumed results below)
 Candidate screenshots refreshed twice; second run passes optical preview and competing-tray assertions. Audit reproduction initially3/3 failed old contracts, corrected with stronger behavioral assertions. Rerun logged Shop35s, hoilang49s, soundsw60s, rollout85s PASS; reading interrupted by execution/session loss, not passed. Process inventory confirms no reading job remains. Latest integration run unit,types,rules,arch,bilingual,reportstorage,testerreport,wearbag,bagitems finished9/9, including99 unit tests. Browser storage-denial case passed. Results saved in evidence/focused-latest-9-checks.json. Latest hidden Music/report flex changes need fresh screenshots.
 Scratch server/test wrapper starts both in the same network namespace: run-repair-check.py. Playwright pinned dependency restored under test-deps; default headless shell works; full Chromium executable does not in this sandbox.
 Tests/out is transient runner output; preserved summary in CHANGELOG. No background monitoring is promised.
 
-## Scope still open
+## Historical open scope (see latest reconciliation below)
 - Complete per-screen inventory, keyboard/safe-area/split-screen/physical devices and full screenshot inspection.
 - Reading full completion remains unverified after interruption; rollout and hoilang behavioral contracts passed the latest interrupted group. Voice assets restored;4 actual coverage gaps remain. No tests weakened.
 - Full candidate GitHub suite, packed cold/warm/offline/update, isolated performance/battery/startup, independent substantive review.
@@ -72,3 +72,17 @@ Henry grants routine repair/test/checkpoint permission while asleep and includes
 Local pending additions: family regressions for removed-device capacity, import truncation/union limit and revoked connection recovery; ownerhearts runtime-handler proof; capture script source/hash provenance; complete59-row evidence-table; refreshed report-origin metadata and diagnostic-findings. None is a claimed finished fix. R74 worktree /workspace/Sparkle-Valley-R74 restored; fresh captures pending. Voice delta downloaded from workflow artifact11887433748 under /workspace/scratch/voice-delta, eight decodableMP3s; preserve older indexes/recordings when integrating.
 
 Next exact action: let expanded suite finish; save its result/log; run new family regressions on unchanged code, repair confirmed defects and validate. Then integrate voice delta, recapture source-attributed R74/candidate pictures and continue Studio/learning/film/screen coverage. Do not ask to approve starting again. Do not deploy incomplete work.
+
+## Current reconciliation · 15 October 2026, 03:44 AEDT
+
+Execution stopped on a stalled tool invocation for approximately 67 minutes; Henry's return interrupted it. No test was running during that interval. Old browser processes are zombies, not continuing checks. Runtime now permits ordinary shell/network operations without interactive approval. Local HTTP server and synthetic PeerJS/MQTT services restarted successfully. Current online seven-check validation is active; results are pending, not skipped or assumed green.
+
+Completed expanded run at source25176e7:6/7, including full reading90 cases across12 games and EN/VI difficulty/under-five combinations (1529 seconds). Voicecover alone failed the four known family-help lines. Saved evidence/resumed-expanded-7-checks.json supersedes earlier interrupted-reading claims. No new learning curriculum is implied.
+
+Family defects reproduced before edits (unit/ownerfamily red). After repair:102 unit tests, strict boundary compilation, architecture/rules/bilingual, protected-heart handlers and voicecover passed. Voicecover:8100 lines/1805 parts/243 templates/27 areas. Latest corrected Studio/ownerfamily focused run:2/2 (352/233 seconds), evidence/family-studio-final-focused.json. Controlled family services prove approved pairing, transfer, offline photos/backup, stale-response protection and revoked-credential recovery; production delivery and physical devices remain unproved.
+
+Local source fixes are not yet remotely checkpointed: active-device capacity without deleting revocation records; full backup validation/combined60-photo limit before writes; current-token revocation recovery; eight missing voice recordings and additive indexes. Cache tag is sv-2026-10-14-repair1-r76, preserving the final numeric build convention, BUILD and installation identity. Portable pinned test lock and local synthetic online services are under validation. Candidate screenshots are still pending exact committed-source captures.
+
+Diagnostic PR300 full-suite38556313225 at ee145bd1 completed140/142, two failures (Studio obsolete fixture and four voice gaps), seven online-service skips. Both failures were repaired/validated locally; this does not turn that old remote run green. Fresh candidate full suite remains pending push. AI review38556313316 had a green wrapper but no completed substantive review. Checks/Quick checks and mirror at dee55ea8 completed successfully; main remains R74. No release/deployment/main merge.
+
+Substantial unfinished scope: original59-point matching BEFORE/AFTER table; all216 report dispositions plus refreshed intake; complete screen/keyboard/safe-area coverage; learning progression and film individuality; outbox/concurrency policies; packed/update/offline and isolated performance checks; exact-candidate full suite and substantive review. No issue closed. Continue these orders without requesting start permission again.
