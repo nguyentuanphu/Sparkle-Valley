@@ -4373,6 +4373,8 @@ await check('netgames', async () => {
   const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
   const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'GAMEA2', friendsOn: true, autoMeet: false, friends: [{ code: 'GAMEB3', name: 'Bin' }] } });
   const B = await open(b, { pre, w: 390, h: 760, lang: 'vi', touch: true, settings: { friendCode: 'GAMEB3', friendsOn: true, autoMeet: false, friends: [{ code: 'GAMEA2', name: 'Na' }] } });
+  await A.page.evaluate(() => { __sv.heroes[0].profile.name = 'Host Demo'; });
+  await B.page.evaluate(() => { __sv.heroes[0].profile.name = 'Guest Demo'; });
   await pairKeys(A, B);
   for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
   await A.page.evaluate(async () => __Net.host(__sv.sendHello())); await A.page.evaluate(() => __sv.shareStatus());
@@ -4388,9 +4390,14 @@ await check('netgames', async () => {
   // (a placed piece is marked .put: its emoji is swapped for a drawing, so the text is empty)
   const tap = async (P, i) => { await P.page.waitForFunction(i => { const c = document.querySelectorAll('.caro-c')[i]; return c && !c.classList.contains('put'); }, i); await P.page.evaluate(i => document.querySelectorAll('.caro-c')[i].click(), i); };
   const seen = async (P, i) => P.page.waitForFunction(i => document.querySelectorAll('.caro-c')[i].classList.contains('put'), i, { timeout: 20000 });
-  for (const [P, Q, i] of [[A, B, 0], [B, A, 3], [A, B, 1], [B, A, 4], [A, B, 2]]) { await tap(P, i); await seen(Q, i); }
+  for (const [P, Q, i] of [[A, B, 0], [B, A, 3], [A, B, 1], [B, A, 4], [A, B, 2]]) {
+    await tap(P, i); await seen(Q, i);
+    const piece = P === A ? '🌸' : '🍀';
+    for (const R of [A, B]) await R.page.waitForFunction(({i,piece}) => [...document.querySelectorAll('.caro-c')[i].querySelectorAll('[data-e]')].some(e => e.dataset.e === piece), {i,piece}, {timeout:10000});
+  }
   for (const P of [A, B]) await P.page.waitForSelector('.gl-win', { timeout: 20000 });
   const caro = { a: await A.page.evaluate(() => document.querySelector('.gl-win p').textContent), b: await B.page.evaluate(() => document.querySelector('.gl-win p').textContent), wonCells: await B.page.evaluate(() => document.querySelectorAll('.caro-c.win').length) };
+  ok(/Host Demo/.test(caro.a) && /Host Demo/.test(caro.b), 'Same assigned player must win on both boards: '+JSON.stringify(caro));
   for (const P of [A, B]) { await P.page.evaluate(() => document.querySelector('.gl-tapout')?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))); await P.page.waitForTimeout(800); await P.page.evaluate(() => { document.querySelectorAll('.gl, .modal').forEach(m => m.remove()); __sv.paused = false; }); }
   // Oẳn tù tì with everyone: A rock, B scissors, three times
   await A.page.evaluate(async () => { __sv.openPad(0, 'friend'); await new Promise(r => setTimeout(r, 500)); document.querySelector('[data-rpsall]').click(); await new Promise(r => setTimeout(r, 400)); document.querySelector('.gamelevel [data-lvl="1"]')?.click(); });
@@ -4462,6 +4469,61 @@ await check('together', async () => {
   const errs = [...A.errors, ...B.errors].filter(e => !/maps\.google|google\.com/.test(e)); await A.ctx.close(); await B.ctx.close();
   ok(tale.a === tale.b && /prince/.test(tale.b) && /⭐3/.test(race) && !stray.length && follow < 6 && claim.gone && claim.by && real.direct && real.inGame && !errs.length, JSON.stringify({ tale, race, stray, follow, claim, real, errs }));
   return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game straight away (Use the internet is on: owner, 10 Oct; the gate itself is checked by realphotos)`;
+});
+
+await check('ownerautoplaystrategy', async () => {
+  const P = await open(b, { w: 390, h: 844, touch: true, pre: () => {
+    localStorage.setItem('sv2_playerid','autoplan0001'); localStorage.setItem('sv2_live',JSON.stringify({releases:{autoplay:{on:true,devices:['autoplan0001']}},festivals:{}}));
+  }, route: async ctx => {
+    await ctx.route('**/api/live**',rt=>rt.fulfill({contentType:'application/json',body:JSON.stringify({releases:{autoplay:{on:true,devices:['autoplan0001']}},festivals:{}})}));
+    await ctx.route('**/api/tester**',rt=>rt.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,rid:'synthetic-plan-receipt',mine:[],open:[]})}));
+  } }); await clear(P.page);
+  await P.page.waitForFunction(() => !!__sv.autoplay, null, {timeout:15000});
+  await P.page.evaluate(() => {
+    const p = __sv.heroes[0].profile; p.age='big'; p.difficulty='hard'; p.gameDiff={...(p.gameDiff||{}),hanoi:'hard'};
+    // Test playing separately from the independently covered world walk; force the old random picker into a repeatable cycle.
+    __sv.gameSpot=()=>null; Math.random=()=>.01; __sv.autoplay.start(['game:hanoi'],'x5');
+  });
+  await P.page.waitForFunction(() => !__sv.autoplay.running() && JSON.parse(localStorage.getItem('sv2_autoplay_report')||'{}').done?.length === 1, null, {timeout:180000});
+  const report=await P.page.evaluate(()=>JSON.parse(localStorage.getItem('sv2_autoplay_report')));
+  const errors=P.errors; await P.ctx.close();
+  const row=report.done[0];
+  ok(row.key==='game:hanoi' && row.ok && /^won:/.test(row.said) && !errors.length, JSON.stringify({row,errors}));
+  return 'Real autoplay solves the4-disc Hanoi activity through legal UI taps and records won, independent of the random fallback';
+});
+
+await check('ownerquesttargets', async () => {
+  const P = await open(b, { w: 1280, h: 800 }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const G = __sv; await G.lanterns.loadCh('ch2'); await G.lanterns.loadCh('ch3');
+    const targets = G.interactables.filter(i => /^story_(light|ribbon)/.test(i.id));
+    const blocked = targets.filter(i => G.world.boxes.some(box => i.x > box.x0 - .6 && i.x < box.x1 + .6 && i.z > box.z0 - .6 && i.z < box.z1 + .6) || G.world.solidAt?.(i.x,i.z)).map(i => ({id:i.id,x:i.x,z:i.z}));
+    const sydney = targets.filter(i => /^story_light_c3_fly_/.test(i.id));
+    return { total:targets.length, sydney:sydney.length, blocked };
+  });
+  const errors = P.errors; await P.ctx.close();
+  ok(r.sydney === 3 && r.total >= 9 && !r.blocked.length && !errors.length, JSON.stringify({ ...r, errors }));
+  return `${r.total} chapter ribbons/lights, including all3 Sydney targets, remain outside house boxes and collision solids`;
+});
+
+await check('ownertalesync', async () => {
+  const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
+  const r = await P.page.evaluate(async () => {
+    const { CUSTOM } = await import('/js/custom.js'), { openTheatre } = await import('/js/tales.js');
+    const previous = CUSTOM.features; CUSTOM.features = { ...(previous || {}), storyFilms: false };
+    const sent = [], wait = ms => new Promise(resolve => setTimeout(resolve, ms)); let receive;
+    const tale = { id: 'sync-regression', flag: '', title: () => 'Shared story', pages: [['', 'First page.', 'Trang đầu.'], ['', 'Second page.', 'Trang thứ hai.'], ['', 'Third page.', 'Trang thứ ba.']] };
+    const done = openTheatre(tale, { sync: { send: page => sent.push(page), listen: fn => { receive = fn; } } });
+    await wait(100); document.querySelector('.th-pause').click(); const initial = sent.slice();
+    receive(1); await wait(100); const remote = { sent: sent.slice(), text: document.querySelector('.th-text p').textContent };
+    receive(0); receive(1); await wait(100); const rapid = sent.slice();
+    document.querySelector('.th-next').click(); await wait(100); const local = { sent: sent.slice(), text: document.querySelector('.th-text p').textContent };
+    document.querySelector('.th-x').click(); await done; CUSTOM.features = previous;
+    return { initial, remote, rapid, local };
+  });
+  const errors = P.errors; await P.ctx.close();
+  ok(JSON.stringify(r.initial) === '[0]' && JSON.stringify(r.remote.sent) === '[0]' && r.remote.text === 'Second page.' && JSON.stringify(r.rapid) === '[0]' && JSON.stringify(r.local.sent) === '[0,2]' && r.local.text === 'Third page.' && !errors.length, JSON.stringify({ ...r, errors }));
+  return 'Received page changes survive the asynchronous draw without being rebroadcast; rapid remote changes settle, local Next broadcasts once';
 });
 
 await check('chests', async () => {
@@ -4831,7 +4893,7 @@ await check('knock', async () => {
   await E.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 30000 });
 
   const errs = A.errors.concat(D.errors, E.errors).filter(e => !/WebSocket|ERR_CONNECTION|peerjs/i.test(e)); await A.ctx.close(); await E.ctx.close();
-  ok(panel && panel.digits === code && panel.animals === 6 && !panel.qr && aniKeys === 10 && atDoor.knocking && !atDoor.partners && atDoor.mic === false && atDoor.panel && !sentAway.remotes && !sentAway.knocks && !sentAway.pop && !stranger.remotes && !stranger.partners && !stranger.bubbles && !errs.length, JSON.stringify({ panel, aniKeys, atDoor, sentAway, stranger, errs }));
+  ok(panel && panel.digits === code && panel.animals === 6 && !panel.qr && aniKeys === 10 && atDoor.knocking && !atDoor.partners && atDoor.mic === 'none' && atDoor.panel && !sentAway.remotes && !sentAway.knocks && !sentAway.pop && !stranger.remotes && !stranger.partners && !stranger.bubbles && !errs.length, JSON.stringify({ panel, aniKeys, atDoor, sentAway, stranger, errs }));
   return `code ${code} shown as digits and 6 animals (no QR code); typed on the animal pad, knocked with the microphone off and nothing heard; "No thanks" sent them away; a stranger's moves without knocking ignored; another child typed the numbers and was let in`;
 });
 

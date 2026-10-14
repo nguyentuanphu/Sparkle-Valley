@@ -37,11 +37,12 @@ register({
       }
       return null;
     }
+    api.plan(() => { const m = bestMove(); return m ? rodEls[held == null ? m[0] : m[1]] : null; });
     tools.querySelector('.hint').onclick = () => { const m = bestMove(); if (m) { held = null; draw(m); api.say('Move a disc from the glowing pole to the other glowing pole.', 'Chuyển một đĩa từ cột sáng này sang cột sáng kia nhé.'); } };
     api.say(`Move all the discs to the flag. A big disc can never sit on a small one!`, `Chuyển hết đĩa sang cột có cờ. Đĩa to không được đặt lên đĩa nhỏ nhé!`);
     draw();
     for (;;) {
-      const r = await tapOne(rodEls); if (api.closed) return;
+      const r = await tapOne(rodEls, api); if (api.closed) return;
       const i = r._v;
       if (held == null) { if (rods[i].length) { held = i; api.sfx.tap(); } else api.wrong(r, 'That pole is empty.', 'Cột này trống rồi.'); }
       else if (held === i) { held = null; }

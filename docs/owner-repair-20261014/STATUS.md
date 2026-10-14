@@ -8,8 +8,8 @@ Owner approved the consolidated repair plan and inclusion of new reports, with a
 - Approved R74 baseline: 6a6ae885f86ad58a52688782eeba1d5417985fe9.
 - Rejected R75 subject: 74b918c6c4c52db2e42d24dc69fe2945f1907e3d; PR195 remains separate.
 - Isolated repair branch: work/owner-repair-20261014, based on R75 with selective repairs preserving R74 identity.
-- Verified remote code checkpoint: 25176e742b5525f62c801d7b467ae451baaabe26. Parent e90b8b9; its formerly local Bag/report-storage/type/version-total changes are saved in this checkpoint. Current reconciliation/intake/result updates are documentation only.
-- Last update: 14 October 2026 AEDT. Role: Release repair editor. WO-01/05/06/07/08/09/10/16/19 active.
+- Current remote diagnostic source checkpoint: dd91f33ba019e59ce503bbf868e107e83e44d798; draft PR300, fresh Full suite38601628166 in progress. Includes tested family/voice repairs and pinned test-service provisioning; not a full-round approval. Earlier source25176e7 remains the exact provenance of completed full reading90-case proof.
+- Last update: 15 October 2026 AEDT. Role: Release repair editor. All unfinished work orders remain active, including WO-11/12/13/14; three newest owner reports retained in diagnostic-findings.md.
 
 ## Implemented and focused checked
 See CHANGELOG.md for contracts and evidence/index.md for honest coverage.
@@ -23,7 +23,7 @@ See CHANGELOG.md for contracts and evidence/index.md for honest coverage.
 - Installation ID retained, originating build retained in offline buckets, latest session ordering and concurrent live versions; Studio current versions distinct from historical device-days.
 - Tester retention wording follows actual per-device policy. Newly changed wording is not recorded speech.
 
-## Checks completed
+## Historical focused checks (superseded where later results are recorded)
 Pinned Playwright 1.56.1 / Chromium headless shell, emulated local browser with controlled services.
 - unit/rules/types/arch/bilingual/ages/soundsw: 7/7; 94 unit tests.
 - boot/shop/reportdetectors/testerreport/ownerround: passed. wearbag/bagitems initially failed; reproduced real clothing-filter bug and documented obsolete direct-action contracts before amendments.
@@ -93,3 +93,19 @@ Substantial unfinished scope: original59-point matching BEFORE/AFTER table; all2
 Publishing the locally tested family/voice repairs and strengthened Studio/family regressions, plus reproducible pinned test dependencies and loopback PeerJS/MQTT workflow provisioning, to the existing repair branch/draftPR300. This is a partial diagnostic candidate, not a release. Current local online7-check run started before the newest fixture corrections: multiplayer admission succeeds but obsolete expected auto-microphone fails; netgames synchronization succeeds but the three-in-a-row fixture used default6×6. Approved R74 itself explicitly starts/joins muted and defaults Caro to6×6. Corrected fixtures now require no permission request through admission then real Mic On/Off assertions, and explicitly select/assert3×3 for the deterministic winning sequence. Both must rerun. Other five online results pending. Fresh remote full suite starts after this push; completion is not assumed.
 
 The imported check-map/check-times are the actual diagnostic GitHub artifact at ee145bd1, not fabricated candidate measurements. Updated local timings are separate transient runner output; next remote artifact remains required. Refreshed GitHub intake still216 open bug-labelled issues through#299.
+
+
+## Online intake / three new owner bugs · 15 October 2026, 04:06 AEDT
+
+First service-enabled local run finished3/7 in21 minutes, no skips: cloud322s, meet134s and mapver156s passed; multiplayer/knock expect an automatically opened microphone contrary to approved R74, netgames expects a3×3 win on default6×6, together shows divergent story pages. Saved evidence/online-first-enabled-7-checks.json. Fixture corrections preserve/update real policy assertions and require reruns. Fresh dd91f33b GitHub Checks/Quick checks and Owner round voices are successful; Full suite and mirror still in progress at observation, no aggregate pass inferred.
+
+Henry adds three bugs, all in this round: screenshot identifies c3_fly, Follow3 lantern lights to Sydney, blocked by a house; autoplay must play toward completion rather than click randomly; Caro pink/green must identify the same player on both devices. DR-09/10/11 record source leads and required proof. Current local regression run ownerquesttargets/ownertalesync/ownerautoplaystrategy is active against unchanged dd91f33b game source; newly added tests are uncommitted. No new fixes yet claimed. Caro network regression now uses distinct synthetic names and compares actual rendered pieces after every turn.
+
+
+## Checked owner fixes / rescue checkpoint · 15 October 2026, 04:14 AEDT
+
+Before focused3/3 failed: two Sydney targets in house/collision bounds; received story pages echoed; unfinished Hanoi179 taps/89 wrong moves marked ok=true. After selective edits,8/8 checks pass including102 units; Hanoi completes through actual legal UI taps, all9 chapter target coordinates outside collision, received/rapid/local page transitions have correct broadcast behavior. Evidence new-owner-bugs-reproduction-before.json and new-owner-bugs-first-after-8-checks.json. These are bounded tests, not whole-round completion.
+
+Current local five-check rerun multiplayer/netgames/together/knock/micoff is active. It includes distinct Caro host/guest names and rendered flower/clover comparison on both boards after every move, actual Mic On/Off and no implicit permission request, and actual network story behavior. Results pending. Caro accessibility labels identify the same global player/seat; all-autoplay-game strategies, pictures and curriculum/films remain open. Cache tag now repair2-r76, BUILD and installation IDs retained.
+
+Saving this partial source to isolated checkpoint branch work/owner-repair-checkpoint-20261015 preserves the active diagnostic PR300 run38601628166 at dd91f33b. That run has not passed and does not contain these newest fixes. Once the focused integration is assessed, advance the repair branch and run the exact new candidate. No main merge/deploy/release or report closure.

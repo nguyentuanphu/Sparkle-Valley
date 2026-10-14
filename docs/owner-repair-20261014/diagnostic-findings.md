@@ -15,3 +15,14 @@
 The expanded suite finished6/7 (full reading passed; voice gaps reproduced). Family and voice repairs passed local focused checks; source changes await remote checkpoint. Diagnostic GitHub run38556313225 finished140/142 with seven service skips at ee145bd1. Its failed Studio fixture and voice coverage were repaired locally; a fresh remote run is still required.
 
 All216 open bug-labelled reports through#299 remain individually listed in issue-intake.json. Sanitized reported-build/module metadata helps choose reproductions but is not a diagnosis. All remain open; no release/retest disposition is inferred from a version change. General source concerns, such as cross-tab outbox races and simultaneous pairing, remain in the work order until reproduced and resolved.
+
+## Owner reports during resumed execution · 15 October 2026 AEDT
+
+| ID | WO | Report / source lead | Required disposition |
+|---|---|---|---|
+| DR-08 | WO-13/16 | Shared story pages disagree; online together check failed. openTheatre resets fromFriend before its asynchronous draw reads it | Focused received-page/no-echo regression before repair, then actual two-device story proof |
+| DR-09 | WO-04/16 | Henry: one owl-request destination sits inside a house and cannot be reached. Chapter ribbon/light placement checks circles but omits building boxes and has an unchecked fallback; quest NPCs may also go indoors at night | Identify reported step when available; audit all quest target geometry, approach and NPC availability; retain world art and real collision |
+| DR-10 | WO-09/13/16 | Henry: autoplay clicks randomly and never finishes. Generic target fallback has no solver for strategy activities | Add legal activity-specific progress strategies with completion/retry/stop proof; retain deliberate bounded wrong-answer testing and report unresolved activities honestly |
+| DR-11 | WO-13/16 | Henry: Caro colors appear self-relative on each device; pink must identify the same player on both | Reproduce with distinct named players; compare rendered piece/color and assigned seat on both boards and across turns/replay; preserve art |
+
+All are included under Henry's existing authorization. None is yet marked repaired. Owner destination clarification is optional and does not block the other investigations. Local online suite remains active; fresh diagnostic GitHub run38601628166 at dd91f33b runs independently.

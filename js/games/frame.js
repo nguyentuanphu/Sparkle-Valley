@@ -25,7 +25,7 @@ let current = null;
 export const gameOpen = () => !!current;
 // (owner, 13 Oct AEDT) the auto play check plays games like a child (js/autoplay.js): it hears each right and wrong
 // answer and the win, and while a game waits for the right one (untilRight) it can see which buttons it is choosing from
-export const playWatch = { on: null, ask: null };
+export const playWatch = { on: null, ask: null, plan: null };
 const tell = (k, e) => { if (playWatch.on) try { playWatch.on(k, e); } catch (x) { } };
 
 // players: array of profiles (1 or 2); level: 1..5; style: 'shrine' | 'village'
@@ -66,6 +66,8 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       show: (en, vi) => { help.textContent = T(en, vi); },
       sfx: SFX, wait,
       onCleanup: f => cleanups.push(f),
+      // Test autoplay still uses real UI taps; a strategy supplies the next legal target, not a synthetic win.
+      plan: f => { playWatch.plan = f; cleanups.push(() => { if (playWatch.plan === f) playWatch.plan = null; }); },
       dots(n, done) { tell('dots'); dots.innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < done ? 'on' : ''}"></i>`).join(''); },
       right(e) { tell('right', e); SFX.ok(); if (e) { e.classList.remove('wrong'); e.classList.add('right'); } reward(e); streak++; rights++; if (streak >= 3) combo(streak); else if (Math.random() < .08) lucky(); },
       wrong(e, en = 'Try again!', vi = 'Thử lại nhé!') { tell('wrong', e); SFX.no(); streak = 0; misses++; if (e) { e.classList.remove('wrong'); void e.offsetWidth; e.classList.add('wrong'); } mascot('hmm', T('Hmm… try again!', 'Ừm… thử lại nhé!')); say(en, vi); },

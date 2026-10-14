@@ -293,6 +293,9 @@ async function playGame(note) {
       if (ask && ask.els.some(shown)) {
         const right = ask.els.find(e => shown(e) && ask.check(e)), wrong = ask.els.filter(e => shown(e) && !ask.check(e) && !tried.has(e));
         pick = right && (Math.random() < AP_RIGHT || !wrong.length) ? right : any(wrong);
+      } else if (playWatch.plan) {
+        pick = playWatch.plan();
+        if (!pick || !shown(pick) || pick.disabled) continue; // wait for the next legal turn; never tap an occupied board at random
       } else {
         const all = targets(stage), fresh = all.filter(e => !tried.has(e));
         if (all.length && !fresh.length) tried.clear();
@@ -308,6 +311,7 @@ async function playGame(note) {
       if (Date.now() - last > s.idle * 1000) { r.cant = true; break; }
     }
   } finally { playWatch.on = null; mo.disconnect(); }
+  if (!r.won && gl.isConnected && !gl.classList.contains('out')) r.cant = true;
   return r;
 }
 
@@ -332,7 +336,7 @@ async function doGame(id, note) {
   await closeAll(); G.playGame(0, id, 'replay');
   if (!await until(() => document.querySelector('.gl'), AP_OPEN_WAIT)) { note(T('did not open', 'không mở được')); return; }
   const r = await playGame(note);
-  if (r.cant) note(T('help: auto play could not work out how to play it', 'cần giúp: tự chơi chưa biết chơi trò này'), true);
+  if (r.cant) note(T('help: auto play could not work out how to play it', 'cần giúp: tự chơi chưa biết chơi trò này'));
   await until(() => !document.querySelector('.gl:not(.out)'), 1.5);
   if (document.querySelector('.gl:not(.out)')) { await closer('.gl .gl-x')(note); if (!await until(() => !document.querySelector('.gl'), 2)) note(T('did not close', 'không đóng được')); }
   return `${r.won ? T('won', 'thắng') : T('played', 'đã chơi')}: ${r.rights} ✓, ${r.wrongs} ✗, ${r.taps} ${T('taps', 'lần chạm')}`;

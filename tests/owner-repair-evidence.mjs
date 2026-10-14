@@ -33,7 +33,7 @@ try {
       const ps=JSON.parse(localStorage.getItem('sv2_profiles')||'[]'); ps.forEach((p,i)=>{p.name=`Demo ${i+1}`;p.photo=null;}); localStorage.setItem('sv2_profiles',JSON.stringify(ps));
       localStorage.setItem('sv2_playerid','tester000001');localStorage.setItem('sv2_tester',JSON.stringify({at:1,b:'r1'}));localStorage.setItem('sv2_live',JSON.stringify({releases:{tester:{on:true,devices:['tester000001']},autoplay:{on:true,devices:['tester000001']}},festivals:{}}));
     }});
-    const shot = async name => P.page.screenshot({path:path.join(dir,`${label}-${name}.png`)});
+    const shot = async name => { await P.page.evaluate(() => document.fonts.ready); await P.page.waitForTimeout(550); await P.page.screenshot({path:path.join(dir,`${label}-${name}.png`)}); };
     await shot('welcome');
     await P.page.click('.screen.title .press', {force:true}); await P.page.waitForSelector('.screen.who');
     await P.page.waitForTimeout(650); await shot('selection');

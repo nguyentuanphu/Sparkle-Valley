@@ -153,16 +153,30 @@ register({
       return pick(near.length && Math.random() < .6 ? near : free);
     };
     api.say(K === 3 ? 'Get three in a row to win! Across, down or slanted.' : K === 4 ? 'Get four in a row to win!' : 'Get five in a row to win!', K === 3 ? 'Xếp được ba hình thẳng hàng là thắng! Ngang, dọc hay chéo đều được.' : K === 4 ? 'Xếp được bốn hình thẳng hàng là thắng!' : 'Xếp được năm hình thẳng hàng là thắng!');
-    let turn = 0, winner = -1;
+    let turn = 0, winner = -1, choosing = false;
+    const plannedSquare = who => {
+      const free = b.map((value, i) => value < 0 ? i : -1).filter(i => i >= 0);
+      const winning = side => free.find(i => { b[i] = side; const win = lineAt(i, side); b[i] = -1; return win; });
+      const urgent = winning(who) ?? winning(1 - who); if (urgent != null) return urgent;
+      const score = i => { const x = i % N, y = Math.floor(i / N); let n = 0;
+        for (const [dx,dy] of [[1,0],[0,1],[1,1],[1,-1]]) for (const sign of [-1,1]) for (let k = 1; k < K; k++) {
+          const nx=x+dx*k*sign, ny=y+dy*k*sign; if(nx<0||ny<0||nx>=N||ny>=N||b[ny*N+nx]===1-who)break;
+          if(b[ny*N+nx]===who)n += K-k;
+        }
+        return n*10-Math.abs(x-(N-1)/2)-Math.abs(y-(N-1)/2);
+      };
+      return free.sort((a,b) => score(b)-score(a))[0];
+    };
+    api.plan(() => choosing ? cells[plannedSquare(turn)] : null);
     for (let moves = 0; moves < N * N; moves++) {
       let i;
       if (O && turn !== O.mine) { // a friend's move, from their own device
-        api.show(`${names[turn]} is thinking…`, `${names[turn]} đang suy nghĩ…`); i = await O.next(moves, turn); if (api.closed) return;
+        api.show(`${names[turn]} ${P[turn]} is thinking…`, `${names[turn]} ${P[turn]} đang suy nghĩ…`); i = await O.next(moves, turn); if (api.closed) return;
         if (i == null || b[i] !== -1 || i >= N * N) { api.say('Your friend left the game.', 'Bạn của con đã rời trò chơi.'); await wait(1500); return api.win({ title: T('Good game!', 'Ván hay lắm!') }); }
       }
       else if (turn === 1 && !api.two && !O) { api.show('Bống is thinking…', 'Bống đang suy nghĩ…'); await wait(700); i = aiMove(); }
-      else { api.show(`${names[turn]} ${P[turn]}`, `${names[turn]} ${P[turn]}`); const c = await tapOne(cells.filter(c => b[c._i] < 0)); if (api.closed) return; i = c._i; if (O) O.move(moves, i); }
-      b[i] = turn; cells[i].textContent = P[turn]; cells[i].classList.add('put'); api.sfx.pop(moves);
+      else { api.show(`${names[turn]} ${P[turn]}`, `${names[turn]} ${P[turn]}`); choosing = true; const c = await tapOne(cells.filter(c => b[c._i] < 0), api); choosing = false; if (api.closed) return; i = c._i; if (O) O.move(moves, i); }
+      b[i] = turn; cells[i].textContent = P[turn]; cells[i].dataset.seat = String(turn); cells[i].setAttribute('aria-label', names[turn] + ': ' + T(turn === 0 ? 'Pink flower' : 'Green clover', turn === 0 ? 'Hoa hồng' : 'Cỏ xanh')); cells[i].classList.add('put'); api.sfx.pop(moves);
       const line = lineAt(i, turn);
       if (line && api.little && turn === 1 && !api.two && !O) break; // (only if every square would finish a line) call it a tie
       if (line) { line.forEach(k => cells[k].classList.add('win')); winner = turn; break; }
