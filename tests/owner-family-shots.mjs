@@ -35,7 +35,8 @@ try {
   await shot(b.page, 'tablet-waiting', 'Tablet: waiting for the first device to approve it');
   await panel(a.page); await a.page.waitForSelector('[data-action="approve"]');
   await shot(a.page, 'phone-approve', 'Phone: the request to approve or refuse');
-  await a.page.click('[data-action="approve"]'); await b.page.click('.fd-refresh'); await b.page.waitForSelector('.fd-photo');
+  await a.page.click('[data-action="approve"]'); // (the panel's own 15 s status check may connect it first, taking the button away: that is fine for a parent too)
+ await b.page.locator('.fd-refresh').click({ timeout: 5000 }).catch(() => { }); await b.page.waitForSelector('.fd-photo', { timeout: 30000 });
   await shot(b.page, 'tablet-connected', 'Tablet: connected to the family');
   const image = await a.page.evaluate(() => { const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d'); g.fillStyle = '#ffcf6b'; g.fillRect(0, 0, 96, 96); g.fillStyle = '#3b2a4f'; g.beginPath(); g.arc(48, 40, 18, 0, 7); g.fill(); g.fillRect(24, 62, 48, 30); return c.toDataURL('image/png').split(',')[1]; });
   await a.page.locator('.fd-photo').setInputFiles({ name: 'grandma.png', mimeType: 'image/png', buffer: Buffer.from(image, 'base64') });

@@ -28,7 +28,8 @@ try {
  const code=(await a.page.locator('.fd-paircode').innerText()).match(/[A-F0-9]{4}(?:-[A-F0-9]{4}){3}/)[0];
  const b=await open(browser,{w:820,h:1180,touch:true,route}); await panel(b.page); await b.page.fill('.fd-label','Test tablet'); await b.page.fill('.fd-code',code); await b.page.click('.fd-join'); await b.page.waitForSelector('.fd-refresh');stage('joining device awaits approval');
  assert.deepEqual(await b.page.evaluate(()=>Object.keys(globalThis.__svFamilyPhotos || {})),[]);
- await panel(a.page); await a.page.waitForSelector('[data-action="approve"]'); await a.page.click('[data-action="approve"]'); await b.page.click('.fd-refresh'); await b.page.waitForSelector('.fd-photo');stage('approval accepted');
+ await panel(a.page); await a.page.waitForSelector('[data-action="approve"]'); await a.page.click('[data-action="approve"]'); // (the panel's own 15 s status check may connect it first, taking the button away: that is fine for a parent too)
+ await b.page.locator('.fd-refresh').click({ timeout: 5000 }).catch(() => { }); await b.page.waitForSelector('.fd-photo', { timeout: 30000 });stage('approval accepted');
  const npc=await a.page.locator('.fd-npc').inputValue();
  const image=await a.page.evaluate(()=>{const c=document.createElement('canvas'); c.width=c.height=32; c.getContext('2d').fillStyle='#13aaff'; c.getContext('2d').fillRect(0,0,32,32); return c.toDataURL('image/png').split(',')[1];});
  await a.page.locator('.fd-photo').setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from(image,'base64')});
