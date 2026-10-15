@@ -4,7 +4,7 @@ import { THREE } from './gfx.js';
 import { T } from './i18n.js';
 import { nm } from './i18n.js';
 import { ICONS } from './icons.js';
-import { farm, saveProfiles, settings } from './state.js';
+import { farm, saveProfiles } from './state.js';
 import { fmt } from './money.js';
 import { el, esc, clamp } from './util.js';
 import { SIZE, HALF } from './world.js';
@@ -12,6 +12,7 @@ import { avatarURL } from './avatar.js';
 import { pic, hasArt as hasPic } from './art.js';
 import { SFX } from './audio.js';
 import { say } from './voice.js';
+import { explain as explainBrief } from './explain.js';
 
 export const EMOTES = [
   { id: 'hi', icon: '👋', en: 'Hi!', vi: 'Xin chào!' },
@@ -84,10 +85,10 @@ export class Hud {
     this.q('.simplesw').onclick = () => { SFX.tap(); game.simple && game.simple.show(); };
     this.q('.pcard').onclick = () => game.openQuick(i);
     // (owner, 16 Oct AEDT, point 50: "keep, explain on tap") the hearts explain themselves instead of opening Settings
-    { const hb = this.q('.hearts'), HEARTS = ['Your hearts show how strong you are. Little ones never lose hearts. For big children on Hard, a big fall takes a heart, and food gives it back. If they run out, Ông Cú carries you somewhere safe and fills them up again.', 'Trái tim cho biết con khỏe thế nào. Các bé nhỏ không bao giờ mất tim. Với các con lớn ở mức Khó, ngã từ chỗ cao sẽ mất một trái tim, và ăn sẽ hồi lại. Nếu hết tim, Ông Cú đưa con đến chỗ an toàn và làm đầy lại.'];
+    { const hb = this.q('.hearts'), HEARTS = ['Hearts show how strong you are. Little ones never lose them.', 'Trái tim cho biết con khỏe thế nào. Các bé không bao giờ mất tim.']
       hb.setAttribute('role', 'button'); hb.tabIndex = 0; hb.setAttribute('aria-label', T('What do the hearts mean?', 'Trái tim có nghĩa là gì?'));
-      // (the spoken line's caption already shows the words; the note is for when captions are off)
-      const explain = e => { e.stopPropagation(); e.preventDefault(); SFX.tap && SFX.tap(); say(...HEARTS); if (settings.captions === false) this.toast(T(...HEARTS)); };
+      // (owner, 16 Oct) a short note and a short spoken line, each with its own Studio switch (js/explain.js)
+      const explain = e => { e.stopPropagation(); e.preventDefault(); SFX.tap && SFX.tap(); explainBrief(this, 'hearts', HEARTS); };
       hb.onclick = explain; hb.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') explain(e); }; }
     this.q('.dk.map').onclick = () => game.openPad(i, 'map');
     this.q('.dk.bag').onclick = () => game.openPad(i, 'bag');
@@ -153,7 +154,7 @@ export class Hud {
     this.fitQuest();
   }
   showRegion(name) { const e = this.q('.region'); e.textContent = name; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
-  toast(msg) { const e = this.q('.htoast'); e.textContent = msg; e.classList.add('show'); clearTimeout(this._tt); this._tt = setTimeout(() => e.classList.remove('show'), Math.max(3200, msg.length * 30)); }
+  toast(msg, o = {}) { const e = this.q('.htoast'); e.textContent = msg; e.classList.toggle('explain', !!o.explain); e.classList.add('show'); clearTimeout(this._tt); this._tt = setTimeout(() => e.classList.remove('show'), Math.max(3200, msg.length * 30)); }
   setAction(it) {
     const b = this.q('.act');
     if (!it) { b.hidden = true; this.last.act = null; return; }

@@ -11,6 +11,7 @@ import { farm } from './state.js';
 import { LANDMARKS } from './regions.js';
 import { heightAt, WATER } from './world.js';
 import { pic } from './art.js';
+import { explain as explainBrief } from './explain.js';
 
 // the hats to save for, in order (coins)
 export const HATS = [
@@ -142,7 +143,7 @@ export function createKidPlay(G, { say, save }) {
     acc += dt; if (acc < .5) return; acc = 0;
     // once a day per child: tell them a gift is waiting, and where
     if (gifts() && spot) for (const h of G.heroes) { const k = h.profile.id + ':' + day(); if (told.has(k) || opened(h) || G.paused) continue; told.add(k);
-      const hud = G.huds && G.huds[h.i]; hud && hud.toast && hud.toast(T(`A surprise gift is waiting near ${spot.L.name()} today!`, `Hôm nay có quà bất ngờ gần ${spot.L.name()}!`)); say(...KID_LINES.giftHint); }
+      const hud = G.huds && G.huds[h.i]; explainBrief(hud, 'gift', [`A surprise gift is near ${spot.L.name()} today!`, `Hôm nay có quà gần ${spot.L.name()}!`], KID_LINES.giftHint); }
   });
   // the buttons follow the coins and the switches even while a window is open and the valley is paused
   setInterval(refresh, 500);

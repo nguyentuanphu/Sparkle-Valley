@@ -24,6 +24,8 @@ window.svLaunchProgress = (value, total, label) => {
 // covered a game's close button), and shows again when the child is back in the valley
 const busy = () => { const g = window.__sv; return !!(g?.heroes?.length && (g.paused || document.querySelector('.gl, .dialog, .storybook, .theatre'))); };
 window.svOfferUpdate = () => {
+  // (owner, 16 Oct) Studio can turn the notice off: the new version then starts the next time the game is opened
+  if (window.svFeatureOn && !window.svFeatureOn('explain_updateNotice', true)) return;
   if (document.querySelector('.update-notice')) return;
   const n = document.createElement('aside'); n.className = 'update-notice'; n.setAttribute('role', 'status');
   const label = document.createElement('span'); label.textContent = text[4];

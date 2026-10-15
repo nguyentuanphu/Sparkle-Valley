@@ -3,6 +3,7 @@
 import { settings, saveSettings, profiles } from './state.js';
 import { events } from './core/events.js';
 import { T } from './i18n.js';
+import { featureOn } from './custom.js';
 
 let PACK = null, packEmit = e => { }, hereArea = () => null, packStarted = false;
 // Keep the pack on the device by itself: a few seconds after the game opens (every time it opens), the voice cache is
@@ -152,6 +153,8 @@ function donePack(want, langs) {
 const packIsSaved = langs => settings.packSaved === packSig() && (!settings.packLangs || langs.every(L => settings.packLangs.includes(L)));
 // on mobile data with the core done: ask a grown-up about the rest (js/packbar.js shows the question)
 async function askRest() {
+  // (owner, 16 Oct) Studio can turn the question off: the rest of the voices then come on Wi-Fi only
+  if (!featureOn('explain_voiceAsk', true)) return;
   if (mayFetchRest() || !askDue() || packNet() === 'off') return;
   const rest = packOrder().filter(g => g !== 'core'); if (!rest.length) return;
   // how much is still to come (a device that kept an older pack has most of it already)
@@ -196,9 +199,10 @@ let card = null, cancelCardHold = () => { };
 export function askCard(mb) {
   if (card || mayFetchRest() || packNet() === 'off') return;
   card = document.createElement('div'); card.className = 'packask'; card.setAttribute('role', 'dialog');
-  card.style.cssText = 'position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 76px);transform:translateX(-50%);z-index:70;width:min(360px,calc(100% - 32px));box-sizing:border-box;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.96);box-shadow:0 6px 24px rgba(60,30,90,.25);color:#3a2a20;font:600 14px/1.35 var(--font);text-align:center';
-  const p = document.createElement('p'); p.style.margin = '0 0 10px';
-  p.textContent = T(`Download the rest of the voices on mobile data? About ${mb} MB. On Wi-Fi they download by themselves.`, `Tải phần giọng đọc còn lại bằng dữ liệu di động? Khoảng ${mb} MB. Khi có Wi-Fi giọng đọc tự tải.`);
+  // (owner, 16 Oct: explanations small; it had covered the goal card) low on the screen, above Jump and Run, and short
+  card.style.cssText = 'position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 184px);transform:translateX(-50%);z-index:70;width:min(340px,calc(100% - 32px));box-sizing:border-box;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.96);box-shadow:0 6px 24px rgba(60,30,90,.25);color:#3a2a20;font:600 14px/1.35 var(--font);text-align:center';
+  const p = document.createElement('p'); p.style.margin = '0 0 8px'; p.style.textAlign = 'center';
+  p.textContent = T(`Download the other voices on mobile data? About ${mb} MB (Wi-Fi does it by itself).`, `Tải các giọng còn lại bằng dữ liệu di động? Khoảng ${mb} MB (có Wi-Fi sẽ tự tải).`);
   const row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;justify-content:center;flex-wrap:wrap';
   const btn = (text, bg) => { const b = document.createElement('button'); b.type = 'button'; b.style.cssText = `position:relative;overflow:hidden;min-height:48px;min-width:120px;flex:1 1 130px;padding:6px 12px;border:0;border-radius:12px;font:700 14px/1.2 var(--font);color:#fff;background:${bg};touch-action:none`; b.innerHTML = '<span style="position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.35)"></span><span style="position:relative"></span>'; b.lastChild.textContent = text; return b; };
   const yes = btn(T('Grown-ups: hold for Yes', 'Người lớn: giữ để đồng ý'), 'var(--purple, #8a5cf6)'), no = btn(T('Not now', 'Để sau'), '#9a8aa8');

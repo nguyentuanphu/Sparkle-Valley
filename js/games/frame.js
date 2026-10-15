@@ -7,6 +7,7 @@ import { SFX, Music } from '../audio.js';
 import { el, wait, esc } from '../util.js';
 import { openHowTo } from '../howto.js';
 import { pic } from '../art.js';
+import { featureOn } from '../custom.js';
 
 import { GAMES, register } from './registry.js';
 import { playWatch, tell, setPlan } from './playwatch.js';
@@ -39,6 +40,9 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
   return new Promise(resolve => {
     const layer = el('div', 'gl gl-' + style + (little ? ' little' : ''));
     layer.dataset.gameId = id;
+    // (owner, 16 Oct) Studio can hide the game's question line on screen; the game still says it aloud. Its space
+    // stays, so nothing in the game moves (UX-001)
+    if (!featureOn('explain_gameLine', true)) layer.classList.add('no-help');
     layer.innerHTML = `
       <div class="gl-head">
         <button class="gl-x" aria-label="${T('Leave', 'Rời đi')}">✕</button>

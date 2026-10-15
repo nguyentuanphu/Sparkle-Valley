@@ -5658,21 +5658,67 @@ await check('ownerstudioperms', async () => {
 });
 
 await check('ownerheartstap', async () => {
-  // (owner, 16 Oct AEDT, point 50) the hearts explain themselves when tapped; the rest of the card still opens Settings
+  // (owner, 16 Oct AEDT, point 50) the hearts explain themselves when tapped; the rest of the card still opens Settings.
+  // (owner, 16 Oct: "discrete, small but understandable"; one Studio switch per thing) a short note of two lines at
+  // most, clear of the buttons, and a short spoken line, each with its own switch; never a caption box as well
   const P = await open(b, { w: 390, h: 844, touch: true }); await clear(P.page);
-  const said = await P.page.evaluate(async () => { const V = await import('/js/voice.js'); window.__said = []; return !!V; });
+  const voices = []; P.page.on('request', q => { const m = /\/voices\/(en|vi)\/\w\/(7863c82e65276c14|e751803424298077)\.mp3/.exec(q.url()); if (m) voices.push(m[2]); });
+  // (Full run 37: the daily gift's own note took the HUD note while this ran) the gift's note and voice stay quiet here
+  const sw = (id, on) => P.page.evaluate(([id, on]) => import('/js/custom.js').then(C => { C.CUSTOM.features = { ...(C.CUSTOM.features || {}), [id]: on }; }), [id, on]);
+  await sw('explain_gift_note', false); await sw('explain_gift_voice', false);
+  // the voice is on here (the checks start with it off), and any way it speaks counts: a recorded file or the device voice
+  await P.page.evaluate(async () => { (await import('/js/state.js')).settings.voice = true; window.__spoke = []; window.__explained = []; addEventListener('sv-explain', e => window.__explained.push(e.detail)); const s = speechSynthesis.speak.bind(speechSynthesis); speechSynthesis.speak = u => { window.__spoke.push(u.text); try { s(u); } catch (e) { } }; });
   const box = await P.page.evaluate(() => { const h = document.querySelector('.hud .hearts'), r = h.getBoundingClientRect(); return { y: r.y + r.height / 2, x: r.x + r.width / 2, hit: Math.round(r.height), role: h.getAttribute('role'), label: h.getAttribute('aria-label') }; });
-  await P.page.touchscreen.tap(box.x, box.y); await P.page.waitForTimeout(600);
-  const after = await P.page.evaluate(() => ({ caption: document.querySelector('.caption.show')?.textContent || '', toast: document.querySelector('.hud .htoast.show')?.textContent || '', settings: !!document.querySelector('.modal:not(.out)') }));
-  // with captions switched off, the words come as a note instead (shown once, never twice)
-  await P.page.evaluate(async () => { (await import('/js/state.js')).settings.captions = false; });
-  await P.page.waitForTimeout(3600); await P.page.touchscreen.tap(box.x, box.y); await P.page.waitForTimeout(600);
-  const noCaps = await P.page.evaluate(async () => { const n = document.querySelector('.hud .htoast.show')?.textContent || ''; (await import('/js/state.js')).settings.captions = true; return n; });
+  const tap = async () => { await P.page.waitForTimeout(3600); voices.length = 0; await P.page.evaluate(() => { window.__spoke = []; window.__explained = []; }); await P.page.touchscreen.tap(box.x, box.y); await P.page.waitForTimeout(1500); const ex = await P.page.evaluate(() => window.__explained.filter(e => e.kind === 'hearts')); if (ex.some(e => e.spoken)) voices.push('spoken'); };
+  const look = () => P.page.evaluate(() => { const n = document.querySelector('.hud .htoast.show'), r = n?.getBoundingClientRect();
+    const hits = !r ? [] : [...document.querySelectorAll('.hud button, .hud .z-view, .hud .dk, .hud .quest, .hud .pcard')].filter(e => { const q = e.getBoundingClientRect(); return q.width && r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top; }).map(e => e.className);
+    return { note: n?.textContent || '', explain: !!n?.classList.contains('explain'), lines: r ? Math.round(r.height / (parseFloat(getComputedStyle(n).lineHeight) || 21)) : 0, h: Math.round(r?.height || 0), w: Math.round(r?.width || 0), hits, caption: document.querySelector('.caption.show')?.textContent || '', settings: !!document.querySelector('.modal:not(.out)') }; });
+  await tap(); const both = { ...(await look()), voice: [...voices] };
+  await sw('explain_hearts_note', false); await tap(); const voiceOnly = { ...(await look()), voice: [...voices] };
+  await sw('explain_hearts_note', true); await sw('explain_hearts_voice', false); await tap(); const noteOnly = { ...(await look()), voice: [...voices] };
+  await sw('explain_hearts_note', false); await tap(); const none = { ...(await look()), voice: [...voices] };
   await clear(P.page); await P.page.locator('.hud .pav').first().tap(); await P.page.waitForTimeout(800);
   const card = await P.page.evaluate(() => !!document.querySelector('.modal:not(.out)'));
   const errors = P.errors; await P.ctx.close();
-  ok(box.role === 'button' && /hearts/i.test(box.label) && box.hit >= 44 && /hearts show how strong/i.test(after.caption) && !after.toast && /hearts show how strong/i.test(noCaps) && !after.settings && card && !errors.length, JSON.stringify({ box, after, noCaps, card, errors }));
-  return `hearts: own 44 px tap target, explained in speech with one caption (a note when captions are off); the picture (with its gear) still opens Settings`;
+  const r = { box, both, voiceOnly, noteOnly, none, card, errors };
+  ok(box.role === 'button' && /hearts/i.test(box.label) && box.hit >= 44, 'hearts tap target: ' + JSON.stringify(box));
+  ok(/^Hearts show how strong you are\. Little ones never lose them\.$/.test(both.note) && both.explain && both.h <= 60 && !both.hits.length && !both.caption && both.voice.length >= 1 && !both.settings, 'note and voice: ' + JSON.stringify(both));
+  ok(!voiceOnly.note && !voiceOnly.caption && voiceOnly.voice.includes('spoken'), 'note switched off: ' + JSON.stringify(voiceOnly));
+  ok(noteOnly.note && !noteOnly.caption && !noteOnly.voice.length, 'voice switched off: ' + JSON.stringify(noteOnly));
+  ok(!none.note && !none.caption && !none.voice.length, 'both switched off: ' + JSON.stringify(none));
+  ok(card && !errors.length, JSON.stringify({ card, errors }));
+  return `hearts: own 44 px tap target; a short note (${both.h} px, clear of every button) and a short spoken line, each switched by Studio on its own, never a caption box; the picture (with its gear) still opens Settings`;
+});
+
+await check('ownerexplainswitches', async () => {
+  // (owner, 16 Oct AEDT: "all options to switch on/off one by one, each telling what will be switched off") with every
+  // explanation switch on (the default) and then off from Studio (content/custom.json features): the daily gift's note
+  // and voice, a game's question line (its space kept), the update notice. The hearts are checked in ownerheartstap
+  const ids = ['explain_gift_note', 'explain_gift_voice', 'explain_gameLine', 'explain_updateNotice', 'explain_voiceAsk', 'explain_hearts_note', 'explain_hearts_voice'];
+  const C = await import('../js/content/releases.js');
+  const listed = ids.filter(id => C.RELEASES.some(r => r.id === id && r.group === 'explain' && r.def === true && / Off: | Tắt: |Off:|Tắt:/.test(r.en + r.vi) && r.vi));
+  ok(listed.length === ids.length && C.RELEASE_GROUPS.explain, 'Studio switches missing, or not saying what Off does: ' + ids.filter(id => !listed.includes(id)).join(', '));
+  const run = async off => {
+    const route = off ? async ctx => ctx.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), ...Object.fromEntries(ids.map(id => [id, false])) }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); }) : null;
+    const P = await open(b, { w: 390, h: 844, touch: true, play: false, route, pre: () => { window.__ex = []; addEventListener('sv-explain', e => window.__ex.push({ ...e.detail, note: [...document.querySelectorAll('.hud .htoast.show')].map(n => n.textContent).join(' ') })); } });
+    await start(P.page); await clear(P.page);
+    await P.page.waitForFunction(() => window.__ex.some(e => e.kind === 'gift'), null, { timeout: 20000 }).catch(() => { });
+    const gift = await P.page.evaluate(() => { const ex = window.__ex.filter(e => e.kind === 'gift'); return { ex, note: ex.map(e => e.note).join(' ') }; });
+    await P.page.evaluate(() => window.svOfferUpdate?.()); await P.page.waitForTimeout(500);
+    const notice = await P.page.evaluate(() => !!document.querySelector('.update-notice'));
+    await P.page.evaluate(() => document.querySelector('.update-notice')?.remove());
+    await P.page.evaluate(() => __sv.openGamesHub(0)); await P.page.waitForSelector('.hplay', { timeout: 20000 }); await P.page.locator('.hplay').first().click();
+    await P.page.waitForSelector('.gl:not(.out)', { timeout: 30000 }); await P.page.waitForTimeout(1500);
+    const line = await P.page.evaluate(() => { const h = document.querySelector('.gl .gl-help'), r = h.getBoundingClientRect(); return { text: h.textContent.trim(), shown: getComputedStyle(h).visibility !== 'hidden', h: Math.round(r.height) }; });
+    const errors = P.errors; await P.ctx.close(); return { gift, notice, line, errors };
+  };
+  const on = await run(false), off = await run(true);
+  ok(on.gift.ex.length && on.gift.ex.every(e => e.shown && e.spoken) && /gift/i.test(on.gift.note), 'gift on: ' + JSON.stringify(on.gift));
+  ok(off.gift.ex.length && off.gift.ex.every(e => !e.shown && !e.spoken) && !/gift/i.test(off.gift.note), 'gift off: ' + JSON.stringify(off.gift));
+  ok(on.notice && !off.notice, `update notice on ${on.notice}, off ${off.notice}`);
+  ok(on.line.text && on.line.shown && off.line.text && !off.line.shown && off.line.h === on.line.h, 'game question line: ' + JSON.stringify({ on: on.line, off: off.line }));
+  ok(!on.errors.length && !off.errors.length, JSON.stringify([on.errors, off.errors]));
+  return `${ids.length} Studio switches (each says what Off does, EN/VI); switched off: no gift note or voice, no update notice, a game's question line hidden with its space kept; on: all shown`;
 });
 
 await check('ownerupdatenotice', async () => {
