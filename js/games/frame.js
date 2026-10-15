@@ -9,6 +9,7 @@ import { openHowTo } from '../howto.js';
 import { pic } from '../art.js';
 
 import { GAMES, register } from './registry.js';
+import { playWatch, tell, setPlan } from './playwatch.js';
 export { GAMES, register }; // (the list itself is in registry.js)
 // Each kind of game has its own song.
 const GAME_MUSIC = {
@@ -23,10 +24,8 @@ const PRIZES = ['🦄', '🦖', '🚀', '🧸', '🎈', '🍭', '🪁', '🐬', 
 
 let current = null;
 export const gameOpen = () => !!current;
-// (owner, 13 Oct AEDT) the auto play check plays games like a child (js/autoplay.js): it hears each right and wrong
-// answer and the win, and while a game waits for the right one (untilRight) it can see which buttons it is choosing from
-export const playWatch = { on: null, ask: null, plan: null, maxActions: 0 };
-const tell = (k, e) => { if (playWatch.on) try { playWatch.on(k, e); } catch (x) { } };
+// the auto play check's view of the game (js/games/playwatch.js)
+export { playWatch };
 
 // players: array of profiles (1 or 2); level: 1..5; style: 'shrine' | 'village'
 // online: playing with friends on their own devices (js/netgames.js): { mine, names, move(n, mv), next(n, seat), all(n) }
@@ -74,7 +73,7 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       sfx: SFX, wait,
       onCleanup: f => cleanups.push(f),
       // Test autoplay still uses real UI taps; a strategy supplies the next legal target, not a synthetic win.
-      plan: (f, { maxActions = 0 } = {}) => { playWatch.plan = f; playWatch.maxActions = maxActions; cleanups.push(() => { if (playWatch.plan === f) { playWatch.plan = null; playWatch.maxActions = 0; } }); },
+      plan: (f, { maxActions = 0 } = {}) => { cleanups.push(setPlan(f, maxActions)); },
       dots(n, done) { tell('dots'); dots.innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < done ? 'on' : ''}"></i>`).join(''); },
       right(e) { tell('right', e); SFX.ok(); if (e) { e.classList.remove('wrong'); e.classList.add('right'); } reward(e); streak++; rights++; if (streak >= 3) combo(streak); else if (Math.random() < .08) lucky(); },
       wrong(e, en = 'Try again!', vi = 'Thử lại nhé!') { tell('wrong', e); SFX.no(); streak = 0; misses++; if (e) { e.classList.remove('wrong'); void e.offsetWidth; e.classList.add('wrong'); } mascot('hmm', T('Hmm… try again!', 'Ừm… thử lại nhé!')); say(en, vi); },
