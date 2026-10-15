@@ -4647,6 +4647,41 @@ await check('together', async () => {
   return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game straight away (Use the internet is on: owner, 10 Oct; the gate itself is checked by realphotos)`;
 });
 
+await check('ownertogetherstart', async () => {
+  const up = await new Promise(r => { const ws = new WebSocket('ws://127.0.0.1:9001/', 'mqtt'); const t = setTimeout(() => r(false), 2000); ws.onopen = () => { clearTimeout(t); ws.close(); r(true); }; ws.onerror = () => { clearTimeout(t); r(false); }; });
+  if (!up) return 'skipped (no local MQTT broker on 127.0.0.1:9001)';
+  const pre = () => { window.SV_PEER = { host: '127.0.0.1', port: 9099, path: '/nope', secure: false }; window.SV_MQTT = ['ws://127.0.0.1:9001/']; };
+  const A = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'TGSA22', friendsOn: true, autoMeet: false, friends: [{ code: 'TGSB33', name: 'Bin' }] } });
+  const B = await open(b, { pre, w: 900, h: 700, lang: 'en', settings: { friendCode: 'TGSB33', friendsOn: true, autoMeet: false, friends: [{ code: 'TGSA22', name: 'Na' }] } });
+  await pairKeys(A, B);
+  for (const P of [A, B]) { await clear(P.page); await P.page.evaluate(async () => { window.__Net = (await import('/js/net.js')).Net; }); }
+  await A.page.evaluate(async () => __Net.host(__sv.sendHello())); await A.page.evaluate(() => __sv.shareStatus());
+  await B.page.waitForFunction(() => { const s = __Net.friends.status.TGSA22; return s && s.online && s.room; }, null, { timeout: 30000 });
+  await B.page.evaluate(() => { __sv.openPad(0, 'friend'); }); await B.page.waitForSelector('[data-joinf]'); await B.page.evaluate(() => document.querySelector('[data-joinf]').click());
+  await B.page.waitForFunction(() => Object.keys(__sv.partners).length > 0, null, { timeout: 45000 });
+  await A.page.waitForFunction(() => Object.values(__sv.partners).some(P => P.pos.y > -40), null, { timeout: 30000 });
+  const clean = async () => { for (const P of [A, B]) await P.page.evaluate(() => { document.querySelectorAll('.modal, .dialog, .gl, .theatre').forEach(m => m.remove()); __sv.paused = false; __sv.netGames.leave(); }); await A.page.waitForTimeout(600); };
+  await clean();
+  const accept = async () => { await B.page.waitForSelector('.dialog .dch', { timeout: 20000 }); await B.page.evaluate(() => document.querySelector('.dialog .dch').click()); };
+  // Cloud sealing and multi-broker delivery can put an initial move before gstart.
+  // Hold only the accepted start; ordinary real room messages still travel through the relay.
+  await B.page.evaluate(() => { const g=__sv.netGames,receive=g.receive.bind(g);window.__storyRelease=()=>{const start=window.__storyStart;window.__storyStart=null;receive(start);};g.receive=d=>{if(d.t==='gstart'&&d.game==='tale-banhchung'){window.__storyStart=d;return;}if(d.t==='gmove'&&window.__storyStart)window.__earlyStoryMoves=(window.__earlyStoryMoves||0)+1;receive(d);}; });
+  await A.page.evaluate(() => __sv.inviteGame('tale-banhchung', null, 1)); await accept();
+  await B.page.waitForFunction(()=>!!window.__storyStart);
+  await A.page.waitForFunction(()=>!!document.querySelector('.theatre .th-text')?.textContent.trim());
+  await A.page.evaluate(()=>document.querySelector('.th-pause').click());
+  await A.page.evaluate(()=>document.querySelector('.th-next').click());await A.page.waitForTimeout(400);await A.page.evaluate(()=>document.querySelector('.th-next').click());
+  const expected=await A.page.evaluate(()=>__sv.TALES.find(t=>t.id==='banhchung').pages[2][1]);
+  await A.page.waitForFunction(expected=>document.querySelector('.th-text')?.textContent.startsWith(expected),expected);
+  await B.page.waitForFunction(()=>window.__earlyStoryMoves>=2);
+  await B.page.evaluate(()=>window.__storyRelease());
+  await B.page.waitForFunction(()=>!!document.querySelector('.theatre .th-text')?.textContent.trim());await B.page.waitForTimeout(2000);
+  const states=[];for(const P of [A,B])states.push(await P.page.evaluate(()=>document.querySelector('.th-text p')?.textContent));
+  const errs=[...A.errors,...B.errors];await A.ctx.close();await B.ctx.close();
+  ok(states.every(s=>s===expected)&&!errs.length,JSON.stringify({expected,states,errs}));
+  return 'An accepted delayed story start retains earlier page moves: both real relay peers stay on the inviter’s chosen page; no late initial-page rollback';
+});
+
 await check('ownerhudocclusion', async () => {
   const rows=[]; const overlaps=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
   for(const [w,h,lang] of [[320,640,'en'],[390,844,'en'],[320,640,'vi'],[390,844,'vi'],[844,390,'vi'],[820,1180,'en'],[1280,800,'en']]) {

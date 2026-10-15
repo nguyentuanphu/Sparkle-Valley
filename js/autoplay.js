@@ -155,10 +155,10 @@ function onScreen(x, y, z) {
 // ---------- moving like a child ----------
 // a path round water, walls, houses and trees (G.goodSpot), on a grid; null when there is none on foot
 async function findPath(x0, z0, x1, z1, near) {
-  const c = AP_PATH.cell, m = AP_PATH.margin, minX = Math.min(x0, x1) - m, minZ = Math.min(z0, z1) - m, nx = Math.ceil((Math.max(x0, x1) + m - minX) / c), nz = Math.ceil((Math.max(z0, z1) + m - minZ) / c);
+  const c = Math.min(AP_PATH.cell, Math.max(.35, near / 2)), m = AP_PATH.margin, minX = Math.min(x0, x1) - m, minZ = Math.min(z0, z1) - m, nx = Math.ceil((Math.max(x0, x1) + m - minX) / c), nz = Math.ceil((Math.max(z0, z1) + m - minZ) / c);
   const ix = x => Math.round((x - minX) / c), iz = z => Math.round((z - minZ) / c), key = (i, j) => i * 100000 + j, wx = i => minX + i * c, wz = j => minZ + j * c;
   const good = new Map(), ok = (i, j) => { if (i < 0 || j < 0 || i > nx || j > nz) return false; const k = key(i, j); if (!good.has(k)) good.set(k, !!G.goodSpot(wx(i), wz(j)) || Math.hypot(wx(i) - x0, wz(j) - z0) < 2.2); return good.get(k); }; // (the first steps away from a wall or a villager the child stands by)
-  const si = ix(x0), sj = iz(z0), reach = Math.max(near + 1, 3.5);
+  const si = ix(x0), sj = iz(z0), reach = Math.max(.1, near - .1);
   const open = [[0, si, sj]], from = new Map([[key(si, sj), null]]), cost = new Map([[key(si, sj), 0]]); let n = 0, end = null;
   const H = (i, j) => Math.hypot(wx(i) - x1, wz(j) - z1);
   while (open.length && n < AP_PATH.max) {
@@ -179,19 +179,21 @@ async function findPath(x0, z0, x1, z1, near) {
   const clear = (a, b) => { const d = Math.hypot(b.x - a.x, b.z - a.z), s = Math.ceil(d / .7); for (let k = 1; k < s; k++) if (!G.goodSpot(a.x + (b.x - a.x) * k / s, a.z + (b.z - a.z) * k / s)) return false; return true; };
   const out = []; let at = { x: x0, z: z0 }, k = 0;
   while (k < pts.length) { let far = k; for (let q = pts.length - 1; q > k; q--) if (clear(at, pts[q])) { far = q; break; } at = pts[far]; out.push(at); k = far + 1; }
-  if (Math.hypot(x1 - at.x, z1 - at.z) > .5 && clear(at, { x: x1, z: z1 })) out.push({ x: x1, z: z1 });
   return out;
 }
 // walk along the points like a tap-to-walk; false: stuck (a jump was tried first)
 async function walk(path, x, z, near) {
   const h = hero(); let jumped = false;
   for (let k = 0; k < path.length; k++) {
-    const p = path[k], last = k === path.length - 1, to = last ? Math.max(.8, near - .3) : 1.1;
+    const p = path[k], last = k === path.length - 1, to = last ? Math.max(.1, Math.min(.8, near - Math.hypot(p.x - x, p.z - z) - .05)) : 1.1;
     let mark = { x: h.pos.x, z: h.pos.z, t: Date.now() };
     while (Math.hypot(h.pos.x - p.x, h.pos.z - p.z) > to) {
       if (Math.hypot(h.pos.x - x, h.pos.z - z) <= near) { h.goal = null; return true; }
       if (topOpen()) { h.goal = null; await settle(40); await closeAll(); mark = { x: h.pos.x, z: h.pos.z, t: Date.now() }; }
-      G.paused = false; h.goal = { x: p.x, z: p.z }; h.goalT = 0; h.autoRun = sp().run;
+      // Tap-to-walk stops .7m before its goal. For a tiny approach, aim just beyond the waypoint
+      // and stop on actual arrival; ordinary movement/collision still decides whether it can be reached.
+      const d = Math.hypot(p.x - h.pos.x, p.z - h.pos.z), beyond = last && to < .75 && d > .001 ? .75 / d : 0;
+      G.paused = false; h.goal = { x: p.x + (p.x - h.pos.x) * beyond, z: p.z + (p.z - h.pos.z) * beyond }; h.goalT = 0; h.autoRun = sp().run;
       await hold(.1);
       if (Date.now() - mark.t > AP_STUCK.secs * 1000) {
         if (Math.hypot(h.pos.x - mark.x, h.pos.z - mark.z) < AP_STUCK.moved) {
@@ -343,7 +345,7 @@ async function readTale(note) {
 // ---------- each kind of step ----------
 const closer = sel => async note => { const x = document.querySelector(sel); if (x && shown(x)) await tap(x, note); else if (x) x.click(); };
 async function doGame(id, note) {
-  const spot = G.gameSpot && G.gameSpot(id); if (spot) { if (!await go(spot.x, spot.z, Math.max(1.8, (spot.r || 2) * .7), note)) return; const s = onScreen(spot.x, 1, spot.z); if (s) await fingerTo(s.x, s.y); }
+  const spot = G.gameSpot && G.gameSpot(id); if (spot) { if (!await go(spot.x, spot.z, Math.max(.35, (spot.r || 2) * .95), note)) return; const s = onScreen(spot.x, 1, spot.z); if (s) await fingerTo(s.x, s.y); }
   await closeAll(); G.playGame(0, id, 'replay');
   if (!await until(() => document.querySelector('.gl'), AP_OPEN_WAIT)) { note(T('did not open', 'không mở được')); return; }
   const r = await playGame(note);
@@ -375,7 +377,7 @@ async function doPlace(p, note) { if (!await go(p.x, p.z, 4, note)) return; awai
 // go up to a thing or a person, tap it, and do what opens (talk through, play, read)
 async function doTap(it, note) {
   await closeAll(); const h = hero();
-  if (!await go(it.x, it.z, Math.max(.35, Math.min(it.r || 2, 3) * .8), note)) return;
+  if (!await go(it.x, it.z, Math.max(.35, (it.r || 2) * .9), note)) return;
   const s = onScreen(it.x, 1.2, it.z); if (s) await fingerTo(s.x, s.y);
   step_('tap', (typeof it.label === 'function' ? it.label() : it.id) || it.id); G.goAndDo(h, it);
   await hold(.6); await until(() => !h.goal, 6); await hold(.4);

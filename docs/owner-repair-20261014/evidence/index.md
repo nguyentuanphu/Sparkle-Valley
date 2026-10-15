@@ -44,3 +44,7 @@ Attributed shared-activity comparisons now complete: activity-shell-before-r74 (
 - autoplay-navigation-robot-before-2-checks.json: both controlled b09 baselines failed (false arrival and Robot random-tap timeout).
 - speech-cancel-before-2-checks.json: b09 cancellation failure retained; existing filmmusic happened to pass locally.
 - autoplay-speech-final-4-checks.json: repair13 focused4/4; all8 real EN/VI legal game completions and immediate plain-player cancellation/stale-timeout safety. Runtime source committed19fe5a91; wider regression still running.
+
+- autoplay-speech-regression-first-9-checks.json: repair13 wider8/9; tour exposed actual approach failures.
+- approach-story-start-before-4-checks.json: first approach refinement1/4; Counting remained blocked, early-page unit/browser reproduced; navigation guard passed.
+- approach-story-start-final-7-checks.json: repair15 final7/7,106 units, actual tour and both online cases. Diagnostic Full still required.
