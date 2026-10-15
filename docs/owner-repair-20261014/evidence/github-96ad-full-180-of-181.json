@@ -1,0 +1,12 @@
+{
+  "run": "https://github.com/nguyentuanphu/Sparkle-Valley/actions/runs/38719558832",
+  "source": "96ad676cfeec1515c263a4c7bb24082a12abe945",
+  "date": "2026-10-15, 21:20-22:11 AEDT",
+  "result": "180/181 passed; 8/8 shares green, collect red on the one failure",
+  "failed": { "ownertalesync": "expected the opening page 0 broadcast that repair16 removed; contradicted ownerstoryinitial. Expectation updated at 100e7ed8 (all behavioural assertions kept); passed locally" },
+  "passed_only_on_retry": [],
+  "skipped": "none listed in the summary (online services provided on GitHub)",
+  "speed_checks": "perf/startup/battery are not run on GitHub (local solo runs still pending)",
+  "summary_comment": "https://github.com/nguyentuanphu/Sparkle-Valley/pull/300#issuecomment-6190677412",
+  "note": "Shard artifacts not yet downloaded and audited individually; this record is from the collect summary and job states"
+}

@@ -320,3 +320,13 @@ Source21 code checks first: ownerdecoroverlap/festivals/festhunt/ownerfestplacem
 Pictures: evidence/festival-tet-before-r74 (R74 6a6ae885, 8766) and evidence/festival-tet-after-23 (ab4773c4, served from a detached worktree), 9 each: phone/tablet/computer EN, Lotus Village, China Town, Hội An, same fixed inspection pose; camera positions agree within about 1.4 m (gameplay camera settles differently), recorded per picture in festival-results.json with full served-source fingerprints. Zero page errors. Not physical-device proof. Remaining decoration gaps: Halloween door pumpkins and the ring's road clearance are outside the audit; naturalness is judged from these 9 views only.
 
 Environment note: this session has no npm registry access; Playwright 1.56.1 is the image's global copy (same version), Chromium build 1194 at /opt/pw-browsers, TypeScript 6.0.2 locally. Online checks needing local PeerJS/MQTT services cannot run here (packages unavailable); GitHub Full runs them.
+
+
+## Session update · 15 October 2026, about 22:30 AEDT
+
+- Autoplay rates: baseline 9/10 at ab4773c4 (ownerautoplay3x found a "Job done!" reward covering Sort It Out's choices). Fixed in js/farm.js (reward waits until no activity is open); 8/8 at 1x/2x/3x/5x plus jobs/games/kidplay/plots.
+- GitHub Full 38719558832 at 96ad676c: 180/181. ownertalesync contradicted the repair16 rule (it expected the removed opening-page broadcast); expectation updated at 100e7ed8 with every behavioural assertion kept. PR300 now at 100e7ed8; its Full is the next exact-source result.
+- Reports #251/#256 (Shadow Shapes stuck at 233,-56) reproduced 8/8 when arriving by a long trip; G.clearSpot could choose ground past the valley edge beside the shadow theatre (R74 hid it by accepting landings within 8 m). Fixed; autoplay's long trips land like the Go button. New check ownertheatreapproach. Focused 14/14.
+- Strict types: js/content/autoplay.js, js/content/tester.js, new js/games/playwatch.js (14 files in types, 6 strict). 111 unit tests.
+- Probes: six learning games open and are won on current; #86 well and #261 Ô Ăn Quan not reproduced in emulation (report-dispositions.md has every report).
+- Still open: see the remaining-work list given to Henry (Studio, family production, learning review, films, hearts proposal, quests/strategies, screen coverage, speed checks, players.mjs types, full picture table, review, ZIP).
