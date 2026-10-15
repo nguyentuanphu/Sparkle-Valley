@@ -8,6 +8,8 @@ import { URL as gameURL } from './harness.mjs';
 import { fileURLToPath } from 'node:url';
 const repoRoot = fileURLToPath(new URL('../', import.meta.url));
 const phase = process.argv[2] || 'baseline';
+// a BEFORE capture (the approved release, or any folder named baseline… or …before…) records what is there; the repair's own assertions apply only to AFTER captures
+const isBaseline = /^baseline|before/.test(phase);
 const settingsOnly = process.argv.includes('--settings-only');
 const audioOnly = process.argv.includes('--audio-only');
 const transportOnly = process.argv.includes('--transport-only');
@@ -144,24 +146,24 @@ try {
     await P.page.waitForTimeout(650); await shot('selection');
     const bounds = () => P.page.evaluate(() => { const r=document.querySelector('.who-card').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}; });
     const before=await bounds(); await P.page.locator('.pick[data-id]').first().click(); await P.page.waitForTimeout(150);const after=await bounds();
-    if (phase!=='baseline' && (Math.abs(before.y-after.y)>1 || Math.abs(before.height-after.height)>1)) throw new Error('Selection shell moved across redraw');
+    if (!isBaseline && (Math.abs(before.y-after.y)>1 || Math.abs(before.height-after.height)>1)) throw new Error('Selection shell moved across redraw');
     const selection=await P.page.evaluate(()=>({scrollHeight:document.querySelector('.who-body')?.scrollHeight,height:document.querySelector('.who-body')?.clientHeight,labels:[...document.querySelectorAll('.pick span:last-of-type')].map(x=>({text:x.textContent,y:x.getBoundingClientRect().y,height:x.getBoundingClientRect().height}))}));
     await P.page.evaluate(async () => { const S=await import('/js/state.js'); S.profiles.forEach(p=>p.screen='valley'); __sv._owlAuto=true; }); await P.page.click('.who .go'); await P.page.waitForFunction(()=>__sv.heroes.length>0);
     await clear(P.page);
     for (const [name,action] of [['bag',()=>__sv.openPad(0,'bag')],['shop',()=>{__sv.openPad(0,'bag');document.querySelector('.pad [data-t="shop"]').click();}],['audio',()=>__sv.openSound(document.querySelector('.dk.snd'))]]) {
       await clear(P.page); await P.page.evaluate(action); await P.page.waitForTimeout(550); await shot(name);
-      if(name==='shop' && phase!=='baseline') {
+      if(name==='shop' && !isBaseline) {
         const optical=await P.page.evaluate(async()=>{const img=document.querySelector('.shop-preview');await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const x=c.getContext('2d');x.drawImage(img,0,0);const d=x.getImageData(0,0,c.width,c.height).data,bg=[d[0],d[1],d[2]];let minY=c.height,maxY=0;for(let y=0;y<c.height;y++)for(let px=0;px<c.width;px++){const i=(y*c.width+px)*4;if(Math.max(...bg.map((v,k)=>Math.abs(d[i+k]-v)))>45){minY=Math.min(minY,y);maxY=Math.max(maxY,y);}}return {height:c.height,visibleHeight:maxY-minY};});
         if(optical.visibleHeight<optical.height*.55)throw new Error('Outfit preview remains optically too small: '+JSON.stringify(optical));
       }
-      if (name==='audio' && phase!=='baseline') {if(await P.page.locator('.dk.mus:visible').count())throw new Error('Duplicate Music entrance');const r=await P.page.locator('.audio-tray').boundingBox();if(r.x<11 || r.x+r.width>w-11 || r.y<11 || r.y+r.height>h-11)throw new Error('Audio outside safe viewport: '+JSON.stringify(r));}
+      if (name==='audio' && !isBaseline) {if(await P.page.locator('.dk.mus:visible').count())throw new Error('Duplicate Music entrance');const r=await P.page.locator('.audio-tray').boundingBox();if(r.x<11 || r.x+r.width>w-11 || r.y<11 || r.y+r.height>h-11)throw new Error('Audio outside safe viewport: '+JSON.stringify(r));}
       if (name==='bag') await P.page.waitForSelector('.pad', {state:'visible'});
       if(name==='shop'){await P.page.click('[data-go="wardrobe"]');await P.page.waitForTimeout(400);await shot('mirror');await P.page.evaluate(()=>document.querySelectorAll('.wardrobe').forEach(x=>x.remove()));}
     }
     await clear(P.page); await P.page.waitForFunction(()=>__sv.tester&&__sv.autoplay,{timeout:15000});
     await P.page.evaluate(()=>__sv.tester.openPanel(0));await P.page.waitForSelector('.tpanel');await shot('tester');
-    if(phase!=='baseline' && await P.page.locator('.audio-tray').count())throw new Error('Audio competes with reporting panel');
-    if(phase!=='baseline') {
+    if(!isBaseline && await P.page.locator('.audio-tray').count())throw new Error('Audio competes with reporting panel');
+    if(!isBaseline) {
       await P.page.fill('.tpanel textarea','Synthetic report draft');await P.page.click('[data-test-tab="autoplay"]');await shot('autoplay');
       await P.page.click('[data-test-tab="tester"]');
       if(await P.page.inputValue('.tpanel textarea')!=='Synthetic report draft')throw new Error('Report draft lost across tabs');
