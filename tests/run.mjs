@@ -730,6 +730,11 @@ await check('voicearea', async () => {
   const areas = JSON.parse(fs.readFileSync('../voices/areas.json', 'utf8')), groupOf = new Map();
   for (const [g, hs] of Object.entries(areas.groups)) for (const h of String(hs).split(' ')) groupOf.set(h, g);
   const mb = n => n / 1048576, core = areas.size.core;
+  // (16 Oct: a Vietnamese line added without its language was looked for under voices/en/, so the core pack never
+  // finished and the grown-ups' question never came) every line of the pack is a file where the game looks for it
+  { const man = JSON.parse(fs.readFileSync('../voices/manifest.json', 'utf8')), other = new Map(); for (const [L, hs] of Object.entries(man.other || {})) for (const h of String(hs).split(' ')) if (h) other.set(h, L);
+    const gone = []; for (const [h, slots] of Object.entries(man.lines)) for (const sl of slots) { const f = `../voices/${other.get(h) || 'en'}/${sl}/${h}.mp3`; if (!fs.existsSync(f)) gone.push(f.slice(3)); }
+    ok(!gone.length, `${gone.length} voice files are not where the game looks for them: ${gone.slice(0, 4).join(', ')}`); }
   ok(mb(core.en) >= 5 && mb(core.en) <= 8 && mb(core.vi) >= 5 && mb(core.vi) <= 8, `the core pack is not 5–8 MB per language: en ${mb(core.en).toFixed(1)}, vi ${mb(core.vi).toFixed(1)}`);
   const place = ['hanoi', 'village', 'town', 'market'].find(g => areas.groups[g] && g !== 'core') || Object.keys(areas.groups).find(g => !['core', 'games', 'stories', 'festivals', 'world'].includes(g));
   // a pretend connection the check can switch: navigator.connection.type 'cellular' or 'wifi'
