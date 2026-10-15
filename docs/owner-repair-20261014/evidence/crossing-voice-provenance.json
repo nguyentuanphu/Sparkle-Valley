@@ -1,0 +1,53 @@
+{
+  "sourceCommit": "278acdd8013f6e7ddc32749d7e3cdf056c16257f",
+  "workflowRun": 38698338099,
+  "artifactId": 11955348096,
+  "newMp3": 8,
+  "existingMp3Changed": 0,
+  "oldLineRecordsPreserved": true,
+  "oldTemplatesPreserved": true,
+  "oldAreaAssignmentsPreserved": true,
+  "newLineRecords": 4,
+  "files": [
+    {
+      "file": "voices/vi/f/5e0a902f-6caedd14.mp3",
+      "sha256": "c7bb7b212f5aaa54b0f742120be823b2ffb0a654ebea17ecdbbd708e9562bcd9",
+      "bytes": 6912
+    },
+    {
+      "file": "voices/vi/f/46230ceb1cab2f71.mp3",
+      "sha256": "9e92b3b4c9606cac21e78fa8359b5f2ee7096b914d5576fa754f6b8a80fb5710",
+      "bytes": 41328
+    },
+    {
+      "file": "voices/vi/m/5e0a902f-6caedd14.mp3",
+      "sha256": "e8934338d6c738d8eaf1a626802317d6ac3f32683fb3cc9997451dc66e89add0",
+      "bytes": 7344
+    },
+    {
+      "file": "voices/vi/m/46230ceb1cab2f71.mp3",
+      "sha256": "f5d8ab6792a5c1cd3a7fb1685658e8ade4a1fb2153903465a957d28dbb9ada23",
+      "bytes": 40896
+    },
+    {
+      "file": "voices/en/f/92c829b74a9b3c8a.mp3",
+      "sha256": "988901ba50104bf73bb60c01c281b46debbfbc41a4de0d8e2fe0e942bc0287bf",
+      "bytes": 40608
+    },
+    {
+      "file": "voices/en/f/f7337bbf-67da81be.mp3",
+      "sha256": "240e3b33628aa871efddd02d5af87c93da986591b7b03dc1d107979c53cad6f5",
+      "bytes": 8928
+    },
+    {
+      "file": "voices/en/m/92c829b74a9b3c8a.mp3",
+      "sha256": "1068444e80528a4ff961931eade5c0a46ece4363be37280c4eb1fde13959b347",
+      "bytes": 32400
+    },
+    {
+      "file": "voices/en/m/f7337bbf-67da81be.mp3",
+      "sha256": "b86083db3e68f863cf14a8164db687f369e5071aced96fb5300c1213d6581ef1",
+      "bytes": 6912
+    }
+  ]
+}

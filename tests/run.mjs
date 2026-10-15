@@ -5610,6 +5610,18 @@ await check('ownerautoplaynormal', async () => {
   return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x1','--ids=sortout','--lang=en']);
 });
 
+await check('ownerautoplaynormalmaze', async () => {
+  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x1','--ids=maze','--lang=en']);
+});
+
+await check('ownerdecoroverlap', async () => {
+  return await ownerSmoke('owner-decor-overlap.mjs');
+});
+
+await check('ownerroadvoice', async () => {
+  return await ownerSmoke('owner-road-voice.mjs');
+});
+
 await check('ownerroadsafety', async () => {
   return await ownerSmoke('owner-road-safety.mjs');
 });

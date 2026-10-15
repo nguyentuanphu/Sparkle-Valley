@@ -12,7 +12,7 @@ try {
    assert.ok(Math.abs(sign.z-crossing.z)>=crossing.halfRoad+1,'A warning must stand off the carriageway');
    const approach=await P.page.evaluate(async({crossing,sign})=>{
     const G=__sv,W=await import('/js/world.js'),h=G.heroes[0];let at=null;
-    for(const dz of [1,1.3,.7])for(const dx of [-1,1,0,-1.5,1.5]){const x=sign.x+dx,z=sign.z-sign.side*dz,d=W.roadDist(x,z);if(Math.hypot(dx,dz)<2.3&&Math.abs(z-crossing.z)>crossing.halfRoad+.15&&G.goodSpot(x,z)&&(!d.road||d.d>d.road.w/2)){at={x,z};break;}if(at)break;}
+    for(const dz of [1,1.3,.7])for(const dx of [0,-1,1,-1.5,1.5]){const x=sign.x+dx,z=sign.z-sign.side*dz,d=W.roadDist(x,z);if(Math.hypot(dx,dz)<2.3&&Math.abs(z-crossing.z)>crossing.halfRoad+.15&&G.goodSpot(x,z)&&(!d.road||d.d>d.road.w/2)){at={x,z};break;}if(at)break;}
     if(!at)return null;G.paused=false;h.goal=null;h.speed=0;h.camYaw=Math.atan2(at.x-sign.x,at.z-sign.z);h.camPitch=innerHeight<500?-.08:.12;h.camDist=5.8;h.view='follow';h.manualCamT=1000000;h.place(at.x,at.z);return at;
    },{crossing,sign});assert.ok(approach,'Sign needs a dry, unblocked approach beside the road: '+JSON.stringify(sign));
    await P.page.waitForTimeout(1400);await clear(P.page);await P.page.waitForTimeout(300);

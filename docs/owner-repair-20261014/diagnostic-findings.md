@@ -94,3 +94,10 @@ Additional probes prepared (not run, source leads only): initial draw sends page
 DR-24 shared-story initial render CONFIRMED: controlled late guest initial page0 leaves host0/guest2 after two real Next taps, no browser errors. DR-25 family cancellation CONFIRMED: held decoder starts cancelled recording after hush (AudioBuffer starts1→2). Stronger exacte75 baseline0/2 retained. Repair16 candidate changes applied; final validation pending, no fix acceptance/full-suite pass claimed.
 
 DR-24/25 final focused9/9 passed: late initial render suppressed; real Back still synchronizes; family decoder completion cannot restart cancelled audio. Existing together, early-start, voice playback/music/contract/106 units also pass. GitHub sourcee75 predates these repairs; exact final-source Full remains required.
+
+
+## Crossing verification,15 October2026 AEDT
+
+New physical signs initially overlapped existing vendor bubble tap rays. First phone4 actual taps passed after footprint/bubble clearance;10-check regression8/10 retained. Ten sign taps across EN/VI phones and town tablet completed before an oblique tablet approach put v_bev in front of both boards. Test now prefers the normal perpendicular dry approach before oblique alternatives, retaining actual first-ray-hit and physical tap assertions. No blanket all-camera-angle guarantee. Five-view acceptance pending. Existing under-5 bus choices reproduced47px height; scoped64px CSS passes phone/contract/a11y, final real bus cases pending.
+
+Potential additional source lead (UNCONFIRMED): floating Sprite raycast bounds may intercept taps through transparent canvas margins. Do not mark this as reproduced/fixed without checking actual intersection UV/alpha and real taps; no runtime filtering change applied.
