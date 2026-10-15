@@ -23,46 +23,9 @@
 //                  10 a hello, 30 a device a day, 60 a connection a day and 200 new lines a day, so nobody can flood
 //                  the inbox (and the Azure budget spent recording it)
 import { createHash } from 'crypto';
-const ID = /^[a-z0-9]{10,24}$/, WORD = /^[\w-]{1,32}$/;
-export const LINES = { hello: 10, device: 30, ip: 60, newPerDay: 200 }; // (round R privacy) missing lines taken at most
-const day = (t = Date.now()) => new Date(t).toISOString().slice(0, 10);
-const int = (v, max) => Math.max(0, Math.min(max, Math.round(+v || 0)));
-const obj = o => o && typeof o === 'object' && !Array.isArray(o) ? o : {};
-const KEY = /^[\w .:/()'#,@-]{1,140}$/, NAME = /^[\p{L}' -]{0,20}$/u;
-const counts = (o, max, n = 20, re = KEY) => { const out = {}; let k = 0; for (const [a, v] of Object.entries(obj(o))) if (re.test(a) && k++ < n) out[a] = int(v, max); return out; };
-// one child's day: first name (or none), age group, minutes, games [started, won, left early], places, stories
-const kid = c => ({ n: NAME.test(String(c.n || '')) ? String(c.n || '').trim() : '', a: c.a === 'big' ? 'big' : 'little', m: int(c.m, 24 * 60), sm: int(c.sm, 24 * 60), t: int(c.t, 200),
-  g: Object.fromEntries(Object.entries(obj(c.g)).filter(([k, v]) => WORD.test(k) && Array.isArray(v)).slice(0, 40).map(([k, v]) => [k, [int(v[0], 500), int(v[1], 500), int(v[2], 500)]])),
-  p: counts(c.p, 500, 30, WORD) });
-const kids = o => Object.fromEntries(Object.entries(obj(o)).filter(([k]) => WORD.test(k)).slice(0, 8).map(([k, c]) => [k, kid(obj(c))]));
-const words = (o, max) => { const out = {}; let n = 0; for (const [k, v] of Object.entries(o && typeof o === 'object' ? o : {})) if (WORD.test(k) && n++ < 40) out[k] = int(v, max); return out; };
-
-// (battery round, 12 Oct) a day's drawing and battery (js/players.js): [minutes measured, frames drawn while a child
-// played and something moved, ms spent on them, draw calls on them, pixel ratio x100 summed per minute, idle minutes,
-// minutes on battery, battery used in tenths of a percent, minutes charging, seconds of that playing]
-const BAT_MAX = [24 * 60, 24 * 3600 * 240, 864e5, 24 * 3600 * 240 * 5000, 24 * 60 * 400, 24 * 60, 24 * 60, 1000, 24 * 60, 24 * 3600];
-const bat = b => Array.isArray(b) && b.length === 10 ? BAT_MAX.map((m, i) => int(b[i], m)) : BAT_MAX.map(() => 0);
-const batAdd = (a, b) => BAT_MAX.map((m, i) => Math.min(m * 30, (a[i] || 0) + (b[i] || 0)));
-// what a device sent, checked: anything odd is dropped
-const DAY = /^\d{4}-\d{2}-\d{2}$/;
-export function clean(b, now = Date.now()) {
-  if (!b || typeof b !== 'object' || !ID.test(b.id || '')) return null;
-  // the days played since the last hello that arrived (at most 14, none in the future, none older than 30 days);
-  // an older device sends one bucket for today
-  const lo = day(now - 30 * 864e5), hi = day(now + 864e5), seen = new Set();
-  const origin=x=>typeof x.build==='string'&&(/^r\d{1,4}$/.test(x.build)||x.build==='?')?x.build:(b.sid?'?':WORD.test(b.b||'')?b.b:'?');
-  const days = (Array.isArray(b.days) ? b.days : [{ d: day(now), m: b.m, g: b.g, t: b.t, o: b.o }]).slice(0, 42)
-    .filter(x => {if(!x||!DAY.test(x.d)||x.d<lo||x.d>hi)return false;const key=x.d+'|'+origin(x);if(seen.has(key))return false;seen.add(key);return true;})
-    .map(x => ({ d: x.d, build:origin(x), mins: int(x.m, 24 * 60), games: words(x.g, 500), tales: int(x.t, 200), online: int(x.o, 24 * 60), // online: minutes with friends online
-      hours: Object.fromEntries(Object.entries(obj(x.h)).filter(([k]) => /^([01]?\d|2[0-3])$/.test(k)).map(([k, v]) => [+k, int(v, 60)])), kids: kids(x.c),
-      errs: counts(x.e, 999), stuck: counts(x.s, 999), quits: words(x.q, 500), fps: Array.isArray(x.f) ? [int(x.f[0], 1e6), int(x.f[1], 24 * 60), int(x.f[2], 24 * 60)] : [0, 0, 0],
-      starts: (Array.isArray(x.st) ? x.st : []).filter(a => Array.isArray(a)).slice(0, 6).map(a => [int(a[0], 6e5), int(a[1], 6e5), int(a[2], 6e5), a[3] ? 1 : 0, /^[a-z]{1,16}$/.test(a[4] || '') ? a[4] : '']),
-      bat: bat(x.b) }));
-  return { id: b.id, hid: /^[a-z0-9]{8,24}$/.test(b.h || '') ? b.h : '', build: WORD.test(b.b || '') ? b.b : '?', sid:/^[a-z0-9]{16}$/.test(b.sid||'')?b.sid:'', started:Number.isSafeInteger(b.started)&&b.started>0&&b.started<=now+300000?b.started:0, lang: /^(en|vi)$/.test(b.l) ? b.l : '?', kids: int(b.k, 8), days,
-    kind: /^(phone|tablet|computer)$/.test(b.d) ? b.d : '?', app: !!b.a,
-    os: /^(iOS|iPadOS|Android|ChromeOS|Windows|macOS|Linux|other)$/.test(b.os) ? b.os : '?', br: /^(Safari|Chrome|Edge|Firefox|Samsung|other)$/.test(b.br) ? b.br : '?', sc: /^\d{2,5}x\d{2,5}$/.test(b.sc || '') ? b.sc : '',
-    lines: (Array.isArray(b.v) ? b.v : []).slice(0, LINES.hello).filter(v => Array.isArray(v) && /^(en|vi|zh|hi)$/.test(v[0]) && typeof v[1] === 'string' && v[1].trim() && v[1].length <= 300 && !/[\u0000-\u001f<>]/.test(v[1])).map(v => [v[0], v[1].trim()]) }; // minutes with friends online
-}
+// what a device sends is checked in netlify/lib/hello-clean.mjs (type-checked); the store below keeps only that
+import { ID, WORD, NAME, LINES, day, int, obj, counts, words, bat, batAdd, clean } from './hello-clean.mjs';
+export { LINES, clean };
 
 // a place name from the connection (Netlify's geo), cleaned
 const place = s => String(s || '').normalize('NFC').replace(/[^\p{L}\p{N} .'-]/gu, '').slice(0, 40);
