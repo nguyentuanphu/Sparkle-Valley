@@ -21,7 +21,7 @@ This is an explicit inventory, not a universal pass. Source review is separate f
 | Dialogue/how-to | popups.js, howto.js | source retained | long bilingual content/choice overflow and save/update boundaries |
 | Story shelf/book/film | tales.js, film.js | source retained | all films rendered; narration/music cleanup; scene individuality |
 | Camera eye/place tray | hud.js, wayfind.js | vertical source; explicit compass enable/disable contract passed | collision, orientation, safe areas, touch/focus |
-| Audio tray/Songs | soundsheet.js, hud.js | independent switches; Songs restored; duplicate hidden entrance assertion | Source-attributed87f9d334 phone/tablet/desktop Audio captures complete; connected Mic pictures and full keyboard/listener coverage missing |
+| Horizontal Audio icons | soundsheet.js, hud.js | Three icons only, compact Audio left of chat; bounds/focus/independent states225s and seven-layout quest/navigation235s; active Mic EN/VI48s | Exact3599d24d off/on comparisons complete; newer HUD pictures have working-tree hashes. Physical-device and connected Mic pictures missing |
 | Ladybird Tester | tester.js, screencapture.js | report/capture/storage behavior; real images | receipt/status detail, keyboard, composed fallback real Safari |
 | Ladybird Autoplay | autoplay.js | tabs/draft preservation; run/stop/restore checked | all speeds/partial/error reporting and live state switching |
 | My reports/fixed/rewards | tester.js, testerrewards.js | testerreport pass | honest retest reproduction; long lists/privacy/backend receipt |
@@ -34,6 +34,6 @@ This is an explicit inventory, not a universal pass. Source review is separate f
 | Studio Tester reports | studio/ui/app.js, tester backend | reporting path source reviewed | receipt-to-issue-to-release-to-retest proof |
 | Studio Admins/custom permissions | studio/ui/app.js, admins.mjs | R75 source implementation retained | immediate list behavior; save/failure/enforcement current checks |
 | Other Studio pages/dialogs | studio/ui/app.js, studio core | source folding helper present | enumerate every page/content group and error/loading states |
-| Public-transport rider/cabin/exit | js/player.js, js/traffic.js, js/vehicles.js, js/rideview.js | six rendered bus/busAU/tramModern age cases83s and visibility restoration; ride54s fares/destinations/exits passed | exact-source before/after on phone/tablet/desktop; coach/taxi/driving render and split-screen comparisons |
+| Public-transport rider/cabin/exit | js/player.js, js/traffic.js, js/vehicles.js, js/rideview.js | six rendered bus/busAU/tramModern age cases83s and visibility restoration; ride54s fares/destinations/exits passed | 24 final exacta246d116 before/after rider/exit captures complete; coach/taxi/driving render, split-screen and physical-device comparisons missing |
 
 No row implies all child-facing or Studio screens have been verified. Complete point-level scope is in audit-matrix.md and requirements.json.

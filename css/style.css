@@ -2632,3 +2632,9 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 .audio-tray .ss-sw .art { width:28px; height:28px; }
 .audio-tray .ss-sw b, .audio-tray .ss-sw i { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 .audio-tray .ss-sw:focus-visible > span { outline:3px solid #ffd23f; outline-offset:3px; }
+
+/* Reserve the measured navigation width, including the tester badge and active microphone. */
+.hud.small .zoom { flex-direction: column; max-width: 100%; }
+.hud.small .quest { max-width: calc(100% - var(--quest-nav-reserve, 122px)); }
+.hud.small.quest-below-nav .quest { top: var(--quest-below-top); max-width: calc(100% - 24px); }
+.hud .q-text { min-width: 0; overflow-wrap: anywhere; }

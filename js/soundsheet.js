@@ -9,6 +9,7 @@ const SWITCHES = [['music', '🎵', ['Music', 'Nhạc']], ['sound', '🔔', ['So
 export function openSoundSheet(G, anchor) {
   const existing = document.querySelector('.audio-tray'); if (existing) { existing.close(); return; }
   document.querySelectorAll('.zoomer.open').forEach(x => { x.classList.remove('open'); x.querySelector('.z-tray')?.setAttribute('aria-expanded', 'false'); });
+  const quest = anchor?.closest('.hud')?.querySelector('.quest');
   const m = document.createElement('div'); m.className = 'audio-tray soundsheet'; m.setAttribute('role', 'group'); m.setAttribute('aria-label', T('Audio', 'Âm thanh'));
   m.innerHTML = SWITCHES.map(([k, icon, name]) => `<button class="ss-sw" data-k="${k}" aria-label="${T(...name)}"><span>${pic(icon)}</span><b>${T(...name)}</b><i></i></button>`).join('');
   dispatchEvent(new Event('sv-hide-caption')); document.body.appendChild(m);
@@ -18,11 +19,15 @@ export function openSoundSheet(G, anchor) {
     const beside = r && r.left - x - 12 >= m.offsetWidth + 8;
     const top = r ? beside ? r.top + (r.height - m.offsetHeight)/2 : r.bottom + 8 : y+100;
     const left = r ? beside ? r.left - m.offsetWidth - 8 : r.left + (r.width - m.offsetWidth)/2 : x+w-m.offsetWidth-12;
-    m.style.top=Math.max(y+12,Math.min(y+h-m.offsetHeight-12,top))+'px';
-    m.style.left=Math.max(x+12,Math.min(x+w-m.offsetWidth-12,left))+'px';
+    let placedTop=Math.max(y+12,Math.min(y+h-m.offsetHeight-12,top));
+    const placedLeft=Math.max(x+12,Math.min(x+w-m.offsetWidth-12,left)), q=quest && !quest.hidden ? quest.getBoundingClientRect() : null;
+    if(q && placedLeft < q.right+8 && placedLeft+m.offsetWidth > q.left-8 && placedTop < q.bottom+8 && placedTop+m.offsetHeight > q.top-8) {
+      placedTop=q.bottom+8+m.offsetHeight <= y+h-12 ? q.bottom+8 : Math.max(y+12,q.top-m.offsetHeight-8);
+    }
+    m.style.top=placedTop+'px'; m.style.left=placedLeft+'px';
   };
   place();
-  const sizeWatch = typeof ResizeObserver === 'function' ? new ResizeObserver(() => { if (m.isConnected) place(); }) : null; sizeWatch?.observe(m);
+  const sizeWatch = typeof ResizeObserver === 'function' ? new ResizeObserver(() => { if (m.isConnected) place(); }) : null; sizeWatch?.observe(m); if (quest) sizeWatch?.observe(quest);
   document.fonts?.ready.then(() => { if (m.isConnected) place(); });
   const paint = () => { m.querySelectorAll('.ss-sw').forEach(b => { const on = !!settings[b.dataset.k]; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.querySelector('i').textContent = on ? T('On', 'Bật') : T('Off', 'Tắt'); b.title=b.getAttribute('aria-label')+' · '+b.querySelector('i').textContent; }); place(); };
   m.querySelectorAll('.ss-sw').forEach(b => b.onclick = () => { G.setAudio(b.dataset.k, !settings[b.dataset.k]); if (settings.sound) SFX.tap(); paint(); });

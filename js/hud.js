@@ -117,12 +117,21 @@ export class Hud {
     EMOTES.forEach(e => { const b = el('button', 'em', `<span>${e.icon}</span><small>${esc(T(e.en, e.vi))}</small>`); b.onclick = () => { this.toggleEmotes(false); game.emote(i, e.id); }; em.appendChild(b); });
     this.regionT = 0; this.toastT = 0; this.last = {};
     this.refreshWho();
+    this.navWatch = new ResizeObserver(() => this.fitQuest()); this.navWatch.observe(this.q('.hud-tr'));
   }
   refreshAudio() {
     const s = this.game.settings, m = this.q('.dk.mus'), d = this.q('.dk.snd');
     m.classList.toggle('off', !s.music); const active = s.music || s.sound || s.voice; d.classList.toggle('off', !active); d.querySelector('span').innerHTML = active ? ICONS.sound : ICONS.soundOff; d.querySelector('small').textContent = T('Audio', 'Âm thanh'); d.setAttribute('aria-label', T('Audio: music, sounds and voice', 'Âm thanh: nhạc, tiếng động và giọng nói'));
   }
-  foldQuest() { const f = !!this.hero.profile.questFold, q = this.q('.quest'); q.classList.toggle('fold', f); this.q('.q-say').setAttribute('aria-label', f ? T('Show the goal', 'Hiện nhiệm vụ') : T('Hide the goal', 'Ẩn nhiệm vụ')); }
+  foldQuest() { const f = !!this.hero.profile.questFold, q = this.q('.quest'); q.classList.toggle('fold', f); this.q('.q-say').setAttribute('aria-label', f ? T('Show the goal', 'Hiện nhiệm vụ') : T('Hide the goal', 'Ẩn nhiệm vụ')); this.fitQuest(); }
+  fitQuest() {
+    const root = this.root, nav = this.q('.hud-tr'), quest = this.q('.quest');
+    if (!root.classList.contains('small')) { root.classList.remove('quest-below-nav'); return; }
+    const reserve = nav.offsetWidth + (parseFloat(getComputedStyle(nav).right) || 0) + (parseFloat(getComputedStyle(quest).left) || 0) + 14;
+    root.style.setProperty('--quest-nav-reserve', reserve + 'px');
+    root.style.setProperty('--quest-below-top', (nav.offsetTop + nav.offsetHeight + 12) + 'px');
+    root.classList.toggle('quest-below-nav', !quest.classList.contains('fold') && root.clientWidth - reserve < 180);
+  }
   refreshWho() { const p = this.hero.profile; this.q('.pav').src = avatarURL(p); this.q('.pname').textContent = nm(p.name); this.q('.pname').classList.toggle('starname', !!(p.look && p.look.star)); } // (owner, 12 Oct: this week's star tester gets a gold star by the name)
   toggleEmotes(v) { const e = this.q('.emotes'); e.hidden = v == null ? !e.hidden : !v; }
   layout(r, two) {
@@ -134,6 +143,7 @@ export class Hud {
     const chatHome = small ? tools : dock; if (chat.parentNode !== chatHome) chatHome.appendChild(chat);
     for (const k of ['snd', 'call', 'mus']) { const b = this.q('.dk.' + k); if (b.parentNode !== tools) tools.appendChild(b); }
     if (small) { const audio = this.q('.dk.snd'); if (tools.firstElementChild !== audio) tools.prepend(audio); if (chat.previousElementSibling !== audio) tools.insertBefore(chat, audio.nextSibling); }
+    this.fitQuest();
   }
   showRegion(name) { const e = this.q('.region'); e.textContent = name; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
   toast(msg) { const e = this.q('.htoast'); e.textContent = msg; e.classList.add('show'); clearTimeout(this._tt); this._tt = setTimeout(() => e.classList.remove('show'), 3200); }
@@ -241,7 +251,7 @@ export class Hud {
       c.beginPath(); c.arc(48, 48, R, -Math.PI / 2, -Math.PI / 2 + val * Math.PI * 2); c.stroke();
     }
   }
-  destroy() { this.root.remove(); }
+  destroy() { this.navWatch?.disconnect(); this.root.remove(); }
 }
 
 // The explorer's map. The whole valley is always shown (much easier for children to find things);

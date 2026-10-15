@@ -168,11 +168,13 @@ const drawSection = (P, sec) => {
     return `<button class="pcard" data-p="${k}"><span class="pi">${i}</span><b>${T(en, vi)}</b><small>${T(den, dvi)}</small></button>`; }).join('')}</div>`;
   P.querySelectorAll('.pcard').forEach(b => b.onclick = () => go(b.dataset.p));
 };
+let renderSequence = 0;
 async function render(force) {
-  nav(); const P = $('#page'), crumb = $('#crumb'); DIRTY = false; KEPT = ''; if (SAVED_HERE !== cur) SAVED_HERE = '';
+  const sequence = ++renderSequence;
+  nav(); const P = $('#page'), crumb = $('#crumb'); P.dataset.render = String(sequence); DIRTY = false; KEPT = ''; if (SAVED_HERE !== cur) SAVED_HERE = '';
   if (!LOADED || force) P.innerHTML = `<div class="loading">✨ ${T('Loading…', 'Đang tải…')}</div>`;
   try {
-    await load(force);
+    await load(force); if (sequence !== renderSequence) return;
     if (INFO.perms) Object.values(INFO.perms).forEach(([, en, vi]) => { PERM_VI[en] = vi; });
     if (!SEC().some(x => x.k === cur || x.pages.includes(cur))) { cur = (SEC()[0] || { pages: ['admins'] }).pages[0]; nav(); }
     else if (!INFO.ok && cur !== 'settings') { cur = 'settings'; nav(); toast(T('First, choose the game folder.', 'Trước tiên, chọn thư mục game.')); }
@@ -182,8 +184,8 @@ async function render(force) {
     if (sec.k === cur && sec.pages.length > 1 && !ABOUT[sec.k]) { crumb.innerHTML = ''; drawSection(P, sec); KEPT = contentNow(); HASH = location.hash; window.scrollTo(0, 0); return; }
     crumb.innerHTML = sec.pages.length > 1 && cur !== sec.k ? `<button class="back">← ${sec.i} ${T(sec.en, sec.vi)}</button>` : '';
     if (crumb.firstChild) crumb.firstChild.onclick = () => go(sec.k);
-    await PAGES[cur](P); explainPage(P, cur); foldPage(P, cur); KEPT = contentNow(); HASH = location.hash; paintState(); window.scrollTo(0, 0);
-  } catch (e) { if (!e.signin) P.innerHTML = `<div class="card badtxt">${esc(e.message)}</div>`; }
+    const page = cur; await PAGES[page](P); if (sequence !== renderSequence || cur !== page) return; explainPage(P, cur); foldPage(P, cur); KEPT = contentNow(); HASH = location.hash; paintState(); window.scrollTo(0, 0);
+  } catch (e) { if (sequence === renderSequence && !e.signin) P.innerHTML = `<div class="card badtxt">${esc(e.message)}</div>`; }
 }
 
 // (owner, 13 Oct AEDT: "each of the functions and within each all the categories should be collapsible") every part of
@@ -682,12 +684,14 @@ async function drawReleases(P, lab) {
   $('#relq').oninput = filt; P.querySelectorAll('#relf [data-f]').forEach(b => b.onclick = () => { fil = b.dataset.f; P.querySelectorAll('#relf [data-f]').forEach(x => x.classList.toggle('on', x === b)); filt(); });
   sum();
   // (owner, 12 Oct) the auto play check: on every device, or only on the ones ticked here (from the players report)
-  const devsP = lab ? api('players').then(r => (r && r.devices) || []).catch(() => []) : Promise.resolve([]);
+  let deviceError = false;
+  const devsP = lab ? api('players').then(r => (r && r.devices) || []).catch(() => { deviceError = true; return []; }) : Promise.resolve([]);
+  const deviceNotice = () => deviceError ? `<p class="badtxt">${T('Could not load the device report. Saved settings are kept; reopen Sparkle Lab to retry.', 'Không tải được báo cáo máy. Các thiết lập đã lưu được giữ; mở lại Phòng thử Sparkle để thử lại.')}</p>` : '';
   { const c = P.querySelector('.relc[data-id="autoplay"]'), mine = new Set((R.autoplay && R.autoplay.devices) || []);
     if (c && !P.querySelector('#apdev')) { const box = document.createElement('div'); box.className = 'relpanel'; box.id = 'apdev'; c.classList.add('wide'); c.appendChild(box);
       box.innerHTML = `<h4>📱 ${T('Which devices show the auto play window', 'Máy nào hiện cửa sổ tự chơi')}</h4><p class="note">${T('None ticked: every device (while the switch is on).', 'Không chọn máy nào: mọi máy (khi công tắc bật).')}</p><div id="apdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>`;
       const devs = (await devsP).slice(); if (stale()) return; for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
-      $('#apdl').innerHTML = devs.length ? devs.map(d => `<label class="chk devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><input type="checkbox" data-dev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`;
+      $('#apdl').innerHTML = deviceNotice() + (devs.length ? devs.map(d => `<label class="chk devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><input type="checkbox" data-dev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>`).join('') : deviceError ? '' : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`);
       devFilter($('#apdl')); } }
   // (owner, 12 Oct) testers: which devices, each one's level, and the sneak peeks (releases testers see early)
   { const c = P.querySelector('.relc[data-id="tester"]'), TR = R.tester || {}, mine = new Set(TR.devices || []), lv = TR.levels || {}, pk = new Set(TR.peeks || []);
@@ -698,7 +702,7 @@ async function drawReleases(P, lab) {
         return `<details class="pkg" data-g="${G.g}"><summary><span class="gi">${REL_ICON[G.g] || '📦'}</span><b>${T(G.en, G.vi)}</b> <span class="pkn"></span><span class="relg-all"><button type="button" class="btn small ghost" data-pall="1">${T('All', 'Hết')}</button><button type="button" class="btn small ghost" data-pall="0">${T('None', 'Bỏ hết')}</button></span></summary>
           ${off.map(lab).join('')}${on.length ? `<p class="note">${T('Already on for everyone:', 'Đã bật cho mọi người:')}</p>${on.map(lab).join('')}` : ''}</details>`; };
       box.innerHTML = `<h4>🐞 ${T('Which devices are testers, and how', 'Máy nào là người thử, và thế nào')}</h4><p class="note">${T('None ticked: every device (while the switch is on). A tester accepts what is collected the first time, on the device.', 'Không chọn máy nào: mọi máy (khi công tắc bật). Người thử đồng ý với những gì được thu thập lần đầu, trên máy.')}</p><div id="tdl">${T('Loading the devices…', 'Đang tải danh sách máy…')}</div>
-        <h4>↩️ ${T('When someone stops being a tester', 'Khi ai đó thôi làm người thử')}</h4><div class="revert">${[['progress', 'Everything since they became a tester goes back (badges, stickers and clothes stay)', 'Mọi tiến bộ từ khi làm người thử được trả lại (huy hiệu, nhãn dán và quần áo vẫn giữ)'], ['autoplay', 'Only what auto play did goes back, after each run (what they played themselves stays)', 'Chỉ trả lại phần tự chơi đã làm, sau mỗi lần chạy (phần con tự chơi vẫn giữ)']].map(([k, en, vi]) => `<label class="chk"><input type="radio" name="trevert" data-trevert="${k}" ${(TR.revert === 'autoplay' ? 'autoplay' : 'progress') === k ? 'checked' : ''}> ${T(en, vi)}</label>`).join('')}</div>
+        <h4>↩️ ${T('When someone stops being a tester', 'Khi ai đó thôi làm người thử')}</h4><p class="note">${T('These are defaults. Each device’s choice below takes priority.', 'Đây là thiết lập mặc định. Lựa chọn của từng máy bên dưới được ưu tiên.')}</p><div class="revert">${[['keep', 'Keep all progress after testing', 'Giữ mọi tiến trình sau khi thử'], ['progress', 'Everything since they became a tester goes back (badges, stickers and clothes stay)', 'Mọi tiến bộ từ khi làm người thử được trả lại (huy hiệu, nhãn dán và quần áo vẫn giữ)'], ['autoplay', 'Only what auto play did goes back, after each run (what they played themselves stays)', 'Chỉ trả lại phần tự chơi đã làm, sau mỗi lần chạy (phần con tự chơi vẫn giữ)']].map(([k, en, vi]) => `<label class="chk"><input type="radio" name="trevert" data-trevert="${k}" ${(['keep', 'autoplay', 'progress'].includes(TR.revert) ? TR.revert : 'progress') === k ? 'checked' : ''}> ${T(en, vi)}</label>`).join('')}</div>
         <h4>👀 ${T('Sneak peeks: testers see these early', 'Xem trước: người thử thấy sớm')} <span class="pill" id="pkcount"></span></h4><input type="search" id="pkq" placeholder="${T('Find a feature…', 'Tìm một tính năng…')}"><div id="tpk">${allGroups.map(peekGroup).join('')}</div>`;
       const pcount = () => { box.querySelector('#pkcount').textContent = T(`${box.querySelectorAll('[data-peek]:checked').length} picked`, `đã chọn ${box.querySelectorAll('[data-peek]:checked').length}`);
         box.querySelectorAll('details.pkg').forEach(d => { d.querySelector('.pkn').textContent = `${d.querySelectorAll('[data-peek]:checked').length}/${d.querySelectorAll('[data-peek]').length}`; }); };
@@ -706,9 +710,9 @@ async function drawReleases(P, lab) {
       box.querySelectorAll('details.pkg').forEach(d => d.querySelectorAll('[data-pall]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); d.querySelectorAll('[data-peek]').forEach(i => { i.checked = b.dataset.pall === '1'; }); pcount(); }));
       box.querySelector('#pkq').oninput = e => { const q = e.target.value.trim().toLowerCase(); box.querySelectorAll('label.peek').forEach(l => { l.hidden = q && !l.textContent.toLowerCase().includes(q); }); if (q) box.querySelectorAll('details.pkg').forEach(d => { d.open = true; }); };
       pcount();
-      const devs = (await devsP).slice(); if (stale()) return; for (const id of mine) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
-      $('#tdl').innerHTML = devs.length ? devs.map(d => `<div class="tdrow devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><label class="chk"><input type="checkbox" data-tdev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>
-        <label>${T('Progress after testing', 'Tiến trình sau khi thử')}<select data-policy="${esc(d.id)}">${[['keep','Keep all progress','Giữ mọi tiến trình'],['autoplay','Restore after each auto check','Trả lại sau mỗi lần tự kiểm tra'],['progress','Restore when testing ends','Trả lại khi kết thúc thử nghiệm']].map(([k,en,vi]) => `<option value="${k}" ${(TR.policies?.[d.id]?.revert || TR.revert || 'progress') === k ? 'selected' : ''}>${T(en,vi)}</option>`).join('')}</select></label><label>${T('Checking speed','Tốc độ kiểm tra')}<select data-speed="${esc(d.id)}">${[1,2,3,5].map(n => `<option value="x${n}" ${(TR.policies?.[d.id]?.speed || 'x1') === 'x'+n ? 'selected' : ''}>${n}×</option>`).join('')}</select></label><label class="chk"><input type="checkbox" data-deviceauto="${esc(d.id)}" ${TR.policies?.[d.id]?.autoplay === false ? '' : 'checked'}>${T('Allow automatic check', 'Cho phép tự kiểm tra')}</label><select data-tlv="${esc(d.id)}" aria-label="${T('Level', 'Mức')}"><option value="ladybird" ${lv[d.id] !== 'auto' ? 'selected' : ''}>${T('Auto reports and the ladybird', 'Tự báo lỗi và con bọ rùa')}</option><option value="auto" ${lv[d.id] === 'auto' ? 'selected' : ''}>${T('Auto reports only', 'Chỉ tự báo lỗi')}</option></select></div>`).join('') : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`;
+      const devs = (await devsP).slice(); if (stale()) return; for (const id of new Set([...mine, ...Object.keys(lv), ...Object.keys(TR.policies || {})])) if (!devs.some(d => d.id === id)) devs.push({ id, label: '', kind: '?' });
+      $('#tdl').innerHTML = deviceNotice() + (devs.length ? devs.map(d => `<div class="tdrow devrow${isRobot(d) ? ' robot' : ''}" data-devrow="${esc(d.id)}"><label class="chk"><input type="checkbox" data-tdev="${esc(d.id)}" ${mine.has(d.id) ? 'checked' : ''}> ${devHTML(d)}</label>
+        <label>${T('Progress after testing', 'Tiến trình sau khi thử')}<select data-policy="${esc(d.id)}">${[['keep','Keep all progress','Giữ mọi tiến trình'],['autoplay','Restore after each auto check','Trả lại sau mỗi lần tự kiểm tra'],['progress','Restore when testing ends','Trả lại khi kết thúc thử nghiệm']].map(([k,en,vi]) => `<option value="${k}" ${(TR.policies?.[d.id]?.revert || TR.revert || 'progress') === k ? 'selected' : ''}>${T(en,vi)}</option>`).join('')}</select></label><label>${T('Checking speed','Tốc độ kiểm tra')}<select data-speed="${esc(d.id)}">${['watch','fast'].includes(TR.policies?.[d.id]?.speed) ? `<option value="${TR.policies[d.id].speed}" selected>${TR.policies[d.id].speed === 'watch' ? T('Watch', 'Xem') : T('Quick', 'Nhanh')}</option>` : ''}${[1,2,3,5].map(n => `<option value="x${n}" ${(TR.policies?.[d.id]?.speed || 'x1') === 'x'+n ? 'selected' : ''}>${n}×</option>`).join('')}</select></label><label class="chk"><input type="checkbox" data-deviceauto="${esc(d.id)}" ${TR.policies?.[d.id]?.autoplay === false ? '' : 'checked'}>${T('Allow automatic check', 'Cho phép tự kiểm tra')}</label><select data-tlv="${esc(d.id)}" aria-label="${T('Level', 'Mức')}"><option value="ladybird" ${lv[d.id] !== 'auto' ? 'selected' : ''}>${T('Auto reports and the ladybird', 'Tự báo lỗi và con bọ rùa')}</option><option value="auto" ${lv[d.id] === 'auto' ? 'selected' : ''}>${T('Auto reports only', 'Chỉ tự báo lỗi')}</option></select></div>`).join('') : deviceError ? '' : `<p class="note">${T('No devices in the players report yet (a device appears after it plays with internet on).', 'Chưa có máy nào trong báo cáo (máy hiện ra sau khi chơi có mạng).')}</p>`);
       devFilter($('#tdl')); } }
   $('#save').onclick = async () => {
     try {
@@ -718,10 +722,10 @@ async function drawReleases(P, lab) {
         const r = {}, on = c.querySelector('[data-r="on"]').checked; if (id === 'wayfind') r.controlVersion = 1; if (on !== x.def || R[id]) r.on = on; if (v('start')) r.start = v('start'); if (+v('days') > 0) r.days = +v('days'); if (+v('newDays') > 0) { r.newDays = +v('newDays'); if (!r.start) r.since = (R[id] && R[id].since) || isoDay(new Date()); }
         if (id === 'autoplay') { const dv = [...P.querySelectorAll('[data-dev]:checked')].map(i => i.dataset.dev); if (dv.length) r.devices = dv; }
         if (id === 'tester') { const dv = [...P.querySelectorAll('[data-tdev]:checked')].map(i => i.dataset.tdev); if (dv.length) r.devices = dv;
-          const policies = {}; P.querySelectorAll('[data-policy]').forEach(select => { const device = select.dataset.policy, speed = P.querySelector(`[data-speed="${CSS.escape(device)}"]`), auto = P.querySelector(`[data-deviceauto="${CSS.escape(device)}"]`); policies[device] = { revert: select.value, speed: speed.value, autoplay: auto.checked }; }); if (Object.keys(policies).length) r.policies = policies;
-          const lv = {}; P.querySelectorAll('[data-tlv]').forEach(s => { if (s.value === 'auto') lv[s.dataset.tlv] = 'auto'; }); if (Object.keys(lv).length) r.levels = lv;
+          const policies = { ...(latest.releases?.tester?.policies || {}) }; P.querySelectorAll('[data-policy]').forEach(select => { const device = select.dataset.policy, speed = P.querySelector(`[data-speed="${CSS.escape(device)}"]`), auto = P.querySelector(`[data-deviceauto="${CSS.escape(device)}"]`); policies[device] = { revert: select.value, speed: speed.value, autoplay: auto.checked }; }); if (Object.keys(policies).length) r.policies = policies;
+          const lv = { ...(latest.releases?.tester?.levels || {}) }; P.querySelectorAll('[data-tlv]').forEach(s => { if (s.value === 'auto') lv[s.dataset.tlv] = 'auto'; else delete lv[s.dataset.tlv]; }); if (Object.keys(lv).length) r.levels = lv;
           const pk = [...P.querySelectorAll('[data-peek]:checked')].map(i => i.dataset.peek); if (pk.length) r.peeks = pk;
-          if ((P.querySelector('[data-trevert]:checked') || {}).dataset?.trevert === 'autoplay') r.revert = 'autoplay'; }
+          const revert = P.querySelector('[data-trevert]:checked')?.dataset.trevert; if (['keep', 'autoplay'].includes(revert)) r.revert = revert; }
         if (Object.keys(r).length) out[id] = r; });
       await saveLive({ releases: out, festivals: latest.festivals || {} });
     } catch (e) { fail(e); }
@@ -1299,9 +1303,10 @@ PAGES.settings = async P => {
 const sydneyZone = d => /GMT\+11|AEDT/.test(new Date(d).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', timeZoneName: 'short' })) ? 'AEDT' : 'AEST';
 // ---------- players: how many children play (anonymous counts from the website, netlify/lib/players.mjs) ----------
 PAGES.players = async P => {
+  const myRender = P.dataset.render, stale = () => cur !== 'players' || P.dataset.render !== myRender;
   P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><div class="card">${T('Asking the website…', 'Đang hỏi trang web…')}</div>`;
   const namesReady = (async () => { await gameLang(); return Promise.allSettled([import(GAME + 'js/games/all.js'), import(GAME + 'js/world.js')]); })();
-  let r; try { r = await api('players'); } catch (e) { P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><div class="card"><p class="badtxt">⚠️ ${esc(e.message)}</p><p class="note">${T('The count comes from the website (it needs a Git deploy on Netlify). In SparkleStudio.exe, put the website and a Studio key in Settings.', 'Số liệu đến từ trang web (cần deploy từ Git trên Netlify). Trong SparkleStudio.exe, điền trang web và khóa Studio trong Cài đặt.')}</p></div>`; return; }
+  let r; try { r = await api('players'); if (stale()) return; } catch (e) { if (stale()) return; P.innerHTML = `<h2>📊 ${T('Analytics', 'Phân tích')}</h2><div class="card"><p class="badtxt">⚠️ ${esc(e.message)}</p><p class="note">${T('The count comes from the website (it needs a Git deploy on Netlify). In SparkleStudio.exe, put the website and a Studio key in Settings.', 'Số liệu đến từ trang web (cần deploy từ Git trên Netlify). Trong SparkleStudio.exe, điền trang web và khóa Studio trong Cài đặt.')}</p></div>`; return; }
   const big = (n, en, vi) => `<div class="card stat"><b>${n}</b><span>${T(en, vi)}</span></div>`, hrs = m => m >= 120 ? (m / 60).toFixed(m >= 600 ? 0 : 1) + ' h' : m + ' min';
   const max = Math.max(1, ...r.perDay.map(d => d.devices)), W = 600, H = 150, bw = W / r.perDay.length;
   const bars = r.perDay.map((d, i) => `<rect x="${(i * bw + 2).toFixed(1)}" y="${(H - 18 - d.devices / max * (H - 30)).toFixed(1)}" width="${(bw - 4).toFixed(1)}" height="${(d.devices / max * (H - 30)).toFixed(1)}" rx="3" fill="#8a5cf6"><title>${d.date}: ${d.devices} (${d.newDevices} ${T('new', 'mới')}), ${hrs(d.mins)}</title></rect>${d.newDevices ? `<rect x="${(i * bw + 2).toFixed(1)}" y="${(H - 18 - d.newDevices / max * (H - 30)).toFixed(1)}" width="${(bw - 4).toFixed(1)}" height="${(d.newDevices / max * (H - 30)).toFixed(1)}" rx="3" fill="#ff7eb8"/>` : ''}${i % 5 === 4 ? `<text x="${(i * bw + bw / 2).toFixed(1)}" y="${H - 4}" font-size="10" text-anchor="middle" fill="#6b5b80">${d.date.slice(5)}</text>` : ''}`).join('');
@@ -1309,9 +1314,10 @@ PAGES.players = async P => {
   const table = (o, name) => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<tr><td>${esc(name ? name(k) : k)}</td><td>${n}</td><td>${pct(n, tw)}</td></tr>`).join('');
   // round L: names for games and places from the game itself; each device with its children, problems, suggestions
   let GN = {}, PN = {};
-  await namesReady;
+  await namesReady; if (stale()) return;
   try { await import(GAME + 'js/games/all.js'); const { GAMES } = await import(GAME + 'js/games/registry.js'); for (const [id, g] of Object.entries(GAMES)) GN[id] = `${g.icon} ${g.name()}`; } catch (e) { }
   try { const W = await import(GAME + 'js/world.js'); for (const [id, f] of Object.entries(W.REGION_NAMES || {})) PN[id] = typeof f === 'function' ? f() : String(f); } catch (e) { }
+  if (stale()) return;
   // how long ago a device was last on the screen (round O)
   const ago = iso => { const m = Math.max(1, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 60 ? T(`${m} min ago`, `${m} phút trước`) : m < 48 * 60 ? T(`${Math.round(m / 60)} h ago`, `${Math.round(m / 60)} giờ trước`) : T(`${Math.round(m / 1440)} days ago`, `${Math.round(m / 1440)} ngày trước`); };
   const gname = g => GN[g] || g, pname = p => PN[p] || p, when = d => d ? new Date(d + 'T12:00:00').toLocaleDateString(LANG === 'vi' ? 'vi-VN' : 'en-AU', { day: 'numeric', month: 'short' }) : '–';

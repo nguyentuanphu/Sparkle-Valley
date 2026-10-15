@@ -1,0 +1,10 @@
+{
+  "sourceCommit": "3599d24df3b51e6e32b413c626964d7dc1ff5bc9",
+  "run": 38649407236,
+  "artifact": 11935987654,
+  "sha256": {
+    "check-map.json": "96df3660a9534297e60ada63ec75a43c152126364e24d04b634330be6c6fa15d",
+    "check-times.json": "08e07d9bdf77ba90b0836e0202b98b5f6230d3346bb1a38aaa3a774e7e0aed00"
+  },
+  "timings": "Actual GitHub timings imported; four new local checks appended. Prior mixed timing history saved separately."
+}

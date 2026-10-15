@@ -8,6 +8,7 @@ import os from 'os';
 import { launch, open, clear, start, URL, seedPlayers, takeCoverage } from './harness.mjs';
 import { groundAudit } from './world-audit.mjs';
 import { studioCheck } from './studio-check.mjs';
+import { studioRepairCheck } from './studio-repair-check.mjs';
 // (round R privacy) friends save each other's device key when they first play together (＋👫); two test devices that are
 // already friends by code get each other's key here, the way that first game would have given it
 // the text of an element with each swapped drawing read back as its emoji (js/emojiswap.js keeps it in data-e)
@@ -806,6 +807,8 @@ await check('studio', async () => {
   ok(build === studio, `studio/version.json says ${studio} but the game is ${build}: bump them together (and rebuild SparkleStudio.exe)`);
   return await studioCheck(b);
 });
+
+await check('ownerstudiofailures', async () => studioRepairCheck(b));
 
 await check('ground', async () => {
   // every building on dry, level ground (not over the river or the lake), no road floating, buried or in water,
@@ -3954,6 +3957,26 @@ await check('ownertransportpov', async () => {
   return JSON.stringify(rows);
 });
 
+await check('ownerautoplaytransport', async () => {
+  const P=await open(b,{w:900,h:640}); await clear(P.page);
+  await P.page.evaluate(()=>{const G=__sv,h=G.heroes[0],i=G.interactables.find(i=>/^ride_/.test(i.id)&&G.traffic.slots[+i.id.slice(5)].id==='bus');h.place(i.x+2,i.z);window.__board=i.act(h,G).then(()=>{G.paused=true;});});
+  await P.page.locator('.dialog .dchoices button').first().click(); await P.page.locator('.stoppick [data-next]').click();
+  const r=await P.page.evaluate(async()=>{
+    await window.__board; const G=__sv,h=G.heroes[0],slot=G.traffic.slots.find(s=>s.passenger===h);slot.mover.wait=100;
+    await new Promise(resolve=>setTimeout(resolve,200));
+    const o=slot.v.o,exit={x:o.position.x+Math.cos(o.rotation.y)*2.6,z:o.position.z-Math.sin(o.rotation.y)*2.6};
+    let target=null;
+    for(let k=0;k<64&&!target;k++){const a=k/64*Math.PI*2,x=exit.x+Math.cos(a)*12,z=exit.z+Math.sin(a)*12;
+      if(!G.goodSpot(x,z))continue;let clear=true;for(let t=0;t<=20;t++)if(!G.goodSpot(exit.x+(x-exit.x)*t/20,exit.z+(z-exit.z)*t/20))clear=false;if(clear)target={x,z};}
+    if(!target)throw Error('No clear walking target from actual bus exit');
+    const {mountAutoplay}=await import('/js/autoplay.js');mountAutoplay(G);
+    const result=await Promise.race([G.autoplay.walkTo(target.x,target.z,'fast'),new Promise(resolve=>setTimeout(()=>resolve({timeout:true}),30000))]);
+    const out={result,carried:!!h.carry,passenger:slot.passenger===h,left:Math.hypot(h.pos.x-target.x,h.pos.z-target.z)};G.autoplay.stop();return out;
+  });
+  const errors=P.errors;await P.ctx.close();ok(!r.result?.timeout&&!r.carried&&!r.passenger&&r.left<=2.1&&!r.result.trail.some(t=>/^fly/.test(t))&&!errors.length,JSON.stringify({r,errors}));
+  return 'Actual bus passenger exits through normal Jump before purposeful on-foot navigation; arrives within2m without flying';
+});
+
 await check('ride', async () => {
   // (Round U, owner 11 Oct: "all vehicles can be ridden, public transport can get in with fares") every parked car and
   // motorbike can be driven (Jump gets off); a bus takes a big kid for its fare and an under-5 for free, to the next stop;
@@ -4622,6 +4645,46 @@ await check('together', async () => {
   const errs = [...A.errors, ...B.errors].filter(e => !/maps\.google|google\.com/.test(e)); await A.ctx.close(); await B.ctx.close();
   ok(tale.a === tale.b && /prince/.test(tale.b) && /⭐3/.test(race) && !stray.length && follow < 6 && claim.gone && claim.by && real.direct && real.inGame && !errs.length, JSON.stringify({ tale, race, stray, follow, claim, real, errs }));
   return `story page turned on both ("${tale.b}…"); side by side: "${race}"; following ended ${follow} m behind; pickup ${pick} gone for B ("${claim.by} got it first"); the real place opens in the game straight away (Use the internet is on: owner, 10 Oct; the gate itself is checked by realphotos)`;
+});
+
+await check('ownerhudocclusion', async () => {
+  const rows=[]; const overlaps=(a,b)=>a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y;
+  for(const [w,h,lang] of [[320,640,'en'],[390,844,'en'],[320,640,'vi'],[390,844,'vi'],[844,390,'vi'],[820,1180,'en'],[1280,800,'en']]) {
+    const P=await open(b,{w,h,lang,touch:true,pre:()=>{
+      localStorage.setItem('sv2_playerid','tester000001');localStorage.setItem('sv2_tester',JSON.stringify({at:1,b:'r1'}));
+      localStorage.setItem('sv2_live',JSON.stringify({releases:{tester:{on:true,devices:['tester000001']}},festivals:{}}));
+    },route:async ctx=>{
+      await ctx.route('**/api/live**',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({releases:{tester:{on:true,devices:['tester000001']}},festivals:{}})}));
+      await ctx.route('**/api/tester**',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,k:'0123456789abcdef',rid:'hud-fixture',mine:[],open:[]})}));
+    }});await clear(P.page);await P.page.waitForSelector('.testermark');await P.page.evaluate(()=>document.fonts.ready);await P.page.waitForTimeout(500);
+    const r=await P.page.evaluate(()=>{
+      const go=document.querySelector('.hud .q-go'),mini=document.querySelector('.hud .mini-wrap'),q=document.querySelector('.hud .quest'),a=go.getBoundingClientRect(),hits=[];
+      for(const x of [.15,.5,.85])for(const y of [.15,.5,.85])hits.push(go.contains(document.elementFromPoint(a.x+a.width*x,a.y+a.height*y)));
+      const rect=n=>{const r=n.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};};
+      return {go:rect(go),mini:rect(mini),quest:rect(q),hits};
+    });
+    await P.page.evaluate(()=>__sv.openSound(document.querySelector('.dk.snd')));await P.page.waitForTimeout(300);
+    r.audio=await P.page.locator('.audio-tray').boundingBox();r.w=w;r.h=h;r.lang=lang;rows.push(r);
+    fs.mkdirSync('out/owner-hud-occlusion',{recursive:true});await P.page.screenshot({path:`out/owner-hud-occlusion/${w}-${h}-${lang}.png`});
+    const errors=P.errors;await P.ctx.close();ok(!overlaps(r.go,r.mini)&&r.hits.every(Boolean)&&!overlaps(r.audio,r.quest)&&!errors.length,JSON.stringify({row:r,errors}));
+  }
+  return JSON.stringify(rows);
+});
+
+await check('ownerhudmic', async () => {
+  const rows=[];
+  for(const lang of ['en','vi']) {
+    const P=await open(b,{w:320,h:640,lang,touch:true});await clear(P.page);
+    await P.page.evaluate(()=>__sv.huds[0].setCall(true,false,true));await P.page.evaluate(()=>document.fonts.ready);await P.page.waitForTimeout(400);
+    await P.page.evaluate(()=>__sv.openSound(document.querySelector('.dk.snd')));await P.page.waitForTimeout(250);
+    const r=await P.page.evaluate(()=>{
+      const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom};};
+      const q=rect('.hud .quest'),go=rect('.q-go'),mini=rect('.mini-wrap'),audio=rect('.audio-tray'),mic=rect('.dk.call');
+      const overlap=(a,b)=>a.x<b.right&&a.right>b.x&&a.y<b.bottom&&a.bottom>b.y;
+      return {questClear:!overlap(go,mini),audioClear:!overlap(q,audio),micBelow:mic.y>=mini.bottom};
+    });rows.push({lang,...r});const errors=P.errors;await P.ctx.close();ok(r.questClear&&r.audioClear&&r.micBelow&&!errors.length,JSON.stringify({r,errors}));
+  }
+  return JSON.stringify(rows);
 });
 
 await check('owneraudiobounds', async () => {

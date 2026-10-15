@@ -206,9 +206,15 @@ async function walk(path, x, z, near) {
 }
 async function go(x, z, near = 1.8, note) {
   const h = hero(); if (!h || !Number.isFinite(x) || !Number.isFinite(z)) return;
-  const far = () => Math.hypot(h.pos.x - x, h.pos.z - z); if (far() <= near) return;
+  const far = () => Math.hypot(h.pos.x - x, h.pos.z - z);
   if (topOpen()) { await settle(40, note); await closeAll(); }
   G.paused = false; if (h.riding && h.dismount) h.dismount();
+  // Public riders must use the same get-off input as a child before setting a walking goal.
+  if (h.carry && (h.carryVehicle || G.traffic?.slots.some(s => s.passenger === h))) {
+    step_('jump', T('Get off', 'Xuống xe')); G.pads[0]._jump = true;
+    if (!await until(() => !h.carry, 2)) { await stuck(note); return; }
+  }
+  if (far() <= near) return;
   if (far() > sp().fly) { step_('fly', `${Math.round(x)},${Math.round(z)}`); await G.travel(h, x - 1.5, z + 2); await hold(.4); }
   for (let tries = 0; tries < 3 && far() > near; tries++) {
     const path = await findPath(h.pos.x, h.pos.z, x, z, near);

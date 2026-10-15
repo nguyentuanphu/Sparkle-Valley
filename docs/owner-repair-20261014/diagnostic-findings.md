@@ -58,3 +58,14 @@ Source-based leads and bounded synthetic proofs do not dispose of all216 reports
 | DR-19 | WO-04/16 | Final classic shrine quest has no destination when all discovered shrines are done and others remain unknown | Corrected280-case inventory has zero blocked approaches but missing final marker in light/dark predicates. Keep known-shrine priority, fall back to nearest unfinished shrine; focused rerun active. |
 
 DR20 — newly reported public-transport POV obstruction. Source inspection: bus and coach bodies and dark glass are closed solid meshes; toy models also carry an outline. Current camera sits at child-eye position inside these solids, so the earlier transport check of eye height/distance does not establish an unobstructed windscreen view. Reproduce actual rendered rider view before correcting; check both ages, bus variants, tram, exit, exterior view and split-screen isolation. Pending.
+
+## Further findings,15 Oct AEDT
+
+| ID | WO | Finding | Disposition / scope |
+|---|---|---|---|
+| DR-21 | WO-08/18 | Small tester navigation grows horizontally, causing Go/minimap visual overlap | Actual320px EN baseline red; all nine hit samples still reached Go. Stack small clock/badge, reserve measured navigation width and move quest below when needed; horizontal Audio avoids quest. Seven-layout check235s and Audio225s pass in focused9/9; active Mic EN/VI48s passes. |
+| DR-22 | WO-10/11 | Failed device lookup appears empty and discards unseen policy/level on Lab save | Real authenticated Studio/live-store regression failed with HTTP503. Display saved device IDs and explicit load failure; preserve unshown latest policies/levels and legacy speed choices. Regression now passes2s, full Studio rerun pending. |
+| DR-23 | WO-11 | Late Analytics response overwrites Releases after navigation | Held actual players response reproduces wrong page. Render generation and Analytics stale-response guards pass targeted regression; full Studio rerun pending. |
+| DR-24 | WO-09/16 | Autoplay attempts walking/flying while still seated in a bus | First fixture exited naturally before reproducing. Tightened actual boarding fixture pauses immediately after boarding and holds station wait100sec; before still carried12.67m from clear12m target after futile path/jump/fly attempts. Normal get-off input before path planning implemented; focused validation pending. Broader random game fallback and first-run world-route stalls remain open. |
+
+DR-24 follow-up: normal public-transport Jump input before path planning passed44s; actual ride51s, Studio360s and103 units also passed in focused11/11. DR-25: existing default Keep tester retention silently changed on Lab Save. Reproduced0/1; explicit Keep default and explanatory scope preserve it, final7/7 passed. Missing physical-device/production proof stays separate.
