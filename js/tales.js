@@ -37,6 +37,9 @@ export const stageOf = en => (STAGES.find(([re]) => re.test(en)) || [0, 'meadow'
 export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = null } = {}) {
   return new Promise(resolve => {
     let k = startPage, auto = true, alive = true, token = 0;
+    let displayed = false;
+    // Both friends already start on page zero. Publishing a late initial render can undo real Next taps.
+    const publish = fromFriend => { const initial = !displayed; displayed = true; if (sync && !fromFriend && (!initial || k !== startPage)) sync.send(k); };
     // (owner, 13 Oct) a soft music bed under the story, lowered while the narrator speaks; the music before comes back on
     // close. Music.play follows the music switch, and the music's loudness calm mode.
     const prev = Music.key; Music.play('story'); const offTalk = onSpeaking(n => Music.under(n > 0));
@@ -85,7 +88,7 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
       if (/✨|magic|thần|fairy|Bụt/i.test(pics + en)) for (let i = 0; i < 10; i++) fx.appendChild(el('i', 'th-spark', pic('✨'))).style.cssText = `left:${10 + (i * 41) % 80}%;top:${10 + (i * 23) % 60}%;animation-delay:${(i % 6) * .3}s`;
       text.innerHTML = `<p>${esc(T(en, vi).replace(/\{name\}/g, name))}</p>`;
       dots.innerHTML = tale.pages.map((_, i) => `<i class="${i === k ? 'on' : i < k ? 'done' : ''}"></i>`).join('');
-      if (sync && !fromFriend) sync.send(k);
+      publish(fromFriend);
       m.querySelector('.th-prev').disabled = k === 0;
       m.querySelector('.th-next').innerHTML = (k === tale.pages.length - 1 ? pic('🏁') : '▶') + `<small>${k === tale.pages.length - 1 ? T('End', 'Hết') : T('Next', 'Sau')}</small>`;
       SFX.page ? SFX.page() : SFX.tap();
@@ -103,7 +106,7 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
     const drawFilm = async (my, en, vi, fromFriend) => {
       text.innerHTML = `<p>${esc(T(en, vi).replace(/\{name\}/g, name))}</p>`;
       dots.innerHTML = tale.pages.map((_, i) => `<i class="${i === k ? 'on' : i < k ? 'done' : ''}"></i>`).join('');
-      if (sync && !fromFriend) sync.send(k);
+      publish(fromFriend);
       m.querySelector('.th-prev').disabled = k === 0;
       m.querySelector('.th-next').innerHTML = (k === tale.pages.length - 1 ? pic('🏁') : '▶') + `<small>${k === tale.pages.length - 1 ? T('End', 'Hết') : T('Next', 'Sau')}</small>`;
       SFX.page ? SFX.page() : SFX.tap();

@@ -23,5 +23,13 @@ try{
  assert.ok(cancelled.paused&&!cancelled.low&&cancelled.count===0,'Hush must stop the real plain player and release narration ducking immediately: '+JSON.stringify(cancelled));
  assert.ok(during.count===1&&after.count===1&&after.low&&after.pauses===during.pauses,'Cancelled line or late completion disrupted the later narrator: '+JSON.stringify({during,after}));
  assert.ok(finished.count===0&&!finished.low,'Finished narrator must release the bed: '+JSON.stringify(finished));
- assert.deepEqual(P.errors,[]);await P.ctx.close();console.log('iPhone fallback cancellation pauses audio and releases the music bed immediately; stale timeout/late completion cannot stop or uncount the next line');
+ assert.deepEqual(P.errors,[]);await P.ctx.close();
+ const Q=await open(browser,{w:390,h:844,touch:true,play:false,settings:{voice:false,music:false,sound:false,familyVoice:false,autoPack:false},pre:`window.__heldFamily=[];window.__familyStarts=0;AudioContext.prototype.decodeAudioData=function(){return new Promise(resolve=>window.__heldFamily.push(()=>resolve(this.createBuffer(1,4410,44100))));};const originalStart=AudioBufferSourceNode.prototype.start;AudioBufferSourceNode.prototype.start=function(...args){window.__familyStarts++;return originalStart.apply(this,args);};`});
+ await Q.page.mouse.click(2,2);
+ await Q.page.evaluate(async()=>{const V=await import('/js/voice.js'),{settings}=await import('/js/state.js'),p=V.FAMILY_PHRASES[0];await V.saveClip('en',p.id,new Blob([new Uint8Array([1,2,3])],{type:'audio/wav'}));settings.voice=true;settings.lang='en';settings.familyVoice=true;window.__familySpeech=V.sayAsync(p.en,p.vi);});
+ await Q.page.waitForFunction(()=>window.__heldFamily.length===1);
+ const family=await Q.page.evaluate(async()=>{const V=await import('/js/voice.js'),before=window.__familyStarts;V.hush();window.__heldFamily.shift()();await window.__familySpeech;return {before,after:window.__familyStarts};});
+ assert.equal(family.after,family.before,'A cancelled family recording must not start after its decoder finishes: '+JSON.stringify(family));
+ assert.deepEqual(Q.errors,[]);await Q.ctx.close();
+console.log('iPhone fallback cancellation pauses audio and releases the music bed immediately; stale timeout/late completion cannot stop or uncount the next line');
 }finally{await browser.close();}

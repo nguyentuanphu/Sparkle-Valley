@@ -134,7 +134,7 @@ async function speakNow(en, vi) {
   // a family recording of exactly this line wins over any other voice
   if (settings.familyVoice) {
     const ph = FAMILY_PHRASES.find(p => p.en === en || p.vi === vi);
-    if (ph && hasClip(settings.lang, ph.id)) { await playClip(settings.lang, ph.id); return; }
+    if (ph && hasClip(settings.lang, ph.id)) { await playClip(settings.lang, ph.id, my); return; }
   }
   const parts = [settings.lang === 'vi' ? ['vi', vi ?? en] : ['en', en]];
   if (settings.bilingual && vi != null && en !== vi) parts.push(settings.lang === 'vi' ? ['en', en] : ['vi', vi]);
@@ -281,10 +281,14 @@ export async function deleteClip(lang, id) { await tx('readwrite', st => st.dele
 let playing = null;
 // Played through Web Audio, which (once unlocked by the first tap) can play at any time, even on iPhone.
 // Returns a promise that resolves when the clip has finished (or false if there is no clip).
-export function playClip(lang, id) {
+export function playClip(lang, id, my = null) {
   const c = clips[lang + ':' + id]; if (!c) return false;
+  // A family line inherits its narration token; a direct preview replaces the current voice.
+  if (my == null) { my = ++seq; activeSpeech.clear(); told(); }
+  if (my !== seq) return Promise.resolve();
+  stopPlayback();
   if (c.decoded) return playBuffer(c.decoded);
-  return decode(c.data).then(buf => { c.decoded = buf; return playBuffer(buf); }).catch(() => { });
+  return decode(c.data).then(buf => { c.decoded = buf; if (my === seq) return playBuffer(buf); }).catch(() => { });
 }
 // (a decoder that never answers falls back to the plain player after 5 s)
 function decode(data) { const a = ac(); return a ? Promise.race([a.decodeAudioData(data.slice(0)), new Promise((_, no) => setTimeout(() => no(new Error('slow decode')), 5000))]) : Promise.reject(new Error('no audio')); }

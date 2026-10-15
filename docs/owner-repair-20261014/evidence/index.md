@@ -48,3 +48,6 @@ Attributed shared-activity comparisons now complete: activity-shell-before-r74 (
 - autoplay-speech-regression-first-9-checks.json: repair13 wider8/9; tour exposed actual approach failures.
 - approach-story-start-before-4-checks.json: first approach refinement1/4; Counting remained blocked, early-page unit/browser reproduced; navigation guard passed.
 - approach-story-start-final-7-checks.json: repair15 final7/7,106 units, actual tour and both online cases. Diagnostic Full still required.
+
+- initial-page-family-cancel-before-2-checks.json: stronger exacte75 baseline0/2, actual delayed page reset and family recording restarting after cancellation.
+- initial-page-family-cancel-final-9-checks.json: repair16 final9/9; real Back/two-peer synchronization and held family decode included in assertions. GitHubFull38690078655 is still on preceding sourcee75.
