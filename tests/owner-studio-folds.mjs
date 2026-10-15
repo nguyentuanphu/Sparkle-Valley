@@ -45,7 +45,7 @@ try {
     // persistence: close the first fold of the Releases tab, reload, it is still closed
     const rel = tabs.indexOf('releases'); if (rel >= 0) {
       await pg.evaluate(() => { location.hash = 'releases'; }); await pg.waitForTimeout(1800);
-      const shotDir = process.env.SV_SHOT; if (shotDir) { fs.mkdirSync(shotDir, { recursive: true }); await pg.screenshot({ path: path.join(shotDir, `${label}-releases-open.png`) }); }
+      const shotDir = process.env.SV_SHOT; if (shotDir) { fs.mkdirSync(shotDir, { recursive: true }); await pg.evaluate(() => { const d = [...document.querySelectorAll('#page details')].find(d => d.open && d.getClientRects().length && !d.matches('.studio-help')); d?.scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); }); await pg.waitForTimeout(300); await pg.screenshot({ path: path.join(shotDir, `${label}-releases-open.png`) }); }
       const name = await pg.evaluate(() => { const d = [...document.querySelectorAll('#page details')].find(d => d.open && d.getClientRects().length && !d.matches('.studio-help')); if (!d) return null; d.querySelector(':scope > summary').click(); return d.querySelector(':scope > summary').textContent.trim().slice(0, 40); });
       if (shotDir) { await pg.waitForTimeout(400); await pg.screenshot({ path: path.join(shotDir, `${label}-releases-first-group-tapped-closed.png`) }); }
       await pg.reload(); await pg.waitForSelector('#tabs button'); await pg.evaluate(() => { location.hash = 'releases'; }); await pg.waitForTimeout(1800);
