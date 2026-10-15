@@ -1281,7 +1281,9 @@ await check('testerreport', async () => {
   if (!await wait(x => x && x.auto === 'noopen' && /no-such-game/.test(x.detail), 9000)) out.push('a game that did not open was not reported');
   await P.page.waitForFunction(() => performance.now() > 0, null); await P.page.waitForTimeout(Math.max(0, 16000 - await P.page.evaluate(() => performance.now())));
   await P.page.evaluate(() => new Promise(r => requestAnimationFrame(() => { const t = performance.now(); while (performance.now() - t < 2600) { } r(); })));
-  if (!await wait(x => x && x.auto === 'freeze', 6000)) out.push('a frozen screen was not reported');
+  { const fz = await wait(x => x && x.auto === 'freeze', 6000); if (!fz) out.push('a frozen screen was not reported');
+    // (#261) the report says the game's own code ran long (this freeze is a 2.6 s script), not only that frames stopped
+    else { const why = JSON.stringify(fz.log || []).match(/longest script (\d+) ms/); if (!why || +why[1] < 2000) out.push('the freeze report does not say a long script caused it: ' + (why ? why[0] : 'no note')); } }
   // the ladybird: tap
   await clear(P.page); const n0 = got.length;
   await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerdown'); await P.page.locator('.hud .z-lb').first().dispatchEvent('pointerup');

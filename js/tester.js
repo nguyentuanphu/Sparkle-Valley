@@ -143,7 +143,14 @@ function watch() {
   setProblemHook((kind, key) => { if (kind === 'stuck') autoReport('stuck', key); }); offs.push(() => setProblemHook(null));
   // frames: frozen (no frame for 2 s while on screen) and slow (under 20 a second for 10 s)
   let lastF = performance.now(), frames = 0, since = performance.now(), raf = 0;
-  const tick = t => { if (!live) return; const gap = t - lastF; if (gap > C.LIMITS.freeze * 1000 && document.visibilityState === 'visible' && performance.now() - mounted > 15000) autoReport('freeze', `${(gap / 1000).toFixed(1)} s`);
+  // (#261, a 3.4 s freeze on Windows Chrome that a probe could not reproduce) each freeze report says why the frames
+  // stopped: the game's own code running long (a long task), or the browser not drawing while the window was resized,
+  // left or hidden. The report itself and how reports are grouped are unchanged.
+  const longs = [], winAt = []; try { const po = new PerformanceObserver(l => { for (const e of l.getEntries()) { longs.push([e.startTime, e.duration]); if (longs.length > 20) longs.shift(); } }); po.observe({ type: 'longtask' }); offs.push(() => po.disconnect()); } catch (e) { }
+  for (const [t, k] of [[window, 'resize'], [window, 'blur'], [window, 'focus'], [document, 'visibilitychange']]) on(t, k, () => { winAt.push([performance.now(), k]); if (winAt.length > 20) winAt.shift(); });
+  const why = (from, to) => { const ran = longs.filter(([a, d]) => a + d > from && a < to).reduce((m, [, d]) => Math.max(m, d), 0), seen = [...new Set(winAt.filter(([a]) => a > from - 500 && a < to).map(([, k]) => k))];
+    return `longest script ${Math.round(ran)} ms; window: ${seen.join(', ') || 'no change'}; focus ${document.hasFocus() ? 'yes' : 'no'}`; };
+  const tick = t => { if (!live) return; const gap = t - lastF; if (gap > C.LIMITS.freeze * 1000 && document.visibilityState === 'visible' && performance.now() - mounted > 15000) { note('freeze', why(lastF, t)); autoReport('freeze', `${(gap / 1000).toFixed(1)} s`); }
     lastF = t; frames++; if (t - since > C.LIMITS.slowFor * 1000) { fpsNow = frames * 1000 / (t - since); if (fpsNow < C.LIMITS.slowFps && document.visibilityState === 'visible' && performance.now() - mounted > 15000) autoReport('slow', `${Math.round(fpsNow)} frames a second`); frames = 0; since = t; }
     raf = requestAnimationFrame(tick); };
   raf = requestAnimationFrame(tick); offs.push(() => cancelAnimationFrame(raf));
