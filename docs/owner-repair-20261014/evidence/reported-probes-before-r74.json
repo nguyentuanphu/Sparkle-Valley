@@ -1,0 +1,28 @@
+{
+  "url": "http://localhost:8766/",
+  "well": {
+    "tapped": 3,
+    "title": false,
+    "canvas": true,
+    "heroes": 1,
+    "maxFrameGapMs": 17,
+    "at": {
+      "x": 193,
+      "z": -47
+    },
+    "errors": []
+  },
+  "oanquan": {
+    "taps": 316,
+    "seconds": 150,
+    "longTasksMs": [
+      526,
+      433,
+      422,
+      413,
+      347
+    ],
+    "maxFrameGapMs": 533,
+    "errors": []
+  }
+}

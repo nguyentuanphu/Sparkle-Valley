@@ -31,7 +31,7 @@ Refreshed 15 October 2026 AEDT: newest open report is still #299. No issue is cl
 | [#81](https://github.com/nguyentuanphu/Sparkle-Valley/issues/81) | r70 | offscreen | [tester] offscreen: Luôn ban ngày | 430x873 vi | off-match | - |
 | [#82](https://github.com/nguyentuanphu/Sparkle-Valley/issues/82) | r69 | offscreen | [tester] offscreen: English | 1256x1332 vi | off-unmatched | - |
 | [#83](https://github.com/nguyentuanphu/Sparkle-Valley/issues/83) | r69 | offscreen | [tester] offscreen: Xóa danh sách | 1256x1332 vi | off-unmatched | - |
-| [#86](https://github.com/nguyentuanphu/Sparkle-Valley/issues/86) | r70 | manual/other | [tester] Ấn vào cái giếng bị trắng màn hình và out ra màn hình đăng nh | 428x879 vi | well86 | Probe pending |
+| [#86](https://github.com/nguyentuanphu/Sparkle-Valley/issues/86) | r70 | manual/other | [tester] Ấn vào cái giếng bị trắng màn hình và out ra màn hình đăng nh | 428x879 vi | well86 | Not reproduced in emulation: 3 well taps at 428x879 VI on current and R74, no white screen, no sign-in return, no errors, worst frame gap 17-33 ms. iOS Safari memory pressure unverified |
 | [#87](https://github.com/nguyentuanphu/Sparkle-Valley/issues/87) | r70 | offscreen | [tester] offscreen: Màn hình hình to | 428x581 vi | off-unmatched | - |
 | [#88](https://github.com/nguyentuanphu/Sparkle-Valley/issues/88) | r70 | slow | [tester] slow: 19 frames a second | 428x879 vi | slow | - |
 | [#89](https://github.com/nguyentuanphu/Sparkle-Valley/issues/89) | r70 | offscreen | [tester] offscreen: Sau lưng | 428x879 vi | off-match | - |
@@ -199,7 +199,7 @@ Refreshed 15 October 2026 AEDT: newest open report is still #299. No issue is cl
 | [#258](https://github.com/nguyentuanphu/Sparkle-Valley/issues/258) | r74 | autoplay | [tester] autoplay: Number Train: did not close | 1260x1339 en | autoplay-r74 | Number Train did not close: not reproduced in one run per source |
 | [#259](https://github.com/nguyentuanphu/Sparkle-Valley/issues/259) | r74 | autoplay | [tester] autoplay: Letter Hunt: slow: 0 frames a second | 1260x1339 en | autoplay-r74 | Letter Hunt 0 fps: accelerated-autoplay frame count; now judged only at 1x |
 | [#260](https://github.com/nguyentuanphu/Sparkle-Valley/issues/260) | r74 | autoplay | [tester] autoplay: stuck at 20, -83 (plateau) | 1260x1339 en | autoplay-r74 | Same as #253: not reproduced in one run per source |
-| [#261](https://github.com/nguyentuanphu/Sparkle-Valley/issues/261) | r74 | freeze | [tester] freeze: 3.4 s | 1260x1339 en | freeze261 | Probe pending |
+| [#261](https://github.com/nguyentuanphu/Sparkle-Valley/issues/261) | r74 | freeze | [tester] freeze: 3.4 s | 1260x1339 en | freeze261 | Not reproduced in emulation: 162-316 taps over 77-150 s, worst main-thread task 460 ms (current) / 526 ms (R74), idle valley 645 ms (reported-probes-*.json). A first probe counted page start-up tasks (2-4 s) and was corrected. Needs a trace on the reporting Windows device |
 | [#262](https://github.com/nguyentuanphu/Sparkle-Valley/issues/262) | r74 | offscreen | [tester] offscreen: ABCFirst Sounds☆☆☆☆ | 1260x1337 en | off-match | - |
 | [#263](https://github.com/nguyentuanphu/Sparkle-Valley/issues/263) | r74 | offscreen | [tester] offscreen: Opposites☆☆☆☆ | 1260x1337 en | off-match | - |
 | [#264](https://github.com/nguyentuanphu/Sparkle-Valley/issues/264) | r74 | offscreen | [tester] offscreen: First Words: Chinese and Hindi☆☆☆☆ | 1260x1337 en | off-match | - |
