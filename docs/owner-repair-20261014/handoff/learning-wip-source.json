@@ -1,18 +1,19 @@
 {
-  "baseCommit": "b4549b3c8b9be987c1e85cbb899109f2461a1856",
-  "savedAt": "2026-10-15T03:32:51.323269+00:00",
-  "status": "Draft:24 progression cases passed154s;18 layout cases and real touch drag passed235s. Visual review then reproduced caption/star/header issues; shared-frame/caption fixes are under13-check validation. No pass for those fixes yet. Speech/complete visual/integration pending.",
-  "patchSha256": "abf11898871a1838ed4dff577eaa31179758d04e566bb49fbefc1ec63493b3f0",
+  "baseCommit": "ab96ae340c8e4425dc1a80423eff9de038cf5cb2",
+  "savedAt": "2026-10-15T03:56:11.713426+00:00",
+  "status": "Latest11/11 composition/layout/progression/static passed. Earlier13/13 shared shell passed; broader5-check phone/accessibility/ownerround integration active. New fixed speech and attributed final activity comparisons pending.",
+  "patchSha256": "d31bc45618115ff19ca78143272199c8ade9aef385b9f34992fb8184417631b8",
   "files": {
     "index.html": "c8a912084dedf65371089cc8b0b2adae09f01d9e345dcf45e73d7915e7bab58a",
     "js/games/all.js": "9d95b11752d4bd02ad1f17e5e65b161faa0f69dac40773f47a1bbe93835ba7bc",
-    "js/games/frame.js": "9ad5d379c17e11ddf7cdf3dc7f4b9cdbc08b7fd0ee83c69ccff73c7c5286fa65",
+    "js/games/frame.js": "1a52f5a018b4effef21bc5a715a8622483ebd3e48b980c6d36ce30e4651e1d69",
     "js/ui.js": "e1f5d743a1bb365c6bd54dfe105cd8808e8e5fd2fcc061c627643e697ee06835",
-    "css/style.css": "9eaa65ba9f34e0fea9eb4fb12d066b67945c996fbee4346a6b0846277bd6359a",
+    "css/style.css": "25e67daea48f4d82d46d2c3abb3712906952251176c5bf9c3e12a552c6170b13",
     "studio/ui/app.js": "fe13d7e565d7cf3b40d33b3413a3c65806367e4fce7af638148e1a9af856a8fe",
     "sw.js": "a02c8708740db33593a1d632fa824056568cbf10d68f6f9befbb66f12fe579f0",
-    "tests/run.mjs": "9c20bba326136e218b054d129e45f1212d4aff63f6941fdbe8c0e76c2a1a591b",
-    "js/games/bigthinkers2.js": "733cd164d165d55bd0749177af444567a2bd1ed9113283233abee9527dd07f17"
+    "tests/run.mjs": "9da76b8d773575b40f4c79a59db5229fa2683058abe1038beb870343d5899438",
+    "tests/owner-repair-evidence.mjs": "7b716ce4117b9090df159798dd0070c7639f00bb0595c61f58822048d277cc5a",
+    "js/games/bigthinkers2.js": "e8e52651515e4612bba9afe1ec1c131173156b7108db61afab2c3e935c8622e2"
   },
-  "recovery": "Apply on clean saved base (same runtime as f475) only when changes absent; reverse check passed against current working draft."
+  "recovery": "Apply only on recorded clean base when source changes absent. Do not apply twice."
 }
