@@ -1,0 +1,790 @@
+[
+  {
+    "view": "desktop",
+    "tab": "home",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "message",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "missions",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "children",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "album",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "quiz",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "stories",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "villagers",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "familycode",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 1,
+    "toggled": {
+      "ok": 1,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "releases",
+    "finished": false,
+    "title": "",
+    "heads": 4,
+    "loose": [],
+    "folds": 17,
+    "toggled": {
+      "ok": 9,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "looks",
+    "finished": false,
+    "title": "",
+    "heads": 3,
+    "loose": [
+      "Chi",
+      "Jack",
+      "Ruby"
+    ],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "plots",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 3,
+    "toggled": {
+      "ok": 3,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "festivals",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 3,
+    "toggled": {
+      "ok": 3,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "path",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 13,
+    "toggled": {
+      "ok": 13,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "music",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "map",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 1,
+    "toggled": {
+      "ok": 1,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "photos",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "play",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "voices",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 2,
+    "toggled": {
+      "ok": 2,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "ads",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 2,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "players",
+    "finished": false,
+    "title": "",
+    "heads": 14,
+    "loose": [],
+    "folds": 9,
+    "toggled": {
+      "ok": 3,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "testers",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 1,
+    "toggled": {
+      "ok": 1,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "publish",
+    "finished": false,
+    "title": "",
+    "heads": 1,
+    "loose": [
+      "Waiting to publish: 0"
+    ],
+    "folds": 2,
+    "toggled": {
+      "ok": 2,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "site",
+    "finished": false,
+    "title": "",
+    "heads": 2,
+    "loose": [],
+    "folds": 2,
+    "toggled": {
+      "ok": 2,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "check",
+    "finished": true,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "settings",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "admins",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 2,
+    "toggled": {
+      "ok": 2,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "security",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 4,
+    "toggled": {
+      "ok": 4,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "tab": "accesslog",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "desktop",
+    "persistence": {
+      "fold": "The lantern story5 of 5 on\n      All onA",
+      "closedAfterReload": true
+    }
+  },
+  {
+    "view": "desktop",
+    "errors": []
+  },
+  {
+    "view": "phone",
+    "tab": "home",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "message",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "missions",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "children",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "album",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "quiz",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "stories",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "villagers",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "familycode",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 1,
+    "toggled": {
+      "ok": 1,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "releases",
+    "finished": false,
+    "title": "",
+    "heads": 4,
+    "loose": [],
+    "folds": 17,
+    "toggled": {
+      "ok": 9,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "looks",
+    "finished": false,
+    "title": "",
+    "heads": 3,
+    "loose": [
+      "Chi",
+      "Jack",
+      "Ruby"
+    ],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "plots",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 3,
+    "toggled": {
+      "ok": 3,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "festivals",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 3,
+    "toggled": {
+      "ok": 3,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "path",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 13,
+    "toggled": {
+      "ok": 13,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "music",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "map",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 1,
+    "toggled": {
+      "ok": 1,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "photos",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "play",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "voices",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 2,
+    "toggled": {
+      "ok": 2,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "ads",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 2,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "players",
+    "finished": false,
+    "title": "",
+    "heads": 14,
+    "loose": [],
+    "folds": 9,
+    "toggled": {
+      "ok": 3,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "testers",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 1,
+    "toggled": {
+      "ok": 1,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "publish",
+    "finished": false,
+    "title": "",
+    "heads": 1,
+    "loose": [
+      "Waiting to publish: 0"
+    ],
+    "folds": 2,
+    "toggled": {
+      "ok": 2,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "site",
+    "finished": false,
+    "title": "",
+    "heads": 2,
+    "loose": [],
+    "folds": 2,
+    "toggled": {
+      "ok": 2,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "check",
+    "finished": true,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "settings",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "admins",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 2,
+    "toggled": {
+      "ok": 2,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "security",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 4,
+    "toggled": {
+      "ok": 4,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "tab": "accesslog",
+    "finished": false,
+    "title": "",
+    "heads": 0,
+    "loose": [],
+    "folds": 0,
+    "toggled": {
+      "ok": 0,
+      "stuck": []
+    }
+  },
+  {
+    "view": "phone",
+    "persistence": {
+      "fold": "The lantern story5 of 5 on\n      All onA",
+      "closedAfterReload": true
+    }
+  },
+  {
+    "view": "phone",
+    "errors": []
+  }
+]
