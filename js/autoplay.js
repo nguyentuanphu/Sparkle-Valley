@@ -217,7 +217,8 @@ async function go(x, z, near = 1.8, note) {
     if (!await until(() => !h.carry, 2)) { await stuck(note); return false; }
   }
   if (far() <= near) return true;
-  if (far() > sp().fly) { step_('fly', `${Math.round(x)},${Math.round(z)}`); await G.travel(h, x - 1.5, z + 2); await hold(.4); }
+  // (reports #251/#256) a long trip lands on clear ground beside the target, like a child's Go button (G.landBy), never inside what stands there
+  if (far() > sp().fly) { step_('fly', `${Math.round(x)},${Math.round(z)}`); await G.landBy(h, x, z); await hold(.4); }
   for (let tries = 0; tries < 3 && far() > near; tries++) {
     const path = await findPath(h.pos.x, h.pos.z, x, z, near);
     if (!path) { step_('fly', T('no way on foot', 'không có đường đi bộ')); await G.landBy(h, x, z); await hold(.4); if (far() <= near) return true; continue; }

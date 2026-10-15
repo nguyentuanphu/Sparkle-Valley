@@ -31,7 +31,7 @@ Refreshed 15 October 2026 AEDT: newest open report is still #299. No issue is cl
 | [#81](https://github.com/nguyentuanphu/Sparkle-Valley/issues/81) | r70 | offscreen | [tester] offscreen: Luôn ban ngày | 430x873 vi | off-match | - |
 | [#82](https://github.com/nguyentuanphu/Sparkle-Valley/issues/82) | r69 | offscreen | [tester] offscreen: English | 1256x1332 vi | off-unmatched | - |
 | [#83](https://github.com/nguyentuanphu/Sparkle-Valley/issues/83) | r69 | offscreen | [tester] offscreen: Xóa danh sách | 1256x1332 vi | off-unmatched | - |
-| [#86](https://github.com/nguyentuanphu/Sparkle-Valley/issues/86) | r70 | manual/other | [tester] Ấn vào cái giếng bị trắng màn hình và out ra màn hình đăng nh | 428x879 vi | well86 | - |
+| [#86](https://github.com/nguyentuanphu/Sparkle-Valley/issues/86) | r70 | manual/other | [tester] Ấn vào cái giếng bị trắng màn hình và out ra màn hình đăng nh | 428x879 vi | well86 | Probe pending |
 | [#87](https://github.com/nguyentuanphu/Sparkle-Valley/issues/87) | r70 | offscreen | [tester] offscreen: Màn hình hình to | 428x581 vi | off-unmatched | - |
 | [#88](https://github.com/nguyentuanphu/Sparkle-Valley/issues/88) | r70 | slow | [tester] slow: 19 frames a second | 428x879 vi | slow | - |
 | [#89](https://github.com/nguyentuanphu/Sparkle-Valley/issues/89) | r70 | offscreen | [tester] offscreen: Sau lưng | 428x879 vi | off-match | - |
@@ -69,10 +69,10 @@ Refreshed 15 October 2026 AEDT: newest open report is still #299. No issue is cl
 | [#121](https://github.com/nguyentuanphu/Sparkle-Valley/issues/121) | r70 | offscreen | [tester] offscreen: Start | 428x879 en | off-match | - |
 | [#122](https://github.com/nguyentuanphu/Sparkle-Valley/issues/122) | r70 | offscreen | [tester] offscreen: Map1 | 428x879 en | off-match | - |
 | [#123](https://github.com/nguyentuanphu/Sparkle-Valley/issues/123) | r70 | autoplay | [tester] autoplay: What Comes Next?: slow: 18 frames a second | 428x879 en | slow | - |
-| [#124](https://github.com/nguyentuanphu/Sparkle-Valley/issues/124) | r70 | noopen | [tester] noopen: numbers | 428x879 en | noopen | - |
-| [#125](https://github.com/nguyentuanphu/Sparkle-Valley/issues/125) | r70 | noopen | [tester] noopen: letters | 428x879 en | noopen | - |
-| [#126](https://github.com/nguyentuanphu/Sparkle-Valley/issues/126) | r70 | noopen | [tester] noopen: counting | 428x879 en | noopen | - |
-| [#127](https://github.com/nguyentuanphu/Sparkle-Valley/issues/127) | r70 | noopen | [tester] noopen: pattern | 428x879 en | noopen | - |
+| [#124](https://github.com/nguyentuanphu/Sparkle-Valley/issues/124) | r70 | noopen | [tester] noopen: numbers | 428x879 en | noopen | numbers opened and was won by real autoplay on current (reported-learning-after-96ad.json) |
+| [#125](https://github.com/nguyentuanphu/Sparkle-Valley/issues/125) | r70 | noopen | [tester] noopen: letters | 428x879 en | noopen | letters opened and was won on current |
+| [#126](https://github.com/nguyentuanphu/Sparkle-Valley/issues/126) | r70 | noopen | [tester] noopen: counting | 428x879 en | noopen | counting opened and was won on current |
+| [#127](https://github.com/nguyentuanphu/Sparkle-Valley/issues/127) | r70 | noopen | [tester] noopen: pattern | 428x879 en | noopen | pattern opened and was won on current |
 | [#128](https://github.com/nguyentuanphu/Sparkle-Valley/issues/128) | r70 | offscreen | [tester] offscreen: My scrapbook: decorate with stickers and | 1258x1335 en | off-match | - |
 | [#129](https://github.com/nguyentuanphu/Sparkle-Valley/issues/129) | r70 | offscreen | [tester] offscreen: What is family play? | 1258x1335 en | off-match | - |
 | [#130](https://github.com/nguyentuanphu/Sparkle-Valley/issues/130) | r70 | offscreen | [tester] offscreen: Glider | 1258x1335 en | off-match | - |
@@ -126,9 +126,9 @@ Refreshed 15 October 2026 AEDT: newest open report is still #299. No issue is cl
 | [#183](https://github.com/nguyentuanphu/Sparkle-Valley/issues/183) | r73 | offscreen | [tester] offscreen: 7Lễ hội9 | 430x873 vi | off-match | - |
 | [#184](https://github.com/nguyentuanphu/Sparkle-Valley/issues/184) | r73 | error | [tester] error: Importing a module script failed. @ main-GMPRN3OC.js:1 | 430x873 vi | import | - |
 | [#185](https://github.com/nguyentuanphu/Sparkle-Valley/issues/185) | r73 | error | [tester] error: Importing a module script failed. @ promise.js:0 | 430x873 vi | import | - |
-| [#186](https://github.com/nguyentuanphu/Sparkle-Valley/issues/186) | r73 | manual/other | [tester] broken | 430x873 vi | import | - |
-| [#187](https://github.com/nguyentuanphu/Sparkle-Valley/issues/187) | r73 | noopen | [tester] noopen: colors | 430x873 vi | noopen | - |
-| [#188](https://github.com/nguyentuanphu/Sparkle-Valley/issues/188) | r73 | noopen | [tester] noopen: shapes | 430x873 vi | noopen | - |
+| [#186](https://github.com/nguyentuanphu/Sparkle-Valley/issues/186) | r73 | manual/other | [tester] broken | 430x873 vi | import | Its log shows shapes/colors opened then closed before 'noopen' was sent (old detector); the import errors are in the import group |
+| [#187](https://github.com/nguyentuanphu/Sparkle-Valley/issues/187) | r73 | noopen | [tester] noopen: colors | 430x873 vi | noopen | colors opened and was won on current |
+| [#188](https://github.com/nguyentuanphu/Sparkle-Valley/issues/188) | r73 | noopen | [tester] noopen: shapes | 430x873 vi | noopen | shapes opened and was won on current (walk stall separately fixed, #251) |
 | [#189](https://github.com/nguyentuanphu/Sparkle-Valley/issues/189) | r73 | autoplay | [tester] autoplay: Nghe Bà Năm kể Sự tích dưa hấu: lỗi: Importing a mo | 430x873 vi | import | - |
 | [#190](https://github.com/nguyentuanphu/Sparkle-Valley/issues/190) | r73 | autoplay | [tester] autoplay: Nghe Bà Năm kể Sự tích dưa hấu: lỗi: Importing a mo | 430x873 vi | import | - |
 | [#191](https://github.com/nguyentuanphu/Sparkle-Valley/issues/191) | r73 | error | [tester] error: Importing a module script failed. @ c-7YK2XFTA.js:1 | 430x873 vi | import | - |
@@ -158,7 +158,7 @@ Refreshed 15 October 2026 AEDT: newest open report is still #299. No issue is cl
 | [#217](https://github.com/nguyentuanphu/Sparkle-Valley/issues/217) | r74 | offscreen | [tester] offscreen: Tiếng Việt | 430x873 en | off-match | - |
 | [#218](https://github.com/nguyentuanphu/Sparkle-Valley/issues/218) | r74 | offscreen | [tester] offscreen: Close | 430x873 en | off-match | - |
 | [#219](https://github.com/nguyentuanphu/Sparkle-Valley/issues/219) | r74 | offscreen | [tester] offscreen: Send | 430x873 en | off-match | - |
-| [#220](https://github.com/nguyentuanphu/Sparkle-Valley/issues/220) | r74 | freeze | [tester] freeze: 99.4 s | 430x873 en | freeze220 | - |
+| [#220](https://github.com/nguyentuanphu/Sparkle-Valley/issues/220) | r74 | freeze | [tester] freeze: 99.4 s | 430x873 en | freeze220 | Not reproducible here (needs iOS suspend); sampler reset on suspend is in place |
 | [#221](https://github.com/nguyentuanphu/Sparkle-Valley/issues/221) | r74 | offscreen | [tester] offscreen: Beach | 430x873 en | off-match | - |
 | [#222](https://github.com/nguyentuanphu/Sparkle-Valley/issues/222) | r74 | offscreen | [tester] offscreen: Friend10 | 430x873 en | off-match | - |
 | [#223](https://github.com/nguyentuanphu/Sparkle-Valley/issues/223) | r74 | offscreen | [tester] offscreen: Swap and Trade☆☆☆☆ | 430x873 en | off-match | - |
@@ -188,18 +188,18 @@ Refreshed 15 October 2026 AEDT: newest open report is still #299. No issue is cl
 | [#247](https://github.com/nguyentuanphu/Sparkle-Valley/issues/247) | r74 | offscreen | [tester] offscreen: Word Balloons☆☆☆☆ | 430x873 en | off-match | - |
 | [#248](https://github.com/nguyentuanphu/Sparkle-Valley/issues/248) | r74 | offscreen | [tester] offscreen: Rhyme Time☆☆☆☆ | 430x873 en | off-match | - |
 | [#249](https://github.com/nguyentuanphu/Sparkle-Valley/issues/249) | r74 | offscreen | [tester] offscreen: Word Builder☆☆☆☆ | 430x873 en | off-match | - |
-| [#250](https://github.com/nguyentuanphu/Sparkle-Valley/issues/250) | r74 | autoplay | [tester] autoplay: Rainbow Paints: did not close | 1260x1339 en | autoplay-r74 | - |
-| [#251](https://github.com/nguyentuanphu/Sparkle-Valley/issues/251) | r74 | autoplay | [tester] autoplay: Shadow Shapes: stuck at 233, -56 (plateau); did not | 1260x1339 en | autoplay-r74 | - |
-| [#252](https://github.com/nguyentuanphu/Sparkle-Valley/issues/252) | r74 | autoplay | [tester] autoplay: Number Train: did not close; slow: 0 frames a secon | 1260x1339 en | autoplay-r74 | - |
-| [#253](https://github.com/nguyentuanphu/Sparkle-Valley/issues/253) | r74 | autoplay | [tester] autoplay: Letter Hunt: stuck at 20, -83 (plateau); slow: 0 fr | 1260x1339 en | autoplay-r74 | - |
-| [#254](https://github.com/nguyentuanphu/Sparkle-Valley/issues/254) | r74 | autoplay | [tester] autoplay: Shadow Shapes: slow: 0 frames a second | 1260x1339 en | autoplay-r74 | - |
-| [#255](https://github.com/nguyentuanphu/Sparkle-Valley/issues/255) | r74 | autoplay | [tester] autoplay: Shadow Shapes: did not close | 1260x1339 en | autoplay-r74 | - |
-| [#256](https://github.com/nguyentuanphu/Sparkle-Valley/issues/256) | r74 | autoplay | [tester] autoplay: stuck at 233, -56 (plateau) | 1260x1339 en | autoplay-r74 | - |
-| [#257](https://github.com/nguyentuanphu/Sparkle-Valley/issues/257) | r74 | autoplay | [tester] autoplay: Number Train: slow: 0 frames a second | 1260x1339 en | autoplay-r74 | - |
-| [#258](https://github.com/nguyentuanphu/Sparkle-Valley/issues/258) | r74 | autoplay | [tester] autoplay: Number Train: did not close | 1260x1339 en | autoplay-r74 | - |
-| [#259](https://github.com/nguyentuanphu/Sparkle-Valley/issues/259) | r74 | autoplay | [tester] autoplay: Letter Hunt: slow: 0 frames a second | 1260x1339 en | autoplay-r74 | - |
-| [#260](https://github.com/nguyentuanphu/Sparkle-Valley/issues/260) | r74 | autoplay | [tester] autoplay: stuck at 20, -83 (plateau) | 1260x1339 en | autoplay-r74 | - |
-| [#261](https://github.com/nguyentuanphu/Sparkle-Valley/issues/261) | r74 | freeze | [tester] freeze: 3.4 s | 1260x1339 en | freeze261 | - |
+| [#250](https://github.com/nguyentuanphu/Sparkle-Valley/issues/250) | r74 | autoplay | [tester] autoplay: Rainbow Paints: did not close | 1260x1339 en | autoplay-r74 | Rainbow Paints did not close: not reproduced in one run per source |
+| [#251](https://github.com/nguyentuanphu/Sparkle-Valley/issues/251) | r74 | autoplay | [tester] autoplay: Shadow Shapes: stuck at 233, -56 (plateau); did not | 1260x1339 en | autoplay-r74 | REPRODUCED and repaired: 8/8 fly-ins stalled at 231,-56 on 96ad676c; clearSpot chose ground past the valley edge beside the shadow theatre. After fix 8/8 reach it (check ownertheatreapproach). R74 hid it by accepting a landing within 8 m |
+| [#252](https://github.com/nguyentuanphu/Sparkle-Valley/issues/252) | r74 | autoplay | [tester] autoplay: Number Train: did not close; slow: 0 frames a secon | 1260x1339 en | autoplay-r74 | Number Train did not close: closed normally in one run on R74 and current; 0 fps part judged only at 1x now |
+| [#253](https://github.com/nguyentuanphu/Sparkle-Valley/issues/253) | r74 | autoplay | [tester] autoplay: Letter Hunt: stuck at 20, -83 (plateau); slow: 0 fr | 1260x1339 en | autoplay-r74 | Letter Hunt stuck at 20,-83: one real-autoplay run on R74 and current reached it; not reproduced |
+| [#254](https://github.com/nguyentuanphu/Sparkle-Valley/issues/254) | r74 | autoplay | [tester] autoplay: Shadow Shapes: slow: 0 frames a second | 1260x1339 en | autoplay-r74 | Shadow Shapes 0 fps: accelerated-autoplay frame count; now judged only at 1x |
+| [#255](https://github.com/nguyentuanphu/Sparkle-Valley/issues/255) | r74 | autoplay | [tester] autoplay: Shadow Shapes: did not close | 1260x1339 en | autoplay-r74 | Shadow Shapes did not close: one real-autoplay run on R74 and on current closed normally; not reproduced |
+| [#256](https://github.com/nguyentuanphu/Sparkle-Valley/issues/256) | r74 | autoplay | [tester] autoplay: stuck at 233, -56 (plateau) | 1260x1339 en | autoplay-r74 | Same as #251 (stuck at 233,-56): reproduced and repaired |
+| [#257](https://github.com/nguyentuanphu/Sparkle-Valley/issues/257) | r74 | autoplay | [tester] autoplay: Number Train: slow: 0 frames a second | 1260x1339 en | autoplay-r74 | Number Train 0 fps: accelerated-autoplay frame count; now judged only at 1x |
+| [#258](https://github.com/nguyentuanphu/Sparkle-Valley/issues/258) | r74 | autoplay | [tester] autoplay: Number Train: did not close | 1260x1339 en | autoplay-r74 | Number Train did not close: not reproduced in one run per source |
+| [#259](https://github.com/nguyentuanphu/Sparkle-Valley/issues/259) | r74 | autoplay | [tester] autoplay: Letter Hunt: slow: 0 frames a second | 1260x1339 en | autoplay-r74 | Letter Hunt 0 fps: accelerated-autoplay frame count; now judged only at 1x |
+| [#260](https://github.com/nguyentuanphu/Sparkle-Valley/issues/260) | r74 | autoplay | [tester] autoplay: stuck at 20, -83 (plateau) | 1260x1339 en | autoplay-r74 | Same as #253: not reproduced in one run per source |
+| [#261](https://github.com/nguyentuanphu/Sparkle-Valley/issues/261) | r74 | freeze | [tester] freeze: 3.4 s | 1260x1339 en | freeze261 | Probe pending |
 | [#262](https://github.com/nguyentuanphu/Sparkle-Valley/issues/262) | r74 | offscreen | [tester] offscreen: ABCFirst Sounds☆☆☆☆ | 1260x1337 en | off-match | - |
 | [#263](https://github.com/nguyentuanphu/Sparkle-Valley/issues/263) | r74 | offscreen | [tester] offscreen: Opposites☆☆☆☆ | 1260x1337 en | off-match | - |
 | [#264](https://github.com/nguyentuanphu/Sparkle-Valley/issues/264) | r74 | offscreen | [tester] offscreen: First Words: Chinese and Hindi☆☆☆☆ | 1260x1337 en | off-match | - |

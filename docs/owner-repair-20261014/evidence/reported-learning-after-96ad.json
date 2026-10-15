@@ -1,0 +1,88 @@
+{
+  "url": "http://localhost:8765/",
+  "ids": [
+    "letters",
+    "numbers",
+    "counting",
+    "pattern",
+    "colors",
+    "shapes"
+  ],
+  "rows": [
+    {
+      "key": "game:pattern",
+      "ok": true,
+      "said": "won: 4 ✓, 0 ✗, 12 taps",
+      "problems": [],
+      "secs": 15
+    },
+    {
+      "key": "game:counting",
+      "ok": true,
+      "said": "won: 4 ✓, 5 ✗, 17 taps",
+      "problems": [],
+      "secs": 25.8
+    },
+    {
+      "key": "game:letters",
+      "ok": true,
+      "said": "won: 4 ✓, 1 ✗, 19 taps",
+      "problems": [],
+      "secs": 20.9
+    },
+    {
+      "key": "game:numbers",
+      "ok": true,
+      "said": "won: 4 ✓, 2 ✗, 16 taps",
+      "problems": [],
+      "secs": 15.7
+    },
+    {
+      "key": "game:shapes",
+      "ok": false,
+      "said": "won: 4 ✓, 1 ✗, 13 taps",
+      "problems": [
+        "stuck at 231, -56 (village)"
+      ],
+      "secs": 21.1
+    },
+    {
+      "key": "game:colors",
+      "ok": true,
+      "said": "won: 4 ✓, 1 ✗, 15 taps",
+      "problems": [],
+      "secs": 13.6
+    }
+  ],
+  "sent": [
+    {
+      "kind": "auto",
+      "detail": "3.8 s"
+    },
+    {
+      "kind": "auto",
+      "detail": "4 frames a second"
+    },
+    {
+      "kind": "auto",
+      "detail": "15 frames a second"
+    },
+    {
+      "kind": "auto",
+      "detail": "16 frames a second"
+    },
+    {
+      "kind": "auto",
+      "detail": "stuck at 231, -56 (village)"
+    },
+    {
+      "kind": "auto",
+      "detail": "14 frames a second"
+    },
+    {
+      "kind": "auto",
+      "detail": "Shadow Shapes: stuck at 231, -56 (village)"
+    }
+  ],
+  "errors": []
+}
