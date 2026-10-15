@@ -1,0 +1,29 @@
+{
+  "sourceCommit": "e75ec692a93a8bc8c290f36a01c47f32244be4bd",
+  "workflowRun": 38690078655,
+  "artifactId": 11953057633,
+  "files": [
+    {
+      "file": "check-map.json",
+      "sha256": "f8638c3d64d0a3a352657bb275f811dd11a91ae369654a334cf91c959f2d7b78"
+    },
+    {
+      "file": "check-times.json",
+      "sha256": "c4ed26d20435cc36eeac85965376ef008f859dfed8e5e7b7679532fbf10e4856"
+    }
+  ],
+  "importStatus": "Imported exact GitHub map and times after local suite finished; retained timing entries for new local check names.",
+  "retainedLocalNames": [
+    "ownerstoryinitial"
+  ],
+  "importedFiles": [
+    {
+      "file": "check-map.json",
+      "sha256": "f8638c3d64d0a3a352657bb275f811dd11a91ae369654a334cf91c959f2d7b78"
+    },
+    {
+      "file": "check-times.json",
+      "sha256": "224d1c977f74b0592fed44aa6c5ee557e465a5e330424661bf729ca84eb73681"
+    }
+  ]
+}
