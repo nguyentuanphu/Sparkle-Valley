@@ -11,6 +11,7 @@ import { SIZE, HALF } from './world.js';
 import { avatarURL } from './avatar.js';
 import { pic, hasArt as hasPic } from './art.js';
 import { SFX } from './audio.js';
+import { say } from './voice.js';
 
 export const EMOTES = [
   { id: 'hi', icon: '👋', en: 'Hi!', vi: 'Xin chào!' },
@@ -82,6 +83,11 @@ export class Hud {
     this.q('.simplesw').hidden = game.mode === 'split' || i > 0;
     this.q('.simplesw').onclick = () => { SFX.tap(); game.simple && game.simple.show(); };
     this.q('.pcard').onclick = () => game.openQuick(i);
+    // (owner, 16 Oct AEDT, point 50: "keep, explain on tap") the hearts explain themselves instead of opening Settings
+    { const hb = this.q('.hearts'), HEARTS = ['Your hearts show how strong you are. Little ones never lose hearts. For big children on Hard, a big fall takes a heart, and food gives it back. If they run out, Ông Cú carries you somewhere safe and fills them up again.', 'Trái tim cho biết con khỏe thế nào. Các bé nhỏ không bao giờ mất tim. Với các con lớn ở mức Khó, ngã từ chỗ cao sẽ mất một trái tim, và ăn sẽ hồi lại. Nếu hết tim, Ông Cú đưa con đến chỗ an toàn và làm đầy lại.'];
+      hb.setAttribute('role', 'button'); hb.tabIndex = 0; hb.setAttribute('aria-label', T('What do the hearts mean?', 'Trái tim có nghĩa là gì?'));
+      const explain = e => { e.stopPropagation(); e.preventDefault(); SFX.tap && SFX.tap(); this.toast(T(...HEARTS)); say(...HEARTS); };
+      hb.onclick = explain; hb.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') explain(e); }; }
     this.q('.dk.map').onclick = () => game.openPad(i, 'map');
     this.q('.dk.bag').onclick = () => game.openPad(i, 'bag');
     // (tester's notes, 12 Oct; owner: "bottom bar") the clothes shop has its own button beside the Bag (it was inside

@@ -135,7 +135,9 @@ select option { color: #000; }
 .hud > * { position: absolute; }
 .hud button { pointer-events: auto; }
 .hud-tl { left: calc(var(--pad) + env(safe-area-inset-left)); top: calc(var(--pad) + env(safe-area-inset-top)); display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
-.hearts { display: flex; flex-wrap: wrap; gap: 3px; max-width: 220px; }
+.hearts { display: flex; flex-wrap: wrap; gap: 3px; max-width: 220px; cursor: pointer; }
+/* (point 50) the hearts are their own tap target: 44 px tall, the extra height taken back by margins so the card keeps its layout */
+.hud .hearts { min-height: 44px; align-items: center; margin: -13px 0; }
 .heart { width: 26px; height: 24px; display: inline-block; font-style: normal;
   background: linear-gradient(90deg, #ff4f6a calc(var(--f) * 100%), rgba(255, 255, 255, .25) 0);
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 24'%3E%3Cpath d='M13 23S1 15 1 7.5C1 3.6 4 1 7.2 1 9.8 1 11.8 2.6 13 4.6 14.2 2.6 16.2 1 18.8 1 22 1 25 3.6 25 7.5 25 15 13 23 13 23z'/%3E%3C/svg%3E") center/contain no-repeat;
