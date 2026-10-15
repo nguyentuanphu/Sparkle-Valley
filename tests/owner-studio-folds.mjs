@@ -36,9 +36,11 @@ try {
       const toggled = await pg.evaluate(async () => { const P = document.querySelector('#page'), out = { ok: 0, stuck: [] };
         for (const d of [...P.querySelectorAll('details')].filter(d => d.getClientRects().length && d.open && !d.closest('details:not([open])'))) {
           const body = [...d.children].find(c => c.tagName !== 'SUMMARY'); if (!body) continue;
-          d.querySelector(':scope > summary').click(); await new Promise(r => setTimeout(r, 30));
-          const hidden = !body.getClientRects().length; d.querySelector(':scope > summary').click(); await new Promise(r => setTimeout(r, 30));
-          if (hidden && body.getClientRects().length) out.ok++; else out.stuck.push((d.querySelector(':scope > summary')?.textContent || '').trim().slice(0, 40)); }
+          d.querySelector(':scope > summary').click(); await new Promise(r => setTimeout(r, 150));
+          // what the browser actually draws (a closed section's content may keep its layout boxes while not drawn)
+          const shown = e => e.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true }) && e.getClientRects().length > 0;
+          const hidden = !shown(body); d.querySelector(':scope > summary').click(); await new Promise(r => setTimeout(r, 150));
+          if (hidden && shown(body)) out.ok++; else out.stuck.push((d.querySelector(':scope > summary')?.textContent || '').trim().slice(0, 40)); }
         return out; });
       rows.push({ view: label, tab: tabs[i], finished, ...r, toggled });
     }
