@@ -19,7 +19,7 @@ import { BUILD } from './build.js';
 import { pic } from './art.js';
 import { takeCopy, putCopyBack, hasCopy } from './keepcopy.js';
 import { sendAutoplayReport, reportDelivery, reportingState, retryReports } from './tester.js';
-import { AP_GROUPS, apSpeed, AP_SPEEDS, AP_OPEN_WAIT, AP_RIGHT, AP_STUCK, AP_PATH, AP_TRAIL, AP_QUESTS, apGroupOf, revertOf } from './content/autoplay.js';
+import { AP_GROUPS, apSpeed, apGameSeconds, AP_SPEEDS, AP_OPEN_WAIT, AP_RIGHT, AP_STUCK, AP_PATH, AP_TRAIL, AP_QUESTS, apGroupOf, revertOf } from './content/autoplay.js';
 
 const REPORT = 'sv2_autoplay_report', UI = 'sv2_autoplay_ui', RUNCOPY = 'sv2_autoplay_copy', OLD_BACKUP = 'sv2_autoplay_backup';
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -288,9 +288,9 @@ async function playGame(note) {
   let last = Date.now();
   playWatch.on = k => { last = Date.now(); if (k === 'right') r.rights++; if (k === 'wrong') r.wrongs++; if (k === 'win') r.won = true; };
   const mo = new MutationObserver(() => { last = Date.now(); }); mo.observe(stage, { childList: true, subtree: true, attributes: true, characterData: true });
-  const end = Date.now() + s.game * (run.quest ? 3 : 1) * 1000; // (a quest's game is played longer: the quest needs it done)
+  const started = Date.now(); // A legal plan's bound includes normal thinking/finger time, not faster play.
   try {
-    while ((Date.now() < end || gl.querySelector('.gl-win')) && gl.isConnected && !gl.classList.contains('out')) {
+    while ((Date.now() < started + apGameSeconds(s, playWatch.maxActions, run.quest ? 3 : 1) * 1000 || gl.querySelector('.gl-win')) && gl.isConnected && !gl.classList.contains('out')) {
       await hold(think()); if (!gl.isConnected) break;
       const win = gl.querySelector('.gl-win');
       if (win) { if (win.classList.contains('ask')) { const t = [win.querySelector('.gl-tapout'), win.querySelector('p'), win].find(shown); if (!t || !await tap(t, note)) await until(() => !gl.isConnected, 1); } continue; }

@@ -73,3 +73,12 @@ export function keepRewards(old, now) {
   for (const k of KEEP_FIELDS) if (now && k in now) m[k] = now[k];
   return m;
 }
+
+// Legal plans can need more than90s at child speed. Bound by their maximum action count,
+// including normal finger/thinking time; unsupported games keep the existing timeout.
+export function apGameSeconds(speed, maxActions = 0, multiplier = 1) {
+  const base = speed.game * multiplier;
+  if (!Number.isFinite(maxActions) || maxActions <= 0) return base;
+  const actions = Math.min(256, Math.ceil(maxActions));
+  return Math.max(base, Math.min(600, Math.ceil(actions * (speed.think[1] + speed.finger / 1000 + .05) + 12)));
+}

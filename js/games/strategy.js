@@ -157,7 +157,7 @@ function makeMaze(W, H) {
 register({
   id: 'maze', icon: '🌀', name: () => T('Mountain Maze', 'Mê Cung Trên Núi'),
   async run(api) {
-    const rounds = 2;
+    const rounds = 2, maxActions = Array.from({length: rounds}, (_, r) => Math.min(8, 3 + api.level + r) ** 2 - 1).reduce((sum, n) => sum + n, 0);
     for (let r = 0; r < rounds; r++) {
       api.dots(rounds, r); api.stage.innerHTML = '';
       const N = Math.min(8, 3 + api.level + r), walls = makeMaze(N, N);
@@ -183,7 +183,7 @@ register({
           if (api.closed) return null;
           const route = routeTo(N, p, [N - 1, N - 1], (from, key) => !walls[from[1] * N + from[0]][wallOf[key]]);
           return route?.length ? arrows[route[0]] : null;
-        });
+        }, { maxActions });
         // Tap a neighbouring square or swipe to move too.
         cells.forEach((c, i) => c.onclick = () => { const x = i % N, y = Math.floor(i / N), dx = x - p[0], dy = y - p[1]; if (Math.abs(dx) + Math.abs(dy) === 1) move(dx === 1 ? 'right' : dx === -1 ? 'left' : dy === 1 ? 'down' : 'up'); });
         const key = e => { const k = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[e.key]; if (k) { e.preventDefault(); move(k); } };

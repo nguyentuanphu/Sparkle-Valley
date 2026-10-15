@@ -76,7 +76,7 @@ register({
         const t = el('button', 'choice sitem2' + (x.g.color ? ' ball' : ''), x.g.color ? '' : x.it); if (x.g.color) t.style.setProperty('--bk', x.g.color); t._x = x; pool.appendChild(t);
       }
       let left = items.length, held = null;
-      api.plan(() => held ? bEls.find(b => b._g === held._x.g) : pool.querySelector('.choice:not(.gone)'));
+      api.plan(() => held ? bEls.find(b => b._g === held._x.g) : pool.querySelector('.choice:not(.gone)'), { maxActions: rounds * nb * per * 2 });
       while (left > 0) {
         const e = await tapOne([...pool.querySelectorAll('.choice:not(.gone)'), ...bEls], api); if (api.closed) return;
         if (e.classList.contains('basket')) {

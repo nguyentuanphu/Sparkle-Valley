@@ -63,7 +63,7 @@ try {
           const inspection=await P.page.evaluate(async({id,detail,fixed})=>{
             const G=__sv,h=G.heroes[0],W=await import('/js/world.js'),{THREE}=await import('/js/gfx.js'),p=id==='town'?W.TOWN:W.AUSSIE,x=p.x-4,z=p.roadZ,y=W.heightAt(x,z),phone=innerWidth<500;
             G.paused=true;h.goal=null;
-            const target=detail?(fixed?new THREE.Vector3(fixed.x,W.heightAt(fixed.x,fixed.z)+2.8,fixed.z):new THREE.Vector3(x+5.2,y+2.2,z-5)):new THREE.Vector3(x,y+.15,z);
+            const target=detail?(fixed?new THREE.Vector3(fixed.x,W.heightAt(fixed.x,fixed.z)+2.3,fixed.z):new THREE.Vector3(x+5.2,y+2.2,z-5)):new THREE.Vector3(x,y+.15,z);
             const position=detail?new THREE.Vector3(target.x+3,target.y+2.3,target.z+7):new THREE.Vector3(x+(phone?18:14),y+(phone?30:23),z+(phone?24:19));
             h.cam.position.copy(position);h.cam.lookAt(target);h.cam.updateMatrixWorld(true);h.camPos.copy(position);h.camLook=target.clone();
             G.scene.updateMatrixWorld(true);

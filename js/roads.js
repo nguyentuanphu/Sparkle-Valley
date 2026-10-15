@@ -473,26 +473,32 @@ export function createRoads(G) {
 // Signs stand beside the footpath approaches; the walking strip, doors and existing interactions stay clear.
 export function createCrossings(G) {
   const { scene, world } = G, list = [], missing = [];
-  const postGeometry = merge([P(new THREE.CylinderGeometry(.07, .07, 4, 8), '#6a4a3a', [0, 2, 0]), P(new THREE.CylinderGeometry(.18, .23, .12, 8), '#a8a296', [0, .06, 0])]), postMaterial = toonVC();
+  const postGeometry = merge([P(new THREE.CylinderGeometry(.07, .07, 2.7, 8), '#6a4a3a', [0, 1.35, 0]), P(new THREE.CylinderGeometry(.18, .23, .12, 8), '#a8a296', [0, .06, 0])]), postMaterial = toonVC();
   const stopBoard = gateSign(['STOP', 'DỪNG'], 1.7, .9, '#d9483a', '#fff8e0'), watchBoard = gateSign(['LOOK · LISTEN', 'NHÌN · NGHE'], 2.4, .65, '#ffd23f', '#4a3a3f');
+  // A clear footprint is insufficient: tall warning posts must also clear shop awnings/roofs.
+  scene.updateMatrixWorld(true);
+  const overheadMeshes=[];scene.traverse(o=>{if(o.isMesh)overheadMeshes.push(o);});
+  const headRay=new THREE.Raycaster(new THREE.Vector3(),new THREE.Vector3(0,1,0),.05,2.75);
+  const headroom=(x,z)=>{headRay.ray.origin.set(x,heightAt(x,z)+.1,z);return !headRay.intersectObjects(overheadMeshes,false).some(hit=>{for(let o=hit.object;o;o=o.parent)if(!o.visible)return false;const mats=Array.isArray(hit.object.material)?hit.object.material:[hit.object.material];return mats.some(m=>m&&m.visible!==false&&(m.opacity??1)>.95);});};
   // Bubble width3.2 plus board width2.4 requires2.8m between their centres.
   const free = (x, z) => [[0, 0], [-1.25, 0], [1.25, 0], [0, -.25], [0, .25]].every(([dx, dz]) => G.goodSpot(x + dx, z + dz))
     && (d => !d.road || d.d > d.road.w / 2 + .5)(roadDist(x, z))
     && !((G.homes && G.homes.list) || []).some(h => h.door && Math.hypot(h.door.x - x, h.door.z - z) < 2.2)
-    && G.interactables.every(it => !Number.isFinite(it.x) || Math.hypot(it.x - x, it.z - z) > (it.bubble ? 2.9 : 1.8));
+    && G.interactables.every(it => !Number.isFinite(it.x) || Math.hypot(it.x - x, it.z - z) > (it.bubble ? 2.9 : 1.8))
+    && [-1.25,0,1.25].every(dx=>headroom(x+dx,z));
   for (const [id, place] of [['town', TOWN], ['aussie', AUSSIE]]) {
     const crossing = { id, x: place.x - 4, z: place.roadZ, halfRoad: 3.5, signs: [] };
     for (const side of [-1, 1]) {
       let at = null;
-      for (const dx of [4.2, 4.6, 5, 5.4, 5.8, 6.2, 6.6, 7, 7.4, 7.8, 8.2, -4.2, -4.6, -5, -5.4, -5.8, -6.2, -6.6, -7, -7.4, -7.8, -8.2, 3.8, 3.4, 3, 2.6, 2.2, 1.8, -3.8, -3.4, -3, -2.6, -2.2, -1.8]) {
-        for (const offset of [4.6, 5, 5.4, 5.8, 6.2, 6.6, 7]) { const x = crossing.x + dx * -side, z = crossing.z + offset * side; if (free(x, z)) { at = { x, z }; break; } }
+      for (const offset of [4.6, 5, 5.4, 5.8, 6.2, 6.6, 7]) {
+        for (const dx of [4.2, 4.6, 5, 5.4, 5.8, 6.2, 6.6, 7, 7.4, 7.8, 8.2, -4.2, -4.6, -5, -5.4, -5.8, -6.2, -6.6, -7, -7.4, -7.8, -8.2, 3.8, 3.4, 3, 2.6, 2.2, 1.8, -3.8, -3.4, -3, -2.6, -2.2, -1.8]) { const x = crossing.x + dx * -side, z = crossing.z + offset * side; if (free(x, z)) { at = { x, z }; break; } }
         if (at) break;
       }
       if (!at) { missing.push({ id, side }); continue; }
       const root = new THREE.Group(); root.userData.noSolid = root.userData.noCam = true; root.position.set(at.x, heightAt(at.x, at.z), at.z); root.rotation.y = side < 0 ? 0 : Math.PI;
       const post = new THREE.Mesh(postGeometry, postMaterial); post.castShadow = true; root.add(post);
-      const stop = stopBoard.clone(true); stop.position.y = 3.7; root.add(stop);
-      const watch = watchBoard.clone(true); watch.position.y = 2.8; root.add(watch); scene.add(root);
+      const stop = stopBoard.clone(true); stop.position.y = 2.3; root.add(stop);
+      const watch = watchBoard.clone(true); watch.position.y = 1.5; root.add(watch); scene.add(root);
       const it = { id: 'crossing_' + id + '_' + (side < 0 ? 'north' : 'south'), x: at.x, z: at.z, r: 2.4, icon: '👣',
         label: () => T('Crossing: stop, look, listen', 'Sang đường: dừng, nhìn, nghe'),
         act: () => { SFX.tap(); return G.dialog(T('Stop, look and listen', 'Dừng, nhìn và nghe'), [['Stop at the kerb. Look and listen both ways. Cross with a grown-up when the road is clear. Keep looking as you cross.', 'Dừng ở mép đường. Nhìn và lắng nghe cả hai phía. Đi cùng người lớn khi đường đã vắng xe. Tiếp tục quan sát khi sang đường.']]); } };
