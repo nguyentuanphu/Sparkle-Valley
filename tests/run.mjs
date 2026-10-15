@@ -1258,7 +1258,8 @@ await check('tester', async () => {
     if (!got.some(x => x && x.accepted === true)) out.push(lang + ': the acceptance was not told');
     // Settings → Stop being a tester
     // (owner, 13 Oct AEDT) "Stop being a tester" is held down: a quick tap does nothing
-    await clear(P.page); await P.page.click('.hud .pcard'); await P.page.waitForSelector('.qs-tester [data-hold="stop"]', { timeout: 8000 });
+    // (owner, 16 Oct, point 50) the hearts in the card's middle explain themselves; the card's picture opens Settings
+    await clear(P.page); await P.page.click('.hud .pav'); await P.page.waitForSelector('.qs-tester [data-hold="stop"]', { timeout: 8000 });
     await P.page.click('.qs-tester [data-hold="stop"]'); await P.page.waitForTimeout(500);
     ok(await P.page.evaluate(() => document.querySelectorAll('.z-lb').length > 0), 'a quick tap stopped being a tester');
     await P.page.hover('.qs-tester [data-hold="stop"]'); await P.page.mouse.down(); await P.page.waitForTimeout(1900); await P.page.mouse.up(); await P.page.waitForTimeout(800);
