@@ -5,5 +5,5 @@
     "target": "es2022", "module": "es2022", "moduleResolution": "bundler", "lib": ["es2022", "dom", "dom.iterable"],
     "types": ["node"], "skipLibCheck": true, "resolveJsonModule": true
   },
-  "files": ["../js/state.js", "../js/netmsg.js", "../js/worldcache.js", "../js/core/ids.js", "../js/core/events.js", "../js/core/rng.js", "../js/core/geo.js", "../studio/core.cjs", "../js/tester-detection.js", "../js/report-outbox.js", "../js/family-backup.js", "../js/content/autoplay.js", "../js/games/playwatch.js", "../js/content/tester.js", "../netlify/lib/hello-clean.mjs"]
+  "files": ["../js/state.js", "../js/netmsg.js", "../js/worldcache.js", "../js/core/ids.js", "../js/core/events.js", "../js/core/rng.js", "../js/core/geo.js", "../studio/core.cjs", "../js/tester-detection.js", "../js/report-outbox.js", "../js/family-backup.js", "../js/content/autoplay.js", "../js/games/playwatch.js", "../js/content/tester.js", "../netlify/lib/hello-clean.mjs", "../netlify/lib/family-devices.mjs"]
 }

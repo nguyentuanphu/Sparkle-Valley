@@ -79,3 +79,10 @@ test('concurrent uploads to different characters are retained and rebind is expl
  const photos = (await familyAction(S,'manifest',{},family.token,5)).photos; assert.ok(photos.owl_new); assert.equal(photos.owl,undefined);
  await assert.rejects(familyAction(S,'photo',{npc:'__proto__',image:'data:image/jpeg;base64,AAAA'},family.token,6), {status:400});
 });
+test('moving a photo whose picture is missing refuses instead of writing an empty picture', async () => {
+  const S = memory(), first = await familyAction(S, 'create', {}, '', 1);
+  await familyAction(S, 'photo', { npc: 'owl', image: 'data:image/jpeg;base64,AAAA' }, first.token, 2);
+  const keys = [...(await S.list({ prefix: 'picture/' })).blobs.map(b => b.key)]; for (const k of keys) await S.delete(k);
+  await assert.rejects(familyAction(S, 'rebind', { from: 'owl', to: 'cat' }, first.token, 3), { status: 404 });
+  assert.deepEqual((await familyAction(S, 'manifest', {}, first.token, 4)).photos, { owl: { at: 2 } });
+});
