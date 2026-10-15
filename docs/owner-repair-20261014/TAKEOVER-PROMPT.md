@@ -14,7 +14,7 @@ Repository: https://github.com/nguyentuanphu/Sparkle-Valley
 - Approved R74/main baseline: `6a6ae885f86ad58a52688782eeba1d5417985fe9`.
 - Rejected R75: `74b918c6c4c52db2e42d24dc69fe2945f1907e3d`; PR195 remains separate.
 - Original saved checkpoint: `25176e742b5525f62c801d7b467ae451baaabe26`.
-- Diagnostic PR300: https://github.com/nguyentuanphu/Sparkle-Valley/pull/300 remains OPEN/DRAFT against main. It currently checks f47546d5. Do not merge it.
+- Diagnostic PR300: https://github.com/nguyentuanphu/Sparkle-Valley/pull/300 remains OPEN/DRAFT against main. It completed157/157 at f47546d5. Do not merge it.
 
 First fetch refs, inspect local status and history, and reconcile old STATUS/BOARD entries against newer commits. Read CLAUDE.md, HANDOFF.md, docs/SO-TAY-THIET-KE.md, docs/ARCHITECTURE.md, docs/cores/BOARD.md, docs/cores/tasks/owner-repair-work-order-20261014.md, and these files under docs/owner-repair-20261014/: STATUS.md, audit-matrix.md, requirements.json, CHANGELOG.md, decisions.md, screen-inventory.md, evidence/index.md, evidence-table.md, diagnostic-findings.md, bug-intake.md and learning-progression.md. Authorization above takes precedence over stale start/push approval wording. Do not delegate to subagents unless applicable instructions explicitly permit it.
 
@@ -38,8 +38,8 @@ Current verified progress:
 GitHub evidence and current workflow state:
 
 - Full38649407236 completed153/153 at3599d24df3b51e6e32b413c626964d7dc1ff5bc9. Downloaded eight shard results have no failures/retry flags. Full reading completed1491s:12 games, nine under-5 entries, all documented EN/VI age/difficulty cases. Films596s covered11 stories; autoplay267s covered counting/oddone and world routing. These do not establish whole curriculum, film redesign or all autoplay strategies. The earlier interrupted reading run remains interrupted.
-- NEW Full38658819569 checks exactf47546d5 and was in progress at handoff preparation. Refresh before claiming a result: https://github.com/nguyentuanphu/Sparkle-Valley/actions/runs/38658819569 . Keep its PR source fixed while active; later work goes to checkpoint branch.
-- At the latest observation, f475 Checks38658819353/38658815058, Quick38658814993 and voices38658815011 succeeded; mirror38658815030 was in progress. Refresh these too. A green AI wrapper is not substantive independent review; none is established for this final round.
+- NEW Full38658819569 COMPLETED SUCCESS at exactf47546d5; PR300 comment6181842626 reports157/157 passed: https://github.com/nguyentuanphu/Sparkle-Valley/actions/runs/38658819569 . This does not cover the later local learning draft. Download individual shard artifacts to inspect retries/skips and import its refreshed check-map/timings; not yet done. A subsequent final candidate still needs its own suite.
+- At the latest observation, f475 Checks38658819353/38658815058, Quick38658814993, voices38658815011 and mirror38658815030 all completed SUCCESS. A green AI wrapper is not substantive independent review; none is established for this final round.
 - Speed checks perf/startup/battery are excluded from GitHub full suite; run them locally alone on the final candidate. Full suite success never replaces missing original-point evidence.
 - Actual3599 check-map/timings artifact11935987654 was imported into tests; provenance and prior mixed local history are saved in evidence. Refresh map from the newer suite after it finishes.
 
