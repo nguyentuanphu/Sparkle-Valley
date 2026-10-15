@@ -9,8 +9,8 @@ try {
  result=await P.page.evaluate(async()=>{const G=__sv,C=(await import('/js/custom.js')).CUSTOM,wait=ms=>new Promise(r=>setTimeout(r,ms));
   for(let k=0;k<40&&!G.festivals.count('village','tet',4);k++){G.festivals.rebuild();await wait(300);}
   const d=new Date(),ymd=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,out=[];
-  for(const ids of [['tet'],['tet','ramthang1']]){
-   C.festivals={};C.releases={...(C.releases||{})};for(const id of ['tet','ramthang1'])delete C.releases['fest_'+id];
+  for(const ids of [['tet'],['tet','ramthang1'],['halloween']]){
+   C.festivals={};C.releases={...(C.releases||{})};for(const id of ['tet','ramthang1','halloween'])delete C.releases['fest_'+id];
    for(const id of ids)C.releases['fest_'+id]={on:true,start:ymd,days:1};
    G.festivals.rebuild();await wait(800);
    const all=G.festivals.items(),solid=all.filter(q=>q.kind!=='string'),cells=new Map(),key=(x,z)=>Math.floor(x/2)+','+Math.floor(z/2),close=[];

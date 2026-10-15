@@ -259,6 +259,7 @@ export function createFestivals(G) {
     group.clear(); places3.length = 0; placed.length = 0; bursts.length = 0; glowMeshes = []; unhook(tables); unhook(doors);
     active = activeFestivals();
     D.begin();const supports=new Map(),drawBunting=(a,b,cols,kind,wall=false)=>bunting(a,b,cols,kind,wall,supports);
+    for (const A of active) if (A.F.id === 'halloween' && A.on) doorSpots(A.F).forEach(q => D.claim(q));
     const places = PLACES(), taken = new Set(), hunts = [];
     for (const A of active) {
       const F = A.F, full = D.FRAC[A.stage] || 0, m = D.decoOf(F);
@@ -322,12 +323,14 @@ export function createFestivals(G) {
   const nightLights = () => { const n = W.isNight(); if (n === wasNight) return; wasNight = n; glowMeshes.forEach(g => { g.material = n ? nightMat : mat; }); };
 
   // ---------- Halloween: trick or treat ----------
+  // the doors that get a trick-or-treat pumpkin (reserved before the decorations take the ground, so nothing stands on them)
+  const doorSpots = F => { const places = PLACES(), boxes = F.where.map(k => places[k]).filter(Boolean).map(o => o.x0 != null ? o : { x0: o.x - (o.r || 30), x1: o.x + (o.r || 30), z0: o.z - (o.r || 30), z1: o.z + (o.r || 30) });
+    return (W.houses || []).filter(hs => boxes.some(b => hs.x > b.x0 && hs.x < b.x1 && hs.z > b.z0 && hs.z < b.z1)).slice(0, 14).map(hs => {
+      const fx = Math.sin(hs.rot), fz = Math.cos(hs.rot), d = hs.d || 6; return { hs, x: hs.x + fx * (d * .5 + 1.2) + fz * .9, z: hs.z + fz * (d * .5 + 1.2) - fx * .9 }; }); };
   const halloweenDoors = F => {
-    const places = PLACES(), boxes = F.where.map(k => places[k]).filter(Boolean).map(o => o.x0 != null ? o : { x0: o.x - (o.r || 30), x1: o.x + (o.r || 30), z0: o.z - (o.r || 30), z1: o.z + (o.r || 30) });
     const parts = [], glows = [];
-    (W.houses || []).filter(hs => boxes.some(b => hs.x > b.x0 && hs.x < b.x1 && hs.z > b.z0 && hs.z < b.z1)).slice(0, 14).forEach((hs, k) => {
-      const fx = Math.sin(hs.rot), fz = Math.cos(hs.rot), d = hs.d || 6, x = hs.x + fx * (d * .5 + 1.2) + fz * .9, z = hs.z + fz * (d * .5 + 1.2) - fx * .9;
-      const q = pumpkin(x, heightAt(x, z), z, .8, hs.rot); parts.push(...q.parts); glows.push(...q.glows);
+    doorSpots(F).forEach(({ hs, x, z }, k) => {
+      const q = pumpkin(x, heightAt(x, z), z, .8, hs.rot); parts.push(...q.parts); glows.push(...q.glows); placed.push({ x, z, kind: 'pumpkin' });
       const it = { id: 'trick_' + k, x, z, r: 2.4, icon: '🎃', label: () => T('Trick or treat!', 'Cho kẹo hay bị ghẹo!'), act: h => trickOrTreat(h, 'h' + Math.round(hs.x) + '_' + Math.round(hs.z)) };
       doors.push(it); G.interactables.push(it);
     });
