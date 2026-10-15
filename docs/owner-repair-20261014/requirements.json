@@ -814,7 +814,7 @@
       "workOrder": "WO-09/13/16",
       "requirement": "Autoplay must understand legal progress, finish supported games and report unfinished activities as failures.",
       "status": "partial",
-      "proof": "Hanoi reproduced179 taps/89 wrongs plus false success, now completes45s; broader strategy catalogue pending.",
+      "proof": "Hanoi legal strategy retained; Robot, Mountain/Duck Maze and sorting finish through normal controls in all8 EN/VI Hard cases. Unreachable navigation and non-advancing quest explicitly fail. Focused4/4; existing regression/full-catalogue/final GitHub proof pending.",
       "releaseApproved": false
     },
     {

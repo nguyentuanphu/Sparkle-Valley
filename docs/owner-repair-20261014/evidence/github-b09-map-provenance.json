@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+  "workflowRun": 38681986376,
+  "artifactId": 11950325618,
+  "result": "163/164; filmmusic failed on first and alone retry; together passed only on alone retry",
+  "imported": [
+    "tests/check-map.json",
+    "tests/check-times.json"
+  ],
+  "note": "New local check timings retained separately from exact GitHub timings. A failed suite map is coverage data, not release approval."
+}

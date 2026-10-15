@@ -51,6 +51,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -87,6 +93,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -123,6 +135,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -159,6 +177,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -195,6 +219,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -231,6 +261,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -267,6 +303,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -303,6 +345,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -339,6 +387,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -375,6 +429,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -411,6 +471,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -447,6 +513,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -483,6 +555,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -519,6 +597,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -555,6 +639,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -591,6 +681,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -627,6 +723,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -663,6 +765,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -699,6 +807,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -735,6 +849,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -771,6 +891,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -807,6 +933,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -843,6 +975,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -879,6 +1017,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -915,6 +1059,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -951,6 +1101,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -987,6 +1143,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1023,6 +1185,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1059,6 +1227,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1095,6 +1269,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1131,6 +1311,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1167,6 +1353,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1203,6 +1395,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1239,6 +1437,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1275,6 +1479,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1311,6 +1521,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1347,6 +1563,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1383,6 +1605,12 @@
         "viewport": "1260x1337",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1851,6 +2079,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1887,6 +2121,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1923,6 +2163,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1959,6 +2205,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -1995,6 +2247,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2031,6 +2289,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2067,6 +2331,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2103,6 +2373,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2139,6 +2415,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2175,6 +2457,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2211,6 +2499,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2247,6 +2541,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2283,6 +2583,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2319,6 +2625,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2355,6 +2667,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2391,6 +2709,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2427,6 +2751,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2463,6 +2793,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2499,6 +2835,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2535,6 +2877,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2571,6 +2919,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2607,6 +2961,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2643,6 +3003,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2679,6 +3045,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2715,6 +3087,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2751,6 +3129,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2787,6 +3171,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2823,6 +3213,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2859,6 +3255,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2932,6 +3334,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -2968,6 +3376,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3004,6 +3418,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3040,6 +3460,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3076,6 +3502,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3112,6 +3544,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3148,6 +3586,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3184,6 +3628,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3220,6 +3670,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3256,6 +3712,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3292,6 +3754,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3328,6 +3796,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3364,6 +3838,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3400,6 +3880,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3436,6 +3922,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3472,6 +3964,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3508,6 +4006,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3545,6 +4049,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3582,6 +4092,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3619,6 +4135,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3655,6 +4177,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3691,6 +4219,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3727,6 +4261,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -3763,6 +4303,12 @@
         "viewport": "430x873",
         "language": "en",
         "build": "r74"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4157,6 +4703,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4193,6 +4745,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4229,6 +4787,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4265,6 +4829,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4301,6 +4871,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4337,6 +4913,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4373,6 +4955,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4409,6 +4997,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4445,6 +5039,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4481,6 +5081,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4517,6 +5123,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4553,6 +5165,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4589,6 +5207,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4625,6 +5249,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4661,6 +5291,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4697,6 +5333,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4733,6 +5375,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4769,6 +5417,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4805,6 +5459,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4841,6 +5501,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4877,6 +5543,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4913,6 +5585,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4949,6 +5627,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -4985,6 +5669,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5021,6 +5711,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5057,6 +5753,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5093,6 +5795,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5129,6 +5837,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5166,6 +5880,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5203,6 +5923,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5240,6 +5966,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5277,6 +6009,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5314,6 +6052,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5351,6 +6095,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5388,6 +6138,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5425,6 +6181,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5461,6 +6223,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5497,6 +6265,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5533,6 +6307,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5569,6 +6349,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5605,6 +6391,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5641,6 +6433,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r73"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5749,6 +6547,12 @@
         "viewport": "1256x1332",
         "language": "vi",
         "build": "r69"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5785,6 +6589,12 @@
         "viewport": "1258x1335",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5821,6 +6631,12 @@
         "viewport": "1258x1335",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5857,6 +6673,12 @@
         "viewport": "1258x1335",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5893,6 +6715,12 @@
         "viewport": "1258x1335",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5929,6 +6757,12 @@
         "viewport": "1258x1335",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -5965,6 +6799,12 @@
         "viewport": "1258x1335",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -6182,6 +7022,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -6218,6 +7064,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -6254,6 +7106,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -6290,6 +7148,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -6326,6 +7190,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-no-panel-context",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -6436,6 +7306,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -6472,6 +7348,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -6508,6 +7390,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -6544,6 +7432,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -6655,6 +7549,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -6920,6 +7820,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -6957,6 +7863,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -6994,6 +7906,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7031,6 +7949,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7068,6 +7992,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7106,6 +8036,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7144,6 +8080,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7182,6 +8124,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7220,6 +8168,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7257,6 +8211,12 @@
         "viewport": "428x879",
         "language": "en",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7295,6 +8255,12 @@
         "viewport": "428x879",
         "language": "vi",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7333,6 +8299,12 @@
         "viewport": "428x879",
         "language": "vi",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7409,6 +8381,12 @@
         "viewport": "428x879",
         "language": "vi",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7485,6 +8463,12 @@
         "viewport": "428x581",
         "language": "vi",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7557,6 +8541,12 @@
         "viewport": "1256x1332",
         "language": "vi",
         "build": "r69"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7594,6 +8584,12 @@
         "viewport": "1256x1332",
         "language": "vi",
         "build": "r69"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7631,6 +8627,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7669,6 +8671,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7708,6 +8716,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7746,6 +8760,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "unresolved-control-or-state-not-matched",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {
@@ -7783,6 +8803,12 @@
         "viewport": "430x873",
         "language": "vi",
         "build": "r70"
+      },
+      "investigation": {
+        "source_commit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+        "status": "matched-current-control-reachable",
+        "scope": "Reported viewport/language in Chromium emulation, synthetic services, first exact-label visible current match; original detailed state/duplicate labels not established. No issue closed.",
+        "evidence_directory": "evidence/reported-screens-b09"
       }
     },
     {

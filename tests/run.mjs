@@ -5426,9 +5426,9 @@ await check('reading', async () => {
 });
 
 // Owner-approved interface contracts: end-to-end screen, privacy and composed-capture regressions.
-async function ownerSmoke(file) {
+async function ownerSmoke(file, args = []) {
   const { execFileSync } = await import('node:child_process');
-  try { return execFileSync(process.execPath, [file], { encoding:'utf8', timeout:600000, maxBuffer:1048576 }).trim().replace(/\s+/g,' '); }
+  try { return execFileSync(process.execPath, [file, ...args], { encoding:'utf8', timeout:600000, maxBuffer:1048576 }).trim().replace(/\s+/g,' '); }
   catch (error) {
     // Preserve assertion/timeout diagnostics from the synthetic owner fixtures; the wrapper's
     // generic 'Command failed' otherwise hides the reason in shard and isolated retries.
@@ -5549,6 +5549,24 @@ await check('ownervoicerefresh', async () => {
 });
 await check('ownervoiceindex', async () => {
   return await ownerSmoke('owner-voice-index-download.mjs');
+});
+await check('ownerreporteddesktop', async () => {
+  return await ownerSmoke('owner-reported-screens.mjs', ['desktop']);
+});
+await check('ownerreportedphoneen', async () => {
+  return await ownerSmoke('owner-reported-screens.mjs', ['phone-en']);
+});
+await check('ownerreportedphonevi', async () => {
+  return await ownerSmoke('owner-reported-screens.mjs', ['phone-vi']);
+});
+await check('ownerautoplaynavigation', async () => {
+  return await ownerSmoke('owner-autoplay-navigation.mjs');
+});
+await check('ownerautoplayplans', async () => {
+  return await ownerSmoke('owner-autoplay-plans.mjs', process.env.SV_AUTOPLAY_BASELINE === '1' ? ['--baseline'] : []);
+});
+await check('ownerspeechcancel', async () => {
+  return await ownerSmoke('owner-speech-cancel.mjs');
 });
 await check('ownerhearts', async () => {
   const P = await open(b, { w:390,h:844,touch:true }); await clear(P.page);

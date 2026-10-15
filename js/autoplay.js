@@ -202,28 +202,30 @@ async function walk(path, x, z, near) {
       }
     }
   }
-  h.goal = null; h.autoRun = false; return true;
+  h.goal = null; h.autoRun = false; return Math.hypot(h.pos.x - x, h.pos.z - z) <= near;
 }
 async function go(x, z, near = 1.8, note) {
-  const h = hero(); if (!h || !Number.isFinite(x) || !Number.isFinite(z)) return;
+  const h = hero(); if (!h || !Number.isFinite(x) || !Number.isFinite(z)) { note?.(T('no way on foot', 'không có đường đi bộ')); return false; }
   const far = () => Math.hypot(h.pos.x - x, h.pos.z - z);
   if (topOpen()) { await settle(40, note); await closeAll(); }
   G.paused = false; if (h.riding && h.dismount) h.dismount();
   // Public riders must use the same get-off input as a child before setting a walking goal.
   if (h.carry && (h.carryVehicle || G.traffic?.slots.some(s => s.passenger === h))) {
     step_('jump', T('Get off', 'Xuống xe')); G.pads[0]._jump = true;
-    if (!await until(() => !h.carry, 2)) { await stuck(note); return; }
+    if (!await until(() => !h.carry, 2)) { await stuck(note); return false; }
   }
-  if (far() <= near) return;
+  if (far() <= near) return true;
   if (far() > sp().fly) { step_('fly', `${Math.round(x)},${Math.round(z)}`); await G.travel(h, x - 1.5, z + 2); await hold(.4); }
   for (let tries = 0; tries < 3 && far() > near; tries++) {
     const path = await findPath(h.pos.x, h.pos.z, x, z, near);
-    if (!path) { step_('fly', T('no way on foot', 'không có đường đi bộ')); await G.landBy(h, x, z); await hold(.4); if (far() <= near + 6) return; continue; }
+    if (!path) { step_('fly', T('no way on foot', 'không có đường đi bộ')); await G.landBy(h, x, z); await hold(.4); if (far() <= near) return true; continue; }
     step_('walk', `${Math.round(x)},${Math.round(z)} (${path.length})`);
-    if (await walk(path, x, z, near)) return;
+    if (await walk(path, x, z, near)) return true;
     if (tries === 0) await stuck(note); // (reported once a jump has not helped; then it tries another way)
   }
   if (far() > near + 3) { step_('fly', T('still stuck', 'vẫn bị kẹt')); await G.landBy(h, x, z); await hold(.4); }
+  if (far() <= near) return true;
+  note?.(T('still stuck', 'vẫn bị kẹt')); return false;
 }
 // stuck: a problem, with the spot and a picture; also sent to Studio straight away
 async function stuck(note) {
@@ -301,7 +303,10 @@ async function playGame(note) {
         pick = right && (Math.random() < AP_RIGHT || !wrong.length) ? right : any(wrong);
       } else if (playWatch.plan) {
         pick = playWatch.plan();
-        if (!pick || !shown(pick) || pick.disabled) continue; // wait for the next legal turn; never tap an occupied board at random
+        if (!pick || !shown(pick) || pick.disabled) {
+          if (Date.now() - last > s.idle * 1000) { r.cant = true; break; }
+          continue; // wait for the next legal turn; never tap an occupied board at random
+        }
       } else {
         const all = targets(stage), fresh = all.filter(e => !tried.has(e));
         if (all.length && !fresh.length) tried.clear();
@@ -338,7 +343,7 @@ async function readTale(note) {
 // ---------- each kind of step ----------
 const closer = sel => async note => { const x = document.querySelector(sel); if (x && shown(x)) await tap(x, note); else if (x) x.click(); };
 async function doGame(id, note) {
-  const spot = G.gameSpot && G.gameSpot(id); if (spot) { await go(spot.x, spot.z, Math.max(1.8, (spot.r || 2) * .7), note); const s = onScreen(spot.x, 1, spot.z); if (s) await fingerTo(s.x, s.y); }
+  const spot = G.gameSpot && G.gameSpot(id); if (spot) { if (!await go(spot.x, spot.z, Math.max(1.8, (spot.r || 2) * .7), note)) return; const s = onScreen(spot.x, 1, spot.z); if (s) await fingerTo(s.x, s.y); }
   await closeAll(); G.playGame(0, id, 'replay');
   if (!await until(() => document.querySelector('.gl'), AP_OPEN_WAIT)) { note(T('did not open', 'không mở được')); return; }
   const r = await playGame(note);
@@ -352,25 +357,25 @@ async function doFestival(F, note) {
   CUSTOM.releases = { ...(CUSTOM.releases || {}), ['fest_' + F.id]: { on: true, start: ymd, days: 1 } }; // (this device, until the step ends)
   try {
     G.festivals.rebuild(); await wait(300);
-    for (const key of F.where || []) { const s = (G.festivals.streetSpots(key) || [])[0]; if (s) { await go(s.x, s.z, 3, note); await hold(sp().stay); } }
+    for (const key of F.where || []) { const s = (G.festivals.streetSpots(key) || [])[0]; if (s) { if (!await go(s.x, s.z, 3, note)) return; await hold(sp().stay); } }
     const it = (G.interactables || []).find(i => i.id === 'festival_' + F.id);
     if (!it) { note(T('no festival table', 'không có bàn lễ hội')); return; }
     await doTap(it, note);
   } finally { delete CUSTOM.releases['fest_' + F.id]; G.festivals.rebuild(); }
 }
 async function doTale(t, note) {
-  if (G.storyteller) await go(G.storyteller.x, G.storyteller.z, 3, note);
+  if (G.storyteller && !await go(G.storyteller.x, G.storyteller.z, 3, note)) return;
   await closeAll(); G.readTale(0, t.id);
   if (!await until(() => document.querySelector('.theatre'), AP_OPEN_WAIT + 2.5)) { note(T('did not open', 'không mở được')); return; }
   await readTale(note);
   await until(() => !document.querySelector('.theatre:not(.out)'), 1);
   if (document.querySelector('.theatre:not(.out)')) { await closer('.th-x')(note); if (!await until(() => !document.querySelector('.theatre'), 2)) note(T('did not close', 'không đóng được')); }
 }
-async function doPlace(p, note) { await go(p.x, p.z, 4, note); await hold(sp().stay); }
+async function doPlace(p, note) { if (!await go(p.x, p.z, 4, note)) return; await hold(sp().stay); }
 // go up to a thing or a person, tap it, and do what opens (talk through, play, read)
 async function doTap(it, note) {
   await closeAll(); const h = hero();
-  await go(it.x, it.z, Math.max(1.6, Math.min(it.r || 2, 3) * .8), note);
+  if (!await go(it.x, it.z, Math.max(.35, Math.min(it.r || 2, 3) * .8), note)) return;
   const s = onScreen(it.x, 1.2, it.z); if (s) await fingerTo(s.x, s.y);
   step_('tap', (typeof it.label === 'function' ? it.label() : it.id) || it.id); G.goAndDo(h, it);
   await hold(.6); await until(() => !h.goal, 6); await hold(.4);
@@ -395,7 +400,7 @@ async function questLoop(h, out) {
   let lastId = null, tries = 0;
   for (let n = 0; n < AP_QUESTS.max; n++) {
     const q = G.currentQuest && G.currentQuest(h.profile); if (!q) { step_('quest', T('every quest done', 'xong mọi nhiệm vụ')); break; }
-    if (q.id === lastId) { if (++tries >= AP_QUESTS.tries) { out.at(-1).notes.push(T('help: auto play could not finish this quest', 'cần giúp: tự chơi chưa làm xong nhiệm vụ này')); break; } }
+    if (q.id === lastId) { if (++tries >= AP_QUESTS.tries) { out.at(-1).problems.push(T('help: auto play could not finish this quest', 'cần giúp: tự chơi chưa làm xong nhiệm vụ này')); out.at(-1).ok = false; break; } }
     else { lastId = q.id; tries = 0; }
     const r = await one({ g: 'quests', key: 'quest:' + q.id, name: () => q.title(), fn: nt => questOnce(q, nt) });
     if (tries) { const l = out.at(-1); l.secs += r.secs; l.problems.push(...r.problems); l.ok = l.ok && r.ok; if (r.said) l.said = r.said; } else out.push(r);
@@ -409,7 +414,7 @@ async function questOnce(q, note) {
   if (!tg) { if (G.sayObjective) G.sayObjective(0); await hold(sp().talk); return; }
   const it = (G.interactables || []).filter(x => !x.auto && (!x.visible || x.visible(h)) && x.act).sort((a, b) => Math.hypot(a.x - tg.x, a.z - tg.z) - Math.hypot(b.x - tg.x, b.z - tg.z))[0];
   if (it && Math.hypot(it.x - tg.x, it.z - tg.z) < 2.5) await doTap(it, note);
-  else { await go(tg.x, tg.z, 1.2, note); await hold(sp().stay); await settle(60, note); }
+  else { if (!await go(tg.x, tg.z, 1.2, note)) return; await hold(sp().stay); await settle(60, note); }
   await hold(1.2); await settle(30, note);
   const now = G.currentQuest(h.profile); return !now || now.id !== q.id ? T('done', 'xong') : '';
 }

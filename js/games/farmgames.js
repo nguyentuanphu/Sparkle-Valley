@@ -76,8 +76,9 @@ register({
         const t = el('button', 'choice sitem2' + (x.g.color ? ' ball' : ''), x.g.color ? '' : x.it); if (x.g.color) t.style.setProperty('--bk', x.g.color); t._x = x; pool.appendChild(t);
       }
       let left = items.length, held = null;
+      api.plan(() => held ? bEls.find(b => b._g === held._x.g) : pool.querySelector('.choice:not(.gone)'));
       while (left > 0) {
-        const e = await tapOne([...pool.querySelectorAll('.choice:not(.gone)'), ...bEls]); if (api.closed) return;
+        const e = await tapOne([...pool.querySelectorAll('.choice:not(.gone)'), ...bEls], api); if (api.closed) return;
         if (e.classList.contains('basket')) {
           if (!held) { api.say('First tap a thing, then its basket.', 'Chạm vào đồ trước, rồi chạm vào giỏ nhé.'); continue; }
           if (held._x.g === e._g) { held.classList.add('gone'); e.querySelector('.in').insertAdjacentHTML('beforeend', held._x.g.color ? `<i class="dot" style="background:${held._x.g.color}"></i>` : held._x.it); api.right(e); left--; held.classList.remove('held'); held = null; }
