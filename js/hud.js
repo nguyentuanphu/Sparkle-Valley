@@ -152,7 +152,7 @@ export class Hud {
     this.fitQuest();
   }
   showRegion(name) { const e = this.q('.region'); e.textContent = name; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
-  toast(msg) { const e = this.q('.htoast'); e.textContent = msg; e.classList.add('show'); clearTimeout(this._tt); this._tt = setTimeout(() => e.classList.remove('show'), 3200); }
+  toast(msg) { const e = this.q('.htoast'); e.textContent = msg; e.classList.add('show'); clearTimeout(this._tt); this._tt = setTimeout(() => e.classList.remove('show'), Math.max(3200, msg.length * 30)); }
   setAction(it) {
     const b = this.q('.act');
     if (!it) { b.hidden = true; this.last.act = null; return; }

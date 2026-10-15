@@ -1,5 +1,6 @@
 // Matching pictures for points 7 (closing a game opened from Play returns to Play), 22/23 (the view tray opens up, no
-// compass unless Studio switches it on) and 39-44 (Grown-ups: family photos and devices). Phone EN and computer.
+// compass unless Studio switches it on), 39-44 (Grown-ups: family photos and devices) and 50 (tapping the hearts).
+// Phone EN and computer. SV_ONLY=hearts captures point 50 alone.
 // Usage: SV_URL=<served source> SV_EVIDENCE_COMMIT=<commit> node owner-point-shots.mjs <evidence folder>
 import fs from 'node:fs';
 import path from 'node:path';
@@ -18,6 +19,11 @@ try {
   for (const [device, w, h, touch] of [['phone', 390, 844, true], ['computer', 1280, 800, false]]) {
     const P = await open(browser, { w, h, touch, lang: 'en', play: false, route: async ctx => { await ctx.route('**/content/custom.json*', r => r.fulfill({ contentType: 'application/json', body: '{}' })); await ctx.route('**/api/**', r => r.fulfill({ status: 204 })); } });
     await start(P.page); await clear(P.page); const shot = async n => { await P.page.waitForTimeout(500); await P.page.screenshot({ path: path.join(dir, `${device}-en-${n}.png`) }); }, st = { device };
+    // 50: tap the hearts
+    await P.page.locator('.hud .hearts').first().click(); await P.page.waitForTimeout(700);
+    st.hearts = await P.page.evaluate(() => { const v = e => e && e.getClientRects().length > 0; const t = [...document.querySelectorAll('.toast, .htoast.show')].filter(v).map(e => e.textContent.trim().slice(0, 200)); return { toast: t, settingsOpen: v(document.querySelector('.modal.settings, .settings')), modals: [...document.querySelectorAll('.modal')].filter(v).map(m => m.className.slice(0, 40)) }; });
+    await shot('hearts-tap'); await clear(P.page);
+    if (process.env.SV_ONLY === 'hearts') { results.push({ ...st, errors: P.errors }); await P.ctx.close(); continue; }
     // 22/23: the view tray
     await P.page.locator('.z-tray').first().click(); await P.page.waitForTimeout(400);
     st.tray = await P.page.evaluate(() => { const z = document.querySelector('.zoomer'), b = [...z.querySelectorAll('button')].filter(x => x.getClientRects().length).map(x => { const r = x.getBoundingClientRect(); return { cls: x.className.split(' ')[0], x: Math.round(r.x), y: Math.round(r.y) }; }); return { open: z.classList.contains('open'), buttons: b, where: !!z.querySelector('.z-where') && z.querySelector('.z-where').getClientRects().length > 0 }; });
