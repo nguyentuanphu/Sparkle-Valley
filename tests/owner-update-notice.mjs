@@ -84,6 +84,16 @@ try {
   result.afterB = await B.page.evaluate(async () => ({ reloaded: window.__notReloaded !== 1, caches: await caches.keys(), controller: navigator.serviceWorker.controller?.state }));
   if (!result.afterB.reloaded || !result.afterB.caches.includes(newVersion)) fail('tab B: ' + JSON.stringify(result.afterB));
   result.firstTabHeldAgain = !!(await held(A.page)); if (!result.firstTabHeldAgain) fail('tab A kept playing after tab B took over');
+  // (point 11, #140 #141 #184-#193) a part that loads later is gone (r73 pages lost their files when r74 took over):
+  // whether the code catches the failure itself (a story's film) or not, the page offers the update
+  result.moduleGone = await B.page.evaluate(async () => {
+    const n = () => { const x = document.querySelector('.update-notice'); return !!x && x.getClientRects().length > 0; }, out = { before: n() };
+    const err = await import('/js/gone-' + Date.now() + '.js').then(() => null, e => e);
+    out.caught = !!err && window.svModuleGone(err) && n(); document.querySelector('.update-notice')?.remove();
+    dispatchEvent(new PromiseRejectionEvent('unhandledrejection', { promise: Promise.resolve(), reason: err })); out.uncaught = n();
+    out.message = String(err?.message || err); return out; });
+  { const g = result.moduleGone; if (g.before || !g.caught || !g.uncaught) fail('a gone module did not offer the update: ' + JSON.stringify(g)); }
+  if (shots) await B.page.screenshot({ path: path.join(shots, 'phone-en-update-after-missing-part.png') });
   const errors = [...A.errors, ...B.errors].filter(e => !/peerjs|WebSocket/i.test(e)); if (errors.length) fail('errors: ' + errors.join(' | '));
   result.versions = [oldVersion, newVersion];
 } finally {

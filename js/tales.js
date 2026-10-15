@@ -62,7 +62,7 @@ export function openTheatre(tale, { name = '', onDone, startPage = 0, sync = nul
       film = F.createFilm(stage, script, tale.ctx); if (!film) return; m.classList.add('film');
       // a narration line inside the film shows under the page's words, and is spoken only while the story reads itself
       film.onSay = (en, vi, kind) => { if (kind !== 'help') { text.querySelectorAll('.th-more').forEach(e => e.remove()); text.appendChild(el('p', 'th-more', esc(T(en, vi).replace(/\{name\}/g, name)))); } return auto ? sayAsync(en, vi) : Promise.resolve(); };
-    }).catch(e => console.warn('film', e)) : Promise.resolve();
+    }).catch(e => { console.warn('film', e); window.svModuleGone?.(e); }) : Promise.resolve();
     const readyOr = Promise.race([ready, wait(10000).then(() => { gaveUp = true; })]);
     const rate = () => window.__svFilmRate || 1; // (checks only: films played faster)
     const draw = async (fromFriend = false) => {

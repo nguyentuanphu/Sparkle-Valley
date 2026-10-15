@@ -48,7 +48,11 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/lo
     reg.addEventListener('updatefound', () => { const next = reg.installing; next?.addEventListener('statechange', () => { if (next.state === 'installed' && navigator.serviceWorker.controller) window.svOfferUpdate(); }); });
   }).catch(() => {});
 }
-addEventListener('unhandledrejection', e => { if (/import.*module|module.*fetch|module script/i.test(String(e.reason?.message || e.reason))) window.svOfferUpdate(); });
+// (owner point 11, #140 #141 #184-#193) a part of the game that loads later (a story's film, a festival's decorations)
+// can be gone: this page is an older version whose files were replaced since it opened. Offer the update instead of a
+// broken activity. Code that catches its own import failure passes it here too.
+window.svModuleGone = e => { if (/import.*module|module.*fetch|module script/i.test(String(e?.message || e))) { window.svOfferUpdate(); return true; } return false; };
+addEventListener('unhandledrejection', e => window.svModuleGone(e.reason));
 await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 try { await import('./main.js'); }
 catch (error) {

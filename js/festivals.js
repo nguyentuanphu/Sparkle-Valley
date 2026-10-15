@@ -224,7 +224,7 @@ export function createFestivals(G) {
   const free = (x, z, r = 1) => heightAt(x, z) > WATER + .3 && !W.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + r) && !W.boxes.some(b => x > b.x0 - r && x < b.x1 + r && z > b.z0 - r && z < b.z1 + r);
   // (owner, 10 Oct) the street spots: js/festdecor.js, loaded once a child plays (PERF-001), then the decorations are built
   let D = null, loadingD = null, waitD = false;
-  const loadD = () => loadingD || (loadingD = import('./festdecor.js').then(m => { D = { ...m.createDecor(free), tell: m.tell, decoOf: m.decoOf, FRAC: m.FRAC }; scheduled = m.scheduled; build(); }).catch(e => { loadingD = null; console.warn('festdecor', e); }));
+  const loadD = () => loadingD || (loadingD = import('./festdecor.js').then(m => { D = { ...m.createDecor(free), tell: m.tell, decoOf: m.decoOf, FRAC: m.FRAC }; scheduled = m.scheduled; build(); }).catch(e => { loadingD = null; console.warn('festdecor', e); window.svModuleGone?.(e); }));
   const streetSpots = (key, o) => D ? D.streetSpots(key, o) : [];
   const unhook = list => { list.forEach(it => { const k = G.interactables.indexOf(it); if (k >= 0) G.interactables.splice(k, 1); }); list.length = 0; };
   // (owner, 13 Oct: 5x the decorations) the decorations are drawn in 12 m patches: the ones nearest the children first,
@@ -321,7 +321,7 @@ export function createFestivals(G) {
   // the festival hunt (js/festhunt.js), loaded only while one is on
   let H = null, loadingH = null;
   const spark = () => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#fff3a0', transparent: true, depthWrite: false })); s.scale.setScalar(.8); return s; };
-  const loadH = () => H ? Promise.resolve(H) : loadingH || (loadingH = import('./festhunt.js').then(m => (H = m.createHunt(G, spark))).catch(e => { loadingH = null; console.warn('festhunt', e); return null; }));
+  const loadH = () => H ? Promise.resolve(H) : loadingH || (loadingH = import('./festhunt.js').then(m => (H = m.createHunt(G, spark))).catch(e => { loadingH = null; console.warn('festhunt', e); window.svModuleGone?.(e); return null; }));
   // lamps, lanterns and pumpkin faces shine at night (full colour, unshaded), and look painted by day
   let wasNight = null;
   const nightLights = () => { const n = W.isNight(); if (n === wasNight) return; wasNight = n; glowMeshes.forEach(g => { g.material = n ? nightMat : mat; }); };
