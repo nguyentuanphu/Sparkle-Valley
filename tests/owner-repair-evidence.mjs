@@ -13,6 +13,9 @@ const audioOnly = process.argv.includes('--audio-only');
 const transportOnly = process.argv.includes('--transport-only');
 const learningOnly = process.argv.includes('--learning-only');
 const activityOnly = process.argv.includes('--activity-only');
+const crossingsOnly = process.argv.includes('--crossings-only');
+const crossingTargets=process.env.SV_CROSSING_TARGETS?JSON.parse(fs.readFileSync(process.env.SV_CROSSING_TARGETS,'utf8')):null;
+if(crossingTargets)for(const id of ['town','aussie'])if(!Number.isFinite(crossingTargets[id]?.x)||!Number.isFinite(crossingTargets[id]?.z))throw Error('Missing fixed crossing detail target: '+id);
 const sourceCommit = execFileSync('git', ['-C', repoRoot, 'rev-parse', '--verify', process.env.SV_EVIDENCE_COMMIT || 'HEAD'], {encoding:'utf8'}).trim();
 const sourceFingerprints = {};
 // Verify the served code, rather than attributing old pictures from a build label alone.
@@ -34,7 +37,7 @@ try {
   if(learningOnly||activityOnly)views.push(['phone-small',320,640,true,'en'],['phone-small',320,640,true,'vi'],['phone-landscape',844,390,true,'vi']);
   for (const [device,w,h,touch,lang] of views) {
     const label = `${device}-${lang}`;
-    const P = await open(browser, { w,h,touch,lang,play:false, route:async ctx => {
+    const P = await open(browser, { w,h,touch,lang,play:false,fast:!crossingsOnly, route:async ctx => {
       await ctx.route('**/content/custom.json*', rt => rt.fulfill({ contentType:'application/json',body:'{}' }));
       await ctx.route('**/api/tester**', rt => rt.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,k:'0123456789abcdef',rid:'evidence-receipt',mine:[],open:[],reports:0})}));
       await ctx.route('**/api/live**', rt => rt.fulfill({contentType:'application/json',body:JSON.stringify({releases:{tester:{on:true,devices:['tester000001']},autoplay:{on:true,devices:['tester000001']}},festivals:{}})}));
@@ -44,6 +47,42 @@ try {
       localStorage.setItem('sv2_playerid','tester000001');localStorage.setItem('sv2_tester',JSON.stringify({at:1,b:'r1'}));localStorage.setItem('sv2_live',JSON.stringify({releases:{tester:{on:true,devices:['tester000001']},autoplay:{on:true,devices:['tester000001']}},festivals:{}}));
     }});
     const shot = async name => { await P.page.evaluate(() => document.fonts.ready); await P.page.waitForTimeout(550); await P.page.screenshot({path:path.join(dir,`${label}-${name}.png`)}); };
+    if(crossingsOnly) {
+      await start(P.page);await clear(P.page);const states=[];
+      for(const id of ['town','aussie']) {
+        const state=await P.page.evaluate(async id=>{
+          const G=__sv,h=G.heroes[0],W=await import('/js/world.js'),S=(await import('/js/state.js')).settings,p=id==='town'?W.TOWN:W.AUSSIE;
+          S.camMode='free';G.paused=false;G.world.time=.4;h.goal=null;h.speed=0;h.view='follow';h.zoom=1;G.zoom=1;h.camYaw=-2.5;h.camPitch=.55;h.camDist=innerWidth<500?24:18;h.manualCamT=1000000;h.place(p.x-6,p.roadZ-5);
+          return {id,crossing:{x:p.x-4,z:p.roadZ},hero:{x:h.pos.x,z:h.pos.z},camera:{yaw:h.camYaw,pitch:h.camPitch,distance:h.camDist},warnings:G.crossings?.list.find(c=>c.id===id)?.signs||[],missing:G.crossings?.missing||[],renderPixelRatio:G.renderer.getPixelRatio()};
+        },id);
+        await P.page.waitForTimeout(2500);await clear(P.page);await P.page.waitForTimeout(1000);
+        state.actualFrame=await P.page.evaluate(async id=>{const G=__sv,h=G.heroes[0],W=await import('/js/world.js'),{THREE}=await import('/js/gfx.js'),p=id==='town'?W.TOWN:W.AUSSIE,projected=new THREE.Vector3(p.x-4,W.heightAt(p.x-4,p.roadZ)+.1,p.roadZ).project(h.cam);return {avatar:{x:h.av.root.position.x,z:h.av.root.position.z},hero:{x:h.pos.x,z:h.pos.z},camera:{x:h.cam.position.x,y:h.cam.position.y,z:h.cam.position.z},crossingProjection:{x:projected.x,y:projected.y,z:projected.z},paused:G.paused};},id);
+        const f=state.actualFrame;if(Math.hypot(f.avatar.x-f.hero.x,f.avatar.z-f.hero.z)>.2||Math.abs(f.crossingProjection.x)>.9||Math.abs(f.crossingProjection.y)>.9||f.crossingProjection.z>1)throw Error('Crossing capture fixture is not actually framing the crossing: '+JSON.stringify(f));
+        state.inspectionViews=[];
+        for(const detail of [false,true]) {
+          const inspection=await P.page.evaluate(async({id,detail,fixed})=>{
+            const G=__sv,h=G.heroes[0],W=await import('/js/world.js'),{THREE}=await import('/js/gfx.js'),p=id==='town'?W.TOWN:W.AUSSIE,x=p.x-4,z=p.roadZ,y=W.heightAt(x,z),phone=innerWidth<500;
+            G.paused=true;h.goal=null;
+            const target=detail?(fixed?new THREE.Vector3(fixed.x,W.heightAt(fixed.x,fixed.z)+2.8,fixed.z):new THREE.Vector3(x+5.2,y+2.2,z-5)):new THREE.Vector3(x,y+.15,z);
+            const position=detail?new THREE.Vector3(target.x+3,target.y+2.3,target.z+7):new THREE.Vector3(x+(phone?18:14),y+(phone?30:23),z+(phone?24:19));
+            h.cam.position.copy(position);h.cam.lookAt(target);h.cam.updateMatrixWorld(true);h.camPos.copy(position);h.camLook=target.clone();
+            G.scene.updateMatrixWorld(true);
+            const distance=position.distanceTo(target),ray=new THREE.Raycaster(position,target.clone().sub(position).normalize(),.1,distance-.25);
+            const meshes=[];G.scene.traverse(o=>{if(o.isMesh)meshes.push(o);});
+            const blocker=ray.intersectObjects(meshes,false).find(hit=>{const o=hit.object;if(!o.isMesh)return false;for(let q=o;q;q=q.parent)if(!q.visible)return false;const mats=Array.isArray(o.material)?o.material:[o.material];return mats.some(m=>m&&m.visible!==false&&(m.opacity??1)>.95);});
+            if(blocker)throw Error('Inspection camera target occluded by actual geometry at '+JSON.stringify({distance:blocker.distance,point:blocker.point}));
+            return {detail,target:{x:target.x,y:target.y,z:target.z},position:{x:position.x,y:position.y,z:position.z},clearLineOfSight:true};
+          },{id,detail,fixed:crossingTargets?.[id]||null});
+          await shot('crossing-'+id+(detail?'-approach':'-overview'));
+          const actual=await P.page.evaluate(()=>({x:__sv.heroes[0].cam.position.x,y:__sv.heroes[0].cam.position.y,z:__sv.heroes[0].cam.position.z}));
+          if(Math.hypot(actual.x-inspection.position.x,actual.y-inspection.position.y,actual.z-inspection.position.z)>.05)throw Error('Inspection camera moved during screenshot');state.inspectionViews.push({...inspection,actual});
+        }
+        states.push(state);
+      }
+      results.push({device,w,h,lang,sourceCommit,sourceFingerprints,capturedAt:new Date().toISOString(),states,crossingTargets,fixture:'Actual existing road crossings; fixed inspection camera, verified avatar/target line of sight and camera pose, daytime, synthetic Demo players; normal renderer resolution',errors:P.errors});
+      if(P.errors.length)throw Error('Page errors in attributed crossing evidence: '+P.errors.join(' | '));
+      console.log(`${phase} ${label}: captured actual crossing overviews and approaches`);await P.ctx.close();continue;
+    }
     if(learningOnly||activityOnly) {
       await start(P.page);await clear(P.page);const states=[];
       for(const id of activityOnly?['counting']:['patternpicnic','shapebuilders','remembergarden']) {
@@ -132,4 +171,4 @@ try {
     console.log(`${phase} ${label}: captured welcome, selection, bag, shop, audio`);
     await P.ctx.close();
   }
-} finally { await browser.close();fs.writeFileSync(path.join(dir,learningOnly?'learning-results.json':activityOnly?'activity-results.json':transportOnly ? 'transport-results.json' : settingsOnly ? 'settings-results.json' : audioOnly ? 'audio-results.json' : 'results.json'),JSON.stringify(results,null,2)); }
+} finally { await browser.close();fs.writeFileSync(path.join(dir,crossingsOnly?'crossing-results.json':learningOnly?'learning-results.json':activityOnly?'activity-results.json':transportOnly ? 'transport-results.json' : settingsOnly ? 'settings-results.json' : audioOnly ? 'audio-results.json' : 'results.json'),JSON.stringify(results,null,2)); }

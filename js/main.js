@@ -47,7 +47,7 @@ import { createWeather } from './weather.js';
 import { createFun, confetti } from './fun.js';
 import { createLearning } from './learn.js';
 import { createShowcase } from './showcase.js';
-import { createRoads, plantRoadside } from './roads.js';
+import { createRoads, plantRoadside, createCrossings } from './roads.js';
 import { createSignposts } from './signposts.js';
 import { createNameTags } from './nametags.js';
 import { createTraffic } from './traffic.js';
@@ -1882,6 +1882,7 @@ G.openTrade = (i, id) => { if (G.paused) return; openTrade(G, G.heroes[i], id); 
 G.secrets = createSecrets(G);
 ensureJobs();
 G.claims.wrap(); // (after every pickup exists: first come, first served online)
+createCrossings(G); // Road warnings beside the existing crossings, after all doors/stalls are known.
 setupBubbles(); setupAreaSigns(); setupGuides();
 $('#songBtn').onclick = () => G.places.nextSong();
 resize();

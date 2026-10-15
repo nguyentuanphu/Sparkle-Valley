@@ -51,3 +51,8 @@ Attributed shared-activity comparisons now complete: activity-shell-before-r74 (
 
 - initial-page-family-cancel-before-2-checks.json: stronger exacte75 baseline0/2, actual delayed page reset and family recording restarting after cancellation.
 - initial-page-family-cancel-final-9-checks.json: repair16 final9/9; real Back/two-peer synchronization and held family decode included in assertions. GitHubFull38690078655 is still on preceding sourcee75.
+
+
+- github-e75-full-171-checks.json: exact e75 Full38690078655 completed171/171; all8 raw shard artifacts audited, no retry markers or skipped checks. Covers repair15, not later repair16/17. Imported remote map provenance retained separately.
+- crossings-before-r74/:16 source-fingerprinted actual PNG across phone EN/VI, tablet and desktop, two existing crossings × overview/detail. Candidate matching pictures are still MISSING. Two invalid camera folders are excluded and must not count as evidence.
+- crossing-ray-before-1-check.json / crossing-panels-before-1-check.json: actual first-hit diagnostics show v_bev bubble intercepting the new sign, not a successful warning interaction. Placement repair remains under validation.

@@ -5606,6 +5606,13 @@ await check('ownerlearningcomposition', async () => {
   const errors=P.errors;await P.ctx.close();ok(!bad.length&&!errors.length,JSON.stringify({bad,rows,help,errors}));return 'Real game entrance:64px header controls, complete picture and palette visible; landscape stars clear; long guidance scrolls without hiding play';
 });
 
+await check('ownerautoplaynormal', async () => {
+  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x1','--ids=sortout','--lang=en']);
+});
+
+await check('ownerroadsafety', async () => {
+  return await ownerSmoke('owner-road-safety.mjs');
+});
 await check('ownerround', async () => {
   return await ownerSmoke('owner-round-smoke.mjs');
 });

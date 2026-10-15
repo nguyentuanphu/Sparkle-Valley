@@ -1036,6 +1036,7 @@ button { color: var(--text); }
 @keyframes conf-fall { to { transform: translate(var(--dx), 110vh) rotate(var(--rot)); opacity: .9; } }
 /* conversations for little ones: big picture buttons */
 .dialog.little .dtext { font-size: clamp(19px, 4.4vw, 24px); }
+.dialog.little .dch { min-height: 64px; }
 .dialog.little .dnext { display: none; }
 .travel .walk { background: #e9fbe4; }
 /* scrapbook */
