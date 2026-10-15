@@ -4921,8 +4921,10 @@ await check('ownertalesync', async () => {
     return { initial, remote, rapid, local };
   });
   const errors = P.errors; await P.ctx.close();
-  ok(JSON.stringify(r.initial) === '[0]' && JSON.stringify(r.remote.sent) === '[0]' && r.remote.text === 'Second page.' && JSON.stringify(r.rapid) === '[0]' && JSON.stringify(r.local.sent) === '[0,2]' && r.local.text === 'Third page.' && !errors.length, JSON.stringify({ ...r, errors }));
-  return 'Received page changes survive the asynchronous draw without being rebroadcast; rapid remote changes settle, local Next broadcasts once';
+  // (repair16, 15 Oct AEDT) opening a shared story no longer broadcasts its first page: a delayed page-0 message rolled the
+  // other device back to the start (ownerstoryinitial). Only a child's own Back/Next/Read is sent.
+  ok(JSON.stringify(r.initial) === '[]' && JSON.stringify(r.remote.sent) === '[]' && r.remote.text === 'Second page.' && JSON.stringify(r.rapid) === '[]' && JSON.stringify(r.local.sent) === '[2]' && r.local.text === 'Third page.' && !errors.length, JSON.stringify({ ...r, errors }));
+  return 'Opening sends nothing; received page changes survive the asynchronous draw without being rebroadcast; rapid remote changes settle, local Next broadcasts once';
 });
 
 await check('chests', async () => {
