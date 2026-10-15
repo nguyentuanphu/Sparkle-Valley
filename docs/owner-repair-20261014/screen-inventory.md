@@ -37,3 +37,5 @@ This is an explicit inventory, not a universal pass. Source review is separate f
 | Public-transport rider/cabin/exit | js/player.js, js/traffic.js, js/vehicles.js, js/rideview.js | six rendered bus/busAU/tramModern age cases83s and visibility restoration; ride54s fares/destinations/exits passed | 24 final exacta246d116 before/after rider/exit captures complete; coach/taxi/driving render, split-screen and physical-device comparisons missing |
 
 No row implies all child-facing or Studio screens have been verified. Complete point-level scope is in audit-matrix.md and requirements.json.
+
+15 Oct 2026 AEDT, exact b09 individual-report reproduction:21 panel/viewport/language cases from171 offscreen reports,20 actual screenshots under evidence/reported-screens-b09. Three checks passed:136 representative exact-label controls were reachable after their real disclosure/tab and native scroll;35 original controls/states remain unmatched. Duplicate labels, original inventory/progress state, physical Safari and matching R74 pictures are not established. These reports remain open; this is bounded current-state evidence, not171 fixes.
