@@ -5641,6 +5641,10 @@ await check('ownerstudiofolds', async () => {
   return await ownerSmoke('owner-studio-folds.mjs');
 });
 
+await check('ownerstudioperms', async () => {
+  return await ownerSmoke('owner-studio-perms.mjs');
+});
+
 await check('ownertheatreapproach', async () => {
   process.env.SV_FAR = '1';
   try { return await ownerSmoke('owner-theatre-walk.mjs', ['out/theatre-walk.json', '4']); } finally { delete process.env.SV_FAR; }
