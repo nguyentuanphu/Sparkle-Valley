@@ -43,7 +43,8 @@ export function createDecor(free) {
   const cell = q => [Math.floor(q.x / 2), Math.floor(q.z / 2)];
   const occupy = (q,kind='piece') => { const [x,z]=cell(q), key=x+','+z; if(!occupied.has(key))occupied.set(key,[]);occupied.get(key).push({...q,kind}); };
   const available = q => { const [x,z]=cell(q);for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)if((occupied.get((x+dx)+','+(z+dz))||[]).some(p=>Math.hypot(p.x-q.x,p.z-q.z)<1.8))return false;return true; };
-  const canSupport = q => { const [x,z]=cell(q);for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)if((occupied.get((x+dx)+','+(z+dz))||[]).some(p=>{const d=Math.hypot(p.x-q.x,p.z-q.z);return d<1.8&&(p.kind!=='support'||d>.05);}))return false;return true; };
+  // (owner, 15 Oct: "crowded poles") a post stands clear of every piece, and at least 4 m from any other post unless it is that post
+  const canSupport = q => { const [x,z]=cell(q);for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++)if((occupied.get((x+dx)+','+(z+dz))||[]).some(p=>{const d=Math.hypot(p.x-q.x,p.z-q.z);return p.kind==='support'?d>.05&&d<4:d<1.8;}))return false;return true; };
   // (a piece drawn outside decorate: the ring round a place without streets, a table, the roadside) takes the ground only if it is free
   const claim = (q,kind='piece') => { if(kind==='support'?!canSupport(q):!available(q))return false; occupy(q,kind); return true; };
   const wireKey = (a,b,wall=false) => (wall?'wall:':'post:')+[[a.x,a.z],[b.x,b.z]].map(p=>p.map(n=>n.toFixed(3)).join(',')).sort().join('|');
