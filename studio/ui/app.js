@@ -184,7 +184,7 @@ async function render(force) {
     if (sec.k === cur && sec.pages.length > 1 && !ABOUT[sec.k]) { crumb.innerHTML = ''; drawSection(P, sec); KEPT = contentNow(); HASH = location.hash; window.scrollTo(0, 0); return; }
     crumb.innerHTML = sec.pages.length > 1 && cur !== sec.k ? `<button class="back">← ${sec.i} ${T(sec.en, sec.vi)}</button>` : '';
     if (crumb.firstChild) crumb.firstChild.onclick = () => go(sec.k);
-    const page = cur; await PAGES[page](P); if (sequence !== renderSequence || cur !== page) return; explainPage(P, cur); foldPage(P, cur); KEPT = contentNow(); HASH = location.hash; paintState(); window.scrollTo(0, 0);
+    const page = cur; await PAGES[page](P); if (sequence !== renderSequence || cur !== page) return; explainPage(P, cur); foldPage(P, cur); refold(P, page); KEPT = contentNow(); HASH = location.hash; paintState(); window.scrollTo(0, 0);
   } catch (e) { if (sequence === renderSequence && !e.signin) P.innerHTML = `<div class="card badtxt">${esc(e.message)}</div>`; }
 }
 
@@ -194,12 +194,22 @@ async function render(force) {
 const FOLD_KEY = 'studioFolds';
 const folds = () => { try { return JSON.parse(localStorage.getItem(FOLD_KEY) || '{}'); } catch (e) { return {}; } };
 const keepFold = (k, open) => { const f = folds(); if (open) delete f[k]; else f[k] = 1; try { localStorage.setItem(FOLD_KEY, JSON.stringify(f)); } catch (e) { } };
+// (point 34, 15 Oct AEDT) parts a page draws later (a list that loads, a redrawn card) fold too, once they appear
+let refolder = null;
+function refold(P, page) {
+  if (refolder) refolder.disconnect();
+  let queued = false;
+  refolder = new MutationObserver(() => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; if (cur !== page) return; refolder.disconnect(); foldPage(P, page); refolder.observe(P, { childList: true, subtree: true }); }); });
+  refolder.observe(P, { childList: true, subtree: true });
+}
 function foldPage(P, page) {
   const closed = folds(), key = h => page + ':' + h.textContent.trim().slice(0, 60);
   const make = (head, nodes, cls) => { if (!nodes.length) return; const d = document.createElement('details'), sm = document.createElement('summary'); d.className = 'fold ' + cls; d.open = !closed[key(head)];
     head.parentNode.insertBefore(d, head); sm.appendChild(head); d.appendChild(sm); nodes.forEach(n => d.appendChild(n)); const k = key(head); d.addEventListener('toggle', () => keepFold(k, d.open)); };
   // each card with a heading (not the ones that open and close already)
-  P.querySelectorAll('.card').forEach(c => { if (c.closest('details') || c.matches('details, .stat, .signin, .pcard')) return; const h = c.firstElementChild; if (!h || !/^H[34]$/.test(h.tagName)) return;
+  // (a card whose first row holds its heading, e.g. a story character's picture and name: that row is the summary)
+  P.querySelectorAll('.card').forEach(c => { if (c.closest('details') || c.matches('details, .stat, .signin, .pcard') || c.querySelector(':scope > details.fold')) return; const h = c.firstElementChild;
+    if (!h || !(/^H[34]$/.test(h.tagName) || (h.querySelector('h3, h4') && c.children.length > 1))) return;
     make(h, [...c.childNodes].filter(n => n !== h), 'card-fold'); });
   // a heading on the page itself, with everything up to the next heading of the same size
   [...P.children].filter(e => /^H3$/.test(e.tagName)).forEach(h => { const nodes = []; let n = h.nextSibling; while (n && !(n.nodeType === 1 && /^H[23]$/.test(n.tagName))) { nodes.push(n); n = n.nextSibling; } make(h, nodes, 'part-fold'); });
