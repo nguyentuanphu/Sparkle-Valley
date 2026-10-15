@@ -13,5 +13,6 @@
     "css/style.css": "7914a257294123269307ecad3f1a30192064f18458fa0c49164382cdfb192a0a",
     "sw.js": "9cae98f850b76439951bc6229459bfb25eedd0fd3ae4baf127e3428ce700940e"
   },
-  "scope": "Synthetic profiles and APIs, seven emulated layouts, browser captures; not physical devices"
+  "scope": "Synthetic profiles and APIs, seven emulated layouts, browser captures; not physical devices",
+  "matchingCodeCommit": "f47546d596230245bf3b96f8f10b1e06137df79b"
 }
