@@ -1,0 +1,12 @@
+{
+  "run": "https://github.com/nguyentuanphu/Sparkle-Valley/actions/runs/38746416448",
+  "source": "9afa91e76c788e789dbde50ad05ba82179cc3b4b",
+  "date": "2026-10-16, 00:52 - 01:44 AEDT",
+  "result": "183/183 passed",
+  "passed_only_on_retry": "none listed in the summary",
+  "skipped": "none listed in the summary (online services provided on GitHub)",
+  "speed_checks": "perf/startup/battery not run on GitHub; battery passed locally, perf and startup blocked locally (esbuild download denied by this session's network policy)",
+  "summary_comment": "https://github.com/nguyentuanphu/Sparkle-Valley/pull/300#issuecomment-6194824417",
+  "covers": "decoration 21-28, autoplay rates and job reward, Shadow Shapes landing, strict types (autoplay policies, tester rules, playwatch, hello-clean, family-devices), Studio folds, ownertalesync correction, runner per-check limit",
+  "note": "Shard artifacts not yet downloaded individually; this record is from the collect summary. The check-map artifact has not been imported into tests/check-map.json yet."
+}

@@ -338,3 +338,7 @@ Environment note: this session has no npm registry access; Playwright 1.56.1 is 
 - Decorations: Halloween door pumpkins reserved first; rings without streets keep posts whole and report requested/placed (China Town 93/110 on Tết, its clear ground is full). Festival AFTER pictures refreshed at 2f16d8fb.
 - Studio point 34: all 30 pages × desktop/phone, 190 folds, 0 unfolded categories (story characters and the publish list were unfolded in R74). CORRECTION: an earlier statement (commit f26ddba8 message) that no R74 fold hides its content was a measurement error; measured by what the browser draws, R74's folds work.
 - Speed: battery passed locally; perf and startup blocked (esbuild download denied by this session's network policy). Reports #86, #261 not reproduced in emulation.
+
+## Exact-source Full · 16 October 2026, 01:44 AEDT
+
+Full 38746416448 at 9afa91e7 (PR300 head): 183/183 passed, no retries or skips listed. It covers every code change made in this session. Docs commit 74ecdb8d sits on the checkpoint branch only (no code). Speed checks remain: battery passed locally; perf and startup are blocked here. Not release-ready: the remaining work orders in this file and the original-point table with pictures remain open. No main merge, deployment or issue closure.
