@@ -27,10 +27,14 @@ const SEED = Number(process.env.SV_SEED) || Math.floor(Date.now() / 36e5);
 const only = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const want = k => !only.length || only.includes(k);
 const results = [];
+// (repair round, 15 Oct AEDT) a check that never finishes is a failure, not a stalled machine: on GitHub one check that
+// hung after its browser stopped answering held its whole share for two hours, so none of the share's checks reported
+const CHECK_LIMIT = (Number(process.env.SV_CHECK_MIN) || 45) * 60000, pause = ms => new Promise(r => setTimeout(r, ms));
 const check = async (name, fn) => {
   if (!want(name)) return;
-  const t0 = Date.now();
-  try { const note = await fn(); results.push([name, true, note || '']); console.log(`✅ ${name} (${((Date.now() - t0) / 1000).toFixed(0)}s) ${note || ''}`); }
+  const t0 = Date.now(); let timer;
+  const limit = new Promise((_, no) => { timer = setTimeout(() => no(new Error(`did not finish within ${CHECK_LIMIT / 60000} min (stopped so the later checks still run)`)), CHECK_LIMIT); });
+  try { const running = fn(); running.catch(() => { }); const note = await Promise.race([running, limit]); results.push([name, true, note || '']); console.log(`✅ ${name} (${((Date.now() - t0) / 1000).toFixed(0)}s) ${note || ''}`); }
   catch (e) {
     results.push([name, false, e.message]); console.log(`❌ ${name}: ${e.message}`);
     // a picture of what was on screen when it failed (out/fail-<check>.png)
@@ -39,7 +43,10 @@ const check = async (name, fn) => {
   // (round R) close every window the check left open, passed or failed: a failed check's window kept drawing the valley
   // and slowed every later check until they timed out
   finally {
-    for (const c of b.contexts()) await c.close().catch(() => { });
+    clearTimeout(timer);
+    // a browser that no longer answers is replaced, so one stuck check cannot stop the rest
+    const closed = await Promise.race([Promise.all(b.contexts().map(c => c.close().catch(() => { }))).then(() => true), pause(30000).then(() => false)]);
+    if (!closed) { console.log(`   (${name}: the browser stopped answering; starting a fresh one)`); await Promise.race([b.close().catch(() => { }), pause(10000)]); b = await launch(); }
     // (owner, 13 Oct: "changed-files checks") with SV_COVER=1 each check writes which game code it ran (tests/suite.mjs
     // turns that into tests/check-map.json); a check that opened no game page writes nothing and always runs
     if (process.env.SV_COVER === '1') { const cov = takeCoverage(); fs.mkdirSync('out/cover', { recursive: true }); fs.writeFileSync(`out/cover/${name}.json`, JSON.stringify(cov)); }
@@ -76,7 +83,7 @@ async function serveFolder(root, { gzip = false } = {}) {
   await new Promise(res => srv.listen(0, '127.0.0.2', res));
   return Object.assign(S, { url: `http://127.0.0.2:${srv.address().port}/`, close: () => { srv.closeAllConnections(); srv.close(); } });
 }
-const b = await launch();
+let b = await launch();
 
 await check('boot', async () => {
   for (const [w, h, touch] of [[390, 844, true], [1024, 768, true], [1280, 800, false]]) {
