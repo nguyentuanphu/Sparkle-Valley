@@ -1,19 +1,19 @@
 {
-  "sourceCommit": "ab4773c4fe20bf5ab9a2369dce1bc632c46bfeeb",
+  "sourceCommit": "2f16d8fbb1dfc15f03231d4c3f660cc188ecae27",
   "servedAt": "http://localhost:8767/",
-  "capturedAt": "2026-10-15T09:12:43.405Z",
-  "fingerprintCount": 238,
+  "capturedAt": "2026-10-15T11:57:17.635Z",
+  "fingerprintCount": 239,
   "fingerprints": {
     "css/fonts.css": "39ebbc57389e5483f75d76d5af4df86b10bf64e3533b256c956197b2f7190b3e",
     "css/style.css": "f97b11e1108187c7809e3d919533bd380bdd92bafa695f4097f822568608fec2",
-    "index.html": "c8a912084dedf65371089cc8b0b2adae09f01d9e345dcf45e73d7915e7bab58a",
+    "index.html": "94034122ac92f51065c81a1925e150527cb57bee652963fe6cb0c983b2c5c701",
     "js/ads.js": "58c7932335b531a8aba744527fc3e45696e349600576cd9a021a9188cf2a04d3",
     "js/animalhomes.js": "c183cf8d6b6916e584e22d204c347953cc3d6953de500deba13af961389bf14d",
     "js/animals.js": "8103ab52f80d3a9763a12d819a0de85018d3feab9b42d079a4be98040079f570",
     "js/art.js": "a5b11182366c57e0ca7336f17bde08ac87ce94f7518f414a2cfd6acc021b221b",
     "js/asia.js": "93c88940a0f8859969aeefbd39e507927d1835467203976977a527464f7e6e31",
     "js/audio.js": "449a2c786e994d79ee55fbcea1556f87666431dfecd3d6d41698770e1e6c685f",
-    "js/autoplay.js": "f6f602a2ecfcf451435405aaaa601d9063cc53b5347e768e9b12fcd7cfcb8646",
+    "js/autoplay.js": "0fe2d58d7146e95be85b3390da743ce3d412f26eb0d7a6b72f859273e8ef8a0f",
     "js/avatar.js": "b8c55cd7bdaeca888272ce964dac6a4d0bf4b49ab1eabfaf5eec9b7ec2fceca1",
     "js/boxes.js": "5965f38ea4df6229d409fd856f130e43dedb929893b4f1f594b4d6d871d890a5",
     "js/build.js": "07ce3c30cb26451b8e865b1b5324a9412ac76c072bd2f4b5ac9ac22e62ab0396",
@@ -26,7 +26,7 @@
     "js/commands.js": "9e5bbfd3e284edeb50d61addfa62cd128a4a539edbe4c8df07e809bd61b9370a",
     "js/companion.js": "397cb096738b21e27d35e57770d19fb2740ced653a14a9898975d0ca0a815630",
     "js/content/activities.js": "5648f3fe7a360da03f76a0aa6f6dc994e0430bc25aeae3751ed34e727242d618",
-    "js/content/autoplay.js": "53d611eb42b77c00780038f295fc6bff1368d27ed1b2d20f3083fd921c1844cf",
+    "js/content/autoplay.js": "cf2ed3fbb0ede625518d4f930c23fa1655364cd78ea36914785a33cef6a70cd7",
     "js/content/boxes.js": "8ba05587afeef4b5d7cf132a052f2ff2933b362564044fef0ef495356a7882f8",
     "js/content/chapter2films.js": "9cd4b086b963e00bf9651769b3ba44525cace9c4744c8e8aa48d01146fac9d09",
     "js/content/chapter2hanoi.js": "5320475dfafb8aebd101c2bd175057865fc68a8334604b82a9191ba6821f2f98",
@@ -88,7 +88,7 @@
     "js/content/songs.js": "4e2022f4ff5dfff311aa953dece2e345efd224f714613f4b0f375e1a7c6be4d7",
     "js/content/surprises.js": "0516d5277c8e335e611f7e601e04bc8c0409633f25663a35fbd49692856e1be1",
     "js/content/talefilms.js": "c2eb1d6ce7a2d1fd7fb8e34c4799d05ed691588350053e57c7347320087fea10",
-    "js/content/tester.js": "61c02b1e897e941a59aaa9cb1ace443d996f4d6119b9620b9e5189d9d9f59a38",
+    "js/content/tester.js": "7584ce3a54a8825b777426b59375b63229de1bc4d82539cf9fc9635f5b40de6f",
     "js/content/villagerlines.js": "c0dd7baa443369c851e9dbf9511387108cfc281376efda1f1255b5a361d4e21d",
     "js/content/yard.js": "06c670a951ea35e98993c2d5c55b4b6ed335ea0602663dbb14f5ca892102dc9b",
     "js/coop.js": "2b90a3c63b6cd68e6c4f17bb19687606ae9ca9f231b4df2d4aa6b14c7524ca51",
@@ -106,11 +106,11 @@
     "js/family-backup.js": "c9ceebe0f78ced6334a0cbfe9911d2fb36b9fcd62297454cfb6274248b8e661c",
     "js/familycards.js": "b4809e0663a7064b36d1c71e6074a451e9d446a55bd43d8c7770a6e8cd53037c",
     "js/familydevices.js": "a49799d4b2b0a2167ea7d140a62d4c55d3d9a15f52f05c2790096bf75d6afee9",
-    "js/farm.js": "a1a8e175bfac68fc50779ed60648b3f1264588a9824fcb9933c67f89734f36f7",
+    "js/farm.js": "a514e903190b9042693d3198123a57b9341f51e36fd5036c62b92b4e712eb832",
     "js/ferry.js": "6770cdfbdffa7686d0c31b4451e770516ec3aabf71e67379427b41641f1a0a25",
-    "js/festdecor.js": "e0ce82ce650de2cabd272ec7e3cbb6bfaa7545ae0272196530b53a854890d528",
+    "js/festdecor.js": "518e4a4f445c2f8557f090032bb732369f515f02fe6ec9d0569d4ddfd3d056d4",
     "js/festhunt.js": "f0e2044f072171b78161ae4e50f952ba18cb70f5fcd0f3449b17c4400225c583",
-    "js/festivals.js": "02389ff040bbedf32025160a5e1ffd95375bfa5340f4d3ff98670c12b877ce48",
+    "js/festivals.js": "e5a0f3b3bfbcee5d41dfb2286353458740bd8d98f99162947f7e9e8ddc6ff57f",
     "js/film.js": "ad1fcc19088e1f197d001e792fce22ed9867e04194f7874fb45033c120030e00",
     "js/folkshow.js": "ae4259dcb5b465ad60426a691ddc403abbd8d063edf1d8be5a465c7d6ee0d755",
     "js/fun.js": "99cdede92c54cb1c3701dd9ab6d6916e4acc047e707e0637fb17da2514beccc0",
@@ -122,13 +122,14 @@
     "js/games/farmgames.js": "d823e47451bf333e3dce67c4bbb9c2c33a98cd553f0a86cb8b4fca62a4d23048",
     "js/games/folk.js": "56891424aa152d14e1fd09c1333170c7a12b1f3583cafd5d10e33464bd620ff2",
     "js/games/folk2.js": "89df432b6e95a468122c55aff391e2fbdbb9086813afc15cbde4d519f202e662",
-    "js/games/frame.js": "c1c11e924546dcbd7ca3af489e18ac5ebaebe5639e1faeb7e039594e3f391add",
+    "js/games/frame.js": "13aa19e213992c8ae5c5cd3bb8291fb80272068d23ce44f7882b2879e8f9b58b",
     "js/games/learning.js": "65922adb06174f4cd0a8e87238b9da4fc54a0b66b8c41c8735ef84c3d8711ade",
     "js/games/market.js": "8370c3feef726ed867148617020f5962458141a4ce3821c950be8d6075414b86",
     "js/games/money.js": "b2bb806154a54e72b203a297e4c9591d7b060acec147a205e69ddf01f9e0bc17",
     "js/games/moneylogic.js": "7f0f8aa0a86faa07c26f5c61d21011764ed9060f8e415ec32a3b4a9428ea94b7",
     "js/games/more.js": "0355c6d318b183f223670a94c181119955fe8069e5de0acde235631657d8101e",
     "js/games/music.js": "18986915515b1fc62af8f8bb29150522743fe1b3278a20d3e1768a9d0399752b",
+    "js/games/playwatch.js": "e64caf23abaec693a66c3c2602c2b4494eb0acc825e4bf1548c36121be1b632e",
     "js/games/reading.js": "e91c7a834c127f42a379b527a54de3b8d227baad70e755c5e45c3fbb4b567d24",
     "js/games/readingmenu.js": "edf29b03404c9eb42955c77bee6743072f0b500dd171524a2649391fd86265ea",
     "js/games/registry.js": "90ee419ec8187229472557e2b6a43b287a58347eb7b2581c2034574650379ae3",
@@ -161,7 +162,7 @@
     "js/listen.js": "0ea9c872a54bd7c3c1b543e13211e9072026a715395688d3fe7f8b677f7998df",
     "js/lotus.js": "65cc07b1e48f2f4c95784464311d055a0d05c21845d1240c814cb4aed6ab31a5",
     "js/lunar.js": "b0a06ef1f507bb223d98f02d13bf403dc96df3c0a7f5b3dd721da8c20a2e8fd4",
-    "js/main.js": "6cb06e9de0ba8c4eae19ee78e4fd5533cb555e859cd90ca277a60be09b906fcc",
+    "js/main.js": "795070506921763e844e960435adc61d44127cf73f5045995baef00f8ca0cea5",
     "js/mictest.js": "a9077445f206b91df1afb3a708d799b70639fb6a556ce9a61dbbe4be6d4213b3",
     "js/money.js": "0798ea7ee44d749bef4be70eaa68c8367af12443cb0c49c30a1fc6dad0851c4b",
     "js/myhouse.js": "48c419e06483f58cabbcd3f3a7a729c9f55de152fac18c0cc8a82a52fae73a75",
@@ -241,7 +242,7 @@
     "js/worldcache.js": "ff71ba85f3b2865138c0af828b921c4f0f0ddfda7125a349f92b90c8f8662081",
     "js/worldedit.js": "8df0c94e078104358e83ec950c2e07a33defda837947944f0d04a00aeb72548b",
     "js/yard.js": "0ec5354d9071e31d9a8f850f1a672a8f3ed66035454ae66fa01ce2d50cd0b718",
-    "sw.js": "73fe433e3c331fdc4e42ce278967e56aff83123c30cd30228f291d30025ad5e7"
+    "sw.js": "cf0d59614198bc226c6cc367238a821ddfbb59cb23f8e003a3a2174cae340dd7"
   },
   "results": [
     {
@@ -267,11 +268,11 @@
           "z": -42
         },
         "camera": {
-          "x": 174.7631764859639,
-          "y": 26.34485940483202,
-          "z": -63.281360339664516
+          "x": 174.76481822347247,
+          "y": 26.34897609809968,
+          "z": -63.2801653258667
         },
-        "patches": 6
+        "patches": 9
       }
     },
     {
@@ -297,9 +298,9 @@
           "z": -200
         },
         "camera": {
-          "x": 80.61000257277523,
-          "y": 36.583339048783415,
-          "z": -219.2091676560543
+          "x": 80.90615194027156,
+          "y": 37.32594016559752,
+          "z": -218.99360178238723
         },
         "patches": 6
       }
@@ -391,9 +392,9 @@
           "z": -200
         },
         "camera": {
-          "x": 84.32746177626508,
-          "y": 25.228967708677338,
-          "z": -216.50324480436387
+          "x": 84.88344687270842,
+          "y": 26.588305482935407,
+          "z": -216.09854560114115
         },
         "patches": 6
       }
@@ -455,9 +456,9 @@
           "z": -42
         },
         "camera": {
-          "x": 178.58391323629806,
-          "y": 15.421217465469452,
-          "z": -60.50026219786999
+          "x": 179.58035578901197,
+          "y": 17.85743744770819,
+          "z": -59.77495587271809
         },
         "patches": 6
       }
@@ -515,9 +516,9 @@
           "z": 90
         },
         "camera": {
-          "x": 147.32746177626504,
-          "y": 23.889885486719095,
-          "z": 73.49675519563611
+          "x": 147.8834468727084,
+          "y": 25.249223260977164,
+          "z": 73.90145439885883
         },
         "patches": 6
       }
