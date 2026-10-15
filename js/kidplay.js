@@ -115,8 +115,15 @@ export function createKidPlay(G, { say, save }) {
 
   // ---------- the daily gift ----------
   const sites = LANDMARKS.filter(l => Number.isFinite(l.x) && Number.isFinite(l.z));
-  const giftAt = () => { const L = sites[day() % sites.length]; if (!L) return null; for (let k = 0; k < 12; k++) { const a = k * .9, x = L.x + Math.cos(a) * 2.6, z = L.z + Math.sin(a) * 2.6; if (heightAt(x, z) > WATER + .3 && !world.colliders.some(c => c.r > 0 && c.top == null && Math.hypot(c.x - x, c.z - z) < c.r + .6)) return { x, z, L }; } return { x: L.x + 2.6, z: L.z, L }; };
-  let spot = giftAt(), spotDay = day();
+  // (Full run 37, 16 Oct: the day's landmark left the gift with no open ground to stand on) the gift stands where a
+  // child can walk up to it: dry ground that nothing pushes them out of and that is not inside a building. It is chosen
+  // again once the solid map is ready, and the check tries every day's landmark (G.giftSpotFor)
+  const open = (x, z) => { if (!(heightAt(x, z) > WATER + .3) || world.solidAt?.(x, z)) return false; const q = { x, z, y: heightAt(x, z) }; world.collide?.(q, .45); return Math.hypot(q.x - x, q.z - z) < .01; };
+  const giftAt = (d = day()) => { const L = sites[d % sites.length]; if (!L) return null;
+    for (const r of [2.6, 3.4, 4.4, 5.6]) for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, x = L.x + Math.cos(a) * r, z = L.z + Math.sin(a) * r; if (open(x, z)) return { x, z, L }; }
+    return { x: L.x + 2.6, z: L.z, L }; };
+  G.giftSpotFor = giftAt;
+  let spot = giftAt(), spotDay = day(), spotSolid = !!world.solidAt;
   const box = new THREE.Group(); box.userData.noSolid = true;
   box.add(new THREE.Mesh(merge([P(new THREE.BoxGeometry(.8, .6, .8), '#ff5a7a', [0, .3, 0]), P(new THREE.BoxGeometry(.86, .14, .86), '#e8433a', [0, .62, 0]), P(new THREE.BoxGeometry(.16, .64, .84), '#ffd23f', [0, .32, 0]), P(new THREE.BoxGeometry(.84, .64, .16), '#ffd23f', [0, .32, 0]),
     P(new THREE.TorusGeometry(.14, .05, 6, 12), '#ffd23f', [-.12, .76, 0], [0, 0, .6]), P(new THREE.TorusGeometry(.14, .05, 6, 12), '#ffd23f', [.12, .76, 0], [0, 0, -.6])]), toonVC()));
@@ -129,7 +136,7 @@ export function createKidPlay(G, { say, save }) {
   const told = new Set();
   let acc = 0;
   world.updaters.push((dt, t) => {
-    if (spotDay !== day()) { spotDay = day(); spot = giftAt(); }
+    if (spotDay !== day() || (!spotSolid && world.solidAt)) { spotDay = day(); spotSolid = !!world.solidAt; spot = giftAt(); }
     box.visible = gifts() && !!spot && G.heroes.some(h => !opened(h));
     if (box.visible) { box.position.set(spot.x, heightAt(spot.x, spot.z) + Math.abs(Math.sin(t * 2)) * .15, spot.z); box.rotation.y = t * .6; }
     acc += dt; if (acc < .5) return; acc = 0;

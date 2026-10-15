@@ -528,7 +528,11 @@ await check('solid', async () => {
       for (let r = 0; r < (it.r || 2.5) - .2 && !found; r += .4) for (let s = 0; s < 16 && !found; s++) { const an = s / 16 * Math.PI * 2, p = { x: it.x + Math.cos(an) * r, z: it.z + Math.sin(an) * r }; p.y = W.groundAt(p.x, p.z); const q = { ...p }; W.collide(q, .45); if (Math.hypot(q.x - p.x, q.z - p.z) < .05) found = true; }
       if (!found) { lost++; lostAt.push(it.id); }
     }
-    return { st, tried, bad, lost, lostAt: lostAt.slice(0, 8) };
+    // (Full run 37, 16 Oct) the daily gift moves to another landmark each day: every day's spot, not only today's
+    const reach = (x, z, R) => { for (let r = 0; r < R - .2; r += .4) for (let s = 0; s < 16; s++) { const an = s / 16 * Math.PI * 2, p = { x: x + Math.cos(an) * r, z: z + Math.sin(an) * r }; p.y = W.groundAt(p.x, p.z); const q = { ...p }; W.collide(q, .45); if (Math.hypot(q.x - p.x, q.z - p.z) < .05) return true; } return false; };
+    const giftDays = []; if (G.giftSpotFor) for (let d = 0; d < 120; d++) { const g = G.giftSpotFor(d); if (g && !reach(g.x, g.z, 2.4)) giftDays.push(`${g.L.id || g.L.name || d}`); }
+    if (giftDays.length) { lost += giftDays.length; lostAt.push(...[...new Set(giftDays)].map(n => 'gift_today at ' + n)); }
+    return { st, tried, bad, lost, lostAt: lostAt.slice(0, 8), giftChecked: !!G.giftSpotFor };
   });
   const rd = await audit(D); console.log('  solid: desktop', JSON.stringify(rd.st)); const rm = await audit(M); console.log('  solid: phone', JSON.stringify(rm.st)); // one after the other: two software-drawn worlds at once are very slow
   await M.page.reload(); await start(M.page); await clear(M.page); console.log('  solid: phone restarted'); const again = await M.page.evaluate(async () => (await __sv.solidsReady).cached);
@@ -538,6 +542,7 @@ await check('solid', async () => {
     ok(r.tried >= 200, `${tag}: only ${r.tried} spots tried`);
     ok(!r.bad.length, `${tag}: ${r.bad.slice(0, 8).join('; ')} (${r.bad.length}/${r.tried})`);
     ok(!r.lost, `${tag}: ${r.lost} things you tap have no open ground near them: ${r.lostAt.join(', ')}`);
+    ok(r.giftChecked, `${tag}: the daily gift's spots for every day were not checked`);
   }
   ok(rd.st.cells === rm.st.cells, `desktop and phone maps differ (${rd.st.cells} vs ${rm.st.cells})`);
   ok(again, 'the saved map was not used on the second start');
