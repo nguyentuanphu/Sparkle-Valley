@@ -1,7 +1,7 @@
 // Offline support: cache the whole game on first visit, then serve from the cache.
 // Bump VERSION whenever files change so devices pick up the update. Updates only replace the game's files:
 // saved progress (localStorage, IndexedDB, and the 'sv-save' copy) and the voice pack are never deleted.
-const VERSION = 'sv-2026-10-15-repair11-r76';
+const VERSION = 'sv-2026-10-15-repair12-r76';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'vendor/three.module.js', 'vendor/peerjs.min.js', 'vendor/RoomEnvironment.js', 'css/fonts.css',
@@ -48,7 +48,24 @@ self.addEventListener('fetch', e => {
   if (url.pathname.includes('/bundle/')) { e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(r => { if (r.ok) e.waitUntil(caches.open(VERSION).then(c => c.put(req, r.clone()))); return r; }))); return; }
   // the voice pack: kept in its own cache (it survives game updates) and stored as lines are played
   if (url.pathname.endsWith('/voices/manifest.json')) { // the saved list at once (slow phone data must never mean the phone's voice), refreshed behind
-    e.respondWith(caches.open('sv-voices').then(c => c.match(req).then(hit => { const fresh = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }); if (hit) { e.waitUntil(fresh.catch(() => { })); return hit; } return fresh.catch(() => new Response('{}', { status: 404 })); })));
+    e.respondWith(caches.open('sv-voices').then(c => c.match(req).then(hit => {
+      const previous = hit?.clone(); // The response returned to the page will already be consumed when refresh finishes.
+      const fresh = fetch(req).then(async r => {
+        if (r.ok) {
+          const text = await r.clone().text(); await c.put(req, r.clone());
+          if (previous && text !== await previous.text()) {
+            const manifest = JSON.parse(text);
+            if (manifest && manifest.lines) {
+              const clients = await self.clients.matchAll({ type: 'window' });
+              clients.forEach(client => client.postMessage({ type: 'SV_VOICE_MANIFEST', manifest }));
+            }
+          }
+        }
+        return r;
+      });
+      if (hit) { e.waitUntil(fresh.catch(() => { })); return hit; }
+      return fresh.catch(() => new Response('{}', { status: 404 }));
+    })));
     return;
   }
   // the family's content pack (Sparkle Studio): the newest when online, the saved copy when offline

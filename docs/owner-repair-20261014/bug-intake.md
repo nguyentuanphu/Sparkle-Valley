@@ -1,6 +1,6 @@
 # Bug intake — owner-approved combined repair round
 
-Latest refresh:15 October2026 AEDT.216 open bug-labelled issues through#299, no newer reports at this refresh. All remain included and open; individual dispositions remain unfinished. Diagnostic draftPR300 full38649407236 passed153/153 at3599d24d; later camera/HUD changes have separate focused proof and need final-source validation. Historical counts and environment blocker below are superseded; execution is available.
+Latest refresh:15 October2026 AEDT.216 open bug-labelled issues through#299, no newer reports at this refresh. All remain included and open; individual dispositions remain unfinished. Diagnostic draftPR300 full38658819569 passed157/157 atf47546d5; all eight shard results were audited with no retry flags. Later learning/shared-frame checkpoint636c8ce8 has focused proof and still needs its own full-suite validation. Historical counts and environment blocker below are superseded; execution is available.
 
 Current groups: offscreen171; freeze2; autoplay15; error6; noopen6; manual/other4; slow12. Full bodies/private diagnostics are not copied into the repository.
 

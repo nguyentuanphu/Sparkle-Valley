@@ -1,0 +1,32 @@
+{
+  "baseCommit": "636c8ce831bab0a802fec242ebad9984f8a3f850",
+  "node": "22.23.3",
+  "playwright": "1.56.1",
+  "chromium": "141.0.7390.37 build1194",
+  "files": {
+    "css/style.css": "25e67daea48f4d82d46d2c3abb3712906952251176c5bf9c3e12a552c6170b13",
+    "index.html": "c8a912084dedf65371089cc8b0b2adae09f01d9e345dcf45e73d7915e7bab58a",
+    "js/games/all.js": "9d95b11752d4bd02ad1f17e5e65b161faa0f69dac40773f47a1bbe93835ba7bc",
+    "js/games/bigthinkers2.js": "e8e52651515e4612bba9afe1ec1c131173156b7108db61afab2c3e935c8622e2",
+    "js/games/frame.js": "1a52f5a018b4effef21bc5a715a8622483ebd3e48b980c6d36ce30e4651e1d69",
+    "js/ui.js": "e1f5d743a1bb365c6bd54dfe105cd8808e8e5fd2fcc061c627643e697ee06835",
+    "js/voice.js": "eb0747d64de38921ee4d319fa077d95d2b3af4b88a3eae18aee5d7a3c91ec7e4",
+    "js/voicepack.js": "0a74b239a4faff034cbaa3c04c2bc1265eea563333d343ea016e34f8e046bf09",
+    "studio/ui/app.js": "fe13d7e565d7cf3b40d33b3413a3c65806367e4fce7af638148e1a9af856a8fe",
+    "sw.js": "13789a3fdaea34e42ce1f098d4d13e8cf004625a12404a45217ffd3576272421",
+    "voices/manifest.json": "bca7a314a83d970385d58542e987fa257282c93b38409579a5a0b0f35b9e524e",
+    "voices/areas.json": "6c66c6d3fec026a1a3e7c50e4be647cd7f236197ebd054a8fb4354183682f1fb",
+    "tests/run.mjs": "6297ad51864dcd4b8b295072ef1f8bbb30d3875cc6c9b0fdeeb9e11f594b0196",
+    "tests/owner-learning-voice.mjs": "7b8c27871bf29e27e196c41f6c9e6e6749e9568f95b8e8788be04906ee30ca86",
+    "tests/owner-voice-refresh.mjs": "611ff8d557a13d811d34ae133f93b9bf970802d2726bf2b712b10602862464fd",
+    "tests/owner-voice-index-download.mjs": "a47f190c01fc24d52e022753716a121daf58459ed06eccfb6df052decaca0220"
+  },
+  "proof": [
+    "learning-composition-final-11-checks.json",
+    "learning-integration-final-5-checks.json",
+    "learning-voice-final-10-checks.json",
+    "voice-refresh-first-after-13-checks.json",
+    "voice-refresh-final-10-checks.json"
+  ],
+  "scope": "Shared learning/UI proof precedes voice-refresh-only changes. First-after13 is12/13 with retained refresh failure; final10 proves repaired service worker, refreshed downloader, offline and contract/static. Not a full-suite or physical-device claim."
+}

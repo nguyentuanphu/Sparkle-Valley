@@ -1,0 +1,16 @@
+{
+  "sourceCommit": "636c8ce831bab0a802fec242ebad9984f8a3f850",
+  "workflowRun": 38678892035,
+  "artifactId": 11947452647,
+  "newMp3": 32,
+  "existingMp3Changed": 0,
+  "oldLineRecordsPreserved": true,
+  "oldTemplatesPreserved": true,
+  "oldAreaAssignmentsPreserved": true,
+  "newLineRecords": 16,
+  "decodedMp3Count": 32,
+  "durationSecondsRange": [
+    1.476,
+    8.208
+  ]
+}

@@ -4,7 +4,7 @@ import { settings, saveSettings, profiles } from './state.js';
 import { events } from './core/events.js';
 import { T } from './i18n.js';
 
-let PACK = null, packEmit = e => { }, hereArea = () => null;
+let PACK = null, packEmit = e => { }, hereArea = () => null, packStarted = false;
 // Keep the pack on the device by itself: a few seconds after the game opens (every time it opens), the voice cache is
 // checked against the list, and any file not there yet (first visit, a new pack, or a phone that cleared space) is
 // downloaded quietly. A small bar shows it (js/packbar.js); every line then plays with the recorded voice, offline too.
@@ -15,10 +15,14 @@ let PACK = null, packEmit = e => { }, hereArea = () => null;
 // the other places. On mobile data a grown-up is asked first (press and hold); the answer is kept, and Grown-ups can
 // change it. A line not downloaded yet still plays its recording from the internet (and is kept).
 export function startPack(pack, emit, here) {
+  const changed = PACK && PACK !== pack;
   PACK = pack; packEmit = emit; hereArea = here;
+  if (changed) { areaRevision++; AREAS = null; areasTried = null; groupOfHash = null; }
   // (an address that can't keep files, like http://192.168.… on a phone: the voices still play, from the internet)
   if (!('caches' in window)) { setTimeout(() => packEmit({ state: 'nostore', total: packFiles().length }), 3000); return; }
   if (settings.autoPack === false) return;
+  if (packStarted) { if (changed) checkPack().catch(() => { }); return; }
+  packStarted = true;
   setTimeout(() => { checkPack().catch(() => { }); }, 6000);
   let againT = 0; const again = () => { if (mayFetchRest()) close(); clearTimeout(againT); againT = setTimeout(() => checkPack().catch(() => { }), 1500); };
   addEventListener('online', again);
@@ -47,8 +51,14 @@ export function allowMobilePack(yes) {
   saveSettings(); if (yes) checkPack().catch(() => { });
 }
 const askDue = () => settings.packCell !== true && (settings.packCell !== false || Date.now() - (settings.packAskAt || 0) > 7 * 864e5);
-let AREAS = null, areasTried = null;
-const loadAreas = () => areasTried || (areasTried = fetch('voices/areas.json').then(r => r.ok ? r.json() : null).then(j => { AREAS = j && j.groups ? j : null; }).catch(() => { }).finally(() => { if (!AREAS) areasTried = null; })); // (tried again next time if it failed)
+let AREAS = null, areasTried = null, areaRevision = 0;
+const loadAreas = () => {
+  if (areasTried) return areasTried;
+  const revision = areaRevision;
+  return areasTried = fetch('voices/areas.json').then(r => r.ok ? r.json() : null).then(j => {
+    if (revision === areaRevision) AREAS = j && j.groups ? j : null;
+  }).catch(() => { }).finally(() => { if (revision === areaRevision && !AREAS) areasTried = null; });
+}; // (tried again next time if it failed)
 let groupOfHash = null;
 // which area each line downloads with; a line not listed (added later in Studio) goes with 'world'. With no areas list
 // (an older pack) everything is the core, as before.
@@ -81,7 +91,7 @@ async function checkPack() {
   if (checking) { recheck = true; return; }
   checking = true; recheck = false;
   if (mayFetchRest()) close();
-  const langs = packLangs(), languageChanged = () => langs.join() !== packLangs().join();
+  const manifest = PACK, langs = packLangs(), languageChanged = () => manifest !== PACK || langs.join() !== packLangs().join();
   try {
     await valleyBuilt();
     const cache = await caches.open('sv-voices');

@@ -5541,6 +5541,15 @@ await check('ownerlearningcomposition', async () => {
 await check('ownerround', async () => {
   return await ownerSmoke('owner-round-smoke.mjs');
 });
+await check('ownerlearningvoice', async () => {
+  return await ownerSmoke('owner-learning-voice.mjs');
+});
+await check('ownervoicerefresh', async () => {
+  return await ownerSmoke('owner-voice-refresh.mjs');
+});
+await check('ownervoiceindex', async () => {
+  return await ownerSmoke('owner-voice-index-download.mjs');
+});
 await check('ownerhearts', async () => {
   const P = await open(b, { w:390,h:844,touch:true }); await clear(P.page);
   const result = await P.page.evaluate(async () => {

@@ -327,7 +327,20 @@ let packTried = false;
 // (round R, PERF-001) fetched on the first tap or key press, or soon after the valley is ready: nothing is spoken before a
 // child taps, so the title screen comes up without it
 let packReady = null;
-const loadPack = () => packReady || (packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.lines) { PACK = j; voiceDiag.pack = 'ok'; autoSavePack(); } else { voiceDiag.pack = 'missing'; packEmit({ state: 'nopack' }); } }).catch(() => { voiceDiag.pack = 'offline'; packEmit({ state: 'nopack' }); }).finally(() => { packTried = true; }));
+let packRevision = 0;
+const loadPack = () => {
+  if (packReady) return packReady;
+  const revision = packRevision;
+  return packReady = fetch('voices/manifest.json').then(r => r.ok ? r.json() : null).then(j => {
+    if (revision !== packRevision) return; // A background refresh already supplied a newer index.
+    if (j && j.lines) { PACK = j; voiceDiag.pack = 'ok'; autoSavePack(); }
+    else { voiceDiag.pack = 'missing'; packEmit({ state: 'nopack' }); }
+  }).catch(() => { if (revision === packRevision) { voiceDiag.pack = 'offline'; packEmit({ state: 'nopack' }); } }).finally(() => { packTried = true; });
+};
+navigator.serviceWorker?.addEventListener('message', e => {
+  if (e.data?.type !== 'SV_VOICE_MANIFEST' || !e.data.manifest?.lines) return;
+  packRevision++; PACK = e.data.manifest; voiceDiag.pack = 'ok'; autoSavePack();
+});
 for (const ev of ['pointerdown', 'keydown', 'touchstart']) addEventListener(ev, loadPack, { once: true, capture: true, passive: true });
 // (owner, 11 Oct AEDT; Release, PERF-001) without a tap it comes a few seconds after the valley is ready (main.js sets
 // G.bootTimes then), not at a fixed 8 s: on a slow tablet the valley took longer than that, so the list (about 120 KB)
