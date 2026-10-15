@@ -1,3 +1,22 @@
+diff --git a/css/style.css b/css/style.css
+index fb1e5cea..2ab37c15 100644
+--- a/css/style.css
++++ b/css/style.css
+@@ -2638,3 +2638,14 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg);
+ .hud.small .quest { max-width: calc(100% - var(--quest-nav-reserve, 122px)); }
+ .hud.small.quest-below-nav .quest { top: var(--quest-below-top); max-width: calc(100% - 24px); }
+ .hud .q-text { min-width: 0; overflow-wrap: anywhere; }
++
++/* Activity controls remain anchored; only the playing field scrolls when content is tall. */
++.gl { overflow: hidden; }
++.gl-head, .gl-help { flex-shrink: 0; }
++.gl-stage { min-height: 0; overflow: auto; justify-content: flex-start; justify-content: safe center; }
++.gl-status { display: contents; }
++@media (max-width: 480px) {
++  .gl-head .gl-status { display: flex; align-items: center; gap: 8px; order: 5; flex-basis: 100%; width: 100%; }
++  .gl-status .gl-dots { flex: 1; flex-basis: auto; order: 0; justify-content: center; }
++  .gl-head .gl-status .starbox { position: static; flex: none; font-size: 18px; margin: 0; }
++}
 diff --git a/index.html b/index.html
 index 82899ce6..a5c3e1cf 100644
 --- a/index.html
@@ -19,6 +38,66 @@ index 5e215187..91ef7559 100644
  
  import './bigthinkers.js';
 +import './bigthinkers2.js';
+diff --git a/js/games/frame.js b/js/games/frame.js
+index 53d5d093..df2d927c 100644
+--- a/js/games/frame.js
++++ b/js/games/frame.js
+@@ -44,16 +44,21 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
+       <div class="gl-head">
+         <button class="gl-x" aria-label="${T('Leave', 'Rời đi')}">✕</button>
+         <div class="gl-title"><span class="gl-icon">${pic(def.icon)}</span><span>${esc(def.name())}</span></div>
+-        <div class="gl-dots"></div>
++        <div class="gl-status"><div class="gl-dots"></div><div class="starbox">⭐ <b>0</b></div></div>
+         ${levelPick ? `<button class="gl-lvl" aria-label="${T('How hard', 'Độ khó')}">${esc(T(...(LEVELS.find(l => l[0] === levelPick.value) || LEVELS[0]).slice(1)))} ▾</button>` : ''}
+         <button class="gl-how" aria-label="${T('How to play', 'Cách chơi')}">📺</button>
+       </div>
+       <div class="gl-help"></div>
+       <div class="gl-stage"></div>
+-      <div class="starbox">⭐ <b>0</b></div>
+       <div class="mascot">🦉</div><div class="mascot-say"></div>`;
+-    document.body.appendChild(layer);
++    dispatchEvent(new Event('sv-hide-caption')); document.body.appendChild(layer);
+     const stage = layer.querySelector('.gl-stage'), dots = layer.querySelector('.gl-dots'), help = layer.querySelector('.gl-help');
++    const setHelp = (en, vi, capital = false) => {
++      const before = help.offsetHeight, text = T(en, vi);
++      help.textContent = capital ? text.charAt(0).toUpperCase() + text.slice(1) : text;
++      // Retain the largest guidance height so selecting a piece cannot move its drop target.
++      help.style.minHeight = Math.max(before, help.offsetHeight) + 'px';
++    };
+     const cleanups = [];
+     let closed = false;
+     const prevMusic = Music.key; Music.play(GAME_MUSIC[id] || 'think');
+@@ -61,9 +66,9 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
+       stage, level, players, two: players.length > 1, partnerName, T, el, online,
+       little,   // under-5 mode: everything gentle, nobody can lose
+       strong,   // computer opponents play to win (big kids on medium or hard)
+-      say: (en, vi) => { const t = T(en, vi); help.textContent = t.charAt(0).toUpperCase() + t.slice(1); say(en, vi); },
++      say: (en, vi) => { setHelp(en, vi, true); say(en, vi); },
+       // Show text without speaking it.
+-      show: (en, vi) => { help.textContent = T(en, vi); },
++      show: (en, vi) => { setHelp(en, vi); },
+       sfx: SFX, wait,
+       onCleanup: f => cleanups.push(f),
+       // Test autoplay still uses real UI taps; a strategy supplies the next legal target, not a synthetic win.
+diff --git a/js/ui.js b/js/ui.js
+index c66ed664..dc0e5cfa 100644
+--- a/js/ui.js
++++ b/js/ui.js
+@@ -69,12 +69,12 @@ let hideCaption = () => { };
+   };
+   spoken.push(text => {
+     if (settings.captions === false || !text) return;
+-    if (document.querySelector('.modal:not(.out), .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .gl, .howto, .credits')) return;
++    if (document.querySelector('.modal:not(.out), .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .gl, .howto, .credits')) { hideCaption(); return; }
+     if (!cap) { cap = el('div', 'caption'); cap.setAttribute('role', 'status'); cap.setAttribute('aria-live', 'polite'); document.body.appendChild(cap); }
+     stop(); let at = 0;
+     chunks(text).forEach(c => {
+       const ms = 2200 + c.length * 70;
+-      timers.push(setTimeout(() => { cap.textContent = c; cap.classList.add('show'); }, at));
++      timers.push(setTimeout(() => { if (document.querySelector('.modal:not(.out), .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .gl, .howto, .credits')) { hideCaption(); return; } cap.textContent = c; cap.classList.add('show'); }, at));
+       at += ms;
+     });
+     timers.push(setTimeout(() => cap.classList.remove('show'), at));
 diff --git a/studio/ui/app.js b/studio/ui/app.js
 index 891f08a0..0dcfad85 100644
 --- a/studio/ui/app.js
@@ -55,10 +134,10 @@ index 2234b3d9..010f1e88 100644
    'js/games/readingmenu.js', 'js/games/reading.js', 'js/content/reading.js', // (Play reading trial)
    'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'
 diff --git a/tests/run.mjs b/tests/run.mjs
-index 80120ebd..af159735 100644
+index 80120ebd..ebe95a5c 100644
 --- a/tests/run.mjs
 +++ b/tests/run.mjs
-@@ -5436,6 +5436,45 @@ async function ownerSmoke(file) {
+@@ -5436,6 +5436,85 @@ async function ownerSmoke(file) {
      throw new Error(`${file} (status ${error.status}, signal ${error.signal || 'none'}): ${detail}`);
    }
  }
@@ -99,6 +178,46 @@ index 80120ebd..af159735 100644
 +    const errors=P.errors;await P.ctx.close();ok(!errors.length,errors.join(' | '));
 +  }
 +  return JSON.stringify(rows);
++});
++
++await check('ownerlearninglayout', async () => {
++  const rows=[];
++  for(const [w,h,lang] of [[320,640,'en'],[320,640,'vi'],[390,844,'en'],[844,390,'vi'],[820,1180,'en'],[1280,800,'en']]) {
++    const P=await open(b,{w,h,touch:w<1000,lang});await clear(P.page);
++    for(const id of ['patternpicnic','shapebuilders','remembergarden']) {
++      await P.page.evaluate(async id=>{const F=await import('/js/games/frame.js');__sv.paused=true;window.__learning=F.openGame(id,{players:[__sv.heroes[0].profile],little:true,level:1});},id);
++      await P.page.waitForSelector('.gl-stage button');await P.page.evaluate(()=>document.fonts.ready);
++      const panel=await P.page.locator('.gl').boundingBox(), controls=P.page.locator('.gl-stage button:not([disabled])');
++      for(let i=0;i<await controls.count();i++) {
++        const control=controls.nth(i);await control.scrollIntoViewIfNeeded();const r=await control.evaluate(e=>{const a=e.getBoundingClientRect(),top=document.elementFromPoint(a.x+a.width/2,a.y+a.height/2);return {w:a.width,h:a.height,x:a.x,y:a.y,right:a.right,bottom:a.bottom,hit:e===top||e.contains(top),label:e.getAttribute('aria-label')||e.textContent};});
++        ok(r.w>=63&&r.h>=63&&r.x>=-1&&r.right<=w+1&&r.y>=-1&&r.bottom<=h+1&&r.hit,JSON.stringify({id,w,h,lang,r}));
++      }
++      const after=await P.page.locator('.gl').boundingBox();ok(Math.abs(panel.y-after.y)<1&&Math.abs(panel.height-after.height)<1,'Activity shell moved while scrolling controls');
++      await P.page.evaluate(()=>{document.querySelector('.gl-stage').scrollTop=0;});fs.mkdirSync('out/owner-learning-stage',{recursive:true});await P.page.screenshot({path:`out/owner-learning-stage/${id}-${w}-${h}-${lang}.png`});rows.push({id,w,h,lang,controls:await controls.count()});
++      await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});
++    }
++    const errors=P.errors;await P.ctx.close();ok(!errors.length,errors.join(' | '));
++  }
++  // Touch sends implicit pointer capture; mouse-only drag proof does not cover that path.
++  const P=await open(b,{w:390,h:844,touch:true,lang:'vi'});await clear(P.page);
++  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');__sv.paused=true;window.__learning=F.openGame('shapebuilders',{players:[__sv.heroes[0].profile],little:true,level:1});});
++  const piece=P.page.locator('.bt-piece').filter({has:P.page.locator('svg path')}).first(),slot=P.page.locator('.bt-slot:not([disabled])');await piece.scrollIntoViewIfNeeded();
++  const a=await piece.boundingBox(),target=await slot.boundingBox(),cdp=await P.ctx.newCDPSession(P.page);
++  const touch=async(type,x,y)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'||type==='touchCancel'?[]:[{x,y,id:1}]});
++  await touch('touchStart',a.x+a.width/2,a.y+a.height/2);for(let i=1;i<=12;i++)await touch('touchMove',a.x+a.width/2+(target.x+target.width/2-a.x-a.width/2)*i/12,a.y+a.height/2+(target.y+target.height/2-a.y-a.height/2)*i/12);await touch('touchEnd');
++  await P.page.waitForTimeout(400);ok(await P.page.locator('.bt-slot').first().isDisabled(),'Real touch drag must place the matching shape with implicit pointer capture');
++  await P.page.locator('.gl-x').click();const errors=P.errors;await P.ctx.close();ok(!errors.length,errors.join(' | '));return JSON.stringify(rows);
++});
++
++await check('owneractivityshell', async () => {
++  const P=await open(b,{w:320,h:640,touch:true,lang:'vi'});await clear(P.page);
++  await P.page.evaluate(async()=>{const V=await import('/js/voice.js');V.spoken.forEach(f=>f('A surprise gift is waiting in the valley.'));});await P.page.waitForSelector('.caption.show');
++  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');__sv.paused=true;window.__learning=F.openGame('shapebuilders',{players:[__sv.heroes[0].profile],little:true,level:1});});await P.page.waitForSelector('.bt-piece');await P.page.evaluate(()=>document.fonts.ready);
++  const before=await P.page.locator('.gl-head').boundingBox();await P.page.locator('.bt-piece').last().scrollIntoViewIfNeeded();
++  const r=await P.page.evaluate(()=>{const head=document.querySelector('.gl-head').getBoundingClientRect(),star=document.querySelector('.gl .starbox').getBoundingClientRect(),help=document.querySelector('.gl-help').getBoundingClientRect();return {headY:head.y,caption:!!document.querySelector('.caption.show'),starHelpOverlap:star.x<help.right&&star.right>help.x&&star.y<help.bottom&&star.bottom>help.y,scroll:document.querySelector('.gl').scrollTop};});
++  fs.mkdirSync('out/owner-activity-shell',{recursive:true});await P.page.screenshot({path:'out/owner-activity-shell/phone-vi.png'});
++  const errors=P.errors;await P.ctx.close();ok(!r.caption&&!r.starHelpOverlap&&r.headY>=0&&Math.abs(r.headY-before.y)<1&&!errors.length,JSON.stringify({r,before,errors}));
++  return 'Small activity header stays visible while body scrolls; reward counter cannot cover guidance; queued valley captions are hidden on entry';
 +});
 +
  await check('ownerround', async () => {

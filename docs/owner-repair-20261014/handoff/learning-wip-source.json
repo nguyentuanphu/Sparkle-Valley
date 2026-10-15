@@ -1,15 +1,18 @@
 {
-  "baseCommit": "f47546d596230245bf3b96f8f10b1e06137df79b",
-  "savedAt": "2026-10-15T03:07:25.443839+00:00",
-  "status": "Draft: focused24-case progression/drag/cancellation check passed154s. First static/Studio7 passed. Voice recording, full visual review, expanded integration and final full suite pending.",
-  "patchSha256": "b386528b11e15d9ca8bf3dd414cd916af87e870a37ff1c5477f44c63130e39bc",
+  "baseCommit": "b4549b3c8b9be987c1e85cbb899109f2461a1856",
+  "savedAt": "2026-10-15T03:32:51.323269+00:00",
+  "status": "Draft:24 progression cases passed154s;18 layout cases and real touch drag passed235s. Visual review then reproduced caption/star/header issues; shared-frame/caption fixes are under13-check validation. No pass for those fixes yet. Speech/complete visual/integration pending.",
+  "patchSha256": "abf11898871a1838ed4dff577eaa31179758d04e566bb49fbefc1ec63493b3f0",
   "files": {
     "index.html": "c8a912084dedf65371089cc8b0b2adae09f01d9e345dcf45e73d7915e7bab58a",
     "js/games/all.js": "9d95b11752d4bd02ad1f17e5e65b161faa0f69dac40773f47a1bbe93835ba7bc",
+    "js/games/frame.js": "9ad5d379c17e11ddf7cdf3dc7f4b9cdbc08b7fd0ee83c69ccff73c7c5286fa65",
+    "js/ui.js": "e1f5d743a1bb365c6bd54dfe105cd8808e8e5fd2fcc061c627643e697ee06835",
+    "css/style.css": "9eaa65ba9f34e0fea9eb4fb12d066b67945c996fbee4346a6b0846277bd6359a",
     "studio/ui/app.js": "fe13d7e565d7cf3b40d33b3413a3c65806367e4fce7af638148e1a9af856a8fe",
     "sw.js": "a02c8708740db33593a1d632fa824056568cbf10d68f6f9befbb66f12fe579f0",
-    "tests/run.mjs": "b5308b0d73fe71744eae289400360bb4b4f9487e0c385252fea8603adca8493a",
+    "tests/run.mjs": "9c20bba326136e218b054d129e45f1212d4aff63f6941fdbe8c0e76c2a1a591b",
     "js/games/bigthinkers2.js": "733cd164d165d55bd0749177af444567a2bd1ed9113283233abee9527dd07f17"
   },
-  "recovery": "On clean f47546d5, git apply --check then git apply this patch. Do not apply twice. Reverse-check succeeded against captured working tree."
+  "recovery": "Apply on clean saved base (same runtime as f475) only when changes absent; reverse check passed against current working draft."
 }

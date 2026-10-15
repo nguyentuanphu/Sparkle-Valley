@@ -1,0 +1,10 @@
+{
+  "sourceCommit": "f47546d596230245bf3b96f8f10b1e06137df79b",
+  "run": 38658819569,
+  "artifact": 11939925535,
+  "sha256": {
+    "check-map.json": "2a64c0a01376ab92b5699887d982efa8d681cefdc08d9b970defbde490503f85",
+    "check-times.json": "d8b482be5cabe1b44bbcd8d8b3ce32b375ce79cf904c5565f880c3c6b1d5d934"
+  },
+  "results": "157 shard entries, all ok; no again/solo retry flags. Studio note mentions intentionally skipped oversized photo, not a skipped check. Imported map/timings pending active local suite completion."
+}
