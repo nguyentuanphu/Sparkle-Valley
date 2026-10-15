@@ -8,11 +8,29 @@
     "performance": null
   },
   {
+    "label": "phone",
+    "lab": {
+      "policies": 0,
+      "devices": 6,
+      "page": "#releases",
+      "found": "For testing0 of 2 on All onAll off Auto play check (for grown-ups testing: a small window that plays everything; every device, or only the ticked ones) Off 7 Schedule Starts todayin 1 daysin 3 daysin "
+    }
+  },
+  {
     "label": "desktop",
     "album": null
   },
   {
     "label": "desktop",
     "performance": null
+  },
+  {
+    "label": "desktop",
+    "lab": {
+      "policies": 0,
+      "devices": 6,
+      "page": "#releases",
+      "found": "For testing0 of 2 on All onAll off Auto play check (for grown-ups testing: a small window that plays everything; every device, or only the ticked ones) Off 7 Schedule Starts todayin 1 daysin 3 daysin "
+    }
   }
 ]
