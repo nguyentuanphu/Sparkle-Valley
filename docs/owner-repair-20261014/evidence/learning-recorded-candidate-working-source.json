@@ -28,5 +28,7 @@
     "voice-refresh-first-after-13-checks.json",
     "voice-refresh-final-10-checks.json"
   ],
-  "scope": "Shared learning/UI proof precedes voice-refresh-only changes. First-after13 is12/13 with retained refresh failure; final10 proves repaired service worker, refreshed downloader, offline and contract/static. Not a full-suite or physical-device claim."
+  "scope": "Shared learning/UI proof precedes voice-refresh-only changes. First-after13 is12/13 with retained refresh failure; final10 proves repaired service worker, refreshed downloader, offline and contract/static. Not a full-suite or physical-device claim.",
+  "sourceCommit": "b09bdcdaff88cdc61da73b2c978895432e3d8bac",
+  "verification": "Every recorded file hash matches this committed candidate"
 }

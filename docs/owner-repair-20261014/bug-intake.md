@@ -48,3 +48,5 @@ Source: both pages of the repository's open issues endpoint, 100 records/page. P
 
 ## Execution blocker
 The selected environment is unavailable. No shell/browser tools are available in this turn. GitHub reads and documentation writes work. No local game execution, code repair, tests, new screenshots, production Studio reports or physical-device checks have been performed in this checkpoint.
+
+Individual technical-context refresh:171 offscreen reports map to50 Pad,44 Play hub,33 quick Settings,28 Grown-ups,15 Tester panels, and one unknown-panel report#118. Exact technical OS/browser/viewport/language/build fields are added per issue in issue-intake.json; no private notes/names/device identities/photos copied. Eight viewport/language combinations and21 panel cases are now under real-control investigation. A matched current control must be scrolled into view and pass center hit/viewport checks; missing/state-dependent matches stay unresolved. This is not a blanket detector dismissal or issue closure.
