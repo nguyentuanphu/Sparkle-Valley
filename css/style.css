@@ -2638,3 +2638,26 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 .hud.small .quest { max-width: calc(100% - var(--quest-nav-reserve, 122px)); }
 .hud.small.quest-below-nav .quest { top: var(--quest-below-top); max-width: calc(100% - 24px); }
 .hud .q-text { min-width: 0; overflow-wrap: anywhere; }
+
+/* Activity controls remain anchored; only the playing field scrolls when content is tall. */
+.gl { overflow: hidden; }
+.gl-head, .gl-help { flex-shrink: 0; }
+.gl-stage { min-height: 0; overflow: auto; justify-content: flex-start; justify-content: safe center; }
+.gl-status { display: flex; align-items: center; gap: 12px; flex: none; }
+.gl-head .gl-status .starbox { position: static; margin: 0; font-size: 20px; }
+@media (max-width: 480px) {
+  .gl-head .gl-status { display: flex; align-items: center; gap: 8px; order: 5; flex-basis: 100%; width: 100%; }
+  .gl-status .gl-dots { flex: 1; flex-basis: auto; order: 0; justify-content: center; }
+  .gl-head .gl-status .starbox { position: static; flex: none; font-size: 18px; margin: 0; }
+}
+
+.gl-title, .gl-title > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.gl-help { min-height: min(var(--gl-guide-height, 1.4em), 30vh); max-height: 30vh; overflow: auto; }
+.gl.little .gl-head .gl-x, .gl.little .gl-head .gl-how { width: 64px; height: 64px; }
+.gl.little .gl-head button { min-width: 64px; min-height: 64px; }
+.gl .choice.bt-piece { width: 64px; height: 64px; min-width: 64px; min-height: 64px; }
+.gl.little .choice.bt-piece { width: 80px; height: 80px; }
+.gl[data-game-id="shapebuilders"] .gl-stage { gap: 8px; padding: 8px; }
+@media (max-height: 480px) and (min-width: 640px) {
+  .gl[data-game-id="shapebuilders"] .gl-stage { flex-direction: row; }
+}

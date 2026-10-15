@@ -44,16 +44,23 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       <div class="gl-head">
         <button class="gl-x" aria-label="${T('Leave', 'Rời đi')}">✕</button>
         <div class="gl-title"><span class="gl-icon">${pic(def.icon)}</span><span>${esc(def.name())}</span></div>
-        <div class="gl-dots"></div>
-        ${levelPick ? `<button class="gl-lvl" aria-label="${T('How hard', 'Độ khó')}">${esc(T(...(LEVELS.find(l => l[0] === levelPick.value) || LEVELS[0]).slice(1)))} ▾</button>` : ''}
+        <div class="gl-status"><div class="gl-dots"></div>
+          ${levelPick ? `<button class="gl-lvl" aria-label="${T('How hard', 'Độ khó')}">${esc(T(...(LEVELS.find(l => l[0] === levelPick.value) || LEVELS[0]).slice(1)))} ▾</button>` : ''}
+          <div class="starbox">⭐ <b>0</b></div>
+        </div>
         <button class="gl-how" aria-label="${T('How to play', 'Cách chơi')}">📺</button>
       </div>
       <div class="gl-help"></div>
       <div class="gl-stage"></div>
-      <div class="starbox">⭐ <b>0</b></div>
       <div class="mascot">🦉</div><div class="mascot-say"></div>`;
-    document.body.appendChild(layer);
+    dispatchEvent(new Event('sv-hide-caption')); document.body.appendChild(layer);
     const stage = layer.querySelector('.gl-stage'), dots = layer.querySelector('.gl-dots'), help = layer.querySelector('.gl-help');
+    const setHelp = (en, vi, capital = false) => {
+      const before = help.offsetHeight, text = T(en, vi);
+      help.textContent = capital ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+      // Retain the largest guidance height so selecting a piece cannot move its drop target.
+      help.style.setProperty('--gl-guide-height', Math.max(before, help.offsetHeight) + 'px');
+    };
     const cleanups = [];
     let closed = false;
     const prevMusic = Music.key; Music.play(GAME_MUSIC[id] || 'think');
@@ -61,9 +68,9 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
       stage, level, players, two: players.length > 1, partnerName, T, el, online,
       little,   // under-5 mode: everything gentle, nobody can lose
       strong,   // computer opponents play to win (big kids on medium or hard)
-      say: (en, vi) => { const t = T(en, vi); help.textContent = t.charAt(0).toUpperCase() + t.slice(1); say(en, vi); },
+      say: (en, vi) => { setHelp(en, vi, true); say(en, vi); },
       // Show text without speaking it.
-      show: (en, vi) => { help.textContent = T(en, vi); },
+      show: (en, vi) => { setHelp(en, vi); },
       sfx: SFX, wait,
       onCleanup: f => cleanups.push(f),
       // Test autoplay still uses real UI taps; a strategy supplies the next legal target, not a synthetic win.

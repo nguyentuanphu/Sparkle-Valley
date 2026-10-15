@@ -11,6 +11,8 @@ const phase = process.argv[2] || 'baseline';
 const settingsOnly = process.argv.includes('--settings-only');
 const audioOnly = process.argv.includes('--audio-only');
 const transportOnly = process.argv.includes('--transport-only');
+const learningOnly = process.argv.includes('--learning-only');
+const activityOnly = process.argv.includes('--activity-only');
 const sourceCommit = execFileSync('git', ['-C', repoRoot, 'rev-parse', '--verify', process.env.SV_EVIDENCE_COMMIT || 'HEAD'], {encoding:'utf8'}).trim();
 const sourceFingerprints = {};
 // Verify the served code, rather than attributing old pictures from a build label alone.
@@ -28,7 +30,9 @@ const dir = path.join(repoRoot, 'docs/owner-repair-20261014/evidence', phase);
 fs.mkdirSync(dir, { recursive: true });
 const browser = await launch(), results = [];
 try {
-  for (const [device,w,h,touch,lang] of [['phone',390,844,true,'en'],['phone',390,844,true,'vi'],['tablet',820,1180,true,'en'],['computer',1280,800,false,'en']]) {
+  const views=[['phone',390,844,true,'en'],['phone',390,844,true,'vi'],['tablet',820,1180,true,'en'],['computer',1280,800,false,'en']];
+  if(learningOnly||activityOnly)views.push(['phone-small',320,640,true,'en'],['phone-small',320,640,true,'vi'],['phone-landscape',844,390,true,'vi']);
+  for (const [device,w,h,touch,lang] of views) {
     const label = `${device}-${lang}`;
     const P = await open(browser, { w,h,touch,lang,play:false, route:async ctx => {
       await ctx.route('**/content/custom.json*', rt => rt.fulfill({ contentType:'application/json',body:'{}' }));
@@ -40,6 +44,28 @@ try {
       localStorage.setItem('sv2_playerid','tester000001');localStorage.setItem('sv2_tester',JSON.stringify({at:1,b:'r1'}));localStorage.setItem('sv2_live',JSON.stringify({releases:{tester:{on:true,devices:['tester000001']},autoplay:{on:true,devices:['tester000001']}},festivals:{}}));
     }});
     const shot = async name => { await P.page.evaluate(() => document.fonts.ready); await P.page.waitForTimeout(550); await P.page.screenshot({path:path.join(dir,`${label}-${name}.png`)}); };
+    if(learningOnly||activityOnly) {
+      await start(P.page);await clear(P.page);const states=[];
+      for(const id of activityOnly?['counting']:['patternpicnic','shapebuilders','remembergarden']) {
+        const available=await P.page.evaluate(async id=>!!(await import('/js/games/frame.js')).GAMES[id],id);
+        if(!available){states.push({id,available:false,note:'New activity has no gameplay in this source; no Before image manufactured'});continue;}
+        if(activityOnly){await P.page.evaluate(async()=>{const V=await import('/js/voice.js'),S=await import('/js/state.js');V.spoken.forEach(f=>f(S.settings.lang==='vi'?'Một món quà bất ngờ đang đợi con trong thung lũng.':'A surprise gift is waiting in the valley.'));});await P.page.waitForTimeout(30);}
+        await P.page.evaluate(id=>{const random=Math.random;Math.random=()=>.5;try{const p=__sv.heroes[0].profile;p.age='little';p.levels[id]=1;p.gameDiff={...p.gameDiff,[id]:'easy'};window.__captureGame=__sv.playGame(0,id,'replay');}finally{Math.random=random;}},id);await P.page.waitForSelector('.gl-stage');await shot(id+'-initial');
+        const layout=await P.page.evaluate(()=>{const rect=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};};return {header:rect('.gl-head'),guidance:rect('.gl-help'),stage:rect('.gl-stage'),stars:rect('.gl .starbox'),worldCaption:!!document.querySelector('.caption.show')};});
+        if(learningOnly&&id==='shapebuilders') {
+          await P.page.locator('.bt-piece').filter({has:P.page.locator('svg path')}).first().click();await P.page.waitForFunction(()=>!!document.querySelector('.bt-slot:not([disabled])')?.onclick);await P.page.locator('.bt-slot:not([disabled])').click();await P.page.waitForFunction(()=>document.querySelector('.bt-slot')?.disabled);await shot(id+'-placed-piece');
+        }
+        states.push({id,available:true,mode:'under-5',layout});await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});await clear(P.page);
+        if(learningOnly&&id==='remembergarden') {
+          await P.page.evaluate(id=>{const p=__sv.heroes[0].profile;p.age='big';p.levels[id]=1;p.gameDiff[id]='medium';window.__captureGame=__sv.playGame(0,id,'replay');},id);await P.page.waitForSelector('.gl-stage');await shot(id+'-model');
+          await P.page.getByRole('button',{name:/Ready to try|Sẵn sàng thử/}).click();await shot(id+'-recall');await P.page.getByRole('button',{name:/Show again|Xem lại/}).click();await shot(id+'-replay');
+          await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});await clear(P.page);
+        }
+      }
+      results.push({device,w,h,lang,sourceCommit,sourceFingerprints,capturedAt:new Date().toISOString(),states,fixture:activityOnly?'Controlled queued valley caption and deterministic real counting activity entrance':'New learning activities through the real game entrance; deterministic choices; model/place/recall/replay states',errors:P.errors});
+      if(P.errors.length)throw Error('Page errors in attributed evidence: '+P.errors.join(' | '));
+      console.log(`${phase} ${label}: captured ${states.length} activity states`);await P.ctx.close();continue;
+    }
     if (settingsOnly) {
       await P.page.evaluate(async () => (await import('/js/ui.js')).openGrownups()); await P.page.waitForSelector('.grownups #gDone');
       await shot('settings');
@@ -106,4 +132,4 @@ try {
     console.log(`${phase} ${label}: captured welcome, selection, bag, shop, audio`);
     await P.ctx.close();
   }
-} finally { await browser.close();fs.writeFileSync(path.join(dir,transportOnly ? 'transport-results.json' : settingsOnly ? 'settings-results.json' : audioOnly ? 'audio-results.json' : 'results.json'),JSON.stringify(results,null,2)); }
+} finally { await browser.close();fs.writeFileSync(path.join(dir,learningOnly?'learning-results.json':activityOnly?'activity-results.json':transportOnly ? 'transport-results.json' : settingsOnly ? 'settings-results.json' : audioOnly ? 'audio-results.json' : 'results.json'),JSON.stringify(results,null,2)); }

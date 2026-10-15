@@ -5436,6 +5436,108 @@ async function ownerSmoke(file) {
     throw new Error(`${file} (status ${error.status}, signal ${error.signal || 'none'}): ${detail}`);
   }
 }
+await check('ownerlearningprogression', async () => {
+  const rows=[];
+  for(const lang of ['en','vi']) {
+    const P=await open(b,{w:390,h:844,touch:true,lang});await clear(P.page);
+    for(const id of ['patternpicnic','shapebuilders','remembergarden']) for(const [mode,little,level] of [['under-5',true,1],['Easy',false,1],['Medium',false,2],['Hard',false,3]]) {
+      await P.page.evaluate(async({id,little,level})=>{
+        const G=__sv,F=await import('/js/games/frame.js');G.paused=true;
+        window.__learning=F.openGame(id,{players:[G.heroes[0].profile],little,level});
+      },{id,little,level});await P.page.waitForSelector('.gl');
+      const r=await P.page.evaluate(async()=>{
+        const F=await import('/js/games/frame.js'),wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));let wrong=false,taps=0,ready=0;
+        const until=Date.now()+30000;
+        while(Date.now()<until&&!document.querySelector('.gl-win')) {
+          const ask=F.playWatch.ask;
+          if(ask) { const bad=ask.els.find(b=>!b.disabled&&!ask.check(b)); if(!wrong&&bad){bad.click();wrong=true;}else ask.els.find(ask.check)?.click();taps++; }
+          else { const next=F.playWatch.plan?.();if(next&&!next.disabled){if(next.textContent.match(/Ready|Sẵn sàng/))ready++;next.click();taps++;} }
+          await wait(60);
+        }
+        return {won:!!document.querySelector('.gl-win'),wrong,taps,ready,stars:document.querySelectorAll('.gl-stars i.on').length,sideways:document.scrollingElement.scrollWidth>innerWidth+1,
+          small:[...document.querySelectorAll('.gl-stage button')].filter(b=>!b.disabled&&b.getClientRects().length&&Math.min(b.getBoundingClientRect().width,b.getBoundingClientRect().height)<63).map(b=>b.className)};
+      });
+      fs.mkdirSync('out/owner-learning',{recursive:true});await P.page.screenshot({path:`out/owner-learning/${id}-${lang}-${mode}.png`});
+      rows.push({id,lang,mode,...r});ok(r.won&&r.wrong&&r.taps>2&&!r.sideways&&!r.small.length&&(!little||r.stars===3),JSON.stringify(rows.at(-1)));
+      await P.page.waitForTimeout(650);await P.page.locator('.gl-win p').first().click();await P.page.waitForSelector('.gl',{state:'detached'});const completed=await P.page.evaluate(()=>window.__learning);ok(completed.won,'Reward finish must return a completed activity');await P.page.waitForTimeout(100);
+    }
+    // A real pointer drag must reject the wrong shape and place the correct shape in its outline.
+    await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');window.__learning=F.openGame('shapebuilders',{players:[__sv.heroes[0].profile],little:true,level:1});});
+    await P.page.waitForSelector('.bt-slot:not([disabled])');
+    const slot=P.page.locator('.bt-slot:not([disabled])'),bad=P.page.locator('.bt-piece').filter({has:P.page.locator('svg circle')}).first(),good=P.page.locator('.bt-piece').filter({has:P.page.locator('svg path')}).first();
+    const drag=async b=>{const a=await b.boundingBox(),target=await slot.boundingBox();await P.page.mouse.move(a.x+a.width/2,a.y+a.height/2);await P.page.mouse.down();await P.page.mouse.move(target.x+target.width/2,target.y+target.height/2,{steps:12});await P.page.mouse.up();await P.page.waitForTimeout(250);};
+    await drag(bad);ok(await P.page.locator('.bt-slot[disabled]').count()===2,'wrong dragged shape must not fill the outline');
+    await drag(good);ok(await P.page.locator('.bt-slot').first().isDisabled(),'correct pointer drag must place first piece');
+    await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});
+    const cleanup=await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');return {plan:F.playWatch.plan,ask:F.playWatch.ask};});ok(!cleanup.plan&&!cleanup.ask,'Cancel must clean up pending choice/placement/plan');
+    const errors=P.errors;await P.ctx.close();ok(!errors.length,errors.join(' | '));
+  }
+  return JSON.stringify(rows);
+});
+
+await check('ownerlearninglayout', async () => {
+  const rows=[];
+  for(const [w,h,lang] of [[320,640,'en'],[320,640,'vi'],[390,844,'en'],[844,390,'vi'],[820,1180,'en'],[1280,800,'en']]) {
+    const P=await open(b,{w,h,touch:w<1000,lang});await clear(P.page);
+    for(const id of ['patternpicnic','shapebuilders','remembergarden']) {
+      await P.page.evaluate(async id=>{const F=await import('/js/games/frame.js');__sv.paused=true;window.__learning=F.openGame(id,{players:[__sv.heroes[0].profile],little:true,level:1});},id);
+      await P.page.waitForSelector('.gl-stage button');await P.page.evaluate(()=>document.fonts.ready);
+      const panel=await P.page.locator('.gl').boundingBox(), controls=P.page.locator('.gl-stage button:not([disabled])');
+      for(let i=0;i<await controls.count();i++) {
+        const control=controls.nth(i);await control.scrollIntoViewIfNeeded();const r=await control.evaluate(e=>{const a=e.getBoundingClientRect(),top=document.elementFromPoint(a.x+a.width/2,a.y+a.height/2);return {w:a.width,h:a.height,x:a.x,y:a.y,right:a.right,bottom:a.bottom,hit:e===top||e.contains(top),label:e.getAttribute('aria-label')||e.textContent};});
+        ok(r.w>=63&&r.h>=63&&r.x>=-1&&r.right<=w+1&&r.y>=-1&&r.bottom<=h+1&&r.hit,JSON.stringify({id,w,h,lang,r}));
+      }
+      const after=await P.page.locator('.gl').boundingBox();ok(Math.abs(panel.y-after.y)<1&&Math.abs(panel.height-after.height)<1,'Activity shell moved while scrolling controls');
+      await P.page.evaluate(()=>{document.querySelector('.gl-stage').scrollTop=0;});fs.mkdirSync('out/owner-learning-stage',{recursive:true});await P.page.screenshot({path:`out/owner-learning-stage/${id}-${w}-${h}-${lang}.png`});rows.push({id,w,h,lang,controls:await controls.count()});
+      await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});
+    }
+    const errors=P.errors;await P.ctx.close();ok(!errors.length,errors.join(' | '));
+  }
+  // Touch sends implicit pointer capture; mouse-only drag proof does not cover that path.
+  const P=await open(b,{w:390,h:844,touch:true,lang:'vi'});await clear(P.page);
+  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');__sv.paused=true;window.__learning=F.openGame('shapebuilders',{players:[__sv.heroes[0].profile],little:true,level:1});});
+  const piece=P.page.locator('.bt-piece').filter({has:P.page.locator('svg path')}).first(),slot=P.page.locator('.bt-slot:not([disabled])');await piece.scrollIntoViewIfNeeded();
+  const a=await piece.boundingBox(),target=await slot.boundingBox(),cdp=await P.ctx.newCDPSession(P.page);
+  const touch=async(type,x,y)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'||type==='touchCancel'?[]:[{x,y,id:1}]});
+  await touch('touchStart',a.x+a.width/2,a.y+a.height/2);for(let i=1;i<=12;i++)await touch('touchMove',a.x+a.width/2+(target.x+target.width/2-a.x-a.width/2)*i/12,a.y+a.height/2+(target.y+target.height/2-a.y-a.height/2)*i/12);await touch('touchEnd');
+  await P.page.waitForTimeout(400);ok(await P.page.locator('.bt-slot').first().isDisabled(),'Real touch drag must place the matching shape with implicit pointer capture');
+  await P.page.locator('.gl-x').click();const errors=P.errors;await P.ctx.close();ok(!errors.length,errors.join(' | '));return JSON.stringify(rows);
+});
+
+await check('owneractivityshell', async () => {
+  const P=await open(b,{w:320,h:640,touch:true,lang:'vi'});await clear(P.page);
+  await P.page.evaluate(async()=>{const V=await import('/js/voice.js');V.spoken.forEach(f=>f('A surprise gift is waiting in the valley.'));});await P.page.waitForSelector('.caption.show');
+  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');__sv.paused=true;window.__learning=F.openGame('shapebuilders',{players:[__sv.heroes[0].profile],little:true,level:1});});await P.page.waitForSelector('.bt-piece');await P.page.evaluate(()=>document.fonts.ready);
+  const before=await P.page.locator('.gl-head').boundingBox();await P.page.locator('.bt-piece').last().scrollIntoViewIfNeeded();
+  const r=await P.page.evaluate(()=>{const head=document.querySelector('.gl-head').getBoundingClientRect(),star=document.querySelector('.gl .starbox').getBoundingClientRect(),help=document.querySelector('.gl-help').getBoundingClientRect();return {headY:head.y,caption:!!document.querySelector('.caption.show'),starHelpOverlap:star.x<help.right&&star.right>help.x&&star.y<help.bottom&&star.bottom>help.y,scroll:document.querySelector('.gl').scrollTop};});
+  fs.mkdirSync('out/owner-activity-shell',{recursive:true});await P.page.screenshot({path:'out/owner-activity-shell/phone-vi.png'});
+  const errors=P.errors;await P.ctx.close();ok(!r.caption&&!r.starHelpOverlap&&r.headY>=0&&Math.abs(r.headY-before.y)<1&&!errors.length,JSON.stringify({r,before,errors}));
+  return 'Small activity header stays visible while body scrolls; reward counter cannot cover guidance; queued valley captions are hidden on entry';
+});
+
+await check('ownerlearningcomposition', async () => {
+  const bad=[],rows=[],P=await open(b,{w:320,h:640,touch:true,lang:'vi'});await clear(P.page);
+  for(const id of ['patternpicnic','shapebuilders','remembergarden']) {
+    await P.page.evaluate(id=>{const p=__sv.heroes[0].profile;p.age='little';p.gameDiff={...p.gameDiff,[id]:'easy'};window.__learning=__sv.playGame(0,id,'replay');},id);await P.page.waitForSelector('.gl-lvl');await P.page.evaluate(()=>document.fonts.ready);await P.page.waitForTimeout(400);
+    const r=await P.page.evaluate(()=>{
+      const rect=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height};};
+      const header=[...document.querySelectorAll('.gl-head button')].map(b=>({label:b.getAttribute('aria-label')||b.textContent,width:b.getBoundingClientRect().width,height:b.getBoundingClientRect().height}));
+      const board=rect('.bt-picture'),repeat=rect('.bt-repeat'),palette=rect('.gl-stage .choices'),stage=rect('.gl-stage');
+      const maxPieceBottom=board?Math.max(...[...document.querySelectorAll('.bt-slot')].map(b=>b.getBoundingClientRect().bottom)):null;
+      return {header,board,repeat,palette,stage,maxPieceBottom};
+    });rows.push({id,...r});if(r.header.some(b=>b.width<63||b.height<63))bad.push(id+': under-5 header target below64px');
+    if(r.board&&(r.maxPieceBottom>r.board.bottom+1||r.maxPieceBottom>r.repeat.y-4||r.palette.bottom>r.stage.bottom+1))bad.push(id+': picture compresses/overlaps or palette cannot stay visible with the model');
+    fs.mkdirSync('out/owner-learning-composition',{recursive:true});await P.page.screenshot({path:`out/owner-learning-composition/${id}.png`});await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});await P.page.waitForTimeout(100);
+  }
+  await P.page.setViewportSize({width:844,height:390});
+  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');window.__learning=F.openGame('remembergarden',{players:[__sv.heroes[0].profile],little:true});});await P.page.waitForSelector('.gl-help');await P.page.waitForTimeout(400);
+  const overlap=await P.page.evaluate(()=>{const a=document.querySelector('.gl .starbox').getBoundingClientRect(),b=document.querySelector('.gl-help').getBoundingClientRect();return a.x<b.right&&a.right>b.x&&a.y<b.bottom&&a.bottom>b.y;});if(overlap)bad.push('landscape reward counter overlaps guidance');await P.page.locator('.gl-x').click();await P.page.waitForSelector('.gl',{state:'detached'});
+  await P.page.setViewportSize({width:320,height:640});
+  await P.page.evaluate(async()=>{const F=await import('/js/games/frame.js');F.register({id:'__guideprobe',icon:'🧩',name:()=> 'Guide probe',run(api){api.say('Choose the picture and think about what happens next. '.repeat(12),'Chọn hình và nghĩ xem chuyện gì xảy ra tiếp theo. '.repeat(12));const b=document.createElement('button');b.className='choice';b.textContent='Go';api.stage.appendChild(b);}});window.__learning=F.openGame('__guideprobe',{players:[__sv.heroes[0].profile],little:true});});await P.page.waitForSelector('.gl-stage .choice');await P.page.waitForTimeout(400);await P.page.locator('.gl-stage .choice').scrollIntoViewIfNeeded();
+  const help=await P.page.evaluate(()=>{const h=document.querySelector('.gl-help'),s=document.querySelector('.gl-stage').getBoundingClientRect();return {height:h.getBoundingClientRect().height,scrollable:h.scrollHeight>h.clientHeight,stageHeight:s.height,viewportHeight:innerHeight};});if(help.stageHeight<104||help.height>help.viewportHeight*.35)bad.push('long guidance removes the playing field');
+  const errors=P.errors;await P.ctx.close();ok(!bad.length&&!errors.length,JSON.stringify({bad,rows,help,errors}));return 'Real game entrance:64px header controls, complete picture and palette visible; landscape stars clear; long guidance scrolls without hiding play';
+});
+
 await check('ownerround', async () => {
   return await ownerSmoke('owner-round-smoke.mjs');
 });

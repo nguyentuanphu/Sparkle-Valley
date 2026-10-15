@@ -69,12 +69,12 @@ let hideCaption = () => { };
   };
   spoken.push(text => {
     if (settings.captions === false || !text) return;
-    if (document.querySelector('.modal:not(.out), .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .gl, .howto, .credits')) return;
+    if (document.querySelector('.modal:not(.out), .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .gl, .howto, .credits')) { hideCaption(); return; }
     if (!cap) { cap = el('div', 'caption'); cap.setAttribute('role', 'status'); cap.setAttribute('aria-live', 'polite'); document.body.appendChild(cap); }
     stop(); let at = 0;
     chunks(text).forEach(c => {
       const ms = 2200 + c.length * 70;
-      timers.push(setTimeout(() => { cap.textContent = c; cap.classList.add('show'); }, at));
+      timers.push(setTimeout(() => { if (document.querySelector('.modal:not(.out), .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .gl, .howto, .credits')) { hideCaption(); return; } cap.textContent = c; cap.classList.add('show'); }, at));
       at += ms;
     });
     timers.push(setTimeout(() => cap.classList.remove('show'), at));

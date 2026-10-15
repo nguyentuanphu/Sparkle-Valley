@@ -16,3 +16,4 @@ import './learning.js';
 import './money.js'; // (round S, owner plan 8 Oct) the ten money games
 
 import './bigthinkers.js';
+import './bigthinkers2.js';
