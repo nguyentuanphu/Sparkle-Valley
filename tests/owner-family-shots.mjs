@@ -10,7 +10,10 @@ const root = fileURLToPath(new URL('../', import.meta.url)), out = path.join(roo
 fs.mkdirSync(out, { recursive: true });
 const records = new Map();
 const store = { get: async key => structuredClone(records.get(key) ?? null), setJSON: async (key, value) => records.set(key, structuredClone(value)), delete: async key => records.delete(key), list: async ({ prefix }) => ({ blobs: [...records.keys()].filter(k => k.startsWith(prefix || '')).map(key => ({ key })) }) };
-const route = async ctx => ctx.route('**/api/family-devices/*', async r => {
+// (the trial is off unless Studio switches it on; these pretend devices have it on, as Studio would)
+const trialOn = ctx => ctx.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), familyDevices: true }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
+const route = async ctx => { await trialOn(ctx); return familyRoute(ctx); };
+const familyRoute = async ctx => ctx.route('**/api/family-devices/*', async r => {
   try { const req = r.request(), token = (req.headers().authorization || '').replace(/^Bearer /, ''); const value = await familyAction(store, new URL(req.url()).pathname.split('/').pop(), req.postDataJSON(), token); await r.fulfill({ json: value }); }
   catch (e) { await r.fulfill({ status: e.status || 500, json: { error: e.message } }); }
 });
