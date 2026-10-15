@@ -89,10 +89,10 @@ const centre = o => o.x != null ? { x: o.x, z: o.z } : { x: (o.x0 + o.x1) / 2, z
 const mat = toonVC(), nightMat = new THREE.MeshBasicMaterial({ vertexColors: true });
 const Sph = (r, w = 8, h = 6) => new THREE.SphereGeometry(r, w, h), Cyl = (a, b, h, s = 8) => new THREE.CylinderGeometry(a, b, h, s), Box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 // a string of little flags (or lanterns, or friendly bats) hanging between two posts, with a gentle sag
-function bunting(a, b, cols, kind = 'flag', wall = false) {
+function bunting(a, b, cols, kind = 'flag', wall = false, supports = null) {
   const parts = [], glows = [];
   const [ax, ay, az] = a, [bx, by, bz] = b, n = Math.max(4, Math.round(Math.hypot(bx - ax, bz - az) / (kind === 'lantern' ? 1 : .7))), yaw = Math.atan2(bx - ax, bz - az);
-  if (!wall) for (const [x, y, z] of [a, b]) parts.push(P(Cyl(.06, .08, y - heightAt(x, z), 6), '#8a6a4a', [x, (y + heightAt(x, z)) / 2, z]));
+  if (!wall) for (const [x, y, z] of [a, b]) { const key=x.toFixed(3)+','+z.toFixed(3),ground=heightAt(x,z),from=supports?.get(key)??ground; if(y>from+.02)parts.push(P(Cyl(.06,from>ground+.02?.06:.08,y-from,6),'#8a6a4a',[x,(y+from)/2,z]));if(supports)supports.set(key,Math.max(y,from)); }
   for (let i = 1; i < n; i++) {
     const t = i / n, x = ax + (bx - ax) * t, z = az + (bz - az) * t, y = ay + (by - ay) * t - Math.sin(t * Math.PI) * .7, c = cols[i % cols.length];
     if (kind === 'lantern') { parts.push(P(Cyl(.012, .012, .25, 3), '#3a2a20', [x, y - .1, z])); glows.push(P(Sph(.15, 8, 6), c, [x, y - .3, z], [0, 0, 0], [1, 1.25, 1]), P(Cyl(.08, .08, .05, 8), '#ffd23f', [x, y - .1, z])); }
@@ -257,6 +257,7 @@ export function createFestivals(G) {
     group.traverse(o => { if (o.isMesh && o.geometry && !o.userData.outline) o.geometry.dispose(); });
     group.clear(); places3.length = 0; bursts.length = 0; glowMeshes = []; unhook(tables); unhook(doors);
     active = activeFestivals();
+    D.begin();const supports=new Map(),drawBunting=(a,b,cols,kind,wall=false)=>bunting(a,b,cols,kind,wall,supports);
     const places = PLACES(), taken = new Set(), hunts = [];
     for (const A of active) {
       const F = A.F, full = D.FRAC[A.stage] || 0, m = D.decoOf(F);
@@ -265,7 +266,7 @@ export function createFestivals(G) {
         if (taken.has(key + F.theme)) return; taken.add(key + F.theme);
         // (owner, 10 Oct) the whole place, along its streets (js/festdecor.js); without streets, a ring round the middle
         // (owner, 13 Oct) 5x by default: pieces, strings across the streets and every house front (Studio sets the amount)
-        const [bc, bk] = THEME_BUNTING[F.theme] || [['#ff4f9a', '#ffd23f'], 'flag'], q = D.decorate(key, o, F, A, piece, bunting, bc, bk, housesOf(o)), items = q || [];
+        const [bc, bk] = THEME_BUNTING[F.theme] || [['#ff4f9a', '#ffd23f'], 'flag'], q = D.decorate(key, o, F, A, piece, drawBunting, bc, bk, housesOf(o)), items = q || [];
         const put = (x, z, r, kind = 'piece') => items.push({ x, z, kind, parts: r.parts, glows: r.glows });
         if (!q) {
           const n = Math.round((F.kind === 'quiet' ? 6 : 16) * full * m);
@@ -273,7 +274,7 @@ export function createFestivals(G) {
             if (!free(x, z, 1.1)) continue; put(x, z, piece(F.theme, i, x, heightAt(x, z), z, a + Math.PI)); i++; }
           const nb = F.kind === 'quiet' ? 0 : Math.max(0, A.stage - 1) * 2 * m;
           for (let j = 0, k = 0; j < nb && k < 30 * m; k++) { const a = k * 1.7 + w, r = 10, x1 = c.x + Math.cos(a) * r, z1 = c.z + Math.sin(a) * r, x2 = c.x + Math.cos(a + .9) * r, z2 = c.z + Math.sin(a + .9) * r;
-            if (!free(x1, z1, .6) || !free(x2, z2, .6)) continue; put((x1 + x2) / 2, (z1 + z2) / 2, bunting([x1, heightAt(x1, z1) + 3.2, z1], [x2, heightAt(x2, z2) + 3.2, z2], bc, bk), 'string'); j++; }
+            if (!free(x1, z1, .6) || !free(x2, z2, .6)) continue; put((x1 + x2) / 2, (z1 + z2) / 2, drawBunting([x1, heightAt(x1, z1) + 3.2, z1], [x2, heightAt(x2, z2) + 3.2, z2], bc, bk), 'string'); j++; }
         }
         // the festival table, on the day, in its first place
         if (A.on && w === 0) {
@@ -298,13 +299,13 @@ export function createFestivals(G) {
     if (spread) {
       const F = spread.F, m = D.decoOf(F), [bc, bk] = THEME_BUNTING[F.theme] || [['#ff4f9a', '#ffd23f'], 'flag'], frac = D.FRAC[spread.stage] || 0;
       const used = new Set(active.flatMap(a => a.F.where));
-      for (const [key, o] of Object.entries(places)) { if (used.has(key)) continue; const q = D.decorate(key, o, F, spread, piece, bunting, bc, bk, [], 1); if (q) addItems(q); }
+      for (const [key, o] of Object.entries(places)) { if (used.has(key)) continue; const q = D.decorate(key, o, F, spread, piece, drawBunting, bc, bk, [], 1); if (q) addItems(q); }
       const inside = (x, z) => Object.values(places).some(o => o.x0 != null ? x > o.x0 - 6 && x < o.x1 + 6 && z > o.z0 - 6 && z < o.z1 + 6 : Math.hypot(x - o.x, z - o.z) < (o.r || 24) + 6);
       const road = D.roadSpots(Math.round(60 / m), inside).filter((q, k) => (k % 4) < Math.round(frac * 4));
       addItems(road.map((q, i) => { const r = piece(F.theme, i, q.x, heightAt(q.x, q.z), q.z, q.a); return { x: q.x, z: q.z, kind: 'road', parts: r.parts, glows: r.glows }; }));
       // and every house outside the places (the suburbs, the homes along the roads): a piece by its door and a garland
       const out = (W.houses || []).filter(hs => !inside(hs.x, hs.z)).filter((hs, k) => (k % 4) < Math.round(frac * 4));
-      addItems(D.fronts(out).flatMap((q, i) => { const r = piece(F.theme, i + 2, q.x, heightAt(q.x, q.z), q.z, q.a), [[x1, z1], [x2, z2]] = q.g, y = Math.min(heightAt(x1, z1), heightAt(x2, z2)) + 2.6, g = bunting([x1, y, z1], [x2, y, z2], bc, bk, true);
+      addItems(D.fronts(out).flatMap((q, i) => { const r = piece(F.theme, i + 2, q.x, heightAt(q.x, q.z), q.z, q.a), [[x1, z1], [x2, z2]] = q.g, y = Math.min(heightAt(x1, z1), heightAt(x2, z2)) + 2.6, g = drawBunting([x1, y, z1], [x2, y, z2], bc, bk, true);
         return [{ x: q.x, z: q.z, kind: 'road', parts: r.parts, glows: r.glows }, { x: (x1 + x2) / 2, z: (z1 + z2) / 2, kind: 'string', parts: g.parts, glows: g.glows }]; }));
     }
     wasNight = null; nightLights(); if (G.heroes.length) near();
@@ -398,6 +399,7 @@ export function createFestivals(G) {
   let dayKey = new Date().toDateString(), dayT = 0; W.updaters.push(dt => { if ((dayT -= dt) > 0) return; dayT = 30; const k = new Date().toDateString(); if (k !== dayKey) { dayKey = k; build(); } });
   return {
     rebuild: build,
+    distribution: () => D ? D.distribution() : [],
     // (checks) the spots along a place's streets, and each active festival's places
     streetSpots: key => { const o = PLACES()[key]; return o ? streetSpots(key, o).map(q => ({ x: q.x, z: q.z })) : []; },
     plan: (key, id, stage) => { const o = PLACES()[key], F = byId(id); return o && F && D ? D.plan(key, o, F, stage) : []; },

@@ -300,3 +300,11 @@ Prepared diagnostics completed: source19 baseline1/4 (awning-maze-decor-before-4
 
 
 Candidate20 final3/3 passed:20 physical warning taps/5 layouts384s including64px bus choices; normal1× Hard Maze139s actual44-tap win112.8sec;107units18s. Saved awning-maze-final-3-checks.json, road20-real-taps.json and maze-normal-x1-after.json. Earlier4m/awning/90sec/overlap failures retained. New posts fit below existing awnings with actual headroom exclusion; paired visual acceptance still pending. Decoration duplicate107 baseline remains unfixed; prepared candidate still unapplied. PR300 stays e75.
+
+
+Precise crossing capture now reads actual north-sign metadata instead of inferring sign coordinates from child approach positions. Source20 is frozen in detached /workspace/Sparkle-Valley-proof20, served8767; source-attributed AFTER capture68094 is running against1e2f06cc. Baseline matching targets will be extracted per viewport/language from those actual inspection frames, not guessed. R74 remains8766. No second browser.
+
+Applied uncommitted decoration21 candidate to current repair workspace while capture uses frozen source20: shared spatial occupancy and strand deduplication across festivals, support footprint reservation, shared/extended bunting poles, configured duplicate strands redistributed as pieces. Added canSupport guards so later different-density themes cannot place poles on earlier pieces. Stronger four-scenario fixture checks mixed amounts/stages, configured totals, piece spacing and support clearance. No decoration run has started; tests must follow capture. Old scratch candidate is historical and must NOT overwrite these later applied edits. Whole map/ring fallback, house-front proportions and visual naturalness still need audit.
+
+
+Source20 AFTER capture completed16 PNG/fourlayouts withzero page errors, full served-file fingerprints and unoccluded camera target assertions. Exact target JSON now uses actual north-sign coordinates per viewport/language (Aussie−112.2,−70); it replaces the provisional approach-derived values. Matching R74 capture76641 is running with those exact targets. Source20 is frozen/read-only; current applied decoration21 remains WIP and has not run its new or existing festival checks. Do not treat the source20 images as automatic source21 evidence.

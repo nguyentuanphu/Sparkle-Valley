@@ -5607,11 +5607,21 @@ await check('ownerlearningcomposition', async () => {
 });
 
 await check('ownerautoplaynormal', async () => {
-  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x1','--ids=sortout','--lang=en']);
+  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x1','--ids=robot,sortout']);
 });
 
 await check('ownerautoplaynormalmaze', async () => {
-  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x1','--ids=maze','--lang=en']);
+  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x1','--ids=maze']);
+});
+
+await check('ownerautoplaynormalduck', async () => {
+  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x1','--ids=duckmaze']);
+});
+await check('ownerautoplay2x', async () => {
+  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x2']);
+});
+await check('ownerautoplay3x', async () => {
+  return await ownerSmoke('owner-autoplay-plans.mjs', ['--speed=x3']);
 });
 
 await check('ownerdecoroverlap', async () => {

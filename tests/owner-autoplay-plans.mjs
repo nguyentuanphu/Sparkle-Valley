@@ -14,6 +14,7 @@ try{
   await P.page.waitForFunction(n=>!__sv.autoplay.running()&&JSON.parse(localStorage.getItem('sv2_autoplay_report')||'{}').done?.length===n,ids.length,{timeout:360000});
   const report=await P.page.evaluate(()=>JSON.parse(localStorage.getItem('sv2_autoplay_report')));
   for(const id of ids){const row=report.done.find(r=>r.key==='game:'+id);rows.push({id,lang,speed,...row});assert.ok(row?.ok&&/^(won|thắng):/.test(row.said),JSON.stringify(rows.at(-1)));}
+  const cleaned=await P.page.evaluate(async()=>{const W=(await import('/js/games/frame.js')).playWatch;return {plan:!!W.plan,maxActions:W.maxActions};});assert.deepEqual(cleaned,{plan:false,maxActions:0},'Completed games must release their plan and action allowance');
   assert.deepEqual(P.errors,[]);await P.ctx.close();
  }
 }finally{await browser.close();fs.mkdirSync('out/owner-autoplay-plans',{recursive:true});fs.writeFileSync(`out/owner-autoplay-plans/${speed}-${langs.join('-')}.json`,JSON.stringify(rows,null,2)+'\n');}

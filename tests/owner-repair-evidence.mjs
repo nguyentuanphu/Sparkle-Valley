@@ -15,7 +15,7 @@ const learningOnly = process.argv.includes('--learning-only');
 const activityOnly = process.argv.includes('--activity-only');
 const crossingsOnly = process.argv.includes('--crossings-only');
 const crossingTargets=process.env.SV_CROSSING_TARGETS?JSON.parse(fs.readFileSync(process.env.SV_CROSSING_TARGETS,'utf8')):null;
-if(crossingTargets)for(const id of ['town','aussie'])if(!Number.isFinite(crossingTargets[id]?.x)||!Number.isFinite(crossingTargets[id]?.z))throw Error('Missing fixed crossing detail target: '+id);
+if(crossingTargets)for(const set of crossingTargets.town?[crossingTargets]:Object.values(crossingTargets))for(const id of ['town','aussie'])if(!Number.isFinite(set[id]?.x)||!Number.isFinite(set[id]?.z))throw Error('Missing fixed crossing detail target: '+id);
 const sourceCommit = execFileSync('git', ['-C', repoRoot, 'rev-parse', '--verify', process.env.SV_EVIDENCE_COMMIT || 'HEAD'], {encoding:'utf8'}).trim();
 const sourceFingerprints = {};
 // Verify the served code, rather than attributing old pictures from a build label alone.
@@ -72,7 +72,7 @@ try {
             const blocker=ray.intersectObjects(meshes,false).find(hit=>{const o=hit.object;if(!o.isMesh)return false;for(let q=o;q;q=q.parent)if(!q.visible)return false;const mats=Array.isArray(o.material)?o.material:[o.material];return mats.some(m=>m&&m.visible!==false&&(m.opacity??1)>.95);});
             if(blocker)throw Error('Inspection camera target occluded by actual geometry at '+JSON.stringify({distance:blocker.distance,point:blocker.point}));
             return {detail,target:{x:target.x,y:target.y,z:target.z},position:{x:position.x,y:position.y,z:position.z},clearLineOfSight:true};
-          },{id,detail,fixed:crossingTargets?.[id]||null});
+          },{id,detail,fixed:crossingTargets?.[label]?.[id]||crossingTargets?.[id]||state.warnings.find(s=>s.side===-1)||null});
           await shot('crossing-'+id+(detail?'-approach':'-overview'));
           const actual=await P.page.evaluate(()=>({x:__sv.heroes[0].cam.position.x,y:__sv.heroes[0].cam.position.y,z:__sv.heroes[0].cam.position.z}));
           if(Math.hypot(actual.x-inspection.position.x,actual.y-inspection.position.y,actual.z-inspection.position.z)>.05)throw Error('Inspection camera moved during screenshot');state.inspectionViews.push({...inspection,actual});
