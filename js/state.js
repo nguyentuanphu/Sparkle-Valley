@@ -44,7 +44,7 @@ export const heldByOtherTab = () => held;
 try {
   const tabs = new BroadcastChannel('sv-tabs'), me = Math.random().toString(36).slice(2);
   tabs.onmessage = e => { if (e.data?.claim && e.data.claim !== me && !held) { held = true; if (mirrorT) clearTimeout(mirrorT); mirrorT = null; dispatchEvent(new CustomEvent('sv-held')); } };
-  tabs.postMessage({ claim: me }); tabs.unref?.(); // (Node, for the checks and tools that read the game's words: an open channel must not keep them running)
+  tabs.postMessage({ claim: me }); /** @type {any} */ (tabs).unref?.(); // (Node, for the checks and tools that read the game's words: an open channel must not keep them running)
 } catch (e) { }
 // (at most 2.5 s after a change, with whatever is newest then: a timer that restarted on every save could be put
 // off again and again by frequent saves, and the copy fell behind)
