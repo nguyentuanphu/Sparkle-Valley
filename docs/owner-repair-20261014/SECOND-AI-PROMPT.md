@@ -1,8 +1,7 @@
 # Prompt for the second AI (owner repair round, 16 October 2026 AEDT)
 
-The owner (Henry) split the remaining repair work between two AI chats on 16 October 2026 AEDT. The Release chat
-keeps the release, the evidence table, the whole-game audits and family photos. This second chat takes the four
-pieces below. Paste everything under "Prompt" into a new Claude Code session on the repository
+The owner (Henry) split the remaining repair work between three AI chats on 16 October 2026 AEDT. The Release chat
+keeps the release, the evidence table, the whole-game audits and family photos. This second chat takes point 49. Paste everything under "Prompt" into a new Claude Code session on the repository
 nguyentuanphu/Sparkle-Valley.
 
 ## Prompt
@@ -16,33 +15,26 @@ whole-game audits. You are a helper chat.
    UX-001 to UX-010), `docs/cores/BOARD.md`, then in `docs/owner-repair-20261014/`: `STATUS.md`, `decisions.md`,
    `evidence-table.md` (rows 46-49, 52, 56), `learning-progression.md`, `design-reference.md`.
 2. `git fetch origin work/owner-repair-checkpoint-20261015` and create your own branch from it:
-   `git checkout -b work/owner-repair-second-20261016 origin/work/owner-repair-checkpoint-20261015`.
-   Push only this branch (`git push -u origin work/owner-repair-second-20261016`). Never push to `main`, to
+   `git checkout -b work/owner-repair-films-20261016 origin/work/owner-repair-checkpoint-20261015`.
+   Push only this branch (`git push -u origin work/owner-repair-films-20261016`). Never push to `main`, to
    `work/owner-repair-20261014` (PR300) or to the checkpoint branch. If you open a pull request, keep it a draft
    against `main`; only Release merges.
 
-**Your work, in this order**
-1. **Point 49, story film look (largest).** Owner: "Story 3D films look dark/plain, mostly houses, with buildings
-   repeated." Each story's film should look like its own place and story: brighter light, colour and setting chosen
-   per story (island and sea for the watermelon tale, palace, forest, river, festival ...), fewer repeated houses,
-   while keeping the approved R74 cartoon style, fonts and compact shells. Files: `js/film.js`,
-   `js/content/films.js`, `js/content/talefilms.js` (and new data files beside them). Do not change the film text
-   layout or sizes (owner approved on 16 Oct: title in a bar above the picture, words in a white box under it, How to
-   play the same; see `css/style.css` end, rules for `.ht-top`, `.ht-cap`, `.th-text`, `.film-help`). Do not touch
-   `js/tales.js` or `js/howto.js` except where a film change truly needs it, and say so. Before/after pictures for
-   every story you change, on a phone, a tablet and a computer, in `docs/owner-repair-20261014/evidence/films-49-*`
-   (the script `tests/owner-film-text-shots.mjs` shows how to open a story film from a script).
-2. **Points 46-48, learning games review.** The three original activities and the three new ones: check that Easy,
-   Medium and Hard are really different, the words are clear for the age, English and Vietnamese both, and each has
-   matching pictures. Fix what is wrong in `js/games/*` for those games only. Record findings in
-   `docs/owner-repair-20261014/learning-progression.md`.
-3. **Point 52, improvements page.** A short page `docs/owner-repair-20261014/improvements.md`: ideas that would make
-   the game more interesting or easier for children, each with why, effort (small/medium/large) and which files.
-   Suggestions only: implement none.
-4. **Point 56, independent review.** Review the Release chat's work on the checkpoint branch since
-   `9afa91e7` (`git log 9afa91e7..origin/work/owner-repair-checkpoint-20261015`): correctness, kid safety,
-   English/Vietnamese, touch sizes, offline, saves. Write `docs/owner-repair-20261014/independent-review.md` with
-   each finding (file:line, what goes wrong, how bad). Do not fix Release's files yourself; list them for Release.
+**Your work: point 49, the story film look.** Owner: "Story 3D films look dark/plain, mostly houses, with
+buildings repeated." Each story's film should look like its own place and story: brighter light, colour and setting
+chosen per story (island and sea for the watermelon tale, palace, forest, river, festival ...), fewer repeated houses,
+while keeping the approved R74 cartoon style, fonts and compact shells. Files: `js/film.js`, `js/content/films.js`,
+`js/content/talefilms.js` (and new data files beside them). Do not change the film text layout or sizes (owner
+approved on 16 Oct: title in a bar above the picture, words in a white box under it, How to play the same; see the
+end of `css/style.css`, rules for `.ht-top`, `.ht-cap`, `.th-text`, `.film-help`). Do not touch `js/tales.js` or
+`js/howto.js` except where a film change truly needs it, and say so. Before/after pictures for every story you
+change, on a phone, a tablet and a computer, in `docs/owner-repair-20261014/evidence/films-49-*` (the script
+`tests/owner-film-text-shots.mjs` shows how to open a story film from a script). Record what each story now looks
+like in `docs/owner-repair-20261014/films-49.md`.
+
+**Another AI works beside you** on points 46-48, 52 and 56 (`THIRD-AI-PROMPT.md`, branch
+`work/owner-repair-learning-20261016`). Do not change `js/games/*` or the docs it writes (`learning-progression.md`,
+`improvements.md`, `independent-review.md`).
 
 **Files you must not change** (Release owns them in this round): `sw.js`, `js/build.js`, `studio/version.json`
 (never bump the version), `index.html`, `js/state.js`, `js/launch.js`, `js/hud.js`, `js/explain.js`,
@@ -52,7 +44,7 @@ regions, cities, town, homes, vendors, hawkers, places, solids, content/map). A 
 `docs/cores/BOARD.md` as a request to Release.
 
 **Rules** (from `CLAUDE.md`, they apply to you)
-- Plan first: show the owner your plan for item 1 and ask for "go" with a pop-up question (2 to 4 choices, the
+- Plan first: show the owner your plan and ask for "go" with a pop-up question (2 to 4 choices, the
   recommended one first), then work through the list without asking again unless a real choice comes up.
 - Questions to the owner only as pop-up questions. Times in Sydney time (AEDT now). No emoji in docs.
 - English and Vietnamese for everything a child sees or hears. Touch targets 44 px or more (64 px for under-5s).
