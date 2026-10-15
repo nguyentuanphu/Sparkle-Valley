@@ -6,7 +6,7 @@ const KEY_SETTINGS = 'sv2_settings', KEY_PROFILES = 'sv2_profiles';
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); mirrorSoon(); return true; } catch (e) { mirrorSoon(); return false; } }
+  set(k, v) { if (held) return false; try { localStorage.setItem(k, JSON.stringify(v)); mirrorSoon(); return true; } catch (e) { mirrorSoon(); return false; } }
 };
 
 // ---------- keeping progress safe on this device ----------
@@ -21,6 +21,7 @@ const idb = mode => new Promise((res, rej) => { const r = indexedDB.open(SNAP_DB
 // session (new progress goes under "new-…"), so a fresh start never overwrites the only good copy.
 let mirrorLocked = false;
 async function writeMirror() {
+  if (held) return;
   const snap = snapshot(); if (!Array.isArray(snap.profiles) || !snap.profiles.length) return;
   const text = JSON.stringify(snap), day = new Date().toISOString().slice(0, 10);
   try {
@@ -34,9 +35,20 @@ async function writeMirror() {
   try { if ('caches' in self) { const c = await caches.open(SNAP_CACHE); await c.put(SNAP_URL, new Response(text, { headers: { 'Content-Type': 'application/json' } })); } } catch (e) { }
 }
 let mirrorT = null;
+// (owner point 10, 16 Oct AEDT) one tab plays at a time. A game opened in another tab or window takes over; this older
+// tab then stops saving, because its copy of the children's progress is older and its saves (play minutes, the spot,
+// leaving the page) wrote over what the new tab had done. It asks the child to play there or to pick this tab again.
+let held = false;
+/** @returns {boolean} true once a newer tab of the game has taken over */
+export const heldByOtherTab = () => held;
+try {
+  const tabs = new BroadcastChannel('sv-tabs'), me = Math.random().toString(36).slice(2);
+  tabs.onmessage = e => { if (e.data?.claim && e.data.claim !== me && !held) { held = true; if (mirrorT) clearTimeout(mirrorT); mirrorT = null; dispatchEvent(new CustomEvent('sv-held')); } };
+  tabs.postMessage({ claim: me });
+} catch (e) { }
 // (at most 2.5 s after a change, with whatever is newest then: a timer that restarted on every save could be put
 // off again and again by frequent saves, and the copy fell behind)
-function mirrorSoon() { if (mirrorT) return; mirrorT = setTimeout(() => { mirrorT = null; writeMirror(); }, 2500); }
+function mirrorSoon() { if (mirrorT || held) return; mirrorT = setTimeout(() => { mirrorT = null; writeMirror(); }, 2500); }
 async function readMirror() {
   const all = [];
   // the latest copy and the daily ones (in case the latest is damaged)

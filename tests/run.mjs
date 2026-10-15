@@ -5663,6 +5663,12 @@ await check('ownerheartstap', async () => {
   return `hearts: own 44 px tap target, explained in speech with one caption (a note when captions are off); the picture (with its gear) still opens Settings`;
 });
 
+await check('ownerupdatenotice', async () => {
+  // (owner point 10) a real service-worker version change with two tabs: the newer tab takes over and the older one
+  // stops saving, the small notice never covers the HUD or an activity, and the update keeps every child's progress
+  return await ownerSmoke('owner-update-notice.mjs');
+});
+
 await check('ownertheatreapproach', async () => {
   process.env.SV_FAR = '1';
   try { return await ownerSmoke('owner-theatre-walk.mjs', ['out/theatre-walk.json', '4']); } finally { delete process.env.SV_FAR; }

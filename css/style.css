@@ -2546,8 +2546,14 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 .pad .slot > span .art { width:64px; height:64px; }
 .launch-progress { padding:10px; display:flex; flex-direction:column; align-items:center; gap:6px; color:#4a2a78; font-size:16px; }
 .launch-progress progress { width:min(340px,70vw); accent-color:#8a5cf6; }
-.update-notice { position:fixed; left:12px; right:12px; top:calc(env(safe-area-inset-top) + 12px); z-index:100001; max-width:600px; margin:auto; padding:12px; background:#fffaf0; color:#4a2a78; border-radius:18px; box-shadow:0 4px 20px #0003; display:flex; gap:10px; align-items:center; font-size:16px; }
-.update-notice button { min-height:44px; flex:none; }
+.update-notice { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 176px); z-index:100001; width:max-content; max-width:min(380px, calc(100% - 32px)); padding:6px 6px 6px 14px; background:#fffaf0; color:#4a2a78; border-radius:22px; box-shadow:0 4px 16px #0003; display:flex; gap:8px; align-items:center; font:600 14px/1.25 Fredoka, "Baloo 2", sans-serif; }
+/* (owner point 10) small and out of the way: above the dock and the captions, never over the HUD or an activity */
+.update-notice button { min-height:44px; min-width:44px; flex:none; border:0; border-radius:22px; padding:0 14px; font:inherit; background:var(--purple); color:#fff; cursor:pointer; }
+.update-notice button[aria-label] { padding:0; background:#efe6ff; color:#4a2a78; font-size:20px; }
+/* (owner point 10) a newer tab of the game took over: this one waits behind a card */
+.tab-held { position:fixed; inset:0; z-index:100002; display:grid; place-items:center; padding:16px; background:rgba(40, 24, 72, .72); }
+.tab-held > div { max-width:420px; padding:20px; border-radius:24px; background:#fffaf0; color:#4a2a78; text-align:center; font:600 17px/1.35 Fredoka, "Baloo 2", sans-serif; box-shadow:0 8px 30px #0005; }
+.tab-held button { min-height:64px; min-width:160px; margin-top:12px; border:0; border-radius:32px; background:var(--purple); color:#fff; font:inherit; font-size:20px; cursor:pointer; }
 .bag-help { position:sticky; bottom:0; z-index:3; border:2px solid #d9c9f5; border-radius:20px; background:#fffaf0; padding:12px; display:grid; gap:8px; box-shadow:0 4px 20px #4a2a7822; font-size:16px; }
 .bag-help .art, .bag-help .kpic { width:64px; height:64px; } .bag-help .actions { justify-content:center; }
 .bag-help button { min-height:64px; } .bag-help p { margin:0; }
