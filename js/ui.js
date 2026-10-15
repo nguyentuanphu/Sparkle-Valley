@@ -10,6 +10,7 @@ import { fmt, cur, spoken as money } from './money.js';
 import { el, esc, $, clamp, wait, local } from './util.js';
 import { familyDevicesHTML, bindFamilyDevices } from './familydevices.js';
 import { familyCode, setFamilyCode, familyPhotoCount, featureOn } from './custom.js';
+const familyTrialOn = () => featureOn('familyDevices', false) || !!window.__sv?.tester;
 import { DEFAULT_OUTFITS, outfitOf, CLOTHES, ITEM, owns, wear as wearItem } from './content/shop.js'; // (round S, owner plan 8 Oct) two starting outfits when the clothes shop is on
 import { avatarURL, applyNpcFaces, namedVillagers } from './avatar.js';
 import { confetti, holdButton } from './popups.js';
@@ -313,7 +314,7 @@ export function openGrownups(after) {
       <h2>${T('Grown-ups', 'Phụ huynh')} <small class="buildtag">${T('Build', 'Bản')} ${BUILD}</small></h2>
       <div class="grownups-body"><div class="g-install"></div>
       ${privacyHTML()}
-      ${familyDevicesHTML()}
+      ${familyTrialOn() ? familyDevicesHTML() : ''}
       <div class="toggles gcaprow">
         <label class="tog"><input type="checkbox" id="gCap" ${settings.captions === false ? '' : 'checked'}> ${T('Captions: show everything that is said as text', 'Phụ đề: hiện chữ cho mọi câu được nói')}</label>
       </div>
@@ -484,7 +485,9 @@ export function openGrownups(after) {
     card.querySelectorAll('[data-rep]').forEach(b => b.onclick = () => { SFX.tap(); openReport(profiles.find(p => p.id === b.dataset.rep)); });
     card.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => openEditor(profiles.find(p => p.id === b.dataset.ed), () => { draw(); after && after(); }));
     // (round R privacy) the family code: kept on this device only (never in a backup); empty removes it and the photos
-    bindFamilyDevices(card, namedVillagers().map(id => ({ id, name: nm(window.__sv?.npcs.find(n => n.id === id)?.name || id) })));
+    // (owner, 16 Oct AEDT) family devices and photo sharing is a trial: shown when Studio switches it on, and on tester
+    // devices so the owner can try it on the real service first
+    if (familyTrialOn()) bindFamilyDevices(card, namedVillagers().map(id => ({ id, name: nm(window.__sv?.npcs.find(n => n.id === id)?.name || id) })));
     card.querySelector('#gFamSave').onclick = async () => { const v = card.querySelector('#gFam').value.trim(), out = card.querySelector('#gFamRes'); if (/^•/.test(v)) return; out.textContent = '…';
       const r = await setFamilyCode(v).catch(() => ({ ok: false }));
       out.textContent = r.cleared ? T('Family code removed from this device.', 'Đã xóa mã gia đình khỏi máy này.') : r.bad ? T('That code is not right: check it with the grown-up who set up the game.', 'Mã chưa đúng: hỏi lại người lớn đã cài trò chơi.') : r.ok ? T(`Saved: ${r.n || 0} of ${r.of || 0} family photos on this device.`, `Đã lưu: ${r.n || 0}/${r.of || 0} ảnh gia đình trên máy này.`) : T('Saved. The photos come the next time this device is online.', 'Đã lưu. Ảnh sẽ về khi máy có mạng.'); };
