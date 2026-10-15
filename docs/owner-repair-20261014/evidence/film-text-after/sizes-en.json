@@ -39,7 +39,7 @@
     "stage": {
       "w": 330,
       "h": 186,
-      "top": 267
+      "top": 272
     },
     "viewport": [
       390,
@@ -50,22 +50,14 @@
       ".th-text p": [],
       ".th-more": [],
       ".film-help:not([hidden])": [],
-      ".ht-titlecard": [
-        {
-          "w": 125,
-          "h": 27,
-          "top": 275,
-          "font": "16px",
-          "text": "Count With Me"
-        }
-      ],
+      ".ht-titlecard": [],
       ".ht-cap": [
         {
           "w": 330,
-          "h": 42,
-          "top": 453,
+          "h": 52,
+          "top": 468,
           "font": "16px",
-          "text": ""
+          "text": "How to play Count With Me"
         }
       ],
       ".caption.show": []
@@ -75,7 +67,7 @@
     "stage": {
       "w": 330,
       "h": 186,
-      "top": 267
+      "top": 272
     },
     "viewport": [
       390,
@@ -86,22 +78,14 @@
       ".th-text p": [],
       ".th-more": [],
       ".film-help:not([hidden])": [],
-      ".ht-titlecard": [
-        {
-          "w": 125,
-          "h": 27,
-          "top": 275,
-          "font": "16px",
-          "text": "Count With Me"
-        }
-      ],
+      ".ht-titlecard": [],
       ".ht-cap": [
         {
           "w": 330,
-          "h": 42,
-          "top": 453,
+          "h": 52,
+          "top": 468,
           "font": "16px",
-          "text": ""
+          "text": "Count the things on the screen."
         }
       ],
       ".caption.show": []
@@ -147,7 +131,7 @@
     "stage": {
       "w": 732,
       "h": 412,
-      "top": 320
+      "top": 332
     },
     "viewport": [
       820,
@@ -158,22 +142,14 @@
       ".th-text p": [],
       ".th-more": [],
       ".film-help:not([hidden])": [],
-      ".ht-titlecard": [
-        {
-          "w": 134,
-          "h": 28,
-          "top": 328,
-          "font": "16px",
-          "text": "Count With Me"
-        }
-      ],
+      ".ht-titlecard": [],
       ".ht-cap": [
         {
           "w": 732,
-          "h": 47,
-          "top": 731,
+          "h": 52,
+          "top": 754,
           "font": "18.04px",
-          "text": ""
+          "text": "How to play Count With Me"
         }
       ],
       ".caption.show": []
@@ -183,7 +159,7 @@
     "stage": {
       "w": 732,
       "h": 412,
-      "top": 320
+      "top": 332
     },
     "viewport": [
       820,
@@ -194,22 +170,14 @@
       ".th-text p": [],
       ".th-more": [],
       ".film-help:not([hidden])": [],
-      ".ht-titlecard": [
-        {
-          "w": 134,
-          "h": 28,
-          "top": 328,
-          "font": "16px",
-          "text": "Count With Me"
-        }
-      ],
+      ".ht-titlecard": [],
       ".ht-cap": [
         {
           "w": 732,
-          "h": 47,
-          "top": 731,
+          "h": 52,
+          "top": 754,
           "font": "18.04px",
-          "text": ""
+          "text": "Count the things on the screen."
         }
       ],
       ".caption.show": []
@@ -255,7 +223,7 @@
     "stage": {
       "w": 732,
       "h": 412,
-      "top": 128
+      "top": 142
     },
     "viewport": [
       1280,
@@ -266,22 +234,14 @@
       ".th-text p": [],
       ".th-more": [],
       ".film-help:not([hidden])": [],
-      ".ht-titlecard": [
-        {
-          "w": 145,
-          "h": 30,
-          "top": 136,
-          "font": "16px",
-          "text": "Count With Me"
-        }
-      ],
+      ".ht-titlecard": [],
       ".ht-cap": [
         {
           "w": 732,
-          "h": 49,
-          "top": 540,
-          "font": "19px",
-          "text": ""
+          "h": 52,
+          "top": 564,
+          "font": "20px",
+          "text": "How to play Count With Me"
         }
       ],
       ".caption.show": []
@@ -291,7 +251,7 @@
     "stage": {
       "w": 732,
       "h": 412,
-      "top": 128
+      "top": 142
     },
     "viewport": [
       1280,
@@ -302,22 +262,14 @@
       ".th-text p": [],
       ".th-more": [],
       ".film-help:not([hidden])": [],
-      ".ht-titlecard": [
-        {
-          "w": 145,
-          "h": 30,
-          "top": 136,
-          "font": "16px",
-          "text": "Count With Me"
-        }
-      ],
+      ".ht-titlecard": [],
       ".ht-cap": [
         {
           "w": 732,
-          "h": 49,
-          "top": 540,
-          "font": "19px",
-          "text": ""
+          "h": 52,
+          "top": 564,
+          "font": "20px",
+          "text": "Count the things on the screen."
         }
       ],
       ".caption.show": []

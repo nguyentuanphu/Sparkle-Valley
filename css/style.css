@@ -2676,12 +2676,14 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 body.touch .htoast.explain { bottom: calc(env(safe-area-inset-bottom) + 184px); max-width: min(320px, calc(100% - 48px)); white-space: normal; overflow: hidden; }
 /* (owner, 16 Oct) Studio "A game's question line on screen" off: the line's space stays so nothing moves */
 .gl.no-help .gl-help { visibility: hidden; }
-/* (owner, 16 Oct AEDT: "captions in films are too big, they cover almost everything") the words in films are small and
-   keep to the edges of the picture, never over the middle of it; "big text" (body.bigtext) still makes them bigger */
-.howto.film .ht-titlecard { top: 8px; left: 8px; transform: none; flex-direction: row; gap: 6px; max-width: min(62%, 300px); padding: 4px 12px; border-radius: 999px; background: rgba(255, 255, 255, .86); box-shadow: none; }
-.howto.film .ht-titlecard .ht-name { font-family: inherit; font-size: clamp(15px, 2vw, 18px); padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.howto.film .ht-titlecard .ht-big { font-size: 20px; animation: none; }
-.ht-cap { font-size: clamp(16px, 2.2vw, 19px); line-height: 1.3; min-height: 2.6em; padding: 8px 8px 2px; }
+/* (owner, 16 Oct AEDT: "captions in films are too big, they cover almost everything"; "the text in How to play should be
+   the same position as the film") the words in films are small and never over the picture: How to play has the story
+   films' layout, its title in a bar above the picture and its words in the same box under it; "big text"
+   (body.bigtext) still makes them bigger */
+.ht-top { display: flex; align-items: center; gap: 10px; padding: 0 4px 10px; color: #fff; }
+.ht-top .ht-title { flex: 1; font-size: clamp(17px, 3.4vw, 26px); line-height: 1.15; }
+.ht-cap { margin: 10px 0 0; background: #fffdf6; color: #3b2a4f; border-radius: 16px; padding: 8px 14px; min-height: 52px; display: flex; align-items: center; justify-content: flex-start; text-align: left; font-size: clamp(16px, 2.2vw, 20px); line-height: 1.35; }
+body.bigtext .ht-cap { font-size: clamp(20px, 3.2vw, 28px); }
 .film-help { bottom: 8px; gap: 6px; max-width: min(80%, 420px); padding: 5px 12px; font-size: clamp(15px, 2vw, 17px); }
 .film-help .fh-hand { width: 24px; height: 24px; }
 .th-text { min-height: 52px; padding: 8px 14px; border-radius: 16px; }

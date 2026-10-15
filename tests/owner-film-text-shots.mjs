@@ -30,7 +30,7 @@ try {
     await P.page.evaluate(async () => (await import('/js/howto.js')).openHowTo('counting', {}));
     await P.page.waitForSelector('.howto', { timeout: 20000 }); await P.page.waitForTimeout(1500);
     await P.page.screenshot({ path: path.join(out, `${name}-${lang}-howto-title.png`) }); result[`${name}-howto-title`] = await measure(P.page);
-    await P.page.waitForTimeout(7000);
+    await P.page.locator('.ht-next').first().click().catch(() => { }); await P.page.waitForTimeout(3500);
     await P.page.screenshot({ path: path.join(out, `${name}-${lang}-howto-step.png`) }); result[`${name}-howto-step`] = await measure(P.page);
     await P.ctx.close();
   }
