@@ -5651,12 +5651,16 @@ await check('ownerheartstap', async () => {
   const said = await P.page.evaluate(async () => { const V = await import('/js/voice.js'); window.__said = []; return !!V; });
   const box = await P.page.evaluate(() => { const h = document.querySelector('.hud .hearts'), r = h.getBoundingClientRect(); return { y: r.y + r.height / 2, x: r.x + r.width / 2, hit: Math.round(r.height), role: h.getAttribute('role'), label: h.getAttribute('aria-label') }; });
   await P.page.touchscreen.tap(box.x, box.y); await P.page.waitForTimeout(600);
-  const after = await P.page.evaluate(() => ({ toast: document.querySelector('.hud .htoast')?.textContent || '', settings: !!document.querySelector('.modal:not(.out)') }));
+  const after = await P.page.evaluate(() => ({ caption: document.querySelector('.caption.show')?.textContent || '', toast: document.querySelector('.hud .htoast.show')?.textContent || '', settings: !!document.querySelector('.modal:not(.out)') }));
+  // with captions switched off, the words come as a note instead (shown once, never twice)
+  await P.page.evaluate(async () => { (await import('/js/state.js')).settings.captions = false; });
+  await P.page.waitForTimeout(3600); await P.page.touchscreen.tap(box.x, box.y); await P.page.waitForTimeout(600);
+  const noCaps = await P.page.evaluate(async () => { const n = document.querySelector('.hud .htoast.show')?.textContent || ''; (await import('/js/state.js')).settings.captions = true; return n; });
   await clear(P.page); await P.page.locator('.hud .pav').first().tap(); await P.page.waitForTimeout(800);
   const card = await P.page.evaluate(() => !!document.querySelector('.modal:not(.out)'));
   const errors = P.errors; await P.ctx.close();
-  ok(box.role === 'button' && /hearts/i.test(box.label) && box.hit >= 44 && /hearts show how strong/i.test(after.toast) && !after.settings && card && !errors.length, JSON.stringify({ box, after, card, errors }));
-  return `hearts: own 44 px tap target, explained in words and speech; the picture (with its gear) still opens Settings`;
+  ok(box.role === 'button' && /hearts/i.test(box.label) && box.hit >= 44 && /hearts show how strong/i.test(after.caption) && !after.toast && /hearts show how strong/i.test(noCaps) && !after.settings && card && !errors.length, JSON.stringify({ box, after, noCaps, card, errors }));
+  return `hearts: own 44 px tap target, explained in speech with one caption (a note when captions are off); the picture (with its gear) still opens Settings`;
 });
 
 await check('ownertheatreapproach', async () => {

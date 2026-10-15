@@ -4,7 +4,7 @@ import { THREE } from './gfx.js';
 import { T } from './i18n.js';
 import { nm } from './i18n.js';
 import { ICONS } from './icons.js';
-import { farm, saveProfiles } from './state.js';
+import { farm, saveProfiles, settings } from './state.js';
 import { fmt } from './money.js';
 import { el, esc, clamp } from './util.js';
 import { SIZE, HALF } from './world.js';
@@ -86,7 +86,8 @@ export class Hud {
     // (owner, 16 Oct AEDT, point 50: "keep, explain on tap") the hearts explain themselves instead of opening Settings
     { const hb = this.q('.hearts'), HEARTS = ['Your hearts show how strong you are. Little ones never lose hearts. For big children on Hard, a big fall takes a heart, and food gives it back. If they run out, Ông Cú carries you somewhere safe and fills them up again.', 'Trái tim cho biết con khỏe thế nào. Các bé nhỏ không bao giờ mất tim. Với các con lớn ở mức Khó, ngã từ chỗ cao sẽ mất một trái tim, và ăn sẽ hồi lại. Nếu hết tim, Ông Cú đưa con đến chỗ an toàn và làm đầy lại.'];
       hb.setAttribute('role', 'button'); hb.tabIndex = 0; hb.setAttribute('aria-label', T('What do the hearts mean?', 'Trái tim có nghĩa là gì?'));
-      const explain = e => { e.stopPropagation(); e.preventDefault(); SFX.tap && SFX.tap(); this.toast(T(...HEARTS)); say(...HEARTS); };
+      // (the spoken line's caption already shows the words; the note is for when captions are off)
+      const explain = e => { e.stopPropagation(); e.preventDefault(); SFX.tap && SFX.tap(); say(...HEARTS); if (settings.captions === false) this.toast(T(...HEARTS)); };
       hb.onclick = explain; hb.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') explain(e); }; }
     this.q('.dk.map').onclick = () => game.openPad(i, 'map');
     this.q('.dk.bag').onclick = () => game.openPad(i, 'bag');
