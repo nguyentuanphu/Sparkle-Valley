@@ -273,11 +273,15 @@ export function createFestivals(G) {
         if (!q) {
           // (strings first, on three rings so their posts never share ground, then the pieces round them)
           const nb = F.kind === 'quiet' ? 0 : Math.max(0, A.stage - 1) * 2 * m;
+          let hung = 0;
           for (let j = 0, k = 0; j < nb && k < 90 * m; k++) { const a = k * 1.7 + w, r = 10 + (k % 3) * 4, x1 = c.x + Math.cos(a) * r, z1 = c.z + Math.sin(a) * r, x2 = c.x + Math.cos(a + .9) * r, z2 = c.z + Math.sin(a + .9) * r;
-            if (!free(x1, z1, .6) || !free(x2, z2, .6) || !D.claim({ x: x1, z: z1 }, 'support') || !D.claim({ x: x2, z: z2 }, 'support')) continue; put((x1 + x2) / 2, (z1 + z2) / 2, drawBunting([x1, heightAt(x1, z1) + 3.2, z1], [x2, heightAt(x2, z2) + 3.2, z2], bc, bk), 'string'); j++; }
-          const n = Math.round((F.kind === 'quiet' ? 6 : 16) * full * m);
+            if (!free(x1, z1, .6) || !free(x2, z2, .6) || !D.fits({ x: x1, z: z1 }, 'support') || !D.fits({ x: x2, z: z2 }, 'support') || Math.hypot(x1 - x2, z1 - z2) < 4) continue; D.claim({ x: x1, z: z1 }, 'support'); D.claim({ x: x2, z: z2 }, 'support'); hung++; put((x1 + x2) / 2, (z1 + z2) / 2, drawBunting([x1, heightAt(x1, z1) + 3.2, z1], [x2, heightAt(x2, z2) + 3.2, z2], bc, bk), 'string'); j++; }
+          // (as along the streets) a strand that does not fit becomes a piece on clear ground, so the amount stays
+          const n = Math.round((F.kind === 'quiet' ? 6 : 16) * full * m) + (nb - hung);
+          let laid = 0;
           for (let i = 0, k = 0; i < n && k < 240 * m; k++) { const a = k * 2.399 + w, r = 7 + (k * .618 % 1) * 2.2 * (4 + m), x = c.x + Math.cos(a) * r, z = c.z + Math.sin(a) * r;
-            if (!free(x, z, 1.1) || !D.claim({ x, z })) continue; put(x, z, piece(F.theme, i, x, heightAt(x, z), z, a + Math.PI)); i++; }
+            if (!free(x, z, 1.1) || !D.claim({ x, z })) continue; put(x, z, piece(F.theme, i, x, heightAt(x, z), z, a + Math.PI)); i++; laid++; }
+          D.note({ place: key, festival: F.id, ring: true, requested: n - (nb - hung) + nb, placed: laid + hung, relocated: nb - hung, unplaced: n - laid });
         }
         // the festival table, on the day, in its first place
         if (A.on && w === 0) {

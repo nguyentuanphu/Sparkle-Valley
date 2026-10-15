@@ -46,7 +46,8 @@ export function createDecor(free) {
   // (owner, 15 Oct: "crowded poles") a post stands clear of every piece, and at least 4 m from any other post unless it is that post
   const canSupport = q => { const [x,z]=cell(q);for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++)if((occupied.get((x+dx)+','+(z+dz))||[]).some(p=>{const d=Math.hypot(p.x-q.x,p.z-q.z);return p.kind==='support'?d>.05&&d<4:d<1.8;}))return false;return true; };
   // (a piece drawn outside decorate: the ring round a place without streets, a table, the roadside) takes the ground only if it is free
-  const claim = (q,kind='piece') => { if(kind==='support'?!canSupport(q):!available(q))return false; occupy(q,kind); return true; };
+  const fits = (q,kind='piece') => kind==='support'?canSupport(q):available(q);
+  const claim = (q,kind='piece') => { if(!fits(q,kind))return false; occupy(q,kind); return true; };
   const wireKey = (a,b,wall=false) => (wall?'wall:':'post:')+[[a.x,a.z],[b.x,b.z]].map(p=>p.map(n=>n.toFixed(3)).join(',')).sort().join('|');
   const order = (q,id) => { let h=2166136261;for(const c of id+'|'+q.x+'|'+q.z)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0; };
   const streetSpots = (key, o, gap = 5) => {
@@ -178,7 +179,7 @@ export function createDecor(free) {
     return all.filter(q => !skip(q.x, q.z));
   };
   const fronts = houses => houses.map(frontOf).filter(q => free(q.x, q.z, .6) && !(roadDist(q.x, q.z).road && roadDist(q.x, q.z).d < roadDist(q.x, q.z).road.w / 2 + 1.2));
-  return { begin, claim, distribution:()=>distribution.map(row=>({...row})), streetSpots, decorate, plan, count, onStreet, roadSpots, fronts };
+  return { begin, fits, claim, note: row => { distribution.push(row); }, distribution:()=>distribution.map(row=>({...row})), streetSpots, decorate, plan, count, onStreet, roadSpots, fronts };
 }
 
 // a festival tapped on the calendar that is not on today: still to come (days to go; nothing starts), or in its
