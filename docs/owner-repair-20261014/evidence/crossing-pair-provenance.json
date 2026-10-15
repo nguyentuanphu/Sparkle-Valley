@@ -1,0 +1,236 @@
+{
+  "beforeSource": "6a6ae885f86ad58a52688782eeba1d5417985fe9",
+  "afterSource": "1e2f06cc114dbc6343ed29f3c91e605392b7472c",
+  "pairs": [
+    {
+      "before": "crossings-paired-before-r74/phone-en-crossing-town-overview.png",
+      "after": "crossings-paired-after-20/phone-en-crossing-town-overview.png",
+      "target": {
+        "x": 5,
+        "y": 4.75,
+        "z": -28
+      },
+      "camera": {
+        "x": 23,
+        "y": 34.6,
+        "z": -4
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/phone-en-crossing-town-approach.png",
+      "after": "crossings-paired-after-20/phone-en-crossing-town-approach.png",
+      "target": {
+        "x": 9.2,
+        "y": 6.8999999999999995,
+        "z": -32.6
+      },
+      "camera": {
+        "x": 12.2,
+        "y": 9.2,
+        "z": -25.6
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/phone-en-crossing-aussie-overview.png",
+      "after": "crossings-paired-after-20/phone-en-crossing-aussie-overview.png",
+      "target": {
+        "x": -104,
+        "y": 4.15,
+        "z": -65
+      },
+      "camera": {
+        "x": -86,
+        "y": 34,
+        "z": -41
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/phone-en-crossing-aussie-approach.png",
+      "after": "crossings-paired-after-20/phone-en-crossing-aussie-approach.png",
+      "target": {
+        "x": -112.2,
+        "y": 6.3,
+        "z": -70
+      },
+      "camera": {
+        "x": -109.2,
+        "y": 8.6,
+        "z": -63
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/phone-vi-crossing-town-overview.png",
+      "after": "crossings-paired-after-20/phone-vi-crossing-town-overview.png",
+      "target": {
+        "x": 5,
+        "y": 4.75,
+        "z": -28
+      },
+      "camera": {
+        "x": 23,
+        "y": 34.6,
+        "z": -4
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/phone-vi-crossing-town-approach.png",
+      "after": "crossings-paired-after-20/phone-vi-crossing-town-approach.png",
+      "target": {
+        "x": 9.2,
+        "y": 6.8999999999999995,
+        "z": -32.6
+      },
+      "camera": {
+        "x": 12.2,
+        "y": 9.2,
+        "z": -25.6
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/phone-vi-crossing-aussie-overview.png",
+      "after": "crossings-paired-after-20/phone-vi-crossing-aussie-overview.png",
+      "target": {
+        "x": -104,
+        "y": 4.15,
+        "z": -65
+      },
+      "camera": {
+        "x": -86,
+        "y": 34,
+        "z": -41
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/phone-vi-crossing-aussie-approach.png",
+      "after": "crossings-paired-after-20/phone-vi-crossing-aussie-approach.png",
+      "target": {
+        "x": -112.2,
+        "y": 6.3,
+        "z": -70
+      },
+      "camera": {
+        "x": -109.2,
+        "y": 8.6,
+        "z": -63
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/tablet-en-crossing-town-overview.png",
+      "after": "crossings-paired-after-20/tablet-en-crossing-town-overview.png",
+      "target": {
+        "x": 5,
+        "y": 4.75,
+        "z": -28
+      },
+      "camera": {
+        "x": 19,
+        "y": 27.6,
+        "z": -9
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/tablet-en-crossing-town-approach.png",
+      "after": "crossings-paired-after-20/tablet-en-crossing-town-approach.png",
+      "target": {
+        "x": 9.2,
+        "y": 6.8999999999999995,
+        "z": -32.6
+      },
+      "camera": {
+        "x": 12.2,
+        "y": 9.2,
+        "z": -25.6
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/tablet-en-crossing-aussie-overview.png",
+      "after": "crossings-paired-after-20/tablet-en-crossing-aussie-overview.png",
+      "target": {
+        "x": -104,
+        "y": 4.15,
+        "z": -65
+      },
+      "camera": {
+        "x": -90,
+        "y": 27,
+        "z": -46
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/tablet-en-crossing-aussie-approach.png",
+      "after": "crossings-paired-after-20/tablet-en-crossing-aussie-approach.png",
+      "target": {
+        "x": -112.2,
+        "y": 6.3,
+        "z": -70
+      },
+      "camera": {
+        "x": -109.2,
+        "y": 8.6,
+        "z": -63
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/computer-en-crossing-town-overview.png",
+      "after": "crossings-paired-after-20/computer-en-crossing-town-overview.png",
+      "target": {
+        "x": 5,
+        "y": 4.75,
+        "z": -28
+      },
+      "camera": {
+        "x": 19,
+        "y": 27.6,
+        "z": -9
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/computer-en-crossing-town-approach.png",
+      "after": "crossings-paired-after-20/computer-en-crossing-town-approach.png",
+      "target": {
+        "x": 9.2,
+        "y": 6.8999999999999995,
+        "z": -32.6
+      },
+      "camera": {
+        "x": 12.2,
+        "y": 9.2,
+        "z": -25.6
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/computer-en-crossing-aussie-overview.png",
+      "after": "crossings-paired-after-20/computer-en-crossing-aussie-overview.png",
+      "target": {
+        "x": -104,
+        "y": 4.15,
+        "z": -65
+      },
+      "camera": {
+        "x": -90,
+        "y": 27,
+        "z": -46
+      }
+    },
+    {
+      "before": "crossings-paired-before-r74/computer-en-crossing-aussie-approach.png",
+      "after": "crossings-paired-after-20/computer-en-crossing-aussie-approach.png",
+      "target": {
+        "x": -112.2,
+        "y": 6.3,
+        "z": -70
+      },
+      "camera": {
+        "x": -109.2,
+        "y": 8.6,
+        "z": -63
+      }
+    }
+  ],
+  "pageErrors": [],
+  "selectedVisualReview": [
+    "phone-en town detail AFTER source20",
+    "tablet-en Aussie detail BEFORE/AFTER"
+  ],
+  "limits": "Fixed inspection cameras and emulated Chromium; remaining individual images/physical devices/map-wide/source21 visual refresh not accepted."
+}

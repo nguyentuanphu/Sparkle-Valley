@@ -814,7 +814,7 @@
       "workOrder": "WO-09/13/16",
       "requirement": "Autoplay must understand legal progress, finish supported games and report unfinished activities as failures.",
       "status": "partial",
-      "proof": "Hanoi legal strategy retained; Robot, Mountain/Duck Maze and sorting finish through normal controls in all8 EN/VI Hard cases. Unreachable navigation and non-advancing quest explicitly fail. Focused4/4; existing regression/full-catalogue/final GitHub proof pending.",
+      "proof": "Eight EN/VI Hard5x legal-plan completions retained; exact e75 Full171/171 clean. Source20 normal1x Hard sorting and maze actual wins; bounded plan-action allowance. Full catalogue and remaining rates/final-source Full pending.",
       "releaseApproved": false
     },
     {
@@ -829,16 +829,16 @@
       "id": "EXT-04",
       "workOrder": "WO-01/16",
       "requirement": "Child-friendly road crossing paths and warning signs, preserving existing artwork and keeping road/door/quest routes clear.",
-      "status": "queued",
-      "proof": "Existing Aussie raised crossing located; map-wide crossing inventory, implementation and EN/VI picture proof pending.",
+      "status": "partial",
+      "proof": "Source20:20 real warning taps/five layouts, actual EN/VI recorded guidance and eight decodes; awning-safe posts at two existing crossings.32 attributed PNG form16 exact R74/source20 camera/target pairs, zero page errors; source21 visual refresh remains pending. Map-wide/physical-device/final-source proof incomplete.",
       "releaseApproved": false
     },
     {
       "id": "EXT-05",
       "workOrder": "WO-01/14/16",
       "requirement": "Natural varied decoration distribution across appropriate places, without crowded clusters or decoration in roads or nonsensical locations.",
-      "status": "partial",
-      "proof": "Reproduced10 decorations in actual shifted town-road bounds; corrected road mask yields130 planned placements with zero violations. Natural spacing and map-wide distribution remain unfinished.",
+      "status": "in_progress",
+      "proof": "Confirmed107 duplicate village piece coordinates between two real festivals. Applied WIP21 shared occupancy/support/strand repair; stronger mixed amounts/stages and configured-count checks unrun. Actual decoration comparison pictures missing.",
       "releaseApproved": false
     },
     {
