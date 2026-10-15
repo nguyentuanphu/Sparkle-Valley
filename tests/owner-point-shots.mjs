@@ -21,7 +21,7 @@ try {
     await start(P.page); await clear(P.page); const shot = async n => { await P.page.waitForTimeout(500); await P.page.screenshot({ path: path.join(dir, `${device}-en-${n}.png`) }); }, st = { device };
     // 50: tap the hearts
     await P.page.locator('.hud .hearts').first().click(); await P.page.waitForTimeout(700);
-    st.hearts = await P.page.evaluate(() => { const v = e => e && e.getClientRects().length > 0; const t = [...document.querySelectorAll('.toast, .htoast.show')].filter(v).map(e => e.textContent.trim().slice(0, 200)); return { toast: t, settingsOpen: v(document.querySelector('.modal.settings, .settings')), modals: [...document.querySelectorAll('.modal')].filter(v).map(m => m.className.slice(0, 40)) }; });
+    st.hearts = await P.page.evaluate(() => { const v = e => e && e.getClientRects().length > 0; const t = [...document.querySelectorAll('.toast, .htoast.show, .caption.show')].filter(v).map(e => e.textContent.trim().slice(0, 200)); return { toast: t, settingsOpen: v(document.querySelector('.modal.settings, .settings')), modals: [...document.querySelectorAll('.modal')].filter(v).map(m => m.className.slice(0, 40)) }; });
     await shot('hearts-tap'); await clear(P.page);
     if (process.env.SV_ONLY === 'hearts') { results.push({ ...st, errors: P.errors }); await P.ctx.close(); continue; }
     // 22/23: the view tray
