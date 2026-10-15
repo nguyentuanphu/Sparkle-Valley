@@ -30,7 +30,9 @@ try {
         const heads = [...P.querySelectorAll('h3, h4')].filter(h => vis(h) && !h.closest('summary') && !h.closest('dialog, .modal'));
         const loose = heads.filter(h => !h.closest('details')).map(h => h.textContent.trim().slice(0, 50));
         const folds = [...P.querySelectorAll('details')].filter(vis);
-        return { title: document.querySelector('#tabs button.on, #tabs button[aria-current]')?.textContent.trim().slice(0, 30) || '', heads: heads.length, loose, folds: folds.length };
+        // (point 35) each page explains itself: who it affects, the default and when a change applies, not a bare tagline
+        const help = (P.querySelector('.studio-help p')?.textContent || '').trim();
+        return { title: document.querySelector('#tabs button.on, #tabs button[aria-current]')?.textContent.trim().slice(0, 30) || '', heads: heads.length, loose, folds: folds.length, help: help.length };
       });
       // close every open fold by tapping its summary: its content must really disappear; tap again: it comes back
       const toggled = await pg.evaluate(async () => { const P = document.querySelector('#page'), out = { ok: 0, stuck: [] };
@@ -57,6 +59,6 @@ try {
     rows.push({ view: label, errors }); await ctx.close();
   }
 } finally { await browser.close(); unroute(); server.close(); fs.mkdirSync('out/owner-studio-folds', { recursive: true }); fs.writeFileSync('out/owner-studio-folds/results.json', JSON.stringify(rows, null, 2) + '\n'); }
-const loose = rows.filter(r => r.loose?.length), stuck = rows.filter(r => r.toggled?.stuck.length), keep = rows.filter(r => r.persistence && r.persistence.closedAfterReload !== true), errs = rows.filter(r => r.errors?.length);
-console.log(JSON.stringify({ tabs: rows.filter(r => r.tab).length, folds: rows.reduce((a, r) => a + (r.folds || 0), 0), toggledOk: rows.reduce((a, r) => a + (r.toggled?.ok || 0), 0), loose: loose.map(r => [r.view, r.tab, r.loose]), stuck: stuck.map(r => [r.view, r.tab, r.toggled.stuck]), keep: keep.map(r => r.persistence), errs: errs.map(r => r.errors) }));
-assert.equal(loose.length + stuck.length + keep.length + errs.length, 0, 'Every Studio heading must be in a fold that really closes and stays closed');
+const thin = rows.filter(r => r.tab && r.help < 80), loose = rows.filter(r => r.loose?.length), stuck = rows.filter(r => r.toggled?.stuck.length), keep = rows.filter(r => r.persistence && r.persistence.closedAfterReload !== true), errs = rows.filter(r => r.errors?.length);
+console.log(JSON.stringify({ thin: thin.map(r => [r.view, r.tab, r.help]), tabs: rows.filter(r => r.tab).length, folds: rows.reduce((a, r) => a + (r.folds || 0), 0), toggledOk: rows.reduce((a, r) => a + (r.toggled?.ok || 0), 0), loose: loose.map(r => [r.view, r.tab, r.loose]), stuck: stuck.map(r => [r.view, r.tab, r.toggled.stuck]), keep: keep.map(r => r.persistence), errs: errs.map(r => r.errors) }));
+assert.equal(thin.length + loose.length + stuck.length + keep.length + errs.length, 0, 'Every Studio heading must be in a fold that really closes and stays closed');
