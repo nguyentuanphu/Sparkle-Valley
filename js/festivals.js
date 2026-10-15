@@ -230,7 +230,7 @@ export function createFestivals(G) {
   // (owner, 13 Oct: 5x the decorations) the decorations are drawn in 12 m patches: the ones nearest the children first,
   // each within NEAR (farther ones are lost in the haze), with outlines only within CLOSE, and never more than BUDGET
   // triangles and CALLS draw calls in all (PERF-003: Lotus Village stays within its budget on a festival day, whatever the amount in Studio)
-  const CELL = 12, NEAR = 85, CLOSE = 30, BUDGET = 60000, CALLS = 16, places3 = [];
+  const CELL = 12, NEAR = 85, CLOSE = 30, BUDGET = 60000, CALLS = 16, places3 = [], placed = [];
   const tris = m => m && m.geometry ? (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3 : 0;
   const addMeshes = (parts, glows, at) => {
     const box = at ? new THREE.Group() : group; if (at) { box.userData.at = at; group.add(box); places3.push(box); }
@@ -239,6 +239,7 @@ export function createFestivals(G) {
   };
   // a place's pieces, grouped into patches
   const addItems = items => { const cells = new Map();
+    for (const it of items) { placed.push({ x: it.x, z: it.z, kind: it.kind }); }
     for (const it of items) { const k = Math.floor(it.x / CELL) + ',' + Math.floor(it.z / CELL); if (!cells.has(k)) cells.set(k, []); cells.get(k).push(it); }
     for (const list of cells.values()) { const x = list.reduce((a, q) => a + q.x, 0) / list.length, z = list.reduce((a, q) => a + q.z, 0) / list.length, r = Math.max(...list.map(q => Math.hypot(q.x - x, q.z - z)));
       addMeshes(list.flatMap(q => q.parts), list.flatMap(q => q.glows), { x, z, r }); } };
@@ -255,7 +256,7 @@ export function createFestivals(G) {
     // (festdecor loads once a child is in the valley, not behind the title screen)
     if (!D) { active = activeFestivals(); if (G.heroes.length) loadD(); else if (!waitD) { waitD = true; W.updaters.push(() => { if (G.heroes.length && !loadingD) loadD(); }); } return; }
     group.traverse(o => { if (o.isMesh && o.geometry && !o.userData.outline) o.geometry.dispose(); });
-    group.clear(); places3.length = 0; bursts.length = 0; glowMeshes = []; unhook(tables); unhook(doors);
+    group.clear(); places3.length = 0; placed.length = 0; bursts.length = 0; glowMeshes = []; unhook(tables); unhook(doors);
     active = activeFestivals();
     D.begin();const supports=new Map(),drawBunting=(a,b,cols,kind,wall=false)=>bunting(a,b,cols,kind,wall,supports);
     const places = PLACES(), taken = new Set(), hunts = [];
@@ -269,16 +270,17 @@ export function createFestivals(G) {
         const [bc, bk] = THEME_BUNTING[F.theme] || [['#ff4f9a', '#ffd23f'], 'flag'], q = D.decorate(key, o, F, A, piece, drawBunting, bc, bk, housesOf(o)), items = q || [];
         const put = (x, z, r, kind = 'piece') => items.push({ x, z, kind, parts: r.parts, glows: r.glows });
         if (!q) {
-          const n = Math.round((F.kind === 'quiet' ? 6 : 16) * full * m);
-          for (let i = 0, k = 0; i < n && k < 80 * m; k++) { const a = k * 2.399 + w, r = 7 + (k % (5 + m)) * 2.2, x = c.x + Math.cos(a) * r, z = c.z + Math.sin(a) * r;
-            if (!free(x, z, 1.1)) continue; put(x, z, piece(F.theme, i, x, heightAt(x, z), z, a + Math.PI)); i++; }
+          // (strings first, on three rings so their posts never share ground, then the pieces round them)
           const nb = F.kind === 'quiet' ? 0 : Math.max(0, A.stage - 1) * 2 * m;
-          for (let j = 0, k = 0; j < nb && k < 30 * m; k++) { const a = k * 1.7 + w, r = 10, x1 = c.x + Math.cos(a) * r, z1 = c.z + Math.sin(a) * r, x2 = c.x + Math.cos(a + .9) * r, z2 = c.z + Math.sin(a + .9) * r;
-            if (!free(x1, z1, .6) || !free(x2, z2, .6)) continue; put((x1 + x2) / 2, (z1 + z2) / 2, drawBunting([x1, heightAt(x1, z1) + 3.2, z1], [x2, heightAt(x2, z2) + 3.2, z2], bc, bk), 'string'); j++; }
+          for (let j = 0, k = 0; j < nb && k < 90 * m; k++) { const a = k * 1.7 + w, r = 10 + (k % 3) * 4, x1 = c.x + Math.cos(a) * r, z1 = c.z + Math.sin(a) * r, x2 = c.x + Math.cos(a + .9) * r, z2 = c.z + Math.sin(a + .9) * r;
+            if (!free(x1, z1, .6) || !free(x2, z2, .6) || !D.claim({ x: x1, z: z1 }, 'support') || !D.claim({ x: x2, z: z2 }, 'support')) continue; put((x1 + x2) / 2, (z1 + z2) / 2, drawBunting([x1, heightAt(x1, z1) + 3.2, z1], [x2, heightAt(x2, z2) + 3.2, z2], bc, bk), 'string'); j++; }
+          const n = Math.round((F.kind === 'quiet' ? 6 : 16) * full * m);
+          for (let i = 0, k = 0; i < n && k < 240 * m; k++) { const a = k * 2.399 + w, r = 7 + (k * .618 % 1) * 2.2 * (4 + m), x = c.x + Math.cos(a) * r, z = c.z + Math.sin(a) * r;
+            if (!free(x, z, 1.1) || !D.claim({ x, z })) continue; put(x, z, piece(F.theme, i, x, heightAt(x, z), z, a + Math.PI)); i++; }
         }
         // the festival table, on the day, in its first place
         if (A.on && w === 0) {
-          let x = c.x - 3, z = c.z + 3; for (let k = 0; k < 12 && !free(x, z, 1.4); k++) { x = c.x + Math.cos(k) * (4 + k * .5); z = c.z + Math.sin(k) * (4 + k * .5); }
+          let x = c.x - 3, z = c.z + 3; for (let k = 0; k < 40 && !(free(x, z, 1.4) && D.claim({ x, z })); k++) { x = c.x + Math.cos(k) * (4 + k * .5); z = c.z + Math.sin(k) * (4 + k * .5); }
           const y = heightAt(x, z), parts = []; parts.push(P(Box(1.8, .08, .9), '#c9a05a', [x, y + .8, z]), ...[[-.8, -.35], [.8, -.35], [-.8, .35], [.8, .35]].map(([dx, dz]) => P(Cyl(.04, .04, .8, 5), '#8a6a4a', [x + dx, y + .4, z + dz])), P(Box(1.9, .5, .02), '#ffffff', [x, y + .55, z + .45]));
           const tq = piece(F.theme, 1, x + .5, y + .84, z, 0); items.push({ x, z, kind: 'table', parts: parts.concat(tq.parts), glows: tq.glows });
           const it = { id: 'festival_' + F.id, x, z, r: 3.2, icon: F.icon, label: () => T(F.en, F.vi), act: h => visit(h, F) }; tables.push(it); G.interactables.push(it);
@@ -301,12 +303,12 @@ export function createFestivals(G) {
       const used = new Set(active.flatMap(a => a.F.where));
       for (const [key, o] of Object.entries(places)) { if (used.has(key)) continue; const q = D.decorate(key, o, F, spread, piece, drawBunting, bc, bk, [], 1); if (q) addItems(q); }
       const inside = (x, z) => Object.values(places).some(o => o.x0 != null ? x > o.x0 - 6 && x < o.x1 + 6 && z > o.z0 - 6 && z < o.z1 + 6 : Math.hypot(x - o.x, z - o.z) < (o.r || 24) + 6);
-      const road = D.roadSpots(Math.round(60 / m), inside).filter((q, k) => (k % 4) < Math.round(frac * 4));
+      const road = D.roadSpots(Math.round(60 / m), inside).filter((q, k) => (k % 4) < Math.round(frac * 4)).filter(q => D.claim(q));
       addItems(road.map((q, i) => { const r = piece(F.theme, i, q.x, heightAt(q.x, q.z), q.z, q.a); return { x: q.x, z: q.z, kind: 'road', parts: r.parts, glows: r.glows }; }));
       // and every house outside the places (the suburbs, the homes along the roads): a piece by its door and a garland
       const out = (W.houses || []).filter(hs => !inside(hs.x, hs.z)).filter((hs, k) => (k % 4) < Math.round(frac * 4));
       addItems(D.fronts(out).flatMap((q, i) => { const r = piece(F.theme, i + 2, q.x, heightAt(q.x, q.z), q.z, q.a), [[x1, z1], [x2, z2]] = q.g, y = Math.min(heightAt(x1, z1), heightAt(x2, z2)) + 2.6, g = drawBunting([x1, y, z1], [x2, y, z2], bc, bk, true);
-        return [{ x: q.x, z: q.z, kind: 'road', parts: r.parts, glows: r.glows }, { x: (x1 + x2) / 2, z: (z1 + z2) / 2, kind: 'string', parts: g.parts, glows: g.glows }]; }));
+        return [...(D.claim(q) ? [{ x: q.x, z: q.z, kind: 'road', parts: r.parts, glows: r.glows }] : []), { x: (x1 + x2) / 2, z: (z1 + z2) / 2, kind: 'string', parts: g.parts, glows: g.glows }]; }));
     }
     wasNight = null; nightLights(); if (G.heroes.length) near();
     if (hunts.length || H) loadH().then(h => h && h.set(hunts));
@@ -400,6 +402,8 @@ export function createFestivals(G) {
   return {
     rebuild: build,
     distribution: () => D ? D.distribution() : [],
+    // (checks) where every drawn piece, string and table stands, across the whole valley
+    items: () => placed.map(q => ({ ...q })),
     // (checks) the spots along a place's streets, and each active festival's places
     streetSpots: key => { const o = PLACES()[key]; return o ? streetSpots(key, o).map(q => ({ x: q.x, z: q.z })) : []; },
     plan: (key, id, stage) => { const o = PLACES()[key], F = byId(id); return o && F && D ? D.plan(key, o, F, stage) : []; },

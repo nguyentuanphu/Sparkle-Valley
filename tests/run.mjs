@@ -5628,6 +5628,10 @@ await check('ownerdecoroverlap', async () => {
   return await ownerSmoke('owner-decor-overlap.mjs');
 });
 
+await check('ownerdecorworld', async () => {
+  return await ownerSmoke('owner-decor-world.mjs');
+});
+
 await check('ownerroadvoice', async () => {
   return await ownerSmoke('owner-road-voice.mjs');
 });

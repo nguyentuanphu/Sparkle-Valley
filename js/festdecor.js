@@ -44,6 +44,8 @@ export function createDecor(free) {
   const occupy = (q,kind='piece') => { const [x,z]=cell(q), key=x+','+z; if(!occupied.has(key))occupied.set(key,[]);occupied.get(key).push({...q,kind}); };
   const available = q => { const [x,z]=cell(q);for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)if((occupied.get((x+dx)+','+(z+dz))||[]).some(p=>Math.hypot(p.x-q.x,p.z-q.z)<1.8))return false;return true; };
   const canSupport = q => { const [x,z]=cell(q);for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)if((occupied.get((x+dx)+','+(z+dz))||[]).some(p=>{const d=Math.hypot(p.x-q.x,p.z-q.z);return d<1.8&&(p.kind!=='support'||d>.05);}))return false;return true; };
+  // (a piece drawn outside decorate: the ring round a place without streets, a table, the roadside) takes the ground only if it is free
+  const claim = (q,kind='piece') => { if(kind==='support'?!canSupport(q):!available(q))return false; occupy(q,kind); return true; };
   const wireKey = (a,b,wall=false) => (wall?'wall:':'post:')+[[a.x,a.z],[b.x,b.z]].map(p=>p.map(n=>n.toFixed(3)).join(',')).sort().join('|');
   const order = (q,id) => { let h=2166136261;for(const c of id+'|'+q.x+'|'+q.z)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0; };
   const streetSpots = (key, o, gap = 5) => {
@@ -141,7 +143,7 @@ export function createDecor(free) {
     // (each piece with where it stands, so js/festivals.js can draw only the patches near the children)
     const L = layout(key, o, F, A.stage, houses, mm), items = []; if (!L) return null;
     const add = (x, z, r, kind = 'piece') => items.push({ x, z, kind, parts: r.parts, glows: r.glows });
-    const region = o.w && o.d ? { ...o, x0:o.x0-20,x1:o.x1+20,z0:o.z0-20,z1:o.z1+20 } : o, rk=region===o?key:key+'+';
+    const region = o.w && o.d ? { ...o, x0:o.x0-20,x1:o.x1+20,z0:o.z0-20,z1:o.z1+20 } : o.x0 == null ? { ...o, r:(o.r||24)+20 } : o, rk=region===o?key:key+'+';
     const alternatives=streetSpots(rk,region,GAP[mm||decoOf(F)]).concat(openSpots(rk,region)).map(q=>({q,n:order(q,F.id+'|'+key)})).sort((a,b)=>a.n-b.n).map(v=>v.q);
     let next=0, extra=0, relocated=0;
     const putPiece=(at,i)=>{let q=at;if(!q||!available(q)){q=null;while(next<alternatives.length){const p=alternatives[next++];if(available(p)){q=p;break;}}}if(!q)return;if(q!==at)relocated++;occupy(q);add(q.x,q.z,piece(F.theme,i,q.x,heightAt(q.x,q.z),q.z,q.a));};
@@ -175,7 +177,7 @@ export function createDecor(free) {
     return all.filter(q => !skip(q.x, q.z));
   };
   const fronts = houses => houses.map(frontOf).filter(q => free(q.x, q.z, .6) && !(roadDist(q.x, q.z).road && roadDist(q.x, q.z).d < roadDist(q.x, q.z).road.w / 2 + 1.2));
-  return { begin, distribution:()=>distribution.map(row=>({...row})), streetSpots, decorate, plan, count, onStreet, roadSpots, fronts };
+  return { begin, claim, distribution:()=>distribution.map(row=>({...row})), streetSpots, decorate, plan, count, onStreet, roadSpots, fronts };
 }
 
 // a festival tapped on the calendar that is not on today: still to come (days to go; nothing starts), or in its
