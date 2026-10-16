@@ -303,7 +303,10 @@ export function createFilm(stage, script, ctx = {}) {
       if (page) page.dispose();
       paused = false; r.domElement.hidden = false;
       page = new Page(k); scene.fog.near = 60; scene.fog.far = 260; sun.intensity = 1.4; hemi.intensity = 1.25;
-      try { script.pages[k] && script.pages[k](page); if (page.look) dressStory(page); } catch (e) { console.warn('film page', k, e); }
+      try {
+        script.pages[k] && script.pages[k](page);
+        if (page.look) { const n = page.tickers.length; dressStory(page); if (calm) page.tickers.length = n; }
+      } catch (e) { console.warn('film page', k, e); }
       page.ev.sort((a, b) => a.t - b.t);
       cam.position.copy(page.camPos); cam.lookAt(page.camLook);
       return page.done;
