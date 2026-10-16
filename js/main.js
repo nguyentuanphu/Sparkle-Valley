@@ -57,6 +57,7 @@ import { cachedCanvas } from './worldcache.js';
 import { events } from './core/events.js';
 import { createPlaceBook } from './placebook.js';
 import { createFamilyCards } from './familycards.js';
+import { attach as attachStickers } from './stickers.js'; // the sticker book (chat B, 16 Oct): give(id), has(id), count()
 import { createMyHouse } from './myhouse.js';
 import { createReport, addMinute } from './report.js';
 import { createCoop } from './coop.js';
@@ -1732,6 +1733,7 @@ createRegionSites(G); // more famous places of each region, just outside its cit
 createVnFun(G, { sfx: SFX, say, dialog, toast: (h, m) => hudFor(h).toast(m) }); // children playing north and south; buffalo and bull festivals
 G.placeBook = createPlaceBook(G, { toast: (h, m) => hudFor(h).toast(m), save }); // the places sticker book listens to the event bus (js/placebook.js)
 G.familyCards = createFamilyCards(G, { toast: (h, m) => hudFor(h).toast(m), save }); // family photos from Studio arrive as postcards (js/familycards.js)
+attachStickers(G); // the sticker book knows who is playing (js/stickers.js)
 G.myHouse = G.homes ? createMyHouse(G) : null; // decorate your own house at Sunny Farm (js/myhouse.js)
 G.report = createReport(G, { save }); // the play report for grown-ups counts games and minutes (js/report.js)
 G.coop = createCoop(G, { Net, toast: (h, m) => hudFor(h).toast(m) }); // together quests in an online room (js/coop.js)
