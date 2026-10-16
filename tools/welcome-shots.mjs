@@ -12,6 +12,8 @@ const b = await launch();
 for (const [dev, [w, h, touch]] of Object.entries(SIZES)) for (const lang of ['en', 'vi']) {
   const P = await open(b, { w, h, touch, lang, play: false, settings: { calm: false } });
   await P.page.waitForTimeout(1200);
+  // the Start button's shine, held halfway across it so the picture shows it
+  await P.page.evaluate(() => document.getAnimations().filter(a => a.animationName === 'tt-shine').forEach(a => { a.pause(); a.currentTime = 2200; }));
   await P.page.screenshot({ path: path.join(out, `${dev}-${lang}.png`) });
   if (P.errors.length) console.log(dev, lang, 'errors:', P.errors.slice(0, 3).join(' | '));
   await P.ctx.close(); console.log('took', dev, lang);
