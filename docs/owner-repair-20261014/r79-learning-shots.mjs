@@ -2,12 +2,12 @@
 // and a computer: each game a moment into its first question at under-5, Easy and Hard; the reward banner after three
 // right answers in a row; and the "You did it!" screen. Games that do not exist yet in the code being pictured are
 // skipped (the before pictures have no new games). Run it once on the old code and once on the new.
-// Usage: node owner-r79-learning-shots.mjs <evidence folder name>   (SV_URL picks the game)
+// Usage (from tests/, so the browser package is found): node ../docs/owner-repair-20261014/r79-learning-shots.mjs <evidence folder name>   (SV_URL picks the game)
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { launch, open, clear } from './harness.mjs';
-const root = fileURLToPath(new URL('../', import.meta.url)), out = path.join(root, 'docs/owner-repair-20261014/evidence', process.argv[2] || 'r79-learning-now');
+import { launch, open, clear } from '../../tests/harness.mjs';
+const root = fileURLToPath(new URL('../../', import.meta.url)), out = path.join(root, 'docs/owner-repair-20261014/evidence', process.argv[2] || 'r79-learning-now');
 fs.mkdirSync(out, { recursive: true });
 const layouts = [['phone', 'en', 390, 844, true], ['phone', 'vi', 390, 844, true], ['tablet', 'en', 820, 1180, true], ['computer', 'en', 1280, 800, false]];
 const games = ['rulefinder', 'gardenorder', 'steppingpath', 'remembergarden', 'patternpicnic', 'shapebuilders', 'sayfind', 'marketcount', 'feelings', 'soundhunt'];

@@ -151,6 +151,7 @@ register({ id: 'marketcount', icon: '🧺', learn: true, name: () => T('Market C
       : [`Put ${target} ${name(target)} in the basket.`, `Bỏ ${NUMBER_WORDS.vi[target]} ${f[3]} vào giỏ.`];
     const sign = el('div', 'mc-sign', mode === 'count' ? `<b>${target}</b>${pic(f[0])}` : `<b>${first} ${mode === 'add' ? '+' : '−'} ${mode === 'add' ? 2 : 1}</b>${pic(f[0])}`);
     const basket = el('div', 'mc-basket'); basket.setAttribute('aria-label', T('Basket', 'Cái giỏ'));
+    basket.appendChild(el('span', 'mc-label', pic('🧺')));
     const stall = el('div', 'mc-stall'); stall.setAttribute('aria-label', T('Fruit stall', 'Sạp trái cây'));
     const done = el('button', 'btn mc-done', pic('✅') + T("That's it!", 'Xong rồi!')); done.style.minHeight = '64px';
     // everything of this round sits in its own box, so its taps and drags end with the round
@@ -169,7 +170,7 @@ register({ id: 'marketcount', icon: '🧺', learn: true, name: () => T('Market C
       else { stall.appendChild(b); const n = inBasket().length; talk(api, num(n)); }
       api.sfx.tap && api.sfx.tap(); arm();
     };
-    let resolve; const finished = new Promise(r => { resolve = r; api.onCleanup(() => r(false)); });
+    let resolve; const finished = new Promise(r => { resolve = r; api.onCleanup(() => { if (playWatch.ask && playWatch.ask.els.includes(done)) playWatch.ask = null; r(false); }); });
     // the auto play check (and the tests) see every fruit and the button as choices, the right one being the next good move
     const arm = () => {
       const n = inBasket().length;
@@ -318,7 +319,7 @@ register({ id: 'soundhunt', icon: '🔤', learn: true, name: () => T('First Soun
       const got = await untilRightWith(api, live, b => targets.includes(b._v) && !found.has(b), why);
       if (!got) return;
       found.add(got); got.disabled = true;
-      talk(api, line(`${model[1]}… ${got._v[1]}!`));
+      talk(api, line(`${got._v[1]}!`));   // the word found, said again (each word is one recording)
       await wait(350);
     }
     if (!missedIt && api.got) api.got(key);

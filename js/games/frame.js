@@ -50,6 +50,8 @@ export function openGame(id, { players, level = 1, style = 'shrine', partnerName
     // (r79 learning, owner 16 Oct AEDT, G2) picture-only for under-5s in learning games: the question line is hidden
     // (still spoken, its space kept) and the pictures are bigger
     if (def.learn && little) layer.classList.add('pic-only');
+    // (r79 learning, UX-001) learning games keep one height for the question line, so a longer explanation never moves the board
+    if (def.learn) layer.classList.add('learn');
     layer.innerHTML = `
       <div class="gl-head">
         <button class="gl-x" aria-label="${T('Leave', 'Rời đi')}">✕</button>
