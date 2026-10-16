@@ -2801,3 +2801,5 @@ body:has(.modal:not(.out), .gl, .wardrobe, .audio-tray, .dialog:not(.out), .stor
 .bag-help.bag-ask > b { display: flex; flex-direction: column; -webkit-line-clamp: unset; }
 .bag-help.bag-ask > b > span.nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 600px) { .mirror .wbig { width: min(170px, 44vw); } }
+/* (r79 A6) on a small phone the goal chip (a hat ready to buy) is narrower, so it fits beside Big pictures and the map */
+.hud.small .kidrow .c-goal { padding: 0 8px 0 4px; gap: 2px; font-size: 11px; } .hud.small .kidrow .c-goal .art { width: 20px; height: 20px; }
