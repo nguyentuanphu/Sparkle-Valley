@@ -7,6 +7,8 @@
   "chip.c-pet",
   "chip.c-goal",
   "chip.c-box",
+  "adv-open",
+  "adv-hear",
   "q-say",
   "q-go",
   "q-fam",
