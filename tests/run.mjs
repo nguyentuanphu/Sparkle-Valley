@@ -5944,7 +5944,7 @@ await check('reportstorage', async () => {
 });
 await check('feel', async () => {
   // feel and sound (chat A, owner plan 16 Oct AEDT; js/feel.js, rules UI-7 and UI-8): every button sinks and makes one
-  // soft sound, a window only makes sounds and never moves (UX-001), earned coins fly into their counter, the Grown-ups
+  // soft sound, a window only makes sounds and never moves (the owner's stable-window rule), earned coins fly into their counter, the Grown-ups
   // "Tap sounds" switch silences the press, calm mode keeps sounds and drops movement, under-5s' action picture breathes
   const notes = [];
   for (const [tag, w, h, touch] of [['computer', 1180, 760, false], ['phone', 390, 844, true]]) {
@@ -5963,7 +5963,7 @@ await check('feel', async () => {
       out.buttons = btns.length; out.sank = sank; out.sprung = !document.querySelector('.sv-press');
       // one tap is heard once: the press sound, and the screen's own SFX.tap right after it is left out
       await wait(500); let o0 = osc; down(btns[0]); up(); A.SFX.tap(); out.oneSound = osc - o0;
-      // a window: sounds only, and it never moves (UX-001)
+      // a window: sounds only, and it never moves (the owner's stable-window rule)
       log.length = 0; const m = U.modal('feeltest', '<h2>Test</h2><p>Window</p>'); const c = m.querySelector('.card');
       const y0 = c.getBoundingClientRect().top; await wait(120); const y1 = c.getBoundingClientRect().top; await wait(250); const y2 = c.getBoundingClientRect().top;
       m.close(); await wait(260); out.window = { sounds: log.slice(), still: Math.abs(y0 - y1) < 1 && Math.abs(y1 - y2) < 1, gone: !document.querySelector('.modal.feeltest') };
