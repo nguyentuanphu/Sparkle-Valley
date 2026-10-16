@@ -1,91 +1,103 @@
-# Plan: TypeScript for the server, the Studio and the game (16 Oct 2026 AEDT)
+# Plan: TypeScript everywhere, and a lighter, faster load (16 Oct 2026 AEDT)
 
-Status: **plan only, nothing built.** Needs the owner's decisions below and a "go" before any work starts. This plan
-goes past the owner's 13 Oct AEDT decision ("stay with plain JavaScript", `docs/cores/release.md`,
-`docs/SO-TAY-THIET-KE.md` §14.2), so that decision has to be changed first.
+Status: **plan only, nothing built.** Owner, 16 Oct AEDT (pop-up answers): "TS everywhere and plan to make loading
+lighter", "go all at once". This replaces the 13 Oct AEDT decision "stay with plain JavaScript"
+(`docs/cores/release.md`, `docs/SO-TAY-THIET-KE.md` §14.2). Building starts only after the owner's "go" on this plan.
+
+**Plain words:** TypeScript is JavaScript plus notes saying what kind each value is. Phones only run JavaScript, so the
+notes are removed before the phone gets the file. TypeScript catches mistakes before a child sees them; it does **not**
+make the game load or run faster. Part 2 is the speed work, and it is separate.
 
 ## What exists today (checked 16 Oct AEDT on `main`, ad44955c)
-- TypeScript 5.9.3 pinned in `tests/package.json`; check `types` (`tests/tsconfig.json`: 16 files with `// @ts-check`,
-  8 of them strict in `tests/tsconfig-contracts.json`) and check `names` (TS2304 over all of `js/`). Both pass.
-- No `.ts` files, no branch with TypeScript work. Round W part 2 (`@ts-check` on `net.js`, `trade.js`, `shop.js`,
-  `parents.js`, save code) is planned, not started.
-- Type errors if checking were switched on for all of `js/` (vendor left out): **2,030** light, **15,436** strict, in
-  218 of 255 files. 87 files have none. About 85 % of the light ones are TS2339 (a property the checker cannot see,
-  mostly the shared game object and globals).
-- Node 22.22 runs `.ts` files directly (type stripping, tested). Netlify packs functions with esbuild
-  (`node_bundler = "esbuild"`), `studio/build-exe.sh` packs the exe with esbuild, and `tools/bundle.mjs` already packs
-  the game with esbuild on Netlify, but with a fallback to the plain `js/` modules if esbuild is missing.
+- TypeScript 5.9.3 pinned in `tests/package.json`; checks `types` (16 files with `// @ts-check`, 8 strict) and `names`
+  pass. No `.ts` files, no branch with TypeScript work.
+- Type errors across `js/` if checked today (vendor left out): **2,030** light, **15,436** strict, in 218 of 255 files.
+  About 85 % of the light ones are "a property the checker cannot see", mostly the shared game object and globals.
+- esbuild 0.25.10 already runs in three places: Netlify functions, the Studio exe (`studio/build-exe.sh`) and the
+  website pack (`tools/bundle.mjs`, which today falls back to the plain `js/` files if it fails).
+- Node 22.22 runs `.ts` files directly (tested).
+- The Studio exe copies the game from GitHub into a folder and serves those files (`studio/studio.cjs`), and the Studio
+  pages import the game's modules by address (`studio/ui/app.js`).
 
-## The three parts and what each needs
+# Part 1: TypeScript everywhere
 
-| Part | Files | Size | Needs a build step? |
-|---|---|---|---|
-| Server | `netlify/functions/*.mjs` (7), `netlify/lib/*.mjs` (9) | small | No: Netlify's esbuild reads `.ts` |
-| Studio engine | `studio/core.cjs` (59 KB), `studio/studio.cjs` (31 KB) | small | No: esbuild packs the exe; Node runs `.cts` |
-| Studio dashboard page | `studio/ui/app.js` (300 KB, browser) | medium | **Yes**, like the game |
-| Game (client) | `js/` (255 files, about 4.3 MB), `sw.js` | large | **Yes** |
-| Tools, tests | `tools/*.mjs` (15), `tests/*.mjs` (45), `tests/unit/*` | medium | No: Node runs `.ts` |
+## How it will work
+- Every `.js`/`.mjs`/`.cjs` file of ours becomes `.ts`/`.mts`/`.cts` **in the same place** (`js/state.ts` next to
+  where `js/state.js` was). Imports keep the `.js` name (`import { settings } from './state.js'`): TypeScript finds
+  `state.ts`, and the built file keeps the same import, so built files look exactly like today's.
+- **The build** (`tools/build.mjs`, new): esbuild turns each `.ts` into a `.js` in `dist/`, one file for one file, with
+  the rest of the site (css, fonts, icons, vendor, content, photos, voices links) copied or linked beside it. About a
+  second for the whole game. Then `tools/bundle.mjs` packs `dist/` for the website as it does today.
+- **The check** `types`: `tsc --noEmit` over everything. esbuild only removes notes; `tsc` is what finds mistakes.
+- Settings (`tsconfig.base.json` at the root): `strict`, `noEmit`, `erasableSyntaxOnly` (only notes, nothing Node or
+  esbuild must translate), `verbatimModuleSyntax`, `allowImportingTsExtensions`, `target es2022`.
+- Shared types in `types/`: the save format (`sv2_*` keys), network messages, the Studio API, tester reports, family
+  devices, and the shared game object. Server, Studio and game use the same files, so a changed message shape fails
+  the check in all three at once.
+- Third-party files in `vendor/` (three.js, peerjs) stay as they are, with type files.
 
-## Phase 0: groundwork (Analytics & Infra; about half a session)
-1. One shared type folder `types/` with `.d.ts` files for what crosses a boundary: the save format (`sv2_*` keys),
-   network messages (`js/netmsg.js`), the Studio API, tester reports, family devices. The server, the Studio and the
-   game all use the same files, so a change to a message shape breaks the check in all three at once.
-2. Root `tsconfig.base.json`: `strict`, `noEmit`, `allowJs`, `erasableSyntaxOnly` (only type notes, no `enum` or
-   `namespace`, so Node can strip them), `allowImportingTsExtensions`, `verbatimModuleSyntax`. Child configs per part.
-3. Pin Netlify's Node: `NODE_VERSION = "22.22.0"` in `netlify.toml` (type stripping needs 22.18 or newer).
-4. Check `types` runs every config; `tests/check-map.json` learns the new file names.
+## What changes around the build
+| Where | Today | After |
+|---|---|---|
+| Website (Netlify) | `node tools/bundle.mjs . \|\| true`, site from the repo root | `node tools/build.mjs && node tools/bundle.mjs dist`, site from `dist/`; a failed build stops the deploy (the live site stays as it was) |
+| Netlify Node | not pinned | `NODE_VERSION = "22.22.0"` in `netlify.toml` |
+| Drag-and-drop zip | `build-netlify.sh`, Node optional | needs Node; zips `dist/` |
+| Offline list (`sw.js`) | about 250 names written by hand | made by the build from `dist/` (`sw.ts` source) |
+| Tests | serve the repo folder (`tests/run.mjs` servers at lines 75 and 5354) | `suite.mjs` builds first and serves `dist/`; GitHub workflows add the build step |
+| Studio exe | copies the game's files from GitHub | copies the built site from a `site` branch that GitHub's workflow fills from `main` after each deploy |
+| Studio online | `/studio` pages import `js/…` | import the built `js/…` in `dist/` (same addresses) |
+| iPhone debugging | the phone's file is the repo's file | source maps (`.map` files) beside the built files point Safari at the `.ts` lines |
+| Check map | `tests/check-map.json` names `.js` | names `.ts`; refreshed from the GitHub run |
 
-## Phase 1: server to `.ts` (Online + Analytics & Infra; about 1 session)
-- `netlify/lib/*.mjs` → `.ts` first (they are imported by the functions and by the tests), then
-  `netlify/functions/*.mjs` → `.ts`. Imports use the `.ts` name.
-- Update the paths in `tests/studio-check.mjs`, `tests/owner-*.mjs`, `tests/unit/*.test.mjs`, `netlify.toml` comments.
-- All strict from the start (two files already pass strict).
-- Checks: `types`, unit tests, `studio-check`, the online checks on a deploy preview (they say "skipped" locally).
+## Order: all at once (owner), in one freeze window
+"All at once" works only if nobody else changes the same files at the same time, so:
+1. **Freeze.** Release asks every core to finish, push and write "ready for Release"; Release merges everything into
+   `main` in the usual round. Then the cores stop changing code until step 5 (docs and voices can go on).
+2. **Groundwork (step A):** `tools/build.mjs`, `tsconfig.base.json`, `types/`, the build in Netlify, the zip, tests,
+   GitHub workflows and the Studio `site` branch, all working on today's `.js` files first, with the full suite green.
+3. **Rename (step B):** one script renames every file and fixes paths in tests, docs, `check-map.json` and the exe
+   script, in one commit, with no other change. The full suite must be green on it.
+4. **Fix types (step C), in this order:** server and Studio engine (small, most already typed) → saves and network
+   (Round W part 2's list) → the shared game object type (clears most of the 2,030 at once) → every remaining file
+   until the light check shows **0 errors**. Then **strict, file by file**, with a ratchet list like
+   `tests/perf-baseline.json`: the number of files not yet strict may only go down. No broad `any`, casts or
+   `@ts-ignore` to make a number go down (owner repair rules, 14 Oct).
+5. **Unfreeze:** each core merges `main` into its branch and carries on in `.ts`. Helper rules in `CLAUDE.md`,
+   `HANDOFF.md` and `docs/cores/*.md` say "`.ts`" where they say "`.js`".
+- **Map files:** Round T froze `js/world.js`, `js/roads.js`, `js/regions.js` and the rest of its list. The rename and
+  type notes do not move anything, but the owner must allow these files to be touched (decision 2 below).
+- Each step is its own round with the full suite on GitHub, screenshots on phone, tablet and computer, and "yes,
+  deploy". Nothing a child sees or hears changes, so `contract` and every screenshot must stay the same.
 
-## Phase 2: Studio engine to `.ts` (Studio core; about 1 session)
-- `studio/core.cjs` → `core.cts`, `studio/studio.cjs` → `studio.cts` (stays CommonJS for the exe).
-- `studio/build-exe.sh`: esbuild entry `studio.cts`; `netlify/functions/studio.ts` imports `core.cts`;
-  `tests/unit/privacy.test.mjs` and `tests/studio-check.mjs` load the new names.
-- Checks: `types`, `studio-check`, privacy unit test, build the exe and open it once.
-
-## Phase 3: tools (Analytics & Infra; about half a session) and tests (optional)
-- `tools/*.mjs` → `.ts` (run as `node tools/x.ts`). `tools/bundle.mjs` runs on Netlify, so Phase 0 step 3 first.
-- Tests: leave `tests/run.mjs` (about 5,400 long lines) in JavaScript with `// @ts-check`; small test files may move.
-
-## Phase 4: the game and the Studio dashboard page (owner's choice, see decision 2)
-
-### Option A (recommended): type-checked JavaScript, types in `.d.ts`
-Files stay `.js`, so the phone still runs the repo's own file and nothing else changes. Each file gets `// @ts-check`
-and uses the shared `types/` files; the checker is as strict as real TypeScript.
-1. A `types/game.d.ts` for the shared game object and globals: removes most of the 2,030 light errors at once.
-2. Wave 1: the 87 files with no errors. Wave 2: Round W's files (save, net, trade, shop, parents). Wave 3: each core's
-   own files, one core at a time, light then strict. Map files (`js/world.js`, `js/roads.js`, `js/regions.js` and the
-   rest of the Round T list) wait until Round T ends.
-3. `studio/ui/app.js` the same way.
-- Size: 4 to 6 rounds alongside other work; no behaviour change, so `contract` and the screenshots stay the same.
-
-### Option B: real `.ts` files in the browser
-Everything in Option A, plus a build step that every part of the project then depends on:
-1. `tools/bundle.mjs` becomes required (the fallback to plain modules goes); `build-netlify.sh` needs Node.
-2. The test servers (`tests/run.mjs` lines 75 and 5354) and the Studio server (`studio/studio.cjs`, the Netlify
-   `/studio` pages) must convert `.ts` on the fly, because the Studio pages import the game's modules by address.
-3. `sw.js`'s offline list (about 250 names) is made by the build, not written by hand.
-4. Source maps for iPhone debugging: the file on the phone is no longer the file in the repo.
-5. Rename 255 files and fix 15,436 strict errors; every core's files change, so every open branch conflicts.
-- Size: 8 to 12 rounds or more; must wait for Round T and Round W part 3 (the `main.js`/`ui.js` split).
-
-## Order and who does it
-Phase 0 → 1 → 2 → 3, one round each or two together; Phase 4 after Round W part 3, waves per core. Release merges
-each phase separately, runs the full suite on GitHub and asks "yes, deploy" per round as usual. Nothing changes what a
-child sees or hears, so no new spoken lines and no new art.
+## Size
+Step A about 2 sessions; step B 1 session; step C light errors about 3 to 5 sessions; strict about 4 to 6 more rounds
+(can run after the unfreeze, file by file). The freeze lasts for steps A to C light: roughly one to two weeks of
+Release work. Estimates; the first session of step C will show the real pace.
 
 ## Risks
-- A deploy on an old Netlify Node fails to run `.ts` tools: Phase 0 step 3 pins it, and Phase 3 waits for it.
-- Paths to renamed files in tests and docs: `check-map.json` and a search for the old names before each merge.
-- Option B only: a broken build means a broken site (today the fallback hides it); open branches all conflict.
-- Undo: each phase is a set of renames and type notes; reverting the merge brings the `.mjs`/`.cjs` files back.
+- A build failure stops a deploy; today's fallback hid that. The build runs on every pull request first.
+- Every open branch conflicts after the rename: the freeze in step 1 is what prevents that.
+- The Studio exe needs the `site` branch to exist before it can update; old exes keep their last copy until rebuilt.
+- Undo: revert the rename merge; step A's build keeps working on `.js` files.
+
+# Part 2: a lighter, faster load
+
+Measured 16 Oct AEDT in the repo and from `tests/perf-baseline.json` (budgets PERF-001 to 005).
+
+| Item | Today | What to do | Owner core |
+|---|---|---|---|
+| S1 Photos | 197 photos, 76 MB; 11 over the 600 KB rule, the largest 7.7 MB (`photos/en-dragon-bridge-da-nang/3.jpg`) | `tools/photo-shrink.mjs`: longest side 1600 px, JPEG quality about 80, keep the original's licence record; Studio saves new photos the same way; a check fails any photo over 600 KB. Expect most of the 76 MB to go (to measure) | Studio |
+| S2 Valley build time | 6.6 s from the game's code to a built valley (`worldMs`, test browser) | profile it; build the child's own area first and the rest in small pieces while they play; reuse `js/worldcache.js` more | World (after Round T) |
+| S3 Draw calls | 507 at home, 359 in Lotus Village; budget 250 | merge still objects that share a look, more one-shape repeats (instancing) | World |
+| S4 Start-up download | 2.6 MB before the title screen (packed, before compression); three.js already minified | see what is in it (esbuild's size report), load films, stories and games only when opened, check Netlify sends it compressed | Analytics & Infra |
+| S5 Voice list | `voices/manifest.json` 340 KB | split it per language so a family downloads only its own | Voice & Audio |
+| S6 Voice pack | 166 MB English, 165 MB Vietnamese, already small (32 kbit/s, mono) and downloaded area by area | leave for now; a smaller format (Opus) only after testing on old iPhones | Voice & Audio |
+
+Order: S1 and S5 first (no code risk, big saving), then S4, then S2 and S3 once Round T ends. Each item lowers its
+number in `tests/perf-baseline.json` (the ratchet) and is checked by `perf`, `startup` and `battery`.
+Part 2 can start now; it does not wait for Part 1, and S1 and S5 do not touch game code.
 
 ## Owner decisions needed
-1. Allow real TypeScript for the server, the Studio engine and the tools (changes the 13 Oct AEDT decision)?
-2. Game and Studio page: Option A (type-checked JavaScript) or Option B (real `.ts` with a build step)?
-3. When: start Phase 0 to 2 now, or after Round W?
+1. "Go" on this plan (Part 1 with the freeze, Part 2 alongside).
+2. May the rename and type notes touch Round T's frozen map files?
+3. Push this plan to GitHub so the other chats can read it?
