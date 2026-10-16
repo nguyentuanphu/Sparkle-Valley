@@ -20,7 +20,7 @@ BEFORE is the supplied checkpoint, not a reconstructed R74 claim. AFTER source h
 
 ## Progress and limits
 
-Phone and tablet AFTER English captures and their page contact sheets have been reviewed for all 38 tales. Computer AFTER and Vietnamese shell captures are still running. Several earlier capture jobs were interrupted between chat turns; they resumed from completed-story manifests. No game-source edits were made during the final capture pass. The capture helper now refuses to resume if its recorded source fingerprints differ from the files being served.
+The first complete AFTER capture pass was superseded: the focused check found undefined `L` calls in seven scenery helper call sites. The film renderer catches page-building exceptions as warnings, so browser page-error checks alone had missed them. This left some new props absent. Replaced those calls with the defined `SETS` helper, retained the initial failure log, and added film-page-warning rejection to the capture helper. The corrected source must pass the focused check before fresh AFTER captures replace the previous set. Before pictures remain the original checkpoint. Several earlier capture jobs were interrupted between chat turns and resumed from completed-story manifests. The helper refuses to resume across different game-source fingerprints.
 
 ## Checks
 

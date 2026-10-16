@@ -18,7 +18,9 @@ const b = await launch();
 try {
  for (const [device, w, h, touch] of [['phone',390,844,true],['tablet',820,1180,true],['computer',1280,800,false]]) {
   if(result.cases.filter(x=>x.device===device).length===(lang==='vi'?38:221)) continue;
-  console.log('opening',device); const P = await open(b, { w, h, touch, lang, fast: true, play: false, url:process.env.SV_URL||(phase==='before'?'http://localhost:8765/':'http://localhost:8766/') }); console.log('title ready',device); await P.page.evaluate(()=>{window.__sv.renderer.render=()=>{};const raf=requestAnimationFrame; window.requestAnimationFrame=f=>f.name==='loop'?raf(()=>setTimeout(()=>f(performance.now()),125)):raf(f);}); await P.page.evaluate(()=>{window.__sv.paused=true;}); await clear(P.page); await P.page.evaluate(()=>{window.__sv.paused=true;});
+  console.log('opening',device); const P = await open(b, { w, h, touch, lang, fast: true, play: false, url:process.env.SV_URL||(phase==='before'?'http://localhost:8765/':'http://localhost:8766/') });
+  P.page.on('console',m=>{if(m.type()==='warning'&&m.text().startsWith('film page'))P.errors.push(m.text());});
+  console.log('title ready',device); await P.page.evaluate(()=>{window.__sv.renderer.render=()=>{};const raf=requestAnimationFrame; window.requestAnimationFrame=f=>f.name==='loop'?raf(()=>setTimeout(()=>f(performance.now()),125)):raf(f);}); await P.page.evaluate(()=>{window.__sv.paused=true;}); await clear(P.page); await P.page.evaluate(()=>{window.__sv.paused=true;});
   const ids = await P.page.evaluate(async () => { const C = await import('/js/content/films.js'), T = await import('/js/content/talefilms.js'); return [...Object.keys(C.FILMS).filter(x=>!x.startsWith('lantern_')), ...Object.keys(T.TALE_FILMS)]; });
   for (const id of ids) {
    if(result.cases.filter(x=>x.id===id&&x.device===device).length) continue;
