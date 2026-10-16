@@ -395,7 +395,7 @@ export function createAdventure(G) {
     const g = GIVERS[a.giver] || GIVERS.owl, st = dots(h);
     return `<div class="adv-log"><button class="adv-logcard" data-advopen><span class="adv-face">${pic(g.icon)}</span><span class="adv-cx"><b>${esc(tt(ADV_LINES.title))}: ${esc(tt(titleOf(a, FEST_NAMES())))}</b>
       <span class="adv-dots">${st.map(d => `<i class="${d}"></i>`).join('')}</span><small>${esc(r.done ? tt(ADV_LINES.doneToday) : tt(stepText(a.steps[r.step], h.profile.age)))}</small></span></button>
-      <div class="adv-week mini">${weekHTML(h)}</div></div>`;
+      <div class="adv-week adv-mini">${weekHTML(h)}</div></div>`;
   }
 
   /** (tests and Grown-ups) give this child a chosen adventure for today, from its first step */

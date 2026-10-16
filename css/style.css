@@ -2904,7 +2904,8 @@ body.calm .sv-press, body.calm .sv-spring, body.calm .sv-wiggle, body.calm .sv-j
 .adv-log .adv-face .art { width: 36px; height: 36px; }
 .adv-log .adv-cx { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .adv-log .adv-cx b { font: 600 17px/1.2 var(--font); } .adv-log .adv-cx small { font: 500 15px/1.2 var(--font); color: #5a4636; }
-.adv-week.mini .adv-stamp span { width: 32px; height: 32px; } .adv-week.mini .adv-stamp .art { width: 20px; height: 20px; }
+.adv-week.adv-mini .adv-stamp span { width: 32px; height: 32px; } .adv-week.adv-mini .adv-stamp .art { width: 20px; height: 20px; }
+.adv-log .adv-logcard { height: auto; white-space: normal; }
 .adv-morebtn { width: 100%; min-height: 56px; margin: 4px 0 8px; background: var(--paper); color: var(--ink); border: 3px solid var(--ink); border-radius: 20px; box-shadow: 0 4px 0 var(--ink); font: 600 18px var(--font); cursor: pointer; }
 .adv-more[hidden] { display: none !important; }
 @media (max-width: 380px) { .advwin .adv-face { width: 72px; height: 72px; } .advwin .adv-face .art { width: 54px; height: 54px; } .adv-stamp span { width: 34px; height: 34px; } .advchest .adv-coins { grid-template-columns: repeat(4, 56px); } }
