@@ -3,7 +3,7 @@
 //    seconds reads what the older systems kept (postcards, treasures, dishes, festivals, secrets, surprises, reward
 //    stickers), so nothing in those systems had to change;
 //  - shows a new sticker: its sound, a toast with its picture, "A new sticker for your book!", and the flying sticker of
-//    js/feel.js (chat A) when that is in the game; the "New!" count on the Bag button;
+//    js/feel.js (chat A); the "New!" count on the Bag button;
 //  - the first minutes (S6): Grandpa Owl's sticker soon after a new child starts, the place they start in, and a hen;
 //  - the prize decorations of full pages, for the child's house (js/myhouse.js DECOR, as keepsakes).
 import { T } from './i18n.js';
@@ -15,6 +15,7 @@ import { id as makeId, parse } from './core/ids.js';
 import { pic } from './art.js';
 import { DECOR } from './myhouse.js';
 import { STICKERS, BY_ID, THEMES, PAGES } from './content/stickers.js';
+import { reward as feelReward } from './feel.js'; // (chat A: the sticker flies into its counter)
 import { give, sync, freshIds, acted, decorKey, book } from './stickers.js';
 
 const ANIMAL_CALLS = new Set(['moo', 'quack', 'woof', 'meow', 'baa', 'oink', 'cluck', 'neigh', 'ribbit', 'hoot']);
@@ -25,10 +26,6 @@ export async function sayName(s) {
   try { await sayAsync(s.en, s.vi); if (!settings.bilingual && s.en !== s.vi) sayIn(settings.lang === 'vi' ? 'en' : 'vi', settings.lang === 'vi' ? s.en : s.vi); } catch (e) { }
 }
 
-// js/feel.js (chat A, branch work/feel-sound) flies a sticker into its counter; until it is merged, nothing flies
-let feel = null;
-const FEEL = './feel.js';
-export function useFeel(f) { feel = f; }
 
 export function createStickerFx(G, { BOOK_LINES, FIRST_THREE }) {
   // the prize decorations: one per page, in the house's chooser once won (keepsakes, like the festival hunt's)
@@ -36,8 +33,6 @@ export function createStickerFx(G, { BOOK_LINES, FIRST_THREE }) {
     const t = THEMES.find(x => x.id === page.theme), k = decorKey(page);
     if (!DECOR[k]) DECOR[k] = { icon: t.decor[0], price: 0, en: t.decor[1] + (page.of > 1 ? ` (${page.n + 1})` : ''), vi: t.decor[2] + (page.of > 1 ? ` (${page.n + 1})` : ''), keepsake: true, wall: true };
   }
-  // the flying sticker, when chat A's js/feel.js is in this build (a missing file is fine: nothing flies)
-  if (!feel) fetch(new URL(FEEL, import.meta.url), { method: 'HEAD' }).then(r => r.ok ? import(FEEL) : null).then(m => { if (m && !feel) feel = m.feel || m.default || m; }).catch(() => { });
 
   const heroBy = p => G.heroes.find(h => h.profile === p) || null;
   const hudOf = h => (h && G.huds && G.huds[G.heroes.indexOf(h)]) || null;
@@ -61,7 +56,7 @@ export function createStickerFx(G, { BOOK_LINES, FIRST_THREE }) {
     const toast = G.toast && h ? m => G.toast(h, m) : () => { };
     toast(`${pic(s.icon)} ${r.shiny ? T('Shiny sticker:', 'Hình dán lấp lánh:') : T('New sticker:', 'Hình dán mới:')} ${T(s.en, s.vi)}`);
     if (performance.now() - lastSay > 4000) { lastSay = performance.now(); const L = r.shiny ? BOOK_LINES.shiny : BOOK_LINES.newOne; say(L[0], L[1]); }
-    if (feel && feel.reward && h) { try { const hud = hudOf(h), to = hud && hud.q && hud.q('.dk.bag'); feel.reward('sticker', from || null, to || null); } catch (e) { } }
+    if (h) { try { const hud = hudOf(h), to = hud && hud.q && hud.q('.dk.bag'); feelReward('sticker', from || null, to || null); } catch (e) { } }
   }
 
   // ---- what gives stickers ----
