@@ -113,10 +113,13 @@ export function showTitle(onStart) {
     <div class="tt-build" aria-hidden="true">${BUILD}</div>`);
   document.body.appendChild(s);
   const redraw = () => {
-    s.querySelector('.tt-press').textContent = T('Tap to start', 'Chạm để bắt đầu');
+    // (r78, owner: windows stay still) the title's words hold both languages, the other one invisible, so switching
+    // language never resizes the cover card or the start button: they keep the size of the longer words
+    const both = (en, vi) => { const on = settings.lang === 'vi' ? 'vi' : 'en'; return [['en', en], ['vi', vi]].map(([L, w]) => `<span class="tt-l${L === on ? '' : ' tt-off'}"${L === on ? '' : ' aria-hidden="true"'}>${w}</span>`).join(''); };
+    s.querySelector('.tt-press').innerHTML = both('Tap to start', 'Chạm để bắt đầu');
     // two words, two colours (pink and purple) with a white outline: clear and friendly, no glitter
-    s.querySelector('.logo-main').innerHTML = (settings.lang === 'vi' ? ['Thung Lũng', 'Lấp Lánh'] : ['Sparkle', 'Valley']).map((w, k) => `<span class="lw lw${k + 1}">${w}</span>`).join(' ');
-    s.querySelector('.logo-sub').textContent = T('Two homes · one valley', 'Hai quê hương · một thung lũng');
+    s.querySelector('.logo-main').innerHTML = both(...[['Sparkle', 'Valley'], ['Thung Lũng', 'Lấp Lánh']].map(ws => ws.map((w, k) => `<span class="lw lw${k + 1}">${w}</span>`).join(' ')));
+    s.querySelector('.logo-sub').innerHTML = both('Two homes · one valley', 'Hai quê hương · một thung lũng');
     s.querySelector('.logo').classList.toggle('vi', settings.lang === 'vi');
     s.querySelector('.about').setAttribute('aria-label', T('About', 'Giới thiệu'));
     s.querySelector('.title-foot').innerHTML = flagBtns();

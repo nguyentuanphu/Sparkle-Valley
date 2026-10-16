@@ -56,6 +56,7 @@ function diff(samples, base, from) {
   return { moved, parts };
 }
 
+const PICK = process.env.SV_PANELS ? new Set(process.env.SV_PANELS.split(',')) : null;
 async function sweepDevice(b, dev) {
   // SV_ONLY_BAG=1: only measure the Bag pictures again (the panels and startup already in results.json are kept)
   const ONLY = process.env.SV_ONLY_BAG === '1', prev = results.devices[dev];
@@ -107,6 +108,8 @@ async function sweepDevice(b, dev) {
   // ---- one panel: open it, watch it, then each tap inside it ----
   // parts: [[name, selector], ...] (the first is the outer box); opener: async fn; actions: [[label, async fn or selector]]
   async function panel(key, parts, opener, actions = [], { waitFor = parts[0][1], after = null, prep = null } = {}) {
+    // SV_PANELS=story-film,shop checks only those (the start screens always run: they lead into the game)
+    if (PICK && !PICK.has(key) && !/^(welcome|who)$/.test(key)) return;
     if (ONLY) { await opener(); await page.waitForTimeout(800); if (after) await after(); return; }
     const P = R.panels[key] = { shell: parts[0][1], parts: Object.fromEntries(parts), opened: false, open: null, actions: [] };
     try {
@@ -269,7 +272,7 @@ async function sweepDevice(b, dev) {
   const gameId = await G(async () => { const F = await import('/js/games/frame.js'); return ['counting', 'colors', 'shapes'].find(id => F.GAMES[id]) || Object.keys(F.GAMES)[0]; });
   await panel('game-frame', [['layer', '.gl'], ['head', '.gl .gl-head'], ['guidance line', '.gl .gl-help'], ['stage', '.gl .gl-stage']], () => G(id => { window.__sv.playGame(0, id, 'hub'); }, gameId), [
     ['tap answer 1', '.gl .gl-stage button >> nth=0'], ['tap answer 2', '.gl .gl-stage button >> nth=1'], ['tap answer 3', '.gl .gl-stage button >> nth=2'], ['tap answer 1 again', '.gl .gl-stage button >> nth=0']], { waitFor: '.gl:not(.out)' });
-  R.panels['game-frame'].game = gameId;
+  if (R.panels['game-frame']) R.panels['game-frame'].game = gameId;
   await reset();
   // ---------- How to play ----------
   await panel('how-to-play', [['film', '.howto .ht-film'], ['controls', '.howto .ht-ctl'], ['words', '.howto .ht-cap'], ['close', '.howto .ht-x']], () => G(async id => { (await import('/js/howto.js')).openHowTo(id, {}); }, gameId), [
@@ -279,7 +282,7 @@ async function sweepDevice(b, dev) {
   const tale = await G(() => (window.__sv.TALES || [])[0]?.id || null);
   await panel('story-film', [['top bar', '.theatre .th-top'], ['picture', '.theatre .th-stage'], ['words', '.theatre .th-text'], ['buttons', '.theatre .th-bar']], () => G(async () => { const { openTheatre } = await import('/js/tales.js'); window.__sv.paused = true; openTheatre(window.__sv.TALES[0], {}); }), [
     ['next page', '.theatre .th-next'], ['next page 2', '.theatre .th-next'], ['pause', '.theatre .th-pause'], ['back', '.theatre .th-prev'], ['next page 3', '.theatre .th-next']]);
-  R.panels['story-film'].tale = tale;
+  if (R.panels['story-film']) R.panels['story-film'].tale = tale;
   await reset();
   // ---------- the update notice ----------
   await panel('update-notice', [['notice', '.update-notice']], () => G(() => { window.svOfferUpdate && window.svOfferUpdate(); }), []);

@@ -23,9 +23,15 @@ window.svLaunchProgress = (value, total, label) => {
 // (owner point 10) the notice never sits over an activity: it waits while a game, talk, story or film is open (it had
 // covered a game's close button), and shows again when the child is back in the valley
 const busy = () => { const g = window.__sv; return !!(g?.heroes?.length && (g.paused || document.querySelector('.gl, .dialog, .storybook, .theatre'))); };
-window.svOfferUpdate = () => {
-  // (owner, 16 Oct) Studio can turn the notice off: the new version then starts the next time the game is opened
-  if (window.svFeatureOn && !window.svFeatureOn('explain_updateNotice', true)) return;
+// (third AI's review R4) Studio's switch is known from the first second: until the game's own switch reader is ready
+// (js/main.js, after the valley is built), this page reads content/custom.json itself
+let noticeOff = false; fetch('content/custom.json', { cache: 'no-store' }).then(r => r.json()).then(j => { noticeOff = j?.features?.explain_updateNotice === false; }).catch(() => { });
+window.svOfferUpdate = (needed = false) => {
+  // (owner, 16 Oct) Studio can turn the notice off: the new version then starts the next time the game is opened.
+  // (review R3) Not when a part of the game has already gone after a deploy (svModuleGone): this tab cannot go on
+  // without the update, so it is offered even with the switch off
+  const off = window.svFeatureOn ? !window.svFeatureOn('explain_updateNotice', true) : noticeOff;
+  if (off && !needed) return;
   if (document.querySelector('.update-notice')) return;
   const n = document.createElement('aside'); n.className = 'update-notice'; n.setAttribute('role', 'status');
   const label = document.createElement('span'); label.textContent = text[4];
@@ -53,7 +59,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/lo
 // (owner point 11, #140 #141 #184-#193) a part of the game that loads later (a story's film, a festival's decorations)
 // can be gone: this page is an older version whose files were replaced since it opened. Offer the update instead of a
 // broken activity. Code that catches its own import failure passes it here too.
-window.svModuleGone = e => { if (/import.*module|module.*fetch|module script/i.test(String(e?.message || e))) { window.svOfferUpdate(); return true; } return false; };
+window.svModuleGone = e => { if (/import.*module|module.*fetch|module script/i.test(String(e?.message || e))) { window.svOfferUpdate(true); return true; } return false; };
 addEventListener('unhandledrejection', e => window.svModuleGone(e.reason));
 await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 try { await import('./main.js'); }
