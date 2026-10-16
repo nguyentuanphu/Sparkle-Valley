@@ -652,11 +652,14 @@ await check('ownerwificard', async () => {
   }});
   try {
     await clear(Q.page);
-    const asked=await Q.page.evaluate(async()=>{
+    await Q.page.evaluate(async()=>{
       const S=await import('/js/state.js'),V=await import('/js/voicepack.js');S.settings.autoPack=true;S.settings.packCell=false;delete S.settings.packAskAt;
-      const ev=[];V.startPack({lines:{en_core_wifi:'f',en_world_wifi:'f'},langOf:{en_core_wifi:'en',en_world_wifi:'en'},areas:true,version:998,made:'owner-wifi-card-off'},e=>{ev.push(e.state);if(e.state==='ask')V.askCard(e.mb);},()=>null);
-      await new Promise(r=>setTimeout(r,6000));return ev;
+      const ev=window.__packEv=[];V.startPack({lines:{en_core_wifi:'f',en_world_wifi:'f'},langOf:{en_core_wifi:'en',en_world_wifi:'en'},areas:true,version:998,made:'owner-wifi-card-off'},e=>{ev.push(e.state);if(e.state==='ask')V.askCard(e.mb);},()=>null);
     });
+    // (the pack waits for the valley to be built first) the core is in, then a few seconds for a question that must not come
+    await Q.page.waitForFunction(()=>window.__packEv.includes('ready'),null,{timeout:90000}).catch(()=>{});
+    await Q.page.waitForTimeout(3000);
+    const asked=await Q.page.evaluate(()=>window.__packEv);
     ok(asked.includes('ready')&&!asked.includes('ask')&&!(await Q.page.locator('.packask').count()),'switched off, the phone still asked: '+asked.join(','));
     ok(!rest,`switched off, ${rest} voice files past the core came over mobile data`);
     ok(!Q.errors.length,Q.errors.join(' | '));

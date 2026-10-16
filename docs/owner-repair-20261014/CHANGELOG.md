@@ -26,7 +26,7 @@ Candidate R77 (was R76), based on rejected R75, compared with approved R74. Thes
 | Daily voices | Daily recordings 14-16 Oct not in the release | Merged additively, 156 lines, 308 files; the release's own lines kept (5e876456) | voicecover, voicearea (16 Oct, local) |
 
 Last focused run (16 Oct 2026 AEDT, local): films, filmstart, filmtails, filmmusic, tales, story, a11y, phone, contract, boot, ownerfamily, ownerheartstap, ownerexplainswitches, ownerupdatenotice, studio, tester, testerreport, solid, voicearea, voicecover, types, preload, offline, unit, ownerround: all passed. perf and startup blocked locally (npm registry).
-GitHub Full: run 39 passed all checks at eaa7522d; run 40 at 3ae10550 185/187 (ownerround, testerreport; both fixed in 098b5535, 2/2 locally); run 41 at 098b5535 started 11:43 AEDT, pending.
+GitHub Full: run 39 passed all checks at eaa7522d; run 40 at 3ae10550 185/187 (ownerround, testerreport; both fixed in 098b5535, 2/2 locally); run 41 at 098b5535 passed 187/187, first try (12:43 AEDT). Local speed: battery passed (16 Oct). New: ownerwificard checks Studio's explain_voiceAsk off (no question, nothing past the core on mobile data); shown to fail with the switch on.
 Earlier focused run (historical): suite.mjs --only unit,rules,types,arch,bilingual,reportdetectors,ownercapture,testerreport,autoplay --jobs 1: 9/9, 5 minutes.
 No checks skipped in that selected run; it is not the full suite.
 Earlier focused run boot/shop/wearbag/bagitems/reportdetectors/testerreport/ownerround: 5/7; failures investigated and rerun 4/4.

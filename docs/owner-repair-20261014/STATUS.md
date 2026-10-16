@@ -1,6 +1,6 @@
 # Repair round checkpoint
 
-Status (16 October 2026 AEDT): R77 candidate (version sv-2026-10-16-repair29-r77) at 098b5535, waiting for Full run 41 and the owner's "yes, deploy". main is still r74; nothing deployed.
+Status (16 October 2026 AEDT): R77 candidate (version sv-2026-10-16-repair29-r77) at 9e9bfb10 and later (version, one new check, docs); Full run 41 passed 187/187 at 098b5535 on its first try; waiting for Full run 42 on the final head and the owner's "yes, deploy". main is still r74; nothing deployed.
 Owner approved the consolidated repair plan and inclusion of new reports, with actual screenshot evidence. This authorization persists. Main merge/deployment is not approved.
 
 ## Exact source
@@ -8,7 +8,7 @@ Owner approved the consolidated repair plan and inclusion of new reports, with a
 - Approved R74 baseline: 6a6ae885f86ad58a52688782eeba1d5417985fe9.
 - Rejected R75 subject: 74b918c6c4c52db2e42d24dc69fe2945f1907e3d; PR195 remains separate.
 - Isolated repair branch: work/owner-repair-20261014, based on R75 with selective repairs preserving R74 identity.
-- Current PR300 source: 098b5535 (R77 candidate). GitHub Full run 39 passed all checks at eaa7522d. Full run 40 at 3ae10550: 185/187; ownerround failed (the family trial is now off by default; the check now switches the trial on) and testerreport failed (the browser measured the 2.6 s test freeze as 1912 ms; the rule is now over 1000 ms). Both fixed in 098b5535 and passed locally (2/2). Full run 41 at 098b5535 started 11:43 AEDT: pending.
+- Current PR300 source: 098b5535 (R77 candidate). GitHub Full run 39 passed all checks at eaa7522d. Full run 40 at 3ae10550: 185/187; ownerround failed (the family trial is now off by default; the check now switches the trial on) and testerreport failed (the browser measured the 2.6 s test freeze as 1912 ms; the rule is now over 1000 ms). Both fixed in 098b5535 and passed locally (2/2). Full run 41 at 098b5535 passed 187/187 on its first try (12:43 AEDT). Since then: version r77, the voice-question switch check (ownerwificard, voicepack passed locally; battery passed locally), docs; Full run 42 runs on that head.
 - Last update: 16 October 2026 AEDT. Role: Release. Older sections below are historical records of 14-16 October; the current state is in "Current round R77" below.
 
 ## Current round R77 · 16 October 2026 AEDT
@@ -22,7 +22,7 @@ Done this round (see CHANGELOG.md for each change):
 - Daily voices 14-16 Oct merged (156 lines, 308 files).
 Local checks passed today: films, filmstart, filmtails, filmmusic, tales, story, a11y, phone, contract, boot, ownerfamily, ownerheartstap, ownerexplainswitches, ownerupdatenotice, studio, tester, testerreport, solid, voicearea, voicecover, types, preload, offline, unit, ownerround.
 Pending and known gaps:
-- Full run 41 result.
+- Full run 42 on the final R77 head (version r77, the new voice-question switch check in ownerwificard, docs).
 - perf and startup speed checks blocked locally (npm registry).
 - Family devices: design pass and a real Netlify two-device test before switching on for everyone.
 - Point 49 (films) not started (second AI); points 46-48, 52, 56 with the third AI.

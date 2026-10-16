@@ -1,6 +1,6 @@
 # Original-point evidence table — repair in progress
 
-Approved BEFORE source: R74 `6a6ae885f86ad58a52688782eeba1d5417985fe9`. Current candidate (16 Oct 2026 AEDT): R77 at `9e9bfb10` (code tested in Full run 41 at `098b5535`, pending). Full run 39 passed all checks at `eaa7522d`; Full run 40 at `3ae10550` 185/187, both failures fixed in `098b5535`. Earlier runs: see STATUS.md and CHANGELOG.md.
+Approved BEFORE source: R74 `6a6ae885f86ad58a52688782eeba1d5417985fe9`. Current candidate (16 Oct 2026 AEDT): R77 at `9e9bfb10` (code at `098b5535` passed Full run 41, 187/187). Full run 39 passed all checks at `eaa7522d`; Full run 40 at `3ae10550` 185/187, both failures fixed in `098b5535`. Earlier runs: see STATUS.md and CHANGELOG.md.
 
 | Original point | WO | Requirement | BEFORE picture | AFTER picture | Implementation status | Test proof and scope | Remaining gaps |
 |---|---|---|---|---|---|---|---|
