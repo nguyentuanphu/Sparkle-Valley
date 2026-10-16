@@ -1,0 +1,261 @@
+{
+ "when": "2026-10-16T16:13:21.674Z",
+ "url": "http://localhost:8765/",
+ "tolerancePx": 2,
+ "devices": {
+  "phone": {
+   "panels": {
+    "welcome": {
+     "shell": ".screen.title .tt-cover",
+     "parts": {
+      "cover": ".screen.title .tt-cover",
+      "logo": ".screen.title .logo",
+      "start": ".screen.title .press",
+      "languages": ".screen.title .tt-panel"
+     },
+     "opened": true,
+     "open": {
+      "appearedAtMs": 0,
+      "baselineAtMs": 1380,
+      "samples": 13,
+      "moved": false,
+      "parts": {
+       "cover": {
+        "base": [
+         16,
+         249.2,
+         358,
+         195.7
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       },
+       "logo": {
+        "base": [
+         40.5,
+         272.2,
+         309,
+         151.7
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       },
+       "start": {
+        "base": [
+         71.6,
+         458.8,
+         246.8,
+         64
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       },
+       "languages": {
+        "base": [
+         50.1,
+         708,
+         289.8,
+         120
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       }
+      },
+      "shot": "phone-001-welcome-open.png"
+     },
+     "actions": [
+      {
+       "action": "Tieng Viet",
+       "moved": false,
+       "parts": {
+        "cover": {
+         "base": [
+          16,
+          249.2,
+          358,
+          195.7
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "logo": {
+         "base": [
+          40.5,
+          272.2,
+          309,
+          151.7
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "start": {
+         "base": [
+          71.6,
+          458.8,
+          246.8,
+          64
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "languages": {
+         "base": [
+          50.1,
+          708,
+          289.8,
+          120
+         ],
+         "maxChange": {
+          "left": -0.4,
+          "top": 0,
+          "width": 0.8,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      }
+     ]
+    }
+   },
+   "startup": {
+    "welcomeFirstNonWhiteFrameMs": 1269,
+    "welcomeBackground": "radial-gradient(at 50% 38%, rgba(255, 250, 235, 0) 0%, rgba(",
+    "firstContentfulPaintMs": 180,
+    "titleTextRenderMs": null,
+    "worldReadyMs": 12123,
+    "bootTimes": {
+     "start": 1207,
+     "world": 3466,
+     "people": 3663,
+     "town": 4342,
+     "roads": 5277,
+     "pretraffic": 6200,
+     "traffic": 6230,
+     "things": 9179,
+     "wideland": 9560,
+     "levelled": 9812,
+     "roadside": 10349,
+     "solids": 10377,
+     "ready": 10916,
+     "shaders": 14237
+    },
+    "navigation": {
+     "domContentLoaded": 548,
+     "load": 549
+    },
+    "wallClockToReadyMs": 19276,
+    "shots": {
+     "500": {
+      "file": "phone-startup-500ms.png",
+      "takenAtMs": 500,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     },
+     "1000": {
+      "file": "phone-startup-1000ms.png",
+      "takenAtMs": 1000,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     },
+     "2000": {
+      "file": "phone-startup-2000ms.png",
+      "takenAtMs": 2001,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     },
+     "4000": {
+      "file": "phone-startup-4000ms.png",
+      "takenAtMs": 4001,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     }
+    }
+   },
+   "bagIcons": null,
+   "errors": []
+  }
+ }
+}
