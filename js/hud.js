@@ -147,10 +147,12 @@ export class Hud {
     this.root.classList.toggle('far', r.rot === 180);   // (two players face to face: this half is turned to the far end)
     const small = two || r.w < 560 || r.h < 420; this.root.classList.toggle('small', small); this.rect = r;
     // Audio and the microphone always stay below navigation, on desktop as on phones.
-    const tools = this.q('.tools'), dock = this.q('.dock'), chat = this.q('.dk.chat');
-    const chatHome = small ? tools : dock; if (chat.parentNode !== chatHome) chatHome.appendChild(chat);
+    const tools = this.q('.tools'), chat = this.q('.dk.chat');
+    // (r79, owner 16 Oct: "move chat up there too") on every screen the chat button sits beside the speaker under the map,
+    // so the Audio switches line up under the two of them the same way on a phone, a tablet and a computer
+    if (chat.parentNode !== tools) tools.appendChild(chat);
     for (const k of ['snd', 'call', 'mus']) { const b = this.q('.dk.' + k); if (b.parentNode !== tools) tools.appendChild(b); }
-    if (small) { const audio = this.q('.dk.snd'); if (tools.firstElementChild !== audio) tools.prepend(audio); if (chat.previousElementSibling !== audio) tools.insertBefore(chat, audio.nextSibling); }
+    { const audio = this.q('.dk.snd'); if (tools.firstElementChild !== audio) tools.prepend(audio); if (chat.previousElementSibling !== audio) tools.insertBefore(chat, audio.nextSibling); }
     this.fitQuest();
   }
   showRegion(name) { const e = this.q('.region'); e.textContent = name; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
