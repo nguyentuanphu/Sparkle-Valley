@@ -1,0 +1,506 @@
+{
+ "when": "2026-10-16T13:16:45.296Z",
+ "url": "http://localhost:8765/",
+ "tolerancePx": 2,
+ "devices": {
+  "phone": {
+   "panels": {
+    "welcome": {
+     "shell": ".screen.title .tt-cover",
+     "parts": {
+      "cover": ".screen.title .tt-cover",
+      "logo": ".screen.title .logo",
+      "start": ".screen.title .press",
+      "languages": ".screen.title .tt-panel"
+     },
+     "opened": true,
+     "open": {
+      "appearedAtMs": 0,
+      "baselineAtMs": 771,
+      "samples": 9,
+      "moved": true,
+      "parts": {
+       "cover": {
+        "base": [
+         16,
+         249.2,
+         358,
+         195.7
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       },
+       "logo": {
+        "base": [
+         40.5,
+         272.2,
+         309,
+         151.7
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       },
+       "start": {
+        "base": [
+         70.4,
+         458.5,
+         249.1,
+         64.6
+        ],
+        "maxChange": {
+         "left": -7,
+         "top": -1.8,
+         "width": 14.1,
+         "height": 3.7
+        },
+        "moved": true,
+        "firstMoveAtMs": 1428,
+        "gone": false,
+        "track": [
+         {
+          "t": 771,
+          "r": [
+           70.4,
+           458.5,
+           249.1,
+           64.6
+          ]
+         },
+         {
+          "t": 1428,
+          "r": [
+           63.4,
+           456.7,
+           263.2,
+           68.3
+          ]
+         },
+         {
+          "t": 2456,
+          "r": [
+           70.6,
+           458.6,
+           248.9,
+           64.5
+          ]
+         },
+         {
+          "t": 3242,
+          "r": [
+           68.2,
+           457.9,
+           253.6,
+           65.8
+          ]
+         },
+         {
+          "t": 4308,
+          "r": [
+           65.4,
+           457.2,
+           259.3,
+           67.2
+          ]
+         },
+         {
+          "t": 6489,
+          "r": [
+           69.1,
+           458.2,
+           251.9,
+           65.3
+          ]
+         }
+        ]
+       },
+       "languages": {
+        "base": [
+         50.1,
+         708,
+         289.8,
+         120
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       }
+      },
+      "shots": [
+       "phone-001-welcome-open-at-700ms.png",
+       "phone-002-welcome-open-at-2500ms.png"
+      ]
+     },
+     "actions": [
+      {
+       "action": "Tieng Viet",
+       "moved": true,
+       "parts": {
+        "cover": {
+         "base": [
+          16,
+          249.2,
+          358,
+          195.7
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "logo": {
+         "base": [
+          40.5,
+          272.2,
+          309,
+          151.7
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "start": {
+         "base": [
+          64.8,
+          457.1,
+          260.4,
+          67.5
+         ],
+         "maxChange": {
+          "left": 6.6,
+          "top": 1.7,
+          "width": -13.3,
+          "height": -3.4
+         },
+         "moved": true,
+         "firstMoveAtMs": 516,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            64.8,
+            457.1,
+            260.4,
+            67.5
+           ]
+          },
+          {
+           "t": 516,
+           "r": [
+            70.8,
+            458.6,
+            248.4,
+            64.4
+           ]
+          },
+          {
+           "t": 2355,
+           "r": [
+            63,
+            456.6,
+            264,
+            68.5
+           ]
+          },
+          {
+           "t": 2767,
+           "r": [
+            71.4,
+            458.8,
+            247.1,
+            64.1
+           ]
+          },
+          {
+           "t": 3705,
+           "r": [
+            64.3,
+            456.9,
+            261.3,
+            67.8
+           ]
+          }
+         ]
+        },
+        "languages": {
+         "base": [
+          50.1,
+          708,
+          289.8,
+          120
+         ],
+         "maxChange": {
+          "left": -0.4,
+          "top": 0,
+          "width": 0.8,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       },
+       "shots": [
+        "phone-003-welcome-before-Tieng-Viet.png",
+        "phone-004-welcome-after-Tieng-Viet.png"
+       ]
+      },
+      {
+       "action": "English",
+       "moved": true,
+       "parts": {
+        "cover": {
+         "base": [
+          16,
+          249.2,
+          358,
+          195.7
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "logo": {
+         "base": [
+          40.5,
+          272.2,
+          309,
+          151.7
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        },
+        "start": {
+         "base": [
+          68.9,
+          458.1,
+          252.3,
+          65.4
+         ],
+         "maxChange": {
+          "left": -5.9,
+          "top": -1.5,
+          "width": 11.6,
+          "height": 3
+         },
+         "moved": true,
+         "firstMoveAtMs": 496,
+         "gone": false,
+         "track": [
+          {
+           "t": 0,
+           "r": [
+            68.9,
+            458.1,
+            252.3,
+            65.4
+           ]
+          },
+          {
+           "t": 496,
+           "r": [
+            63.1,
+            456.6,
+            263.7,
+            68.4
+           ]
+          },
+          {
+           "t": 1223,
+           "r": [
+            65,
+            457.1,
+            260.1,
+            67.5
+           ]
+          },
+          {
+           "t": 1904,
+           "r": [
+            71.1,
+            458.7,
+            247.7,
+            64.2
+           ]
+          },
+          {
+           "t": 2371,
+           "r": [
+            65.4,
+            457.2,
+            259.2,
+            67.2
+           ]
+          },
+          {
+           "t": 2849,
+           "r": [
+            63,
+            456.6,
+            263.9,
+            68.4
+           ]
+          }
+         ]
+        },
+        "languages": {
+         "base": [
+          49.7,
+          708,
+          290.6,
+          120
+         ],
+         "maxChange": {
+          "left": 0.4,
+          "top": 0,
+          "width": -0.8,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       },
+       "shots": [
+        "phone-005-welcome-before-English.png",
+        "phone-006-welcome-after-English.png"
+       ]
+      }
+     ]
+    }
+   },
+   "startup": {
+    "welcomeFirstNonWhiteFrameMs": 879,
+    "welcomeBackground": "radial-gradient(at 50% 38%, rgba(255, 250, 235, 0) 0%, rgba(",
+    "firstContentfulPaintMs": 120,
+    "titleTextRenderMs": null,
+    "worldReadyMs": 10792,
+    "bootTimes": {
+     "start": 847,
+     "world": 2924,
+     "people": 3068,
+     "town": 3622,
+     "roads": 4614,
+     "pretraffic": 5427,
+     "traffic": 5441,
+     "things": 8513,
+     "wideland": 8840,
+     "levelled": 9109,
+     "roadside": 9548,
+     "solids": 9566,
+     "ready": 9945,
+     "shaders": 13317
+    },
+    "navigation": {
+     "domContentLoaded": 336,
+     "load": 336
+    },
+    "wallClockToReadyMs": 16732,
+    "shots": {
+     "500": {
+      "file": "phone-startup-500ms.png",
+      "takenAtMs": 500,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     },
+     "1000": {
+      "file": "phone-startup-1000ms.png",
+      "takenAtMs": 1000,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     },
+     "2000": {
+      "file": "phone-startup-2000ms.png",
+      "takenAtMs": 2000,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     },
+     "4000": {
+      "file": "phone-startup-4000ms.png",
+      "takenAtMs": 4000,
+      "screen": {
+       "title": true,
+       "launch": [
+        "DIV",
+        "DIV",
+        "screen title sv2",
+        "DIV"
+       ],
+       "bodyBg": "rgb(248, 241, 255)"
+      }
+     }
+    }
+   },
+   "bagIcons": null,
+   "errors": []
+  }
+ }
+}
