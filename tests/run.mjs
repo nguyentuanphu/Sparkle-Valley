@@ -5979,6 +5979,30 @@ await check('r79bagtiles', async () => {
   return rows.join(', ') + '; pictures centred and clear of names, names at most two lines, voices note hidden behind the Pad';
 });
 
+// (r79 A3) Album "Words I learned": each row holds its picture and its hear-again button (44 px or more) inside it, lined
+// up, with no empty white circles (a drawn picture inside the row must not get the row's own white box)
+await check('r79albumwords', async () => {
+  const rows = [];
+  for (const [dev, w, h, touch] of [['phone', 390, 844, true], ['computer', 1280, 800, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    await P.page.evaluate(() => { __sv.heroes[0].profile.words = { 'vn:bowl': true, 'vn:pineapple': true, 'vn:corn': true, "au:G'day": true, 'au:Mate': true, 'vs:Hết sảy': true }; __sv.openPad(0, 'album'); });
+    await P.page.waitForSelector('.wordlist .wl-row'); await P.page.evaluate(() => document.querySelector('.wordlist').scrollIntoView({ block: 'center' })); await P.page.waitForTimeout(700);
+    const r = await P.page.evaluate(() => [...document.querySelectorAll('.wordlist .wl-row')].map(row => {
+      const R = row.getBoundingClientRect(), bad = [], name = row.textContent.trim().slice(0, 20);
+      const inside = (e, what) => { const a = e.getBoundingClientRect(); if (a.top < R.top - 1 || a.bottom > R.bottom + 1 || a.left < R.left - 1 || a.right > R.right + 1) bad.push(name + ': ' + what + ' outside its row'); return a; };
+      const pic = row.querySelector('.wl-pic svg'), say = row.querySelector('.wl-say');
+      if (!pic) bad.push(name + ': no picture'); else { const a = inside(pic, 'picture'); if (Math.abs((a.top + a.bottom) / 2 - (R.top + R.bottom) / 2) > 4) bad.push(name + ': picture not lined up'); }
+      if (!say) bad.push(name + ': no hear button'); else { const a = inside(say, 'hear button'); if (Math.min(a.width, a.height) < 44) bad.push(name + ': hear button under 44 px'); }
+      for (const e of row.querySelectorAll('span, i')) { const cs = getComputedStyle(e); if (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || cs.boxShadow !== 'none') bad.push(name + ': a white box inside the row (' + e.className + ')'); }
+      return bad;
+    }));
+    await P.page.locator('.wordlist .wl-say').first().click();
+    rows.push(dev + ': ' + r.length + ' rows'); ok(r.length === 6, dev + ': 6 word rows expected, got ' + r.length); ok(!r.flat().length, dev + ': ' + r.flat().join('; '));
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  }
+  return rows.join(', ') + '; pictures and 44 px hear buttons inside each row, lined up, no empty circles';
+});
+
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);

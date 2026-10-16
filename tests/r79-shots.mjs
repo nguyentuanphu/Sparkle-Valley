@@ -18,11 +18,12 @@ const SEED = async page => page.evaluate(async () => {
   const p = window.__sv.heroes[0].profile;
   p.bought = { h_tauhu: 1, h_traicay: 1 };
   p.inv = { ...(p.inv || {}), ruby: 1, crystal: 1, fossil: 1, bone: 2, pebble: 4 };
+  p.words = { ...(p.words || {}), 'vn:bowl': true, 'vn:pineapple': true, 'vn:corn': true, "au:G'day": true, 'au:Mate': true, 'vs:Hết sảy': true };
   const S = await import('/js/state.js'); S.saveProfiles && S.saveProfiles();
 });
 const SCREENS = {
   bag: async page => { await page.evaluate(() => window.__sv.openPad(0, 'bag')); await page.waitForTimeout(1200); },
-  album: async page => { await page.evaluate(() => window.__sv.openPad(0, 'album')); await page.waitForTimeout(1200); },
+  album: async page => { await page.evaluate(() => window.__sv.openPad(0, 'album')); await page.waitForTimeout(1200); await page.evaluate(() => document.querySelector('.wordlist')?.scrollIntoView({ block: 'center' })); await page.waitForTimeout(500); },
   wardrobe: async page => { await page.evaluate(() => window.__sv.openPad(0, 'shop')); await page.waitForTimeout(1000); await page.evaluate(() => { const b = document.querySelector('[data-go="wardrobe"]'); b && b.click(); }); await page.waitForTimeout(1000); },
   hud: async page => { await page.evaluate(() => { const b = document.querySelector('.dk.snd'); b && b.click(); }); await page.waitForTimeout(800); },
   camera: async page => { await page.evaluate(() => { const b = document.querySelector('.z-tray'); b && b.click(); }); await page.waitForTimeout(800); },
