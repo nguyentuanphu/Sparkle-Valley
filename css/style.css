@@ -2752,6 +2752,8 @@ body.bigtext .theatre .th-text { --thp: clamp(20px, 3.2vw, 28px); --thm: clamp(1
 .stkbook .stk-dot, .pad-tabs .stk-count, .dk .stk-count { position: absolute; top: -8px; right: -6px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--purple, #8a5cf6); color: #fff; border: 2px solid #3a2a20; font: 600 13px/18px var(--font); font-style: normal; text-align: center; pointer-events: none; }
 .pad-tabs button span, .dk { position: relative; }
 .pad-tabs .stk-count { top: -4px; right: -14px; }
+/* (the Bag button's count sits inside its corner: nothing pokes out of a button, check spill) */
+.dk .stk-count { top: 2px; right: 2px; }
 .stkbook .stk-page { background: var(--paper); border: 3px solid var(--ink); border-radius: 28px; box-shadow: 0 6px 0 var(--ink); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .stkbook .stk-page.won { border-color: var(--gold); box-shadow: 0 0 0 4px var(--gold), 0 6px 0 4px var(--ink); }
 .stkbook .stk-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
