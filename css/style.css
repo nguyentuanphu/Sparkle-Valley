@@ -2535,7 +2535,9 @@ details.ocard.friends:not([open]) > summary::after { transform: rotate(-90deg); 
 /* Owner round, 14 Oct: fixed shells, optical item sizes and compact trays (UX-001–004). */
 .screen.title .tt-cover, .screen.title .logo, .sv2 .who-card, .dialog, .wardrobe { animation: none !important; }
 .sv2.screen.who { justify-content: center; }
-.modal .card { max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px); }
+/* (r78) r75 capped every pop-up card at the screen height without letting it scroll, so a taller card (the character
+   maker on a phone) spilled its lower half over the screen behind: as in r74, a tall card scrolls with its pop-up. Cards
+   with their own steady height (Pad, Grown-ups, Shop, tester panel, Play) keep it */
 .pad .card { height: min(760px, calc(100dvh - 24px)); display:flex; flex-direction:column; }
 .pad-head { flex:none; } .pad-body { flex:1; min-height:0; max-height:none; }
 .grownups .card { padding-bottom:100px; } .grownups #gDone { position:sticky; bottom:0; margin:20px auto 0; width:min(360px,100%); display:block; z-index:2; box-shadow:0 0 0 12px #fffaf0; }
@@ -2689,3 +2691,47 @@ body.bigtext .ht-cap { font-size: clamp(20px, 3.2vw, 28px); }
 .th-text { min-height: 52px; padding: 8px 14px; border-radius: 16px; }
 .th-text p { font-size: clamp(16px, 2.2vw, 20px); }
 .th-text .th-more { font-size: clamp(15px, 1.9vw, 17px); }
+/* (r78, owner: windows stay still; sweep of r77: the phone's film picture got shorter or taller with every page, as
+   the story's words went from 2 lines to 3 and a character's spoken line came and went) the words box keeps one height:
+   room for 3 lines of the story and 1 spoken line; longer words scroll inside it, the picture never moves */
+.theatre .th-text { --thp: clamp(16px, 2.2vw, 20px); --thm: clamp(15px, 1.9vw, 17px); box-sizing: border-box; height: calc(var(--thp) * 1.35 * 3 + var(--thm) * 1.35 + 4px + 16px); min-height: 0; overflow-y: auto; justify-content: flex-start; }
+body.bigtext .theatre .th-text { --thp: clamp(20px, 3.2vw, 28px); --thm: clamp(17px, 2.7vw, 23px); }
+.theatre .th-text p, .theatre .th-text .th-more { line-height: 1.35; flex: none; }
+/* (r78, sweep of r77: on a tablet the Shop card is centred and fitted to what it shows, so every tab, the buy question
+   and the wardrobe moved it up and down by up to 177 px) the Shop keeps one height, like the Pad: the items scroll
+   inside it and the buy question covers the card as before */
+.modal.shopk .card { box-sizing: border-box; height: min(760px, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px)); overflow-y: auto; }
+.modal.shopk .card > .kgrid { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start; }
+/* (r78) the Welcome title and start button hold both languages' words in one place; only the chosen one shows */
+.sv2 .logo-main, .sv2 .logo-sub, .sv2 .tt-press { display: inline-grid; justify-items: center; }
+.sv2 .logo-main { display: grid; }
+.sv2 .tt-l { grid-area: 1 / 1; } .sv2 .tt-l.tt-off { visibility: hidden; }
+/* (r78, sweep of r77: on a phone "Preparing the valley" sat over the top-right "Add to Home Screen" button) the progress
+   sits under the top row of buttons, in the space above the cover card */
+.screen.title > .launch-progress { top: calc(env(safe-area-inset-top) + 76px); max-width: calc(100% - 32px); }
+/* (third AI's review R6) on a phone held sideways (a short screen) 176 px up is the middle of the valley: the update
+   notice and the explanation notes sit low, between the bottom buttons, and a little narrower */
+@media (max-height: 500px) {
+  .update-notice { bottom: calc(env(safe-area-inset-bottom) + 10px); max-width: min(320px, calc(100% - 360px)); }
+  body.touch .htoast.explain { bottom: calc(env(safe-area-inset-bottom) + 10px); max-width: min(300px, calc(100% - 360px)); }
+}
+/* (review R5) a note that is still longer than two lines ends with "…", never cut mid-word */
+.htoast.explain { text-overflow: ellipsis; }
+/* (r78, owner: no overlaps) some Bag pictures are drawn a little past their 64 px box (the apple, the rice), so their
+   name sat on the picture: the picture keeps 10 px clear below it, and the name stays above the drawing */
+.pad .slot > span:not(.sw) { margin-bottom: 10px; }
+.pad .slot > small { position: relative; z-index: 1; }
+/* (r78, sweep: the cover still changed height with the language) each language's title words carry their own size,
+   so the title box, which holds both, is the same in English and Vietnamese */
+.sv2 .logo.vi .logo-main { font-size: clamp(48px, 11vw, 120px); font-weight: 500; }
+.sv2 .logo .logo-main > .tt-l:nth-child(2) { font-size: clamp(40px, 11vw, 96px); font-weight: 600; }
+/* (r78) Vietnamese mode switches the page to Baloo 2 (Fredoka has no Vietnamese letters), which resized the English
+   title words held beside the Vietnamese ones: each language's words keep their own font, and the language buttons
+   keep one height in both fonts */
+.sv2 .tt-l:nth-child(1) { font-family: 'Fredoka', 'Baloo 2', 'Segoe UI', system-ui, -apple-system, sans-serif; }
+.sv2 .tt-l:nth-child(2) { font-family: 'Baloo 2', 'Segoe UI', system-ui, -apple-system, sans-serif; }
+.sv2 .tt-panel .seg.lang button { height: 48px; display: inline-flex; align-items: center; gap: 6px; }
+.sv2 .tt-panel .learnrow { height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+/* (r78, after the release pictures: on a computer one line of story sat in a box built for four) wide screens fit about
+   twice the words on a line, so the box keeps room for 2 lines of the story and 1 spoken line there; phones keep 3 + 1 */
+@media (min-width: 700px) { .theatre .th-text { height: calc(var(--thp) * 1.35 * 2 + var(--thm) * 1.35 + 4px + 16px); } }

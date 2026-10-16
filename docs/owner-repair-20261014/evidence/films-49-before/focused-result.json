@@ -1,0 +1,73 @@
+{
+  "stories": 38,
+  "pages": [],
+  "animals": [
+    {
+      "name": "mouse",
+      "expected": 0.42,
+      "actual": 1
+    },
+    {
+      "name": "lion",
+      "expected": 1.5,
+      "actual": 1
+    },
+    {
+      "name": "tiger",
+      "expected": 1.45,
+      "actual": 1
+    },
+    {
+      "name": "jackal",
+      "expected": 1.1,
+      "actual": 1
+    }
+  ],
+  "bad": [
+    "mouse: animation lost authored size",
+    "lion: animation lost authored size",
+    "tiger: animation lost authored size",
+    "jackal: animation lost authored size",
+    "duahau: missing art direction",
+    "thanhgiong: missing art direction",
+    "banhchung: missing art direction",
+    "caykhe: missing art direction",
+    "hoguom: missing art direction",
+    "rongtien: missing art direction",
+    "caytre: missing art direction",
+    "tamcam: missing art direction",
+    "sodua: missing art direction",
+    "thachsanh: missing art direction",
+    "chucuoi: missing art direction",
+    "cockien: missing art direction",
+    "vusua: missing art direction",
+    "baluoiriu: missing art direction",
+    "quabau: missing art direction",
+    "thayboi: missing art direction",
+    "nhacmeo: missing art direction",
+    "ongtao: missing art direction",
+    "cachep: missing art direction",
+    "sontinh: missing art direction",
+    "rainbowserpent: missing art direction",
+    "emu: missing art direction",
+    "dotkangaroo: missing art direction",
+    "birdcolours: missing art direction",
+    "magicpudding: missing art direction",
+    "tiddalik: missing art direction",
+    "greatrace: missing art direction",
+    "maliang: missing art direction",
+    "weaver: missing art direction",
+    "nian: missing art direction",
+    "kongrong: missing art direction",
+    "change: missing art direction",
+    "crow: missing art direction",
+    "lionrabbit: missing art direction",
+    "ganesha: missing art direction",
+    "bluejackal: missing art direction",
+    "elephantmice: missing art direction",
+    "monkey: missing art direction"
+  ],
+  "warnings": [],
+  "disposed": 0,
+  "guides": 4
+}

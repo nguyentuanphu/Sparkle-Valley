@@ -5807,15 +5807,20 @@ await check('ownerexplainswitches', async () => {
     await P.page.evaluate(() => window.svOfferUpdate?.()); await P.page.waitForTimeout(500);
     const notice = await P.page.evaluate(() => !!document.querySelector('.update-notice'));
     await P.page.evaluate(() => document.querySelector('.update-notice')?.remove());
+    // (review R3) a part of the game that has gone after a deploy still offers the update with the switch off
+    await P.page.evaluate(() => window.svModuleGone?.(new TypeError('Importing a module script failed.'))); await P.page.waitForTimeout(500);
+    const gone = await P.page.evaluate(() => !!document.querySelector('.update-notice'));
+    await P.page.evaluate(() => document.querySelector('.update-notice')?.remove());
     await P.page.evaluate(() => __sv.openGamesHub(0)); await P.page.waitForSelector('.hplay', { timeout: 20000 }); await P.page.locator('.hplay').first().click();
     await P.page.waitForSelector('.gl:not(.out)', { timeout: 30000 }); await P.page.waitForTimeout(1500);
     const line = await P.page.evaluate(() => { const h = document.querySelector('.gl .gl-help'), r = h.getBoundingClientRect(); return { text: h.textContent.trim(), shown: getComputedStyle(h).visibility !== 'hidden', h: Math.round(r.height) }; });
-    const errors = P.errors; await P.ctx.close(); return { gift, notice, line, errors };
+    const errors = P.errors; await P.ctx.close(); return { gift, notice, gone, line, errors };
   };
   const on = await run(false), off = await run(true);
   ok(on.gift.ex.length && on.gift.ex.every(e => e.shown && e.spoken) && /gift/i.test(on.gift.note), 'gift on: ' + JSON.stringify(on.gift));
   ok(off.gift.ex.length && off.gift.ex.every(e => !e.shown && !e.spoken) && !/gift/i.test(off.gift.note), 'gift off: ' + JSON.stringify(off.gift));
   ok(on.notice && !off.notice, `update notice on ${on.notice}, off ${off.notice}`);
+  ok(on.gone && off.gone, `a gone part must offer the update even with the notice off: on ${on.gone}, off ${off.gone}`);
   ok(on.line.text && on.line.shown && off.line.text && !off.line.shown && off.line.h === on.line.h, 'game question line: ' + JSON.stringify({ on: on.line, off: off.line }));
   ok(!on.errors.length && !off.errors.length, JSON.stringify([on.errors, off.errors]));
   return `${ids.length} Studio switches (each says what Off does, EN/VI); switched off: no gift note or voice, no update notice, a game's question line hidden with its space kept; on: all shown`;
