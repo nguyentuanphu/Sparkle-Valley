@@ -5565,6 +5565,64 @@ await check('ownerlearningprogression', async () => {
   return JSON.stringify(rows);
 });
 
+// (owner repair round, points 46-48, 16 Oct AEDT) the four reasoning games really change with the level: more choices,
+// bigger boards and look-alike pictures on Hard; never a forced single choice; a wrong tap says why in EN and VI; Garden
+// Steps never says the answer before the child chooses it.
+await check('ownerthinkinglevels', async () => {
+  const rows = [];
+  for (const lang of ['en', 'vi']) {
+    const P = await open(b, { w: 390, h: 844, touch: true, lang }); await clear(P.page);
+    for (const id of ['rulefinder', 'gardenorder', 'steppingpath', 'remembergarden']) for (const [mode, little, level] of [['under-5', true, 1], ['Easy', false, 1], ['Medium', false, 2], ['Hard', false, 3]]) {
+      await P.page.evaluate(async ({ id, little, level }) => { const G = __sv, F = await import('/js/games/frame.js'); G.paused = true; window.__thinking = F.openGame(id, { players: [G.heroes[0].profile], little, level }); }, { id, little, level });
+      await P.page.waitForSelector('.gl');
+      const r = await P.page.evaluate(async () => {
+        const F = await import('/js/games/frame.js'), wait = ms => new Promise(res => setTimeout(res, ms));
+        const help = () => document.querySelector('.gl-help').textContent.trim();
+        let wrongHelp = null, asks = 0, minChoices = 99, maxChoices = 0, small = [], askHelp = new Set(), grid = 0, flowers = 0, puddles = 0;
+        const until = Date.now() + 45000;
+        while (Date.now() < until && !document.querySelector('.gl-win')) {
+          const ask = F.playWatch.ask;
+          if (ask) {
+            const live = ask.els.filter(b => !b.disabled && b.getClientRects().length);
+            if (live.length) {
+              asks++; minChoices = Math.min(minChoices, live.length); maxChoices = Math.max(maxChoices, live.length); askHelp.add(help());
+              const path = document.querySelector('.think-path');
+              if (path) { grid = Math.max(grid, Math.round(Math.sqrt(path.children.length))); flowers = [...path.children].filter(c => /flower|hoa/i.test(c.getAttribute('aria-label'))).length; puddles = [...path.children].filter(c => /puddle|nước/i.test(c.getAttribute('aria-label'))).length; }
+              for (const x of document.querySelectorAll('.gl-stage button')) { if (x.disabled || !x.getClientRects().length) continue; const q = x.getBoundingClientRect(); if (Math.min(q.width, q.height) < (document.querySelector('.gl.little') ? 63 : 44) || q.left < -1 || q.right > innerWidth + 1) small.push(x.className); }
+              const bad = live.find(b => !ask.check(b));
+              if (wrongHelp === null && bad) { bad.click(); await wait(120); wrongHelp = help(); }
+              else live.find(ask.check)?.click();
+            }
+          } else { const next = F.playWatch.plan?.(); if (next && !next.disabled) next.click(); }
+          await wait(70);
+        }
+        const path = document.querySelector('.think-path'), deadEnds = path ? [...path.children].filter(c => /flower|hoa/i.test(c.getAttribute('aria-label')) && !c.classList.contains('right')).length : 0;
+        return { won: !!document.querySelector('.gl-win'), deadEnds, asks, minChoices, maxChoices, wrongHelp, askHelp: [...askHelp], grid, flowers, puddles, small: [...new Set(small)], sideways: document.scrollingElement.scrollWidth > innerWidth + 1 };
+      });
+      fs.mkdirSync('out/owner-thinking', { recursive: true }); await P.page.screenshot({ path: `out/owner-thinking/${id}-${lang}-${mode}.png` });
+      const row = { id, lang, mode, ...r }; rows.push(row); const say = JSON.stringify(row);
+      ok(r.won && r.asks > 1, 'did not finish: ' + say);
+      ok(r.minChoices >= 2, 'a forced single choice: ' + say);
+      ok(r.wrongHelp && !/^(Try again|Thử lại)/i.test(r.wrongHelp) , 'a wrong tap must say why: ' + say);
+      ok(!r.small.length && !r.sideways, 'small buttons or sideways scroll: ' + say);
+      if (lang === 'vi') ok(r.askHelp.every(t => /[ăâđêôơưàáảãạèéẻẽẹìíỉĩịòóỏõọùúủũụỳýỷỹỵ]/i.test(t)), 'English guidance in Vietnamese: ' + say);
+      if (id === 'gardenorder') ok(r.askHelp.filter(t => t !== r.wrongHelp).every(t => /first|next|trước|tiếp theo/i.test(t)), 'Garden Steps must not name the answer before the choice: ' + say);
+      await P.page.waitForTimeout(650); await P.page.locator('.gl-win p').first().click(); await P.page.waitForSelector('.gl', { state: 'detached' });
+      ok((await P.page.evaluate(() => window.__thinking)).won, 'the reward must finish the game: ' + say);
+    }
+    ok(!P.errors.length, P.errors.join('\n')); await P.ctx.close();
+  }
+  // the levels really differ (under-5 < Easy < Hard in choices or board size; Medium adds dead-end flowers)
+  const get = (id, mode) => rows.filter(x => x.id === id && x.mode === mode);
+  for (const lang of ['en', 'vi']) {
+    const one = (id, mode) => get(id, mode).find(x => x.lang === lang);
+    ok(one('rulefinder', 'under-5').maxChoices === 2 && one('rulefinder', 'Easy').maxChoices === 3 && one('rulefinder', 'Hard').maxChoices === 4, 'Find the Rule choices by level: ' + JSON.stringify(get('rulefinder', 'Hard')));
+    ok(one('steppingpath', 'under-5').grid === 3 && one('steppingpath', 'Easy').grid === 4 && one('steppingpath', 'Hard').grid === 5, 'Flower Path board by level');
+    ok(one('steppingpath', 'Easy').deadEnds === 0 && one('steppingpath', 'Medium').deadEnds >= 1 && one('steppingpath', 'Hard').deadEnds >= 1, 'Flower Path dead ends from Medium: ' + JSON.stringify(get('steppingpath', 'Medium')));
+    ok(one('gardenorder', 'Hard').maxChoices > one('gardenorder', 'under-5').maxChoices && one('remembergarden', 'Hard').maxChoices > one('remembergarden', 'Easy').maxChoices, 'Garden Steps and Remember the Garden choices grow');
+  }
+  fs.writeFileSync('out/owner-thinking/results.json', JSON.stringify(rows, null, 2));
+});
 await check('ownerlearninglayout', async () => {
   const rows=[];
   for(const [w,h,lang] of [[320,640,'en'],[320,640,'vi'],[390,844,'en'],[844,390,'vi'],[820,1180,'en'],[1280,800,'en']]) {

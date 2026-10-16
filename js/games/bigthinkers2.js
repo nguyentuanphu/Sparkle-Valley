@@ -20,13 +20,14 @@ function repeat(api, speak) {
   button.style.minHeight = '64px'; button.onclick = speak; api.stage.appendChild(button); return button;
 }
 const SYMBOLS = ['🍎', '🌸', '🐶', '🍌'];
-const NAMES = {'🍎':['Apple','Táo'],'🌸':['Flower','Hoa'],'🐶':['Dog','Chó'],'🍌':['Banana','Chuối'],'🌱':['Seedling','Cây non'],'💧':['Water','Nước'],'🌳':['Tree','Cây']};
+const NAMES = {'🍎':['Apple','Táo'],'🌸':['Flower','Hoa'],'🐶':['Dog','Chó'],'🍌':['Banana','Chuối'],'🌱':['Seedling','Cây non'],'💧':['Water','Nước'],'🌳':['Tree','Cây'],'🐝':['Bee','Con ong'],'🦋':['Butterfly','Con bướm'],'🍄':['Mushroom','Cây nấm']};
 register({ id: 'patternpicnic', icon: '🧺', name: () => T('Pattern Picnic', 'Dã Ngoại Quy Luật'), async run(api) {
   const patterns = [['🍎','🌸'], ['🍎','🍎','🌸'], ['🍎','🌸','🐶'], ['🍎','🌸','🌸','🐶']];
   const level = tier(api), rounds = level === 0 ? 3 : 4;
   for (let round = 0; round < rounds; round++) {
     if (api.closed) return; api.stage.innerHTML = ''; api.dots(rounds, round);
-    const rule = patterns[Math.min(3, level === 0 ? 0 : level === 1 ? round % 2 : Math.min(level, round))];
+    // (points 46-48) each level has its own run of patterns; Medium and Hard no longer open with the under-5 pattern
+    const rule = patterns[[[0, 0, 0], [0, 1, 0, 1], [1, 2, 1, 2], [2, 3, 2, 3]][level][round]];
     const shift = round % rule.length, model = Array.from({ length: rule.length * 2 }, (_, i) => rule[(i + shift) % rule.length]);
     const answer = rule[(model.length + shift) % rule.length];
     const row = el('div', 'seq', model.map(value => `<span class="seq-item">${pic(value)}</span>`).join('') + '<span class="seq-item q">?</span>');
@@ -81,6 +82,9 @@ register({ id: 'shapebuilders', icon: '🧩', name: () => T('Shape Builders', 'G
   buttons.forEach(b=>b.disabled=true);return api.win();
 } });
 
+// (points 46-48, 16 Oct AEDT) garden pictures that are not in the row join the choices (one for under-5s and Easy, two
+// from Medium), so the last picture is never the only one left to tap
+const EXTRA=['🐝','🦋','🍄','🍎','🌸','🐶'];
 register({ id: 'remembergarden', icon: '🌱', name: () => T('Remember the Garden', 'Nhớ Khu Vườn'), async run(api) {
   const level=tier(api),pool=['🌱','💧','🌸','🍎','🌳','🐶'],length=[2,3,4,6][level];
   for(let round=0;round<3;round++) {
@@ -91,8 +95,9 @@ register({ id: 'remembergarden', icon: '🌱', name: () => T('Remember the Garde
       await new Promise(resolve=>{ready.onclick=resolve;api.onCleanup(resolve);});if(api.closed)return;ready.remove();model.querySelectorAll('.seq-item').forEach(b=>b.innerHTML='?');}
     const show=el('button','btn',pic('🔁')+T('Show again', 'Xem lại'));show.style.minHeight='64px';show.onclick=()=>{model.querySelectorAll('.seq-item').forEach((b,i)=>b.innerHTML=pic(order[i]));api.say(...INTRO.remembergarden);};api.stage.appendChild(show);
     const done=el('div','seq');api.stage.appendChild(done);const controls=el('div');api.stage.appendChild(controls);
-    for(let i=0;i<order.length;i++){if(api.closed)return;controls.innerHTML='';const old=api.stage;api.stage=controls;const options=shuffle([...new Set(order.slice(i))]);const buttons=choiceButtons(api,options,v=>pic(v));buttons.forEach(b=>b.setAttribute('aria-label',T(...NAMES[b._v])));api.stage=old;
-      if(!await untilRight(api,buttons,b=>b._v===order[i]))return;done.appendChild(el('span','seq-item',pic(order[i])));api.praise();}
+    for(let i=0;i<order.length;i++){if(api.closed)return;controls.innerHTML='';const old=api.stage;api.stage=controls;const options=shuffle([...new Set(order.slice(i)),...shuffle(EXTRA.filter(v=>!order.includes(v))).slice(0,level>=2?2:1)]);const buttons=choiceButtons(api,options,v=>pic(v));buttons.forEach(b=>b.setAttribute('aria-label',T(...NAMES[b._v])));api.stage=old;
+      const wrong=api.wrong;api.wrong=e=>{const line=order.includes(e._v)?['That one comes later. Which picture was before it?','Hình đó ở sau. Hình nào đứng trước nó?']:['That picture was not in the garden row. Tap Show again to look.','Hình đó không có trong hàng. Chạm Xem lại để nhìn nhé.'];wrong(e,...line);api.show(...line);};
+      const got=await untilRight(api,buttons,b=>b._v===order[i]);api.wrong=wrong;if(!got)return;done.appendChild(el('span','seq-item',pic(order[i])));api.praise();}
   }
   return api.win();
 } });
