@@ -13,7 +13,6 @@ import { settings } from './state.js';
 import { events } from './core/events.js';
 import { id as makeId, parse } from './core/ids.js';
 import { pic } from './art.js';
-import { DECOR } from './myhouse.js';
 import { STICKERS, BY_ID, THEMES, PAGES } from './content/stickers.js';
 import { reward as feelReward } from './feel.js'; // (chat A: the sticker flies into its counter)
 import { give, sync, freshIds, acted, decorKey, book } from './stickers.js';
@@ -29,10 +28,11 @@ export async function sayName(s) {
 
 export function createStickerFx(G, { BOOK_LINES, FIRST_THREE }) {
   // the prize decorations: one per page, in the house's chooser once won (keepsakes, like the festival hunt's)
-  for (const page of PAGES) {
+  // (loaded after start: js/myhouse.js loads js/ui.js, which loads this file; a static import would be a circle, check arch)
+  import('./myhouse.js').then(({ DECOR }) => { for (const page of PAGES) {
     const t = THEMES.find(x => x.id === page.theme), k = decorKey(page);
     if (!DECOR[k]) DECOR[k] = { icon: t.decor[0], price: 0, en: t.decor[1] + (page.of > 1 ? ` (${page.n + 1})` : ''), vi: t.decor[2] + (page.of > 1 ? ` (${page.n + 1})` : ''), keepsake: true, wall: true };
-  }
+  } }).catch(e => console.warn('sticker book decorations', e));
 
   const heroBy = p => G.heroes.find(h => h.profile === p) || null;
   const hudOf = h => (h && G.huds && G.huds[G.heroes.indexOf(h)]) || null;
