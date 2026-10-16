@@ -12,7 +12,7 @@ villagers, Simple screen, music, map, real photos, play time, voices, ads, analy
 - `tests/studio-check.mjs`
 - In-game ads made in Studio: `js/ads.js` (off unless Studio turns them on)
 
-## How saving works (owner, round P)
+## How saving works (owner, round P; r81: the content pages are live, see Owner's decisions)
 Online, a save waits on the website (Netlify Blobs store `studio-pending`) and is read back at once; Publish (N)
 sends all waiting changes to GitHub as one commit and puts them live; “Drop all waiting changes” forgets them. The exe
 saves into the game folder and sends to GitHub in two steps (draft, then Publish). Only the family's files can change
@@ -80,7 +80,7 @@ Photo faces and Family album pictures never go into `content/` (the site publish
 
 ## Hard rules (§9.6)
 STUDIO-001 (the exe and online Studio are one program, the same version as the game), STUDIO-002 (online saves wait
-until Publish; only the family's files change), PRIV rules (no keys in the repository; passwords kept only as hashes;
+until Publish, except the content pages, live at once since r81; only the family's files change), PRIV rules (no keys in the repository; passwords kept only as hashes;
 PRIV-012 family photos family-only; PRIV-013 two-step sign-in, lockout and access log).
 
 ## Checks you run
@@ -95,6 +95,7 @@ Build the exe after changes: `bash studio/build-exe.sh`.
 - **Release**: the exe goes into each round's packages.
 
 ## Owner's decisions
+- (17 Oct AEDT, r81) **The content pages go live at once, without Publish.** Message, Missions, Quiz, Our stories, Villagers (names, voices, photo links), Story characters, Memory Villages, Simple screen, Defaults and Ads settings save to the website's live store (`/studio/api/live/content`, Blobs store `live`, key `content`; needs "Change pages") and reach every device through `/api/live` (about 30 seconds); a live section wins over `content/custom.json`, which stays the fallback. SparkleStudio.exe saves them in its folder (Publish still works) and sends them with its Studio key when the website and a key are set. Music, the map and buildings, recorded voices, real photos, ad pictures and game code stay on Publish. Each page says "Live" or "Needs Publish" in English and Vietnamese. Code: `netlify/lib/live.mjs` (`cleanContent`, `saveContent`), `netlify/functions/studio.mjs`, `netlify/functions/live.mjs`, `netlify/lib/admins.mjs`, `studio/ui/app.js`, `studio/core.cjs`, `studio/studio.cjs`, `js/custom.js`, `js/main.js` (Message and Defaults follow `onLive`), `js/ads.js` (an ad whose picture is not published yet is not shown); checks `tests/unit/live-content.test.mjs`, `studiolive`, `studio`.
 - (14 Oct AEDT) **Admins get permissions one by one** ("for admin and owner give them more granular access level in details which can be granted"). Setup → Admins shows each person's permissions as ticks: See Analytics, Name devices, See tester reports, Mark tester problems, Open pages (look only), Change pages (waits for Publish), Make and record voices, Switch features and festivals (live at once), Family photos and code, Make a new family code, Publish, Rebuild the website, Put code live. The roles Viewer, Editor and Owner are ready-made sets that do what they did before; ticking one box makes the role "Chosen". Managing admins, Security and the Access log come only with Owner, so nobody can give themselves more. Code: `netlify/lib/admins.mjs` (PERMS, PRESETS, needs, allowed), `netlify/functions/studio.mjs`, `studio/ui/app.js`; checks `tests/unit/perms.test.mjs` and the `studio` check. The owner said Release may push and deploy it when it fits.
 - (14 Oct AEDT) Studio's Releases page is readable in dark mode on phones, and Analytics no longer times out (504): the report reads the store many at a time and tidies once a day (`fix/studio-dark-analytics`).
 - **11 Oct AEDT: no two-step for the owner.** The owner signs in with `STUDIO_PASSWORD` only; two-step is for admins (`netlify/functions/studio.mjs`, Setup → Admins shows the owner as "password only"). to keep
