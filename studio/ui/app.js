@@ -241,7 +241,7 @@ function liveBadge(P, page) {
   const live = !!LIVE_PAGES[page] && liveOn(), d = document.createElement('div'); d.className = 'card livenote livebadge'; d.dataset.live = live ? '1' : '0';
   d.innerHTML = `<p class="${live ? 'ok' : 'note'}">${live ? '⚡ ' + T('Live: devices get it the next time they open the game (about 30 seconds). No Publish needed.', 'Có hiệu lực ngay: các máy nhận được khi mở game lần tới (khoảng 30 giây). Không cần Phát hành.') + (page === 'ads' ? ' ' + T('A new picture still needs Publish.', 'Hình mới vẫn cần Phát hành.') : '')
     : '✏️ ' + T('Needs Publish: Save keeps it with the family’s files; press Publish afterwards to send it to the children.', 'Cần Phát hành: Lưu giữ cùng tệp của gia đình; sau đó bấm Phát hành để gửi tới các con.') + (LIVE_PAGES[page] ? ' ' + T('To make it live at once, put the website and a Studio key in Settings.', 'Để có hiệu lực ngay, hãy điền trang web và khóa Studio trong Cài đặt.') : '')}</p>`;
-  const h = P.querySelector('h2'); if (h) h.after(d); else P.prepend(d);
+  const h = P.querySelector('h2'), at = h && h.nextElementSibling && h.nextElementSibling.matches('.sub') ? h.nextElementSibling : h; if (at) at.after(d); else P.prepend(d);
 }
 function explainPage(P, page) {
   if (P.querySelector('.studio-help')) return;
@@ -347,7 +347,7 @@ PAGES.ads = async P => {
       <label><input type="checkbox" class="ad-on" ${x.active !== false ? 'checked' : ''}> ${T('Active', 'Đang dùng')}</label></div></div>
       <button class="btn ghost ad-del" title="${T('Remove', 'Xóa')}" aria-label="${T('Remove', 'Xóa')}">🗑️</button></div>
       <div class="adcheck">${adCheck(x)}</div><div class="adlive">${adPreview(x)}</div></div>`;
-  P.innerHTML = `<h2>📣 ${T('In-game ads', 'Quảng cáo trong game')}</h2><p class="sub">${T('Ready for later, and switched OFF. Nothing shows in the game until you switch it on here and Publish.', 'Đã chuẩn bị sẵn và đang TẮT. Không có gì hiện trong game cho tới khi bạn bật ở đây và Phát hành.')}</p>
+  P.innerHTML = `<h2>📣 ${T('In-game ads', 'Quảng cáo trong game')}</h2><p class="sub">${T('Ready for later, and switched OFF. Nothing shows in the game until you switch it on here and ' + PUB('Publish.', 'Save (live at once).') + '', 'Đã chuẩn bị sẵn và đang TẮT. Không có gì hiện trong game cho tới khi bạn bật ở đây và ' + PUB('Phát hành.', 'Lưu (có hiệu lực ngay).') + '')}</p>
   <div class="card"><label class="adon"><input type="checkbox" id="adOn" ${A.enabled === true ? 'checked' : ''}> <b>${T('Show ads in the game', 'Hiện quảng cáo trong game')}</b></label>
     <label>${T('Most cards after mini-games per day (each device)', 'Số thẻ tối đa sau trò chơi mỗi ngày (mỗi máy)')}</label><input type="number" id="adPer" min="0" max="10" value="${A.perDay ?? 3}" style="max-width:100px"></div>
   ${A.items.length ? `<div class="card adview"><b>👀 ${T('Preview', 'Xem trước')}</b><div class="row"><span class="seg"><button class="btn small ${AD_VIEW.size === 'phone' ? '' : 'ghost'}" data-size="phone">📱 ${T('Phone', 'Điện thoại')}</button><button class="btn small ${AD_VIEW.size === 'computer' ? '' : 'ghost'}" data-size="computer">💻 ${T('Computer', 'Máy tính')}</button></span>

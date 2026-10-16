@@ -1,0 +1,67 @@
+[
+  {
+    "label": "phone",
+    "page": "message",
+    "note": "Live: devices get it the next time they open the game (about 30 seconds). No Publish needed."
+  },
+  {
+    "label": "phone",
+    "page": "play",
+    "note": "Live: devices get it the next time they open the game (about 30 seconds). No Publish needed."
+  },
+  {
+    "label": "phone",
+    "page": "ads",
+    "note": "Live: devices get it the next time they open the game (about 30 seconds). No Publish needed. A new picture still needs Publish."
+  },
+  {
+    "label": "phone",
+    "page": "music",
+    "note": "Needs Publish: Save keeps it with the family’s files; press Publish afterwards to send it to the children."
+  },
+  {
+    "label": "tablet",
+    "page": "message",
+    "note": "Live: devices get it the next time they open the game (about 30 seconds). No Publish needed."
+  },
+  {
+    "label": "tablet",
+    "page": "play",
+    "note": "Live: devices get it the next time they open the game (about 30 seconds). No Publish needed."
+  },
+  {
+    "label": "tablet",
+    "page": "ads",
+    "note": "Live: devices get it the next time they open the game (about 30 seconds). No Publish needed. A new picture still needs Publish."
+  },
+  {
+    "label": "tablet",
+    "page": "music",
+    "note": "Needs Publish: Save keeps it with the family’s files; press Publish afterwards to send it to the children."
+  },
+  {
+    "label": "computer",
+    "page": "message",
+    "note": "Live: devices get it the next time they open the game (about 30 seconds). No Publish needed."
+  },
+  {
+    "label": "computer",
+    "page": "play",
+    "note": "Live: devices get it the next time they open the game (about 30 seconds). No Publish needed."
+  },
+  {
+    "label": "computer",
+    "page": "ads",
+    "note": "Live: devices get it the next time they open the game (about 30 seconds). No Publish needed. A new picture still needs Publish."
+  },
+  {
+    "label": "computer",
+    "page": "music",
+    "note": "Needs Publish: Save keeps it with the family’s files; press Publish afterwards to send it to the children."
+  },
+  {
+    "label": "phone-vi",
+    "page": "message",
+    "note": "Có hiệu lực ngay: các máy nhận được khi mở game lần tới (khoảng 30 giây). Không cần Phát hành."
+  }
+]
