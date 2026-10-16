@@ -2732,3 +2732,16 @@ body.bigtext .theatre .th-text { --thp: clamp(20px, 3.2vw, 28px); --thm: clamp(1
 .sv2 .tt-l:nth-child(2) { font-family: 'Baloo 2', 'Segoe UI', system-ui, -apple-system, sans-serif; }
 .sv2 .tt-panel .seg.lang button { height: 48px; display: inline-flex; align-items: center; gap: 6px; }
 .sv2 .tt-panel .learnrow { height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+/* ---- r79 screens (chat 1) ---- */
+/* (r79 A1, owner 16 Oct: names ran over their pictures, icons off centre, long names squeezed) every Bag tile: the
+   picture centred in a fixed 64 px box at the top, the name under it in its own space, two lines at most then "..."
+   (the whole name is said and shown when the tile is tapped); tiles in a row share one height */
+.pad .slots { align-items: stretch; }
+.pad .slot { justify-content: flex-start; padding: 10px 6px 8px; overflow: hidden; }
+.pad .slot > span:not(.sw), .pad .slot > svg, .pad .slot > .kpic, .pad .slot > .art { flex: none; width: 64px; height: 64px; min-height: 64px; margin: 4px auto 8px; display: flex; align-items: center; justify-content: center; overflow: visible; }
+.pad .slot > span:not(.sw) > svg, .pad .slot > span:not(.sw) > .art, .pad .slot > span:not(.sw) > .kpic { width: 56px; height: 56px; }
+.pad .slot > small { flex: none; width: 100%; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; line-height: 1.2; max-height: 2.4em; }
+/* (r79 A2, owner 16 Oct: "Getting the voices ready..." floated over the Pad) the voices note stays behind every window,
+   panel and game (they start at layer 25) and fades while one is open, so it never covers their words or buttons */
+.packbar { z-index: 24; }
+body:has(.modal:not(.out), .gl, .wardrobe, .audio-tray, .dialog:not(.out), .storybook, .howto) .packbar { opacity: 0; }

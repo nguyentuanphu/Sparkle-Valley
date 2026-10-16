@@ -5942,6 +5942,43 @@ await check('reportstorage', async () => {
   const {execFileSync}=await import('node:child_process');
   return execFileSync(process.execPath,['owner-report-storage.mjs'],{encoding:'utf8',timeout:60000}).trim();
 });
+// ---- r79 screens (chat 1), owner 16 Oct AEDT ----
+// (r79 A1, A2) Bag tiles on a phone, the owner's phone, a computer and with the biggest text: every picture centred in
+// its tile and clear of its name, every name two lines at most; the voices note never shows over an open Pad
+await check('r79bagtiles', async () => {
+  const rows = [];
+  for (const [dev, w, h, touch, textSize] of [['phone', 390, 844, true, 0], ['bigphone', 430, 932, true, 2], ['computer', 1280, 800, false, 0]]) {
+    const P = await open(b, { w, h, touch, settings: { textSize } }); await clear(P.page);
+    await P.page.evaluate(() => { const p = __sv.heroes[0].profile; p.bought = { h_tauhu: 1, h_traicay: 1 }; p.inv = { ...(p.inv || {}), ruby: 1, crystal: 1, fossil: 1, bone: 2, pebble: 4, apple: 3 }; });
+    await P.page.evaluate(() => { const n = document.createElement('div'); n.className = 'packbar'; n.innerHTML = '<span>Getting the voices ready… 6%</span><i><b></b></i>'; document.body.appendChild(n); });
+    await P.page.evaluate(() => __sv.openPad(0, 'bag')); await P.page.waitForSelector('.pad .slot'); await P.page.waitForTimeout(900);
+    const r = await P.page.evaluate(() => {
+      const bad = [];
+      for (const s of document.querySelectorAll('.pad .slot')) {
+        const pic = s.querySelector(':scope > span:not(.sw), :scope > svg, :scope > .kpic, :scope > .art'), lab = s.querySelector(':scope > small');
+        if (!pic || !lab) continue;
+        const t = s.getBoundingClientRect(), a = pic.getBoundingClientRect(), l = lab.getBoundingClientRect(), name = lab.textContent.trim().slice(0, 24);
+        // the drawn shape too (a picture can spill past its box)
+        let drawnBottom = a.bottom; const g = pic.tagName === 'svg' ? pic : pic.querySelector('svg');
+        try { if (g && g.getBBox) { const bb = g.getBBox(), m = g.getScreenCTM(); drawnBottom = Math.max(drawnBottom, (bb.y + bb.height) * m.d + m.f); } } catch (e) { }
+        const lines = Math.round(l.height / parseFloat(getComputedStyle(lab).lineHeight));
+        if (drawnBottom > l.top + 1) bad.push(name + ': picture over name by ' + Math.round(drawnBottom - l.top) + ' px');
+        if (lines > 2) bad.push(name + ': ' + lines + ' lines');
+        if (Math.abs((a.left + a.right) / 2 - (t.left + t.right) / 2) > 2) bad.push(name + ': picture off centre');
+        if (l.bottom > t.bottom + 1) bad.push(name + ': name spills out of its tile');
+      }
+      const pb = document.querySelector('.packbar'), pr = pb.getBoundingClientRect(), top = document.elementFromPoint(pr.left + pr.width / 2, pr.top + pr.height / 2);
+      return { tiles: document.querySelectorAll('.pad .slot').length, bad, packbarOver: !!(top && top.closest('.packbar')) || getComputedStyle(pb).opacity !== '0' };
+    });
+    rows.push(dev + ': ' + r.tiles + ' tiles');
+    ok(r.tiles >= 7, dev + ': the seeded Bag should show at least 7 tiles, got ' + r.tiles);
+    ok(!r.bad.length, dev + ': ' + r.bad.join('; '));
+    ok(!r.packbarOver, dev + ': the voices note shows over the open Pad');
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  }
+  return rows.join(', ') + '; pictures centred and clear of names, names at most two lines, voices note hidden behind the Pad';
+});
+
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
