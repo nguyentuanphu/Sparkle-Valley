@@ -2,7 +2,8 @@
 // first time a child walks into a place, its sticker goes into their book. It is the first system that only listens to
 // the event bus (architecture step 1): main.js says "PlayerEnteredVillage", this file gives the sticker and says
 // "StickerEarned"; neither calls the other. Places a child visited before round E are filled in when the book opens.
-// The stickers are also in the scrapbook tray (js/fun.js), to stick on a page.
+// The stickers are also in the scrapbook tray (js/fun.js), to stick on a page. Since the sticker book (16 Oct, chat B)
+// they are its Places pages (js/content/stickers.js); this file still keeps placeStickers for older saves and the tray.
 import { T } from './i18n.js';
 import { say } from './voice.js';
 import { SFX } from './audio.js';
@@ -11,11 +12,11 @@ import { events } from './core/events.js';
 import { id as makeId, parse } from './core/ids.js';
 import { pic } from './art.js';
 import { esc } from './util.js';
+import { give } from './stickers.js';
 
 const PLACE_ICON = { village: '🪷', town: '🏠', market: '🛒', aussie: '🦘', china: '🏮', india: '🪔', home: '🌻', paddies: '🌾', lake: '🦢', bamboo: '🎋', mountain: '🏔️', meadow: '🌼', plateau: '🌄' };
 // every place, in the order of the book: the farm and the valley first, then the villages, then the cities
 export const PLACES = [...Object.keys(PLACE_ICON).map(id => ({ id, icon: PLACE_ICON[id] })), ...CITIES.map(c => ({ id: c.id, icon: c.icon || '🏙️' }))];
-const iconOf = place => (PLACES.find(x => x.id === place) || { icon: '🗺️' }).icon;
 export const placeName = place => (REGION_NAMES[place] ? REGION_NAMES[place]() : place);
 
 /** the stickers this child has: { placeId: time } (older saves: filled from the places they visited) */
@@ -31,9 +32,9 @@ export function createPlaceBook(G, { toast, save }) {
     if (!h || !place || !PLACES.some(x => x.id === place)) return;
     const s = placeStickers(h.profile); if (s[place]) return;
     s[place] = Date.now(); save();
-    SFX.chime && SFX.chime();
-    toast(h, `📒 ${T('A new sticker for your book:', 'Hình dán mới cho sổ của con:')} ${iconOf(place)} ${placeName(place)}`); // (the toast draws its pictures like every toast)
-    say('A new sticker for your book!', 'Một hình dán mới cho sổ của con!');
+    // (sticker book, chat B 16 Oct) the place's sticker is shown by the sticker book like every new sticker
+    // (js/stickers.js give(), js/stickerfx.js): its sound, its picture and "A new sticker for your book!"
+    give('place_' + place, h);
     events.emit('StickerEarned', { playerId, stickerId: makeId('sticker', 'place', place), placeId: villageId });
   });
 }
