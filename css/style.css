@@ -2721,3 +2721,14 @@ body.bigtext .theatre .th-text { --thp: clamp(20px, 3.2vw, 28px); --thm: clamp(1
    name sat on the picture: the picture keeps 10 px clear below it, and the name stays above the drawing */
 .pad .slot > span:not(.sw) { margin-bottom: 10px; }
 .pad .slot > small { position: relative; z-index: 1; }
+/* (r78, sweep: the cover still changed height with the language) each language's title words carry their own size,
+   so the title box, which holds both, is the same in English and Vietnamese */
+.sv2 .logo.vi .logo-main { font-size: clamp(48px, 11vw, 120px); font-weight: 500; }
+.sv2 .logo .logo-main > .tt-l:nth-child(2) { font-size: clamp(40px, 11vw, 96px); font-weight: 600; }
+/* (r78) Vietnamese mode switches the page to Baloo 2 (Fredoka has no Vietnamese letters), which resized the English
+   title words held beside the Vietnamese ones: each language's words keep their own font, and the language buttons
+   keep one height in both fonts */
+.sv2 .tt-l:nth-child(1) { font-family: 'Fredoka', 'Baloo 2', 'Segoe UI', system-ui, -apple-system, sans-serif; }
+.sv2 .tt-l:nth-child(2) { font-family: 'Baloo 2', 'Segoe UI', system-ui, -apple-system, sans-serif; }
+.sv2 .tt-panel .seg.lang button { height: 48px; display: inline-flex; align-items: center; gap: 6px; }
+.sv2 .tt-panel .learnrow { height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; }
