@@ -1,19 +1,18 @@
-fatal: path 'js/content/film-looks.js' exists on disk, but not in 'e75ec692a93a8bc8c290f36a01c47f32244be4bd'
-56 changed file(s) since c0bcd0bf; 65 of 190 checks:
+2074 changed file(s) since c0bcd0bf; 65 of 190 checks:
   boot             a game file changed
-  features         js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/content/talefilms.js:0 (top level)
+  features         js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/content/films/kit.js:60 (top level)
   contract         a game file changed
   phone            js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
   voicepack        a game file changed (checks the code map cannot see)
   welcomevoice     js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
   studio           a game file changed (checks the code map cannot see)
   ownerstudiofailures a game file changed (checks the code map cannot see)
-  tales            js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/content/films/kit.js:253
+  tales            js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/content/films/kit.js:60 (top level)
   emoji            always (no browser, seconds); a game file changed (checks the code map cannot see)
   autoplay         js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
   films            js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
-  filmtails        js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/content/films/kit.js:253
-  filmstart        js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/content/films/kit.js:253
+  filmtails        js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/content/films/kit.js:60 (top level)
+  filmstart        js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/content/films/kit.js:60 (top level)
   filmmusic        js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
   preload          always (no browser, seconds); a game file changed (checks the code map cannot see)
   story            js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
