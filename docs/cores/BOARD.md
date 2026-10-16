@@ -96,6 +96,8 @@ Format for a request:
 ## Owner plan: feel and sound, sticker book, daily adventure (16 Oct AEDT)
 - **Now:** plan docs only (no game code) · branch `work/plans-20261016` · three chat prompts in `docs/plans-20261016/` (chat A feel and sound `work/feel-sound`, chat B sticker book `work/sticker-book`, chat C daily adventure `work/daily-adventure`) and the owner's UI redesign mockups and rules in `docs/ui-redesign-20261016/` · ready for Release (docs only) · 16 Oct AEDT
 - [ ] (owner plan → Release) merge `work/plans-20261016` with the next round; then merge A, then B, then C as each says "ready for Release" · the three chats depend on each other in that order · docs only · 16 Oct AEDT
+- **Now (chat A, feel and sound):** building · branch `work/feel-sound` · feel.js API pushed (`press`, `open`, `close`, `reward(kind, from, to, n)`, `nope`, `celebrate({ little })`, in `js/feel.js`); chats B and C can start from it · owner's answers 16 Oct AEDT: plan "go", Grown-ups "Tap sounds" switch yes, gentle confetti for under-5s yes; started from `main` (r78), which r it ships in is decided later · 16 Oct AEDT
+- [ ] (chat A → Release) add `js/feel.js` to the offline list (`sw.js` FILES) · new file · 16 Oct AEDT
 
 ### Chat B: sticker book
 - **Now:** **stickers API pushed** (`eae48a1f`: `js/stickers.js` with `give(id, who?)`, `has(id, who?)`, `count(who?)`; `who` is a hero or a profile, default the child playing now; `give` returns `{ id, first }`) · building S1 to S8 · branch `work/sticker-book` · waiting for: chat A's `feel.js` (not on GitHub yet; a small fallback is used until it is) and r79 on main (main is r78; owner, 16 Oct 11 pm AEDT: work first, decide later) · 16 Oct, 11:00 pm AEDT

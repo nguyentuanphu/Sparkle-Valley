@@ -8,20 +8,23 @@ import { SFX } from './audio.js';
 import { settings, reduceMotion } from './state.js';
 import { labelArt } from './art.js';
 import { el, esc, pick, clamp } from './util.js';
+import * as feel from './feel.js';
 
 // ---------- confetti ----------
 const COLORS = ['#ff4f9a', '#ffd23f', '#3cc7e8', '#5fd36a', '#ff9f43', '#a66bff'];
-export function confetti(rect, n = 60) {
+// gentle (owner, 16 Oct AEDT: "Yes, gentle" for under-5s): fewer pieces falling more slowly
+export function confetti(rect, n = 60, gentle = false) {
   if (reduceMotion()) n = 16;
   const r = rect || { x: 0, y: 0, w: innerWidth, h: innerHeight };
   const box = el('div', 'confetti'); Object.assign(box.style, { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
   for (let i = 0; i < n; i++) {
-    const c = el('i'); const x = Math.random() * 100, d = 1.6 + Math.random() * 1.4, dx = (Math.random() - .5) * 160;
+    const c = el('i'); const x = Math.random() * 100, d = (1.6 + Math.random() * 1.4) * (gentle ? 1.6 : 1), dx = (Math.random() - .5) * 160;
     c.style.cssText = `left:${x}%;background:${pick(COLORS)};animation-duration:${d}s;animation-delay:${Math.random() * .35}s;--dx:${dx}px;--rot:${Math.random() * 900 - 450}deg;${i % 3 ? '' : 'border-radius:50%;'}`;
     box.appendChild(c);
   }
-  document.body.appendChild(box); setTimeout(() => box.remove(), 3600);
+  document.body.appendChild(box); setTimeout(() => box.remove(), gentle ? 5600 : 3600);
 }
+feel.useConfetti(confetti);
 
 // The Save / Done / Close / Back row at the end of any window floats at the bottom while the page scrolls, and the
 // ✕ stays at the top, so they can always be reached without scrolling (this runs for every window, also ones
@@ -38,7 +41,8 @@ floatWatch.observe(document.documentElement, { childList: true, subtree: true })
 export function modal(cls, html) {
   const m = el('div', 'modal ' + (cls || ''), `<div class="card">${html}</div>`);
   dispatchEvent(new Event('sv-hide-caption')); document.body.appendChild(m); requestAnimationFrame(() => floatEnds(m.querySelector('.card')));
-  m.close = () => { m.classList.add('out'); setTimeout(() => m.remove(), 200); };
+  feel.open(m); // a sound only: windows never move (UX-001)
+  m.close = () => { if (!m.classList.contains('out')) feel.close(m); m.classList.add('out'); setTimeout(() => m.remove(), 200); };
   return m;
 }
 
