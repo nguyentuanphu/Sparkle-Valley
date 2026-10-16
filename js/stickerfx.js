@@ -12,7 +12,6 @@ import { SFX, animalCall } from './audio.js';
 import { settings } from './state.js';
 import { events } from './core/events.js';
 import { id as makeId, parse } from './core/ids.js';
-import { pic } from './art.js';
 import { STICKERS, BY_ID, THEMES, PAGES } from './content/stickers.js';
 import { reward as feelReward } from './feel.js'; // (chat A: the sticker flies into its counter)
 import { give, sync, freshIds, acted, decorKey, book } from './stickers.js';
@@ -53,8 +52,10 @@ export function createStickerFx(G, { BOOK_LINES, FIRST_THREE }) {
     if (h) badge(h);
     if (performance.now() < quietUntil) return; // (a big sync, e.g. many earned at once: one toast, not twenty)
     playSound(s);
+    // (owner, 17 Oct AEDT: the drawing's code showed as words) the HUD's toast is plain text, so only words go in it;
+    // the sticker's picture flies to the Bag below
     const toast = G.toast && h ? m => G.toast(h, m) : () => { };
-    toast(`${pic(s.icon)} ${r.shiny ? T('Shiny sticker:', 'Hình dán lấp lánh:') : T('New sticker:', 'Hình dán mới:')} ${T(s.en, s.vi)}`);
+    toast(`${r.shiny ? T('Shiny sticker:', 'Hình dán lấp lánh:') : T('New sticker:', 'Hình dán mới:')} ${T(s.en, s.vi)}`);
     if (performance.now() - lastSay > 4000) { lastSay = performance.now(); const L = r.shiny ? BOOK_LINES.shiny : BOOK_LINES.newOne; say(L[0], L[1]); }
     if (h) { try { const hud = hudOf(h), to = hud && hud.q && hud.q('.dk.bag'); feelReward('sticker', from || null, to || null); } catch (e) { } }
   }
