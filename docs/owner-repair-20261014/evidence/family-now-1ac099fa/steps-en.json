@@ -1,0 +1,42 @@
+[
+  {
+    "file": "1-phone-start-en.png",
+    "what": "Phone, Grown-ups: the new family section before anything is set up"
+  },
+  {
+    "file": "2-phone-family-made-en.png",
+    "what": "Phone: family created; a recovery file was saved to the device"
+  },
+  {
+    "file": "3-phone-pairing-code-en.png",
+    "what": "Phone: a one-use pairing code to type on the other device"
+  },
+  {
+    "file": "4-tablet-enter-code-en.png",
+    "what": "Tablet, Grown-ups: name the device and type the code"
+  },
+  {
+    "file": "5-tablet-waiting-en.png",
+    "what": "Tablet: waiting for the first device to approve it"
+  },
+  {
+    "file": "6-phone-approve-en.png",
+    "what": "Phone: the request to approve or refuse"
+  },
+  {
+    "file": "7-tablet-connected-en.png",
+    "what": "Tablet: connected to the family"
+  },
+  {
+    "file": "8-phone-photo-saved-en.png",
+    "what": "Phone: a family photo chosen for a villager and saved"
+  },
+  {
+    "file": "9-tablet-photo-arrived-en.png",
+    "what": "Tablet: the photo arrived; it shows on that villager in the game"
+  },
+  {
+    "file": "10-phone-devices-list-en.png",
+    "what": "Phone: the list of connected devices, each can be removed"
+  }
+]

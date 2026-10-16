@@ -6,7 +6,9 @@ const browser = await launch(); fs.mkdirSync('out/owner-round', { recursive: tru
 const results = [];
 try {
   for (const [w, h, touch, lang] of [[390,844,true,'en'],[390,844,true,'vi'],[820,1180,true,'en'],[1280,800,false,'en'],[844,390,true,'en'],[844,390,true,'vi']]) {
-    const P = await open(browser, { w, h, touch, lang }); const { page } = P; await clear(page);
+    // (owner, 16 Oct AEDT) family devices is a Studio trial, off by default: switched on here, as Studio would, to check its layout
+    const route = ctx => ctx.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), familyDevices: true }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
+    const P = await open(browser, { w, h, touch, lang, route }); const { page } = P; await clear(page);
     await page.evaluate(() => window.__sv.openPad(0, 'shop')); await page.waitForSelector('.pad .shop-content');
     assert.equal(await page.locator('.modal.pad').count(), 1); assert.equal(await page.locator('.modal.shopk').count(), 0);
     assert.equal(await page.locator('.shop-collections button').count(), 3);

@@ -1908,4 +1908,5 @@ import('./state.js').then(S => { if (S.restoredFromCopy) setTimeout(() => toast(
 document.addEventListener('visibilitychange', () => { if (document.hidden) { if (playing) keepSpot(); save(); hush(); } });
 addEventListener('pagehide', () => { if (playing) keepSpot(); saveProfiles(true); });
 bootMark('ready'); G.bootTimes = bootTimes; bootDone();
-{ const refresh = () => import('./familydevices.js').then(m => m.refreshDevicePhotos()).catch(() => {}); refresh(); addEventListener('online', refresh); setInterval(refresh, 60000); }
+// (owner, 16 Oct AEDT) no device contacts the family service unless Studio switches the trial on, or on a tester device
+{ const refresh = () => (featureOn('familyDevices', false) || G.tester) ? import('./familydevices.js').then(m => m.refreshDevicePhotos()).catch(() => {}) : null; refresh(); addEventListener('online', refresh); setInterval(refresh, 60000); }

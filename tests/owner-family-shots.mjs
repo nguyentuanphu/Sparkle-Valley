@@ -10,7 +10,10 @@ const root = fileURLToPath(new URL('../', import.meta.url)), out = path.join(roo
 fs.mkdirSync(out, { recursive: true });
 const records = new Map();
 const store = { get: async key => structuredClone(records.get(key) ?? null), setJSON: async (key, value) => records.set(key, structuredClone(value)), delete: async key => records.delete(key), list: async ({ prefix }) => ({ blobs: [...records.keys()].filter(k => k.startsWith(prefix || '')).map(key => ({ key })) }) };
-const route = async ctx => ctx.route('**/api/family-devices/*', async r => {
+// (the trial is off unless Studio switches it on; these pretend devices have it on, as Studio would)
+const trialOn = ctx => ctx.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), familyDevices: true }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
+const route = async ctx => { await trialOn(ctx); return familyRoute(ctx); };
+const familyRoute = async ctx => ctx.route('**/api/family-devices/*', async r => {
   try { const req = r.request(), token = (req.headers().authorization || '').replace(/^Bearer /, ''); const value = await familyAction(store, new URL(req.url()).pathname.split('/').pop(), req.postDataJSON(), token); await r.fulfill({ json: value }); }
   catch (e) { await r.fulfill({ status: e.status || 500, json: { error: e.message } }); }
 });
@@ -32,7 +35,8 @@ try {
   await shot(b.page, 'tablet-waiting', 'Tablet: waiting for the first device to approve it');
   await panel(a.page); await a.page.waitForSelector('[data-action="approve"]');
   await shot(a.page, 'phone-approve', 'Phone: the request to approve or refuse');
-  await a.page.click('[data-action="approve"]'); await b.page.click('.fd-refresh'); await b.page.waitForSelector('.fd-photo');
+  await a.page.click('[data-action="approve"]'); // (the panel's own 15 s status check may connect it first, taking the button away: that is fine for a parent too)
+ await b.page.locator('.fd-refresh').click({ timeout: 5000 }).catch(() => { }); await b.page.waitForSelector('.fd-photo', { timeout: 30000 });
   await shot(b.page, 'tablet-connected', 'Tablet: connected to the family');
   const image = await a.page.evaluate(() => { const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d'); g.fillStyle = '#ffcf6b'; g.fillRect(0, 0, 96, 96); g.fillStyle = '#3b2a4f'; g.beginPath(); g.arc(48, 40, 18, 0, 7); g.fill(); g.fillRect(24, 62, 48, 30); return c.toDataURL('image/png').split(',')[1]; });
   await a.page.locator('.fd-photo').setInputFiles({ name: 'grandma.png', mimeType: 'image/png', buffer: Buffer.from(image, 'base64') });

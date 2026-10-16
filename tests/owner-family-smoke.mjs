@@ -5,7 +5,10 @@ import { familyAction } from '../netlify/lib/family-devices.mjs';
 import { launch, open, clear } from './harness.mjs';
 const records = new Map();
 const store = { get: async key => structuredClone(records.get(key) ?? null), setJSON: async (key,value) => records.set(key,structuredClone(value)), delete: async key => records.delete(key), list: async ({prefix}) => ({blobs:[...records.keys()].filter(k=>k.startsWith(prefix)).map(key=>({key}))}) };
-const route = async ctx => ctx.route('**/api/family-devices/*', async r => {
+// (owner, 16 Oct AEDT) the trial is off unless Studio switches it on: these devices have it on, as Studio would
+const trialOn = ctx => ctx.route('**/content/custom.json*', async r => { let j = {}; try { j = await (await r.fetch()).json(); } catch (e) { } j.features = { ...(j.features || {}), familyDevices: true }; await r.fulfill({ contentType: 'application/json', body: JSON.stringify(j) }); });
+const route = async ctx => { await trialOn(ctx); return familyRoute(ctx); };
+const familyRoute = async ctx => ctx.route('**/api/family-devices/*', async r => {
   try { const req=r.request(), token=(req.headers().authorization || '').replace(/^Bearer /,''); const value=await familyAction(store,new URL(req.url()).pathname.split('/').pop(),req.postDataJSON(),token); await r.fulfill({status:200,json:value}); }
   catch(e) { await r.fulfill({status:e.status || 500,json:{error:e.message}}); }
 });
@@ -14,13 +17,19 @@ const browser=await launch();
 const stage = label => console.log('Family fixture: '+label);
 async function panel(page) { await clear(page); await page.evaluate(async()=>{const U=await import('/js/ui.js'); U.openGrownups();}); await page.locator('[data-sec="familydevices"] > summary').click(); }
 try {
+ // switched off (the default): no family section in Grown-ups and no device contacts the family service
+ { const calls=[]; const off=await open(browser,{w:390,h:844,touch:true}); off.page.on('request',q=>{if(q.url().includes('/api/family-devices/'))calls.push(q.url());});
+   await clear(off.page); await off.page.evaluate(async()=>{const U=await import('/js/ui.js'); U.openGrownups();}); await off.page.waitForTimeout(2500);
+   assert.equal(await off.page.locator('[data-sec="familydevices"]').count(),0,'the family trial must be hidden while switched off'); assert.deepEqual(calls,[],'no family service calls while switched off');
+   assert.deepEqual(off.errors,[]); await off.ctx.close(); stage('switched off: hidden, no service calls'); }
  const a=await open(browser,{w:390,h:844,touch:true,route}); await panel(a.page);
  const recovery=a.page.waitForEvent('download'); await a.page.click('.fd-create'); await (await recovery).saveAs('out/owner-round/recovery-fixture.json'); await a.page.waitForSelector('.fd-pair');stage('family created');
  await a.page.click('.fd-pair'); await a.page.waitForFunction(()=>document.querySelector('.fd-paircode')?.textContent.includes('-'));
  const code=(await a.page.locator('.fd-paircode').innerText()).match(/[A-F0-9]{4}(?:-[A-F0-9]{4}){3}/)[0];
  const b=await open(browser,{w:820,h:1180,touch:true,route}); await panel(b.page); await b.page.fill('.fd-label','Test tablet'); await b.page.fill('.fd-code',code); await b.page.click('.fd-join'); await b.page.waitForSelector('.fd-refresh');stage('joining device awaits approval');
  assert.deepEqual(await b.page.evaluate(()=>Object.keys(globalThis.__svFamilyPhotos || {})),[]);
- await panel(a.page); await a.page.waitForSelector('[data-action="approve"]'); await a.page.click('[data-action="approve"]'); await b.page.click('.fd-refresh'); await b.page.waitForSelector('.fd-photo');stage('approval accepted');
+ await panel(a.page); await a.page.waitForSelector('[data-action="approve"]'); await a.page.click('[data-action="approve"]'); // (the panel's own 15 s status check may connect it first, taking the button away: that is fine for a parent too)
+ await b.page.locator('.fd-refresh').click({ timeout: 5000 }).catch(() => { }); await b.page.waitForSelector('.fd-photo', { timeout: 30000 });stage('approval accepted');
  const npc=await a.page.locator('.fd-npc').inputValue();
  const image=await a.page.evaluate(()=>{const c=document.createElement('canvas'); c.width=c.height=32; c.getContext('2d').fillStyle='#13aaff'; c.getContext('2d').fillRect(0,0,32,32); return c.toDataURL('image/png').split(',')[1];});
  await a.page.locator('.fd-photo').setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from(image,'base64')});
