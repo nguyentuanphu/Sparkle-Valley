@@ -31,20 +31,21 @@ async function untilRightWhy(api, els, check, why) {
 const pick = (list, n) => shuffle(list).slice(0, n);
 
 // ---------- Find the Rule ----------
-// Each rule: its name for the feedback, the pictures that follow it, and (Hard) look-alikes that are close but do not.
+// Each rule: what is said after a right and a wrong tap (whole lines, so each has its own recording), the pictures
+// that follow it, and look-alikes that are close but do not.
 // also: pictures that follow the rule too, so they are never offered as a wrong choice; only: wrong choices come only
 // from the hand-picked near list (colours and flying, where pictures from other groups could match by chance)
 const CREATURES = ['🐟', '🐠', '🐙', '🐳', '🦀', '🦋', '🐝', '🐦', '🦉', '🐌', '🐢', '🐸', '🦁', '🐵', '🐘'];
 const RULES = [
-  { id: 'fruit', en: 'They are all fruit.', vi: 'Tất cả đều là trái cây.', yes: ['🍎', '🍌', '🍉', '🍇', '🍓', '🍊', '🍐', '🥭'], near: ['🥕', '🌽'], also: ['🍅', '🍋', '🫐'] },
-  { id: 'animals', en: 'They are all animals.', vi: 'Tất cả đều là con vật.', yes: ['🐶', '🐱', '🐰', '🐮', '🐷', '🐔', '🦆', '🐴'], near: ['🧸'], also: CREATURES },
-  { id: 'clothes', en: 'They are all things to wear.', vi: 'Tất cả đều là đồ để mặc.', yes: ['👕', '👟', '👒', '🧦', '🧢'], near: ['🧺'] },
-  { id: 'vehicles', en: 'They all take us places.', vi: 'Tất cả đều chở mình đi.', yes: ['🚗', '🚌', '🚲', '⛵', '🚂', '✈️'], near: ['🏠'] },
-  { id: 'flowers', en: 'They are all flowers.', vi: 'Tất cả đều là hoa.', yes: ['🌸', '🌻', '🌷'], near: ['🌳', '🌱'], from: 2 },
-  { id: 'water', en: 'They all live in the water.', vi: 'Tất cả đều sống dưới nước.', yes: ['🐟', '🐠', '🐙', '🐳', '🦀'], near: ['🐶', '🐱', '🐔'], also: ['🦆', '🐢', '🐸', '⛵'], from: 2 },
-  { id: 'fly', en: 'They can all fly.', vi: 'Tất cả đều biết bay.', yes: ['🦋', '🐝', '🐦', '🦉', '✈️', '🎈'], near: ['🐌', '🐢', '🐟', '🐶'], only: true, from: 3 },
-  { id: 'red', en: 'They are all red.', vi: 'Tất cả đều màu đỏ.', yes: ['🍎', '🍓', '🍅', '🟥', '🔴'], near: ['🍌', '🍋', '🟦', '🟨', '🫐'], only: true, from: 3 },
-  { id: 'yellow', en: 'They are all yellow.', vi: 'Tất cả đều màu vàng.', yes: ['🍌', '🍋', '🌻', '🟨', '🟡'], near: ['🍎', '🍓', '🟥', '🔵', '🫐'], only: true, from: 3 }
+  { id: 'fruit', right: ['Yes! They are all fruit.', 'Đúng rồi! Tất cả đều là trái cây.'], miss: ['Not that one. Look again: they are all fruit.', 'Chưa đúng. Nhìn lại nhé: tất cả đều là trái cây.'], yes: ['🍎', '🍌', '🍉', '🍇', '🍓', '🍊', '🍐', '🥭'], near: ['🥕', '🌽'], also: ['🍅', '🍋', '🫐'] },
+  { id: 'animals', right: ['Yes! They are all animals.', 'Đúng rồi! Tất cả đều là con vật.'], miss: ['Not that one. Look again: they are all animals.', 'Chưa đúng. Nhìn lại nhé: tất cả đều là con vật.'], yes: ['🐶', '🐱', '🐰', '🐮', '🐷', '🐔', '🦆', '🐴'], near: ['🧸'], also: CREATURES },
+  { id: 'clothes', right: ['Yes! They are all things to wear.', 'Đúng rồi! Tất cả đều là đồ để mặc.'], miss: ['Not that one. Look again: they are all things to wear.', 'Chưa đúng. Nhìn lại nhé: tất cả đều là đồ để mặc.'], yes: ['👕', '👟', '👒', '🧦', '🧢'], near: ['🧺'] },
+  { id: 'vehicles', right: ['Yes! They all take us places.', 'Đúng rồi! Tất cả đều chở mình đi.'], miss: ['Not that one. Look again: they all take us places.', 'Chưa đúng. Nhìn lại nhé: tất cả đều chở mình đi.'], yes: ['🚗', '🚌', '🚲', '⛵', '🚂', '✈️'], near: ['🏠'] },
+  { id: 'flowers', right: ['Yes! They are all flowers.', 'Đúng rồi! Tất cả đều là hoa.'], miss: ['Not that one. Look again: they are all flowers.', 'Chưa đúng. Nhìn lại nhé: tất cả đều là hoa.'], yes: ['🌸', '🌻', '🌷'], near: ['🌳', '🌱'], from: 2 },
+  { id: 'water', right: ['Yes! They all live in the water.', 'Đúng rồi! Tất cả đều sống dưới nước.'], miss: ['Not that one. Look again: they all live in the water.', 'Chưa đúng. Nhìn lại nhé: tất cả đều sống dưới nước.'], yes: ['🐟', '🐠', '🐙', '🐳', '🦀'], near: ['🐶', '🐱', '🐔'], also: ['🦆', '🐢', '🐸', '⛵'], from: 2 },
+  { id: 'fly', right: ['Yes! They can all fly.', 'Đúng rồi! Tất cả đều biết bay.'], miss: ['Not that one. Look again: they can all fly.', 'Chưa đúng. Nhìn lại nhé: tất cả đều biết bay.'], yes: ['🦋', '🐝', '🐦', '🦉', '✈️', '🎈'], near: ['🐌', '🐢', '🐟', '🐶'], only: true, from: 3 },
+  { id: 'red', right: ['Yes! They are all red.', 'Đúng rồi! Tất cả đều màu đỏ.'], miss: ['Not that one. Look again: they are all red.', 'Chưa đúng. Nhìn lại nhé: tất cả đều màu đỏ.'], yes: ['🍎', '🍓', '🍅', '🟥', '🔴'], near: ['🍌', '🍋', '🟦', '🟨', '🫐'], only: true, from: 3 },
+  { id: 'yellow', right: ['Yes! They are all yellow.', 'Đúng rồi! Tất cả đều màu vàng.'], miss: ['Not that one. Look again: they are all yellow.', 'Chưa đúng. Nhìn lại nhé: tất cả đều màu vàng.'], yes: ['🍌', '🍋', '🌻', '🟨', '🟡'], near: ['🍎', '🍓', '🟥', '🔵', '🫐'], only: true, from: 3 }
 ];
 register({ id: 'rulefinder', icon: '🧩', name: () => T('Find the Rule', 'Tìm Quy Luật'), async run(api) {
   const level = tier(api), rounds = level === 0 ? 3 : 4;
@@ -68,8 +69,8 @@ register({ id: 'rulefinder', icon: '🧩', name: () => T('Find the Rule', 'Tìm 
     const buttons = choiceButtons(api, shuffle([right, ...wrongs]), value => pic(value));
     repeat(api, line);
     // a wrong tap names the rule, so the child learns it rather than guessing again
-    if (!await untilRightWhy(api, buttons, b => b._v === right, () => [`Not that one. Look again: ${rule.en[0].toLowerCase() + rule.en.slice(1)}`, `Chưa đúng. Nhìn lại nhé: ${rule.vi[0].toLowerCase() + rule.vi.slice(1)}`])) return;
-    api.say(`Yes! ${rule.en}`, `Đúng rồi! ${rule.vi}`); api.praise(); await wait(500);
+    if (!await untilRightWhy(api, buttons, b => b._v === right, () => rule.miss)) return;
+    api.say(...rule.right); api.praise(); await wait(500);
   }
   return api.win();
 } });

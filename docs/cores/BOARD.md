@@ -42,6 +42,56 @@ Format for a request:
 
 - [ ] (Release → Play, Kid UI, World, Online) **Round U (r62) is being built by the Release robot chat** (`docs/cores/ROUND-U.md`, owner's "go" 11 Oct AEDT): until it is merged please do not change `js/ui.js`, `js/simple.js`, `js/hud.js`, `js/parents.js`, `js/shop.js`, `js/content/shop.js`, `js/traffic.js`, `js/vehicles.js`, `js/myhouse.js`, `js/town.js`, `js/animals.js`, `js/weather.js`, `css/style.css`; put requests for them here instead · 11 Oct AEDT
 
+## Owner repair: third AI (points 46-48, 52, 56)
+- **Now (16 Oct AEDT):** learning games reviewed and repaired (points 46-48), improvements page (52) and independent review (56) written · `work/owner-repair-learning-20261016` · last commit: see the branch · waiting for: Release to record the new lines below and to merge · docs: `docs/owner-repair-20261014/learning-progression.md` (16 Oct section), `improvements.md`, `independent-review.md`
+- [ ] (third AI → Release) **R1, high: opening Studio online stops a child's game** (the one-tab lock in `js/state.js:44-47` also fires for Studio pages that load the game's `state.js`). Reproduced; fix proposal and the other findings (R2-R8) in `docs/owner-repair-20261014/independent-review.md` · `js/state.js`, `studio/ui/app.js` · 16 Oct AEDT
+- [ ] (third AI → Release) **45 new spoken lines to record** (EN and VI each; the reasoning games, `js/games/bigthinkers.js` and `bigthinkers2.js`). `voicecover` stays red on this branch until they are recorded, because Release owns `voices/manifest.json` and `voices/areas.json` this round. `node tools/make-voice-pack.mjs --cover` lists them. · 16 Oct AEDT
+- "Put the little story in order. Choose what happens first, then what happens next." / "Xếp câu chuyện nhỏ theo thứ tự. Chọn việc xảy ra trước, rồi việc tiếp theo."
+- "Yes! They are all fruit." / "Đúng rồi! Tất cả đều là trái cây."
+- "Not that one. Look again: they are all fruit." / "Chưa đúng. Nhìn lại nhé: tất cả đều là trái cây."
+- "Yes! They are all animals." / "Đúng rồi! Tất cả đều là con vật."
+- "Not that one. Look again: they are all animals." / "Chưa đúng. Nhìn lại nhé: tất cả đều là con vật."
+- "Yes! They are all things to wear." / "Đúng rồi! Tất cả đều là đồ để mặc."
+- "Not that one. Look again: they are all things to wear." / "Chưa đúng. Nhìn lại nhé: tất cả đều là đồ để mặc."
+- "Yes! They all take us places." / "Đúng rồi! Tất cả đều chở mình đi."
+- "Not that one. Look again: they all take us places." / "Chưa đúng. Nhìn lại nhé: tất cả đều chở mình đi."
+- "Yes! They are all flowers." / "Đúng rồi! Tất cả đều là hoa."
+- "Not that one. Look again: they are all flowers." / "Chưa đúng. Nhìn lại nhé: tất cả đều là hoa."
+- "Yes! They all live in the water." / "Đúng rồi! Tất cả đều sống dưới nước."
+- "Not that one. Look again: they all live in the water." / "Chưa đúng. Nhìn lại nhé: tất cả đều sống dưới nước."
+- "Yes! They can all fly." / "Đúng rồi! Tất cả đều biết bay."
+- "Not that one. Look again: they can all fly." / "Chưa đúng. Nhìn lại nhé: tất cả đều biết bay."
+- "Yes! They are all red." / "Đúng rồi! Tất cả đều màu đỏ."
+- "Not that one. Look again: they are all red." / "Chưa đúng. Nhìn lại nhé: tất cả đều màu đỏ."
+- "Yes! They are all yellow." / "Đúng rồi! Tất cả đều màu vàng."
+- "Not that one. Look again: they are all yellow." / "Chưa đúng. Nhìn lại nhé: tất cả đều màu vàng."
+- "What happens first?" / "Việc gì xảy ra trước tiên?"
+- "What happens next?" / "Tiếp theo là gì?"
+- "That picture is not part of this story." / "Hình đó không thuộc câu chuyện này."
+- "That comes later. What has to happen before it?" / "Việc đó xảy ra sau. Trước đó phải có gì?"
+- "Some flowers stop at a puddle. Find the flowers that go all the way to the flag." / "Có hoa dẫn đến vũng nước. Tìm đường hoa đi đến tận lá cờ."
+- "You have been there already. Go on towards the flag." / "Con đi qua đó rồi. Đi tiếp về phía lá cờ nhé."
+- "Those flowers stop at a puddle. Find the way to the flag." / "Đường hoa đó dừng ở vũng nước. Tìm đường đến lá cờ nhé."
+- "That is a puddle. Step on a flower." / "Đó là vũng nước. Bước lên hoa nhé."
+- "Water it." / "Tưới nước."
+- "The tree grows." / "Cây lớn lên."
+- "Snow falls." / "Tuyết rơi."
+- "Build a snowman." / "Đắp người tuyết."
+- "The sun comes out." / "Mặt trời ló ra."
+- "The snowman melts." / "Người tuyết tan chảy."
+- "Clouds come." / "Mây kéo đến."
+- "It rains." / "Trời mưa."
+- "A rainbow!" / "Cầu vồng!"
+- "The rice grows." / "Lúa lớn lên."
+- "Harvest the rice." / "Gặt lúa."
+- "Cook the rice." / "Nấu cơm."
+- "Eat together." / "Cùng nhau ăn cơm."
+- "A little shoot." / "Một mầm nhỏ."
+- "A flower opens." / "Hoa nở."
+- "A bee visits." / "Ong đến thăm."
+- "That one comes later. Which picture was before it?" / "Hình đó ở sau. Hình nào đứng trước nó?"
+- "That picture was not in the garden row. Tap Show again to look." / "Hình đó không có trong hàng. Chạm Xem lại để nhìn nhé."
+
 ## Front Desk
 - **Now:** robot working again (timer fired at 1:39 am AEDT). Fixed on branches: #27 (PR #40), #28 (PR #42), #29 (PR #43), #31 (PR #44). Owner's go: #30 (keep Khám phá), #33 (80 to 90 percent see-through; link footprints so they fade). #35 waits for the owner's iPhone voice report; #41 retrying · branch `core/front-desk` · waiting for Release to merge the bugfix pull requests · 11 Oct, 3:15 am AEDT (Sydney)
 - [x] (Front Desk → Release) **Owner, 11 Oct 3 am AEDT: the robot should use the spare GitHub capacity.** Raise `MAX_PER_RUN` in `.github/workflows/bug-fixer.yml` (3 now; the work jobs already run side by side) to e.g. 8, so every waiting bug starts at once instead of 3 per run. Also: the robots' fixes report that the `parents` check fails on "bedtime" on `main` too (#28, #29), please look at it in the round · `.github/workflows/bug-fixer.yml`, `tests/run.mjs` · 11 Oct, 3:15 am AEDT · done by Release (robot chat, `claude/peaceful-hopper-un7oym`): `MAX_PER_RUN` 8, 4 bugs worked on at once; the `parents` bedtime failure was fixed on main (2fa7043f) · 11 Oct, 3:30 am AEDT
