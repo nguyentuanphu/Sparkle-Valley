@@ -771,7 +771,7 @@ function dressStory(S) {
       // Bank-side reeds and flowers; leave the boats, fish, waterfall and crossing channel open.
       const bankZ=kind==='lake'?-29:kind==='falls'?-9:-12;
       if(kind==='falls')[-10,10].forEach(x=>ball(3.5,'#bacad0',x,-.85,-9,[1,.3,1]));
-      for(const x of [-8,8]){for(let i=0;i<6;i++)post(.03,.8+i%3*.2,'#63b869',x+i*.16,.4,bankZ);flowers(x,bankZ-1,kind==='lotus'?'#ff6fae':'#ffd764',5);}
+      for(const x of (kind==='falls'?[-10,10]:[-8,8])){for(let i=0;i<6;i++)post(.03,.8+i%3*.2,'#63b869',x+i*.16,.4,bankZ);flowers(x,bankZ-1,kind==='lotus'?'#ff6fae':'#ffd764',5);}
       if(kind==='lake'){L.blossom(S,-12,-30);B(5,.15,1.5,'#d8c7a5',10,.05,-24.7);[7.7,12.3].forEach(x=>post(.08,.8,'#ae8054',x,-.3,-24.2));}
       if(kind==='tropicalriver'){tree(-9,-16,'#83c96b','#ffb020');L.palm(S,12,-18,.2);if(S.look.islet)ball(3.4,'#b7cf8a',0,-.7,-3,[1,.25,1]);}
       if(kind==='falls')rocks(-11,-9,'#bacad0',5);
