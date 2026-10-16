@@ -23,6 +23,7 @@ Done this round (see CHANGELOG.md for each change):
 Local checks passed today: films, filmstart, filmtails, filmmusic, tales, story, a11y, phone, contract, boot, ownerfamily, ownerheartstap, ownerexplainswitches, ownerupdatenotice, studio, tester, testerreport, solid, voicearea, voicecover, types, preload, offline, unit, ownerround.
 Pending and known gaps:
 - Full run 42 on the final R77 head (version r77, the new voice-question switch check in ownerwificard, docs).
+- Release screenshots (16 Oct, EN): phone, tablet and computer of the valley, Grown-ups and Play in evidence/release-r77, with the same views on r74 (main) in evidence/release-r74-compare; no page errors; the start view behind Grandpa Owl is the same as r74.
 - perf and startup speed checks blocked locally (npm registry).
 - Family devices: design pass and a real Netlify two-device test before switching on for everyone.
 - Point 49 (films) not started (second AI); points 46-48, 52, 56 with the third AI.
