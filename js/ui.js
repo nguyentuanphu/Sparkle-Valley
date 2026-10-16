@@ -338,6 +338,7 @@ export function openGrownups(after) {
         <label class="tog"><input type="checkbox" id="gVoice" ${settings.voice ? 'checked' : ''}> ${T('Talking voice', 'Giọng nói')}</label>
         <label class="tog"><input type="checkbox" id="gMusic" ${settings.music ? 'checked' : ''}> ${T('Music', 'Nhạc')}</label>
         <label class="tog"><input type="checkbox" id="gSound" ${settings.sound ? 'checked' : ''}> ${T('Sound effects', 'Hiệu ứng âm thanh')}</label>
+        <label class="tog"><input type="checkbox" id="gTapSnd" ${settings.tapSounds === false ? '' : 'checked'}> ${T('Tap sounds: a soft sound on every button', 'Tiếng bấm: tiếng nhẹ khi bấm mỗi nút')}</label>
       </div>
 <h3>🎙️ ${T('Voices', 'Giọng nói')}</h3>
       ${packStatusHTML()}
@@ -479,7 +480,7 @@ export function openGrownups(after) {
     card.querySelectorAll('.seg.tview button').forEach(b => b.onclick = () => { settings.twoView = b.dataset.tv; saveSettings(); dispatchEvent(new Event('resize')); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { settings.textSize = +b.dataset.ts; saveSettings(); applyComfort(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.rest button').forEach(b => b.onclick = () => { settings.restMins = b.dataset.r; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
-    chk('#gBil', 'bilingual'); chk('#gVoice', 'voice'); chk('#gMusic', 'music', () => settings.music ? Music.refresh() : Music.stop()); chk('#gSound', 'sound'); chk('#gDay', 'alwaysDay');
+    chk('#gBil', 'bilingual'); chk('#gVoice', 'voice'); chk('#gMusic', 'music', () => settings.music ? Music.refresh() : Music.stop()); chk('#gSound', 'sound'); chk('#gTapSnd', 'tapSounds'); chk('#gDay', 'alwaysDay');
     card.querySelector('#vEn').onchange = e => { settings.voiceEn = e.target.value; saveSettings(); };
     card.querySelector('#vVi').onchange = e => { settings.voiceVi = e.target.value; saveSettings(); };
     card.querySelectorAll('[data-try]').forEach(b => b.onclick = () => {

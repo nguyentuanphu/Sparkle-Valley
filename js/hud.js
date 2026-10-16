@@ -191,7 +191,9 @@ export class Hud {
       const nums = [farm.coins, p.orbs, Object.keys(p.leafies).length];
       if (this.last.m && this.nums) [['coin', '.chip.c-money'], ['orb', '.chip.c-orbs'], ['leaf', '.chip.c-leafy']].forEach(([kind, sel], k) => {
         const d = nums[k] - this.nums[k]; if (d <= 0 || (k === 0 && this.i !== 0)) return;
-        feel.reward(kind, null, this.q(sel), k === 0 ? Math.ceil(Math.min(d, 50) / 10) : d);
+        // a phone hides the counters: then they fly into the player's card
+        const chip = this.q(sel), to = chip && chip.getClientRects().length && getComputedStyle(chip).visibility !== 'hidden' ? chip : this.q('.pcard');
+        feel.reward(kind, null, to, k === 0 ? Math.ceil(Math.min(d, 50) / 10) : d);
       });
       this.nums = nums; this.last.m = mk;
     }

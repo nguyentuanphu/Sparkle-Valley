@@ -391,6 +391,7 @@ function giveSticker(p) { const left = STICKERS.filter(s => !p.stickers.includes
 const hudFor = h => G.huds[h.i];
 G.give = give;
 G.toast = (h, m) => hudFor(h).toast(m);
+G.quality = quality; // (feel and sound) js/fun.js leaves out the running dust on 'low'
 G.fx = (x, y, z, ch) => { const s = sprite(ch, 1.4); s.material = s.material.clone(); s.position.set(x, y, z); scene.add(s); const t0 = performance.now(); const f = () => { const k = (performance.now() - t0) / 900; s.position.y = y + k * 2; s.material.opacity = 1 - k; if (k < 1) requestAnimationFrame(f); else { scene.remove(s); s.material.dispose(); } }; f(); };
 G.mount = (h, b) => { h.mount(b); h.profile.quests.buffalo = true; save(); say('Moo! Hold on tight!', 'Ụm bò! Bám chắc nhé!'); hudFor(h).toast(T('Press Jump to get off', 'Bấm Nhảy để xuống')); };
 

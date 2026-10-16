@@ -90,6 +90,7 @@ export const settings = Object.assign({
   currency: 'AUD',       // 'AUD' | 'VND', used only when curPinned (otherwise it follows the language: js/money.js curCode)
   curPinned: false,
   sound: true, music: true, voice: true,
+  tapSounds: true,       // (feel and sound, owner 16 Oct AEDT) the soft sound when a button is pressed (js/feel.js)
   voiceEn: '', voiceVi: '',
   bilingual: false,      // speak the other language too, after a short pause
   twoView: 'auto',       // two players: 'face' (each half turned to its own end), 'side' (both one way), 'auto' = face on touch screens

@@ -5942,6 +5942,60 @@ await check('reportstorage', async () => {
   const {execFileSync}=await import('node:child_process');
   return execFileSync(process.execPath,['owner-report-storage.mjs'],{encoding:'utf8',timeout:60000}).trim();
 });
+await check('feel', async () => {
+  // feel and sound (chat A, owner plan 16 Oct AEDT; js/feel.js, rules UI-7 and UI-8): every button sinks and makes one
+  // soft sound, a window only makes sounds and never moves (UX-001), earned coins fly into their counter, the Grown-ups
+  // "Tap sounds" switch silences the press, calm mode keeps sounds and drops movement, under-5s' action picture breathes
+  const notes = [];
+  for (const [tag, w, h, touch] of [['computer', 1180, 760, false], ['phone', 390, 844, true]]) {
+    const P = await open(b, { w, h, touch, settings: { sound: true, calm: false } });
+    const r = await P.page.evaluate(async () => {
+      const A = await import('/js/audio.js'), S = await import('/js/state.js'), U = await import('/js/popups.js');
+      let osc = 0; const make = AudioContext.prototype.createOscillator; AudioContext.prototype.createOscillator = function () { osc++; return make.call(this); };
+      const log = []; for (const k of ['press', 'open', 'shut', 'pop', 'shhk', 'no', 'tada']) { const f = A.SFX[k]; A.SFX[k] = (...a) => { log.push(k); return f(...a); }; }
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      const down = b => { const r = b.getBoundingClientRect(); b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 })); };
+      const up = () => dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+      const out = {};
+      // every visible HUD button sinks while pressed and springs back
+      const btns = [...document.querySelectorAll('.hud button')].filter(b => b.getClientRects().length && getComputedStyle(b).visibility !== 'hidden').slice(0, 12);
+      let sank = 0; for (const b of btns) { down(b); if (b.classList.contains('sv-press') && getComputedStyle(b).scale !== 'none' && getComputedStyle(b).scale !== '1') sank++; up(); }
+      out.buttons = btns.length; out.sank = sank; out.sprung = !document.querySelector('.sv-press');
+      // one tap is heard once: the press sound, and the screen's own SFX.tap right after it is left out
+      await wait(500); let o0 = osc; down(btns[0]); up(); A.SFX.tap(); out.oneSound = osc - o0;
+      // a window: sounds only, and it never moves (UX-001)
+      log.length = 0; const m = U.modal('feeltest', '<h2>Test</h2><p>Window</p>'); const c = m.querySelector('.card');
+      const y0 = c.getBoundingClientRect().top; await wait(120); const y1 = c.getBoundingClientRect().top; await wait(250); const y2 = c.getBoundingClientRect().top;
+      m.close(); await wait(260); out.window = { sounds: log.slice(), still: Math.abs(y0 - y1) < 1 && Math.abs(y1 - y2) < 1, gone: !document.querySelector('.modal.feeltest') };
+      // coins fly into the counter and land with a climbing note
+      log.length = 0; S.farm.coins += 30; await wait(200); out.flying = document.querySelectorAll('.sv-fly').length; await wait(1200);
+      out.landed = log.filter(k => k === 'pop').length; out.flyGone = !document.querySelector('.sv-fly');
+      // Grown-ups → Tap sounds off: no press sound, other sounds stay
+      S.settings.tapSounds = false; await wait(500); o0 = osc; down(btns[0]); up(); A.SFX.tap(); out.tapOff = osc - o0; o0 = osc; A.SFX.ok(); out.otherStill = osc - o0; S.settings.tapSounds = true;
+      // calm mode: the sound stays, nothing moves, rewards land without flying
+      S.settings.calm = true; S.applyComfort && S.applyComfort(); document.body.classList.add('calm');
+      log.length = 0; down(btns[0]); out.calmPressed = btns[0].classList.contains('sv-press'); up(); out.calmSound = log.includes('press');
+      log.length = 0; S.farm.coins += 30; await wait(200); out.calmFly = document.querySelectorAll('.sv-fly').length; await wait(600); out.calmLanded = log.includes('pop');
+      out.little = !!document.querySelector('.hud.little');
+      // the Grown-ups "Tap sounds" switch
+      const UI = await import('/js/ui.js'); UI.openGrownups(() => { }); await wait(700);
+      const sw = document.querySelector('#gTapSnd'); out.tapSwitch = !!sw && sw.checked && /Tap sounds/.test(sw.closest('label').textContent);
+      document.querySelectorAll('.modal').forEach(x => x.close ? x.close() : x.remove()); await wait(250);
+      return out;
+    });
+    ok(r.buttons >= 3 && r.sank === r.buttons && r.sprung, `${tag}: buttons did not all sink and spring back ${JSON.stringify(r)}`);
+    ok(r.oneSound > 0 && r.oneSound <= 2, `${tag}: a tap should be heard once (press only), got ${r.oneSound} oscillators`);
+    ok(r.window.sounds.includes('open') && r.window.sounds.includes('shut') && r.window.still && r.window.gone, `${tag}: window ${JSON.stringify(r.window)}`);
+    ok(r.flying > 0 && r.landed > 0 && r.flyGone, `${tag}: coins did not fly and land ${JSON.stringify(r)}`);
+    ok(r.tapOff === 0 && r.otherStill > 0, `${tag}: Tap sounds off ${JSON.stringify(r)}`);
+    ok(!r.calmPressed && r.calmSound && r.calmFly === 0 && r.calmLanded, `${tag}: calm mode ${JSON.stringify(r)}`);
+    ok(r.tapSwitch, `${tag}: no Tap sounds switch in Grown-ups`);
+    ok(!P.errors.length, P.errors.join(' | '));
+    notes.push(`${tag}: ${r.sank}/${r.buttons} buttons sink, one sound a tap, window still, coins fly, tap sounds off, calm still${r.little ? ', under-5 breathing' : ''}`);
+    await P.ctx.close();
+  }
+  return notes.join('; ');
+});
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
