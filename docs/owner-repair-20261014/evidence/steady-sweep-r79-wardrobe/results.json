@@ -4970,6 +4970,315 @@
        }
       }
      ]
+    },
+    "ladybird-tester": {
+     "shell": ".modal.tpanel .card",
+     "opened": true,
+     "actions": [
+      {
+       "action": "kind broken",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          130,
+          270,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind looks",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          130,
+          270,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind words",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          130,
+          270,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind sound",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          130,
+          270,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "kind idea",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          130,
+          270,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "type a note",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          130,
+          270,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "picture: scene only",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          130,
+          270,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "picture: whole interface",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          130,
+          270,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Auto play tab",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          130,
+          270,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       },
+       "autoplayShot": "tablet-023-ladybird-autoplay-tab.png"
+      },
+      {
+       "action": "wait in Auto play",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          130,
+          270,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Tester tab",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          130,
+          270,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      },
+      {
+       "action": "Auto play tab again",
+       "moved": false,
+       "parts": {
+        "card": {
+         "base": [
+          130,
+          270,
+          560,
+          640
+         ],
+         "maxChange": {
+          "left": 0,
+          "top": 0,
+          "width": 0,
+          "height": 0
+         },
+         "moved": false,
+         "firstMoveAtMs": null,
+         "gone": false
+        }
+       }
+      }
+     ],
+     "open": {
+      "appearedAtMs": 9080,
+      "baselineAtMs": 9704,
+      "samples": 43,
+      "moved": false,
+      "parts": {
+       "card": {
+        "base": [
+         130,
+         270,
+         560,
+         640
+        ],
+        "maxChange": {
+         "left": 0,
+         "top": 0,
+         "width": 0,
+         "height": 0
+        },
+        "moved": false,
+        "firstMoveAtMs": null,
+        "gone": false
+       }
+      },
+      "shot": "tablet-022-ladybird-open.png"
+     }
     }
    },
    "startup": {
