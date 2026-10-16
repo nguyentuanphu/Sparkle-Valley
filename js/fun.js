@@ -66,7 +66,7 @@ export function createFun(G) {
   // (feel and sound) little puffs of dust behind a running child, at most four a second, none on low quality
   let dustT = 0;
   // (feel and sound) under-5s: after 10 seconds with no tap, the companion flies towards the goal for a few seconds and
-  // says "Over there!" (never a countdown; once per quiet spell, at most every 30 seconds; never over a window, a story
+  // says "Let's go!" (never a countdown; once per quiet spell, at most every 30 seconds; never over a window, a story
   // or a companion already leading the way)
   let pointT = 0, pointed = 0, pointing = null;
   const companionPoint = () => {
@@ -79,7 +79,7 @@ export function createFun(G) {
     if (!c || c.lead || !tg || Math.hypot(tg.x - h.pos.x, tg.z - h.pos.z) < 6) return;
     pointed = now; const at = { x: tg.x, y: h.pos.y + 1.5, z: tg.z };
     comp.lead(h, at); pointing = { h, at, until: now + 4500 };
-    say('Over there!', 'Đằng kia kìa!');
+    say('Let\u2019s go!', 'Đi thôi!'); // the line the Go button already says, so it is always a recorded voice
   };
   // the water buffaloes moo when tapped (riding is still the button)
   (world.buffalo || []).forEach(b => { b.mesh.userData.react = () => { SFX.moo(); G.fx(b.mesh.position.x, b.mesh.position.y + 2.2, b.mesh.position.z, '💨'); }; });
