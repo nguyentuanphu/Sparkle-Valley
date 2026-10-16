@@ -2732,3 +2732,6 @@ body.bigtext .theatre .th-text { --thp: clamp(20px, 3.2vw, 28px); --thm: clamp(1
 .sv2 .tt-l:nth-child(2) { font-family: 'Baloo 2', 'Segoe UI', system-ui, -apple-system, sans-serif; }
 .sv2 .tt-panel .seg.lang button { height: 48px; display: inline-flex; align-items: center; gap: 6px; }
 .sv2 .tt-panel .learnrow { height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+/* (r78, after the release pictures: on a computer one line of story sat in a box built for four) wide screens fit about
+   twice the words on a line, so the box keeps room for 2 lines of the story and 1 spoken line there; phones keep 3 + 1 */
+@media (min-width: 700px) { .theatre .th-text { height: calc(var(--thp) * 1.35 * 2 + var(--thm) * 1.35 + 4px + 16px); } }
