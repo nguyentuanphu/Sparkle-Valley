@@ -86,6 +86,10 @@ jobs:
     if: ${{ !cancelled() && needs.which.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      statuses: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -110,6 +114,27 @@ jobs:
             tests/check-map.json
             tests/check-times.json
           retention-days: 30
+      # (r79, 17 Oct AEDT: cloud chats cannot download artifacts, their network blocks GitHub's storage, but git works.
+      # So the same two files also go on the branch code-map, one commit per run on top of the last, never forced.
+      # Release takes them with: git fetch origin code-map && git checkout FETCH_HEAD -- tests/check-map.json tests/check-times.json
+      # A failed push here (two runs at once) never fails the suite.)
+      - name: Keep the code map on the branch code-map
+        if: always() && hashFiles('tests/check-map.json') != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ needs.which.outputs.sha }}
+          REF: ${{ github.head_ref || github.ref_name }}
+        run: |
+          url="https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git"
+          d=$(mktemp -d)
+          git clone -q --depth 1 --branch code-map "$url" "$d" 2>/dev/null || { git init -q "$d"; git -C "$d" checkout -q -b code-map; }
+          mkdir -p "$d/tests"; cp tests/check-map.json tests/check-times.json "$d/tests/"
+          cd "$d"; git add tests
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -qm "Code map from run $GITHUB_RUN_ID ($REF at ${SHA:0:8}) [skip netlify]" || exit 0
+          git push -q "$url" HEAD:refs/heads/code-map
       - name: Tell the pull request
         if: always()
         env:

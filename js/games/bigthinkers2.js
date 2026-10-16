@@ -6,7 +6,9 @@ import { el, shuffle, wait } from '../util.js';
 import { GAME_INFO } from '../content/activities.js';
 import { HOWTO } from '../howto.js';
 
-const tier = api => api.little ? 0 : api.level >= 3 ? 3 : api.level >= 2 ? 2 : 1;
+// (r79 learning, I1) the frame's tier follows the child inside the game (api.tier); simple test frames fall back to the level
+const tier = api => api.tier ? api.tier() : api.little ? 0 : api.level >= 3 ? 3 : api.level >= 2 ? 2 : 1;
+const nextRound = api => api.nextRound ? api.nextRound() : tier(api);
 const INTRO = {
   patternpicnic: ['Listen and look at the pattern. Choose the picture that comes next.', 'Nghe và nhìn quy luật. Chọn hình tiếp theo.'],
   shapebuilders: ['Build the picture. Choose a shape, then tap its matching outline. You can drag the shape there too.', 'Ghép bức tranh. Chọn hình khối rồi chạm vào nét viền giống hình đó. Con cũng có thể kéo hình vào đó.'],
@@ -21,13 +23,15 @@ function repeat(api, speak) {
 }
 const SYMBOLS = ['🍎', '🌸', '🐶', '🍌'];
 const NAMES = {'🍎':['Apple','Táo'],'🌸':['Flower','Hoa'],'🐶':['Dog','Chó'],'🍌':['Banana','Chuối'],'🌱':['Seedling','Cây non'],'💧':['Water','Nước'],'🌳':['Tree','Cây'],'🐝':['Bee','Con ong'],'🦋':['Butterfly','Con bướm'],'🍄':['Mushroom','Cây nấm']};
-register({ id: 'patternpicnic', icon: '🧺', name: () => T('Pattern Picnic', 'Dã Ngoại Quy Luật'), async run(api) {
+register({ id: 'patternpicnic', icon: '🧺', learn: true, name: () => T('Pattern Picnic', 'Dã Ngoại Quy Luật'), async run(api) {
   const patterns = [['🍎','🌸'], ['🍎','🍎','🌸'], ['🍎','🌸','🐶'], ['🍎','🌸','🌸','🐶']];
-  const level = tier(api), rounds = level === 0 ? 3 : 4;
+  const rounds = tier(api) === 0 ? 3 : 4;
   for (let round = 0; round < rounds; round++) {
     if (api.closed) return; api.stage.innerHTML = ''; api.dots(rounds, round);
     // (points 46-48) each level has its own run of patterns; Medium and Hard no longer open with the under-5 pattern
-    const rule = patterns[[[0, 0, 0], [0, 1, 0, 1], [1, 2, 1, 2], [2, 3, 2, 3]][level][round]];
+    // (r79 learning, I1) the level can move between rounds
+    const level = round ? nextRound(api) : tier(api);
+    const rule = patterns[[[0, 0, 0], [0, 1, 0, 1], [1, 2, 1, 2], [2, 3, 2, 3]][level][round] ?? [0, 1, 1, 2][level]];
     const shift = round % rule.length, model = Array.from({ length: rule.length * 2 }, (_, i) => rule[(i + shift) % rule.length]);
     const answer = rule[(model.length + shift) % rule.length];
     const row = el('div', 'seq', model.map(value => `<span class="seq-item">${pic(value)}</span>`).join('') + '<span class="seq-item q">?</span>');
@@ -53,7 +57,7 @@ const PICTURES = [
   [['rectangle',10,61,192,112], ['square',152,9,110,110], ['circle',24,142,76,76], ['circle',151,142,76,76], ['square',172,28,64,64]],
   [['rectangle',105,90,70,140,90], ['triangle',39,102,90,80], ['triangle',152,117,90,80], ['circle',84,31,112,112], ['circle',24,12,100,100], ['circle',155,11,100,100]]
 ];
-register({ id: 'shapebuilders', icon: '🧩', name: () => T('Shape Builders', 'Ghép Tranh Hình Khối'), async run(api) {
+register({ id: 'shapebuilders', icon: '🧩', learn: true, name: () => T('Shape Builders', 'Ghép Tranh Hình Khối'), async run(api) {
   const pieces = PICTURES[tier(api)], board = el('div', 'bt-picture');
   const pictureHeight = Math.max(200, ...pieces.map(([,x,y,w,h]) => y+h+12));
   board.style.cssText = `position:relative;width:280px;max-width:100%;height:${pictureHeight}px;flex-shrink:0;margin:0 auto`; api.stage.appendChild(board);
@@ -85,9 +89,11 @@ register({ id: 'shapebuilders', icon: '🧩', name: () => T('Shape Builders', 'G
 // (points 46-48, 16 Oct AEDT) garden pictures that are not in the row join the choices (one for under-5s and Easy, two
 // from Medium), so the last picture is never the only one left to tap
 const EXTRA=['🐝','🦋','🍄','🍎','🌸','🐶'];
-register({ id: 'remembergarden', icon: '🌱', name: () => T('Remember the Garden', 'Nhớ Khu Vườn'), async run(api) {
-  const level=tier(api),pool=['🌱','💧','🌸','🍎','🌳','🐶'],length=[2,3,4,6][level];
+register({ id: 'remembergarden', icon: '🌱', learn: true, name: () => T('Remember the Garden', 'Nhớ Khu Vườn'), async run(api) {
+  const pool=['🌱','💧','🌸','🍎','🌳','🐶'];
   for(let round=0;round<3;round++) {
+    // (r79 learning, I1) the row's length and the extra pictures follow the level between rounds
+    const level=round?nextRound(api):tier(api),length=[2,3,4,6][level];
     if(api.closed)return;api.stage.innerHTML='';api.dots(3,round);const order=Array.from({length},(_,i)=>pool[(i+round)%pool.length]);
     const model=el('div','seq',order.map(v=>`<span class="seq-item">${pic(v)}</span>`).join(''));api.stage.appendChild(model);
     repeat(api,()=>api.say(...INTRO.remembergarden));api.say(...INTRO.remembergarden);

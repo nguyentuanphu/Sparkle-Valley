@@ -2,6 +2,7 @@
 // Settings, player profiles and saving. Everything lives in localStorage on this device;
 // grown-ups can export/import a backup file to move progress between devices.
 import { BUILD } from './build.js';
+import { sortClothes } from './content/shop.js';
 const KEY_SETTINGS = 'sv2_settings', KEY_PROFILES = 'sv2_profiles';
 
 const store = {
@@ -164,8 +165,12 @@ export function normalizeProfile(p) {
   for (const k of ['leafies', 'shrines', 'towers', 'discovered', 'inv', 'levels', 'wins', 'quests', 'dishes', 'stats']) o[k] = Object.assign({}, d[k], p[k] || {});
   o.owned = Object.assign({ hats: ['none'], gliders: [0] }, p.owned || {});
   if (!o.owned.hats.includes(o.look.hat)) o.owned.hats.push(o.look.hat);
+  // (r79, owner 16 Oct: "boy wears boys clothes") clothes of the other set come off and are wrapped as gift boxes; things
+  // that were for both sets become the child's own set's version (js/content/shop.js)
+  sortClothes(o);
   if (!Array.isArray(o.stickers)) o.stickers = [];
   if (!Array.isArray(o.album)) o.album = [];
+  o.learn = normalizeLearn(p.learn); // (r79 learning, chat 2) what each child missed most, games that showed the hand
   return o;
 }
 
@@ -244,4 +249,15 @@ export async function importBackup(file) {
   Object.assign(settings, data.settings || {}); dropOldVoice(); dropOldFestival(); // (round R privacy, 9 Oct) an old backup brings no voice key back
   if (data.farm) Object.assign(farm, newFarm(), data.farm);
   saveSettings(); saveProfiles(true);
+}
+
+// r79 learning (chat 2)
+// (r79 learning, I2 and G2) a child's small learning record, from any age of save (stable data, owner rule on saves): what they missed most in
+// each game, and which games already showed the hand. Anything odd is dropped, never the profile.
+export function normalizeLearn(v) {
+  const o = v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+  const obj = x => x && typeof x === 'object' && !Array.isArray(x) ? x : {};
+  const miss = {}; for (const [g, m] of Object.entries(obj(o.miss))) { const row = {}; for (const [k, n] of Object.entries(obj(m))) if (Number.isFinite(+n) && +n > 0) row[k] = Math.min(9, Math.round(+n)); if (Object.keys(row).length) miss[g] = row; }
+  const seen = {}; for (const [g, n] of Object.entries(obj(o.seen))) if (n) seen[g] = 1;
+  return { v: 1, miss, seen };
 }

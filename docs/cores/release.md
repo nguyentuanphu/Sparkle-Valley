@@ -18,7 +18,9 @@ when the owner says so.
 3. Record new voices (`tools/make-voice-pack.mjs --engine azure`, see Voice & Audio).
 4. Run the **full suite** once per release: `cd tests && node suite.mjs` (owner, 13 Oct: 3 checks at a time, the speed checks alone at the
    end, crashed ones once more alone; about an hour; `--all` for no samples). Commit first; afterwards commit the refreshed
-   `tests/check-map.json` and `tests/check-times.json`. Fix or send back every failure. A branch that only adds films or fixes a
+   `tests/check-map.json` and `tests/check-times.json`. From a GitHub run (r79, 17 Oct AEDT; cloud chats cannot download its
+   artifact): `git fetch origin code-map && git checkout FETCH_HEAD -- tests/check-map.json tests/check-times.json`, then commit.
+   Fix or send back every failure. A branch that only adds films or fixes a
    button gets `node suite.mjs --changed` in its own chat; the release still gets one full suite.
 5. Update `HANDOFF.md` (round history and checks table) and `docs/ARCHITECTURE.md` §9 if rules changed (`node tools/rules-from-doc.mjs`).
 6. Packages: the Netlify zip (`git archive --format=zip -o <dir>/sparkle-valley-netlify-rNN-game.zip HEAD index.html sw.js manifest.webmanifest netlify.toml css js fonts icons vendor videos content`). **No local bundle** (owner, 11 Oct: the offline files are on GitHub and the Google Drive mirror). The Studio exe when `studio/` changed (`bash studio/build-exe.sh`).

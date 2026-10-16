@@ -59,3 +59,35 @@ Owner's "go" for this plan: 16 Oct AEDT (pop-up, "Go, all three"). Scope: the si
 
 - New spoken lines are not recorded yet (listed on `docs/cores/BOARD.md` for Release, who owns the voice index this round); until then the device voice reads them.
 - Physical devices, and a real child trying the new levels, remain unverified. The reading activities were not re-reviewed in this pass.
+
+## r79 learning, chat 2, 16 October 2026 AEDT (E1, E3, E4, I1, I2, I4, G2 and four new games; branch `work/r79-learning-20261016`)
+
+Owner's answer to the plan pop-up: "Do everything at once". "Learning games" below means the six reasoning games, the four new games and the five games in `js/games/learning.js` (they carry `learn: true` when they register). Other games are unchanged.
+
+| Item | What a child sees | Where |
+|---|---|---|
+| E1 | One small reward banner ("Combo x3", "Lucky star! +3", "A bit harder!") in the top bar, over the game's name between Leave and How to play. A new one replaces the one showing; it never covers the question line or the puzzle. Calm fade, no zoom. | `js/games/frame.js` `banner()`, `css/style.css` `.gl-reward` |
+| E3 | On a computer (wide screen, mouse) the game buttons ("Hear again", "Show again", "Ready to try", "That's it!") have 19 px text. Phones and tablets keep 16 px. | `css/style.css` |
+| E4 | "You did it!" sits on a darker, softly blurred layer, and the words have a dark band behind them. | `css/style.css` `.gl-win` |
+| I1 | Three right in a row make the next round one step harder; two misses in a round make it one step easier. The level moves at most one step from where the game started (Easy, Medium or Hard stay the starting point), and under-5s always stay at the under-5 level. Flower Path and Shape Builders have one puzzle per game, so their step applies to "Play again" of the same game only. | `frame.js` `api.tier()`, `api.nextRound()` |
+| I2 | Each child's profile keeps a small record of what they missed in each learning game (a rule, a story, a word, a sound; at most 12 per game, counts up to 9). The most-missed one comes back first next time; a clean answer counts it down. Old saves of any shape get a clean record (`normalizeLearn` in `js/state.js`, called by `normalizeProfile`). | `profile.learn = { v: 1, miss: { game: { key: n } }, seen: { game: 1 } }` |
+| I4 | Finishing Hard in a reasoning game gives its sticker once, shown under "You did it!" and in the sticker book: Rule finder, Story sorter, Path planner, Pattern spotter, Shape builder, Memory keeper. Drawn in `js/art.js` (keys `skill:<game>`); the sticker book draws them with `pic()`. Not for under-5s. | `js/games/registry.js` `SKILLS`, `js/fun.js` |
+| G2 | Under-5s in learning games: the question line is hidden (still spoken, its space kept), the pictures are bigger, and the first time each game opens for that child a drawn hand taps the first right move three times. | `frame.js` `pic-only`, `api.hand()` |
+
+### The four new games (`js/games/talkgames.js`)
+
+| Game | Area, age | Levels | A wrong tap |
+|---|---|---|---|
+| Say It, Find It (`sayfind`) | Letters and words, 3+ | 2, 4, 6 pictures; Hard: two-word asks with a big and a little picture of the same thing ("Where is the big dog?"). Optional microphone: saying the word counts like a tap and the child hears it back; no microphone, no permission or a phone without speech recognition: no button, tapping works. | "That is a banana. The mango is yellow-green and shaped like a big bean." |
+| Market Counting (`marketcount`) | Numbers, 3+ | Up to 3 (under-5), up to 5, up to 10; Hard: "add 2 more" or "take 1 away" from a basket that already has fruit. Fruit is tapped or dragged into the basket (and back out); each one is counted aloud. | Too many or too few: the basket counts out loud, extra fruit gets a red ring, missing places show as dashed spaces, then "We need three. Put in one more." |
+| How Do They Feel? (`feelings`, rebuilt in place) | Me and my family, everyone | 2 faces (under-5), then 4 (happy, sad, surprised, cross); Medium and Hard add "What could you do?" (2 and 3 choices). Eight little stories about Lá. | "Would you smile if your ice cream fell? Lá feels sad." / "That will not help Lá right now. Sharing can help when someone is sad." |
+| First Sound Hunt (`soundhunt`) | Letters and words, 4+ | 1 of 2, 2 of 4, 2 or 3 of 6 pictures; Hard: end sounds in English, tones in Vietnamese. One language's words per game. | Both words, one after the other: "tiger… frog… They start with different sounds." |
+
+The old "How Do They Feel?" (Tí's stories, three faces chosen from eight feelings) had the same name as the new game, so it was rebuilt in place with the same id: its place on the Simple screen and a child's progress stay. "First Sound Hunt" sits beside the existing "First Sounds" (which letter a word starts with).
+
+### Checks and pictures
+
+- New check `r79learning` (`tests/run.mjs`, at the end): the four new games at under-5, Easy, Medium and Hard in EN and VI on a phone, each played to the end with one wrong tap (32 runs: never one choice, every wrong tap says why, 64 px and 44 px buttons, nothing off screen, no English in the Vietnamese games, the levels differ); E1, E3 (and phones unchanged), E4, I1 (up, down, at most one step, under-5s fixed, "Play again" carry), I2 (comes back first, counts up and down, old saves, kept after a reload), I4 (Hard only, once, not for under-5s, the sticker book draws it), G2 (first time only, bigger children see words and no hand), the microphone (none: no button; heard: counts; refused: button goes, tapping still works).
+- Before and after pictures: `evidence/r79-learning-before/` (the code before this chat) and `evidence/r79-learning-after/` (script `r79-learning-shots.mjs`), phone EN and VI, tablet and computer.
+- Steady windows: `evidence/steady-sweep-r79-learning/` (`tests/owner-steady-sweep.mjs` with `SV_GAMES`, every learning game's screen).
+- New spoken lines: `r79-learning-voice-lines.md` (for Release to record).

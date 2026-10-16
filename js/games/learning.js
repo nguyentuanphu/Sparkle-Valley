@@ -20,7 +20,7 @@ function clockSVG(h, m) {
 const timeText = (h, m) => vi() ? (m === 0 ? `${h} giờ` : m === 30 ? `${h} giờ rưỡi` : `${h} giờ ${m}`) : (m === 0 ? `${h} o'clock` : m === 30 ? `half past ${h}` : m === 15 ? `quarter past ${h}` : `quarter to ${h % 12 + 1}`);
 const digital = (h, m) => `${h}:${String(m).padStart(2, '0')}`;
 register({
-  id: 'clock', icon: '🕒', name: () => T("What's the Time?", 'Mấy Giờ Rồi?'),
+  id: 'clock', learn: true, icon: '🕒', name: () => T("What's the Time?", 'Mấy Giờ Rồi?'),
   async run(api) {
     const rounds = 4, mins = api.level <= 1 ? [0] : api.level === 2 ? [0, 30] : [0, 15, 30, 45];
     for (let r = 0; r < rounds; r++) {
@@ -40,7 +40,7 @@ register({
 
 // ---------- Add it up (and take away for bigger kids) ----------
 register({
-  id: 'sums', icon: '➕', name: () => T('Add It Up', 'Cộng Trừ Vui'),
+  id: 'sums', learn: true, icon: '➕', name: () => T('Add It Up', 'Cộng Trừ Vui'),
   async run(api) {
     const rounds = 5, max = [5, 5, 10, 15, 20][Math.min(4, api.level - 1)];
     for (let r = 0; r < rounds; r++) {
@@ -69,7 +69,7 @@ const OPP = [['🐘', 'big', 'to', '🐭', 'small', 'nhỏ'], ['🔥', 'hot', 'n
   ['🐆', 'fast', 'nhanh', '🐢', 'slow', 'chậm'], ['⬆️', 'up', 'lên', '⬇️', 'down', 'xuống'], ['🥁', 'loud', 'to tiếng', '🤫', 'quiet', 'im lặng'], ['🍼', 'full', 'đầy', '🫙', 'empty', 'rỗng'],
   ['🚪', 'open', 'mở', '🔒', 'closed', 'đóng'], ['🌊', 'wet', 'ướt', '🏜️', 'dry', 'khô'], ['🦒', 'tall', 'cao', '🐿️', 'short', 'thấp'], ['🪶', 'light', 'nhẹ', '🏋️', 'heavy', 'nặng']];
 register({
-  id: 'opposites', icon: '↔️', name: () => T('Opposites', 'Từ Trái Nghĩa'),
+  id: 'opposites', learn: true, icon: '↔️', name: () => T('Opposites', 'Từ Trái Nghĩa'),
   async run(api) {
     const rounds = 5, list = shuffle(OPP).slice(0, rounds);
     for (let r = 0; r < rounds; r++) {
@@ -91,7 +91,7 @@ register({
 const VOICES = [['moo', '🐄', 'cow', 'con bò'], ['baa', '🐑', 'sheep', 'con cừu'], ['oink', '🐷', 'pig', 'con heo'], ['woof', '🐶', 'dog', 'con chó'], ['meow', '🐱', 'cat', 'con mèo'],
   ['quack', '🦆', 'duck', 'con vịt'], ['cluck', '🐔', 'hen', 'con gà mái'], ['neigh', '🐴', 'horse', 'con ngựa'], ['ribbit', '🐸', 'frog', 'con ếch'], ['hoot', '🦉', 'owl', 'con cú']];
 register({
-  id: 'animalsounds', icon: '👂', name: () => T('Who Says That?', 'Con Gì Kêu Thế?'),
+  id: 'animalsounds', learn: true, icon: '👂', name: () => T('Who Says That?', 'Con Gì Kêu Thế?'),
   async run(api) {
     const rounds = 5, list = shuffle(VOICES).slice(0, rounds);
     for (let r = 0; r < rounds; r++) {
@@ -113,7 +113,7 @@ register({
 const PH_EN = [['🍎', 'apple'], ['⚽', 'ball'], ['🐱', 'cat'], ['🐶', 'dog'], ['🥚', 'egg'], ['🐟', 'fish'], ['🐐', 'goat'], ['🎩', 'hat'], ['🧃', 'juice'], ['🪁', 'kite'], ['🦁', 'lion'], ['🌙', 'moon'], ['🪺', 'nest'], ['🐙', 'octopus'], ['🐷', 'pig'], ['👑', 'queen'], ['🐰', 'rabbit'], ['☀️', 'sun'], ['🌳', 'tree'], ['☂️', 'umbrella'], ['🚐', 'van'], ['🐳', 'whale'], ['🦓', 'zebra']];
 const PH_VI = [['🐄', 'bò', 'B'], ['🐟', 'cá', 'C'], ['🐐', 'dê', 'D'], ['🏮', 'đèn', 'Đ'], ['🐔', 'gà', 'G'], ['🌸', 'hoa', 'H'], ['🍦', 'kem', 'K'], ['🍃', 'lá', 'L'], ['🐱', 'mèo', 'M'], ['👒', 'nón', 'N'], ['🐝', 'ong', 'O'], ['🍐', 'ổi', 'Ô'], ['🪭', 'quạt', 'Q'], ['🐢', 'rùa', 'R'], ['⭐', 'sao', 'S'], ['🍎', 'táo', 'T'], ['🐘', 'voi', 'V'], ['🚲', 'xe', 'X'], ['🐸', 'ếch', 'Ê'], ['✏️', 'bút', 'B'], ['🦆', 'vịt', 'V']];
 register({
-  id: 'phonics', icon: '🔤', name: () => T('First Sounds', 'Âm Đầu Tiên'),
+  id: 'phonics', learn: true, icon: '🔤', name: () => T('First Sounds', 'Âm Đầu Tiên'),
   async run(api) {
     const rounds = 5, VI = vi(), pool = shuffle(VI ? PH_VI : PH_EN).slice(0, rounds), letters = [...new Set((VI ? PH_VI : PH_EN).map(w => VI ? w[2] : w[1][0].toUpperCase()))];
     for (let r = 0; r < rounds; r++) {
@@ -130,24 +130,5 @@ register({
   }
 });
 
-// ---------- How do they feel? ----------
-const FEEL = [['😀', 'happy', 'vui', 'got a big hug from Grandma', 'được bà ôm thật chặt'], ['😢', 'sad', 'buồn', 'dropped their ice cream', 'làm rơi cây kem'], ['😠', 'cross', 'giận', 'had their tower knocked over', 'bị bạn làm đổ tháp xếp hình'],
-  ['😨', 'scared', 'sợ', 'heard thunder in the night', 'nghe sấm lúc nửa đêm'], ['😴', 'sleepy', 'buồn ngủ', 'played all day at the beach', 'chơi ở biển cả ngày'], ['😲', 'surprised', 'ngạc nhiên', 'found a present on the doorstep', 'thấy một món quà trước cửa'],
-  ['🥰', 'loved', 'được yêu thương', 'got a goodnight kiss', 'được hôn chúc ngủ ngon'], ['😋', 'hungry', 'đói bụng', 'smelt the phở cooking', 'ngửi thấy mùi phở thơm']];
-register({
-  id: 'feelings', icon: '😊', name: () => T('How Do They Feel?', 'Bạn Thấy Thế Nào?'),
-  async run(api) {
-    const rounds = 4, list = shuffle(FEEL).slice(0, rounds);
-    for (let r = 0; r < rounds; r++) {
-      api.dots(rounds, r); api.stage.innerHTML = '';
-      const f = list[r];
-      api.stage.appendChild(el('div', 'oppcard', `<span class="big">🧒</span><b>${T(`Tí ${f[3]}.`, `Tí ${f[4]}.`)}</b>`));
-      api.say(`Tí ${f[3]}. How does Tí feel?`, `Tí ${f[4]}. Tí thấy thế nào?`);
-      const opts = shuffle([f, ...shuffle(FEEL.filter(x => x !== f)).slice(0, 2)]);
-      const btns = choiceButtons(api, opts, ([i, e, v]) => `<span class="big">${i}</span><small>${T(e, v)}</small>`);
-      const ok = await untilRight(api, btns, e => e._v === f); if (!ok) return;
-      api.say(`Yes, ${f[1]}. It's okay to feel ${f[1]}.`, `Đúng rồi, ${f[2]}. Cảm thấy ${f[2]} cũng không sao cả.`); await wait(1700);
-    }
-    api.dots(rounds, rounds); return api.win();
-  }
-});
+// (r79 learning, owner 16 Oct AEDT) "How Do They Feel?" was rebuilt as a talk-and-touch game with Lá's stories, four
+// faces and "what could help?": js/games/talkgames.js (same id, so a child's progress stays)

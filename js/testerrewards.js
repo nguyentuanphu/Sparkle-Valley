@@ -14,7 +14,7 @@ import { el, esc } from './util.js';
 import { pic } from './art.js';
 import { modal, dialog, reward, confetti } from './popups.js';
 import { say } from './voice.js';
-import { ITEM, adoptWorn } from './content/shop.js';
+import { ITEM, adoptWorn, versionFor, setOf } from './content/shop.js';
 import { RELEASES } from './content/releases.js';
 import * as C from './content/tester.js';
 
@@ -39,7 +39,8 @@ function dress(st) {
     if (badge) look.badge = badge.id; else delete look.badge;
     if (st.star) look.star = 1; else delete look.star;
     p.testerStickers = kinds;
-    if (gear.length) { adoptWorn(p); gear.forEach(id => { if (ITEM[id] && !p.owned.clothes.includes(id)) p.owned.clothes.push(id); }); }
+    // (r79) each child gets the version made for their own set (a girl's bug hunter hat is the purple one)
+    if (gear.length) { adoptWorn(p); gear.map(id => versionFor(id, setOf(p.look))).forEach(id => { if (ITEM[id] && !p.owned.clothes.includes(id)) p.owned.clothes.push(id); }); }
     if (JSON.stringify([look.badge, look.star, p.testerStickers, (p.owned || {}).clothes]) !== was) changed = true;
   });
   if (changed) { saveProfiles(); (G.heroes || []).forEach((h, i) => G.rebuildHero && G.rebuildHero(i)); }

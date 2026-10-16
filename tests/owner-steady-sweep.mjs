@@ -247,12 +247,12 @@ async function sweepDevice(b, dev) {
     ['buying for player 1', async () => { const s = page.locator('.modal.shopk .shop-recipient'); if (!(await s.count())) return false; const v = await s.locator('option').nth(0).getAttribute('value'); await s.selectOption(v); }],
     ...[0, 1, 2, 3, 4, 5].map(k => [`kind tab ${k + 1}`, `.modal.shopk [data-tab] >> nth=${k}`]),
     ['tap item 1', '.modal.shopk .kitem >> nth=0'], ['not now', '.modal.shopk .kno'], ['tap item 3', '.modal.shopk .kitem >> nth=2'], ['not now 2', '.modal.shopk .kno'],
-    ['open wardrobe (mirror)', '.modal.shopk [data-go="wardrobe"]'], ['wardrobe item 1', '.modal.shopk .wrow [data-k]:not([data-v="none"])'], ['wardrobe remove', '.modal.shopk .wrow [data-v="none"]'], ['wardrobe done', '.modal.shopk .whead .x']]);
+    ['open wardrobe (mirror)', '.modal.shopk [data-go="wardrobe"]'], ['mirror item 1 on', '.modal.shopk .mirror .wit >> nth=0'], ['mirror item 1 off', '.modal.shopk .mirror .wit >> nth=0'], ['mirror tab tops', '.modal.shopk .mirror [data-wtab="top"]'], ['mirror tab hats', '.modal.shopk .mirror [data-wtab="hat"]'], ['wardrobe done', '.modal.shopk .whead .x']]);
   await reset();
   // ---------- the wardrobe / mirror on its own ----------
   await panel('wardrobe', [['wardrobe', '.wardrobe']], () => G(() => { window.__sv.openWardrobe(0); }), [
-    ['row 1 item', '.wardrobe .wrow >> nth=0 >> [data-k]:not([data-v="none"]) >> nth=0'], ['row 1 remove', '.wardrobe .wrow >> nth=0 >> [data-v="none"]'],
-    ['row 2 item', '.wardrobe .wrow >> nth=1 >> [data-k]:not([data-v="none"]) >> nth=0'], ['row 3 item', '.wardrobe .wrow >> nth=2 >> [data-k]:not([data-v="none"]) >> nth=0'], ['row 2 remove', '.wardrobe .wrow >> nth=1 >> [data-v="none"]']]);
+    // (r79: the mirror is a tab for each kind and a grid of pictures; tap to wear, tap again to take off)
+    ['item 1 on', '.wardrobe .wit >> nth=0'], ['item 1 off', '.wardrobe .wit >> nth=0'], ...['neck', 'top', 'bottom', 'feet', 'back', 'hat'].map(k => [`tab ${k}`, `.wardrobe [data-wtab="${k}"]`]), ['item 1 on again', '.wardrobe .wit >> nth=0']]);
   await reset();
   // ---------- Play hub ----------
   const hubTabs = await G(async () => { window.__sv.openGamesHub(0); await new Promise(r => setTimeout(r, 400)); return [...document.querySelectorAll('.modal.hub .hubtabs [data-tab]')].map(b => b.dataset.tab); });
@@ -274,6 +274,12 @@ async function sweepDevice(b, dev) {
     ['tap answer 1', '.gl .gl-stage button >> nth=0'], ['tap answer 2', '.gl .gl-stage button >> nth=1'], ['tap answer 3', '.gl .gl-stage button >> nth=2'], ['tap answer 1 again', '.gl .gl-stage button >> nth=0']], { waitFor: '.gl:not(.out)' });
   if (R.panels['game-frame']) R.panels['game-frame'].game = gameId;
   await reset();
+  // (r79 learning) SV_GAMES=sayfind,marketcount sweeps those games' screens too: three taps, then a wrong-answer explanation
+  for (const id of (process.env.SV_GAMES || '').split(',').filter(Boolean)) {
+    await panel('game-' + id, [['layer', '.gl'], ['head', '.gl .gl-head'], ['guidance line', '.gl .gl-help'], ['stage', '.gl .gl-stage']], () => G(id => { window.__sv.playGame(0, id, 'hub'); }, id), [
+      ['tap 1', '.gl .gl-stage button >> nth=0'], ['tap 2', '.gl .gl-stage button >> nth=1'], ['tap 3', '.gl .gl-stage button >> nth=2'], ['tap 4', '.gl .gl-stage button >> nth=3'], ['hear again', '.gl .bt-repeat']], { waitFor: '.gl:not(.out)' });
+    await reset();
+  }
   // ---------- How to play ----------
   await panel('how-to-play', [['film', '.howto .ht-film'], ['controls', '.howto .ht-ctl'], ['words', '.howto .ht-cap'], ['close', '.howto .ht-x']], () => G(async id => { (await import('/js/howto.js')).openHowTo(id, {}); }, gameId), [
     ['next', '.howto .ht-next'], ['next 2', '.howto .ht-next'], ['pause', '.howto .ht-pp'], ['play', '.howto .ht-pp'], ['back', '.howto .ht-prev'], ['next 3', '.howto .ht-next']]);
