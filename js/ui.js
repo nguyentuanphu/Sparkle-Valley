@@ -11,7 +11,7 @@ import { el, esc, $, clamp, wait, local } from './util.js';
 import { familyDevicesHTML, bindFamilyDevices } from './familydevices.js';
 import { familyCode, setFamilyCode, familyPhotoCount, featureOn } from './custom.js';
 const familyTrialOn = () => featureOn('familyDevices', false) || !!window.__sv?.tester;
-import { DEFAULT_OUTFITS, outfitOf, CLOTHES, ITEM, owns, wear as wearItem } from './content/shop.js'; // (round S, owner plan 8 Oct) two starting outfits when the clothes shop is on
+import { DEFAULT_OUTFITS, outfitOf, CLOTHES, ITEM, SLOTS as WEAR_SLOTS, owns, wear as wearItem, giveGift, setOf as setOfLook } from './content/shop.js'; // (round S, owner plan 8 Oct) two starting outfits when the clothes shop is on
 import { avatarURL, applyNpcFaces, namedVillagers } from './avatar.js';
 import { confetti, holdButton } from './popups.js';
 export { holdButton }; // (round R privacy, 9 Oct) moved to popups.js so the real-place window can ask a grown-up too
@@ -892,12 +892,16 @@ export function openPad(game, i, tab) {
       <h3>${T('Ingredients', 'Nguyên liệu')}</h3>
       <div class="slots">${items.map(([id, n]) => `<button class="slot" data-ing="${id}" title="${esc(ingInfo(id)[0])}"><span>${ITEMS[id].icon}</span><b>${n}</b><small>${esc(ITEMS[id].name())}</small></button>`).join('') || `<p class="note">${T('Empty! Shake apple trees and look for herbs and mushrooms.', 'Trống trơn! Rung cây táo và tìm rau thơm, nấm nhé.')}</p>`}</div>
       ${(() => { const SLOT_ICON = { hat: '👒', neck: '📿', top: '👕', bottom: '👖', feet: '👟', back: '🪽' }; // (Round U, owner 11 Oct: everything bought shows here until it is worn) the clothes and accessories the child owns
-        const itemSVG = it => game.shop && game.shop.itemSVG ? game.shop.itemSVG(it) : pic(SLOT_ICON[it.slot] || '👕'), mine = CLOTHES.filter(it => owns(p, it.id)), off = mine.filter(it => p.look[it.slot] !== it.id), on = mine.filter(it => p.look[it.slot] === it.id);
+        const itemSVG = it => game.shop && game.shop.itemSVG ? game.shop.itemSVG(it) : pic(SLOT_ICON[it.slot] || '👕'), mine = CLOTHES.filter(it => owns(p, it.id) && it.for === (setOfLook(p.look) === 'girl' ? 'g' : 'b')), off = mine.filter(it => p.look[it.slot] !== it.id), on = mine.filter(it => p.look[it.slot] === it.id);
         const hats = HATS.concat(REWARD_HATS.filter(h => p.owned.hats.includes(h))).filter(h => h !== 'none' && !ITEM[h]);
         return `<h3>${pic('👕')} ${T('Clothes and accessories', 'Quần áo và phụ kiện')} <small>${T('tap to wear', 'chạm để mặc')}</small></h3>
       <div class="slots">${off.map(it => `<button class="slot" data-wear="${it.id}" title="${esc(T(it.en, it.vi))}">${itemSVG(it)}<small>${esc(T(it.en, it.vi))}</small></button>`).join('')}${hats.filter(h => p.look.hat !== h).map(h => `<button class="slot" data-hat="${h}"><span>${HAT_ICON[h]}</span><small>${esc(HAT_NAME[h]())}</small></button>`).join('')}${!off.length && !hats.filter(h => p.look.hat !== h).length ? `<p class="note">${T('Everything you have is on! Find more at the clothes shop.', 'Con đang mặc hết đồ rồi! Ghé cửa hàng quần áo để mua thêm nhé.')}</p>` : ''}</div>
       ${on.length || (p.look.hat && p.look.hat !== 'none' && !ITEM[p.look.hat]) ? `<h3>${T('Wearing now', 'Đang mặc')} <small>${T('tap to take off', 'chạm để cởi ra')}</small></h3>
       <div class="slots">${on.map(it => `<button class="slot on" data-unwear="${it.slot}" title="${esc(T(it.en, it.vi))}">${itemSVG(it)}<small>${esc(T(it.en, it.vi))}</small></button>`).join('')}${p.look.hat && p.look.hat !== 'none' && !ITEM[p.look.hat] && HAT_ICON[p.look.hat] ? `<button class="slot on" data-hat="none"><span>${HAT_ICON[p.look.hat]}</span><small>${esc(HAT_NAME[p.look.hat] ? HAT_NAME[p.look.hat]() : '')}</small></button>` : ''}</div>` : ''}`; })()}
+      ${(() => { // (r79, owner 16 Oct) clothes of the other set, bought to give away: wrapped gift boxes, one tile for each kind
+        const gifts = (p.owned && p.owned.gifts || []).filter(id => ITEM[id]), kinds = [...new Set(gifts)];
+        return kinds.length ? `<h3>🎁 ${T('Gifts to give', 'Quà để tặng')} <small>${T('tap to give', 'chạm để tặng')}</small></h3>
+      <div class="slots">${kinds.map(id => { const it = ITEM[id], n = gifts.filter(x => x === id).length; return `<button class="slot giftbox" data-gift="${id}" title="${esc(T(it.en, it.vi))}"><span>🎁</span>${n > 1 ? `<b>${n}</b>` : ''}<small>${esc(T(it.en, it.vi))}</small></button>`; }).join('')}</div>` : ''; })()}
       <h3>🪁 ${T('Whistling kite', 'Diều sáo')}</h3>
       <div class="slots">${p.kite ? `<button class="slot ${p.kiteOn !== false ? 'on' : ''}" data-kite="1"><span>🪁</span><small>${p.kiteOn !== false ? T('Flying', 'Đang bay') : T('Put away', 'Cất đi')}</small></button><button class="slot" data-whistle="1"><span>🎶</span><small>${T('Whistle!', 'Thổi sáo!')}</small></button>` : `<p class="note">${T('Win the Kite Flying game to get a kite with a bamboo flute that sings in the wind!', 'Thắng trò Thả Diều để nhận diều sáo hát vi vu trong gió!')}</p>`}</div>
       ${game.hoilang ? game.hoilang.bagHTML(p) : ''}
@@ -905,14 +909,18 @@ export function openPad(game, i, tab) {
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
     jumpNav(body, body.querySelector('.bag-top')); // (owner, 13 Oct AEDT: the Backpack's section-button row back, after the tester's notes took it out)
     // (Round V, owner 13 Oct) food asks first ("Eat it?"); an ingredient says what it is and which dishes it makes
-    const helpCard = (name, art, en, vi, action, run) => {
+    // (r79, owner point 14: the "Eat it?" question was too big) food asks in one small row: the picture, "Eat it?" and the
+    // two buttons; what the food does is said aloud, not written out
+    const helpCard = (name, art, en, vi, action, run, small) => {
       body.querySelector('.bag-help')?.remove();
-      const c = el('div', 'bag-help', `<div>${art}<b>${esc(name)}</b></div><p>${esc(T(en, vi))}</p><div class="actions">${action ? `<button class="btn primary bh-act">${action}</button>` : ''}<button class="btn bh-close">${T('Not now', 'Để sau')}</button></div>`);
+      const c = small
+        ? el('div', 'bag-help bag-ask' + (p.age !== 'big' ? ' little' : ''), `${art}<b><span class="nm">${esc(name)}</span><small>${T('Eat it?', 'Ăn nhé?')}</small></b><button class="btn primary bh-act">${action}</button><button class="btn bh-close">${T('Not now', 'Để sau')}</button>`)
+        : el('div', 'bag-help', `<div>${art}<b>${esc(name)}</b></div><p>${esc(T(en, vi))}</p><div class="actions">${action ? `<button class="btn primary bh-act">${action}</button>` : ''}<button class="btn bh-close">${T('Not now', 'Để sau')}</button></div>`);
       c.setAttribute('role', 'region'); c.setAttribute('aria-label', name); body.appendChild(c); say(`${name}. ${en}`, `${name}. ${vi}`);
       c.querySelector('.bh-close').onclick = () => { c.remove(); run?.(false); };
       if (action) c.querySelector('.bh-act').onclick = () => { c.remove(); run?.(true); }; return c;
     };
-    const askEat = (name, icon, en, vi) => new Promise(resolve => { SFX.tap(); helpCard(name, pic(icon), en, vi, T('Eat', 'Ăn'), resolve); });
+    const askEat = (name, icon, en, vi) => new Promise(resolve => { SFX.tap(); helpCard(name, pic(icon), 'Eat it? ' + en, 'Ăn nhé? ' + vi, T('Eat', 'Ăn'), resolve, true); });
     body.querySelectorAll('[data-eat]').forEach(b => b.onclick = async () => { const r = dishInfo(b.dataset.eat) || { icon: '🥘', heal: 1, name: () => T('Mystery stew', 'Món hầm bí ẩn') };
       if (await askEat(r.name(), r.icon, `Restores up to ${r.heal} hearts and refills energy. Hearts only fall for older children on Hard.`, `Hồi tối đa ${r.heal} tim và nạp năng lượng. Chỉ trẻ lớn ở mức Khó mới mất tim.`)) game.eat(hero, b.dataset.eat); draw(); });
     body.querySelectorAll('[data-snack]').forEach(b => b.onclick = async () => { const v = snackOf(b.dataset.snack);
@@ -928,22 +936,41 @@ export function openPad(game, i, tab) {
     body.querySelectorAll('[data-hat]').forEach(b => b.onclick = () => { p.look.hat = b.dataset.hat; saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); });
     body.querySelectorAll('[data-wear]').forEach(b => b.onclick = () => { const it = ITEM[b.dataset.wear]; if (it && wearItem(p, it.slot, it.id)) { saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); } });
     body.querySelectorAll('[data-unwear]').forEach(b => b.onclick = () => { if (wearItem(p, b.dataset.unwear, 'none')) { saveProfiles(); game.rebuildHero(i); SFX.tap(); draw(); } });
+    // (r79) a gift box says what is inside and who it is for, and offers the players on this device it fits
+    body.querySelectorAll('[data-gift]').forEach(b => b.onclick = () => {
+      SFX.tap(); const id = b.dataset.gift, it = ITEM[id], girls = it.for === 'g', name = T(it.en, it.vi);
+      const friends = profiles.filter(q => q.id !== p.id && setOfLook(q.look) === (girls ? 'girl' : 'boy'));
+      const en = `A wrapped gift: ${it.en}, made for ${girls ? 'girls' : 'boys'}. ${friends.length ? 'Choose who to give it to.' : 'Give it to a friend when you play together: trade it at your market stall.'}`;
+      const vi = `Một món quà đã gói: ${it.vi}, dành cho ${girls ? 'bé gái' : 'bé trai'}. ${friends.length ? 'Chọn bạn để tặng nhé.' : 'Khi chơi cùng bạn, tặng ở sạp hàng của con nhé.'}`;
+      body.querySelector('.bag-help')?.remove();
+      const c = el('div', 'bag-help', `<div>${b.querySelector('svg, .art')?.outerHTML || ''}<b>${esc(name)}</b></div><p>${esc(T(en, vi))}</p><div class="actions">${friends.map(q => `<button class="btn primary bh-give" data-to="${q.id}">${T('Give to', 'Tặng')} ${esc(q.name)}</button>`).join('')}<button class="btn bh-close">${T('Not now', 'Để sau')}</button></div>`);
+      c.setAttribute('role', 'region'); c.setAttribute('aria-label', name); body.appendChild(c); say(en, vi);
+      c.querySelector('.bh-close').onclick = () => c.remove();
+      c.querySelectorAll('.bh-give').forEach(g => g.onclick = () => { const q = profiles.find(x => x.id === g.dataset.to), r = giveGift(p, q, id);
+        if (r.ok) { saveProfiles(true); SFX.ok(); say(`You gave ${it.en} to ${q.name}. How kind!`, `Con đã tặng ${it.vi} cho ${q.name}. Con tốt bụng quá!`); toast(T(`Given to ${q.name}`, `Đã tặng ${q.name}`)); } draw(); });
+    });
     body.querySelectorAll('[data-kite]').forEach(b => b.onclick = () => { p.kiteOn = p.kiteOn === false; saveProfiles(); game.kites.sync(); SFX.ok(); if (p.kiteOn) game.kites.whistle(hero); draw(); });
     body.querySelectorAll('[data-whistle]').forEach(b => b.onclick = () => { game.kites.whistle(hero); });
     game.hoilang && game.hoilang.bindBag(body, hero, draw); // (round S) carry a village festival prize, like the kite
     body.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { p.look.glider = +b.dataset.gl; saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); });
     // Help is the first tap; every change requires an explicit action inside the same Bag.
     for (const b of body.querySelectorAll('.slot')) {
-      if (b.dataset.eat || b.dataset.snack) continue;
+      if (b.dataset.eat || b.dataset.snack || b.dataset.gift) continue;
       const oldAction = b.onclick, name = b.querySelector('small')?.textContent || b.title || T('Item', 'Đồ dùng');
       const it = ITEM[b.dataset.wear], ingredient = b.dataset.ing, treasure = WILD[b.dataset.sellgem];
       let en = 'Keep this item in your Backpack and use its action when you need it.', vi = 'Giữ món này trong Ba lô và chọn hành động khi cần.';
+      // (r79, owner point 12) every kind of thing says what it is and what the button does
       if (it || b.dataset.hat || b.dataset.unwear) { en = 'Clothes and accessories change how your character looks.'; vi = 'Quần áo và phụ kiện thay đổi vẻ ngoài của nhân vật.'; }
+      if (it) { const sl = WEAR_SLOTS.find(x => x.id === it.slot); en = `Clothes from the shop (${sl ? sl.en.toLowerCase() : 'clothes'}). Tap Wear to put it on; the mirror in the Shop shows everything you own.`; vi = `Quần áo mua ở cửa hàng (${sl ? sl.vi.toLowerCase() : 'quần áo'}). Chạm Mặc để mặc vào; cái gương trong Cửa hàng cho xem mọi đồ con có.`; }
+      if (b.dataset.unwear) { en = 'You are wearing this now. Tap Take off to take it off; it stays in your Backpack.'; vi = 'Con đang mặc món này. Chạm Cởi ra để cởi; nó vẫn ở trong Ba lô.'; }
+      if (b.dataset.hat && b.dataset.hat !== 'none' && !ITEM[b.dataset.hat]) { en = 'A hat you won on an adventure. Tap Wear to put it on.'; vi = 'Chiếc mũ con giành được trong chuyến phiêu lưu. Chạm Mặc để đội.'; }
+      if (b.dataset.hat === 'none') { en = 'The hat you won, on your head now. Tap Take off to take it off.'; vi = 'Chiếc mũ con giành được, đang đội trên đầu. Chạm Cởi ra để bỏ mũ.'; }
+      if (b.dataset.hlcarry) { en = 'A prize you won at the village festival. Carry it to show everyone, or put it away. It is a keepsake in your house too.'; vi = 'Phần quà con giành được ở hội làng. Mang theo cho mọi người xem, hoặc cất đi. Nó cũng là kỷ vật trong nhà con.'; }
       if (b.dataset.gl) { en = 'Choose the colour of your glider for flying safely from high places.'; vi = 'Chọn màu cánh lượn để bay an toàn từ nơi cao.'; }
       if (b.dataset.kite || b.dataset.whistle) { en = 'Your whistling kite follows you; its bamboo flute sings in the wind.'; vi = 'Diều sáo bay theo con; sáo tre hát trong gió.'; }
       if (ingredient) { const info = ingInfo(ingredient); en = info[1]; vi = info[2]; }
       if (treasure) { en = `A treasure you found. Sell one for ${money(treasure.sell)} or keep it.`; vi = `Báu vật con tìm được. Bán một món lấy ${money(treasure.sell)} hoặc giữ lại.`; }
-      const action = treasure ? T('Sell one', 'Bán một') : b.dataset.unwear || b.dataset.hat === 'none' ? T('Remove', 'Bỏ ra') : b.dataset.wear || b.dataset.hat ? T('Wear', 'Mặc') : b.dataset.kite ? (p.kiteOn !== false ? T('Put away', 'Cất đi') : T('Fly', 'Thả diều')) : b.dataset.hlcarry ? (p.hoilang?.carryOn !== false && p.hoilang?.carry === b.dataset.hlcarry ? T('Put away', 'Cất đi') : T('Carry', 'Mang theo')) : b.dataset.whistle ? T('Whistle', 'Thổi sáo') : b.dataset.gl !== undefined ? T('Choose', 'Chọn') : T('Use', 'Dùng');
+      const action = treasure ? T('Sell one', 'Bán một') : b.dataset.unwear || b.dataset.hat === 'none' ? T('Take off', 'Cởi ra') : b.dataset.wear || b.dataset.hat ? T('Wear', 'Mặc') : b.dataset.kite ? (p.kiteOn !== false ? T('Put away', 'Cất đi') : T('Fly', 'Thả diều')) : b.dataset.hlcarry ? (p.hoilang?.carryOn !== false && p.hoilang?.carry === b.dataset.hlcarry ? T('Put away', 'Cất đi') : T('Carry', 'Mang theo')) : b.dataset.whistle ? T('Whistle', 'Thổi sáo') : b.dataset.gl !== undefined ? T('Choose', 'Chọn') : T('Use', 'Dùng');
       b.onclick = () => { const art = b.querySelector('svg, .art, .sw')?.outerHTML || ''; helpCard(name, art, en, vi, oldAction && !ingredient ? action : '', ok => { if (ok) { oldAction?.call(b); } }); };
     }
 
@@ -999,7 +1026,7 @@ export function openPad(game, i, tab) {
     Object.values(GAMES).forEach(g => {
       const ok = found.has(g.id);
       const b = el('button', 'gcard' + (ok ? '' : ' locked'), `<span>${ok ? g.icon : '🔒'}</span><b>${esc(ok ? g.name() : '???')}</b>${ok ? `<small>${T('Level', 'Cấp')} ${p.levels[g.id] || 1}</small>` : ''}`);
-      if (ok) b.onclick = () => { close(); game.playGame(i, g.id, 'replay'); };
+      if (ok) b.onclick = () => { close(); game.playGame(i, g.id, 'pad'); }; // (r79 point 7: closing the game comes back here)
       list.appendChild(b);
     });
   }

@@ -2770,3 +2770,37 @@ body:has(.modal:not(.out), .gl, .wardrobe, .audio-tray, .dialog:not(.out), .stor
 /* (r79 A7) on a tablet or computer the View button sits a little lower, so the column above it stays clear of the speaker */
 .hud:not(.small) .zoomer, .hud:not(.small) .zoomer:has(.z-lb) { top: 60%; }
 @media (max-height: 480px) { .hud:not(.small) .zoomer, .hud:not(.small) .zoomer:has(.z-lb) { top: auto; } }
+/* (r79, owner point 14) "Eat it?" is one small row at the bottom of the Bag: picture, name, "Eat it?", Eat and Not now */
+.bag-help.bag-ask { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 16px; font-size: 14px; max-width: 520px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+.bag-help.bag-ask > .art, .bag-help.bag-ask > .arti, .bag-help.bag-ask > svg, .bag-help.bag-ask > .kpic { flex: none; width: 36px; height: 36px; }
+.bag-help.bag-ask > b { flex: 1 1 auto; min-width: 0; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.bag-help.bag-ask > b small { display: block; font-weight: 600; color: #6a4aa0; }
+.bag-help.bag-ask button { flex: none; min-height: 44px; min-width: 64px; padding: 0 12px; }
+.bag-help.bag-ask.little button { min-height: 64px; }
+/* (r79 A4, points 17 and 18) the mirror: a big picture of the child, a tab for each kind of thing, the child's own clothes
+   in a grid (tap to wear, tap again to take off: a tick shows what is on); the shop marks the other collection as gifts */
+.mirror .whead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mirror .whead h2 { margin: 0; display: flex; align-items: center; gap: 8px; } .mirror .whead h2 .art { width: 36px; height: 36px; }
+.mirror .whead .x { position: static; min-width: 64px; min-height: 48px; font-size: 16px; }
+.mirror .wmirror { display: flex; justify-content: center; margin: 4px 0; }
+.mirror .wbig { width: min(240px, 60vw); aspect-ratio: 3 / 4; object-fit: contain; border-radius: 24px; background: linear-gradient(180deg, #f3ecff, #e9def5); box-shadow: inset 0 0 0 4px #fff, 0 4px 14px rgba(90, 60, 130, .15); }
+.mirror .whow { text-align: center; margin: 4px 0 8px; }
+.mirror .wtabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.mirror .wtabs .ktab { position: relative; width: 56px; height: 56px; min-width: 56px; }
+.mirror .wtabs .ktab .art { width: 34px; height: 34px; }
+.mirror .wtabs .wn { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; border-radius: 10px; background: #8a5cf6; color: #fff; font-size: 12px; line-height: 20px; text-align: center; padding: 0 4px; }
+.mirror .wkind { text-align: center; margin: 10px 0 6px; color: #6a4aa0; }
+.mirror .wgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.mirror .wit { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 108px; padding: 10px 6px 8px; border: 0; border-radius: 18px; background: #fff; box-shadow: 0 3px 0 rgba(90, 60, 130, .1), 0 0 0 2px rgba(90, 60, 130, .06); font: inherit; color: inherit; cursor: pointer; }
+.mirror .wit .kpic, .mirror .wit .art { width: 56px; height: 56px; flex: none; }
+.mirror .wit small { font-size: 13px; line-height: 1.2; text-align: center; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.mirror .wit.on { box-shadow: 0 0 0 3px #8a5cf6, 0 3px 0 rgba(90, 60, 130, .1); background: #f6f0ff; }
+.mirror .wit .ktick { position: absolute; top: 6px; right: 6px; } .mirror .wit .ktick .art { width: 22px; height: 22px; }
+.mirror.little .wit { min-height: 120px; } .mirror.little .wtabs .ktab { width: 64px; height: 64px; min-width: 64px; }
+.mirror .wnone { grid-column: 1 / -1; text-align: center; }
+.kitem.gift { position: relative; } .kitem .kgift { position: absolute; top: 4px; left: 4px; } .kitem .kgift .art { width: 22px; height: 22px; }
+.kask .kgiftnote { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #6a4aa0; } .kask .kgiftnote .art { width: 24px; height: 24px; }
+.mirror .whead .x { white-space: nowrap; padding: 0 16px; }
+.bag-help.bag-ask > b { display: flex; flex-direction: column; -webkit-line-clamp: unset; }
+.bag-help.bag-ask > b > span.nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 600px) { .mirror .wbig { width: min(170px, 44vw); } }

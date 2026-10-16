@@ -418,9 +418,12 @@ async function playGame(i, id, source, shrine) {
   if (res.restart) { events.emit('ActivityAbandoned', { activityId: actId, reason: 'level' }); p.gameDiff = { ...(p.gameDiff || {}), [id]: res.restart }; save(); return playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); }
   if (res.won) events.emit('ActivityCompleted', { activityId: actId, defId: makeId('game', id), players: playerIds, result: { won: true, stars: res.stars || 0, level } });
   else events.emit('ActivityAbandoned', { activityId: actId, reason: 'left' });
-  if (!res.won) { if (source === 'hub') G.openGamesHub(i); return; }
+  // (r79, owner point 7) a game opened from Play goes back to Play, one opened from the Pad's Games page back to that page;
+  // one opened by talking to a villager (or at a shrine) closes straight back to the valley
+  const back = () => { if (source === 'hub') G.openGamesHub(i); else if (source === 'pad') G.openPad(i, 'games'); };
+  if (!res.won) { back(); return; }
   // after the rewards: straight on to the next game, or this one again, if the child chose that
-  const then = () => { if (res.next === 'next' && nextId) playGame(i, nextId, source === 'hub' ? 'hub' : 'replay'); else if (res.next === 'again') playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); else if (source === 'hub') G.openGamesHub(i); };
+  const then = () => { if (res.next === 'next' && nextId) playGame(i, nextId, source === 'hub' || source === 'pad' ? source : 'replay'); else if (res.next === 'again') playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); else back(); };
   // winning Kite Flying earns the whistling kite (diều sáo), which then flies above you everywhere
   if (id === 'kite' && !p.kite) {
     p.kite = true; p.kiteOn = true; save(); G.kites.sync();
