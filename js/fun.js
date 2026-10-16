@@ -10,6 +10,8 @@ import { STICKERS } from './data.js';
 import { PLACES, placeStickers } from './placebook.js';
 import { el, esc, pick, flip } from './util.js';
 import { modal } from './popups.js';
+import { pic } from './art.js';
+import { SKILLS } from './games/registry.js';
 
 // ---------- confetti: js/popups.js (architecture step 2), passed on from here ----------
 import { confetti } from './popups.js';
@@ -82,7 +84,7 @@ export function createFun(G) {
         <div class="sb-page"></div>
         <div class="sb-tools" ${sel == null ? 'hidden' : ''}><button class="btn" data-t="small">➖</button><button class="btn" data-t="big">➕</button><button class="btn" data-t="turn">↻</button><button class="btn danger" data-t="del">🗑️</button></div>
         <p class="note center">${T('Tap a sticker or photo to put it on the page, then drag it around!', 'Chạm vào hình dán hoặc ảnh để đặt lên trang, rồi kéo đi đâu cũng được!')}</p>
-        <div class="sb-tray">${owned.map(s => `<button data-s="${esc(s)}">${s}</button>`).join('')}${p.album.map((src, k) => `<button data-p="${k}" class="ph"><img src="${src}" alt=""></button>`).join('')}${!owned.length && !p.album.length ? `<p class="note">${T('Win stickers and take photos to fill your scrapbook!', 'Hãy thắng hình dán và chụp ảnh để dán vào sổ nhé!')}</p>` : ''}</div>`;
+        <div class="sb-tray">${owned.map(s => `<button data-s="${esc(s)}"${skillName(s)}>${stickerPic(s)}</button>`).join('')}${p.album.map((src, k) => `<button data-p="${k}" class="ph"><img src="${src}" alt=""></button>`).join('')}${!owned.length && !p.album.length ? `<p class="note">${T('Win stickers and take photos to fill your scrapbook!', 'Hãy thắng hình dán và chụp ảnh để dán vào sổ nhé!')}</p>` : ''}</div>`;
       card.querySelector('.x').onclick = close;
       card.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => { page = +b.dataset.pg; sel = null; SFX.tap(); draw(); });
       card.querySelectorAll('[data-s],[data-p]').forEach(b => b.onclick = () => {
@@ -99,7 +101,7 @@ export function createFun(G) {
       const pg = card.querySelector('.sb-page');
       items().forEach((it, k) => {
         if (it.t === 'p' && !p.album[it.v]) return;
-        const d = el('div', 'sb-item' + (k === sel ? ' sel' : '') + (it.t === 'p' ? ' photo' : ''), it.t === 's' ? it.v : `<img src="${p.album[it.v]}" alt="">`);
+        const d = el('div', 'sb-item' + (k === sel ? ' sel' : '') + (it.t === 'p' ? ' photo' : ''), it.t === 's' ? stickerPic(it.v) : `<img src="${p.album[it.v]}" alt="">`);
         d.style.cssText = `left:${it.x}%;top:${it.y}%;transform:translate(-50%,-50%) rotate(${it.r}deg) scale(${it.s})`;
         d.onpointerdown = e => {
           e.preventDefault(); sel = k; card.querySelector('.sb-tools').hidden = false; pg.querySelectorAll('.sb-item').forEach(x => x.classList.remove('sel')); d.classList.add('sel');
@@ -115,3 +117,8 @@ export function createFun(G) {
     say('Make your own scrapbook page!', 'Con tự trang trí sổ dán hình nhé!');
   };
 }
+
+// (r79 learning, chat 2, I4) the skill stickers from the reasoning games are drawings with a key, not emoji: drawn with
+// pic(), with their name for screen readers
+function stickerPic(s) { return /^skill:/.test(s) ? pic(s) : s; }
+function skillName(s) { const k = /^skill:(.+)$/.exec(s), sk = k && SKILLS[k[1]]; return sk ? ` aria-label="${esc(T(sk.en, sk.vi))}"` : ''; }

@@ -2732,3 +2732,57 @@ body.bigtext .theatre .th-text { --thp: clamp(20px, 3.2vw, 28px); --thm: clamp(1
 .sv2 .tt-l:nth-child(2) { font-family: 'Baloo 2', 'Segoe UI', system-ui, -apple-system, sans-serif; }
 .sv2 .tt-panel .seg.lang button { height: 48px; display: inline-flex; align-items: center; gap: 6px; }
 .sv2 .tt-panel .learnrow { height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+/* r79 learning (chat 2) */
+/* (owner, 16 Oct AEDT, E1) learning games: one small reward banner under the top bar, never stacked over the puzzle;
+   a new one replaces the one showing. Calm: a short fade, no zoom. */
+.gl-reward { position: fixed; left: 50%; transform: translate(-50%, -50%); z-index: 4; display: inline-flex; align-items: center; gap: 6px; max-width: calc(100% - 32px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: linear-gradient(180deg, #ff9f43, #ff5f7e); color: #fff; font-size: 16px; font-weight: 700; line-height: 1.2; padding: 5px 14px; border-radius: 999px; box-shadow: 0 3px 10px rgba(255, 95, 126, .35); pointer-events: none; animation: glRewardFade 1.4s ease forwards; }
+.gl-reward .art, .gl-reward .emo { width: 20px; height: 20px; font-size: 18px; flex: none; }
+.gl-reward.lucky { background: linear-gradient(180deg, #ffe066, #ffb020); color: #5a3a00; }
+.gl-reward.up { background: linear-gradient(180deg, #8fd8ff, #8a5cf6); }
+@keyframes glRewardFade { 0% { opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .gl-reward { animation-duration: 1.4s; animation-timing-function: steps(1, end); } }
+/* (E3) on a computer the game buttons ("Hear again", "Show again", "Ready to try") have text as big as the question line */
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .gl .gl-stage .btn, .gl .bt-repeat { font-size: 19px; }
+  .gl .gl-stage .btn .art { width: 26px; height: 26px; }
+}
+/* (E4) a soft dark layer behind "You did it!": the board is dimmed and softened, and the words sit on a dark band */
+.gl-win { background: rgba(28, 14, 44, .78); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+.gl-win > p:not(.gl-tapout) { background: rgba(28, 14, 44, .55); border-radius: 18px; padding: 4px 18px; }
+.gl-win .gl-tapout { background: rgba(28, 14, 44, .55); border-radius: 12px; padding: 2px 12px; }
+/* (I4) the new skill sticker under "You did it!" */
+.gl-skill { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; background: #fff6e4; color: #3b2a4f; border-radius: 16px; padding: 6px 14px; font-size: 18px; box-shadow: 0 4px 0 rgba(0, 0, 0, .2); }
+.gl-skill .art { width: 44px; height: 44px; }
+/* (G2) picture-only for under-5s: the question line is hidden with its space kept, the pictures are bigger */
+.gl.pic-only .gl-help { visibility: hidden; }
+.gl.little.pic-only .choice:not(.bt-piece) { width: clamp(116px, 27vw, 184px); height: clamp(116px, 27vw, 184px); font-size: clamp(60px, 13vw, 92px); }
+.gl.little.pic-only .seq-item { width: clamp(72px, 16vw, 116px); height: clamp(72px, 16vw, 116px); font-size: clamp(46px, 10vw, 72px); }
+@media (max-height: 560px) { .gl.little.pic-only .choice:not(.bt-piece) { width: clamp(84px, 21vh, 140px); height: clamp(84px, 21vh, 140px); } }
+/* the showing hand: taps three times over the first right choice, then goes */
+.gl-hand { position: fixed; z-index: 5; width: 56px; height: 56px; pointer-events: none; animation: glHandTap 1.1s ease-in-out 3; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .35)); }
+.gl-hand .art, .gl-hand .emo { width: 56px; height: 56px; font-size: 48px; }
+@keyframes glHandTap { 0%, 100% { transform: translate(14px, 22px); } 50% { transform: translate(0, 0) scale(.9); } }
+/* (I4) the skill stickers are drawings: the same size as the emoji stickers beside them */
+.sb-tray button > .art, .sb-item > .art { width: 1.15em; height: 1.15em; vertical-align: middle; }
+/* (r79 learning) the talk-and-touch games */
+.gl .sf-tools { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.gl .sf-mic.on { background: #ffe1ef; box-shadow: 0 0 0 3px #ff6fae; }
+.gl .sf-mic .art { width: 26px; height: 26px; }
+.gl .choice.sf-little > .art, .gl .choice.sf-little > .emo { transform: scale(.55); }
+.gl .mc-sign { display: inline-flex; align-items: center; gap: 10px; align-self: center; background: #fff6e4; color: #3b2a4f; border-radius: 18px; padding: 6px 18px; font-size: clamp(30px, 6vw, 44px); box-shadow: 0 4px 0 rgba(90, 60, 130, .18); }
+.gl .mc-sign .art { width: 48px; height: 48px; }
+.gl .mc-basket { display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: 6px; width: min(100%, 520px); min-height: 148px; box-sizing: border-box; padding: 12px; margin: 0 auto; border-radius: 22px 22px 44px 44px; background: #e7b77a; border: 4px solid #8a5a2b; box-shadow: inset 0 -10px 0 rgba(90, 50, 20, .18); }
+.gl .mc-stall { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: min(100%, 560px); min-height: 72px; margin: 0 auto; padding: 8px; box-sizing: border-box; border-radius: 16px; background: rgba(255, 255, 255, .35); }
+.gl .choice.mc-fruit { width: 64px; height: 64px; min-width: 64px; min-height: 64px; border-radius: 18px; font-size: 40px; padding: 0; touch-action: none; position: relative; }
+.gl .choice.mc-fruit .art { width: 46px; height: 46px; }
+.gl .choice.mc-fruit.extra { box-shadow: 0 0 0 4px #ff5f7a; }
+.gl .mc-gap { width: 64px; height: 64px; box-sizing: border-box; border-radius: 18px; border: 3px dashed #8a5cf6; background: rgba(255, 255, 255, .5); }
+.gl .fs-card { display: flex; align-items: center; justify-content: center; gap: 14px; align-self: center; background: #fff6e4; border-radius: 22px; padding: 10px 22px; box-shadow: 0 4px 0 rgba(90, 60, 130, .18); }
+.gl .fs-card .art { width: clamp(64px, 16vw, 104px); height: clamp(64px, 16vw, 104px); }
+.gl .choice.fs-face, .gl .choice.fs-help { flex-direction: column; gap: 2px; }
+.gl .choice.fs-face small, .gl .choice.fs-help small { font-size: 15px; line-height: 1.15; text-align: center; padding: 0 4px; }
+.gl .choice.fs-face .art { width: 62%; height: 62%; }
+.gl .choice.fs-help .art { width: 48%; height: 48%; }
+.gl .sh-model .seq-item { border: 3px solid #8a5cf6; }
+.gl .mc-round { display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 2vw, 14px); width: 100%; }
