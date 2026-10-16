@@ -111,6 +111,10 @@ export function createKidPlay(G, { say, save }) {
       if (showFeed) { c.feed.innerHTML = fedToday ? (level(h) >= 3 ? pic('✨') + `<small>${T('Trick', 'Biểu diễn')}</small>` : pic('😊') + `<small>${T('Full', 'No rồi')}</small>`) : pic('🍓') + `<small>${T('Feed', 'Cho ăn')}</small>`;
         c.feed.setAttribute('aria-label', fedToday ? T('Do a trick', 'Biểu diễn') : T('Feed your friend', 'Cho bạn ăn')); c.feed.classList.toggle('ready', !fedToday); }
       if (showGoal) { c.goal.innerHTML = pic('🎯') + `<small>${narrow ? '' : T(x.en, x.vi) + ' '}${Math.min(farm.coins, x.price)}/${x.price}</small>`; c.goal.classList.toggle('ready', !!can); c.goal.setAttribute('aria-label', T('About your companion hat goal', 'Về mục tiêu mũ cho bạn đồng hành')); }
+      // (r79 A6) on a phone the chips sit on the player card's level and never slide under the mini-map: with no room, the
+      // goal chip (a hat ready to buy) takes the trick chip's place; only if it still has no room does it step aside
+      if (narrow && !c.goal.hidden) requestAnimationFrame(() => { const mm = G.huds[h.i]?.root.querySelector('.mini-wrap'), over = () => { const g = c.goal.getBoundingClientRect(); return mm && g.width && g.right > mm.getBoundingClientRect().left - 4; };
+        if (over() && !c.feed.hidden) c.feed.hidden = true; if (over()) c.goal.hidden = true; });
     }
   }
 

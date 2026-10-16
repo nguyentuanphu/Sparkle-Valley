@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sticker book</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&amp;family=Fredoka:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#8a5cf6}a:hover{color:#5b34c4}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #ffd1e6; font-family: 'Fredoka', sans-serif; color: #3a2a20; padding: 20px 14px; display: flex; flex-direction: column; gap: 14px">
+
+<div style="display: flex; justify-content: space-between; align-items: center">
+<div style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 28px; line-height: 1">My sticker book</div>
+<a href="HUD.dc.html" aria-label="Close" style="width: 52px; height: 52px; border-radius: 50%; background: #ff6fae; border: 3px solid #3a2a20; box-shadow: 0 5px 0 #c2407e; display: flex; align-items: center; justify-content: center; box-sizing: border-box"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></a>
+</div>
+
+<div role="tablist" aria-label="Sticker pages" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+<button type="button" role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+</sc-for>
+</div>
+
+<section style="flex: 1; background: #fff6e4; border: 3px solid #3a2a20; border-radius: 28px; box-shadow: 0 6px 0 #3a2a20; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<div style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 24px">{{pageTitle}}</div>
+<div style="font-weight: 600; font-size: 18px">{{got}} / 9</div>
+</div>
+<div style="height: 16px; border-radius: 8px; background: #ffffff; border: 3px solid #3a2a20; overflow: hidden">
+<div style="height: 100%; width: {{pct}}; background: #ffb020"></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; flex: 1">
+<sc-for list="{{items}}" as="s" hint-placeholder-count="9">
+<div style="position: relative; border-radius: 20px; background: {{s.bg}}; border: 3px {{s.border}} #3a2a20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 2px">
+<sc-if value="{{s.have}}" hint-placeholder-val="{{true}}">
+<svg width="60" height="60" viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="32" r="22" fill="{{s.color}}" stroke="#3a2a20" stroke-width="3"></circle><circle cx="22" cy="28" r="3.5" fill="#3a2a20"></circle><circle cx="38" cy="28" r="3.5" fill="#3a2a20"></circle><path d="M23 38 Q30 44 37 38" fill="none" stroke="#3a2a20" stroke-width="3" stroke-linecap="round"></path><circle cx="16" cy="36" r="3.5" fill="#ff8fb8"></circle><circle cx="44" cy="36" r="3.5" fill="#ff8fb8"></circle></svg>
+<div style="font-weight: 600; font-size: 15px; text-align: center; line-height: 1.1">{{s.name}}</div>
+</sc-if>
+<sc-if value="{{s.missing}}" hint-placeholder-val="{{false}}">
+<svg width="60" height="60" viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="32" r="22" fill="#e9dcc4"></circle><text x="30" y="42" text-anchor="middle" font-family="Baloo 2" font-weight="800" font-size="28" fill="#a08a6a">?</text></svg>
+<div style="font-weight: 500; font-size: 13px; text-align: center; color: #6b5444; line-height: 1.1">{{s.hint}}</div>
+</sc-if>
+<sc-if value="{{s.isNew}}" hint-placeholder-val="{{false}}">
+<span style="position: absolute; top: -10px; right: -6px; background: #8a5cf6; color: #ffffff; border: 2px solid #3a2a20; border-radius: 999px; padding: 2px 8px; font-size: 13px; font-weight: 600">New!</span>
+</sc-if>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; background: #ffe7a8; border: 3px solid #3a2a20; border-radius: 18px; padding: 8px 12px">
+<svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true" style="flex: none"><rect x="4" y="4" width="28" height="28" rx="6" fill="none" stroke="#ffb020" stroke-width="5"></rect><rect x="4" y="4" width="28" height="28" rx="6" fill="none" stroke="#3a2a20" stroke-width="2"></rect></svg>
+<span style="font-size: 16px; font-weight: 500">Fill the page to win a golden frame and a new song!</span>
+</div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: 'animals' }; }
+  renderVals() {
+    const pages = {
+      animals: { title: 'Farm friends', items: [
+        { name: 'Buffalo', color: '#9aa6b8', have: true },
+        { name: 'Hen', color: '#ffffff', have: true },
+        { name: 'Duck', color: '#ffe066', have: true, isNew: true },
+        { name: 'Dog', color: '#e3a36a', have: true },
+        { name: 'Cat', color: '#ffb020', have: true },
+        { hint: 'Lives by the pond' },
+        { name: 'Pig', color: '#ffb3c7', have: true },
+        { hint: 'Says "baa"' },
+        { hint: 'Hops in the rice field' } ] },
+      food: { title: 'Yummy dishes', items: [
+        { name: 'Phở', color: '#ffe7a8', have: true },
+        { name: 'Bánh xèo', color: '#ffb020', have: true, isNew: true },
+        { hint: 'Cook with Grandma Năm' },
+        { name: 'Mango', color: '#ffcf33', have: true },
+        { hint: 'From the market' }, { hint: 'At the Moon festival' },
+        { hint: 'In China Town' }, { hint: 'Crunchy and green' }, { hint: 'A hot summer treat' } ] },
+      places: { title: 'Places I visited', items: [
+        { name: 'Lotus Village', color: '#ff6fae', have: true },
+        { name: 'Hà Nội', color: '#d9573f', have: true },
+        { hint: 'Over the river' }, { hint: 'Far in the south' }, { name: 'Sydney', color: '#29b6f6', have: true },
+        { hint: 'Up the mountain' }, { hint: 'By the sea' }, { hint: 'Red lanterns' }, { hint: 'Spicy food' } ] },
+      fest: { title: 'Festivals', items: [
+        { name: 'Moon festival', color: '#ffb020', have: true },
+        { hint: 'New year' }, { hint: 'Lantern night' }, { hint: 'Kite day' }, { hint: 'Christmas' },
+        { hint: 'Boat race' }, { hint: 'Flower fair' }, { hint: 'Water day' }, { hint: 'Dragon dance' } ] }
+    };
+    const labels = [['animals', 'Animals'], ['food', 'Food'], ['places', 'Places'], ['fest', 'Festivals']];
+    const tabColors = { animals: '#43c463', food: '#ffb020', places: '#29b6f6', fest: '#8a5cf6' };
+    const tabs = labels.map(([id, label]) => {
+      const on = this.state.tab === id;
+      return { label, on: on ? 'true' : 'false', pick: () => this.setState({ tab: id }),
+        style: "font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; height: 48px; border-radius: 16px; border: 3px solid #3a2a20; color: " + (on ? '#ffffff' : '#3a2a20') + '; background: ' + (on ? tabColors[id] : '#fff6e4') + '; box-shadow: 0 ' + (on ? '1px' : '4px') + ' 0 #3a2a20' };
+    });
+    const p = pages[this.state.tab];
+    const items = p.items.map((s) => ({ ...s, have: !!s.have, missing: !s.have, isNew: !!s.isNew,
+      bg: s.have ? '#ffffff' : '#f6ecd8', border: s.have ? 'solid' : 'dashed' }));
+    const got = items.filter((s) => s.have).length;
+    return { tabs, items, got, pageTitle: p.title, pct: Math.round(got / 9 * 100) + '%' };
+  }
+}
+</script>
+</body>
+</html>

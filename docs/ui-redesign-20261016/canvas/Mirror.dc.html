@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mirror</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&amp;family=Fredoka:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#8a5cf6}a:hover{color:#5b34c4}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #cfeefc; font-family: 'Fredoka', sans-serif; color: #3a2a20; padding: 20px 14px; display: flex; flex-direction: column; gap: 12px">
+
+<div style="display: flex; justify-content: space-between; align-items: center">
+<div style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 28px; line-height: 1">Mirror · Gương</div>
+<a href="HUD.dc.html" aria-label="Close" style="width: 52px; height: 52px; border-radius: 50%; background: #ff6fae; border: 3px solid #3a2a20; box-shadow: 0 5px 0 #c2407e; display: flex; align-items: center; justify-content: center; box-sizing: border-box"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></a>
+</div>
+
+<div style="background: #fff6e4; border: 3px solid #3a2a20; border-radius: 120px 120px 32px 32px; box-shadow: 0 6px 0 #3a2a20; height: 330px; display: flex; align-items: flex-end; justify-content: center; position: relative; overflow: hidden">
+<svg width="220" height="300" viewBox="0 0 220 300" role="img" aria-label="Na in the mirror">
+<ellipse cx="110" cy="292" rx="70" ry="8" fill="#e9dcc4"></ellipse>
+<rect x="80" y="230" width="22" height="58" rx="10" fill="#3a6ea5" stroke="#3a2a20" stroke-width="3"></rect>
+<rect x="118" y="230" width="22" height="58" rx="10" fill="#3a6ea5" stroke="#3a2a20" stroke-width="3"></rect>
+<path d="M62 150 Q110 128 158 150 L166 240 Q110 254 54 240 Z" fill="{{topColor}}" stroke="#3a2a20" stroke-width="3.5" stroke-linejoin="round"></path>
+<circle cx="110" cy="98" r="52" fill="#ffd9b8" stroke="#3a2a20" stroke-width="3.5"></circle>
+<path d="M60 92 Q66 44 110 44 Q154 44 160 92 Q140 70 110 72 Q80 70 60 92 Z" fill="#3a2a20"></path>
+<circle cx="92" cy="102" r="6" fill="#3a2a20"></circle>
+<circle cx="128" cy="102" r="6" fill="#3a2a20"></circle>
+<path d="M98 122 Q110 132 122 122" fill="none" stroke="#3a2a20" stroke-width="3.5" stroke-linecap="round"></path>
+<circle cx="80" cy="118" r="7" fill="#ff8fb8"></circle>
+<circle cx="140" cy="118" r="7" fill="#ff8fb8"></circle>
+<sc-if value="{{hatOn}}" hint-placeholder-val="{{true}}">
+<path d="M48 64 Q110 -6 172 64 Z" fill="{{hatColor}}" stroke="#3a2a20" stroke-width="3.5" stroke-linejoin="round"></path>
+</sc-if>
+</svg>
+<span style="position: absolute; top: 18px; left: 50%; transform: translateX(-50%); background: #ffffff; border: 3px solid #3a2a20; border-radius: 16px; padding: 4px 12px; font-weight: 600; font-size: 16px; white-space: nowrap">{{wearing}}</span>
+</div>
+
+<div role="tablist" aria-label="Clothes" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="2">
+<button type="button" role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+</sc-for>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{items}}" as="it" hint-placeholder-count="6">
+<button type="button" aria-pressed="{{it.on}}" onClick="{{it.toggle}}" style="{{it.style}}">
+<svg width="52" height="44" viewBox="0 0 52 44" aria-hidden="true"><path d="{{it.shape}}" fill="{{it.color}}" stroke="#3a2a20" stroke-width="3" stroke-linejoin="round"></path></svg>
+<span style="font-weight: 600; font-size: 15px; line-height: 1.1; text-align: center">{{it.name}}</span>
+</button>
+</sc-for>
+</div>
+
+<div style="font-size: 15px; color: #3d5a6c; text-align: center">Tap to wear · tap again to take off</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: 'hats', hat: 'nonla', top: 'pink' }; }
+  renderVals() {
+    const hatShape = 'M4 36 Q26 2 48 36 Z';
+    const topShape = 'M8 12 L18 6 Q26 12 34 6 L44 12 L40 22 L36 20 L36 40 L16 40 L16 20 L12 22 Z';
+    const sets = {
+      hats: [
+        { id: 'nonla', name: 'Nón lá', color: '#f2d38a' },
+        { id: 'red', name: 'Red cap', color: '#ff5a6a' },
+        { id: 'crown', name: 'Crown', color: '#ffb020' },
+        { id: 'flower', name: 'Flower hat', color: '#ff6fae' },
+        { id: 'sun', name: 'Sun hat', color: '#ffe7a8' },
+        { id: 'star', name: 'Star hat', color: '#8a5cf6' } ],
+      tops: [
+        { id: 'pink', name: 'Pink top', color: '#ff6fae' },
+        { id: 'aobaba', name: 'Áo bà ba', color: '#8a5cf6' },
+        { id: 'green', name: 'Leaf top', color: '#43c463' },
+        { id: 'sky', name: 'Sky top', color: '#29b6f6' },
+        { id: 'gold', name: 'Sunny top', color: '#ffb020' },
+        { id: 'cream', name: 'Cream top', color: '#fff6e4' } ]
+    };
+    const tab = this.state.tab;
+    const slot = tab === 'hats' ? 'hat' : 'top';
+    const items = sets[tab].map((it) => {
+      const on = this.state[slot] === it.id;
+      return { ...it, shape: tab === 'hats' ? hatShape : topShape, on: on ? 'true' : 'false',
+        toggle: () => this.setState({ [slot]: on ? null : it.id }),
+        style: "font-family: 'Fredoka', sans-serif; color: #3a2a20; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px 8px; border-radius: 22px; border: 3px solid #3a2a20; background: " + (on ? '#ffe7a8' : '#ffffff') + '; box-shadow: ' + (on ? '0 0 0 5px #ffb020' : '0 4px 0 #3a2a20') };
+    });
+    const tabs = [['hats', 'Hats · Mũ'], ['tops', 'Tops · Áo']].map(([id, label]) => {
+      const on = tab === id;
+      return { label, on: on ? 'true' : 'false', pick: () => this.setState({ tab: id }),
+        style: "font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 18px; height: 50px; border-radius: 18px; border: 3px solid #3a2a20; color: " + (on ? '#ffffff' : '#3a2a20') + '; background: ' + (on ? '#29b6f6' : '#fff6e4') + '; box-shadow: 0 ' + (on ? '1px' : '4px') + ' 0 #3a2a20' };
+    });
+    const hat = sets.hats.find((h) => h.id === this.state.hat);
+    const top = sets.tops.find((t) => t.id === this.state.top);
+    const parts = [hat && hat.name, top && top.name].filter(Boolean);
+    return { tabs, items, hatOn: !!hat, hatColor: hat ? hat.color : '#ffffff',
+      topColor: top ? top.color : '#ffffff', wearing: parts.length ? parts.join(' + ') : 'Pick something to wear!' };
+  }
+}
+</script>
+</body>
+</html>

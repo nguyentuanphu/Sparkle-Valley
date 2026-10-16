@@ -13,6 +13,7 @@ import { pic, hasArt as hasPic } from './art.js';
 import { SFX } from './audio.js';
 import { say } from './voice.js';
 import { explain as explainBrief } from './explain.js';
+import * as feel from './feel.js';
 
 export const EMOTES = [
   { id: 'hi', icon: '👋', en: 'Hi!', vi: 'Xin chào!' },
@@ -125,7 +126,9 @@ export class Hud {
     EMOTES.forEach(e => { const b = el('button', 'em', `<span>${e.icon}</span><small>${esc(T(e.en, e.vi))}</small>`); b.onclick = () => { this.toggleEmotes(false); game.emote(i, e.id); }; em.appendChild(b); });
     this.regionT = 0; this.toastT = 0; this.last = {};
     this.refreshWho();
-    this.navWatch = new ResizeObserver(() => this.fitQuest()); this.navWatch.observe(this.q('.hud-tr'));
+    this.navWatch = new ResizeObserver(() => this.fitQuest()); this.navWatch.observe(this.q('.hud-tr')); this.navWatch.observe(this.q('.hud-tl')); this.navWatch.observe(this.q('.quest')); // (r80: the adventure card and the language change their widths)
+    // (daily adventure, chat C, 16 Oct AEDT) the goal card: js/adventure.js is loaded once, for every player's HUD
+    if (!game.adventure && !game._advLoad) game._advLoad = import('./adventure.js').then(m => m.createAdventure(game)).catch(e => console.warn('daily adventure', e));
   }
   refreshAudio() {
     const s = this.game.settings, m = this.q('.dk.mus'), d = this.q('.dk.snd');
@@ -134,7 +137,17 @@ export class Hud {
   foldQuest() { const f = !!this.hero.profile.questFold, q = this.q('.quest'); q.classList.toggle('fold', f); this.q('.q-say').setAttribute('aria-label', f ? T('Show the goal', 'Hiện nhiệm vụ') : T('Hide the goal', 'Ẩn nhiệm vụ')); this.fitQuest(); }
   fitQuest() {
     const root = this.root, nav = this.q('.hud-tr'), quest = this.q('.quest');
-    if (!root.classList.contains('small')) { root.classList.remove('quest-below-nav'); return; }
+    // (r80, GitHub run 66: on a tablet in Vietnamese the goal row, made wider by the adventure card, sat over the Leafy
+    // chip) bigger screens: the goal row stays centred, unless that would reach the corners: then it fills the space
+    // between them (the coins and the player card on the left, the map and buttons on the right)
+    if (!root.classList.contains('small')) {
+      root.classList.remove('quest-below-nav', 'quest-gap');
+      // (its width from the layout, not from the screen: the goal row's arrival animation scales it)
+      const rr = root.getBoundingClientRect(), tl = this.q('.hud-tl').getBoundingClientRect(), tr = nav.getBoundingClientRect(), w = quest.offsetWidth, mid = root.clientWidth / 2;
+      const L = tl.right - rr.left + 12, R = tr.left - rr.left - 12;
+      if (w && (mid - w / 2 < L || mid + w / 2 > R)) { root.style.setProperty('--quest-x', Math.round((L + R) / 2) + 'px'); root.style.setProperty('--quest-gap-w', Math.max(200, Math.round(R - L)) + 'px'); root.classList.add('quest-gap'); }
+      return;
+    }
     const reserve = nav.offsetWidth + (parseFloat(getComputedStyle(nav).right) || 0) + (parseFloat(getComputedStyle(quest).left) || 0) + 14;
     root.style.setProperty('--quest-nav-reserve', reserve + 'px');
     root.style.setProperty('--quest-below-top', (nav.offsetTop + nav.offsetHeight + 12) + 'px');
@@ -147,10 +160,12 @@ export class Hud {
     this.root.classList.toggle('far', r.rot === 180);   // (two players face to face: this half is turned to the far end)
     const small = two || r.w < 560 || r.h < 420; this.root.classList.toggle('small', small); this.rect = r;
     // Audio and the microphone always stay below navigation, on desktop as on phones.
-    const tools = this.q('.tools'), dock = this.q('.dock'), chat = this.q('.dk.chat');
-    const chatHome = small ? tools : dock; if (chat.parentNode !== chatHome) chatHome.appendChild(chat);
+    const tools = this.q('.tools'), chat = this.q('.dk.chat');
+    // (r79, owner 16 Oct: "move chat up there too") on every screen the chat button sits beside the speaker under the map,
+    // so the Audio switches line up under the two of them the same way on a phone, a tablet and a computer
+    if (chat.parentNode !== tools) tools.appendChild(chat);
     for (const k of ['snd', 'call', 'mus']) { const b = this.q('.dk.' + k); if (b.parentNode !== tools) tools.appendChild(b); }
-    if (small) { const audio = this.q('.dk.snd'); if (tools.firstElementChild !== audio) tools.prepend(audio); if (chat.previousElementSibling !== audio) tools.insertBefore(chat, audio.nextSibling); }
+    { const audio = this.q('.dk.snd'); if (tools.firstElementChild !== audio) tools.prepend(audio); if (chat.previousElementSibling !== audio) tools.insertBefore(chat, audio.nextSibling); }
     this.fitQuest();
   }
   showRegion(name) { const e = this.q('.region'); e.textContent = name; e.classList.remove('show'); void e.offsetWidth; e.classList.add('show'); }
@@ -171,6 +186,8 @@ export class Hud {
 
   update(dt, camera, fogMap, markers) {
     const h = this.hero, p = h.profile;
+    // under-5s: the action button's picture breathes (css: feel and sound)
+    { const lt = p.age !== 'big'; if (this.last.little !== lt) { this.root.classList.toggle('little', lt); this.last.little = lt; } }
     // (batch rollout) the "Where is…?" button waits for its batch day (Studio switch 'wayfind'), unless a child playing used it
     { const w = !this.game.keep || this.game.keep('wayfind'); if (this.last.where !== w) { const b = this.q('.z-where'); if (b) b.style.display = w ? '' : 'none'; this.last.where = w; } }
     // hearts
@@ -183,12 +200,22 @@ export class Hud {
     if (this.last.m !== mk) {
       this.q('.chip.c-money').innerHTML = '<i>🪙</i>' + fmt(farm.coins); this.q('.chip.c-orbs').innerHTML = '<i>🔮</i>' + p.orbs; this.q('.chip.c-leafy').innerHTML = '<i>🍃</i>' + Object.keys(p.leafies).length;
       if (this.last.m) this.q('.chips').classList.add('bump'), setTimeout(() => this.q('.chips').classList.remove('bump'), 400);
-      this.last.m = mk;
+      // (feel and sound, owner plan 16 Oct AEDT) what was earned flies into its counter from where the child last
+      // tapped (js/feel.js). Coins are shared, so only the first player's screen shows them flying.
+      const nums = [farm.coins, p.orbs, Object.keys(p.leafies).length];
+      if (this.last.m && this.nums) [['coin', '.chip.c-money'], ['orb', '.chip.c-orbs'], ['leaf', '.chip.c-leafy']].forEach(([kind, sel], k) => {
+        const d = nums[k] - this.nums[k]; if (d <= 0 || (k === 0 && this.i !== 0)) return;
+        // a phone hides the counters: then they fly into the player's card
+        const chip = this.q(sel), to = chip && chip.getClientRects().length && getComputedStyle(chip).visibility !== 'hidden' ? chip : this.q('.pcard');
+        feel.reward(kind, null, to, k === 0 ? Math.ceil(Math.min(d, 50) / 10) : d);
+      });
+      this.nums = nums; this.last.m = mk;
     }
     // objective + clock
     const obj = this.game.objective(h), qi = this.game.objectiveIcon(h);
     if (this.last.o !== obj) { this.q('.q-text').textContent = obj || ''; this.q('.q-icon').textContent = qi || '📍'; this.q('.quest').hidden = !obj; this.last.o = obj; this.q('.quest').classList.remove('new'); void this.q('.quest').offsetWidth; this.q('.quest').classList.add('new'); this.foldQuest(); }
     this.q('.q-go').hidden = !this.game.questTarget(h);
+    if (this.game.adventure) this.game.adventure.hud(this);   // (daily adventure) the goal card takes the goal row while today's adventure is on
     // (Round V, owner 13 Oct) a family mission that has started (told to the child, not done yet) shows under the quest too
     const P = this.game.parents, fm = P && P.openFor ? P.openFor(p).find(m => (p.missionsSeen || []).includes(m.id)) : null, fk = fm ? fm.id + ':' + T('e', 'v') : '';
     if (this.last.fm !== fk) { this.last.fm = fk; const b = this.q('.q-fam'); b.hidden = !fm; if (fm) { b.innerHTML = `${pic(fm.icon || '📝')}<span><b>${esc(T('Family mission', 'Nhiệm vụ gia đình'))}</b> ${esc(T(fm.en, fm.vi))}</span>`; b.setAttribute('aria-label', T('Family mission: ', 'Nhiệm vụ gia đình: ') + T(fm.en, fm.vi)); } }

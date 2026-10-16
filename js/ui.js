@@ -11,19 +11,23 @@ import { el, esc, $, clamp, wait, local } from './util.js';
 import { familyDevicesHTML, bindFamilyDevices } from './familydevices.js';
 import { familyCode, setFamilyCode, familyPhotoCount, featureOn } from './custom.js';
 const familyTrialOn = () => featureOn('familyDevices', false) || !!window.__sv?.tester;
-import { DEFAULT_OUTFITS, outfitOf, CLOTHES, ITEM, owns, wear as wearItem } from './content/shop.js'; // (round S, owner plan 8 Oct) two starting outfits when the clothes shop is on
+import { DEFAULT_OUTFITS, outfitOf, CLOTHES, ITEM, SLOTS as WEAR_SLOTS, owns, wear as wearItem, giveGift, setOf as setOfLook } from './content/shop.js'; // (round S, owner plan 8 Oct) two starting outfits when the clothes shop is on
 import { avatarURL, applyNpcFaces, namedVillagers } from './avatar.js';
 import { confetti, holdButton } from './popups.js';
 export { holdButton }; // (round R privacy, 9 Oct) moved to popups.js so the real-place window can ask a grown-up too
-import { placeBookHTML, bindPlaceBook } from './placebook.js';
+// (sticker book, chat B 16 Oct) the Album tab is the sticker book (js/stickers.js, js/content/stickers.js)
+import { sync as sbSync, has as sbHas, freshIds as sbFresh, seen as sbSeen, isShiny as sbIsShiny, pageCount as sbPageCount, pageFull as sbPageFull, welcome as sbWelcome, claimPrize as sbClaimPrize, prizeWon as sbPrizeWon } from './stickers.js';
+import { THEMES as SB_THEMES, PAGES as SB_PAGES, BY_ID as SB_BY_ID, BOOK_LINES as SB_LINES } from './content/stickers.js';
+import { playSound as stickerSound, sayName as stickerName } from './stickerfx.js';
+// the page each child had open (UX-004: the book opens where it was left)
+const sbAt = { theme: 'farm', page: {} };
 import { familyCardsHTML, bindFamilyCards } from './familycards.js';
 import { openReport } from './report.js';
-import { ITEMS, RECIPES, findRecipe, SHOP, HAT_ICON, HAT_NAME, REWARD_HATS, dishInfo, QUESTS, STICKERS } from './data.js';
+import { ITEMS, RECIPES, findRecipe, SHOP, HAT_ICON, HAT_NAME, REWARD_HATS, dishInfo, QUESTS } from './data.js';
 import { SIZE, HALF, SHRINES, TOWERS, WATER, heightAt, regionAt, RIVERS, PONDS, ROADS } from './world.js';
 import { LANDMARK_HOME, ROAD_TONES } from './content/map.js';
 import { GAMES } from './games/frame.js';
 import { showStory, storyList } from './story.js';
-import { SECRETS } from './secrets.js';
 import { LANDMARKS, VENDORS } from './regions.js';
 import { AUSSIE_SLANG, VN_WORDS, VN_SLANG } from './words.js';
 import { openCredits } from './credits.js';
@@ -338,6 +342,7 @@ export function openGrownups(after) {
         <label class="tog"><input type="checkbox" id="gVoice" ${settings.voice ? 'checked' : ''}> ${T('Talking voice', 'Giọng nói')}</label>
         <label class="tog"><input type="checkbox" id="gMusic" ${settings.music ? 'checked' : ''}> ${T('Music', 'Nhạc')}</label>
         <label class="tog"><input type="checkbox" id="gSound" ${settings.sound ? 'checked' : ''}> ${T('Sound effects', 'Hiệu ứng âm thanh')}</label>
+        <label class="tog"><input type="checkbox" id="gTapSnd" ${settings.tapSounds === false ? '' : 'checked'}> ${T('Tap sounds: a soft sound on every button', 'Tiếng bấm: tiếng nhẹ khi bấm mỗi nút')}</label>
       </div>
 <h3>🎙️ ${T('Voices', 'Giọng nói')}</h3>
       ${packStatusHTML()}
@@ -376,6 +381,12 @@ export function openGrownups(after) {
 <h3>🌙 ${T('Rest time', 'Giờ nghỉ')}</h3>
       <p class="note">${T('After this much play in a day, the explorer yawns and says goodnight. A grown-up can hold a button for 10 more minutes. Counted on this device only.', 'Sau khoảng thời gian chơi này trong ngày, nhà thám hiểm sẽ ngáp và chúc ngủ ngon. Người lớn có thể giữ nút để chơi thêm 10 phút. Chỉ tính trên máy này.')} ${T('Today', 'Hôm nay')}: ${Math.round(settings.playDay === new Date().toDateString() ? settings.playMins || 0 : 0)} ${T('min', 'phút')}</p>
       <div class="seg rest">${['0', '15', '30', '45', '60'].map(k => `<button data-r="${k}" class="${String(settings.restMins || '0') === k ? 'on' : ''}">${k === '0' ? T('Off', 'Tắt') : k + ' ' + T('min', 'phút')}</button>`).join('')}</div>
+      <h3>🧭 ${T('Daily adventure', 'Phiêu lưu mỗi ngày')}</h3>
+      <div class="toggles"><label class="tog"><input type="checkbox" id="gAdv" ${settings.dailyAdventure === false ? '' : 'checked'}> ${T('A new three-step adventure every day, with a chest at the end', 'Mỗi ngày một chuyến phiêu lưu ba bước, cuối cùng có rương báu')}</label></div>
+      <p class="note">${T('A new adventure starts:', 'Phiêu lưu mới bắt đầu:')}</p>
+      <div class="seg advday">${[['first', T('When the child first plays', 'Khi bé chơi lần đầu trong ngày')], ['6am', T('At 6 am', 'Lúc 6 giờ sáng')], ['midnight', T('At midnight', 'Lúc nửa đêm')]].map(([k, l]) => `<button data-d="${k}" class="${(settings.advDay || 'first') === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+      <p class="note">${T('For children 5 and over. Tricky adds a sand timer for bonus coins (never a loss); under-5s never have a timer.', 'Cho bé từ 5 tuổi. Thử thách thêm đồng hồ cát để được thưởng thêm (không bao giờ bị thua); bé dưới 5 tuổi không có đồng hồ.')}</p>
+      <div class="seg advlvl">${[['gentle', T('Gentle', 'Nhẹ nhàng')], ['tricky', T('Tricky', 'Thử thách')]].map(([k, l]) => `<button data-l="${k}" class="${(settings.advLevel || 'gentle') === k ? 'on' : ''}">${l}</button>`).join('')}</div>
       
       </div></details>
       <details class="gsec" data-sec="money" ${gOpen.has('money') ? 'open' : ''}><summary><span class="gi">💰</span><b>${T('Money and farm', 'Tiền và nông trại')}</b></summary><div class="gbody">
@@ -479,7 +490,11 @@ export function openGrownups(after) {
     card.querySelectorAll('.seg.tview button').forEach(b => b.onclick = () => { settings.twoView = b.dataset.tv; saveSettings(); dispatchEvent(new Event('resize')); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.tsize button').forEach(b => b.onclick = () => { settings.textSize = +b.dataset.ts; saveSettings(); applyComfort(); const y = m.scrollTop; draw(); m.scrollTop = y; });
     card.querySelectorAll('.seg.rest button').forEach(b => b.onclick = () => { settings.restMins = b.dataset.r; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
-    chk('#gBil', 'bilingual'); chk('#gVoice', 'voice'); chk('#gMusic', 'music', () => settings.music ? Music.refresh() : Music.stop()); chk('#gSound', 'sound'); chk('#gDay', 'alwaysDay');
+    // (daily adventure, chat C) on or off, when a new day starts, Gentle or Tricky
+    chk('#gAdv', 'dailyAdventure');
+    card.querySelectorAll('.seg.advday button').forEach(b => b.onclick = () => { settings.advDay = b.dataset.d; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
+    card.querySelectorAll('.seg.advlvl button').forEach(b => b.onclick = () => { settings.advLevel = b.dataset.l; saveSettings(); const y = m.scrollTop; draw(); m.scrollTop = y; });
+    chk('#gBil', 'bilingual'); chk('#gVoice', 'voice'); chk('#gMusic', 'music', () => settings.music ? Music.refresh() : Music.stop()); chk('#gSound', 'sound'); chk('#gTapSnd', 'tapSounds'); chk('#gDay', 'alwaysDay');
     card.querySelector('#vEn').onchange = e => { settings.voiceEn = e.target.value; saveSettings(); };
     card.querySelector('#vVi').onchange = e => { settings.voiceVi = e.target.value; saveSettings(); };
     card.querySelectorAll('[data-try]').forEach(b => b.onclick = () => {
@@ -727,14 +742,14 @@ export function openPad(game, i, tab) {
   const hero = game.heroes[i], p = hero.profile;
   const m = modal('pad', '');
   const card = m.querySelector('.card');
-  const TABS = [['map', '🗺️', T('Map', 'Bản đồ')], ['bag', '🎒', T('Backpack', 'Ba lô')], ['log', '📜', T('Adventures', 'Nhiệm vụ')], ['album', '⭐', T('Album', 'Bộ sưu tập')], ['passport', '🛂', T('Passport', 'Hộ chiếu')], ['games', '🎲', T('Games', 'Trò chơi')], ['cam', '📷', T('Camera', 'Máy ảnh')], ['cal', '📅', T('Festivals', 'Lễ hội')]];
+  const TABS = [['map', '🗺️', T('Map', 'Bản đồ')], ['bag', '🎒', T('Backpack', 'Ba lô')], ['log', '📜', T('Adventures', 'Nhiệm vụ')], ['album', '⭐', T('Stickers', 'Hình dán')], ['passport', '🛂', T('Passport', 'Hộ chiếu')], ['games', '🎲', T('Games', 'Trò chơi')], ['cam', '📷', T('Camera', 'Máy ảnh')], ['cal', '📅', T('Festivals', 'Lễ hội')]];
   if (game.mode === 'online' || game.mode === 'solo') TABS.push(['friend', '📞', T('Friend', 'Bạn bè')]);
   // (Round V, owner 13 Oct: "the shop button should be right next to the bag") a Shop tab straight after Backpack opens the
   // clothes shop right there (no travel); it replaces the dock's Shop button
   if (game.shop && game.shop.on() && game.heroes.length < 2) TABS.splice(TABS.findIndex(t => t[0] === 'bag') + 1, 0, ['shop', '🛍️', T('Shop', 'Cửa hàng')]);
   const draw = () => {
     const sl = card.querySelector('.pad-tabs') ? card.querySelector('.pad-tabs').scrollLeft : 0;
-    card.innerHTML = `<div class="pad-head"><div class="pad-tabs">${TABS.map((t, k) => `<button data-t="${t[0]}" class="${t[0] === tab ? 'on' : ''}"><span>${pic(t[1])}</span><small>${t[2]}<kbd class="padkey">${k + 1}</kbd></small></button>`).join('')}</div><button class="x" aria-label="${T('Close', 'Đóng')}">✕<kbd class="padkey">Esc</kbd></button></div><div class="pad-body"></div>`;
+    card.innerHTML = `<div class="pad-head"><div class="pad-tabs">${TABS.map((t, k) => `<button data-t="${t[0]}" class="${t[0] === tab ? 'on' : ''}"><span>${pic(t[1])}${t[0] === 'album' && sbFresh(p).length ? `<i class="stk-count" aria-label="${T(`${sbFresh(p).length} new stickers`, `${sbFresh(p).length} hình dán mới`)}">${sbFresh(p).length}</i>` : ''}</span><small>${t[2]}<kbd class="padkey">${k + 1}</kbd></small></button>`).join('')}</div><button class="x" aria-label="${T('Close', 'Đóng')}">✕<kbd class="padkey">Esc</kbd></button></div><div class="pad-body"></div>`;
     card.querySelector('.pad-tabs').scrollLeft = sl;
     card.querySelectorAll('.pad-tabs button').forEach(b => b.onclick = () => { SFX.tap(); tab = b.dataset.t; draw(); });
     card.querySelector('.x').onclick = close;
@@ -892,12 +907,16 @@ export function openPad(game, i, tab) {
       <h3>${T('Ingredients', 'Nguyên liệu')}</h3>
       <div class="slots">${items.map(([id, n]) => `<button class="slot" data-ing="${id}" title="${esc(ingInfo(id)[0])}"><span>${ITEMS[id].icon}</span><b>${n}</b><small>${esc(ITEMS[id].name())}</small></button>`).join('') || `<p class="note">${T('Empty! Shake apple trees and look for herbs and mushrooms.', 'Trống trơn! Rung cây táo và tìm rau thơm, nấm nhé.')}</p>`}</div>
       ${(() => { const SLOT_ICON = { hat: '👒', neck: '📿', top: '👕', bottom: '👖', feet: '👟', back: '🪽' }; // (Round U, owner 11 Oct: everything bought shows here until it is worn) the clothes and accessories the child owns
-        const itemSVG = it => game.shop && game.shop.itemSVG ? game.shop.itemSVG(it) : pic(SLOT_ICON[it.slot] || '👕'), mine = CLOTHES.filter(it => owns(p, it.id)), off = mine.filter(it => p.look[it.slot] !== it.id), on = mine.filter(it => p.look[it.slot] === it.id);
+        const itemSVG = it => game.shop && game.shop.itemSVG ? game.shop.itemSVG(it) : pic(SLOT_ICON[it.slot] || '👕'), mine = CLOTHES.filter(it => owns(p, it.id) && it.for === (setOfLook(p.look) === 'girl' ? 'g' : 'b')), off = mine.filter(it => p.look[it.slot] !== it.id), on = mine.filter(it => p.look[it.slot] === it.id);
         const hats = HATS.concat(REWARD_HATS.filter(h => p.owned.hats.includes(h))).filter(h => h !== 'none' && !ITEM[h]);
         return `<h3>${pic('👕')} ${T('Clothes and accessories', 'Quần áo và phụ kiện')} <small>${T('tap to wear', 'chạm để mặc')}</small></h3>
       <div class="slots">${off.map(it => `<button class="slot" data-wear="${it.id}" title="${esc(T(it.en, it.vi))}">${itemSVG(it)}<small>${esc(T(it.en, it.vi))}</small></button>`).join('')}${hats.filter(h => p.look.hat !== h).map(h => `<button class="slot" data-hat="${h}"><span>${HAT_ICON[h]}</span><small>${esc(HAT_NAME[h]())}</small></button>`).join('')}${!off.length && !hats.filter(h => p.look.hat !== h).length ? `<p class="note">${T('Everything you have is on! Find more at the clothes shop.', 'Con đang mặc hết đồ rồi! Ghé cửa hàng quần áo để mua thêm nhé.')}</p>` : ''}</div>
       ${on.length || (p.look.hat && p.look.hat !== 'none' && !ITEM[p.look.hat]) ? `<h3>${T('Wearing now', 'Đang mặc')} <small>${T('tap to take off', 'chạm để cởi ra')}</small></h3>
       <div class="slots">${on.map(it => `<button class="slot on" data-unwear="${it.slot}" title="${esc(T(it.en, it.vi))}">${itemSVG(it)}<small>${esc(T(it.en, it.vi))}</small></button>`).join('')}${p.look.hat && p.look.hat !== 'none' && !ITEM[p.look.hat] && HAT_ICON[p.look.hat] ? `<button class="slot on" data-hat="none"><span>${HAT_ICON[p.look.hat]}</span><small>${esc(HAT_NAME[p.look.hat] ? HAT_NAME[p.look.hat]() : '')}</small></button>` : ''}</div>` : ''}`; })()}
+      ${(() => { // (r79, owner 16 Oct) clothes of the other set, bought to give away: wrapped gift boxes, one tile for each kind
+        const gifts = (p.owned && p.owned.gifts || []).filter(id => ITEM[id]), kinds = [...new Set(gifts)];
+        return kinds.length ? `<h3>🎁 ${T('Gifts to give', 'Quà để tặng')} <small>${T('tap to give', 'chạm để tặng')}</small></h3>
+      <div class="slots">${kinds.map(id => { const it = ITEM[id], n = gifts.filter(x => x === id).length; return `<button class="slot giftbox" data-gift="${id}" title="${esc(T(it.en, it.vi))}"><span>🎁</span>${n > 1 ? `<b>${n}</b>` : ''}<small>${esc(T(it.en, it.vi))}</small></button>`; }).join('')}</div>` : ''; })()}
       <h3>🪁 ${T('Whistling kite', 'Diều sáo')}</h3>
       <div class="slots">${p.kite ? `<button class="slot ${p.kiteOn !== false ? 'on' : ''}" data-kite="1"><span>🪁</span><small>${p.kiteOn !== false ? T('Flying', 'Đang bay') : T('Put away', 'Cất đi')}</small></button><button class="slot" data-whistle="1"><span>🎶</span><small>${T('Whistle!', 'Thổi sáo!')}</small></button>` : `<p class="note">${T('Win the Kite Flying game to get a kite with a bamboo flute that sings in the wind!', 'Thắng trò Thả Diều để nhận diều sáo hát vi vu trong gió!')}</p>`}</div>
       ${game.hoilang ? game.hoilang.bagHTML(p) : ''}
@@ -905,14 +924,18 @@ export function openPad(game, i, tab) {
       <div class="slots">${p.glider ? p.owned.gliders.map(g => `<button class="slot ${p.look.glider === g ? 'on' : ''}" data-gl="${g}"><span class="sw big" style="background:${GLIDERS[g]}"></span></button>`).join('') : `<p class="note">${T('Not yet! Ông Cú has something for you…', 'Chưa có! Ông Cú có món quà cho con đấy…')}</p>`}</div>`;
     jumpNav(body, body.querySelector('.bag-top')); // (owner, 13 Oct AEDT: the Backpack's section-button row back, after the tester's notes took it out)
     // (Round V, owner 13 Oct) food asks first ("Eat it?"); an ingredient says what it is and which dishes it makes
-    const helpCard = (name, art, en, vi, action, run) => {
+    // (r79, owner point 14: the "Eat it?" question was too big) food asks in one small row: the picture, "Eat it?" and the
+    // two buttons; what the food does is said aloud, not written out
+    const helpCard = (name, art, en, vi, action, run, small) => {
       body.querySelector('.bag-help')?.remove();
-      const c = el('div', 'bag-help', `<div>${art}<b>${esc(name)}</b></div><p>${esc(T(en, vi))}</p><div class="actions">${action ? `<button class="btn primary bh-act">${action}</button>` : ''}<button class="btn bh-close">${T('Not now', 'Để sau')}</button></div>`);
+      const c = small
+        ? el('div', 'bag-help bag-ask' + (p.age !== 'big' ? ' little' : ''), `${art}<b><span class="nm">${esc(name)}</span><small>${T('Eat it?', 'Ăn nhé?')}</small></b><button class="btn primary bh-act">${action}</button><button class="btn bh-close">${T('Not now', 'Để sau')}</button>`)
+        : el('div', 'bag-help', `<div>${art}<b>${esc(name)}</b></div><p>${esc(T(en, vi))}</p><div class="actions">${action ? `<button class="btn primary bh-act">${action}</button>` : ''}<button class="btn bh-close">${T('Not now', 'Để sau')}</button></div>`);
       c.setAttribute('role', 'region'); c.setAttribute('aria-label', name); body.appendChild(c); say(`${name}. ${en}`, `${name}. ${vi}`);
       c.querySelector('.bh-close').onclick = () => { c.remove(); run?.(false); };
       if (action) c.querySelector('.bh-act').onclick = () => { c.remove(); run?.(true); }; return c;
     };
-    const askEat = (name, icon, en, vi) => new Promise(resolve => { SFX.tap(); helpCard(name, pic(icon), en, vi, T('Eat', 'Ăn'), resolve); });
+    const askEat = (name, icon, en, vi) => new Promise(resolve => { SFX.tap(); helpCard(name, pic(icon), 'Eat it? ' + en, 'Ăn nhé? ' + vi, T('Eat', 'Ăn'), resolve, true); });
     body.querySelectorAll('[data-eat]').forEach(b => b.onclick = async () => { const r = dishInfo(b.dataset.eat) || { icon: '🥘', heal: 1, name: () => T('Mystery stew', 'Món hầm bí ẩn') };
       if (await askEat(r.name(), r.icon, `Restores up to ${r.heal} hearts and refills energy. Hearts only fall for older children on Hard.`, `Hồi tối đa ${r.heal} tim và nạp năng lượng. Chỉ trẻ lớn ở mức Khó mới mất tim.`)) game.eat(hero, b.dataset.eat); draw(); });
     body.querySelectorAll('[data-snack]').forEach(b => b.onclick = async () => { const v = snackOf(b.dataset.snack);
@@ -928,22 +951,41 @@ export function openPad(game, i, tab) {
     body.querySelectorAll('[data-hat]').forEach(b => b.onclick = () => { p.look.hat = b.dataset.hat; saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); });
     body.querySelectorAll('[data-wear]').forEach(b => b.onclick = () => { const it = ITEM[b.dataset.wear]; if (it && wearItem(p, it.slot, it.id)) { saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); } });
     body.querySelectorAll('[data-unwear]').forEach(b => b.onclick = () => { if (wearItem(p, b.dataset.unwear, 'none')) { saveProfiles(); game.rebuildHero(i); SFX.tap(); draw(); } });
+    // (r79) a gift box says what is inside and who it is for, and offers the players on this device it fits
+    body.querySelectorAll('[data-gift]').forEach(b => b.onclick = () => {
+      SFX.tap(); const id = b.dataset.gift, it = ITEM[id], girls = it.for === 'g', name = T(it.en, it.vi);
+      const friends = profiles.filter(q => q.id !== p.id && setOfLook(q.look) === (girls ? 'girl' : 'boy'));
+      const en = `A wrapped gift: ${it.en}, made for ${girls ? 'girls' : 'boys'}. ${friends.length ? 'Choose who to give it to.' : 'Give it to a friend when you play together: trade it at your market stall.'}`;
+      const vi = `Một món quà đã gói: ${it.vi}, dành cho ${girls ? 'bé gái' : 'bé trai'}. ${friends.length ? 'Chọn bạn để tặng nhé.' : 'Khi chơi cùng bạn, tặng ở sạp hàng của con nhé.'}`;
+      body.querySelector('.bag-help')?.remove();
+      const c = el('div', 'bag-help', `<div>${b.querySelector('svg, .art')?.outerHTML || ''}<b>${esc(name)}</b></div><p>${esc(T(en, vi))}</p><div class="actions">${friends.map(q => `<button class="btn primary bh-give" data-to="${q.id}">${T('Give to', 'Tặng')} ${esc(q.name)}</button>`).join('')}<button class="btn bh-close">${T('Not now', 'Để sau')}</button></div>`);
+      c.setAttribute('role', 'region'); c.setAttribute('aria-label', name); body.appendChild(c); say(en, vi);
+      c.querySelector('.bh-close').onclick = () => c.remove();
+      c.querySelectorAll('.bh-give').forEach(g => g.onclick = () => { const q = profiles.find(x => x.id === g.dataset.to), r = giveGift(p, q, id);
+        if (r.ok) { saveProfiles(true); SFX.ok(); say(`You gave ${it.en} to ${q.name}. How kind!`, `Con đã tặng ${it.vi} cho ${q.name}. Con tốt bụng quá!`); toast(T(`Given to ${q.name}`, `Đã tặng ${q.name}`)); } draw(); });
+    });
     body.querySelectorAll('[data-kite]').forEach(b => b.onclick = () => { p.kiteOn = p.kiteOn === false; saveProfiles(); game.kites.sync(); SFX.ok(); if (p.kiteOn) game.kites.whistle(hero); draw(); });
     body.querySelectorAll('[data-whistle]').forEach(b => b.onclick = () => { game.kites.whistle(hero); });
     game.hoilang && game.hoilang.bindBag(body, hero, draw); // (round S) carry a village festival prize, like the kite
     body.querySelectorAll('[data-gl]').forEach(b => b.onclick = () => { p.look.glider = +b.dataset.gl; saveProfiles(); game.rebuildHero(i); SFX.ok(); draw(); });
     // Help is the first tap; every change requires an explicit action inside the same Bag.
     for (const b of body.querySelectorAll('.slot')) {
-      if (b.dataset.eat || b.dataset.snack) continue;
+      if (b.dataset.eat || b.dataset.snack || b.dataset.gift) continue;
       const oldAction = b.onclick, name = b.querySelector('small')?.textContent || b.title || T('Item', 'Đồ dùng');
       const it = ITEM[b.dataset.wear], ingredient = b.dataset.ing, treasure = WILD[b.dataset.sellgem];
       let en = 'Keep this item in your Backpack and use its action when you need it.', vi = 'Giữ món này trong Ba lô và chọn hành động khi cần.';
+      // (r79, owner point 12) every kind of thing says what it is and what the button does
       if (it || b.dataset.hat || b.dataset.unwear) { en = 'Clothes and accessories change how your character looks.'; vi = 'Quần áo và phụ kiện thay đổi vẻ ngoài của nhân vật.'; }
+      if (it) { const sl = WEAR_SLOTS.find(x => x.id === it.slot); en = `Clothes from the shop (${sl ? sl.en.toLowerCase() : 'clothes'}). Tap Wear to put it on; the mirror in the Shop shows everything you own.`; vi = `Quần áo mua ở cửa hàng (${sl ? sl.vi.toLowerCase() : 'quần áo'}). Chạm Mặc để mặc vào; cái gương trong Cửa hàng cho xem mọi đồ con có.`; }
+      if (b.dataset.unwear) { en = 'You are wearing this now. Tap Take off to take it off; it stays in your Backpack.'; vi = 'Con đang mặc món này. Chạm Cởi ra để cởi; nó vẫn ở trong Ba lô.'; }
+      if (b.dataset.hat && b.dataset.hat !== 'none' && !ITEM[b.dataset.hat]) { en = 'A hat you won on an adventure. Tap Wear to put it on.'; vi = 'Chiếc mũ con giành được trong chuyến phiêu lưu. Chạm Mặc để đội.'; }
+      if (b.dataset.hat === 'none') { en = 'The hat you won, on your head now. Tap Take off to take it off.'; vi = 'Chiếc mũ con giành được, đang đội trên đầu. Chạm Cởi ra để bỏ mũ.'; }
+      if (b.dataset.hlcarry) { en = 'A prize you won at the village festival. Carry it to show everyone, or put it away. It is a keepsake in your house too.'; vi = 'Phần quà con giành được ở hội làng. Mang theo cho mọi người xem, hoặc cất đi. Nó cũng là kỷ vật trong nhà con.'; }
       if (b.dataset.gl) { en = 'Choose the colour of your glider for flying safely from high places.'; vi = 'Chọn màu cánh lượn để bay an toàn từ nơi cao.'; }
       if (b.dataset.kite || b.dataset.whistle) { en = 'Your whistling kite follows you; its bamboo flute sings in the wind.'; vi = 'Diều sáo bay theo con; sáo tre hát trong gió.'; }
       if (ingredient) { const info = ingInfo(ingredient); en = info[1]; vi = info[2]; }
       if (treasure) { en = `A treasure you found. Sell one for ${money(treasure.sell)} or keep it.`; vi = `Báu vật con tìm được. Bán một món lấy ${money(treasure.sell)} hoặc giữ lại.`; }
-      const action = treasure ? T('Sell one', 'Bán một') : b.dataset.unwear || b.dataset.hat === 'none' ? T('Remove', 'Bỏ ra') : b.dataset.wear || b.dataset.hat ? T('Wear', 'Mặc') : b.dataset.kite ? (p.kiteOn !== false ? T('Put away', 'Cất đi') : T('Fly', 'Thả diều')) : b.dataset.hlcarry ? (p.hoilang?.carryOn !== false && p.hoilang?.carry === b.dataset.hlcarry ? T('Put away', 'Cất đi') : T('Carry', 'Mang theo')) : b.dataset.whistle ? T('Whistle', 'Thổi sáo') : b.dataset.gl !== undefined ? T('Choose', 'Chọn') : T('Use', 'Dùng');
+      const action = treasure ? T('Sell one', 'Bán một') : b.dataset.unwear || b.dataset.hat === 'none' ? T('Take off', 'Cởi ra') : b.dataset.wear || b.dataset.hat ? T('Wear', 'Mặc') : b.dataset.kite ? (p.kiteOn !== false ? T('Put away', 'Cất đi') : T('Fly', 'Thả diều')) : b.dataset.hlcarry ? (p.hoilang?.carryOn !== false && p.hoilang?.carry === b.dataset.hlcarry ? T('Put away', 'Cất đi') : T('Carry', 'Mang theo')) : b.dataset.whistle ? T('Whistle', 'Thổi sáo') : b.dataset.gl !== undefined ? T('Choose', 'Chọn') : T('Use', 'Dùng');
       b.onclick = () => { const art = b.querySelector('svg, .art, .sw')?.outerHTML || ''; helpCard(name, art, en, vi, oldAction && !ingredient ? action : '', ok => { if (ok) { oldAction?.call(b); } }); };
     }
 
@@ -958,32 +1000,92 @@ export function openPad(game, i, tab) {
     return `<i class="${have ? 'have' : 'miss'}">${ITEMS[n].icon}${have ? '<b class="tick">✅</b>' : ''}</i>`; }).join(' + ');
   function drawLog(body) {
     const next = game.currentQuest(p);
-    body.innerHTML = (game.parents ? game.parents.logHTML(p) : '') + sideHTML() + (game.coop ? game.coop.html() : '') + (game.chests ? game.chests.html(p) : '') + `<h3>${T('Main adventure', 'Cuộc phiêu lưu chính')}</h3><ol class="quests">${QUESTS.map(q => { const done = !!p.quests[q.id] || (q.check && q.check(p)); return `<li class="${done ? 'done' : q === next ? 'now' : ''}"><span>${done ? '✅' : q.icon}</span>${esc(q.title())}</li>`; }).join('')}</ol>
+    // (daily adventure, chat C, 16 Oct AEDT; ADV-1) today's adventure on top; everything else behind "More adventures"
+    const advTop = game.adventure ? game.adventure.logHTML(p) : '';
+    // (owner, 17 Oct AEDT: "show both") the family's missions stay in sight above the button: a grown-up holds ✓ there
+    const famLog = game.parents ? game.parents.logHTML(p) : '';
+    body.innerHTML = (advTop ? advTop + famLog + `<button class="adv-morebtn" aria-expanded="false">${esc(T('More adventures', 'Thêm phiêu lưu'))}</button><div class="adv-more" hidden>` : famLog) + sideHTML() + (game.coop ? game.coop.html() : '') + (game.chests ? game.chests.html(p) : '') + `<h3>${T('Main adventure', 'Cuộc phiêu lưu chính')}</h3><ol class="quests">${QUESTS.map(q => { const done = !!p.quests[q.id] || (q.check && q.check(p)); return `<li class="${done ? 'done' : q === next ? 'now' : ''}"><span>${done ? '✅' : q.icon}</span>${esc(q.title())}</li>`; }).join('')}</ol>
       <p class="note">✨ ${T('Shrines solved', 'Đền đã giải')}: ${Object.keys(p.shrines).length}/12 · 🗼 ${T('Towers', 'Tháp')}: ${Object.keys(p.towers).length}/4 · 🍳 ${T('Recipes', 'Công thức')}: ${Object.keys(p.dishes).length}/${RECIPES.length}</p>
-      <h3>🍳 ${T('Cooking recipes', 'Sổ công thức nấu ăn')}</h3><div class="recipes">${RECIPES.map(r => { const known = p.dishes[r.id] != null; return `<div class="rec ${known ? '' : 'unk'}"><span>${known ? r.icon : '❔'}</span><small>${known ? esc(r.name()) : recNeed(r)}</small></div>`; }).join('')}</div>`;
+      <h3>🍳 ${T('Cooking recipes', 'Sổ công thức nấu ăn')}</h3><div class="recipes">${RECIPES.map(r => { const known = p.dishes[r.id] != null; return `<div class="rec ${known ? '' : 'unk'}"><span>${known ? r.icon : '❔'}</span><small>${known ? esc(r.name()) : recNeed(r)}</small></div>`; }).join('')}</div>${advTop ? '</div>' : ''}`;
+    if (advTop) {
+      const more = body.querySelector('.adv-more'), mb = body.querySelector('.adv-morebtn');
+      mb.onclick = () => { more.hidden = !more.hidden; mb.setAttribute('aria-expanded', String(!more.hidden)); };
+      body.querySelector('[data-advopen]').onclick = () => { close(); game.adventure.openWindow(i); };
+    }
     body.querySelectorAll('[data-follow]').forEach(b => b.onclick = () => { p.follow = p.follow === b.dataset.follow ? null : b.dataset.follow; saveProfiles(); SFX.ok(); game.checkQuests && game.checkQuests(hero); draw(); });
     game.parents && game.parents.bindLog(body, hero, draw); // (round S) a grown-up holds ✓ on a family mission
   }
+  // (sticker book, owner plan 16 Oct AEDT, chat B) the Album tab is the sticker book: tabs by theme, pages of 3 x 3, a
+  // count and a progress bar, missing stickers as a grey shape with "?" and a hint (spoken on tap), the prize at the
+  // bottom (STK-1 to STK-6). The scrapbook, family postcards, photos, words, storybook and food passport stay below it.
   function drawAlbum(body) {
-    const sec = p.secrets || {};
-    const pcs = p.postcards || {}, tasted = p.tasted || {}, words = Object.keys(p.words || {});
-    const fd = p.found || {}, wk = Object.keys(WILD);
-    const treasures = `<h3>💎 ${T('My treasures', 'Báu vật của con')} ${wk.filter(k => fd[k]).length}/${wk.length}</h3><div class="secrets">${wk.map(k => fd[k] ? `<div class="sec on"><span>${WILD[k].icon}</span><small>${esc(WILD[k].name())} ×${fd[k]}</small></div>` : `<div class="sec"><span>❔</span><small>${T({ fruit: 'Wild fruit', flower: 'Wild flower', gem: 'Inside a rock' }[WILD[k].kind], { fruit: 'Quả dại', flower: 'Hoa dại', gem: 'Trong hòn đá' }[WILD[k].kind])}</small></div>`).join('')}</div>
-      <p class="note">${T('Pick fruit and flowers in the meadows and bamboo forest. Tap a rock 3 times to crack it open, or dig 3 times at a sparkly mound of earth: the rarest gems are worth the most! Sell treasures from your bag or to Mr. Bear at the farm.', 'Hái quả và hoa ở đồng cỏ và rừng tre. Gõ hòn đá 3 lần để mở nó ra, hoặc đào 3 lần ở ụ đất lấp lánh: đá quý càng hiếm càng đáng giá! Bán báu vật ngay trong túi hoặc cho Bác Gấu ở nông trại.')}</p>`;
-    body.innerHTML = `<button class="btn wide big" id="scrapBtn">📒 ${T('My scrapbook: decorate with stickers and photos', 'Sổ dán hình: trang trí bằng hình dán và ảnh')}</button>` + treasures + placeBookHTML(p) + familyCardsHTML(p) + `<h3>📮 ${T('Postcards', 'Bưu thiếp')} ${Object.keys(pcs).length}/${LANDMARKS.length}</h3><div class="secrets">${LANDMARKS.map(l => pcs[l.id] ? `<button class="sec on" data-pcfact="${l.id}"><span>${l.icon}</span><small>${esc(l.name())}</small></button>` : `<button class="sec" data-fly="${l.id}"><span>❔</span><small>✈️ ${esc(l.name())}</small></button>`).join('')}</div>
-      <h3>🍜 ${T('Food passport', 'Hộ chiếu ẩm thực')} ${Object.keys(tasted).length}/${VENDORS.length}</h3><div class="secrets">${VENDORS.map(v => `<div class="sec ${tasted[v.id] ? 'on' : ''}"><span>${tasted[v.id] ? v.food[0] : '❔'}</span><small>${tasted[v.id] ? esc(T(v.food[1], v.food[2])) : esc(v.name)}</small></div>`).join('')}</div>
-      <h3>🗣️ ${T('Words I learned', 'Từ con đã học')} ${words.length}</h3><div class="wordlist">${words.map(k => { const [kind, w] = [k.slice(0, 2), k.slice(3)]; if (kind === 'au') { const s = AUSSIE_SLANG.find(x => x[0] === w); return s ? `<span>🇦🇺 <b>${esc(s[0])}</b> = ${esc(T(s[1], s[2]))}</span>` : ''; } if (kind === 'vs') { const s = VN_SLANG.find(x => x[0] === w); return s ? `<span>🇻🇳 <b>${esc(s[0])}</b> = ${esc(T(s[1], s[2]))}</span>` : ''; } const v = VN_WORDS.find(x => x[1] === w); return v ? `<span>🇻🇳 ${v[0]} Bắc <b>${esc(v[2])}</b> · Trung <b>${esc(v[3])}</b> · Nam <b>${esc(v[4])}</b></span>` : ''; }).join('') || `<p class="note">${T('Ask the market sellers and the Aussie shopkeepers to teach you a word!', 'Hỏi các cô chú bán hàng ở chợ và ở Góc Nước Úc để học từ mới nhé!')}</p>`}</div>
-      <h3>🤫 ${T('Secrets', 'Bí mật')} ${Object.keys(sec).length}/${SECRETS.length}</h3><div class="secrets">${SECRETS.map(s => sec[s.id] ? `<div class="sec on"><span>${s.icon}</span><small>${esc(s.name())}</small></div>` : `<button class="sec" data-hint="${esc(s.hint())}"><span>❔</span><small>${T('Tap for a clue', 'Chạm để nghe gợi ý')}</small></button>`).join('')}</div>
-      <h3>📖 ${T('Storybook', 'Sách truyện')}</h3><div class="stories">${storyList(p).map((st, k) => `<button class="qbtn" data-st="${k}"><span>📖</span><small>${esc(st.title())}</small></button>`).join('')}</div>
-      <h3>${T('Stickers', 'Hình dán')} ${p.stickers.length}/${STICKERS.length}</h3><div class="stickers">${STICKERS.map(s => `<div class="${p.stickers.includes(s) ? '' : 'miss'}">${p.stickers.includes(s) ? s : '?'}</div>`).join('')}</div>
-      <h3>${T('Photos', 'Ảnh chụp')}</h3><div class="photos">${p.album.map((src, k) => `<figure><img src="${src}" alt=""><button class="btn" data-dl="${k}">⬇</button></figure>`).join('') || `<p class="note">${T('Use the Camera tab to take pictures of your adventure!', 'Dùng thẻ Máy ảnh để chụp ảnh chuyến phiêu lưu!')}</p>`}</div>`;
-    body.querySelectorAll('[data-hint]').forEach(b => b.onclick = () => { say(b.dataset.hint, b.dataset.hint); toast(b.dataset.hint); });
-    bindPlaceBook(body, toast); bindFamilyCards(body, toast);
+    sbSync(p);
+    const little = p.age !== 'big', all = SB_PAGES.filter(x => x.theme === sbAt.theme);
+    if (!all.length) sbAt.theme = SB_THEMES[0].id;
+    const pages = SB_PAGES.filter(x => x.theme === sbAt.theme), page = pages[Math.min(sbAt.page[sbAt.theme] || 0, pages.length - 1)], th = SB_THEMES.find(t => t.id === page.theme);
+    // STK-3: a page is never empty: its welcome sticker comes as a present the first time it is opened
+    const gift = sbWelcome(page, p);
+    const fresh = new Set(sbFresh(p)), got = sbPageCount(page, p), full = got === page.stickers.length;
+    const prize = full && !sbPrizeWon(page, p) ? sbClaimPrize(page, p) : null, won = sbPrizeWon(page, p);
+    const tile = st => { const have = sbHas(st.id, p), isNew = have && fresh.has(st.id), shiny = have && sbIsShiny(st.id, p);
+      return have
+        ? `<button class="stk-tile have${isNew ? ' new' : ''}${shiny ? ' shiny' : ''}" data-sid="${st.id}" aria-label="${esc(T(st.en, st.vi))}"><span class="stk-pic">${pic(st.icon)}</span><b class="stk-name">${esc(T(st.en, st.vi))}</b>${isNew ? `<span class="stk-new">${T('New!', 'Mới!')}</span>` : ''}</button>`
+        : `<button class="stk-tile miss" data-miss="${st.id}" aria-label="${esc(T(st.hint[0], st.hint[1]))}"><span class="stk-pic stk-ghost">${pic(st.icon)}<b class="stk-q">?</b></span><small class="stk-hint">${esc(T(st.hint[0], st.hint[1]))}</small></button>`; };
+    const newIn = t => sbFresh(p).filter(id => SB_BY_ID[id] && SB_BY_ID[id].theme === t).length;
+    body.innerHTML = `<div class="stkbook${little ? ' little' : ''}" style="--c:${th.color}">
+      <div class="stk-tabs" role="tablist" aria-label="${T('Sticker pages', 'Các trang hình dán')}">${SB_THEMES.map(t => `<button role="tab" data-th="${t.id}" aria-selected="${t.id === th.id}" class="${t.id === th.id ? 'on' : ''}" style="--c:${t.color}"><span>${pic(t.icon)}</span><small>${esc(T(t.tab[0], t.tab[1]))}</small>${newIn(t.id) ? `<i class="stk-dot">${newIn(t.id)}</i>` : ''}</button>`).join('')}</div>
+      <section class="stk-page${won ? ' won' : ''}" data-page="${page.key}">
+        <div class="stk-head"><b class="stk-title">${esc(T(th.en, th.vi))}${page.of > 1 ? ` <small>${page.n + 1}/${page.of}</small>` : ''}</b><span class="stk-got">${got} / ${page.stickers.length}</span></div>
+        <div class="stk-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${page.stickers.length}" aria-valuenow="${got}"><i style="width:${Math.round(got / page.stickers.length * 100)}%"></i></div>
+        <div class="stk-grid">${page.stickers.map(tile).join('')}</div>
+        ${page.of > 1 ? `<div class="stk-nav"><button class="stk-prev" ${page.n ? '' : 'disabled'} aria-label="${T('Page before', 'Trang trước')}">${pic('⬅️')}</button><span class="stk-dots">${pages.map((x, k) => `<i class="${k === page.n ? 'on' : ''}${sbPageFull(x, p) ? ' full' : ''}"></i>`).join('')}</span><button class="stk-next" ${page.n < page.of - 1 ? '' : 'disabled'} aria-label="${T('Next page', 'Trang sau')}">${pic('➡️')}</button></div>` : ''}
+        <div class="stk-fly" hidden></div>
+        <div class="stk-prize${won ? ' won' : ''}"><span class="stk-frame" aria-hidden="true"></span>${won
+          ? `<span>${T('Golden frame won! A present is in your house.', 'Con được khung vàng! Có quà trong nhà con.')}</span><button class="btn stk-song">${pic('🎵')} ${T('My song', 'Bài hát của con')}</button>`
+          : `<span>${T(SB_LINES.prize[0], SB_LINES.prize[1])}</span>`}</div>
+      </section></div>
+      <div class="stk-more">
+        <button class="btn wide big" id="scrapBtn">📒 ${T('My scrapbook: decorate with stickers and photos', 'Sổ dán hình: trang trí bằng hình dán và ảnh')}</button>
+        ${th.id === 'friends' ? familyCardsHTML(p) : ''}
+        ${albumMoreHTML()}
+      </div>`;
+    const sb = body.querySelector('.stkbook');
+    sb.querySelectorAll('[data-th]').forEach(b => b.onclick = () => { SFX.tap(); sbAt.theme = b.dataset.th; const t = SB_THEMES.find(x => x.id === b.dataset.th); say(t.en, t.vi); drawAlbum(body); foldHeadings(body, 'album'); });
+    const go = d => { SFX.tap(); sbAt.page[th.id] = Math.max(0, Math.min(page.of - 1, page.n + d)); drawAlbum(body); foldHeadings(body, 'album'); };
+    const pv = sb.querySelector('.stk-prev'), nx = sb.querySelector('.stk-next'); if (pv) pv.onclick = () => go(-1); if (nx) nx.onclick = () => go(1);
+    // STK-6: a sticker they have says its name in both languages and plays its sound; the "New!" badge goes (STK-5)
+    sb.querySelectorAll('[data-sid]').forEach(b => b.onclick = () => { const st = SB_BY_ID[b.dataset.sid]; sbSeen(st.id, p); b.classList.remove('new'); const n = b.querySelector('.stk-new'); if (n) n.remove(); stickerSound(st); stickerName(st); game.stickerBadges && game.stickerBadges(); });
+    // STK-2: a missing one says where to find it; a postcard or a place can be flown to, as before
+    sb.querySelectorAll('[data-miss]').forEach(b => b.onclick = () => { SFX.tap(); const st = SB_BY_ID[b.dataset.miss]; say(st.hint[0], st.hint[1]); toast(T(st.hint[0], st.hint[1]));
+      const fly = sb.querySelector('.stk-fly'), w = st.earn.find(x => x.postcard), l = w && LANDMARKS.find(x => x.id === w.postcard);
+      fly.hidden = !l; if (l) { fly.innerHTML = `<button class="btn primary big" data-fly="${l.id}">${pic('✈️')} ${T('Fly there', 'Bay đến đó')}: ${esc(l.name())}</button>`;
+        fly.querySelector('[data-fly]').onclick = () => { close(); game.travel(hero, l.x, l.z + (l.id === 'uluru' ? -4 : 3)); }; } });
+    const song = sb.querySelector('.stk-song'); if (song) song.onclick = () => { SFX.tap(); if (Music.key === th.song) Music.stop(); else Music.play(th.song, true); };
+    if (gift) { toast(`${T(SB_LINES.gift[0], SB_LINES.gift[1])} ${T(gift.en, gift.vi)}`); say(SB_LINES.gift[0], SB_LINES.gift[1]); }
+    if (prize) { confetti(); SFX.fanfare(); say(SB_LINES.full[0], SB_LINES.full[1]); try { Music.play(th.song, true); } catch (e) { } }
+    bindFamilyCards(body, toast);
     body.querySelector('#scrapBtn').onclick = () => { m.close(); game.closePad(i); setTimeout(() => game.openScrapbook(hero), 220); };
+    bindAlbumMore(body);
+    game.stickerBadges && game.stickerBadges();
+  }
+  // the album's other parts, kept as they were (each folds open and shut): food passport, words, storybook, photos
+  function albumMoreHTML() {
+    const tasted = p.tasted || {}, words = Object.keys(p.words || {});
+    return `<h3>🍜 ${T('Food passport', 'Hộ chiếu ẩm thực')} ${Object.keys(tasted).length}/${VENDORS.length}</h3><div class="secrets">${VENDORS.map(v => `<div class="sec ${tasted[v.id] ? 'on' : ''}"><span>${tasted[v.id] ? v.food[0] : '❔'}</span><small>${tasted[v.id] ? esc(T(v.food[1], v.food[2])) : esc(v.name)}</small></div>`).join('')}</div>
+      <h3>🗣️ ${T('Words I learned', 'Từ con đã học')} ${words.length}</h3><div class="wordlist">${words.map(k => { const [kind, w] = [k.slice(0, 2), k.slice(3)];
+        // (r79 A3, owner 16 Oct: pictures fell below and across the rows, empty circles on the left) one row each: the
+        // word's picture, its words, and a button to hear it again, all inside the row and lined up
+        const row = (icon, flag, words, say) => `<div class="wl-row"><span class="wl-pic">${icon}</span><span class="wl-txt"><i class="wl-flag">${flag}</i> ${words}</span><button class="wl-say" data-wsay="${esc(JSON.stringify(say))}" aria-label="${T('Hear it', 'Nghe lại')}">🔊</button></div>`;
+        if (kind === 'au') { const s = AUSSIE_SLANG.find(x => x[0] === w); return s ? row(s[3], '🇦🇺', `<b>${esc(s[0])}</b> = ${esc(T(s[1], s[2]))}`, [`${s[0]} means ${s[1]}`, `${s[0]} nghĩa là ${s[2]}`]) : ''; }
+        if (kind === 'vs') { const s = VN_SLANG.find(x => x[0] === w); return s ? row(s[3], '🇻🇳', `<b>${esc(s[0])}</b> = ${esc(T(s[1], s[2]))}`, [`${s[0]} means ${s[1]}`, `${s[0]}: ${s[2]}`]) : ''; }
+        const v = VN_WORDS.find(x => x[1] === w); return v ? row(v[0], '🇻🇳', `Bắc <b>${esc(v[2])}</b> · Trung <b>${esc(v[3])}</b> · Nam <b>${esc(v[4])}</b>`, [`${v[1]}: in the north ${v[2]}, in the middle ${v[3]}, in the south ${v[4]}`, `Miền Bắc nói ${v[2]}, miền Trung nói ${v[3]}, miền Nam nói ${v[4]}`]) : ''; }).join('') || `<p class="note">${T('Ask the market sellers and the Aussie shopkeepers to teach you a word!', 'Hỏi các cô chú bán hàng ở chợ và ở Góc Nước Úc để học từ mới nhé!')}</p>`}</div>
+      <h3>📖 ${T('Storybook', 'Sách truyện')}</h3><div class="stories">${storyList(p).map((st, k) => `<button class="qbtn" data-st="${k}"><span>📖</span><small>${esc(st.title())}</small></button>`).join('')}</div>
+      <h3>${T('Photos', 'Ảnh chụp')}</h3><div class="photos">${p.album.map((src, k) => `<figure><img src="${src}" alt=""><button class="btn" data-dl="${k}">⬇</button></figure>`).join('') || `<p class="note">${T('Use the Camera tab to take pictures of your adventure!', 'Dùng thẻ Máy ảnh để chụp ảnh chuyến phiêu lưu!')}</p>`}</div>`;
+  }
+  function bindAlbumMore(body) {
     body.querySelectorAll('[data-st]').forEach(b => b.onclick = () => showStory(storyList(p)[+b.dataset.st], p.name));
-    body.querySelectorAll('[data-fly]').forEach(b => b.onclick = () => { const l = LANDMARKS.find(x => x.id === b.dataset.fly); close(); game.travel(hero, l.x, l.z + (l.id === 'uluru' ? -4 : 3)); });
-    body.querySelectorAll('[data-pcfact]').forEach(b => b.onclick = () => { const l = LANDMARKS.find(x => x.id === b.dataset.pcfact); say(l.fact[0], l.fact[1]); toast(T(l.fact[0], l.fact[1])); });
     body.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => savePhoto(p.album[+b.dataset.dl]));
+    body.querySelectorAll('[data-wsay]').forEach(b => b.onclick = () => { SFX.tap(); const [en, vi] = JSON.parse(b.dataset.wsay); say(en, vi); });   // (r79 A3) a learned word, heard again
   }
   function drawGames(body) {
     body.innerHTML = `<p class="note">${T('Play any game you have already found again. Every win makes the next one a little harder.', 'Chơi lại các trò con đã tìm thấy. Mỗi lần thắng, trò chơi sẽ khó hơn một chút.')}</p><div class="gamelist"></div>`;
@@ -992,7 +1094,7 @@ export function openPad(game, i, tab) {
     Object.values(GAMES).forEach(g => {
       const ok = found.has(g.id);
       const b = el('button', 'gcard' + (ok ? '' : ' locked'), `<span>${ok ? g.icon : '🔒'}</span><b>${esc(ok ? g.name() : '???')}</b>${ok ? `<small>${T('Level', 'Cấp')} ${p.levels[g.id] || 1}</small>` : ''}`);
-      if (ok) b.onclick = () => { close(); game.playGame(i, g.id, 'replay'); };
+      if (ok) b.onclick = () => { close(); game.playGame(i, g.id, 'pad'); }; // (r79 point 7: closing the game comes back here)
       list.appendChild(b);
     });
   }

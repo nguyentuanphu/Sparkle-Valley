@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Grown-ups: now vs mockup</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&amp;family=Fredoka:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5b34c4}a:hover{color:#3a2a20}
+</style>
+</helmet>
+<div style="width: 1460px; height: 1080px; box-sizing: border-box; padding: 40px 48px; background: #fff6e4; color: #3a2a20; font-family: 'Fredoka', sans-serif; display: flex; flex-direction: column; gap: 18px">
+<div style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 38px; line-height: 1">Grown-ups · Phụ huynh</div>
+<div style="display: flex; gap: 40px; align-items: flex-start">
+<div style="display: flex; flex-direction: column; gap: 10px; flex: none; width: 596px">
+<span style="align-self: flex-start; background: #ffffff; border: 3px solid #3a2a20; border-radius: 999px; padding: 4px 14px; font-weight: 600; font-size: 17px">Now · r79 (computer)</span>
+<img src="/_blob/a0dabbc8691c4785d486d3e14415e1e3" alt="Grown-ups now on a computer" style="width: 596px; height: 384px; border: 3px solid #3a2a20; border-radius: 16px; display: block; box-sizing: border-box">
+<span style="align-self: flex-start; background: #43c463; color: #ffffff; border: 3px solid #3a2a20; border-radius: 999px; padding: 4px 14px; font-weight: 600; font-size: 17px; margin-top: 16px">Mockup</span>
+<div style="width: 590px; height: 380px; border: 3px solid #3a2a20; border-radius: 16px; overflow: hidden; box-sizing: content-box">
+<div style="width: 1180px; height: 760px; transform: scale(0.5); transform-origin: 0 0"><dc-import name="Grownups" hint-size="1180px,760px"></dc-import></div>
+</div>
+</div>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #ffffff; border: 3px solid #3a2a20; border-radius: 22px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-family: 'Baloo 2', sans-serif; font-size: 24px">What changes</h2>
+<ul style="margin: 0; padding-left: 20px; font-size: 16px; line-height: 1.4; display: flex; flex-direction: column; gap: 6px">
+<li>Now Grown-ups is one narrow window over the game with every setting in one long scroll: Home Screen, privacy, captions, language, voices, children, devices… The children come only after several screens of settings.</li>
+<li>The mockup is full screen with a side menu (Children, Play time, Learning, Voices and sound, Family devices, Settings), one topic per page.</li>
+<li>Children come first: each child gets a card with picture, age group, what they did this week, and difficulty.</li>
+<li>A new "Daily adventure and play time" group holds the new features (adventure on/off, Owl says goodnight).</li>
+<li>All current settings stay. They only move into the section they belong to. "Save &amp; close" can become saving automatically.</li>
+</ul>
+</section>
+<section style="background: #ffffff; border: 3px solid #3a2a20; border-radius: 22px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-family: 'Baloo 2', sans-serif; font-size: 24px">Rules for this screen</h2>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">GU-1</b><span>Full screen with a section menu: down the left on a tablet or computer, tabs along the top on a phone. Never one long scroll.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">GU-2</b><span>Children is always the first section.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">GU-3</b><span>Each setting is one row: label on the left, control on the right, at most one line of help under it.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">GU-4</b><span>Same kit pieces as the children's screens, but calmer: fewer colours, text 15–17 px, buttons at least 44 px.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">GU-5</b><span>A change saves as soon as it's made and shows a small "Saved" tick.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">GU-6</b><span>A new setting goes into an existing section. A new section needs the owner's yes.</span></div>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1460,"height":1080}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

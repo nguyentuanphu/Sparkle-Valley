@@ -18,13 +18,18 @@ const COIN_STEPS = [0, 10, 20, 50, 100];   // in game coins (10 = $1)
 // only as a gift (nothing asked back) and only clothes made for that friend's set
 const wearing = (p, id) => !!p.look && Object.values(p.look).includes(id);
 export const spareClothes = p => CLOTHES.filter(it => owns(p, it.id) && !wearing(p, it.id) && !it.tester).map(it => it.id);
-const has = (p, want) => Object.entries(want.items || {}).every(([k, n]) => (p.inv[k] || 0) >= n) && farm.coins >= (want.coins || 0) && (want.clothes || []).every(id => owns(p, id) && !wearing(p, id));
+// (r79, owner 16 Oct) clothes of the other set are wrapped gift boxes (owned.gifts): a friend of that set can be given one
+const gifts = p => (p.owned && Array.isArray(p.owned.gifts) ? p.owned.gifts : []);
+const has = (p, want) => Object.entries(want.items || {}).every(([k, n]) => (p.inv[k] || 0) >= n) && farm.coins >= (want.coins || 0) && (want.clothes || []).every(id => (owns(p, id) && !wearing(p, id)) || gifts(p).includes(id));
 function move(p, take, give) {
   for (const [k, n] of Object.entries(take.items || {})) p.inv[k] = (p.inv[k] || 0) - n;
   for (const [k, n] of Object.entries(give.items || {})) p.inv[k] = (p.inv[k] || 0) + n;
   farm.coins += (give.coins || 0) - (take.coins || 0); saveFarm();
-  p.owned = p.owned || {}; p.owned.clothes = (p.owned.clothes || []).filter(id => !(take.clothes || []).includes(id));
-  for (const id of give.clothes || []) if (!p.owned.clothes.includes(id)) p.owned.clothes.push(id);
+  p.owned = p.owned || {}; p.owned.gifts = gifts(p).slice();
+  // a gift box given away leaves the Backpack (one box); other clothes leave the wardrobe
+  for (const id of take.clothes || []) { const k = p.owned.gifts.indexOf(id); if (k >= 0) p.owned.gifts.splice(k, 1); else p.owned.clothes = (p.owned.clothes || []).filter(x => x !== id); }
+  p.owned.clothes = p.owned.clothes || [];
+  for (const id of give.clothes || []) { if (ITEM[id] && !forSet(ITEM[id], setOf(p.look))) p.owned.gifts.push(id); else if (!p.owned.clothes.includes(id)) p.owned.clothes.push(id); }
 }
 const label = side => [...Object.entries(side.items || {}).map(([k, n]) => `${n} ${ITEMS[k] ? ITEMS[k].icon : '❔'}`), ...(side.clothes || []).map(id => ITEM[id] ? T(ITEM[id].en, ITEM[id].vi) : ''), side.coins ? fmt(side.coins) : ''].filter(Boolean).join(' + ') || T('nothing', 'không gì');
 const ALL_WANT = () => Object.keys(ITEMS);
@@ -74,7 +79,7 @@ export function openTrade(G, h, toId) {
       return;
     }
     const inv = Object.entries(h.profile.inv || {}).filter(([k, n]) => n > 0 && ITEMS[k]);
-    const mine = setOf(h.profile.look), theirs = setOfFriend(G, st.to), same = mine === theirs, spare = spareClothes(h.profile).filter(id => same || forSet(ITEM[id], theirs));
+    const mine = setOf(h.profile.look), theirs = setOfFriend(G, st.to), same = mine === theirs, spare = same ? spareClothes(h.profile) : [...new Set(gifts(h.profile))].filter(id => ITEM[id] && forSet(ITEM[id], theirs));
     const clothesPic = it => G.shop && G.shop.itemSVG ? G.shop.itemSVG(it) : '👕';
     const chip = (side, k) => { const n = st[side].items[k] || 0; return n ? `<b class="tr-n">${n}</b>` : ''; };
     card.innerHTML = `<button class="x" aria-label="${T('Close', 'Đóng')}">✕</button><h2>🏪 ${T('My market stall', 'Sạp hàng của con')}</h2>

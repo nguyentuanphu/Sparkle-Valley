@@ -89,3 +89,8 @@ RELEASES.push(
 // (owner, 16 Oct AEDT: "show me and I will decide") the new family devices and photo sharing (owner points 39-45) is a
 // trial, off until the owner switches it on
 RELEASES.push({ id: 'familyDevices', en: 'Family devices and photo sharing (trial): connect the family\'s devices with a one-use code, and family photos on villagers reach every connected device. Off: the section is not shown in Grown-ups and no device contacts the family service, except tester devices, so it can be tried first', vi: 'Thiết bị gia đình và chia sẻ ảnh (thử nghiệm): kết nối các thiết bị trong nhà bằng mã dùng một lần, ảnh gia đình trên dân làng tới mọi thiết bị đã kết nối. Tắt: phần này không hiện trong mục Người lớn và không thiết bị nào liên lạc với dịch vụ gia đình, trừ thiết bị thử nghiệm để thử trước', group: 'trial', def: false });
+
+/* daily adventure (chat C) */
+// (owner plan, 16 Oct AEDT) one three-step adventure a day for each child, the goal card, the window, the week chest
+// (js/adventure.js, js/content/adventures.js). Off: no goal card or adventure window; the Adventures tab is as before
+RELEASES.push({ id: 'adventure', en: 'Daily adventure: one three-step adventure a day with a treasure chest, week stamps and a week chest. Off: no adventure card on the game screen and the Adventures tab shows its lists as before', vi: 'Phiêu lưu mỗi ngày: mỗi ngày một chuyến phiêu lưu ba bước có rương báu, con dấu trong tuần và rương cuối tuần. Tắt: không có thẻ phiêu lưu trên màn hình và mục Nhiệm vụ hiện danh sách như trước', group: 'kids', def: true });

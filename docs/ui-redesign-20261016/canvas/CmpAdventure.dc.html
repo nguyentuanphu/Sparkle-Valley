@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Adventure: now vs mockup</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&amp;family=Fredoka:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5b34c4}a:hover{color:#3a2a20}
+</style>
+</helmet>
+<div style="width: 1460px; height: 1080px; box-sizing: border-box; padding: 40px 48px; background: #fff6e4; color: #3a2a20; font-family: 'Fredoka', sans-serif; display: flex; flex-direction: column; gap: 18px">
+<div style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 38px; line-height: 1">Adventures · Nhiệm vụ</div>
+<div style="display: flex; gap: 40px; align-items: flex-start">
+<div style="display: flex; flex-direction: column; gap: 10px; flex: none">
+<span style="align-self: flex-start; background: #ffffff; border: 3px solid #3a2a20; border-radius: 999px; padding: 4px 14px; font-weight: 600; font-size: 17px">Now · r79 (Adventures tab)</span>
+<img src="/_blob/837ba1413baa08fba43004b24b2bd446" alt="The Adventures tab now on a phone" style="width: 390px; height: 844px; border: 3px solid #3a2a20; border-radius: 20px; display: block; box-sizing: border-box">
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; flex: none">
+<span style="align-self: flex-start; background: #43c463; color: #ffffff; border: 3px solid #3a2a20; border-radius: 999px; padding: 4px 14px; font-weight: 600; font-size: 17px">Mockup · Today's adventure</span>
+<div style="width: 390px; height: 844px; border: 3px solid #3a2a20; border-radius: 20px; overflow: hidden; box-sizing: content-box"><dc-import name="Adventure" hint-size="390px,844px"></dc-import></div>
+</div>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #ffffff; border: 3px solid #3a2a20; border-radius: 22px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-family: 'Baloo 2', sans-serif; font-size: 24px">What changes</h2>
+<ul style="margin: 0; padding-left: 20px; font-size: 16px; line-height: 1.4; display: flex; flex-direction: column; gap: 6px">
+<li>Now it's one long list: Family missions, Side stories, Treasure chests, Main adventure. A child can't tell which one to do. The mockup shows <b>one</b> adventure for today.</li>
+<li>Now the tasks are sentences ("Do it for real, then a grown-up holds ✓"). The mockup uses 3 picture steps of a few words each, and Grandpa Owl says them.</li>
+<li>Now the reward isn't shown. The mockup shows the chest before they start.</li>
+<li>The big pale tick circles look like buttons but mean "done". Progress uses one style instead: tick, gold glow, dashed.</li>
+<li>The other lists (family missions, side stories, chests) stay, under a "More adventures" button, mainly for big kids and grown-ups.</li>
+</ul>
+</section>
+<section style="background: #ffffff; border: 3px solid #3a2a20; border-radius: 22px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-family: 'Baloo 2', sans-serif; font-size: 24px">Rules for this screen</h2>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">ADV-1</b><span>One adventure on the screen at a time. Other lists sit behind one "More adventures" button.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">ADV-2</b><span>Always 3 steps. Each has a picture or number and at most 6 words.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">ADV-3</b><span>A character introduces it in a speech bubble (2 lines at most, recorded voice, no child's name in the spoken line).</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">ADV-4</b><span>The reward is shown before the child starts.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">ADV-5</b><span>Week stamps only fill up. A missed day never takes one away, and there are no timers for under-5s.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">ADV-6</b><span>One green "Let's go!" button at the bottom. It closes the window and points the way.</span></div>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1460,"height":1080}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

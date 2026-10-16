@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bag</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&amp;family=Fredoka:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#8a5cf6}a:hover{color:#5b34c4}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #ffd9a8; font-family: 'Fredoka', sans-serif; color: #3a2a20; padding: 20px 14px; display: flex; flex-direction: column; gap: 14px; position: relative">
+
+<div style="display: flex; justify-content: space-between; align-items: center">
+<div style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 28px; line-height: 1">My bag · Ba lô</div>
+<a href="HUD.dc.html" aria-label="Close" style="width: 52px; height: 52px; border-radius: 50%; background: #ff6fae; border: 3px solid #3a2a20; box-shadow: 0 5px 0 #c2407e; display: flex; align-items: center; justify-content: center; box-sizing: border-box"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{items}}" as="it" hint-placeholder-count="9">
+<button type="button" onClick="{{it.pick}}" style="{{it.style}}">
+<span style="position: relative; display: block; width: 60px; height: 60px">
+<svg width="60" height="60" viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="31" r="22" fill="{{it.color}}" stroke="#3a2a20" stroke-width="3"></circle><path d="{{it.mark}}" fill="none" stroke="#3a2a20" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<sc-if value="{{it.many}}" hint-placeholder-val="{{false}}">
+<span style="position: absolute; right: -10px; bottom: -4px; min-width: 26px; height: 26px; border-radius: 13px; background: #29b6f6; color: #ffffff; border: 2px solid #3a2a20; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center">{{it.count}}</span>
+</sc-if>
+</span>
+<span style="font-weight: 600; font-size: 15px; line-height: 1.1; text-align: center; min-height: 34px; display: flex; align-items: center">{{it.name}}</span>
+</button>
+</sc-for>
+</div>
+
+<section style="margin-top: auto; background: #fff6e4; border: 3px solid #3a2a20; border-radius: 28px; box-shadow: 0 6px 0 #3a2a20; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 12px">
+<svg width="56" height="56" viewBox="0 0 60 60" aria-hidden="true" style="flex: none"><circle cx="30" cy="31" r="22" fill="{{sel.color}}" stroke="#3a2a20" stroke-width="3"></circle><path d="{{sel.mark}}" fill="none" stroke="#3a2a20" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 24px; line-height: 1">{{sel.name}}</div>
+<div style="font-size: 16px; color: #5a4636">{{sel.about}}</div>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<button type="button" style="height: 60px; font-family: inherit; font-weight: 600; font-size: 20px; color: #ffffff; background: #43c463; border: 3px solid #3a2a20; border-radius: 20px; box-shadow: 0 5px 0 #2a8a40">{{sel.main}}</button>
+<button type="button" style="height: 60px; font-family: inherit; font-weight: 600; font-size: 20px; color: #3a2a20; background: #ffffff; border: 3px solid #3a2a20; border-radius: 20px; box-shadow: 0 5px 0 #c9b48f">{{sel.second}}</button>
+</div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { pick: 0 }; }
+  renderVals() {
+    const data = [
+      { name: 'Egg', color: '#fffdf6', count: 2, mark: 'M24 30 Q30 22 36 30', about: 'From the hens. Grandma Năm wants these!', main: 'Give', second: 'Eat it?' },
+      { name: 'Mango', color: '#ffcf33', count: 3, mark: 'M30 9 Q34 4 39 6', about: 'Sweet and yellow.', main: 'Eat it', second: 'Give' },
+      { name: 'Kite', color: '#ff6fae', count: 1, mark: 'M30 12 L30 50 M12 31 L48 31', about: 'Fly it on a windy hill.', main: 'Fly it', second: 'Put away' },
+      { name: 'Gift box', color: '#8a5cf6', count: 1, mark: 'M30 12 L30 50 M10 28 L50 28', about: 'A present for a friend. Give it to someone!', main: 'Give it', second: 'Peek' },
+      { name: 'Lantern', color: '#ff5a6a', count: 1, mark: 'M22 20 L38 20 M22 42 L38 42', about: 'Glows at night.', main: 'Hold it', second: 'Put away' },
+      { name: 'Fishing rod', color: '#43c463', count: 1, mark: 'M18 46 L42 14 L42 34', about: 'Catch fish at the pond.', main: 'Use it', second: 'Put away' },
+      { name: 'Bánh mì', color: '#e3a36a', count: 2, mark: 'M16 30 Q30 20 44 30', about: 'Crunchy bread with filling.', main: 'Eat it', second: 'Give' },
+      { name: 'Shell', color: '#ffe7a8', count: 4, mark: 'M30 14 L22 46 M30 14 L38 46 M30 14 L30 48', about: 'From the beach.', main: 'Listen', second: 'Give' },
+      { name: 'Flower seeds', color: '#a8e6a1', count: 5, mark: 'M24 28 L24 30 M34 26 L34 28 M30 36 L30 38', about: 'Plant them at home.', main: 'Plant', second: 'Give' }
+    ];
+    const items = data.map((d, i) => {
+      const on = this.state.pick === i;
+      return { ...d, many: d.count > 1, pick: () => this.setState({ pick: i }),
+        style: "font-family: 'Fredoka', sans-serif; color: #3a2a20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 4px 8px; border-radius: 22px; border: 3px solid #3a2a20; background: " + (on ? '#ffe7a8' : '#fff6e4') + '; box-shadow: ' + (on ? '0 0 0 5px #ffb020' : '0 4px 0 #3a2a20') };
+    });
+    return { items, sel: data[this.state.pick] };
+  }
+}
+</script>
+</body>
+</html>

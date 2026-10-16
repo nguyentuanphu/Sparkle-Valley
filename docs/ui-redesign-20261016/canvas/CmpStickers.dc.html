@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Album and sticker book: now vs mockup</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&amp;family=Fredoka:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5b34c4}a:hover{color:#3a2a20}
+</style>
+</helmet>
+<div style="width: 1460px; height: 1080px; box-sizing: border-box; padding: 40px 48px; background: #fff6e4; color: #3a2a20; font-family: 'Fredoka', sans-serif; display: flex; flex-direction: column; gap: 18px">
+<div style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 38px; line-height: 1">Album → Sticker book · Bộ sưu tập</div>
+<div style="display: flex; gap: 40px; align-items: flex-start">
+<div style="display: flex; flex-direction: column; gap: 10px; flex: none">
+<span style="align-self: flex-start; background: #ffffff; border: 3px solid #3a2a20; border-radius: 999px; padding: 4px 14px; font-weight: 600; font-size: 17px">Now · r79 (Album tab, new player)</span>
+<img src="/_blob/13733ec500c6ea064783ae2d48c68b43" alt="The Album tab now on a phone" style="width: 390px; height: 844px; border: 3px solid #3a2a20; border-radius: 20px; display: block; box-sizing: border-box">
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; flex: none">
+<span style="align-self: flex-start; background: #43c463; color: #ffffff; border: 3px solid #3a2a20; border-radius: 999px; padding: 4px 14px; font-weight: 600; font-size: 17px">Mockup · tap the tabs</span>
+<div style="width: 390px; height: 844px; border: 3px solid #3a2a20; border-radius: 20px; overflow: hidden; box-sizing: content-box"><dc-import name="Stickers" hint-size="390px,844px"></dc-import></div>
+</div>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #ffffff; border: 3px solid #3a2a20; border-radius: 22px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-family: 'Baloo 2', sans-serif; font-size: 24px">What changes</h2>
+<ul style="margin: 0; padding-left: 20px; font-size: 16px; line-height: 1.4; display: flex; flex-direction: column; gap: 6px">
+<li>A new player sees a wall of 36 identical purple "?" tiles ("My treasures 0/36"). There's nothing to look forward to and nothing to be proud of.</li>
+<li>The mockup splits it into pages of 9 by theme (Animals, Food, Places, Festivals), each tab with its own colour.</li>
+<li>Each missing sticker shows a hint of where to find it ("Lives by the pond"), so the book tells the child what to do next.</li>
+<li>A progress bar and a prize for a full page (golden frame, a new song) give a reason to finish.</li>
+<li>The scrapbook (decorate with photos) and treasures stay. Treasures become one of the pages.</li>
+</ul>
+</section>
+<section style="background: #ffffff; border: 3px solid #3a2a20; border-radius: 22px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-family: 'Baloo 2', sans-serif; font-size: 24px">Rules for this screen</h2>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">STK-1</b><span>Pages of exactly 9 (3 × 3), one theme each. The tab colour is the theme colour.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">STK-2</b><span>Stickers they have: full colour plus name. Missing ones: grey shape, "?" and a hint of where to find it (spoken on tap).</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">STK-3</b><span>Never an empty page. The first page always has 2–3 stickers a new player gets in their first minutes.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">STK-4</b><span>Every page shows a count, a progress bar and its prize at the bottom.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">STK-5</b><span>A new sticker keeps a purple "New!" badge until it's tapped. The Stickers button shows how many are new.</span></div>
+<div style="display: flex; gap: 12px; font-size: 16px; line-height: 1.35"><b style="color: #8a5cf6; flex: none; width: 52px">STK-6</b><span>Tapping a sticker says its name in both languages and plays its sound.</span></div>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1460,"height":1080}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -108,10 +108,35 @@ export const Rain = {
 };
 
 const PENTA = [72, 74, 76, 79, 81, 84, 86, 88];
+// (feel and sound, owner plan 16 Oct AEDT) every button makes a soft press sound when it goes down (js/feel.js); a
+// screen's own SFX.tap() on the click that follows is then left out, so a tap is heard once. Grown-ups → "Tap sounds"
+// (settings.tapSounds) turns both off; every other sound stays.
+let pressedAt = -1e9;
+const tapsOn = () => settings.tapSounds !== false;
 export const SFX = {
-  tap() { tone(880, .08, { type: 'triangle', vol: .08 }); },
+  tap() { if (!tapsOn() || performance.now() - pressedAt < 450) return; tone(880, .08, { type: 'triangle', vol: .08 }); },
+  // kind: 'main' (the big green button: lower), 'round' (✕ and back: higher), anything else in between
+  press(kind) {
+    if (!tapsOn()) return; pressedAt = performance.now();
+    const f = kind === 'main' ? 520 : kind === 'round' ? 990 : 740;
+    tone(f, .07, { type: 'triangle', to: f * 1.18, vol: .07 }); noise(.03, { freq: 2600, vol: .025, q: 1.2 });
+  },
   ok() { tone(midi(79), .12, { type: 'triangle', vol: .12 }); tone(midi(84), .22, { type: 'triangle', at: .09, vol: .12 }); },
-  no() { tone(300, .18, { to: 220, type: 'triangle', vol: .12 }); },
+  // a wrong tap: a soft, friendly boing (was a falling low tone that sounded like "wrong!")
+  no() { tone(240, .32, { type: 'sine', bend: [.02, 1.6, .1], vol: .12, vib: 14, vibRate: 16 }); },
+  boing() { SFX.no(); },
+  // a window opening (a soft rising whoosh with a little bloop) and closing (falling)
+  open() { noise(.22, { freq: 1300, vol: .05, q: .7 }); tone(420, .14, { at: .06, to: 700, type: 'triangle', vol: .06 }); },
+  shut() { noise(.18, { freq: 900, vol: .04, q: .7 }); tone(620, .14, { to: 380, type: 'triangle', vol: .05 }); },
+  // clothes on (the mirror) and a sticker peeled and pressed down
+  swish() { noise(.28, { freq: 3800, vol: .07, q: .5 }); tone(900, .2, { at: .05, to: 1500, vol: .03 }); },
+  shhk() { noise(.12, { freq: 5200, vol: .08, q: 1.2 }); noise(.06, { at: .13, freq: 1800, vol: .1, q: 1.4 }); tone(midi(88), .25, { at: .16, type: 'triangle', vol: .06 }); },
+  // a finished adventure: a short drum-roll, then ta-da
+  tada() {
+    for (let i = 0; i < 10; i++) noise(.05, { at: i * .055, freq: 1300 + i * 40, vol: .03 + i * .006, q: 1.1 });
+    [[72, 76, 79], [77, 81, 84]].forEach((ch, k) => ch.forEach(m => tone(midi(m), k ? .9 : .2, { type: 'triangle', at: .6 + k * .2, vol: .09 })));
+    noise(.5, { at: .8, freq: 7000, vol: .04 });
+  },
   pop(n = 0) { const f = midi(PENTA[n % PENTA.length]); tone(f * .5, .12, { to: f * 1.5, vol: .2 }); noise(.06, { vol: .12, freq: 3200 }); },
   chime() { [0, 4, 7, 12].forEach((s, i) => tone(midi(84 + s), .6, { type: 'triangle', at: i * .07, vol: .1 })); },
   ding() { [0, .16].forEach(t => tone(2350, .5, { at: t, vol: .07, type: 'triangle', vib: 18, vibRate: 30 })); }, // a bicycle bell: kring kring

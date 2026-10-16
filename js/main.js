@@ -57,6 +57,7 @@ import { cachedCanvas } from './worldcache.js';
 import { events } from './core/events.js';
 import { createPlaceBook } from './placebook.js';
 import { createFamilyCards } from './familycards.js';
+import { attach as attachStickers } from './stickers.js'; // the sticker book (chat B, 16 Oct): give(id), has(id), count()
 import { createMyHouse } from './myhouse.js';
 import { createReport, addMinute } from './report.js';
 import { createCoop } from './coop.js';
@@ -195,6 +196,12 @@ function nameTag(name, color = '#ffffff') {
   // (round R, owner: on phones a tag right in front of the camera filled the screen) fade it out when the camera is close
   s.onBeforeRender = (r, sc, cam) => { s.material.opacity = Math.min(1, Math.max(0, (cam.position.distanceTo(s.position) - 5) / 5)); };
   return s;
+}
+// a child does what an interactable offers (a tap, a walk-up, the Act button): the event bus hears InteractionStarted
+// first (architecture §6; the sticker book listens: talking to someone, a ferry, the bunny's hutch), then it happens
+function startAct(it, h) {
+  try { events.emit('InteractionStarted', { playerId: makeId('player', h.profile.id || 'guest'), entityId: 'interaction:' + String(it.id).toLowerCase().replace(/[^a-z0-9]+/g, '-'), action: 'act', it: it.id }); } catch (e) { }
+  return it.act(h, G);
 }
 function addNPC({ id, name, faceName, look, model, x, z, face = 0, icon = '💬', talk }) {
   const A = model ? null : nameAvatar(buildAvatar(look, null), faceName || name, true, id), obj = model || A.root;
@@ -391,6 +398,7 @@ function giveSticker(p) { const left = STICKERS.filter(s => !p.stickers.includes
 const hudFor = h => G.huds[h.i];
 G.give = give;
 G.toast = (h, m) => hudFor(h).toast(m);
+G.quality = quality; // (feel and sound) js/fun.js leaves out the running dust on 'low'
 G.fx = (x, y, z, ch) => { const s = sprite(ch, 1.4); s.material = s.material.clone(); s.position.set(x, y, z); scene.add(s); const t0 = performance.now(); const f = () => { const k = (performance.now() - t0) / 900; s.position.y = y + k * 2; s.material.opacity = 1 - k; if (k < 1) requestAnimationFrame(f); else { scene.remove(s); s.material.dispose(); } }; f(); };
 G.mount = (h, b) => { h.mount(b); h.profile.quests.buffalo = true; save(); say('Moo! Hold on tight!', 'Ụm bò! Bám chắc nhé!'); hudFor(h).toast(T('Press Jump to get off', 'Bấm Nhảy để xuống')); };
 
@@ -418,9 +426,12 @@ async function playGame(i, id, source, shrine) {
   if (res.restart) { events.emit('ActivityAbandoned', { activityId: actId, reason: 'level' }); p.gameDiff = { ...(p.gameDiff || {}), [id]: res.restart }; save(); return playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); }
   if (res.won) events.emit('ActivityCompleted', { activityId: actId, defId: makeId('game', id), players: playerIds, result: { won: true, stars: res.stars || 0, level } });
   else events.emit('ActivityAbandoned', { activityId: actId, reason: 'left' });
-  if (!res.won) { if (source === 'hub') G.openGamesHub(i); return; }
+  // (r79, owner point 7) a game opened from Play goes back to Play, one opened from the Pad's Games page back to that page;
+  // one opened by talking to a villager (or at a shrine) closes straight back to the valley
+  const back = () => { if (source === 'hub') G.openGamesHub(i); else if (source === 'pad') G.openPad(i, 'games'); };
+  if (!res.won) { back(); return; }
   // after the rewards: straight on to the next game, or this one again, if the child chose that
-  const then = () => { if (res.next === 'next' && nextId) playGame(i, nextId, source === 'hub' ? 'hub' : 'replay'); else if (res.next === 'again') playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); else if (source === 'hub') G.openGamesHub(i); };
+  const then = () => { if (res.next === 'next' && nextId) playGame(i, nextId, source === 'hub' || source === 'pad' ? source : 'replay'); else if (res.next === 'again') playGame(i, id, source === 'shrine' ? 'replay' : source, shrine); else back(); };
   // winning Kite Flying earns the whistling kite (diều sáo), which then flies above you everywhere
   if (id === 'kite' && !p.kite) {
     p.kite = true; p.kiteOn = true; save(); G.kites.sync();
@@ -1419,7 +1430,7 @@ function onTap(i, x, y) {
 }
 function goAndDo(h, it) {
   if (!it) return;
-  if (dist2(h.pos.x, h.pos.z, it.x, it.z) < (it.plot ? 7 : it.r)) { SFX.tap(); if (twoHalves()) G.lastPlayer = Math.max(0, G.heroes.indexOf(h)); it.act(h, G); return; }
+  if (dist2(h.pos.x, h.pos.z, it.x, it.z) < (it.plot ? 7 : it.r)) { SFX.tap(); if (twoHalves()) G.lastPlayer = Math.max(0, G.heroes.indexOf(h)); startAct(it, h); return; }
   h.goal = approach(h, it); h.goalAct = it;
 }
 G.goAndDo = goAndDo;
@@ -1612,12 +1623,12 @@ function frame(now) {
       h.update(dt, pads[i], t, G);
       if (i === 0) watchHero(h, pads[i], dt, G.regionOf[i]); // stuck: pushing to walk without moving (Studio's report)
       if (!h.profile.quests.owl && !G._owlAuto && dist2(h.pos.x, h.pos.z, owl.x, owl.z) < 6) { G._owlAuto = true; owlTalk(h); }
-      if (h.goalAct && !h.goal) { const it = h.goalAct; h.goalAct = null; if (dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r + .8) { SFX.tap(); (G.lastPlayer = i, it.act(h, G)); } }
+      if (h.goalAct && !h.goal) { const it = h.goalAct; h.goalAct = null; if (dist2(h.pos.x, h.pos.z, it.x, it.z) < it.r + .8) { SFX.tap(); (G.lastPlayer = i, startAct(it, h)); } }
       const it = h.carry ? h.carryIt || null : nearest(h);
       if (it && it.auto) (G.lastPlayer = i, it.act(h, G));
       G.huds[i].setAction(it && !it.auto ? it : null);
       h._dancing = G.places.onStage(h);
-      if (pads[i].act() && it) { SFX.tap(); (G.lastPlayer = i, it.act(h, G)); }
+      if (pads[i].act() && it) { SFX.tap(); (G.lastPlayer = i, startAct(it, h)); }
       // discover shrines and towers you walk near
       for (const s of SHRINES.concat(TOWERS)) if (!h.profile.discovered[s.id] && dist2(s.x, s.z, h.pos.x, h.pos.z) < 45) { h.profile.discovered[s.id] = true; save(); }
       const rg = h.indoors ? G.regionOf[i] : regionAt(h.pos.x, h.pos.z); // inside a house: still where the house is
@@ -1732,6 +1743,7 @@ createRegionSites(G); // more famous places of each region, just outside its cit
 createVnFun(G, { sfx: SFX, say, dialog, toast: (h, m) => hudFor(h).toast(m) }); // children playing north and south; buffalo and bull festivals
 G.placeBook = createPlaceBook(G, { toast: (h, m) => hudFor(h).toast(m), save }); // the places sticker book listens to the event bus (js/placebook.js)
 G.familyCards = createFamilyCards(G, { toast: (h, m) => hudFor(h).toast(m), save }); // family photos from Studio arrive as postcards (js/familycards.js)
+attachStickers(G); // the sticker book knows who is playing (js/stickers.js)
 G.myHouse = G.homes ? createMyHouse(G) : null; // decorate your own house at Sunny Farm (js/myhouse.js)
 G.report = createReport(G, { save }); // the play report for grown-ups counts games and minutes (js/report.js)
 G.coop = createCoop(G, { Net, toast: (h, m) => hudFor(h).toast(m) }); // together quests in an online room (js/coop.js)

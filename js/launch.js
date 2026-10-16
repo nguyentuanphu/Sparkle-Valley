@@ -50,11 +50,24 @@ addEventListener('sv-held', () => {
   card.append(p, b); n.append(card); document.body.appendChild(n); b.focus();
 });
 // Begin saving the shell and assets while the world builds, rather than waiting for it to finish.
+// (r80, owner 17 Oct AEDT: "users must have the latest r") a new version takes over as soon as it is saved (sw.js). Before
+// a child has started playing (the start screens) the game reloads into it at once; while playing, the notice offers
+// it (or, with Studio's switch off, it starts the next time). A game coming back to the screen (a Home Screen app is
+// mostly resumed, not opened) and an open one every 30 minutes ask the website for a newer version (svUpdateGap: the
+// shortest time between two asks, set by the check).
+const playing = () => !!window.__sv?.heroes?.length;
+window.svWatchUpdates = reg => {
+  let had = !!navigator.serviceWorker.controller; // (the very first visit: nothing to update from, only the next time)
+  if (reg.waiting) { if (playing()) window.svOfferUpdate(); else reg.waiting.postMessage({ type: 'SKIP_WAITING' }); }
+  reg.addEventListener('updatefound', () => { const next = reg.installing; next?.addEventListener('statechange', () => { if (next.state === 'installed' && navigator.serviceWorker.controller && playing()) window.svOfferUpdate(); }); });
+  navigator.serviceWorker.addEventListener('controllerchange', () => { const was = had; had = true; if (!was) return; if (playing()) window.svOfferUpdate(); else location.reload(); });
+  let last = Date.now(); const check = force => { if (!force && Date.now() - last < (window.svUpdateGap ?? 60000)) return; last = Date.now(); reg.update().catch(() => { }); };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+  addEventListener('online', () => check());
+  setInterval(() => check(true), 30 * 60000);
+};
 if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !/localhost|127\.0\.0\.1/.test(location.hostname)) {
-  navigator.serviceWorker.register('sw.js').then(reg => {
-    if (reg.waiting) window.svOfferUpdate();
-    reg.addEventListener('updatefound', () => { const next = reg.installing; next?.addEventListener('statechange', () => { if (next.state === 'installed' && navigator.serviceWorker.controller) window.svOfferUpdate(); }); });
-  }).catch(() => {});
+  navigator.serviceWorker.register('sw.js').then(reg => window.svWatchUpdates(reg)).catch(() => {});
 }
 // (owner point 11, #140 #141 #184-#193) a part of the game that loads later (a story's film, a festival's decorations)
 // can be gone: this page is an older version whose files were replaced since it opened. Offer the update instead of a
