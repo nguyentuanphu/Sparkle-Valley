@@ -2757,3 +2757,16 @@ body:has(.modal:not(.out), .gl, .wardrobe, .audio-tray, .dialog:not(.out), .stor
 .wordlist .wl-row span { background: none; border-radius: 0; padding: 0; box-shadow: none; font-size: inherit; }
 .wordlist .wl-pic .arti, .wordlist .wl-say .arti { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
 .wordlist .wl-flag .flagi { display: inline-flex; } .wordlist .wl-flag .flag { width: 22px; height: 15px; }
+/* (r79 A6, owner 16 Oct: "Big pictures" and "Trick" sat lower than the player card and off centre) on a phone they sit
+   on the same level as the player card, centred on it, and "Big pictures" keeps its whole name */
+.hud.small .hud-tl { align-items: center; }
+.hud.small .hud-tl > .simplesw, .hud.small .hud-tl > .kidrow { align-self: center; margin-top: 0; }
+.hud.small .hud-tl > .kidrow { flex-wrap: nowrap; }
+.hud.small .simplesw { width: auto; min-width: 56px; min-height: 48px; padding: 4px 8px; }
+/* (r79 A7, owner 16 Oct: zoom in, zoom out and camera view sat in a column to the LEFT of the View button) they open in
+   one straight column directly ABOVE the View button, centred on it (the camera view button nearest) */
+.zoomer .ztray { right: auto; left: 50%; top: auto; bottom: calc(100% + 8px); transform: translateX(-50%); flex-direction: column; align-items: center; gap: 8px; }
+@media (max-height: 480px) { .zoomer .ztray { left: auto; right: calc(100% + 10px); bottom: 0; transform: none; flex-direction: row-reverse; } }
+/* (r79 A7) on a tablet or computer the View button sits a little lower, so the column above it stays clear of the speaker */
+.hud:not(.small) .zoomer, .hud:not(.small) .zoomer:has(.z-lb) { top: 60%; }
+@media (max-height: 480px) { .hud:not(.small) .zoomer, .hud:not(.small) .zoomer:has(.z-lb) { top: auto; } }

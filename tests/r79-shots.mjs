@@ -17,6 +17,8 @@ fs.mkdirSync(out, { recursive: true });
 const SEED = async page => page.evaluate(async () => {
   const p = window.__sv.heroes[0].profile;
   p.bought = { h_tauhu: 1, h_traicay: 1 };
+  // a companion that was fed today and can do a trick (the Trick chip beside the player card)
+  p.lanterns = { ...(p.lanterns || {}), companion: 'dragon', pet: { feeds: 6, hats: [], fed: Math.floor((Date.now() + 10 * 3600e3) / 864e5) } };
   p.inv = { ...(p.inv || {}), ruby: 1, crystal: 1, fossil: 1, bone: 2, pebble: 4 };
   p.words = { ...(p.words || {}), 'vn:bowl': true, 'vn:pineapple': true, 'vn:corn': true, "au:G'day": true, 'au:Mate': true, 'vs:Hết sảy': true };
   const S = await import('/js/state.js'); S.saveProfiles && S.saveProfiles();

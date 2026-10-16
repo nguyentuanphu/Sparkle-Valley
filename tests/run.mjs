@@ -6003,6 +6003,57 @@ await check('r79albumwords', async () => {
   return rows.join(', ') + '; pictures and 44 px hear buttons inside each row, lined up, no empty circles';
 });
 
+// (r79 A5-A8) the top buttons and the two trays, on two phones, a tablet and a computer: the Audio row opens in one row
+// directly under the speaker (and the chat button beside it), right-aligned with them and evenly spaced; Big pictures and
+// Trick sit level with the player card on a phone and never under the map; zoom in, zoom out and camera view open in one
+// column directly above the View button, centred on it and clear of the speaker; the View button is not the eye
+await check('r79hudtrays', async () => {
+  const rows = [];
+  for (const [dev, w, h, touch] of [['phone', 390, 844, true], ['bigphone', 430, 932, true], ['tablet', 820, 1180, true], ['computer', 1280, 800, false]]) {
+    const P = await open(b, { w, h, touch }); await clear(P.page);
+    await P.page.evaluate(() => { const p = __sv.heroes[0].profile; p.lanterns = { ...(p.lanterns || {}), companion: 'dragon', pet: { feeds: 6, hats: [], fed: Math.floor((Date.now() + 10 * 3600e3) / 864e5) } }; });
+    await P.page.waitForTimeout(1500);
+    const bad = [];
+    const box = (sel, root = document) => { const e = [...root.querySelectorAll(sel)].find(x => !x.hidden && x.getClientRects().length); return e ? e.getBoundingClientRect().toJSON() : null; };
+    // A6: the chips beside the player card
+    const top = await P.page.evaluate(() => { const H = document.querySelector('.hud'), r = s => { const e = [...H.querySelectorAll(s)].find(x => !x.hidden && x.getClientRects().length); return e && e.getBoundingClientRect().toJSON(); };
+      return { small: H.classList.contains('small'), card: r('.pcard'), big: r('.simplesw'), chips: [...H.querySelectorAll('.kidrow .chip')].filter(x => !x.hidden && x.getClientRects().length).map(x => x.getBoundingClientRect().toJSON()), map: r('.mini-wrap') }; });
+    if (top.small) {
+      const mid = b => (b.top + b.bottom) / 2, c = mid(top.card);
+      for (const x of [top.big, ...top.chips]) { if (Math.abs(mid(x) - c) > 3) bad.push('a top button is not level with the player card (' + Math.round(mid(x) - c) + ' px)'); if (x.right > top.map.left - 2 && x.top < top.map.bottom) bad.push('a top button runs under the map'); }
+      if (!top.chips.length) bad.push('the Trick chip is missing');
+    }
+    // A5: the Audio row
+    await P.page.locator('.hud .dk.snd').click(); await P.page.waitForSelector('.audio-tray'); await P.page.waitForTimeout(300);
+    const au = await P.page.evaluate(() => { const r = e => e.getBoundingClientRect().toJSON(), snd = document.querySelector('.hud .dk.snd'), chat = [...snd.parentElement.querySelectorAll(':scope > .dk')].filter(b => b !== snd && !b.hidden && b.getClientRects().length).map(r).filter(b => Math.abs(b.top - r(snd).top) < 8 && Math.min(Math.abs(b.left - r(snd).right), Math.abs(r(snd).left - b.right)) < 24);
+      return { snd: r(snd), mates: chat, sw: [...document.querySelectorAll('.audio-tray .ss-sw > span')].map(r), sideways: document.scrollingElement.scrollWidth > innerWidth + 1 || scrollX !== 0 }; });
+    if (au.sideways) bad.push('the open Audio row makes the page scroll sideways');
+    const rowR = Math.max(au.snd.right, ...au.mates.map(m => m.right)), rowB = Math.max(au.snd.bottom, ...au.mates.map(m => m.bottom));
+    if (au.sw.length !== 3) bad.push('the Audio row should hold 3 switches'); else {
+      if (au.sw.some(s => Math.abs(s.top - au.sw[0].top) > 1)) bad.push('the Audio switches are not in one row');
+      if (Math.min(...au.sw.map(s => s.top)) < rowB) bad.push('the Audio row is not under the speaker');
+      if (Math.abs(Math.max(...au.sw.map(s => s.right)) - rowR) > 3) bad.push('the Audio row is not right-aligned with the speaker (' + Math.round(Math.max(...au.sw.map(s => s.right)) - rowR) + ' px)');
+      const xs = au.sw.map(s => s.left).sort((a, c) => a - c); if (Math.abs((xs[1] - xs[0]) - (xs[2] - xs[1])) > 1) bad.push('the Audio switches are not evenly spaced');
+    }
+    await P.page.keyboard.press('Escape'); await P.page.waitForTimeout(200);
+    // A7, A8: the View column
+    await P.page.locator('.hud .z-tray').click(); await P.page.waitForTimeout(400);
+    const vw = await P.page.evaluate(() => { const r = e => e.getBoundingClientRect().toJSON(), t = document.querySelector('.hud .z-tray');
+      return { tray: r(t), btns: [...document.querySelectorAll('.hud .zoomer .ztray > button')].filter(x => x.getClientRects().length).map(r), snd: r(document.querySelector('.hud .dk.snd')), eye: /M5 24c5-9/.test(t.innerHTML) }; });
+    if (vw.eye) bad.push('the View button still shows the eye');
+    if (vw.btns.length < 3) bad.push('the View column should hold zoom in, zoom out and camera view'); else for (const x of vw.btns) {
+      if (x.bottom > vw.tray.top + 1) bad.push('a View button is not above the View button');
+      if (Math.abs((x.left + x.right) / 2 - (vw.tray.left + vw.tray.right) / 2) > 2) bad.push('a View button is not centred on the View button');
+      if (x.top < vw.snd.bottom && x.bottom > vw.snd.top && x.left < vw.snd.right && x.right > vw.snd.left) bad.push('the View column covers the speaker');
+      if (x.top < 0) bad.push('the View column goes off the top');
+    }
+    fs.mkdirSync('out/r79', { recursive: true }); await P.page.screenshot({ path: `out/r79/hudtrays-${dev}.png` });
+    rows.push(dev); ok(!bad.length, dev + ': ' + [...new Set(bad)].join('; '));
+    ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
+  }
+  return rows.join(', ') + ': Audio row under the speaker, right-aligned and even; Big pictures and Trick level with the card; View column above the camera-icon View button';
+});
+
 await b.close();
 const failed = results.filter(r => !r[1]);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
