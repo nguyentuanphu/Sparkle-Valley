@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {launch,open,clear} from './harness.mjs';
+import {BUILD} from '../js/build.js'; // (a report carries the build the game is running; was 'r76' written in, red once the version moved to r77)
 const browser=await launch();
 try {
  const P=await open(browser,{w:390,h:844,touch:true,route:async ctx=>{
@@ -13,6 +14,6 @@ try {
  await P.page.click('.tp-send');assert.equal(await P.page.inputValue('.tpanel textarea'),'Synthetic draft must survive storage failure');assert.equal(await P.page.evaluate(()=>localStorage.getItem('sv2_tester_out')),old);
  assert.ok(await P.page.locator('.testertoast').last().textContent().then(t=>t.includes('Could not save')));
  await P.page.evaluate(()=>{Storage.prototype.setItem=originalSet;});await P.page.click('.tp-send');await P.page.waitForSelector('.modal.tpanel',{state:'detached'});
- const saved=await P.page.evaluate(()=>JSON.parse(localStorage.getItem('sv2_tester_out')).find(r=>r.note==='Synthetic draft must survive storage failure'));assert.ok(saved.clientId);assert.equal(saved.b,'r76');
+ const saved=await P.page.evaluate(()=>JSON.parse(localStorage.getItem('sv2_tester_out')).find(r=>r.note==='Synthetic draft must survive storage failure'));assert.ok(saved.clientId);assert.equal(saved.b,BUILD);
  await P.ctx.close();console.log('PASS: denied storage preserves report draft and old queue; retry persists with stable identity');
 }finally{await browser.close();}
