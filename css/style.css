@@ -2763,13 +2763,10 @@ body:has(.modal:not(.out), .gl, .wardrobe, .audio-tray, .dialog:not(.out), .stor
 .hud.small .hud-tl > .simplesw, .hud.small .hud-tl > .kidrow { align-self: center; margin-top: 0; }
 .hud.small .hud-tl > .kidrow { flex-wrap: nowrap; }
 .hud.small .simplesw { width: auto; min-width: 56px; min-height: 48px; padding: 4px 8px; }
-/* (r79 A7, owner 16 Oct: zoom in, zoom out and camera view sat in a column to the LEFT of the View button) they open in
-   one straight column directly ABOVE the View button, centred on it (the camera view button nearest) */
-.zoomer .ztray { right: auto; left: 50%; top: auto; bottom: calc(100% + 8px); transform: translateX(-50%); flex-direction: column; align-items: center; gap: 8px; }
-@media (max-height: 480px) { .zoomer .ztray { left: auto; right: calc(100% + 10px); bottom: 0; transform: none; flex-direction: row-reverse; } }
-/* (r79 A7) on a tablet or computer the View button sits a little lower, so the column above it stays clear of the speaker */
-.hud:not(.small) .zoomer, .hud:not(.small) .zoomer:has(.z-lb) { top: 60%; }
-@media (max-height: 480px) { .hud:not(.small) .zoomer, .hud:not(.small) .zoomer:has(.z-lb) { top: auto; } }
+/* (r79 A7, owner 16 Oct, with a drawing on the tablet picture) zoom in, zoom out and camera view open in one straight
+   column just to the LEFT of the View button, the middle one level with it, one above and one below */
+.zoomer .ztray { right: calc(100% + 10px); left: auto; top: 50%; bottom: auto; transform: translateY(-50%); flex-direction: column; align-items: center; gap: 8px; }
+@media (max-height: 480px) { .zoomer .ztray { top: auto; bottom: 0; transform: none; flex-direction: row-reverse; } }
 /* (r79, owner point 14) "Eat it?" is one small row at the bottom of the Bag: picture, name, "Eat it?", Eat and Not now */
 .bag-help.bag-ask { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 16px; font-size: 14px; max-width: 520px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 .bag-help.bag-ask > .art, .bag-help.bag-ask > .arti, .bag-help.bag-ask > svg, .bag-help.bag-ask > .kpic { flex: none; width: 36px; height: 36px; }
@@ -2804,6 +2801,8 @@ body:has(.modal:not(.out), .gl, .wardrobe, .audio-tray, .dialog:not(.out), .stor
 .bag-help.bag-ask > b { display: flex; flex-direction: column; -webkit-line-clamp: unset; }
 .bag-help.bag-ask > b > span.nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 600px) { .mirror .wbig { width: min(170px, 44vw); } }
+/* (r79 A6) on a small phone the goal chip (a hat ready to buy) is narrower, so it fits beside Big pictures and the map */
+.hud.small .kidrow .c-goal { padding: 0 8px 0 4px; gap: 2px; font-size: 11px; } .hud.small .kidrow .c-goal .art { width: 20px; height: 20px; }
 
 
 /* r79 learning (chat 2) */

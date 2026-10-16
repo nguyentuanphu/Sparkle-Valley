@@ -6006,9 +6006,9 @@ await check('r79albumwords', async () => {
 });
 await check('r79hudtrays', async () => {
   // (r79 A5-A8) the top buttons and the two trays, on two phones, a tablet and a computer: the Audio row opens in one row
-  // directly under the speaker (and the chat button beside it), right-aligned with them and evenly spaced; Big pictures and
+  // directly under the speaker (and the chat button beside it), each switch centred under a top button at their spacing; Big pictures and
   // Trick sit level with the player card on a phone and never under the map; zoom in, zoom out and camera view open in one
-  // column directly above the View button, centred on it and clear of the speaker; the View button is not the eye
+  // column just left of the View button, the middle one level with it (owner's drawing, 16 Oct); the View button is not the eye
   const rows = [];
   for (const [dev, w, h, touch] of [['phone', 390, 844, true], ['bigphone', 430, 932, true], ['tablet', 820, 1180, true], ['computer', 1280, 800, false]]) {
     const P = await open(b, { w, h, touch }); await clear(P.page);
@@ -6033,7 +6033,11 @@ await check('r79hudtrays', async () => {
     if (au.sw.length !== 3) bad.push('the Audio row should hold 3 switches'); else {
       if (au.sw.some(s => Math.abs(s.top - au.sw[0].top) > 1)) bad.push('the Audio switches are not in one row');
       if (Math.min(...au.sw.map(s => s.top)) < rowB) bad.push('the Audio row is not under the speaker');
-      if (Math.abs(Math.max(...au.sw.map(s => s.right)) - rowR) > 3) bad.push('the Audio row is not right-aligned with the speaker (' + Math.round(Math.max(...au.sw.map(s => s.right)) - rowR) + ' px)');
+      // (owner, 16 Oct, second drawing) each switch sits in a column with a top button: the last under the last top button,
+      // the one before under the one before, at the same spacing
+      const cx = b => (b.left + b.right) / 2, tops = [au.snd, ...au.mates].sort((p, q) => p.left - q.left).map(cx), sws = au.sw.map(cx).sort((p, q) => p - q);
+      for (let k = 1; k <= tops.length; k++) { const d = sws[sws.length - k] - tops[tops.length - k]; if (Math.abs(d) > 2) bad.push('an Audio switch is not centred under its top button (' + Math.round(d) + ' px)'); }
+      if (tops.length > 1 && Math.abs((sws[2] - sws[1]) - (tops[1] - tops[0])) > 2) bad.push('the Audio switches are not spaced like the top buttons');
       const xs = au.sw.map(s => s.left).sort((a, c) => a - c); if (Math.abs((xs[1] - xs[0]) - (xs[2] - xs[1])) > 1) bad.push('the Audio switches are not evenly spaced');
     }
     await P.page.keyboard.press('Escape'); await P.page.waitForTimeout(200);
@@ -6043,16 +6047,18 @@ await check('r79hudtrays', async () => {
       return { tray: r(t), btns: [...document.querySelectorAll('.hud .zoomer .ztray > button')].filter(x => x.getClientRects().length).map(r), snd: r(document.querySelector('.hud .dk.snd')), eye: /M5 24c5-9/.test(t.innerHTML) }; });
     if (vw.eye) bad.push('the View button still shows the eye');
     if (vw.btns.length < 3) bad.push('the View column should hold zoom in, zoom out and camera view'); else for (const x of vw.btns) {
-      if (x.bottom > vw.tray.top + 1) bad.push('a View button is not above the View button');
-      if (Math.abs((x.left + x.right) / 2 - (vw.tray.left + vw.tray.right) / 2) > 2) bad.push('a View button is not centred on the View button');
+      if (x.right > vw.tray.left - 2) bad.push('a View button is not to the left of the View button');
+      if (Math.abs((x.left + x.right) / 2 - (vw.btns[0].left + vw.btns[0].right) / 2) > 1) bad.push('the View buttons are not in one straight column');
       if (x.top < vw.snd.bottom && x.bottom > vw.snd.top && x.left < vw.snd.right && x.right > vw.snd.left) bad.push('the View column covers the speaker');
       if (x.top < 0) bad.push('the View column goes off the top');
     }
+    // (owner's drawing) the middle one level with the View button, one above and one below
+    if (vw.btns.length >= 3) { const mid = vw.btns[1], cy = b => (b.top + b.bottom) / 2; if (Math.abs(cy(mid) - cy(vw.tray)) > 2) bad.push('the middle View button is not level with the View button (' + Math.round(cy(mid) - cy(vw.tray)) + ' px)'); if (!(vw.btns[0].bottom <= vw.tray.top + vw.tray.height / 2 && vw.btns[2].top >= vw.tray.top + vw.tray.height / 2)) bad.push('the View column is not one above and one below'); }
     fs.mkdirSync('out/r79', { recursive: true }); await P.page.screenshot({ path: `out/r79/hudtrays-${dev}.png` });
     rows.push(dev); ok(!bad.length, dev + ': ' + [...new Set(bad)].join('; '));
     ok(!P.errors.length, P.errors.join(' | ')); await P.ctx.close();
   }
-  return rows.join(', ') + ': Audio row under the speaker, right-aligned and even; Big pictures and Trick level with the card; View column above the camera-icon View button';
+  return rows.join(', ') + ': Audio switches each centred under a top button, at their spacing; Big pictures and Trick level with the card; View column left of the camera-icon View button, the middle one level with it';
 });
 await check('r79clothes', async () => {
   // (r79 points 6, 7, 12, 14, 17, 18 and A4; owner 16 Oct AEDT: "boy wears boys clothes ... other genders clothes for
