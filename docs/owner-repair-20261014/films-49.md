@@ -1,6 +1,6 @@
 # Point 49: story film scenery
 
-Stopped by owner for handoff, 16 October 2026 AEDT. Owner approved the plan in this chat's pop-up. Branch `work/owner-repair-films-20261016`, based exactly on checkpoint `c0bcd0bf2da10d394396b108d6c217bf0899ad87`.
+Stopped by owner for handoff, 16 October 2026 AEDT. Subsequently pushed to `work/owner-repair-films-20261016` at the owner's explicit request, with the incomplete checks and failures retained. No merge or deployment. Owner approved the plan in this chat's pop-up. Branch `work/owner-repair-films-20261016`, based exactly on checkpoint `c0bcd0bf2da10d394396b108d6c217bf0899ad87`.
 
 ## Scope and visual direction
 
