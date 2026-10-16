@@ -7,7 +7,7 @@ export const STORY_LOOKS = {
   thanhgiong: look('bamboo', '#ffb020', 'home', { 3: { house: 'none' }, 4: { house: 'none' }, 5: { setting: 'mountain', house: 'none' } }),
   banhchung: look('tet', '#ff6fae', 'home', { 1: { setting: 'mountain' }, 2: { setting: 'rice' }, 3: { setting: 'kitchen' } }),
   caykhe: look('orchard', '#ffb020', 'home', { 2: { setting: 'treasure', house: 'none' }, 3: { setting: 'treasure', house: 'none' }, 4: { setting: 'sea', house: 'none' } }),
-  hoguom: look('lake', '#29b6f6', 'none'),
+  hoguom: look('lake', '#29b6f6', 'none', { 0: { setting: 'river' }, 1: { setting: 'forest' }, 2: { setting: 'meadow' } }),
   rongtien: look('coast', '#ff6fae', 'none', { 0: { setting: 'coral' }, 1: { setting: 'mountain' }, 3: { setting: 'flowers' }, 5: { setting: 'flowers' } }),
   caytre: look('bamboo', '#43c463', 'farm', { 2: { house: 'none' }, 3: { house: 'none' }, 5: { setting: 'wedding' } }),
   tamcam: look('garden', '#ff6fae', 'home', { 1: { setting: 'lotus' }, 2: { setting: 'festival' }, 3: { setting: 'festival' }, 4: { setting: 'palace' }, 5: { setting: 'orchard', accent: '#ffb020' } }),
@@ -40,6 +40,6 @@ export const STORY_LOOKS = {
   ganesha: look('mango', '#ffb020', 'pavilion'),
   bluejackal: look('indigo', '#8a5cf6', 'workshop', { 2: { setting: 'jungle', house: 'none' }, 3: { setting: 'jungle', house: 'none' }, 4: { setting: 'jungle', house: 'none' }, 5: { setting: 'jungle', house: 'none' } }),
   elephantmice: look('ruins', '#ffd764', 'none'),
-  monkey: look('tropicalriver', '#ffb020', 'none'),
+  monkey: look('tropicalriver', '#ffb020', 'none', { 0: { islet: true }, 4: { islet: true } }),
 };
 export const storyLook = (look, page) => look && { ...look, ...look.pages[page] };
