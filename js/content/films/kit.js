@@ -57,14 +57,18 @@ export function animal(S, kind, x, z, yaw = 0, scale = 1) {
   return g;
 }
 // legs, tail and breathing as in the valley; userData.nod tips the head (+ down) on top of that
-const animate = g => (dt, time) => { tickAnimal(g, dt, time); const r = g.userData.rig; if (r.head && g.userData.nod) r.head.rotation.x += g.userData.nod; };
+const animate = g => (dt, time) => { tickAnimal(g, dt, time); const r = g.userData.rig; if (r.filmScale) r.root.scale.multiply(r.filmScale); if (r.head && g.userData.nod) r.head.rotation.x += g.userData.nod; };
 
 // ---------- animals the valley does not have (rigged like js/animals.js, so tickAnimal moves them) ----------
 function rigged(build, o = {}) {
   const g = new THREE.Group(), root = new THREE.Group(); g.add(root);
   const r = Object.assign({ root, legs: [], ears: [], gait: 'walk', wag: 0, sway: 0, seed: Math.random() * 10, ph: 0, sp: 0, px: null, pz: null }, o);
   const piv = (parent, pos, parts) => { const p = new THREE.Group(); p.position.set(...pos); if (parts && parts.length) p.add(mesh(parts)); parent.add(p); return p; };
-  build(root, r, piv); g.userData.rig = r; g.userData.tick = animate(g); return g;
+  build(root, r, piv);
+  // tickAnimal resets its breathing scale every frame. Retain the authored animal size
+  // separately, otherwise a tiny mouse becomes adult-sized and a lion shrinks.
+  r.filmScale = root.scale.clone();
+  g.userData.rig = r; g.userData.tick = animate(g); return g;
 }
 const eyes = (x, y, z, rr = .04) => [-1, 1].flatMap(s => [P(Sp(rr, 10, 8), '#1a1a1a', [s * x, y, z]), P(Sp(rr * .35, 6, 5), '#ffffff', [s * x + rr * .3, y + rr * .35, z + rr * .75])]);
 const legs4 = (R, r, piv, c, hip, dx, dz, len, paw = c) => { for (const [x, z, ph] of [[dx, dz, 0], [-dx, dz, PI], [dx, -dz, PI], [-dx, -dz, 0]]) r.legs.push([piv(R, [x, hip, z], [P(Cap(len * .2, len * .7), c, [0, -len / 2, 0]), P(Sp(len * .22, 8, 6), paw, [0, -len + .03, .04], [0, 0, 0], [1, .6, 1.3])]), ph]); };
