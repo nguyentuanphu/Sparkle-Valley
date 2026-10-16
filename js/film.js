@@ -745,7 +745,7 @@ function dressStory(S) {
       if(kind==='study'){B(2,.8,1,'#b78858',5,.4,-3);B(1.4,.05,.7,'#fff6e4',5,.84,-3);}
       break;
     case 'orchard': case 'pears': case 'mango': case 'garden': case 'herbs':
-      tree(-7,-6,'#8ac775',kind==='pears'?'#e1da68':kind==='mango'?'#ffb020':null);tree(7,-8,'#a2ce7e',kind==='orchard'?'#c18de0':null);
+      tree(-7,-6,'#8ac775',kind==='pears'?'#e1da68':kind==='mango'?'#ffb020':null);tree(7,-8,'#a2ce7e',kind==='orchard'?c:null);
       flowers(-5,-2,kind==='herbs'?'#c18de0':c);flowers(6,-2,'#ffb5a0');
       if(kind==='pears'){B(2,.15,.9,'#bc8d59',-5,.75,-2);for(let i=0;i<5;i++)ball(.2,'#e1da68',-5.6+i*.3,.98,-2);}
       break;
@@ -765,7 +765,7 @@ function dressStory(S) {
       if(kind==='mountain')L.clouds(S,[[-12,3,-24,1.2],[13,4,-30,1.6]]);break;
     case 'lotus': case 'lake': case 'river': case 'tropicalriver': case 'falls':
       // Bank-side reeds and flowers; leave the boats, fish, waterfall and crossing channel open.
-      for(const x of [-8,8]){for(let i=0;i<6;i++)post(.03,.8+i%3*.2,'#63b869',x+i*.16,.4,-8);flowers(x,-9,kind==='lotus'?'#ff6fae':'#ffd764',5);}
+      for(const x of [-8,8]){for(let i=0;i<6;i++)post(.03,.8+i%3*.2,'#63b869',x+i*.16,.4,-12);flowers(x,-13,kind==='lotus'?'#ff6fae':'#ffd764',5);}
       if(kind==='lake'){L.blossom(S,-12,-18);B(5,.15,1.5,'#d8c7a5',10,.05,-11);}
       if(kind==='tropicalriver'){tree(-9,-16,'#83c96b','#ffb020');L.palm(S,12,-18,.2);}
       if(kind==='falls')rocks(-11,-9,'#bacad0',5);

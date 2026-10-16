@@ -10,7 +10,7 @@ export const STORY_LOOKS = {
   hoguom: look('lake', '#29b6f6', 'none'),
   rongtien: look('coast', '#ff6fae', 'none', { 0: { setting: 'coral' }, 1: { setting: 'mountain' }, 3: { setting: 'flowers' }, 5: { setting: 'flowers' } }),
   caytre: look('bamboo', '#43c463', 'farm', { 2: { house: 'none' }, 3: { house: 'none' }, 5: { setting: 'wedding' } }),
-  tamcam: look('garden', '#ff6fae', 'home', { 1: { setting: 'lotus' }, 2: { setting: 'festival' }, 3: { setting: 'festival' }, 4: { setting: 'palace' }, 5: { setting: 'orchard' } }),
+  tamcam: look('garden', '#ff6fae', 'home', { 1: { setting: 'lotus' }, 2: { setting: 'festival' }, 3: { setting: 'festival' }, 4: { setting: 'palace' }, 5: { setting: 'orchard', accent: '#ffb020' } }),
   sodua: look('meadow', '#ffd764', 'hut', { 1: { setting: 'pasture', house: 'none' }, 2: { setting: 'pasture', house: 'none' }, 3: { setting: 'wedding', house: 'home' }, 4: { setting: 'study', house: 'study' } }),
   thachsanh: look('forest', '#43c463', 'none', { 1: { setting: 'cave' }, 2: { setting: 'cliffs' }, 3: { setting: 'music' }, 4: { setting: 'rice' }, 5: { setting: 'palace' } }),
   chucuoi: look('herbs', '#8a5cf6', 'hut', { 0: { setting: 'forest' }, 4: { setting: 'moon' }, 5: { setting: 'moon' } }),
