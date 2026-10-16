@@ -39,3 +39,9 @@ Audio compact layout refinement: with Audio left of chat, its three small icons 
 - Owner decision, 16 October 2026 AEDT (about 2:05 pm), chosen in this chat: deploy r77 first (Release's round, the third AI's points 46-48, 52, 56, and the review fixes R1/R2 with the 45 new recorded lines). The window, start-up and bag sweep runs meanwhile; its fixes go in the next round (r78).
 
 - Owner decisions, 16 October 2026 AEDT (evening): r78 ships without new additions; r79 and r80 are combined into one helper chat (branch work/r79-20261016) together with the bugs reported with pictures 1-5 in evidence/owner-reports-20261016 (Bag names over pictures, voice bar over panels, Album word rows, wardrobe Remove buttons, Audio row under the speaker and chat buttons, Big pictures and Trick level with the player card, camera tray in one column above the eye button, a friendlier icon instead of the scary eye). Improvements chosen: E1, E3, E4, I1, I2, I4, G2 and new talk-and-touch learning games.
+
+- 16 October 2026 AEDT, r79 chat (branch `work/r79-20261016`), owner's answers to the plan pop-ups:
+  - Plan: do parts A, B and C on this branch, then push and mark "ready for Release" once, at the end (one handover, not after A and B).
+  - New learning games: build all four: "Say it, find it" (3-6), "Market counting" (3-7), "How do they feel?" (3-6), "First sound hunt" (4-7).
+  - Mirror (A4, point 18): a big picture of the child, with tabs underneath showing only the clothes the child owns; tap to wear, tap again to take off; no "Remove" buttons; Men and Lady collections stay.
+  - View button (A8): the eye icon becomes a little round camera in the game's art style, drawn in `js/art.js`.
