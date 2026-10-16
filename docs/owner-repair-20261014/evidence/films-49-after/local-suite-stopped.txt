@@ -1,0 +1,82 @@
+Stopped by owner before completion. Status icons replaced with PASS/FAIL; pictographs escaped. This is NOT a completed suite result.
+fatal: path 'js/content/film-looks.js' exists on disk, but not in 'e75ec692a93a8bc8c290f36a01c47f32244be4bd'
+2074 changed file(s) since c0bcd0bf; 65 of 190 checks:
+  boot             a game file changed
+  features         js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/content/films/kit.js:60 (top level)
+  contract         a game file changed
+  phone            js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
+  voicepack        a game file changed (checks the code map cannot see)
+  welcomevoice     js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
+  studio           a game file changed (checks the code map cannot see)
+  ownerstudiofailures a game file changed (checks the code map cannot see)
+  tales            js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/content/films/kit.js:60 (top level)
+  emoji            always (no browser, seconds); a game file changed (checks the code map cannot see)
+  autoplay         js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
+  films            js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
+  filmtails        js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/content/films/kit.js:60 (top level)
+  filmstart        js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/content/films/kit.js:60 (top level)
+  filmmusic        js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
+  preload          always (no browser, seconds); a game file changed (checks the code map cannot see)
+  story            js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
+  chapter2         js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
+  chapter3         js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
+  kidplay          js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
+  noemoji          always (no browser, seconds)
+  arch             always (no browser, seconds); a game file changed (checks the code map cannot see)
+  mapcoords        a game file changed (checks the code map cannot see)
+  simple           js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
+  unit             always (no browser, seconds); a game file changed (checks the code map cannot see)
+  names            always (no browser, seconds); a game file changed (checks the code map cannot see)
+  bilingual        always (no browser, seconds); a game file changed (checks the code map cannot see)
+  rules            always (no browser, seconds); a game file changed (checks the code map cannot see)
+  together         js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
+  ownertogetherstart js/content/films.js:7 (top level); js/content/films.js:1430 (top level); js/film.js:22 (top level)
+  ownerstoryinitial a game file changed (checks the code map cannot see)
+  types            always (no browser, seconds); a game file changed (checks the code map cannot see)
+  perf             a game file changed (checks the code map cannot see)
+  battery          a game file changed (checks the code map cannot see)
+  startup          a game file changed (checks the code map cannot see)
+  saves            a game file changed (checks the code map cannot see)
+  ownerautoplaynormal a game file changed (checks the code map cannot see)
+  ownerautoplaynormalmaze a game file changed (checks the code map cannot see)
+  ownerautoplaynormalduck a game file changed (checks the code map cannot see)
+  ownerautoplay2x  a game file changed (checks the code map cannot see)
+  ownerautoplay3x  a game file changed (checks the code map cannot see)
+  ownerdecoroverlap a game file changed (checks the code map cannot see)
+  ownerstudiofolds a game file changed (checks the code map cannot see)
+  ownerstudioperms a game file changed (checks the code map cannot see)
+  ownerheartstap   a game file changed (checks the code map cannot see)
+  ownerexplainswitches a game file changed (checks the code map cannot see)
+  ownerupdatenotice a game file changed (checks the code map cannot see)
+  ownertheatreapproach a game file changed (checks the code map cannot see)
+  ownerdecorworld  a game file changed (checks the code map cannot see)
+  ownerroadvoice   a game file changed (checks the code map cannot see)
+  ownerroadsafety  a game file changed (checks the code map cannot see)
+  ownerround       a game file changed (checks the code map cannot see)
+  ownerlearningvoice a game file changed (checks the code map cannot see)
+  ownervoicerefresh a game file changed (checks the code map cannot see)
+  ownervoiceindex  a game file changed (checks the code map cannot see)
+  ownerreporteddesktop a game file changed (checks the code map cannot see)
+  ownerreportedphoneen a game file changed (checks the code map cannot see)
+  ownerreportedphonevi a game file changed (checks the code map cannot see)
+  ownerautoplaynavigation a game file changed (checks the code map cannot see)
+  ownerautoplayplans a game file changed (checks the code map cannot see)
+  ownerspeechcancel a game file changed (checks the code map cannot see)
+  ownerfamily      a game file changed (checks the code map cannot see)
+  ownercapture     a game file changed (checks the code map cannot see)
+  reportdetectors  a game file changed (checks the code map cannot see)
+  reportstorage    a game file changed (checks the code map cannot see)
+  note: js/content/film-looks.js: a new file (checked through the file that loads it)
+65 checks: group 1 62 (~131 min), then alone: perf, battery, startup
+[1] PASS boot (179s) 
+[1] PASS features (79s) {"cities":8,"roads":37,"landmarks":55,"kiosks":28,"hosts":8,"house8":true,"tales":38,"vnTales":20,"deck":4.5,"river":-2.6,"pets":"kitty+puppy",
+[1] PASS contract (55s) 
+[1] PASS phone (596s) 10 screens checked on desktop, phone and tablet; a friend's Join button clear of the status
+[1] PASS voicepack (165s) first open downloads with a small bar ("Đang tải giọng đọc… 0%" → "Đang tải giọng đọc… 25%" … "Giọng đọc đã sẵn sàng [U+2713]"), the next open shows
+[1] PASS welcomevoice (72s) Ông Cú's welcome shows the child's name ("Who will fly with you, Kiwi?…") and every spoken line (4) has a recording
+[1] FAIL studio: page.waitForSelector: Timeout 15000ms exceeded.
+[1] PASS ownerstudiofailures (3s) Failed device lookup preserves unseen policies/levels with explicit error; late Analytics response cannot overwrite Releases; unrelat
+[1] PASS tales (322s) 38 tales, 259 pages: every picture drawn, no phone emoji (the tale shelf too)
+[1] PASS emoji (1s) 783 different emoji in the game, 783 drawn, 0 not drawn (0 uses); no emoji in the docs
+[1] FAIL autoplay: page.waitForSelector: Timeout 15000ms exceeded.
+[1] PASS films (1151s) duahau 6 pages, thanhgiong 6 pages, lantern_prologue 3 pages, lantern_ch1 2 pages, banhchung 5 pages, caykhe 6 pages, hoguom 6 pages, oanquan 7 

@@ -20,6 +20,7 @@ import { sayAsync } from './voice.js';
 import { SFX } from './audio.js';
 import { el, esc } from './util.js';
 import { pic } from './art.js';
+import { storyLook } from './content/film-looks.js';
 
 const H = Math.PI / 2;
 export const io = k => k < .5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
@@ -162,6 +163,7 @@ export function createFilm(stage, script, ctx = {}) {
   const sky = skyTex(); scene.background = sky; scene.fog = new THREE.Fog('#cfefff', 60, 260);
   const hemi = new THREE.HemisphereLight(0xffffff, 0xf1dfc0, 1.25), sun = new THREE.DirectionalLight(0xffffff, 1.4);
   sun.position.set(30, 50, 25); scene.add(hemi, sun);
+  if (script.look) { const fill = new THREE.DirectionalLight('#fff6e4', .55); fill.position.set(-12, 16, 25); scene.add(fill); }
   stage.appendChild(r.domElement);
   const help = el('div', 'film-help'); help.hidden = true; stage.appendChild(help);
   const ring = el('div', 'film-ring'); ring.hidden = true; stage.appendChild(ring);
@@ -199,6 +201,7 @@ export function createFilm(stage, script, ctx = {}) {
     const S = this; S.root = new THREE.Group(); scene.add(S.root);
     S.ev = []; S.t = 0; S.len = 0; S.actors = []; S.tickers = []; S.hold = null; S.narrated = false; S.camT = null;
     S.camPos = new THREE.Vector3(0, 3, 12); S.camLook = new THREE.Vector3(0, 1, 0); S.follow = null;
+    S.look = storyLook(script.look, k);
     S.calm = calm; S.k = k; S.ctx = ctx || {}; // (story films: the child's own look, name and companion)
     let resolve; S.done = new Promise(res => { resolve = res; });
     S.tw = (t, dur, fn, e = io) => { S.ev.push({ t, dur: calm && fn.cam ? 0 : Math.max(0, dur), fn, e }); S.len = Math.max(S.len, t + dur); return t + dur; };
@@ -207,8 +210,8 @@ export function createFilm(stage, script, ctx = {}) {
     S.every = f => S.tickers.push(f);
     S.sky = (top, bottom, fog) => { sky.paint(top, bottom); scene.fog.color.set(fog || bottom); S.skyNow = [top, bottom]; };
     S.skyTo = (t, dur, top, bottom) => { let from; return S.tw(t, dur, (k, first) => { if (first) from = S.skyNow.slice(); const a = mixHex(from[0], top, k), b = mixHex(from[1], bottom, k); sky.paint(a, b); scene.fog.color.set(b); if (k >= 1) S.skyNow = [top, bottom]; }, lin); };
-    S.light = (sunI = 1.05, hemiI = .85) => { sun.intensity = Math.max(.45, sunI); hemi.intensity = Math.max(.65, hemiI); };
-    S.lightTo = (t, dur, sunI, hemiI) => { let a, b; return S.tw(t, dur, (k, first) => { if (first) { a = sun.intensity; b = hemi.intensity; } sun.intensity = Math.max(.45, lerp(a, sunI, k)); hemi.intensity = Math.max(.65, lerp(b, hemiI, k)); }, lin); };
+    S.light = (sunI = 1.05, hemiI = .85) => { sun.intensity = Math.max(S.look ? .8 : .45, sunI); hemi.intensity = Math.max(S.look ? 1.1 : .65, hemiI); };
+    S.lightTo = (t, dur, sunI, hemiI) => { let a, b; return S.tw(t, dur, (k, first) => { if (first) { a = sun.intensity; b = hemi.intensity; } sun.intensity = Math.max(S.look ? .8 : .45, lerp(a, sunI, k)); hemi.intensity = Math.max(S.look ? 1.1 : .65, lerp(b, hemiI, k)); }, lin); };
     // actors
     S.person = (look, x, z, yaw = 0, scale = 1) => { const a = person(look, scale); a.px = x; a.pz = z; a.yaw = yaw; S.add(a.o, x, 0, z, yaw); S.actors.push(a); return a; };
     S.face = (a, t, yaw, dur = .45) => { if (Array.isArray(yaw)) yaw = Math.atan2(yaw[0] - a.px, yaw[1] - a.pz); let y0 = a.yaw, d = ((yaw - y0 + Math.PI * 3) % (Math.PI * 2)) - Math.PI; a.yaw = y0 + d; S.tw(t, dur, k => { a.o.rotation.y = y0 + d * k; }); return t + dur; };
@@ -300,7 +303,10 @@ export function createFilm(stage, script, ctx = {}) {
       if (page) page.dispose();
       paused = false; r.domElement.hidden = false;
       page = new Page(k); scene.fog.near = 60; scene.fog.far = 260; sun.intensity = 1.4; hemi.intensity = 1.25;
-      try { script.pages[k] && script.pages[k](page); } catch (e) { console.warn('film page', k, e); }
+      try {
+        script.pages[k] && script.pages[k](page);
+        if (page.look) { const n = page.tickers.length; dressStory(page); if (calm) page.tickers.length = n; }
+      } catch (e) { console.warn('film page', k, e); }
       page.ev.sort((a, b) => a.t - b.t);
       cam.position.copy(page.camPos); cam.lookAt(page.camLook);
       return page.done;
@@ -358,6 +364,7 @@ export const SETS = {
   },
   // a village house of mud walls and a thatched roof, open at the front
   house(S, x, z, ry = 0) {
+    if (S.look) return storyHouse(S, x, z, ry);
     const variant = ((S.houseCount = (S.houseCount || 0) + 1) + Math.round(Math.abs(x + z))) % 4;
     const walls = ['#f4dca8', '#dcebc8', '#f3d4cd', '#d6e4f3'][variant], roof = ['#dfb867', '#c87568', '#d89d65', '#8eacd0'][variant];
     const m = mesh([
@@ -701,3 +708,117 @@ PROPS.turtleTower = () => {
   parts.push(...[0, 1, 2].map(i => P(S_(.6, 8, 6), '#4f9e42', [Math.cos(i * 2.1) * 1.9, .5, Math.sin(i * 2.1) * 1.9])));
   return mesh(parts);
 };
+
+// Story-only dressing: landmarks sit behind or beside the actors, leaving the centre clear.
+// A page owns every added mesh, so the normal film disposal frees it on Next/Close.
+function dressStory(S) {
+  const { setting: kind, accent: c } = S.look;
+  const parts = [], B = (w,h,d,color,x,y,z,rot) => parts.push(P(Box(w,h,d),color,[x,y,z],rot)),
+    ball = (r,color,x,y,z,scale=[1,1,1]) => parts.push(P(S_(r,10,7),color,[x,y,z],[0,0,0],scale)),
+    post = (r,h,color,x,y,z) => parts.push(P(Cyl(r,r,h,8),color,[x,y,z]));
+  const flowers = (x,z,color=c,n=9) => { for(let i=0;i<n;i++){const px=x+Math.cos(i*2.4)*(1+i%3*.3),pz=z+Math.sin(i*2.4)*.8;post(.025,.4,'#43a45a',px,.2,pz);ball(.17,color,px,.43,pz,[1,.5,1]);ball(.06,'#ffd764',px,.5,pz);} };
+  const tree = (x,z,color='#82bf70',fruit=null) => { post(.18,2.6,'#94673f',x,1.3,z);for(let i=0;i<4;i++)ball(1.1,color,x+Math.sin(i*2.4)*.7,2.8+i%2*.4,z+Math.cos(i*2.4)*.5);if(fruit)for(let i=0;i<7;i++)ball(.18,fruit,x+Math.sin(i*2.4),2.4+i%3*.35,z+Math.cos(i*2.4)*.9); };
+  const rocks = (x,z,color='#c8af94',n=4) => { for(let i=0;i<n;i++)parts.push(P(new THREE.DodecahedronGeometry(.5+i%3*.2),color,[x+i*.8,.3,z+Math.sin(i)*.6],[i,.4,0],[1,.8,1])); };
+  const bunting = (z=-4) => { [-7,7].forEach(x=>post(.07,4.6,'#94673f',x,2.3,z));B(14,.035,.035,'#94673f',0,4.4,z);for(let i=0;i<11;i++)parts.push(P(Cone(.24,.5,3),['#ff6fae','#ffb020','#29b6f6'][i%3],[-6+i*1.2,4.05,z],[0,0,Math.PI])); };
+  const shelves = (x,z) => { B(2.6,.12,.8,'#ae8054',x,1,z);B(2.6,.12,.8,'#ae8054',x,2,z);[-1,1].forEach(dx=>post(.06,2.1,'#94673f',x+dx*1.2,1.05,z));for(let i=0;i<5;i++){ball(.18,['#ffd764','#c18de0','#ffb5a0'][i%3],x-1+i*.5,1.25,z);post(.16,.4,'#fff0d0',x-1+i*.5,2.25,z);} };
+  switch(kind) {
+    case 'island': case 'sea': case 'coast':
+      // Distant sandbars and a readable white surf line, not extra buildings.
+      for(let i=0;i<3;i++){const x=-24+i*24,z=-42-i%2*12;ball(5,'#f4dfac',x,-.6,z,[1.8,.2,1]);}
+      for(let i=0;i<12;i++)ball(.16,'#fff6e4',-11+i*2,-.15,12.6+Math.sin(i)*.2,[2,.3,1]);
+      if(kind!=='sea'){flowers(-8,kind==='coast'?9:-2,'#ffb5a0',5);rocks(7,kind==='coast'?8:-3,'#e8d4b3',3);} break;
+    case 'bamboo':
+      // Batch the additional bamboo into the dressing mesh: no extra draw call per leaf.
+      for (const x of [-6, 7]) for (let i=0;i<5;i++) { const px=x+i*.25,h=5+i*.45; post(.075,h,'#69be70',px,h/2,-10); for(let j=1;j<5;j++) { post(.095,.06,'#a0d18a',px,j*h/5,-10); parts.push(P(Cone(.2,1.1,4),'#87cb6b',[px+.3,j*h/5+.4,-10],[0,0,-.9],[1,1,.3])); } }
+      B(4,.18,1,'#cda56b',-6,.12,-2);for(let i=0;i<5;i++)post(.065,1.3,'#e8ce91',-7.5+i*.7,.75,-2);flowers(7,-3);break;
+    case 'tet': case 'newyear': case 'festival': case 'wedding': case 'moonfestival':
+      bunting();SETS.blossom(S,-7,-6);SETS.blossom(S,7,-7);
+      [-6,-3,3,6].forEach((x,i)=>SETS.lantern(S,x,3.7,-4,i%2?'#ffd764':c));
+      if(kind==='tet'){B(1.2,.4,1.2,'#63b869',-5,.2,-2);B(.06,.42,1.22,'#fff0d0',-5,.21,-2);B(1.22,.42,.06,'#fff0d0',-5,.21,-2);}
+      break;
+    case 'palace': case 'cloudcourt':
+      // Two small garden pavilions frame the existing throne, never replace its actor positions.
+      [-10,10].forEach(x=>{post(.25,3,'#dc7661',x,1.5,-8);parts.push(P(Cone(1.6,1.2,4),c,[x,3.4,-8],[0,Math.PI/4,0],[1.2,1,.8]));ball(.22,'#ffd764',x,4.1,-8);});
+      flowers(-7,-3,'#ff6fae');flowers(7,-3,'#ffd764');break;
+    case 'rice': case 'farm':
+      SETS.paddy(S,-11,-7,6,5);B(2,.22,1,'#cda56b',6,.12,-3);for(let i=0;i<3;i++)ball(.45,'#e7c776',5.3+i*.65,.45,-3,[.65,1,1]);break;
+    case 'kitchen': case 'pantry': case 'study': case 'art': case 'indigo':
+      // Interior dressing close enough for the mice's low camera as well as a human-height shot.
+      shelves(kind==='pantry'?-3:-5,kind==='pantry'?-2.65:-4);
+      if(kind==='art'||kind==='indigo'){for(let i=0;i<4;i++){post(.3,.6,['#8a5cf6','#29b6f6','#ff6fae','#ffb020'][i],5+i*.65,.3,-3);B(.5,.06,.5,'#fff6e4',5+i*.65,.62,-3);}}
+      if(kind==='study'){B(2,.8,1,'#b78858',5,.4,-3);B(1.4,.05,.7,'#fff6e4',5,.84,-3);}
+      break;
+    case 'orchard': case 'pears': case 'mango': case 'garden': case 'herbs':
+      tree(-7,-6,'#8ac775',kind==='pears'?'#e1da68':kind==='mango'?'#ffb020':null);tree(7,-8,'#a2ce7e',kind==='orchard'?c:null);
+      flowers(-5,-2,kind==='herbs'?'#c18de0':c);flowers(6,-2,'#ffb5a0');
+      if(kind==='pears'){B(2,.15,.9,'#bc8d59',-5,.75,-2);for(let i=0;i<5;i++)ball(.2,'#e1da68',-5.6+i*.3,.98,-2);}
+      break;
+    case 'gourd':
+      [-7,7].forEach(x=>{post(.09,3.8,'#b58b58',x,1.9,-5);B(3,.12,.15,'#b58b58',x,3.7,-5);for(let i=0;i<4;i++){ball(.35,'#a0cd78',x-1+i*.65,3.1,-5,[.7,1.4,.7]);ball(.13,'#63b869',x-1+i*.65,3.6,-5);}});break;
+    case 'meadow': case 'pasture': case 'courtyard':
+      tree(-8,-8);flowers(-6,-2);flowers(7,-5,'#fff6e4');
+      if(kind==='pasture')for(let i=0;i<7;i++){post(.06,1,'#cda56b',-8+i*1.5,.5,-7);B(1.5,.08,.1,'#cda56b',-7.25+i*1.5,.7,-7);}
+      if(kind==='courtyard'){B(3,.25,1,'#d8c7a5',6,.45,-4);B(3,.15,1.2,'#e8dcc8',6,.65,-4);}break;
+    case 'forest': case 'jungle': case 'music': case 'flowers': case 'wildflowers':
+      tree(-7,-8,kind==='jungle'?'#56aa78':'#8ac775');tree(7,-10,'#9ad17b');flowers(-5,-3);flowers(6,-3,kind==='wildflowers'?'#29b6f6':'#ffd764');
+      if(kind==='music'){B(2.2,.5,1,'#d8c7a5',-5,.25,-2);for(let i=0;i<5;i++)post(.04,.4+i*.1,'#cda56b',-5.7+i*.3,.8,-2);}break;
+    case 'cave': case 'cliffs': case 'mountain': case 'treasure':
+      [-9,9].forEach((x,i)=>{ball(3.6,i?'#b7b3ca':'#b4c5bc',x,1.3,-10,[1,1.3,1]);rocks(x-2,-7,'#c9c4d8',3);});
+      if(kind==='cave'){ball(3,'#998b9e',0,1,-13,[1.8,1.4,.7]);ball(2,'#766a85',0,.8,-10.8,[1,1,.18]);}
+      if(kind==='treasure')for(let i=0;i<7;i++)parts.push(P(new THREE.OctahedronGeometry(.35),['#ffd764','#ffb020','#8a5cf6'][i%3],[-6+i*.6,.4,-3],[.4,i,0]));
+      if(kind==='mountain')SETS.clouds(S,[[-12,3,-24,1.2],[13,4,-30,1.6]]);break;
+    case 'lotus': case 'lake': case 'river': case 'tropicalriver': case 'falls':
+      // Bank-side reeds and flowers; leave the boats, fish, waterfall and crossing channel open.
+      const bankZ=kind==='lake'?-29:kind==='falls'?-9:-12;
+      if(kind==='falls')[-10,10].forEach(x=>ball(3.5,'#bacad0',x,-.85,-9,[1,.3,1]));
+      for(const x of (kind==='falls'?[-10,10]:[-8,8])){for(let i=0;i<6;i++)post(.03,.8+i%3*.2,'#63b869',x+i*.16,.4,bankZ);flowers(x,bankZ-1,kind==='lotus'?'#ff6fae':'#ffd764',5);}
+      if(kind==='lake'){SETS.blossom(S,-12,-30);B(5,.15,1.5,'#d8c7a5',10,.05,-24.7);[7.7,12.3].forEach(x=>post(.08,.8,'#ae8054',x,-.3,-24.2));}
+      if(kind==='tropicalriver'){tree(-9,-16,'#83c96b','#ffb020');SETS.palm(S,12,-18,.2);if(S.look.islet)ball(3.4,'#b7cf8a',0,-.7,-3,[1,.25,1]);}
+      if(kind==='falls')rocks(-11,-9,'#bacad0',5);
+      break;
+    case 'coral':
+      for(let i=0;i<8;i++){const x=-7+i*2;post(.08,.8+i%3*.4,['#ff9eb5','#c18de0','#ffb070'][i%3],x,.4,-5);ball(.3,c,x,.9+i%3*.3,-5);}
+      ball(2,'#a1d2db',-9,.3,-12,[1.8,.7,1]);break;
+    case 'moon': case 'stars': case 'silk':
+      if(kind==='silk'){B(2.4,.14,.9,'#b58b58',-5,1.2,-3);for(let i=0;i<6;i++)B(.25,.03,.8,['#c18de0','#ff6fae','#29b6f6'][i%3],-6+i*.35,1.3,-3);}
+      else for(let i=0;i<8;i++)parts.push(P(new THREE.OctahedronGeometry(.16),i%2?'#ffd764':'#c18de0',[-8+i*2.2,5+i%3,-16],[0,0,.3]));break;
+    case 'grassland': case 'eucalyptus': case 'picnic':
+      // Pale branching gum trunks and airy crowns, rather than village houses.
+      for(const x of [-7,8]){post(.18,3.8,'#e8dcc8',x,1.9,-7);parts.push(P(Cyl(.09,.12,2), '#e8dcc8',[x+.5,3.2,-7],[0,0,-.65]));ball(1.6,'#a4c7a1',x,4,-7,[1.3,.6,1]);}
+      if(kind==='picnic'){B(2.4,.02,1.6,'#fff6e4',-5,.03,-2);for(let i=0;i<5;i++)B(.2,.025,1.6,c,-6+i*.5,.04,-2);}
+      else flowers(-5,-3,kind==='grassland'?'#ffd764':'#ffb5a0',6);break;
+    case 'dry': case 'earth': case 'rain': case 'waterhole': case 'ruins':
+      rocks(-8,-8,kind==='earth'?'#d18b69':'#d8c7a5',5);
+      if(kind==='ruins')[-8,8].forEach(x=>{post(.35,2.8,'#d8c7a5',x,1.4,-8);B(1.2,.3,1,'#e8dcc8',x,2.9,-8);});
+      if(kind==='waterhole'){flowers(-7,-3,'#ffd764',5);flowers(8,-6,'#fff6e4',5);}
+      if(kind==='rain')for(let i=0;i<5;i++)ball(.32,'#9acbd0',-8+i*.6,.04,-4,[1,.1,1]);break;
+    case 'race':
+      for(const x of [-9,9]){post(.1,4,'#dc7661',x,2,-7);for(let i=0;i<3;i++)B(.9,.35,.06,['#e85a55','#ffd764','#29b6f6'][i],x+.4,3.6-i*.6,-7);}
+      B(4,.12,1,'#e8dcc8',7,.1,4);break;
+  }
+  if(parts.length){const o=mesh(parts);o.userData.storyScenery=kind;S.add(o);}
+}
+
+// Homes carry a story role and a different silhouette. Generic repeated houses are omitted
+// from forests, lake banks, mountain journeys and the open family gathering scenes.
+function storyHouse(S, x, z, ry) {
+  const style = S.look.house, c = S.look.accent;
+  if (style === 'none') return S.add(new THREE.Group(), x, 0, z, ry);
+  if (style === 'hut') return SETS.hut(S, x, z, ry);
+  const parts = [], add = (g,c,p,r,s) => parts.push(P(g,c,p,r,s));
+  const open = style === 'pavilion' || style === 'workshop';
+  const w = style === 'farm' ? 7 : style === 'study' ? 4 : 5.4, h = style === 'court' ? 3 : 2.3;
+  add(Box(w+.6,.2,4.4),'#e8d5b4',[0,.1,0]);
+  if (!open) { add(Box(w,h,3.6),'#fff0d0',[0,h/2+.2,0]);add(Box(1.25,1.9,.12),'#815936',[0,1.15,1.82]); }
+  else add(Box(w,h,.25),'#f4dfbd',[0,h/2+.2,-1.7]);
+  [-1,1].forEach(v=>{add(Cyl(.12,.12,h+.2,8),'#ac744a',[v*(w/2-.2),h/2+.2,1.8]);if(!open)add(Box(.9,.8,.13),c,[v*w*.32,1.55,1.83]);});
+  if(style==='pavilion'){
+    add(Cyl(w*.58,w*.65,.3,8),'#ffcf76',[0,h+.35,0]);add(S_(w*.45),'#ffb070',[0,h+.5,0],[0,0,0],[1,.65,1]);add(S_(.18),'#ffd764',[0,h+2.2,0]);
+  } else {
+    add(Cone(w*.8,style==='farm'?1.3:1.8,4),style==='farm'?'#dab779':style==='court'?'#70a8b8':'#d47a68',[0,h+1,0],[0,Math.PI/4,0],[1.2,1,.85]);
+    add(Box(w+.6,.18,1.4),c,[0,h+.1,2.2]);
+    if(style==='study')add(Box(.8,.8,.2),'#fff6e4',[0,h+.7,1.8]);
+  }
+  [-1,1].forEach(v=>{add(Cyl(.28,.22,.4,8),'#d69a73',[v*(w/2+.5),.25,1.8]);add(S_(.4),c,[v*(w/2+.5),.65,1.8]);});
+  const o=mesh(parts);o.userData.storyHouse=style;return S.add(o,x,0,z,ry);
+}

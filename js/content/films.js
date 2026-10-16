@@ -5,6 +5,7 @@
 import { SETS as L, PROPS as Pp, LOOK, G3, io } from '../film.js';
 import { THREE, P, merge } from '../gfx.js';
 import { SFX } from '../audio.js';
+import { STORY_LOOKS } from './film-looks.js';
 
 const PI = Math.PI, H = PI / 2;
 // the cast
@@ -1428,3 +1429,6 @@ FILMS.hoguom = { pages: [
     S.at(9, () => { });
   }
 ] };
+
+// Story art direction is attached only to tales; guides and lantern chapters keep their sets.
+for (const [id, look] of Object.entries(STORY_LOOKS)) if (FILMS[id]) FILMS[id].look = look;

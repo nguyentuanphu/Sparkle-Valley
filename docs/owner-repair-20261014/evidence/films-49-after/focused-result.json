@@ -1,0 +1,1578 @@
+{
+  "stories": 38,
+  "pages": [
+    {
+      "id": "duahau",
+      "page": 1,
+      "setting": "island",
+      "house": "hut",
+      "triangles": 3268
+    },
+    {
+      "id": "duahau",
+      "page": 2,
+      "setting": "island",
+      "house": "hut",
+      "triangles": 3268
+    },
+    {
+      "id": "duahau",
+      "page": 3,
+      "setting": "island",
+      "house": "hut",
+      "triangles": 3268
+    },
+    {
+      "id": "duahau",
+      "page": 4,
+      "setting": "island",
+      "house": "hut",
+      "triangles": 3268
+    },
+    {
+      "id": "duahau",
+      "page": 5,
+      "setting": "island",
+      "house": "hut",
+      "triangles": 3268
+    },
+    {
+      "id": "duahau",
+      "page": 6,
+      "setting": "palace",
+      "house": "hut",
+      "triangles": 5224
+    },
+    {
+      "id": "thanhgiong",
+      "page": 1,
+      "setting": "bamboo",
+      "house": "home",
+      "triangles": 5416
+    },
+    {
+      "id": "thanhgiong",
+      "page": 2,
+      "setting": "bamboo",
+      "house": "home",
+      "triangles": 5416
+    },
+    {
+      "id": "thanhgiong",
+      "page": 3,
+      "setting": "bamboo",
+      "house": "home",
+      "triangles": 5416
+    },
+    {
+      "id": "thanhgiong",
+      "page": 4,
+      "setting": "bamboo",
+      "house": "none",
+      "triangles": 4700
+    },
+    {
+      "id": "thanhgiong",
+      "page": 5,
+      "setting": "bamboo",
+      "house": "none",
+      "triangles": 4700
+    },
+    {
+      "id": "thanhgiong",
+      "page": 6,
+      "setting": "mountain",
+      "house": "none",
+      "triangles": 456
+    },
+    {
+      "id": "banhchung",
+      "page": 1,
+      "setting": "tet",
+      "house": "home",
+      "triangles": 211
+    },
+    {
+      "id": "banhchung",
+      "page": 2,
+      "setting": "mountain",
+      "house": "home",
+      "triangles": 456
+    },
+    {
+      "id": "banhchung",
+      "page": 3,
+      "setting": "rice",
+      "house": "home",
+      "triangles": 1088
+    },
+    {
+      "id": "banhchung",
+      "page": 4,
+      "setting": "kitchen",
+      "house": "home",
+      "triangles": 1564
+    },
+    {
+      "id": "banhchung",
+      "page": 5,
+      "setting": "tet",
+      "house": "home",
+      "triangles": 211
+    },
+    {
+      "id": "caykhe",
+      "page": 1,
+      "setting": "orchard",
+      "house": "home",
+      "triangles": 7476
+    },
+    {
+      "id": "caykhe",
+      "page": 2,
+      "setting": "orchard",
+      "house": "home",
+      "triangles": 6760
+    },
+    {
+      "id": "caykhe",
+      "page": 3,
+      "setting": "treasure",
+      "house": "none",
+      "triangles": 512
+    },
+    {
+      "id": "caykhe",
+      "page": 4,
+      "setting": "treasure",
+      "house": "none",
+      "triangles": 512
+    },
+    {
+      "id": "caykhe",
+      "page": 5,
+      "setting": "sea",
+      "house": "none",
+      "triangles": 1800
+    },
+    {
+      "id": "caykhe",
+      "page": 6,
+      "setting": "orchard",
+      "house": "home",
+      "triangles": 7476
+    },
+    {
+      "id": "hoguom",
+      "page": 1,
+      "setting": "river",
+      "house": "none",
+      "triangles": 3104
+    },
+    {
+      "id": "hoguom",
+      "page": 2,
+      "setting": "forest",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "hoguom",
+      "page": 3,
+      "setting": "meadow",
+      "house": "none",
+      "triangles": 5408
+    },
+    {
+      "id": "hoguom",
+      "page": 4,
+      "setting": "lake",
+      "house": "none",
+      "triangles": 3180
+    },
+    {
+      "id": "hoguom",
+      "page": 5,
+      "setting": "lake",
+      "house": "none",
+      "triangles": 3180
+    },
+    {
+      "id": "hoguom",
+      "page": 6,
+      "setting": "lake",
+      "house": "none",
+      "triangles": 3180
+    },
+    {
+      "id": "rongtien",
+      "page": 1,
+      "setting": "coral",
+      "house": "none",
+      "triangles": 1336
+    },
+    {
+      "id": "rongtien",
+      "page": 2,
+      "setting": "mountain",
+      "house": "none",
+      "triangles": 456
+    },
+    {
+      "id": "rongtien",
+      "page": 3,
+      "setting": "coast",
+      "house": "none",
+      "triangles": 3268
+    },
+    {
+      "id": "rongtien",
+      "page": 4,
+      "setting": "flowers",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "rongtien",
+      "page": 5,
+      "setting": "coast",
+      "house": "none",
+      "triangles": 3268
+    },
+    {
+      "id": "rongtien",
+      "page": 6,
+      "setting": "flowers",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "caytre",
+      "page": 1,
+      "setting": "bamboo",
+      "house": "farm",
+      "triangles": 5416
+    },
+    {
+      "id": "caytre",
+      "page": 2,
+      "setting": "bamboo",
+      "house": "farm",
+      "triangles": 5416
+    },
+    {
+      "id": "caytre",
+      "page": 3,
+      "setting": "bamboo",
+      "house": "none",
+      "triangles": 4700
+    },
+    {
+      "id": "caytre",
+      "page": 4,
+      "setting": "bamboo",
+      "house": "none",
+      "triangles": 4700
+    },
+    {
+      "id": "caytre",
+      "page": 5,
+      "setting": "bamboo",
+      "house": "farm",
+      "triangles": 5416
+    },
+    {
+      "id": "caytre",
+      "page": 6,
+      "setting": "wedding",
+      "house": "farm",
+      "triangles": 891
+    },
+    {
+      "id": "tamcam",
+      "page": 1,
+      "setting": "garden",
+      "house": "home",
+      "triangles": 6636
+    },
+    {
+      "id": "tamcam",
+      "page": 2,
+      "setting": "lotus",
+      "house": "home",
+      "triangles": 3820
+    },
+    {
+      "id": "tamcam",
+      "page": 3,
+      "setting": "festival",
+      "house": "home",
+      "triangles": 891
+    },
+    {
+      "id": "tamcam",
+      "page": 4,
+      "setting": "festival",
+      "house": "home",
+      "triangles": 175
+    },
+    {
+      "id": "tamcam",
+      "page": 5,
+      "setting": "palace",
+      "house": "home",
+      "triangles": 5224
+    },
+    {
+      "id": "tamcam",
+      "page": 6,
+      "setting": "orchard",
+      "house": "home",
+      "triangles": 7476
+    },
+    {
+      "id": "sodua",
+      "page": 1,
+      "setting": "meadow",
+      "house": "hut",
+      "triangles": 5408
+    },
+    {
+      "id": "sodua",
+      "page": 2,
+      "setting": "pasture",
+      "house": "none",
+      "triangles": 5716
+    },
+    {
+      "id": "sodua",
+      "page": 3,
+      "setting": "pasture",
+      "house": "none",
+      "triangles": 5716
+    },
+    {
+      "id": "sodua",
+      "page": 4,
+      "setting": "wedding",
+      "house": "home",
+      "triangles": 891
+    },
+    {
+      "id": "sodua",
+      "page": 5,
+      "setting": "study",
+      "house": "study",
+      "triangles": 1600
+    },
+    {
+      "id": "sodua",
+      "page": 6,
+      "setting": "meadow",
+      "house": "hut",
+      "triangles": 5408
+    },
+    {
+      "id": "thachsanh",
+      "page": 1,
+      "setting": "forest",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "thachsanh",
+      "page": 2,
+      "setting": "cave",
+      "house": "none",
+      "triangles": 696
+    },
+    {
+      "id": "thachsanh",
+      "page": 3,
+      "setting": "cliffs",
+      "house": "none",
+      "triangles": 456
+    },
+    {
+      "id": "thachsanh",
+      "page": 4,
+      "setting": "music",
+      "house": "none",
+      "triangles": 6092
+    },
+    {
+      "id": "thachsanh",
+      "page": 5,
+      "setting": "rice",
+      "house": "none",
+      "triangles": 372
+    },
+    {
+      "id": "thachsanh",
+      "page": 6,
+      "setting": "palace",
+      "house": "none",
+      "triangles": 5224
+    },
+    {
+      "id": "chucuoi",
+      "page": 1,
+      "setting": "forest",
+      "house": "hut",
+      "triangles": 5920
+    },
+    {
+      "id": "chucuoi",
+      "page": 2,
+      "setting": "herbs",
+      "house": "hut",
+      "triangles": 5920
+    },
+    {
+      "id": "chucuoi",
+      "page": 3,
+      "setting": "herbs",
+      "house": "hut",
+      "triangles": 5920
+    },
+    {
+      "id": "chucuoi",
+      "page": 4,
+      "setting": "herbs",
+      "house": "hut",
+      "triangles": 5920
+    },
+    {
+      "id": "chucuoi",
+      "page": 5,
+      "setting": "moon",
+      "house": "hut",
+      "triangles": 64
+    },
+    {
+      "id": "chucuoi",
+      "page": 6,
+      "setting": "moon",
+      "house": "hut",
+      "triangles": 64
+    },
+    {
+      "id": "cockien",
+      "page": 1,
+      "setting": "dry",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "cockien",
+      "page": 2,
+      "setting": "dry",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "cockien",
+      "page": 3,
+      "setting": "dry",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "cockien",
+      "page": 4,
+      "setting": "cloudcourt",
+      "house": "none",
+      "triangles": 5224
+    },
+    {
+      "id": "cockien",
+      "page": 5,
+      "setting": "cloudcourt",
+      "house": "none",
+      "triangles": 5224
+    },
+    {
+      "id": "cockien",
+      "page": 6,
+      "setting": "rain",
+      "house": "none",
+      "triangles": 780
+    },
+    {
+      "id": "vusua",
+      "page": 1,
+      "setting": "garden",
+      "house": "home",
+      "triangles": 6636
+    },
+    {
+      "id": "vusua",
+      "page": 2,
+      "setting": "garden",
+      "house": "home",
+      "triangles": 6636
+    },
+    {
+      "id": "vusua",
+      "page": 3,
+      "setting": "rain",
+      "house": "none",
+      "triangles": 780
+    },
+    {
+      "id": "vusua",
+      "page": 4,
+      "setting": "orchard",
+      "house": "none",
+      "triangles": 6760
+    },
+    {
+      "id": "vusua",
+      "page": 5,
+      "setting": "orchard",
+      "house": "none",
+      "triangles": 6760
+    },
+    {
+      "id": "vusua",
+      "page": 6,
+      "setting": "orchard",
+      "house": "none",
+      "triangles": 6760
+    },
+    {
+      "id": "baluoiriu",
+      "page": 1,
+      "setting": "river",
+      "house": "none",
+      "triangles": 3104
+    },
+    {
+      "id": "baluoiriu",
+      "page": 2,
+      "setting": "river",
+      "house": "none",
+      "triangles": 3104
+    },
+    {
+      "id": "baluoiriu",
+      "page": 3,
+      "setting": "river",
+      "house": "none",
+      "triangles": 3104
+    },
+    {
+      "id": "baluoiriu",
+      "page": 4,
+      "setting": "river",
+      "house": "none",
+      "triangles": 3104
+    },
+    {
+      "id": "baluoiriu",
+      "page": 5,
+      "setting": "river",
+      "house": "none",
+      "triangles": 3104
+    },
+    {
+      "id": "baluoiriu",
+      "page": 6,
+      "setting": "river",
+      "house": "none",
+      "triangles": 3104
+    },
+    {
+      "id": "quabau",
+      "page": 1,
+      "setting": "gourd",
+      "house": "hut",
+      "triangles": 2008
+    },
+    {
+      "id": "quabau",
+      "page": 2,
+      "setting": "rain",
+      "house": "hut",
+      "triangles": 780
+    },
+    {
+      "id": "quabau",
+      "page": 3,
+      "setting": "mountain",
+      "house": "hut",
+      "triangles": 456
+    },
+    {
+      "id": "quabau",
+      "page": 4,
+      "setting": "gourd",
+      "house": "hut",
+      "triangles": 2008
+    },
+    {
+      "id": "quabau",
+      "page": 5,
+      "setting": "gourd",
+      "house": "none",
+      "triangles": 2008
+    },
+    {
+      "id": "quabau",
+      "page": 6,
+      "setting": "flowers",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "thayboi",
+      "page": 1,
+      "setting": "courtyard",
+      "house": "none",
+      "triangles": 5432
+    },
+    {
+      "id": "thayboi",
+      "page": 2,
+      "setting": "courtyard",
+      "house": "none",
+      "triangles": 5432
+    },
+    {
+      "id": "thayboi",
+      "page": 3,
+      "setting": "courtyard",
+      "house": "none",
+      "triangles": 5432
+    },
+    {
+      "id": "thayboi",
+      "page": 4,
+      "setting": "courtyard",
+      "house": "none",
+      "triangles": 5432
+    },
+    {
+      "id": "thayboi",
+      "page": 5,
+      "setting": "courtyard",
+      "house": "none",
+      "triangles": 5432
+    },
+    {
+      "id": "thayboi",
+      "page": 6,
+      "setting": "courtyard",
+      "house": "none",
+      "triangles": 5432
+    },
+    {
+      "id": "nhacmeo",
+      "page": 1,
+      "setting": "pantry",
+      "house": "none",
+      "triangles": 848
+    },
+    {
+      "id": "nhacmeo",
+      "page": 2,
+      "setting": "pantry",
+      "house": "none",
+      "triangles": 848
+    },
+    {
+      "id": "nhacmeo",
+      "page": 3,
+      "setting": "pantry",
+      "house": "none",
+      "triangles": 848
+    },
+    {
+      "id": "nhacmeo",
+      "page": 4,
+      "setting": "pantry",
+      "house": "none",
+      "triangles": 848
+    },
+    {
+      "id": "nhacmeo",
+      "page": 5,
+      "setting": "pantry",
+      "house": "none",
+      "triangles": 848
+    },
+    {
+      "id": "nhacmeo",
+      "page": 6,
+      "setting": "pantry",
+      "house": "none",
+      "triangles": 848
+    },
+    {
+      "id": "ongtao",
+      "page": 1,
+      "setting": "kitchen",
+      "house": "home",
+      "triangles": 848
+    },
+    {
+      "id": "ongtao",
+      "page": 2,
+      "setting": "kitchen",
+      "house": "home",
+      "triangles": 848
+    },
+    {
+      "id": "ongtao",
+      "page": 3,
+      "setting": "lotus",
+      "house": "none",
+      "triangles": 3104
+    },
+    {
+      "id": "ongtao",
+      "page": 4,
+      "setting": "lotus",
+      "house": "none",
+      "triangles": 3104
+    },
+    {
+      "id": "ongtao",
+      "page": 5,
+      "setting": "cloudcourt",
+      "house": "home",
+      "triangles": 5224
+    },
+    {
+      "id": "ongtao",
+      "page": 6,
+      "setting": "tet",
+      "house": "home",
+      "triangles": 927
+    },
+    {
+      "id": "cachep",
+      "page": 1,
+      "setting": "falls",
+      "house": "none",
+      "triangles": 3524
+    },
+    {
+      "id": "cachep",
+      "page": 2,
+      "setting": "falls",
+      "house": "none",
+      "triangles": 3524
+    },
+    {
+      "id": "cachep",
+      "page": 3,
+      "setting": "falls",
+      "house": "none",
+      "triangles": 3524
+    },
+    {
+      "id": "cachep",
+      "page": 4,
+      "setting": "falls",
+      "house": "none",
+      "triangles": 3524
+    },
+    {
+      "id": "cachep",
+      "page": 5,
+      "setting": "cloudcourt",
+      "house": "none",
+      "triangles": 5224
+    },
+    {
+      "id": "cachep",
+      "page": 6,
+      "setting": "cloudcourt",
+      "house": "none",
+      "triangles": 5224
+    },
+    {
+      "id": "sontinh",
+      "page": 1,
+      "setting": "palace",
+      "house": "home",
+      "triangles": 5224
+    },
+    {
+      "id": "sontinh",
+      "page": 2,
+      "setting": "palace",
+      "house": "home",
+      "triangles": 5224
+    },
+    {
+      "id": "sontinh",
+      "page": 3,
+      "setting": "cliffs",
+      "house": "none",
+      "triangles": 456
+    },
+    {
+      "id": "sontinh",
+      "page": 4,
+      "setting": "rain",
+      "house": "none",
+      "triangles": 780
+    },
+    {
+      "id": "rainbowserpent",
+      "page": 1,
+      "setting": "earth",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "rainbowserpent",
+      "page": 2,
+      "setting": "earth",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "rainbowserpent",
+      "page": 3,
+      "setting": "earth",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "rainbowserpent",
+      "page": 4,
+      "setting": "rain",
+      "house": "none",
+      "triangles": 780
+    },
+    {
+      "id": "rainbowserpent",
+      "page": 5,
+      "setting": "waterhole",
+      "house": "none",
+      "triangles": 2900
+    },
+    {
+      "id": "rainbowserpent",
+      "page": 6,
+      "setting": "waterhole",
+      "house": "none",
+      "triangles": 2900
+    },
+    {
+      "id": "emu",
+      "page": 1,
+      "setting": "grassland",
+      "house": "none",
+      "triangles": 2016
+    },
+    {
+      "id": "emu",
+      "page": 2,
+      "setting": "grassland",
+      "house": "none",
+      "triangles": 2016
+    },
+    {
+      "id": "emu",
+      "page": 3,
+      "setting": "grassland",
+      "house": "none",
+      "triangles": 2016
+    },
+    {
+      "id": "emu",
+      "page": 4,
+      "setting": "grassland",
+      "house": "none",
+      "triangles": 2016
+    },
+    {
+      "id": "emu",
+      "page": 5,
+      "setting": "grassland",
+      "house": "none",
+      "triangles": 2016
+    },
+    {
+      "id": "emu",
+      "page": 6,
+      "setting": "grassland",
+      "house": "none",
+      "triangles": 2016
+    },
+    {
+      "id": "dotkangaroo",
+      "page": 1,
+      "setting": "eucalyptus",
+      "house": "none",
+      "triangles": 2016
+    },
+    {
+      "id": "dotkangaroo",
+      "page": 2,
+      "setting": "eucalyptus",
+      "house": "none",
+      "triangles": 2016
+    },
+    {
+      "id": "dotkangaroo",
+      "page": 3,
+      "setting": "eucalyptus",
+      "house": "none",
+      "triangles": 2016
+    },
+    {
+      "id": "dotkangaroo",
+      "page": 4,
+      "setting": "eucalyptus",
+      "house": "none",
+      "triangles": 2016
+    },
+    {
+      "id": "dotkangaroo",
+      "page": 5,
+      "setting": "eucalyptus",
+      "house": "none",
+      "triangles": 2016
+    },
+    {
+      "id": "dotkangaroo",
+      "page": 6,
+      "setting": "picnic",
+      "house": "none",
+      "triangles": 456
+    },
+    {
+      "id": "birdcolours",
+      "page": 1,
+      "setting": "wildflowers",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "birdcolours",
+      "page": 2,
+      "setting": "wildflowers",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "birdcolours",
+      "page": 3,
+      "setting": "wildflowers",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "birdcolours",
+      "page": 4,
+      "setting": "wildflowers",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "birdcolours",
+      "page": 5,
+      "setting": "wildflowers",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "birdcolours",
+      "page": 6,
+      "setting": "wildflowers",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "magicpudding",
+      "page": 1,
+      "setting": "picnic",
+      "house": "hut",
+      "triangles": 456
+    },
+    {
+      "id": "magicpudding",
+      "page": 2,
+      "setting": "picnic",
+      "house": "hut",
+      "triangles": 456
+    },
+    {
+      "id": "magicpudding",
+      "page": 3,
+      "setting": "picnic",
+      "house": "hut",
+      "triangles": 456
+    },
+    {
+      "id": "magicpudding",
+      "page": 4,
+      "setting": "picnic",
+      "house": "hut",
+      "triangles": 456
+    },
+    {
+      "id": "magicpudding",
+      "page": 5,
+      "setting": "picnic",
+      "house": "hut",
+      "triangles": 456
+    },
+    {
+      "id": "magicpudding",
+      "page": 6,
+      "setting": "garden",
+      "house": "hut",
+      "triangles": 5920
+    },
+    {
+      "id": "tiddalik",
+      "page": 1,
+      "setting": "waterhole",
+      "house": "none",
+      "triangles": 2900
+    },
+    {
+      "id": "tiddalik",
+      "page": 2,
+      "setting": "dry",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "tiddalik",
+      "page": 3,
+      "setting": "dry",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "tiddalik",
+      "page": 4,
+      "setting": "dry",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "tiddalik",
+      "page": 5,
+      "setting": "waterhole",
+      "house": "none",
+      "triangles": 2900
+    },
+    {
+      "id": "greatrace",
+      "page": 1,
+      "setting": "race",
+      "house": "none",
+      "triangles": 148
+    },
+    {
+      "id": "greatrace",
+      "page": 2,
+      "setting": "race",
+      "house": "none",
+      "triangles": 148
+    },
+    {
+      "id": "greatrace",
+      "page": 3,
+      "setting": "race",
+      "house": "none",
+      "triangles": 148
+    },
+    {
+      "id": "greatrace",
+      "page": 4,
+      "setting": "race",
+      "house": "none",
+      "triangles": 148
+    },
+    {
+      "id": "greatrace",
+      "page": 5,
+      "setting": "race",
+      "house": "none",
+      "triangles": 148
+    },
+    {
+      "id": "greatrace",
+      "page": 6,
+      "setting": "race",
+      "house": "none",
+      "triangles": 148
+    },
+    {
+      "id": "maliang",
+      "page": 1,
+      "setting": "art",
+      "house": "workshop",
+      "triangles": 1704
+    },
+    {
+      "id": "maliang",
+      "page": 2,
+      "setting": "art",
+      "house": "workshop",
+      "triangles": 1704
+    },
+    {
+      "id": "maliang",
+      "page": 3,
+      "setting": "art",
+      "house": "workshop",
+      "triangles": 1704
+    },
+    {
+      "id": "maliang",
+      "page": 4,
+      "setting": "art",
+      "house": "workshop",
+      "triangles": 1704
+    },
+    {
+      "id": "maliang",
+      "page": 5,
+      "setting": "sea",
+      "house": "none",
+      "triangles": 1800
+    },
+    {
+      "id": "maliang",
+      "page": 6,
+      "setting": "art",
+      "house": "workshop",
+      "triangles": 1704
+    },
+    {
+      "id": "weaver",
+      "page": 1,
+      "setting": "cloudcourt",
+      "house": "hut",
+      "triangles": 5224
+    },
+    {
+      "id": "weaver",
+      "page": 2,
+      "setting": "silk",
+      "house": "hut",
+      "triangles": 84
+    },
+    {
+      "id": "weaver",
+      "page": 3,
+      "setting": "silk",
+      "house": "hut",
+      "triangles": 84
+    },
+    {
+      "id": "weaver",
+      "page": 4,
+      "setting": "stars",
+      "house": "hut",
+      "triangles": 64
+    },
+    {
+      "id": "weaver",
+      "page": 5,
+      "setting": "stars",
+      "house": "hut",
+      "triangles": 64
+    },
+    {
+      "id": "weaver",
+      "page": 6,
+      "setting": "silk",
+      "house": "hut",
+      "triangles": 84
+    },
+    {
+      "id": "nian",
+      "page": 1,
+      "setting": "newyear",
+      "house": "court",
+      "triangles": 891
+    },
+    {
+      "id": "nian",
+      "page": 2,
+      "setting": "newyear",
+      "house": "court",
+      "triangles": 891
+    },
+    {
+      "id": "nian",
+      "page": 3,
+      "setting": "newyear",
+      "house": "court",
+      "triangles": 891
+    },
+    {
+      "id": "nian",
+      "page": 4,
+      "setting": "newyear",
+      "house": "court",
+      "triangles": 891
+    },
+    {
+      "id": "nian",
+      "page": 5,
+      "setting": "newyear",
+      "house": "court",
+      "triangles": 891
+    },
+    {
+      "id": "nian",
+      "page": 6,
+      "setting": "newyear",
+      "house": "court",
+      "triangles": 891
+    },
+    {
+      "id": "kongrong",
+      "page": 1,
+      "setting": "pears",
+      "house": "court",
+      "triangles": 8088
+    },
+    {
+      "id": "kongrong",
+      "page": 2,
+      "setting": "pears",
+      "house": "court",
+      "triangles": 8088
+    },
+    {
+      "id": "kongrong",
+      "page": 3,
+      "setting": "pears",
+      "house": "court",
+      "triangles": 8088
+    },
+    {
+      "id": "kongrong",
+      "page": 4,
+      "setting": "pears",
+      "house": "court",
+      "triangles": 8088
+    },
+    {
+      "id": "kongrong",
+      "page": 5,
+      "setting": "pears",
+      "house": "court",
+      "triangles": 8088
+    },
+    {
+      "id": "kongrong",
+      "page": 6,
+      "setting": "pears",
+      "house": "court",
+      "triangles": 8088
+    },
+    {
+      "id": "change",
+      "page": 1,
+      "setting": "moon",
+      "house": "none",
+      "triangles": 64
+    },
+    {
+      "id": "change",
+      "page": 2,
+      "setting": "moon",
+      "house": "none",
+      "triangles": 64
+    },
+    {
+      "id": "change",
+      "page": 3,
+      "setting": "moonfestival",
+      "house": "none",
+      "triangles": 175
+    },
+    {
+      "id": "change",
+      "page": 4,
+      "setting": "moon",
+      "house": "none",
+      "triangles": 64
+    },
+    {
+      "id": "crow",
+      "page": 1,
+      "setting": "dry",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "crow",
+      "page": 2,
+      "setting": "dry",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "crow",
+      "page": 3,
+      "setting": "dry",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "crow",
+      "page": 4,
+      "setting": "dry",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "crow",
+      "page": 5,
+      "setting": "dry",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "crow",
+      "page": 6,
+      "setting": "dry",
+      "house": "none",
+      "triangles": 180
+    },
+    {
+      "id": "lionrabbit",
+      "page": 1,
+      "setting": "jungle",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "lionrabbit",
+      "page": 2,
+      "setting": "jungle",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "lionrabbit",
+      "page": 3,
+      "setting": "jungle",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "lionrabbit",
+      "page": 4,
+      "setting": "jungle",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "lionrabbit",
+      "page": 5,
+      "setting": "jungle",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "lionrabbit",
+      "page": 6,
+      "setting": "jungle",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "ganesha",
+      "page": 1,
+      "setting": "mango",
+      "house": "pavilion",
+      "triangles": 7952
+    },
+    {
+      "id": "ganesha",
+      "page": 2,
+      "setting": "mango",
+      "house": "pavilion",
+      "triangles": 7952
+    },
+    {
+      "id": "ganesha",
+      "page": 3,
+      "setting": "mango",
+      "house": "pavilion",
+      "triangles": 7952
+    },
+    {
+      "id": "ganesha",
+      "page": 4,
+      "setting": "mango",
+      "house": "pavilion",
+      "triangles": 7952
+    },
+    {
+      "id": "ganesha",
+      "page": 5,
+      "setting": "mango",
+      "house": "pavilion",
+      "triangles": 7952
+    },
+    {
+      "id": "ganesha",
+      "page": 6,
+      "setting": "mango",
+      "house": "pavilion",
+      "triangles": 7952
+    },
+    {
+      "id": "bluejackal",
+      "page": 1,
+      "setting": "indigo",
+      "house": "workshop",
+      "triangles": 1704
+    },
+    {
+      "id": "bluejackal",
+      "page": 2,
+      "setting": "indigo",
+      "house": "workshop",
+      "triangles": 1704
+    },
+    {
+      "id": "bluejackal",
+      "page": 3,
+      "setting": "jungle",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "bluejackal",
+      "page": 4,
+      "setting": "jungle",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "bluejackal",
+      "page": 5,
+      "setting": "jungle",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "bluejackal",
+      "page": 6,
+      "setting": "jungle",
+      "house": "none",
+      "triangles": 5920
+    },
+    {
+      "id": "elephantmice",
+      "page": 1,
+      "setting": "ruins",
+      "house": "none",
+      "triangles": 268
+    },
+    {
+      "id": "elephantmice",
+      "page": 2,
+      "setting": "ruins",
+      "house": "none",
+      "triangles": 268
+    },
+    {
+      "id": "elephantmice",
+      "page": 3,
+      "setting": "ruins",
+      "house": "none",
+      "triangles": 268
+    },
+    {
+      "id": "elephantmice",
+      "page": 4,
+      "setting": "ruins",
+      "house": "none",
+      "triangles": 268
+    },
+    {
+      "id": "elephantmice",
+      "page": 5,
+      "setting": "ruins",
+      "house": "none",
+      "triangles": 268
+    },
+    {
+      "id": "elephantmice",
+      "page": 6,
+      "setting": "ruins",
+      "house": "none",
+      "triangles": 268
+    },
+    {
+      "id": "monkey",
+      "page": 1,
+      "setting": "tropicalriver",
+      "house": "none",
+      "triangles": 4576
+    },
+    {
+      "id": "monkey",
+      "page": 2,
+      "setting": "tropicalriver",
+      "house": "none",
+      "triangles": 4456
+    },
+    {
+      "id": "monkey",
+      "page": 3,
+      "setting": "tropicalriver",
+      "house": "none",
+      "triangles": 4456
+    },
+    {
+      "id": "monkey",
+      "page": 4,
+      "setting": "tropicalriver",
+      "house": "none",
+      "triangles": 4456
+    },
+    {
+      "id": "monkey",
+      "page": 5,
+      "setting": "tropicalriver",
+      "house": "none",
+      "triangles": 4576
+    }
+  ],
+  "animals": [
+    {
+      "name": "mouse",
+      "expected": 0.42,
+      "actual": 0.42
+    },
+    {
+      "name": "lion",
+      "expected": 1.5,
+      "actual": 1.5
+    },
+    {
+      "name": "tiger",
+      "expected": 1.45,
+      "actual": 1.45
+    },
+    {
+      "name": "jackal",
+      "expected": 1.1,
+      "actual": 1.1
+    }
+  ],
+  "bad": [],
+  "warnings": [],
+  "disposed": 266,
+  "guides": 4
+}
