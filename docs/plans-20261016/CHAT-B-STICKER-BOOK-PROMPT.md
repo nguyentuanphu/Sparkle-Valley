@@ -4,6 +4,8 @@ The owner split the "feel and sound, sticker book, daily adventure" plan into th
 
 ## Prompt
 
+**Round (owner, 17 Oct AEDT): r80.** r79 is taken by other work; chats A, B and C all go into **r80** together. r79 may not be on `main` yet when you start: do not stop for that (owner, 16 Oct: "just work first"); start from `main` as below and Release puts everything in r80.
+
 You are chat B of three helper chats on Sparkle Valley: the sticker book. Chat A (feel and sound, branch `work/feel-sound`) gives you the flying-sticker effect. Chat C (daily adventure, branch `work/daily-adventure`) gives stickers as rewards through your `stickers.give(id)`. Another chat, **Release**, owns `main`, the version number, the voice index and every deployment. You never deploy.
 
 ### 1. Start
@@ -11,7 +13,7 @@ You are chat B of three helper chats on Sparkle Valley: the sticker book. Chat A
 1. Read `CLAUDE.md`, `HANDOFF.md`, `docs/SO-TAY-THIET-KE.md` (with UX-001 to UX-010), `docs/ARCHITECTURE.md` and `docs/cores/BOARD.md`.
 2. Read this file and the other two prompts in `docs/plans-20261016/`.
 3. Read the owner's mockups and rules in `docs/ui-redesign-20261016/` (`README.md`, and `canvas/Stickers.dc.html` for the exact design). Follow UI-1 to UI-10 and STK-1 to STK-6 (also copied in section 2 below).
-4. Check on the board that r79 is on `main`, and wait for "feel.js API pushed" from chat A. If either is missing, tell the owner with one pop-up.
+4. Check on the board that chat A wrote "feel.js API pushed" (it has: `work/feel-sound`, ready for Release). If it is missing, tell the owner with one pop-up.
 5. Create your branch: `git fetch origin main work/feel-sound && git checkout -b work/sticker-book origin/main && git merge --no-edit origin/work/feel-sound`. Merge `origin/work/feel-sound` again before each push.
    The plan and mockup docs (`docs/plans-20261016/`, `docs/ui-redesign-20261016/`) are on the branch `work/plans-20261016` until Release merges it. If they are not on `main` yet, read them there first (`git fetch origin work/plans-20261016 && git show origin/work/plans-20261016:docs/plans-20261016/<file>`) and merge that branch into yours right after creating it: `git merge --no-edit origin/work/plans-20261016`.
 6. **Push the API first.** Write `js/stickers.js` with `give(id)`, `has(id)` and `count()` (they can do little at first), commit and push, then write "stickers API pushed" on the board with the commit id. Chat C starts from it.

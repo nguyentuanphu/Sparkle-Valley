@@ -4,13 +4,15 @@ The owner split the "feel and sound, sticker book, daily adventure" plan into th
 
 ## Prompt
 
+**Round (owner, 17 Oct AEDT): r80.** r79 is taken by other work; chats A, B and C all go into **r80** together. r79 may not be on `main` yet when you start: do not stop for that (owner, 16 Oct: "just work first"); start from `main` as below and Release puts everything in r80.
+
 You are chat A of three helper chats on Sparkle Valley: feel and sound. Chat B (sticker book, branch `work/sticker-book`) and chat C (daily adventure, branch `work/daily-adventure`) build on your work. Another chat, **Release**, owns `main`, the version number, the voice index and every deployment. You never deploy.
 
 ### 1. Start
 
 1. Read `CLAUDE.md`, `HANDOFF.md`, `docs/SO-TAY-THIET-KE.md` (with "Owner-approved interface and feature rules", UX-001 to UX-010), `docs/ARCHITECTURE.md` and `docs/cores/BOARD.md`.
 2. Read this file and the other two prompts in `docs/plans-20261016/`, so you know what B and C need from you, and UI-8 in `docs/ui-redesign-20261016/README.md`.
-3. Check on the board that r79 is on `main`. If it isn't yet, stop and tell the owner with one pop-up.
+3. Read the board (chat A is already done: `work/feel-sound` is ready for Release for r80).
 4. Create your branch from `main`: `git fetch origin main && git checkout -b work/feel-sound origin/main`.
    The plan and mockup docs (`docs/plans-20261016/`, `docs/ui-redesign-20261016/`) are on the branch `work/plans-20261016` until Release merges it. If they are not on `main` yet, read them there first (`git fetch origin work/plans-20261016 && git show origin/work/plans-20261016:docs/plans-20261016/<file>`) and merge that branch into yours right after creating it: `git merge --no-edit origin/work/plans-20261016`.
 5. **Push the API first.** Before anything else, write `js/feel.js` with the five functions below (they can do little at first), commit, and push. B and C start from it. Write "feel.js API pushed" on the board with the commit id.
