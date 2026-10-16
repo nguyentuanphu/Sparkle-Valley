@@ -27,7 +27,7 @@ The first complete AFTER capture pass was superseded: the focused check found un
 | Check | Result |
 |---|---|
 | Focused regression on BEFORE | Expected failure: 38 missing new art directions and four animal-size failures. [Result](evidence/films-49-before/focused-result.json). |
-| Initial focused AFTER regression | Failed: undefined scenery helper calls. Fixed in `fa62bd8ec`; [failure log](evidence/films-49-after/focused-initial-failure.log) retained. All initial AFTER pictures were replaced. |
+| Initial focused AFTER regression | Failed: undefined scenery helper calls. Fixed in `fa62bd8ec`; [failure log](evidence/films-49-after/focused-initial-failure.txt) retained. All initial AFTER pictures were replaced. |
 | Corrected focused regression, before and after replacement capture | Passed twice: 38 tales, 221 pages, no warnings, four authored animal scales retained, 266 scenery geometries disposed, night fill readable, guide lighting unchanged, added scenery still in Calm. [Result](evidence/films-49-after/focused-result.json). |
 | Evidence validator | Passed: 2,010 nonblank PNGs, 777 matched views, source hashes match recorded commits and served files, CSS unchanged, title/text/stage bounds within 1 pixel, actor counts unchanged. [Result](evidence/films-49-after/evidence-validation.json). |
 | Visual review | Completed: all 42 labelled contact sheets (7 per device per phase), covering every English page of every tale on phone/tablet/computer. Corrected AFTER sheets were regenerated and reviewed again. Full shells also inspected in EN and VI, including phone Nian, tablet cake palace, computer watermelon and monkey. |

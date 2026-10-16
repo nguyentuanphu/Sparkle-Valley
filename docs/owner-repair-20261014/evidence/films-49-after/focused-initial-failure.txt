@@ -1,0 +1,56 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
++ [
++   'thanhgiong 5: no recognizable set detail',
++   'banhchung 0: no recognizable set detail',
++   'banhchung 1: no recognizable set detail',
++   'banhchung 4: no recognizable set detail',
++   'hoguom 3: no recognizable set detail',
++   'hoguom 4: no recognizable set detail',
++   'hoguom 5: no recognizable set detail',
++   'rongtien 1: no recognizable set detail',
++   'tamcam 3: no recognizable set detail',
++   'thachsanh 4: no recognizable set detail',
++   'quabau 2: no recognizable set detail',
++   'change 2: no recognizable set detail',
++   'monkey 0: no recognizable set detail',
++   'monkey 1: no recognizable set detail',
++   'monkey 2: no recognizable set detail',
++   'monkey 3: no recognizable set detail',
++   'monkey 4: no recognizable set detail'
++ ]
+- []
+
+    at file:///workspace/Sparkle-Valley/docs/owner-repair-20261014/check-films-49.mjs:50:41 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'thanhgiong 5: no recognizable set detail',
+    'banhchung 0: no recognizable set detail',
+    'banhchung 1: no recognizable set detail',
+    'banhchung 4: no recognizable set detail',
+    'hoguom 3: no recognizable set detail',
+    'hoguom 4: no recognizable set detail',
+    'hoguom 5: no recognizable set detail',
+    'rongtien 1: no recognizable set detail',
+    'tamcam 3: no recognizable set detail',
+    'thachsanh 4: no recognizable set detail',
+    'quabau 2: no recognizable set detail',
+    'change 2: no recognizable set detail',
+    'monkey 0: no recognizable set detail',
+    'monkey 1: no recognizable set detail',
+    'monkey 2: no recognizable set detail',
+    'monkey 3: no recognizable set detail',
+    'monkey 4: no recognizable set detail'
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0
